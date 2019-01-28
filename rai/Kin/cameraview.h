@@ -27,13 +27,12 @@ struct CameraView : GLDrawer {
 
   //-- run parameter
   Sensor *currentSensor=0;
-  bool background=true;
   int watchComputations=0;
   RenderMode renderMode=all;
   byteA frameIDmap;
 
   //-- evaluation outputs
-  CameraView(const rai::KinematicWorld& _K, bool _background=true, int _watchComputations=0);
+  CameraView(const rai::KinematicWorld& _K, bool _offscreen=true, int _watchComputations=0);
   ~CameraView(){}
 
   //-- loading the configuration: the meshes, the robot model, the tote, the sensors; all ends up in K
@@ -73,6 +72,8 @@ struct Sim_CameraView : Thread {
   Sim_CameraView(Var<rai::KinematicWorld>& _kin, double beatIntervalSec=-1., const char* _cameraFrameName=NULL, bool _idColors=false, const byteA& _frameIDmap=NoByteA);
   ~Sim_CameraView();
   void step();
+
+  arr getFxypxy();
 };
 
 }

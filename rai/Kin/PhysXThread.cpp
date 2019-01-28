@@ -50,7 +50,7 @@ struct PhysXThread : Thread {
     physxWorld().setJointState(ctrl_q_ref.get());
     px->step();
     physxWorld.deAccess();
-    if(gl) if(!(step_count%10)) gl->update(NULL, false, false, true);
+    if(gl) if(!(step_count%10)) gl->update(NULL, true);
   }
   
   void close() {

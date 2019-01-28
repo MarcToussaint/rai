@@ -71,7 +71,7 @@ void glDrawPlot(void *module) { plotDrawOpenGL(((PlotModule*)module)->s); }
 #ifdef RAI_GL
 void plotInitGL(double xl=-1., double xh=1., double yl=-1., double yh=1., double zl=-1., double zh=1., const char* name=0, uint width=600, uint height=600, int posx=0, int posy=0) {
   if(!plotModule.gl) {
-    plotModule.gl=new OpenGL(name, width, height, posx, posy);
+    plotModule.gl=new OpenGL(name, width, height);
     plotModule.gl->add(glDrawPlot, &plotModule);
     plotModule.gl->setClearColors(1., 1., 1., 1.);
   }

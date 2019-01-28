@@ -42,7 +42,7 @@ void KinViewer_old::step() {
       copy.gl().camera.setKinect();
       copy.gl().camera.X = kinectShape->X * copy.gl().camera.X;
 //      openGlLock();
-      copy.gl().renderInBack(true, true, 580, 480);
+      copy.gl().renderInBack(580, 480);
 //      copy.glGetMasks(580, 480, true);
 //      openGlUnlock();
       modelCameraView.set() = copy.gl().captureImage;
@@ -99,7 +99,7 @@ void KinViewer::step() {
   //-- get transforms, or all shapes if their number changed, and proxies
   rai::Array<rai::Transformation> X;
   world.readAccess();
-  if(true || world->frames.N!=meshesCopy.N) { //need to copy meshes
+  if(world->frames.N!=meshesCopy.N) { //need to copy meshes
     uint n=world->frames.N;
     gl->dataLock.writeLock();
     meshesCopy.resizeCopy(n);
@@ -129,7 +129,7 @@ void KinViewer::step() {
   for(uint i=0; i<X.N; i++) meshesCopy(i).glX = X(i);
   gl->dataLock.unlock();
   
-  gl->update(); //NULL, false, false, true);
+  gl->update(NULL, false); //NULL, false, false, true);
 }
 
 //===========================================================================
@@ -175,7 +175,6 @@ void KinPathViewer::step() {
   copy.gl().dataLock.unlock();
   if(T) {
     copy.orsDrawMarkers=false;
-    copy.gl().computeImage=writeToFiles;
     copy.gl().update(STRING("(time " <<tprefix+int(tt) <<'/' <<tprefix+int(T) <<")\n" <<text).p); //, false, false, true);
     if(writeToFiles) write_ppm(copy.gl().captureImage,STRING("vid/"<<std::setw(4)<<std::setfill('0')<<tprefix+int(tt)<<".ppm"));
   }
@@ -203,7 +202,7 @@ void renderConfigurations(const WorldL& cs, const char* filePrefix, int tprefix,
       copy.gl().camera.focus(.5, 0., .7);
     }
     copy.gl().text.clear() <<"time " <<tprefix+int(t) <<'/' <<tprefix+int(cs.N);
-    copy.gl().renderInBack(true, false, w, h);
+    copy.gl().renderInBack(w, h);
 #endif
     write_ppm(copy.gl().captureImage, STRING(filePrefix<<std::setw(4)<<std::setfill('0')<<t<<".ppm"));
   }
@@ -323,7 +322,7 @@ void ComputeCameraView::step() {
     gl.camera.setKinect();
     gl.camera.X = kinectShape->X * gl.camera.X;
     gl.dataLock.unlock();
-    gl.renderInBack(true, getDepth, 640, 480);
+    gl.renderInBack(640, 480);
     flip_image(gl.captureImage);
     flip_image(gl.captureDepth);
     cameraView.set() = gl.captureImage;

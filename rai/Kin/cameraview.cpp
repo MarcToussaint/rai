@@ -5,8 +5,8 @@ extern bool Geo_mesh_drawColors; //UGLY!!
 
 //===========================================================================
 
-rai::CameraView::CameraView(const rai::KinematicWorld& _K, bool _background, int _watchComputations)
-  : K(_K), background(_background), watchComputations(_watchComputations) {
+rai::CameraView::CameraView(const rai::KinematicWorld& _K, bool _offscreen, int _watchComputations)
+  : K(_K), gl("CameraView", 300, 300, _offscreen), watchComputations(_watchComputations) {
 
   gl.add(*this);
 }
@@ -66,10 +66,7 @@ rai::CameraView::Sensor& rai::CameraView::selectSensor(const char* sensorName){
 void rai::CameraView::computeImageAndDepth(byteA& image, floatA& depth){
   updateCamera();
 //  renderMode=all;
-  if(!background)
-    gl.update(NULL, true, true, true);
-  else
-    gl.renderInBack(true, true, -1, -1);
+  gl.update(NULL, true);
   image = gl.captureImage;
   flip_image(image);
   if(renderMode==seg && frameIDmap.N){
@@ -100,10 +97,7 @@ void rai::CameraView::computeImageAndDepth(byteA& image, floatA& depth){
 void rai::CameraView::computeSegmentation(byteA& segmentation){
   updateCamera();
   renderMode=seg;
-  if(!background)
-    gl.update(NULL, true, true, true);
-  else
-    gl.renderInBack(true, true, gl.width, gl.height);
+  gl.update(NULL, true);
   segmentation = gl.captureImage;
   flip_image(segmentation);
   done(__func__);
@@ -218,8 +212,8 @@ rai::Sim_CameraView::Sim_CameraView(Var<rai::KinematicWorld>& _kin, double beatI
     depth(this),
     C(model.get()()){
   if(_cameraFrameName){
-      C.addSensor(_cameraFrameName, _cameraFrameName);
-      C.selectSensor(_cameraFrameName);
+    C.addSensor(_cameraFrameName, _cameraFrameName);
+    C.selectSensor(_cameraFrameName);
   }
   if(_idColors){
     C.renderMode = C.seg;
@@ -250,3 +244,8 @@ void rai::Sim_CameraView::step() {
   depth.set() = dep;
 }
 
+
+arr rai::Sim_CameraView::getFxypxy(){
+  auto sen = C.currentSensor;
+  return ARR(sen->cam.focalLength*sen->height, sen->cam.focalLength*sen->height, .5*sen->width, .5*sen->height);
+}

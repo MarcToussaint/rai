@@ -1491,7 +1491,7 @@ void rai::KinematicWorld::glGetMasks(int w, int h, bool rgbIndices) {
     orsDrawIndexColors = true;
     orsDrawMarkers = orsDrawJoints = orsDrawProxies = false;
   }
-  gl().renderInBack(true, true, w, h);
+  gl().renderInBack(w, h);
   //  indexRgb = gl().captureImage;
   //  depth = gl().captureDepth;
 
@@ -3455,7 +3455,7 @@ int animateConfiguration(rai::KinematicWorld& K, OpenGL& gl, Inotify *ino) {
       // Joint limits
       checkNan(x);
       K.setJointState(x);
-      int key = gl.update(STRING("DOF = " <<i <<" : " <<jointNames(i) <<" [" <<lim[i] <<"]"), false, false, true);
+      int key = gl.update(STRING("DOF = " <<i <<" : " <<jointNames(i) <<" [" <<lim[i] <<"]"), true);
       //      write_ppm(gl.captureImage, STRING("vid/" <<std::setw(3)<<std::setfill('0')<<saveCount++<<".ppm"));
 
       gl.pressedkey=0;
@@ -3464,7 +3464,7 @@ int animateConfiguration(rai::KinematicWorld& K, OpenGL& gl, Inotify *ino) {
     }
   }
   K.setJointState(x0);
-  return gl.update("", false, false, true);
+  return gl.update("", true);
 }
 
 rai::Frame *movingBody=NULL;

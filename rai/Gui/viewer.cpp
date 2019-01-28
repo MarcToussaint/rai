@@ -71,7 +71,7 @@ void ImageViewer::step() {
   if(s->gl.height!= s->gl.background.d0 || s->gl.width!= s->gl.background.d1)
     s->gl.resize(s->gl.background.d1, s->gl.background.d0);
     
-  s->gl.update(name); //, false, false, true);
+  s->gl.update(name, false); //, false, false, true);
 }
 
 //===========================================================================
@@ -153,6 +153,7 @@ void PointCloudViewer::open() {
 }
 
 void PointCloudViewer::close() {
+  s->gl.clear();
   delete s;
 }
 

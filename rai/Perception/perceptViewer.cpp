@@ -79,6 +79,6 @@ void PerceptViewer::step() {
 //  if(X.N==modelCopy.N) for(uint i=0; i<X.N; i++) modelCopy(i).glX = X(i);
 //  gl->dataLock.unlock();
   
-  gl->update(); //NULL, false, false, true);
+  gl->update(NULL, false); //NULL, false, false, true);
 }
 

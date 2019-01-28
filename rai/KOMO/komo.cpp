@@ -1618,7 +1618,6 @@ bool KOMO::displayTrajectory(double delay, bool watch, bool overlayPaths, const 
   DrawPaths drawX(X);
   
   for(int t=-(int)k_order; t<(int)T; t++) {
-    if(saveVideoPrefix) gl->computeImage=true;
     rai::KinematicWorld& K = *configurations(t+k_order);
     timetag.clear() <<tag <<" (config:" <<t <<'/' <<T <<"  s:" <<conv_step2time(t,stepsPerPhase) <<" tau:" <<K.frames.first()->tau <<')';
 //    K.reportProxies();
@@ -1668,7 +1667,7 @@ bool KOMO::displayPath(bool watch, bool full) {
     int key = gl->watch();
     return !(key==27 || key=='q');
   }
-  gl->update(NULL, false, false, true);
+  gl->update(NULL, true);
   gl->clear();
   return false;
 }

@@ -256,12 +256,13 @@ struct GlfwSpinner : Thread {
   }
   void open() {}
   void step() {
-    glfwWaitEvents();
+//    glfwWaitEvents();
+    glfwWaitEventsTimeout(.1);
 //    glfwPollEvents();
 //    static uint count=0;
 //    cout <<"HERE" <<count++;
     OpenGLMutex().lock();
-    for(OpenGL* gl: glwins) if(gl->s && gl->s->needsRedraw){
+    for(OpenGL* gl: glwins) if(gl->s->window && gl->s->needsRedraw){
       glfwMakeContextCurrent(gl->s->window);
       gl->Draw(gl->width,gl->height);
       glfwSwapBuffers(gl->s->window);
@@ -282,8 +283,6 @@ struct GlfwSpinner : Thread {
 
   void delGL(OpenGL* gl) {
     glwins.removeValue(gl);
-    glfwDestroyWindow(gl->s->window);
-    gl->s->window=0;
     if(!glwins.N){ //stop looping
       OpenGLMutex().unlock();
       glfwPostEmptyEvent();
@@ -355,7 +354,8 @@ void OpenGL::openWindow() {
     }else{
       glfwWindowHint(GLFW_VISIBLE, GL_TRUE);
     }
-    s->window = glfwCreateWindow(width, height, title, NULL, NULL);
+    if(!title.N) title="GLFW window";
+    s->window = glfwCreateWindow(width, height, title.p, NULL, NULL);
     glfwMakeContextCurrent(s->window);
     glfwSetWindowUserPointer(s->window, this);
     glfwSetMouseButtonCallback(s->window, GlfwSpinner::_MouseButton);
@@ -373,6 +373,12 @@ void OpenGL::openWindow() {
 
 void OpenGL::closeWindow() {
   if(s->window) {
+    {
+      auto fg = singleGlProcess();
+      glfwPostEmptyEvent();
+      glfwDestroyWindow(s->window);
+      s->window=0;
+    }
     singleGlProcess()->delGL(this);
   }
 }
@@ -1421,8 +1427,8 @@ OpenGL::OpenGL(void *container)
 }
 
 OpenGL::~OpenGL() {
-  closeWindow();
   clear();
+  closeWindow();
   delete s;
   s=NULL;
 }
@@ -1848,7 +1854,7 @@ int OpenGL::update(const char *txt, bool waitForCompletedDraw) {
   openWindow();
   if(txt) text.clear() <<txt;
 #ifdef RAI_GL
-  isUpdating.waitForStatusEq(0);
+  if(waitForCompletedDraw) isUpdating.waitForStatusEq(0);
   isUpdating.setStatus(1);
   postRedrawEvent(false);
   if(waitForCompletedDraw) isUpdating.waitForStatusEq(0); //{ rai::wait(.01); processEvents(); rai::wait(.01); }
@@ -2289,6 +2295,11 @@ struct XBackgroundContext {
 Singleton<XBackgroundContext> xBackgroundContext;
 
 void OpenGL::renderInBack(int w, int h) {
+#ifdef RAI_GLFW
+  LOG(-3) <<"NO! do this with offscreen window";
+  return;
+#endif
+
 #ifdef RAI_GL
   if(w<0) w=width;
   if(h<0) h=height;
