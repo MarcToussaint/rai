@@ -100,10 +100,12 @@ struct KinematicWorld : GLDrawer {
   Frame *operator[](const char* name) { return getFrameByName(name, true); }
   Frame *operator()(int i) { return frames(i); }
   Frame *getFrameByName(const char* name, bool warnIfNotExist=true) const;
+  FrameL getFramesByNames(const StringA& frameNames) const;
 //  Link  *getLinkByBodies(const Frame* from, const Frame* to) const;
   Joint *getJointByBodies(const Frame* from, const Frame* to) const;
   Joint *getJointByBodyNames(const char* from, const char* to) const;
   Joint *getJointByBodyIndices(uint ifrom, uint ito) const;
+  uintA getQindicesByNames(const StringA& jointNames) const;
   StringA getJointNames() const;
   StringA getFrameNames() const;
 

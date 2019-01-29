@@ -16,10 +16,12 @@
 //===========================================================================
 
 void naturalGains(double& Kp, double& Kd, double decayTime, double dampingRatio) {
-  CHECK(decayTime>0. && dampingRatio>0., "this does not define proper gains!");
-  double lambda = -decayTime*dampingRatio/log(.1);
-  Kp = 1./(lambda*lambda);
-  Kd = 2.*dampingRatio/lambda;
+  CHECK(decayTime>0. && dampingRatio>=0., "this does not define proper gains!");
+  double lambda = decayTime*dampingRatio/(-log(.1));
+//  double lambda = decayTime/(-log(.1)); //assume the damping ratio always 1. -- just so that setting ratio to zero still gives a reasonable value
+  double freq = 1./lambda;
+  Kp = freq*freq;
+  Kd = 2.*dampingRatio*freq;
 }
 
 //===========================================================================
@@ -39,12 +41,17 @@ ActStatus MotionProfile_Sine::update(arr& yRef, arr& ydotRef, double tau, const 
   t+=tau;
   if(t>T) t=T;
   if(y_start.N!=y.N) y_start=y; //initialization
-  if(y_target.N!=y.N) y_target = zeros(y.N);
+  if(y_target.N!=y.N) y_target = y_start;
   yRef = y_start + (.5*(1.-cos(RAI_PI*t/T))) * (y_target - y_start);
   ydotRef = zeros(y.N);
   y_err = yRef - y;
   if(t>=T-1e-6/* && length(y_err)<1e-3*/) return AS_done;
   return AS_running;
+}
+
+void MotionProfile_Sine::setTarget(const arr& ytarget, const arr& vtarget){
+  y_target = ytarget;
+  resetState();
 }
 
 bool MotionProfile_Sine::isDone() {
@@ -82,7 +89,7 @@ MotionProfile_PD::MotionProfile_PD(const Graph& params)
 void MotionProfile_PD::setTarget(const arr& ytarget, const arr& vtarget) {
   y_target = ytarget;
   if(!!vtarget) v_target=vtarget; else v_target.resizeAs(y_target).setZero();
-  y_ref.clear(); v_ref.clear(); //resets the current reference
+  resetState(); //resets the current reference
 }
 
 void MotionProfile_PD::setGains(double _kp, double _kd) {
@@ -235,9 +242,7 @@ ActStatus CtrlTask::update(double tau, const rai::KinematicWorld& world) {
   ActStatus s_old = status.get();
   ActStatus s_new = s_old;
   if(ref) s_new = ref->update(y_ref, v_ref, tau, y, v);
-  if(s_new!=s_old) { //new status
-    status.set()=s_new;
-  }
+  if(s_new!=s_old) status.set()=s_new;
   return s_new;
 }
 
@@ -495,7 +500,16 @@ arr TaskControlMethods::getComplianceProjection(CtrlTaskL& tasks) {
   for(CtrlTask* t: tasks) {
     if(t->active && t->complianceDirection.N) {
       if(!P.N) P = eye(t->J_y.d1);
-      
+
+      //special case! qItself feature!
+      if(t->complianceDirection.N==1 && std::dynamic_pointer_cast<TM_qItself>(t->map)){
+        double compliance = t->complianceDirection.scalar();
+        CHECK_GE(compliance, 0., "");
+        CHECK_LE(compliance, 1., "");
+        P = diag(1.-compliance, P.d0);
+        return P;
+      }
+
       CHECK(!count,"only implemented for ONE compliance task yet -> subtract more dimensions?");
       CHECK_EQ(t->complianceDirection.N, t->y.N, "compliance direction has wrong dim");
       double factor = length(t->complianceDirection);

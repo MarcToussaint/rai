@@ -56,7 +56,7 @@ struct MotionProfile_Sine : MotionProfile {
   double t, T;
   MotionProfile_Sine(const arr& y_target, double duration) : y_target(y_target), t(0.), T(duration) {}
   virtual ActStatus update(arr& yRef, arr& ydotRef, double tau,const arr& y, const arr& ydot);
-  virtual void setTarget(const arr& ytarget, const arr& vtarget=NoArr){ y_target = ytarget; }
+  virtual void setTarget(const arr& ytarget, const arr& vtarget=NoArr);
   virtual void setTimeScale(double d) { T=d; }
   virtual void resetState() { y_start.clear(); y_err.clear(); t=0.; }
   virtual bool isDone();

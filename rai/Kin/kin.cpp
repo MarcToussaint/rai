@@ -1342,6 +1342,12 @@ rai::Frame* rai::KinematicWorld::getFrameByName(const char* name, bool warnIfNot
   return 0;
 }
 
+FrameL rai::KinematicWorld::getFramesByNames(const StringA& frameNames) const{
+  FrameL F;
+  for(const rai::String& name:frameNames) F.append(getFrameByName(name), true);
+  return F;
+}
+
 ///// find shape with specific name
 //rai::Shape* rai::KinematicWorld::getShapeByName(const char* name, bool warnIfNotExist) const {
 //  Frame *f = getFrameByName(name, warnIfNotExist);
@@ -1380,6 +1386,16 @@ rai::Joint* rai::KinematicWorld::getJointByBodyIndices(uint ifrom, uint ito) con
   Frame *f = frames(ifrom);
   Frame *t = frames(ito);
   return getJointByBodies(f, t);
+}
+
+uintA rai::KinematicWorld::getQindicesByNames(const StringA& jointNames) const{
+  FrameL F = getFramesByNames(jointNames);
+  uintA Qidx;
+  for(rai::Frame* f: F){
+    CHECK(f->joint, "");
+    Qidx.append(f->joint->qIndex);
+  }
+  return Qidx;
 }
 
 StringA rai::KinematicWorld::getJointNames() const {
