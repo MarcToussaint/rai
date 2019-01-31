@@ -133,9 +133,13 @@ void rai::Geom::createMeshes() {
 }
 
 void rai::Geom::glDraw(OpenGL &gl) {
-  if(!mesh.V.N) createMeshes();
-  mesh.glDraw(gl);
-  return;
+  if(type==rai::ST_marker){
+    glDrawDiamond(size(0)/5., size(0)/5., size(0)/5.); glDrawAxes(size(0), !gl.drawMode_idColor);
+  }else{
+    if(!mesh.V.N) createMeshes();
+    mesh.glDraw(gl);
+    return;
+  }
   bool drawCores = false;
   bool drawMeshes = true;
   switch(type) {
