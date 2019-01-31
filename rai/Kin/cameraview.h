@@ -71,6 +71,7 @@ struct Sim_CameraView : Thread {
 
   Sim_CameraView(Var<rai::KinematicWorld>& _kin, double beatIntervalSec=-1., const char* _cameraFrameName=NULL, bool _idColors=false, const byteA& _frameIDmap=NoByteA);
   ~Sim_CameraView();
+
   void step();
 
   arr getFxypxy();
