@@ -22,15 +22,15 @@ struct TaskControlThread : Thread {
 //  VAR(arr, ctrl_q_real)
 //  VAR(arr, ctrl_q_ref)
   
+  Var<rai::KinematicWorld> ctrl_config;
   Var<CtrlMsg> ctrl_ref;
   Var<CtrlMsg> ctrl_state;
-  Var<CtrlTaskL> ctrlTasks;
+  Var<CtrlTaskL> ctrl_tasks;
 //  Var<rai::KinematicWorld> model;
 //  VAR(bool, fixBase)
 //  VAR(double, IK_cost)
   
 //private:
-  Var<rai::KinematicWorld> model_ref;
 //  rai::KinematicWorld model_real;
   arr q_real, qdot_real; //< real state
   arr q_model, qdot_model; //< model state
@@ -45,24 +45,34 @@ public:
   int verbose;
   
 public:
-  TaskControlThread(const rai::KinematicWorld& _model,
+  TaskControlThread(const Var<rai::KinematicWorld>& _ctrl_config,
                     const Var<CtrlMsg>& _ctrl_ref,
-                    const Var<CtrlMsg>& _ctrl_state);
+                    const Var<CtrlMsg>& _ctrl_state,
+                    const Var<CtrlTaskL>& _ctrl_tasks);
   ~TaskControlThread();
   
   void step();
-
-  ptr<CtrlTask> addCtrlTask(const char* name, const ptr<Feature>& map, const ptr<MotionProfile>& ref);
-
-  ptr<CtrlTask> addCtrlTask(const char* name, FeatureSymbol fs, const StringA& frames,
-                            const ptr<MotionProfile>& ref);
-
-  ptr<CtrlTask> addCtrlTask(const char* name, FeatureSymbol fs, const StringA& frames,
-                            double decayTime, double dampingRatio=-1., double maxVel=-1., double maxAcc=-1.);
-
-  ptr<CtrlTask> addCompliance(const char* name, FeatureSymbol fs, const StringA& frames,
-                              const arr& compliance);
-
-  void removeCtrlTask(const ptr<CtrlTask>& t);
-
 };
+
+ptr<CtrlTask> addCtrlTask(Var<CtrlTaskL>& ctrlTasks,
+                          Var<rai::KinematicWorld>& ctrl_config,
+                          const char* name, const ptr<Feature>& map,
+                          const ptr<MotionProfile>& ref);
+
+ptr<CtrlTask> addCtrlTask(Var<CtrlTaskL>& ctrlTasks,
+                          Var<rai::KinematicWorld>& ctrl_config,
+                          const char* name, FeatureSymbol fs, const StringA& frames,
+                          const ptr<MotionProfile>& ref);
+
+ptr<CtrlTask> addCtrlTask(Var<CtrlTaskL>& ctrlTasks,
+                          Var<rai::KinematicWorld>& ctrl_config,
+                          const char* name, FeatureSymbol fs, const StringA& frames,
+                          double decayTime, double dampingRatio=-1., double maxVel=-1., double maxAcc=-1.);
+
+ptr<CtrlTask> addCompliance(Var<CtrlTaskL>& ctrlTasks,
+                            Var<rai::KinematicWorld>& ctrl_config,
+                            const char* name, FeatureSymbol fs, const StringA& frames,
+                            const arr& compliance);
+
+void removeCtrlTask(Var<CtrlTaskL>& ctrlTasks, const ptr<CtrlTask>& t);
+

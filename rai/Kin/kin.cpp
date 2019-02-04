@@ -2949,7 +2949,6 @@ void rai::KinematicWorld::glDraw_sub(OpenGL& gl) {
       if(f->name.startsWith(("perc_"))){
         glColor(1.,.5,.5);
         rai::Mesh *m = &f->shape->mesh();
-        cout <<"DRAW MESH:" <<m->getRadius() <<endl;
       }else{
         f->shape->glDraw(gl);
       }

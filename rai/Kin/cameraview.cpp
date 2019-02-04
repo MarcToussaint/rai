@@ -85,10 +85,9 @@ void rai::CameraView::computeImageAndDepth(byteA& image, floatA& depth){
   if(!!depth){
     depth = gl.captureDepth;
     flip_image(depth);
-    for(uint i=0; i<depth.N; i++){
-      double d=depth.elem(i);
-      if(d==1. || d==0.) depth.elem(i)=-1.;
-      else depth.elem(i) = gl.camera.glConvertToTrueDepth(d);
+    for(float& d:depth){
+      if(d==1.f || d==0.f) d=-1.f;
+      else d = gl.camera.glConvertToTrueDepth(d);
     }
   }
   done(__func__);
@@ -207,11 +206,14 @@ void rai::CameraView::done(const char* _func_){
 
 //===========================================================================
 
-rai::Sim_CameraView::Sim_CameraView(Var<rai::KinematicWorld>& _kin, double beatIntervalSec, const char* _cameraFrameName, bool _idColors, const byteA& _frameIDmap)
+rai::Sim_CameraView::Sim_CameraView(Var<rai::KinematicWorld>& _kin,
+                                    Var<byteA> _color,
+                                    Var<floatA> _depth,
+                                    double beatIntervalSec, const char* _cameraFrameName, bool _idColors, const byteA& _frameIDmap)
   : Thread("Sim_CameraView", beatIntervalSec),
     model(this, _kin, (beatIntervalSec<0.)),
-    color(this),
-    depth(this),
+    color(this, _color),
+    depth(this, _depth),
     C(model.get()()){
   if(_cameraFrameName){
     C.addSensor(_cameraFrameName, _cameraFrameName);

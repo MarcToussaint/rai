@@ -1886,17 +1886,13 @@ arr Camera::getInverseProjectionMatrix() const{
 /// convert from gluPerspective's non-linear [0, 1] depth to the true [zNear, zFar] depth
 double Camera::glConvertToTrueDepth(double d) const {
   if(heightAbs) return zNear + (zFar-zNear)*d;
-  return zNear + (zFar-zNear)*d/((zFar-zNear)/zNear*(1.-d)+1.);
-//  return zNear + (zFar-zNear) * glConvertToLinearDepth(d);
+  return zNear + (zFar-zNear)*d/((zFar-zNear)/zNear*(1.-d)+1.); //TODO: optimize numerically
 }
 
 /// convert from gluPerspective's non-linear [0, 1] depth to the linear [0, 1] depth
 double Camera::glConvertToLinearDepth(double d) const {
   CHECK(!heightAbs, "I think this is wrong for ortho view");
   return d/((zFar-zNear)/zNear*(1.-d)+1.);
-//  d = 2.0 * d - 1.0;
-//  d = 2.0 * zNear * zFar / (zFar + zNear - d * (zFar - zNear));
-//  return d;
 }
 
 void Camera::project2PixelsAndTrueDepth(arr& x, double width, double height) const{

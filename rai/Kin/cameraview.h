@@ -69,7 +69,10 @@ struct Sim_CameraView : Thread {
   //-- internal
   CameraView C;
 
-  Sim_CameraView(Var<rai::KinematicWorld>& _kin, double beatIntervalSec=-1., const char* _cameraFrameName=NULL, bool _idColors=false, const byteA& _frameIDmap=NoByteA);
+  Sim_CameraView(Var<rai::KinematicWorld>& _kin,
+                 Var<byteA> _color,
+                 Var<floatA> _depth,
+                 double beatIntervalSec=-1., const char* _cameraFrameName=NULL, bool _idColors=false, const byteA& _frameIDmap=NoByteA);
   ~Sim_CameraView();
 
   void step();

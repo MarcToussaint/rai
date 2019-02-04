@@ -24,13 +24,14 @@ PerceptViewer::~PerceptViewer() {
 void glDrawPercepts(void *P) {
   PerceptL& percepts = *((PerceptL*)P);
   for(std::shared_ptr<Percept>& p:percepts) {
-    glPushMatrix();
     glTransform(p->pose);
+    glPushMatrix();
+    p->glDraw(NoOpenGL);
+    glPopMatrix();
+    glTranslated(p->com.x, p->com.y, p->com.z);
     glColor3f(0,0,0);
     glDrawText(STRING(p->id),0,0,0, true);
     glColor3f(0,1,0);
-    p->glDraw(NoOpenGL);
-    glPopMatrix();
   }
 }
 
