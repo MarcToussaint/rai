@@ -242,10 +242,10 @@ ifeq ($(OPENCV),1)
 endif
 
 ifeq ($(OPENCV4),1)
-CXXFLAGS  += -DRAI_OPENCV4
-CPATH := /home/opt/include/opencv4/:$(CPATH)
-LPATH := /home/opt/lib:$(LPATH)
-LIBS += `pkg-config --libs opencv`
+CXXFLAGS  += -DRAI_OPENCV
+CPATH := $(HOME)/opt/include/opencv4/:$(CPATH)
+LPATH := $(HOME)/opt/lib:$(LPATH)
+LIBS += -lopencv_core -lopencv_highgui
 endif
 
 ifeq ($(HSL),1)

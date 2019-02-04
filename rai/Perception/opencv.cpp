@@ -40,11 +40,10 @@ double ratio_to_p(double a) { double p1=exp(a); return p1/(p1+1./p1); }
 
 char cvShow(const byteA& img, const char *window, bool wait) {
   CHECK(img.nd==2 || (img.nd==3 && img.d2==3), "img has improper dimensionalities");
-  cvNamedWindow(window, CV_WINDOW_AUTOSIZE);
   if(img.nd==3) {
-    byteA imgBGR; resizeAs(imgBGR, img);
-    cv::cvtColor(conv_Arr2CvRef(img), conv_Arr2CvRef(imgBGR), CV_RGB2BGR);
-    cv::imshow(window, conv_Arr2CvRef(imgBGR));
+    //    byteA imgBGR; resizeAs(imgBGR, img);
+    //    cv::cvtColor(conv_Arr2CvRef(img), conv_Arr2CvRef(imgBGR), cv::RGB2BGR);
+    cv::imshow(window, conv_Arr2CvRef(img));
   } else {
     cv::imshow(window, conv_Arr2CvRef(img));
   }
@@ -54,7 +53,6 @@ char cvShow(const byteA& img, const char *window, bool wait) {
 
 char cvShow(const floatA& img, const char *window, bool wait) {
   CHECK(img.nd==2 || (img.nd==3 && img.d2==3), "");
-  cvNamedWindow(window, CV_WINDOW_AUTOSIZE);
   cv::imshow(window, conv_Arr2CvRef(img));
   if(wait) return cv::waitKey();
   return cv::waitKey(2);
