@@ -17,21 +17,12 @@
 /// The task controller generates the message send to the RT_Controller
 /// the problem is defined by the list of CtrlTasks
 struct TaskControlThread : Thread {
-  
-  //protected access points
-//  VAR(arr, ctrl_q_real)
-//  VAR(arr, ctrl_q_ref)
-  
+
   Var<rai::KinematicWorld> ctrl_config;
   Var<CtrlMsg> ctrl_ref;
   Var<CtrlMsg> ctrl_state;
   Var<CtrlTaskL> ctrl_tasks;
-//  Var<rai::KinematicWorld> model;
-//  VAR(bool, fixBase)
-//  VAR(double, IK_cost)
   
-//private:
-//  rai::KinematicWorld model_real;
   arr q_real, qdot_real; //< real state
   arr q_model, qdot_model; //< model state
   arr q0; //< homing pose
@@ -41,10 +32,8 @@ struct TaskControlThread : Thread {
   double kp_factor, kd_factor, ki_factor;
   bool useSwift;
   bool requiresInitialSync; //< whether the step() should reinit the state from the ros message
-public:
   int verbose;
   
-public:
   TaskControlThread(const Var<rai::KinematicWorld>& _ctrl_config,
                     const Var<CtrlMsg>& _ctrl_ref,
                     const Var<CtrlMsg>& _ctrl_state,

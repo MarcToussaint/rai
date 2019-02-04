@@ -75,6 +75,35 @@ void ImageViewer::step() {
 }
 
 //===========================================================================
+//
+// ImageViewerFloat
+//
+
+ImageViewerFloat::ImageViewerFloat(const Var<floatA>& _img, double beatIntervalSec, float _scale)
+  : Thread(STRING("ImageViewerFloat_" <<_img.name()), beatIntervalSec),
+    img(this, _img, (beatIntervalSec<0.)),
+    scale(_scale){
+  gl = make_shared<OpenGL>(STRING("ImageViewerFloat: "<<img.data->name));
+  if(beatIntervalSec>=0.) threadLoop(); else threadStep();
+}
+
+ImageViewerFloat::~ImageViewerFloat() {
+  threadClose();
+}
+
+void ImageViewerFloat::step() {
+  gl->dataLock.writeLock();
+  floatA img_copy = img.get();
+  if(flipImage) flip_image(img_copy);
+  if(scale!=1.f) img_copy *= scale;
+  gl->dataLock.unlock();
+  if(!img_copy.N) return;
+  if(gl->height!= img_copy.d0 || gl->width!= img_copy.d1) gl->resize(img_copy.d1, img_copy.d0);
+
+  gl->watchImage(img_copy, false, 1.);
+}
+
+//===========================================================================
 
 ImageViewerCallback::ImageViewerCallback(const Var<byteA>& _img)
   : img(_img){

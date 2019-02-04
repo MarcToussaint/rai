@@ -241,6 +241,13 @@ ifeq ($(OPENCV),1)
   endif
 endif
 
+ifeq ($(OPENCV4),1)
+CXXFLAGS  += -DRAI_OPENCV4
+CPATH := /home/opt/include/opencv4/:$(CPATH)
+LPATH := /home/opt/lib:$(LPATH)
+LIBS += `pkg-config --libs opencv`
+endif
+
 ifeq ($(HSL),1)
 CXXFLAGS  += -DRAI_HSL
 CPATH	  := $(CPATH):$(LIBPATH)/HSL-archive/include
