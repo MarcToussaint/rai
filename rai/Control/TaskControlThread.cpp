@@ -59,6 +59,11 @@ TaskControlThread::~TaskControlThread() {
   threadClose();
 }
 
+arr TaskControlThread::whatsTheForce(const ptr<CtrlTask>& t){
+// arr tau = ctrl_state.get()->u_bias;
+  return pseudoInverse(~t->J_y)*torques_real;
+}
+
 void TaskControlThread::step() {
 //  rai::Frame *transF = model_real.getFrameByName("worldTranslationRotation", false);
 //  rai::Joint *trans = (transF?transF->joint:NULL);
@@ -70,7 +75,7 @@ void TaskControlThread::step() {
         q_real = state->q;
         qdot_real = state->qdot;
       }
-      ctrl_config.set()->setJointState(q_real);
+      ctrl_config.set()->setJointState(q_real, qdot_real);
 //      model_real.setJointState(q_real);
       q_model = q_real;
       qdot_model = qdot_real;
@@ -87,11 +92,13 @@ void TaskControlThread::step() {
     if(state->q.N){
       q_real = state->q;
       qdot_real = state->qdot;
+      torques_real = state->u_bias;
     }
   }
+
 //  model_real.setJointState(q_real);
   if(true){
-    ctrl_config.set()->setJointState(q_real);
+    ctrl_config.set()->setJointState(q_real, qdot_real);
     q_model = q_real;
     qdot_model = qdot_real;
   }
@@ -113,18 +120,22 @@ void TaskControlThread::step() {
 
     TaskControlMethods taskController(Hmetric);
 
+    //-- get compliance projection matrix
+    P_compliance = taskController.getComplianceProjection(ctrl_tasks());
+
     //-- compute IK step
     double maxQStep = 2e-1;
     arr dq;
-    dq = taskController.inverseKinematics(ctrl_tasks(), qdot_model); //don't include a null step
+    dq = taskController.inverseKinematics(ctrl_tasks(), qdot_model, P_compliance); //don't include a null step
     if(dq.N){
       double l = length(dq);
       if(l>maxQStep) dq *= maxQStep/l;
       q_model += dq;
     }
     
+#if 0
     //set/test the new configuration
-    K->setJointState(q_model, qdot_model);
+    K->setJointState(q_model, qdot_model); //DONT! the configuration should stay on real; use a separate one for safty checks
     if(useSwift) K->stepSwift();
     for(CtrlTask* t: ctrl_tasks()) t->update(.0, K); //update without time increment
     double cost = taskController.getIKCosts(ctrl_tasks());
@@ -138,12 +149,10 @@ void TaskControlThread::step() {
       if(useSwift) K->stepSwift();
       for(CtrlTask* t: ctrl_tasks()) t->update(.0, K); //update without time increment
     }
-    
+#endif
+
     if(verbose) taskController.reportCurrentState(ctrl_tasks());
     
-    // get compliance projection matrix
-    P_compliance = taskController.getComplianceProjection(ctrl_tasks());
-
     ctrl_tasks.deAccess();
   }
   
@@ -183,7 +192,7 @@ void TaskControlThread::step() {
   if(true){
     CtrlMsg refs;
     refs.q =  q_model;
-    refs.qdot = zeros(q_model.N);
+    refs.qdot = qdot_model;
     refs.P_compliance = P_compliance;
     refs.fL_gamma = 1.;
     refs.Kp = Kp; //ARR(1.);

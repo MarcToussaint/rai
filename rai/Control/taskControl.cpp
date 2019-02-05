@@ -27,11 +27,21 @@ void naturalGains(double& Kp, double& Kd, double decayTime, double dampingRatio)
 //===========================================================================
 
 ActStatus MotionProfile_Const::update(arr& yRef, arr& ydotRef, double tau, const arr& y, const arr& ydot) {
+  if(y_target.N!=y.N) y_target = y;
   if(flipTargetSignOnNegScalarProduct && scalarProduct(y_target, y) < 0) {
     y_target = -y_target;
   }
   yRef = y_target;
   ydotRef = zeros(y.N);
+  return AS_running;
+}
+
+//===========================================================================
+
+ActStatus MotionProfile_ConstVel::update(arr& yRef, arr& ydotRef, double tau, const arr& y, const arr& ydot) {
+  if(v_target.N!=y.N) v_target = zeros(y.N);
+  yRef.clear();
+  ydotRef = v_target;
   return AS_running;
 }
 
@@ -429,17 +439,20 @@ if(true || cost>10.) { //calling an optimizer!
 }
 #endif
 
-arr TaskControlMethods::inverseKinematics(CtrlTaskL& tasks, arr& qdot, const arr& nullRef, double* cost) {
-  arr y,v,J;
+arr TaskControlMethods::inverseKinematics(CtrlTaskL& tasks, arr& qdot, const arr& P_compliance, const arr& nullRef, double* cost) {
+  arr y,v,J, J_vel; //separate J only for velocity tasks
   for(CtrlTask* t: tasks) {
     if(t->active && t->ref) {
-      y.append(t->prec%(t->y_ref - t->y));
-      J.append(t->prec%(t->J_y));
-      if(!!qdot) v.append(t->prec%(t->v_ref));
+      if(t->y_ref.N){
+        y.append(t->prec%(t->y_ref - t->y));
+        J.append(t->prec%(t->J_y));
+      }
+      if((!!qdot) && t->v_ref.N){
+        v.append(t->prec%(t->v_ref));
+        J_vel.append(t->prec%(t->J_y));
+      }
     }
   }
-  if(!y.N) return zeros(Hmetric.d0);
-  J.reshape(y.N, J.N/y.N);
   
   arr Winv = oneover(Hmetric);
   if(lockJoints.N) {
@@ -448,12 +461,36 @@ arr TaskControlMethods::inverseKinematics(CtrlTaskL& tasks, arr& qdot, const arr
     for(uint i=0; i<n; i++) if(lockJoints(i)) Winv(i) = 0.;
   }
 
+  //compute the qdot reference: only velocity tasks, special J_vec Jacobian, and not accounting for compliance
+  if(!!qdot){
+    if(v.N){
+      J_vel.reshape(v.N, J_vel.N/v.N);
+      qdot = pseudoInverse(J_vel, Winv, 1e-1)*v;
+    }else{
+      qdot.setZero();
+    }
+  }
+
+  if(!y.N) return zeros(Hmetric.d0);
+  J.reshape(y.N, J.N/y.N);
+
+#if 0
+  //integrate compliance in regularization metric
+  if(!!P_compliance && P_compliance.N){
+    CHECK_EQ(P_compliance.d0, Winv.d0, "");
+    if(Winv.nd==1){
+      Winv = P_compliance * (Winv % P_compliance);
+    }else{
+      Winv = P_compliance * Winv * P_compliance;
+    }
+  }
+#endif
+
   if(J.d1 > Winv.N) Winv.append(1e6, Winv.N-J.d1); //append high costs for joints not represented in Hmetric
   
   arr Jinv = pseudoInverse(J, Winv, 1e-1);
   checkNan(Jinv);
   checkNan(y);
-  if(!!qdot) qdot = Jinv*v;
   arr dq = Jinv*y;
   if(!!nullRef) dq += nullRef - Jinv*(J*nullRef);
   if(cost) {

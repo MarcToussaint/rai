@@ -51,6 +51,18 @@ struct MotionProfile_Const : MotionProfile {
 
 //===========================================================================
 
+struct MotionProfile_ConstVel : MotionProfile {
+  arr v_target;
+  MotionProfile_ConstVel(const arr& _v_target) : v_target(_v_target) {}
+  virtual ActStatus update(arr& yRef, arr& ydotRef, double tau, const arr& y, const arr& ydot);
+  virtual void setTarget(const arr& ytarget, const arr& vtarget=NoArr){ CHECK(!!vtarget, ""); v_target = vtarget; }
+  virtual void setTimeScale(double d) {}
+  virtual void resetState() {}
+  virtual bool isDone() { return false; }
+};
+
+//===========================================================================
+
 struct MotionProfile_Sine : MotionProfile {
   arr y_start, y_target, y_err;
   double t, T;
@@ -64,7 +76,7 @@ struct MotionProfile_Sine : MotionProfile {
 
 //===========================================================================
 
-struct MotionProfile_PD: MotionProfile {
+struct MotionProfile_PD : MotionProfile {
   arr y_ref, v_ref;
   arr y_target, v_target;
   double kp, kd;
@@ -180,7 +192,7 @@ struct TaskControlMethods {
   void lockJointGroup(const char *groupname, rai::KinematicWorld& world, bool lockThem=true);
   
   double getIKCosts(CtrlTaskL& tasks, const arr& q=NoArr, const arr& q0=NoArr, arr& g=NoArr, arr& H=NoArr);
-  arr inverseKinematics(CtrlTaskL& tasks, arr& qdot, const arr& nullRef=NoArr, double* cost=NULL);
+  arr inverseKinematics(CtrlTaskL& tasks, arr& qdot, const arr& P_compliance, const arr& nullRef=NoArr, double* cost=NULL);
   arr inverseKinematics_hierarchical(CtrlTaskL& tasks);
   arr getComplianceProjection(CtrlTaskL& tasks);
   arr operationalSpaceControl(CtrlTaskL& tasks);

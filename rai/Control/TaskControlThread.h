@@ -23,7 +23,7 @@ struct TaskControlThread : Thread {
   Var<CtrlMsg> ctrl_state;
   Var<CtrlTaskL> ctrl_tasks;
   
-  arr q_real, qdot_real; //< real state
+  arr q_real, qdot_real, torques_real; //< real state
   arr q_model, qdot_model; //< model state
   arr q0; //< homing pose
   arr Hmetric;
@@ -39,6 +39,8 @@ struct TaskControlThread : Thread {
                     const Var<CtrlMsg>& _ctrl_state,
                     const Var<CtrlTaskL>& _ctrl_tasks);
   ~TaskControlThread();
+
+  arr whatsTheForce(const ptr<CtrlTask>& t);
   
   void step();
 };
