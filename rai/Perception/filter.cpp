@@ -192,7 +192,7 @@ void Filter::step() {
   
   double cost=0.;
   for(CtrlTask* t: tasks) t->update(.0, modelWorld()); //computes their values and Jacobians
-  arr dq = taskController.inverseKinematics(tasks, NoArr, NoArr, &cost);
+  arr dq = taskController.inverseKinematics(tasks, NoArr, NoArr, NoArr, &cost);
   q += dq;
   
   if(verbose>0) {
