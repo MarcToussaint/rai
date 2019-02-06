@@ -1767,8 +1767,8 @@ void rai::KinematicWorld::writeURDF(std::ostream &os, const char* robotName) con
       arr& size = a->shape->size();
       switch(a->shape->type()) {
         case ST_box:       os <<"      <box size=\"" <<size({0,2}) <<"\" />\n";  break;
-        case ST_cylinder:  os <<"      <cylinder length=\"" <<size(2) <<"\" radius=\"" <<size(3) <<"\" />\n";  break;
-        case ST_sphere:    os <<"      <sphere radius=\"" <<size(3) <<"\" />\n";  break;
+        case ST_cylinder:  os <<"      <cylinder length=\"" <<size.elem(-2) <<"\" radius=\"" <<size.elem(-1) <<"\" />\n";  break;
+        case ST_sphere:    os <<"      <sphere radius=\"" <<size.last() <<"\" />\n";  break;
         case ST_mesh:      os <<"      <mesh filename=\"" <<a->ats.get<rai::FileToken>("mesh").name <<'"';
           if(a->ats["meshscale"]) os <<" scale=\"" <<a->ats.get<arr>("meshscale") <<'"';
           os <<" />\n";  break;
@@ -1794,8 +1794,8 @@ void rai::KinematicWorld::writeURDF(std::ostream &os, const char* robotName) con
         arr& size = b->shape->size();
         switch(b->shape->type()) {
           case ST_box:       os <<"      <box size=\"" <<size({0,2}) <<"\" />\n";  break;
-          case ST_cylinder:  os <<"      <cylinder length=\"" <<size(2) <<"\" radius=\"" <<size(3) <<"\" />\n";  break;
-          case ST_sphere:    os <<"      <sphere radius=\"" <<size(3) <<"\" />\n";  break;
+          case ST_cylinder:  os <<"      <cylinder length=\"" <<size.elem(-2) <<"\" radius=\"" <<size.elem(-1) <<"\" />\n";  break;
+          case ST_sphere:    os <<"      <sphere radius=\"" <<size.last() <<"\" />\n";  break;
           case ST_mesh:      os <<"      <mesh filename=\"" <<b->ats.get<rai::FileToken>("mesh").name <<'"';
             if(b->ats["meshscale"]) os <<" scale=\"" <<b->ats.get<arr>("meshscale") <<'"';
             os <<" />\n";  break;
