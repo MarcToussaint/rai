@@ -120,7 +120,7 @@ void TEST(GJK_Jacobians2) {
   K.calc_activeSets();
   K.calc_fwdPropagateFrames();
 
-  K.gl().update();
+  K.watch();
 
   K.swift().initActivations(K, 0);
   K.stepSwift();
@@ -168,7 +168,7 @@ void TEST(GJK_Jacobians2) {
 
   }
 
-  K.gl().watch();
+  K.watch(true);
 }
 
 //===========================================================================
@@ -199,7 +199,7 @@ void TEST(GJK_Jacobians3) {
   K.calc_activeSets();
   K.calc_fwdPropagateFrames();
 
-  K.gl().update();
+  K.watch();
 
   K.swift().initActivations(K, 0);
   K.stepSwift();
@@ -231,7 +231,7 @@ void TEST(GJK_Jacobians3) {
     q -= 1e-2*J + 1e-2*(~y2*J2);
   }
 
-  K.gl().watch();
+  K.watch(true);
 }
 
 //===========================================================================

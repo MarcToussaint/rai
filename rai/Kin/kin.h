@@ -238,6 +238,7 @@ struct KinematicWorld : GLDrawer {
   OdeInterface& ode();
   FeatherstoneInterface& fs();
   int watch(bool pause=false, const char* txt=NULL);
+  void glAdd(void (*call)(void*), void* classP);
   void glAnimate();
   void glGetMasks(int w=-1, int h=-1, bool rgbIndices=true);
   void stepSwift();

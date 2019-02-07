@@ -141,7 +141,7 @@ namespace rai {
     bool swiftIsReference;
     sKinematicWorld():gl(NULL), swift(NULL), physx(NULL), ode(NULL), swiftIsReference(false) {}
     ~sKinematicWorld() {
-      if(gl) delete gl;
+      if(gl){ gl->dataLock.unlock(); delete gl; }
       if(swift && !swiftIsReference) delete swift;
       if(physx) delete physx;
       if(ode) delete ode;
@@ -1439,6 +1439,7 @@ OpenGL& rai::KinematicWorld::gl(const char* window_title) {
     s->gl->add(glStandardScene, 0);
     s->gl->addDrawer(this);
     s->gl->camera.setDefault();
+    s->gl->dataLock.writeLock();
   }
   return *s->gl;
 }
@@ -1489,10 +1490,22 @@ FeatherstoneInterface& rai::KinematicWorld::fs() {
 }
 
 int rai::KinematicWorld::watch(bool pause, const char* txt) {
+  gl().dataLock.unlock();
+  int key = 0;
   if(pause){
     if(!txt) txt="Config::watch";
-    return gl().watch(txt);
-  }else return gl().update(txt);
+    key = gl().watch(txt);
+  }else{
+    key = gl().update(txt, true);
+  }
+  gl().dataLock.writeLock();
+  return key;
+}
+
+void rai::KinematicWorld::glAdd(void (*call)(void*), void* classP){
+  gl().dataLock.unlock();
+  gl().add(call, classP);
+  gl().dataLock.writeLock();
 }
 
 void rai::KinematicWorld::glAnimate() {

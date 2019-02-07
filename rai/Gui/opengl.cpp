@@ -37,7 +37,7 @@ Singleton<SingleGLAccess> singleGLAccess;
 // A freeglut singleton to ensure once initialization
 //
 
-Mutex& OpenGLMutex();
+//Mutex& OpenGLMutex();
 
 class FreeglutSpinner : Thread{
 private:
@@ -216,8 +216,6 @@ struct sOpenGL {
 #endif
 
 #ifdef RAI_GLFW
-Mutex& OpenGLMutex();
-//static uint GLProcessCount = 0;
 
 //===========================================================================
 //
@@ -238,7 +236,9 @@ struct sOpenGL : NonCopyable {
 
 struct GlfwSpinner : Thread {
   rai::Array<OpenGL*> glwins;
-  GlfwSpinner() : Thread("GlfwSpinnerSpinner", .025) {
+  Mutex mutex;
+
+  GlfwSpinner() : Thread("GlfwSpinnerSpinner", .01) {
     glfwSetErrorCallback(error_callback);
     if (!glfwInit()) exit(EXIT_FAILURE);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
@@ -258,39 +258,46 @@ struct GlfwSpinner : Thread {
   void step() {
 //    glfwWaitEvents();
 //    glfwWaitEventsTimeout(.1);
-    glfwPollEvents();
 //    static uint count=0;
 //    cout <<"HERE" <<count++;
-    OpenGLMutex().lock();
+    mutex.lock();
+    glfwPollEvents();
     for(OpenGL* gl: glwins) if(gl->s->window && gl->s->needsRedraw){
       glfwMakeContextCurrent(gl->s->window);
+      gl->isUpdating.setStatus(1);
       gl->Draw(gl->width,gl->height);
       glfwSwapBuffers(gl->s->window);
-      gl->isUpdating.setStatus(0);
       gl->s->needsRedraw--;
-//      cout <<"DRAW";
+      gl->isUpdating.setStatus(0);
     }
-    OpenGLMutex().unlock();
+    mutex.unlock();
 //    cout <<endl;
   }
   void close() {}
 
   void addGL(OpenGL* gl) {
+    bool start=false;
+    mutex.lock();
     glwins.append(gl);
     gl->s->needsRedraw = 10;
-    if(glwins.N==1) threadLoop(); //start looping
+    if(glwins.N==1) start=true; //start looping
+    mutex.unlock();
+
+    if(start) threadLoop(); //start looping
   }
 
   void delGL(OpenGL* gl) {
+    bool stop=false;
+    mutex.lock();
     glwins.removeValue(gl);
-    if(!glwins.N){ //stop looping
-      OpenGLMutex().unlock();
-      glfwPostEmptyEvent();
-      threadClose();
-      OpenGLMutex().lock();
+    if(!glwins.N) stop=true; //stop looping
+    mutex.unlock();
+
+    if(stop){ //stop looping
+      threadStop();
       for(uint i=0;i<10;i++){
-        glfwPostEmptyEvent();
         glfwPollEvents(); //ensure that all windows are being closed
+        rai::wait(.001);
       }
     }
   }
@@ -329,8 +336,10 @@ struct GlfwSpinner : Thread {
   }
 
   static void _Close(GLFWwindow* window){
+    OpenGL *gl=(OpenGL*)glfwGetWindowUserPointer(window);
 //      if (!time_to_close)
-//          glfwSetWindowShouldClose(window, GLFW_FALSE);
+//    OpenGL *gl=(OpenGL*)glfwSetWindowShouldClose(window, GLFW_FALSE);
+    gl->WindowStatus(0);
   }
 
   static void _Scroll(GLFWwindow* window, double xoffset, double yoffset){
@@ -340,14 +349,15 @@ struct GlfwSpinner : Thread {
 
 };
 
-Singleton<GlfwSpinner> singleGlProcess;
-
-Mutex& OpenGLMutex() { return singleGlProcess.mutex; }
-
+static GlfwSpinner* singletonGlSpinner() {
+  static GlfwSpinner instance;
+  return &instance;
+}
 
 void OpenGL::openWindow() {
   if(!s->window) {
-    auto fg = singleGlProcess();
+    auto fg = singletonGlSpinner();
+    fg->mutex.lock();
 
     if(offscreen){
       glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
@@ -366,6 +376,7 @@ void OpenGL::openWindow() {
     glfwSetWindowCloseCallback(s->window, GlfwSpinner::_Close);
 
     glfwSwapInterval(1);
+    fg->mutex.unlock();
 
     fg->addGL(this);
   }
@@ -374,24 +385,25 @@ void OpenGL::openWindow() {
 void OpenGL::closeWindow() {
   if(s->window) {
     {
-      auto fg = singleGlProcess();
-      glfwPostEmptyEvent();
+      auto fg = singletonGlSpinner();
+      fg->mutex.lock();
       glfwDestroyWindow(s->window);
       s->window=0;
+      fg->mutex.unlock();
+      isUpdating.setStatus(0);
+      watching.setStatus(0);
     }
-    singleGlProcess()->delGL(this);
+    singletonGlSpinner()->delGL(this);
   }
 }
 
 void OpenGL::postRedrawEvent(bool fromWithinCallback) {
-  if(!s->needsRedraw)
+  auto fg = singletonGlSpinner();
+  fg->mutex.lock();
+  if(!s->needsRedraw){
     s->needsRedraw=1;
-  glfwPostEmptyEvent();
-//  auto fg=singleGlProcess();
-//  s->accessWindow();
-
-//  glutPostRedisplay();
-//  s->deaccessWindow();
+  }
+  fg->mutex.unlock();
 }
 
 void OpenGL::resize(int w,int h) {
@@ -1835,14 +1847,10 @@ int OpenGL::watch(const char *txt) {
     LOG(0) <<"can't watch an offscreen context";
     return 'q';
   }
-  update(STRING(txt<<" - press ENTER to continue"));
+  update(STRING(txt<<" - press ENTER to continue"), true);
   if(rai::getInteractivity()) {
     watching.setStatus(1);
     watching.waitForStatusEq(0);
-//    while(watching.getStatus()!=0){
-//      processEvents();
-//      sleepForEvents();
-//    }
   } else {
     rai::wait(.1);
   }
@@ -1857,7 +1865,7 @@ int OpenGL::update(const char *txt, bool waitForCompletedDraw) {
   if(waitForCompletedDraw) isUpdating.waitForStatusEq(0);
   isUpdating.setStatus(1);
   postRedrawEvent(false);
-  if(waitForCompletedDraw) isUpdating.waitForStatusEq(0); //{ rai::wait(.01); processEvents(); rai::wait(.01); }
+  if(waitForCompletedDraw) isUpdating.waitForStatusEq(0);
 #endif
   return pressedkey;
 }
@@ -2034,8 +2042,8 @@ void OpenGL::Reshape(int _width, int _height) {
   if(height%2) height = 2*(height/2);
   camera.setWHRatio((double)width/height);
   for(uint v=0; v<views.N; v++) views(v).camera.setWHRatio((views(v).ri-views(v).le)*width/((views(v).to-views(v).bo)*height));
-  postRedrawEvent(true);
   dataLock.unlock();
+  postRedrawEvent(true);
 }
 
 void OpenGL::Key(unsigned char key) {
@@ -2130,9 +2138,8 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y) {
   if(!downPressed) {
     for(uint i=0; i<clickCalls.N; i++) clickCalls(i)->clickCallback(*this);
   }
-  
-  postRedrawEvent(true);
   dataLock.unlock();
+  postRedrawEvent(true);
 }
 
 void OpenGL::Scroll(int wheel, int direction) {
@@ -2140,13 +2147,14 @@ void OpenGL::Scroll(int wheel, int direction) {
   CALLBACK_DEBUG("Mouse Wheel Callback: " <<wheel <<' ' <<direction);
   if(direction>0) camera.X.pos += camera.X.rot*Vector_z * (.1 * (camera.X.pos-camera.foc).length());
   else            camera.X.pos -= camera.X.rot*Vector_z * (.1 * (camera.X.pos-camera.foc).length());
-  postRedrawEvent(true);
   dataLock.unlock();
+  postRedrawEvent(true);
 }
 
 void OpenGL::WindowStatus(int status){
   dataLock.writeLock();
   CALLBACK_DEBUG("WindowStatus Callback: " <<status);
+  if(!status) closeWindow();
   dataLock.unlock();
 }
 
@@ -2172,8 +2180,8 @@ void OpenGL::MouseMotion(int _x, int _y) {
     mouseposx=_x; mouseposy=_y;
     bool ud=false;
     for(uint i=0; i<hoverCalls.N; i++) ud=ud || hoverCalls(i)->hoverCallback(*this);
-    if(ud) postRedrawEvent(true);
     dataLock.unlock();
+    if(ud) postRedrawEvent(true);
     return;
   }
   if(mouse_button==1) {  //rotation
@@ -2189,7 +2197,6 @@ void OpenGL::MouseMotion(int _x, int _y) {
     cam->X.rot = downRot * rot;   //rotate camera's direction
     rot = downRot * rot / downRot; //interpret rotation relative to current viewing
     cam->X.pos = downFoc + rot * (downPos - downFoc);   //rotate camera's position
-    postRedrawEvent(true);
   }
   if(mouse_button==2) {  //translation || (mouse_button==1 && (modifiers&GLUT_ACTIVE_SHIFT) && !(modifiers&GLUT_ACTIVE_CTRL))){
     rai::Vector trans = vec - downVec;
@@ -2197,7 +2204,6 @@ void OpenGL::MouseMotion(int _x, int _y) {
     trans *= .2*(downFoc - downPos).length();
     trans = downRot * trans;
     cam->X.pos = downPos - trans;
-    postRedrawEvent(true);
   }
   if(mouse_button==3) {  //zooming || (mouse_button==1 && !(modifiers&GLUT_ACTIVE_SHIFT) && (modifiers&GLUT_ACTIVE_CTRL))){
 #if 0
@@ -2209,6 +2215,7 @@ void OpenGL::MouseMotion(int _x, int _y) {
 #endif
   }
   dataLock.unlock();
+  postRedrawEvent(true);
 #else
   NICO
 #endif
@@ -2304,7 +2311,7 @@ void OpenGL::renderInBack(int w, int h) {
   if(w<0) w=width;
   if(h<0) h=height;
   
-  singleGlProcess(); //ensure that glut is initialized (if the drawer called glut)
+  singletonGlSpinner(); //ensure that glut is initialized (if the drawer called glut)
   
   auto mut=singleGLAccess();
   dataLock.readLock();
