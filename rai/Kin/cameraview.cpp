@@ -165,11 +165,11 @@ void rai::CameraView::glDraw(OpenGL& gl) {
     glStandardScene(NULL);
     gl.drawMode_idColor = false;
     if(renderMode==visuals){
-        K.orsDrawVisualsOnly=true;
-        K.orsDrawMarkers = false;
+      K.orsDrawVisualsOnly=true;
+      K.orsDrawMarkers = false;
     }else{
-        K.orsDrawVisualsOnly=false;
-        K.orsDrawMarkers = true;
+      K.orsDrawVisualsOnly=false;
+      K.orsDrawMarkers = true;
     }
 
     K.glDraw(gl);
@@ -238,10 +238,19 @@ void rai::Sim_CameraView::step() {
   floatA dep;
   arr X = model.get()->getFrameState();
   if(!X.N) return;
-  if(X.d0==C.K.frames.N){
+  if(step_count>0 && X.d0==C.K.frames.N){
     C.K.setFrameState(X);
   }else{
     C.K = model.get();
+    if(C.renderMode==C.seg){//update frameIDmap
+      C.frameIDmap.resize(C.K.frames.N).setZero();
+      for(rai::Frame *f:C.K.frames){
+        int *label=f->ats.find<int>("label");
+        if(label){
+          C.frameIDmap(f->ID) = *label;
+        }
+      }
+    }
   }
   C.computeImageAndDepth(img, dep);
   color.set() = img;
@@ -251,5 +260,5 @@ void rai::Sim_CameraView::step() {
 
 arr rai::Sim_CameraView::getFxypxy(){
   auto sen = C.currentSensor;
-  return ARR(sen->cam.focalLength*sen->height, sen->cam.focalLength*sen->height, .5*sen->width, .5*sen->height);
+  return ARR(sen->cam.focalLength*sen->height, sen->cam.focalLength*sen->height, .5*(sen->width-1.), .5*(sen->height-1.));
 }

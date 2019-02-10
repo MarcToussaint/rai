@@ -82,11 +82,13 @@ void PercMesh::syncWith(rai::KinematicWorld& K) {
     f->name <<"perc_" <<id;
     new rai::Shape(*f);
     f->shape->type() = rai::ST_mesh;
-    f->shape->visual = false;
+    f->shape->visual = true;
+    f->ats.getNew<int>("label") = 0x80+id;
   }
   f->X = pose;
   f->shape->mesh() = mesh;
   f->shape->mesh().C = ARR(.5, 1., .5);
+  f->ats.getNew<int>("label") = 0x80+id;
 }
 
 double PercMesh::fuse(PerceptPtr& other) {

@@ -31,4 +31,7 @@ struct Depth2PointCloud : Thread {
   void close() {}
 };
 
+
+void depthData2point(double* pt, double* fxypxy);
+
 void depthData2pointCloud(arr& pts, const floatA& depth, float fx, float fy, float px, float py);

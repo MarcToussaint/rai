@@ -70,3 +70,9 @@ void depthData2pointCloud(arr& pts, const floatA& depth, float fx, float fy, flo
 
 }
 
+
+void depthData2point(double* pt, double* fxypxy){
+  pt[0] =  pt[2] * (pt[0] - fxypxy[2]) / fxypxy[0];
+  pt[1] = -pt[2] * (pt[1] - fxypxy[3]) / fxypxy[1];
+  pt[2] = -pt[2];
+}

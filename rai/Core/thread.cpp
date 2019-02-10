@@ -80,18 +80,6 @@ Signaler::Signaler(int initialStatus)
 }
 
 Signaler::~Signaler() {
-//  for(Signaler *c:listensTo) {
-//    c->statusLock();
-//    c->listeners.removeValue(this);
-//    c->statusUnlock();
-//  }
-//  for(Signaler *c:listeners) {
-//    c->statusLock();
-//    c->listensTo.removeValue(this);
-//    c->messengers.removeValue(this, false);
-//    c->statusUnlock();
-//  }
-//  listDelete(callbacks);
   int rc = pthread_cond_destroy(&cond);    if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
 }
 
@@ -112,18 +100,7 @@ int Signaler::incrementStatus(Signaler* messenger) {
 }
 
 void Signaler::broadcast(Signaler* messenger) {
-  //remember the messengers:
-//  if(messenger) messengers.setAppend(messenger);
-  //signal to all waiters:
   int rc = pthread_cond_signal(&cond);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-  //int rc = pthread_cond_broadcast(&cond);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-  //setStatus to all listeners:
-//  for(Signaler *c:listeners) if(c!=messenger) {
-//      Thread *th = dynamic_cast<Thread*>(c);
-//      if(th) th->threadStep();
-//      else c->setStatus(1, this);
-//    }
-//  for(auto* c:callbacks) c->call()(this, status);
 }
 
 void Event::listenTo(Var_base& v) {
@@ -527,8 +504,7 @@ Thread::Thread(const char* _name, double beatIntervalSec)
     thread(0),
     tid(0),
     step_count(0),
-    metronome(beatIntervalSec),
-    verbose(0) {
+    metronome(beatIntervalSec) {
   if(name.N>14) name.resize(14, true);
 }
 
@@ -682,7 +658,7 @@ void Thread::threadStop(bool wait) {
 
 void Thread::main() {
   tid = syscall(SYS_gettid);
-  if(verbose>0) cout <<"*** Entering Thread '" <<name <<"'" <<endl;
+//  if(verbose>0) cout <<"*** Entering Thread '" <<name <<"'" <<endl;
   //http://linux.die.net/man/3/setpriority
   //if(Thread::threadPriority) setRRscheduling(Thread::threadPriority);
   //if(Thread::threadPriority) setNice(Thread::threadPriority);
@@ -710,15 +686,12 @@ void Thread::main() {
   event.statusUnlock();
   
   timer.reset();
-  bool waitForTic=false;
   for(;;) {
     //-- wait for a non-idle state
     int s = event.waitForStatusNotEq(tsIDLE);
     if(s==tsToClose) break;
-    if(s==tsBEATING) waitForTic=true; else waitForTic=false;
+    if(s==tsBEATING) metronome.waitForTic();
     if(s>0) event.setStatus(tsIDLE); //step command -> reset to idle
-    
-    if(waitForTic) metronome.waitForTic();
     
     //-- make a step
     timer.cycleStart();
@@ -732,7 +705,7 @@ void Thread::main() {
   stepMutex.lock();
   close(); //virtual close routine
   stepMutex.unlock();
-  if(verbose>0) cout <<"*** Exiting Thread '" <<name <<"'" <<endl;
+//  if(verbose>0) cout <<"*** Exiting Thread '" <<name <<"'" <<endl;
   
   event.setStatus(tsIsClosed);
 }

@@ -2959,12 +2959,7 @@ void rai::KinematicWorld::glDraw_sub(OpenGL& gl) {
     //first non-transparent
     for(Frame *f: frames) if(f->shape && f->shape->alpha()==1. && (f->shape->visual||!orsDrawVisualsOnly)) {
       gl.drawId(f->ID);
-      if(f->name.startsWith(("perc_"))){
-        glColor(1.,.5,.5);
-        rai::Mesh *m = &f->shape->mesh();
-      }else{
-        f->shape->glDraw(gl);
-      }
+      f->shape->glDraw(gl);
     }
     for(Frame *f: frames) if(f->shape && f->shape->alpha()<1. && (f->shape->visual||!orsDrawVisualsOnly)) {
       gl.drawId(f->ID);

@@ -226,10 +226,6 @@ struct Var {
 
 template<class T> std::ostream& operator<<(std::ostream& os, Var<T>& x) { x.write(os); return os; }
 
-//#define VAR(type, name) Var<type> name = Var<type>(this, #name);
-//#define VARlisten(type, name) Var<type> name = Var<type>(this, #name, true);
-//#define VARname(type, name) Var<type> name = Var<type>(NULL, #name);
-
 //===========================================================================
 
 /// a basic condition variable
@@ -238,19 +234,12 @@ struct Signaler {
   Mutex statusMutex;
   pthread_cond_t cond;
 
-//  SignalerL listeners;   ///< list of other condition variables that are being signaled on a setStatus access
-//  SignalerL listensTo;   ///< ...
-//  SignalerL messengers;  ///< set(!) of condition variables that send signals (via the listen mechanism) - is cleared by the user only
-  
   Signaler(int initialStatus=0);
   virtual ~Signaler(); //virtual, to enforce polymorphism
   
-  void setStatus(int i, Signaler* messenger=NULL); ///< sets state and broadcasts
-  int  incrementStatus(Signaler* messenger=NULL);  ///< increase value by 1
-  void broadcast(Signaler* messenger=NULL);        ///< wake up listeners and call callbacks with current status
-//  void listenTo(Signaler& c);
-//  void stopListenTo(Signaler& c);
-//  void stopListening();
+  void setStatus(int i, Signaler* messenger=NULL); ///< sets status and broadcasts
+  int  incrementStatus(Signaler* messenger=NULL);  ///< increase status by 1
+  void broadcast(Signaler* messenger=NULL);        ///< wake up waitForSignal callers
   
   void statusLock();   //the user can manually lock/unlock, if he needs locked state access for longer -> use userHasLocked=true below!
   void statusUnlock();
@@ -268,9 +257,10 @@ struct Signaler {
 
 typedef std::function<int(const rai::Array<Var_base*>&, int whoChanged)> EventFunction;
 
+/// a condition variable that auto-changes status according to a given function of variables
 struct Event : Signaler {
-  rai::Array<Var_base*> variables;
-  EventFunction eventFct;
+  rai::Array<Var_base*> variables; /// variables this event depends on
+  EventFunction eventFct;          /// int-valued function that computes status based on variables
 
   Event(int initialState=0) : Signaler(initialState) {}
   Event(const rai::Array<Var_base*>& _variables, const EventFunction& _eventFct, int initialState=0);
@@ -371,7 +361,6 @@ struct Thread {
   uint step_count;              ///< how often the step was called
   Metronome metronome;          ///< used for beat-looping
   CycleTimer timer;             ///< measure how the time spend per cycle, within step, idle
-  int verbose;
 
   /// @name c'tor/d'tor
   /** DON'T open drivers/devices/files or so here in the constructor,

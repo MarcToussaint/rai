@@ -163,30 +163,25 @@ export MSVC_LPATH
 default: $(OUTPUT)
 all: $(OUTPUT) #this is for qtcreator, which by default uses the 'all' target
 
-clean: cleanLocks cleanLocal
-#	rm -f $(OUTPUT) $(OBJS) $(PREOBJS) callgrind.out.* $(CLEAN)
-#	@rm -f $(MODULE_NAME)_wrap.* $(MODULE_NAME)py.so $(MODULE_NAME)py.py
-#	@find $(BASE) -type d -name 'Make.lock' -delete -print
-#	@find $(BASE)/rai \( -type f -or -type l \) \( -name 'lib*.so' -or -name 'lib*.a' \)  -delete -print
-
-cleanLocal: force
+clean: cleanLocks cleanLibs force
+	@echo "   *** clean      " $(PWD)
 	rm -f $(OUTPUT) $(OBJS) $(PREOBJS) callgrind.out.* $(CLEAN)
 	@rm -f $(MODULE_NAME)_wrap.* $(MODULE_NAME)py.so $(MODULE_NAME)py.py
-	@find $(BASE) -type d -name 'Make.lock' -delete -print
-	@find $(BASE)/rai $(BASE)/../src \( -type f -or -type l \) \( -name 'lib*.so' -or -name 'lib*.a' \)  -delete -print
 
 cleanLocks: force
-	@find $(BASE) -type d -name 'Make.lock' -delete -print
-
-cleanAll: force
-	@find $(PWD) $(BASE) -type d -name 'Make.lock' -delete -print
-	@find $(PWD) $(BASE) \( -type f -or -type l \) \( -name '*.o' -or -name 'lib*.so' -or -name 'lib*.a' -or -name 'x.exe' \) -delete -print
+	@echo "   *** cleanLocks " $(PWD)
+	@find $(PWD) $(BASE) $(BASE2) -type d -name 'Make.lock' -delete -print
 
 cleanLibs: force
-	@find $(BASE)/rai -type f \( -name 'lib*.so' -or -name 'lib*.a' \)  -delete -print
+	@echo "   *** cleanLibs  " $(PWD)
+	@find $(BASE)/rai $(BASE2) \( -type f -or -type l \) \( -name 'lib*.so' -or -name 'lib*.a' \)  -delete -print
+
+cleanAll: cleanLocks force
+	@echo "   *** cleanAll   " $(PWD)
+	@find $(PWD) $(BASE) $(BASE2) \( -type f -or -type l \) \( -name '*.o' -or -name 'lib*.so' -or -name 'lib*.a' -or -name 'x.exe' \) -delete -print
 
 cleanDepends: force
-	@find $(BASE) -type f -name 'Makefile.dep' -delete -print
+	@find $(BASE) $(BASE2) -type f -name 'Makefile.dep' -delete -print
 
 installUbuntu: force
 	sudo apt-get -q $(APTGETYES) install $(DEPEND_UBUNTU)

@@ -20,9 +20,6 @@ SyncFiltered::~SyncFiltered() {
   threadClose();
 }
 
-void SyncFiltered::open() {
-}
-
 void SyncFiltered::step() {
   uintA existingIDs;
   

@@ -19,7 +19,7 @@ struct CameraView : GLDrawer {
   };
 
   //-- description of world configuration
-  rai::KinematicWorld K;       //the configuration
+  rai::KinematicWorld K;       //COPY of the configuration
   rai::Array<Sensor> sensors;  //the list of sensors
 
   enum RenderMode{ all, seg, visuals };
