@@ -293,13 +293,7 @@ struct GlfwSpinner : Thread {
     if(!glwins.N) stop=true; //stop looping
     mutex.unlock();
 
-    if(stop){ //stop looping
-      threadStop();
-      for(uint i=0;i<10;i++){
-        glfwPollEvents(); //ensure that all windows are being closed
-        rai::wait(.001);
-      }
-    }
+    if(stop) threadStop(); //stop looping
   }
 
   static void error_callback(int error, const char* description){
