@@ -27,7 +27,7 @@ typedef rai::Array<Thread*> ThreadL;
 //===========================================================================
 
 template<class F> struct Callback {
-  const void* id; //needed to delete callbacks from callback lists!
+  const void* id; //only needed to delete callbacks from callback lists!
   std::function<F> callback;
   Callback(const void* _id) : id(_id) {}
   Callback(const void* _id, const std::function<F>& c) : id(_id), callback(c) {}
@@ -70,7 +70,6 @@ struct RWLock {
 struct Var_base : NonCopyable {
   RWLock rwlock;               ///< rwLock (handled via read/writeAccess)
   uint revision=0;
-  const std::type_info& type;  ///< type of the variable
   rai::String name;            ///< name
   double write_time=0.;        ///< clock time of last write access
   double data_time=0.;         ///< time stamp of the original data source
@@ -415,7 +414,7 @@ template<class T> Var_data<T>& getVariable(const char* name) {
   ptr<Var_base> v = getVariable(name);
   if(!v) HALT("can't find variable of name '" <<name <<"'");
   ptr<Var_data<T>> var = std::dynamic_pointer_cast<Var_data<T>>(v);
-  if(!var) HALT("can't convert variable of type '" <<NAME(v->type) <<"' to '" <<NAME(typeid(T)) <<"'");
+  if(!var) HALT("can't convert variable '" <<v->name <<"' to type '" <<NAME(typeid(T)) <<"'");
   return *var;
 }
 
@@ -425,7 +424,8 @@ template<class T> rai::Array<ptr<Var<T>>> getVariablesOfType() {
   rai::Array<ptr<Var<T>>> ret;
   rai::Array<ptr<Var_base>*> vars = getVariables();
   for(ptr<Var_base>* v : vars) {
-    if((*v)->type==typeid(T)) ret.append(std::make_shared<Var<T>>((Thread*)0, *v));
+    ptr<Var_data<T>> var = std::dynamic_pointer_cast<Var_data<T>>(v);
+    if(var) ret.append(std::make_shared<Var<T>>(var->get()));
 //    ptr<VariableData<T>> var = std::dynamic_pointer_cast<VariableData<T>>(*v);
 //    if(var) ret.append(Var<T>(NULL, var));
   }
@@ -548,8 +548,8 @@ Var<T>::Var(Thread* _thread, const Var<T>& acc, bool threadListens)
 template<class T>
 Var<T>::Var(Thread* _thread, const ptr<Var_base>& var, bool threadListens)
   : data(NULL), thread(_thread), last_read_revision(0) {
-  if(var->type!=typeid(T)) HALT("types don't match!");
-  data = std::dynamic_pointer_cast<Var_data<T>>(var); //dynamic_cast<VariableData<T>*>(&var));
+  data = std::dynamic_pointer_cast<Var_data<T>>(var);
+  if(!data) HALT("types don't match!");
   if(thread && threadListens) thread->event.listenTo(*data);
 }
 

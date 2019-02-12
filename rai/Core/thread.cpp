@@ -250,7 +250,7 @@ int Signaler::waitForStatusSmallerThan(int i, bool userHasLocked, double timeout
 // VariableBase
 //
 
-Var_base::Var_base(const std::type_info& _type, const char* _name) : type(_type), name(_name) {
+Var_base::Var_base(const std::type_info& _type, const char* _name) : name(_name) {
 }
 
 Var_base::~Var_base() {
