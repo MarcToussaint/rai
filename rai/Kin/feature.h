@@ -18,6 +18,7 @@ struct Value{
 /// defines only a map (task space), not yet the costs or constraints in this space
 struct Feature {
   uint order;       ///< 0=position, 1=vel, etc
+  arr scale, target;     ///< optional linear transformation
   bool flipTargetSignOnNegScalarProduct; ///< for order==1 (vel mode), when taking temporal difference, flip sign when scalar product it negative [specific to quats -> move to special TM for quats only]
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& K) = 0; ///< this needs to be overloaded
   virtual void phi(arr& y, arr& J, const WorldL& Ktuple); ///< if not overloaded this computes the generic pos/vel/acc depending on order
@@ -35,6 +36,8 @@ struct Feature {
   
   VectorFunction vf(rai::KinematicWorld& K);
   VectorFunction vf(WorldL& Ktuple);
+private:
+  void applyLinearTrans(arr& y, arr& J);
 };
 
 //these are frequently used by implementations of task maps

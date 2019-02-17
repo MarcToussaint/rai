@@ -391,6 +391,19 @@ void OpenGL::closeWindow() {
   }
 }
 
+void OpenGL::beginNonThreadedDraw(){
+  openWindow();
+  auto fg = singletonGlSpinner();
+  fg->mutex.lock();
+  glfwMakeContextCurrent(s->window);
+}
+
+void OpenGL::endNonThreadedDraw(){
+  auto fg = singletonGlSpinner();
+  glfwSwapBuffers(s->window);
+  fg->mutex.unlock();
+}
+
 void OpenGL::postRedrawEvent(bool fromWithinCallback) {
   auto fg = singletonGlSpinner();
   fg->mutex.lock();
@@ -1852,14 +1865,24 @@ int OpenGL::watch(const char *txt) {
 }
 
 /// update the view (in Qt: also starts displaying the window)
-int OpenGL::update(const char *txt, bool waitForCompletedDraw) {
+int OpenGL::update(const char *txt, bool nonThreaded) {
   openWindow();
   if(txt) text.clear() <<txt;
 #ifdef RAI_GL
-  if(waitForCompletedDraw) isUpdating.waitForStatusEq(0);
+#if 0
+  if(nonThreaded) isUpdating.waitForStatusEq(0);
   isUpdating.setStatus(1);
   postRedrawEvent(false);
-  if(waitForCompletedDraw) isUpdating.waitForStatusEq(0);
+  if(nonThreaded) isUpdating.waitForStatusEq(0);
+#else
+  if(nonThreaded){
+    beginNonThreadedDraw();
+    Draw(width, height);
+    endNonThreadedDraw();
+  }else{
+    postRedrawEvent(false);
+  }
+#endif
 #endif
   return pressedkey;
 }

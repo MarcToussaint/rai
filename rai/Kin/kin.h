@@ -168,7 +168,7 @@ struct KinematicWorld : GLDrawer {
   }
 
   /// @name features
-  void evalFeature(arr& y, arr& J, FeatureSymbol fs, const StringA &symbols) const;
+  void evalFeature(arr& y, arr& J, FeatureSymbol& fs, const StringA &symbols) const;
 
   /// @name kinematics (low level)
   void kinematicsPos(arr& y, arr& J, Frame *a, const Vector& rel=NoVector) const;  //TODO: make vector& not vector*
@@ -238,6 +238,7 @@ struct KinematicWorld : GLDrawer {
   OdeInterface& ode();
   FeatherstoneInterface& fs();
   int watch(bool pause=false, const char* txt=NULL);
+  void saveVideoPic(uint& t, const char* pathPrefix="vid/");
   void glAdd(void (*call)(void*), void* classP);
   void glAnimate();
   void glGetMasks(int w=-1, int h=-1, bool rgbIndices=true);

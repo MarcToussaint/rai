@@ -24,12 +24,12 @@ struct SimulationThread_self{
   std::shared_ptr<PublisherConv<std_msgs::Float64, double, conv_double2Float64>> pub_timeToGo;
 
   SimulationThread_self()
-      : ROS("simulator"),
-        ref("MotionReference"),
-        command("command"),
-        currentQ("currentQ"),
-        objectPoses("objectPoses"),
-        objectNames("objectNames"){
+      : ref(),
+        command(),
+        currentQ(),
+        objectPoses(),
+        objectNames(),
+        ROS("simulator"){
 
       //setup ros communication
       sub_ref = ROS.subscribe(ref);

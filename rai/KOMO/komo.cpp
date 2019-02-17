@@ -186,14 +186,15 @@ Objective *KOMO::addObjective(double startTime, double endTime,
 
 Objective* KOMO::addObjective(const arr& times, ObjectiveType type, const FeatureSymbol& feat, const StringA& frames, const arr& _scale, const arr& target, int order){
   double scale=1e1;
-  Feature *f = symbols2feature(feat, frames, world);
-  if(_scale.N>1){
-    f = new TM_LinTrans(f, _scale, {});
+  ptr<Feature> f = symbols2feature(feat, frames, world);
+  if(_scale.N){
+    NIY;
+//    f = make_shared<TM_LinTrans>(f, _scale, {});
     scale=1.;
   }
-  if(_scale.N==1) scale=_scale.scalar();
+//  if(_scale.N==1) scale=_scale.scalar();
 
-  Objective *task = addObjective(-1.,-1., f, type, target, scale, order);
+  Objective *task = addObjective(-1.,-1., f.get(), type, target, scale, order);
   if(!denseOptimization){
     if(!times.N){
       task->setCostSpecs(0, T-1, target, scale);

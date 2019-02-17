@@ -199,7 +199,7 @@ struct OpenGL {
   void renderInBack(int w=-1, int h=-1);
   
   /// @name showing, updating, and watching
-  int update(const char *text=NULL, bool waitForCompletedDraw=false);
+  int update(const char *text=NULL, bool nonThreaded=false);
   int watch(const char *text=NULL);
   int timedupdate(double sec);
   void resize(int w, int h);
@@ -223,6 +223,8 @@ struct OpenGL {
 public: //driver dependent methods
   void openWindow();
   void closeWindow();
+  void beginNonThreadedDraw();
+  void endNonThreadedDraw();
   void postRedrawEvent(bool fromWithinCallback);
   
 public:

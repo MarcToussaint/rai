@@ -28,6 +28,7 @@
 #include "kin_physx.h"
 #include "kin_ode.h"
 #include "kin_feather.h"
+#include "featureSymbols.h"
 #include <Geo/fclInterface.h>
 #include <Geo/qhull.h>
 #include <Geo/mesh_readAssimp.h>
@@ -813,10 +814,9 @@ void rai::KinematicWorld::setTimes(double t) {
 // features
 //
 
-void rai::KinematicWorld::evalFeature(arr& y, arr& J, FeatureSymbol fs, const StringA& symbols) const{
-  Feature *f = symbols2feature(fs, symbols, *this);
+void rai::KinematicWorld::evalFeature(arr& y, arr& J, FeatureSymbol& fs, const StringA& symbols) const{
+  ptr<Feature> f = symbols2feature(fs, symbols, *this);
   f->phi(y, J, *this);
-  delete f;
 }
 
 //===========================================================================
@@ -1500,6 +1500,10 @@ int rai::KinematicWorld::watch(bool pause, const char* txt) {
   }
   gl().dataLock.writeLock();
   return key;
+}
+
+void rai::KinematicWorld::saveVideoPic(uint& t, const char* pathPrefix){
+  write_ppm(gl().captureImage, STRING(pathPrefix <<std::setw(4)<<std::setfill('0')<<t++<<".ppm"));
 }
 
 void rai::KinematicWorld::glAdd(void (*call)(void*), void* classP){

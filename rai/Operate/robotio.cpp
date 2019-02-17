@@ -33,9 +33,9 @@ struct RobotAbstraction_KukaWSG : RobotAbstraction{
     uint gripperCommandCounter=0;
 
     RobotAbstraction_KukaWSG(const rai::KinematicWorld& _K)
-        : jointState("/joint_states"),
-          tfMessages("/tf"),
-          gripperCommand("/schunk_driver/schunk_wsg_command"){
+        : jointState(),
+          tfMessages(),
+          gripperCommand(){
 
         q0 = _K.getJointState();
         sub_jointState = ROS.subscribe(jointState);
