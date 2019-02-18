@@ -289,3 +289,65 @@ void MeshAViewer::step() {
   gl->update(); //NULL, false, false, true);
 }
 
+
+//===========================================================================
+//
+// PlotViewer
+//
+
+PlotViewer::PlotViewer(const Var<arr>& _data, double beatIntervalSec)
+  : Thread(STRING("PlotViewer_" <<_data.name()), beatIntervalSec),
+    data(this, _data, (beatIntervalSec<0.)){
+  if(beatIntervalSec>=0.) threadLoop(); else threadOpen();
+}
+
+PlotViewer::~PlotViewer() {
+  threadClose();
+}
+
+void PlotViewer::open() {
+  gl = new OpenGL(STRING("PlotViewer: "<<data.name()));
+  gl->add(*this);
+
+  gl->setClearColors(1., 1., 1., 1.);
+  double xl=0., xh=1., yl=-.5, yh=+.5;
+  gl->camera.setPosition(.5*(xh+xl), .5*(yh+yl), 5.);
+  gl->camera.focus(.5*(xh+xl), .5*(yh+yl), .0);
+  gl->camera.setWHRatio((xh-xl)/(yh-yl));
+  gl->camera.setHeightAbs(1.2*(yh-yl));
+}
+
+void PlotViewer::step(){
+  arr x = data.get();
+  int r = data.getRevision();
+  if(!x.N) return;
+  if(x0.N!=x.N) x0=x;
+  CHECK_EQ(x.nd, 1, "");
+  if(!plot.N) plot.resize(T-1,x0.N).setZero();
+  plot.append(x);
+  plot.reshape(plot.N/x.N, x.N);
+  if(plot.d0>T) plot.delRows(0, plot.d0-T);
+  gl->update(STRING("data revision" <<r), true);
+}
+
+void PlotViewer::close() {
+  delete gl;
+}
+
+void PlotViewer::glDraw(OpenGL&){
+//  rai::Color c;
+//  glColor(c.r, c.g, c.b);
+  glColor(0.,0.,0.);
+  for(uint i=0;i<plot.d1;i++){
+    glBegin(GL_LINE_STRIP);
+    for(uint x=0;x<plot.d0;x++){
+      float _x = float(x)/plot.d0;
+      float _y = plot(x,i) - x0(i);
+      glVertex3f(_x, _y, -1.f);
+    }
+    glEnd();
+  }
+}
+
+
+

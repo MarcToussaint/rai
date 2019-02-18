@@ -130,5 +130,5 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
   if(!!target) f->target = scale;
   if(order>=0) f->order = order;
 
-  return 0;
+  return f;
 }

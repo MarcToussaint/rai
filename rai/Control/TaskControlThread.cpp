@@ -205,17 +205,6 @@ void TaskControlThread::step() {
     refs.u_bias = zeros(q_model.N);
     refs.intLimitRatio = 1.;
     refs.qd_filt = .99;
-    
-//    ctrl_q_ref.set() = refs.q;
-    
-    //-- set base motion command as velocities
-#if 0
-    if(!fixBase.get() && trans && trans->qDim()==3) {
-      refs.qdot(trans->qIndex+0) = qdot_model(trans->qIndex+0);
-      refs.qdot(trans->qIndex+1) = qdot_model(trans->qIndex+1);
-      refs.qdot(trans->qIndex+2) = qdot_model(trans->qIndex+2);
-    }
-#endif
 
     //-- send the computed movement to the robot
     ctrl_ref.set() = refs;
@@ -237,25 +226,25 @@ ptr<CtrlTask> addCtrlTask(Var<CtrlTaskL>& ctrl_tasks,
                           Var<rai::KinematicWorld>& ctrl_config,
                           const char* name, FeatureSymbol fs, const StringA& frames,
                           const ptr<MotionProfile>& ref){
-  return addCtrlTask(ctrl_tasks, ctrl_config, name, ptr<Feature>(symbols2feature(fs, frames, ctrl_config.get())), ref);
+  return addCtrlTask(ctrl_tasks, ctrl_config, name,
+                     symbols2feature(fs, frames, ctrl_config.get()),
+                     ref);
 }
 
 ptr<CtrlTask> addCtrlTask(Var<CtrlTaskL>& ctrl_tasks,
                           Var<rai::KinematicWorld>& ctrl_config,
                           const char* name, FeatureSymbol fs, const StringA& frames,
-                          double decayTime, double dampingRatio, double maxVel, double maxAcc){
-  ptr<CtrlTask> t = make_shared<CtrlTask>(name, ptr<Feature>(symbols2feature(fs, frames, ctrl_config.get())), decayTime,  dampingRatio,  maxVel, maxAcc);
-  t->update(0., ctrl_config.get());
-  t->ctrlTasks = &ctrl_tasks;
-  ctrl_tasks.set()->append(t.get());
-  return t;
+                          double maxVel){
+  return addCtrlTask(ctrl_tasks, ctrl_config, name,
+                     symbols2feature(fs, frames, ctrl_config.get()),
+                     make_shared<MotionProfile_Bang>(arr(), maxVel, -1.) );
 }
 
 ptr<CtrlTask> addCompliance(Var<CtrlTaskL>& ctrl_tasks,
                             Var<rai::KinematicWorld>& ctrl_config,
                             const char* name, FeatureSymbol fs, const StringA& frames,
                             const arr& compliance){
-  ptr<CtrlTask> t = make_shared<CtrlTask>(name, ptr<Feature>(symbols2feature(fs, frames, ctrl_config.get())));
+  ptr<CtrlTask> t = make_shared<CtrlTask>(name, symbols2feature(fs, frames, ctrl_config.get()));
   t->complianceDirection = compliance;
   t->ctrlTasks = &ctrl_tasks;
   ctrl_tasks.set()->append(t.get());
