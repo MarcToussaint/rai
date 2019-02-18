@@ -71,8 +71,8 @@ bool MotionProfile_Sine::isDone() {
 
 //===========================================================================
 
-MotionProfile_Bang::MotionProfile_Bang(const arr& _y_target, double _maxVel, double _maxAcc)
-  : y_target(_y_target), maxVel(_maxVel), maxAcc(_maxAcc), tolerance(1e-3){
+MotionProfile_Bang::MotionProfile_Bang(const arr& _y_target, double _maxVel)
+  : y_target(_y_target), maxVel(_maxVel), tolerance(1e-3){
 }
 
 void MotionProfile_Bang::setTarget(const arr& ytarget, const arr& vtarget){
@@ -313,7 +313,7 @@ CtrlTask::CtrlTask(const char* name, const ptr<Feature>& _map, const ptr<MotionP
 
 CtrlTask::CtrlTask(const char* name, const ptr<Feature>& _map, double maxVel)
   : CtrlTask(name, _map) {
-  ref = make_shared<MotionProfile_Bang>(arr(), maxVel, -1.);
+  ref = make_shared<MotionProfile_Bang>(arr(), maxVel);
 }
 
 CtrlTask::CtrlTask(const char* name, const ptr<Feature>& _map, double decayTime, double dampingRatio, double maxVel, double maxAcc)

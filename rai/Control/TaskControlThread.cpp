@@ -237,7 +237,7 @@ ptr<CtrlTask> addCtrlTask(Var<CtrlTaskL>& ctrl_tasks,
                           double maxVel){
   return addCtrlTask(ctrl_tasks, ctrl_config, name,
                      symbols2feature(fs, frames, ctrl_config.get()),
-                     make_shared<MotionProfile_Bang>(arr(), maxVel, -1.) );
+                     make_shared<MotionProfile_Bang>(arr(), maxVel) );
 }
 
 ptr<CtrlTask> addCompliance(Var<CtrlTaskL>& ctrl_tasks,

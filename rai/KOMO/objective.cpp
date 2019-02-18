@@ -12,13 +12,12 @@
 
 //===========================================================================
 
-void Objective::setCostSpecs(int fromStep, int toStep, const arr& _target, double _prec) {
-  if(!!_target) target = _target; else target.clear();
+void Objective::setCostSpecs(int fromStep, int toStep) {
   CHECK_GE(fromStep, 0, "");
   CHECK_GE(toStep, fromStep, "");
-  prec.resize(toStep+1).setZero();
-  for(uint t=fromStep; t<=(uint)toStep; t++) prec(t) = _prec;
-#if 1
+  vars.resize(toStep+1).setZero();
+  for(uint t=fromStep; t<=(uint)toStep; t++) vars(t) = 1;
+#if 0
   vars.resize(prec.N, map->order+1);
   for(uint t=0;t<vars.d0;t++)
     for(int i=0;i<(int)map->order+1;i++) vars(t,i) = t+i-(int)map->order;
@@ -26,7 +25,6 @@ void Objective::setCostSpecs(int fromStep, int toStep, const arr& _target, doubl
 }
 
 void Objective::setCostSpecs(double fromTime, double toTime, int stepsPerPhase, uint T,
-                             const arr& _target, double _prec,
                              int deltaFromStep, int deltaToStep) {
 
   if(toTime>double(T)/stepsPerPhase+1.){
@@ -47,12 +45,10 @@ void Objective::setCostSpecs(double fromTime, double toTime, int stepsPerPhase, 
   if(tTo<0) tTo=0;
 
 
-  setCostSpecs(tFrom, tTo, _target, _prec);
+  setCostSpecs(tFrom, tTo);
 }
 
-void Objective::setCostSpecsDense(intA _vars, const arr& _target, double _prec) {
-  if(!!_target) target = _target; else target.clear();
-  prec = ARR(_prec);
+void Objective::setCostSpecsDense(const intA& _vars) {
   vars = _vars;
   vars.reshape(1, vars.N);
 }

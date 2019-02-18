@@ -258,7 +258,11 @@ rai::Frame* rai::KinematicWorld::addObject(const char* name, rai::ShapeType shap
 
   if(parent){
     rai::Frame *p = getFrameByName(parent);
-    if(p) f->linkFrom(p);
+    if(p){
+//      f->linkFrom(p);
+      rai::Joint *j = new rai::Joint(*p, *f);
+      j->type = rai::JT_rigid;
+    }
   }
 
   if(pos.N){ f->Q.pos = pos; }

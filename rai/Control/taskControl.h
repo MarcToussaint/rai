@@ -78,10 +78,10 @@ struct MotionProfile_Sine : MotionProfile {
 
 struct MotionProfile_Bang : MotionProfile {
   arr y_target;           ///< position target of this motion generator
-  double maxVel, maxAcc;  ///< parameters
+  double maxVel;          ///< parameters
   double tolerance;
   MotionProfile_Bang();
-  MotionProfile_Bang(const arr& _y_target, double _maxVel, double _maxAcc);
+  MotionProfile_Bang(const arr& _y_target, double _maxVel);
 
   virtual void setTarget(const arr& ytarget, const arr& vtarget=NoArr);
   virtual void setTimeScale(double d) { HALT("doesn't make sense"); }

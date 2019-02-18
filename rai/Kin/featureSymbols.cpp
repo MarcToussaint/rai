@@ -127,7 +127,7 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
   else HALT("can't interpret feature symbols: " <<feat);
 
   if(!!scale) f->scale = scale;
-  if(!!target) f->target = scale;
+  if(!!target) f->target = target;
   if(order>=0) f->order = order;
 
   return f;

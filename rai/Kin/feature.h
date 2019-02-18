@@ -36,7 +36,7 @@ struct Feature {
   
   VectorFunction vf(rai::KinematicWorld& K);
   VectorFunction vf(WorldL& Ktuple);
-private:
+protected:
   void applyLinearTrans(arr& y, arr& J);
 };
 
