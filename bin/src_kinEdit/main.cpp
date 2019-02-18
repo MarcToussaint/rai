@@ -58,7 +58,7 @@ int MAIN(int argc,char **argv){
 
     if(rai::checkParameter<bool>("cleanOnly")) return 0;
 
-    editConfiguration(file, K, K.gl());
+    editConfiguration(file, K);
 
   return 0;
 }

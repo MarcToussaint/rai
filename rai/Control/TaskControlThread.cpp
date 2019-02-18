@@ -234,10 +234,10 @@ ptr<CtrlTask> addCtrlTask(Var<CtrlTaskL>& ctrl_tasks,
 ptr<CtrlTask> addCtrlTask(Var<CtrlTaskL>& ctrl_tasks,
                           Var<rai::KinematicWorld>& ctrl_config,
                           const char* name, FeatureSymbol fs, const StringA& frames,
-                          double maxVel){
+                          double duration){
   return addCtrlTask(ctrl_tasks, ctrl_config, name,
                      symbols2feature(fs, frames, ctrl_config.get()),
-                     make_shared<MotionProfile_Bang>(arr(), maxVel) );
+                     make_shared<MotionProfile_Sine>(arr(), duration) );
 }
 
 ptr<CtrlTask> addCompliance(Var<CtrlTaskL>& ctrl_tasks,

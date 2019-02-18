@@ -57,7 +57,8 @@ ptr<CtrlTask> addCtrlTask(Var<CtrlTaskL>& ctrlTasks,
 
 ptr<CtrlTask> addCtrlTask(Var<CtrlTaskL>& ctrlTasks,
                           Var<rai::KinematicWorld>& ctrl_config,
-                          const char* name, FeatureSymbol fs, const StringA& frames, double maxVel=-1.);
+                          const char* name, FeatureSymbol fs, const StringA& frames,
+                          double duration);
 
 ptr<CtrlTask> addCompliance(Var<CtrlTaskL>& ctrlTasks,
                             Var<rai::KinematicWorld>& ctrl_config,
