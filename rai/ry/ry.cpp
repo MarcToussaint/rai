@@ -317,7 +317,7 @@ PYBIND11_MODULE(libry, m) {
 
   .def("edit", [](ry::Config& self, const char* filename){
     rai::KinematicWorld K;
-    editConfiguration(filename, K, K.gl());
+    editConfiguration(filename, K);
     self.set() = K;
   } )
 
