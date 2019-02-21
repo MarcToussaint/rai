@@ -52,6 +52,8 @@ template<class T> bool lower(const T& a, const T& b) { return a<b; }
 template<class T> bool lowerEqual(const T& a, const T& b) { return a<=b; }
 template<class T> bool greater(const T& a, const T& b) { return a>b; }
 template<class T> bool greaterEqual(const T& a, const T& b) { return a>=b; }
+struct SparseVector;
+struct SparseMatrix;
 } //namespace
 
 //===========================================================================
@@ -278,8 +280,9 @@ template<class T> struct Array : std::vector<T>, Serializable {
   
   /// @name special matrices [TODO: move outside, use 'special']
   double sparsity();
-  void makeSparse();
-  
+  SparseMatrix& sparse();
+  SparseVector& sparseVec();
+
   /// @name I/O
   void write(std::ostream& os=std::cout, const char *ELEMSEP=NULL, const char *LINESEP=NULL, const char *BRACKETS=NULL, bool dimTag=false, bool binary=false) const;
   void read(std::istream& is);
@@ -872,6 +875,8 @@ arr lapack_Ainv_b_sym(const arr& A, const arr& b);
 void lapack_min_Ax_b(arr& x,const arr& A, const arr& b);
 arr lapack_Ainv_b_symPosDef_givenCholesky(const arr& U, const arr&b);
 arr lapack_Ainv_b_triangular(const arr& L, const arr& b);
+arr eigen_Ainv_b(const arr& A, const arr& b);
+
 
 //===========================================================================
 /// @}
@@ -928,17 +933,32 @@ inline RowShifted* castRowShifted(arr& X) {
 namespace rai {
 
 struct SparseVector: SpecialArray {
-  uint N; ///< original size
-  uintA elems; ///< for every non-zero (in memory order), the index
-  template<class T> SparseVector(rai::Array<T>& X);
+  arr& Z;      ///< references the array itself
+  intA elems;  ///< for every non-zero (in memory order), the index
+  SparseVector(arr& _Z);
+  void resize(uint d0, uint n);
+  double& entry(uint i, uint k);
+  void setFromDense(const arr& x);
+  arr unsparse();
 };
 
 struct SparseMatrix : SpecialArray {
-  uintA elems; ///< for every non-zero (in memory order), the (row,col) index tuple [or only (row) for vectors]
+  arr& Z;      ///< references the array itself
+  intA elems;  ///< for every non-zero (in memory order), the (row,col) index tuple [or only (row) for vectors]
   uintAA cols; ///< for every column, for every non-zero the (row,memory) index tuple [also for a vector column]
   uintAA rows; ///< for every row   , for every non-zero the (column,memory) index tuple [not for vectors]
-  template<class T> SparseMatrix(rai::Array<T>& X);
-  template<class T> SparseMatrix(rai::Array<T>& X, uint d0);
+
+  SparseMatrix(arr& _Z);
+  SparseMatrix(arr& _Z, SparseMatrix& s);
+  void resize(uint d0, uint d1, uint n);
+  double& entry(uint i,uint j,uint k);
+  double& elem(uint i, uint j);
+  double& addEntry(uint i, uint j);
+  void setFromDense(const arr& X);
+  arr At_x(const arr& x);
+  arr At_A();
+  void multiplyRow(uint i, double a);
+  arr unsparse();
 };
 
 }//namespace rai

@@ -247,80 +247,6 @@ template<class T> uint rai::Array<T>::dim(uint k) const {
   if(!d && k<3) return (&d0)[k]; else return d[k];
 }
 
-//***** sparse arrays
-
-/// return fraction of non-zeros in the array
-template<class T> double rai::Array<T>::sparsity() {
-  uint i, m=0;
-  for(i=0; i<N; i++) if(elem(i)) m++;
-  return ((double)m)/N;
-}
-
-/// make sparse: create the \ref sparse index
-template<class T> void rai::Array<T>::makeSparse() {
-  if(nd==1) {
-    special = new SparseVector(*this);
-  } else if(nd==2) {
-    special = new SparseMatrix(*this);
-  } else NIY;
-}
-
-template<class T> rai::SparseVector::SparseVector(rai::Array<T>& x) {
-  CHECK(isNotSpecial(x), "only once yet");
-  type=sparseVectorST;
-  N = x.N;
-  uint n=0; //memory index
-  elems.resize(x.N);
-  for(uint i=0; i<N; i++) if(x.p[i]) {
-      elems.p[n]=i; //list of entries (maps n->i)
-      x.p[n]=x.p[i];
-      n++;
-    }
-  x.resizeCopy(n);
-  elems.resizeCopy(n);
-}
-
-template<class T> rai::SparseMatrix::SparseMatrix(rai::Array<T>& X, uint d0) {
-  CHECK(isNotSpecial(X), "only once yet");
-  type=sparseMatrixST;
-  cols.resize(1);
-  X.nd=1; X.d0=d0;
-}
-
-template<class T> rai::SparseMatrix::SparseMatrix(rai::Array<T>& X) {
-  CHECK(isNotSpecial(X), "only once yet");
-  type=sparseMatrixST;
-  uint n=0; //memory index
-  if(X.nd==1) {
-    uint i;
-    cols.resize(1);
-    elems.clear();
-    cols(0).clear();//resize(X.d0); sparse[1]=-1;
-    for(i=0; i<X.d0; i++) if(X.p[i]) {
-        elems.append(i); //list of entries (maps n->i)
-        cols(0).append(TUP(i,n));     //index list to entries (maps i->n)
-        X.permute(i, n);
-        n++;
-      }
-    X.N=n; X.resizeMEM(n, true);
-    return;
-  }
-  if(X.nd==2) {
-    uint i, j;
-    cols.resize(X.d1);
-    rows.resize(X.d0);
-    for(i=0; i<X.d0; i++) for(j=0; j<X.d1; j++) if(X.p[i*X.d1+j]) {
-          elems.append(TUP(i,j));   elems.reshape(n+1, 2);
-          X.permute(i*X.d1+j, n);
-          //register entry in columns and row indices
-          cols(j).append(TUP(i,n));  cols(j).reshape(cols(j).N/2, 2);
-          rows(i).append(TUP(j,n));  rows(i).reshape(rows(i).N/2, 2);
-          n++;
-        }
-    X.N=n; X.resizeMEM(n, true);
-    return;
-  }
-}
 
 //***** internal memory routines (probably not for external use)
 
@@ -1242,7 +1168,10 @@ template<class T> rai::Array<T>& rai::Array<T>::operator=(const rai::Array<T>& a
   if(isRowShifted(a)) {
     CHECK(typeid(T) == typeid(double),"");
     special = new RowShifted(*((arr*)this),*((RowShifted*)a.special));
-    return *this;
+  }
+  if(isSparseMatrix(a)) {
+    CHECK(typeid(T) == typeid(double), "");
+    special = new SparseMatrix(*((arr*)this), *((SparseMatrix*)a.special));
   }
   return *this;
 }
@@ -1428,10 +1357,8 @@ template<class T> void rai::Array<T>::setCarray(const T **buffer, uint D0, uint 
 
 /// copy 'this' into a C array
 template<class T> void rai::Array<T>::copyInto(T *buffer) const {
-  CHECK_EQ(nd,1, "can only copy 1D Array into 1D C-array");
-  uint i;
-  if(memMove && typeid(T)==typeid(T)) memmove(buffer, p, sizeT*d0);
-  else for(i=0; i<d0; i++) buffer[i]=(T)operator()(i);
+  if(memMove && typeid(T)==typeid(T)) memmove(buffer, p, sizeT*N);
+  else for(uint i=0; i<N; i++) buffer[i]=(T)elem(i);
 }
 
 /// copy 'this' into a C array
@@ -1622,21 +1549,22 @@ template<class T> void rai::Array<T>::swap(Array<T>& a) {
   HALT("vec not done yet");
 #else
     CHECK(!reference && !a.reference, "NIY for references");
-    CHECK(nd<=1 && a.nd<=1, "only for 1D");
-//    CHECK(M==N && a.M==a.N, "");
+    CHECK(nd<=3 && a.nd<=3, "only for 1D");
     std::swap((vec_type&)*this, (vec_type&)a);
 
     T* p_tmp = p;
     p=a.p;
     a.p=p_tmp;
 
-    uint n = N;
-    d0=N = a.N;
-    a.d0=a.N = n;
-
-    n = nd;
-    nd = a.nd;
-    a.nd = n;
+    uint z;
+#define SWAP(X, Y){ z=X; X=Y; Y=z; }
+    SWAP(N, a.N);
+    SWAP(nd, a.nd);
+    SWAP(d0, a.d0);
+    SWAP(d1, a.d1);
+    SWAP(d2, a.d2);
+    SWAP(M, a.M);
+#undef SWAP
 
     CHECK_EQ(p, vec_type::_M_impl._M_start, "");
 #endif
@@ -1827,12 +1755,11 @@ template<class T> void rai::Array<T>::write(std::ostream& os, const char *ELEMSE
     os.put(0);
     os <<std::endl;
   } else if(isSparseVector(*this)) {
-    uintA& elems = dynamic_cast<SparseVector*>(special)->elems;
+    intA& elems = dynamic_cast<SparseVector*>(special)->elems;
     for(uint i=0; i<N; i++) cout <<"( " <<elems(i) <<" ) " <<elem(i) <<endl;
   } else if(isSparseMatrix(*this)) {
-    uintA& elems = dynamic_cast<SparseMatrix*>(special)->elems;
-    if(nd==1) for(uint i=0; i<N; i++) cout <<"( " <<elems(i) <<" ) " <<elem(i) <<endl;
-    else for(uint i=0; i<N; i++) cout <<'(' <<elems[i] <<") " <<elem(i) <<endl;
+    intA& elems = dynamic_cast<SparseMatrix*>(special)->elems;
+    for(uint i=0; i<N; i++) cout <<'(' <<elems[i] <<") " <<elem(i) <<endl;
   } else {
     if(BRACKETS[0]) os <<BRACKETS[0];
     if(dimTag || nd>=3) { os <<' '; writeDim(os); if(nd==2) os <<LINESEP; else os <<' '; }
@@ -2815,9 +2742,9 @@ T scalarProduct(const rai::Array<T>& v, const rai::Array<T>& w) {
     if(isSparseVector(v) && isSparseVector(w)) {
       rai::SparseVector *sv = dynamic_cast<rai::SparseVector*>(v.special);
       rai::SparseVector *sw = dynamic_cast<rai::SparseVector*>(w.special);
-      CHECK_EQ(sv->N,sw->N,
-               "scalar product on different array dimensions (" <<sv->N <<", " <<sw->N <<")");
-      uint *ev=sv->elems.p, *ev_stop=ev+v.N, *ew=sw->elems.p, *ew_stop=ew+w.N;
+      CHECK_EQ(v.d0, w.d0,
+               "scalar product on different array dimensions (" <<v.d0 <<", " <<w.d0 <<")");
+      int *ev=sv->elems.p, *ev_stop=ev+v.N, *ew=sw->elems.p, *ew_stop=ew+w.N;
       T *vp=v.p, *wp=w.p;
       for(; ev!=ev_stop && ew!=ew_stop;) {
         if(*ev==*ew) {
@@ -2826,8 +2753,10 @@ T scalarProduct(const rai::Array<T>& v, const rai::Array<T>& w) {
           ew++; wp++;
         } else if(*ev<*ew) { ev++; vp++; } else { ew++; wp++; }
       }
-    } else NIY
+    }else{
+      NIY;
     }
+  }
   return t;
 }
 

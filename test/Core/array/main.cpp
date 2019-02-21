@@ -755,14 +755,18 @@ void TEST(SparseMatrix){
   cout <<"A sparsity=" <<A.sparsity() <<endl;
   cout <<"B sparsity=" <<B.sparsity() <<endl;
 
-  A.makeSparse();
-  B.makeSparse();
+  A.sparse();
+  B.sparseVec();
 
   cout <<"A=\n" <<A <<"\nB=\n" <<B <<endl;
 //  cout <<"\nA*B=\n" <<A*B <<endl;
   arr y;
   sparseProduct(y, A, B);
-  cout <<"A*B=\n" <<y <<endl;
+  y = y.sparseVec().unsparse();
+  cout <<"A*B=" <<y <<endl;
+
+  arr x = eigen_Ainv_b(A, y);
+  cout <<"Ainv*A*B=" <<~x <<endl;
 
   for(uint k=0;k<100;k++){
     arr A(10,20);
@@ -770,7 +774,7 @@ void TEST(SparseMatrix){
     rndInteger(A,0,3);
     rndInteger(B,0,3);
     arr C = A*B;
-    A.makeSparse();
+    A.sparse();
 //    B.makeSparse();
     arr D;
     sparseProduct(D, A, B);
@@ -791,8 +795,8 @@ void TEST(SparseVector){
   cout <<"A sparsity=" <<a.sparsity() <<endl;
   cout <<"B sparsity=" <<b.sparsity() <<endl;
 
-  a.makeSparse();
-  b.makeSparse();
+  a.sparseVec();
+  b.sparseVec();
 
   cout <<"A=\n" <<a <<"\nB=\n" <<b <<"\nA*B=\n" <<scalarProduct(a, b) <<endl;
 
@@ -802,8 +806,8 @@ void TEST(SparseVector){
     rndInteger(a,0,3);
     rndInteger(b,0,3);
     double c = scalarProduct(a,b);
-    a.makeSparse();
-    b.makeSparse();
+    a.sparseVec();
+    b.sparseVec();
     double d = scalarProduct(a,b);
     CHECK_EQ(c, d, "");
   }
