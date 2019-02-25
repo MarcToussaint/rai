@@ -955,9 +955,10 @@ struct SparseMatrix : SpecialArray {
   double& elem(uint i, uint j);
   double& addEntry(uint i, uint j);
   void setFromDense(const arr& X);
+  void setupRowsCols();
   arr At_x(const arr& x);
   arr At_A();
-  void multiplyRow(uint i, double a);
+  void rowWiseMult(const arr& a);
   arr unsparse();
 };
 

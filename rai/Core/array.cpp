@@ -1121,6 +1121,7 @@ void sparseProduct(arr& y, arr& A, const arr& x) {
     return;
   }
   if(isSparseMatrix(A) && isSparseVector(x)) {
+    A.sparse().setupRowsCols();
     rai::SparseVector *sx = dynamic_cast<rai::SparseVector*>(x.special);
     CHECK(x.nd==1 && A.nd==2 && x.d0==A.d1, "not a proper matrix-vector multiplication");
     uint i, j, n;
@@ -1786,7 +1787,7 @@ void getEigen(rai::SparseMatrix& S, Eigen::SparseMatrix<double>& E){
   E.resize(Z.d0, Z.d1);
   std::vector<Eigen::Triplet<double>> triplets;
   triplets.reserve(Z.N);
-  for(uint i=0;i<Z.N;i++) triplets.push_back(Eigen::Triplet<double>(S.elems(i,0), S.elems(i,1), Z.elem(i)));
+  for(uint k=0;k<Z.N;k++) triplets.push_back(Eigen::Triplet<double>(S.elems.p[2*k], S.elems.p[2*k+1], Z.p[k]));
   E.setFromTriplets(triplets.begin(), triplets.end());
 //  cout <<E <<endl;
 }
@@ -1797,7 +1798,9 @@ arr eigen_Ainv_b(const arr& A, const arr& b){
     Eigen::SparseMatrix<double> Aeig;
     getEigen(As, Aeig);
     Eigen::MatrixXd beig = conv_arr2eigen(b);
-    Eigen::SparseQR<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int> > solver;
+//    Eigen::SparseQR<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int> > solver;
+    Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> solver;
+//    Eigen::SimplicialLLT<Eigen::SparseMatrix<double>> solver;
     solver.compute(Aeig);
     if(solver.info()!=Eigen::Success) {
       HALT("decomposition failed");
@@ -2117,8 +2120,6 @@ SparseMatrix::SparseMatrix(arr& _Z, SparseMatrix& s) : Z(_Z) {
   type = SpecialArray::sparseMatrixST;
   Z.special = this;
   elems = s.elems;
-  rows = s.rows;
-  cols = s.cols;
 }
 
 SparseVector::SparseVector(arr& _Z) : Z(_Z) {
@@ -2147,42 +2148,46 @@ void SparseMatrix::resize(uint d0, uint d1, uint n){
   Z.resizeMEM(n, false);
   Z.setZero();
   elems.resize(n,2);
-  rows.resize(d0); for(uintA& r:rows) r.resize(0,2);
-  cols.resize(d1); for(uintA& c:cols) c.resize(0,2);
   for(int& e:elems) e=-1;
 }
 
 double& SparseVector::entry(uint i, uint k){
   CHECK_LE(k, Z.N-1, "");
-  if(elems(k)==-1){ //new element
-    elems(k)=i;
+  if(elems.p[k]==-1){ //new element
+    elems.p[k]=i;
   }else{
-    CHECK_EQ(elems(k), (int)i, "");
+    CHECK_EQ(elems.p[k], (int)i, "");
   }
-  return Z.elem(k);
+  return Z.p[k];
 }
 
 double& SparseMatrix::entry(uint i, uint j, uint k){
   CHECK_LE(k, Z.N-1, "");
-  if(elems(k,0)==-1 && elems(k,1)==-1){ //new element
-    elems(k,0)=i;
-    elems(k,1)=j;
-    rows(i).append(TUP(j,k));  rows(i).reshape(rows(i).N/2, 2);
-    cols(j).append(TUP(i,k));  cols(j).reshape(cols(j).N/2, 2);
+  int *elemsk = elems.p+2*k;
+  if(*elemsk==-1){ //new element
+    *elemsk=i;
+    elemsk[1]=j;
+    rows.clear();
+    cols.clear();
   }else{
-    CHECK_EQ(elems(k,0), (int)i, "");
-    CHECK_EQ(elems(k,1), (int)j, "");
+    CHECK_EQ(*elemsk, (int)i, "");
+    CHECK_EQ(elemsk[1], (int)j, "");
   }
-  return Z.elem(k);
+  return Z.p[k];
 }
 
 double& SparseMatrix::elem(uint i, uint j){
-  uintA& r = rows(i);
-  uintA& c = cols(j);
-  if(r.N < c.N){
-    for(uint rj=0;rj<r.d0;rj++) if(r(rj,0)==j) return Z.elem(r(rj,1));
+  if(rows.N){
+    uintA& r = rows(i);
+    uintA& c = cols(j);
+    if(r.N < c.N){
+      for(uint rj=0;rj<r.d0;rj++) if(r(rj,0)==j) return Z.elem(r(rj,1));
+    }else{
+      for(uint ci=0;ci<c.d0;ci++) if(c(ci,0)==i) return Z.elem(c(ci,1));
+    }
   }else{
-    for(uint ci=0;ci<c.d0;ci++) if(c(ci,0)==i) return Z.elem(c(ci,1));
+    for(uint k=0;k<elems.d0;k++)
+      if(elems.p[2*k]==(int)i && elems.p[2*k+1]==(int)j) return Z.elem(k);
   }
   return addEntry(i,j);
 }
@@ -2193,8 +2198,8 @@ double& SparseMatrix::addEntry(uint i, uint j){
   elems.resizeCopy(k+1,2);
   elems(k,0)=i;
   elems(k,1)=j;
-  rows(i).append(TUP(j,k));  rows(i).reshape(rows(i).N/2, 2);
-  cols(j).append(TUP(i,k));  cols(j).reshape(cols(j).N/2, 2);
+  rows.clear();
+  cols.clear();
   Z.resizeMEM(k+1, true);
   return Z.last();
 }
@@ -2235,6 +2240,10 @@ void SparseMatrix::setFromDense(const arr& X) {
       n++;
     }
   }
+}
+
+void SparseMatrix::setupRowsCols(){
+  NIY;
 }
 
 arr SparseMatrix::At_x(const arr& x){
@@ -2289,22 +2298,22 @@ arr SparseMatrix::At_A(){
 
 }
 
-void SparseMatrix::multiplyRow(uint i, double a){
-  uintA& r = rows(i);
-  for(uint j=0;j<r.d0;j++) Z.elem(r(j,1)) *= a;
+void SparseMatrix::rowWiseMult(const arr& a){
+  CHECK_EQ(a.N, Z.d0, "");
+  for(uint k=0;k<Z.N;k++) Z.elem(k) *= a.elem(elems.p[2*k]);
 }
 
 arr SparseVector::unsparse(){
   arr x;
   x.resize(Z.d0).setZero();
-  for(uint i=0;i<Z.N;i++) x(elems(i)) += Z.elem(i);
+  for(uint k=0;k<Z.N;k++) x(elems(k)) += Z.elem(k);
   return x;
 }
 
 arr SparseMatrix::unsparse(){
   arr x;
   x.resize(Z.d0, Z.d1).setZero();
-  for(uint i=0;i<Z.N;i++) x(elems(i,0), elems(i,1)) += Z.elem(i);
+  for(uint k=0;k<Z.N;k++) x(elems(k,0), elems(k,1)) += Z.elem(k);
   return x;
 }
 

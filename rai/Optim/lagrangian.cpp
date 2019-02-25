@@ -100,8 +100,8 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
     if(!isSparseMatrix(tmp)){
       for(uint i=0; i<phi_x.N; i++) tmp[i]() *= sqrt(coeff.p[i]);
     }else{
-      auto& tmpSparse = tmp.sparse();
-      for(uint i=0; i<phi_x.N; i++) tmpSparse.multiplyRow(i, sqrt(coeff.p[i]));
+      arr sqrtCoeff = sqrt(coeff);
+      tmp.sparse().rowWiseMult(sqrtCoeff);
     }
 #if 1
     HL = comp_At_A(tmp); //Gauss-Newton type!

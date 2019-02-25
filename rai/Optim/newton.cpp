@@ -61,7 +61,7 @@ OptNewton::StopCriterion OptNewton::step() {
     }else if(isRowShifted(R)) {
       for(uint i=0; i<R.d0; i++) R(i,0) += beta; //(R(i,0) is the diagonal in the packed matrix!!)
     }else if(isSparseMatrix(R)) {
-      for(uint i=0; i<R.d0; i++) R.sparse().elem(i,i) += beta;
+      for(uint i=0; i<R.d0; i++) R.sparse().addEntry(i,i) = beta;
     }else NIY;
   }
   if(additionalRegularizer) { //obsolete -> retire
