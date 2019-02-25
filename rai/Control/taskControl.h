@@ -76,6 +76,22 @@ struct MotionProfile_Sine : MotionProfile {
 
 //===========================================================================
 
+struct MotionProfile_Bang : MotionProfile {
+  arr y_target;           ///< position target of this motion generator
+  double maxVel;          ///< parameters
+  double tolerance;
+  MotionProfile_Bang();
+  MotionProfile_Bang(const arr& _y_target, double _maxVel);
+
+  virtual void setTarget(const arr& ytarget, const arr& vtarget=NoArr);
+  virtual void setTimeScale(double d) { HALT("doesn't make sense"); }
+  virtual ActStatus update(arr& yRef, arr& ydotRef, double tau,const arr& y, const arr& ydot);
+  virtual void resetState() {}
+  virtual bool isDone() { return false; }
+};
+
+//===========================================================================
+
 struct MotionProfile_PD : MotionProfile {
   arr y_ref, v_ref;
   arr y_target, v_target;
@@ -152,6 +168,7 @@ struct CtrlTask {
   
   CtrlTask(const char* name, const ptr<Feature>& _map);
   CtrlTask(const char* name, const ptr<Feature>& _map, const ptr<MotionProfile>& _ref);
+  CtrlTask(const char* name, const ptr<Feature>& _map, double maxVel);
   CtrlTask(const char* name, const ptr<Feature>& _map, double decayTime, double dampingRatio, double maxVel=-1., double maxAcc=-1.);
   CtrlTask(const char* name, const ptr<Feature>& _map, const Graph& params);
   ~CtrlTask();

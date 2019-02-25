@@ -353,6 +353,7 @@ template<class T> Array<T> operator/(const Array<T>& y, const Array<T>& z); //el
 template<class T> Array<T> operator|(const Array<T>& A, const Array<T>& B); //A^-1 B
 template<class T> Array<T> operator,(const Array<T>& y, const Array<T>& z); //concat
 
+template<class T> Array<T>& operator<<(Array<T>& x, const T& y); //append
 template<class T> Array<T>& operator<<(Array<T>& x, const Array<T>& y); //append
 
 template<class T> bool operator==(const Array<T>& v, const Array<T>& w);

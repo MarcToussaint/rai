@@ -3485,6 +3485,9 @@ template<class T> Array<T> operator|(const Array<T>& A, const Array<T>& B) { Arr
 template<class T> Array<T> operator,(const Array<T>& y, const Array<T>& z) { Array<T> x(y); x.append(z); return x; }
 
 /// x.append(y)
+template<class T> Array<T>& operator<<(Array<T>& x, const T& y) { x.append(y); return x; }
+
+/// x.append(y)
 template<class T> Array<T>& operator<<(Array<T>& x, const Array<T>& y) { x.append(y); return x; }
 
 /// index-wise (elem-wise) product (x_i = y_i z_i   or  X_{ij} = y_i Z_{ij}  or  X_{ijk} = Y_{ij} Z_{jk}   etc)

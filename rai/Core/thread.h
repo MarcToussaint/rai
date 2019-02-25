@@ -190,6 +190,7 @@ struct Var {
   RToken<T> get() { return RToken<T>(*data, &data->data, thread, &last_read_revision); } ///< read access to the variable's data
   WToken<T> set() { return WToken<T>(*data, &data->data, thread/*, &last_read_revision*/); } ///< write access to the variable's data
   WToken<T> set(const double& dataTime) { return WToken<T>(dataTime, *data, &data->data, thread/*, &last_read_revision*/); } ///< write access to the variable's data
+  operator Var_base&(){ return *std::dynamic_pointer_cast<Var_base>(data); }
 
   void reassignTo(const ptr<Var_data<T>>& _data){
     data.reset();
@@ -402,6 +403,34 @@ struct Thread {
   
   void main(); //this is the thread main - should be private!
 };
+
+//===========================================================================
+
+struct ScriptThread : Thread {
+  std::function<int()> script;
+  Var<ActStatus> status;
+  ScriptThread(const std::function<int()>& S, Var_base& listenTo)
+      :  Thread("ScriptThread"), script(S){
+    event.listenTo(listenTo);
+    threadOpen();
+  }
+  ScriptThread(const std::function<int()>& S, double beatIntervalSec=-1.)
+      :  Thread("ScriptThread", beatIntervalSec), script(S){
+      if(beatIntervalSec<0.) threadOpen();
+      else threadLoop();
+  }
+  ~ScriptThread(){ threadClose(); }
+
+  virtual void step(){ ActStatus r = (ActStatus)script(); status.set()=r; }
+};
+
+inline ptr<ScriptThread> run(const std::function<int ()>& script, Var_base& listenTo){
+  return make_shared<ScriptThread>(script, listenTo);
+}
+
+inline ptr<ScriptThread> run(const std::function<int ()>& script, double beatIntervalSec){
+  return make_shared<ScriptThread>(script, beatIntervalSec);
+}
 
 
 //===========================================================================

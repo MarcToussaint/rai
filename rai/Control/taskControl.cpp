@@ -71,6 +71,94 @@ bool MotionProfile_Sine::isDone() {
 
 //===========================================================================
 
+MotionProfile_Bang::MotionProfile_Bang(const arr& _y_target, double _maxVel)
+  : y_target(_y_target), maxVel(_maxVel), tolerance(1e-3){
+}
+
+void MotionProfile_Bang::setTarget(const arr& ytarget, const arr& vtarget){
+  y_target = ytarget;
+  resetState(); //resets the current reference
+}
+
+void getAcc_bang(double& x, double& v, double maxVel, double tau){
+  double bang = maxVel/.1;
+
+  if(fabs(x)<.1*maxVel){
+    v=0.;
+    x=0.;
+    return;
+  }
+
+  if(v<0.){
+    x*=-1.; v*=-1;
+    getAcc_bang(x, v, maxVel, tau);
+    x*=-1.; v*=-1;
+    return;
+  }
+
+  if(x>0.){
+    v -= tau*bang;
+    x += tau*v;
+    if(x<0.){ x=0.; v=0.; }
+    return;
+  }
+
+  double ahit = -0.5*(v*v)/x;
+
+  //accelerate
+  if(ahit<bang){
+    v += tau*bang;
+    if(v>maxVel) v=maxVel;
+    x += tau*v;
+    return;
+  }
+
+  //deccelerate
+  v -= tau*ahit;
+  if(v<0.) v=0.;
+}
+
+void getVel_bang(double& x, double& v, double maxVel, double tau){
+  double sign=rai::sign(x); //-1=left
+  v = -sign*maxVel;
+  if( (x<0. && x+tau*v > 0.) ||
+      (x>0. && x+tau*v < 0.)   ){
+    v=0.; x=0;
+  }else{
+    x=x+tau*v;
+  }
+}
+
+ActStatus MotionProfile_Bang::update(arr& yRef, arr& ydotRef, double tau, const arr& y, const arr& ydot){
+  //only on initialization the true state is used; otherwise ignored!
+  if(y_target.N!=y.N){ y_target=y; }
+
+#if 1
+  yRef = y - y_target;
+  ydotRef = ydot;
+  for(uint i=0;i<y.N;i++){
+    getAcc_bang(yRef(i), ydotRef(i), maxVel, tau);
+    if(i==2){
+      cout <<y(i) <<' ' <<ydot(i) <<' ' <<ydotRef(i) <<endl;
+    }
+  }
+  yRef += y_target;
+#else
+  arr yDelta = y - y_target;
+  ydotRef.resizeAs(y).setZero();
+  for(uint i=0;i<y.N;i++) getVel_bang(yDelta(i), ydotRef(i), maxVel, tau);
+  yRef = y_target + yDelta;
+#endif
+
+  if(maxDiff(y, y_target)<tolerance
+     && absMax(ydot)<tolerance){
+    return AS_converged;
+  }
+  return AS_running;
+}
+
+//===========================================================================
+
 MotionProfile_PD::MotionProfile_PD()
   : kp(0.), kd(0.), maxVel(-1.), maxAcc(-1.), flipTargetSignOnNegScalarProduct(false), makeTargetModulo2PI(false), tolerance(1e-3) {}
 
@@ -221,6 +309,11 @@ CtrlTask::CtrlTask(const char* name, const ptr<Feature>& _map, const ptr<MotionP
   : CtrlTask(name, _map) {
   ref = _ref;
   status.set() = AS_init;
+}
+
+CtrlTask::CtrlTask(const char* name, const ptr<Feature>& _map, double maxVel)
+  : CtrlTask(name, _map) {
+  ref = make_shared<MotionProfile_Bang>(arr(), maxVel);
 }
 
 CtrlTask::CtrlTask(const char* name, const ptr<Feature>& _map, double decayTime, double dampingRatio, double maxVel, double maxAcc)
