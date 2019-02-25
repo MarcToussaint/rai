@@ -2723,6 +2723,15 @@ void outerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>&
   HALT("outer product - not yet implemented for these dimensions");
 }
 
+/** @brief element wise product */
+template<class T>
+void elemWiseProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>& z) {
+  CHECK_EQ(y.N, z.N, "");
+  x = z;
+  for(uint i=0;i<x.N;i++) x.elem(i) *= y.elem(i);
+  return;
+}
+
 /** @brief index wise (element-wise for vectors and matrices) product (also ordinary matrix or scalar product).:
   \f$\forall_{ik}:~ x_{ik} = \sum_j v_{ij}\, w_{jk}\f$ but also:
   \f$\forall_{i}:~ x_{i} = \sum_j v_{ij}\, w_{j}\f$

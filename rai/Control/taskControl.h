@@ -142,28 +142,28 @@ struct MotionProfile_Path: MotionProfile {
 struct CtrlTask {
   //-- general information
   rai::String name;  ///< just for easier reporting
-  bool active;       ///< also non-active tasks are updates (states evaluated), but don't enter the TaskControlMethods
+  bool active;       ///< also non-active tasks are updated (states evaluated), but don't enter the TaskControlMethods
   Var<ActStatus> status;
 
   Var<CtrlTaskL>* ctrlTasks=0; ///< if non-zero, auto-removes itself from this list on destruction
 
   //-- defines the feature map
-  ptr<Feature> map;      ///< this defines the task space
+  ptr<Feature> map;        ///< this defines the task space
   
   //-- feature values -- these are always kept up-to-date (in update)
-  arr y, v, J_y;     ///< update() will evaluate these for a given kinematic configuration
+  arr y, v, J_y;           ///< update() will evaluate these for a given kinematic configuration
 
   //-- if motion task: defines the reference in task space
   ptr<MotionProfile> ref;  ///< non-NULL iff this is a pos/vel task
-  arr y_ref, v_ref;    ///< update() will define compute these references (reference=NOW, target=FUTURE)
-  arr prec;            ///< Cholesky(!) of C, not C itself: sumOfSqr(prec*(y-y_ref)) is the error, and prec*J the Jacobian
-  uint hierarchy;      ///< hierarchy level in hiearchycal inverse kinematics: higher = higher priority
+  arr y_ref, v_ref;        ///< update() will define compute these references (reference=NOW, target=FUTURE)
+  double scale;            ///< additional scaling (precision) for each task (redundant with map->scale! use latter for non-isotropic!)
+  uint hierarchy;          ///< hierarchy level in hiearchycal inverse kinematics: higher = higher priority
   
   //-- if compliance task:
-  arr complianceDirection;             ///< non-empty iff this is a compliance task; defines the task space compliance coefficients
+  arr compliance;          ///< non-empty iff this is a compliance task; values in [0,1] for each dimension of the Jacobian
   
   //-- if force task:
-  arr f_ref;           ///< non-empty iff this is a force limit control task; defines the box limits (abs value in all dimensions)
+  arr f_ref;               ///< non-empty iff this is a force limit control task; defines the box limits (abs value in all dimensions)
   double f_alpha, f_gamma; ///< TODO
   
   CtrlTask(const char* name, const ptr<Feature>& _map);

@@ -191,6 +191,11 @@ printUbuntuPackages: force
 
 depend: generate_Makefile.dep
 
+dependAll: force
+	@echo "   *** dependAll   " $(PWD)
+	@find $(PWD) $(BASE) $(BASE2) -type f -name 'Makefile' -execdir make -j1 depend \;
+
+
 info: force
 	@echo; echo ----------------------------------------
 	@echo "     " "environment configuration (see make-generic file)";

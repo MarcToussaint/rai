@@ -279,7 +279,13 @@ struct GlfwSpinner : Thread {
     bool start=false;
     mutex.lock();
     glwins.append(gl);
+#if 0
     gl->s->needsRedraw = 10;
+#else
+    glfwMakeContextCurrent(gl->s->window);
+    gl->Draw(gl->width,gl->height);
+    glfwSwapBuffers(gl->s->window);
+#endif
     if(glwins.N==1) start=true; //start looping
     mutex.unlock();
 
@@ -406,6 +412,7 @@ void OpenGL::endNonThreadedDraw(){
 
 void OpenGL::postRedrawEvent(bool fromWithinCallback) {
   auto fg = singletonGlSpinner();
+  HALT("not here!");
   fg->mutex.lock();
   if(!s->needsRedraw){
     s->needsRedraw=1;
@@ -2060,7 +2067,9 @@ void OpenGL::Reshape(int _width, int _height) {
   camera.setWHRatio((double)width/height);
   for(uint v=0; v<views.N; v++) views(v).camera.setWHRatio((views(v).ri-views(v).le)*width/((views(v).to-views(v).bo)*height));
   dataLock.unlock();
-  postRedrawEvent(true);
+  if(!offscreen){
+    postRedrawEvent(true);
+  }
 }
 
 void OpenGL::Key(unsigned char key) {

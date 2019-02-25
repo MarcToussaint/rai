@@ -245,7 +245,7 @@ ptr<CtrlTask> addCompliance(Var<CtrlTaskL>& ctrl_tasks,
                             const char* name, FeatureSymbol fs, const StringA& frames,
                             const arr& compliance){
   ptr<CtrlTask> t = make_shared<CtrlTask>(name, symbols2feature(fs, frames, ctrl_config.get()));
-  t->complianceDirection = compliance;
+  t->compliance = compliance;
   t->ctrlTasks = &ctrl_tasks;
   ctrl_tasks.set()->append(t.get());
   return t;
