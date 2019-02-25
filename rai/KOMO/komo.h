@@ -120,7 +120,8 @@ struct KOMO : NonCopyable {
    * they allow the user to add a cost task, or a kinematic switch in the problem definition
    * Typically, the user does not call them directly, but uses the many methods below
    * Think of all of the below as examples for how to set arbirary tasks/switches yourself */
-  struct Objective* addObjective(double startTime, double endTime, Feature* map, ObjectiveType type=OT_sos, const arr& target=NoArr, double scale=1e1, int order=-1, int deltaFromStep=0, int deltaToStep=0);
+  struct Objective* addObjective(double startTime, double endTime, const ptr<Feature>& map, ObjectiveType type=OT_sos, const arr& target=NoArr, double scale=-1., int order=-1, int deltaFromStep=0, int deltaToStep=0);
+  struct Objective* addObjective(double startTime, double endTime, Feature* map, ObjectiveType type=OT_sos, const arr& target=NoArr, double scale=-1., int order=-1, int deltaFromStep=0, int deltaToStep=0);
   struct Objective* addObjective(const arr& times, ObjectiveType type, const FeatureSymbol& feat, const StringA& frames={}, const arr& scale=NoArr, const arr& target=NoArr, int order=-1);
 
   void addSwitch(double time, bool before, rai::KinematicSwitch* sw);

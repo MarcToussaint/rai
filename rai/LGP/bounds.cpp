@@ -35,8 +35,7 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
 
       //-- deactivate all velocity objectives except for transition
       for(Objective *o:komo.objectives){
-        if(!dynamic_cast<TM_Transition*>(o->map) && o->map->order>0){
-          o->prec.clear();
+        if(!std::dynamic_pointer_cast<TM_Transition>(o->map) && o->map->order>0){
           o->vars.clear();
         }
       }

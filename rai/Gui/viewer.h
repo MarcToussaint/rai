@@ -74,3 +74,16 @@ struct MeshAViewer : Thread {
   void step();
   void close();
 };
+
+struct PlotViewer : Thread, GLDrawer {
+  Var<arr> data;
+  arr plot, x0;
+  uint T=100;
+  struct OpenGL *gl;
+  PlotViewer(const Var<arr>& _data, double beatIntervalSec=-1.);
+  ~PlotViewer();
+  void open();
+  void step();
+  void close();
+  void glDraw(struct OpenGL&);
+};

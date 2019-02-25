@@ -73,6 +73,8 @@ void TM_qItself::phi(arr& q, arr& J, const rai::KinematicWorld& G) {
     }
     CHECK_EQ(n, m,"");
   }
+
+  applyLinearTrans(q, J);
 }
 
 void TM_qItself::phi(arr& y, arr& J, const WorldL& Ktuple) {

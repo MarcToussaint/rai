@@ -52,7 +52,7 @@ namespace ry{
 
   struct RyLGP_Tree { ptr<LGP_Tree_Thread> lgp; };
 
-  struct RyFeature { Feature *feature=0; };
+  struct RyFeature { ptr<Feature> feature; };
   struct RyFrame { rai::Frame *frame=0; };
 
   struct RyCameraView {

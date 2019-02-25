@@ -12,31 +12,31 @@
 #include <Kin/feature.h>
 
 struct Objective {
-  Feature *map;
+  ptr<Feature> map;
   const rai::Enum<ObjectiveType> type;  ///< element of {sumOfSqr, inequality, equality}
   rai::String name;
-  arr target, prec;     ///< optional linear, time-dependent, rescaling (with semantics of target & precision)
-  intA vars;
+  intA vars; //either a (0,1)-indicator per time slice, or a list of variable tuples
   
-  Objective(Feature *m, const ObjectiveType& type) : map(m), type(type) {}
-  ~Objective() { if(map) delete map; map=NULL; }
+  Objective(const ptr<Feature>& _map, const ObjectiveType& _type) : map(_map), type(_type) {}
+  ~Objective() {}
   
-  void setCostSpecs(int fromStep, int toStep, const arr& _target= {}, double _prec=1.);
+  void setCostSpecs(int fromStep, int toStep);
   void setCostSpecs(double fromTime, double toTime, int stepsPerPhase, uint T,
-                    const arr& _target, double _prec, int deltaFromStep=0, int deltaToStep=0);
-  void setCostSpecsDense(intA _vars, const arr& _target, double _prec);
-  bool isActive(uint t) { return (prec.N>t && prec(t)); }
+                    int deltaFromStep=0, int deltaToStep=0);
+  void setCostSpecsDense(const intA& _vars);
+  bool isActive(uint t) { CHECK_EQ(vars.nd, 1, "variables are not time indexed (tuples for dense problem instead)"); return (vars.N>t && vars(t)); }
   void write(std::ostream& os) const {
     os <<"TASK '" <<name <<"'";
     if(vars.N){
-      if(vars.d0==1) os <<" ("<<vars <<')';
-      else os <<" (" <<vars.first() <<".." <<vars.last() <<')';
+      if(vars.d0==1){
+          if(vars.N>4) writeConsecutiveConstant(os,vars);
+          else os <<" ("<<vars <<')';
+      }else os <<" (" <<vars.first() <<".." <<vars.last() <<')';
     }else os <<" ()";
     os <<"  type=" <<type
        <<"  order=" <<map->order
-       <<"  target=[" <<target <<']'
-       <<"  prec=";
-    if(prec.N>4) writeConsecutiveConstant(os,prec); else os <<'[' <<prec <<']';
+       <<"  target=[" <<map->target <<']'
+       <<"  scale=" <<map->scale;
   }
 };
 stdOutPipe(Objective)

@@ -258,7 +258,11 @@ rai::Frame* rai::KinematicWorld::addObject(const char* name, rai::ShapeType shap
 
   if(parent){
     rai::Frame *p = getFrameByName(parent);
-    if(p) f->linkFrom(p);
+    if(p){
+//      f->linkFrom(p);
+      rai::Joint *j = new rai::Joint(*p, *f);
+      j->type = rai::JT_rigid;
+    }
   }
 
   if(pos.N){ f->Q.pos = pos; }
@@ -1491,7 +1495,8 @@ FeatherstoneInterface& rai::KinematicWorld::fs() {
 
 int rai::KinematicWorld::watch(bool pause, const char* txt) {
   gl().dataLock.unlock();
-  int key = 0;
+  gl().pressedkey=0;
+  int key;
   if(pause){
     if(!txt) txt="Config::watch";
     key = gl().watch(txt);
@@ -1513,7 +1518,7 @@ void rai::KinematicWorld::glAdd(void (*call)(void*), void* classP){
 }
 
 void rai::KinematicWorld::glAnimate() {
-  animateConfiguration(*this, gl(), NULL);
+  animateConfiguration(*this, NULL);
 }
 
 void rai::KinematicWorld::glGetMasks(int w, int h, bool rgbIndices) {
@@ -3454,11 +3459,10 @@ void _glDrawOdeWorld(dWorldID world)
 }
 */
 
-int animateConfiguration(rai::KinematicWorld& K, OpenGL& gl, Inotify *ino) {
+int animateConfiguration(rai::KinematicWorld& K, Inotify *ino) {
   arr x, x0;
   K.getJointState(x0);
   arr lim = K.getLimits();
-  gl.pressedkey=0;
   const int steps = 50;
   K.checkConsistency();
   StringA jointNames = K.getJointNames();
@@ -3482,16 +3486,15 @@ int animateConfiguration(rai::KinematicWorld& K, OpenGL& gl, Inotify *ino) {
       // Joint limits
       checkNan(x);
       K.setJointState(x);
-      int key = gl.update(STRING("DOF = " <<i <<" : " <<jointNames(i) <<" [" <<lim[i] <<"]"), true);
+      int key = K.watch(false, STRING("DOF = " <<i <<" : " <<jointNames(i) <<" [" <<lim[i] <<"]"));
       //      write_ppm(gl.captureImage, STRING("vid/" <<std::setw(3)<<std::setfill('0')<<saveCount++<<".ppm"));
 
-      gl.pressedkey=0;
       if(key==13 || key==32 || key==27 || key=='q') return key;
-      //      rai::wait(0.01);
+      rai::wait(0.01);
     }
   }
   K.setJointState(x0);
-  return gl.update("", true);
+  return K.watch(false);
 }
 
 rai::Frame *movingBody=NULL;
@@ -3636,14 +3639,14 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
   }
 };
 
-void editConfiguration(const char* filename, rai::KinematicWorld& K, OpenGL &gl) {
+void editConfiguration(const char* filename, rai::KinematicWorld& K){
   K.checkConsistency();
 
   //  gl.exitkeys="1234567890qhjklias, "; //TODO: move the key handling to the keyCall!
   bool exit=false;
   //  gl.addHoverCall(new EditConfigurationHoverCall(K));
-  gl.addKeyCall(new EditConfigurationKeyCall(K,exit));
-  gl.addClickCall(new EditConfigurationClickCall(K));
+  K.gl().addKeyCall(new EditConfigurationKeyCall(K,exit));
+  K.gl().addClickCall(new EditConfigurationClickCall(K));
   Inotify ino(filename);
   for(; !exit;) {
     cout <<"reloading `" <<filename <<"' ... " <<std::endl;
@@ -3651,9 +3654,9 @@ void editConfiguration(const char* filename, rai::KinematicWorld& K, OpenGL &gl)
     try {
       rai::lineCount=1;
       W.init(filename);
-      gl.dataLock.writeLock();
+//      gl.dataLock.writeLock();
       K = W;
-      gl.dataLock.unlock();
+//      gl.dataLock.unlock();
       K.report();
     } catch(std::runtime_error& err) {
       cout <<"line " <<rai::lineCount <<": " <<err.what() <<" -- please check the file and re-save" <<endl;
@@ -3662,18 +3665,16 @@ void editConfiguration(const char* filename, rai::KinematicWorld& K, OpenGL &gl)
     cout <<"watching..." <<endl;
     int key = -1;
     for(;;) {
-      key = gl.update();
-      gl.pressedkey=0;
+      key = K.watch(false);
       if(key==13 || key==32 || key==27 || key=='q') break;
       if(ino.poll(false, true)) break;
       rai::wait(.02);
     }
     if(exit) break;
-    gl.pressedkey=0;
     if(key==13 || key==32){
       cout <<"animating.." <<endl;
       //while(ino.pollForModification());
-      key = animateConfiguration(K, gl, &ino);
+      key = animateConfiguration(K, &ino);
     }
     if(key==27 || key=='q') break;
     if(key==-1) continue;

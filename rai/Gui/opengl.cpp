@@ -1875,7 +1875,7 @@ int OpenGL::update(const char *txt, bool nonThreaded) {
   postRedrawEvent(false);
   if(nonThreaded) isUpdating.waitForStatusEq(0);
 #else
-  if(nonThreaded){
+  if(nonThreaded || offscreen){
     beginNonThreadedDraw();
     Draw(width, height);
     endNonThreadedDraw();
