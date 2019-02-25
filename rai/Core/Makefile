@@ -12,6 +12,7 @@ LAPACK = 1
 PTHREAD = 1
 ROS = 1
 JSON = 1
+EIGEN = 1
 CXXFLAGS += -DRAI_CORE_PATH=\"`pwd`\"
 
 SRCS = $(shell find . -maxdepth 1 -name '*.cpp' )

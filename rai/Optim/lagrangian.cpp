@@ -49,7 +49,9 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
   } else { //we evaluated this before - use buffered values; the meta F is still recomputed as (dual) parameters might have changed
   }
   CHECK(x.N, "zero-dim optimization variables!");
-  CHECK_EQ(phi_x.N, J_x.d0, "Jacobian size inconsistent");
+  if(!isSparseMatrix(J_x)){
+    CHECK_EQ(phi_x.N, J_x.d0, "Jacobian size inconsistent");
+  }
   CHECK_EQ(phi_x.N, tt_x.N, "termType array size inconsistent");
   
   //-- construct unconstrained problem
@@ -95,7 +97,12 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
       if(nu       && tt_x.p[i]==OT_eq) coeff.p[i] += hpenalty_dd(phi_x.p[i]);                        //h-penalty
     }
     arr tmp = J_x;
-    for(uint i=0; i<phi_x.N; i++) tmp[i]() *= sqrt(coeff.p[i]);
+    if(!isSparseMatrix(tmp)){
+      for(uint i=0; i<phi_x.N; i++) tmp[i]() *= sqrt(coeff.p[i]);
+    }else{
+      auto& tmpSparse = tmp.sparse();
+      for(uint i=0; i<phi_x.N; i++) tmpSparse.multiplyRow(i, sqrt(coeff.p[i]));
+    }
 #if 1
     HL = comp_At_A(tmp); //Gauss-Newton type!
 #else
