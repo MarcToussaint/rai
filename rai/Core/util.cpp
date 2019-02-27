@@ -577,7 +577,7 @@ bool wait(bool useX11) {
 int x11_getKey() {
   rai::String txt="PRESS KEY";
   int key=0;
-  
+
   Display *disp = XOpenDisplay(NULL);
   CHECK(disp, "Cannot open display");
   
