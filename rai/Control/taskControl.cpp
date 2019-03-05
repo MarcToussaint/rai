@@ -300,7 +300,7 @@ ActStatus MotionProfile_Path::update(arr& yRef, arr& ydotRef, double tau, const 
 //===========================================================================
 
 CtrlTask::CtrlTask(const char* name, const ptr<Feature>& _map)
-  : name(name), active(true), map(_map), prec(ARR(1.)), hierarchy(1) {
+  : name(name), active(true), map(_map), scale(1.), hierarchy(1) {
   status.set() = AS_init;
   //  ref = new MotionProfile_PD();
 }
@@ -329,7 +329,7 @@ CtrlTask::CtrlTask(const char* name, const ptr<Feature>& _map, const Graph& para
   : CtrlTask(name, _map) {
   ref = make_shared<MotionProfile_PD>(params);
   Node *n;
-  if((n=params["prec"])) prec = n->get<arr>();
+  if((n=params["scale"])) scale = n->get<double>();
 }
 
 CtrlTask::~CtrlTask() {
@@ -369,13 +369,6 @@ void CtrlTask::setTarget(const arr& y_target) {
   CHECK(ref,"need a ref to set target");
   ref->setTarget(y_target);
   ref->resetState();
-}
-
-arr CtrlTask::getPrec() {
-  uint n=y_ref.N;
-  if(prec.N==1) return diag(rai::sqr(prec.scalar()), n);
-  if(prec.nd==1) return diag(prec%prec);
-  return comp_At_A(prec);
 }
 
 void CtrlTask::getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const rai::KinematicWorld& world) {
@@ -467,11 +460,11 @@ double TaskControlMethods::getIKCosts(CtrlTaskL& tasks, const arr& q, const arr&
   if(!!H) { CHECK(&q,""); H = zeros(q.N, q.N); }
   for(CtrlTask* t: tasks) {
     if(t->active && t->ref) {
-      y = t->prec%(t->y_ref - t->y);
-      J = t->prec%(t->J_y);
+      y = t->scale*(t->y_ref - t->y);
+      J = t->scale*(t->J_y);
       c += sumOfSqr(y);
-      if(!!g) g -= 2.*~(~y*J);
-      if(!!H) H += 2.*comp_At_A(J);
+      if(!!g) g -= 2.*t->scale*~(~y*J);
+      if(!!H) H += 2.*t->scale*comp_At_A(J);
     }
   }
   
@@ -537,12 +530,12 @@ arr TaskControlMethods::inverseKinematics(CtrlTaskL& tasks, arr& qdot, const arr
   for(CtrlTask* t: tasks) {
     if(t->active && t->ref) {
       if(t->y_ref.N){
-        y.append(t->prec%(t->y_ref - t->y));
-        J.append(t->prec%(t->J_y));
+        y.append(t->scale*(t->y_ref - t->y));
+        J.append(t->scale*(t->J_y));
       }
       if((!!qdot) && t->v_ref.N){
-        v.append(t->prec%(t->v_ref));
-        J_vel.append(t->prec%(t->J_y));
+        v.append(t->scale*(t->v_ref));
+        J_vel.append(t->scale*(t->J_y));
       }
     }
   }
@@ -611,8 +604,8 @@ arr TaskControlMethods::inverseKinematics_hierarchical(CtrlTaskL& tasks) {
   for(uint h=0; h<=maxHierarchy; h++) { //start with lowest priorities; end with highest
     arr y,J;
     for(CtrlTask* t: tasks) if(t->active && t->ref && t->hierarchy==h) {
-        y.append(t->prec%(t->y_ref - t->y));
-        J.append(t->prec%(t->J_y));
+        y.append(t->scale*(t->y_ref - t->y));
+        J.append(t->scale*(t->J_y));
       }
     if(!y.N) continue;
     J.reshape(y.N, J.N/y.N);
@@ -628,12 +621,12 @@ arr TaskControlMethods::getComplianceProjection(CtrlTaskL& tasks) {
   arr P;
   uint count=0;
   for(CtrlTask* t: tasks) {
-    if(t->active && t->complianceDirection.N) {
+    if(t->active && t->compliance.N) {
       if(!P.N) P = eye(t->J_y.d1);
 
       //special case! qItself feature!
-      if(t->complianceDirection.N==1 && std::dynamic_pointer_cast<TM_qItself>(t->map)){
-        double compliance = t->complianceDirection.scalar();
+      if(t->compliance.N==1 && std::dynamic_pointer_cast<TM_qItself>(t->map)){
+        double compliance = t->compliance.scalar();
         CHECK_GE(compliance, 0., "");
         CHECK_LE(compliance, 1., "");
         P = diag(1.-compliance, P.d0);
@@ -641,8 +634,8 @@ arr TaskControlMethods::getComplianceProjection(CtrlTaskL& tasks) {
       }
 
       CHECK(!count,"only implemented for ONE compliance task yet -> subtract more dimensions?");
-      CHECK_EQ(t->complianceDirection.N, t->y.N, "compliance direction has wrong dim");
-      double factor = length(t->complianceDirection);
+      CHECK_EQ(t->compliance.N, t->y.N, "compliance direction has wrong dim");
+      double factor = length(t->compliance);
       CHECK(factor>0 && factor<=1., "compliance direction needs length in (0,1] (1 means full compliance in this direction)");
       
       arr J = t->J_y;
@@ -661,9 +654,9 @@ arr TaskControlMethods::getComplianceProjection(CtrlTaskL& tasks) {
         for(uint i=0; i<n; i++) if(lockJoints(i)) Winv(i) = 0.;
       }
       arr Jinv = pseudoInverse(J, Winv, 1e-1);
-      arr d = Jinv * t->complianceDirection;
+      arr d = Jinv * t->compliance;
 #else
-      arr d = ~J * t->complianceDirection;
+      arr d = ~J * t->compliance;
 #endif
       P -= factor*d*~d/(sumOfSqr(d)+1e-6);
       
@@ -709,8 +702,8 @@ arr TaskControlMethods::operationalSpaceControl(CtrlTaskL& tasks) {
   for(CtrlTask* t: tasks) {
     if(t->active && !t->f_ref.N) {
       arr a_des = t->PD().getDesiredAcceleration();
-      yddot_des.append(t->prec%(a_des /*-Jdot*qdot*/));
-      J.append(t->prec%t->J_y);
+      yddot_des.append(t->scale*(a_des /*-Jdot*qdot*/));
+      J.append(t->scale*t->J_y);
     }
   }
   if(yddot_des.N) J.reshape(yddot_des.N, J.N/yddot_des.N);
@@ -737,10 +730,10 @@ arr TaskControlMethods::operationalSpaceControl(CtrlTaskL& tasks) {
 }
 
 arr TaskControlMethods::getDesiredLinAccLaw(CtrlTaskL& tasks, arr &Kp, arr &Kd, arr &k, const arr& q, const arr& qdot) {
-  arr Kp_y, Kd_y, k_y, C_y, H;
+  arr Kp_y, Kd_y, k_y, H;
   NIY;
 //  qNullCostRef.PD().getDesiredLinAccLaw(Kp_y, Kd_y, k_y);
-//  arr H = qNullCostRef.getPrec();
+//  arr H = qNullCostRef.getscale();
   
   Kp = H * Kp_y;
   Kd = H * Kd_y;
@@ -751,9 +744,8 @@ arr TaskControlMethods::getDesiredLinAccLaw(CtrlTaskL& tasks, arr &Kp, arr &Kd, 
   for(CtrlTask* task : tasks) if(task->active) {
       arr J_y;
       task->PD().getDesiredLinAccLaw(Kp_y, Kd_y, k_y);
-      C_y = task->getPrec();
-      
-      arr JtC_y = ~J_y*C_y;
+
+      arr JtC_y = ~J_y*task->scale;
       
       JCJ += JtC_y*J_y;
       
@@ -801,7 +793,7 @@ arr TaskControlMethods::calcOptimalControlProjected(CtrlTaskL& tasks, arr &Kp, a
 //    a += H_rate_diag % qitselfPD.getDesiredAcceleration(world.q, world.qdot);
 //  }
   for(CtrlTask* law : tasks) if(law->active) {
-      tempJPrec = ~J_y*law->getPrec();
+      tempJPrec = ~J_y*law->scale;
       A += tempJPrec*J_y;
       
       law->PD().getDesiredLinAccLaw(Kp_y, Kd_y, a0_y);

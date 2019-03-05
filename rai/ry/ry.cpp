@@ -888,8 +888,8 @@ PYBIND11_MODULE(libry, m) {
 
       ENUMVAL(FS,transAccelerations)
       ENUMVAL(FS,transVelocities)
-
       .export_values();
+
 #undef ENUMVAL
 
 }

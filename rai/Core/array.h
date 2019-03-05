@@ -356,8 +356,8 @@ template<class T> Array<T> operator,(const Array<T>& y, const Array<T>& z); //co
 template<class T> Array<T>& operator<<(Array<T>& x, const T& y); //append
 template<class T> Array<T>& operator<<(Array<T>& x, const Array<T>& y); //append
 
-template<class T> bool operator==(const Array<T>& v, const Array<T>& w);
-template<class T> bool operator==(const Array<T>& v, const T *w);
+template<class T> bool operator==(const Array<T>& v, const Array<T>& w); //equal in size and all elements
+template<class T> Array<byte> operator==(const Array<T>& v, const T& w); //element-wise equal
 template<class T> bool operator!=(const Array<T>& v, const Array<T>& w);
 template<class T> bool operator<(const Array<T>& v, const Array<T>& w);
 template<class T> std::istream& operator>>(std::istream& is, Array<T>& x);

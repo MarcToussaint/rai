@@ -2650,6 +2650,15 @@ void outerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>&
   HALT("outer product - not yet implemented for these dimensions");
 }
 
+/** @brief element wise product */
+template<class T>
+void elemWiseProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>& z) {
+  CHECK_EQ(y.N, z.N, "");
+  x = z;
+  for(uint i=0;i<x.N;i++) x.elem(i) *= y.elem(i);
+  return;
+}
+
 /** @brief index wise (element-wise for vectors and matrices) product (also ordinary matrix or scalar product).:
   \f$\forall_{ik}:~ x_{ik} = \sum_j v_{ij}\, w_{jk}\f$ but also:
   \f$\forall_{i}:~ x_{i} = \sum_j v_{ij}\, w_{j}\f$
@@ -3008,14 +3017,14 @@ template<class T> void tensorEquation(rai::Array<T> &X, const rai::Array<T> &A, 
   if(!sum) {
     res=1;
     //X.resizeTensor(d);
-    CHECK_EQ(d,X.d, "for security, please set size before");
+    CHECK_EQ(d,X.dim(), "for security, please set size before");
   } else {
     dx.resize(d.N-sum);
     res=1;
     for(j=0; j<dx.N; j++) dx(j)=d(j);
     for(; j<d .N; j++) res*=d(j);
     //X.resizeTensor(dx);
-    CHECK_EQ(dx,X.d, "for security, please set size before");
+    CHECK_EQ(dx,X.dim(), "for security, please set size before");
   }
   CHECK_EQ(N,X.N*res, "");
   DEBUG_TENSOR(cout <<"dx=" <<dx <<" res=" <<res <<endl;);
@@ -3562,13 +3571,26 @@ template<class T> bool operator==(const Array<T>& v, const Array<T>& w) {
   return true;
 }
 
-/// equal in size and all elements
-template<class T> bool operator==(const Array<T>& v, const T *w) {
-  const T *vp=v.p, *wp=w, *vstop=vp+v.N;
-  for(; vp!=vstop; vp++, wp++)
-    if(*vp != *wp) return false;
-  return true;
+/// element-wise equal to constant
+template<class T> Array<byte> operator==(const Array<T>& v, const T& w) {
+  Array<byte> x;
+  resizeAs(x, v);
+  x.setZero();
+  const T *vp=v.p, *vstop=vp+v.N;
+  byte *xp=x.p;
+  for(; vp!=vstop; vp++, xp++)
+    if(*vp == w) *xp=1;
+  return x;
 }
+
+
+///// equal in size and all elements
+//template<class T> bool operator==(const Array<T>& v, const T *w) {
+//  const T *vp=v.p, *wp=w, *vstop=vp+v.N;
+//  for(; vp!=vstop; vp++, wp++)
+//    if(*vp != *wp) return false;
+//  return true;
+//}
 
 /// not equal
 template<class T> bool operator!=(const Array<T>& v, const Array<T>& w) {

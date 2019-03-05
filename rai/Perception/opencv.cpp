@@ -43,9 +43,9 @@ char cvShow(const byteA& img, const char *window, bool wait) {
   if(img.nd==3) {
     //    byteA imgBGR; resizeAs(imgBGR, img);
     //    cv::cvtColor(conv_Arr2CvRef(img), conv_Arr2CvRef(imgBGR), cv::RGB2BGR);
-    cv::imshow(window, conv_Arr2CvRef(img));
+    cv::imshow(window, CV(img));
   } else {
-    cv::imshow(window, conv_Arr2CvRef(img));
+    cv::imshow(window, CV(img));
   }
   if(wait) return cv::waitKey();
   return cv::waitKey(2);
@@ -53,7 +53,7 @@ char cvShow(const byteA& img, const char *window, bool wait) {
 
 char cvShow(const floatA& img, const char *window, bool wait) {
   CHECK(img.nd==2 || (img.nd==3 && img.d2==3), "");
-  cv::imshow(window, conv_Arr2CvRef(img));
+  cv::imshow(window, CV(img));
   if(wait) return cv::waitKey();
   return cv::waitKey(2);
 }
@@ -77,7 +77,7 @@ void getDiffProb(floatA& diff, const byteA& img0, const byteA& img1, float pixSd
     p++;
   }
   floatA smoothed(diff);
-  cv::blur(conv_Arr2CvRef(diff), conv_Arr2CvRef(smoothed), cv::Size(range,range));
+  cv::blur(CV(diff), CV(smoothed), cv::Size(range,range));
   for(uint i=0; i<smoothed.N; i++) smoothed.p[i] = student3(smoothed.p[i]);
   diff = smoothed;
 }
