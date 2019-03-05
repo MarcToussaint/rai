@@ -480,7 +480,7 @@ PYBIND11_MODULE(libry, m) {
   py::class_<ry::RyFeature>(m, "Feature")
   .def("eval", [](ry::RyFeature& self, ry::Config& K){
     arr y,J;
-    self.feature->phi(y, J, K.get());
+    self.feature->__phi(y, J, K.get());
     pybind11::tuple ret(2);
     ret[0] = pybind11::array(y.dim(), y.p);
     ret[1] = pybind11::array(J.dim(), J.p);
@@ -495,7 +495,7 @@ PYBIND11_MODULE(libry, m) {
 
     arr y, J;
     self.feature->order=Ktuple.N-1;
-    self.feature->phi(y, J, Ktuple);
+    self.feature->__phi(y, J, Ktuple);
     cout <<"THERE!!" <<J.dim() <<endl;
     pybind11::tuple ret(2);
     ret[0] = pybind11::array(y.dim(), y.p);

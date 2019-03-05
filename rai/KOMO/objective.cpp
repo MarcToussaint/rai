@@ -54,6 +54,7 @@ void Objective::setCostSpecsDense(const intA& _vars) {
 }
 
 bool Objective::isActive(uint t) {
+  if(!vars.N) return false;
   CHECK_EQ(vars.nd, 1, "variables are not time indexed (tuples for dense problem instead)");
   return (vars.N>t && vars(t));
 }
