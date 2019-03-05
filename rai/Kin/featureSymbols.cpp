@@ -65,7 +65,7 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
   else if(feat==FS_aboveBox) {  f=make_shared<TM_AboveBox>(world, frames(1), frames(0), .05); }
   else if(feat==FS_standingAbove) {
     double h = .5*(shapeSize(world, frames(0)) + shapeSize(world, frames(1)));
-    Feature *relPos = new TM_Default(TMT_posDiff, world, frames(0), rai::Vector(0.,0.,h), frames(1), NoVector);
+    ptr<Feature> relPos = make_shared<TM_Default>(TMT_posDiff, world, frames(0), rai::Vector(0.,0.,h), frames(1), NoVector);
     f=make_shared<TM_LinTrans>(relPos, arr(1,3,{0.,0.,1.}), arr());
   }
 

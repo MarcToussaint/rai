@@ -665,7 +665,6 @@ void KOMO_ext::setPlace(double time, const char* endeff, const char* object, con
 #else
   addSwitch_stableOn(time, -1., placeRef, object);
 #endif
-
 }
 
 /// place with a specific relative pose -> no effective DOFs!
@@ -790,7 +789,7 @@ void KOMO::setGraspSlide(double time, const char* endeff, const char* object, co
   //keep height of object above table
   double h = .5*(shapeSize(world, object) + shapeSize(world, placeRef));
   addObjective(startTime, endTime,
-          new TM_LinTrans(new TM_Default(TMT_posDiff, world, object, NoVector, placeRef), ~ARR(0,0,1), ARR(0)),
+          new TM_LinTrans(make_shared<TM_Default>(TMT_posDiff, world, object, NoVector, placeRef), ~ARR(0,0,1), ARR(0)),
           OT_sos, ARR(h), 1e1);
   //keep object vertial
   addObjective(startTime, endTime,
@@ -2116,7 +2115,6 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::getStructure(uintA& variableDimensio
     for(uint i=0; i<komo.objectives.N; i++) {
       Objective *task = komo.objectives.elem(i);
       if(task->isActive(t)) {
-        //      CHECK_LE(task->prec.N, MP.T,"");
         uint m = task->map->__dim_phi(komo.configurations({t,t+komo.k_order})); //dimensionality of this task
         
         if(!!featureTimes) featureTimes.append(t, m); //consts<uint>(t, m));

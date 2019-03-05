@@ -11,7 +11,7 @@ double shapeSize(const rai::KinematicWorld& K, const char* name, uint i=1);
 void addBoxGrasp(KOMO& komo, const char* object, const char* endeff, int axis){
   //  komo.addObjective(0., 0., OT_eq, FS_accumulatedCollisions, {}, 1e0);
     if(komo.world["endeffWorkspace"]){
-      komo.addObjective(0., 0., new TM_LinTrans(new TM_Default(TMT_posDiff, komo.world, "endeffWorkspace", NoVector, object), {2,3,{1.,0.,0., 0.,1.,0.}}, {}), OT_sos, {}, 1e2);
+        komo.addObjective(0., 0., new TM_LinTrans(make_shared<TM_Default>(TMT_posDiff, komo.world, "endeffWorkspace", NoVector, object), {2,3,{1.,0.,0., 0.,1.,0.}}, {}), OT_sos, {}, 1e2);
     }
 
   //height to grasp
