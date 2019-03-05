@@ -238,22 +238,23 @@ void rai::Sim_CameraView::step() {
   floatA dep;
   arr X = model.get()->getFrameState();
   if(!X.N) return;
-  C.gl.dataLock.writeLock();
-  if(step_count>0 && X.d0==C.K.frames.N){
-    C.K.setFrameState(X);
-  }else{
-    C.K = model.get();
-    if(C.renderMode==C.seg){//update frameIDmap
-      C.frameIDmap.resize(C.K.frames.N).setZero();
-      for(rai::Frame *f:C.K.frames){
-        int *label=f->ats.find<int>("label");
-        if(label){
-          C.frameIDmap(f->ID) = *label;
+  {
+    auto _dataLock = C.gl.dataLock(RAI_HERE);
+    if(step_count>0 && X.d0==C.K.frames.N){
+      C.K.setFrameState(X);
+    }else{
+      C.K = model.get();
+      if(C.renderMode==C.seg){//update frameIDmap
+        C.frameIDmap.resize(C.K.frames.N).setZero();
+        for(rai::Frame *f:C.K.frames){
+          int *label=f->ats.find<int>("label");
+          if(label){
+            C.frameIDmap(f->ID) = *label;
+          }
         }
       }
     }
   }
-  C.gl.dataLock.unlock();
   C.computeImageAndDepth(img, dep);
   color.set() = img;
   depth.set() = dep;

@@ -20,24 +20,6 @@ void renderConfigurations(const WorldL& cs, const char* filePrefix="vid/z.", int
 
 //===========================================================================
 
-struct KinViewer_old : Thread {
-  Var<rai::KinematicWorld> modelWorld;
-  //-- outputs
-  Var<byteA> modelCameraView;
-  Var<floatA> modelDepthView;
-  //-- internal (private)
-  rai::KinematicWorld copy;
-  bool computeCameraView;
-  
-  KinViewer_old(const Var<rai::KinematicWorld>& _modelWorld, double beatIntervalSec=-1., bool computeCameraView=false);
-  ~KinViewer_old();
-  void open();
-  void step();
-  void close() {}
-};
-
-//===========================================================================
-
 struct KinViewer : Thread {
   Var<rai::KinematicWorld> world;
   MeshA meshesCopy;
@@ -57,6 +39,7 @@ struct KinPathViewer : Thread {
   Var<WorldL> configurations;
   //-- internal (private)
   rai::KinematicWorld copy;
+  struct OpenGL *gl;
   uint t;
   int tprefix;
   bool writeToFiles;
@@ -69,7 +52,7 @@ struct KinPathViewer : Thread {
   ~KinPathViewer();
   void open();
   void step();
-  void close() {}
+  void close();
 };
 
 //===========================================================================

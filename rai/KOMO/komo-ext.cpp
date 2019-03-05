@@ -57,12 +57,10 @@ void addMotionTo(KOMO& komo, const arr& target_q, const StringA& target_joints, 
     profile.setZero();
 
     if(up>0.){
-      uint t0=up*komo.T+1;
       komo.addObjective(0., up, new TM_Default(TMT_posDiff, komo.world, endeff), OT_sos, {0.,0.,.05}, 1e2, 2);
     }
 
     if(down>0.){
-      uint t0=down*komo.T-1;
       komo.addObjective(down, 1., new TM_Default(TMT_posDiff, komo.world, endeff), OT_sos, {0.,0.,-.05}, 1e2, 2);
     }
   }

@@ -230,7 +230,9 @@ struct KinematicWorld : GLDrawer {
   void NewtonEuler_backward();
   
   /// @name extensions on demand
+//private:
   OpenGL& gl(const char* window_title=NULL);
+//public:
   SwiftInterface& swift();
   FclInterface& fcl();
   void swiftDelete();

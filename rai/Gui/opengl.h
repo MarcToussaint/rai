@@ -157,7 +157,7 @@ struct OpenGL {
   floatA captureDepth;
   double backgroundZoom;
   arr P; //camera projection matrix
-  RWLock dataLock; //'data' means anything: member fields (camera, variables), drawers, data the drawers access
+  Mutex dataLock; //'data' means anything: member fields (camera, variables), drawers, data the drawers access
 //  uint fbo, render_buf;
   uint fboId;
   uint rboColor;
@@ -179,10 +179,10 @@ struct OpenGL {
   void add(void (*call)(void*), void* classP=NULL);
   void addInit(void (*call)(void*), void* classP=NULL);
   void add(std::function<void(OpenGL&)> drawer);
-  void add(GLDrawer& c) { dataLock.writeLock(); drawers.append(&c); dataLock.unlock(); }
+  void add(GLDrawer& c) { auto _dataLock = dataLock(RAI_HERE); drawers.append(&c); }
   template<class T> void add(Var<T>& c) { add(c.set()); }
-  void addDrawer(GLDrawer *c) { dataLock.writeLock(); drawers.append(c); dataLock.unlock(); }
-  void remove(GLDrawer& c) { dataLock.writeLock(); drawers.removeValue(&c); dataLock.unlock(); }
+  void addDrawer(GLDrawer *c) { auto _dataLock = dataLock(RAI_HERE); drawers.append(c); }
+  void remove(GLDrawer& c) { auto _dataLock = dataLock(RAI_HERE); drawers.removeValue(&c); }
   //template<class T> void add(const T& x) { add(x.staticDraw, &x); } ///< add a class or struct with a staticDraw routine
   void addHoverCall(GLHoverCall *c) { hoverCalls.append(c); }
   void addClickCall(GLClickCall *c) { clickCalls.append(c); }

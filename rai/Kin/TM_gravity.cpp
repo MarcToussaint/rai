@@ -49,7 +49,7 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple) {
 //      if(a->inertia && a->inertia->type==rai::BT_dynamic){
         TM_Default pos(TMT_pos, a->ID);
         pos.order=1;
-        pos.Feature::phi(p0, (!!J?J0:NoArr), Ktuple);
+        pos.Feature::__phi(p0, (!!J?J0:NoArr), Ktuple);
         
         arr v_ref = {0.,0.,-gravity};
         arr Jv_ref = zeros(3, K.q.N);
@@ -119,7 +119,7 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple) {
       if(a->flags & (1<<FL_gravityAcc)) {
         TM_Default pos(TMT_posDiff, a->ID);
         pos.order=2;
-        pos.Feature::phi(acc, (!!J?Jacc:NoArr), Ktuple);
+        pos.Feature::__phi(acc, (!!J?Jacc:NoArr), Ktuple);
         
         arr err = acc - acc_ref;
         arr Jerr = Jacc;
@@ -237,19 +237,19 @@ void TM_Gravity2::phi(arr& y, arr& J, const WorldL& Ktuple){
   }
   TM_LinVel pos(i);
   pos.order=2;
-  pos.Feature::phi(y, J, Ktuple);
+  pos.Feature::__phi(y, J, Ktuple);
   y(2) += gravity;
 
 //  TM_Default quat(TMT_quat, a->ID); //mt: NOT TMT_quatDiff!! (this would compute the diff to world, which zeros the w=1...)
 //  // flip the quaternion sign if necessary
 //  quat.flipTargetSignOnNegScalarProduct = true;
 //  quat.order=1;
-//  quat.Feature::phi(y({d+3,d+6})(), (!!J?J({d+3,d+6})():NoArr), Ktuple);
+//  quat.Feature::__phi(y({d+3,d+6})(), (!!J?J({d+3,d+6})():NoArr), Ktuple);
 //  if(false) { //rotational friction
 //    double eps = 1e-2;
 //    arr w,Jw;
 //    quat.order=1;
-//    quat.Feature::phi(w, (!!J?Jw:NoArr), Ktuple);
+//    quat.Feature::__phi(w, (!!J?Jw:NoArr), Ktuple);
 //    y({d+3,d+6}) += eps*w;
 //    if(!!J) J({d+3,d+6}) += eps*Jw;
 //  }
@@ -271,7 +271,7 @@ void TM_ZeroAcc::phi(arr& y, arr& J, const WorldL& Ktuple){
   }
   TM_Default pos(TMT_pos, i);
   pos.order=2;
-  pos.Feature::phi(y, J, Ktuple);
+  pos.Feature::__phi(y, J, Ktuple);
 }
 
 void TM_ZeroQVel::phi(arr& y, arr& J, const WorldL& Ktuple){
@@ -284,10 +284,15 @@ void TM_ZeroQVel::phi(arr& y, arr& J, const WorldL& Ktuple){
     if(!!J) J.resize(y.N, getKtupleDim(Ktuple).last()).setZero();
     return;
   }
-  q.Feature::phi(y, J, Ktuple);
+  q.Feature::__phi(y, J, Ktuple);
 }
 
 uint TM_ZeroQVel::dim_phi(const rai::KinematicWorld& K){
   rai::Frame *a = K.frames(i);
+  if(!a->joint){
+    LOG(-1) <<"reconfiguring to become link";
+    a = a->getUpwardLink();
+    i = a->ID;
+  }
   return a->joint->dim;
 }

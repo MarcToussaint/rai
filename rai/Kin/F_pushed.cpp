@@ -43,9 +43,9 @@ void F_pushed::phi(arr& y, arr& J, const WorldL& Ktuple){
 
   if(a->contacts.N==1){
     rai::Contact *con = a->contacts.scalar();
-    double sign = +1.;
+//    double sign = +1.;
     CHECK(&con->a==a || &con->b==a, "");
-    if(&con->b==a) sign=-1.;
+//    if(&con->b==a) sign=-1.;
 
     //get the POA
     arr cp, Jcp;

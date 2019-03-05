@@ -128,7 +128,7 @@ void TM_LinVel::phi(arr& y, arr& J, const WorldL& Ktuple){
     double tau = Ktuple(-2)->frames(0)->tau;
     if(impulseInsteadOfAcceleration) tau=1.;
     y = (y1-y0)/tau; //difference!
-    if(!!J) J = (Jy1 - Jy0)/tau;
+    if(!!J) J = (Jy1-Jy0)/tau;
   }
 }
 
@@ -224,10 +224,10 @@ void TM_NoJumpFromParent::phi(arr& y, arr& J, const WorldL& Ktuple){
     TM_Default tmp(TMT_pos, link->ID, NoVector, parent->ID, NoVector);
     tmp.order = 1;
     tmp.type = TMT_pos;
-    tmp.Feature::phi(y, J, Ktuple);
+    tmp.Feature::__phi(y, J, Ktuple);
     tmp.type = TMT_quat;
     tmp.flipTargetSignOnNegScalarProduct=true;
-    tmp.Feature::phi(yq, (!!J?Jq:NoArr), Ktuple);
+    tmp.Feature::__phi(yq, (!!J?Jq:NoArr), Ktuple);
     y.append(yq);
     if(!!J) J.append(Jq);
   }

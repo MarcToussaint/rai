@@ -91,7 +91,7 @@ void rai::KinematicSwitch::apply(KinematicWorld& K) {
     //first find link frame above 'to', and make it a root
     rai::Frame *link = to->getUpwardLink();
     if(link->parent) link->unLink();
-    K.reconfigureRootOfSubtree(to);
+    K.reconfigureRootOfSubtree(to); //TODO: really? do you need this when you took the link??
 
     //create a new joint
     to->linkFrom(from);

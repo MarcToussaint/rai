@@ -61,7 +61,7 @@ struct PhysXThread : Thread {
   
   void showInternalOpengl() {
     if(!gl) {
-      stepMutex.lock();
+      stepMutex.lock(RAI_HERE);
       gl = new OpenGL("Internal PhyesX display");
       gl->add(glStandardScene);
       gl->add(*px);

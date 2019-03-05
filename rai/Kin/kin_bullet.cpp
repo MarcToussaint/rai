@@ -102,11 +102,7 @@ btRigidBody* BulletInterface::addFrame(const rai::Frame* f){
   arr& size = f->shape->geom->size;
   switch(f->shape->type()){
     case rai::ST_sphere:{
-      double rad=1;
-      if(size.N==1) rad=size(0);
-      else rad=size(3);
-      colShape =new btSphereShape(btScalar(rad));
-
+      colShape =new btSphereShape(btScalar(size.last()));
     } break;
     case rai::ST_box:{
       colShape =new btBoxShape(btVector3(.5*size(0), .5*size(1), .5*size(2)));
@@ -114,13 +110,18 @@ btRigidBody* BulletInterface::addFrame(const rai::Frame* f){
     case rai::ST_ssBox:{
       colShape =new btBoxShape(btVector3(.5*size(0), .5*size(1), .5*size(2)));
     } break;
+    case rai::ST_mesh:{
+      floatA V;
+      copy(V, f->shape->mesh().V);
+      colShape =new btConvexHullShape(V.p, V.d0);
+    } break;
     default: HALT("NIY" <<f->shape->type());
   }
   self->collisionShapes.push_back(colShape);
 
   btTransform pose(btQuaternion(f->X.rot.x, f->X.rot.y, f->X.rot.z, f->X.rot.w),
                    btVector3(f->X.pos.x, f->X.pos.y, f->X.pos.z));
-  btScalar mass(0.0f);
+  btScalar mass(1.0f);
   if(f->inertia) mass = f->inertia->mass;
   btVector3 localInertia(0, 0, 0);
   colShape->calculateLocalInertia(mass, localInertia);

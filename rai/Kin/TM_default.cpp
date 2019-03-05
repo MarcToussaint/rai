@@ -130,7 +130,6 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
         }
       }
     }
-    applyLinearTrans(y,J);
     return;
   }
   
@@ -146,7 +145,6 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
       y -= y2;
       if(!!J) J -= J2;
     }
-    applyLinearTrans(y,J);
     return;
   }
   
@@ -166,7 +164,6 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
       //      y = conv_vec2arr(c);
       NIY; //TODO: Jacobian?
     }
-    applyLinearTrans(y,J);
     return;
   }
   
@@ -185,7 +182,6 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
       y -= y2;
       if(!!J) J -= J2;
     }
-    applyLinearTrans(y,J);
     return;
   }
   
@@ -208,7 +204,6 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
       J = ~zj * Ji + ~zi * Jj;
       J.reshape(1, G.getJointStateDimension());
     }
-    applyLinearTrans(y,J);
     return;
   }
   
@@ -222,7 +217,6 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
       J = ~orientation*J;
       J.reshape(1, J.N);
     }
-    applyLinearTrans(y,J);
     return;
   }
   
@@ -255,7 +249,6 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
               ~yi * (Jpj-Jpi) + ~(pj-pi) * Jyi);
       J.reshape(2, G.getJointStateDimension());
     }
-    applyLinearTrans(y,J);
     return;
   }
   
@@ -278,7 +271,6 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
         checkNan(J);
       }
     }
-    applyLinearTrans(y,J);
     return;
   }
   
@@ -298,7 +290,6 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
         if(!!J) J += J2;
       }
     }
-    applyLinearTrans(y,J);
     return;
   }
 
@@ -311,7 +302,6 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
     tmp.phi(yq, (!!J?Jq:NoArr), G);
     y.append(yq);
     if(!!J) J.append(Jq);
-    applyLinearTrans(y,J);
     return;
   }
 
@@ -324,7 +314,6 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
     tmp.phi(yq, (!!J?Jq:NoArr), G);
     y.append(yq);
     if(!!J) J.append(Jq);
-    applyLinearTrans(y,J);
     return;
   }
   

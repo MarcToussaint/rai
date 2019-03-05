@@ -346,7 +346,12 @@ void setLogLevels(int fileLogLevel=3, int consoleLogLevel=2);
 
 
 //----- error handling:
-#define RAI_HERE __FILE__<<':' <<__FUNCTION__ <<':' <<__LINE__ <<' ' //":" <<std::setprecision(5) <<rai::realTime() <<"s "
+//#define RAI_HERE __FILE__<<':' <<__FUNCTION__ <<':' <<__LINE__ <<' ' //":" <<std::setprecision(5) <<rai::realTime() <<"s "
+#define S1(x) #x
+#define S2(x) S1(x)
+#define RAI_HERE __FILE__ ":" S2(__LINE__)
+//#define RAI_HERE __FILE__ ## ":" ## #__FUNCTION__ ## ":" ## #__LINE__
+
 
 namespace rai {
 extern String errString;
@@ -608,17 +613,27 @@ struct Mutex {
 #endif
   int state; ///< 0=unlocked, otherwise=syscall(SYS_gettid)
   uint recursive; ///< number of times it's been locked
+  const char* lockInfo;
   Mutex();
   ~Mutex();
-  void lock();
+  void lock(const char *_lockInfo);
   void unlock();
   
   struct Token {
     Mutex &m;
-    Token(Mutex& m):m(m) { m.lock(); }
+    Token(Mutex& m, const char *_lockInfo):m(m) { m.lock(_lockInfo); }
     ~Token() { m.unlock(); }
   };
-  struct Token operator()() { return Token(*this); }
+  struct Token operator()(const char *_lockInfo) { return Token(*this, _lockInfo); }
+
+  template<class T> struct TypedToken {
+    Mutex &m;
+    T *data;
+    TypedToken(Mutex& m, T *data, const char *_lockInfo):m(m),data(data) { m.lock(_lockInfo); }
+    ~TypedToken() { m.unlock(); }
+    T* operator->() { return data; }
+  };
+  template<class T> TypedToken<T> operator()(T *data, const char *_lockInfo) { return TypedToken<T>(*this, data, _lockInfo); }
 };
 
 //===========================================================================
@@ -633,7 +648,7 @@ struct Singleton {
   
   T *getSingleton() const {
     if(!singleton) {
-      mutex.lock();
+      mutex.lock(RAI_HERE);
       if(!singleton) singleton = new T;
       mutex.unlock();
     }
@@ -653,7 +668,7 @@ struct Singleton {
   
   struct Token {
     const Singleton<T>& base;
-    Token(Singleton<T>& _base) : base(_base) { base.getSingleton(); base.mutex.lock(); }
+    Token(Singleton<T>& _base) : base(_base) { base.getSingleton(); base.mutex.lock(RAI_HERE); }
     ~Token() { base.mutex.unlock(); }
     T* operator->() { return base.getSingleton(); }
     operator T&() { return *base.getSingleton(); }
@@ -688,7 +703,7 @@ struct NonCopyable {
 
 extern Mutex coutMutex;
 struct CoutToken {
-  CoutToken() { coutMutex.lock(); }
+  CoutToken() { coutMutex.lock(RAI_HERE); }
   ~CoutToken() { coutMutex.unlock(); }
   std::ostream& getOs() { return std::cout; }
 };

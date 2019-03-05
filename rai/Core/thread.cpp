@@ -41,20 +41,20 @@ RWLock::~RWLock() {
 
 void RWLock::readLock() {
   int rc = pthread_rwlock_rdlock(&rwLock);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-  rwCountMutex.lock();
+  rwCountMutex.lock(RAI_HERE);
   rwCount++;
   rwCountMutex.unlock();
 }
 
 void RWLock::writeLock() {
   int rc = pthread_rwlock_wrlock(&rwLock);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-  rwCountMutex.lock();
+  rwCountMutex.lock(RAI_HERE);
   rwCount=-1;
   rwCountMutex.unlock();
 }
 
 void RWLock::unlock() {
-  rwCountMutex.lock();
+  rwCountMutex.lock(RAI_HERE);
   if(rwCount>0) rwCount--; else rwCount=0;
   rwCountMutex.unlock();
   int rc = pthread_rwlock_unlock(&rwLock);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
@@ -84,14 +84,14 @@ Signaler::~Signaler() {
 }
 
 void Signaler::setStatus(int i, Signaler* messenger) {
-  statusMutex.lock();
+  statusMutex.lock(RAI_HERE);
   status=i;
   broadcast(messenger);
   statusMutex.unlock();
 }
 
 int Signaler::incrementStatus(Signaler* messenger) {
-  statusMutex.lock();
+  statusMutex.lock(RAI_HERE);
   status++;
   broadcast(messenger);
   int i=status;
@@ -105,7 +105,7 @@ void Signaler::broadcast(Signaler* messenger) {
 
 void Event::listenTo(Var_base& v) {
   CHECK(&v, "");
-  auto lock = statusMutex();
+  auto lock = statusMutex(RAI_HERE);
   v.readAccess();
   variables.append(&v);
   v.callbacks.append(new Callback<void(Var_base*)>(this, std::bind(&Event::callback, this, std::placeholders::_1)));
@@ -113,7 +113,7 @@ void Event::listenTo(Var_base& v) {
 }
 
 void Event::stopListenTo(Var_base& v) {
-  auto lock = statusMutex();
+  auto lock = statusMutex(RAI_HERE);
 //  v.readAccess();
   int i=variables.findValue(&v);
   CHECK_GE(i,0,"something's wrong");
@@ -132,7 +132,7 @@ void Event::callback(Var_base *v){
   if(eventFct){
     int newEventStatus = eventFct(variables, i);
     //  cout <<"event callback: BOOL=" <<eventStatus <<' ' <<s <<' ' <<status <<" statuses=" <<statuses <<endl;
-    auto lock = statusMutex();
+    auto lock = statusMutex(RAI_HERE);
 //    if(this->status!=newEventStatus)
       setStatus(newEventStatus);
   }else{ //we don't have an eventFct, just increment value
@@ -150,7 +150,7 @@ Event::~Event() {
 }
 
 void Signaler::statusLock() {
-  statusMutex.lock();
+  statusMutex.lock(RAI_HERE);
 }
 
 void Signaler::statusUnlock() {
@@ -159,14 +159,14 @@ void Signaler::statusUnlock() {
 
 int Signaler::getStatus(bool userHasLocked) const {
   Mutex *m = (Mutex*)&statusMutex; //sorry: to allow for 'const' access
-  if(!userHasLocked) m->lock(); else CHECK_EQ(m->state,syscall(SYS_gettid),"user must have locked before calling this!");
+  if(!userHasLocked) m->lock(RAI_HERE); else CHECK_EQ(m->state,syscall(SYS_gettid),"user must have locked before calling this!");
   int i=status;
   if(!userHasLocked) m->unlock();
   return i;
 }
 
 bool Signaler::waitForSignal(bool userHasLocked, double timeout) {
-  if(!userHasLocked) statusMutex.lock(); // else CHECK_EQ(mutex.state, syscall(SYS_gettid), "user must have locked before calling this!");
+  if(!userHasLocked) statusMutex.lock(RAI_HERE); // else CHECK_EQ(mutex.state, syscall(SYS_gettid), "user must have locked before calling this!");
   if(timeout<0.) {
     int rc = pthread_cond_wait(&cond, &statusMutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   } else {
@@ -193,7 +193,7 @@ bool Signaler::waitForSignal(bool userHasLocked, double timeout) {
 }
 
 bool Signaler::waitForEvent(std::function<bool()> f, bool userHasLocked) {
-  if(!userHasLocked) statusMutex.lock(); else CHECK_EQ(statusMutex.state, syscall(SYS_gettid), "user must have locked before calling this!");
+  if(!userHasLocked) statusMutex.lock(RAI_HERE); else CHECK_EQ(statusMutex.state, syscall(SYS_gettid), "user must have locked before calling this!");
   while(!f()) {
     int rc = pthread_cond_wait(&cond, &statusMutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   }
@@ -203,7 +203,7 @@ bool Signaler::waitForEvent(std::function<bool()> f, bool userHasLocked) {
 }
 
 bool Signaler::waitForStatusEq(int i, bool userHasLocked, double timeout) {
-  if(!userHasLocked) statusMutex.lock(); else CHECK_EQ(statusMutex.state, syscall(SYS_gettid), "user must have locked before calling this!");
+  if(!userHasLocked) statusMutex.lock(RAI_HERE); else CHECK_EQ(statusMutex.state, syscall(SYS_gettid), "user must have locked before calling this!");
   while(status!=i) {
     bool succ = waitForSignal(true, timeout);
     if(!succ){ if(!userHasLocked) statusMutex.unlock();  return false; }
@@ -213,7 +213,7 @@ bool Signaler::waitForStatusEq(int i, bool userHasLocked, double timeout) {
 }
 
 int Signaler::waitForStatusNotEq(int i, bool userHasLocked, double timeout) {
-  if(!userHasLocked) statusMutex.lock(); else CHECK_EQ(statusMutex.state, syscall(SYS_gettid), "user must have locked before calling this!");
+  if(!userHasLocked) statusMutex.lock(RAI_HERE); else CHECK_EQ(statusMutex.state, syscall(SYS_gettid), "user must have locked before calling this!");
   while(status==i) {
     bool succ = waitForSignal(true, timeout);
     if(!succ){ if(!userHasLocked) statusMutex.unlock();  return false; }
@@ -224,7 +224,7 @@ int Signaler::waitForStatusNotEq(int i, bool userHasLocked, double timeout) {
 }
 
 int Signaler::waitForStatusGreaterThan(int i, bool userHasLocked, double timeout) {
-  if(!userHasLocked) statusMutex.lock(); else CHECK_EQ(statusMutex.state,syscall(SYS_gettid),"user must have locked before calling this!");
+  if(!userHasLocked) statusMutex.lock(RAI_HERE); else CHECK_EQ(statusMutex.state,syscall(SYS_gettid),"user must have locked before calling this!");
   while(status<=i) {
     bool succ = waitForSignal(true, timeout);
     if(!succ){ if(!userHasLocked) statusMutex.unlock();  return false; }
@@ -235,7 +235,7 @@ int Signaler::waitForStatusGreaterThan(int i, bool userHasLocked, double timeout
 }
 
 int Signaler::waitForStatusSmallerThan(int i, bool userHasLocked, double timeout) {
-  if(!userHasLocked) statusMutex.lock(); else CHECK_EQ(statusMutex.state,syscall(SYS_gettid),"user must have locked before calling this!");
+  if(!userHasLocked) statusMutex.lock(RAI_HERE); else CHECK_EQ(statusMutex.state,syscall(SYS_gettid),"user must have locked before calling this!");
   while(status>=i) {
     bool succ = waitForSignal(true, timeout);
     if(!succ){ if(!userHasLocked) statusMutex.unlock();  return false; }
@@ -518,7 +518,7 @@ Thread::~Thread() {
 
 void Thread::threadOpen(bool wait, int priority) {
   {
-    auto lock = event.statusMutex();
+    auto lock = event.statusMutex(RAI_HERE);
     if(thread) return; //this is already open -- or has just beend opened (parallel call to threadOpen)
 #ifndef RAI_QThread
     int rc;
@@ -664,7 +664,7 @@ void Thread::main() {
   //if(Thread::threadPriority) setNice(Thread::threadPriority);
   
   {
-    auto mux = stepMutex();
+    auto mux = stepMutex(RAI_HERE);
     try {
       open(); //virtual open routine
     } catch(const std::exception& ex) {
@@ -695,14 +695,14 @@ void Thread::main() {
     
     //-- make a step
     timer.cycleStart();
-    stepMutex.lock();
+    stepMutex.lock(RAI_HERE);
     step(); //virtual step routine
     stepMutex.unlock();
     step_count++;
     timer.cycleDone();
   };
   
-  stepMutex.lock();
+  stepMutex.lock(RAI_HERE);
   close(); //virtual close routine
   stepMutex.unlock();
 //  if(verbose>0) cout <<"*** Exiting Thread '" <<name <<"'" <<endl;
@@ -880,7 +880,7 @@ void TStream::unreg_all() {
 TStream::Access::Access(TStream *ts, const void *o):tstream(ts), obj(o) { }
 TStream::Access::Access(const Access &a):tstream(a.tstream) { }
 TStream::Access::~Access() {
-  tstream->mutex.lock();
+  tstream->mutex.lock(RAI_HERE);
   char *head;
   tstream->lock.readLock();
   if(tstream->get_private(obj, &head, false))

@@ -152,8 +152,9 @@ void SwiftInterface::initActivations(const rai::KinematicWorld& world, uint pare
     }
   //shapes within a link
   for(rai::Frame *f: world.frames) if(f->shape && f->shape->cont){
-    FrameL F;
-    f->getUpwardLink()->getRigidSubFrames(F);
+    rai::Frame *p = f->getUpwardLink();
+    FrameL F = {p};
+    p->getRigidSubFrames(F);
     for(uint i=F.N;i--;) if(!F(i)->shape || !F(i)->shape->cont) F.remove(i);
     deactivate(F);
   }
@@ -184,6 +185,7 @@ void SwiftInterface::initActivations(const rai::KinematicWorld& world, uint pare
   for(rai::Frame *f: world.frames) if(f->shape && f->shape->cont<0){
     FrameL F,P;
     rai::Frame* p = f->getUpwardLink();
+    F = {p};
     p->getRigidSubFrames(F);
     for(uint i=F.N;i--;) if(!F(i)->shape || !F(i)->shape->cont) F.remove(i);
 
@@ -191,6 +193,7 @@ void SwiftInterface::initActivations(const rai::KinematicWorld& world, uint pare
       p = p->parent;
       if(!p) break;
       p = p->getUpwardLink();
+      P = {p};
       p->getRigidSubFrames(P);
       for(uint i=P.N;i--;) if(!P(i)->shape || !P(i)->shape->cont) P.remove(i);
 
@@ -254,8 +257,8 @@ void SwiftInterface::pushToSwift(const rai::KinematicWorld& world) {
 
 void SwiftInterface::pullFromSwift(rai::KinematicWorld& world, bool dumpReport) {
   int i, j, k, np;
-  int *oids, *num_contacts;
-  SWIFT_Real *dists, *nearest_pts, *normals;
+  int *oids=0, *num_contacts=0;
+  SWIFT_Real *dists=0, *nearest_pts=0, *normals=0;
   
   try {
 //    scene->Query_Contact_Determination(

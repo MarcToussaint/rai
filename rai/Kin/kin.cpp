@@ -142,7 +142,7 @@ namespace rai {
     bool swiftIsReference;
     sKinematicWorld():gl(NULL), swift(NULL), physx(NULL), ode(NULL), swiftIsReference(false) {}
     ~sKinematicWorld() {
-      if(gl){ gl->dataLock.unlock(); delete gl; }
+      if(gl) delete gl;
       if(swift && !swiftIsReference) delete swift;
       if(physx) delete physx;
       if(ode) delete ode;
@@ -820,7 +820,7 @@ void rai::KinematicWorld::setTimes(double t) {
 
 void rai::KinematicWorld::evalFeature(arr& y, arr& J, FeatureSymbol& fs, const StringA& symbols) const{
   ptr<Feature> f = symbols2feature(fs, symbols, *this);
-  f->phi(y, J, *this);
+  f->__phi(y, J, *this);
 }
 
 //===========================================================================
@@ -1443,7 +1443,6 @@ OpenGL& rai::KinematicWorld::gl(const char* window_title) {
     s->gl->add(glStandardScene, 0);
     s->gl->addDrawer(this);
     s->gl->camera.setDefault();
-    s->gl->dataLock.writeLock();
   }
   return *s->gl;
 }
@@ -1494,7 +1493,6 @@ FeatherstoneInterface& rai::KinematicWorld::fs() {
 }
 
 int rai::KinematicWorld::watch(bool pause, const char* txt) {
-  gl().dataLock.unlock();
   gl().pressedkey=0;
   int key;
   if(pause){
@@ -1503,7 +1501,6 @@ int rai::KinematicWorld::watch(bool pause, const char* txt) {
   }else{
     key = gl().update(txt, true);
   }
-  gl().dataLock.writeLock();
   return key;
 }
 
@@ -1512,9 +1509,7 @@ void rai::KinematicWorld::saveVideoPic(uint& t, const char* pathPrefix){
 }
 
 void rai::KinematicWorld::glAdd(void (*call)(void*), void* classP){
-  gl().dataLock.unlock();
   gl().add(call, classP);
-  gl().dataLock.writeLock();
 }
 
 void rai::KinematicWorld::glAnimate() {
@@ -3270,7 +3265,7 @@ void rai::glDrawProxies(void *P) {
 
 void displayState(const arr& x, rai::KinematicWorld& G, const char *tag) {
   G.setJointState(x);
-  G.gl().watch(tag);
+  G.watch(true, tag);
 }
 
 void displayTrajectory(const arr& _x, int steps, rai::KinematicWorld& G, const KinematicSwitchL& switches, const char *tag, double delay, uint dim_z, bool copyG) {
@@ -3654,9 +3649,9 @@ void editConfiguration(const char* filename, rai::KinematicWorld& K){
     try {
       rai::lineCount=1;
       W.init(filename);
-//      gl.dataLock.writeLock();
+      K.gl().dataLock.lock(RAI_HERE);
       K = W;
-//      gl.dataLock.unlock();
+      K.gl().dataLock.unlock();
       K.report();
     } catch(std::runtime_error& err) {
       cout <<"line " <<rai::lineCount <<": " <<err.what() <<" -- please check the file and re-save" <<endl;
