@@ -193,7 +193,7 @@ depend: generate_Makefile.dep
 
 dependAll: force
 	@echo "   *** dependAll   " $(PWD)
-	@find $(PWD) $(BASE) $(BASE2) -type f -name 'Makefile' -execdir make -j1 depend \;
+	@find $(PWD) $(BASE) $(BASE2) -type f -name 'Makefile' -execdir $(MAKE) depend \;
 
 
 info: force
@@ -327,7 +327,7 @@ endif
 
 ## generate a make dependency file
 generate_Makefile.dep: $(SRCS)
-	-$(CXX) -MM $(SRCS) $(CXXFLAGS) > Makefile.dep
+	-$(CXX) -MM $(SRCS) $(CFLAGS) $(CXXFLAGS) > Makefile.dep
 
 includeAll.cxx: force
 	find . -maxdepth 1 -name '*.cpp' -exec echo "#include \"{}\"" \; > includeAll.cxx
