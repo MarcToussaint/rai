@@ -6,12 +6,8 @@
 #include <btBulletDynamicsCommon.h>
 
 constexpr float gravity = -10.0f;
-constexpr float initialY = 10.0f;
-// TODO some combinations of coefficients smaller than 1.0
-// make the ball go up higher / not lose height. Why?
-constexpr float groundRestitution = 0.9f;
-constexpr float sphereRestitution = 0.9f;
-constexpr int maxNPoints = 500;
+constexpr float groundRestitution = 0.1f;
+constexpr float objectRestitution = 0.1f;
 
 struct sBulletInterface{
   btDefaultCollisionConfiguration *collisionConfiguration;
@@ -78,26 +74,14 @@ btRigidBody* BulletInterface::addGround(){
   return body;
 }
 
-btRigidBody* BulletInterface::addSphere(){
-  btCollisionShape* colShape = new btSphereShape(btScalar(1.0));
-  self->collisionShapes.push_back(colShape);
-  btTransform startTransform;
-  startTransform.setIdentity();
-  startTransform.setOrigin(btVector3(0, 0, initialY));
-  btVector3 localInertia(0, 0, 0);
-  btScalar mass(1.0f);
-  colShape->calculateLocalInertia(mass, localInertia);
-  btDefaultMotionState *myMotionState = new btDefaultMotionState(startTransform);
-  btRigidBody *body = new btRigidBody(btRigidBody::btRigidBodyConstructionInfo(
-                                        mass, myMotionState, colShape, localInertia));
-  body->setRestitution(sphereRestitution);
-  self->dynamicsWorld->addRigidBody(body);
-  return body;
-}
-
 btRigidBody* BulletInterface::addFrame(const rai::Frame* f){
+  rai::BodyType type = rai::BT_dynamic;
+  if(f->joint) type = rai::BT_kinematic;
+  if(f->inertia) type = f->inertia->type;
+
+
+  //-- create a bullet collision shape
   CHECK(f->shape && f->shape->geom, "can only add frames with shapes");
-  //create a colShape
   btCollisionShape* colShape = 0;
   arr& size = f->shape->geom->size;
   switch(f->shape->type()){
@@ -107,28 +91,36 @@ btRigidBody* BulletInterface::addFrame(const rai::Frame* f){
     case rai::ST_box:{
       colShape =new btBoxShape(btVector3(.5*size(0), .5*size(1), .5*size(2)));
     } break;
-    case rai::ST_ssBox:{
-      colShape =new btBoxShape(btVector3(.5*size(0), .5*size(1), .5*size(2)));
-    } break;
+    case rai::ST_ssBox:
     case rai::ST_mesh:{
-      floatA V;
-      copy(V, f->shape->mesh().V);
-      colShape =new btConvexHullShape(V.p, V.d0);
+      floatA V = convert<float>(f->shape->mesh().V);
+      colShape =new btConvexHullShape(V.p, V.d0, V.sizeT*V.d1);
     } break;
     default: HALT("NIY" <<f->shape->type());
   }
   self->collisionShapes.push_back(colShape);
 
+  //-- create a bullet body
   btTransform pose(btQuaternion(f->X.rot.x, f->X.rot.y, f->X.rot.z, f->X.rot.w),
                    btVector3(f->X.pos.x, f->X.pos.y, f->X.pos.z));
   btScalar mass(1.0f);
-  if(f->inertia) mass = f->inertia->mass;
   btVector3 localInertia(0, 0, 0);
-  colShape->calculateLocalInertia(mass, localInertia);
+  if(type==rai::BT_dynamic){
+    if(f->inertia) mass = f->inertia->mass;
+    colShape->calculateLocalInertia(mass, localInertia);
+  }else{
+    mass=0.;
+  }
+
   btDefaultMotionState *motionState = new btDefaultMotionState(pose);
   btRigidBody *body = new btRigidBody(btRigidBody::btRigidBodyConstructionInfo(mass, motionState, colShape, localInertia));
-  body->setRestitution(.9f);
+  body->setRestitution(objectRestitution);
   self->dynamicsWorld->addRigidBody(body);
+
+  if(type==rai::BT_kinematic){
+    body->setCollisionFlags( body->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT);
+    body->setActivationState(DISABLE_DEACTIVATION);
+  }
 
   while(self->frameID_to_btBody.N<=f->ID) self->frameID_to_btBody.append(0);
   CHECK(!self->frameID_to_btBody(f->ID), "you already added a frame with ID" <<f->ID);
@@ -151,37 +143,90 @@ void BulletInterface::step(double tau){
   self->stepCount++;
   self->dynamicsWorld->stepSimulation(tau);
 
-  for (int j = self->dynamicsWorld->getNumCollisionObjects() - 1; j >= 0; --j) {
-    btCollisionObject *obj = self->dynamicsWorld->getCollisionObjectArray()[j];
-    btRigidBody *body = btRigidBody::upcast(obj);
-    btTransform trans;
-    if (body && body->getMotionState()) {
-      body->getMotionState()->getWorldTransform(trans);
-    } else {
-      trans = obj->getWorldTransform();
-    }
-    btVector3 origin = trans.getOrigin();
-    if(j==1) std::cout <<self->stepCount <<' ' <<j <<' ' <<origin[2] <<std::endl;
-  }
+//  for (int j = self->dynamicsWorld->getNumCollisionObjects() - 1; j >= 0; --j) {
+//    btCollisionObject *obj = self->dynamicsWorld->getCollisionObjectArray()[j];
+//    btRigidBody *body = btRigidBody::upcast(obj);
+//    btTransform trans;
+//    if (body && body->getMotionState()) {
+//      body->getMotionState()->getWorldTransform(trans);
+//    } else {
+//      trans = obj->getWorldTransform();
+//    }
+//    btVector3 origin = trans.getOrigin();
+//    if(j==1) std::cout <<self->stepCount <<' ' <<j <<' ' <<origin[2] <<std::endl;
+//  }
 }
 
-void BulletInterface::syncBack(FrameL& frames){
+void BulletInterface::pushFullState(FrameL& frames, arr& vel){
   for(uint i=0;i<self->frameID_to_btBody.N;i++){
     btRigidBody* b = self->frameID_to_btBody(i);
     rai::Frame *f = frames(i);
     if(f && b){
-      btTransform trans;
-      if (b && b->getMotionState()) {
-        b->getMotionState()->getWorldTransform(trans);
-      } else {
-        NIY; //trans = obj->getWorldTransform();
+      btTransform pose(btQuaternion(f->X.rot.x, f->X.rot.y, f->X.rot.z, f->X.rot.w),
+                       btVector3(f->X.pos.x, f->X.pos.y, f->X.pos.z));
+      b->setWorldTransform(pose);
+      b->clearForces();
+      b->setActivationState(ACTIVE_TAG);
+      if(vel.N){
+        b->setLinearVelocity(btVector3(vel(i,0),vel(i,1),vel(i,2)));
+        b->setAngularVelocity(btVector3(vel(i,3),vel(i,4),vel(i,5)));
       }
-      btQuaternion q = trans.getRotation();
-      btVector3& p = trans.getOrigin();
-      f->X.pos.set(p.x(), p.y(), p.z());
-      f->X.rot.set(q.w(), q.x(), q.y(), q.z());
     }
   }
+}
+
+void BulletInterface::pushKinematicStates(FrameL& frames){
+  for(uint i=0;i<self->frameID_to_btBody.N;i++){
+    btRigidBody* b = self->frameID_to_btBody(i);
+    rai::Frame *f = frames(i);
+    if(f && b){
+      rai::BodyType type = rai::BT_dynamic;
+      if(f->joint) type = rai::BT_kinematic;
+      if(f->inertia) type = f->inertia->type;
+
+      if(type==rai::BT_kinematic){
+        btTransform pose(btQuaternion(f->X.rot.x, f->X.rot.y, f->X.rot.z, f->X.rot.w),
+                         btVector3(f->X.pos.x, f->X.pos.y, f->X.pos.z));
+        if(b->getMotionState()) {
+          b->getMotionState()->setWorldTransform(pose);
+        } else {
+          NIY; //trans = obj->getWorldTransform();
+        }
+      }
+    }
+  }
+}
+
+arr BulletInterface::pullDynamicStates(FrameL& frames){
+  arr vel(frames.N,6);
+  vel.setZero();
+  for(uint i=0;i<self->frameID_to_btBody.N;i++){
+    btRigidBody* b = self->frameID_to_btBody(i);
+    rai::Frame *f = frames(i);
+    if(f && b){
+      rai::BodyType type = rai::BT_dynamic;
+      if(f->joint) type = rai::BT_kinematic;
+      if(f->inertia) type = f->inertia->type;
+
+      if(type==rai::BT_dynamic){
+        btTransform pose;
+        if (b && b->getMotionState()) {
+          b->getMotionState()->getWorldTransform(pose);
+        } else {
+          NIY; //trans = obj->getWorldTransform();
+        }
+        const btQuaternion q = pose.getRotation();
+        const btVector3& p = pose.getOrigin();
+        f->X.pos.set(p.x(), p.y(), p.z());
+        f->X.rot.set(q.w(), q.x(), q.y(), q.z());
+
+        const btVector3& v = b->getLinearVelocity();
+        const btVector3& w = b->getAngularVelocity();
+        vel[i] = ARR(v.x(), v.y(), v.z(), w.x(), w.y(), w.z());
+      }
+    }
+  }
+  return vel;
 }
 
 void BulletInterface::saveBulletFile(const char* filename){

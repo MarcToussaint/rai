@@ -179,7 +179,7 @@ struct Shape : NonCopyable, GLDrawer {
   arr& size() { return getGeom().size; }
   double& size(uint i) { return getGeom().size.elem(i); }
   double radius() { arr &size = getGeom().size; if(size.N==1) return size(0); if(size.N>=4) return size(3); return 0.; }
-  Mesh& mesh() { return getGeom().mesh; }
+  Mesh& mesh() { if(!getGeom().mesh.V.N) geom->createMeshes(); return geom->mesh; }
   Mesh& sscCore() { return getGeom().sscCore; }
   double alpha() { arr& C=getGeom().mesh.C; if(C.N==4) return C(3); return 1.; }
   
