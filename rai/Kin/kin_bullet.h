@@ -15,8 +15,8 @@ struct BulletInterface{
   void defaultInit(const rai::KinematicWorld& K);
 
   void step(double tau=.01);
-  void pushFullState(FrameL& frames, arr& vel);
-  void pushKinematicStates(FrameL& frames);
+  void pushFullState(const FrameL& frames, const arr& vel);
+  void pushKinematicStates(const FrameL& frames);
   arr pullDynamicStates(FrameL& frames);
 
   void saveBulletFile(const char* filename);

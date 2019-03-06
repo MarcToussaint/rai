@@ -14,6 +14,8 @@
 #include <Gui/viewer.h>
 #include <LGP/LGP_tree.h>
 
+struct BulletInterface;
+
 namespace ry{
 
   typedef Var<rai::KinematicWorld> Config;
@@ -62,6 +64,8 @@ namespace ry{
     Var<byteA> segmentation;
     Var<arr> pts;
   };
+
+  struct RyBullet { std::shared_ptr<BulletInterface> bullet; };
 }
 
 namespace ry{

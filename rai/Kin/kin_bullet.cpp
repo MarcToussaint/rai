@@ -157,10 +157,10 @@ void BulletInterface::step(double tau){
 //  }
 }
 
-void BulletInterface::pushFullState(FrameL& frames, arr& vel){
+void BulletInterface::pushFullState(const FrameL& frames, const arr& vel){
   for(uint i=0;i<self->frameID_to_btBody.N;i++){
     btRigidBody* b = self->frameID_to_btBody(i);
-    rai::Frame *f = frames(i);
+    const rai::Frame *f = frames(i);
     if(f && b){
       btTransform pose(btQuaternion(f->X.rot.x, f->X.rot.y, f->X.rot.z, f->X.rot.w),
                        btVector3(f->X.pos.x, f->X.pos.y, f->X.pos.z));
@@ -175,7 +175,7 @@ void BulletInterface::pushFullState(FrameL& frames, arr& vel){
   }
 }
 
-void BulletInterface::pushKinematicStates(FrameL& frames){
+void BulletInterface::pushKinematicStates(const FrameL& frames){
   for(uint i=0;i<self->frameID_to_btBody.N;i++){
     btRigidBody* b = self->frameID_to_btBody(i);
     rai::Frame *f = frames(i);

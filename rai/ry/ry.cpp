@@ -5,6 +5,7 @@
 #include <Core/graph.h>
 #include <Kin/frame.h>
 #include <Kin/kin.h>
+#include <Kin/kin_bullet.h>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -154,23 +155,23 @@ PYBIND11_MODULE(libry, m) {
        const std::vector<double>& color,
        const std::vector<double>& pos,
        const std::vector<double>& quat,
-       const std::vector<double>& rot,
        double radius){
     auto Kset = self.set();
-    rai::Frame *f = Kset->addObject(shape, conv_stdvec2arr(size), conv_stdvec2arr(color), radius);
-    f->name = name;
-    if(parent.size()){
-      rai::Frame *p = Kset->getFrameByName(parent.c_str());
-      if(p) f->linkFrom(p);
-    }
-    if(pos.size()) f->Q.pos.set(pos);
-    if(quat.size()) f->Q.rot.set(quat);
-    if(rot.size()) f->Q.addRelativeRotationDeg(rot[0], rot[1], rot[2], rot[3]);
-    if(f->parent){
-      f->X = f->parent->X * f->Q;
-    }else{
-      f->X = f->Q;
-    }
+    rai::Frame *f = Kset->addObject(name.c_str(), shape, conv_stdvec2arr(size), conv_stdvec2arr(color), radius, parent.c_str(), conv_stdvec2arr(pos), conv_stdvec2arr(quat));
+//    f->name = name;
+//    if(parent.size()){
+//      rai::Frame *p = Kset->getFrameByName(parent.c_str());
+//      if(p) f->linkFrom(p);
+//    }
+//    if(pos.size()) f->Q.pos.set(pos);
+//    if(quat.size()) f->Q.rot.set(quat);
+//    if(rot.size()) f->Q.addRelativeRotationDeg(rot[0], rot[1], rot[2], rot[3]);
+//    if(f->parent){
+//      f->X = f->parent->X * f->Q;
+//    }else{
+//      f->X = f->Q;
+//    }
+    return f->ID;
   }, "",
     py::arg("name"),
     py::arg("parent") = std::string(),
@@ -179,7 +180,6 @@ PYBIND11_MODULE(libry, m) {
     py::arg("color") = std::vector<double>(),
     py::arg("pos") = std::vector<double>(),
     py::arg("quat") = std::vector<double>(),
-    py::arg("rot") = std::vector<double>(),
     py::arg("radius") = -1. )
 
 
@@ -354,7 +354,13 @@ PYBIND11_MODULE(libry, m) {
     lgp.lgp = make_shared<LGP_Tree_Thread>(self.get(), folFileName.c_str());
     return lgp;
   } )
-    
+
+  .def("bullet", [](ry::Config& self){
+    ry::RyBullet bullet;
+    bullet.bullet = make_shared<BulletInterface>(self.get());
+    return bullet;
+  } )
+
   .def("sortFrames", [](ry::Config& self){
     self.set()->sortFrames();
   })
@@ -782,6 +788,30 @@ PYBIND11_MODULE(libry, m) {
   .def("getKOMO", [](ry::RyLGP_Tree& self, uint solution, BoundType bound){
     const auto& komo = self.lgp->getKOMO(solution, bound);
     return ry::RyKOMO(komo);
+  } )
+
+  ;
+
+  //===========================================================================
+
+  py::class_<ry::RyBullet>(m, "RyBullet")
+  .def("step", [](ry::RyBullet& self){
+    self.bullet->step();
+  } )
+
+  .def("step", [](ry::RyBullet& self, ry::Config& C){
+    self.bullet->pushKinematicStates(C.get()->frames);
+    self.bullet->step();
+    self.bullet->pullDynamicStates(C.set()->frames);
+  } )
+
+  .def("getState", [](ry::RyBullet& self, ry::Config& C){
+    arr V = self.bullet->pullDynamicStates(C.set()->frames);
+    return pybind11::array(V.dim(), V.p);
+  } )
+
+  .def("setState", [](ry::RyBullet& self, ry::Config& C, const pybind11::array& velocities){
+    self.bullet->pushFullState(C.get()->frames, numpy2arr(velocities));
   } )
 
   ;
