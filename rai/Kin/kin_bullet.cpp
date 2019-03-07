@@ -93,7 +93,11 @@ btRigidBody* BulletInterface::addFrame(const rai::Frame* f){
     } break;
     case rai::ST_ssBox:
     case rai::ST_mesh:{
+#ifdef BT_USE_DOUBLE_PRECISION
+      arr& V = f->shape->mesh().V;
+#else
       floatA V = convert<float>(f->shape->mesh().V);
+#endif
       colShape =new btConvexHullShape(V.p, V.d0, V.sizeT*V.d1);
     } break;
     default: HALT("NIY" <<f->shape->type());

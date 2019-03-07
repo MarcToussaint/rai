@@ -389,12 +389,14 @@ LIBS += -Wl,--start-group -lpthread -lrt\
 endif
 
 ifeq ($(BULLET),1)
-BULLET_PATH=$(HOME)/git/bullet3
-CXXFLAGS  += -DRAI_BULLET
-LPATH := $(BULLET_PATH)/bin:$(LPATH)
-CPATH := $(CPATH):$(BULLET_PATH)/src
-btLIB = _gmake_x64_release
-LIBS += -lBulletSoftBody$(btLIB) -lBulletDynamics$(btLIB) -lBulletCollision$(btLIB)  -lLinearMath$(btLIB)
+#BULLET_PATH=$(HOME)/git/bullet3
+CXXFLAGS  += -DRAI_BULLET -DBT_USE_DOUBLE_PRECISION
+CPATH := $(HOME)/opt/include/bullet/:$(CPATH)
+LPATH := $(HOME)/opt/lib:$(LPATH)
+#LPATH := $(BULLET_PATH)/bin:$(LPATH)
+#CPATH := $(CPATH):$(BULLET_PATH)/src
+#btLIB = _gmake_x64_release
+LIBS += -lBulletSoftBody -lBulletDynamics -lBulletCollision  -lLinearMath
 endif
 
 ifeq ($(PORTAUDIO),1)
