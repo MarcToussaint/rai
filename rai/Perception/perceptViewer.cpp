@@ -64,10 +64,11 @@ void PerceptViewer::close() {
 void PerceptViewer::step() {
   percepts.readAccess();
   if(!percepts().N) { percepts.deAccess(); return; }
-  gl->dataLock.writeLock();
-  copy = percepts.get(); //this copies shared pointers!
-//  listClone(copy, percepts.get()());
-  gl->dataLock.unlock();
+  {
+    auto _dataLock = gl->dataLock(RAI_HERE);
+    copy = percepts.get(); //this copies shared pointers!
+    //  listClone(copy, percepts.get()());
+  }
   percepts.deAccess();
 
 //  rai::Array<rai::Transformation> X;
