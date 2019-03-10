@@ -20,8 +20,8 @@ void TEST(GJK_Jacobians) {
   rai::Joint j1(base, b1), J1(b1, B1), j2(B1, b2), J2(b2, B2);
   rai::Shape s1(B1), s2(B2);
   j1.type = j2.type = rai::JT_free; //trans3;
-  j1.frame.insertPreLink(rai::Transformation(0))->Q.addRelativeTranslation(1,1,1);
-  j2.frame.insertPreLink(rai::Transformation(0))->Q.addRelativeTranslation(-1,-1,1);
+  j1.frame->insertPreLink(rai::Transformation(0))->Q.addRelativeTranslation(1,1,1);
+  j2.frame->insertPreLink(rai::Transformation(0))->Q.addRelativeTranslation(-1,-1,1);
   J1.type = J2.type = rai::JT_free;
   s1.type() = s2.type() = rai::ST_ssCvx; //ST_mesh;
   s1.size(3) = s2.size(3) = .2;
@@ -45,7 +45,7 @@ void TEST(GJK_Jacobians) {
   TM_PairCollision distNorm(K, "s1", "s2", TM_PairCollision::_normal);
   TM_PairCollision distCenter(K, "s1", "s2", TM_PairCollision::_center);
 
-  for(uint k=0;k<1000;k++){
+  for(uint k=0;k<100;k++){
     //randomize shapes
     s1.mesh().clear();             s2.mesh().clear();
     s1.sscCore().setRandom();      s2.sscCore().setRandom();
@@ -107,8 +107,8 @@ void TEST(GJK_Jacobians2) {
 
     rai::Joint *j = new rai::Joint(base, *a);
     j->type = rai::JT_free;
-    j->frame.Q.setRandom();
-    j->frame.Q.pos.z += 1.;
+    j->frame->Q.setRandom();
+    j->frame->Q.pos.z += 1.;
 
     rai::Shape *s = new rai::Shape(*a);
     s->cont=true;
@@ -241,8 +241,8 @@ int MAIN(int argc, char** argv){
 
   rnd.clockSeed();
 
-//  testGJK_Jacobians();
-//  testGJK_Jacobians2();
+  testGJK_Jacobians();
+  testGJK_Jacobians2();
   testGJK_Jacobians3();
 
   return 0;

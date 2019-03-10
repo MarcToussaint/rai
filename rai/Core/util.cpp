@@ -987,6 +987,8 @@ bool rai::String::operator!=(const String& s) const { return !(operator==(s)); }
 bool rai::String::operator<(const String& s) const { return p && s.p && strcmp(p, s.p)<0; }
 
 bool rai::String::contains(const String& substring) const {
+  if(!p && substring.p) return false;
+  if(!substring.p && p) return true;
   char* p = strstr(this->p, substring.p);
   return p != NULL;
 }

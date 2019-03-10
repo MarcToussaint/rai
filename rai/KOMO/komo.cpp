@@ -897,7 +897,7 @@ void KOMO::setSlow(double startTime, double endTime, double prec, bool hardConst
   if(stepsPerPhase>2) { //otherwise: no velocities
 #if 1
     uintA selectedBodies;
-    for(rai::Joint *j:world.fwdActiveJoints) if(j->type!=rai::JT_time && j->qDim()>0) selectedBodies.append(j->frame.ID);
+    for(rai::Joint *j:world.fwdActiveJoints) if(j->type!=rai::JT_time && j->qDim()>0) selectedBodies.append(j->frame->ID);
     Feature *map = new TM_qItself(selectedBodies);
 #else
     Feature *map = new TM_qItself;
@@ -1412,7 +1412,7 @@ void KOMO::run() {
     cout <<"** optimization time=" <<runTime
          <<" setJointStateCount=" <<KinematicWorld::setJointStateCount <<endl;
   }
-  if(verbose>1) cout <<getReport(false) <<endl;
+  if(verbose>0) cout <<getReport(verbose>1) <<endl;
 }
 
 void KOMO::optimize(bool initialize){
@@ -1423,11 +1423,11 @@ void KOMO::optimize(bool initialize){
 
   run();
 
-  if(verbose>0){
-    Graph specs = getProblemGraph(true);
-    cout <<specs <<endl;
-    cout <<getReport(verbose>1) <<endl; // Enables plot
-  }
+//  if(verbose>0){
+//    Graph specs = getProblemGraph(true);
+//    cout <<specs <<endl;
+//    cout <<getReport(verbose>1) <<endl; // Enables plot
+//  }
 }
 
 void KOMO_ext::getPhysicsReference(uint subSteps, int display) {
@@ -1798,7 +1798,7 @@ struct EffJointInfo {
   double accum=0.;
   EffJointInfo(rai::Joint *j, uint t): j(j), t(t) {}
   void write(ostream& os) const {
-    os <<"EffInfo " <<j->frame.parent->name <<"->" <<j->frame.name <<" \t" <<j->type <<" \tt=" <<t_start <<':' <<t_end <<" \tQ=" <<Q;
+    os <<"EffInfo " <<j->frame->parent->name <<"->" <<j->frame->name <<" \t" <<j->type <<" \tt=" <<t_start <<':' <<t_end <<" \tQ=" <<Q;
   }
 };
 stdOutPipe(EffJointInfo)
@@ -1812,9 +1812,9 @@ rai::Array<rai::Transformation> KOMO::reportEffectiveJoints(std::ostream& os) {
     JointL matches = getMatchingJoints({configurations(s-1), configurations(s)}, true);
     for(uint i=0; i<matches.d0; i++) {
       JointL match = matches[i];
-      auto *n = new Node_typed<EffJointInfo>(G, {match(1)->frame.name}, {}, EffJointInfo(match(1), s-k_order));
+      auto *n = new Node_typed<EffJointInfo>(G, {match(1)->frame->name}, {}, EffJointInfo(match(1), s-k_order));
       map[match(1)] = n;
-      if(map.find(match(0))==map.end()) map[match(0)] = new Node_typed<EffJointInfo>(G, {match(0)->frame.name}, {}, EffJointInfo(match(0), s-k_order-1));
+      if(map.find(match(0))==map.end()) map[match(0)] = new Node_typed<EffJointInfo>(G, {match(0)->frame->name}, {}, EffJointInfo(match(0), s-k_order-1));
       Node *other=map[match(0)];
       n->addParent(other);
     }
@@ -1834,7 +1834,7 @@ rai::Array<rai::Transformation> KOMO::reportEffectiveJoints(std::ostream& os) {
     if(!n->parents.N) { //a root node -> accumulate all info
       EffJointInfo& info = n->get<EffJointInfo>();
       info.t_start = info.t_end = info.t;
-      info.Q = info.j->frame.Q;
+      info.Q = info.j->frame->Q;
       info.accum += 1.;
       Node *c=n;
       for(;;) {
@@ -1842,10 +1842,10 @@ rai::Array<rai::Transformation> KOMO::reportEffectiveJoints(std::ostream& os) {
         c = c->parentOf.scalar();
         EffJointInfo& cinfo = c->get<EffJointInfo>();
         if(info.t_end<cinfo.t) info.t_end=cinfo.t;
-        info.Q.rot.add(cinfo.j->frame.Q.rot);
-        info.Q.pos += cinfo.j->frame.Q.pos;
+        info.Q.rot.add(cinfo.j->frame->Q.rot);
+        info.Q.pos += cinfo.j->frame->Q.pos;
         info.accum += 1.;
-//        cout <<" t=" <<cinfo.t <<'\t' <<c->keys <<" \t" <<cinfo.j->type <<" \tq=" <<cinfo.j->getQ() <<" \tQ=" <<cinfo.j->frame.Q <<endl;
+//        cout <<" t=" <<cinfo.t <<'\t' <<c->keys <<" \t" <<cinfo.j->type <<" \tq=" <<cinfo.j->getQ() <<" \tQ=" <<cinfo.j->frame->Q <<endl;
       }
       info.Q.pos /= info.accum;
       info.Q.rot.normalize();
@@ -1863,8 +1863,8 @@ rai::Array<rai::Transformation> KOMO::reportEffectiveJoints(std::ostream& os) {
       rai::KinematicSwitch *sw = switches(s);
       CHECK_EQ(info.t_start, sw->timeOfApplication, "");
       CHECK_EQ(info.j->type, sw->jointType, "");
-//      CHECK_EQ(info.j->frame.parent->ID, sw->fromId, "");
-//      CHECK_EQ(info.j->frame.ID, sw->toId, "");
+//      CHECK_EQ(info.j->frame->parent->ID, sw->fromId, "");
+//      CHECK_EQ(info.j->frame->ID, sw->toId, "");
 #endif
 
       Qs(s) = info.Q;
