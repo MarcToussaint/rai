@@ -34,9 +34,9 @@ SRCS = $(OBJS:%.o=%.cpp)
 endif
 
 ## if we weren't called from make-path.sh add cleanLocks
-ifndef SUB_MAKE
-PREOBJS := cleanLocks $(PREOBJS)
-endif
+#ifndef SUB_MAKE
+#PREOBJS := cleanLocks $(PREOBJS)
+#endif
 
 
 ################################################################################
@@ -170,7 +170,7 @@ clean: cleanLocks cleanLibs force
 
 cleanLocks: force
 	@echo "   *** cleanLocks " $(PWD)
-	@find $(PWD) $(BASE) $(BASE2) -type d -name 'Make.lock' -delete -print
+	@find $(PWD) $(BASE) $(BASE2) -type d -name 'Make.lock' -delete -print || exit 0
 
 cleanLibs: force
 	@echo "   *** cleanLibs  " $(PWD)

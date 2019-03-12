@@ -1310,8 +1310,8 @@ int OpenGL::watchImage(const floatA &_img, bool wait, float _zoom) {
   resizeAs(img, _img);
   float x;
   for(uint i=0; i<img.N; i++) {
-    x=_img.elem(i);
-    img.elem(i) = (x<0.)?0:((x>255.)?255:x);
+    x=_img.p[i];
+    img.p[i] = (x<0.)?0:((x>255.)?255:x);
   }
   return watchImage(img, wait, _zoom);
 }

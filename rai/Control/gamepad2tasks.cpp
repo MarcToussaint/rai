@@ -150,7 +150,7 @@ HALT("change code: add a qNull here explicitly");
       if(!pdt) break;
       pdt->active=true;
       if(!pdt->y.N || !pdt->v.N) {
-        pdt->map->phi(pdt->y, NoArr, K);
+        pdt->map->__phi(pdt->y, NoArr, K);
       }
       rai::Vector vel(gamepadLeftRight, gamepadForwardBack, gamepadUpDown);
       if(sel==down) {
@@ -181,7 +181,7 @@ HALT("change code: add a qNull here explicitly");
       rai::Joint *j = K.getFrameByName("worldTranslationRotation")->joint;
       if(j) {
         arr b;
-        base->map->phi(b, NoArr, K);
+        base->map->__phi(b, NoArr, K);
         if(b.N && j && j->qDim()) {
           for(uint i=0; i<j->qDim(); i++)
             homing->PD().y_target(j->qIndex+i) = b(i);
