@@ -7,236 +7,153 @@
     --------------------------------------------------------------  */
 
 #include "TaskControlThread.h"
-#include <Gui/opengl.h>
 #include <RosCom/baxter.h>
 #include <Kin/frame.h>
 
-void lowPassUpdate(arr& lowPass, const arr& signal, double rate=.1) {
-  if(lowPass.N!=signal.N) { lowPass=zeros(signal.N); return; }
-  lowPass = (1.-rate)*lowPass + rate*signal;
-}
-
-#ifdef RAI_ROS
-struct sTaskControlThread {
-  Var<sensor_msgs::JointState> jointState = Var<sensor_msgs::JointState>(NULL, "jointState");
-};
-#else
-struct sTaskControlThread {};
-#endif
-
-TaskControlThread::TaskControlThread(const char* _robot, const rai::KinematicWorld& world)
-  : Thread("TaskControlThread", .01)
-  , s(NULL)
-  , taskController(NULL)
-  , useRos(false)
-  , useSwift(true)
-  , requiresInitialSync(true)
-  , syncMode(false)
-  , verbose(false)
-  , useDynSim(true)
-  , compensateGravity(false)
-  , compensateFTSensors(false) {
+TaskControlThread::TaskControlThread(const Var<rai::KinematicWorld>& _ctrl_config,
+                                     const Var<CtrlMsg>& _ctrl_ref,
+                                     const Var<CtrlMsg>& _ctrl_state,
+                                     const Var<CtrlTaskL>& _ctrl_tasks)
+  : Thread("TaskControlThread", .01),
+    ctrl_config(this, _ctrl_config),
+    ctrl_ref(this, _ctrl_ref),
+    ctrl_state(this, _ctrl_state),
+    ctrl_tasks(this, _ctrl_tasks),
+    useSwift(true),
+    requiresInitialSync(true),
+    verbose(0)
+{
   
-  s = new sTaskControlThread();
-  
-  useSwift = rai::getParameter<bool>("useSwift",true);
-  useRos = rai::getParameter<bool>("useRos",false);
-  if(useRos && rai::checkParameter<bool>("taskControllerNoUseRos"))
-    useRos = false;
-  useDynSim = !useRos; //rai::getParameter<bool>("useDynSim", true);
-  syncMode = rai::getParameter<bool>("controller_syncMode", false);
+  useSwift = rai::getParameter<bool>("useSwift", true);
   kp_factor = rai::getParameter<double>("controller_kp_factor", 1.);
   kd_factor = rai::getParameter<double>("controller_kd_factor", 1.);
   ki_factor = rai::getParameter<double>("controller_ki_factor", .2);
   
   double hyper = rai::getParameter<double>("hyperSpeed", -1.);
-  if(!useRos && hyper>0.) {
-    this->metronome.reset(.01/hyper);
-  }
-  
-  robot = rai::getParameter<rai::String>("robot");
-  
-  //-- deciding on the kinematic model. Priority:
-  // 1) an explicit model is given as argument
-  // 2) modelWorld has been set before
-  // 3) the "robot" flag in cfg file
-  // 4) the "robot" argument here
-  
-  if(&world) {
-    realWorld = world;
-    modelWorld.set()() = realWorld;
-  } else {
-    if(modelWorld.get()->q.N) { //modelWorld has been set before
-      realWorld = modelWorld.get();
-    } else {
-      if(robot=="pr2") {
-        realWorld.init(rai::raiPath("data/pr2_model/pr2_model.ors").p);
-      } else if(robot=="baxter") {
-        realWorld.init(rai::raiPath("data/baxter_model/baxter.ors").p);
-      } else {
-        HALT("robot not known!")
-      }
-      modelWorld.set()() = realWorld;
-    }
-  }
-  
-  if(robot!="pr2" && robot!="baxter" && robot!="none") {
-    HALT("robot not known!")
-  }
-  
-  q0 = realWorld.q;
-  
-  Kp_base = zeros(realWorld.q.N);
-  Kd_base = zeros(realWorld.q.N);
-  rai::Joint *j;
-  for(rai::Frame* f:realWorld.frames) if((j=f->joint) && j->qDim()>0) {
-      arr *gains = f->ats.find<arr>("gains");
-      if(gains) {
-        for(uint i=0; i<j->qDim(); i++) {
-          Kp_base(j->qIndex+i)=gains->elem(0);
-          Kd_base(j->qIndex+i)=gains->elem(1);
-        }
+  if(hyper>0.) this->metronome.reset(.01/hyper);
+
+  //memorize the "NULL position", which is the initial model position
+  q0 = ctrl_config.get()->getJointState();
+  q_real = q_model = q0;
+  qdot_real = qdot_model = zeros(q0.N);
+
+  //initialize Kp and Kd
+  Kp_base = zeros(q0.N);
+  Kd_base = zeros(q0.N);
+  for(rai::Joint *j:ctrl_config.get()->fwdActiveJoints) {
+    arr *gains = j->frame.ats.find<arr>("gains");
+    if(gains) {
+      for(uint i=0; i<j->qDim(); i++) {
+        Kp_base(j->qIndex+i)=gains->elem(0);
+        Kd_base(j->qIndex+i)=gains->elem(1);
       }
     }
-    
-  fRInitialOffset = ARR(-0.17119, 0.544316, -1.2, 0.023718, 0.00802182, 0.0095804);
+  }
+
+  Hmetric = rai::getParameter<double>("Hrate", .1)*ctrl_config.get()->getHmetric();
+
+  threadLoop();
 }
 
 TaskControlThread::~TaskControlThread() {
   threadClose();
-  if(s) delete s; s=NULL;
 }
 
-void TaskControlThread::open() {
-  modelWorld.set() = realWorld;
-  modelWorld.get()->getJointState(q_model, qdot_model);
-  makeConvexHulls(modelWorld.set()->frames);
-  
-  taskController = new TaskControlMethods(modelWorld.get());
-  
-  if(compensateGravity) {
-    gc->learnGCModel();
-  }
-  if(compensateFTSensors) {
-    gc->learnFTModel();
-  }
-  
-  if(useRos) requiresInitialSync=true;
-  
-//    dynSim = new RTControllerSimulation(realWorld, 0.01, false, 0.);
-//    dynSim->threadLoop();
+arr TaskControlThread::whatsTheForce(const ptr<CtrlTask>& t){
+// arr tau = ctrl_state.get()->u_bias;
+  return pseudoInverse(~t->J_y)*torques_real;
 }
 
 void TaskControlThread::step() {
-  rai::Frame *transF = realWorld.getFrameByName("worldTranslationRotation", false);
-  rai::Joint *trans = (transF?transF->joint:NULL);
+//  rai::Frame *transF = model_real.getFrameByName("worldTranslationRotation", false);
+//  rai::Joint *trans = (transF?transF->joint:NULL);
   
-  //-- read real state
-  if(useRos) {
-    bool succ=true;
-    if(robot=="pr2") {
-      ctrl_obs.waitForRevisionGreaterThan(0);
-      pr2_odom.waitForRevisionGreaterThan(0);
-      
-      //update q_read from both, ctrl_obs and pr2_odom
-      q_real = ctrl_obs.get()->q;
-      qdot_real = ctrl_obs.get()->qdot;
-      arr pr2odom = pr2_odom.get();
-      if(q_real.N==realWorld.q.N && pr2odom.N==3) {
-        q_real({trans->qIndex, trans->qIndex+2}) = pr2odom;
+  if(requiresInitialSync){
+    if(ctrl_state.getRevision()>1){
+      {
+        auto state = ctrl_state.get();
+        q_real = state->q;
+        qdot_real = state->qdot;
       }
-    }
-    
-    if(robot=="baxter") {
-#ifdef RAI_ROS
-      s->jointState.waitForRevisionGreaterThan(20);
-      q_real = realWorld.q;
-      succ = baxter_update_qReal(q_real, s->jointState.get(), realWorld);
-#endif
-      qdot_real = zeros(q_real.N);
-    }
-    
-    if(robot=="none") {
-      if(requiresInitialSync || syncMode) {
-        q_real = q_model;
-        qdot_real = qdot_model;
-      }
+      ctrl_config.set()->setJointState(q_real, qdot_real);
+//      model_real.setJointState(q_real);
+      q_model = q_real;
+      qdot_model = qdot_real;
       requiresInitialSync = false;
-    }
-    
-    ctrl_q_real.set() = q_real;
-    
-    if(succ && q_real.N==realWorld.q.N && qdot_real.N==realWorld.q.N) { //we received a good reading
-      realWorld.setJointState(q_real, qdot_real);
-      
-      if(requiresInitialSync || syncMode) {
-        q_model = q_real;
-        qdot_model = qdot_real;
-        modelWorld.set()->setJointState(q_model, qdot_model);
-      }
-      requiresInitialSync = false;
-    } else {
-      LOG(-1) <<"** Waiting for ROS message on initial configuration.." <<endl;
-      if(step_count>300) {
-        HALT("sync'ing real robot with simulated failed")
-      }
+    }else{
+      LOG(0) <<"waiting for ctrl_state messages...";
       return;
     }
   }
-  
-  double lowPass=.01;
-  if(!q_model_lowPass.N) q_model_lowPass = q_model;
-  else { q_model_lowPass *= 1.-lowPass; q_model_lowPass += lowPass * q_model; }
-  
-  //-- compute the feedback controller step and iterate to compute a forward reference
-  arr CompProj;
-//  arr M, F;
-  {
-    modelWorld.writeAccess();
-//    if(!(step_count%20)) modelWorld().gl().update(); //only for debugging
 
-    ctrlTasks.writeAccess();
-    taskController->tasks = ctrlTasks();
-    
-    taskController->updateCtrlTasks(.01, modelWorld()); //update with time increment
-    
+  //-- read current state
+  {
+    auto state = ctrl_state.get();
+    if(state->q.N){
+      q_real = state->q;
+      qdot_real = state->qdot;
+      torques_real = state->u_bias;
+    }
+  }
+
+//  model_real.setJointState(q_real);
+  if(true){
+    ctrl_config.set()->setJointState(q_real, qdot_real);
+    q_model = q_real;
+    qdot_model = qdot_real;
+  }
+
+  //-- compute the feedback controller step and iterate to compute a forward reference
+  arr P_compliance;
+  {
+    auto K = ctrl_config.set();
+
+    if(!(step_count%20)){
+      rai::String txt;
+      txt <<"TaskControlThread ctrl_config " <<step_count;
+      for(CtrlTask *t:ctrl_tasks.get()()){ txt <<'\n'; t->reportState(txt); }
+      K->watch(false, txt); //only for debugging
+    }
+
+    ctrl_tasks.writeAccess();
+    for(CtrlTask* t: ctrl_tasks()) t->update(.01, K);
+
+    TaskControlMethods taskController(Hmetric);
+
+    //-- get compliance projection matrix
+    P_compliance = taskController.getComplianceProjection(ctrl_tasks());
+
     //-- compute IK step
     double maxQStep = 2e-1;
     arr dq;
-    if(syncMode) {
-      dq = taskController->inverseKinematics(qdot_model, q_model_lowPass - q_model);
-    } else {
-      dq = taskController->inverseKinematics(qdot_model); //don't include a null step
+    dq = taskController.inverseKinematics(ctrl_tasks(), qdot_model, P_compliance); //don't include a null step
+    if(dq.N){
+      double l = length(dq);
+      if(l>maxQStep) dq *= maxQStep/l;
+      q_model += dq;
     }
-    double l = length(dq);
-    if(l>maxQStep) dq *= maxQStep/l;
-    q_model += dq;
     
+#if 0
     //set/test the new configuration
-    modelWorld().setJointState(q_model, qdot_model);
-    if(useSwift) modelWorld().stepSwift();
-    taskController->updateCtrlTasks(0., modelWorld()); //update without time increment
-    double cost = taskController->getIKCosts();
-    IK_cost.set() = cost;
+    K->setJointState(q_model, qdot_model); //DONT! the configuration should stay on real; use a separate one for safty checks
+    if(useSwift) K->stepSwift();
+    for(CtrlTask* t: ctrl_tasks()) t->update(.0, K); //update without time increment
+    double cost = taskController.getIKCosts(ctrl_tasks());
+//    IK_cost.set() = cost;
     
     //check the costs
     if(cost>1000.) { //reject!
       LOG(-1) <<"HIGH COST IK! " <<cost;
       q_model -= .9*dq;
-      modelWorld().setJointState(q_model, qdot_model);
-      if(useSwift) modelWorld().stepSwift();
-      taskController->updateCtrlTasks(0., modelWorld()); //update without time increment
+      K->setJointState(q_model, qdot_model);
+      if(useSwift) K->stepSwift();
+      for(CtrlTask* t: ctrl_tasks()) t->update(.0, K); //update without time increment
     }
-    
-    if(verbose) taskController->reportCurrentState();
-    
-    // get compliance projection matrix
-    CompProj = taskController->getComplianceProjection();
-    
-//    modelWorld().equationOfMotion(M,F);
+#endif
 
-    ctrlTasks.deAccess();
-    modelWorld.deAccess();
+    if(verbose) taskController.reportCurrentState(ctrl_tasks());
+    
+    ctrl_tasks.deAccess();
   }
   
   //set gains
@@ -250,18 +167,18 @@ void TaskControlThread::step() {
 //  Kp = M*Kp; DANGER!!
 //  Kd = M*Kd;
 
-  if(CompProj.N) {
-    Kp = CompProj*Kp*CompProj;
-    Kd = CompProj*Kd*CompProj;
-    Ki = CompProj*diag(Kp_base*ki_factor)*CompProj;
+  if(P_compliance.N) {
+    Kp = P_compliance*Kp*P_compliance;
+    Kd = P_compliance*Kd*P_compliance;
+    Ki = P_compliance*diag(Kp_base*ki_factor)*P_compliance;
   }
   
   //TODO: construct force tasks
   //    //-- compute the force feedback control coefficients
   //    uint count=0;
-  //    ctrlTasks.readAccess();
-  //    taskController->tasks = ctrlTasks();
-  //    for(CtrlTask *t : taskController->tasks) {
+  //    ctrl_tasks.readAccess();
+  //    taskController.tasks = ctrl_tasks();
+  //    for(CtrlTask *t : taskController.tasks) {
   //      if(t->active && t->f_ref.N){
   //        count++;
   //        if(count!=1) HALT("you have multiple active force control tasks - NIY");
@@ -269,13 +186,14 @@ void TaskControlThread::step() {
   //      }
   //    }
   //    if(count==1) refs.Kp = .5;
-  //    ctrlTasks.deAccess();
+  //    ctrl_tasks.deAccess();
   
   //-- output: set variables
-  {
+  if(true){
     CtrlMsg refs;
     refs.q =  q_model;
-    refs.qdot = zeros(q_model.N);
+    refs.qdot = qdot_model;
+    refs.P_compliance = P_compliance;
     refs.fL_gamma = 1.;
     refs.Kp = Kp; //ARR(1.);
     refs.Kd = Kd; //ARR(1.);
@@ -287,21 +205,52 @@ void TaskControlThread::step() {
     refs.u_bias = zeros(q_model.N);
     refs.intLimitRatio = 1.;
     refs.qd_filt = .99;
-    
-    ctrl_q_ref.set() = refs.q;
-    
-    //-- set base motion command as velocities
-    if(!fixBase.get() && trans && trans->qDim()==3) {
-      refs.qdot(trans->qIndex+0) = qdot_model(trans->qIndex+0);
-      refs.qdot(trans->qIndex+1) = qdot_model(trans->qIndex+1);
-      refs.qdot(trans->qIndex+2) = qdot_model(trans->qIndex+2);
-    }
-    
+
     //-- send the computed movement to the robot
     ctrl_ref.set() = refs;
   }
 }
 
-void TaskControlThread::close() {
-  delete taskController;
+ptr<CtrlTask> addCtrlTask(Var<CtrlTaskL>& ctrl_tasks,
+                          Var<rai::KinematicWorld>& ctrl_config,
+                          const char* name, const ptr<Feature>& map,
+                          const ptr<MotionProfile>& ref){
+  ptr<CtrlTask> t = make_shared<CtrlTask>(name, map, ref);
+  t->update(0., ctrl_config.get());
+  t->ctrlTasks = &ctrl_tasks;
+  ctrl_tasks.set()->append(t.get());
+  return t;
+}
+
+ptr<CtrlTask> addCtrlTask(Var<CtrlTaskL>& ctrl_tasks,
+                          Var<rai::KinematicWorld>& ctrl_config,
+                          const char* name, FeatureSymbol fs, const StringA& frames,
+                          const ptr<MotionProfile>& ref){
+  return addCtrlTask(ctrl_tasks, ctrl_config, name,
+                     symbols2feature(fs, frames, ctrl_config.get()),
+                     ref);
+}
+
+ptr<CtrlTask> addCtrlTask(Var<CtrlTaskL>& ctrl_tasks,
+                          Var<rai::KinematicWorld>& ctrl_config,
+                          const char* name, FeatureSymbol fs, const StringA& frames,
+                          double duration){
+  return addCtrlTask(ctrl_tasks, ctrl_config, name,
+                     symbols2feature(fs, frames, ctrl_config.get()),
+                     make_shared<MotionProfile_Sine>(arr(), duration) );
+}
+
+ptr<CtrlTask> addCompliance(Var<CtrlTaskL>& ctrl_tasks,
+                            Var<rai::KinematicWorld>& ctrl_config,
+                            const char* name, FeatureSymbol fs, const StringA& frames,
+                            const arr& compliance){
+  ptr<CtrlTask> t = make_shared<CtrlTask>(name, symbols2feature(fs, frames, ctrl_config.get()));
+  t->compliance = compliance;
+  t->ctrlTasks = &ctrl_tasks;
+  ctrl_tasks.set()->append(t.get());
+  return t;
+}
+
+void removeCtrlTask(Var<CtrlTaskL>& ctrl_tasks, const ptr<CtrlTask>& t){
+  ctrl_tasks.set()->removeValue(t.get());
 }

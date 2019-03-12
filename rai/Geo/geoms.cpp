@@ -11,22 +11,16 @@
 #include <Core/graph.h>
 #include <Gui/opengl.h>
 
-Singleton<rai::GeomStore> _GeomStore;
-
 template<> const char* rai::Enum<rai::ShapeType>::names []= {
   "box", "sphere", "capsule", "mesh", "cylinder", "marker", "SSBox", "pointCloud", "ssCvx", "ssBox", NULL
 };
 
-rai::Geom::Geom(rai::GeomStore &_store) : store(_store), type(ST_none) {
-  ID=store.geoms.N;
-  store.geoms.append(this);
+rai::Geom::Geom() : type(ST_none) {
   size = {1.,1.,1.,.1};
   mesh.C = consts<double>(.8, 3); //color[0]=color[1]=color[2]=.8; color[3]=1.;
-  
 }
 
 rai::Geom::~Geom() {
-  store.geoms(ID) = NULL;
 }
 
 void rai::Geom::read(const Graph &ats) {
@@ -46,7 +40,10 @@ void rai::Geom::read(const Graph &ats) {
   else if(ats.get(d, "type"))    { type=(ShapeType)(int)d;}
   else if(ats.get(str, "type"))  { str>> type; }
   if(ats.get(str, "mesh"))     { mesh.read(FILE(str), str.getLastN(3).p, str); }
-  else if(ats.get(fil, "mesh"))     { mesh.read(fil.getIs(), fil.name.getLastN(3).p, fil.name); }
+  else if(ats.get(fil, "mesh"))     {
+    fil.cd_file();
+    mesh.read(fil.getIs(), fil.name.getLastN(3).p, fil.name);
+  }
   if(ats.get(d, "meshscale"))  { mesh.scale(d); }
   if(ats.get(x, "meshscale"))  { mesh.scale(x(0), x(1), x(2)); }
   
@@ -75,12 +72,15 @@ void rai::Geom::createMeshes() {
       mesh.setBox();
       mesh.scale(size(0), size(1), size(2));
       break;
-    case rai::ST_sphere:
+    case rai::ST_sphere:{
       sscCore.V = arr(1,3, {0.,0.,0.});
-      mesh.setSSCvx(sscCore, size(3));
+      double rad=1;
+      if(size.N==1) rad=size(0);
+      else rad=size(3);
+      mesh.setSSCvx(sscCore, rad);
       //      mesh.setSphere();
       //      mesh.scale(size(3), size(3), size(3));
-      break;
+    } break;
     case rai::ST_cylinder:
       CHECK(size(3)>1e-10,"");
       mesh.setCylinder(size(3), size(2));
@@ -100,7 +100,7 @@ void rai::Geom::createMeshes() {
       break;
     case rai::ST_mesh:
     case rai::ST_pointCloud:
-      CHECK(mesh.V.N, "mesh needs to be loaded");
+      if(!mesh.V.N) LOG(-1) <<"mesh needs to be loaded";
       size(3) = 0.;
 //    sscCore = mesh;
 //    sscCore.makeConvexHull();
@@ -113,24 +113,33 @@ void rai::Geom::createMeshes() {
       }
       mesh.setSSCvx(sscCore, size(3));
       break;
-    case rai::ST_ssBox:
+    case rai::ST_ssBox: {
       if(size(3)<1e-10) {
         sscCore.setBox();
         sscCore.scale(size(0), size(1), size(2));
         mesh = sscCore;
         break;
       }
-      CHECK(size.N==4 && size(3)>1e-10,"");
+      double r = size(3);
+      CHECK(size.N==4 && r>1e-10,"");
+      for(uint i=0;i<3;i++) if(size(i)<2.*r) size(i) = 2.*r;
       sscCore.setBox();
-      sscCore.scale(size(0)-2.*size(3), size(1)-2.*size(3), size(2)-2.*size(3));
-      mesh.setSSBox(size(0), size(1), size(2), size(3));
-      //      mesh.setSSCvx(sscCore, size(3));
-      break;
+      sscCore.scale(size(0)-2.*r, size(1)-2.*r, size(2)-2.*r);
+      mesh.setSSBox(size(0), size(1), size(2), r);
+      //      mesh.setSSCvx(sscCore, r);
+    } break;
     default: NIY;
   }
 }
 
 void rai::Geom::glDraw(OpenGL &gl) {
+  if(type==rai::ST_marker){
+    glDrawDiamond(size(0)/5., size(0)/5., size(0)/5.); glDrawAxes(size(0), !gl.drawMode_idColor);
+  }else{
+    if(!mesh.V.N) createMeshes();
+    mesh.glDraw(gl);
+    return;
+  }
   bool drawCores = false;
   bool drawMeshes = true;
   switch(type) {
@@ -165,11 +174,11 @@ void rai::Geom::glDraw(OpenGL &gl) {
       break;
     case rai::ST_marker:
       //      if(frame.K.orsDrawMarkers){
-      glDrawDiamond(size(0)/5., size(0)/5., size(0)/5.); glDrawAxes(size(0));
+      glDrawDiamond(size(0)/5., size(0)/5., size(0)/5.); glDrawAxes(size(0), !gl.drawMode_idColor);
       //      }
       break;
     case rai::ST_mesh:
-      CHECK(mesh.V.N, "mesh needs to be loaded to draw mesh object");
+//      CHECK(mesh.V.N, "mesh needs to be loaded to draw mesh object");
       if(drawCores && sscCore.V.N) sscCore.glDraw(gl);
       else mesh.glDraw(gl);
       break;
@@ -196,16 +205,4 @@ void rai::Geom::glDraw(OpenGL &gl) {
       
     default: HALT("can't draw that geom yet");
   }
-}
-
-rai::GeomStore::~GeomStore() {
-  for(Geom* g:geoms) if(g) delete g;
-  for(Geom* g:geoms) CHECK(!g, "geom is not deleted");
-  geoms.clear();
-}
-
-rai::Geom &rai::GeomStore::get(uint id) {
-  Geom *g=geoms.elem(id);
-  CHECK(g, "geom does not exist");
-  return *g;
 }

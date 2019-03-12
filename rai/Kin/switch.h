@@ -14,7 +14,7 @@
 namespace rai {
 
 enum SwitchType {
-  none=-1,
+  SW_none=-1,
   deleteJoint=0,
   SW_effJoint,
   addJointAtFrom,
@@ -28,19 +28,32 @@ enum SwitchType {
   SW_fixCurrent,
   SW_delContact,
   SW_addContact,
-  SW_addSoftContact,
+};
+
+enum SwitchInitializationType {
+  SWInit_zero=0,
+  SWInit_copy,
+  SWInit_random
 };
 
 struct KinematicSwitch {
   Enum<SwitchType> symbol;
   Enum<JointType> jointType;
-  uint timeOfApplication;
-  uint fromId, toId;
+  Enum<SwitchInitializationType> init;
+  int timeOfApplication;
+  int fromId, toId;
   rai::Transformation jA,jB;
   KinematicSwitch();
   KinematicSwitch(SwitchType op, JointType type,
+                  int aFrame, int bFrame,
+                  SwitchInitializationType _init=SWInit_zero,
+                  int _timeOfApplication=0,
+                  const rai::Transformation& jFrom=NoTransformation, const rai::Transformation& jTo=NoTransformation);
+  KinematicSwitch(SwitchType op, JointType type,
                   const char* ref1, const char* ref2,
-                  const rai::KinematicWorld& K, uint _timeOfApplication=0,
+                  const rai::KinematicWorld& K,
+                  SwitchInitializationType _init=SWInit_zero,
+                  int _timeOfApplication=0,
                   const rai::Transformation& jFrom=NoTransformation, const rai::Transformation& jTo=NoTransformation);
   void setTimeOfApplication(double time, bool before, int stepsPerPhase, uint T);
   void apply(KinematicWorld& K);
@@ -48,7 +61,7 @@ struct KinematicSwitch {
   rai::String shortTag(const KinematicWorld* G) const;
   void write(std::ostream& os, rai::KinematicWorld *K=NULL) const;
   static KinematicSwitch* newSwitch(const Node *specs, const rai::KinematicWorld& world, int stepsPerPhase, uint T);
-  static KinematicSwitch* newSwitch(const rai::String& type, const char* ref1, const char* ref2, const rai::KinematicWorld& world, uint _timeOfApplication, const rai::Transformation& jFrom=NoTransformation, const rai::Transformation& jTo=NoTransformation);
+  static KinematicSwitch* newSwitch(const rai::String& type, const char* ref1, const char* ref2, const rai::KinematicWorld& world, int _timeOfApplication, const rai::Transformation& jFrom=NoTransformation, const rai::Transformation& jTo=NoTransformation);
   static const char* name(SwitchType s);
 };
 
@@ -58,4 +71,5 @@ stdOutPipe(rai::KinematicSwitch)
 
 #endif
 
-uint conv_time2step(double time, uint stepsPerPhase);
+int conv_time2step(double time, uint stepsPerPhase);
+double conv_step2time(int step, uint stepsPerPhase);

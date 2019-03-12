@@ -38,7 +38,7 @@ LagrangianProblem::LagrangianProblem(ConstrainedProblem& P, OptOptions opt, arr&
     case noMethod: HALT("need to set method before");  break;
   }
   
-  if(&lambdaInit) lambda = lambdaInit;
+  if(!!lambdaInit) lambda = lambdaInit;
 }
 
 double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
@@ -48,7 +48,10 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
     P.phi(phi_x, J_x, H_x, tt_x, x, lambda);
   } else { //we evaluated this before - use buffered values; the meta F is still recomputed as (dual) parameters might have changed
   }
-  CHECK_EQ(phi_x.N, J_x.d0, "Jacobian size inconsistent");
+  CHECK(x.N, "zero-dim optimization variables!");
+  if(!isSparseMatrix(J_x)){
+    CHECK_EQ(phi_x.N, J_x.d0, "Jacobian size inconsistent");
+  }
   CHECK_EQ(phi_x.N, tt_x.N, "termType array size inconsistent");
   
   //-- construct unconstrained problem
@@ -68,7 +71,7 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
     if(lambda.N && tt_x.p[i]==OT_eq) L += lambda.p[i] * phi_x.p[i];                       //h-lagrange terms
   }
   
-  if(&dL) { //L gradient
+  if(!!dL) { //L gradient
     arr coeff=zeros(phi_x.N);
     for(uint i=0; i<phi_x.N; i++) {
       if(tt_x.p[i]==OT_f) coeff.p[i] += 1.;                                                  // direct cost term
@@ -83,7 +86,7 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
     dL.reshape(x.N);
   }
   
-  if(&HL) { //L hessian: Most terms are of the form   "J^T  diag(coeffs)  J"
+  if(!!HL) { //L hessian: Most terms are of the form   "J^T  diag(coeffs)  J"
     arr coeff=zeros(phi_x.N);
     int fterm=-1;
     for(uint i=0; i<phi_x.N; i++) {
@@ -94,7 +97,12 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
       if(nu       && tt_x.p[i]==OT_eq) coeff.p[i] += hpenalty_dd(phi_x.p[i]);                        //h-penalty
     }
     arr tmp = J_x;
-    for(uint i=0; i<phi_x.N; i++) tmp[i]() *= sqrt(coeff.p[i]);
+    if(!isSparseMatrix(tmp)){
+      for(uint i=0; i<phi_x.N; i++) tmp[i]() *= sqrt(coeff.p[i]);
+    }else{
+      arr sqrtCoeff = sqrt(coeff);
+      tmp.sparse().rowWiseMult(sqrtCoeff);
+    }
 #if 1
     HL = comp_At_A(tmp); //Gauss-Newton type!
 #else
@@ -218,7 +226,7 @@ void LagrangianProblem::aulaUpdate(bool anyTimeVariant, double lambdaStepsize, d
   if(muInc>1. && nu<1e6) nu *= muInc;
   
   //-- recompute the Lagrangian with the new parameters (its current value, gradient & hessian)
-  if(L_x || &dL_x || &HL_x) {
+  if(L_x || !!dL_x || !!HL_x) {
     double L = lagrangian(dL_x, HL_x, x); //reevaluate gradients and hessian (using buffered info)
     if(L_x) *L_x = L;
   }

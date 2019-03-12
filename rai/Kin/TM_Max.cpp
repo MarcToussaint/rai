@@ -9,10 +9,10 @@
 #include "TM_Max.h"
 
 void TM_Max::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
-  map->phi(y, J, G);
+  map->__phi(y, J, G);
   uint i=argmax(y);
   y = ARR(y(i));
-  if(&J) J=~J[i];
-  if(neg) { y*=-1.; if(&J) J*=-1.; }
+  if(!!J) J=~J[i];
+  if(neg) { y*=-1.; if(!!J) J*=-1.; }
 }
 

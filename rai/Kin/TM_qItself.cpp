@@ -52,12 +52,12 @@ void TM_qItself::phi(arr& q, arr& J, const rai::KinematicWorld& G) {
     if(relative_q0) {
       for(rai::Joint* j: G.fwdActiveJoints) if(j->q0.N && j->qDim()==1) q(j->qIndex) -= j->q0.scalar();
     }
-    if(&J) J.setId(q.N);
+    if(!!J) J.setId(q.N);
   } else {
     uint n=dim_phi(G);
     q.resize(n);
     G.getJointState();
-    if(&J) J.resize(n, G.q.N).setZero();
+    if(!!J) J.resize(n, G.q.N).setZero();
     uint m=0;
     uint qIndex=0;
     for(uint b:selectedBodies) {
@@ -67,7 +67,7 @@ void TM_qItself::phi(arr& q, arr& J, const rai::KinematicWorld& G) {
       for(uint k=0; k<j->qDim(); k++) {
         q(m) = G.q.elem(qIndex+k);
         if(relative_q0 && j->q0.N) q(m) -= j->q0(k);
-        if(&J) J(m, qIndex+k) = 1.;
+        if(!!J) J(m, qIndex+k) = 1.;
         m++;
       }
     }
@@ -78,9 +78,12 @@ void TM_qItself::phi(arr& q, arr& J, const rai::KinematicWorld& G) {
 void TM_qItself::phi(arr& y, arr& J, const WorldL& Ktuple) {
   CHECK_GE(Ktuple.N, order+1,"I need at least " <<order+1 <<" configurations to evaluate");
   uint k=order;
-  if(k==0) return Feature::phi(y, J, Ktuple);
+  if(k==0){
+    phi(y, J, *Ktuple(-1));
+    if(!!J) expandJacobian(J, Ktuple, -1);
+  }
   
-  double tau = Ktuple(-1)->frames(0)->time; // - Ktuple(-2)->frames(0)->time;
+  double tau = Ktuple(-1)->frames(0)->tau; // - Ktuple(-2)->frames(0)->time;
   double tau2=tau*tau, tau3=tau2*tau;
   arrA q_bar(k+1), J_bar(k+1);
   //-- read out the task variable from the k+1 configurations
@@ -143,7 +146,7 @@ void TM_qItself::phi(arr& y, arr& J, const WorldL& Ktuple) {
   if(k==1)  y = (q_bar(1)-q_bar(0))/tau; //penalize velocity
   if(k==2)  y = (q_bar(2)-2.*q_bar(1)+q_bar(0))/tau2; //penalize acceleration
   if(k==3)  y = (q_bar(3)-3.*q_bar(2)+3.*q_bar(1)-q_bar(0))/tau3; //penalize jerk
-  if(&J) {
+  if(!!J) {
     uintA qidx(Ktuple.N);
     qidx(0)=0;
     for(uint i=1; i<Ktuple.N; i++) qidx(i) = qidx(i-1)+Ktuple(i-1)->q.N;
@@ -221,14 +224,14 @@ void TM_qZeroVels::phi(arr& y, arr& J, const WorldL& Ktuple) {
   CHECK_GE(Ktuple.N, order+1,"I need at least " <<order+1 <<" configurations to evaluate");
   uint k=order;
   
-  double tau = Ktuple(-1)->frames(0)->time; // - Ktuple(-2)->frames(0)->time;
+  double tau = Ktuple(-1)->frames(0)->tau; // - Ktuple(-2)->frames(0)->time;
   double tau2=tau*tau, tau3=tau2*tau;
   arrA q_bar(k+1), J_bar(k+1);
   //-- read out the task variable from the k+1 configurations
   uint offset = Ktuple.N-1-k; //G.N might contain more configurations than the order of THIS particular task -> the front ones are not used
   
   rai::Joint *j;
-  for(rai::Frame *f:Ktuple.last()->frames) if((j=f->joint) && j->constrainToZeroVel) {
+  for(rai::Frame *f:Ktuple.last()->frames) if((j=f->joint) && j->active && j->constrainToZeroVel) {
       rai::Joint *jmatch = Ktuple.last(-2)->getJointByBodyIndices(j->from()->ID, j->frame.ID);
       if(jmatch && j->type!=jmatch->type) jmatch=NULL;
       if(jmatch) {
@@ -240,14 +243,14 @@ void TM_qZeroVels::phi(arr& y, arr& J, const WorldL& Ktuple) {
         }
       }
     }
-  if(!q_bar(0).N) { y.clear(); if(&J) J.clear(); return; }
+  if(!q_bar(0).N) { y.clear(); if(!!J) J.clear(); return; }
   J_bar(0).reshape(q_bar(0).N, J_bar(0).N/q_bar(0).N);
   J_bar(1).reshape(q_bar(1).N, J_bar(1).N/q_bar(1).N);
   
   if(k==1)  y = (q_bar(1)-q_bar(0))/tau; //penalize velocity
   if(k==2)  y = (q_bar(2)-2.*q_bar(1)+q_bar(0))/tau2; //penalize acceleration
   if(k==3)  y = (q_bar(3)-3.*q_bar(2)+3.*q_bar(1)-q_bar(0))/tau3; //penalize jerk
-  if(&J) {
+  if(!!J) {
     uintA qidx(Ktuple.N);
     qidx(0)=0;
     for(uint i=1; i<Ktuple.N; i++) qidx(i) = qidx(i-1)+Ktuple(i-1)->q.N;
@@ -281,7 +284,7 @@ rai::Array<rai::Joint*> getMatchingJoints(const WorldL& Ktuple, bool zeroVelJoin
   bool matchIsGood;
   
   rai::Joint *j;
-  for(rai::Frame *f:Ktuple.last()->frames) if((j=f->joint) && (!zeroVelJointsOnly || j->constrainToZeroVel)) {
+  for(rai::Frame *f:Ktuple.last()->frames) if((j=f->joint) && j->active && (!zeroVelJointsOnly || j->constrainToZeroVel)) {
       matches.setZero();
       matches.last() = j;
       matchIsGood=true;
@@ -317,7 +320,7 @@ rai::Array<rai::Joint*> getSwitchedJoints(const rai::KinematicWorld& G0, const r
   rai::Array<rai::Joint*> switchedJoints;
   
   rai::Joint *j1;
-  for(rai::Frame *f: G1.frames) if((j1=f->joint)) {
+  for(rai::Frame *f: G1.frames) if((j1=f->joint) && j1->active) {
       if(j1->from()->ID>=G0.frames.N || j1->frame.ID>=G0.frames.N) {
         switchedJoints.append({NULL,j1});
         continue;
@@ -346,6 +349,22 @@ rai::Array<rai::Joint*> getSwitchedJoints(const rai::KinematicWorld& G0, const r
 
 //===========================================================================
 
+bool isSwitched(rai::Frame *f0, rai::Frame *f1){
+  rai::Joint *j0 = f0->joint;
+  rai::Joint *j1 = f1->joint;
+  if(!j0 != !j1) return true;
+  if(j0) {
+    if(j0->type!=j1->type
+       || j0->constrainToZeroVel!=j1->constrainToZeroVel
+       || (j0->from() && j0->from()->ID!=j1->from()->ID)) { //different joint type; or attached to different parent
+      return true;
+    }
+  }
+  return false;
+}
+
+//===========================================================================
+
 uintA getSwitchedBodies(const rai::KinematicWorld& G0, const rai::KinematicWorld& G1, int verbose) {
   uintA switchedBodies;
   
@@ -355,6 +374,7 @@ uintA getSwitchedBodies(const rai::KinematicWorld& G0, const rai::KinematicWorld
     rai::Frame *b0 = G0.frames(id);
     rai::Joint *j0 = b0->joint;
     rai::Joint *j1 = b1->joint;
+    if(!j1) continue; //don't report if j1 did not become an effective DOF
     if(!j0 != !j1) { switchedBodies.append(id); continue; }
     if(j0) {
       if(j0->type!=j1->type
@@ -374,4 +394,23 @@ uintA getSwitchedBodies(const rai::KinematicWorld& G0, const rai::KinematicWorld
   }
   
   return switchedBodies;
+}
+
+//===========================================================================
+
+uintA getNonSwitchedBodies(const WorldL& Ktuple) {
+  uintA nonSwitchedBodies;
+
+  rai::KinematicWorld& K0 = *Ktuple(0);
+  for(rai::Frame *f0:K0.frames) {
+    bool succ = true;
+    uint id = f0->ID;
+    for(uint i=1;i<Ktuple.N;i++){
+      rai::KinematicWorld& K1 = *Ktuple(i);
+      if(id>=K1.frames.N){ succ=false; break; }
+      if(isSwitched(f0, K1.frames(id))){ succ=false; break; }
+    }
+    if(succ) nonSwitchedBodies.append(id);
+  }
+  return nonSwitchedBodies;
 }

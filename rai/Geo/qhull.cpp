@@ -94,7 +94,7 @@ void qhull_free() {
 //===========================================================================
 
 double distanceToConvexHull(const arr &X, const arr &y, arr& distances, arr &projectedPoints, uintA *faceVertices, bool freeqhull) {
-  auto lock = qhullMutex();
+  auto lock = qhullMutex(RAI_HERE);
   
   int exitcode;
   //static const char* cmd = "qhull Tv i p";
@@ -110,8 +110,8 @@ double distanceToConvexHull(const arr &X, const arr &y, arr& distances, arr &pro
   arr Y;
   Y.referTo(y);
   if(y.nd==1) Y.reshape(1,Y.N);
-  if(&distances) distances.clear();
-  if(&projectedPoints) projectedPoints.clear();
+  if(!!distances) distances.clear();
+  if(!!projectedPoints) projectedPoints.clear();
   
   for(uint i=0; i<Y.d0; i++) {
     bestfacet = qh_findbest(Y[i].p, qh facet_list,
@@ -129,11 +129,11 @@ double distanceToConvexHull(const arr &X, const arr &y, arr& distances, arr &pro
     CHECK(length(y)>1e-10 || fabs(bestdist-bestfacet->offset)<1e-10, "inconsistent!");
     CHECK((isoutside && bestdist>-1e-10) || (!isoutside && bestdist<1e-10), "");
     
-    if(&distances) {
+    if(!!distances) {
       distances.append(bestdist);
     }
     
-    if(&projectedPoints) {
+    if(!!projectedPoints) {
       arr p = Y[i];
       arr n(bestfacet->normal, p.N);
       projectedPoints.append(p - bestdist*n);
@@ -190,7 +190,6 @@ double distanceToConvexHullGradient(arr& dDdX, const arr &X, const arr &y, bool 
   
   uint i, j, k, l;
   arr v, f, w, v_f, y_f, dv, subn, wk, W;
-  double dd;
   for(i=0; i<vertices.N; i++) {
     v.referToDim(X, vertices(i)); //v is the vertex in question
     
@@ -220,8 +219,10 @@ double distanceToConvexHullGradient(arr& dDdX, const arr &X, const arr &y, bool 
     double yf_vf=scalarProduct(y_f, v_f);
     double yf_vf_norm=yf_vf/sumOfSqr(v_f);
     // check pythagoras
-    dd = sumOfSqr(y_f) - yf_vf * yf_vf_norm;
+#ifndef RAI_NOCHECK
+    double dd = sumOfSqr(y_f) - yf_vf * yf_vf_norm;
     CHECK(fabs(dd - d*d)<1e-8, "");
+#endif
     
     //compute gradient
     dv.referToDim(dDdX, vertices(i));
@@ -324,7 +325,7 @@ double forceClosure(const arr& C, const arr& Cn, const rai::Vector& center,
 //===========================================================================
 
 arr getHull(const arr& V, uintA& T) {
-  auto lock = qhullMutex();
+  auto lock = qhullMutex(RAI_HERE);
   
   int exitcode;
   uint dim=V.d1;
@@ -346,7 +347,7 @@ arr getHull(const arr& V, uintA& T) {
     memmove(&Vnew(i, 0), vertex->point,  dim*sizeof(double));
     i++;
   }
-  if(&T) { //retrieve also the triangulation
+  if(!!T) { //retrieve also the triangulation
     T.resize(qh num_facets, dim);
     f=0;
     FORALLfacets {
@@ -375,7 +376,7 @@ arr getHull(const arr& V, uintA& T) {
 //===========================================================================
 
 void getDelaunayEdges(uintA& E, const arr& V) {
-  auto lock = qhullMutex();
+  auto lock = qhullMutex(RAI_HERE);
   
   if(V.d0<3) { E.clear(); return; }
   int exitcode;

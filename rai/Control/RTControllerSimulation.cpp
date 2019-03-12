@@ -102,7 +102,7 @@ void RTControlStep(
   //-- F/T sensor error
   //TODO: How to allow multiple Tasks? Upper AND Lower bounds simultaneously?
   //TODO(mt): don't distinguish between L and R -- all is just matrix equations..
-  if(&fL_errIntegral) {
+  if(!!fL_errIntegral) {
     if(!cmd.KiFTL.N) {    // no contact or Ki gain -> don't use the integral term
       fL_errIntegral = fL_errIntegral*0.;              // reset integral error
     } else {
@@ -110,7 +110,7 @@ void RTControlStep(
       u += cmd.KiFTL * fL_errIntegral;
     }
   }
-  if(&fR_errIntegral) {
+  if(!!fR_errIntegral) {
     if(!cmd.KiFTR.N) {    // no contact or Ki gain -> don't use the integral term
       fR_errIntegral = fR_errIntegral*0.;              // reset integral error
     } else {
@@ -145,10 +145,10 @@ void RTControlStep(
   
 }
 
-RTControllerSimulation::RTControllerSimulation(rai::KinematicWorld realWorld, double tau, bool gravity, double _systematicErrorSdv)
+RTControllerSimulation::RTControllerSimulation(const rai::KinematicWorld& realWorld, const Var<CtrlMsg>& _ctrl_ref, const Var<CtrlMsg>& _ctrl_obs, double tau, bool gravity, double _systematicErrorSdv)
   : Thread("DynmSim", -1.)
-  , ctrl_ref(this, "ctrl_ref", true)
-  , ctrl_obs(this, "ctrl_obs")
+  , ctrl_ref(this, _ctrl_ref, true)
+  , ctrl_obs(this, _ctrl_obs)
     //, modelWorld(this, "modelWorld")
   , tau(tau)
   , gravity(gravity)

@@ -1,4 +1,4 @@
-#include <KOMO/komo.h>
+#include <KOMO/komo-ext.h>
 #include <string>
 #include <map>
 #include <Core/graph.h>
@@ -8,19 +8,22 @@ using namespace std;
 //===========================================================================
 
 void TEST(KomoSequence){
-  
-  KOMO komo;
-  komo.setConfigFromFile();
+
+  rai::KinematicWorld K("model.g");
+  K.optimizeTree(false);
+  makeConvexHulls(K.frames);
+
+  KOMO_ext komo;
+  komo.setModel(K);
+  komo.setPathOpt(2., 20, 10.);
+//  komo.setConfigFromFile();
 
   //  komo.setHoming(-1., -1., 1e-1);
   //  komo.setSquaredQVelocities();
-  komo.setFixEffectiveJoints();
-  komo.setFixSwitchedObjects();
   komo.setSquaredQAccelerations();
 
   komo.setGrasp(1., "humanR", "Long1");
   komo.setPlace(1.8, "humanR", "Long1", "tableL");
-  komo.setSlowAround(1., .1, 1e3);
 
   komo.setGrasp(1., "humanL", "Long2");
   komo.setPlace(1.8, "humanL", "Long2", "tableR");

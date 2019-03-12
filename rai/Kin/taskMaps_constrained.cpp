@@ -27,7 +27,7 @@ PairCollisionConstraint::PairCollisionConstraint(const rai::KinematicWorld &G, c
 
 void PairCollisionConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
   y.resize(1) = -1.; //default value if not overwritten below
-  if(&J) J.resize(1,G.q.N).setZero();
+  if(!!J) J.resize(1,G.q.N).setZero();
   if(j>=0) { //against a concrete j
     for(const rai::Proxy& p: G.proxies) {
       if(((int)p.a->ID==i && (int)p.b->ID==j) || ((int)p.a->ID==j && (int)p.b->ID==i)) {
@@ -52,7 +52,7 @@ void PairCollisionConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G) 
     }
     yHat /= yNorm;
     //compute derivative
-    if(&J) {
+    if(!!J) {
       J.resize(1,G.getJointStateDimension()).setZero();
       arr Ji;
       for(const rai::Proxy* p: P) {
@@ -77,22 +77,22 @@ void PlaneConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
   rai::Vector vec_i = 0;
   
   arr y_eff, J_eff;
-  G.kinematicsPos(y_eff, (&J?J_eff:NoArr), body_i, vec_i);
+  G.kinematicsPos(y_eff, (!!J?J_eff:NoArr), body_i, vec_i);
   
   y_eff.append(1.); //homogeneous coordinates
-  if(&J) J_eff.append(zeros(1,J_eff.d1));
+  if(!!J) J_eff.append(zeros(1,J_eff.d1));
   
   y.resize(1);
   y(0) = scalarProduct(y_eff, planeParams);
-  if(&J) J = ~planeParams * J_eff;
+  if(!!J) J = ~planeParams * J_eff;
 }
 
 //===========================================================================
 
 void ConstraintStickiness::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
-  map.phi(y, J, G);
+  map.__phi(y, J, G);
   for(uint j=0; j<y.N; j++) y(j) = -y(j);
-  if(&J) for(uint j=0; j<J.d0; j++) J[j]() *= -1.;
+  if(!!J) for(uint j=0; j<J.d0; j++) J[j]() *= -1.;
 }
 
 //===========================================================================
@@ -105,7 +105,7 @@ void PointEqualityConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G) 
   rai::Vector pi = body_i ? body_i->X * vec_i : vec_i;
   rai::Vector pj = body_j ? body_j->X * vec_j : vec_j;
   y = conv_vec2arr(pi-pj);
-  if(&J) {
+  if(!!J) {
     arr Ji, Jj;
     G.kinematicsPos(NoArr, Ji, body_i, vec_i);
     if(body_j) {
@@ -127,7 +127,7 @@ ContactEqualityConstraint::ContactEqualityConstraint(const rai::KinematicWorld &
 
 void ContactEqualityConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
   y.resize(1) = 0.;
-  if(&J) J.resize(1,G.q.N).setZero();
+  if(!!J) J.resize(1,G.q.N).setZero();
   for(const rai::Proxy& p: G.proxies) {
     if(((int)p.a->ID==i && (int)p.b->ID==j) || ((int)p.a->ID==j && (int)p.b->ID==i)) {
       G.kinematicsProxyConstraint(y, J, p, margin);
@@ -145,8 +145,8 @@ VelAlignConstraint::VelAlignConstraint(const rai::KinematicWorld& G,
   rai::Frame *b = jShapeName ? G.getFrameByName(jShapeName):NULL;
   if(a) i=a->ID;
   if(b) j=b->ID;
-  if(&_ivec) ivec=_ivec; else ivec.setZero();
-  if(&_jvec) jvec=_jvec; else jvec.setZero();
+  if(!!_ivec) ivec=_ivec; else ivec.setZero();
+  if(!!_jvec) jvec=_jvec; else jvec.setZero();
   order = 1;
   target = _target;
 }
@@ -156,9 +156,9 @@ void VelAlignConstraint::phi(arr& y, arr& J, const WorldL& G) {
   
   // compute body j orientation
   arr y_j,J_j,J_bar_j;
-  G(G.N-1)->kinematicsVec(y_j, (&J?J_bar_j:NoArr), G(G.N-1)->frames(j), jvec);
+  G(G.N-1)->kinematicsVec(y_j, (!!J?J_bar_j:NoArr), G(G.N-1)->frames(j), jvec);
   
-  if(&J) {
+  if(!!J) {
     J_j = zeros(G.N, y_j.N, J_bar_j.d1);
     J_j[G.N-1]() = J_bar_j;
     arr tmp(J_j);
@@ -172,13 +172,13 @@ void VelAlignConstraint::phi(arr& y, arr& J, const WorldL& G) {
   J_bar.resize(k+1);
   
   for(uint c=0; c<=k; c++) {
-    G(G.N-1-c)->kinematicsPos(y_bar(c), (&J?J_bar(c):NoArr), G(G.N-1-c)->frames(i), ivec);
+    G(G.N-1-c)->kinematicsPos(y_bar(c), (!!J?J_bar(c):NoArr), G(G.N-1-c)->frames(i), ivec);
   }
   
   arr dy_i, dJ_i;
   dy_i = (y_bar(0)-y_bar(1));
   
-  if(&J) {
+  if(!!J) {
     dJ_i = zeros(G.N, dy_i.N, J_bar(0).d1);
     dJ_i[G.N-1-1]() = -J_bar(1);
     dJ_i[G.N-1-0]() = J_bar(0);
@@ -189,7 +189,7 @@ void VelAlignConstraint::phi(arr& y, arr& J, const WorldL& G) {
   
   // normalize dy_i
   if(length(dy_i) != 0) {
-    if(&J) {
+    if(!!J) {
       double tmp = (~dy_i*dy_i).scalar();
       dJ_i = (eye(dJ_i.d0) - (dy_i*~dy_i)/(tmp))*dJ_i/(length(dy_i));
     }
@@ -198,7 +198,7 @@ void VelAlignConstraint::phi(arr& y, arr& J, const WorldL& G) {
   
   innerProduct(y,~dy_i,y_j);
   
-  if(&J) {
+  if(!!J) {
     J = ~dy_i*J_j + ~y_j*dJ_i;
     J = -J;
   }
@@ -212,12 +212,12 @@ void qItselfConstraint::phi(arr& q, arr& J, const rai::KinematicWorld& G) {
   G.getJointState(q);
   if(M.N) {
     if(M.nd==1) {
-      q=M%q; if(&J) J.setDiag(M);
+      q=M%q; if(!!J) J.setDiag(M);
     } else {
-      q=M*q; if(&J) J=M;
+      q=M*q; if(!!J) J=M;
     }
   } else {
-    if(&J) J.setId(q.N);
+    if(!!J) J.setId(q.N);
   }
 }
 

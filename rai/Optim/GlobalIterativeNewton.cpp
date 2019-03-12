@@ -11,7 +11,8 @@
 bool useNewton=true;
 
 GlobalIterativeNewton::GlobalIterativeNewton(const ScalarFunction& f, const arr& bounds_lo, const arr& bounds_hi, OptOptions opt)
-  : newton(x, f, opt),
+  : x(.5*(bounds_lo+bounds_hi)),
+    newton(x, f, opt),
     grad(x, f, opt),
     bounds_lo(bounds_lo), bounds_hi(bounds_hi),
     best(NULL) {

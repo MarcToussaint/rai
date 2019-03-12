@@ -115,6 +115,7 @@ void VideoEncoderX264::step() {
 // AudioReader and Writer
 //
 
+#if 0
 void AudioReader::open() {
 #ifdef HAVE_PULSEAUDIO
   poller = new AudioPoller_PA();
@@ -214,7 +215,7 @@ void OpencvCamera::step() {
   s->capture.read(img);
   if(!img.empty()) {
     cv::cvtColor(img, imgRGB, CV_BGR2RGB);
-    rgb.set()=cvtMAT(imgRGB);
+    rgb.set()=conv_cvMat2byteA(imgRGB);
   }
 }
 
@@ -604,3 +605,5 @@ void draw1(void*) {
 //  planes_now_copy = planes_now.get();
 //  gl.update();
 //}
+
+#endif

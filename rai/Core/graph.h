@@ -71,7 +71,7 @@ struct Node {
   bool matches(const char *key); ///< return true, if 'key' is in keys
   bool matches(const StringA &query_keys); ///< return true, if all query_keys are in keys
   
-  void write(std::ostream &os) const;
+  void write(std::ostream &os, bool pythonMode=false) const;
   
   //-- virtuals implemented by Node_typed
   virtual void copyValue(Node*) {NIY}
@@ -81,6 +81,7 @@ struct Node {
   virtual Node* newClone(Graph& container) const {NIY}
 };
 stdOutPipe(Node)
+inline std::istream& operator>>(std::istream& is, Node*& x){ HALT("prohibited"); return is; }
 
 //===========================================================================
 
@@ -103,7 +104,8 @@ struct Graph : NodeL {
   Graph(std::initializer_list<const char*> list);
   Graph(const Graph& G);                                 ///< copy constructor
   ~Graph();
-  
+  bool operator!() const { return this==&NoGraph; } ///< check if NoGraph
+
   void clear();
   NodeL& list() { return *this; }
   
@@ -116,7 +118,7 @@ struct Graph : NodeL {
   template<class T> Node_typed<T>* newNode(const StringA& keys, const NodeL& parents); ///<exactly equivalent to calling a Node_typed constructor
   template<class T> Node_typed<T>* newNode(const T& x); ///<exactly equivalent to calling a Node_typed constructor
   Node_typed<int>* newNode(const uintA& parentIdxs); ///< add 'vertex tupes' (like edges) where vertices are referred to by integers
-  Node_typed<Graph>* newSubgraph(const StringA& keys={}, const NodeL& parents={}, const Graph& x=NoGraph);
+  Graph& newSubgraph(const StringA& keys={}, const NodeL& parents={}, const Graph& x=NoGraph);
   void appendDict(const std::map<std::string, std::string>& dict);
   Graph& newNode(const Nod& ni); ///< (internal) append a node initializer
   
@@ -178,7 +180,7 @@ struct Graph : NodeL {
   void read(std::istream& is, bool parseInfo=false);
   Node* readNode(std::istream& is, bool verbose=false, bool parseInfo=false, rai::String prefixedKey=rai::String()); //used only internally..
   void readJson(std::istream& is);
-  void write(std::ostream& os=std::cout, const char *ELEMSEP="\n", const char *delim=NULL) const;
+  void write(std::ostream& os=std::cout, const char *ELEMSEP=",\n", const char *BRACKETS="{}") const;
   void writeDot(std::ostream& os, bool withoutHeader=false, bool defaultEdges=false, int nodesOrEdges=0, int focusIndex=-1, bool subGraphsAsNodes=false);
   void writeHtml(std::ostream& os, std::istream& is);
   void writeParseInfo(std::ostream& os);
@@ -188,6 +190,7 @@ struct Graph : NodeL {
   //private:
   friend struct Node;
   uint index(bool subKVG=false, uint start=0);
+
 };
 stdPipes(Graph)
 
@@ -327,23 +330,23 @@ struct Node_typed : Node {
   Node_typed(Graph& container, const T& _value)
     : Node(typeid(T), &this->value, container), value(_value) {
     if(isGraph()) graph().isNodeOfGraph = this; //this is the only place where isNodeOfGraph is set
-    if(&container && container.callbacks.N) for(GraphEditCallback *cb:container.callbacks) cb->cb_new(this);
+    if(!!container && container.callbacks.N) for(GraphEditCallback *cb:container.callbacks) cb->cb_new(this);
   }
   
   Node_typed(Graph& container, const StringA& keys, const NodeL& parents)
     : Node(typeid(T), &this->value, container, keys, parents), value() {
     if(isGraph()) graph().isNodeOfGraph = this; //this is the only place where isNodeOfGraph is set
-    if(&container && container.callbacks.N) for(GraphEditCallback *cb:container.callbacks) cb->cb_new(this);
+    if(!!container && container.callbacks.N) for(GraphEditCallback *cb:container.callbacks) cb->cb_new(this);
   }
   
   Node_typed(Graph& container, const StringA& keys, const NodeL& parents, const T& _value)
     : Node(typeid(T), &this->value, container, keys, parents), value(_value) {
     if(isGraph()) graph().isNodeOfGraph = this; //this is the only place where isNodeOfGraph is set
-    if(&container && container.callbacks.N) for(GraphEditCallback *cb:container.callbacks) cb->cb_new(this);
+    if(!!container && container.callbacks.N) for(GraphEditCallback *cb:container.callbacks) cb->cb_new(this);
   }
   
   virtual ~Node_typed() {
-    if(&container && container.callbacks.N) for(GraphEditCallback *cb:container.callbacks) cb->cb_delete(this);
+    if(!!container && container.callbacks.N) for(GraphEditCallback *cb:container.callbacks) cb->cb_delete(this);
   }
   
   virtual void copyValue(Node *it) {
@@ -373,9 +376,9 @@ struct Node_typed : Node {
   
   virtual Node* newClone(Graph& container) const {
     if(isGraph()) {
-      Node_typed<Graph> *n = container.newSubgraph(keys, parents);
-      n->value.copy(graph());
-      return n;
+      Graph& g = container.newSubgraph(keys, parents);
+      g.copy(graph());
+      return g.isNodeOfGraph;
     }
     return container.newNode<T>(keys, parents, value);
   }
@@ -489,12 +492,6 @@ template<class T> Node_typed<T> *Graph::newNode(const T& x) {
 }
 
 //===========================================================================
-
-// macro for declaring types (in *.cpp files)
-#define REGISTER_TYPE(Key, T) \
-  RUN_ON_INIT_BEGIN(Decl_Type##_##Key) \
-  registry()->newNode<std::shared_ptr<Type> >({rai::String("Decl_Type"), rai::String(#Key)}, NodeL(), std::make_shared<Type_typed_readable<T> >()); \
-  RUN_ON_INIT_END(Decl_Type##_##Key)
 
 #endif
 

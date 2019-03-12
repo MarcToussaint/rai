@@ -8,6 +8,7 @@
 
 #include "mesh.h"
 #include "qhull.h"
+#include "mesh_readAssimp.h"
 
 #include <limits>
 
@@ -31,7 +32,6 @@ bool Geo_mesh_drawColors=true;
 
 extern void glColorId(uint id);
 
-extern rai::Mesh mesh_readAssimp(const char* filename);
 
 //==============================================================================
 //
@@ -75,6 +75,14 @@ void rai::Mesh::setBox() {
 
 void rai::Mesh::setDot() {
   V.resize(1,3).setZero(); Vn.clear();
+  T.clear(); Tn.clear();
+}
+
+void rai::Mesh::setLine(double l){
+  V.resize(2,3).setZero();
+  V(0,2) = -.5*l;
+  V(1,2) = +.5*l;
+  Vn.clear();
   T.clear(); Tn.clear();
 }
 
@@ -149,10 +157,13 @@ void rai::Mesh::setDodecahedron() {
 
 void rai::Mesh::setSphere(uint fineness) {
   setOctahedron();
+//  setDodecahedron();
+//  setTetrahedron();
   for(uint k=0; k<fineness; k++) {
     subDivide();
     for(uint i=0; i<V.d0; i++) V[i]() /= length(V[i]);
   }
+  makeConvexHull();
 }
 
 void rai::Mesh::setHalfSphere(uint fineness) {
@@ -163,6 +174,7 @@ void rai::Mesh::setHalfSphere(uint fineness) {
     subDivide();
     for(uint i=0; i<V.d0; i++) V[i]() /= length(V[i]);
   }
+  makeConvexHull();
 }
 
 void rai::Mesh::setCylinder(double r, double l, uint fineness) {
@@ -211,6 +223,7 @@ void rai::Mesh::setSSBox(double x_width, double y_width, double z_height, double
     V(i,1) += rai::sign(V(i,1))*(.5*y_width-r);
     V(i,2) += rai::sign(V(i,2))*(.5*z_height-r);
   }
+  makeConvexHull();
 }
 
 void rai::Mesh::setCappedCylinder(double r, double l, uint fineness) {
@@ -218,6 +231,7 @@ void rai::Mesh::setCappedCylinder(double r, double l, uint fineness) {
   setSphere(fineness);
   scale(r);
   for(i=0; i<V.d0; i++) V(i, 2) += .5*rai::sign(V(i, 2))*l;
+  makeConvexHull();
 }
 
 /** @brief add triangles according to the given grid; grid has to be a 2D
@@ -261,6 +275,7 @@ void rai::Mesh::subDivide() {
     k+=3;
   }
   T = newT;
+//  fuseNearVertices();
 }
 
 void rai::Mesh::subDivide(uint i) {
@@ -328,6 +343,7 @@ void rai::Mesh::box() {
 void rai::Mesh::addMesh(const Mesh& mesh2, const rai::Transformation& X) {
   uint n=V.d0, t=T.d0, tt=Tt.d0;
   V.append(mesh2.V);
+  if(V.N==C.N && mesh2.V.N==mesh2.C.N) C.append(mesh2.C); else C.clear();
   tex.append(mesh2.tex);
   T.append(mesh2.T);
   for(; t<T.d0; t++) {  T(t, 0)+=n;  T(t, 1)+=n;  T(t, 2)+=n;  }
@@ -343,6 +359,11 @@ void rai::Mesh::makeConvexHull() {
 #if 1
   V = getHull(V, T);
   if(C.nd==2) C = mean(C);
+  Vn.clear();
+  Tn.clear();
+  Tt.clear();
+  tex.clear();
+  texImg.clear();
 #else
   uintA H = getHullIndices(V, T);
   intA Hinv = consts<int>(-1, V.d0);
@@ -532,7 +553,7 @@ void permuteVertices(rai::Mesh& m, uintA& p) {
     for(i=0; i<p.N; i++) { x(i, 0)=m.Vn(p(i), 0); x(i, 1)=m.Vn(p(i), 1); x(i, 2)=m.Vn(p(i), 2); }
     m.Vn=x;
   }
-  if(m.C.N) {
+  if(m.C.N==m.V.N) {
     for(i=0; i<p.N; i++) { x(i, 0)=m.C(p(i), 0); x(i, 1)=m.C(p(i), 1); x(i, 2)=m.C(p(i), 2); }
     m.C=x;
   }
@@ -581,7 +602,9 @@ void rai::Mesh::fuseNearVertices(double tol) {
   uintA p;
   uint i, j;
   
-  cout <<"fusing vertices: #V=" <<V.d0 <<", sorting.." <<std::flush;
+  if(C.N==V.N) C.clear();
+
+//  cout <<"fusing vertices: #V=" <<V.d0 <<", sorting.." <<std::flush;
   //cout <<V <<endl;
   //sort vertices lexically
   p.setStraightPerm(V.d0);
@@ -590,7 +613,7 @@ void rai::Mesh::fuseNearVertices(double tol) {
   std::sort(p.p, pstop, COMP);
   permuteVertices(*this, p);
   
-  cout <<"permuting.." <<std::flush;
+//  cout <<"permuting.." <<std::flush;
   //cout <<V <<endl;
   p.setStraightPerm(V.d0);
   for(i=0; i<V.d0; i++) {
@@ -608,15 +631,17 @@ void rai::Mesh::fuseNearVertices(double tol) {
   for(i=0; i<T.d0; i++) { y(i, 0)=p(T(i, 0)); y(i, 1)=p(T(i, 1)); y(i, 2)=p(T(i, 2)); }
   T=y;
   
-  cout <<"deleting tris.." <<std::flush;
+//  cout <<"deleting tris.." <<std::flush;
   deleteZeroTriangles(*this);
   
-  cout <<"deleting verts.." <<std::flush;
+//  cout <<"deleting verts.." <<std::flush;
   deleteUnusedVertices();
   
-  cout <<"#V=" <<V.d0 <<", done" <<endl;
+//  cout <<"#V=" <<V.d0 <<", done" <<endl;
   
-  C.clear();
+  Tt.clear();
+  tex.clear();
+  texImg.clear();
 }
 
 void getVertexNeighorsList(const rai::Mesh& m, intA& Vt, intA& VT) {
@@ -775,6 +800,10 @@ void rai::Mesh::clean() {
     T=Tnew;
     deleteUnusedVertices();
   }
+
+  Tt.clear();
+  tex.clear();
+  texImg.clear();
   computeNormals();
 }
 
@@ -910,6 +939,16 @@ void rai::Mesh::getBox(double& dx, double& dy, double& dz) const {
   }
 }
 
+arr rai::Mesh::getBox() const {
+  arr a,b;
+  a = b = V[0];
+  for(uint i=0; i<V.d0; i++) {
+    a = elemWiseMin(a, V[i]);
+    b = elemWiseMax(b, V[i]);
+  }
+  return cat(a,b).reshape(2,3);
+}
+
 double rai::Mesh::getRadius() const {
   double r=0.;
   for(uint i=0; i<V.d0; i++) r=rai::MAX(r, sumOfSqr(V[i]));
@@ -997,7 +1036,7 @@ void rai::Mesh::write(std::ostream& os) const {
 void rai::Mesh::readFile(const char* filename) {
   const char* fileExtension = filename+(strlen(filename)-3);
 //  if(!strcmp(fileExtension, "obj")) { *this = mesh_readAssimp(filename); } else
-  if(!strcmp(fileExtension, "dae") || !strcmp(fileExtension, "DAE")) { *this = mesh_readAssimp(filename); }
+  if(!strcmp(fileExtension, "dae") || !strcmp(fileExtension, "DAE")) { *this = AssimpLoader(filename).getSingleMesh(); }
   else read(FILE(filename).getIs(), fileExtension, filename);
 }
 
@@ -1009,7 +1048,7 @@ void rai::Mesh::read(std::istream& is, const char* fileExtension, const char* fi
   if(!strcmp(fileExtension, "tri")) { readTriFile(is); loaded=true; }
   if(!strcmp(fileExtension, "arr")) { readArr(is); loaded=true; }
   if(!strcmp(fileExtension, "stl") || !strcmp(fileExtension, "STL")) { loaded = readStlFile(is); }
-  if(!strcmp(fileExtension, "dae") || !strcmp(fileExtension, "DAE")) { *this = mesh_readAssimp(filename); }
+  if(!strcmp(fileExtension, "dae") || !strcmp(fileExtension, "DAE")) { *this = AssimpLoader(filename).getSingleMesh(); loaded=true; }
   if(!loaded) HALT("can't read fileExtension '" <<fileExtension <<"' file '" <<filename <<"'");
 }
 
@@ -1154,6 +1193,12 @@ void rai::Mesh::writePLY(const char *fn, bool bin) {
   free_ply(ply);
 }
 
+bool ply_check_property( PlyElement *elem, const char *prop_name){
+  for(int i=0; i<elem->nprops; i++)
+    if(!strcmp(prop_name, elem->props[i]->name)) return true;
+  return false;
+}
+
 void rai::Mesh::readPLY(const char *fn) {
   struct PlyFace {    unsigned char nverts;  int *verts; };
   struct Vertex {    double x,  y,  z ;  byte r,g,b; };
@@ -1176,7 +1221,7 @@ void rai::Mesh::readPLY(const char *fn) {
   };
   
   FILE    *fp  = fopen(fn, "r");
-  CHECK(fp, "coult not open file " <<fn)
+  CHECK(fp, "coult not open file " <<fn <<" from path "<<getcwd_string())
   PlyFile *ply = read_ply(fp);
   
   //-- get the number of faces and vertices
@@ -1187,9 +1232,8 @@ void rai::Mesh::readPLY(const char *fn) {
     if(equal_strings("face",   elem_name)) _ntrigs = elem_count;
   }
   V.resize(_nverts,3);
-  C.resize(_nverts,3);
   T.resize(_ntrigs,3);
-  
+
   //-- examine each element type that is in the file (PlyVertex, PlyFace)
   for(int i = 0; i < ply->num_elem_types; ++i)  {
     int elem_count ;
@@ -1197,22 +1241,29 @@ void rai::Mesh::readPLY(const char *fn) {
     
     if(equal_strings("vertex", elem_name))   {
       /* set up for getting PlyVertex elements */
-      setup_property_ply(ply, &vert_props[0]);
-      setup_property_ply(ply, &vert_props[1]);
-      setup_property_ply(ply, &vert_props[2]);
-      setup_property_ply(ply, &vert_props[3]);
-      setup_property_ply(ply, &vert_props[4]);
-      setup_property_ply(ply, &vert_props[5]);
-      
+      int r=1;
+      r &= setup_property_ply(ply, &vert_props[0]);
+      r &= setup_property_ply(ply, &vert_props[1]);
+      r &= setup_property_ply(ply, &vert_props[2]);
+      if(!r) HALT("no vertices defined??");
+      if(ply_check_property(ply->which_elem, "red")){
+        r &= setup_property_ply(ply, &vert_props[3]);
+        r &= setup_property_ply(ply, &vert_props[4]);
+        r &= setup_property_ply(ply, &vert_props[5]);
+        if(r && C.N!=V.N) C.resize(_nverts,3); //has color
+      }
+
       Vertex vertex;
       for(uint j = 0; j < _nverts; ++j) {
         get_element_ply(ply, &vertex);
         V(j,0) = vertex.x;
         V(j,1) = vertex.y;
         V(j,2) = vertex.z;
-        C(j,0) = vertex.r;
-        C(j,1) = vertex.g;
-        C(j,2) = vertex.b;
+        if(C.N==V.N){
+          C(j,0) = vertex.r;
+          C(j,1) = vertex.g;
+          C(j,2) = vertex.b;
+        }
       }
     } else if(equal_strings("face", elem_name))  {
       /* set up for getting PlyFace elements */
@@ -1636,12 +1687,12 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
     glDisableClientState(GL_VERTEX_ARRAY);
     
     glEnable(GL_LIGHTING);
-    glPointSize(1.);
+//    glPointSize(1.);
     return;
   }
   
   if(T.d1==2) { //-- draw lines
-    glLineWidth(3.f);
+//    glLineWidth(3.f);
     glBegin(GL_LINES);
     for(uint t=0; t<T.d0; t++) {
       glVertex3dv(&V(T(t, 0), 0));
@@ -1655,42 +1706,48 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
   if(V.d0!=Vn.d0 || T.d0!=Tn.d0) computeNormals();
   
   //-- if not yet done, GenTexture
-  if(texImg.N && texture<0) {
-    GLuint texName;
-    glGenTextures(1, &texName);
-    texture = texName;
-    glBindTexture(GL_TEXTURE_2D, texture);
+  if(texImg.N && Geo_mesh_drawColors){
+    if(texture<0) {
+      GLuint texName;
+      glGenTextures(1, &texName);
+      texture = texName;
+      glBindTexture(GL_TEXTURE_2D, texture);
     
-    if(texImg.d2==4) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texImg.d1, texImg.d0, 0, GL_RGBA, GL_UNSIGNED_BYTE, texImg.p);
-    else if(texImg.d2==3) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texImg.d1, texImg.d0, 0, GL_RGB, GL_UNSIGNED_BYTE, texImg.p);
-    else NIY;
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  } else {
-    glBindTexture(GL_TEXTURE_2D, texture);
+      if(texImg.d2==4) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texImg.d1, texImg.d0, 0, GL_RGBA, GL_UNSIGNED_BYTE, texImg.p);
+      else if(texImg.d2==3) glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texImg.d1, texImg.d0, 0, GL_RGB, GL_UNSIGNED_BYTE, texImg.p);
+      else NIY;
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    } else {
+      glBindTexture(GL_TEXTURE_2D, texture);
+    }
   }
   
   //-- draw the mesh
   if((!C.N || C.nd==1 || C.d0==V.d0)  //we have colors for each vertex
       && (!tex.N || !Tt.N)) { //we have no tex or tex coords for each vertex -> use index arrays
       
-    if(tex.N) CHECK_EQ(tex.d0, V.d0, "this needs tex coords for each vertex; if you have it face wise, render the slow way..");
-    if(tex.N) glEnable(GL_TEXTURE_2D);
-    
     //  glShadeModel(GL_FLAT);
     glShadeModel(GL_SMOOTH);
     glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_NORMAL_ARRAY);
-    if(C.N==V.N) glEnableClientState(GL_COLOR_ARRAY); else glDisableClientState(GL_COLOR_ARRAY);
-    if(C.N==V.N) glDisable(GL_LIGHTING); //because lighting requires ambiance colors to be set..., not just color..
-    if(tex.N) glEnableClientState(GL_TEXTURE_COORD_ARRAY); else glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    if(Geo_mesh_drawColors){
+      if(tex.N) CHECK_EQ(tex.d0, V.d0, "this needs tex coords for each vertex; if you have it face wise, render the slow way..");
+      if(tex.N) glEnable(GL_TEXTURE_2D);
+
+      glEnableClientState(GL_NORMAL_ARRAY);
+      if(C.N==V.N) glEnableClientState(GL_COLOR_ARRAY); else glDisableClientState(GL_COLOR_ARRAY);
+      if(C.N==V.N) glDisable(GL_LIGHTING); //because lighting requires ambiance colors to be set..., not just color..
+      if(tex.N) glEnableClientState(GL_TEXTURE_COORD_ARRAY); else glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    }
     
     glVertexPointer(3, GL_DOUBLE, 0, V.p);
-    glNormalPointer(GL_DOUBLE, 0, Vn.p);
-    if(C.N==V.N) glColorPointer(3, GL_DOUBLE, 0, C.p);
-    if(tex.N) glTexCoordPointer(2, GL_DOUBLE, 0, tex.p);
+    if(Geo_mesh_drawColors){
+      glNormalPointer(GL_DOUBLE, 0, Vn.p);
+      if(C.N==V.N) glColorPointer(3, GL_DOUBLE, 0, C.p);
+      if(tex.N) glTexCoordPointer(2, GL_DOUBLE, 0, tex.p);
+    }
     
     glDrawElements(GL_TRIANGLES, T.N, GL_UNSIGNED_INT, T.p);
     
@@ -1769,6 +1826,7 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
       glEnd();
     }
 #else
+    glColor(0.,0.,0.,1.);
     glEnableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_NORMAL_ARRAY);
     if(C.N==V.N) glEnableClientState(GL_COLOR_ARRAY); else glDisableClientState(GL_COLOR_ARRAY);
@@ -1804,6 +1862,22 @@ void glDrawMeshes(void *P) {
     glPopMatrix();
   }
 #endif
+}
+
+void rai::MeshCollection::glDraw(OpenGL& gl){
+  CHECK_EQ(X.nd, 2, "");
+  CHECK_EQ(X.d0, M.N, "");
+  CHECK_EQ(X.d1, 7, "");
+
+  double GLmatrix[16];
+  rai::Transformation t;
+  for(uint i=0;i<M.N;i++) {
+    glPushMatrix();
+    t.set(&X(i,0));
+    glLoadMatrixd(t.getAffineMatrixGL(GLmatrix));
+    M(i)->glDraw(gl);
+    glPopMatrix();
+  }
 }
 
 //==============================================================================
@@ -1857,12 +1931,12 @@ double GJK_sqrDistance(const rai::Mesh& mesh1, const rai::Mesh& mesh2,
   // convert transformations to affine matrices
   arr T1,T2;
   rai::Array<double*> Thelp1, Thelp2;
-  if(&t1) {  T1=t1.getAffineMatrix();  T1.getCarray(Thelp1);  }
-  if(&t2) {  T2=t2.getAffineMatrix();  T2.getCarray(Thelp2);  }
+  if(!!t1) {  T1=t1.getAffineMatrix();  T1.getCarray(Thelp1);  }
+  if(!!t2) {  T2=t2.getAffineMatrix();  T2.getCarray(Thelp2);  }
   
   // call GJK
   simplex_point simplex;
-  double d2 = gjk_distance(&m1, Thelp1.p, &m2, Thelp2.p, (&p1?p1.p():NULL), (&p2?p2.p():NULL), &simplex, 0);
+  double d2 = gjk_distance(&m1, Thelp1.p, &m2, Thelp2.p, (!p1?NULL:p1.p()), (!p2?NULL:p2.p()), &simplex, 0);
   
 //  cout <<"simplex npts=" <<simplex.npts <<endl;
 //  cout <<"simplex lambda=" <<arr(simplex.lambdas, 4) <<endl;
@@ -1876,7 +1950,7 @@ double GJK_sqrDistance(const rai::Mesh& mesh1, const rai::Mesh& mesh2,
 //  cout <<"P2=" <<P2 <<", " <<p2 <<endl;
 
   // analyze point types
-  if(&e1 && &e2) {
+  if(!!e1 && !!e2) {
     e1.setZero();
     e2.setZero();
     pt1=GJK_vertex;
@@ -2050,8 +2124,8 @@ DistanceFunction_Sphere::DistanceFunction_Sphere(const rai::Transformation& _t, 
 double DistanceFunction_Sphere::f(arr& g, arr& H, const arr& x) {
   arr d = x-conv_vec2arr(t.pos);
   double len = length(d);
-  if(&g) g = d/len;
-  if(&H) H = 1./len * (eye(3) - (d^d)/(len*len));
+  if(!!g) g = d/len;
+  if(!!H) H = 1./len * (eye(3) - (d^d)/(len*len));
   return len-r;
 }
 
@@ -2064,8 +2138,8 @@ double DistanceFunction_Sphere::f(arr& g, arr& H, const arr& x) {
 //  uint i;
 //  double na = length(a);
 
-//  if(&g) g = s*a/na;
-//  if(&H){
+//  if(!!g) g = s*a/na;
+//  if(!!H){
 //    I.setZero();
 //    for(i=0;i<x.d0;++i) I(i,i)=1;
 //    H = s/na * (I - z*(~z) - 1/(na*na) * a*(~a));
@@ -2092,12 +2166,12 @@ double DistanceFunction_Cylinder::f(arr& g, arr& H, const arr& x) {
   
   if(lb < dz/2.) {   // x projection on z is inside cyl
     if(la<r && (dz/2.-lb)<(r-la)) { // x is INSIDE the cyl and closer to the lid than the wall
-      if(&g) g = 1./lb*b; //z is unit: s*z*|z|*sgn(b*z) = s*b/nb
-      if(&H) { I.setZero(); H=I; }
+      if(!!g) g = 1./lb*b; //z is unit: s*z*|z|*sgn(b*z) = s*b/nb
+      if(!!H) { I.setZero(); H=I; }
       return lb-dz/2.;
     } else { // closer to the side than to a lid (inc. cases in- and outside the tube, because (r-na)<0 then)
-      if(&g) g = a/la;
-      if(&H) {
+      if(!!g) g = a/la;
+      if(!!H) {
         I.setId(3);
         H = 1./la * (I - zzT - aaTovasq);
       }
@@ -2105,14 +2179,14 @@ double DistanceFunction_Cylinder::f(arr& g, arr& H, const arr& x) {
     }
   } else { // x projection on z is outside cylinder
     if(la < r) {  // inside the infinite cylinder
-      if(&g) g = b/lb;
-      if(&H) H.resize(3,3).setZero();
+      if(!!g) g = b/lb;
+      if(!!H) H.resize(3,3).setZero();
       return lb-dz/2.;
     } else { // outside the infinite cyl
       arr v =  b/lb * (lb-dz/2.)  + a/la * (la-r); //MT: good! (note: b/nb is the same as z) SD: well, b/nb is z or -z.
       double nv=length(v);
-      if(&g) g = v/nv;
-      if(&H) {
+      if(!!g) g = v/nv;
+      if(!!H) {
         I.setId(3);
         arr dvdx = (la-r)/la*(I - zzT - aaTovasq)
                    + aaTovasq + zzT;
@@ -2173,8 +2247,8 @@ double DistanceFunction_Box::f(arr& g, arr& H, const arr& x) {
   
   arr del = a_rel-closest;
   double d = length(del);
-  if(&g) g = rot*del/d; //transpose(R) rotates the gradient back to world coordinates
-  if(&H) {
+  if(!!g) g = rot*del/d; //transpose(R) rotates the gradient back to world coordinates
+  if(!!H) {
     if(d<0.) { //inside
       H.resize(3,3).setZero();
     } else { //outside
@@ -2210,7 +2284,7 @@ ScalarFunction DistanceFunction_SSBox = [](arr& g, arr& H, const arr& x) -> doub
   double d = length(grad);
   grad /= d;
   d -= x(6);
-  if(&g) {
+  if(!!g) {
     g.resize(14);
     g.setZero();
     g({0,2}) = grad;
@@ -2281,3 +2355,4 @@ void rai::Mesh::supportMargin(uintA &verts, const arr &dir, double margin, int i
     }
   }
 }
+

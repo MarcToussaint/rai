@@ -19,7 +19,7 @@ OptGrad::OptGrad(arr& _x, const ScalarFunction& _f,  OptOptions _o):
 }
 
 void OptGrad::reinit(const arr& _x) {
-  if(&_x && &_x!=&x) x=_x;
+  if(!!_x && &_x!=&x) x=_x;
   fx = f(gx, NoArr, x);  evals++;
   
   //startup verbose
@@ -200,7 +200,7 @@ uint Rprop::loop(arr& _x,
                  double stoppingTolerance,
                  double initialStepSize,
                  uint maxEvals,
-                 uint verbose) {
+                 int verbose) {
                  
   if(!s->stepSize.N) init(initialStepSize);
   arr x, J(_x.N), x_min, J_min;

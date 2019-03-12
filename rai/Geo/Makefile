@@ -7,6 +7,7 @@ OUTPUT = lib$(NAME).so
 QHULL = 1
 GL = 1
 ASSIMP = 1
+FCL = 1
 
 DEPEND = Core extern_GJK extern_Lewiner extern_ply extern_ccd
 

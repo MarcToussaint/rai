@@ -47,18 +47,18 @@ struct RandomLPFunction : ConstrainedProblem {
     CHECK_EQ(randomG.d1, x.N+1,"you changed dimensionality!");
     
     phi.clear();
-    if(&tt) tt.clear();
-    if(&J) J.clear();
+    if(!!tt) tt.clear();
+    if(!!J) J.clear();
     
     phi.append() = sum(x);
-    if(&tt) tt.append(OT_f);
-    if(&J) J.append(ones(1,x.N));
-    if(&H) H = zeros(x.N, x.N);
+    if(!!tt) tt.append(OT_f);
+    if(!!J) J.append(ones(1,x.N));
+    if(!!H) H = zeros(x.N, x.N);
     
     phi.append(randomG * cat({1.},x));
-    if(&tt) tt.append(consts(OT_ineq, randomG.d0));
-    if(&J) J.append(randomG.sub(0,-1,1,-1));
-    if(&J) J.reshape(J.N/x.N, x.N);
+    if(!!tt) tt.append(consts(OT_ineq, randomG.d0));
+    if(!!J) J.append(randomG.sub(0,-1,1,-1));
+    if(!!J) J.reshape(J.N/x.N, x.N);
   }
 };
 
@@ -74,22 +74,22 @@ struct ChoiceConstraintFunction : ConstrainedProblem {
   }
   void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda) {
     CHECK_EQ(x.N,n,"");
-    phi.clear();  if(&tt) tt.clear();  if(&J) J.clear();
+    phi.clear();  if(!!tt) tt.clear();  if(!!J) J.clear();
     
-    phi.append(ChoiceFunction()(J, H, x)); if(&tt) tt.append(OT_f);
+    phi.append(ChoiceFunction()(J, H, x)); if(!!tt) tt.append(OT_f);
     
     switch(which) {
       case wedge2D:
-        for(uint i=0; i<x.N; i++) { phi.append(-sum(x)+1.5*x(i)-.2); if(&tt) tt.append(OT_ineq); }
-        if(&J) { arr Jg(x.N, x.N); Jg=-1.; for(uint i=0; i<x.N; i++) Jg(i,i) = +.5; J.append(Jg); }
+        for(uint i=0; i<x.N; i++) { phi.append(-sum(x)+1.5*x(i)-.2); if(!!tt) tt.append(OT_ineq); }
+        if(!!J) { arr Jg(x.N, x.N); Jg=-1.; for(uint i=0; i<x.N; i++) Jg(i,i) = +.5; J.append(Jg); }
         break;
       case halfcircle2D:
-        phi.append(sumOfSqr(x)-.25);  if(&tt) tt.append(OT_ineq);  if(&J) J.append(2.*x);       //feasible=IN circle of radius .5
-        phi.append(-x(0)-.2);         if(&tt) tt.append(OT_ineq);  if(&J) { J.append(zeros(x.N)); J.elem(-x.N) = -1.; }      //feasible=right of -.2
+        phi.append(sumOfSqr(x)-.25);  if(!!tt) tt.append(OT_ineq);  if(!!J) J.append(2.*x);       //feasible=IN circle of radius .5
+        phi.append(-x(0)-.2);         if(!!tt) tt.append(OT_ineq);  if(!!J) { J.append(zeros(x.N)); J.elem(-x.N) = -1.; }      //feasible=right of -.2
         break;
       case circleLine2D:
-        phi.append(sumOfSqr(x)-.25);  if(&tt) tt.append(OT_ineq);  if(&J) J.append(2.*x);       //feasible=IN circle of radius .5
-        phi.append(x(0));             if(&tt) tt.append(OT_eq);    if(&J) { J.append(zeros(x.N)); J.elem(-x.N) = 1.; }
+        phi.append(sumOfSqr(x)-.25);  if(!!tt) tt.append(OT_ineq);  if(!!J) J.append(2.*x);       //feasible=IN circle of radius .5
+        phi.append(x(0));             if(!!tt) tt.append(OT_eq);    if(!!J) { J.append(zeros(x.N)); J.elem(-x.N) = 1.; }
         break;
       case randomLinear: {
         if(!randomG.N) {
@@ -102,12 +102,12 @@ struct ChoiceConstraintFunction : ConstrainedProblem {
         }
         CHECK_EQ(randomG.d1, x.N+1, "you changed dimensionality");
         phi.append(randomG * cat({1.}, x));
-        if(&tt) tt.append(consts(OT_ineq, randomG.d0));
-        if(&J) J.append(randomG.sub(0,-1,1,-1));
+        if(!!tt) tt.append(consts(OT_ineq, randomG.d0));
+        if(!!J) J.append(randomG.sub(0,-1,1,-1));
       } break;
     }
     
-    if(&J) J.reshape(J.N/x.N,x.N);
+    if(!!J) J.reshape(J.N/x.N,x.N);
   }
   virtual uint dim_x() {
     return n;
@@ -131,20 +131,20 @@ struct SimpleConstraintFunction : ConstrainedProblem {
   }
   virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& _x) {
     CHECK_EQ(_x.N, 2,"");
-    if(&tt) tt = { OT_sos, OT_sos, OT_ineq, OT_ineq };
+    if(!!tt) tt = { OT_sos, OT_sos, OT_ineq, OT_ineq };
     phi.resize(4);
-    if(&J) { J.resize(4, 2); J.setZero(); }
-    if(&H) { H=zeros(4,4); }
+    if(!!J) { J.resize(4, 2); J.setZero(); }
+    if(!!H) { H=zeros(4,4); }
     
     //simple squared potential, displaced by 1
     arr x(_x);
     x(0) -= 1.;
     phi({0,1}) = x;
-    if(&J) J.setMatrixBlock(eye(2),0,0);
+    if(!!J) J.setMatrixBlock(eye(2),0,0);
     x(0) += 1.;
     
-    phi(2) = .25-sumOfSqr(x);  if(&J) J[2]() = -2.*x; //OUTSIDE the circle
-    phi(3) = x(0);             if(&J) J(3,0) = 1.;
+    phi(2) = .25-sumOfSqr(x);  if(!!J) J[2]() = -2.*x; //OUTSIDE the circle
+    phi(3) = x(0);             if(!!J) J(3,0) = 1.;
   }
 };
 
@@ -165,7 +165,7 @@ struct SinusesFunction:VectorFunction {
     phi(1) = sin(a*condition*x(1));
     phi(2) = 2.*x(0);
     phi(3) = 2.*condition*x(1);
-    if(&J) {
+    if(!!J) {
       J.resize(4,2);
       J.setZero();
       J(0,0) = cos(a*x(0))*a;

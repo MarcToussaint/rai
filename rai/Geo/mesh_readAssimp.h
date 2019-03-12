@@ -10,4 +10,16 @@
 
 #include <Geo/mesh.h>
 
-rai::Mesh mesh_readAssimp(const char* path);
+struct AssimpLoader {
+  std::vector<rai::Mesh> meshes;
+  std::string directory;
+
+  AssimpLoader(std::string const &path);
+
+  rai::Mesh getSingleMesh();
+
+private:
+  void loadNode(struct aiNode *node, const struct aiScene *scene, arr T);
+  rai::Mesh loadMesh(struct aiMesh *mesh, const struct aiScene *scene);
+};
+

@@ -149,10 +149,10 @@ bool Intersect_Edge( SWIFT_Tri_Face& f,
             return false;
         } else if( dt < 0.0 ) {
             lambda = dt / (dt - dh);
-            lambda_t = max( lambda, lambda_t );
+            lambda_t = SWIFT_max( lambda, lambda_t );
         } else if( dh < 0.0 ) {
             lambda = dt / (dt - dh);
-            lambda_h = min( lambda, lambda_h );
+            lambda_h = SWIFT_min( lambda, lambda_h );
         }
         if( lambda_t > lambda_h ) {
             // Edge is fully clipped out
@@ -165,10 +165,10 @@ bool Intersect_Edge( SWIFT_Tri_Face& f,
             return false;
         } else if( dt < 0.0 ) {
             lambda = dt / (dt - dh);
-            lambda_t = max( lambda, lambda_t );
+            lambda_t = SWIFT_max( lambda, lambda_t );
         } else if( dh < 0.0 ) {
             lambda = dt / (dt - dh);
-            lambda_h = min( lambda, lambda_h );
+            lambda_h = SWIFT_min( lambda, lambda_h );
         }
         if( lambda_t > lambda_h ) {
             // Edge is fully clipped out

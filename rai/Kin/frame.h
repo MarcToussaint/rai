@@ -48,15 +48,15 @@ namespace rai {
 //===========================================================================
 
 /// a Frame can have a link (also joint), shape (visual or coll), and/or intertia (mass) attached to it
-struct Frame {
+struct Frame : NonCopyable{
   struct KinematicWorld& K;  ///< a Frame is uniquely associated with a KinematicConfiguration
   uint ID;                   ///< unique identifier
   String name;               ///< name
   Frame *parent=NULL;        ///< parent frame
-  FrameL outLinks;           ///< list of children [TODO: rename]
+  FrameL parentOf;           ///< list of children [TODO: rename]
   Transformation Q=0;        ///< relative transform to parent
   Transformation X=0;        ///< frame's absolute pose
-  double time=0.;            ///< frame's absolute time (could be thought as part of the transformation X in space-time)
+  double tau=0.;            ///< frame's absolute time (could be thought as part of the transformation X in space-time)
   Graph ats;                 ///< list of any-type attributes
   bool active=true;          ///< if false, this frame is skipped in computations (e.g. in fwd propagation)
   int flags=0;               ///< various flags that are used by task maps to impose costs/constraints in KOMO
@@ -78,13 +78,15 @@ struct Frame {
   Frame* insertPostLink(const rai::Transformation& B=0);
   void unLink();
   void linkFrom(Frame *_parent, bool adoptRelTransform=false);
+  bool isChildOf(const Frame* par, int order=1) const;
   
   Inertia& getInertia();
   
   void getRigidSubFrames(FrameL& F); ///< recursively collect all rigidly attached sub-frames (e.g., shapes of a link), (THIS is not included)
-  Frame* getUpwardLink(rai::Transformation& Qtotal=NoTransformation); ///< recurse upward BEFORE the next joint and return relative transform (this->Q is not included!b)
+  Frame* getUpwardLink(rai::Transformation& Qtotal=NoTransformation) const; ///< recurse upward BEFORE the next joint and return relative transform (this->Q is not included!b)
   
   void read(const Graph &ats);
+  void write(Graph &G);
   void write(std::ostream& os) const;
 };
 stdOutPipe(Frame)
@@ -92,7 +94,7 @@ stdOutPipe(Frame)
 //===========================================================================
 
 /// for a Frame with Joint-Link, the relative transformation 'Q' is articulated
-struct Joint {
+struct Joint : NonCopyable{
   Frame& frame;
   
   // joint information
@@ -113,6 +115,7 @@ struct Joint {
   //attachments to the joint
   struct Uncertainty *uncertainty=NULL;
   
+  Joint(Frame& f, JointType type);
   Joint(Frame& f, Joint* copyJoint=NULL);
   Joint(Frame& from, Frame& f, Joint* copyJoint=NULL);
   ~Joint();
@@ -132,17 +135,18 @@ struct Joint {
   double& getQ();
   
   void makeRigid();
-  void makeFree();
+  void makeFree(double H_cost=0.);
 
-  void write(std::ostream& os) const;
   void read(const Graph& G);
+  void write(Graph &g);
+  void write(std::ostream& os) const;
 };
 stdOutPipe(Joint)
 
 //===========================================================================
 
 /// a Frame with Inertia has mass and, in physical simulation, has forces associated with it
-struct Inertia {
+struct Inertia : NonCopyable {
   Frame& frame;
   double mass=-1.;
   Matrix matrix=0;
@@ -157,6 +161,7 @@ struct Inertia {
   arr getFrameRelativeWrench();
   
   void write(std::ostream& os) const;
+  void write(Graph &g);
   void read(const Graph& G);
 };
 stdOutPipe(Inertia)
@@ -164,16 +169,17 @@ stdOutPipe(Inertia)
 //===========================================================================
 
 /// a Frame with Shape is a collision or visual object
-struct Shape : GLDrawer {
+struct Shape : NonCopyable, GLDrawer {
   Frame& frame;
-  Geom *geom = NULL;
+  ptr<Geom> geom;
   
   Geom& getGeom(); ///< creates a geom if not yet initialized
   void setGeomMimic(const Frame* f);
   Enum<ShapeType>& type() { return getGeom().type; }
   arr& size() { return getGeom().size; }
   double& size(uint i) { return getGeom().size.elem(i); }
-  Mesh& mesh() { return getGeom().mesh; }
+  double radius() { arr &size = getGeom().size; if(size.N==1) return size(0); if(size.N>=4) return size(3); return 0.; }
+  Mesh& mesh() { if(!getGeom().mesh.V.N) geom->createMeshes(); return geom->mesh; }
   Mesh& sscCore() { return getGeom().sscCore; }
   double alpha() { arr& C=getGeom().mesh.C; if(C.N==4) return C(3); return 1.; }
   
@@ -181,12 +187,26 @@ struct Shape : GLDrawer {
 //  arr size;
 //  Mesh mesh, sscCore;
 //  double mesh_radius=0.;
-  bool cont=false;           ///< are contacts registered (or filtered in the callback)
+  char cont=0;           ///< are contacts registered (or filtered in the callback)
+  bool visual=true;
   
   Shape(Frame& f, const Shape *copyShape=NULL); //new Shape, being added to graph and body's shape lists
   virtual ~Shape();
+
+  bool canCollideWith(const Frame *f) const{
+    if(!cont) return false;
+    if(!f->shape || !f->shape->cont) return false;
+    Frame *a = frame.getUpwardLink();
+    Frame *b = f->getUpwardLink();
+    if(a==b) return false;
+    if(cont<0) if(a->isChildOf(b, -cont)) return false;
+    if(f->shape->cont<0)  if(b->isChildOf(a, -f->shape->cont)) return false;
+    return true;
+  }
+
   void read(const Graph &ats);
   void write(std::ostream& os) const;
+  void write(Graph &g);
   void glDraw(OpenGL&);
 };
 

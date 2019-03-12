@@ -31,7 +31,7 @@ void rai::TM_ContactNegDistance::phi(arr &y, arr &J, const rai::KinematicWorld &
     y.resize(1);
     y = scalarProduct(bp-ap, an) - (C.a_rad+C.b_rad);
     y *= -1.;
-    if(&J) {
+    if(!!J) {
       J = ~(bp-ap)*Jan + ~an*(Jbp-Jap);
       J *= -1.;
     }
@@ -45,20 +45,20 @@ void rai::TM_ContactNegDistance::phi(arr &y, arr &J, const rai::KinematicWorld &
     y.resize(1);
     y = scalarProduct(bp-ap, bn) - (C.a_rad+C.b_rad);
     y *= -1.;
-    if(&J) {
+    if(!!J) {
       J = ~(bp-ap)*Jbn + ~bn*(Jbp-Jap);
       J *= -1.;
     }
   } else {
     arr ap, an, bp, bn, Jap, Jan, Jbp, Jbn;
-    K.kinematicsPos(ap, (&J?Jap:NoArr), K.frames(C.a.ID), C.a_rel);
-    K.kinematicsVec(an, (&J?Jan:NoArr), K.frames(C.a.ID), C.a_norm);
-    K.kinematicsPos(bp, (&J?Jbp:NoArr), K.frames(C.b.ID), C.b_rel);
-    K.kinematicsVec(bn, (&J?Jbn:NoArr), K.frames(C.b.ID), C.b_norm);
+    K.kinematicsPos(ap, (!!J?Jap:NoArr), K.frames(C.a.ID), C.a_rel);
+    K.kinematicsVec(an, (!!J?Jan:NoArr), K.frames(C.a.ID), C.a_norm);
+    K.kinematicsPos(bp, (!!J?Jbp:NoArr), K.frames(C.b.ID), C.b_rel);
+    K.kinematicsVec(bn, (!!J?Jbn:NoArr), K.frames(C.b.ID), C.b_norm);
     
     y = ARR(.5*scalarProduct(bp-ap, an-bn) - (C.a_rad+C.b_rad));
     y *= -1.;
-    if(&J) {
+    if(!!J) {
       J = ~(bp-ap)*(Jan-Jbn) + ~(an-bn)*(Jbp-Jap);
       J *= -.5;
     }

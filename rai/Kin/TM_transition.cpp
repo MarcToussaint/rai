@@ -16,7 +16,9 @@ TM_Transition::TM_Transition(const rai::KinematicWorld& G, bool effectiveJointsO
   posCoeff = rai::getParameter<double>("Motion/TaskMapTransition/posCoeff",.0);
   velCoeff = rai::getParameter<double>("Motion/TaskMapTransition/velCoeff",.0);
   accCoeff = rai::getParameter<double>("Motion/TaskMapTransition/accCoeff",1.);
-  
+
+  order = 2;
+
   //transition cost metric
   H_rate = rai::getParameter<double>("Hrate", 1.);
   arr H_diag;
@@ -49,11 +51,14 @@ uint TM_Transition::dim_phi(const WorldL& G) {
 }
 
 void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple) {
+  if(velCoeff) CHECK(order>=1, "a velocity feature needs to have order>=1");
+  if(accCoeff) CHECK(order>=2, "an acceleration feature needs to have order>=2");
+
   bool handleSwitches=effectiveJointsOnly;
   uint qN=Ktuple(0)->q.N;
   for(uint i=0; i<Ktuple.N; i++) if(Ktuple(i)->q.N!=qN) { handleSwitches=true; break; }
   
-  double tau = Ktuple(-1)->frames(0)->time; // - Ktuple(-2)->frames(0)->time;
+  double tau = Ktuple(-1)->frames(0)->tau; // - Ktuple(-2)->frames(0)->time;
   
   if(!handleSwitches) { //simple implementation
     //-- transition costs
@@ -104,7 +109,7 @@ void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple) {
       }
 #endif
     
-    if(&J) {
+    if(!!J) {
       arr Jtau;  Ktuple(-1)->jacobianTime(Jtau, Ktuple(-1)->frames(0));  expandJacobian(Jtau, Ktuple, -1);
 //      arr Jtau2;  Ktuple(-2)->jacobianTime(Jtau2, Ktuple(-2)->frames(0));  expandJacobian(Jtau2, Ktuple, -2);
 //      arr Jtau = Jtau1 - Jtau2;
@@ -155,7 +160,7 @@ void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple) {
     uintA qidx(Ktuple.N);
     for(uint i=0; i<matchingJoints.d0; i++) ydim += matchingJoints(i,0)->qDim();
     y.resize(ydim).setZero();
-    if(&J) {
+    if(!!J) {
       qidx(0)=0;
       for(uint i=1; i<Ktuple.N; i++) qidx(i) = qidx(i-1)+Ktuple(i-1)->q.N;
       J.resize(ydim, qidx.last()+Ktuple.last()->q.N).setZero();
@@ -176,7 +181,7 @@ void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple) {
         if(order>=0 && posCoeff) y(m) += posCoeff*hj       * (Ktuple.elem(-1)->q(qi1));
         if(order>=1 && velCoeff) y(m) += (velCoeff*hj/tau) * (Ktuple.elem(-1)->q(qi1) -    Ktuple.elem(-2)->q(qi2));
         if(order>=2 && accCoeff) y(m) += (accCoeff*hj/tau2)* (Ktuple.elem(-1)->q(qi1) - 2.*Ktuple.elem(-2)->q(qi2) + Ktuple.elem(-3)->q(qi3));
-        if(&J) {
+        if(!!J) {
           if(order>=0 && posCoeff) { J(m, qidx.elem(-1)+qi1) += posCoeff*hj; }
           if(order>=1 && velCoeff) { J(m, qidx.elem(-1)+qi1) += velCoeff*hj/tau;  J(m, qidx.elem(-2)+qi2) += -velCoeff*hj/tau; }
           if(order>=2 && accCoeff) { J(m, qidx.elem(-1)+qi1) += accCoeff*hj/tau2; J(m, qidx.elem(-2)+qi2) += -2.*accCoeff*hj/tau2; J(m, qidx.elem(-3)+qi3) += accCoeff*hj/tau2; }

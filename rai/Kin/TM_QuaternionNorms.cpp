@@ -13,7 +13,7 @@
 void TM_QuaternionNorms::phi(arr &y, arr &J, const rai::KinematicWorld &G) {
   uint n=dim_phi(G);
   y.resize(n);
-  if(&J) J.resize(n, G.q.N).setZero();
+  if(!!J) J.resize(n, G.q.N).setZero();
   uint i=0;
   for(const rai::Joint *j: G.fwdActiveJoints) if(j->type==rai::JT_quatBall || j->type==rai::JT_free || j->type==rai::JT_XBall) {
       arr q;
@@ -23,7 +23,7 @@ void TM_QuaternionNorms::phi(arr &y, arr &J, const rai::KinematicWorld &G) {
       double norm = sumOfSqr(q);
       y(i) = norm - 1.;
       
-      if(&J) {
+      if(!!J) {
         if(j->type==rai::JT_quatBall) J(i, {j->qIndex+0, j->qIndex+3}) = 2.*q;
         if(j->type==rai::JT_XBall)    J(i, {j->qIndex+1, j->qIndex+4}) = 2.*q;
         if(j->type==rai::JT_free)     J(i, {j->qIndex+3, j->qIndex+6}) = 2.*q;

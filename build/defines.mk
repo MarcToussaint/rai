@@ -16,7 +16,7 @@ CXXFLAGS += -fopenmp -DOPENMP
 endif
 
 ifeq ($(PYBIND),1)
-DEPEND_UBUNTU += python3-numpy
+DEPEND_UBUNTU += python3 python3-numpy python3-pip
 CXXFLAGS += -DRAI_PYBIND `python3-config --cflags`
 LIBS += `python3-config --ldflags`
 CPATH   := $(CPATH):$(BASE)/../pybind11/include::$(BASE)/../../pybind11/include
@@ -133,6 +133,12 @@ CXXFLAGS  += -DRAI_ODE -DdDOUBLE
 LIBS += -lode
 endif
 
+ifeq ($(FCL),1)
+DEPEND_UBUNTU += libfcl-dev
+CXXFLAGS  += -DRAI_FCL
+LIBS      += -lfcl
+endif
+
 ifeq ($(SWIFT),1)
 CXXFLAGS  += -DRAI_SWIFT
 CPATH	  := $(CPATH):$(LIBPATH)/SWIFT++_1.2/include
@@ -233,6 +239,13 @@ ifeq ($(OPENCV),1)
     %CPATH := $(CPATH):$(IFLAGS:\-I%=\:%\:) % is it possible to add the includes to the CPATH?
     LIBS      += `pkg-config --libs opencv`
   endif
+endif
+
+ifeq ($(OPENCV4),1)
+CXXFLAGS  += -DRAI_OPENCV
+CPATH := $(HOME)/opt/include/opencv4/:$(CPATH)
+LPATH := $(HOME)/opt/lib:$(LPATH)
+LIBS += -lopencv_core -lopencv_highgui
 endif
 
 ifeq ($(HSL),1)
@@ -373,6 +386,17 @@ LIBS += -Wl,--start-group -lpthread -lrt\
 -lPxTask \
 -lSceneQuery \
 -lSimulationController 
+endif
+
+ifeq ($(BULLET),1)
+#BULLET_PATH=$(HOME)/git/bullet3
+CXXFLAGS  += -DRAI_BULLET -DBT_USE_DOUBLE_PRECISION
+CPATH := $(HOME)/opt/include/bullet/:$(CPATH)
+LPATH := $(HOME)/opt/lib:$(LPATH)
+#LPATH := $(BULLET_PATH)/bin:$(LPATH)
+#CPATH := $(CPATH):$(BULLET_PATH)/src
+#btLIB = _gmake_x64_release
+LIBS += -lBulletSoftBody -lBulletDynamics -lBulletCollision  -lLinearMath
 endif
 
 ifeq ($(PORTAUDIO),1)

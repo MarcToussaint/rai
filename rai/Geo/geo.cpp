@@ -10,11 +10,6 @@
 #include <Core/array.h>
 #include "geo.h"
 
-#ifndef RAI_NO_REGISTRY
-#include <Core/graph.h>
-REGISTER_TYPE(T, rai::Transformation)
-#endif
-
 #ifdef RAI_GL
 #  include <GL/glu.h>
 #endif
@@ -32,9 +27,9 @@ rai::Transformation& NoTransformation = *((rai::Transformation*)NULL);
 
 namespace rai {
 
-double quatScalarProduct(const rai::Quaternion& a, const rai::Quaternion& b);
+  bool Vector::operator!() const { return this==&NoVector; }
 
-double& Vector::operator()(uint i) {
+  double& Vector::operator()(uint i) {
   CHECK(i<3,"out of range");
   isZero=false;
   return (&x)[i];
@@ -94,7 +89,7 @@ double Vector::diffZero() const { return fabs(x)+fabs(y)+fabs(z); }
 /// check whether isZero is true
 void Vector::checkZero() const {
   bool iszero = (x==0. && y==0. && z==0.);
-  if(isZero) CHECK(iszero, "you must have set this by hand!");
+  if(isZero) if(!iszero) HALT("you must have set this by hand!");
 }
 
 /// is it normalized?
@@ -290,7 +285,7 @@ bool operator!=(const Quaternion& lhs, const Quaternion& rhs) {
 }
 
 bool operator==(const Transformation& lhs, const Transformation& rhs) {
-  if(!&rhs) return !&lhs; //if rhs==NoArr
+  if(!rhs) return !lhs; //if rhs==NoArr
   return lhs.pos == rhs.pos && lhs.rot == rhs.rot;
 }
 
@@ -323,6 +318,10 @@ bool operator==(const Vector& lhs, const Vector& rhs) {
 
 bool operator!=(const Vector& lhs, const Vector& rhs) {
   return !(lhs == rhs);
+}
+
+double sqrDistance(const Vector &a, const Vector &b) {
+  return (a-b).lengthSqr();
 }
 
 //==============================================================================
@@ -572,7 +571,7 @@ void Quaternion::append(const Quaternion& q) {
 }
 
 /// set the quad
-void Quaternion::set(double* p) { w=p[0]; x=p[1]; y=p[2]; z=p[3]; isZero=((w==1. || w==-1.) && x==0. && y==0. && z==0.); }
+void Quaternion::set(const double* p) { w=p[0]; x=p[1]; y=p[2]; z=p[3]; isZero=((w==1. || w==-1.) && x==0. && y==0. && z==0.); }
 
 /// set the quad
 void Quaternion::set(const arr& q) { CHECK_EQ(q.N,4, "");  set(q.p); }
@@ -601,7 +600,7 @@ void Quaternion::setRandom() {
 /// sets this to a smooth interpolation between two rotations
 void Quaternion::setInterpolate(double t, const Quaternion& a, const Quaternion b) {
   double sign=1.;
-  if(quatScalarProduct(a, b)<0) sign=-1.;
+  if(quat_scalarProduct(a, b)<0) sign=-1.;
   w=a.w+t*(sign*b.w-a.w);
   x=a.x+t*(sign*b.x-a.x);
   y=a.y+t*(sign*b.y-a.y);
@@ -612,7 +611,7 @@ void Quaternion::setInterpolate(double t, const Quaternion& a, const Quaternion 
 
 /// euclidean addition (with weights) modulated by scalar product -- leaves you with UNNORMALIZED quaternion
 void Quaternion::add(const Quaternion b, double w_b, double w_this) {
-  if(quatScalarProduct(*this, b)<0.) w_b *= -1.;
+  if(quat_scalarProduct(*this, b)<0.) w_b *= -1.;
   if(w_this!=-1.) {
     w *= w_this;
     x *= w_this;
@@ -745,7 +744,7 @@ double Quaternion::sqrDiffZero() const { return (w>0.?rai::sqr(w-1.):rai::sqr(w+
 /// check whether isZero is true
 void Quaternion::checkZero() const {
   bool iszero = ((w==1. || w==-1.) && x==0. && y==0. && z==0.);
-  if(isZero) CHECK(iszero, "you must have set this by hand!");
+  if(isZero) if(!iszero) HALT("you must have set this by hand!");
 }
 
 /// return the squared-error between two quads, modulo flipping
@@ -1109,11 +1108,17 @@ Vector operator/(const Transformation& X, const Vector& c) {
   return a;
 }
 
+/// use as similarity measure (distance = 1 - |scalarprod|)
+double quat_scalarProduct(const Quaternion& a, const Quaternion& b) {
+  return a.w*b.w+a.x*b.x+a.y*b.y+a.z*b.z;
+}
+
 void quat_concat(arr& y, arr& Ja, arr& Jb, const arr& A, const arr& B){
   rai::Quaternion a(A);
   rai::Quaternion b(B);
+  a.isZero=b.isZero=false;
   y = (a * b).getArr4d();
-  if(&Ja){
+  if(!!Ja){
     Ja.resize(4,4);
     Ja(0,0) =  b.w;
     Ja(0,1) = -b.x; Ja(0,2) = -b.y; Ja(0,3) = -b.z;
@@ -1123,7 +1128,7 @@ void quat_concat(arr& y, arr& Ja, arr& Jb, const arr& A, const arr& B){
     Ja(2,1) =-b.z; Ja(2,2) = b.w; Ja(2,3) = b.x;
     Ja(3,1) = b.y; Ja(3,2) =-b.x; Ja(3,3) = b.w;
   }
-  if(&Jb){
+  if(!!Jb){
     Jb.resize(4,4);
     Jb(0,0) =  a.w;
     Jb(0,1) = -a.x; Jb(0,2) = -a.y; Jb(0,3) = -a.z;
@@ -1140,7 +1145,7 @@ void quat_normalize(arr& y, arr& J, const arr& a){
   double l2 = sumOfSqr(y);
   double l = sqrt(l2);
   y /= l;
-  if(&J){
+  if(!!J){
     J = eye(4);
     J -= y^y;
     J /= l;
@@ -1151,21 +1156,21 @@ void quat_getVec(arr& y, arr& J, const arr& A){
   rai::Quaternion a(A);
   y.resize(3);
   double phi,sinphi,s;
-  double dphi, dsinphi, ds;
+  double dphi, dsinphi, ds=0.;
   if(a.w>=1. || a.w<=-1. || (a.x==0. && a.y==0. && a.z==0.)) {
     y.setZero();
-    if(&J){
+    if(!!J){
       J.resize(3,4).setZero();
       J(0,1) = J(1,2) = J(2,3) = 2.;
     }
     return;
   }
 
-  if(a.w>=0.){
+  if(false && a.w>=0.){
     phi=acos(a.w);
     sinphi = sin(phi);
     s=2.*phi/sinphi;
-    if(&J){
+    if(!!J){
       dphi = -1./sqrt(1.-a.w*a.w);
       dsinphi = cos(phi) * dphi;
       ds = 2.*( dphi/sinphi - phi/(sinphi*sinphi)*dsinphi );
@@ -1174,7 +1179,7 @@ void quat_getVec(arr& y, arr& J, const arr& A){
     phi=acos(-a.w);
     sinphi = sin(phi);
     s=-2.*phi/sinphi;
-    if(&J){
+    if(!!J){
       dphi = 1./sqrt(1.-a.w*a.w);
       dsinphi = cos(phi) * dphi;
       ds = -2.*( dphi/sinphi - phi/(sinphi*sinphi)*dsinphi );
@@ -1184,7 +1189,7 @@ void quat_getVec(arr& y, arr& J, const arr& A){
   y(0) = s*a.x;
   y(1) = s*a.y;
   y(2) = s*a.z;
-  if(&J){
+  if(!!J){
     J.resize(3,4).setZero();
     J(0,1) = J(1,2) = J(2,3) = s;
     J(0,0) = a.x*ds;
@@ -1195,10 +1200,10 @@ void quat_getVec(arr& y, arr& J, const arr& A){
 
 void quat_diffVector(arr& y, arr& Ja, arr& Jb, const arr& a, const arr& b){
   arr ab, Jca, Jcb;
-  arr ainv = a;
-  if(a(0)!=1.)  ainv(0) *= -1.;
-  quat_concat(ab, Jca, Jcb, ainv, b);
-  if(a(0)!=1.)  for(uint i=0;i<Jca.d0;i++) Jca(i,0) *= -1.;
+  arr binv = b;
+  binv(0) *= -1.;
+  quat_concat(ab, Jca, Jcb, a, binv);
+  for(uint i=0;i<Jcb.d0;i++) Jcb(i,0) *= -1.;
 
   arr Jvec;
   quat_getVec(y, Jvec, ab);
@@ -1210,6 +1215,8 @@ void quat_diffVector(arr& y, arr& Ja, arr& Jb, const arr& a, const arr& b){
 
 /// initialize by reading from the string
 Transformation& Transformation::setText(const char* txt) { read(rai::String(txt).stream()); return *this; }
+
+bool Transformation::operator!() const { return this==&NoTransformation; }
 
 /// resets the position to origin, rotation to identity, velocities to zero, scale to unit
 Transformation& Transformation::setZero() {
@@ -1415,10 +1422,21 @@ double Transformation::diffZero() const {
   return pos.diffZero() + rot.diffZero();
 }
 
+void Transformation::checkNan() const{
+  CHECK_EQ(pos.x, pos.x, "inconsistent: " <<pos.x);
+  CHECK_EQ(pos.y, pos.y, "inconsistent: " <<pos.y);
+  CHECK_EQ(pos.z, pos.z, "inconsistent: " <<pos.z);
+  CHECK_EQ(rot.x, rot.x, "inconsistent: " <<rot.x);
+  CHECK_EQ(rot.w, rot.w, "inconsistent: " <<rot.w);
+  CHECK_EQ(rot.x, rot.x, "inconsistent: " <<rot.x);
+  CHECK_EQ(rot.y, rot.y, "inconsistent: " <<rot.y);
+  CHECK_EQ(rot.z, rot.z, "inconsistent: " <<rot.z);
+}
+
 /// operator<<
 void Transformation::write(std::ostream& os) const {
   os <<pos.x <<' ' <<pos.y <<' ' <<pos.z <<' '
-     <<rot.w <<' ' <<rot.x <<' ' <<rot.y <<' ' <<rot.z;
+    <<rot.w <<' ' <<rot.x <<' ' <<rot.y <<' ' <<rot.z;
 }
 
 /// operator>>
@@ -1446,7 +1464,9 @@ void Transformation::read(std::istream& is) {
         case 'T': break; //old convention
         case '|':
         case '>': is.putback(c); return; //those symbols finish the reading without error
-        default: RAI_MSG("unknown Transformation read tag: " <<c <<"abort reading this frame"); is.putback(c); return;
+        default:{
+          RAI_MSG("unknown Transformation read tag: " <<c <<"abort reading this frame"); is.putback(c); return;
+        }
       }
     if(is.fail()) HALT("error reading '" <<c <<"' parameters in frame");
   }
@@ -1687,9 +1707,8 @@ void Camera::setZero() {
   X.setZero();
   foc.setZero();
   setHeightAngle(45.);
-  whRatio=1.;
-  zNear=.1;
-  zFar=50.;
+  setWHRatio(1.);
+  setZRange(.02, 200.);
 }
 
 /// the height angle (in degrees) of the camera perspective; set it 0 for orthogonal projection
@@ -1707,9 +1726,9 @@ void Camera::setPosition(float x, float y, float z) { X.pos.set(x, y, z); }
 /// rotate the frame to focus the absolute coordinate origin (0, 0, 0)
 void Camera::focusOrigin() { foc.setZero(); focus(); }
 /// rotate the frame to focus the point (x, y, z)
-void Camera::focus(float x, float y, float z) { foc.set(x, y, z); focus(); }
+void Camera::focus(float x, float y, float z, bool makeUpright) { foc.set(x, y, z); focus(); if(makeUpright) upright(); }
 /// rotate the frame to focus the point given by the vector
-void Camera::focus(const Vector& v) { foc=v; focus(); }
+void Camera::focus(const Vector& v, bool makeUpright) { foc=v; focus(); if(makeUpright) upright(); }
 /// rotate the frame to focus (again) the previously given focus
 void Camera::focus() { watchDirection(foc-X.pos); } //X.Z=X.pos; X.Z-=foc; X.Z.normalize(); upright(); }
 /// rotate the frame to watch in the direction vector D
@@ -1866,18 +1885,14 @@ arr Camera::getInverseProjectionMatrix() const{
 
 /// convert from gluPerspective's non-linear [0, 1] depth to the true [zNear, zFar] depth
 double Camera::glConvertToTrueDepth(double d) const {
-  CHECK(!heightAbs, "I think this is wrong for ortho view");
-  return zNear + (zFar-zNear)*d/(zFar/zNear*(1.-d)+1.);
-//  return zNear + (zFar-zNear) * glConvertToLinearDepth(d);
+  if(heightAbs) return zNear + (zFar-zNear)*d;
+  return zNear + (zFar-zNear)*d/((zFar-zNear)/zNear*(1.-d)+1.); //TODO: optimize numerically
 }
 
 /// convert from gluPerspective's non-linear [0, 1] depth to the linear [0, 1] depth
 double Camera::glConvertToLinearDepth(double d) const {
   CHECK(!heightAbs, "I think this is wrong for ortho view");
-  return d/(zFar/zNear*(1.-d)+1.);
-//  d = 2.0 * d - 1.0;
-//  d = 2.0 * zNear * zFar / (zFar + zNear - d * (zFar - zNear));
-//  return d;
+  return d/((zFar-zNear)/zNear*(1.-d)+1.);
 }
 
 void Camera::project2PixelsAndTrueDepth(arr& x, double width, double height) const{
@@ -1932,7 +1947,7 @@ void Camera::setKinect() {
 
 void Camera::setDefault() {
   setHeightAngle(24.);
-  setZRange(.1, 50.);
+  setZRange(.02, 200.);
   setPosition(8., -12., 6.);
 //  setPosition(10., -4., 10.);
   focus(0, 0, 1.);
@@ -1942,11 +1957,6 @@ void Camera::setDefault() {
 
 //==============================================================================
 
-/// use as similarity measure (distance = 1 - |scalarprod|)
-double quatScalarProduct(const Quaternion& a, const Quaternion& b) {
-  return a.w*b.w+a.x*b.x+a.y*b.y+a.z*b.z;
-}
-
 std::istream& operator>>(std::istream& is, Vector& x)    { x.read(is); return is; }
 std::istream& operator>>(std::istream& is, Matrix& x)    { x.read(is); return is; }
 std::istream& operator>>(std::istream& is, Quaternion& x) { x.read(is); return is; }
@@ -1955,10 +1965,6 @@ std::ostream& operator<<(std::ostream& os, const Vector& x)    { x.write(os); re
 std::ostream& operator<<(std::ostream& os, const Matrix& x)    { x.write(os); return os; }
 std::ostream& operator<<(std::ostream& os, const Quaternion& x) { x.write(os); return os; }
 std::ostream& operator<<(std::ostream& os, const Transformation& x)     { x.write(os); return os; }
-
-double sqrDistance(const Vector &a, const Vector &b) {
-  return (a-b).lengthSqr();
-}
 
 } //namespace rai
 

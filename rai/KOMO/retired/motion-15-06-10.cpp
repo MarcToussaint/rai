@@ -25,7 +25,7 @@ void MotionProblemFunction::phi_t(arr& phi, arr& J, uint t, const arr& x_bar, co
   if(k==3)  phi = (x_bar[3]-3.*x_bar[2]+3.*x_bar[1]-x_bar[0])/tau3; //penalize jerk
   phi = h % phi;
   
-  if(&J) {
+  if(!!J) {
     J.resize(phi.N, k+1, n);
     J.setZero();
     for(uint i=0; i<n; i++) {
@@ -40,15 +40,15 @@ void MotionProblemFunction::phi_t(arr& phi, arr& J, uint t, const arr& x_bar, co
     for(uint i=0; i<n; i++) J[i]() *= h(i);
   }
   
-  if(&J) CHECK_EQ(J.d0,phi.N,"");
+  if(!!J) CHECK_EQ(J.d0,phi.N,"");
   
   //-- task cost (which are taken w.r.t. x_bar[k])
   arr _phi, J_x, J_v;
   if(k>0) MP.setState(x_bar[k], (x_bar[k]-x_bar[k-1])/tau);
   else    MP.setState(x_bar[k], NoArr); //don't set velocities
-  MP.getTaskCosts(_phi, (&J?J_x:NoArr), (&J?J_v:NoArr), t);
+  MP.getTaskCosts(_phi, (!!J?J_x:NoArr), (!!J?J_v:NoArr), t);
   phi.append(_phi);
-  if(&J && _phi.N) {
+  if(!!J && _phi.N) {
     arr Japp(_phi.N, (k+1)*n);
     Japp.setZero();
     Japp.setMatrixBlock(J_x + (1./tau)*J_v, 0,  k*n);    //w.r.t. x_bar[k]
@@ -56,7 +56,7 @@ void MotionProblemFunction::phi_t(arr& phi, arr& J, uint t, const arr& x_bar, co
     J.append(Japp);
   }
   
-  if(&J) CHECK_EQ(J.d0,phi.N,"");
+  if(!!J) CHECK_EQ(J.d0,phi.N,"");
   
   //store in CostMatrix
   if(!MP.phiMatrix.N) MP.phiMatrix.resize(get_T()+1);

@@ -27,10 +27,10 @@ Convert::~Convert() {
 //void conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction& f, arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x);
 double conv_VectorFunction_ScalarFunction(VectorFunction f, arr& g, arr& H, const arr& x) {
   arr y,J;
-  f(y, (&g?J:NoArr), x);
+  f(y, (!!g?J:NoArr), x);
   //  if(J.special==arr::RowShiftedST) J = unpack(J);
-  if(&g) { g = comp_At_x(J, y); g *= 2.; }
-  if(&H) { H = comp_At_A(J); H *= 2.; }
+  if(!!g) { g = comp_At_x(J, y); g *= 2.; }
+  if(!!H) { H = comp_At_A(J); H *= 2.; }
   return sumOfSqr(y);
 }
 
@@ -80,7 +80,7 @@ Convert::operator VectorFunction() {
 
 ScalarFunction conv_cstylefs2ScalarFunction(double(*fs)(arr*, const arr&, void*),void *data) {
   return [&fs,data](arr& g, arr& H, const arr& x) -> double {
-    if(&H) NIY;
+    if(!!H) NIY;
     return fs(&g, x, data);
   };
 }
@@ -94,10 +94,10 @@ VectorFunction conv_cstylefv2VectorFunction(void (*fv)(arr&, arr*, const arr&, v
 ScalarFunction conv_VectorFunction2ScalarFunction(const VectorFunction& f) {
   return [&f](arr& g, arr& H, const arr& x) -> double {
     arr y,J;
-    f(y, (&g?J:NoArr), x);
+    f(y, (!!g?J:NoArr), x);
     //  if(J.special==arr::RowShiftedST) J = unpack(J);
-    if(&g) { g = comp_At_x(J, y); g *= 2.; }
-    if(&H) { H = comp_At_A(J); H *= 2.; }
+    if(!!g) { g = comp_At_x(J, y); g *= 2.; }
+    if(!!H) { H = comp_At_A(J); H *= 2.; }
     return sumOfSqr(y);
   };
 }
@@ -105,8 +105,8 @@ ScalarFunction conv_VectorFunction2ScalarFunction(const VectorFunction& f) {
 void Conv_linearlyReparameterize_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& z, arr& lambda) {
   arr x = B*z;
   P.phi(phi, J, H, tt, x, NoArr);
-  if(&J) J = comp_A_x(J,B);
-  if(&H && H.N) NIY;
+  if(!!J) J = comp_A_x(J,B);
+  if(!!H && H.N) NIY;
 }
 
 //===========================================================================

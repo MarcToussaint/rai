@@ -73,7 +73,7 @@ bool checkDirectionalJacobian(const VectorFunction &f, const arr& x, const arr& 
 enum ConstrainedMethodType { noMethod=0, squaredPenalty, augmentedLag, logBarrier, anyTimeAula, squaredPenaltyFixed };
 
 struct OptOptions {
-  uint verbose;
+  int verbose;
   double *fmin_return;
   double stopTolerance;
   double stopFTolerance;

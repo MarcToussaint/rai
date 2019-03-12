@@ -51,15 +51,16 @@ struct Mesh : GLDrawer {
   void clear();
   void setBox();
   void setDot(); ///< an awkward mesh: just a single dot, not tris (e.g. cvx core of a sphere...)
+  void setLine(double l); ///< an awkward mesh: just a single line, not tris (e.g. cvx core of a sphere...)
   void setTetrahedron();
   void setOctahedron();
   void setDodecahedron();
-  void setSphere(uint fineness=3);
-  void setHalfSphere(uint fineness=3);
-  void setCylinder(double r, double l, uint fineness=3);
-  void setCappedCylinder(double r, double l, uint fineness=3);
-  void setSSBox(double x_width, double y_width, double z_height, double r, uint fineness=3);
-  void setSSCvx(const rai::Mesh& m, double r, uint fineness=3);
+  void setSphere(uint fineness=2);
+  void setHalfSphere(uint fineness=2);
+  void setCylinder(double r, double l, uint fineness=2);
+  void setCappedCylinder(double r, double l, uint fineness=2);
+  void setSSBox(double x_width, double y_width, double z_height, double r, uint fineness=2);
+  void setSSCvx(const rai::Mesh& m, double r, uint fineness=2);
   void setImplicitSurface(ScalarFunction f, double lo=-10., double hi=+10., uint res=100);
   void setImplicitSurface(ScalarFunction f, double xLo, double xHi, double yLo, double yHi, double zLo, double zHi, uint res);
   void setRandom(uint vertices=10);
@@ -93,6 +94,7 @@ struct Mesh : GLDrawer {
   rai::Vector getCenter() const;
   arr getMean() const;
   void getBox(double& dx, double& dy, double& dz) const;
+  arr getBox() const;
   double getRadius() const;
   double getArea() const;
   double getArea(uint tri) const;
@@ -126,6 +128,16 @@ struct Mesh : GLDrawer {
 };
 } //END of namespace
 stdOutPipe(rai::Mesh)
+
+//===========================================================================
+
+namespace rai {
+struct MeshCollection : GLDrawer{
+  Array<Mesh*> M;
+  arr X;
+  void glDraw(struct OpenGL&);
+};
+} //END of namespace
 
 //===========================================================================
 

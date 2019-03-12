@@ -7,26 +7,25 @@ Mutex m;
 
 // Normal Thread struct
 struct MyThread: Thread{
-  VariableData<double>& x;
+  Var<double> x;
   uint n;
-  MyThread(VariableData<double>& x, uint n, double beat):Thread(STRING("MyThread_"<<n), beat), x(x), n(n){
+  MyThread(Var<double>& _x, uint n, double beat)
+    : Thread(STRING("MyThread_"<<n), beat), x(this, _x), n(n){
     threadOpen();
   }
-  void open(){}
-  void close(){}
   void step(){
-    x.set(this)++;
+    x.set()++;
     COUT <<rai::realTime() <<"sec Thread " <<n <<" is counting:" <<x.get() <<endl;
   }
 };
 
 void TEST(Thread){
-  VariableData<double> x;
-  x.value = 0.;
+  Var<double> x;
+  x.set() = 0.;
   MyThread t1(x, 1, .5), t2(x, 2, -1);
 
   t1.threadLoop();
-  t2.listenTo(x); //whenever t1 modifies x, t2 is stepped
+  t2.event.listenTo(x); //whenever t1 modifies x, t2 is stepped
   
   rai::wait(3.);
 
@@ -46,15 +45,13 @@ struct MyType{
 };
 
 struct ComputeSum : Thread {
-  VAR(arr, x)    //input
-  VAR(double, s) //output
-  VAR(MyType, i)
+  Var<arr> x;    //input
+  Var<double> s; //output
+  Var<MyType> i;
 
   ComputeSum():Thread("ComputeSum"){}
-  virtual ~ComputeSum(){}
+  virtual ~ComputeSum(){ threadClose(); }
 
-  void open(){}
-  void close(){}
   void step(){
     s.set() = sum(x.get()());
   }
@@ -79,10 +76,10 @@ void TEST(Way0){
 //
 
 void TEST(Way1){
-  Thread *m = new ComputeSum;
+  auto m = make_shared<ComputeSum>();
 
-  Var<arr> x(NULL, "x");
-  Var<double> s(NULL, "s");
+  Var<arr> x(m->x);
+  Var<double> s(m->s);
 
   x.set() = {1., 2., 3.};
 
@@ -98,52 +95,6 @@ void TEST(Way1){
 #endif
 
   cout <<"result = " <<s.get() <<endl;
-  delete m;
-}
-
-//===========================================================================
-//
-// direct execution - Way2
-//
-
-struct MySystem{
-  Var<arr> x = Var<arr>(NULL, "x");
-  Var<double> s = Var<double>(NULL, "s");
-  ComputeSum cs;
-};
-
-void TEST(Way2){
-  cout <<registry() <<endl;
-
-  MySystem S;
-
-  S.x.set() = {1., 2., 3.};
-
-  openModules();
-  stepModules();
-  closeModules();
-
-  cout <<"result = " <<S.s.get() <<endl;
-};
-
-//===========================================================================
-//
-// testing
-//
-
-void TEST(SystemConnect) {
-  cout <<"**** ENTER_MAIN" <<endl;
-
-  cout <<registry() <<endl;
-
-  ComputeSum CS;
-
-  cout <<registry() <<endl;
-
-  registry()->displayDot();
-
-//  GraphView gv(registry());
-//  gv.watch();
 }
 
 //===========================================================================
@@ -154,73 +105,43 @@ void TEST(SystemConnect) {
 struct PairSorter:Thread{
   Var<int> a;
   Var<int> b;
-  PairSorter(const char *a_name, const char* b_name)
-    : Thread(STRING("S_"<<a_name<<"_"<<b_name)),
-      a(this, a_name),
-      b(this, b_name){}
-  PairSorter():Thread("S"), a(this, "a"), b(this, "b"){}
-  void open(){}
-  void close(){}
+  PairSorter(Var<int>& _a, Var<int>& _b)
+    : Thread(STRING("S_"<<_a.name()<<"_"<<_b.name())),
+      a(this, _a),
+      b(this, _b){}
+  ~PairSorter(){
+    threadClose();
+  }
   void step();
 };
 
 //==============================================================================
 
-void TEST(ModuleSorter1){
+void TEST(Sorter){
   uint N=20;
 
-  cout <<registry() <<endl <<"----------------------------" <<endl;
-  rai::Array<PairSorter*> ps;
+  rai::Array<Var<int>> x(N);
+  rai::Array<ptr<PairSorter>> ps(N-1);
   for(uint i=0;i<N-1;i++)
-    ps.append( new PairSorter(STRING("int"<<i), STRING("int"<<i+1)) );
-  cout <<registry() <<endl <<"----------------------------" <<endl;
-  auto vars = getVariablesOfType<int>();
-  CHECK_EQ(vars.N, N, "");
+    ps(i) = make_shared<PairSorter>(x(i), x(i+1));
 
-  threadOpenModules(true);
+  {
+    for(auto& s:ps) s->threadOpen();
 
-  for(uint i=0;i<N;i++) vars(i)->set() = rnd(100);
+    for(uint i=0;i<N;i++) x(i).set() = rnd(100);
 
-  for(uint k=0;k<20;k++){
-    if(moduleShutdown()->getStatus()) break;
-    for(uint i=0;i<N;i++) cout <<vars(i)->get() <<' ';  cout <<endl;
-    stepModules();
-    rai::wait(.1);
+    for(uint k=0;k<20;k++){
+      if(moduleShutdown()->getStatus()) break;
+      for(uint i=0;i<N;i++) cout <<x(i).get() <<' ';  cout <<endl;
+      for(auto& s:ps) s->threadStep();
+      rai::wait(.1);
+    }
+
+    for(auto& s:ps) s->threadClose();
   }
-
-  threadCloseModules();
-
-  for(auto& x:ps){ delete x; x=NULL; }
 
 }
 
-//==============================================================================
-
-void TEST(ModuleSorter2){
-  uint N=20;
-
-  rai::Array<PairSorter*> ps;
-
-  for(uint i=0;i<N-1;i++)
-    ps.append( new PairSorter(STRING("int"<<i), STRING("int"<<i+1)) );
-
-  cout <<registry() <<endl;
-
-  for(uint i=0;i<N-1;i++) ps(i)->a.set() = rnd(100);
-  ps.last()->b.set() = rnd(100);
-
-  openModules();
-
-  for(uint k=0;k<20;k++){
-    for(uint i=0;i<N-1;i++) cout <<ps(i)->a.get() <<' ';  cout <<endl;
-    stepModules();
-    rai::wait(.1);
-  }
-
-  closeModules();
-
-  for(auto& x:ps){ delete x; x=NULL; }
-}
 
 //==============================================================================
 
@@ -278,12 +199,10 @@ int MAIN(int argc,char** argv){
   rai::initCmdLine(argc, argv);
 
   testThread();
+  testSorter();
+
   testWay0();
   testWay1();
-  testWay2();
-  testSystemConnect();
-  testModuleSorter1();
-  testModuleSorter2();
   testLogging();
 
   return 0;

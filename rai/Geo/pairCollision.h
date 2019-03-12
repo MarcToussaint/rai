@@ -24,8 +24,9 @@ struct PairCollision : GLDrawer {
   arr normal;      ///< normal such that "<normal, p1-p2> = distance" is guaranteed (pointing from obj2 to obj1)
   arr simplex1;    ///< simplex on obj1 defining the collision geometry
   arr simplex2;    ///< simplex on obj2 defining the collision geometry
-  arr dSimplex1, dSimplex2;
-  arr m1, m2, eig1, eig2; ///< output of marginAnalysis: mean and eigenvalues of ALL point on the objs (not only simplex) that define the collision
+//  arr dSimplex1, dSimplex2;
+
+//  arr m1, m2, eig1, eig2; ///< output of marginAnalysis: mean and eigenvalues of ALL point on the objs (not only simplex) that define the collision
   
   arr poly, polyNorm;
   
@@ -41,16 +42,23 @@ struct PairCollision : GLDrawer {
   
   double getDistance() { return distance-rad1-rad2; }
 
-  void kinVector(arr& y, arr& J,
-                 const arr& Jp1, const arr& Jp2,
-                 const arr& Jx1, const arr& Jx2);
+  void kinDistance(arr& y, arr& J,
+                   const arr& Jp1, const arr& Jp2);
   void kinNormal(arr& y, arr& J,
                  const arr& Jp1, const arr& Jp2,
                  const arr& Jx1, const arr& Jx2);
-  void kinDistance(arr& y, arr& J,
-                   const arr& Jp1, const arr& Jp2);
-  void kinDistance2(arr& y, arr& J, //obsolete
-                    const arr& JSimplex1, const arr& JSimplex2);
+  void kinVector(arr& y, arr& J,
+                 const arr& Jp1, const arr& Jp2,
+                 const arr& Jx1, const arr& Jx2);
+  void kinPointP1(arr& y, arr& J,
+                  const arr& Jp1, const arr& Jp2,
+                  const arr& Jx1, const arr& Jx2);
+  void kinPointP2(arr& y, arr& J,
+                  const arr& Jp1, const arr& Jp2,
+                  const arr& Jx1, const arr& Jx2);
+  void kinCenter(arr& y, arr& J,
+                 const arr& Jp1, const arr& Jp2,
+                 const arr& Jx1, const arr& Jx2);
                     
   void nearSupportAnalysis(double eps=1e-6); ///< analyses not only closest obj support (the simplex) but all points within a margin
   
@@ -63,9 +71,10 @@ private:
 };
 
 //return normals and closes points for 1-on-3 simplices or 2-on-2 simplices
-double coll_1on3(arr& pInTri, arr& normal, const arr& pts1, const arr& pts2);
+double coll_1on2(arr& p2, arr& normal, const arr& pts1, const arr& pts2);
+double coll_1on3(arr& p2, arr& normal, const arr& pts1, const arr& pts2);
 double coll_2on2(arr& p1, arr& p2, arr& normal, const arr& pts1, const arr& pts2);
-double coll_2on3(arr& p1, arr& p2, arr& normal, const arr& pts1, const arr& pts2);
-double coll_3on3(arr& p1, arr& p2, arr& normal, const arr& pts1, const arr& pts2);
+double coll_2on3(arr& p1, arr& p2, arr& normal, const arr& pts1, const arr& pts2, const arr& center);
+double coll_3on3(arr& p1, arr& p2, arr& normal, const arr& pts1, const arr& pts2, const arr& center);
 
 stdOutPipe(PairCollision)

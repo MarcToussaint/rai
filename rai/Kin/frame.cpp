@@ -17,6 +17,8 @@
 #include <Gui/opengl.h>
 #endif
 
+extern bool Geo_mesh_drawColors;
+
 //===========================================================================
 
 template<> const char* rai::Enum<rai::JointType>::names []= {
@@ -32,6 +34,8 @@ template<> const char* rai::Enum<rai::BodyType>::names []= {
 // Frame
 //
 
+bool rai_Kin_frame_ignoreQuatNormalizationWarning = false;
+
 rai::Frame::Frame(KinematicWorld& _K, const Frame* copyFrame)
   : K(_K) {
   
@@ -39,7 +43,7 @@ rai::Frame::Frame(KinematicWorld& _K, const Frame* copyFrame)
   K.frames.append(this);
   if(copyFrame) {
     const Frame& f = *copyFrame;
-    name=f.name; Q=f.Q; X=f.X; time=f.time; ats=f.ats; active=f.active; flags=f.flags;
+    name=f.name; Q=f.Q; X=f.X; tau=f.tau; ats=f.ats; active=f.active; flags=f.flags;
     //we cannot copy link! because we can't know if the frames already exist. KinematicWorld::copy copies the rel's !!
     if(copyFrame->joint) new Joint(*this, copyFrame->joint);
     if(copyFrame->shape) new Shape(*this, copyFrame->shape);
@@ -59,14 +63,16 @@ rai::Frame::~Frame() {
   if(inertia) delete inertia;
   if(parent) unLink();
   while(contacts.N) delete contacts.last();
-  while(outLinks.N) outLinks.last()->unLink();
-  K.frames.removeValue(this);
+  while(parentOf.N) parentOf.last()->unLink();
+//  K.frames.removeValue(this);
+  CHECK_EQ(this, K.frames(ID), "")
+  K.frames.remove(ID);
   listReindex(K.frames);
 }
 
 void rai::Frame::calc_X_from_parent() {
   CHECK(parent, "");
-  time = parent->time;
+  tau = parent->tau;
   Transformation &from = parent->X;
   X = from;
   X.appendTransformation(Q);
@@ -91,21 +97,22 @@ void rai::Frame::calc_Q_from_parent(bool enforceWithinJoint) {
 }
 
 void rai::Frame::getRigidSubFrames(FrameL &F) {
-  for(Frame *f:outLinks) if(!f->joint) { F.append(f); f->getRigidSubFrames(F); }
+  for(Frame *f:parentOf) if(!f->joint) { F.append(f); f->getRigidSubFrames(F); }
 }
 
 rai::Inertia &rai::Frame::getInertia() {
-  if(!inertia) inertia = new Inertia(*this); return *inertia;
+  if(!inertia) inertia = new Inertia(*this);
+  return *inertia;
 }
 
-rai::Frame *rai::Frame::getUpwardLink(rai::Transformation &Qtotal) {
-  if(&Qtotal) Qtotal.setZero();
-  Frame *p=this;
+rai::Frame *rai::Frame::getUpwardLink(rai::Transformation &Qtotal) const {
+  if(!!Qtotal) Qtotal.setZero();
+  const Frame *p=this;
   while(p->parent && !p->joint) {
-    if(&Qtotal) Qtotal = p->Q*Qtotal;
-    p=p->parent;
+    if(!!Qtotal) Qtotal = p->Q*Qtotal;
+    p = p->parent;
   }
-  return p;
+  return (Frame*)p;
 }
 
 void rai::Frame::read(const Graph& ats) {
@@ -134,11 +141,30 @@ void rai::Frame::read(const Graph& ats) {
   if(ats["mass"]) { inertia = new Inertia(*this); inertia->read(ats); }
 }
 
+void rai::Frame::write(Graph& G){
+  auto& g = G.newSubgraph({name});
+  if(parent) g.newNode<rai::String>({"parent"}, {}, parent->name);
+  if(joint) joint->write(g);
+  if(shape) shape->write(g);
+  if(inertia) inertia->write(g);
+
+  if(parent) {
+    if(!Q.isZero()) g.newNode<arr>({"Q"}, {}, Q.getArr7d());
+  } else {
+    if(!X.isZero()) g.newNode<arr>({"X"}, {}, X.getArr7d());
+  }
+
+  for(Node *n : ats) {
+    StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H", "axis", "A"};
+    if(!avoid.contains(n->keys.last())) n->newClone(g);
+  }
+}
+
 void rai::Frame::write(std::ostream& os) const {
-  os <<"frame " <<name;
-  if(parent) os <<'(' <<parent->name <<')';
+  os <<name;
   os <<" \t{ ";
-  
+
+  if(parent) os <<"parent:" <<parent->name;
   if(joint) joint->write(os);
   if(shape) shape->write(os);
   if(inertia) inertia->write(os);
@@ -176,18 +202,17 @@ rai::Frame* rai::Frame::insertPreLink(const rai::Transformation &A) {
   //new frame between: parent -> f -> this
   Frame *f = new Frame(K);
 
-  
   if(parent) {
     f->linkFrom(parent);
-    parent->outLinks.removeValue(this);
+    parent->parentOf.removeValue(this);
     f->name <<parent->name <<'>' <<name;
   }else{
     f->name <<"NIL>" <<name;
   }
   parent=f;
-  parent->outLinks.append(this);
+  parent->parentOf.append(this);
   
-  if(&A) f->Q = A;
+  if(!!A) f->Q = A;
   
   return f;
 }
@@ -198,9 +223,9 @@ rai::Frame* rai::Frame::insertPostLink(const rai::Transformation &B) {
   if(name) f->name <<'<' <<name;
   
   //reconnect all outlinks from -> to
-  f->outLinks = outLinks;
-  for(Frame *b:outLinks) b->parent = f;
-  outLinks.clear();
+  f->parentOf = parentOf;
+  for(Frame *b:parentOf) b->parent = f;
+  parentOf.clear();
   f->Q = B;
   f->linkFrom(this);
   
@@ -209,7 +234,7 @@ rai::Frame* rai::Frame::insertPostLink(const rai::Transformation &B) {
 
 void rai::Frame::unLink() {
   CHECK(parent,"");
-  parent->outLinks.removeValue(this);
+  parent->parentOf.removeValue(this);
   parent=NULL;
   Q.setZero();
   if(joint) { delete joint; joint=NULL; }
@@ -220,12 +245,27 @@ void rai::Frame::linkFrom(rai::Frame *_parent, bool adoptRelTransform) {
   CHECK(!parent,"this frame is already linked to a parent");
   if(parent==_parent) return;
   parent=_parent;
-  parent->outLinks.append(this);
+  parent->parentOf.append(this);
   if(adoptRelTransform) Q = X/parent->X;
 }
 
+bool rai::Frame::isChildOf(const rai::Frame* par, int order) const{
+  Frame *p = parent;
+  while(p){
+    if(p->joint) order--;
+    if(order<0) return false;
+    if(p==par) return true;
+    p = p->parent;
+  }
+  return false;
+}
+
+rai::Joint::Joint(rai::Frame& f, rai::JointType _type) : Joint(f, (Joint*)NULL){
+  type = _type;
+}
+
 rai::Joint::Joint(Frame &f, Joint *copyJoint)
-  : frame(f), qIndex(UINT_MAX), q0(0.) {
+  : frame(f), qIndex(UINT_MAX){
   CHECK(!frame.joint, "the Link already has a Joint");
   frame.joint = this;
   frame.K.reset_q();
@@ -286,7 +326,7 @@ void rai::Joint::calc_Q_from_q(const arr &q, uint _qIndex) {
         Q.rot.set(q.p+_qIndex);
         {
           double n=Q.rot.normalization();
-          if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n <<endl;
+          if(!rai_Kin_frame_ignoreQuatNormalizationWarning) if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n;
         }
         Q.rot.normalize();
         Q.rot.isZero=false; //WHY? (gradient check fails without!)
@@ -297,7 +337,7 @@ void rai::Joint::calc_Q_from_q(const arr &q, uint _qIndex) {
         Q.rot.set(q.p+_qIndex+3);
         {
           double n=Q.rot.normalization();
-          if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n <<endl;
+          if(!rai_Kin_frame_ignoreQuatNormalizationWarning) if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n;
         }
         Q.rot.normalize();
         Q.rot.isZero=false;
@@ -311,7 +351,7 @@ void rai::Joint::calc_Q_from_q(const arr &q, uint _qIndex) {
         Q.rot.set(q.p+_qIndex+1);
         {
           double n=Q.rot.normalization();
-          if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n <<endl;
+          if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n;
         }
         Q.rot.normalize();
         Q.rot.isZero=false;
@@ -351,7 +391,8 @@ void rai::Joint::calc_Q_from_q(const arr &q, uint _qIndex) {
         break;
         
       case JT_time:
-        frame.time = 1e-1 * q.elem(_qIndex);
+        frame.tau = 1e-1 * q.elem(_qIndex);
+        if(frame.tau<1e-10) frame.tau=1e-10;
         break;
       default: NIY;
     }
@@ -462,7 +503,7 @@ arr rai::Joint::calc_q_from_Q(const rai::Transformation &Q) const {
       break;
     case JT_time:
       q.resize(1);
-      q(0) = 1e1 * frame.time;
+      q(0) = 1e1 * frame.tau;
       break;
     default: NIY;
   }
@@ -579,9 +620,10 @@ void rai::Joint::makeRigid() {
   }
 }
 
-void rai::Joint::makeFree(){
+void rai::Joint::makeFree(double H_cost){
   if(type!=JT_free){
     type=JT_free; frame.K.reset_q();
+    H=H_cost;
   }
 }
 
@@ -611,8 +653,8 @@ void rai::Joint::read(const Graph &G) {
   
   if(!B.isZero()) {
     //new frame between: from -> f -> to
-    CHECK_EQ(frame.outLinks.N, 1,"");
-    Frame *follow = frame.outLinks.scalar();
+    CHECK_EQ(frame.parentOf.N, 1,"");
+    Frame *follow = frame.parentOf.scalar();
     
     CHECK(follow->parent, "");
     CHECK(!follow->joint, "");
@@ -671,12 +713,19 @@ void rai::Joint::read(const Graph &G) {
   }
 }
 
+void rai::Joint::write(Graph& g){
+  g.newNode<Enum<JointType>>({"joint"}, {}, type);
+  if(H) g.newNode<double>({"ctrl_H"}, {}, H);
+  if(limits.N) g.newNode<arr>({"limits"}, {}, limits);
+  if(mimic) g.newNode<rai::String>({"mimic"}, {}, STRING('(' <<mimic->frame.name <<')'));
+}
+
 void rai::Joint::write(std::ostream& os) const {
   os <<" joint:" <<type;
   if(H) os <<" ctrl_H:"<<H;
-  if(limits.N) os <<" limits=[" <<limits <<"]";
+  if(limits.N) os <<" limits:[" <<limits <<"]";
   if(mimic) {
-    os <<" mimic:" <<mimic->frame.name;
+    os <<" mimic:(" <<mimic->frame.name <<')';
   }
   
   Node *n;
@@ -696,9 +745,9 @@ rai::Shape::Shape(Frame &f, const Shape *copyShape)
   frame.shape = this;
   if(copyShape) {
     const Shape& s = *copyShape;
-//    mesh_radius=s.mesh_radius;
-    cont=s.cont;
-    geom = s.geom;
+    cont = s.cont;
+    visual = s.visual;
+    geom = s.geom; //shallow shared_ptr copy!
   }
 }
 
@@ -707,7 +756,7 @@ rai::Shape::~Shape() {
 }
 
 rai::Geom &rai::Shape::getGeom() {
-  if(!geom) geom = new Geom(_GeomStore());
+  if(!geom) geom = make_shared<Geom>();
   return *geom;
 }
 
@@ -721,8 +770,15 @@ void rai::Shape::read(const Graph& ats) {
 
   getGeom().read(ats);
   
-  if(ats["contact"])           { cont=true; }
-  
+  if(ats["contact"]){
+    double d;
+    if(ats.get(d, "contact")) cont = (char)d;
+    else cont=1;
+  }
+  if(ats["noVisual"]){
+    visual=false;
+  }
+
   //center the mesh:
   if(type()==rai::ST_mesh && mesh().V.N) {
     if(ats["rel_includes_mesh_center"]) {
@@ -752,7 +808,16 @@ void rai::Shape::write(std::ostream& os) const {
   if((n=frame.ats["color"])) os <<' ' <<*n;
   if((n=frame.ats["mesh"])) os <<' ' <<*n;
   if((n=frame.ats["meshscale"])) os <<' ' <<*n;
-  if(cont) os <<" contact, ";
+  if(cont) os <<" contact:" <<(int)cont;
+}
+
+void rai::Shape::write(Graph& g){
+  if(geom) {
+    g.newNode<rai::Enum<ShapeType>>({"shape"}, {}, geom->type);
+    if(geom->type!=ST_mesh)
+      g.newNode<arr>({"size"}, {}, geom->size);
+  }
+  if(cont) g.newNode<int>({"contact"}, {}, cont);
 }
 
 void rai::Shape::glDraw(OpenGL& gl) {
@@ -778,7 +843,8 @@ void rai::Shape::glDraw(OpenGL& gl) {
     glDrawSphere(.1*scale);
   }
   if(frame.K.orsDrawShapes) {
-    if(geom->type!=ST_marker || frame.K.orsDrawMarkers) {
+    if(geom->type!=ST_marker || (frame.K.orsDrawMarkers)) {
+      if(gl.drawMode_idColor) Geo_mesh_drawColors=false; else Geo_mesh_drawColors=true;
       geom->glDraw(gl);
     }
   }
@@ -820,13 +886,12 @@ void rai::Inertia::defaultInertiaByShape() {
   CHECK(frame.shape, "");
   
   //add inertia to the body
-  Matrix I;
   switch(frame.shape->type()) {
-    case ST_sphere:   inertiaSphere(I.p(), mass, 1000., frame.shape->size(3));  break;
+    case ST_sphere:   inertiaSphere(matrix.p(), mass, 1000., frame.shape->radius());  break;
     case ST_ssBox:
-    case ST_box:      inertiaBox(I.p(), mass, 1000., frame.shape->size(0), frame.shape->size(1), frame.shape->size(2));  break;
+    case ST_box:      inertiaBox(matrix.p(), mass, 1000., frame.shape->size(0), frame.shape->size(1), frame.shape->size(2));  break;
     case ST_capsule:
-    case ST_cylinder: inertiaCylinder(I.p(), mass, 1000., frame.shape->size(2), frame.shape->size(3));  break;
+    case ST_cylinder: inertiaCylinder(matrix.p(), mass, 1000., frame.shape->size(2), frame.shape->size(3));  break;
     default: HALT("not implemented for this shape type");
   }
 }
@@ -844,12 +909,17 @@ void rai::Inertia::write(std::ostream &os) const {
   os <<" mass:" <<mass;
 }
 
+void rai::Inertia::write(Graph& g){
+  g.newNode<double>({"mass"}, {}, mass);
+}
+
 void rai::Inertia::read(const Graph& G) {
   double d;
   if(G.get(d, "mass")) {
     mass=d;
     matrix.setId();
     matrix *= .2*d;
+    if(frame.shape) defaultInertiaByShape();
   }
   if(G["fixed"])       type=BT_static;
   if(G["static"])      type=BT_static;

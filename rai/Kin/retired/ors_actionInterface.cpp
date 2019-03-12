@@ -123,8 +123,8 @@ void ActionInterface::loadConfiguration(const char* ors_filename) {
   arr BM(C->bodies.N);
   BM=1.;
   for(i=BM.N; i--;) {
-    if(C->bodies(i)->outLinks.N) {
-      BM(i) += BM(C->bodies(i)->outLinks(0)->to->index);
+    if(C->bodies(i)->parentOf.N) {
+      BM(i) += BM(C->bodies(i)->parentOf(0)->to->index);
     }
   }
   arr Wdiag(q0.N);
@@ -294,7 +294,7 @@ void ActionInterface::grab(const char *man_id, const char *obj_id) {
 //   if(!swift) c.active=false;
 
   // (1) drop object if one is in hand
-  for_list(rai::Joint,  e,  C->bodies(x.i)->outLinks) {
+  for_list(rai::Joint,  e,  C->bodies(x.i)->parentOf) {
     NIY;
     //C->del_edge(e);
   }
@@ -526,7 +526,7 @@ uint ActionInterface::getCatched(uint man_id) {
   return UINT_MAX;
 #else
   rai::Joint *e;
-  e=C->bodies(man_id)->outLinks(0);
+  e=C->bodies(man_id)->parentOf(0);
   if(!e) return UINT_MAX;
   return e->to->index;
 #endif
@@ -723,7 +723,7 @@ void ActionInterface::printObjectInfo() {
 
 void ActionInterface::indicateFailure() {
   // drop object
-  for_list(rai::Joint,  e,  C->getBodyByName("fing1c")->outLinks) {
+  for_list(rai::Joint,  e,  C->getBodyByName("fing1c")->parentOf) {
     NIY;
     //C->del_edge(e); //otherwise: no object in hand
   }

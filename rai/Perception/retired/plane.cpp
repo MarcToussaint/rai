@@ -30,7 +30,7 @@ arr CostFct_PlanePoints::df_transform() {
 ScalarFunction CostFct_PlanePoints::f_transform() {
   return [this](arr& g, arr& H, const arr& x) -> double {
     CostFct_PlanePoints fx(n,m,X,x);
-    if(&g) g=fx.df_transform();
+    if(!!g) g=fx.df_transform();
     return fx.f();
   };
 }

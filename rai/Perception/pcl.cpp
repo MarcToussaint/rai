@@ -20,7 +20,7 @@ void conv_ArrCloud_PclCloud(Pcl& cloud,
 void conv_PclCloud_ArrCloud(arr& pts,
                             const Pcl& cloud){
   double *p=NULL;
-  if(&pts){
+  if(!!pts){
     pts.resize(cloud.size(),3);
     p=pts.p;
   }
@@ -58,11 +58,11 @@ void conv_PclCloud_ArrCloud(arr& pts,
                             const PclC& cloud){
   double *p=NULL;
   byte *c=NULL;
-  if(&pts){
+  if(!!pts){
     pts.resize(cloud.size(),3);
     p=pts.p;
   }
-  if(&rgb){
+  if(!!rgb){
     rgb.resize(cloud.size(),3);
     c=rgb.p;
   }
@@ -106,11 +106,11 @@ void conv_PclCloud_ArrCloud(arr& pts,
                             const PclC& cloud){
   double *p=NULL;
   double *c=NULL;
-  if(&pts){
+  if(!!pts){
     pts.resize(cloud.size(),3);
     p=pts.p;
   }
-  if(&rgb){
+  if(!!rgb){
     rgb.resize(cloud.size(),3);
     c=rgb.p;
   }

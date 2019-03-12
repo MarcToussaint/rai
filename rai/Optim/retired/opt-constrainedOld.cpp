@@ -14,8 +14,8 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
     CHECK(df_x.N==x.N && Hf_x.d0==x.N && g_x.N==Jg_x.d0 && h_x.N==Jh_x.d0,"");
 //    && Hf_x.d1==x.N && Jg_x.d1==x.N &&  && Jh_x.d1==x.N //those dimensions might be non-equal due to packing...
   } else { //we evaluated this before - use buffered values; the meta F is still recomputed as (dual) parameters might have changed
-    if(&dL) CHECK(df_x.N && g_x.N==Jg_x.d0 && h_x.N==Jh_x.d0,"");
-    if(&HL) CHECK(Hf_x.N && g_x.N==Jg_x.d0 && h_x.N==Jh_x.d0,"");
+    if(!!dL) CHECK(df_x.N && g_x.N==Jg_x.d0 && h_x.N==Jh_x.d0,"");
+    if(!!HL) CHECK(Hf_x.N && g_x.N==Jg_x.d0 && h_x.N==Jh_x.d0,"");
   }
   
   //-- construct unconstrained problem
@@ -31,7 +31,7 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
   if(nu)       for(uint i=0; i<h_x.N; i++) L += nu * rai::sqr(h_x(i));                   //h-penalty
   if(kappa.N)  for(uint i=0; i<h_x.N; i++) L += kappa(i) * h_x(i);                      //h-lagrange terms
   
-  if(&dL) { //L gradient
+  if(!!dL) { //L gradient
     dL=df_x;
     //-- g-terms
     if(g_x.N) {
@@ -52,7 +52,7 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
     dL.reshape(x.N);
   }
   
-  if(&HL) { //L hessian
+  if(!!HL) { //L hessian
     // the 2.*Jg_x^T Jg_x terms are considered as in Gauss-Newton type; no real Hg used
     HL=Hf_x;
     //-- g-terms
@@ -244,7 +244,7 @@ uint optConstrained(arr& x, arr& dual, const ConstrainedProblem& P, OptOptions o
     
   }
   fil.close();
-  if(&dual) dual=UCP.lambda;
+  if(!!dual) dual=UCP.lambda;
   
   return newton.evals;
 }

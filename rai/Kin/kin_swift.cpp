@@ -43,7 +43,7 @@ SwiftInterface::~SwiftInterface() {
 SwiftInterface::SwiftInterface(const rai::KinematicWorld& world, double _cutoff)
   : scene(NULL), cutoff(_cutoff) {
   bool r, add;
-  
+
   if(scene) delete scene;
   
   scene = new SWIFT_Scene(false, false);
@@ -51,10 +51,11 @@ SwiftInterface::SwiftInterface(const rai::KinematicWorld& world, double _cutoff)
   INDEXswift2frame.resize(world.frames.N);  INDEXswift2frame=-1;
   INDEXshape2swift.resize(world.frames.N);  INDEXshape2swift=-1;
   
-  //cout <<" -- SwiftInterface init";
+//  cout <<" -- SwiftInterface init";
   rai::Shape *s;
   for(rai::Frame *f: world.frames) if((s=f->shape) && s->cont) {
-      //cout <<'.' <<flush;
+    //cout <<'.' <<flush;
+//    cout <<'.' <<f->name <<flush;
       add=true;
       switch(s->type()) {
         case rai::ST_none: HALT("shapes should have a type - somehow wrong initialization..."); break;
@@ -107,7 +108,7 @@ SwiftInterface::SwiftInterface(const rai::KinematicWorld& world, double _cutoff)
   initActivations(world, 4);
   
   pushToSwift(world);
-  //cout <<"...done" <<endl;
+//  cout <<"...done" <<endl;
 }
 
 void SwiftInterface::reinitShape(const rai::Frame *f) {
@@ -138,58 +139,88 @@ void SwiftInterface::initActivations(const rai::KinematicWorld& world, uint pare
     -- no collisions between bodies liked via the tree via 3 links
   */
   
-  //cout <<"collision active shapes: ";
-  //for_list(Type,  s,  world.shapes) if(s->cont) cout <<s->name <<' ';
+//  cout <<"collision active shapes: ";
+//  for(auto* f:world.frames) if(f->shape && f->shape->cont) cout <<f->name <<' ';
   
   for(rai::Frame *f: world.frames) if(f->shape) {
       if(!f->shape->cont) {
         if(INDEXshape2swift(f->ID)!=-1) scene->Deactivate(INDEXshape2swift(f->ID));
       } else {
         if(INDEXshape2swift(f->ID)!=-1) scene->Activate(INDEXshape2swift(f->ID));
-//      cout <<"activating " <<f->name <<endl;
+//        cout <<"activating " <<f->name <<endl;
       }
     }
-  //shapes within a body
-//  for(rai::Frame *b: world.frames) deactivate(b->shapes);
-  //deactivate along edges...
-  for(rai::Frame *f: world.frames) if(f->parent) {
-//    cout <<"deactivating edge pair " <<f->parent->name <<"--" <<f->name <<endl;
-      deactivate({ f->parent, f });
-    }
+  //shapes within a link
+  for(rai::Frame *f: world.frames) if(f->shape && f->shape->cont){
+    rai::Frame *p = f->getUpwardLink();
+    FrameL F = {p};
+    p->getRigidSubFrames(F);
+    for(uint i=F.N;i--;) if(!F(i)->shape || !F(i)->shape->cont) F.remove(i);
+    deactivate(F);
+  }
+#if 0
   //deactivate along trees...
-  for(rai::Frame *b: world.frames) {
+  for(rai::Frame *b: world.frames) if(b->shape && b->shape->cont){
+    if(!b->ats["robot"]) continue;
     FrameL group, children;
-    group.append(b);
+    group.append(b->getUpwardLink());
     //all rigid links as well
     for(uint i=0; i<group.N; i++) {
-      for(rai::Frame *b2: group(i)->outLinks) if(!b2->joint) group.setAppend(b2);
+      for(rai::Frame *b2: group(i)->parentOf) if(!b2->joint) group.setAppend(b2);
     }
     for(uint l=0; l<parentLevelsToDeactivate; l++) {
       children.clear();
-      for(rai::Frame *b2: group) for(rai::Frame *b2to: b2->outLinks) children.setAppend(b2to);
+      for(rai::Frame *b2: group) for(rai::Frame *b2to: b2->parentOf) children.setAppend(b2to);
       group.setAppend(children);
       //all rigid links as well
       for(uint i=0; i<group.N; i++) {
-        for(rai::Frame *b2: group(i)->outLinks) if(!b2->joint) group.setAppend(b2);
+        for(rai::Frame *b2: group(i)->parentOf) if(!b2->joint) group.setAppend(b2);
       }
     }
+    cout <<"deactivating group { " <<group <<" }" <<endl;
     deactivate(group);
   }
-}
+#else
+  //deactivate upward, depending on cont parameter (-1 indicates deactivate with parent)
+  for(rai::Frame *f: world.frames) if(f->shape && f->shape->cont<0){
+    FrameL F,P;
+    rai::Frame* p = f->getUpwardLink();
+    F = {p};
+    p->getRigidSubFrames(F);
+    for(uint i=F.N;i--;) if(!F(i)->shape || !F(i)->shape->cont) F.remove(i);
 
-void SwiftInterface::deactivate(const FrameL& shapes) {
-  //cout <<"deactivating shape group "; listWriteNames(shapes, cout); cout <<endl;
-  for(rai::Frame *s1: shapes) {
-    for(rai::Frame *s2: shapes) {
-      if(s1->ID > s2->ID) deactivate(s1, s2);
+    for(char i=0;i<-f->shape->cont;i++){
+      p = p->parent;
+      if(!p) break;
+      p = p->getUpwardLink();
+      P = {p};
+      p->getRigidSubFrames(P);
+      for(uint i=P.N;i--;) if(!P(i)->shape || !P(i)->shape->cont) P.remove(i);
+
+      if(F.N && P.N) deactivate(F,P);
     }
   }
+#endif
 }
 
 void SwiftInterface::deactivate(rai::Frame *s1, rai::Frame *s2) {
   if(INDEXshape2swift(s1->ID)==-1 || INDEXshape2swift(s2->ID)==-1) return;
   //cout <<"deactivating shape pair " <<s1->name <<'-' <<s2->name <<endl;
   scene->Deactivate(INDEXshape2swift(s1->ID), INDEXshape2swift(s2->ID));
+}
+
+void SwiftInterface::deactivate(const FrameL& shapes1, const FrameL& shapes2) {
+//  cout <<"deactivating shapes {"; listWriteNames(shapes1, cout);
+//  cout <<"} versus {"; listWriteNames(shapes2, cout); cout <<"}" <<endl;
+  for(rai::Frame *s1: shapes1) {
+    for(rai::Frame *s2: shapes2) {
+      if(s1->ID > s2->ID) deactivate(s1, s2);
+    }
+  }
+}
+
+void SwiftInterface::deactivate(const FrameL& shapes) {
+  deactivate(shapes, shapes);
 }
 
 void SwiftInterface::activate(rai::Frame *s1, rai::Frame *s2) {
@@ -226,16 +257,18 @@ void SwiftInterface::pushToSwift(const rai::KinematicWorld& world) {
 
 void SwiftInterface::pullFromSwift(rai::KinematicWorld& world, bool dumpReport) {
   int i, j, k, np;
-  int *oids, *num_contacts;
-  SWIFT_Real *dists, *nearest_pts, *normals;
+  int *oids=0, *num_contacts=0;
+  SWIFT_Real *dists=0, *nearest_pts=0, *normals=0;
   
   try {
-    scene->Query_Contact_Determination(
-      false, cutoff, np,
-      &oids, &num_contacts,
-      &dists,
-      &nearest_pts,
-      &normals);
+//    scene->Query_Contact_Determination(
+//      false, cutoff, np,
+//      &oids, &num_contacts,
+//      &dists,
+//      &nearest_pts,
+//      &normals);
+    scene->Query_Tolerance_Verification(false, cutoff, np, &oids);
+//    scene->Query_Intersection(false, np, &oids);
   } catch(const char *msg) {
     world.proxies.clear();
     cout <<"... catching error '" <<msg <<"' -- SWIFT failed! .. no proxies for this posture!!..." <<endl;
@@ -257,7 +290,6 @@ void SwiftInterface::pullFromSwift(rai::KinematicWorld& world, bool dumpReport) 
     }
   }
   
-  
   for(rai::Proxy& p:world.proxies) p.del_coll();
   world.proxies.resize(np);
   
@@ -268,8 +300,11 @@ void SwiftInterface::pullFromSwift(rai::KinematicWorld& world, bool dumpReport) 
     //CHECK(ids(a)==a && ids(b)==b, "shape index does not coincide with swift index");
     proxy.a = world.frames(INDEXswift2frame(oids[i <<1]));
     proxy.b = world.frames(INDEXswift2frame(oids[(i <<1)+1]));
-    proxy.d = dists[i];
-    
+    proxy.d = -.0; //dists[i];
+    proxy.posA = proxy.a->X.pos;
+    proxy.posB = proxy.b->X.pos;
+
+#if 0
     //non-penetrating pair of objects
     if(num_contacts[i]>0) { //only add one proxy!for(j=0; j<num_contacts[i]; j++, k++) {
       CHECK_EQ(num_contacts[i], 1,"");
@@ -296,6 +331,7 @@ void SwiftInterface::pullFromSwift(rai::KinematicWorld& world, bool dumpReport) 
     } else if(num_contacts[i]==0) {
       RAI_MSG("what is this?");
     }
+#endif
     
   }
   

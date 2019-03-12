@@ -14,16 +14,18 @@ bool KOMO_Problem::checkStructure(const arr& x) {
   arrA J, H;
   ObjectiveTypeA tt, featureTypes;
 //  uint T=get_T();
-  uint k=get_k();
   uintA variableDimensions, featureTimes, phiTimes;
   getStructure(variableDimensions, featureTimes, featureTypes);
   uintA varDimIntegral = integral(variableDimensions);
   
   phi(y, J, H, phiTimes, tt, x, NoArr);
   
+#ifndef RAI_NOCHECK
+  uint m=y.N;
+  uint k=get_k();
+
   CHECK_EQ(tt, featureTypes,"");
   CHECK_EQ(sum(variableDimensions), x.N, "variable dimensions don't match");
-  uint m=y.N;
   CHECK_EQ(featureTimes.N, m, "");
   CHECK_EQ(J.N, m, "");
   CHECK_EQ(tt.N, m, "");
@@ -33,6 +35,7 @@ bool KOMO_Problem::checkStructure(const arr& x) {
     uint d=varDimIntegral(t) - (t>k? varDimIntegral(t-k-1) : 0);
     CHECK_EQ(J(i).N, d, i<<"th Jacobian has wrong dim");
   }
+#endif
   return true;
 }
 
@@ -45,7 +48,7 @@ void KOMO_Problem::report(const arr& phi) {
   cout <<"KOMO Problem report:  k=" <<k <<"  Features:" <<endl;
   for(uint i=0; i<featureTimes.N; i++) {
     cout <<i <<" t=" <<featureTimes(i) <<" vardim=" <<variableDimensions(featureTimes(i)) <<" type=" <<featureTypes(i);
-    if(&phi) cout <<" phi=" <<phi(i) <<" phi^2=" <<rai::sqr(phi(i));
+    if(!!phi) cout <<" phi=" <<phi(i) <<" phi^2=" <<rai::sqr(phi(i));
     cout <<endl;
   }
 }
@@ -79,10 +82,10 @@ Conv_KOMO_ConstrainedProblem::Conv_KOMO_ConstrainedProblem(KOMO_Problem& P) : KO
 }
 
 void Conv_KOMO_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& featureTypes, const arr& x, arr& lambda) {
-  KOMO.phi(phi, (&J?J_KOMO:NoArrA), (&H?H_KOMO:NoArrA), featureTimes, featureTypes, x, lambda);
+  KOMO.phi(phi, (!!J?J_KOMO:NoArrA), (!!H?H_KOMO:NoArrA), featureTimes, featureTypes, x, lambda);
   
   //-- construct a row-shifed J from the array of featureJs
-  if(&J) {
+  if(!!J) {
     uint k=KOMO.get_k();
     uint dim_xmax = max(variableDimensions);
     RowShifted *Jaux = makeRowShifted(J, phi.N, (k+1)*dim_xmax, x.N);
@@ -103,9 +106,9 @@ void Conv_KOMO_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA&
     Jaux->computeColPatches(true);
   }
   
-  if(&H) {
+  if(!!H) {
     bool hasFterm = false;
-    if(&featureTypes) hasFterm = (featureTypes.findValue(OT_f) != -1);
+    if(!!featureTypes) hasFterm = (featureTypes.findValue(OT_f) != -1);
     if(hasFterm) {
       CHECK(H_KOMO.N, "this problem has f-terms -- I need a Hessian!");
       NIY

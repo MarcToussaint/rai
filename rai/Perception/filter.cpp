@@ -13,9 +13,9 @@
 
 Filter::Filter()
   : Thread("Filter", -1.),
-    percepts_input(this, "percepts_input", true), //listens!!
-    percepts_filtered(this, "percepts_filtered"),
-    modelWorld(this, "modelWorld") {
+    percepts_input(this, true), //listens!!
+    percepts_filtered(this),
+    modelWorld(this) {
   threadOpen();
 }
 
@@ -30,14 +30,14 @@ void Filter::open() {
     if(b->ats["percept"]) {
       //first check if it already is in the percept list
       bool done=false;
-      for(Percept *p:percepts_filtered.get()()) if(p->bodyId==(int)b->ID) done=true;
+      for(const PerceptPtr& p:percepts_filtered.get()()) if(p->bodyId==(int)b->ID) done=true;
       if(!done) {
         LOG(0) <<"ADDING this body " <<b->name <<" to the percept database, which ats:" <<endl;
         LOG(0) <<*b <<"--" <<b->ats <<endl;
         rai::Shape *s=b->shape;
         switch(s->type()) {
           case rai::ST_box: {
-            Percept *p = new PercBox(b->X, s->size(), s->mesh().C);
+            PerceptPtr p = make_shared<PercBox>(b->X, s->size(), s->mesh().C);
             p->id = nextId++;
             p->bodyId = b->ID;
             percepts_filtered.set()->append(p);
@@ -56,16 +56,7 @@ void Filter::step() {
 //  verbose = 1;
 
   if(false) { //just copy!
-    percepts_input.writeAccess();
-    percepts_filtered.writeAccess();
-    
-    listDelete(percepts_filtered());
-    percepts_filtered() = percepts_input();
-    percepts_input().clear();
-    
-    percepts_filtered.deAccess();
-    percepts_input.deAccess();
-    
+    percepts_filtered.set() = percepts_input.get();
     return;
   }
   
@@ -75,9 +66,9 @@ void Filter::step() {
   if(verbose>0) cout <<"FILTER: #inputs=" <<percepts_input().N <<" #database=" <<percepts_filtered().N <<endl;
   if(verbose>1) {
     cout <<"INPUTS:" <<endl;
-    for(Percept *p:percepts_input()) cout <<(*p) <<endl;
+    for(PerceptPtr& p:percepts_input()) cout <<(*p) <<endl;
     cout <<"DATABASE:" <<endl;
-    for(Percept *p:percepts_filtered()) cout <<(*p) <<endl;
+    for(PerceptPtr& p:percepts_filtered()) cout <<(*p) <<endl;
   }
   
   // If empty inputs, do nothing.
@@ -91,7 +82,7 @@ void Filter::step() {
   
   //-- step 1: discount precision of old percepts
   // in forward models, the variance of two Gaussians is ADDED -> precision is 1/variance
-  for(Percept *p:percepts_filtered()) p->precision = 1./(1./p->precision + 1./precision_transition);
+  for(PerceptPtr& p:percepts_filtered()) p->precision = 1./(1./p->precision + 1./precision_transition);
   
   //-- step 2: compute matches within types and fuse
   // For each type of inputs, run the matching
@@ -99,8 +90,8 @@ void Filter::step() {
     Percept::Type type = Percept::Type(t);
     //collect input and database percepts of given type
     PerceptL input_ofType, database_ofType;
-    for(Percept *p : percepts_input())     if(p->type==type)  input_ofType.append(p);
-    for(Percept *p : percepts_filtered())  if(p->type==type)  database_ofType.append(p);
+    for(PerceptPtr& p : percepts_input())     if(p->type==type)  input_ofType.append(p);
+    for(PerceptPtr& p : percepts_filtered())  if(p->type==type)  database_ofType.append(p);
     
     //no percepts at all of this type..
     if(!input_ofType.N && !database_ofType.N) continue;
@@ -117,7 +108,7 @@ void Filter::step() {
     filtered.append(assignedObjects);
 #else
     for(uint i=0; i<input_ofType.N; i++) {
-      Percept *perc = input_ofType(i);
+      PerceptPtr& perc = input_ofType(i);
       int j=ha.getMatch_row(i);
       if(j>=(int)database_ofType.N) j=-1;
       if(j==-1) { //nothing to merge with
@@ -129,7 +120,7 @@ void Filter::step() {
           perc->id = 0; //will be deleted
         }
       } else {
-        Percept *obj = database_ofType(j);
+        PerceptPtr& obj = database_ofType(j);
         perc->id = obj->id;
         obj->fuse(perc);
       }
@@ -139,10 +130,8 @@ void Filter::step() {
   
   //-- step 3: remove all database objects with too low precision and no body match; and append new creations
   for(uint i=percepts_filtered().N; i--;) {
-    Percept *p = percepts_filtered()(i);
+    PerceptPtr& p = percepts_filtered()(i);
     if(p->precision<precision_threshold && p->bodyId>=0) {
-      delete p;
-      p=NULL;
       percepts_filtered().remove(i);
     }
   }
@@ -150,9 +139,6 @@ void Filter::step() {
   newCreations.clear();
   
   //-- step 4: clean up remaining percepts
-  for(Percept* p : percepts_input()) {
-    if(!p->id) delete p;
-  }
   percepts_input().clear();
   
 #if 0
@@ -173,48 +159,58 @@ void Filter::step() {
   
   //-- step 5: sync with modelWorld using inverse kinematics
   modelWorld.writeAccess();
-  modelWorld->setAgent(1);
-  TaskControlMethods taskController(modelWorld());
+  modelWorld->selectJointsByName({"S1"});
+
+  TaskControlMethods taskController(rai::getParameter<double>("Hrate", .1)*modelWorld->getHmetric());
+  CtrlTaskL tasks;
   arr q=modelWorld().q;
   
   // create task costs on the modelWorld for each percept
-  for(Percept *p:percepts_filtered()) {
+  for(PerceptPtr& p:percepts_filtered()) {
     if(p->bodyId>=0) {
       rai::Frame *b = modelWorld->frames(p->bodyId);
+      if(p->type==Percept::PT_box) {
+        rai::Shape *s=b->shape;
+//        s->size() = (static_cast<PercBox*>(p))->size;
+//        s->mesh().setSSBox(s->size(0), s->size(1), s->size(2), 0.0001);
+        s->mesh().C = std::dynamic_pointer_cast<PercBox>(p)->color;
+        if(s->mesh().C.d0 > 3)
+          s->mesh().C=ARR(0.,0.,0.);
+      }
+
       CtrlTask *t;
       
-      t = new CtrlTask(STRING("syncPos_" <<b->name), new TM_Default(TMT_pos, b->ID));
-      t->ref = new MotionProfile_Const(p->transform.pos.getArr());
-      taskController.tasks.append(t);
+      t = new CtrlTask(STRING("syncPos_" <<b->name), make_shared<TM_Default>(TMT_pos, b->ID));
+      t->ref = make_shared<MotionProfile_Const>(p->pose.pos.getArr());
+      tasks.append(t);
       
-      t = new CtrlTask(STRING("syncQuat_" <<b->name), new TM_Default(TMT_quat, b->ID));
-      t->ref = new MotionProfile_Const(p->transform.rot.getArr4d(), true);
-      taskController.tasks.append(t);
+      t = new CtrlTask(STRING("syncQuat_" <<b->name), make_shared<TM_Default>(TMT_quat, b->ID));
+      t->ref = make_shared<MotionProfile_Const>(p->pose.rot.getArr4d(), true);
+      tasks.append(t);
     }
   }
   
   double cost=0.;
-  taskController.updateCtrlTasks(0., modelWorld()); //computes their values and Jacobians
-  arr dq = taskController.inverseKinematics(NoArr, NoArr, &cost);
+  for(CtrlTask* t: tasks) t->update(.0, modelWorld()); //computes their values and Jacobians
+  arr dq = taskController.inverseKinematics(tasks, NoArr, NoArr, NoArr, &cost);
   q += dq;
   
   if(verbose>0) {
     LOG(0) <<"FILTER: IK cost=" <<cost <<" perc q vector = " <<q <<endl;
-    taskController.reportCurrentState();
+    taskController.reportCurrentState(tasks);
   }
   
-  listDelete(taskController.tasks); //cleanup tasks
+  listDelete(tasks); //cleanup tasks
   
-  modelWorld->setAgent(1);
   modelWorld->setJointState(q);
-  modelWorld->setAgent(0);
+  modelWorld->selectJointsByName({}, true);
   modelWorld.deAccess();
   
   //-- done
   
   if(verbose>1) {
     cout <<"AFTER FILTER: DATABASE:" <<endl;
-    for(Percept *p:percepts_filtered()) cout <<(*p) <<endl;
+    for(PerceptPtr& p:percepts_filtered()) cout <<(*p) <<endl;
   }
   
   percepts_filtered.deAccess();
@@ -237,7 +233,7 @@ PerceptL Filter::assign(const PerceptL& inputs, const PerceptL& database, const 
     // Existed before, doesn't exist now.
     if(i >= num_new) {
       //std::cout<< "Existed before, doesn't now." << std::endl;
-      Percept *old_obj = database(col);
+      PerceptPtr& old_obj = database(col);
       old_obj->precision *= relevance_decay_factor;
       if(old_obj->precision > precision_threshold)
         new_database.append(old_obj);
@@ -245,15 +241,15 @@ PerceptL Filter::assign(const PerceptL& inputs, const PerceptL& database, const 
     } else {
       if((col < num_old) && (costs(i, col) < distance_threshold)) {      // Existed before
         //std::cout<< "Existed before, does now" << std::endl;
-        Percept *new_obj = inputs(i);
-        Percept *old_obj = database(col);
+        PerceptPtr& new_obj = inputs(i);
+        PerceptPtr& old_obj = database(col);
         if(new_obj->type != Percept::Type::PT_alvar)
           new_obj->id = database(col)->id;
         old_obj->fuse(new_obj);
         new_database.append(old_obj);
       } else { // This didn't exist before. Add it in
         //std::cout<< "Didn't exist before, or not close enough." << std::endl;
-        Percept *new_obj = inputs(i);
+        PerceptPtr& new_obj = inputs(i);
         if(new_obj->type != Percept::Type::PT_alvar) {
           new_obj->id = nextId;
           nextId++;

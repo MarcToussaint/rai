@@ -23,6 +23,7 @@ void draw1(void*){
 
 void TEST(Teapot) {
   OpenGL gl;
+  gl.reportEvents = true;
   gl.add(draw1,0);
   gl.watch();
   cout <<"returned from watch - watch again" <<endl;
@@ -42,8 +43,8 @@ void TEST(MultipleViews) {
   gl.add(draw1,0);
   gl.addSubView(0,draw1,0);
   gl.addSubView(1,draw1,0);
-  gl.setViewPort(1,.1,.4,.1,.4);
-  gl.setViewPort(0,.6,.9,.6,.9);
+  gl.setSubViewPort(1,.1,.4,.1,.4);
+  gl.setSubViewPort(0,.6,.9,.6,.9);
   gl.views(0).img=&img;
   gl.views(0).text="little image";
   //gl.views(1).text="2nd teapot";
@@ -56,7 +57,7 @@ void TEST(Grab) {
   OpenGL gl("title",300,300);
   gl.add(draw1,0);
   cout <<"normal view - written to z.ppm " <<endl;
-  gl.update("title", true, true);
+  gl.update("title", true);
   write_ppm(gl.captureImage,"z.1.ppm");
   write_ppm(convert<byte>(255.f*gl.captureDepth),"z.2.ppm");
 
@@ -69,7 +70,7 @@ void TEST(Grab) {
   gl.watch();
 
   //grap the depth image from current view:
-  gl.update(NULL, false, true);
+  gl.update(NULL, true);
   cout <<"max " <<(int)gl.captureDepth.max() <<" min " <<(int)gl.captureDepth.min() <<endl;
   gl.watchImage(gl.captureDepth,true,1);
 }
@@ -315,10 +316,10 @@ void TEST(Texture2) {
 //===========================================================================
 
 void TEST(OfflineRendering){
-  OpenGL gl("view", 40, 40);
+  OpenGL gl("view", 40, 40, true);
   gl.add(draw1,0);
-  gl.update();
-  gl.renderInBack(200, 200);
+  gl.update(NULL, true);
+//  gl.renderInBack(200, 200);
   write_ppm(gl.captureImage,"z.ppm");
 //  OpenGL gl2("captured", gl.captureImage.d1, gl.captureImage.d0);
 //  gl2.watchImage(gl.captureImage, true, 1);
@@ -363,7 +364,6 @@ void TEST(Image) {
   OpenGL gl;
   byteA img;
   read_ppm(img,"box.ppm",false);
-  gl.doCaptureImage=true;
   gl.watchImage(img,true,2);
 
   img=gl.captureImage;

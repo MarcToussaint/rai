@@ -32,12 +32,11 @@ void testFolLoadFile(){
   cout <<"state = " <<*s <<"\nrule=" <<*r <<endl;
 
   G.checkConsistency();
-  Node *sub = G.newSubgraph({}, {});
-  sub->graph().isNodeOfGraph = sub;
+  Graph& sub = G.newSubgraph({}, {});
   G.checkConsistency();
-  sub->graph().newNode<bool>({}, {s, consts(0)}, true);
+  sub.newNode<bool>({}, {s, consts(0)}, true);
   G.checkConsistency();
-  sub->graph().newNode<bool>({}, {s, consts(2)}, true);
+  sub.newNode<bool>({}, {s, consts(2)}, true);
   G.checkConsistency();
 }
 

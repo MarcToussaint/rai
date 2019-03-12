@@ -12,9 +12,9 @@
 
 struct KinectDepthPacking : Thread {
   struct sKinectDepthPacking *s;
-  VARlisten(uint16A, kinect_depth);
-  VAR(byteA, kinect_depthRgb);
-  KinectDepthPacking() : Thread("KinectDepthPacking") {}
+  Var<uint16A> kinect_depth;
+  Var<byteA> kinect_depthRgb;
+  KinectDepthPacking() : Thread("KinectDepthPacking"), kinect_depth(this, true) {}
   void open();
   void step();
   void close();

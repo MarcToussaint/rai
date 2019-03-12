@@ -1,5 +1,5 @@
 #include <Kin/kin.h>
-#include <KOMO/komo.h>
+#include <KOMO/komo-ext.h>
 #include <Kin/taskMaps.h>
 #include <Core/graph.h>
 #include <Gui/opengl.h>
@@ -19,29 +19,32 @@ void plan(){
   K["ball2"]->joint->type=rai::JT_rigid;
   K.reset_q();
 
-  KOMO komo;
+  KOMO_ext komo;
   komo.setModel(K, false);
   komo.setPathOpt(3., 20, 1.);
-
+  komo.setSquaredQAccelerations();
+  
   //permanent tasks: no collision, gravity
-  komo.setTask(-1., -1., new TM_PairCollision(K, "ball1", "ball2", TM_PairCollision::_negScalar, false), OT_ineq, {}, 1e2);
+  komo.addObjective(-1., -1., new TM_PairCollision(K, "ball1", "ball2", TM_PairCollision::_negScalar, false), OT_ineq, {}, 1e2);
 
   //-- action 1
-  komo.setImpact(1., "ball1", "ball2");
-  komo.setPlace(1., NULL, "ball1", "table1");
-  komo.setKinematicSwitch(1., true, new rai::KinematicSwitch(rai::SW_actJoint, rai::JT_transXY, "world", "ball2", K));
-  komo.setFlag(1., new rai::Flag(FL_zeroAcc, K["ball2"]->ID, 0, true));
+//  komo.setImpact(1., "ball1", "ball2");
+//  komo.setPlace(1., NULL, "ball1", "table1");
+  komo.addSwitch_dynamicOn(1., -1., "world", "ball2");
+//  komo.setKinematicSwitch(1., true, new rai::KinematicSwitch(rai::SW_actJoint, rai::JT_transXY, "world", "ball2", K));
+//  komo.setFlag(1., new rai::Flag(FL_zeroAcc, K["ball2"]->ID, 0, true));
 
   // ball2 over the edge
 //  komo.setOverTheEdge(2., "ball2", "table1");
 
   // gravity for ball2
-  komo.setKinematicSwitch(2., true, new rai::KinematicSwitch(rai::SW_actJoint, rai::JT_trans3, "world", "ball2", K));
-  komo.setFlag(2., new rai::Flag(FL_clear, K["ball2"]->ID, 0, true));
-  komo.setFlag(2., new rai::Flag(FL_gravityAcc, K["ball2"]->ID, 0, true));
+  komo.addSwitch_dynamic(2., -1., "world", "ball2");
+//  komo.setKinematicSwitch(2., true, new rai::KinematicSwitch(rai::SW_actJoint, rai::JT_trans3, "world", "ball2", K));
+//  komo.setFlag(2., new rai::Flag(FL_clear, K["ball2"]->ID, 0, true));
+//  komo.setFlag(2., new rai::Flag(FL_gravityAcc, K["ball2"]->ID, 0, true));
 
   // final target for ball2
-  komo.setTask(3., 3., new TM_Default(TMT_posDiff, K, "ball2"), OT_sos, {+2.,-0.,.3}, 1e1);
+  komo.addObjective(3., 3., new TM_Default(TMT_posDiff, K, "ball2"), OT_sos, {+2.,-0.,.3}, 1e1);
 
   komo.reset();
   komo.reportProblem();
@@ -50,7 +53,7 @@ void plan(){
   komo.getReport(true);
   komo.checkGradients();
 
-  while(komo.displayTrajectory(-.01, true, "vid/z."));
+  for(uint i=0;i<2;i++) komo.displayTrajectory(-.01, true, "vid/z.");
   //renderConfigurations(komo.configurations, filePrefix, -komo.k_order, 600, 600, &komo.gl->camera);
 }
 

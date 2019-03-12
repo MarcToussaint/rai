@@ -49,7 +49,7 @@ TaskControlThread::TaskControlThread(const char* _robot, const rai::KinematicWor
   // 3) the "robot" flag in cfg file
   // 4) the "robot" argument here
   
-  if(&world) {
+  if(!!world) {
     realWorld = world;
     modelWorld.set()() = realWorld;
   } else {

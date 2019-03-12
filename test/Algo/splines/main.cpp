@@ -26,7 +26,7 @@ ScalarFunction cost = [](arr &g, arr &H, const arr &x) -> double{
   t=0;       C += sumOfSqr(x[t]-0.);
   t=x.d0-1;  C += sumOfSqr(x[t]-1.);
 
-  if(&g){
+  if(!!g){
     g.resizeAs(x);
     g.setZero();
     //gravity
@@ -88,7 +88,7 @@ void TEST(BSpline){
 
   ScalarFunction splineCost = [&S](arr &g, arr &H, const arr &x) -> double{
     double c=cost(g, NoArr, S.basis*x);
-    if(&g) g=S.basis_trans*g;
+    if(!!g) g=S.basis_trans*g;
     return c;
   };
 
@@ -135,7 +135,7 @@ void TEST(Path){
   VectorFunction Test = [&P](arr& y, arr& J, const arr& x) -> void {
     CHECK_EQ(x.N,1,"");
     y = P.getPosition(x(0));
-    if(&J) J = P.getVelocity(x(0));
+    if(!!J) J = P.getVelocity(x(0));
   };
   for(uint k=0;k<10;k++){
     arr x(1);

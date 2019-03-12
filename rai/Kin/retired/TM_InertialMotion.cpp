@@ -25,18 +25,18 @@ void TM_InertialMotion::phi(arr &y, arr &J, const WorldL &Ktuple) {
   
   TM_Default pos(TMT_pos, i);
   pos.order=2;
-  pos.Feature::phi(acc, (&J?Jacc:NoArr), Ktuple);
+  pos.Feature::__phi(acc, (!!J?Jacc:NoArr), Ktuple);
   
   y = acc - acc_ref;
-  if(&J) {
+  if(!!J) {
     J = zeros(3, Jacc.d1);
     J.setMatrixBlock(-Jacc_ref, 0, Jacc.d1-Jacc_ref.d1);
     J += Jacc;
   }
   
-  if(K.frames(i)->flags & (1<<FL_impulseExchange)) {
+  if(Ktuple(-2)->frames(i)->flags & (1<<FL_impulseExchange)) {
     y.setZero();
-    if(&J) J.setZero();
+    if(!!J) J.setZero();
   }
 }
 

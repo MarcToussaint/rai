@@ -19,5 +19,5 @@ struct TM_Energy : Feature {
   virtual void phi(arr& y, arr& J, const WorldL& Ktuple);
   virtual uint dim_phi(const WorldL& Ktuple);
 
-  virtual rai::String shortTag(const rai::KinematicWorld& G) { return STRING("Energy"); }
+  virtual rai::String shortTag(const rai::KinematicWorld& G) { return STRING("Energy-"<<order); }
 };

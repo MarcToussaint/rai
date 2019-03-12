@@ -44,15 +44,15 @@ bool baxter_update_qReal(arr& qReal, const sensor_msgs::JointState& msg, const r
 bool baxter_get_q_qdot_u(arr& q, arr& v, arr& u, const sensor_msgs::JointState& msg, const rai::KinematicWorld& baxterModel) {
   uint n = msg.name.size();
   if(!n) return false;
-  if(&q && q.N!=baxterModel.q.N) q.resize(baxterModel.q.N).setZero();
-  if(&v && v.N!=baxterModel.q.N) v.resize(baxterModel.q.N).setZero();
-  if(&u && u.N!=baxterModel.q.N) u.resize(baxterModel.q.N).setZero();
+  if(!!q && q.N!=baxterModel.q.N) q.resize(baxterModel.q.N).setZero();
+  if(!!v && v.N!=baxterModel.q.N) v.resize(baxterModel.q.N).setZero();
+  if(!!u && u.N!=baxterModel.q.N) u.resize(baxterModel.q.N).setZero();
   for(uint i=0; i<n; i++) {
     rai::Joint *j = baxterModel.getJointByName(msg.name[i].c_str(), false);
     if(j) {
-      if(&q) q(j->qIndex) = msg.position[i];
-      if(&v) v(j->qIndex) = msg.velocity[i];
-      if(&u) u(j->qIndex) = msg.effort[i];
+      if(!!q) q(j->qIndex) = msg.position[i];
+      if(!!v) v(j->qIndex) = msg.velocity[i];
+      if(!!u) u(j->qIndex) = msg.effort[i];
     }
   }
   return true;
@@ -152,6 +152,17 @@ void SendPositionCommandsToBaxter::close() {
 
 #ifdef RAI_ROS
 bool baxter_update_qReal(arr& qReal, const sensor_msgs::JointState& msg, const rai::KinematicWorld& baxterModel) { NICO }
+
+SendPositionCommandsToBaxter::SendPositionCommandsToBaxter(const rai::KinematicWorld& kw, const Var<CtrlMsg>& _ctrl_ref)
+  : Thread("SendPositionCommandsToBaxter"),
+    ctrl_ref(NULL, _ctrl_ref, true),
+    s(NULL),
+    baxterModel(kw) {
+  NICO;
+}
+void SendPositionCommandsToBaxter::open() { NICO }
+void SendPositionCommandsToBaxter::step() { NICO }
+void SendPositionCommandsToBaxter::close() { NICO }
 #endif
 
 #endif

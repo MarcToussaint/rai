@@ -12,6 +12,7 @@
 #include <Kin/contact.h>
 #include <Kin/TM_default.h>
 #include <Kin/TM_PairCollision.h>
+#include <Kin/TM_angVel.h>
 
 bool JointDidNotSwitch(const rai::Frame *a1, const WorldL& Ktuple, int order);
 
@@ -30,7 +31,7 @@ TM_Gravity::TM_Gravity() {
 void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple) {
 
   y.clear();
-  if(&J) J.clear();
+  if(!!J) J.clear();
   
   if(order==0) HALT("that doesn't make sense");
   
@@ -48,7 +49,7 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple) {
 //      if(a->inertia && a->inertia->type==rai::BT_dynamic){
         TM_Default pos(TMT_pos, a->ID);
         pos.order=1;
-        pos.Feature::phi(p0, (&J?J0:NoArr), Ktuple);
+        pos.Feature::__phi(p0, (!!J?J0:NoArr), Ktuple);
         
         arr v_ref = {0.,0.,-gravity};
         arr Jv_ref = zeros(3, K.q.N);
@@ -56,14 +57,14 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple) {
         if(false && a->contacts.N) {
           for(rai::Contact *c:a->contacts) {
             if(&c->a == a) {
-              K.kinematicsVec(pc, (&J?Jc:NoArr), a, c->a_rel);
+              K.kinematicsVec(pc, (!!J?Jc:NoArr), a, c->a_rel);
             } else {
               CHECK_EQ(&c->b, a, "");
-              K.kinematicsVec(pc, (&J?Jc:NoArr), a, c->b_rel);
+              K.kinematicsVec(pc, (!!J?Jc:NoArr), a, c->b_rel);
             }
             arr rel = pc;
             double rel2=sumOfSqr(rel);
-            if(&J) {
+            if(!!J) {
               arr Jrel = Jc;
               arr Jrel2 = ((-2./(rel2*rel2)) * ~rel) * Jrel;
               Jv_ref -= ((rel * ~rel)/rel2) * Jv_ref; //derive w.r.t. v_ref
@@ -79,7 +80,7 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple) {
         //z-velocity only, compared to default .1 drop velocity
 #if 1
         y.append(p0 - v_ref);
-        if(&J) {
+        if(!!J) {
 //          uint Ktuple_dim = 0;
 //          for(auto *K:Ks) Ktuple_dim += K->q.N;
 //          arr tmp = zeros(3, Ktuple_dim);
@@ -92,7 +93,7 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple) {
         }
 #else
         y.append(scalarProduct(v_ref, p0) - .1);
-        if(&J) {
+        if(!!J) {
 //          uint Ktuple_dim = 0;
 //          for(auto *K:Ks) Ktuple_dim += K->q.N;
 //          arr tmp = zeros(1, Ktuple_dim);
@@ -118,14 +119,14 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple) {
       if(a->flags & (1<<FL_gravityAcc)) {
         TM_Default pos(TMT_posDiff, a->ID);
         pos.order=2;
-        pos.Feature::phi(acc, (&J?Jacc:NoArr), Ktuple);
+        pos.Feature::__phi(acc, (!!J?Jacc:NoArr), Ktuple);
         
         arr err = acc - acc_ref;
         arr Jerr = Jacc;
         
         y.append(err);
         
-        if(&J) {
+        if(!!J) {
           expandJacobian(Jacc_ref, Ktuple);
           Jerr -= Jacc_ref;
           J = Jerr;
@@ -137,78 +138,78 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple) {
           
             arr d, Jd;
             TM_PairCollision dist(con->a.ID, con->b.ID, TM_PairCollision::_negScalar, false);
-            dist.phi(d, (&J?Jd:NoArr), *Ktuple(-2));
-            if(&J) expandJacobian(Jd, Ktuple, -2);
+            dist.phi(d, (!!J?Jd:NoArr), *Ktuple(-2));
+            if(!!J) expandJacobian(Jd, Ktuple, -2);
             d *= 1.;
-            if(&J) Jd *= 1.;
+            if(!!J) Jd *= 1.;
             
 //            arr d2, Jd2;
 //            TM_PairCollision dist2(con->a.ID, con->b.ID, true, false);
-//            dist2.phi(d2, (&J?Jd2:NoArr), *Ktuple(-1));
-//            if(&J) expandJacobian(Jd2, Ktuple, -1);
+//            dist2.phi(d2, (!!J?Jd2:NoArr), *Ktuple(-1));
+//            if(!!J) expandJacobian(Jd2, Ktuple, -1);
 //            d += d2;
-//            if(&J) Jd += Jd2;
+//            if(!!J) Jd += Jd2;
 
 //            d.scalar() = tanh(d.scalar());
-//            if(&J) Jd *= (1.-d.scalar()*d.scalar());
+//            if(!!J) Jd *= (1.-d.scalar()*d.scalar());
 //            double dd;
 //            shapeFunction(d.scalar(), dd);
-//            if(&J) Jd *= dd;
+//            if(!!J) Jd *= dd;
 
             arr c, Jc;
             TM_PairCollision coll(con->a.ID, con->b.ID, TM_PairCollision::_vector, true);
-            coll.phi(c, (&J?Jc:NoArr), K);
+            coll.phi(c, (!!J?Jc:NoArr), K);
             if(length(c)<1e-6) continue;
             normalizeWithJac(c, Jc);
-            if(&J) expandJacobian(Jc, Ktuple, -2);
+            if(!!J) expandJacobian(Jc, Ktuple, -2);
             
             double sign = scalarProduct(c,err);
             
 //            cout <<"time " <<t <<" frame " <<a->name <<" norm=" <<c <<" dist=" <<d <<endl;
 #if 0
-            if(&J) J -= (c*~c*J + c*~y*Jc + scalarProduct(c,y)*Jc);
+            if(!!J) J -= (c*~c*J + c*~y*Jc + scalarProduct(c,y)*Jc);
             y -= c*scalarProduct(c,y);
 #elif 1
             if(sign<0.) {
-              if(&J) J -= (1.-d.scalar())*(c*~c*J + c*~y*Jc + scalarProduct(c,y)*Jc) - c*scalarProduct(c,y)*Jd;
+              if(!!J) J -= (1.-d.scalar())*(c*~c*J + c*~y*Jc + scalarProduct(c,y)*Jc) - c*scalarProduct(c,y)*Jd;
               y -= (1.-d.scalar())*c*scalarProduct(c,y);
             }
 #else
             if(sign<0.) {
               double dfactor=exp(-0.5*d.scalar()*d.scalar()/.01);
               double ddfactor = dfactor * (-d.scalar()/.01);
-              if(&J) J -= dfactor*(c*~c*J + c*~y*Jc + scalarProduct(c,y)*Jc) + ddfactor*c*scalarProduct(c,y)*Jd;
+              if(!!J) J -= dfactor*(c*~c*J + c*~y*Jc + scalarProduct(c,y)*Jc) + ddfactor*c*scalarProduct(c,y)*Jd;
               y -= dfactor*c*scalarProduct(c,y);
             }
 #endif
             
 #if 0
-            if(&J) {
+            if(!!J) {
               arr tmp = scalarProduct(c,err)*Jd + d*~c*Jerr + d*~err*Jc;
               J.append(tmp);
             }
             y.append(d*scalarProduct(c,err));
 #else
-//            if(&J){
+//            if(!!J){
 //              arr tmp = scalarProduct(c,err)*Jd + d*~c*Jerr + d*~err*Jc;
 //              J += c*tmp + d.scalar()*scalarProduct(c,err)*Jc;
 //            }
 //            y += c*d.scalar()*scalarProduct(c,err);
             
 //            y.append(0.);
-//            if(&J) J.append(zeros(1, J.d1));
+//            if(!!J) J.append(zeros(1, J.d1));
 #endif
           }
         } else {
 //            y.append(0.);
-//            if(&J) J.append(zeros(1, J.d1));
+//            if(!!J) J.append(zeros(1, J.d1));
         }
       }
     }
   }
   
   uintA KD = getKtupleDim(Ktuple);
-  if(&J) J.reshape(y.N, KD.last());
+  if(!!J) J.reshape(y.N, KD.last());
 }
 
 uint TM_Gravity::dim_phi(const WorldL &Ktuple) {
@@ -228,29 +229,29 @@ TM_Gravity2::TM_Gravity2(int iShape) : i(iShape) {
 void TM_Gravity2::phi(arr& y, arr& J, const WorldL& Ktuple){
   CHECK_GE(order, 2, "needs k-order 2");
 
-  rai::Frame *a = Ktuple(-1)->frames(i);
+  rai::Frame *a = Ktuple(-2)->frames(i);
   if((a->flags & (1<<FL_impulseExchange))){
     y.resize(3).setZero();
-    if(&J) J.resize(3, getKtupleDim(Ktuple).last()).setZero();
+    if(!!J) J.resize(3, getKtupleDim(Ktuple).last()).setZero();
     return;
   }
-  TM_Default pos(TMT_pos, i);
+  TM_LinVel pos(i);
   pos.order=2;
-  pos.Feature::phi(y, J, Ktuple);
+  pos.Feature::__phi(y, J, Ktuple);
   y(2) += gravity;
 
 //  TM_Default quat(TMT_quat, a->ID); //mt: NOT TMT_quatDiff!! (this would compute the diff to world, which zeros the w=1...)
 //  // flip the quaternion sign if necessary
 //  quat.flipTargetSignOnNegScalarProduct = true;
 //  quat.order=1;
-//  quat.Feature::phi(y({d+3,d+6})(), (&J?J({d+3,d+6})():NoArr), Ktuple);
+//  quat.Feature::__phi(y({d+3,d+6})(), (!!J?J({d+3,d+6})():NoArr), Ktuple);
 //  if(false) { //rotational friction
 //    double eps = 1e-2;
 //    arr w,Jw;
 //    quat.order=1;
-//    quat.Feature::phi(w, (&J?Jw:NoArr), Ktuple);
+//    quat.Feature::__phi(w, (!!J?Jw:NoArr), Ktuple);
 //    y({d+3,d+6}) += eps*w;
-//    if(&J) J({d+3,d+6}) += eps*Jw;
+//    if(!!J) J({d+3,d+6}) += eps*Jw;
 //  }
 
 }
@@ -262,24 +263,36 @@ TM_ZeroAcc::TM_ZeroAcc(int iShape) : i(iShape) {
 void TM_ZeroAcc::phi(arr& y, arr& J, const WorldL& Ktuple){
   CHECK_GE(order, 2, "needs k-order 2");
 
-  rai::Frame *a = Ktuple(-1)->frames(i);
+  rai::Frame *a = Ktuple(-2)->frames(i);
   if((a->flags & (1<<FL_impulseExchange))){
     y.resize(3).setZero();
-    if(&J) J.resize(3, getKtupleDim(Ktuple).last()).setZero();
+    if(!!J) J.resize(3, getKtupleDim(Ktuple).last()).setZero();
     return;
   }
   TM_Default pos(TMT_pos, i);
   pos.order=2;
-  pos.Feature::phi(y, J, Ktuple);
+  pos.Feature::__phi(y, J, Ktuple);
 }
 
 void TM_ZeroQVel::phi(arr& y, arr& J, const WorldL& Ktuple){
   TM_qItself q({(uint)i}, false);
-  q.order=1;
-  q.Feature::phi(y, J, Ktuple);
+  q.order=order;
+  if(order==1 && Ktuple(-1)->frames(i)->joint->qDim()!=Ktuple(-2)->frames(i)->joint->qDim()){
+//    rai::Frame *a = Ktuple(-2)->frames(i);
+//    rai::Frame *b = Ktuple(-1)->frames(i);
+    y.resize(Ktuple(-1)->frames(i)->joint->dim).setZero();
+    if(!!J) J.resize(y.N, getKtupleDim(Ktuple).last()).setZero();
+    return;
+  }
+  q.Feature::__phi(y, J, Ktuple);
 }
 
-uint TM_ZeroQVel::dim_phi(const rai::KinematicWorld& G){
-  rai::Frame *a = G.frames(i);
+uint TM_ZeroQVel::dim_phi(const rai::KinematicWorld& K){
+  rai::Frame *a = K.frames(i);
+  if(!a->joint){
+    LOG(-1) <<"reconfiguring to become link";
+    a = a->getUpwardLink();
+    i = a->ID;
+  }
   return a->joint->dim;
 }

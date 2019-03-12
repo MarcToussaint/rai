@@ -29,8 +29,8 @@ TM_Default::TM_Default(TM_DefaultType _type,
                        int iShape, const rai::Vector& _ivec,
                        int jShape, const rai::Vector& _jvec)
   :type(_type), i(iShape), j(jShape) {
-  if(&_ivec) ivec=_ivec; else ivec.setZero();
-  if(&_jvec) jvec=_jvec; else jvec.setZero();
+  if(!!_ivec) ivec=_ivec; else ivec.setZero();
+  if(!!_jvec) jvec=_jvec; else jvec.setZero();
   if(type==TMT_quat) flipTargetSignOnNegScalarProduct=true;
 }
 
@@ -42,8 +42,8 @@ TM_Default::TM_Default(TM_DefaultType _type, const rai::KinematicWorld &K,
   rai::Frame *b = jShapeName ? K.getFrameByName(jShapeName):NULL;
   if(a) i=a->ID;
   if(b) j=b->ID;
-  if(&_ivec) ivec=_ivec; else ivec.setZero();
-  if(&_jvec) jvec=_jvec; else jvec.setZero();
+  if(!!_ivec) ivec=_ivec; else ivec.setZero();
+  if(!!_jvec) jvec=_jvec; else jvec.setZero();
   if(type==TMT_quat) flipTargetSignOnNegScalarProduct=true;
 }
 
@@ -108,26 +108,26 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
     if(body_j==NULL) { //simple, no j reference
       G.kinematicsPos(y, J, body_i, vec_i);
       y -= conv_vec2arr(vec_j);
-      return;
-    }//else...
-    rai::Vector pi = body_i->X * vec_i;
-    rai::Vector pj = body_j->X * vec_j;
-    y = conv_vec2arr(body_j->X.rot / (pi-pj));
-    if(&J) {
-      arr Ji, Jj, JRj;
-      G.kinematicsPos(NoArr, Ji, body_i, vec_i);
-      G.kinematicsPos(NoArr, Jj, body_j, vec_j);
-      G.axesMatrix(JRj, body_j);
-      J.resize(3, Jj.d1);
-      for(uint k=0; k<Jj.d1; k++) {
-        rai::Vector vi(Ji(0, k), Ji(1, k), Ji(2, k));
-        rai::Vector vj(Jj(0, k), Jj(1, k), Jj(2, k));
-        rai::Vector r(JRj(0, k), JRj(1, k), JRj(2, k));
-        rai::Vector jk =  body_j->X.rot / (vi-vj);
-        jk -= body_j->X.rot / (r ^ (pi-pj));
-        J(0, k)=jk.x;
-        J(1, k)=jk.y;
-        J(2, k)=jk.z;
+    }else{
+      rai::Vector pi = body_i->X * vec_i;
+      rai::Vector pj = body_j->X * vec_j;
+      y = conv_vec2arr(body_j->X.rot / (pi-pj));
+      if(!!J) {
+        arr Ji, Jj, JRj;
+        G.kinematicsPos(NoArr, Ji, body_i, vec_i);
+        G.kinematicsPos(NoArr, Jj, body_j, vec_j);
+        G.axesMatrix(JRj, body_j);
+        J.resize(3, Jj.d1);
+        for(uint k=0; k<Jj.d1; k++) {
+          rai::Vector vi(Ji(0, k), Ji(1, k), Ji(2, k));
+          rai::Vector vj(Jj(0, k), Jj(1, k), Jj(2, k));
+          rai::Vector r(JRj(0, k), JRj(1, k), JRj(2, k));
+          rai::Vector jk =  body_j->X.rot / (vi-vj);
+          jk -= body_j->X.rot / (r ^ (pi-pj));
+          J(0, k)=jk.x;
+          J(1, k)=jk.y;
+          J(2, k)=jk.z;
+        }
       }
     }
     return;
@@ -139,11 +139,11 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
     G.kinematicsPos(y, J, body_i, vec_i);
     if(!body_j) { //relative to world
       y -= conv_vec2arr(vec_j);
-    } else {
+    }else{
       arr y2, J2;
-      G.kinematicsPos(y2, (&J?J2:NoArr), body_j, vec_j);
+      G.kinematicsPos(y2, (!!J?J2:NoArr), body_j, vec_j);
       y -= y2;
-      if(&J) J -= J2;
+      if(!!J) J -= J2;
     }
     return;
   }
@@ -154,16 +154,16 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
     if(vec_i.isZero) RAI_MSG("attached vector is zero -- can't control that");
     if(body_j==NULL) { //simple, no j reference
       G.kinematicsVec(y, J, body_i, vec_i);
-      return;
-    }//else...
-    //relative
-    RAI_MSG("warning - don't have a correct Jacobian for this TMT_ype yet");
-    //      fi = G.bodies(body_i)->X; fi.appendTransformation(irel);
-    //      fj = G.bodies(body_j)->X; fj.appendTransformation(jrel);
-    //      f.setDifference(fi, fj);
-    //      f.rot.getZ(c);
-    //      y = conv_vec2arr(c);
-    NIY; //TODO: Jacobian?
+    }else{
+      //relative
+      RAI_MSG("warning - don't have a correct Jacobian for this TMT_ype yet");
+      //      fi = G.bodies(body_i)->X; fi.appendTransformation(irel);
+      //      fj = G.bodies(body_j)->X; fj.appendTransformation(jrel);
+      //      f.setDifference(fi, fj);
+      //      f.rot.getZ(c);
+      //      y = conv_vec2arr(c);
+      NIY; //TODO: Jacobian?
+    }
     return;
   }
   
@@ -180,7 +180,7 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
       arr y2, J2;
       G.kinematicsVec(y2, J2, body_j, vec_j);
       y -= y2;
-      J -= J2;
+      if(!!J) J -= J2;
     }
     return;
   }
@@ -194,13 +194,13 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
     G.kinematicsVec(zi, Ji, body_i, vec_i);
     if(body_j==NULL) {
       zj = conv_vec2arr(vec_j);
-      if(&J) { Jj.resizeAs(Ji); Jj.setZero(); }
+      if(!!J) { Jj.resizeAs(Ji); Jj.setZero(); }
     } else {
       G.kinematicsVec(zj, Jj, body_j, vec_j);
     }
     y.resize(1);
     y(0) = scalarProduct(zi, zj);
-    if(&J) {
+    if(!!J) {
       J = ~zj * Ji + ~zi * Jj;
       J.reshape(1, G.getJointStateDimension());
     }
@@ -212,7 +212,7 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
     arr orientation = conv_vec2arr(ivec);
     G.kinematicsPos(y, NoArr, body_i);
     y = ~orientation*y;
-    if(&J) {
+    if(!!J) {
       G.kinematicsPos(NoArr, J, body_i);
       J = ~orientation*J;
       J.reshape(1, J.N);
@@ -230,23 +230,21 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
     //         If j is not set, the target shape is WORLD and jvec is a vector in world coordinates
     
     rai::Vector vec_i = ivec;
-    rai::Vector vec_xi = Vector_x;
-    rai::Vector vec_yi = Vector_y;
     rai::Vector vec_j = jvec;
     arr pi,Jpi, xi,Jxi, yi,Jyi, pj,Jpj;
     G.kinematicsPos(pi, Jpi, body_i, vec_i);
-    G.kinematicsVec(xi, Jxi, body_i, vec_xi);
-    G.kinematicsVec(yi, Jyi, body_i, vec_yi);
+    G.kinematicsVec(xi, Jxi, body_i, Vector_x);
+    G.kinematicsVec(yi, Jyi, body_i, Vector_y);
     if(body_j==NULL) { //we look at WORLD
       pj = conv_vec2arr(vec_j);
-      if(&J) { Jpj.resizeAs(Jpi); Jpj.setZero(); }
+      if(!!J) { Jpj.resizeAs(Jpi); Jpj.setZero(); }
     } else {
       G.kinematicsPos(pj, Jpj, body_j, vec_j);
     }
     y.resize(2);
     y(0) = scalarProduct(xi, (pj-pi));
     y(1) = scalarProduct(yi, (pj-pi));
-    if(&J) {
+    if(!!J) {
       J = cat(~xi * (Jpj-Jpi) + ~(pj-pi) * Jxi,
               ~yi * (Jpj-Jpi) + ~(pj-pi) * Jyi);
       J.reshape(2, G.getJointStateDimension());
@@ -257,8 +255,7 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
   if(type==TMT_quat) {
     if(body_j==NULL) { //simple, no j reference
       G.kinematicsQuat(y, J, body_i);
-      return;
-    }{
+    }else{
       arr a,b,Ja,Jb;
       G.kinematicsQuat(b, Jb, body_i);
       G.kinematicsQuat(a, Ja, body_j);
@@ -269,7 +266,7 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
       quat_concat(y, Jya, Jyb, ainv, b);
       if(a(0)!=1.) for(uint i=0;i<Jya.d0;i++) Jya(i,0) *= -1.;
 
-      if(&J){
+      if(!!J){
         J = Jya * Ja + Jyb * Jb;
         checkNan(J);
       }
@@ -287,10 +284,10 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
       G.kinematicsQuat(y2, J2, body_j);
       if(scalarProduct(y,y2)>=0.) {
         y -= y2;
-        if(&J) J -= J2;
+        if(!!J) J -= J2;
       } else {
         y += y2;
-        if(&J) J += J2;
+        if(!!J) J += J2;
       }
     }
     return;
@@ -302,9 +299,9 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
     tmp.type = TMT_pos;
     tmp.phi(y, J, G);
     tmp.type = TMT_quat;
-    tmp.phi(yq, (&J?Jq:NoArr), G);
+    tmp.phi(yq, (!!J?Jq:NoArr), G);
     y.append(yq);
-    if(&J) J.append(Jq);
+    if(!!J) J.append(Jq);
     return;
   }
 
@@ -314,9 +311,9 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
     tmp.type = TMT_posDiff;
     tmp.phi(y, J, G);
     tmp.type = TMT_quatDiff;
-    tmp.phi(yq, (&J?Jq:NoArr), G);
+    tmp.phi(yq, (!!J?Jq:NoArr), G);
     y.append(yq);
-    if(&J) J.append(Jq);
+    if(!!J) J.append(Jq);
     return;
   }
   
@@ -341,10 +338,11 @@ uint TM_Default::dim_phi(const rai::KinematicWorld& G) {
 }
 
 rai::String TM_Default::shortTag(const rai::KinematicWorld& K) {
-  rai::String s="Default";
-  s <<':' <<type;
-  s <<':' <<(i<0?"WORLD":K.frames(i)->name);
-  s <<'/' <<(j<0?"WORLD":K.frames(j)->name);
+  rai::String s="Default-";
+  s <<order;
+  s <<'-' <<type;
+  s <<'-' <<(i<0?"WORLD":K.frames(i)->name);
+  s <<'-' <<(j<0?"WORLD":K.frames(j)->name);
   return s;
 }
 

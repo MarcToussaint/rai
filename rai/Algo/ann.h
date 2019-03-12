@@ -28,8 +28,9 @@ struct ANN {
   uint bufferSize; //a tree is only rebuild if there are more than 'buffer' new points appended [default: 20]
   
   ANN();
+  ANN(const ANN& ann);
   ~ANN();
-  
+
   void clear();              //clears the tree and X
   void setX(const arr& _X);  //set X
   void append(const arr& x); //append to X

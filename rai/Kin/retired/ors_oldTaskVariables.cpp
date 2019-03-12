@@ -81,7 +81,7 @@ void DefaultTaskVariable::set(
   irel=_irel;
   j=_j;
   jrel=_jrel;
-  if(&_params) params=_params; else params.clear();
+  if(!!_params) params=_params; else params.clear();
   updateState(_ors);
   y_target=y;
   v_target=v;
@@ -585,7 +585,7 @@ void addAContact(double& y, arr& J, const rai::Proxy *p, const rai::KinematicWor
   arel.setZero();  arel=a->X.rot/(p->posA-a->X.pos);
   brel.setZero();  brel=b->X.rot/(p->posB-b->X.pos);
   
-  if(&J) {
+  if(!!J) {
     CHECK(p->normal.isNormalized(), "proxy normal is not normalized");
     dnormal.referTo(&p->normal.x, 3); dnormal.reshape(1, 3);
     if(!linear) {

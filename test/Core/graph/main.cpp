@@ -105,7 +105,7 @@ void TEST(Random){
 
   for(uint k=0;k<10;k++){
     rndModify(rndSubgraph(A));
-    Graph& C = rndSubgraph(A).newSubgraph({}, {})->value;
+    Graph& C = rndSubgraph(A).newSubgraph({}, {});
 
     Graph& D = rndSubgraph(A);
     if(D.N){
@@ -150,7 +150,6 @@ void operator<<(ostream& os, const Something& s){ os <<s.x; }
 //the following 2 lines are optional: they enable naming the type and typed reading from file
 void operator>>(istream& is, Something& s){ is >>s.x; }
 bool operator==(const Something&, const Something&){ return false; }
-REGISTER_TYPE(Something, Something)
 
 void TEST(Manual){
   Graph G;

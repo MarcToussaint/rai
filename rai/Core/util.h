@@ -34,13 +34,36 @@
 #define RAI_LnSqrt2Pi -0.9189385332046727417803296
 #define RAI_SQRT2 1.414213562373095049
 #define RAI_SQRTPI 1.772453850905516027
+
+//===========================================================================
+//
+// types
+//
+
 typedef unsigned char byte;            ///< byte
 typedef unsigned int uint;             ///< unsigned integer
 typedef const char* charp;
 
+//===========================================================================
+//
+// using
+//
+
+using std::cout;
+using std::cerr;
+using std::endl;
+using std::flush;
+using std::ostream;
+using std::istream;
+using std::ofstream;
+using std::ifstream;
+template<class T> using ptr=std::shared_ptr<T>;
+using std::make_shared;
+
+
 //----- macros to define the standard <<and >>operatos for most my classes:
 #define stdInPipe(type)\
-  inline std::istream& operator>>(std::istream& is, type& x){ x.read(is);return is; }
+  inline std::istream& operator>>(std::istream& is, type& x){ x.read(is); return is; }
 #define stdOutPipe(type)\
   inline std::ostream& operator<<(std::ostream& os, const type& x){ x.write(os); return os; }
 #define stdPipes(type)\
@@ -95,6 +118,7 @@ void flip(int& b, uint i);
 double MIN(double a, double b);
 double MAX(double a, double b);
 uint MAX(uint a, uint b);
+int MAX(int a, int b);
 double indicate(bool expr);
 double modMetric(double x, double y, double mod);
 double sign(double x);
@@ -236,6 +260,7 @@ public:
   String& printf(const char *format, ...);
   void resize(uint n, bool copy); //low-level resizing the string buffer - with additinal final 0
   void append(char x);
+  void prepend(const String& s);
   String& setRandom();
   
   /// @name resetting
@@ -319,39 +344,44 @@ void setLogLevels(int fileLogLevel=3, int consoleLogLevel=2);
 // macros for halting/MSGs etc
 //
 
+
+//----- error handling:
+//#define RAI_HERE __FILE__<<':' <<__FUNCTION__ <<':' <<__LINE__ <<' ' //":" <<std::setprecision(5) <<rai::realTime() <<"s "
+#define S1(x) #x
+#define S2(x) S1(x)
+#define RAI_HERE __FILE__ ":" S2(__LINE__)
+//#define RAI_HERE __FILE__ ## ":" ## #__FUNCTION__ ## ":" ## #__LINE__
+
+
 namespace rai {
 extern String errString;
 }
 
-//----- error handling:
-#  define RAI_HERE __FILE__<<':' <<__FUNCTION__ <<':' <<__LINE__ <<' ' //":" <<std::setprecision(5) <<rai::realTime() <<"s "
-
 #ifndef HALT
 #  define RAI_MSG(msg){ LOG(-1) <<msg; }
-#  define THROW(msg){ LOG(-1) <<msg; throw(rai::errString.p); }
-#  define HALT(msg){ LOG(-2) <<msg; exit(1); }
+#  define THROW(msg){ LOG(-1) <<msg; throw std::runtime_error(rai::errString.p); }
+#  define HALT(msg){ LOG(-2) <<msg; throw std::runtime_error(rai::errString.p); exit(1); }
 #  define NIY  { LOG(-2) <<"not implemented yet"; exit(1); }
 #  define NICO { LOG(-2) <<"not implemented with this compiler options: usually this means that the implementation needs an external library and a corresponding compiler option - see the source code"; exit(1); }
-#  define OPS  { LOG(-2) <<"obsolete"; exit(1); }
 #endif
 
 //----- check macros:
 #ifndef RAI_NOCHECK
 
 #define CHECK(cond, msg) \
-  if(!(cond)){ LOG(-2) <<"CHECK failed: '" <<#cond <<"' " <<msg;  throw rai::errString.p; }\
+  if(!(cond)){ LOG(-2) <<"CHECK failed: '" <<#cond <<"' " <<msg;  throw std::runtime_error(rai::errString.p); }\
 
 #define CHECK_ZERO(expr, tolerance, msg) \
-  if(fabs((double)(expr))>tolerance){ LOG(-2) <<"CHECK_ZERO failed: '" <<#expr<<"'=" <<expr <<" > " <<tolerance <<" -- " <<msg; throw rai::errString.p; } \
+  if(fabs((double)(expr))>tolerance){ LOG(-2) <<"CHECK_ZERO failed: '" <<#expr<<"'=" <<expr <<" > " <<tolerance <<" -- " <<msg; throw std::runtime_error(rai::errString.p); } \
 
 #define CHECK_EQ(A, B, msg) \
-  if(!(A==B)){ LOG(-2) <<"CHECK_EQ failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; throw rai::errString.p; } \
+  if(!(A==B)){ LOG(-2) <<"CHECK_EQ failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; throw std::runtime_error(rai::errString.p); } \
 
 #define CHECK_GE(A, B, msg) \
-  if(!(A>=B)){ LOG(-2) <<"CHECK_GE failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; throw rai::errString.p; } \
+  if(!(A>=B)){ LOG(-2) <<"CHECK_GE failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; throw std::runtime_error(rai::errString.p); } \
 
 #define CHECK_LE(A, B, msg) \
-  if(!(A<=B)){ LOG(-2) <<"CHECK_LE failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; throw rai::errString.p; } \
+  if(!(A<=B)){ LOG(-2) <<"CHECK_LE failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; throw std::runtime_error(rai::errString.p); } \
 
 #else
 #define CHECK(cond, msg)
@@ -403,17 +433,17 @@ struct FileToken {
   std::shared_ptr<std::ofstream> os;
   std::shared_ptr<std::ifstream> is;
   
-  FileToken() {}
-  FileToken(const char* _filename, bool change_dir=true);
+  FileToken();
+  FileToken(const char* _filename, bool change_dir=false);
   FileToken(const FileToken& ft);
   ~FileToken();
   FileToken& operator()() { return *this; }
   
   void decomposeFilename();
-  void changeDir();
-  void unchangeDir();
+  void cd_start();
+  void cd_file();
   bool exists();
-  std::ofstream& getOs();
+  std::ofstream& getOs(bool change_dir=false);
   std::ifstream& getIs(bool change_dir=false);
   operator std::istream&() { return getIs(); }
   operator std::ostream&() { return getOs(); }
@@ -424,7 +454,7 @@ inline std::ostream& operator<<(std::ostream& os, const FileToken& fil) { return
 template<class T> FileToken& operator<<(T& x, FileToken& fil) { fil.getIs() >>x; return fil; }
 template<class T> void operator>>(const T& x, FileToken& fil) { fil.getOs() <<x; }
 }
-#define FILE(filename) (rai::FileToken(filename)()) //it needs to return a REFERENCE to a local scope object
+#define FILE(filename) (rai::FileToken(filename, false)()) //it needs to return a REFERENCE to a local scope object
 
 inline bool operator==(const rai::FileToken&, const rai::FileToken&) { return false; }
 
@@ -440,6 +470,7 @@ struct Enum {
   static const char* names [];
   Enum():x((enum_T)-1) {}
   explicit Enum(const enum_T& y):x(y) {}
+  explicit Enum(const rai::String& str):Enum() { operator=(str); }
   const enum_T& operator=(const enum_T& y) { x=y; return x; }
   bool operator==(const enum_T& y) const { return x==y; }
   bool operator!=(const enum_T& y) const { return x!=y; }
@@ -464,6 +495,15 @@ struct Enum {
       LOG(-2) <<"Enum::read could not find the keyword '" <<str <<"'. Possible Enum keywords: " <<all;
     }
     CHECK(!strcmp(names[x], str.p), "");
+  }
+  static bool contains(const rai::String& str){
+    for(int i=0; names[i]; i++) {
+      if(str==names[i]) return true;
+    }
+    return false;
+  }
+  static const char* name(int i){
+    return names[i];
   }
   const char* name() const {
     if(x<0) return "init";
@@ -573,17 +613,27 @@ struct Mutex {
 #endif
   int state; ///< 0=unlocked, otherwise=syscall(SYS_gettid)
   uint recursive; ///< number of times it's been locked
+  const char* lockInfo;
   Mutex();
   ~Mutex();
-  void lock();
+  void lock(const char *_lockInfo);
   void unlock();
   
   struct Token {
     Mutex &m;
-    Token(Mutex& m):m(m) { m.lock(); }
+    Token(Mutex& m, const char *_lockInfo):m(m) { m.lock(_lockInfo); }
     ~Token() { m.unlock(); }
   };
-  struct Token operator()() { return Token(*this); }
+  struct Token operator()(const char *_lockInfo) { return Token(*this, _lockInfo); }
+
+  template<class T> struct TypedToken {
+    Mutex &m;
+    T *data;
+    TypedToken(Mutex& m, T *data, const char *_lockInfo):m(m),data(data) { m.lock(_lockInfo); }
+    ~TypedToken() { m.unlock(); }
+    T* operator->() { return data; }
+  };
+  template<class T> TypedToken<T> operator()(T *data, const char *_lockInfo) { return TypedToken<T>(*this, data, _lockInfo); }
 };
 
 //===========================================================================
@@ -598,7 +648,7 @@ struct Singleton {
   
   T *getSingleton() const {
     if(!singleton) {
-      mutex.lock();
+      mutex.lock(RAI_HERE);
       if(!singleton) singleton = new T;
       mutex.unlock();
     }
@@ -618,7 +668,7 @@ struct Singleton {
   
   struct Token {
     const Singleton<T>& base;
-    Token(Singleton<T>& _base) : base(_base) { base.getSingleton(); base.mutex.lock(); }
+    Token(Singleton<T>& _base) : base(_base) { base.getSingleton(); base.mutex.lock(RAI_HERE); }
     ~Token() { base.mutex.unlock(); }
     T* operator->() { return base.getSingleton(); }
     operator T&() { return *base.getSingleton(); }
@@ -653,7 +703,7 @@ struct NonCopyable {
 
 extern Mutex coutMutex;
 struct CoutToken {
-  CoutToken() { coutMutex.lock(); }
+  CoutToken() { coutMutex.lock(RAI_HERE); }
   ~CoutToken() { coutMutex.unlock(); }
   std::ostream& getOs() { return std::cout; }
 };
@@ -711,21 +761,6 @@ template <typename T> T clip(T& x, const T& lower, const T& upper) {
 
 std::string getcwd_string();
 const char* NAME(const std::type_info& type);
-
-//===========================================================================
-//
-// USING's
-//
-
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::flush;
-using std::ostream;
-using std::istream;
-using std::ofstream;
-using std::ifstream;
-using rai::String;
 
 #endif
 

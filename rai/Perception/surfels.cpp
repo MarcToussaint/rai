@@ -88,7 +88,7 @@ void Surfels::recomputeSurfelIndices() {
 void Surfels::pointCloud2Surfels(const arr& pts, const arr& cols, OpenGL& gl) {
   recomputeSurfelIndices();
   CHECK_EQ(pts.d0,surfelIdx.N,"mismatch in #pixels");
-  mx.lock();
+  mx.lock(RAI_HERE);
   if(rndPerm.N!=surfelIdx.N) rndPerm.setRandomPerm(surfelIdx.N);
   for(uint i=0; i<1; i++) { //pts.d0;i++){
 //    uint p = rndPerm(i);

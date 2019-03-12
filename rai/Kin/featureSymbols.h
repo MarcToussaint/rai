@@ -1,4 +1,6 @@
-#include "feature.h"
+#pragma once
+
+#include <Core/array.h>
 
 enum FeatureSymbol {
   FS_none=-1,
@@ -20,8 +22,16 @@ enum FeatureSymbol {
   FS_vectorZ,
   FS_vectorZDiff,
   FS_vectorZRel,
-  FS_scalarProductZ,
+  FS_scalarProductXX,
+  FS_scalarProductXY,
+  FS_scalarProductXZ,
+  FS_scalarProductYX,
+  FS_scalarProductYY,
+  FS_scalarProductYZ,
+  FS_scalarProductZZ,
   FS_gazeAt,
+
+  FS_angularVel,
 
   FS_accumulatedCollisions,
   FS_jointLimits,
@@ -33,7 +43,18 @@ enum FeatureSymbol {
   FS_insideBox,
 
   FS_standingAbove,
+
+  FS_physics,
+  FS_contactConstraints,
+  FS_energy,
+
+  FS_transAccelerations,
+  FS_transVelocities,
 };
 
+namespace rai{
+  struct KinematicWorld;
+}
+struct Feature;
 
-Feature *symbols2feature(FeatureSymbol feat, const StringA &symbols, const rai::KinematicWorld& world);
+ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA &symbols, const rai::KinematicWorld& world, const arr& scale=NoArr, const arr& target=NoArr, int order=-1);

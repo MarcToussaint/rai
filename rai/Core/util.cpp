@@ -116,16 +116,16 @@ void system(const char *cmd) {
 void open(std::ofstream& fs, const char *name, const char *errmsg) {
   fs.clear();
   fs.open(name);
-  LOG(3) <<"opening output file `" <<name <<"'" <<std::endl;
-  if(!fs.good()) RAI_MSG("could not open file `" <<name <<"' for output" <<errmsg);
+  LOG(3) <<"opening output file '" <<name <<"'" <<std::endl;
+  if(!fs.good()) RAI_MSG("could not open file '" <<name <<"' for output" <<errmsg);
 }
 
 /// open an input-file with name '\c name'
 void open(std::ifstream& fs, const char *name, const char *errmsg) {
   fs.clear();
   fs.open(name);
-  LOG(3) <<"opening input file `" <<name <<"'" <<std::endl;
-  if(!fs.good()) HALT("could not open file `" <<name <<"' for input" <<errmsg);
+  LOG(3) <<"opening input file '" <<name <<"'" <<std::endl;
+  if(!fs.good()) HALT("could not open file '" <<name <<"' for input" <<errmsg);
 }
 
 /// returns true if the (0-terminated) string s contains c
@@ -196,7 +196,7 @@ bool skipUntil(std::istream& is, const char *tag) {
 
 /// a global operator to scan (parse) strings from a stream
 bool parse(std::istream& is, const char *str, bool silent) {
-  if(!is.good()) { if(!silent) RAI_MSG("bad stream tag when scanning for `" <<str <<"'"); return false; }  //is.clear(); }
+  if(!is.good()) { if(!silent) RAI_MSG("bad stream tag when scanning for '" <<str <<"'"); return false; }  //is.clear(); }
   uint i, n=strlen(str);
   char buf[n+1]; buf[n]=0;
   rai::skip(is, " \n\r\t");
@@ -204,8 +204,8 @@ bool parse(std::istream& is, const char *str, bool silent) {
   if(!is.good() || strcmp(str, buf)) {
     for(i=n; i--;) is.putback(buf[i]);
     is.setstate(std::ios::failbit);
-    if(!silent)  RAI_MSG("(LINE=" <<rai::lineCount <<") parsing of constant string `" <<str
-                           <<"' failed! (read instead: `" <<buf <<"')");
+    if(!silent)  RAI_MSG("(LINE=" <<rai::lineCount <<") parsing of constant string '" <<str
+                           <<"' failed! (read instead: '" <<buf <<"')");
     return false;
   }
   return true;
@@ -227,6 +227,7 @@ void flip(int& b, uint i) { b ^= 1 <<(7-(i&7)); }
 double MIN(double a, double b) { return a<b?a:b; }
 double MAX(double a, double b) { return a>b?a:b; }
 uint MAX(uint a, uint b) { return a>b?a:b; }
+int MAX(int a, int b) { return a>b?a:b; }
 
 double indicate(bool expr) { if(expr) return 1.; return 0.; }
 
@@ -312,7 +313,8 @@ double approxExp(double x) {
 
 /// ordinary Log, but cutting off for small values
 double Log(double x) {
-  if(x<.001) x=.001; return ::log(x);
+  if(x<.001) x=.001;
+  return ::log(x);
 }
 
 /// integer log2
@@ -523,7 +525,7 @@ void wait(double sec, bool msg_on_fail) {
   timespec ts;
   ts.tv_sec = (long)(floor(sec));
   sec -= (double)ts.tv_sec;
-  ts.tv_nsec = (long)(floor(1e9d*sec));
+  ts.tv_nsec = long(floor(1e9d*sec));
   int rc = clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);
   if(rc && msg_on_fail) {
     RAI_MSG("clock_nanosleep() failed " <<rc <<" '" <<strerror(rc) <<"' trying select instead");
@@ -575,7 +577,7 @@ bool wait(bool useX11) {
 int x11_getKey() {
   rai::String txt="PRESS KEY";
   int key=0;
-  
+
   Display *disp = XOpenDisplay(NULL);
   CHECK(disp, "Cannot open display");
   
@@ -772,20 +774,22 @@ rai::LogToken::~LogToken() {
     if(log_level>=0) std::cout <<code_file <<':' <<code_func <<':' <<code_line <<'(' <<log_level <<") " <<msg <<endl;
     if(log_level<0) {
 
-      void *trace_elems[10];
-      int trace_elem_count = backtrace( trace_elems, 10 );
-      char **stack_syms = backtrace_symbols( trace_elems, trace_elem_count );
-      for(int i=trace_elem_count; i--;) std::cout <<"STACK" <<i <<' ' <<stack_syms[i] <<'\n';
-      free( stack_syms );
+      if(log_level<=-2){
+        void *trace_elems[10];
+        int trace_elem_count = backtrace( trace_elems, 10 );
+        char **stack_syms = backtrace_symbols( trace_elems, trace_elem_count );
+        for(int i=trace_elem_count; i--;) std::cout <<"STACK" <<i <<' ' <<stack_syms[i] <<'\n';
+        free( stack_syms );
+      }
 
       rai::errString.clear() <<code_file <<':' <<code_func <<':' <<code_line <<'(' <<log_level <<") " <<msg;
 // #ifdef RAI_ROS
 //       ROS_INFO("RAI-MSG: %s",rai::errString.p);
 // #endif
-      if(log_level==-1) { rai::errString <<" -- WARNING";    cout <<rai::errString <<endl; }
-      if(log_level==-2) { rai::errString <<" -- ERROR  ";    cerr <<rai::errString <<endl; /*throw does not WORK!!! Because this is a destructor. The THROW macro does it inline*/ }
-      if(log_level==-3) { rai::errString <<" -- HARD EXIT!"; cerr <<rai::errString <<endl; /*rai::logServer().mutex.unlock();*/ exit(1); }
-      if(log_level<=-2) raise(SIGUSR2);
+      if(log_level==-1) { cout <<"** WARNING:" <<rai::errString <<endl; }
+      if(log_level==-2) { cerr <<"** ERROR:" <<rai::errString <<endl; /*throw does not WORK!!! Because this is a destructor. The THROW macro does it inline*/ }
+      if(log_level==-3) { cerr <<"** HARD EXIT! " <<rai::errString <<endl; /*rai::logServer().mutex.unlock();*/ exit(1); }
+      if(log_level<=-3) raise(SIGUSR2);
     }
   }
 //  rai::logServer().mutex.unlock();
@@ -836,6 +840,13 @@ char *rai::String::StringBuf::getIpos() { return gptr(); }
 //-- direct memory operations
 void rai::String::append(char x) { resize(N+1, true); operator()(N-1)=x; }
 
+void rai::String::prepend(const rai::String& s){
+  uint n=N;
+  resize(n+s.N, true);
+  memmove(p+s.N, p, n);
+  memmove(p, s, s.N);
+}
+
 rai::String& rai::String::setRandom() {
   resize(rnd(2,6), false);
   for(uint i=0; i<N; i++) operator()(i)=rnd('a','z');
@@ -872,7 +883,7 @@ rai::String::String() : std::iostream(&buffer) { init(); clearStream(); }
 rai::String::String(const String& s) : std::iostream(&buffer) { init(); this->operator=(s); }
 
 /// copy constructor for an ordinary C-string (needs to be 0-terminated)
-rai::String::String(const char *s) : std::iostream(&buffer) { init(); this->operator=(s); }
+rai::String::String(const char *s) : std::iostream(&buffer) { init(); if(s) this->operator=(s); }
 
 rai::String::String(const std::string& s) : std::iostream(&buffer) { init(); this->operator=(s.c_str()); }
 
@@ -900,7 +911,7 @@ char& rai::String::operator()(int i) const {
   return p[i];
 }
 
-/// return the substring from `start` to (exclusive) `end`.
+/// return the substring from 'start' to (exclusive) 'end'.
 rai::String rai::String::getSubString(int start, int end) const {
   if(start<0) start+=N;
   if(end<0) end+=N;
@@ -914,7 +925,7 @@ rai::String rai::String::getSubString(int start, int end) const {
 }
 
 /**
- * @brief Return the last `n` chars of the string.
+ * @brief Return the last 'n' chars of the string.
  * @param n number of chars to return
  */
 rai::String rai::String::getLastN(uint n) const {
@@ -922,7 +933,7 @@ rai::String rai::String::getLastN(uint n) const {
 }
 
 /**
- * @brief Return the first `n` chars of the string.
+ * @brief Return the first 'n' chars of the string.
  * @param n number of chars to return.
  */
 rai::String rai::String::getFirstN(uint n) const {
@@ -936,7 +947,7 @@ rai::String& rai::String::operator=(const String& s) {
   return *this;
 }
 
-rai::String& String::operator=(const std::string& s){
+rai::String& rai::String::operator=(const std::string& s){
   return this->operator=(s.c_str());
 }
 
@@ -980,21 +991,21 @@ bool rai::String::contains(const String& substring) const {
   return p != NULL;
 }
 
-/// Return true iff the string starts with `substring`.
+/// Return true iff the string starts with 'substring'.
 bool rai::String::startsWith(const String& substring) const {
   return N>=substring.N && this->getFirstN(substring.N) == substring;
 }
 
-/// Return true iff the string starts with `substring`.
+/// Return true iff the string starts with 'substring'.
 bool rai::String::startsWith(const char* substring) const {
   return this->startsWith(rai::String(substring));
 }
 
-/// Return true iff the string ends with `substring`.
+/// Return true iff the string ends with 'substring'.
 bool rai::String::endsWith(const String& substring) const {
   return this->getLastN(substring.N) == substring;
 }
-/// Return true iff the string ends with `substring`.
+/// Return true iff the string ends with 'substring'.
 bool rai::String::endsWith(const char* substring) const {
   return this->endsWith(rai::String(substring));
 }
@@ -1058,26 +1069,26 @@ rai::String rai::getNowString() {
 // FileToken
 //
 
+rai::FileToken::FileToken() {
+  cwd = getcwd_string();
+}
+
 rai::FileToken::FileToken(const char* filename, bool change_dir) {
-  name=filename;
-  if(change_dir) changeDir();
+  cwd = getcwd_string();
+  name = filename;
+  if(change_dir) cd_file();
 //  if(!exists()) HALT("file '" <<filename <<"' does not exist");
 }
 
 rai::FileToken::FileToken(const FileToken& ft) {
   name=ft.name;
-  if(ft.path.N) {
-    NIY;
-    path=ft.path;
-    cwd=ft.cwd;
-  }
+  path=ft.path;
+  cwd=ft.cwd;
   is = ft.is;
   os = ft.os;
 }
 
-rai::FileToken::~FileToken() {
-  unchangeDir();
-}
+rai::FileToken::~FileToken() {}
 
 /// change to the directory of the given filename
 void rai::FileToken::decomposeFilename() {
@@ -1092,25 +1103,17 @@ void rai::FileToken::decomposeFilename() {
   }
 }
 
-void rai::FileToken::changeDir() {
-  if(path.N) {
-    HALT("you've changed already?");
-  } else {
-    decomposeFilename();
-    if(path.N && path!=".") {
-      cwd.resize(200, false);
-      if(!getcwd(cwd.p, 200)) HALT("couldn't get current dir");
-      cwd.resize(strlen(cwd.p), true);
-      LOG(3) <<"entering path `" <<path<<"' from '" <<cwd <<"'" <<std::endl;
-      if(chdir(path)) HALT("couldn't change to directory '" <<path <<"' (current dir: '" <<cwd <<"')");
-    }
-  }
+void rai::FileToken::cd_start() {
+  LOG(3) <<"entering path '" <<cwd<<"'" <<std::endl;
+  if(chdir(cwd)) HALT("couldn't change to directory '" <<cwd <<"'");
 }
 
-void rai::FileToken::unchangeDir() {
-  if(cwd.N) {
-    LOG(3) <<"leaving path `" <<path<<"' back to '" <<cwd <<"'" <<std::endl;
-    if(chdir(cwd)) HALT("couldn't change back to directory '" <<cwd <<"'");
+void rai::FileToken::cd_file() {
+  cd_start();
+  if(!path.N) decomposeFilename();
+  if(path!=".") {
+    LOG(3) <<"entering path '" <<path<<"' from '" <<cwd <<"'" <<std::endl;
+    if(chdir(path)) HALT("couldn't change to directory '" <<path <<"' from '" <<cwd <<"'");
   }
 }
 
@@ -1120,25 +1123,26 @@ bool rai::FileToken::exists() {
   return r==0;
 }
 
-std::ofstream& rai::FileToken::getOs() {
+std::ofstream& rai::FileToken::getOs(bool change_dir) {
   CHECK(!is,"don't use a FileToken both as input and output");
   if(!os) {
+    if(change_dir) cd_file();
     os = std::make_shared<std::ofstream>();
     os->open(name);
-    LOG(3) <<"opening output file `" <<name <<"'" <<std::endl;
-    if(!os->good()) RAI_MSG("could not open file `" <<name <<"' for output");
+    LOG(3) <<"opening output file '" <<name <<"'" <<std::endl;
+    if(!os->good()) RAI_MSG("could not open file '" <<name <<"' for output from '" <<cwd <<"./" <<path <<"'");
   }
   return *os;
 }
 
 std::ifstream& rai::FileToken::getIs(bool change_dir) {
-  if(change_dir) changeDir();
   CHECK(!os,"don't use a FileToken both as input and output");
   if(!is) {
+    if(change_dir) cd_file();
     is = std::make_shared<std::ifstream>();
     is->open(name);
-    LOG(3) <<"opening input file `" <<name <<"'" <<std::endl;
-    if(!is->good()) THROW("could not open file `" <<name <<"' for input");
+    LOG(3) <<"opening input file '" <<name <<"'" <<std::endl;
+    if(!is->good()) THROW("could not open file '" <<name <<"' for input from '" <<cwd <<"./" <<path <<"'");
   }
   return *is;
 }
@@ -1324,13 +1328,14 @@ Mutex::~Mutex() {
   int rc = pthread_mutex_destroy(&mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
 }
 
-void Mutex::lock() {
+void Mutex::lock(const char* _lockInfo) {
   int rc = pthread_mutex_lock(&mutex);
   if(rc) {
     //don't use HALT here, because log uses mutexing as well -> can lead to recursive HALT...
     cerr <<STRING("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
     exit(1);
   }
+  lockInfo = _lockInfo;
   recursive++;
   state=syscall(SYS_gettid);
   MUTEX_DUMP(cout <<"Mutex-lock: " <<state <<" (rec: " <<recursive << ")" <<endl);
@@ -1461,7 +1466,7 @@ double gaussIntExpectation(double x) {
 std::string getcwd_string() {
   char buff[PATH_MAX];
   char *succ=getcwd(buff, PATH_MAX);
-  CHECK(succ,"could not call getcwd: errno=" <<errno <<' ' <<strerror(errno));
+  if(!succ) HALT("could not call getcwd: errno=" <<errno <<' ' <<strerror(errno));
   return std::string(buff);
 }
 

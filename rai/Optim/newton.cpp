@@ -52,15 +52,21 @@ OptNewton::StopCriterion OptNewton::step() {
   if(o.verbose>1) cout <<"optNewton it=" <<std::setw(4) <<it << " \tbeta=" <<std::setw(8) <<beta <<flush;
   
   if(!(fx==fx)) HALT("you're calling a newton step with initial function value = NAN");
-  
+
   //-- compute Delta
   arr R=Hx;
   if(beta) { //Levenberg Marquardt damping
-    if(isRowShifted(R)) for(uint i=0; i<R.d0; i++) R(i,0) += beta; //(R(i,0) is the diagonal in the packed matrix!!)
-    else for(uint i=0; i<R.d0; i++) R(i,i) += beta;
+    if(isNotSpecial(R)){
+      for(uint i=0; i<R.d0; i++) R(i,i) += beta;
+    }else if(isRowShifted(R)) {
+      for(uint i=0; i<R.d0; i++) R(i,0) += beta; //(R(i,0) is the diagonal in the packed matrix!!)
+    }else if(isSparseMatrix(R)) {
+      for(uint i=0; i<R.d0; i++) R.sparse().addEntry(i,i) = beta;
+    }else NIY;
   }
   if(additionalRegularizer) { //obsolete -> retire
     if(isRowShifted(R)) R = unpack(R);
+    else if(!isNotSpecial(R)) NIY;
     Delta = lapack_Ainv_b_sym(R + (*additionalRegularizer), -(gx+(*additionalRegularizer)*vectorShaped(x)));
   } else {
     bool inversionFailed=false;
@@ -91,7 +97,7 @@ OptNewton::StopCriterion OptNewton::step() {
       }
     }
   }
-  
+
   //chop Delta to stay within bounds
   if(bound_lo.N && bound_hi.N) {
     double a=1.;
@@ -108,8 +114,9 @@ OptNewton::StopCriterion OptNewton::step() {
   //restrict stepsize
   double maxDelta = absMax(Delta);
   if(o.maxStep>0. && maxDelta>o.maxStep) {  Delta *= o.maxStep/maxDelta; maxDelta = o.maxStep; }
-  double alphaLimit = o.maxStep/maxDelta;
-  
+  double alphaHiLimit = o.maxStep/maxDelta;
+  double alphaLoLimit = 1e-1*o.stopTolerance/maxDelta;
+
   if(o.verbose>1) cout <<" \t|Delta|=" <<std::setw(11) <<maxDelta <<flush;
   
   //lazy stopping criterion: stop without any update
@@ -121,11 +128,11 @@ OptNewton::StopCriterion OptNewton::step() {
   //-- line search along Delta
   for(bool endLineSearch=false; !endLineSearch;) {
     if(!o.allowOverstep) if(alpha>1.) alpha=1.;
-    if(alphaLimit>0. && alpha>alphaLimit) alpha=alphaLimit;
+    if(alphaHiLimit>0. && alpha>alphaHiLimit) alpha=alphaHiLimit;
     y = x + alpha*Delta;
     fy = f(gy, Hy, y);  evals++;
     if(additionalRegularizer) fy += scalarProduct(y,(*additionalRegularizer)*vectorShaped(y));
-    if(o.verbose>2) cout <<" \tprobing y=" <<y;
+    if(o.verbose>5) cout <<" \tprobing y=" <<y;
     if(o.verbose>1) cout <<" \tevals=" <<std::setw(4) <<evals <<" \talpha=" <<std::setw(11) <<alpha <<" \tf(y)=" <<fy <<flush;
     bool wolfe = (fy <= fx + o.wolfe*alpha*scalarProduct(Delta,gx));
     if(rootFinding) wolfe=true;
@@ -171,6 +178,7 @@ OptNewton::StopCriterion OptNewton::step() {
         if(o.verbose>1) cout <<"\n\t\t\t\t\t(line search)\t" <<flush;
       }
       alpha *= o.stepDec;
+      if(alpha<alphaLoLimit) endLineSearch=true;
     }
   }
   
@@ -183,7 +191,7 @@ OptNewton::StopCriterion OptNewton::step() {
 #define STOPIF(expr, code, ret) if(expr){ if(o.verbose>1) cout <<"\t\t\t\t\t\t--- stopping criterion='" <<#expr <<"'" <<endl; code; return stopCriterion=ret; }
   
   STOPIF(absMax(Delta)<o.stopTolerance, , stopCrit1);
-  STOPIF(numTinySteps>10, numTinySteps=0, stopCrit2);
+  STOPIF(numTinySteps>4, numTinySteps=0, stopCrit2);
 //  STOPIF(alpha*absMax(Delta)<1e-3*o.stopTolerance, stopCrit2);
   STOPIF(evals>=o.stopEvals, , stopCritEvals);
   STOPIF(it>=o.stopIters, , stopCritEvals);

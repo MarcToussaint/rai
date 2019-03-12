@@ -23,7 +23,7 @@ void PhaseOneProblem::phi(arr& meta_phi, arr& meta_J, arr& meta_H, ObjectiveType
   // for(uint i=0;i<g.N;i++) meta_g(i) = g(i)-x.last();  //slack constraints
   // meta_g.last() = -x.last();                                  //last constraint
   
-  // if(&meta_Jg){
+  // if(!!meta_Jg){
   //   meta_Jg.resize(meta_g.N, x.N);  meta_Jg.setZero();
   //   meta_Jg(0,x.N-1) = 1.; //cost
   //   for(uint i=0;i<g.N;i++) for(uint j=0;j<x.N-1;j++) meta_Jg(i,j) = Jg(i,j);
@@ -41,8 +41,11 @@ const char* MethodName[]= { "NoMethod", "SquaredPenalty", "AugmentedLagrangian",
 
 //==============================================================================
 
-OptConstrained::OptConstrained(arr& x, arr &dual, ConstrainedProblem& P, OptOptions opt)
-  : L(P, opt, dual), newton(x, L, opt), dual(dual), opt(opt) {
+OptConstrained::OptConstrained(arr& _x, arr &_dual, ConstrainedProblem& P, int verbose, OptOptions _opt)
+  : L(P, _opt, _dual), newton(_x, L, _opt), dual(_dual), opt(_opt) {
+
+  if(verbose>=0) opt.verbose=verbose;
+  newton.o.verbose = rai::MAX(opt.verbose-1,0);
   
   if(opt.verbose>0) cout <<"***** optConstrained: method=" <<MethodName[opt.constrainedMethod] <<endl;
 }
@@ -142,7 +145,7 @@ bool OptConstrained::step() {
     case noMethod: HALT("need to set method before");  break;
   }
   
-  if(&dual) dual=L.lambda;
+  if(!!dual) dual=L.lambda;
   
   its++;
   

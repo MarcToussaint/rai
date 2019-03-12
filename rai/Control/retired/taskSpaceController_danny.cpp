@@ -20,17 +20,17 @@ LinTaskSpaceAccLaw::LinTaskSpaceAccLaw(Feature* map, rai::KinematicWorld* world,
 // TODO: enable to set ref and generate trajectory out of it
 
 void LinTaskSpaceAccLaw::setRef(const arr& yRef, const arr& yDotRef, const arr& yDDotRef) {
-  if(&yRef) {
+  if(!!yRef) {
     this->yRef = yRef;
   } else if(!this->yRef.N) {
     this->yRef = this->getPhi();//zeros(this->getPhiDim()); // TODO: is this the best way?
   }
-  if(&yDotRef) {
+  if(!!yDotRef) {
     this->yDotRef = yDotRef;
   } else if(!this->yDotRef.N) {
     this->yDotRef = zeros(this->getPhiDim());
   }
-  if(&yDDotRef) {
+  if(!!yDDotRef) {
     this->yDDotRef = yDDotRef;
   } else if(!this->yDDotRef.N) {
     this->yDDotRef = zeros(this->getPhiDim());
@@ -61,17 +61,17 @@ void LinTaskSpaceAccLaw::setTargetEvalSpline(double s) {
 }
 
 void LinTaskSpaceAccLaw::setTrajectory(uint trajLength, const arr& traj, const arr& trajDot, const arr& trajDDot) {
-  if(&traj) {
+  if(!!traj) {
     this->trajectory = traj;
   } else if(!this->trajectory.N) {
     this->trajectory = zeros(trajLength, this->getPhiDim()); //TODO: same as setRef: getPhi
   }
-  if(&trajDot) {
+  if(!!trajDot) {
     this->trajectoryDot = trajDot;
   } else if(!this->trajectoryDot.N) {
     this->trajectoryDot = zeros(trajLength,this->getPhiDim());
   }
-  if(&trajDDot) {
+  if(!!trajDDot) {
     this->trajectoryDDot = trajDDot;
   } else if(!this->trajectoryDDot.N) {
     this->trajectoryDDot = zeros(trajLength,this->getPhiDim());

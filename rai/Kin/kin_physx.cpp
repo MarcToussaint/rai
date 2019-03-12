@@ -512,7 +512,7 @@ void sPhysXInterface::addLink(rai::Frame *b, physx::PxMaterial *mMaterial) {
 
 void PhysXInterface::pullFromPhysx(rai::KinematicWorld *K, arr& vels) {
   if(!K) K=&world;
-  if(&vels) vels.resize(K->frames.N, 2, 3).setZero();
+  if(!!vels) vels.resize(K->frames.N, 2, 3).setZero();
   for(rai::Frame *f : K->frames) {
     if(s->actors.N <= f->ID) continue;
     PxRigidActor* a = s->actors(f->ID);
@@ -521,7 +521,7 @@ void PhysXInterface::pullFromPhysx(rai::KinematicWorld *K, arr& vels) {
     bool isDynamic = (f->inertia && f->inertia->type==rai::BT_dynamic);
     if(isDynamic) {
       PxTrans2OrsTrans(f->X, a->getGlobalPose());
-      if(&vels && a->getType() == PxActorType::eRIGID_DYNAMIC) {
+      if(!!vels && a->getType() == PxActorType::eRIGID_DYNAMIC) {
         PxRigidBody *px_body = (PxRigidBody*) a;
         vels(f->ID, 0, {}) = conv_PxVec3_arr(px_body->getLinearVelocity());
         vels(f->ID, 1, {}) = conv_PxVec3_arr(px_body->getAngularVelocity());
@@ -619,7 +619,7 @@ void DrawActor(PxRigidActor* actor, rai::Frame *frame) {
     
     // use the color of the first shape of the body for the entire body
     rai::Shape *s = frame->shape;
-    if(!s) s = frame->outLinks.elem(0)->shape;
+    if(!s) s = frame->parentOf.elem(0)->shape;
     if(s) glColor(s->mesh().C);
     
     rai::Transformation f;

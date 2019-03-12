@@ -39,7 +39,7 @@ void testJacobianInFile(const char* filename, const char* shape){
   {
     K.setJointState(x);
     K.kinematicsPos(y, J, a, NoVector);
-    if(&J) cout <<"J=" <<J <<endl;
+    if(!!J) cout <<"J=" <<J <<endl;
   } );
 
   checkJacobian(f, K.q, 1e-4);
@@ -72,7 +72,7 @@ void TEST(Kinematics){
           case RelVec: K.kinematicsRelVec(y,J,b,vec,b2); break;
           case RelRot: K.kinematicsRelRot(y,J,b,b2); break;
         }
-        //if(&J) cout <<"\nJ=" <<J <<endl;
+        //if(!!J) cout <<"\nJ=" <<J <<endl;
       } );
     }
     VectorFunction& operator()(){ return *this; }
@@ -248,7 +248,7 @@ void TEST(Contacts){
   VectorFunction f = [&G](arr& y, arr& J, const arr& x) -> void {
     G.setJointState(x);
     G.stepSwift();
-    G.kinematicsProxyCost(y, (&J?J:NoArr), .2);
+    G.kinematicsProxyCost(y, (!!J?J:NoArr), .2);
   };
 
   x = G.q;
@@ -291,7 +291,7 @@ void TEST(Limits){
       x -= .1 * J.reshape(n);
       checkJacobian(F,x,1e-4);
       G.setJointState(x);
-      G.gl().update();
+      G.watch();
     }
   }
 }
@@ -346,7 +346,7 @@ void TEST(PlayTorqueSequenceInOde){
     G.ode().importStateFromOde();
     G.getJointState(Xt[t](),Vt[t]());
     G.gl().text.clear() <<"play a random torque sequence [using ODE] -- time " <<t;
-    G.gl().timedupdate(.01);
+    G.watch();
   }
 }
 
@@ -384,7 +384,7 @@ void TEST(FollowRedundantSequence){
   G.kinematicsPos(y, NoArr, endeff, rel);
   for(t=0;t<T;t++) Z[t]() += y; //adjust coordinates to be inside the arm range
   plotLine(Z);
-  G.gl().add(glDrawPlot,&plotModule);
+  G.glAdd(glDrawPlot,&plotModule);
   G.watch(false);
   //-- follow the trajectory kinematically
   for(t=0;t<T;t++){
@@ -418,7 +418,7 @@ void TEST(FollowRedundantSequence){
 void TEST(Dynamics){
   rai::KinematicWorld G("arm7.g");
   G.optimizeTree();
-  G.fwdIndexIDs();
+  G.sortFrames();
   cout <<G <<endl;
 
   arr u;
@@ -567,10 +567,10 @@ void TEST(BlenderImport){
   readBlender("blender-export",mesh,bl);
   cout <<"loading time =" <<rai::timerRead() <<"sec" <<endl;
   OpenGL gl;
-  G.gl().add(glStandardScene, NULL);
-  G.gl().add(drawTrimesh,&mesh);
-  G.gl().watch("mesh only");
-  G.gl().add(rai::glDrawGraph,&bl);
+  G.glAdd(glStandardScene, NULL);
+  G.glAdd(drawTrimesh,&mesh);
+  G.watch(true, "mesh only");
+  G.glAdd(rai::glDrawGraph,&bl);
   G.gl().text="testing blender import";
   animateConfiguration(bl,gl);
 }
