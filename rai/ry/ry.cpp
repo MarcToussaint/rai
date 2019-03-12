@@ -274,6 +274,10 @@ PYBIND11_MODULE(libry, m) {
     self.set()->makeObjectsFree(I_conv(objs));
   } )
 
+  .def("makeObjectsConvex", [](ry::Config& self){
+      makeConvexHulls(self.set()->frames);
+  } )
+
   .def("computeCollisions", [](ry::Config& self){
     self.set()->stepSwift();
   } )
@@ -300,6 +304,17 @@ PYBIND11_MODULE(libry, m) {
     ry::RyFrame f;
     f.frame = self.get()->getFrameByName(framename.c_str(), true);
     return f;
+  } )
+
+  .def("getFrameBox", [](ry::Config& self, const std::string& framename){
+    auto Kget = self.get();
+    rai::Frame *f = Kget->getFrameByName(framename.c_str(), true);
+    rai::Shape *s = f->shape;
+    CHECK(s, "frame " <<f->name <<" does not have a shape");
+    CHECK(s->type() == rai::ST_ssBox || s->type() == rai::ST_box,
+            "frame " <<f->name <<" needs to be a box");
+    arr range = s->size();
+    return pybind11::array(range.dim(), range.p);
   } )
 
   .def("view", [](ry::Config& self, const std::string& frame){
