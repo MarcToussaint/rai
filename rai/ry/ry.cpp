@@ -278,6 +278,10 @@ PYBIND11_MODULE(libry, m) {
       makeConvexHulls(self.set()->frames);
   } )
 
+  .def("attach", [](ry::Config& self, const std::string& frame1, const std::string& frame2){
+      self.set()->attach(frame1.c_str(), frame1.c_str());
+  } )
+
   .def("computeCollisions", [](ry::Config& self){
     self.set()->stepSwift();
   } )
