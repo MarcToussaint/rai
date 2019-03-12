@@ -143,6 +143,13 @@ PYBIND11_MODULE(libry, m) {
     py::arg("parent") = std::string(),
     py::arg("args") = std::string() )
 
+  .def("setFrameRelativePose", [](ry::Config& self, const std::string& frame, const std::vector<double>& x) {
+      auto Kset = self.set();
+      rai::Frame *f = Kset->getFrameByName(frame.c_str(), true);
+      f->Q.set(conv_stdvec2arr(x));
+      Kset->calc_fwdPropagateFrames();
+  } )
+
   .def("delFrame", [](ry::Config& self, const std::string& name) {
     auto Kset = self.set();
     rai::Frame *p = Kset->getFrameByName(name.c_str(), true);
