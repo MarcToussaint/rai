@@ -306,6 +306,17 @@ PYBIND11_MODULE(libry, m) {
     return f;
   } )
 
+  .def("getFrameBox", [](ry::Config& self, const std::string& framename){
+    auto Kget = self.get();
+    rai::Frame *f = Kget->getFrameByName(framename.c_str(), true);
+    rai::Shape *s = f->shape;
+    CHECK(s, "frame " <<f->name <<" does not have a shape");
+    CHECK(s->type() == rai::ST_ssBox || s->type() == rai::ST_box,
+            "frame " <<f->name <<" needs to be a box");
+    arr range = s->size();
+    return pybind11::array(range.dim(), range.p);
+  } )
+
   .def("view", [](ry::Config& self, const std::string& frame){
     ry::ConfigViewer view;
     view.view = make_shared<KinViewer>(self, -1, rai::String(frame));
