@@ -274,6 +274,10 @@ PYBIND11_MODULE(libry, m) {
     self.set()->makeObjectsFree(I_conv(objs));
   } )
 
+  .def("makeObjectsConvex", [](ry::Config& self){
+      makeConvexHulls(self.set()->frames);
+  } )
+
   .def("computeCollisions", [](ry::Config& self){
     self.set()->stepSwift();
   } )

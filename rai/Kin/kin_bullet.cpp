@@ -252,4 +252,17 @@ void BulletInterface::saveBulletFile(const char* filename){
 }
 
 #else
+
+BulletInterface::BulletInterface(){ NICO }
+BulletInterface::BulletInterface(const rai::KinematicWorld& K){ NICO }
+BulletInterface::~BulletInterface(){ NICO }
+btRigidBody* BulletInterface::addGround(){ NICO }
+btRigidBody* BulletInterface::addFrame(const rai::Frame* f){ NICO }
+void BulletInterface::addFrames(const FrameL& frames){ NICO }
+void BulletInterface::defaultInit(const rai::KinematicWorld& K){ NICO }
+void BulletInterface::step(double tau){ NICO }
+void BulletInterface::pushFullState(const FrameL& frames, const arr& vel){ NICO }
+void BulletInterface::pushKinematicStates(const FrameL& frames){ NICO }
+arr BulletInterface::pullDynamicStates(FrameL& frames){ NICO }
+void BulletInterface::saveBulletFile(const char* filename){ NICO }
 #endif

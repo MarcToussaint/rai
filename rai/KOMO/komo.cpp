@@ -749,7 +749,7 @@ void KOMO::setPush(double startTime, double endTime, const char* stick, const ch
 void KOMO::setGraspSlide(double time, const char* endeff, const char* object, const char* placeRef, int verbose) {
 
   double startTime = time;
-  double endTime = time+5.;
+  double endTime = time+1.;
   
   if(verbose>0) cout <<"KOMO_setSlide t=" <<startTime <<" endeff=" <<endeff <<" obj=" <<object <<endl;
   
