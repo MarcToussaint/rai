@@ -21,7 +21,7 @@ struct TM_qItself:Feature {
   
   TM_qItself(bool relative_q0=false);
   TM_qItself(TM_qItself_PickMode pickMode, const StringA& picks, const rai::KinematicWorld& G, bool relative_q0=false);
-  TM_qItself(uintA _selectedBodies, bool relative_q0=false);
+  TM_qItself(const uintA& _selectedBodies, bool relative_q0=false);
   
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
   virtual void phi(arr& y, arr& J, const WorldL& Ktuple);

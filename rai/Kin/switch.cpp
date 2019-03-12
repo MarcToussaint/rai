@@ -89,7 +89,7 @@ void rai::KinematicSwitch::apply(KinematicWorld& K) {
   if(symbol==SW_effJoint || symbol==SW_actJoint) {
 
     //first find link frame above 'to', and make it a root
-    rai::Frame *link = to->getUpwardLink();
+    rai::Frame *link = to->getUpwardLink(NoTransformation, true);
     if(link->parent) link->unLink();
     K.reconfigureRootOfSubtree(to); //TODO: really? do you need this when you took the link??
 
@@ -98,8 +98,8 @@ void rai::KinematicSwitch::apply(KinematicWorld& K) {
     Joint *j = new Joint(*to);
     j->type = jointType;
 
-    if(!jA.isZero()) j->frame.insertPreLink(jA);
-    if(!jB.isZero()) j->frame.insertPostLink(jB);
+    if(!jA.isZero()) j->frame->insertPreLink(jA);
+    if(!jB.isZero()) j->frame->insertPostLink(jB);
 
     //set zeroVel flag
     if(symbol==SW_actJoint || symbol==insertActuated) {
@@ -111,17 +111,17 @@ void rai::KinematicSwitch::apply(KinematicWorld& K) {
 
     //initialize to zero, copy, or random
     if(init==SWInit_zero) { //initialize the joint with zero transform
-      j->frame.Q.setZero();
+      j->frame->Q.setZero();
     }else if(init==SWInit_copy) { //set Q to the current relative transform, modulo DOFs
-      j->frame.Q = j->frame.X / j->frame.parent->X; //that's important for the initialization of x during the very first komo.setupConfigurations !!
-      //cout <<j->frame.Q <<' ' <<j->frame.Q.rot.normalization() <<endl;
-      arr q = j->calc_q_from_Q(j->frame.Q);
-      j->frame.Q.setZero();
+      j->frame->Q = j->frame->X / j->frame->parent->X; //that's important for the initialization of x during the very first komo.setupConfigurations !!
+      //cout <<j->frame->Q <<' ' <<j->frame->Q.rot.normalization() <<endl;
+      arr q = j->calc_q_from_Q(j->frame->Q);
+      j->frame->Q.setZero();
       j->calc_Q_from_q(q, 0);
     } if(init==SWInit_random) { //random, modulo DOFs
-      j->frame.Q.setRandom();
-      arr q = j->calc_q_from_Q(j->frame.Q);
-      j->frame.Q.setZero();
+      j->frame->Q.setRandom();
+      arr q = j->calc_q_from_Q(j->frame->Q);
+      j->frame->Q.setZero();
       j->calc_Q_from_q(q, 0);
     }
 

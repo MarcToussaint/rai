@@ -70,7 +70,7 @@ void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple) {
     arr h = zeros(y.N);
     for(rai::Joint *j:Ktuple.last()->fwdActiveJoints) for(uint i=0; i<j->qDim(); i++) {
         h(j->qIndex+i) = hbase*j->H;
-        if(j->frame.flags && !(j->frame.flags & (1<<FL_normalControlCosts))) {
+        if(j->frame->flags && !(j->frame->flags & (1<<FL_normalControlCosts))) {
           h(j->qIndex+i)=0.;
         }
       }
@@ -104,7 +104,7 @@ void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple) {
 #else
     for(rai::Joint *j:Ktuple.last()->fwdActiveJoints) for(uint i=0; i<j->qDim(); i++) {
         double hj = h*j->H;
-        if(j->frame.flags && !(j->frame.flags & (1<<FL_normalControlCosts))) hj=0.;
+        if(j->frame->flags && !(j->frame->flags & (1<<FL_normalControlCosts))) hj=0.;
         y(j->qIndex+i) *= hj;
       }
 #endif
@@ -139,7 +139,7 @@ void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple) {
 #else
       for(rai::Joint *j: Ktuple.last()->fwdActiveJoints) for(uint i=0; i<j->qDim(); i++) {
           double hj = h*j->H;
-          if(j->frame.flags && !(j->frame.flags & (1<<FL_normalControlCosts))) hj=0.;
+          if(j->frame->flags && !(j->frame->flags & (1<<FL_normalControlCosts))) hj=0.;
 #if 1
           uint k=j->qIndex+i;
           J[k] *= hj;
@@ -176,7 +176,7 @@ void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple) {
         if(order>=2 && accCoeff) qi3 = joints.elem(-3)->qIndex+j;
         rai::Joint *jl = joints.last();
         double hj = h * jl->H;
-        if(jl->frame.flags && !(jl->frame.flags & (1<<FL_normalControlCosts))) hj=0.;
+        if(jl->frame->flags && !(jl->frame->flags & (1<<FL_normalControlCosts))) hj=0.;
         //TODO: adding vels + accs before squareing does not make much sense!
         if(order>=0 && posCoeff) y(m) += posCoeff*hj       * (Ktuple.elem(-1)->q(qi1));
         if(order>=1 && velCoeff) y(m) += (velCoeff*hj/tau) * (Ktuple.elem(-1)->q(qi1) -    Ktuple.elem(-2)->q(qi2));
