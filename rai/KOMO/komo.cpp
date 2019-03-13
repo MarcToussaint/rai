@@ -2181,6 +2181,8 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
       if(task->isActive(t)) {
         //query the task map and check dimensionalities of returns
         task->map->__phi(y, (!!J?Jy:NoArr), Ktuple);
+//        uint m = task->map->__dim_phi(Ktuple);
+//        CHECK_EQ(m,y.N,"");
         if(!!J) CHECK_EQ(y.N, Jy.d0, "");
         if(!!J) CHECK_EQ(Jy.nd, 2, "");
         if(!!J) CHECK_EQ(Jy.d1, Ktuple_dim.last(), "");

@@ -134,7 +134,7 @@ LIBS += -lode
 endif
 
 ifeq ($(FCL),1)
-DEPEND_UBUNTU += libfcl-dev
+DEPEND_UBUNTU += libfcl-0.5-dev
 CXXFLAGS  += -DRAI_FCL
 LIBS      += -lfcl
 endif

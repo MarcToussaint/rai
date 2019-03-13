@@ -286,7 +286,8 @@ PYBIND11_MODULE(libry, m) {
   } )
 
   .def("attach", [](ry::Config& self, const std::string& frame1, const std::string& frame2){
-      self.set()->attach(frame1.c_str(), frame1.c_str());
+      auto Kset = self.set();
+      Kset->attach(frame1.c_str(), frame2.c_str());
   } )
 
   .def("computeCollisions", [](ry::Config& self){
