@@ -15,7 +15,9 @@ BASE_REAL = $(shell realpath $(BASE))
 # load user options from the local make-config
 #
 ################################################################################
--include $(BASE)/build/config.mk
+-include $(BASE)/build/config.mk.default
+-include $(BASE)/config.mk
+-include $(BASE)/../config.mk
 
 
 ################################################################################
@@ -410,8 +412,8 @@ inPath_printUbuntuPackages/%: $(BASE)/rai/%
 inPath_makePython/%: %
 	make --directory=$< pywrapper
 
-$(BASE)/build/config.mk: $(BASE)/../config.mk
-	cp $< $@
+# $(BASE)/build/config.mk: $(BASE)/../config.mk
+# 	cp $< $@
 
 #$(BASE)/build/config.mk: $(BASE)/build/config.mk.default
 #	cp $< $@
