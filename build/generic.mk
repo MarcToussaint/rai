@@ -15,7 +15,9 @@ BASE_REAL = $(shell realpath $(BASE))
 # load user options from the local make-config
 #
 ################################################################################
--include $(BASE)/build/config.mk
+-include $(BASE)/build/config.mk.default
+-include $(BASE)/config.mk
+-include $(BASE)/../config.mk
 
 
 ################################################################################
@@ -55,9 +57,9 @@ UIC = uic
 YACC = bison -d
 
 LINK	= $(CXX)
-CPATHS	+= $(BASE)/rai $(BASE)/../src
+CPATHS	+= $(BASE)/rai
 ifdef BASE2
-CPATHS	+= $(BASE)/rai $(BASE2)/src
+CPATHS	+= $(BASE2)/src
 endif
 LPATHS	+= $(BASE_REAL)/lib /usr/local/lib
 LIBS += -lrt
@@ -173,7 +175,7 @@ cleanLocal: force
 	rm -f $(OUTPUT) $(OBJS) $(PREOBJS) callgrind.out.* $(CLEAN)
 	@rm -f $(MODULE_NAME)_wrap.* $(MODULE_NAME)py.so $(MODULE_NAME)py.py
 	@find $(BASE) -type d -name 'Make.lock' -delete -print
-	@find $(BASE)/rai $(BASE)/../src \( -type f -or -type l \) \( -name 'lib*.so' -or -name 'lib*.a' \)  -delete -print
+	@find $(BASE)/rai \( -type f -or -type l \) \( -name 'lib*.so' -or -name 'lib*.a' \)  -delete -print
 
 cleanLocks: force
 	@find $(BASE) -type d -name 'Make.lock' -delete -print
@@ -410,8 +412,8 @@ inPath_printUbuntuPackages/%: $(BASE)/rai/%
 inPath_makePython/%: %
 	make --directory=$< pywrapper
 
-$(BASE)/build/config.mk: $(BASE)/../config.mk
-	cp $< $@
+# $(BASE)/build/config.mk: $(BASE)/../config.mk
+# 	cp $< $@
 
 #$(BASE)/build/config.mk: $(BASE)/build/config.mk.default
 #	cp $< $@
