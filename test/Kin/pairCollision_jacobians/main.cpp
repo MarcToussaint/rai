@@ -122,7 +122,7 @@ void TEST(GJK_Jacobians2) {
 
   K.watch();
 
-  K.swift().initActivations(K, 0);
+  K.swift().initActivations(K);
   K.stepSwift();
 //  K.reportProxies();
   K.orsDrawProxies=true;
@@ -201,7 +201,7 @@ void TEST(GJK_Jacobians3) {
 
   K.watch();
 
-  K.swift().initActivations(K, 0);
+  K.swift().initActivations(K);
   K.stepSwift();
   K.reportProxies();
   K.orsDrawProxies=true;
