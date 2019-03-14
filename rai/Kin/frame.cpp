@@ -272,8 +272,7 @@ bool rai::Frame::isChildOf(const rai::Frame* par, int order) const{
 }
 
 rai::Joint::Joint(rai::Frame& f, rai::JointType _type) : Joint(f, (Joint*)NULL){
-  type = _type;
-  dim = getDimFromType();
+  setType(_type);
 }
 
 rai::Joint::Joint(Frame &f, Joint *copyJoint)
@@ -633,9 +632,15 @@ void rai::Joint::makeRigid() {
 }
 
 void rai::Joint::makeFree(double H_cost){
-  if(type!=JT_free){
-    type=JT_free; frame->K.reset_q();
-    H=H_cost;
+  setType(JT_free);
+  H=H_cost;
+}
+
+void rai::Joint::setType(rai::JointType _type){
+  if(type!=_type){
+    type = _type;
+    dim = getDimFromType();
+    frame->K.reset_q();
   }
 }
 

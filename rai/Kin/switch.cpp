@@ -87,7 +87,6 @@ void rai::KinematicSwitch::apply(KinematicWorld& K) {
   if(symbol==SW_insertEffJoint || symbol==insertActuated) HALT("deprecated");
 
   if(symbol==SW_effJoint || symbol==SW_actJoint) {
-
     //first find link frame above 'to', and make it a root
     rai::Frame *link = to->getUpwardLink(NoTransformation, true);
     if(link->parent) link->unLink();
@@ -96,7 +95,7 @@ void rai::KinematicSwitch::apply(KinematicWorld& K) {
     //create a new joint
     to->linkFrom(from);
     Joint *j = new Joint(*to);
-    j->type = jointType;
+    j->setType(jointType);
 
     if(!jA.isZero()) j->frame->insertPreLink(jA);
     if(!jB.isZero()) j->frame->insertPostLink(jB);

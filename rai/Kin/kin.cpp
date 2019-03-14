@@ -264,7 +264,7 @@ rai::Frame* rai::KinematicWorld::addObject(const char* name, rai::ShapeType shap
     if(p){
 //      f->linkFrom(p);
       rai::Joint *j = new rai::Joint(*p, *f);
-      j->type = rai::JT_rigid;
+      j->setType(rai::JT_rigid);
     }
   }
 
@@ -1729,11 +1729,17 @@ void rai::KinematicWorld::proxiesToContacts(double margin) {
 }
 
 double rai::KinematicWorld::totalContactPenetration() {
-  NIY;
   double D=0.;
+  for(const Proxy& p:proxies) {
+    //early check: if swift is way out of collision, don't bother computing it precise
+    if(p.d > p.a->shape->radius()+p.a->shape->radius()+.01) continue;
+    //exact computation
+    if(!p.coll) ((Proxy*)&p)->calc_coll(*this);
+    double d = p.coll->getDistance();
+    if(d<0.) D -= d;
+  }
   //  for(Frame *f:frames) for(Contact *c:f->contacts) if(&c->a==f) {
   //        double d = c->getDistance();
-  //        if(d<0.) D -= d;
   //      }
   return D;
 }

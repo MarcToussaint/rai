@@ -106,7 +106,7 @@ void TEST(GJK_Jacobians2) {
     a->name <<"obj_" <<i;
 
     rai::Joint *j = new rai::Joint(base, *a);
-    j->type = rai::JT_free;
+    j->setType(rai::JT_free);
     j->frame->Q.setRandom();
     j->frame->Q.pos.z += 1.;
 
