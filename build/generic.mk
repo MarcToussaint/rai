@@ -105,11 +105,17 @@ all: $(OUTPUT) #this is for qtcreator, which by default uses the 'all' target
 #
 ################################################################################
 
-$(BASE)/config.mk:: $(BASE)/build/config.mk.default
-	cp $< $@
+ifneq ("$(wildcard $(BASE)/../config.mk)","")
 
 $(BASE)/config.mk:: $(BASE)/../config.mk
 	cp $< $@
+
+else
+
+$(BASE)/config.mk:: $(BASE)/build/config.mk.default
+	cp $< $@
+
+endif
 
 include $(BASE)/config.mk
 
