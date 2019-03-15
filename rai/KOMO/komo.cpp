@@ -2073,7 +2073,7 @@ Graph KOMO::getProblemGraph(bool includeValues){
         g.newNode<double>({"sos_value"}, {}, sumOfSqr(V));
       }else if(task->type==OT_eq){
         g.newNode<double>({"eq_sumOfAbs"}, {}, sumOfAbs(V));
-      }else if(task->type==OT_sos){
+      }else if(task->type==OT_ineq){
         double c=0.;
         for(double& v:V) if(v>0) c+=v;
         g.newNode<double>({"inEq_sumOfPos"}, {}, c);

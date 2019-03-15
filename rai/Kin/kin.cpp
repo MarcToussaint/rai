@@ -2836,7 +2836,6 @@ bool rai::KinematicWorld::checkConsistency() {
 
 rai::Joint* rai::KinematicWorld::attach(Frame* a, Frame* b){
   b = b->getUpwardLink();
-
   if(b->parent) b->unLink();
   b->linkFrom(a, true);
   return new rai::Joint(*b, rai::JT_rigid);
