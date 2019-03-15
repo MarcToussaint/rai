@@ -10,15 +10,6 @@
 
 BASE_REAL = $(shell realpath $(BASE))
 
-################################################################################
-#
-# load user options from the local make-config
-#
-################################################################################
--include $(BASE)/build/config.mk.default
--include $(BASE)/config.mk
--include $(BASE)/../config.mk
-
 
 ################################################################################
 #
@@ -99,9 +90,29 @@ endif
 
 ################################################################################
 #
+# default target
+#
+################################################################################
+
+default: $(OUTPUT)
+all: $(OUTPUT) #this is for qtcreator, which by default uses the 'all' target
+
+
+################################################################################
+#
+# load user options from the local make-config
 # load defines for linking to external libs
 #
 ################################################################################
+
+$(BASE)/config.mk:: $(BASE)/build/config.mk.default
+	cp $< $@
+
+$(BASE)/config.mk:: $(BASE)/../config.mk
+	cp $< $@
+
+include $(BASE)/config.mk
+
 include $(BASE)/build/defines.mk
 
 
@@ -411,12 +422,6 @@ inPath_printUbuntuPackages/%: $(BASE)/rai/%
 
 inPath_makePython/%: %
 	make --directory=$< pywrapper
-
-# $(BASE)/build/config.mk: $(BASE)/../config.mk
-# 	cp $< $@
-
-#$(BASE)/build/config.mk: $(BASE)/build/config.mk.default
-#	cp $< $@
 
 zip::
 	cd ..;  rm -f $(NAME).tgz;  tar cvzf $(NAME).tgz $(NAME) --dereference --exclude-vcs --exclude-from tar.exclude --exclude-from $(NAME)/tar.exclude
