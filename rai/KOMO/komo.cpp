@@ -1763,7 +1763,7 @@ void KOMO::set_x(const arr& x) {
 //    configurations(s)->checkConsistency();
   }
   CHECK_EQ(x_count, x.N, "");
-  }
+}
 
 void KOMO::reportProxies(std::ostream& os, double belowMargin) {
   int s=0;
@@ -2053,6 +2053,7 @@ Graph KOMO::getProblemGraph(bool includeValues){
     g.isNodeOfGraph->keys.append(task->name);
     //        g.newNode<
     g.newNode<rai::String>({"type"}, {}, STRING(task->type));
+    g.newNode<uint>({"dim"}, {}, task->map->__dim_phi(configurations({0,k_order})));
 //    if(task->vars.N) g.newNode<intA>({"confs"}, {}, task->vars);
     g.copy(task->map->getSpec(world), true);
     if(includeValues){

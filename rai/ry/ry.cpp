@@ -607,9 +607,10 @@ PYBIND11_MODULE(libry, m) {
       py::arg("stickiness") = 0. )
 
   .def("addObjective", [](ry::RyKOMO& self, const std::vector<double>& time, const ObjectiveType& type, const FeatureSymbol& feature, const ry::I_StringA& frames, const std::vector<double> scale, const std::vector<std::vector<double>> scaleTrans, const std::vector<double>& target, int order){
-    arr _scale = arr(scale);
+    arr _scale;
+    if(scale.size()) _scale=conv_stdvec2arr(scale);
     if(scaleTrans.size()) _scale=vecvec2arr(scaleTrans);
-    self.komo->addObjective(arr(time), type, feature, I_conv(frames), arr(scale), arr(target), order);
+    self.komo->addObjective(arr(time), type, feature, I_conv(frames), _scale, arr(target), order);
   },"", py::arg("time")=std::vector<double>(),
       py::arg("type"),
       py::arg("feature"),
