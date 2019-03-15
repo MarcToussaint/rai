@@ -6,7 +6,11 @@
 # etc
 #
 
-#OPTIM=fast
+# only UNCOMMENT some of the following lines
+# (they are already set =1 in the components that refer to them)
+
+#OPTIM = fast
+
 FCL = 0
 ODE = 0
 PHYSX = 0
