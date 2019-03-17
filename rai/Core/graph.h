@@ -163,6 +163,7 @@ struct Graph : NodeL {
   //-- editing nodes
   Node *edit(Node *ed); ///< ed describes how another node should be edited; ed is removed after editing is done
   void edit(const NodeL& L) { for(Node *ed:L) edit(ed); }
+  void collapse(Node *a, Node *b);
   
   //-- hierarchical finding: up and down in the graph hierarchy
   const Graph* getRootGraph() const;
@@ -277,8 +278,13 @@ struct Nod {
 inline Graph& operator<<(Graph& G, const Nod& n) { G.newNode(n); return G; }
 
 //===========================================================================
+//
+// algorithms
 
 NodeL neighbors(Node*);
+
+int distance(NodeL A, NodeL B);
+
 
 //===========================================================================
 
@@ -311,7 +317,7 @@ typedef rai::Array<std::shared_ptr<Type> > TypeInfoL;
 //===========================================================================
 //===========================================================================
 //
-// definition of template methods
+// definition of template methods - could move this to graph.tpp
 //
 //===========================================================================
 //===========================================================================

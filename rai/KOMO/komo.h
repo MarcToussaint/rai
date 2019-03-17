@@ -23,12 +23,14 @@ enum SkeletonSymbol{
   SY_above,
   SY_inside,
   SY_impulse,
+  SY_initial,
   SY_stable,
   SY_stableOn,
   SY_dynamic,
   SY_dynamicOn,
   SY_dynamicTrans,
   SY_liftDownUp,
+  SY_break,
 
   SY_contact,
   SY_bounce,
@@ -37,7 +39,9 @@ enum SkeletonSymbol{
   SY_magicTrans,
 
   SY_push,
-  SY_graspSlide
+  SY_graspSlide,
+
+  SY_identical,
 };
 
 
@@ -53,7 +57,7 @@ struct SkeletonEntry {
 stdOutPipe(SkeletonEntry)
 typedef rai::Array<SkeletonEntry> Skeleton;
 intA getSwitchesFromSkeleton(const Skeleton& S);
-void writeSkeleton(const Skeleton& S, const intA& switches={});
+void writeSkeleton(std::ostream& os, const Skeleton& S, const intA& switches={});
 
 //===========================================================================
 
@@ -144,6 +148,7 @@ struct KOMO : NonCopyable {
 
   //-- tasks mid-level
   void setSquaredQAccelerations(double startTime=0., double endTime=-1., double prec=1.);
+  void setSquaredQAccelerations_novel(double startTime=0., double endTime=-1., double prec=1., double homingPrec=1e-2);
   void setSquaredQVelocities(double startTime=0., double endTime=-1., double prec=1.);
   void setFixEffectiveJoints(double startTime=0., double endTime=-1., double prec=3e1);
   void setFixSwitchedObjects(double startTime=0., double endTime=-1., double prec=3e1);

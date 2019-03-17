@@ -273,7 +273,7 @@ public:
   bool operator==(const String& s) const;
   bool operator!=(const char *s) const;
   bool operator!=(const String& s) const;
-  bool operator<(const String& s) const;
+  bool operator<=(const String& s) const;
   
   /// @name misc
   bool contains(const String& substring) const;

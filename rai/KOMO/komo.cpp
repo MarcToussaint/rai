@@ -255,7 +255,7 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
     }
 
     //-- DOF-is-constant constraint
-    if(endTime<0. || stepsPerPhase*endTime>stepsPerPhase*time+1)
+    if((endTime<0. && stepsPerPhase*time<T) || stepsPerPhase*endTime>stepsPerPhase*time+1)
       addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 3e1, 1, +1, -1);
 
     //-- no relative jump at end
@@ -490,6 +490,26 @@ void KOMO::setHoming(double startTime, double endTime, double prec, const char* 
 void KOMO::setSquaredQAccelerations(double startTime, double endTime, double prec) {
   CHECK_GE(k_order, 2,"");
   addObjective(startTime, endTime, new TM_Transition(world), OT_sos, NoArr, prec);
+}
+
+void KOMO::setSquaredQAccelerations_novel(double startTime, double endTime, double prec, double homingPrec) {
+
+  uintA selectedBodies;
+  for(rai::Frame *f:world.frames) if(f->joint && f->joint->dim==1){
+    selectedBodies.append(TUP(f->ID, f->parent->ID));
+  }
+  selectedBodies.reshape(selectedBodies.N/2,2);
+  if(k_order==2){
+    //sqr accel
+    addObjective(startTime, endTime, make_shared<TM_qItself>(selectedBodies), OT_sos, NoArr, prec, 2);
+  }else{
+    //sqr vel
+    addObjective(startTime, endTime, make_shared<TM_qItself>(selectedBodies), OT_sos, NoArr, prec, 1);
+  }
+  if(homingPrec){
+    //homing
+    addObjective(startTime, endTime, make_shared<TM_qItself>(selectedBodies, true), OT_sos, NoArr, homingPrec, 0);
+  }
 }
 
 void KOMO::setSquaredQVelocities(double startTime, double endTime, double prec) {
@@ -1055,6 +1075,7 @@ void KOMO::setSkeleton(const Skeleton &S, bool ignoreSwitches) {
     if(s.symbol==SY_dynamicTrans) { if(!ignoreSwitches) addSwitch_dynamicTrans(s.phase0, s.phase1+1., "base", s.frames(0));  continue;  }
 #endif
     if(s.symbol==SY_liftDownUp) {  setLiftDownUp(s.phase0, s.frames(0), .4);  continue;  }
+    if(s.symbol==SY_break) {    addObjective(s.phase0, s.phase1, make_shared<TM_NoJumpFromParent>(world, s.frames(0)), OT_eq, NoArr, 1e2, 1, 0, 0);  continue;  }
 
     if(s.symbol==SY_contact) {   addContact_slide(s.phase0, s.phase1, s.frames(0), s.frames(1));  continue;  }
     if(s.symbol==SY_bounce) {   addContact_elasticBounce(s.phase0, s.frames(0), s.frames(1), .9);  continue;  }
@@ -2051,10 +2072,9 @@ Graph KOMO::getProblemGraph(bool includeValues){
     //        Graph& g = K.newSubgraph({}, configs.sub(convert<uint>(task->vars[t]+(int)k_order))) -> graph();
     Graph& g = K.newSubgraph();
     g.isNodeOfGraph->keys.append(task->name);
-    //        g.newNode<
     g.newNode<rai::String>({"type"}, {}, STRING(task->type));
     g.newNode<uint>({"dim"}, {}, task->map->__dim_phi(configurations({0,k_order})));
-//    if(task->vars.N) g.newNode<intA>({"confs"}, {}, task->vars);
+    if(task->vars.N) g.newNode<intA>({"confs"}, {}, task->vars);
     g.copy(task->map->getSpec(world), true);
     if(includeValues){
       arr y,V;
@@ -2503,12 +2523,14 @@ template<> const char* rai::Enum<SkeletonSymbol>::names []= {
   "above",
   "inside",
   "impulse",
+  "initial",
   "stable",
   "stableOn",
   "dynamic",
   "dynamicOn",
   "dynamicTrans",
   "liftDownUp",
+  "break",
 
   "contact",
   "bounce",
@@ -2518,6 +2540,8 @@ template<> const char* rai::Enum<SkeletonSymbol>::names []= {
 
   "push",
   "graspSlide",
+
+  "identical",
   NULL
 };
 
@@ -2541,17 +2565,17 @@ intA getSwitchesFromSkeleton(const Skeleton& S){
   return ret;
 }
 
-void writeSkeleton(const Skeleton& S, const intA& switches){
-  cout <<"SKELETON:" <<endl;
-  for(auto &s:S) cout <<"  " <<s <<endl;
+void writeSkeleton(ostream& os, const Skeleton& S, const intA& switches){
+  os <<"SKELETON:" <<endl;
+  for(auto &s:S) os <<"  " <<s <<endl;
   if(switches.N){
-    cout <<"SWITCHES:" <<endl;
+    os <<"SWITCHES:" <<endl;
     for(uint i=0;i<switches.d0;i++){
       int j = switches(i,0);
       if(j<0)
-        cout <<"  START  -->  " <<S(switches(i,1)) <<endl;
+        os <<"  START  -->  " <<S(switches(i,1)) <<endl;
       else
-        cout <<"  " <<S(j) <<"  -->  " <<S(switches(i,1)) <<endl;
+        os <<"  " <<S(j) <<"  -->  " <<S(switches(i,1)) <<endl;
     }
   }
 }

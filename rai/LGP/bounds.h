@@ -19,3 +19,8 @@ void skeleton2Bound(KOMO& komo,
                     bool collisions,
                     const arrA& waypoints={}
                     );
+
+void skeleton2CGO(const Skeleton& S,
+                  const rai::KinematicWorld& startKinematics,
+                  bool collisions);
+

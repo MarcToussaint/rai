@@ -126,12 +126,14 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
   komo.fil = new ofstream(OptLGPDataPath + STRING("komo-" <<id <<'-' <<step <<'-' <<bound));
   
   Skeleton S = getSkeleton({"touch", "above", "inside", "impulse",
-                            "stable", "stableOn", "dynamic", "dynamicTrans", "dynamicOn",
+                            "stable", "stableOn", "dynamic", "dynamicTrans", "dynamicOn", "break",
                             "push", "graspSlide", "liftDownUp"
                            });
 
+  if(komo.fil) writeSkeleton(*komo.fil, S, getSwitchesFromSkeleton(S));
+
   if(komo.verbose>1){
-    writeSkeleton(S, getSwitchesFromSkeleton(S));
+    writeSkeleton(cout, S, getSwitchesFromSkeleton(S));
   }
 
   //ensure the effective kinematics are computed when BD_pose
@@ -152,6 +154,11 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
                  startKinematics, (parent?parent->effKinematics:startKinematics),
                  collisions,
                  waypoints);
+
+  if(komo.fil){
+    komo.reportProblem(*komo.fil);
+    (*komo.fil) <<komo.getProblemGraph(false);
+  }
 
 //  if(level==BD_seq) komo.denseOptimization=true;
 
@@ -221,6 +228,21 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
   if(!feasible(bound))
     labelInfeasible();
     
+}
+
+void LGP_Node::getCGO(bool collisions, int verbose) {
+  Skeleton S = getSkeleton({"touch", "above", "inside", "impulse",
+                            "initial", "stable", "stableOn", "dynamic", "dynamicTrans", "dynamicOn", "break",
+                            "push", "graspSlide", "liftDownUp"
+                           });
+
+  if(verbose>1){
+    writeSkeleton(cout, S, getSwitchesFromSkeleton(S));
+  }
+
+  skeleton2CGO(S,
+               startKinematics,
+               collisions);
 }
 
 void LGP_Node::setInfeasible() {
@@ -339,7 +361,7 @@ Skeleton LGP_Node::getSkeleton(StringA predicateFilter,  bool finalStateOnly) co
 
         rai::Enum<SkeletonSymbol> sym(symbols.first());
         if(k_end==states.N-1) {
-          skeleton.append(SkeletonEntry({times(k), times.last(), sym, symbols({1,-1})}));
+          skeleton.append(SkeletonEntry({times(k), -2., sym, symbols({1,-1})}));
         } else {
           skeleton.append(SkeletonEntry({times(k), times(k_end), sym, symbols({1,-1})}));
         }

@@ -443,6 +443,27 @@ Node* Graph::edit(Node *ed) {
   return NULL;
 }
 
+void Graph::collapse(Node* a, Node* b){
+  NodeL ab={a,b}, ba={b,a};
+//  cout <<"collapsing " <<a->keys.first() <<' ' <<b->keys.first() <<endl;
+//  cout <<"collapsing " <<*a <<listString(a->parentOf) <<" and " <<*b <<listString(b->parentOf) <<endl;
+//  a->keys.first() <<'_' <<b->keys.first();
+  for(Node *ch:a->parentOf) if(ch->parents==ab || ch->parents==ba) delete ch;
+  NodeL b_parentOf = b->parentOf;
+  for(Node *ch:b_parentOf){
+    for(Node*& p:ch->parents) if(p==b){
+      p=a;
+      b->parentOf.removeValue(ch);
+      b->numChildren--;
+      a->parentOf.prepend(ch);
+      a->numChildren++;
+    }
+  }
+//  cout <<"... becomes " <<*a <<listString(a->parentOf) <<" and " <<*b <<listString(b->parentOf) <<endl;
+//  checkConsistency();
+  delete b;
+}
+
 void Graph::copy(const Graph& G, bool appendInsteadOfClear, bool enforceCopySubgraphToNonsubgraph) {
   DEBUG(G.checkConsistency();)
       if(!G.isIndexed) HALT("can't copy non-indexed graph");
@@ -947,11 +968,15 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
         label <<k;
         newline=true;
       }
-    } else if(n->parents.N) {
-      label <<"(" <<n->parents(0)->keys.last();
-      for(uint i=1; i<n->parents.N; i++) label <<' ' <<n->parents(i)->keys.last();
-      label <<")";
+    } else {
+//      if(n->parents.N) {
+//        label <<"(" <<n->parents(0)->keys.last();
+//        for(uint i=1; i<n->parents.N; i++) label <<' ' <<n->parents(i)->keys.last();
+//        label <<")";
+//      }
     }
+    if(label.N) label <<"\\n";
+    n->writeValue(label);
     
     rai::String shape;
     if(n->keys.contains("box")) shape <<", shape=box"; else shape <<", shape=ellipse";
@@ -1148,6 +1173,47 @@ NodeL neighbors(Node* it) {
   }
   return N;
 }
+
+int distance(NodeL A, NodeL B){
+  CHECK(A.N, "");
+  CHECK(B.N, "");
+  Graph& G=A.first()->container;
+  CHECK_EQ(&B.first()->container, &G, "");
+
+  boolA doneA(G.N), doneB(G.N);
+  doneA.setZero();
+  doneB.setZero();
+  NodeL fringeA = A;
+  NodeL fringeB = B;
+  int D=0;
+  for(Node *a:fringeA) doneA(a->index) = true;
+  for(Node *b:fringeB){ if(doneA(b->index)) return D; doneB(b->index) = true; }
+  for(;;){
+    D++;
+    NodeL newA;
+    for(Node *a:fringeA){
+      NodeL neighA = neighbors(a);
+      for(Node *n:neighA){
+        if(doneB(n->index)) return D;
+        if(!doneA(n->index)){ newA.append(n); doneA(n->index)=true; }
+      }
+    }
+    D++;
+    NodeL newB;
+    for(Node *b:fringeB){
+      NodeL neighB = neighbors(b);
+      for(Node *n:neighB){
+        if(doneA(n->index)) return D;
+        if(!doneB(n->index)){ newB.append(n); doneB(n->index)=true; }
+      }
+    }
+    if(!newA.N && !newB.N) break; //failure
+    fringeA = newA;
+    fringeB = newB;
+  }
+  return -1;
+}
+
 
 //===========================================================================
 //

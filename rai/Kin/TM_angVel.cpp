@@ -214,20 +214,24 @@ void TM_NoJumpFromParent::phi(arr& y, arr& J, const WorldL& Ktuple){
   rai::Frame *link = obj->getUpwardLink();
   rai::Frame *parent = link->parent;
 
-  if(parent->ID == Ktuple.elem(-1)->frames(i)->getUpwardLink()->parent->ID){
+  if(parent && parent->ID == Ktuple.elem(-1)->frames(i)->getUpwardLink()->parent->ID){
     LOG(-1) <<"this frame isn't switching - are you sure you want to do this?";
   }
 
   {
 //  if(link->joint && link->joint->type==rai::JT_rigid){
     arr yq, Jq;
-    TM_Default tmp(TMT_pos, link->ID, NoVector, parent->ID, NoVector);
-    tmp.order = 1;
-    tmp.type = TMT_pos;
-    tmp.Feature::__phi(y, J, Ktuple);
-    tmp.type = TMT_quat;
-    tmp.flipTargetSignOnNegScalarProduct=true;
-    tmp.Feature::__phi(yq, (!!J?Jq:NoArr), Ktuple);
+    ptr<TM_Default> tmp;
+    if(parent)
+      tmp = make_shared<TM_Default>(TMT_pos, link->ID, NoVector, parent->ID, NoVector);
+    else
+      tmp = make_shared<TM_Default>(TMT_pos, link->ID);
+    tmp->order = 1;
+    tmp->type = TMT_pos;
+    tmp->Feature::__phi(y, J, Ktuple);
+    tmp->type = TMT_quat;
+    tmp->flipTargetSignOnNegScalarProduct=true;
+    tmp->Feature::__phi(yq, (!!J?Jq:NoArr), Ktuple);
     y.append(yq);
     if(!!J) J.append(Jq);
   }
