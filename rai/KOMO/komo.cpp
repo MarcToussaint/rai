@@ -255,8 +255,10 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
     }
 
     //-- DOF-is-constant constraint
-    if((endTime<0. && stepsPerPhase*time<T) || stepsPerPhase*endTime>stepsPerPhase*time+1)
-      addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 3e1, 1, +1, -1);
+    if((endTime<0. && stepsPerPhase*time<T) || stepsPerPhase*endTime>stepsPerPhase*time+1){
+      Objective *o=addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 1e1, 1, +1, -1);
+//      addObjective(time, endTime, symbols2feature(FS_poseRel, {from, to}, world), OT_eq, NoArr, 1e1, 1, +1, -1);
+    }
 
     //-- no relative jump at end
 //    if(endTime>0.) addObjective(endTime, endTime, new TM_NoJumpFromParent(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
@@ -530,7 +532,7 @@ void KOMO::setFixSwitchedObjects(double startTime, double endTime, double prec) 
 }
 
 void KOMO::setSquaredQuaternionNorms(double startTime, double endTime, double prec) {
-  addObjective(startTime, endTime, new TM_QuaternionNorms(), OT_sos, NoArr, prec);
+  addObjective(startTime, endTime, new TM_QuaternionNorms(), OT_eq, NoArr, prec);
 }
 
 void KOMO::setHoldStill(double startTime, double endTime, const char* shape, double prec) {
@@ -1656,6 +1658,7 @@ bool KOMO::displayTrajectory(double delay, bool watch, bool overlayPaths, const 
     rai::KinematicWorld& K = *configurations(t+k_order);
     timetag.clear() <<tag <<" (config:" <<t <<'/' <<T <<"  s:" <<conv_step2time(t,stepsPerPhase) <<" tau:" <<K.frames.first()->tau <<')';
 //    K.reportProxies();
+    K.orsDrawProxies=false;
     gl->clear();
     gl->add(glStandardScene, 0);
     gl->add(K);

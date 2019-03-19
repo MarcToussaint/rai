@@ -290,6 +290,16 @@ void TM_ZeroQVel::phi(arr& y, arr& J, const WorldL& Ktuple){
     return;
   }
   q.Feature::__phi(y, J, Ktuple);
+  if(y.N==3){
+    arr s = ARR(10.,10.,1.);
+    y = s%y;
+    J = s%J;
+  }
+  if(y.N==7){
+    arr s = ARR(10., 10., 10., 1., 1., 1., 1.);
+    y = s%y;
+    J = s%J;
+  }
 }
 
 uint TM_ZeroQVel::dim_phi(const rai::KinematicWorld& K){
