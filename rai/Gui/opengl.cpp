@@ -412,7 +412,7 @@ void OpenGL::endNonThreadedDraw(){
 
 void OpenGL::postRedrawEvent(bool fromWithinCallback) {
   auto fg = singletonGlSpinner();
-  HALT("not here!");
+  //HALT("not here!");
   fg->mutex.lock();
   if(!s->needsRedraw){
     s->needsRedraw=1;

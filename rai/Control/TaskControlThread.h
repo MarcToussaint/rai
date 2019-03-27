@@ -45,6 +45,18 @@ struct TaskControlThread : Thread {
   void step();
 };
 
+#if 0 //draft
+struct TaskControlUserInterface {
+  Var<rai::KinematicWorld> ctrl_config;
+  Var<CtrlTaskL> ctrl_tasks;
+
+  TaskControlUserInterface(const Var<rai::KinematicWorld>& _ctrl_config, const Var<CtrlTaskL>& _ctrl_tasks);
+
+  //add your wish function
+};
+
+#endif
+
 ptr<CtrlTask> addCtrlTask(Var<CtrlTaskL>& ctrlTasks,
                           Var<rai::KinematicWorld>& ctrl_config,
                           const char* name, const ptr<Feature>& map,
