@@ -52,7 +52,7 @@ Robot_PR2_PathThread::Robot_PR2_PathThread(const rai::KinematicWorld& _K)
     Kp_base = zeros(q0.N);
     Kd_base = zeros(q0.N);
     for(rai::Joint *j: K.fwdActiveJoints) if(j->qDim()>0) {
-        arr *gains = j->frame.ats.find<arr>("gains");
+        arr *gains = j->frame->ats.find<arr>("gains");
         if(gains) {
           for(uint i=0; i<j->qDim(); i++) {
             Kp_base(j->qIndex+i)=gains->elem(0);
@@ -76,7 +76,7 @@ void Robot_PR2_PathThread::step()
 {
     stepCount++;
 
-    auto lock = threadLock();
+    auto lock = threadLock(RAI_HERE);
 
     rai::Frame *transF = K.getFrameByName("worldTranslationRotation", false);
     rai::Joint *trans = (transF?transF->joint:NULL);
@@ -163,7 +163,7 @@ Robot_PR2::~Robot_PR2()
 }
 
 bool Robot_PR2::executeMotion(const StringA& joints, const arr& path, const arr& times, double timeScale, bool append){
-    auto lock = self->threadLock();
+    auto lock = self->threadLock(RAI_HERE);
 
     if(self->currentlyUsedJoints!=joints){
       if(self->spline.refPoints.N){
@@ -193,7 +193,7 @@ void Robot_PR2::execGripper(const rai::String& gripper, double position, double 
 arr Robot_PR2::getJointPositions(const StringA& joints){
     self->ctrl_obs.waitForRevisionGreaterThan(10);
 
-    auto lock = self->threadLock();
+    auto lock = self->threadLock(RAI_HERE);
 
     if(joints.N){
         NIY
@@ -207,7 +207,7 @@ StringA Robot_PR2::getJointNames(){
 }
 
 double Robot_PR2::timeToGo(){
-    auto lock = self->threadLock();
+    auto lock = self->threadLock(RAI_HERE);
 
     return self->spline.timeToGo();
 }

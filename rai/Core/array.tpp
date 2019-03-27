@@ -952,8 +952,11 @@ template<class T> rai::Array<T> rai::Array<T>::sub(int i, int I) const {
   if(I<0) I+=d0;
   CHECK(i>=0 && I>=0 && i<=I, "lower limit higher than upper!");
   x.resize(I-i+1);
-  int k;
-  for(k=i; k<=I; k++) x(k-i)=operator()(k); //TODO: memmove (also below!)
+  if(memMove==1){
+    memmove(x.p, p+i, sizeT*x.N);
+  }else{
+    for(uint ii=0; ii<x.N; ii++) x.p[ii]=p[ii+i];
+  }
   return x;
 }
 
@@ -969,8 +972,11 @@ template<class T> rai::Array<T> rai::Array<T>::sub(int i, int I, int j, int J) c
   if(J<0) J+=d1;
   CHECK(i>=0 && j>=0 && I>=0 && J>=0 && i<=I && j<=J, "lower limit higher than upper!");
   x.resize(I-i+1, J-j+1);
-  int k, l;
-  for(k=i; k<=I; k++) for(l=j; l<=J; l++) x(k-i, l-j)=operator()(k, l);
+  if(memMove==1){
+    for(uint ii=0; ii<x.d0; ii++) memmove(x.p+(ii*x.d1), p+((ii+i)*d1+j), sizeT*x.d1);
+  }else{
+    for(uint ii=0; ii<x.d0; ii++) for(uint jj=0; jj<x.d1; jj++) x(ii, jj)=operator()(ii+i, jj+j);
+  }
   return x;
 }
 
@@ -988,8 +994,14 @@ template<class T> rai::Array<T> rai::Array<T>::sub(int i, int I, int j, int J, i
   if(K<0) K+=d2;
   CHECK(i>=0 && j>=0 && k>=0 && I>=0 && J>=0 && K>=0 && i<=I && j<=J && k<=K, "lower limit higher than upper!");
   x.resize(I-i+1, J-j+1, K-k+1);
-  int ii, jj, kk;
-  for(ii=i; ii<=I; ii++) for(jj=j; jj<=J; jj++)  for(kk=k; kk<=K; kk++) x(ii-i, jj-j, kk-k)=operator()(ii, jj, kk);
+  if(memMove==1){
+    for(uint ii=0; ii<x.d0; ii++) for(uint jj=0; jj<x.d1; jj++){
+      memmove(x.p+((ii*x.d1+jj)*x.d2), p+(((ii+i)*d1+jj+j)*d2+k), sizeT*x.d2);
+    }
+  }else{
+    for(uint ii=0; ii<x.d0; ii++) for(uint jj=0; jj<x.d1; jj++) for(uint kk=0; kk<x.d2; kk++)
+      x(ii, jj, kk)=operator()(ii+i, jj+j, kk+k);
+  }
   return x;
 }
 

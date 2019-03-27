@@ -24,13 +24,13 @@ struct Objective {
   void setCostSpecs(double fromTime, double toTime, int stepsPerPhase, uint T,
                     int deltaFromStep=0, int deltaToStep=0);
   void setCostSpecsDense(const intA& _vars);
-  bool isActive(uint t) { CHECK_EQ(vars.nd, 1, "variables are not time indexed (tuples for dense problem instead)"); return (vars.N>t && vars(t)); }
+  bool isActive(uint t);
   void write(std::ostream& os) const {
     os <<"TASK '" <<name <<"'";
     if(vars.N){
       if(vars.d0==1){
-          if(vars.N>4) writeConsecutiveConstant(os,vars);
-          else os <<" ("<<vars <<')';
+        if(vars.N>4) writeConsecutiveConstant(os,vars);
+        else os <<" ("<<vars <<')';
       }else os <<" (" <<vars.first() <<".." <<vars.last() <<')';
     }else os <<" ()";
     os <<"  type=" <<type

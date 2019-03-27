@@ -160,7 +160,7 @@ void rai::KinematicSwitch::apply(KinematicWorld& K) {
       j->frame.flags |= (1<<FL_zeroQVel);
       j->H = 0.;
     }
-    j->type = jointType;
+    j->setType(jointType);
     if(false) { //this is so annoying!
       j->frame.Q = j->frame.X / j->frame.parent->X; //that's important for the initialization of x during the very first komo.setupConfigurations !!
       arr q = j->calc_q_from_Q(j->frame.Q);

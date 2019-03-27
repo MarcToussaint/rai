@@ -83,7 +83,7 @@ struct Frame : NonCopyable{
   Inertia& getInertia();
   
   void getRigidSubFrames(FrameL& F); ///< recursively collect all rigidly attached sub-frames (e.g., shapes of a link), (THIS is not included)
-  Frame* getUpwardLink(rai::Transformation& Qtotal=NoTransformation) const; ///< recurse upward BEFORE the next joint and return relative transform (this->Q is not included!b)
+  Frame* getUpwardLink(rai::Transformation& Qtotal=NoTransformation, bool untilRigid=false) const; ///< recurse upward BEFORE the next joint and return relative transform (this->Q is not included!b)
   
   void read(const Graph &ats);
   void write(Graph &G);
@@ -95,7 +95,7 @@ stdOutPipe(Frame)
 
 /// for a Frame with Joint-Link, the relative transformation 'Q' is articulated
 struct Joint : NonCopyable{
-  Frame& frame;
+  Frame *frame;
   
   // joint information
   uint dim=0;
@@ -120,9 +120,9 @@ struct Joint : NonCopyable{
   Joint(Frame& from, Frame& f, Joint* copyJoint=NULL);
   ~Joint();
   
-  const Transformation& X() const { return frame.parent->X; }
-  const Transformation& Q() const { return frame.Q; }
-  Frame *from() const { return frame.parent; }
+  const Transformation& X() const { return frame->parent->X; }
+  const Transformation& Q() const { return frame->Q; }
+  Frame *from() const { return frame->parent; }
   
   uint qDim() { return dim; }
   void calc_Q_from_q(const arr& q, uint n);
@@ -136,6 +136,8 @@ struct Joint : NonCopyable{
   
   void makeRigid();
   void makeFree(double H_cost=0.);
+  void setType(JointType _type);
+  void flip();
 
   void read(const Graph& G);
   void write(Graph &g);
@@ -179,7 +181,7 @@ struct Shape : NonCopyable, GLDrawer {
   arr& size() { return getGeom().size; }
   double& size(uint i) { return getGeom().size.elem(i); }
   double radius() { arr &size = getGeom().size; if(size.N==1) return size(0); if(size.N>=4) return size(3); return 0.; }
-  Mesh& mesh() { return getGeom().mesh; }
+  Mesh& mesh() { if(!getGeom().mesh.V.N) geom->createMeshes(); return geom->mesh; }
   Mesh& sscCore() { return getGeom().sscCore; }
   double alpha() { arr& C=getGeom().mesh.C; if(C.N==4) return C(3); return 1.; }
   

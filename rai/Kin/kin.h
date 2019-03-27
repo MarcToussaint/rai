@@ -89,8 +89,8 @@ struct KinematicWorld : GLDrawer {
   /// @name initializations
   void init(const char* filename);
   void init(const Graph& G, bool addInsteadOfClear=false);
-  void addFile(const char* filename);
-  void addFile(const char* filename, const char* parentOfRoot, const rai::Transformation& relOfRoot);
+  Frame* addFile(const char* filename);
+  Frame* addFile(const char* filename, const char* parentOfRoot, const rai::Transformation& relOfRoot);
   void addAssimp(const char* filename);
   Frame* addFrame(const char* name, const char* parent=NULL, const char* args=NULL);
   Frame* addObject(rai::ShapeType shape, const arr& size={}, const arr& col={}, double radius=-1.);
@@ -99,7 +99,7 @@ struct KinematicWorld : GLDrawer {
   /// @name access
   Frame *operator[](const char* name) { return getFrameByName(name, true); }
   Frame *operator()(int i) { return frames(i); }
-  Frame *getFrameByName(const char* name, bool warnIfNotExist=true) const;
+  Frame *getFrameByName(const char* name, bool warnIfNotExist=true, bool reverse=false) const;
   FrameL getFramesByNames(const StringA& frameNames) const;
 //  Link  *getLinkByBodies(const Frame* from, const Frame* to) const;
   Joint *getJointByBodies(const Frame* from, const Frame* to) const;
@@ -130,7 +130,8 @@ struct KinematicWorld : GLDrawer {
   void addTimeJoint();
   bool hasTimeJoint();
   bool checkConsistency();
-  void attach(const char *a, const char *b);
+  Joint* attach(Frame* a, Frame* b);
+  Joint* attach(const char *a, const char *b);
 
   uint analyzeJointStateDimensions() const; ///< sort of private: count the joint dimensionalities and assign j->q_index
   
@@ -230,7 +231,9 @@ struct KinematicWorld : GLDrawer {
   void NewtonEuler_backward();
   
   /// @name extensions on demand
+//private:
   OpenGL& gl(const char* window_title=NULL);
+//public:
   SwiftInterface& swift();
   FclInterface& fcl();
   void swiftDelete();
@@ -240,7 +243,7 @@ struct KinematicWorld : GLDrawer {
   int watch(bool pause=false, const char* txt=NULL);
   void saveVideoPic(uint& t, const char* pathPrefix="vid/");
   void glAdd(void (*call)(void*), void* classP);
-  void glAnimate();
+  int glAnimate();
   void glGetMasks(int w=-1, int h=-1, bool rgbIndices=true);
   void stepSwift();
   void stepFcl();

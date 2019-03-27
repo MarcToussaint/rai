@@ -987,6 +987,8 @@ bool rai::String::operator!=(const String& s) const { return !(operator==(s)); }
 bool rai::String::operator<(const String& s) const { return p && s.p && strcmp(p, s.p)<0; }
 
 bool rai::String::contains(const String& substring) const {
+  if(!p && substring.p) return false;
+  if(!substring.p && p) return true;
   char* p = strstr(this->p, substring.p);
   return p != NULL;
 }
@@ -1328,13 +1330,14 @@ Mutex::~Mutex() {
   int rc = pthread_mutex_destroy(&mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
 }
 
-void Mutex::lock() {
+void Mutex::lock(const char* _lockInfo) {
   int rc = pthread_mutex_lock(&mutex);
   if(rc) {
     //don't use HALT here, because log uses mutexing as well -> can lead to recursive HALT...
     cerr <<STRING("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
     exit(1);
   }
+  lockInfo = _lockInfo;
   recursive++;
   state=syscall(SYS_gettid);
   MUTEX_DUMP(cout <<"Mutex-lock: " <<state <<" (rec: " <<recursive << ")" <<endl);

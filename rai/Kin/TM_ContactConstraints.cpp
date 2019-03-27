@@ -103,16 +103,16 @@ void POA_rel_vel(arr& y, arr& J, const WorldL& Ktuple, rai::Contact* con, bool a
   arr p1, p2, Jp1, Jp2;
   arr v1, v2, Jv1, Jv2;
   TM_Default lin(TMT_pos, con->a.ID);
-  lin.order=0;  lin.i=con->a.ID;  lin.Feature::phi(p1, Jp1, Ktuple({0,1}));
-  lin.order=0;  lin.i=con->b.ID;  lin.Feature::phi(p2, Jp2, Ktuple({0,1}));
+  lin.order=0;  lin.i=con->a.ID;  lin.Feature::__phi(p1, Jp1, Ktuple({0,1}));
+  lin.order=0;  lin.i=con->b.ID;  lin.Feature::__phi(p2, Jp2, Ktuple({0,1}));
   padJacobian(Jp1, Ktuple);
   padJacobian(Jp2, Ktuple);
   if(after_or_before){
-    lin.order=1;  lin.i=con->a.ID;  lin.Feature::phi(v1, Jv1, Ktuple);
-    lin.order=1;  lin.i=con->b.ID;  lin.Feature::phi(v2, Jv2, Ktuple);
+    lin.order=1;  lin.i=con->a.ID;  lin.Feature::__phi(v1, Jv1, Ktuple);
+    lin.order=1;  lin.i=con->b.ID;  lin.Feature::__phi(v2, Jv2, Ktuple);
   }else{
-    lin.order=1;  lin.i=con->a.ID;  lin.Feature::phi(v1, Jv1, Ktuple({0,1}));
-    lin.order=1;  lin.i=con->b.ID;  lin.Feature::phi(v2, Jv2, Ktuple({0,1}));
+    lin.order=1;  lin.i=con->a.ID;  lin.Feature::__phi(v1, Jv1, Ktuple({0,1}));
+    lin.order=1;  lin.i=con->b.ID;  lin.Feature::__phi(v2, Jv2, Ktuple({0,1}));
     padJacobian(Jv1, Ktuple);
     padJacobian(Jv2, Ktuple);
   }
@@ -120,11 +120,11 @@ void POA_rel_vel(arr& y, arr& J, const WorldL& Ktuple, rai::Contact* con, bool a
   arr w1, w2, Jw1, Jw2;
   TM_AngVel ang(con->a.ID);
   if(after_or_before){
-    ang.order=1;  ang.i=con->a.ID;  ang.phi(w1, Jw1, Ktuple);
-    ang.order=1;  ang.i=con->b.ID;  ang.phi(w2, Jw2, Ktuple);
+    ang.order=1;  ang.i=con->a.ID;  ang.__phi(w1, Jw1, Ktuple);
+    ang.order=1;  ang.i=con->b.ID;  ang.__phi(w2, Jw2, Ktuple);
   }else{
-    ang.order=1;  ang.i=con->a.ID;  ang.phi(w1, Jw1, Ktuple({0,1}));
-    ang.order=1;  ang.i=con->b.ID;  ang.phi(w2, Jw2, Ktuple({0,1}));
+    ang.order=1;  ang.i=con->a.ID;  ang.__phi(w1, Jw1, Ktuple({0,1}));
+    ang.order=1;  ang.i=con->b.ID;  ang.__phi(w2, Jw2, Ktuple({0,1}));
     padJacobian(Jw1, Ktuple);
     padJacobian(Jw2, Ktuple);
   }
@@ -153,7 +153,7 @@ void POA_vel(arr& y, arr& J, const WorldL& Ktuple, rai::Contact* con, bool b_or_
   //object center
   arr p, Jp;
   TM_Default pos(TMT_pos, f->ID);
-  pos.Feature::phi(p, Jp, Ktuple);
+  pos.Feature::__phi(p, Jp, Ktuple);
 
   //object vel
   arr v, Jv;
@@ -306,13 +306,13 @@ void TM_ContactConstraints_Vel::phi(arr& y, arr& J, const WorldL& Ktuple){
   arr v1, v2, Jv1, Jv2;
   TM_Default lin(TMT_pos, a);
   lin.order=0; lin.i=a;
-  lin.Feature::phi(p1, Jp1, Ktuple);
+  lin.Feature::__phi(p1, Jp1, Ktuple);
   lin.order=0; lin.i=b;
-  lin.Feature::phi(p2, Jp2, Ktuple);
+  lin.Feature::__phi(p2, Jp2, Ktuple);
   lin.order=1; lin.i=a;
-  lin.Feature::phi(v1, Jv1, Ktuple);
+  lin.Feature::__phi(v1, Jv1, Ktuple);
   lin.order=1; lin.i=b;
-  lin.Feature::phi(v2, Jv2, Ktuple);
+  lin.Feature::__phi(v2, Jv2, Ktuple);
 
   arr w1, w2, Jw1, Jw2;
   TM_AngVel ang(a);

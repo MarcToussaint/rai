@@ -388,7 +388,6 @@ int MAIN(int argc,char **argv){
 //  testMenu();
   testImage();
 
-  threadCloseModules();
   return 0;
 }
 

@@ -10,13 +10,6 @@
 
 BASE_REAL = $(shell realpath $(BASE))
 
-################################################################################
-#
-# load user options from the local make-config
-#
-################################################################################
--include $(BASE)/build/config.mk
-
 
 ################################################################################
 #
@@ -34,9 +27,9 @@ SRCS = $(OBJS:%.o=%.cpp)
 endif
 
 ## if we weren't called from make-path.sh add cleanLocks
-ifndef SUB_MAKE
-PREOBJS := cleanLocks $(PREOBJS)
-endif
+#ifndef SUB_MAKE
+#PREOBJS := cleanLocks $(PREOBJS)
+#endif
 
 
 ################################################################################
@@ -97,9 +90,35 @@ endif
 
 ################################################################################
 #
+# default target
+#
+################################################################################
+
+default: $(OUTPUT)
+all: $(OUTPUT) #this is for qtcreator, which by default uses the 'all' target
+
+
+################################################################################
+#
+# load user options from the local make-config
 # load defines for linking to external libs
 #
 ################################################################################
+
+ifneq ("$(wildcard $(BASE)/../config.mk)","")
+
+$(BASE)/config.mk:: $(BASE)/../config.mk
+	cp $< $@
+
+else
+
+$(BASE)/config.mk:: $(BASE)/build/config.mk.default
+	cp $< $@
+
+endif
+
+include $(BASE)/config.mk
+
 include $(BASE)/build/defines.mk
 
 
@@ -170,7 +189,7 @@ clean: cleanLocks cleanLibs force
 
 cleanLocks: force
 	@echo "   *** cleanLocks " $(PWD)
-	@find $(PWD) $(BASE) $(BASE2) -type d -name 'Make.lock' -delete -print
+	@find $(PWD) $(BASE) $(BASE2) -type d -name 'Make.lock' -delete -print || exit 0
 
 cleanLibs: force
 	@echo "   *** cleanLibs  " $(PWD)
@@ -193,7 +212,7 @@ depend: generate_Makefile.dep
 
 dependAll: force
 	@echo "   *** dependAll   " $(PWD)
-	@find $(PWD) $(BASE) $(BASE2) -type f -name 'Makefile' -execdir make -j1 depend \;
+	@find $(PWD) $(BASE) $(BASE2) -type f -name 'Makefile' -execdir $(MAKE) depend \;
 
 
 info: force
@@ -327,7 +346,7 @@ endif
 
 ## generate a make dependency file
 generate_Makefile.dep: $(SRCS)
-	-$(CXX) -MM $(SRCS) $(CXXFLAGS) > Makefile.dep
+	-$(CXX) -MM $(SRCS) $(CFLAGS) $(CXXFLAGS) > Makefile.dep
 
 includeAll.cxx: force
 	find . -maxdepth 1 -name '*.cpp' -exec echo "#include \"{}\"" \; > includeAll.cxx
@@ -409,12 +428,6 @@ inPath_printUbuntuPackages/%: $(BASE)/rai/%
 
 inPath_makePython/%: %
 	make --directory=$< pywrapper
-
-$(BASE)/build/config.mk: $(BASE)/../config.mk
-	cp $< $@
-
-#$(BASE)/build/config.mk: $(BASE)/build/config.mk.default
-#	cp $< $@
 
 zip::
 	cd ..;  rm -f $(NAME).tgz;  tar cvzf $(NAME).tgz $(NAME) --dereference --exclude-vcs --exclude-from tar.exclude --exclude-from $(NAME)/tar.exclude

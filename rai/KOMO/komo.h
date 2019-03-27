@@ -296,5 +296,16 @@ struct KOMO : NonCopyable {
     void getStructure(uintA& variableDimensions, intAA& featureTimes, ObjectiveTypeA& featureTypes);
     virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda);
   } dense_problem;
+
+  struct Conv_MotionProblem_GraphProblem : GraphProblem {
+    KOMO& komo;
+    uint dimPhi=0;
+
+    Conv_MotionProblem_GraphProblem(KOMO& _komo) : komo(_komo) {}
+    void clear(){ dimPhi=0; }
+
+    virtual void getStructure(uintA& variableDimensions, uintAA& featureVariables, ObjectiveTypeA& featureTypes);
+    virtual void phi(arr& phi, arrA& J, arrA& H, const arr& x, arr& lambda);
+  } graph_problem;
 };
 

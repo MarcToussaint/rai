@@ -340,7 +340,7 @@ CtrlTask::~CtrlTask() {
 }
 
 ActStatus CtrlTask::update(double tau, const rai::KinematicWorld& world) {
-  map->phi(y, J_y, world);
+  map->__phi(y, J_y, world);
   if(world.qdot.N) v = J_y*world.qdot; else v.resize(y.N).setZero();
   ActStatus s_old = status.get();
   ActStatus s_new = s_old;
@@ -840,7 +840,7 @@ void TaskControlMethods::calcForceControl(CtrlTaskL& tasks, arr& K_ft, arr& J_ft
       rai::Frame* body = world.frames(map->i);
       rai::Frame* lFtSensor = world.getFrameByName("r_ft_sensor");
       arr y, J, J_ft;
-      task->map->phi(y, J, world);
+      task->map->__phi(y, J, world);
       world.kinematicsPos_wrtFrame(NoArr, J_ft, body, map->ivec, lFtSensor);
       J_ft_inv = -~conv_vec2arr(map->ivec)*inverse_SymPosDef(J_ft*~J_ft)*J_ft;
       K_ft = -~J*task->f_alpha;

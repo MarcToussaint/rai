@@ -48,7 +48,7 @@ void TM_BeliefTransition::phi(arr &y, arr &J, const WorldL &Ktuple) {
   arr J_xi = zeros(Ktuple.N, Ktuple.elem(-1)->q.N);
   if(viewError) {
     arr y_view, J_view;
-    viewError->phi(y_view, J_view, Ktuple);
+    viewError->__phi(y_view, J_view, Ktuple);
     y_view *= 2.;
     J_view *= 2.;
     xi = 1. - Forsyth(J_xi, y_view, 1.);
@@ -59,7 +59,7 @@ void TM_BeliefTransition::phi(arr &y, arr &J, const WorldL &Ktuple) {
   }
   
   for(rai::Joint *j1 : Ktuple.elem(-1)->fwdActiveJoints) if(j1->uncertainty) {
-      rai::Joint *j0 = Ktuple.elem(-2)->frames(j1->frame.ID)->joint;
+      rai::Joint *j0 = Ktuple.elem(-2)->frames(j1->frame->ID)->joint;
       CHECK(j0, "");
       CHECK(j0->uncertainty, "");
       CHECK_EQ(j0->dim, j1->dim, "");

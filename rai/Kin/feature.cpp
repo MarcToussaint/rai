@@ -29,6 +29,7 @@ void Feature::phi(arr& y, arr& J, const WorldL& Ktuple) {
   y = y1-y0;
   if(!!J) J = Jy1 - Jy0;
 
+#if 1 //feature itself does not care for tau!!! use specialized features, e.g. linVel, angVel
   if(Ktuple(-1)->hasTimeJoint()){
     double tau; arr Jtau;
     Ktuple(-1)->kinematicsTau(tau, (!!J?Jtau:NoArr));
@@ -47,6 +48,7 @@ void Feature::phi(arr& y, arr& J, const WorldL& Ktuple) {
       if(!!J) J /= tau;
     }
   }
+#endif
 }
 
 VectorFunction Feature::vf(rai::KinematicWorld& K) { ///< direct conversion to vector function: use to check gradient or evaluate
@@ -76,16 +78,30 @@ void Feature::applyLinearTrans(arr& y, arr& J){
   }
   if(scale.N) {
     if(scale.N==1){ //scalar
-      y = scale.scalar()*y;
-      if(!!J) J = scale.scalar()*J;
-    }
-    if(scale.nd==1){ //element-wise
+      y *= scale.scalar();
+      if(!!J) J *= scale.scalar();
+    }else if(scale.nd==1){ //element-wise
+      CHECK_EQ(scale.d0, y.N, "");
       y = scale % y;
       if(!!J) J = scale % J;
-    }
-    if(scale.nd==2){ //matrix
+    }else if(scale.nd==2){ //matrix
+      CHECK_EQ(scale.d1, y.N, "");
       y = scale * y;
       if(!!J) J = scale * J;
     }
   }
+}
+
+uint Feature::applyLinearTrans_dim(uint d){
+  if(scale.N){
+    if(scale.N==1){ //scalar
+      return d;
+    }else if(scale.nd==1){ //element-wise
+      return d;
+    }else if(scale.nd==2){ //matrix
+      CHECK_EQ(scale.d1, d, "");
+      return scale.d0;
+    }
+  }
+  return d;
 }

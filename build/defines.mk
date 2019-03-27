@@ -96,7 +96,7 @@ QT := 1
 endif
 
 ifeq ($(GL),1)
-DEPEND_UBUNTU += libglew-dev
+DEPEND_UBUNTU += libglew-dev freeglut3-dev
 CXXFLAGS  += -DRAI_GL
 LIBS += -lGLEW -lglut -lGLU -lGL -lX11
 endif
@@ -134,7 +134,7 @@ LIBS += -lode
 endif
 
 ifeq ($(FCL),1)
-DEPEND_UBUNTU += libfcl-dev
+DEPEND_UBUNTU += libfcl-0.5-dev
 CXXFLAGS  += -DRAI_FCL
 LIBS      += -lfcl
 endif
@@ -389,12 +389,14 @@ LIBS += -Wl,--start-group -lpthread -lrt\
 endif
 
 ifeq ($(BULLET),1)
-BULLET_PATH=$(HOME)/git/bullet3
-CXXFLAGS  += -DRAI_BULLET
-LPATH := $(BULLET_PATH)/bin:$(LPATH)
-CPATH := $(CPATH):$(BULLET_PATH)/src
-btLIB = _gmake_x64_release
-LIBS += -lBulletSoftBody$(btLIB) -lBulletDynamics$(btLIB) -lBulletCollision$(btLIB)  -lLinearMath$(btLIB)
+#BULLET_PATH=$(HOME)/git/bullet3
+CXXFLAGS  += -DRAI_BULLET -DBT_USE_DOUBLE_PRECISION
+CPATH := $(HOME)/opt/include/bullet/:$(CPATH)
+LPATH := $(HOME)/opt/lib:$(LPATH)
+#LPATH := $(BULLET_PATH)/bin:$(LPATH)
+#CPATH := $(CPATH):$(BULLET_PATH)/src
+#btLIB = _gmake_x64_release
+LIBS += -lBulletSoftBody -lBulletDynamics -lBulletCollision  -lLinearMath
 endif
 
 ifeq ($(PORTAUDIO),1)

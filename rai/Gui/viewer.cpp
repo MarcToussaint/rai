@@ -45,31 +45,33 @@ void ImageViewer::open() {
 void ImageViewer::close() { delete s; }
 
 void ImageViewer::step() {
-  s->gl.dataLock.writeLock();
-  s->gl.background = img.get();
-  if(flipImage) flip_image(s->gl.background);
+  {
+    auto _dataLock = s->gl.dataLock(RAI_HERE);
+    s->gl.background = img.get();
+    if(flipImage) flip_image(s->gl.background);
 #if 0 //draw a center
-  uint ci = s->gl.background.d0/2;
-  uint cj = s->gl.background.d1/2;
-  uint skip = s->gl.background.d1*s->gl.background.d2;
-  byte *p, *pstop;
-  p=&s->gl.background(ci-5, cj-5, 0);
-  pstop=&s->gl.background(ci-5, cj+5, 0);
-  for(; p<=pstop; p++) *p = 0;
-  p=&s->gl.background(ci+5, cj-5, 0);
-  pstop=&s->gl.background(ci+5, cj+5, 0);
-  for(; p<=pstop; p++) *p = 0;
-  p=&s->gl.background(ci-5, cj-5, 0);
-  pstop=&s->gl.background(ci+5, cj-5, 0);
-  for(; p<=pstop; p+=skip) p[0]=p[1]=p[2]=0;
-  p=&s->gl.background(ci-5, cj+5, 0);
-  pstop=&s->gl.background(ci+5, cj+5, 0);
-  for(; p<=pstop; p+=skip) p[0]=p[1]=p[2]=0;
+    uint ci = s->gl.background.d0/2;
+    uint cj = s->gl.background.d1/2;
+    uint skip = s->gl.background.d1*s->gl.background.d2;
+    byte *p, *pstop;
+    p=&s->gl.background(ci-5, cj-5, 0);
+    pstop=&s->gl.background(ci-5, cj+5, 0);
+    for(; p<=pstop; p++) *p = 0;
+    p=&s->gl.background(ci+5, cj-5, 0);
+    pstop=&s->gl.background(ci+5, cj+5, 0);
+    for(; p<=pstop; p++) *p = 0;
+    p=&s->gl.background(ci-5, cj-5, 0);
+    pstop=&s->gl.background(ci+5, cj-5, 0);
+    for(; p<=pstop; p+=skip) p[0]=p[1]=p[2]=0;
+    p=&s->gl.background(ci-5, cj+5, 0);
+    pstop=&s->gl.background(ci+5, cj+5, 0);
+    for(; p<=pstop; p+=skip) p[0]=p[1]=p[2]=0;
 #endif
-  s->gl.dataLock.unlock();
-  if(!s->gl.background.N) return;
-  if(s->gl.height!= s->gl.background.d0 || s->gl.width!= s->gl.background.d1)
-    s->gl.resize(s->gl.background.d1, s->gl.background.d0);
+
+    if(!s->gl.background.N) return;
+    if(s->gl.height!= s->gl.background.d0 || s->gl.width!= s->gl.background.d1)
+      s->gl.resize(s->gl.background.d1, s->gl.background.d0);
+  }
     
   s->gl.update(name, false); //, false, false, true);
 }
@@ -92,13 +94,16 @@ ImageViewerFloat::~ImageViewerFloat() {
 }
 
 void ImageViewerFloat::step() {
-  gl->dataLock.writeLock();
-  floatA img_copy = img.get();
-  if(flipImage) flip_image(img_copy);
-  if(scale!=1.f) img_copy *= scale;
-  gl->dataLock.unlock();
-  if(!img_copy.N) return;
-  if(gl->height!= img_copy.d0 || gl->width!= img_copy.d1) gl->resize(img_copy.d1, img_copy.d0);
+  floatA img_copy;
+  {
+    auto _dataLock = gl->dataLock(RAI_HERE);
+    img_copy = img.get();
+    if(flipImage) flip_image(img_copy);
+    if(scale!=1.f) img_copy *= scale;
+
+    if(!img_copy.N) return;
+    if(gl->height!= img_copy.d0 || gl->width!= img_copy.d1) gl->resize(img_copy.d1, img_copy.d0);
+  }
 
   gl->watchImage(img_copy, false, 1.);
 }
@@ -120,15 +125,17 @@ void ImageViewerCallback::call(Var_base* v){
     gl = new OpenGL(STRING("ImageViewer: "<<img.data->name));
   }
 
-  gl->dataLock.writeLock();
-  img.checkLocked();
-  gl->background = img();
-  if(flipImage) flip_image(gl->background);
-  gl->dataLock.unlock();
-  if(!gl->background.N) return;
+  {
+    auto _dataLock = gl->dataLock(RAI_HERE);
+    img.checkLocked();
+    gl->background = img();
+    if(flipImage) flip_image(gl->background);
 
-  if(gl->height!= gl->background.d0 || gl->width!= gl->background.d1)
-    gl->resize(gl->background.d1, gl->background.d0);
+    if(!gl->background.N) return;
+
+    if(gl->height!= gl->background.d0 || gl->width!= gl->background.d1)
+      gl->resize(gl->background.d1, gl->background.d0);
+  }
 
   gl->update(); //0, false, false, true);
 }
@@ -189,23 +196,24 @@ void PointCloudViewer::close() {
 void PointCloudViewer::step() {
   uint W,H;
 
-  s->gl.dataLock.writeLock();
-  s->pc.V=pts.get();
-  copy(s->pc.C, rgb.get()());
-  H=s->pc.C.d0;
-  W=s->pc.C.d1;
-  uint n=s->pc.V.N/3;
-  if(n!=s->pc.C.N/3) {
-    s->gl.dataLock.unlock();
-    return;
+  {
+    auto _dataLock = s->gl.dataLock(RAI_HERE);
+    s->pc.V=pts.get();
+    copy(s->pc.C, rgb.get()());
+    H=s->pc.C.d0;
+    W=s->pc.C.d1;
+    uint n=s->pc.V.N/3;
+    if(n!=s->pc.C.N/3) {
+
+      return;
+    }
+    s->pc.C /= 255.;
+    s->pc.V.reshape(n,3);
+    s->pc.C.reshape(n,3);
+
+
+    if(W!=s->gl.width || H!=s->gl.height) s->gl.resize(W,H);
   }
-  s->pc.C /= 255.;
-  s->pc.V.reshape(n,3);
-  s->pc.C.reshape(n,3);
-  s->gl.dataLock.unlock();
-
-  if(W!=s->gl.width || H!=s->gl.height) s->gl.resize(W,H);
-
   
   s->gl.update(); //NULL, false, false, true);
 }
@@ -232,24 +240,25 @@ void PointCloudViewerCallback::call(Var_base* v){
 
   uint W,H;
 
-  s->gl.dataLock.writeLock();
-  pts.checkLocked();
-  s->pc.V=pts();
-  copy(s->pc.C, rgb.get()());
-  H=s->pc.C.d0;
-  W=s->pc.C.d1;
-  uint n=s->pc.V.N/3;
-  if(n!=s->pc.C.N/3) {
-    s->gl.dataLock.unlock();
-    return;
+  {
+    auto _dataLock = s->gl.dataLock(RAI_HERE);
+    pts.checkLocked();
+    s->pc.V=pts();
+    copy(s->pc.C, rgb.get()());
+    H=s->pc.C.d0;
+    W=s->pc.C.d1;
+    uint n=s->pc.V.N/3;
+    if(n!=s->pc.C.N/3) {
+
+      return;
+    }
+    s->pc.C /= 255.;
+    s->pc.V.reshape(n,3);
+    s->pc.C.reshape(n,3);
+
+
+    if(W!=s->gl.width || H!=s->gl.height) s->gl.resize(W,H);
   }
-  s->pc.C /= 255.;
-  s->pc.V.reshape(n,3);
-  s->pc.C.reshape(n,3);
-  s->gl.dataLock.unlock();
-
-  if(W!=s->gl.width || H!=s->gl.height) s->gl.resize(W,H);
-
 
   s->gl.update(); //NULL, false, false, true);
 }
@@ -282,9 +291,10 @@ void MeshAViewer::close() {
 }
 
 void MeshAViewer::step() {
-  gl->dataLock.writeLock();
-  copy = meshes.get();
-  gl->dataLock.unlock();
+  {
+    auto _dataLock = gl->dataLock(RAI_HERE);
+    copy = meshes.get();
+  }
   
   gl->update(); //NULL, false, false, true);
 }

@@ -41,7 +41,7 @@ TaskControlThread::TaskControlThread(const Var<rai::KinematicWorld>& _ctrl_confi
   Kp_base = zeros(q0.N);
   Kd_base = zeros(q0.N);
   for(rai::Joint *j:ctrl_config.get()->fwdActiveJoints) {
-    arr *gains = j->frame.ats.find<arr>("gains");
+    arr *gains = j->frame->ats.find<arr>("gains");
     if(gains) {
       for(uint i=0; i<j->qDim(); i++) {
         Kp_base(j->qIndex+i)=gains->elem(0);
