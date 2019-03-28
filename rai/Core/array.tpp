@@ -1692,7 +1692,7 @@ template<class T> void rai::Array<T>::removeValueInSorted(const T& x, ElemCompar
 }
 
 template<class T> rai::Array<T>& rai::Array<T>::removeDoublesInSorted() {
-  for(uint i=N-1;i>0;i--) if(elem(i)==elem(i-1)) remove(i);
+  for(int i=N-1;i>0;i--) if(elem(i)==elem(i-1)) remove(i);
   return *this;
 }
 
@@ -1765,7 +1765,8 @@ operator<<(std::ostream& os, const rai::Array<T>& x) {
   os <<'{';
   for(uint i=0; i<x.N; i++){ if(x.elem(i)) os <<' ' <<*x.elem(i); else os <<" <NULL>"; }
   os <<" }" <<std::flush;
-  //  x.write(os); return os;
+  //  x.write(os);
+  return os;
 }
 
 template <class T>

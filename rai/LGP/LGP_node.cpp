@@ -106,7 +106,12 @@ void LGP_Node::computeEndKinematics(){
   effKinematics.copy(startKinematics, true);
   KOMO tmp;
   tmp.setModel(startKinematics, false);
-  tmp.setTiming(1., 1, 10., 1);
+  double maxPhase=0;
+  for(const SkeletonEntry& s:S){
+    if(s.phase0>maxPhase) maxPhase=s.phase0;
+    if(s.phase1>maxPhase) maxPhase=s.phase1;
+  }
+  tmp.setTiming(maxPhase+1., 1, 5., 1);
   tmp.setSkeleton(S);
 //  tmp.reportProblem();
   for(rai::KinematicSwitch *s : tmp.switches) s->apply(effKinematics);
@@ -230,7 +235,61 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
     
 }
 
-void LGP_Node::getCGO(bool collisions, int verbose) {
+ptr<KOMO> LGP_Node::optSubCG(const SubCG& scg, bool collisions, int verbose) {
+  ptr<KOMO> komo = std::make_shared<KOMO>();
+
+  komo->verbose = rai::MAX(verbose,0);
+
+  if(komo->verbose>0){
+    cout <<"########## OPTIM SubCG: " <<scg <<endl;
+  }
+
+//  komo->fil = new ofstream(OptLGPDataPath + STRING("komo-" <<id <<'-' <<step <<'-' <<bound));
+
+  CG2komo(*komo, scg, startKinematics, collisions);
+  return komo;
+
+
+  if(komo->fil){
+    komo->reportProblem(*komo->fil);
+    (*komo->fil) <<komo->getProblemGraph(false);
+  }
+
+//  if(level==BD_seq) komo->denseOptimization=true;
+
+  //-- optimize
+  DEBUG(FILE("z.fol") <<fol;);
+  DEBUG(komo->getReport(false, 1, FILE("z.problem")););
+  if(komo->verbose>1) komo->reportProblem();
+  if(komo->verbose>5) komo->animateOptimization = komo->verbose-5;
+
+  try {
+    komo->run();
+  } catch(std::runtime_error& err) {
+    cout <<"KOMO CRASHED: " <<err.what() <<endl;
+    komo.reset();
+    return komo;
+  }
+  if(!komo->denseOptimization) COUNT_evals += komo->opt->newton.evals;
+  COUNT_kin += rai::KinematicWorld::setJointStateCount;
+  COUNT_time += komo->runTime;
+
+  DEBUG(komo->getReport(false, 1, FILE("z.problem")););
+//  cout <<komo->getReport(true) <<endl;
+//  komo->reportProxies(cout, 0.);
+//  komo->checkGradients();
+
+  Graph result = komo->getReport(komo->verbose>0);
+  DEBUG(FILE("z.problem.cost") <<result;);
+  double cost_here = result.get<double>({"total","sqrCosts"});
+  double constraints_here = result.get<double>({"total","constraints"});
+  bool feas = (constraints_here<1.);
+
+
+  return komo;
+}
+
+ptr<CG> LGP_Node::getCGO(bool collisions, int verbose) {
   Skeleton S = getSkeleton({"touch", "above", "inside", "impulse",
                             "initial", "stable", "stableOn", "dynamic", "dynamicTrans", "dynamicOn", "break",
                             "push", "graspSlide", "liftDownUp"
@@ -240,9 +299,9 @@ void LGP_Node::getCGO(bool collisions, int verbose) {
     writeSkeleton(cout, S, getSwitchesFromSkeleton(S));
   }
 
-  skeleton2CGO(S,
-               startKinematics,
-               collisions);
+  return skeleton2CGO(S,
+                      startKinematics,
+                      collisions);
 }
 
 void LGP_Node::setInfeasible() {

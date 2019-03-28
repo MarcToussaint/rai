@@ -83,6 +83,8 @@ struct Frame : NonCopyable{
   Inertia& getInertia();
   
   void getRigidSubFrames(FrameL& F); ///< recursively collect all rigidly attached sub-frames (e.g., shapes of a link), (THIS is not included)
+  FrameL getPathToRoot();
+
   Frame* getUpwardLink(rai::Transformation& Qtotal=NoTransformation, bool untilRigid=false) const; ///< recurse upward BEFORE the next joint and return relative transform (this->Q is not included!b)
   
   void read(const Graph &ats);

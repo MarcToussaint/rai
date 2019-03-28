@@ -41,6 +41,7 @@ enum SkeletonSymbol{
   SY_push,
   SY_graspSlide,
 
+  SY_noCollision,
   SY_identical,
 };
 
@@ -79,6 +80,7 @@ struct KOMO : NonCopyable {
   
   //-- optimizer
   bool denseOptimization=false;///< calls optimization with a dense (instead of banded) representation
+  bool sparseOptimization=false;///< calls optimization with a sparse (instead of banded) representation
   OptConstrained *opt=0;       ///< optimizer; created in run()
   arr x, dual;                 ///< the primal and dual solution
   arr z, splineB;              ///< when a spline representation is used: z are the nodes; splineB the B-spline matrix; x = splineB * z
@@ -298,7 +300,8 @@ struct KOMO : NonCopyable {
     Conv_MotionProblem_DenseProblem(KOMO& _komo) : komo(_komo) {}
     void clear(){ dimPhi=0; }
 
-    void getStructure(uintA& variableDimensions, intAA& featureTimes, ObjectiveTypeA& featureTypes);
+    void getDimPhi();
+
     virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda);
   } dense_problem;
 
@@ -309,8 +312,8 @@ struct KOMO : NonCopyable {
     Conv_MotionProblem_GraphProblem(KOMO& _komo) : komo(_komo) {}
     void clear(){ dimPhi=0; }
 
-    virtual void getStructure(uintA& variableDimensions, uintAA& featureVariables, ObjectiveTypeA& featureTypes);
-    virtual void phi(arr& phi, arrA& J, arrA& H, const arr& x, arr& lambda);
+    virtual void getStructure(uintA& variableDimensions, intAA& featureVariables, ObjectiveTypeA& featureTypes);
+    virtual void phi(arr& phi, arrA& J, arrA& H, const arr& x);
   } graph_problem;
 };
 

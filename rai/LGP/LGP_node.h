@@ -78,7 +78,8 @@ struct LGP_Node {
   //- computations on the node
   void expand(int verbose=0);           ///< expand this node (symbolically: compute possible decisions and add their effect nodes)
   void optBound(BoundType bound, bool collisions=false, int verbose=-1);
-  void getCGO(bool collisions=false, int verbose=-1);
+  ptr<KOMO> optSubCG(const SubCG& scg, bool collisions, int verbose);
+  ptr<CG> getCGO(bool collisions=false, int verbose=-1);
   void resetData();
   void computeEndKinematics();
   

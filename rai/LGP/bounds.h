@@ -20,7 +20,33 @@ void skeleton2Bound(KOMO& komo,
                     const arrA& waypoints={}
                     );
 
-void skeleton2CGO(const Skeleton& S,
-                  const rai::KinematicWorld& startKinematics,
-                  bool collisions);
 
+
+struct SubCG{
+  NodeL frames;
+  NodeL constraints;
+  uint maxT;
+  int merged=-1;
+  void write(ostream& os) const{
+    cout <<"*** subproblem (merged:" <<merged <<")" <<endl;
+    cout <<"  frames:";
+    for(Node *f:frames) cout <<' ' <<*f;
+    cout <<"\n  constraints:";
+    for(Node *c:constraints) cout <<"\n    " <<*c;
+    cout <<endl;
+  }
+};
+stdOutPipe(SubCG)
+struct CG{
+  Graph G;
+  rai::Array<std::shared_ptr<SubCG>> subproblems;
+};
+
+ptr<CG> skeleton2CGO(const Skeleton& S,
+                     const rai::KinematicWorld& startKinematics,
+                     bool collisions);
+
+void CG2komo(KOMO& komo,
+             const SubCG& scg,
+             const rai::KinematicWorld& C,
+             bool collisions);

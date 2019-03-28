@@ -277,6 +277,21 @@ rai::Frame* rai::KinematicWorld::addObject(const char* name, rai::ShapeType shap
   return f;
 }
 
+/// the list F can be from another (not this) Configuration
+void rai::KinematicWorld::addFramesCopy(const FrameL& F){
+  uint maxId=0;
+  for(Frame *f:F) if(f->ID>maxId) maxId=f->ID;
+  intA FId2thisId(maxId+1);
+  FId2thisId = -1;
+  for(Frame *f:F) {
+    Frame *a = new Frame(*this, f);
+    FId2thisId(f->ID)=a->ID;
+  }
+  for(Frame *f:F) if(f->parent && f->parent->ID<=maxId && FId2thisId(f->parent->ID)!=-1){
+    frames(FId2thisId(f->ID))->linkFrom(frames(FId2thisId(f->parent->ID)));
+  }
+}
+
 void rai::KinematicWorld::clear() {
   reset_q();
   proxies.clear(); //while(proxies.N){ delete proxies.last(); /*checkConsistency();*/ }
@@ -502,15 +517,10 @@ void rai::KinematicWorld::flipFrames(rai::Frame *a, rai::Frame *b) {
 /** @brief re-orient all joints (edges) such that n becomes
   the root of the configuration */
 void rai::KinematicWorld::reconfigureRootOfSubtree(Frame *root) {
-  FrameL pathToOldRoot;
-  rai::Frame *f = root;
-  while(f->parent) {
-    pathToOldRoot.prepend(f);
-    f = f->parent;
-  }
+  FrameL pathToOldRoot = root->getPathToRoot();
   
   for(Frame *f : pathToOldRoot) {
-    flipFrames(f->parent, f);
+    if(f->parent) flipFrames(f->parent, f);
   }
   
   checkConsistency();
@@ -1974,13 +1984,14 @@ void rai::KinematicWorld::report(std::ostream &os) const {
   for(Frame *f:fwdActiveSet) if(f->shape) nShapes++;
   for(Joint *j:fwdActiveJoints) if(j->uncertainty) nUc++;
   
-  os <<"Kin: q.N=" <<q.N
+  os <<"Config: q.N=" <<q.N
     <<" #frames=" <<frames.N
    <<" #activeFrames=" <<fwdActiveSet.N
   <<" #activeJoints=" <<fwdActiveJoints.N
   <<" #activeShapes=" <<nShapes
   <<" #activeUncertainties=" <<nUc
   <<" #proxies=" <<proxies.N
+  <<" #contacts=" <<contacts.N
   <<" #evals=" <<setJointStateCount
   <<endl;
 }
@@ -2736,7 +2747,7 @@ bool rai::KinematicWorld::hasTimeJoint(){
   return f && f->joint && (f->joint->type==JT_time);
 }
 
-bool rai::KinematicWorld::checkConsistency() {
+bool rai::KinematicWorld::checkConsistency() const {
   //check qdim
   if(q.nd) {
     uint N = analyzeJointStateDimensions();

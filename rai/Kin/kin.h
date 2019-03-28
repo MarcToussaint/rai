@@ -95,6 +95,8 @@ struct KinematicWorld : GLDrawer {
   Frame* addFrame(const char* name, const char* parent=NULL, const char* args=NULL);
   Frame* addObject(rai::ShapeType shape, const arr& size={}, const arr& col={}, double radius=-1.);
   Frame* addObject(const char* name, rai::ShapeType shape, const arr& size={}, const arr& col={}, double radius=-1., const char* parent=NULL, const arr& pos={}, const arr& rot={});
+  void addFramesCopy(const FrameL& F);
+
 
   /// @name access
   Frame *operator[](const char* name) { return getFrameByName(name, true); }
@@ -129,7 +131,7 @@ struct KinematicWorld : GLDrawer {
   void makeObjectsFree(const StringA& objects, double H_cost=0.);
   void addTimeJoint();
   bool hasTimeJoint();
-  bool checkConsistency();
+  bool checkConsistency() const;
   Joint* attach(Frame* a, Frame* b);
   Joint* attach(const char *a, const char *b);
 

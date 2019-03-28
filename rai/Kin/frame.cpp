@@ -100,6 +100,16 @@ void rai::Frame::getRigidSubFrames(FrameL &F) {
   for(Frame *f:parentOf) if(!f->joint) { F.append(f); f->getRigidSubFrames(F); }
 }
 
+FrameL rai::Frame::getPathToRoot(){
+  FrameL pathToRoot;
+  rai::Frame *f = this;
+  while(f) {
+    pathToRoot.prepend(f);
+    f = f->parent;
+  }
+  return pathToRoot;
+}
+
 rai::Inertia &rai::Frame::getInertia() {
   if(!inertia) inertia = new Inertia(*this);
   return *inertia;

@@ -12,11 +12,17 @@
 
 //===========================================================================
 
-void Objective::setCostSpecs(int fromStep, int toStep) {
+void Objective::setCostSpecs(int fromStep, int toStep, bool sparse) {
   CHECK_GE(fromStep, 0, "");
   CHECK_GE(toStep, fromStep, "");
-  vars.resize(toStep+1).setZero();
-  for(uint t=fromStep; t<=(uint)toStep; t++) vars(t) = 1;
+  if(!sparse){
+    vars.resize(toStep+1).setZero();
+    for(uint t=fromStep; t<=(uint)toStep; t++) vars(t) = 1;
+  }else{
+    vars.resize(1+toStep-fromStep, map->order+1);
+    for(uint t=fromStep; t<=(uint)toStep; t++)
+      for(uint i=0;i<vars.d1;i++) vars(t-fromStep,i) = t+i-int(map->order);
+  }
 #if 0
   vars.resize(prec.N, map->order+1);
   for(uint t=0;t<vars.d0;t++)
@@ -25,13 +31,14 @@ void Objective::setCostSpecs(int fromStep, int toStep) {
 }
 
 void Objective::setCostSpecs(double fromTime, double toTime, int stepsPerPhase, uint T,
-                             int deltaFromStep, int deltaToStep) {
+                             int deltaFromStep, int deltaToStep, bool sparse) {
 
   if(toTime>double(T)/stepsPerPhase+1.){
     LOG(-1) <<"beyond the time!: endTime=" <<toTime <<" phases=" <<double(T)/stepsPerPhase;
   }
 
-  if(stepsPerPhase<0) stepsPerPhase=T;
+//  if(stepsPerPhase<0) stepsPerPhase=T;
+  CHECK_GE(stepsPerPhase, 0, "");
 //  if(conv_time2step(toTime, stepsPerPhase)>T-1){
 //    LOG(-1) <<"beyond the time!: endTime=" <<toTime <<" phases=" <<double(T)/stepsPerPhase;
 //  }
@@ -43,12 +50,13 @@ void Objective::setCostSpecs(double fromTime, double toTime, int stepsPerPhase, 
 
   if(tFrom<0) tFrom=0;
   if(tTo<0) tTo=0;
+  if(tTo>=T) tTo=T-1;
 
-
-  setCostSpecs(tFrom, tTo);
+  setCostSpecs(tFrom, tTo, sparse);
 }
 
 void Objective::setCostSpecsDense(const intA& _vars) {
+  HALT("why do we need this??");
   vars = _vars;
   vars.reshape(1, vars.N);
 }
