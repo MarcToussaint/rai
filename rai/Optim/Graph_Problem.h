@@ -19,11 +19,15 @@ struct GraphProblem {
   
   /// We require 'x.N == \sum_i variableDimensions(i)'; so x defines the value of all variables
   /// This returns the feature values, types and Jacobians at state x
-  /// Only for features of type 'OT_f' also a Hessian is returned
+  /// Only for features of type 'OT_f' also a Hessian is returned (hardly in use)
   /// Jacobians and Hessians are dense! But only w.r.t. the variables the feature depends on!!
   /// (It is the job of the optimizer to translate this to sparse global Jacobians/Hessians)
   virtual void phi(arr& phi, arrA& J, arrA& H, const arr& x) = 0;
-  
+
+  virtual void setPartialX(const uintA& whichX, const arr& x) {NIY}
+  virtual void getPartialPhi(arr& phi, arrA& J, arrA& H, const uintA& whichPhi) {NIY}
+  virtual void getSemantics(StringA& varNames, StringA& phiNames) {NIY}
+
   bool checkStructure(const arr& x);                 ///< check if Jacobians and Hessians have right dimensions (=clique size)
 //  bool checkJacobian(const arr& x, double tolerance); ///< finite differences check of the returned Jacobian at x
 //  bool checkHessian(const arr& x, double tolerance);  ///< finite differences check of the returned Hessian at x
