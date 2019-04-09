@@ -18,7 +18,7 @@ struct sServiceRAP {
   ros::ServiceServer service;
   bool cb_service(rai_msgs::StringString::Request& _request, rai_msgs::StringString::Response& response);
   
-  sServiceRAP() : RM(NULL, "RM") {}
+  sServiceRAP() {}
 };
 
 ServiceRAP::ServiceRAP() : s(NULL) {

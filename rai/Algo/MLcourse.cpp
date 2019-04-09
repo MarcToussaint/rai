@@ -311,6 +311,7 @@ arr logisticRegression2Class(const arr& X, const arr& y, double lambda, arr& bay
     //compute logLikelihood
     logLike=0.;
     for(uint i=0; i<n; i++) logLike += rai::indicate(y(i)==1.)*f(i) - log(Z(i));
+    logLike /= n;
     LOG(1) <<"log-likelihood = " <<logLike;
     
     //optionally reject the update
@@ -567,6 +568,7 @@ void rbfFeatures(arr& Z, const arr& X, const arr& Xtrain) {
 }
 
 arr makeFeatures(const arr& X, FeatureType featureType, const arr& rbfCenters) {
+  if(X.nd==1) return makeFeatures(~X, featureType, rbfCenters);
   if(featureType==readFromCfgFileFT) featureType = (FeatureType)rai::getParameter<uint>("modelFeatureType", 1);
   arr Z;
   switch(featureType) {

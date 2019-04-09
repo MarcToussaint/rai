@@ -32,7 +32,10 @@ struct RTControllerSimulation : Thread {
   arr Kp_base, Kd_base, limits;
   arr I_term;
   
-  RTControllerSimulation(rai::KinematicWorld realWorld, double tau=0.01, bool gravity=false, double _systematicErrorSdv=0.);
+  RTControllerSimulation(const rai::KinematicWorld& realWorld,
+                         const Var<CtrlMsg>& _ctrl_ref,
+                         const Var<CtrlMsg>& _ctrl_obs,
+                         double tau=0.01, bool gravity=false, double _systematicErrorSdv=0.);
   virtual ~RTControllerSimulation() {}
   
   void open();

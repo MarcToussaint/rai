@@ -36,7 +36,7 @@ void TEST(CameraView){
 
 //  K.gl().camera.setKinect();
 //  K.gl().camera.X = K.getFrameByName("endeffEyes")->X * K.gl().camera.X;
-//  K.gl().watch(); //if commented, glut/gtk is never initiated
+//  K.watch(true); //if commented, glut/gtk is never initiated
 //  byteA indexRgb, depth;
 //  K.glGetMasks(580, 480);
 //  write_ppm(K.gl().captureImage, "z.rgb.ppm");

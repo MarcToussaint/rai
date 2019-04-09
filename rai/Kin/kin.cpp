@@ -28,6 +28,7 @@
 #include "kin_physx.h"
 #include "kin_ode.h"
 #include "kin_feather.h"
+#include "featureSymbols.h"
 #include <Geo/fclInterface.h>
 #include <Geo/qhull.h>
 #include <Geo/mesh_readAssimp.h>
@@ -93,7 +94,8 @@ uintA shapesToShapeIndices(const FrameL& frames) {
 }
 
 void makeConvexHulls(FrameL& frames, bool onlyContactShapes) {
-  for(rai::Frame *f: frames) if(f->shape && (!onlyContactShapes || f->shape->cont)) f->shape->mesh().makeConvexHull();
+  for(rai::Frame *f: frames) if(f->shape && (!onlyContactShapes || f->shape->cont))
+    f->shape->mesh().makeConvexHull();
 }
 
 void computeOptimalSSBoxes(FrameL &frames) {
@@ -154,8 +156,8 @@ rai::KinematicWorld::KinematicWorld() : s(NULL) {
   s=new sKinematicWorld;
 }
 
-rai::KinematicWorld::KinematicWorld(const rai::KinematicWorld& other) : KinematicWorld() {
-  copy(other);
+rai::KinematicWorld::KinematicWorld(const rai::KinematicWorld& other, bool referenceSwiftOnCopy) : KinematicWorld() {
+  copy(other, referenceSwiftOnCopy);
 }
 
 rai::KinematicWorld::KinematicWorld(const char* filename) : KinematicWorld() {
@@ -177,11 +179,27 @@ void rai::KinematicWorld::init(const char* filename) {
   file.cd_start();
 }
 
-void rai::KinematicWorld::addFile(const char* filename) {
+rai::Frame* rai::KinematicWorld::addFile(const char* filename) {
+  uint n=frames.N;
   rai::FileToken file(filename, true);
   Graph G(file);
   init(G, true);
   file.cd_start();
+  if(frames.N==n) return 0;
+  return frames(n); //returns 1st frame of added file
+}
+
+rai::Frame* rai::KinematicWorld::addFile(const char* filename, const char* parentOfRoot, const rai::Transformation& relOfRoot){
+  rai::Frame *f = addFile(filename);
+  if(parentOfRoot){
+    CHECK(f, "nothing added?");
+    f->linkFrom(getFrameByName(parentOfRoot));
+    new rai::Joint(*f, rai::JT_rigid);
+    f->Q = relOfRoot;
+  }
+  calc_activeSets();
+  calc_fwdPropagateFrames();
+  return f;
 }
 
 void rai::KinematicWorld::addAssimp(const char* filename) {
@@ -243,7 +261,11 @@ rai::Frame* rai::KinematicWorld::addObject(const char* name, rai::ShapeType shap
 
   if(parent){
     rai::Frame *p = getFrameByName(parent);
-    if(p) f->linkFrom(p);
+    if(p){
+//      f->linkFrom(p);
+      rai::Joint *j = new rai::Joint(*p, *f);
+      j->setType(rai::JT_rigid);
+    }
   }
 
   if(pos.N){ f->Q.pos = pos; }
@@ -455,7 +477,7 @@ arr rai::KinematicWorld::naturalQmetric(double power) const {
   arr Wdiag(q.N);
   for(Joint *j: fwdActiveJoints) {
     for(uint i=0; i<j->qDim(); i++) {
-      Wdiag(j->qIndex+i) = ::pow(BM(j->frame.ID), power);
+      Wdiag(j->qIndex+i) = ::pow(BM(j->frame->ID), power);
     }
   }
   return Wdiag;
@@ -468,7 +490,9 @@ void rai::KinematicWorld::flipFrames(rai::Frame *a, rai::Frame *b) {
   CHECK_EQ(b->parent, a, "");
   CHECK(!a->parent, "");
   CHECK(!a->joint, "");
-  CHECK(!b->joint, "");
+  if(b->joint){
+    b->joint->flip();
+  }
   a->Q = -b->Q;
   b->Q.setZero();
   b->unLink();
@@ -611,7 +635,7 @@ void rai::KinematicWorld::calc_q_from_Q() {
   for(Joint *j: fwdActiveJoints) {
     if(j->mimic) continue; //don't count dependent joints
     CHECK_EQ(j->qIndex, n, "joint indexing is inconsistent");
-    arr joint_q = j->calc_q_from_Q(j->frame.Q);
+    arr joint_q = j->calc_q_from_Q(j->frame->Q);
     CHECK_EQ(joint_q.N, j->dim, "");
     if(!j->dim) continue; //nothing to do
     q.setVectorBlock(joint_q, j->qIndex);
@@ -799,10 +823,9 @@ void rai::KinematicWorld::setTimes(double t) {
 // features
 //
 
-void rai::KinematicWorld::evalFeature(arr& y, arr& J, FeatureSymbol fs, const StringA& symbols) const{
-  Feature *f = symbols2feature(fs, symbols, *this);
-  f->phi(y, J, *this);
-  delete f;
+void rai::KinematicWorld::evalFeature(arr& y, arr& J, FeatureSymbol& fs, const StringA& symbols) const{
+  ptr<Feature> f = symbols2feature(fs, symbols, *this);
+  f->__phi(y, J, *this);
 }
 
 //===========================================================================
@@ -1321,11 +1344,21 @@ bool rai::KinematicWorld::checkUniqueNames() const {
 }
 
 /// find body with specific name
-rai::Frame* rai::KinematicWorld::getFrameByName(const char* name, bool warnIfNotExist) const {
-  for(Frame *b: frames) if(b->name==name) return b;
+rai::Frame* rai::KinematicWorld::getFrameByName(const char* name, bool warnIfNotExist, bool reverse) const {
+  if(!reverse){
+    for(Frame *b: frames) if(b->name==name) return b;
+  }else{
+    for(uint i=frames.N;i--;) if(frames(i)->name==name) return frames(i);
+  }
   if(strcmp("glCamera", name)!=0)
     if(warnIfNotExist) RAI_MSG("cannot find Body named '" <<name <<"' in Graph");
   return 0;
+}
+
+FrameL rai::KinematicWorld::getFramesByNames(const StringA& frameNames) const{
+  FrameL F;
+  for(const rai::String& name:frameNames) F.append(getFrameByName(name), true);
+  return F;
 }
 
 ///// find shape with specific name
@@ -1368,11 +1401,21 @@ rai::Joint* rai::KinematicWorld::getJointByBodyIndices(uint ifrom, uint ito) con
   return getJointByBodies(f, t);
 }
 
+uintA rai::KinematicWorld::getQindicesByNames(const StringA& jointNames) const{
+  FrameL F = getFramesByNames(jointNames);
+  uintA Qidx;
+  for(rai::Frame* f: F){
+    CHECK(f->joint, "");
+    Qidx.append(f->joint->qIndex);
+  }
+  return Qidx;
+}
+
 StringA rai::KinematicWorld::getJointNames() const {
   if(!q.nd)((KinematicWorld*)this)->calc_q();
   StringA names(getJointStateDimension());
   for(Joint *j:fwdActiveJoints) {
-    rai::String name=j->frame.name;
+    rai::String name=j->frame->name;
     if(!name) name <<'q' <<j->qIndex;
     if(j->dim==1) names(j->qIndex) <<name;
     else for(uint i=0; i<j->dim; i++) names(j->qIndex+i) <<name <<':' <<i;
@@ -1398,7 +1441,7 @@ StringA rai::KinematicWorld::getFrameNames() const {
 
 /** @brief creates uniques names by prefixing the node-index-number to each name */
 void rai::KinematicWorld::prefixNames(bool clear) {
-  if(!clear) for(Frame *a: frames) a->name=STRING(a->ID<< a->name);
+  if(!clear) for(Frame *a: frames) a->name=STRING('_' <<a->ID <<'_' <<a->name);
   else       for(Frame *a: frames) a->name.clear() <<a->ID;
 }
 
@@ -1458,13 +1501,28 @@ FeatherstoneInterface& rai::KinematicWorld::fs() {
   return *s->fs;
 }
 
-void rai::KinematicWorld::watch(bool pause, const char* txt) {
-  if(pause) gl().watch(txt);
-  else gl().update(txt);
+int rai::KinematicWorld::watch(bool pause, const char* txt) {
+//  gl().pressedkey=0;
+  int key;
+  if(pause){
+    if(!txt) txt="Config::watch";
+    key = gl().watch(txt);
+  }else{
+    key = gl().update(txt, true);
+  }
+  return key;
 }
 
-void rai::KinematicWorld::glAnimate() {
-  animateConfiguration(*this, gl(), NULL);
+void rai::KinematicWorld::saveVideoPic(uint& t, const char* pathPrefix){
+  write_ppm(gl().captureImage, STRING(pathPrefix <<std::setw(4)<<std::setfill('0')<<t++<<".ppm"));
+}
+
+void rai::KinematicWorld::glAdd(void (*call)(void*), void* classP){
+  gl().add(call, classP);
+}
+
+int rai::KinematicWorld::glAnimate() {
+  return animateConfiguration(*this, NULL);
 }
 
 void rai::KinematicWorld::glGetMasks(int w, int h, bool rgbIndices) {
@@ -1475,7 +1533,7 @@ void rai::KinematicWorld::glGetMasks(int w, int h, bool rgbIndices) {
     orsDrawIndexColors = true;
     orsDrawMarkers = orsDrawJoints = orsDrawProxies = false;
   }
-  gl().renderInBack(true, true, w, h);
+  gl().renderInBack(w, h);
   //  indexRgb = gl().captureImage;
   //  depth = gl().captureDepth;
 
@@ -1671,11 +1729,17 @@ void rai::KinematicWorld::proxiesToContacts(double margin) {
 }
 
 double rai::KinematicWorld::totalContactPenetration() {
-  NIY;
   double D=0.;
+  for(const Proxy& p:proxies) {
+    //early check: if swift is way out of collision, don't bother computing it precise
+    if(p.d > p.a->shape->radius()+p.a->shape->radius()+.01) continue;
+    //exact computation
+    if(!p.coll) ((Proxy*)&p)->calc_coll(*this);
+    double d = p.coll->getDistance();
+    if(d<0.) D -= d;
+  }
   //  for(Frame *f:frames) for(Contact *c:f->contacts) if(&c->a==f) {
   //        double d = c->getDistance();
-  //        if(d<0.) D -= d;
   //      }
   return D;
 }
@@ -1735,8 +1799,8 @@ void rai::KinematicWorld::writeURDF(std::ostream &os, const char* robotName) con
       arr& size = a->shape->size();
       switch(a->shape->type()) {
         case ST_box:       os <<"      <box size=\"" <<size({0,2}) <<"\" />\n";  break;
-        case ST_cylinder:  os <<"      <cylinder length=\"" <<size(2) <<"\" radius=\"" <<size(3) <<"\" />\n";  break;
-        case ST_sphere:    os <<"      <sphere radius=\"" <<size(3) <<"\" />\n";  break;
+        case ST_cylinder:  os <<"      <cylinder length=\"" <<size.elem(-2) <<"\" radius=\"" <<size.elem(-1) <<"\" />\n";  break;
+        case ST_sphere:    os <<"      <sphere radius=\"" <<size.last() <<"\" />\n";  break;
         case ST_mesh:      os <<"      <mesh filename=\"" <<a->ats.get<rai::FileToken>("mesh").name <<'"';
           if(a->ats["meshscale"]) os <<" scale=\"" <<a->ats.get<arr>("meshscale") <<'"';
           os <<" />\n";  break;
@@ -1762,8 +1826,8 @@ void rai::KinematicWorld::writeURDF(std::ostream &os, const char* robotName) con
         arr& size = b->shape->size();
         switch(b->shape->type()) {
           case ST_box:       os <<"      <box size=\"" <<size({0,2}) <<"\" />\n";  break;
-          case ST_cylinder:  os <<"      <cylinder length=\"" <<size(2) <<"\" radius=\"" <<size(3) <<"\" />\n";  break;
-          case ST_sphere:    os <<"      <sphere radius=\"" <<size(3) <<"\" />\n";  break;
+          case ST_cylinder:  os <<"      <cylinder length=\"" <<size.elem(-2) <<"\" radius=\"" <<size.elem(-1) <<"\" />\n";  break;
+          case ST_sphere:    os <<"      <sphere radius=\"" <<size.last() <<"\" />\n";  break;
           case ST_mesh:      os <<"      <mesh filename=\"" <<b->ats.get<rai::FileToken>("mesh").name <<'"';
             if(b->ats["meshscale"]) os <<" scale=\"" <<b->ats.get<arr>("meshscale") <<'"';
             os <<" />\n";  break;
@@ -1923,6 +1987,9 @@ void rai::KinematicWorld::report(std::ostream &os) const {
 
 void rai::KinematicWorld::init(const Graph& G, bool addInsteadOfClear) {
   if(!addInsteadOfClear) clear();
+
+  FrameL node2frame(G.N);
+  node2frame.setZero();
   
   NodeL bs = G.getNodes("body");
   for(Node *n:  bs) {
@@ -1930,6 +1997,7 @@ void rai::KinematicWorld::init(const Graph& G, bool addInsteadOfClear) {
     CHECK(n->isGraph(), "bodies must have value Graph");
     
     Frame *b=new Frame(*this);
+    node2frame(n->index) = b;
     if(n->keys.N>1) b->name=n->keys.last();
     b->ats.copy(n->graph(), false, true);
     if(n->keys.N>2) b->ats.newNode<bool>({n->keys.last()});
@@ -1944,7 +2012,8 @@ void rai::KinematicWorld::init(const Graph& G, bool addInsteadOfClear) {
     
     Frame *b = NULL;
     if(!n->parents.N) b = new Frame(*this);
-    if(n->parents.N==1) b = new Frame(getFrameByName(n->parents(0)->keys.last()));
+    if(n->parents.N==1) b = new Frame(node2frame(n->parents(0)->index)); //getFrameByName(n->parents(0)->keys.last()));
+    node2frame(n->index) = b;
     if(n->keys.N && n->keys.last()!="frame") b->name=n->keys.last();
     b->ats.copy(n->graph(), false, true);
     //    if(n->keys.N>2) b->ats.newNode<bool>({n->keys.last()});
@@ -2010,7 +2079,7 @@ void rai::KinematicWorld::init(const Graph& G, bool addInsteadOfClear) {
       }else{
         HALT("could not retrieve minimick frame for joint '" <<f->name <<"' from ats '" <<f->ats <<"'");
       }
-      rai::Frame *mimicFrame = getFrameByName(jointName);
+      rai::Frame *mimicFrame = getFrameByName(jointName, true, true);
       CHECK(mimicFrame, "");
       j->mimic = mimicFrame->joint;
       if(!j->mimic) HALT("The joint '" <<*j <<"' is declared coupled to '" <<jointName <<"' -- but that doesn't exist!");
@@ -2286,7 +2355,7 @@ void rai::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, do
   if(!addValues) { y.setZero();  if(!!J) J.setZero(); }
 
   //early check: if swift is way out of collision, don't bother computing it precise
-  if(p.d>.01+margin) return;
+  if(p.d>p.a->shape->radius()+p.a->shape->radius()+.01+margin) return;
   
 #if 1
   if(!p.coll) ((Proxy*)&p)->calc_coll(*this);
@@ -2701,7 +2770,7 @@ bool rai::KinematicWorld::checkConsistency() {
     CHECK(&a->K==this,"");
     CHECK_EQ(a, frames(a->ID), "");
     for(Frame *b: a->parentOf) CHECK_EQ(b->parent, a, "");
-    if(a->joint) CHECK_EQ(&a->joint->frame, a, "");
+    if(a->joint) CHECK_EQ(a->joint->frame, a, "");
     if(a->shape) CHECK_EQ(&a->shape->frame, a, "");
     if(a->inertia) CHECK_EQ(&a->inertia->frame, a, "");
     a->ats.checkConsistency();
@@ -2716,16 +2785,18 @@ bool rai::KinematicWorld::checkConsistency() {
   for(Frame *f: frames) if((j=f->joint)) {
     if(j->type.x!=JT_time) {
       CHECK(j->from(), "");
-      CHECK(j->from()->parentOf.findValue(&j->frame)>=0,"");
+      CHECK(j->from()->parentOf.findValue(j->frame)>=0,"");
     }
-    CHECK_EQ(j->frame.joint, j,"");
+    CHECK_EQ(j->frame->joint, j,"");
     CHECK_GE(j->type.x, 0, "");
     CHECK_LE(j->type.x, JT_time, "");
 
     if(j->mimic) {
       CHECK_EQ(j->dim, 0, "");
       CHECK(j->mimic>(void*)1, "mimic was not parsed correctly");
-      CHECK(frames.contains(&j->mimic->frame), "mimic points to a frame outside this kinematic configuration");
+      CHECK(frames.contains(j->mimic->frame), "mimic points to a frame outside this kinematic configuration");
+    }else{
+      CHECK_EQ(j->dim, j->getDimFromType(), "");
     }
   }
 
@@ -2742,7 +2813,7 @@ bool rai::KinematicWorld::checkConsistency() {
   //check active sets
   for(Frame *f: fwdActiveSet) CHECK(f->active, "");
   boolA jointIsInActiveSet = consts<byte>(false, frames.N);
-  for(Joint *j: fwdActiveJoints) { CHECK(j->active, ""); jointIsInActiveSet.elem(j->frame.ID)=true; }
+  for(Joint *j: fwdActiveJoints) { CHECK(j->active, ""); jointIsInActiveSet.elem(j->frame->ID)=true; }
   if(q.nd) {
     for(Frame *f: frames) if(f->joint && f->joint->active) CHECK(jointIsInActiveSet(f->ID), "");
   }
@@ -2761,6 +2832,17 @@ bool rai::KinematicWorld::checkConsistency() {
   }
   
   return true;
+}
+
+rai::Joint* rai::KinematicWorld::attach(Frame* a, Frame* b){
+  b = b->getUpwardLink();
+  if(b->parent) b->unLink();
+  b->linkFrom(a, true);
+  return new rai::Joint(*b, rai::JT_rigid);
+}
+
+rai::Joint* rai::KinematicWorld::attach(const char* _a, const char* _b){
+  return attach(getFrameByName(_a), getFrameByName(_b));
 }
 
 //void rai::KinematicWorld::meldFixedJoints(int verbose) {
@@ -2903,13 +2985,7 @@ void rai::KinematicWorld::glDraw_sub(OpenGL& gl) {
     //first non-transparent
     for(Frame *f: frames) if(f->shape && f->shape->alpha()==1. && (f->shape->visual||!orsDrawVisualsOnly)) {
       gl.drawId(f->ID);
-      if(f->name.startsWith(("perc_"))){
-        glColor(1.,.5,.5);
-        rai::Mesh *m = &f->shape->mesh();
-        cout <<"DRAW MESH:" <<m->getRadius() <<endl;
-      }else{
-        f->shape->glDraw(gl);
-      }
+      f->shape->glDraw(gl);
     }
     for(Frame *f: frames) if(f->shape && f->shape->alpha()<1. && (f->shape->visual||!orsDrawVisualsOnly)) {
       gl.drawId(f->ID);
@@ -2985,7 +3061,7 @@ void transferQbetweenTwoWorlds(arr& qto, const arr& qfrom, const rai::KinematicW
   match = -1;
   rai::Joint* jfrom;
   for(rai::Frame* f: from.frames) if((jfrom=f->joint)) {
-    rai::Joint* jto = to.getJointByBodyNames(jfrom->from()->name, jfrom->frame.name);
+    rai::Joint* jto = to.getJointByBodyNames(jfrom->from()->name, jfrom->frame->name);
     if(!jto || !jfrom->qDim() || !jto->qDim()) continue;
     CHECK_EQ(jfrom->qDim(), jto->qDim(), "joints must have same dimensionality");
     for(uint i=0; i<jfrom->qDim(); i++) {
@@ -3211,7 +3287,7 @@ void rai::glDrawProxies(void *P) {
 
 void displayState(const arr& x, rai::KinematicWorld& G, const char *tag) {
   G.setJointState(x);
-  G.gl().watch(tag);
+  G.watch(true, tag);
 }
 
 void displayTrajectory(const arr& _x, int steps, rai::KinematicWorld& G, const KinematicSwitchL& switches, const char *tag, double delay, uint dim_z, bool copyG) {
@@ -3400,17 +3476,17 @@ void _glDrawOdeWorld(dWorldID world)
 }
 */
 
-int animateConfiguration(rai::KinematicWorld& K, OpenGL& gl, Inotify *ino) {
+int animateConfiguration(rai::KinematicWorld& K, Inotify *ino) {
   arr x, x0;
   K.getJointState(x0);
   arr lim = K.getLimits();
-  gl.pressedkey=0;
   const int steps = 50;
   K.checkConsistency();
   StringA jointNames = K.getJointNames();
   
   //  uint saveCount=0;
 
+  K.gl().pressedkey=0;
   for(uint i=x0.N; i--;) {
     x=x0;
     double upper_lim = lim(i,1);
@@ -3428,16 +3504,15 @@ int animateConfiguration(rai::KinematicWorld& K, OpenGL& gl, Inotify *ino) {
       // Joint limits
       checkNan(x);
       K.setJointState(x);
-      int key = gl.update(STRING("DOF = " <<i <<" : " <<jointNames(i) <<" [" <<lim[i] <<"]"), false, false, true);
+      int key = K.watch(false, STRING("DOF = " <<i <<" : " <<jointNames(i) <<" [" <<lim[i] <<"]"));
       //      write_ppm(gl.captureImage, STRING("vid/" <<std::setw(3)<<std::setfill('0')<<saveCount++<<".ppm"));
 
-      gl.pressedkey=0;
       if(key==13 || key==32 || key==27 || key=='q') return key;
-      //      rai::wait(0.01);
+      rai::wait(0.01);
     }
   }
   K.setJointState(x0);
-  return gl.update("", false, false, true);
+  return K.watch(false);
 }
 
 rai::Frame *movingBody=NULL;
@@ -3462,7 +3537,7 @@ struct EditConfigurationClickCall:OpenGL::GLClickCall {
     if((i&3)==2) {
       rai::Joint *j = ors->frames(i>>2)->joint;
       gl.text
-          <<"edge selection: " <<j->from()->name <<' ' <<j->frame.name
+          <<"edge selection: " <<j->from()->name <<' ' <<j->frame->name
             //         <<"\nA=" <<j->A <<"\nQ=" <<j->Q <<"\nB=" <<j->B
          <<endl;
       //      listWrite(j->ats, gl.text, "\n");
@@ -3495,7 +3570,7 @@ struct EditConfigurationHoverCall:OpenGL::GLHoverCall {
       }
       if(j) {
         gl.text
-            <<"edge selection: " <<j->from()->name <<' ' <<j->frame.name
+            <<"edge selection: " <<j->from()->name <<' ' <<j->frame->name
               //           <<"\nA=" <<j->A <<"\nQ=" <<j->Q <<"\nB=" <<j->B
            <<endl;
         //        listWrite(j->ats, gl.text, "\n");
@@ -3544,7 +3619,7 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
         movingBody=s;
       }
       if(j) {
-        cout <<"selected joint " <<j->frame.ID <<" connecting " <<j->from()->name <<"--" <<j->frame.name <<endl;
+        cout <<"selected joint " <<j->frame->ID <<" connecting " <<j->from()->name <<"--" <<j->frame->name <<endl;
       }
       return true;
     } else switch(gl.pressedkey) {
@@ -3582,14 +3657,14 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
   }
 };
 
-void editConfiguration(const char* filename, rai::KinematicWorld& K, OpenGL &gl) {
+void editConfiguration(const char* filename, rai::KinematicWorld& K){
   K.checkConsistency();
 
   //  gl.exitkeys="1234567890qhjklias, "; //TODO: move the key handling to the keyCall!
   bool exit=false;
   //  gl.addHoverCall(new EditConfigurationHoverCall(K));
-  gl.addKeyCall(new EditConfigurationKeyCall(K,exit));
-  gl.addClickCall(new EditConfigurationClickCall(K));
+//  K.gl().addKeyCall(new EditConfigurationKeyCall(K,exit));
+//  K.gl().addClickCall(new EditConfigurationClickCall(K));
   Inotify ino(filename);
   for(; !exit;) {
     cout <<"reloading `" <<filename <<"' ... " <<std::endl;
@@ -3597,9 +3672,9 @@ void editConfiguration(const char* filename, rai::KinematicWorld& K, OpenGL &gl)
     try {
       rai::lineCount=1;
       W.init(filename);
-      gl.dataLock.writeLock();
+      K.gl().dataLock.lock(RAI_HERE);
       K = W;
-      gl.dataLock.unlock();
+      K.gl().dataLock.unlock();
       K.report();
     } catch(std::runtime_error& err) {
       cout <<"line " <<rai::lineCount <<": " <<err.what() <<" -- please check the file and re-save" <<endl;
@@ -3607,19 +3682,18 @@ void editConfiguration(const char* filename, rai::KinematicWorld& K, OpenGL &gl)
     }
     cout <<"watching..." <<endl;
     int key = -1;
+    K.gl().pressedkey=0;
     for(;;) {
-      key = gl.update();
-      gl.pressedkey=0;
+      key = K.watch(false);
       if(key==13 || key==32 || key==27 || key=='q') break;
       if(ino.poll(false, true)) break;
       rai::wait(.02);
     }
     if(exit) break;
-    gl.pressedkey=0;
     if(key==13 || key==32){
       cout <<"animating.." <<endl;
       //while(ino.pollForModification());
-      key = animateConfiguration(K, gl, &ino);
+      key = animateConfiguration(K, &ino);
     }
     if(key==27 || key=='q') break;
     if(key==-1) continue;

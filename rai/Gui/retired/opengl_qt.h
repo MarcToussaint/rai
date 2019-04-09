@@ -61,17 +61,17 @@ public:
   void keyPressEvent(QKeyEvent *e) { gl->pressedkey=e->text().toAscii()[0]; gl->Key(gl->pressedkey,gl->mouseposx,gl->mouseposy); }
   void timerEvent(QTimerEvent*) { if(quitLoopOnTimer) gl->exitEventLoop(); }
   void mouseMoveEvent(QMouseEvent* e) {
-    if(!gl->mouseIsDown) gl->Motion(e->x(),e->y()); else gl->Motion(e->x(),e->y());
+    if(!gl->mouseIsDown) gl->MouseMotion(e->x(),e->y()); else gl->MouseMotion(e->x(),e->y());
   }
   void mousePressEvent(QMouseEvent* e) {
-    if(e->button()==Qt::LeftButton) { gl->Mouse(0,0,e->x(),e->y()); }
-    if(e->button()==Qt::MidButton)  { gl->Mouse(1,0,e->x(),e->y()); }
-    if(e->button()==Qt::RightButton) { gl->Mouse(2,0,e->x(),e->y()); }
+    if(e->button()==Qt::LeftButton) { gl->MouseButton(0,0,e->x(),e->y()); }
+    if(e->button()==Qt::MidButton)  { gl->MouseButton(1,0,e->x(),e->y()); }
+    if(e->button()==Qt::RightButton) { gl->MouseButton(2,0,e->x(),e->y()); }
   }
   void mouseReleaseEvent(QMouseEvent* e) {
-    if(e->button()==Qt::LeftButton) { gl->Mouse(0,1,e->x(),e->y()); }
-    if(e->button()==Qt::MidButton)  { gl->Mouse(1,1,e->x(),e->y()); }
-    if(e->button()==Qt::RightButton) { gl->Mouse(2,1,e->x(),e->y()); }
+    if(e->button()==Qt::LeftButton) { gl->MouseButton(0,1,e->x(),e->y()); }
+    if(e->button()==Qt::MidButton)  { gl->MouseButton(1,1,e->x(),e->y()); }
+    if(e->button()==Qt::RightButton) { gl->MouseButton(2,1,e->x(),e->y()); }
   }
   
   

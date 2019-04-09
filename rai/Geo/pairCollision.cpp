@@ -41,7 +41,9 @@ PairCollision::PairCollision(const rai::Mesh &_mesh1, const rai::Mesh &_mesh2, r
   if(rai::sign(distance) * scalarProduct(normal, p1-p2) < 0.)
     normal *= -1.;
 
-  CHECK_ZERO(length(normal) - 1., 1e-5, "");
+  if(distance>1e-10){
+    CHECK_ZERO(length(normal) - 1., 1e-5, "");
+  }
 
   CHECK_ZERO(scalarProduct(normal, p1-p2) - distance, 1e-5, "");
 

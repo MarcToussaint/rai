@@ -19,7 +19,5 @@ struct SyncFiltered : Thread {
   SyncFiltered(Var<PerceptL>& _percepts, Var<rai::KinematicWorld>& _kin);
   ~SyncFiltered();
   
-  virtual void open();
   virtual void step();
-  virtual void close() {}
 };

@@ -243,25 +243,25 @@ void sOpenGL::endGlContext() {
 
 bool sOpenGL::motion_notify(GtkWidget *widget, GdkEventMotion *event) {
   sOpenGL *s = (sOpenGL*)g_object_get_data(G_OBJECT(widget), "sOpenGL");
-  s->gl->Motion(event->x, event->y);
+  s->gl->MouseMotion(event->x, event->y);
   return true;
 }
 
 bool sOpenGL::button_press(GtkWidget *widget, GdkEventButton *event) {
   sOpenGL *s = (sOpenGL*)g_object_get_data(G_OBJECT(widget), "sOpenGL");
-  s->gl->Mouse(event->button-1, false, event->x, event->y);
+  s->gl->MouseButton(event->button-1, false, event->x, event->y);
   return true;
 }
 
 bool sOpenGL::button_release(GtkWidget *widget, GdkEventButton *event) {
   sOpenGL *s = (sOpenGL*)g_object_get_data(G_OBJECT(widget), "sOpenGL");
-  s->gl->Mouse(event->button-1, true, event->x, event->y);
+  s->gl->MouseButton(event->button-1, true, event->x, event->y);
   return true;
 }
 
 bool sOpenGL::scroll_event(GtkWidget *widget, GdkEventScroll *event) {
   sOpenGL *s = (sOpenGL*)g_object_get_data(G_OBJECT(widget), "sOpenGL");
-  s->gl->MouseWheel(0, event->direction, event->x, event->y);
+  s->gl->Scroll(0, event->direction, event->x, event->y);
   return true;
 }
 

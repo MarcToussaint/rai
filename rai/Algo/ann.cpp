@@ -14,7 +14,7 @@
 #include <ANN/ANN.h>
 
 struct sANN {
-  ANNkd_tree *tree;
+  ANNkd_tree *tree=0;
   //PartialLeastSquares pls;
   rai::Array<double*> cpointers;
   uint treeSize;   //for how many entries in X have we build the tree?
@@ -24,8 +24,16 @@ struct sANN {
 ANN::ANN() {
   bufferSize = 1 <<10;
   s = new sANN;
-  s->tree = NULL;
+  s->tree = 0;
   s->treeSize = 0;
+}
+
+ANN::ANN(const ANN& ann) {
+  bufferSize = 1 <<10;
+  s = new sANN;
+  s->tree = 0;
+  s->treeSize = 0;
+  setX(ann.X);
 }
 
 ANN::~ANN() {
@@ -135,6 +143,7 @@ void ANN::getkNN(arr& xx             , const arr& x, uint k, double eps, bool ve
 
 ANN::ANN() { NICO }
 ANN::~ANN() { NICO }
+
 void ANN::setX(const arr& _XX) { NICO }
 void ANN::append(const arr& x) { NICO }
 uint ANN::getNN(const arr& x, double eps, bool verbose) { NICO }

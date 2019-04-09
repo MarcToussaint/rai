@@ -52,15 +52,21 @@ OptNewton::StopCriterion OptNewton::step() {
   if(o.verbose>1) cout <<"optNewton it=" <<std::setw(4) <<it << " \tbeta=" <<std::setw(8) <<beta <<flush;
   
   if(!(fx==fx)) HALT("you're calling a newton step with initial function value = NAN");
-  
+
   //-- compute Delta
   arr R=Hx;
   if(beta) { //Levenberg Marquardt damping
-    if(isRowShifted(R)) for(uint i=0; i<R.d0; i++) R(i,0) += beta; //(R(i,0) is the diagonal in the packed matrix!!)
-    else for(uint i=0; i<R.d0; i++) R(i,i) += beta;
+    if(isNotSpecial(R)){
+      for(uint i=0; i<R.d0; i++) R(i,i) += beta;
+    }else if(isRowShifted(R)) {
+      for(uint i=0; i<R.d0; i++) R(i,0) += beta; //(R(i,0) is the diagonal in the packed matrix!!)
+    }else if(isSparseMatrix(R)) {
+      for(uint i=0; i<R.d0; i++) R.sparse().addEntry(i,i) = beta;
+    }else NIY;
   }
   if(additionalRegularizer) { //obsolete -> retire
     if(isRowShifted(R)) R = unpack(R);
+    else if(!isNotSpecial(R)) NIY;
     Delta = lapack_Ainv_b_sym(R + (*additionalRegularizer), -(gx+(*additionalRegularizer)*vectorShaped(x)));
   } else {
     bool inversionFailed=false;
@@ -91,7 +97,7 @@ OptNewton::StopCriterion OptNewton::step() {
       }
     }
   }
-  
+
   //chop Delta to stay within bounds
   if(bound_lo.N && bound_hi.N) {
     double a=1.;

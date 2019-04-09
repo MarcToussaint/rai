@@ -90,12 +90,12 @@ void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
     K.kinematicsPos(p, Jp, a);
     if(!!J) expandJacobian(Jp, Ktuple, -2);
 
-    acc -= sign * forceScaling * mass * con->force;
-    if(!transOnly) wcc += sign * forceScaling * Imatrix * crossProduct(cp-p, con->force);
+    acc -= sign * forceScaling * mass * f;
+    if(!transOnly) wcc += sign * forceScaling * Imatrix * crossProduct(cp-p, f);
 
     if(!!J){
       Jacc -= sign * forceScaling *mass* Jf;
-      if(!transOnly) Jwcc += sign * forceScaling * Imatrix * (skew(cp-p) * Jf - skew(con->force) * (Jcp-Jp));
+      if(!transOnly) Jwcc += sign * forceScaling * Imatrix * (skew(cp-p) * Jf - skew(f) * (Jcp-Jp));
     }
   }
 

@@ -9,7 +9,7 @@
 #include "TM_linTrans.h"
 
 void TM_LinTrans::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
-  map->phi(y, J, G);
+  map->__phi(y, J, G);
   if(A.N) {
     y = A*y;
     if(!!J) J = A*J;

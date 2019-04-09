@@ -145,10 +145,10 @@ void RTControlStep(
   
 }
 
-RTControllerSimulation::RTControllerSimulation(rai::KinematicWorld realWorld, double tau, bool gravity, double _systematicErrorSdv)
+RTControllerSimulation::RTControllerSimulation(const rai::KinematicWorld& realWorld, const Var<CtrlMsg>& _ctrl_ref, const Var<CtrlMsg>& _ctrl_obs, double tau, bool gravity, double _systematicErrorSdv)
   : Thread("DynmSim", -1.)
-  , ctrl_ref(this, "ctrl_ref", true)
-  , ctrl_obs(this, "ctrl_obs")
+  , ctrl_ref(this, _ctrl_ref, true)
+  , ctrl_obs(this, _ctrl_obs)
     //, modelWorld(this, "modelWorld")
   , tau(tau)
   , gravity(gravity)

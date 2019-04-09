@@ -10,7 +10,7 @@
 #include <Kin/kin.h>
 
 Kinect2PointCloud::Kinect2PointCloud()
-  : Thread("Kinect2PointCloud") {
+  : Thread("Kinect2PointCloud"), kinect_depth(this, true) {
   depthShift_dx = rai::getParameter<int>("kinectDepthPixelShift_x", 0);
   depthShift_dy = rai::getParameter<int>("kinectDepthPixelShift_y", 0);
   frameShift = rai::getParameter<arr>("kinectFrameShift", {});

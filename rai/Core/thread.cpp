@@ -41,20 +41,20 @@ RWLock::~RWLock() {
 
 void RWLock::readLock() {
   int rc = pthread_rwlock_rdlock(&rwLock);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-  rwCountMutex.lock();
+  rwCountMutex.lock(RAI_HERE);
   rwCount++;
   rwCountMutex.unlock();
 }
 
 void RWLock::writeLock() {
   int rc = pthread_rwlock_wrlock(&rwLock);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-  rwCountMutex.lock();
+  rwCountMutex.lock(RAI_HERE);
   rwCount=-1;
   rwCountMutex.unlock();
 }
 
 void RWLock::unlock() {
-  rwCountMutex.lock();
+  rwCountMutex.lock(RAI_HERE);
   if(rwCount>0) rwCount--; else rwCount=0;
   rwCountMutex.unlock();
   int rc = pthread_rwlock_unlock(&rwLock);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
@@ -80,30 +80,18 @@ Signaler::Signaler(int initialStatus)
 }
 
 Signaler::~Signaler() {
-//  for(Signaler *c:listensTo) {
-//    c->statusLock();
-//    c->listeners.removeValue(this);
-//    c->statusUnlock();
-//  }
-//  for(Signaler *c:listeners) {
-//    c->statusLock();
-//    c->listensTo.removeValue(this);
-//    c->messengers.removeValue(this, false);
-//    c->statusUnlock();
-//  }
-//  listDelete(callbacks);
   int rc = pthread_cond_destroy(&cond);    if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
 }
 
 void Signaler::setStatus(int i, Signaler* messenger) {
-  statusMutex.lock();
+  statusMutex.lock(RAI_HERE);
   status=i;
   broadcast(messenger);
   statusMutex.unlock();
 }
 
 int Signaler::incrementStatus(Signaler* messenger) {
-  statusMutex.lock();
+  statusMutex.lock(RAI_HERE);
   status++;
   broadcast(messenger);
   int i=status;
@@ -112,35 +100,23 @@ int Signaler::incrementStatus(Signaler* messenger) {
 }
 
 void Signaler::broadcast(Signaler* messenger) {
-  //remember the messengers:
-//  if(messenger) messengers.setAppend(messenger);
-  //signal to all waiters:
   int rc = pthread_cond_signal(&cond);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-  //int rc = pthread_cond_broadcast(&cond);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-  //setStatus to all listeners:
-//  for(Signaler *c:listeners) if(c!=messenger) {
-//      Thread *th = dynamic_cast<Thread*>(c);
-//      if(th) th->threadStep();
-//      else c->setStatus(1, this);
-//    }
-//  for(auto* c:callbacks) c->call()(this, status);
 }
 
 void Event::listenTo(Var_base& v) {
-  auto lock = statusMutex();
+  CHECK(&v, "");
+  auto lock = statusMutex(RAI_HERE);
   v.readAccess();
-  variableRevisions.append(v.revision);
   variables.append(&v);
-  v.callbacks.append(new Callback<void(Var_base*,int)>(this, std::bind(&Event::callback, this, std::placeholders::_1, std::placeholders::_2)));
+  v.callbacks.append(new Callback<void(Var_base*)>(this, std::bind(&Event::callback, this, std::placeholders::_1)));
   v.deAccess();
 }
 
 void Event::stopListenTo(Var_base& v) {
-  auto lock = statusMutex();
+  auto lock = statusMutex(RAI_HERE);
 //  v.readAccess();
   int i=variables.findValue(&v);
   CHECK_GE(i,0,"something's wrong");
-  variableRevisions.remove(i);
   variables.remove(i);
   v.callbacks.removeCallback(this);
 //  v.deAccess();
@@ -150,14 +126,13 @@ void Event::stopListening() {
   while(variables.N) stopListenTo(*variables.last());
 }
 
-void Event::callback(Var_base *v, int revision){
+void Event::callback(Var_base *v){
   int i = variables.findValue(v);
   CHECK_GE(i, 0, "signaler " <<v <<" was not registered with this event!");
-  variableRevisions(i) = revision;
   if(eventFct){
-    int newEventStatus = eventFct(variables, variableRevisions, i);
+    int newEventStatus = eventFct(variables, i);
     //  cout <<"event callback: BOOL=" <<eventStatus <<' ' <<s <<' ' <<status <<" statuses=" <<statuses <<endl;
-    auto lock = statusMutex();
+    auto lock = statusMutex(RAI_HERE);
 //    if(this->status!=newEventStatus)
       setStatus(newEventStatus);
   }else{ //we don't have an eventFct, just increment value
@@ -175,7 +150,7 @@ Event::~Event() {
 }
 
 void Signaler::statusLock() {
-  statusMutex.lock();
+  statusMutex.lock(RAI_HERE);
 }
 
 void Signaler::statusUnlock() {
@@ -184,14 +159,14 @@ void Signaler::statusUnlock() {
 
 int Signaler::getStatus(bool userHasLocked) const {
   Mutex *m = (Mutex*)&statusMutex; //sorry: to allow for 'const' access
-  if(!userHasLocked) m->lock(); else CHECK_EQ(m->state,syscall(SYS_gettid),"user must have locked before calling this!");
+  if(!userHasLocked) m->lock(RAI_HERE); else CHECK_EQ(m->state,syscall(SYS_gettid),"user must have locked before calling this!");
   int i=status;
   if(!userHasLocked) m->unlock();
   return i;
 }
 
 bool Signaler::waitForSignal(bool userHasLocked, double timeout) {
-  if(!userHasLocked) statusMutex.lock(); // else CHECK_EQ(mutex.state, syscall(SYS_gettid), "user must have locked before calling this!");
+  if(!userHasLocked) statusMutex.lock(RAI_HERE); // else CHECK_EQ(mutex.state, syscall(SYS_gettid), "user must have locked before calling this!");
   if(timeout<0.) {
     int rc = pthread_cond_wait(&cond, &statusMutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   } else {
@@ -218,7 +193,7 @@ bool Signaler::waitForSignal(bool userHasLocked, double timeout) {
 }
 
 bool Signaler::waitForEvent(std::function<bool()> f, bool userHasLocked) {
-  if(!userHasLocked) statusMutex.lock(); else CHECK_EQ(statusMutex.state, syscall(SYS_gettid), "user must have locked before calling this!");
+  if(!userHasLocked) statusMutex.lock(RAI_HERE); else CHECK_EQ(statusMutex.state, syscall(SYS_gettid), "user must have locked before calling this!");
   while(!f()) {
     int rc = pthread_cond_wait(&cond, &statusMutex.mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   }
@@ -228,7 +203,7 @@ bool Signaler::waitForEvent(std::function<bool()> f, bool userHasLocked) {
 }
 
 bool Signaler::waitForStatusEq(int i, bool userHasLocked, double timeout) {
-  if(!userHasLocked) statusMutex.lock(); else CHECK_EQ(statusMutex.state, syscall(SYS_gettid), "user must have locked before calling this!");
+  if(!userHasLocked) statusMutex.lock(RAI_HERE); else CHECK_EQ(statusMutex.state, syscall(SYS_gettid), "user must have locked before calling this!");
   while(status!=i) {
     bool succ = waitForSignal(true, timeout);
     if(!succ){ if(!userHasLocked) statusMutex.unlock();  return false; }
@@ -238,7 +213,7 @@ bool Signaler::waitForStatusEq(int i, bool userHasLocked, double timeout) {
 }
 
 int Signaler::waitForStatusNotEq(int i, bool userHasLocked, double timeout) {
-  if(!userHasLocked) statusMutex.lock(); else CHECK_EQ(statusMutex.state, syscall(SYS_gettid), "user must have locked before calling this!");
+  if(!userHasLocked) statusMutex.lock(RAI_HERE); else CHECK_EQ(statusMutex.state, syscall(SYS_gettid), "user must have locked before calling this!");
   while(status==i) {
     bool succ = waitForSignal(true, timeout);
     if(!succ){ if(!userHasLocked) statusMutex.unlock();  return false; }
@@ -249,7 +224,7 @@ int Signaler::waitForStatusNotEq(int i, bool userHasLocked, double timeout) {
 }
 
 int Signaler::waitForStatusGreaterThan(int i, bool userHasLocked, double timeout) {
-  if(!userHasLocked) statusMutex.lock(); else CHECK_EQ(statusMutex.state,syscall(SYS_gettid),"user must have locked before calling this!");
+  if(!userHasLocked) statusMutex.lock(RAI_HERE); else CHECK_EQ(statusMutex.state,syscall(SYS_gettid),"user must have locked before calling this!");
   while(status<=i) {
     bool succ = waitForSignal(true, timeout);
     if(!succ){ if(!userHasLocked) statusMutex.unlock();  return false; }
@@ -260,7 +235,7 @@ int Signaler::waitForStatusGreaterThan(int i, bool userHasLocked, double timeout
 }
 
 int Signaler::waitForStatusSmallerThan(int i, bool userHasLocked, double timeout) {
-  if(!userHasLocked) statusMutex.lock(); else CHECK_EQ(statusMutex.state,syscall(SYS_gettid),"user must have locked before calling this!");
+  if(!userHasLocked) statusMutex.lock(RAI_HERE); else CHECK_EQ(statusMutex.state,syscall(SYS_gettid),"user must have locked before calling this!");
   while(status>=i) {
     bool succ = waitForSignal(true, timeout);
     if(!succ){ if(!userHasLocked) statusMutex.unlock();  return false; }
@@ -275,14 +250,10 @@ int Signaler::waitForStatusSmallerThan(int i, bool userHasLocked, double timeout
 // VariableBase
 //
 
-Var_base::Var_base(const std::type_info& _type, void* _value_ptr, const char* _name) : type(_type), value_ptr(_value_ptr), name(_name) {
-//  registryNode = registry()->newNode<VariableBase* >({"VariableData", name}, {}, this);
-//  registryNode = registry()->newNode<VariableBase::Ptr>({"VariableData", name}, {}, std::dynamic_pointer_cast<VariableBase>(data));
+Var_base::Var_base(const std::type_info& _type, const char* _name) : name(_name) {
 }
 
 Var_base::~Var_base() {
-//  CHECK(registryNode,"");
-//  if(registryNode) registry()->delNode(registryNode);
 }
 
 int Var_base::readAccess(Thread *th) {
@@ -302,7 +273,7 @@ int Var_base::deAccess(Thread *th) {
     i = revision++;
     for(auto* c:callbacks){
       //don't call a callback-event for a thread that accessed the variable:
-      if(!th || c->id!=&th->event) c->call()(this, i);
+      if(!th || c->id!=&th->event) c->call()(this);
     }
   } else {
     i = revision;
@@ -424,8 +395,6 @@ void* MiniThread_staticMain(void *_self) {
 }
 
 MiniThread::MiniThread(const char* _name) : Signaler(tsIsClosed), name(_name) {
-
-  registryNode = registry()->newNode<MiniThread*>({"MiniThread", name}, {}, this);
   if(name.N>14) name.resize(14, true);
   
   statusLock();
@@ -446,7 +415,6 @@ MiniThread::~MiniThread() {
            That's because the 'virtual table is destroyed' before calling the destructor ~Thread (google 'call virtual function\
            in destructor') but now the destructor has to call 'threadClose' which triggers a Thread::close(), which is\
            pure virtual while you're trying to call ~Thread.")
-    registry()->delNode(registryNode);
 }
 
 void MiniThread::threadClose(double timeoutForce) {
@@ -536,9 +504,7 @@ Thread::Thread(const char* _name, double beatIntervalSec)
     thread(0),
     tid(0),
     step_count(0),
-    metronome(beatIntervalSec),
-    verbose(0) {
-  registryNode = registry()->newNode<Thread*>({"Thread", name}, {}, this);
+    metronome(beatIntervalSec) {
   if(name.N>14) name.resize(14, true);
 }
 
@@ -548,12 +514,11 @@ Thread::~Thread() {
            That's because the 'virtual table is destroyed' before calling the destructor ~Thread (google 'call virtual function\
            in destructor') but now the destructor has to call 'threadClose' which triggers a Thread::close(), which is\
            pure virtual while you're trying to call ~Thread.")
-    registry()->delNode(registryNode);
 }
 
 void Thread::threadOpen(bool wait, int priority) {
   {
-    auto lock = event.statusMutex();
+    auto lock = event.statusMutex(RAI_HERE);
     if(thread) return; //this is already open -- or has just beend opened (parallel call to threadOpen)
 #ifndef RAI_QThread
     int rc;
@@ -693,13 +658,13 @@ void Thread::threadStop(bool wait) {
 
 void Thread::main() {
   tid = syscall(SYS_gettid);
-  if(verbose>0) cout <<"*** Entering Thread '" <<name <<"'" <<endl;
+//  if(verbose>0) cout <<"*** Entering Thread '" <<name <<"'" <<endl;
   //http://linux.die.net/man/3/setpriority
   //if(Thread::threadPriority) setRRscheduling(Thread::threadPriority);
   //if(Thread::threadPriority) setNice(Thread::threadPriority);
   
   {
-    auto mux = stepMutex();
+    auto mux = stepMutex(RAI_HERE);
     try {
       open(); //virtual open routine
     } catch(const std::exception& ex) {
@@ -721,29 +686,26 @@ void Thread::main() {
   event.statusUnlock();
   
   timer.reset();
-  bool waitForTic=false;
   for(;;) {
     //-- wait for a non-idle state
     int s = event.waitForStatusNotEq(tsIDLE);
     if(s==tsToClose) break;
-    if(s==tsBEATING) waitForTic=true; else waitForTic=false;
+    if(s==tsBEATING) metronome.waitForTic();
     if(s>0) event.setStatus(tsIDLE); //step command -> reset to idle
-    
-    if(waitForTic) metronome.waitForTic();
     
     //-- make a step
     timer.cycleStart();
-    stepMutex.lock();
+    stepMutex.lock(RAI_HERE);
     step(); //virtual step routine
     stepMutex.unlock();
     step_count++;
     timer.cycleDone();
   };
   
-  stepMutex.lock();
+  stepMutex.lock(RAI_HERE);
   close(); //virtual close routine
   stepMutex.unlock();
-  if(verbose>0) cout <<"*** Exiting Thread '" <<name <<"'" <<endl;
+//  if(verbose>0) cout <<"*** Exiting Thread '" <<name <<"'" <<endl;
   
   event.setStatus(tsIsClosed);
 }
@@ -779,6 +741,7 @@ void signalhandler(int s) {
   }
 }
 
+#if 0
 void openModules() {
   NodeL threads = registry()->getNodesOfType<Thread*>();
   for(Node* th:threads) { th->get<Thread*>()->open(); }
@@ -794,12 +757,12 @@ void closeModules() {
   for(Node* th:threads) { th->get<Thread*>()->close(); }
 }
 
-Var_base::Ptr getVariable(const char* name) {
-  return registry()->get<Var_base::Ptr>({"VariableData", name});
+ptr<Var_base> getVariable(const char* name) {
+  return registry()->get<ptr<Var_base>>({"VariableData", name});
 }
 
-rai::Array<Var_base::Ptr*> getVariables() {
-  return registry()->getValuesOfType<Var_base::Ptr>();
+rai::Array<ptr<Var_base>*> getVariables() {
+  return registry()->getValuesOfType<ptr<Var_base>>();
 }
 
 void threadOpenModules(bool waitForOpened, bool setSignalHandler) {
@@ -832,6 +795,15 @@ void threadReportCycleTimes() {
     Thread *thread=th->get<Thread*>();
     cout <<std::setw(30) <<thread->name <<" : " <<thread->timer.report() <<endl;
   }
+}
+#endif
+
+void threadCloseModules() {
+  NIY
+}
+
+void threadCancelModules() {
+  NIY
 }
 
 //===========================================================================
@@ -908,7 +880,7 @@ void TStream::unreg_all() {
 TStream::Access::Access(TStream *ts, const void *o):tstream(ts), obj(o) { }
 TStream::Access::Access(const Access &a):tstream(a.tstream) { }
 TStream::Access::~Access() {
-  tstream->mutex.lock();
+  tstream->mutex.lock(RAI_HERE);
   char *head;
   tstream->lock.readLock();
   if(tstream->get_private(obj, &head, false))
@@ -929,8 +901,20 @@ TStream::Register::~Register() {
   tstream->reg_private(obj, p, true);
 }
 
+int _allPositive(const VarL& signalers, int whoChanged){
+  bool allPositive=true;
+  for(Var_base *s:signalers){
+    Var_data<ActStatus>* a = dynamic_cast<Var_data<ActStatus>*>(s);
+    CHECK(a, "this is not an ActStatus!!");
+    if(a->rwlock.isLocked() && a->data<=0) allPositive=false;
+    if(!a->rwlock.isLocked() && a->data<=0) allPositive=false;
+  }
+  if(allPositive) return AS_true;
+  return AS_false;
+}
+
 RUN_ON_INIT_BEGIN(thread)
-rai::Array<Var_base::Ptr*>::memMove=true;
+rai::Array<ptr<Var_base>*>::memMove=true;
 ThreadL::memMove=true;
 SignalerL::memMove=true;
 RUN_ON_INIT_END(thread)

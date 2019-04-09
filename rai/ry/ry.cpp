@@ -5,6 +5,7 @@
 #include <Core/graph.h>
 #include <Kin/frame.h>
 #include <Kin/kin.h>
+#include <Kin/kin_bullet.h>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -142,6 +143,13 @@ PYBIND11_MODULE(libry, m) {
     py::arg("parent") = std::string(),
     py::arg("args") = std::string() )
 
+  .def("setFrameRelativePose", [](ry::Config& self, const std::string& frame, const std::vector<double>& x) {
+      auto Kset = self.set();
+      rai::Frame *f = Kset->getFrameByName(frame.c_str(), true);
+      f->Q.set(conv_stdvec2arr(x));
+      Kset->calc_fwdPropagateFrames();
+  } )
+
   .def("delFrame", [](ry::Config& self, const std::string& name) {
     auto Kset = self.set();
     rai::Frame *p = Kset->getFrameByName(name.c_str(), true);
@@ -154,23 +162,23 @@ PYBIND11_MODULE(libry, m) {
        const std::vector<double>& color,
        const std::vector<double>& pos,
        const std::vector<double>& quat,
-       const std::vector<double>& rot,
        double radius){
     auto Kset = self.set();
-    rai::Frame *f = Kset->addObject(shape, conv_stdvec2arr(size), conv_stdvec2arr(color), radius);
-    f->name = name;
-    if(parent.size()){
-      rai::Frame *p = Kset->getFrameByName(parent.c_str());
-      if(p) f->linkFrom(p);
-    }
-    if(pos.size()) f->Q.pos.set(pos);
-    if(quat.size()) f->Q.rot.set(quat);
-    if(rot.size()) f->Q.addRelativeRotationDeg(rot[0], rot[1], rot[2], rot[3]);
-    if(f->parent){
-      f->X = f->parent->X * f->Q;
-    }else{
-      f->X = f->Q;
-    }
+    rai::Frame *f = Kset->addObject(name.c_str(), shape, conv_stdvec2arr(size), conv_stdvec2arr(color), radius, parent.c_str(), conv_stdvec2arr(pos), conv_stdvec2arr(quat));
+//    f->name = name;
+//    if(parent.size()){
+//      rai::Frame *p = Kset->getFrameByName(parent.c_str());
+//      if(p) f->linkFrom(p);
+//    }
+//    if(pos.size()) f->Q.pos.set(pos);
+//    if(quat.size()) f->Q.rot.set(quat);
+//    if(rot.size()) f->Q.addRelativeRotationDeg(rot[0], rot[1], rot[2], rot[3]);
+//    if(f->parent){
+//      f->X = f->parent->X * f->Q;
+//    }else{
+//      f->X = f->Q;
+//    }
+    return f->ID;
   }, "",
     py::arg("name"),
     py::arg("parent") = std::string(),
@@ -179,7 +187,6 @@ PYBIND11_MODULE(libry, m) {
     py::arg("color") = std::vector<double>(),
     py::arg("pos") = std::vector<double>(),
     py::arg("quat") = std::vector<double>(),
-    py::arg("rot") = std::vector<double>(),
     py::arg("radius") = -1. )
 
 
@@ -274,6 +281,15 @@ PYBIND11_MODULE(libry, m) {
     self.set()->makeObjectsFree(I_conv(objs));
   } )
 
+  .def("makeObjectsConvex", [](ry::Config& self){
+      makeConvexHulls(self.set()->frames);
+  } )
+
+  .def("attach", [](ry::Config& self, const std::string& frame1, const std::string& frame2){
+      auto Kset = self.set();
+      Kset->attach(frame1.c_str(), frame2.c_str());
+  } )
+
   .def("computeCollisions", [](ry::Config& self){
     self.set()->stepSwift();
   } )
@@ -302,6 +318,17 @@ PYBIND11_MODULE(libry, m) {
     return f;
   } )
 
+  .def("getFrameBox", [](ry::Config& self, const std::string& framename){
+    auto Kget = self.get();
+    rai::Frame *f = Kget->getFrameByName(framename.c_str(), true);
+    rai::Shape *s = f->shape;
+    CHECK(s, "frame " <<f->name <<" does not have a shape");
+    CHECK(s->type() == rai::ST_ssBox || s->type() == rai::ST_box,
+            "frame " <<f->name <<" needs to be a box");
+    arr range = s->size();
+    return pybind11::array(range.dim(), range.p);
+  } )
+
   .def("view", [](ry::Config& self, const std::string& frame){
     ry::ConfigViewer view;
     view.view = make_shared<KinViewer>(self, -1, rai::String(frame));
@@ -317,7 +344,7 @@ PYBIND11_MODULE(libry, m) {
 
   .def("edit", [](ry::Config& self, const char* filename){
     rai::KinematicWorld K;
-    editConfiguration(filename, K, K.gl());
+    editConfiguration(filename, K);
     self.set() = K;
   } )
 
@@ -354,7 +381,13 @@ PYBIND11_MODULE(libry, m) {
     lgp.lgp = make_shared<LGP_Tree_Thread>(self.get(), folFileName.c_str());
     return lgp;
   } )
-    
+
+  .def("bullet", [](ry::Config& self){
+    ry::RyBullet bullet;
+    bullet.bullet = make_shared<BulletInterface>(self.get());
+    return bullet;
+  } )
+
   .def("sortFrames", [](ry::Config& self){
     self.set()->sortFrames();
   })
@@ -480,7 +513,7 @@ PYBIND11_MODULE(libry, m) {
   py::class_<ry::RyFeature>(m, "Feature")
   .def("eval", [](ry::RyFeature& self, ry::Config& K){
     arr y,J;
-    self.feature->phi(y, J, K.get());
+    self.feature->__phi(y, J, K.get());
     pybind11::tuple ret(2);
     ret[0] = pybind11::array(y.dim(), y.p);
     ret[1] = pybind11::array(J.dim(), J.p);
@@ -495,7 +528,7 @@ PYBIND11_MODULE(libry, m) {
 
     arr y, J;
     self.feature->order=Ktuple.N-1;
-    self.feature->phi(y, J, Ktuple);
+    self.feature->__phi(y, J, Ktuple);
     cout <<"THERE!!" <<J.dim() <<endl;
     pybind11::tuple ret(2);
     ret[0] = pybind11::array(y.dim(), y.p);
@@ -574,9 +607,10 @@ PYBIND11_MODULE(libry, m) {
       py::arg("stickiness") = 0. )
 
   .def("addObjective", [](ry::RyKOMO& self, const std::vector<double>& time, const ObjectiveType& type, const FeatureSymbol& feature, const ry::I_StringA& frames, const std::vector<double> scale, const std::vector<std::vector<double>> scaleTrans, const std::vector<double>& target, int order){
-    arr _scale = arr(scale);
+    arr _scale;
+    if(scale.size()) _scale=conv_stdvec2arr(scale);
     if(scaleTrans.size()) _scale=vecvec2arr(scaleTrans);
-    self.komo->addObjective(arr(time), type, feature, I_conv(frames), arr(scale), arr(target), order);
+    self.komo->addObjective(arr(time), type, feature, I_conv(frames), _scale, arr(target), order);
   },"", py::arg("time")=std::vector<double>(),
       py::arg("type"),
       py::arg("feature"),
@@ -788,6 +822,30 @@ PYBIND11_MODULE(libry, m) {
 
   //===========================================================================
 
+  py::class_<ry::RyBullet>(m, "RyBullet")
+  .def("step", [](ry::RyBullet& self){
+    self.bullet->step();
+  } )
+
+  .def("step", [](ry::RyBullet& self, ry::Config& C){
+    self.bullet->pushKinematicStates(C.get()->frames);
+    self.bullet->step();
+    self.bullet->pullDynamicStates(C.set()->frames);
+  } )
+
+  .def("getState", [](ry::RyBullet& self, ry::Config& C){
+    arr V = self.bullet->pullDynamicStates(C.set()->frames);
+    return pybind11::array(V.dim(), V.p);
+  } )
+
+  .def("setState", [](ry::RyBullet& self, ry::Config& C, const pybind11::array& velocities){
+    self.bullet->pushFullState(C.get()->frames, numpy2arr(velocities));
+  } )
+
+  ;
+
+  //===========================================================================
+
 #define ENUMVAL(pre, x) .value(#x, pre##_##x)
 
   py::enum_<ObjectiveType>(m, "OT")
@@ -888,8 +946,8 @@ PYBIND11_MODULE(libry, m) {
 
       ENUMVAL(FS,transAccelerations)
       ENUMVAL(FS,transVelocities)
-
       .export_values();
+
 #undef ENUMVAL
 
 }

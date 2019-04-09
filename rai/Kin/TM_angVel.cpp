@@ -128,7 +128,7 @@ void TM_LinVel::phi(arr& y, arr& J, const WorldL& Ktuple){
     double tau = Ktuple(-2)->frames(0)->tau;
     if(impulseInsteadOfAcceleration) tau=1.;
     y = (y1-y0)/tau; //difference!
-    if(!!J) J = (Jy1 - Jy0)/tau;
+    if(!!J) J = (Jy1-Jy0)/tau;
   }
 }
 
@@ -166,7 +166,6 @@ void TM_AngVel::phi(arr& y, arr& J, const WorldL& Ktuple) {
     return;
   }
 
-#if 1
   if(order==2){
     arr y0, y1, Jy0, Jy1;
     order--;
@@ -179,48 +178,6 @@ void TM_AngVel::phi(arr& y, arr& J, const WorldL& Ktuple) {
     y = (y1-y0)/tau; //difference!
     if(!!J) J = (Jy1 - Jy0)/tau;
   }
-
-#else
-
-  if(order==2){
-    arr y0, y1, J0, J1;
-    angVel_base(*Ktuple(-3), *Ktuple(-2), i, y0, J0);
-    angVel_base(*Ktuple(-2), *Ktuple(-1), i, y1, J1);
-
-    y = y1 - y0;
-
-#if 1
-    double tau = Ktuple(-1)->frames(0)->tau;
-    CHECK_GE(tau, 1e-10, "");
-    double tau2=tau*tau;
-    y /= tau2;
-#endif
-
-    if(!!J){
-      CHECK_EQ(Ktuple.N, 3,"");
-      uint d0=Ktuple(-3)->q.N;
-      uint d1=Ktuple(-2)->q.N;
-      uint d2=Ktuple(-1)->q.N;
-      J.resize(y.N, d0+d1+d2).setZero();
-      CHECK_EQ(J0.d1, d0+d1, "");
-      CHECK_EQ(J1.d1, d1+d2, "");
-      for(uint i=0;i<y.N;i++){
-        for(uint j=0;j<J0.d1;j++) J(i,j) -= J0(i,j);
-        for(uint j=0;j<J1.d1;j++) J(i,d0+j) += J1(i,j);
-      }
-
-#if 1
-      J /= tau2;
-      arr Jtau;  Ktuple(-1)->jacobianTime(Jtau, Ktuple(-1)->frames(0));  expandJacobian(Jtau, Ktuple, -1);
-      J += (-2./tau)*y*Jtau;
-#endif
-    }
-    return;
-  }
-
-  HALT("shoudn't be here");
-#endif
-
 }
 
 uint TM_AngVel::dim_phi(const rai::KinematicWorld &G){ return 3; }
@@ -267,10 +224,10 @@ void TM_NoJumpFromParent::phi(arr& y, arr& J, const WorldL& Ktuple){
     TM_Default tmp(TMT_pos, link->ID, NoVector, parent->ID, NoVector);
     tmp.order = 1;
     tmp.type = TMT_pos;
-    tmp.Feature::phi(y, J, Ktuple);
+    tmp.Feature::__phi(y, J, Ktuple);
     tmp.type = TMT_quat;
     tmp.flipTargetSignOnNegScalarProduct=true;
-    tmp.Feature::phi(yq, (!!J?Jq:NoArr), Ktuple);
+    tmp.Feature::__phi(yq, (!!J?Jq:NoArr), Ktuple);
     y.append(yq);
     if(!!J) J.append(Jq);
   }

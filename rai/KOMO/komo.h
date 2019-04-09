@@ -120,7 +120,8 @@ struct KOMO : NonCopyable {
    * they allow the user to add a cost task, or a kinematic switch in the problem definition
    * Typically, the user does not call them directly, but uses the many methods below
    * Think of all of the below as examples for how to set arbirary tasks/switches yourself */
-  struct Objective* addObjective(double startTime, double endTime, Feature* map, ObjectiveType type=OT_sos, const arr& target=NoArr, double scale=1e1, int order=-1, int deltaFromStep=0, int deltaToStep=0);
+  struct Objective* addObjective(double startTime, double endTime, const ptr<Feature>& map, ObjectiveType type=OT_sos, const arr& target=NoArr, double scale=-1., int order=-1, int deltaFromStep=0, int deltaToStep=0);
+  struct Objective* addObjective(double startTime, double endTime, Feature* map, ObjectiveType type=OT_sos, const arr& target=NoArr, double scale=-1., int order=-1, int deltaFromStep=0, int deltaToStep=0);
   struct Objective* addObjective(const arr& times, ObjectiveType type, const FeatureSymbol& feat, const StringA& frames={}, const arr& scale=NoArr, const arr& target=NoArr, int order=-1);
 
   void addSwitch(double time, bool before, rai::KinematicSwitch* sw);
@@ -132,6 +133,8 @@ struct KOMO : NonCopyable {
   void addContact_noFriction(double startTime, double endTime, const char *from, const char* to);
   void addContact_Complementary(double startTime, double endTime, const char *from, const char* to);
   //  void addContact_Relaxed(double startTime, double endTime, const char *from, const char* to);
+  void addContact_staticPush(double startTime, double endTime, const char *from, const char* to);
+
 
 
   //===========================================================================
@@ -170,9 +173,12 @@ struct KOMO : NonCopyable {
   void addSwitch_stableOn(double time, double endTime, const char* from, const char* to);
   void addSwitch_dynamic(double time, double endTime, const char *from, const char *to);
   void addSwitch_dynamicOn(double time, double endTime, const char *from, const char* to);
+  void addSwitch_dynamicOnNewton(double time, double endTime, const char *from, const char* to);
   void addSwitch_dynamicTrans(double time, double endTime, const char *from, const char *to);
   void addSwitch_magic(double time, double endTime, const char* from, const char* to, double sqrAccCost);
   void addSwitch_magicTrans(double time, double endTime, const char* from, const char* to, double sqrAccCost);
+  void addSwitch_on(double time, const char *from, const char* to);
+
 
   
   //-- tasks - logic level (used within LGP)
@@ -241,7 +247,7 @@ struct KOMO : NonCopyable {
   double getConstraintViolations();
   double getCosts();
   void reportProxies(ostream& os=std::cout, double belowMargin=.1); ///< report the proxies (collisions) for each time slice
-  Graph getContacts(ostream& os=std::cout); ///< report the contacts
+  Graph getContacts(); ///< report the contacts
   rai::Array<rai::Transformation> reportEffectiveJoints(ostream& os=std::cout);
 
   void checkGradients(bool dense=false);          ///< checks all gradients numerically
@@ -290,5 +296,16 @@ struct KOMO : NonCopyable {
     void getStructure(uintA& variableDimensions, intAA& featureTimes, ObjectiveTypeA& featureTypes);
     virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda);
   } dense_problem;
+
+  struct Conv_MotionProblem_GraphProblem : GraphProblem {
+    KOMO& komo;
+    uint dimPhi=0;
+
+    Conv_MotionProblem_GraphProblem(KOMO& _komo) : komo(_komo) {}
+    void clear(){ dimPhi=0; }
+
+    virtual void getStructure(uintA& variableDimensions, uintAA& featureVariables, ObjectiveTypeA& featureTypes);
+    virtual void phi(arr& phi, arrA& J, arrA& H, const arr& x, arr& lambda);
+  } graph_problem;
 };
 

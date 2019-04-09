@@ -291,7 +291,7 @@ void TEST(Limits){
       x -= .1 * J.reshape(n);
       checkJacobian(F,x,1e-4);
       G.setJointState(x);
-      G.gl().update();
+      G.watch();
     }
   }
 }
@@ -346,7 +346,7 @@ void TEST(PlayTorqueSequenceInOde){
     G.ode().importStateFromOde();
     G.getJointState(Xt[t](),Vt[t]());
     G.gl().text.clear() <<"play a random torque sequence [using ODE] -- time " <<t;
-    G.gl().timedupdate(.01);
+    G.watch();
   }
 }
 
@@ -384,7 +384,7 @@ void TEST(FollowRedundantSequence){
   G.kinematicsPos(y, NoArr, endeff, rel);
   for(t=0;t<T;t++) Z[t]() += y; //adjust coordinates to be inside the arm range
   plotLine(Z);
-  G.gl().add(glDrawPlot,&plotModule);
+  G.glAdd(glDrawPlot,&plotModule);
   G.watch(false);
   //-- follow the trajectory kinematically
   for(t=0;t<T;t++){
@@ -567,10 +567,10 @@ void TEST(BlenderImport){
   readBlender("blender-export",mesh,bl);
   cout <<"loading time =" <<rai::timerRead() <<"sec" <<endl;
   OpenGL gl;
-  G.gl().add(glStandardScene, NULL);
-  G.gl().add(drawTrimesh,&mesh);
-  G.gl().watch("mesh only");
-  G.gl().add(rai::glDrawGraph,&bl);
+  G.glAdd(glStandardScene, NULL);
+  G.glAdd(drawTrimesh,&mesh);
+  G.watch(true, "mesh only");
+  G.glAdd(rai::glDrawGraph,&bl);
   G.gl().text="testing blender import";
   animateConfiguration(bl,gl);
 }

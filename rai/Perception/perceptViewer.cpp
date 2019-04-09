@@ -11,7 +11,7 @@
 #include <Kin/frame.h>
 
 PerceptViewer::PerceptViewer(Var<PerceptL>& _percepts, Var<rai::KinematicWorld> _kin)
-  : Thread(STRING("PercViewer_"<<_percepts.name), -1.),
+  : Thread(STRING("PercViewer_"<<_percepts.name()), -1.),
     percepts(this, _percepts, true),
     kin(this, _kin, false) {
   threadOpen();
@@ -24,18 +24,19 @@ PerceptViewer::~PerceptViewer() {
 void glDrawPercepts(void *P) {
   PerceptL& percepts = *((PerceptL*)P);
   for(std::shared_ptr<Percept>& p:percepts) {
-    glPushMatrix();
     glTransform(p->pose);
+    glPushMatrix();
+    p->glDraw(NoOpenGL);
+    glPopMatrix();
+    glTranslated(p->com.x, p->com.y, p->com.z);
     glColor3f(0,0,0);
     glDrawText(STRING(p->id),0,0,0, true);
     glColor3f(0,1,0);
-    p->glDraw(NoOpenGL);
-    glPopMatrix();
   }
 }
 
 void PerceptViewer::open() {
-  gl = new OpenGL(STRING("PercViewer "<<percepts.name));
+  gl = new OpenGL(STRING("PercViewer "<<percepts.name()));
   gl->add(glStandardScene);
 //  gl->add(glDrawMeshes, &modelCopy);
   gl->add(glDrawPercepts, &copy);
@@ -63,12 +64,13 @@ void PerceptViewer::close() {
 void PerceptViewer::step() {
   percepts.readAccess();
   if(!percepts().N) { percepts.deAccess(); return; }
-  gl->dataLock.writeLock();
-  copy = percepts.get(); //this copies shared pointers!
-//  listClone(copy, percepts.get()());
-  gl->dataLock.unlock();
+  {
+    auto _dataLock = gl->dataLock(RAI_HERE);
+    copy = percepts.get(); //this copies shared pointers!
+    //  listClone(copy, percepts.get()());
+  }
   percepts.deAccess();
-  
+
 //  rai::Array<rai::Transformation> X;
 //  modelWorld.readAccess();
 //  X.resize(modelWorld().frames.N);
@@ -79,6 +81,6 @@ void PerceptViewer::step() {
 //  if(X.N==modelCopy.N) for(uint i=0; i<X.N; i++) modelCopy(i).glX = X(i);
 //  gl->dataLock.unlock();
   
-  gl->update(NULL, false, false, true);
+  gl->update(NULL, false); //NULL, false, false, true);
 }
 

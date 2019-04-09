@@ -110,7 +110,7 @@ void TEST(FinalPosePR2){
   cout <<"configuration space dim=" <<K.getJointStateDimension() <<endl;
   arr x = finalPoseTo(K, *K.getFrameByName("endeff"), *K.getFrameByName("target"));
   K.setJointState(x.reshape(x.N));
-  K.gl().watch();
+  K.watch(true);
 }
 
 //===========================================================================

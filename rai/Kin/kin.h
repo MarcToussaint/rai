@@ -79,7 +79,7 @@ struct KinematicWorld : GLDrawer {
   
   /// @name constructors
   KinematicWorld();
-  KinematicWorld(const rai::KinematicWorld& other);
+  KinematicWorld(const rai::KinematicWorld& other, bool referenceSwiftOnCopy=false);
   KinematicWorld(const char* filename);
   virtual ~KinematicWorld();
   void operator=(const rai::KinematicWorld& K) { copy(K); }
@@ -89,7 +89,8 @@ struct KinematicWorld : GLDrawer {
   /// @name initializations
   void init(const char* filename);
   void init(const Graph& G, bool addInsteadOfClear=false);
-  void addFile(const char* filename);
+  Frame* addFile(const char* filename);
+  Frame* addFile(const char* filename, const char* parentOfRoot, const rai::Transformation& relOfRoot);
   void addAssimp(const char* filename);
   Frame* addFrame(const char* name, const char* parent=NULL, const char* args=NULL);
   Frame* addObject(rai::ShapeType shape, const arr& size={}, const arr& col={}, double radius=-1.);
@@ -98,11 +99,13 @@ struct KinematicWorld : GLDrawer {
   /// @name access
   Frame *operator[](const char* name) { return getFrameByName(name, true); }
   Frame *operator()(int i) { return frames(i); }
-  Frame *getFrameByName(const char* name, bool warnIfNotExist=true) const;
+  Frame *getFrameByName(const char* name, bool warnIfNotExist=true, bool reverse=false) const;
+  FrameL getFramesByNames(const StringA& frameNames) const;
 //  Link  *getLinkByBodies(const Frame* from, const Frame* to) const;
   Joint *getJointByBodies(const Frame* from, const Frame* to) const;
   Joint *getJointByBodyNames(const char* from, const char* to) const;
   Joint *getJointByBodyIndices(uint ifrom, uint ito) const;
+  uintA getQindicesByNames(const StringA& jointNames) const;
   StringA getJointNames() const;
   StringA getFrameNames() const;
 
@@ -127,7 +130,9 @@ struct KinematicWorld : GLDrawer {
   void addTimeJoint();
   bool hasTimeJoint();
   bool checkConsistency();
-  
+  Joint* attach(Frame* a, Frame* b);
+  Joint* attach(const char *a, const char *b);
+
   uint analyzeJointStateDimensions() const; ///< sort of private: count the joint dimensionalities and assign j->q_index
   
   /// @name computations on the graph
@@ -164,7 +169,7 @@ struct KinematicWorld : GLDrawer {
   }
 
   /// @name features
-  void evalFeature(arr& y, arr& J, FeatureSymbol fs, const StringA &symbols) const;
+  void evalFeature(arr& y, arr& J, FeatureSymbol& fs, const StringA &symbols) const;
 
   /// @name kinematics (low level)
   void kinematicsPos(arr& y, arr& J, Frame *a, const Vector& rel=NoVector) const;  //TODO: make vector& not vector*
@@ -226,15 +231,19 @@ struct KinematicWorld : GLDrawer {
   void NewtonEuler_backward();
   
   /// @name extensions on demand
+//private:
   OpenGL& gl(const char* window_title=NULL);
+//public:
   SwiftInterface& swift();
   FclInterface& fcl();
   void swiftDelete();
   PhysXInterface& physx();
   OdeInterface& ode();
   FeatherstoneInterface& fs();
-  void watch(bool pause=false, const char* txt=NULL);
-  void glAnimate();
+  int watch(bool pause=false, const char* txt=NULL);
+  void saveVideoPic(uint& t, const char* pathPrefix="vid/");
+  void glAdd(void (*call)(void*), void* classP);
+  int glAnimate();
   void glGetMasks(int w=-1, int h=-1, bool rgbIndices=true);
   void stepSwift();
   void stepFcl();
@@ -310,8 +319,8 @@ void displayTrajectory(const arr& x, int steps, rai::KinematicWorld& G, const Ki
 inline void displayTrajectory(const arr& x, int steps, rai::KinematicWorld& G, const char *tag, double delay=0., uint dim_z=0, bool copyG=false) {
   displayTrajectory(x, steps, G, {}, tag, delay, dim_z, copyG);
 }
-void editConfiguration(const char* orsfile, rai::KinematicWorld& G, OpenGL& gl);
-int animateConfiguration(rai::KinematicWorld& G, OpenGL& gl, struct Inotify *ino=NULL);
+void editConfiguration(const char* orsfile, rai::KinematicWorld& G);
+int animateConfiguration(rai::KinematicWorld& G, struct Inotify *ino=NULL);
 
 void kinVelocity(arr& y, arr& J, uint frameId, const WorldL& Ktuple, double tau);
 void kinAngVelocity(arr& y, arr& J, uint frameId, const WorldL& Ktuple, double tau);

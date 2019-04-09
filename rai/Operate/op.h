@@ -2,7 +2,6 @@
 #include <iomanip>
 
 typedef std::function<int()> Script;
-enum ActStatus { AS_init=-1, AS_running, AS_done, AS_converged, AS_stalled, AS_true, AS_false, AS_kill };
 
 struct Act {
   Var<ActStatus> status;

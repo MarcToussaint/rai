@@ -46,6 +46,7 @@ rai::Mesh AssimpLoader::getSingleMesh() {
   return M;
 }
 
+uint depth=0;
 void AssimpLoader::loadNode(aiNode* node, const aiScene* scene, arr T) {
   arr t(4,4);
   for(uint i=0; i<4; i++) for(uint j=0; j<4; j++) t(i,j) = node->mTransformation[i][j];
@@ -55,7 +56,8 @@ void AssimpLoader::loadNode(aiNode* node, const aiScene* scene, arr T) {
   arr R = T.sub(0,2,0,2);
   arr p = T.sub(0,2,3,3).reshape(3);
 
-  //      cout <<"loading node -- transform: T=\n" <<T <<"\n p=" <<p <<" R=\n" <<R <<endl;
+//  for(uint i=0;i<depth;i++) cout <<'+';
+//  cout <<" loading node '" <<node->mName.C_Str() <<"' -- transform: T=\n" <<T <<"\n p=" <<p <<" R=\n" <<R <<endl;
 
   for(unsigned int i = 0; i < node->mNumMeshes; i++)  {
     aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
@@ -70,7 +72,9 @@ void AssimpLoader::loadNode(aiNode* node, const aiScene* scene, arr T) {
   }
 
   for(unsigned int i = 0; i < node->mNumChildren; i++) {
+    depth++;
     loadNode(node->mChildren[i], scene, T);
+    depth--;
   }
 }
 

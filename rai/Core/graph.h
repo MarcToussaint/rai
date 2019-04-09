@@ -493,12 +493,6 @@ template<class T> Node_typed<T> *Graph::newNode(const T& x) {
 
 //===========================================================================
 
-// macro for declaring types (in *.cpp files)
-#define REGISTER_TYPE(Key, T) \
-  RUN_ON_INIT_BEGIN(Decl_Type##_##Key) \
-  registry()->newNode<std::shared_ptr<Type> >({rai::String("Decl_Type"), rai::String(#Key)}, NodeL(), std::make_shared<Type_typed_readable<T> >()); \
-  RUN_ON_INIT_END(Decl_Type##_##Key)
-
 #endif
 
 /// @} //end group
