@@ -66,6 +66,15 @@ LPATHS += /usr/src/gtest
 LIBS += -lgtest -lpthread
 endif
 
+ifeq ($(GLFW),1)
+DEPEND_UBUNTU += libglfw3-dev
+CXXFLAGS  += -DRAI_GLFW
+#CPATH := $(HOME)/opt/include:$(CPATH)
+#LPATH := $(HOME)/opt/lib:$(LPATH)
+LIBS      += -lglfw
+GL := 1
+endif
+
 ifeq ($(FREEGLUT),1)
 DEPEND_UBUNTU += freeglut3-dev
 CXXFLAGS  += -DRAI_FREEGLUT

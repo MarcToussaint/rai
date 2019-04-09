@@ -1,4 +1,4 @@
-BASE = ../../../rai
+BASE = ../../..
 
 DEPEND = Core Algo Gui Optim Plot
 
