@@ -8,6 +8,9 @@ ROS = 1
 PCL = 1
 DEPEND = Core KOMO Kin Gui Logic
 
+CXXFLAGS += -DRAI_ROS_BAXTER
+CPATHS += $(BASE)/../external/install/include
+
 #CXXFLAGS += -DROS_PACKAGE_NAME='"pr2_module"'
 
 #CPATHS += $(BASE)/projects/marc_controller_pkg/msg_gen/cpp/include

@@ -20,6 +20,7 @@
 RosCom::RosCom(const char* node_name) {
   rosCheckInit(node_name);
   spinner = new RosCom_Spinner(node_name);
+  rai::wait(.1);
 }
 
 RosCom::~RosCom() {
