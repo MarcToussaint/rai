@@ -55,5 +55,6 @@ enum FeatureSymbol {
 namespace rai{
   struct KinematicWorld;
 }
+struct Feature;
 
-struct Feature *symbols2feature(FeatureSymbol feat, const StringA &symbols, const rai::KinematicWorld& world);
+ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA &symbols, const rai::KinematicWorld& world, const arr& scale=NoArr, const arr& target=NoArr, int order=-1);

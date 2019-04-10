@@ -255,7 +255,7 @@ void PhysXInterface::setArticulatedBodiesKinematic() {
   HALT("NOT SURE IF THIS IS DESIRED");
   for(rai::Joint* j:world.fwdActiveJoints) if(j->type!=rai::JT_free) {
       if(j->from()->inertia && j->from()->inertia->type==rai::BT_dynamic) j->from()->inertia->type=rai::BT_kinematic;
-      if(j->frame.inertia   && j->frame.inertia->type==rai::BT_dynamic) j->frame.inertia->type=rai::BT_kinematic;
+      if(j->frame->inertia   && j->frame->inertia->type==rai::BT_dynamic) j->frame->inertia->type=rai::BT_kinematic;
     }
   for(rai::Frame *b: world.frames) if(s->actors(b->ID) && b->inertia) {
       if(b->inertia->type==rai::BT_kinematic)
@@ -274,18 +274,18 @@ void PhysXInterface::setArticulatedBodiesKinematic() {
 
 void sPhysXInterface::addJoint(rai::Joint *jj) {
   HALT("REALLY?");
-  while(joints.N <= jj->frame.ID)
+  while(joints.N <= jj->frame->ID)
     joints.append(NULL);
     
-  //  cout <<"ADDING JOINT " <<jj->frame.parent->name <<'-' <<jj->frame.name <<endl;
+  //  cout <<"ADDING JOINT " <<jj->frame->parent->name <<'-' <<jj->frame->name <<endl;
   
   rai::Transformation rel;
-  rai::Frame *from = jj->frame.getUpwardLink(rel);
+  rai::Frame *from = jj->frame->getUpwardLink(rel);
   
-  if(!jj->frame.inertia || !from || !from->inertia) return;
-  CHECK(jj->frame.inertia, "this joint belongs to a frame '" <<jj->frame.name <<"' without inertia");
-  CHECK(from, "this joint ('" <<jj->frame.name <<"') links from NULL");
-  CHECK(from->inertia, "this joint ('" <<jj->frame.name <<"') links from a frame '" <<from->name <<"' without inertia");
+  if(!jj->frame->inertia || !from || !from->inertia) return;
+  CHECK(jj->frame->inertia, "this joint belongs to a frame '" <<jj->frame->name <<"' without inertia");
+  CHECK(from, "this joint ('" <<jj->frame->name <<"') links from NULL");
+  CHECK(from->inertia, "this joint ('" <<jj->frame->name <<"') links from a frame '" <<from->name <<"' without inertia");
   
   PxTransform A = conv_Transformation2PxTrans(rel);
   PxTransform B = Id_PxTrans();
@@ -296,19 +296,19 @@ void sPhysXInterface::addJoint(rai::Joint *jj) {
     case rai::JT_hingeY:
     case rai::JT_hingeZ: {
   
-      PxD6Joint *desc = PxD6JointCreate(*mPhysics, actors(from->ID), A, actors(jj->frame.ID), B.getInverse());
+      PxD6Joint *desc = PxD6JointCreate(*mPhysics, actors(from->ID), A, actors(jj->frame->ID), B.getInverse());
       CHECK(desc, "PhysX joint creation failed.");
       
-      if(jj->frame.ats.find<arr>("drive")) {
-        arr drive_values = jj->frame.ats.get<arr>("drive");
+      if(jj->frame->ats.find<arr>("drive")) {
+        arr drive_values = jj->frame->ats.get<arr>("drive");
         PxD6JointDrive drive(drive_values(0), drive_values(1), PX_MAX_F32, true);
         desc->setDrive(PxD6Drive::eTWIST, drive);
       }
       
-      if(jj->frame.ats.find<arr>("limit")) {
+      if(jj->frame->ats.find<arr>("limit")) {
         desc->setMotion(PxD6Axis::eTWIST, PxD6Motion::eLIMITED);
         
-        arr limits = jj->frame.ats.get<arr>("limit");
+        arr limits = jj->frame->ats.get<arr>("limit");
         PxJointAngularLimitPair limit(limits(0), limits(1), 0.1f);
         limit.restitution = limits(2);
         //limit.spring = limits(3);
@@ -319,18 +319,18 @@ void sPhysXInterface::addJoint(rai::Joint *jj) {
         desc->setMotion(PxD6Axis::eTWIST, PxD6Motion::eFREE);
       }
       
-      if(jj->frame.ats.find<arr>("drive")) {
-        arr drive_values = jj->frame.ats.get<arr>("drive");
+      if(jj->frame->ats.find<arr>("drive")) {
+        arr drive_values = jj->frame->ats.get<arr>("drive");
         PxD6JointDrive drive(drive_values(0), drive_values(1), PX_MAX_F32, false);
         desc->setDrive(PxD6Drive::eTWIST, drive);
         //desc->setDriveVelocity(PxVec3(0, 0, 0), PxVec3(5e-1, 0, 0));
       }
-      joints(jj->frame.ID) = desc;
+      joints(jj->frame->ID) = desc;
     }
     break;
     case rai::JT_rigid: {
       // PxFixedJoint* desc =
-      PxFixedJointCreate(*mPhysics, actors(jj->from()->ID), A, actors(jj->frame.ID), B.getInverse());
+      PxFixedJointCreate(*mPhysics, actors(jj->from()->ID), A, actors(jj->frame->ID), B.getInverse());
       // desc->setProjectionLinearTolerance(1e10);
       // desc->setProjectionAngularTolerance(3.14);
     }
@@ -339,32 +339,32 @@ void sPhysXInterface::addJoint(rai::Joint *jj) {
       break;
     }
     case rai::JT_transXYPhi: {
-      PxD6Joint *desc = PxD6JointCreate(*mPhysics, actors(jj->from()->ID), A, actors(jj->frame.ID), B.getInverse());
+      PxD6Joint *desc = PxD6JointCreate(*mPhysics, actors(jj->from()->ID), A, actors(jj->frame->ID), B.getInverse());
       CHECK(desc, "PhysX joint creation failed.");
       
       desc->setMotion(PxD6Axis::eX, PxD6Motion::eFREE);
       desc->setMotion(PxD6Axis::eY, PxD6Motion::eFREE);
       desc->setMotion(PxD6Axis::eSWING2, PxD6Motion::eFREE);
       
-      joints(jj->frame.ID) = desc;
+      joints(jj->frame->ID) = desc;
       break;
     }
     case rai::JT_transX:
     case rai::JT_transY:
     case rai::JT_transZ: {
-      PxD6Joint *desc = PxD6JointCreate(*mPhysics, actors(jj->from()->ID), A, actors(jj->frame.ID), B.getInverse());
+      PxD6Joint *desc = PxD6JointCreate(*mPhysics, actors(jj->from()->ID), A, actors(jj->frame->ID), B.getInverse());
       CHECK(desc, "PhysX joint creation failed.");
       
-      if(jj->frame.ats.find<arr>("drive")) {
-        arr drive_values = jj->frame.ats.get<arr>("drive");
+      if(jj->frame->ats.find<arr>("drive")) {
+        arr drive_values = jj->frame->ats.get<arr>("drive");
         PxD6JointDrive drive(drive_values(0), drive_values(1), PX_MAX_F32, true);
         desc->setDrive(PxD6Drive::eX, drive);
       }
       
-      if(jj->frame.ats.find<arr>("limit")) {
+      if(jj->frame->ats.find<arr>("limit")) {
         desc->setMotion(PxD6Axis::eX, PxD6Motion::eLIMITED);
         
-        arr limits = jj->frame.ats.get<arr>("limit");
+        arr limits = jj->frame->ats.get<arr>("limit");
         PxJointLinearLimit limit(mPhysics->getTolerancesScale(), limits(0), 0.1f);
         limit.restitution = limits(2);
         //if(limits(3)>0) {
@@ -375,7 +375,7 @@ void sPhysXInterface::addJoint(rai::Joint *jj) {
       } else {
         desc->setMotion(PxD6Axis::eX, PxD6Motion::eFREE);
       }
-      joints(jj->frame.ID) = desc;
+      joints(jj->frame->ID) = desc;
     }
     break;
     default:

@@ -67,7 +67,7 @@ void readNode(Graph *i, uintA &hsitoi, uintA &itohsi, int ind) {
 }
 
 void G4ID::load(const char *meta) {
-  String name_agent, name_limb, name_digit, name_object, name_part;
+  rai::String name_agent, name_limb, name_digit, name_object, name_part;
   rai::Array<Graph*> kvg_agents, kvg_limbs, kvg_digits, kvg_objects, kvg_parts;
   uint i = 0;
   
@@ -81,7 +81,7 @@ void G4ID::load(const char *meta) {
     s->agents.append(name_agent);
     s->subjects.append(name_agent);
     
-    s->kvg_suplimbs.newNode<String>({name_agent}, {}, String(""));
+    s->kvg_suplimbs.newNode<rai::String>({name_agent}, {}, rai::String(""));
     s->kvg_sublimbs.newNode<StringA>({name_agent}, {}, StringA());
     
     s->kvg_digitsof.newNode<StringA>({name_agent}, {}, StringA());
@@ -93,7 +93,7 @@ void G4ID::load(const char *meta) {
       s->limbs.append(name_limb);
       s->subjects.append(name_limb);
       
-      s->kvg_suplimbs.newNode<String>({name_limb}, {}, String(name_agent));
+      s->kvg_suplimbs.newNode<rai::String>({name_limb}, {}, rai::String(name_agent));
       s->kvg_sublimbs.newNode<StringA>({name_limb}, {}, StringA());
       s->kvg_sublimbs.get<StringA>(name_agent).append(name_limb);
       
@@ -108,7 +108,7 @@ void G4ID::load(const char *meta) {
         s->sensors.append(name_digit);
         s->unstruct_sensors.append(name_digit);
         
-        s->kvg_suplimbs.newNode({name_digit}, {}, String(name_limb));
+        s->kvg_suplimbs.newNode({name_digit}, {}, rai::String(name_limb));
         s->kvg_sublimbs.newNode({name_digit}, {}, StringA());
         s->kvg_sublimbs.get<StringA>(name_limb).append(name_digit);
         
@@ -171,9 +171,9 @@ const StringA& G4ID::agents() { return s->agents; }
 const StringA& G4ID::limbs() { return s->limbs; }
 const StringA& G4ID::digits() { return s->digits; }
 
-const StringA& G4ID::digitsof(const String &limb) { return s->kvg_digitsof.get<StringA>(limb); }
-const StringA& G4ID::sublimbs(const String &limb) { return s->kvg_sublimbs.get<StringA>(limb); }
-const String& G4ID::suplimb(const String &limb) { return s->kvg_suplimbs.get<String>(limb); }
+const StringA& G4ID::digitsof(const rai::String &limb) { return s->kvg_digitsof.get<StringA>(limb); }
+const StringA& G4ID::sublimbs(const rai::String &limb) { return s->kvg_sublimbs.get<StringA>(limb); }
+const rai::String& G4ID::suplimb(const rai::String &limb) { return s->kvg_suplimbs.get<rai::String>(limb); }
 
 uint G4ID::hsitoi(uint hsi) {
   return s->hsitoi(hsi);
@@ -482,7 +482,7 @@ arr G4Rec::query(const char *type, const char *sensor, uint f) {
 /* } */
 
 void G4Rec::computeDPos(const char *sensor) {
-  String typeDPos;
+  rai::String typeDPos;
   typeDPos << sensor << "_dPos";
   
   arr bamDPos(nsensors, nframes, numDim("pos"));
@@ -510,7 +510,7 @@ void G4Rec::computeDPos(const char *sensor) {
 }
 
 void G4Rec::computeDQuat(const char *sensor) {
-  String typeDQuat;
+  rai::String typeDQuat;
   typeDQuat << sensor << "_dQuat";
   
   arr bamDQuat(nsensors, nframes, numDim("quat"));
@@ -564,7 +564,7 @@ void G4Rec::computeDQuat(const char *sensor) {
 // }
 
 void G4Rec::computeVar(const char *type) {
-  String typeVar = STRING(type << "Var");
+  rai::String typeVar = STRING(type << "Var");
   
   arr bam, bamVar, window, windowMean, windowMeanRep;
   uint wlen, thinning, nframes, nframes_thin;
@@ -603,7 +603,7 @@ void G4Rec::computeVar(const char *type) {
 }
 
 void G4Rec::computeVar(const StringA &types) {
-  for(const String &type: types)
+  for(const rai::String &type: types)
     computeVar(type);
 }
 
@@ -619,8 +619,8 @@ G4RawSeqL G4Rec::rawseqlist(const char *obj1, const char *obj2) {
   
   const StringA sensors1 = (obj1? g4id.sensorsof(obj1): g4id.sensors());
   const StringA sensors2 = (obj2? g4id.sensorsof(obj2): g4id.sensors());
-  for(const String &sens1: sensors1) {
-    for(const String &sens2: sensors2) {
+  for(const rai::String &sens1: sensors1) {
+    for(const rai::String &sens2: sensors2) {
       seq = new G4RawSeq();
       seq->set(*this, sens1, sens2);
       seqlist.append(seq);
@@ -647,8 +647,8 @@ G4FeatSeqL G4Rec::featseqlist(bool with_ann, const char *obj1, const char *obj2)
       
   StringA sensors1 = (obj1? g4id.sensorsof(obj1): g4id.sensors());
   StringA sensors2 = (obj2? g4id.sensorsof(obj2): g4id.sensors());
-  for(const String &sens1: sensors1) {
-    for(const String &sens2: sensors2) {
+  for(const rai::String &sens1: sensors1) {
+    for(const rai::String &sens2: sensors2) {
       i1 = g4id.i(sens1);
       i2 = g4id.i(sens2);
       if(i1 != i2 && !checklist[i1][i2] && (!with_ann || hasAnn(sens1, sens2))) {
@@ -673,7 +673,7 @@ void G4Rec::write(std::ostream &os) const {
 G4Data::G4Data() { }
 G4Data::~G4Data() { }
 
-String &G4Data::base() { return basedir; }
+rai::String &G4Data::base() { return basedir; }
 
 void G4Data::load(const char *recdir, bool interpolate) {
   G4Rec *g4rec = new G4Rec();
@@ -779,10 +779,10 @@ void G4FeatSeq::set(G4Rec &g4rec, const char *sens1, const char *sens2) {
   g4rec.computeVar("pos");
   g4rec.computeVar("quat");
   
-  String sens1_dPos = STRING(sens1 << "_dPos");
-  String sens1_dQuat = STRING(sens1 << "_dQuat");
-  String sens1_dPosVar = STRING(sens1_dPos << "Var");
-  String sens1_dQuatVar = STRING(sens1_dQuat << "Var");
+  rai::String sens1_dPos = STRING(sens1 << "_dPos");
+  rai::String sens1_dQuat = STRING(sens1 << "_dQuat");
+  rai::String sens1_dPosVar = STRING(sens1_dPos << "Var");
+  rai::String sens1_dQuatVar = STRING(sens1_dQuat << "Var");
   
   g4rec.computeDPos(sens1);
   g4rec.computeDQuat(sens1);

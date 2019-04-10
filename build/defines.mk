@@ -66,6 +66,15 @@ LPATHS += /usr/src/gtest
 LIBS += -lgtest -lpthread
 endif
 
+ifeq ($(GLFW),1)
+DEPEND_UBUNTU += libglfw3-dev
+CXXFLAGS  += -DRAI_GLFW
+#CPATH := $(HOME)/opt/include:$(CPATH)
+#LPATH := $(HOME)/opt/lib:$(LPATH)
+LIBS      += -lglfw
+GL := 1
+endif
+
 ifeq ($(FREEGLUT),1)
 DEPEND_UBUNTU += freeglut3-dev
 CXXFLAGS  += -DRAI_FREEGLUT
@@ -96,7 +105,7 @@ QT := 1
 endif
 
 ifeq ($(GL),1)
-DEPEND_UBUNTU += libglew-dev
+DEPEND_UBUNTU += libglew-dev freeglut3-dev
 CXXFLAGS  += -DRAI_GL
 LIBS += -lGLEW -lglut -lGLU -lGL -lX11
 endif
@@ -131,6 +140,12 @@ endif
 ifeq ($(ODE),1)
 CXXFLAGS  += -DRAI_ODE -DdDOUBLE
 LIBS += -lode
+endif
+
+ifeq ($(FCL),1)
+DEPEND_UBUNTU += libfcl-0.5-dev
+CXXFLAGS  += -DRAI_FCL
+LIBS      += -lfcl
 endif
 
 ifeq ($(SWIFT),1)
@@ -233,6 +248,13 @@ ifeq ($(OPENCV),1)
     %CPATH := $(CPATH):$(IFLAGS:\-I%=\:%\:) % is it possible to add the includes to the CPATH?
     LIBS      += `pkg-config --libs opencv`
   endif
+endif
+
+ifeq ($(OPENCV4),1)
+CXXFLAGS  += -DRAI_OPENCV
+CPATH := $(HOME)/opt/include/opencv4/:$(CPATH)
+LPATH := $(HOME)/opt/lib:$(LPATH)
+LIBS += -lopencv_core -lopencv_highgui
 endif
 
 ifeq ($(HSL),1)
@@ -376,12 +398,14 @@ LIBS += -Wl,--start-group -lpthread -lrt\
 endif
 
 ifeq ($(BULLET),1)
-BULLET_PATH=$(HOME)/git/bullet3
-CXXFLAGS  += -DRAI_BULLET
-LPATH := $(BULLET_PATH)/bin:$(LPATH)
-CPATH := $(CPATH):$(BULLET_PATH)/src
-btLIB = _gmake_x64_release
-LIBS += -lBulletSoftBody$(btLIB) -lBulletDynamics$(btLIB) -lBulletCollision$(btLIB)  -lLinearMath$(btLIB)
+#BULLET_PATH=$(HOME)/git/bullet3
+CXXFLAGS  += -DRAI_BULLET -DBT_USE_DOUBLE_PRECISION
+CPATH := $(HOME)/opt/include/bullet/:$(CPATH)
+LPATH := $(HOME)/opt/lib:$(LPATH)
+#LPATH := $(BULLET_PATH)/bin:$(LPATH)
+#CPATH := $(CPATH):$(BULLET_PATH)/src
+#btLIB = _gmake_x64_release
+LIBS += -lBulletSoftBody -lBulletDynamics -lBulletCollision  -lLinearMath
 endif
 
 ifeq ($(PORTAUDIO),1)

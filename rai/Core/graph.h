@@ -71,7 +71,7 @@ struct Node {
   bool matches(const char *key); ///< return true, if 'key' is in keys
   bool matches(const StringA &query_keys); ///< return true, if all query_keys are in keys
   
-  void write(std::ostream &os) const;
+  void write(std::ostream &os, bool pythonMode=false) const;
   
   //-- virtuals implemented by Node_typed
   virtual void copyValue(Node*) {NIY}
@@ -492,12 +492,6 @@ template<class T> Node_typed<T> *Graph::newNode(const T& x) {
 }
 
 //===========================================================================
-
-// macro for declaring types (in *.cpp files)
-#define REGISTER_TYPE(Key, T) \
-  RUN_ON_INIT_BEGIN(Decl_Type##_##Key) \
-  registry()->newNode<std::shared_ptr<Type> >({rai::String("Decl_Type"), rai::String(#Key)}, NodeL(), std::make_shared<Type_typed_readable<T> >()); \
-  RUN_ON_INIT_END(Decl_Type##_##Key)
 
 #endif
 

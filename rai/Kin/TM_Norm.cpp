@@ -9,7 +9,7 @@
 #include "TM_Norm.h"
 
 void TM_Norm::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
-  map->phi(y, J, G);
+  map->__phi(y, J, G);
   double l = sqrt(sumOfSqr(y));
   if(!!J) J = ~(y/l)*J;
   y = ARR(l);

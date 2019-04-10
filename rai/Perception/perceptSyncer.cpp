@@ -20,9 +20,6 @@ SyncFiltered::~SyncFiltered() {
   threadClose();
 }
 
-void SyncFiltered::open() {
-}
-
 void SyncFiltered::step() {
   uintA existingIDs;
   
@@ -35,7 +32,8 @@ void SyncFiltered::step() {
   
   // delete non-existing bodies
   kin.writeAccess();
-  for(rai::Frame *b:kin().frames) {
+  for(uint i=kin().frames.N;i--;){
+    rai::Frame *b = kin().frames.elem(i);
     if(b->name.startsWith("perc_")) {
       uint id;
       b->name.resetIstream();

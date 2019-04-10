@@ -128,12 +128,15 @@ bool Node::matches(const StringA &query_keys) {
   return true;
 }
 
-void Node::write(std::ostream& os) const {
+void Node::write(std::ostream& os, bool pythonMode) const {
   if(!container.isIndexed) container.index();
   
   //-- write keys
-  keys.write(os, " ", "", "\"\"");
-  
+  if(pythonMode)
+    keys.write(os, " ", "", "\"\"");
+  else
+    keys.write(os, " ", "", "\0\0");
+
   //-- write parents
   if(parents.N) {
     //    if(keys.N) os <<' ';
@@ -158,14 +161,14 @@ void Node::write(std::ostream& os) const {
     for(Node *it: (*getValue<NodeL>())) os <<' ' <<it->keys.last();
     os <<" )";
   } else if(isOfType<rai::String>()) {
-#if 0
-    const rai::String& str = *getValue<rai::String>();
-    char c=str(0);
-    if((c>='a'&& c<='z') || (c>='A'&& c<='Z') ) os <<":" <<str;
-    else os <<":\"" <<str <<'"';
-#else
-    os <<":\"" <<*getValue<rai::String>() <<'"';
-#endif
+    if(pythonMode){
+      os <<":\"" <<*getValue<rai::String>() <<'"';
+    }else{
+      const rai::String& str = *getValue<rai::String>();
+      char c=str(0);
+      if((c>='a'&& c<='z') || (c>='A'&& c<='Z') ) os <<":" <<str;
+      else os <<":\"" <<str <<'"';
+    }
   } else if(isOfType<rai::FileToken>()) {
     os <<":'" <<getValue<rai::FileToken>()->name <<'\'';
   } else if(isOfType<arr>()) {
@@ -179,7 +182,7 @@ void Node::write(std::ostream& os) const {
   } else if(isOfType<bool>()) {
     if(*getValue<bool>()) os <<":True"; else os <<":False";
   } else if(isOfType<Type*>()) {
-    os <<":"; get<Type*>()->write(os);
+    os <<':'; get<Type*>()->write(os);
   } else {
     Node *it = reg_findType(type.name());
     if(it && it->keys.N>1) {
@@ -665,7 +668,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, rai::Strin
   pinfo.value_beg=(long int)is.tellg()-1;
   if(c=='=' || c==':' || c=='{' || c=='[' || c=='<' || c=='!' || c=='\'') {
     if(c=='=' || c==':') c=rai::getNextChar(is," \t");
-    if((c>='a' && c<='z') || (c>='A' && c<='Z')) { //rai::String or boolean
+    if((c>='a' && c<='z') || (c>='A' && c<='Z') || c=='_') { //rai::String or boolean
       is.putback(c);
       str.read(is, "", " \n\r\t,;}", false);
       if(str=="true") node = newNode<bool>(keys, parents, true);

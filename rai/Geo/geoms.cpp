@@ -11,22 +11,16 @@
 #include <Core/graph.h>
 #include <Gui/opengl.h>
 
-Singleton<rai::GeomStore> _GeomStore;
-
 template<> const char* rai::Enum<rai::ShapeType>::names []= {
   "box", "sphere", "capsule", "mesh", "cylinder", "marker", "SSBox", "pointCloud", "ssCvx", "ssBox", NULL
 };
 
-rai::Geom::Geom(rai::GeomStore &_store) : store(_store), type(ST_none) {
-  ID=store.geoms.N;
-  store.geoms.append(this);
+rai::Geom::Geom() : type(ST_none) {
   size = {1.,1.,1.,.1};
   mesh.C = consts<double>(.8, 3); //color[0]=color[1]=color[2]=.8; color[3]=1.;
-  
 }
 
 rai::Geom::~Geom() {
-  store.geoms(ID) = NULL;
 }
 
 void rai::Geom::read(const Graph &ats) {
@@ -83,7 +77,7 @@ void rai::Geom::createMeshes() {
       double rad=1;
       if(size.N==1) rad=size(0);
       else rad=size(3);
-      mesh.setSSCvx(sscCore, rad, 3);
+      mesh.setSSCvx(sscCore, rad);
       //      mesh.setSphere();
       //      mesh.scale(size(3), size(3), size(3));
     } break;
@@ -106,7 +100,7 @@ void rai::Geom::createMeshes() {
       break;
     case rai::ST_mesh:
     case rai::ST_pointCloud:
-      CHECK(mesh.V.N, "mesh needs to be loaded");
+      if(!mesh.V.N) LOG(-1) <<"mesh needs to be loaded";
       size(3) = 0.;
 //    sscCore = mesh;
 //    sscCore.makeConvexHull();
@@ -139,6 +133,13 @@ void rai::Geom::createMeshes() {
 }
 
 void rai::Geom::glDraw(OpenGL &gl) {
+  if(type==rai::ST_marker){
+    glDrawDiamond(size(0)/5., size(0)/5., size(0)/5.); glDrawAxes(size(0), !gl.drawMode_idColor);
+  }else{
+    if(!mesh.V.N) createMeshes();
+    mesh.glDraw(gl);
+    return;
+  }
   bool drawCores = false;
   bool drawMeshes = true;
   switch(type) {
@@ -204,18 +205,4 @@ void rai::Geom::glDraw(OpenGL &gl) {
       
     default: HALT("can't draw that geom yet");
   }
-}
-
-rai::GeomStore::~GeomStore() {
-  for(Geom* g:geoms) if(g) delete g;
-#ifndef RAI_NOCHECK
-  for(Geom* g:geoms) CHECK(!g, "geom is not deleted");
-#endif
-  geoms.clear();
-}
-
-rai::Geom &rai::GeomStore::get(uint id) {
-  Geom *g=geoms.elem(id);
-  CHECK(g, "geom does not exist");
-  return *g;
 }

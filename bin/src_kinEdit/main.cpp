@@ -42,7 +42,7 @@ int MAIN(int argc,char **argv){
     K.checkConsistency();
     K >>FILE("z.g");
     //some optional manipulations
-    K.optimizeTree(false);
+    K.optimizeTree();
     K.calc_q();
     K.checkConsistency();
     if(K.fwdActiveSet.N == K.frames.N) K.sortFrames();
@@ -58,7 +58,7 @@ int MAIN(int argc,char **argv){
 
     if(rai::checkParameter<bool>("cleanOnly")) return 0;
 
-    editConfiguration(file, K, K.gl());
+    editConfiguration(file, K);
 
   return 0;
 }

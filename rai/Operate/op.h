@@ -2,7 +2,6 @@
 #include <iomanip>
 
 typedef std::function<int()> Script;
-enum ActStatus { AS_init=-1, AS_running, AS_done, AS_converged, AS_stalled, AS_true, AS_false, AS_kill };
 
 struct Act {
   Var<ActStatus> status;
@@ -35,8 +34,8 @@ struct Act_Script : Act, Thread{
 };
 
 template<class T> struct Act_LoopStep : Act, Thread{
-    shared_ptr<T> script;
-  Act_LoopStep(const shared_ptr<T>& S, double beatIntervalSec=-1.)
+    ptr<T> script;
+  Act_LoopStep(const ptr<T>& S, double beatIntervalSec=-1.)
       :  Thread("Act_Script", beatIntervalSec), script(S){
       if(beatIntervalSec<0.) threadStep();
       else threadLoop();
@@ -53,7 +52,7 @@ inline Act::Ptr loop(const std::function<int ()>& script, double beatIntervalSec
   return make_shared<Act_Script>(script, beatIntervalSec);
 }
 
-template<class T> Act::Ptr loop(const shared_ptr<T>& script, double beatIntervalSec=.1){
+template<class T> Act::Ptr loop(const ptr<T>& script, double beatIntervalSec=.1){
   return make_shared<Act_LoopStep<T>>(script, beatIntervalSec);
 }
 

@@ -60,8 +60,7 @@ struct DisplayThread : MiniThread {
                                  <<lgp->solutions()(i)->decisions;
       }
       lgp->solutions.deAccess();
-      if(saveVideo) gl.computeImage=true;
-      gl.update(NULL, false, false, false);
+      gl.update();
       if(saveVideo) write_ppm(gl.captureImage, STRING(OptLGPDataPath <<"vid/" <<std::setw(3)<<std::setfill('0')<<t++<<".ppm"));
     }
   }
@@ -99,8 +98,7 @@ void initFolStateFromKin(FOL_World& L, const rai::KinematicWorld& K) {
 }
 
 LGP_Tree::LGP_Tree()
-  : verbose(2), numSteps(0),
-    solutions("OptLGPsolutions"){
+  : verbose(2), numSteps(0){
   dataPath <<"z." <<rai::date2() <<"/";
   dataPath = rai::getParameter<rai::String>("LGP_dataPath", dataPath);
   rai::system(STRING("mkdir -p " <<dataPath));
@@ -120,6 +118,7 @@ LGP_Tree::LGP_Tree()
 
 LGP_Tree::LGP_Tree(const rai::KinematicWorld& _kin, const char *folFileName) : LGP_Tree() {
   kin.copy(_kin);
+  if(collisions) kin.swift(); //initialize swift in root model (SwiftInterface is reference by all child models)
   fol.init(folFileName);
   initFolStateFromKin(fol, kin);
   if(verbose>0) cout <<"INITIAL LOGIC STATE = " <<*fol.start_state <<endl;
@@ -146,9 +145,9 @@ LGP_Tree::~LGP_Tree() {
 void LGP_Tree::initDisplay() {
   if(verbose>2 && !views.N) {
     views.resize(4);
-    views(1) = make_shared<KinPathViewer>("pose", 1.2, -1);
-    views(2) = make_shared<KinPathViewer>("sequence", 1.2, -1);
-    views(3) = make_shared<KinPathViewer>("path", .05, -2);
+    views(1) = make_shared<KinPathViewer>(Var<WorldL>(), 1.2, -1);
+    views(2) = make_shared<KinPathViewer>(Var<WorldL>(), 1.2, -1);
+    views(3) = make_shared<KinPathViewer>(Var<WorldL>(), .05, -2);
     for(auto& v:views) if(v) v->copy.orsDrawJoints=v->copy.orsDrawMarkers=v->copy.orsDrawProxies=false;
   }
   if(!dth) dth = new DisplayThread(this);
@@ -624,8 +623,8 @@ LGP_Tree_SolutionData::LGP_Tree_SolutionData(LGP_Tree& _tree, LGP_Node *_node) :
       frameIDs.append(a->ID);
     }
   }
-  geomIDs.resizeAs(frameIDs);
-  for(uint i=0; i<geomIDs.N; i++) geomIDs(i) = K.frames(frameIDs(i))->shape->geom->ID;
+  geoms.resize(frameIDs.N);
+  for(uint i=0; i<geoms.N; i++) geoms(i) = K.frames(frameIDs(i))->shape->geom;
   
   uint L = node->komoProblem.N;
   paths.resize(L);
@@ -650,18 +649,17 @@ void LGP_Tree_SolutionData::write(std::ostream &os) const {
 void LGP_Tree_SolutionData::glDraw(OpenGL &gl) {
 #ifdef RAI_GL
   BoundType displayBound=tree.displayBound;
-  rai::Array<rai::Geom*>& geoms = _GeomStore()->geoms;
-  
+
   if(!paths(displayBound).N) return;
   
-  for(uint i=0; i<geomIDs.N; i++) {
+  for(uint i=0; i<geoms.N; i++) {
     if(displayStep >= paths(displayBound).d0) displayStep = 0;
     rai::Transformation &X = paths(displayBound)(displayStep, i);
     double GLmatrix[16];
     X.getAffineMatrixGL(GLmatrix);
     glLoadMatrixd(GLmatrix);
     
-    geoms(geomIDs(i))->glDraw(gl);
+    geoms(i)->glDraw(gl);
   }
 #endif
 }

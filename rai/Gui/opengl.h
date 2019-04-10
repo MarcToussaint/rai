@@ -129,9 +129,9 @@ struct OpenGL {
   struct GLView     { double le, ri, bo, to;  rai::Array<GLDrawer*> drawers;  rai::Camera camera;  byteA *img;  rai::String text;  GLView() { img=NULL; le=bo=0.; ri=to=1.; } };
   
   /// @name data fields
-  rai::Array<GLView> views;            ///< list of draw routines
-  rai::Array<GLDrawer*> drawers;        ///< list of draw routines
-  rai::Array<GLInitCall*> initCalls;    ///< list of initialization routines
+  rai::Array<GLView> views;            ///< list of subviews
+  rai::Array<GLDrawer*> drawers;       ///< list of draw routines
+  rai::Array<GLInitCall*> initCalls;   ///< list of initialization routines
   rai::Array<GLHoverCall*> hoverCalls; ///< list of hover callbacks
   rai::Array<GLClickCall*> clickCalls; ///< list of click callbacks
   rai::Array<GLKeyCall*> keyCalls;     ///< list of click callbacks
@@ -139,6 +139,7 @@ struct OpenGL {
   
   rai::String title;     ///< the window title
   uint width, height;
+  bool offscreen;
   rai::Camera camera;     ///< the camera used for projection
   rai::String text;        ///< the text to be drawn as title within the opengl frame
   float clearR, clearG, clearB, clearA;  ///< colors of the beackground (called in glClearColor(...))
@@ -151,14 +152,12 @@ struct OpenGL {
   bool mouseIsDown;
   rai::Array<GLSelect> selection; ///< list of all selected objects
   GLSelect *topSelection;        ///< top selected object
-  bool immediateExitLoop;
   bool drawFocus;
-  bool computeImage, computeDepth, computeIdImage;
-  byteA background, captureImage, captureIdImage;
+  byteA background, captureImage;
   floatA captureDepth;
   double backgroundZoom;
   arr P; //camera projection matrix
-  RWLock dataLock; //'data' means anything: member fields (camera, variables), drawers, data the drawers access
+  Mutex dataLock; //'data' means anything: member fields (camera, variables), drawers, data the drawers access
 //  uint fbo, render_buf;
   uint fboId;
   uint rboColor;
@@ -168,7 +167,7 @@ struct OpenGL {
   bool drawMode_idColor=false;
   
   /// @name constructors & destructors
-  OpenGL(const char* title="rai::OpenGL", int w=400, int h=400, int posx=-1, int posy=-1);
+  OpenGL(const char* title="rai::OpenGL", int w=400, int h=400, bool _offscreen=false);
   //OpenGL(void *parent, const char* title="rai::OpenGL", int w=400, int h=400, int posx=-1, int posy=-1);
   OpenGL(void *container); //special constructor: used when the underlying system-dependent class exists already
   
@@ -180,10 +179,10 @@ struct OpenGL {
   void add(void (*call)(void*), void* classP=NULL);
   void addInit(void (*call)(void*), void* classP=NULL);
   void add(std::function<void(OpenGL&)> drawer);
-  void add(GLDrawer& c) { dataLock.writeLock(); drawers.append(&c); dataLock.unlock(); }
+  void add(GLDrawer& c) { auto _dataLock = dataLock(RAI_HERE); drawers.append(&c); }
   template<class T> void add(Var<T>& c) { add(c.set()); }
-  void addDrawer(GLDrawer *c) { dataLock.writeLock(); drawers.append(c); dataLock.unlock(); }
-  void remove(GLDrawer& c) { dataLock.writeLock(); drawers.removeValue(&c); dataLock.unlock(); }
+  void addDrawer(GLDrawer *c) { auto _dataLock = dataLock(RAI_HERE); drawers.append(c); }
+  void remove(GLDrawer& c) { auto _dataLock = dataLock(RAI_HERE); drawers.removeValue(&c); }
   //template<class T> void add(const T& x) { add(x.staticDraw, &x); } ///< add a class or struct with a staticDraw routine
   void addHoverCall(GLHoverCall *c) { hoverCalls.append(c); }
   void addClickCall(GLClickCall *c) { clickCalls.append(c); }
@@ -197,10 +196,10 @@ struct OpenGL {
   /// @name the core draw routines (actually only for internal use)
   void Draw(int w, int h, rai::Camera *cam=NULL, bool callerHasAlreadyLocked=false);
   void Select(bool callerHasAlreadyLocked=false);
-  void renderInBack(bool computeImage=true, bool captureDepth=false, int w=-1, int h=-1);
+  void renderInBack(int w=-1, int h=-1);
   
   /// @name showing, updating, and watching
-  int update(const char *text=NULL, bool computeImage=false, bool captureDepth=false, bool waitForCompletedDraw=true);
+  int update(const char *text=NULL, bool nonThreaded=false);
   int watch(const char *text=NULL);
   int timedupdate(double sec);
   void resize(int w, int h);
@@ -224,30 +223,29 @@ struct OpenGL {
 public: //driver dependent methods
   void openWindow();
   void closeWindow();
+  void beginNonThreadedDraw();
+  void endNonThreadedDraw();
   void postRedrawEvent(bool fromWithinCallback);
-#if !defined RAI_MSVC && !defined RAI_QTGL
-  //  Display* xdisplay();
-  //  Drawable xdraw();
-#endif
-  void forceGlutInit();
   
-protected:
+public:
   GLEvent lastEvent;
   static uint selectionBuffer[1000];
   
   void init(); //initializes camera etc
   
   //general callbacks (used by all implementations)
-  void Key(unsigned char key, int x, int y);
-  void Mouse(int button, int updown, int x, int y);
-  void Motion(int x, int y);
-public:
-  void Reshape(int w, int h);
 protected:
-  void MouseWheel(int wheel, int direction, int x, int y);
+  rai::Vector downVec,downPos,downFoc;
+  rai::Quaternion downRot;
+  void Key(unsigned char key);
+  void MouseButton(int button, int updown, int x, int y);
+  void MouseMotion(int x, int y);
+  void Reshape(int w, int h);
+  void Scroll(int wheel, int direction);
   void WindowStatus(int status);
   
   friend struct sOpenGL;
+  friend struct GlfwSpinner;
   friend bool glClickUI(void *p, OpenGL *gl);
 };
 

@@ -42,7 +42,7 @@ struct SwiftInterface {
   void deactivate(const FrameL& shapes1, const FrameL& shapes2);
   void deactivate(const FrameL& shapes);
   
-  void initActivations(const rai::KinematicWorld& world, uint parentLevelsToDeactivate=1);
+  void initActivations(const rai::KinematicWorld& world);
   void swiftQueryExactDistance();
   uint countObjects();
 };

@@ -10,6 +10,7 @@
 #define RAI_color_h
 
 #include <Core/util.h>
+#include <Core/array.h>
 
 namespace rai {
 /// simple float[3] color class
@@ -104,6 +105,8 @@ public:
   
   /// get the gray value (average of RGB)
   float getGray() const { return (r+g+b)/3.; }
+
+  arr getArr() const { return ARR(r,g,b); }
   
   /// mix with white
   void whiten(float f) {

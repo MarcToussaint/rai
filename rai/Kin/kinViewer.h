@@ -20,32 +20,13 @@ void renderConfigurations(const WorldL& cs, const char* filePrefix="vid/z.", int
 
 //===========================================================================
 
-struct KinViewer_old : Thread {
-  Var<rai::KinematicWorld> modelWorld;
-  //-- outputs
-  Var<byteA> modelCameraView;
-  Var<floatA> modelDepthView;
-  //-- internal (private)
-  rai::KinematicWorld copy;
-  bool computeCameraView;
-  
-  KinViewer_old(const char* varname="modelWorld", double beatIntervalSec=-1., bool computeCameraView=false);
-  ~KinViewer_old();
-  void open();
-  void step();
-  void close() {}
-};
-
-//===========================================================================
-
 struct KinViewer : Thread {
   Var<rai::KinematicWorld> world;
   MeshA meshesCopy;
   ProxyA proxiesCopy;
   struct OpenGL *gl;
   int cameraFrameID=-1;
-  KinViewer(const char* world_name="modelWorld", double beatIntervalSec=-1.);
-  KinViewer(Var<rai::KinematicWorld>& _kin, double beatIntervalSec=-1., const char* _cameraFrameName=NULL);
+  KinViewer(const Var<rai::KinematicWorld>& _kin, double beatIntervalSec=-1., const char* _cameraFrameName=NULL);
   ~KinViewer();
   void open();
   void step();
@@ -58,6 +39,7 @@ struct KinPathViewer : Thread {
   Var<WorldL> configurations;
   //-- internal (private)
   rai::KinematicWorld copy;
+  struct OpenGL *gl;
   uint t;
   int tprefix;
   bool writeToFiles;
@@ -66,11 +48,11 @@ struct KinPathViewer : Thread {
   void setConfigurations(const WorldL& cs);
   void clear();
   
-  KinPathViewer(const char* varname, double beatIntervalSec=.2, int tprefix=0);
+  KinPathViewer(const Var<WorldL>& _configurations, double beatIntervalSec=.2, int tprefix=0);
   ~KinPathViewer();
   void open();
   void step();
-  void close() {}
+  void close();
 };
 
 //===========================================================================
@@ -84,7 +66,7 @@ struct KinPoseViewer : Thread, GLDrawer {
   rai::KinematicWorld copy;
   WorldL copies;
   
-  KinPoseViewer(const char* modelVarName, const StringA& poseVarNames, double beatIntervalSec=-1.);
+//  KinPoseViewer(const char* modelVarName, const StringA& poseVarNames, double beatIntervalSec=-1.);
   KinPoseViewer(Var<rai::KinematicWorld>& _kin, const Var<arr>& _frameState, double beatIntervalSec=-1.);
   ~KinPoseViewer();
   
@@ -110,7 +92,7 @@ struct ComputeCameraView : Thread {
   rai::KinematicWorld copy;
   bool getDepth;
   
-  ComputeCameraView(double beatIntervalSec=-1., const char* modelWorld_name="modelWorld");
+  ComputeCameraView(const Var<rai::KinematicWorld>& _modelWorld, double beatIntervalSec=-1.);
   ~ComputeCameraView();
   void open();
   void step();

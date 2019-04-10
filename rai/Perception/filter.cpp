@@ -13,9 +13,9 @@
 
 Filter::Filter()
   : Thread("Filter", -1.),
-    percepts_input(this, "percepts_input", true), //listens!!
-    percepts_filtered(this, "percepts_filtered"),
-    modelWorld(this, "modelWorld") {
+    percepts_input(this, true), //listens!!
+    percepts_filtered(this),
+    modelWorld(this) {
   threadOpen();
 }
 
@@ -161,7 +161,8 @@ void Filter::step() {
   modelWorld.writeAccess();
   modelWorld->selectJointsByName({"S1"});
 
-  TaskControlMethods taskController(modelWorld());
+  TaskControlMethods taskController(rai::getParameter<double>("Hrate", .1)*modelWorld->getHmetric());
+  CtrlTaskL tasks;
   arr q=modelWorld().q;
   
   // create task costs on the modelWorld for each percept
@@ -179,27 +180,27 @@ void Filter::step() {
 
       CtrlTask *t;
       
-      t = new CtrlTask(STRING("syncPos_" <<b->name), new TM_Default(TMT_pos, b->ID));
-      t->ref = new MotionProfile_Const(p->pose.pos.getArr());
-      taskController.tasks.append(t);
+      t = new CtrlTask(STRING("syncPos_" <<b->name), make_shared<TM_Default>(TMT_pos, b->ID));
+      t->ref = make_shared<MotionProfile_Const>(p->pose.pos.getArr());
+      tasks.append(t);
       
-      t = new CtrlTask(STRING("syncQuat_" <<b->name), new TM_Default(TMT_quat, b->ID));
-      t->ref = new MotionProfile_Const(p->pose.rot.getArr4d(), true);
-      taskController.tasks.append(t);
+      t = new CtrlTask(STRING("syncQuat_" <<b->name), make_shared<TM_Default>(TMT_quat, b->ID));
+      t->ref = make_shared<MotionProfile_Const>(p->pose.rot.getArr4d(), true);
+      tasks.append(t);
     }
   }
   
   double cost=0.;
-  taskController.updateCtrlTasks(0., modelWorld()); //computes their values and Jacobians
-  arr dq = taskController.inverseKinematics(NoArr, NoArr, &cost);
+  for(CtrlTask* t: tasks) t->update(.0, modelWorld()); //computes their values and Jacobians
+  arr dq = taskController.inverseKinematics(tasks, NoArr, NoArr, NoArr, &cost);
   q += dq;
   
   if(verbose>0) {
     LOG(0) <<"FILTER: IK cost=" <<cost <<" perc q vector = " <<q <<endl;
-    taskController.reportCurrentState();
+    taskController.reportCurrentState(tasks);
   }
   
-  listDelete(taskController.tasks); //cleanup tasks
+  listDelete(tasks); //cleanup tasks
   
   modelWorld->setJointState(q);
   modelWorld->selectJointsByName({}, true);

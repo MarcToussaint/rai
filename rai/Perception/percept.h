@@ -25,6 +25,7 @@ struct Percept : GLDrawer {
   rai::Enum<Type> type;
   double precision = 1.;
   rai::Transformation pose;
+  rai::Vector com=0;
   std::string frame_id;
   Percept(Type type);
   Percept(Type type, const rai::Transformation& _pose);

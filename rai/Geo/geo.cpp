@@ -10,11 +10,6 @@
 #include <Core/array.h>
 #include "geo.h"
 
-#ifndef RAI_NO_REGISTRY
-#include <Core/graph.h>
-REGISTER_TYPE(T, rai::Transformation)
-#endif
-
 #ifdef RAI_GL
 #  include <GL/glu.h>
 #endif
@@ -1469,7 +1464,9 @@ void Transformation::read(std::istream& is) {
         case 'T': break; //old convention
         case '|':
         case '>': is.putback(c); return; //those symbols finish the reading without error
-        default: RAI_MSG("unknown Transformation read tag: " <<c <<"abort reading this frame"); is.putback(c); return;
+        default:{
+          RAI_MSG("unknown Transformation read tag: " <<c <<"abort reading this frame"); is.putback(c); return;
+        }
       }
     if(is.fail()) HALT("error reading '" <<c <<"' parameters in frame");
   }
@@ -1888,18 +1885,14 @@ arr Camera::getInverseProjectionMatrix() const{
 
 /// convert from gluPerspective's non-linear [0, 1] depth to the true [zNear, zFar] depth
 double Camera::glConvertToTrueDepth(double d) const {
-  CHECK(!heightAbs, "I think this is wrong for ortho view");
-  return zNear + (zFar-zNear)*d/(zFar/zNear*(1.-d)+1.);
-//  return zNear + (zFar-zNear) * glConvertToLinearDepth(d);
+  if(heightAbs) return zNear + (zFar-zNear)*d;
+  return zNear + (zFar-zNear)*d/((zFar-zNear)/zNear*(1.-d)+1.); //TODO: optimize numerically
 }
 
 /// convert from gluPerspective's non-linear [0, 1] depth to the linear [0, 1] depth
 double Camera::glConvertToLinearDepth(double d) const {
   CHECK(!heightAbs, "I think this is wrong for ortho view");
-  return d/(zFar/zNear*(1.-d)+1.);
-//  d = 2.0 * d - 1.0;
-//  d = 2.0 * zNear * zFar / (zFar + zNear - d * (zFar - zNear));
-//  return d;
+  return d/((zFar-zNear)/zNear*(1.-d)+1.);
 }
 
 void Camera::project2PixelsAndTrueDepth(arr& x, double width, double height) const{

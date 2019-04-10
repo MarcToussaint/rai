@@ -71,10 +71,8 @@ void TEST(Align){
 //===========================================================================
 
 void TEST(PR2){
-  //NOTE: this uses a 25-DOF whole-body-motion model of thbe PR2
   rai::KinematicWorld K("model.g");
-  K.pruneRigidJoints();
-  K.optimizeTree();
+  K.optimizeTree(true);
 //  makeConvexHulls(K.frames);
   cout <<"configuration space dim=" <<K.getJointStateDimension() <<endl;
   double rand = rai::getParameter<double>("KOMO/moveTo/randomizeInitialPose", .0);
@@ -112,7 +110,7 @@ void TEST(FinalPosePR2){
   cout <<"configuration space dim=" <<K.getJointStateDimension() <<endl;
   arr x = finalPoseTo(K, *K.getFrameByName("endeff"), *K.getFrameByName("target"));
   K.setJointState(x.reshape(x.N));
-  K.gl().watch();
+  K.watch(true);
 }
 
 //===========================================================================
@@ -120,11 +118,11 @@ void TEST(FinalPosePR2){
 int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
-  rnd.clockSeed();
+//  rnd.clockSeed();
 
-  testEasy();
+//  testEasy();
 //  testAlign();
-//  testPR2();
+  testPR2();
 
   return 0;
 }

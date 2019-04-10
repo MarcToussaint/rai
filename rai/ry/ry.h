@@ -14,14 +14,16 @@
 #include <Gui/viewer.h>
 #include <LGP/LGP_tree.h>
 
+struct BulletInterface;
+
 namespace ry{
 
   typedef Var<rai::KinematicWorld> Config;
 
-  struct ConfigViewer { shared_ptr<KinViewer> view; };
-  struct PathViewer { shared_ptr<KinPoseViewer> view; };
-  struct ImageViewer { shared_ptr<::ImageViewer> view; };
-  struct PointCloudViewer { shared_ptr<::PointCloudViewer> view; };
+  struct ConfigViewer { ptr<KinViewer> view; };
+  struct PathViewer { ptr<KinPoseViewer> view; };
+  struct ImageViewer { ptr<::ImageViewer> view; };
+  struct PointCloudViewer { ptr<::PointCloudViewer> view; };
 
   struct RyKOMO{
     RyKOMO(){}
@@ -41,34 +43,35 @@ namespace ry{
       config.set() = komo->world;
       komo->setPathOpt(phases, stepsPerPhase, timePerPhase);
     }
-    RyKOMO(const shared_ptr<KOMO>& _komo){
+    RyKOMO(const ptr<KOMO>& _komo){
       komo = _komo;
     }
 
-    shared_ptr<KOMO> komo;
+    ptr<KOMO> komo;
     Var<rai::KinematicWorld> config;
     Var<arr> path;
   };
 
-  struct RyLGP_Tree { shared_ptr<LGP_Tree_Thread> lgp; };
+  struct RyLGP_Tree { ptr<LGP_Tree_Thread> lgp; };
 
-  struct RyFeature { Feature *feature=0; };
+  struct RyFeature { ptr<Feature> feature; };
   struct RyFrame { rai::Frame *frame=0; };
 
   struct RyCameraView {
-    shared_ptr<rai::CameraView> cam;
+    ptr<rai::CameraView> cam;
     Var<byteA> image;
     Var<floatA> depth;
     Var<byteA> segmentation;
     Var<arr> pts;
   };
+
+  struct RyBullet { std::shared_ptr<BulletInterface> bullet; };
 }
 
 namespace ry{
 
 typedef std::pair<std::vector<unsigned int>, std::vector<double> > I_arr;
 typedef std::vector<std::string> I_StringA;
-template<class T> using ptr=std::shared_ptr<T>;
 typedef std::map<std::string, std::string> I_dict;
 typedef std::map<std::string, std::vector<double> > I_args;
 

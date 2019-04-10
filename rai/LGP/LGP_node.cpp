@@ -103,7 +103,7 @@ void LGP_Node::computeEndKinematics(){
                             "push", "graspSlide", "liftDownUp"
                            });
 
-  effKinematics.copy(startKinematics);
+  effKinematics.copy(startKinematics, true);
   KOMO tmp;
   tmp.setModel(startKinematics, false);
   tmp.setTiming(1., 1, 10., 1);
@@ -190,7 +190,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
     cost_here -= 0.1*ret.reward; //account for the symbolic costs
     if(parent) cost_here += parent->cost(bound); //this is sequentially additive cost
     
-    effKinematics = *komo.configurations.last();
+    effKinematics.copy(*komo.configurations.last(), true);
     
     for(rai::KinematicSwitch *sw: komo.switches) {
       //    CHECK_EQ(sw->timeOfApplication, 1, "need to do this before the optimization..");

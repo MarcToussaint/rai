@@ -62,7 +62,7 @@ void testFeature() {
 
   rai_Kin_frame_ignoreQuatNormalizationWarning=true;
 
-  for(uint k=0;k<1000;k++){
+  for(uint k=0;k<100;k++){
     arr x = 5.*(rand(n)-.5);
 
     bool succ=true;
@@ -73,7 +73,7 @@ void testFeature() {
     }
 
     arr y;
-    F.first()->phi(y, NoArr, Ktuple);
+    F.first()->__phi(y, NoArr, Ktuple);
 
     if(!succ) K2.watch(true);
   }

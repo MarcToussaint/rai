@@ -94,7 +94,7 @@ void qhull_free() {
 //===========================================================================
 
 double distanceToConvexHull(const arr &X, const arr &y, arr& distances, arr &projectedPoints, uintA *faceVertices, bool freeqhull) {
-  auto lock = qhullMutex();
+  auto lock = qhullMutex(RAI_HERE);
   
   int exitcode;
   //static const char* cmd = "qhull Tv i p";
@@ -325,7 +325,7 @@ double forceClosure(const arr& C, const arr& Cn, const rai::Vector& center,
 //===========================================================================
 
 arr getHull(const arr& V, uintA& T) {
-  auto lock = qhullMutex();
+  auto lock = qhullMutex(RAI_HERE);
   
   int exitcode;
   uint dim=V.d1;
@@ -376,7 +376,7 @@ arr getHull(const arr& V, uintA& T) {
 //===========================================================================
 
 void getDelaunayEdges(uintA& E, const arr& V) {
-  auto lock = qhullMutex();
+  auto lock = qhullMutex(RAI_HERE);
   
   if(V.d0<3) { E.clear(); return; }
   int exitcode;

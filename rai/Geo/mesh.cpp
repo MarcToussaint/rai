@@ -157,10 +157,13 @@ void rai::Mesh::setDodecahedron() {
 
 void rai::Mesh::setSphere(uint fineness) {
   setOctahedron();
+//  setDodecahedron();
+//  setTetrahedron();
   for(uint k=0; k<fineness; k++) {
     subDivide();
     for(uint i=0; i<V.d0; i++) V[i]() /= length(V[i]);
   }
+  makeConvexHull();
 }
 
 void rai::Mesh::setHalfSphere(uint fineness) {
@@ -171,6 +174,7 @@ void rai::Mesh::setHalfSphere(uint fineness) {
     subDivide();
     for(uint i=0; i<V.d0; i++) V[i]() /= length(V[i]);
   }
+  makeConvexHull();
 }
 
 void rai::Mesh::setCylinder(double r, double l, uint fineness) {
@@ -219,6 +223,7 @@ void rai::Mesh::setSSBox(double x_width, double y_width, double z_height, double
     V(i,1) += rai::sign(V(i,1))*(.5*y_width-r);
     V(i,2) += rai::sign(V(i,2))*(.5*z_height-r);
   }
+  makeConvexHull();
 }
 
 void rai::Mesh::setCappedCylinder(double r, double l, uint fineness) {
@@ -226,6 +231,7 @@ void rai::Mesh::setCappedCylinder(double r, double l, uint fineness) {
   setSphere(fineness);
   scale(r);
   for(i=0; i<V.d0; i++) V(i, 2) += .5*rai::sign(V(i, 2))*l;
+  makeConvexHull();
 }
 
 /** @brief add triangles according to the given grid; grid has to be a 2D
@@ -269,6 +275,7 @@ void rai::Mesh::subDivide() {
     k+=3;
   }
   T = newT;
+//  fuseNearVertices();
 }
 
 void rai::Mesh::subDivide(uint i) {
@@ -352,6 +359,8 @@ void rai::Mesh::makeConvexHull() {
 #if 1
   V = getHull(V, T);
   if(C.nd==2) C = mean(C);
+  Vn.clear();
+  Tn.clear();
   Tt.clear();
   tex.clear();
   texImg.clear();
@@ -593,7 +602,9 @@ void rai::Mesh::fuseNearVertices(double tol) {
   uintA p;
   uint i, j;
   
-  cout <<"fusing vertices: #V=" <<V.d0 <<", sorting.." <<std::flush;
+  if(C.N==V.N) C.clear();
+
+//  cout <<"fusing vertices: #V=" <<V.d0 <<", sorting.." <<std::flush;
   //cout <<V <<endl;
   //sort vertices lexically
   p.setStraightPerm(V.d0);
@@ -602,7 +613,7 @@ void rai::Mesh::fuseNearVertices(double tol) {
   std::sort(p.p, pstop, COMP);
   permuteVertices(*this, p);
   
-  cout <<"permuting.." <<std::flush;
+//  cout <<"permuting.." <<std::flush;
   //cout <<V <<endl;
   p.setStraightPerm(V.d0);
   for(i=0; i<V.d0; i++) {
@@ -620,19 +631,17 @@ void rai::Mesh::fuseNearVertices(double tol) {
   for(i=0; i<T.d0; i++) { y(i, 0)=p(T(i, 0)); y(i, 1)=p(T(i, 1)); y(i, 2)=p(T(i, 2)); }
   T=y;
   
-  cout <<"deleting tris.." <<std::flush;
+//  cout <<"deleting tris.." <<std::flush;
   deleteZeroTriangles(*this);
   
-  cout <<"deleting verts.." <<std::flush;
+//  cout <<"deleting verts.." <<std::flush;
   deleteUnusedVertices();
   
-  cout <<"#V=" <<V.d0 <<", done" <<endl;
+//  cout <<"#V=" <<V.d0 <<", done" <<endl;
   
   Tt.clear();
   tex.clear();
   texImg.clear();
-
-  C.clear();
 }
 
 void getVertexNeighorsList(const rai::Mesh& m, intA& Vt, intA& VT) {
@@ -930,6 +939,16 @@ void rai::Mesh::getBox(double& dx, double& dy, double& dz) const {
   }
 }
 
+arr rai::Mesh::getBox() const {
+  arr a,b;
+  a = b = V[0];
+  for(uint i=0; i<V.d0; i++) {
+    a = elemWiseMin(a, V[i]);
+    b = elemWiseMax(b, V[i]);
+  }
+  return cat(a,b).reshape(2,3);
+}
+
 double rai::Mesh::getRadius() const {
   double r=0.;
   for(uint i=0; i<V.d0; i++) r=rai::MAX(r, sumOfSqr(V[i]));
@@ -1174,6 +1193,12 @@ void rai::Mesh::writePLY(const char *fn, bool bin) {
   free_ply(ply);
 }
 
+bool ply_check_property( PlyElement *elem, const char *prop_name){
+  for(int i=0; i<elem->nprops; i++)
+    if(!strcmp(prop_name, elem->props[i]->name)) return true;
+  return false;
+}
+
 void rai::Mesh::readPLY(const char *fn) {
   struct PlyFace {    unsigned char nverts;  int *verts; };
   struct Vertex {    double x,  y,  z ;  byte r,g,b; };
@@ -1221,11 +1246,12 @@ void rai::Mesh::readPLY(const char *fn) {
       r &= setup_property_ply(ply, &vert_props[1]);
       r &= setup_property_ply(ply, &vert_props[2]);
       if(!r) HALT("no vertices defined??");
-
-      r &= setup_property_ply(ply, &vert_props[3]);
-      r &= setup_property_ply(ply, &vert_props[4]);
-      r &= setup_property_ply(ply, &vert_props[5]);
-      if(r && C.N!=V.N) C.resize(_nverts,3); //has color
+      if(ply_check_property(ply->which_elem, "red")){
+        r &= setup_property_ply(ply, &vert_props[3]);
+        r &= setup_property_ply(ply, &vert_props[4]);
+        r &= setup_property_ply(ply, &vert_props[5]);
+        if(r && C.N!=V.N) C.resize(_nverts,3); //has color
+      }
 
       Vertex vertex;
       for(uint j = 0; j < _nverts; ++j) {
@@ -1800,6 +1826,7 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
       glEnd();
     }
 #else
+    glColor(0.,0.,0.,1.);
     glEnableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_NORMAL_ARRAY);
     if(C.N==V.N) glEnableClientState(GL_COLOR_ARRAY); else glDisableClientState(GL_COLOR_ARRAY);
@@ -1835,6 +1862,22 @@ void glDrawMeshes(void *P) {
     glPopMatrix();
   }
 #endif
+}
+
+void rai::MeshCollection::glDraw(OpenGL& gl){
+  CHECK_EQ(X.nd, 2, "");
+  CHECK_EQ(X.d0, M.N, "");
+  CHECK_EQ(X.d1, 7, "");
+
+  double GLmatrix[16];
+  rai::Transformation t;
+  for(uint i=0;i<M.N;i++) {
+    glPushMatrix();
+    t.set(&X(i,0));
+    glLoadMatrixd(t.getAffineMatrixGL(GLmatrix));
+    M(i)->glDraw(gl);
+    glPopMatrix();
+  }
 }
 
 //==============================================================================
@@ -2312,3 +2355,4 @@ void rai::Mesh::supportMargin(uintA &verts, const arr &dir, double margin, int i
     }
   }
 }
+

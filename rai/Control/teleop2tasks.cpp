@@ -35,40 +35,40 @@ inline bool stopButtons(const arr& gamepadState){
 
 
 Teleop2Tasks::Teleop2Tasks(TaskControlMethods& _MP, const rai::KinematicWorld& K):fmc(_MP) {
-  effPosR = fmc.addPDTask("MoveEffTo_endeffR", .2, 1.8,new TM_Default(TMT_pos, K,"endeffR",NoVector,"base_footprint"));
+  effPosR = fmc.addPDTask(tasks, "MoveEffTo_endeffR", .2, 1.8, make_shared<TM_Default>(TMT_pos, K,"endeffR",NoVector,"base_footprint"));
   effPosR->PD().y_target = {0.8, -.5, 1.};
   
-  effPosL = fmc.addPDTask("MoveEffTo_endeffL", .2, 1.8,new TM_Default(TMT_pos,K,"endeffL",NoVector,"base_footprint"));
+  effPosL = fmc.addPDTask(tasks, "MoveEffTo_endeffL", .2, 1.8, make_shared<TM_Default>(TMT_pos,K,"endeffL",NoVector,"base_footprint"));
   effPosL->PD().y_target = {0.8, .5, 1.};
   
-  fc = fmc.addPDTask("fc_endeffL", .2, 1.8,new TM_Default(TMT_pos,K, "endeffForceL",NoVector,"base_footprint"));
+  fc = fmc.addPDTask(tasks, "fc_endeffL", .2, 1.8, make_shared<TM_Default>(TMT_pos,K, "endeffForceL",NoVector,"base_footprint"));
   fc->PD().y_target = {0.8,0.5,1.};
   fc->f_ref = {15.,15.,15.};
   fc->f_alpha = .075;
   fc->active = true;
   
-  gripperR = fmc.addPDTask("gripperR", .3, 1.8, new TM_qItself(QIP_byJointNames, {"r_gripper_joint"}, K));
+  gripperR = fmc.addPDTask(tasks, "gripperR", .3, 1.8, make_shared<TM_qItself>(QIP_byJointNames, StringA({"r_gripper_joint"}), K));
   gripperR->PD().setTarget({0.01});
   //gripperR->PD().y_target = {.08};  // open gripper 8cm
   
-  gripperL = fmc.addPDTask("gripperL", .3, 1.8, new TM_qItself(QIP_byJointNames, {"l_gripper_joint"}, K));
+  gripperL = fmc.addPDTask(tasks, "gripperL", .3, 1.8, make_shared<TM_qItself>(QIP_byJointNames, StringA({"l_gripper_joint"}), K));
   gripperL->PD().setTarget({0.01});
   //gripperL->PD().y_target = {.08};  // open gripper 8cm
   
-  effOrientationR = fmc.addPDTask("orientationR", .2, 1.8,new TM_Default(TMT_quat,K, "endeffR"));
+  effOrientationR = fmc.addPDTask(tasks, "orientationR", .2, 1.8,make_shared<TM_Default>(TMT_quat,K, "endeffR"));
   effOrientationR->PD().y_target = {1., 0., 0., 0.};
   effOrientationR->PD().flipTargetSignOnNegScalarProduct = true;
   
-  effOrientationL = fmc.addPDTask("orientationL", .2,1.8,new TM_Default(TMT_quat,K, "endeffL"));
+  effOrientationL = fmc.addPDTask(tasks, "orientationL", .2,1.8,make_shared<TM_Default>(TMT_quat,K, "endeffL"));
   effOrientationL->PD().y_target = {1., 0., 0., 0.};
   effOrientationL->PD().flipTargetSignOnNegScalarProduct = true;
   
-  base = fmc.addPDTask("basepos", .2,.8,new TM_qItself(QIP_byJointNames, {"worldTranslationRotation"}, K));
+  base = fmc.addPDTask(tasks, "basepos", .2,.8,make_shared<TM_qItself>(QIP_byJointNames, StringA({"worldTranslationRotation"}), K));
   base->PD().y_target= {0.,0.,0.};
   base->active =false;
 }
 
-rai::Array<CtrlTask*> Teleop2Tasks::getTasks() {
+CtrlTaskL Teleop2Tasks::getTasks() {
   return { effPosR, gripperR, effOrientationR, effPosL, gripperL, effOrientationL, base }; //, fc
 }
 
@@ -84,7 +84,7 @@ void Teleop2Tasks::deactivateTasks() {
   
 }
 
-void Teleop2Tasks::updateMovement(floatA& cal_pose, arr& old_pos, arr& old_effpos, CtrlTask *effPos) {
+void Teleop2Tasks::updateMovement(floatA& cal_pose, arr& old_pos, arr& old_effpos, CtrlTask* effPos) {
   arr pos, pos_div;
   
   //get positiondata

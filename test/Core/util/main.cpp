@@ -5,8 +5,8 @@
 
 void TEST(String){
   //-- basic IO
-  String s("4.123, ");                     // create the string
-  String t1,t2;
+  rai::String s("4.123, ");                     // create the string
+  rai::String t1,t2;
   t1 <<s <<"length=" <<s.N <<'|' <<endl;   // piping into a string (including the endl '\n')
   t2 <<s <<"length=7|" <<endl;
   cout <<t1 <<t2;                          // outputting a string
@@ -41,10 +41,10 @@ void TEST(String){
 }
 
 void TEST(Parameter){
-  String p1 = rai::getParameter<String>("par", String("default1"));
+  rai::String p1 = rai::getParameter<rai::String>("par", rai::String("default1"));
   CHECK_EQ(p1,"default1","");
 
-  String p2 = rai::getParameter<String>("h", String("def2"));
+  rai::String p2 = rai::getParameter<rai::String>("h", rai::String("def2"));
   CHECK_EQ(p2,"def2","");
 
   double d = rai::getParameter<double>("number");

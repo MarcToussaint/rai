@@ -16,6 +16,10 @@ Depth2PointCloud::Depth2PointCloud(Var<floatA>& _depth, float _fx, float _fy, fl
   threadOpen();
 }
 
+Depth2PointCloud::Depth2PointCloud(Var<floatA>& _depth, const arr& Fxypxy)
+    : Depth2PointCloud(_depth, Fxypxy(0), Fxypxy(1), Fxypxy(2), Fxypxy(3)){
+}
+
 Depth2PointCloud::~Depth2PointCloud() {
   threadClose();
 }
@@ -64,4 +68,11 @@ void depthData2pointCloud(arr& pts, const floatA& depth, float fx, float fy, flo
 
   pts.reshape(H, W, 3);
 
+}
+
+
+void depthData2point(double* pt, double* fxypxy){
+  pt[0] =  pt[2] * (pt[0] - fxypxy[2]) / fxypxy[0];
+  pt[1] = -pt[2] * (pt[1] - fxypxy[3]) / fxypxy[1];
+  pt[2] = -pt[2];
 }

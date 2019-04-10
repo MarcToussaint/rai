@@ -13,24 +13,33 @@ void drawInit(void*){
 
 //===========================================================================
 
+extern bool orsDrawWires;
+
 void TEST(Sphere) {
-  OpenGL gl;
   rai::Mesh mesh;
+
+  OpenGL gl;
+  gl.add(drawInit,0);
+  gl.add(mesh);
+  orsDrawWires=true;
 
   //MeshSetTetrahedron(mesh);
   //MeshSetOctahedron(mesh);
   //MeshSetDodecahedron(mesh);
   //MeshSetBox(mesh);
-  mesh.setSphere();
+  mesh.setSphere(2);
   //MeshSetHalfSphere(mesh);
   //MeshSetCylinder(mesh,.2,1.);
   //MeshSetCappedCylinder(mesh,.2,1.);
-  gl.add(drawInit,0);
-  gl.add(mesh);
+  cout <<"#V=" <<mesh.V.d0 <<endl;
   gl.watch();
 
-  getHull(mesh.V, mesh.T);
+  mesh.setSSBox(3,3,3,1,2);
+  cout <<"#V=" <<mesh.V.d0 <<endl;
+  gl.watch();
 
+  mesh.setCappedCylinder(1,3,2);
+  cout <<"#V=" <<mesh.V.d0 <<endl;
   gl.watch();
 }
 

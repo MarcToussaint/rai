@@ -35,6 +35,8 @@ void testConstraint(ConstrainedProblem& p, uint dim_x, arr& x_start=NoArr, uint 
   default: NIY;
   }
 
+  double muInc = rai::getParameter<double>("opt/aulaMuInc", 1.5);
+
   //-- initial x
   arr x(dim_x);
   if(!!x_start) x=x_start;
@@ -73,9 +75,9 @@ void testConstraint(ConstrainedProblem& p, uint dim_x, arr& x_start=NoArr, uint 
 
     //upate unconstraint problem parameters
     switch(newton.o.constrainedMethod){
-    case squaredPenalty: UCP.mu *= 10.;  UCP.nu *= 10.;  break;
-    case augmentedLag:   UCP.aulaUpdate(false, 1., 2., &newton.fx, newton.gx, newton.Hx);  break;
-    case anyTimeAula:    UCP.aulaUpdate(true,  1., 2., &newton.fx, newton.gx, newton.Hx);  break;
+    case squaredPenalty: UCP.mu *= 2.;  UCP.nu *= 2.;  break;
+    case augmentedLag:   UCP.aulaUpdate(false, 1., muInc, &newton.fx, newton.gx, newton.Hx);  break;
+    case anyTimeAula:    UCP.aulaUpdate(true,  1., muInc, &newton.fx, newton.gx, newton.Hx);  break;
     case logBarrier:     UCP.muLB /= 2.;  UCP.nu *= 10;  break;
     default: NIY;
     }
