@@ -756,6 +756,12 @@ template<class T> T& rai::Array<T>::operator()(int i, int j, int k) const {
   return p[(i*d1+j)*d2+k];
 }
 
+template<class T> rai::Array<T> rai::Array<T>::ref() const {
+  Array<T> x;
+  x.referTo(*this);
+  return x;
+}
+
 template<class T> rai::Array<T> rai::Array<T>::operator()(std::pair<int, int> I) const {
   rai::Array<T> z;
   z.referToRange(*this, I.first, I.second);

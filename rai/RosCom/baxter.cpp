@@ -23,25 +23,26 @@ struct sBaxterInterface {
 
   Var<sensor_msgs::JointState> state;
 
-  ros::NodeHandle nh;
+  ptr<ros::NodeHandle> nh;
   ros::Publisher pubL, pubR, pubLg, pubRg, pubHead, pubGripper;
   rai::KinematicWorld baxterModel;
 
   std::shared_ptr<Subscriber<sensor_msgs::JointState>> sub_state;
 
-  sBaxterInterface()
-    : state("/robot/joint_states"){
+  sBaxterInterface() {
     baxterModel.addFile(rai::raiPath("../rai-robotModels/baxter/baxter.g"));
 
     if(rai::getParameter<bool>("useRos",false)) {
+      nh = make_shared<ros::NodeHandle>();
       rai::wait(.5);
-      pubR = nh.advertise<baxter_core_msgs::JointCommand>("robot/limb/right/joint_command", 1);
-      pubL = nh.advertise<baxter_core_msgs::JointCommand>("robot/limb/left/joint_command", 1);
-      pubRg = nh.advertise<std_msgs::Empty>("robot/limb/right/suppress_gravity_compensation", 1);
-      pubLg = nh.advertise<std_msgs::Empty>("robot/limb/left/suppress_gravity_compensation", 1);
-      pubHead = nh.advertise<baxter_core_msgs::HeadPanCommand>("robot/head/command_head_pan", 1);
-      pubGripper = nh.advertise<baxter_core_msgs::EndEffectorCommand>("robot/end_effector/left_gripper/command", 1);
+      pubR = nh->advertise<baxter_core_msgs::JointCommand>("robot/limb/right/joint_command", 1);
+      pubL = nh->advertise<baxter_core_msgs::JointCommand>("robot/limb/left/joint_command", 1);
+      pubRg = nh->advertise<std_msgs::Empty>("robot/limb/right/suppress_gravity_compensation", 1);
+      pubLg = nh->advertise<std_msgs::Empty>("robot/limb/left/suppress_gravity_compensation", 1);
+      pubHead = nh->advertise<baxter_core_msgs::HeadPanCommand>("robot/head/command_head_pan", 1);
+      pubGripper = nh->advertise<baxter_core_msgs::EndEffectorCommand>("robot/end_effector/left_gripper/command", 1);
 
+      state.name() = "/robot/joint_states";
       ROS.subscribe(sub_state, state, true);
       rai::wait(.5);
     }
@@ -51,9 +52,9 @@ struct sBaxterInterface {
 baxter_core_msgs::JointCommand conv_qRef2baxterMessage(const arr& q_ref, const rai::KinematicWorld& baxterModel, const char* prefix) {
   baxter_core_msgs::JointCommand msg;
   msg.mode = 1;
-  for(rai::Joint *j:baxterModel.fwdActiveJoints) if(j->frame.name.startsWith(prefix)) {
+  for(rai::Joint *j:baxterModel.fwdActiveJoints) if(j->frame->name.startsWith(prefix)) {
       msg.command.push_back(q_ref(j->qIndex));
-      msg.names.push_back(j->frame.name.p);
+      msg.names.push_back(j->frame->name.p);
     }
   return msg;
 }
@@ -106,9 +107,9 @@ baxter_core_msgs::EndEffectorCommand getGripperMsg(const arr& q_ref, const rai::
   return msg;
 }
 
-SendPositionCommandsToBaxter::SendPositionCommandsToBaxter(const rai::KinematicWorld& kw)
+SendPositionCommandsToBaxter::SendPositionCommandsToBaxter(const rai::KinematicWorld& kw, const Var<CtrlMsg>& _ctrl_ref)
   : Thread("SendPositionCommandsToBaxter"),
-    ctrl_ref(NULL, "ctrl_ref", true),
+    ctrl_ref(NULL, true),
     s(0) {
 
   s = new sBaxterInterface;

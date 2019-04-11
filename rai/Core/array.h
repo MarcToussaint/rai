@@ -187,6 +187,7 @@ template<class T> struct Array : std::vector<T>, Serializable {
   T& operator()(int i) const;
   T& operator()(int i, int j) const;
   T& operator()(int i, int j, int k) const;
+  Array<T> ref() const; //a reference on this
   Array<T> operator()(std::pair<int, int> I) const;
   Array<T> operator()(int i, std::pair<int, int> J) const;
   Array<T> operator()(int i, int j, std::initializer_list<int> K) const;
@@ -198,7 +199,7 @@ template<class T> struct Array : std::vector<T>, Serializable {
   
   
   /// @name access by copy
-  rai::Array<T> copy() const;
+  Array<T> copy() const;
   Array<T> sub(int i, int I) const;
   Array<T> sub(int i, int I, int j, int J) const;
   Array<T> sub(int i, int I, int j, int J, int k, int K) const;
