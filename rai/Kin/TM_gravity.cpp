@@ -293,12 +293,12 @@ void TM_ZeroQVel::phi(arr& y, arr& J, const WorldL& Ktuple){
   if(y.N==3){
     arr s = ARR(10.,10.,1.);
     y = s%y;
-    J = s%J;
+    if(!!J) J = s%J;
   }
   if(y.N==7){
     arr s = ARR(10., 10., 10., 1., 1., 1., 1.);
     y = s%y;
-    J = s%J;
+    if(!!J) J = s%J;
   }
 }
 

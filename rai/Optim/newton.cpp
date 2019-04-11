@@ -53,6 +53,7 @@ OptNewton::StopCriterion OptNewton::step() {
   
   if(!(fx==fx)) HALT("you're calling a newton step with initial function value = NAN");
 
+  rai::timerRead(true);
   //-- compute Delta
   arr R=Hx;
   if(beta) { //Levenberg Marquardt damping
@@ -124,13 +125,16 @@ OptNewton::StopCriterion OptNewton::step() {
     if(o.verbose>1) cout <<" \t - NO UPDATE" <<endl;
     return stopCriterion=stopCrit1;
   }
-  
+  timeNewton += rai::timerRead(true);
+
   //-- line search along Delta
   for(bool endLineSearch=false; !endLineSearch;) {
     if(!o.allowOverstep) if(alpha>1.) alpha=1.;
     if(alphaHiLimit>0. && alpha>alphaHiLimit) alpha=alphaHiLimit;
     y = x + alpha*Delta;
+    double timeBefore = rai::timerStart();
     fy = f(gy, Hy, y);  evals++;
+    timeEval += rai::timerRead(true, timeBefore);
     if(additionalRegularizer) fy += scalarProduct(y,(*additionalRegularizer)*vectorShaped(y));
     if(o.verbose>5) cout <<" \tprobing y=" <<y;
     if(o.verbose>1) cout <<" \tevals=" <<std::setw(4) <<evals <<" \talpha=" <<std::setw(11) <<alpha <<" \tf(y)=" <<fy <<flush;

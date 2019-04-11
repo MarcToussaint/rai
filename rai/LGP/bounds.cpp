@@ -2,6 +2,8 @@
 //#include <Kin/switch.h>
 #include <Kin/TM_transition.h>
 
+double conv_step2time(int step, uint stepsPerPhase);
+
 template<> const char* rai::Enum<BoundType>::names []= {
   "symbolic", "pose", "seq", "path", "seqPath", NULL
 };
@@ -69,7 +71,9 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
     } break;
     case BD_seq: {
       komo.setModel(startKinematics, collisions);
-      komo.setTiming(maxPhase+1., 1, 5., 1);
+      komo.setTiming(maxPhase+1., 2, 5., 1);
+      komo.sparseOptimization = true;
+      komo.animateOptimization = 0;
 
       komo.setSquaredQuaternionNorms();
       komo.setSquaredQAccelerations_novel(0, -1., 1., 1e-1);
@@ -91,6 +95,7 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
       uint stepsPerPhase = rai::getParameter<uint>("LGP/stepsPerPhase", 10);
       uint pathOrder = rai::getParameter<uint>("LGP/pathOrder", 2);
       komo.setTiming(maxPhase+.5, stepsPerPhase, 10., pathOrder);
+      komo.animateOptimization = 0;
 
       komo.setSquaredQuaternionNorms(0., -1., 1e1);
 #if 0
@@ -113,16 +118,23 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
       uint stepsPerPhase = rai::getParameter<uint>("LGP/stepsPerPhase", 10);
       uint pathOrder = rai::getParameter<uint>("LGP/pathOrder", 2);
       komo.setTiming(maxPhase+.5, stepsPerPhase, 10., pathOrder);
+      komo.animateOptimization = 0;
 
       komo.setSquaredQuaternionNorms();
+#if 0
       komo.setSquaredQAccelerations_novel(0, -1., 1., 1e-1);
 //      komo.setHoming(0., -1., 1e-2);
 //      if(pathOrder==1) komo.setSquaredQVelocities();
 //      else komo.setSquaredQAccelerations();
+#else
+      komo.setSquaredQAccelerations_novel(0, -1., 1., 1e-2);
+#endif
 
-      CHECK_EQ(waypoints.N-1, floor(maxPhase+.5), "");
+      uint T = floor(maxPhase+.5);
+      uint waypointsStepsPerPhase = waypoints.N/(T+1);
+      CHECK_EQ(waypoints.N, waypointsStepsPerPhase * (T+1), "waypoint steps not clear");
       for(uint i=0;i<waypoints.N-1;i++){
-        komo.addObjective(ARR(double(i+1)), OT_sos, FS_qItself, {}, {1e-1}, waypoints(i));
+        komo.addObjective(ARR(conv_step2time(i, waypointsStepsPerPhase)), OT_sos, FS_qItself, {}, {1e-1}, waypoints(i));
       }
 
       komo.setSkeleton(S);
@@ -134,7 +146,7 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
       if(collisions) komo.add_collision(true, 0, 1e1);
 
       komo.reset();
-      komo.initWithWaypoints(waypoints);
+      komo.initWithWaypoints(waypoints, waypointsStepsPerPhase);
       //      cout <<komo.getPath_times() <<endl;
     } break;
 
@@ -203,12 +215,12 @@ ptr<CG> skeleton2CGO(const Skeleton& S, const rai::KinematicWorld& startKinemati
   for(const SkeletonEntry& s:S){
     int s_end=s.phase1;
     if(s_end<0) s_end = maxPhase;
-    for(uint t=s.phase0; t<=s_end;t++){
+    for(int t=s.phase0; t<=s_end;t++){
       NodeL parents;
       for(const rai::String& f:s.frames) parents.append(cg->G.getNode(STRING(f <<'_' <<t)));
       cg->G.newNode<rai::Enum<SkeletonSymbol>>({}, parents, s.symbol);
       if(s.symbol==SY_stable || s.symbol==SY_stableOn){
-        for(uint t2=t+1; t2<=s_end+1 && t2<=maxPhase; t2++){
+        for(int t2=t+1; t2<=s_end+1 && t2<=maxPhase; t2++){
           NodeL parents2=parents;
           for(const rai::String& f:s.frames) parents2.append(cg->G.getNode(STRING(f <<'_' <<t2)));
           cg->G.newNode<rai::Enum<SkeletonSymbol>>({}, parents2, s.symbol);

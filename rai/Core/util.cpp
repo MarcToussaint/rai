@@ -636,10 +636,11 @@ long mem() {
 }
 
 /// start and reset the timer (user CPU time)
-void timerStart(bool useRealTime) {
+double timerStart(bool useRealTime) {
   if(useRealTime) timerUseRealTime=true; else timerUseRealTime=false;
   timerPauseTime=-1.;
   timerStartTime=(timerUseRealTime?realTime():cpuTime());
+  return timerStartTime;
 }
 
 /// read the timer and optionally also reset it (user CPU time)

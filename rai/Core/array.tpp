@@ -3392,6 +3392,7 @@ void setMinus(rai::Array<T>& x, const rai::Array<T>& y) {
   }
 }
 
+/// x becomes the section of y and z
 template<class T> rai::Array<T> setSectionSorted(const rai::Array<T>& x, const rai::Array<T>& y,
     bool (*comp)(const T& a, const T& b)) {
   rai::Array<T> R;
@@ -3410,17 +3411,28 @@ template<class T> rai::Array<T> setSectionSorted(const rai::Array<T>& x, const r
   return R;
 }
 
-/// x becomes the section of y and z
 template<class T>
 void setMinusSorted(rai::Array<T>& x, const rai::Array<T>& y,
                     bool (*comp)(const T& a, const T& b)) {
-  T *yp=y.p, *ystop=y.p+y.N;
+#if 1
+  int i=x.N-1, j=y.N-1;
+  for(;;){
+    while(j>=0 && !comp(y.elem(j),x.elem(i))) j--;
+    if(j<0) break;
+    while(i>=0 && !comp(x.elem(i),y.elem(j))) i--;
+    if(i<0) break;
+    if(x.elem(i)==y.elem(j)){ x.remove(i); i--; }
+    if(i<0) break;
+  }
+#else
+    T *yp=y.p, *ystop=y.p+y.N;
   for(uint i=0; i<x.N;) {
-    while(yp!=ystop && comp(*yp,x(i))) yp++;
+    while(yp!=ystop && comp(*yp,x.elem(i))) yp++;
     if(yp==ystop) break;
-    if(*yp==x(i)) x.remove(i);
+    if(*yp==x.elem(i)) x.remove(i);
     else i++;
   }
+#endif
 }
 
 /// share x and y at least one element?

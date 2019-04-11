@@ -94,6 +94,7 @@ struct KOMO : NonCopyable {
   int verbose;                 ///< verbosity level
   int animateOptimization=0;   ///< display the current path for each evaluation during optimization
   double runTime=0.;           ///< measured run time
+  double timeCollisions=0., timeKinematics=0., timeNewton=0., timeFeatures=0.;
   ofstream *fil=0;
   
   KOMO();
@@ -231,7 +232,7 @@ struct KOMO : NonCopyable {
   //-- optimization macros
   void setSpline(uint splineT);      ///< optimize B-spline nodes instead of the path; splineT specifies the time steps per node
   void reset(double initNoise=.01);  ///< reset the optimizer (initializes x to a default path)
-  void initWithWaypoints(const arrA& waypoints, bool sineProfile=true);
+  void initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase=1, bool sineProfile=true);
   void run();                        ///< run the optimization (using OptConstrained -- its parameters are read from the cfg file)
   void optimize(bool initialize=true);
 
@@ -275,7 +276,7 @@ struct KOMO : NonCopyable {
 //  Task* addTask(const char* name, Feature *map, const ObjectiveType& termType); ///< manually add a task
   void setupConfigurations();   ///< this creates the @configurations@, that is, copies the original world T times (after setTiming!) perhaps modified by KINEMATIC SWITCHES and FLAGS
 //  arr getInitialization();      ///< this reads out the initial state trajectory after 'setupConfigurations'
-  void set_x(const arr& x);            ///< set the state trajectory of all configurations
+  void set_x(const arr& x, const uintA& selectedConfigurationsOnly=NoUintA);            ///< set the state trajectory of all configurations
   uint dim_x(uint t) { return configurations(t+k_order)->getJointStateDimension(); }
 
   struct Conv_MotionProblem_KOMO_Problem : KOMO_Problem {
@@ -314,6 +315,10 @@ struct KOMO : NonCopyable {
 
     virtual void getStructure(uintA& variableDimensions, intAA& featureVariables, ObjectiveTypeA& featureTypes);
     virtual void phi(arr& phi, arrA& J, arrA& H, const arr& x);
+
+    virtual void setPartialX(const uintA& whichX, const arr& x);
+    virtual void getPartialPhi(arr& phi, arrA& J, arrA& H, const uintA& whichPhi);
+    virtual void getSemantics(StringA& varNames, StringA& phiNames);
   } graph_problem;
 };
 

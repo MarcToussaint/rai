@@ -50,7 +50,7 @@ void Objective::setCostSpecs(double fromTime, double toTime, int stepsPerPhase, 
 
   if(tFrom<0) tFrom=0;
   if(tTo<0) tTo=0;
-  if(tTo>=T) tTo=T-1;
+  if(tTo>=(int)T) tTo=T-1;
 
   setCostSpecs(tFrom, tTo, sparse);
 }

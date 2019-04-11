@@ -1217,7 +1217,10 @@ arr finiteDifferenceJacobian(const VectorFunction& f, const arr& _x, arr& Janaly
   arr x=_x;
   arr y, dx, dy, J;
   f(y, Janalytic, x);
-  if(isRowShifted(Janalytic)) Janalytic = unpack(Janalytic);
+  if(isRowShifted(Janalytic)
+     || isSparseMatrix(Janalytic)){
+    Janalytic = unpack(Janalytic);
+  }
   
   J.resize(y.N, x.N);
   double eps=CHECK_EPS;
@@ -2327,7 +2330,9 @@ arr SparseMatrix::unsparse(){
 arr unpack(const arr& X) {
   if(isNotSpecial(X)) HALT("this is not special");
   if(isRowShifted(X)) return unpackRowShifted(X);
-  return NoArr;
+  if(isSparseMatrix(X)) return dynamic_cast<rai::SparseMatrix*>(X.special)->unsparse();
+  HALT("should not be here");
+  return arr();
 }
 
 arr comp_At_A(const arr& A) {

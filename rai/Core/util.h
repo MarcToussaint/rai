@@ -169,7 +169,7 @@ bool wait(bool useX11=true);
 long mem();
 
 //----- timer functions
-void   timerStart(bool useRealTime=false);
+double timerStart(bool useRealTime=false);
 double timerRead(bool reset=false);
 double timerRead(bool reset, double startTime);
 double timerPause();

@@ -103,7 +103,7 @@ void SubGraphProblem::optim(int verbose){
   rai::timerStart();
   Conv_Graph_ConstrainedProblem C(*this);
   arr dual;
-  OptConstrained opt(x, dual, C, 5); //rai::MAX(verbose-2, 0));
+  OptConstrained opt(x, dual, C, 0); //rai::MAX(verbose-2, 0));
   //    opt.fil = fil;
   opt.run();
   //    opt.newton.evals;
@@ -135,6 +135,8 @@ void SubGraphProblem::optim(int verbose){
   if(verbose>0){
     cout <<"   sos=" <<sos <<" ineq=" <<ineq <<" eq=" <<eq <<" #conflicts=" <<conflictSet.N <<endl;
   }
+
+  checkJacobianCP(C, x, 1e-4);
 }
 
 void SubGraphProblem::getStructure(uintA& variableDimensions, intAA& featureVariables, ObjectiveTypeA& featureTypes){
@@ -235,12 +237,14 @@ bool BacktrackingGraphOptimization::run(){
     cout <<"** BGO: solve (" <<X <<"|" <<Y <<")" <<endl;
     SubGraphProblem G_XY(G, X, Y);
     G_XY.optim();
+//    rai::wait();
     while(!G_XY.feasible){
       if(!Y.N){
         infeasibleSubset = X;
         conflictSet = G_XY.conflictSet;
         return false;
       }
+      /*
       SubGraphProblem G_X(G, X, {});
       G_X.optim();
       f_low = rai::MAX(f_low, G_X.f);
@@ -249,6 +253,7 @@ bool BacktrackingGraphOptimization::run(){
         conflictSet = G_X.conflictSet;
         return false;
       }
+      */
       uintA pi_C = getVariablesForObjectives(G_XY.conflictSet);
       setMinusSorted(pi_C, X);
       if(!pi_C.N){
@@ -256,7 +261,7 @@ bool BacktrackingGraphOptimization::run(){
         X.setAppendInSorted(prev);
       }else{
         for(uint i:pi_C){
-          Y.removeValue(i);
+          Y.removeValue(i, false);
           X.setAppendInSorted(i);
         }
       }
@@ -264,6 +269,7 @@ bool BacktrackingGraphOptimization::run(){
       for(uint i:Y) CHECK(!X.containsInSorted((i)), "");
       G_XY.reset(X,Y);
       G_XY.optim();
+//      rai::wait();
     }
     Y.append(X);
   }
