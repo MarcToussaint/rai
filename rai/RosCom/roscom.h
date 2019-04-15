@@ -52,9 +52,9 @@
 // utils
 //
 
-void rosCheckInit(const char* node_name="pr2_module");
+void rosCheckInit(const char* node_name="rai_node");
 bool rosOk();
-struct RosInit { RosInit(const char* node_name="rai_module"); };
+struct RosInit { RosInit(const char* node_name="rai_node"); };
 
 //-- ROS <--> RAI
 std_msgs::String    conv_string2string(const rai::String&);

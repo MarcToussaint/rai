@@ -6,8 +6,11 @@
 struct RobotInterface {
   std::shared_ptr<struct sRobotInterface> s;
 
-  RobotInterface(const rai::KinematicWorld& _K, double dt=.01);
+  RobotInterface(const rai::KinematicWorld& _K, double dt=.01, const char* rosNodeName="rai_node");
   ~RobotInterface();
+
+  //-- real switch
+  void sendToReal(bool activate);
 
   //-- basic info
   const StringA& getJointNames();

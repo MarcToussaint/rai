@@ -15,16 +15,18 @@ struct sRobotInterface : Thread, GLDrawer{
   rai::KinematicWorld K_ref, K_baxter;
   OpenGL gl;
   bool useBaxter=false;
+  bool sendToBaxter=false;
 
   SplineRunner spline;
   double dt; // time stepping interval
 
-  sRobotInterface(const rai::KinematicWorld& _K, double _dt, bool forceUseRos=false)
+  sRobotInterface(const rai::KinematicWorld& _K, double _dt, bool useRosDefault)
     : Thread("RobotInterface", _dt),
       K_ref(_K),
       dt(_dt){
 
-    useBaxter = rai::getParameter<bool>("useRos",false);
+    useBaxter = rai::getParameter<bool>("useRos", useRosDefault);
+    sendToBaxter = useBaxter;
 
     gl.add(*this);
     gl.camera.setDefault();
@@ -50,7 +52,7 @@ struct sRobotInterface : Thread, GLDrawer{
       //otherwise q_ref is just the last spline point..
 
       if(q_ref.N){
-        if(useBaxter) baxter.send_q(q_ref);
+        if(useBaxter && sendToBaxter) baxter.send_q(q_ref);
         {
           auto lock = gl.dataLock(RAI_HERE);
           K_ref.setJointState(q_ref);
@@ -63,6 +65,8 @@ struct sRobotInterface : Thread, GLDrawer{
       {
       }
       gl.update(STRING("step=" <<step_count <<" phase=" <<spline.phase <<" timeToGo=" <<spline.timeToGo() <<" #ref=" <<spline.refSpline.points.d0));
+
+//      cout <<"ONLINE! " <<baxter.get_q() <<endl;
     }
 
   }
@@ -72,24 +76,34 @@ struct sRobotInterface : Thread, GLDrawer{
     glStandardScene(NULL);
     K_ref.glDraw(gl);
 //    auto lock = gl.dataLock(RAI_HERE);
-    K_baxter.setJointState(baxter.get_q());
-    Geo_mesh_drawColors=false;
-    glColor(.8, .2, .2, .5);
-    gl.drawMode_idColor = true;
-    if(useBaxter) K_baxter.glDraw(gl);
-    Geo_mesh_drawColors=true;
-    gl.drawMode_idColor = false;
+    if(useBaxter){
+      arr q_real = baxter.get_q();
+      if(q_real.N == K_baxter.getJointStateDimension()){
+        K_baxter.setJointState(q_real);
+      }
+      Geo_mesh_drawColors=false;
+      glColor(.8, .2, .2, .5);
+      gl.drawMode_idColor = true;
+      K_baxter.glDraw(gl);
+      Geo_mesh_drawColors=true;
+      gl.drawMode_idColor = false;
+    }
   }
 
 
 };
 
 
-RobotInterface::RobotInterface(const rai::KinematicWorld& _K, double dt) {
-  s = make_shared<sRobotInterface>(_K, dt);
+RobotInterface::RobotInterface(const rai::KinematicWorld& _K, double dt, const char* rosNodeName) {
+  if(rosNodeName) rosCheckInit(rosNodeName);
+  s = make_shared<sRobotInterface>(_K, dt, rosNodeName);
 }
 
 RobotInterface::~RobotInterface(){
+}
+
+void RobotInterface::sendToReal(bool activate){
+  s->sendToBaxter = activate;
 }
 
 
@@ -108,6 +122,7 @@ RobotInterface::~RobotInterface(){
     To interrupt a running motion, send and empty path with
     append=false. */
 void RobotInterface::move(const arr& path, const arr& times, bool append){
+  cout <<"SENDING MOTION: " <<path <<endl <<times <<endl;
   auto lock = s->stepMutex(RAI_HERE);
   arr _path = path.ref();
   if(_path.nd==1) _path.reshape(1,_path.N);

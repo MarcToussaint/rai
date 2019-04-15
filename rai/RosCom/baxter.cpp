@@ -32,7 +32,7 @@ struct sBaxterInterface {
   sBaxterInterface() {
     baxterModel.addFile(rai::raiPath("../rai-robotModels/baxter/baxter.g"));
 
-    if(rai::getParameter<bool>("useRos",false)) {
+    if(rai::getParameter<bool>("useRos", true)) {
       nh = make_shared<ros::NodeHandle>();
       rai::wait(.5);
       pubR = nh->advertise<baxter_core_msgs::JointCommand>("robot/limb/right/joint_command", 1);

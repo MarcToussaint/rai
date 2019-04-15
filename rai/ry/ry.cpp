@@ -388,9 +388,9 @@ PYBIND11_MODULE(libry, m) {
     return bullet;
   } )
 
-  .def("operate", [](ry::Config& self){
+  .def("operate", [](ry::Config& self, const char* rosNodeName){
     ry::RyOperate op;
-    op.R = make_shared<RobotInterface>(self.get());
+    op.R = make_shared<RobotInterface>(self.get(), .01, rosNodeName);
     return op;
   } )
 
@@ -853,8 +853,10 @@ PYBIND11_MODULE(libry, m) {
   //===========================================================================
 
   py::class_<ry::RyOperate>(m, "RyOperate")
-  .def("move", [](ry::RyOperate& self, const std::vector<double>& path, const std::vector<double>& times, bool append){
-    self.R->move(conv_stdvec2arr(path), conv_stdvec2arr(times), append);
+  .def("move", [](ry::RyOperate& self, const std::vector<std::vector<double>>& poses, const std::vector<double>& times, bool append){
+    arr path(poses.size(), poses[0].size());
+    for(uint i=0;i<path.d0;i++) path[i] = conv_stdvec2arr(poses[i]);
+    self.R->move(path, conv_stdvec2arr(times), append);
   } )
 
   .def("move", [](ry::RyOperate& self, const pybind11::array& path, const std::vector<double>& times, bool append){
@@ -878,6 +880,10 @@ PYBIND11_MODULE(libry, m) {
   .def("getJointPositions", [](ry::RyOperate& self, ry::Config& C){
     arr q = self.R->getJointPositions();
     return pybind11::array(q.dim(), q.p);
+  } )
+
+  .def("send", [](ry::RyOperate& self, bool activate){
+    self.R->sendToReal(activate);
   } )
 
   .def("sync", [](ry::RyOperate& self, ry::Config& C){
