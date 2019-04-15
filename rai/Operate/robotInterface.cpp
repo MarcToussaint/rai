@@ -6,10 +6,11 @@
 #include "splineRunner.h"
 
 //#include "SimulationThread_self.h"
+extern bool Geo_mesh_drawColors;
 
 struct sRobotInterface : Thread, GLDrawer{
   BaxterInterface baxter;
-  arr q0;
+  arr q0, q_ref;
   StringA jointNames;
   rai::KinematicWorld K_ref, K_baxter;
   OpenGL gl;
@@ -43,7 +44,10 @@ struct sRobotInterface : Thread, GLDrawer{
       auto lock = stepMutex(RAI_HERE);
 
       //read out the new reference
-      arr q_ref = spline.run(dt);
+      arr q_spline = spline.run(dt);
+
+      if(q_spline.N) q_ref = q_spline;
+      //otherwise q_ref is just the last spline point..
 
       if(q_ref.N){
         if(useBaxter) baxter.send_q(q_ref);
@@ -57,8 +61,6 @@ struct sRobotInterface : Thread, GLDrawer{
 
     if(!(step_count%10)){
       {
-        auto lock = gl.dataLock(RAI_HERE);
-        K_baxter.setJointState(baxter.get_q());
       }
       gl.update(STRING("step=" <<step_count <<" phase=" <<spline.phase <<" timeToGo=" <<spline.timeToGo() <<" #ref=" <<spline.refSpline.points.d0));
     }
@@ -69,7 +71,14 @@ struct sRobotInterface : Thread, GLDrawer{
     //        auto lock = stepMutex(RAI_HERE);
     glStandardScene(NULL);
     K_ref.glDraw(gl);
+//    auto lock = gl.dataLock(RAI_HERE);
+    K_baxter.setJointState(baxter.get_q());
+    Geo_mesh_drawColors=false;
+    glColor(.8, .2, .2, .5);
+    gl.drawMode_idColor = true;
     if(useBaxter) K_baxter.glDraw(gl);
+    Geo_mesh_drawColors=true;
+    gl.drawMode_idColor = false;
   }
 
 
