@@ -249,8 +249,8 @@ PYBIND11_MODULE(libry, m) {
     self.set()->setFrameState(_X, I_conv(frames), calc_q_from_X);
   }, "",
     py::arg("X"),
-        py::arg("frames") = ry::I_StringA(),
-        py::arg("calc_q_from_X") = true )
+    py::arg("frames") = ry::I_StringA(),
+    py::arg("calc_q_from_X") = true )
 
   .def("feature", [](ry::Config& self, FeatureSymbol fs, const ry::I_StringA& frames) {
     ry::RyFeature F;
@@ -386,6 +386,12 @@ PYBIND11_MODULE(libry, m) {
     ry::RyBullet bullet;
     bullet.bullet = make_shared<BulletInterface>(self.get());
     return bullet;
+  } )
+
+  .def("operate", [](ry::Config& self){
+    ry::RyOperate op;
+    op.R = make_shared<RobotInterface>(self.get());
+    return op;
   } )
 
   .def("sortFrames", [](ry::Config& self){
@@ -840,6 +846,42 @@ PYBIND11_MODULE(libry, m) {
 
   .def("setState", [](ry::RyBullet& self, ry::Config& C, const pybind11::array& velocities){
     self.bullet->pushFullState(C.get()->frames, numpy2arr(velocities));
+  } )
+
+  ;
+
+  //===========================================================================
+
+  py::class_<ry::RyOperate>(m, "RyOperate")
+  .def("move", [](ry::RyOperate& self, const std::vector<double>& path, const std::vector<double>& times, bool append){
+    self.R->move(conv_stdvec2arr(path), conv_stdvec2arr(times), append);
+  } )
+
+  .def("move", [](ry::RyOperate& self, const pybind11::array& path, const std::vector<double>& times, bool append){
+    arr _path = numpy2arr(path);
+    self.R->move(_path, conv_stdvec2arr(times), append);
+  } )
+
+  .def("timeToGo", [](ry::RyOperate& self){
+    return self.R->timeToGo();
+  } )
+
+  .def("wait", [](ry::RyOperate& self){
+    return self.R->wait();
+  } )
+
+  .def("getJointPositions", [](ry::RyOperate& self, ry::Config& C){
+    arr q = self.R->getJointPositions();
+    return pybind11::array(q.dim(), q.p);
+  } )
+
+  .def("getJointPositions", [](ry::RyOperate& self, ry::Config& C){
+    arr q = self.R->getJointPositions();
+    return pybind11::array(q.dim(), q.p);
+  } )
+
+  .def("sync", [](ry::RyOperate& self, ry::Config& C){
+    self.R->sync(C.set());
   } )
 
   ;

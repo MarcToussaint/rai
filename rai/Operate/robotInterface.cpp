@@ -19,7 +19,7 @@ struct sRobotInterface : Thread, GLDrawer{
   SplineRunner spline;
   double dt; // time stepping interval
 
-  sRobotInterface(const rai::KinematicWorld& _K, double _dt)
+  sRobotInterface(const rai::KinematicWorld& _K, double _dt, bool forceUseRos=false)
     : Thread("RobotInterface", _dt),
       K_ref(_K),
       dt(_dt){
