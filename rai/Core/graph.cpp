@@ -15,8 +15,11 @@
 
 #define DEBUG(x) //x
 
+Graph __NoGraph;
+Graph& NoGraph = __NoGraph;
+
 NodeL& NoNodeL=*((NodeL*)NULL);
-Graph& NoGraph=*((Graph*)NULL);
+//Graph& NoGraph=*((Graph*)NULL);
 
 //===========================================================================
 //
@@ -245,6 +248,10 @@ Graph::Graph(const Graph& G) : Graph() {
 
 Graph::~Graph() {
   clear();
+}
+
+bool Graph::operator!() const {
+  return this==&__NoGraph;
 }
 
 void Graph::clear() {

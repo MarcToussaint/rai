@@ -66,13 +66,19 @@ const char* arrayBrackets="  ";
 }
 
 arr __NoArr(new SpecialArray(SpecialArray::ST_NoArr));
-arr& NoArr = *((arr*)&__NoArr);
-arrA& NoArrA = *((arrA*)NULL);
-uintA& NoUintA = *((uintA*)NULL);
-uint16A& NoUint16A = *((uint16A*)NULL);
-byteA& NoByteA = *((byteA*)NULL);
-intAA& NoIntAA = *((intAA*)NULL);
-uintAA& NoUintAA = *((uintAA*)NULL);
+arr& NoArr = __NoArr;
+arrA __NoArrA(new SpecialArray(SpecialArray::ST_NoArr));
+arrA& NoArrA = __NoArrA;
+uintA __NoUintA(new SpecialArray(SpecialArray::ST_NoArr));
+uintA& NoUintA = __NoUintA;
+uint16A __NoUint16A(new SpecialArray(SpecialArray::ST_NoArr));
+uint16A& NoUint16A = __NoUint16A;
+byteA __NoByteA(new SpecialArray(SpecialArray::ST_NoArr));
+byteA& NoByteA = __NoByteA;
+intAA __NoIntAA(new SpecialArray(SpecialArray::ST_NoArr));
+intAA& NoIntAA = __NoIntAA;
+uintAA __NoUintAA(new SpecialArray(SpecialArray::ST_NoArr));
+uintAA& NoUintAA = __NoUintAA;
 
 /* LAPACK notes
 Use the documentation at

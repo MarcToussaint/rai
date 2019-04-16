@@ -104,7 +104,7 @@ struct Graph : NodeL {
   Graph(std::initializer_list<const char*> list);
   Graph(const Graph& G);                                 ///< copy constructor
   ~Graph();
-  bool operator!() const { return this==&NoGraph; } ///< check if NoGraph
+  bool operator!() const;                                ///< check if NoGraph
 
   void clear();
   NodeL& list() { return *this; }

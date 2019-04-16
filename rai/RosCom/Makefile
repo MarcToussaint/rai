@@ -9,7 +9,7 @@ PCL = 1
 DEPEND = Core KOMO Kin Gui Logic
 
 CXXFLAGS += -DRAI_ROS_BAXTER
-CPATHS += $(BASE)/../external/install/include
+CPATHS += $(BASE)/../external/devel/include
 
 #CXXFLAGS += -DROS_PACKAGE_NAME='"pr2_module"'
 

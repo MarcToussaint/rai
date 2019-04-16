@@ -74,7 +74,8 @@ uint rai::KinematicWorld::setJointStateCount = 0;
 rai::Frame& NoFrame = *((rai::Frame*)NULL);
 rai::Shape& NoShape = *((rai::Shape*)NULL);
 rai::Joint& NoJoint = *((rai::Joint*)NULL);
-rai::KinematicWorld& NoWorld = *((rai::KinematicWorld*)NULL);
+rai::KinematicWorld __NoWorld;
+rai::KinematicWorld& NoWorld = *((rai::KinematicWorld*)&__NoWorld);
 
 uintA stringListToShapeIndices(const rai::Array<const char*>& names, const rai::KinematicWorld& K) {
   uintA I(names.N);
