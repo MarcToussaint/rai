@@ -205,7 +205,7 @@ cleanDepends: force
 installUbuntu: force
 	sudo apt-get -q $(APTGETYES) install $(DEPEND_UBUNTU)
 
-printUbuntuPackages: force
+printUbuntu: force
 	@echo $(DEPEND_UBUNTU)
 
 depend: generate_Makefile.dep
@@ -422,9 +422,9 @@ inPath_installUbuntu/%: $(BASE2)/%
 	@-$(MAKE) -C $< installUbuntu --no-print-directory
 endif
 
-inPath_printUbuntuPackages/%: $(BASE)/rai/%
+inPath_printUbuntu/%: $(BASE)/rai/%
 	@echo "#" $*
-	@-$(MAKE) -C $< printUbuntuPackages --no-print-directory
+	@-$(MAKE) -C $< printUbuntu --no-print-directory
 
 inPath_makePython/%: %
 	make --directory=$< pywrapper

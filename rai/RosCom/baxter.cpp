@@ -8,6 +8,7 @@
 
 #include "baxter.h"
 
+#ifdef RAI_ROS
 #ifdef RAI_ROS_BAXTER
 
 #include "roscom.h"
@@ -148,25 +149,6 @@ void SendPositionCommandsToBaxter::close() {
   if(s) delete s;
 }
 
-#else
-
-#ifdef RAI_ROS
-bool baxter_update_qReal(arr& qReal, const sensor_msgs::JointState& msg, const rai::KinematicWorld& baxterModel) { NICO }
-
-SendPositionCommandsToBaxter::SendPositionCommandsToBaxter(const rai::KinematicWorld& kw, const Var<CtrlMsg>& _ctrl_ref)
-  : Thread("SendPositionCommandsToBaxter"),
-    ctrl_ref(NULL, _ctrl_ref, true),
-    s(NULL),
-    baxterModel(kw) {
-  NICO;
-}
-void SendPositionCommandsToBaxter::open() { NICO }
-void SendPositionCommandsToBaxter::step() { NICO }
-void SendPositionCommandsToBaxter::close() { NICO }
-#endif
-
-#endif
-
 BaxterInterface::BaxterInterface(bool useRosDefault) : s(0){
   s = new sBaxterInterface(useRosDefault);
 }
@@ -203,3 +185,24 @@ void BaxterInterface::send_q(const arr& q_ref, bool enableL, bool enableR){
   s->pubHead.publish(getHeadMsg(q_ref, s->baxterModel));
   s->pubGripper.publish(getGripperMsg(q_ref, s->baxterModel));
 }
+
+#else
+
+#ifdef RAI_ROS
+bool baxter_update_qReal(arr& qReal, const sensor_msgs::JointState& msg, const rai::KinematicWorld& baxterModel) { NICO }
+
+SendPositionCommandsToBaxter::SendPositionCommandsToBaxter(const rai::KinematicWorld& kw, const Var<CtrlMsg>& _ctrl_ref)
+  : Thread("SendPositionCommandsToBaxter"),
+    ctrl_ref(NULL, _ctrl_ref, true),
+    s(NULL),
+    baxterModel(kw) {
+  NICO;
+}
+void SendPositionCommandsToBaxter::open() { NICO }
+void SendPositionCommandsToBaxter::step() { NICO }
+void SendPositionCommandsToBaxter::close() { NICO }
+#endif
+
+#endif
+#endif
+

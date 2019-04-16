@@ -2,8 +2,6 @@ BASE   = ../..
 NAME   = $(shell basename `pwd`)
 OUTPUT = lib$(NAME).so
 
-DEPEND_UBUNTU = ros-kinetic-desktop ros-kinetic-object-recognition-msgs ros-kinetic-ar-track-alvar-msgs
-
 ROS = 1
 PCL = 1
 DEPEND = Core KOMO Kin Gui Logic

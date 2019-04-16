@@ -1,7 +1,5 @@
-#ifdef RAI_ROS
-#  include <RosCom/roscom.h>
-#  include <RosCom/baxter.h>
-#endif
+#include <RosCom/roscom.h>
+#include <RosCom/baxter.h>
 
 #include <Gui/opengl.h>
 

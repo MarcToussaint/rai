@@ -8,9 +8,7 @@
 
 #pragma once
 
-#ifndef RAI_ROS
-# error "Sorry, you can include this only when compiling against ROS"
-#endif
+#ifdef RAI_ROS
 
 #include <tf/transform_listener.h>
 #include <tf/tf.h>
@@ -335,3 +333,10 @@ struct RosCom {
   template<class T> std::shared_ptr<Subscriber<T>> subscribe(Var<T>& v) { return std::make_shared<Subscriber<T>>(v); }
   template<class T> std::shared_ptr<Publisher<T>> publish(Var<T>& v) { return std::make_shared<Publisher<T>>(v); }
 };
+
+#else
+
+#include <Core/util.h>
+inline void rosCheckInit(const char* node_name="rai_node"){ NICO }
+
+#endif
