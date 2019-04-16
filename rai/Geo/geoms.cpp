@@ -86,9 +86,9 @@ void rai::Geom::createMeshes() {
       mesh.setCylinder(size(3), size(2));
       break;
     case rai::ST_capsule:
-      CHECK(size(3)>1e-10,"");
-      sscCore.V = arr(2,3, {0.,0.,-.5*size(2), 0.,0.,.5*size(2)});
-      mesh.setSSCvx(sscCore, size(3));
+      CHECK(size(-1)>1e-10,"");
+      sscCore.V = arr(2,3, {0.,0.,-.5*size(-2), 0.,0.,.5*size(-2)});
+      mesh.setSSCvx(sscCore, size(-1));
       //      mesh.setCappedCylinder(size(3), size(2));
       //      mesh.setSSBox(2.*size(3), 2.*size(3), size(2)+2.*size(3), size(3));
       break;

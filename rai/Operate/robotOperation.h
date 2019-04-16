@@ -1,13 +1,12 @@
 #pragma once
 
-#include "simulation.h"
-#include "robotio.h"
+#include <Kin/kin.h>
 
-struct RobotInterface {
-  std::shared_ptr<struct sRobotInterface> s;
+struct RobotOperation {
+  std::shared_ptr<struct sRobotOperation> s;
 
-  RobotInterface(const rai::KinematicWorld& _K, double dt=.01, const char* rosNodeName="rai_node");
-  ~RobotInterface();
+  RobotOperation(const rai::KinematicWorld& _K, double dt=.01, const char* rosNodeName="rai_node");
+  ~RobotOperation();
 
   //-- real switch
   void sendToReal(bool activate);
@@ -24,5 +23,5 @@ struct RobotInterface {
 
   //-- feedback
   arr getJointPositions(const StringA& joints={});
-  void sync(rai::KinematicWorld& K);  ///< copies current robot pose into K
+  void sync(rai::KinematicWorld& K);                                ///< copies current robot pose into K
 };

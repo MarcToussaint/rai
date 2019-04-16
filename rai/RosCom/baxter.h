@@ -36,7 +36,7 @@ struct SendPositionCommandsToBaxter : Thread {
 struct BaxterInterface {
   struct sBaxterInterface *s;
 
-  BaxterInterface();
+  BaxterInterface(bool useRosDefault);
   ~BaxterInterface();
 
   arr get_q();

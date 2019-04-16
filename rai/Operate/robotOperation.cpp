@@ -1,14 +1,18 @@
-#include "robotInterface.h"
 #ifdef RAI_ROS
 #  include <RosCom/roscom.h>
 #  include <RosCom/baxter.h>
 #endif
+
+#include <Gui/opengl.h>
+
+#include "robotOperation.h"
 #include "splineRunner.h"
+
 
 //#include "SimulationThread_self.h"
 extern bool Geo_mesh_drawColors;
 
-struct sRobotInterface : Thread, GLDrawer{
+struct sRobotOperation : Thread, GLDrawer{
   BaxterInterface baxter;
   arr q0, q_ref;
   StringA jointNames;
@@ -20,8 +24,9 @@ struct sRobotInterface : Thread, GLDrawer{
   SplineRunner spline;
   double dt; // time stepping interval
 
-  sRobotInterface(const rai::KinematicWorld& _K, double _dt, bool useRosDefault)
+  sRobotOperation(const rai::KinematicWorld& _K, double _dt, bool useRosDefault)
     : Thread("RobotInterface", _dt),
+      baxter(useRosDefault),
       K_ref(_K),
       dt(_dt){
 
@@ -37,7 +42,7 @@ struct sRobotInterface : Thread, GLDrawer{
     threadLoop();
   }
 
-  ~sRobotInterface(){
+  ~sRobotOperation(){
     threadClose();
   }
 
@@ -94,15 +99,20 @@ struct sRobotInterface : Thread, GLDrawer{
 };
 
 
-RobotInterface::RobotInterface(const rai::KinematicWorld& _K, double dt, const char* rosNodeName) {
-  if(rosNodeName) rosCheckInit(rosNodeName);
-  s = make_shared<sRobotInterface>(_K, dt, rosNodeName);
+RobotOperation::RobotOperation(const rai::KinematicWorld& _K, double dt, const char* rosNodeName) {
+  if(rosNodeName && strlen(rosNodeName)>3){
+      rosCheckInit(rosNodeName);
+      s = make_shared<sRobotOperation>(_K, dt, true);
+  }else{
+      s = make_shared<sRobotOperation>(_K, dt, false);
+  }
+
 }
 
-RobotInterface::~RobotInterface(){
+RobotOperation::~RobotOperation(){
 }
 
-void RobotInterface::sendToReal(bool activate){
+void RobotOperation::sendToReal(bool activate){
   s->sendToBaxter = activate;
 }
 
@@ -121,7 +131,7 @@ void RobotInterface::sendToReal(bool activate){
 
     To interrupt a running motion, send and empty path with
     append=false. */
-void RobotInterface::move(const arr& path, const arr& times, bool append){
+void RobotOperation::move(const arr& path, const arr& times, bool append){
   cout <<"SENDING MOTION: " <<path <<endl <<times <<endl;
   auto lock = s->stepMutex(RAI_HERE);
   arr _path = path.ref();
@@ -129,13 +139,13 @@ void RobotInterface::move(const arr& path, const arr& times, bool append){
   s->spline.set(_path, times, getJointPositions(), append);
 }
 
-void RobotInterface::move(const arrA& poses, const arr& times, bool append){
+void RobotOperation::move(const arrA& poses, const arr& times, bool append){
   arr path(poses.N, poses(0).N);
   for(uint i=0;i<path.d0;i++) path[i] = poses(i);
   move(path, times, append);
 }
 
-double RobotInterface::timeToGo(){
+double RobotOperation::timeToGo(){
   auto lock = s->stepMutex(RAI_HERE);
   return s->spline.timeToGo();
 }
@@ -160,19 +170,19 @@ double RobotInterface::timeToGo(){
 //  NIY
 //}
 
-arr RobotInterface::getHomePose(){ return s->q0; }
+arr RobotOperation::getHomePose(){ return s->q0; }
 
-const StringA& RobotInterface::getJointNames(){
+const StringA& RobotOperation::getJointNames(){
   return s->jointNames;
 }
 
-arr RobotInterface::getJointPositions(const StringA& joints){
+arr RobotOperation::getJointPositions(const StringA& joints){
   auto lock = s->stepMutex(RAI_HERE);
   if(s->useBaxter) return s->baxter.get_q();
   return s->K_ref.getJointState();
 }
 
-void RobotInterface::sync(rai::KinematicWorld& K){
+void RobotOperation::sync(rai::KinematicWorld& K){
   auto lock = s->stepMutex(RAI_HERE);
   K.setJointState(getJointPositions(), s->jointNames);
 }

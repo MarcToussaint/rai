@@ -13,7 +13,7 @@
 #include <Kin/cameraview.h>
 #include <Gui/viewer.h>
 #include <LGP/LGP_tree.h>
-#include <Operate/robotInterface.h>
+#include <Operate/robotOperation.h>
 
 struct BulletInterface;
 
@@ -68,7 +68,7 @@ namespace ry{
 
   struct RyBullet { std::shared_ptr<BulletInterface> bullet; };
 
-  struct RyOperate { std::shared_ptr<RobotInterface> R; };
+  struct RyOperate { std::shared_ptr<RobotOperation> R; };
 }
 
 namespace ry{

@@ -29,10 +29,10 @@ struct sBaxterInterface {
 
   std::shared_ptr<Subscriber<sensor_msgs::JointState>> sub_state;
 
-  sBaxterInterface() {
+  sBaxterInterface(bool useRosDefault) {
     baxterModel.addFile(rai::raiPath("../rai-robotModels/baxter/baxter.g"));
 
-    if(rai::getParameter<bool>("useRos", true)) {
+    if(rai::getParameter<bool>("useRos", useRosDefault)) {
       nh = make_shared<ros::NodeHandle>();
       rai::wait(.5);
       pubR = nh->advertise<baxter_core_msgs::JointCommand>("robot/limb/right/joint_command", 1);
@@ -112,7 +112,7 @@ SendPositionCommandsToBaxter::SendPositionCommandsToBaxter(const rai::KinematicW
     ctrl_ref(NULL, true),
     s(0) {
 
-  s = new sBaxterInterface;
+  s = new sBaxterInterface(true);
   s->baxterModel = kw;
 }
 
@@ -167,8 +167,8 @@ void SendPositionCommandsToBaxter::close() { NICO }
 
 #endif
 
-BaxterInterface::BaxterInterface() : s(0){
-  s = new sBaxterInterface;
+BaxterInterface::BaxterInterface(bool useRosDefault) : s(0){
+  s = new sBaxterInterface(useRosDefault);
 }
 
 BaxterInterface::~BaxterInterface(){

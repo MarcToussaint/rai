@@ -390,7 +390,7 @@ PYBIND11_MODULE(libry, m) {
 
   .def("operate", [](ry::Config& self, const char* rosNodeName){
     ry::RyOperate op;
-    op.R = make_shared<RobotInterface>(self.get(), .01, rosNodeName);
+    op.R = make_shared<RobotOperation>(self.get(), .01, rosNodeName);
     return op;
   } )
 
@@ -877,12 +877,7 @@ PYBIND11_MODULE(libry, m) {
     return pybind11::array(q.dim(), q.p);
   } )
 
-  .def("getJointPositions", [](ry::RyOperate& self, ry::Config& C){
-    arr q = self.R->getJointPositions();
-    return pybind11::array(q.dim(), q.p);
-  } )
-
-  .def("send", [](ry::RyOperate& self, bool activate){
+  .def("sendToReal", [](ry::RyOperate& self, bool activate){
     self.R->sendToReal(activate);
   } )
 

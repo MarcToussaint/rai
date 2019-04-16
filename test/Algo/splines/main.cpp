@@ -125,8 +125,8 @@ void TEST(BSpline){
 
 void TEST(BSpline2){
 
-  arr X(3, 1, {0., 1., 2.});
-  arr T = {0., 1., 12.};
+  arr X(5, 1, {0., 2., 1.9, 1.8, 2.});
+  arr T = {0., 10.9, 11., 11.1, 12.};
 
   rai::Spline S;
   S.set(2, X, T);
@@ -134,11 +134,11 @@ void TEST(BSpline2){
   cout <<"times = " <<S.times <<endl;
 
   ofstream fil("z.test");
-  for(double t=T.first();t<=T.last();t+=.01){
+  for(double t=T.first();t<=T.last();t+=.001){
     fil <<t <<' ' <<S.eval(t) <<endl;
   }
   fil.close();
-  gnuplot("plot 'z.test' us 1:2", true);
+  gnuplot("plot 'z.test' us 1:2", false, true);
 
   //Cost cost;
 
