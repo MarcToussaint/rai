@@ -824,7 +824,7 @@ void rai::KinematicWorld::setTimes(double t) {
 // features
 //
 
-void rai::KinematicWorld::evalFeature(arr& y, arr& J, FeatureSymbol& fs, const StringA& symbols) const{
+void rai::KinematicWorld::evalFeature(arr& y, arr& J, FeatureSymbol fs, const StringA& symbols) const{
   ptr<Feature> f = symbols2feature(fs, symbols, *this);
   f->__phi(y, J, *this);
 }

@@ -18,7 +18,7 @@ installUbuntuAll: force
 	@echo "##### calling make installUbuntu in each lib"
 	@find rai -mindepth 1 -maxdepth 1 -type d -exec make installUbuntu -C {} \;
 
-printUbuntuAll: $(DEPEND:%=inPath_printUbuntu/%) printUbuntuAll
+printUbuntuAll: $(DEPEND:%=inPath_printUbuntu/%) printUbuntu
 
 tests: $(test_paths:%=inPath_make/%)
 
