@@ -247,6 +247,16 @@ byteA conv_image2byteA(const sensor_msgs::Image& msg) {
   return img;
 }
 
+floatA conv_imageu162floatA(const sensor_msgs::Image& msg) {
+  byteA data = conv_stdvec2arr<byte>(msg.data);
+  uint16A ref((const uint16_t*)data.p, data.N/2);
+//  uint16A ref((const uint16_t*)msg.data.data(), msg.data.size()/2);
+  ref.reshape(msg.height, msg.width);
+  floatA img(ref.d0, ref.d1);
+  for(uint i=0;i<img.N;i++) img.elem(i) = 0.001f*float(ref.elem(i));
+  return img;
+}
+
 uint16A conv_image2uint16A(const sensor_msgs::Image& msg) {
   byteA data = conv_stdvec2arr<byte>(msg.data);
   uint16A ref((const uint16_t*)data.p, data.N/2);
