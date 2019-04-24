@@ -316,7 +316,6 @@ struct PublisherConv : Thread {
 //===========================================================================
 
 struct RosCom {
-  struct RosCom_Spinner* spinner;
   RosCom(const char* node_name="rai_module");
   ~RosCom();
   template<class T, class P> void publish(std::shared_ptr<P>& pub, Var<T>& v, bool wait=true) {

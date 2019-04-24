@@ -889,6 +889,23 @@ PYBIND11_MODULE(libry, m) {
 
   //===========================================================================
 
+  py::class_<ry::RyCamera>(m, "Camera")
+  .def(py::init<const char*>())
+
+  .def("getRgb", [](ry::RyCamera& self){
+    byteA rgb = self.C->getRgb();
+    return pybind11::array_t<byte>(rgb.dim(), rgb.p);
+  } )
+
+  .def("getDepth", [](ry::RyCamera& self){
+    byteA depth = self.C->getDepth();
+    return pybind11::array_t<float>(depth.dim(), depth.p);
+  } )
+
+  ;
+
+  //===========================================================================
+
 #define ENUMVAL(pre, x) .value(#x, pre##_##x)
 
   py::enum_<ObjectiveType>(m, "OT")

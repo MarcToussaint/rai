@@ -17,14 +17,16 @@
 #  include <pcl_conversions/pcl_conversions.h>
 #endif
 
+Singleton<RosCom_Spinner> singletonRosSpinner;
+
 RosCom::RosCom(const char* node_name) {
   rosCheckInit(node_name);
-  spinner = new RosCom_Spinner(node_name);
+  singletonRosSpinner();
+//  spinner = new RosCom_Spinner(node_name);
   rai::wait(.1);
 }
 
 RosCom::~RosCom() {
-  delete spinner;
 }
 
 bool rosOk() {

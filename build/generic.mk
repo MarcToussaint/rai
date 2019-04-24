@@ -195,7 +195,7 @@ cleanLibs: force
 	@echo "   *** cleanLibs  " $(PWD)
 	@find $(BASE)/rai $(BASE2) \( -type f -or -type l \) \( -name 'lib*.so' -or -name 'lib*.a' \)  -delete -print
 
-cleanAll: cleanLocks force
+cleanAll: cleanLocks cleanDepends force
 	@echo "   *** cleanAll   " $(PWD)
 	@find $(PWD) $(BASE) $(BASE2) \( -type f -or -type l \) \( -name '*.o' -or -name 'lib*.so' -or -name 'lib*.a' -or -name 'x.exe' \) -delete -print
 
@@ -210,9 +210,9 @@ printUbuntu: force
 
 depend: generate_Makefile.dep
 
-dependAll: force
-	@echo "   *** dependAll   " $(PWD)
-	@find $(PWD) $(BASE) $(BASE2) -type f -name 'Makefile' -execdir $(MAKE) depend \;
+# dependAll: force
+# 	@echo "   *** dependAll   " $(PWD)
+# 	@find $(PWD) $(BASE) $(BASE2) -type f -name 'Makefile' -execdir $(MAKE) depend \;
 
 
 info: force

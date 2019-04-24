@@ -2,7 +2,7 @@ BASE   = ../..
 NAME   = $(shell basename `pwd`)
 OUTPUT = lib$(NAME).so
 
-DEPEND = Kin RosCom KOMO
+DEPEND = Kin RosCom KOMO Perception
 
 ROS = 1
 
