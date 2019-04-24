@@ -70,13 +70,13 @@ struct RobotAbstraction_SimulationThread : RobotAbstraction {
     ~RobotAbstraction_SimulationThread(){}
 
     virtual bool executeMotion(const StringA& joints, const arr& path, const arr& times, double timeScale=1., bool append=false){
-        auto lock = S.stepMutex();
+        auto lock = S.stepMutex(RAI_HERE);
         S.SIM.setUsedRobotJoints(joints);
         S.SIM.exec(path, times*timeScale, append);
         return true;
     }
     virtual void execGripper(const rai::String& gripper, double position, double force=40.){
-        auto lock = S.stepMutex();
+        auto lock = S.stepMutex(RAI_HERE);
         if(gripper=="pr2R"){
             //  komo->addObjective(0., 0., OT_eq, FS_accumulatedCollisions, {}, 1e0);
             //open gripper
@@ -91,25 +91,25 @@ struct RobotAbstraction_SimulationThread : RobotAbstraction {
     }
     virtual arr getHomePose(){ return q0; }
     virtual arr getJointPositions(const StringA& joints){
-        auto lock = S.stepMutex();
+        auto lock = S.stepMutex(RAI_HERE);
         S.SIM.setUsedRobotJoints(joints);
         arr q = S.SIM.getJointState();
         return q;
     }
     virtual StringA getJointNames(){
-        auto lock = S.stepMutex();
+        auto lock = S.stepMutex(RAI_HERE);
         StringA joints = S.SIM.getJointNames();
         return joints;
     }
     virtual void attach(const char *a, const char *b){
-        auto lock = S.stepMutex();
+        auto lock = S.stepMutex(RAI_HERE);
         S.SIM.exec({"attach", a, b});
     }
     virtual double timeToGo(){
         return S.SIM.getTimeToGo();
     }
     virtual void getSensor(SensorId sensor, arr& data){
-        auto lock = S.stepMutex();
+        auto lock = S.stepMutex(RAI_HERE);
 	//        S.SIM.setCamera("pr2Kinect");
 	//        S.SIM.getCamera(NoByteA, data, NoArr, NoUint16A);
         NIY;

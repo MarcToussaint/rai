@@ -92,13 +92,22 @@ btRigidBody* BulletInterface::addFrame(const rai::Frame* f){
       colShape =new btBoxShape(btVector3(.5*size(0), .5*size(1), .5*size(2)));
     } break;
     case rai::ST_ssBox:
+    case rai::ST_ssCvx:{
+#ifdef BT_USE_DOUBLE_PRECISION
+      arr& V = f->shape->sscCore().V;
+#else
+      floatA V = convert<float>(f->shape->sscCore().V);
+#endif
+      colShape = new btConvexHullShape(V.p, V.d0, V.sizeT*V.d1);
+      colShape->setMargin(f->shape->radius()+.01);
+    } break;
     case rai::ST_mesh:{
 #ifdef BT_USE_DOUBLE_PRECISION
       arr& V = f->shape->mesh().V;
 #else
       floatA V = convert<float>(f->shape->mesh().V);
 #endif
-      colShape =new btConvexHullShape(V.p, V.d0, V.sizeT*V.d1);
+      colShape = new btConvexHullShape(V.p, V.d0, V.sizeT*V.d1);
     } break;
     default: HALT("NIY" <<f->shape->type());
   }
@@ -252,4 +261,17 @@ void BulletInterface::saveBulletFile(const char* filename){
 }
 
 #else
+
+BulletInterface::BulletInterface(){ NICO }
+BulletInterface::BulletInterface(const rai::KinematicWorld& K){ NICO }
+BulletInterface::~BulletInterface(){ NICO }
+btRigidBody* BulletInterface::addGround(){ NICO }
+btRigidBody* BulletInterface::addFrame(const rai::Frame* f){ NICO }
+void BulletInterface::addFrames(const FrameL& frames){ NICO }
+void BulletInterface::defaultInit(const rai::KinematicWorld& K){ NICO }
+void BulletInterface::step(double tau){ NICO }
+void BulletInterface::pushFullState(const FrameL& frames, const arr& vel){ NICO }
+void BulletInterface::pushKinematicStates(const FrameL& frames){ NICO }
+arr BulletInterface::pullDynamicStates(FrameL& frames){ NICO }
+void BulletInterface::saveBulletFile(const char* filename){ NICO }
 #endif

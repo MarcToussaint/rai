@@ -274,12 +274,12 @@ void TM_ZeroAcc::phi(arr& y, arr& J, const WorldL& Ktuple){
   pos.Feature::__phi(y, J, Ktuple);
 }
 
+extern bool isSwitched(rai::Frame *f0, rai::Frame *f1);
+
 void TM_ZeroQVel::phi(arr& y, arr& J, const WorldL& Ktuple){
   TM_qItself q({(uint)i}, false);
   q.order=order;
-  if(order==1 && Ktuple(-1)->frames(i)->joint->qDim()!=Ktuple(-2)->frames(i)->joint->qDim()){
-//    rai::Frame *a = Ktuple(-2)->frames(i);
-//    rai::Frame *b = Ktuple(-1)->frames(i);
+  if(order==1 && isSwitched(Ktuple(-1)->frames(i), Ktuple(-2)->frames(i))){
     y.resize(Ktuple(-1)->frames(i)->joint->dim).setZero();
     if(!!J) J.resize(y.N, getKtupleDim(Ktuple).last()).setZero();
     return;

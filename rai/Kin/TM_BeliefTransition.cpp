@@ -59,7 +59,7 @@ void TM_BeliefTransition::phi(arr &y, arr &J, const WorldL &Ktuple) {
   }
   
   for(rai::Joint *j1 : Ktuple.elem(-1)->fwdActiveJoints) if(j1->uncertainty) {
-      rai::Joint *j0 = Ktuple.elem(-2)->frames(j1->frame.ID)->joint;
+      rai::Joint *j0 = Ktuple.elem(-2)->frames(j1->frame->ID)->joint;
       CHECK(j0, "");
       CHECK(j0->uncertainty, "");
       CHECK_EQ(j0->dim, j1->dim, "");

@@ -96,7 +96,7 @@ QT := 1
 endif
 
 ifeq ($(GL),1)
-DEPEND_UBUNTU += libglew-dev
+DEPEND_UBUNTU += libglew-dev freeglut3-dev
 CXXFLAGS  += -DRAI_GL
 LIBS += -lGLEW -lglut -lGLU -lGL -lX11
 endif
@@ -134,7 +134,7 @@ LIBS += -lode
 endif
 
 ifeq ($(FCL),1)
-DEPEND_UBUNTU += libfcl-dev
+DEPEND_UBUNTU += libfcl-0.5-dev
 CXXFLAGS  += -DRAI_FCL
 LIBS      += -lfcl
 endif

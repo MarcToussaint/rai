@@ -143,6 +143,13 @@ PYBIND11_MODULE(libry, m) {
     py::arg("parent") = std::string(),
     py::arg("args") = std::string() )
 
+  .def("setFrameRelativePose", [](ry::Config& self, const std::string& frame, const std::vector<double>& x) {
+      auto Kset = self.set();
+      rai::Frame *f = Kset->getFrameByName(frame.c_str(), true);
+      f->Q.set(conv_stdvec2arr(x));
+      Kset->calc_fwdPropagateFrames();
+  } )
+
   .def("delFrame", [](ry::Config& self, const std::string& name) {
     auto Kset = self.set();
     rai::Frame *p = Kset->getFrameByName(name.c_str(), true);
@@ -274,6 +281,15 @@ PYBIND11_MODULE(libry, m) {
     self.set()->makeObjectsFree(I_conv(objs));
   } )
 
+  .def("makeObjectsConvex", [](ry::Config& self){
+      makeConvexHulls(self.set()->frames);
+  } )
+
+  .def("attach", [](ry::Config& self, const std::string& frame1, const std::string& frame2){
+      auto Kset = self.set();
+      Kset->attach(frame1.c_str(), frame2.c_str());
+  } )
+
   .def("computeCollisions", [](ry::Config& self){
     self.set()->stepSwift();
   } )
@@ -300,6 +316,17 @@ PYBIND11_MODULE(libry, m) {
     ry::RyFrame f;
     f.frame = self.get()->getFrameByName(framename.c_str(), true);
     return f;
+  } )
+
+  .def("getFrameBox", [](ry::Config& self, const std::string& framename){
+    auto Kget = self.get();
+    rai::Frame *f = Kget->getFrameByName(framename.c_str(), true);
+    rai::Shape *s = f->shape;
+    CHECK(s, "frame " <<f->name <<" does not have a shape");
+    CHECK(s->type() == rai::ST_ssBox || s->type() == rai::ST_box,
+            "frame " <<f->name <<" needs to be a box");
+    arr range = s->size();
+    return pybind11::array(range.dim(), range.p);
   } )
 
   .def("view", [](ry::Config& self, const std::string& frame){
@@ -580,9 +607,10 @@ PYBIND11_MODULE(libry, m) {
       py::arg("stickiness") = 0. )
 
   .def("addObjective", [](ry::RyKOMO& self, const std::vector<double>& time, const ObjectiveType& type, const FeatureSymbol& feature, const ry::I_StringA& frames, const std::vector<double> scale, const std::vector<std::vector<double>> scaleTrans, const std::vector<double>& target, int order){
-    arr _scale = arr(scale);
+    arr _scale;
+    if(scale.size()) _scale=conv_stdvec2arr(scale);
     if(scaleTrans.size()) _scale=vecvec2arr(scaleTrans);
-    self.komo->addObjective(arr(time), type, feature, I_conv(frames), arr(scale), arr(target), order);
+    self.komo->addObjective(arr(time), type, feature, I_conv(frames), _scale, arr(target), order);
   },"", py::arg("time")=std::vector<double>(),
       py::arg("type"),
       py::arg("feature"),

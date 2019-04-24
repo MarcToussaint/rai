@@ -73,7 +73,7 @@ void testFeature() {
     }
 
     arr y;
-    F.first()->phi(y, NoArr, Ktuple);
+    F.first()->__phi(y, NoArr, Ktuple);
 
     if(!succ) K2.watch(true);
   }

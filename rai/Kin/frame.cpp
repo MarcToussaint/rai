@@ -105,10 +105,15 @@ rai::Inertia &rai::Frame::getInertia() {
   return *inertia;
 }
 
-rai::Frame *rai::Frame::getUpwardLink(rai::Transformation &Qtotal) const {
+rai::Frame *rai::Frame::getUpwardLink(rai::Transformation &Qtotal, bool untilRigid) const {
   if(!!Qtotal) Qtotal.setZero();
   const Frame *p=this;
-  while(p->parent && !p->joint) {
+  while(p->parent) {
+    if(!untilRigid){
+      if(p->joint) break;
+    }else{
+      if(p->joint && p->joint->getDimFromType()!=1 && !p->joint->mimic) break;
+    }
     if(!!Qtotal) Qtotal = p->Q*Qtotal;
     p = p->parent;
   }
@@ -155,16 +160,22 @@ void rai::Frame::write(Graph& G){
   }
 
   for(Node *n : ats) {
-    StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H", "axis", "A"};
-    if(!avoid.contains(n->keys.last())) n->newClone(g);
+    StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H", "axis", "A", "B", "mimic"};
+    if(!avoid.contains(n->keys.last())){
+      n->newClone(g);
+    }
   }
 }
 
 void rai::Frame::write(std::ostream& os) const {
   os <<name;
+
+  if(parent) os <<" (" <<parent->name <<')';
+
   os <<" \t{ ";
 
-  if(parent) os <<"parent:" <<parent->name;
+//  if(parent) os <<"parent:" <<parent->name;
+
   if(joint) joint->write(os);
   if(shape) shape->write(os);
   if(inertia) inertia->write(os);
@@ -186,7 +197,7 @@ void rai::Frame::write(std::ostream& os) const {
   }
   
   for(Node *n : ats) {
-    StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H", "axis", "A"};
+    StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H", "axis", "A", "B", "mimic"};
     if(!avoid.contains(n->keys.last())) os <<' ' <<*n;
   }
   
@@ -261,14 +272,14 @@ bool rai::Frame::isChildOf(const rai::Frame* par, int order) const{
 }
 
 rai::Joint::Joint(rai::Frame& f, rai::JointType _type) : Joint(f, (Joint*)NULL){
-  type = _type;
+  setType(_type);
 }
 
 rai::Joint::Joint(Frame &f, Joint *copyJoint)
-  : frame(f), qIndex(UINT_MAX){
-  CHECK(!frame.joint, "the Link already has a Joint");
-  frame.joint = this;
-  frame.K.reset_q();
+  : frame(&f), qIndex(UINT_MAX){
+  CHECK(!frame->joint, "the Link already has a Joint");
+  frame->joint = this;
+  frame->K.reset_q();
   
   if(copyJoint) {
     qIndex=copyJoint->qIndex; dim=copyJoint->dim; mimic=reinterpret_cast<Joint*>(copyJoint->mimic?1l:0l); constrainToZeroVel=copyJoint->constrainToZeroVel;
@@ -276,7 +287,7 @@ rai::Joint::Joint(Frame &f, Joint *copyJoint)
     active=copyJoint->active;
     
     if(copyJoint->mimic) {
-      mimic = frame.K.frames(copyJoint->mimic->frame.ID)->joint;
+      mimic = frame->K.frames(copyJoint->mimic->frame->ID)->joint;
     }
     
     if(copyJoint->uncertainty) {
@@ -287,20 +298,20 @@ rai::Joint::Joint(Frame &f, Joint *copyJoint)
 
 rai::Joint::Joint(Frame &from, Frame &f, Joint *copyJoint)
   : Joint(f, copyJoint) {
-  frame.linkFrom(&from);
+  frame->linkFrom(&from);
 }
 
 rai::Joint::~Joint() {
-  frame.K.reset_q();
-  frame.joint = NULL;
-  //if(frame.parent) frame.unLink();
+  frame->K.reset_q();
+  frame->joint = NULL;
+  //if(frame->parent) frame->unLink();
 }
 
 void rai::Joint::calc_Q_from_q(const arr &q, uint _qIndex) {
-  rai::Transformation &Q = frame.Q;
+  rai::Transformation &Q = frame->Q;
 //  if(type!=JT_rigid) Q.setZero();
   if(mimic) {
-    Q = mimic->frame.Q;
+    Q = mimic->frame->Q;
   } else {
     switch(type) {
       case JT_hingeX: {
@@ -391,8 +402,8 @@ void rai::Joint::calc_Q_from_q(const arr &q, uint _qIndex) {
         break;
         
       case JT_time:
-        frame.tau = 1e-1 * q.elem(_qIndex);
-        if(frame.tau<1e-10) frame.tau=1e-10;
+        frame->tau = 1e-1 * q.elem(_qIndex);
+        if(frame->tau<1e-10) frame->tau=1e-10;
         break;
       default: NIY;
     }
@@ -503,7 +514,7 @@ arr rai::Joint::calc_q_from_Q(const rai::Transformation &Q) const {
       break;
     case JT_time:
       q.resize(1);
-      q(0) = 1e1 * frame.tau;
+      q(0) = 1e1 * frame->tau;
       break;
     default: NIY;
   }
@@ -611,20 +622,34 @@ arr rai::Joint::get_h() const {
 }
 
 double& rai::Joint::getQ() {
-  return frame.K.q.elem(qIndex);
+  return frame->K.q.elem(qIndex);
 }
 
 void rai::Joint::makeRigid() {
   if(type!=JT_rigid){
-    type=JT_rigid; frame.K.reset_q();
+    type=JT_rigid; frame->K.reset_q();
   }
 }
 
 void rai::Joint::makeFree(double H_cost){
-  if(type!=JT_free){
-    type=JT_free; frame.K.reset_q();
-    H=H_cost;
+  setType(JT_free);
+  H=H_cost;
+}
+
+void rai::Joint::setType(rai::JointType _type){
+  if(type!=_type){
+    type = _type;
+    dim = getDimFromType();
+    frame->K.reset_q();
   }
+}
+
+void rai::Joint::flip(){
+  frame->joint = 0;
+  frame = frame->parent;
+  CHECK(!frame->joint, "");
+  frame->joint = this;
+  frame->K.reset_q();
 }
 
 void rai::Joint::read(const Graph &G) {
@@ -653,8 +678,8 @@ void rai::Joint::read(const Graph &G) {
   
   if(!B.isZero()) {
     //new frame between: from -> f -> to
-    CHECK_EQ(frame.parentOf.N, 1,"");
-    Frame *follow = frame.parentOf.scalar();
+    CHECK_EQ(frame->parentOf.N, 1,"");
+    Frame *follow = frame->parentOf.scalar();
     
     CHECK(follow->parent, "");
     CHECK(!follow->joint, "");
@@ -663,11 +688,11 @@ void rai::Joint::read(const Graph &G) {
   }
   
   if(!A.isZero()) {
-    frame.insertPreLink(A);
+    frame->insertPreLink(A);
     A.setZero();
   }
   
-  G.get(frame.Q, "Q");
+  G.get(frame->Q, "Q");
   G.get(H, "ctrl_H");
   if(G.get(d, "joint"))        type=(JointType)d;
   else if(G.get(str, "joint")) { str >>type; }
@@ -679,7 +704,7 @@ void rai::Joint::read(const Graph &G) {
   
   if(G.get(d, "q")) {
     if(!dim) { //HACK convention
-      frame.Q.rot.setRad(d, 1., 0., 0.);
+      frame->Q.rot.setRad(d, 1., 0., 0.);
     } else {
       CHECK(dim, "setting q (in config file) for 0-dim joint");
       q0 = consts<double>(d, dim);
@@ -690,7 +715,7 @@ void rai::Joint::read(const Graph &G) {
     calc_Q_from_q(q0, 0);
   } else {
     //    link->Q.setZero();
-    q0 = calc_q_from_Q(frame.Q);
+    q0 = calc_q_from_Q(frame->Q);
   }
   
   //limit
@@ -715,9 +740,9 @@ void rai::Joint::read(const Graph &G) {
 
 void rai::Joint::write(Graph& g){
   g.newNode<Enum<JointType>>({"joint"}, {}, type);
-  if(H) g.newNode<double>({"ctrl_H"}, {}, H);
+  if(H!=1.) g.newNode<double>({"ctrl_H"}, {}, H);
   if(limits.N) g.newNode<arr>({"limits"}, {}, limits);
-  if(mimic) g.newNode<rai::String>({"mimic"}, {}, STRING('(' <<mimic->frame.name <<')'));
+  if(mimic) g.newNode<rai::String>({"mimic"}, {}, STRING('(' <<mimic->frame->name <<')'));
 }
 
 void rai::Joint::write(std::ostream& os) const {
@@ -725,12 +750,12 @@ void rai::Joint::write(std::ostream& os) const {
   if(H) os <<" ctrl_H:"<<H;
   if(limits.N) os <<" limits:[" <<limits <<"]";
   if(mimic) {
-    os <<" mimic:(" <<mimic->frame.name <<')';
+    os <<" mimic:(" <<mimic->frame->name <<')';
   }
-  
-  Node *n;
-  if((n=frame.ats["Q"])) os <<*n <<' ';
-  if((n=frame.ats["q"])) os <<*n <<' ';
+  os <<' ';
+//  Node *n;
+//  if((n=frame->ats["Q"])) os <<*n <<' ';
+//  if((n=frame->ats["q"])) os <<*n <<' ';
 }
 
 //===========================================================================
