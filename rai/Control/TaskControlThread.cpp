@@ -81,7 +81,7 @@ void TaskControlThread::step() {
       qdot_model = qdot_real;
       requiresInitialSync = false;
     }else{
-      LOG(0) <<"waiting for ctrl_state messages...";
+//      LOG(0) <<"waiting for ctrl_state messages...";
       return;
     }
   }

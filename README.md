@@ -26,8 +26,8 @@ cd rai
 cp build/config.mk.default build/config.mk    # edit this to modify dependencies or debug mode
 
 # OPTIONAL! Often you will only need to compile some components and don't need all Ubuntu packages
-make -j1 printUbuntu  # to just print Ubuntu package dependencies per component
-make -j1 initUbuntuPackages  # calls sudo apt-get install; you can always interrupt
+make -j1 printUbuntuAll  # to just print Ubuntu package dependencies per component
+make -j1 installUbuntuAll  # calls sudo apt-get install; you can always interrupt
 
 make runTests      # compile and run the essential tests
 make bin           # compile rai/bin/kinEdit and similar
