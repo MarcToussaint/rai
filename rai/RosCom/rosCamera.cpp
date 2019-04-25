@@ -20,3 +20,6 @@ RosCamera::RosCamera(const char* rosNodeName,
   if(depth_topic) depth.name() = depth_topic;
   s = make_shared<sRosCamera>(rosNodeName, rgb, depth);
 }
+
+RosCamera::~RosCamera(){
+}
