@@ -14,11 +14,11 @@ bin_paths = $(shell find bin -mindepth 2 -maxdepth 2 -name 'Makefile' -printf "%
 
 ################################################################################
 
-initUbuntuPackages: force
+installUbuntuAll: force
 	@echo "##### calling make installUbuntu in each lib"
 	@find rai -mindepth 1 -maxdepth 1 -type d -exec make installUbuntu -C {} \;
 
-printUbuntu: $(DEPEND:%=inPath_printUbuntuPackages/%) printUbuntuPackages
+printUbuntuAll: $(DEPEND:%=inPath_printUbuntu/%) printUbuntu
 
 tests: $(test_paths:%=inPath_make/%)
 
