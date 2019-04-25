@@ -14,7 +14,7 @@
 #include <Gui/viewer.h>
 #include <LGP/LGP_tree.h>
 #include <Operate/robotOperation.h>
-#include <Operate/cameraOperation.h>
+#include <RosCom/rosCamera.h>
 
 struct BulletInterface;
 
@@ -71,7 +71,10 @@ namespace ry{
 
   struct RyOperate { std::shared_ptr<RobotOperation> R; };
 
-  struct RyCamera { std::shared_ptr<CameraOperation> C; };
+  struct RyCamera {
+    std::shared_ptr<RosCamera> C;
+    RyCamera() : C(make_shared<RosCamera>()) {}
+  };
 }
 
 namespace ry{

@@ -890,7 +890,7 @@ PYBIND11_MODULE(libry, m) {
   //===========================================================================
 
   py::class_<ry::RyCamera>(m, "Camera")
-  .def(py::init<const char*>())
+  .def(py::init<>())
 
   .def("getRgb", [](ry::RyCamera& self){
     byteA rgb = self.C->getRgb();
@@ -898,7 +898,7 @@ PYBIND11_MODULE(libry, m) {
   } )
 
   .def("getDepth", [](ry::RyCamera& self){
-    byteA depth = self.C->getDepth();
+    floatA depth = self.C->getDepth();
     return pybind11::array_t<float>(depth.dim(), depth.p);
   } )
 

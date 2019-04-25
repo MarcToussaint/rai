@@ -2,7 +2,7 @@ BASE   = ../..
 NAME   = $(shell basename `pwd`)
 OUTPUT = lib$(NAME).so
 
-DEPEND = Core Kin KOMO LGP Operate
+DEPEND = Core Kin KOMO LGP Operate RosCom
 
 PYBIND = 1
 
