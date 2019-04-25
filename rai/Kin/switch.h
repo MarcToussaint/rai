@@ -41,9 +41,14 @@ struct KinematicSwitch {
   Enum<JointType> jointType;
   Enum<SwitchInitializationType> init;
   int timeOfApplication;
-  uint fromId, toId;
+  int fromId, toId;
   rai::Transformation jA,jB;
   KinematicSwitch();
+  KinematicSwitch(SwitchType op, JointType type,
+                  int aFrame, int bFrame,
+                  SwitchInitializationType _init=SWInit_zero,
+                  int _timeOfApplication=0,
+                  const rai::Transformation& jFrom=NoTransformation, const rai::Transformation& jTo=NoTransformation);
   KinematicSwitch(SwitchType op, JointType type,
                   const char* ref1, const char* ref2,
                   const rai::KinematicWorld& K,

@@ -1193,6 +1193,12 @@ void rai::Mesh::writePLY(const char *fn, bool bin) {
   free_ply(ply);
 }
 
+bool ply_check_property( PlyElement *elem, const char *prop_name){
+  for(int i=0; i<elem->nprops; i++)
+    if(!strcmp(prop_name, elem->props[i]->name)) return true;
+  return false;
+}
+
 void rai::Mesh::readPLY(const char *fn) {
   struct PlyFace {    unsigned char nverts;  int *verts; };
   struct Vertex {    double x,  y,  z ;  byte r,g,b; };
@@ -1240,11 +1246,12 @@ void rai::Mesh::readPLY(const char *fn) {
       r &= setup_property_ply(ply, &vert_props[1]);
       r &= setup_property_ply(ply, &vert_props[2]);
       if(!r) HALT("no vertices defined??");
-
-      r &= setup_property_ply(ply, &vert_props[3]);
-      r &= setup_property_ply(ply, &vert_props[4]);
-      r &= setup_property_ply(ply, &vert_props[5]);
-      if(r && C.N!=V.N) C.resize(_nverts,3); //has color
+      if(ply_check_property(ply->which_elem, "red")){
+        r &= setup_property_ply(ply, &vert_props[3]);
+        r &= setup_property_ply(ply, &vert_props[4]);
+        r &= setup_property_ply(ply, &vert_props[5]);
+        if(r && C.N!=V.N) C.resize(_nverts,3); //has color
+      }
 
       Vertex vertex;
       for(uint j = 0; j < _nverts; ++j) {

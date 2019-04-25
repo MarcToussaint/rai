@@ -30,5 +30,5 @@ frame stick (table1){
   joint:rigid
 }
 
-frame stickTip (stick) { Q:<t(.4 .1 0) d(90 0 0 1)> type:ssBox size:[.2 .026 .04 0.01] color:[.6 .3 0], logical:{ object, pusher } }
+frame stickTip (stick) { Q:<t(.4 .1 0) d(90 0 0 1)> type:ssBox size:[.2 .026 .04 0.01] color:[.6 .3 0], logical:{ object, pusher }, contact }
 

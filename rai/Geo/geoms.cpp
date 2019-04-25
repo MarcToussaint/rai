@@ -100,7 +100,7 @@ void rai::Geom::createMeshes() {
       break;
     case rai::ST_mesh:
     case rai::ST_pointCloud:
-      CHECK(mesh.V.N, "mesh needs to be loaded");
+      if(!mesh.V.N) LOG(-1) <<"mesh needs to be loaded";
       size(3) = 0.;
 //    sscCore = mesh;
 //    sscCore.makeConvexHull();
@@ -133,9 +133,13 @@ void rai::Geom::createMeshes() {
 }
 
 void rai::Geom::glDraw(OpenGL &gl) {
-  if(!mesh.V.N) createMeshes();
-  mesh.glDraw(gl);
-  return;
+  if(type==rai::ST_marker){
+    glDrawDiamond(size(0)/5., size(0)/5., size(0)/5.); glDrawAxes(size(0), !gl.drawMode_idColor);
+  }else{
+    if(!mesh.V.N) createMeshes();
+    mesh.glDraw(gl);
+    return;
+  }
   bool drawCores = false;
   bool drawMeshes = true;
   switch(type) {

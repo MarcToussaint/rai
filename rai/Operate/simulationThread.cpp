@@ -24,12 +24,12 @@ struct SimulationThread_self{
   std::shared_ptr<PublisherConv<std_msgs::Float64, double, conv_double2Float64>> pub_timeToGo;
 
   SimulationThread_self()
-      : ROS("simulator"),
-        ref("MotionReference"),
-        command("command"),
-        currentQ("currentQ"),
-        objectPoses("objectPoses"),
-        objectNames("objectNames"){
+      : ref(),
+        command(),
+        currentQ(),
+        objectPoses(),
+        objectNames(),
+        ROS("simulator"){
 
       //setup ros communication
       sub_ref = ROS.subscribe(ref);
@@ -114,14 +114,14 @@ void SimulationThread::loop(){
 }
 
 bool SimulationThread::executeMotion(const StringA& joints, const arr& path, const arr& times, double timeScale, bool append){
-  auto lock = stepMutex();
+  auto lock = stepMutex(RAI_HERE);
   SIM.setUsedRobotJoints(joints);
   SIM.exec(path, times*timeScale, append);
   return true;
 }
 
 void SimulationThread::execGripper(const rai::String& gripper, double position, double force){
-  auto lock = stepMutex();
+  auto lock = stepMutex(RAI_HERE);
   if(gripper=="pr2R"){
     //  komo->addObjective(0., 0., OT_eq, FS_accumulatedCollisions, {}, 1e0);
     //open gripper
@@ -143,34 +143,27 @@ void SimulationThread::execGripper(const rai::String& gripper, double position, 
 arr SimulationThread::getHomePose(){ return q0; }
 
 StringA SimulationThread::getJointNames(){
-  auto lock = stepMutex();
+  auto lock = stepMutex(RAI_HERE);
   StringA joints = SIM.getJointNames();
   return joints;
 }
 
 void SimulationThread::attach(const char *a, const char *b){
-  auto lock = stepMutex();
+  auto lock = stepMutex(RAI_HERE);
   SIM.exec({"attach", a, b});
 }
 
 arr SimulationThread::getJointPositions(const StringA& joints){
-  auto lock = stepMutex();
+  auto lock = stepMutex(RAI_HERE);
   SIM.setUsedRobotJoints(joints);
   arr q = SIM.getJointState();
   return q;
 }
 
 void SimulationThread::addFile(const char* filename, const char* parentOfRoot, const rai::Transformation& relOfRoot){
-  auto lock = stepMutex();
-  uint n = SIM.K.frames.N;
-  SIM.K.addFile(filename);
-  if(parentOfRoot){
-      rai::Frame *f = SIM.K.frames(n);
-      f->linkFrom(SIM.K.getFrameByName(parentOfRoot));
-      new rai::Joint(*f, rai::JT_rigid);
-      f->Q = relOfRoot;
-      SIM.K.calc_activeSets();
-  }
+  auto lock = stepMutex(RAI_HERE);
+  SIM.K.addFile(filename, parentOfRoot, relOfRoot);
+  SIM.K.calc_activeSets();
   SIM.K.calc_fwdPropagateFrames();
   SIM.K.checkConsistency();
   K.set() = SIM.K;

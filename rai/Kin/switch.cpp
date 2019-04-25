@@ -56,21 +56,23 @@ template<> const char* rai::Enum<rai::SwitchInitializationType>::names []= {
 //
 
 rai::KinematicSwitch::KinematicSwitch()
-  : symbol(SW_none), jointType(JT_none), init(SWInit_zero), timeOfApplication(-1), fromId(UINT_MAX), toId(UINT_MAX), jA(0), jB(0) {
-}
+  : symbol(SW_none), jointType(JT_none), init(SWInit_zero), timeOfApplication(-1), fromId(-1), toId(-1), jA(0), jB(0)
+{}
 
-rai::KinematicSwitch::KinematicSwitch(SwitchType _symbol, JointType _jointType, const char* ref1, const char* ref2, const rai::KinematicWorld& K, SwitchInitializationType _init, int _timeOfApplication, const rai::Transformation& jFrom, const rai::Transformation& jTo)
+rai::KinematicSwitch::KinematicSwitch(SwitchType _symbol, JointType _jointType, int aFrame, int bFrame, SwitchInitializationType _init, int _timeOfApplication, const rai::Transformation& jFrom, const rai::Transformation& jTo)
   : symbol(_symbol),
     jointType(_jointType),
     init(_init),
     timeOfApplication(_timeOfApplication),
-    fromId(UINT_MAX), toId(UINT_MAX),
+    fromId(aFrame), toId(bFrame),
     jA(0), jB(0) {
-  if(ref1) fromId = K.getFrameByName(ref1, true)->ID;
-  if(ref2) toId = K.getFrameByName(ref2, true)->ID;
   if(!!jFrom) jA = jFrom;
   if(!!jTo)   jB = jTo;
 }
+
+rai::KinematicSwitch::KinematicSwitch(rai::SwitchType op, rai::JointType type, const char* ref1, const char* ref2, const rai::KinematicWorld& K, rai::SwitchInitializationType _init, int _timeOfApplication, const rai::Transformation& jFrom, const rai::Transformation& jTo)
+  : KinematicSwitch(op, type, initIdArg(K,ref1), initIdArg(K,ref2), _init, _timeOfApplication, jFrom, jTo)
+{}
 
 void rai::KinematicSwitch::setTimeOfApplication(double time, bool before, int stepsPerPhase, uint T) {
   if(stepsPerPhase<0) stepsPerPhase=T;
@@ -79,25 +81,24 @@ void rai::KinematicSwitch::setTimeOfApplication(double time, bool before, int st
 
 void rai::KinematicSwitch::apply(KinematicWorld& K) {
   Frame *from=NULL, *to=NULL;
-  if(fromId!=UINT_MAX) from=K.frames(fromId);
-  if(toId!=UINT_MAX) to=K.frames(toId);
+  if(fromId!=-1) from=K.frames(fromId);
+  if(toId!=-1) to=K.frames(toId);
 
   if(symbol==SW_insertEffJoint || symbol==insertActuated) HALT("deprecated");
 
   if(symbol==SW_effJoint || symbol==SW_actJoint) {
-
     //first find link frame above 'to', and make it a root
-    rai::Frame *link = to->getUpwardLink();
+    rai::Frame *link = to->getUpwardLink(NoTransformation, true);
     if(link->parent) link->unLink();
-    K.reconfigureRootOfSubtree(to);
+    K.reconfigureRootOfSubtree(to); //TODO: really? do you need this when you took the link??
 
     //create a new joint
     to->linkFrom(from);
     Joint *j = new Joint(*to);
-    j->type = jointType;
+    j->setType(jointType);
 
-    if(!jA.isZero()) j->frame.insertPreLink(jA);
-    if(!jB.isZero()) j->frame.insertPostLink(jB);
+    if(!jA.isZero()) j->frame->insertPreLink(jA);
+    if(!jB.isZero()) j->frame->insertPostLink(jB);
 
     //set zeroVel flag
     if(symbol==SW_actJoint || symbol==insertActuated) {
@@ -109,17 +110,17 @@ void rai::KinematicSwitch::apply(KinematicWorld& K) {
 
     //initialize to zero, copy, or random
     if(init==SWInit_zero) { //initialize the joint with zero transform
-      j->frame.Q.setZero();
+      j->frame->Q.setZero();
     }else if(init==SWInit_copy) { //set Q to the current relative transform, modulo DOFs
-      j->frame.Q = j->frame.X / j->frame.parent->X; //that's important for the initialization of x during the very first komo.setupConfigurations !!
-      //cout <<j->frame.Q <<' ' <<j->frame.Q.rot.normalization() <<endl;
-      arr q = j->calc_q_from_Q(j->frame.Q);
-      j->frame.Q.setZero();
+      j->frame->Q = j->frame->X / j->frame->parent->X; //that's important for the initialization of x during the very first komo.setupConfigurations !!
+      //cout <<j->frame->Q <<' ' <<j->frame->Q.rot.normalization() <<endl;
+      arr q = j->calc_q_from_Q(j->frame->Q);
+      j->frame->Q.setZero();
       j->calc_Q_from_q(q, 0);
     } if(init==SWInit_random) { //random, modulo DOFs
-      j->frame.Q.setRandom();
-      arr q = j->calc_q_from_Q(j->frame.Q);
-      j->frame.Q.setZero();
+      j->frame->Q.setRandom();
+      arr q = j->calc_q_from_Q(j->frame->Q);
+      j->frame->Q.setZero();
       j->calc_Q_from_q(q, 0);
     }
 
@@ -173,8 +174,7 @@ void rai::KinematicSwitch::apply(KinematicWorld& K) {
 
   if(symbol==SW_addContact) {
     CHECK_EQ(jointType, JT_none, "");
-    auto c = new rai::Contact(*from, *to);
-    c->setZero();
+    new rai::Contact(*from, *to);
     return;
   }
 
@@ -195,7 +195,7 @@ rai::String rai::KinematicSwitch::shortTag(const rai::KinematicWorld* G) const {
   str <<"  timeOfApplication=" <<timeOfApplication;
   str <<"  symbol=" <<symbol;
   str <<"  jointType=" <<jointType;
-  str <<"  fromId=" <<(fromId==UINT_MAX?"NULL":(G?G->frames(fromId)->name:STRING(fromId)));
+  str <<"  fromId=" <<(fromId==-1?"NULL":(G?G->frames(fromId)->name:STRING(fromId)));
   str <<"  toId=" <<(G?G->frames(toId)->name:STRING(toId)) <<endl;
   return str;
 }
@@ -205,9 +205,9 @@ void rai::KinematicSwitch::write(std::ostream& os, rai::KinematicWorld* K) const
   os <<"  symbol=" <<symbol;
   os <<"  jointType=" <<jointType;
   os <<"  fromId=" <<(int)fromId;
-  if(K && fromId<UINT_MAX) os <<"'" <<K->frames(fromId)->name <<"'";
+  if(K && fromId<-1) os <<"'" <<K->frames(fromId)->name <<"'";
   os <<"  toId=" <<toId;
-  if(K && toId<UINT_MAX) os <<"'" <<K->frames(toId)->name <<"'";
+  if(K && toId<-1) os <<"'" <<K->frames(toId)->name <<"'";
 }
 
 //===========================================================================

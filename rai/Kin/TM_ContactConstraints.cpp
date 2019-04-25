@@ -13,9 +13,9 @@
 #include <Geo/pairCollision.h>
 #include "TM_angVel.h"
 
-void POA_distance(arr& y, arr& J, rai::Contact* con, bool a_or_b){
+void POA_distance(arr& y, arr& J, rai::Contact* con, bool b_or_a){
   rai::Shape *s = con->a.shape;
-  if(a_or_b) s = con->b.shape;
+  if(b_or_a) s = con->b.shape;
   CHECK(s,"contact object does not have a shape!");
   double r=s->radius();
   rai::Mesh *m = &s->sscCore();  if(!m->V.N) { m = &s->mesh(); r=0.; }
@@ -88,6 +88,7 @@ void POA_rel_vel2(arr& y, arr& J, const WorldL& Ktuple, rai::Contact* con, bool 
   }
 }
 
+//3-dim feature: the difference in POA velocities (V)
 void POA_rel_vel(arr& y, arr& J, const WorldL& Ktuple, rai::Contact* con, bool after_or_before){
   CHECK_EQ(Ktuple.N, 3, "");
 
@@ -102,16 +103,16 @@ void POA_rel_vel(arr& y, arr& J, const WorldL& Ktuple, rai::Contact* con, bool a
   arr p1, p2, Jp1, Jp2;
   arr v1, v2, Jv1, Jv2;
   TM_Default lin(TMT_pos, con->a.ID);
-  lin.order=0;  lin.i=con->a.ID;  lin.Feature::phi(p1, Jp1, Ktuple({0,1}));
-  lin.order=0;  lin.i=con->b.ID;  lin.Feature::phi(p2, Jp2, Ktuple({0,1}));
+  lin.order=0;  lin.i=con->a.ID;  lin.Feature::__phi(p1, Jp1, Ktuple({0,1}));
+  lin.order=0;  lin.i=con->b.ID;  lin.Feature::__phi(p2, Jp2, Ktuple({0,1}));
   padJacobian(Jp1, Ktuple);
   padJacobian(Jp2, Ktuple);
   if(after_or_before){
-    lin.order=1;  lin.i=con->a.ID;  lin.Feature::phi(v1, Jv1, Ktuple);
-    lin.order=1;  lin.i=con->b.ID;  lin.Feature::phi(v2, Jv2, Ktuple);
+    lin.order=1;  lin.i=con->a.ID;  lin.Feature::__phi(v1, Jv1, Ktuple);
+    lin.order=1;  lin.i=con->b.ID;  lin.Feature::__phi(v2, Jv2, Ktuple);
   }else{
-    lin.order=1;  lin.i=con->a.ID;  lin.Feature::phi(v1, Jv1, Ktuple({0,1}));
-    lin.order=1;  lin.i=con->b.ID;  lin.Feature::phi(v2, Jv2, Ktuple({0,1}));
+    lin.order=1;  lin.i=con->a.ID;  lin.Feature::__phi(v1, Jv1, Ktuple({0,1}));
+    lin.order=1;  lin.i=con->b.ID;  lin.Feature::__phi(v2, Jv2, Ktuple({0,1}));
     padJacobian(Jv1, Ktuple);
     padJacobian(Jv2, Ktuple);
   }
@@ -119,11 +120,11 @@ void POA_rel_vel(arr& y, arr& J, const WorldL& Ktuple, rai::Contact* con, bool a
   arr w1, w2, Jw1, Jw2;
   TM_AngVel ang(con->a.ID);
   if(after_or_before){
-    ang.order=1;  ang.i=con->a.ID;  ang.phi(w1, Jw1, Ktuple);
-    ang.order=1;  ang.i=con->b.ID;  ang.phi(w2, Jw2, Ktuple);
+    ang.order=1;  ang.i=con->a.ID;  ang.__phi(w1, Jw1, Ktuple);
+    ang.order=1;  ang.i=con->b.ID;  ang.__phi(w2, Jw2, Ktuple);
   }else{
-    ang.order=1;  ang.i=con->a.ID;  ang.phi(w1, Jw1, Ktuple({0,1}));
-    ang.order=1;  ang.i=con->b.ID;  ang.phi(w2, Jw2, Ktuple({0,1}));
+    ang.order=1;  ang.i=con->a.ID;  ang.__phi(w1, Jw1, Ktuple({0,1}));
+    ang.order=1;  ang.i=con->b.ID;  ang.__phi(w2, Jw2, Ktuple({0,1}));
     padJacobian(Jw1, Ktuple);
     padJacobian(Jw2, Ktuple);
   }
@@ -135,6 +136,37 @@ void POA_rel_vel(arr& y, arr& J, const WorldL& Ktuple, rai::Contact* con, bool a
 
   y = vc1 - vc2;
   if(!!J) J = Jvc1 - Jvc2;
+}
+
+//3-dim feature: the POA velocities (V)
+void POA_vel(arr& y, arr& J, const WorldL& Ktuple, rai::Contact* con, bool b_or_a){
+  CHECK_GE(Ktuple.N, 2, "");
+
+  rai::Frame *f = &con->a;
+  if(b_or_a) f = &con->b;
+
+  //POA
+  arr cp, Jcp;
+  Ktuple(-2)->kinematicsContactPOA(cp, Jcp, con);
+  expandJacobian(Jcp, Ktuple, -2);
+
+  //object center
+  arr p, Jp;
+  TM_Default pos(TMT_pos, f->ID);
+  pos.Feature::__phi(p, Jp, Ktuple);
+
+  //object vel
+  arr v, Jv;
+  TM_LinVel vel(f->ID);
+  vel.phi(v, Jv, Ktuple);
+
+  //object ang vel
+  arr w, Jw;
+  TM_AngVel ang(f->ID);
+  ang.phi(w, Jw, Ktuple);
+
+  y = v - crossProduct(w, cp - p);
+  if(!!J) J = Jv - skew(w) * (Jcp - Jp) + skew(cp-p) * Jw;
 }
 
 rai::Contact *getContact(const rai::KinematicWorld &K, int aId, int bId){
@@ -235,8 +267,10 @@ void TM_Contact_POAisInIntersection_InEq::phi(arr& y, arr& J, const rai::Kinemat
   coll1.kinDistance(y({1,1})(), (!!J?J[1]():NoArr), Jpos, Jp1);
   coll2.kinDistance(y({2,2})(), (!!J?J[2]():NoArr), Jpos, Jp2);
 
-//  y(1) -= .001;
-//  y(2) -= .001;
+  if(margin){
+    y(1) -= margin;
+    y(2) -= margin;
+  }
 
   if(!!J) checkNan(J);
 }
@@ -272,13 +306,13 @@ void TM_ContactConstraints_Vel::phi(arr& y, arr& J, const WorldL& Ktuple){
   arr v1, v2, Jv1, Jv2;
   TM_Default lin(TMT_pos, a);
   lin.order=0; lin.i=a;
-  lin.Feature::phi(p1, Jp1, Ktuple);
+  lin.Feature::__phi(p1, Jp1, Ktuple);
   lin.order=0; lin.i=b;
-  lin.Feature::phi(p2, Jp2, Ktuple);
+  lin.Feature::__phi(p2, Jp2, Ktuple);
   lin.order=1; lin.i=a;
-  lin.Feature::phi(v1, Jv1, Ktuple);
+  lin.Feature::__phi(v1, Jv1, Ktuple);
   lin.order=1; lin.i=b;
-  lin.Feature::phi(v2, Jv2, Ktuple);
+  lin.Feature::__phi(v2, Jv2, Ktuple);
 
   arr w1, w2, Jw1, Jw2;
   TM_AngVel ang(a);
@@ -315,9 +349,17 @@ void TM_Contact_POAmovesContinuously::phi(arr& y, arr& J, const WorldL& Ktuple){
   }
 }
 
-void TM_Contact_ZeroVel::phi(arr& y, arr& J, const WorldL& Ktuple){
+void TM_Contact_POAzeroRelVel::phi(arr& y, arr& J, const WorldL& Ktuple){
   rai::Contact *con = getContact(*Ktuple(-2),a,b);
+#if 0
   POA_rel_vel(y, J, Ktuple, con, true);
+#else
+  arr v1, Jv1, v2, Jv2;
+  POA_vel(v1, Jv1, Ktuple, con, false);
+  POA_vel(v2, Jv2, Ktuple, con, true);
+  y = v1 - v2;
+  if(!!J) J = Jv1 - Jv2;
+#endif
 }
 
 void TM_Contact_ElasticVel::phi(arr& y, arr& J, const WorldL& Ktuple){

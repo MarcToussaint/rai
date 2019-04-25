@@ -20,6 +20,7 @@
 RosCom::RosCom(const char* node_name) {
   rosCheckInit(node_name);
   spinner = new RosCom_Spinner(node_name);
+  rai::wait(.1);
 }
 
 RosCom::~RosCom() {
@@ -36,7 +37,7 @@ void rosCheckInit(const char* node_name) {
   static bool inited = false;
   
   if(rai::getParameter<bool>("useRos", true)) {
-    mutex.lock();
+    mutex.lock(RAI_HERE);
     if(!inited) {
       rai::String nodeName = rai::getParameter<rai::String>("rosNodeName", STRING(node_name));
       ros::init(rai::argc, rai::argv, nodeName.p, ros::init_options::NoSigintHandler);

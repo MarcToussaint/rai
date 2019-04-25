@@ -1,5 +1,7 @@
 #include "fclInterface.h"
 
+#ifdef RAI_FCL
+
 #include <fcl/broadphase/broadphase.h>
 #include <fcl/BVH/BVH_model.h>
 #include <fcl/distance.h>
@@ -76,3 +78,10 @@ bool FclInterfaceBroadphaseCallback(fcl::CollisionObject* o1, fcl::CollisionObje
   }
   return false;
 }
+
+
+#else //RAI_FCL
+rai::FclInterface::FclInterface(const rai::Array<ptr<Geom> >& _geometries, double _cutoff){ NICO }
+rai::FclInterface::~FclInterface(){ NICO }
+  void rai::FclInterface::step(const arr& X){ NICO }
+#endif

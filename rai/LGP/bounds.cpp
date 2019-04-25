@@ -35,8 +35,7 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
 
       //-- deactivate all velocity objectives except for transition
       for(Objective *o:komo.objectives){
-        if(!dynamic_cast<TM_Transition*>(o->map) && o->map->order>0){
-          o->prec.clear();
+        if(!std::dynamic_pointer_cast<TM_Transition>(o->map) && o->map->order>0){
           o->vars.clear();
         }
       }
@@ -125,7 +124,7 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
         komo.addObjective(ARR(double(i+1)), OT_sos, FS_qItself, {}, {1e-1}, waypoints(i));
 //        komo.addObjective(ARR(double(i+1)), OT_eq, FS_qItself, {}, {1e0}, waypoints(i));
       }
-      uint O = komo.objectives.N;
+//      uint O = komo.objectives.N;
 
       komo.setSkeleton(S);
       //delete all added objectives! -> only keep switches

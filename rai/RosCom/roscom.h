@@ -123,9 +123,9 @@ struct Subscriber : SubscriberType {
   Subscriber(Var<msg_type>& _var, const char* topic_name=NULL)
     : var(_var) {
     if(rai::getParameter<bool>("useRos", true)) {
-      if(!topic_name) topic_name = var.name;
-      registry()->newNode<SubscriberType*>({"Subscriber", topic_name}, {var.registryNode}, this);
-      LOG(0) <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(msg_type).name() <<"> into var '" <<var.name <<'\'';
+      if(!topic_name) topic_name = var.name();
+//      registry()->newNode<SubscriberType*>({"Subscriber", topic_name}, {var.registryNode}, this);
+      LOG(0) <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(msg_type).name() <<"> into var '" <<var.name() <<'\'';
       nh = new ros::NodeHandle;
       sub  = nh->subscribe(topic_name, 100, &Subscriber::callback, this);
     }
@@ -149,11 +149,11 @@ struct Publisher : Thread {
   rai::String topic_name;
   
   Publisher(const Var<msg_type>& _var)
-    : Thread(STRING("Publisher_"<<_var.name), -1.),
+    : Thread(STRING("Publisher_"<<_var.name()), -1.),
       var(this, _var, true),
       nh(NULL) {
     if(rai::getParameter<bool>("useRos", true)) {
-      rai::String topic_name = STRING("rai/" <<var.name);
+      rai::String topic_name = STRING("rai/" <<var.name());
       LOG(0) <<"publishing to topic '" <<topic_name <<"' <" <<typeid(msg_type).name() <<">";
       nh = new ros::NodeHandle;
       pub = nh->advertise<msg_type>(topic_name.p, 1);
@@ -190,11 +190,11 @@ struct SubscriberConv : SubscriberType {
   SubscriberConv(Var<var_type>& _var, const char* topic_name=NULL, Var<rai::Transformation> *_frame=NULL)
     : var(NULL, _var), frame(_frame), nh(NULL), listener(NULL) {
     if(rai::getParameter<bool>("useRos", true)) {
-      if(!topic_name) topic_name = var.name;
+      if(!topic_name) topic_name = var.name();
       nh = new ros::NodeHandle;
       if(frame) listener = new tf::TransformListener;
-      registry()->newNode<SubscriberType*>({"Subscriber", topic_name}, {var.registryNode}, this);
-      LOG(0) <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> into var '" <<var.name <<'\'';
+//      registry()->newNode<SubscriberType*>({"Subscriber", topic_name}, {var.registryNode}, this);
+      LOG(0) <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> into var '" <<var.name() <<'\'';
       sub = nh->subscribe(topic_name, 1, &SubscriberConv::callback, this);
     }
   }
@@ -204,8 +204,8 @@ struct SubscriberConv : SubscriberType {
       if(!topic_name) topic_name = var_name;
       nh = new ros::NodeHandle;
       if(frame) listener = new tf::TransformListener;
-      registry()->newNode<SubscriberType*>({"Subscriber", topic_name}, {var.registryNode}, this);
-      LOG(0) <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> into var '" <<var.name <<'\'';
+//      registry()->newNode<SubscriberType*>({"Subscriber", topic_name}, {var.registryNode}, this);
+      LOG(0) <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> into var '" <<var.name() <<'\'';
       sub = nh->subscribe(topic_name, 1, &SubscriberConv::callback, this);
     }
   }
@@ -235,10 +235,10 @@ struct SubscriberConvNoHeader : SubscriberType {
   SubscriberConvNoHeader(Var<var_type>& _var, const char* topic_name=NULL)
     : var(NULL, _var), nh(NULL) {
     if(rai::getParameter<bool>("useRos", true)) {
-      if(!topic_name) topic_name = var.name;
+      if(!topic_name) topic_name = var.name();
       nh = new ros::NodeHandle;
-      registry()->newNode<SubscriberType*>({"Subscriber", topic_name}, {var.registryNode}, this);
-      LOG(0) <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> into var '" <<var.name <<'\'';
+//      registry()->newNode<SubscriberType*>({"Subscriber", topic_name}, {var.registryNode}, this);
+      LOG(0) <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> into var '" <<var.name() <<'\'';
       sub = nh->subscribe(topic_name, 1, &SubscriberConvNoHeader::callback, this);
     }
   }
@@ -247,8 +247,8 @@ struct SubscriberConvNoHeader : SubscriberType {
     if(rai::getParameter<bool>("useRos", true)) {
       if(!topic_name) topic_name = var_name;
       nh = new ros::NodeHandle;
-      registry()->newNode<SubscriberType*>({"Subscriber", topic_name}, {var.registryNode}, this);
-      LOG(0) <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> into var '" <<var.name <<'\'';
+//      registry()->newNode<SubscriberType*>({"Subscriber", topic_name}, {var.registryNode}, this);
+      LOG(0) <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> into var '" <<var.name() <<'\'';
       sub = nh->subscribe(topic_name, 1, &SubscriberConvNoHeader::callback, this);
     }
   }
@@ -274,13 +274,13 @@ struct PublisherConv : Thread {
   rai::String topic_name;
   
   PublisherConv(const Var<var_type>& _var, const char* _topic_name=NULL, double beatIntervalSec=-1.)
-    : Thread(STRING("Publisher_"<<_var.name <<"->" <<_topic_name), beatIntervalSec),
+    : Thread(STRING("Publisher_"<<_var.name() <<"->" <<_topic_name), beatIntervalSec),
       var(this, _var, beatIntervalSec<0.),
       nh(NULL),
       topic_name(_topic_name) {
     if(rai::getParameter<bool>("useRos", true)) {
-      if(!_topic_name) topic_name = var.name;
-      LOG(0) <<"publishing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> from var '" <<var.name <<'\'';
+      if(!_topic_name) topic_name = var.name();
+      LOG(0) <<"publishing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> from var '" <<var.name() <<'\'';
       nh = new ros::NodeHandle;
       pub = nh->advertise<msg_type>(topic_name.p, 1);
       rai::wait(.1); //I hate this -- no idea why the publisher isn't ready right away..
@@ -293,7 +293,7 @@ struct PublisherConv : Thread {
       topic_name(_topic_name) {
     if(rai::getParameter<bool>("useRos", true)) {
       if(!_topic_name) topic_name = var_name;
-      LOG(0) <<"publishing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> from var '" <<var.name <<'\'';
+      LOG(0) <<"publishing to topic '" <<topic_name <<"' <" <<typeid(var_type).name() <<"> from var '" <<var.name() <<'\'';
       nh = new ros::NodeHandle;
       pub = nh->advertise<msg_type>(topic_name.p, 1);
       rai::wait(.1); //I hate this -- no idea why the publisher isn't ready right away..

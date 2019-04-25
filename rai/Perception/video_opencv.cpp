@@ -12,8 +12,8 @@
 #include <opencv2/opencv.hpp>
 #undef MIN
 #undef MAX
-#include "opencv.h"
 #include "videoEncoder.h"
+#include "opencv.h"
 
 struct sVideoEncoder_OpenCV {
   CvVideoWriter *video;
@@ -28,7 +28,8 @@ void sVideoEncoder_OpenCV::open(uint width, uint height) {
   numFrames=0;
   //s->width = width;
 //  s->height = height;
-  video = cvCreateVideoWriter(filename, CV_FOURCC('X','V','I','D'), fps , cvSize(width, height), true);
+//  video = cvCreateVideoWriter(filename, CV_FOURCC('X','V','I','D'), fps , cvSize(width, height), true);
+  HALT("CV_FOURCC is obsolete - needs fix");
 }
 
 VideoEncoder_OpenCV::VideoEncoder_OpenCV(const char* filename, uint fps) {
@@ -39,16 +40,24 @@ VideoEncoder_OpenCV::VideoEncoder_OpenCV(const char* filename, uint fps) {
 
 void VideoEncoder_OpenCV::addFrame(const byteA& img) {
   if(!s->video) s->open(img.d1, img.d0);
+#if 1
+  HALT("IplImage is obsolete needs fix");
+#else
   IplImage ipl_img;
   cv::Mat ref=conv_Arr2CvRef(img);
   cvGetImage(&ref, &ipl_img);
   cvWriteFrame(s->video, &ipl_img);
 //  s->video <<conv_Arr2CvRef(img);
   s->numFrames++;
+#endif  
 }
 
 void VideoEncoder_OpenCV::close() {
+#if 1
+  HALT("cvReleaseVideoWriter is obsolete needs fix");
+#else
   cvReleaseVideoWriter(&s->video);
+#endif
 }
 
 #else //RAI_OPENCV

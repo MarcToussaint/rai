@@ -49,19 +49,4 @@ runTests: tests
 
 ################################################################################
 
-doc:
-	cd doc; doxygen rai.doxy;
-#	$(MAKE) -w -C doc guide doxy
-
-reformatSources:
-	astyle --options=rai/style.astyle "rai/MT/*.h" "rai/MT/*.cpp" "rai/MT/*.cxx"
-	cd rai; find MT/ \( -name "*.h" -or -name "*.cpp" -or -name "*.cxx" \) -exec ./style.sed.sh {} \;
-
-%.tgz: force
-	bin/makeZip.sh $*
-
-force:
-
-################################################################################
-
-include build/generic.mk
+include $(BASE)/build/generic.mk

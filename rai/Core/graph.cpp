@@ -668,7 +668,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, rai::Strin
   pinfo.value_beg=(long int)is.tellg()-1;
   if(c=='=' || c==':' || c=='{' || c=='[' || c=='<' || c=='!' || c=='\'') {
     if(c=='=' || c==':') c=rai::getNextChar(is," \t");
-    if((c>='a' && c<='z') || (c>='A' && c<='Z')) { //rai::String or boolean
+    if((c>='a' && c<='z') || (c>='A' && c<='Z') || c=='_') { //rai::String or boolean
       is.putback(c);
       str.read(is, "", " \n\r\t,;}", false);
       if(str=="true") node = newNode<bool>(keys, parents, true);

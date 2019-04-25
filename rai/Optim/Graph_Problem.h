@@ -38,6 +38,7 @@ struct Conv_Graph_ConstrainedProblem : ConstrainedProblem {
   arrA J_G, H_G;
   
   Conv_Graph_ConstrainedProblem(GraphProblem& _G);
+//  void phi_dense(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda);
   void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda);
 };
 

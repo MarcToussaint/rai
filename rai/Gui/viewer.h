@@ -17,12 +17,21 @@ struct ImageViewer : Thread {
   struct sImageViewer *s;
   Var<byteA> img;
   bool flipImage = false;
-  ImageViewer(const char* img_name="rgb");
   ImageViewer(const Var<byteA>& _img, double beatIntervalSec=-1.);
   ~ImageViewer();
   void open();
   void step();
   void close();
+};
+
+struct ImageViewerFloat : Thread {
+  ptr<struct OpenGL> gl;
+  Var<floatA> img;
+  bool flipImage = false;
+  float scale;
+  ImageViewerFloat(const Var<floatA>& _img, double beatIntervalSec=-1., float _scale=256.);
+  ~ImageViewerFloat();
+  void step();
 };
 
 struct ImageViewerCallback {
@@ -31,7 +40,7 @@ struct ImageViewerCallback {
   bool flipImage = false;
   ImageViewerCallback(const Var<byteA>& _img);
   ~ImageViewerCallback();
-  void call(Var_base *v, int revision);
+  void call(Var_base *v);
 };
 
 struct PointCloudViewer : Thread {
@@ -52,16 +61,29 @@ struct PointCloudViewerCallback {
   Var<byteA> rgb;
   PointCloudViewerCallback(const Var<arr>& _pts, const Var<byteA>& _rgb);
   ~PointCloudViewerCallback();
-  void call(Var_base *v, int revision);
+  void call(Var_base *v);
 };
 
 struct MeshAViewer : Thread {
   Var<MeshA> meshes;
   MeshA copy;
   struct OpenGL *gl;
-  MeshAViewer(const char* meshes_name="visionDisplay");
+  MeshAViewer(const Var<MeshA>& _meshes);
   ~MeshAViewer();
   void open();
   void step();
   void close();
+};
+
+struct PlotViewer : Thread, GLDrawer {
+  Var<arr> data;
+  arr plot, x0;
+  uint T=100;
+  struct OpenGL *gl;
+  PlotViewer(const Var<arr>& _data, double beatIntervalSec=-1.);
+  ~PlotViewer();
+  void open();
+  void step();
+  void close();
+  void glDraw(struct OpenGL&);
 };

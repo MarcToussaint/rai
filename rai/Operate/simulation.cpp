@@ -12,7 +12,7 @@ struct Sensor{
   rai::Camera cam;
   uint width=640, height=480;
   byteA backgroundImage;
-  Sensor();
+  Sensor(){}
 };
 
 struct Simulation_self{
@@ -52,7 +52,7 @@ Simulation::~Simulation(){
 }
 
 void Simulation::stepKin(){
-  auto lock = self->threadLock();
+  auto lock = self->threadLock(RAI_HERE);
 
   //read out the new reference
   arr q_ref = self->spline.run(self->dt);
@@ -85,13 +85,13 @@ void Simulation::stepKin(){
 }
 
 void Simulation::setJointState(const StringA &joints, const arr &q_ref){
-  auto lock = self->threadLock();
+  auto lock = self->threadLock(RAI_HERE);
 
   K.setJointState(q_ref, joints);
 }
 
 void Simulation::setJointStateSafe(arr q_ref, StringA &jointsInLimit, StringA &collisionPairs){
-  auto lock = self->threadLock();
+  auto lock = self->threadLock(RAI_HERE);
 
   arr q = q_ref;
   arr q0 = K.getJointState(self->currentlyUsedJoints);
@@ -117,7 +117,7 @@ void Simulation::setJointStateSafe(arr q_ref, StringA &jointsInLimit, StringA &c
         }
       }
     }
-    if(active) jointsInLimit.append(j->frame.name);
+    if(active) jointsInLimit.append(j->frame->name);
   }
   q_ref = q;
 
@@ -184,7 +184,7 @@ void Simulation::setJointStateSafe(arr q_ref, StringA &jointsInLimit, StringA &c
 }
 
 void Simulation::setUsedRobotJoints(const StringA& joints){
-  auto lock = self->threadLock();
+  auto lock = self->threadLock(RAI_HERE);
 
   if(self->currentlyUsedJoints!=joints){
     if(self->spline.refPoints.N){
@@ -197,7 +197,7 @@ void Simulation::setUsedRobotJoints(const StringA& joints){
 
 
 void Simulation::exec(const arr &x, const arr &t, bool append){
-  auto lock = self->threadLock();
+  auto lock = self->threadLock(RAI_HERE);
 
   if(x.d1 != self->currentlyUsedJoints.N){
     LOG(-1) <<"you're sending me a motion reference of wrong dimension!"
@@ -211,7 +211,7 @@ void Simulation::exec(const arr &x, const arr &t, bool append){
 }
 
 void Simulation::exec(const StringA& command){
-  auto lock = self->threadLock();
+  auto lock = self->threadLock(RAI_HERE);
 
   LOG(0) <<"CMD = " <<command <<endl;
   if(command(0)=="attach"){
@@ -227,28 +227,28 @@ void Simulation::exec(const StringA& command){
 }
 
 void Simulation::stop(bool hard){
-  auto lock = self->threadLock();
+  auto lock = self->threadLock(RAI_HERE);
 
   self->spline.stop();
 }
 
 double Simulation::getTimeToGo(){
-  auto lock = self->threadLock();
+  auto lock = self->threadLock(RAI_HERE);
   return self->spline.timeToGo();
 }
 
 arr Simulation::getJointState(){
-  auto lock = self->threadLock();
+  auto lock = self->threadLock(RAI_HERE);
   return K.getJointState(self->currentlyUsedJoints);
 }
 
 arr Simulation::getFrameState(){
-  auto lock = self->threadLock();
+  auto lock = self->threadLock(RAI_HERE);
   return K.getFrameState();
 }
 
 arr Simulation::getObjectPoses(const StringA &objects){
-  auto lock = self->threadLock();
+  auto lock = self->threadLock(RAI_HERE);
 
   FrameL objs;
   if(objects.N){
@@ -265,13 +265,13 @@ arr Simulation::getObjectPoses(const StringA &objects){
 }
 
 StringA Simulation::getJointNames(){
-  auto lock = self->threadLock();
+  auto lock = self->threadLock(RAI_HERE);
 
   return K.getJointNames();
 }
 
 StringA Simulation::getObjectNames(){
-  auto lock = self->threadLock();
+  auto lock = self->threadLock(RAI_HERE);
 
   StringA objs;
   for(rai::Frame *a:K.frames){

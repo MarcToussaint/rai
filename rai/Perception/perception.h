@@ -60,8 +60,9 @@ struct VideoEncoder : Thread {
   struct sVideoEncoder *s;
   bool is_rgb;
   double fps;
-  VARlisten(byteA, img)
-  VideoEncoder() : Thread("VideoEncoder"), is_rgb(false), fps(30) {}
+  Var<byteA> img;
+  VideoEncoder(const Var<byteA>& _img)
+    : Thread("VideoEncoder"), is_rgb(false), fps(30), img(this, _img, true) {}
   virtual ~VideoEncoder() {}
   
   virtual void open();
@@ -77,8 +78,8 @@ struct VideoEncoderX264 : Thread {
   struct sVideoEncoderX264 *s;
   bool is_rgb;
   double fps;
-  VARlisten(byteA, img)
-  VideoEncoderX264() : Thread("VideoEncoderX264"), is_rgb(false) {}
+  Var<byteA> img;
+  VideoEncoderX264(const Var<byteA>& _img) : Thread("VideoEncoderX264"), is_rgb(false), img(this, _img, true) {}
   virtual ~VideoEncoderX264() {}
   
   virtual void open();
@@ -188,7 +189,7 @@ struct OpencvCamera : Thread {
   struct sOpencvCamera *s;
   Var<byteA> rgb;
   std::map<int,double> properties; bool set(int prop, double status);
-  OpencvCamera(const char* rgb_name="rgb") : Thread(STRING("OpencvCamera_"<<rgb_name), 0.), rgb(this, rgb_name) {}
+  OpencvCamera(const Var<byteA>& _rgb) : Thread(STRING("OpencvCamera_"<<_rgb.name()), 0.), rgb(this, _rgb) {}
   void open();
   void step();
   void close();
@@ -199,8 +200,8 @@ struct CvtGray : Thread {
   Var<byteA> rgb;
   Var<byteA> gray;
   std::map<int,double> properties; bool set(int prop, double status);
-  CvtGray(const char* rgb_name="rgb", const char* gray_name="gray")
-    : Thread(STRING("CvtGray_"<<rgb_name), -1), rgb(this, rgb_name, true), gray(this, gray_name) {}
+  CvtGray(const Var<byteA>& _rgb, const Var<byteA>& _gray)
+    : Thread(STRING("CvtGray_"<<_rgb.name()), -1), rgb(this, _rgb, true), gray(this, _gray) {}
   void open();
   void step();
   void close();
@@ -210,8 +211,8 @@ struct MotionFilter : Thread {
   struct sMotionFilter *s;
   Var<byteA> rgb;
   Var<byteA> motion;
-  MotionFilter(const char* rgb_name="rgb", const char* motion_name="motion")
-    : Thread(STRING("MotionFilter_"<<rgb_name), -1), rgb(this, rgb_name, true), motion(this, motion_name) {}
+  MotionFilter(const Var<byteA>& _rgb, const Var<byteA>& _motion)
+    : Thread(STRING("MotionFilter_"<<_rgb.name()), -1), rgb(this, _rgb, true), motion(this, _motion) {}
   void open();
   void step();
   void close();
@@ -222,8 +223,8 @@ struct DifferenceFilter : Thread {
   Var<byteA> i1;
   Var<byteA> i2;
   Var<byteA> diffImage;
-  DifferenceFilter(const char* i1_name="i1", const char* i2_name="i2", const char* diffImage_name="diffImage")
-    : Thread(STRING("DifferenceFilter_"<<i1_name), -1), i1(this, i1_name, true), i2(this, i2_name), diffImage(this, diffImage_name) {}
+  DifferenceFilter(const Var<byteA>& _i1, const Var<byteA>& _i2, const Var<byteA>* _diffImage)
+    : Thread(STRING("DifferenceFilter_"<<_i1.name()), -1), i1(this, _i1, true), i2(this, _i2), diffImage(this, _diffImage) {}
   void open();
   void step();
   void close();
@@ -233,10 +234,10 @@ struct CannyFilter : Thread {
   struct sCannyFilter *s;
   Var<byteA> grayImage;
   Var<byteA> cannyImage;
-  CannyFilter(const char* grayImage_name="grayImage", const char* cannyImage_name="cannyImage")
-    : Thread(STRING("CannyFilter_"<<grayImage_name<<"_" <<cannyImage_name), -1),
-      grayImage(this, grayImage_name, true),
-      cannyImage(this, cannyImage_name) {}
+  CannyFilter(const Var<byteA>& _grayImage, const Var<byteA>& _cannyImage)
+    : Thread(STRING("CannyFilter_"<<_grayImage.name()<<"_" <<_cannyImage.name()), -1),
+      grayImage(this, _grayImage, true),
+      cannyImage(this, _cannyImage) {}
   void open();
   void step();
   void close();
@@ -246,10 +247,10 @@ struct Patcher : Thread {
   struct sPatcher *s;
   Var<byteA> rgbImage;
   Var<Patching> patchImage;
-  Patcher(const char* rgbImage_name="rgbImage", const char* patchImage_name="patchImage")
-    : Thread(STRING("Patcher"<<rgbImage_name<<"_" <<patchImage_name), -1),
-      rgbImage(this, rgbImage_name, true),
-      patchImage(this, patchImage_name) {}
+  Patcher(const Var<byteA>& _rgbImage, const Var<Patching>& _patchImage)
+    : Thread(STRING("Patcher"<<_rgbImage.name()<<"_" <<_patchImage.name()), -1),
+      rgbImage(this, _rgbImage, true),
+      patchImage(this, _patchImage) {}
   void open();
   void step();
   void close();
@@ -292,17 +293,17 @@ struct Patcher : Thread {
 //BEGIN_MODULE(PointCloudViewer) VARlisten(arr, kinect_points)         VAR(arr, kinect_pointColors)        END_MODULE()
 //BEGIN_MODULE(OpencvCamera)     VAR(byteA, rgb)       std::map<int,double> properties; bool set(int prop, double value);  END_MODULE()
 //BEGIN_MODULE(CvtGray)          VAR(byteA, rgb)       VAR(byteA, gray)      END_MODULE()
-BEGIN_MODULE(CvtHsv)           VARlisten(byteA, rgb)       VAR(byteA, hsv)       END_MODULE()
-BEGIN_MODULE(HsvFilter)        VARlisten(byteA, hsv)       VAR(floatA, evi)      END_MODULE()
+//BEGIN_MODULE(CvtHsv)           VARlisten(byteA, rgb)       VAR(byteA, hsv)       END_MODULE()
+//BEGIN_MODULE(HsvFilter)        VARlisten(byteA, hsv)       VAR(floatA, evi)      END_MODULE()
 //BEGIN_MODULE(MotionFilter)     VAR(byteA, rgb)       VAR(byteA, motion)    END_MODULE()
 //BEGIN_MODULE(DifferenceFilter) VAR(byteA, i1)        VAR(byteA, i2)        VAR(byteA, diffImage) END_MODULE()
 //BEGIN_MODULE(CannyFilter)      VAR(byteA, grayImage) VAR(byteA, cannyImage)       END_MODULE()
 //BEGIN_MODULE(Patcher)          VARlisten(byteA, rgbImage)  VAR(Patching, patchImage)    END_MODULE()
-BEGIN_MODULE(SURFer)           VARlisten(byteA, grayImage) VAR(SURFfeatures, features)  END_MODULE()
-BEGIN_MODULE(HoughLineFilter)  VARlisten(byteA, grayImage) VAR(HoughLines, houghLines)  END_MODULE()
-BEGIN_MODULE(ShapeFitter)      VARlisten(floatA, eviL)     VAR(floatA, eviR)            VAR(PerceptionOutput, perc)      END_MODULE()
-BEGIN_MODULE(AudioReader)    AudioPoller_PA *poller; VAR(byteA, pcms16ne2c) END_MODULE()
-BEGIN_MODULE(AudioWriter)    AudioWriter_libav *writer; VAR(byteA, pcms16ne2c) END_MODULE()
+//BEGIN_MODULE(SURFer)           VARlisten(byteA, grayImage) VAR(SURFfeatures, features)  END_MODULE()
+//BEGIN_MODULE(HoughLineFilter)  VARlisten(byteA, grayImage) VAR(HoughLines, houghLines)  END_MODULE()
+//BEGIN_MODULE(ShapeFitter)      VARlisten(floatA, eviL)     VAR(floatA, eviR)            VAR(PerceptionOutput, perc)      END_MODULE()
+//BEGIN_MODULE(AudioReader)    AudioPoller_PA *poller; VAR(byteA, pcms16ne2c) END_MODULE()
+//BEGIN_MODULE(AudioWriter)    AudioWriter_libav *writer; VAR(byteA, pcms16ne2c) END_MODULE()
 
 #endif
 

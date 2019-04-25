@@ -14,17 +14,13 @@
 #ifdef RAI_ROS
 #include <sensor_msgs/JointState.h>
 bool baxter_get_q_qdot_u(arr& q, arr& q_dot, arr& u, const sensor_msgs::JointState& msg, const rai::KinematicWorld& baxterModel);
-//TODO: redundant -> remove
-bool baxter_update_qReal(arr& qReal, const sensor_msgs::JointState& msg, const rai::KinematicWorld& baxterModel);
-arr baxter_getEfforts(const sensor_msgs::JointState& msg, const rai::KinematicWorld& baxterModel);
 #endif
 
 struct SendPositionCommandsToBaxter : Thread {
   Var<CtrlMsg> ctrl_ref;
-  struct sSendPositionCommandsToBaxter *s;
-  rai::KinematicWorld baxterModel;
+  struct sBaxterInterface *s;
   
-  SendPositionCommandsToBaxter(const rai::KinematicWorld& baxterWorld);
+  SendPositionCommandsToBaxter(const rai::KinematicWorld& baxterWorld, const Var<CtrlMsg>& _ctrl_ref);
   ~SendPositionCommandsToBaxter() {}
   
   void open();
@@ -37,3 +33,15 @@ struct SendPositionCommandsToBaxter : Thread {
   bool totalTorqueModeR = false;
 };
 
+struct BaxterInterface {
+  struct sBaxterInterface *s;
+
+  BaxterInterface();
+  ~BaxterInterface();
+
+  arr get_q();
+  arr get_qdot();
+  arr get_u();
+
+  void send_q(const arr& q_ref, bool enableL=true, bool enableR=true);
+};

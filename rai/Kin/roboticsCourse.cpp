@@ -62,7 +62,7 @@ Simulator::Simulator(const char* orsFile) {
   makeConvexHulls(s->G.frames);
   
   //OPENGL
-  s->G.gl().add(glDrawPlot, &plotModule);
+  s->G.glAdd(glDrawPlot, &plotModule);
   
   //SWIFT
   s->G.swift().setCutoff(.5);
@@ -73,8 +73,7 @@ Simulator::~Simulator() {
 }
 
 void Simulator::watch(bool pause, const char* txt) {
-  if(pause) s->G.gl().watch(txt);
-  else s->G.gl().update(txt);
+  s->G.watch(pause, txt);
 }
 
 void Simulator::getJointAngles(arr& q) {

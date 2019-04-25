@@ -159,8 +159,8 @@ void TEST(Distance){
     if(d>0.) CHECK_ZERO(d-d2, 1e-4, "NOT EQUAL!");
     rai::Proxy p; p.posA=Pa; p.posB=Pb; p.colorCode=1;
     K.proxies.append( p );
-    K.gl().timedupdate(.1);
-    K.gl().watch();
+    K.watch();
+    K.watch(true);
     //    K.proxies.clear();
   }
 }

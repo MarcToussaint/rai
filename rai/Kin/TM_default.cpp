@@ -108,26 +108,26 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
     if(body_j==NULL) { //simple, no j reference
       G.kinematicsPos(y, J, body_i, vec_i);
       y -= conv_vec2arr(vec_j);
-      return;
-    }//else...
-    rai::Vector pi = body_i->X * vec_i;
-    rai::Vector pj = body_j->X * vec_j;
-    y = conv_vec2arr(body_j->X.rot / (pi-pj));
-    if(!!J) {
-      arr Ji, Jj, JRj;
-      G.kinematicsPos(NoArr, Ji, body_i, vec_i);
-      G.kinematicsPos(NoArr, Jj, body_j, vec_j);
-      G.axesMatrix(JRj, body_j);
-      J.resize(3, Jj.d1);
-      for(uint k=0; k<Jj.d1; k++) {
-        rai::Vector vi(Ji(0, k), Ji(1, k), Ji(2, k));
-        rai::Vector vj(Jj(0, k), Jj(1, k), Jj(2, k));
-        rai::Vector r(JRj(0, k), JRj(1, k), JRj(2, k));
-        rai::Vector jk =  body_j->X.rot / (vi-vj);
-        jk -= body_j->X.rot / (r ^ (pi-pj));
-        J(0, k)=jk.x;
-        J(1, k)=jk.y;
-        J(2, k)=jk.z;
+    }else{
+      rai::Vector pi = body_i->X * vec_i;
+      rai::Vector pj = body_j->X * vec_j;
+      y = conv_vec2arr(body_j->X.rot / (pi-pj));
+      if(!!J) {
+        arr Ji, Jj, JRj;
+        G.kinematicsPos(NoArr, Ji, body_i, vec_i);
+        G.kinematicsPos(NoArr, Jj, body_j, vec_j);
+        G.axesMatrix(JRj, body_j);
+        J.resize(3, Jj.d1);
+        for(uint k=0; k<Jj.d1; k++) {
+          rai::Vector vi(Ji(0, k), Ji(1, k), Ji(2, k));
+          rai::Vector vj(Jj(0, k), Jj(1, k), Jj(2, k));
+          rai::Vector r(JRj(0, k), JRj(1, k), JRj(2, k));
+          rai::Vector jk =  body_j->X.rot / (vi-vj);
+          jk -= body_j->X.rot / (r ^ (pi-pj));
+          J(0, k)=jk.x;
+          J(1, k)=jk.y;
+          J(2, k)=jk.z;
+        }
       }
     }
     return;
@@ -139,7 +139,7 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
     G.kinematicsPos(y, J, body_i, vec_i);
     if(!body_j) { //relative to world
       y -= conv_vec2arr(vec_j);
-    } else {
+    }else{
       arr y2, J2;
       G.kinematicsPos(y2, (!!J?J2:NoArr), body_j, vec_j);
       y -= y2;
@@ -154,16 +154,16 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
     if(vec_i.isZero) RAI_MSG("attached vector is zero -- can't control that");
     if(body_j==NULL) { //simple, no j reference
       G.kinematicsVec(y, J, body_i, vec_i);
-      return;
-    }//else...
-    //relative
-    RAI_MSG("warning - don't have a correct Jacobian for this TMT_ype yet");
-    //      fi = G.bodies(body_i)->X; fi.appendTransformation(irel);
-    //      fj = G.bodies(body_j)->X; fj.appendTransformation(jrel);
-    //      f.setDifference(fi, fj);
-    //      f.rot.getZ(c);
-    //      y = conv_vec2arr(c);
-    NIY; //TODO: Jacobian?
+    }else{
+      //relative
+      RAI_MSG("warning - don't have a correct Jacobian for this TMT_ype yet");
+      //      fi = G.bodies(body_i)->X; fi.appendTransformation(irel);
+      //      fj = G.bodies(body_j)->X; fj.appendTransformation(jrel);
+      //      f.setDifference(fi, fj);
+      //      f.rot.getZ(c);
+      //      y = conv_vec2arr(c);
+      NIY; //TODO: Jacobian?
+    }
     return;
   }
   
@@ -255,8 +255,7 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
   if(type==TMT_quat) {
     if(body_j==NULL) { //simple, no j reference
       G.kinematicsQuat(y, J, body_i);
-      return;
-    }{
+    }else{
       arr a,b,Ja,Jb;
       G.kinematicsQuat(b, Jb, body_i);
       G.kinematicsQuat(a, Ja, body_j);
