@@ -72,8 +72,10 @@ namespace ry{
   struct RyOperate { std::shared_ptr<RobotOperation> R; };
 
   struct RyCamera {
+    Var<byteA> rgb;
+    Var<floatA> depth;
     std::shared_ptr<RosCamera> C;
-    RyCamera() : C(make_shared<RosCamera>()) {}
+    RyCamera() : C(make_shared<RosCamera>(rgb, depth)) {}
   };
 }
 

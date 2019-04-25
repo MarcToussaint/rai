@@ -893,12 +893,12 @@ PYBIND11_MODULE(libry, m) {
   .def(py::init<>())
 
   .def("getRgb", [](ry::RyCamera& self){
-    byteA rgb = self.C->getRgb();
+    byteA rgb = self.rgb.get();
     return pybind11::array_t<byte>(rgb.dim(), rgb.p);
   } )
 
   .def("getDepth", [](ry::RyCamera& self){
-    floatA depth = self.C->getDepth();
+    floatA depth = self.depth.get();
     return pybind11::array_t<float>(depth.dim(), depth.p);
   } )
 
