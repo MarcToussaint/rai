@@ -91,16 +91,20 @@ struct Frame : NonCopyable{
   void write(std::ostream& os) const;
 
   //-- HIGHER LEVEL USER INTERFACE
-  void setSize(const std::vector<double>& size);
+  void setShape(rai::ShapeType shape, const std::vector<double>& size);
   void setPosition(const std::vector<double>& pos);
   void setQuaternion(const std::vector<double>& quat);
   void setRelativePosition(const std::vector<double>& pos);
   void setRelativeQuaternion(const std::vector<double>& quat);
   void setPointCloud(const std::vector<double>& points);
   void setConvexMesh(const std::vector<double>& points);
-  void setBox(const std::vector<double>& size);
   void setColor(const std::vector<double>& color);
 
+  arr getPosition(){ return X.pos.getArr(); }
+  arr getQuaternion(){ return X.rot.getArr(); }
+  arr getRelativePosition(){ return Q.pos.getArr(); }
+  arr getRelativeQuaternion(){ return Q.rot.getArr(); }
+  arr getMeshPoints();
 };
 stdOutPipe(Frame)
 

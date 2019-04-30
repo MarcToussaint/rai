@@ -217,17 +217,17 @@ rai::Frame* rai::KinematicWorld::addFrame(const char* name, const char* parent, 
   rai::Frame *f = new rai::Frame(*this);
   f->name = name;
 
-  if(parent){
+  if(parent && parent[0]){
     rai::Frame *p = getFrameByName(parent);
     if(p) f->linkFrom(p);
   }
 
-  if(args){
+  if(args && args[0]){
     rai::String(args) >>f->ats;
     f->read(f->ats);
   }
 
-  if(f->parent) f->X = f->parent->X * f->Q;
+  if(f->parent) f->calc_X_from_parent();
 
   return f;
 }
@@ -244,13 +244,13 @@ rai::Frame* rai::KinematicWorld::addObject(rai::ShapeType shape, const arr& size
   }else{
     if(shape==ST_mesh){
       s->mesh().V = size;
-      s->mesh().V.reshape(size.N/3,3);
+      s->mesh().V.reshape(-1,3);
     }
     if(shape==ST_ssCvx){
       s->sscCore().V = size;
-      s->sscCore().V.reshape(size.N/3,3);
+      s->sscCore().V.reshape(-1,3);
       CHECK(radius>0., "radius must be greater zero");
-      s->size() = ARR(0.,0.,0.,radius);
+      s->size() = ARR(radius);
     }
   }
   return f;
@@ -1782,7 +1782,7 @@ void rai::KinematicWorld::write(std::ostream& os) const {
 
 void rai::KinematicWorld::write(Graph& G) const {
   for(Frame *f: frames) if(!f->name.N) f->name <<'_' <<f->ID;
-  for(Frame *f: frames) f->write(G);
+  for(Frame *f: frames) f->write(G.newSubgraph({f->name}));
 }
 
 void rai::KinematicWorld::writeURDF(std::ostream &os, const char* robotName) const {

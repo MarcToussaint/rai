@@ -59,10 +59,10 @@ void KinViewer::step() {
   //-- get transforms, or all shapes if their number changed, and proxies
   rai::Array<rai::Transformation> X;
   world.readAccess();
-  if(world->frames.N!=meshesCopy.N) { //need to copy meshes
+  if(true || world->frames.N!=meshesCopy.N) { //need to copy meshes
     uint n=world->frames.N;
     auto _dataLock = gl->dataLock(RAI_HERE);
-    meshesCopy.resizeCopy(n);
+    meshesCopy.resize(n);
     for(uint i=0; i<n; i++) {
       if(world->frames.elem(i)->shape) meshesCopy.elem(i) = world->frames.elem(i)->shape->mesh();
       else meshesCopy.elem(i).clear();
@@ -91,7 +91,7 @@ void KinViewer::step() {
     for(uint i=0; i<X.N; i++) meshesCopy(i).glX = X(i);
   }
   
-  gl->update(NULL, false); //NULL, false, false, true);
+  gl->update(NULL, true); //NULL, false, false, true);
 }
 
 //===========================================================================

@@ -105,7 +105,6 @@ rai::Shape& rai::Frame::getShape(){
   return *shape;
 }
 
-
 rai::Inertia &rai::Frame::getInertia() {
   if(!inertia) inertia = new Inertia(*this);
   return *inertia;
@@ -153,22 +152,21 @@ void rai::Frame::read(const Graph& ats) {
 }
 
 void rai::Frame::write(Graph& G){
-  auto& g = G.newSubgraph({name});
-  if(parent) g.newNode<rai::String>({"parent"}, {}, parent->name);
-  if(joint) joint->write(g);
-  if(shape) shape->write(g);
-  if(inertia) inertia->write(g);
+  if(parent) G.newNode<rai::String>({"parent"}, {}, parent->name);
+  if(joint) joint->write(G);
+  if(shape) shape->write(G);
+  if(inertia) inertia->write(G);
 
   if(parent) {
-    if(!Q.isZero()) g.newNode<arr>({"Q"}, {}, Q.getArr7d());
+    if(!Q.isZero()) G.newNode<arr>({"Q"}, {}, Q.getArr7d());
   } else {
-    if(!X.isZero()) g.newNode<arr>({"X"}, {}, X.getArr7d());
+    if(!X.isZero()) G.newNode<arr>({"X"}, {}, X.getArr7d());
   }
 
   for(Node *n : ats) {
     StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H", "axis", "A", "B", "mimic"};
     if(!avoid.contains(n->keys.last())){
-      n->newClone(g);
+      n->newClone(G);
     }
   }
 }
@@ -215,10 +213,13 @@ void rai::Frame::write(std::ostream& os) const {
   //      if(a->keys(0)!="X" && a->keys(0)!="pose") os <<*a <<' ';
 }
 
+
 /************* USER INTERFACE **************/
 
-void rai::Frame::setSize(const std::vector<double>& size){
-  getShape().size()=size;
+void rai::Frame::setShape(rai::ShapeType shape, const std::vector<double>& size){
+  getShape().type() = shape;
+  getShape().size() = size;
+  getShape().getGeom().createMeshes();
 }
 
 void rai::Frame::setPosition(const std::vector<double>& pos){
@@ -227,6 +228,7 @@ void rai::Frame::setPosition(const std::vector<double>& pos){
 
 void rai::Frame::setQuaternion(const std::vector<double>& quat){
   X.rot.set(quat);
+  X.rot.normalize();
 }
 
 void rai::Frame::setRelativePosition(const std::vector<double>& pos){
@@ -236,11 +238,16 @@ void rai::Frame::setRelativePosition(const std::vector<double>& pos){
 
 void rai::Frame::setRelativeQuaternion(const std::vector<double>& quat){
   Q.rot.set(quat);
+  Q.rot.normalize();
   calc_X_from_parent();
 }
 
 void rai::Frame::setPointCloud(const std::vector<double>& points){
   getShape().type() = ST_pointCloud;
+  if(!points.size()){
+    cerr <<"given point cloud has zero size" <<endl;
+    return;
+  }
   getShape().mesh().V.clear().operator=(points).reshape(-1, 3);
 }
 
@@ -250,18 +257,15 @@ void rai::Frame::setConvexMesh(const std::vector<double>& points){
   getShape().mesh().makeConvexHull();
 }
 
-void rai::Frame::setBox(const std::vector<double>& size){
-  if(size.size()==4){
-    getShape().type() = ST_ssBox;
-  }else if(size.size()==3){
-    getShape().type() = ST_box;
-  }else HALT("need to have 3 or 4 sizes");
-  getShape().size()=size;
-}
-
 void rai::Frame::setColor(const std::vector<double>& color){
   getShape().mesh().C = color;
 }
+
+arr rai::Frame::getMeshPoints(){
+  return getShape().mesh().V;
+}
+
+/***********************************************************/
 
 rai::Frame* rai::Frame::insertPreLink(const rai::Transformation &A) {
   //new frame between: parent -> f -> this
@@ -895,6 +899,8 @@ void rai::Shape::write(Graph& g){
     g.newNode<rai::Enum<ShapeType>>({"shape"}, {}, geom->type);
     if(geom->type!=ST_mesh)
       g.newNode<arr>({"size"}, {}, geom->size);
+    if(geom->mesh.C.N>0 && geom->mesh.C.N<=4)
+      g.newNode<arr>({"color"}, {}, geom->mesh.C);
   }
   if(cont) g.newNode<int>({"contact"}, {}, cont);
 }

@@ -70,6 +70,7 @@ void rai::Mesh::setBox() {
   T.setCarray(tris , 36);
   V.reshape(8, 3);
   T.reshape(12, 3);
+  Vn.clear(); Tn.clear();
   //cout <<V <<endl;  for(uint i=0;i<4;i++) cout <<length(V[i]) <<endl;
 }
 
@@ -94,6 +95,7 @@ void rai::Mesh::setTetrahedron() {
   T.setCarray(tris , 12);
   V.reshape(4, 3);
   T.reshape(4, 3);
+  Vn.clear(); Tn.clear();
   //cout <<V <<endl;  for(uint i=0;i<4;i++) cout <<length(V[i]) <<endl;
 }
 
@@ -114,6 +116,7 @@ void rai::Mesh::setOctahedron() {
   T.setCarray(tris , 24);
   V.reshape(6, 3);
   T.reshape(8, 3);
+  Vn.clear(); Tn.clear();
   //cout <<V <<endl;  for(uint i=0;i<4;i++) cout <<length(V[i]) <<endl;
 }
 
@@ -153,6 +156,7 @@ void rai::Mesh::setDodecahedron() {
   T.setCarray(tris , 108);
   V.reshape(20, 3);
   T.reshape(36, 3);
+  Vn.clear(); Tn.clear();
 }
 
 void rai::Mesh::setSphere(uint fineness) {
@@ -212,6 +216,7 @@ void rai::Mesh::setCylinder(double r, double l, uint fineness) {
     T(4*i+3, 1)=i+div;
     T(4*i+3, 2)=2*div+1;
   }
+  Vn.clear(); Tn.clear();
 }
 
 void rai::Mesh::setSSBox(double x_width, double y_width, double z_height, double r, uint fineness) {

@@ -69,6 +69,7 @@ void rai::Geom::createMeshes() {
   switch(type) {
     case rai::ST_none: HALT("shapes should have a type - somehow wrong initialization..."); break;
     case rai::ST_box:
+      mesh.clear();
       mesh.setBox();
       mesh.scale(size(0), size(1), size(2));
       break;
@@ -106,7 +107,7 @@ void rai::Geom::createMeshes() {
 //    sscCore.makeConvexHull();
       break;
     case rai::ST_ssCvx:
-      CHECK(size(3)>1e-10,"");
+      CHECK(size(-1)>1e-10,"");
       if(!sscCore.V.N) {
         CHECK(mesh.V.N, "mesh or sscCore needs to be loaded");
         sscCore=mesh;

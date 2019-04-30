@@ -38,6 +38,8 @@ py::dict graph2dict(const Graph& G){
       dict[key.p] = n->get<uint>();
     } else if(n->isOfType<bool>()) {
       dict[key.p] = n->get<bool>();
+    } else if(n->isOfType<rai::Enum<rai::ShapeType>>()) {
+      dict[key.p] = n->get<rai::Enum<rai::ShapeType>>().name();
     } else {
       LOG(-1) <<"can't convert node of type " <<n->type.name() <<" to dictionary";
     }
@@ -562,21 +564,88 @@ PYBIND11_MODULE(libry, m) {
   py::class_<ry::RyFrame>(m, "Frame")
   .def("setPointCloud", [](ry::RyFrame& self, const pybind11::array& points){
     arr _points = numpy2arr(points);
-    self.config->writeAccess();
+    WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
     self.frame->setPointCloud(_points);
-    self.config->deAccess();
   } )
 
-  .def("setBox", [](ry::RyFrame& self, const std::vector<double>& size){
-    self.config->writeAccess();
-    self.frame->setBox(size);
-    self.config->deAccess();
+  .def("setShape", [](ry::RyFrame& self, rai::ShapeType shape, const std::vector<double>& size){
+    WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    self.frame->setShape(shape, size);
   } )
 
   .def("setColor", [](ry::RyFrame& self, const std::vector<double>& color){
-    self.config->writeAccess();
+    WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
     self.frame->setColor(color);
-    self.config->deAccess();
+  } )
+
+  .def("setPose", [](ry::RyFrame& self, const std::string& pose){
+    WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    self.frame->X.setText(pose.c_str());
+  } )
+
+  .def("setPosition", [](ry::RyFrame& self, const std::vector<double>& pos){
+    WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    self.frame->setPosition(pos);
+  } )
+
+  .def("setQuaternion", [](ry::RyFrame& self, const std::vector<double>& quat){
+    WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    self.frame->setQuaternion(quat);
+  } )
+
+  .def("setRelativePose", [](ry::RyFrame& self, const std::string& pose){
+    WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    self.frame->Q.setText(pose.c_str());
+    self.frame->calc_X_from_parent();
+  } )
+
+  .def("setRelativePosition", [](ry::RyFrame& self, const std::vector<double>& pos){
+    WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    self.frame->setRelativePosition(pos);
+  } )
+
+  .def("setRelativeQuaternion", [](ry::RyFrame& self, const std::vector<double>& quat){
+    WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    self.frame->setRelativeQuaternion(quat);
+  } )
+
+  .def("getPosition", [](ry::RyFrame& self){
+    RToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    arr x = self.frame->getPosition();
+    return pybind11::array_t<double>(x.dim(), x.p);
+  } )
+
+  .def("getQuaternion", [](ry::RyFrame& self){
+    RToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    arr x = self.frame->getQuaternion();
+    return pybind11::array_t<double>(x.dim(), x.p);
+  } )
+
+  .def("getRelativePosition", [](ry::RyFrame& self){
+    RToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    arr x = self.frame->getRelativePosition();
+    return pybind11::array_t<double>(x.dim(), x.p);
+  } )
+
+  .def("getRelativeQuaternion", [](ry::RyFrame& self){
+    RToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    arr x = self.frame->getRelativeQuaternion();
+    return pybind11::array_t<double>(x.dim(), x.p);
+  } )
+
+  .def("getMeshPoints", [](ry::RyFrame& self){
+    RToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    arr x = self.frame->getMeshPoints();
+    return pybind11::array_t<double>(x.dim(), x.p);
+  } )
+
+  .def("info", [](ry::RyFrame& self){
+    Graph G;
+    WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    G.newNode<rai::String>({"name"}, {}, self.frame->name);
+    G.newNode<int>({"ID"}, {}, self.frame->ID);
+    self.frame->write(G);
+    return graph2dict(G);
   } )
 
   .def("setMeshAsLines", [](ry::RyFrame& self, const std::vector<double>& lines){
