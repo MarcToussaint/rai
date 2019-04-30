@@ -919,7 +919,7 @@ PYBIND11_MODULE(libry, m) {
   //===========================================================================
 
   py::class_<ry::RyCamera>(m, "Camera")
-  .def(py::init<>())
+  .def(py::init<const char*, const char*, const char*>())
 
   .def("getRgb", [](ry::RyCamera& self){
     byteA rgb = self.rgb.get();

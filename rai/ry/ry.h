@@ -78,7 +78,10 @@ namespace ry{
     Var<byteA> rgb;
     Var<floatA> depth;
     std::shared_ptr<RosCamera> C;
-    RyCamera() : C(make_shared<RosCamera>(rgb, depth)) {}
+    RyCamera(const char* rosNodeName,
+             const char* rgb_topic,
+             const char* depth_topic)
+      : C(make_shared<RosCamera>(rgb, depth, rosNodeName, rgb_topic, depth_topic)) {}
   };
 
 }
