@@ -43,6 +43,8 @@ enum SkeletonSymbol{
 
   SY_noCollision,
   SY_identical,
+
+  SY_alignByInt
 };
 
 
@@ -50,7 +52,7 @@ struct SkeletonEntry {
   double phase0=-1.;
   double phase1=-1.;
   rai::Enum<SkeletonSymbol> symbol;
-  StringA frames;
+  StringA frames; //strings referring to things
   SkeletonEntry() {}
   SkeletonEntry(double phase0, double phase1, SkeletonSymbol symbol, StringA frames) : phase0(phase0), phase1(phase1), symbol(symbol), frames(frames){}
   void write(ostream& os) const { os <<symbol <<' '; frames.write(os," ",NULL,"()"); os <<" from " <<phase0 <<" to " <<phase1; }

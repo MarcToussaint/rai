@@ -132,7 +132,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
   
   Skeleton S = getSkeleton({"touch", "above", "inside", "impulse",
                             "stable", "stableOn", "dynamic", "dynamicTrans", "dynamicOn", "break",
-                            "push", "graspSlide", "liftDownUp"
+                            "push", "graspSlide", "liftDownUp", "alignByInt"
                            });
 
   if(komo.fil) writeSkeleton(*komo.fil, S, getSwitchesFromSkeleton(S));

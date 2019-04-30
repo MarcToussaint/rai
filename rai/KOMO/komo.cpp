@@ -1092,6 +1092,9 @@ void KOMO::setSkeleton(const Skeleton &S, bool ignoreSwitches) {
     if(s.symbol==SY_magic) {  addSwitch_magic(s.phase0, s.phase1, newFrom, s.frames(0), 0.); continue; }
     if(s.symbol==SY_magicTrans) {  addSwitch_magicTrans(s.phase0, s.phase1, newFrom, s.frames(0), 0.); continue; }
 
+    if(s.symbol==SY_alignByInt) { addObjective({s.phase0, s.phase1}, OT_sos, FS_scalarProductXX, s.frames);
+    cout <<"THE INTEGER IS: " <<s.frames(2) <<endl;
+    }
 
 //    if(s.symbol==SY_magicTouch) {
 //      core_setTouch(s.phase0, s.phase1, s.frames(0), s.frames(1));
@@ -2633,6 +2636,8 @@ template<> const char* rai::Enum<SkeletonSymbol>::names []= {
 
   "noCollision",
   "identical",
+
+  "alignByInt",
   NULL
 };
 
