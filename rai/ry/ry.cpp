@@ -6,6 +6,7 @@
 #include <Kin/frame.h>
 #include <Kin/kin.h>
 #include <Kin/kin_bullet.h>
+#include <Perception/depth2PointCloud.h>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -98,6 +99,9 @@ arr numpy2arr(const pybind11::array& X){
   } else if(Y.nd==2){
     for(uint i=0;i<Y.d0;i++) for(uint j=0;j<Y.d1;j++) Y(i,j) = ref(i,j);
     return Y;
+  } else if(Y.nd==3){
+    for(uint i=0;i<Y.d0;i++) for(uint j=0;j<Y.d1;j++) for(uint k=0;k<Y.d2;k++) Y(i,j,k) = ref(i,j,k);
+    return Y;
   }
   NIY;
   return Y;
@@ -137,7 +141,10 @@ PYBIND11_MODULE(libry, m) {
   } )
 
   .def("addFrame", [](ry::Config& self, const std::string& name, const std::string& parent, const std::string& args) {
-    return self.set()->addFrame(name.c_str(), parent.c_str(), args.c_str())->ID;
+    ry::RyFrame f;
+    f.config = self.data;
+    f.frame = self.set()->addFrame(name.c_str(), parent.c_str(), args.c_str());
+    return f;
   }, "",
     py::arg("name"),
     py::arg("parent") = std::string(),
@@ -164,7 +171,9 @@ PYBIND11_MODULE(libry, m) {
        const std::vector<double>& quat,
        double radius){
     auto Kset = self.set();
-    rai::Frame *f = Kset->addObject(name.c_str(), shape, conv_stdvec2arr(size), conv_stdvec2arr(color), radius, parent.c_str(), conv_stdvec2arr(pos), conv_stdvec2arr(quat));
+    ry::RyFrame f;
+    f.config = self.data;
+    f.frame = Kset->addObject(name.c_str(), shape, conv_stdvec2arr(size), conv_stdvec2arr(color), radius, parent.c_str(), conv_stdvec2arr(pos), conv_stdvec2arr(quat));
 //    f->name = name;
 //    if(parent.size()){
 //      rai::Frame *p = Kset->getFrameByName(parent.c_str());
@@ -178,7 +187,7 @@ PYBIND11_MODULE(libry, m) {
 //    }else{
 //      f->X = f->Q;
 //    }
-    return f->ID;
+    return f;
   }, "",
     py::arg("name"),
     py::arg("parent") = std::string(),
@@ -314,6 +323,7 @@ PYBIND11_MODULE(libry, m) {
 
   .def("frame", [](ry::Config& self, const std::string& framename){
     ry::RyFrame f;
+    f.config = self.data;
     f.frame = self.get()->getFrameByName(framename.c_str(), true);
     return f;
   } )
@@ -550,6 +560,25 @@ PYBIND11_MODULE(libry, m) {
   //===========================================================================
 
   py::class_<ry::RyFrame>(m, "Frame")
+  .def("setPointCloud", [](ry::RyFrame& self, const pybind11::array& points){
+    arr _points = numpy2arr(points);
+    self.config->writeAccess();
+    self.frame->setPointCloud(_points);
+    self.config->deAccess();
+  } )
+
+  .def("setBox", [](ry::RyFrame& self, const std::vector<double>& size){
+    self.config->writeAccess();
+    self.frame->setBox(size);
+    self.config->deAccess();
+  } )
+
+  .def("setColor", [](ry::RyFrame& self, const std::vector<double>& color){
+    self.config->writeAccess();
+    self.frame->setColor(color);
+    self.config->deAccess();
+  } )
+
   .def("setMeshAsLines", [](ry::RyFrame& self, const std::vector<double>& lines){
       CHECK(self.frame, "this is not a valid frame");
       CHECK(self.frame->shape, "this frame is not a mesh!");
@@ -900,6 +929,14 @@ PYBIND11_MODULE(libry, m) {
   .def("getDepth", [](ry::RyCamera& self){
     floatA depth = self.depth.get();
     return pybind11::array_t<float>(depth.dim(), depth.p);
+  } )
+
+  .def("getPoints", [](ry::RyCamera& self, std::vector<double>& Fxypxy){
+    floatA _depth = self.depth.get();
+    arr _points;
+    CHECK_EQ(Fxypxy.size(), 4, "I need 4 intrinsic calibration parameters")
+    depthData2pointCloud(_points, _depth, Fxypxy[0], Fxypxy[1], Fxypxy[2], Fxypxy[3]);
+    return pybind11::array_t<double>(_points.dim(), _points.p);
   } )
 
   ;

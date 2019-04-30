@@ -57,7 +57,10 @@ namespace ry{
   struct RyLGP_Tree { ptr<LGP_Tree_Thread> lgp; };
 
   struct RyFeature { ptr<Feature> feature; };
-  struct RyFrame { rai::Frame *frame=0; };
+  struct RyFrame {
+    ptr<Var_data<rai::KinematicWorld>> config; //only to ensure the containing configuration is not destroyed
+    rai::Frame *frame=0;
+  };
 
   struct RyCameraView {
     ptr<rai::CameraView> cam;
@@ -77,6 +80,7 @@ namespace ry{
     std::shared_ptr<RosCamera> C;
     RyCamera() : C(make_shared<RosCamera>(rgb, depth)) {}
   };
+
 }
 
 namespace ry{

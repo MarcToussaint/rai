@@ -80,6 +80,7 @@ struct Frame : NonCopyable{
   void linkFrom(Frame *_parent, bool adoptRelTransform=false);
   bool isChildOf(const Frame* par, int order=1) const;
   
+  Shape& getShape();
   Inertia& getInertia();
   
   void getRigidSubFrames(FrameL& F); ///< recursively collect all rigidly attached sub-frames (e.g., shapes of a link), (THIS is not included)
@@ -88,6 +89,18 @@ struct Frame : NonCopyable{
   void read(const Graph &ats);
   void write(Graph &G);
   void write(std::ostream& os) const;
+
+  //-- HIGHER LEVEL USER INTERFACE
+  void setSize(const std::vector<double>& size);
+  void setPosition(const std::vector<double>& pos);
+  void setQuaternion(const std::vector<double>& quat);
+  void setRelativePosition(const std::vector<double>& pos);
+  void setRelativeQuaternion(const std::vector<double>& quat);
+  void setPointCloud(const std::vector<double>& points);
+  void setConvexMesh(const std::vector<double>& points);
+  void setBox(const std::vector<double>& size);
+  void setColor(const std::vector<double>& color);
+
 };
 stdOutPipe(Frame)
 

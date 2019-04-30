@@ -100,6 +100,12 @@ void rai::Frame::getRigidSubFrames(FrameL &F) {
   for(Frame *f:parentOf) if(!f->joint) { F.append(f); f->getRigidSubFrames(F); }
 }
 
+rai::Shape& rai::Frame::getShape(){
+  if(!shape) shape = new Shape(*this);
+  return *shape;
+}
+
+
 rai::Inertia &rai::Frame::getInertia() {
   if(!inertia) inertia = new Inertia(*this);
   return *inertia;
@@ -207,6 +213,54 @@ void rai::Frame::write(std::ostream& os) const {
   //  uint i; Node *a;
   //  for(Type *  a:  ats)
   //      if(a->keys(0)!="X" && a->keys(0)!="pose") os <<*a <<' ';
+}
+
+/************* USER INTERFACE **************/
+
+void rai::Frame::setSize(const std::vector<double>& size){
+  getShape().size()=size;
+}
+
+void rai::Frame::setPosition(const std::vector<double>& pos){
+  X.pos.set(pos);
+}
+
+void rai::Frame::setQuaternion(const std::vector<double>& quat){
+  X.rot.set(quat);
+}
+
+void rai::Frame::setRelativePosition(const std::vector<double>& pos){
+  Q.pos.set(pos);
+  calc_X_from_parent();
+}
+
+void rai::Frame::setRelativeQuaternion(const std::vector<double>& quat){
+  Q.rot.set(quat);
+  calc_X_from_parent();
+}
+
+void rai::Frame::setPointCloud(const std::vector<double>& points){
+  getShape().type() = ST_pointCloud;
+  getShape().mesh().V.clear().operator=(points).reshape(-1, 3);
+}
+
+void rai::Frame::setConvexMesh(const std::vector<double>& points){
+  getShape().type() = ST_mesh;
+  getShape().mesh().V.clear().operator=(points).reshape(-1, 3);
+  getShape().mesh().makeConvexHull();
+}
+
+void rai::Frame::setBox(const std::vector<double>& size){
+  if(size.size()==4){
+    getShape().type() = ST_ssBox;
+  }else if(size.size()==3){
+    getShape().type() = ST_box;
+  }else HALT("need to have 3 or 4 sizes");
+  getShape().size()=size;
+}
+
+void rai::Frame::setColor(const std::vector<double>& color){
+  getShape().mesh().C = color;
 }
 
 rai::Frame* rai::Frame::insertPreLink(const rai::Transformation &A) {

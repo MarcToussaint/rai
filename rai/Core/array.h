@@ -132,7 +132,7 @@ template<class T> struct Array : std::vector<T>, Serializable {
   Array<T>& resize(uint ND, uint *dim);
   Array<T>& resize(const Array<uint> &dim);
   Array<T>& reshape(uint D0);
-  Array<T>& reshape(uint D0, uint D1);
+  Array<T>& reshape(int D0, int D1);
   Array<T>& reshape(uint D0, uint D1, uint D2);
   Array<T>& reshape(uint ND, uint *dim);
   Array<T>& reshape(const Array<uint> &dim);
@@ -148,7 +148,7 @@ template<class T> struct Array : std::vector<T>, Serializable {
   Array<T>& dereference();
   
   /// @name initializing/assigning entries
-  void clear();
+  rai::Array<T>& clear();
   void setZero(byte zero=0);
   void setUni(const T& scalar, int d=-1);
   void setId(int d=-1);
