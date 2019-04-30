@@ -71,6 +71,8 @@ arr                 conv_wrench2arr(const geometry_msgs::WrenchStamped& msg);
 byteA               conv_image2byteA(const sensor_msgs::Image& msg);
 uint16A             conv_image2uint16A(const sensor_msgs::Image& msg);
 floatA              conv_imageu162floatA(const sensor_msgs::Image& msg);
+floatA              conv_imageFloat32_floatA(const sensor_msgs::Image& msg);
+
 floatA              conv_laserScan2arr(const sensor_msgs::LaserScan& msg);
 #ifdef RAI_PCL
 PclC                 conv_pointcloud22pcl(const sensor_msgs::PointCloud2& msg);

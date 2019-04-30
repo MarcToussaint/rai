@@ -5,7 +5,7 @@
 struct sRosCamera {
   RosCom ROS;
   ptr<SubscriberConv<sensor_msgs::Image, byteA, &conv_image2byteA>> subRgb;
-  ptr<SubscriberConv<sensor_msgs::Image, floatA, &conv_imageu162floatA>> subDepth;
+  ptr<SubscriberConv<sensor_msgs::Image, floatA, &conv_imageFloat32_floatA>> subDepth;
 
   sRosCamera(const char* rosNodeName, Var<byteA>& rgb, Var<floatA>& depth) : ROS(rosNodeName){
     if(rgb.name().N) ROS.subscribe(subRgb, rgb);
