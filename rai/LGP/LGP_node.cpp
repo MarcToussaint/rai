@@ -7,6 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "LGP_node.h"
+#include "LGP_tree.h"
 #include "bounds.h"
 
 #include <MCTS/solver_PlainMC.h>
@@ -38,10 +39,10 @@ void LGP_Node::resetData() {
   highestBound=0.;
 }
 
-LGP_Node::LGP_Node(rai::KinematicWorld& kin, FOL_World& _fol, uint levels)
-  : parent(NULL), step(0), time(0.), id(COUNT_node++),
-    fol(_fol),
-    startKinematics(kin),
+LGP_Node::LGP_Node(LGP_Tree* _tree, uint levels)
+  : parent(NULL), tree(_tree), step(0), time(0.), id(COUNT_node++),
+    fol(tree->fol),
+    startKinematics(tree->kin),
     L(levels) {
   //this is the root node!
   fol.reset_state();
@@ -53,7 +54,7 @@ LGP_Node::LGP_Node(rai::KinematicWorld& kin, FOL_World& _fol, uint levels)
 }
 
 LGP_Node::LGP_Node(LGP_Node* parent, MCTS_Environment::Handle& a)
-  : parent(parent), step(parent->step+1), id(COUNT_node++),
+  : parent(parent), tree(parent->tree), step(parent->step+1), id(COUNT_node++),
     fol(parent->fol),
     startKinematics(parent->startKinematics),
     L(parent->L) {
@@ -159,6 +160,13 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
                  startKinematics, (parent?parent->effKinematics:startKinematics),
                  collisions,
                  waypoints);
+
+  for(Objective *o:tree->finalGeometryObjectives.objectives){
+    cout <<"FINAL objective: " <<*o <<endl;
+    Objective *co = komo.addObjective(0,0, o->map, o->type);
+    co->setCostSpecs(komo.T-1, komo.T-1, komo.sparseOptimization);
+    cout <<"FINAL objective: " <<*co <<endl;
+  }
 
   if(komo.fil){
     komo.reportProblem(*komo.fil);

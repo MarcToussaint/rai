@@ -31,6 +31,7 @@ extern bool LGP_useHoming;
 
 struct LGP_Node {
   LGP_Node *parent;
+  struct LGP_Tree* tree=0;
   rai::Array<LGP_Node*> children;
   uint step;            ///< decision depth/step of this node
   double time;          ///< real time
@@ -68,7 +69,7 @@ struct LGP_Node {
   rai::String note;
   
   /// root node init
-  LGP_Node(rai::KinematicWorld& kin, FOL_World& fol, uint levels);
+  LGP_Node(LGP_Tree* _tree, uint levels);
   
   /// child node creation
   LGP_Node(LGP_Node *parent, FOL_World::Handle& a);

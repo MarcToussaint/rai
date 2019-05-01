@@ -200,11 +200,6 @@ void Node::write(std::ostream& os, bool pythonMode) const {
   }
 }
 
-Nod::Nod(const char* key) {
-  n = G.newNode<bool>(true);
-  n->keys.append(STRING(key));
-}
-
 Nod::Nod(const char* key, const char* stringValue) {
   n = G.newNode<rai::String>(STRING(stringValue));
   n->keys.append(STRING(key));
