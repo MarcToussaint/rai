@@ -72,10 +72,11 @@ OptNewton::StopCriterion OptNewton::step() {
   } else {
     bool inversionFailed=false;
     try {
-      if(!rootFinding)
+      if(!rootFinding){
         Delta = lapack_Ainv_b_sym(R, -gx);
-      else
+      }else{
         lapack_mldivide(Delta, R, -gx);
+      }
     } catch(...) {
       inversionFailed=true;
     }
@@ -139,11 +140,11 @@ OptNewton::StopCriterion OptNewton::step() {
     if(o.verbose>5) cout <<" \tprobing y=" <<y;
     if(o.verbose>1) cout <<" \tevals=" <<std::setw(4) <<evals <<" \talpha=" <<std::setw(11) <<alpha <<" \tf(y)=" <<fy <<flush;
     bool wolfe = (fy <= fx + o.wolfe*alpha*scalarProduct(Delta,gx));
-    if(rootFinding) wolfe=true;
+//    if(rootFinding) wolfe=true;
     if(fy==fy && (wolfe || o.nonStrictSteps==-1 || o.nonStrictSteps>(int)it)) { //fy==fy is for NAN?
       //accept new point
       if(o.verbose>1) cout <<" - ACCEPT" <<endl;
-      if(!rootFinding && fx-fy<o.stopFTolerance) numTinySteps++; else numTinySteps=0;
+      if(fx-fy<o.stopFTolerance) numTinySteps++; else numTinySteps=0;
       x = y;
       fx = fy;
       gx = gy;

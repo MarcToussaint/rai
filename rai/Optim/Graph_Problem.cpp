@@ -114,4 +114,40 @@ void Conv_Graph_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA
   }
 }
 
+void Conv_Graph_ConstrainedProblem::reportProblem(std::ostream& os){
+  uint nG=0, nH=0;
+  for(ObjectiveType t:featureTypes) if(t==OT_ineq) nG++; else if(t==OT_eq) nH++;
+  os <<"\n# GraphProblem";
+  os <<"\n# num_vars:" <<variableDimensions.N <<" num_feat:" <<featureTypes.N <<" num_ineq:" <<nG <<" num_eq:" <<nH;
+  StringA varNames, phiNames;
+  G.getSemantics(varNames, phiNames);
+  os <<"\n# vars:";
+  for(uint i=0;i<varNames.N;i++) os <<"\n#   " <<varNames.elem(i) <<"  (" <<variableDimensions.elem(i) <<")";
+  os <<"\n# features:";
+  for(uint i=0;i<phiNames.N;i++) os <<"\n#   " <<phiNames.elem(i) <<"  (" <<featureTypes.elem(i) <<")";
+  os <<endl;
+}
+
 #endif
+
+void ModGraphProblem::getStructure(uintA& variableDimensions, intAA& featureVariables, ObjectiveTypeA& featureTypes){
+  G.getStructure(variableDimensions, featureVariables, featureTypes);
+  for(uint i=0;i<featureVariables.N;i++){
+    if(featureTypes(i)==OT_ineq || featureTypes(i)==OT_eq){
+      subselectFeatures.append(i);
+    }
+  }
+  featureVariables = featureVariables.sub(subselectFeatures);
+  featureTypes = featureTypes.sub(subselectFeatures);
+}
+
+void ModGraphProblem::getSemantics(StringA& varNames, StringA& phiNames){
+  G.getSemantics(varNames, phiNames);
+  phiNames = phiNames.sub(subselectFeatures);
+}
+
+void ModGraphProblem::phi(arr& phi, arrA& J, arrA& H, const arr& x){
+  G.phi(phi, J, H, x);
+  phi = phi.sub(subselectFeatures);
+  J = J.sub(subselectFeatures);
+}

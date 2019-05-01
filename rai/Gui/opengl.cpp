@@ -383,12 +383,12 @@ void OpenGL::openWindow() {
 }
 
 void OpenGL::closeWindow() {
+  s->needsRedraw=0;
   if(s->window) {
     {
       auto fg = singletonGlSpinner();
       fg->mutex.lock(RAI_HERE);
       glfwDestroyWindow(s->window);
-      s->window=0;
       fg->mutex.unlock();
       isUpdating.setStatus(0);
       watching.setStatus(0);

@@ -13,23 +13,65 @@
 // PhaseOneProblem
 //
 
-void PhaseOneProblem::phi(arr& meta_phi, arr& meta_J, arr& meta_H, ObjectiveTypeA& tt, const arr& x, arr& lambda) {
-  NIY;
-  arr g, Jg;
-//  f_orig(NoArr, NoArr, g, (&meta_Jg?Jg:NoArr), x.sub(0,-2)); //the underlying problem only receives a x.N-1 dimensional x
+void PhaseOneProblem::initialize(arr& x){
+  arr phi;
+  ObjectiveTypeA ot;
+  f_orig.phi(phi, NoArr, NoArr, ot, x, NoArr);
+  dim_x=x.N;
+  dim_eq=dim_ineq=0;
+  double gmax=0.;
+  for(uint i=0;i<phi.N;i++){
+    if(ot.elem(i)==OT_ineq){
+      dim_ineq++;
+      gmax = rai::MAX(gmax, phi.elem(i));
+    }
+    if(ot.elem(i)==OT_eq){
+      dim_eq++;
+    }
+  }
+  x.append(gmax);
+}
 
-  // meta_g.resize(g.N+1);
-  // meta_g(0) = x.last();                                       //cost
-  // for(uint i=0;i<g.N;i++) meta_g(i) = g(i)-x.last();  //slack constraints
-  // meta_g.last() = -x.last();                                  //last constraint
-  
-  // if(!!meta_Jg){
-  //   meta_Jg.resize(meta_g.N, x.N);  meta_Jg.setZero();
-  //   meta_Jg(0,x.N-1) = 1.; //cost
-  //   for(uint i=0;i<g.N;i++) for(uint j=0;j<x.N-1;j++) meta_Jg(i,j) = Jg(i,j);
-  //   for(uint i=0;i<g.N;i++) meta_Jg(i,x.N-1) = -1.;
-  //   meta_Jg(g.N, x.N-1) = -1.;
-  // }
+void PhaseOneProblem::phi(arr& meta_phi, arr& meta_J, arr& meta_H, ObjectiveTypeA& meta_ot, const arr& meta_x, arr& lambda) {
+  CHECK_EQ(meta_x.N, dim_x+1, "");
+  arr x = meta_x({0,-2});
+  double s = meta_x(-1);
+
+  arr phi, J;
+  ObjectiveTypeA ot;
+  f_orig.phi(phi, J, NoArr, ot, x, NoArr);
+
+  meta_phi.resize(1+dim_ineq+dim_eq);
+  meta_ot.resize(1+dim_ineq+dim_eq);
+
+  uint m=0;
+  for(uint i=0;i<phi.N;i++) if(ot.elem(i)==OT_ineq){
+    meta_phi(m) = phi(i) - s; //subtract slack!
+    meta_ot(m) = OT_ineq;
+    m++;
+  }
+  for(uint i=0;i<phi.N;i++) if(ot.elem(i)==OT_eq){
+    meta_phi(m) = phi(i);
+    meta_ot(m) = OT_eq;
+    m++;
+  }
+  CHECK_EQ(m, dim_ineq+dim_eq, "");
+  meta_phi(m) = s;
+
+   if(!!meta_J){
+     meta_J.resize(meta_phi.N, meta_x.N).setZero();
+     m=0;
+     for(uint i=0;i<phi.N;i++) if(ot.elem(i)==OT_ineq){
+       meta_J[m] = J[i];
+       m++;
+     }
+     for(uint i=0;i<phi.N;i++) if(ot.elem(i)==OT_eq){
+       meta_J[m] = J[i];
+       m++;
+     }
+     meta_J(-1,-1) = 1.;
+     CHECK_EQ(m, dim_ineq+dim_eq, "");
+   }
 }
 
 //==============================================================================
@@ -51,8 +93,9 @@ OptConstrained::OptConstrained(arr& _x, arr &_dual, ConstrainedProblem& P, int v
 }
 
 bool OptConstrained::step() {
-  if(fil)(*fil) <<"constr " <<its <<' ' <<newton.evals <<' ' <<L.get_costs() <<' ' <<L.get_sumOfGviolations() <<' ' <<L.get_sumOfHviolations() <<endl;
+  if(fil) (*fil) <<"constr " <<its <<' ' <<newton.evals <<' ' <<L.get_costs() <<' ' <<L.get_sumOfGviolations() <<' ' <<L.get_sumOfHviolations() <<endl;
   newton.fil = fil;
+//  L.fil = fil;
   
   if(opt.verbose>0) {
     cout <<"** optConstr. it=" <<its

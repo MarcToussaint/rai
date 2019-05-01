@@ -38,7 +38,7 @@ struct OptPrimalDual {
   uint its=0;
   ofstream *fil=NULL;
   
-  OptPrimalDual(arr& x, arr &dual, ConstrainedProblem& P, OptOptions opt=NOOPT);
+  OptPrimalDual(arr& x, arr &dual, ConstrainedProblem& P, int verbose=-1, OptOptions opt=NOOPT);
   ~OptPrimalDual();
   uint run();
 };

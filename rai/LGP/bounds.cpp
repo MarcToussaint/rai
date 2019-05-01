@@ -84,9 +84,9 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
 
       komo.setSkeleton(S);
 
-      if(collisions) komo.add_collision(true, 0., 1e1);
+      if(collisions) komo.add_collision(true);
 
-      komo.reset();
+      komo.reset(.1);
 //      komo.setPairedTimes();
       //      cout <<komo.getPath_times() <<endl;
     } break;
@@ -108,7 +108,7 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
 
       komo.setSkeleton(S);
 
-      if(collisions) komo.add_collision(true, 0, 1e1);
+      if(collisions) komo.add_collision(true, 0., 1e1);
 
       komo.reset();
       //      cout <<komo.getPath_times() <<endl;
@@ -143,7 +143,7 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
 //      for(uint i=O; i<komo.objectives.N; i++) delete komo.objectives(i);
 //      komo.objectives.resizeCopy(O);
 
-      if(collisions) komo.add_collision(true, 0, 1e1);
+      if(collisions) komo.add_collision(true, 0., 1e1);
 
       komo.reset();
       komo.initWithWaypoints(waypoints, waypointsStepsPerPhase);

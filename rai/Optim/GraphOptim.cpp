@@ -26,6 +26,7 @@ GraphProblem_Structure::GraphProblem_Structure(GraphProblem& _G) : G(_G){
   for(uint k=0;k<O.N;k++){
     O(k).phi_index = k;
     O(k).vars = featureVariables(k);
+    for(int i=O(k).vars.N;i--;) if(O(k).vars(i)<0) O(k).vars.remove(i); //remove variables of negative index
     O(k).type = featureTypes(k);
     for(int i:O(k).vars) if(i>=0) V(i).objs.setAppendInSorted(k);
     O(k).description = phiNames(k);
@@ -85,6 +86,8 @@ void SubGraphProblem::reset(const uintA& _X, const uintA& _Y){
   }
 }
 
+ofstream fil;
+
 void SubGraphProblem::optim(int verbose){
   uint m=0;
   for(uint i:X) m += G.V(i).x_dim;
@@ -101,10 +104,16 @@ void SubGraphProblem::optim(int verbose){
 
   //    KinematicWorld::setJointStateCount=0;
   rai::timerStart();
+#if 0
+  ModGraphProblem Gsel(*this);
+  Conv_Graph_ConstrainedProblem C(Gsel);
+#else
   Conv_Graph_ConstrainedProblem C(*this);
+#endif
+  C.reportProblem(fil);
   arr dual;
   OptConstrained opt(x, dual, C, 0); //rai::MAX(verbose-2, 0));
-  //    opt.fil = fil;
+  opt.L.fil = &fil;
   opt.run();
   //    opt.newton.evals;
   double runTime = rai::timerRead();
@@ -121,8 +130,8 @@ void SubGraphProblem::optim(int verbose){
     else if(o.type==OT_eq) eq += fabs(o.value);
     else if(o.type==OT_ineq && o.value>0.) ineq += o.value;
 
-    if(o.type==OT_eq && fabs(o.value)>.1) conflictSet.append(k);
-    if(o.type==OT_ineq && o.value>.1) conflictSet.append(k);
+    if(o.type==OT_eq && fabs(o.value)>.5) conflictSet.append(k);
+    if(o.type==OT_ineq && o.value>.5) conflictSet.append(k);
   }
   if(eq+ineq>1.){
     feasible = false;
@@ -136,7 +145,8 @@ void SubGraphProblem::optim(int verbose){
     cout <<"   sos=" <<sos <<" ineq=" <<ineq <<" eq=" <<eq <<" #conflicts=" <<conflictSet.N <<endl;
   }
 
-  checkJacobianCP(C, x, 1e-4);
+//  checkJacobianCP(C, x, 1e-4);
+//  rai::wait();
 }
 
 void SubGraphProblem::getStructure(uintA& variableDimensions, intAA& featureVariables, ObjectiveTypeA& featureTypes){
@@ -153,6 +163,18 @@ void SubGraphProblem::getStructure(uintA& variableDimensions, intAA& featureVari
       for(int& j:featureVariables(k)) j = Gindex2SubIndex(j);
     }
     if(!!featureTypes) featureTypes(k) = G.O(Phi(k)).type;
+  }
+}
+
+void SubGraphProblem::getSemantics(StringA& varNames, StringA& phiNames){
+  if(!!varNames){
+    varNames.resize(X.N);
+    for(uint i=0;i<X.N;i++) varNames(i) = G.V(X(i)).description;
+  }
+
+  if(!!phiNames) phiNames.resize(Phi.N);
+  for(uint k=0;k<Phi.N;k++){
+    if(!!phiNames) phiNames(k) = G.O(Phi(k)).description;
   }
 }
 
@@ -205,8 +227,8 @@ BacktrackingGraphOptimization::BacktrackingGraphOptimization(GraphProblem& _G) :
 
 int BacktrackingGraphOptimization::chooseNextVariableToAssign(const uintA& Y){
   uint n = G.V.N;
-//  for(uint i=n;i--;){
-  for(uint i=0;i<n;i++){
+  for(uint i=n;i--;){
+//  for(uint i=0;i<n;i++){
     if(!Y.contains(i)) return i;
   }
   return -1;
@@ -230,6 +252,8 @@ bool BacktrackingGraphOptimization::run(){
   uintA X; //active variables
   f_low=0.;
 
+  fil.open("z.optim");
+
   for(;;){
     int next = chooseNextVariableToAssign(Y);
     if(next<0) return true; //success: no next variable
@@ -237,7 +261,6 @@ bool BacktrackingGraphOptimization::run(){
     cout <<"** BGO: solve (" <<X <<"|" <<Y <<")" <<endl;
     SubGraphProblem G_XY(G, X, Y);
     G_XY.optim();
-//    rai::wait();
     while(!G_XY.feasible){
       if(!Y.N){
         infeasibleSubset = X;
@@ -269,8 +292,19 @@ bool BacktrackingGraphOptimization::run(){
       for(uint i:Y) CHECK(!X.containsInSorted((i)), "");
       G_XY.reset(X,Y);
       G_XY.optim();
-//      rai::wait();
     }
     Y.append(X);
   }
+
+  fil.close();
+
+  return true;
+}
+
+bool BacktrackingGraphOptimization::runFull(){
+  uintA X;
+  X.setStraightPerm(G.V.N);
+  SubGraphProblem G_X(G, X, {});
+  G_X.optim();
+  return G_X.feasible;
 }

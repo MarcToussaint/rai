@@ -1651,6 +1651,11 @@ const char *potrf_ERR="\n\
 *                completed.\n";
 
 void lapack_mldivide(arr& X, const arr& A, const arr& B) {
+  if(isSparseMatrix(A)) {
+    X = eigen_Ainv_b(A, B);
+    return;
+  }
+
   CHECK_EQ(A.nd, 2, "A in Ax=b must be a NxN matrix.");
   CHECK_EQ(A.d0, A.d1, "A in Ax=b must be square matrix.");
   CHECK(B.nd==1 || B.nd==2, "b in Ax=b must be a vector or matrix.");
@@ -2154,6 +2159,10 @@ void SparseMatrix::resize(uint d0, uint d1, uint n){
   for(int& e:elems) e=-1;
 }
 
+void SparseMatrix::reshape(uint d0, uint d1){
+  Z.nd=2; Z.d0=d0; Z.d1=d1;
+}
+
 double& SparseVector::entry(uint i, uint k){
   CHECK_LE(k, Z.N-1, "");
   if(elems.p[k]==-1){ //new element
@@ -2195,7 +2204,11 @@ double& SparseMatrix::elem(uint i, uint j){
   return addEntry(i,j);
 }
 
-double& SparseMatrix::addEntry(uint i, uint j){
+double& SparseMatrix::addEntry(int i, int j){
+  if(i<0) i += Z.d0;
+  if(j<0) j += Z.d1;
+  CHECK(Z.nd==2 && (uint)i<Z.d0 && (uint)j<Z.d1,
+        "2D range error (" <<Z.nd <<"=2, " <<i <<"<" <<Z.d0 <<", " <<j <<"<" <<Z.d1 <<")");
   uint k=Z.N;
   CHECK_EQ(elems.d0, k, "");
   elems.resizeCopy(k+1,2);
@@ -2246,7 +2259,16 @@ void SparseMatrix::setFromDense(const arr& X) {
 }
 
 void SparseMatrix::setupRowsCols(){
-  NIY;
+  rows.resize(Z.d0);
+  cols.resize(Z.d1);
+  for(uint k=0;k<elems.d0;k++){
+    uint i = elems(k,0);
+    uint j = elems(k,1);
+    rows(i).append(TUP(j,k));
+    cols(j).append(TUP(i,k));
+  }
+  for(uint i=0;i<Z.d0;i++) rows(i).reshape(rows(i).N/2,2);
+  for(uint j=0;j<Z.d1;j++) cols(j).reshape(cols(j).N/2,2);
 }
 
 arr SparseMatrix::At_x(const arr& x){

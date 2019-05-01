@@ -252,7 +252,7 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
     }else{  //SY_stableOn
       Transformation rel = 0;
       rel.pos.set(0,0, .5*(shapeSize(world, from) + shapeSize(world, to)));
-      addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_transXYPhi, from, to, world, SWInit_copy, 0, rel));
+      addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_transXYPhi, from, to, world, SWInit_zero, 0, rel));
     }
 
     //-- DOF-is-constant constraint
@@ -1409,18 +1409,27 @@ void KOMO::run() {
   if(denseOptimization){
     CHECK(!splineB.N, "NIY");
     OptConstrained _opt(x, dual, dense_problem, rai::MAX(verbose-2, 0));
-//    OptPrimalDual _opt(x, dual, dense_problem);
+//    OptPrimalDual _opt(x, dual, dense_problem, rai::MAX(verbose-2, 0));
     _opt.fil = fil;
     _opt.run();
     timeNewton += _opt.newton.timeNewton;
   } else if(sparseOptimization){
     CHECK(!splineB.N, "NIY");
-#if 1
+#if 0
+//    ModGraphProblem selG(graph_problem);
+//    Conv_Graph_ConstrainedProblem C(selG);
     Conv_Graph_ConstrainedProblem C(graph_problem);
     OptConstrained _opt(x, dual, C, rai::MAX(verbose-2, 0));
-//    OptPrimalDual _opt(x, dual, dense_problem);
+//    OptPrimalDual _opt(x, dual, C, rai::MAX(verbose-2, 0));
     _opt.fil = fil;
     _opt.run();
+    {
+//      testing primal dual:
+//      rai::wait();
+//      OptPrimalDual _opt(x, dual, C, rai::MAX(verbose-2, 0));
+//      _opt.run();
+    }
+
     timeNewton += _opt.newton.timeNewton;
 #else
     BacktrackingGraphOptimization BGO(graph_problem);
@@ -1717,7 +1726,7 @@ bool KOMO::displayPath(bool watch, bool full) {
     return !(key==27 || key=='q');
   }
   gl->update(NULL, true);
-  gl->clear();
+//  gl->clear();
   return true;
 }
 
@@ -1769,6 +1778,12 @@ void KOMO::setupConfigurations() {
     }
     K.calc_q();
     K.checkConsistency();
+//    {
+//      cout <<"CONFIGURATION s-k_order=" <<int(s)-k_order <<endl;
+//      K.glAnimate();
+//      rai::wait();
+////      K.glClose();
+//    }
   }
   
   //now apply NON-PERSISTENT flags
@@ -2132,8 +2147,8 @@ Graph KOMO::getProblemGraph(bool includeValues){
     //    t_count++;
   }
 
-  if(switches.N) RAI_MSG("not implemented for switches yet");
-  if(flags.N) RAI_MSG("not implemented for flags yet");
+//  if(switches.N) RAI_MSG("not implemented for switches yet");
+//  if(flags.N) RAI_MSG("not implemented for flags yet");
 
   return K;
 }

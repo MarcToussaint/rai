@@ -31,7 +31,9 @@ struct LagrangianProblem : ScalarFunction { //TODO: rename: UnconstrainedLagrang
   arr x;               ///< point where P was last evaluated
   arr phi_x, J_x, H_x; ///< features at x
   ObjectiveTypeA tt_x; ///< feature types at x
-  
+
+  ofstream *fil=NULL;  ///< file for logging
+
   LagrangianProblem(ConstrainedProblem &P, OptOptions opt=NOOPT, arr& lambdaInit=NoArr);
   
   double lagrangian(arr& dL, arr& HL, const arr& x); ///< CORE METHOD: the unconstrained scalar function F

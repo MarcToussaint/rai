@@ -949,16 +949,17 @@ struct SparseVector: SpecialArray {
 
 struct SparseMatrix : SpecialArray {
   arr& Z;      ///< references the array itself
-  intA elems;  ///< for every non-zero (in memory order), the (row,col) index tuple [or only (row) for vectors]
-  uintAA cols; ///< for every column, for every non-zero the (row,memory) index tuple [also for a vector column]
-  uintAA rows; ///< for every row   , for every non-zero the (column,memory) index tuple [not for vectors]
+  intA elems;  ///< for every non-zero (in memory order), the (row,col) index tuple
+  uintAA cols; ///< for every column, for every non-zero the (row,memory) index tuple
+  uintAA rows; ///< for every row   , for every non-zero the (column,memory) index tuple
 
   SparseMatrix(arr& _Z);
   SparseMatrix(arr& _Z, SparseMatrix& s);
   void resize(uint d0, uint d1, uint n);
+  void reshape(uint d0, uint d1);
   double& entry(uint i,uint j,uint k);
   double& elem(uint i, uint j);
-  double& addEntry(uint i, uint j);
+  double& addEntry(int i, int j);
   void setFromDense(const arr& X);
   void setupRowsCols();
   arr At_x(const arr& x);

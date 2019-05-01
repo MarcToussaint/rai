@@ -43,5 +43,16 @@ struct Conv_Graph_ConstrainedProblem : ConstrainedProblem {
   
   Conv_Graph_ConstrainedProblem(GraphProblem& _G);
   void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda);
+
+  void reportProblem(ostream& os);
 };
 
+struct ModGraphProblem : GraphProblem {
+  GraphProblem& G;
+  uintA subselectFeatures;
+
+  ModGraphProblem(GraphProblem &G) : G(G) {}
+  virtual void getStructure(uintA& variableDimensions, intAA& featureVariables, ObjectiveTypeA& featureTypes);
+  virtual void getSemantics(StringA& varNames, StringA& phiNames);
+  virtual void phi(arr& phi, arrA& J, arrA& H, const arr& x);
+};
