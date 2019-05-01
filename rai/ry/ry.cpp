@@ -6,6 +6,7 @@
 #include <Kin/frame.h>
 #include <Kin/kin.h>
 #include <Kin/kin_bullet.h>
+#include <Perception/depth2PointCloud.h>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -37,6 +38,8 @@ py::dict graph2dict(const Graph& G){
       dict[key.p] = n->get<uint>();
     } else if(n->isOfType<bool>()) {
       dict[key.p] = n->get<bool>();
+    } else if(n->isOfType<rai::Enum<rai::ShapeType>>()) {
+      dict[key.p] = n->get<rai::Enum<rai::ShapeType>>().name();
     } else {
       LOG(-1) <<"can't convert node of type " <<n->type.name() <<" to dictionary";
     }
@@ -98,6 +101,9 @@ arr numpy2arr(const pybind11::array& X){
   } else if(Y.nd==2){
     for(uint i=0;i<Y.d0;i++) for(uint j=0;j<Y.d1;j++) Y(i,j) = ref(i,j);
     return Y;
+  } else if(Y.nd==3){
+    for(uint i=0;i<Y.d0;i++) for(uint j=0;j<Y.d1;j++) for(uint k=0;k<Y.d2;k++) Y(i,j,k) = ref(i,j,k);
+    return Y;
   }
   NIY;
   return Y;
@@ -137,7 +143,10 @@ PYBIND11_MODULE(libry, m) {
   } )
 
   .def("addFrame", [](ry::Config& self, const std::string& name, const std::string& parent, const std::string& args) {
-    return self.set()->addFrame(name.c_str(), parent.c_str(), args.c_str())->ID;
+    ry::RyFrame f;
+    f.config = self.data;
+    f.frame = self.set()->addFrame(name.c_str(), parent.c_str(), args.c_str());
+    return f;
   }, "",
     py::arg("name"),
     py::arg("parent") = std::string(),
@@ -164,7 +173,9 @@ PYBIND11_MODULE(libry, m) {
        const std::vector<double>& quat,
        double radius){
     auto Kset = self.set();
-    rai::Frame *f = Kset->addObject(name.c_str(), shape, conv_stdvec2arr(size), conv_stdvec2arr(color), radius, parent.c_str(), conv_stdvec2arr(pos), conv_stdvec2arr(quat));
+    ry::RyFrame f;
+    f.config = self.data;
+    f.frame = Kset->addObject(name.c_str(), shape, conv_stdvec2arr(size), conv_stdvec2arr(color), radius, parent.c_str(), conv_stdvec2arr(pos), conv_stdvec2arr(quat));
 //    f->name = name;
 //    if(parent.size()){
 //      rai::Frame *p = Kset->getFrameByName(parent.c_str());
@@ -178,7 +189,7 @@ PYBIND11_MODULE(libry, m) {
 //    }else{
 //      f->X = f->Q;
 //    }
-    return f->ID;
+    return f;
   }, "",
     py::arg("name"),
     py::arg("parent") = std::string(),
@@ -249,8 +260,8 @@ PYBIND11_MODULE(libry, m) {
     self.set()->setFrameState(_X, I_conv(frames), calc_q_from_X);
   }, "",
     py::arg("X"),
-        py::arg("frames") = ry::I_StringA(),
-        py::arg("calc_q_from_X") = true )
+    py::arg("frames") = ry::I_StringA(),
+    py::arg("calc_q_from_X") = true )
 
   .def("feature", [](ry::Config& self, FeatureSymbol fs, const ry::I_StringA& frames) {
     ry::RyFeature F;
@@ -314,6 +325,7 @@ PYBIND11_MODULE(libry, m) {
 
   .def("frame", [](ry::Config& self, const std::string& framename){
     ry::RyFrame f;
+    f.config = self.data;
     f.frame = self.get()->getFrameByName(framename.c_str(), true);
     return f;
   } )
@@ -386,6 +398,12 @@ PYBIND11_MODULE(libry, m) {
     ry::RyBullet bullet;
     bullet.bullet = make_shared<BulletInterface>(self.get());
     return bullet;
+  } )
+
+  .def("operate", [](ry::Config& self, const char* rosNodeName){
+    ry::RyOperate op;
+    op.R = make_shared<RobotOperation>(self.get(), .01, rosNodeName);
+    return op;
   } )
 
   .def("sortFrames", [](ry::Config& self){
@@ -544,6 +562,92 @@ PYBIND11_MODULE(libry, m) {
   //===========================================================================
 
   py::class_<ry::RyFrame>(m, "Frame")
+  .def("setPointCloud", [](ry::RyFrame& self, const pybind11::array& points){
+    arr _points = numpy2arr(points);
+    WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    self.frame->setPointCloud(_points);
+  } )
+
+  .def("setShape", [](ry::RyFrame& self, rai::ShapeType shape, const std::vector<double>& size){
+    WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    self.frame->setShape(shape, size);
+  } )
+
+  .def("setColor", [](ry::RyFrame& self, const std::vector<double>& color){
+    WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    self.frame->setColor(color);
+  } )
+
+  .def("setPose", [](ry::RyFrame& self, const std::string& pose){
+    WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    self.frame->X.setText(pose.c_str());
+  } )
+
+  .def("setPosition", [](ry::RyFrame& self, const std::vector<double>& pos){
+    WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    self.frame->setPosition(pos);
+  } )
+
+  .def("setQuaternion", [](ry::RyFrame& self, const std::vector<double>& quat){
+    WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    self.frame->setQuaternion(quat);
+  } )
+
+  .def("setRelativePose", [](ry::RyFrame& self, const std::string& pose){
+    WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    self.frame->Q.setText(pose.c_str());
+    self.frame->calc_X_from_parent();
+  } )
+
+  .def("setRelativePosition", [](ry::RyFrame& self, const std::vector<double>& pos){
+    WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    self.frame->setRelativePosition(pos);
+  } )
+
+  .def("setRelativeQuaternion", [](ry::RyFrame& self, const std::vector<double>& quat){
+    WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    self.frame->setRelativeQuaternion(quat);
+  } )
+
+  .def("getPosition", [](ry::RyFrame& self){
+    RToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    arr x = self.frame->getPosition();
+    return pybind11::array_t<double>(x.dim(), x.p);
+  } )
+
+  .def("getQuaternion", [](ry::RyFrame& self){
+    RToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    arr x = self.frame->getQuaternion();
+    return pybind11::array_t<double>(x.dim(), x.p);
+  } )
+
+  .def("getRelativePosition", [](ry::RyFrame& self){
+    RToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    arr x = self.frame->getRelativePosition();
+    return pybind11::array_t<double>(x.dim(), x.p);
+  } )
+
+  .def("getRelativeQuaternion", [](ry::RyFrame& self){
+    RToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    arr x = self.frame->getRelativeQuaternion();
+    return pybind11::array_t<double>(x.dim(), x.p);
+  } )
+
+  .def("getMeshPoints", [](ry::RyFrame& self){
+    RToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    arr x = self.frame->getMeshPoints();
+    return pybind11::array_t<double>(x.dim(), x.p);
+  } )
+
+  .def("info", [](ry::RyFrame& self){
+    Graph G;
+    WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    G.newNode<rai::String>({"name"}, {}, self.frame->name);
+    G.newNode<int>({"ID"}, {}, self.frame->ID);
+    self.frame->write(G);
+    return graph2dict(G);
+  } )
+
   .def("setMeshAsLines", [](ry::RyFrame& self, const std::vector<double>& lines){
       CHECK(self.frame, "this is not a valid frame");
       CHECK(self.frame->shape, "this frame is not a mesh!");
@@ -840,6 +944,68 @@ PYBIND11_MODULE(libry, m) {
 
   .def("setState", [](ry::RyBullet& self, ry::Config& C, const pybind11::array& velocities){
     self.bullet->pushFullState(C.get()->frames, numpy2arr(velocities));
+  } )
+
+  ;
+
+  //===========================================================================
+
+  py::class_<ry::RyOperate>(m, "RyOperate")
+  .def("move", [](ry::RyOperate& self, const std::vector<std::vector<double>>& poses, const std::vector<double>& times, bool append){
+    arr path(poses.size(), poses[0].size());
+    for(uint i=0;i<path.d0;i++) path[i] = conv_stdvec2arr(poses[i]);
+    self.R->move(path, conv_stdvec2arr(times), append);
+  } )
+
+  .def("move", [](ry::RyOperate& self, const pybind11::array& path, const std::vector<double>& times, bool append){
+    arr _path = numpy2arr(path);
+    self.R->move(_path, conv_stdvec2arr(times), append);
+  } )
+
+  .def("timeToGo", [](ry::RyOperate& self){
+    return self.R->timeToGo();
+  } )
+
+  .def("wait", [](ry::RyOperate& self){
+    return self.R->wait();
+  } )
+
+  .def("getJointPositions", [](ry::RyOperate& self, ry::Config& C){
+    arr q = self.R->getJointPositions();
+    return pybind11::array(q.dim(), q.p);
+  } )
+
+  .def("sendToReal", [](ry::RyOperate& self, bool activate){
+    self.R->sendToReal(activate);
+  } )
+
+  .def("sync", [](ry::RyOperate& self, ry::Config& C){
+    self.R->sync(C.set());
+  } )
+
+  ;
+
+  //===========================================================================
+
+  py::class_<ry::RyCamera>(m, "Camera")
+  .def(py::init<const char*, const char*, const char*>())
+
+  .def("getRgb", [](ry::RyCamera& self){
+    byteA rgb = self.rgb.get();
+    return pybind11::array_t<byte>(rgb.dim(), rgb.p);
+  } )
+
+  .def("getDepth", [](ry::RyCamera& self){
+    floatA depth = self.depth.get();
+    return pybind11::array_t<float>(depth.dim(), depth.p);
+  } )
+
+  .def("getPoints", [](ry::RyCamera& self, std::vector<double>& Fxypxy){
+    floatA _depth = self.depth.get();
+    arr _points;
+    CHECK_EQ(Fxypxy.size(), 4, "I need 4 intrinsic calibration parameters")
+    depthData2pointCloud(_points, _depth, Fxypxy[0], Fxypxy[1], Fxypxy[2], Fxypxy[3]);
+    return pybind11::array_t<double>(_points.dim(), _points.p);
   } )
 
   ;

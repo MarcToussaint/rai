@@ -18,9 +18,6 @@
  * replace the types by more fundamental:
  *  shapes: ssbox or ssmesh -- nothing else
  *  joint: 7bits
- *  body: maybe as is
- *
- * Collisions: The Proxies in Kin should only call GJK or exact ssbox-distance --> no use of center-of-mesh anymore!
  *
  */
 
@@ -30,7 +27,6 @@ struct Joint;
 struct Shape;
 struct Inertia;
 struct Contact;
-//enum ShapeType { ST_none=-1, ST_box=0, ST_sphere, ST_capsule, ST_mesh, ST_cylinder, ST_marker, ST_retired_SSBox, ST_pointCloud, ST_ssCvx, ST_ssBox };
 enum JointType { JT_none=-1, JT_hingeX=0, JT_hingeY=1, JT_hingeZ=2, JT_transX=3, JT_transY=4, JT_transZ=5, JT_transXY=6, JT_trans3=7, JT_transXYPhi=8, JT_universal=9, JT_rigid=10, JT_quatBall=11, JT_phiTransXY=12, JT_XBall, JT_free, JT_time };
 enum BodyType  { BT_none=-1, BT_dynamic=0, BT_kinematic, BT_static };
 }
@@ -80,6 +76,7 @@ struct Frame : NonCopyable{
   void linkFrom(Frame *_parent, bool adoptRelTransform=false);
   bool isChildOf(const Frame* par, int order=1) const;
   
+  Shape& getShape();
   Inertia& getInertia();
   
   void getRigidSubFrames(FrameL& F); ///< recursively collect all rigidly attached sub-frames (e.g., shapes of a link), (THIS is not included)
@@ -90,6 +87,22 @@ struct Frame : NonCopyable{
   void read(const Graph &ats);
   void write(Graph &G);
   void write(std::ostream& os) const;
+
+  //-- HIGHER LEVEL USER INTERFACE
+  void setShape(rai::ShapeType shape, const std::vector<double>& size);
+  void setPosition(const std::vector<double>& pos);
+  void setQuaternion(const std::vector<double>& quat);
+  void setRelativePosition(const std::vector<double>& pos);
+  void setRelativeQuaternion(const std::vector<double>& quat);
+  void setPointCloud(const std::vector<double>& points);
+  void setConvexMesh(const std::vector<double>& points);
+  void setColor(const std::vector<double>& color);
+
+  arr getPosition(){ return X.pos.getArr(); }
+  arr getQuaternion(){ return X.rot.getArr(); }
+  arr getRelativePosition(){ return Q.pos.getArr(); }
+  arr getRelativeQuaternion(){ return Q.rot.getArr(); }
+  arr getMeshPoints();
 };
 stdOutPipe(Frame)
 
@@ -175,18 +188,20 @@ stdOutPipe(Inertia)
 /// a Frame with Shape is a collision or visual object
 struct Shape : NonCopyable, GLDrawer {
   Frame& frame;
-  ptr<Geom> geom;
-  
-  Geom& getGeom(); ///< creates a geom if not yet initialized
-  void setGeomMimic(const Frame* f);
-  Enum<ShapeType>& type() { return getGeom().type; }
-  arr& size() { return getGeom().size; }
-  double& size(uint i) { return getGeom().size.elem(i); }
-  double radius() { arr &size = getGeom().size; if(size.N==1) return size(0); if(size.N>=4) return size(3); return 0.; }
-  Mesh& mesh() { if(!getGeom().mesh.V.N) geom->createMeshes(); return geom->mesh; }
-  Mesh& sscCore() { return getGeom().sscCore; }
-  double alpha() { arr& C=getGeom().mesh.C; if(C.N==4) return C(3); return 1.; }
-  
+  ptr<Mesh> _mesh;
+  ptr<Mesh> _sscCore;
+  Enum<ShapeType> _type;
+  arr size;
+
+  void setMeshMimic(const Frame* f);
+  double radius() { if(size.N) return size(-1); return 0.; }
+  Enum<ShapeType>& type() { return _type; }
+  Mesh& mesh() { if(!_mesh) _mesh = make_shared<Mesh>();  return *_mesh; }
+  Mesh& sscCore() { if(!_sscCore) _sscCore = make_shared<Mesh>();  return *_sscCore; }
+  double alpha() { arr& C=mesh().C; if(C.N==4) return C(3); return 1.; }
+
+  void createMeshes();
+
 //  Enum<ShapeType> type;
 //  arr size;
 //  Mesh mesh, sscCore;

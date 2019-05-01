@@ -22,8 +22,10 @@ const rai::Quaternion Quaternion_Id(1, 0, 0, 0);
 const rai::Quaternion Quaternion_x(RAI_SQRT2/2., RAI_SQRT2/2., 0, 0);
 const rai::Quaternion Quaternion_y(RAI_SQRT2/2., 0, RAI_SQRT2/2., 0);
 const rai::Quaternion Quaternion_z(RAI_SQRT2/2., 0, 0, RAI_SQRT2/2.);
-rai::Vector& NoVector = *((rai::Vector*)NULL);
-rai::Transformation& NoTransformation = *((rai::Transformation*)NULL);
+rai::Vector __NoVector;
+rai::Vector& NoVector = __NoVector;
+rai::Transformation __NoTransformation;
+rai::Transformation& NoTransformation = __NoTransformation;
 
 namespace rai {
 

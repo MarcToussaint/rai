@@ -81,9 +81,9 @@ btRigidBody* BulletInterface::addFrame(const rai::Frame* f){
 
 
   //-- create a bullet collision shape
-  CHECK(f->shape && f->shape->geom, "can only add frames with shapes");
+  CHECK(f->shape && f->shape->_mesh, "can only add frames with meshes");
   btCollisionShape* colShape = 0;
-  arr& size = f->shape->geom->size;
+  arr& size = f->shape->size;
   switch(f->shape->type()){
     case rai::ST_sphere:{
       colShape =new btSphereShape(btScalar(size.last()));
@@ -143,7 +143,7 @@ btRigidBody* BulletInterface::addFrame(const rai::Frame* f){
 
 void BulletInterface::addFrames(const FrameL& frames){
   for(const rai::Frame *f:frames){
-    if(f->shape && f->shape->geom) addFrame(f);
+    if(f->shape && f->shape->_mesh) addFrame(f);
   }
 }
 

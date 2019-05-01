@@ -105,11 +105,17 @@ all: $(OUTPUT) #this is for qtcreator, which by default uses the 'all' target
 #
 ################################################################################
 
-$(BASE)/config.mk:: $(BASE)/build/config.mk.default
-	cp $< $@
+ifneq ("$(wildcard $(BASE)/../config.mk)","")
 
 $(BASE)/config.mk:: $(BASE)/../config.mk
 	cp $< $@
+
+else
+
+$(BASE)/config.mk:: $(BASE)/build/config.mk.default
+	cp $< $@
+
+endif
 
 include $(BASE)/config.mk
 
@@ -189,7 +195,7 @@ cleanLibs: force
 	@echo "   *** cleanLibs  " $(PWD)
 	@find $(BASE)/rai $(BASE2) \( -type f -or -type l \) \( -name 'lib*.so' -or -name 'lib*.a' \)  -delete -print
 
-cleanAll: cleanLocks force
+cleanAll: cleanLocks cleanDepends force
 	@echo "   *** cleanAll   " $(PWD)
 	@find $(PWD) $(BASE) $(BASE2) \( -type f -or -type l \) \( -name '*.o' -or -name 'lib*.so' -or -name 'lib*.a' -or -name 'x.exe' \) -delete -print
 
@@ -199,14 +205,14 @@ cleanDepends: force
 installUbuntu: force
 	sudo apt-get -q $(APTGETYES) install $(DEPEND_UBUNTU)
 
-printUbuntuPackages: force
+printUbuntu: force
 	@echo $(DEPEND_UBUNTU)
 
 depend: generate_Makefile.dep
 
-dependAll: force
-	@echo "   *** dependAll   " $(PWD)
-	@find $(PWD) $(BASE) $(BASE2) -type f -name 'Makefile' -execdir $(MAKE) depend \;
+# dependAll: force
+# 	@echo "   *** dependAll   " $(PWD)
+# 	@find $(PWD) $(BASE) $(BASE2) -type f -name 'Makefile' -execdir $(MAKE) depend \;
 
 
 info: force
@@ -416,9 +422,9 @@ inPath_installUbuntu/%: $(BASE2)/%
 	@-$(MAKE) -C $< installUbuntu --no-print-directory
 endif
 
-inPath_printUbuntuPackages/%: $(BASE)/rai/%
+inPath_printUbuntu/%: $(BASE)/rai/%
 	@echo "#" $*
-	@-$(MAKE) -C $< printUbuntuPackages --no-print-directory
+	@-$(MAKE) -C $< printUbuntu --no-print-directory
 
 inPath_makePython/%: %
 	make --directory=$< pywrapper

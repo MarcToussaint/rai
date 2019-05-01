@@ -1,0 +1,20 @@
+# An example. Place your definition in the following line:
+f(x,y) = y - x**2 / tan(y)
+
+f1(x,y) = +(0.0138866) +(-0.517588)*x +(1.25336)*y
+f2(x,y) = +(2.19909) +(0.669282)*x +(3.5439)*y +(-1.36924)*x**2 +(-0.94907)*x*y +(-1.26662)*y**2
+f3(x,y) = +(2.58419) +(1.04546)*x +(2.3387)*y +(-3.03105)*x**2 +(-4.78246)*x*y +(-0.96096)*y**2 +(0.699026)*x**3 +(4.1775)*x**2*y +(-2.03621)*x*y**2 +(0.693941)*y**3
+
+set dgrid3d 100,100
+set isosample 100
+set contour base
+set cntrparam levels discrete -1,0.0,1
+#set cntrparam bspline
+unset surface
+set table 'z.curve.dat'
+splot[-2:3][-2:3] 'data2'#,f1(x,y),f2(x,y),f3(x,y)
+unset table
+plot 'z.curve.dat' w l
+
+
+#plot [-2:3][-2:3] 'data' us 1:2:3 pt 2 lc variable title 'data','./z.curve.dat' us 1:2:(abs($3)*2) with lines lc variable title 'decision boundary'

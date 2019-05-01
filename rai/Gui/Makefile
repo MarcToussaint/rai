@@ -18,13 +18,4 @@ DEPEND = Core Geo
 SRCS = $(shell find . -maxdepth 1 -name '*.cpp' )
 OBJS = $(SRCS:%.cpp=%.o)
 
-ifeq ($(GLFW),1)
-DEPEND_UBUNTU += libglfw3-dev
-CXXFLAGS  += -DRAI_GLFW
-#CPATH := $(HOME)/opt/include:$(CPATH)
-#LPATH := $(HOME)/opt/lib:$(LPATH)
-LIBS      += -lglfw
-endif
-
-
 include $(BASE)/build/generic.mk

@@ -1,0 +1,15 @@
+
+#set dgrid3d 10,10
+#set isosample 10
+set contour base
+set cntrparam linear
+set cntrparam levels discrete .1,.5,.9
+set surface
+set hidden3d
+unset title
+#set table 'z.contour.dat'
+splot [-2:3][-2:3][0:1] \
+'z.model1' matrix us ($1/10-2):($2/10-2):3 with lines notitle,\
+'z.model2' matrix us ($1/10-2):($2/10-2):3 with lines notitle,\
+'z.model3' matrix us ($1/10-2):($2/10-2):3 with lines notitle,\
+'z.model4' matrix us ($1/10-2):($2/10-2):3 with lines notitle

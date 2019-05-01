@@ -171,7 +171,7 @@ struct KinematicWorld : GLDrawer {
   }
 
   /// @name features
-  void evalFeature(arr& y, arr& J, FeatureSymbol& fs, const StringA &symbols) const;
+  void evalFeature(arr& y, arr& J, FeatureSymbol fs, const StringA &symbols) const;
 
   /// @name kinematics (low level)
   void kinematicsPos(arr& y, arr& J, Frame *a, const Vector& rel=NoVector) const;  //TODO: make vector& not vector*

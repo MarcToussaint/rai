@@ -620,12 +620,12 @@ LGP_Tree_SolutionData::LGP_Tree_SolutionData(LGP_Tree& _tree, LGP_Node *_node) :
   uintA frameIDs;
   for(uint f=0; f<K.frames.N; f++) {
     const rai::Frame *a = K.frames(f);
-    if(a->shape && a->shape->geom && a->shape->type()!=rai::ST_marker) {
+    if(a->shape && a->shape->_mesh && a->shape->type()!=rai::ST_marker) {
       frameIDs.append(a->ID);
     }
   }
   geoms.resize(frameIDs.N);
-  for(uint i=0; i<geoms.N; i++) geoms(i) = K.frames(frameIDs(i))->shape->geom;
+  for(uint i=0; i<geoms.N; i++) geoms(i) = K.frames(frameIDs(i))->shape->_mesh;
   
   uint L = node->komoProblem.N;
   paths.resize(L);

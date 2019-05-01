@@ -17,13 +17,16 @@
 #  include <pcl_conversions/pcl_conversions.h>
 #endif
 
+Singleton<RosCom_Spinner> singletonRosSpinner;
+
 RosCom::RosCom(const char* node_name) {
   rosCheckInit(node_name);
-  spinner = new RosCom_Spinner(node_name);
+  singletonRosSpinner();
+//  spinner = new RosCom_Spinner(node_name);
+  rai::wait(.1);
 }
 
 RosCom::~RosCom() {
-  delete spinner;
 }
 
 bool rosOk() {
@@ -244,6 +247,23 @@ byteA conv_image2byteA(const sensor_msgs::Image& msg) {
     swap_RGB_BGR(img);
   }
   return img;
+}
+
+floatA conv_imageu162floatA(const sensor_msgs::Image& msg) {
+  byteA data = conv_stdvec2arr<byte>(msg.data);
+  uint16A ref((const uint16_t*)data.p, data.N/2);
+  //  uint16A ref((const uint16_t*)msg.data.data(), msg.data.size()/2);
+  ref.reshape(msg.height, msg.width);
+  floatA img(ref.d0, ref.d1);
+  for(uint i=0;i<img.N;i++) img.elem(i) = 0.001f*float(ref.elem(i));
+  return img;
+}
+
+floatA conv_imageFloat32_floatA(const sensor_msgs::Image& msg) {
+  CHECK_EQ(msg.encoding, "32FC1", "wrong image encoding");
+  floatA x((const float*)msg.data.data(), msg.data.size()/4);
+  x.reshape(msg.height, msg.width);
+  return x;
 }
 
 uint16A conv_image2uint16A(const sensor_msgs::Image& msg) {

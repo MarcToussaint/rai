@@ -132,7 +132,7 @@ template<class T> struct Array : std::vector<T>, Serializable {
   Array<T>& resize(uint ND, uint *dim);
   Array<T>& resize(const Array<uint> &dim);
   Array<T>& reshape(uint D0);
-  Array<T>& reshape(uint D0, uint D1);
+  Array<T>& reshape(int D0, int D1);
   Array<T>& reshape(uint D0, uint D1, uint D2);
   Array<T>& reshape(uint ND, uint *dim);
   Array<T>& reshape(const Array<uint> &dim);
@@ -148,7 +148,7 @@ template<class T> struct Array : std::vector<T>, Serializable {
   Array<T>& dereference();
   
   /// @name initializing/assigning entries
-  void clear();
+  rai::Array<T>& clear();
   void setZero(byte zero=0);
   void setUni(const T& scalar, int d=-1);
   void setId(int d=-1);
@@ -187,6 +187,7 @@ template<class T> struct Array : std::vector<T>, Serializable {
   T& operator()(int i) const;
   T& operator()(int i, int j) const;
   T& operator()(int i, int j, int k) const;
+  Array<T> ref() const; //a reference on this
   Array<T> operator()(std::pair<int, int> I) const;
   Array<T> operator()(int i, std::pair<int, int> J) const;
   Array<T> operator()(int i, int j, std::initializer_list<int> K) const;
@@ -198,7 +199,7 @@ template<class T> struct Array : std::vector<T>, Serializable {
   
   
   /// @name access by copy
-  rai::Array<T> copy() const;
+  Array<T> copy() const;
   Array<T> sub(int i, int I) const;
   Array<T> sub(int i, int I, int j, int J) const;
   Array<T> sub(int i, int I, int j, int J, int k, int K) const;
