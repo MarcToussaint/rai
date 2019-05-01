@@ -23,7 +23,7 @@ struct LGP_Tree_SolutionData : GLDrawer {
   LGP_Node *node; ///< contains costs, constraints, and solutions for each level
   rai::String decisions;
   
-  rai::Array<ptr<rai::Geom>> geoms; ///< for display
+  rai::Array<ptr<rai::Mesh>> geoms; ///< for display
   rai::Array<TransformationA> paths; ///< for display
   uint displayStep=0;
   

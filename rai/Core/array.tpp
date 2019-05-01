@@ -118,7 +118,7 @@ template<class T> bool rai::Array<T>::operator!() const {
 //***** resize
 
 /// frees all memory; this becomes an empty array
-template<class T> void rai::Array<T>::clear() { freeMEM(); }
+template<class T> rai::Array<T>&  rai::Array<T>::clear() { freeMEM(); return *this;}
 
 /// resize 1D array, discard the previous contents
 template<class T> rai::Array<T>& rai::Array<T>::resize(uint D0) { nd=1; d0=D0; resetD(); resizeMEM(d0, false); return *this; }
@@ -136,7 +136,13 @@ template<class T> rai::Array<T>& rai::Array<T>::resize(uint D0, uint D1) { nd=2;
 template<class T> rai::Array<T>& rai::Array<T>::resizeCopy(uint D0, uint D1) { nd=2; d0=D0; d1=D1; resetD(); resizeMEM(d0*d1, true); return *this; }
 
 /// ...
-template<class T> rai::Array<T>& rai::Array<T>::reshape(uint D0, uint D1) { CHECK_EQ(N,D0*D1, "reshape must preserve total memory size"); nd=2; d0=D0; d1=D1; d2=0; resetD(); return *this; }
+template<class T> rai::Array<T>& rai::Array<T>::reshape(int D0, int D1) {
+  if(D0<0) D0=N/D1; else if(D1<0) D1=N/D0;
+  CHECK_EQ((int)N, D0*D1, "reshape must preserve total memory size");
+  nd=2; d0=D0; d1=D1; d2=0;
+  resetD();
+  return *this;
+}
 
 /// same for 3D ...
 template<class T> rai::Array<T>& rai::Array<T>::resize(uint D0, uint D1, uint D2) { nd=3; d0=D0; d1=D1; d2=D2; resetD(); resizeMEM(d0*d1*d2, false); return *this; }
@@ -754,6 +760,12 @@ template<class T> T& rai::Array<T>::operator()(int i, int j, int k) const {
   CHECK(nd==3 && (uint)i<d0 && (uint)j<d1 && (uint)k<d2 && !isSparseMatrix(*this),
         "3D range error (" <<nd <<"=3, " <<i <<"<" <<d0 <<", " <<j <<"<" <<d1 <<", " <<k <<"<" <<d2 <<")");
   return p[(i*d1+j)*d2+k];
+}
+
+template<class T> rai::Array<T> rai::Array<T>::ref() const {
+  Array<T> x;
+  x.referTo(*this);
+  return x;
 }
 
 template<class T> rai::Array<T> rai::Array<T>::operator()(std::pair<int, int> I) const {

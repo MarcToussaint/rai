@@ -24,7 +24,7 @@ git clone https://github.com/MarcToussaint/rai.git
 cd rai
 
 # OPTIONAL! Often you will only need to compile some components and don't need all Ubuntu packages
-make -j1 printUbuntuAll  # to just print Ubuntu package dependencies per component
+make -j1 printUbuntuAll    # to just print Ubuntu package dependencies per component
 make -j1 installUbuntuAll  # calls sudo apt-get install; you can always interrupt
 
 make -j4

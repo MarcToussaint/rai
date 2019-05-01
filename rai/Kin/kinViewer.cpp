@@ -62,7 +62,7 @@ void KinViewer::step() {
   if(true || world->frames.N!=meshesCopy.N) { //need to copy meshes
     uint n=world->frames.N;
     auto _dataLock = gl->dataLock(RAI_HERE);
-    meshesCopy.resizeCopy(n);
+    meshesCopy.resize(n);
     for(uint i=0; i<n; i++) {
       if(world->frames.elem(i)->shape) meshesCopy.elem(i) = world->frames.elem(i)->shape->mesh();
       else meshesCopy.elem(i).clear();
@@ -91,7 +91,7 @@ void KinViewer::step() {
     for(uint i=0; i<X.N; i++) meshesCopy(i).glX = X(i);
   }
   
-  gl->update(NULL, false); //NULL, false, false, true);
+  gl->update(NULL, true); //NULL, false, false, true);
 }
 
 //===========================================================================
@@ -243,12 +243,12 @@ void KinPoseViewer::glDraw(OpenGL &gl) {
 
   for(uint i=0; i<n; i++) {
     rai::Shape* sh = modelGet->frames(i)->shape;
-    if(sh && sh->geom){
+    if(sh && sh->_mesh){
       if(frameCount >= frameStateGet->d1) frameCount = 0;
       rai::Transformation X;
       X.set(&frameStateGet->operator()(i, frameCount, 0));
       glTransform(X);
-      sh->geom->glDraw(gl);
+      sh->mesh().glDraw(gl);
     }
   }
   frameCount++;

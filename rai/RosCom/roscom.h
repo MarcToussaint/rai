@@ -8,9 +8,7 @@
 
 #pragma once
 
-#ifndef RAI_ROS
-# error "Sorry, you can include this only when compiling against ROS"
-#endif
+#ifdef RAI_ROS
 
 #include <tf/transform_listener.h>
 #include <tf/tf.h>
@@ -52,9 +50,9 @@
 // utils
 //
 
-void rosCheckInit(const char* node_name="pr2_module");
+void rosCheckInit(const char* node_name="rai_node");
 bool rosOk();
-struct RosInit { RosInit(const char* node_name="rai_module"); };
+struct RosInit { RosInit(const char* node_name="rai_node"); };
 
 //-- ROS <--> RAI
 std_msgs::String    conv_string2string(const rai::String&);
@@ -72,6 +70,9 @@ timespec            conv_time2timespec(const ros::Time&);
 arr                 conv_wrench2arr(const geometry_msgs::WrenchStamped& msg);
 byteA               conv_image2byteA(const sensor_msgs::Image& msg);
 uint16A             conv_image2uint16A(const sensor_msgs::Image& msg);
+floatA              conv_imageu162floatA(const sensor_msgs::Image& msg);
+floatA              conv_imageFloat32_floatA(const sensor_msgs::Image& msg);
+
 floatA              conv_laserScan2arr(const sensor_msgs::LaserScan& msg);
 #ifdef RAI_PCL
 PclC                 conv_pointcloud22pcl(const sensor_msgs::PointCloud2& msg);
@@ -153,7 +154,7 @@ struct Publisher : Thread {
       var(this, _var, true),
       nh(NULL) {
     if(rai::getParameter<bool>("useRos", true)) {
-      rai::String topic_name = STRING("rai/" <<var.name());
+      rai::String topic_name = var.name();
       LOG(0) <<"publishing to topic '" <<topic_name <<"' <" <<typeid(msg_type).name() <<">";
       nh = new ros::NodeHandle;
       pub = nh->advertise<msg_type>(topic_name.p, 1);
@@ -317,7 +318,6 @@ struct PublisherConv : Thread {
 //===========================================================================
 
 struct RosCom {
-  struct RosCom_Spinner* spinner;
   RosCom(const char* node_name="rai_module");
   ~RosCom();
   template<class T, class P> void publish(std::shared_ptr<P>& pub, Var<T>& v, bool wait=true) {
@@ -335,3 +335,10 @@ struct RosCom {
   template<class T> std::shared_ptr<Subscriber<T>> subscribe(Var<T>& v) { return std::make_shared<Subscriber<T>>(v); }
   template<class T> std::shared_ptr<Publisher<T>> publish(Var<T>& v) { return std::make_shared<Publisher<T>>(v); }
 };
+
+#else
+
+#include <Core/util.h>
+inline void rosCheckInit(const char* node_name="rai_node"){ NICO }
+
+#endif

@@ -10,11 +10,11 @@
 
 bool FclInterfaceBroadphaseCallback(fcl::CollisionObject* o1, fcl::CollisionObject* o2, void* cdata_);
 
-rai::FclInterface::FclInterface(const rai::Array<ptr<Geom> >& _geometries, double _cutoff)
+rai::FclInterface::FclInterface(const rai::Array<ptr<Mesh> >& _geometries, double _cutoff)
   : geometries(_geometries), cutoff(_cutoff){
   for(long int i=0;i<geometries.N;i++){
     if(geometries(i)){
-      rai::Mesh& mesh = geometries(i)->mesh;
+      rai::Mesh& mesh = *geometries(i);
       fcl::BVHModel<fcl::OBBRSS>* model = new fcl::BVHModel<fcl::OBBRSS>();
       model->beginModel();
       for(uint i=0;i<mesh.T.d0;i++)
@@ -81,7 +81,7 @@ bool FclInterfaceBroadphaseCallback(fcl::CollisionObject* o1, fcl::CollisionObje
 
 
 #else //RAI_FCL
-rai::FclInterface::FclInterface(const rai::Array<ptr<Geom> >& _geometries, double _cutoff){ NICO }
+rai::FclInterface::FclInterface(const Array<ptr<Mesh> >& _geometries, double _cutoff){ NICO }
 rai::FclInterface::~FclInterface(){ NICO }
   void rai::FclInterface::step(const arr& X){ NICO }
 #endif

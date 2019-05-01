@@ -13,6 +13,8 @@
 #include <Kin/cameraview.h>
 #include <Gui/viewer.h>
 #include <LGP/LGP_tree.h>
+#include <Operate/robotOperation.h>
+#include <RosCom/rosCamera.h>
 
 struct BulletInterface;
 
@@ -55,7 +57,10 @@ namespace ry{
   struct RyLGP_Tree { ptr<LGP_Tree_Thread> lgp; };
 
   struct RyFeature { ptr<Feature> feature; };
-  struct RyFrame { rai::Frame *frame=0; };
+  struct RyFrame {
+    ptr<Var_data<rai::KinematicWorld>> config; //only to ensure the containing configuration is not destroyed
+    rai::Frame *frame=0;
+  };
 
   struct RyCameraView {
     ptr<rai::CameraView> cam;
@@ -66,6 +71,19 @@ namespace ry{
   };
 
   struct RyBullet { std::shared_ptr<BulletInterface> bullet; };
+
+  struct RyOperate { std::shared_ptr<RobotOperation> R; };
+
+  struct RyCamera {
+    Var<byteA> rgb;
+    Var<floatA> depth;
+    std::shared_ptr<RosCamera> C;
+    RyCamera(const char* rosNodeName,
+             const char* rgb_topic,
+             const char* depth_topic)
+      : C(make_shared<RosCamera>(rgb, depth, rosNodeName, rgb_topic, depth_topic)) {}
+  };
+
 }
 
 namespace ry{

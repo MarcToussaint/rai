@@ -37,7 +37,7 @@ Singleton<SingleGLAccess> singleGLAccess;
 // A freeglut singleton to ensure once initialization
 //
 
-//Mutex& OpenGLMutex();
+Mutex& OpenGLMutex();
 
 class FreeglutSpinner : Thread{
 private:
@@ -73,7 +73,7 @@ public:
     if(!numWins){ //stop looping
       OpenGLMutex().unlock();
       threadClose();
-      OpenGLMutex().lock();
+      OpenGLMutex().lock(RAI_HERE);
       for(uint i=0;i<10;i++) glutMainLoopEvent(); //ensure that all windows are being closed
     }
   }
@@ -84,16 +84,16 @@ public:
 
   void open() {}
   void step() {
-    OpenGLMutex().lock();
+    OpenGLMutex().lock(RAI_HERE);
     glutMainLoopEvent();
     OpenGLMutex().unlock();
   }
   void close() {}
 };
 
-Singleton<FreeglutSpinner> singleGlProcess;
+Singleton<FreeglutSpinner> singletonGlSpinner; //();singleGlProcess;
 
-Mutex& OpenGLMutex() { return singleGlProcess.mutex; }
+Mutex& OpenGLMutex() { return singletonGlSpinner.mutex; }
 
 //===========================================================================
 //
@@ -107,14 +107,14 @@ struct sOpenGL : NonCopyable{
   
   //-- callbacks
   static void _Void() { }
-  static void _Draw() { auto fg=singleGlProcess();  OpenGL *gl=fg->getGL(glutGetWindow()); gl->Draw(gl->width,gl->height); glutSwapBuffers(); gl->isUpdating.setStatus(0); }
-  static void _Key(unsigned char key, int x, int y) {        singleGlProcess()->getGL(glutGetWindow())->Key(key); }
-  static void _Mouse(int button, int updown, int x, int y) { singleGlProcess()->getGL(glutGetWindow())->MouseButton(button,updown,x,y); }
-  static void _Motion(int x, int y) {                        singleGlProcess()->getGL(glutGetWindow())->MouseMotion(x,y); }
-  static void _PassiveMotion(int x, int y) {                 singleGlProcess()->getGL(glutGetWindow())->MouseMotion(x,y); }
-  static void _Reshape(int w,int h) {                        singleGlProcess()->getGL(glutGetWindow())->Reshape(w,h); }
-  static void _MouseWheel(int wheel, int dir, int x, int y) { singleGlProcess()->getGL(glutGetWindow())->Scroll(wheel,dir); }
-  static void _WindowStatus(int status)                     { singleGlProcess()->getGL(glutGetWindow())->WindowStatus(status); }
+  static void _Draw() { auto fg=singletonGlSpinner();  OpenGL *gl=fg->getGL(glutGetWindow()); gl->Draw(gl->width,gl->height); glutSwapBuffers(); gl->isUpdating.setStatus(0); }
+  static void _Key(unsigned char key, int x, int y) {        singletonGlSpinner()->getGL(glutGetWindow())->Key(key); }
+  static void _Mouse(int button, int updown, int x, int y) { singletonGlSpinner()->getGL(glutGetWindow())->MouseButton(button,updown,x,y); }
+  static void _Motion(int x, int y) {                        singletonGlSpinner()->getGL(glutGetWindow())->MouseMotion(x,y); }
+  static void _PassiveMotion(int x, int y) {                 singletonGlSpinner()->getGL(glutGetWindow())->MouseMotion(x,y); }
+  static void _Reshape(int w,int h) {                        singletonGlSpinner()->getGL(glutGetWindow())->Reshape(w,h); }
+  static void _MouseWheel(int wheel, int dir, int x, int y) { singletonGlSpinner()->getGL(glutGetWindow())->Scroll(wheel,dir); }
+  static void _WindowStatus(int status)                     { singletonGlSpinner()->getGL(glutGetWindow())->WindowStatus(status); }
 };
 
 //===========================================================================
@@ -125,7 +125,7 @@ struct sOpenGL : NonCopyable{
 void OpenGL::openWindow() {
   if(s->windowID==-1) {
     {
-      auto fg = singleGlProcess();
+      auto fg = singletonGlSpinner();
       glutInitWindowSize(width, height);
       //  glutInitWindowPosition(posx,posy);
       glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
@@ -149,7 +149,7 @@ void OpenGL::openWindow() {
 
 void OpenGL::closeWindow() {
   if(s->windowID!=-1) {
-    auto fg=singleGlProcess();
+    auto fg=singletonGlSpinner();
     glutDestroyWindow(s->windowID);
     fg->delGL(s->windowID, this);
   }
@@ -157,7 +157,7 @@ void OpenGL::closeWindow() {
 }
 
 void OpenGL::postRedrawEvent(bool fromWithinCallback) {
-  auto fg=singleGlProcess();
+  auto fg=singletonGlSpinner();
   openWindow();
   glutSetWindow(s->windowID);
   glutPostRedisplay();
@@ -168,11 +168,26 @@ void OpenGL::resize(int w,int h) {
   if(s->windowID==-1) {
     Reshape(w, h);
   } else {
-    auto fg=singleGlProcess();
+    auto fg=singletonGlSpinner();
     glutSetWindow(s->windowID);
     glutReshapeWindow(w,h);
 //    glXMakeCurrent(fgDisplay.Display, None, NULL);
   }
+}
+
+void OpenGL::beginNonThreadedDraw(){
+  openWindow();
+  NIY;
+//  auto fg = singletonGlSpinner();
+//  fg->mutex.lock(RAI_HERE);
+//  glutSetWindow(s->windowID);
+//  glfwMakeContextCurrent(s->window);
+}
+
+void OpenGL::endNonThreadedDraw(){
+//  auto fg = singletonGlSpinner();
+//  glfwSwapBuffers(s->window);
+//  fg->mutex.unlock();
 }
 
 #elif 0
@@ -200,13 +215,13 @@ struct sOpenGL {
   
   //-- callbacks
   // static void _Void() { }
-  // static void _Draw() { auto fg=singleGlProcess();  OpenGL *gl=fg->getGL(glutGetWindow()); gl->Draw(gl->width,gl->height); glutSwapBuffers(); gl->isUpdating.setStatus(0); }
-  // static void _Key(unsigned char key, int x, int y) {        singleGlProcess()->getGL(glutGetWindow())->Key(key,x,y); }
-  // static void _Mouse(int button, int updown, int x, int y) { singleGlProcess()->getGL(glutGetWindow())->Mouse(button,updown,x,y); }
-  // static void _Motion(int x, int y) {                        singleGlProcess()->getGL(glutGetWindow())->Motion(x,y); }
-  // static void _PassiveMotion(int x, int y) {                 singleGlProcess()->getGL(glutGetWindow())->Motion(x,y); }
-  // static void _Reshape(int w,int h) {                        singleGlProcess()->getGL(glutGetWindow())->Reshape(w,h); }
-  // static void _MouseWheel(int wheel, int dir, int x, int y){ singleGlProcess()->getGL(glutGetWindow())->MouseWheel(wheel,dir,x,y); }
+  // static void _Draw() { auto fg=singletonGlSpinner();  OpenGL *gl=fg->getGL(glutGetWindow()); gl->Draw(gl->width,gl->height); glutSwapBuffers(); gl->isUpdating.setStatus(0); }
+  // static void _Key(unsigned char key, int x, int y) {        singletonGlSpinner()->getGL(glutGetWindow())->Key(key,x,y); }
+  // static void _Mouse(int button, int updown, int x, int y) { singletonGlSpinner()->getGL(glutGetWindow())->Mouse(button,updown,x,y); }
+  // static void _Motion(int x, int y) {                        singletonGlSpinner()->getGL(glutGetWindow())->Motion(x,y); }
+  // static void _PassiveMotion(int x, int y) {                 singletonGlSpinner()->getGL(glutGetWindow())->Motion(x,y); }
+  // static void _Reshape(int w,int h) {                        singletonGlSpinner()->getGL(glutGetWindow())->Reshape(w,h); }
+  // static void _MouseWheel(int wheel, int dir, int x, int y){ singletonGlSpinner()->getGL(glutGetWindow())->MouseWheel(wheel,dir,x,y); }
   
   void accessWindow() {  //same as above, but also sets gl cocntext (glXMakeCurrent)
   }
@@ -1874,7 +1889,7 @@ int OpenGL::update(const char *txt, bool nonThreaded) {
   openWindow();
   if(txt) text.clear() <<txt;
 #ifdef RAI_GL
-#if 0
+#if RAI_FREEGLUT
   if(nonThreaded) isUpdating.waitForStatusEq(0);
   isUpdating.setStatus(1);
   postRedrawEvent(false);
