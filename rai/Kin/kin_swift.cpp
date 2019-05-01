@@ -87,7 +87,7 @@ SwiftInterface::SwiftInterface(const rai::KinematicWorld& world, double _cutoff)
       }
       if(add) {
         if(!s->mesh().V.d0) {
-          s->getGeom().createMeshes();
+          s->createMeshes();
           CHECK(s->mesh().V.d0, "the mesh must have been created earlier -- has size zero!");
         }
         rai::Mesh *mesh = &s->mesh();

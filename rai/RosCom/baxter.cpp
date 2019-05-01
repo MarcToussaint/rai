@@ -12,9 +12,9 @@
 #ifdef RAI_ROS_BAXTER
 
 #include "roscom.h"
-#include <baxter_core_msgs/HeadPanCommand.h>
-#include <baxter_core_msgs/EndEffectorCommand.h>
-#include <baxter_core_msgs/JointCommand.h>
+#include <rai_msgs/baxter/HeadPanCommand.h>
+#include <rai_msgs/baxter/EndEffectorCommand.h>
+#include <rai_msgs/baxter/JointCommand.h>
 #include <RosCom/roscom.h>
 
 #include <Kin/frame.h>

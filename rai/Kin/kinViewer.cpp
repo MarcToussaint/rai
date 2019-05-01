@@ -243,12 +243,12 @@ void KinPoseViewer::glDraw(OpenGL &gl) {
 
   for(uint i=0; i<n; i++) {
     rai::Shape* sh = modelGet->frames(i)->shape;
-    if(sh && sh->geom){
+    if(sh && sh->_mesh){
       if(frameCount >= frameStateGet->d1) frameCount = 0;
       rai::Transformation X;
       X.set(&frameStateGet->operator()(i, frameCount, 0));
       glTransform(X);
-      sh->geom->glDraw(gl);
+      sh->mesh().glDraw(gl);
     }
   }
   frameCount++;

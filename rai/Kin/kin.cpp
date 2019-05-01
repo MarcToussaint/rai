@@ -240,7 +240,7 @@ rai::Frame* rai::KinematicWorld::addObject(rai::ShapeType shape, const arr& size
   if(radius>0.) s->size() = ARR(radius);
   if(shape!=ST_mesh && shape!=ST_ssCvx){
     if(size.N>=1) s->size() = size;
-    s->getGeom().createMeshes();
+    s->createMeshes();
   }else{
     if(shape==ST_mesh){
       s->mesh().V = size;
@@ -1465,11 +1465,11 @@ SwiftInterface& rai::KinematicWorld::swift() {
 
 rai::FclInterface& rai::KinematicWorld::fcl(){
   if(!s->fcl){
-    Array<ptr<Geom>> geometries(frames.N);
+    Array<ptr<Mesh>> geometries(frames.N);
     for(Frame *f:frames){
       if(f->shape && f->shape->cont){
-        if(!f->shape->mesh().V.N) f->shape->getGeom().createMeshes();
-        geometries(f->ID) = f->shape->geom;
+        if(!f->shape->mesh().V.N) f->shape->createMeshes();
+        geometries(f->ID) = f->shape->_mesh;
       }
     }
     s->fcl = make_shared<rai::FclInterface>(geometries, .0);
@@ -1578,8 +1578,8 @@ void rai::KinematicWorld::stepFcl(){
       p.a = frames(COL(i,0));
       p.b = frames(COL(i,1));
       p.d = -0.;
-      p.posA = frames(COL(i,0))->shape->geom->mesh.getCenter();
-      p.posB = frames(COL(i,1))->shape->geom->mesh.getCenter();
+      p.posA = frames(COL(i,0))->shape->mesh().getCenter();
+      p.posB = frames(COL(i,1))->shape->mesh().getCenter();
       j++;
     }
   }
