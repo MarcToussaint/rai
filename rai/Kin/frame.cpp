@@ -984,8 +984,11 @@ void rai::Shape::glDraw(OpenGL& gl) {
       if(frame.K.orsDrawMarkers)
         glDrawDiamond(size(0)/5., size(0)/5., size(0)/5.); glDrawAxes(size(0), !gl.drawMode_idColor);
     }else{
-      CHECK_GE(mesh().V.N, 1, "cannot draw empty mesh");
-      mesh().glDraw(gl);
+      if(!mesh().V.N){
+        LOG(1) <<"trying to draw empty mesh";
+      }else{
+        mesh().glDraw(gl);
+      }
     }
   }
 

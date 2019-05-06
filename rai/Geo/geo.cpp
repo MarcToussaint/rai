@@ -1462,6 +1462,10 @@ void Transformation::read(std::istream& is) {
         case 'r': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>x[3]>>PARSE(")"); addRelativeRotationRad(x[0], x[1], x[2], x[3]); break;
         case 'd': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>x[3]>>PARSE(")"); addRelativeRotationDeg(x[0], x[1], x[2], x[3]); break;
         case 'E': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>PARSE(")"); addRelativeRotation(Quaternion().setRpy(x[0], x[1], x[2])); break;
+        case 'p':{
+	  is>>PARSE("(")>>x[0]>>x[1]>>x[2];       addRelativeTranslation(x[0], x[1], x[2]);
+	  is>>x[0]>>x[1]>>x[2]>>x[3]>>PARSE(")"); addRelativeRotationQuat(x[0], x[1], x[2], x[3]);
+	} break;
         //case 's': is>>PARSE("(")>>x[0]>>PARSE(")");                   scale(x[0]); break;
         case 'T': break; //old convention
         case '|':

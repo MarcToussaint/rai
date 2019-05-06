@@ -42,16 +42,19 @@ int MAIN(int argc,char **argv){
     K.checkConsistency();
     K >>FILE("z.g");
     //some optional manipulations
-    K.optimizeTree();
+    if(rai::checkParameter<bool>("prune")){
+      K.optimizeTree(true, true, true);
+    }else{
+      K.optimizeTree(false, false, false);
+    }
     K.calc_q();
     K.checkConsistency();
     if(K.fwdActiveSet.N == K.frames.N) K.sortFrames();
-    K >>FILE("z.g");
+
 //    makeConvexHulls(G.frames);
 //    computeOptimalSSBoxes(G.shapes);
-//    G >>FILE("z.ors");
-//    K.watch(true);
-//    return;
+
+    K >>FILE("z.g");
 
     if(rai::checkParameter<bool>("dot")) K.displayDot();
     K.writeURDF(FILE("z.urdf"));

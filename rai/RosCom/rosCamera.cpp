@@ -2,6 +2,8 @@
 
 #include "rosCamera.h"
 
+#ifdef RAI_ROS
+
 struct sRosCamera {
   RosCom ROS;
   ptr<SubscriberConv<sensor_msgs::Image, byteA, &conv_image2byteA>> subRgb;
@@ -25,3 +27,6 @@ RosCamera::RosCamera(Var<byteA>& _rgb, Var<floatA> _depth,
 
 RosCamera::~RosCamera(){
 }
+
+#else //RAI_ROS
+#endif
