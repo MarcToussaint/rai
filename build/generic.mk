@@ -34,6 +34,40 @@ endif
 
 ################################################################################
 #
+# default target
+#
+################################################################################
+
+default: $(OUTPUT)
+all: $(OUTPUT) #this is for qtcreator, which by default uses the 'all' target
+
+
+################################################################################
+#
+# load user options from the local make-config
+# load defines for linking to external libs
+#
+################################################################################
+
+ifneq ("$(wildcard $(BASE)/../config.mk)","")
+
+$(BASE)/config.mk:: $(BASE)/../config.mk
+	cp $< $@
+
+else
+
+$(BASE)/config.mk:: $(BASE)/build/config.mk.default
+	cp $< $@
+
+endif
+
+include $(BASE)/config.mk
+
+include $(BASE)/build/defines.mk
+
+
+################################################################################
+#
 # basic compiler settings
 #
 ################################################################################
@@ -86,40 +120,6 @@ endif
 ifeq ($(OPTIM),callgrind)
 CXXFLAGS := -O -g -Wall -DRAI_NOCHECK -fno-inline $(CXXFLAGS)
 endif
-
-
-################################################################################
-#
-# default target
-#
-################################################################################
-
-default: $(OUTPUT)
-all: $(OUTPUT) #this is for qtcreator, which by default uses the 'all' target
-
-
-################################################################################
-#
-# load user options from the local make-config
-# load defines for linking to external libs
-#
-################################################################################
-
-ifneq ("$(wildcard $(BASE)/../config.mk)","")
-
-$(BASE)/config.mk:: $(BASE)/../config.mk
-	cp $< $@
-
-else
-
-$(BASE)/config.mk:: $(BASE)/build/config.mk.default
-	cp $< $@
-
-endif
-
-include $(BASE)/config.mk
-
-include $(BASE)/build/defines.mk
 
 
 ################################################################################
