@@ -1396,6 +1396,12 @@ arr Transformation::getWrenchTransform() {
   //cout <<"\nz=" <<z <<"\nr=" <<r <<"\nR=" <<R <<"\nX=" <<X <<endl;
 }
 
+void Transformation::applyOnPoint(arr& pt) const {
+  CHECK_EQ(pt.N, 3, "");
+  if(!rot.isZero) pt = rot.getArr() * pt;
+  if(!pos.isZero) pt += pos.getArr();
+}
+
 void Transformation::applyOnPointArray(arr& pts) const {
   if(!((pts.nd==2 && pts.d1==3) || (pts.nd==3 && pts.d2==3))) {
     LOG(-1) <<"wrong pts dimensions for transformation:" <<pts.dim();

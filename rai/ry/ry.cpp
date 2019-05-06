@@ -1000,12 +1000,22 @@ PYBIND11_MODULE(libry, m) {
     return pybind11::array_t<float>(depth.dim(), depth.p);
   } )
 
-  .def("getPoints", [](ry::RyCamera& self, std::vector<double>& Fxypxy){
+  .def("getPoints", [](ry::RyCamera& self, const std::vector<double>& Fxypxy){
     floatA _depth = self.depth.get();
     arr _points;
     CHECK_EQ(Fxypxy.size(), 4, "I need 4 intrinsic calibration parameters")
     depthData2pointCloud(_points, _depth, Fxypxy[0], Fxypxy[1], Fxypxy[2], Fxypxy[3]);
     return pybind11::array_t<double>(_points.dim(), _points.p);
+  } )
+
+  .def("transform_image2world", [](ry::RyCamera& self, const std::vector<double>& pt, const char* cameraFrame, const std::vector<double>& Fxypxy){
+    NIY
+//    arr _pt = pt;
+//    depthData2point(_pt, conv_stdvec2arr(Fxypxy)); //transforms the point to camera xyz coordinates
+
+//    pcl->X.applyOnPoint(pt); //transforms into world coordinates
+
+//    return pybind11::array_t<double>(_pt.dim(), _pt.p);
   } )
 
   ;
