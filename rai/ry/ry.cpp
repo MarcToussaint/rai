@@ -360,33 +360,34 @@ PYBIND11_MODULE(libry, m) {
     self.set() = K;
   } )
 
-  .def("komo_IK", [](ry::Config& self){
+  .def("komo_IK", [](ry::Config& self, bool useSwift){
     ry::RyKOMO komo;
-    komo.komo = make_shared<KOMO>(self.get());
+    komo.komo = make_shared<KOMO>(self.get(), useSwift);
     komo.config.set() = komo.komo->world;
     komo.komo->setIKOpt();
     return komo;
   } )
 
-  .def("komo_CGO", [](ry::Config& self, uint numConfigs){
+  .def("komo_CGO", [](ry::Config& self, uint numConfigs, bool useSwift){
     CHECK_GE(numConfigs, 1, "");
     ry::RyKOMO komo;
-    komo.komo = make_shared<KOMO>(self.get());
+    komo.komo = make_shared<KOMO>(self.get(), useSwift);
     komo.config.set() = komo.komo->world;
     komo.komo->setDiscreteOpt(numConfigs);
     return komo;
   } )
 
-  .def("komo_path",  [](ry::Config& self, double phases, uint stepsPerPhase, double timePerPhase){
+  .def("komo_path",  [](ry::Config& self, double phases, uint stepsPerPhase, double timePerPhase, bool useSwift){
     ry::RyKOMO komo;
-    komo.komo = make_shared<KOMO>(self.get());
+    komo.komo = make_shared<KOMO>(self.get(), useSwift);
     komo.config.set() = komo.komo->world;
     komo.komo->setPathOpt(phases, stepsPerPhase, timePerPhase);
     return komo;
   }, "",
     py::arg("phases"),
     py::arg("stepsPerPhase")=20,
-    py::arg("timePerPhase")=5. )
+    py::arg("timePerPhase")=5.,
+    py::arg("useSwift"))
 
   .def("lgp", [](ry::Config& self, const std::string& folFileName){
     ry::RyLGP_Tree lgp;
