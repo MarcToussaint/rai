@@ -462,6 +462,10 @@ PYBIND11_MODULE(libry, m) {
   //===========================================================================
 
   py::class_<ry::RyCameraView>(m, "CameraView")
+  .def("updateConfig", [](ry::RyCameraView& self, ry::Config& config){
+    self.cam->K.setFrameState(config.get()->getFrameState());
+  } )
+
   .def("addSensor", [](ry::RyCameraView& self, const char* name, const char* frameAttached, uint width, uint height, double focalLength, double orthoAbsHeight, const std::vector<double>& zRange, const std::string& backgroundImageFile){
     self.cam->addSensor(name, frameAttached, width, height, focalLength, orthoAbsHeight, arr(zRange), backgroundImageFile.c_str());
   }, "",
