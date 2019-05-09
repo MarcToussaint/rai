@@ -42,6 +42,8 @@ struct BaxterInterface {
   arr get_q();
   arr get_qdot();
   arr get_u();
+  bool get_grabbed(const std::string& whichArm);
+  bool get_opened(const std::string& whichArm);
 
   void send_q(const arr& q_ref, bool enableL=true, bool enableR=true);
 };

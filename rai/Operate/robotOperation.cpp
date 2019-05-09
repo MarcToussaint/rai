@@ -180,6 +180,16 @@ arr RobotOperation::getJointPositions(const StringA& joints){
   return s->K_ref.getJointState();
 }
 
+bool RobotOperation::getGripperGrabbed(const std::string& whichArm){
+  // if(s->useBaxter) 
+  return s->baxter.get_grabbed(whichArm);
+}
+
+bool RobotOperation::getGripperOpened(const std::string& whichArm){
+  // if(s->useBaxter) 
+  return s->baxter.get_opened(whichArm);
+}
+
 void RobotOperation::sync(rai::KinematicWorld& K){
   auto lock = s->stepMutex(RAI_HERE);
   K.setJointState(getJointPositions(), s->jointNames);

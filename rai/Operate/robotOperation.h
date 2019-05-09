@@ -23,5 +23,7 @@ struct RobotOperation {
 
   //-- feedback
   arr getJointPositions(const StringA& joints={});
+  bool getGripperGrabbed(const std::string& whichArm="right");
+  bool getGripperOpened(const std::string& whichArm="right");
   void sync(rai::KinematicWorld& K);                                ///< copies current robot pose into K
 };

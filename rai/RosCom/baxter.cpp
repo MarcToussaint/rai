@@ -14,6 +14,7 @@
 #include "roscom.h"
 #include <baxter_core_msgs/HeadPanCommand.h>
 #include <baxter_core_msgs/EndEffectorCommand.h>
+#include <baxter_core_msgs/EndEffectorState.h>
 #include <baxter_core_msgs/JointCommand.h>
 #include <RosCom/roscom.h>
 
@@ -23,12 +24,16 @@ struct sBaxterInterface {
   RosCom ROS;
 
   Var<sensor_msgs::JointState> state;
+  Var<baxter_core_msgs::EndEffectorState> gripR;
+  Var<baxter_core_msgs::EndEffectorState> gripL;
 
   ptr<ros::NodeHandle> nh;
   ros::Publisher pubL, pubR, pubLg, pubRg, pubHead, pubGripperR, pubGripperL;
   rai::KinematicWorld baxterModel;
 
   std::shared_ptr<Subscriber<sensor_msgs::JointState>> sub_state;
+  std::shared_ptr<Subscriber<baxter_core_msgs::EndEffectorState>> sub_gripR;
+  std::shared_ptr<Subscriber<baxter_core_msgs::EndEffectorState>> sub_gripL;
 
   sBaxterInterface(bool useRosDefault) {
     baxterModel.addFile(rai::raiPath("../rai-robotModels/baxter/baxter.g"));
@@ -45,7 +50,12 @@ struct sBaxterInterface {
       pubGripperL = nh->advertise<baxter_core_msgs::EndEffectorCommand>("robot/end_effector/left_gripper/command", 1);
 
       state.name() = "/robot/joint_states";
+      gripR.name() = "/robot/end_effector/right_gripper/state";
+      gripL.name() = "/robot/end_effector/left_gripper/state";
       ROS.subscribe(sub_state, state, true);
+      ROS.subscribe(sub_gripR, gripR, true);
+      ROS.subscribe(sub_gripL, gripL, true);
+
       rai::wait(.5);
     }
   }
@@ -94,15 +104,17 @@ baxter_core_msgs::EndEffectorCommand getElectricGripperMsg(const arr& q_ref, con
   rai::Joint *j = baxterModel.getFrameByName("r_gripper_l_finger_joint")->joint;
   rai::String str;
   
-  double position = q_ref(j->qIndex) / (j->limits(1) - j->limits(0)) * 100.0;
-  
+  bool position = bool(q_ref(j->qIndex));
+
 //  str <<"{ \"position\":" <<1000.*q_ref(j->qIndex) <<", \"dead zone\":5.0, \"force\": 40.0, \"holding force\": 30.0, \"velocity\": 50.0 }";
   str <<"{ \"position\":" << position<<", \"dead zone\":5.0, \"force\": 40.0, \"holding force\": 30.0, \"velocity\": 50.0 }";
   
-  //cout <<str <<endl;
-  
   msg.id = 65538;
-  msg.command = msg.CMD_GO;
+  if(position){
+    msg.command = msg.CMD_GRIP; //CMD_GO;
+  }else{
+    msg.command = msg.CMD_RELEASE;
+  }
   msg.args = str.p;
   msg.sender = "foo";
   msg.sequence = 1;
@@ -116,15 +128,14 @@ baxter_core_msgs::EndEffectorCommand getVacuumGripperMsg(const arr& q_ref, const
   
   bool suction = bool(q_ref(j->qIndex));
 
-//  str <<"{ \"position\":" <<1000.*q_ref(j->qIndex) <<", \"dead zone\":5.0, \"force\": 40.0, \"holding force\": 30.0, \"velocity\": 50.0 }";
   str <<"{ \"blowing\" : false,\n  \"suction\" : "<<suction<<",\n  \"vacuum\" : false,\n \"vacuum threshold\" : 46}";
-  
-  //cout <<str <<endl;
   
   msg.id = 65537;
   if(suction){
-    msg.command = msg.CMD_GRIP;}
-  else {msg.command = msg.CMD_RELEASE; }
+    msg.command = msg.CMD_GRIP;
+  }else{
+    msg.command = msg.CMD_RELEASE;
+  }
   msg.args = str.p;
   msg.sender = "foo";
   msg.sequence = 6;
@@ -200,6 +211,43 @@ arr BaxterInterface::get_u(){
   return u;
 }
 
+bool BaxterInterface::get_grabbed(const std::string& whichArm){
+  bool grabbed;
+  baxter_core_msgs::EndEffectorState msgs;
+
+  if(whichArm=="left"){
+    msgs = s->gripL.get();
+  }
+  else{
+    msgs = s->gripR.get();
+  }
+  grabbed=bool(int(msgs.gripping));
+
+  return grabbed;
+}
+
+bool BaxterInterface::get_opened(const std::string& whichArm){
+  bool opened, grabbed;
+  baxter_core_msgs::EndEffectorState msgs;
+
+  if(whichArm=="left"){
+    msgs = s->gripL.get();
+  }
+  else{
+    msgs = s->gripR.get();
+  }
+  grabbed=get_grabbed(whichArm);
+
+  if(msgs.position>90 && !get_grabbed(whichArm)){
+    opened=true;
+  }
+  else{
+    opened=false;
+  }
+
+  return opened;
+}
+
 void BaxterInterface::send_q(const arr& q_ref, bool enableL, bool enableR){
   if(enableL)
     s->pubL.publish(conv_qRef2baxterMessage(q_ref, s->baxterModel, "left_"));
@@ -210,7 +258,6 @@ void BaxterInterface::send_q(const arr& q_ref, bool enableL, bool enableR){
   s->pubHead.publish(getHeadMsg(q_ref, s->baxterModel));
   s->pubGripperR.publish(getElectricGripperMsg(q_ref, s->baxterModel));
   s->pubGripperL.publish(getVacuumGripperMsg(q_ref, s->baxterModel));
-
 }
 
 #else

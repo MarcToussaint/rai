@@ -626,6 +626,12 @@ PYBIND11_MODULE(libry, m) {
     return pybind11::array_t<double>(x.dim(), x.p);
   } )
 
+  .def("getRotationMatrix", [](ry::RyFrame& self){
+    RToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    arr x = self.frame->getRotationMatrix();
+    return pybind11::array_t<double>(x.dim(), x.p);
+  } )
+
   .def("getRelativePosition", [](ry::RyFrame& self){
     RToken<rai::KinematicWorld> token(*self.config, &self.config->data);
     arr x = self.frame->getRelativePosition();

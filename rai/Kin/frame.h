@@ -101,7 +101,8 @@ struct Frame : NonCopyable{
   void setColor(const std::vector<double>& color);
 
   arr getPosition(){ return X.pos.getArr(); }
-  arr getQuaternion(){ return X.rot.getArr(); }
+  arr getQuaternion(){ return X.rot.getArr4d(); }
+  arr getRotationMatrix(){ return X.rot.getArr(); }
   arr getRelativePosition(){ return Q.pos.getArr(); }
   arr getRelativeQuaternion(){ return Q.rot.getArr(); }
   arr getMeshPoints();
