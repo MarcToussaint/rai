@@ -242,19 +242,25 @@ void rai::Frame::setRelativeQuaternion(const std::vector<double>& quat){
   calc_X_from_parent();
 }
 
-void rai::Frame::setPointCloud(const std::vector<double>& points){
+void rai::Frame::setPointCloud(const std::vector<double>& points, const std::vector<byte>& colors){
   getShape().type() = ST_pointCloud;
   if(!points.size()){
     cerr <<"given point cloud has zero size" <<endl;
     return;
   }
   getShape().mesh().V.clear().operator=(points).reshape(-1, 3);
+  if(colors.size()){
+    getShape().mesh().C.clear().operator=(convert<double>(byteA(colors))/255.).reshape(-1, 3);
+  }
 }
 
-void rai::Frame::setConvexMesh(const std::vector<double>& points){
+void rai::Frame::setConvexMesh(const std::vector<double>& points, const std::vector<byte>& colors){
   getShape().type() = ST_mesh;
   getShape().mesh().V.clear().operator=(points).reshape(-1, 3);
   getShape().mesh().makeConvexHull();
+  if(colors.size()){
+    getShape().mesh().C.clear().operator=(convert<double>(byteA(colors))/255.).reshape(-1, 3);
+  }
 }
 
 void rai::Frame::setColor(const std::vector<double>& color){
