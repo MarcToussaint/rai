@@ -570,7 +570,7 @@ PYBIND11_MODULE(libry, m) {
   .def("setPointCloud", [](ry::RyFrame& self, const pybind11::array& points){
     arr _points = numpy2arr(points);
     WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
-    self.frame->setPointCloud(_points);
+    self.frame->setPointCloud(_points, {});
   } )
 
   .def("setShape", [](ry::RyFrame& self, rai::ShapeType shape, const std::vector<double>& size){
