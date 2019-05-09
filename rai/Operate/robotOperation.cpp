@@ -143,6 +143,15 @@ void RobotOperation::move(const arrA& poses, const arr& times, bool append){
   move(path, times, append);
 }
 
+void RobotOperation::moveHard(const arr& pose){
+    arr path;
+    path.referTo(pose);
+    path.reshape(1,pose.N);
+    move(path, {0.}, false);
+}
+
+
+
 double RobotOperation::timeToGo(){
   auto lock = s->stepMutex(RAI_HERE);
   return s->spline.timeToGo();

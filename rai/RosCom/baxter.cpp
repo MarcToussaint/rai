@@ -53,8 +53,8 @@ struct sBaxterInterface {
       gripR.name() = "/robot/end_effector/right_gripper/state";
       gripL.name() = "/robot/end_effector/left_gripper/state";
       ROS.subscribe(sub_state, state, true);
-      ROS.subscribe(sub_gripR, gripR, true);
-      ROS.subscribe(sub_gripL, gripL, true);
+      ROS.subscribe(sub_gripR, gripR);
+      ROS.subscribe(sub_gripL, gripL);
 
       rai::wait(.5);
     }
