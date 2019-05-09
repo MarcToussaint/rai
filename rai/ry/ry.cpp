@@ -109,6 +109,26 @@ arr numpy2arr(const pybind11::array& X){
   return Y;
 }
 
+byteA numpy2arr(const pybind11::array_t<byte>& X){
+  byteA Y;
+  uintA dim(X.ndim());
+  for(uint i=0;i<dim.N;i++) dim(i)=X.shape()[i];
+  Y.resize(dim);
+  auto ref = X.unchecked<>();
+  if (Y.nd==1) {
+    for(uint i=0;i<Y.d0;i++) Y(i) = ref(i);
+    return Y;
+  } else if(Y.nd==2){
+    for(uint i=0;i<Y.d0;i++) for(uint j=0;j<Y.d1;j++) Y(i,j) = ref(i,j);
+    return Y;
+  } else if(Y.nd==3){
+    for(uint i=0;i<Y.d0;i++) for(uint j=0;j<Y.d1;j++) for(uint k=0;k<Y.d2;k++) Y(i,j,k) = ref(i,j,k);
+    return Y;
+  }
+  NIY;
+  return Y;
+}
+
 arr vecvec2arr(const std::vector<std::vector<double>>& X){
   CHECK(X.size()>0, "");
   arr Y(X.size(), X[0].size());
@@ -567,10 +587,11 @@ PYBIND11_MODULE(libry, m) {
   //===========================================================================
 
   py::class_<ry::RyFrame>(m, "Frame")
-  .def("setPointCloud", [](ry::RyFrame& self, const pybind11::array& points){
+  .def("setPointCloud", [](ry::RyFrame& self, const pybind11::array& points, const pybind11::array_t<byte>& colors){
     arr _points = numpy2arr(points);
+    byteA _colors = numpy2arr(colors);
     WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
-    self.frame->setPointCloud(_points, {});
+    self.frame->setPointCloud(_points, _colors);
   } )
 
   .def("setShape", [](ry::RyFrame& self, rai::ShapeType shape, const std::vector<double>& size){
@@ -973,6 +994,11 @@ PYBIND11_MODULE(libry, m) {
     self.R->move(_path, conv_stdvec2arr(times), append);
   } )
 
+  .def("moveHard", [](ry::RyOperate& self, const pybind11::array& pose){
+    arr _pose = numpy2arr(pose);
+    self.R->moveHard(_pose);
+  } )
+
   .def("timeToGo", [](ry::RyOperate& self){
     return self.R->timeToGo();
   } )
@@ -984,6 +1010,14 @@ PYBIND11_MODULE(libry, m) {
   .def("getJointPositions", [](ry::RyOperate& self, ry::Config& C){
     arr q = self.R->getJointPositions();
     return pybind11::array(q.dim(), q.p);
+  } )
+
+  .def("getGripperGrabbed", [](ry::RyOperate& self, const std::string& whichArm){
+    return self.R->getGripperGrabbed(whichArm);
+  } )
+
+  .def("getGripperOpened", [](ry::RyOperate& self, const std::string& whichArm){
+    return self.R->getGripperOpened(whichArm);
   } )
 
   .def("sendToReal", [](ry::RyOperate& self, bool activate){
