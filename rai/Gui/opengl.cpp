@@ -462,7 +462,7 @@ uint OpenGL::selectionBuffer[1000];
 //
 
 #ifdef RAI_GL
-void glStandardLight(void*) {
+void glStandardLight(void*, OpenGL&) {
   glEnable(GL_LIGHTING);
   static GLfloat ambient[]   = { .5, .5, .5, 1.0 };
   static GLfloat diffuse[]   = { .2, .2, .2, 1.0 };
@@ -479,9 +479,9 @@ void glStandardLight(void*) {
   glEnable(GL_LIGHT0);
 }
 
-void glStandardScene(void*) {
+void glStandardScene(void*, OpenGL& gl) {
   glPushAttrib(GL_CURRENT_BIT);
-  glStandardLight(NULL);
+  glStandardLight(NULL, gl);
   //  glDrawFloor(10, .8, .8, .8);
   //  glDrawFloor(10, 1.5, 0.83, .0);
   glDrawFloor(10., 108./255., 123./255., 139./255.);
@@ -489,7 +489,7 @@ void glStandardScene(void*) {
   glPopAttrib();
 }
 
-void glStandardOriginAxes(void*) {
+void glStandardOriginAxes(void*, OpenGL&) {
   glDrawAxes(.1);
 }
 
@@ -1501,9 +1501,9 @@ void OpenGL::init() {
 
 struct CstyleDrawer : GLDrawer {
   void *classP;
-  void (*call)(void*);
-  CstyleDrawer(void (*call)(void*), void* classP) : classP(classP), call(call) {}
-  void glDraw(OpenGL&) { call(classP); }
+  void (*call)(void*,OpenGL&);
+  CstyleDrawer(void (*call)(void*,OpenGL&), void* classP) : classP(classP), call(call) {}
+  void glDraw(OpenGL& gl) { call(classP, gl); }
 };
 
 struct LambdaDrawer : GLDrawer {
@@ -1520,7 +1520,7 @@ struct CstyleInitCall : OpenGL::GLInitCall {
 };
 
 /// add a draw routine
-void OpenGL::add(void (*call)(void*), void* classP) {
+void OpenGL::add(void (*call)(void*,OpenGL&), void* classP) {
   CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
   auto _dataLock = dataLock(RAI_HERE);
   toBeDeletedOnCleanup.append(new CstyleDrawer(call, classP));
@@ -1545,7 +1545,7 @@ void OpenGL::add(std::function<void (OpenGL&)> call){
 }
 
 /// add a draw routine to a view
-void OpenGL::addSubView(uint v, void (*call)(void*), void* classP) {
+void OpenGL::addSubView(uint v, void (*call)(void*,OpenGL&), void* classP) {
   CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
   auto _dataLock = dataLock(RAI_HERE);
   if(v>=views.N) views.resizeCopy(v+1);

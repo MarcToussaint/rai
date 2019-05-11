@@ -14,7 +14,7 @@
 
 namespace rai { struct Mesh; }
 typedef rai::Array<rai::Mesh> MeshA;
-void glDrawMeshes(void*);
+void glDrawMeshes(void*, OpenGL&);
 
 /// @file
 /// @ingroup group_geo

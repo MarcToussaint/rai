@@ -386,7 +386,10 @@ CPATH := $(CPATH):$(HOME)/opt/include:$(HOME)/opt/include/physx
 #PhysX/Include:$(RAI_LIBPATH)/PhysX/Include/extensions:$(RAI_LIBPATH)/PhysX/Include/foundation:$(RAI_LIBPATH)/PhysX/Include/deprecated
 LPATH := $(HOME)/opt/lib/physx:$(LPATH)
 LIBS += -Wl,--start-group -lpthread -lrt\
--lLowLevel \
+-lPhysX3_x64 -lPhysX3Extensions -lPhysX3Cooking_x64 -lPhysX3Common_x64 -lPxFoundation_x64
+
+#Physx-3.3:
+#-lLowLevel \
 -lLowLevelCloth \
 -lPhysX3CharacterKinematic \
 -lPhysX3 \

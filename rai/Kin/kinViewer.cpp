@@ -234,7 +234,7 @@ void KinPoseViewer::glDraw(OpenGL &gl) {
   if(!modelGet->frames.N) return;
   if(!frameStateGet->N) return;
 
-  glStandardScene(NULL);
+  glStandardScene(NULL, gl);
 
 
   CHECK_EQ(frameStateGet->nd, 3, "");
