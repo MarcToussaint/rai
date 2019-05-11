@@ -382,9 +382,9 @@ endif
 
 ifeq ($(PHYSX),1)
 CXXFLAGS += -DRAI_PHYSX -D_DEBUG -DPX_DISABLE_FLUIDS -DCORELIB -DPX32 -DLINUX
-CPATH := $(CPATH):$(HOME)/opt/include:$(HOME)/opt/include/physx
+CPATH := $(CPATH):$(HOME)/opt/physx3.4/include:$(HOME)/opt/physx3.4/include/physx
 #PhysX/Include:$(RAI_LIBPATH)/PhysX/Include/extensions:$(RAI_LIBPATH)/PhysX/Include/foundation:$(RAI_LIBPATH)/PhysX/Include/deprecated
-LPATH := $(HOME)/opt/lib/physx:$(LPATH)
+LPATH := $(HOME)/opt/physx3.4/lib:$(LPATH)
 LIBS += -Wl,--start-group -lpthread -lrt\
 -lPhysX3_x64 -lPhysX3Extensions -lPhysX3Cooking_x64 -lPhysX3Common_x64 -lPxFoundation_x64
 
