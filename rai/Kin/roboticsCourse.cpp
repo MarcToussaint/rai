@@ -14,8 +14,8 @@
 #include <Plot/plot.h>
 #include <Algo/algos.h>
 
-void drawEnv(void*) { glStandardLight(NULL); glDrawFloor(10., .9, .9, .9); }
-void drawBase(void*) { glDrawAxes(1.); }
+void drawEnv(void*, OpenGL& gl) { glStandardLight(NULL, gl); glDrawFloor(10., .9, .9, .9); }
+void drawBase(void*, OpenGL& gl) { glDrawAxes(1.); }
 
 struct sSimulator {
   rai::KinematicWorld G;
@@ -284,7 +284,7 @@ void VisionSimulator::projectWorldPointsToImagePoints(arr& x, const arr& X, doub
 #endif
 }
 
-void glDrawCarSimulator(void *classP);
+void glDrawCarSimulator(void *classP, OpenGL&);
 
 CarSimulator::CarSimulator() {
   //car parameters
@@ -373,7 +373,7 @@ void CarSimulator::getObservationJacobianAtState(arr& dy_dx, const arr& X) {
   }
 }
 
-void glDrawCarSimulator(void *classP) {
+void glDrawCarSimulator(void *classP, OpenGL&) {
 #ifdef FREEGLUT
   CarSimulator *s=(CarSimulator*)classP;
   rai::Transformation f;

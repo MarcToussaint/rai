@@ -56,9 +56,9 @@ struct Transformation;
 // utility functions
 //
 
-void glStandardLight(void*);
-void glStandardScene(void*);
-void glStandardOriginAxes(void*);
+void glStandardLight(void*, OpenGL&);
+void glStandardScene(void*, OpenGL&);
+void glStandardOriginAxes(void*, OpenGL&);
 
 void glColor(float r, float g, float b, float a=1.f);
 void glColor(int col);
@@ -176,7 +176,7 @@ struct OpenGL {
   
   /// @name adding drawing routines and callbacks
   void clear();
-  void add(void (*call)(void*), void* classP=NULL);
+  void add(void (*call)(void*,OpenGL&), void* classP=NULL);
   void addInit(void (*call)(void*), void* classP=NULL);
   void add(std::function<void(OpenGL&)> drawer);
   void add(GLDrawer& c) { auto _dataLock = dataLock(RAI_HERE); drawers.append(&c); }
@@ -187,7 +187,7 @@ struct OpenGL {
   void addHoverCall(GLHoverCall *c) { hoverCalls.append(c); }
   void addClickCall(GLClickCall *c) { clickCalls.append(c); }
   void addKeyCall(GLKeyCall *c) { keyCalls.append(c); }
-  void addSubView(uint view, void (*call)(void*), void* classP=0);
+  void addSubView(uint view, void (*call)(void*,OpenGL&), void* classP=0);
   void addSubView(uint view, GLDrawer& c);
   void setSubViewTiles(uint cols, uint rows);
   void setSubViewPort(uint view, double l, double r, double b, double t);

@@ -26,8 +26,8 @@
 #include <physx/extensions/PxDefaultCpuDispatcher.h>
 #include <physx/extensions/PxShapeExt.h>
 #include <physx/foundation/PxMat33.h>
-#include <physx/pvd/PxVisualDebugger.h>
-#include <physx/physxvisualdebuggersdk/PvdConnectionFlags.h>
+//#include <physx/pvd/PxVisualDebugger.h>
+//#include <physx/physxvisualdebuggersdk/PvdConnectionFlags.h>
 //#include <PxMat33Legacy.h>
 #include <physx/extensions/PxSimpleFactory.h>
 #pragma GCC diagnostic pop
@@ -140,7 +140,7 @@ struct sPhysXInterface {
   rai::Array<PxD6Joint*> joints;
   OpenGL *gl=NULL;
   
-  debugger::comm::PvdConnection* connection = NULL;
+//  debugger::comm::PvdConnection* connection = NULL;
   
   void addLink(rai::Frame *b, physx::PxMaterial *material);
   void addJoint(rai::Joint *jj);
@@ -155,7 +155,7 @@ PhysXInterface::PhysXInterface(rai::KinematicWorld& _world): world(_world), s(NU
   s = new sPhysXInterface;
   
   if(!mFoundation) {
-    mFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, gDefaultAllocatorCallback, gDefaultErrorCallback);
+    mFoundation = PxCreateFoundation(PX_FOUNDATION_VERSION, gDefaultAllocatorCallback, gDefaultErrorCallback);
     mPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *mFoundation, PxTolerancesScale());
     PxCookingParams cookParams(mPhysics->getTolerancesScale());
     cookParams.skinWidth = .001f;
@@ -163,8 +163,8 @@ PhysXInterface::PhysXInterface(rai::KinematicWorld& _world): world(_world), s(NU
     if(!mCooking) HALT("PxCreateCooking failed!");
     if(!mPhysics) HALT("Error creating PhysX3 device.");
     
-    if(!PxInitExtensions(*mPhysics))
-      HALT("PxInitExtensions failed!");
+//    if(!PxInitExtensions(*mPhysics))
+//      HALT("PxInitExtensions failed!");
   }
   
   //PxExtensionVisualDebugger::connect(mPhysics->getPvdConnectionManager(),"localhost",5425, 10000, true);
@@ -215,13 +215,13 @@ PhysXInterface::PhysXInterface(rai::KinematicWorld& _world): world(_world), s(NU
   //  for(rai::Joint *j : world.fwdActiveJoints) s->addJoint(j); //DONT ADD JOINTS!!!!
   
   /// save data for the PVD
-  if(rai::getParameter<bool>("physx_debugger", false)) {
-    const char* filename = "pvd_capture.pxd2";
-    PxVisualDebuggerConnectionFlags connectionFlags = PxVisualDebuggerExt::getAllConnectionFlags();
+//  if(rai::getParameter<bool>("physx_debugger", false)) {
+//    const char* filename = "pvd_capture.pxd2";
+//    PxVisualDebuggerConnectionFlags connectionFlags = PxVisualDebuggerExt::getAllConnectionFlags();
     
-    s->connection = PxVisualDebuggerExt::createConnection(mPhysics->getPvdConnectionManager(), filename, connectionFlags);
-    mPhysics->getVisualDebugger()->setVisualDebuggerFlags(PxVisualDebuggerFlag::eTRANSMIT_CONTACTS | PxVisualDebuggerFlag::eTRANSMIT_CONSTRAINTS);
-  }
+//    s->connection = PxVisualDebuggerExt::createConnection(mPhysics->getPvdConnectionManager(), filename, connectionFlags);
+//    mPhysics->getVisualDebugger()->setVisualDebuggerFlags(PxVisualDebuggerFlag::eTRANSMIT_CONTACTS | PxVisualDebuggerFlag::eTRANSMIT_CONSTRAINTS);
+//  }
 }
 
 PhysXInterface::~PhysXInterface() {
@@ -259,9 +259,9 @@ void PhysXInterface::setArticulatedBodiesKinematic() {
     }
   for(rai::Frame *b: world.frames) if(s->actors(b->ID) && b->inertia) {
       if(b->inertia->type==rai::BT_kinematic)
-        ((PxRigidDynamic*)s->actors(b->ID))->setRigidDynamicFlag(PxRigidDynamicFlag::eKINEMATIC, true);
+        ((PxRigidDynamic*)s->actors(b->ID))->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
       if(b->inertia->type==rai::BT_dynamic)
-        ((PxRigidDynamic*)s->actors(b->ID))->setRigidDynamicFlag(PxRigidDynamicFlag::eKINEMATIC, false);
+        ((PxRigidDynamic*)s->actors(b->ID))->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, false);
     }
 }
 
@@ -424,7 +424,7 @@ void sPhysXInterface::addLink(rai::Frame *b, physx::PxMaterial *mMaterial) {
       break;
     case rai::BT_kinematic:
       actor = mPhysics->createRigidDynamic(conv_Transformation2PxTrans(b->X));
-      actor->setRigidDynamicFlag(PxRigidDynamicFlag::eKINEMATIC, true);
+      actor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
       break;
     case rai::BT_none:
       HALT("this shoudn't be none BT!?")
@@ -488,7 +488,8 @@ void sPhysXInterface::addLink(rai::Frame *b, physx::PxMaterial *mMaterial) {
       if(&s->frame==b) {
         shape = actor->createShape(*geometry, *mMaterial);
       } else {
-        shape = actor->createShape(*geometry, *mMaterial, conv_Transformation2PxTrans(s->frame.Q));
+        NIY
+//        shape = actor->createShape(*geometry, *mMaterial, conv_Transformation2PxTrans(s->frame.Q));
       }
       CHECK(shape, "create shape failed!");
     }
@@ -557,9 +558,9 @@ void PhysXInterface::pushToPhysx(rai::KinematicWorld *K, rai::KinematicWorld *Kt
     if(f->inertia && f->inertia->type!= s->actorTypes(f->ID)) {
       LOG(0) <<"SWITCHING INERTIA TYPE! " <<f->name;
       s->actorTypes(f->ID) = f->inertia->type;
-      if(f->inertia->type==rai::BT_kinematic)((PxRigidDynamic*)a)->setRigidDynamicFlag(PxRigidDynamicFlag::eKINEMATIC, true);
+      if(f->inertia->type==rai::BT_kinematic)((PxRigidDynamic*)a)->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
       if(f->inertia->type==rai::BT_dynamic) {
-        ((PxRigidDynamic*)a)->setRigidDynamicFlag(PxRigidDynamicFlag::eKINEMATIC, false);
+        ((PxRigidDynamic*)a)->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, false);
         if(Kt_1) {
           rai::Vector v = (Kt_1->frames(f->ID)->X.pos - Kt_2->frames(f->ID)->X.pos)/tau;
           ((PxRigidDynamic*)a)->setLinearVelocity(PxVec3(v.x, v.y, v.z));
@@ -590,10 +591,10 @@ void PhysXInterface::ShutdownPhysX() {
       s->gScene->removeActor(*a);
       a->release();
     }
-  if(s->connection) {
-    s->connection->release();
-    s->connection=NULL;
-  }
+//  if(s->connection) {
+//    s->connection->release();
+//    s->connection=NULL;
+//  }
   if(s->gScene) {
     s->gScene->release();
     s->gScene = NULL;

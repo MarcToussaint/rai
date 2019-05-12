@@ -255,10 +255,16 @@ void rai::Frame::setPointCloud(const std::vector<double>& points){
   getShape().mesh().V.clear().operator=(points).reshape(-1, 3);
 }
 
-void rai::Frame::setConvexMesh(const std::vector<double>& points){
-  getShape().type() = ST_mesh;
-  getShape().mesh().V.clear().operator=(points).reshape(-1, 3);
-  getShape().mesh().makeConvexHull();
+void rai::Frame::setConvexMesh(const std::vector<double>& points, double radius){
+  if(!radius){
+    getShape().type() = ST_mesh;
+    getShape().mesh().V.clear().operator=(points).reshape(-1, 3);
+    getShape().mesh().makeConvexHull();
+  }else{
+    getShape().type() = ST_ssCvx;
+    getShape().sscCore().V.clear().operator=(points).reshape(-1, 3);
+    getShape().mesh().setSSCvx(getShape().sscCore(), radius);
+  }
 }
 
 void rai::Frame::setColor(const std::vector<double>& color){
