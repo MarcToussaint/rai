@@ -76,7 +76,7 @@ struct sRobotOperation : Thread, GLDrawer{
 
   void glDraw(OpenGL& gl){
     //        auto lock = stepMutex(RAI_HERE);
-    glStandardScene(NULL);
+    glStandardScene(NULL, gl);
     K_ref.glDraw(gl);
 //    auto lock = gl.dataLock(RAI_HERE);
     if(useBaxter){

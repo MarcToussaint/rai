@@ -17,6 +17,7 @@
 #include <RosCom/rosCamera.h>
 
 struct BulletInterface;
+struct PhysXInterface;
 
 namespace ry{
 
@@ -71,6 +72,8 @@ namespace ry{
   };
 
   struct RyBullet { std::shared_ptr<BulletInterface> bullet; };
+
+  struct RyPhysX { std::shared_ptr<PhysXInterface> physx; };
 
   struct RyOperate { std::shared_ptr<RobotOperation> R; };
 

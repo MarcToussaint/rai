@@ -1,4 +1,5 @@
 #include <Core/thread.h>
+#include <Core/array.h>
 
 struct OpencvCamera : Thread {
   ptr<struct sOpencvCamera> s;

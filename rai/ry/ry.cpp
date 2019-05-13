@@ -6,6 +6,7 @@
 #include <Kin/frame.h>
 #include <Kin/kin.h>
 #include <Kin/kin_bullet.h>
+#include <Kin/kin_physx.h>
 #include <Perception/depth2PointCloud.h>
 
 #include <pybind11/pybind11.h>
@@ -398,6 +399,12 @@ PYBIND11_MODULE(libry, m) {
     ry::RyBullet bullet;
     bullet.bullet = make_shared<BulletInterface>(self.get());
     return bullet;
+  } )
+
+  .def("physx", [](ry::Config& self){
+    ry::RyPhysX physx;
+    physx.physx = make_shared<PhysXInterface>(self.set());
+    return physx;
   } )
 
   .def("operate", [](ry::Config& self, const char* rosNodeName){
@@ -944,6 +951,31 @@ PYBIND11_MODULE(libry, m) {
 
   .def("setState", [](ry::RyBullet& self, ry::Config& C, const pybind11::array& velocities){
     self.bullet->pushFullState(C.get()->frames, numpy2arr(velocities));
+  } )
+
+  ;
+
+  //===========================================================================
+
+  py::class_<ry::RyPhysX>(m, "RyPhysX")
+  .def("step", [](ry::RyPhysX& self){
+    self.physx->step();
+  } )
+
+  .def("step", [](ry::RyPhysX& self, ry::Config& C){
+    self.physx->pushToPhysx(&C.get()());
+    self.physx->step();
+    self.physx->pullFromPhysx(&C.set()());
+  } )
+
+  .def("getState", [](ry::RyPhysX& self, ry::Config& C){
+    arr V;
+    self.physx->pullFromPhysx(&C.set()(), V);
+    return pybind11::array(V.dim(), V.p);
+  } )
+
+  .def("setState", [](ry::RyPhysX& self, ry::Config& C, const pybind11::array& velocities){
+    self.physx->pushToPhysx(&C.get()(), numpy2arr(velocities));
   } )
 
   ;

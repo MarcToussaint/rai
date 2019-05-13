@@ -31,7 +31,7 @@ struct PhysXInterface : GLDrawer {
   
   void step(double tau=.03, bool withKinematicPush=true);
   
-  void pushToPhysx(rai::KinematicWorld *K=NULL, rai::KinematicWorld *Kt_1=NULL, rai::KinematicWorld *Kt_2=NULL, double tau=-1., bool onlyKinematic=true);
+  void pushToPhysx(const rai::KinematicWorld *K=NULL, const arr& vels=NoArr, rai::KinematicWorld *Kt_1=NULL, rai::KinematicWorld *Kt_2=NULL, double tau=-1., bool onlyKinematic=true);
   void pullFromPhysx(rai::KinematicWorld *K=NULL, arr &vels=NoArr);
   
   void setArticulatedBodiesKinematic();
