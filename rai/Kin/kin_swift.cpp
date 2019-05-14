@@ -20,6 +20,7 @@
 #include "frame.h"
 #include <Algo/ann.h>
 
+#define RAI_extern_SWIFT
 #ifdef RAI_extern_SWIFT
 
 #ifdef RAI_SINGLE

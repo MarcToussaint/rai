@@ -1226,6 +1226,7 @@ Singleton<Graph> registry;
 
 struct RegistryInitializer {
   Mutex lock;
+//  Graph cfgParameters;
   RegistryInitializer() {
     int n;
     for(n=1; n<rai::argc; n++) {

@@ -42,6 +42,7 @@
 //#  include <Plot/plot.h>
 #endif
 
+#define RAI_extern_ply
 #ifdef RAI_extern_ply
 #  include <Geo/ply/ply.h>
 #endif

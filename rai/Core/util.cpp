@@ -1508,6 +1508,7 @@ template rai::String rai::getParameter<rai::String>(const char*);
 template rai::String rai::getParameter<rai::String>(const char*, const rai::String&);
 
 template bool rai::checkParameter<uint>(const char*);
+template bool rai::checkParameter<int>(const char*);
 template bool rai::checkParameter<bool>(const char*);
 template bool rai::checkParameter<rai::String>(const char*);
 
