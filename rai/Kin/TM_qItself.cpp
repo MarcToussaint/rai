@@ -122,7 +122,7 @@ void TM_qItself::phi(arr& y, arr& J, const WorldL& Ktuple) {
   uint qN=q_bar(0).N;
   for(uint i=0; i<=k; i++) if(q_bar(i).N!=qN) { handleSwitches=true; break; }
   if(handleSwitches) { //when bodies are selected, switches don't have to be handled
-    CHECK(!selectedBodies.N,"doesn't work for this...")
+    CHECK(!selectedBodies.N, "doesn't work for this...")
     uint nFrames = Ktuple(offset)->frames.N;
     JointL jointMatchLists(k+1, nFrames); //for each joint of [0], find if the others have it
     jointMatchLists.setZero();

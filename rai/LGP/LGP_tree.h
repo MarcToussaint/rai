@@ -9,7 +9,6 @@
 #pragma once
 
 #include "LGP_node.h"
-//#include <Geo/geoms.h>
 #include <Core/thread.h>
 
 struct KinPathViewer;
@@ -48,6 +47,8 @@ struct LGP_Tree : GLDrawer {
   LGP_Node *root=0, *focusNode=0;
   FOL_World fol;
   rai::KinematicWorld kin;
+
+  KOMO finalGeometryObjectives;
   
   rai::Array<std::shared_ptr<KinPathViewer>> views; //displays for the 3 different levels
   

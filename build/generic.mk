@@ -151,7 +151,7 @@ SWIG_FLAGS=-c++ -python $(SWIG_INCLUDE)
 
 BUILDS := $(DEPEND:%=inPath_makeLib/%) $(BUILDS)
 LIBS := $(DEPEND:%=-l%) $(LIBS)
-CXXFLAGS := $(DEPEND:%=-DRAI_%) $(CXXFLAGS)
+#CXXFLAGS := $(DEPEND:%=-DRAI_%) $(CXXFLAGS)
 
 
 ################################################################################

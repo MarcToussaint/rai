@@ -7,6 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "LGP_node.h"
+#include "LGP_tree.h"
 #include "bounds.h"
 
 #include <MCTS/solver_PlainMC.h>
@@ -38,10 +39,10 @@ void LGP_Node::resetData() {
   highestBound=0.;
 }
 
-LGP_Node::LGP_Node(rai::KinematicWorld& kin, FOL_World& _fol, uint levels)
-  : parent(NULL), step(0), time(0.), id(COUNT_node++),
-    fol(_fol),
-    startKinematics(kin),
+LGP_Node::LGP_Node(LGP_Tree* _tree, uint levels)
+  : parent(NULL), tree(_tree), step(0), time(0.), id(COUNT_node++),
+    fol(tree->fol),
+    startKinematics(tree->kin),
     L(levels) {
   //this is the root node!
   fol.reset_state();
@@ -53,7 +54,7 @@ LGP_Node::LGP_Node(rai::KinematicWorld& kin, FOL_World& _fol, uint levels)
 }
 
 LGP_Node::LGP_Node(LGP_Node* parent, MCTS_Environment::Handle& a)
-  : parent(parent), step(parent->step+1), id(COUNT_node++),
+  : parent(parent), tree(parent->tree), step(parent->step+1), id(COUNT_node++),
     fol(parent->fol),
     startKinematics(parent->startKinematics),
     L(parent->L) {
@@ -106,7 +107,12 @@ void LGP_Node::computeEndKinematics(){
   effKinematics.copy(startKinematics, true);
   KOMO tmp;
   tmp.setModel(startKinematics, false);
-  tmp.setTiming(1., 1, 10., 1);
+  double maxPhase=0;
+  for(const SkeletonEntry& s:S){
+    if(s.phase0>maxPhase) maxPhase=s.phase0;
+    if(s.phase1>maxPhase) maxPhase=s.phase1;
+  }
+  tmp.setTiming(maxPhase+1., 1, 5., 1);
   tmp.setSkeleton(S);
 //  tmp.reportProblem();
   for(rai::KinematicSwitch *s : tmp.switches) s->apply(effKinematics);
@@ -126,12 +132,14 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
   komo.fil = new ofstream(OptLGPDataPath + STRING("komo-" <<id <<'-' <<step <<'-' <<bound));
   
   Skeleton S = getSkeleton({"touch", "above", "inside", "impulse",
-                            "stable", "stableOn", "dynamic", "dynamicTrans", "dynamicOn",
-                            "push", "graspSlide", "liftDownUp"
+                            "stable", "stableOn", "dynamic", "dynamicTrans", "dynamicOn", "break",
+                            "push", "graspSlide", "liftDownUp", "alignByInt"
                            });
 
+  if(komo.fil) writeSkeleton(*komo.fil, S, getSwitchesFromSkeleton(S));
+
   if(komo.verbose>1){
-    writeSkeleton(S, getSwitchesFromSkeleton(S));
+    writeSkeleton(cout, S, getSwitchesFromSkeleton(S));
   }
 
   //ensure the effective kinematics are computed when BD_pose
@@ -152,6 +160,18 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
                  startKinematics, (parent?parent->effKinematics:startKinematics),
                  collisions,
                  waypoints);
+
+  for(Objective *o:tree->finalGeometryObjectives.objectives){
+    cout <<"FINAL objective: " <<*o <<endl;
+    Objective *co = komo.addObjective(0,0, o->map, o->type);
+    co->setCostSpecs(komo.T-1, komo.T-1, komo.sparseOptimization);
+    cout <<"FINAL objective: " <<*co <<endl;
+  }
+
+  if(komo.fil){
+    komo.reportProblem(*komo.fil);
+    (*komo.fil) <<komo.getProblemGraph(false);
+  }
 
 //  if(level==BD_seq) komo.denseOptimization=true;
 
@@ -221,6 +241,75 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
   if(!feasible(bound))
     labelInfeasible();
     
+}
+
+ptr<KOMO> LGP_Node::optSubCG(const SubCG& scg, bool collisions, int verbose) {
+  ptr<KOMO> komo = std::make_shared<KOMO>();
+
+  komo->verbose = rai::MAX(verbose,0);
+
+  if(komo->verbose>0){
+    cout <<"########## OPTIM SubCG: " <<scg <<endl;
+  }
+
+//  komo->fil = new ofstream(OptLGPDataPath + STRING("komo-" <<id <<'-' <<step <<'-' <<bound));
+
+  CG2komo(*komo, scg, startKinematics, collisions);
+  return komo;
+
+
+  if(komo->fil){
+    komo->reportProblem(*komo->fil);
+    (*komo->fil) <<komo->getProblemGraph(false);
+  }
+
+//  if(level==BD_seq) komo->denseOptimization=true;
+
+  //-- optimize
+  DEBUG(FILE("z.fol") <<fol;);
+  DEBUG(komo->getReport(false, 1, FILE("z.problem")););
+  if(komo->verbose>1) komo->reportProblem();
+  if(komo->verbose>5) komo->animateOptimization = komo->verbose-5;
+
+  try {
+    komo->run();
+  } catch(std::runtime_error& err) {
+    cout <<"KOMO CRASHED: " <<err.what() <<endl;
+    komo.reset();
+    return komo;
+  }
+  if(!komo->denseOptimization) COUNT_evals += komo->opt->newton.evals;
+  COUNT_kin += rai::KinematicWorld::setJointStateCount;
+  COUNT_time += komo->runTime;
+
+  DEBUG(komo->getReport(false, 1, FILE("z.problem")););
+//  cout <<komo->getReport(true) <<endl;
+//  komo->reportProxies(cout, 0.);
+//  komo->checkGradients();
+
+  Graph result = komo->getReport(komo->verbose>0);
+  DEBUG(FILE("z.problem.cost") <<result;);
+  double cost_here = result.get<double>({"total","sqrCosts"});
+  double constraints_here = result.get<double>({"total","constraints"});
+  bool feas = (constraints_here<1.);
+
+
+  return komo;
+}
+
+ptr<CG> LGP_Node::getCGO(bool collisions, int verbose) {
+  Skeleton S = getSkeleton({"touch", "above", "inside", "impulse",
+                            "initial", "stable", "stableOn", "dynamic", "dynamicTrans", "dynamicOn", "break",
+                            "push", "graspSlide", "liftDownUp"
+                           });
+
+  if(verbose>1){
+    writeSkeleton(cout, S, getSwitchesFromSkeleton(S));
+  }
+
+  return skeleton2CGO(S,
+                      startKinematics,
+                      collisions);
 }
 
 void LGP_Node::setInfeasible() {
@@ -339,7 +428,7 @@ Skeleton LGP_Node::getSkeleton(StringA predicateFilter,  bool finalStateOnly) co
 
         rai::Enum<SkeletonSymbol> sym(symbols.first());
         if(k_end==states.N-1) {
-          skeleton.append(SkeletonEntry({times(k), times.last(), sym, symbols({1,-1})}));
+          skeleton.append(SkeletonEntry({times(k), -2., sym, symbols({1,-1})}));
         } else {
           skeleton.append(SkeletonEntry({times(k), times(k_end), sym, symbols({1,-1})}));
         }

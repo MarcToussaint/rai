@@ -20,6 +20,7 @@
 #include "frame.h"
 #include <Algo/ann.h>
 
+#define RAI_extern_SWIFT
 #ifdef RAI_extern_SWIFT
 
 #ifdef RAI_SINGLE
@@ -55,7 +56,7 @@ SwiftInterface::SwiftInterface(const rai::KinematicWorld& world, double _cutoff)
   rai::Shape *s;
   for(rai::Frame *f: world.frames) if((s=f->shape) && s->cont) {
     //cout <<'.' <<flush;
-//    cout <<'.' <<f->name <<flush;
+    //cout <<'.' <<f->name <<flush;
       add=true;
       switch(s->type()) {
         case rai::ST_none: HALT("shapes should have a type - somehow wrong initialization..."); break;

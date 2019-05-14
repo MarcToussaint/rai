@@ -8,6 +8,7 @@
 
 #include "pairCollision.h"
 
+#define RAI_extern_GJK
 #ifdef RAI_extern_GJK
 extern "C" {
 #  include "GJK/gjk.h"

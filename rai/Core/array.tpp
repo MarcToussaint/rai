@@ -1629,9 +1629,10 @@ rai::Array<T>::setGrid(uint dim, T lo, T hi, uint steps) {
 
 //----- sorting etc
 /// sort this list
-template<class T> void rai::Array<T>::sort(ElemCompare comp) {
+template<class T> rai::Array<T>& rai::Array<T>::sort(ElemCompare comp) {
   T *pstop=p+N;
   std::sort(p, pstop, comp);
+  return *this;
 }
 
 /// check whether list is sorted
@@ -1702,6 +1703,11 @@ template<class T> void rai::Array<T>::removeValueInSorted(const T& x, ElemCompar
   remove(i);
 }
 
+template<class T> rai::Array<T>& rai::Array<T>::removeDoublesInSorted() {
+  for(int i=N-1;i>0;i--) if(elem(i)==elem(i-1)) remove(i);
+  return *this;
+}
+
 //***** permutations
 
 /// permute the elements \c i and \c j
@@ -1760,6 +1766,25 @@ template<class T> void rai::Array<T>::shift(int offset, bool wrapAround) {
     memmove(p, p+m, sizeT*(N-m));
     if(wrapAround) memmove(p+(N-m), tmp.p, sizeT*m); else memset(p+(N-m), 0, sizeT*m);
   }
+}
+
+template<typename T> struct is_shared_ptr : std::false_type {};
+template<typename T> struct is_shared_ptr<std::shared_ptr<T>> : std::true_type {};
+
+template <class T>
+typename std::enable_if<is_shared_ptr<T>::value, std::ostream&>::type
+operator<<(std::ostream& os, const rai::Array<T>& x) {
+  os <<'{';
+  for(uint i=0; i<x.N; i++){ if(x.elem(i)) os <<' ' <<*x.elem(i); else os <<" <NULL>"; }
+  os <<" }" <<std::flush;
+  //  x.write(os);
+  return os;
+}
+
+template <class T>
+typename std::enable_if<!is_shared_ptr<T>::value, std::ostream&>::type
+operator<<(std::ostream& os, const rai::Array<T>& x) {
+  x.write(os); return os;
 }
 
 /** @brief prototype for operator<<, writes the array by separating elements with ELEMSEP, separating rows with LINESEP, using BRACKETS[0] and BRACKETS[1] to brace the data, optionally writs a dimensionality tag before the data (see below), and optinally in binary format */
@@ -3580,10 +3605,18 @@ BinaryOperator(- , -=);
 /// calls Array<T>::read
 template<class T> std::istream& operator>>(std::istream& is, Array<T>& x) { x.read(is); return is; }
 
+
 /// calls Array<T>::write
-template<class T> std::ostream& operator<<(std::ostream& os, const Array<T>& x) {
-  x.write(os); return os;
-}
+//template<class T> std::ostream& operator<<(std::ostream& os, const Array<T>& x) {
+//  if(is_shared_ptr<T>::value == true){
+//    os <<'{';
+//    for(uint i=0; i<x.N; i++){ if(x.elem(i)) os <<' ' <<*x.elem(i); else os <<" <NULL>"; }
+//    os <<" }" <<std::flush;
+//  }else{
+//    x.write(os);
+//  }
+//  return os;
+//}
 
 /// equal in size and all elements
 template<class T> bool operator==(const Array<T>& v, const Array<T>& w) {

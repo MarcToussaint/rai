@@ -100,7 +100,7 @@ struct Graph : NodeL {
   explicit Graph(const char* filename);                  ///< read from a file
   explicit Graph(istream& is);                           ///< read from a stream
   Graph(const std::map<std::string, std::string>& dict); ///< useful to represent Python dicts
-  Graph(std::initializer_list<struct Nod> list);         ///< initialize, e.g.: {"x", "b", {"a", 3.}, {"b", {"x"}, 5.}, {"c", rai::String("BLA")} };
+  Graph(std::initializer_list<struct NodeInitializer> list);         ///< initialize, e.g.: {"x", "b", {"a", 3.}, {"b", {"x"}, 5.}, {"c", rai::String("BLA")} };
   Graph(std::initializer_list<const char*> list);
   Graph(const Graph& G);                                 ///< copy constructor
   ~Graph();
@@ -120,7 +120,7 @@ struct Graph : NodeL {
   Node_typed<int>* newNode(const uintA& parentIdxs); ///< add 'vertex tupes' (like edges) where vertices are referred to by integers
   Graph& newSubgraph(const StringA& keys={}, const NodeL& parents={}, const Graph& x=NoGraph);
   void appendDict(const std::map<std::string, std::string>& dict);
-  Graph& newNode(const Nod& ni); ///< (internal) append a node initializer
+  Graph& newNode(const NodeInitializer& ni); ///< (internal) append a node initializer
   
   //-- deleting nodes
   void delNode(Node *n) { delete n; }
@@ -163,6 +163,7 @@ struct Graph : NodeL {
   //-- editing nodes
   Node *edit(Node *ed); ///< ed describes how another node should be edited; ed is removed after editing is done
   void edit(const NodeL& L) { for(Node *ed:L) edit(ed); }
+  void collapse(Node *a, Node *b);
   
   //-- hierarchical finding: up and down in the graph hierarchy
   const Graph* getRootGraph() const;
@@ -263,22 +264,26 @@ struct ArrayG : rai::Array<T*>, GraphEditCallback {
 
 /// This is a Node initializer, specifically for Graph(std::initializer_list<struct Nod> list); and the operator<< below
 /// not to be used otherwise
-struct Nod {
-  Nod(const char* key);
-  Nod(const char* key, const char* stringValue);
-  template<class T> Nod(const char* key, const T& x);
-  template<class T> Nod(const char* key, const StringA& parents, const T& x);
+struct NodeInitializer {
+  NodeInitializer(const char* key, const char* stringValue);
+  template<class T> NodeInitializer(const char* key, const T& x);
+  template<class T> NodeInitializer(const char* key, const StringA& parents, const T& x);
   Graph G;
   Node *n;
   StringA parents;
 };
 
 /// pipe node initializers into a graph (to append nodes)
-inline Graph& operator<<(Graph& G, const Nod& n) { G.newNode(n); return G; }
+inline Graph& operator<<(Graph& G, const NodeInitializer& n) { G.newNode(n); return G; }
 
 //===========================================================================
+//
+// algorithms
 
 NodeL neighbors(Node*);
+
+int distance(NodeL A, NodeL B);
+
 
 //===========================================================================
 
@@ -311,7 +316,7 @@ typedef rai::Array<std::shared_ptr<Type> > TypeInfoL;
 //===========================================================================
 //===========================================================================
 //
-// definition of template methods
+// definition of template methods - could move this to graph.tpp
 //
 //===========================================================================
 //===========================================================================
@@ -424,12 +429,12 @@ template<class T> T& Node::get(const char* key) {
   return x->get<T>(key);
 }
 
-template<class T> Nod::Nod(const char* key, const T& x) {
+template<class T> NodeInitializer::NodeInitializer(const char* key, const T& x) {
   n = G.newNode<T>(x);
   n->keys.append(STRING(key));
 }
 
-template<class T> Nod::Nod(const char* key, const StringA& parents, const T& x)
+template<class T> NodeInitializer::NodeInitializer(const char* key, const StringA& parents, const T& x)
   : parents(parents) {
   n = G.newNode<T>(x);
   n->keys.append(STRING(key));

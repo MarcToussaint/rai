@@ -23,12 +23,14 @@ enum SkeletonSymbol{
   SY_above,
   SY_inside,
   SY_impulse,
+  SY_initial,
   SY_stable,
   SY_stableOn,
   SY_dynamic,
   SY_dynamicOn,
   SY_dynamicTrans,
   SY_liftDownUp,
+  SY_break,
 
   SY_contact,
   SY_bounce,
@@ -37,7 +39,12 @@ enum SkeletonSymbol{
   SY_magicTrans,
 
   SY_push,
-  SY_graspSlide
+  SY_graspSlide,
+
+  SY_noCollision,
+  SY_identical,
+
+  SY_alignByInt
 };
 
 
@@ -45,7 +52,7 @@ struct SkeletonEntry {
   double phase0=-1.;
   double phase1=-1.;
   rai::Enum<SkeletonSymbol> symbol;
-  StringA frames;
+  StringA frames; //strings referring to things
   SkeletonEntry() {}
   SkeletonEntry(double phase0, double phase1, SkeletonSymbol symbol, StringA frames) : phase0(phase0), phase1(phase1), symbol(symbol), frames(frames){}
   void write(ostream& os) const { os <<symbol <<' '; frames.write(os," ",NULL,"()"); os <<" from " <<phase0 <<" to " <<phase1; }
@@ -53,7 +60,7 @@ struct SkeletonEntry {
 stdOutPipe(SkeletonEntry)
 typedef rai::Array<SkeletonEntry> Skeleton;
 intA getSwitchesFromSkeleton(const Skeleton& S);
-void writeSkeleton(const Skeleton& S, const intA& switches={});
+void writeSkeleton(std::ostream& os, const Skeleton& S, const intA& switches={});
 
 //===========================================================================
 
@@ -75,6 +82,7 @@ struct KOMO : NonCopyable {
   
   //-- optimizer
   bool denseOptimization=false;///< calls optimization with a dense (instead of banded) representation
+  bool sparseOptimization=false;///< calls optimization with a sparse (instead of banded) representation
   OptConstrained *opt=0;       ///< optimizer; created in run()
   arr x, dual;                 ///< the primal and dual solution
   arr z, splineB;              ///< when a spline representation is used: z are the nodes; splineB the B-spline matrix; x = splineB * z
@@ -144,6 +152,7 @@ struct KOMO : NonCopyable {
 
   //-- tasks mid-level
   void setSquaredQAccelerations(double startTime=0., double endTime=-1., double prec=1.);
+  void setSquaredQAccelerations_novel(double startTime=0., double endTime=-1., double prec=1., double homingPrec=1e-2);
   void setSquaredQVelocities(double startTime=0., double endTime=-1., double prec=1.);
   void setFixEffectiveJoints(double startTime=0., double endTime=-1., double prec=3e1);
   void setFixSwitchedObjects(double startTime=0., double endTime=-1., double prec=3e1);
@@ -293,7 +302,8 @@ struct KOMO : NonCopyable {
     Conv_MotionProblem_DenseProblem(KOMO& _komo) : komo(_komo) {}
     void clear(){ dimPhi=0; }
 
-    void getStructure(uintA& variableDimensions, intAA& featureTimes, ObjectiveTypeA& featureTypes);
+    void getDimPhi();
+
     virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda);
   } dense_problem;
 
@@ -304,8 +314,8 @@ struct KOMO : NonCopyable {
     Conv_MotionProblem_GraphProblem(KOMO& _komo) : komo(_komo) {}
     void clear(){ dimPhi=0; }
 
-    virtual void getStructure(uintA& variableDimensions, uintAA& featureVariables, ObjectiveTypeA& featureTypes);
-    virtual void phi(arr& phi, arrA& J, arrA& H, const arr& x, arr& lambda);
+    virtual void getStructure(uintA& variableDimensions, intAA& featureVariables, ObjectiveTypeA& featureTypes);
+    virtual void phi(arr& phi, arrA& J, arrA& H, const arr& x);
   } graph_problem;
 };
 

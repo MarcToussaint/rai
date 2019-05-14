@@ -83,6 +83,8 @@ void TEST(PR2){
   }
 
   KOMO_ext komo;
+//  komo.denseOptimization=true;
+  komo.sparseOptimization=true;
   komo.setModel(K);
   komo.setPathOpt(1., 100, 10.);
   komo.setSquaredQAccelerations();

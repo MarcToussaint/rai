@@ -31,6 +31,7 @@ extern bool LGP_useHoming;
 
 struct LGP_Node {
   LGP_Node *parent;
+  struct LGP_Tree* tree=0;
   rai::Array<LGP_Node*> children;
   uint step;            ///< decision depth/step of this node
   double time;          ///< real time
@@ -68,7 +69,7 @@ struct LGP_Node {
   rai::String note;
   
   /// root node init
-  LGP_Node(rai::KinematicWorld& kin, FOL_World& fol, uint levels);
+  LGP_Node(LGP_Tree* _tree, uint levels);
   
   /// child node creation
   LGP_Node(LGP_Node *parent, FOL_World::Handle& a);
@@ -78,6 +79,8 @@ struct LGP_Node {
   //- computations on the node
   void expand(int verbose=0);           ///< expand this node (symbolically: compute possible decisions and add their effect nodes)
   void optBound(BoundType bound, bool collisions=false, int verbose=-1);
+  ptr<KOMO> optSubCG(const SubCG& scg, bool collisions, int verbose);
+  ptr<CG> getCGO(bool collisions=false, int verbose=-1);
   void resetData();
   void computeEndKinematics();
   

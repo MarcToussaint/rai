@@ -122,6 +122,9 @@ KinPathViewer::~KinPathViewer() {
 
 void KinPathViewer::open() {
   gl = new OpenGL(STRING("KinPathViewer: "<<configurations.name()));
+  gl->add(glStandardScene);
+  gl->add(copy);
+  gl->camera.setDefault();
 }
 
 void KinPathViewer::close() {
@@ -131,7 +134,6 @@ void KinPathViewer::close() {
 void KinPathViewer::step() {
   uint T,tt;
   {
-    HALT("don't use gl()!!!")
     auto _dataLock = gl->dataLock(RAI_HERE);
     configurations.readAccess();
     T=configurations().N;
@@ -144,7 +146,7 @@ void KinPathViewer::step() {
   }
   if(T) {
     copy.orsDrawMarkers=false;
-    gl->update(STRING("(time " <<tprefix+int(tt) <<'/' <<tprefix+int(T) <<")\n" <<text).p); //, false, false, true);
+    gl->update(STRING("(time " <<tprefix+int(tt) <<'/' <<tprefix+int(T) <<")\n" <<text).p, true); //, false, false, true);
     if(writeToFiles) write_ppm(gl->captureImage,STRING("vid/"<<std::setw(4)<<std::setfill('0')<<tprefix+int(tt)<<".ppm"));
   }
   t++;
@@ -274,7 +276,7 @@ ComputeCameraView::~ComputeCameraView() {
 
 void ComputeCameraView::open() {
   gl.add(glStandardLight);
-  gl.addDrawer(&copy);
+  gl.add(copy);
 }
 
 void ComputeCameraView::close() {

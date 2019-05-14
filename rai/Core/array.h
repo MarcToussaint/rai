@@ -229,6 +229,7 @@ template<class T> struct Array : std::vector<T>, Serializable {
   int findValue(const T& x) const;
   void findValues(rai::Array<uint>& indices, const T& x) const;
   bool contains(const T& x) const { return findValue(x)!=-1; }
+  bool contains(const Array<T>& X) const { for(const T& x:X) if(findValue(x)==-1) return false; return true; }
   bool containsDoubles() const;
   uint getMemsize() const; // -> remove
   void getIndexTuple(Array<uint> &I, uint i) const; // -> remove?
@@ -261,13 +262,16 @@ template<class T> struct Array : std::vector<T>, Serializable {
   void removeLast();
   
   /// @name sorting and permuting this array
-  void sort(ElemCompare comp=lowerEqual<T>);
+  Array<T>& sort(ElemCompare comp=lowerEqual<T>);
   bool isSorted(ElemCompare comp=lowerEqual<T>) const;
   uint rankInSorted(const T& x, ElemCompare comp=lowerEqual<T>, bool rankAfterIfEqual=false) const;
   int findValueInSorted(const T& x, ElemCompare comp=lowerEqual<T>) const;
+  bool containsInSorted(const T& x, ElemCompare comp=lowerEqual<T>) const { return findValueInSorted(x)!=-1; }
+  bool containsInSorted(const Array<T>& X, ElemCompare comp=lowerEqual<T>) const { for(const T& x:X) if(findValue(x)==-1) return false; return true; }
   uint insertInSorted(const T& x, ElemCompare comp=lowerEqual<T>, bool insertAfterIfEqual=false);
   uint setAppendInSorted(const T& x, ElemCompare comp=lowerEqual<T>);
   void removeValueInSorted(const T& x, ElemCompare comp=lowerEqual<T>);
+  Array<T>& removeDoublesInSorted();
   void reverse();
   void reverseRows();
   void permute(uint i, uint j);
@@ -362,7 +366,7 @@ template<class T> Array<byte> operator==(const Array<T>& v, const T& w); //eleme
 template<class T> bool operator!=(const Array<T>& v, const Array<T>& w);
 template<class T> bool operator<(const Array<T>& v, const Array<T>& w);
 template<class T> std::istream& operator>>(std::istream& is, Array<T>& x);
-template<class T> std::ostream& operator<<(std::ostream& os, const Array<T>& x);
+//template<class T> std::ostream& operator<<(std::ostream& os, const Array<T>& x);
 
 //element-wise update operators
 #ifndef SWIG
@@ -787,7 +791,7 @@ template<class T> rai::Array<T> setSectionSorted(const rai::Array<T>& x, const r
     bool (*comp)(const T& a, const T& b));
 template<class T> void setMinus(rai::Array<T>& x, const rai::Array<T>& y);
 template<class T> void setMinusSorted(rai::Array<T>& x, const rai::Array<T>& y,
-                                      bool (*comp)(const T& a, const T& b));
+                                      bool (*comp)(const T& a, const T& b)=rai::lowerEqual<T>);
 template<class T> uint numberSharedElements(const rai::Array<T>& x, const rai::Array<T>& y);
 template<class T> void rndInteger(rai::Array<T>& a, int low=0, int high=1, bool add=false);
 template<class T> void rndUniform(rai::Array<T>& a, double low=0., double high=1., bool add=false);

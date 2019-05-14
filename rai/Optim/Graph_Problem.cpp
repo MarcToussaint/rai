@@ -8,6 +8,32 @@
 
 #include "Graph_Problem.h"
 
+bool GraphProblem::checkStructure(const arr& x) {
+  arr y;
+  arrA J, H;
+  ObjectiveTypeA featureTypes;
+  uintA variableDimensions;
+  intAA featureVariables;
+  getStructure(variableDimensions, featureVariables, featureTypes);
+
+  phi(y, J, H, x);
+
+  uint m=y.N;
+
+  CHECK_EQ(sum(variableDimensions), x.N, "variable dimensions don't match");
+  CHECK_EQ(featureVariables.N, m, "");
+  CHECK_EQ(J.N, m, "");
+  CHECK_EQ(featureTypes.N, m, "");
+
+  for(uint i=0; i<m; i++) {
+    uint d=0;
+    intA& vars=featureVariables(i);
+    for(int& j:vars) if(j>=0) d += variableDimensions(j);
+    CHECK_EQ(J(i).N, d, i<<"th Jacobian has wrong dim");
+  }
+  return true;
+}
+
 Conv_Graph_ConstrainedProblem::Conv_Graph_ConstrainedProblem(GraphProblem& _G) : G(_G) {
   G.getStructure(variableDimensions, featureVariables, featureTypes);
   varDimIntegral = integral(variableDimensions);
@@ -49,7 +75,7 @@ void Conv_Graph_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA
 
 //sparse
 void Conv_Graph_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda) {
-  G.phi(phi, J_G, H_G, x, lambda);
+  G.phi(phi, J_G, H_G, x);
 
   if(!!tt) tt = featureTypes;
 
@@ -70,7 +96,7 @@ void Conv_Graph_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA
     for(uint i=0; i<J_G.N; i++) { //loop over features
       arr& Ji = J_G(i);
       uint c=0;
-      for(uint& j:featureVariables(i)) { //loop over variables of this features
+      for(int& j:featureVariables(i)) if(j>=0){ //loop over variables of this features
         uint xjN = variableDimensions(j);
         for(uint xi=0; xi<xjN; xi++) { //loop over variable dimension
           double J_value = Ji.elem(c);

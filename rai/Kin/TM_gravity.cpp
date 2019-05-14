@@ -279,20 +279,36 @@ extern bool isSwitched(rai::Frame *f0, rai::Frame *f1);
 void TM_ZeroQVel::phi(arr& y, arr& J, const WorldL& Ktuple){
   TM_qItself q({(uint)i}, false);
   q.order=order;
+  if(!Ktuple(-1)->frames(i)->joint){
+    y.resize(0).setZero();
+    if(!!J) J.resize(0, getKtupleDim(Ktuple).last()).setZero();
+    return;
+  }
   if(order==1 && isSwitched(Ktuple(-1)->frames(i), Ktuple(-2)->frames(i))){
     y.resize(Ktuple(-1)->frames(i)->joint->dim).setZero();
     if(!!J) J.resize(y.N, getKtupleDim(Ktuple).last()).setZero();
     return;
   }
   q.Feature::__phi(y, J, Ktuple);
+  if(y.N==3){
+    arr s = ARR(10.,10.,1.);
+    y = s%y;
+    J = s%J;
+  }
+  if(y.N==7){
+    arr s = ARR(10., 10., 10., 1., 1., 1., 1.);
+    y = s%y;
+    J = s%J;
+  }
 }
 
 uint TM_ZeroQVel::dim_phi(const rai::KinematicWorld& K){
   rai::Frame *a = K.frames(i);
   if(!a->joint){
-    LOG(-1) <<"reconfiguring to become link";
-    a = a->getUpwardLink();
-    i = a->ID;
+    return 0;
+//    LOG(-1) <<"reconfiguring to become link";
+//    a = a->getUpwardLink();
+//    i = a->ID;
   }
   return a->joint->dim;
 }

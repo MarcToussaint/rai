@@ -984,7 +984,7 @@ bool rai::String::operator==(const char *s) const { return p && !strcmp(p, s); }
 bool rai::String::operator==(const String& s) const { return p && s.p && !strcmp(p, s.p); }
 bool rai::String::operator!=(const char *s) const { return !operator==(s); }
 bool rai::String::operator!=(const String& s) const { return !(operator==(s)); }
-bool rai::String::operator<(const String& s) const { return p && s.p && strcmp(p, s.p)<0; }
+bool rai::String::operator<=(const String& s) const { return p && s.p && strcmp(p, s.p)<=0; }
 
 bool rai::String::contains(const String& substring) const {
   if(!p && substring.p) return false;
@@ -1508,6 +1508,7 @@ template rai::String rai::getParameter<rai::String>(const char*);
 template rai::String rai::getParameter<rai::String>(const char*, const rai::String&);
 
 template bool rai::checkParameter<uint>(const char*);
+template bool rai::checkParameter<int>(const char*);
 template bool rai::checkParameter<bool>(const char*);
 template bool rai::checkParameter<rai::String>(const char*);
 
