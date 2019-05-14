@@ -677,6 +677,7 @@ PYBIND11_MODULE(libry, m) {
     G.newNode<rai::String>({"name"}, {}, self.frame->name);
     G.newNode<int>({"ID"}, {}, self.frame->ID);
     self.frame->write(G);
+    if(!G["X"]) G.newNode<arr>({"X"}, {}, self.frame->X.getArr7d());
     return graph2dict(G);
   } )
 

@@ -224,19 +224,23 @@ void rai::Frame::setShape(rai::ShapeType shape, const std::vector<double>& size)
 
 void rai::Frame::setPosition(const std::vector<double>& pos){
   X.pos.set(pos);
+  if(parent) calc_Q_from_parent(false);
 }
 
 void rai::Frame::setQuaternion(const std::vector<double>& quat){
   X.rot.set(quat);
   X.rot.normalize();
+  if(parent) calc_Q_from_parent(false);
 }
 
 void rai::Frame::setRelativePosition(const std::vector<double>& pos){
+  CHECK(parent, "you cannot set relative position for a frame without parent");
   Q.pos.set(pos);
   calc_X_from_parent();
 }
 
 void rai::Frame::setRelativeQuaternion(const std::vector<double>& quat){
+  CHECK(parent, "you cannot set relative position for a frame without parent");
   Q.rot.set(quat);
   Q.rot.normalize();
   calc_X_from_parent();
