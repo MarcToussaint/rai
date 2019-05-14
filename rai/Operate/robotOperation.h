@@ -18,10 +18,13 @@ struct RobotOperation {
   //-- execution
   void move(const arr& path, const arr& times, bool append=true);   ///< core method to send motion (see detailed doc in cpp)
   void move(const arrA& poses, const arr& times, bool append=true); ///< wrapper of the above: send a sequence of poses using {q1, q2, q3}
+  void moveHard(const arr& pose);
   double timeToGo();                                                ///< get the remaining time til the end of the spline
   void wait(){ while(timeToGo()) rai::wait(.1); }
 
   //-- feedback
   arr getJointPositions(const StringA& joints={});
+  bool getGripperGrabbed(const std::string& whichArm="right");
+  bool getGripperOpened(const std::string& whichArm="right");
   void sync(rai::KinematicWorld& K);                                ///< copies current robot pose into K
 };

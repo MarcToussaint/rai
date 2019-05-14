@@ -29,19 +29,19 @@ namespace ry{
 
   struct RyKOMO{
     RyKOMO(){}
-    RyKOMO(ry::Config& self){
-      komo = make_shared<KOMO>(self.get());
+    RyKOMO(ry::Config& self, bool useSwift){
+      komo = make_shared<KOMO>(self.get(), useSwift);
       config.set() = komo->world;
       komo->setIKOpt();
     }
-    RyKOMO(ry::Config& self, uint numConfigs){
+    RyKOMO(ry::Config& self, uint numConfigs, bool useSwift){
       CHECK_GE(numConfigs, 1, "");
-      komo = make_shared<KOMO>(self.get());
+      komo = make_shared<KOMO>(self.get(), useSwift);
       config.set() = komo->world;
       komo->setDiscreteOpt(numConfigs);
     }
-    RyKOMO(ry::Config& self, double phases, uint stepsPerPhase, double timePerPhase){
-      komo = make_shared<KOMO>(self.get());
+    RyKOMO(ry::Config& self, double phases, uint stepsPerPhase, double timePerPhase, bool useSwift){
+      komo = make_shared<KOMO>(self.get(), useSwift);
       config.set() = komo->world;
       komo->setPathOpt(phases, stepsPerPhase, timePerPhase);
     }

@@ -212,6 +212,7 @@ struct Transformation {
   arr getArr7d();
   arr getWrenchTransform();
   
+  void applyOnPoint(arr& pt) const;
   void applyOnPointArray(arr& pts) const;
   
   void write(std::ostream& os) const;

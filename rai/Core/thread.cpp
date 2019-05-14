@@ -256,6 +256,10 @@ Var_base::Var_base(const std::type_info& _type, const char* _name) : name(_name)
 Var_base::~Var_base() {
 }
 
+void Var_base::addCallback(const std::function<void (Var_base*)>& call, const void* callbackID){
+  callbacks.append(new Callback<void(Var_base*)>(callbackID, call));
+}
+
 int Var_base::readAccess(Thread *th) {
   rwlock.readLock();
   return revision;
@@ -282,21 +286,6 @@ int Var_base::deAccess(Thread *th) {
   return i;
 }
 
-//int VariableBase::waitForNextRevision(){
-//  revision.statusLock();
-//  revision.waitForSignal(true);
-//  int rev = revision.status;
-//  revision.statusUnlock();
-//  return rev;
-//}
-
-//int VariableBase::waitForRevisionGreaterThan(int rev) {
-//  revision.statusLock();
-//  revision.waitForStatusGreaterThan(rev, true);
-//  rev = revision.status;
-//  revision.statusUnlock();
-//  return rev;
-//}
 
 //===========================================================================
 //
@@ -380,7 +369,6 @@ rai::String CycleTimer::report() {
   rai::String s;
   s.printf("busy=[%5.1f %5.1f] cycle=[%5.1f %5.1f] load=%4.1f%% steps=%i", busyDtMean, busyDtMax, cyclDtMean, cyclDtMax, 100.*busyDtMean/cyclDtMean, steps);
   return s;
-//  fflush(stdout);
 }
 
 //===========================================================================
@@ -601,28 +589,6 @@ void Thread::threadStep() {
   event.setStatus(tsToStep);
 }
 
-//void Thread::listenTo(VariableBase& var) {
-//#if 0
-//  var.rwlock.writeLock();  //don't want to increase revision and broadcast!
-//  var.listeners.setAppend(this);
-//  var.rwlock.unlock();
-//  listensTo.setAppend(&var);
-//#else
-//  listenTo(&var.revision);
-//#endif
-//}
-
-//void Thread::stopListenTo(VariableBase& var){
-//#if 0
-//  listensTo.removeValue(&var);
-//  var.rwlock.writeLock();
-//  var.listeners.removeValue(this);
-//  var.rwlock.unlock();
-//#else
-//  stopListenTo(&var.revision);
-//#endif
-//}
-
 bool Thread::isIdle() {
   return event.getStatus()==tsIDLE;
 }
@@ -727,12 +693,12 @@ void signalhandler(int s) {
   }
   if(calls==2) {
     LOG(0) <<" -- smoothly closing modules directly" <<endl;
-    threadCloseModules(); //might lead to a hangup of the main loop, but processes should close
+//    threadCloseModules(); //might lead to a hangup of the main loop, but processes should close
     LOG(0) <<" -- DONE" <<endl;
   }
   if(calls==3) {
     LOG(0) <<" -- cancelling threads to force closing" <<endl;
-    threadCancelModules();
+//    threadCancelModules();
     LOG(0) <<" -- DONE" <<endl;
   }
   if(calls>3) {
@@ -741,165 +707,10 @@ void signalhandler(int s) {
   }
 }
 
-#if 0
-void openModules() {
-  NodeL threads = registry()->getNodesOfType<Thread*>();
-  for(Node* th:threads) { th->get<Thread*>()->open(); }
-}
-
-void stepModules() {
-  NodeL threads = registry()->getNodesOfType<Thread*>();
-  for(Node* th:threads) { th->get<Thread*>()->step(); }
-}
-
-void closeModules() {
-  NodeL threads = registry()->getNodesOfType<Thread*>();
-  for(Node* th:threads) { th->get<Thread*>()->close(); }
-}
-
-ptr<Var_base> getVariable(const char* name) {
-  return registry()->get<ptr<Var_base>>({"VariableData", name});
-}
-
-rai::Array<ptr<Var_base>*> getVariables() {
-  return registry()->getValuesOfType<ptr<Var_base>>();
-}
-
-void threadOpenModules(bool waitForOpened, bool setSignalHandler) {
-  if(setSignalHandler) signal(SIGINT, signalhandler);
-  NodeL threads = registry()->getNodesOfType<Thread*>();
-  for(Node *th: threads) th->get<Thread*>()->threadOpen();
-  if(waitForOpened) for(Node *th: threads) th->get<Thread*>()->waitForOpened();
-  for(Node *th: threads) {
-    Thread *mod=th->get<Thread*>();
-    if(mod->metronome.ticInterval>=0.) mod->threadLoop();
-    //otherwise the module is listening (hopefully)
-  }
-}
-
-void threadCloseModules() {
-  NodeL threads = registry()->getNodesOfType<Thread*>();
-  for(Node *th: threads) th->get<Thread*>()->threadClose();
-//  threadReportCycleTimes();
-}
-
-void threadCancelModules() {
-  NodeL threads = registry()->getNodesOfType<Thread*>();
-  for(Node *th: threads) th->get<Thread*>()->threadCancel();
-}
-
-void threadReportCycleTimes() {
-  cout <<"Cycle times for all Threads (msec):" <<endl;
-  NodeL threads = registry()->getNodesOfType<Thread*>();
-  for(Node *th: threads) {
-    Thread *thread=th->get<Thread*>();
-    cout <<std::setw(30) <<thread->name <<" : " <<thread->timer.report() <<endl;
-  }
-}
-#endif
-
-void threadCloseModules() {
-  NIY
-}
-
-void threadCancelModules() {
-  NIY
-}
-
 //===========================================================================
 //
 // Utils
 //
-
-//void stop(const ThreadL& P) {
-//  for_list(Thread,  p,  P) p->threadStop();
-//}
-
-//void wait(const ThreadL& P) {
-//  for_list(Thread,  p,  P) p->waitForIdle();
-//}
-
-//void close(const ThreadL& P) {
-//  for_list(Thread,  p,  P) p->threadClose();
-//}
-
-//===========================================================================
-//
-// TStream class, for concurrent access to ostreams
-//
-
-TStream::TStream(std::ostream &o):out(o) { }
-
-TStream::Access TStream::operator()(const void *obj) {
-  return Access(this, obj);
-}
-
-TStream::Register TStream::reg(const void *obj) {
-  return Register(this, obj);
-}
-
-bool TStream::get(const void *obj, char **head) {
-  return get_private(obj, head, true);
-}
-
-bool TStream::get_private(const void *obj, char **head, bool l) {
-  if(l) lock.readLock();
-  bool ret = map.count(obj) == 1;
-  if(head) *head = ret? (char*)map[obj]: NULL;
-  if(l) lock.unlock();
-  return ret;
-}
-
-void TStream::reg_private(const void *obj, char *p, bool l) {
-  if(l) lock.writeLock();
-  unreg_private(obj, false);
-  map[obj] = p;
-  if(l) lock.unlock();
-}
-
-void TStream::unreg(const void *obj) {
-  unreg_private(obj, true);
-}
-
-void TStream::unreg_private(const void *obj, bool l) {
-  if(l) lock.writeLock();
-  if(get_private(obj, NULL, false)) {
-    delete map[obj];
-    map.erase(obj);
-  }
-  if(l) lock.unlock();
-}
-
-void TStream::unreg_all() {
-  lock.writeLock();
-  for(auto it = map.begin(); it != map.end();)
-    unreg_private((it++)->first, false); // always increment before actual deletion
-  lock.unlock();
-}
-
-TStream::Access::Access(TStream *ts, const void *o):tstream(ts), obj(o) { }
-TStream::Access::Access(const Access &a):tstream(a.tstream) { }
-TStream::Access::~Access() {
-  tstream->mutex.lock(RAI_HERE);
-  char *head;
-  tstream->lock.readLock();
-  if(tstream->get_private(obj, &head, false))
-    tstream->out <<head;
-  tstream->lock.unlock();
-  tstream->out <<stream.str();
-  tstream->mutex.unlock();
-}
-
-TStream::Register::Register(TStream *ts, const void *o):tstream(ts), obj(o) {}
-TStream::Register::Register(const Register &r):tstream(r.tstream) {}
-TStream::Register::~Register() {
-  const char *cstr = stream.str().c_str();
-  size_t cstrl = strlen(cstr);
-  char *p = new char[cstrl+1];
-  memcpy(p, cstr, cstrl+1);
-  
-  tstream->reg_private(obj, p, true);
-}
 
 int _allPositive(const VarL& signalers, int whoChanged){
   bool allPositive=true;

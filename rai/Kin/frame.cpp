@@ -249,31 +249,38 @@ void rai::Frame::setShape(rai::ShapeType shape, const std::vector<double>& size)
 
 void rai::Frame::setPosition(const std::vector<double>& pos){
   X.pos.set(pos);
+  if(parent) calc_Q_from_parent(false);
 }
 
 void rai::Frame::setQuaternion(const std::vector<double>& quat){
   X.rot.set(quat);
   X.rot.normalize();
+  if(parent) calc_Q_from_parent(false);
 }
 
 void rai::Frame::setRelativePosition(const std::vector<double>& pos){
+  CHECK(parent, "you cannot set relative position for a frame without parent");
   Q.pos.set(pos);
   calc_X_from_parent();
 }
 
 void rai::Frame::setRelativeQuaternion(const std::vector<double>& quat){
+  CHECK(parent, "you cannot set relative position for a frame without parent");
   Q.rot.set(quat);
   Q.rot.normalize();
   calc_X_from_parent();
 }
 
-void rai::Frame::setPointCloud(const std::vector<double>& points){
+void rai::Frame::setPointCloud(const std::vector<double>& points, const std::vector<byte>& colors){
   getShape().type() = ST_pointCloud;
   if(!points.size()){
     cerr <<"given point cloud has zero size" <<endl;
     return;
   }
   getShape().mesh().V.clear().operator=(points).reshape(-1, 3);
+  if(colors.size()){
+    getShape().mesh().C.clear().operator=(convert<double>(byteA(colors))/255.).reshape(-1, 3);
+  }
 }
 
 void rai::Frame::setConvexMesh(const std::vector<double>& points, double radius){
@@ -285,6 +292,15 @@ void rai::Frame::setConvexMesh(const std::vector<double>& points, double radius)
     getShape().type() = ST_ssCvx;
     getShape().sscCore().V.clear().operator=(points).reshape(-1, 3);
     getShape().mesh().setSSCvx(getShape().sscCore(), radius);
+  }
+}
+
+void rai::Frame::setConvexMesh(const std::vector<double>& points, const std::vector<byte>& colors){
+  getShape().type() = ST_mesh;
+  getShape().mesh().V.clear().operator=(points).reshape(-1, 3);
+  getShape().mesh().makeConvexHull();
+  if(colors.size()){
+    getShape().mesh().C.clear().operator=(convert<double>(byteA(colors))/255.).reshape(-1, 3);
   }
 }
 
