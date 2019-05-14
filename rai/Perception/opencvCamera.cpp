@@ -2,6 +2,8 @@
 
 #include "opencvCamera.h"
 
+#ifdef RAI_OPENCV
+
 struct sOpencvCamera {  cv::VideoCapture capture;  };
 
 OpencvCamera::OpencvCamera(const Var<byteA>& _rgb)
@@ -49,3 +51,4 @@ bool OpencvCamera::set(int propId, double value) {
   }
 }
 
+#endif

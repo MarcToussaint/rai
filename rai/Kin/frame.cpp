@@ -283,7 +283,7 @@ void rai::Frame::setPointCloud(const std::vector<double>& points, const std::vec
   }
 }
 
-void rai::Frame::setConvexMesh(const std::vector<double>& points, double radius){
+void rai::Frame::setConvexMesh(const std::vector<double>& points, const std::vector<byte>& colors, double radius){
   if(!radius){
     getShape().type() = ST_mesh;
     getShape().mesh().V.clear().operator=(points).reshape(-1, 3);
@@ -293,12 +293,6 @@ void rai::Frame::setConvexMesh(const std::vector<double>& points, double radius)
     getShape().sscCore().V.clear().operator=(points).reshape(-1, 3);
     getShape().mesh().setSSCvx(getShape().sscCore(), radius);
   }
-}
-
-void rai::Frame::setConvexMesh(const std::vector<double>& points, const std::vector<byte>& colors){
-  getShape().type() = ST_mesh;
-  getShape().mesh().V.clear().operator=(points).reshape(-1, 3);
-  getShape().mesh().makeConvexHull();
   if(colors.size()){
     getShape().mesh().C.clear().operator=(convert<double>(byteA(colors))/255.).reshape(-1, 3);
   }

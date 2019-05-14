@@ -462,10 +462,6 @@ PYBIND11_MODULE(libry, m) {
     py::arg("q"),
     py::arg("qdot") )
     
-  .def("getEnergy", [](ry::Config& self){
-    return self.set()->getEnergy();
-  } )
-    
   ;
 
 //  py::class_<ry::Display>(m, "Display")
