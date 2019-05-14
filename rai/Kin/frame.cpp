@@ -124,11 +124,11 @@ rai::Inertia &rai::Frame::getInertia() {
   return *inertia;
 }
 
-rai::Frame *rai::Frame::getUpwardLink(rai::Transformation &Qtotal, bool untilRigid) const {
+rai::Frame *rai::Frame::getUpwardLink(rai::Transformation &Qtotal, bool untilPartBreak) const {
   if(!!Qtotal) Qtotal.setZero();
   const Frame *p=this;
   while(p->parent) {
-    if(!untilRigid){
+    if(!untilPartBreak){
       if(p->joint) break;
     }else{
       if(p->joint && p->joint->getDimFromType()!=1 && !p->joint->mimic) break;
@@ -137,6 +137,17 @@ rai::Frame *rai::Frame::getUpwardLink(rai::Transformation &Qtotal, bool untilRig
     p = p->parent;
   }
   return (Frame*)p;
+}
+
+const char*rai::Frame::isPart(){
+  rai::String *p = ats.find<rai::String>("part");
+  if(p) return p->p;
+  return 0;
+}
+
+void rai::Frame::getPartSubFrames(FrameL &F) {
+  for(Frame *f:parentOf)
+    if(!f->joint || !f->joint->isPartBreak()) { F.append(f); f->getRigidSubFrames(F); }
 }
 
 void rai::Frame::read(const Graph& ats) {

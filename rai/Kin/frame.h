@@ -67,23 +67,29 @@ struct Frame : NonCopyable{
   Frame(Frame *_parent);
   ~Frame();
   
+  //accessors to attachments
+  Shape& getShape();
+  Inertia& getInertia();
+
+  //low-level fwd kinematics computation
   void calc_X_from_parent();
   void calc_Q_from_parent(bool enforceWithinJoint = true);
   
+  //structural operations
   Frame* insertPreLink(const rai::Transformation& A=0);
   Frame* insertPostLink(const rai::Transformation& B=0);
   void unLink();
   void linkFrom(Frame *_parent, bool adoptRelTransform=false);
+
+  //structural information/retrieval
   bool isChildOf(const Frame* par, int order=1) const;
-  
-  Shape& getShape();
-  Inertia& getInertia();
-  
   void getRigidSubFrames(FrameL& F); ///< recursively collect all rigidly attached sub-frames (e.g., shapes of a link), (THIS is not included)
   FrameL getPathToRoot();
+  Frame* getUpwardLink(rai::Transformation& Qtotal=NoTransformation, bool untilPartBreak=false) const; ///< recurse upward BEFORE the next joint and return relative transform (this->Q is not included!b)
+  const char* isPart();
+  void getPartSubFrames(FrameL& F); ///< recursively collect all frames of this part
 
-  Frame* getUpwardLink(rai::Transformation& Qtotal=NoTransformation, bool untilRigid=false) const; ///< recurse upward BEFORE the next joint and return relative transform (this->Q is not included!b)
-  
+  //I/O
   void read(const Graph &ats);
   void write(Graph &G);
   void write(std::ostream& os) const;
@@ -146,9 +152,12 @@ struct Joint : NonCopyable{
   uint getDimFromType() const;
   arr get_h() const;
   
+  bool isPartBreak(){ return dim!=1 || type==JT_time; }
+
   //access the K's q vector
   double& getQ();
   
+  //structural operations
   void makeRigid();
   void makeFree(double H_cost=0.);
   void setType(JointType _type);

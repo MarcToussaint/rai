@@ -70,7 +70,7 @@ struct KinematicWorld : GLDrawer {
   
   static uint setJointStateCount;
   
-  //global options
+  //global options -> TODO: refactor away from here
   bool orsDrawJoints=false, orsDrawShapes=true, orsDrawBodies=true, orsDrawProxies=true, orsDrawMarkers=true, orsDrawColors=true, orsDrawIndexColors=false;
   bool orsDrawVisualsOnly=false, orsDrawMeshes=true, orsDrawCores=false, orsDrawZlines=false;
   bool orsDrawBodyNames=false;
@@ -97,7 +97,6 @@ struct KinematicWorld : GLDrawer {
   Frame* addObject(const char* name, rai::ShapeType shape, const arr& size={}, const arr& col={}, double radius=-1., const char* parent=NULL, const arr& pos={}, const arr& rot={});
   void addFramesCopy(const FrameL& F);
 
-
   /// @name access
   Frame *operator[](const char* name) { return getFrameByName(name, true); }
   Frame *operator()(int i) { return frames(i); }
@@ -114,7 +113,7 @@ struct KinematicWorld : GLDrawer {
   bool checkUniqueNames() const;
   void prefixNames(bool clear=false);
   
-  /// @name changes of configuration
+  /// @name structural operations, changes of configuration
   void clear();
   void reset_q();
   FrameL calc_topSort() const;
@@ -134,6 +133,7 @@ struct KinematicWorld : GLDrawer {
   bool checkConsistency() const;
   Joint* attach(Frame* a, Frame* b);
   Joint* attach(const char *a, const char *b);
+  FrameL getParts() const;
 
   uint analyzeJointStateDimensions() const; ///< sort of private: count the joint dimensionalities and assign j->q_index
   
@@ -213,13 +213,6 @@ struct KinematicWorld : GLDrawer {
   void equationOfMotion(arr& M, arr& F, bool gravity=true);
   void inertia(arr& M);
   
-  /// @name older 'kinematic maps'
-  double getCenterOfMass(arr& com) const;
-  void getComGradient(arr &grad) const;
-  
-  double getEnergy();
-  const Proxy *getContact(uint a, uint b) const;
-  
   /// @name get infos
   arr getHmetric() const;
   
@@ -233,9 +226,7 @@ struct KinematicWorld : GLDrawer {
   void NewtonEuler_backward();
   
   /// @name extensions on demand
-//private:
   OpenGL& gl(const char* window_title=NULL);
-//public:
   SwiftInterface& swift();
   FclInterface& fcl();
   void swiftDelete();

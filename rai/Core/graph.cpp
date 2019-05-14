@@ -200,7 +200,7 @@ void Node::write(std::ostream& os, bool pythonMode) const {
   }
 }
 
-Nod::Nod(const char* key, const char* stringValue) {
+NodeInitializer::NodeInitializer(const char* key, const char* stringValue) {
   n = G.newNode<rai::String>(STRING(stringValue));
   n->keys.append(STRING(key));
 }
@@ -225,8 +225,8 @@ Graph::Graph(const std::map<std::string, std::string>& dict) : Graph() {
   appendDict(dict);
 }
 
-Graph::Graph(std::initializer_list<Nod> list) : Graph() {
-  for(const Nod& ni:list) newNode(ni);
+Graph::Graph(std::initializer_list<NodeInitializer> list) : Graph() {
+  for(const NodeInitializer& ni:list) newNode(ni);
 }
 
 Graph::Graph(std::initializer_list<const char*> list) : Graph(){
@@ -273,7 +273,7 @@ void Graph::clear() {
   isIndexed=true;
 }
 
-Graph& Graph::newNode(const Nod& ni) {
+Graph& Graph::newNode(const NodeInitializer& ni) {
   Node *clone = ni.n->newClone(*this); //this appends sequentially clones of all nodes to 'this'
   for(const rai::String& s:ni.parents) {
     Node *p = findNode({s}, true, false);

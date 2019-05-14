@@ -1995,6 +1995,10 @@ void rai::KinematicWorld::report(std::ostream &os) const {
   <<" #contacts=" <<contacts.N
   <<" #evals=" <<setJointStateCount
   <<endl;
+
+  FrameL parts = getParts();
+  os <<"PARTS: ";
+  for(Frame *f:parts) os <<*f <<endl;
 }
 
 void rai::KinematicWorld::init(const Graph& G, bool addInsteadOfClear) {
@@ -2575,6 +2579,7 @@ void rai::KinematicWorld::inverseKinematicsPos(Frame& body, const arr& ytarget,
   }
 }
 
+#if 0
 /// center of mass of the whole configuration (3 vector)
 double rai::KinematicWorld::getCenterOfMass(arr& x_) const {
   double M=0.;
@@ -2610,30 +2615,14 @@ const rai::Proxy* rai::KinematicWorld::getContact(uint a, uint b) const {
   return NULL;
 }
 
-arr rai::KinematicWorld::getHmetric() const {
-  arr H = zeros(getJointStateDimension());
-  for(Joint *j: fwdActiveJoints) {
-    double h=j->H;
-    //    CHECK(h>0.,"Hmetric should be larger than 0");
-    if(j->type==JT_transXYPhi) {
-      H(j->qIndex+0)=h*10.;
-      H(j->qIndex+1)=h*10.;
-      H(j->qIndex+2)=h;
-    } else {
-      for(uint k=0; k<j->qDim(); k++) H(j->qIndex+k)=h;
-    }
-  }
-  return H;
-}
-
 /** @brief */
 double rai::KinematicWorld::getEnergy() {
   double m, v, E;
   rai::Matrix I;
   rai::Vector w;
-  
+
   arr vel = calc_fwdPropagateVelocities();
-  
+
   E=0.;
   for(Frame *f: frames) if(f->inertia) {
     Vector linVel = vel(f->ID, 0, {});
@@ -2650,6 +2639,24 @@ double rai::KinematicWorld::getEnergy() {
   }
 
   return E;
+}
+
+#endif
+
+arr rai::KinematicWorld::getHmetric() const {
+  arr H = zeros(getJointStateDimension());
+  for(Joint *j: fwdActiveJoints) {
+    double h=j->H;
+    //    CHECK(h>0.,"Hmetric should be larger than 0");
+    if(j->type==JT_transXYPhi) {
+      H(j->qIndex+0)=h*10.;
+      H(j->qIndex+1)=h*10.;
+      H(j->qIndex+2)=h;
+    } else {
+      for(uint k=0; k<j->qDim(); k++) H(j->qIndex+k)=h;
+    }
+  }
+  return H;
 }
 
 void rai::KinematicWorld::pruneRigidJoints(int verbose) {
@@ -2854,7 +2861,13 @@ rai::Joint* rai::KinematicWorld::attach(Frame* a, Frame* b){
 }
 
 rai::Joint* rai::KinematicWorld::attach(const char* _a, const char* _b){
-  return attach(getFrameByName(_a), getFrameByName(_b));
+    return attach(getFrameByName(_a), getFrameByName(_b));
+}
+
+FrameL rai::KinematicWorld::getParts() const{
+  FrameL F;
+  for(Frame *f:frames) if(f->isPart()) F.append(f);
+  return F;
 }
 
 //void rai::KinematicWorld::meldFixedJoints(int verbose) {
