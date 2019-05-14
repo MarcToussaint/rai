@@ -281,7 +281,7 @@ StringA Simulation::getObjectNames(){
 }
 
 void Simulation::glDraw(OpenGL &gl){
-  glStandardLight(NULL);
+  glStandardLight(NULL, gl);
    //  glEnable(GL_LIGHTING);
 
   for(Sensor& sen:self->sensors){

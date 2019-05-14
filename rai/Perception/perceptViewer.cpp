@@ -21,7 +21,7 @@ PerceptViewer::~PerceptViewer() {
   threadClose();
 }
 
-void glDrawPercepts(void *P) {
+void glDrawPercepts(void *P, OpenGL&) {
   PerceptL& percepts = *((PerceptL*)P);
   for(std::shared_ptr<Percept>& p:percepts) {
     glTransform(p->pose);
