@@ -101,7 +101,7 @@ struct Frame : NonCopyable{
   void setRelativePosition(const std::vector<double>& pos);
   void setRelativeQuaternion(const std::vector<double>& quat);
   void setPointCloud(const std::vector<double>& points);
-  void setConvexMesh(const std::vector<double>& points);
+  void setConvexMesh(const std::vector<double>& points, double radius=0.);
   void setColor(const std::vector<double>& color);
 
   arr getPosition(){ return X.pos.getArr(); }

@@ -235,7 +235,7 @@ struct KinematicWorld : GLDrawer {
   FeatherstoneInterface& fs();
   int watch(bool pause=false, const char* txt=NULL);
   void saveVideoPic(uint& t, const char* pathPrefix="vid/");
-  void glAdd(void (*call)(void*), void* classP);
+  void glAdd(void (*call)(void*, OpenGL&), void* classP);
   int glAnimate();
   void glGetMasks(int w=-1, int h=-1, bool rgbIndices=true);
   void stepSwift();
@@ -280,7 +280,7 @@ stdPipes(rai::KinematicWorld)
 //
 
 namespace rai {
-void glDrawGraph(void*);
+void glDrawGraph(void*, OpenGL& gl);
 }
 
 uintA stringListToShapeIndices(const rai::Array<const char*>& names, const FrameL& shapes);

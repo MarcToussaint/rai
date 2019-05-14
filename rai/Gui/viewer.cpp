@@ -177,7 +177,7 @@ PointCloudViewer::~PointCloudViewer() {
 void PointCloudViewer::open() {
   s = new sPointCloudViewer(STRING("PointCloudViewer: "<<pts.name() <<' ' <<rgb.name()));
 #if 1
-  s->gl.add(glDrawAxes);
+  s->gl.add(glStandardOriginAxes);
   s->gl.add(glStandardLight);
   s->gl.add(s->pc);
   //  s->gl.reportSelects = true;

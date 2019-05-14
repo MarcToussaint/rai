@@ -54,9 +54,9 @@ PlotModule::~PlotModule() {
   delete s;
 }
 
-void plotDrawOpenGL(void* data);
+void plotDrawOpenGL(void* data, OpenGL& gl);
 void plotDrawGnuplot(void* data, bool pauseMouse);
-void glDrawPlot(void *module) { plotDrawOpenGL(((PlotModule*)module)->s); }
+void glDrawPlot(void *module, OpenGL& gl) { plotDrawOpenGL(((PlotModule*)module)->s, gl); }
 
 //===========================================================================
 //
@@ -418,7 +418,7 @@ void plotGaussians(const GaussianL& G) {
 // OpenGL draw routine
 //
 
-void plotDrawOpenGL(void *_data) {
+void plotDrawOpenGL(void *_data, OpenGL& gl) {
 #ifdef RAI_GL
   sPlotModule& data=(*((sPlotModule*)_data));
   uint a, i, j;
@@ -428,7 +428,7 @@ void plotDrawOpenGL(void *_data) {
   double x=0., y=0., z=0.;
   
   //light?
-  if(plotModule.light) glStandardLight(NULL);
+  if(plotModule.light) glStandardLight(NULL, gl);
   
   if(plotModule.drawBox) {
     glColor3f(.7, .7, .7);

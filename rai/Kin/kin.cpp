@@ -1528,7 +1528,7 @@ void rai::KinematicWorld::saveVideoPic(uint& t, const char* pathPrefix){
   write_ppm(gl().captureImage, STRING(pathPrefix <<std::setw(4)<<std::setfill('0')<<t++<<".ppm"));
 }
 
-void rai::KinematicWorld::glAdd(void (*call)(void*), void* classP){
+void rai::KinematicWorld::glAdd(void (*call)(void*,OpenGL&), void* classP){
   gl().add(call, classP);
 }
 
@@ -3297,8 +3297,8 @@ void bindOrsToOpenGL(rai::KinematicWorld& graph, OpenGL& gl) {
 #ifndef RAI_ORS_ONLY_BASICS
 
 /// static GL routine to draw a rai::KinematicWorld
-void rai::glDrawGraph(void *classP) {
-  ((rai::KinematicWorld*)classP)->glDraw(NoOpenGL);
+void rai::glDrawGraph(void *classP, OpenGL& gl) {
+  ((rai::KinematicWorld*)classP)->glDraw(gl);
 }
 
 void rai::glDrawProxies(void *P) {

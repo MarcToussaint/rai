@@ -1855,7 +1855,7 @@ void glTransform(const rai::Transformation&) { NICO }
 
 extern OpenGL& NoOpenGL;
 
-void glDrawMeshes(void *P) {
+void glDrawMeshes(void *P, OpenGL&) {
 #ifdef RAI_GL
   MeshA& meshes = *((MeshA*)P);
   double GLmatrix[16];
