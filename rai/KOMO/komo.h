@@ -44,7 +44,11 @@ enum SkeletonSymbol{
   SY_noCollision,
   SY_identical,
 
-  SY_alignByInt
+  SY_alignByInt,
+
+  SY_makeFree,
+  SY_stableRelPose,
+  SY_stablePose,
 };
 
 

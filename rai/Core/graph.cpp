@@ -97,7 +97,7 @@ Node::~Node() {
 
 void Node::addParent(Node *p) {
   CHECK(p,"you gave me a NULL parent");
-  if(parents.contains(p)) return;
+//  if(parents.contains(p)) return; //allow the same parent twice!
   parents.append(p);
   p->numChildren++;
   if(container.isDoubleLinked) p->parentOf.append(this);
@@ -673,7 +673,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, rai::Strin
   }
   DEBUG(checkConsistency());
 
-      if(verbose) { cout <<" keys:" <<keys <<flush; }
+  if(verbose) { cout <<" keys:" <<keys <<flush; }
   
   //-- read parents
   NodeL parents;

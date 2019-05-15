@@ -1936,6 +1936,7 @@ void Camera::unproject_fromPixelsAndTrueDepth(arr& x, double width, double heigh
 }
 
 void Camera::unproject_fromPixelsAndGLDepth(arr& x, uint width, uint height) const{
+#if 0
   CHECK_LE(fabs(double(width)/height - whRatio), 1e-6, "given width and height don't match whRatio");
   arr I = eye(4);
   arr P = getGLProjectionMatrix();
@@ -1945,6 +1946,12 @@ void Camera::unproject_fromPixelsAndGLDepth(arr& x, uint width, uint height) con
 //  cout <<"\nM=\n" <<I <<"\nP=\n" <<P <<"\nV=\n" <<viewPort <<endl;
   gluUnProject(x(0), x(1), x(2), I.p, P.p, viewPort.p, &_x, &_y, &_z);
   x(0)=_x; x(1)=_y; x(2)=_z;
+#else
+  if(x.N==3) x.append(1.);
+  CHECK_EQ(x.N, 4, "");
+  x(2) = glConvertToTrueDepth(x(2));
+  unproject_fromPixelsAndTrueDepth(x, width, height);
+#endif
 }
 
 

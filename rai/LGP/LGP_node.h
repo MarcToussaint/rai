@@ -93,7 +93,7 @@ struct LGP_Node {
   MNodeL getAll() { MNodeL L; getAll(L); return L; }
   void checkConsistency();
   
-  Skeleton getSkeleton(StringA predicateFilter={}, bool finalStateOnly=false) const;
+  Skeleton getSkeleton(bool finalStateOnly=false) const;
 private:
   void setInfeasible(); ///< set this and all children infeasible
   void labelInfeasible(); ///< sets this infeasible AND propagates this label up-down to others

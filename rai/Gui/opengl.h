@@ -273,14 +273,14 @@ struct glUI:OpenGL::GLHoverCall,OpenGL::GLClickCall {
   glUI() { top=-1; }
   
   void addButton(uint x, uint y, const char *name, const char *img1=0, const char *img2=0);
-  void glDraw();
+  void glDraw(OpenGL& gl);
   bool checkMouse(int _x, int _y);
   
   bool hoverCallback(OpenGL&);
   bool clickCallback(OpenGL&);
 };
 
-void glDrawUI(void *p);
+void glDrawUI(void *p, OpenGL&);
 
 extern OpenGL& NoOpenGL;
 

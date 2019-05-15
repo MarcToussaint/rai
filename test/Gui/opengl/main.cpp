@@ -12,8 +12,8 @@ using namespace std;
 
 /************ first test ************/
 
-void draw1(void*){
-  glStandardLight(NULL);
+void draw1(void*,OpenGL& gl){
+  glStandardLight(NULL, gl);
   glColor(1,0,0);
   glFrontFace(GL_CW);
   glutSolidTeapot(1.);
@@ -77,8 +77,8 @@ void TEST(Grab) {
 
 /************ second test ************/
 
-static void draw2(void*){
-  glStandardLight(NULL);
+static void draw2(void*, OpenGL& gl){
+  glStandardLight(NULL, gl);
   glDrawAxes(1.);
   glColor(1.,1.,1.);
   glDisable(GL_CULL_FACE);
@@ -189,8 +189,8 @@ void TEST(Menu){
 
 byteA texImg;
 static GLuint texName;
-void draw5(void*){
-  glStandardScene(NULL);
+void draw5(void*, OpenGL& gl){
+  glStandardScene(NULL, gl);
 
 #if 1
   glDisable(GL_CULL_FACE);
@@ -328,9 +328,9 @@ void TEST(OfflineRendering){
 
 /************ test clicking on and identifying objects in the scene ************/
 
-void draw3(void*){
+void draw3(void*, OpenGL& gl){
   glPushName(0xa0);
-  glStandardLight(NULL);
+  glStandardLight(NULL, gl);
   glColor(1,0,0);
   glutSolidTeapot(1.);
   glPopName();
