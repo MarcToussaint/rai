@@ -548,7 +548,7 @@ void PhysXInterface::pullFromPhysx(rai::KinematicWorld *K, arr& vels) {
 //  K->calc_q_from_Q();
 }
 
-void PhysXInterface::pushToPhysx(rai::KinematicWorld *K, rai::KinematicWorld *Kt_1, rai::KinematicWorld *Kt_2, double tau, bool onlyKinematic) {
+void PhysXInterface::pushToPhysx(const rai::KinematicWorld *K, const arr& vels, rai::KinematicWorld *Kt_1, rai::KinematicWorld *Kt_2, double tau, bool onlyKinematic) {
   if(!K) K=&world;
   for(rai::Frame *f : K->frames) {
     if(s->actors.N <= f->ID) continue;
@@ -557,19 +557,24 @@ void PhysXInterface::pushToPhysx(rai::KinematicWorld *K, rai::KinematicWorld *Kt
     
     if(f->inertia && f->inertia->type!= s->actorTypes(f->ID)) {
       LOG(0) <<"SWITCHING INERTIA TYPE! " <<f->name;
+      PxRigidBody *px_body = (PxRigidBody*) a;
       s->actorTypes(f->ID) = f->inertia->type;
-      if(f->inertia->type==rai::BT_kinematic)((PxRigidDynamic*)a)->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
+      if(f->inertia->type==rai::BT_kinematic) px_body->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
       if(f->inertia->type==rai::BT_dynamic) {
-        ((PxRigidDynamic*)a)->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, false);
-        if(Kt_1) {
+        px_body->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, false);
+	if(!!vels){
+	  arr v = vels(f->ID, 0, {}), w = vels(f->ID, 1, {});
+	  px_body->setLinearVelocity(PxVec3(v.elem(0), v.elem(1), v.elem(2)));
+	  px_body->setAngularVelocity(PxVec3(w.elem(0), w.elem(1), w.elem(2)));
+	}else if(Kt_1) {
           rai::Vector v = (Kt_1->frames(f->ID)->X.pos - Kt_2->frames(f->ID)->X.pos)/tau;
-          ((PxRigidDynamic*)a)->setLinearVelocity(PxVec3(v.x, v.y, v.z));
+          px_body->setLinearVelocity(PxVec3(v.x, v.y, v.z));
           
           rai::Vector w = (f->X.rot.getJacobian() * (Kt_1->frames(f->ID)->X.rot.getArr4d() - Kt_2->frames(f->ID)->X.rot.getArr4d()))/tau;
-          ((PxRigidDynamic*)a)->setAngularVelocity(PxVec3(w.x, w.y, w.z));
+          px_body->setAngularVelocity(PxVec3(w.x, w.y, w.z));
           
           LOG(0) <<"  switch velocity=" <<v <<"  angular=" <<w <<"  position=" <<f->X.pos;
-        } else {
+	} else {
           LOG(-1) <<"I could not set velocities as K_{t-1} was not given";
         }
       }
@@ -710,7 +715,7 @@ PhysXInterface::PhysXInterface(rai::KinematicWorld& _world) : world(_world), s(N
 PhysXInterface::~PhysXInterface() { NICO }
 
 void PhysXInterface::step(double tau, bool withKinematicPush) { NICO }
-void PhysXInterface::pushToPhysx(rai::KinematicWorld *K, rai::KinematicWorld *Kt_1, rai::KinematicWorld *Kt_2, double tau, bool onlyKinematic) { NICO }
+void PhysXInterface::pushToPhysx(rai::KinematicWorld *K, const arr& vels, rai::KinematicWorld *Kt_1, rai::KinematicWorld *Kt_2, double tau, bool onlyKinematic) { NICO }
 void PhysXInterface::pullFromPhysx(rai::KinematicWorld *K, arr& vels) { NICO }
 void PhysXInterface::setArticulatedBodiesKinematic() { NICO }
 void PhysXInterface::ShutdownPhysX() { NICO }

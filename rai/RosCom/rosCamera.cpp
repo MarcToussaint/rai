@@ -29,4 +29,11 @@ RosCamera::~RosCamera(){
 }
 
 #else //RAI_ROS
+
+RosCamera::RosCamera(Var<byteA>& _rgb, Var<floatA> _depth,
+		     const char* rosNodeName,
+		     const char* rgb_topic,
+		     const char* depth_topic){ NICO }
+RosCamera::~RosCamera(){ NICO }
+
 #endif

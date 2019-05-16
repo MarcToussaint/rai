@@ -1490,7 +1490,7 @@ void KOMO_ext::playInPhysics(uint subSteps, bool display) {
   arr vels;
   PhysXInterface& px = world.physx();
   for(uint t=0; t<T; t++) {
-    px.pushToPhysx(configurations(k_order+t), configurations(k_order+t-1), configurations(k_order+t-2), tau, true);
+    px.pushToPhysx(configurations(k_order+t), NoArr, configurations(k_order+t-1), configurations(k_order+t-2), tau, true);
     for(uint s=0; s<subSteps; s++) {
       if(display) px.watch(false, STRING("t="<<t<<";"<<s));
       world.physx().step(tau/subSteps, false);
