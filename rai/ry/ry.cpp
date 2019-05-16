@@ -808,8 +808,8 @@ PYBIND11_MODULE(libry, m) {
 
   //-- run
 
-  .def("optimize", [](ry::RyKOMO& self){
-    self.komo->optimize();
+  .def("optimize", [](ry::RyKOMO& self, bool reinitialize_randomly){
+    self.komo->optimize(reinitialize_randomly);
     self.path.set() = self.komo->getPath_frames();
   } )
 
