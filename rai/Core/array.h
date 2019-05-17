@@ -261,6 +261,7 @@ template<class T> struct Array : std::vector<T>, Serializable {
   void removeLast();
   
   /// @name sorting and permuting this array
+  T median_nonConst(); //this modifies the array!
   void sort(ElemCompare comp=lowerEqual<T>);
   bool isSorted(ElemCompare comp=lowerEqual<T>) const;
   uint rankInSorted(const T& x, ElemCompare comp=lowerEqual<T>, bool rankAfterIfEqual=false) const;

@@ -1754,14 +1754,12 @@ void Camera::watchDirection(const Vector& d) {
 void Camera::upright(const Vector& up) {
 #if 1
   //construct desired X:
-  Vector fwd(0, 0, -1), x(1, 0, 0), xDesired;
-  x=X.rot*x; //true X
-  fwd=X.rot*fwd;
-//  if(fabs(fwd.z)<1.) up.set(0, 0, 1); else up.set(0, 1, 0);
-  xDesired=up^fwd; //desired X
-  if(xDesired*x<=0) xDesired=-xDesired;
+  Vector y=X.rot.getY();
+  Vector fwd = -X.rot.getZ();
+  Vector yDesired=fwd^(up^fwd); //desired Y
+  if(yDesired*up<=0) yDesired=-yDesired;
   Quaternion r;
-  r.setDiff(x, xDesired);
+  r.setDiff(y, yDesired);
   X.rot=r*X.rot;
 #else
   if(X.Z[2]<1.) X.Y.set(0, 0, 1); else X.Y.set(0, 1, 0);
@@ -1956,7 +1954,7 @@ void Camera::setKinect() {
 void Camera::setDefault() {
   setHeightAngle(24.);
   setZRange(.02, 200.);
-  setPosition(8., -12., 6.);
+  setPosition(8., 12., 6.);
 //  setPosition(10., -4., 10.);
   focus(0, 0, 1.);
 //  focus(.9, 0., 1.3);

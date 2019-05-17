@@ -1628,10 +1628,16 @@ rai::Array<T>::setGrid(uint dim, T lo, T hi, uint steps) {
 }
 
 //----- sorting etc
+template<class T> T rai::Array<T>::median_nonConst(){
+  CHECK_GE(N, 1, "");
+  std::nth_element(p, p+N/2, p+N);
+  return *(p+N/2);
+}
+
+
 /// sort this list
 template<class T> void rai::Array<T>::sort(ElemCompare comp) {
-  T *pstop=p+N;
-  std::sort(p, pstop, comp);
+  std::sort(p, p+N, comp);
 }
 
 /// check whether list is sorted
