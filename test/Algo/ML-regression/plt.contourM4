@@ -14,5 +14,5 @@ splot [-2:3][-2:3] \
 unset table
 
 plot [-2:3][-2:3] \
- 'z.train' us 1:2:3 with points pt 2 lc variable title 'train',\
+ 'z.train' us 2:1:3 with points pt 2 lc variable title 'train',\
  './z.contour.dat' us 1:2:(abs($3-.5)/.4) with lines lc variable title 'decision boundary'
