@@ -5,8 +5,8 @@
 #include <Gui/opengl.h>
 #include <Geo/qhull.h>
 
-void drawInit(void*){
-  glStandardLight(NULL);
+void drawInit(void*, OpenGL& gl){
+  glStandardLight(NULL, gl);
   glDrawAxes(1.);
   glColor(1.,.5,0.);
 }
@@ -110,12 +110,12 @@ rai::Mesh m1, m2;
 rai::Transformation t1, t2;
 rai::Vector p1, p2;
 
-void drawGJK(void*){
+void drawGJK(void*, OpenGL& gl){
   glDisable(GL_DEPTH_TEST);
 
   glColor(.8, .8, .8, .8);
-  glTransform(t1);  m1.glDraw(NoOpenGL);
-  glTransform(t2);  m2.glDraw(NoOpenGL);
+  glTransform(t1);  m1.glDraw(gl);
+  glTransform(t2);  m2.glDraw(gl);
   glLoadIdentity();
 
   glColor(1., 0., 0., .9);

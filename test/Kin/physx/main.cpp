@@ -20,7 +20,7 @@ int main(int argc,char** argv){
     if(rnd.uni()<.5){
       f->setShape(rai::ST_ssBox, {1.,.2,.1, .02});
     }else{
-      f->setConvexMesh(.2*randn(10,3), .02);
+      f->setConvexMesh(.2*randn(10,3), {}, .02);
     }
     (new rai::Inertia(*f)) -> type=rai::BT_dynamic;
     f->shape->cont=1;

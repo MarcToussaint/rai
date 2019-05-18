@@ -42,7 +42,7 @@ void TEST(Init){
 
   Graph B;
 
-  B <<"x" <<"b" <<Nod("a", 3.) <<Nod("b", {"x"}, ARR(1.,2.,3.));
+  B <<"x" <<"b" <<NodeInitializer("a", 3.) <<NodeInitializer("b", {"x"}, ARR(1.,2.,3.));
   cout <<B <<endl;
 }
 

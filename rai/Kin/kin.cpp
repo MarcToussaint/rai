@@ -2620,6 +2620,8 @@ const rai::Proxy* rai::KinematicWorld::getContact(uint a, uint b) const {
   return NULL;
 }
 
+#endif
+
 /** @brief */
 double rai::KinematicWorld::getEnergy() {
   double m, v, E;
@@ -2645,8 +2647,6 @@ double rai::KinematicWorld::getEnergy() {
 
   return E;
 }
-
-#endif
 
 arr rai::KinematicWorld::getHmetric() const {
   arr H = zeros(getJointStateDimension());

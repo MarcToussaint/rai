@@ -2113,7 +2113,7 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y) {
   mouseposx=_x; mouseposy=_y;
   lastEvent.set(mouse_button, -1, _x, _y, 0., 0.);
   
-  GLView *v;
+  GLView *v=0;
   rai::Camera *cam=&camera;
   rai::Vector vec;
   for(mouseView=views.N; mouseView--;) {
@@ -2124,7 +2124,10 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y) {
       break;
     }
   }
-  if(mouseView==-1) getSphereVector(vec, _x, _y, 0, w, 0, h);
+  if(mouseView==-1){
+    getSphereVector(vec, _x, _y, 0, w, 0, h);
+    v=0;
+  }
   CALLBACK_DEBUG("associated to view " <<mouseView <<" x=" <<vec.x <<" y=" <<vec.y <<endl);
   
   if(!downPressed) {  //down press
@@ -2174,14 +2177,15 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y) {
       cout <<"NO SELECTION: SELECTION DEPTH = " <<d <<' ' <<camera.glConvertToTrueDepth(d) <<endl;
     } else {
       arr x = {(double)mouseposx, (double)mouseposy, d};
-//      unproject(x, y, d, true, mouseView);
       if(v){
-        cam->unproject_fromPixelsAndGLDepth(x, width, height);
-        NIY;
+        x(0) -= double(v->le)*width;
+        x(1) -= double(v->bo)*height;
+        v->camera.unproject_fromPixelsAndGLDepth(x, (v->ri-v->le)*width, (v->to-v->bo)*height);
+        v->camera.focus(x);
       }else{
         cam->unproject_fromPixelsAndGLDepth(x, width, height);
+        cam->focus(x);
       }
-      cam->focus(x);
     }
   }
   

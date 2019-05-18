@@ -264,6 +264,7 @@ struct ArrayG : rai::Array<T*>, GraphEditCallback {
 /// This is a Node initializer, specifically for Graph(std::initializer_list<struct Nod> list); and the operator<< below
 /// not to be used otherwise
 struct NodeInitializer {
+  NodeInitializer(const char* key);
   NodeInitializer(const char* key, const char* stringValue);
   template<class T> NodeInitializer(const char* key, const T& x);
   template<class T> NodeInitializer(const char* key, const StringA& parents, const T& x);

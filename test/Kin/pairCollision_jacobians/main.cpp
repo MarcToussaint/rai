@@ -192,7 +192,7 @@ void TEST(GJK_Jacobians3) {
   s1.type() = s2.type() = rai::ST_ssBox;
   s1.size() = {.2, .2, .2, .01 };
   s2.size() = {.2, .2, .2, .01 };
-  s1.getGeom().createMeshes();
+  s1.createMeshes();
   s1.mesh().C = {.5,.8,.5,.9};
   s2.mesh().C = {.5,.5,.8,.9};
 

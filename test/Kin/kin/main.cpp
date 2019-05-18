@@ -377,7 +377,7 @@ void TEST(FollowRedundantSequence){
   //-- generate a random endeffector trajectory
   arr Z, Zt; //desired and true endeffector trajectories
   generateSequence(Z, 200, 3); //3D random sequence with limits [-1,1]
-  Z *= .8;
+  Z *= .5;
   T=Z.d0;
   G.setJointState(x);
   rai::Frame *endeff = G.getFrameByName("arm7");

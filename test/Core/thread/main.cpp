@@ -1,8 +1,5 @@
 #include <Core/thread.h>
 
-TStream tout(cout);
-Mutex m;
-
 //===========================================================================
 
 // Normal Thread struct
@@ -131,7 +128,7 @@ void TEST(Sorter){
     for(uint i=0;i<N;i++) x(i).set() = rnd(100);
 
     for(uint k=0;k<20;k++){
-      if(moduleShutdown()->getStatus()) break;
+      //if(moduleShutdown()->getStatus()) break;
       for(uint i=0;i<N;i++) cout <<x(i).get() <<' ';  cout <<endl;
       for(auto& s:ps) s->threadStep();
       rai::wait(.1);

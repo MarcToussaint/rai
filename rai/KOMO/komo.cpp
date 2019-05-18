@@ -1397,7 +1397,7 @@ void KOMO::run() {
     timeNewton += _opt.newton.timeNewton;
   } else if(sparseOptimization){
     CHECK(!splineB.N, "NIY");
-#if 0
+#if 1
 //    ModGraphProblem selG(graph_problem);
 //    Conv_Graph_ConstrainedProblem C(selG);
     Conv_Graph_ConstrainedProblem C(graph_problem);

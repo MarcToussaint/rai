@@ -3,8 +3,6 @@
 #include "opencv.h"
 #include "opencvCamera.h"
 
-#ifdef RAI_OPENCV
-
 struct sOpencvCamera {  cv::VideoCapture capture;  };
 
 OpencvCamera::OpencvCamera(const Var<byteA>& _rgb)

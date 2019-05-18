@@ -212,6 +212,7 @@ struct KinematicWorld : GLDrawer {
   void inverseDynamics(arr& tau, const arr& qd, const arr& qdd, bool gravity=true);
   void equationOfMotion(arr& M, arr& F, bool gravity=true);
   void inertia(arr& M);
+  double getEnergy();
   
   /// @name get infos
   arr getHmetric() const;

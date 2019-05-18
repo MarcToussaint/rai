@@ -32,8 +32,8 @@ void testFeature() {
   s1.size(3) = rnd.uni(.01, .3); s2.size(3) = rnd.uni(.01, .3);
 //  if(rnd.uni()<.2) s1.sscCore().setDot(); else if(rnd.uni()<.2) s1.sscCore().setLine(.5);
 //  if(rnd.uni()<.2) s2.sscCore().setDot(); else if(rnd.uni()<.2) s1.sscCore().setLine(.5);
-  s1.getGeom().createMeshes();
-  s2.getGeom().createMeshes();
+  s1.createMeshes();
+  s2.createMeshes();
 
   rai::Inertia m1(obj1), m2(obj2);
   m1.defaultInertiaByShape();

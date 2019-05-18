@@ -1,8 +1,8 @@
 #include <Gui/opengl.h>
 #include <Core/thread.h>
 
-void draw1(void*){
-  glStandardLight(NULL);
+void draw1(void*, OpenGL& gl){
+  glStandardLight(NULL, gl);
   glColor3f(1,0,0);
   //glDrawBox(1.,1.,1.);
   glutSolidTeapot(1.);
