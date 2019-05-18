@@ -249,7 +249,7 @@ template<class T> struct Array : std::vector<T>, Serializable {
   void removePerm(uint i);          //more efficient for sets, works also for non-memMove arrays
   bool removeValue(const T& x, bool errorIfMissing=true);
   void removeAllValues(const T& x);
-  void delRows(uint i, uint k=1);
+  void delRows(int i, uint k=1);
   void delColumns(int i, uint k=1);
   void insRows(int i, uint k=1);
   void insColumns(int i, uint k=1);

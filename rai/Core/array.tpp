@@ -593,9 +593,11 @@ template<class T> void rai::Array<T>::replace(uint i, uint n, const rai::Array<T
 }
 
 /// deletes the i-th row [must be 2D]
-template<class T> void rai::Array<T>::delRows(uint i, uint k) {
+template<class T> void rai::Array<T>::delRows(int i, uint k) {
   CHECK(memMove, "only with memMove");
   CHECK_EQ(nd,2, "only for matricies");
+  if(i<0) i+=d0;
+  CHECK_GE(i, 0, "range check error");
   CHECK_LE(i+k, d0, "range check error");
   uint n=d1;
   if(i+k<d0) memmove(p+i*n, p+(i+k)*n, sizeT*(d0-i-k)*n);
