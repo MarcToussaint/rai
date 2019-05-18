@@ -328,6 +328,7 @@ rai::Frame* rai::Frame::insertPreLink(const rai::Transformation &A) {
   parent->parentOf.append(this);
   
   if(!!A) f->Q = A;
+  f->calc_X_from_parent();
   
   return f;
 }

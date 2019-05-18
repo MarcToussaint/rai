@@ -53,8 +53,8 @@ struct SubGraphProblem : GraphProblem{
 
   //-- graph problem of the subgraph
   virtual void getStructure(uintA& variableDimensions, intAA& featureVariables, ObjectiveTypeA& featureTypes);
-
   virtual void phi(arr& phi, arrA& J, arrA& H, const arr& x);
+  virtual void getSemantics(StringA& varNames, StringA& phiNames);
 };
 
 
@@ -75,4 +75,6 @@ struct BacktrackingGraphOptimization{
   void evaluate(const arr& x);
 
   bool run();
+
+  bool runFull();
 };

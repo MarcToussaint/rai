@@ -182,7 +182,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
     komoProblem(bound).reset();
     return;
   }
-  if(!komo.denseOptimization) COUNT_evals += komo.opt->newton.evals;
+  if(!komo.denseOptimization && !komo.sparseOptimization) COUNT_evals += komo.opt->newton.evals;
   COUNT_kin += rai::KinematicWorld::setJointStateCount;
   COUNT_opt(bound)++;
   COUNT_time += komo.runTime;

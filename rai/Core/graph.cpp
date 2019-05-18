@@ -229,13 +229,13 @@ Graph::Graph(std::initializer_list<NodeInitializer> list) : Graph() {
   for(const NodeInitializer& ni:list) newNode(ni);
 }
 
-Graph::Graph(std::initializer_list<const char*> list) : Graph(){
-  for(const char* s:list){
-    rai::String str(s);
-    Graph &g=newSubgraph();
-    g.read(str);
-  }
-}
+//Graph::Graph(std::initializer_list<const char*> list) : Graph(){
+//  for(const char* s:list){
+//    rai::String str(s);
+//    Graph &g=newSubgraph();
+//    g.read(str);
+//  }
+//}
 
 Graph::Graph(const Graph& G) : Graph() {
   *this = G;

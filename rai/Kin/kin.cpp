@@ -1537,6 +1537,10 @@ int rai::KinematicWorld::glAnimate() {
   return animateConfiguration(*this, NULL);
 }
 
+void rai::KinematicWorld::glClose(){
+  if(s->gl){ delete s->gl; s->gl=0; }
+}
+
 void rai::KinematicWorld::glGetMasks(int w, int h, bool rgbIndices) {
   gl().clear();
   gl().addDrawer(this);
@@ -3530,10 +3534,13 @@ int animateConfiguration(rai::KinematicWorld& K, Inotify *ino) {
       // Joint limits
       checkNan(x);
       K.setJointState(x);
-      int key = K.watch(false, STRING("DOF = " <<i <<" : " <<jointNames(i) <<" [" <<lim[i] <<"]"));
+      int key = K.gl().update(STRING("DOF = " <<i <<" : " <<jointNames(i) <<" [" <<lim[i] <<"]"), false);
       //      write_ppm(gl.captureImage, STRING("vid/" <<std::setw(3)<<std::setfill('0')<<saveCount++<<".ppm"));
 
-      if(key==13 || key==32 || key==27 || key=='q') return key;
+      if(key==13 || key==32 || key==27 || key=='q'){
+        K.setJointState(x0);
+        return key;
+      }
       rai::wait(0.01);
     }
   }

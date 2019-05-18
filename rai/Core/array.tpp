@@ -1177,7 +1177,7 @@ template<class T> rai::Array<T>& rai::Array<T>::operator=(std::initializer_list<
 template<class T> rai::Array<T>& rai::Array<T>::operator=(const T& v) {
   uint i;
   //if(memMove && typeid(T)==typeid(T)) memset(p, *((int*)&v), N); else
-  CHECK(N,"assigning constant to empty array");
+//  CHECK(N,"assigning constant to empty array");
   for(i=0; i<N; i++) p[i]=v;
   return *this;
 }
@@ -1488,6 +1488,7 @@ template<class T> void rai::Array<T>::referToRange(const Array<T>& a, int i, int
 /// make this array a subarray reference to \c a
 template<class T> void rai::Array<T>::referToDim(const rai::Array<T>& a, int i) {
   CHECK(a.nd>1, "can't create subarray of array less than 2 dimensions");
+  CHECK(!isSparseMatrix(*this), "can't refer to row of sparse matrix");
   if(i<0) i+=a.d0;
   
   CHECK(i>=0 && i<(int)a.d0, "SubDim range error (" <<i <<"<" <<a.d0 <<")");
@@ -3411,6 +3412,7 @@ void setMinus(rai::Array<T>& x, const rai::Array<T>& y) {
   }
 }
 
+/// x becomes the section of y and z
 template<class T> rai::Array<T> setSectionSorted(const rai::Array<T>& x, const rai::Array<T>& y,
     bool (*comp)(const T& a, const T& b)) {
   rai::Array<T> R;
@@ -3429,17 +3431,30 @@ template<class T> rai::Array<T> setSectionSorted(const rai::Array<T>& x, const r
   return R;
 }
 
-/// x becomes the section of y and z
 template<class T>
 void setMinusSorted(rai::Array<T>& x, const rai::Array<T>& y,
                     bool (*comp)(const T& a, const T& b)) {
-  T *yp=y.p, *ystop=y.p+y.N;
+#if 1
+  int i=x.N-1, j=y.N-1;
+  if(j<0) return;
+  if(i<0) return;
+  for(;;){
+    while(j>=0 && !comp(y.elem(j),x.elem(i))) j--;
+    if(j<0) break;
+    while(i>=0 && !comp(x.elem(i),y.elem(j))) i--;
+    if(i<0) break;
+    if(x.elem(i)==y.elem(j)){ x.remove(i); i--; }
+    if(i<0) break;
+  }
+#else
+    T *yp=y.p, *ystop=y.p+y.N;
   for(uint i=0; i<x.N;) {
-    while(yp!=ystop && comp(*yp,x(i))) yp++;
+    while(yp!=ystop && comp(*yp,x.elem(i))) yp++;
     if(yp==ystop) break;
-    if(*yp==x(i)) x.remove(i);
+    if(*yp==x.elem(i)) x.remove(i);
     else i++;
   }
+#endif
 }
 
 /// share x and y at least one element?

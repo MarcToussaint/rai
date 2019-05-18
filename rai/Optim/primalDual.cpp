@@ -13,7 +13,7 @@ PrimalDualProblem::PrimalDualProblem(const arr &x, ConstrainedProblem &P, OptOpt
 
   L.mu = L.nu = L.muLB = 0.;
 
-//  double Lval = L.lagrangian(NoArr, NoArr, x);
+  double Lval = L.lagrangian(NoArr, NoArr, x);
 //  cout <<"x=" <<x <<endl <<"L=" <<Lval <<endl;
   
   n_ineq=0;
@@ -33,7 +33,7 @@ PrimalDualProblem::PrimalDualProblem(const arr &x, ConstrainedProblem &P, OptOpt
 double PrimalDualProblem::primalDual(arr &r, arr &R, const arr &x_lambda) {
 
   //copy the latter part of x into lambdas for the inequalities
-  uint n = L.x.N;
+  uint n = L.x.N; //x_lambda.N - (n_eq+n_ineq);
   const arr x = x_lambda({0,n-1});
   if(!L.lambda.N) L.lambda = zeros(L.phi_x.N);
   for(uint i=0; i<L.phi_x.N; i++) if(L.tt_x.p[i]==OT_eq) L.lambda(i) = x_lambda(n++);
@@ -45,7 +45,7 @@ double PrimalDualProblem::primalDual(arr &r, arr &R, const arr &x_lambda) {
   L.nu = L.muLB = 0.;
   
   arr dL, HL;
-//  double Lval = L.lagrangian(dL, HL, x);
+  double Lval = L.lagrangian(dL, HL, x);
 //  cout <<"x=" <<x <<endl <<"lambda=" <<L.lambda <<endl <<"L=" <<Lval <<endl;
   if(!L.lambda.N) L.lambda = zeros(L.phi_x.N);
   
@@ -62,15 +62,17 @@ double PrimalDualProblem::primalDual(arr &r, arr &R, const arr &x_lambda) {
     }
   }
 
-  dualityMeasure /= n_ineq;
+  if(n_ineq){
+    dualityMeasure /= n_ineq;
 #if 1
-  mu = .5*dualityMeasure;
+    mu = .5*dualityMeasure;
 #else
-  double newMu = .5*dualityMeasure;
-  if(newMu < mu) mu *= .5;
+    double newMu = .5*dualityMeasure;
+    if(newMu < mu) mu *= .5;
 #endif
-  cout <<" \tmu=\t" <<mu <<std::flush;
-  
+    cout <<" \tmu=\t" <<mu <<std::flush;
+  }
+
   //-- equation system
   if(!!r) {
     // 1st KKT: dL
@@ -99,15 +101,35 @@ double PrimalDualProblem::primalDual(arr &r, arr &R, const arr &x_lambda) {
   
   //-- Jacobian
   if(!!R) {
-    R.resize(r.N, r.N).setZero();
-    // top-left: 1st KKT: HL
-    R.setMatrixBlock(HL, 0, 0);
+    bool sparse=isSparseMatrix(HL);
+    rai::SparseMatrix* Rsparse=0;
+    rai::SparseMatrix* LJx_sparse=0;
+
+    if(!sparse){
+      R.resize(r.N, r.N).setZero();
+      // top-left: 1st KKT: HL
+      R.setMatrixBlock(HL, 0, 0);
+    }else{
+      CHECK(isSparseMatrix(L.J_x), "");
+      R = HL;
+      Rsparse = &R.sparse();
+      Rsparse->reshape(r.N,r.N);
+      LJx_sparse = &L.J_x.sparse();
+      LJx_sparse->setupRowsCols();
+    }
 
     // top-mid: transposed \del h
     n=x.N;
     for(uint i=0; i<L.phi_x.N; i++) {
       if(L.tt_x.p[i]==OT_eq) {
-        for(uint j=0; j<x.N; j++) R(j,n) = L.J_x(i, j);
+        if(!sparse){
+          for(uint j=0; j<x.N; j++) R(j,n) = L.J_x(i, j);
+        }else{
+          uintA& row = LJx_sparse->rows(i);
+          for(uint j=0;j<row.d0;j++){
+            Rsparse->addEntry(row(j,0),n) = LJx_sparse->Z.elem(row(j,1));
+          }
+        }
         n++;
       }
     }
@@ -116,7 +138,10 @@ double PrimalDualProblem::primalDual(arr &r, arr &R, const arr &x_lambda) {
     n=x.N+n_eq;
     for(uint i=0; i<L.phi_x.N; i++) {
       if(L.tt_x.p[i]==OT_ineq) {
-        for(uint j=0; j<x.N; j++) R(j,n) = L.J_x(i, j);
+        for(uint j=0; j<x.N; j++){
+          if(!sparse) R(j,n) = L.J_x(i, j);
+          else Rsparse->addEntry(j,n) = L.J_x(i, j);
+        }
         n++;
       }
     }
@@ -127,7 +152,14 @@ double PrimalDualProblem::primalDual(arr &r, arr &R, const arr &x_lambda) {
     n=x.N;
     for(uint i=0; i<L.phi_x.N; i++) {
       if(L.tt_x.p[i]==OT_eq) {
-        for(uint j=0; j<x.N; j++) R(n,j) = L.J_x(i, j);
+        if(!sparse){
+          for(uint j=0; j<x.N; j++) R(n,j) = L.J_x(i, j);
+        }else{
+          uintA& row = LJx_sparse->rows(i);
+          for(uint j=0;j<row.d0;j++){
+            Rsparse->addEntry(n,row(j,0)) = LJx_sparse->Z.elem(row(j,1));
+          }
+        }
         n++;
       }
     }
@@ -138,7 +170,8 @@ double PrimalDualProblem::primalDual(arr &r, arr &R, const arr &x_lambda) {
       if(L.tt_x.p[i]==OT_ineq) {
         for(uint j=0; j<x.N; j++){
 //          if(L.phi_x.p[i] > 0.) R(n,j) = -L.J_x(i, j); else
-          R(n,j) = -L.lambda(i) * L.J_x(i, j);
+          if(!sparse) R(n,j) = -L.lambda(i) * L.J_x(i, j);
+          else Rsparse->addEntry(n,j) = -L.lambda(i) * L.J_x(i, j);
         }
         n++;
       }
@@ -149,8 +182,10 @@ double PrimalDualProblem::primalDual(arr &r, arr &R, const arr &x_lambda) {
     for(uint i=0; i<L.phi_x.N; i++) {
       if(L.tt_x.p[i]==OT_ineq) {
         for(uint j=0; j<x.N; j++){
+          NIY; //THIS IS WRONG! below does not depend on j
 //          if(L.phi_x.p[i] > 0.) {} else
-          R(n,n) = - L.phi_x(i);
+          if(!sparse) R(n,n) = - L.phi_x(i);
+          else Rsparse->addEntry(n,n) = - L.phi_x(i);
         }
         n++;
       }
@@ -163,9 +198,12 @@ double PrimalDualProblem::primalDual(arr &r, arr &R, const arr &x_lambda) {
 
 //==============================================================================
 
-OptPrimalDual::OptPrimalDual(arr& x, arr &dual, ConstrainedProblem& P, OptOptions opt)
+OptPrimalDual::OptPrimalDual(arr& x, arr &dual, ConstrainedProblem& P, int verbose, OptOptions opt)
   : x(x), PD(x, P, opt, dual), newton(PD.x_lambda, PD, opt), opt(opt) {
   
+  if(verbose>=0) opt.verbose=verbose;
+  newton.o.verbose = rai::MAX(opt.verbose-1,0);
+
   newton.rootFinding = true;
   newton.bound_lo.resize(newton.x.N).setZero();
   newton.bound_hi.resize(newton.x.N) = -1.;

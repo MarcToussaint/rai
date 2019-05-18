@@ -237,6 +237,7 @@ struct KinematicWorld : GLDrawer {
   void saveVideoPic(uint& t, const char* pathPrefix="vid/");
   void glAdd(void (*call)(void*, OpenGL&), void* classP);
   int glAnimate();
+  void glClose();
   void glGetMasks(int w=-1, int h=-1, bool rgbIndices=true);
   void stepSwift();
   void stepFcl();

@@ -28,6 +28,7 @@ struct OptNewton {
   arr bound_lo, bound_hi;
   bool rootFinding=false;
   ofstream *fil=NULL;
+  double timeNewton=0., timeEval=0.;
   
   OptNewton(arr& x, const ScalarFunction& f, OptOptions o=NOOPT);
   ~OptNewton();

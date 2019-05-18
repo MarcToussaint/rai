@@ -68,8 +68,10 @@ inline void evaluateConstrainedProblem(const arr& x, ConstrainedProblem& P, std:
 
 struct PhaseOneProblem : ConstrainedProblem {
   ConstrainedProblem &f_orig;
+  uint dim_x, dim_ineq, dim_eq;
   
   PhaseOneProblem(ConstrainedProblem &f_orig):f_orig(f_orig) {}
-  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& ot, const arr& x, arr& lambda);
+  void initialize(arr& x);
+  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& meta_ot, const arr& x, arr& lambda);
 };
 
