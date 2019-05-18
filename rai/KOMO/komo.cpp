@@ -69,7 +69,7 @@ KOMO::KOMO() : useSwift(true), verbose(1), komo_problem(*this), dense_problem(*t
   verbose = getParameter<int>("KOMO/verbose",1);
 }
 
-KOMO::KOMO(const KinematicWorld& K)
+KOMO::KOMO(const KinematicWorld& K, bool )
   : KOMO() {
   setModel(K, true);
   world.optimizeTree();
@@ -86,10 +86,8 @@ KOMO::~KOMO() {
   listDelete(configurations);
 }
 
-void KOMO::setModel(const KinematicWorld& K,
-                    bool _useSwift) {
-
-  if(&K!=&world) world.copy(K, true);
+void KOMO::setModel(const KinematicWorld& K, bool _useSwift) {
+  if(&K!=&world) world.copy(K, _useSwift);
   useSwift = _useSwift;
   if(useSwift) world.swift();
   world.calc_q();

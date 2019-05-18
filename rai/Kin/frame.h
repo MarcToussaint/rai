@@ -100,13 +100,14 @@ struct Frame : NonCopyable{
   void setQuaternion(const std::vector<double>& quat);
   void setRelativePosition(const std::vector<double>& pos);
   void setRelativeQuaternion(const std::vector<double>& quat);
-  void setPointCloud(const std::vector<double>& points);
-  void setConvexMesh(const std::vector<double>& points, double radius=0.);
+  void setPointCloud(const std::vector<double>& points, const std::vector<byte>& colors);
+  void setConvexMesh(const std::vector<double>& points, const std::vector<byte>& colors, double radius=0.);
   void setColor(const std::vector<double>& color);
   void setJoint(rai::JointType jointType);
 
   arr getPosition(){ return X.pos.getArr(); }
-  arr getQuaternion(){ return X.rot.getArr(); }
+  arr getQuaternion(){ return X.rot.getArr4d(); }
+  arr getRotationMatrix(){ return X.rot.getArr(); }
   arr getRelativePosition(){ return Q.pos.getArr(); }
   arr getRelativeQuaternion(){ return Q.rot.getArr(); }
   arr getMeshPoints();

@@ -52,11 +52,11 @@ void depthData2pointCloud(arr& pts, const floatA& depth, float fx, float fy, flo
       float d = *(de++);
       if(d>=0.){
           float x=j, y=i;
-#if 0
+#if 0 //slow
           pts(k, 0) = d * (x - px) / fx;
           pts(k, 1) = -d * (y - py) / fy;
           pts(k, 2) = -d;
-#else
+#else //fast
           *(pt++) = d * (x - px) / fx;
           *(pt++) = -d * (y - py) / fy;
           *(pt++) = -d;
@@ -75,4 +75,10 @@ void depthData2point(double* pt, double* fxypxy){
   pt[0] =  pt[2] * (pt[0] - fxypxy[2]) / fxypxy[0];
   pt[1] = -pt[2] * (pt[1] - fxypxy[3]) / fxypxy[1];
   pt[2] = -pt[2];
+}
+
+void depthData2point(arr& pt, const arr& Fxypxy){
+  CHECK_EQ(pt.N, 3, "need a 3D point");
+  CHECK_EQ(Fxypxy.N, 4, "need 4 intrinsic parameters");
+  depthData2point(pt.p, Fxypxy.p);
 }

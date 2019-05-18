@@ -14,6 +14,7 @@
 #include "roscom.h"
 #include <rai_msgs/baxter/HeadPanCommand.h>
 #include <rai_msgs/baxter/EndEffectorCommand.h>
+#include <rai_msgs/baxter/EndEffectorState.h>
 #include <rai_msgs/baxter/JointCommand.h>
 #include <RosCom/roscom.h>
 
@@ -23,12 +24,16 @@ struct sBaxterInterface {
   RosCom ROS;
 
   Var<sensor_msgs::JointState> state;
+  Var<baxter_core_msgs::EndEffectorState> gripR;
+  Var<baxter_core_msgs::EndEffectorState> gripL;
 
   ptr<ros::NodeHandle> nh;
-  ros::Publisher pubL, pubR, pubLg, pubRg, pubHead, pubGripper;
+  ros::Publisher pubL, pubR, pubLg, pubRg, pubHead, pubGripperR, pubGripperL;
   rai::KinematicWorld baxterModel;
 
   std::shared_ptr<Subscriber<sensor_msgs::JointState>> sub_state;
+  std::shared_ptr<Subscriber<baxter_core_msgs::EndEffectorState>> sub_gripR;
+  std::shared_ptr<Subscriber<baxter_core_msgs::EndEffectorState>> sub_gripL;
 
   sBaxterInterface(bool useRosDefault) {
     baxterModel.addFile(rai::raiPath("../rai-robotModels/baxter/baxter.g"));
@@ -41,10 +46,16 @@ struct sBaxterInterface {
       pubRg = nh->advertise<std_msgs::Empty>("robot/limb/right/suppress_gravity_compensation", 1);
       pubLg = nh->advertise<std_msgs::Empty>("robot/limb/left/suppress_gravity_compensation", 1);
       pubHead = nh->advertise<baxter_core_msgs::HeadPanCommand>("robot/head/command_head_pan", 1);
-      pubGripper = nh->advertise<baxter_core_msgs::EndEffectorCommand>("robot/end_effector/left_gripper/command", 1);
+      pubGripperR = nh->advertise<baxter_core_msgs::EndEffectorCommand>("robot/end_effector/right_gripper/command", 1);
+      pubGripperL = nh->advertise<baxter_core_msgs::EndEffectorCommand>("robot/end_effector/left_gripper/command", 1);
 
       state.name() = "/robot/joint_states";
+      gripR.name() = "/robot/end_effector/right_gripper/state";
+      gripL.name() = "/robot/end_effector/left_gripper/state";
       ROS.subscribe(sub_state, state, true);
+      ROS.subscribe(sub_gripR, gripR);
+      ROS.subscribe(sub_gripL, gripL);
+
       rai::wait(.5);
     }
   }
@@ -88,23 +99,46 @@ baxter_core_msgs::HeadPanCommand getHeadMsg(const arr& q_ref, const rai::Kinemat
   return msg;
 }
 
-baxter_core_msgs::EndEffectorCommand getGripperMsg(const arr& q_ref, const rai::KinematicWorld& baxterModel) {
+baxter_core_msgs::EndEffectorCommand getElectricGripperMsg(const arr& q_ref, const rai::KinematicWorld& baxterModel) {
+  baxter_core_msgs::EndEffectorCommand msg;
+  rai::Joint *j = baxterModel.getFrameByName("r_gripper_l_finger_joint")->joint;
+  rai::String str;
+  
+  bool position = bool(q_ref(j->qIndex));
+
+//  str <<"{ \"position\":" <<1000.*q_ref(j->qIndex) <<", \"dead zone\":5.0, \"force\": 40.0, \"holding force\": 30.0, \"velocity\": 50.0 }";
+  str <<"{ \"position\":" << position<<", \"dead zone\":5.0, \"force\": 40.0, \"holding force\": 30.0, \"velocity\": 50.0 }";
+  
+  msg.id = 65538;
+  if(position){
+    msg.command = msg.CMD_GRIP; //CMD_GO;
+  }else{
+    msg.command = msg.CMD_RELEASE;
+  }
+  msg.args = str.p;
+  msg.sender = "foo";
+  msg.sequence = 1;
+  return msg;
+}
+
+baxter_core_msgs::EndEffectorCommand getVacuumGripperMsg(const arr& q_ref, const rai::KinematicWorld& baxterModel) {
   baxter_core_msgs::EndEffectorCommand msg;
   rai::Joint *j = baxterModel.getFrameByName("l_gripper_l_finger_joint")->joint;
   rai::String str;
   
-  double position = q_ref(j->qIndex) / (j->limits(1) - j->limits(0)) * 100.0;
+  bool suction = bool(q_ref(j->qIndex));
+
+  str <<"{ \"blowing\" : false,\n  \"suction\" : "<<suction<<",\n  \"vacuum\" : false,\n \"vacuum threshold\" : 46}";
   
-//  str <<"{ \"position\":" <<1000.*q_ref(j->qIndex) <<", \"dead zone\":5.0, \"force\": 40.0, \"holding force\": 30.0, \"velocity\": 50.0 }";
-  str <<"{ \"position\":" << position<<", \"dead zone\":5.0, \"force\": 40.0, \"holding force\": 30.0, \"velocity\": 50.0 }";
-  
-  //cout <<str <<endl;
-  
-  msg.id = 65538;
-  msg.command = msg.CMD_GO;
+  msg.id = 65537;
+  if(suction){
+    msg.command = msg.CMD_GRIP;
+  }else{
+    msg.command = msg.CMD_RELEASE;
+  }
   msg.args = str.p;
   msg.sender = "foo";
-  msg.sequence = 1;
+  msg.sequence = 6;
   return msg;
 }
 
@@ -139,7 +173,9 @@ void SendPositionCommandsToBaxter::step() {
       s->pubR.publish(conv_qRef2baxterMessage(q_ref, s->baxterModel, "right_"));
       
     s->pubHead.publish(getHeadMsg(q_ref, s->baxterModel));
-    s->pubGripper.publish(getGripperMsg(q_ref, s->baxterModel));
+    s->pubGripperR.publish(getElectricGripperMsg(q_ref, s->baxterModel));
+    s->pubGripperL.publish(getVacuumGripperMsg(q_ref, s->baxterModel));
+
   } else {
     close();
   }
@@ -175,6 +211,43 @@ arr BaxterInterface::get_u(){
   return u;
 }
 
+bool BaxterInterface::get_grabbed(const std::string& whichArm){
+  bool grabbed;
+  baxter_core_msgs::EndEffectorState msgs;
+
+  if(whichArm=="left"){
+    msgs = s->gripL.get();
+  }
+  else{
+    msgs = s->gripR.get();
+  }
+  grabbed=bool(int(msgs.gripping));
+
+  return grabbed;
+}
+
+bool BaxterInterface::get_opened(const std::string& whichArm){
+  bool opened, grabbed;
+  baxter_core_msgs::EndEffectorState msgs;
+
+  if(whichArm=="left"){
+    msgs = s->gripL.get();
+  }
+  else{
+    msgs = s->gripR.get();
+  }
+  grabbed=get_grabbed(whichArm);
+
+  if(msgs.position>90 && !get_grabbed(whichArm)){
+    opened=true;
+  }
+  else{
+    opened=false;
+  }
+
+  return opened;
+}
+
 void BaxterInterface::send_q(const arr& q_ref, bool enableL, bool enableR){
   if(enableL)
     s->pubL.publish(conv_qRef2baxterMessage(q_ref, s->baxterModel, "left_"));
@@ -183,7 +256,8 @@ void BaxterInterface::send_q(const arr& q_ref, bool enableL, bool enableR){
     s->pubR.publish(conv_qRef2baxterMessage(q_ref, s->baxterModel, "right_"));
 
   s->pubHead.publish(getHeadMsg(q_ref, s->baxterModel));
-  s->pubGripper.publish(getGripperMsg(q_ref, s->baxterModel));
+  s->pubGripperR.publish(getElectricGripperMsg(q_ref, s->baxterModel));
+  s->pubGripperL.publish(getVacuumGripperMsg(q_ref, s->baxterModel));
 }
 
 #else

@@ -593,9 +593,11 @@ template<class T> void rai::Array<T>::replace(uint i, uint n, const rai::Array<T
 }
 
 /// deletes the i-th row [must be 2D]
-template<class T> void rai::Array<T>::delRows(uint i, uint k) {
+template<class T> void rai::Array<T>::delRows(int i, uint k) {
   CHECK(memMove, "only with memMove");
   CHECK_EQ(nd,2, "only for matricies");
+  if(i<0) i+=d0;
+  CHECK_GE(i, 0, "range check error");
   CHECK_LE(i+k, d0, "range check error");
   uint n=d1;
   if(i+k<d0) memmove(p+i*n, p+(i+k)*n, sizeT*(d0-i-k)*n);
@@ -1628,11 +1630,16 @@ rai::Array<T>::setGrid(uint dim, T lo, T hi, uint steps) {
 }
 
 //----- sorting etc
+template<class T> T rai::Array<T>::median_nonConst(){
+  CHECK_GE(N, 1, "");
+  std::nth_element(p, p+N/2, p+N);
+  return *(p+N/2);
+}
+
+
 /// sort this list
 template<class T> rai::Array<T>& rai::Array<T>::sort(ElemCompare comp) {
-  T *pstop=p+N;
-  std::sort(p, pstop, comp);
-  return *this;
+  std::sort(p, p+N, comp);
 }
 
 /// check whether list is sorted

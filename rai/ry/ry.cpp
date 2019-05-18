@@ -110,6 +110,26 @@ arr numpy2arr(const pybind11::array& X){
   return Y;
 }
 
+byteA numpy2arr(const pybind11::array_t<byte>& X){
+  byteA Y;
+  uintA dim(X.ndim());
+  for(uint i=0;i<dim.N;i++) dim(i)=X.shape()[i];
+  Y.resize(dim);
+  auto ref = X.unchecked<>();
+  if (Y.nd==1) {
+    for(uint i=0;i<Y.d0;i++) Y(i) = ref(i);
+    return Y;
+  } else if(Y.nd==2){
+    for(uint i=0;i<Y.d0;i++) for(uint j=0;j<Y.d1;j++) Y(i,j) = ref(i,j);
+    return Y;
+  } else if(Y.nd==3){
+    for(uint i=0;i<Y.d0;i++) for(uint j=0;j<Y.d1;j++) for(uint k=0;k<Y.d2;k++) Y(i,j,k) = ref(i,j,k);
+    return Y;
+  }
+  NIY;
+  return Y;
+}
+
 arr vecvec2arr(const std::vector<std::vector<double>>& X){
   CHECK(X.size()>0, "");
   arr Y(X.size(), X[0].size());
@@ -361,33 +381,34 @@ PYBIND11_MODULE(libry, m) {
     self.set() = K;
   } )
 
-  .def("komo_IK", [](ry::Config& self){
+  .def("komo_IK", [](ry::Config& self, bool useSwift){
     ry::RyKOMO komo;
-    komo.komo = make_shared<KOMO>(self.get());
+    komo.komo = make_shared<KOMO>(self.get(), useSwift);
     komo.config.set() = komo.komo->world;
     komo.komo->setIKOpt();
     return komo;
   } )
 
-  .def("komo_CGO", [](ry::Config& self, uint numConfigs){
+  .def("komo_CGO", [](ry::Config& self, uint numConfigs, bool useSwift){
     CHECK_GE(numConfigs, 1, "");
     ry::RyKOMO komo;
-    komo.komo = make_shared<KOMO>(self.get());
+    komo.komo = make_shared<KOMO>(self.get(), useSwift);
     komo.config.set() = komo.komo->world;
     komo.komo->setDiscreteOpt(numConfigs);
     return komo;
   } )
 
-  .def("komo_path",  [](ry::Config& self, double phases, uint stepsPerPhase, double timePerPhase){
+  .def("komo_path",  [](ry::Config& self, double phases, uint stepsPerPhase, double timePerPhase, bool useSwift){
     ry::RyKOMO komo;
-    komo.komo = make_shared<KOMO>(self.get());
+    komo.komo = make_shared<KOMO>(self.get(), useSwift);
     komo.config.set() = komo.komo->world;
     komo.komo->setPathOpt(phases, stepsPerPhase, timePerPhase);
     return komo;
   }, "",
     py::arg("phases"),
     py::arg("stepsPerPhase")=20,
-    py::arg("timePerPhase")=5. )
+    py::arg("timePerPhase")=5.,
+    py::arg("useSwift"))
 
   .def("lgp", [](ry::Config& self, const std::string& folFileName){
     ry::RyLGP_Tree lgp;
@@ -468,6 +489,10 @@ PYBIND11_MODULE(libry, m) {
   //===========================================================================
 
   py::class_<ry::RyCameraView>(m, "CameraView")
+  .def("updateConfig", [](ry::RyCameraView& self, ry::Config& config){
+    self.cam->K.setFrameState(config.get()->getFrameState());
+  } )
+
   .def("addSensor", [](ry::RyCameraView& self, const char* name, const char* frameAttached, uint width, uint height, double focalLength, double orthoAbsHeight, const std::vector<double>& zRange, const std::string& backgroundImageFile){
     self.cam->addSensor(name, frameAttached, width, height, focalLength, orthoAbsHeight, arr(zRange), backgroundImageFile.c_str());
   }, "",
@@ -569,10 +594,11 @@ PYBIND11_MODULE(libry, m) {
   //===========================================================================
 
   py::class_<ry::RyFrame>(m, "Frame")
-  .def("setPointCloud", [](ry::RyFrame& self, const pybind11::array& points){
+  .def("setPointCloud", [](ry::RyFrame& self, const pybind11::array& points, const pybind11::array_t<byte>& colors){
     arr _points = numpy2arr(points);
+    byteA _colors = numpy2arr(colors);
     WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
-    self.frame->setPointCloud(_points);
+    self.frame->setPointCloud(_points, _colors);
   } )
 
   .def("setShape", [](ry::RyFrame& self, rai::ShapeType shape, const std::vector<double>& size){
@@ -628,6 +654,12 @@ PYBIND11_MODULE(libry, m) {
     return pybind11::array_t<double>(x.dim(), x.p);
   } )
 
+  .def("getRotationMatrix", [](ry::RyFrame& self){
+    RToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    arr x = self.frame->getRotationMatrix();
+    return pybind11::array_t<double>(x.dim(), x.p);
+  } )
+
   .def("getRelativePosition", [](ry::RyFrame& self){
     RToken<rai::KinematicWorld> token(*self.config, &self.config->data);
     arr x = self.frame->getRelativePosition();
@@ -652,6 +684,7 @@ PYBIND11_MODULE(libry, m) {
     G.newNode<rai::String>({"name"}, {}, self.frame->name);
     G.newNode<int>({"ID"}, {}, self.frame->ID);
     self.frame->write(G);
+    if(!G["X"]) G.newNode<arr>({"X"}, {}, self.frame->X.getArr7d());
     return graph2dict(G);
   } )
 
@@ -782,8 +815,8 @@ PYBIND11_MODULE(libry, m) {
 
   //-- run
 
-  .def("optimize", [](ry::RyKOMO& self){
-    self.komo->optimize();
+  .def("optimize", [](ry::RyKOMO& self, bool reinitialize_randomly){
+    self.komo->optimize(reinitialize_randomly);
     self.path.set() = self.komo->getPath_frames();
   } )
 
@@ -994,6 +1027,11 @@ PYBIND11_MODULE(libry, m) {
     self.R->move(_path, conv_stdvec2arr(times), append);
   } )
 
+  .def("moveHard", [](ry::RyOperate& self, const pybind11::array& pose){
+    arr _pose = numpy2arr(pose);
+    self.R->moveHard(_pose);
+  } )
+
   .def("timeToGo", [](ry::RyOperate& self){
     return self.R->timeToGo();
   } )
@@ -1005,6 +1043,14 @@ PYBIND11_MODULE(libry, m) {
   .def("getJointPositions", [](ry::RyOperate& self, ry::Config& C){
     arr q = self.R->getJointPositions();
     return pybind11::array(q.dim(), q.p);
+  } )
+
+  .def("getGripperGrabbed", [](ry::RyOperate& self, const std::string& whichArm){
+    return self.R->getGripperGrabbed(whichArm);
+  } )
+
+  .def("getGripperOpened", [](ry::RyOperate& self, const std::string& whichArm){
+    return self.R->getGripperOpened(whichArm);
   } )
 
   .def("sendToReal", [](ry::RyOperate& self, bool activate){
@@ -1032,12 +1078,22 @@ PYBIND11_MODULE(libry, m) {
     return pybind11::array_t<float>(depth.dim(), depth.p);
   } )
 
-  .def("getPoints", [](ry::RyCamera& self, std::vector<double>& Fxypxy){
+  .def("getPoints", [](ry::RyCamera& self, const std::vector<double>& Fxypxy){
     floatA _depth = self.depth.get();
     arr _points;
     CHECK_EQ(Fxypxy.size(), 4, "I need 4 intrinsic calibration parameters")
     depthData2pointCloud(_points, _depth, Fxypxy[0], Fxypxy[1], Fxypxy[2], Fxypxy[3]);
     return pybind11::array_t<double>(_points.dim(), _points.p);
+  } )
+
+  .def("transform_image2world", [](ry::RyCamera& self, const std::vector<double>& pt, const char* cameraFrame, const std::vector<double>& Fxypxy){
+    NIY
+//    arr _pt = pt;
+//    depthData2point(_pt, conv_stdvec2arr(Fxypxy)); //transforms the point to camera xyz coordinates
+
+//    pcl->X.applyOnPoint(pt); //transforms into world coordinates
+
+//    return pybind11::array_t<double>(_pt.dim(), _pt.p);
   } )
 
   ;

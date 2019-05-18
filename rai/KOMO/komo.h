@@ -99,12 +99,11 @@ struct KOMO : NonCopyable {
   ofstream *fil=0;
   
   KOMO();
-  KOMO(const rai::KinematicWorld& K);
+  KOMO(const rai::KinematicWorld& K, bool _useSwift=true);
   ~KOMO();
   
   //-- setup the problem
-  void setModel(const rai::KinematicWorld& K,
-                bool _useSwift=true);
+  void setModel(const rai::KinematicWorld& K, bool _useSwift=true);
   void setTiming(double _phases=1., uint _stepsPerPhase=10, double durationPerPhase=5., uint _k_order=2);
   void setPairedTimes();
   void activateCollisions(const char* s1, const char* s2);
