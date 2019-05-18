@@ -277,7 +277,7 @@ struct GlfwSpinner : Thread {
 //    cout <<"HERE" <<count++;
     mutex.lock(RAI_HERE);
     glfwPollEvents();
-    for(OpenGL* gl: glwins) if(gl->s->window && gl->s->needsRedraw){
+    for(OpenGL* gl: glwins) if(gl->s && gl->s->window && gl->s->needsRedraw){
       gl->isUpdating.setStatus(1);
 
       glfwMakeContextCurrent(gl->s->window);

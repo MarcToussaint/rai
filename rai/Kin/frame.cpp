@@ -302,6 +302,11 @@ void rai::Frame::setColor(const std::vector<double>& color){
   getShape().mesh().C = color;
 }
 
+void rai::Frame::setJoint(rai::JointType jointType){
+  if(joint) { delete joint; joint=NULL; }
+  new Joint(*this, jointType);
+}
+
 arr rai::Frame::getMeshPoints(){
   return getShape().mesh().V;
 }

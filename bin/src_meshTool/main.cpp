@@ -12,8 +12,8 @@ Usage:  rai_meshTools file.[tri|obj|off|ply|stl] <tags...>\n\
 \n\
 Tags can be -view, -box, -fuse, -clean, -center, -scale, -save, -qhull, -flip \n";
 
-void drawInit(void*){
-  glStandardLight(NULL);
+void drawInit(void*, OpenGL& gl){
+  glStandardLight(NULL, gl);
   glDrawAxes(1.);
   glColor(1.,.5,0.);
 }

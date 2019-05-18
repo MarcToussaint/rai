@@ -52,11 +52,11 @@ void depthData2pointCloud(arr& pts, const floatA& depth, float fx, float fy, flo
       float d = *(de++);
       if(d>=0.){
           float x=j, y=i;
-#if 0
+#if 0 //slow
           pts(k, 0) = d * (x - px) / fx;
           pts(k, 1) = -d * (y - py) / fy;
           pts(k, 2) = -d;
-#else
+#else //fast
           *(pt++) = d * (x - px) / fx;
           *(pt++) = -d * (y - py) / fy;
           *(pt++) = -d;

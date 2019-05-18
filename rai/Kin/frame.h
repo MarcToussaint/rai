@@ -103,6 +103,7 @@ struct Frame : NonCopyable{
   void setPointCloud(const std::vector<double>& points, const std::vector<byte>& colors={});
   void setConvexMesh(const std::vector<double>& points, const std::vector<byte>& colors={}, double radius=0.);
   void setColor(const std::vector<double>& color);
+  void setJoint(rai::JointType jointType);
 
   arr getPosition(){ return X.pos.getArr(); }
   arr getQuaternion(){ return X.rot.getArr4d(); }

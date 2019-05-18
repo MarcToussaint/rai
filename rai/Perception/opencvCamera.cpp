@@ -1,5 +1,6 @@
-#include "opencv.h"
+#ifdef RAI_OPENCV
 
+#include "opencv.h"
 #include "opencvCamera.h"
 
 #ifdef RAI_OPENCV

@@ -6,6 +6,7 @@
 #include <Kin/frame.h>
 #include <Kin/kin.h>
 #include <Kin/kin_bullet.h>
+#include <Kin/kin_physx.h>
 #include <Perception/depth2PointCloud.h>
 
 #include <pybind11/pybind11.h>
@@ -421,6 +422,12 @@ PYBIND11_MODULE(libry, m) {
     return bullet;
   } )
 
+  .def("physx", [](ry::Config& self){
+    ry::RyPhysX physx;
+    physx.physx = make_shared<PhysXInterface>(self.set());
+    return physx;
+  } )
+
   .def("operate", [](ry::Config& self, const char* rosNodeName){
     ry::RyOperate op;
     op.R = make_shared<RobotOperation>(self.get(), .01, rosNodeName);
@@ -804,8 +811,8 @@ PYBIND11_MODULE(libry, m) {
 
   //-- run
 
-  .def("optimize", [](ry::RyKOMO& self){
-    self.komo->optimize();
+  .def("optimize", [](ry::RyKOMO& self, bool reinitialize_randomly){
+    self.komo->optimize(reinitialize_randomly);
     self.path.set() = self.komo->getPath_frames();
   } )
 
@@ -973,6 +980,31 @@ PYBIND11_MODULE(libry, m) {
 
   .def("setState", [](ry::RyBullet& self, ry::Config& C, const pybind11::array& velocities){
     self.bullet->pushFullState(C.get()->frames, numpy2arr(velocities));
+  } )
+
+  ;
+
+  //===========================================================================
+
+  py::class_<ry::RyPhysX>(m, "RyPhysX")
+  .def("step", [](ry::RyPhysX& self){
+    self.physx->step();
+  } )
+
+  .def("step", [](ry::RyPhysX& self, ry::Config& C){
+    self.physx->pushToPhysx(&C.get()());
+    self.physx->step();
+    self.physx->pullFromPhysx(&C.set()());
+  } )
+
+  .def("getState", [](ry::RyPhysX& self, ry::Config& C){
+    arr V;
+    self.physx->pullFromPhysx(&C.set()(), V);
+    return pybind11::array(V.dim(), V.p);
+  } )
+
+  .def("setState", [](ry::RyPhysX& self, ry::Config& C, const pybind11::array& velocities){
+    self.physx->pushToPhysx(&C.get()(), numpy2arr(velocities));
   } )
 
   ;

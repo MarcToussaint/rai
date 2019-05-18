@@ -276,8 +276,21 @@ SendPositionCommandsToBaxter::SendPositionCommandsToBaxter(const rai::KinematicW
 void SendPositionCommandsToBaxter::open() { NICO }
 void SendPositionCommandsToBaxter::step() { NICO }
 void SendPositionCommandsToBaxter::close() { NICO }
-#endif
 
 #endif
+
+
+#endif
+#else
+
+BaxterInterface::BaxterInterface(bool useRosDefault){ NICO }
+BaxterInterface::~BaxterInterface(){ NICO }
+
+arr BaxterInterface::get_q(){ NICO }
+arr BaxterInterface::get_qdot(){ NICO }
+arr BaxterInterface::get_u(){ NICO }
+
+void BaxterInterface::send_q(const arr& q_ref, bool enableL, bool enableR){ NICO }
+
 #endif
 

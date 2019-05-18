@@ -63,15 +63,9 @@ struct sRobotOperation : Thread, GLDrawer{
       }
     }
 
-
     if(!(step_count%10)){
-      {
-      }
       gl.update(STRING("step=" <<step_count <<" phase=" <<spline.phase <<" timeToGo=" <<spline.timeToGo() <<" #ref=" <<spline.refSpline.points.d0));
-
-//      cout <<"ONLINE! " <<baxter.get_q() <<endl;
     }
-
   }
 
   void glDraw(OpenGL& gl){
