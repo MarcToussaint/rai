@@ -212,6 +212,7 @@ struct Transformation {
   arr getArr7d();
   arr getWrenchTransform();
   
+  void applyOnPoint(arr& pt) const;
   void applyOnPointArray(arr& pts) const;
   
   void write(std::ostream& os) const;
@@ -291,7 +292,6 @@ struct Camera {
   double glConvertToTrueDepth(double d) const;
   double glConvertToLinearDepth(double d) const;
   void project2PixelsAndTrueDepth(arr& x, double width, double height) const;
-  void unproject(arr& x_in2DwithTrueDepth) const;
   void unproject_fromPixelsAndTrueDepth(arr& x, double width, double height) const;
   void unproject_fromPixelsAndGLDepth(arr& x, uint width, uint height) const;
 

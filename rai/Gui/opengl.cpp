@@ -277,11 +277,14 @@ struct GlfwSpinner : Thread {
 //    cout <<"HERE" <<count++;
     mutex.lock(RAI_HERE);
     glfwPollEvents();
-    for(OpenGL* gl: glwins) if(gl->s->window && gl->s->needsRedraw){
-      glfwMakeContextCurrent(gl->s->window);
+    for(OpenGL* gl: glwins) if(gl->s && gl->s->window && gl->s->needsRedraw){
       gl->isUpdating.setStatus(1);
+
+      glfwMakeContextCurrent(gl->s->window);
       gl->Draw(gl->width,gl->height);
       glfwSwapBuffers(gl->s->window);
+      glfwMakeContextCurrent(NULL);
+
       gl->s->needsRedraw--;
       gl->isUpdating.setStatus(0);
     }
@@ -300,6 +303,7 @@ struct GlfwSpinner : Thread {
     glfwMakeContextCurrent(gl->s->window);
     gl->Draw(gl->width,gl->height);
     glfwSwapBuffers(gl->s->window);
+    glfwMakeContextCurrent(NULL);
 #endif
     if(glwins.N==1) start=true; //start looping
     mutex.unlock();
@@ -391,6 +395,7 @@ void OpenGL::openWindow() {
     glfwSetWindowCloseCallback(s->window, GlfwSpinner::_Close);
 
     glfwSwapInterval(1);
+    glfwMakeContextCurrent(NULL);
     fg->mutex.unlock();
 
     fg->addGL(this);
@@ -422,6 +427,7 @@ void OpenGL::beginNonThreadedDraw(){
 void OpenGL::endNonThreadedDraw(){
   auto fg = singletonGlSpinner();
   glfwSwapBuffers(s->window);
+  glfwMakeContextCurrent(NULL);
   fg->mutex.unlock();
 }
 
@@ -1379,9 +1385,9 @@ int OpenGL::displayRedBlue(const arr &x, bool wait, float _zoom) {
   return watchImage(img, wait, _zoom);
 }
 
-void glDrawUI(void *p) {
+void glDrawUI(void *p, OpenGL& gl) {
   glPushName(0x10);
-  ((glUI*)p)->glDraw();
+  ((glUI*)p)->glDraw(gl);
   glPopName();
 }
 
@@ -2167,9 +2173,15 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y) {
     if(d<.001 || d==1.) {
       cout <<"NO SELECTION: SELECTION DEPTH = " <<d <<' ' <<camera.glConvertToTrueDepth(d) <<endl;
     } else {
-      double x=mouseposx, y=mouseposy;
-      unproject(x, y, d, true, mouseView);
-      cam->focus(x, y, d);
+      arr x = {(double)mouseposx, (double)mouseposy, d};
+//      unproject(x, y, d, true, mouseView);
+      if(v){
+        cam->unproject_fromPixelsAndGLDepth(x, width, height);
+        NIY;
+      }else{
+        cam->unproject_fromPixelsAndGLDepth(x, width, height);
+      }
+      cam->focus(x);
     }
   }
   
@@ -2482,7 +2494,7 @@ void glUI::addButton(uint x, uint y, const char *name, const char *img1, const c
   b.img2=img;    add_alpha_channel(b.img2, 200);
 }
 
-void glUI::glDraw() {
+void glUI::glDraw(OpenGL& gl) {
 #ifdef RAI_GL
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();

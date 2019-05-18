@@ -63,15 +63,9 @@ struct sRobotOperation : Thread, GLDrawer{
       }
     }
 
-
     if(!(step_count%10)){
-      {
-      }
       gl.update(STRING("step=" <<step_count <<" phase=" <<spline.phase <<" timeToGo=" <<spline.timeToGo() <<" #ref=" <<spline.refSpline.points.d0));
-
-//      cout <<"ONLINE! " <<baxter.get_q() <<endl;
     }
-
   }
 
   void glDraw(OpenGL& gl){
@@ -143,6 +137,15 @@ void RobotOperation::move(const arrA& poses, const arr& times, bool append){
   move(path, times, append);
 }
 
+void RobotOperation::moveHard(const arr& pose){
+    arr path;
+    path.referTo(pose);
+    path.reshape(1,pose.N);
+    move(path, {0.}, false);
+}
+
+
+
 double RobotOperation::timeToGo(){
   auto lock = s->stepMutex(RAI_HERE);
   return s->spline.timeToGo();
@@ -178,6 +181,16 @@ arr RobotOperation::getJointPositions(const StringA& joints){
   auto lock = s->stepMutex(RAI_HERE);
   if(s->useBaxter) return s->baxter.get_q();
   return s->K_ref.getJointState();
+}
+
+bool RobotOperation::getGripperGrabbed(const std::string& whichArm){
+  // if(s->useBaxter) 
+  return s->baxter.get_grabbed(whichArm);
+}
+
+bool RobotOperation::getGripperOpened(const std::string& whichArm){
+  // if(s->useBaxter) 
+  return s->baxter.get_opened(whichArm);
 }
 
 void RobotOperation::sync(rai::KinematicWorld& K){

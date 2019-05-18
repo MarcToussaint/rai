@@ -69,7 +69,7 @@ KOMO::KOMO() : useSwift(true), verbose(1), komo_problem(*this), dense_problem(*t
   verbose = getParameter<int>("KOMO/verbose",1);
 }
 
-KOMO::KOMO(const KinematicWorld& K)
+KOMO::KOMO(const KinematicWorld& K, bool )
   : KOMO() {
   setModel(K, true);
   world.optimizeTree();
@@ -86,10 +86,8 @@ KOMO::~KOMO() {
   listDelete(configurations);
 }
 
-void KOMO::setModel(const KinematicWorld& K,
-                    bool _useSwift) {
-
-  if(&K!=&world) world.copy(K, true);
+void KOMO::setModel(const KinematicWorld& K, bool _useSwift) {
+  if(&K!=&world) world.copy(K, _useSwift);
   useSwift = _useSwift;
   if(useSwift) world.swift();
   world.calc_q();
@@ -1051,7 +1049,6 @@ void KOMO_ext::setAbstractTask(double phase, const Graph& facts, int verbose) {
 
 void KOMO::setSkeleton(const Skeleton &S, bool ignoreSwitches) {
   //-- add objectives for mode switches
-#if 1
   intA switches = getSwitchesFromSkeleton(S);
   if(!ignoreSwitches){
     for(uint i=0;i<switches.d0;i++) {
@@ -1065,65 +1062,49 @@ void KOMO::setSkeleton(const Skeleton &S, bool ignoreSwitches) {
         addSwitch_mode(S(j).symbol, S(k).symbol, S(k).phase0, S(k).phase1+1., S(j).frames(0), newFrom, S(k).frames.last());
     }
   }
-#endif
   //-- add objectives for rest
   for(const SkeletonEntry& s:S) {
-    if(s.symbol==SY_touch) {   add_touch(s.phase0, s.phase1, s.frames(0), s.frames(1));  continue;  }
-    if(s.symbol==SY_above) {   add_aboveBox(s.phase0, s.phase1, s.frames(0), s.frames(1));  continue;  }
-    if(s.symbol==SY_inside) {   add_aboveBox(s.phase0, s.phase1, s.frames(0), s.frames(1));  continue;  }
-    if(s.symbol==SY_impulse) {  add_impulse(s.phase0, s.frames(0), s.frames(1));  continue;  }
-#if 0
-    if(s.symbol==SY_stable) {    if(!ignoreSwitches) addSwitch_stable(s.phase0, s.phase1+1., s.frames(0), s.frames(1));  continue;  }
-    if(s.symbol==SY_stableOn) {  if(!ignoreSwitches) addSwitch_stableOn(s.phase0, s.phase1+1., s.frames(0), s.frames(1));  continue;  }
-    if(s.symbol==SY_dynamic) {   if(!ignoreSwitches) addSwitch_dynamic(s.phase0, s.phase1+1., "base", s.frames(0));  continue;  }
-    if(s.symbol==SY_dynamicOn) { if(!ignoreSwitches) addSwitch_dynamicOn(s.phase0, s.phase1+1., s.frames(0), s.frames(1));  continue;  }
-    if(s.symbol==SY_dynamicTrans) { if(!ignoreSwitches) addSwitch_dynamicTrans(s.phase0, s.phase1+1., "base", s.frames(0));  continue;  }
-#endif
-    if(s.symbol==SY_liftDownUp) {  setLiftDownUp(s.phase0, s.frames(0), .4);  continue;  }
-    if(s.symbol==SY_break) {    addObjective(s.phase0, s.phase1, make_shared<TM_NoJumpFromParent>(world, s.frames(0)), OT_eq, NoArr, 1e2, 1, 0, 0);  continue;  }
+    switch(s.symbol){
+      case SY_none:       HALT("should not be here");  break;
+      case SY_initial: case SY_identical: case SY_noCollision:    break;
+      case SY_touch:      add_touch(s.phase0, s.phase1, s.frames(0), s.frames(1));  break;
+      case SY_above:      add_aboveBox(s.phase0, s.phase1, s.frames(0), s.frames(1));  break;
+      case SY_inside:     add_aboveBox(s.phase0, s.phase1, s.frames(0), s.frames(1));  break;
+      case SY_impulse:    add_impulse(s.phase0, s.frames(0), s.frames(1));  break;
 
-    if(s.symbol==SY_contact) {   addContact_slide(s.phase0, s.phase1, s.frames(0), s.frames(1));  continue;  }
-    if(s.symbol==SY_bounce) {   addContact_elasticBounce(s.phase0, s.frames(0), s.frames(1), .9);  continue;  }
-    //if(s.symbol==SY_contactComplementary) {   addContact_Complementary(s.phase0, s.phase1, s.frames(0), s.frames(1));  continue;  }
+      case SY_makeFree:   world.makeObjectsFree(s.frames);  break;
+      case SY_stableRelPose: addObjective({s.phase0, s.phase1+1.}, OT_eq, FS_poseRel, s.frames, {1e2}, {}, 1);  break;
+      case SY_stablePose:  addObjective({s.phase0, s.phase1+1.}, OT_eq, FS_pose, s.frames, {1e2}, {}, 1);  break;
 
-    const char* newFrom = world.frames.first()->name;
-    if(s.symbol==SY_magic) {  addSwitch_magic(s.phase0, s.phase1, newFrom, s.frames(0), 0.); continue; }
-    if(s.symbol==SY_magicTrans) {  addSwitch_magicTrans(s.phase0, s.phase1, newFrom, s.frames(0), 0.); continue; }
 
-    if(s.symbol==SY_alignByInt) { addObjective({s.phase0, s.phase1}, OT_sos, FS_scalarProductXX, s.frames);
-    cout <<"THE INTEGER IS: " <<s.frames(2) <<endl;
+      case SY_liftDownUp: setLiftDownUp(s.phase0, s.frames(0), .4);  break;
+      case SY_break:      addObjective(s.phase0, s.phase1, make_shared<TM_NoJumpFromParent>(world, s.frames(0)), OT_eq, NoArr, 1e2, 1, 0, 0);  break;
+
+      case SY_contact:    addContact_slide(s.phase0, s.phase1, s.frames(0), s.frames(1));  break;
+      case SY_bounce:     addContact_elasticBounce(s.phase0, s.frames(0), s.frames(1), .9);  break;
+        //case SY_contactComplementary:     addContact_Complementary(s.phase0, s.phase1, s.frames(0), s.frames(1));  break;
+
+
+      case SY_alignByInt: {
+        addObjective({s.phase0, s.phase1}, OT_sos, FS_scalarProductXX, s.frames);  break;
+        cout <<"THE INTEGER IS: " <<s.frames(2) <<endl;
+      } break;
+
+      case SY_push:       setPush(s.phase0, s.phase1+1., s.frames(0), s.frames(1), s.frames(2), verbose);  break;//TODO: the +1. assumes pushes always have duration 1
+      case SY_graspSlide: setGraspSlide(s.phase0, s.frames(0), s.frames(1), s.frames(2), verbose);  break;
+        //    else case SY_handover)              setHandover(s.phase0, s.frames(0), s.frames(1), s.frames(2), verbose);
+        //    else LOG(-2) <<"UNKNOWN PREDICATE!: " <<s;
+
+      //switches are handled above now
+      case SY_stable:      //if(!ignoreSwitches) addSwitch_stable(s.phase0, s.phase1+1., s.frames(0), s.frames(1));  break;
+      case SY_stableOn:    //if(!ignoreSwitches) addSwitch_stableOn(s.phase0, s.phase1+1., s.frames(0), s.frames(1));  break;
+      case SY_dynamic:     //if(!ignoreSwitches) addSwitch_dynamic(s.phase0, s.phase1+1., "base", s.frames(0));  break;
+      case SY_dynamicOn:   //if(!ignoreSwitches) addSwitch_dynamicOn(s.phase0, s.phase1+1., s.frames(0), s.frames(1));  break;
+      case SY_dynamicTrans:   //if(!ignoreSwitches) addSwitch_dynamicTrans(s.phase0, s.phase1+1., "base", s.frames(0));  break;
+        break;
+      case SY_magic:      addSwitch_magic(s.phase0, s.phase1, world.frames.first()->name, s.frames(0), 0.);  break;
+      case SY_magicTrans: addSwitch_magicTrans(s.phase0, s.phase1, world.frames.first()->name, s.frames(0), 0.);  break;
     }
-
-//    if(s.symbol==SY_magicTouch) {
-//      core_setTouch(s.phase0, s.phase1, s.frames(0), s.frames(1));
-//      setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_actJoint, JT_trans3, "base", s.frames(1), world));
-//      setFlag(s.phase0, new Flag(FL_clear, world[s.frames(0)]->ID, 0, true), +0);
-//      setFlag(s.phase0, new Flag(FL_qCtrlCostAcc, world[s.frames(0)]->ID, 0, true), +0);
-//      continue;
-//    }
-//    if(s.symbol==SY_actFree) {
-//      setKinematicSwitch(s.phase0, true, new KinematicSwitch(SW_actJoint, JT_trans3, "base", s.frames(0), world));
-//      setFlag(s.phase0, new Flag(FL_clear, world[s.frames(0)]->ID, 0, true), +0);
-//      setFlag(s.phase0, new Flag(FL_qCtrlCostVel, world[s.frames(0)]->ID, 0, true), +0);
-////      setFlag(s.phase0, new Flag(FL_qCtrlCostAcc, world[s.frames(0)]->ID, 0, true), +0);
-//      continue;
-//    }
-    
-//    if(s.symbol==SY_grasp) {
-//      setSlow(s.phase0-.05, s.phase0+.05, 3e0, false);
-//      core_setTouch(s.phase0, s.phase1, s.frames(0), s.frames(1));
-////      core_setInside(s.phase0, s.phase1, s.frames(0), s.frames(1));
-//      addSwitch_stable(s.phase0, s.frames(0), s.frames(1));
-////      setLiftDownUp(s.phase0, s.frames(0));
-//      continue;
-//    }
-    
-    if(s.symbol==SY_push)                       setPush(s.phase0, s.phase1+1., s.frames(0), s.frames(1), s.frames(2), verbose); //TODO: the +1. assumes pushes always have duration 1
-//    else if(s.symbol==SY_place" && s.symbols.N==3) setPlace(s.phase0, NULL, s.frames(0), s.frames(1), verbose);
-//    else if(s.symbol==SY_place" && s.symbols.N==4) setPlace(s.phase0, s.frames(0), s.frames(1), s.frames(2), verbose);
-    else if(s.symbol==SY_graspSlide)            setGraspSlide(s.phase0, s.frames(0), s.frames(1), s.frames(2), verbose);
-//    else if(s.symbol==SY_handover)              setHandover(s.phase0, s.frames(0), s.frames(1), s.frames(2), verbose);
-//    else LOG(-2) <<"UNKNOWN PREDICATE!: " <<s;
   }
 }
 
@@ -2636,6 +2617,10 @@ template<> const char* rai::Enum<SkeletonSymbol>::names []= {
   "identical",
 
   "alignByInt",
+
+  "makeFree",
+  "stableRelPose",
+  "stablePose",
   NULL
 };
 

@@ -68,6 +68,7 @@ void getDiffProb(floatA& diff, const byteA& img0, const byteA& img1, float pixSd
 
 #else
 
+#include <Core/array.h>
 inline char cvShow(const byteA& img, const char *window="opencv", bool wait=false) { NICO }
 inline char cvShow(const floatA& img, const char *window="opencv", bool wait=false) { NICO };
 void getDiffProb(floatA& diff, const byteA& img0, const byteA& img1, float pixSdv, uint range) { NICO };

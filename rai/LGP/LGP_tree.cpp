@@ -93,7 +93,7 @@ void initFolStateFromKin(FOL_World& L, const rai::KinematicWorld& K) {
       p=p->parent;
     }
     for(rai::Frame *b:F) if(b!=a && b->shape && b->ats["logical"]) {
-      L.addFact({"on", a->name, b->name});
+      L.addFact({"on", b->name, a->name});
     }
   }
 }
@@ -132,11 +132,11 @@ LGP_Tree::LGP_Tree(const rai::KinematicWorld& _kin, const char *folFileName) : L
 LGP_Tree::LGP_Tree(const rai::KinematicWorld& _kin, const FOL_World& _fol) : LGP_Tree() {
   kin.copy(_kin);
   fol.copy(_fol);
-  if(verbose>0) cout <<"INITIAL LOGIC STATE = " <<*fol.start_state <<endl;
   finalGeometryObjectives.setModel(kin);
   finalGeometryObjectives.setTiming(1.,1,1.,1);
   root = new LGP_Node(this, BD_max);
   focusNode = root;
+  if(verbose>0) cout <<"INITIAL LOGIC STATE = " <<*root->folState <<endl;
 }
 
 LGP_Tree::~LGP_Tree() {

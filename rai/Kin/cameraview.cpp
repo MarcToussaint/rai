@@ -6,7 +6,8 @@ extern bool Geo_mesh_drawColors; //UGLY!!
 //===========================================================================
 
 rai::CameraView::CameraView(const rai::KinematicWorld& _K, bool _offscreen, int _watchComputations)
-  : K(_K), gl("CameraView", 300, 300, _offscreen), watchComputations(_watchComputations) {
+//  : K(_K), gl("CameraView", 300, 300, _offscreen), watchComputations(_watchComputations) {
+  : K(_K), gl("CameraView", 640, 480, _offscreen), watchComputations(_watchComputations) {
 
   gl.add(*this);
 }

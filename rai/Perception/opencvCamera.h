@@ -1,3 +1,5 @@
+#pragma once
+
 #include <Core/thread.h>
 #include <Core/array.h>
 

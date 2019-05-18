@@ -99,10 +99,7 @@ void LGP_Node::expand(int verbose) {
 }
 
 void LGP_Node::computeEndKinematics(){
-  Skeleton S = getSkeleton({"touch", "above", "inside", "impulse",
-                            "stable", "stableOn", "dynamic", "dynamicTrans", "dynamicOn",
-                            "push", "graspSlide", "liftDownUp"
-                           });
+  Skeleton S = getSkeleton();
 
   effKinematics.copy(startKinematics, true);
   KOMO tmp;
@@ -131,10 +128,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
 
   komo.fil = new ofstream(OptLGPDataPath + STRING("komo-" <<id <<'-' <<step <<'-' <<bound));
   
-  Skeleton S = getSkeleton({"touch", "above", "inside", "impulse",
-                            "stable", "stableOn", "dynamic", "dynamicTrans", "dynamicOn", "break",
-                            "push", "graspSlide", "liftDownUp", "alignByInt"
-                           });
+  Skeleton S = getSkeleton();
 
   if(komo.fil) writeSkeleton(*komo.fil, S, getSwitchesFromSkeleton(S));
 
@@ -298,10 +292,7 @@ ptr<KOMO> LGP_Node::optSubCG(const SubCG& scg, bool collisions, int verbose) {
 }
 
 ptr<CG> LGP_Node::getCGO(bool collisions, int verbose) {
-  Skeleton S = getSkeleton({"touch", "above", "inside", "impulse",
-                            "initial", "stable", "stableOn", "dynamic", "dynamicTrans", "dynamicOn", "break",
-                            "push", "graspSlide", "liftDownUp"
-                           });
+  Skeleton S = getSkeleton();
 
   if(verbose>1){
     writeSkeleton(cout, S, getSwitchesFromSkeleton(S));
@@ -381,7 +372,7 @@ rai::String LGP_Node::getTreePathString(char sep) const {
   return str;
 }
 
-Skeleton LGP_Node::getSkeleton(StringA predicateFilter,  bool finalStateOnly) const {
+Skeleton LGP_Node::getSkeleton(bool finalStateOnly) const {
   rai::Array<Graph*> states;
   arr times;
   if(!finalStateOnly){
@@ -412,10 +403,11 @@ Skeleton LGP_Node::getSkeleton(StringA predicateFilter,  bool finalStateOnly) co
         StringA symbols;
         for(Node *p:n->parents) symbols.append(p->keys.last());
         
-        //check predicate filter
-        if(!symbols.N
-           || !rai::Enum<SkeletonSymbol>::contains(symbols.first())
-           || (predicateFilter.N && !predicateFilter.contains(symbols.first()))) continue;
+        //check if there is a predicate
+        if(!symbols.N) continue;
+
+        //check if predicate is a SkeletonSymbol
+        if(!rai::Enum<SkeletonSymbol>::contains(symbols.first())) continue;
             
         //trace into the future
         uint k_end=k+1;
