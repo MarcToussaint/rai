@@ -1641,6 +1641,7 @@ template<class T> T rai::Array<T>::median_nonConst(){
 /// sort this list
 template<class T> rai::Array<T>& rai::Array<T>::sort(ElemCompare comp) {
   std::sort(p, p+N, comp);
+  return *this;
 }
 
 /// check whether list is sorted

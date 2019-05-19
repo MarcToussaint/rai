@@ -715,7 +715,7 @@ PhysXInterface::PhysXInterface(rai::KinematicWorld& _world) : world(_world), s(N
 PhysXInterface::~PhysXInterface() { NICO }
 
 void PhysXInterface::step(double tau, bool withKinematicPush) { NICO }
-void PhysXInterface::pushToPhysx(const rai::KinematicWorld *K, const arr& vels, rai::KinematicWorld *Kt_1, rai::KinematicWorld *Kt_2, double tau, bool onlyKinematic){ NICO }
+void PhysXInterface::pushToPhysx(const rai::KinematicWorld *K, const arr& vels, rai::KinematicWorld *Kt_1, rai::KinematicWorld *Kt_2, double tau, bool onlyKinematic) { NICO }
 void PhysXInterface::pullFromPhysx(rai::KinematicWorld *K, arr& vels) { NICO }
 void PhysXInterface::setArticulatedBodiesKinematic() { NICO }
 void PhysXInterface::ShutdownPhysX() { NICO }

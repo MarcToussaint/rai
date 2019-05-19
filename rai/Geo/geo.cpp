@@ -1791,6 +1791,12 @@ void Camera::setCameraProjectionMatrix(const arr& P) {
   //fixedProjectionMatrix = glP;
 }
 
+void Camera::report(std::ostream& os){
+  os <<"camera pose X=" <<X <<endl;
+  os <<"camera focal length=" <<focalLength <<endl;
+  os <<"intrinsic matrix=\n" <<getIntrinsicMatrix(640, 480) <<endl;
+}
+
 /** sets OpenGL's GL_PROJECTION matrix accordingly -- should be
     called in an opengl draw routine */
 void Camera::glSetProjectionMatrix() const {
@@ -1952,6 +1958,21 @@ void Camera::unproject_fromPixelsAndGLDepth(arr& x, uint width, uint height) con
 #endif
 }
 
+arr Camera::getIntrinsicMatrix(double W, double H) const{
+  if(focalLength>0.) { //normal perspective mode
+    CHECK(!heightAbs, "");
+    arr K(3,3);
+    K.setZero();
+    K(0,0) = focalLength*H;
+    K(1,1) = -focalLength*H;
+    K(2,2) = -1.; //depth is flipped to become positive for 'in front of camera'
+    K(0,2) = -0.5*W;
+    K(1,2) = -0.5*H;
+    return K;
+  }
+  NIY;
+  return arr();
+}
 
 void Camera::setKinect() {
   setZero();

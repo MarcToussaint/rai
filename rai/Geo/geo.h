@@ -123,6 +123,7 @@ struct Quaternion {
   Quaternion& setRpy(double r, double p, double y);
   void setVec(Vector w);
   void setMatrix(double* m);
+  void setMatrix(const arr& R){ CHECK_EQ(R.N, 9, ""); setMatrix(R.p); }
   void setDiff(const Vector& from, const Vector& to);
   void setInterpolate(double t, const Quaternion& a, const Quaternion b);
   void add(const Quaternion b, double w_b=1., double w_this=1.);
@@ -295,8 +296,12 @@ struct Camera {
   void unproject_fromPixelsAndTrueDepth(arr& x, double width, double height) const;
   void unproject_fromPixelsAndGLDepth(arr& x, uint width, uint height) const;
 
+  arr getIntrinsicMatrix(double W, double H) const;
+
   //retired
   void setCameraProjectionMatrix(const arr& P); //P is in standard convention -> computes fixedProjectionMatrix in OpenGL convention from this
+
+  void report(ostream& os=cout);
 };
 
 //===========================================================================
