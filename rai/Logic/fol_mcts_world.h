@@ -76,13 +76,14 @@ struct FOL_World : MCTS_Environment {
   
   bool deadEnd, successEnd;
   Graph KB;     ///< current knowledge base
-  Graph *start_state; ///< the start-state within the KB (is a subgraph item of KB)
-  Graph *state; ///< the dynamic/fluent state within the KB (is a subgraph item of KB, created within the constructor)
+  Graph *start_state=0; ///< the start-state within the KB (is a subgraph item of KB)
+  Graph *state=0; ///< the dynamic/fluent state within the KB (is a subgraph item of KB, created within the constructor)
   NodeL worldRules;     ///< rules within the KB (each is a subgraph item of the KB)
   NodeL decisionRules;  ///< rules within the KB (each is a subgraph item of the KB)
-  Node *lastDecisionInState; ///< the literal that represents the last decision in the state
+  Node *lastDecisionInState=0; ///< the literal that represents the last decision in the state
   Graph *rewardFct; ///< the reward function within the KB (is a subgraph item of KB)
-  Node *Terminate_keyword, *Quit_keyword, *Wait_keyword, *Quit_literal;
+  Node *Terminate_keyword=0, *Wait_keyword=0, *Quit_keyword=0, *Quit_literal=0, *Subgoal_keyword=0, *Subgoal_literal=0;
+  Graph *subgoals=0;
   int verbose;
   int verbFil;
   ofstream fil;
@@ -136,3 +137,4 @@ struct FOL_World : MCTS_Environment {
   void write(std::ostream& os) const { os <<KB; }
 };
 stdOutPipe(FOL_World)
+

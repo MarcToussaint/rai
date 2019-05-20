@@ -103,7 +103,7 @@ public:
   void displayTreeUsingDot();
   void initDisplay();
   void updateDisplay();
-  void renderToVideo(uint specificBound=3, const char* filePrefix="vid/");
+  void renderToVideo(int specificBound=-1, const char* filePrefix="vid/");
   void writeNodeList(ostream& os=cout);
   void glDraw(struct OpenGL&gl);
   
