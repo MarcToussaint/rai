@@ -11,6 +11,7 @@ struct RosCamera {
   RosCamera(Var<byteA>& _rgb, Var<floatA> _depth,
             const char* rosNodeName = "rai_node",
             const char* rgb_topic = "/camera/rgb/image_rect_color",
-            const char* depth_topic = "/camera/depth_registered/image_raw");
+            const char* depth_topic = "/camera/depth_registered/image_raw",
+            bool useUint=false);
   ~RosCamera();
 };

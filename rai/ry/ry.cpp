@@ -820,6 +820,14 @@ PYBIND11_MODULE(libry, m) {
     self.path.set() = self.komo->getPath_frames();
   } )
 
+  //-- reinitialize with configuration
+  .def("setConfigurations", [](ry::RyKOMO& self, ry::Config& C){
+    for(rai::KinematicWorld *c:self.komo->configurations){
+      c->setFrameState(C.get()->getFrameState());
+    }
+    self.komo->reset(0.);
+  } )
+
   //-- read out
 
   .def("getT", [](ry::RyKOMO& self){
@@ -1066,7 +1074,11 @@ PYBIND11_MODULE(libry, m) {
   //===========================================================================
 
   py::class_<ry::RyCamera>(m, "Camera")
-  .def(py::init<const char*, const char*, const char*>())
+  .def(py::init<const char*, const char*, const char*, bool>()
+       , "", py::arg("rosNodeName"),
+             py::arg("rgb_topic"),
+             py::arg("depth_topic"),
+             py::arg("useUint") = false)
 
   .def("getRgb", [](ry::RyCamera& self){
     byteA rgb = self.rgb.get();

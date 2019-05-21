@@ -250,6 +250,7 @@ byteA conv_image2byteA(const sensor_msgs::Image& msg) {
 }
 
 floatA conv_imageu162floatA(const sensor_msgs::Image& msg) {
+  CHECK_EQ(msg.encoding, "16UC1", "wrong image encoding");
   byteA data = conv_stdvec2arr<byte>(msg.data);
   uint16A ref((const uint16_t*)data.p, data.N/2);
   //  uint16A ref((const uint16_t*)msg.data.data(), msg.data.size()/2);

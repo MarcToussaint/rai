@@ -83,8 +83,9 @@ namespace ry{
     std::shared_ptr<RosCamera> C;
     RyCamera(const char* rosNodeName,
              const char* rgb_topic,
-             const char* depth_topic)
-      : C(make_shared<RosCamera>(rgb, depth, rosNodeName, rgb_topic, depth_topic)) {}
+             const char* depth_topic,
+             bool useUint=false)
+      : C(make_shared<RosCamera>(rgb, depth, rosNodeName, rgb_topic, depth_topic, useUint)) {}
   };
 
 }
