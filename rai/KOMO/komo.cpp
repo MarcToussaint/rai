@@ -215,10 +215,12 @@ Objective* KOMO::addObjective(const arr& times, ObjectiveType type, const Featur
       vars.resize(T, f->order+1);
       for(uint t=0;t<vars.d0;t++)
         for(uint i=0;i<vars.d1;i++) vars(t,i) = t+i-int(f->order);
+      task->vars = vars;
     }else{
       uint order = vars.N-1;
       CHECK_GE(k_order, order, "task requires larger k-order: " <<task->map->shortTag(world));
       task->map->order = order;
+      task->vars = vars;
     }
   }
   return task;

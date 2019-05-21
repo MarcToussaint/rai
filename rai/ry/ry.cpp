@@ -29,6 +29,10 @@ py::dict graph2dict(const Graph& G){
       dict[key.p] = n->get<rai::String>().p;
     } else if(n->isOfType<arr>()) {
       dict[key.p] = conv_arr2stdvec( n->get<arr>() );
+    } else if(n->isOfType<intA>()) {
+      dict[key.p] = conv_arr2stdvec( n->get<intA>() );
+    } else if(n->isOfType<uintA>()) {
+      dict[key.p] = conv_arr2stdvec( n->get<uintA>() );
     } else if(n->isOfType<boolA>()) {
       dict[key.p] = conv_arr2stdvec( n->get<boolA>() );
     } else if(n->isOfType<double>()) {
