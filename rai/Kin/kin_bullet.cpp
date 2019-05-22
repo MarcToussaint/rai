@@ -79,7 +79,6 @@ btRigidBody* BulletInterface::addFrame(const rai::Frame* f){
   if(f->joint) type = rai::BT_kinematic;
   if(f->inertia) type = f->inertia->type;
 
-
   //-- create a bullet collision shape
   CHECK(f->shape && f->shape->_mesh, "can only add frames with meshes");
   btCollisionShape* colShape = 0;
@@ -210,9 +209,9 @@ void BulletInterface::pushKinematicStates(const FrameL& frames){
   }
 }
 
-arr BulletInterface::pullDynamicStates(FrameL& frames){
-  arr vel(frames.N,6);
-  vel.setZero();
+void BulletInterface::pullDynamicStates(FrameL& frames, arr& vel){
+  if(!!vel) vel.resize(frames.N,6).setZero();
+
   for(uint i=0;i<self->frameID_to_btBody.N;i++){
     btRigidBody* b = self->frameID_to_btBody(i);
     rai::Frame *f = frames(i);
@@ -233,13 +232,14 @@ arr BulletInterface::pullDynamicStates(FrameL& frames){
         f->X.pos.set(p.x(), p.y(), p.z());
         f->X.rot.set(q.w(), q.x(), q.y(), q.z());
 
-        const btVector3& v = b->getLinearVelocity();
-        const btVector3& w = b->getAngularVelocity();
-        vel[i] = ARR(v.x(), v.y(), v.z(), w.x(), w.y(), w.z());
+        if(!!vel){
+          const btVector3& v = b->getLinearVelocity();
+          const btVector3& w = b->getAngularVelocity();
+          vel[i] = ARR(v.x(), v.y(), v.z(), w.x(), w.y(), w.z());
+        }
       }
     }
   }
-  return vel;
 }
 
 void BulletInterface::saveBulletFile(const char* filename){

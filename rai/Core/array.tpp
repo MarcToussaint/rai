@@ -813,24 +813,7 @@ template<class T> rai::Array<T> rai::Array<T>::operator()(int i, int j, std::ini
 template<class T> rai::Array<T> rai::Array<T>::operator[](int i) const {
 //  return Array(*this, i);
   rai::Array<T> z;
-#if 1
   z.referToDim(*this, i);
-#else
-  CHECK(nd>1, "can't create subarray of array less than 2 dimensions");
-  CHECK(i<d0, "SubDim range error (" <<i <<"<" <<d0 <<")");
-  z.reference=true; z.memMove=memMove;
-  if(nd==2) {
-    z.nd=1; z.d0=d1; z.N=z.d0;
-  }
-  if(nd==3) {
-    z.nd=2; z.d0=d1; z.d1=d2; z.N=z.d0*z.d1;
-  }
-  if(nd>3) {
-    z.nd=nd-1; z.d0=d1; z.d1=d2; z.d2=d[3]; z.N=N/d0;
-    if(z.nd>3) { z.d=new uint[z.nd];  memmove(z.d, d+1, z.nd*sizeof(uint)); }
-  }
-  z.p=p+i*z.N;
-#endif
   return z;
 }
 

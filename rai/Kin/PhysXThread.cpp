@@ -39,8 +39,8 @@ struct PhysXThread : Thread {
     }
     physxWorld.deAccess();
 #endif
-    px = new PhysXInterface(physxWorld.set());
-    px->setArticulatedBodiesKinematic();
+    px = new PhysXInterface(physxWorld.get());
+    px->setArticulatedBodiesKinematic(physxWorld.get());
     view = new KinViewer(Var<rai::KinematicWorld>()); NIY //("physxWorld", .1);
     view->threadLoop();
   }

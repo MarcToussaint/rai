@@ -39,7 +39,8 @@ RosCamera::~RosCamera(){
 RosCamera::RosCamera(Var<byteA>& _rgb, Var<floatA> _depth,
 		     const char* rosNodeName,
 		     const char* rgb_topic,
-		     const char* depth_topic){ NICO }
+		     const char* depth_topic,
+		     bool useUint){ NICO }
 RosCamera::~RosCamera(){ NICO }
 
 #endif

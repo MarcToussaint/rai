@@ -233,7 +233,8 @@ rai::Frame* rai::KinematicWorld::addFrame(const char* name, const char* parent, 
   return f;
 }
 
-rai::Frame* rai::KinematicWorld::addObject(rai::ShapeType shape, const arr& size, const arr& col, double radius){
+#if 0
+rai::Frame* rai::KinematicWorld::addObject(rai::ShapeType shape, const arr& size, const arr& col){
   rai::Frame *f = new rai::Frame(*this);
   rai::Shape *s = new rai::Shape(*f);
   s->type() = shape;
@@ -256,26 +257,21 @@ rai::Frame* rai::KinematicWorld::addObject(rai::ShapeType shape, const arr& size
   }
   return f;
 }
+#endif
 
-rai::Frame* rai::KinematicWorld::addObject(const char* name, rai::ShapeType shape, const arr& size, const arr& col, double radius, const char* parent, const arr& pos, const arr& rot){
-  rai::Frame *f = addObject(shape, size, col, radius);
-  f->name=name;
-
-  if(parent){
-    rai::Frame *p = getFrameByName(parent);
-    if(p){
-//      f->linkFrom(p);
-      rai::Joint *j = new rai::Joint(*p, *f);
-      j->setType(rai::JT_rigid);
-    }
+rai::Frame* rai::KinematicWorld::addObject(const char* name, const char* parent, rai::ShapeType shape, const arr& size, const arr& col, const arr& pos, const arr& rot){
+  rai::Frame *f = addFrame(name, parent);
+  if(f->parent) f->setJoint(rai::JT_rigid);
+  f->setShape(shape, size);
+  f->setContact(-1);
+  if(col.N) f->setColor(col);
+  if(f->parent){
+    if(pos.N) f->setRelativePosition(pos);
+    if(rot.N) f->setRelativeQuaternion(rot);
+  }else{
+    if(pos.N) f->setPosition(pos);
+    if(rot.N) f->setQuaternion(rot);
   }
-
-  if(pos.N){ f->Q.pos = pos; }
-  if(rot.N){ f->Q.rot = rot; f->Q.rot.normalize(); }
-
-  if(f->parent) f->X = f->parent->X * f->Q;
-  else f->X = f->Q;
-
   return f;
 }
 
@@ -1973,7 +1969,7 @@ namespace rai {
 //  return links;
 //}
 
-rai::Array<rai::Frame*> rai::KinematicWorld::getLinks() {
+rai::Array<rai::Frame*> rai::KinematicWorld::getLinks() const {
   FrameL links;
   for(Frame *a:frames) if(!a->parent || a->joint) links.append(a);
   return links;

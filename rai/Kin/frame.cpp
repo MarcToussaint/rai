@@ -307,6 +307,10 @@ void rai::Frame::setJoint(rai::JointType jointType){
   new Joint(*this, jointType);
 }
 
+void rai::Frame::setContact(int cont){
+  getShape().cont = cont;
+}
+
 arr rai::Frame::getMeshPoints(){
   return getShape().mesh().V;
 }
@@ -1057,15 +1061,14 @@ void rai::Shape::createMeshes() {
     case rai::ST_sphere:{
       sscCore().V = arr(1,3, {0.,0.,0.});
       double rad=1;
-      if(size.N==1) rad=size(0);
-      else rad=size(3);
+      if(size.N) rad=size.last();
       mesh().setSSCvx(sscCore(), rad);
       //      mesh().setSphere();
       //      mesh().scale(size(3), size(3), size(3));
     } break;
     case rai::ST_cylinder:
-      CHECK(size(3)>1e-10,"");
-      mesh().setCylinder(size(3), size(2));
+      CHECK(size(-1)>1e-10,"");
+      mesh().setCylinder(size(-1), size(-2));
       break;
     case rai::ST_capsule:
       CHECK(size(-1)>1e-10,"");
@@ -1090,7 +1093,7 @@ void rai::Shape::createMeshes() {
         CHECK(mesh().V.N, "mesh or sscCore needs to be loaded");
         sscCore() = mesh();
       }
-      mesh().setSSCvx(sscCore(), size(3));
+      mesh().setSSCvx(sscCore(), size.last());
       break;
     case rai::ST_ssBox: {
       if(size(3)<1e-10) {
@@ -1137,7 +1140,7 @@ void rai::Inertia::defaultInertiaByShape() {
     case ST_ssBox:
     case ST_box:      inertiaBox(matrix.p(), mass, 1000., frame.shape->size(0), frame.shape->size(1), frame.shape->size(2));  break;
     case ST_capsule:
-    case ST_cylinder: inertiaCylinder(matrix.p(), mass, 1000., frame.shape->size(2), frame.shape->size(3));  break;
+    case ST_cylinder: inertiaCylinder(matrix.p(), mass, 1000., frame.shape->size(-2), frame.shape->size(-1));  break;
     default: HALT("not implemented for this shape type");
   }
 }

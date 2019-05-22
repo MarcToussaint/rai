@@ -217,12 +217,11 @@ PYBIND11_MODULE(libry, m) {
        const std::vector<double>& size,
        const std::vector<double>& color,
        const std::vector<double>& pos,
-       const std::vector<double>& quat,
-       double radius){
+       const std::vector<double>& quat){
     auto Kset = self.set();
     ry::RyFrame f;
     f.config = self.data;
-    f.frame = Kset->addObject(name.c_str(), shape, conv_stdvec2arr(size), conv_stdvec2arr(color), radius, parent.c_str(), conv_stdvec2arr(pos), conv_stdvec2arr(quat));
+    f.frame = Kset->addObject(name.c_str(), parent.c_str(), shape, conv_stdvec2arr(size), conv_stdvec2arr(color), conv_stdvec2arr(pos), conv_stdvec2arr(quat));
 //    f->name = name;
 //    if(parent.size()){
 //      rai::Frame *p = Kset->getFrameByName(parent.c_str());
@@ -244,8 +243,8 @@ PYBIND11_MODULE(libry, m) {
     py::arg("size") = std::vector<double>(),
     py::arg("color") = std::vector<double>(),
     py::arg("pos") = std::vector<double>(),
-    py::arg("quat") = std::vector<double>(),
-    py::arg("radius") = -1. )
+    py::arg("quat") = std::vector<double>()
+  )
 
 
   .def("getJointNames", [](ry::Config& self) {
@@ -705,7 +704,10 @@ py::arg("featureSymbol"),
   .def("setShape", [](ry::RyFrame& self, rai::ShapeType shape, const std::vector<double>& size){
     WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
     self.frame->setShape(shape, size);
-  } )
+  },
+  py::arg("type"),
+  py::arg("size")
+  )
 
   .def("setColor", [](ry::RyFrame& self, const std::vector<double>& color){
     WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
@@ -742,6 +744,17 @@ py::arg("featureSymbol"),
     WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
     self.frame->setRelativeQuaternion(quat);
   } )
+
+  .def("setJoint", [](ry::RyFrame& self, rai::JointType jointType){
+    WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    self.frame->setJoint(jointType);
+  } )
+
+  .def("setContact", [](ry::RyFrame& self, int cont){
+    WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    self.frame->setContact(cont);
+  } )
+
 
   .def("getPosition", [](ry::RyFrame& self){
     RToken<rai::KinematicWorld> token(*self.config, &self.config->data);
@@ -1087,7 +1100,8 @@ py::arg("featureSymbol"),
   } )
 
   .def("getState", [](ry::RyBullet& self, ry::Config& C){
-    arr V = self.bullet->pullDynamicStates(C.set()->frames);
+    arr V;
+    self.bullet->pullDynamicStates(C.set()->frames, V);
     return pybind11::array(V.dim(), V.p);
   } )
 
@@ -1105,19 +1119,19 @@ py::arg("featureSymbol"),
   } )
 
   .def("step", [](ry::RyPhysX& self, ry::Config& C){
-    self.physx->pushToPhysx(&C.get()());
+    self.physx->pushKinematicStates(C.get()->frames);
     self.physx->step();
-    self.physx->pullFromPhysx(&C.set()());
+    self.physx->pullDynamicStates(C.set()->frames);
   } )
 
   .def("getState", [](ry::RyPhysX& self, ry::Config& C){
     arr V;
-    self.physx->pullFromPhysx(&C.set()(), V);
+    self.physx->pullDynamicStates(C.set()->frames, V);
     return pybind11::array(V.dim(), V.p);
   } )
 
   .def("setState", [](ry::RyPhysX& self, ry::Config& C, const pybind11::array& velocities){
-    self.physx->pushToPhysx(&C.get()(), numpy2arr(velocities));
+    self.physx->pushFullState(C.get()->frames, numpy2arr(velocities));
   } )
 
   ;

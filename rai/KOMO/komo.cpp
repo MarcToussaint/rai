@@ -178,7 +178,7 @@ Objective *KOMO::addObjective(double startTime, double endTime,
   objectives.append(task);
   if(startTime!=-123. && endTime!=-123.){ //very special case!: Only when KOMO::addObjective calls (see below) we don't set the variables
 //    if(!denseOptimization && !sparseOptimization){
-      task->setCostSpecs(startTime, endTime, stepsPerPhase, T, deltaFromStep, deltaToStep, denseOptimization || sparseOptimization);
+    task->setCostSpecs(startTime, endTime, stepsPerPhase, T, deltaFromStep, deltaToStep, denseOptimization || sparseOptimization);
 //    }else{
 //      if(startTime<0.) endTime=0;
 //      if(endTime<0.) endTime=T-1;
@@ -187,6 +187,9 @@ Objective *KOMO::addObjective(double startTime, double endTime,
 //        for(uint i=0;i<vars.d1;i++) vars(t,i) = int(startTime)+t+i-int(map->order);
 //      task->setCostSpecsDense(vars);
 //    }
+    if(denseOptimization || sparseOptimization){
+      CHECK_EQ(task->vars.nd, 2, "");
+    }
   }
   return task;
 }
@@ -221,7 +224,9 @@ Objective* KOMO::addObjective(const arr& times, ObjectiveType type, const Featur
       CHECK_GE(k_order, order, "task requires larger k-order: " <<task->map->shortTag(world));
       task->map->order = order;
       task->vars = vars;
+      task->vars.reshape(1,vars.N);
     }
+    CHECK_EQ(task->vars.nd, 2, "");
   }
   return task;
 }
@@ -1461,10 +1466,10 @@ void KOMO::optimize(bool initialize){
 void KOMO_ext::getPhysicsReference(uint subSteps, int display) {
   x.resize(T, world.getJointStateDimension());
   PhysXInterface& px = world.physx();
-  px.pushToPhysx();
+  px.pushFullState(world.frames);
   for(uint t=0; t<T; t++) {
     for(uint s=0; s<subSteps; s++) {
-      px.step(tau/subSteps, false);
+      px.step(tau/subSteps);
       if(display) px.watch((display<0), STRING("t="<<t<<";"<<s));
     }
     x[t] = world.q;
@@ -1484,12 +1489,12 @@ void KOMO_ext::playInPhysics(uint subSteps, bool display) {
   arr vels;
   PhysXInterface& px = world.physx();
   for(uint t=0; t<T; t++) {
-    px.pushToPhysx(configurations(k_order+t), NoArr, configurations(k_order+t-1), configurations(k_order+t-2), tau, true);
+    px.pushFullState(configurations(k_order+t)->frames, NoArr, configurations(k_order+t-1), configurations(k_order+t-2), tau, true);
     for(uint s=0; s<subSteps; s++) {
       if(display) px.watch(false, STRING("t="<<t<<";"<<s));
-      world.physx().step(tau/subSteps, false);
+      world.physx().step(tau/subSteps);
     }
-    px.pullFromPhysx(configurations(k_order+t), vels);
+    px.pullDynamicStates(configurations(k_order+t)->frames, vels);
   }
   //  for(uint i=0;i<vels.d0;i++) if(i<world.frames.N) cout <<world.frames(i)->name <<" v=" <<vels[i] <<endl;
 }
