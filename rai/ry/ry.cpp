@@ -29,6 +29,10 @@ py::dict graph2dict(const Graph& G){
       dict[key.p] = n->get<rai::String>().p;
     } else if(n->isOfType<arr>()) {
       dict[key.p] = conv_arr2stdvec( n->get<arr>() );
+    } else if(n->isOfType<intA>()) {
+      dict[key.p] = conv_arr2stdvec( n->get<intA>() );
+    } else if(n->isOfType<uintA>()) {
+      dict[key.p] = conv_arr2stdvec( n->get<uintA>() );
     } else if(n->isOfType<boolA>()) {
       dict[key.p] = conv_arr2stdvec( n->get<boolA>() );
     } else if(n->isOfType<double>()) {
@@ -142,49 +146,71 @@ arr vecvec2arr(const std::vector<std::vector<double>>& X){
 
 
 PYBIND11_MODULE(libry, m) {
+  m.doc() = "rai bindings";
 
   //===========================================================================
   //
   // Config
   //
 
-  py::class_<ry::Config>(m, "Config")
+  py::class_<ry::Config>(m, "Config", "This is a class docstring")
       .def(py::init<>())
 
   METHOD_set(clear)
 
-  .def("copy", [](ry::Config& self, ry::Config& K2) {
-    self.set()->copy(K2.get());
-  } )
+  .def("copy", [](ry::Config& self, ry::Config& C2) {
+    self.set()->copy(C2.get());
+  },
+  "make C a (deep) copy of the given C2",
+  py::arg("C2")
+  )
 
   //-- setup/edit the configuration
 
-  .def("addFile", [](ry::Config& self, const std::string& file) {
-    self.set()->addFile(file.c_str());
-  } )
+  .def("addFile", [](ry::Config& self, const std::string& fileName) {
+    self.set()->addFile(fileName.c_str());
+  },
+  "add the contents of the file to C",
+  py::arg("file_name")
+  )
 
   .def("addFrame", [](ry::Config& self, const std::string& name, const std::string& parent, const std::string& args) {
     ry::RyFrame f;
     f.config = self.data;
     f.frame = self.set()->addFrame(name.c_str(), parent.c_str(), args.c_str());
     return f;
-  }, "",
-    py::arg("name"),
-    py::arg("parent") = std::string(),
-    py::arg("args") = std::string() )
+  },
+  "add a new frame to C; optionally make this a child to the given parent",
+  py::arg("name"),
+      py::arg("parent") = std::string(),
+      py::arg("args") = std::string()
+  )
+
+  .def("frame", [](ry::Config& self, const std::string& frameName){
+    ry::RyFrame f;
+    f.config = self.data;
+    f.frame = self.get()->getFrameByName(frameName.c_str(), true);
+    return f;
+  },
+  "get access to a frame by name",
+  py::arg("frameName")
+  )
 
   .def("setFrameRelativePose", [](ry::Config& self, const std::string& frame, const std::vector<double>& x) {
       auto Kset = self.set();
       rai::Frame *f = Kset->getFrameByName(frame.c_str(), true);
       f->Q.set(conv_stdvec2arr(x));
       Kset->calc_fwdPropagateFrames();
-  } )
+  }, "TODO remove -> use frame" )
 
-  .def("delFrame", [](ry::Config& self, const std::string& name) {
+  .def("delFrame", [](ry::Config& self, const std::string& frameName) {
     auto Kset = self.set();
-    rai::Frame *p = Kset->getFrameByName(name.c_str(), true);
+    rai::Frame *p = Kset->getFrameByName(frameName.c_str(), true);
     if(p) delete p;
-  } )
+  },
+  "destroy and remove a frame from C",
+  py::arg("frameName")
+  )
 
   .def("addObject", [](ry::Config& self, const std::string& name, const std::string& parent,
        rai::ShapeType shape,
@@ -211,7 +237,7 @@ PYBIND11_MODULE(libry, m) {
 //      f->X = f->Q;
 //    }
     return f;
-  }, "",
+  }, "TODO remove! use addFrame only",
     py::arg("name"),
     py::arg("parent") = std::string(),
     py::arg("shape"),
@@ -224,19 +250,25 @@ PYBIND11_MODULE(libry, m) {
 
   .def("getJointNames", [](ry::Config& self) {
     return I_conv(self.get()->getJointNames());
-  } )
+  },
+    "get the list of joint names"
+  )
 
   .def("getJointDimension", [](ry::Config& self) {
     return self.get()->getJointStateDimension();
-  } )
+  },
+    "get the total number of degrees of freedom"
+  )
 
   .def("getJointState", [](ry::Config& self, const ry::I_StringA& joints) {
     arr q;
     if(joints.size()) q = self.get()->getJointState(I_conv(joints));
     else q = self.get()->getJointState();
     return pybind11::array(q.dim(), q.p);
-  }, "",
-    py::arg("joints") = ry::I_StringA() )
+  },
+    "get the joint state as a numpy vector, optionally only for a subset of joints specified as list of joint names",
+    py::arg("joints") = ry::I_StringA()
+  )
 
   .def("setJointState", [](ry::Config& self, const std::vector<double>& q, const ry::I_StringA& joints){
     arr _q = conv_stdvec2arr(q);
@@ -245,18 +277,30 @@ PYBIND11_MODULE(libry, m) {
     }else{
       self.set()->setJointState(_q);
     }
-  }, "",
+  },
+    "set the joint state, optionally only for a subset of joints specified as list of joint names",
     py::arg("q"),
-    py::arg("joints") = ry::I_StringA() )
+    py::arg("joints") = ry::I_StringA()
+  )
 
   .def("getFrameNames", [](ry::Config& self){
     return I_conv(self.get()->getFrameNames());
-  } )
+  },
+    "get the list of frame names"
+  )
+
+  .def("getJointDimension", [](ry::Config& self) {
+    return self.get()->frames.N;
+  },
+    "get the total number of frames"
+  )
 
   .def("getFrameState", [](ry::Config& self){
     arr X = self.get()->getFrameState();
     return pybind11::array(X.dim(), X.p);
-  } )
+  },
+    "get the frame state as a n-times-7 numpy matrix, with a 7D pose per frame"
+  )
 
   .def("getFrameState", [](ry::Config& self, const char* frame){
     arr X;
@@ -264,67 +308,97 @@ PYBIND11_MODULE(libry, m) {
     rai::Frame *f = Kget->getFrameByName(frame, true);
     if(f) X = f->X.getArr7d();
     return pybind11::array(X.dim(), X.p);
-  } )
+  }, "TODO remove -> use individual frame!" )
 
   .def("setFrameState", [](ry::Config& self, const std::vector<double>& X, const ry::I_StringA& frames, bool calc_q_from_X){
     arr _X = conv_stdvec2arr(X);
     _X.reshape(_X.N/7, 7);
     self.set()->setFrameState(_X, I_conv(frames), calc_q_from_X);
-  }, "",
+  },
+    "set the frame state, optionally only for a subset of frames specified as list of frame names. \
+ By default this also computes and sets the consistent joint state based on the relative poses.\
+ Setting calc_q_from_x to false will not compute the joint state and leave the configuration in an inconsistent state!",
     py::arg("X"),
     py::arg("frames") = ry::I_StringA(),
-    py::arg("calc_q_from_X") = true )
+    py::arg("calc_q_from_X") = true
+  )
 
   .def("setFrameState", [](ry::Config& self, const pybind11::array& X, const ry::I_StringA& frames, bool calc_q_from_X){
     arr _X = numpy2arr(X);
     _X.reshape(_X.N/7, 7);
     self.set()->setFrameState(_X, I_conv(frames), calc_q_from_X);
-  }, "",
+ },
+ "set the frame state, optionally only for a subset of frames specified as list of frame names. \
+By default this also computes and sets the consistent joint state based on the relative poses.\
+Setting calc_q_from_x to false will not compute the joint state and leave the configuration in an inconsistent state!",
     py::arg("X"),
     py::arg("frames") = ry::I_StringA(),
-    py::arg("calc_q_from_X") = true )
+    py::arg("calc_q_from_X") = true
+  )
 
-  .def("feature", [](ry::Config& self, FeatureSymbol fs, const ry::I_StringA& frames) {
+  .def("feature", [](ry::Config& self, FeatureSymbol featureSymbol, const ry::I_StringA& frameNames) {
     ry::RyFeature F;
-//    F.feature = make_shared<::Feature>(symbols2feature(fs, I_conv(frames), Kget));
-    F.feature = symbols2feature(fs, I_conv(frames), self.get());
+    F.feature = symbols2feature(featureSymbol, I_conv(frameNames), self.get());
     return F;
-  } )
+  },
+  "create a feature (a differentiable map from joint state to a vector space), as they're typically used for IK or optimization. See the dedicated tutorial for details.\
+featureSymbol defines which mapping this is (position, vectors, collision distance, etc).\
+many mapping refer to one or several frames, which need to be specified using frameNames",
+py::arg("featureSymbol"),
+    py::arg("frameNames"))
 
   .def("evalFeature", [](ry::Config& self, FeatureSymbol fs, const ry::I_StringA& frames) {
     arr y,J;
     self.get()->evalFeature(y, J, fs, I_conv(frames));
     return pybind11::make_tuple(pybind11::array(y.dim(), y.p), pybind11::array(J.dim(), J.p));
-  } )
+  }, "TODO remove -> use feature directly"
+  )
+
+  .def("selectJoints", [](ry::Config& self, const ry::I_StringA& jointNames){
+    // TODO: this is joint groups
+    // TODO: maybe call joint groups just joints and joints DOFs
+    self.set()->selectJointsByName(I_conv(jointNames));
+  },
+  "redefine what are considered the DOFs of this configuration: only joint listed in jointNames are considered\
+  part of the joint state and define the number of DOFs",
+    py::arg("jointNames")
+  )
 
   .def("selectJointsByTag", [](ry::Config& self, const ry::I_StringA& jointGroups){
     auto Kset = self.set();
     Kset->selectJointsByGroup(I_conv(jointGroups), true, true);
     Kset->calc_q();
-  } )
-
-  .def("selectJoints", [](ry::Config& self, const ry::I_StringA& joints){
-    // TODO: this is joint groups
-    // TODO: maybe call joint groups just joints and joints DOFs
-    self.set()->selectJointsByName(I_conv(joints));
-  } )
+  },
+  "redefine what are considered the DOFs of this configuration: only joint that have a tag listed in jointGroups are considered\
+  part of the joint state and define the number of DOFs",
+    py::arg("jointGroups")
+  )
 
   .def("makeObjectsFree", [](ry::Config& self, const ry::I_StringA& objs){
     self.set()->makeObjectsFree(I_conv(objs));
-  } )
+  }, "TODO remove -> to frame" )
 
   .def("makeObjectsConvex", [](ry::Config& self){
       makeConvexHulls(self.set()->frames);
-  } )
+  },
+  "remake all meshes associated with all frames to become their convex hull"
+  )
 
   .def("attach", [](ry::Config& self, const std::string& frame1, const std::string& frame2){
       auto Kset = self.set();
       Kset->attach(frame1.c_str(), frame2.c_str());
-  } )
+  },
+  "change the configuration by creating a rigid joint from frame1 to frame2, adopting their current\
+  relative pose. This also breaks the first joint joints that is parental to frame2 and reverses the\
+  topological order from frame2 to the broken joint"
+  )
 
   .def("computeCollisions", [](ry::Config& self){
     self.set()->stepSwift();
-  } )
+  },
+  "call the broadphase collision engine (SWIFT++) to generate the list of collisions (or near proximities)\
+  between all frame shapes that have the collision tag set non-zero"
+  )
 
   .def("getCollisions", [](ry::Config& self, double belowMargin){
     py::list ret;
@@ -341,15 +415,12 @@ PYBIND11_MODULE(libry, m) {
       ret.append( tuple ) ;
     }
     return ret;
-  }, "",
-    py::arg("belowMargin") = 1.)
-
-  .def("frame", [](ry::Config& self, const std::string& framename){
-    ry::RyFrame f;
-    f.config = self.data;
-    f.frame = self.get()->getFrameByName(framename.c_str(), true);
-    return f;
-  } )
+  },
+  "return the results of collision computations: a list of 3 tuples with (frame1, frame2, distance).\
+  Optionally report only on distances below a margin\
+  To get really precise distances and penetrations use the FS.distance feature with the two frame names",
+  py::arg("belowMargin") = 1.
+  )
 
   .def("getFrameBox", [](ry::Config& self, const std::string& framename){
     auto Kget = self.get();
@@ -360,26 +431,32 @@ PYBIND11_MODULE(libry, m) {
             "frame " <<f->name <<" needs to be a box");
     arr range = s->size();
     return pybind11::array(range.dim(), range.p);
-  } )
+  }, "TODO remove -> frame.getShape" )
 
   .def("view", [](ry::Config& self, const std::string& frame){
     ry::ConfigViewer view;
     view.view = make_shared<KinViewer>(self, -1, rai::String(frame));
     return view;
-  }, "",
-    py::arg("frame")="")
+  },
+  "create a viewer for this configuration. Optionally, specify a frame that is the origin of the viewer camera",
+  py::arg("frame")="")
 
   .def("cameraView", [](ry::Config& self){
     ry::RyCameraView view;
     view.cam = make_shared<rai::CameraView>(self.get(), true, 0);
     return view;
-   } )
+   },
+  "create an offscreen renderer for this configuration"
+  )
 
-  .def("edit", [](ry::Config& self, const char* filename){
+  .def("edit", [](ry::Config& self, const char* fileName){
     rai::KinematicWorld K;
-    editConfiguration(filename, K);
+    editConfiguration(fileName, K);
     self.set() = K;
-  } )
+  },
+  "launch a viewer that listents (inode) to changes of a file (made by you in an editor), and\
+  reloads, displays and animates the configuration whenever the file is changed"
+  )
 
   .def("komo_IK", [](ry::Config& self, bool useSwift){
     ry::RyKOMO komo;
@@ -387,7 +464,13 @@ PYBIND11_MODULE(libry, m) {
     komo.config.set() = komo.komo->world;
     komo.komo->setIKOpt();
     return komo;
-  } )
+  },
+  "create KOMO solver configured to IK, useSwift determine whether for each\
+  query the broadphase collision computations are done. (Necessary only when generic\
+  FS.accumulatedCollision feature is needed. The explicit distance feature is independent\
+  from broadphase collision computation)",
+  py::arg("useSwift")
+  )
 
   .def("komo_CGO", [](ry::Config& self, uint numConfigs, bool useSwift){
     CHECK_GE(numConfigs, 1, "");
@@ -396,7 +479,16 @@ PYBIND11_MODULE(libry, m) {
     komo.config.set() = komo.komo->world;
     komo.komo->setDiscreteOpt(numConfigs);
     return komo;
-  } )
+  },
+  "create KOMO solver configured for dense graph optimization,\
+  numConfig gives the number of configurations optimized over,\
+  useSwift determine whether for each\
+  query the broadphase collision computations are done. (Necessary only when generic\
+  FS.accumulatedCollision feature is needed. The explicit distance feature is independent\
+  from broadphase collision computation)",
+  py::arg("numConfigs"),
+  py::arg("useSwift")
+  )
 
   .def("komo_path",  [](ry::Config& self, double phases, uint stepsPerPhase, double timePerPhase, bool useSwift){
     ry::RyKOMO komo;
@@ -404,35 +496,48 @@ PYBIND11_MODULE(libry, m) {
     komo.config.set() = komo.komo->world;
     komo.komo->setPathOpt(phases, stepsPerPhase, timePerPhase);
     return komo;
-  }, "",
-    py::arg("phases"),
-    py::arg("stepsPerPhase")=20,
-    py::arg("timePerPhase")=5.,
-    py::arg("useSwift"))
+  },
+  "create KOMO solver configured for sparse path optimization",
+  py::arg("phases"),
+  py::arg("stepsPerPhase")=20,
+  py::arg("timePerPhase")=5.,
+  py::arg("useSwift")
+  )
 
   .def("lgp", [](ry::Config& self, const std::string& folFileName){
     ry::RyLGP_Tree lgp;
     lgp.lgp = make_shared<LGP_Tree_Thread>(self.get(), folFileName.c_str());
     return lgp;
-  } )
+  },
+  "create an LGP solver"
+  )
 
   .def("bullet", [](ry::Config& self){
     ry::RyBullet bullet;
     bullet.bullet = make_shared<BulletInterface>(self.get());
     return bullet;
-  } )
+  },
+  "create a Bullet engine for physical simulation from the configuration: The configuration\
+  is being exported into a bullet instance, which can be stepped forward, and the result syced back to this configuration"
+  )
 
   .def("physx", [](ry::Config& self){
     ry::RyPhysX physx;
     physx.physx = make_shared<PhysXInterface>(self.set());
     return physx;
-  } )
+  },
+  "create a PhysX engine for physical simulation from the configuration: The configuration\
+  is being exported into a bullet instance, which can be stepped forward, and the result syced back to this configuration"
+  )
 
   .def("operate", [](ry::Config& self, const char* rosNodeName){
     ry::RyOperate op;
     op.R = make_shared<RobotOperation>(self.get(), .01, rosNodeName);
     return op;
-  } )
+  },
+  "create a module (including ROS node) to sync this configuration both ways (reading state, and controlling) to a real robot",
+  py::arg("rosNodeName")
+  )
 
   .def("sortFrames", [](ry::Config& self){
     self.set()->sortFrames();
@@ -449,10 +554,10 @@ PYBIND11_MODULE(libry, m) {
     arr _u = conv_stdvec2arr(u_control);
     self.set()->stepDynamics(_u, tau, dynamicNoise, gravity);
   }, "",
-      py::arg("u_control"),
-      py::arg("tau"),
-      py::arg("dynamicNoise"),
-      py::arg("gravity"))
+    py::arg("u_control"),
+    py::arg("tau"),
+    py::arg("dynamicNoise"),
+    py::arg("gravity"))
 
  .def("getJointState_qdot", [](ry::Config& self, const ry::I_StringA& joints) {
    arr q, qdot;
@@ -816,6 +921,14 @@ PYBIND11_MODULE(libry, m) {
     self.path.set() = self.komo->getPath_frames();
   } )
 
+  //-- reinitialize with configuration
+  .def("setConfigurations", [](ry::RyKOMO& self, ry::Config& C){
+    for(rai::KinematicWorld *c:self.komo->configurations){
+      c->setFrameState(C.get()->getFrameState());
+    }
+    self.komo->reset(0.);
+  } )
+
   //-- read out
 
   .def("getT", [](ry::RyKOMO& self){
@@ -1062,7 +1175,11 @@ PYBIND11_MODULE(libry, m) {
   //===========================================================================
 
   py::class_<ry::RyCamera>(m, "Camera")
-  .def(py::init<const char*, const char*, const char*>())
+  .def(py::init<const char*, const char*, const char*, bool>()
+       , "", py::arg("rosNodeName"),
+             py::arg("rgb_topic"),
+             py::arg("depth_topic"),
+             py::arg("useUint") = false)
 
   .def("getRgb", [](ry::RyCamera& self){
     byteA rgb = self.rgb.get();
