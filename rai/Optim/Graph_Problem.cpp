@@ -7,6 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "Graph_Problem.h"
+#include <Core/graph.h>
 
 bool GraphProblem::checkStructure(const arr& x) {
   arr y;
@@ -34,9 +35,24 @@ bool GraphProblem::checkStructure(const arr& x) {
   return true;
 }
 
-Conv_Graph_ConstrainedProblem::Conv_Graph_ConstrainedProblem(GraphProblem& _G) : G(_G) {
+Conv_Graph_ConstrainedProblem::Conv_Graph_ConstrainedProblem(GraphProblem& _G,  ostream *_log) : G(_G), log(_log) {
   G.getStructure(variableDimensions, featureVariables, featureTypes);
   varDimIntegral = integral(variableDimensions);
+  if(log){
+    StringA varNames, phiNames;
+    G.getSemantics(varNames, phiNames);
+
+    Graph data = { {"#variables", variableDimensions.N},
+                   {"variableNames", varNames},
+                   {"variableDimensions", variableDimensions},
+                   {"#features", featureVariables.N},
+                   {"featureNames", phiNames},
+                   {"featureVariables", featureVariables},
+                   {"featureTypes", featureTypes},
+                 };
+
+    (*log) <<data <<endl;
+  }
 }
 
 #if 0
@@ -112,6 +128,21 @@ void Conv_Graph_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA
     }
     CHECK_EQ(k, J.N, ""); //one entry for each non-zero
   }
+
+  if(log){
+    arr err = summarizeErrors(phi, featureTypes);
+
+    Graph data = { {"query", queryCount},
+                   {"errors", err},
+                   {"x", x},
+                   {"lambda", lambda},
+                   {"phi", phi}
+                 };
+
+    (*log) <<data <<endl;
+  }
+
+  queryCount++;
 }
 
 void Conv_Graph_ConstrainedProblem::reportProblem(std::ostream& os){

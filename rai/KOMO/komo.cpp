@@ -1400,7 +1400,8 @@ void KOMO::run() {
 #if 1
 //    ModGraphProblem selG(graph_problem);
 //    Conv_Graph_ConstrainedProblem C(selG);
-    Conv_Graph_ConstrainedProblem C(graph_problem);
+    ofstream logfile("z.graph_opt_log");
+    Conv_Graph_ConstrainedProblem C(graph_problem, &logfile);
     OptConstrained _opt(x, dual, C, rai::MAX(verbose-2, 0));
 //    OptPrimalDual _opt(x, dual, C, rai::MAX(verbose-2, 0));
     _opt.fil = fil;

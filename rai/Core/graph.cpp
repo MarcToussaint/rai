@@ -176,6 +176,14 @@ void Node::write(std::ostream& os, bool pythonMode) const {
     os <<":'" <<getValue<rai::FileToken>()->name <<'\'';
   } else if(isOfType<arr>()) {
     os <<':'; getValue<arr>()->write(os, ", ", NULL, "[]");
+  } else if(isOfType<intA>()) {
+    os <<':'; getValue<intA>()->write(os, ", ", NULL, "[]");
+  } else if(isOfType<intAA>()) {
+    os <<':'; getValue<intAA>()->write(os, ", ", NULL, "[]");
+  } else if(isOfType<uintA>()) {
+    os <<':'; getValue<uintA>()->write(os, ", ", NULL, "[]");
+  } else if(isOfType<StringA>()) {
+    os <<':'; getValue<StringA>()->write(os, ", ", NULL, "[]");
   } else if(isOfType<double>()) {
     os <<':' <<*getValue<double>();
   } else if(isOfType<int>()) {
@@ -193,9 +201,9 @@ void Node::write(std::ostream& os, bool pythonMode) const {
       writeValue(os);
       os <<'>';
     } else {
-      os <<":\"";
+      os <<":<";
       writeValue(os);
-      os <<'"';
+      os <<'>';
     }
   }
 }
