@@ -409,12 +409,17 @@ void sPhysXInterface::addLink(rai::Frame *f, physx::PxMaterial *mMaterial) {
   FrameL parts = {f};
   f->getRigidSubFrames(parts);
   bool hasShape=false;
-  for(rai::Frame *p:parts) if(p->shape){ hasShape=true; break; }
+  for(rai::Frame *p:parts) if(p->shape && p->getShape().type()!=rai::ST_marker){ hasShape=true; break; }
 
-  rai::BodyType type = rai::BT_dynamic;
-  if(!hasShape) type = rai::BT_static;
-  if(f->joint) type = rai::BT_kinematic;
-  if(f->inertia) type = f->inertia->type;
+  rai::BodyType type = rai::BT_static;
+  if(!hasShape){
+    type = rai::BT_static;
+  }else{
+    if(f->joint) type = rai::BT_kinematic;
+    if(f->inertia){
+      type = f->inertia->type;
+    }
+  }
   actorTypes(f->ID) = type;
   
   PxRigidDynamic* actor=NULL;
@@ -450,11 +455,11 @@ void sPhysXInterface::addLink(rai::Frame *f, physx::PxMaterial *mMaterial) {
       }
       break;
       case rai::ST_sphere: {
-        geometry = new PxSphereGeometry(s->size(3));
+        geometry = new PxSphereGeometry(s->size(-1));
       }
       break;
       case rai::ST_capsule: {
-        geometry = new PxCapsuleGeometry(s->size(3), .5*s->size(2));
+        geometry = new PxCapsuleGeometry(s->size(-1), .5*s->size(-2));
       }
       break;
       case rai::ST_cylinder:
@@ -485,11 +490,14 @@ void sPhysXInterface::addLink(rai::Frame *f, physx::PxMaterial *mMaterial) {
     
     if(geometry) {
       PxShape* shape = NULL;
-      if(&s->frame==f) {
-        shape = actor->createShape(*geometry, *mMaterial);
-      } else {
-        NIY
-//        shape = actor->createShape(*geometry, *mMaterial, conv_Transformation2PxTrans(s->frame.Q));
+      shape = actor->createShape(*geometry, *mMaterial);
+      if(&s->frame!=f) {
+          if(s->frame.parent==f){
+              shape->setLocalPose(conv_Transformation2PxTrans(s->frame.Q));
+          }else{
+              rai::Transformation rel = f->X / s->frame.X;
+              shape->setLocalPose(conv_Transformation2PxTrans(rel));
+          }
       }
       CHECK(shape, "create shape failed!");
     }

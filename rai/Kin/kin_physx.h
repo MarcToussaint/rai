@@ -28,7 +28,7 @@ struct PhysXInterface : GLDrawer {
   PhysXInterface(const rai::KinematicWorld& world);
   ~PhysXInterface();
   
-  void step(double tau=.03);
+  void step(double tau=.01);
   
   void pushKinematicStates(const FrameL& frames);
   void pushFullState(const FrameL& frames, const arr& vels=NoArr, rai::KinematicWorld *Kt_1=NULL, rai::KinematicWorld *Kt_2=NULL, double tau=-1., bool onlyKinematic=false);

@@ -76,9 +76,9 @@ void rai::CameraView::computeImageAndDepth(byteA& image, floatA& depth){
     for(uint i=0; i<image.d0; i++){
         uint id = color2id(image.p+3*i);
         if(id<frameIDmap.N){
-            seg(i) = frameIDmap(id);
+          seg(i) = frameIDmap(id);
         }else
-            seg(i) = 0;
+          seg(i) = 0;
     }
     image = seg;
     image.reshape(gl.height, gl.width);

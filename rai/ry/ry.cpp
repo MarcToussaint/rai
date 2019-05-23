@@ -335,6 +335,14 @@ Setting calc_q_from_x to false will not compute the joint state and leave the co
     py::arg("calc_q_from_X") = true
   )
 
+  .def("fwdChainFrames", [](ry::Config& self) {
+     self.set()->calc_fwdPropagateFrames();
+  },
+  "recompute all absolute frames by forward chaining the relative transformations in the frame tree.\
+  This is automatically done in setJointState. A user hardly ever has to do this. An exception is if the\
+  user calls Frame->setPosition for a frame with children - then fwd propagation is not automatically done."
+  )
+
   .def("feature", [](ry::Config& self, FeatureSymbol featureSymbol, const ry::I_StringA& frameNames) {
     ry::RyFeature F;
     F.feature = symbols2feature(featureSymbol, I_conv(frameNames), self.get());
@@ -764,6 +772,10 @@ py::arg("featureSymbol"),
     self.frame->setContact(cont);
   } )
 
+  .def("setMass", [](ry::RyFrame& self, double mass){
+    WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    self.frame->setMass(mass);
+  } )
 
   .def("getPosition", [](ry::RyFrame& self){
     RToken<rai::KinematicWorld> token(*self.config, &self.config->data);
@@ -1131,11 +1143,13 @@ py::arg("featureSymbol"),
     self.physx->pushKinematicStates(C.get()->frames);
     self.physx->step();
     self.physx->pullDynamicStates(C.set()->frames);
+    C.set()->calc_fwdPropagateFrames();
   } )
 
   .def("getState", [](ry::RyPhysX& self, ry::Config& C){
     arr V;
     self.physx->pullDynamicStates(C.set()->frames, V);
+    C.set()->calc_fwdPropagateFrames();
     return pybind11::array(V.dim(), V.p);
   } )
 
