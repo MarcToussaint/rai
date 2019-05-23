@@ -252,9 +252,9 @@ ptr<KOMO> LGP_Node::optSubCG(const SubCG& scg, bool collisions, int verbose) {
   return komo;
 
 
-  if(komo->fil){
-    komo->reportProblem(*komo->fil);
-    (*komo->fil) <<komo->getProblemGraph(false);
+  if(komo->logFile){
+    komo->reportProblem(*komo->logFile);
+    (*komo->logFile) <<komo->getProblemGraph(false);
   }
 
 //  if(level==BD_seq) komo->denseOptimization=true;
