@@ -8,7 +8,7 @@
 
 #include "optimization.h"
 
-uint eval_cost=0;
+uint eval_count=0;
 Singleton<OptOptions> globalOptOptions;
 ObjectiveTypeA& NoTermTypeA = *((ObjectiveTypeA*)NULL);
 
@@ -131,7 +131,7 @@ uint optGradDescent(arr& x, const ScalarFunction& f, OptOptions o) {
   if(o.verbose>1) cout <<"*** optGradDescent: starting point x=" <<(x.N<20?x:arr()) <<" f(x)=" <<fx <<" a=" <<a <<endl;
   ofstream fil;
   if(o.verbose>0) fil.open("z.opt");
-  if(o.verbose>0) fil <<0 <<' ' <<eval_cost <<' ' <<fx <<' ' <<a <<' ' <<x <<endl;
+  if(o.verbose>0) fil <<0 <<' ' <<eval_count <<' ' <<fx <<' ' <<a <<' ' <<x <<endl;
   
   grad_x /= length(grad_x);
   
@@ -139,7 +139,7 @@ uint optGradDescent(arr& x, const ScalarFunction& f, OptOptions o) {
     y = x - a*grad_x;
     fy = f(grad_y, NoArr, y);  evals++;
     CHECK_EQ(fy,fy, "cost seems to be NAN: fy=" <<fy);
-    if(o.verbose>1) cout <<"optGradDescent " <<evals <<' ' <<eval_cost <<" \tprobing y=" <<(y.N<20?y:arr()) <<" \tf(y)=" <<fy <<" \t|grad|=" <<length(grad_y) <<" \ta=" <<a;
+    if(o.verbose>1) cout <<"optGradDescent " <<evals <<' ' <<eval_count <<" \tprobing y=" <<(y.N<20?y:arr()) <<" \tf(y)=" <<fy <<" \t|grad|=" <<length(grad_y) <<" \ta=" <<a;
     
     if(fy <= fx) {
       if(o.verbose>1) cout <<" - ACCEPT" <<endl;
@@ -149,7 +149,7 @@ uint optGradDescent(arr& x, const ScalarFunction& f, OptOptions o) {
       grad_x = grad_y/length(grad_y);
       a *= 1.2;
       if(o.maxStep>0. && a>o.maxStep) a = o.maxStep;
-      if(o.verbose>0) fil <<evals <<' ' <<eval_cost <<' ' <<fx <<' ' <<a <<' ' <<x <<endl;
+      if(o.verbose>0) fil <<evals <<' ' <<eval_count <<' ' <<fx <<' ' <<a <<' ' <<x <<endl;
       if(step<o.stopTolerance) break;
     } else {
       if(o.verbose>1) cout <<" - reject" <<endl;

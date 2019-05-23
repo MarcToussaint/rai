@@ -40,7 +40,7 @@ struct Conv_Graph_ConstrainedProblem : ConstrainedProblem {
   intAA featureVariables;
   ObjectiveTypeA featureTypes;
   arrA J_G, H_G;
-  ostream *log=0;
+  ostream *logFile=0;
   uint queryCount=0;
   
   Conv_Graph_ConstrainedProblem(GraphProblem& _G, ostream *_log=0);

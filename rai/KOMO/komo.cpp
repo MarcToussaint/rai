@@ -80,7 +80,7 @@ KOMO::KOMO(const KinematicWorld& K, bool )
 KOMO::~KOMO() {
   if(gl) delete gl;
   if(opt) delete opt;
-  if(fil) delete fil;
+  if(logFile) delete logFile;
   listDelete(objectives);
   listDelete(flags);
   listDelete(switches);
@@ -1399,7 +1399,7 @@ void KOMO::run() {
     CHECK(!splineB.N, "NIY");
     OptConstrained _opt(x, dual, dense_problem, rai::MAX(verbose-2, 0));
 //    OptPrimalDual _opt(x, dual, dense_problem, rai::MAX(verbose-2, 0));
-    _opt.fil = fil;
+    _opt.logFile = logFile;
     _opt.run();
     timeNewton += _opt.newton.timeNewton;
   } else if(sparseOptimization){
@@ -1407,11 +1407,9 @@ void KOMO::run() {
 #if 1
 //    ModGraphProblem selG(graph_problem);
 //    Conv_Graph_ConstrainedProblem C(selG);
-    ofstream logfile("z.graph_opt_log");
-    Conv_Graph_ConstrainedProblem C(graph_problem, &logfile);
-    OptConstrained _opt(x, dual, C, rai::MAX(verbose-2, 0));
+    Conv_Graph_ConstrainedProblem C(graph_problem, logFile);
+    OptConstrained _opt(x, dual, C, rai::MAX(verbose-2, 0), NOOPT, logFile);
 //    OptPrimalDual _opt(x, dual, C, rai::MAX(verbose-2, 0));
-    _opt.fil = fil;
     _opt.run();
     {
 //      testing primal dual:
@@ -1429,14 +1427,14 @@ void KOMO::run() {
   } else if(!splineB.N) { //DEFAULT CASE
     Convert C(komo_problem);
     opt = new OptConstrained(x, dual, C, rai::MAX(verbose-2, 0));
-    opt->fil = fil;
+    opt->logFile = logFile;
     opt->run();
   } else {
     arr a,b,c,d,e;
     Conv_KOMO_ConstrainedProblem P0(komo_problem);
     Conv_linearlyReparameterize_ConstrainedProblem P(P0, splineB);
     opt = new OptConstrained(z, dual, P, rai::MAX(verbose-2, 0));
-    opt->fil = fil;
+    opt->logFile = logFile;
     opt->run();
   }
   runTime = timerRead(true, timeZero);

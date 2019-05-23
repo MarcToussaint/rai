@@ -721,13 +721,15 @@ void PhysXInterface::addForce(rai::Vector& force, rai::Frame* b, rai::Vector& po
 #else //RAI_PHYSX
 
 #include "kin_physx.h"
-PhysXInterface::PhysXInterface(rai::KinematicWorld& _world) : world(_world), s(NULL) { NICO }
+PhysXInterface::PhysXInterface(const rai::KinematicWorld& _world) : s(NULL) { NICO }
 PhysXInterface::~PhysXInterface() { NICO }
 
-void PhysXInterface::step(double tau, bool withKinematicPush) { NICO }
-void PhysXInterface::pushToPhysx(const rai::KinematicWorld *K, const arr& vels, rai::KinematicWorld *Kt_1, rai::KinematicWorld *Kt_2, double tau, bool onlyKinematic) { NICO }
-void PhysXInterface::pullFromPhysx(rai::KinematicWorld *K, arr& vels) { NICO }
-void PhysXInterface::setArticulatedBodiesKinematic() { NICO }
+void PhysXInterface::step(double tau) { NICO }
+void PhysXInterface::pushKinematicStates(const FrameL& frames){ NICO }
+void PhysXInterface::pushFullState(const FrameL& frames, const arr& vels, rai::KinematicWorld *Kt_1, rai::KinematicWorld *Kt_2, double tau, bool onlyKinematic){ NICO }
+void PhysXInterface::pullDynamicStates(FrameL& frames, arr &vels){ NICO }
+
+void PhysXInterface::setArticulatedBodiesKinematic(const rai::KinematicWorld& C) { NICO }
 void PhysXInterface::ShutdownPhysX() { NICO }
 void PhysXInterface::watch(bool pause, const char *txt) { NICO }
 void PhysXInterface::glDraw(OpenGL&) { NICO }

@@ -21,8 +21,8 @@ int optNewton(arr& x, const ScalarFunction& f,  OptOptions o) {
 
 //===========================================================================
 
-OptNewton::OptNewton(arr& _x, const ScalarFunction& _f,  OptOptions _o):
-  x(_x), f(_f), o(_o) {
+OptNewton::OptNewton(arr& _x, const ScalarFunction& _f,  OptOptions _o, ostream* _logFile):
+  x(_x), f(_f), o(_o), logFile(_logFile) {
   alpha = o.initStep;
   beta = o.damping;
   additionalRegularizer=NULL;
@@ -37,9 +37,11 @@ void OptNewton::reinit(const arr& _x) {
   //startup verbose
   if(o.verbose>1) cout <<"*** optNewton: starting point f(x)=" <<fx <<" alpha=" <<alpha <<" beta=" <<beta <<endl;
   if(o.verbose>2) cout <<"\nx=" <<x <<endl;
-  if(fil)(*fil) <<0 <<' ' <<eval_cost <<' ' <<fx <<' ' <<alpha;
-  if(fil && o.verbose>2)(*fil) <<' ' <<x;
-  if(fil)(*fil) <<endl;
+  if(logFile){
+    (*logFile) <<"{ newton:" <<its <<", evaluations:" <<evals <<", f_x:" <<fx <<", alpha:" <<alpha;
+    if(o.verbose>2) (*logFile) <<", x:" <<x;
+    (*logFile) <<" }" <<endl;
+  }
 }
 
 //===========================================================================
@@ -48,8 +50,8 @@ OptNewton::StopCriterion OptNewton::step() {
   double fy;
   arr y, gy, Hy, Delta;
   
-  it++;
-  if(o.verbose>1) cout <<"optNewton it=" <<std::setw(4) <<it << " \tbeta=" <<std::setw(8) <<beta <<flush;
+  its++;
+  if(o.verbose>1) cout <<"optNewton it=" <<std::setw(4) <<its << " \tbeta=" <<std::setw(8) <<beta <<flush;
   
   if(!(fx==fx)) HALT("you're calling a newton step with initial function value = NAN");
 
@@ -129,7 +131,8 @@ OptNewton::StopCriterion OptNewton::step() {
   timeNewton += rai::timerRead(true);
 
   //-- line search along Delta
-  for(bool endLineSearch=false; !endLineSearch;) {
+  uint lineSearchSteps=0;
+  for(bool endLineSearch=false; !endLineSearch; lineSearchSteps++) {
     if(!o.allowOverstep) if(alpha>1.) alpha=1.;
     if(alphaHiLimit>0. && alpha>alphaHiLimit) alpha=alphaHiLimit;
     y = x + alpha*Delta;
@@ -141,9 +144,12 @@ OptNewton::StopCriterion OptNewton::step() {
     if(o.verbose>1) cout <<" \tevals=" <<std::setw(4) <<evals <<" \talpha=" <<std::setw(11) <<alpha <<" \tf(y)=" <<fy <<flush;
     bool wolfe = (fy <= fx + o.wolfe*alpha*scalarProduct(Delta,gx));
 //    if(rootFinding) wolfe=true;
-    if(fy==fy && (wolfe || o.nonStrictSteps==-1 || o.nonStrictSteps>(int)it)) { //fy==fy is for NAN?
+    if(fy==fy && (wolfe || o.nonStrictSteps==-1 || o.nonStrictSteps>(int)its)) { //fy==fy is for NAN?
       //accept new point
       if(o.verbose>1) cout <<" - ACCEPT" <<endl;
+      if(logFile){
+        (*logFile) <<"{ lineSearch:" <<lineSearchSteps <<", alpha:" <<alpha <<", beta:" <<beta <<", f_x:" <<fx <<", f_y:" <<fy <<", wolfe:" <<wolfe <<", accept:True }" <<endl;
+      }
       if(fx-fy<o.stopFTolerance) numTinySteps++; else numTinySteps=0;
       x = y;
       fx = fy;
@@ -170,6 +176,9 @@ OptNewton::StopCriterion OptNewton::step() {
     } else {
       //reject new point
       if(o.verbose>1) cout <<" - reject" <<flush;
+      if(logFile){
+        (*logFile) <<"{ lineSearch:" <<lineSearchSteps <<", alpha:" <<alpha <<", beta:" <<beta <<", f_x:" <<fx <<", f_y:" <<fy <<", wolfe:" <<wolfe <<", accept:False }" <<endl;
+      }
       if(evals>o.stopEvals) {
         if(o.verbose>1) cout <<" (evals>stopEvals)" <<endl;
         break; //WARNING: this may lead to non-monotonicity -> make evals high!
@@ -187,9 +196,11 @@ OptNewton::StopCriterion OptNewton::step() {
     }
   }
   
-  if(fil)(*fil) <<"newton 0 " <<evals <<' ' <<fx;  //<<eval_cost <<' '
-  if(fil && o.verbose>2)(*fil)  <<' ' <<alpha <<' ' <<x;
-  if(fil)(*fil) <<endl;
+  if(logFile){
+    (*logFile) <<"{ newton:" <<its <<", evaluations:" <<evals <<", f_x:" <<fx <<", alpha:" <<alpha;
+    if(o.verbose>2) (*logFile) <<", Delta:" <<Delta;
+    (*logFile) <<" }" <<endl;
+  }
   
   //stopping criteria
   
@@ -199,7 +210,7 @@ OptNewton::StopCriterion OptNewton::step() {
   STOPIF(numTinySteps>4, numTinySteps=0, stopCrit2);
 //  STOPIF(alpha*absMax(Delta)<1e-3*o.stopTolerance, stopCrit2);
   STOPIF(evals>=o.stopEvals, , stopCritEvals);
-  STOPIF(it>=o.stopIters, , stopCritEvals);
+  STOPIF(its>=o.stopIters, , stopCritEvals);
   
 #undef STOPIF
   

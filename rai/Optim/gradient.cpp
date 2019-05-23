@@ -26,7 +26,7 @@ void OptGrad::reinit(const arr& _x) {
   if(o.verbose>1) cout <<"*** optGrad: starting point f(x)=" <<fx <<" alpha=" <<alpha <<endl;
   if(o.verbose>2) cout <<"             x=" <<x <<endl;
   if(o.verbose>0) fil.open("z.opt");
-  if(o.verbose>0) fil <<0 <<' ' <<eval_cost <<' ' <<fx <<' ' <<alpha;
+  if(o.verbose>0) fil <<0 <<' ' <<eval_count <<' ' <<fx <<' ' <<alpha;
   if(o.verbose>2) fil <<' ' <<x;
   if(o.verbose>0) fil <<endl;
 }
@@ -74,7 +74,7 @@ OptGrad::StopCriterion OptGrad::step() {
     }
   }
   
-  if(o.verbose>0) fil <<evals <<' ' <<eval_cost <<' ' <<fx <<' ' <<alpha;
+  if(o.verbose>0) fil <<evals <<' ' <<eval_count <<' ' <<fx <<' ' <<alpha;
   if(o.verbose>2) fil <<' ' <<x;
   if(o.verbose>0) fil <<endl;
   
@@ -219,8 +219,8 @@ uint Rprop::loop(arr& _x,
     //compute value and gradient at x
     fx = f(J, NoArr, x);  evals++;
     
-    if(verbose>0) fil <<evals <<' ' <<eval_cost <<' ' << fx <<' ' <<diff <<' ' <<x <<endl;
-    if(verbose>1) cout <<"optRprop " <<evals <<' ' <<eval_cost <<" \tf(x)=" <<fx <<" \tdiff=" <<diff <<" \tx=" <<(x.N<20?x:arr()) <<endl;
+    if(verbose>0) fil <<evals <<' ' <<eval_count <<' ' << fx <<' ' <<diff <<' ' <<x <<endl;
+    if(verbose>1) cout <<"optRprop " <<evals <<' ' <<eval_count <<" \tf(x)=" <<fx <<" \tdiff=" <<diff <<" \tx=" <<(x.N<20?x:arr()) <<endl;
     
     //infeasible point! undo the previous step
     if(fx!=fx) { //is NAN

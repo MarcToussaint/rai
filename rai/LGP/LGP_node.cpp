@@ -126,11 +126,11 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
     cout <<"########## OPTIM lev " <<bound <<endl;
   }
 
-  komo.fil = new ofstream(OptLGPDataPath + STRING("komo-" <<id <<'-' <<step <<'-' <<bound));
+  komo.logFile = new ofstream(OptLGPDataPath + STRING("komo-" <<id <<'-' <<step <<'-' <<bound));
   
   Skeleton S = getSkeleton();
 
-  if(komo.fil) writeSkeleton(*komo.fil, S, getSwitchesFromSkeleton(S));
+  if(komo.logFile) writeSkeleton(*komo.logFile, S, getSwitchesFromSkeleton(S));
 
   if(komo.verbose>1){
     writeSkeleton(cout, S, getSwitchesFromSkeleton(S));
@@ -162,9 +162,9 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
     cout <<"FINAL objective: " <<*co <<endl;
   }
 
-  if(komo.fil){
-    komo.reportProblem(*komo.fil);
-    (*komo.fil) <<komo.getProblemGraph(false);
+  if(komo.logFile){
+    komo.reportProblem(*komo.logFile);
+    (*komo.logFile) <<komo.getProblemGraph(false);
   }
 
 //  if(level==BD_seq) komo.denseOptimization=true;

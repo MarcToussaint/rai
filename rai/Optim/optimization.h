@@ -131,7 +131,7 @@ extern Singleton<OptOptions> globalOptOptions;
 void displayFunction(const ScalarFunction &f, bool wait=false, double lo=-1.2, double hi=1.2);
 
 // function evaluation counter (used only for performance meassurements, global for simplicity)
-extern uint eval_cost;
+extern uint eval_count;
 
 //===========================================================================
 //

@@ -163,7 +163,7 @@ uint optNodewise(arr& x, VectorChainFunction& f, OptOptions o) {
   ofstream fil;
   double fx=evaluateVCF(f, x);
   if(o.verbose>0) fil.open("z.nodewise");
-  if(o.verbose>0) fil <<0 <<' ' <<eval_cost <<' ' <<fx <<endl;
+  if(o.verbose>0) fil <<0 <<' ' <<eval_count <<' ' <<fx <<endl;
   if(o.verbose>1) cout <<"optNodewise initial cost " <<fx <<endl;
   
   OptOptions op;
@@ -187,7 +187,7 @@ uint optNodewise(arr& x, VectorChainFunction& f, OptOptions o) {
       if(o.verbose>1) cout <<"optNodewise " <<k <<" < " <<t <<' ' <<evaluateVCF(f, x) <<endl;
     }
     fx = evaluateVCF(f, x);
-    if(o.verbose>0) fil <<evals <<' ' <<eval_cost <<' ' <<fx <<endl;
+    if(o.verbose>0) fil <<evals <<' ' <<eval_count <<' ' <<fx <<endl;
     if(maxDiff(x,x_old)<o.stopTolerance) break;
   }
   if(o.fmin_return) *o.fmin_return=fx;
@@ -838,7 +838,7 @@ double tannenbaum(double *grad, double x, double power=8.) {
 }
 
 void SlalomProblem::fv_i(arr& y, arr& J, uint i, const arr& x_i) {
-  eval_cost++;
+  eval_count++;
   CHECK_EQ(x_i.N,2,"");
   y.resize(1);  y(0)=0.;
   if(!!J) { J.resize(1,2);  J.setZero(); }

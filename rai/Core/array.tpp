@@ -1783,10 +1783,10 @@ operator<<(std::ostream& os, const rai::Array<T>& x) {
 template<class T> void rai::Array<T>::write(std::ostream& os, const char *ELEMSEP, const char *LINESEP, const char *BRACKETS, bool dimTag, bool binary) const {
   CHECK(!binary || memMove, "binary write works only for memMoveable data");
   uint i, j, k;
-  
   if(!ELEMSEP) ELEMSEP=rai::arrayElemsep;
   if(!LINESEP) LINESEP=rai::arrayLinesep;
   if(!BRACKETS) BRACKETS=rai::arrayBrackets;
+
   
   if(binary) {
     writeDim(os);

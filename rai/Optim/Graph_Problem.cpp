@@ -35,14 +35,19 @@ bool GraphProblem::checkStructure(const arr& x) {
   return true;
 }
 
-Conv_Graph_ConstrainedProblem::Conv_Graph_ConstrainedProblem(GraphProblem& _G,  ostream *_log) : G(_G), log(_log) {
+Conv_Graph_ConstrainedProblem::Conv_Graph_ConstrainedProblem(GraphProblem& _G,  ostream *_log) : G(_G), logFile(_log) {
   G.getStructure(variableDimensions, featureVariables, featureTypes);
   varDimIntegral = integral(variableDimensions);
-  if(log){
+
+  if(logFile){
     StringA varNames, phiNames;
     G.getSemantics(varNames, phiNames);
 
-    Graph data = { {"#variables", variableDimensions.N},
+    rai::arrayElemsep=", ";
+    rai::arrayBrackets="[]";
+
+    Graph data = { {"graphStructureQuery", true},
+                   {"#variables", variableDimensions.N},
                    {"variableNames", varNames},
                    {"variableDimensions", variableDimensions},
                    {"#features", featureVariables.N},
@@ -51,7 +56,7 @@ Conv_Graph_ConstrainedProblem::Conv_Graph_ConstrainedProblem(GraphProblem& _G,  
                    {"featureTypes", featureTypes},
                  };
 
-    (*log) <<data <<endl;
+    (*logFile) <<data <<endl;
   }
 }
 
@@ -129,17 +134,17 @@ void Conv_Graph_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA
     CHECK_EQ(k, J.N, ""); //one entry for each non-zero
   }
 
-  if(log){
+  if(logFile){
     arr err = summarizeErrors(phi, featureTypes);
 
-    Graph data = { {"query", queryCount},
+    Graph data = { {"graphQuery", queryCount},
                    {"errors", err},
                    {"x", x},
                    {"lambda", lambda},
                    {"phi", phi}
                  };
 
-    (*log) <<data <<endl;
+    (*logFile) <<data <<endl;
   }
 
   queryCount++;

@@ -86,7 +86,7 @@ void SubGraphProblem::reset(const uintA& _X, const uintA& _Y){
   }
 }
 
-ofstream fil;
+ofstream logFile;
 
 void SubGraphProblem::optim(int verbose){
   uint m=0;
@@ -110,10 +110,10 @@ void SubGraphProblem::optim(int verbose){
 #else
   Conv_Graph_ConstrainedProblem C(*this);
 #endif
-  C.reportProblem(fil);
+  C.reportProblem(logFile);
   arr dual;
   OptConstrained opt(x, dual, C, 0); //rai::MAX(verbose-2, 0));
-  opt.L.fil = &fil;
+  opt.L.logFile = &logFile;
   opt.run();
   //    opt.newton.evals;
   double runTime = rai::timerRead();
@@ -252,7 +252,7 @@ bool BacktrackingGraphOptimization::run(){
   uintA X; //active variables
   f_low=0.;
 
-  fil.open("z.optim");
+  logFile.open("z.optim");
 
   for(;;){
     int next = chooseNextVariableToAssign(Y);
@@ -296,7 +296,7 @@ bool BacktrackingGraphOptimization::run(){
     Y.append(X);
   }
 
-  fil.close();
+  logFile.close();
 
   return true;
 }
