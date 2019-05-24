@@ -71,22 +71,22 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
     } break;
     case BD_seq: {
       komo.setModel(startKinematics, collisions);
-      komo.setTiming(maxPhase+1., 2, 5., 1);
+      komo.setTiming(maxPhase+1., 1, 5., 1);
       komo.sparseOptimization = true;
       komo.animateOptimization = 0;
 
       komo.setSquaredQuaternionNorms();
-      komo.setSquaredQAccelerations_novel(0, -1., 1., 1e-1);
-//      komo.setHoming(0., -1., 1e-2);
-//      komo.setSquaredQVelocities(0., -1., 1e-2);
-//      komo.setFixEffectiveJoints(0., -1., 1e2);
-//      komo.setFixSwitchedObjects(0., -1., 1e2);
-
+#if 0
+      komo.setHoming(0., -1., 1e-2);
+      komo.setSquaredQVelocities(0., -1., 1e-2);
+#else
+      komo.setSquaredQAccelerations_novel(0, -1., 1e-2, 1e-2);
+#endif
       komo.setSkeleton(S);
 
       if(collisions) komo.add_collision(true);
 
-      komo.reset(.1);
+      komo.reset();
 //      komo.setPairedTimes();
       //      cout <<komo.getPath_times() <<endl;
     } break;
@@ -97,7 +97,7 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
       komo.setTiming(maxPhase+.5, stepsPerPhase, 10., pathOrder);
       komo.animateOptimization = 0;
 
-      komo.setSquaredQuaternionNorms(0., -1., 1e1);
+      komo.setSquaredQuaternionNorms();
 #if 0
       komo.setHoming(0., -1., 1e-2);
       if(pathOrder==1) komo.setSquaredQVelocities();
@@ -122,10 +122,9 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
 
       komo.setSquaredQuaternionNorms();
 #if 0
-      komo.setSquaredQAccelerations_novel(0, -1., 1., 1e-1);
-//      komo.setHoming(0., -1., 1e-2);
-//      if(pathOrder==1) komo.setSquaredQVelocities();
-//      else komo.setSquaredQAccelerations();
+      komo.setHoming(0., -1., 1e-2);
+      if(pathOrder==1) komo.setSquaredQVelocities();
+      else komo.setSquaredQAccelerations();
 #else
       komo.setSquaredQAccelerations_novel(0, -1., 1., 1e-2);
 #endif

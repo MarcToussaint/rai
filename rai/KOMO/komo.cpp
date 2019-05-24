@@ -255,7 +255,7 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
     }else{  //SY_stableOn
       Transformation rel = 0;
       rel.pos.set(0,0, .5*(shapeSize(world, from) + shapeSize(world, to)));
-      addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_transXYPhi, from, to, world, SWInit_zero, 0, rel));
+      addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_transXYPhi, from, to, world, SWInit_copy, 0, rel));
     }
 
     //-- DOF-is-constant constraint
