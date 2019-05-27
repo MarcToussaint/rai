@@ -105,6 +105,7 @@ struct Frame : NonCopyable{
   void setColor(const std::vector<double>& color);
   void setJoint(rai::JointType jointType);
   void setContact(int cont);
+  void setMass(double mass);
 
   arr getPosition(){ return X.pos.getArr(); }
   arr getQuaternion(){ return X.rot.getArr4d(); }

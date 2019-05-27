@@ -311,6 +311,10 @@ void rai::Frame::setContact(int cont){
   getShape().cont = cont;
 }
 
+void rai::Frame::setMass(double mass){
+  getInertia().mass = mass;
+}
+
 arr rai::Frame::getMeshPoints(){
   return getShape().mesh().V;
 }
@@ -1018,8 +1022,10 @@ void rai::Shape::glDraw(OpenGL& gl) {
 
     if(gl.drawMode_idColor) Geo_mesh_drawColors=false; else Geo_mesh_drawColors=true;
     if(_type==rai::ST_marker){
-      if(frame.K.orsDrawMarkers)
-        glDrawDiamond(size(0)/5., size(0)/5., size(0)/5.); glDrawAxes(size(0), !gl.drawMode_idColor);
+      if(frame.K.orsDrawMarkers){
+        glDrawDiamond(size(0)/5., size(0)/5., size(0)/5.);
+        glDrawAxes(size(0), !gl.drawMode_idColor);
+      }
     }else{
       if(!mesh().V.N){
         LOG(1) <<"trying to draw empty mesh";
@@ -1114,7 +1120,7 @@ void rai::Shape::createMeshes() {
   }
 }
 
-rai::Inertia::Inertia(Frame &f, Inertia *copyInertia) : frame(f), type(BT_kinematic) {
+rai::Inertia::Inertia(Frame &f, Inertia *copyInertia) : frame(f), type(BT_dynamic) {
   CHECK(!frame.inertia, "this frame already has inertia");
   frame.inertia = this;
   if(copyInertia) {

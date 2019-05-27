@@ -109,7 +109,7 @@ void LGP_Node::computeEndKinematics(){
     if(s.phase0>maxPhase) maxPhase=s.phase0;
     if(s.phase1>maxPhase) maxPhase=s.phase1;
   }
-  tmp.setTiming(maxPhase+1., 1, 5., 1);
+  tmp.setTiming(1., 1, 10., 1);
   tmp.setSkeleton(S);
 //  tmp.reportProblem();
   for(rai::KinematicSwitch *s : tmp.switches) s->apply(effKinematics);
@@ -252,9 +252,9 @@ ptr<KOMO> LGP_Node::optSubCG(const SubCG& scg, bool collisions, int verbose) {
   return komo;
 
 
-  if(komo->fil){
-    komo->reportProblem(*komo->fil);
-    (*komo->fil) <<komo->getProblemGraph(false);
+  if(komo->logFile){
+    komo->reportProblem(*komo->logFile);
+    (*komo->logFile) <<komo->getProblemGraph(false);
   }
 
 //  if(level==BD_seq) komo->denseOptimization=true;
@@ -420,7 +420,7 @@ Skeleton LGP_Node::getSkeleton(bool finalStateOnly) const {
 
         rai::Enum<SkeletonSymbol> sym(symbols.first());
         if(k_end==states.N-1) {
-          skeleton.append(SkeletonEntry({times(k), -2., sym, symbols({1,-1})}));
+          skeleton.append(SkeletonEntry({times(k), times.last(), sym, symbols({1,-1})}));
         } else {
           skeleton.append(SkeletonEntry({times(k), times(k_end), sym, symbols({1,-1})}));
         }
