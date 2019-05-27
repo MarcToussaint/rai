@@ -590,7 +590,12 @@ py::arg("featureSymbol"),
 
   py::class_<ry::RyCameraView>(m, "CameraView")
   .def("updateConfig", [](ry::RyCameraView& self, ry::Config& config){
-    self.cam->K.setFrameState(config.get()->getFrameState());
+    auto Cget = config.get();
+    if(Cget->frames.N!= self.cam->K.frames.N){
+      self.cam->K.copy(Cget);
+    }else{
+      self.cam->K.setFrameState(Cget->getFrameState());
+    }
   } )
 
   .def("addSensor", [](ry::RyCameraView& self, const char* name, const char* frameAttached, uint width, uint height, double focalLength, double orthoAbsHeight, const std::vector<double>& zRange, const std::string& backgroundImageFile){
@@ -610,15 +615,19 @@ py::arg("featureSymbol"),
       }, "",
       py::arg("name") )
 
-   .def("computeImageAndDepth", [](ry::RyCameraView& self){
+   .def("computeImageAndDepth", [](ry::RyCameraView& self, bool visualsOnly){
       auto imageSet = self.image.set();
       auto depthSet = self.depth.set();
+      if(visualsOnly) self.cam->renderMode = CameraView::visuals;
+      else self.cam->renderMode = CameraView::all;
       self.cam->computeImageAndDepth(imageSet, depthSet);
       pybind11::tuple ret(2);
       ret[0] = pybind11::array(imageSet->dim(), imageSet->p);
       ret[1] = pybind11::array(depthSet->dim(), depthSet->p);
       return ret;
-    } )
+    },
+      py::arg("visualsOnly")=true
+    )
 
     .def("computePointCloud", [](ry::RyCameraView& self, const pybind11::array& depth, bool globalCoordinates){
       arr _depth = numpy2arr(depth);

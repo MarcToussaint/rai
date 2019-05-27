@@ -440,8 +440,8 @@ void OpenGL::postRedrawEvent(bool fromWithinCallback) {
 
 void OpenGL::resize(int w,int h) {
   openWindow();
-  glfwSetWindowSize(s->window, w, h);
   Reshape(w, h);
+  glfwSetWindowSize(s->window, width, height);
 }
 
 #endif
