@@ -64,7 +64,6 @@ void TEST(Align){
   komo.reset();
   komo.run();
   komo.plotTrajectory();
-  komo.getReport(true);
   for(uint i=0;i<2;i++) komo.displayTrajectory();
 }
 
@@ -99,7 +98,6 @@ void TEST(PR2){
 //  komo.setSpline(10);
   komo.run();
   komo.plotTrajectory();
-  komo.getReport(true);
   for(uint i=0;i<2;i++) komo.displayTrajectory();
 }
 

@@ -47,16 +47,17 @@ Conv_Graph_ConstrainedProblem::Conv_Graph_ConstrainedProblem(GraphProblem& _G,  
     rai::arrayBrackets="[]";
 
     Graph data = { {"graphStructureQuery", true},
-                   {"#variables", variableDimensions.N},
+                   {"numVariables", variableDimensions.N},
                    {"variableNames", varNames},
                    {"variableDimensions", variableDimensions},
-                   {"#features", featureVariables.N},
+                   {"numFeatures", featureVariables.N},
                    {"featureNames", phiNames},
                    {"featureVariables", featureVariables},
                    {"featureTypes", featureTypes},
                  };
 
-    (*logFile) <<data <<endl;
+    data.write(*logFile, ",\n", "{\n\n}");
+    (*logFile) <<endl;
   }
 }
 
@@ -144,7 +145,8 @@ void Conv_Graph_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA
                    {"phi", phi}
                  };
 
-    (*logFile) <<data <<endl;
+    data.write(*logFile, ",\n", "{\n\n}");
+    (*logFile) <<endl;
   }
 
   queryCount++;

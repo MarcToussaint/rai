@@ -63,7 +63,7 @@ rai::CameraView::Sensor& rai::CameraView::selectSensor(const char* sensorName){
   return *sen;
 }
 
-void rai::CameraView::updateConfiguration(rai::KinematicWorld& newC){
+void rai::CameraView::updateConfiguration(const rai::KinematicWorld& newC){
   arr X = newC.getFrameState();
   auto _dataLock = gl.dataLock(RAI_HERE);
   if(X.d0==K.frames.N){

@@ -7,7 +7,10 @@
     --------------------------------------------------------------  */
 
 #include <map>
-#include <jsoncpp/json/json.h>
+
+#ifdef RAI_JSON
+#  include <jsoncpp/json/json.h>
+#endif
 
 #include "util.tpp"
 #include "array.tpp"
@@ -157,7 +160,7 @@ void Node::write(std::ostream& os, bool pythonMode) const {
   
   //-- write value
   if(isGraph()) {
-    os <<':';
+    os <<": ";
     graph().write(os, ", ", "{}");
   } else if(isOfType<NodeL>()) {
     os <<":(";
@@ -175,25 +178,27 @@ void Node::write(std::ostream& os, bool pythonMode) const {
   } else if(isOfType<rai::FileToken>()) {
     os <<":'" <<getValue<rai::FileToken>()->name <<'\'';
   } else if(isOfType<arr>()) {
-    os <<':'; getValue<arr>()->write(os, ", ", NULL, "[]");
+    os <<": "; getValue<arr>()->write(os, ", ", NULL, "[]");
   } else if(isOfType<intA>()) {
-    os <<':'; getValue<intA>()->write(os, ", ", NULL, "[]");
+    os <<": "; getValue<intA>()->write(os, ", ", NULL, "[]");
   } else if(isOfType<intAA>()) {
-    os <<':'; getValue<intAA>()->write(os, ", ", NULL, "[]");
+    os <<": "; getValue<intAA>()->write(os, ", ", NULL, "[]");
   } else if(isOfType<uintA>()) {
-    os <<':'; getValue<uintA>()->write(os, ", ", NULL, "[]");
+    os <<": "; getValue<uintA>()->write(os, ", ", NULL, "[]");
   } else if(isOfType<StringA>()) {
-    os <<':'; getValue<StringA>()->write(os, ", ", NULL, "[]");
+    os <<": [";
+    for(const rai::String& s:get<StringA>()) os <<'\"' <<s <<"\", ";
+    os <<']';
   } else if(isOfType<double>()) {
-    os <<':' <<*getValue<double>();
+    os <<": " <<*getValue<double>();
   } else if(isOfType<int>()) {
-    os <<':' <<*getValue<int>();
+    os <<": " <<*getValue<int>();
   } else if(isOfType<uint>()) {
-    os <<':' <<*getValue<uint>();
+    os <<": " <<*getValue<uint>();
   } else if(isOfType<bool>()) {
-    if(*getValue<bool>()) os <<":True"; else os <<":False";
+    if(*getValue<bool>()) os <<": True"; else os <<": False";
   } else if(isOfType<Type*>()) {
-    os <<':'; get<Type*>()->write(os);
+    os <<": "; get<Type*>()->write(os);
   } else {
     Node *it = reg_findType(type.name());
     if(it && it->keys.N>1) {
@@ -201,9 +206,8 @@ void Node::write(std::ostream& os, bool pythonMode) const {
       writeValue(os);
       os <<'>';
     } else {
-      os <<":<";
+      os <<": ";
       writeValue(os);
-      os <<'>';
     }
   }
 }
@@ -835,6 +839,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, rai::Strin
   return node;
 }
 
+#ifdef RAI_JSON
 void addJasonValues(Graph& G, const char* key, Json::Value& value);
 
 void Json2Graph(Graph& G, Json::Value& value) {
@@ -910,13 +915,21 @@ void Graph::readJson(std::istream &is) {
   is >>root;
   Json2Graph(*this, root);
 }
+#else
+void Graph::readJson(std::istream &is) {
+  NICO
+}
+#endif
 
 #undef PARSERR
 
 void Graph::write(std::ostream& os, const char *ELEMSEP, const char *BRACKETS) const {
-  if(BRACKETS) os <<BRACKETS[0];
+  uint BRACKETSlength=0;
+  if(BRACKETS) BRACKETSlength=strlen(BRACKETS);
+  for(uint b=0;b<BRACKETSlength/2;b++) os <<BRACKETS[b];
   for(uint i=0; i<N; i++) { if(i) os <<ELEMSEP;  if(elem(i)) elem(i)->write(os); else os <<"<NULL>"; }
-  if(BRACKETS) os <<BRACKETS[1] <<std::flush;
+  for(uint b=BRACKETSlength/2; b<BRACKETSlength; b++) os <<BRACKETS[b];
+  os <<std::flush;
 }
 
 void Graph::writeParseInfo(std::ostream& os) {
