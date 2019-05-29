@@ -32,7 +32,7 @@ int main(int argc,char** argv){
   PhysXInterface PY(C);
 
   for(uint t=0; t<300; t++) {
-    PY.step(.01, false);
+    PY.step(.01);
 //        BT.step();
 //        BT.pullDynamicStates(C.frames);
     C.watch(false, STRING("t="<<t));

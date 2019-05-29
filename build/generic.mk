@@ -90,7 +90,7 @@ LPATHS	+= $(BASE_REAL)/lib /usr/local/lib
 LIBS += -lrt
 SHAREFLAG = -shared #-Wl,--warn-unresolved-symbols #-Wl,--no-allow-shlib-undefined
 
-CXXFLAGS += -fPIC
+CXXFLAGS += -Wno-terminate -fPIC
 CFLAGS += -fPIC
 
 ifndef RAI_NO_CXX11

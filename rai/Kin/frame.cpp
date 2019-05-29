@@ -1116,7 +1116,9 @@ void rai::Shape::createMeshes() {
       mesh().setSSBox(size(0), size(1), size(2), r);
       //      mesh().setSSCvx(sscCore, r);
     } break;
-    default: NIY;
+    default:{
+      HALT("createMeshes not possible for shape type '" <<_type <<"'");
+    }
   }
 }
 
