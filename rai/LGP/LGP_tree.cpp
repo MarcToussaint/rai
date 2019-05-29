@@ -61,7 +61,7 @@ struct DisplayThread : MiniThread {
       }
       lgp->solutions.deAccess();
       gl.update();
-      if(saveVideo) write_ppm(gl.captureImage, STRING(OptLGPDataPath <<"vid/" <<std::setw(3)<<std::setfill('0')<<t++<<".ppm"));
+      if(saveVideo) write_ppm(gl.captureImage, STRING(OptLGPDataPath <<"vid/" <<std::setw(4)<<std::setfill('0')<<t++<<".ppm"));
     }
   }
 };
@@ -158,9 +158,14 @@ void LGP_Tree::initDisplay() {
   if(!dth) dth = new DisplayThread(this);
 }
 
-void LGP_Tree::renderToVideo(uint specificBound, const char* filePrefix) {
+void LGP_Tree::renderToVideo(int specificBound, const char* filePrefix) {
+  if(specificBound<0) specificBound=displayBound;
   CHECK(focusNode->komoProblem(specificBound) && focusNode->komoProblem(specificBound)->configurations.N, "level " <<specificBound <<" has not been computed for the current 'displayFocus'");
-  renderConfigurations(focusNode->komoProblem(specificBound)->configurations, filePrefix, -2, 600, 600, &views(3)->copy.gl().camera);
+  if(specificBound<views.N && views(specificBound)){
+    renderConfigurations(focusNode->komoProblem(specificBound)->configurations, filePrefix, -2, 600, 600, &views(specificBound)->copy.gl().camera);
+  }else{
+    renderConfigurations(focusNode->komoProblem(specificBound)->configurations, filePrefix, -2, 600, 600);
+  }
 }
 
 void LGP_Tree::displayTreeUsingDot(){
@@ -301,6 +306,7 @@ void LGP_Tree::player(StringA cmds) {
 }
 
 LGP_Node* LGP_Tree::walkToNode(const rai::String& seq){
+  init();
   Graph& tmp = root->fol.KB.newSubgraph({"TMP"}, {});
   rai::String tmpseq(seq);
   tmp.read(tmpseq);
@@ -488,7 +494,7 @@ rai::String LGP_Tree::report(bool detailed) {
      <<" POSE= " <<COUNT_opt(BD_pose) <<" SEQ= " <<COUNT_opt(BD_seq) <<" PATH= " <<COUNT_opt(BD_path)+COUNT_opt(BD_seqPath)
     <<" bestPose= " <<(bpose?bpose->cost(1):100.)
    <<" bestSeq= " <<(bseq ?bseq ->cost(2):100.)
-  <<" bestPath= " <<(bpath?bpath->cost(3):100.)
+  <<" bestPath= " <<(bpath?bpath->cost(displayBound):100.)
   <<" #solutions= " <<fringe_solved.N;
 
   //  if(bseq) displayFocus=bseq;

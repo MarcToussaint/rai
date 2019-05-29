@@ -1925,7 +1925,7 @@ void Camera::project2PixelsAndTrueDepth(arr& x, double width, double height) con
 }
 
 void Camera::unproject_fromPixelsAndTrueDepth(arr& x, double width, double height) const{
-  CHECK_LE(fabs(width/height - whRatio), 1e-6, "given width and height don't match whRatio");
+  CHECK_LE(fabs(width/height - whRatio), 1e-2, "given width and height don't match whRatio");
   if(x.N==3) x.append(1.);
   CHECK_EQ(x.N, 4, "");
   arr Pinv = getInverseProjectionMatrix();
