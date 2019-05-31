@@ -1226,19 +1226,16 @@ void KOMO::setDiscreteOpt(uint k){
 void KOMO::setPoseOpt() {
   denseOptimization=true;
   setTiming(1., 2, 5., 1);
-//  setSquaredQVelocities();
   setSquaredQuaternionNorms();
 }
 
 void KOMO::setSequenceOpt(double _phases) {
   setTiming(_phases, 2, 5., 1);
-//  setSquaredQVelocities();
   setSquaredQuaternionNorms();
 }
 
 void KOMO::setPathOpt(double _phases, uint stepsPerPhase, double timePerPhase) {
   setTiming(_phases, stepsPerPhase, timePerPhase, 2);
-//  setSquaredQAccelerations();
   setSquaredQuaternionNorms();
 }
 
@@ -1342,6 +1339,14 @@ void KOMO::reset(double initNoise) {
   if(splineB.N) {
     z = pseudoInverse(splineB) * x;
   }
+}
+
+void KOMO::initWithConstant(const arr& q){
+  for(uint t=0;t<T;t++) {
+    configurations(k_order+t)->setJointState(q);
+  }
+
+  reset(0.);
 }
 
 void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, bool sineProfile){

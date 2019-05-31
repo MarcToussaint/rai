@@ -72,6 +72,7 @@ rai::Frame::~Frame() {
   CHECK_EQ(this, K.frames(ID), "")
   K.frames.remove(ID);
   listReindex(K.frames);
+  K.reset_q();
 }
 
 void rai::Frame::calc_X_from_parent() {
