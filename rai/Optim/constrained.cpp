@@ -122,7 +122,7 @@ bool OptConstrained::step() {
     newton.run();
   } else {
     double stopTol = newton.o.stopTolerance;
-    newton.o.stopTolerance *= (earlyPhase?10.:2.);
+    if(earlyPhase) newton.o.stopTolerance *= 10.;
     if(opt.constrainedMethod==anyTimeAula)  newton.run(20);
     else                                    newton.run();
     newton.o.stopTolerance = stopTol;
@@ -207,6 +207,8 @@ bool OptConstrained::step() {
 uint OptConstrained::run() {
 //  earlyPhase=true;
   while(!step());
+  newton.beta *= 1e-3;
+  step();
   return newton.evals;
 }
 

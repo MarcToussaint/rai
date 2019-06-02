@@ -320,6 +320,10 @@ arr rai::Frame::getMeshPoints(){
   return getShape().mesh().V;
 }
 
+arr rai::Frame::getMeshCorePoints(){
+  return getShape().sscCore().V;
+}
+
 /***********************************************************/
 
 rai::Frame* rai::Frame::insertPreLink(const rai::Transformation &A) {

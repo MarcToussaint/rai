@@ -37,14 +37,7 @@ TM_Default::TM_Default(TM_DefaultType _type,
 TM_Default::TM_Default(TM_DefaultType _type, const rai::KinematicWorld &K,
                        const char* iShapeName, const rai::Vector& _ivec,
                        const char* jShapeName, const rai::Vector& _jvec)
-  :type(_type), i(-1), j(-1) {
-  rai::Frame *a = iShapeName ? K.getFrameByName(iShapeName):NULL;
-  rai::Frame *b = jShapeName ? K.getFrameByName(jShapeName):NULL;
-  if(a) i=a->ID;
-  if(b) j=b->ID;
-  if(!!_ivec) ivec=_ivec; else ivec.setZero();
-  if(!!_jvec) jvec=_jvec; else jvec.setZero();
-  if(type==TMT_quat) flipTargetSignOnNegScalarProduct=true;
+  : TM_Default(_type, initIdArg(K, iShapeName), _ivec, initIdArg(K, jShapeName), _jvec) {
 }
 
 TM_Default::TM_Default(const Graph& specs, const rai::KinematicWorld& G)

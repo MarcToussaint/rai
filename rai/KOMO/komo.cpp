@@ -498,27 +498,32 @@ void KOMO::setSquaredQAccelerations(double startTime, double endTime, double pre
   addObjective(startTime, endTime, new TM_Transition(world), OT_sos, NoArr, prec);
 }
 
-void KOMO::setSquaredQAccelerations_novel(double startTime, double endTime, double prec, double homingPrec) {
+void KOMO::setSquaredQAccelerations_novel(double startTime, double endTime, double accPrec, double velPrec, double homingPrec) {
 
   uintA selectedBodies;
   arr scale;
-  for(rai::Frame *f:world.frames) if(f->joint && f->joint->dim>0 && f->joint->dim<7 && f->joint->active && f->joint->H>0.){
+  for(rai::Frame *f:world.frames) if(f->joint && f->joint->dim>0 && f->joint->dim<7 && f->joint->type!=JT_time && f->joint->active && f->joint->H>0.){
     CHECK(!f->joint->mimic, "")
     selectedBodies.append(TUP(f->ID, f->parent->ID));
     scale.append(f->joint->H, f->joint->dim);
   }
   selectedBodies.reshape(selectedBodies.N/2,2);
+//  cout <<scale <<endl <<world.getHmetric() <<endl;
+  scale *= sqrt(tau);
   if(k_order==2){
     //sqr accel
-    Objective *o = addObjective(startTime, endTime, make_shared<TM_qItself>(selectedBodies), OT_sos, NoArr, prec, 2);
-    o->map->scale = prec*scale;
-  }else{
+    Objective *o = addObjective(startTime, endTime, make_shared<TM_qItself>(selectedBodies), OT_sos, NoArr, accPrec, 2);
+    o->map->scale = accPrec*scale;
+  }
+  if(k_order==1 || velPrec){
     //sqr vel
-    Objective *o = addObjective(startTime, endTime, make_shared<TM_qItself>(selectedBodies), OT_sos, NoArr, prec, 1);
-    o->map->scale = prec*scale;
+    if(!velPrec) velPrec = accPrec;
+    Objective *o = addObjective(startTime, endTime, make_shared<TM_qItself>(selectedBodies), OT_sos, NoArr, velPrec, 1);
+    o->map->scale = velPrec*scale;
   }
   if(homingPrec){
     //homing
+    homingPrec *= sqrt(tau);
     addObjective(startTime, endTime, make_shared<TM_qItself>(selectedBodies, true), OT_sos, NoArr, homingPrec, 0);
   }
 }
@@ -928,8 +933,12 @@ void KOMO::setSlow(double startTime, double endTime, double prec, bool hardConst
   if(stepsPerPhase>2) { //otherwise: no velocities
 #if 1
     uintA selectedBodies;
-    for(rai::Joint *j:world.fwdActiveJoints) if(j->type!=rai::JT_time && j->qDim()>0) selectedBodies.append(j->frame->ID);
-    Feature *map = new TM_qItself(selectedBodies);
+    arr scale;
+    for(rai::Frame *f:world.frames) if(f->joint && f->joint->dim>0 && f->joint->dim<7 && f->joint->type!=rai::JT_time && f->joint->active && f->joint->H>0.){
+      selectedBodies.append(TUP(f->ID, f->parent->ID));
+    }
+    selectedBodies.reshape(selectedBodies.N/2,2);
+    ptr<Feature> map = make_shared<TM_qItself>(selectedBodies);
 #else
     Feature *map = new TM_qItself;
 #endif
@@ -2643,9 +2652,14 @@ arr KOMO::getPath_decisionVariable() {
 
 arr KOMO::getPath(const StringA &joints) {
   CHECK_EQ(configurations.N, k_order+T, "configurations are not setup yet");
-  arr X(T,joints.N);
+  uint n = joints.N;
+  if(!n) n = world.getJointStateDimension();
+  arr X(T, n);
   for(uint t=0; t<T; t++) {
-    X[t] = configurations(t+k_order)->getJointState(joints);
+    if(joints.N)
+      X[t] = configurations(t+k_order)->getJointState(joints);
+    else
+      X[t] = configurations(t+k_order)->getJointState();
   }
   return X;
 }

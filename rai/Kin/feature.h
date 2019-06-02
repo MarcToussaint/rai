@@ -57,7 +57,8 @@ inline uintA getKtupleDim(const WorldL& Ktuple) {
 }
 
 inline int initIdArg(const rai::KinematicWorld &K, const char* frameName) {
-  rai::Frame *a = frameName ? K.getFrameByName(frameName):NULL;
+  rai::Frame *a = 0;
+  if(frameName && frameName[0]) a = K.getFrameByName(frameName);
   if(a) return a->ID;
   return -1;
 }
