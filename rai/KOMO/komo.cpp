@@ -498,7 +498,7 @@ void KOMO::setSquaredQAccelerations(double startTime, double endTime, double pre
   addObjective(startTime, endTime, new TM_Transition(world), OT_sos, NoArr, prec);
 }
 
-void KOMO::setSquaredQAccelerations_novel(double startTime, double endTime, double accPrec, double velPrec, double homingPrec) {
+void KOMO::setSquaredQAccVelHoming(double startTime, double endTime, double accPrec, double velPrec, double homingPrec) {
 
   uintA selectedBodies;
   arr scale;
@@ -510,19 +510,20 @@ void KOMO::setSquaredQAccelerations_novel(double startTime, double endTime, doub
   selectedBodies.reshape(selectedBodies.N/2,2);
 //  cout <<scale <<endl <<world.getHmetric() <<endl;
   scale *= sqrt(tau);
-  if(k_order==2){
+  if(accPrec){
     //sqr accel
+    CHECK_GE(k_order, 2, "");
     Objective *o = addObjective(startTime, endTime, make_shared<TM_qItself>(selectedBodies), OT_sos, NoArr, accPrec, 2);
     o->map->scale = accPrec*scale;
   }
-  if(k_order==1 || velPrec){
+  if(velPrec){
     //sqr vel
-    if(!velPrec) velPrec = accPrec;
+    CHECK_GE(k_order, 1, "");
     Objective *o = addObjective(startTime, endTime, make_shared<TM_qItself>(selectedBodies), OT_sos, NoArr, velPrec, 1);
     o->map->scale = velPrec*scale;
   }
   if(homingPrec){
-    //homing
+    //sqr homing
     homingPrec *= sqrt(tau);
     addObjective(startTime, endTime, make_shared<TM_qItself>(selectedBodies, true), OT_sos, NoArr, homingPrec, 0);
   }

@@ -156,7 +156,7 @@ struct KOMO : NonCopyable {
 
   //-- tasks mid-level
   void setSquaredQAccelerations(double startTime=0., double endTime=-1., double prec=1.);
-  void setSquaredQAccelerations_novel(double startTime=0., double endTime=-1., double prec=1., double velPrec=0., double homingPrec=1e-2);
+  void setSquaredQAccVelHoming(double startTime=0., double endTime=-1., double accPrec=1., double velPrec=0., double homingPrec=1e-2);
   void setSquaredQVelocities(double startTime=0., double endTime=-1., double prec=1.);
   void setFixEffectiveJoints(double startTime=0., double endTime=-1., double prec=3e1);
   void setFixSwitchedObjects(double startTime=0., double endTime=-1., double prec=3e1);
