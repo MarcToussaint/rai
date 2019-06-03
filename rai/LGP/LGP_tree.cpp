@@ -111,6 +111,7 @@ LGP_Tree::LGP_Tree()
   if(!filNodes) filNodes = new ofstream(dataPath + "nodes");
 
   collisions = rai::getParameter<bool>("LGP/collisions", true);
+  useSwitches = rai::getParameter<bool>("LGP/useSwitches", true);
   displayTree = rai::getParameter<bool>("LGP/displayTree", false);
 
   verbose = rai::getParameter<int>("LGP/verbose", 2);
@@ -317,7 +318,7 @@ LGP_Node* LGP_Tree::walkToNode(const rai::String& seq){
   //first walk to the node that corresponds to seq
   LGP_Node *node = root;
   for(Node *actionLiteral:tmp) {
-//    if(specificBound==BD_all || specificBound==BD_poseFromSub) node->optBound(BD_poseFromSub, collisions); //optimize poses along the path
+//    if(specificBound==BD_all || specificBound==BD_pose) node->optBound(BD_pose, collisions); //optimize poses along the path
     if(!node->isExpanded) node->expand();
     LGP_Node *next = node->getChildByAction(actionLiteral);
     if(!next) LOG(-2) <<"action '" <<*actionLiteral <<"' is not a child of '" <<*node <<"'";
@@ -337,7 +338,7 @@ void LGP_Tree::optFixedSequence(const rai::String& seq, BoundType specificBound,
   updateDisplay();
 
   //then compute the desired bound
-  if(specificBound==BD_all || specificBound==BD_poseFromSub) node->optBound(BD_poseFromSub, collisions, verbose-2);
+  if(specificBound==BD_all || specificBound==BD_pose) node->optBound(BD_pose, collisions, verbose-2);
   if(specificBound==BD_all || specificBound==BD_seq)  node->optBound(BD_seq, collisions, verbose-2);
   if(specificBound==BD_all || specificBound==BD_path) node->optBound(BD_path, collisions, verbose-2);
   if(specificBound==BD_all || specificBound==BD_seqPath) node->optBound(BD_seqPath, collisions, verbose-2);
@@ -380,7 +381,7 @@ bool LGP_Tree::execChoice(rai::String cmd) {
   if(cmd=="q") return false;
   else if(cmd=="u") { if(focusNode->parent) focusNode = focusNode->parent; }
   else if(cmd=="e") focusNode->expand();
-  else if(cmd=="p") focusNode->optBound(BD_poseFromSub, collisions, verbose-2);
+  else if(cmd=="p") focusNode->optBound(BD_pose, collisions, verbose-2);
   else if(cmd=="s") focusNode->optBound(BD_seq , collisions, verbose-2);
   else if(cmd=="x") focusNode->optBound(BD_path, collisions, verbose-2);
   //  else if(cmd=="m") node->addMCRollouts(100,10);
@@ -493,7 +494,7 @@ rai::String LGP_Tree::report(bool detailed) {
   
   rai::String out;
   out <<"TIME= " <<rai::cpuTime() <<" TIME= " <<COUNT_time <<" KIN= " <<COUNT_kin <<" EVALS= " <<COUNT_evals << " TREE= " <<COUNT_node
-     <<" POSE= " <<COUNT_opt(BD_poseFromSub) <<" SEQ= " <<COUNT_opt(BD_seq) <<" PATH= " <<COUNT_opt(BD_path)+COUNT_opt(BD_seqPath)
+     <<" POSE= " <<COUNT_opt(BD_pose) <<" SEQ= " <<COUNT_opt(BD_seq) <<" PATH= " <<COUNT_opt(BD_path)+COUNT_opt(BD_seqPath)
     <<" bestPose= " <<(bpose?bpose->cost(1):100.)
    <<" bestSeq= " <<(bseq ?bseq ->cost(2):100.)
   <<" bestPath= " <<(bpath?bpath->cost(displayBound):100.)
@@ -522,9 +523,9 @@ void LGP_Tree::step() {
   
   uint numSol = fringe_solved.N;
   
-//  if(rnd.uni()<.5) optBestOnLevel(BD_poseFromSub, fringe_pose, BD_symbolic, &fringe_seq, &fringe_pose);
-  optFirstOnLevel(BD_poseFromSub, fringe_poseToGoal, &fringe_seq);
-  optBestOnLevel(BD_seq, fringe_seq, BD_poseFromSub, &fringe_path, NULL);
+//  if(rnd.uni()<.5) optBestOnLevel(BD_pose, fringe_pose, BD_symbolic, &fringe_seq, &fringe_pose);
+  optFirstOnLevel(BD_pose, fringe_poseToGoal, &fringe_seq);
+  optBestOnLevel(BD_seq, fringe_seq, BD_pose, &fringe_path, NULL);
   if(verbose>0 && fringe_path.N) cout <<"EVALUATING PATH " <<fringe_path.last()->getTreePathString() <<endl;
   optBestOnLevel(BD_seqPath, fringe_path, BD_seq, &fringe_solved, NULL);
   

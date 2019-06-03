@@ -151,6 +151,8 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
     waypoints = komoProblem(BD_seq)->getPath_q();
   }
 
+  komo.useSwitches = tree->useSwitches;
+
   skeleton2Bound(komo, bound, S,
                  startKinematics, (parent?parent->effKinematics:startKinematics),
                  collisions,
@@ -178,9 +180,10 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
 
 
   try {
-    if(bound != BD_poseFromSub){
+    if(bound != BD_poseFromSeq){
       komo.run();
     }else{
+      CHECK_EQ(step, komo.T-1, "");
       komo.run_sub({komo.T-2}, {});
     }
   } catch(std::runtime_error& err) {
@@ -203,7 +206,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
   DEBUG(FILE("z.problem.cost") <<result;);
   double cost_here = result.get<double>({"total","sqrCosts"});
   double constraints_here = result.get<double>({"total","constraints"});
-  if(bound == BD_poseFromSub){
+  if(bound == BD_poseFromSeq){
     cost_here = komo.sos;
     constraints_here = komo.ineq + komo.eq;
   }
@@ -596,6 +599,20 @@ void LGP_Node::getGraph(Graph& G, Node* n, bool brief) {
   
   //  n->keys.append(STRING("reward:" <<effPoseReward));
   for(LGP_Node *ch:children) ch->getGraph(G, n, brief);
+}
+
+void LGP_Node::displayBound(OpenGL& gl, BoundType bound){
+  if(!komoProblem(bound)){
+    LOG(-1) <<"bound was not computed - cannot display";
+  }else{
+    CHECK(!komoProblem(bound)->gl,"");
+    komoProblem(bound)->gl = &gl;
+    if(bound>=BD_path && bound<=BD_seqVelPath)
+      komoProblem(bound)->displayTrajectory(.1, true, false);
+    else
+      komoProblem(bound)->displayTrajectory(-1., true, false);
+    komoProblem(bound)->gl = 0;
+  }
 }
 
 RUN_ON_INIT_BEGIN(manipulationTree)

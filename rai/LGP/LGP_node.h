@@ -47,7 +47,7 @@ struct LGP_Node {
   
   //-- kinematics: the kinematic structure of the world after the decision path
   const rai::KinematicWorld& startKinematics; ///< initial start state kinematics
-  rai::KinematicWorld effKinematics; ///< the effective kinematics (computed from kinematics and symbolic state)
+  rai::KinematicWorld effKinematics; ///< TODO: REMOVE the effective kinematics (computed from kinematics and symbolic state)
   
   bool isExpanded=false;
   bool isInfeasible=false;
@@ -106,6 +106,7 @@ public:
   Graph getInfo() const;
   void getGraph(Graph& G, Node *n=NULL, bool brief=false);
   Graph getGraph(bool brief=false) { Graph G; getGraph(G, NULL, brief); G.checkConsistency(); return G; }
+  void displayBound(OpenGL& gl, BoundType bound);
 };
 
 inline ostream& operator<<(ostream& os, const LGP_Node& n) { n.write(os); return os; }

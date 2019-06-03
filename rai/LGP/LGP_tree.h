@@ -39,6 +39,7 @@ struct LGP_Tree : GLDrawer {
   bool displayTree=true;
   BoundType displayBound=BD_seqPath;
   bool collisions=false;
+  bool useSwitches=true;
   struct DisplayThread *dth=NULL;
   rai::String dataPath;
   arr cameraFocus;

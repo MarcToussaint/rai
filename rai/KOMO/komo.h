@@ -83,7 +83,8 @@ struct KOMO : NonCopyable {
   rai::KinematicWorld world;   ///< original world; which is the blueprint for all time-slice worlds (almost const: only makeConvexHulls modifies it)
   WorldL configurations;       ///< copies for each time slice; including kinematic switches; only these are optimized
   bool useSwift;               ///< whether swift (collisions/proxies) is evaluated whenever new configurations are set (needed if tasks read proxy list)
-  
+  bool useSwitches;            ///< if true, switches change kinematic topology; if false, switches only impose relative pose constraints
+
   //-- optimizer
   bool denseOptimization=false;///< calls optimization with a dense (instead of banded) representation
   bool sparseOptimization=false;///< calls optimization with a sparse (instead of banded) representation
@@ -93,13 +94,12 @@ struct KOMO : NonCopyable {
   //return values
   double sos, eq, ineq;
 
-  
   //-- verbosity only: buffers of all feature values computed on last set_x
   arr featureValues;           ///< storage of all features in all time slices
   ObjectiveTypeA featureTypes; ///< storage of all feature-types in all time slices
   bool featureDense;
 //  arr dualSolution;            ///< the dual solution computed during constrained optimization
-  struct OpenGL *gl=0;      ///< internal only: used in 'displayTrajectory'
+  struct OpenGL *gl=0;         ///< internal only: used in 'displayTrajectory'
   int verbose;                 ///< verbosity level
   int animateOptimization=0;   ///< display the current path for each evaluation during optimization
   double runTime=0.;           ///< measured run time

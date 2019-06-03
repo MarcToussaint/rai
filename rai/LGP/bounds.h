@@ -9,7 +9,7 @@ enum BoundType{ BD_all=-1,
                 BD_path,
                 BD_seqPath,
                 BD_seqVelPath,
-                BD_poseFromSub,
+                BD_poseFromSeq,
                 BD_max };
 
 void skeleton2Bound(KOMO& komo,

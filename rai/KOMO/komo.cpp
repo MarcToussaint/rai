@@ -66,7 +66,7 @@ Shape *getShape(const KinematicWorld& K, const char* name) {
   return s;
 }
 
-KOMO::KOMO() : useSwift(true), verbose(1), komo_problem(*this), dense_problem(*this), graph_problem(*this) {
+KOMO::KOMO() : useSwift(true), useSwitches(true), verbose(1), komo_problem(*this), dense_problem(*this), graph_problem(*this) {
   verbose = getParameter<int>("KOMO/verbose",1);
 }
 
@@ -177,16 +177,7 @@ Objective *KOMO::addObjective(double startTime, double endTime,
   task->name = map->shortTag(world);
   objectives.append(task);
   if(startTime!=-123. && endTime!=-123.){ //very special case!: Only when KOMO::addObjective calls (see below) we don't set the variables
-//    if(!denseOptimization && !sparseOptimization){
     task->setCostSpecs(startTime, endTime, stepsPerPhase, T, deltaFromStep, deltaToStep, denseOptimization || sparseOptimization);
-//    }else{
-//      if(startTime<0.) endTime=0;
-//      if(endTime<0.) endTime=T-1;
-//      intA vars(1+int(endTime)-int(startTime), map->order+1);
-//      for(uint t=0;t<vars.d0;t++)
-//        for(uint i=0;i<vars.d1;i++) vars(t,i) = int(startTime)+t+i-int(map->order);
-//      task->setCostSpecsDense(vars);
-//    }
     if(denseOptimization || sparseOptimization){
       CHECK_EQ(task->vars.nd, 2, "");
     }
@@ -250,31 +241,41 @@ void KOMO::addSwitch(double time, bool before, const char* type, const char* ref
 
 void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, double time, double endTime, const char* prevFrom, const char* from, const char* to){
   if(newMode==SY_stable || newMode==SY_stableOn){
-    if(newMode==SY_stable){
-      addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_free, from, to, world, SWInit_copy));
-    }else{  //SY_stableOn
-      Transformation rel = 0;
-      rel.pos.set(0,0, .5*(shapeSize(world, from) + shapeSize(world, to)));
-      addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_transXYPhi, from, to, world, SWInit_copy, 0, rel));
-    }
-
-    //-- DOF-is-constant constraint
-    if((endTime<0. && stepsPerPhase*time<T) || stepsPerPhase*endTime>stepsPerPhase*time+1){
-      addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 1e1, 1, +1, -1);
-//      addObjective(time, endTime, symbols2feature(FS_poseRel, {from, to}, world), OT_eq, NoArr, 1e1, 1, +1, -1);
-    }
-
-    //-- no relative jump at end
-//    if(endTime>0.) addObjective(endTime, endTime, new TM_NoJumpFromParent(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
-
-    if(prevMode==SY_stable || prevMode==SY_stableOn){
-      //-- no acceleration at start: +1 EXCLUDES (x-2, x-1, x0), ASSUMPTION: this is a placement that can excert impact
+    if(!useSwitches){
+      if(prevMode==SY_initial){
+        addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_free, world.frames.first()->name, to, world, SWInit_copy));
+        addObjective(time, time, new TM_NoJumpFromParent(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
+      }
+//      addObjective({time, endTime}, OT_eq, FS_poseRel, {from, to}, {1e2}, {}, 1);
+      addObjective(time, endTime, symbols2feature(FS_poseRel, {from, to}, world), OT_eq, NoArr, 1e2, 1, +1, 0);
       if(k_order>1) addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2, +0, +1);
-      else addObjective(time, time, new TM_NoJumpFromParent(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
     }else{
-      //-- no acceleration at start: +1 EXCLUDES (x-2, x-1, x0), ASSUMPTION: this is a placement that can excert impact
-      if(k_order>1) addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2, +1, +1);
-      else addObjective(time, time, new TM_NoJumpFromParent(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
+      if(newMode==SY_stable){
+        addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_free, from, to, world, SWInit_copy));
+      }else{  //SY_stableOn
+        Transformation rel = 0;
+        rel.pos.set(0,0, .5*(shapeSize(world, from) + shapeSize(world, to)));
+        addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_transXYPhi, from, to, world, SWInit_copy, 0, rel));
+      }
+
+      //-- DOF-is-constant constraint
+      if((endTime<0. && stepsPerPhase*time<T) || stepsPerPhase*endTime>stepsPerPhase*time+1){
+        addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 1e1, 1, +1, -1);
+        //      addObjective(time, endTime, symbols2feature(FS_poseRel, {from, to}, world), OT_eq, NoArr, 1e1, 1, +1, -1);
+      }
+
+      //-- no relative jump at end
+      //    if(endTime>0.) addObjective(endTime, endTime, new TM_NoJumpFromParent(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
+
+      if(prevMode==SY_initial || prevMode==SY_stable || prevMode==SY_stableOn){
+        //-- no acceleration at start: +1 EXCLUDES (x-2, x-1, x0), ASSUMPTION: this is a placement that can excert impact
+        if(k_order>1) addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2, +0, +1);
+        else addObjective(time, time, new TM_NoJumpFromParent(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
+      }else{
+        //-- no acceleration at start: +1 EXCLUDES (x-2, x-1, x0), ASSUMPTION: this is a placement that can excert impact
+        if(k_order>1) addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2, +1, +1);
+        else addObjective(time, time, new TM_NoJumpFromParent(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
+      }
     }
   }
 
@@ -1075,7 +1076,7 @@ void KOMO::setSkeleton(const Skeleton &S, bool ignoreSwitches) {
       const char* newFrom=world.frames.first()->name;
       if(S(k).frames.N==2) newFrom = S(k).frames(0);
       if(j<0)
-        addSwitch_mode(SY_stable, S(k).symbol, S(k).phase0, S(k).phase1+1., NULL, newFrom, S(k).frames.last());
+        addSwitch_mode(SY_initial, S(k).symbol, S(k).phase0, S(k).phase1+1., NULL, newFrom, S(k).frames.last());
       else
         addSwitch_mode(S(j).symbol, S(k).symbol, S(k).phase0, S(k).phase1+1., S(j).frames(0), newFrom, S(k).frames.last());
     }
