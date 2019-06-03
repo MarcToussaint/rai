@@ -92,7 +92,7 @@ OptConstrained::OptConstrained(arr& _x, arr &_dual, ConstrainedProblem& P, int v
   if(opt.verbose>0) cout <<"***** optConstrained: method=" <<MethodName[opt.constrainedMethod] <<endl;
 
   if(logFile){
-    (*logFile) <<"{ optConstraint:" <<its <<", mu:" <<L.mu <<", nu:" <<L.nu <<", L_x:" <<newton.fx <<", errors: ["<<L.get_costs() <<", " <<L.get_sumOfGviolations() <<", " <<L.get_sumOfHviolations() <<"], lambda:" <<L.lambda <<" }" <<endl;
+    (*logFile) <<"{ optConstraint: " <<its <<", mu: " <<L.mu <<", nu: " <<L.nu <<", L_x: " <<newton.fx <<", errors: ["<<L.get_costs() <<", " <<L.get_sumOfGviolations() <<", " <<L.get_sumOfHviolations() <<"], lambda: " <<L.lambda <<" }," <<endl;
   }
 }
 
@@ -198,7 +198,7 @@ bool OptConstrained::step() {
   its++;
 
   if(logFile){
-    (*logFile) <<"{ optConstraint:" <<its <<", mu:" <<L.mu <<", nu:" <<L.nu <<", L_x_beforeUpdate:" <<L_x_before <<", L_x_afterUpdate:" <<newton.fx <<", errors: ["<<L.get_costs() <<", " <<L.get_sumOfGviolations() <<", " <<L.get_sumOfHviolations() <<"], lambda:" <<L.lambda <<" }" <<endl;
+    (*logFile) <<"{ optConstraint: " <<its <<", mu: " <<L.mu <<", nu: " <<L.nu <<", L_x_beforeUpdate: " <<L_x_before <<", L_x_afterUpdate: " <<newton.fx <<", errors: ["<<L.get_costs() <<", " <<L.get_sumOfGviolations() <<", " <<L.get_sumOfHviolations() <<"], lambda: " <<L.lambda <<" }," <<endl;
   }
 
   return false;

@@ -38,9 +38,9 @@ void OptNewton::reinit(const arr& _x) {
   if(o.verbose>1) cout <<"*** optNewton: starting point f(x)=" <<fx <<" alpha=" <<alpha <<" beta=" <<beta <<endl;
   if(o.verbose>2) cout <<"\nx=" <<x <<endl;
   if(logFile){
-    (*logFile) <<"{ newton:" <<its <<", evaluations:" <<evals <<", f_x:" <<fx <<", alpha:" <<alpha;
-    if(o.verbose>2) (*logFile) <<", x:" <<x;
-    (*logFile) <<" }" <<endl;
+    (*logFile) <<"{ newton: " <<its <<", evaluations: " <<evals <<", f_x: " <<fx <<", alpha: " <<alpha;
+    if(o.verbose>2) (*logFile) <<", x: " <<x;
+    (*logFile) <<" }," <<endl;
   }
 }
 
@@ -148,7 +148,7 @@ OptNewton::StopCriterion OptNewton::step() {
       //accept new point
       if(o.verbose>1) cout <<" - ACCEPT" <<endl;
       if(logFile){
-        (*logFile) <<"{ lineSearch:" <<lineSearchSteps <<", alpha:" <<alpha <<", beta:" <<beta <<", f_x:" <<fx <<", f_y:" <<fy <<", wolfe:" <<wolfe <<", accept:True }" <<endl;
+        (*logFile) <<"{ lineSearch: " <<lineSearchSteps <<", alpha: " <<alpha <<", beta: " <<beta <<", f_x: " <<fx <<", f_y: " <<fy <<", wolfe: " <<wolfe <<", accept: True }," <<endl;
       }
       if(fx-fy<o.stopFTolerance) numTinySteps++; else numTinySteps=0;
       x = y;
@@ -177,7 +177,7 @@ OptNewton::StopCriterion OptNewton::step() {
       //reject new point
       if(o.verbose>1) cout <<" - reject" <<flush;
       if(logFile){
-        (*logFile) <<"{ lineSearch:" <<lineSearchSteps <<", alpha:" <<alpha <<", beta:" <<beta <<", f_x:" <<fx <<", f_y:" <<fy <<", wolfe:" <<wolfe <<", accept:False }" <<endl;
+        (*logFile) <<"{ lineSearch: " <<lineSearchSteps <<", alpha: " <<alpha <<", beta: " <<beta <<", f_x: " <<fx <<", f_y: " <<fy <<", wolfe: " <<wolfe <<", accept: False }," <<endl;
       }
       if(evals>o.stopEvals) {
         if(o.verbose>1) cout <<" (evals>stopEvals)" <<endl;
@@ -197,9 +197,9 @@ OptNewton::StopCriterion OptNewton::step() {
   }
   
   if(logFile){
-    (*logFile) <<"{ newton:" <<its <<", evaluations:" <<evals <<", f_x:" <<fx <<", alpha:" <<alpha;
-    if(o.verbose>2) (*logFile) <<", Delta:" <<Delta;
-    (*logFile) <<" }" <<endl;
+    (*logFile) <<"{ newton: " <<its <<", evaluations: " <<evals <<", f_x: " <<fx <<", alpha: " <<alpha;
+    if(o.verbose>2) (*logFile) <<", Delta: " <<Delta;
+    (*logFile) <<" }," <<endl;
   }
   
   //stopping criteria
