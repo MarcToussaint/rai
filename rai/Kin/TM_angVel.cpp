@@ -174,7 +174,13 @@ void TM_NoJumpFromParent::phi(arr& y, arr& J, const WorldL& Ktuple){
   rai::Frame *parent = link->parent;
 
   if(parent && parent->ID == Ktuple.elem(-1)->frames(i)->getUpwardLink()->parent->ID){
+#if 0
     LOG(-1) <<"this frame isn't switching - are you sure you want to do this?";
+#else
+    y.resize(7).setZero();
+    if(!!J) J.resize(7,getKtupleDim(Ktuple).last()).setZero();
+    return;
+#endif
   }
 
   {

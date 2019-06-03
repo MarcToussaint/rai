@@ -13,6 +13,7 @@
 #include <MCTS/solver_PlainMC.h>
 #include <KOMO/komo.h>
 #include <Kin/switch.h>
+#include <Optim/GraphOptim.h>
 
 #define DEBUG(x) //x
 #define DEL_INFEASIBLE(x) //x
@@ -109,7 +110,7 @@ void LGP_Node::computeEndKinematics(){
     if(s.phase0>maxPhase) maxPhase=s.phase0;
     if(s.phase1>maxPhase) maxPhase=s.phase1;
   }
-  tmp.setTiming(1., 1, 10., 1);
+  tmp.setTiming(maxPhase+1., 1, 10., 1);
   tmp.setSkeleton(S);
 //  tmp.reportProblem();
   for(rai::KinematicSwitch *s : tmp.switches) s->apply(effKinematics);
@@ -175,8 +176,13 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
   if(komo.verbose>1) komo.reportProblem();
   if(komo.verbose>5) komo.animateOptimization = komo.verbose-5;
 
+
   try {
-    komo.run();
+    if(bound != BD_poseFromSub){
+      komo.run();
+    }else{
+      komo.run_sub({komo.T-2}, {});
+    }
   } catch(std::runtime_error& err) {
     cout <<"KOMO CRASHED: " <<err.what() <<endl;
     komoProblem(bound).reset();
@@ -197,8 +203,16 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
   DEBUG(FILE("z.problem.cost") <<result;);
   double cost_here = result.get<double>({"total","sqrCosts"});
   double constraints_here = result.get<double>({"total","constraints"});
+  if(bound == BD_poseFromSub){
+    cost_here = komo.sos;
+    constraints_here = komo.ineq + komo.eq;
+  }
   bool feas = (constraints_here<1.);
-  
+
+  if(komo.verbose>0){
+    cout <<"  RESULTS: cost: " <<cost_here <<" constraints: " <<constraints_here <<" feasible: " <<feas <<endl;
+  }
+
   //-- post process komo problem for level==1
   if(bound==BD_pose) {
     cost_here -= 0.1*ret.reward; //account for the symbolic costs
@@ -286,7 +300,6 @@ ptr<KOMO> LGP_Node::optSubCG(const SubCG& scg, bool collisions, int verbose) {
   double cost_here = result.get<double>({"total","sqrCosts"});
   double constraints_here = result.get<double>({"total","constraints"});
   bool feas = (constraints_here<1.);
-
 
   return komo;
 }

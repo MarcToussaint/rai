@@ -1,11 +1,19 @@
 #include "bounds.h"
 //#include <Kin/switch.h>
-#include <Kin/TM_transition.h>
+#include <Kin/TM_qItself.h>
 
 double conv_step2time(int step, uint stepsPerPhase);
 
 template<> const char* rai::Enum<BoundType>::names []= {
-  "symbolic", "pose", "seq", "path", "seqPath", NULL
+  "symbolic",
+  "pose",
+  "seq",
+  "path",
+  "seqPath",
+  "seqVelPath",
+  "poseFromSub",
+  "max",
+  NULL
 };
 
 rai::Array<SkeletonSymbol> modes = { SY_stable, SY_stableOn, SY_dynamic, SY_dynamicOn, SY_dynamicTrans, };
@@ -51,15 +59,19 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
       komo.setModel(startKinematics, collisions);
       komo.setTiming(1., 1, 10., 1);
 
+      komo.setSquaredQuaternionNorms();
+#if 0
       komo.setHoming(0., -1., 1e-2);
       komo.setSquaredQVelocities(1., -1., 1e-1); //IMPORTANT: do not penalize transitions of from prefix to x_{0} -> x_{0} is 'loose'
-      komo.setSquaredQuaternionNorms();
+#else
+      komo.setSquaredQAccelerations_novel(0, -1., 1e-2, 1e-2);
+#endif
 
       komo.setSkeleton(finalS, false);
 
       //-- deactivate all velocity objectives except for transition
       for(Objective *o:komo.objectives){
-        if(!std::dynamic_pointer_cast<TM_Transition>(o->map) && o->map->order>0){
+        if(!std::dynamic_pointer_cast<TM_qItself>(o->map) && o->map->order>0){
           o->vars.clear();
         }
       }
@@ -69,6 +81,7 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
       komo.reset();
 //      komo.setPairedTimes();
     } break;
+    case BD_poseFromSub:
     case BD_seq: {
       komo.setModel(startKinematics, collisions);
       komo.setTiming(maxPhase+1., 1, 5., 1);

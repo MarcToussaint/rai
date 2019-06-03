@@ -1446,6 +1446,35 @@ void KOMO::run() {
   if(verbose>0) cout <<getReport(verbose>1) <<endl;
 }
 
+void KOMO::run_sub(const uintA& X, const uintA& Y) {
+  KinematicWorld::setJointStateCount=0;
+  double timeZero = timerStart();
+  if(opt) delete opt;
+
+  {
+    GraphProblem_Structure Gstruct(graph_problem);
+    //evaluate once with full parameters to adopt initialization
+    {
+      uintA X;
+      X.setStraightPerm(Gstruct.V.N);
+      SubGraphProblem G_X(Gstruct, X, {});
+      G_X.phi(NoArr, NoArrA, NoArrA, x);
+    }
+
+    SubGraphProblem G_XY(Gstruct, X, Y);
+    G_XY.optim( rai::MAX(verbose-2, 0) );
+    sos = G_XY.sos; eq = G_XY.eq; ineq = G_XY.ineq;
+  }
+
+  runTime = timerRead(true, timeZero);
+  if(verbose>0) {
+    cout <<"** optimization time=" <<runTime
+        <<" (kin:" <<timeKinematics <<" coll:" <<timeCollisions <<" feat:" <<timeFeatures <<" newton: " <<timeNewton <<")"
+       <<" setJointStateCount=" <<KinematicWorld::setJointStateCount <<endl;
+  }
+  if(verbose>0) cout <<getReport(verbose>1) <<endl;
+}
+
 void KOMO::optimize(bool initialize){
   if(initialize) reset();
   CHECK_EQ(configurations.N, T+k_order, "");

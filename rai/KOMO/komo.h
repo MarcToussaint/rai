@@ -90,6 +90,9 @@ struct KOMO : NonCopyable {
   OptConstrained *opt=0;       ///< optimizer; created in run()
   arr x, dual;                 ///< the primal and dual solution
   arr z, splineB;              ///< when a spline representation is used: z are the nodes; splineB the B-spline matrix; x = splineB * z
+  //return values
+  double sos, eq, ineq;
+
   
   //-- verbosity only: buffers of all feature values computed on last set_x
   arr featureValues;           ///< storage of all features in all time slices
@@ -239,6 +242,7 @@ struct KOMO : NonCopyable {
   void reset(double initNoise=.01);  ///< reset the optimizer (initializes x to a default path)
   void initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase=1, bool sineProfile=true);
   void run();                        ///< run the optimization (using OptConstrained -- its parameters are read from the cfg file)
+  void run_sub(const uintA& X, const uintA& Y);
   void optimize(bool initialize=true);
 
   rai::KinematicWorld& getConfiguration(double phase);
