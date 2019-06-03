@@ -72,6 +72,7 @@ rai::Frame::~Frame() {
   CHECK_EQ(this, K.frames(ID), "")
   K.frames.remove(ID);
   listReindex(K.frames);
+  K.reset_q();
 }
 
 void rai::Frame::calc_X_from_parent() {
@@ -317,6 +318,10 @@ void rai::Frame::setMass(double mass){
 
 arr rai::Frame::getMeshPoints(){
   return getShape().mesh().V;
+}
+
+arr rai::Frame::getMeshCorePoints(){
+  return getShape().sscCore().V;
 }
 
 /***********************************************************/
@@ -1116,7 +1121,9 @@ void rai::Shape::createMeshes() {
       mesh().setSSBox(size(0), size(1), size(2), r);
       //      mesh().setSSCvx(sscCore, r);
     } break;
-    default: NIY;
+    default:{
+      HALT("createMeshes not possible for shape type '" <<_type <<"'");
+    }
   }
 }
 

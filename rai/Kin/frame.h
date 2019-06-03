@@ -113,6 +113,7 @@ struct Frame : NonCopyable{
   arr getRelativePosition(){ return Q.pos.getArr(); }
   arr getRelativeQuaternion(){ return Q.rot.getArr(); }
   arr getMeshPoints();
+  arr getMeshCorePoints();
 };
 stdOutPipe(Frame)
 

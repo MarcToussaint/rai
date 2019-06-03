@@ -224,6 +224,8 @@ void draw5(void*, OpenGL& gl){
 
 }
 
+#ifdef RAI_PNG
+
 #include <png.h>
 
 void read_png(byteA &img, const char *file_name, bool swap_rows) {
@@ -289,10 +291,12 @@ void read_png(byteA &img, const char *file_name, bool swap_rows) {
   if(swap_rows) flip_image(img);
 }
 
+#endif
+
 void TEST(Texture) {
   OpenGL gl;
-//  read_ppm(texImg, "box.ppm", false);
-  read_png(texImg, "box.png", false);
+  read_ppm(texImg, "box.ppm", false);
+  //  read_png(texImg, "box.png", false);
 //  remove_alpha_channel(texImg);
 //  write_ppm(texImg, "z.ppm");
 //  texName=glImageTexture(texImg);

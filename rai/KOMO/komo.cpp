@@ -498,27 +498,33 @@ void KOMO::setSquaredQAccelerations(double startTime, double endTime, double pre
   addObjective(startTime, endTime, new TM_Transition(world), OT_sos, NoArr, prec);
 }
 
-void KOMO::setSquaredQAccelerations_novel(double startTime, double endTime, double prec, double homingPrec) {
+void KOMO::setSquaredQAccVelHoming(double startTime, double endTime, double accPrec, double velPrec, double homingPrec) {
 
   uintA selectedBodies;
   arr scale;
-  for(rai::Frame *f:world.frames) if(f->joint && f->joint->dim>0 && f->joint->dim<7 && f->joint->active && f->joint->H>0.){
+  for(rai::Frame *f:world.frames) if(f->joint && f->joint->dim>0 && f->joint->dim<7 && f->joint->type!=JT_time && f->joint->active && f->joint->H>0.){
     CHECK(!f->joint->mimic, "")
     selectedBodies.append(TUP(f->ID, f->parent->ID));
     scale.append(f->joint->H, f->joint->dim);
   }
   selectedBodies.reshape(selectedBodies.N/2,2);
-  if(k_order==2){
+//  cout <<scale <<endl <<world.getHmetric() <<endl;
+  scale *= sqrt(tau);
+  if(accPrec){
     //sqr accel
-    Objective *o = addObjective(startTime, endTime, make_shared<TM_qItself>(selectedBodies), OT_sos, NoArr, prec, 2);
-    o->map->scale = prec*scale;
-  }else{
+    CHECK_GE(k_order, 2, "");
+    Objective *o = addObjective(startTime, endTime, make_shared<TM_qItself>(selectedBodies), OT_sos, NoArr, accPrec, 2);
+    o->map->scale = accPrec*scale;
+  }
+  if(velPrec){
     //sqr vel
-    Objective *o = addObjective(startTime, endTime, make_shared<TM_qItself>(selectedBodies), OT_sos, NoArr, prec, 1);
-    o->map->scale = prec*scale;
+    CHECK_GE(k_order, 1, "");
+    Objective *o = addObjective(startTime, endTime, make_shared<TM_qItself>(selectedBodies), OT_sos, NoArr, velPrec, 1);
+    o->map->scale = velPrec*scale;
   }
   if(homingPrec){
-    //homing
+    //sqr homing
+    homingPrec *= sqrt(tau);
     addObjective(startTime, endTime, make_shared<TM_qItself>(selectedBodies, true), OT_sos, NoArr, homingPrec, 0);
   }
 }
@@ -928,8 +934,12 @@ void KOMO::setSlow(double startTime, double endTime, double prec, bool hardConst
   if(stepsPerPhase>2) { //otherwise: no velocities
 #if 1
     uintA selectedBodies;
-    for(rai::Joint *j:world.fwdActiveJoints) if(j->type!=rai::JT_time && j->qDim()>0) selectedBodies.append(j->frame->ID);
-    Feature *map = new TM_qItself(selectedBodies);
+    arr scale;
+    for(rai::Frame *f:world.frames) if(f->joint && f->joint->dim>0 && f->joint->dim<7 && f->joint->type!=rai::JT_time && f->joint->active && f->joint->H>0.){
+      selectedBodies.append(TUP(f->ID, f->parent->ID));
+    }
+    selectedBodies.reshape(selectedBodies.N/2,2);
+    ptr<Feature> map = make_shared<TM_qItself>(selectedBodies);
 #else
     Feature *map = new TM_qItself;
 #endif
@@ -1226,19 +1236,16 @@ void KOMO::setDiscreteOpt(uint k){
 void KOMO::setPoseOpt() {
   denseOptimization=true;
   setTiming(1., 2, 5., 1);
-//  setSquaredQVelocities();
   setSquaredQuaternionNorms();
 }
 
 void KOMO::setSequenceOpt(double _phases) {
   setTiming(_phases, 2, 5., 1);
-//  setSquaredQVelocities();
   setSquaredQuaternionNorms();
 }
 
 void KOMO::setPathOpt(double _phases, uint stepsPerPhase, double timePerPhase) {
   setTiming(_phases, stepsPerPhase, timePerPhase, 2);
-//  setSquaredQAccelerations();
   setSquaredQuaternionNorms();
 }
 
@@ -1342,6 +1349,14 @@ void KOMO::reset(double initNoise) {
   if(splineB.N) {
     z = pseudoInverse(splineB) * x;
   }
+}
+
+void KOMO::initWithConstant(const arr& q){
+  for(uint t=0;t<T;t++) {
+    configurations(k_order+t)->setJointState(q);
+  }
+
+  reset(0.);
 }
 
 void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, bool sineProfile){
@@ -2640,9 +2655,14 @@ arr KOMO::getPath_decisionVariable() {
 
 arr KOMO::getPath(const StringA &joints) {
   CHECK_EQ(configurations.N, k_order+T, "configurations are not setup yet");
-  arr X(T,joints.N);
+  uint n = joints.N;
+  if(!n) n = world.getJointStateDimension();
+  arr X(T, n);
   for(uint t=0; t<T; t++) {
-    X[t] = configurations(t+k_order)->getJointState(joints);
+    if(joints.N)
+      X[t] = configurations(t+k_order)->getJointState(joints);
+    else
+      X[t] = configurations(t+k_order)->getJointState();
   }
   return X;
 }

@@ -159,23 +159,19 @@ void renderConfigurations(const WorldL& cs, const char* filePrefix, int tprefix,
   copy.orsDrawMarkers=false;
   rai::system(STRING("mkdir -p " <<filePrefix));
   rai::system(STRING("rm -f " <<filePrefix <<"*.ppm"));
+  OpenGL gl("RenderConfiguration", w, h, true);
+  gl.add(glStandardScene, 0);
+  gl.add(copy);
+  if(camera) {
+    gl.camera = *camera;
+  } else {
+    gl.camera.setDefault();
+    gl.camera.focus(.5, 0., .7);
+  }
   for(uint t=0; t<cs.N; t++) {
     copy.copy(*cs(t), true);
-#if 0 //render on screen
-    copy.gl().resize(w,h);
-    copy.gl().doCaptureImage=true;
-    copy.gl().update(STRING(" (time " <<tprefix+int(t) <<'/' <<tprefix+int(cs.N) <<')').p); //, false, false, true);
-#else
-    if(camera) {
-      copy.gl().camera = *camera;
-    } else {
-      copy.gl().camera.setDefault();
-      copy.gl().camera.focus(.5, 0., .7);
-    }
-    copy.gl().text.clear() <<"time " <<tprefix+int(t) <<'/' <<tprefix+int(cs.N);
-    copy.gl().renderInBack(w, h);
-#endif
-    write_ppm(copy.gl().captureImage, STRING(filePrefix<<std::setw(4)<<std::setfill('0')<<t<<".ppm"));
+    gl.update(STRING(" (time " <<tprefix+int(t) <<'/' <<tprefix+int(cs.N) <<')').p, true);
+    write_ppm(gl.captureImage, STRING(filePrefix<<std::setw(4)<<std::setfill('0')<<t<<".ppm"));
   }
 }
 
