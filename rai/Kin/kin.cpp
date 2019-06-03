@@ -136,16 +136,14 @@ bool always_unlocked(void*) { return false; }
 namespace rai {
   struct sKinematicWorld {
     OpenGL *gl;
-    SwiftInterface *swift;
+    std::shared_ptr<SwiftInterface> swift;
     ptr<FclInterface> fcl;
     PhysXInterface *physx;
     OdeInterface *ode;
     FeatherstoneInterface *fs = NULL;
-    bool swiftIsReference;
-    sKinematicWorld():gl(NULL), swift(NULL), physx(NULL), ode(NULL), swiftIsReference(false) {}
+    sKinematicWorld():gl(NULL), physx(NULL), ode(NULL) {}
     ~sKinematicWorld() {
       if(gl) delete gl;
-      if(swift && !swiftIsReference) delete swift;
       if(physx) delete physx;
       if(ode) delete ode;
     }
@@ -369,10 +367,7 @@ void rai::KinematicWorld::copy(const rai::KinematicWorld& K, bool referenceSwift
   //copy contacts
   for(Contact *c:K.contacts) new Contact(*frames(c->a.ID), *frames(c->b.ID), c);
   //copy swift reference
-  if(referenceSwiftOnCopy) {
-    s->swift = K.s->swift;
-    s->swiftIsReference=true;
-  }
+  if(referenceSwiftOnCopy) s->swift = K.s->swift;
   q = K.q;
   qdot = K.qdot;
   calc_activeSets();
@@ -1466,7 +1461,7 @@ OpenGL& rai::KinematicWorld::gl(const char* window_title) {
 
 /// return a Swift extension
 SwiftInterface& rai::KinematicWorld::swift() {
-  if(!s->swift) s->swift = new SwiftInterface(*this, .1);
+  if(!s->swift) s->swift = make_shared<SwiftInterface>(*this, .1);
   return *s->swift;
 }
 
@@ -1485,8 +1480,7 @@ rai::FclInterface& rai::KinematicWorld::fcl(){
 }
 
 void rai::KinematicWorld::swiftDelete() {
-  delete s->swift;
-  s->swift = nullptr;
+  s->swift.reset();
 }
 
 /// return a PhysX extension

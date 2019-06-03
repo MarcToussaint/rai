@@ -117,7 +117,7 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
     if(!HL.special) HL.reshape(x.N,x.N);
   }
 
-  if(logFile) (*logFile) <<"{ lagrangianQuery:True, errors:[" <<get_costs() <<", " <<get_sumOfGviolations() <<", " <<get_sumOfHviolations() <<"] }" <<endl;
+  if(logFile) (*logFile) <<"{ lagrangianQuery: True, errors: [" <<get_costs() <<", " <<get_sumOfGviolations() <<", " <<get_sumOfHviolations() <<"] }," <<endl;
   
   return L;
 }

@@ -92,7 +92,7 @@ OptConstrained::OptConstrained(arr& _x, arr &_dual, ConstrainedProblem& P, int v
   if(opt.verbose>0) cout <<"***** optConstrained: method=" <<MethodName[opt.constrainedMethod] <<endl;
 
   if(logFile){
-    (*logFile) <<"{ optConstraint:" <<its <<", mu:" <<L.mu <<", nu:" <<L.nu <<", L_x:" <<newton.fx <<", errors: ["<<L.get_costs() <<", " <<L.get_sumOfGviolations() <<", " <<L.get_sumOfHviolations() <<"], lambda:" <<L.lambda <<" }" <<endl;
+    (*logFile) <<"{ optConstraint: " <<its <<", mu: " <<L.mu <<", nu: " <<L.nu <<", L_x: " <<newton.fx <<", errors: ["<<L.get_costs() <<", " <<L.get_sumOfGviolations() <<", " <<L.get_sumOfHviolations() <<"], lambda: " <<L.lambda <<" }," <<endl;
   }
 }
 
@@ -122,7 +122,7 @@ bool OptConstrained::step() {
     newton.run();
   } else {
     double stopTol = newton.o.stopTolerance;
-    newton.o.stopTolerance *= (earlyPhase?10.:2.);
+    if(earlyPhase) newton.o.stopTolerance *= 10.;
     if(opt.constrainedMethod==anyTimeAula)  newton.run(20);
     else                                    newton.run();
     newton.o.stopTolerance = stopTol;
@@ -198,7 +198,7 @@ bool OptConstrained::step() {
   its++;
 
   if(logFile){
-    (*logFile) <<"{ optConstraint:" <<its <<", mu:" <<L.mu <<", nu:" <<L.nu <<", L_x_beforeUpdate:" <<L_x_before <<", L_x_afterUpdate:" <<newton.fx <<", errors: ["<<L.get_costs() <<", " <<L.get_sumOfGviolations() <<", " <<L.get_sumOfHviolations() <<"], lambda:" <<L.lambda <<" }" <<endl;
+    (*logFile) <<"{ optConstraint: " <<its <<", mu: " <<L.mu <<", nu: " <<L.nu <<", L_x_beforeUpdate: " <<L_x_before <<", L_x_afterUpdate: " <<newton.fx <<", errors: ["<<L.get_costs() <<", " <<L.get_sumOfGviolations() <<", " <<L.get_sumOfHviolations() <<"], lambda: " <<L.lambda <<" }," <<endl;
   }
 
   return false;
@@ -207,6 +207,8 @@ bool OptConstrained::step() {
 uint OptConstrained::run() {
 //  earlyPhase=true;
   while(!step());
+  newton.beta *= 1e-3;
+  step();
   return newton.evals;
 }
 

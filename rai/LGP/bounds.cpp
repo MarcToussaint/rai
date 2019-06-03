@@ -93,7 +93,7 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
       komo.setHoming(0., -1., 1e-2);
       komo.setSquaredQVelocities(0., -1., 1e-2);
 #else
-      komo.setSquaredQAccelerations_novel(0, -1., 1e-2, 1e-2);
+      komo.setSquaredQAccVelHoming(0, -1., 0., 1e-2, 1e-2);
 #endif
       komo.setSkeleton(S);
 
@@ -116,7 +116,7 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
       if(pathOrder==1) komo.setSquaredQVelocities();
       else komo.setSquaredQAccelerations();
 #else
-      komo.setSquaredQAccelerations_novel(0, -1., 1., 1e-2);
+      komo.setSquaredQAccVelHoming(0, -1., 1., 0., 1e-2);
 #endif
 
       komo.setSkeleton(S);
@@ -139,7 +139,7 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
       if(pathOrder==1) komo.setSquaredQVelocities();
       else komo.setSquaredQAccelerations();
 #else
-      komo.setSquaredQAccelerations_novel(0, -1., 1., 1e-2);
+      komo.setSquaredQAccVelHoming(0, -1., 1., 0., 1e-2);
 #endif
 
       uint T = floor(maxPhase+.5);

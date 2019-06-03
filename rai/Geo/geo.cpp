@@ -1409,7 +1409,6 @@ void Transformation::applyOnPointArray(arr& pts) const {
   }
   if(!rot.isZero){
     arr R = ~rot.getArr(); //transposed, only to make it applicable to an n-times-3 array
-    arr t = conv_vec2arr(pos);
     pts = pts * R;
   }
   if(!pos.isZero){

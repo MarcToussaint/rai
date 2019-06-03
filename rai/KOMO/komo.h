@@ -159,7 +159,7 @@ struct KOMO : NonCopyable {
 
   //-- tasks mid-level
   void setSquaredQAccelerations(double startTime=0., double endTime=-1., double prec=1.);
-  void setSquaredQAccelerations_novel(double startTime=0., double endTime=-1., double prec=1., double homingPrec=1e-2);
+  void setSquaredQAccVelHoming(double startTime=0., double endTime=-1., double accPrec=1., double velPrec=0., double homingPrec=1e-2);
   void setSquaredQVelocities(double startTime=0., double endTime=-1., double prec=1.);
   void setFixEffectiveJoints(double startTime=0., double endTime=-1., double prec=3e1);
   void setFixSwitchedObjects(double startTime=0., double endTime=-1., double prec=3e1);
@@ -240,6 +240,7 @@ struct KOMO : NonCopyable {
   //-- optimization macros
   void setSpline(uint splineT);      ///< optimize B-spline nodes instead of the path; splineT specifies the time steps per node
   void reset(double initNoise=.01);  ///< reset the optimizer (initializes x to a default path)
+  void initWithConstant(const arr& q);
   void initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase=1, bool sineProfile=true);
   void run();                        ///< run the optimization (using OptConstrained -- its parameters are read from the cfg file)
   void run_sub(const uintA& X, const uintA& Y);
@@ -250,7 +251,7 @@ struct KOMO : NonCopyable {
   arr getFrameState(double phase);
   arr getPath_decisionVariable();
   arr getPath(const uintA& joints);
-  arr getPath(const StringA& joints);
+  arr getPath(const StringA& joints={});
   arr getPath_frames(const uintA &frames);
   arr getPath_frames(const StringA &frame={});
   arrA getPath_q();
