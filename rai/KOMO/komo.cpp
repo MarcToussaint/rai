@@ -47,15 +47,7 @@ using namespace rai;
 
 //===========================================================================
 
-double shapeSize(const KinematicWorld& K, const char* name, uint i=2) {
-  Frame *f = K.getFrameByName(name);
-  Shape *s = f->shape;
-  if(!s) {
-    for(Frame *b:f->parentOf) if(b->name==name && b->shape) { s=b->shape; break; }
-  }
-  if(!s) return 0;
-  return s->size(i);
-}
+double shapeSize(const KinematicWorld& K, const char* name, uint i=2);
 
 Shape *getShape(const KinematicWorld& K, const char* name) {
   Frame *f = K.getFrameByName(name);

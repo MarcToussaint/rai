@@ -20,13 +20,13 @@
 extern "C" {
 #include "cblas.h"
 #ifdef RAI_MSVC
-#  include <lapack/blaswrap.h>
+#  include "lapack/blaswrap.h"
 #endif
 #include "f2c.h"
 #undef small
 #undef large
 #ifndef ATLAS
-#  include <lapack/clapack.h>
+#  include "lapack/clapack.h"
 #endif
 #undef double
 #undef max
@@ -39,7 +39,7 @@ extern "C" {
 #define lapack_complex_float std::complex<float>
 #define lapack_complex_double std::complex<double>
 
-#include <lapack/lapacke.h>
+#include "lapack/lapacke.h"
 #define integer int
 #undef MAX
 #undef MIN
