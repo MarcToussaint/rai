@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <float.h>
 #include "MarchingCubes.h"
-#include "ply.h"
+#include "../ply/ply.h"
 #include "LookUpTable.h"
 
 // step size of the arrays of vertices and triangles

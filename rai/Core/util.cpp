@@ -698,8 +698,8 @@ char *getCmdLineArgument(const char *tag) {
 }
 
 String raiPath(const char* rel) {
-  String path(RAI_CORE_PATH);
-  path <<"/../../" <<rel;
+  String path(RAI_ROOT_PATH);
+  path <<"/" <<rel;
   return path;
 }
 

@@ -17,8 +17,8 @@
 
 #include <stdio.h>
 #include <float.h>
-#include <ccd/ccd.h>
-#include <ccd/vec3.h>
+#include "ccd.h"
+#include "vec3.h"
 #include "simplex.h"
 #include "polytope.h"
 #include "alloc.h"
