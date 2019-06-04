@@ -1401,6 +1401,7 @@ void KOMO::run() {
   KinematicWorld::setJointStateCount=0;
   double timeZero = timerStart();
   CHECK(T,"");
+  if(logFile) (*logFile) <<"KOMO_run_log: [" <<endl;
   if(opt) delete opt;
   if(denseOptimization){
     CHECK(!splineB.N, "NIY");
@@ -1445,6 +1446,7 @@ void KOMO::run() {
     opt->run();
   }
   runTime = timerRead(true, timeZero);
+  if(logFile) (*logFile) <<"\n] #end of KOMO_run_log" <<endl;
   if(verbose>0) {
     cout <<"** optimization time=" <<runTime
         <<" (kin:" <<timeKinematics <<" coll:" <<timeCollisions <<" feat:" <<timeFeatures <<" newton: " <<timeNewton <<")"
