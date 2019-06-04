@@ -60,20 +60,12 @@ void solve(){
   lgp.displayBound = BD_seqPath;
   lgp.verbose=2;
 
-
   lgp.run();
-
-//  lgp.optFixedSequence("(pick pr2R obj1) (place pr2R obj1 tray)", 2, true);
-//  lgp.optFixedSequence("(pick pr2R obj0) (pick pr2L obj3) (place pr2R obj0 tray) ", BD_seq, true);
-//  lgp.optFixedSequence("(pick pr2R obj0) (pick pr2L obj3) (place pr2R obj0 tray) ", BD_seqPath, true);
-//  lgp.optFixedSequence("(pick pr2R obj3)", 2, true);
-//  lgp.optFixedSequence("(pick pr2R obj1) (pick pr2L obj2) (place pr2R obj1 tray) (place pr2L obj2 tray)\
-//                       (pick pr2R obj3) (pick pr2L obj0) (place pr2R obj3 tray) (place pr2L obj0 tray)\
-//                       ", 2, true);
 
   rai::wait();
   lgp.renderToVideo();
 }
+
 
 void testBounds(){
   rai::KinematicWorld K;
@@ -82,69 +74,18 @@ void testBounds(){
   K.selectJointsByGroup({"base","armL","armR"}, true, true);
   K.optimizeTree();
 
-  //K.sortFrames();  FILE("z.model.g") <<K;
-
-
   LGP_Tree lgp(K, "fol-pnp-switch.g");
 
-//  lgp.getSymbolicSolutions(6);
-//  return;
-
-  LGP_Node *node = lgp.walkToNode("(pick pr2R obj0)");
-  cout <<"Node Info:\n" <<node->getInfo() <<endl;
-
-  auto S = node->getSkeleton();
-  writeSkeleton(cout, S, getSwitchesFromSkeleton(S));
-
-//  node = node->parent->parent;
-//  node->computeEndKinematics();
-//  node->effKinematics.glAnimate();
-
-  OpenGL gl;
-  gl.camera.setDefault();
-
-  BoundType bound = BD_pose;
-  node->optBound(bound, true, 2);
-//  node->effKinematics.glAnimate();
-  node->displayBound(gl, bound);
-
-
-  node = lgp.walkToNode("(pick pr2R obj0) (pick pr2L obj3)");
-
-  node->optBound(bound, true, 2);
-  node->displayBound(gl, bound);
-
-
-  node = lgp.walkToNode("(pick pr2R obj0) (pick pr2L obj3) (place pr2R obj0 tray)");
-
-  node->optBound(bound, true, 2);
-  node->displayBound(gl, bound);
-
-
-  node = lgp.walkToNode("(pick pr2R obj0) (pick pr2L obj3) (place pr2R obj0 tray) (place pr2L obj3 tray)");
-
-  node->optBound(bound, true, 2);
-  node->displayBound(gl, bound);
-
-  bound = BD_seq;
-  node->optBound(bound, true, 2);
-  node->displayBound(gl, bound);
-
-  bound = BD_seqPath;
-  node->optBound(bound, true, 2);
-  node->displayBound(gl, bound);
-  lgp.renderToVideo(BD_seqPath);
-
-  cout <<"Node Info:\n" <<node->getInfo() <<endl;
+  lgp.inspectSequence("(pick pr2R obj0) (pick pr2L obj3) (place pr2R obj0 tray) (place pr2L obj3 tray)");
 }
 
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 //  rnd.clockSeed();
 
-  solve();
+//  solve();
 
-//  testBounds();
+  testBounds();
 
   return 0;
 }

@@ -14,6 +14,7 @@
 #include <KOMO/komo.h>
 #include <Kin/switch.h>
 #include <Optim/GraphOptim.h>
+#include <Gui/opengl.h>
 
 #define DEBUG(x) //x
 #define DEL_INFEASIBLE(x) //x
@@ -368,8 +369,8 @@ void LGP_Node::labelInfeasible() {
   //TODO: resort all queues
 }
 
-MNodeL LGP_Node::getTreePath() const {
-  MNodeL path;
+LGP_NodeL LGP_Node::getTreePath() const {
+  LGP_NodeL path;
   LGP_Node *node=(LGP_Node*)this;
   for(; node;) {
     path.prepend(node);
@@ -379,7 +380,7 @@ MNodeL LGP_Node::getTreePath() const {
 }
 
 rai::String LGP_Node::getTreePathString(char sep) const {
-  MNodeL path = getTreePath();
+  LGP_NodeL path = getTreePath();
   rai::String str;
   for(LGP_Node *b : path) {
     if(b->decision) str <<*b->decision <<sep;
@@ -461,7 +462,7 @@ LGP_Node *LGP_Node::getChildByAction(Node *folDecision) {
   return NULL;
 }
 
-void LGP_Node::getAll(MNodeL& L) {
+void LGP_Node::getAll(LGP_NodeL& L) {
   L.append(this);
   for(LGP_Node *ch:children) ch->getAll(L);
 }
@@ -544,7 +545,7 @@ void LGP_Node::write(ostream& os, bool recursive, bool path) const {
   os <<"\t state= " <<*folState->isNodeOfGraph <<endl;
   if(path) {
     os <<"\t decision path:";
-    MNodeL _path = getTreePath();
+    LGP_NodeL _path = getTreePath();
     for(LGP_Node *nn: _path)
         if(nn->decision) os <<*nn->decision <<' '; else os <<" <ROOT> ";
     os <<endl;
@@ -606,15 +607,18 @@ void LGP_Node::displayBound(OpenGL& gl, BoundType bound){
     LOG(-1) <<"bound was not computed - cannot display";
   }else{
     CHECK(!komoProblem(bound)->gl,"");
+    rai::Enum<BoundType> _bound(bound);
+    gl.title.clear() <<"BOUND " <<_bound <<" at step " <<step;
+    gl.setTitle();
     komoProblem(bound)->gl = &gl;
     if(bound>=BD_path && bound<=BD_seqVelPath)
-      komoProblem(bound)->displayTrajectory(.1, true, false);
+      while(komoProblem(bound)->displayTrajectory(.1, true, false));
     else
-      komoProblem(bound)->displayTrajectory(-1., true, false);
+      while(komoProblem(bound)->displayTrajectory(-1., true, false));
     komoProblem(bound)->gl = 0;
   }
 }
 
 RUN_ON_INIT_BEGIN(manipulationTree)
-MNodeL::memMove = true;
+LGP_NodeL::memMove = true;
 RUN_ON_INIT_END(manipulationTree)
