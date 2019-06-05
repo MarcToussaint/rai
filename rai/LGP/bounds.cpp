@@ -1,6 +1,9 @@
 #include "bounds.h"
 //#include <Kin/switch.h>
 #include <Kin/TM_qItself.h>
+#include <Kin/TM_angVel.h>
+#include <Kin/TM_gravity.h>
+#include <Kin/TM_default.h>
 
 double conv_step2time(int step, uint stepsPerPhase);
 
@@ -31,14 +34,20 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
   //-- prepare the komo problem
   switch(boundType) {
     case BD_pose: {
+      double optHorizon=maxPhase;
+      if(optHorizon<1.) optHorizon=maxPhase=1.;
+      if(optHorizon>2.) optHorizon=2.;
+
       //-- remove non-switches
       Skeleton finalS;
       for(const SkeletonEntry& s:S){
         if(modes.contains(s.symbol)
            || s.phase0>=maxPhase){
-          finalS.append(s);
-          finalS.last().phase0 -= maxPhase-1.;
-          finalS.last().phase1 -= maxPhase-1.;
+          SkeletonEntry& fs = finalS.append(s);
+          fs.phase0 -= maxPhase-optHorizon;
+          fs.phase1 -= maxPhase-optHorizon;
+          if(fs.phase0<0.) fs.phase0=0.;
+          if(fs.phase1<0.) fs.phase1=0.;
         }
       }
 #if 0
@@ -57,21 +66,30 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
       }
 
       komo.setModel(startKinematics, collisions);
-      komo.setTiming(1., 1, 10., 1);
+      komo.setTiming(optHorizon, 1, 10., 1);
 
       komo.setSquaredQuaternionNorms();
 #if 0
       komo.setHoming(0., -1., 1e-2);
       komo.setSquaredQVelocities(1., -1., 1e-1); //IMPORTANT: do not penalize transitions of from prefix to x_{0} -> x_{0} is 'loose'
 #else
-      komo.setSquaredQAccVelHoming(0, -1., 1e-2, 1e-2);
+      komo.setSquaredQAccVelHoming(0, -1., 0., 1e-2, 1e-2);
 #endif
 
       komo.setSkeleton(finalS, false);
 
       //-- deactivate all velocity objectives except for transition
+//      for(Objective *o:komo.objectives){
+//        if((std::dynamic_pointer_cast<TM_ZeroQVel>(o->map)
+//           || std::dynamic_pointer_cast<TM_Default>(o->map))
+//           && o->map->order==1){
+//          o->vars.clear();
+//        }
+//      }
       for(Objective *o:komo.objectives){
-        if(!std::dynamic_pointer_cast<TM_qItself>(o->map) && o->map->order>0){
+        if(!std::dynamic_pointer_cast<TM_qItself>(o->map)
+           && !std::dynamic_pointer_cast<TM_NoJumpFromParent>(o->map)
+           && o->map->order>0){
           o->vars.clear();
         }
       }
@@ -81,7 +99,7 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
       komo.reset();
 //      komo.setPairedTimes();
     } break;
-    case BD_poseFromSub:
+    case BD_poseFromSeq:
     case BD_seq: {
       komo.setModel(startKinematics, collisions);
       komo.setTiming(maxPhase+1., 1, 5., 1);

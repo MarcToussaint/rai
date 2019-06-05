@@ -417,6 +417,13 @@ void OpenGL::closeWindow() {
   }
 }
 
+void OpenGL::setTitle(const char* _title){
+  if(_title) title = _title;
+  if(s->window){
+    glfwSetWindowTitle(s->window, title.p);
+  }
+}
+
 void OpenGL::beginNonThreadedDraw(){
   openWindow();
   auto fg = singletonGlSpinner();
