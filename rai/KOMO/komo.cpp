@@ -78,7 +78,7 @@ KOMO::KOMO(const KinematicWorld& K, bool )
 }
 
 KOMO::~KOMO() {
-  if(gl) delete gl;
+  gl.reset();
   if(opt) delete opt;
   if(logFile) delete logFile;
   listDelete(objectives);
@@ -1670,7 +1670,7 @@ bool KOMO::displayTrajectory(double delay, bool watch, bool overlayPaths, const 
   const char* tag = "KOMO planned trajectory";
   rai::String timetag;
   if(!gl) {
-    gl = new OpenGL("KOMO display");
+    gl = make_shared<OpenGL>("KOMO display");
     gl->camera.setDefault();
   }
   
@@ -1715,7 +1715,7 @@ bool KOMO::displayPath(bool watch, bool full) {
   DrawPaths drawX(X);
   
   if(!gl) {
-    gl = new OpenGL("KOMO display");
+    gl = make_shared<OpenGL>("KOMO display");
     gl->camera.setDefault();
   }
   gl->clear();
@@ -1728,16 +1728,18 @@ bool KOMO::displayPath(bool watch, bool full) {
   }
   if(watch) {
     int key = gl->watch();
+    gl.reset();
     return !(key==27 || key=='q');
   }
   gl->update(NULL, true);
+  gl.reset();
 //  gl->clear();
   return true;
 }
 
 Camera& KOMO::displayCamera() {
   if(!gl) {
-    gl = new OpenGL("KOMO display");
+    gl = make_shared<OpenGL>("KOMO display");
     gl->camera.setDefault();
   }
   return gl->camera;

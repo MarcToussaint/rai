@@ -96,7 +96,7 @@ struct KOMO : NonCopyable {
   ObjectiveTypeA featureTypes; ///< storage of all feature-types in all time slices
   bool featureDense;
 //  arr dualSolution;            ///< the dual solution computed during constrained optimization
-  struct OpenGL *gl=0;      ///< internal only: used in 'displayTrajectory'
+  ptr<OpenGL> gl;              ///< internal only: used in 'displayTrajectory'
   int verbose;                 ///< verbosity level
   int animateOptimization=0;   ///< display the current path for each evaluation during optimization
   double runTime=0.;           ///< measured run time
