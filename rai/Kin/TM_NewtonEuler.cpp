@@ -16,6 +16,7 @@
 
 void shapeFunction(double &x, double &dx);
 
+//===========================================================================
 
 TM_NewtonEuler::TM_NewtonEuler(int iShape, bool _transOnly) : i(iShape), transOnly(_transOnly) {
   order=2;
@@ -113,6 +114,59 @@ void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
 
 uint TM_NewtonEuler::dim_phi(const WorldL& Ktuple){
   if(transOnly) return 3;
+  return 6;
+}
+
+
+//===========================================================================
+
+
+TM_Wrench::TM_Wrench(int iShape, const arr& _vec, bool _torqueOnly) : i(iShape), vec(_vec), torqueOnly(_torqueOnly) {
+  order=2;
+  gravity = rai::getParameter<double>("TM_Wrench/gravity", 9.81);
+}
+
+void TM_Wrench::phi(arr &y, arr &J, const WorldL &Ktuple) {
+  CHECK_EQ(order, 2, "");
+
+  rai::KinematicWorld& K = *Ktuple(-2); // ! THIS IS THE MID TIME SLICE !
+  rai::Frame *a = K.frames(i);
+  if((a->flags & (1<<FL_impulseExchange))){
+    y.resize(3).setZero();
+    if(!!J) J.resize(3, getKtupleDim(Ktuple).last()).setZero();
+    return;
+  }
+
+  //get linear acceleration
+  arr acc, Jacc;
+  TM_LinVel pos(i);
+  pos.order=2;
+  pos.impulseInsteadOfAcceleration=false;
+  pos.phi(acc, (!!J?Jacc:NoArr), Ktuple);
+
+  acc(2) += gravity;
+
+  //get relative vector
+  arr v, Jv;
+  K.kinematicsVec(v, Jv, K.frames(i), vec);
+  if(!!J) expandJacobian(Jv, Ktuple, -2);
+
+  //torque
+  arr torque = crossProduct(v, acc);
+  arr Jtorque;
+  if(!!J) Jtorque = skew(v) * Jacc - skew(acc) * Jv;
+
+  //compose
+  if(torqueOnly){
+    y = torque;
+    if(!!J) J = Jtorque;
+  }else{
+    NIY
+  }
+}
+
+uint TM_Wrench::dim_phi(const WorldL& Ktuple){
+  if(torqueOnly) return 3;
   return 6;
 }
 

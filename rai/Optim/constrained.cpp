@@ -83,19 +83,22 @@ const char* MethodName[]= { "NoMethod", "SquaredPenalty", "AugmentedLagrangian",
 
 //==============================================================================
 
-OptConstrained::OptConstrained(arr& _x, arr &_dual, ConstrainedProblem& P, int verbose, OptOptions _opt)
-  : L(P, _opt, _dual), newton(_x, L, _opt), dual(_dual), opt(_opt) {
+OptConstrained::OptConstrained(arr& _x, arr &_dual, ConstrainedProblem& P, int verbose, OptOptions _opt, std::ostream* _logFile)
+  : L(P, _opt, _dual), newton(_x, L, _opt, _logFile), dual(_dual), opt(_opt), logFile(_logFile) {
 
   if(verbose>=0) opt.verbose=verbose;
   newton.o.verbose = rai::MAX(opt.verbose-1,0);
   
   if(opt.verbose>0) cout <<"***** optConstrained: method=" <<MethodName[opt.constrainedMethod] <<endl;
+
+  if(logFile){
+    (*logFile) <<"{ optConstraint: " <<its <<", mu: " <<L.mu <<", nu: " <<L.nu <<", L_x: " <<newton.fx <<", errors: ["<<L.get_costs() <<", " <<L.get_sumOfGviolations() <<", " <<L.get_sumOfHviolations() <<"], lambda: " <<L.lambda <<" }," <<endl;
+  }
 }
 
 bool OptConstrained::step() {
-  if(fil) (*fil) <<"constr " <<its <<' ' <<newton.evals <<' ' <<L.get_costs() <<' ' <<L.get_sumOfGviolations() <<' ' <<L.get_sumOfHviolations() <<endl;
-  newton.fil = fil;
-//  L.fil = fil;
+  newton.logFile = logFile;
+  L.logFile = logFile;
   
   if(opt.verbose>0) {
     cout <<"** optConstr. it=" <<its
@@ -119,7 +122,7 @@ bool OptConstrained::step() {
     newton.run();
   } else {
     double stopTol = newton.o.stopTolerance;
-    newton.o.stopTolerance *= (earlyPhase?10.:2.);
+    if(earlyPhase) newton.o.stopTolerance *= 10.;
     if(opt.constrainedMethod==anyTimeAula)  newton.run(20);
     else                                    newton.run();
     newton.o.stopTolerance = stopTol;
@@ -168,7 +171,7 @@ bool OptConstrained::step() {
     if(opt.verbose>0) cout <<"** optConstr. StoppingCriterion MAX EVALS" <<endl;
     return true;
   }
-  if(newton.it>=opt.stopIters) {
+  if(newton.its>=opt.stopIters) {
     if(opt.verbose>0) cout <<"** optConstr. StoppingCriterion MAX ITERS" <<endl;
     return true;
   }
@@ -177,6 +180,8 @@ bool OptConstrained::step() {
     return true;
   }
   
+  double L_x_before = newton.fx;
+
   //upate Lagrange parameters
   switch(opt.constrainedMethod) {
 //  case squaredPenalty: UCP.mu *= opt.aulaMuInc;  break;
@@ -189,15 +194,21 @@ bool OptConstrained::step() {
   }
   
   if(!!dual) dual=L.lambda;
-  
+
   its++;
-  
+
+  if(logFile){
+    (*logFile) <<"{ optConstraint: " <<its <<", mu: " <<L.mu <<", nu: " <<L.nu <<", L_x_beforeUpdate: " <<L_x_before <<", L_x_afterUpdate: " <<newton.fx <<", errors: ["<<L.get_costs() <<", " <<L.get_sumOfGviolations() <<", " <<L.get_sumOfHviolations() <<"], lambda: " <<L.lambda <<" }," <<endl;
+  }
+
   return false;
 }
 
 uint OptConstrained::run() {
 //  earlyPhase=true;
   while(!step());
+  newton.beta *= 1e-3;
+  step();
   return newton.evals;
 }
 

@@ -1,9 +1,5 @@
 BASE = ../../..
 
-GL = 1
-PNG = 1
-
-DEPEND = Core Geo Gui
+DEPEND = Core Kin Gui Geo KOMO Logic LGP Optim
 
 include $(BASE)/build/generic.mk
-

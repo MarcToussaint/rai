@@ -15,7 +15,7 @@
 #include "bounds.h"
 
 struct LGP_Node;
-typedef rai::Array<LGP_Node*> MNodeL;
+typedef rai::Array<LGP_Node*> LGP_NodeL;
 
 //struct SkeletonEntry{ StringL symbols; uint k0,k1; double phase0, phase1; };
 //typedef rai::Array<SkeletonEntry> Skeleton;
@@ -47,7 +47,7 @@ struct LGP_Node {
   
   //-- kinematics: the kinematic structure of the world after the decision path
   const rai::KinematicWorld& startKinematics; ///< initial start state kinematics
-  rai::KinematicWorld effKinematics; ///< the effective kinematics (computed from kinematics and symbolic state)
+  rai::KinematicWorld effKinematics; ///< TODO: REMOVE the effective kinematics (computed from kinematics and symbolic state)
   
   bool isExpanded=false;
   bool isInfeasible=false;
@@ -85,12 +85,12 @@ struct LGP_Node {
   void computeEndKinematics();
   
   //-- helpers to get other nodes
-  MNodeL getTreePath() const; ///< return the decision path in terms of a list of nodes (just walking to the root)
+  LGP_NodeL getTreePath() const; ///< return the decision path in terms of a list of nodes (just walking to the root)
   rai::String getTreePathString(char sep=' ') const;
   LGP_Node* getRoot(); ///< return the decision path in terms of a list of nodes (just walking to the root)
   LGP_Node* getChildByAction(Node  *folDecision); ///<
-  void getAll(MNodeL& L);
-  MNodeL getAll() { MNodeL L; getAll(L); return L; }
+  void getAll(LGP_NodeL& L);
+  LGP_NodeL getAll() { LGP_NodeL L; getAll(L); return L; }
   void checkConsistency();
   
   Skeleton getSkeleton(bool finalStateOnly=false) const;
@@ -106,6 +106,7 @@ public:
   Graph getInfo() const;
   void getGraph(Graph& G, Node *n=NULL, bool brief=false);
   Graph getGraph(bool brief=false) { Graph G; getGraph(G, NULL, brief); G.checkConsistency(); return G; }
+  void displayBound(OpenGL& gl, BoundType bound);
 };
 
 inline ostream& operator<<(ostream& os, const LGP_Node& n) { n.write(os); return os; }

@@ -83,25 +83,28 @@ struct KOMO : NonCopyable {
   rai::KinematicWorld world;   ///< original world; which is the blueprint for all time-slice worlds (almost const: only makeConvexHulls modifies it)
   WorldL configurations;       ///< copies for each time slice; including kinematic switches; only these are optimized
   bool useSwift;               ///< whether swift (collisions/proxies) is evaluated whenever new configurations are set (needed if tasks read proxy list)
-  
+  bool useSwitches;            ///< if true, switches change kinematic topology; if false, switches only impose relative pose constraints
+
   //-- optimizer
   bool denseOptimization=false;///< calls optimization with a dense (instead of banded) representation
   bool sparseOptimization=false;///< calls optimization with a sparse (instead of banded) representation
   OptConstrained *opt=0;       ///< optimizer; created in run()
   arr x, dual;                 ///< the primal and dual solution
   arr z, splineB;              ///< when a spline representation is used: z are the nodes; splineB the B-spline matrix; x = splineB * z
-  
+  //return values
+  double sos, eq, ineq;
+
   //-- verbosity only: buffers of all feature values computed on last set_x
   arr featureValues;           ///< storage of all features in all time slices
   ObjectiveTypeA featureTypes; ///< storage of all feature-types in all time slices
   bool featureDense;
 //  arr dualSolution;            ///< the dual solution computed during constrained optimization
-  struct OpenGL *gl=0;      ///< internal only: used in 'displayTrajectory'
+  struct OpenGL *gl=0;         ///< internal only: used in 'displayTrajectory'
   int verbose;                 ///< verbosity level
   int animateOptimization=0;   ///< display the current path for each evaluation during optimization
   double runTime=0.;           ///< measured run time
   double timeCollisions=0., timeKinematics=0., timeNewton=0., timeFeatures=0.;
-  ofstream *fil=0;
+  ofstream *logFile=0;
   
   KOMO();
   KOMO(const rai::KinematicWorld& K, bool _useSwift=true);
@@ -156,7 +159,7 @@ struct KOMO : NonCopyable {
 
   //-- tasks mid-level
   void setSquaredQAccelerations(double startTime=0., double endTime=-1., double prec=1.);
-  void setSquaredQAccelerations_novel(double startTime=0., double endTime=-1., double prec=1., double homingPrec=1e-2);
+  void setSquaredQAccVelHoming(double startTime=0., double endTime=-1., double accPrec=1., double velPrec=0., double homingPrec=1e-2);
   void setSquaredQVelocities(double startTime=0., double endTime=-1., double prec=1.);
   void setFixEffectiveJoints(double startTime=0., double endTime=-1., double prec=3e1);
   void setFixSwitchedObjects(double startTime=0., double endTime=-1., double prec=3e1);
@@ -237,8 +240,10 @@ struct KOMO : NonCopyable {
   //-- optimization macros
   void setSpline(uint splineT);      ///< optimize B-spline nodes instead of the path; splineT specifies the time steps per node
   void reset(double initNoise=.01);  ///< reset the optimizer (initializes x to a default path)
+  void initWithConstant(const arr& q);
   void initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase=1, bool sineProfile=true);
   void run();                        ///< run the optimization (using OptConstrained -- its parameters are read from the cfg file)
+  void run_sub(const uintA& X, const uintA& Y);
   void optimize(bool initialize=true);
 
   rai::KinematicWorld& getConfiguration(double phase);
@@ -246,7 +251,7 @@ struct KOMO : NonCopyable {
   arr getFrameState(double phase);
   arr getPath_decisionVariable();
   arr getPath(const uintA& joints);
-  arr getPath(const StringA& joints);
+  arr getPath(const StringA& joints={});
   arr getPath_frames(const uintA &frames);
   arr getPath_frames(const StringA &frame={});
   arrA getPath_q();

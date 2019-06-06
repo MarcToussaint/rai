@@ -4,7 +4,7 @@ OUTPUT = lib$(NAME).so
 -include $(BASE)/build/config.mk
 
 X11 = 1
-PNG = 1
+#PNG = 1
 GL = 1
 GTK = 0
 #GTKGL = 1

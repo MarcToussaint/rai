@@ -32,7 +32,7 @@ struct LagrangianProblem : ScalarFunction { //TODO: rename: UnconstrainedLagrang
   arr phi_x, J_x, H_x; ///< features at x
   ObjectiveTypeA tt_x; ///< feature types at x
 
-  ofstream *fil=NULL;  ///< file for logging
+  ostream *logFile=NULL;  ///< file for logging
 
   LagrangianProblem(ConstrainedProblem &P, OptOptions opt=NOOPT, arr& lambdaInit=NoArr);
   

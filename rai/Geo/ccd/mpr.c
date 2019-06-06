@@ -16,7 +16,7 @@
  */
 
 #include <stdlib.h>
-#include <ccd/ccd.h>
+#include "ccd.h"
 #include "simplex.h"
 #include "dbg.h"
 

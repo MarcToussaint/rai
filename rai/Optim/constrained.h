@@ -25,9 +25,9 @@ struct OptConstrained {
   OptOptions opt;
   uint its=0;
   bool earlyPhase=false;
-  ofstream *fil=NULL;
+  ostream *logFile=NULL;
   
-  OptConstrained(arr& x, arr &dual, ConstrainedProblem& P, int verbose=-1, OptOptions opt=NOOPT);
+  OptConstrained(arr& x, arr &dual, ConstrainedProblem& P, int verbose=-1, OptOptions opt=NOOPT, ostream* _logFile=0);
   ~OptConstrained();
   bool step();
   uint run();

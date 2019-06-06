@@ -614,6 +614,7 @@ class SWIFT_Tri_Mesh {
         only_tris = true;
 #endif
         no_dup_verts = true;
+        radius = -1.;
     }
     ~SWIFT_Tri_Mesh( ) { }
     void Prepare_For_Delete( );

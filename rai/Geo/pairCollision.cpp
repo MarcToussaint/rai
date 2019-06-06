@@ -16,8 +16,8 @@ extern "C" {
 #endif
 
 #include <Gui/opengl.h>
-#include <ccd/ccd.h>
-#include <ccd/quat.h>
+#include "ccd/ccd.h"
+#include "ccd/quat.h"
 #include <Geo/qhull.h>
 
 PairCollision::PairCollision(const rai::Mesh &_mesh1, const rai::Mesh &_mesh2, rai::Transformation &_t1, rai::Transformation &_t2, double rad1, double rad2)

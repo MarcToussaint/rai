@@ -104,6 +104,8 @@ struct Frame : NonCopyable{
   void setConvexMesh(const std::vector<double>& points, const std::vector<byte>& colors={}, double radius=0.);
   void setColor(const std::vector<double>& color);
   void setJoint(rai::JointType jointType);
+  void setContact(int cont);
+  void setMass(double mass);
 
   arr getPosition(){ return X.pos.getArr(); }
   arr getQuaternion(){ return X.rot.getArr4d(); }
@@ -111,6 +113,7 @@ struct Frame : NonCopyable{
   arr getRelativePosition(){ return Q.pos.getArr(); }
   arr getRelativeQuaternion(){ return Q.rot.getArr(); }
   arr getMeshPoints();
+  arr getMeshCorePoints();
 };
 stdOutPipe(Frame)
 
@@ -127,6 +130,7 @@ struct Joint : NonCopyable{
   arr limits;        ///< joint limits (lo, up, [maxvel, maxeffort])
   arr q0;            ///< joint null position
   double H=1.;       ///< control cost scalar
+  double scale=1.;   ///< scaling robot-q = scale * q-vector
   
   Joint *mimic=NULL; ///< if non-NULL, this joint's state is identical to another's
   

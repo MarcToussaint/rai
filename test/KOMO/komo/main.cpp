@@ -64,7 +64,6 @@ void TEST(Align){
   komo.reset();
   komo.run();
   komo.plotTrajectory();
-  komo.getReport(true);
   for(uint i=0;i<2;i++) komo.displayTrajectory();
 }
 
@@ -82,12 +81,15 @@ void TEST(PR2){
     K.setJointState(K.q);
   }
 
+//  K["worldTranslationRotation"]->joint->scale = 10.;
+  
   KOMO_ext komo;
+  komo.logFile = new ofstream("z.dat");
 //  komo.denseOptimization=true;
-  komo.sparseOptimization=true;
+//  komo.sparseOptimization=true;
   komo.setModel(K);
   komo.setPathOpt(1., 100, 10.);
-  komo.setSquaredQAccelerations();
+  komo.setSquaredQAccVelHoming();
   komo.setPosition(1., 1., "endeff", "target");
   komo.setSlowAround(1., .02);
   komo.add_collision(true);
@@ -97,8 +99,8 @@ void TEST(PR2){
   komo.reset();
 //  komo.setSpline(10);
   komo.run();
+//  komo.checkGradients();
   komo.plotTrajectory();
-  komo.getReport(true);
   for(uint i=0;i<2;i++) komo.displayTrajectory();
 }
 

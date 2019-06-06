@@ -41,6 +41,8 @@ struct CameraView : GLDrawer {
 
   Sensor& selectSensor(const char* sensorName); //set the OpenGL sensor
 
+  void updateConfiguration(const KinematicWorld& newC);
+
   //-- compute/analyze a camera perspective (stored in classes' output fields)
   void computeImageAndDepth(byteA& image, floatA& depth);
   void computeKinectDepth(uint16A& kinect_depth, const arr& depth);

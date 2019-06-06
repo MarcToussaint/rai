@@ -1,3 +1,4 @@
+
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
@@ -64,8 +65,12 @@ void FOL_World::init(const Graph& _KB){
   Terminate_keyword = KB["Terminate"];  CHECK(Terminate_keyword, "You need to declare the Terminate keyword");
   Quit_keyword = KB["QUIT"];            CHECK(Quit_keyword, "You need to declare the QUIT keyword");
   Wait_keyword = KB["WAIT"];            //CHECK(Wait_keyword, "You need to declare the WAIT keyword");
+  Subgoal_keyword = KB["SubgoalDone"];            //CHECK(Wait_keyword, "You need to declare the WAIT keyword");
   Quit_literal = KB.newNode<bool>({}, {Quit_keyword}, true);
-  
+  if(Subgoal_keyword){
+    Subgoal_literal = KB.newNode<bool>({"tmp"}, {Subgoal_keyword}, true);
+  }
+
   Graph *params = KB.find<Graph>("FOL_World");
   if(params) {
     hasWait = params->get<bool>("hasWait", hasWait);
@@ -101,7 +106,7 @@ MCTS_Environment::TransitionReturn FOL_World::transition(const Handle& action) {
   lastStepDuration = 0.;
   lastStepProbability = 1.;
   lastStepObservation = 0;
-  
+
   T_step++;
   
   CHECK(!hasWait || Wait_keyword,"if the FOL uses wait, the WAIT keyword needs to be declared");

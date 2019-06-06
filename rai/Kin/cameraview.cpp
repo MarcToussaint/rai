@@ -6,7 +6,6 @@ extern bool Geo_mesh_drawColors; //UGLY!!
 //===========================================================================
 
 rai::CameraView::CameraView(const rai::KinematicWorld& _K, bool _offscreen, int _watchComputations)
-//  : K(_K), gl("CameraView", 300, 300, _offscreen), watchComputations(_watchComputations) {
   : K(_K), gl("CameraView", 640, 480, _offscreen), watchComputations(_watchComputations) {
 
   gl.add(*this);
@@ -64,9 +63,26 @@ rai::CameraView::Sensor& rai::CameraView::selectSensor(const char* sensorName){
   return *sen;
 }
 
+void rai::CameraView::updateConfiguration(const rai::KinematicWorld& newC){
+  arr X = newC.getFrameState();
+  auto _dataLock = gl.dataLock(RAI_HERE);
+  if(X.d0==K.frames.N){
+    K.setFrameState(X);
+  }else{
+    K.copy(newC);
+    if(renderMode==seg){//update frameIDmap
+      frameIDmap.resize(K.frames.N).setZero();
+      for(rai::Frame *f:K.frames){
+        int *label=f->ats.find<int>("label");
+        if(label) frameIDmap(f->ID) = *label;
+      }
+    }
+  }
+}
+
 void rai::CameraView::computeImageAndDepth(byteA& image, floatA& depth){
   updateCamera();
-//  renderMode=all;
+  //  renderMode=all;
   gl.update(NULL, true);
   image = gl.captureImage;
   flip_image(image);
@@ -74,11 +90,11 @@ void rai::CameraView::computeImageAndDepth(byteA& image, floatA& depth){
     byteA seg(image.d0*image.d1);
     image.reshape(image.d0*image.d1, 3);
     for(uint i=0; i<image.d0; i++){
-        uint id = color2id(image.p+3*i);
-        if(id<frameIDmap.N){
-            seg(i) = frameIDmap(id);
-        }else
-            seg(i) = 0;
+      uint id = color2id(image.p+3*i);
+      if(id<frameIDmap.N){
+        seg(i) = frameIDmap(id);
+      }else
+        seg(i) = 0;
     }
     image = seg;
     image.reshape(gl.height, gl.width);
@@ -237,25 +253,7 @@ rai::Sim_CameraView::~Sim_CameraView() {
 void rai::Sim_CameraView::step() {
   byteA img;
   floatA dep;
-  arr X = model.get()->getFrameState();
-  if(!X.N) return;
-  {
-    auto _dataLock = C.gl.dataLock(RAI_HERE);
-    if(step_count>0 && X.d0==C.K.frames.N){
-      C.K.setFrameState(X);
-    }else{
-      C.K = model.get();
-      if(C.renderMode==C.seg){//update frameIDmap
-        C.frameIDmap.resize(C.K.frames.N).setZero();
-        for(rai::Frame *f:C.K.frames){
-          int *label=f->ats.find<int>("label");
-          if(label){
-            C.frameIDmap(f->ID) = *label;
-          }
-        }
-      }
-    }
-  }
+  C.updateConfiguration(model.get());
   C.computeImageAndDepth(img, dep);
   color.set() = img;
   depth.set() = dep;

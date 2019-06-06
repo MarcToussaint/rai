@@ -65,6 +65,18 @@ bool checkHessianCP(ConstrainedProblem& P, const arr& x, double tolerance);
 bool checkDirectionalGradient(const ScalarFunction &f, const arr& x, const arr& delta, double tolerance);
 bool checkDirectionalJacobian(const VectorFunction &f, const arr& x, const arr& delta, double tolerance);
 
+inline arr summarizeErrors(const arr& phi, const ObjectiveTypeA& tt) {
+  arr err = zeros(3);
+  for(uint i=0; i<phi.N; i++) {
+    if(tt(i)==OT_f) err(0) += phi(i);
+    if(tt(i)==OT_sos) err(0) += rai::sqr(phi(i));
+    if(tt(i)==OT_ineq && phi(i)>0.) err(1) += phi(i);
+    if(tt(i)==OT_eq) err(2) += fabs(phi(i));
+  }
+  return err;
+}
+
+
 //===========================================================================
 //
 // generic optimization options
@@ -119,7 +131,7 @@ extern Singleton<OptOptions> globalOptOptions;
 void displayFunction(const ScalarFunction &f, bool wait=false, double lo=-1.2, double hi=1.2);
 
 // function evaluation counter (used only for performance meassurements, global for simplicity)
-extern uint eval_cost;
+extern uint eval_count;
 
 //===========================================================================
 //

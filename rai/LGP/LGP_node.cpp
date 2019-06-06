@@ -13,6 +13,8 @@
 #include <MCTS/solver_PlainMC.h>
 #include <KOMO/komo.h>
 #include <Kin/switch.h>
+#include <Optim/GraphOptim.h>
+#include <Gui/opengl.h>
 
 #define DEBUG(x) //x
 #define DEL_INFEASIBLE(x) //x
@@ -109,7 +111,7 @@ void LGP_Node::computeEndKinematics(){
     if(s.phase0>maxPhase) maxPhase=s.phase0;
     if(s.phase1>maxPhase) maxPhase=s.phase1;
   }
-  tmp.setTiming(maxPhase+1., 1, 5., 1);
+  tmp.setTiming(maxPhase+1., 1, 10., 1);
   tmp.setSkeleton(S);
 //  tmp.reportProblem();
   for(rai::KinematicSwitch *s : tmp.switches) s->apply(effKinematics);
@@ -126,11 +128,11 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
     cout <<"########## OPTIM lev " <<bound <<endl;
   }
 
-  komo.fil = new ofstream(OptLGPDataPath + STRING("komo-" <<id <<'-' <<step <<'-' <<bound));
+  komo.logFile = new ofstream(OptLGPDataPath + STRING("komo-" <<id <<'-' <<step <<'-' <<bound));
   
   Skeleton S = getSkeleton();
 
-  if(komo.fil) writeSkeleton(*komo.fil, S, getSwitchesFromSkeleton(S));
+  if(komo.logFile) writeSkeleton(*komo.logFile, S, getSwitchesFromSkeleton(S));
 
   if(komo.verbose>1){
     writeSkeleton(cout, S, getSwitchesFromSkeleton(S));
@@ -150,6 +152,8 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
     waypoints = komoProblem(BD_seq)->getPath_q();
   }
 
+  komo.useSwitches = tree->useSwitches;
+
   skeleton2Bound(komo, bound, S,
                  startKinematics, (parent?parent->effKinematics:startKinematics),
                  collisions,
@@ -162,9 +166,9 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
     cout <<"FINAL objective: " <<*co <<endl;
   }
 
-  if(komo.fil){
-    komo.reportProblem(*komo.fil);
-    (*komo.fil) <<komo.getProblemGraph(false);
+  if(komo.logFile){
+    komo.reportProblem(*komo.logFile);
+    (*komo.logFile) <<komo.getProblemGraph(false);
   }
 
 //  if(level==BD_seq) komo.denseOptimization=true;
@@ -175,8 +179,14 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
   if(komo.verbose>1) komo.reportProblem();
   if(komo.verbose>5) komo.animateOptimization = komo.verbose-5;
 
+
   try {
-    komo.run();
+    if(bound != BD_poseFromSeq){
+      komo.run();
+    }else{
+      CHECK_EQ(step, komo.T-1, "");
+      komo.run_sub({komo.T-2}, {});
+    }
   } catch(std::runtime_error& err) {
     cout <<"KOMO CRASHED: " <<err.what() <<endl;
     komoProblem(bound).reset();
@@ -197,8 +207,16 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
   DEBUG(FILE("z.problem.cost") <<result;);
   double cost_here = result.get<double>({"total","sqrCosts"});
   double constraints_here = result.get<double>({"total","constraints"});
+  if(bound == BD_poseFromSeq){
+    cost_here = komo.sos;
+    constraints_here = komo.ineq + komo.eq;
+  }
   bool feas = (constraints_here<1.);
-  
+
+  if(komo.verbose>0){
+    cout <<"  RESULTS: cost: " <<cost_here <<" constraints: " <<constraints_here <<" feasible: " <<feas <<endl;
+  }
+
   //-- post process komo problem for level==1
   if(bound==BD_pose) {
     cost_here -= 0.1*ret.reward; //account for the symbolic costs
@@ -252,9 +270,9 @@ ptr<KOMO> LGP_Node::optSubCG(const SubCG& scg, bool collisions, int verbose) {
   return komo;
 
 
-  if(komo->fil){
-    komo->reportProblem(*komo->fil);
-    (*komo->fil) <<komo->getProblemGraph(false);
+  if(komo->logFile){
+    komo->reportProblem(*komo->logFile);
+    (*komo->logFile) <<komo->getProblemGraph(false);
   }
 
 //  if(level==BD_seq) komo->denseOptimization=true;
@@ -286,7 +304,6 @@ ptr<KOMO> LGP_Node::optSubCG(const SubCG& scg, bool collisions, int verbose) {
   double cost_here = result.get<double>({"total","sqrCosts"});
   double constraints_here = result.get<double>({"total","constraints"});
   bool feas = (constraints_here<1.);
-
 
   return komo;
 }
@@ -352,8 +369,8 @@ void LGP_Node::labelInfeasible() {
   //TODO: resort all queues
 }
 
-MNodeL LGP_Node::getTreePath() const {
-  MNodeL path;
+LGP_NodeL LGP_Node::getTreePath() const {
+  LGP_NodeL path;
   LGP_Node *node=(LGP_Node*)this;
   for(; node;) {
     path.prepend(node);
@@ -363,7 +380,7 @@ MNodeL LGP_Node::getTreePath() const {
 }
 
 rai::String LGP_Node::getTreePathString(char sep) const {
-  MNodeL path = getTreePath();
+  LGP_NodeL path = getTreePath();
   rai::String str;
   for(LGP_Node *b : path) {
     if(b->decision) str <<*b->decision <<sep;
@@ -420,7 +437,7 @@ Skeleton LGP_Node::getSkeleton(bool finalStateOnly) const {
 
         rai::Enum<SkeletonSymbol> sym(symbols.first());
         if(k_end==states.N-1) {
-          skeleton.append(SkeletonEntry({times(k), -2., sym, symbols({1,-1})}));
+          skeleton.append(SkeletonEntry({times(k), times.last(), sym, symbols({1,-1})}));
         } else {
           skeleton.append(SkeletonEntry({times(k), times(k_end), sym, symbols({1,-1})}));
         }
@@ -445,7 +462,7 @@ LGP_Node *LGP_Node::getChildByAction(Node *folDecision) {
   return NULL;
 }
 
-void LGP_Node::getAll(MNodeL& L) {
+void LGP_Node::getAll(LGP_NodeL& L) {
   L.append(this);
   for(LGP_Node *ch:children) ch->getAll(L);
 }
@@ -528,7 +545,7 @@ void LGP_Node::write(ostream& os, bool recursive, bool path) const {
   os <<"\t state= " <<*folState->isNodeOfGraph <<endl;
   if(path) {
     os <<"\t decision path:";
-    MNodeL _path = getTreePath();
+    LGP_NodeL _path = getTreePath();
     for(LGP_Node *nn: _path)
         if(nn->decision) os <<*nn->decision <<' '; else os <<" <ROOT> ";
     os <<endl;
@@ -585,6 +602,23 @@ void LGP_Node::getGraph(Graph& G, Node* n, bool brief) {
   for(LGP_Node *ch:children) ch->getGraph(G, n, brief);
 }
 
+void LGP_Node::displayBound(OpenGL& gl, BoundType bound){
+  if(!komoProblem(bound)){
+    LOG(-1) <<"bound was not computed - cannot display";
+  }else{
+    CHECK(!komoProblem(bound)->gl,"");
+    rai::Enum<BoundType> _bound(bound);
+    gl.title.clear() <<"BOUND " <<_bound <<" at step " <<step;
+    gl.setTitle();
+    komoProblem(bound)->gl = &gl;
+    if(bound>=BD_path && bound<=BD_seqVelPath)
+      while(komoProblem(bound)->displayTrajectory(.1, true, false));
+    else
+      while(komoProblem(bound)->displayTrajectory(-1., true, false));
+    komoProblem(bound)->gl = 0;
+  }
+}
+
 RUN_ON_INIT_BEGIN(manipulationTree)
-MNodeL::memMove = true;
+LGP_NodeL::memMove = true;
 RUN_ON_INIT_END(manipulationTree)

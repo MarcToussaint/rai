@@ -417,6 +417,13 @@ void OpenGL::closeWindow() {
   }
 }
 
+void OpenGL::setTitle(const char* _title){
+  if(_title) title = _title;
+  if(s->window){
+    glfwSetWindowTitle(s->window, title.p);
+  }
+}
+
 void OpenGL::beginNonThreadedDraw(){
   openWindow();
   auto fg = singletonGlSpinner();
@@ -440,8 +447,8 @@ void OpenGL::postRedrawEvent(bool fromWithinCallback) {
 
 void OpenGL::resize(int w,int h) {
   openWindow();
-  glfwSetWindowSize(s->window, w, h);
   Reshape(w, h);
+  glfwSetWindowSize(s->window, width, height);
 }
 
 #endif
@@ -2200,8 +2207,17 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y) {
 void OpenGL::Scroll(int wheel, int direction) {
   auto _dataLock = dataLock(RAI_HERE);
   CALLBACK_DEBUG("Mouse Wheel Callback: " <<wheel <<' ' <<direction);
-  if(direction>0) camera.X.pos += camera.X.rot*Vector_z * (.1 * (camera.X.pos-camera.foc).length());
-  else            camera.X.pos -= camera.X.rot*Vector_z * (.1 * (camera.X.pos-camera.foc).length());
+  rai::Camera *cam=&camera;
+  for(mouseView=views.N; mouseView--;) {
+    GLView *v = &views(mouseView);
+    if(mouseposx<v->ri*width && mouseposx>v->le*width && mouseposy<v->to*height && mouseposy>v->bo*height) {
+      cam=&views(mouseView).camera;
+      break;
+    }
+  }
+
+  if(direction>0) cam->X.pos += cam->X.rot*Vector_z * (.1 * (cam->X.pos-cam->foc).length());
+  else            cam->X.pos -= cam->X.rot*Vector_z * (.1 * (cam->X.pos-cam->foc).length());
 
   postRedrawEvent(true);
 }

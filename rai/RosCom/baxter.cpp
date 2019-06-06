@@ -290,6 +290,9 @@ arr BaxterInterface::get_q(){ NICO }
 arr BaxterInterface::get_qdot(){ NICO }
 arr BaxterInterface::get_u(){ NICO }
 
+bool BaxterInterface::get_grabbed(const std::string& whichArm){ NICO }
+bool BaxterInterface::get_opened(const std::string& whichArm){ NICO }
+
 void BaxterInterface::send_q(const arr& q_ref, bool enableL, bool enableR){ NICO }
 
 #endif

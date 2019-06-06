@@ -7,6 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "Graph_Problem.h"
+#include <Core/graph.h>
 
 bool GraphProblem::checkStructure(const arr& x) {
   arr y;
@@ -34,9 +35,30 @@ bool GraphProblem::checkStructure(const arr& x) {
   return true;
 }
 
-Conv_Graph_ConstrainedProblem::Conv_Graph_ConstrainedProblem(GraphProblem& _G) : G(_G) {
+Conv_Graph_ConstrainedProblem::Conv_Graph_ConstrainedProblem(GraphProblem& _G,  ostream *_log) : G(_G), logFile(_log) {
   G.getStructure(variableDimensions, featureVariables, featureTypes);
   varDimIntegral = integral(variableDimensions);
+
+  if(logFile){
+    StringA varNames, phiNames;
+    G.getSemantics(varNames, phiNames);
+
+    rai::arrayElemsep=", ";
+    rai::arrayBrackets="[]";
+
+    Graph data = { {"graphStructureQuery", true},
+                   {"numVariables", variableDimensions.N},
+                   {"variableNames", varNames},
+                   {"variableDimensions", variableDimensions},
+                   {"numFeatures", featureVariables.N},
+                   {"featureNames", phiNames},
+                   {"featureVariables", featureVariables},
+                   {"featureTypes", featureTypes},
+                 };
+
+    data.write(*logFile, ",\n", "{\n\n}");
+    (*logFile) <<',' <<endl;
+  }
 }
 
 #if 0
@@ -112,18 +134,34 @@ void Conv_Graph_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA
     }
     CHECK_EQ(k, J.N, ""); //one entry for each non-zero
   }
+
+  if(logFile){
+    arr err = summarizeErrors(phi, featureTypes);
+
+    Graph data = { {"graphQuery", queryCount},
+                   {"errors", err},
+                   {"x", x},
+                   {"lambda", lambda},
+                   {"phi", phi}
+                 };
+
+    data.write(*logFile, ",\n", "{\n\n}");
+    (*logFile) <<',' <<endl;
+  }
+
+  queryCount++;
 }
 
 void Conv_Graph_ConstrainedProblem::reportProblem(std::ostream& os){
   uint nG=0, nH=0;
   for(ObjectiveType t:featureTypes) if(t==OT_ineq) nG++; else if(t==OT_eq) nH++;
   os <<"\n# GraphProblem";
-  os <<"\n# num_vars:" <<variableDimensions.N <<" num_feat:" <<featureTypes.N <<" num_ineq:" <<nG <<" num_eq:" <<nH;
+  os <<"\n# num_vars: " <<variableDimensions.N <<" num_feat: " <<featureTypes.N <<" num_ineq: " <<nG <<" num_eq: " <<nH;
   StringA varNames, phiNames;
   G.getSemantics(varNames, phiNames);
-  os <<"\n# vars:";
+  os <<"\n# vars: ";
   for(uint i=0;i<varNames.N;i++) os <<"\n#   " <<varNames.elem(i) <<"  (" <<variableDimensions.elem(i) <<")";
-  os <<"\n# features:";
+  os <<"\n# features: ";
   for(uint i=0;i<phiNames.N;i++) os <<"\n#   " <<phiNames.elem(i) <<"  (" <<featureTypes.elem(i) <<")";
   os <<endl;
 }

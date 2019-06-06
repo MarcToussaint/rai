@@ -23,14 +23,14 @@ struct OptNewton {
   double fx;
   arr gx, Hx;
   double alpha, beta;
-  uint it=0, evals=0, numTinySteps=0;
+  uint its=0, evals=0, numTinySteps=0;
   StopCriterion stopCriterion;
   arr bound_lo, bound_hi;
   bool rootFinding=false;
-  ofstream *fil=NULL;
+  ostream *logFile=NULL;
   double timeNewton=0., timeEval=0.;
   
-  OptNewton(arr& x, const ScalarFunction& f, OptOptions o=NOOPT);
+  OptNewton(arr& x, const ScalarFunction& f, OptOptions o=NOOPT, ostream* _logFile=0);
   ~OptNewton();
   StopCriterion step();
   StopCriterion run(uint maxIt = 1000);

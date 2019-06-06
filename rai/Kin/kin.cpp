@@ -136,16 +136,14 @@ bool always_unlocked(void*) { return false; }
 namespace rai {
   struct sKinematicWorld {
     OpenGL *gl;
-    SwiftInterface *swift;
+    std::shared_ptr<SwiftInterface> swift;
     ptr<FclInterface> fcl;
     PhysXInterface *physx;
     OdeInterface *ode;
     FeatherstoneInterface *fs = NULL;
-    bool swiftIsReference;
-    sKinematicWorld():gl(NULL), swift(NULL), physx(NULL), ode(NULL), swiftIsReference(false) {}
+    sKinematicWorld():gl(NULL), physx(NULL), ode(NULL) {}
     ~sKinematicWorld() {
       if(gl) delete gl;
-      if(swift && !swiftIsReference) delete swift;
       if(physx) delete physx;
       if(ode) delete ode;
     }
@@ -233,7 +231,8 @@ rai::Frame* rai::KinematicWorld::addFrame(const char* name, const char* parent, 
   return f;
 }
 
-rai::Frame* rai::KinematicWorld::addObject(rai::ShapeType shape, const arr& size, const arr& col, double radius){
+#if 0
+rai::Frame* rai::KinematicWorld::addObject(rai::ShapeType shape, const arr& size, const arr& col){
   rai::Frame *f = new rai::Frame(*this);
   rai::Shape *s = new rai::Shape(*f);
   s->type() = shape;
@@ -256,26 +255,21 @@ rai::Frame* rai::KinematicWorld::addObject(rai::ShapeType shape, const arr& size
   }
   return f;
 }
+#endif
 
-rai::Frame* rai::KinematicWorld::addObject(const char* name, rai::ShapeType shape, const arr& size, const arr& col, double radius, const char* parent, const arr& pos, const arr& rot){
-  rai::Frame *f = addObject(shape, size, col, radius);
-  f->name=name;
-
-  if(parent){
-    rai::Frame *p = getFrameByName(parent);
-    if(p){
-//      f->linkFrom(p);
-      rai::Joint *j = new rai::Joint(*p, *f);
-      j->setType(rai::JT_rigid);
-    }
+rai::Frame* rai::KinematicWorld::addObject(const char* name, const char* parent, rai::ShapeType shape, const arr& size, const arr& col, const arr& pos, const arr& rot){
+  rai::Frame *f = addFrame(name, parent);
+  if(f->parent) f->setJoint(rai::JT_rigid);
+  f->setShape(shape, size);
+  f->setContact(-1);
+  if(col.N) f->setColor(col);
+  if(f->parent){
+    if(pos.N) f->setRelativePosition(pos);
+    if(rot.N) f->setRelativeQuaternion(rot);
+  }else{
+    if(pos.N) f->setPosition(pos);
+    if(rot.N) f->setQuaternion(rot);
   }
-
-  if(pos.N){ f->Q.pos = pos; }
-  if(rot.N){ f->Q.rot = rot; f->Q.rot.normalize(); }
-
-  if(f->parent) f->X = f->parent->X * f->Q;
-  else f->X = f->Q;
-
   return f;
 }
 
@@ -373,10 +367,7 @@ void rai::KinematicWorld::copy(const rai::KinematicWorld& K, bool referenceSwift
   //copy contacts
   for(Contact *c:K.contacts) new Contact(*frames(c->a.ID), *frames(c->b.ID), c);
   //copy swift reference
-  if(referenceSwiftOnCopy) {
-    s->swift = K.s->swift;
-    s->swiftIsReference=true;
-  }
+  if(referenceSwiftOnCopy) s->swift = K.s->swift;
   q = K.q;
   qdot = K.qdot;
   calc_activeSets();
@@ -882,43 +873,51 @@ void rai::KinematicWorld::jacobianPos(arr& J, Frame *a, const rai::Vector& pos_w
       if(j_idx<N) {
         if(j->type==JT_hingeX || j->type==JT_hingeY || j->type==JT_hingeZ) {
           rai::Vector tmp = j->axis ^ (pos_world-j->X()*j->Q().pos);
+          tmp *= j->scale;
           J(0, j_idx) += tmp.x;
           J(1, j_idx) += tmp.y;
           J(2, j_idx) += tmp.z;
         } else if(j->type==JT_transX || j->type==JT_transY || j->type==JT_transZ || j->type==JT_XBall) {
-          J(0, j_idx) += j->axis.x;
-          J(1, j_idx) += j->axis.y;
-          J(2, j_idx) += j->axis.z;
+          J(0, j_idx) += j->scale * j->axis.x;
+          J(1, j_idx) += j->scale * j->axis.y;
+          J(2, j_idx) += j->scale * j->axis.z;
         } else if(j->type==JT_transXY) {
           if(j->mimic) NIY;
           arr R = j->X().rot.getArr();
+          R *= j->scale;
           J.setMatrixBlock(R.sub(0,-1,0,1), 0, j_idx);
         } else if(j->type==JT_transXYPhi) {
           if(j->mimic) NIY;
           arr R = j->X().rot.getArr();
+          R *= j->scale;
           J.setMatrixBlock(R.sub(0,-1,0,1), 0, j_idx);
           rai::Vector tmp = j->axis ^ (pos_world-(j->X().pos + j->X().rot*a->Q.pos));
+          tmp *= j->scale;
           J(0, j_idx+2) += tmp.x;
           J(1, j_idx+2) += tmp.y;
           J(2, j_idx+2) += tmp.z;
         } else if(j->type==JT_phiTransXY) {
           if(j->mimic) NIY;
           rai::Vector tmp = j->axis ^ (pos_world-j->X().pos);
+          tmp *= j->scale;
           J(0, j_idx) += tmp.x;
           J(1, j_idx) += tmp.y;
           J(2, j_idx) += tmp.z;
           arr R = (j->X().rot*a->Q.rot).getArr();
+          R *= j->scale;
           J.setMatrixBlock(R.sub(0,-1,0,1), 0, j_idx+1);
         }
         if(j->type==JT_XBall) {
           if(j->mimic) NIY;
           arr R = conv_vec2arr(j->X().rot.getX());
+          R *= j->scale;
           R.reshape(3,1);
           J.setMatrixBlock(R, 0, j_idx);
         }
         if(j->type==JT_trans3 || j->type==JT_free) {
           if(j->mimic) NIY;
           arr R = j->X().rot.getArr();
+          R *= j->scale;
           J.setMatrixBlock(R, 0, j_idx);
         }
         if(j->type==JT_quatBall || j->type==JT_free || j->type==JT_XBall) {
@@ -929,6 +928,7 @@ void rai::KinematicWorld::jacobianPos(arr& J, Frame *a, const rai::Vector& pos_w
           Jrot = crossProduct(Jrot, conv_vec2arr(pos_world-(j->X().pos+j->X().rot*a->Q.pos)));  //cross-product of all 4 w-vectors with lever
           Jrot /= sqrt(sumOfSqr(q({j->qIndex+offset, j->qIndex+offset+3})));   //account for the potential non-normalization of q
           //          for(uint i=0;i<4;i++) for(uint k=0;k<3;k++) J(k,j_idx+offset+i) += Jrot(k,i);
+          Jrot *= j->scale;
           J.setMatrixBlock(Jrot, 0, j_idx+offset);
         }
       }
@@ -1169,9 +1169,9 @@ void rai::KinematicWorld::axesMatrix(arr& J, Frame *a) const {
       if(j_idx<N) {
         if((j->type>=JT_hingeX && j->type<=JT_hingeZ) || j->type==JT_transXYPhi || j->type==JT_phiTransXY) {
           if(j->type==JT_transXYPhi) j_idx += 2; //refer to the phi only
-          J(0, j_idx) += j->axis.x;
-          J(1, j_idx) += j->axis.y;
-          J(2, j_idx) += j->axis.z;
+          J(0, j_idx) += j->scale * j->axis.x;
+          J(1, j_idx) += j->scale * j->axis.y;
+          J(2, j_idx) += j->scale * j->axis.z;
         }
         if(j->type==JT_quatBall || j->type==JT_free || j->type==JT_XBall) {
           uint offset = 0;
@@ -1180,6 +1180,7 @@ void rai::KinematicWorld::axesMatrix(arr& J, Frame *a) const {
           arr Jrot = j->X().rot.getArr() * a->Q.rot.getJacobian(); //transform w-vectors into world coordinate
           Jrot /= sqrt(sumOfSqr(q({j->qIndex+offset,j->qIndex+offset+3}))); //account for the potential non-normalization of q
           //          for(uint i=0;i<4;i++) for(uint k=0;k<3;k++) J(k,j_idx+offset+i) += Jrot(k,i);
+          Jrot *= j->scale;
           J.setMatrixBlock(Jrot, 0, j_idx+offset);
         }
         //all other joints: J=0 !!
@@ -1470,7 +1471,7 @@ OpenGL& rai::KinematicWorld::gl(const char* window_title) {
 
 /// return a Swift extension
 SwiftInterface& rai::KinematicWorld::swift() {
-  if(!s->swift) s->swift = new SwiftInterface(*this, .1);
+  if(!s->swift) s->swift = make_shared<SwiftInterface>(*this, .1);
   return *s->swift;
 }
 
@@ -1489,8 +1490,7 @@ rai::FclInterface& rai::KinematicWorld::fcl(){
 }
 
 void rai::KinematicWorld::swiftDelete() {
-  delete s->swift;
-  s->swift = nullptr;
+  s->swift.reset();
 }
 
 /// return a PhysX extension
@@ -1973,7 +1973,7 @@ namespace rai {
 //  return links;
 //}
 
-rai::Array<rai::Frame*> rai::KinematicWorld::getLinks() {
+rai::Array<rai::Frame*> rai::KinematicWorld::getLinks() const {
   FrameL links;
   for(Frame *a:frames) if(!a->parent || a->joint) links.append(a);
   return links;
