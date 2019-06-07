@@ -18,7 +18,7 @@
 #ifndef __CCD_SUPPORT_H__
 #define __CCD_SUPPORT_H__
 
-#include <ccd/ccd.h>
+#include "ccd.h"
 
 #ifdef __cplusplus
 extern "C" {

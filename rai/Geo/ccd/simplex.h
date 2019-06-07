@@ -18,7 +18,7 @@
 #ifndef __CCD_SIMPLEX_H__
 #define __CCD_SIMPLEX_H__
 
-#include <ccd/compiler.h>
+#include "compiler.h"
 #include "support.h"
 
 #ifdef __cplusplus

@@ -76,7 +76,7 @@ void SubGraphProblem::reset(const uintA& _X, const uintA& _Y){
     }
   }
 
-  if(true){
+  if(false){
     cout <<" ** subproblem - VARIABLES:  #=" <<X.N <<endl;
     if(X.N<30) for(uint i:X) cout <<"    " <<i <<": " <<G.V(i).description <<endl;
     cout <<" ** subproblem - CONSTANTS:  #=" <<Y.N <<endl;

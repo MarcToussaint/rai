@@ -16,7 +16,7 @@
  */
 
 #include <stdio.h>
-#include <ccd/vec3.h>
+#include "vec3.h"
 #include "dbg.h"
 
 static CCD_VEC3(__ccd_vec3_origin, CCD_ZERO, CCD_ZERO, CCD_ZERO);

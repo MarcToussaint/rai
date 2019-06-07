@@ -144,6 +144,7 @@ void ANN::getkNN(arr& xx             , const arr& x, uint k, double eps, bool ve
 ANN::ANN() { NICO }
 ANN::~ANN() { NICO }
 
+void ANN::calculate() { NICO }
 void ANN::setX(const arr& _XX) { NICO }
 void ANN::append(const arr& x) { NICO }
 uint ANN::getNN(const arr& x, double eps, bool verbose) { NICO }
