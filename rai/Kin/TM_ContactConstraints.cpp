@@ -224,22 +224,31 @@ void TM_Contact_ForceIsComplementary::phi(arr &y, arr &J, const rai::KinematicWo
 uint TM_Contact_ForceIsComplementary::dim_phi(const rai::KinematicWorld& K){ return 6; }
 
 
-void TM_Contact_POAisInIntersection_InEq::phi(arr& y, arr& J, const rai::KinematicWorld& K){
+void TM_Contact_ForceIsPositive::phi(arr &y, arr &J, const rai::KinematicWorld &K) {
   rai::Contact *con = getContact(K,a,b);
 
-  y.resize(3).setZero();
-  if(!!J){ J.resize(3, K.getJointStateDimension()).setZero(); }
-
-  //-- only pushing forces
+  //-- from the contact we need force
   arr force, Jforce;
   K.kinematicsContactForce(force, Jforce, con);
 
+  //-- from the geometry we need normal
   arr normal, Jnormal;
-  TM_PairCollision coll(con->a.ID, con->b.ID, TM_PairCollision::_normal, false);
+  TM_PairCollision coll(con->a.ID, con->b.ID, TM_PairCollision::_vector, true);
   coll.phi(normal, (!!J?Jnormal:NoArr), K);
 
-  y(0) = - scalarProduct(normal, force);
-  if(!!J) J[0] = - ~normal * Jforce - ~force * Jnormal;
+  //-- force needs to align with normal -> project force along normal
+  y.resize(1);
+  y.scalar() = -scalarProduct(normal,force);
+  if(!!J) J = - (~normal*Jforce + ~force*Jnormal);
+}
+
+
+
+void TM_Contact_POAisInIntersection_InEq::phi(arr& y, arr& J, const rai::KinematicWorld& K){
+  rai::Contact *con = getContact(K,a,b);
+
+  y.resize(2).setZero();
+  if(!!J){ J.resize(2, K.getJointStateDimension()).setZero(); }
 
   //-- POA inside objects (eventually on surface!)
   rai::Shape *s1 = K.frames(a)->shape;
@@ -264,19 +273,15 @@ void TM_Contact_POAisInIntersection_InEq::phi(arr& y, arr& J, const rai::Kinemat
   K.jacobianPos(Jp1, &s1->frame, coll1.p1);
   K.jacobianPos(Jp2, &s2->frame, coll2.p2);
 
-  coll1.kinDistance(y({1,1})(), (!!J?J[1]():NoArr), Jpos, Jp1);
-  coll2.kinDistance(y({2,2})(), (!!J?J[2]():NoArr), Jpos, Jp2);
+  coll1.kinDistance(y({0,0})(), (!!J?J[0]():NoArr), Jpos, Jp1);
+  coll2.kinDistance(y({1,1})(), (!!J?J[1]():NoArr), Jpos, Jp2);
 
   if(margin){
+    y(0) -= margin;
     y(1) -= margin;
-    y(2) -= margin;
   }
 
   if(!!J) checkNan(J);
-}
-
-uint TM_Contact_POAisInIntersection_InEq::dim_phi(const rai::KinematicWorld& K){
-  return 3;
 }
 
 void TM_Contact_ForceRegularization::phi(arr& y, arr& J, const rai::KinematicWorld& K){

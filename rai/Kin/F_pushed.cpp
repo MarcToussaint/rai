@@ -1,4 +1,5 @@
 #include "F_pushed.h"
+#include "F_static.h"
 #include <Kin/kin.h>
 #include "TM_angVel.h"
 #include <Kin/contact.h>
@@ -25,22 +26,44 @@ void F_pushed::phi(arr& y, arr& J, const WorldL& Ktuple){
   rot.order=1;
   rot.phi(w, (!!J?Jw:NoArr), Ktuple);
 
+  y.resize(6).setZero();
+
+  y.setVectorBlock(v, 0);
+  y.setVectorBlock(w, 3);
+  if(!!J) {
+    J.resize(y.N, Jv.d1).setZero();
+    J.setMatrixBlock(Jv, 0, 0);
+    J.setMatrixBlock(Jw, 3, 0);
+  }
+
   if(a->contacts.N==0){
-    y = w;
-    if(!!J) J = Jw;
     return;
   }
 
   double mass=1;
-  arr Imatrix = diag(.1, 3);
+  arr Imatrix = diag(.02, 3);
   if(a->inertia){
     mass = a->inertia->mass;
     Imatrix = 2.*conv_mat2arr(a->inertia->matrix);
   }
 
-  mass = 1./mass;
-  Imatrix = inverse_SymPosDef(Imatrix);
+//  mass = 1./mass;
+//  Imatrix = inverse_SymPosDef(Imatrix);
 
+  arr one_over_mass(6);
+  for(uint i=0;i<3;i++) one_over_mass(i) = 1./mass;
+  for(uint i=0;i<3;i++) one_over_mass(i+3) = 1./Imatrix(i,i);
+
+  Value F = F_netForce(a->ID, false, true)(Ktuple);
+
+  y += one_over_mass % F.y;
+  if(!!J){
+    J += one_over_mass % F.J;
+  }
+
+
+
+#if 0
   if(a->contacts.N==1){
     rai::Contact *con = a->contacts.scalar();
 //    double sign = +1.;
@@ -83,4 +106,5 @@ void F_pushed::phi(arr& y, arr& J, const WorldL& Ktuple){
   if(a->contacts.N>1){
     NIY;
   }
+#endif
 }

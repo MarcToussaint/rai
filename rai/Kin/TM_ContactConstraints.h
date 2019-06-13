@@ -30,6 +30,18 @@ struct TM_Contact_ForceIsComplementary : Feature {
   rai::String shortTag(const rai::KinematicWorld& K) { return STRING("TM_Contact_ForceIsComplementary-" <<K.frames(a)->name <<'-' <<K.frames(b)->name); }
 };
 
+struct TM_Contact_ForceIsPositive : Feature {
+  int a,b;
+  TM_Contact_ForceIsPositive(int aShape, int bShape) : a(aShape), b(bShape) {}
+  TM_Contact_ForceIsPositive(const rai::KinematicWorld& K, const char* aShapeName=NULL, const char* bShapeName=NULL)
+    : TM_Contact_ForceIsPositive(initIdArg(K,aShapeName), initIdArg(K,bShapeName)){}
+
+  void phi(arr& y, arr& J, const rai::KinematicWorld& K);
+  uint dim_phi(const rai::KinematicWorld& K){ return 1; }
+  rai::String shortTag(const rai::KinematicWorld& K) { return STRING("TM_Contact_ForceIsPositive-" <<K.frames(a)->name <<'-' <<K.frames(b)->name); }
+};
+
+
 struct TM_Contact_POAmovesContinuously : Feature {
   int a,b;
   TM_Contact_POAmovesContinuously(int aShape, int bShape) : a(aShape), b(bShape) {}
@@ -96,11 +108,11 @@ struct TM_Contact_POAisInIntersection_InEq : Feature {
   int a,b;
   double margin=0.;
   TM_Contact_POAisInIntersection_InEq(int aShape, int bShape, double _margin=0.) : a(aShape), b(bShape), margin(_margin) {}
-  TM_Contact_POAisInIntersection_InEq(const rai::KinematicWorld& K, const char* aShapeName=NULL, const char* bShapeName=NULL)
-    : TM_Contact_POAisInIntersection_InEq(initIdArg(K,aShapeName), initIdArg(K,bShapeName)){}
+  TM_Contact_POAisInIntersection_InEq(const rai::KinematicWorld& K, const char* aShapeName=NULL, const char* bShapeName=NULL, double _margin=0.)
+    : TM_Contact_POAisInIntersection_InEq(initIdArg(K,aShapeName), initIdArg(K,bShapeName), _margin){}
 
   void phi(arr& y, arr& J, const rai::KinematicWorld& K);
-  uint dim_phi(const rai::KinematicWorld& K);
+  uint dim_phi(const rai::KinematicWorld& K){ return 2; }
   rai::String shortTag(const rai::KinematicWorld& K) { return STRING("TM_Contact_POAisInIntersection_InEq-" <<K.frames(a)->name <<'-' <<K.frames(b)->name); }
 };
 

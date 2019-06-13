@@ -191,9 +191,9 @@ struct KOMO : NonCopyable {
   void addSwitch_dynamicOn(double time, double endTime, const char *from, const char* to);
   void addSwitch_dynamicOnNewton(double time, double endTime, const char *from, const char* to);
   void addSwitch_dynamicTrans(double time, double endTime, const char *from, const char *to);
-  void addSwitch_magic(double time, double endTime, const char* from, const char* to, double sqrAccCost);
+  void addSwitch_magic(double time, double endTime, const char* from, const char* to, double sqrAccCost, double sqrVelCost);
   void addSwitch_magicTrans(double time, double endTime, const char* from, const char* to, double sqrAccCost);
-  void addSwitch_on(double time, const char *from, const char* to);
+  void addSwitch_on(double time, const char *from, const char* to, bool copyInitialization=false);
 
 
   
