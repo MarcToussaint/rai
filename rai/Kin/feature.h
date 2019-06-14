@@ -39,7 +39,8 @@ public:
   //-- helpers
   arr phi(const rai::KinematicWorld& K) { arr y; phi(y,NoArr,K); return y; } ///< evaluate without computing Jacobian
   Value operator()(const WorldL& Ktuple){ arr y,J; phi(y, J, Ktuple); return Value(y,J); }
-  
+  Value operator()(const rai::KinematicWorld& K){ arr y,J; phi(y, J, K); return Value(y,J); }
+
   VectorFunction vf(rai::KinematicWorld& K);
   VectorFunction vf(WorldL& Ktuple);
 private:
