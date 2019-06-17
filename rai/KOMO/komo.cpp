@@ -1996,6 +1996,7 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
   arr dualSolution; if(dual.N) dualSolution=zeros(T, objectives.N);
   arr taskC=zeros(objectives.N);
   arr taskG=zeros(objectives.N);
+  arr taskH=zeros(objectives.N);
   uint M=0;
   if(!featureDense){
     for(uint t=0; t<T; t++) {
@@ -2020,7 +2021,7 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
               if(task->type==OT_eq) {
                 for(uint j=0; j<d; j++) err(t,i) += fabs(featureValues(M+j));
                 if(dual.N) dualSolution(t, i) = dual(M);
-                taskG(i) += err(t,i);
+                taskH(i) += err(t,i);
               }
               M += d;
             }
@@ -2056,7 +2057,7 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
             }
             if(task->type==OT_eq) {
               for(uint j=0; j<d; j++) err(time,i) += fabs(featureValues(M+j));
-              taskG(i) += err(time,i);
+              taskH(i) += err(time,i);
             }
             M += d;
           }
@@ -2075,20 +2076,23 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
   
   //-- generate a report graph
   Graph report;
-  double totalC=0., totalG=0.;
+  double totalC=0., totalG=0., totalH=0.;
   for(uint i=0; i<objectives.N; i++) {
     Objective *c = objectives(i);
     Graph& g = report.newSubgraph({c->name}, {});
     g.newNode<double>({"order"}, {}, c->map->order);
     g.newNode<String>({"type"}, {}, STRING(c->type.name()));
-    g.newNode<double>({"sqrCosts"}, {}, taskC(i));
-    g.newNode<double>({"constraints"}, {}, taskG(i));
+    g.newNode<double>({"sos"}, {}, taskC(i));
+    g.newNode<double>({"ineq"}, {}, taskG(i));
+    g.newNode<double>({"eq"}, {}, taskH(i));
     totalC += taskC(i);
     totalG += taskG(i);
+    totalH += taskH(i);
   }
-  report.newNode<double>({"total","sqrCosts"}, {}, totalC);
-  report.newNode<double>({"total","constraints"}, {}, totalG);
-  
+  report.newNode<double>({"total","sos"}, {}, totalC);
+  report.newNode<double>({"total","ineq"}, {}, totalG);
+  report.newNode<double>({"total","eq"}, {}, totalH);
+
   if(gnuplt) {
     //-- write a nice gnuplot file
     ofstream fil("z.costReport");

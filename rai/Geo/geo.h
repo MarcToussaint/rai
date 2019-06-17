@@ -184,7 +184,7 @@ struct Transformation {
 
   Transformation& setZero();
   Transformation& setText(const char* txt);
-  void set(double* p);
+  void set(const double* p);
   void set(const arr& t);
   void setRandom();
   void setInverse(const Transformation& f);
