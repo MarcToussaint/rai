@@ -52,7 +52,8 @@ struct DisplayThread : MiniThread {
       //      tic.waitForTic();
       rai::wait(.1);
       lgp->solutions.writeAccess();
-      for(uint i=0; i<lgp->solutions().N; i++) {
+      uint numSolutions = lgp->solutions().N;
+      for(uint i=0; i<numSolutions; i++) {
         lgp->solutions()(i)->displayStep++;
         if(gl.views.N>i)
           gl.views(i).text.clear() <<i <<':' <<lgp->solutions()(i)->displayStep <<": "
@@ -60,7 +61,8 @@ struct DisplayThread : MiniThread {
                                  <<lgp->solutions()(i)->decisions;
       }
       lgp->solutions.deAccess();
-      gl.update();
+      if(numSolutions)
+        gl.update();
       if(saveVideo) write_ppm(gl.captureImage, STRING(OptLGPDataPath <<"vid/" <<std::setw(4)<<std::setfill('0')<<t++<<".ppm"));
     }
   }
@@ -109,6 +111,7 @@ LGP_Tree::LGP_Tree()
   if(!filNodes) filNodes = new ofstream(dataPath + "nodes");
 
   collisions = rai::getParameter<bool>("LGP/collisions", true);
+  useSwitches = rai::getParameter<bool>("LGP/useSwitches", true);
   displayTree = rai::getParameter<bool>("LGP/displayTree", false);
 
   verbose = rai::getParameter<int>("LGP/verbose", 2);
