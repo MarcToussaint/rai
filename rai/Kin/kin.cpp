@@ -257,9 +257,9 @@ rai::Frame* rai::KinematicWorld::addObject(rai::ShapeType shape, const arr& size
 }
 #endif
 
-rai::Frame* rai::KinematicWorld::addObject(const char* name, const char* parent, rai::ShapeType shape, const arr& size, const arr& col, const arr& pos, const arr& rot){
+rai::Frame* rai::KinematicWorld::addObject(const char* name, const char* parent, rai::ShapeType shape, const arr& size, const arr& col, const arr& pos, const arr& rot, bool isSubFrame){
   rai::Frame *f = addFrame(name, parent);
-  if(f->parent) f->setJoint(rai::JT_rigid);
+  if(f->parent && !isSubFrame) f->setJoint(rai::JT_rigid);
   f->setShape(shape, size);
   f->setContact(-1);
   if(col.N) f->setColor(col);

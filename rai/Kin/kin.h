@@ -93,8 +93,7 @@ struct KinematicWorld : GLDrawer {
   Frame* addFile(const char* filename, const char* parentOfRoot, const rai::Transformation& relOfRoot);
   void addAssimp(const char* filename);
   Frame* addFrame(const char* name, const char* parent=NULL, const char* args=NULL);
-//  Frame* addObject(rai::ShapeType shape, const arr& size={}, const arr& col={});
-  Frame* addObject(const char* name, const char* parent, rai::ShapeType shape, const arr& size={}, const arr& col={}, const arr& pos={}, const arr& rot={});
+  Frame* addObject(const char* name, const char* parent, rai::ShapeType shape, const arr& size={}, const arr& col={}, const arr& pos={}, const arr& rot={}, bool isSubFrame=false);
   void addFramesCopy(const FrameL& F);
 
   /// @name access

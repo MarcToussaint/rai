@@ -221,13 +221,14 @@ void KOMO::addFlag(double time, Flag *fl, int deltaStep) {
 }
 
 void KOMO::addSwitch(double time, bool before, KinematicSwitch *sw) {
-  if(time<0.) time=0.;
   sw->setTimeOfApplication(time, before, stepsPerPhase, T);
   switches.append(sw);
 }
 
-void KOMO::addSwitch(double time, bool before, const char* type, const char* ref1, const char* ref2, const Transformation& jFrom) {
-  KinematicSwitch *sw = KinematicSwitch::newSwitch(type, ref1, ref2, world, 0/*con_time2step(time, stepsPerPhase)+(before?0:1)*/, jFrom);
+void KOMO::addSwitch(double time, bool before, rai::JointType type, SwitchInitializationType init,
+                     const char* ref1, const char* ref2,
+                     const rai::Transformation& jFrom, const rai::Transformation& jTo) {
+  KinematicSwitch *sw = new KinematicSwitch(SW_joint, type, ref1, ref2, world, init, 0, jFrom, jTo);
   addSwitch(time, before, sw);
 }
 
@@ -235,7 +236,7 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
   if(newMode==SY_stable || newMode==SY_stableOn){
     if(!useSwitches){
       if(prevMode==SY_initial){
-        addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_free, world.frames.first()->name, to, world, SWInit_copy));
+        addSwitch(time, true, JT_free, SWInit_copy, world.frames.first()->name, to);
         addObjective(time, time, new TM_NoJumpFromParent(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
       }
 //      addObjective({time, endTime}, OT_eq, FS_poseRel, {from, to}, {1e2}, {}, 1);
@@ -243,11 +244,11 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
       if(k_order>1) addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2, +0, +1);
     }else{
       if(newMode==SY_stable){
-        addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_free, from, to, world, SWInit_copy));
+        addSwitch(time, true, JT_free, SWInit_copy, from, to);
       }else{  //SY_stableOn
         Transformation rel = 0;
         rel.pos.set(0,0, .5*(shapeSize(world, from) + shapeSize(world, to)));
-        addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_transXYPhi, from, to, world, SWInit_copy, 0, rel));
+        addSwitch(time, true, JT_transXYPhi, SWInit_copy, from, to, rel);
       }
 
       //-- DOF-is-constant constraint
@@ -272,13 +273,13 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
   }
 
   if(newMode==SY_dynamic){
-    addSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_free, from, to, world, SWInit_copy));
+    addSwitch(time, true, JT_free, SWInit_copy, from, to);
     addObjective(time, endTime, new TM_NewtonEuler(world, to), OT_eq, NoArr, 1e0, k_order, +0, -1);
   //  addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2); //this should be implicit in the NE equations!
   }
 
   if(newMode==SY_dynamicTrans){
-    addSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_trans3, from, to, world, SWInit_copy));
+    addSwitch(time, true, JT_trans3, SWInit_copy, from, to);
   #if 0
     addObjective(time, endTime, new TM_Gravity2(world, to), OT_eq, NoArr, 3e1, k_order, +1, -1);
   #else
@@ -289,7 +290,7 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
   if(newMode==SY_dynamicOn){
     Transformation rel = 0;
     rel.pos.set(0,0, .5*(shapeSize(world, from) + shapeSize(world, to)));
-    addSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_transXYPhi, from, to, world, SWInit_copy, 0, rel));
+    addSwitch(time, true, JT_transXYPhi, SWInit_copy, from, to, rel);
     if(k_order>=2) addObjective(time, endTime, new TM_ZeroAcc(world, to), OT_eq, NoArr, 3e1, k_order, +0, -1);
   //  else addObjective(time, time, new TM_NoJumpFromParent(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
   }
@@ -297,7 +298,7 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
 
 
 void KOMO::addSwitch_stable(double time, double endTime, const char* from, const char* to) {
-  addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_free, from, to, world));
+  addSwitch(time, true, JT_free, SWInit_zero, from, to);
   //-- DOF-is-constant constraint
   if(endTime<0. || stepsPerPhase*endTime>stepsPerPhase*time+1)
     addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 3e1, 1, +1, -1);
@@ -311,7 +312,7 @@ void KOMO::addSwitch_stable(double time, double endTime, const char* from, const
 void KOMO::addSwitch_stableOn(double time, double endTime, const char *from, const char* to) {
   Transformation rel = 0;
   rel.pos.set(0,0, .5*(shapeSize(world, from) + shapeSize(world, to)));
-  addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_transXYPhi, from, to, world, SWInit_zero, 0, rel));
+  addSwitch(time, true, JT_transXYPhi, SWInit_zero, from, to, rel);
   //-- DOF-is-constant constraint
   if(endTime<0. || stepsPerPhase*endTime>stepsPerPhase*time+1)
     addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 3e1, 1, +1, -1);
@@ -323,7 +324,7 @@ void KOMO::addSwitch_stableOn(double time, double endTime, const char *from, con
 }
 
 void KOMO::addSwitch_dynamic(double time, double endTime, const char* from, const char* to, bool dampedVelocity) {
-  addSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_free, from, to, world, SWInit_copy));
+  addSwitch(time, true, JT_free, SWInit_copy, from, to);
   if(!dampedVelocity)
     addObjective(time, endTime, new TM_NewtonEuler(world, to), OT_eq, NoArr, 1e0, 2, +0, -1);
   else
@@ -332,7 +333,7 @@ void KOMO::addSwitch_dynamic(double time, double endTime, const char* from, cons
 }
 
 void KOMO::addSwitch_dynamicTrans(double time, double endTime, const char* from, const char* to) {
-  addSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_trans3, from, to, world, SWInit_copy));
+  addSwitch(time, true, JT_trans3, SWInit_copy, from, to);
 #if 0
   addObjective(time, endTime, new TM_Gravity2(world, to), OT_eq, NoArr, 3e1, k_order, +1, -1);
 #else
@@ -343,7 +344,7 @@ void KOMO::addSwitch_dynamicTrans(double time, double endTime, const char* from,
 void KOMO::addSwitch_dynamicOn(double time, double endTime, const char *from, const char* to) {
   Transformation rel = 0;
   rel.pos.set(0,0, .5*(shapeSize(world, from) + shapeSize(world, to)));
-  addSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_transXYPhi, from, to, world, SWInit_zero, 0, rel));
+  addSwitch(time, true, JT_transXYPhi, SWInit_zero, from, to, rel);
   if(k_order>=2) addObjective(time, endTime, new TM_ZeroAcc(world, to), OT_eq, NoArr, 3e1, k_order, +0, -1);
 //  else addObjective(time, time, new TM_NoJumpFromParent(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
 }
@@ -351,13 +352,13 @@ void KOMO::addSwitch_dynamicOn(double time, double endTime, const char *from, co
 void KOMO::addSwitch_dynamicOnNewton(double time, double endTime, const char *from, const char* to) {
   Transformation rel = 0;
   rel.pos.set(0,0, .5*(shapeSize(world, from) + shapeSize(world, to)));
-  addSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_transXYPhi, from, to, world, SWInit_zero, 0, rel));
+  addSwitch(time, true, JT_transXYPhi, SWInit_zero, from, to, rel);
   if(k_order>=2) addObjective(time, endTime, new TM_NewtonEuler(world, to), OT_eq, NoArr, 1e0, k_order, +0, -1);
 }
 
 
 void KOMO::addSwitch_magic(double time, double endTime, const char* from, const char* to, double sqrAccCost, double sqrVelCost) {
-  addSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_free, from, to, world, SWInit_copy));
+  addSwitch(time, true, JT_free, SWInit_copy, from, to);
   if(sqrVelCost>0. && k_order>=1){
     addObjective(time, endTime, new TM_LinAngVel(world, to), OT_sos, NoArr, sqrVelCost, 1);
   }
@@ -367,7 +368,7 @@ void KOMO::addSwitch_magic(double time, double endTime, const char* from, const 
 }
 
 void KOMO::addSwitch_magicTrans(double time, double endTime, const char* from, const char* to, double sqrAccCost) {
-  addSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_transZ, from, to, world, SWInit_copy));
+  addSwitch(time, true, JT_transZ, SWInit_copy, from, to);
   if(sqrAccCost>0.){
     addObjective(time, endTime, new TM_LinAngVel(world, to), OT_eq, NoArr, sqrAccCost, 2);
   }
@@ -376,8 +377,7 @@ void KOMO::addSwitch_magicTrans(double time, double endTime, const char* from, c
 void KOMO::addSwitch_on(double time, const char *from, const char* to, bool copyInitialization) {
   Transformation rel = 0;
   rel.pos.set(0,0, .5*(shapeSize(world, from) + shapeSize(world, to)));
-  addSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_transXYPhi, from, to, world,
-                                            (copyInitialization?SWInit_copy:SWInit_zero), 0, rel));
+  addSwitch(time, true, JT_transXYPhi, (copyInitialization?SWInit_copy:SWInit_zero), from, to, rel);
 }
 
 void KOMO::addContact_slide(double startTime, double endTime, const char *from, const char* to) {
@@ -385,7 +385,7 @@ void KOMO::addContact_slide(double startTime, double endTime, const char *from, 
   if(endTime>0.) addSwitch(endTime, false, new rai::KinematicSwitch(rai::SW_delContact, rai::JT_none, from, to, world) );
 
   addObjective(startTime, endTime, new TM_Contact_ForceIsNormal(world, from, to), OT_eq, NoArr, 1e1);
-  addObjective(startTime, endTime, new TM_Contact_ForceIsPositive(world, from, to), OT_ineq, NoArr, 1e1);
+  addObjective(startTime, endTime, new TM_Contact_ForceIsPositive(world, from, to), OT_ineq, NoArr, 1e2);
   addObjective(startTime, endTime, new TM_Contact_POAisInIntersection_InEq(world, from, to), OT_ineq, NoArr, 1e1);
   addObjective(startTime, endTime, new TM_Contact_POAmovesContinuously(world, from, to), OT_sos, NoArr, 1e0, 1, +1, +0);
   addObjective(startTime, endTime, new TM_Contact_ForceRegularization(world, from, to), OT_sos, NoArr, 1e-0);
@@ -424,7 +424,7 @@ void KOMO::addContact_Complementary(double startTime, double endTime, const char
   addSwitch(startTime, true, new rai::KinematicSwitch(rai::SW_addContact, rai::JT_none, from, to, world) );
   addObjective(startTime, endTime, new TM_Contact_ForceIsNormal(world, from, to), OT_eq, NoArr, 3e1);
   addObjective(startTime, endTime, new TM_Contact_ForceIsComplementary(world, from, to), OT_eq, NoArr, 1e2);
-  addObjective(startTime, endTime, new TM_Contact_POAmovesContinuously(world, from, to), OT_sos, NoArr, 1e0, 1, +1);
+  addObjective(startTime, endTime, new TM_Contact_POAmovesContinuously(world, from, to), OT_sos, NoArr, 1e0, 1, +1, +0);
   addObjective(startTime, endTime, new TM_Contact_ElasticVelIsComplementary(world, from, to, 0., 0.), OT_eq, NoArr, 1e1);
 
 //  addObjective(startTime, endTime, new TM_ContactConstraints_Vel(world, from, to), OT_eq, NoArr, 1e1);
@@ -443,7 +443,7 @@ void KOMO::addContact_noFriction(double startTime, double endTime, const char *f
   addObjective(startTime, endTime, new TM_Contact_ForceIsNormal(world, from, to), OT_eq, NoArr, 3e1);
   addObjective(startTime, endTime, new TM_Contact_ForceIsPositive(world, from, to), OT_ineq, NoArr, 1e1);
   addObjective(startTime, endTime, new TM_Contact_POAisInIntersection_InEq(world, from, to), OT_ineq, NoArr, 1e1);
-  addObjective(startTime, endTime, new TM_Contact_POAmovesContinuously(world, from, to), OT_sos, NoArr, 1e0, 1, +1);
+  addObjective(startTime, endTime, new TM_Contact_POAmovesContinuously(world, from, to), OT_sos, NoArr, 1e0, 1, +1, +0);
   addObjective(startTime, endTime, new TM_Contact_ForceRegularization(world, from, to), OT_sos, NoArr, 1e-4);
   addObjective(startTime, endTime, new TM_PairCollision(world, from, to, TM_PairCollision::_negScalar, false), OT_eq, NoArr, 1e1);
 }
@@ -478,8 +478,8 @@ void KOMO::setKS_slider(double time, double endTime, bool before, const char* ob
   
 //  setKinematicSwitch(time, true, "transXYPhiZero", table, slidera, rel);
 //  setKinematicSwitch(time, true, "hingeZZero", sliderb, obj);
-  addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_transXYPhi, table, slidera, world, SWInit_zero, 0, rel));
-  addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_hingeZ, sliderb, obj, world));
+  addSwitch(time, true, JT_transXYPhi, SWInit_zero, table, slidera, rel);
+  addSwitch(time, true, JT_hingeZ, SWInit_zero, sliderb, obj);
 
   addObjective(time, endTime, new TM_ZeroQVel(world, slidera), OT_eq, NoArr, 3e1, 1, +1, +0);
   addObjective(time, endTime, new TM_ZeroQVel(world, obj), OT_eq, NoArr, 3e1, 1, +1, -1);
@@ -496,7 +496,7 @@ void KOMO::setKS_slider(double time, double endTime, bool before, const char* ob
 void KOMO::setHoming(double startTime, double endTime, double prec, const char* keyword) {
   uintA bodies;
   Joint *j;
-  for(Frame *f:world.frames) if((j=f->joint) && !j->constrainToZeroVel && j->qDim()>0 && (!keyword || f->ats[keyword])) bodies.append(f->ID);
+  for(Frame *f:world.frames) if((j=f->joint) && j->qDim()>0 && (!keyword || f->ats[keyword])) bodies.append(f->ID);
 //  cout <<"HOMING: "; for(uint i:bodies) cout <<' ' <<world.frames(i)->name;  cout <<endl;
   addObjective(startTime, endTime, new TM_qItself(bodies, true), OT_sos, NoArr, prec); //world.q, prec);
 }
@@ -593,7 +593,7 @@ void KOMO_ext::setOverTheEdge(double time, const char *object, const char *from,
 }
 
 void KOMO_ext::setInertialMotion(double startTime, double endTime, const char *object, const char *base, double g, double c) {
-  addSwitch(startTime, true, new KinematicSwitch(SW_actJoint, JT_trans3, base, object, world));
+  addSwitch(startTime, true, JT_trans3, SWInit_zero, base, object);
 //  setFlag(time, new Flag(FT_gravityAcc, world[object]->ID, 0, true),+1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
 //  setFlag(startTime, new Flag(FL_noQControlCosts, world[object]->ID, 0, true), +2);
 //  setFlag(endTime, new Flag(FL_noQControlCosts, world[object]->ID, 0, true, false), +1);
@@ -601,11 +601,6 @@ void KOMO_ext::setInertialMotion(double startTime, double endTime, const char *o
     NIY;
 //    setTask(startTime, endTime, new TM_InertialMotion(world, object, g, c), OT_sos, {}, 1e1, 2);
   }
-}
-
-void KOMO_ext::setFreeGravity(double time, const char *object, const char *base) {
-  addSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_trans3, base, object, world));
-  addFlag(time, new Flag(FL_gravityAcc, world[object]->ID, 0, true),+1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
 }
 
 /// a standard pick up: lower-attached-lift; centered, from top
@@ -662,8 +657,8 @@ void KOMO_ext::setGraspStick(double time, const char* endeffRef, const char* obj
 //  setKinematicSwitch(time, true, "delete", NULL, object);
 
   //connect graspRef with object
-  addSwitch(time, true, "ballZero", endeffRef, object);
-  addSwitch(time, true, "insert_transX", NULL, object);
+  addSwitch(time, true, JT_quatBall, SWInit_zero, endeffRef, object);
+  HALT("deprecated"); //addSwitch(time, true, "insert_transX", NULL, object);
 //  setTask(time, time,
 //          new TM_LinTrans(
 //              new TM_Default(TMT_posDiff, world, endeffRef, NoVector, object, NoVector),
@@ -717,7 +712,7 @@ void KOMO_ext::setPlaceFixed(double time, const char* endeff, const char* object
   if(verbose>0) cout <<"KOMO_setPlace t=" <<time <<" endeff=" <<endeff <<" obj=" <<object <<" place=" <<placeRef <<endl;
   
   //connect object to table
-  addSwitch(time, true, "rigidZero", placeRef, object, relPose);
+  addSwitch(time, true, JT_rigid, SWInit_zero, placeRef, object, relPose);
   
   if(stepsPerPhase>2) { //velocities down and up
     if(endeff) {
@@ -810,7 +805,7 @@ void KOMO::setGraspSlide(double time, const char* endeff, const char* object, co
 //  setTask(time, time, new TM_InsideBox(world, endeff, NoVector, object), OT_ineq, NoArr, 1e1);
 
 //  addSwitch_stable(startTime, endTime+1., endeff, object);
-  addSwitch(startTime, true, new KinematicSwitch(SW_effJoint, JT_free, endeff, object, world));
+  addSwitch(startTime, true, JT_free, SWInit_zero, endeff, object);
   addObjective(time, endTime, new TM_ZeroQVel(world, object), OT_eq, NoArr, 3e1, 1, +1, -1);
   if(k_order>1) addObjective(time, time, new TM_LinAngVel(world, object), OT_eq, NoArr, 1e2, 2, 0);
   else addObjective(time, time, new TM_NoJumpFromParent(world, object), OT_eq, NoArr, 1e2, 1, 0, 0);
@@ -869,8 +864,8 @@ void KOMO_ext::setSlideAlong(double time, const char* stick, const char* object,
   Transformation rel = 0;
   rel.rot.setDeg(-90, {1, 0, 0});
   rel.pos.set(0, -.5*(shapeSize(world, wall, 1) - shapeSize(world, object)), +.5*(shapeSize(world, wall, 2) + shapeSize(world, object, 1)));
-  addSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_transX, wall, object, world));
-  addSwitch(time, true, new KinematicSwitch(SW_insertEffJoint, JT_transZ, NULL, object, world, SWInit_zero, 0, rel));
+  addSwitch(time, true, JT_transX, SWInit_zero, wall, object);
+  HALT("deprecated")//addSwitch(time, true, new KinematicSwitch(SW_insertEffJoint, JT_transZ, NULL, object, world, SWInit_zero, 0, rel));
   //    setKinematicSwitch(time, true, "insert_trans3", NULL, object);
   //    setTask(time, time, new TM_InsideBox(world, endeff, NoVector, object), OT_ineq, NoArr, 1e1);
   
@@ -878,29 +873,6 @@ void KOMO_ext::setSlideAlong(double time, const char* stick, const char* object,
     addObjective(endTime+.0, endTime+.05, new TM_Default(TMT_pos, world, stick), OT_sos, {0.,0., 0}, 3e0, 1); //hold still
     addObjective(endTime+.1, endTime+.3, new TM_Default(TMT_pos, world, stick), OT_sos, {0.,0., .05}, 3e0, 1); // move up
   }
-}
-
-void KOMO_ext::setDrop(double time, const char* object, const char* from, const char* to, int verbose) {
-
-  if(from) { //require the object outside the margin of its bounding box
-    setOverTheEdge(time, object, from, .05);
-  }
-  
-  //disconnect object from anything
-//  setKinematicSwitch(time, true, "delete", NULL, object);
-
-  //connect to world with lift
-//  setKinematicSwitch(time, true, "JT_trans3", "world", object);
-  addSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_transZ, to, object, world));
-  addSwitch(time, true, new KinematicSwitch(SW_insertEffJoint, JT_transXY, NULL, object, world));
-  
-  addFlag(time, new Flag(FL_xPosAccCosts, world[object]->ID, 0, true)); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
-//  setFlag(time, new Flag(FT_gravityAcc, world[object]->ID, 0, true),+1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
-//  setFlag(time, new Flag(FT_noQControlCosts, world[object]->ID, 0, true),+1);
-
-//  if(stepsPerPhase>2){ //velocities down and up
-//    setTask(time, time+.2, new TM_Default(TMT_pos, world, object), OT_sos, {0.,0.,-.1}, 3e0, 1); // move down
-//  }
 }
 
 void KOMO_ext::setDropEdgeFixed(double time, const char* object, const char* to, const Transformation &relFrom, const Transformation &relTo, int verbose) {
@@ -911,7 +883,7 @@ void KOMO_ext::setDropEdgeFixed(double time, const char* object, const char* to,
   //connect to world with lift
 //  setKinematicSwitch(time, true, "JT_trans3", "world", object);
 
-  addSwitch(time, true, new KinematicSwitch(SW_actJoint, JT_hingeX, to, object, world, SWInit_zero, 0, relFrom, relTo));
+  addSwitch(time, true, JT_hingeX, SWInit_zero, to, object, relFrom, relTo);
 //  setKinematicSwitch(time, true, new KinematicSwitch(insertActuated, JT_transZ, NULL, object, world, 0));
 //  setKinematicSwitch(time, true, new KinematicSwitch(SW_insertEffJoint, JT_trans3, NULL, object, world, 0));
 
@@ -934,7 +906,7 @@ void KOMO_ext::setAttach(double time, const char* endeff, const char* object1, c
 
 //  Transformation rel = 0;
 //  rel.addRelativeTranslation( 0., 0., .5*(shapeSize(world.getFrameByName(object)) + shapeSize(world.getFrameByName(placeRef))));
-  addSwitch(time, true, "rigidZero", object1, object2, rel);
+  addSwitch(time, true, JT_rigid, SWInit_zero, object1, object2, rel);
   
 }
 
@@ -983,6 +955,7 @@ void KOMO_ext::setFine_grasp(double time, const char* endeff, const char* object
 }
 
 /// translate a list of facts (typically facts in a FOL state) to LGP tasks
+/*
 void KOMO_ext::setAbstractTask(double phase, const Graph& facts, int verbose) {
 //  CHECK_LE(phase, maxPhase,"");
 //  listWrite(facts, cout,"\n");  cout <<endl;
@@ -1021,13 +994,13 @@ void KOMO_ext::setAbstractTask(double phase, const Graph& facts, int verbose) {
       } else if(*symbols(0)=="fricSlide") {
         Transformation rel = 0;
         rel.pos.set(0,0, .5*(shapeSize(world, *symbols(1)) + shapeSize(world, *symbols(2))));
-        addSwitch(phase+time, false, new KinematicSwitch(SW_actJoint, JT_transXYPhi, *symbols(2), *symbols(1), world, SWInit_zero, 0, rel));
+        addSwitch(phase+time, false, JT_transXYPhi, SWInit_zero, *symbols(2), *symbols(1), rel);
         addFlag(phase+time, new Flag(FL_clear, world[*symbols(1)]->ID, 0, true), +1);
         addFlag(phase+time, new Flag(FL_impulseExchange, world[*symbols(1)]->ID), 0);
         addFlag(phase+time, new Flag(FL_xPosVelCosts, world[*symbols(1)]->ID, 0, true), +1);
       } else if(*symbols(0)=="dynVert")               {
-        addSwitch(phase+time, true, new KinematicSwitch(SW_actJoint, JT_transZ, *symbols(2), *symbols(1), world));
-        addSwitch(phase+time, true, new KinematicSwitch(SW_insertEffJoint, JT_transXY, NULL, *symbols(1), world));
+        addSwitch(phase+time, true, JT_transZ, SWInit_zero, *symbols(2), *symbols(1));
+        HALT("deprecated")//addSwitch(phase+time, true, new KinematicSwitch(SW_insertEffJoint, JT_transXY, NULL, *symbols(1), world));
         addFlag(phase+time, new Flag(FL_clear, world[*symbols(1)]->ID, 0, true), +1);
 //        setFlag(phase+time, new Flag(FL_zeroAcc, world[*symbols(1)]->ID, 0, true), +1);
         addFlag(phase+time, new Flag(FL_xPosAccCosts, world[*symbols(1)]->ID, 0, true), +1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
@@ -1040,12 +1013,12 @@ void KOMO_ext::setAbstractTask(double phase, const Graph& facts, int verbose) {
         else setDrop(phase+time, *symbols(0), *symbols(1), *symbols(2), verbose);
       } else if(n->keys.last()=="komoThrow") {
 //        setInertialMotion(phase+time, phase+time+1., *symbols(0), "base", -.1, 0.);
-        addSwitch(phase+time, true, new KinematicSwitch(SW_actJoint, JT_trans3, "base", *symbols(0), world));
+        addSwitch(phase+time, true, JT_trans3, SWInit_zero, "base", *symbols(0));
         addFlag(phase+time, new Flag(FL_gravityAcc, world[*symbols(0)]->ID, 0, true), +1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
       } else if(n->keys.last()=="komoHit") {
         setImpact(phase+time, *symbols(0), *symbols(1));
         if(symbols.N==2) {
-          addSwitch(phase+time, true, new KinematicSwitch(SW_actJoint, JT_trans3, "base", *symbols(1), world));
+          addSwitch(phase+time, true, JT_trans3, SWInit_zero, "base", *symbols(1));
           addFlag(phase+time, new Flag(FL_gravityAcc, world[*symbols(1)]->ID, 0, true), +1); //why +1: the kinematic switch triggers 'FixSwitchedObjects' to enforce acc 0 for time slide +0
         } else if(symbols.N==3) {
           //const char* bat = *symbols(0);
@@ -1054,7 +1027,7 @@ void KOMO_ext::setAbstractTask(double phase, const Graph& facts, int verbose) {
           Transformation rel = 0;
           rel.pos.set(0,0, .5*(shapeSize(world, object) + shapeSize(world, placeRef)));
           
-          addSwitch(phase+time, true, new KinematicSwitch(SW_actJoint, JT_transXYPhi, placeRef, object, world, SWInit_zero, 0, rel));
+          addSwitch(phase+time, true, JT_transXYPhi, SWInit_zero, placeRef, object, rel);
           addFlag(phase+time, new Flag(FL_clear, world[object]->ID, 0, true));
           addFlag(phase+time, new Flag(FL_zeroAcc, world[object]->ID, 0, true));
           
@@ -1072,6 +1045,7 @@ void KOMO_ext::setAbstractTask(double phase, const Graph& facts, int verbose) {
     }
   }
 }
+*/
 
 void KOMO::setSkeleton(const Skeleton &S, bool ignoreSwitches) {
   //-- add objectives for mode switches

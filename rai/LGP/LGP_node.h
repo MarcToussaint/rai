@@ -106,7 +106,7 @@ public:
   Graph getInfo() const;
   void getGraph(Graph& G, Node *n=NULL, bool brief=false);
   Graph getGraph(bool brief=false) { Graph G; getGraph(G, NULL, brief); G.checkConsistency(); return G; }
-  void displayBound(OpenGL& gl, BoundType bound);
+  void displayBound(ptr<OpenGL>& gl, BoundType bound);
 };
 
 inline ostream& operator<<(ostream& os, const LGP_Node& n) { n.write(os); return os; }

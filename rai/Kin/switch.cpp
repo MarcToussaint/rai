@@ -27,19 +27,12 @@ double conv_step2time(int step, uint stepsPerPhase) {
 //===========================================================================
 
 template<> const char* rai::Enum<rai::SwitchType>::names []= {
-  "deleteJoint",
-  "SW_effJoint",
-  "addJointAtFrom",
-  "addJointAtTo",
-  "SW_actJoint",
-  "addSliderMechanism",
-  "SW_insertEffJoint",
-  "insertActuated",
+  "noJointLink",
+  "joint",
   "makeDynamic",
   "makeKinematic",
-  "SW_fixCurrent",
-  "SW_delContact",
-  "SW_addContact",
+  "delContact",
+  "addContact",
   NULL
 };
 
@@ -84,9 +77,7 @@ void rai::KinematicSwitch::apply(KinematicWorld& K) {
   if(fromId!=-1) from=K.frames(fromId);
   if(toId!=-1) to=K.frames(toId);
 
-  if(symbol==SW_insertEffJoint || symbol==insertActuated) HALT("deprecated");
-
-  if(symbol==SW_effJoint || symbol==SW_actJoint) {
+    if(symbol==SW_joint || symbol==SW_joint) {
     //first find link frame above 'to', and make it a root
     rai::Frame *link = to->getUpwardLink(NoTransformation, true);
     if(link->parent) link->unLink();
@@ -99,14 +90,6 @@ void rai::KinematicSwitch::apply(KinematicWorld& K) {
 
     if(!jA.isZero()) j->frame->insertPreLink(jA);
     if(!jB.isZero()) j->frame->insertPostLink(jB);
-
-    //set zeroVel flag
-    if(symbol==SW_actJoint || symbol==insertActuated) {
-      j->constrainToZeroVel=false;
-    } else {
-      j->constrainToZeroVel=true;
-      j->H = 0.;
-    }
 
     //initialize to zero, copy, or random
     if(init==SWInit_zero) { //initialize the joint with zero transform
@@ -128,15 +111,7 @@ void rai::KinematicSwitch::apply(KinematicWorld& K) {
     return;
   }
   
-  if(symbol==addSliderMechanism) {
-    HALT("I think it is better if there is fixed  slider mechanisms in the world, that may jump; no dynamic creation of bodies");
-  }
-  
-  if(symbol==addJointAtTo) {
-    HALT("deprecated");
-  }
-  
-  if(symbol==SW_fixCurrent) {
+  if(symbol==SW_noJointLink) {
     CHECK_EQ(jointType, JT_none, "");
     
     if(to->parent) to->unLink();
@@ -153,7 +128,6 @@ void rai::KinematicSwitch::apply(KinematicWorld& K) {
     
     from->inertia->type=rai::BT_dynamic;
     if(from->joint) {
-      from->joint->constrainToZeroVel=false;
       from->joint->H = 1e-1;
     }
     return;
@@ -212,6 +186,7 @@ void rai::KinematicSwitch::write(std::ostream& os, rai::KinematicWorld* K) const
 
 //===========================================================================
 
+/*
 rai::KinematicSwitch* rai::KinematicSwitch::newSwitch(const Node *specs, const rai::KinematicWorld& world, int stepsPerPhase, uint T) {
   if(specs->parents.N<2) return NULL;
   
@@ -234,33 +209,26 @@ rai::KinematicSwitch* rai::KinematicSwitch::newSwitch(const Node *specs, const r
   }
   return sw;
 }
+*/
 
+/*
 rai::KinematicSwitch* rai::KinematicSwitch::newSwitch(const rai::String& type, const char* ref1, const char* ref2, const rai::KinematicWorld& world, int _timeOfApplication, const rai::Transformation& jFrom, const rai::Transformation& jTo) {
   //-- create switch
   rai::KinematicSwitch *sw= new rai::KinematicSwitch();
-  if(type=="addRigid") { sw->symbol=rai::SW_effJoint; sw->jointType=rai::JT_rigid; }
+  if(type=="addRigid") { sw->symbol=rai::SW_joint; sw->jointType=rai::JT_rigid; }
 //  else if(type=="addRigidRel"){ sw->symbol = rai::KinematicSwitch::addJointAtTo; sw->jointType=rai::JT_rigid; }
-  else if(type=="rigidAtTo") { sw->symbol = rai::addJointAtTo; sw->jointType=rai::JT_rigid; }
-  else if(type=="rigidAtFrom") { sw->symbol = rai::addJointAtFrom; sw->jointType=rai::JT_rigid; }
-  else if(type=="rigidZero") { sw->symbol = rai::SW_effJoint; sw->jointType=rai::JT_rigid; }
-  else if(type=="transXActuated") { sw->symbol = rai::SW_actJoint; sw->jointType=rai::JT_transX; }
-  else if(type=="transXYPhiAtFrom") { sw->symbol = rai::addJointAtFrom; sw->jointType=rai::JT_transXYPhi; }
-  else if(type=="transXYPhiZero") { sw->symbol = rai::SW_effJoint; sw->jointType=rai::JT_transXYPhi; }
-  else if(type=="transXYPhiActuated") { sw->symbol = rai::SW_actJoint; sw->jointType=rai::JT_transXYPhi; }
-  else if(type=="freeAtTo") { sw->symbol = rai::addJointAtTo; sw->jointType=rai::JT_free; }
-  else if(type=="freeZero") { sw->symbol = rai::SW_effJoint; sw->jointType=rai::JT_free; }
-  else if(type=="freeActuated") { sw->symbol = rai::SW_actJoint; sw->jointType=rai::JT_free; }
-  else if(type=="ballZero") { sw->symbol = rai::SW_effJoint; sw->jointType=rai::JT_quatBall; }
-  else if(type=="hingeZZero") { sw->symbol = rai::SW_effJoint; sw->jointType=rai::JT_hingeZ; }
-  else if(type=="sliderMechanism") { sw->symbol = rai::addSliderMechanism; }
-  else if(type=="delete") { sw->symbol = rai::deleteJoint; }
-  else if(type=="JT_XBall") { sw->symbol = rai::SW_effJoint; sw->jointType=rai::JT_XBall; }
-  else if(type=="JT_transZ") { sw->symbol = rai::SW_effJoint; sw->jointType=rai::JT_transZ; }
-  else if(type=="JT_transX") { sw->symbol = rai::SW_effJoint; sw->jointType=rai::JT_transX; }
-  else if(type=="JT_trans3") { sw->symbol = rai::SW_effJoint; sw->jointType=rai::JT_trans3; }
-  else if(type=="insert_transX") { sw->symbol = rai::SW_insertEffJoint; sw->jointType=rai::JT_transX; }
-  else if(type=="insert_trans3") { sw->symbol = rai::SW_insertEffJoint; sw->jointType=rai::JT_trans3; }
-  else if(type=="createSlider") { sw->symbol = rai::addSliderMechanism; }
+  else if(type=="rigidZero") { sw->symbol = rai::SW_joint; sw->jointType=rai::JT_rigid; }
+  else if(type=="transXActuated") { sw->symbol = rai::SW_joint; sw->jointType=rai::JT_transX; }
+  else if(type=="transXYPhiZero") { sw->symbol = rai::SW_joint; sw->jointType=rai::JT_transXYPhi; }
+  else if(type=="transXYPhiActuated") { sw->symbol = rai::SW_joint; sw->jointType=rai::JT_transXYPhi; }
+  else if(type=="freeZero") { sw->symbol = rai::SW_joint; sw->jointType=rai::JT_free; }
+  else if(type=="freeActuated") { sw->symbol = rai::SW_joint; sw->jointType=rai::JT_free; }
+  else if(type=="ballZero") { sw->symbol = rai::SW_joint; sw->jointType=rai::JT_quatBall; }
+  else if(type=="hingeZZero") { sw->symbol = rai::SW_joint; sw->jointType=rai::JT_hingeZ; }
+  else if(type=="JT_XBall") { sw->symbol = rai::SW_joint; sw->jointType=rai::JT_XBall; }
+  else if(type=="JT_transZ") { sw->symbol = rai::SW_joint; sw->jointType=rai::JT_transZ; }
+  else if(type=="JT_transX") { sw->symbol = rai::SW_joint; sw->jointType=rai::JT_transX; }
+  else if(type=="JT_trans3") { sw->symbol = rai::SW_joint; sw->jointType=rai::JT_trans3; }
   else if(type=="makeDynamic") { sw->symbol = rai::makeDynamic; }
   else if(type=="makeKinematic") { sw->symbol = rai::makeKinematic; }
   else HALT("unknown type: "<< type);
@@ -288,3 +256,4 @@ rai::KinematicSwitch* rai::KinematicSwitch::newSwitch(const rai::String& type, c
   if(!!jTo) sw->jB = jTo;
   return sw;
 }
+*/

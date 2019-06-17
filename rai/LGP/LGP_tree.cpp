@@ -291,8 +291,8 @@ void LGP_Tree::inspectSequence(const rai::String& seq){
   auto S = node->getSkeleton();
   writeSkeleton(cout, S, getSwitchesFromSkeleton(S));
 
-  OpenGL gl;
-  gl.camera.setDefault();
+  ptr<OpenGL> gl = make_shared<OpenGL>();
+  gl->camera.setDefault();
 
   //-- first test pose bounds along the path
   BoundType bound = BD_pose;
