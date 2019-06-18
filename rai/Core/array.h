@@ -131,7 +131,7 @@ template<class T> struct Array : std::vector<T>, Serializable {
   Array<T>& resize(uint D0, uint D1, uint D2);
   Array<T>& resize(uint ND, uint *dim);
   Array<T>& resize(const Array<uint> &dim);
-  Array<T>& reshape(uint D0);
+  Array<T>& reshape(int D0);
   Array<T>& reshape(int D0, int D1);
   Array<T>& reshape(uint D0, uint D1, uint D2);
   Array<T>& reshape(uint ND, uint *dim);

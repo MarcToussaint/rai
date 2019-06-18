@@ -178,12 +178,13 @@ struct Transformation {
   Transformation(const Vector _pos, const Quaternion _rot) : pos(_pos), rot(_rot) {}
   Transformation(const Transformation &t) : pos(t.pos), rot(t.rot) {}
   Transformation(const char* init) { setText(init); }
+  Transformation(const arr& t) { set(t); }
   void operator=(const Transformation& f) { memcpy(this, &f, sizeof(Transformation)); }
   bool operator!() const;
 
   Transformation& setZero();
   Transformation& setText(const char* txt);
-  void set(double* p);
+  void set(const double* p);
   void set(const arr& t);
   void setRandom();
   void setInverse(const Transformation& f);

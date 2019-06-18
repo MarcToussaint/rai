@@ -53,8 +53,8 @@ void addBoxGrasp(KOMO& komo, const char* object, const char* endeff, int axis){
 void addMotionTo(KOMO& komo, const arr& target_q, const StringA& target_joints, const char* endeff, double up, double down){
 
   if(endeff){
-    arr profile(komo.T, 3);
-    profile.setZero();
+//    arr profile(komo.T, 3);
+//    profile.setZero();
 
     if(up>0.){
       komo.addObjective(0., up, new TM_Default(TMT_posDiff, komo.world, endeff), OT_sos, {0.,0.,.05}, 1e2, 2);

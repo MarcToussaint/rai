@@ -6,7 +6,9 @@ extern bool Geo_mesh_drawColors; //UGLY!!
 //===========================================================================
 
 rai::CameraView::CameraView(const rai::KinematicWorld& _K, bool _offscreen, int _watchComputations)
-  : K(_K), gl("CameraView", 640, 480, _offscreen), watchComputations(_watchComputations) {
+  : gl("CameraView", 640, 480, _offscreen), watchComputations(_watchComputations) {
+
+  updateConfiguration(_K);
 
   gl.add(*this);
 }
@@ -70,6 +72,11 @@ void rai::CameraView::updateConfiguration(const rai::KinematicWorld& newC){
     K.setFrameState(X);
   }else{
     K.copy(newC);
+    //deep copy meshes!
+    for(rai::Frame *f:K.frames) if(f->shape){
+        ptr<Mesh> org = f->shape->_mesh;
+        f->shape->_mesh = make_shared<Mesh> ( *org.get() );
+    }
     if(renderMode==seg){//update frameIDmap
       frameIDmap.resize(K.frames.N).setZero();
       for(rai::Frame *f:K.frames){
@@ -240,6 +247,10 @@ rai::Sim_CameraView::Sim_CameraView(Var<rai::KinematicWorld>& _kin,
     C.renderMode = C.seg;
     if(!!_frameIDmap)
         C.frameIDmap = _frameIDmap;
+    else{
+        C.K.clear();;
+                C.updateConfiguration(model.get());
+    }
   }else{
     C.renderMode = C.visuals;
   }

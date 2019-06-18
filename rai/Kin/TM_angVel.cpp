@@ -157,10 +157,12 @@ void TM_LinAngVel::phi(arr& y, arr& J, const WorldL& Ktuple){
 
   TM_LinVel lin(i);
   lin.order=order;
+  lin.impulseInsteadOfAcceleration = impulseInsteadOfAcceleration;
   lin.phi(y({0,2})(), (!!J?J({0,2})():NoArr), Ktuple);
 
   TM_AngVel ang(i);
   ang.order=order;
+  ang.impulseInsteadOfAcceleration = impulseInsteadOfAcceleration;
   ang.phi(y({3,5})(), (!!J?J({3,5})():NoArr), Ktuple);
 }
 

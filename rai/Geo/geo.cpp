@@ -181,8 +181,8 @@ arr Vector::generateOrthonormalSystemMatrix() const {
 
 //{ I/O
 void Vector::write(std::ostream& os) const {
-  if(!rai::IOraw) os <<'(' <<x <<' ' <<y <<' ' <<z <<')';
-  else os <<' ' <<x <<' ' <<y <<' ' <<z;
+  if(!rai::IOraw) os <<'[' <<x <<", " <<y <<", " <<z <<']';
+  else os <<' ' <<x <<", " <<y <<' ' <<z;
 }
 
 void Vector::read(std::istream& is) {
@@ -404,10 +404,10 @@ double Matrix::diffZero() const {
 }
 
 void Matrix::write(std::ostream& os) const {
-  os <<"\n " <<m00 <<' ' <<m01 <<' ' <<m02;
-  os <<"\n " <<m10 <<' ' <<m11 <<' ' <<m12;
-  os <<"\n " <<m20 <<' ' <<m21 <<' ' <<m22;
-  os <<endl;
+  os <<"\n[" <<m00 <<", " <<m01 <<", " <<m02;
+  os <<"\n " <<m10 <<", " <<m11 <<", " <<m12;
+  os <<"\n " <<m20 <<", " <<m21 <<", " <<m22;
+  os <<']' <<endl;
 }
 void Matrix::read(std::istream& is) {
   NIY;
@@ -978,7 +978,7 @@ arr Quaternion::getMatrixJacobian() const {
 
 void Quaternion::writeNice(std::ostream& os) const { os <<"Quaternion: " <<getDeg() <<" around " <<getVec() <<"\n"; }
 void Quaternion::write(std::ostream& os) const {
-  if(!rai::IOraw) os <<'(' <<w <<' ' <<x <<' ' <<y <<' ' <<z <<')';
+  if(!rai::IOraw) os <<'[' <<w <<", " <<x <<", " <<y <<", " <<z <<']';
   else os <<' ' <<w <<' ' <<x <<' ' <<y <<' ' <<z;
 }
 void Quaternion::read(std::istream& is) { is >>PARSE("(") >>w >>x >>y  >>z >>PARSE(")"); normalize();}
@@ -1228,7 +1228,7 @@ Transformation& Transformation::setZero() {
   return *this;
 }
 
-void Transformation::set(double *p) { pos.set(p); rot.set(p+3); }
+void Transformation::set(const double *p) { pos.set(p); rot.set(p+3); }
 
 void Transformation::set(const arr &t) { CHECK_EQ(t.N,7, "");  set(t.p); }
 
@@ -1442,8 +1442,8 @@ void Transformation::checkNan() const{
 
 /// operator<<
 void Transformation::write(std::ostream& os) const {
-  os <<pos.x <<' ' <<pos.y <<' ' <<pos.z <<' '
-    <<rot.w <<' ' <<rot.x <<' ' <<rot.y <<' ' <<rot.z;
+  os <<'[' <<pos.x <<", " <<pos.y <<", " <<pos.z <<", "
+    <<rot.w <<", " <<rot.x <<", " <<rot.y <<", " <<rot.z <<']';
 }
 
 /// operator>>
@@ -1656,8 +1656,8 @@ double DynamicTransformation::diffZero() const {
 
 /// operator<<
 void DynamicTransformation::write(std::ostream& os) const {
-  os <<pos.x <<' ' <<pos.y <<' ' <<pos.z <<' '
-     <<rot.w <<' ' <<rot.x <<' ' <<rot.y <<' ' <<rot.z;
+  os <<pos.x <<", " <<pos.y <<", " <<pos.z <<", "
+     <<rot.w <<", " <<rot.x <<", " <<rot.y <<", " <<rot.z;
   if(!zeroVels) {
     os <<" v" <<vel <<" w" <<angvel;
   }

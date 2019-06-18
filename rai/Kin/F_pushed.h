@@ -18,9 +18,9 @@ struct F_pushed : Feature {
   virtual uint dim_phi(const rai::KinematicWorld& K){ HALT("can't be here"); }
 
   virtual void phi(arr& y, arr& J, const WorldL& Ktuple);
-  virtual uint dim_phi(const WorldL& Ktuple){ return 3; }
+  virtual uint dim_phi(const WorldL& Ktuple){ return 6; }
 
-  virtual rai::String shortTag(const rai::KinematicWorld& K) { return STRING("static-" <<K.frames(i)->name); }
+  virtual rai::String shortTag(const rai::KinematicWorld& K) { return STRING("pushed-" <<K.frames(i)->name); }
 };
 
 

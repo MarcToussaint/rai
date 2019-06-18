@@ -99,7 +99,7 @@ struct KOMO : NonCopyable {
   ObjectiveTypeA featureTypes; ///< storage of all feature-types in all time slices
   bool featureDense;
 //  arr dualSolution;            ///< the dual solution computed during constrained optimization
-  struct OpenGL *gl=0;         ///< internal only: used in 'displayTrajectory'
+  ptr<struct OpenGL> gl;              ///< internal only: used in 'displayTrajectory'
   int verbose;                 ///< verbosity level
   int animateOptimization=0;   ///< display the current path for each evaluation during optimization
   double runTime=0.;           ///< measured run time
@@ -187,13 +187,13 @@ struct KOMO : NonCopyable {
                       const char *prevFrom, const char *newFrom, const char *obj);
   void addSwitch_stable(double time, double endTime, const char *from, const char *to);
   void addSwitch_stableOn(double time, double endTime, const char* from, const char* to);
-  void addSwitch_dynamic(double time, double endTime, const char *from, const char *to);
+  void addSwitch_dynamic(double time, double endTime, const char *from, const char *to, bool dampedVelocity=false);
   void addSwitch_dynamicOn(double time, double endTime, const char *from, const char* to);
   void addSwitch_dynamicOnNewton(double time, double endTime, const char *from, const char* to);
   void addSwitch_dynamicTrans(double time, double endTime, const char *from, const char *to);
-  void addSwitch_magic(double time, double endTime, const char* from, const char* to, double sqrAccCost);
+  void addSwitch_magic(double time, double endTime, const char* from, const char* to, double sqrAccCost, double sqrVelCost);
   void addSwitch_magicTrans(double time, double endTime, const char* from, const char* to, double sqrAccCost);
-  void addSwitch_on(double time, const char *from, const char* to);
+  void addSwitch_on(double time, const char *from, const char* to, bool copyInitialization=false);
 
 
   

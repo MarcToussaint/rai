@@ -127,7 +127,12 @@ template<class T> rai::Array<T>& rai::Array<T>::resize(uint D0) { nd=1; d0=D0; r
 template<class T> rai::Array<T>& rai::Array<T>::resizeCopy(uint D0) { nd=1; d0=D0; resetD(); resizeMEM(d0, true); return *this; }
 
 /// reshape the dimensionality (e.g. from 2D to 1D); throw an error if this actually requires to resize the memory
-template<class T> rai::Array<T>& rai::Array<T>::reshape(uint D0) { CHECK_EQ(N, D0, "reshape must preserve total memory size"); nd=1; d0=D0; d1=d2=0; resetD(); return *this; }
+template<class T> rai::Array<T>& rai::Array<T>::reshape(int D0) {
+    if(D0<0) D0=N;
+    CHECK_EQ((int)N, D0, "reshape must preserve total memory size");
+    nd=1; d0=D0; d1=d2=0; resetD();
+    return *this;
+}
 
 /// same for 2D ...
 template<class T> rai::Array<T>& rai::Array<T>::resize(uint D0, uint D1) { nd=2; d0=D0; d1=D1; resetD(); resizeMEM(d0*d1, false); return *this; }

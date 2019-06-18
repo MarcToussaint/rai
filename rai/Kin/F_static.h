@@ -8,13 +8,14 @@
 
 #include "feature.h"
 
-struct F_static : Feature {
+struct F_netForce : Feature {
   int i;               ///< which shapes does it refer to?
   double gravity=9.81;
   bool transOnly=false;
-  
-  F_static(int iShape, bool _transOnly=false);
-  F_static(const rai::KinematicWorld& K, const char* iShapeName, bool _transOnly=false) : F_static(initIdArg(K,iShapeName), _transOnly){}
+
+  F_netForce(int iShape, bool _transOnly=false, bool _zeroGravity=false);
+  F_netForce(const rai::KinematicWorld& K, const char* iShapeName, bool _transOnly=false, bool _zeroGravity=false)
+    : F_netForce(initIdArg(K,iShapeName), _transOnly, _zeroGravity){}
   
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& K);
   virtual uint dim_phi(const rai::KinematicWorld& K);

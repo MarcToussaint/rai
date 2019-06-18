@@ -2960,7 +2960,8 @@ void rai::KinematicWorld::glDraw_sub(OpenGL& gl) {
   if(orsDrawProxies) for(const Proxy& p: proxies)((Proxy*)&p)->glDraw(gl);
 
   //contacts
-  if(orsDrawProxies) for(const Frame *fr: frames) for(rai::Contact *c:fr->contacts) if(&c->a==fr) {
+//  if(orsDrawProxies)
+  for(const Frame *fr: frames) for(rai::Contact *c:fr->contacts) if(&c->a==fr) {
     c->glDraw(gl);
   }
 
