@@ -32,6 +32,7 @@ enum SkeletonSymbol{
   SY_dynamicOn,
   SY_dynamicTrans,
   SY_quasiStatic,
+  SY_quasiStaticOn,
   SY_liftDownUp,
   SY_break,
 

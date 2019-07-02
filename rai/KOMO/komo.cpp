@@ -303,6 +303,14 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
     addSwitch(time, true, JT_free, SWInit_copy, from, to);
     addObjective(time, endTime, new TM_NewtonEuler_DampedVelocities(world, to), OT_eq, NoArr, 1e0, 1, +0, -1);
   }
+
+  if(newMode==SY_quasiStaticOn){
+    Transformation rel = 0;
+    rel.pos.set(0,0, .5*(shapeSize(world, from) + shapeSize(world, to)));
+    addSwitch(time, true, JT_transXYPhi, SWInit_copy, from, to, rel);
+    addObjective(time, endTime, new TM_NewtonEuler_DampedVelocities(world, to, 0.), OT_eq, NoArr, 1e0, 1, +0, -1);
+//    addObjective(time, endTime, new F_pushed(world, to), OT_eq, NoArr, 1e0, 1, +0, -1);
+  }
 }
 
 
@@ -397,7 +405,7 @@ void KOMO::addContact_slide(double startTime, double endTime, const char *from, 
   addObjective(startTime, endTime, new TM_Contact_ForceIsPositive(world, from, to), OT_ineq, NoArr, 1e2);
   addObjective(startTime, endTime, new TM_Contact_POAisInIntersection_InEq(world, from, to), OT_ineq, NoArr, 1e1);
   addObjective(startTime, endTime, new TM_Contact_POAmovesContinuously(world, from, to), OT_sos, NoArr, 1e0, 1, +1, +0);
-  addObjective(startTime, endTime, new TM_Contact_ForceRegularization(world, from, to), OT_sos, NoArr, 1e-0);
+  addObjective(startTime, endTime, new TM_Contact_ForceRegularization(world, from, to), OT_sos, NoArr, 1e-1);
   addObjective(startTime, endTime, new TM_Contact_POAzeroRelVel(world, from, to), OT_sos, NoArr, 1e-1, 1, +1, +0);
   addObjective(startTime, endTime, new TM_PairCollision(world, from, to, TM_PairCollision::_negScalar, false), OT_eq, NoArr, 1e1);
 }
@@ -407,10 +415,10 @@ void KOMO::addContact_staticPush(double startTime, double endTime, const char *f
   if(endTime>0.) addSwitch(endTime, false, new rai::KinematicSwitch(rai::SW_delContact, rai::JT_none, from, to, world) );
 
   addObjective(startTime, endTime, new TM_Contact_ForceIsNormal(world, from, to), OT_sos, NoArr, 1e1);
-  addObjective(startTime, endTime, new TM_Contact_ForceIsPositive(world, from, to), OT_ineq, NoArr, 1e1);
+  addObjective(startTime, endTime, new TM_Contact_ForceIsPositive(world, from, to), OT_ineq, NoArr, 1e2);
   addObjective(startTime, endTime, new TM_Contact_POAisInIntersection_InEq(world, from, to), OT_ineq, NoArr, 1e1);
   addObjective(startTime, endTime, new TM_Contact_POAmovesContinuously(world, from, to), OT_sos, NoArr, 1e0, 1, +1, +0);
-  addObjective(startTime, endTime, new TM_Contact_ForceRegularization(world, from, to), OT_sos, NoArr, 1e-4);
+  addObjective(startTime, endTime, new TM_Contact_ForceRegularization(world, from, to), OT_sos, NoArr, 1e-1);
   addObjective(startTime, endTime, new TM_Contact_POAzeroRelVel(world, from, to), OT_sos, NoArr, 1e-1, 1, +1, +0);
   //  addObjective(startTime, endTime, new TM_Contact_POAzeroRelVel(world, from, to), OT_eq, NoArr, 1e1, 1, +1, +0);
 //  addObjective(time, time, new F_pushed(world, to), OT_eq, NoArr, 1e1, 1, +1, +0);
@@ -1684,11 +1692,11 @@ struct DrawPaths : GLDrawer {
   DrawPaths(arr& X): X(X) {}
   void glDraw(OpenGL& gl) {
     glColor(0.,0.,0.);
-    for(uint i=0; i<X.d0; i++) {
+    for(uint i=0; i<X.d1; i++) {
       glBegin(GL_LINES);
-      for(uint t=0; t<X.d1; t++) {
+      for(uint t=0; t<X.d0; t++) {
         rai::Transformation pose;
-        pose.set(&X(i,t,0));
+        pose.set(&X(t,i,0));
 //          glTransform(pose);
         glVertex3d(pose.pos.x, pose.pos.y, pose.pos.z);
       }
@@ -1759,7 +1767,8 @@ bool KOMO::displayPath(bool watch, bool full) {
   }
   if(watch) {
     int key = gl->watch();
-    gl.reset();
+//    gl.reset();
+    gl->clear();
     return !(key==27 || key=='q');
   }
   gl->update(NULL, true);
@@ -2723,10 +2732,10 @@ arr KOMO::getPath_frames(const StringA &frame) {
 
 arr KOMO::getPath_frames(const uintA &frames) {
   CHECK_EQ(configurations.N, k_order+T, "configurations are not setup yet");
-  arr X(frames.N, T, 7);
+  arr X(T, frames.N, 7);
   for(uint t=0; t<T; t++) {
     for(uint i=0; i<frames.N; i++) {
-      X(i, t, {}) = configurations(t+k_order)->frames(frames(i))->X.getArr7d();
+      X(t, i, {}) = configurations(t+k_order)->frames(frames(i))->X.getArr7d();
     }
   }
   return X;
@@ -2787,6 +2796,7 @@ template<> const char* rai::Enum<SkeletonSymbol>::names []= {
   "dynamicOn",
   "dynamicTrans",
   "quasiStatic",
+  "quasiStaticOn",
   "liftDownUp",
   "break",
 
@@ -2814,7 +2824,7 @@ template<> const char* rai::Enum<SkeletonSymbol>::names []= {
 };
 
 intA getSwitchesFromSkeleton(const Skeleton& S){
-  rai::Array<SkeletonSymbol> modes = { SY_free, SY_stable, SY_stableOn, SY_dynamic, SY_dynamicOn, SY_dynamicTrans, SY_quasiStatic };
+  rai::Array<SkeletonSymbol> modes = { SY_free, SY_stable, SY_stableOn, SY_dynamic, SY_dynamicOn, SY_dynamicTrans, SY_quasiStatic, SY_quasiStaticOn };
 
   intA ret;
   for(int i=0;i<(int)S.N;i++){

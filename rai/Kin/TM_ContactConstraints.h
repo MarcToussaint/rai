@@ -51,7 +51,7 @@ struct TM_Contact_POAmovesContinuously : Feature {
   void phi(arr& y, arr& J, const rai::KinematicWorld& K){ NIY }
   void phi(arr& y, arr& J, const WorldL& Ktuple);
   uint dim_phi(const rai::KinematicWorld& K){ return 3; }
-  rai::String shortTag(const rai::KinematicWorld& K) { return STRING("TM_Contact_MovesContinuously-" <<K.frames(a)->name <<'-' <<K.frames(b)->name); }
+  rai::String shortTag(const rai::KinematicWorld& K) { return STRING("TM_Contact_POAmovesContinuously-" <<K.frames(a)->name <<'-' <<K.frames(b)->name); }
 };
 
 struct TM_ContactConstraints_Vel : Feature {
@@ -75,7 +75,7 @@ struct TM_Contact_POAzeroRelVel : Feature {
   void phi(arr& y, arr& J, const rai::KinematicWorld& K){ NIY }
   void phi(arr& y, arr& J, const WorldL& Ktuple);
   uint dim_phi(const rai::KinematicWorld& K){ return 3; }
-  rai::String shortTag(const rai::KinematicWorld& K) { return STRING("TM_Contact_ZeroVel-" <<K.frames(a)->name <<'-' <<K.frames(b)->name); }
+  rai::String shortTag(const rai::KinematicWorld& K) { return STRING("TM_Contact_POAzeroRelVel-" <<K.frames(a)->name <<'-' <<K.frames(b)->name); }
 };
 
 struct TM_Contact_ElasticVel : Feature {
@@ -124,5 +124,5 @@ struct TM_Contact_ForceRegularization : Feature {
 
   void phi(arr& y, arr& J, const rai::KinematicWorld& K);
   uint dim_phi(const rai::KinematicWorld& K);
-  rai::String shortTag(const rai::KinematicWorld& K) { return STRING("TM_ContactConstraints_SOS-" <<K.frames(a)->name <<'-' <<K.frames(b)->name); }
+  rai::String shortTag(const rai::KinematicWorld& K) { return STRING("TM_Contact_ForceRegularization-" <<K.frames(a)->name <<'-' <<K.frames(b)->name); }
 };
