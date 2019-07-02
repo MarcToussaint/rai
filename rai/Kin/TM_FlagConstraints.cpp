@@ -23,7 +23,6 @@ bool JointDidNotSwitch(const rai::Frame *a1, const WorldL& Ktuple, int order) {
     rai::Joint *j0 = a0->joint, *j1 = a1->joint;
     if(!j0 || !j1
         || j0->type!=j1->type
-        || j0->constrainToZeroVel!=j1->constrainToZeroVel
         || j0->from()->ID!=j1->from()->ID) return false;
   }
   return true;
