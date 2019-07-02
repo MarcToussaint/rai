@@ -16,29 +16,9 @@ void F_pushed::phi(arr& y, arr& J, const WorldL& Ktuple){
   rai::Frame *a = Ktuple(-2)->frames(i);
 
   //get linear and angular velocities
-  arr v, Jv;
-  TM_LinVel pos(i);
+  TM_LinAngVel pos(i);
   pos.order=1;
-  pos.phi(v, (!!J?Jv:NoArr), Ktuple);
-
-  arr w, Jw;
-  TM_AngVel rot(i);
-  rot.order=1;
-  rot.phi(w, (!!J?Jw:NoArr), Ktuple);
-
-  y.resize(6).setZero();
-
-  y.setVectorBlock(v, 0);
-  y.setVectorBlock(w, 3);
-  if(!!J) {
-    J.resize(y.N, Jv.d1).setZero();
-    J.setMatrixBlock(Jv, 0, 0);
-    J.setMatrixBlock(Jw, 3, 0);
-  }
-
-  if(a->contacts.N==0){
-    return;
-  }
+  pos.phi(y, J, Ktuple);
 
   double mass=1;
   arr Imatrix = diag(.02, 3);

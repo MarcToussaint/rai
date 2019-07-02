@@ -74,7 +74,7 @@ void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
 void TM_NewtonEuler_DampedVelocities::phi(arr &y, arr &J, const WorldL &Ktuple) {
   CHECK_EQ(order, 1, "");
 
-  //get linear and angular accelerations
+  //get linear and angular velocities
   TM_LinAngVel pos(i);
   pos.order=1;
   pos.phi(y, J, Ktuple);

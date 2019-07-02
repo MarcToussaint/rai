@@ -47,7 +47,7 @@ TM_qItself::TM_qItself(const uintA& _selectedBodies, bool relative_q0)
 }
 
 void TM_qItself::phi(arr& q, arr& J, const rai::KinematicWorld& G) {
-  if(!selectedBodies.N) {
+  if(!selectedBodies.nd) {
     G.getJointState(q);
     if(relative_q0) {
       for(rai::Joint* j: G.fwdActiveJoints) if(j->q0.N && j->qDim()==1) q(j->qIndex) -= j->q0.scalar();
@@ -60,7 +60,7 @@ void TM_qItself::phi(arr& q, arr& J, const rai::KinematicWorld& G) {
     if(!!J) J.resize(n, G.q.N).setZero();
     uint m=0;
     uint qIndex=0;
-    if(selectedBodies.N){
+    if(selectedBodies.nd){
       for(uint i=0;i<selectedBodies.d0;i++) {
         rai::Joint *j=0;
         bool flipSign=false;
@@ -109,7 +109,7 @@ void TM_qItself::phi(arr& y, arr& J, const WorldL& Ktuple) {
   uint offset = Ktuple.N-1-k; //G.N might contain more configurations than the order of THIS particular task -> the front ones are not used
   //before reading out, check if, in selectedBodies mode, some of the selected ones where switched
   uintA selectedBodies_org = selectedBodies;
-  if(selectedBodies.N && selectedBodies.nd==1) {
+  if(selectedBodies.nd==1) {
     uintA sw = getSwitchedBodies(*Ktuple.elem(-2), *Ktuple.elem(-1));
     for(uint id:sw) selectedBodies.removeValue(id, false);
   }
@@ -122,7 +122,7 @@ void TM_qItself::phi(arr& y, arr& J, const WorldL& Ktuple) {
   uint qN=q_bar(0).N;
   for(uint i=0; i<=k; i++) if(q_bar(i).N!=qN) { handleSwitches=true; break; }
   if(handleSwitches) { //when bodies are selected, switches don't have to be handled
-    CHECK(!selectedBodies.N, "doesn't work for this...")
+    CHECK(!selectedBodies.nd, "doesn't work for this...")
     uint nFrames = Ktuple(offset)->frames.N;
     JointL jointMatchLists(k+1, nFrames); //for each joint of [0], find if the others have it
     jointMatchLists.setZero();
@@ -182,7 +182,7 @@ void TM_qItself::phi(arr& y, arr& J, const WorldL& Ktuple) {
 }
 
 uint TM_qItself::dim_phi(const rai::KinematicWorld& G) {
-  if(selectedBodies.N) {
+  if(selectedBodies.nd) {
     uint n=0;
     for(uint i=0;i<selectedBodies.d0;i++) {
       rai::Joint *j=0;
@@ -234,7 +234,7 @@ uint TM_qItself::dim_phi(const WorldL& Ktuple) {
 
 rai::String TM_qItself::shortTag(const rai::KinematicWorld& G) {
   rai::String s="qItself";
-  if(selectedBodies.N) {
+  if(selectedBodies.nd) {
     if(selectedBodies.N<=3) {
       for(uint b:selectedBodies) s <<':' <<G.frames(b)->name;
     } else {

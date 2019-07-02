@@ -164,7 +164,7 @@ void LGP_Tree::initDisplay() {
 void LGP_Tree::renderToVideo(int specificBound, const char* filePrefix) {
   if(specificBound<0) specificBound=displayBound;
   CHECK(focusNode->komoProblem(specificBound) && focusNode->komoProblem(specificBound)->configurations.N, "level " <<specificBound <<" has not been computed for the current 'displayFocus'");
-  if(specificBound<views.N && views(specificBound)){
+  if(specificBound<(int)views.N && views(specificBound)){
     renderConfigurations(focusNode->komoProblem(specificBound)->configurations, filePrefix, -2, 600, 600, &views(specificBound)->copy.gl().camera);
   }else{
     renderConfigurations(focusNode->komoProblem(specificBound)->configurations, filePrefix, -2, 600, 600);

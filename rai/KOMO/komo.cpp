@@ -274,6 +274,10 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
 
   if(newMode==SY_dynamic){
     addSwitch(time, true, JT_free, SWInit_copy, from, to);
+  }
+
+  if(newMode==SY_dynamic){
+    addSwitch(time, true, JT_free, SWInit_copy, from, to);
     addObjective(time, endTime, new TM_NewtonEuler(world, to), OT_eq, NoArr, 1e0, k_order, +0, -1);
   //  addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2); //this should be implicit in the NE equations!
   }
@@ -293,6 +297,11 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
     addSwitch(time, true, JT_transXYPhi, SWInit_copy, from, to, rel);
     if(k_order>=2) addObjective(time, endTime, new TM_ZeroAcc(world, to), OT_eq, NoArr, 3e1, k_order, +0, -1);
   //  else addObjective(time, time, new TM_NoJumpFromParent(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
+  }
+
+  if(newMode==SY_quasiStatic){
+    addSwitch(time, true, JT_free, SWInit_copy, from, to);
+    addObjective(time, endTime, new TM_NewtonEuler_DampedVelocities(world, to), OT_eq, NoArr, 1e0, 1, +0, -1);
   }
 }
 
@@ -1081,10 +1090,20 @@ void KOMO::setSkeleton(const Skeleton &S, bool ignoreSwitches) {
       case SY_break:      addObjective(s.phase0, s.phase1, make_shared<TM_NoJumpFromParent>(world, s.frames(0)), OT_eq, NoArr, 1e2, 1, 0, 0);  break;
 
       case SY_contact:    addContact_slide(s.phase0, s.phase1, s.frames(0), s.frames(1));  break;
+      case SY_contactStick:    addContact_stick(s.phase0, s.phase1, s.frames(0), s.frames(1));  break;
       case SY_bounce:     addContact_elasticBounce(s.phase0, s.frames(0), s.frames(1), .9);  break;
         //case SY_contactComplementary:     addContact_Complementary(s.phase0, s.phase1, s.frames(0), s.frames(1));  break;
 
 
+      case SY_dampMotion: {
+        double sqrAccCost=1e-3, sqrVelCost=1e-2;
+        if(sqrVelCost>0. && k_order>=1){
+          addObjective(s.phase0, s.phase1, new TM_LinAngVel(world, s.frames(0)), OT_sos, NoArr, sqrVelCost, 1);
+        }
+        if(sqrAccCost>0. && k_order>=2){
+          addObjective(s.phase0, s.phase1, new TM_LinAngVel(world, s.frames(0)), OT_sos, NoArr, sqrAccCost, 2);
+        }
+      } break;
       case SY_alignByInt: {
         addObjective({s.phase0, s.phase1}, OT_sos, FS_scalarProductXX, s.frames);  break;
         cout <<"THE INTEGER IS: " <<s.frames(2) <<endl;
@@ -1101,6 +1120,7 @@ void KOMO::setSkeleton(const Skeleton &S, bool ignoreSwitches) {
       case SY_dynamic:     //if(!ignoreSwitches) addSwitch_dynamic(s.phase0, s.phase1+1., "base", s.frames(0));  break;
       case SY_dynamicOn:   //if(!ignoreSwitches) addSwitch_dynamicOn(s.phase0, s.phase1+1., s.frames(0), s.frames(1));  break;
       case SY_dynamicTrans:   //if(!ignoreSwitches) addSwitch_dynamicTrans(s.phase0, s.phase1+1., "base", s.frames(0));  break;
+      case SY_quasiStatic:
         break;
       case SY_magic:      addSwitch_magic(s.phase0, s.phase1, world.frames.first()->name, s.frames(0), 0., 0.);  break;
       case SY_magicTrans: addSwitch_magicTrans(s.phase0, s.phase1, world.frames.first()->name, s.frames(0), 0.);  break;
@@ -1546,7 +1566,7 @@ void KOMO::reportProblem(std::ostream& os) {
   for(KinematicSwitch* sw:switches) {
     os <<"    ";
     if(sw->timeOfApplication+k_order >= configurations.N) {
-      LOG(-1) <<"switch time " <<sw->timeOfApplication <<" is beyond time horizon " <<T;
+//      LOG(-1) <<"switch time " <<sw->timeOfApplication <<" is beyond time horizon " <<T;
       sw->write(os, NULL);
     } else {
       sw->write(os, configurations(sw->timeOfApplication+k_order));
@@ -1972,7 +1992,7 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
   arr taskG=zeros(objectives.N);
   arr taskH=zeros(objectives.N);
   uint M=0;
-  if(!featureDense){
+  if(!denseOptimization){
     for(uint t=0; t<T; t++) {
       for(uint i=0; i<objectives.N; i++) {
         Objective *task = objectives(i);
@@ -2144,7 +2164,7 @@ Graph KOMO::getProblemGraph(bool includeValues){
     g.copy(task->map->getSpec(world), true);
     if(includeValues){
       arr y,V;
-      if(!featureDense){
+      if(!denseOptimization){
         for(uint t=0;t<task->vars.N && t<T;t++) if(task->isActive(t)) {
           task->map->__phi(y, NoArr, configurations({t,t+k_order}));
           V.append(y);
@@ -2760,15 +2780,18 @@ template<> const char* rai::Enum<SkeletonSymbol>::names []= {
   "inside",
   "impulse",
   "initial",
+  "free",
   "stable",
   "stableOn",
   "dynamic",
   "dynamicOn",
   "dynamicTrans",
+  "quasiStatic",
   "liftDownUp",
   "break",
 
   "contact",
+  "contactStick",
   "bounce",
 
   "magic",
@@ -2776,6 +2799,8 @@ template<> const char* rai::Enum<SkeletonSymbol>::names []= {
 
   "push",
   "graspSlide",
+
+  "dampMotion",
 
   "noCollision",
   "identical",
@@ -2789,7 +2814,7 @@ template<> const char* rai::Enum<SkeletonSymbol>::names []= {
 };
 
 intA getSwitchesFromSkeleton(const Skeleton& S){
-  rai::Array<SkeletonSymbol> modes = { SY_stable, SY_stableOn, SY_dynamic, SY_dynamicOn, SY_dynamicTrans };
+  rai::Array<SkeletonSymbol> modes = { SY_free, SY_stable, SY_stableOn, SY_dynamic, SY_dynamicOn, SY_dynamicTrans, SY_quasiStatic };
 
   intA ret;
   for(int i=0;i<(int)S.N;i++){

@@ -25,15 +25,18 @@ enum SkeletonSymbol{
   SY_inside,
   SY_impulse,
   SY_initial,
+  SY_free,
   SY_stable,
   SY_stableOn,
   SY_dynamic,
   SY_dynamicOn,
   SY_dynamicTrans,
+  SY_quasiStatic,
   SY_liftDownUp,
   SY_break,
 
   SY_contact,
+  SY_contactStick,
   SY_bounce,
 
   SY_magic,
@@ -41,6 +44,8 @@ enum SkeletonSymbol{
 
   SY_push,
   SY_graspSlide,
+
+  SY_dampMotion,
 
   SY_noCollision,
   SY_identical,
