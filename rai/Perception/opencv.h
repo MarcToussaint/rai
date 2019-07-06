@@ -27,6 +27,7 @@ extern ::Mutex cvMutex;
 inline cv::Mat CV(const byteA& img) {
   if(img.nd==2) return cv::Mat(img.d0, img.d1, CV_8UC1, img.p);
   if(img.nd==3) return cv::Mat(img.d0, img.d1, CV_8UC3, img.p);
+  if(img.nd==4) return cv::Mat(img.d0, img.d1, CV_8UC4, img.p);
   return cv::Mat();
 }
 

@@ -870,7 +870,7 @@ py::arg("featureSymbol"),
   } )
 
   .def("addSwitch_magic", [](ry::RyKOMO& self, double time, const char* from, const char* to){
-      self.komo->addSwitch_magic(time, time, from, to, 0.);
+      self.komo->addSwitch_magic(time, time, from, to, 0., 0.);
   } )
 
   .def("addSwitch_dynamicTrans", [](ry::RyKOMO& self, double startTime, double endTime, const char* from, const char* to){
