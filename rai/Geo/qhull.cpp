@@ -619,8 +619,6 @@ void sort2Dpoints(arr& A) {
   A.permuteRows(perm);
 }
 
-#include <Plot/plot.h>
-
 arr convconv_intersect(const arr &A, const arr &B) {
   if(A.d0==1) return A;
   if(B.d0==1) return B;

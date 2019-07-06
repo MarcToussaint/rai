@@ -208,6 +208,9 @@ installUbuntu: force
 printUbuntu: force
 	@echo $(DEPEND_UBUNTU)
 
+printDepend: force
+	@echo $(DEPEND)
+
 depend: generate_Makefile.dep
 
 # dependAll: force
@@ -425,6 +428,10 @@ endif
 inPath_printUbuntu/%: $(BASE)/rai/%
 	@echo "#" $*
 	@-$(MAKE) -C $< printUbuntu --no-print-directory
+
+inPath_printDepend/%: $(BASE)/rai/%
+	@echo "#" $*
+	@-$(MAKE) -C $< printDepend --no-print-directory
 
 inPath_makePython/%: %
 	make --directory=$< pywrapper

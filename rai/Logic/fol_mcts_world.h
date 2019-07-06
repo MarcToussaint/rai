@@ -65,15 +65,17 @@ struct FOL_World : MCTS_Environment {
     void write(ostream& os) const { os <<*state; }
   };
   
-  uint T_step, start_T_step; ///< discrete "time": decision steps so far
-  double T_real, start_T_real;///< real time so far;
-  double R_total;
-  
   //-- parameters
   bool hasWait;
   double gamma, stepCost, timeCost, deadEndCost;
   uint maxHorizon;
+
+  //-- internal state
+  uint T_step, start_T_step; ///< discrete "time": decision steps so far
+  double T_real, start_T_real;///< real time so far;
+  double R_total;
   
+  // the logic state is fully described by the KB; all other variables just point into the KB
   bool deadEnd, successEnd;
   Graph KB;     ///< current knowledge base
   Graph *start_state=0; ///< the start-state within the KB (is a subgraph item of KB)
@@ -84,6 +86,7 @@ struct FOL_World : MCTS_Environment {
   Graph *rewardFct; ///< the reward function within the KB (is a subgraph item of KB)
   Node *Terminate_keyword=0, *Wait_keyword=0, *Quit_keyword=0, *Quit_literal=0, *Subgoal_keyword=0, *Subgoal_literal=0;
   Graph *subgoals=0;
+
   int verbose;
   int verbFil;
   ofstream fil;
@@ -116,7 +119,7 @@ struct FOL_World : MCTS_Environment {
   void write_state(ostream&);
   void set_state(rai::String&);
   
-  //-- helpers
+  //-- helpers to modify the problem
   Node *addSymbol(const char* name);
   void addFact(const StringA& symbols);
   void addAgent(const char* name);
@@ -133,8 +136,11 @@ struct FOL_World : MCTS_Environment {
   Graph* getState();
   void setState(Graph*, int setT_step=-1);
   Graph* createStateCopy();
-  
+
   void write(std::ostream& os) const { os <<KB; }
+  void writePDDLdomain(std::ostream& os, const char* domainName="raiFolDomain") const;
+  void writePDDLproblem(std::ostream& os, const char* domainName="raiFolDomain", const char* problemName="raiFolProblem") const;
+  void writePDDLfiles(rai::String name);
 };
 stdOutPipe(FOL_World)
 

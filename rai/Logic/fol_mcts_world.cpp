@@ -286,6 +286,7 @@ bool FOL_World::is_terminal_state() const {
 
 void FOL_World::make_current_state_new_start() {
   if(!start_state) start_state = &KB.newSubgraph({"START_STATE"}, state->isNodeOfGraph->parents);
+  state->index();
   start_state->copy(*state);
   start_state->isNodeOfGraph->keys(0)="START_STATE";
   start_T_step = T_step;
@@ -399,6 +400,135 @@ Graph* FOL_World::createStateCopy() {
   new_state->copy(*state);
   return new_state;
 }
+
+void FOL_World::writePDDLdomain(std::ostream& os, const char* domainName) const {
+  os <<"(define (domain " <<domainName;
+
+  //collect all predicate symbols used in the rules
+  CHECK(KB.isIndexed, "");
+  boolA used(KB.N);
+  used=false;
+  NodeL predicates;
+  for(Node* rule:decisionRules) {
+    Graph& Rule = rule->graph();
+    Graph& precond = Rule.elem(-2)->graph();
+    Graph& effect = Rule.elem(-1)->graph();
+    for(Node *n:precond){
+      if(n->keys.N) continue; //no temporary facts
+      uint ID = n->parents(0)->index;
+      if(!used(ID)){ predicates.setAppend(n); used(ID)=true; }
+    }
+    for(Node *n:effect){
+      if(n->keys.N) continue; //no temporary facts
+      uint ID = n->parents(0)->index;
+      if(!used(ID)){ predicates.setAppend(n); used(ID)=true; }
+    }
+  }
+  //output them
+  os <<")\n   (:predicates";
+  for(Node *n:predicates){
+    os <<" (" <<n->parents(0)->keys.last();
+    for(uint i=1;i<n->parents.N;i++) os <<" ?" <<n->parents(i)->keys.last();
+    os <<')';
+  }
+
+  for(Node* rule:decisionRules) {
+    os <<")\n   (:action " <<rule->keys.last();
+
+    Graph& Rule = rule->graph();
+    Graph& precond = Rule.elem(-2)->graph();
+    Graph& effect = Rule.elem(-1)->graph();
+
+    os <<"\n      :parameters (";
+    for(Node *n:Rule) if(n->keys.N>0 && n->parents.N==0 && n->isOfType<bool>()) os <<" ?" <<n->keys.last();
+
+    os <<")\n      :precondition (and";
+    for(Node *n:precond){
+      if(n->keys.N) continue; //no temporary facts
+      bool neg = n->isOfType<bool>() && !n->get<bool>();
+      if(neg) os <<" (not";
+      os <<" (" <<n->parents(0)->keys.last();
+      for(uint i=1;i<n->parents.N;i++) os <<" ?" <<n->parents(i)->keys.last();
+      os <<')';
+      if(neg) os <<')';
+    }
+
+    os <<")\n      :effect (and";
+    for(Node *n:effect){
+      if(n->keys.N) continue; //no temporary facts
+      bool neg = n->isOfType<bool>() && !n->get<bool>();
+      if(neg) os <<" (not";
+      os <<" (" <<n->parents(0)->keys.last();
+      for(uint i=1;i<n->parents.N;i++) os <<" ?" <<n->parents(i)->keys.last();
+      os <<')';
+      if(neg) os <<')';
+    }
+
+    os <<')';
+  }
+  os <<")\n)" <<endl;
+}
+
+void FOL_World::writePDDLproblem(std::ostream& os, const char* domainName, const char* problemName) const {
+  os <<"(define (problem " <<problemName;
+
+  os <<")\n   (:domain " <<domainName;
+
+  //collect all constants used in the start state
+  CHECK(KB.isIndexed, "");
+  boolA used(KB.N);
+  used=false;
+  NodeL constants;
+  {
+    for(Node *n:*start_state){
+      if(n->keys.N) continue; //no temporary facts
+      for(uint i=1;i<n->parents.N;i++){
+        uint ID = n->parents(i)->index;
+        if(!used(ID)){ constants.setAppend(n->parents(i)); used(ID)=true; }
+      }
+    }
+  }
+  //output them
+  os <<")\n   (:objects";
+  for(Node *n:constants) os <<' ' <<n->keys.last();
+
+  //-- start state
+  os <<")\n   (:init";
+  for(Node *n:*start_state) os <<' ' <<*n;
+
+  //-- terminal rules
+  os <<")\n   (:goal (or";
+  for(Node* rule:worldRules) {
+    Graph& Rule = rule->graph();
+    if(Rule.elem(-1)->isOfType<arr>()) continue; //this is a probabilistic rule!
+    Graph& precond = Rule.elem(-2)->graph();
+    Graph& effect = Rule.elem(-1)->graph();
+
+    if(effect.N==1 && effect(0)->parents.N==1 && effect(0)->parents(0)==Quit_keyword){ //this is a termination rule
+      os <<" (and";
+      for(Node *n:precond){
+        bool neg = n->isOfType<bool>() && !n->get<bool>();
+        if(neg) os <<" (not";
+        os <<' ' <<*n;
+//        os <<" (";
+//        for(uint i=0;i<n->parents.N;i++) os <<n->parents(i)->keys.last();
+//        os <<')';
+        if(neg) os <<')';
+      }
+      os <<')';
+    }
+  }
+  os <<"))\n)" <<endl;
+}
+
+void FOL_World::writePDDLfiles(rai::String name){
+  ofstream f1(name+"-domain.pddl");
+  ofstream f2(name+"-problem.pddl");
+  writePDDLdomain(f1, name+"-domain");
+  writePDDLproblem(f2, name+"-domain", name+"-problem");
+}
+
+
 
 Node* FOL_World::addSymbol(const char* name) {
   return KB.newNode<bool>({name}, {}, true);

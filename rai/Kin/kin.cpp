@@ -2105,6 +2105,8 @@ void rai::KinematicWorld::init(const Graph& G, bool addInsteadOfClear) {
       j->mimic = mimicFrame->joint;
       if(!j->mimic) HALT("The joint '" <<*j <<"' is declared coupled to '" <<jointName <<"' -- but that doesn't exist!");
       j->type = j->mimic->type;
+      j->q0 = j->mimic->q0;
+      j->calc_Q_from_q(j->q0, 0);
 
       delete mim;
       f->ats.index();
