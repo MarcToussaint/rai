@@ -46,7 +46,7 @@ void Objective::setCostSpecs(double fromTime, double toTime, int stepsPerPhase, 
 
   if(fromStep<0) fromStep=0;
 //  if(toStep<0) toStep=0;
-//  if(toStep>=(int)T) toStep=T-1;
+  if(toStep>=(int)T && T>0) toStep=T-1;
 
   setCostSpecs(fromStep, toStep, sparse);
 }

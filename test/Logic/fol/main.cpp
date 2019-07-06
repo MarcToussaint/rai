@@ -225,9 +225,6 @@ void testMonteCarlo(){
 int main(int argc, char** argv){
   rai::initCmdLine(argc, argv);
 
-  testFolFunction();
-  return 0;
-
   if(argc>1){
     testLoadAndDot(argv[1]);
     return 0;

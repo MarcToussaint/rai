@@ -32,8 +32,9 @@ struct TM_NewtonEuler : Feature {
 struct TM_NewtonEuler_DampedVelocities : Feature {
   int i;               ///< which shapes does it refer to?
   double gravity=9.81;
+  bool onlyXYPhi=false;
 
-  TM_NewtonEuler_DampedVelocities(int iShape, double _gravity=-1.) : i(iShape) {
+  TM_NewtonEuler_DampedVelocities(int iShape, double _gravity=-1., bool _onlyXYPhi=false) : i(iShape), onlyXYPhi(_onlyXYPhi) {
     order = 1;
     if(_gravity>=0.){
       gravity = _gravity;
@@ -41,7 +42,7 @@ struct TM_NewtonEuler_DampedVelocities : Feature {
       gravity = rai::getParameter<double>("TM_NewtonEuler/gravity", 9.81);
     }
   }
-  TM_NewtonEuler_DampedVelocities(const rai::KinematicWorld& K, const char* iShapeName, double _gravity=-1.) : TM_NewtonEuler_DampedVelocities(initIdArg(K,iShapeName), _gravity){}
+  TM_NewtonEuler_DampedVelocities(const rai::KinematicWorld& K, const char* iShapeName, double _gravity=-1., bool _onlyXYPhi=false) : TM_NewtonEuler_DampedVelocities(initIdArg(K,iShapeName), _gravity, _onlyXYPhi){}
 
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& K) { HALT("can only be of higher order"); }
   virtual uint dim_phi(const rai::KinematicWorld& K) { HALT("can only be of higher order"); }

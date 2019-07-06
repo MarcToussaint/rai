@@ -100,7 +100,7 @@ void TM_NewtonEuler_DampedVelocities::phi(arr &y, arr &J, const WorldL &Ktuple) 
 
   //collect mass info (assume diagonal inertia matrix!!)
   double mass=1.;
-  arr Imatrix = diag(.05, 3);
+  arr Imatrix = diag(.03, 3);
   rai::Frame *a = Ktuple(-2)->frames(i);
   if(a->inertia){
     mass = a->inertia->mass;
@@ -117,6 +117,11 @@ void TM_NewtonEuler_DampedVelocities::phi(arr &y, arr &J, const WorldL &Ktuple) 
 
   y += one_over_mass % F.y;
   if(!!J) J += one_over_mass % F.J;
+
+  if(onlyXYPhi){
+    y({2,4}).setZero();
+    if(!!J) J({2,4}).setZero();
+  }
 }
 
 //===========================================================================
