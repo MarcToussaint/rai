@@ -177,6 +177,7 @@ template<class T> struct Array : std::vector<T>, Serializable {
   void setGrid(uint dim, T lo, T hi, uint steps);
   
   /// @name access by reference (direct memory access)
+  Array<T> ref() const; //a reference on this
   T& elem(int i) const;
 //  T& elem(const Array<int> &I) const;
   T& elem(const Array<uint> &I) const;
@@ -187,7 +188,6 @@ template<class T> struct Array : std::vector<T>, Serializable {
   T& operator()(int i) const;
   T& operator()(int i, int j) const;
   T& operator()(int i, int j, int k) const;
-  Array<T> ref() const; //a reference on this
   Array<T> operator()(std::pair<int, int> I) const;
   Array<T> operator()(int i, std::pair<int, int> J) const;
   Array<T> operator()(int i, int j, std::initializer_list<int> K) const;
@@ -221,11 +221,11 @@ template<class T> struct Array : std::vector<T>, Serializable {
   T& min() const;
   T& max() const;
   void minmax(T& minVal, T& maxVal) const;
-  uint minIndex() const; // -> argmin
-  uint maxIndex() const; // -> argmax
+  uint argmin() const;
+  uint argmax() const;
   void maxIndeces(uint& m1, uint& m2) const; //best and 2nd best -> remove
-  void maxIndex(uint& i, uint& j) const; //-> remove, or return uintA
-  void maxIndex(uint& i, uint& j, uint& k) const; //-> remove
+  void argmax(uint& i, uint& j) const; //-> remove, or return uintA
+  void argmax(uint& i, uint& j, uint& k) const; //-> remove
   int findValue(const T& x) const;
   void findValues(rai::Array<uint>& indices, const T& x) const;
   bool contains(const T& x) const { return findValue(x)!=-1; }
@@ -593,8 +593,8 @@ arr repmat(const arr& A, uint m, uint n);
 
 //inline double max(const arr& x) { return x.max(); }
 //inline double min(const arr& x) { return x.min(); }
-inline uint argmax(const arr& x) { return x.maxIndex(); }
-inline uint argmin(const arr& x) { return x.minIndex(); }
+inline uint argmax(const arr& x) { return x.argmax(); }
+inline uint argmin(const arr& x) { return x.argmin(); }
 
 inline uintA randperm(uint n) {  uintA z;  z.setRandomPerm(n);  return z; }
 inline arr linspace(double base, double limit, uint n) {  arr z;  z.setGrid(1, base, limit, n);  return z;  }

@@ -60,6 +60,8 @@ void solve(){
   lgp.displayBound = BD_seqPath;
   lgp.verbose=2;
 
+  lgp.fol.writePDDLfiles("z");
+
   lgp.run();
 
   rai::wait();

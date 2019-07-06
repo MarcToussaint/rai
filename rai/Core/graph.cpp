@@ -138,10 +138,12 @@ void Node::write(std::ostream& os, bool pythonMode) const {
   if(!container.isIndexed) container.index();
   
   //-- write keys
-  if(pythonMode)
-    keys.write(os, " ", "", "\"\"");
-  else
-    keys.write(os, " ", "", "\0\0");
+  if(keys.N){
+    if(pythonMode)
+      keys.write(os, " ", "", "\"\"");
+    else
+      keys.write(os, " ", "", "\0\0");
+  }
 
   //-- write parents
   if(parents.N) {
@@ -157,18 +159,31 @@ void Node::write(std::ostream& os, bool pythonMode) const {
     }
     os <<')';
   }
+
+  //-- boolean special
+  if(isOfType<bool>()) {
+    bool x = *getValue<bool>();
+    if(pythonMode){ if(x) os <<": True"; else os <<": False"; }
+    else { if(!x) os <<'!'; }
+    return;
+  }
+
+  //-- colon separator
+  if(keys.N || parents.N){
+    if(pythonMode) os <<": ";
+    else os <<':';
+  }
   
   //-- write value
   if(isGraph()) {
-    os <<": ";
-    graph().write(os, ", ", "{}");
+    graph().write(os, ", ", "{  }");
   } else if(isOfType<NodeL>()) {
-    os <<":(";
+    os <<"(";
     for(Node *it: (*getValue<NodeL>())) os <<' ' <<it->keys.last();
     os <<" )";
   } else if(isOfType<rai::String>()) {
     if(pythonMode){
-      os <<":\"" <<*getValue<rai::String>() <<'"';
+      os <<"\"" <<*getValue<rai::String>() <<'"';
     }else{
       const rai::String& str = *getValue<rai::String>();
       char c=str(0);
@@ -176,37 +191,34 @@ void Node::write(std::ostream& os, bool pythonMode) const {
       else os <<":\"" <<str <<'"';
     }
   } else if(isOfType<rai::FileToken>()) {
-    os <<":'" <<getValue<rai::FileToken>()->name <<'\'';
+    os <<"'" <<getValue<rai::FileToken>()->name <<'\'';
   } else if(isOfType<arr>()) {
-    os <<": "; getValue<arr>()->write(os, ", ", NULL, "[]");
+    getValue<arr>()->write(os, ", ", NULL, "[]");
   } else if(isOfType<intA>()) {
-    os <<": "; getValue<intA>()->write(os, ", ", NULL, "[]");
+    getValue<intA>()->write(os, ", ", NULL, "[]");
   } else if(isOfType<intAA>()) {
-    os <<": "; getValue<intAA>()->write(os, ", ", NULL, "[]");
+    getValue<intAA>()->write(os, ", ", NULL, "[]");
   } else if(isOfType<uintA>()) {
-    os <<": "; getValue<uintA>()->write(os, ", ", NULL, "[]");
+    getValue<uintA>()->write(os, ", ", NULL, "[]");
   } else if(isOfType<StringA>()) {
-    os <<": [";
+    os <<"[";
     for(const rai::String& s:get<StringA>()) os <<'\"' <<s <<"\", ";
     os <<']';
   } else if(isOfType<double>()) {
-    os <<": " <<*getValue<double>();
+    os <<*getValue<double>();
   } else if(isOfType<int>()) {
-    os <<": " <<*getValue<int>();
+    os <<*getValue<int>();
   } else if(isOfType<uint>()) {
-    os <<": " <<*getValue<uint>();
-  } else if(isOfType<bool>()) {
-    if(*getValue<bool>()) os <<": True"; else os <<": False";
+    os <<*getValue<uint>();
   } else if(isOfType<Type*>()) {
-    os <<": "; get<Type*>()->write(os);
+    get<Type*>()->write(os);
   } else {
     Node *it = reg_findType(type.name());
     if(it && it->keys.N>1) {
-      os <<":<" <<it->keys(1) <<' ';
+      os <<"<" <<it->keys(1) <<' ';
       writeValue(os);
       os <<'>';
     } else {
-      os <<": ";
       writeValue(os);
     }
   }
@@ -231,7 +243,9 @@ Graph::Graph() : isNodeOfGraph(NULL), pi(NULL), ri(NULL) {
 }
 
 Graph::Graph(const char* filename): Graph() {
-  read(rai::FileToken(filename).getIs());
+  rai::FileToken file(filename, true);
+  read(file);
+  file.cd_start();
 }
 
 Graph::Graph(istream& is) : Graph() {
@@ -484,8 +498,8 @@ void Graph::collapse(Node* a, Node* b){
 }
 
 void Graph::copy(const Graph& G, bool appendInsteadOfClear, bool enforceCopySubgraphToNonsubgraph) {
-  DEBUG(G.checkConsistency();)
-      if(!G.isIndexed) HALT("can't copy non-indexed graph");
+  DEBUG(G.checkConsistency());
+  if(!G.isIndexed) HALT("can't copy non-indexed graph");
   
   CHECK(this!=&G, "Graph self copy -- never do this");
   

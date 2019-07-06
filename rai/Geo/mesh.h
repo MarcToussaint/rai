@@ -60,7 +60,7 @@ struct Mesh : GLDrawer {
   void setCylinder(double r, double l, uint fineness=2);
   void setCappedCylinder(double r, double l, uint fineness=2);
   void setSSBox(double x_width, double y_width, double z_height, double r, uint fineness=2);
-  void setSSCvx(const rai::Mesh& m, double r, uint fineness=2);
+  void setSSCvx(const arr& core, double r, uint fineness=2);
   void setImplicitSurface(ScalarFunction f, double lo=-10., double hi=+10., uint res=100);
   void setImplicitSurface(ScalarFunction f, double xLo, double xHi, double yLo, double yHi, double zLo, double zHi, uint res);
   void setRandom(uint vertices=10);
@@ -87,6 +87,7 @@ struct Mesh : GLDrawer {
   
   /// @name internal computations & cleanup
   void computeNormals();
+  void buildGraph();
   void deleteUnusedVertices();
   void fuseNearVertices(double tol=1e-5);
   void clean();

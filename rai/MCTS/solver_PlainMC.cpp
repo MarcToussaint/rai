@@ -189,7 +189,7 @@ uint PlainMC::getBestActionIdx() {
     else
       Q(a) = Qmin;
   }
-  return Q.maxIndex();
+  return Q.argmax();
 }
 
 MCTS_Environment::Handle PlainMC::getBestAction() {
