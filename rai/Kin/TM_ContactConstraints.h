@@ -6,6 +6,8 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
+#pragma once
+
 #include "feature.h"
 
 struct TM_Contact_POA : Feature {

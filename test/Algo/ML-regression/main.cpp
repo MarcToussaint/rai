@@ -321,7 +321,7 @@ void TEST(MultiClass){
   p_pred = exp(Phi*beta);
   for(uint i=0; i<label.N; i++) {
     p_pred[i]() /= sum(p_pred[i]);
-    label(i) = y[i].maxIndex();
+    label(i) = y[i].argmax();
   }
   rai::arrayBrackets="  ";
   FILE("z.train") <<catCol(X, label, y, p_pred);

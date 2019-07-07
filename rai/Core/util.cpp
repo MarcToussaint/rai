@@ -24,6 +24,7 @@
 #if defined RAI_X11
 #  include <X11/Xlib.h>
 #  include <X11/Xutil.h>
+#  undef Success
 #endif
 #endif
 #ifdef __CYGWIN__

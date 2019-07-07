@@ -1,7 +1,6 @@
 BASE   = ../..
 NAME   = $(shell basename `pwd`)
 OUTPUT = lib$(NAME).so
--include $(BASE)/build/config.mk
 
 X11 = 1
 #PNG = 1
