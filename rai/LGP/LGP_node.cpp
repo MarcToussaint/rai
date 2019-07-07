@@ -205,9 +205,9 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
 
   Graph result = komo.getReport((komo.verbose>0 && bound>=2));
   DEBUG(FILE("z.problem.cost") <<result;);
-  double cost_here = result.get<double>({"total","sos"});
-  double constraints_here = result.get<double>({"total","eq"});
-  constraints_here += result.get<double>({"total","ineq"});
+  double cost_here = result.get<double>({"total","sos_sumOfSqr"});
+  double constraints_here = result.get<double>({"total","eq_sumOfAbs"});
+  constraints_here += result.get<double>({"total","ineq_sumOfPos"});
   if(bound == BD_poseFromSeq){
     cost_here = komo.sos;
     constraints_here = komo.ineq + komo.eq;

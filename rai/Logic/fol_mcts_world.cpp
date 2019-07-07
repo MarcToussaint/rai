@@ -497,7 +497,8 @@ void FOL_World::writePDDLproblem(std::ostream& os, const char* domainName, const
   for(Node *n:*start_state) os <<' ' <<*n;
 
   //-- terminal rules
-  os <<")\n   (:goal (or";
+  os <<")\n   (:goal"; // add an " (or" here if PDDL would support disjunction of goals
+  uint numGoals=0;
   for(Node* rule:worldRules) {
     Graph& Rule = rule->graph();
     if(Rule.elem(-1)->isOfType<arr>()) continue; //this is a probabilistic rule!
@@ -506,6 +507,8 @@ void FOL_World::writePDDLproblem(std::ostream& os, const char* domainName, const
 
     if(effect.N==1 && effect(0)->parents.N==1 && effect(0)->parents(0)==Quit_keyword){ //this is a termination rule
       os <<" (and";
+      CHECK(!numGoals, "downward (in standard config) doesnt work for multiple goals!");
+      numGoals++;
       for(Node *n:precond){
         bool neg = n->isOfType<bool>() && !n->get<bool>();
         if(neg) os <<" (not";
@@ -518,7 +521,7 @@ void FOL_World::writePDDLproblem(std::ostream& os, const char* domainName, const
       os <<')';
     }
   }
-  os <<"))\n)" <<endl;
+  os <<")\n)" <<endl;
 }
 
 void FOL_World::writePDDLfiles(rai::String name){
