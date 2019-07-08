@@ -131,6 +131,8 @@ struct FOL_World : MCTS_Environment {
   }
   void addTerminalRule(const char* literals);
   void addTerminalRule(const StringAA& literals);
+  void addDecisionSequence(std::istream& is);
+
   
   //-- internal access
   Graph* getState();
@@ -141,6 +143,8 @@ struct FOL_World : MCTS_Environment {
   void writePDDLdomain(std::ostream& os, const char* domainName="raiFolDomain") const;
   void writePDDLproblem(std::ostream& os, const char* domainName="raiFolDomain", const char* problemName="raiFolProblem") const;
   void writePDDLfiles(rai::String name);
+  rai::String callPDDLsolver();
+
 };
 stdOutPipe(FOL_World)
 

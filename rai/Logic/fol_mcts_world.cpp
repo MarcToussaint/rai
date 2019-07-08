@@ -525,10 +525,33 @@ void FOL_World::writePDDLproblem(std::ostream& os, const char* domainName, const
 }
 
 void FOL_World::writePDDLfiles(rai::String name){
-  ofstream f1(name+"-domain.pddl");
-  ofstream f2(name+"-problem.pddl");
+  ofstream f1(name+".domain.pddl");
+  ofstream f2(name+".problem.pddl");
   writePDDLdomain(f1, name+"-domain");
   writePDDLproblem(f2, name+"-domain", name+"-problem");
+}
+
+rai::String FOL_World::callPDDLsolver(){
+  writePDDLfiles("z");
+
+  rai::String cmd = "~/git/downward/fast-downward.py";
+  cmd <<" z.domain.pddl z.problem.pddl";
+  cmd <<" --search \"astar(ff(transform=no_transform(), cache_estimates=true))\"";
+
+  rai::system(cmd);
+
+  rai::system("mv sas_plan z.sas_plan; mv output.sas z.output.sas");
+
+  rai::String plan(FILE("z.sas_plan"));
+
+  //cut the last line comment with ';'
+  uint i=plan.N;
+  for(;i--;) if(plan(i)==';') break;
+  plan.resize(i, true);
+
+  cout <<"FOUND PLAN: " <<plan << endl;
+
+  return plan;
 }
 
 
@@ -584,4 +607,10 @@ void FOL_World::addTerminalRule(const StringAA& literals) {
   }
   
   cout <<"CREATED RULE NODE:" <<*rule.isNodeOfGraph <<endl;
+}
+
+void FOL_World::addDecisionSequence(std::istream& is){
+  Graph& seq = KB.newSubgraph({"Decisions"}, {});
+  seq.read(is);
+  cout <<"CREATED DECISION SEQUENCE:" <<*seq.isNodeOfGraph <<endl;
 }
