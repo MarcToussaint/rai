@@ -7,6 +7,7 @@
 // IK problems
 void addBoxGrasp(KOMO& komo, const char* object, const char* endeff, int axis=1);
 void chooseBoxGrasp(rai::KinematicWorld& K, const char* endeff, const char* object);
+void findOpposingGrasp(rai::KinematicWorld& K, const char* fingerL, const char* fingerR, const char* object);
 
 // motion interpolation
 void addMotionTo(KOMO& komo, const arr &target_q, const StringA& target_joints, const char* endeff, double up, double down);

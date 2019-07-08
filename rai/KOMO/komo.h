@@ -96,6 +96,7 @@ struct KOMO : NonCopyable {
 
   //-- verbosity only: buffers of all feature values computed on last set_x
   arr featureValues;           ///< storage of all features in all time slices
+  arrA featureJacobians;           ///< storage of all features in all time slices
   ObjectiveTypeA featureTypes; ///< storage of all feature-types in all time slices
   bool featureDense;
 //  arr dualSolution;            ///< the dual solution computed during constrained optimization
@@ -240,6 +241,7 @@ struct KOMO : NonCopyable {
   //-- optimization macros
   void setSpline(uint splineT);      ///< optimize B-spline nodes instead of the path; splineT specifies the time steps per node
   void reset(double initNoise=.01);  ///< reset the optimizer (initializes x to a default path)
+  void setInitialConfigurations(const arr& q);
   void initWithConstant(const arr& q);
   void initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase=1, bool sineProfile=true);
   void run();                        ///< run the optimization (using OptConstrained -- its parameters are read from the cfg file)
@@ -258,6 +260,8 @@ struct KOMO : NonCopyable {
   arr getPath_tau();
   arr getPath_times();
   arr getPath_energies();
+
+  arr getActiveConstraintJacobian();
 
   void reportProblem(ostream &os=std::cout);
   Graph getReport(bool gnuplt=false, int reportFeatures=0, ostream& featuresOs=std::cout); ///< return a 'dictionary' summarizing the optimization results (optional: gnuplot task costs; output detailed cost features per time slice)

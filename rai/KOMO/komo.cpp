@@ -1349,6 +1349,7 @@ void KOMO::reset(double initNoise) {
   x = getPath_decisionVariable();
   dual.clear();
   featureValues.clear();
+  featureJacobians.clear();
   featureTypes.clear();
   komo_problem.clear();
   dense_problem.clear();
@@ -1357,6 +1358,10 @@ void KOMO::reset(double initNoise) {
   if(splineB.N) {
     z = pseudoInverse(splineB) * x;
   }
+}
+
+void KOMO::setInitialConfigurations(const arr& q){
+  for(uint s=0;s<k_order;s++) configurations(s)->setJointState(q);
 }
 
 void KOMO::initWithConstant(const arr& q){
@@ -1507,12 +1512,6 @@ void KOMO::optimize(bool initialize){
   if(verbose>0) reportProblem();
 
   run();
-
-//  if(verbose>0){
-//    Graph specs = getProblemGraph(true);
-//    cout <<specs <<endl;
-//    cout <<getReport(verbose>1) <<endl; // Enables plot
-//  }
 }
 
 void KOMO_ext::getPhysicsReference(uint subSteps, int display) {
@@ -2203,12 +2202,12 @@ Graph KOMO::getProblemGraph(bool includeValues){
 
 double KOMO::getConstraintViolations(){
   Graph R = getReport(false);
-  return R.get<double>("constraints");
+  return R.get<double>("ineq") + R.get<double>("eq");
 }
 
 double KOMO::getCosts(){
   Graph R = getReport(false);
-  return R.get<double>("sqrCosts");
+  return R.get<double>("sos");
 }
 
 void KOMO::Conv_MotionProblem_KOMO_Problem::getStructure(uintA& variableDimensions, uintA& featureTimes, ObjectiveTypeA& featureTypes) {
@@ -2343,6 +2342,7 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
   CHECK_EQ(M, dimPhi, "");
 //  if(!!lambda) CHECK_EQ(prevLambda, lambda, ""); //this ASSERT only holds is none of the tasks is variable dim!
   komo.featureValues = phi;
+  if(!!J) komo.featureJacobians = J;
   if(!!tt) komo.featureTypes = tt;
   komo.featureDense=false;
 
@@ -2462,6 +2462,7 @@ void KOMO::Conv_MotionProblem_DenseProblem::phi(arr& phi, arr& J, arr& H, Object
   CHECK_EQ(M, dimPhi, "");
 //  if(!!lambda) CHECK_EQ(prevLambda, lambda, ""); //this ASSERT only holds is none of the tasks is variable dim!
   komo.featureValues = phi;
+  if(!!J) komo.featureJacobians.resize(1).scalar() = J;
   if(!!tt) komo.featureTypes = tt;
   komo.featureDense=true;
 
@@ -2777,6 +2778,25 @@ arr KOMO::getPath_energies() {
     X(t) = y.scalar();
   }
   return X;
+}
+
+arr KOMO::getActiveConstraintJacobian(){
+  CHECK_EQ(featureDense, true, "");
+  uint n=0;
+  for(uint i=0;i<dual.N;i++) if(dual.elem(i)>0.) n++;
+
+  arr J(n, x.N);
+
+  n=0;
+  for(uint i=0;i<dual.N;i++){
+    if(dual.elem(i)>0.){
+      J[n] = featureJacobians.scalar()[i];
+      n++;
+    }
+  }
+  CHECK_EQ(n, J.d0, "");
+
+  return J;
 }
 
 
