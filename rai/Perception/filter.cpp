@@ -224,7 +224,7 @@ PerceptL Filter::assign(const PerceptL& inputs, const PerceptL& database, const 
   uint num_new = inputs.N;
   
   for(uint i = 0; i < ha.starred.dim(0); ++i) {   //index over inputs
-    uint col = ha.starred[i]().maxIndex();        //index over database
+    uint col = ha.starred[i]().argmax();        //index over database
     // 3 cases:
     // 1) Existed before, no longer exists. If i > num_new
     // 2) Existed before and still exists. If costs < distannce_threshold

@@ -228,7 +228,7 @@ void rai::Frame::write(std::ostream& os) const {
   
   for(Node *n : ats) {
     StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H", "axis", "A", "B", "mimic"};
-    if(!avoid.contains(n->keys.last())) os <<' ' <<*n;
+    if(!avoid.contains(n->keys.last())) os <<", " <<*n;
   }
   
   os <<" }\n";
@@ -292,7 +292,7 @@ void rai::Frame::setConvexMesh(const std::vector<double>& points, const std::vec
   }else{
     getShape().type() = ST_ssCvx;
     getShape().sscCore().V.clear().operator=(points).reshape(-1, 3);
-    getShape().mesh().setSSCvx(getShape().sscCore(), radius);
+    getShape().mesh().setSSCvx(getShape().sscCore().V, radius);
   }
   if(colors.size()){
     getShape().mesh().C.clear().operator=(convert<double>(byteA(colors))/255.).reshape(-1, 3);
@@ -400,7 +400,7 @@ rai::Joint::Joint(Frame &f, Joint *copyJoint)
   frame->K.reset_q();
   
   if(copyJoint) {
-    qIndex=copyJoint->qIndex; dim=copyJoint->dim; mimic=reinterpret_cast<Joint*>(copyJoint->mimic?1l:0l); constrainToZeroVel=copyJoint->constrainToZeroVel;
+    qIndex=copyJoint->qIndex; dim=copyJoint->dim; mimic=reinterpret_cast<Joint*>(copyJoint->mimic?1l:0l);
     type=copyJoint->type; axis=copyJoint->axis; limits=copyJoint->limits; q0=copyJoint->q0; H=copyJoint->H; scale=copyJoint->scale;
     active=copyJoint->active;
     
@@ -871,16 +871,13 @@ void rai::Joint::write(Graph& g){
 
 void rai::Joint::write(std::ostream& os) const {
   os <<" joint:" <<type;
-  if(H!=1.) os <<" ctrl_H:"<<H;
-  if(scale!=1.) os <<" joint_scale:"<<scale;
-  if(limits.N) os <<" limits:[" <<limits <<"]";
+  if(H!=1.) os <<", ctrl_H:" <<H;
+  if(scale!=1.) os <<", joint_scale:" <<scale;
+  if(limits.N) os <<", limits:" <<limits;
   if(mimic) {
-    os <<" mimic:(" <<mimic->frame->name <<')';
+    os <<", mimic:(" <<mimic->frame->name <<')';
   }
   os <<' ';
-//  Node *n;
-//  if((n=frame->ats["Q"])) os <<*n <<' ';
-//  if((n=frame->ats["q"])) os <<*n <<' ';
 }
 
 //===========================================================================
@@ -987,13 +984,13 @@ void rai::Shape::read(const Graph& ats) {
 
 void rai::Shape::write(std::ostream& os) const {
   os <<" shape:" <<_type;
-  if(_type!=ST_mesh) os <<" size:[" <<size <<"]";
+  if(_type!=ST_mesh) os <<", size:" <<size;
   
   Node *n;
-  if((n=frame.ats["color"])) os <<' ' <<*n;
-  if((n=frame.ats["mesh"])) os <<' ' <<*n;
-  if((n=frame.ats["meshscale"])) os <<' ' <<*n;
-  if(cont) os <<" contact:" <<(int)cont;
+  if((n=frame.ats["color"])) os <<", " <<*n;
+  if((n=frame.ats["mesh"])) os <<", " <<*n;
+  if((n=frame.ats["meshscale"])) os <<", " <<*n;
+  if(cont) os <<", contact:" <<(int)cont;
 }
 
 void rai::Shape::write(Graph& g){
@@ -1080,7 +1077,7 @@ void rai::Shape::createMeshes() {
       sscCore().V = arr(1,3, {0.,0.,0.});
       double rad=1;
       if(size.N) rad=size.last();
-      mesh().setSSCvx(sscCore(), rad);
+      mesh().setSSCvx(sscCore().V, rad);
       //      mesh().setSphere();
       //      mesh().scale(size(3), size(3), size(3));
     } break;
@@ -1091,7 +1088,7 @@ void rai::Shape::createMeshes() {
     case rai::ST_capsule:
       CHECK(size(-1)>1e-10,"");
       sscCore().V = arr(2,3, {0.,0.,-.5*size(-2), 0.,0.,.5*size(-2)});
-      mesh().setSSCvx(sscCore(), size(-1));
+      mesh().setSSCvx(sscCore().V, size(-1));
       //      mesh().setCappedCylinder(size(3), size(2));
       //      mesh().setSSBox(2.*size(3), 2.*size(3), size(2)+2.*size(3), size(3));
       break;
@@ -1111,7 +1108,7 @@ void rai::Shape::createMeshes() {
         CHECK(mesh().V.N, "mesh or sscCore needs to be loaded");
         sscCore() = mesh();
       }
-      mesh().setSSCvx(sscCore(), size.last());
+      mesh().setSSCvx(sscCore().V, size.last());
       break;
     case rai::ST_ssBox: {
       if(size(3)<1e-10) {
@@ -1175,7 +1172,7 @@ arr rai::Inertia::getFrameRelativeWrench() {
 }
 
 void rai::Inertia::write(std::ostream &os) const {
-  os <<" mass:" <<mass;
+  os <<", mass:" <<mass;
 }
 
 void rai::Inertia::write(Graph& g){

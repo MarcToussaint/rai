@@ -12,6 +12,7 @@
 #include <Optim/constrained.h>
 #include <Optim/KOMO_Problem.h>
 #include "objective.h"
+#include <Kin/switch.h>
 #include <Kin/flag.h>
 #include <Kin/featureSymbols.h>
 
@@ -24,15 +25,19 @@ enum SkeletonSymbol{
   SY_inside,
   SY_impulse,
   SY_initial,
+  SY_free,
   SY_stable,
   SY_stableOn,
   SY_dynamic,
   SY_dynamicOn,
   SY_dynamicTrans,
+  SY_quasiStatic,
+  SY_quasiStaticOn,
   SY_liftDownUp,
   SY_break,
 
   SY_contact,
+  SY_contactStick,
   SY_bounce,
 
   SY_magic,
@@ -40,6 +45,8 @@ enum SkeletonSymbol{
 
   SY_push,
   SY_graspSlide,
+
+  SY_dampMotion,
 
   SY_noCollision,
   SY_identical,
@@ -141,7 +148,9 @@ struct KOMO : NonCopyable {
   struct Objective* addObjective(const arr& times, ObjectiveType type, const FeatureSymbol& feat, const StringA& frames={}, const arr& scale=NoArr, const arr& target=NoArr, int order=-1);
 
   void addSwitch(double time, bool before, rai::KinematicSwitch* sw);
-  void addSwitch(double time, bool before, const char *type, const char* ref1, const char* ref2, const rai::Transformation& jFrom=NoTransformation);
+  void addSwitch(double time, bool before, rai::JointType type, rai::SwitchInitializationType init,
+                       const char* ref1, const char* ref2,
+                       const rai::Transformation& jFrom=NoTransformation, const rai::Transformation& jTo=NoTransformation);
   void addFlag(double time, rai::Flag* fl, int deltaStep=0);
   void addContact_slide(double startTime, double endTime, const char *from, const char* to);
   void addContact_stick(double startTime, double endTime, const char *from, const char* to);

@@ -364,7 +364,7 @@ void rai::Mesh::addMesh(const Mesh& mesh2, const rai::Transformation& X) {
 }
 
 void rai::Mesh::makeConvexHull() {
-  if(!V.N) return;
+  if(V.d0<=1) return;
 #if 1
   V = getHull(V, T);
   if(C.nd==2) C = mean(C);
@@ -414,7 +414,7 @@ void rai::Mesh::makeLineStrip() {
   }
 }
 
-void rai::Mesh::setSSCvx(const rai::Mesh& m, double r, uint fineness) {
+void rai::Mesh::setSSCvx(const arr& core, double r, uint fineness) {
   if(r>0.) {
     Mesh ball;
     ball.setSphere(fineness);
@@ -422,16 +422,17 @@ void rai::Mesh::setSSCvx(const rai::Mesh& m, double r, uint fineness) {
     
     arr c=C;
     clear();
-    for(uint i=0; i<m.V.d0; i++) {
-      ball.translate(m.V(i,0), m.V(i,1), m.V(i,2));
+    for(uint i=0; i<core.d0; i++) {
+      ball.translate(core(i,0), core(i,1), core(i,2));
       addMesh(ball);
-      ball.translate(-m.V(i,0), -m.V(i,1), -m.V(i,2));
+      ball.translate(-core(i,0), -core(i,1), -core(i,2));
     }
     makeConvexHull();
     C=c;
   } else {
     arr c=C;
-    operator=(m);
+    V = core;
+    makeConvexHull();
     C=c;
   }
 }
@@ -2219,7 +2220,7 @@ void closestPointOnBox(arr& closest, arr& signs, const rai::Transformation& t, d
   closest = a_rel;
   arr del_abs = fabs(a_rel)-dim;
   if(del_abs.max()<0.) { //inside
-    uint side=del_abs.maxIndex(); //which side are we closest to?
+    uint side=del_abs.argmax(); //which side are we closest to?
     //in positive or neg direction?
     if(a_rel(side)>0) { closest(side) = dim(side);  signs(side)=+1.; }
     else             { closest(side) =-dim(side);  signs(side)=-1.; }
@@ -2247,7 +2248,7 @@ double DistanceFunction_Box::f(arr& g, arr& H, const arr& x) {
   arr del_abs = fabs(a_rel)-dim;
   //-- find closest point on box and distance to it
   if(del_abs.max()<0.) { //inside
-    uint side=del_abs.maxIndex(); //which side are we closest to?
+    uint side=del_abs.argmax(); //which side are we closest to?
     if(a_rel(side)>0) closest(side) = dim(side);  else  closest(side)=-dim(side); //in positive or neg direction?
   } else { //outside
     closest = elemWiseMax(-dim,closest);
@@ -2306,18 +2307,20 @@ ScalarFunction DistanceFunction_SSBox = [](arr& g, arr& H, const arr& x) -> doub
   return d;
 };
 
-uint rai::Mesh::support(const arr &dir) {
-  if(!graph.N) { //build graph
-    graph.resize(V.d0);
-    for(uint i=0; i<T.d0; i++) {
-      graph(T(i,0)).setAppend(T(i,1));
-      graph(T(i,0)).setAppend(T(i,2));
-      graph(T(i,1)).setAppend(T(i,0));
-      graph(T(i,1)).setAppend(T(i,2));
-      graph(T(i,2)).setAppend(T(i,0));
-      graph(T(i,2)).setAppend(T(i,1));
-    }
+void rai::Mesh::buildGraph(){
+  graph.resize(V.d0);
+  for(uint i=0; i<T.d0; i++) {
+    graph(T(i,0)).setAppend(T(i,1));
+    graph(T(i,0)).setAppend(T(i,2));
+    graph(T(i,1)).setAppend(T(i,0));
+    graph(T(i,1)).setAppend(T(i,2));
+    graph(T(i,2)).setAppend(T(i,0));
+    graph(T(i,2)).setAppend(T(i,1));
   }
+}
+
+uint rai::Mesh::support(const arr &dir) {
+  if(!graph.N) buildGraph();
   
   arr q(V.d0);
   for(uint i=0; i<V.d0; i++) q(i) = scalarProduct(dir, V[i]);

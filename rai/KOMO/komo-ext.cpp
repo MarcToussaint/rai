@@ -9,7 +9,7 @@
 #include <Kin/TM_PairCollision.h>
 #include <Kin/F_grasping.h>
 
-double shapeSize(const rai::KinematicWorld& K, const char* name, uint i=1);
+double shapeSize(const rai::KinematicWorld& K, const char* name, uint i);
 
 void addBoxGrasp(KOMO& komo, const char* object, const char* endeff, int axis){
   //  komo.addObjective(0., 0., OT_eq, FS_accumulatedCollisions, {}, 1e0);
@@ -18,7 +18,7 @@ void addBoxGrasp(KOMO& komo, const char* object, const char* endeff, int axis){
     }
 
   //height to grasp
-  double h = .5*shapeSize(komo.world, object);
+    double h = .5*shapeSize(komo.world, object, 1);
 #if 0
   setTask(0.,0.,
           new TM_LinTrans(new TM_Default(TMT_pos, K, endeff, {0.,0.,.05}, object), {2,3,{0.,1.,0., 0.,0.,1.}}, {}),

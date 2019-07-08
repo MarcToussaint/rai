@@ -469,9 +469,9 @@ struct Enum {
   enum_T x;
   static const char* names [];
   Enum():x((enum_T)-1) {}
-  explicit Enum(const enum_T& y):x(y) {}
+  explicit Enum(enum_T y):x(y) {}
   explicit Enum(const rai::String& str):Enum() { operator=(str); }
-  const enum_T& operator=(const enum_T& y) { x=y; return x; }
+  const enum_T& operator=(enum_T y) { x=y; return x; }
   bool operator==(const enum_T& y) const { return x==y; }
   bool operator!=(const enum_T& y) const { return x!=y; }
   operator enum_T() const { return x; }

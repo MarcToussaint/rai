@@ -257,9 +257,9 @@ rai::Frame* rai::KinematicWorld::addObject(rai::ShapeType shape, const arr& size
 }
 #endif
 
-rai::Frame* rai::KinematicWorld::addObject(const char* name, const char* parent, rai::ShapeType shape, const arr& size, const arr& col, const arr& pos, const arr& rot){
+rai::Frame* rai::KinematicWorld::addObject(const char* name, const char* parent, rai::ShapeType shape, const arr& size, const arr& col, const arr& pos, const arr& rot, bool isSubFrame){
   rai::Frame *f = addFrame(name, parent);
-  if(f->parent) f->setJoint(rai::JT_rigid);
+  if(f->parent && !isSubFrame) f->setJoint(rai::JT_rigid);
   f->setShape(shape, size);
   f->setContact(-1);
   if(col.N) f->setColor(col);
@@ -2105,6 +2105,8 @@ void rai::KinematicWorld::init(const Graph& G, bool addInsteadOfClear) {
       j->mimic = mimicFrame->joint;
       if(!j->mimic) HALT("The joint '" <<*j <<"' is declared coupled to '" <<jointName <<"' -- but that doesn't exist!");
       j->type = j->mimic->type;
+      j->q0 = j->mimic->q0;
+      j->calc_Q_from_q(j->q0, 0);
 
       delete mim;
       f->ats.index();

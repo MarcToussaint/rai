@@ -164,7 +164,7 @@ void LGP_Tree::initDisplay() {
 void LGP_Tree::renderToVideo(int specificBound, const char* filePrefix) {
   if(specificBound<0) specificBound=displayBound;
   CHECK(focusNode->komoProblem(specificBound) && focusNode->komoProblem(specificBound)->configurations.N, "level " <<specificBound <<" has not been computed for the current 'displayFocus'");
-  if(specificBound<views.N && views(specificBound)){
+  if(specificBound<(int)views.N && views(specificBound)){
     renderConfigurations(focusNode->komoProblem(specificBound)->configurations, filePrefix, -2, 600, 600, &views(specificBound)->copy.gl().camera);
   }else{
     renderConfigurations(focusNode->komoProblem(specificBound)->configurations, filePrefix, -2, 600, 600);
@@ -291,8 +291,8 @@ void LGP_Tree::inspectSequence(const rai::String& seq){
   auto S = node->getSkeleton();
   writeSkeleton(cout, S, getSwitchesFromSkeleton(S));
 
-  OpenGL gl;
-  gl.camera.setDefault();
+  ptr<OpenGL> gl = make_shared<OpenGL>();
+  gl->camera.setDefault();
 
   //-- first test pose bounds along the path
   BoundType bound = BD_pose;

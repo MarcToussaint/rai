@@ -136,7 +136,6 @@ struct Joint : NonCopyable{
   
   Vector axis=0;          ///< joint axis (same as X.rot.getX() for standard hinge joints)
   Enum<JointType> type;   ///< joint type
-  bool constrainToZeroVel=false;
   bool active=true;  ///< if false, this joint is not considered part of the q-vector
   
   //attachments to the joint

@@ -34,10 +34,30 @@ void F_netForce::phi(arr &y, arr &J, const rai::KinematicWorld& K) {
     force(2) += gravity * mass;
   }
 
+  //-- collect contacts and signs FOR ALL shapes attached to this link
+  rai::Array<rai::Contact*> contacts;
+  arr signs;
+  FrameL F;
+  F.append(a);
+  a->getRigidSubFrames(F);
+  for(rai::Frame *f:F){
+    for(rai::Contact *con:f->contacts){
+      CHECK(&con->a==f || &con->b==f, "");
+      contacts.append(con);
+      signs.append( (&con->a==f ? +1. : -1.) );
+    }
+  }
+
+#if 0
   for(rai::Contact *con:a->contacts){
     double sign = +1.;
     CHECK(&con->a==a || &con->b==a, "");
     if(&con->b==a) sign=-1.;
+#else
+  for(uint i=0;i<contacts.N;i++){
+    rai::Contact *con = contacts(i);
+    double sign = signs(i);
+#endif
 
     //get the force
     arr f, Jf;

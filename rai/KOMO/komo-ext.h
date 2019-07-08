@@ -33,7 +33,6 @@ struct KOMO_ext : KOMO{
   // high-level 'script elements' to define tasks: typically adding multiple tasks to realize some kind of 'action'
   //
 
-  void setAbstractTask(double phase, const Graph& facts, int verbose=0);
   //-- dynamic
   void setImpact(double time, const char* a, const char* b);
   void setOverTheEdge(double time, const char* object, const char* from, double margin=.0);

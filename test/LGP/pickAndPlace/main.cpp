@@ -60,6 +60,8 @@ void solve(){
   lgp.displayBound = BD_seqPath;
   lgp.verbose=2;
 
+  lgp.fol.writePDDLfiles("z");
+
   lgp.run();
 
   rai::wait();
@@ -83,9 +85,9 @@ int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 //  rnd.clockSeed();
 
-//  solve();
+  solve();
 
-  testBounds();
+//  testBounds();
 
   return 0;
 }

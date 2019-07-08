@@ -208,6 +208,9 @@ installUbuntu: force
 printUbuntu: force
 	@echo $(DEPEND_UBUNTU)
 
+printDepend: force
+	@echo $(DEPEND)
+
 depend: generate_Makefile.dep
 
 # dependAll: force
@@ -295,6 +298,10 @@ pywrapper: $(OUTPUT) $(MODULE_NAME)py.so $(MODULE_NAME)py.py
 	$(LINK) $(LDFLAGS) -o $@ $(OBJS) $(LIBS) $(SHAREFLAG)
 	cp $@ $(BASE)/lib
 
+#%.so: $(PREOBJS) $(BUILDS) z.SRCS.o
+#	$(LINK) $(LDFLAGS) -o $@ z.SRCS.o $(LIBS) $(SHAREFLAG)
+#	cp $@ $(BASE)/lib
+
 %.lib: $(PREOBJS) $(BUILDS) $(OBJS)
 	$(LINK) $(LDFLAGS) -o $@ $(OBJS) $(LIBS) -static ### $(SHAREFLAG)
 
@@ -348,8 +355,9 @@ endif
 generate_Makefile.dep: $(SRCS)
 	-$(CXX) -MM $(SRCS) $(CFLAGS) $(CXXFLAGS) > Makefile.dep
 
-includeAll.cxx: force
-	find . -maxdepth 1 -name '*.cpp' -exec echo "#include \"{}\"" \; > includeAll.cxx
+z.SRCS.cxx: $(SRCS)
+	@echo "$(SRCS:%=#include\"%\"\n)" > z.SRCS.cxx
+#	find . -maxdepth 1 -name '*.cpp' -exec echo "#include \"{}\"" \; > libInc.cxx
 
 
 ################################################################################
@@ -425,6 +433,10 @@ endif
 inPath_printUbuntu/%: $(BASE)/rai/%
 	@echo "#" $*
 	@-$(MAKE) -C $< printUbuntu --no-print-directory
+
+inPath_printDepend/%: $(BASE)/rai/%
+	@echo "#" $*
+	@-$(MAKE) -C $< printDepend --no-print-directory
 
 inPath_makePython/%: %
 	make --directory=$< pywrapper

@@ -74,27 +74,33 @@ void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
 void TM_NewtonEuler_DampedVelocities::phi(arr &y, arr &J, const WorldL &Ktuple) {
   CHECK_EQ(order, 1, "");
 
-  //get linear and angular accelerations
+  //get linear and angular velocities
   TM_LinAngVel pos(i);
   pos.order=1;
   pos.phi(y, J, Ktuple);
 
+  double friction=1.;
+  y *= friction;
+  if(!!J) J *= friction;
+
   //add gravity
-  if(Ktuple(-1)->hasTimeJoint()){
-    double tau; arr Jtau;
-    Ktuple(-1)->kinematicsTau(tau, Jtau);
-    y(2) += gravity*tau;
-    if(!!J){
-      expandJacobian(Jtau, Ktuple, -1);
-      J[2] += gravity*Jtau;
+  if(gravity){
+    if(Ktuple(-1)->hasTimeJoint()){
+      double tau; arr Jtau;
+      Ktuple(-1)->kinematicsTau(tau, Jtau);
+      y(2) += gravity*tau;
+      if(!!J){
+        expandJacobian(Jtau, Ktuple, -1);
+        J[2] += gravity*Jtau;
+      }
+    }else{
+      y(2) += gravity * Ktuple(-1)->frames.first()->tau;
     }
-  }else{
-    y(2) += gravity * Ktuple(-1)->frames.first()->tau;
   }
 
   //collect mass info (assume diagonal inertia matrix!!)
-  double mass=1;
-  arr Imatrix = diag(.1, 3);
+  double mass=1.;
+  arr Imatrix = diag(.03, 3);
   rai::Frame *a = Ktuple(-2)->frames(i);
   if(a->inertia){
     mass = a->inertia->mass;
@@ -107,11 +113,15 @@ void TM_NewtonEuler_DampedVelocities::phi(arr &y, arr &J, const WorldL &Ktuple) 
   one_over_mass *= forceScaling;
 
   //collect total contact forces
-  Value F = F_netForce(a->ID, false, true)(*Ktuple(-1));
-  if(!!J) expandJacobian(F.J, Ktuple, -1);
+  Value F = F_netForce(a->ID, false, true)(Ktuple);
 
   y += one_over_mass % F.y;
   if(!!J) J += one_over_mass % F.J;
+
+  if(onlyXYPhi){
+    y({2,4}).setZero();
+    if(!!J) J({2,4}).setZero();
+  }
 }
 
 //===========================================================================
