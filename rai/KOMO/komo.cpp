@@ -2159,8 +2159,9 @@ Graph KOMO::getProblemGraph(bool includeValues){
 #endif
 
   //full configuration paths
-  g.newNode<arrA>({"x"}, {}, getPath_q());
   g.newNode<arr>({"X"}, {}, getPath_frames());
+  g.newNode<arrA>({"x"}, {}, getPath_q());
+  g.newNode<arr>({"dual"}, {}, dual);
 
   //objectives
   for(Objective* ob : objectives){
