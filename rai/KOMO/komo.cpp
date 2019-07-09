@@ -62,9 +62,9 @@ KOMO::KOMO() : useSwift(true), useSwitches(true), verbose(1), komo_problem(*this
   verbose = getParameter<int>("KOMO/verbose",1);
 }
 
-KOMO::KOMO(const KinematicWorld& K, bool )
+KOMO::KOMO(const KinematicWorld& K, bool _useSwift)
   : KOMO() {
-  setModel(K, true);
+  setModel(K, _useSwift);
   world.optimizeTree();
   world.calc_q();
 }
