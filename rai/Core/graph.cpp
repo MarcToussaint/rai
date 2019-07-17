@@ -134,14 +134,17 @@ bool Node::matches(const StringA &query_keys) {
   return true;
 }
 
-void Node::write(std::ostream& os, bool pythonMode) const {
+void Node::write(std::ostream& os, bool yamlMode) const {
   if(!container.isIndexed) container.index();
   
   //-- write keys
   if(keys.N){
-    if(pythonMode)
-      keys.write(os, " ", "", "\"\"");
-    else
+    if(yamlMode){
+      if(keys.N!=1) os <<'"';
+      keys.write(os, " ", "", "\0\0");
+//      keys.write(os, " ", "", "\"\"");
+      if(keys.N!=1) os <<'"';
+    }else
       keys.write(os, " ", "", "\0\0");
   }
 
@@ -163,32 +166,32 @@ void Node::write(std::ostream& os, bool pythonMode) const {
   //-- boolean special
   if(isOfType<bool>()) {
     bool x = *getValue<bool>();
-    if(pythonMode){ if(x) os <<": True"; else os <<": False"; }
+    if(yamlMode){ if(x) os <<": True"; else os <<": False"; }
     else { if(!x) os <<'!'; }
     return;
   }
 
   //-- colon separator
   if(keys.N || parents.N){
-    if(pythonMode) os <<": ";
+    if(yamlMode) os <<": ";
     else os <<':';
   }
   
   //-- write value
   if(isGraph()) {
-    graph().write(os, ", ", "{  }");
+    graph().write(os, ", ", "{  }", yamlMode);
   } else if(isOfType<NodeL>()) {
     os <<"(";
     for(Node *it: (*getValue<NodeL>())) os <<' ' <<it->keys.last();
     os <<" )";
   } else if(isOfType<rai::String>()) {
-    if(pythonMode){
-      os <<"\"" <<*getValue<rai::String>() <<'"';
+    if(yamlMode){
+      os <<'"' <<*getValue<rai::String>() <<'"';
     }else{
       const rai::String& str = *getValue<rai::String>();
       char c=str(0);
-      if((c>='a'&& c<='z') || (c>='A'&& c<='Z') ) os <<":" <<str;
-      else os <<":\"" <<str <<'"';
+      if((c>='a'&& c<='z') || (c>='A'&& c<='Z') ) os <<str;
+      else os <<'"' <<str <<'"';
     }
   } else if(isOfType<rai::FileToken>()) {
     os <<"'" <<getValue<rai::FileToken>()->name <<'\'';
@@ -937,11 +940,11 @@ void Graph::readJson(std::istream &is) {
 
 #undef PARSERR
 
-void Graph::write(std::ostream& os, const char *ELEMSEP, const char *BRACKETS) const {
+void Graph::write(std::ostream& os, const char *ELEMSEP, const char *BRACKETS, bool yamlMode) const {
   uint BRACKETSlength=0;
   if(BRACKETS) BRACKETSlength=strlen(BRACKETS);
   for(uint b=0;b<BRACKETSlength/2;b++) os <<BRACKETS[b];
-  for(uint i=0; i<N; i++) { if(i) os <<ELEMSEP;  if(elem(i)) elem(i)->write(os); else os <<"<NULL>"; }
+  for(uint i=0; i<N; i++) { if(i) os <<ELEMSEP;  if(elem(i)) elem(i)->write(os, yamlMode); else os <<"<NULL>"; }
   for(uint b=BRACKETSlength/2; b<BRACKETSlength; b++) os <<BRACKETS[b];
   os <<std::flush;
 }

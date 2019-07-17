@@ -1808,8 +1808,8 @@ template<class T> void rai::Array<T>::write(std::ostream& os, const char *ELEMSE
     for(uint i=0; i<N; i++) cout <<'(' <<elems[i] <<") " <<elem(i) <<endl;
   } else {
     if(BRACKETS[0]) os <<BRACKETS[0];
-    if(dimTag || nd>=3) { os <<' '; writeDim(os); if(nd==2) os <<LINESEP; else os <<' '; }
-    if(nd>=3) os <<LINESEP;
+    if(dimTag || nd>3) { os <<' '; writeDim(os); if(nd==2) os <<'\n'; else os <<' '; }
+    if(nd>=3) os <<'\n';
     if(nd==0 && N==1) {
       os <<(const T&)scalar();
     }
@@ -1825,7 +1825,7 @@ template<class T> void rai::Array<T>::write(std::ostream& os, const char *ELEMSE
         for(i=0; i<d1; i++) os <<(i?ELEMSEP:"") <<operator()(j, i);
       }
     if(nd==3) for(k=0; k<d0; k++) {
-        if(k) os <<LINESEP;
+        if(k) os <<'\n';
         for(j=0; j<d1; j++) {
           for(i=0; i<d2; i++) os <<(i?ELEMSEP:"") <<operator()(k, j, i);
           os <<LINESEP;

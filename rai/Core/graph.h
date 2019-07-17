@@ -71,7 +71,7 @@ struct Node {
   bool matches(const char *key); ///< return true, if 'key' is in keys
   bool matches(const StringA &query_keys); ///< return true, if all query_keys are in keys
   
-  void write(std::ostream &os, bool pythonMode=false) const;
+  void write(std::ostream &os, bool yamlMode=false) const;
   
   //-- virtuals implemented by Node_typed
   virtual void copyValue(Node*) {NIY}
@@ -180,7 +180,7 @@ struct Graph : NodeL {
   void read(std::istream& is, bool parseInfo=false);
   Node* readNode(std::istream& is, bool verbose=false, bool parseInfo=false, rai::String prefixedKey=rai::String()); //used only internally..
   void readJson(std::istream& is);
-  void write(std::ostream& os=std::cout, const char *ELEMSEP=",\n", const char *BRACKETS="{}") const;
+  void write(std::ostream& os=std::cout, const char *ELEMSEP=",\n", const char *BRACKETS="{}", bool yamlMode=false) const;
   void writeDot(std::ostream& os, bool withoutHeader=false, bool defaultEdges=false, int nodesOrEdges=0, int focusIndex=-1, bool subGraphsAsNodes=false);
   void writeHtml(std::ostream& os, std::istream& is);
   void writeParseInfo(std::ostream& os);
