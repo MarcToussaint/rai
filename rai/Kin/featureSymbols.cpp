@@ -11,6 +11,7 @@
 #include <Kin/TM_energy.h>
 #include <Kin/TM_angVel.h>
 //#include <Kin/proxy.h>
+#include <Kin/F_grasping.h>
 
 template<> const char* rai::Enum<FeatureSymbol>::names []= {
   "position",
@@ -36,6 +37,7 @@ template<> const char* rai::Enum<FeatureSymbol>::names []= {
   "accumulatedCollisions",
   "jointLimits",
   "distance",
+    "oppose",
   "qItself",
   "aboveBox",
   "insideBox",
@@ -62,6 +64,7 @@ double shapeSize(const rai::KinematicWorld& K, const char* name, uint i=2) {
 ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const rai::KinematicWorld& world, const arr& scale, const arr& target, int order){
   ptr<Feature> f;
   if(feat==FS_distance) {  f=make_shared<TM_PairCollision>(world, frames(0), frames(1), TM_PairCollision::_negScalar, false); }
+  else if(feat==FS_oppose) {  f=make_shared<F_GraspOppose>(world, frames(0), frames(1), frames(2)); }
   else if(feat==FS_aboveBox) {  f=make_shared<TM_AboveBox>(world, frames(1), frames(0), .05); }
   else if(feat==FS_standingAbove) {
     double h = .5*(shapeSize(world, frames(0)) + shapeSize(world, frames(1)));

@@ -130,12 +130,12 @@ struct Joint : NonCopyable{
   arr limits;        ///< joint limits (lo, up, [maxvel, maxeffort])
   arr q0;            ///< joint null position
   double H=1.;       ///< control cost scalar
+  double scale=1.;   ///< scaling robot-q = scale * q-vector
   
   Joint *mimic=NULL; ///< if non-NULL, this joint's state is identical to another's
   
   Vector axis=0;          ///< joint axis (same as X.rot.getX() for standard hinge joints)
   Enum<JointType> type;   ///< joint type
-  bool constrainToZeroVel=false;
   bool active=true;  ///< if false, this joint is not considered part of the q-vector
   
   //attachments to the joint

@@ -225,6 +225,14 @@ void TEST(DistanceFunctions2) {
       HALT("x=" <<x);
     }
   }
+
+  //-- display
+  rai::Mesh m;
+  m.setImplicitSurface(DistanceFunction_SSBox,-10.,10.,100);
+  OpenGL gl;
+  gl.add(m);
+  gl.watch();
+
 }
 
 //===========================================================================

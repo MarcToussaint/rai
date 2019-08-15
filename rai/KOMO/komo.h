@@ -12,6 +12,7 @@
 #include <Optim/constrained.h>
 #include <Optim/KOMO_Problem.h>
 #include "objective.h"
+#include <Kin/switch.h>
 #include <Kin/flag.h>
 #include <Kin/featureSymbols.h>
 
@@ -24,15 +25,19 @@ enum SkeletonSymbol{
   SY_inside,
   SY_impulse,
   SY_initial,
+  SY_free,
   SY_stable,
   SY_stableOn,
   SY_dynamic,
   SY_dynamicOn,
   SY_dynamicTrans,
+  SY_quasiStatic,
+  SY_quasiStaticOn,
   SY_liftDownUp,
   SY_break,
 
   SY_contact,
+  SY_contactStick,
   SY_bounce,
 
   SY_magic,
@@ -40,6 +45,8 @@ enum SkeletonSymbol{
 
   SY_push,
   SY_graspSlide,
+
+  SY_dampMotion,
 
   SY_noCollision,
   SY_identical,
@@ -96,10 +103,11 @@ struct KOMO : NonCopyable {
 
   //-- verbosity only: buffers of all feature values computed on last set_x
   arr featureValues;           ///< storage of all features in all time slices
+  arrA featureJacobians;           ///< storage of all features in all time slices
   ObjectiveTypeA featureTypes; ///< storage of all feature-types in all time slices
   bool featureDense;
 //  arr dualSolution;            ///< the dual solution computed during constrained optimization
-  struct OpenGL *gl=0;         ///< internal only: used in 'displayTrajectory'
+  ptr<struct OpenGL> gl;              ///< internal only: used in 'displayTrajectory'
   int verbose;                 ///< verbosity level
   int animateOptimization=0;   ///< display the current path for each evaluation during optimization
   double runTime=0.;           ///< measured run time
@@ -140,7 +148,9 @@ struct KOMO : NonCopyable {
   struct Objective* addObjective(const arr& times, ObjectiveType type, const FeatureSymbol& feat, const StringA& frames={}, const arr& scale=NoArr, const arr& target=NoArr, int order=-1);
 
   void addSwitch(double time, bool before, rai::KinematicSwitch* sw);
-  void addSwitch(double time, bool before, const char *type, const char* ref1, const char* ref2, const rai::Transformation& jFrom=NoTransformation);
+  void addSwitch(double time, bool before, rai::JointType type, rai::SwitchInitializationType init,
+                       const char* ref1, const char* ref2,
+                       const rai::Transformation& jFrom=NoTransformation, const rai::Transformation& jTo=NoTransformation);
   void addFlag(double time, rai::Flag* fl, int deltaStep=0);
   void addContact_slide(double startTime, double endTime, const char *from, const char* to);
   void addContact_stick(double startTime, double endTime, const char *from, const char* to);
@@ -187,13 +197,13 @@ struct KOMO : NonCopyable {
                       const char *prevFrom, const char *newFrom, const char *obj);
   void addSwitch_stable(double time, double endTime, const char *from, const char *to);
   void addSwitch_stableOn(double time, double endTime, const char* from, const char* to);
-  void addSwitch_dynamic(double time, double endTime, const char *from, const char *to);
+  void addSwitch_dynamic(double time, double endTime, const char *from, const char *to, bool dampedVelocity=false);
   void addSwitch_dynamicOn(double time, double endTime, const char *from, const char* to);
   void addSwitch_dynamicOnNewton(double time, double endTime, const char *from, const char* to);
   void addSwitch_dynamicTrans(double time, double endTime, const char *from, const char *to);
-  void addSwitch_magic(double time, double endTime, const char* from, const char* to, double sqrAccCost);
+  void addSwitch_magic(double time, double endTime, const char* from, const char* to, double sqrAccCost, double sqrVelCost);
   void addSwitch_magicTrans(double time, double endTime, const char* from, const char* to, double sqrAccCost);
-  void addSwitch_on(double time, const char *from, const char* to);
+  void addSwitch_on(double time, const char *from, const char* to, bool copyInitialization=false);
 
 
   
@@ -240,6 +250,7 @@ struct KOMO : NonCopyable {
   //-- optimization macros
   void setSpline(uint splineT);      ///< optimize B-spline nodes instead of the path; splineT specifies the time steps per node
   void reset(double initNoise=.01);  ///< reset the optimizer (initializes x to a default path)
+  void setInitialConfigurations(const arr& q);
   void initWithConstant(const arr& q);
   void initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase=1, bool sineProfile=true);
   void run();                        ///< run the optimization (using OptConstrained -- its parameters are read from the cfg file)
@@ -258,6 +269,8 @@ struct KOMO : NonCopyable {
   arr getPath_tau();
   arr getPath_times();
   arr getPath_energies();
+
+  arr getActiveConstraintJacobian();
 
   void reportProblem(ostream &os=std::cout);
   Graph getReport(bool gnuplt=false, int reportFeatures=0, ostream& featuresOs=std::cout); ///< return a 'dictionary' summarizing the optimization results (optional: gnuplot task costs; output detailed cost features per time slice)

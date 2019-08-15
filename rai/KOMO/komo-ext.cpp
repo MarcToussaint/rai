@@ -5,8 +5,11 @@
 #include <Kin/TM_default.h>
 #include <Kin/TM_linTrans.h>
 #include <Kin/TM_qItself.h>
+#include <Kin/TM_InsideBox.h>
+#include <Kin/TM_PairCollision.h>
+#include <Kin/F_grasping.h>
 
-double shapeSize(const rai::KinematicWorld& K, const char* name, uint i=1);
+double shapeSize(const rai::KinematicWorld& K, const char* name, uint i);
 
 void addBoxGrasp(KOMO& komo, const char* object, const char* endeff, int axis){
   //  komo.addObjective(0., 0., OT_eq, FS_accumulatedCollisions, {}, 1e0);
@@ -15,7 +18,7 @@ void addBoxGrasp(KOMO& komo, const char* object, const char* endeff, int axis){
     }
 
   //height to grasp
-  double h = .5*shapeSize(komo.world, object);
+    double h = .5*shapeSize(komo.world, object, 1);
 #if 0
   setTask(0.,0.,
           new TM_LinTrans(new TM_Default(TMT_pos, K, endeff, {0.,0.,.05}, object), {2,3,{0.,1.,0., 0.,0.,1.}}, {}),
@@ -53,8 +56,8 @@ void addBoxGrasp(KOMO& komo, const char* object, const char* endeff, int axis){
 void addMotionTo(KOMO& komo, const arr& target_q, const StringA& target_joints, const char* endeff, double up, double down){
 
   if(endeff){
-    arr profile(komo.T, 3);
-    profile.setZero();
+//    arr profile(komo.T, 3);
+//    profile.setZero();
 
     if(up>0.){
       komo.addObjective(0., up, new TM_Default(TMT_posDiff, komo.world, endeff), OT_sos, {0.,0.,.05}, 1e2, 2);
@@ -110,4 +113,37 @@ void chooseBoxGrasp(rai::KinematicWorld& K, const char* endeff, const char* obje
     cout <<"using axis 1" <<endl;
     K.setJointState(q2);
   }
+}
+
+void findOpposingGrasp(rai::KinematicWorld& K, const char* fingerL, const char* fingerR, const char* object){
+    KOMO komo;
+    komo.setModel(K, true);
+    komo.setIKOpt();
+
+
+    komo.addObjective(1., 1., make_shared<F_GraspOppose>(K, fingerL, fingerR, object), OT_eq, {}, 1e2);
+
+//    //anti-podal
+//    switch(axis){
+//      case 0:
+//        komo.addObjective({}, OT_eq, FS_scalarProductXY, {endeff, object}, {1e1});
+//        komo.addObjective({}, OT_eq, FS_scalarProductXZ, {endeff, object}, {1e1});
+//        break;
+//      case 1:
+//        komo.addObjective({}, OT_eq, FS_scalarProductXX, {endeff, object}, {1e1});
+//        komo.addObjective({}, OT_eq, FS_scalarProductXZ, {endeff, object}, {1e1});
+//        break;
+//      case 2:
+//        komo.addObjective({}, OT_eq, FS_scalarProductXX, {endeff, object}, {1e1});
+//        komo.addObjective({}, OT_eq, FS_scalarProductXY, {endeff, object}, {1e1});
+//        break;
+//      default: HALT("axis " <<axis <<" needs to be in {0,1,2}");
+//    }
+
+//    //vertical
+//    komo.addObjective({}, OT_sos, FS_vectorZ, {endeff}, {3e0}, {0.,0.,1.} );
+
+    komo.optimize();
+
+    K.setJointState(komo.x);
 }

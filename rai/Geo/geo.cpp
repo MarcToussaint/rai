@@ -140,7 +140,7 @@ Vector Vector::getNormalVectorNormalToThis() const {
     RAI_MSG("every vector is normal to a zero vector");
   }
   arr s = ARR(fabs(x), fabs(y), fabs(z));
-  uint c = s.maxIndex();
+  uint c = s.argmax();
   double xv, yv, zv;
   if(c == 0) {
     xv = -(y+z)/x;
@@ -1450,15 +1450,20 @@ void Transformation::write(std::ostream& os) const {
 void Transformation::read(std::istream& is) {
   setZero();
   char c;
-  double x[4];
+  double x[7];
   rai::skip(is, " \n\r\t<|");
   for(;;) {
     is >>c;
     if(is.fail()) return;  //EOF I guess
-    if((c>='0' && c<='9') || c=='.' || c=='-') {  //read a 7-vector (pos+quat) for the transformation
-      is.putback(c);
-      is>>x[0]>>x[1]>>x[2];       addRelativeTranslation(x[0], x[1], x[2]);
-      is>>x[0]>>x[1]>>x[2]>>x[3]; addRelativeRotationQuat(x[0], x[1], x[2], x[3]);
+    if((c>='0' && c<='9') || c=='.' || c=='-' || c=='['){  //read a 7-vector (pos+quat) for the transformation
+      if(c=='['){
+        is>>x[0]>>PARSE(",") >>x[1]>>PARSE(",") >>x[2]>>PARSE(",") >>x[3]>>PARSE(",") >>x[4]>>PARSE(",") >>x[5]>>PARSE(",") >>x[6] >>PARSE("]");
+      }else{
+        is.putback(c);
+        is>>x[0]>>x[1]>>x[2]>>x[3]>>x[4]>>x[5]>>x[6];
+      }
+      addRelativeTranslation(x[0], x[1], x[2]);
+      addRelativeRotationQuat(x[3], x[4], x[5], x[6]);
       break;
     } else switch(c) {
         //case '<': break; //do nothing -- assume this is an opening tag

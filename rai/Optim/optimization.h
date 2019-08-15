@@ -52,7 +52,7 @@ typedef std::function<void(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const a
 struct Conv_Lambda_ConstrainedProblem : ConstrainedProblem {
   ConstrainedProblemLambda f;
   Conv_Lambda_ConstrainedProblem(const ConstrainedProblemLambda& f): f(f) {}
-  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x) { f(phi, J, H, tt, x); }
+  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& ot, const arr& x, arr& lambda) { f(phi, J, H, ot, x); }
 };
 
 //===========================================================================

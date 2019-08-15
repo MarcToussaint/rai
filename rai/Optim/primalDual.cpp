@@ -49,8 +49,8 @@ double PrimalDualProblem::primalDual(arr &r, arr &R, const arr &x_lambda) {
 //  cout <<"x=" <<x <<endl <<"lambda=" <<L.lambda <<endl <<"L=" <<Lval <<endl;
   if(!L.lambda.N) L.lambda = zeros(L.phi_x.N);
   
-  bool primalFeasible=true;
-  double dualityMeasure=0.;
+  primalFeasible=true;
+  dualityMeasure=0.;
   for(uint i=0; i<L.phi_x.N; i++) {
     if(L.tt_x.p[i]==OT_ineq) {
       if(L.phi_x.p[i] > 0.) { primalFeasible=false; /*break;*/ }
@@ -61,17 +61,12 @@ double PrimalDualProblem::primalDual(arr &r, arr &R, const arr &x_lambda) {
 //      dualityMeasure += ::fabs(L.phi_x.p[i]);
     }
   }
-
   if(n_ineq){
     dualityMeasure /= n_ineq;
-#if 1
-    mu = .5*dualityMeasure;
-#else
-    double newMu = .5*dualityMeasure;
-    if(newMu < mu) mu *= .5;
-#endif
-    cout <<" \tmu=\t" <<mu <<" primalFeasible=" <<primalFeasible <<std::flush;
   }
+
+//  updateMu(primalFeasible);
+//  cout <<" \tmu=\t" <<mu <<" primalFeasible=" <<primalFeasible <<std::flush;
 
   //-- equation system
   if(!!r) {
@@ -133,6 +128,7 @@ double PrimalDualProblem::primalDual(arr &r, arr &R, const arr &x_lambda) {
         n++;
       }
     }
+    CHECK_EQ(n, x.N+n_eq, "");
 
     // top-right: transposed \del g
     n=x.N+n_eq;
@@ -145,6 +141,7 @@ double PrimalDualProblem::primalDual(arr &r, arr &R, const arr &x_lambda) {
         n++;
       }
     }
+    CHECK_EQ(n, x.N+n_eq+n_ineq, "");
 
     // mid-mid and mid-right are zero
 
@@ -163,6 +160,7 @@ double PrimalDualProblem::primalDual(arr &r, arr &R, const arr &x_lambda) {
         n++;
       }
     }
+    CHECK_EQ(n, x.N+n_eq, "");
 
     // bottom-left:
     n=x.N+n_eq;
@@ -176,25 +174,34 @@ double PrimalDualProblem::primalDual(arr &r, arr &R, const arr &x_lambda) {
         n++;
       }
     }
+    CHECK_EQ(n, x.N+n_eq+n_ineq, "");
 
     // bottom-right:
     n=x.N+n_eq;
     for(uint i=0; i<L.phi_x.N; i++) {
       if(L.tt_x.p[i]==OT_ineq) {
-        for(uint j=0; j<x.N; j++){
-          NIY; //THIS IS WRONG! below does not depend on j
 //          if(L.phi_x.p[i] > 0.) {} else
-          if(!sparse) R(n,n) = - L.phi_x(i);
-          else Rsparse->addEntry(n,n) = - L.phi_x(i);
-        }
+        if(!sparse) R(n,n) = - L.phi_x(i);
+        else Rsparse->addEntry(n,n) = - L.phi_x(i);
         n++;
       }
     }
+    CHECK_EQ(n, x.N+n_eq+n_ineq, "");
   }
   
 //  if(!primalFeasible) return NAN;
   return sumOfSqr(r);
 }
+
+void PrimalDualProblem::updateMu(){
+#if 1
+  mu = .5*dualityMeasure;
+#else
+  double newMu = .5*dualityMeasure;
+  if(newMu < mu) mu *= .5;
+#endif
+}
+
 
 //==============================================================================
 
@@ -212,23 +219,37 @@ OptPrimalDual::OptPrimalDual(arr& x, arr &dual, ConstrainedProblem& P, int verbo
   if(opt.verbose>0) cout <<"***** OptPrimalDual" <<endl;
 }
 
-uint OptPrimalDual::run() {
+uint OptPrimalDual::run(uint maxIt) {
   if(fil)(*fil) <<"constr " <<its <<' ' <<newton.evals <<' ' <<PD.L.get_costs() <<' ' <<PD.L.get_sumOfGviolations() <<' ' <<PD.L.get_sumOfHviolations() <<endl;
   newton.logFile = fil;
+
+  //newton loop (cp newton.run() )
+  newton.numTinySteps=0;
+  for(uint i=0; i<maxIt; i++) {
+    newton.step();
+
+    if(PD.primalFeasible){
+      if(opt.stopGTolerance<0.
+         || PD.L.get_sumOfGviolations() + PD.L.get_sumOfHviolations() < opt.stopGTolerance){
+        if(newton.stopCriterion==newton.stopStepFailed) continue;
+        if(newton.stopCriterion>=newton.stopCrit1) break;
+      }
+    }
+
+    PD.updateMu();
+
+    x = newton.x({0,x.N-1});
   
-  newton.run();
-  
-  x = newton.x({0,x.N-1});
-  
-  if(opt.verbose>0) {
-    cout <<"** optPrimalDual it=" <<its
-         <<' ' <<newton.evals
-         <<" mu=" <<PD.mu
-         <<" f(x)=" <<PD.L.get_costs()
-         <<" \tg_compl=" <<PD.L.get_sumOfGviolations()
-         <<" \th_compl=" <<PD.L.get_sumOfHviolations();
-    if(x.N<5) cout <<" \tx=" <<x;
-    cout <<endl;
+    if(opt.verbose>0) {
+      cout <<"** optPrimalDual it=" <<its
+           <<' ' <<newton.evals
+           <<" mu=" <<PD.mu
+           <<" f(x)=" <<PD.L.get_costs()
+           <<" \tg_compl=" <<PD.L.get_sumOfGviolations()
+           <<" \th_compl=" <<PD.L.get_sumOfHviolations();
+      if(x.N<5) cout <<" \tx=" <<x;
+      cout <<endl;
+    }
   }
   
   return newton.evals;

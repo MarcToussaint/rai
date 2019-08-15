@@ -175,6 +175,26 @@ void rai::Frame::read(const Graph& ats) {
   }
   if(ats["shape"] || ats["mesh"]) { shape = new Shape(*this); shape->read(ats); }
   if(ats["mass"]) { inertia = new Inertia(*this); inertia->read(ats); }
+
+  if(ats["collisionCore"]){
+    arr core = ats.get<arr>("collisionCore");
+    core.reshape(-1,3);
+    double r = ats.get<double>("collisionCore_radius");
+
+    Shape *sh=0;
+    if(!shape){
+      shape = new Shape(*this);
+      sh = shape;
+    }else{
+      Frame *f = new Frame(this);
+      sh= new Shape(*f);
+    }
+    sh->type() = rai::ST_ssCvx;
+    sh->sscCore().V = core;
+    sh->size = ARR(r);
+    sh->mesh().C = ARR(1., 1., 0., .5);
+    sh->mesh().setSSCvx(core, r);
+  }
 }
 
 void rai::Frame::write(Graph& G){
@@ -228,7 +248,7 @@ void rai::Frame::write(std::ostream& os) const {
   
   for(Node *n : ats) {
     StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H", "axis", "A", "B", "mimic"};
-    if(!avoid.contains(n->keys.last())) os <<' ' <<*n;
+    if(!avoid.contains(n->keys.last())) os <<", " <<*n;
   }
   
   os <<" }\n";
@@ -292,7 +312,7 @@ void rai::Frame::setConvexMesh(const std::vector<double>& points, const std::vec
   }else{
     getShape().type() = ST_ssCvx;
     getShape().sscCore().V.clear().operator=(points).reshape(-1, 3);
-    getShape().mesh().setSSCvx(getShape().sscCore(), radius);
+    getShape().mesh().setSSCvx(getShape().sscCore().V, radius);
   }
   if(colors.size()){
     getShape().mesh().C.clear().operator=(convert<double>(byteA(colors))/255.).reshape(-1, 3);
@@ -400,8 +420,8 @@ rai::Joint::Joint(Frame &f, Joint *copyJoint)
   frame->K.reset_q();
   
   if(copyJoint) {
-    qIndex=copyJoint->qIndex; dim=copyJoint->dim; mimic=reinterpret_cast<Joint*>(copyJoint->mimic?1l:0l); constrainToZeroVel=copyJoint->constrainToZeroVel;
-    type=copyJoint->type; axis=copyJoint->axis; limits=copyJoint->limits; q0=copyJoint->q0; H=copyJoint->H;
+    qIndex=copyJoint->qIndex; dim=copyJoint->dim; mimic=reinterpret_cast<Joint*>(copyJoint->mimic?1l:0l);
+    type=copyJoint->type; axis=copyJoint->axis; limits=copyJoint->limits; q0=copyJoint->q0; H=copyJoint->H; scale=copyJoint->scale;
     active=copyJoint->active;
     
     if(copyJoint->mimic) {
@@ -425,34 +445,37 @@ rai::Joint::~Joint() {
   //if(frame->parent) frame->unLink();
 }
 
-void rai::Joint::calc_Q_from_q(const arr &q, uint _qIndex) {
+void rai::Joint::calc_Q_from_q(const arr &q_full, uint _qIndex) {
   rai::Transformation &Q = frame->Q;
 //  if(type!=JT_rigid) Q.setZero();
+  arr q(dim);
+  for(uint i=0;i<dim;i++) q.elem(i) = q_full.elem(_qIndex+i);
+  q *= scale;
   if(mimic) {
     Q = mimic->frame->Q;
   } else {
     switch(type) {
       case JT_hingeX: {
-        Q.rot.setRadX(q.elem(_qIndex));
+        Q.rot.setRadX(q.first());
       } break;
       
       case JT_hingeY: {
-        Q.rot.setRadY(q.elem(_qIndex));
+        Q.rot.setRadY(q.first());
       } break;
       
       case JT_hingeZ: {
-        Q.rot.setRadZ(q.elem(_qIndex));
+        Q.rot.setRadZ(q.first());
       } break;
       
       case JT_universal: {
         rai::Quaternion rot1, rot2;
-        rot1.setRadX(q.elem(_qIndex));
-        rot2.setRadY(q.elem(_qIndex+1));
+        rot1.setRadX(q.elem(0));
+        rot2.setRadY(q.elem(1));
         Q.rot = rot1*rot2;
       } break;
       
       case JT_quatBall: {
-        Q.rot.set(q.p+_qIndex);
+        Q.rot.set(q.p);
         {
           double n=Q.rot.normalization();
           if(!rai_Kin_frame_ignoreQuatNormalizationWarning) if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n;
@@ -462,8 +485,8 @@ void rai::Joint::calc_Q_from_q(const arr &q, uint _qIndex) {
       } break;
       
       case JT_free: {
-        Q.pos.set(q.p+_qIndex);
-        Q.rot.set(q.p+_qIndex+3);
+        Q.pos.set(q.p);
+        Q.rot.set(q.p+3);
         {
           double n=Q.rot.normalization();
           if(!rai_Kin_frame_ignoreQuatNormalizationWarning) if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n;
@@ -473,11 +496,11 @@ void rai::Joint::calc_Q_from_q(const arr &q, uint _qIndex) {
       } break;
       
       case JT_XBall: {
-        Q.pos.x = q.elem(_qIndex);
+        Q.pos.x = q.elem(0);
         Q.pos.y = 0.;
         Q.pos.z = 0.;
         Q.pos.isZero = false;
-        Q.rot.set(q.p+_qIndex+1);
+        Q.rot.set(q.p+1);
         {
           double n=Q.rot.normalization();
           if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n;
@@ -487,40 +510,40 @@ void rai::Joint::calc_Q_from_q(const arr &q, uint _qIndex) {
       } break;
       
       case JT_transX: {
-        Q.pos = q.elem(_qIndex)*Vector_x;
+        Q.pos = q.first() * Vector_x;
       } break;
       
       case JT_transY: {
-        Q.pos = q.elem(_qIndex)*Vector_y;
+        Q.pos = q.first() * Vector_y;
       } break;
       
       case JT_transZ: {
-        Q.pos = q.elem(_qIndex)*Vector_z;
+        Q.pos = q.first() * Vector_z;
       } break;
       
       case JT_transXY: {
-        Q.pos.set(q.elem(_qIndex), q.elem(_qIndex+1), 0.);
+        Q.pos.set(q.elem(0), q.elem(1), 0.);
       } break;
       
       case JT_trans3: {
-        Q.pos.set(q.elem(_qIndex), q.elem(_qIndex+1), q.elem(_qIndex+2));
+        Q.pos.set(q.p);
       } break;
       
       case JT_transXYPhi: {
-        Q.pos.set(q.elem(_qIndex), q.elem(_qIndex+1), 0.);
-        Q.rot.setRadZ(q.elem(_qIndex+2));
+        Q.pos.set(q.elem(0), q.elem(1), 0.);
+        Q.rot.setRadZ(q.elem(2));
       } break;
       
       case JT_phiTransXY: {
-        Q.rot.setRadZ(q.elem(_qIndex));
-        Q.pos = Q.rot*Vector(q.elem(_qIndex+1), q.elem(_qIndex+2), 0.);
+        Q.rot.setRadZ(q.elem(0));
+        Q.pos = Q.rot*Vector(q.elem(1), q.elem(2), 0.);
       } break;
       
       case JT_rigid:
         break;
         
       case JT_time:
-        frame->tau = 1e-1 * q.elem(_qIndex);
+        frame->tau = 1e-1 * q.first();
         if(frame->tau<1e-10) frame->tau=1e-10;
         break;
       default: NIY;
@@ -636,6 +659,7 @@ arr rai::Joint::calc_q_from_Q(const rai::Transformation &Q) const {
       break;
     default: NIY;
   }
+  q /= scale;
   return q;
 }
 
@@ -812,6 +836,7 @@ void rai::Joint::read(const Graph &G) {
   
   G.get(frame->Q, "Q");
   G.get(H, "ctrl_H");
+  G.get(scale, "joint_scale");
   if(G.get(d, "joint"))        type=(JointType)d;
   else if(G.get(str, "joint")) { str >>type; }
   else if(G.get(d, "type"))    type=(JointType)d;
@@ -859,21 +884,20 @@ void rai::Joint::read(const Graph &G) {
 void rai::Joint::write(Graph& g){
   g.newNode<Enum<JointType>>({"joint"}, {}, type);
   if(H!=1.) g.newNode<double>({"ctrl_H"}, {}, H);
+  if(scale!=1.) g.newNode<double>({"joint_scale"}, {}, scale);
   if(limits.N) g.newNode<arr>({"limits"}, {}, limits);
   if(mimic) g.newNode<rai::String>({"mimic"}, {}, STRING('(' <<mimic->frame->name <<')'));
 }
 
 void rai::Joint::write(std::ostream& os) const {
   os <<" joint:" <<type;
-  if(H) os <<" ctrl_H:"<<H;
-  if(limits.N) os <<" limits:[" <<limits <<"]";
+  if(H!=1.) os <<", ctrl_H:" <<H;
+  if(scale!=1.) os <<", joint_scale:" <<scale;
+  if(limits.N) os <<", limits:" <<limits;
   if(mimic) {
-    os <<" mimic:(" <<mimic->frame->name <<')';
+    os <<", mimic:(" <<mimic->frame->name <<')';
   }
   os <<' ';
-//  Node *n;
-//  if((n=frame->ats["Q"])) os <<*n <<' ';
-//  if((n=frame->ats["q"])) os <<*n <<' ';
 }
 
 //===========================================================================
@@ -980,13 +1004,13 @@ void rai::Shape::read(const Graph& ats) {
 
 void rai::Shape::write(std::ostream& os) const {
   os <<" shape:" <<_type;
-  if(_type!=ST_mesh) os <<" size:[" <<size <<"]";
+  if(_type!=ST_mesh) os <<", size:" <<size;
   
   Node *n;
-  if((n=frame.ats["color"])) os <<' ' <<*n;
-  if((n=frame.ats["mesh"])) os <<' ' <<*n;
-  if((n=frame.ats["meshscale"])) os <<' ' <<*n;
-  if(cont) os <<" contact:" <<(int)cont;
+  if((n=frame.ats["color"])) os <<", " <<*n;
+  if((n=frame.ats["mesh"])) os <<", " <<*n;
+  if((n=frame.ats["meshscale"])) os <<", " <<*n;
+  if(cont) os <<", contact:" <<(int)cont;
 }
 
 void rai::Shape::write(Graph& g){
@@ -1073,7 +1097,7 @@ void rai::Shape::createMeshes() {
       sscCore().V = arr(1,3, {0.,0.,0.});
       double rad=1;
       if(size.N) rad=size.last();
-      mesh().setSSCvx(sscCore(), rad);
+      mesh().setSSCvx(sscCore().V, rad);
       //      mesh().setSphere();
       //      mesh().scale(size(3), size(3), size(3));
     } break;
@@ -1084,7 +1108,7 @@ void rai::Shape::createMeshes() {
     case rai::ST_capsule:
       CHECK(size(-1)>1e-10,"");
       sscCore().V = arr(2,3, {0.,0.,-.5*size(-2), 0.,0.,.5*size(-2)});
-      mesh().setSSCvx(sscCore(), size(-1));
+      mesh().setSSCvx(sscCore().V, size(-1));
       //      mesh().setCappedCylinder(size(3), size(2));
       //      mesh().setSSBox(2.*size(3), 2.*size(3), size(2)+2.*size(3), size(3));
       break;
@@ -1104,7 +1128,7 @@ void rai::Shape::createMeshes() {
         CHECK(mesh().V.N, "mesh or sscCore needs to be loaded");
         sscCore() = mesh();
       }
-      mesh().setSSCvx(sscCore(), size.last());
+      mesh().setSSCvx(sscCore().V, size.last());
       break;
     case rai::ST_ssBox: {
       if(size(3)<1e-10) {
@@ -1168,7 +1192,7 @@ arr rai::Inertia::getFrameRelativeWrench() {
 }
 
 void rai::Inertia::write(std::ostream &os) const {
-  os <<" mass:" <<mass;
+  os <<", mass:" <<mass;
 }
 
 void rai::Inertia::write(Graph& g){

@@ -13,21 +13,16 @@
 #include <Kin/TM_default.h>
 #include <Kin/TM_angVel.h>
 #include <Kin/TM_PairCollision.h>
+#include <Kin/F_static.h>
 
 void shapeFunction(double &x, double &dx);
 
 //===========================================================================
 
-TM_NewtonEuler::TM_NewtonEuler(int iShape, bool _transOnly) : i(iShape), transOnly(_transOnly) {
-  order=2;
-  gravity = rai::getParameter<double>("TM_NewtonEuler/gravity", 9.81);
-}
-
 void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
   CHECK_EQ(order, 2, "");
 
-  rai::KinematicWorld& K = *Ktuple(-2); // ! THIS IS THE MID TIME SLICE !
-  rai::Frame *a = K.frames(i);
+  rai::Frame *a = Ktuple(-2)->frames(i);
   if((a->flags & (1<<FL_impulseExchange))){
     y.resize(3).setZero();
     if(!!J) J.resize(3, getKtupleDim(Ktuple).last()).setZero();
@@ -35,88 +30,99 @@ void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
   }
 
   //get linear and angular accelerations
-  arr acc, Jacc, wcc, Jwcc;
-  TM_LinVel pos(i);
+  TM_LinAngVel pos(i);
   pos.order=2;
   pos.impulseInsteadOfAcceleration=true;
-  pos.phi(acc, (!!J?Jacc:NoArr), Ktuple);
+  pos.phi(y, J, Ktuple);
 
+  //add gravity
   if(Ktuple(-1)->hasTimeJoint()){
     double tau; arr Jtau;
     Ktuple(-1)->kinematicsTau(tau, Jtau);
-    acc(2) += gravity*tau;
+    y(2) += gravity*tau;
     if(!!J){
       expandJacobian(Jtau, Ktuple, -1);
-      Jacc[2] += gravity*Jtau;
+      J[2] += gravity*Jtau;
     }
   }else{
-    acc(2) += gravity * Ktuple(-1)->frames.first()->tau;
+    y(2) += gravity * Ktuple(-1)->frames.first()->tau;
   }
 
-  TM_AngVel rot(i);
-  rot.order=2;
-  rot.impulseInsteadOfAcceleration=true;
-  if(!transOnly) rot.phi(wcc, (!!J?Jwcc:NoArr), Ktuple);
-
-//  rai::KinematicWorld& K = *Ktuple(-2); // ! THIS IS THE MID TIME SLICE !
-//  rai::Frame *a = K.frames(i);
+  //collect mass info (assume diagonal inertia matrix!!)
   double mass=1;
   arr Imatrix = diag(.1, 3);
   if(a->inertia){
     mass = a->inertia->mass;
     Imatrix = 2.*conv_mat2arr(a->inertia->matrix);
   }
-
-  mass = 1./mass;
-  Imatrix = inverse_SymPosDef(Imatrix);
+  arr one_over_mass(6);
+  for(uint i=0;i<3;i++) one_over_mass(i) = 1./mass;
+  for(uint i=0;i<3;i++) one_over_mass(i+3) = 1./Imatrix(i,i);
   double forceScaling = 1e1;
+  one_over_mass *= forceScaling;
 
-  for(rai::Contact *con:a->contacts){
-    double sign = +1.;
-    CHECK(&con->a==a || &con->b==a, "");
-    if(&con->b==a) sign=-1.;
+  //collect total contact forces
+  Value F = F_netForce(a->ID, false, true)(*Ktuple(-1)); // ! THIS IS THE MID TIME SLICE !
+  if(!!J) expandJacobian(F.J, Ktuple, -1);
 
-    //get the force
-    arr f, Jf;
-    K.kinematicsContactForce(f, Jf, con);
-    if(!!J) expandJacobian(Jf, Ktuple, -2);
+  y += one_over_mass % F.y;
+  if(!!J) J += one_over_mass % F.J;
+}
 
-    //get the POA
-    arr cp, Jcp;
-    K.kinematicsContactPOA(cp, Jcp, con);
-    if(!!J) expandJacobian(Jcp, Ktuple, -2);
+//===========================================================================
 
-    //get object center
-    arr p, Jp;
-    K.kinematicsPos(p, Jp, a);
-    if(!!J) expandJacobian(Jp, Ktuple, -2);
+void TM_NewtonEuler_DampedVelocities::phi(arr &y, arr &J, const WorldL &Ktuple) {
+  CHECK_EQ(order, 1, "");
 
-    acc -= sign * forceScaling * mass * f;
-    if(!transOnly) wcc += sign * forceScaling * Imatrix * crossProduct(cp-p, f);
+  //get linear and angular velocities
+  TM_LinAngVel pos(i);
+  pos.order=1;
+  pos.phi(y, J, Ktuple);
 
-    if(!!J){
-      Jacc -= sign * forceScaling *mass* Jf;
-      if(!transOnly) Jwcc += sign * forceScaling * Imatrix * (skew(cp-p) * Jf - skew(f) * (Jcp-Jp));
+  double friction=1.;
+  y *= friction;
+  if(!!J) J *= friction;
+
+  //add gravity
+  if(gravity){
+    if(Ktuple(-1)->hasTimeJoint()){
+      double tau; arr Jtau;
+      Ktuple(-1)->kinematicsTau(tau, Jtau);
+      y(2) += gravity*tau;
+      if(!!J){
+        expandJacobian(Jtau, Ktuple, -1);
+        J[2] += gravity*Jtau;
+      }
+    }else{
+      y(2) += gravity * Ktuple(-1)->frames.first()->tau;
     }
   }
 
-  if(!transOnly) y.resize(6).setZero();
-  else y.resize(3).setZero();
-  y.setVectorBlock(acc, 0);
-  if(!transOnly) y.setVectorBlock(wcc, 3);
+  //collect mass info (assume diagonal inertia matrix!!)
+  double mass=1.;
+  arr Imatrix = diag(.03, 3);
+  rai::Frame *a = Ktuple(-2)->frames(i);
+  if(a->inertia){
+    mass = a->inertia->mass;
+    Imatrix = 2.*conv_mat2arr(a->inertia->matrix);
+  }
+  arr one_over_mass(6);
+  for(uint i=0;i<3;i++) one_over_mass(i) = 1./mass;
+  for(uint i=0;i<3;i++) one_over_mass(i+3) = 1./Imatrix(i,i);
+  double forceScaling = 1e1;
+  one_over_mass *= forceScaling;
 
-  if(!!J) {
-    J.resize(y.N, Jacc.d1).setZero();
-    J.setMatrixBlock(Jacc, 0, 0);
-    if(!transOnly) J.setMatrixBlock(Jwcc, 3, 0);
+  //collect total contact forces
+  Value F = F_netForce(a->ID, false, true)(Ktuple);
+
+  y += one_over_mass % F.y;
+  if(!!J) J += one_over_mass % F.J;
+
+  if(onlyXYPhi){
+    y({2,4}).setZero();
+    if(!!J) J({2,4}).setZero();
   }
 }
-
-uint TM_NewtonEuler::dim_phi(const WorldL& Ktuple){
-  if(transOnly) return 3;
-  return 6;
-}
-
 
 //===========================================================================
 

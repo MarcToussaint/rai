@@ -110,7 +110,7 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
     HL = comp_A_At(tmpt); //Gauss-Newton type!
 #endif
     
-    if(fterm!=-1) { //For f-terms, the Hessian must be given explicitly, and is not \propto J^T J
+    if(fterm!=-1 && H_x.N) { //For f-terms, the Hessian must be given explicitly, and is not \propto J^T J
       HL += H_x;
     }
     

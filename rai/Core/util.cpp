@@ -24,6 +24,7 @@
 #if defined RAI_X11
 #  include <X11/Xlib.h>
 #  include <X11/Xutil.h>
+#  undef Success
 #endif
 #endif
 #ifdef __CYGWIN__
@@ -1148,6 +1149,14 @@ std::ifstream& rai::FileToken::getIs(bool change_dir) {
     if(!is->good()) THROW("could not open file '" <<name <<"' for input from '" <<cwd <<"./" <<path <<"'");
   }
   return *is;
+}
+
+rai::String rai::FileToken::absolutePathName() const{
+  rai::String str;
+  str <<cwd;
+  if(path.N) str <<'/' <<path;
+  str <<'/' <<name;
+  return str;
 }
 
 //===========================================================================

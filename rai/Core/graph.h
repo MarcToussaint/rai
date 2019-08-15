@@ -59,6 +59,7 @@ struct Node {
   template<class T> T& get() { T *x=getValue<T>(); CHECK(x, "this node is not of type '" <<typeid(T).name() <<"' but type '" <<type.name() <<"'"); return *x; }
   template<class T> const T& get() const { const T *x=getValue<T>(); CHECK(x, "this node is not of type '" <<typeid(T).name() <<"' but type '" <<type.name() <<"'"); return *x; }
   template<class T> bool getFromString(T& x) const; ///< return value = false means parsing object of type T from the string failed
+  template<class T> bool getFromArr(T& x) const; ///< return value = false means parsing object of type T from the string failed
   bool isBoolAndTrue() const { if(type!=typeid(bool)) return false; return *((bool*)value_ptr) == true; }
   bool isBoolAndFalse() const { if(type!=typeid(bool)) return false; return *((bool*)value_ptr) == false; }
   bool isGraph() const;//{ return type==typeid(Graph); }
@@ -71,7 +72,7 @@ struct Node {
   bool matches(const char *key); ///< return true, if 'key' is in keys
   bool matches(const StringA &query_keys); ///< return true, if all query_keys are in keys
   
-  void write(std::ostream &os, bool pythonMode=false) const;
+  void write(std::ostream &os, bool yamlMode=false) const;
   
   //-- virtuals implemented by Node_typed
   virtual void copyValue(Node*) {NIY}
@@ -180,7 +181,7 @@ struct Graph : NodeL {
   void read(std::istream& is, bool parseInfo=false);
   Node* readNode(std::istream& is, bool verbose=false, bool parseInfo=false, rai::String prefixedKey=rai::String()); //used only internally..
   void readJson(std::istream& is);
-  void write(std::ostream& os=std::cout, const char *ELEMSEP=",\n", const char *BRACKETS="{}") const;
+  void write(std::ostream& os=std::cout, const char *ELEMSEP=",\n", const char *BRACKETS="{}", bool yamlMode=false) const;
   void writeDot(std::ostream& os, bool withoutHeader=false, bool defaultEdges=false, int nodesOrEdges=0, int focusIndex=-1, bool subGraphsAsNodes=false);
   void writeHtml(std::ostream& os, std::istream& is);
   void writeParseInfo(std::ostream& os);
@@ -423,6 +424,13 @@ template<class T> bool Node::getFromString(T& x) const {
   return false;
 }
 
+template<class T> bool Node::getFromArr(T& x) const {
+  if(!isOfType<arr>()) return false;
+  arr z = get<arr>();
+  x.set(z);
+  return true;
+}
+
 template<class T> T& Node::get(const char* key) {
   Graph *x=getValue<Graph>();
   CHECK(x, "this node is not of type '" <<typeid(Graph).name() <<"' but type '" <<type.name() <<"'");
@@ -466,13 +474,12 @@ template<class T> const T& Graph::get(const char *key, const T& defaultValue) co
 
 template<class T> bool Graph::get(T& x, const StringA &keys) const {
   Node *n = findNodeOfType(typeid(T), keys);
-  if(!n) {
-    n = findNodeOfType(typeid(rai::String), keys);
-    if(!n) return false;
-    return n->getFromString<T>(x);
-  }
-  x=n->get<T>();
-  return true;
+  if(n) { x=n->get<T>();  return true; }
+
+  n = findNodeOfType(typeid(rai::String), keys);
+  if(n) return n->getFromString<T>(x);
+
+  return false;
 }
 
 template<class T> rai::Array<T*> Graph::getValuesOfType(const char* key) {

@@ -7,6 +7,7 @@
 // IK problems
 void addBoxGrasp(KOMO& komo, const char* object, const char* endeff, int axis=1);
 void chooseBoxGrasp(rai::KinematicWorld& K, const char* endeff, const char* object);
+void findOpposingGrasp(rai::KinematicWorld& K, const char* fingerL, const char* fingerR, const char* object);
 
 // motion interpolation
 void addMotionTo(KOMO& komo, const arr &target_q, const StringA& target_joints, const char* endeff, double up, double down);
@@ -32,7 +33,6 @@ struct KOMO_ext : KOMO{
   // high-level 'script elements' to define tasks: typically adding multiple tasks to realize some kind of 'action'
   //
 
-  void setAbstractTask(double phase, const Graph& facts, int verbose=0);
   //-- dynamic
   void setImpact(double time, const char* a, const char* b);
   void setOverTheEdge(double time, const char* object, const char* from, double margin=.0);

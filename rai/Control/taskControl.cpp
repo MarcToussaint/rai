@@ -282,18 +282,25 @@ bool MotionProfile_PD::isConverged(double _tolerance) {
 
 //===========================================================================
 
-MotionProfile_Path::MotionProfile_Path(const arr& path, double executionTime) : executionTime(executionTime), phase(0.) {
+MotionProfile_Path::MotionProfile_Path(const arr& path, double executionTime)
+  : endTime(executionTime), time(0.) {
   CHECK_EQ(path.nd, 2,"need a properly shaped path!");
-  spline.points = path;
-  spline.setUniformNonperiodicBasis();
+  arr times(path.d0);
+  for(uint i=0;i<path.d0;i++) times.elem(i) = endTime*double(i)/double(times.N-1);
+  spline.set(2, path, times);
+}
+
+MotionProfile_Path::MotionProfile_Path(const arr& path, const arr& times)
+  : endTime(times.last()), time(0.) {
+  spline.set(2, path, times);
 }
 
 ActStatus MotionProfile_Path::update(arr& yRef, arr& ydotRef, double tau, const arr& y, const arr& ydot) {
-  phase += tau/executionTime;
-  if(phase > 1.) phase=1.;
-  yRef    = spline.eval(phase);
-  ydotRef = spline.eval(phase, 1)/executionTime;
-  if(phase>=1.) return AS_done;
+  time += tau;
+  if(time > endTime) time=endTime;
+  yRef    = spline.eval(time);
+  ydotRef = spline.eval(time, 1);
+  if(time>=endTime) return AS_done;
   return AS_running;
 }
 

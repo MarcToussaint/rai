@@ -15,17 +15,10 @@ namespace rai {
 
 enum SwitchType {
   SW_none=-1,
-  deleteJoint=0,
-  SW_effJoint,
-  addJointAtFrom,
-  addJointAtTo,
-  SW_actJoint,
-  addSliderMechanism,
-  SW_insertEffJoint,
-  insertActuated,
+  SW_noJointLink=0,
+  SW_joint,
   makeDynamic,
   makeKinematic,
-  SW_fixCurrent,
   SW_delContact,
   SW_addContact,
 };
@@ -57,12 +50,8 @@ struct KinematicSwitch {
                   const rai::Transformation& jFrom=NoTransformation, const rai::Transformation& jTo=NoTransformation);
   void setTimeOfApplication(double time, bool before, int stepsPerPhase, uint T);
   void apply(KinematicWorld& K);
-  void temporallyAlign(const KinematicWorld& Gprevious, KinematicWorld& G, bool copyFromBodies);
   rai::String shortTag(const KinematicWorld* G) const;
   void write(std::ostream& os, rai::KinematicWorld *K=NULL) const;
-  static KinematicSwitch* newSwitch(const Node *specs, const rai::KinematicWorld& world, int stepsPerPhase, uint T);
-  static KinematicSwitch* newSwitch(const rai::String& type, const char* ref1, const char* ref2, const rai::KinematicWorld& world, int _timeOfApplication, const rai::Transformation& jFrom=NoTransformation, const rai::Transformation& jTo=NoTransformation);
-  static const char* name(SwitchType s);
 };
 
 } // namespace rai

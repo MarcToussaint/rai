@@ -257,9 +257,9 @@ rai::Frame* rai::KinematicWorld::addObject(rai::ShapeType shape, const arr& size
 }
 #endif
 
-rai::Frame* rai::KinematicWorld::addObject(const char* name, const char* parent, rai::ShapeType shape, const arr& size, const arr& col, const arr& pos, const arr& rot){
+rai::Frame* rai::KinematicWorld::addObject(const char* name, const char* parent, rai::ShapeType shape, const arr& size, const arr& col, const arr& pos, const arr& rot, bool isSubFrame){
   rai::Frame *f = addFrame(name, parent);
-  if(f->parent) f->setJoint(rai::JT_rigid);
+  if(f->parent && !isSubFrame) f->setJoint(rai::JT_rigid);
   f->setShape(shape, size);
   f->setContact(-1);
   if(col.N) f->setColor(col);
@@ -873,43 +873,51 @@ void rai::KinematicWorld::jacobianPos(arr& J, Frame *a, const rai::Vector& pos_w
       if(j_idx<N) {
         if(j->type==JT_hingeX || j->type==JT_hingeY || j->type==JT_hingeZ) {
           rai::Vector tmp = j->axis ^ (pos_world-j->X()*j->Q().pos);
+          tmp *= j->scale;
           J(0, j_idx) += tmp.x;
           J(1, j_idx) += tmp.y;
           J(2, j_idx) += tmp.z;
         } else if(j->type==JT_transX || j->type==JT_transY || j->type==JT_transZ || j->type==JT_XBall) {
-          J(0, j_idx) += j->axis.x;
-          J(1, j_idx) += j->axis.y;
-          J(2, j_idx) += j->axis.z;
+          J(0, j_idx) += j->scale * j->axis.x;
+          J(1, j_idx) += j->scale * j->axis.y;
+          J(2, j_idx) += j->scale * j->axis.z;
         } else if(j->type==JT_transXY) {
           if(j->mimic) NIY;
           arr R = j->X().rot.getArr();
+          R *= j->scale;
           J.setMatrixBlock(R.sub(0,-1,0,1), 0, j_idx);
         } else if(j->type==JT_transXYPhi) {
           if(j->mimic) NIY;
           arr R = j->X().rot.getArr();
+          R *= j->scale;
           J.setMatrixBlock(R.sub(0,-1,0,1), 0, j_idx);
           rai::Vector tmp = j->axis ^ (pos_world-(j->X().pos + j->X().rot*a->Q.pos));
+          tmp *= j->scale;
           J(0, j_idx+2) += tmp.x;
           J(1, j_idx+2) += tmp.y;
           J(2, j_idx+2) += tmp.z;
         } else if(j->type==JT_phiTransXY) {
           if(j->mimic) NIY;
           rai::Vector tmp = j->axis ^ (pos_world-j->X().pos);
+          tmp *= j->scale;
           J(0, j_idx) += tmp.x;
           J(1, j_idx) += tmp.y;
           J(2, j_idx) += tmp.z;
           arr R = (j->X().rot*a->Q.rot).getArr();
+          R *= j->scale;
           J.setMatrixBlock(R.sub(0,-1,0,1), 0, j_idx+1);
         }
         if(j->type==JT_XBall) {
           if(j->mimic) NIY;
           arr R = conv_vec2arr(j->X().rot.getX());
+          R *= j->scale;
           R.reshape(3,1);
           J.setMatrixBlock(R, 0, j_idx);
         }
         if(j->type==JT_trans3 || j->type==JT_free) {
           if(j->mimic) NIY;
           arr R = j->X().rot.getArr();
+          R *= j->scale;
           J.setMatrixBlock(R, 0, j_idx);
         }
         if(j->type==JT_quatBall || j->type==JT_free || j->type==JT_XBall) {
@@ -920,6 +928,7 @@ void rai::KinematicWorld::jacobianPos(arr& J, Frame *a, const rai::Vector& pos_w
           Jrot = crossProduct(Jrot, conv_vec2arr(pos_world-(j->X().pos+j->X().rot*a->Q.pos)));  //cross-product of all 4 w-vectors with lever
           Jrot /= sqrt(sumOfSqr(q({j->qIndex+offset, j->qIndex+offset+3})));   //account for the potential non-normalization of q
           //          for(uint i=0;i<4;i++) for(uint k=0;k<3;k++) J(k,j_idx+offset+i) += Jrot(k,i);
+          Jrot *= j->scale;
           J.setMatrixBlock(Jrot, 0, j_idx+offset);
         }
       }
@@ -1160,9 +1169,9 @@ void rai::KinematicWorld::axesMatrix(arr& J, Frame *a) const {
       if(j_idx<N) {
         if((j->type>=JT_hingeX && j->type<=JT_hingeZ) || j->type==JT_transXYPhi || j->type==JT_phiTransXY) {
           if(j->type==JT_transXYPhi) j_idx += 2; //refer to the phi only
-          J(0, j_idx) += j->axis.x;
-          J(1, j_idx) += j->axis.y;
-          J(2, j_idx) += j->axis.z;
+          J(0, j_idx) += j->scale * j->axis.x;
+          J(1, j_idx) += j->scale * j->axis.y;
+          J(2, j_idx) += j->scale * j->axis.z;
         }
         if(j->type==JT_quatBall || j->type==JT_free || j->type==JT_XBall) {
           uint offset = 0;
@@ -1171,6 +1180,7 @@ void rai::KinematicWorld::axesMatrix(arr& J, Frame *a) const {
           arr Jrot = j->X().rot.getArr() * a->Q.rot.getJacobian(); //transform w-vectors into world coordinate
           Jrot /= sqrt(sumOfSqr(q({j->qIndex+offset,j->qIndex+offset+3}))); //account for the potential non-normalization of q
           //          for(uint i=0;i<4;i++) for(uint k=0;k<3;k++) J(k,j_idx+offset+i) += Jrot(k,i);
+          Jrot *= j->scale;
           J.setMatrixBlock(Jrot, 0, j_idx+offset);
         }
         //all other joints: J=0 !!
@@ -2095,6 +2105,8 @@ void rai::KinematicWorld::init(const Graph& G, bool addInsteadOfClear) {
       j->mimic = mimicFrame->joint;
       if(!j->mimic) HALT("The joint '" <<*j <<"' is declared coupled to '" <<jointName <<"' -- but that doesn't exist!");
       j->type = j->mimic->type;
+      j->q0 = j->mimic->q0;
+      j->calc_Q_from_q(j->q0, 0);
 
       delete mim;
       f->ats.index();
@@ -2950,7 +2962,8 @@ void rai::KinematicWorld::glDraw_sub(OpenGL& gl) {
   if(orsDrawProxies) for(const Proxy& p: proxies)((Proxy*)&p)->glDraw(gl);
 
   //contacts
-  if(orsDrawProxies) for(const Frame *fr: frames) for(rai::Contact *c:fr->contacts) if(&c->a==fr) {
+//  if(orsDrawProxies)
+  for(const Frame *fr: frames) for(rai::Contact *c:fr->contacts) if(&c->a==fr) {
     c->glDraw(gl);
   }
 

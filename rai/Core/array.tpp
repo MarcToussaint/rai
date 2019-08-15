@@ -890,15 +890,15 @@ template<class T> T maxA(const rai::Array<T>& v, uint & ind, uint start, uint en
 
 /** @brief the index of the maxium; precondition: the comparision operator
   > exists for type T */
-template<class T> uint rai::Array<T>::maxIndex() const { uint i, m=0; for(i=0; i<N; i++) if(p[i]>p[m]) m=i; return m; }
+template<class T> uint rai::Array<T>::argmax() const { uint i, m=0; for(i=0; i<N; i++) if(p[i]>p[m]) m=i; return m; }
 
 /** @brief the index of the maxium; precondition: the comparision operator
   > exists for type T */
-template<class T> void rai::Array<T>::maxIndex(uint& i, uint& j) const { CHECK_EQ(nd,2, "needs 2D array"); j=maxIndex(); i=j/d1; j=j%d1; }
+template<class T> void rai::Array<T>::argmax(uint& i, uint& j) const { CHECK_EQ(nd,2, "needs 2D array"); j=argmax(); i=j/d1; j=j%d1; }
 
 /** @brief the index of the maxium; precondition: the comparision operator
   > exists for type T */
-template<class T> void rai::Array<T>::maxIndex(uint& i, uint& j, uint& k) const { CHECK_EQ(nd,3, "needs 3D array"); k=maxIndex(); i=k/(d1*d2); k=k%(d1*d2); j=k/d2; k=k%d2; }
+template<class T> void rai::Array<T>::argmax(uint& i, uint& j, uint& k) const { CHECK_EQ(nd,3, "needs 3D array"); k=argmax(); i=k/(d1*d2); k=k%(d1*d2); j=k/d2; k=k%d2; }
 
 /// get the maximal and second maximal value
 template<class T> void rai::Array<T>::maxIndeces(uint& m1, uint& m2) const {
@@ -917,7 +917,7 @@ template<class T> void rai::Array<T>::maxIndeces(uint& m1, uint& m2) const {
 }
 
 /// the index of the minimum; precondition: the comparision operator > exists for type T
-template<class T> uint rai::Array<T>::minIndex() const { uint i, m=0; for(i=0; i<N; i++) if(p[i]<p[m]) m=i; return m; }
+template<class T> uint rai::Array<T>::argmin() const { uint i, m=0; for(i=0; i<N; i++) if(p[i]<p[m]) m=i; return m; }
 
 /// return the index of an entry equal to x, or -1
 template<class T> int rai::Array<T>::findValue(const T& x) const { uint i; for(i=0; i<N; i++) if(p[i]==x) return i; return -1; }
@@ -1808,8 +1808,8 @@ template<class T> void rai::Array<T>::write(std::ostream& os, const char *ELEMSE
     for(uint i=0; i<N; i++) cout <<'(' <<elems[i] <<") " <<elem(i) <<endl;
   } else {
     if(BRACKETS[0]) os <<BRACKETS[0];
-    if(dimTag || nd>=3) { os <<' '; writeDim(os); if(nd==2) os <<LINESEP; else os <<' '; }
-    if(nd>=3) os <<LINESEP;
+    if(dimTag || nd>3) { os <<' '; writeDim(os); if(nd==2) os <<'\n'; else os <<' '; }
+    if(nd>=3) os <<'\n';
     if(nd==0 && N==1) {
       os <<(const T&)scalar();
     }
@@ -1825,7 +1825,7 @@ template<class T> void rai::Array<T>::write(std::ostream& os, const char *ELEMSE
         for(i=0; i<d1; i++) os <<(i?ELEMSEP:"") <<operator()(j, i);
       }
     if(nd==3) for(k=0; k<d0; k++) {
-        if(k) os <<LINESEP;
+        if(k) os <<'\n';
         for(j=0; j<d1; j++) {
           for(i=0; i<d2; i++) os <<(i?ELEMSEP:"") <<operator()(k, j, i);
           os <<LINESEP;

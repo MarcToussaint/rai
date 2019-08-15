@@ -177,21 +177,24 @@ rai::Contact *getContact(const rai::KinematicWorld &K, int aId, int bId){
   return NULL;
 }
 
-void TM_Contact_ForceIsNormal::phi(arr &y, arr &J, const rai::KinematicWorld &K) {
-  rai::Contact *con = getContact(K,a,b);
+void TM_Contact_POA::phi(arr& y, arr& J, const rai::KinematicWorld& C){
+  C.kinematicsContactPOA(y, J, getContact(C,a,b));
+}
 
+void TM_Contact_Force::phi(arr& y, arr& J, const rai::KinematicWorld& C){
+  C.kinematicsContactForce(y, J, getContact(C,a,b));
+}
+
+void TM_Contact_ForceIsNormal::phi(arr &y, arr &J, const rai::KinematicWorld &K) {
   //-- from the contact we need force
-  arr force, Jforce;
-  K.kinematicsContactForce(force, Jforce, con);
+  Value force = TM_Contact_Force(a,b) (K);
 
   //-- from the geometry we need normal
-  arr normal, Jnormal;
-  TM_PairCollision coll(con->a.ID, con->b.ID, TM_PairCollision::_normal, false);
-  coll.phi(normal, (!!J?Jnormal:NoArr), K);
+  Value normal = TM_PairCollision(a, b, TM_PairCollision::_normal, true) (K);
 
   //-- force needs to align with normal -> project force along normal
-  y = force - normal*scalarProduct(normal,force);
-  if(!!J) J = Jforce - (normal*~normal*Jforce + normal*~force*Jnormal + scalarProduct(normal,force)*Jnormal);
+  y = force.y - normal.y*scalarProduct(normal.y, force.y);
+  if(!!J) J = force.J - (normal.y*~normal.y*force.J + normal.y*~force.y*normal.J + scalarProduct(normal.y, force.y)*normal.J);
 }
 
 void TM_Contact_ForceIsComplementary::phi(arr &y, arr &J, const rai::KinematicWorld &K) {
@@ -224,22 +227,26 @@ void TM_Contact_ForceIsComplementary::phi(arr &y, arr &J, const rai::KinematicWo
 uint TM_Contact_ForceIsComplementary::dim_phi(const rai::KinematicWorld& K){ return 6; }
 
 
+void TM_Contact_ForceIsPositive::phi(arr &y, arr &J, const rai::KinematicWorld &K) {
+  //-- from the contact we need force
+  Value force = TM_Contact_Force(a,b) (K);
+
+  //-- from the geometry we need normal
+  Value normal = TM_PairCollision(a, b, TM_PairCollision::_normal, true) (K);
+
+  //-- force needs to align with normal -> project force along normal
+  y.resize(1);
+  y.scalar() = -scalarProduct(normal.y, force.y);
+  if(!!J) J = - (~normal.y*force.J + ~force.y*normal.J);
+}
+
+
+
 void TM_Contact_POAisInIntersection_InEq::phi(arr& y, arr& J, const rai::KinematicWorld& K){
   rai::Contact *con = getContact(K,a,b);
 
-  y.resize(3).setZero();
-  if(!!J){ J.resize(3, K.getJointStateDimension()).setZero(); }
-
-  //-- only pushing forces
-  arr force, Jforce;
-  K.kinematicsContactForce(force, Jforce, con);
-
-  arr normal, Jnormal;
-  TM_PairCollision coll(con->a.ID, con->b.ID, TM_PairCollision::_normal, false);
-  coll.phi(normal, (!!J?Jnormal:NoArr), K);
-
-  y(0) = - scalarProduct(normal, force);
-  if(!!J) J[0] = - ~normal * Jforce - ~force * Jnormal;
+  y.resize(2).setZero();
+  if(!!J){ J.resize(2, K.getJointStateDimension()).setZero(); }
 
   //-- POA inside objects (eventually on surface!)
   rai::Shape *s1 = K.frames(a)->shape;
@@ -264,28 +271,16 @@ void TM_Contact_POAisInIntersection_InEq::phi(arr& y, arr& J, const rai::Kinemat
   K.jacobianPos(Jp1, &s1->frame, coll1.p1);
   K.jacobianPos(Jp2, &s2->frame, coll2.p2);
 
-  coll1.kinDistance(y({1,1})(), (!!J?J[1]():NoArr), Jpos, Jp1);
-  coll2.kinDistance(y({2,2})(), (!!J?J[2]():NoArr), Jpos, Jp2);
+  coll1.kinDistance(y({0,0})(), (!!J?J[0]():NoArr), Jpos, Jp1);
+  coll2.kinDistance(y({1,1})(), (!!J?J[1]():NoArr), Jpos, Jp2);
 
   if(margin){
+    y(0) -= margin;
     y(1) -= margin;
-    y(2) -= margin;
   }
 
   if(!!J) checkNan(J);
 }
-
-uint TM_Contact_POAisInIntersection_InEq::dim_phi(const rai::KinematicWorld& K){
-  return 3;
-}
-
-void TM_Contact_ForceRegularization::phi(arr& y, arr& J, const rai::KinematicWorld& K){
-  rai::Contact *con = getContact(K,a,b);
-
-  K.kinematicsContactForce(y, J, con);
-}
-
-uint TM_Contact_ForceRegularization::dim_phi(const rai::KinematicWorld& K){ return 3; }
 
 void TM_ContactConstraints_Vel::phi(arr& y, arr& J, const WorldL& Ktuple){
   CHECK_EQ(order, 1, "");
@@ -420,3 +415,4 @@ void TM_Contact_ElasticVelIsComplementary::phi(arr& y, arr& J, const WorldL& Ktu
     J = ~force * Jv1 + ~v1 * Jforce;
   }
 }
+

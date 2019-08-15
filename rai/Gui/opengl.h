@@ -223,6 +223,7 @@ struct OpenGL {
 public: //driver dependent methods
   void openWindow();
   void closeWindow();
+  void setTitle(const char* _title=0);
   void beginNonThreadedDraw();
   void endNonThreadedDraw();
   void postRedrawEvent(bool fromWithinCallback);

@@ -6,23 +6,53 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
+#pragma once
+
 #include "feature.h"
 
 struct TM_NewtonEuler : Feature {
   int i;               ///< which shapes does it refer to?
   double gravity=9.81;
-  bool transOnly=false;
   
-  TM_NewtonEuler(int iShape, bool _transOnly=false);
+  TM_NewtonEuler(int iShape, bool _transOnly=false) : i(iShape) {
+    order = 2;
+    gravity = rai::getParameter<double>("TM_NewtonEuler/gravity", 9.81);
+  }
   TM_NewtonEuler(const rai::KinematicWorld& K, const char* iShapeName, bool _transOnly=false) : TM_NewtonEuler(initIdArg(K,iShapeName), _transOnly){}
   
   virtual void phi(arr& y, arr& J, const rai::KinematicWorld& K) { HALT("can only be of higher order"); }
   virtual uint dim_phi(const rai::KinematicWorld& K) { HALT("can only be of higher order"); }
   
   virtual void phi(arr& y, arr& J, const WorldL& Ktuple);
-  virtual uint dim_phi(const WorldL& Ktuple);
+  virtual uint dim_phi(const WorldL& Ktuple){ return 6; }
   
   virtual rai::String shortTag(const rai::KinematicWorld& K) { return STRING("NewtonEuler-" <<K.frames(i)->name); }
+};
+
+//===========================================================================
+
+struct TM_NewtonEuler_DampedVelocities : Feature {
+  int i;               ///< which shapes does it refer to?
+  double gravity=9.81;
+  bool onlyXYPhi=false;
+
+  TM_NewtonEuler_DampedVelocities(int iShape, double _gravity=-1., bool _onlyXYPhi=false) : i(iShape), onlyXYPhi(_onlyXYPhi) {
+    order = 1;
+    if(_gravity>=0.){
+      gravity = _gravity;
+    }else{
+      gravity = rai::getParameter<double>("TM_NewtonEuler/gravity", 9.81);
+    }
+  }
+  TM_NewtonEuler_DampedVelocities(const rai::KinematicWorld& K, const char* iShapeName, double _gravity=-1., bool _onlyXYPhi=false) : TM_NewtonEuler_DampedVelocities(initIdArg(K,iShapeName), _gravity, _onlyXYPhi){}
+
+  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& K) { HALT("can only be of higher order"); }
+  virtual uint dim_phi(const rai::KinematicWorld& K) { HALT("can only be of higher order"); }
+
+  virtual void phi(arr& y, arr& J, const WorldL& Ktuple);
+  virtual uint dim_phi(const WorldL& Ktuple){ return 6; }
+
+  virtual rai::String shortTag(const rai::KinematicWorld& K) { return STRING("NewtonEuler_DampedVelocities-" <<K.frames(i)->name); }
 };
 
 //===========================================================================
