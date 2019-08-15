@@ -76,8 +76,11 @@ struct Frame : NonCopyable{
   //low-level fwd kinematics computation
   void calc_X_from_parent();
   void calc_Q_from_parent(bool enforceWithinJoint = true);
-  void ensure_X(){  if(!_state_X_isGood){ if(parent) parent->ensure_X(); calc_X_from_parent(); }  }
-  
+  const Transformation& ensure_X(){
+    if(!_state_X_isGood){ if(parent) parent->ensure_X(); calc_X_from_parent(); }
+    return X;
+  }
+
   //structural operations
   Frame* insertPreLink(const rai::Transformation& A=0);
   Frame* insertPostLink(const rai::Transformation& B=0);
@@ -87,10 +90,11 @@ struct Frame : NonCopyable{
   //structural information/retrieval
   bool isChildOf(const Frame* par, int order=1) const;
   void getRigidSubFrames(FrameL& F); ///< recursively collect all rigidly attached sub-frames (e.g., shapes of a link), (THIS is not included)
+  void getPartSubFrames(FrameL& F); ///< recursively collect all frames of this part
   FrameL getPathToRoot();
   Frame* getUpwardLink(rai::Transformation& Qtotal=NoTransformation, bool untilPartBreak=false) const; ///< recurse upward BEFORE the next joint and return relative transform (this->Q is not included!b)
   const char* isPart();
-  void getPartSubFrames(FrameL& F); ///< recursively collect all frames of this part
+  void set_X_isBad_inBranch();
 
   //I/O
   void read(const Graph &ats);
@@ -99,6 +103,7 @@ struct Frame : NonCopyable{
 
   //-- HIGHER LEVEL USER INTERFACE
   void setShape(rai::ShapeType shape, const std::vector<double>& size);
+  void setPose(const rai::Transformation& _X);
   void setPosition(const std::vector<double>& pos);
   void setQuaternion(const std::vector<double>& quat);
   void setRelativePosition(const std::vector<double>& pos);
@@ -110,11 +115,11 @@ struct Frame : NonCopyable{
   void setContact(int cont);
   void setMass(double mass);
 
-  arr getPosition(){ return X.pos.getArr(); }
-  arr getQuaternion(){ return X.rot.getArr4d(); }
-  arr getRotationMatrix(){ return X.rot.getArr(); }
-  arr getRelativePosition(){ return Q.pos.getArr(); }
-  arr getRelativeQuaternion(){ return Q.rot.getArr(); }
+  arr getPosition(){ return ensure_X().pos.getArr(); }
+  arr getQuaternion(){ return ensure_X().rot.getArr4d(); }
+  arr getRotationMatrix(){ return ensure_X().rot.getArr(); }
+  arr getRelativePosition(){ return ensure_X().pos.getArr(); }
+  arr getRelativeQuaternion(){ return ensure_X().rot.getArr(); }
   arr getMeshPoints();
   arr getMeshCorePoints();
 };
@@ -149,8 +154,8 @@ struct Joint : NonCopyable{
   Joint(Frame& from, Frame& f, Joint* copyJoint=NULL);
   ~Joint();
   
-  const Transformation& X() const { return frame->parent->X; }
-  const Transformation& Q() const { return frame->Q; }
+  const Transformation& X() const;
+  const Transformation& Q() const;
   Frame *from() const { return frame->parent; }
   
   uint qDim() { return dim; }

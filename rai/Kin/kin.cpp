@@ -402,6 +402,7 @@ arr rai::KinematicWorld::calc_fwdPropagateVelocities() {
   rai::Transformation f;
   Vector linVel, angVel, q_vel, q_angvel;
   for(Frame *f : fwdActiveSet) { //this has no bailout for loopy graphs!
+    f->ensure_X();
     if(f->parent) {
       Frame *from = f->parent;
       Joint *j = f->joint;
@@ -745,7 +746,7 @@ void rai::KinematicWorld::setJointState(const arr& _q, const arr& _qdot) {
   
   calc_Q_from_q();
   
-  calc_fwdPropagateFrames();
+//  calc_fwdPropagateFrames();
 }
 
 void rai::KinematicWorld::setJointState(const arr& _q, const StringA& joints) {
@@ -778,7 +779,7 @@ void rai::KinematicWorld::setJointState(const arr& _q, const StringA& joints) {
 
   calc_Q_from_q();
   
-  calc_fwdPropagateFrames();
+//  calc_fwdPropagateFrames();
 }
 
 void rai::KinematicWorld::setJointState(const arr& _q, const uintA& joints) {
@@ -797,7 +798,7 @@ void rai::KinematicWorld::setJointState(const arr& _q, const uintA& joints) {
 
   calc_Q_from_q();
 
-  calc_fwdPropagateFrames();
+//  calc_fwdPropagateFrames();
 }
 
 void rai::KinematicWorld::setFrameState(const arr& X, const StringA& frameNames, bool calc_q_from_X, bool warnOnDifferentDim){
@@ -809,6 +810,7 @@ void rai::KinematicWorld::setFrameState(const arr& X, const StringA& frameNames,
     for(uint i=0;i<frames.N && i<X.d0;i++){
       frames(i)->X.set(X[i]);
       frames(i)->X.rot.normalize();
+      frames(i)->_state_X_isGood=true;
     }
   }else{
     if(X.nd==1){
@@ -817,6 +819,7 @@ void rai::KinematicWorld::setFrameState(const arr& X, const StringA& frameNames,
       if(!f) return;
       f->X.set(X);
       f->X.rot.normalize();
+      f->_state_X_isGood=true;
     }else{
       CHECK_EQ(X.d0, frameNames.N, "X.d0 does not equal #frames");
       for(uint i=0;i<X.d0;i++){
@@ -824,9 +827,13 @@ void rai::KinematicWorld::setFrameState(const arr& X, const StringA& frameNames,
         if(!f) return;
         f->X.set(X[i]);
         f->X.rot.normalize();
+        f->_state_X_isGood=true;
       }
     }
   }
+  _state_q_isGood=false;
+  _state_Q_isGood=false;
+
   if(calc_q_from_X){
     calc_Q_from_BodyFrames();
     calc_q_from_Q();
@@ -865,6 +872,7 @@ void rai::KinematicWorld::kinematicsPos(arr& y, arr& J, Frame *a, const rai::Vec
   }
 
   //get position
+  a->ensure_X();
   rai::Vector pos_world = a->X.pos;
   if(!!rel && !rel.isZero) pos_world += a->X.rot*rel;
   if(!!y) y = conv_vec2arr(pos_world); //return the output
@@ -876,6 +884,8 @@ void rai::KinematicWorld::kinematicsPos(arr& y, arr& J, Frame *a, const rai::Vec
 #if 1
 void rai::KinematicWorld::jacobianPos(arr& J, Frame *a, const rai::Vector& pos_world) const {
   CHECK_EQ(&a->K, this, "");
+
+  a->ensure_X();
 
   //get Jacobian
   uint N=getJointStateDimension();
@@ -1019,6 +1029,8 @@ void rai::KinematicWorld::kinematicsPos_wrtFrame(arr& y, arr& J, Frame *b, const
   if(!b && !!J) { J.resize(3, getJointStateDimension()).setZero();  return; }
   
   //get position
+  b->ensure_X();
+  s->ensure_X();
   rai::Vector pos_world = b->X.pos;
   if(!!rel) pos_world += b->X.rot*rel;
   if(!!y) y = conv_vec2arr(pos_world); //return the output
@@ -1060,6 +1072,7 @@ void rai::KinematicWorld::hessianPos(arr& H, Frame *a, rai::Vector *rel) const {
   H.setZero();
   
   //get reference frame
+  a->ensure_X();
   pos_a = a->X.pos;
   if(rel) pos_a += a->X.rot*(*rel);
   
@@ -1118,6 +1131,7 @@ void rai::KinematicWorld::hessianPos(arr& H, Frame *a, rai::Vector *rel) const {
 void rai::KinematicWorld::kinematicsVec(arr& y, arr& J, Frame *a, const rai::Vector& vec) const {
   CHECK_EQ(&a->K, this, "");
   //get the vectoreference frame
+  a->ensure_X();
   rai::Vector vec_world;
   if(!!vec) vec_world = a->X.rot*vec;
   else     vec_world = a->X.rot.getZ();
@@ -1134,6 +1148,7 @@ void rai::KinematicWorld::kinematicsVec(arr& y, arr& J, Frame *a, const rai::Vec
 /// Jacobian of the i-th body's z-orientation vector
 void rai::KinematicWorld::kinematicsQuat(arr& y, arr& J, Frame *a) const { //TODO: allow for relative quat
   CHECK_EQ(&a->K, this, "");
+  a->ensure_X();
   rai::Quaternion rot_a = a->X.rot;
   if(!!y) y = conv_quat2arr(rot_a); //return the vec
   if(!!J) {
@@ -1283,13 +1298,13 @@ void rai::KinematicWorld::inertia(arr& M) {
   
   for(Frame *a: frames) {
     //get reference frame
-    Xa = a->X;
+    Xa = a->ensure_X();
     
     j1=a->joint;
     while(j1) {
       j1_idx=j1->qIndex;
       
-      Xi = j1->from()->X;
+      Xi = j1->from()->ensure_X();
       //      Xi.appendTransformation(j1->A);
       ti = Xi.rot.getX();
       
@@ -2765,6 +2780,8 @@ bool rai::KinematicWorld::checkConsistency() const {
     a->X.checkNan();
     CHECK_ZERO(a->Q.rot.normalization()-1., 1e-4, "");
     CHECK_ZERO(a->X.rot.normalization()-1., 1e-4, "");
+
+    if(a->parent && a->_state_X_isGood) CHECK(a->parent->_state_X_isGood, "");
   }
   
   Joint *j;
@@ -3258,7 +3275,7 @@ void bindOrsToOpenGL(rai::KinematicWorld& graph, OpenGL& gl) {
 
   rai::Frame* glCamera = graph.getFrameByName("glCamera");
   if(glCamera) {
-    gl.camera.X = glCamera->X;
+    gl.camera.X = glCamera->ensure_X();
     gl.resize(500,500);
   } else {
     gl.camera.setPosition(10., -15., 8.);

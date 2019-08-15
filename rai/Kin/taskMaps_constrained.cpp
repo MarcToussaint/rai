@@ -100,16 +100,16 @@ void ConstraintStickiness::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
 void PointEqualityConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
   rai::Vector vec_i = ivec;
   rai::Vector vec_j = jvec;
-  rai::Frame *body_i = i<0?NULL: G.frames(i);
-  rai::Frame *body_j = j<0?NULL: G.frames(j);
-  rai::Vector pi = body_i ? body_i->X * vec_i : vec_i;
-  rai::Vector pj = body_j ? body_j->X * vec_j : vec_j;
+  rai::Frame *a = i<0?NULL: G.frames(i);
+  rai::Frame *b = j<0?NULL: G.frames(j);
+  rai::Vector pi = a ? a->ensure_X() * vec_i : vec_i;
+  rai::Vector pj = b ? b->ensure_X() * vec_j : vec_j;
   y = conv_vec2arr(pi-pj);
   if(!!J) {
     arr Ji, Jj;
-    G.kinematicsPos(NoArr, Ji, body_i, vec_i);
-    if(body_j) {
-      G.kinematicsPos(NoArr, Jj, body_j, vec_j);
+    G.kinematicsPos(NoArr, Ji, a, vec_i);
+    if(b) {
+      G.kinematicsPos(NoArr, Jj, b, vec_j);
       J = Ji - Jj;
     } else {
       J = Ji;

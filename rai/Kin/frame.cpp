@@ -105,11 +105,20 @@ void rai::Frame::calc_Q_from_parent(bool enforceWithinJoint) {
     arr q = joint->calc_q_from_Q(Q);
     joint->calc_Q_from_q(q, 0);
   }
+
+  K._state_q_isGood=false;
 }
 
 void rai::Frame::getRigidSubFrames(FrameL &F) {
-  for(Frame *f:parentOf) if(!f->joint) { F.append(f); f->getRigidSubFrames(F); }
+  for(Frame *child:parentOf)
+    if(!child->joint) { F.append(child); child->getRigidSubFrames(F); }
 }
+
+void rai::Frame::getPartSubFrames(FrameL &F) {
+  for(Frame *child:parentOf)
+    if(!child->joint || !child->joint->isPartBreak()) { F.append(child); child->getRigidSubFrames(F); }
+}
+
 
 FrameL rai::Frame::getPathToRoot(){
   FrameL pathToRoot;
@@ -152,9 +161,11 @@ const char*rai::Frame::isPart(){
   return 0;
 }
 
-void rai::Frame::getPartSubFrames(FrameL &F) {
-  for(Frame *f:parentOf)
-    if(!f->joint || !f->joint->isPartBreak()) { F.append(f); f->getRigidSubFrames(F); }
+void rai::Frame::set_X_isBad_inBranch(){
+  if(_state_X_isGood){ //no need to propagate to children if already bad
+    _state_X_isGood=false;
+    for(Frame* child:parentOf) child->set_X_isBad_inBranch();
+  }
 }
 
 void rai::Frame::read(const Graph& ats) {
@@ -274,6 +285,11 @@ void rai::Frame::setShape(rai::ShapeType shape, const std::vector<double>& size)
   getShape().createMeshes();
 }
 
+void rai::Frame::setPose(const rai::Transformation& _X){
+  X = _X;
+  if(parent) calc_Q_from_parent(false);
+}
+
 void rai::Frame::setPosition(const std::vector<double>& pos){
   X.pos.set(pos);
   if(parent) calc_Q_from_parent(false);
@@ -288,14 +304,14 @@ void rai::Frame::setQuaternion(const std::vector<double>& quat){
 void rai::Frame::setRelativePosition(const std::vector<double>& pos){
   CHECK(parent, "you cannot set relative position for a frame without parent");
   Q.pos.set(pos);
-  calc_X_from_parent();
+  set_X_isBad_inBranch();
 }
 
 void rai::Frame::setRelativeQuaternion(const std::vector<double>& quat){
   CHECK(parent, "you cannot set relative position for a frame without parent");
   Q.rot.set(quat);
   Q.rot.normalize();
-  calc_X_from_parent();
+  set_X_isBad_inBranch();
 }
 
 void rai::Frame::setPointCloud(const std::vector<double>& points, const std::vector<byte>& colors){
@@ -451,9 +467,19 @@ rai::Joint::~Joint() {
   //if(frame->parent) frame->unLink();
 }
 
+const rai::Transformation&rai::Joint::X() const {
+  CHECK(frame->_state_X_isGood,"");
+  return frame->parent->X;
+}
+
+const rai::Transformation&rai::Joint::Q() const {
+  CHECK(frame->K._state_Q_isGood,"");
+  return frame->Q;
+}
+
 void rai::Joint::calc_Q_from_q(const arr &q_full, uint _qIndex) {
   rai::Transformation &Q = frame->Q;
-//  if(type!=JT_rigid) Q.setZero();
+  //  if(type!=JT_rigid) Q.setZero();
   arr q(dim);
   for(uint i=0;i<dim;i++) q.elem(i) = q_full.elem(_qIndex+i);
   q *= scale;
@@ -1038,6 +1064,8 @@ void rai::Shape::glDraw(OpenGL& gl) {
   }
   if(frame.K.orsDrawIndexColors) gl.drawId(frame.ID);
   
+  frame.ensure_X();
+
   double GLmatrix[16];
   frame.X.getAffineMatrixGL(GLmatrix);
   glLoadMatrixd(GLmatrix);

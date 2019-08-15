@@ -155,7 +155,7 @@ HALT("change code: add a qNull here explicitly");
       rai::Vector vel(gamepadLeftRight, gamepadForwardBack, gamepadUpDown);
       if(sel==down) {
         vel.set(.5*gamepadLeftRight, .5*gamepadRotate, 2.*gamepadForwardBack);
-        vel = K.getFrameByName("endeffBase") -> X.rot * vel;
+        vel = K.getFrameByName("endeffBase") -> ensure_X().rot * vel;
       }
 //      vel = MP.world.getShapeByName("endeffBase")->X.rot*vel;
       arr ve;

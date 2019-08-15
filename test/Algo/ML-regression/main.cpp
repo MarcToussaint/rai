@@ -468,6 +468,7 @@ int main(int argc, char *argv[]) {
     break;
   }
   
+  plotClear();
   return 0;
 }
 

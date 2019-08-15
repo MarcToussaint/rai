@@ -223,7 +223,7 @@ void SwiftInterface::pushToSwift(const rai::KinematicWorld& world) {
   for(rai::Frame *f: world.frames) {
     if(f->shape) {
       if(f->ID<INDEXshape2swift.N && INDEXshape2swift(f->ID)!=-1) {
-        rot = f->X.rot.getMatrix();
+        rot = f->ensure_X().rot.getMatrix();
         scene->Set_Object_Transformation(INDEXshape2swift(f->ID), rot.p(), f->X.pos.p());
         if(!f->shape->cont) scene->Deactivate(INDEXshape2swift(f->ID));
         //else         scene->Activate( INDEXshape2swift(f->ID) );

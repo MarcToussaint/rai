@@ -85,7 +85,7 @@ void PercMesh::syncWith(rai::KinematicWorld& K) {
     f->shape->visual = true;
     f->ats.getNew<int>("label") = 0x80+id;
   }
-  f->X = pose;
+  f->setPose(pose);
   f->shape->mesh() = mesh;
   f->shape->mesh().C = ARR(.5, 1., .5);
   f->ats.getNew<int>("label") = 0x80+id;
@@ -142,7 +142,7 @@ void PercPlane::syncWith(rai::KinematicWorld &K) {
 //    shape->size(0) = shape->size(1) = shape->size(2) = shape->size(3) = .2;
 //    stored_planes.append(id);
   }
-  body->X = pose;
+  body->setPose(pose);
   
   body->shape->mesh() = hull;
 }
@@ -215,7 +215,7 @@ void PercBox::syncWith(rai::KinematicWorld &K) {
     rai::Shape *shape = new rai::Shape(*body);
     shape->type() = rai::ST_box;
   }
-  body->X = pose;
+  body->setPose(pose);
   body->shape->size() = size;
   body->shape->mesh().C = color;
 }
@@ -272,9 +272,9 @@ void PercCluster::syncWith(rai::KinematicWorld& K) {
     shape->size() = consts<double>(.2,3);
 //    stored_clusters.append(id);
   }
-  body->X = pose;
+  body->setPose(pose);
   
-  pose = body->X;
+  pose = body->ensure_X();
   //((Cluster*)cluster)->mean = ARR(cen.x, cen.y, cen.z);
   /* If we change the mean, we compare the transformed mean to an untransformed mean later...*/
 }
@@ -295,7 +295,7 @@ void PercAlvar::syncWith(rai::KinematicWorld& K) {
 //    stored_alvars.append(id);
   }
   
-  body->X = pose;
+  body->setPose(pose);
 }
 
 void OptitrackBody::syncWith(rai::KinematicWorld &K) {
@@ -312,7 +312,7 @@ void OptitrackBody::syncWith(rai::KinematicWorld &K) {
 //    stored_optitrackbodies.append(id);
   }
   
-  body->X = pose;
+  body->setPose(pose);
 }
 
 void OptitrackMarker::syncWith(rai::KinematicWorld &K) {
@@ -329,6 +329,6 @@ void OptitrackMarker::syncWith(rai::KinematicWorld &K) {
 //    stored_optitrackmarkers.append(id);
   }
   
-  body->X = pose;
+  body->setPose(pose);
 }
 

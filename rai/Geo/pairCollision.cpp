@@ -20,7 +20,7 @@ extern "C" {
 #include "ccd/quat.h"
 #include <Geo/qhull.h>
 
-PairCollision::PairCollision(const rai::Mesh &_mesh1, const rai::Mesh &_mesh2, rai::Transformation &_t1, rai::Transformation &_t2, double rad1, double rad2)
+PairCollision::PairCollision(const rai::Mesh &_mesh1, const rai::Mesh &_mesh2, const rai::Transformation& _t1, const rai::Transformation& _t2, double rad1, double rad2)
   : mesh1(&_mesh1), mesh2(&_mesh2), t1(&_t1), t2(&_t2), rad1(rad1), rad2(rad2) {
   
   double d2 = GJK_sqrDistance();

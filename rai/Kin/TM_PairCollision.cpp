@@ -37,7 +37,7 @@ void TM_PairCollision::phi(arr& y, arr& J, const rai::KinematicWorld& K) {
   if(!m2->V.N) m2->V = zeros(1,3);
 
   if(coll) delete coll;
-  coll = new PairCollision(*m1, *m2, s1->frame.X, s2->frame.X, r1, r2);
+  coll = new PairCollision(*m1, *m2, s1->frame.ensure_X(), s2->frame.ensure_X(), r1, r2);
   
   if(neglectRadii) coll->rad1=coll->rad2=0.;
   

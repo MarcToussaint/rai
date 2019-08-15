@@ -95,7 +95,7 @@ void rai::KinematicSwitch::apply(KinematicWorld& K) {
     if(init==SWInit_zero) { //initialize the joint with zero transform
       j->frame->Q.setZero();
     }else if(init==SWInit_copy) { //set Q to the current relative transform, modulo DOFs
-      j->frame->Q = j->frame->X / j->frame->parent->X; //that's important for the initialization of x during the very first komo.setupConfigurations !!
+      j->frame->Q = j->frame->ensure_X() / j->frame->parent->ensure_X(); //that's important for the initialization of x during the very first komo.setupConfigurations !!
       //cout <<j->frame->Q <<' ' <<j->frame->Q.rot.normalization() <<endl;
       arr q = j->calc_q_from_Q(j->frame->Q);
       j->frame->Q.setZero();

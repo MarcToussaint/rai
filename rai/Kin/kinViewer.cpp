@@ -69,7 +69,7 @@ void KinViewer::step() {
     }
   }
   X.resize(world->frames.N);
-  for(rai::Frame *f:world().frames) X(f->ID) = f->X;
+  for(rai::Frame *f:world().frames) X(f->ID) = f->ensure_X();
 
   {
     auto _dataLock = gl->dataLock(RAI_HERE);
@@ -288,7 +288,7 @@ void ComputeCameraView::step() {
     {
       auto _dataLock = gl.dataLock(RAI_HERE);
       gl.camera.setKinect();
-      gl.camera.X = kinectShape->X * gl.camera.X;
+      gl.camera.X = kinectShape->ensure_X() * gl.camera.X;
     }
     gl.renderInBack(640, 480);
     flip_image(gl.captureImage);
@@ -303,7 +303,7 @@ void ComputeCameraView::step() {
       }
       cameraDepth.set() = depth_image;
     }
-    cameraFrame.set() = kinectShape->X;
+    cameraFrame.set() = kinectShape->ensure_X();
   }
 }
 

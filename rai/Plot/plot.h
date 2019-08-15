@@ -35,7 +35,7 @@ struct PlotModule {
   PlotModule();
   ~PlotModule();
 };
-extern PlotModule plotModule;
+extern Singleton<PlotModule> plotModule;
 
 //===========================================================================
 

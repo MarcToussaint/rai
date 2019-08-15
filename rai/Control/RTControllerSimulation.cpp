@@ -20,7 +20,7 @@ void force(rai::KinematicWorld* world, arr& fR) {
       if(p.d <= 0.0) {
         rai::Vector trans = p.posB - p.posA;
         rai::Vector force = 100.0*trans;
-        rai::Vector torque = (p.posA - p.a->X.pos) ^ force;
+        rai::Vector torque = (p.posA - p.a->ensure_X().pos) ^ force;
         fR(0) = force(0);
         fR(1) = force(1);
         fR(2) = force(2);

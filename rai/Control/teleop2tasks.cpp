@@ -158,7 +158,7 @@ void Teleop2Tasks::updateTasks(floatA cal_pose_rh, floatA cal_pose_lh, float cal
     initialised = true;
   }
   
-  rai::Quaternion orsquats = K.getFrameByName("endeffBase") -> X.rot;
+  rai::Quaternion orsquats = K.getFrameByName("endeffBase") -> ensure_X().rot;
 //  rai::Joint *trans = K.getJointByName("worldTranslationRotation");
 //  orsquats.setRad( q(trans->qIndex+2),{0.,0.,1.} );
   rai::Quaternion orsquatsacc;

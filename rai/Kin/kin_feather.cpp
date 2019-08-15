@@ -284,7 +284,7 @@ void FeatherstoneInterface::update() {
     for(rai::Frame* f : K.frames) {
       F_Link& link=tree(f->ID);
       link.ID = f->ID;
-      link.X = f->X;
+      link.X = f->ensure_X();
       if(f->parent) { //is not a root
         link.parent = f->parent->ID;
         link.Q = f->Q;
@@ -307,7 +307,7 @@ void FeatherstoneInterface::update() {
   } else { //just update an existing structure
     for(rai::Frame *f: K.frames) {
       F_Link& link=tree(f->ID);
-      link.X = f->X;
+      link.X = f->ensure_X();
       if(f->parent) link.Q = f->Q;
       
       if(f->inertia) {

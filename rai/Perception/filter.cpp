@@ -37,7 +37,7 @@ void Filter::open() {
         rai::Shape *s=b->shape;
         switch(s->type()) {
           case rai::ST_box: {
-            PerceptPtr p = make_shared<PercBox>(b->X, s->size(), s->mesh().C);
+            PerceptPtr p = make_shared<PercBox>(b->ensure_X(), s->size(), s->mesh().C);
             p->id = nextId++;
             p->bodyId = b->ID;
             percepts_filtered.set()->append(p);

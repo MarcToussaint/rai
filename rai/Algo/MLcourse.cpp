@@ -9,8 +9,6 @@
 #include <Core/util.h>
 #include "MLcourse.h"
 
-arr beta_true;
-
 double NormalSdv(const double& a, const double& b, double sdv) {
   double d=(a-b)/sdv;
   double norm = 1./(::sqrt(RAI_2PI)*sdv);
@@ -584,11 +582,13 @@ arr makeFeatures(const arr& X, FeatureType featureType, const arr& rbfCenters) {
   return Z;
 }
 
-void artificialData(arr& X, arr& y, ArtificialDataType dataType) {
+arr artificialData(arr& X, arr& y, ArtificialDataType dataType) {
   uint n = rai::getParameter<uint>("n", 100);
   uint d = rai::getParameter<uint>("d", 1);
   double sigma = rai::getParameter<double>("sigma", 1.); // observation noise
   
+  arr beta_true;
+
   if(dataType==readFromCfgFileDT) dataType = (ArtificialDataType)rai::getParameter<uint>("dataType", 1);
   switch(dataType) {
     case linearRedundantData:
@@ -631,6 +631,7 @@ void artificialData(arr& X, arr& y, ArtificialDataType dataType) {
     default: HALT("");
   }
   cout <<"correct beta=" <<beta_true <<endl;
+  return beta_true;
 }
 
 void artificialData_Hasties2Class(arr& X, arr& y) {

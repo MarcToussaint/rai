@@ -30,7 +30,7 @@ void POA_distance(arr& y, arr& J, rai::Contact* con, bool b_or_a){
   K.kinematicsContactPOA(pos, Jpos, con);
   X0.pos = pos;
 
-  PairCollision coll(M0, *m, X0, s->frame.X, 0., r);
+  PairCollision coll(M0, *m, X0, s->frame.ensure_X(), 0., r);
 
   arr Jp;
   K.jacobianPos(Jp, &s->frame, coll.p1);
@@ -47,8 +47,8 @@ void POA_rel_vel2(arr& y, arr& J, const WorldL& Ktuple, rai::Contact* con, bool 
   Kc->kinematicsContactPOA(cp, Jcp, con);
   if(!!J) expandJacobian(Jcp, Ktuple, -2);
 
-  arr Ra = con->a.X.rot.getArr();
-  arr Rb = con->b.X.rot.getArr();
+  arr Ra = con->a.ensure_X().rot.getArr();
+  arr Rb = con->b.ensure_X().rot.getArr();
 
   arr p0a, p0b, Jp0a, Jp0b;
   Kc->kinematicsPos(p0a, Jp0a, &con->a);
@@ -79,8 +79,8 @@ void POA_rel_vel2(arr& y, arr& J, const WorldL& Ktuple, rai::Contact* con, bool 
       expandJacobian(Jpa, Ktuple, -3);
       expandJacobian(Jpb, Ktuple, -3);
     }
-    Jpa += fa->X.rot.getArr() * Jrela;
-    Jpb += fb->X.rot.getArr() * Jrelb;
+    Jpa += fa->ensure_X().rot.getArr() * Jrela;
+    Jpb += fb->ensure_X().rot.getArr() * Jrelb;
   }
   y = pa - pb;
   if(!!J){
@@ -264,8 +264,8 @@ void TM_Contact_POAisInIntersection_InEq::phi(arr& y, arr& J, const rai::Kinemat
   K.kinematicsContactPOA(pos, Jpos, con);
   X0.pos = pos;
 
-  PairCollision coll1(M0, *m1, X0, s1->frame.X, 0., r1);
-  PairCollision coll2(M0, *m2, X0, s2->frame.X, 0., r2);
+  PairCollision coll1(M0, *m1, X0, s1->frame.ensure_X(), 0., r1);
+  PairCollision coll2(M0, *m2, X0, s2->frame.ensure_X(), 0., r2);
 
   arr Jp1, Jp2;
   K.jacobianPos(Jp1, &s1->frame, coll1.p1);

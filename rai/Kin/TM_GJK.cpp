@@ -80,7 +80,7 @@ void TM_GJK::phi(arr& v, arr& J, const rai::KinematicWorld& W) {
   rai::Vector p1, p2, e1, e2;
   GJK_point_type pt1, pt2;
   
-  double d2 = GJK_sqrDistance(*m1, *m2, s1->frame.X, s2->frame.X, p1, p2, e1, e2, pt1, pt2);
+  double d2 = GJK_sqrDistance(*m1, *m2, s1->frame.ensure_X(), s2->frame.ensure_X(), p1, p2, e1, e2, pt1, pt2);
   //  if(d2<1e-10) LOG(-1) <<"zero distance";
   arr y1, J1, y2, J2;
   

@@ -104,14 +104,14 @@ double distance_SSRects(rai::Frame& A, rai::Frame& B, rai::Vector& Pa, rai::Vect
     return distance_SSLines(A, B, Pa, Pb);
   }
   rai::Transformation f;
-  f.setDifference(A.X, B.X);
+  f.setDifference(A.ensure_X(), B.ensure_X());
   rai::Matrix R = ((f.rot)).getMatrix();
   rai::Vector Asize={A.shape->size(0), A.shape->size(1), 0.};
   rai::Vector Bsize={B.shape->size(0), B.shape->size(1), 0.};
   rai::Vector trans = f.pos; //Asize + f.pos - R*Bsize;
   double dist = pqp_RectDist(R.p(), trans.p(), (Asize).p(), (Bsize).p(), Pa.p(), Pb.p());
-  Pa = A.X * Pa;
-  Pb = A.X * Pb;
+  Pa = A.ensure_X() * Pa;
+  Pb = A.ensure_X() * Pb;
    //distance
   rai::Vector c = Pa-Pb;
   double d = c.length();
