@@ -380,6 +380,13 @@ CXXFLAGS  += -DRAI_PTHREAD
 LIBS += -lpthread
 endif
 
+ifeq ($(DART),1)
+CXXFLAGS += -DRAI_DART -std=c++14
+CPATH := $(CPATH):$(HOME)/git/dart/build:$(HOME)/git/dart
+LPATH := $(HOME)/git/dart/build/lib:$(LPATH)
+LIBS += -ldart-gui -ldart-utils-urdf -ldart-utils -ldart -lboost_system
+endif
+
 ifeq ($(PHYSX),1)
 CXXFLAGS += -DRAI_PHYSX -D_DEBUG -DPX_DISABLE_FLUIDS -DCORELIB -DPX32 -DLINUX
 CPATH := $(CPATH):$(HOME)/opt/physx3.4/include:$(HOME)/opt/physx3.4/include/physx
