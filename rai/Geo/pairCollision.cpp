@@ -273,7 +273,7 @@ void PairCollision::kinNormal(arr& y, arr& J,
       if(1.-ab*ab>1e-8) { //the edges are not colinear
         double nn = ::sqrt(1.-ab*ab);
         double sign = ::sign(scalarProduct(normal, crossProduct(b,a)));
-        J += ((sign/nn) * (eye(3,3) - normal*~normal)) * (skew(b) * crossProduct(Jx1, a) - skew(a) * crossProduct(Jx2, b));
+        J = ((sign/nn) * (eye(3,3) - normal*~normal)) * (skew(b) * crossProduct(Jx1, a) - skew(a) * crossProduct(Jx2, b));
       }
     }
     if(simplexType(2, 1)) {
@@ -480,16 +480,25 @@ void PairCollision::nearSupportAnalysis(double eps) {
   }
 }
 
-double coll_1on2(arr &p2, arr& normal, const arr &pts1, const arr &pts2) {
+double coll_1on2(arr &p2, arr& normal, double& s, const arr &pts1, const arr &pts2) {
   CHECK(pts1.nd==2 && pts1.d0==1 && pts1.d1==3, "I need a set of 1 pts1");
   CHECK(pts2.nd==2 && pts2.d0==2 && pts2.d1==3, "I need a set of 2 pts2");
 
   const arr& p1 = pts1[0];
 
-  arr b = pts2[1]-pts2[0];  b/=length(b);
+  arr b = pts2[1]-pts2[0];
 
-  p2 = pts2[0];
-  p2 += scalarProduct(p1-p2, b)*b;
+  s = scalarProduct(p1-pts2[0], b);
+  s /= sumOfSqr(b);
+
+  if(s<=0.){ //1on1 with pts2[0]
+    p2 = pts2[0];
+  } else if(s>=1.){ //1on1 with pts2[1]
+    p2 = pts2[1];
+  } else {
+    p2 = pts2[0];
+    p2 += s*b;
+  }
 
   normal = p1-p2;
   double d = length(normal);
@@ -544,7 +553,8 @@ double coll_2on3(arr &p1, arr& p2, arr& normal, const arr &pts1, const arr &pts2
   //collide center on line to get p1:
   arr cen = center;
   cen.reshape(1,3);
-  coll_1on2(p1, normal, cen, pts1);
+  double s;
+  coll_1on2(p1, normal, s, cen, pts1);
 //  p1 = .5*(pts1[0]+pts1[1]); //take center of line segment as single point
   p1.reshape(1,3);
   double d = coll_1on3(p2, normal, p1, pts2);

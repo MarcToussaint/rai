@@ -14,6 +14,7 @@
 #include <Algo/ann.h>
 
 #include <mpi_kmeans.h>
+#include <Geo/pairCollision.h>
 
 void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
   struct fitSSBoxProblem : ConstrainedProblem {
@@ -322,7 +323,7 @@ void RitterAlgorithm(arr& center, double& radius, const arr& pts){
 
   for(uint i=0; i<pts.d0; i++){
     double r = length(pts[i]-center);
-    if(r<radius) radius = r;
+    if(r>radius) radius = r;
   }
 }
 
@@ -393,4 +394,227 @@ void minimalConvexCore3(arr& core, const arr& org_pts, double max_radius, int ve
   kmeans(centers.p, pts.p, labels.p, 3, pts.d0, k, 100, 3);
 
   core = centers;
+}
+
+
+struct LinearProgram : ConstrainedProblem {
+  arr c;
+  arr G, g;
+
+  LinearProgram(const arr& _c, const arr& _G, const arr& _g) : c(_c), G(_G), g(_g) {
+    CHECK_EQ(c.N, G.d1, "");
+    CHECK_EQ(g.N, G.d0, "");
+  }
+
+  uint dim_x() { return c.N; }
+
+  virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& ot, const arr& x, arr& lambda) {
+    phi.resize(1+G.d0);
+    if(!!ot) ot.resize(phi.N);
+    if(!!J) J.resize(phi.N, x.N).setZero();
+
+    phi(0) = scalarProduct(c, x);
+    if(!!ot) ot(0) = OT_f;
+    if(!!J) J[0] = c;
+    if(!!H) H.clear();
+
+    phi.setVectorBlock(G*x+g, 1);
+    if(!!ot) ot.setVectorBlock(consts(OT_ineq, G.d0), 1);
+    if(!!J) J.setMatrixBlock(G, 1, 0);
+  }
+};
+
+double sphereReduceConvex(rai::Mesh& M, double radius, int verbose){
+  //-- construct H-polytope (normals and offsets)
+  M.makeConvexHull();
+  arr V_orig = M.V;
+  M.computeNormals();
+  uint nIneq = M.Tn.d0;
+  arr G(nIneq, 3), g(nIneq);
+  for(uint i=0;i<nIneq;i++){
+    arr n = M.Tn[i];
+    arr p = M.V[M.T(i,0)];
+    G[i] = n;
+    g(i) = -scalarProduct(n,p)+radius;
+  }
+
+  //-- Define LP
+  for(uint i=0;i<M.V.d0;i++){
+    arr x = M.V[i];
+    arr c = -M.Vn[i];
+    LinearProgram LP(c, G, g);
+    OptConstrained opt(x, NoArr, LP, 0, OPT(stopTolerance=1e-4, stopGTolerance=1e-4));
+    opt.run();
+  }
+
+  double r = radius;
+  for(uint i=0;i<M.V.d0;i++){
+    double l = length(M.V[i] - V_orig[i]);
+    if(l>r) r=l;
+  }
+  M.fuseNearVertices(1e-3);
+  M.makeConvexHull();
+
+  cout <<"result radius:" <<r <<endl;
+
+  return r;
+}
+
+struct FitSphereProblem : ConstrainedProblem {
+  const arr& X;
+  FitSphereProblem(const arr& X):X(X) {}
+  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda) {
+    CHECK_EQ(x.N, 4, "");  //x,y,z,radius
+    phi.resize(1+X.d0);
+    if(!!tt) { tt.resize(1+X.d0); tt=OT_ineq; }
+    if(!!J) {  J.resize(1+X.d0,4); J.setZero(); }
+    if(!!H) {  H.resize(4,4); H.setZero(); }
+
+    //-- the radius objective
+    phi(0) = x(3);
+    if(!!tt) tt(0) = OT_f;
+    if(!!J)  J(0,3) = 1.;
+    if(!!H)  {}//zero
+
+    //-- all constraints
+    arr c = x({0,2});
+    double r = x(3);
+    for(uint i=0; i<X.d0; i++) {
+      arr d = c - X[i];
+      double dlen = length(d);
+      phi(1+i) = dlen - r;
+      if(!!J){
+        J(1+i,{0,2}) = d / dlen;
+        J(1+i,3) = -1.;
+      }
+    }
+  }
+};
+
+struct FitCapsuleProblem : ConstrainedProblem {
+  const arr& X;
+  FitCapsuleProblem(const arr& X):X(X) {}
+  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda) {
+    CHECK_EQ(x.N, 7, "");  //x,y,z, x,y,z, radius
+    phi.resize(2+X.d0);
+    if(!!tt) { tt.resize(2+X.d0); tt=OT_ineq; }
+    if(!!J) {  J.resize(2+X.d0,7); J.setZero(); }
+    if(!!H) {  H.resize(7,7); H.setZero(); }
+
+    //-- the radius objective
+    phi(0) = 4.*x(6);
+    if(!!tt) tt(0) = OT_f;
+    if(!!J)  J(0,6) = 4.;
+    if(!!H)  {}//zero
+
+    //-- the capsule length objective
+    arr a = x({0,2});
+    arr b = x({3,5});
+    double l = length(a-b);
+    phi(0) += l;
+    if(!!J){
+      J(0, {0,2}) += (a-b)/l;
+      J(0, {3,5}) += (b-a)/l;
+    }
+    if(!!H) {
+      arr B(3,3);
+      B.setId();
+      B *= 1./l;
+      B -= ((a-b)^(a-b)) / (l*l*l);
+      arr A;
+      A.setBlockMatrix(B, -B, -B, B);
+      H.setMatrixBlock(A, 0, 0);
+    }//zero
+
+    //-- all constraints
+    double scale = 1e1;
+    arr pts2 = x({0,5});
+    pts2.reshape(2,3);
+    double r = x(6);
+    for(uint i=0; i<X.d0; i++) {
+      double d, s;
+      arr p2, normal;
+      d = coll_1on2(p2, normal, s, X[i].reshape(1,3), pts2);
+      if(d>1e-8){
+        normal *= -scale;
+        checkNan(normal);
+        phi(2+i) = scale*(d - r);
+        if(!!J){
+          if(s<=0.){
+            J(2+i, {0,2}) = normal;
+          } else if(s>=1.){
+            J(2+i, {3,5}) = normal;
+          } else{
+            J(2+i, {0,2}) = (1.-s)*normal;
+            J(2+i, {3,5}) = s*normal;
+          }
+          J(2+i, 6) = -scale;
+        }
+      }
+    }
+    checkNan(J);
+    checkNan(H);
+  }
+};
+
+void optimalSphere(arr& core, uint num, const arr& org_pts, double& radius, int verbose){
+  arr pts = getHull(org_pts);
+
+  LOG(1) <<"merging with radius " <<radius;
+
+  //initialization
+  arr x;
+  if(num==1){
+    RitterAlgorithm(x, radius, pts);
+  }else if(num==2){
+    x.resize(2,3);
+    x[0] = pts[rnd(pts.d0)];
+    x[1] = pts[rnd(pts.d0)];
+    radius = .1;
+  }
+  x.append(radius);
+
+  //problem
+  ptr<ConstrainedProblem> F;
+  if(num==1) F = make_shared<FitSphereProblem>(pts);
+  else if(num==2)  F = make_shared<FitCapsuleProblem>(pts);
+
+  if(verbose>1) {
+    checkJacobianCP(*F, x, 1e-4);
+    checkHessianCP(*F, x, 1e-4);
+  }
+
+#if 1
+  OptConstrained opt(x, NoArr, *F, -1, OPT(
+                       stopTolerance = 1e-4,
+                       stopFTolerance = 1e-3,
+                       damping=1,
+                       maxStep=-1,
+                       constrainedMethod = augmentedLag,
+                       aulaMuInc = 1.1
+                                   ));
+#else
+  OptPrimalDual opt(x, NoArr, *F, 3, OPT(
+                      stopTolerance = 1e-5,
+                      stopFTolerance = 1e-5,
+                      damping=1e-0,
+                      maxStep=-1,
+                      muLBInit=1e1));
+#endif
+
+  opt.run();
+
+  if(verbose>1) {
+    checkJacobianCP(*F, x, 1e-4);
+    checkHessianCP(*F, x, 1e-4);
+  }
+
+  core = x({0,x.N-2});
+  core.reshape(-1,3);
+  radius = x.last();
+
+  double f = opt.L.get_costs();
+  double g = opt.L.get_sumOfGviolations();
+  cout <<"core:" <<core <<" radius:"<<radius <<endl;
+  cout <<"cost:" <<f <<" ineq:"<<g <<endl;
 }

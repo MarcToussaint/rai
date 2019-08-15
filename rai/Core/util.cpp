@@ -1151,6 +1151,14 @@ std::ifstream& rai::FileToken::getIs(bool change_dir) {
   return *is;
 }
 
+rai::String rai::FileToken::absolutePathName() const{
+  rai::String str;
+  str <<cwd;
+  if(path.N) str <<'/' <<path;
+  str <<'/' <<name;
+  return str;
+}
+
 //===========================================================================
 //
 // random number generator

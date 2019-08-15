@@ -189,12 +189,19 @@ void Node::write(std::ostream& os, bool yamlMode) const {
       os <<'"' <<*getValue<rai::String>() <<'"';
     }else{
       const rai::String& str = *getValue<rai::String>();
-      char c=str(0);
-      if((c>='a'&& c<='z') || (c>='A'&& c<='Z') ) os <<str;
+      bool onlyLetters=true;
+      for(uint i=0;i<str.N;i++){
+        char c=str(i);
+        if( ! ((c>='a'&& c<='z') || (c>='A'&& c<='Z')) ){
+          onlyLetters=false;
+          break;
+        }
+      }
+      if(onlyLetters) os <<str;
       else os <<'"' <<str <<'"';
     }
   } else if(isOfType<rai::FileToken>()) {
-    os <<"'" <<getValue<rai::FileToken>()->name <<'\'';
+    os <<'\'' <<getValue<rai::FileToken>()->absolutePathName() <<'\'';
   } else if(isOfType<arr>()) {
     getValue<arr>()->write(os, ", ", NULL, "[]");
   } else if(isOfType<intA>()) {
@@ -216,14 +223,7 @@ void Node::write(std::ostream& os, bool yamlMode) const {
   } else if(isOfType<Type*>()) {
     get<Type*>()->write(os);
   } else {
-    Node *it = reg_findType(type.name());
-    if(it && it->keys.N>1) {
-      os <<"<" <<it->keys(1) <<' ';
-      writeValue(os);
-      os <<'>';
-    } else {
-      writeValue(os);
-    }
+    writeValue(os);
   }
 }
 
@@ -589,6 +589,7 @@ void Graph::read(std::istream& is, bool parseInfo) {
     char c=rai::peerNextChar(is, " \n\r\t,");
     if(!is.good() || c=='}') { is.clear(); break; }
     Node *n = readNode(is, false, parseInfo);
+    if(!n) break;
     if(n->keys.N==1 && n->keys.first()=="Quit") {
       delete n; n=NULL;
     }
