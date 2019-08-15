@@ -61,6 +61,7 @@ inline int initIdArg(const rai::KinematicWorld &K, const char* frameName) {
   rai::Frame *a = 0;
   if(frameName && frameName[0]) a = K.getFrameByName(frameName);
   if(a) return a->ID;
+  HALT("frame '" <<frameName <<"' does not exist");
   return -1;
 }
 
