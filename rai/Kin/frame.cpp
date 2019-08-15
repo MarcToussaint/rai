@@ -17,8 +17,6 @@
 #include <Gui/opengl.h>
 #endif
 
-extern bool Geo_mesh_drawColors;
-
 //===========================================================================
 
 template<> const char* rai::Enum<rai::ShapeType>::names []= {
@@ -1049,7 +1047,6 @@ void rai::Shape::glDraw(OpenGL& gl) {
   if(frame.K.orsDrawShapes) {
     CHECK(_type!=rai::ST_none, "shape type is not initialized");
 
-    if(gl.drawMode_idColor) Geo_mesh_drawColors=false; else Geo_mesh_drawColors=true;
     if(_type==rai::ST_marker){
       if(frame.K.orsDrawMarkers){
         glDrawDiamond(size(0)/5., size(0)/5., size(0)/5.);
@@ -1096,10 +1093,8 @@ void rai::Shape::createMeshes() {
     case rai::ST_sphere:{
       sscCore().V = arr(1,3, {0.,0.,0.});
       double rad=1;
-      if(size.N) rad=size.last();
+      if(size.N) rad=size(-1);
       mesh().setSSCvx(sscCore().V, rad);
-      //      mesh().setSphere();
-      //      mesh().scale(size(3), size(3), size(3));
     } break;
     case rai::ST_cylinder:
       CHECK(size(-1)>1e-10,"");
@@ -1109,8 +1104,6 @@ void rai::Shape::createMeshes() {
       CHECK(size(-1)>1e-10,"");
       sscCore().V = arr(2,3, {0.,0.,-.5*size(-2), 0.,0.,.5*size(-2)});
       mesh().setSSCvx(sscCore().V, size(-1));
-      //      mesh().setCappedCylinder(size(3), size(2));
-      //      mesh().setSSBox(2.*size(3), 2.*size(3), size(2)+2.*size(3), size(3));
       break;
     case rai::ST_retired_SSBox:
       HALT("deprecated?");

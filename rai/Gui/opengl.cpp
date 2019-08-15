@@ -570,9 +570,14 @@ void glColorId(uint id) {
   glColor3ubv(rgb);
 }
 
+extern bool Geo_mesh_drawColors;
+
 void OpenGL::drawId(uint id) {
   if(drawMode_idColor) {
     glColorId(id);
+    Geo_mesh_drawColors=false;
+  }else{
+    Geo_mesh_drawColors=true;
   }
 }
 

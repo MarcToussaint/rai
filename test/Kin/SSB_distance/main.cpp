@@ -143,13 +143,12 @@ double distance_(rai::Frame& A, rai::Frame& B, rai::Vector& Pa, rai::Vector& Pb)
 }
 
 void TEST(Distance){
-  rai::KinematicWorld K;
-  rai::Frame A(K), B(K);
+  rai::KinematicWorld C;
+  rai::Frame A(C), B(C);
   new rai::Shape(A);
   new rai::Shape(B);
-  A.shape->type() = B.shape->type() = rai::ST_ssBox;
-  A.shape->size() = ARR(1.6, 1.6, .0, .0);
-  B.shape->size() = ARR(1.6, 1.6, .0, .0);
+  A.setShape(rai::ST_ssBox, {1.6, 1.6, .0, .0});
+  B.setShape(rai::ST_ssBox, {1.6, 1.6, .0, .0});
   for(uint k=0;k<20;k++){
     A.X.setRandom(); A.X.pos(2) += 2.;
     B.X.setRandom(); B.X.pos(2) += 2.;
@@ -158,10 +157,9 @@ void TEST(Distance){
     cout <<"d=" <<d <<' ' <<d2 <<' ' <<Pa <<Pb <<endl;
     if(d>0.) CHECK_ZERO(d-d2, 1e-4, "NOT EQUAL!");
     rai::Proxy p; p.posA=Pa; p.posB=Pb; p.colorCode=1;
-    K.proxies.append( p );
-    K.watch();
-    K.watch(true);
-    //    K.proxies.clear();
+    C.proxies.clear();
+    C.proxies.append( p );
+    C.watch(true);
   }
 }
 

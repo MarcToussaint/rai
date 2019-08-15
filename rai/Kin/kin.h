@@ -183,7 +183,7 @@ struct KinematicWorld : GLDrawer {
   void axesMatrix(arr& J, Frame *a) const; //usually called internally with kinematicsVec or Quat
   void kinematicsRelPos(arr& y, arr& J, Frame *a, const Vector& vec1, Frame *b, const Vector& vec2) const;
   void kinematicsRelVec(arr& y, arr& J, Frame *a, const Vector& vec1, Frame *b) const;
-  void kinematicsRelRot(arr& y, arr& J, Frame *a, Frame *b) const;
+//  void kinematicsRelRot(arr& y, arr& J, Frame *a, Frame *b) const;
 
   void kinematicsContactPOA(arr& y, arr& J, Contact *c) const;
   void kinematicsContactForce(arr& y, arr& J, Contact *c) const;
@@ -226,7 +226,7 @@ struct KinematicWorld : GLDrawer {
   void NewtonEuler_backward();
   
   /// @name extensions on demand
-  OpenGL& gl(const char* window_title=NULL);
+  OpenGL& gl(const char* window_title=NULL, bool offscreen=false);
   SwiftInterface& swift();
   FclInterface& fcl();
   void swiftDelete();

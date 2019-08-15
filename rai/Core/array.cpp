@@ -1812,20 +1812,34 @@ arr eigen_Ainv_b(const arr& A, const arr& b){
     Eigen::SparseMatrix<double> Aeig;
     getEigen(As, Aeig);
     Eigen::MatrixXd beig = conv_arr2eigen(b);
-//    Eigen::SparseQR<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int> > solver;
-    Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> solver;
-//    Eigen::SimplicialLLT<Eigen::SparseMatrix<double>> solver;
-    solver.compute(Aeig);
-    if(solver.info()!=Eigen::Success) {
-      HALT("decomposition failed");
-      return NoArr;
+    if(A.d0==A.d1){ //square matrix
+      Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> solver;
+  //    Eigen::SimplicialLLT<Eigen::SparseMatrix<double>> solver;
+      solver.compute(Aeig);
+      if(solver.info()!=Eigen::Success) {
+        HALT("decomposition failed");
+        return NoArr;
+      }
+      Eigen::MatrixXd x = solver.solve(beig);
+      if(solver.info()!=Eigen::Success) {
+        HALT("solving failed");
+        return NoArr;
+      }
+      return conv_eigen2arr(x);
+    }else{ //non-square matrix
+      Eigen::SparseQR<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int> > solver;
+      solver.compute(Aeig);
+      if(solver.info()!=Eigen::Success) {
+        HALT("decomposition failed");
+        return NoArr;
+      }
+      Eigen::MatrixXd x = solver.solve(beig);
+      if(solver.info()!=Eigen::Success) {
+        HALT("solving failed");
+        return NoArr;
+      }
+      return conv_eigen2arr(x);
     }
-    Eigen::MatrixXd x = solver.solve(beig);
-    if(solver.info()!=Eigen::Success) {
-      HALT("solving failed");
-      return NoArr;
-    }
-    return conv_eigen2arr(x);
   }else NIY;
     return NoArr;
 }

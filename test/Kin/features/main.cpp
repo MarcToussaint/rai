@@ -25,15 +25,10 @@ void testFeature() {
   rai::Joint j1(obj1), j2(obj2);
   j1.type = j2.type = rai::JT_free;
 
-  rai::Shape s1(obj1), s2(obj2);
-  s1.type() = s2.type() = rai::ST_ssBox; //rai::ST_ssCvx; //ST_mesh;
-//  s1.sscCore().setRandom();      s2.sscCore().setRandom();
-  s1.mesh().C = {.5,.8,.5,.4};   s2.mesh().C = {.5,.5,.8,.4};
-  s1.size(3) = rnd.uni(.01, .3); s2.size(3) = rnd.uni(.01, .3);
-//  if(rnd.uni()<.2) s1.sscCore().setDot(); else if(rnd.uni()<.2) s1.sscCore().setLine(.5);
-//  if(rnd.uni()<.2) s2.sscCore().setDot(); else if(rnd.uni()<.2) s1.sscCore().setLine(.5);
-  s1.createMeshes();
-  s2.createMeshes();
+  obj1.setShape(rai::ST_ssBox, ARR(1.,1.,1.,rnd.uni(.01, .3)));
+  obj2.setShape(rai::ST_ssBox, ARR(1.,1.,1.,rnd.uni(.01, .3)));
+  obj1.setColor({.5,.8,.5,.4});
+  obj2.setColor({.5,.5,.8,.4});
 
   rai::Inertia m1(obj1), m2(obj2);
   m1.defaultInertiaByShape();
@@ -75,7 +70,8 @@ void testFeature() {
     arr y;
     F.first()->__phi(y, NoArr, Ktuple);
 
-    if(!succ) K2.watch(true);
+    if(!succ)
+      K2.watch(true);
   }
 }
 

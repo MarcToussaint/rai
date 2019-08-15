@@ -311,9 +311,9 @@ void TEST(Exception){
   bool caught=false;
   try{
     cout <<A(2);
-  }catch(const char *e){
+  }catch(const std::runtime_error& err){
     caught=true;
-    cout <<"exception caught `" <<e <<"'" <<endl;
+    cout <<"exception caught `" <<err.what() <<"'" <<endl;
   }
   CHECK(caught,"exception not caught");
 }

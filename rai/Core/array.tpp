@@ -1881,7 +1881,7 @@ template<class T> void rai::Array<T>::read(std::istream& is) {
     uint i=0;
     d=0;
     for(;;) {
-      rai::skip(is, " \r\t", NULL, true);
+      rai::skip(is, " ,\r\t", NULL, true);
       is.get(c);
       if(c==']' || !is.good()) { is.clear(); break; }
       if(c==';' || c=='\n') {  //set an array width

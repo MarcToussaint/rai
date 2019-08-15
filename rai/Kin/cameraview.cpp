@@ -1,8 +1,6 @@
 #include "cameraview.h"
 #include <Kin/frame.h>
 
-extern bool Geo_mesh_drawColors; //UGLY!!
-
 //===========================================================================
 
 rai::CameraView::CameraView(const rai::KinematicWorld& _K, bool _offscreen, int _watchComputations)
@@ -210,12 +208,10 @@ void rai::CameraView::glDraw(OpenGL& gl) {
     gl.setClearColors(1, 1, 1, 0);
     gl.background.clear();
     gl.drawMode_idColor = true;
-    Geo_mesh_drawColors = false;
     K.orsDrawMarkers = false;
     K.orsDrawVisualsOnly=true;
     K.glDraw(gl);
     gl.drawMode_idColor = false;
-    Geo_mesh_drawColors = true;
   }
 }
 

@@ -55,7 +55,7 @@ void testJacobianInFile(const char* filename, const char* shape){
 void TEST(Kinematics){
 
   struct MyFct : VectorFunction{
-    enum Mode {Pos, Vec, Quat, RelPos, RelVec, RelRot} mode;
+    enum Mode {Pos, Vec, Quat, RelPos, RelVec} mode;
     rai::KinematicWorld& K;
     rai::Frame *b, *b2;
     rai::Vector &vec, &vec2;
@@ -70,7 +70,7 @@ void TEST(Kinematics){
           case Quat:   K.kinematicsQuat(y,J,b); break;
           case RelPos: K.kinematicsRelPos(y,J,b,vec,b2,vec2); break;
           case RelVec: K.kinematicsRelVec(y,J,b,vec,b2); break;
-          case RelRot: K.kinematicsRelRot(y,J,b,b2); break;
+//          case RelRot: K.kinematicsRelRot(y,J,b,b2); break;
         }
         //if(!!J) cout <<"\nJ=" <<J <<endl;
       } );
@@ -98,7 +98,7 @@ void TEST(Kinematics){
     cout <<"kinematicsVec:   "; checkJacobian(MyFct(MyFct::Vec   , G, b, vec, b2, vec2)(), x, 1e-5);
     cout <<"kinematicsRelVec:"; checkJacobian(MyFct(MyFct::RelVec, G, b, vec, b2, vec2)(), x, 1e-5);
     cout <<"kinematicsQuat:  "; checkJacobian(MyFct(MyFct::Quat  , G, b, vec, b2, vec2)(), x, 1e-5);
-    cout <<"kinematicsRelRot:"; checkJacobian(MyFct(MyFct::RelRot, G, b, vec, b2, vec2)(), x, 1e-5);
+//    cout <<"kinematicsRelRot:"; checkJacobian(MyFct(MyFct::RelRot, G, b, vec, b2, vec2)(), x, 1e-5);
 
     //checkJacobian(Convert(T1::f_hess, NULL), x, 1e-5);
   }

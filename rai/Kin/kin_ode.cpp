@@ -122,20 +122,20 @@ OdeInterface::OdeInterface(rai::KinematicWorld &_C):C(_C) {
           geom=dCreateBox(myspace, s->size(0), s->size(1), s->size(2));
           break;
         case rai::ST_sphere:
-          dMassSetSphere(&odeMass, n->mass, s->size(3));
+          dMassSetSphere(&odeMass, n->mass, s->size(-1));
           dBodySetMass(b, &odeMass);
-          geom=dCreateSphere(myspace, s->size(3));
+          geom=dCreateSphere(myspace, s->size(-1));
           break;
         case rai::ST_cylinder:
-          dMassSetCylinder(&odeMass, n->mass, 3, s->size(3), s->size(2));
+          dMassSetCylinder(&odeMass, n->mass, 3, s->size(-1), s->size(-2));
           dBodySetMass(b, &odeMass);
-          geom=dCreateCylinder(myspace, s->size(3), s->size(2));
+          geom=dCreateCylinder(myspace, s->size(-1), s->size(-2));
           break;
         case rai::ST_capsule:
-          dMassSetCylinder(&odeMass, n->mass, 3, s->size(3), s->size(2));
+          dMassSetCylinder(&odeMass, n->mass, 3, s->size(-1), s->size(-2));
           //                 RAI_MSG("ODE: setting Cylinder instead of capped cylinder mass");
           dBodySetMass(b, &odeMass);
-          geom=dCreateCCylinder(myspace, s->size(3), s->size(2));
+          geom=dCreateCCylinder(myspace, s->size(-1), s->size(-2));
           break;
         case rai::ST_mesh: {
 #if 0

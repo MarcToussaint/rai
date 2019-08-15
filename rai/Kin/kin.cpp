@@ -1218,6 +1218,7 @@ void rai::KinematicWorld::kinematicsRelVec(arr& y, arr& J, Frame *a, const rai::
   }
 }
 
+#if 0
 /// The position vec1, attached to b1, relative to the frame of b2 (plus vec2)
 void rai::KinematicWorld::kinematicsRelRot(arr& y, arr& J, Frame *a, Frame *b) const {
   rai::Quaternion rot_b = a->X.rot;
@@ -1232,6 +1233,7 @@ void rai::KinematicWorld::kinematicsRelRot(arr& y, arr& J, Frame *a, Frame *b) c
     J -= 0.5 * ss/s/s*(y*~y*A);
   }
 }
+#endif
 
 void rai::KinematicWorld::kinematicsContactPOA(arr& y, arr& J, rai::Contact *c) const{
   y = c->position;
@@ -1459,9 +1461,9 @@ void rai::KinematicWorld::prefixNames(bool clear) {
 }
 
 /// return a OpenGL extension
-OpenGL& rai::KinematicWorld::gl(const char* window_title) {
+OpenGL& rai::KinematicWorld::gl(const char* window_title, bool offscreen) {
   if(!s->gl) {
-    s->gl = new OpenGL(window_title);
+    s->gl = new OpenGL(window_title, 400,400, offscreen);
     s->gl->add(glStandardScene, 0);
     s->gl->addDrawer(this);
     s->gl->camera.setDefault();
@@ -1542,23 +1544,26 @@ void rai::KinematicWorld::glClose(){
 }
 
 void rai::KinematicWorld::glGetMasks(int w, int h, bool rgbIndices) {
+  if(s->gl && !s->gl->offscreen){
+    LOG(0) <<"can't make this offscreen anymore!";
+  }else gl(NULL, true);
+
   gl().clear();
   gl().addDrawer(this);
   if(rgbIndices) {
+    gl().drawMode_idColor = true;
     gl().setClearColors(0,0,0,0);
-    orsDrawIndexColors = true;
     orsDrawMarkers = orsDrawJoints = orsDrawProxies = false;
   }
-  gl().renderInBack(w, h);
-  //  indexRgb = gl().captureImage;
-  //  depth = gl().captureDepth;
+
+  gl().update(NULL, true);
 
   gl().clear();
   gl().add(glStandardScene, 0);
   gl().addDrawer(this);
   if(rgbIndices) {
     gl().setClearColors(1,1,1,0);
-    orsDrawIndexColors = false;
+    gl().drawMode_idColor = false;
     orsDrawMarkers = orsDrawJoints = orsDrawProxies = true;
   }
 }
@@ -2341,19 +2346,6 @@ void rai::KinematicWorld::kinematicsProxyDist(arr& y, arr& J, const Proxy& p, do
   if(!!J) J.resize(1, getJointStateDimension());
   if(!addValues) { y.setZero();  if(!!J) J.setZero(); }
   
-  //  //costs
-  //  if(a->type==rai::ST_sphere && b->type==rai::ST_sphere){
-  //    rai::Vector diff=a->X.pos-b->X.pos;
-  //    double d = diff.length() - a->size(3) - b->size(3);
-  //    y(0) = d;
-  //    if(!!J){
-  //      arr Jpos;
-  //      arr normal = conv_vec2arr(diff)/diff.length(); normal.reshape(1, 3);
-  //      kinematicsPos(NoArr, Jpos, a->body);  J += (normal*Jpos);
-  //      kinematicsPos(NoArr, Jpos, b->body);  J -= (normal*Jpos);
-  //    }
-  //    return;
-  //  }
   y(0) = p.d;
   if(!!J) {
     arr Jpos;
@@ -2380,7 +2372,6 @@ void rai::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, do
   //early check: if swift is way out of collision, don't bother computing it precise
   if(p.d>p.a->shape->radius()+p.a->shape->radius()+.01+margin) return;
   
-#if 1
   if(!p.coll) ((Proxy*)&p)->calc_coll(*this);
 
   if(p.coll->getDistance()>margin) return;
@@ -2397,66 +2388,6 @@ void rai::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, do
   if(y_dist.scalar()>margin) return;
   y += margin-y_dist.scalar();
   if(!!J)  J -= J_dist;
-  
-#else
-  CHECK(a->shape->mesh_radius>0.,"");
-  CHECK(b->shape->mesh_radius>0.,"");
-  
-  y.resize(1);
-  if(!!J) J.resize(1, getJointStateDimension());
-  if(!addValues) { y.setZero();  if(!!J) J.setZero(); }
-  
-  //costs
-  if(a->shape->type()==rai::ST_sphere && b->shape->type()==rai::ST_sphere) {
-    rai::Vector diff=a->X.pos-b->X.pos;
-    double d = diff.length() - a->shape->size(3) - b->shape->size(3);
-    y(0) = 1. - d/margin;
-    if(!!J) {
-      arr Jpos;
-      arr normal = conv_vec2arr(diff)/diff.length(); normal.reshape(1, 3);
-      kinematicsPos(NoArr, Jpos, a);  J -= 1./margin*(normal*Jpos);
-      kinematicsPos(NoArr, Jpos, b);  J += 1./margin*(normal*Jpos);
-    }
-    return;
-  }
-  double ab_radius = margin + 10.*(a->shape->mesh_radius+b->shape->mesh_radius);
-  CHECK(p->d<(1.+1e-6)*margin, "something's really wierd here!");
-  CHECK(p->cenD<(1.+1e-6)*ab_radius, "something's really wierd here! You disproved the triangle inequality :-)");
-  double d1 = 1.-p->d/margin;
-  double d2 = 1.-p->cenD/ab_radius;
-  if(d2<0.) d2=0.;
-  if(!useCenterDist) d2=1.;
-  y(0) += d1*d2;
-  
-  //Jacobian
-  if(!!J) {
-    arr Jpos;
-    rai::Vector arel, brel;
-    if(p->d>0.) { //we have a gradient on pos only when outside
-      arel=a->X.rot/(p->posA-a->X.pos);
-      brel=b->X.rot/(p->posB-b->X.pos);
-      CHECK(p->normal.isNormalized(), "proxy normal is not normalized");
-      arr normal; normal.referTo(&p->normal.x, 3); normal.reshape(1, 3);
-
-      kinematicsPos(NoArr, Jpos, a, arel);  J -= d2/margin*(normal*Jpos);
-      kinematicsPos(NoArr, Jpos, b, brel);  J += d2/margin*(normal*Jpos);
-    }
-
-    if(useCenterDist && d2>0.) {
-      arel=a->X.rot/(p->cenA-a->X.pos);
-      brel=b->X.rot/(p->cenB-b->X.pos);
-      //      CHECK(p->cenN.isNormalized(), "proxy normal is not normalized");
-      if(!p->cenN.isNormalized()) {
-        RAI_MSG("proxy->cenN is not normalized: objects seem to be at exactly the same place");
-      } else {
-        arr normal; normal.referTo(&p->cenN.x, 3); normal.reshape(1, 3);
-
-        kinematicsPos(NoArr, Jpos, a, arel);  J -= d1/ab_radius*(normal*Jpos);
-        kinematicsPos(NoArr, Jpos, b, brel);  J += d1/ab_radius*(normal*Jpos);
-      }
-    }
-  }
-#endif
 }
 
 /// measure (=scalar kinematics) for the contact cost summed over all bodies
@@ -2959,7 +2890,9 @@ void rai::KinematicWorld::glDraw_sub(OpenGL& gl) {
     orsDrawProxies=orsDrawJoints=orsDrawMarkers=false;
 
   //proxies
-  if(orsDrawProxies) for(const Proxy& p: proxies)((Proxy*)&p)->glDraw(gl);
+  if(orsDrawProxies) for(const Proxy& p: proxies){
+    ((Proxy*)&p)->glDraw(gl);
+  }
 
   //contacts
 //  if(orsDrawProxies)

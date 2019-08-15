@@ -24,7 +24,7 @@ void TEST(GJK_Jacobians) {
   j2.frame->insertPreLink(rai::Transformation(0))->Q.addRelativeTranslation(-1,-1,1);
   J1.type = J2.type = rai::JT_free;
   s1.type() = s2.type() = rai::ST_ssCvx; //ST_mesh;
-  s1.size(3) = s2.size(3) = .2;
+  s1.size() = s2.size() = ARR(.2);
   s1.sscCore().setRandom();     s2.sscCore().setRandom();
   s1.mesh().C = {.5,.8,.5,.4};  s2.mesh().C = {.5,.5,.8,.4};
   s1.frame.name="s1";           s2.frame.name="s2";
@@ -50,7 +50,7 @@ void TEST(GJK_Jacobians) {
     s1.mesh().clear();             s2.mesh().clear();
     s1.sscCore().setRandom();      s2.sscCore().setRandom();
     s1.mesh().C = {.5,.8,.5,.4};   s2.mesh().C = {.5,.5,.8,.4};
-    s1.size(3) = rnd.uni(.01, .3); s2.size(3) = rnd.uni(.01, .3);
+    s1.size() = ARR(rnd.uni(.01, .3)); s2.size() = ARR(rnd.uni(.01, .3));
     if(rnd.uni()<.4) s1.sscCore().setDot();
     if(rnd.uni()<.4) s2.sscCore().setDot();
 
@@ -77,7 +77,7 @@ void TEST(GJK_Jacobians) {
     cout <<k <<" center  ";
     succ &= checkJacobian(distCenter.vf(K), q, 1e-5);
 
-    PairCollision collInfo(s1.sscCore(), s2.sscCore(), s1.frame.X, s2.frame.X, s1.size(3), s2.size(3));
+    PairCollision collInfo(s1.sscCore(), s2.sscCore(), s1.frame.X, s2.frame.X, s1.size(-1), s2.size(-1));
 
     //    cout <<"distance: " <<y <<" vec=" <<y2 <<" error=" <<length(y2)-fabs(y(0)) <<endl;
     if(!succ) cout <<collInfo;
@@ -113,7 +113,7 @@ void TEST(GJK_Jacobians2) {
     rai::Shape *s = new rai::Shape(*a);
     s->cont=true;
     s->type() = rai::ST_ssCvx; //ST_mesh;
-    s->size(3) = .02 + .1*rnd.uni();
+    s->size() = ARR(.02 + .1*rnd.uni());
     s->sscCore().setRandom();
     s->mesh().C = {.5,.5,.8,.6};
   }
@@ -213,7 +213,7 @@ void TEST(GJK_Jacobians3) {
     K.stepSwift();
 //    K.reportProxies(cout, -1., false);
 
-//    PairCollision collInfo(s1.sscCore(), s2.sscCore(), s1.frame.X, s2.frame.X, s1.size(3), s2.size(3));
+//    PairCollision collInfo(s1.sscCore(), s2.sscCore(), s1.frame.X, s2.frame.X, s1.size(-1), s2.size(-1));
 
     TM_PairCollision gjk(1, 2, TM_PairCollision::_negScalar);
     checkJacobian(gjk.vf(K), q, 1e-4);

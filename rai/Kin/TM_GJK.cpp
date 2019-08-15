@@ -141,8 +141,8 @@ void TM_GJK::phi(arr& v, arr& J, const rai::KinematicWorld& W) {
   
   //reduce by radii
   double rad=0.;
-  if(s1->type()==rai::ST_ssCvx) rad += s1->size(3);
-  if(s2->type()==rai::ST_ssCvx) rad += s2->size(3);
+  if(s1->type()==rai::ST_ssCvx) rad += s1->size(-1);
+  if(s2->type()==rai::ST_ssCvx) rad += s2->size(-1);
   double l2=sumOfSqr(v), l=sqrt(l2);
   double fac = (l-rad)/l;
   if(!!J) {
