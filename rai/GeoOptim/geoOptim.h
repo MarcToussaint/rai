@@ -17,3 +17,6 @@ void minimalConvexCore(arr& core, const arr& points, double radius, int verbose=
 
 void minimalConvexCore2(arr& core, const arr& points, double radius, int verbose=0);
 void minimalConvexCore3(arr& core, const arr& points, double radius, int verbose=0);
+double sphereReduceConvex(rai::Mesh& M, double radius, int verbose=0);
+
+void optimalSphere(arr& core, uint num, const arr& points, double& radius, int verbose=0);

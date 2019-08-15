@@ -447,6 +447,8 @@ struct FileToken {
   std::ifstream& getIs(bool change_dir=false);
   operator std::istream&() { return getIs(); }
   operator std::ostream&() { return getOs(); }
+
+  rai::String absolutePathName() const;
 };
 template<class T> FileToken& operator>>(FileToken& fil, T& x) { fil.getIs() >>x;  return fil; }
 template<class T> std::ostream& operator<<(FileToken& fil, const T& x) { fil.getOs() <<x;  return fil.getOs(); }

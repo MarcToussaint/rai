@@ -27,7 +27,7 @@ namespace rai {
 /// a mesh (arrays of vertices, triangles, colors & normals)
 struct Mesh : GLDrawer {
   arr V;                ///< vertices
-  arr Vn;               ///< triangle normals (optional)
+  arr Vn;               ///< vertex normals (optional)
   arr C;                ///< vertex colors (optional, may be just 3 numbers -> global color)
   
   uintA T;              ///< triangles (faces, empty -> point cloud)

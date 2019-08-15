@@ -104,6 +104,7 @@ OptNewton::StopCriterion OptNewton::step() {
 
   //chop Delta to stay within bounds
   if(bound_lo.N && bound_hi.N) {
+#if 0
     double a=1.;
     for(uint i=0; i<x.N; i++) if(bound_hi(i)>bound_lo(i)) {
         if(x(i)+a*Delta(i)>bound_hi(i)) a = (bound_hi(i)-x(i))/Delta(i);
@@ -113,6 +114,7 @@ OptNewton::StopCriterion OptNewton::step() {
       if(o.verbose>1) cout <<" \tboundClip=" <<std::setw(11) <<a <<flush;
       Delta *= a;
     }
+#endif
   }
   
   //restrict stepsize
@@ -129,6 +131,16 @@ OptNewton::StopCriterion OptNewton::step() {
     return stopCriterion=stopCrit1;
   }
   timeNewton += rai::timerRead(true);
+
+  //chop Delta to stay within bounds
+  if(bound_lo.N && bound_hi.N) {
+#if 1
+    for(uint i=0; i<x.N; i++) if(bound_hi(i)>bound_lo(i)) {
+        if(x(i)+alpha*Delta(i)>bound_hi(i)) Delta(i) = (bound_hi(i)-x(i))/alpha;
+        if(x(i)+alpha*Delta(i)<bound_lo(i)) Delta(i) = (bound_lo(i)-x(i))/alpha;
+    }
+#endif
+  }
 
   //-- line search along Delta
   uint lineSearchSteps=0;

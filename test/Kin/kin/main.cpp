@@ -11,18 +11,18 @@
 
 //===========================================================================
 //
-// test laod save
+// test load save
 //
 
 void TEST(LoadSave){
-  rai::KinematicWorld G;
-  FILE("arm7.g") >>G;
-  cout <<G <<endl;
+  rai::KinematicWorld C;
+  C.addFile("../../../../rai-robotModels/panda/panda.g");
+  cout <<C <<endl;
+  C.sortFrames();
+  FILE("z.g") <<C;
 
-  for(uint i=0;i<0;i++){
-    G.watch(true);
-//    rai::wait(.1)
-  }
+  rai::KinematicWorld C2("z.g");
+  C2.watch(true);
 }
 
 //===========================================================================
