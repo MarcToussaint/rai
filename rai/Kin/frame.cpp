@@ -45,7 +45,7 @@ rai::Frame::Frame(KinematicWorld& _K, const Frame* copyFrame)
   K.frames.append(this);
   if(copyFrame) {
     const Frame& f = *copyFrame;
-    name=f.name; Q=f.Q; X=f.X; tau=f.tau; ats=f.ats; active=f.active; flags=f.flags;
+    name=f.name; Q=f.Q; X=f.X; tau=f.tau; ats=f.ats; flags=f.flags;
     //we cannot copy link! because we can't know if the frames already exist. KinematicWorld::copy copies the rel's !!
     if(copyFrame->joint) new Joint(*this, copyFrame->joint);
     if(copyFrame->shape) new Shape(*this, copyFrame->shape);
@@ -75,6 +75,9 @@ rai::Frame::~Frame() {
 
 void rai::Frame::calc_X_from_parent() {
   CHECK(parent, "");
+  CHECK(parent->_state_X_isGood, "");
+  CHECK(K._state_Q_isGood, "");
+
   tau = parent->tau;
   Transformation &from = parent->X;
   X = from;
@@ -88,10 +91,15 @@ void rai::Frame::calc_X_from_parent() {
     if(j->type==JT_transXYPhi)  j->axis = from.rot.getZ();
     if(j->type==JT_phiTransXY)  j->axis = from.rot.getZ();
   }
+
+  _state_X_isGood=true;
 }
 
 void rai::Frame::calc_Q_from_parent(bool enforceWithinJoint) {
   CHECK(parent,"");
+  CHECK(_state_X_isGood, "");
+  CHECK(parent->_state_X_isGood, "");
+
   Q.setDifference(parent->X, X);
   if(joint && enforceWithinJoint) {
     arr q = joint->calc_q_from_Q(Q);

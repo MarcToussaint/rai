@@ -58,15 +58,20 @@ struct KinematicWorld : GLDrawer {
   struct sKinematicWorld *s;
   
   //-- fundamental structure
-  FrameL frames;
-  
+  FrameL frames;     ///< list of coordinate frames, with shapes, joints, inertias attached
+  ContactL contacts; ///< list of (force) interactions between frames
+  ProxyA proxies;    ///< list of current collision proximities between frames
+  arr q, qdot;       ///< the current joint configuration vector and velocities
+
   //-- derived: computed with calc_q(); reset with reset_q()
-  arr q, qdot; ///< the current joint configuration vector and velocities
   FrameL fwdActiveSet;
   JointL fwdActiveJoints;
-  ContactL contacts;
-  
-  ProxyA proxies; ///< list of current proximities between bodies
+
+  //-- data structure state (lazy evaluation leave the state structure out of sync)
+  bool _state_activeSets_areGood=false; // the active sets, esp. their topological sorting, are up to date
+  bool _state_q_isGood=false; // the q-vector represents the current relative transforms (and force dofs)
+  bool _state_Q_isGood=true; // the Q-transformations represents the current relative transforms
+  bool _state_proxies_isGood=false; // the proxies have been created for the current state
   
   static uint setJointStateCount;
   
@@ -137,7 +142,7 @@ struct KinematicWorld : GLDrawer {
   uint analyzeJointStateDimensions() const; ///< sort of private: count the joint dimensionalities and assign j->q_index
   
   /// @name computations on the graph
-  void calc_Q_from_q(); ///< from the set (q,qdot) compute the joint's Q transformations
+  void calc_Q_from_q();  ///< from the set (q,qdot) compute the joint's Q transformations
   void calc_q_from_Q();  ///< updates (q,qdot) based on the joint's Q transformations
   void calc_fwdPropagateFrames();    ///< elementary forward kinematics; also computes all Shape frames
   arr calc_fwdPropagateVelocities();    ///< elementary forward kinematics; also computes all Shape frames
@@ -152,7 +157,13 @@ struct KinematicWorld : GLDrawer {
   arr getFrameState() const;
   arr naturalQmetric(double power=.5) const;               ///< returns diagonal of a natural metric in q-space, depending on tree depth
   arr getLimits() const;
-  
+
+  /// @name ensure state consistencies
+  void ensure_activeSets(){   if(!_state_activeSets_areGood) calc_activeSets();  }
+  void ensure_Q(){  if(!_state_Q_isGood) calc_Q_from_q();  }
+  void ensure_q(){  if(!_state_q_isGood) calc_q_from_Q();  }
+  void ensure_proxies(){  if(!_state_proxies_isGood) stepSwift();  }
+
   /// @name active set selection
   void selectJointsByGroup(const StringA& groupNames, bool OnlyTheseOrNotThese=true, bool deleteInsteadOfLock=true);
   void selectJointsByName(const StringA&, bool notThose=false);

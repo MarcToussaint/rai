@@ -293,6 +293,9 @@ void rai::KinematicWorld::clear() {
   proxies.clear(); //while(proxies.N){ delete proxies.last(); /*checkConsistency();*/ }
   while(frames.N) { delete frames.last(); /*checkConsistency();*/ }
   reset_q();
+
+  _state_proxies_isGood=false;
+  _state_Q_isGood=true;
 }
 
 void rai::KinematicWorld::reset_q() {
@@ -300,6 +303,9 @@ void rai::KinematicWorld::reset_q() {
   qdot.clear();
   fwdActiveSet.clear();
   fwdActiveJoints.clear();
+
+  _state_activeSets_areGood=false;
+  _state_q_isGood=false;
 }
 
 FrameL rai::KinematicWorld::calc_topSort() const {
@@ -344,6 +350,8 @@ void rai::KinematicWorld::calc_activeSets() {
   fwdActiveJoints.clear();
   for(Frame *f:fwdActiveSet) if(f->joint && f->joint->active)
     fwdActiveJoints.append(f->joint);
+
+  _state_activeSets_areGood=true;
 }
 
 void rai::KinematicWorld::calc_q() {
@@ -370,6 +378,8 @@ void rai::KinematicWorld::copy(const rai::KinematicWorld& K, bool referenceSwift
   if(referenceSwiftOnCopy) s->swift = K.s->swift;
   q = K.q;
   qdot = K.qdot;
+  _state_q_isGood = K._state_q_isGood;
+  _state_Q_isGood = K._state_Q_isGood;
   calc_activeSets();
 }
 
@@ -379,28 +389,10 @@ bool rai::KinematicWorld::operator!() const { return this==&NoWorld; }
     on the edges, this calculates the absolute frames of all other nodes (propagating forward
     through trees and testing consistency of loops). */
 void rai::KinematicWorld::calc_fwdPropagateFrames() {
+  CHECK(_state_Q_isGood, "");
+
   if(fwdActiveSet.N!=frames.N) calc_activeSets();
-  for(Frame *f:fwdActiveSet) {
-#if 1
-    if(f->parent) f->calc_X_from_parent();
-#else
-    if(f->parent) {
-      Transformation &from = f->parent->X;
-      Transformation &to = f->X;
-      to = from;
-      to.appendTransformation(f->Q);
-      CHECK_EQ(to.pos.x, to.pos.x, "NAN transformation:" <<from <<'*' <<f->Q);
-      if(f->joint) {
-        Joint *j = f->joint;
-        if(j->type==JT_hingeX || j->type==JT_transX || j->type==JT_XBall)  j->axis = from.rot.getX();
-        if(j->type==JT_hingeY || j->type==JT_transY)  j->axis = from.rot.getY();
-        if(j->type==JT_hingeZ || j->type==JT_transZ)  j->axis = from.rot.getZ();
-        if(j->type==JT_transXYPhi)  j->axis = from.rot.getZ();
-        if(j->type==JT_phiTransXY)  j->axis = from.rot.getZ();
-      }
-    }
-#endif
-  }
+  for(Frame *f:fwdActiveSet) if(f->parent) f->calc_X_from_parent();
 }
 
 arr rai::KinematicWorld::calc_fwdPropagateVelocities() {
@@ -460,8 +452,10 @@ arr rai::KinematicWorld::calc_fwdPropagateVelocities() {
     frame X for each edge (which includes joint transformation and errors) */
 void rai::KinematicWorld::calc_Q_from_BodyFrames() {
   for(Frame *f:frames) if(f->parent) {
-    f->Q.setDifference(f->parent->X, f->X);
+    f->calc_Q_from_parent();
   }
+
+  _state_Q_isGood=true;
 }
 
 arr rai::KinematicWorld::naturalQmetric(double power) const {
@@ -629,6 +623,8 @@ arr rai::KinematicWorld::getLimits() const {
 }
 
 void rai::KinematicWorld::calc_q_from_Q() {
+  CHECK(_state_Q_isGood, "");
+
   uint N=q.N;
   if(!N) N=analyzeJointStateDimensions();
   q.resize(N).setZero();
@@ -656,9 +652,13 @@ void rai::KinematicWorld::calc_q_from_Q() {
     n += c->qDim();
   }
   CHECK_EQ(n,N,"");
+
+  _state_q_isGood=true;
 }
 
 void rai::KinematicWorld::calc_Q_from_q() {
+  CHECK(_state_q_isGood, "");
+
   uint n=0;
   for(Joint *j: fwdActiveJoints) {
     if(!j->mimic) CHECK_EQ(j->qIndex, n, "joint indexing is inconsistent");
@@ -677,6 +677,8 @@ void rai::KinematicWorld::calc_Q_from_q() {
     n += c->qDim();
   }
   CHECK_EQ(n, q.N, "");
+
+  _state_Q_isGood=true;
 }
 
 void rai::KinematicWorld::selectJointsByGroup(const StringA &groupNames, bool OnlyTheseOrNotThese, bool deleteInsteadOfLock) {
@@ -733,6 +735,13 @@ void rai::KinematicWorld::setJointState(const arr& _q, const arr& _qdot) {
 
   q=_q;
   if(!!_qdot) qdot=_qdot; else qdot.clear();
+
+  proxies.clear();
+
+  _state_q_isGood=true;
+  _state_Q_isGood=false;
+  _state_proxies_isGood=false;
+  for(Frame *f:frames) if(f->parent) f->_state_X_isGood=false;
   
   calc_Q_from_q();
   
@@ -759,7 +768,14 @@ void rai::KinematicWorld::setJointState(const arr& _q, const StringA& joints) {
     }
   }
   qdot.clear();
-  
+
+  proxies.clear();
+
+  _state_q_isGood=true;
+  _state_Q_isGood=false;
+  _state_proxies_isGood=false;
+  for(Frame *f:frames) if(f->parent) f->_state_X_isGood=false;
+
   calc_Q_from_q();
   
   calc_fwdPropagateFrames();
@@ -1573,6 +1589,8 @@ void rai::KinematicWorld::stepSwift() {
   //  reportProxies();
   //  watch(true);
   //  gl().closeWindow();
+
+  _state_proxies_isGood=true;
 }
 
 void rai::KinematicWorld::stepFcl(){
@@ -1603,6 +1621,8 @@ void rai::KinematicWorld::stepFcl(){
       j++;
     }
   }
+
+  _state_proxies_isGood=true;
 }
 
 void rai::KinematicWorld::stepPhysx(double tau) {
@@ -1750,6 +1770,8 @@ void rai::KinematicWorld::proxiesToContacts(double margin) {
 }
 
 double rai::KinematicWorld::totalContactPenetration() {
+  CHECK(_state_proxies_isGood, "");
+
   double D=0.;
   for(const Proxy& p:proxies) {
     //early check: if swift is way out of collision, don't bother computing it precise
@@ -1766,6 +1788,7 @@ double rai::KinematicWorld::totalContactPenetration() {
 }
 
 void rai::KinematicWorld::copyProxies(const rai::KinematicWorld& K){
+  proxies.clear();
   proxies.resize(K.proxies.N);
   for(uint i=0;i<proxies.N;i++) proxies(i).copy(*this, K.proxies(i));
 }
@@ -2193,6 +2216,8 @@ void rai::KinematicWorld::writePlyFile(const char* filename) const {
 
 /// dump the list of current proximities on the screen
 void rai::KinematicWorld::reportProxies(std::ostream& os, double belowMargin, bool brief) const {
+  CHECK(_state_proxies_isGood, "");
+
   os <<"Proximity report: #" <<proxies.N <<endl;
   uint i=0;
   for(const Proxy& p: proxies) {
@@ -2319,6 +2344,8 @@ void rai::KinematicWorld::contactsToForces(double hook, double damp) {
 }
 
 void rai::KinematicWorld::kinematicsPenetrations(arr& y, arr& J, bool penetrationsOnly, double activeMargin) const {
+  CHECK(_state_proxies_isGood, "");
+
   y.resize(proxies.N).setZero();
   if(!!J) J.resize(y.N, getJointStateDimension()).setZero();
   uint i=0;
@@ -2392,6 +2419,8 @@ void rai::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, do
 
 /// measure (=scalar kinematics) for the contact cost summed over all bodies
 void rai::KinematicWorld::kinematicsProxyCost(arr &y, arr& J, double margin) const {
+  CHECK(_state_proxies_isGood, "");
+
   y.resize(1).setZero();
   if(!!J) J.resize(1, getJointStateDimension()).setZero();
   for(const Proxy& p:proxies) { /*if(p.d<margin)*/
@@ -2695,7 +2724,7 @@ bool rai::KinematicWorld::hasTimeJoint(){
 
 bool rai::KinematicWorld::checkConsistency() const {
   //check qdim
-  if(q.nd) {
+  if(_state_q_isGood) { //  q.nd) {
     uint N = analyzeJointStateDimensions();
     CHECK_EQ(1, q.nd, "");
     CHECK_EQ(N, q.N, "");
@@ -2758,21 +2787,26 @@ bool rai::KinematicWorld::checkConsistency() const {
   }
 
   //check topsort
-  intA level = consts<int>(0, frames.N);
-  //compute levels
-  for(Frame *f: fwdActiveSet)
-    if(f->parent) level(f->ID) = level(f->parent->ID)+1;
-  //check levels are strictly increasing across links
-  for(Frame *f: fwdActiveSet) if(f->parent) {
-    CHECK(level(f->parent->ID) < level(f->ID), "joint from '" <<f->parent->name <<"'[" <<f->parent->ID <<"] to '" <<f->name <<"'[" <<f->ID <<"] does not go forward");
+  if(_state_activeSets_areGood){
+    CHECK_EQ(fwdActiveSet.N, frames.N, "");
+
+    intA level = consts<int>(0, frames.N);
+    //compute levels
+    for(Frame *f: fwdActiveSet)
+      if(f->parent) level(f->ID) = level(f->parent->ID)+1;
+    //check levels are strictly increasing across links
+    for(Frame *f: fwdActiveSet) if(f->parent) {
+      CHECK(level(f->parent->ID) < level(f->ID), "joint from '" <<f->parent->name <<"'[" <<f->parent->ID <<"] to '" <<f->name <<"'[" <<f->ID <<"] does not go forward");
+    }
   }
 
   //check active sets
-  for(Frame *f: fwdActiveSet) CHECK(f->active, "");
-  boolA jointIsInActiveSet = consts<byte>(false, frames.N);
-  for(Joint *j: fwdActiveJoints) { CHECK(j->active, ""); jointIsInActiveSet.elem(j->frame->ID)=true; }
-  if(q.nd) {
-    for(Frame *f: frames) if(f->joint && f->joint->active) CHECK(jointIsInActiveSet(f->ID), "");
+  if(_state_activeSets_areGood){
+    boolA jointIsInActiveSet = consts<byte>(false, frames.N);
+    for(Joint *j: fwdActiveJoints) { CHECK(j->active, ""); jointIsInActiveSet.elem(j->frame->ID)=true; }
+    if(q.nd) {
+      for(Frame *f: frames) if(f->joint && f->joint->active) CHECK(jointIsInActiveSet(f->ID), "");
+    }
   }
   
   //check isZero for all transformations

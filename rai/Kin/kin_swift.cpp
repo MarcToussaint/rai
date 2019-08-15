@@ -272,6 +272,7 @@ void SwiftInterface::pullFromSwift(rai::KinematicWorld& world, bool dumpReport) 
   }
   
   for(rai::Proxy& p:world.proxies) p.del_coll();
+  world.proxies.clear();
   world.proxies.resize(np);
   
   //add contacts to list

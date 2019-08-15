@@ -54,7 +54,6 @@ struct Frame : NonCopyable{
   Transformation X=0;        ///< frame's absolute pose
   double tau=0.;            ///< frame's absolute time (could be thought as part of the transformation X in space-time)
   Graph ats;                 ///< list of any-type attributes
-  bool active=true;          ///< if false, this frame is skipped in computations (e.g. in fwd propagation)
   int flags=0;               ///< various flags that are used by task maps to impose costs/constraints in KOMO
   
   //attachments to the frame
@@ -62,7 +61,10 @@ struct Frame : NonCopyable{
   Shape *shape=NULL;         ///< this frame has a (collision or visual) geometry
   Inertia *inertia=NULL;     ///< this frame has inertia (is a mass)
   Array<Contact*> contacts;  ///< this frame is in (near-) contact with other frames
-  
+
+  //-- data structure state (lazy evaluation leave the state structure out of sync)
+  bool _state_X_isGood=true; // X represents the current state
+
   Frame(KinematicWorld& _K, const Frame *copyBody=NULL);
   Frame(Frame *_parent);
   ~Frame();
@@ -74,6 +76,7 @@ struct Frame : NonCopyable{
   //low-level fwd kinematics computation
   void calc_X_from_parent();
   void calc_Q_from_parent(bool enforceWithinJoint = true);
+  void ensure_X(){  if(!_state_X_isGood){ if(parent) parent->ensure_X(); calc_X_from_parent(); }  }
   
   //structural operations
   Frame* insertPreLink(const rai::Transformation& A=0);
