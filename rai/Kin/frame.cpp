@@ -383,7 +383,8 @@ rai::Frame* rai::Frame::insertPreLink(const rai::Transformation &A) {
   parent->parentOf.append(this);
   
   if(!!A) f->Q = A;
-  f->calc_X_from_parent();
+  f->_state_X_isGood=false;
+//  f->calc_X_from_parent();
   
   return f;
 }
@@ -409,6 +410,7 @@ void rai::Frame::unLink() {
   parent=NULL;
   Q.setZero();
   if(joint) { delete joint; joint=NULL; }
+  _state_X_isGood=true;
 }
 
 void rai::Frame::linkFrom(rai::Frame *_parent, bool adoptRelTransform) {
@@ -417,7 +419,12 @@ void rai::Frame::linkFrom(rai::Frame *_parent, bool adoptRelTransform) {
   if(parent==_parent) return;
   parent=_parent;
   parent->parentOf.append(this);
-  if(adoptRelTransform) Q = X/parent->X;
+  _state_X_isGood=false;
+
+  if(adoptRelTransform){
+    Q = X/parent->X;
+    if(K._state_Q_isGood && parent->_state_X_isGood) _state_X_isGood=true;
+  }
 }
 
 bool rai::Frame::isChildOf(const rai::Frame* par, int order) const{
@@ -468,7 +475,7 @@ rai::Joint::~Joint() {
 }
 
 const rai::Transformation&rai::Joint::X() const {
-  CHECK(frame->_state_X_isGood,"");
+  CHECK(frame->parent->_state_X_isGood,"");
   return frame->parent->X;
 }
 
@@ -478,36 +485,44 @@ const rai::Transformation&rai::Joint::Q() const {
 }
 
 void rai::Joint::calc_Q_from_q(const arr &q_full, uint _qIndex) {
+  CHECK_LE(_qIndex+dim, q_full.N, "");
   rai::Transformation &Q = frame->Q;
   //  if(type!=JT_rigid) Q.setZero();
-  arr q(dim);
-  for(uint i=0;i<dim;i++) q.elem(i) = q_full.elem(_qIndex+i);
-  q *= scale;
+  std::shared_ptr<arr> q_copy;
+  double *qp;
+  if(scale==1.){
+    qp = q_full.p + _qIndex;
+  }else{
+    q_copy = make_shared<arr>(dim);
+    for(uint i=0;i<dim;i++) q_copy->elem(i) = q_full.elem(_qIndex+i);
+    *q_copy *= scale;
+    qp = q_copy->p;
+  }
   if(mimic) {
     Q = mimic->frame->Q;
   } else {
     switch(type) {
       case JT_hingeX: {
-        Q.rot.setRadX(q.first());
+        Q.rot.setRadX(qp[0]);
       } break;
       
       case JT_hingeY: {
-        Q.rot.setRadY(q.first());
+        Q.rot.setRadY(qp[0]);
       } break;
       
       case JT_hingeZ: {
-        Q.rot.setRadZ(q.first());
+        Q.rot.setRadZ(qp[0]);
       } break;
       
       case JT_universal: {
         rai::Quaternion rot1, rot2;
-        rot1.setRadX(q.elem(0));
-        rot2.setRadY(q.elem(1));
+        rot1.setRadX(qp[0]);
+        rot2.setRadY(qp[1]);
         Q.rot = rot1*rot2;
       } break;
       
       case JT_quatBall: {
-        Q.rot.set(q.p);
+        Q.rot.set(qp);
         {
           double n=Q.rot.normalization();
           if(!rai_Kin_frame_ignoreQuatNormalizationWarning) if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n;
@@ -517,8 +532,8 @@ void rai::Joint::calc_Q_from_q(const arr &q_full, uint _qIndex) {
       } break;
       
       case JT_free: {
-        Q.pos.set(q.p);
-        Q.rot.set(q.p+3);
+        Q.pos.set(qp);
+        Q.rot.set(qp+3);
         {
           double n=Q.rot.normalization();
           if(!rai_Kin_frame_ignoreQuatNormalizationWarning) if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n;
@@ -528,11 +543,11 @@ void rai::Joint::calc_Q_from_q(const arr &q_full, uint _qIndex) {
       } break;
       
       case JT_XBall: {
-        Q.pos.x = q.elem(0);
+        Q.pos.x = qp[0];
         Q.pos.y = 0.;
         Q.pos.z = 0.;
         Q.pos.isZero = false;
-        Q.rot.set(q.p+1);
+        Q.rot.set(qp+1);
         {
           double n=Q.rot.normalization();
           if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n;
@@ -542,40 +557,40 @@ void rai::Joint::calc_Q_from_q(const arr &q_full, uint _qIndex) {
       } break;
       
       case JT_transX: {
-        Q.pos = q.first() * Vector_x;
+        Q.pos = qp[0] * Vector_x;
       } break;
       
       case JT_transY: {
-        Q.pos = q.first() * Vector_y;
+        Q.pos = qp[0] * Vector_y;
       } break;
       
       case JT_transZ: {
-        Q.pos = q.first() * Vector_z;
+        Q.pos = qp[0] * Vector_z;
       } break;
       
       case JT_transXY: {
-        Q.pos.set(q.elem(0), q.elem(1), 0.);
+        Q.pos.set(qp[0], qp[1], 0.);
       } break;
       
       case JT_trans3: {
-        Q.pos.set(q.p);
+        Q.pos.set(qp);
       } break;
       
       case JT_transXYPhi: {
-        Q.pos.set(q.elem(0), q.elem(1), 0.);
-        Q.rot.setRadZ(q.elem(2));
+        Q.pos.set(qp[0], qp[1], 0.);
+        Q.rot.setRadZ(qp[2]);
       } break;
       
       case JT_phiTransXY: {
-        Q.rot.setRadZ(q.elem(0));
-        Q.pos = Q.rot*Vector(q.elem(1), q.elem(2), 0.);
+        Q.rot.setRadZ(qp[0]);
+        Q.pos = Q.rot*Vector(qp[1], qp[2], 0.);
       } break;
       
       case JT_rigid:
         break;
         
       case JT_time:
-        frame->tau = 1e-1 * q.first();
+        frame->tau = 1e-1 * qp[0];
         if(frame->tau<1e-10) frame->tau=1e-10;
         break;
       default: NIY;

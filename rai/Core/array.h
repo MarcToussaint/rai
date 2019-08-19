@@ -179,6 +179,7 @@ template<class T> struct Array : std::vector<T>, Serializable {
   /// @name access by reference (direct memory access)
   Array<T> ref() const; //a reference on this
   T& elem(int i) const;
+  T& elem(int i, int j); //access that also handles sparse matrices
 //  T& elem(const Array<int> &I) const;
   T& elem(const Array<uint> &I) const;
   T& scalar() const;
@@ -951,7 +952,7 @@ struct SparseVector: SpecialArray {
 };
 
 struct SparseMatrix : SpecialArray {
-  arr& Z;      ///< references the array itself
+  arr& Z;      ///< references the array itself, which linearly stores numbers
   intA elems;  ///< for every non-zero (in memory order), the (row,col) index tuple
   uintAA cols; ///< for every column, for every non-zero the (row,memory) index tuple
   uintAA rows; ///< for every row   , for every non-zero the (column,memory) index tuple
@@ -959,15 +960,22 @@ struct SparseMatrix : SpecialArray {
   SparseMatrix(arr& _Z);
   SparseMatrix(arr& _Z, SparseMatrix& s);
   void resize(uint d0, uint d1, uint n);
+  void resizeCopy(uint d0, uint d1, uint n);
   void reshape(uint d0, uint d1);
-  double& entry(uint i,uint j,uint k);
+  double& entry(uint i, uint j, uint k);
   double& elem(uint i, uint j);
   double& addEntry(int i, int j);
   void setFromDense(const arr& X);
   void setupRowsCols();
+  //computations
   arr At_x(const arr& x);
   arr At_A();
+  arr A_B(const arr& B) const;
+  arr B_A(const arr& B) const;
+  void transpose();
   void rowWiseMult(const arr& a);
+  void add(const arr& a);
+  void subtract(const arr& a);
   arr unsparse();
 };
 

@@ -67,6 +67,8 @@ void lib_ors() { cout <<"force loading lib/ors" <<endl; }
 
 uint rai::KinematicWorld::setJointStateCount = 0;
 
+#define SPARSE_JACOBIANS false
+
 //===========================================================================
 //
 // contants
@@ -878,18 +880,22 @@ void rai::KinematicWorld::kinematicsPos(arr& y, arr& J, Frame *a, const rai::Vec
   if(!!y) y = conv_vec2arr(pos_world); //return the output
   if(!J) return; //do not return the Jacobian
   
-  jacobianPos(J, a, pos_world);
+  jacobianPos(J, a, pos_world, SPARSE_JACOBIANS);
 }
 
 #if 1
-void rai::KinematicWorld::jacobianPos(arr& J, Frame *a, const rai::Vector& pos_world) const {
+void rai::KinematicWorld::jacobianPos(arr& J, Frame *a, const rai::Vector& pos_world, bool sparse) const {
   CHECK_EQ(&a->K, this, "");
 
   a->ensure_X();
 
-  //get Jacobian
   uint N=getJointStateDimension();
-  J.resize(3, N).setZero();
+  if(!sparse){
+    J.resize(3, N).setZero();
+  }else{
+    J.sparse().resize(3, N, 0);
+  }
+
   while(a) { //loop backward down the kinematic tree
     if(!a->parent) break; //frame has no inlink -> done
     Joint *j=a->joint;
@@ -900,13 +906,13 @@ void rai::KinematicWorld::jacobianPos(arr& J, Frame *a, const rai::Vector& pos_w
         if(j->type==JT_hingeX || j->type==JT_hingeY || j->type==JT_hingeZ) {
           rai::Vector tmp = j->axis ^ (pos_world-j->X()*j->Q().pos);
           tmp *= j->scale;
-          J(0, j_idx) += tmp.x;
-          J(1, j_idx) += tmp.y;
-          J(2, j_idx) += tmp.z;
+          J.elem(0, j_idx) += tmp.x;
+          J.elem(1, j_idx) += tmp.y;
+          J.elem(2, j_idx) += tmp.z;
         } else if(j->type==JT_transX || j->type==JT_transY || j->type==JT_transZ || j->type==JT_XBall) {
-          J(0, j_idx) += j->scale * j->axis.x;
-          J(1, j_idx) += j->scale * j->axis.y;
-          J(2, j_idx) += j->scale * j->axis.z;
+          J.elem(0, j_idx) += j->scale * j->axis.x;
+          J.elem(1, j_idx) += j->scale * j->axis.y;
+          J.elem(2, j_idx) += j->scale * j->axis.z;
         } else if(j->type==JT_transXY) {
           if(j->mimic) NIY;
           arr R = j->X().rot.getArr();
@@ -919,16 +925,16 @@ void rai::KinematicWorld::jacobianPos(arr& J, Frame *a, const rai::Vector& pos_w
           J.setMatrixBlock(R.sub(0,-1,0,1), 0, j_idx);
           rai::Vector tmp = j->axis ^ (pos_world-(j->X().pos + j->X().rot*a->Q.pos));
           tmp *= j->scale;
-          J(0, j_idx+2) += tmp.x;
-          J(1, j_idx+2) += tmp.y;
-          J(2, j_idx+2) += tmp.z;
+          J.elem(0, j_idx+2) += tmp.x;
+          J.elem(1, j_idx+2) += tmp.y;
+          J.elem(2, j_idx+2) += tmp.z;
         } else if(j->type==JT_phiTransXY) {
           if(j->mimic) NIY;
           rai::Vector tmp = j->axis ^ (pos_world-j->X().pos);
           tmp *= j->scale;
-          J(0, j_idx) += tmp.x;
-          J(1, j_idx) += tmp.y;
-          J(2, j_idx) += tmp.z;
+          J.elem(0, j_idx) += tmp.x;
+          J.elem(1, j_idx) += tmp.y;
+          J.elem(2, j_idx) += tmp.z;
           arr R = (j->X().rot*a->Q.rot).getArr();
           R *= j->scale;
           J.setMatrixBlock(R.sub(0,-1,0,1), 0, j_idx+1);
@@ -953,7 +959,7 @@ void rai::KinematicWorld::jacobianPos(arr& J, Frame *a, const rai::Vector& pos_w
           arr Jrot = j->X().rot.getArr() * a->Q.rot.getJacobian(); //transform w-vectors into world coordinate
           Jrot = crossProduct(Jrot, conv_vec2arr(pos_world-(j->X().pos+j->X().rot*a->Q.pos)));  //cross-product of all 4 w-vectors with lever
           Jrot /= sqrt(sumOfSqr(q({j->qIndex+offset, j->qIndex+offset+3})));   //account for the potential non-normalization of q
-          //          for(uint i=0;i<4;i++) for(uint k=0;k<3;k++) J(k,j_idx+offset+i) += Jrot(k,i);
+          //          for(uint i=0;i<4;i++) for(uint k=0;k<3;k++) J.elem(k,j_idx+offset+i) += Jrot(k,i);
           Jrot *= j->scale;
           J.setMatrixBlock(Jrot, 0, j_idx+offset);
         }
@@ -1188,10 +1194,16 @@ void rai::KinematicWorld::kinematicsQuat(arr& y, arr& J, Frame *a) const { //TOD
 //}
 
 //* This Jacobian directly gives the implied rotation vector: multiplied with \dot q it gives the angular velocity of body b */
-void rai::KinematicWorld::axesMatrix(arr& J, Frame *a) const {
+void rai::KinematicWorld::axesMatrix(arr& J, Frame *a, bool sparse) const {
+  a->ensure_X();
+
   uint N = getJointStateDimension();
-  J.resize(3, N).setZero();
-  
+  if(!sparse){
+    J.resize(3, N).setZero();
+  }else{
+    J.sparse().resize(3, N, 0);
+  }
+
   while(a) { //loop backward down the kinematic tree
     Joint *j=a->joint;
     if(j && j->active) {
@@ -1200,9 +1212,9 @@ void rai::KinematicWorld::axesMatrix(arr& J, Frame *a) const {
       if(j_idx<N) {
         if((j->type>=JT_hingeX && j->type<=JT_hingeZ) || j->type==JT_transXYPhi || j->type==JT_phiTransXY) {
           if(j->type==JT_transXYPhi) j_idx += 2; //refer to the phi only
-          J(0, j_idx) += j->scale * j->axis.x;
-          J(1, j_idx) += j->scale * j->axis.y;
-          J(2, j_idx) += j->scale * j->axis.z;
+          J.elem(0, j_idx) += j->scale * j->axis.x;
+          J.elem(1, j_idx) += j->scale * j->axis.y;
+          J.elem(2, j_idx) += j->scale * j->axis.z;
         }
         if(j->type==JT_quatBall || j->type==JT_free || j->type==JT_XBall) {
           uint offset = 0;
@@ -1210,7 +1222,7 @@ void rai::KinematicWorld::axesMatrix(arr& J, Frame *a) const {
           if(j->type==JT_free) offset=3;
           arr Jrot = j->X().rot.getArr() * a->Q.rot.getJacobian(); //transform w-vectors into world coordinate
           Jrot /= sqrt(sumOfSqr(q({j->qIndex+offset,j->qIndex+offset+3}))); //account for the potential non-normalization of q
-          //          for(uint i=0;i<4;i++) for(uint k=0;k<3;k++) J(k,j_idx+offset+i) += Jrot(k,i);
+          //          for(uint i=0;i<4;i++) for(uint k=0;k<3;k++) J.elem(k,j_idx+offset+i) += Jrot(k,i);
           Jrot *= j->scale;
           J.setMatrixBlock(Jrot, 0, j_idx+offset);
         }
@@ -1230,7 +1242,7 @@ void rai::KinematicWorld::kinematicsRelPos(arr& y, arr& J, Frame *a, const rai::
   y = Rinv * (y1 - y2);
   if(!!J) {
     arr A;
-    axesMatrix(A, b);
+    axesMatrix(A, b, SPARSE_JACOBIANS);
     J = Rinv * (J1 - J2 - crossProduct(A, y1 - y2));
   }
 }
@@ -1238,6 +1250,8 @@ void rai::KinematicWorld::kinematicsRelPos(arr& y, arr& J, Frame *a, const rai::
 /// The vector vec1, attached to b1, relative to the frame of b2
 void rai::KinematicWorld::kinematicsRelVec(arr& y, arr& J, Frame *a, const rai::Vector& vec1, Frame *b) const {
   arr y1,J1;
+  a->ensure_X();
+  b->ensure_X();
   kinematicsVec(y1, J1, a, vec1);
   //  kinematicsVec(y2, J2, b2, vec2);
   arr Rinv = ~(b->X.rot.getArr());
@@ -2782,6 +2796,7 @@ bool rai::KinematicWorld::checkConsistency() const {
     CHECK_ZERO(a->X.rot.normalization()-1., 1e-4, "");
 
     if(a->parent && a->_state_X_isGood) CHECK(a->parent->_state_X_isGood, "");
+    if(!a->parent) CHECK(a->_state_X_isGood, "");
   }
   
   Joint *j;

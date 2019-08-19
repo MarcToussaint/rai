@@ -1796,21 +1796,38 @@ arr lapack_Ainv_b_triangular(const arr& L, const arr& b) { return inverse(L)*b; 
 // Eigen
 //
 
-void getEigen(rai::SparseMatrix& S, Eigen::SparseMatrix<double>& E){
+Eigen::SparseMatrix<double> conv_sparseArr2sparseEigen(const rai::SparseMatrix& S){
   arr& Z = S.Z;
+  Eigen::SparseMatrix<double> E;
   E.resize(Z.d0, Z.d1);
   std::vector<Eigen::Triplet<double>> triplets;
   triplets.reserve(Z.N);
   for(uint k=0;k<Z.N;k++) triplets.push_back(Eigen::Triplet<double>(S.elems.p[2*k], S.elems.p[2*k+1], Z.p[k]));
   E.setFromTriplets(triplets.begin(), triplets.end());
+  return E;
 //  cout <<E <<endl;
 }
+
+arr conv_sparseEigen2sparseArr(Eigen::SparseMatrix<double>& E){
+  arr X;
+  rai::SparseMatrix& Xs = X.sparse();
+  Xs.resize(E.rows(), E.cols(), E.nonZeros());
+
+  uint n=0;
+  for(int k=0; k<E.outerSize(); ++k){
+    for(Eigen::SparseMatrix<double>::InnerIterator it(E,k); it; ++it) {
+      Xs.entry(it.row(), it.col(), n) = it.value();
+      n++;
+    }
+  }
+  return X;
+}
+
 
 arr eigen_Ainv_b(const arr& A, const arr& b){
   if(isSparseMatrix(A)){
     rai::SparseMatrix& As = *dynamic_cast<rai::SparseMatrix*>(A.special);
-    Eigen::SparseMatrix<double> Aeig;
-    getEigen(As, Aeig);
+    Eigen::SparseMatrix<double> Aeig = conv_sparseArr2sparseEigen(As);
     Eigen::MatrixXd beig = conv_arr2eigen(b);
     if(A.d0==A.d1){ //square matrix
       Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> solver;
@@ -2163,7 +2180,6 @@ template<> double Array<double>::sparsity() {
   return ((double)m)/N;
 }
 
-
 void SparseVector::resize(uint d0, uint n){
   Z.nd=1; Z.d0=d0;
   Z.resizeMEM(n, false);
@@ -2177,6 +2193,15 @@ void SparseMatrix::resize(uint d0, uint d1, uint n){
   Z.setZero();
   elems.resize(n,2);
   for(int& e:elems) e=-1;
+}
+
+void SparseMatrix::resizeCopy(uint d0, uint d1, uint n){
+  Z.nd=2; Z.d0=d0; Z.d1=d1;
+  uint Nold = Z.N;
+  Z.resizeMEM(n, true);
+  if(n>Nold) memset(Z.p+Nold, 0, Z.sizeT*(n-Nold));
+  elems.resizeCopy(n,2);
+  for(uint i=Nold;i<n;i++) elems(i,0) = elems(i,1) =-1;
 }
 
 void SparseMatrix::reshape(uint d0, uint d1){
@@ -2237,6 +2262,7 @@ double& SparseMatrix::addEntry(int i, int j){
   rows.clear();
   cols.clear();
   Z.resizeMEM(k+1, true);
+  Z.last()=0.;
   return Z.last();
 }
 
@@ -2292,60 +2318,71 @@ void SparseMatrix::setupRowsCols(){
 }
 
 arr SparseMatrix::At_x(const arr& x){
-#ifdef RAI_EIGEN
-  Eigen::SparseMatrix<double> s;
-  getEigen(*this, s);
+  Eigen::SparseMatrix<double> A_eig = conv_sparseArr2sparseEigen(*this);
+  Eigen::MatrixXd x_eig = conv_arr2eigen(x);
 
-  Eigen::MatrixXd v(x.d0, 1);
-  for(uint i = 0; i<x.d0; i++) v(i,0) = x(i);
+  x_eig = A_eig.transpose() * x_eig;
 
-  v = s.transpose() * v;
-
-  arr y(v.rows());
-  for(uint i = 0; i<y.d0; i++) y(i) = v(i,0);
+  arr y(x_eig.rows());
+  for(uint i = 0; i<y.d0; i++) y(i) = x_eig(i,0);
   return y;
-#else
-//  arr y;
-//  sparseProduct(y,);
-  NIY;
-  return NoArr;
-#endif
 }
 
 arr SparseMatrix::At_A(){
-#ifdef RAI_EIGEN
-  Eigen::SparseMatrix<double> s;
-  getEigen(*this, s);
+  Eigen::SparseMatrix<double> s = conv_sparseArr2sparseEigen(*this);
 
   Eigen::SparseMatrix<double> W(Z.d1, Z.d1);
-
   W = s.transpose() * s;
 
-  arr X;
-  SparseMatrix& Xs = X.sparse();
-  Xs.resize(Z.d1, Z.d1, W.nonZeros());
+  return conv_sparseEigen2sparseArr(W);
+}
 
-  uint n=0;
-  for(int k=0; k<W.outerSize(); ++k){
-    for(Eigen::SparseMatrix<double>::InnerIterator it(W,k); it; ++it) {
-      Xs.entry(it.row(), it.col(), n) = it.value();
-      n++;
-    }
+arr SparseMatrix::A_B(const arr& B) const{
+  Eigen::SparseMatrix<double> A_eig = conv_sparseArr2sparseEigen(*this);
+  Eigen::SparseMatrix<double> B_eig = conv_sparseArr2sparseEigen(B.copy().sparse());
+
+  Eigen::SparseMatrix<double> W = A_eig * B_eig;
+
+  return conv_sparseEigen2sparseArr(W);
+}
+
+arr SparseMatrix::B_A(const arr& B) const{
+  Eigen::SparseMatrix<double> A_eig = conv_sparseArr2sparseEigen(*this);
+  Eigen::SparseMatrix<double> B_eig = conv_sparseArr2sparseEigen(B.copy().sparse());
+
+  Eigen::SparseMatrix<double> W = B_eig * A_eig;
+
+  return conv_sparseEigen2sparseArr(W);
+}
+
+void SparseMatrix::transpose(){
+  uint d0 = Z.d0;
+  Z.d0 = Z.d1;
+  Z.d1 = d0;
+  for(uint i=0;i<elems.d0;i++){
+    int k = elems(i,0);
+    elems(i,0) = elems(i,1);
+    elems(i,1) = k;
   }
-
-  return X;
-#else
-//  arr y;
-//  sparseProduct(y,);
-  NIY;
-  return NoArr;
-#endif
-
+  cols.clear();
+  rows.clear();
 }
 
 void SparseMatrix::rowWiseMult(const arr& a){
   CHECK_EQ(a.N, Z.d0, "");
   for(uint k=0;k<Z.N;k++) Z.elem(k) *= a.elem(elems.p[2*k]);
+}
+
+void SparseMatrix::subtract(const arr& a){
+  CHECK(isSparseMatrix(a), "");
+  CHECK_EQ(a.d0, Z.d0, "");
+  CHECK_EQ(a.d1, Z.d1, "");
+  uint Nold=Z.N;
+  resizeCopy(Z.d0, Z.d1, Z.N + a.N);
+  const SparseMatrix* as = dynamic_cast<const SparseMatrix*>(a.special);
+  for(uint j=0;j<a.N;j++){
+    entry(as->elems(j,0), as->elems(j,1), Nold+j) = -a.elem(j);
+  }
 }
 
 arr SparseVector::unsparse(){

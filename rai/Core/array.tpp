@@ -693,6 +693,19 @@ template<class T> T& rai::Array<T>::elem(int i) const {
   return p[i];
 }
 
+/// access that invariantly works for sparse and non-sparse matrices
+template<class T> T& rai::Array<T>::elem(int i, int j) {
+  if(i<0) i += d0;
+  if(j<0) j += d1;
+  CHECK(nd==2 && (uint)i<d0 && (uint)j<d1,
+        "2D range error (" <<nd <<"=2, " <<i <<"<" <<d0 <<", " <<j <<"<" <<d1 <<")");
+  if(isSparseMatrix(*this)){
+    return sparse().addEntry(i,j);
+  }
+  return p[i*d1+j];
+
+}
+
 /// multi-dimensional (tensor) access
 //template<class T> T& rai::Array<T>::elem(const Array<int> &I) const {
 //  CHECK_EQ(I.N , nd, "wrong dimensions");
@@ -1294,10 +1307,14 @@ template<class T> void rai::Array<T>::setMatrixBlock(const rai::Array<T>& B, uin
   if(B.nd==2) {
     CHECK(nd==2 && lo0+B.d0<=d0 && lo1+B.d1<=d1, "");
     uint i, j;
-    if(memMove) {
-      for(i=0; i<B.d0; i++) memmove(p+(lo0+i)*d1+lo1, B.p+i*B.d1, B.d1*sizeT);
-    } else {
-      for(i=0; i<B.d0; i++) for(j=0; j<B.d1; j++) p[(lo0+i)*d1+lo1+j] = B.p[i*B.d1+j];   // operator()(lo0+i, lo1+j)=B(i, j);
+    if(!isSparseMatrix(*this)){
+        if(memMove) {
+            for(i=0; i<B.d0; i++) memmove(p+(lo0+i)*d1+lo1, B.p+i*B.d1, B.d1*sizeT);
+        } else {
+            for(i=0; i<B.d0; i++) for(j=0; j<B.d1; j++) p[(lo0+i)*d1+lo1+j] = B.p[i*B.d1+j];   // operator()(lo0+i, lo1+j)=B(i, j);
+        }
+    }else{
+        for(i=0; i<B.d0; i++) for(j=0; j<B.d1; j++) sparse().addEntry(lo0+i,lo1+j) = B.p[i*B.d1+j];
     }
   } else {
     CHECK(nd==2 && lo0+B.d0<=d0 && lo1+1<=d1, "");
@@ -2054,6 +2071,11 @@ template<class T> void transpose(rai::Array<T>& x, const rai::Array<T>& y) {
     return;
   }
   if(y.nd==2) {
+    if(isSparseMatrix(y)) {
+      x = y;
+      x.sparse().transpose();
+      return;
+    }
     x.resize(y.d1, y.d0);
 //    for(i=0; i<d0; i++)
     T *xp=x.p;
@@ -2592,7 +2614,12 @@ void innerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>&
       return;
     }
 #endif
-    if(rai::useLapack && typeid(T)==typeid(double)) { blas_MM(x, y, z); return; }
+    if(rai::useLapack && typeid(T)==typeid(double)) {
+      if(isSparseMatrix(y)){ x = dynamic_cast<const rai::SparseMatrix*>(y.special)->A_B(z); return; }
+      if(isSparseMatrix(z)){ x = dynamic_cast<const rai::SparseMatrix*>(z.special)->B_A(y); return; }
+      blas_MM(x, y, z);
+      return;
+    }
     T *a, *astop, *b, *c;
     x.resize(d0, d1); x.setZero();
     c=x.p;
@@ -2761,7 +2788,9 @@ rai::Array<T> crossProduct(const rai::Array<T>& y, const rai::Array<T>& z) {
   }
   if(y.nd==2 && z.nd==1) { //every COLUMN of y is cross-product'd with z!
     CHECK(y.d0==3 && z.N==3,"cross product only works for 3D vectors!");
-#if 0
+#if 1
+    return skew(-z) * y;
+#elif 0
     rai::Array<T> x(3, y.d1);
     for(uint i=0; i<y.d1; i++) {
       x(0,i)=y(1,i)*z(2)-y(2,i)*z(1);
@@ -3522,10 +3551,20 @@ template<class T> uint softMax(const rai::Array<T>& a, arr& soft, double beta) {
 
 //===========================================================================
 //
-/// @name certain initializations
+/// @name operators
 //
 
 namespace rai {
+//addition
+template<class T> Array<T> operator+(const Array<T>& y, const Array<T>& z){ Array<T> x(y); x+=z; return x; }
+//subtraction
+template<class T> Array<T> operator-(const Array<T>& y, const Array<T>& z){
+  Array<T> x(y);
+  if(isSparseMatrix(x) && isSparseMatrix(z)) x.sparse().subtract(z);
+  else x-=z;
+  return x;
+}
+
 /// transpose
 template<class T> Array<T> operator~(const Array<T>& y) { Array<T> x; transpose(x, y); return x; }
 /// negative
@@ -3541,7 +3580,7 @@ template<class T> Array<T> operator*(const Array<T>& y, T z) {             Array
 template<class T> Array<T> operator*(T y, const Array<T>& z) {             Array<T> x(z); x*=y; return x; }
 
 /// inverse
-template<class T> Array<T> operator/(int y, const Array<T>& z) {  Array<T> x=inverse(z); CHECK_EQ(y,1,""); return x; }
+template<class T> Array<T> operator/(int y, const Array<T>& z) {  CHECK_EQ(y,1,""); Array<T> x=inverse(z); return x; }
 /// scalar division
 template<class T> Array<T> operator/(const Array<T>& y, T z) {             Array<T> x(y); x/=z; return x; }
 /// element-wise division
@@ -3600,7 +3639,6 @@ UpdateOperator(%=)
 #undef UpdateOperator
 
 #define BinaryOperator( op, updateOp)         \
-  template<class T> Array<T> operator op(const Array<T>& y, const Array<T>& z){ Array<T> x(y); x updateOp z; return x; } \
   template<class T> Array<T> operator op(T y, const Array<T>& z){               Array<T> x; x.resizeAs(z); x=y; x updateOp z; return x; } \
   template<class T> Array<T> operator op(const Array<T>& y, T z){               Array<T> x(y); x updateOp z; return x; }
 

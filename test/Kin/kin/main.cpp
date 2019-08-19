@@ -384,15 +384,16 @@ void TEST(FollowRedundantSequence){
   G.kinematicsPos(y, NoArr, endeff, rel);
   for(t=0;t<T;t++) Z[t]() += y; //adjust coordinates to be inside the arm range
   plotLine(Z);
-  G.glAdd(glDrawPlot,&plotModule);
+  G.glAdd(glDrawPlot,&plotModule()());
   G.watch(false);
   //-- follow the trajectory kinematically
   for(t=0;t<T;t++){
     //Z[t] is the desired endeffector trajectory
     //x is the full joint state, z the endeffector position, J the Jacobian
     G.kinematicsPos(y, J, endeff, rel);  //get the new endeffector position
-    invJ = ~J*inverse_SymPosDef(J*~J);
-    x += invJ * (Z[t]-y);                  //simulate a time step (only kinematically)
+//    invJ = ~J*inverse_SymPosDef(J*~J);
+//    x += invJ * (Z[t]-y);                  //simulate a time step (only kinematically)
+    x += ~J * lapack_Ainv_b_sym(J*~J, Z[t]-y);
     G.setJointState(x);
 //    cout <<J * invJ <<endl <<x <<endl <<"tracking error = " <<maxDiff(Z[t],y) <<endl;
     G.watch(false, STRING("follow redundant trajectory -- time " <<t));
