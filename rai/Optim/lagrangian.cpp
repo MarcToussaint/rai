@@ -63,7 +63,7 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
   double L=0.; //L value
   for(uint i=0; i<phi_x.N; i++) {
     if(tt_x.p[i]==OT_f) L += phi_x.p[i];                                                  // direct cost term
-    if(tt_x.p[i]==OT_sos) L += rai::sqr(phi_x.p[i]);                                 // sumOfSqr term
+    if(tt_x.p[i]==OT_sos) L += rai::sqr(phi_x.p[i]);                                      // sumOfSqr term
     if(muLB     && tt_x.p[i]==OT_ineq) { if(phi_x.p[i]>0.) return NAN;  L -= muLB * ::log(-phi_x.p[i]); }                   //log barrier, check feasibility
     if(mu       && tt_x.p[i]==OT_ineq && I_lambda_x.p[i]) L += gpenalty(phi_x.p[i]);      //g-penalty
     if(lambda.N && tt_x.p[i]==OT_ineq && lambda.p[i]>0.) L += lambda.p[i] * phi_x.p[i];   //g-lagrange terms
@@ -103,12 +103,7 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
       arr sqrtCoeff = sqrt(coeff);
       tmp.sparse().rowWiseMult(sqrtCoeff);
     }
-#if 1
     HL = comp_At_A(tmp); //Gauss-Newton type!
-#else
-    arr tmpt = comp_At(tmp);
-    HL = comp_A_At(tmpt); //Gauss-Newton type!
-#endif
     
     if(fterm!=-1 && H_x.N) { //For f-terms, the Hessian must be given explicitly, and is not \propto J^T J
       HL += H_x;

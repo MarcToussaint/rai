@@ -41,7 +41,7 @@ double PrimalDualProblem::primalDual(arr &r, arr &R, const arr &x_lambda) {
   CHECK_EQ(n, x_lambda.N, "");
   CHECK_EQ(x.N+n_eq+n_ineq, x_lambda.N, "");
 
-  L.mu = .1;
+  L.mu = 0.; //1e-2;
   L.nu = L.muLB = 0.;
   
   arr dL, HL;
@@ -237,6 +237,8 @@ uint OptPrimalDual::run(uint maxIt) {
     }
 
     PD.updateMu();
+
+    newton.reinit(newton.x); //potential to optimize! don't recompute everything naively
 
     x = newton.x({0,x.N-1});
   
