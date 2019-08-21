@@ -60,7 +60,7 @@ OptNewton::StopCriterion OptNewton::step() {
   //-- compute Delta
   arr R=Hx;
   if(beta) { //Levenberg Marquardt damping
-    if(isNotSpecial(R)){
+    if(!isSpecial(R)){
       for(uint i=0; i<R.d0; i++) R(i,i) += beta;
     }else if(isRowShifted(R)) {
       for(uint i=0; i<R.d0; i++) R(i,0) += beta; //(R(i,0) is the diagonal in the packed matrix!!)
@@ -70,7 +70,7 @@ OptNewton::StopCriterion OptNewton::step() {
   }
   if(additionalRegularizer) { //obsolete -> retire
     if(isRowShifted(R)) R = unpack(R);
-    else if(!isNotSpecial(R)) NIY;
+    else if(isSpecial(R)) NIY;
     Delta = lapack_Ainv_b_sym(R + (*additionalRegularizer), -(gx+(*additionalRegularizer)*vectorShaped(x)));
   } else {
     bool inversionFailed=false;

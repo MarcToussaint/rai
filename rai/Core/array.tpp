@@ -110,8 +110,8 @@ template<class T> rai::Array<T>::~Array() {
 }
 
 template<class T> bool rai::Array<T>::operator!() const {
-    if(((char*)this)+1==(char*)1) return true;
-    return isNoArr<T>(*this);
+  if(((char*)this)+1==(char*)1) return true;
+  return isNoArr<T>(*this);
 }
 
 
@@ -1308,18 +1308,31 @@ template<class T> void rai::Array<T>::setMatrixBlock(const rai::Array<T>& B, uin
     CHECK(nd==2 && lo0+B.d0<=d0 && lo1+B.d1<=d1, "");
     uint i, j;
     if(!isSparseMatrix(*this)){
-        if(memMove) {
-            for(i=0; i<B.d0; i++) memmove(p+(lo0+i)*d1+lo1, B.p+i*B.d1, B.d1*sizeT);
-        } else {
-            for(i=0; i<B.d0; i++) for(j=0; j<B.d1; j++) p[(lo0+i)*d1+lo1+j] = B.p[i*B.d1+j];   // operator()(lo0+i, lo1+j)=B(i, j);
-        }
+      CHECK(!isSparseMatrix(B), "");
+      if(memMove) {
+        for(i=0; i<B.d0; i++) memmove(p+(lo0+i)*d1+lo1, B.p+i*B.d1, B.d1*sizeT);
+      } else {
+        for(i=0; i<B.d0; i++) for(j=0; j<B.d1; j++) p[(lo0+i)*d1+lo1+j] = B.p[i*B.d1+j];   // operator()(lo0+i, lo1+j)=B(i, j);
+      }
     }else{
+      if(!isSparseMatrix(B)){
         for(i=0; i<B.d0; i++) for(j=0; j<B.d1; j++) sparse().addEntry(lo0+i,lo1+j) = B.p[i*B.d1+j];
+      }else{
+        SparseMatrix& S = sparse();
+        const SparseMatrix& BS = B.sparse();
+        for(i=0; i<B.N; i++){
+          S.addEntry(lo0 + BS.elems(i,0), lo1 + BS.elems(i,1)) = B.elem(i);
+        }
+      }
     }
   } else {
     CHECK(nd==2 && lo0+B.d0<=d0 && lo1+1<=d1, "");
     uint i;
-    for(i=0; i<B.d0; i++) p[(lo0+i)*d1+lo1] = B.p[i];  // operator()(lo0+i, lo1+j)=B(i, j);
+    if(!isSparseMatrix(*this)){
+      for(i=0; i<B.d0; i++) p[(lo0+i)*d1+lo1] = B.p[i];  // operator()(lo0+i, lo1+j)=B(i, j);
+    }else{
+      for(i=0; i<B.d0; i++) sparse().addEntry(lo0+i,lo1) = B.p[i];
+    }
   }
 }
 
@@ -3555,15 +3568,12 @@ template<class T> uint softMax(const rai::Array<T>& a, arr& soft, double beta) {
 //
 
 namespace rai {
-//addition
-template<class T> Array<T> operator+(const Array<T>& y, const Array<T>& z){ Array<T> x(y); x+=z; return x; }
-//subtraction
-template<class T> Array<T> operator-(const Array<T>& y, const Array<T>& z){
-  Array<T> x(y);
-  if(isSparseMatrix(x) && isSparseMatrix(z)) x.sparse().subtract(z);
-  else x-=z;
-  return x;
-}
+  //addition
+  template<class T> Array<T> operator+(const Array<T>& y, const Array<T>& z){ Array<T> x(y); x+=z; return x; }
+
+  //subtraction
+  template<class T> Array<T> operator-(const Array<T>& y, const Array<T>& z){ Array<T> x(y); x-=z; return x; }
+
 
 /// transpose
 template<class T> Array<T> operator~(const Array<T>& y) { Array<T> x; transpose(x, y); return x; }
@@ -3603,7 +3613,9 @@ template<class T> Array<T> operator%(const Array<T>& y, const Array<T>& z) { Arr
 
 #define UpdateOperator( op )        \
   template<class T> Array<T>& operator op (Array<T>& x, const Array<T>& y){ \
-    CHECK_EQ(x.N,y.N, "binary operator on different array dimensions (" <<x.N <<", " <<y.N <<")"); \
+    if(isSparseMatrix(x) && isSparseMatrix(y)){ x.sparse() op y.sparse(); return x; }  \
+    CHECK(!isSpecial(x), "");  \
+    CHECK_EQ(x.N, y.N, "binary operator on different array dimensions (" <<x.N <<", " <<y.N <<")"); \
     T *xp=x.p, *xstop=xp+x.N;              \
     const T *yp=y.p;              \
     for(; xp!=xstop; xp++, yp++) *xp op *yp;       \
@@ -3611,19 +3623,25 @@ template<class T> Array<T> operator%(const Array<T>& y, const Array<T>& z) { Arr
   }                 \
   \
   template<class T> Array<T>& operator op (Array<T>& x, T y ){ \
+    if(isSparseMatrix(x)){ x.sparse() op y; return x; }  \
+    CHECK(!isSpecial(x), "");  \
     T *xp=x.p, *xstop=xp+x.N;              \
     for(; xp!=xstop; xp++) *xp op y;        \
     return x;           \
   } \
   \
   template<class T> void operator op (Array<T>&& x, const Array<T>& y){ \
-    CHECK_EQ(x.N,y.N, "binary operator on different array dimensions (" <<x.N <<", " <<y.N <<")"); \
+    if(isSparseMatrix(x) && isSparseMatrix(y)){ x.sparse() op y.sparse(); return; }  \
+    CHECK(!isSpecial(x), "");  \
+    CHECK_EQ(x.N, y.N, "binary operator on different array dimensions (" <<x.N <<", " <<y.N <<")"); \
     T *xp=x.p, *xstop=xp+x.N;              \
     const T *yp=y.p;              \
     for(; xp!=xstop; xp++, yp++) *xp op *yp;       \
   }                 \
   \
   template<class T> void operator op (Array<T>&& x, T y ){ \
+    if(isSparseMatrix(x)){ x.sparse() op y; return; }  \
+    CHECK(!isSpecial(x), "");  \
     T *xp=x.p, *xstop=xp+x.N;              \
     for(; xp!=xstop; xp++) *xp op y;        \
   }

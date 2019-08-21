@@ -131,6 +131,21 @@ template<> rai::SparseMatrix& rai::Array<double>::sparse() {
   return *s;
 }
 
+/// make sparse: create the \ref sparse index
+template<> const rai::SparseMatrix& rai::Array<double>::sparse() const{
+  CHECK(isSparseMatrix(*this), "");
+  SparseMatrix *s = dynamic_cast<SparseMatrix*>(special);
+  CHECK(s, "");
+  return *s;
+}
+
+#define NONSENSE( type ) \
+template<> rai::SparseMatrix& rai::Array<type>::sparse() { NIY; return *(new SparseMatrix(NoArr)); }
+NONSENSE(float)
+NONSENSE(uint)
+NONSENSE(int)
+#undef NONSENSE
+
 }
 
 //===========================================================================
@@ -1529,7 +1544,7 @@ arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
     integer M, IL=1, IU=k, LDQ=0, LDZ=1, LWORK=WORK.N;
     double VL=0., VU=0., ABSTOL=1e-8;
     arr sig(N);
-    if(isNotSpecial(A)) {
+    if(!isSpecial(A)) {
 //      sig.resize(N);
 //      dsyev_ ((char*)"N", (char*)"L", &N, A.p, &N, sig.p, WORK.p, &LWORK, &INFO);
 //      lapack_EigenDecomp(A, sig, NoArr);
@@ -2155,20 +2170,20 @@ arr RowShifted::At() {
 namespace rai{
 
 SparseMatrix::SparseMatrix(arr& _Z) : Z(_Z) {
-  CHECK(isNotSpecial(_Z), "only once yet");
+  CHECK(!isSpecial(_Z), "only once yet");
   type = SpecialArray::sparseMatrixST;
   Z.special = this;
 }
 
 SparseMatrix::SparseMatrix(arr& _Z, SparseMatrix& s) : Z(_Z) {
-  CHECK(isNotSpecial(_Z), "only once yet");
+  CHECK(!isSpecial(_Z), "only once yet");
   type = SpecialArray::sparseMatrixST;
   Z.special = this;
   elems = s.elems;
 }
 
 SparseVector::SparseVector(arr& _Z) : Z(_Z) {
-  CHECK(isNotSpecial(_Z), "only once yet");
+  CHECK(!isSpecial(_Z), "only once yet");
   type=sparseVectorST;
   Z.special = this;
 }
@@ -2317,6 +2332,15 @@ void SparseMatrix::setupRowsCols(){
   for(uint j=0;j<Z.d1;j++) cols(j).reshape(cols(j).N/2,2);
 }
 
+void SparseMatrix::rowShift(int shift){
+  for(uint i=0;i<elems.d0;i++){
+    int &j = elems(i,1);
+    CHECK_GE(j+shift, 0, "");
+    CHECK_LE(j+shift+1, (int)Z.d1, "");
+    j += shift;
+  }
+}
+
 arr SparseMatrix::At_x(const arr& x){
   Eigen::SparseMatrix<double> A_eig = conv_sparseArr2sparseEigen(*this);
   Eigen::MatrixXd x_eig = conv_arr2eigen(x);
@@ -2373,15 +2397,13 @@ void SparseMatrix::rowWiseMult(const arr& a){
   for(uint k=0;k<Z.N;k++) Z.elem(k) *= a.elem(elems.p[2*k]);
 }
 
-void SparseMatrix::subtract(const arr& a){
-  CHECK(isSparseMatrix(a), "");
-  CHECK_EQ(a.d0, Z.d0, "");
-  CHECK_EQ(a.d1, Z.d1, "");
+void SparseMatrix::subtract(const SparseMatrix& a){
+  CHECK_EQ(a.Z.d0, Z.d0, "");
+  CHECK_EQ(a.Z.d1, Z.d1, "");
   uint Nold=Z.N;
-  resizeCopy(Z.d0, Z.d1, Z.N + a.N);
-  const SparseMatrix* as = dynamic_cast<const SparseMatrix*>(a.special);
-  for(uint j=0;j<a.N;j++){
-    entry(as->elems(j,0), as->elems(j,1), Nold+j) = -a.elem(j);
+  resizeCopy(Z.d0, Z.d1, Z.N + a.Z.N);
+  for(uint j=0;j<a.Z.N;j++){
+    entry(a.elems(j,0), a.elems(j,1), Nold+j) = -a.Z.elem(j);
   }
 }
 
@@ -2401,13 +2423,28 @@ arr SparseMatrix::unsparse(){
 
 } //namespace rai
 
+void operator -= (rai::SparseMatrix& x, const rai::SparseMatrix& y){ x.subtract(y); }
+void operator -= (rai::SparseMatrix& x, double y){ arr& X=x.Z; x.unsparse(); X -= y; }
+
+void operator += (rai::SparseMatrix& x, const rai::SparseMatrix& y){ NIY; }
+void operator += (rai::SparseMatrix& x, double y){ arr& X=x.Z; x.unsparse(); X += y; }
+
+void operator *= (rai::SparseMatrix& x, const rai::SparseMatrix& y){ NIY; }
+void operator *= (rai::SparseMatrix& x, double y){ x.Z.ref() *= y; }
+
+void operator /= (rai::SparseMatrix& x, const rai::SparseMatrix& y){ NIY; }
+void operator /= (rai::SparseMatrix& x, double y){ x.Z.ref() /= y; }
+
+//void operator %= (rai::SparseMatrix& x, const rai::SparseMatrix& y){ NIY; }
+
+
 //===========================================================================
 //
 // generic special
 //
 
 arr unpack(const arr& X) {
-  if(isNotSpecial(X)) HALT("this is not special");
+  if(!isSpecial(X)) HALT("this is not special");
   if(isRowShifted(X)) return unpackRowShifted(X);
   if(isSparseMatrix(X)) return dynamic_cast<rai::SparseMatrix*>(X.special)->unsparse();
   HALT("should not be here");
@@ -2415,39 +2452,39 @@ arr unpack(const arr& X) {
 }
 
 arr comp_At_A(const arr& A) {
-  if(isNotSpecial(A)) { arr X; blas_At_A(X,A); return X; }
+  if(!isSpecial(A)) { arr X; blas_At_A(X,A); return X; }
   if(isRowShifted(A)) return ((RowShifted*)A.special)->At_A();
   if(isSparseMatrix(A)) return ((rai::SparseMatrix*)A.special)->At_A();
   return NoArr;
 }
 
 arr comp_A_At(const arr& A) {
-  if(isNotSpecial(A)) { arr X; blas_A_At(X,A); return X; }
+  if(!isSpecial(A)) { arr X; blas_A_At(X,A); return X; }
   if(isRowShifted(A)) return ((RowShifted*)A.special)->A_At();
   return NoArr;
 }
 
 //arr comp_A_H_At(arr& A, const arr& H){
-//  if(isNotSpecial(A)) { arr X; blas_A_At(X,A); return X; }
+//  if(!isSpecial(A)) { arr X; blas_A_At(X,A); return X; }
 //  if(isRowShifted(A)) return ((RowShifted*)A.aux)->A_H_At(H);
 //  return NoArr;
 //}
 
 arr comp_At_x(const arr& A, const arr& x) {
-  if(isNotSpecial(A)) { arr y; innerProduct(y, ~A, x); return y; }
+  if(!isSpecial(A)) { arr y; innerProduct(y, ~A, x); return y; }
   if(isRowShifted(A)) return ((RowShifted*)A.special)->At_x(x);
   if(isSparseMatrix(A)) return ((rai::SparseMatrix*)A.special)->At_x(x);
   return NoArr;
 }
 
 arr comp_At(const arr& A) {
-  if(isNotSpecial(A)) { return ~A; }
+  if(!isSpecial(A)) { return ~A; }
   if(isRowShifted(A)) return ((RowShifted*)A.special)->At();
   return NoArr;
 }
 
 arr comp_A_x(const arr& A, const arr& x) {
-  if(isNotSpecial(A)) { arr y; innerProduct(y, A, x); return y; }
+  if(!isSpecial(A)) { arr y; innerProduct(y, A, x); return y; }
   if(isRowShifted(A)) return ((RowShifted*)A.special)->A_x(x);
   return NoArr;
 }

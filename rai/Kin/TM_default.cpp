@@ -105,30 +105,7 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
       G.kinematicsPos(y, J, a, vec_i);
       y -= conv_vec2arr(vec_j);
     }else{
-#if 1
       G.kinematicsRelPos(y, J, a, vec_i, b, vec_j);
-#else
-      rai::Vector pi = a->X * vec_i;
-      rai::Vector pj = b->X * vec_j;
-      y = conv_vec2arr(b->X.rot / (pi-pj));
-      if(!!J) {
-        arr Ji, Jj, JRj;
-        G.kinematicsPos(NoArr, Ji, a, vec_i);
-        G.kinematicsPos(NoArr, Jj, b, vec_j);
-        G.axesMatrix(JRj, b);
-        J.resize(3, Jj.d1);
-        for(uint k=0; k<Jj.d1; k++) {
-          rai::Vector vi(Ji(0, k), Ji(1, k), Ji(2, k));
-          rai::Vector vj(Jj(0, k), Jj(1, k), Jj(2, k));
-          rai::Vector r(JRj(0, k), JRj(1, k), JRj(2, k));
-          rai::Vector jk =  b->X.rot / (vi-vj);
-          jk -= b->ensure_X().rot / (r ^ (pi-pj));
-          J(0, k)=jk.x;
-          J(1, k)=jk.y;
-          J(2, k)=jk.z;
-        }
-      }
-#endif
     }
     return;
   }
@@ -145,6 +122,7 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
       y -= y2;
       if(!!J) J -= J2;
     }
+//    if(!!J && isSpecial(J)) unpack(J);
     return;
   }
   

@@ -207,8 +207,8 @@ bool OptConstrained::step() {
 uint OptConstrained::run() {
 //  earlyPhase=true;
   while(!step());
-  newton.beta *= 1e-3;
-  step();
+//  newton.beta *= 1e-3;
+//  step();
   return newton.evals;
 }
 

@@ -229,7 +229,7 @@ void LagrangianProblem::aulaUpdate(bool anyTimeVariant, double lambdaStepsize, d
   }
 }
 
-#if 0
+#if 1
 double LagrangianProblem::gpenalty(double g) { return mu*g*g; }
 double LagrangianProblem::gpenalty_d(double g) { return 2.*mu*g; }
 double LagrangianProblem::gpenalty_dd(double g) { return 2.*mu; }
@@ -239,7 +239,7 @@ double LagrangianProblem::gpenalty_d(double g) { g*=mu; if(g>0.) return mu*(2.*g
 double LagrangianProblem::gpenalty_dd(double g) { g*=mu; if(g>0.) return mu*mu*(2. + 6.*g);  return 2.*mu*mu; }
 #endif
 
-#if 0
+#if 1
 double LagrangianProblem::hpenalty(double h) { return nu*h*h;  }
 double LagrangianProblem::hpenalty_d(double h) { return 2.*nu*h;  }
 double LagrangianProblem::hpenalty_dd(double h) { return 2.*nu;  }

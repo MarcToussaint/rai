@@ -86,13 +86,13 @@ void TEST(PR2){
   KOMO_ext komo;
   komo.logFile = new ofstream("z.dat");
 //  komo.denseOptimization=true;
-//  komo.sparseOptimization=true;
+  komo.sparseOptimization=true;
   komo.setModel(K);
   komo.setPathOpt(1., 100, 10.);
   komo.setSquaredQAccVelHoming();
   komo.setPosition(1., 1., "endeff", "target");
   komo.setSlowAround(1., .02);
-  komo.add_collision(true);
+  komo.add_collision(false);
 //  komo.setTask(-1., -1., new TM_ContactConstraints(), OT_ineq);
 //  komo.setTask(-1., -1., new TM_ContactConstraints(), OT_ineq, NoArr, 1e2);
 

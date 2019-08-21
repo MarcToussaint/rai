@@ -288,6 +288,7 @@ template<class T> struct Array : std::vector<T>, Serializable {
   /// @name special matrices [TODO: move outside, use 'special']
   double sparsity();
   SparseMatrix& sparse();
+  const SparseMatrix& sparse() const;
   SparseVector& sparseVec();
 
   /// @name I/O
@@ -906,7 +907,7 @@ struct SpecialArray {
   virtual ~SpecialArray() {}
 };
 
-template<class T> bool isNotSpecial(const rai::Array<T>& X)   { return !X.special || X.special->type==SpecialArray::ST_none; }
+template<class T> bool isSpecial(const rai::Array<T>& X)      { return X.special && X.special->type!=SpecialArray::ST_none; }
 template<class T> bool isNoArr(const rai::Array<T>& X)        { return X.special && X.special->type==SpecialArray::ST_NoArr; }
 template<class T> bool isRowShifted(const rai::Array<T>& X)   { return X.special && X.special->type==SpecialArray::RowShiftedST; }
 template<class T> bool isSparseMatrix(const rai::Array<T>& X) { return X.special && X.special->type==SpecialArray::sparseMatrixST; }
@@ -967,6 +968,8 @@ struct SparseMatrix : SpecialArray {
   double& addEntry(int i, int j);
   void setFromDense(const arr& X);
   void setupRowsCols();
+  //manipulations
+  void rowShift(int shift);
   //computations
   arr At_x(const arr& x);
   arr At_A();
@@ -975,11 +978,24 @@ struct SparseMatrix : SpecialArray {
   void transpose();
   void rowWiseMult(const arr& a);
   void add(const arr& a);
-  void subtract(const arr& a);
+  void subtract(const SparseMatrix& a);
   arr unsparse();
 };
 
 }//namespace rai
+
+#define UpdateOperator( op ) \
+void operator op (rai::SparseMatrix& x, const rai::SparseMatrix& y); \
+void operator op (rai::SparseMatrix& x, double y );
+UpdateOperator(|=)
+UpdateOperator(^=)
+UpdateOperator(&=)
+UpdateOperator(+=)
+UpdateOperator(-=)
+UpdateOperator(*=)
+UpdateOperator(/=)
+UpdateOperator(%=)
+#undef UpdateOperator
 
 //struct RowSparseMatrix : SpecialArray {
 //  RowSparseMatrix()

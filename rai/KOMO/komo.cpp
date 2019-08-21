@@ -588,7 +588,7 @@ void KOMO::setHoldStill(double startTime, double endTime, const char* shape, dou
 }
 
 void KOMO_ext::setPosition(double startTime, double endTime, const char* shape, const char* shapeRel, ObjectiveType type, const arr& target, double prec) {
-  addObjective(startTime, endTime, new TM_Default(TMT_pos, world, shape, NoVector, shapeRel, NoVector), type, target, prec);
+  addObjective(startTime, endTime, new TM_Default(TMT_posDiff, world, shape, NoVector, shapeRel, NoVector), type, target, prec);
 }
 
 void KOMO_ext::setOrientation(double startTime, double endTime, const char* shape, const char* shapeRel, ObjectiveType type, const arr& target, double prec) {
@@ -597,7 +597,7 @@ void KOMO_ext::setOrientation(double startTime, double endTime, const char* shap
 }
 
 void KOMO_ext::setVelocity(double startTime, double endTime, const char* shape, const char* shapeRel, ObjectiveType type, const arr& target, double prec) {
-  addObjective(startTime, endTime, new TM_Default(TMT_pos, world, shape, NoVector, shapeRel, NoVector), type, target, prec, 1);
+  addObjective(startTime, endTime, new TM_Default(TMT_posDiff, world, shape, NoVector, shapeRel, NoVector), type, target, prec, 1);
 }
 
 void KOMO_ext::setLastTaskToBeVelocity() {
@@ -2324,6 +2324,7 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
         //write into phi and J
         phi.setVectorBlock(y, M);
         if(!!J) {
+//          if(isSpecial(Jy)) unpack(Jy);
 //          Jy *= task->prec(t);
           if(t<komo.k_order) Jy.delColumns(0, Ktuple_dim(komo.k_order-t-1)); //delete the columns that correspond to the prefix!!
 //          if(t<komo.k_order) Jy.delColumns(0,(komo.k_order-t)*komo.configurations(0)->q.N); //delete the columns that correspond to the prefix!!

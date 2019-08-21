@@ -881,6 +881,7 @@ void rai::KinematicWorld::kinematicsPos(arr& y, arr& J, Frame *a, const rai::Vec
   if(!J) return; //do not return the Jacobian
   
   jacobianPos(J, a, pos_world, SPARSE_JACOBIANS);
+//  if(isSpecial(J)) unpack(J);
 }
 
 #if 1
@@ -1243,6 +1244,7 @@ void rai::KinematicWorld::kinematicsRelPos(arr& y, arr& J, Frame *a, const rai::
   if(!!J) {
     arr A;
     axesMatrix(A, b, SPARSE_JACOBIANS);
+//    if(isSpecial(A)) unpack(A);
     J = Rinv * (J1 - J2 - crossProduct(A, y1 - y2));
   }
 }
@@ -1258,7 +1260,7 @@ void rai::KinematicWorld::kinematicsRelVec(arr& y, arr& J, Frame *a, const rai::
   y = Rinv * y1;
   if(!!J) {
     arr A;
-    axesMatrix(A, b);
+    axesMatrix(A, b, SPARSE_JACOBIANS);
     J = Rinv * (J1 - crossProduct(A, y1));
   }
 }

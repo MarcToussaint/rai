@@ -76,7 +76,7 @@ OptOptions::OptOptions() {
   constrainedMethod = (ConstrainedMethodType)rai::getParameter<int>("opt/constrainedMethod", augmentedLag);
   muInit = rai::getParameter<double>("opt/muInit", 1.);
   muLBInit = rai::getParameter<double>("opt/muLBInit", 1.);
-  aulaMuInc = rai::getParameter<double>("opt/aulaMuInc", 2.);
+  aulaMuInc = rai::getParameter<double>("opt/aulaMuInc", 5.);
 }
 
 void OptOptions::write(std::ostream& os) const {
