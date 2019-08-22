@@ -122,7 +122,6 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
       y -= y2;
       if(!!J) J -= J2;
     }
-//    if(!!J && isSpecial(J)) unpack(J);
     return;
   }
   

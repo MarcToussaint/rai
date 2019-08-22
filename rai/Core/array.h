@@ -290,6 +290,7 @@ template<class T> struct Array : std::vector<T>, Serializable {
   SparseMatrix& sparse();
   const SparseMatrix& sparse() const;
   SparseVector& sparseVec();
+  const SparseVector& sparseVec() const;
 
   /// @name I/O
   void write(std::ostream& os=std::cout, const char *ELEMSEP=NULL, const char *LINESEP=NULL, const char *BRACKETS=NULL, bool dimTag=false, bool binary=false) const;
@@ -946,8 +947,10 @@ struct SparseVector: SpecialArray {
   arr& Z;      ///< references the array itself
   intA elems;  ///< for every non-zero (in memory order), the index
   SparseVector(arr& _Z);
+  SparseVector(arr& _Z, const SparseVector& s);
   void resize(uint d0, uint n);
   double& entry(uint i, uint k);
+  double& addEntry(int i);
   void setFromDense(const arr& x);
   arr unsparse();
 };
@@ -959,16 +962,19 @@ struct SparseMatrix : SpecialArray {
   uintAA rows; ///< for every row   , for every non-zero the (column,memory) index tuple
 
   SparseMatrix(arr& _Z);
-  SparseMatrix(arr& _Z, SparseMatrix& s);
-  void resize(uint d0, uint d1, uint n);
-  void resizeCopy(uint d0, uint d1, uint n);
-  void reshape(uint d0, uint d1);
+  SparseMatrix(arr& _Z, const SparseMatrix& s);
+  //access
   double& entry(uint i, uint j, uint k);
   double& elem(uint i, uint j);
   double& addEntry(int i, int j);
+  arr getSparseRow(uint i);
+  //construction
   void setFromDense(const arr& X);
   void setupRowsCols();
   //manipulations
+  void resize(uint d0, uint d1, uint n);
+  void resizeCopy(uint d0, uint d1, uint n);
+  void reshape(uint d0, uint d1);
   void rowShift(int shift);
   //computations
   arr At_x(const arr& x);

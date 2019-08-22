@@ -1192,13 +1192,20 @@ template<class T> rai::Array<T>& rai::Array<T>::operator=(const rai::Array<T>& a
   if(memMove) memmove(p, a.p, sizeT*N);
   else for(i=0; i<N; i++) p[i]=a.p[i];
   if(special) { delete special; special=NULL; }
-  if(isRowShifted(a)) {
-    CHECK(typeid(T) == typeid(double),"");
-    special = new RowShifted(*((arr*)this),*((RowShifted*)a.special));
-  }
-  if(isSparseMatrix(a)) {
-    CHECK(typeid(T) == typeid(double), "");
-    special = new SparseMatrix(*((arr*)this), *((SparseMatrix*)a.special));
+  if(isSpecial(a)){
+    if(isRowShifted(a)) {
+      CHECK(typeid(T) == typeid(double),"");
+      special = new RowShifted(*((arr*)this), *dynamic_cast<RowShifted*>(a.special));
+    }
+    else if(isSparseVector(a)) {
+      CHECK(typeid(T) == typeid(double), "");
+      special = new SparseVector(*((arr*)this), *dynamic_cast<SparseVector*>(a.special));
+    }
+    else if(isSparseMatrix(a)) {
+      CHECK(typeid(T) == typeid(double), "");
+      special = new SparseMatrix(*((arr*)this), *dynamic_cast<SparseMatrix*>(a.special));
+    }
+    else NIY;
   }
   return *this;
 }

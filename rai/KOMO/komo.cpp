@@ -2176,6 +2176,8 @@ Graph KOMO::getProblemGraph(bool includeValues){
       if(!denseOptimization && !sparseOptimization){
         for(uint t=0;t<ob->vars.N && t<T;t++) if(ob->isActive(t)) {
           ob->map->__phi(y, Jy, configurations({t,t+k_order}));
+          if(isSpecial(Jy)) Jy = unpack(Jy);
+
           V.append(y);
           J.append(Jy);
         }
@@ -2183,6 +2185,8 @@ Graph KOMO::getProblemGraph(bool includeValues){
         for(uint t=0;t<ob->vars.d0;t++) {
           WorldL Ktuple = configurations.sub(convert<uint,int>(ob->vars[t]+(int)k_order));
           ob->map->__phi(y, Jy, Ktuple);
+          if(isSpecial(Jy)) Jy = unpack(Jy);
+
           V.append(y);
           J.append(Jy);
         }
@@ -2307,24 +2311,11 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
         if(!!J) CHECK_EQ(Jy.d1, Ktuple_dim.last(), "");
         if(!y.N) continue;
         if(absMax(y)>1e10) RAI_MSG("WARNING y=" <<y);
-        
-#if 0
-        //linear transform (target shift)
-        arr target;
-        if(task->target.N==1) target = consts<double>(task->target.scalar(), y.N);
-        else if(task->target.nd==1) target = task->target;
-        else if(task->target.nd==2) target = task->target[t];
-        if(target.N) {
-          if(task->map->flipTargetSignOnNegScalarProduct && scalarProduct(y, target)<-.0) target *= -1.;
-          y -= target;
-        }
-        y *= task->prec(t);
-#endif
-        
+
         //write into phi and J
         phi.setVectorBlock(y, M);
         if(!!J) {
-//          if(isSpecial(Jy)) unpack(Jy);
+          if(isSpecial(Jy)) Jy = unpack(Jy);
 //          Jy *= task->prec(t);
           if(t<komo.k_order) Jy.delColumns(0, Ktuple_dim(komo.k_order-t-1)); //delete the columns that correspond to the prefix!!
 //          if(t<komo.k_order) Jy.delColumns(0,(komo.k_order-t)*komo.configurations(0)->q.N); //delete the columns that correspond to the prefix!!
@@ -2435,23 +2426,11 @@ void KOMO::Conv_MotionProblem_DenseProblem::phi(arr& phi, arr& J, arr& H, Object
       if(!y.N) continue;
       if(absMax(y)>1e10) RAI_MSG("WARNING y=" <<y);
 
-#if 0
-      //linear transform (target shift)
-      arr target;
-      if(task->target.N==1) target = consts<double>(task->target.scalar(), y.N);
-      else if(task->target.nd==1) target = task->target;
-      else if(task->target.nd==2) target = task->target[t];
-      if(target.N) {
-        if(task->map->flipTargetSignOnNegScalarProduct && scalarProduct(y, target)<-.0) target *= -1.;
-        y -= target;
-      }
-      y *= task->prec(t);
-#endif
-
       //write into phi and J
       phi.setVectorBlock(y, M);
 
       if(!!J) {
+        if(isSpecial(Jy)) Jy = unpack(Jy);
 //        Jy *= task->prec(t);
         for(uint j=0;j<task->vars.d1;j++){
           if(task->vars(t,j)>=0){
@@ -2580,10 +2559,16 @@ void KOMO::Conv_MotionProblem_GraphProblem::phi(arr& phi, arrA& J, arrA& H, cons
       if(!!J) {
         for(uint j=ob->vars.d1;j--;){
           if(ob->vars(t,j)<0){
+            if(isSpecial(Jy)) Jy = unpack(Jy);
             Jy.delColumns(kdim(j),kdim(j+1)-kdim(j)); //delete the columns that correspond to the prefix!!
           }
         }
-        for(uint i=0; i<y.N; i++) J(M+i) = Jy[i];
+        if(!isSparseMatrix(Jy)){
+          for(uint i=0; i<y.N; i++) J(M+i) = Jy[i];
+        }else{
+          Jy.sparse().setupRowsCols();
+          for(uint i=0; i<y.N; i++) J(M+i) = Jy.sparse().getSparseRow(i);
+        }
       }
 
       //counter for features phi
@@ -2637,6 +2622,8 @@ void KOMO::Conv_MotionProblem_GraphProblem::getPartialPhi(arr& phi, arrA& J, arr
 
         //query the task map and check dimensionalities of returns
         ob->map->__phi(y, (!!J?Jy:NoArr), Ktuple);
+        if(!!J && isSpecial(Jy)) Jy = unpack(Jy);
+
         if(!!J) CHECK_EQ(y.N, Jy.d0, "");
         if(!!J) CHECK_EQ(Jy.nd, 2, "");
         if(!!J) CHECK_EQ(Jy.d1, kdim.last(), "");

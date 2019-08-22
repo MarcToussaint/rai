@@ -111,6 +111,13 @@ template<> rai::SparseVector& rai::Array<double>::sparseVec() {
   return *s;
 }
 
+template<> const rai::SparseVector& rai::Array<double>::sparseVec() const{
+  CHECK(isSparseVector(*this), "");
+  SparseVector *s = dynamic_cast<SparseVector*>(special);
+  CHECK(s, "");
+  return *s;
+}
+
 /// make sparse: create the \ref sparse index
 template<> rai::SparseMatrix& rai::Array<double>::sparse() {
   SparseMatrix *s;
@@ -2169,23 +2176,24 @@ arr RowShifted::At() {
 
 namespace rai{
 
-SparseMatrix::SparseMatrix(arr& _Z) : Z(_Z) {
+SparseVector::SparseVector(arr& _Z) : Z(_Z) {
   CHECK(!isSpecial(_Z), "only once yet");
-  type = SpecialArray::sparseMatrixST;
+  type = sparseVectorST;
   Z.special = this;
 }
 
-SparseMatrix::SparseMatrix(arr& _Z, SparseMatrix& s) : Z(_Z) {
+SparseMatrix::SparseMatrix(arr& _Z) : Z(_Z) {
   CHECK(!isSpecial(_Z), "only once yet");
-  type = SpecialArray::sparseMatrixST;
+  type = sparseMatrixST;
   Z.special = this;
+}
+
+SparseVector::SparseVector(arr& _Z, const SparseVector& s) : SparseVector(_Z){
   elems = s.elems;
 }
 
-SparseVector::SparseVector(arr& _Z) : Z(_Z) {
-  CHECK(!isSpecial(_Z), "only once yet");
-  type=sparseVectorST;
-  Z.special = this;
+SparseMatrix::SparseMatrix(arr& _Z, const SparseMatrix& s) : SparseMatrix(_Z){
+  elems = s.elems;
 }
 
 /// return fraction of non-zeros in the array
@@ -2198,6 +2206,7 @@ template<> double Array<double>::sparsity() {
 void SparseVector::resize(uint d0, uint n){
   Z.nd=1; Z.d0=d0;
   Z.resizeMEM(n, false);
+  Z.setZero();
   elems.resize(n);
   for(int& e:elems) e=-1;
 }
@@ -2264,6 +2273,19 @@ double& SparseMatrix::elem(uint i, uint j){
   return addEntry(i,j);
 }
 
+double& SparseVector::addEntry(int i){
+  if(i<0) i += Z.d0;
+  CHECK(Z.nd==1 && (uint)i<Z.d0,
+        "1D range error (" <<Z.nd <<"=1, " <<i <<"<" <<Z.d0 <<")");
+  uint k=Z.N;
+  CHECK_EQ(elems.N, k, "");
+  elems.resizeCopy(k+1);
+  elems(k)=i;
+  Z.resizeMEM(k+1, true);
+  Z.last()=0.;
+  return Z.last();
+}
+
 double& SparseMatrix::addEntry(int i, int j){
   if(i<0) i += Z.d0;
   if(j<0) j += Z.d1;
@@ -2279,6 +2301,22 @@ double& SparseMatrix::addEntry(int i, int j){
   Z.resizeMEM(k+1, true);
   Z.last()=0.;
   return Z.last();
+}
+
+arr SparseMatrix::getSparseRow(uint i){
+  arr v;
+  SparseVector& vS = v.sparseVec();
+  if(rows.N){
+    uintA& r = rows(i);
+    uint n=r.d0;
+    vS.resize(Z.d1, n);
+    for(uint k=0;k<n;k++){
+      vS.entry(r(k,0), k) = Z.elem(r(k,1));
+    }
+  }else{
+    NIY
+  }
+  return v;
 }
 
 void SparseVector::setFromDense(const arr& x) {

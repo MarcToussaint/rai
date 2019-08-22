@@ -881,7 +881,6 @@ void rai::KinematicWorld::kinematicsPos(arr& y, arr& J, Frame *a, const rai::Vec
   if(!J) return; //do not return the Jacobian
   
   jacobianPos(J, a, pos_world, SPARSE_JACOBIANS);
-//  if(isSpecial(J)) unpack(J);
 }
 
 #if 1
@@ -1145,7 +1144,7 @@ void rai::KinematicWorld::kinematicsVec(arr& y, arr& J, Frame *a, const rai::Vec
   if(!!y) y = conv_vec2arr(vec_world); //return the vec
   if(!!J) {
     arr A;
-    axesMatrix(A, a);
+    axesMatrix(A, a, SPARSE_JACOBIANS);
     J = crossProduct(A, conv_vec2arr(vec_world));
   }
 }
@@ -1244,7 +1243,6 @@ void rai::KinematicWorld::kinematicsRelPos(arr& y, arr& J, Frame *a, const rai::
   if(!!J) {
     arr A;
     axesMatrix(A, b, SPARSE_JACOBIANS);
-//    if(isSpecial(A)) unpack(A);
     J = Rinv * (J1 - J2 - crossProduct(A, y1 - y2));
   }
 }
@@ -1275,7 +1273,7 @@ void rai::KinematicWorld::kinematicsRelRot(arr& y, arr& J, Frame *a, Frame *b) c
     double s=2.*phi/sin(phi);
     double ss=-2./(1.-rai::sqr(rot_b.w)) * (1.-phi/tan(phi));
     arr A;
-    axesMatrix(A, a);
+    axesMatrix(A, a, SPARSE_JACOBIANS);
     J = 0.5 * (rot_b.w*A*s + crossProduct(A, y));
     J -= 0.5 * ss/s/s*(y*~y*A);
   }

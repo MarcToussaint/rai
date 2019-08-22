@@ -80,7 +80,7 @@ void TEST(Kinematics){
 
 //  rai::KinematicWorld G("arm7.g");
   rai::KinematicWorld G("kinematicTests.g");
-//  rai::KinematicWorld G("../../../data/pr2_model/pr2_model.ors");
+//  rai::KinematicWorld G("../../../../rai-robotModels/pr2/pr2.g");
 //  rai::KinematicWorld G("../../../projects/17-LGP-push/quatJacTest.g");
 //  G.watch(true);
 
