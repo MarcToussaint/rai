@@ -18,7 +18,7 @@ py::dict graph2dict(const Graph& G){
   for(Node *n:G){
     rai::String key;
     if(n->keys.N) key=n->keys.last();
-    else key <<n->index;
+    else key = n->index;
 
     //-- write value
     if(n->isGraph()) {
