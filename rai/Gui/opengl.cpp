@@ -2465,7 +2465,7 @@ void OpenGL::renderInBack(int w, int h) {
           break;
         }
       }
-      exit(EXIT_FAILURE);
+      HALT("couldn't create framebuffer");
     }
   }
   
@@ -2488,8 +2488,6 @@ void OpenGL::renderInBack(int w, int h) {
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
   
   isUpdating.setStatus(0);
-
-
 #endif
 }
 
