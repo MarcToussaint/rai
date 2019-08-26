@@ -220,7 +220,10 @@ rai::Frame* rai::KinematicWorld::addFrame(const char* name, const char* parent, 
 
   if(parent && parent[0]){
     rai::Frame *p = getFrameByName(parent);
-    if(p) f->linkFrom(p);
+    if(p){
+      f->X = p->X;
+      f->linkFrom(p, true);
+    }
   }
 
   if(args && args[0]){
@@ -228,7 +231,7 @@ rai::Frame* rai::KinematicWorld::addFrame(const char* name, const char* parent, 
     f->read(f->ats);
   }
 
-  if(f->parent) f->calc_X_from_parent();
+//  if(f->parent) f->calc_X_from_parent();
 
   return f;
 }
@@ -748,7 +751,7 @@ void rai::KinematicWorld::setJointState(const arr& _q, const arr& _qdot) {
   
   calc_Q_from_q();
   
-//  calc_fwdPropagateFrames();
+  calc_fwdPropagateFrames();
 }
 
 void rai::KinematicWorld::setJointState(const arr& _q, const StringA& joints) {
@@ -781,7 +784,7 @@ void rai::KinematicWorld::setJointState(const arr& _q, const StringA& joints) {
 
   calc_Q_from_q();
   
-//  calc_fwdPropagateFrames();
+  calc_fwdPropagateFrames();
 }
 
 void rai::KinematicWorld::setJointState(const arr& _q, const uintA& joints) {
@@ -800,7 +803,7 @@ void rai::KinematicWorld::setJointState(const arr& _q, const uintA& joints) {
 
   calc_Q_from_q();
 
-//  calc_fwdPropagateFrames();
+  calc_fwdPropagateFrames();
 }
 
 void rai::KinematicWorld::setFrameState(const arr& X, const StringA& frameNames, bool calc_q_from_X, bool warnOnDifferentDim){
@@ -3076,7 +3079,7 @@ double forceClosureFromProxies(rai::KinematicWorld& K, uint bodyIndex, double di
   }
   C .reshape(C.N/3, 3);
   Cn.reshape(C.N/3, 3);
-  double fc=forceClosure(C, Cn, K.frames(bodyIndex)->X.pos, mu, torqueWeights, NULL);
+  double fc=forceClosure(C, Cn, K.frames(bodyIndex)->ensure_X().pos, mu, torqueWeights, NULL);
   return fc;
 }
 
@@ -3565,7 +3568,7 @@ struct EditConfigurationClickCall:OpenGL::GLClickCall {
     gl.text.clear();
     if((i&3)==1) {
       rai::Frame *s=ors->frames(i>>2);
-      gl.text <<"shape selection: shape=" <<s->name <<" X=" <<s->X <<endl;
+      gl.text <<"shape selection: shape=" <<s->name <<" X=" <<s->ensure_X() <<endl;
       //      listWrite(s->ats, gl.text, "\n");
       cout <<gl.text;
     }
@@ -3601,7 +3604,7 @@ struct EditConfigurationHoverCall:OpenGL::GLHoverCall {
       if((i&3)==2) j=ors->frames(i>>2)->joint;
       gl.text.clear();
       if(s) {
-        gl.text <<"shape selection: body=" <<s->name <<" X=" <<s->X;
+        gl.text <<"shape selection: body=" <<s->name <<" X=" <<s->ensure_X();
       }
       if(j) {
         gl.text
@@ -3617,7 +3620,7 @@ struct EditConfigurationHoverCall:OpenGL::GLHoverCall {
       double x=gl.mouseposx, y=gl.mouseposy, z=seld;
       gl.unproject(x, y, z, true);
       cout <<"x=" <<x <<" y=" <<y <<" z=" <<z <<" d=" <<seld <<endl;
-      movingBody->X.pos = selpos + ARR(x-selx, y-sely, z-selz);
+      movingBody->setPosition(selpos.getArr() + ARR(x-selx, y-sely, z-selz));
     }
     return true;
   }
@@ -3650,7 +3653,7 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
         selz=top->z;
         seld=top->dmin;
         cout <<"x=" <<selx <<" y=" <<sely <<" z=" <<selz <<" d=" <<seld <<endl;
-        selpos = s->X.pos;
+        selpos = s->ensure_X().pos;
         movingBody=s;
       }
       if(j) {

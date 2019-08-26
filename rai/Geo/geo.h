@@ -211,8 +211,8 @@ struct Transformation {
   arr getInverseAffineMatrix() const;
   double* getAffineMatrixGL(double *m) const;       // in OpenGL format (transposed memory storage!!)
   double* getInverseAffineMatrixGL(double *m) const;// in OpenGL format (transposed memory storage!!)
-  arr getArr7d();
-  arr getWrenchTransform();
+  arr getArr7d() const;
+  arr getWrenchTransform() const;
   
   void applyOnPoint(arr& pt) const;
   void applyOnPointArray(arr& pts) const;

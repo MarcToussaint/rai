@@ -224,7 +224,7 @@ void SwiftInterface::pushToSwift(const rai::KinematicWorld& world) {
     if(f->shape) {
       if(f->ID<INDEXshape2swift.N && INDEXshape2swift(f->ID)!=-1) {
         rot = f->ensure_X().rot.getMatrix();
-        scene->Set_Object_Transformation(INDEXshape2swift(f->ID), rot.p(), f->X.pos.p());
+        scene->Set_Object_Transformation(INDEXshape2swift(f->ID), rot.p(), f->getPosition().p);
         if(!f->shape->cont) scene->Deactivate(INDEXshape2swift(f->ID));
         //else         scene->Activate( INDEXshape2swift(f->ID) );
       }
@@ -283,8 +283,8 @@ void SwiftInterface::pullFromSwift(rai::KinematicWorld& world, bool dumpReport) 
     proxy.a = world.frames(INDEXswift2frame(oids[i <<1]));
     proxy.b = world.frames(INDEXswift2frame(oids[(i <<1)+1]));
     proxy.d = -.0; //dists[i];
-    proxy.posA = proxy.a->X.pos;
-    proxy.posB = proxy.b->X.pos;
+    proxy.posA = proxy.a->ensure_X().pos;
+    proxy.posB = proxy.b->ensure_X().pos;
 
 #if 0
     //non-penetrating pair of objects
@@ -330,7 +330,7 @@ void SwiftInterface::pullFromSwift(rai::KinematicWorld& world, bool dumpReport) 
         
         //relative rotation and translation of shapes
         rai::Transformation rel;
-        rel.setDifference(global_ANN_shape->frame.X, s->frame.X);
+        rel.setDifference(global_ANN_shape->frame.ensure_X(), s->frame.ensure_X());
         rel.rot.getMatrix(R.p);
         t = conv_vec2arr(rel.pos);
         
@@ -349,8 +349,8 @@ void SwiftInterface::pullFromSwift(rai::KinematicWorld& world, bool dumpReport) 
         proxy->a = &global_ANN_shape->frame;
         proxy->b = &s->frame;
         proxy->d = _dists(0);
-        proxy->posA.set(&global_ANN_shape->mesh().V(_idx(0), 0));  proxy->posA = global_ANN_shape->frame.X * proxy->posA;
-        proxy->posB.set(&s->mesh().V(_i, 0));                      proxy->posB = s->frame.X * proxy->posB;
+        proxy->posA.set(&global_ANN_shape->mesh().V(_idx(0), 0));  proxy->posA = global_ANN_shape->frame.ensure_X() * proxy->posA;
+        proxy->posB.set(&s->mesh().V(_i, 0));                      proxy->posB = s->frame.ensure_X() * proxy->posB;
         proxy->normal = proxy->posA - proxy->posB;
         proxy->normal.normalize();
       }
