@@ -18,9 +18,9 @@ void generateProblem(rai::KinematicWorld& K){
     K.addFile(rai::raiPath("../rai-robotModels/objects/tables.g"));
     for(uint i=0;i<numObj;i++){
       rai::Frame *f = K.addFrame(STRING("obj"<<i), "table1", "type:ssBox size:[.1 .1 .2 .02] color:[1. 0. 0.], contact, logical={ object }, joint:rigid" );
-      f->Q.pos = {rnd.uni(-.3, .3), rnd.uni(-1.,1.), .15};
-      f->Q.rot.addZ(rnd.uni(-RAI_PI,RAI_PI));
-      f->X = f->parent->X * f->Q;
+      f->setRelativePosition({rnd.uni(-.3, .3), rnd.uni(-1.,1.), .15});
+      f->setRelativeQuaternion(rai::Quaternion(0).addZ(rnd.uni(-RAI_PI,RAI_PI)).getArr4d());
+      f->calc_X_from_parent();
     }
     K.stepSwift();
     arr y;
@@ -34,7 +34,7 @@ void generateProblem(rai::KinematicWorld& K){
   K.proxies.clear();
 
   rai::Frame *f = K.addFrame("tray", "table2", "type:ssBox size:[.15 .15 .04 .02] color:[0. 1. 0.], logical={ table }" );
- f->Q.pos = {0.,0.,.07};
+  f->setRelativePosition({0.,0.,.07});
 //  f->Q.pos = {rnd.uni(-.3, .3), rnd.uni(-1.,1.), .07};
 //  f->Q.rot.addZ(rnd.uni(-RAI_PI,RAI_PI));
 

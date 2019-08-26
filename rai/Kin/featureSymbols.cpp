@@ -1,5 +1,6 @@
 #include "featureSymbols.h"
 
+#include <Kin/F_pose.h>
 #include <Kin/TM_default.h>
 #include <Kin/TM_proxy.h>
 #include <Kin/TM_qItself.h>
@@ -92,9 +93,12 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
   else if(feat==FS_quaternionDiff) {  f=make_shared<TM_Default>(TMT_quatDiff, world, frames(0), NoVector, frames(1), NoVector); }
   else if(feat==FS_quaternionRel) {  f=make_shared<TM_Default>(TMT_quat, world, frames(0), NoVector, frames(1), NoVector); }
 
-  else if(feat==FS_pose) {  f=make_shared<TM_Default>(TMT_pose, world, frames(0)); }
-  else if(feat==FS_poseDiff) {  f=make_shared<TM_Default>(TMT_poseDiff, world, frames(0), NoVector, frames(1), NoVector); }
-  else if(feat==FS_poseRel)  {  f=make_shared<TM_Default>(TMT_pose, world, frames(0), NoVector, frames(1), NoVector); }
+//  else if(feat==FS_pose) {  f=make_shared<TM_Default>(TMT_pose, world, frames(0)); }
+//  else if(feat==FS_poseDiff) {  f=make_shared<TM_Default>(TMT_poseDiff, world, frames(0), NoVector, frames(1), NoVector); }
+//  else if(feat==FS_poseRel)  {  f=make_shared<TM_Default>(TMT_pose, world, frames(0), NoVector, frames(1), NoVector); }
+  else if(feat==FS_pose) {  f=make_shared<F_Pose>(world, frames(0)); }
+  else if(feat==FS_poseDiff) {  f=make_shared<F_PoseDiff>(world, frames(0), frames(1)); }
+  else if(feat==FS_poseRel)  {  f=make_shared<F_PoseRel>(world, frames(0), frames(1)); }
 
   else if(feat==FS_scalarProductXX) {  f=make_shared<TM_Default>(TMT_vecAlign, world, frames(0), Vector_x, frames(1), Vector_x); }
   else if(feat==FS_scalarProductXY) {  f=make_shared<TM_Default>(TMT_vecAlign, world, frames(0), Vector_x, frames(1), Vector_y); }

@@ -381,21 +381,25 @@ arr rai::Frame::getMeshCorePoints(){
 
 rai::Frame* rai::Frame::insertPreLink(const rai::Transformation &A) {
   //new frame between: parent -> f -> this
-  Frame *f = new Frame(K);
+  Frame *f;
 
   if(parent) {
-    f->linkFrom(parent);
+    f = new Frame(parent);
     parent->parentOf.removeValue(this);
     f->name <<parent->name <<'>' <<name;
   }else{
+    f = new Frame(K);
     f->name <<"NIL>" <<name;
   }
   parent=f;
   parent->parentOf.append(this);
   
-  if(!!A) f->Q = A;
-  f->_state_X_isGood=false;
-//  f->calc_X_from_parent();
+  if(!!A){
+    f->Q = A;
+    f->set_X_isBad_inBranch();
+  }else{
+    f->Q.setZero();
+  }
   
   return f;
 }

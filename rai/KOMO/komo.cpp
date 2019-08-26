@@ -262,7 +262,14 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
 
       if(prevMode==SY_initial || prevMode==SY_stable || prevMode==SY_stableOn){
         //-- no acceleration at start: +0 INCLUDES (x-2, x-1, x0)
-        if(k_order>1) addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2, +0, +1);
+//        if(k_order>1) addObjective(time, time, new TM_NoJumpFromParent(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
+
+//        if(k_order>1){
+//          if(prevFrom) addObjective(time, time, symbols2feature(FS_poseRel, {prevFrom, to}, world), OT_eq, NoArr, 1e2, 1, 0, 0);
+//          else addObjective(time, time, symbols2feature(FS_pose, {to}, world), OT_eq, NoArr, 1e2, 1, 0, 0);
+//        }
+        if(k_order>1) addObjective(time, time, symbols2feature(FS_pose, {to}, world), OT_eq, NoArr, 1e2, 2, +0, +1);
+//        if(k_order>1) addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2, +0, +1);
         else addObjective(time, time, new TM_NoJumpFromParent(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
       }else{
         //-- no acceleration at start: +1 EXCLUDES (x-2, x-1, x0), ASSUMPTION: this is a placement that can excert impact

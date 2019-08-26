@@ -687,7 +687,7 @@ LGP_Tree_SolutionData::LGP_Tree_SolutionData(LGP_Tree& _tree, LGP_Node *_node) :
     if(komo && komo->configurations.N) {
       paths(l).resize(komo->configurations.N, frameIDs.N);
       for(uint s=0; s<komo->configurations.N; s++) for(uint i=0; i<frameIDs.N; i++) {
-        paths(l)(s, i) = komo->configurations(s)->frames(frameIDs(i))->X;
+        paths(l)(s, i) = komo->configurations(s)->frames(frameIDs(i))->ensure_X();
       }
     }
   }

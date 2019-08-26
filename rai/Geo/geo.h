@@ -135,7 +135,7 @@ struct Quaternion {
   
   void addX(double radians);
   void addY(double radians);
-  void addZ(double radians);
+  Quaternion& addZ(double radians);
   void append(const Quaternion& q);
   
   double diffZero() const;

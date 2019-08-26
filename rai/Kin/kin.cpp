@@ -2798,7 +2798,7 @@ bool rai::KinematicWorld::checkConsistency() const {
     CHECK_ZERO(a->Q.rot.normalization()-1., 1e-4, "");
     CHECK_ZERO(a->X.rot.normalization()-1., 1e-4, "");
 
-    if(a->parent && a->_state_X_isGood) CHECK(a->parent->_state_X_isGood, "");
+//    if(a->parent && a->_state_X_isGood) CHECK(a->parent->_state_X_isGood, "");
     if(!a->parent) CHECK(a->_state_X_isGood, "");
   }
   

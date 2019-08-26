@@ -545,8 +545,8 @@ void Quaternion::addY(double angle) {
   set(a.w, a.x, a.y, a.z);
 }
 
-void Quaternion::addZ(double radians) {
-  if(!radians) { return; }
+Quaternion& Quaternion::addZ(double radians) {
+  if(!radians) { return *this; }
   radians/=2.;
   double cw=cos(radians);
   double cz=sin(radians);
@@ -558,6 +558,7 @@ void Quaternion::addZ(double radians) {
   a.z = w*cz + z*cw;
   
   set(a.w, a.x, a.y, a.z);
+  return *this;
 }
 
 void Quaternion::append(const Quaternion& q) {

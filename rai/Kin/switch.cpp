@@ -77,25 +77,27 @@ void rai::KinematicSwitch::apply(KinematicWorld& K) {
   if(fromId!=-1) from=K.frames(fromId);
   if(toId!=-1) to=K.frames(toId);
 
-    if(symbol==SW_joint || symbol==SW_joint) {
+  if(symbol==SW_joint || symbol==SW_joint) {
     //first find link frame above 'to', and make it a root
     rai::Frame *link = to->getUpwardLink(NoTransformation, true);
     if(link->parent) link->unLink();
     K.reconfigureRootOfSubtree(to); //TODO: really? do you need this when you took the link??
 
     //create a new joint
+    rai::Transformation orgX = to->ensure_X();
     to->linkFrom(from);
+    to->set_X_isBad_inBranch();
     Joint *j = new Joint(*to);
     j->setType(jointType);
 
     if(!jA.isZero()) j->frame->insertPreLink(jA);
-    if(!jB.isZero()) j->frame->insertPostLink(jB);
+    if(!jB.isZero()){ HALT("only to be careful: does the orgX still work?"); j->frame->insertPostLink(jB); }
 
     //initialize to zero, copy, or random
     if(init==SWInit_zero) { //initialize the joint with zero transform
       j->frame->Q.setZero();
     }else if(init==SWInit_copy) { //set Q to the current relative transform, modulo DOFs
-      j->frame->Q = j->frame->ensure_X() / j->frame->parent->ensure_X(); //that's important for the initialization of x during the very first komo.setupConfigurations !!
+      j->frame->Q = orgX / j->frame->parent->ensure_X(); //that's important for the initialization of x during the very first komo.setupConfigurations !!
       //cout <<j->frame->Q <<' ' <<j->frame->Q.rot.normalization() <<endl;
       arr q = j->calc_q_from_Q(j->frame->Q);
       j->frame->Q.setZero();
@@ -106,6 +108,7 @@ void rai::KinematicSwitch::apply(KinematicWorld& K) {
       j->frame->Q.setZero();
       j->calc_Q_from_q(q, 0);
     }
+    j->frame->set_X_isBad_inBranch();
 
     K.reset_q();
     return;
