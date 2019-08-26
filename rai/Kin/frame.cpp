@@ -56,7 +56,8 @@ rai::Frame::Frame(KinematicWorld& _K, const Frame* copyFrame)
 rai::Frame::Frame(Frame *_parent)
   : Frame(_parent->K) {
   CHECK(_parent, "");
-  linkFrom(_parent);
+  X = _parent->X;
+  linkFrom(_parent, true);
 }
 
 rai::Frame::~Frame() {
@@ -107,6 +108,16 @@ void rai::Frame::calc_Q_from_parent(bool enforceWithinJoint) {
   }
 
   K._state_q_isGood=false;
+}
+
+const rai::Transformation&rai::Frame::ensure_X(){
+  if(!_state_X_isGood){ if(parent) parent->ensure_X(); calc_X_from_parent(); }
+  return X;
+}
+
+const rai::Transformation&rai::Frame::ensure_Q(){
+  if(!K._state_Q_isGood){ K.calc_Q_from_q(); }
+  return Q;
 }
 
 void rai::Frame::getRigidSubFrames(FrameL &F) {
@@ -178,7 +189,7 @@ void rai::Frame::read(const Graph& ats) {
   
   if(ats["joint"]) {
     if(ats["B"]){ //there is an extra transform from the joint into this frame -> create an own joint frame
-      Frame *f=new Frame(parent);
+      Frame *f = new Frame(parent);
       f->name <<'|' <<name; //the joint frame is actually the link frame of all child frames
       f->ats.copy(ats, false, true);
       this->unLink();
@@ -204,7 +215,7 @@ void rai::Frame::read(const Graph& ats) {
       sh = shape;
     }else{
       Frame *f = new Frame(this);
-      sh= new Shape(*f);
+      sh = new Shape(*f);
     }
     sh->type() = rai::ST_ssCvx;
     sh->sscCore().V = core;
@@ -419,11 +430,10 @@ void rai::Frame::linkFrom(rai::Frame *_parent, bool adoptRelTransform) {
   if(parent==_parent) return;
   parent=_parent;
   parent->parentOf.append(this);
-  _state_X_isGood=false;
 
   if(adoptRelTransform){
+    ensure_X();
     Q = X/parent->X;
-    if(K._state_Q_isGood && parent->_state_X_isGood) _state_X_isGood=true;
   }
 }
 
@@ -1079,10 +1089,8 @@ void rai::Shape::glDraw(OpenGL& gl) {
   }
   if(frame.K.orsDrawIndexColors) gl.drawId(frame.ID);
   
-  frame.ensure_X();
-
   double GLmatrix[16];
-  frame.X.getAffineMatrixGL(GLmatrix);
+  frame.ensure_X().getAffineMatrixGL(GLmatrix);
   glLoadMatrixd(GLmatrix);
   
   if(!frame.K.orsDrawShapes) {
@@ -1116,7 +1124,7 @@ void rai::Shape::glDraw(OpenGL& gl) {
     glColor(0, .7, 0);
     glBegin(GL_LINES);
     glVertex3d(0., 0., 0.);
-    glVertex3d(0., 0., -frame.X.pos.z);
+    glVertex3d(0., 0., -frame.ensure_X().pos.z);
     glEnd();
   }
   
@@ -1228,8 +1236,8 @@ void rai::Inertia::defaultInertiaByShape() {
 
 arr rai::Inertia::getFrameRelativeWrench() {
   arr f(6);
-  rai::Vector fo = frame.X.rot/force;
-  rai::Vector to = frame.X.rot/(torque + ((frame.X.rot*com)^force));
+  rai::Vector fo = frame.ensure_X().rot/force;
+  rai::Vector to = frame.ensure_X().rot/(torque + ((frame.ensure_X().rot*com)^force));
   f(0)=to.x;  f(1)=to.y;  f(2)=to.z;
   f(3)=fo.x;  f(4)=fo.y;  f(5)=fo.z;
   return f;

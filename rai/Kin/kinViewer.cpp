@@ -79,7 +79,7 @@ void KinViewer::step() {
 //  proxiesCopy = world->proxies;
 
     if(cameraFrameID>=0){
-      gl->camera.X = world->frames(cameraFrameID)->X;
+      gl->camera.X = world->frames(cameraFrameID)->ensure_X();
     }
   }
   world.deAccess();

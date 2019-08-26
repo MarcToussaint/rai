@@ -50,8 +50,10 @@ struct Frame : NonCopyable{
   String name;               ///< name
   Frame *parent=NULL;        ///< parent frame
   FrameL parentOf;           ///< list of children [TODO: rename]
+protected:
   Transformation Q=0;        ///< relative transform to parent
   Transformation X=0;        ///< frame's absolute pose
+public:
   double tau=0.;            ///< frame's absolute time (could be thought as part of the transformation X in space-time)
   Graph ats;                 ///< list of any-type attributes
   int flags=0;               ///< various flags that are used by task maps to impose costs/constraints in KOMO
@@ -76,10 +78,8 @@ struct Frame : NonCopyable{
   //low-level fwd kinematics computation
   void calc_X_from_parent();
   void calc_Q_from_parent(bool enforceWithinJoint = true);
-  const Transformation& ensure_X(){
-    if(!_state_X_isGood){ if(parent) parent->ensure_X(); calc_X_from_parent(); }
-    return X;
-  }
+  const Transformation& ensure_X();
+  const Transformation& ensure_Q();
 
   //structural operations
   Frame* insertPreLink(const rai::Transformation& A=0);
@@ -122,6 +122,10 @@ struct Frame : NonCopyable{
   arr getRelativeQuaternion(){ return ensure_X().rot.getArr(); }
   arr getMeshPoints();
   arr getMeshCorePoints();
+
+  friend struct KinematicWorld;
+  friend struct KinematicSwitch;
+  friend struct Joint;
 };
 stdOutPipe(Frame)
 
