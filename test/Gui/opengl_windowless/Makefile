@@ -1,7 +1,9 @@
 BASE = ../../..
 
-LIBS += -lpthread
-GL = 1
+OBJS = egl.o
+
+LIBS += -lpthread -lEGL
+#GL = 1
 DEPEND = Core Geo Gui
 
 include $(BASE)/build/generic.mk

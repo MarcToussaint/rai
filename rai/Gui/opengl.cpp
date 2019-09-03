@@ -2387,19 +2387,19 @@ void OpenGL::renderInBack(int w, int h) {
   if(w<0) w=width;
   if(h<0) h=height;
   
-  singletonGlSpinner(); //ensure that glut is initialized (if the drawer called glut)
+//  singletonGlSpinner(); //ensure that glut is initialized (if the drawer called glut)
   
-  auto mut=singleGLAccess();
-  auto _dataLock = dataLock(RAI_HERE);
-  xBackgroundContext()->makeCurrent();
-  
+//  auto mut=singleGLAccess();
+//  auto _dataLock = dataLock(RAI_HERE);
+//  xBackgroundContext()->makeCurrent();
+
   CHECK_EQ(w%4,0,"should be devidable by 4!!");
   
   isUpdating.waitForStatusEq(0);
   isUpdating.setStatus(1);
   
   if(!rboColor || !rboDepth) { //need to initialize
-    glewInit();
+//    glewInit();
     glGenRenderbuffers(1, &rboColor);  // Create a new renderbuffer unique name.
     glBindRenderbuffer(GL_RENDERBUFFER, rboColor);  // Set it as the current.
     glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, w, h); // Sets storage type for currently bound renderbuffer.
