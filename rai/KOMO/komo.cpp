@@ -419,22 +419,20 @@ void KOMO::addContact_slide(double startTime, double endTime, const char *from, 
   addObjective(startTime, endTime, new TM_PairCollision(world, from, to, TM_PairCollision::_negScalar, false), OT_eq, NoArr, 1e1);
 
   addObjective(startTime, endTime, new TM_Contact_POA(world, from, to), OT_sos, NoArr, 1e-2, 2, +2, +0);
-  addObjective(startTime, endTime, new TM_Contact_Force(world, from, to), OT_sos, NoArr, 1e-2, 2, +2, 0);
-  addObjective(startTime, endTime, new TM_Contact_Force(world, from, to), OT_sos, NoArr, 1e-2);
-  addObjective(startTime, endTime, new TM_Contact_POAzeroRelVel(world, from, to), OT_sos, NoArr, 1e-1, 1, +1, +0);
+//  addObjective(startTime, endTime, new TM_Contact_Force(world, from, to), OT_sos, NoArr, 1e-2, 2, +2, 0);
+  addObjective(startTime, endTime, new TM_Contact_Force(world, from, to), OT_sos, NoArr, 1e-4);
+//  addObjective(startTime, endTime, new TM_Contact_POAzeroRelVel(world, from, to), OT_sos, NoArr, 1e-1, 1, +1, +0);
+
 }
 
 void KOMO::addContact_staticPush(double startTime, double endTime, const char *from, const char* to) {
   addSwitch(startTime, true, new rai::KinematicSwitch(rai::SW_addContact, rai::JT_none, from, to, world) );
   if(endTime>0.) addSwitch(endTime, false, new rai::KinematicSwitch(rai::SW_delContact, rai::JT_none, from, to, world) );
 
-  addObjective(startTime, endTime, new TM_Contact_ForceIsNormal(world, from, to), OT_sos, NoArr, 1e1);
-  addObjective(startTime, endTime, new TM_Contact_ForceIsPositive(world, from, to), OT_ineq, NoArr, 1e2);
+  addObjective(startTime, endTime, new TM_Contact_ForceIsPositive(world, from, to), OT_ineq, NoArr, 1e1);
   addObjective(startTime, endTime, new TM_Contact_POAisInIntersection_InEq(world, from, to), OT_ineq, NoArr, 1e1);
+  addObjective(startTime, endTime, new TM_Contact_POAzeroRelVel(world, from, to), OT_eq, NoArr, 1e1, 1, +1, +0);
   addObjective(startTime, endTime, new TM_Contact_POAmovesContinuously(world, from, to), OT_sos, NoArr, 1e0, 1, +1, +0);
-  addObjective(startTime, endTime, new TM_Contact_Force(world, from, to), OT_sos, NoArr, 1e-1);
-  addObjective(startTime, endTime, new TM_Contact_POAzeroRelVel(world, from, to), OT_sos, NoArr, 1e-1, 1, +1, +0);
-  //  addObjective(startTime, endTime, new TM_Contact_POAzeroRelVel(world, from, to), OT_eq, NoArr, 1e1, 1, +1, +0);
 //  addObjective(time, time, new F_pushed(world, to), OT_eq, NoArr, 1e1, 1, +1, +0);
 }
 
@@ -443,14 +441,15 @@ void KOMO::addContact_stick(double startTime, double endTime, const char *from, 
   addSwitch(startTime, true, new rai::KinematicSwitch(rai::SW_addContact, rai::JT_none, from, to, world) );
   if(endTime>0.) addSwitch(endTime, false, new rai::KinematicSwitch(rai::SW_delContact, rai::JT_none, from, to, world) );
 
-  addObjective(startTime, endTime, new TM_Contact_ForceIsPositive(world, from, to), OT_ineq, NoArr, 1e2);
+  addObjective(startTime, endTime, new TM_Contact_ForceIsPositive(world, from, to), OT_ineq, NoArr, 1e1);
   addObjective(startTime, endTime, new TM_Contact_POAisInIntersection_InEq(world, from, to), OT_ineq, NoArr, 1e1);
   addObjective(startTime, endTime, new TM_PairCollision(world, from, to, TM_PairCollision::_negScalar, false), OT_eq, NoArr, 1e1);
 
   addObjective(startTime, endTime, new TM_Contact_POA(world, from, to), OT_sos, NoArr, 1e-2, 2, +2, +0);
-  addObjective(startTime, endTime, new TM_Contact_Force(world, from, to), OT_sos, NoArr, 1e-2, 2, +2, 0);
+//  addObjective(startTime, endTime, new TM_Contact_Force(world, from, to), OT_sos, NoArr, 1e-2, 2, +2, 0);
   addObjective(startTime, endTime, new TM_Contact_Force(world, from, to), OT_sos, NoArr, 1e-4);
-//  addObjective(startTime, endTime, new TM_Contact_POAmovesContinuously(world, from, to), OT_sos, NoArr, 1e0, 1, +1, +0);
+//  addObjective(startTime, endTime, new TM_Contact_POAmovesContinuously(world, from, to), OT_sos, NoArr, 1e-1, 1, +1, +0);
+  addObjective(startTime, endTime, new TM_Contact_POA(world, from, to), OT_sos, NoArr, 1e-2, 1, +1, +0);
   addObjective(startTime, endTime, new TM_Contact_POAzeroRelVel(world, from, to), OT_eq, NoArr, 1e0, 1, +1, +1);
 }
 
@@ -2879,4 +2878,3 @@ void writeSkeleton(ostream& os, const Skeleton& S, const intA& switches){
     }
   }
 }
-

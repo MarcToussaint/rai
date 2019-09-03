@@ -62,8 +62,8 @@ void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
   one_over_mass *= forceScaling;
 
   //collect total contact forces
-  Value F = F_netForce(a->ID, false, true)(*Ktuple(-1)); // ! THIS IS THE MID TIME SLICE !
-  if(!!J) expandJacobian(F.J, Ktuple, -1);
+  Value F = F_netForce(a->ID, false, true)(*Ktuple(-2)); // ! THIS IS THE MID TIME SLICE !
+  if(!!J) expandJacobian(F.J, Ktuple, -2);
 
   y += one_over_mass % F.y;
   if(!!J) J += one_over_mass % F.J;
