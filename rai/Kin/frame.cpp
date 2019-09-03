@@ -110,13 +110,23 @@ void rai::Frame::calc_Q_from_parent(bool enforceWithinJoint) {
   K._state_q_isGood=false;
 }
 
-const rai::Transformation&rai::Frame::ensure_X(){
+const rai::Transformation& rai::Frame::ensure_X(){
   if(!_state_X_isGood){ if(parent) parent->ensure_X(); calc_X_from_parent(); }
   return X;
 }
 
-const rai::Transformation&rai::Frame::ensure_Q(){
+const rai::Transformation& rai::Frame::ensure_Q(){
   if(!K._state_Q_isGood){ K.calc_Q_from_q(); }
+  return Q;
+}
+
+const rai::Transformation& rai::Frame::X_const() const{
+  CHECK(_state_X_isGood, "");
+  return X;
+}
+
+const rai::Transformation& rai::Frame::Q_const() const{
+  CHECK(K._state_Q_isGood, "");
   return Q;
 }
 
@@ -130,7 +140,6 @@ void rai::Frame::getPartSubFrames(FrameL &F) {
     if(!child->joint || !child->joint->isPartBreak()) { F.append(child); child->getRigidSubFrames(F); }
 }
 
-
 FrameL rai::Frame::getPathToRoot(){
   FrameL pathToRoot;
   rai::Frame *f = this;
@@ -141,6 +150,36 @@ FrameL rai::Frame::getPathToRoot(){
   return pathToRoot;
 }
 
+rai::Frame *rai::Frame::getUpwardLink(rai::Transformation &Qtotal, bool untilPartBreak) const {
+  if(!!Qtotal) Qtotal.setZero();
+  const Frame *f=this;
+  while(f->parent) {
+    if(!untilPartBreak){
+      if(f->joint) break;
+    }else{
+      if(f->joint && f->joint->getDimFromType()!=1 && !f->joint->mimic) break;
+    }
+    if(!!Qtotal) Qtotal = f->Q*Qtotal;
+    f = f->parent;
+  }
+  return (Frame*)f;
+}
+
+FrameL rai::Frame::getPathToUpwardLink(bool untilPartBreak) {
+  FrameL pathToLink;
+  rai::Frame *f = this;
+  while(f) {
+    if(!untilPartBreak){
+      if(f->joint) break;
+    }else{
+      if(f->joint && f->joint->getDimFromType()!=1 && !f->joint->mimic) break;
+    }
+    pathToLink.prepend(f);
+    f = f->parent;
+  }
+  return pathToLink;
+}
+
 rai::Shape& rai::Frame::getShape(){
   if(!shape) shape = new Shape(*this);
   return *shape;
@@ -149,21 +188,6 @@ rai::Shape& rai::Frame::getShape(){
 rai::Inertia &rai::Frame::getInertia() {
   if(!inertia) inertia = new Inertia(*this);
   return *inertia;
-}
-
-rai::Frame *rai::Frame::getUpwardLink(rai::Transformation &Qtotal, bool untilPartBreak) const {
-  if(!!Qtotal) Qtotal.setZero();
-  const Frame *p=this;
-  while(p->parent) {
-    if(!untilPartBreak){
-      if(p->joint) break;
-    }else{
-      if(p->joint && p->joint->getDimFromType()!=1 && !p->joint->mimic) break;
-    }
-    if(!!Qtotal) Qtotal = p->Q*Qtotal;
-    p = p->parent;
-  }
-  return (Frame*)p;
 }
 
 const char*rai::Frame::isPart(){

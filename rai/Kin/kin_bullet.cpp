@@ -113,8 +113,9 @@ btRigidBody* BulletInterface::addFrame(const rai::Frame* f){
   self->collisionShapes.push_back(colShape);
 
   //-- create a bullet body
-  btTransform pose(btQuaternion(f->X.rot.x, f->X.rot.y, f->X.rot.z, f->X.rot.w),
-                   btVector3(f->X.pos.x, f->X.pos.y, f->X.pos.z));
+  rai::Transformation fX = f->X_const();
+  btTransform pose(btQuaternion(fX.rot.x, fX.rot.y, fX.rot.z, fX.rot.w),
+                   btVector3(fX.pos.x, fX.pos.y, fX.pos.z));
   btScalar mass(1.0f);
   btVector3 localInertia(0, 0, 0);
   if(type==rai::BT_dynamic){
@@ -174,8 +175,9 @@ void BulletInterface::pushFullState(const FrameL& frames, const arr& vel){
     btRigidBody* b = self->frameID_to_btBody(i);
     const rai::Frame *f = frames(i);
     if(f && b){
-      btTransform pose(btQuaternion(f->X.rot.x, f->X.rot.y, f->X.rot.z, f->X.rot.w),
-                       btVector3(f->X.pos.x, f->X.pos.y, f->X.pos.z));
+      rai::Transformation fX = f->X_const();
+      btTransform pose(btQuaternion(fX.rot.x, fX.rot.y, fX.rot.z, fX.rot.w),
+                       btVector3(fX.pos.x, fX.pos.y, fX.pos.z));
       b->setWorldTransform(pose);
       b->clearForces();
       b->setActivationState(ACTIVE_TAG);
@@ -197,8 +199,9 @@ void BulletInterface::pushKinematicStates(const FrameL& frames){
       if(f->inertia) type = f->inertia->type;
 
       if(type==rai::BT_kinematic){
-        btTransform pose(btQuaternion(f->X.rot.x, f->X.rot.y, f->X.rot.z, f->X.rot.w),
-                         btVector3(f->X.pos.x, f->X.pos.y, f->X.pos.z));
+        rai::Transformation fX = f->X_const();
+        btTransform pose(btQuaternion(fX.rot.x, fX.rot.y, fX.rot.z, fX.rot.w),
+                         btVector3(fX.pos.x, fX.pos.y, fX.pos.z));
         if(b->getMotionState()) {
           b->getMotionState()->setWorldTransform(pose);
         } else {
@@ -229,8 +232,8 @@ void BulletInterface::pullDynamicStates(FrameL& frames, arr& vel){
         }
         const btQuaternion q = pose.getRotation();
         const btVector3& p = pose.getOrigin();
-        f->X.pos.set(p.x(), p.y(), p.z());
-        f->X.rot.set(q.w(), q.x(), q.y(), q.z());
+        f->setPosition({p.x(), p.y(), p.z()});
+        f->setQuaternion({q.w(), q.x(), q.y(), q.z()});
 
         if(!!vel){
           const btVector3& v = b->getLinearVelocity();

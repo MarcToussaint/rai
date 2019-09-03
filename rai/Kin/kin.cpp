@@ -509,8 +509,11 @@ void rai::KinematicWorld::flipFrames(rai::Frame *a, rai::Frame *b) {
 
 /** @brief re-orient all joints (edges) such that n becomes
   the root of the configuration */
-void rai::KinematicWorld::reconfigureRootOfSubtree(Frame *root) {
-  FrameL pathToOldRoot = root->getPathToRoot();
+void rai::KinematicWorld::reconfigureRoot(Frame *newRoot, bool ofLinkOnly) {
+  FrameL pathToOldRoot;
+
+  if(ofLinkOnly) pathToOldRoot = newRoot->getPathToUpwardLink();
+  else pathToOldRoot = newRoot->getPathToRoot();
   
   for(Frame *f : pathToOldRoot) {
     if(f->parent) flipFrames(f->parent, f);

@@ -80,6 +80,8 @@ public:
   void calc_Q_from_parent(bool enforceWithinJoint = true);
   const Transformation& ensure_X();
   const Transformation& ensure_Q();
+  const Transformation& X_const() const;
+  const Transformation& Q_const() const;
 
   //structural operations
   Frame* insertPreLink(const rai::Transformation& A=0);
@@ -93,6 +95,7 @@ public:
   void getPartSubFrames(FrameL& F); ///< recursively collect all frames of this part
   FrameL getPathToRoot();
   Frame* getUpwardLink(rai::Transformation& Qtotal=NoTransformation, bool untilPartBreak=false) const; ///< recurse upward BEFORE the next joint and return relative transform (this->Q is not included!b)
+  FrameL getPathToUpwardLink(bool untilPartBreak=false); ///< recurse upward BEFORE the next joint and return relative transform (this->Q is not included!b)
   const char* isPart();
   void set_X_isBad_inBranch();
 

@@ -79,9 +79,9 @@ void rai::KinematicSwitch::apply(KinematicWorld& K) {
 
   if(symbol==SW_joint || symbol==SW_joint) {
     //first find link frame above 'to', and make it a root
-    rai::Frame *link = to->getUpwardLink(NoTransformation, true);
+    rai::Frame *link = to->getUpwardLink(NoTransformation, false); //THIS IS A PROBLEM FOR THE CRAWLER!
     if(link->parent) link->unLink();
-    K.reconfigureRootOfSubtree(to); //TODO: really? do you need this when you took the link??
+//    K.reconfigureRoot(to, true); //TODO: really? do you need this when you took the link??
 
     //create a new joint
     rai::Transformation orgX = to->ensure_X();
@@ -111,6 +111,7 @@ void rai::KinematicSwitch::apply(KinematicWorld& K) {
     j->frame->set_X_isBad_inBranch();
 
     K.reset_q();
+    //K.calc_q(); K.checkConsistency();
     return;
   }
   
