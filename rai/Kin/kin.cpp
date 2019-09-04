@@ -1810,7 +1810,7 @@ double rai::KinematicWorld::totalContactPenetration() {
   double D=0.;
   for(const Proxy& p:proxies) {
     //early check: if swift is way out of collision, don't bother computing it precise
-    if(p.d > p.a->shape->radius()+p.a->shape->radius()+.01) continue;
+    if(p.d > p.a->shape->radius()+p.b->shape->radius()+.01) continue;
     //exact computation
     if(!p.coll) ((Proxy*)&p)->calc_coll(*this);
     double d = p.coll->getDistance();
@@ -2432,7 +2432,7 @@ void rai::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, do
   if(!addValues) { y.setZero();  if(!!J) J.setZero(); }
 
   //early check: if swift is way out of collision, don't bother computing it precise
-  if(p.d>p.a->shape->radius()+p.a->shape->radius()+.01+margin) return;
+  if(p.d > p.a->shape->radius() + p.b->shape->radius() + .01 + margin) return;
   
   if(!p.coll) ((Proxy*)&p)->calc_coll(*this);
 
