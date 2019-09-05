@@ -20,12 +20,22 @@
 
 enum SkeletonSymbol{
   SY_none=-1,
+
+  //geometric:
   SY_touch,
   SY_above,
   SY_inside,
-  SY_impulse,
+
+  SY_impulse, //old
   SY_initial,
-  SY_free,
+  SY_free, //old
+
+  //pose constraints:
+  SY_poseEq,
+  SY_stableRelPose,
+  SY_stablePose,
+
+  //mode switches:
   SY_stable,
   SY_stableOn,
   SY_dynamic,
@@ -33,29 +43,31 @@ enum SkeletonSymbol{
   SY_dynamicTrans,
   SY_quasiStatic,
   SY_quasiStaticOn,
-  SY_liftDownUp,
+  SY_liftDownUp, //old
   SY_break,
 
+  //interactions:
   SY_contact,
   SY_contactStick,
+  SY_contactComplementary,
   SY_bounce,
 
+  //mode switches:
   SY_magic,
   SY_magicTrans,
 
-  SY_push,
-  SY_graspSlide,
+  SY_push,  //old
+  SY_graspSlide, //old
 
   SY_dampMotion,
 
-  SY_noCollision,
+  SY_noCollision, //old
   SY_identical,
 
   SY_alignByInt,
 
   SY_makeFree,
-  SY_stableRelPose,
-  SY_stablePose,
+
 };
 
 
@@ -156,7 +168,7 @@ struct KOMO : NonCopyable {
   void addContact_stick(double startTime, double endTime, const char *from, const char* to);
   void addContact_elasticBounce(double time, const char *from, const char* to, double elasticity=.8, double stickiness=0.);
   void addContact_noFriction(double startTime, double endTime, const char *from, const char* to);
-  void addContact_Complementary(double startTime, double endTime, const char *from, const char* to);
+  void addContact_ComplementarySlide(double startTime, double endTime, const char *from, const char* to);
   //  void addContact_Relaxed(double startTime, double endTime, const char *from, const char* to);
   void addContact_staticPush(double startTime, double endTime, const char *from, const char* to);
 
