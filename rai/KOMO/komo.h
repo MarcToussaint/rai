@@ -25,6 +25,7 @@ enum SkeletonSymbol{
   SY_touch,
   SY_above,
   SY_inside,
+  SY_oppose,
 
   SY_impulse, //old
   SY_initial,

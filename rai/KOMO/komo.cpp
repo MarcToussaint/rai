@@ -450,7 +450,7 @@ void KOMO::addContact_ComplementarySlide(double startTime, double endTime, const
   //constraints
   addObjective(startTime, endTime, new TM_Contact_ForceIsNormal(world, from, to), OT_eq, NoArr, 1e2);
   addObjective(startTime, endTime, new TM_Contact_ForceIsComplementary(world, from, to), OT_eq, NoArr, 1e2);
-  addObjective(startTime, endTime, new TM_Contact_ElasticVelIsComplementary(world, from, to, 0., 0.), OT_eq, NoArr, 1e1);
+  addObjective(startTime, endTime, new TM_Contact_ElasticVelIsComplementary(world, from, to, 0., 0.), OT_eq, NoArr, 1e1, 1, +1);
   addObjective(startTime, endTime, new TM_PairCollision(world, from, to, TM_PairCollision::_negScalar, false), OT_ineq, NoArr, 1e1);
 
   //regularization
@@ -1110,7 +1110,8 @@ void KOMO::setSkeleton(const Skeleton &S, bool ignoreSwitches) {
       case SY_initial: case SY_identical: case SY_noCollision:    break;
       case SY_touch:      add_touch(s.phase0, s.phase1, s.frames(0), s.frames(1));  break;
       case SY_above:      add_aboveBox(s.phase0, s.phase1, s.frames(0), s.frames(1));  break;
-      case SY_inside:     add_aboveBox(s.phase0, s.phase1, s.frames(0), s.frames(1));  break;
+      case SY_inside:     add_insideBox(s.phase0, s.phase1, s.frames(0), s.frames(1));  break;
+      case SY_oppose:     addObjective({s.phase0, s.phase1}, OT_eq, FS_oppose, s.frames, {1e1});
       case SY_impulse:    add_impulse(s.phase0, s.frames(0), s.frames(1));  break;
 
       case SY_makeFree:   world.makeObjectsFree(s.frames);  break;
@@ -2818,6 +2819,7 @@ template<> const char* rai::Enum<SkeletonSymbol>::names []= {
   "touch",
   "above",
   "inside",
+  "oppose",
 
   "impulse",
   "initial",
