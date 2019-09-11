@@ -115,12 +115,12 @@ struct TM_Contact_ElasticVel : Feature {
   rai::String shortTag(const rai::KinematicWorld& K) { return STRING("TM_Contact_ElasticVel-" <<K.frames(a)->name <<'-' <<K.frames(b)->name); }
 };
 
-struct TM_Contact_ElasticVelIsComplementary : Feature {
+struct TM_Contact_NormalVelIsComplementary : Feature {
   int a,b;
   double elasticity, stickiness;
-  TM_Contact_ElasticVelIsComplementary(int aShape, int bShape, double _elasticity, double _stickiness) : a(aShape), b(bShape), elasticity(_elasticity), stickiness(_stickiness) { order=1; }
-  TM_Contact_ElasticVelIsComplementary(const rai::KinematicWorld& K, const char* aShapeName, const char* bShapeName, double _elasticity, double _stickiness)
-    : TM_Contact_ElasticVelIsComplementary(initIdArg(K,aShapeName), initIdArg(K,bShapeName), _elasticity, _stickiness){}
+  TM_Contact_NormalVelIsComplementary(int aShape, int bShape, double _elasticity, double _stickiness) : a(aShape), b(bShape), elasticity(_elasticity), stickiness(_stickiness) { order=1; }
+  TM_Contact_NormalVelIsComplementary(const rai::KinematicWorld& K, const char* aShapeName, const char* bShapeName, double _elasticity, double _stickiness)
+    : TM_Contact_NormalVelIsComplementary(initIdArg(K,aShapeName), initIdArg(K,bShapeName), _elasticity, _stickiness){}
 
   void phi(arr& y, arr& J, const rai::KinematicWorld& K){ NIY }
   void phi(arr& y, arr& J, const WorldL& Ktuple);

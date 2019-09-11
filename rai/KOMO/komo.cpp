@@ -451,15 +451,14 @@ void KOMO::addContact_ComplementarySlide(double startTime, double endTime, const
   //constraints
   addObjective(startTime, endTime, new TM_Contact_ForceIsNormal(world, from, to), OT_eq, NoArr, 1e2);
   addObjective(startTime, endTime, new TM_Contact_ForceIsComplementary(world, from, to), OT_eq, NoArr, 1e2);
-  addObjective(startTime, endTime, new TM_Contact_ElasticVelIsComplementary(world, from, to, 0., 0.), OT_eq, NoArr, 1e1, 1, +1);
+  addObjective(startTime, endTime, new TM_Contact_NormalVelIsComplementary(world, from, to, 0., 0.), OT_eq, NoArr, 1e2, 1, +1);
   addObjective(startTime, endTime, new TM_PairCollision(world, from, to, TM_PairCollision::_negScalar, false), OT_ineq, NoArr, 1e1);
 
   //regularization
-//  addObjective(startTime, endTime, new TM_ContactConstraints_Vel(world, from, to), OT_eq, NoArr, 1e1);
-//  addObjective(startTime, endTime, new TM_Contact_POAisInIntersection_InEq(world, from, to), OT_ineq, NoArr, 1e1);
   addObjective(startTime, endTime, new TM_Contact_Force(world, from, to), OT_sos, NoArr, 1e-4);
-//  addObjective(startTime, endTime, new TM_Contact_POA(world, from, to), OT_sos, NoArr, 1e-2, 2, +3, +0);
+  addObjective(startTime, endTime, new TM_Contact_POA(world, from, to), OT_sos, NoArr, 1e-2, 2, +3, +0);
   addObjective(startTime, endTime, new TM_Contact_POA(world, from, to), OT_sos, NoArr, 1e-2, 1, +1, +0);
+//  addObjective(startTime, endTime, new TM_Contact_POAzeroRelVel(world, from, to), OT_sos, NoArr, 1e-1, 1, +1, +0);
 }
 
 void KOMO::addContact_staticPush(double startTime, double endTime, const char *from, const char* to) {

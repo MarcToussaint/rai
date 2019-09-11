@@ -393,7 +393,7 @@ void TM_Contact_ElasticVel::phi(arr& y, arr& J, const WorldL& Ktuple){
   }
 }
 
-void TM_Contact_ElasticVelIsComplementary::phi(arr& y, arr& J, const WorldL& Ktuple){
+void TM_Contact_NormalVelIsComplementary::phi(arr& y, arr& J, const WorldL& Ktuple){
   rai::KinematicWorld& K = *Ktuple(-2);
   rai::Contact *con = getContact(K,a,b);
 
