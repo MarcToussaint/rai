@@ -137,13 +137,14 @@ void KOMO::deactivateCollisions(const char* s1, const char* s2) {
 void KOMO::setTimeOptimization(){
   world.addTimeJoint();
   Objective* o = addObjective(0., -1., new TM_Time(), OT_eq, {}, 1e2, 1); //smooth time evolution
-  //break the constraint at phase switches:
+#if 1 //break the constraint at phase switches:
   CHECK(o->vars.nd==1 && o->vars.N==T, "");
   CHECK_GE(stepsPerPhase, 10, "NIY")
-  for(uint t=1;t<o->vars.N; t+=stepsPerPhase) o->vars(t)=0;
+  for(uint t=2;t<o->vars.N; t+=stepsPerPhase) o->vars(t)=0;
+#endif
 
   addObjective(0., -1., new TM_Time(), OT_sos, {tau}, 1e-1); //prior on timing
-//  addObjective(0., -1., new TM_Time(), OT_ineq, {tau}, -1e1); //lower bound on timing
+  addObjective(0., -1., new TM_Time(), OT_ineq, {tau}, -1e1); //lower bound on timing
 }
 
 //===========================================================================
