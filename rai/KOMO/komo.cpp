@@ -1734,12 +1734,17 @@ struct DrawPaths : GLDrawer {
   }
 };
 
-bool KOMO::displayTrajectory(double delay, bool watch, bool overlayPaths, const char* saveVideoPrefix) {
+bool KOMO::displayTrajectory(double delay, bool watch, bool overlayPaths, const char* saveVideoPath) {
   const char* tag = "KOMO planned trajectory";
   rai::String timetag;
   if(!gl) {
     gl = make_shared<OpenGL>("KOMO display");
     gl->camera.setDefault();
+  }
+
+  if(saveVideoPath){
+    rai::system(STRING("mkdir -p " <<saveVideoPath));
+    rai::system(STRING("rm -f " <<saveVideoPath <<"*.ppm"));
   }
   
   uintA allFrames;
@@ -1763,7 +1768,7 @@ bool KOMO::displayTrajectory(double delay, bool watch, bool overlayPaths, const 
       gl->update(timetag.p);
       if(delay) rai::wait(delay * K.frames.first()->tau);
     }
-    if(saveVideoPrefix) write_ppm(gl->captureImage, STRING(saveVideoPrefix<<std::setw(4)<<std::setfill('0')<<t<<".ppm"));
+    if(saveVideoPath) write_ppm(gl->captureImage, STRING(saveVideoPath<<std::setw(4)<<std::setfill('0')<<t<<".ppm"));
   }
   if(watch) {
     int key = gl->watch(timetag.p);

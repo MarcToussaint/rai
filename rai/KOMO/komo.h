@@ -298,7 +298,7 @@ struct KOMO : NonCopyable {
 
   void plotTrajectory();
   void plotPhaseTrajectory();
-  bool displayTrajectory(double delay=1., bool watch=true, bool overlayPaths=true, const char* saveVideoPrefix=NULL); ///< display the trajectory; use "vid/z." as vid prefix
+  bool displayTrajectory(double delay=1., bool watch=true, bool overlayPaths=true, const char* saveVideoPath=NULL); ///< display the trajectory; use "vid/z." as vid prefix
   bool displayPath(bool watch=true, bool full=true); ///< display the trajectory; use "vid/z." as vid prefix
   rai::Camera& displayCamera();   ///< access to the display camera to change the view
   
