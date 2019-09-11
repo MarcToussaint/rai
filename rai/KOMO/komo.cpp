@@ -264,11 +264,11 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
         //-- no acceleration at start: +0 INCLUDES (x-2, x-1, x0)
 //        if(k_order>1) addObjective(time, time, new TM_NoJumpFromParent(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
 
-//        if(k_order>1){
-//          if(prevFrom) addObjective(time, time, symbols2feature(FS_poseRel, {prevFrom, to}, world), OT_eq, NoArr, 1e2, 1, 0, 0);
-//          else addObjective(time, time, symbols2feature(FS_pose, {to}, world), OT_eq, NoArr, 1e2, 1, 0, 0);
-//        }
-        if(k_order>1) addObjective(time, time, symbols2feature(FS_pose, {to}, world), OT_eq, NoArr, 1e2, 2, +0, +1);
+        if(k_order>1){
+          if(prevFrom) addObjective(time, time, symbols2feature(FS_poseRel, {prevFrom, to}, world), OT_eq, NoArr, 1e2, 1, 0, 0);
+          else addObjective(time, time, symbols2feature(FS_pose, {to}, world), OT_eq, NoArr, 1e2, 1, 0, 0);
+        }
+//        if(k_order>1) addObjective(time, time, symbols2feature(FS_pose, {to}, world), OT_eq, NoArr, 1e2, 2, +0, +1);
 //        if(k_order>1) addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2, +0, +1);
         else addObjective(time, time, new TM_NoJumpFromParent(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
       }else{
@@ -1111,7 +1111,8 @@ void KOMO::setSkeleton(const Skeleton &S, bool ignoreSwitches) {
       case SY_touch:      add_touch(s.phase0, s.phase1, s.frames(0), s.frames(1));  break;
       case SY_above:      add_aboveBox(s.phase0, s.phase1, s.frames(0), s.frames(1));  break;
       case SY_inside:     add_insideBox(s.phase0, s.phase1, s.frames(0), s.frames(1));  break;
-      case SY_oppose:     addObjective({s.phase0, s.phase1}, OT_eq, FS_oppose, s.frames, {1e1});
+//      case SY_inside:     addObjective(s.phase0, s.phase1, make_shared<TM_InsideLine>(world, s.frames(0), s.frames(1)), OT_ineq, NoArr, 1e1);  break;
+      case SY_oppose:     addObjective({s.phase0, s.phase1}, OT_eq, FS_oppose, s.frames, {1e1});  break;
       case SY_impulse:    add_impulse(s.phase0, s.frames(0), s.frames(1));  break;
 
       case SY_makeFree:   world.makeObjectsFree(s.frames);  break;

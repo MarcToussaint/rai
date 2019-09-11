@@ -52,8 +52,24 @@ void TM_InsideBox::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
   }
 }
 
-uint TM_InsideBox::dim_phi(const rai::KinematicWorld &G) { return 6; }
+void TM_InsideLine::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
+  rai::Shape *pnt=G.frames(i)->shape;
+  rai::Shape *box=G.frames(j)->shape;
+  CHECK(pnt && box,"I need shapes!");
+  CHECK(box->type()==rai::ST_capsule,"the 2nd shape needs to be a capsule"); //s1 should be the board
+  arr pos,posJ;
+  G.kinematicsRelPos(pos, posJ, &pnt->frame, NoVector, &box->frame, NoVector);
+  double range = box->size(-2);
+  range *= .5;
+  range -= margin;
+  if(range<.01) range=.01;
 
-rai::String TM_InsideBox::shortTag(const rai::KinematicWorld &G) {
-  return STRING("InsideBox:"<<(i<0?"WORLD":G.frames(i)->name) <<':' <<(j<0?"WORLD":G.frames(j)->name));
+  y.resize(2);
+  y(0) =  pos(2) - range;
+  y(1) = -pos(2) - range;
+  if(!!J) {
+    J.resize(2, posJ.d1);
+    J[0] =  posJ[2];
+    J[1] = -posJ[2];
+  }
 }
