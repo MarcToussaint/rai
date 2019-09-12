@@ -327,7 +327,10 @@ void rai::Frame::setPose(const rai::Transformation& _X){
 
 void rai::Frame::setPosition(const std::vector<double>& pos){
   X.pos.set(pos);
+  _state_X_isGood=true;
   if(parent) calc_Q_from_parent(false);
+  set_X_isBad_inBranch();
+  _state_X_isGood=true;
 }
 
 void rai::Frame::setQuaternion(const std::vector<double>& quat){
