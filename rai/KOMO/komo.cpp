@@ -1734,7 +1734,7 @@ struct DrawPaths : GLDrawer {
   }
 };
 
-bool KOMO::displayTrajectory(double delay, bool watch, bool overlayPaths, const char* saveVideoPath) {
+bool KOMO::displayTrajectory(double delay, bool watch, bool overlayPaths, const char* saveVideoPath, const char* addText) {
   const char* tag = "KOMO planned trajectory";
   rai::String timetag;
   if(!gl) {
@@ -1755,6 +1755,7 @@ bool KOMO::displayTrajectory(double delay, bool watch, bool overlayPaths, const 
   for(int t=-(int)k_order; t<(int)T; t++) {
     rai::KinematicWorld& K = *configurations(t+k_order);
     timetag.clear() <<tag <<" (config:" <<t <<'/' <<T <<"  s:" <<conv_step2time(t,stepsPerPhase) <<" tau:" <<K.frames.first()->tau <<')';
+    if(addText) timetag <<addText;
 //    K.reportProxies();
     K.orsDrawProxies=false;
     gl->clear();
