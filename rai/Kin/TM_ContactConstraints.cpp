@@ -398,8 +398,8 @@ void TM_Contact_NormalVelIsComplementary::phi(arr& y, arr& J, const WorldL& Ktup
   rai::Contact *con = getContact(K,a,b);
 
   //-- get the pre and post V:
-  arr v0, Jv0, v1, Jv1;
-  POA_rel_vel(v0, Jv0, Ktuple, con, false);
+  arr /*v0, Jv0, */v1, Jv1;
+//  POA_rel_vel(v0, Jv0, Ktuple, con, false);
   POA_rel_vel(v1, Jv1, Ktuple, con, true);
 
   //-- get the force

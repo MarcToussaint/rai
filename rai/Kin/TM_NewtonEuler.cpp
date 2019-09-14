@@ -49,11 +49,13 @@ void TM_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
   }
 
   //collect mass info (assume diagonal inertia matrix!!)
-  double mass=1;
+  double mass=1.;
   arr Imatrix = diag(.1, 3);
   if(a->inertia){
     mass = a->inertia->mass;
     Imatrix = 2.*conv_mat2arr(a->inertia->matrix);
+    //      rai::Quaternion &rot = f->X.rot;
+    //      I=(rot).getMatrix() * f->inertia->matrix * (-rot).getMatrix();
   }
   arr one_over_mass(6);
   for(uint i=0;i<3;i++) one_over_mass(i) = 1./mass;

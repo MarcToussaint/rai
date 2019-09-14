@@ -136,7 +136,7 @@ void KOMO::deactivateCollisions(const char* s1, const char* s2) {
 
 void KOMO::setTimeOptimization(){
   world.addTimeJoint();
-  Objective* o = addObjective(0., -1., new TM_Time(), OT_eq, {}, 1e2, 1); //smooth time evolution
+  Objective* o = addObjective(0., -1., new TM_Time(), OT_sos, {}, 1e2, 1); //smooth time evolution
 #if 1 //break the constraint at phase switches:
   CHECK(o->vars.nd==1 && o->vars.N==T, "");
   CHECK_GE(stepsPerPhase, 10, "NIY")
@@ -144,7 +144,7 @@ void KOMO::setTimeOptimization(){
 #endif
 
   addObjective(0., -1., new TM_Time(), OT_sos, {tau}, 1e-1); //prior on timing
-  addObjective(0., -1., new TM_Time(), OT_ineq, {tau}, -1e1); //lower bound on timing
+  addObjective(0., -1., new TM_Time(), OT_ineq, {.9*tau}, -1e1); //lower bound on timing
 }
 
 //===========================================================================
@@ -163,7 +163,7 @@ Objective *KOMO::addObjective(double startTime, double endTime,
                               const arr& target, double scale, int order,
                               int deltaFromStep, int deltaToStep) {
   if(!!target) map->target = target;
-  if(scale>0. && scale!=1.) map->scale = ARR(scale);
+  if(scale!=0. && scale!=1.) map->scale = ARR(scale);
   if(order>=0) map->order = order;
   CHECK_GE(k_order, map->order, "task requires larger k-order: " <<map->shortTag(world));
   Objective *task = new Objective(map, type);

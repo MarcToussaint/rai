@@ -48,31 +48,33 @@ void TM_Energy::phi(arr &y, arr &J, const WorldL &Ktuple) {
   if(!!J) J = zeros(1, qdim.last());
 
   for(rai::Frame *a:K.frames) {
+    double mass=1.;
+    arr Imatrix = diag(.1, 3);
     if(a->inertia){
+      mass = a->inertia->mass;
+      Imatrix = 2.*conv_mat2arr(a->inertia->matrix);
+      //      rai::Quaternion &rot = f->X.rot;
+      //      I=(rot).getMatrix() * f->inertia->matrix * (-rot).getMatrix();
+    }
 
-      TM_Default pos(TMT_posDiff, a->ID);
-      pos.order=0;
-      pos.Feature::__phi(p, (!!J?Jp:NoArr), Ktuple);
+    TM_Default pos(TMT_pos, a->ID);
+    pos.order=0;
+    pos.Feature::__phi(p, (!!J?Jp:NoArr), Ktuple);
 
-      pos.order=1;
-      pos.Feature::__phi(v, (!!J?Jv:NoArr), Ktuple);
-
+    pos.order=1;
+    pos.Feature::__phi(v, (!!J?Jv:NoArr), Ktuple);
 
 //      TM_AngVel rot(a->ID);
 //      rot.order=1;
 //      rot.phi(w, (!!J?Jw:NoArr), Ktuple);
 
-      double m=a->inertia->mass;
-//      rai::Quaternion &rot = f->X.rot;
-//      I=(rot).getMatrix() * f->inertia->matrix * (-rot).getMatrix();
-      E += .5*m*sumOfSqr(v);
-      E += gravity * m * p(2); //p(2)=height //(a->X*a->inertia->com).z;
+    E += .5*mass*sumOfSqr(v);
+    E += gravity * mass * p(2); //p(2)=height //(a->X*a->inertia->com).z;
 //      E += .5*m*sumOfSqr(w); //(w*(I*w));
 
-      if(!!J){
-        J += (m*~v) * Jv;
-        J += (gravity*m) * Jp[2];
-      }
+    if(!!J){
+      J += (mass*~v) * Jv;
+      J += (gravity*mass) * Jp[2];
     }
   }
 
