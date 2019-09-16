@@ -7,7 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "TM_FlagConstraints.h"
-#include "TM_qItself.h"
+#include "F_qFeatures.h"
 #include "TM_default.h"
 #include "frame.h"
 #include "flag.h"
@@ -110,7 +110,7 @@ void TM_FlagConstraints::phi(arr& y, arr& J, const WorldL& Ktuple) {
       if(a->flags & (1<<FL_zeroQVel)) if(JointDidNotSwitch(a, Ktuple, 1)) {
           uint jdim = a->joint->dim;
           
-          TM_qItself q({a->ID}, false);
+          F_qItself q({a->ID}, false);
           q.order=1;
           q.Feature::__phi(y({d,d+jdim-1})(), (!!J?J({d,d+jdim-1})():NoArr), Ktuple);
           
@@ -170,7 +170,7 @@ void TM_FlagCosts::phi(arr& y, arr& J, const WorldL& Ktuple) {
       if(order>=2 && a->flags & (1<<FL_qCtrlCostAcc)) if(JointDidNotSwitch(a, Ktuple, 2)) {
           uint jdim = a->joint->dim;
           
-          TM_qItself q({a->ID}, false);
+          F_qItself q({a->ID}, false);
           q.order=2;
           q.Feature::__phi(y({d,d+jdim-1})(), (!!J?J({d,d+jdim-1})():NoArr), Ktuple);
           
@@ -180,7 +180,7 @@ void TM_FlagCosts::phi(arr& y, arr& J, const WorldL& Ktuple) {
       if(order>=1 && a->flags & (1<<FL_qCtrlCostVel)) if(JointDidNotSwitch(a, Ktuple, 1)) {
           uint jdim = a->joint->dim;
           
-          TM_qItself q({a->ID}, false);
+          F_qItself q({a->ID}, false);
           q.order=1;
           q.Feature::__phi(y({d,d+jdim-1})(), (!!J?J({d,d+jdim-1})():NoArr), Ktuple);
           

@@ -283,7 +283,7 @@ void CtrlTask::reportState(ostream& os) {
 //===========================================================================
 
 TaskControlMethods::TaskControlMethods(const rai::KinematicWorld& world)
-  : Hmetric(world.getHmetric()), qNullCostRef("qNullPD", new TM_qItself()) {
+  : Hmetric(world.getHmetric()), qNullCostRef("qNullPD", new F_qItself()) {
 //  qNullCostRef.PD().setGains(0.,1.);
 //  qNullCostRef.prec = ::sqrt(rai::getParameter<double>("Hrate", .1)*Hmetric);
 //  qNullCostRef.PD().setTarget(world.q);

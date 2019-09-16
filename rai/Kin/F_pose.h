@@ -50,3 +50,16 @@ struct F_PoseRel : Feature {
   virtual uint dim_phi(const rai::KinematicWorld& G){ return 7; }
   virtual rai::String shortTag(const rai::KinematicWorld& C){ return STRING("F_PoseRel-" <<C.frames(a)->name <<'-' <<C.frames(b)->name); }
 };
+
+//===========================================================================
+
+struct TM_Align : Feature {
+  int i, j;               ///< which shapes does it refer to?
+
+  TM_Align(const rai::KinematicWorld& G, const char* iName=NULL, const char* jName=NULL);
+
+  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
+  virtual uint dim_phi(const rai::KinematicWorld& G) { return 3; }
+  virtual rai::String shortTag(const rai::KinematicWorld& G);
+};
+

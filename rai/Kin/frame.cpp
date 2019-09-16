@@ -11,7 +11,6 @@
 #include "kin.h"
 #include "uncertainty.h"
 #include "contact.h"
-#include "flag.h"
 
 #ifdef RAI_GL
 #include <Gui/opengl.h>
@@ -288,15 +287,15 @@ void rai::Frame::write(std::ostream& os) const {
     if(!X.isZero()) os <<" X:<" <<X <<'>';
   }
   
-  if(flags) {
-    Enum<FrameFlagType> fl;
-    os <<" FLAGS:";
-    for(int i=0;; i++) {
-      fl.x = FrameFlagType(i);
-      if(!fl.name()) break;
-      if(flags & (1<<fl.x)) os <<' ' <<fl.name();
-    }
-  }
+//  if(flags) {
+//    Enum<FrameFlagType> fl;
+//    os <<" FLAGS:";
+//    for(int i=0;; i++) {
+//      fl.x = FrameFlagType(i);
+//      if(!fl.name()) break;
+//      if(flags & (1<<fl.x)) os <<' ' <<fl.name();
+//    }
+//  }
   
   for(Node *n : ats) {
     StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H", "axis", "A", "B", "mimic"};
@@ -1159,7 +1158,7 @@ void rai::Shape::glDraw(OpenGL& gl) {
     glEnd();
   }
   
-  if(frame.K.orsDrawBodyNames) {
+  if(frame.K.orsDrawFrameNames) {
     glColor(1,1,1);
     glDrawText(frame.name, 0, 0, 0);
   }

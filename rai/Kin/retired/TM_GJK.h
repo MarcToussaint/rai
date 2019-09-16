@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "taskMaps.h"
+#include "feature.h"
 
 struct TM_GJK:Feature {
   int i, j;               ///< which shapes does it refer to?

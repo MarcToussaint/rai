@@ -13,21 +13,16 @@
 #include <Kin/frame.h>
 #include <Kin/switch.h>
 #include <Kin/kin_swift.h>
-#include <Kin/taskMaps.h>
 #include <Gui/opengl.h>
-#include <Kin/TM_FixSwitchedObjects.h>
-#include <Kin/TM_QuaternionNorms.h>
-#include <Kin/TM_AboveBox.h>
-#include <Kin/TM_InsideBox.h>
-#include <Kin/TM_AlignStacking.h>
-#include <Kin/TM_linTrans.h>
-#include <Kin/TM_StaticStability.h>
-#include <Kin/TM_Max.h>
-#include <Kin/TM_ImpulseExchange.h>
-#include <Kin/TM_ContactConstraints.h>
-#include <Kin/TM_FlagConstraints.h>
-#include <Kin/TM_energy.h>
-#include <Kin/TM_gravity.h>
+#include <Kin/F_qFeatures.h>
+#include <Kin/TM_default.h>
+#include <Kin/F_pose.h>
+#include <Kin/TM_proxy.h>
+#include <Kin/F_PairCollision.h>
+#include <Kin/F_geometrics.h>
+#include <Kin/F_operators.h>
+#include <Kin/F_contacts.h>
+#include <Kin/F_dynamics.h>
 #include <Kin/contact.h>
 #include <Optim/optimization.h>
 #include <Optim/convert.h>
@@ -35,9 +30,7 @@
 #include <Optim/GraphOptim.h>
 #include <Kin/kin_physx.h>
 #include <Kin/TM_time.h>
-#include <Kin/TM_NewtonEuler.h>
 #include <Kin/TM_angVel.h>
-#include <Kin/F_pushed.h>
 
 #ifdef RAI_GL
 #  include <GL/gl.h>
@@ -74,7 +67,7 @@ KOMO::~KOMO() {
   if(opt) delete opt;
   if(logFile) delete logFile;
   listDelete(objectives);
-  listDelete(flags);
+//  listDelete(flags);
   listDelete(switches);
   listDelete(configurations);
 }
@@ -155,7 +148,7 @@ void KOMO::setTimeOptimization(){
 void KOMO::clearObjectives() {
   listDelete(objectives);
   listDelete(switches);
-  listDelete(flags);
+//  listDelete(flags);
 }
 
 Objective *KOMO::addObjective(double startTime, double endTime,
@@ -215,11 +208,11 @@ Objective* KOMO::addObjective(const arr& times, ObjectiveType type, const Featur
   return task;
 }
 
-void KOMO::addFlag(double time, Flag *fl, int deltaStep) {
-  if(time<0.) time=0.;
-  fl->stepOfApplication = conv_time2step(time, stepsPerPhase) + deltaStep;
-  flags.append(fl);
-}
+//void KOMO::addFlag(double time, Flag *fl, int deltaStep) {
+//  if(time<0.) time=0.;
+//  fl->stepOfApplication = conv_time2step(time, stepsPerPhase) + deltaStep;
+//  flags.append(fl);
+//}
 
 void KOMO::addSwitch(double time, bool before, KinematicSwitch *sw) {
   sw->setTimeOfApplication(time, before, stepsPerPhase, T);
@@ -254,7 +247,7 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
 
       //-- DOF-is-constant constraint
       if((endTime<0. && stepsPerPhase*time<T) || stepsPerPhase*endTime>stepsPerPhase*time+1){
-        addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 1e1, 1, +1, -1);
+        addObjective(time, endTime, new F_qZeroVel(world, to), OT_eq, NoArr, 1e1, 1, +1, -1);
         //      addObjective(time, endTime, symbols2feature(FS_poseRel, {from, to}, world), OT_eq, NoArr, 1e1, 1, +1, -1);
       }
 
@@ -289,7 +282,7 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
 
   if(newMode==SY_dynamic){
     addSwitch(time, true, JT_free, SWInit_copy, from, to);
-    addObjective(time, endTime, new TM_NewtonEuler(world, to), OT_eq, NoArr, 1e0, k_order, +0, -1);
+    addObjective(time, endTime, new F_NewtonEuler(world, to), OT_eq, NoArr, 1e0, k_order, +0, -1);
   //  addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2); //this should be implicit in the NE equations!
   }
 
@@ -298,7 +291,7 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
   #if 0
     addObjective(time, endTime, new TM_Gravity2(world, to), OT_eq, NoArr, 3e1, k_order, +1, -1);
   #else
-    addObjective(time, endTime, new TM_NewtonEuler(world, to, true), OT_eq, NoArr, 3e1, k_order, +0, -1);
+    addObjective(time, endTime, new F_NewtonEuler(world, to, true), OT_eq, NoArr, 3e1, k_order, +0, -1);
   #endif
   }
 
@@ -306,20 +299,20 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
     Transformation rel = 0;
     rel.pos.set(0,0, .5*(shapeSize(world, from) + shapeSize(world, to)));
     addSwitch(time, true, JT_transXYPhi, SWInit_copy, from, to, rel);
-    if(k_order>=2) addObjective(time, endTime, new TM_ZeroAcc(world, to), OT_eq, NoArr, 3e1, k_order, +0, -1);
+    if(k_order>=2) addObjective(time, endTime, new F_Pose(world, to), OT_eq, NoArr, 3e1, k_order, +0, -1);
   //  else addObjective(time, time, new TM_NoJumpFromParent(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
   }
 
   if(newMode==SY_quasiStatic){
     addSwitch(time, true, JT_free, SWInit_copy, from, to);
-    addObjective(time, endTime, new TM_NewtonEuler_DampedVelocities(world, to), OT_eq, NoArr, 1e1, 1, +0, -1);
+    addObjective(time, endTime, new F_NewtonEuler_DampedVelocities(world, to), OT_eq, NoArr, 1e1, 1, +0, -1);
   }
 
   if(newMode==SY_quasiStaticOn){
     Transformation rel = 0;
     rel.pos.set(0,0, .5*(shapeSize(world, from) + shapeSize(world, to)));
     addSwitch(time, true, JT_transXYPhi, SWInit_copy, from, to, rel);
-    addObjective(time, endTime, new TM_NewtonEuler_DampedVelocities(world, to, 0., false), OT_eq, NoArr, 1e2, 1, +0, -1);
+    addObjective(time, endTime, new F_NewtonEuler_DampedVelocities(world, to, 0., false), OT_eq, NoArr, 1e2, 1, +0, -1);
 //    addObjective(time, endTime, new F_pushed(world, to), OT_eq, NoArr, 1e0, 1, +0, -1);
 
     //-- no acceleration at start: +1 EXCLUDES (x-2, x-1, x0), ASSUMPTION: this is a placement that can excert impact
@@ -334,7 +327,7 @@ void KOMO::addSwitch_stable(double time, double endTime, const char* from, const
   addSwitch(time, true, JT_free, SWInit_zero, from, to);
   //-- DOF-is-constant constraint
   if(endTime<0. || stepsPerPhase*endTime>stepsPerPhase*time+1)
-    addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 3e1, 1, +1, -1);
+    addObjective(time, endTime, new F_qZeroVel(world, to), OT_eq, NoArr, 3e1, 1, +1, -1);
   //-- no relative jump at end
   if(endTime>0.) addObjective(endTime, endTime, new TM_NoJumpFromParent(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
   //-- no object acceleration at start: +0 include (x-2, x-1, x0), which enforces a SMOOTH pickup
@@ -348,7 +341,7 @@ void KOMO::addSwitch_stableOn(double time, double endTime, const char *from, con
   addSwitch(time, true, JT_transXYPhi, SWInit_zero, from, to, rel);
   //-- DOF-is-constant constraint
   if(endTime<0. || stepsPerPhase*endTime>stepsPerPhase*time+1)
-    addObjective(time, endTime, new TM_ZeroQVel(world, to), OT_eq, NoArr, 3e1, 1, +1, -1);
+    addObjective(time, endTime, new F_qZeroVel(world, to), OT_eq, NoArr, 3e1, 1, +1, -1);
   //-- no relative jump at end
   if(endTime>0.) addObjective(endTime, endTime, new TM_NoJumpFromParent(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
   //-- no acceleration at start: +1 EXCLUDES (x-2, x-1, x0), ASSUMPTION: this is a placement that can excert impact
@@ -359,9 +352,9 @@ void KOMO::addSwitch_stableOn(double time, double endTime, const char *from, con
 void KOMO::addSwitch_dynamic(double time, double endTime, const char* from, const char* to, bool dampedVelocity) {
   addSwitch(time, true, JT_free, SWInit_copy, from, to);
   if(!dampedVelocity)
-    addObjective(time, endTime, new TM_NewtonEuler(world, to), OT_eq, NoArr, 1e0, 2, +0, -1);
+    addObjective(time, endTime, new F_NewtonEuler(world, to), OT_eq, NoArr, 1e0, 2, +0, -1);
   else
-    addObjective(time, endTime, new TM_NewtonEuler_DampedVelocities(world, to), OT_eq, NoArr, 1e2, 1, +0, -1);
+    addObjective(time, endTime, new F_NewtonEuler_DampedVelocities(world, to), OT_eq, NoArr, 1e2, 1, +0, -1);
 //  addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2); //this should be implicit in the NE equations!
 }
 
@@ -370,7 +363,7 @@ void KOMO::addSwitch_dynamicTrans(double time, double endTime, const char* from,
 #if 0
   addObjective(time, endTime, new TM_Gravity2(world, to), OT_eq, NoArr, 3e1, k_order, +1, -1);
 #else
-  addObjective(time, endTime, new TM_NewtonEuler(world, to, true), OT_eq, NoArr, 3e1, k_order, +0, -1);
+  addObjective(time, endTime, new F_NewtonEuler(world, to, true), OT_eq, NoArr, 3e1, k_order, +0, -1);
 #endif
 }
 
@@ -378,7 +371,7 @@ void KOMO::addSwitch_dynamicOn(double time, double endTime, const char *from, co
   Transformation rel = 0;
   rel.pos.set(0,0, .5*(shapeSize(world, from) + shapeSize(world, to)));
   addSwitch(time, true, JT_transXYPhi, SWInit_zero, from, to, rel);
-  if(k_order>=2) addObjective(time, endTime, new TM_ZeroAcc(world, to), OT_eq, NoArr, 3e1, k_order, +0, -1);
+  if(k_order>=2) addObjective(time, endTime, new F_Pose(world, to), OT_eq, NoArr, 3e1, k_order, +0, -1);
 //  else addObjective(time, time, new TM_NoJumpFromParent(world, to), OT_eq, NoArr, 1e2, 1, 0, 0);
 }
 
@@ -386,7 +379,7 @@ void KOMO::addSwitch_dynamicOnNewton(double time, double endTime, const char *fr
   Transformation rel = 0;
   rel.pos.set(0,0, .5*(shapeSize(world, from) + shapeSize(world, to)));
   addSwitch(time, true, JT_transXYPhi, SWInit_zero, from, to, rel);
-  if(k_order>=2) addObjective(time, endTime, new TM_NewtonEuler(world, to), OT_eq, NoArr, 1e0, k_order, +0, -1);
+  if(k_order>=2) addObjective(time, endTime, new F_NewtonEuler(world, to), OT_eq, NoArr, 1e0, k_order, +0, -1);
 }
 
 
@@ -525,8 +518,8 @@ void KOMO::setKS_slider(double time, double endTime, bool before, const char* ob
   addSwitch(time, true, JT_transXYPhi, SWInit_zero, table, slidera, rel);
   addSwitch(time, true, JT_hingeZ, SWInit_zero, sliderb, obj);
 
-  addObjective(time, endTime, new TM_ZeroQVel(world, slidera), OT_eq, NoArr, 3e1, 1, +1, +0);
-  addObjective(time, endTime, new TM_ZeroQVel(world, obj), OT_eq, NoArr, 3e1, 1, +1, -1);
+  addObjective(time, endTime, new F_qZeroVel(world, slidera), OT_eq, NoArr, 3e1, 1, +1, +0);
+  addObjective(time, endTime, new F_qZeroVel(world, obj), OT_eq, NoArr, 3e1, 1, +1, -1);
   addObjective(time, time, new TM_LinAngVel(world, obj), OT_eq, NoArr, 1e2, 1);
 
 //  setKinematicSwitch(time, before, "sliderMechanism", table, obj, rel );
@@ -542,13 +535,13 @@ void KOMO::setHoming(double startTime, double endTime, double prec, const char* 
   Joint *j;
   for(Frame *f:world.frames) if((j=f->joint) && j->qDim()>0 && (!keyword || f->ats[keyword])) bodies.append(f->ID);
 //  cout <<"HOMING: "; for(uint i:bodies) cout <<' ' <<world.frames(i)->name;  cout <<endl;
-  addObjective(startTime, endTime, new TM_qItself(bodies, true), OT_sos, NoArr, prec); //world.q, prec);
+  addObjective(startTime, endTime, new F_qItself(bodies, true), OT_sos, NoArr, prec); //world.q, prec);
 }
 
-void KOMO::setSquaredQAccelerations(double startTime, double endTime, double prec) {
-  CHECK_GE(k_order, 2,"");
-  addObjective(startTime, endTime, new TM_Transition(world), OT_sos, NoArr, prec);
-}
+//void KOMO::setSquaredQAccelerations(double startTime, double endTime, double prec) {
+//  CHECK_GE(k_order, 2,"");
+//  addObjective(startTime, endTime, new TM_Transition(world), OT_sos, NoArr, prec);
+//}
 
 void KOMO::setSquaredQAccVelHoming(double startTime, double endTime, double accPrec, double velPrec, double homingPrec) {
 
@@ -565,46 +558,46 @@ void KOMO::setSquaredQAccVelHoming(double startTime, double endTime, double accP
   if(accPrec){
     //sqr accel
     CHECK_GE(k_order, 2, "");
-    Objective *o = addObjective(startTime, endTime, make_shared<TM_qItself>(selectedBodies), OT_sos, NoArr, accPrec, 2);
+    Objective *o = addObjective(startTime, endTime, make_shared<F_qItself>(selectedBodies), OT_sos, NoArr, accPrec, 2);
     o->map->scale = accPrec*scale;
   }
   if(velPrec){
     //sqr vel
     CHECK_GE(k_order, 1, "");
-    Objective *o = addObjective(startTime, endTime, make_shared<TM_qItself>(selectedBodies), OT_sos, NoArr, velPrec, 1);
+    Objective *o = addObjective(startTime, endTime, make_shared<F_qItself>(selectedBodies), OT_sos, NoArr, velPrec, 1);
     o->map->scale = velPrec*scale;
   }
   if(homingPrec){
     //sqr homing
     homingPrec *= sqrt(tau);
-    addObjective(startTime, endTime, make_shared<TM_qItself>(selectedBodies, true), OT_sos, NoArr, homingPrec, 0);
+    addObjective(startTime, endTime, make_shared<F_qItself>(selectedBodies, true), OT_sos, NoArr, homingPrec, 0);
   }
 }
 
-void KOMO::setSquaredQVelocities(double startTime, double endTime, double prec) {
-  auto *map = new TM_Transition(world);
-  map->velCoeff = 1.;
-  map->accCoeff = 0.;
-  addObjective(startTime, endTime, map, OT_sos, NoArr, prec, 1);
-}
+//void KOMO::setSquaredQVelocities(double startTime, double endTime, double prec) {
+//  auto *map = new TM_Transition(world);
+//  map->velCoeff = 1.;
+//  map->accCoeff = 0.;
+//  addObjective(startTime, endTime, map, OT_sos, NoArr, prec, 1);
+//}
 
-void KOMO::setFixEffectiveJoints(double startTime, double endTime, double prec) {
-//  setTask(startTime, endTime, new TM_Transition(world, true), OT_eq, NoArr, prec, 1); //NOTE: order=1!!
-  addObjective(startTime, endTime, new TM_FlagConstraints(), OT_eq, NoArr, prec, k_order);
-  addObjective(startTime, endTime, new TM_FlagCosts(), OT_sos, NoArr, 1., k_order);
-}
+//void KOMO::setFixEffectiveJoints(double startTime, double endTime, double prec) {
+////  setTask(startTime, endTime, new TM_Transition(world, true), OT_eq, NoArr, prec, 1); //NOTE: order=1!!
+//  addObjective(startTime, endTime, new TM_FlagConstraints(), OT_eq, NoArr, prec, k_order);
+//  addObjective(startTime, endTime, new TM_FlagCosts(), OT_sos, NoArr, 1., k_order);
+//}
 
-void KOMO::setFixSwitchedObjects(double startTime, double endTime, double prec) {
-  addObjective(startTime, endTime, new TM_FixSwichedObjects(), OT_eq, NoArr, prec, k_order);
-}
+//void KOMO::setFixSwitchedObjects(double startTime, double endTime, double prec) {
+//  addObjective(startTime, endTime, new TM_FixSwichedObjects(), OT_eq, NoArr, prec, k_order);
+//}
 
 void KOMO::setSquaredQuaternionNorms(double startTime, double endTime, double prec) {
-  addObjective(startTime, endTime, new TM_QuaternionNorms(), OT_eq, NoArr, prec);
+  addObjective(startTime, endTime, new F_qQuaternionNorms(), OT_eq, NoArr, prec);
 }
 
 void KOMO::setHoldStill(double startTime, double endTime, const char* shape, double prec) {
   Frame *s = world.getFrameByName(shape);
-  addObjective(startTime, endTime, new TM_qItself(TUP(s->ID)), OT_sos, NoArr, prec, 1);
+  addObjective(startTime, endTime, new F_qItself(TUP(s->ID)), OT_sos, NoArr, prec, 1);
 }
 
 void KOMO_ext::setPosition(double startTime, double endTime, const char* shape, const char* shapeRel, ObjectiveType type, const arr& target, double prec) {
@@ -626,7 +619,8 @@ void KOMO_ext::setLastTaskToBeVelocity() {
 
 void KOMO_ext::setImpact(double time, const char *a, const char *b) {
   add_touch(time, time, a, b);
-  add_impulse(time, a, b);
+  HALT("obsolete");
+//  add_impulse(time, a, b);
 }
 
 void KOMO_ext::setOverTheEdge(double time, const char *object, const char *from, double margin) {
@@ -850,7 +844,7 @@ void KOMO::setGraspSlide(double time, const char* endeff, const char* object, co
 
 //  addSwitch_stable(startTime, endTime+1., endeff, object);
   addSwitch(startTime, true, JT_free, SWInit_zero, endeff, object);
-  addObjective(time, endTime, new TM_ZeroQVel(world, object), OT_eq, NoArr, 3e1, 1, +1, -1);
+  addObjective(time, endTime, new F_qZeroVel(world, object), OT_eq, NoArr, 3e1, 1, +1, -1);
   if(k_order>1) addObjective(time, time, new TM_LinAngVel(world, object), OT_eq, NoArr, 1e2, 2, 0);
   else addObjective(time, time, new TM_NoJumpFromParent(world, object), OT_eq, NoArr, 1e2, 1, 0, 0);
 
@@ -872,9 +866,10 @@ void KOMO::setGraspSlide(double time, const char* endeff, const char* object, co
   //-- slide constraints!
   //keep height of object above table
   double h = .5*(shapeSize(world, object) + shapeSize(world, placeRef));
-  addObjective(startTime, endTime,
-          new TM_LinTrans(make_shared<TM_Default>(TMT_posDiff, world, object, NoVector, placeRef), ~ARR(0,0,1), ARR(0)),
-          OT_sos, ARR(h), 1e1);
+  HALT("TODO: fix syntax:")
+//  addObjective(startTime, endTime,
+//          make_shared<TM_Default>(TMT_posDiff, world, object, NoVector, placeRef),
+//          OT_sos, ARR(h), ~ARR(0,0,1e1));
   //keep object vertial
   addObjective(startTime, endTime,
           new TM_Default(TMT_vecDiff, world, object, Vector_z, placeRef, Vector_z), OT_sos, {}, 1e1);
@@ -963,7 +958,7 @@ void KOMO::setSlow(double startTime, double endTime, double prec, bool hardConst
       selectedBodies.append(TUP(f->ID, f->parent->ID));
     }
     selectedBodies.reshape(selectedBodies.N/2,2);
-    ptr<Feature> map = make_shared<TM_qItself>(selectedBodies);
+    ptr<Feature> map = make_shared<F_qItself>(selectedBodies);
 #else
     Feature *map = new TM_qItself;
 #endif
@@ -988,13 +983,13 @@ void KOMO_ext::setFine_grasp(double time, const char* endeff, const char* object
   addObjective(time+t1, 1., new TM_Default(TMT_vecAlign, world, endeff, Vector_x, object, Vector_y), OT_sos, NoArr, 3e0);
   addObjective(time+t1, 1., new TM_Default(TMT_vecAlign, world, endeff, Vector_x, object, Vector_z), OT_sos, NoArr, 3e0);
   //open gripper
-  if(gripper)  addObjective(time+t1, .85, new TM_qItself(QIP_byJointNames, {gripper}, world), OT_sos, {gripSize + .05});
-  if(gripper2) addObjective(time+t1, .85, new TM_qItself(QIP_byJointNames, {gripper2}, world), OT_sos, {::asin((gripSize + .05)/(2.*.10))});
+  if(gripper)  addObjective(time+t1, .85, new F_qItself(F_qItself::byJointNames, {gripper}, world), OT_sos, {gripSize + .05});
+  if(gripper2) addObjective(time+t1, .85, new F_qItself(F_qItself::byJointNames, {gripper2}, world), OT_sos, {::asin((gripSize + .05)/(2.*.10))});
   //lower
   addObjective(time+t2, 1., new TM_Default(TMT_posDiff, world, endeff, NoVector, object, NoVector), OT_sos, {0.,0.,above}, 3e1);
   //close gripper
-  if(gripper)  addObjective(time+t3, 1., new TM_qItself(QIP_byJointNames, {gripper}, world), OT_sos, {gripSize});
-  if(gripper2) addObjective(time+t3, 1., new TM_qItself(QIP_byJointNames, {gripper2}, world), OT_sos, {::asin((gripSize)/(2.*.10))});
+  if(gripper)  addObjective(time+t3, 1., new F_qItself(F_qItself::byJointNames, {gripper}, world), OT_sos, {gripSize});
+  if(gripper2) addObjective(time+t3, 1., new F_qItself(F_qItself::byJointNames, {gripper2}, world), OT_sos, {::asin((gripSize)/(2.*.10))});
   setSlowAround(time, .05, 3e1);
 }
 
@@ -1116,7 +1111,7 @@ void KOMO::setSkeleton(const Skeleton &S, bool ignoreSwitches) {
       case SY_inside:     add_insideBox(s.phase0, s.phase1, s.frames(0), s.frames(1));  break;
 //      case SY_inside:     addObjective(s.phase0, s.phase1, make_shared<TM_InsideLine>(world, s.frames(0), s.frames(1)), OT_ineq, NoArr, 1e1);  break;
       case SY_oppose:     addObjective({s.phase0, s.phase1}, OT_eq, FS_oppose, s.frames, {1e1});  break;
-      case SY_impulse:    add_impulse(s.phase0, s.frames(0), s.frames(1));  break;
+      case SY_impulse:    HALT("obsolete"); /*add_impulse(s.phase0, s.frames(0), s.frames(1));*/  break;
 
       case SY_makeFree:   world.makeObjectsFree(s.frames);  break;
       case SY_stableRelPose: addObjective({s.phase0, s.phase1+1.}, OT_eq, FS_poseRel, s.frames, {1e2}, {}, 1);  break;
@@ -1195,21 +1190,22 @@ void KOMO::add_insideBox(double startTime, double endTime, const char* shape1, c
   addObjective(startTime, endTime, new TM_InsideBox(world, shape1, NoVector, shape2), OT_ineq, NoArr, prec);
 }
 
-void KOMO::add_impulse(double time, const char* shape1, const char* shape2, ObjectiveType type, double prec) {
-//    setTask(time, time, new TM_ImpulsExchange(world, a, b), OT_sos, {}, 3e1, 2, +1); //+1 deltaStep indicates moved 1 time slot backward (to cover switch)
-  if(k_order>=2) {
-    addObjective(time, time, new TM_ImpulsExchange(world, shape1, shape2), type, {}, prec, 2, +1, +1); //+1 deltaStep indicates moved 1 time slot backward (to cover switch)
-    addFlag(time, new Flag(FL_impulseExchange, world[shape1]->ID), +0);
-    addFlag(time, new Flag(FL_impulseExchange, world[shape2]->ID), +0);
-  }
-}
+//void KOMO::add_impulse(double time, const char* shape1, const char* shape2, ObjectiveType type, double prec) {
+////    setTask(time, time, new TM_ImpulsExchange(world, a, b), OT_sos, {}, 3e1, 2, +1); //+1 deltaStep indicates moved 1 time slot backward (to cover switch)
+//  if(k_order>=2) {
+//    addObjective(time, time, new TM_ImpulsExchange(world, shape1, shape2), type, {}, prec, 2, +1, +1); //+1 deltaStep indicates moved 1 time slot backward (to cover switch)
+//    addFlag(time, new Flag(FL_impulseExchange, world[shape1]->ID), +0);
+//    addFlag(time, new Flag(FL_impulseExchange, world[shape2]->ID), +0);
+//  }
+//}
 
 void KOMO::add_stable(double time, const char* shape1, const char* shape2, ObjectiveType type, double prec){
   addObjective(time, time, new TM_Default(TMT_pose, world, shape1, NoVector, shape2), type, NoArr, prec, 1, 0 );
 }
 
 void KOMO_ext::setAlignedStacking(double time, const char* object, ObjectiveType type, double prec) {
-  addObjective(time, time, new TM_AlignStacking(world, object), type, NoArr, prec);
+  HALT("obsolete");
+//  addObjective(time, time, new TM_AlignStacking(world, object), type, NoArr, prec);
 }
 
 void KOMO::add_collision(bool hardConstraint, double margin, double prec) {
@@ -1222,7 +1218,7 @@ void KOMO::add_collision(bool hardConstraint, double margin, double prec) {
 
 void KOMO::add_jointLimits(bool hardConstraint, double margin, double prec) {
   if(hardConstraint) { //interpreted as hard constraint (default)
-    addObjective(0., -1., new LimitsConstraint(margin), OT_ineq, NoArr, prec);
+    addObjective(0., -1., new F_qLimits(), OT_ineq, NoArr, -prec);
   } else { //cost term
     NIY;
 //    setTask(0., -1., new TM_Proxy(TMT_allP, {}, margin), OT_sos, NoArr, prec);
@@ -1263,7 +1259,8 @@ void KOMO::setIKOpt() {
   T = 1;
   tau = 1.;
   k_order = 1;
-  setSquaredQVelocities(0.,-1.,1e-1);
+//  setSquaredQVelocities(0.,-1.,1e-1);
+  setSquaredQAccVelHoming(0., -1., 0., 1e-1, 1e-2);
   setSquaredQuaternionNorms();
 }
 
@@ -1613,16 +1610,16 @@ void KOMO::reportProblem(std::ostream& os) {
     }
     os <<endl;
   }
-  for(Flag* fl:flags) {
-    os <<"    ";
-    if(fl->stepOfApplication+k_order >= configurations.N) {
-      LOG(-1) <<"flag time " <<fl->stepOfApplication <<" is beyond time horizon " <<T;
-      fl->write(os, NULL);
-    } else {
-      fl->write(os, configurations(fl->stepOfApplication+k_order));
-    }
-    os <<endl;
-  }
+//  for(Flag* fl:flags) {
+//    os <<"    ";
+//    if(fl->stepOfApplication+k_order >= configurations.N) {
+//      LOG(-1) <<"flag time " <<fl->stepOfApplication <<" is beyond time horizon " <<T;
+//      fl->write(os, NULL);
+//    } else {
+//      fl->write(os, configurations(fl->stepOfApplication+k_order));
+//    }
+//    os <<endl;
+//  }
 }
 
 void KOMO::checkGradients(bool dense) {
@@ -1856,11 +1853,11 @@ void KOMO::setupConfigurations() {
       }
     }
     //apply potential PERSISTENT flags
-    for(Flag *fl:flags) {
-      if(fl->persist && fl->stepOfApplication+k_order==s) {
-        fl->apply(K);
-      }
-    }
+//    for(Flag *fl:flags) {
+//      if(fl->persist && fl->stepOfApplication+k_order==s) {
+//        fl->apply(K);
+//      }
+//    }
     K.calc_q();
     K.checkConsistency();
 //    {
@@ -1872,13 +1869,13 @@ void KOMO::setupConfigurations() {
   }
 
   //now apply NON-PERSISTENT flags
-  for(uint s=1; s<k_order+T; s++) {
-    for(Flag *fl:flags) {
-      if(!fl->persist && fl->stepOfApplication+k_order==s) {
-        fl->apply(*configurations(s));
-      }
-    }
-  }
+//  for(uint s=1; s<k_order+T; s++) {
+//    for(Flag *fl:flags) {
+//      if(!fl->persist && fl->stepOfApplication+k_order==s) {
+//        fl->apply(*configurations(s));
+//      }
+//    }
+//  }
 }
 
 void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
@@ -2795,7 +2792,7 @@ arr KOMO::getPath_times() {
 
 arr KOMO::getPath_energies() {
   CHECK_EQ(configurations.N, k_order+T, "configurations are not setup yet");
-  TM_Energy E;
+  F_Energy E;
   E.order=1;
   arr X(T), y;
   for(uint t=0; t<T; t++) {

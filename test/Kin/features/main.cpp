@@ -53,7 +53,7 @@ void testFeature() {
   F.append(new TM_ZeroAcc (K, "obj1"));
 //  F.append(new TM_Energy );
 //  F.append(new TM_ContactConstraints (K, "obj1", "obj2"));
-  F.append(new TM_NewtonEuler (K, "obj1"));
+  F.append(new F_NewtonEuler (K, "obj1"));
 
   rai_Kin_frame_ignoreQuatNormalizationWarning=true;
 

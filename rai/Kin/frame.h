@@ -67,7 +67,7 @@ public:
   //-- data structure state (lazy evaluation leave the state structure out of sync)
   bool _state_X_isGood=true; // X represents the current state
 
-  Frame(KinematicWorld& _K, const Frame *copyBody=NULL);
+  Frame(KinematicWorld& _K, const Frame *copyFrame=NULL);
   Frame(Frame *_parent);
   ~Frame();
   
@@ -238,7 +238,7 @@ struct Shape : NonCopyable, GLDrawer {
   char cont=0;           ///< are contacts registered (or filtered in the callback)
   bool visual=true;
   
-  Shape(Frame& f, const Shape *copyShape=NULL); //new Shape, being added to graph and body's shape lists
+  Shape(Frame& f, const Shape *copyShape=NULL); //new Shape, being added to graph and frame's shape lists
   virtual ~Shape();
 
   bool canCollideWith(const Frame *f) const{

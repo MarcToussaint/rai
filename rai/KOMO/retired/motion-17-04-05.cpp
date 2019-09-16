@@ -149,7 +149,7 @@ void KOMO::parseTasks(const Graph& specs, int stepsPerPhase) {
   
   //-- add TransitionTask for InvKinematics
   if(!T) {
-    Feature *map = new TM_qItself();
+    Feature *map = new F_qItself();
     map->order = 0;
     Task *task = new Task(map, OT_sos);
     task->name="InvKinTransition";

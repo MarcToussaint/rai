@@ -10,12 +10,10 @@
 
 #include "feature.h"
 
-#include "TM_qItself.h"
+#include "F_qFeatures.h"
 #include "TM_GJK.h"
 #include "TM_PairCollision.h"
-#include "TM_transition.h"
 #include "TM_default.h"
-#include "TM_qLimits.h"
 #include "TM_pushConsistent.h"
 #include "TM_FixSwitchedObjects.h"
 #include "TM_AboveBox.h"

@@ -632,7 +632,7 @@ arr TaskControlMethods::getComplianceProjection(CtrlTaskL& tasks) {
       if(!P.N) P = eye(t->J_y.d1);
 
       //special case! qItself feature!
-      if(t->compliance.N==1 && std::dynamic_pointer_cast<TM_qItself>(t->map)){
+      if(t->compliance.N==1 && std::dynamic_pointer_cast<F_qItself>(t->map)){
         double compliance = t->compliance.scalar();
         CHECK_GE(compliance, 0., "");
         CHECK_LE(compliance, 1., "");

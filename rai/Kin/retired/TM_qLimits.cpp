@@ -6,17 +6,14 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#pragma once
-#include "feature.h"
+#include "TM_qLimits.h"
 
 //===========================================================================
 
-struct TM_Norm : Feature {
-  Feature *map;
-  
-  TM_Norm(Feature *map) : map(map) {}
-  
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
-  virtual uint dim_phi(const rai::KinematicWorld& G);
-  virtual rai::String shortTag(const rai::KinematicWorld& G) { return STRING("Norm:"<<map->shortTag((G))); }
-};
+void LimitsConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
+//  if(!limits.N)
+  limits = G.getLimits();
+  G.kinematicsLimitsCost(y, J, limits, margin);
+  y -= .5;
+}
+

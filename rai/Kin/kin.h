@@ -78,7 +78,7 @@ struct KinematicWorld : GLDrawer {
   //global options -> TODO: refactor away from here
   bool orsDrawJoints=false, orsDrawShapes=true, orsDrawBodies=true, orsDrawProxies=true, orsDrawMarkers=true, orsDrawColors=true, orsDrawIndexColors=false;
   bool orsDrawVisualsOnly=false, orsDrawMeshes=true, orsDrawCores=false, orsDrawZlines=false;
-  bool orsDrawBodyNames=false;
+  bool orsDrawFrameNames=false;
   double orsDrawAlpha=1.;
   uint orsDrawLimit=0;
   
@@ -107,9 +107,9 @@ struct KinematicWorld : GLDrawer {
   Frame *getFrameByName(const char* name, bool warnIfNotExist=true, bool reverse=false) const;
   FrameL getFramesByNames(const StringA& frameNames) const;
 //  Link  *getLinkByBodies(const Frame* from, const Frame* to) const;
-  Joint *getJointByBodies(const Frame* from, const Frame* to) const;
-  Joint *getJointByBodyNames(const char* from, const char* to) const;
-  Joint *getJointByBodyIndices(uint ifrom, uint ito) const;
+  Joint *getJointByFrames(const Frame* from, const Frame* to) const;
+  Joint *getJointByFrameNames(const char* from, const char* to) const;
+  Joint *getJointByFrameIndices(uint ifrom, uint ito) const;
   uintA getQindicesByNames(const StringA& jointNames) const;
   StringA getJointNames() const;
   StringA getFrameNames() const;
@@ -146,7 +146,7 @@ struct KinematicWorld : GLDrawer {
   void calc_q_from_Q();  ///< updates (q,qdot) based on the joint's Q transformations
   void calc_fwdPropagateFrames();    ///< elementary forward kinematics; also computes all Shape frames
   arr calc_fwdPropagateVelocities();    ///< elementary forward kinematics; also computes all Shape frames
-  void calc_Q_from_BodyFrames();    ///< fill in the joint transformations assuming that body poses are known (makes sense when reading files)
+  void calc_Q_from_Frames();    ///< fill in the joint transformations assuming that frame poses are known (makes sense when reading files)
   
   /// @name get state
   uint getJointStateDimension() const;
@@ -215,7 +215,7 @@ struct KinematicWorld : GLDrawer {
   void setAgent(uint) { NIY }
   
   /// @name High level (inverse) kinematics
-  void inverseKinematicsPos(Frame& body, const arr& ytarget, const rai::Vector& rel_offset=NoVector, int max_iter=3);
+  void inverseKinematicsPos(Frame& frame, const arr& ytarget, const rai::Vector& rel_offset=NoVector, int max_iter=3);
   
   /// @name dynamics
   void fwdDynamics(arr& qdd, const arr& qd, const arr& tau, bool gravity=true);
@@ -307,7 +307,7 @@ void lib_ors();
 void makeConvexHulls(FrameL& frames, bool onlyContactShapes=true);
 void computeOptimalSSBoxes(FrameL& frames);
 void computeMeshNormals(FrameL& frames, bool force=false);
-double forceClosureFromProxies(rai::KinematicWorld& C, uint bodyIndex,
+double forceClosureFromProxies(rai::KinematicWorld& C, uint frameIndex,
                                double distanceThreshold=0.01,
                                double mu=.5,     //friction coefficient
                                double discountTorques=1.);  //friction coefficient

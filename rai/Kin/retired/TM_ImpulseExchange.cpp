@@ -9,7 +9,6 @@
 #include "TM_ImpulseExchange.h"
 #include "TM_default.h"
 #include "TM_PairCollision.h"
-#include "flag.h"
 
 void TM_ImpulsExchange::phi(arr &y, arr &J, const WorldL &Ktuple) {
   CHECK_GE(Ktuple.N, 3, "");

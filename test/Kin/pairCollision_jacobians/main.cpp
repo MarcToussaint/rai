@@ -147,7 +147,7 @@ void TEST(GJK_Jacobians2) {
 
 //    checkJacobian(f, q, 1e-4);
 
-    TM_QuaternionNorms qn;
+    F_qQuaternionNorms qn;
 //    K.reportProxies();
 
     arr y,J;
@@ -221,7 +221,7 @@ void TEST(GJK_Jacobians3) {
     arr y,J;
     gjk.phi(y, J, K);
 
-    TM_QuaternionNorms qn;
+    F_qQuaternionNorms qn;
     arr y2, J2;
     qn.phi(y2, J2, K);
 

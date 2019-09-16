@@ -6,13 +6,10 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "TM_Max.h"
+#pragma once
+#include "feature.h"
 
-void TM_Max::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
-  map->__phi(y, J, G);
-  uint i=argmax(y);
-  y = ARR(y(i));
-  if(!!J) J=~J[i];
-  if(neg) { y*=-1.; if(!!J) J*=-1.; }
-}
+//===========================================================================
 
+/// defines a transition cost vector, which is q.N-dimensional and captures
+/// accelerations or velocities over consecutive time steps

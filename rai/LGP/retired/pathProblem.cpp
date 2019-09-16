@@ -57,7 +57,7 @@ PathProblem::PathProblem(const rai::KinematicWorld& world_initial,
   //-- pose damping
   {
     Objective *t;
-    t = MP.addTask("pose", new TM_qItself(), OT_sos);
+    t = MP.addTask("pose", new F_qItself(), OT_sos);
     t->map->order=0;
     t->setCostSpecs(0, MP.T, {0.}, 1e-5);
   }
@@ -128,7 +128,7 @@ PathProblem::PathProblem(const rai::KinematicWorld& world_initial,
 //    M.setZero();
 //    for(uint i=0;i<j_grasp->qDim();i++) M(i,j_grasp->qIndex+i)=1.;
 //    cout <<M <<endl;
-    t = MP.addTask("graspJoint", new TM_qItself(QIP_byJointNames, {"graspJoint"}, world), OT_sos);
+    t = MP.addTask("graspJoint", new F_qItself(QIP_byJointNames, {"graspJoint"}, world), OT_sos);
     t->map->order=1;
     t->prec.resize(MP.T+1).setZero();
     for(uint i=0; i<actions.N; i++) {

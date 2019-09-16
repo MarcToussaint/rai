@@ -7,7 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "TM_transition.h"
-#include "TM_qItself.h"
+#include "F_qFeatures.h"
 #include "frame.h"
 #include "flag.h"
 

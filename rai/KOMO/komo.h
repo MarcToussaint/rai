@@ -13,7 +13,6 @@
 #include <Optim/KOMO_Problem.h>
 #include "objective.h"
 #include <Kin/switch.h>
-#include <Kin/flag.h>
 #include <Kin/featureSymbols.h>
 
 //===========================================================================
@@ -96,7 +95,6 @@ struct KOMO : NonCopyable {
   double tau=0.;               ///< real time duration of single step (used when evaluating task space velocities/accelerations)
   uint k_order=0;              ///< the (Markov) order of the KOMO problem (default 2)
   rai::Array<Objective*> objectives;     ///< list of tasks
-  rai::Array<rai::Flag*> flags;     ///< list of flaggings that are applied to the frames/joints in the configurations and modify tasks
   rai::Array<rai::KinematicSwitch*> switches;  ///< list of kinematic switches along the motion
   
   //-- internals
@@ -164,7 +162,6 @@ struct KOMO : NonCopyable {
   void addSwitch(double time, bool before, rai::JointType type, rai::SwitchInitializationType init,
                        const char* ref1, const char* ref2,
                        const rai::Transformation& jFrom=NoTransformation, const rai::Transformation& jTo=NoTransformation);
-  void addFlag(double time, rai::Flag* fl, int deltaStep=0);
   void addContact_slide(double startTime, double endTime, const char *from, const char* to);
   void addContact_stick(double startTime, double endTime, const char *from, const char* to);
   void addContact_elasticBounce(double time, const char *from, const char* to, double elasticity=.8, double stickiness=0.);
@@ -181,11 +178,11 @@ struct KOMO : NonCopyable {
   //
 
   //-- tasks mid-level
-  void setSquaredQAccelerations(double startTime=0., double endTime=-1., double prec=1.);
+//  void setSquaredQAccelerations(double startTime=0., double endTime=-1., double prec=1.);
   void setSquaredQAccVelHoming(double startTime=0., double endTime=-1., double accPrec=1., double velPrec=0., double homingPrec=1e-2);
-  void setSquaredQVelocities(double startTime=0., double endTime=-1., double prec=1.);
-  void setFixEffectiveJoints(double startTime=0., double endTime=-1., double prec=3e1);
-  void setFixSwitchedObjects(double startTime=0., double endTime=-1., double prec=3e1);
+//  void setSquaredQVelocities(double startTime=0., double endTime=-1., double prec=1.);
+//  void setFixEffectiveJoints(double startTime=0., double endTime=-1., double prec=3e1);
+//  void setFixSwitchedObjects(double startTime=0., double endTime=-1., double prec=3e1);
   void setSquaredQuaternionNorms(double startTime=0., double endTime=-1., double prec=3e0);
 
   void setHoming(double startTime=0., double endTime=-1., double prec=1e-1, const char *keyword="robot");
@@ -201,7 +198,7 @@ struct KOMO : NonCopyable {
   void add_touch(double startTime, double endTime, const char* shape1, const char* shape2, ObjectiveType type=OT_eq, const arr& target=NoArr, double prec=1e2);
   void add_aboveBox(double startTime, double endTime, const char* shape1, const char* shape2, double prec=1e1);
   void add_insideBox(double startTime, double endTime, const char* shape1, const char* shape2, double prec=1e1);
-  void add_impulse(double time, const char* shape1, const char* shape2, ObjectiveType type=OT_eq, double prec=1e1);
+//  void add_impulse(double time, const char* shape1, const char* shape2, ObjectiveType type=OT_eq, double prec=1e1);
   void add_stable(double time,  const char* shape1, const char* shape2, ObjectiveType type=OT_eq, double prec=1e1);
   
   //-- core kinematic switch symbols of skeletons

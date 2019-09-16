@@ -47,14 +47,3 @@ struct TM_ZeroAcc : Feature {
   virtual rai::String shortTag(const rai::KinematicWorld& G){ return STRING("ZeroAcc-" <<G.frames(i)->name); }
 };
 
-struct TM_ZeroQVel : Feature {
-  int i;               ///< which shapes does it refer to?
-
-  TM_ZeroQVel(int iShape=-1) : i(iShape) { order=1; }
-  TM_ZeroQVel(const rai::KinematicWorld& K, const char* iShapeName=NULL) : TM_ZeroQVel(initIdArg(K,iShapeName)){}
-
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G){ NIY; }
-  virtual void phi(arr& y, arr& J, const WorldL& Ktuple);
-  virtual uint dim_phi(const rai::KinematicWorld& G);
-  virtual rai::String shortTag(const rai::KinematicWorld& G){ return STRING("ZeroQVel-" <<G.frames(i)->name); }
-};
