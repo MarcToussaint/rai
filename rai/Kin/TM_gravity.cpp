@@ -277,25 +277,27 @@ void TM_ZeroAcc::phi(arr& y, arr& J, const WorldL& Ktuple){
 extern bool isSwitched(rai::Frame *f0, rai::Frame *f1);
 
 void TM_ZeroQVel::phi(arr& y, arr& J, const WorldL& Ktuple){
-  TM_qItself q({(uint)i}, false);
-  q.order=order;
   if(!Ktuple(-1)->frames(i)->joint){
+    HALT("shouldn't be here");
     y.resize(0).setZero();
     if(!!J) J.resize(0, getKtupleDim(Ktuple).last()).setZero();
     return;
   }
   if(order==1 && isSwitched(Ktuple(-1)->frames(i), Ktuple(-2)->frames(i))){
+    HALT("shouldn't be here");
     y.resize(Ktuple(-1)->frames(i)->joint->dim).setZero();
     if(!!J) J.resize(y.N, getKtupleDim(Ktuple).last()).setZero();
     return;
   }
+  TM_qItself q({(uint)i}, false);
+  q.order=order;
   q.Feature::__phi(y, J, Ktuple);
-  if(y.N==3){
+  if(Ktuple(-1)->frames(i)->joint->type==rai::JT_transXYPhi){
     arr s = ARR(10.,10.,1.);
     y = s%y;
     if(!!J) J = s%J;
   }
-  if(y.N==7){
+  if(Ktuple(-1)->frames(i)->joint->type==rai::JT_free){
     arr s = ARR(10., 10., 10., 1., 1., 1., 1.);
     y = s%y;
     if(!!J) J = s%J;

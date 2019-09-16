@@ -1161,8 +1161,8 @@ void rai::KinematicWorld::kinematicsVec(arr& y, arr& J, Frame *a, const rai::Vec
 void rai::KinematicWorld::kinematicsQuat(arr& y, arr& J, Frame *a) const { //TODO: allow for relative quat
   CHECK_EQ(&a->K, this, "");
   a->ensure_X();
-  rai::Quaternion rot_a = a->X.rot;
-  if(!!y) y = conv_quat2arr(rot_a); //return the vec
+  const rai::Quaternion& rot_a = a->X.rot;
+  if(!!y) y = rot_a.getArr4d();
   if(!!J) {
     arr A;
     axesMatrix(A, a);

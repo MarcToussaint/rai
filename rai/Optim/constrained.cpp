@@ -118,13 +118,14 @@ bool OptConstrained::step() {
   }
   
   //run newton on the Lagrangian problem
+  OptNewton::StopCriterion newtonStop;
   if(newtonOnce || opt.constrainedMethod==squaredPenaltyFixed) {
-    newton.run();
+    newtonStop = newton.run();
   } else {
     double stopTol = newton.o.stopTolerance;
     if(earlyPhase) newton.o.stopTolerance *= 10.;
-    if(opt.constrainedMethod==anyTimeAula)  newton.run(20);
-    else                                    newton.run();
+    if(opt.constrainedMethod==anyTimeAula)  newtonStop = newton.run(20);
+    else                                    newtonStop = newton.run();
     newton.o.stopTolerance = stopTol;
   }
   
@@ -160,6 +161,15 @@ bool OptConstrained::step() {
   //stopping criteron
   if(its>=2 && absMax(x_old-newton.x) < (earlyPhase?5.:1.)*opt.stopTolerance) {
     if(opt.verbose>0) cout <<"** optConstr. StoppingCriterion Delta<" <<opt.stopTolerance <<endl;
+    if(earlyPhase) earlyPhase=false;
+    else {
+      if(opt.stopGTolerance<0.
+          || L.get_sumOfGviolations() + L.get_sumOfHviolations() < opt.stopGTolerance)
+        return true;
+    }
+  }
+  if(its>=2 && newtonStop==OptNewton::stopTinySteps) {
+    if(opt.verbose>0) cout <<"** optConstr. StoppingCriterion TinySteps<" <<opt.stopTolerance <<endl;
     if(earlyPhase) earlyPhase=false;
     else {
       if(opt.stopGTolerance<0.
