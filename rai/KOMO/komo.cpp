@@ -8,12 +8,16 @@
 
 #include "komo.h"
 #include "komo-ext.h"
+
 #include <Algo/spline.h>
-#include <iomanip>
+#include <Gui/opengl.h>
+
 #include <Kin/frame.h>
 #include <Kin/switch.h>
+#include <Kin/contact.h>
 #include <Kin/kin_swift.h>
-#include <Gui/opengl.h>
+#include <Kin/kin_physx.h>
+
 #include <Kin/F_qFeatures.h>
 #include <Kin/TM_default.h>
 #include <Kin/F_pose.h>
@@ -23,14 +27,15 @@
 #include <Kin/F_operators.h>
 #include <Kin/F_contacts.h>
 #include <Kin/F_dynamics.h>
-#include <Kin/contact.h>
+#include <Kin/TM_time.h>
+#include <Kin/TM_angVel.h>
+
 #include <Optim/optimization.h>
 #include <Optim/convert.h>
 #include <Optim/primalDual.h>
 #include <Optim/GraphOptim.h>
-#include <Kin/kin_physx.h>
-#include <Kin/TM_time.h>
-#include <Kin/TM_angVel.h>
+
+#include <iomanip>
 
 #ifdef RAI_GL
 #  include <GL/gl.h>
@@ -278,12 +283,10 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
 
   if(newMode==SY_dynamic){
     addSwitch(time, true, JT_free, SWInit_copy, from, to);
-  }
-
-  if(newMode==SY_dynamic){
-    addSwitch(time, true, JT_free, SWInit_copy, from, to);
-    addObjective(time, endTime, new F_NewtonEuler(world, to), OT_eq, NoArr, 1e0, k_order, +0, -1);
-  //  addObjective(time, time, new TM_LinAngVel(world, to), OT_eq, NoArr, 1e2, 2); //this should be implicit in the NE equations!
+    //new contacts don't exist in step [-1], so we rather impose only zero acceleration at [-2,-1,0]
+    addObjective(time, time, symbols2feature(FS_pose, {to}, world), OT_eq, NoArr, 1e0, k_order, +0, +0);
+    //... and physics starting from [-1,0,+1], ... until [-3,-2,-1]
+    addObjective(time, endTime, new F_NewtonEuler(world, to), OT_eq, NoArr, 1e0, k_order, +1, -1);
   }
 
   if(newMode==SY_dynamicTrans){
@@ -312,7 +315,24 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
     Transformation rel = 0;
     rel.pos.set(0,0, .5*(shapeSize(world, from) + shapeSize(world, to)));
     addSwitch(time, true, JT_transXYPhi, SWInit_copy, from, to, rel);
+#if 0
     addObjective(time, endTime, new F_NewtonEuler_DampedVelocities(world, to, 0., false), OT_eq, NoArr, 1e2, 1, +0, -1);
+#else
+    //eq for 3DOFs only
+    Objective *o = addObjective(time, endTime, new F_NewtonEuler_DampedVelocities(world, to, 0., false), OT_eq, NoArr, 1e2, 1, +0, -1);
+    o->map->scale=1e2 * arr(3,6,{
+                              1,0,0,0,0,0,
+                              0,1,0,0,0,0,
+                              0,0,0,0,0,1
+                            });
+    //sos penalty of other forces
+    o = addObjective(time, endTime, new F_NewtonEuler_DampedVelocities(world, to, 0., false), OT_sos, NoArr, 1e2, 1, +0, -1);
+    o->map->scale=1e1 * arr(3,6,{
+                              0,0,1,0,0,0,
+                              0,0,0,1,0,0,
+                              0,0,0,0,1,0
+                            });
+#endif
 //    addObjective(time, endTime, new F_pushed(world, to), OT_eq, NoArr, 1e0, 1, +0, -1);
 
     //-- no acceleration at start: +1 EXCLUDES (x-2, x-1, x0), ASSUMPTION: this is a placement that can excert impact
@@ -1130,7 +1150,7 @@ void KOMO::setSkeleton(const Skeleton &S, bool ignoreSwitches) {
 
 
       case SY_dampMotion: {
-        double sqrAccCost=1e-3, sqrVelCost=1e-2;
+        double sqrAccCost=1e-2, sqrVelCost=1e-2;
         if(sqrVelCost>0. && k_order>=1){
           addObjective(s.phase0, s.phase1, new TM_LinAngVel(world, s.frames(0)), OT_sos, NoArr, sqrVelCost, 1);
         }

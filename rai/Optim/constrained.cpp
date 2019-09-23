@@ -168,15 +168,15 @@ bool OptConstrained::step() {
         return true;
     }
   }
-  if(its>=2 && newtonStop==OptNewton::stopTinySteps) {
-    if(opt.verbose>0) cout <<"** optConstr. StoppingCriterion TinySteps<" <<opt.stopTolerance <<endl;
-    if(earlyPhase) earlyPhase=false;
-    else {
-      if(opt.stopGTolerance<0.
-          || L.get_sumOfGviolations() + L.get_sumOfHviolations() < opt.stopGTolerance)
-        return true;
-    }
-  }
+//  if(its>=2 && newtonStop==OptNewton::stopTinySteps) {
+//    if(opt.verbose>0) cout <<"** optConstr. StoppingCriterion TinySteps<" <<opt.stopTolerance <<endl;
+//    if(earlyPhase) earlyPhase=false;
+//    else {
+//      if(opt.stopGTolerance<0.
+//          || L.get_sumOfGviolations() + L.get_sumOfHviolations() < opt.stopGTolerance)
+//        return true;
+//    }
+//  }
   if(newton.evals>=opt.stopEvals) {
     if(opt.verbose>0) cout <<"** optConstr. StoppingCriterion MAX EVALS" <<endl;
     return true;
