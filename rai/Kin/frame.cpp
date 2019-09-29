@@ -926,7 +926,7 @@ void rai::Joint::read(const Graph &G) {
   else if(G.get(str, "joint")) { str >>type; }
   else if(G.get(d, "type"))    type=(JointType)d;
   else if(G.get(str, "type"))  { str >>type; }
-  else type=JT_hingeX;
+  else type=JT_rigid;
   
   dim = getDimFromType();
   

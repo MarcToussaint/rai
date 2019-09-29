@@ -553,20 +553,24 @@ void piecewiseLinearFeatures(arr& Z, const arr& X) {
   }
 }
 
-void rbfFeatures(arr& Z, const arr& X, const arr& Xtrain) {
+void rbfFeatures(arr& Z, const arr& X, const arr& Xtrain, arr& Jacobian) {
   uint rbfBias = rai::getParameter<uint>("rbfBias", 1);
   double rbfWidth = rai::sqr(rai::getParameter<double>("rbfWidth", .2));
   Z.resize(X.d0, Xtrain.d0+rbfBias);
+  if(!!Jacobian) Jacobian.resize(X.d0, Xtrain.d0+rbfBias, X.d1);
   for(uint i=0; i<Z.d0; i++) {
     if(rbfBias) Z(i, 0) = 1.; //bias feature also for rbfs?
     for(uint j=0; j<Xtrain.d0; j++) {
       Z(i, j+rbfBias) = ::exp(-sqrDistance(X[i], Xtrain[j])/rbfWidth);
+      if(!!Jacobian){
+        Jacobian(i,j+rbfBias,{}) = (-2.*Z(i, j+rbfBias)/rbfWidth) * (X[i] - Xtrain[j]);
+      }
     }
   }
 }
 
-arr makeFeatures(const arr& X, FeatureType featureType, const arr& rbfCenters) {
-  if(X.nd==1) return makeFeatures(~X, featureType, rbfCenters);
+arr makeFeatures(const arr& X, FeatureType featureType, const arr& rbfCenters, arr& Jacobian) {
+  if(X.nd==1) return makeFeatures(~X, featureType, rbfCenters, Jacobian);
   if(featureType==readFromCfgFileFT) featureType = (FeatureType)rai::getParameter<uint>("modelFeatureType", 1);
   arr Z;
   switch(featureType) {
@@ -574,7 +578,7 @@ arr makeFeatures(const arr& X, FeatureType featureType, const arr& rbfCenters) {
     case linearFT:    linearFeatures(Z, X);  break;
     case quadraticFT: quadraticFeatures(Z, X);  break;
     case cubicFT:     cubicFeatures(Z, X);  break;
-    case rbfFT:       if(!!rbfCenters) rbfFeatures(Z, X, rbfCenters); else rbfFeatures(Z, X, X);  break;
+    case rbfFT:       if(!!rbfCenters) rbfFeatures(Z, X, rbfCenters, Jacobian); else rbfFeatures(Z, X, X, Jacobian);  break;
     case piecewiseConstantFT:  piecewiseConstantFeatures(Z, X);  break;
     case piecewiseLinearFT:    piecewiseLinearFeatures(Z, X);  break;
     default: HALT("");
