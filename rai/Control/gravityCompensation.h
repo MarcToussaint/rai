@@ -9,10 +9,11 @@
 #ifndef GRAVITYCOMPENSATION_H
 #define GRAVITYCOMPENSATION_H
 
+#include <map>
+
 #include <Core/array.h>
 #include <Kin/kin.h>
-#include <Kin/taskMaps.h>
-#include <map>
+#include <Kin/TM_default.h>
 
 struct GravityCompensation {
 

@@ -146,8 +146,8 @@ void TEST(QuaternionKinematics){
   for(uint k=0;k<3;k++){
     rai::Quaternion target;
     target.setRandom();
-    G.getFrameByName("ref")->Q.rot = target;
-    G.getFrameByName("marker")->Q.rot = target;
+    G.getFrameByName("ref")->set_Q()->rot = target;
+    G.getFrameByName("marker")->set_Q()->rot = target;
     rai::Frame *endeff = G.getFrameByName("endeff");
     arr x;
     G.getJointState(x);
@@ -372,7 +372,7 @@ void TEST(FollowRedundantSequence){
   uint t,T,n=G.getJointStateDimension();
   arr x(n),y,J,invJ;
   x=.8;     //initialize with intermediate joint positions (non-singular positions)
-  rai::Vector rel = G.getFrameByName("endeff")->Q.pos; //this frame describes the relative position of the endeffector wrt. 7th body
+  rai::Vector rel = G.getFrameByName("endeff")->ensure_Q().pos; //this frame describes the relative position of the endeffector wrt. 7th body
 
   //-- generate a random endeffector trajectory
   arr Z, Zt; //desired and true endeffector trajectories
@@ -585,7 +585,7 @@ void TEST(InverseKinematics) {
 
   rai::Frame* drawer = world.getFrameByName("cabinet_drawer");
   rai::Frame* marker = world.getFrameByName("marker");
-  arr destination = conv_vec2arr(marker->X.pos);
+  arr destination = conv_vec2arr(marker->ensure_X().pos);
 
   cout << "destination: " << destination << endl;
   cout << "world state: " << world.q << endl;
@@ -597,16 +597,16 @@ void TEST(InverseKinematics) {
   world.watch(true, STRING("press key to continue"));
 
   cout << "moving destination (can't be reached)" << endl;
-  marker->X.pos.set(2., 1., 1);
-  destination = conv_vec2arr(marker->X.pos);
+  marker->set_X()->pos.set(2., 1., 1);
+  destination = conv_vec2arr(marker->ensure_X().pos);
   world.inverseKinematicsPos(*drawer, destination);
   cout << "destination: " << destination << endl;
   cout << "world state: " << world.q << endl;
   world.watch(true, STRING("press key to continue"));
 
   cout << "moving destination (can't be reached)" << endl;
-  marker->X.pos.set(-2., 0.1, 1.2);
-  destination = conv_vec2arr(marker->X.pos);
+  marker->set_X()->pos.set(-2., 0.1, 1.2);
+  destination = conv_vec2arr(marker->ensure_X().pos);
   world.inverseKinematicsPos(*drawer, destination);
   cout << "destination: " << destination << endl;
   cout << "world state: " << world.q << endl;

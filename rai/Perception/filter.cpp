@@ -10,6 +10,7 @@
 #include "filter.h"
 #include <Control/taskControl.h>
 #include <Kin/frame.h>
+#include <Kin/TM_default.h>
 
 Filter::Filter()
   : Thread("Filter", -1.),

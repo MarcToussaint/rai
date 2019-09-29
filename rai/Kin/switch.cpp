@@ -85,7 +85,6 @@ void rai::KinematicSwitch::apply(KinematicWorld& K) {
     //create a new joint
     rai::Transformation orgX = to->ensure_X();
     to->linkFrom(from);
-    to->set_X_isBad_inBranch();
     Joint *j = new Joint(*to);
     j->setType(jointType);
 
@@ -107,7 +106,6 @@ void rai::KinematicSwitch::apply(KinematicWorld& K) {
       j->frame->Q.setZero();
       j->calc_Q_from_q(q, 0);
     }
-    j->frame->set_X_isBad_inBranch();
 
     K.reset_q();
     //K.calc_q(); K.checkConsistency();

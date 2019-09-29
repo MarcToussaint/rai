@@ -260,7 +260,7 @@ arr Simulation::getObjectPoses(const StringA &objects){
   }
 
   arr X(objs.N, 7);
-  for(uint i=0;i<objs.N;i++) X[i] = objs.elem(i)->X.getArr7d();
+  for(uint i=0;i<objs.N;i++) X[i] = objs.elem(i)->ensure_X().getArr7d();
   return X;
 }
 

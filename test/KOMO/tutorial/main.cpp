@@ -1,7 +1,7 @@
 #include <Kin/kin.h>
 #include <Gui/opengl.h>
 #include <KOMO/komo.h>
-#include <Kin/taskMaps.h>
+#include <Kin/TM_default.h>
 
 //===========================================================================
 
@@ -21,7 +21,7 @@ void tutorialBasics(){
   komo.setTiming(2, 20, 5., 2);
 
   //-- default tasks for transition costs
-  komo.setSquaredQAccelerations();
+  komo.setSquaredQAccVelHoming();
   komo.setSquaredQuaternionNorms(-1., -1., 1e1); //when the kinematics includes quaternion joints, keep them roughly regularized
 
   //-- simple tasks, called low-level
@@ -83,7 +83,7 @@ void tutorialInverseKinematics(){
   komo.setTiming(1, 1);
 
   //-- default tasks for transition costs
-  komo.setSquaredQVelocities();
+  komo.setSquaredQAccVelHoming(1., -1., 0., 1., 1e-2);
   komo.setSquaredQuaternionNorms(-1., -1., 1e3); //when the kinematics includes quaternion joints, keep them roughly regularized
 
   //-- simple tasks, called low-level

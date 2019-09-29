@@ -4,11 +4,11 @@
 #include <Geo/mesh.h>
 #include <Gui/opengl.h>
 #include <Kin/kin.h>
-#include <Kin/taskMaps.h>
 #include <Kin/frame.h>
 #include <Geo/pairCollision.h>
 #include <Kin/kin_swift.h>
-#include <Kin/TM_QuaternionNorms.h>
+#include <Kin/F_PairCollision.h>
+#include <Kin/F_qFeatures.h>
 
 extern bool orsDrawWires;
 
@@ -20,8 +20,8 @@ void TEST(GJK_Jacobians) {
   rai::Joint j1(base, b1), J1(b1, B1), j2(B1, b2), J2(b2, B2);
   rai::Shape s1(B1), s2(B2);
   j1.type = j2.type = rai::JT_free; //trans3;
-  j1.frame->insertPreLink(rai::Transformation(0))->Q.addRelativeTranslation(1,1,1);
-  j2.frame->insertPreLink(rai::Transformation(0))->Q.addRelativeTranslation(-1,-1,1);
+  j1.frame->insertPreLink(rai::Transformation(0))->set_Q()->addRelativeTranslation(1,1,1);
+  j2.frame->insertPreLink(rai::Transformation(0))->set_Q()->addRelativeTranslation(-1,-1,1);
   J1.type = J2.type = rai::JT_free;
   s1.type() = s2.type() = rai::ST_ssCvx; //ST_mesh;
   s1.size() = s2.size() = ARR(.2);
@@ -77,7 +77,7 @@ void TEST(GJK_Jacobians) {
     cout <<k <<" center  ";
     succ &= checkJacobian(distCenter.vf(K), q, 1e-5);
 
-    PairCollision collInfo(s1.sscCore(), s2.sscCore(), s1.frame.X, s2.frame.X, s1.size(-1), s2.size(-1));
+    PairCollision collInfo(s1.sscCore(), s2.sscCore(), s1.frame.ensure_X(), s2.frame.ensure_X(), s1.size(-1), s2.size(-1));
 
     //    cout <<"distance: " <<y <<" vec=" <<y2 <<" error=" <<length(y2)-fabs(y(0)) <<endl;
     if(!succ) cout <<collInfo;
@@ -107,8 +107,8 @@ void TEST(GJK_Jacobians2) {
 
     rai::Joint *j = new rai::Joint(base, *a);
     j->setType(rai::JT_free);
-    j->frame->Q.setRandom();
-    j->frame->Q.pos.z += 1.;
+    j->frame->set_Q()->setRandom();
+    j->frame->set_Q()->pos.z += 1.;
 
     rai::Shape *s = new rai::Shape(*a);
     s->cont=true;
@@ -180,12 +180,12 @@ void TEST(GJK_Jacobians3) {
   rai::Shape s1(B1), s2(B2);
   J1.type = rai::JT_free;
   J2.type = rai::JT_rigid;
-//  B1.Q.setRandom();
-  B1.Q.pos = {0.,0., 1.05};
-  B2.Q.pos = {0.,0., 1.21};
-  B1.Q.pos.x += .03;
-  B1.Q.pos.y += .03;
-//  B1.Q.rot.addX(.01);
+//  B1.set_Q()->setRandom();
+  B1.set_Q()->pos = {0.,0., 1.05};
+  B2.set_Q()->pos = {0.,0., 1.21};
+  B1.set_Q()->pos.x += .03;
+  B1.set_Q()->pos.y += .03;
+//  B1.set_Q()->rot.addX(.01);
   s1.cont=s2.cont = true;
   B1.name = "1"; B2.name="2";
 

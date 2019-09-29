@@ -16,7 +16,7 @@ void TEST(Grasp){
   KOMO komo;
   komo.setModel(K);
   komo.setPathOpt(2.5, 10., 5.);
-  komo.setSquaredQAccelerations();
+  komo.setSquaredQAccVelHoming();
 
 #if 0
   komo.setGrasp(1., "endeff", "stick");

@@ -199,7 +199,7 @@ PYBIND11_MODULE(libry, m) {
   .def("setFrameRelativePose", [](ry::Config& self, const std::string& frame, const std::vector<double>& x) {
       auto Kset = self.set();
       rai::Frame *f = Kset->getFrameByName(frame.c_str(), true);
-      f->Q.set(conv_stdvec2arr(x));
+      f->set_Q()->set(conv_stdvec2arr(x));
       Kset->calc_fwdPropagateFrames();
   }, "TODO remove -> use frame" )
 
@@ -305,7 +305,7 @@ PYBIND11_MODULE(libry, m) {
     arr X;
     auto Kget = self.get();
     rai::Frame *f = Kget->getFrameByName(frame, true);
-    if(f) X = f->X.getArr7d();
+    if(f) X = f->ensure_X().getArr7d();
     return pybind11::array(X.dim(), X.p);
   }, "TODO remove -> use individual frame!" )
 
@@ -733,7 +733,7 @@ py::arg("featureSymbol"),
 
   .def("setPose", [](ry::RyFrame& self, const std::string& pose){
     WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
-    self.frame->X.setText(pose.c_str());
+    self.frame->set_X()->setText(pose.c_str());
   } )
 
   .def("setPosition", [](ry::RyFrame& self, const std::vector<double>& pos){
@@ -748,7 +748,7 @@ py::arg("featureSymbol"),
 
   .def("setRelativePose", [](ry::RyFrame& self, const std::string& pose){
     WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
-    self.frame->Q.setText(pose.c_str());
+    self.frame->set_Q()->setText(pose.c_str());
     self.frame->calc_X_from_parent();
   } )
 
@@ -819,7 +819,7 @@ py::arg("featureSymbol"),
     G.newNode<rai::String>({"name"}, {}, self.frame->name);
     G.newNode<int>({"ID"}, {}, self.frame->ID);
     self.frame->write(G);
-    if(!G["X"]) G.newNode<arr>({"X"}, {}, self.frame->X.getArr7d());
+    if(!G["X"]) G.newNode<arr>({"X"}, {}, self.frame->ensure_X().getArr7d());
     return graph2dict(G);
   } )
 

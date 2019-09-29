@@ -31,8 +31,8 @@ inline void clip(double& x, double r){
 double distance_SSPoints(rai::Frame& A, rai::Frame& B,rai::Vector& Pa, rai::Vector& Pb){
   CHECK(A.shape && A.shape->type()==rai::ST_retired_SSBox && B.shape && B.shape->type()==rai::ST_retired_SSBox,"");
   CHECK(!A.shape->size(0) && !B.shape->size(0) && !A.shape->size(1) && !B.shape->size(1) && !A.shape->size(2) && !B.shape->size(2), "can only handle SSpoints");
-  Pa = A.X.pos;
-  Pb = B.X.pos;
+  Pa = A.ensure_X().pos;
+  Pb = B.ensure_X().pos;
   rai::Vector c = Pa-Pb;
   double d = c.length();
   //account for radii
@@ -47,14 +47,14 @@ double distance_SSLinePoint(rai::Frame& A, rai::Frame& B,rai::Vector& Pa, rai::V
   if(!A.shape->size(0)){ //SSLinePoint
     return distance_SSPoints(A, B, Pa, Pb);
   }
-  rai::Vector a=A.X.rot.getX();
-  rai::Vector c=B.X.pos - A.X.pos;
+  rai::Vector a=A.ensure_X().rot.getX();
+  rai::Vector c=B.ensure_X().pos - A.ensure_X().pos;
   //get the 'coordinate' along the line segment
   double t = c*a;
   clip(t, A.shape->size(0));
   //compute closest points
-  Pa = A.X.pos + t*a;
-  Pb = B.X.pos;
+  Pa = A.ensure_X().pos + t*a;
+  Pb = B.ensure_X().pos;
   //distance
   c = Pa-Pb;
   double d = c.length();
@@ -70,9 +70,9 @@ double distance_SSLines(rai::Frame& A, rai::Frame& B,rai::Vector& Pa, rai::Vecto
   if(!B.shape->size(0)){ //SSLinePoint
     return distance_SSLinePoint(A, B, Pa, Pb);
   }
-  rai::Vector a=A.X.rot.getX();
-  rai::Vector b=B.X.rot.getX();
-  rai::Vector c=B.X.pos - A.X.pos;
+  rai::Vector a=A.ensure_X().rot.getX();
+  rai::Vector b=B.ensure_X().rot.getX();
+  rai::Vector c=B.ensure_X().pos - A.ensure_X().pos;
   //get the 'coordinates' along the line segments
   double A_dot_B = a*b;
   double A_dot_C = a*c;
@@ -86,8 +86,8 @@ double distance_SSLines(rai::Frame& A, rai::Frame& B,rai::Vector& Pa, rai::Vecto
   t = u*A_dot_B + A_dot_C;
   clip(t, A.shape->size(0));
   //compute closest points
-  Pa = A.X.pos + t*a;
-  Pb = B.X.pos + u*b;
+  Pa = A.ensure_X().pos + t*a;
+  Pb = B.ensure_X().pos + u*b;
   //distance
   c = Pa-Pb;
   double d = c.length();
@@ -132,11 +132,11 @@ double distance_(rai::Frame& A, rai::Frame& B, rai::Vector& Pa, rai::Vector& Pb)
   arr& Bs = B.shape->size();
   As(0)-=2.*As(3);  As(1)-=2.*As(3);  As(2)-=2.*As(3);
   Bs(0)-=2.*Bs(3);  Bs(1)-=2.*Bs(3);  Bs(2)-=2.*Bs(3);
-  A.X.pos -= 0.5*(A.X.rot*rai::Vector(As(0), As(1), As(2)));
-  B.X.pos -= 0.5*(B.X.rot*rai::Vector(Bs(0), Bs(1), Bs(2)));
+  A.set_X()->pos -= 0.5*(A.ensure_X().rot*rai::Vector(As(0), As(1), As(2)));
+  B.set_X()->pos -= 0.5*(B.ensure_X().rot*rai::Vector(Bs(0), Bs(1), Bs(2)));
   double d=distance_SSRects(A, B, Pa, Pb);
-  A.X.pos += 0.5*(A.X.rot*rai::Vector(As(0), As(1), As(2)));
-  B.X.pos += 0.5*(B.X.rot*rai::Vector(Bs(0), Bs(1), Bs(2)));
+  A.set_X()->pos += 0.5*(A.ensure_X().rot*rai::Vector(As(0), As(1), As(2)));
+  B.set_X()->pos += 0.5*(B.ensure_X().rot*rai::Vector(Bs(0), Bs(1), Bs(2)));
   As(0)+=2.*As(3);  As(1)+=2.*As(3);  As(2)+=2.*As(3);
   Bs(0)+=2.*Bs(3);  Bs(1)+=2.*Bs(3);  Bs(2)+=2.*Bs(3);
   return d;
@@ -150,8 +150,8 @@ void TEST(Distance){
   A.setShape(rai::ST_ssBox, {1.6, 1.6, .0, .0});
   B.setShape(rai::ST_ssBox, {1.6, 1.6, .0, .0});
   for(uint k=0;k<20;k++){
-    A.X.setRandom(); A.X.pos(2) += 2.;
-    B.X.setRandom(); B.X.pos(2) += 2.;
+    A.set_X()->setRandom(); A.set_X()->pos(2) += 2.;
+    B.set_X()->setRandom(); B.set_X()->pos(2) += 2.;
     double d=distance_(A, B, Pa, Pb);
     double d2=(Pa-Pb).length();
     cout <<"d=" <<d <<' ' <<d2 <<' ' <<Pa <<Pb <<endl;

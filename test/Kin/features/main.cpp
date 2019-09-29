@@ -1,10 +1,8 @@
-#include <Kin/TM_QuaternionNorms.h>
-#include <Kin/TM_PairCollision.h>
+#include <Kin/F_qFeatures.h>
+#include <Kin/F_PairCollision.h>
 #include <Kin/TM_angVel.h>
-#include <Kin/TM_NewtonEuler.h>
-#include <Kin/TM_energy.h>
-#include <Kin/TM_gravity.h>
-#include <Kin/TM_ContactConstraints.h>
+#include <Kin/F_dynamics.h>
+#include <Kin/F_contacts.h>
 #include <Kin/contact.h>
 #include <iomanip>
 
@@ -19,8 +17,8 @@ void testFeature() {
   world.name = "world";
   obj1.name = "obj1";
   obj2.name = "obj2";
-  obj1.Q = "t(1 1 1)";
-  obj2.Q = "t(-1 -1 1)";
+  obj1.set_Q()->setText("t(1 1 1)");
+  obj2.set_Q()->setText("t(-1 -1 1)");
 
   rai::Joint j1(obj1), j2(obj2);
   j1.type = j2.type = rai::JT_free;
@@ -50,7 +48,7 @@ void testFeature() {
   F.append(new TM_PairCollision (K, "obj1", "obj2", TM_PairCollision::_center));
   F.append(new TM_LinAngVel (K, "obj1"));
   F.append(new TM_LinAngVel (K, "obj1")) -> order=2;
-  F.append(new TM_ZeroAcc (K, "obj1"));
+  //  F.append(new TM_ZeroAcc (K, "obj1"));
 //  F.append(new TM_Energy );
 //  F.append(new TM_ContactConstraints (K, "obj1", "obj2"));
   F.append(new F_NewtonEuler (K, "obj1"));

@@ -58,7 +58,7 @@ void TEST(BSpline){
   cout <<"times = " <<S.times <<endl;
 
   plotOpengl();
-  plotModule.drawBox=true;
+  plotModule()->drawBox=true;
   S.plotBasis();
   
   arr path = S.eval();
