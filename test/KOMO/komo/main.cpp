@@ -2,7 +2,7 @@
 #include <Kin/frame.h>
 #include <Gui/opengl.h>
 #include <KOMO/komo-ext.h>
-#include <Kin/TM_ContactConstraints.h>
+#include <Kin/F_contacts.h>
 #include <Kin/TM_time.h>
 #include <Kin/TM_default.h>
 
@@ -18,7 +18,7 @@ void TEST(Easy){
   KOMO_ext komo;
   komo.setModel(K, true);
   komo.setPathOpt(1., 100, 5.);
-  komo.setSquaredQAccelerations();
+  komo.setSquaredQAccVelHoming();
 
   //-- set a time optim objective
 //  komo.addObjective(-1., -1., new TM_Time(), OT_sos, {}, 1e2, 1); //smooth time evolution
@@ -50,7 +50,7 @@ void TEST(Align){
   KOMO_ext komo;
   komo.setModel(K);
   komo.setPathOpt(1., 100, 5.);
-  komo.setSquaredQAccelerations();
+  komo.setSquaredQAccVelHoming();
 
 //  komo.setPosition(1., 1., "endeff", "target");
   komo.addObjective({1.}, OT_sos, FS_positionRel, {"target", "endeff"});

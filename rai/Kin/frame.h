@@ -42,6 +42,27 @@ extern rai::Frame& NoFrame;
 namespace rai {
 
 //===========================================================================
+  //
+  // Transformation tokens allow setting frame state (in destructor) after manipulating a transform
+  //
+
+  struct Transformation_Xtoken{
+    Frame& f;
+    Transformation_Xtoken(Frame& _f):f(_f) {}
+    ~Transformation_Xtoken();
+    Transformation* operator->();
+    void operator=(const Transformation&);
+  };
+
+  struct Transformation_Qtoken{
+    Frame& f;
+    Transformation_Qtoken(Frame& _f):f(_f) {}
+    ~Transformation_Qtoken();
+    Transformation* operator->();
+    void operator=(const Transformation&);
+  };
+
+//===========================================================================
 
 /// a Frame can have a link (also joint), shape (visual or coll), and/or intertia (mass) attached to it
 struct Frame : NonCopyable{
@@ -53,6 +74,9 @@ struct Frame : NonCopyable{
 protected:
   Transformation Q=0;        ///< relative transform to parent
   Transformation X=0;        ///< frame's absolute pose
+  void _state_setXBadinBranch();
+  void _state_updateAfterTouchingX();
+  void _state_updateAfterTouchingQ();
 public:
   double tau=0.;            ///< frame's absolute time (could be thought as part of the transformation X in space-time)
   Graph ats;                 ///< list of any-type attributes
@@ -67,7 +91,7 @@ public:
   //-- data structure state (lazy evaluation leave the state structure out of sync)
   bool _state_X_isGood=true; // X represents the current state
 
-  Frame(KinematicWorld& _K, const Frame *copyBody=NULL);
+  Frame(KinematicWorld& _K, const Frame *copyFrame=NULL);
   Frame(Frame *_parent);
   ~Frame();
   
@@ -80,6 +104,8 @@ public:
   void calc_Q_from_parent(bool enforceWithinJoint = true);
   const Transformation& ensure_X();
   const Transformation& ensure_Q();
+  Transformation_Xtoken set_X(){ return Transformation_Xtoken(*this); }
+  Transformation_Qtoken set_Q(){ return Transformation_Qtoken(*this); }
   const Transformation& X_const() const;
   const Transformation& Q_const() const;
 
@@ -97,7 +123,6 @@ public:
   Frame* getUpwardLink(rai::Transformation& Qtotal=NoTransformation, bool untilPartBreak=false) const; ///< recurse upward BEFORE the next joint and return relative transform (this->Q is not included!b)
   FrameL getPathToUpwardLink(bool untilPartBreak=false); ///< recurse upward BEFORE the next joint and return relative transform (this->Q is not included!b)
   const char* isPart();
-  void set_X_isBad_inBranch();
 
   //I/O
   void read(const Graph &ats);
@@ -129,6 +154,8 @@ public:
   friend struct KinematicWorld;
   friend struct KinematicSwitch;
   friend struct Joint;
+  friend struct Transformation_Xtoken;
+  friend struct Transformation_Qtoken;
 };
 stdOutPipe(Frame)
 
@@ -238,7 +265,7 @@ struct Shape : NonCopyable, GLDrawer {
   char cont=0;           ///< are contacts registered (or filtered in the callback)
   bool visual=true;
   
-  Shape(Frame& f, const Shape *copyShape=NULL); //new Shape, being added to graph and body's shape lists
+  Shape(Frame& f, const Shape *copyShape=NULL); //new Shape, being added to graph and frame's shape lists
   virtual ~Shape();
 
   bool canCollideWith(const Frame *f) const{

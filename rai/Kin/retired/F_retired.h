@@ -10,16 +10,16 @@
 
 #include "feature.h"
 
-struct TM_Energy : Feature {
-  double gravity=9.81;
+//===========================================================================
 
-  TM_Energy();
+struct TM_qZeroVels:Feature {
+  TM_qZeroVels() { }
 
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& K) { HALT("can only be of higher order"); }
-  virtual uint dim_phi(const rai::KinematicWorld& K) { HALT("can only be of higher order"); }
-
+  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G) {NIY}
   virtual void phi(arr& y, arr& J, const WorldL& Ktuple);
+  virtual uint dim_phi(const rai::KinematicWorld& G) {NIY}
   virtual uint dim_phi(const WorldL& Ktuple);
-
-  virtual rai::String shortTag(const rai::KinematicWorld& G) { return STRING("Energy-"<<order); }
+private:
+  std::map<rai::KinematicWorld*, uint> dimPhi;
 };
+

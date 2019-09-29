@@ -21,3 +21,15 @@ struct TM_Max : Feature {
   virtual uint dim_phi(const rai::KinematicWorld& G) { return 1; }
   virtual rai::String shortTag(const rai::KinematicWorld& G) { return STRING("Max:"<<map->shortTag((G))); }
 };
+
+//===========================================================================
+
+struct TM_Norm : Feature {
+  Feature *map;
+
+  TM_Norm(Feature *map) : map(map) {}
+
+  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
+  virtual uint dim_phi(const rai::KinematicWorld& G);
+  virtual rai::String shortTag(const rai::KinematicWorld& G) { return STRING("Norm:"<<map->shortTag((G))); }
+};

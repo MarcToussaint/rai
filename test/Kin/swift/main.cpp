@@ -12,8 +12,8 @@ void TEST(Swift) {
 
   uint t;
   for(t=0;t<50;t++){
-    K.frames(0)->X.addRelativeTranslation(0,0,-.01);
-    K.frames(0)->X.addRelativeRotationDeg(10,1,0,0);
+    K.frames(0)->set_X()->addRelativeTranslation(0,0,-.01);
+    K.frames(0)->set_X()->addRelativeRotationDeg(10,1,0,0);
     K.calc_fwdPropagateFrames();
 
     K.stepSwift();

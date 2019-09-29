@@ -6,22 +6,27 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "TM_qLimits.h"
+#include "F_operators.h"
 
 //===========================================================================
 
-void TM_qLimits::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
-//  if(!limits.N)
-  limits=G.getLimits(); //G might change joint ordering (kinematic switches), need to query limits every time
-  G.kinematicsLimitsCost(y, J, limits);
+void TM_Max::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
+  map->__phi(y, J, G);
+  uint i=argmax(y);
+  y = ARR(y(i));
+  if(!!J) J=~J[i];
+  if(neg) { y*=-1.; if(!!J) J*=-1.; }
 }
 
 //===========================================================================
 
-void LimitsConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
-//  if(!limits.N)
-  limits = G.getLimits();
-  G.kinematicsLimitsCost(y, J, limits, margin);
-  y -= .5;
+void TM_Norm::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
+  map->__phi(y, J, G);
+  double l = sqrt(sumOfSqr(y));
+  if(!!J) J = ~(y/l)*J;
+  y = ARR(l);
 }
 
+uint TM_Norm::dim_phi(const rai::KinematicWorld& G) {
+  return 1;
+}

@@ -87,7 +87,7 @@ Feature *newTaskMap(const Node* specs, const rai::KinematicWorld& world) {
   const Graph& params = specs->graph();
 //  rai::String type = specs.get<rai::String>("type", "pos");
   if(type=="wheels") {
-    map = new TM_qItself(world, "worldTranslationRotation");
+    map = new F_qItself(world, "worldTranslationRotation");
   } else if(type=="collisionIneq") {
     map = new CollisionConstraint((params?params->get<double>("margin", 0.1):0.1));
   } else if(type=="collisionPairs") {
@@ -109,9 +109,9 @@ Feature *newTaskMap(const Node* specs, const rai::KinematicWorld& world) {
   } else if(type=="proxy") {
     map = new TM_Proxy(TMT_allP, {0u}, (params?params->get<double>("margin", 0.1):0.1));
   } else if(type=="qItself") {
-    if(ref1) map = new TM_qItself(world, ref1);
-    else if(params && params->getNode("Hmetric")) map = new TM_qItself(params->getNode("Hmetric")->get<double>()*world.getHmetric()); //world.naturalQmetric()); //
-    else map = new TM_qItself();
+    if(ref1) map = new F_qItself(world, ref1);
+    else if(params && params->getNode("Hmetric")) map = new F_qItself(params->getNode("Hmetric")->get<double>()*world.getHmetric()); //world.naturalQmetric()); //
+    else map = new F_qItself();
   } else if(type=="GJK") {
     map = new TM_GJK(world, ref1, ref2, true);
   } else {
@@ -274,7 +274,7 @@ void KOMO::parseTasks(const Graph& specs, int Tinterval, uint Tzero) {
   
   //-- add TransitionTask for InvKinematics
   if(!T) {
-    Feature *map = new TM_qItself();
+    Feature *map = new F_qItself();
     map->order = 0;
     map->type=OT_sos;
     Task *task = new Task(map);

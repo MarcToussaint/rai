@@ -1421,10 +1421,12 @@ rai::String singleString(const StringA& strs) {
 // file:///usr/share/doc/liblapack-doc/lug/index.html
 
 #ifdef RAI_LAPACK
-#ifdef NO_BLAS
+#if 1 //def NO_BLAS
 void blas_MM(arr& X, const arr& A, const arr& B) {       rai::useLapack=false; innerProduct(X, A, B); rai::useLapack=true; };
 void blas_MsymMsym(arr& X, const arr& A, const arr& B) { rai::useLapack=false; innerProduct(X, A, B); rai::useLapack=true; };
 void blas_Mv(arr& y, const arr& A, const arr& x) {       rai::useLapack=false; innerProduct(y, A, x); rai::useLapack=true; };
+void blas_A_At(arr& X, const arr& A) { X = A*~A; }
+void blas_At_A(arr& X, const arr& A) { X = ~A*A; }
 #else
 void blas_MM(arr& X, const arr& A, const arr& B) {
   CHECK_EQ(A.d1,B.d0, "matrix multiplication: wrong dimensions");

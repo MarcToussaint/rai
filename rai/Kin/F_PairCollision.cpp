@@ -6,7 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "TM_PairCollision.h"
+#include "F_PairCollision.h"
 #include "frame.h"
 #include <Geo/pairCollision.h>
 

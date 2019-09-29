@@ -7,7 +7,6 @@
     --------------------------------------------------------------  */
 
 #include "RTControllerSimulation.h"
-#include <Kin/taskMaps.h>
 #include <Kin/proxy.h>
 #include <Kin/frame.h>
 

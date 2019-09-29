@@ -1,6 +1,5 @@
 #include "TM_angVel.h"
 #include "TM_default.h"
-#include "flag.h"
 #include <Geo/geo.h>
 
 void angVel_base(const rai::KinematicWorld& K0, rai::KinematicWorld& K1, uint i, arr& y, arr& J){
@@ -147,9 +146,9 @@ void TM_LinAngVel::phi(arr& y, arr& J, const WorldL& Ktuple){
   y.resize(6);
   if(!!J) J.resize(6, getKtupleDim(Ktuple).last()).setZero();
 
-  if(Ktuple.elem(-2)->frames(i)->flags & (1<<FL_impulseExchange)){
-    return;
-  }
+//  if(Ktuple.elem(-2)->frames(i)->flags & (1<<FL_impulseExchange)){
+//    return;
+//  }
 
 //  rai::Frame *b0 = Ktuple.elem(-2)->frames(i);    CHECK(&b0->K==Ktuple.elem(-2),"");
 //  rai::Frame *b1 = Ktuple.elem(-1)->frames(i);    CHECK(&b1->K==Ktuple.elem(-1),"");

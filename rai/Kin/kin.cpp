@@ -456,7 +456,8 @@ arr rai::KinematicWorld::calc_fwdPropagateVelocities() {
 /** @brief given the absolute frames of all nodes and the two rigid (relative)
     frames A & B of each edge, this calculates the dynamic (relative) joint
     frame X for each edge (which includes joint transformation and errors) */
-void rai::KinematicWorld::calc_Q_from_BodyFrames() {
+void rai::KinematicWorld::calc_Q_from_Frames() {
+  HALT("should never be called (anymore)");
   for(Frame *f:frames) if(f->parent) {
     f->calc_Q_from_parent();
   }
@@ -843,7 +844,7 @@ void rai::KinematicWorld::setFrameState(const arr& X, const StringA& frameNames,
   _state_Q_isGood=false;
 
   if(calc_q_from_X){
-    calc_Q_from_BodyFrames();
+    calc_Q_from_Frames();
     calc_q_from_Q();
   }
 }
@@ -1161,8 +1162,8 @@ void rai::KinematicWorld::kinematicsVec(arr& y, arr& J, Frame *a, const rai::Vec
 void rai::KinematicWorld::kinematicsQuat(arr& y, arr& J, Frame *a) const { //TODO: allow for relative quat
   CHECK_EQ(&a->K, this, "");
   a->ensure_X();
-  rai::Quaternion rot_a = a->X.rot;
-  if(!!y) y = conv_quat2arr(rot_a); //return the vec
+  const rai::Quaternion& rot_a = a->X.rot;
+  if(!!y) y = rot_a.getArr4d();
   if(!!J) {
     arr A;
     axesMatrix(A, a);
@@ -1446,25 +1447,25 @@ FrameL rai::KinematicWorld::getFramesByNames(const StringA& frameNames) const{
 //}
 
 /// find joint connecting two bodies
-rai::Joint* rai::KinematicWorld::getJointByBodies(const Frame* from, const Frame* to) const {
+rai::Joint* rai::KinematicWorld::getJointByFrames(const Frame* from, const Frame* to) const {
   if(to->joint && to->parent==from) return to->joint;
   return NULL;
 }
 
 /// find joint connecting two bodies with specific names
-rai::Joint* rai::KinematicWorld::getJointByBodyNames(const char* from, const char* to) const {
+rai::Joint* rai::KinematicWorld::getJointByFrameNames(const char* from, const char* to) const {
   Frame *f = getFrameByName(from);
   Frame *t = getFrameByName(to);
   if(!f || !t) return NULL;
-  return getJointByBodies(f, t);
+  return getJointByFrames(f, t);
 }
 
 /// find joint connecting two bodies with specific names
-rai::Joint* rai::KinematicWorld::getJointByBodyIndices(uint ifrom, uint ito) const {
+rai::Joint* rai::KinematicWorld::getJointByFrameIndices(uint ifrom, uint ito) const {
   if(ifrom>=frames.N || ito>=frames.N) return NULL;
   Frame *f = frames(ifrom);
   Frame *t = frames(ito);
-  return getJointByBodies(f, t);
+  return getJointByFrames(f, t);
 }
 
 uintA rai::KinematicWorld::getQindicesByNames(const StringA& jointNames) const{
@@ -1810,7 +1811,7 @@ double rai::KinematicWorld::totalContactPenetration() {
   double D=0.;
   for(const Proxy& p:proxies) {
     //early check: if swift is way out of collision, don't bother computing it precise
-    if(p.d > p.a->shape->radius()+p.a->shape->radius()+.01) continue;
+    if(p.d > p.a->shape->radius()+p.b->shape->radius()+.01) continue;
     //exact computation
     if(!p.coll) ((Proxy*)&p)->calc_coll(*this);
     double d = p.coll->getDistance();
@@ -2192,8 +2193,8 @@ void rai::KinematicWorld::init(const Graph& G, bool addInsteadOfClear) {
   
   //-- clean up the graph
   calc_q();
-  checkConsistency();
   calc_fwdPropagateFrames();
+  checkConsistency();
 }
 
 void rai::KinematicWorld::writePlyFile(const char* filename) const {
@@ -2432,7 +2433,7 @@ void rai::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, do
   if(!addValues) { y.setZero();  if(!!J) J.setZero(); }
 
   //early check: if swift is way out of collision, don't bother computing it precise
-  if(p.d>p.a->shape->radius()+p.a->shape->radius()+.01+margin) return;
+  if(p.d > p.a->shape->radius() + p.b->shape->radius() + .01 + margin) return;
   
   if(!p.coll) ((Proxy*)&p)->calc_coll(*this);
 
@@ -2556,7 +2557,7 @@ void rai::KinematicWorld::kinematicsLimitsCost(arr &y, arr &J, const arr& limits
 }
 
 /// Compute the new configuration q such that body is located at ytarget (with deplacement rel).
-void rai::KinematicWorld::inverseKinematicsPos(Frame& body, const arr& ytarget,
+void rai::KinematicWorld::inverseKinematicsPos(Frame& frame, const arr& ytarget,
                                                const rai::Vector& rel_offset, int max_iter) {
   arr q0, q;
   getJointState(q0);
@@ -2570,7 +2571,7 @@ void rai::KinematicWorld::inverseKinematicsPos(Frame& body, const arr& ytarget,
   // first iteration: $q* = q' + J^# (y* - y')$
   // next iterations: $q* = q' + J^# (y* - y') + (I - J# J)(q0 - q')$
   for(int i = 0; i < max_iter; i++) {
-    kinematicsPos(y, J, &body, rel_offset);
+    kinematicsPos(y, J, &frame, rel_offset);
     invJ = ~J * inverse(J * ~J);  // inverse_SymPosDef should work!?
     q = q + invJ * (ytarget - y);
     
@@ -2690,20 +2691,8 @@ void rai::KinematicWorld::reconnectLinksToClosestJoints() {
         link->parentOf.append(f);
         f->parent = link;
         f->Q = Q;
+        f->_state_updateAfterTouchingQ();
       }
-
-      //      if(!link->shape && f->shape && f->Q.isZero()){ //f has a shape, link not -> move shape to link
-      //        LOG(-1) <<"Shape '" <<f->name <<"' could be reassociated to link '" <<link->name <<"' (child of '" <<(link->parent?link->parent->name:STRING("NONE")) <<"')";
-      ////        link->shape = f->shape;
-      ////        f->shape = NULL;
-      //      }
-
-      //      if(!link->inertia && f->inertia && f->Q.isZero()){ //f has a shape, link not -> move shape to link
-      //        LOG(-1) <<"Inertia '" <<f->name <<"' could be reassociated to link '" <<link->name <<"' (child of '" <<(link->parent?link->parent->name:STRING("NONE")) <<"')";
-      ////        link->shape = f->shape;
-      ////        f->shape = NULL;
-      //      }
-
     }
   }
 }
@@ -2758,14 +2747,26 @@ bool rai::KinematicWorld::hasTimeJoint(){
 }
 
 bool rai::KinematicWorld::checkConsistency() const {
+  /* state consistency concept:
+     the configuration represents exactly one concrete current configuration, not multiple different ones in q or Q or X
+     'good' means correctly reflecting the current configuration
+     the relative transforms Q of all frames are ALWAYS 'good'
+     when a frame has no parent, Q is identical to X and X is 'good'
+     when a frame has a parent, X may be non-good, but can always be computed using ensure_X
+     q may generaly be non-good
+     when setJointState is called, q becomes good and all Q are recomputed to stay consistent
+     when frame_setX... is called, q becomes non-good, all frame descendents will have non-good X, Q for that frame is recomputed (from its parent's X), and X for that frame is good as well
+
+     when initially loading a configuration, q and all X are typically non-good
+     */
   //check qdim
-  if(_state_q_isGood) { //  q.nd) {
+  if(_state_q_isGood) {
     uint N = analyzeJointStateDimensions();
     CHECK_EQ(1, q.nd, "");
     CHECK_EQ(N, q.N, "");
     if(qdot.N) CHECK_EQ(N, qdot.N, "");
     
-    //count yourself and check...
+    //count dimensions yourself and check...
     uint myqdim = 0;
     for(Joint *j: fwdActiveJoints) {
       if(j->mimic) {
@@ -2784,6 +2785,13 @@ bool rai::KinematicWorld::checkConsistency() const {
       myqdim += c->qDim();
     }
     CHECK_EQ(myqdim, N, "qdim is wrong");
+
+    //consistency with Q
+    for(Joint *j: fwdActiveJoints) {
+      arr jq = j->calc_q_from_Q(j->frame->Q);
+      CHECK_EQ(jq.N, j->dim, "");
+      for(int i=0;i<jq.N;i++) CHECK_ZERO(jq.elem(i) - q.elem(j->qIndex+i), 1e-6, "");
+    }
   }
   
   for(Frame *a: frames) {
@@ -2801,8 +2809,17 @@ bool rai::KinematicWorld::checkConsistency() const {
     CHECK_ZERO(a->Q.rot.normalization()-1., 1e-4, "");
     CHECK_ZERO(a->X.rot.normalization()-1., 1e-4, "");
 
-//    if(a->parent && a->_state_X_isGood) CHECK(a->parent->_state_X_isGood, "");
-    if(!a->parent) CHECK(a->_state_X_isGood, "");
+    // frame has no parent -> Q and X are identical, X is good
+    if(!a->parent){
+      CHECK(a->_state_X_isGood, "");
+      CHECK(a->Q.isZero(), "");
+    }
+    // frame has a parent -> X may be non-good, otherwise it must be consistent with Q
+    if(a->parent && a->_state_X_isGood){
+      CHECK(a->parent->_state_X_isGood, "");
+      rai::Transformation test = a->parent->X * a->Q;
+      CHECK_ZERO((a->X / test).diffZero(), 1e-6, "");
+    }
   }
   
   Joint *j;
@@ -3062,14 +3079,14 @@ void kinVelocity(arr &y, arr &J, uint frameId, const WorldL &Ktuple, double tau)
 
 #undef LEN
 
-double forceClosureFromProxies(rai::KinematicWorld& K, uint bodyIndex, double distanceThreshold, double mu, double torqueWeights) {
+double forceClosureFromProxies(rai::KinematicWorld& K, uint frameIndex, double distanceThreshold, double mu, double torqueWeights) {
   rai::Vector c, cn;
   arr C, Cn;
   for(const rai::Proxy& p: K.proxies) {
     int body_a = p.a?p.a->ID:-1;
     int body_b = p.b?p.b->ID:-1;
-    if(p.d<distanceThreshold && (body_a==(int)bodyIndex || body_b==(int)bodyIndex)) {
-      if(body_a==(int)bodyIndex) {
+    if(p.d<distanceThreshold && (body_a==(int)frameIndex || body_b==(int)frameIndex)) {
+      if(body_a==(int)frameIndex) {
         c = p.posA;
         cn=-p.normal;
       } else {
@@ -3082,7 +3099,7 @@ double forceClosureFromProxies(rai::KinematicWorld& K, uint bodyIndex, double di
   }
   C .reshape(C.N/3, 3);
   Cn.reshape(C.N/3, 3);
-  double fc=forceClosure(C, Cn, K.frames(bodyIndex)->ensure_X().pos, mu, torqueWeights, NULL);
+  double fc=forceClosure(C, Cn, K.frames(frameIndex)->ensure_X().pos, mu, torqueWeights, NULL);
   return fc;
 }
 
@@ -3099,7 +3116,7 @@ void transferQbetweenTwoWorlds(arr& qto, const arr& qfrom, const rai::KinematicW
   match = -1;
   rai::Joint* jfrom;
   for(rai::Frame* f: from.frames) if((jfrom=f->joint)) {
-    rai::Joint* jto = to.getJointByBodyNames(jfrom->from()->name, jfrom->frame->name);
+    rai::Joint* jto = to.getJointByFrameNames(jfrom->from()->name, jfrom->frame->name);
     if(!jto || !jfrom->qDim() || !jto->qDim()) continue;
     CHECK_EQ(jfrom->qDim(), jto->qDim(), "joints must have same dimensionality");
     for(uint i=0; i<jfrom->qDim(); i++) {

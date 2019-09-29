@@ -8,8 +8,8 @@
 
 #include "gravityCompensation.h"
 #include <Algo/MLcourse.h>
-#include <Kin/taskMaps.h>
 #include <Kin/frame.h>
+#include <Kin/F_qFeatures.h>
 
 struct GravityCompensation::CV : public CrossValidation {
   void  train(const arr& X, const arr& y, double param, arr& beta) {
@@ -297,7 +297,7 @@ void GravityCompensation::testForLimits() {
   uint j = 0;
   for(uint i = 0; i < q.d0; i++) {
     world.setJointState(q[i]);
-    LimitsConstraint limits(0.03);
+    F_qLimits limits; //(0.03);
     arr y;
     limits.phi(y,NoArr,world);
     if(y(0) > 0) {
@@ -321,7 +321,7 @@ void GravityCompensation::removeLimits() {
   
   for(uint i = 0; i < q.d0; i++) {
     world.setJointState(q[i]);
-    LimitsConstraint limits;
+    F_qLimits limits;
     arr y;
     limits.phi(y, NoArr, world);
     if(y(0) <= 0) {

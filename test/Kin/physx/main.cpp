@@ -12,7 +12,7 @@ int main(int argc,char** argv){
   rai::Frame *f = C.addFrame("base");
   f->setShape(rai::ST_ssBox, {8., 8., .2, .02});
   f->setColor({.5, .5, .5});
-  f->X.pos.set(0,0,.1);
+  f->set_X()->pos.set(0,0,.1);
   f->shape->cont=1;
 
   for(uint k=0;k<10;k++){
@@ -24,8 +24,8 @@ int main(int argc,char** argv){
     }
     (new rai::Inertia(*f)) -> type=rai::BT_dynamic;
     f->shape->cont=1;
-    f->X.setRandom();
-    f->X.pos.z += 2.;
+    f->set_X()->setRandom();
+    f->set_X()->pos.z += 2.;
   }
 
 //  BulletInterface BT(C);

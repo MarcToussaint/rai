@@ -6,15 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "TM_Norm.h"
+#include "TM_QuaternionNorms.h"
+#include "F_qFeatures.h"
+#include "frame.h"
 
-void TM_Norm::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
-  map->__phi(y, J, G);
-  double l = sqrt(sumOfSqr(y));
-  if(!!J) J = ~(y/l)*J;
-  y = ARR(l);
-}
-
-uint TM_Norm::dim_phi(const rai::KinematicWorld& G) {
-  return 1;
-}

@@ -11,7 +11,6 @@
 #include "kin.h"
 #include "uncertainty.h"
 #include "contact.h"
-#include "flag.h"
 
 #ifdef RAI_GL
 #include <Gui/opengl.h>
@@ -30,6 +29,16 @@ template<> const char* rai::Enum<rai::JointType>::names []= {
 template<> const char* rai::Enum<rai::BodyType>::names []= {
   "dynamic", "kinematic", "static", NULL
 };
+
+rai::Transformation_Xtoken::~Transformation_Xtoken() { f._state_updateAfterTouchingX(); }
+rai::Transformation_Qtoken::~Transformation_Qtoken() { f._state_updateAfterTouchingQ(); }
+
+rai::Transformation* rai::Transformation_Xtoken::operator->(){ f.ensure_X(); return &f.X; }
+rai::Transformation* rai::Transformation_Qtoken::operator->(){ return &f.Q; }
+
+void rai::Transformation_Xtoken::operator=(const rai::Transformation& _X){ f.X=_X; }
+void rai::Transformation_Qtoken::operator=(const rai::Transformation& _Q){ f.Q=_Q; }
+
 
 //===========================================================================
 //
@@ -99,25 +108,35 @@ void rai::Frame::calc_X_from_parent() {
 void rai::Frame::calc_Q_from_parent(bool enforceWithinJoint) {
   CHECK(parent,"");
   CHECK(_state_X_isGood, "");
-  CHECK(parent->_state_X_isGood, "");
 
-  Q.setDifference(parent->X, X);
+  Q.setDifference(parent->ensure_X(), X);
   if(joint && enforceWithinJoint) {
     arr q = joint->calc_q_from_Q(Q);
     joint->calc_Q_from_q(q, 0);
   }
-
-  K._state_q_isGood=false;
+  _state_updateAfterTouchingQ();
 }
 
 const rai::Transformation& rai::Frame::ensure_X(){
-  if(!_state_X_isGood){ if(parent) parent->ensure_X(); calc_X_from_parent(); }
+  if(!_state_X_isGood){ if(parent){ parent->ensure_X(); calc_X_from_parent(); } }
+  CHECK(_state_X_isGood, "");
   return X;
 }
 
 const rai::Transformation& rai::Frame::ensure_Q(){
   if(!K._state_Q_isGood){ K.calc_Q_from_q(); }
   return Q;
+}
+
+void rai::Frame::_state_updateAfterTouchingX(){
+  _state_X_isGood = true;
+  if(!parent){} // Q = X;
+  else calc_Q_from_parent(true);
+}
+
+void rai::Frame::_state_updateAfterTouchingQ(){
+  _state_setXBadinBranch();
+  K._state_q_isGood = false;
 }
 
 const rai::Transformation& rai::Frame::X_const() const{
@@ -196,18 +215,18 @@ const char*rai::Frame::isPart(){
   return 0;
 }
 
-void rai::Frame::set_X_isBad_inBranch(){
+void rai::Frame::_state_setXBadinBranch(){
   if(_state_X_isGood){ //no need to propagate to children if already bad
     _state_X_isGood=false;
-    for(Frame* child:parentOf) child->set_X_isBad_inBranch();
+    for(Frame* child:parentOf) child->_state_setXBadinBranch();
   }
 }
 
 void rai::Frame::read(const Graph& ats) {
   //interpret some of the attributes
-  ats.get(X, "X");
-  ats.get(X, "pose");
-  ats.get(Q, "Q");
+  if(ats["X"])    set_X()->setText(ats.get<String>("X"));
+  if(ats["pose"]) set_X()->setText(ats.get<String>("pose"));
+  if(ats["Q"])    set_Q()->setText(ats.get<String>("Q"));
   
   if(ats["type"]) ats["type"]->keys.last() = "shape"; //compatibility with old convention: 'body { type... }' generates shape
   
@@ -288,15 +307,15 @@ void rai::Frame::write(std::ostream& os) const {
     if(!X.isZero()) os <<" X:<" <<X <<'>';
   }
   
-  if(flags) {
-    Enum<FrameFlagType> fl;
-    os <<" FLAGS:";
-    for(int i=0;; i++) {
-      fl.x = FrameFlagType(i);
-      if(!fl.name()) break;
-      if(flags & (1<<fl.x)) os <<' ' <<fl.name();
-    }
-  }
+//  if(flags) {
+//    Enum<FrameFlagType> fl;
+//    os <<" FLAGS:";
+//    for(int i=0;; i++) {
+//      fl.x = FrameFlagType(i);
+//      if(!fl.name()) break;
+//      if(flags & (1<<fl.x)) os <<' ' <<fl.name();
+//    }
+//  }
   
   for(Node *n : ats) {
     StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H", "axis", "A", "B", "mimic"};
@@ -321,32 +340,35 @@ void rai::Frame::setShape(rai::ShapeType shape, const std::vector<double>& size)
 }
 
 void rai::Frame::setPose(const rai::Transformation& _X){
+  ensure_X();
   X = _X;
-  if(parent) calc_Q_from_parent(false);
+  _state_updateAfterTouchingX();
 }
 
 void rai::Frame::setPosition(const std::vector<double>& pos){
+  ensure_X();
   X.pos.set(pos);
-  if(parent) calc_Q_from_parent(false);
+  _state_updateAfterTouchingX();
 }
 
 void rai::Frame::setQuaternion(const std::vector<double>& quat){
+  ensure_X();
   X.rot.set(quat);
   X.rot.normalize();
-  if(parent) calc_Q_from_parent(false);
+  _state_updateAfterTouchingX();
 }
 
 void rai::Frame::setRelativePosition(const std::vector<double>& pos){
   CHECK(parent, "you cannot set relative position for a frame without parent");
   Q.pos.set(pos);
-  set_X_isBad_inBranch();
+  _state_updateAfterTouchingQ();
 }
 
 void rai::Frame::setRelativeQuaternion(const std::vector<double>& quat){
   CHECK(parent, "you cannot set relative position for a frame without parent");
   Q.rot.set(quat);
   Q.rot.normalize();
-  set_X_isBad_inBranch();
+  _state_updateAfterTouchingQ();
 }
 
 void rai::Frame::setPointCloud(const std::vector<double>& points, const std::vector<byte>& colors){
@@ -418,12 +440,8 @@ rai::Frame* rai::Frame::insertPreLink(const rai::Transformation &A) {
   parent=f;
   parent->parentOf.append(this);
   
-  if(!!A){
-    f->Q = A;
-    f->set_X_isBad_inBranch();
-  }else{
-    f->Q.setZero();
-  }
+  if(!!A) f->Q=A; else f->Q.setZero();
+  f->_state_updateAfterTouchingQ();
   
   return f;
 }
@@ -437,32 +455,38 @@ rai::Frame* rai::Frame::insertPostLink(const rai::Transformation &B) {
   f->parentOf = parentOf;
   for(Frame *b:parentOf) b->parent = f;
   parentOf.clear();
-  f->Q = B;
-  f->linkFrom(this);
+
+  if(!!B) f->Q=B; else f->Q.setZero();
+  f->_state_updateAfterTouchingQ();
+
+  f->linkFrom(this, false);
   
   return f;
 }
 
 void rai::Frame::unLink() {
   CHECK(parent,"");
+  ensure_X();
   parent->parentOf.removeValue(this);
   parent=NULL;
-  Q.setZero();
-  if(joint) { delete joint; joint=NULL; }
+  Q.setZero(); // = X;
+  _state_updateAfterTouchingQ();
   _state_X_isGood=true;
+  if(joint) { delete joint; joint=NULL; }
 }
 
 void rai::Frame::linkFrom(rai::Frame *_parent, bool adoptRelTransform) {
   CHECK(_parent,"you need to set a parent to link from");
   CHECK(!parent,"this frame is already linked to a parent");
   if(parent==_parent) return;
+
+  if(adoptRelTransform) ensure_X();
+
   parent=_parent;
   parent->parentOf.append(this);
 
-  if(adoptRelTransform){
-    ensure_X();
-    Q = X/parent->X;
-  }
+  if(adoptRelTransform) calc_Q_from_parent();
+  _state_updateAfterTouchingQ();
 }
 
 bool rai::Frame::isChildOf(const rai::Frame* par, int order) const{
@@ -1156,7 +1180,7 @@ void rai::Shape::glDraw(OpenGL& gl) {
     glEnd();
   }
   
-  if(frame.K.orsDrawBodyNames) {
+  if(frame.K.orsDrawFrameNames) {
     glColor(1,1,1);
     glDrawText(frame.name, 0, 0, 0);
   }

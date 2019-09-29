@@ -13,7 +13,7 @@
 #include <Gui/opengl.h>
 #include <Algo/ann.h>
 
-#include <mpi_kmeans.h>
+//#include <mpi_kmeans.h>
 #include <Geo/pairCollision.h>
 
 void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
@@ -391,7 +391,9 @@ void minimalConvexCore3(arr& core, const arr& org_pts, double max_radius, int ve
   uint k=20;
   arr centers(k,3);
   uintA labels(pts.d0);
-  kmeans(centers.p, pts.p, labels.p, 3, pts.d0, k, 100, 3);
+  HALT("obsolete");
+  //kmeans(centers.p, pts.p, labels.p, 3, pts.d0, k, 100, 3);
+  
 
   core = centers;
 }

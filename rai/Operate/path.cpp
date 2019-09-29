@@ -61,7 +61,7 @@ std::pair<arr, arr> computePath(const rai::KinematicWorld& K, const arr& target_
     KOMO komo;
     komo.setModel(K, true);
     komo.setPathOpt(1., 20, 3.);
-    komo.setSquaredQAccelerations();
+    komo.setSquaredQAccVelHoming();
 
     addMotionTo(komo, target_q, target_joints, endeff, up, down);
     komo.verbose=1;

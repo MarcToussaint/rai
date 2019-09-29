@@ -7,11 +7,12 @@
     --------------------------------------------------------------  */
 
 #include "taskControl.h"
-#include <Kin/kin_swift.h>
 #include <KOMO/komo.h>
-#include <Kin/frame.h>
-#include <Kin/taskMaps.h>
 #include <Core/graph.h>
+#include <Kin/frame.h>
+#include <Kin/kin_swift.h>
+#include <Kin/TM_default.h>
+#include <Kin/F_qFeatures.h>
 
 //===========================================================================
 
@@ -632,7 +633,7 @@ arr TaskControlMethods::getComplianceProjection(CtrlTaskL& tasks) {
       if(!P.N) P = eye(t->J_y.d1);
 
       //special case! qItself feature!
-      if(t->compliance.N==1 && std::dynamic_pointer_cast<TM_qItself>(t->map)){
+      if(t->compliance.N==1 && std::dynamic_pointer_cast<F_qItself>(t->map)){
         double compliance = t->compliance.scalar();
         CHECK_GE(compliance, 0., "");
         CHECK_LE(compliance, 1., "");

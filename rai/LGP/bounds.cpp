@@ -1,8 +1,8 @@
 #include "bounds.h"
 //#include <Kin/switch.h>
-#include <Kin/TM_qItself.h>
+#include <Kin/F_qFeatures.h>
 #include <Kin/TM_angVel.h>
-#include <Kin/TM_gravity.h>
+#include <Kin/F_dynamics.h>
 #include <Kin/TM_default.h>
 
 double conv_step2time(int step, uint stepsPerPhase);
@@ -87,7 +87,7 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
 //        }
 //      }
       for(Objective *o:komo.objectives){
-        if(!std::dynamic_pointer_cast<TM_qItself>(o->map)
+        if(!std::dynamic_pointer_cast<F_qItself>(o->map)
            && !std::dynamic_pointer_cast<TM_NoJumpFromParent>(o->map)
            && o->map->order>0){
           o->vars.clear();
@@ -186,7 +186,7 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
       komo.setTiming(maxPhase+.5, stepsPerPhase, 10., 1);
 
       komo.setHoming(0., -1., 1e-2);
-      komo.setSquaredQVelocities();
+      komo.setSquaredQAccVelHoming(0, -1., 0., 1., 1e-2);
       komo.setSquaredQuaternionNorms();
 
       CHECK_EQ(waypoints.N-1, floor(maxPhase+.5), "");

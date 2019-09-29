@@ -7,47 +7,49 @@
     --------------------------------------------------------------  */
 
 #include <climits>
-#include "TM_qItself.h"
+#include "F_qFeatures.h"
 #include "frame.h"
 
-TM_qItself::TM_qItself(bool relative_q0) : moduloTwoPi(true), relative_q0(relative_q0) {}
+//===========================================================================
 
-TM_qItself::TM_qItself(TM_qItself_PickMode pickMode, const StringA& picks, const rai::KinematicWorld& K, bool relative_q0)
+F_qItself::F_qItself(bool relative_q0) : moduloTwoPi(true), relative_q0(relative_q0) {}
+
+F_qItself::F_qItself(PickMode pickMode, const StringA& picks, const rai::KinematicWorld& K, bool relative_q0)
   : moduloTwoPi(true), relative_q0(relative_q0) {
-  if(pickMode==QIP_byJointGroups) {
+  if(pickMode==byJointGroups) {
     for(rai::Frame *f: K.frames) {
       bool pick=false;
       for(const rai::String& s:picks) if(f->ats.getNode(s)) { pick=true; break; }
-      if(pick) selectedBodies.setAppend(f->ID);
+      if(pick) selectedFrames.setAppend(f->ID);
     }
     return;
   }
-  if(pickMode==QIP_byJointNames) {
+  if(pickMode==byJointNames) {
     for(rai::String s:picks) {
       if(s(-2)==':') s.resize(s.N-2,true);
       rai::Frame *f = K.getFrameByName(s);
       if(!f) HALT("pick '" <<s <<"' not found");
       if(!f->joint) HALT("pick '" <<s <<"' is not a joint");
-      selectedBodies.setAppend(f->ID);
+      selectedFrames.setAppend(f->ID);
     }
     return;
   }
-  if(pickMode==QIP_byExcludeJointNames) {
+  if(pickMode==byExcludeJointNames) {
     for(rai::Frame *f: K.fwdActiveSet) if(f->joint) {
         if(picks.contains(f->name)) continue;
-        selectedBodies.setAppend(f->ID);
+        selectedFrames.setAppend(f->ID);
       }
     return;
   }
   NIY
 }
 
-TM_qItself::TM_qItself(const uintA& _selectedBodies, bool relative_q0)
-  : selectedBodies(_selectedBodies), moduloTwoPi(true), relative_q0(relative_q0) {
+F_qItself::F_qItself(const uintA& _selectedFrames, bool relative_q0)
+  : selectedFrames(_selectedFrames), moduloTwoPi(true), relative_q0(relative_q0) {
 }
 
-void TM_qItself::phi(arr& q, arr& J, const rai::KinematicWorld& G) {
-  if(!selectedBodies.nd) {
+void F_qItself::phi(arr& q, arr& J, const rai::KinematicWorld& G) {
+  if(!selectedFrames.nd) {
     G.getJointState(q);
     if(relative_q0) {
       for(rai::Joint* j: G.fwdActiveJoints) if(j->q0.N && j->qDim()==1) q(j->qIndex) -= j->q0.scalar();
@@ -60,17 +62,17 @@ void TM_qItself::phi(arr& q, arr& J, const rai::KinematicWorld& G) {
     if(!!J) J.resize(n, G.q.N).setZero();
     uint m=0;
     uint qIndex=0;
-    if(selectedBodies.nd){
-      for(uint i=0;i<selectedBodies.d0;i++) {
+    if(selectedFrames.nd){
+      for(uint i=0;i<selectedFrames.d0;i++) {
         rai::Joint *j=0;
         bool flipSign=false;
-        if(selectedBodies.nd==1){
-          rai::Frame *f = G.frames.elem(selectedBodies.elem(i));
+        if(selectedFrames.nd==1){
+          rai::Frame *f = G.frames.elem(selectedFrames.elem(i));
           j = f->joint;
-          CHECK(j, "selected frame " <<selectedBodies.elem(i) <<" ('" <<f->name <<"') is not a joint");
+          CHECK(j, "selected frame " <<selectedFrames.elem(i) <<" ('" <<f->name <<"') is not a joint");
         }else{
-          rai::Frame *a = G.frames.elem(selectedBodies(i,0));
-          rai::Frame *b = G.frames.elem(selectedBodies(i,1));
+          rai::Frame *a = G.frames.elem(selectedFrames(i,0));
+          rai::Frame *b = G.frames.elem(selectedFrames(i,1));
           if(a->parent==b) j=a->joint;
           else if(b->parent==a){ j=b->joint; flipSign=true; }
           else HALT("a and b are not linked");
@@ -93,7 +95,7 @@ void TM_qItself::phi(arr& q, arr& J, const rai::KinematicWorld& G) {
   }
 }
 
-void TM_qItself::phi(arr& y, arr& J, const WorldL& Ktuple) {
+void F_qItself::phi(arr& y, arr& J, const WorldL& Ktuple) {
   CHECK_GE(Ktuple.N, order+1,"I need at least " <<order+1 <<" configurations to evaluate");
   uint k=order;
   if(k==0){
@@ -108,21 +110,21 @@ void TM_qItself::phi(arr& y, arr& J, const WorldL& Ktuple) {
   //-- read out the task variable from the k+1 configurations
   uint offset = Ktuple.N-1-k; //G.N might contain more configurations than the order of THIS particular task -> the front ones are not used
   //before reading out, check if, in selectedBodies mode, some of the selected ones where switched
-  uintA selectedBodies_org = selectedBodies;
-  if(selectedBodies.nd==1) {
+  uintA selectedBodies_org = selectedFrames;
+  if(selectedFrames.nd==1) {
     uintA sw = getSwitchedBodies(*Ktuple.elem(-2), *Ktuple.elem(-1));
-    for(uint id:sw) selectedBodies.removeValue(id, false);
+    for(uint id:sw) selectedFrames.removeValue(id, false);
   }
   for(uint i=0; i<=k; i++) {
     phi(q_bar(i), J_bar(i), *Ktuple(offset+i));
   }
-  selectedBodies = selectedBodies_org;
+  selectedFrames = selectedBodies_org;
   
   bool handleSwitches=false;
   uint qN=q_bar(0).N;
   for(uint i=0; i<=k; i++) if(q_bar(i).N!=qN) { handleSwitches=true; break; }
   if(handleSwitches) { //when bodies are selected, switches don't have to be handled
-    CHECK(!selectedBodies.nd, "doesn't work for this...")
+    CHECK(!selectedFrames.nd, "doesn't work for this...")
     uint nFrames = Ktuple(offset)->frames.N;
     JointL jointMatchLists(k+1, nFrames); //for each joint of [0], find if the others have it
     jointMatchLists.setZero();
@@ -133,7 +135,7 @@ void TM_qItself::phi(arr& y, arr& J, const WorldL& Ktuple) {
       rai::Joint *j = f->joint;
       if(j) {
         for(uint s=0; s<=k; s++) {
-          rai::Joint *jmatch = Ktuple(offset+s)->getJointByBodyNames(j->from()->name, j->frame->name);
+          rai::Joint *jmatch = Ktuple(offset+s)->getJointByFrameNames(j->from()->name, j->frame->name);
           if(jmatch && j->type!=jmatch->type) jmatch=NULL;
           if(!jmatch) { useIt(i) = false; break; }
           jointMatchLists(s, i) = jmatch;
@@ -181,18 +183,18 @@ void TM_qItself::phi(arr& y, arr& J, const WorldL& Ktuple) {
   }
 }
 
-uint TM_qItself::dim_phi(const rai::KinematicWorld& G) {
-  if(selectedBodies.nd) {
+uint F_qItself::dim_phi(const rai::KinematicWorld& G) {
+  if(selectedFrames.nd) {
     uint n=0;
-    for(uint i=0;i<selectedBodies.d0;i++) {
+    for(uint i=0;i<selectedFrames.d0;i++) {
       rai::Joint *j=0;
-      if(selectedBodies.nd==1){
-        rai::Frame *f = G.frames.elem(selectedBodies.elem(i));
+      if(selectedFrames.nd==1){
+        rai::Frame *f = G.frames.elem(selectedFrames.elem(i));
         j = f->joint;
-        CHECK(j, "selected frame " <<selectedBodies.elem(i) <<" ('" <<f->name <<"') is not a joint");
+        CHECK(j, "selected frame " <<selectedFrames.elem(i) <<" ('" <<f->name <<"') is not a joint");
       }else{
-        rai::Frame *a = G.frames.elem(selectedBodies(i,0));
-        rai::Frame *b = G.frames.elem(selectedBodies(i,1));
+        rai::Frame *a = G.frames.elem(selectedFrames(i,0));
+        rai::Frame *b = G.frames.elem(selectedFrames(i,1));
         if(a->parent==b) j=a->joint;
         else if(b->parent==a) j=b->joint;
         else HALT("a and b are not linked");
@@ -205,7 +207,7 @@ uint TM_qItself::dim_phi(const rai::KinematicWorld& G) {
   return G.getJointStateDimension();
 }
 
-uint TM_qItself::dim_phi(const WorldL& Ktuple) {
+uint F_qItself::dim_phi(const WorldL& Ktuple) {
   if(order==0) return dim_phi(*Ktuple.last());
   else {
     if(dimPhi.find(Ktuple.last()) == dimPhi.end()) {
@@ -218,92 +220,63 @@ uint TM_qItself::dim_phi(const WorldL& Ktuple) {
     }
   }
   return 0;
-//  if(t<0) return dim_phi(*Ktuple.last());
-
-//  while(dimPhi.N<=(uint)t) dimPhi.append(UINT_MAX);
-
-//  //empirically test the dimension:
-//  if(dimPhi(t)==UINT_MAX){
-//    arr y;
-//    phi(y, NoArr, Ktuple);
-//    dimPhi(t) = y.N;
-//  }
-
-//  return dimPhi(t);
 }
 
-rai::String TM_qItself::shortTag(const rai::KinematicWorld& G) {
+rai::String F_qItself::shortTag(const rai::KinematicWorld& G) {
   rai::String s="qItself";
-  if(selectedBodies.nd) {
-    if(selectedBodies.N<=3) {
-      for(uint b:selectedBodies) s <<':' <<G.frames(b)->name;
+  if(selectedFrames.nd) {
+    if(selectedFrames.N<=3) {
+      for(uint b:selectedFrames) s <<'-' <<G.frames(b)->name;
     } else {
-      s <<'#' <<selectedBodies.N;
+      s <<'#' <<selectedFrames.N;
     }
   } else {
-    s <<":ALL";
+    s <<"-ALL";
   }
   return s;
 }
 
 //===========================================================================
 
-void TM_qZeroVels::phi(arr& y, arr& J, const WorldL& Ktuple) {
-  HALT("deprecated")
-  CHECK_EQ(order, 1,"NIY");
-  CHECK_GE(Ktuple.N, order+1,"I need at least " <<order+1 <<" configurations to evaluate");
-  uint k=order;
-  
-  double tau = Ktuple(-1)->frames(0)->tau; // - Ktuple(-2)->frames(0)->time;
-  double tau2=tau*tau, tau3=tau2*tau;
-  arrA q_bar(k+1), J_bar(k+1);
-  //-- read out the task variable from the k+1 configurations
-  uint offset = Ktuple.N-1-k; //G.N might contain more configurations than the order of THIS particular task -> the front ones are not used
-  
-  rai::Joint *j;
-  for(rai::Frame *f:Ktuple.last()->frames) if((j=f->joint) && j->active) {
-      rai::Joint *jmatch = Ktuple.last(-2)->getJointByBodyIndices(j->from()->ID, j->frame->ID);
-      if(jmatch && j->type!=jmatch->type) jmatch=NULL;
-      if(jmatch) {
-        for(uint i=0; i<j->qDim(); i++) {
-          q_bar(0).append(Ktuple.last(-2)->q(jmatch->qIndex+i));
-          q_bar(1).append(Ktuple.last(-1)->q(j     ->qIndex+i));
-          J_bar(0).append(eyeVec(Ktuple.last(-2)->q.N, jmatch->qIndex+i));
-          J_bar(1).append(eyeVec(Ktuple.last(-1)->q.N, j     ->qIndex+i));
-        }
-      }
-    }
-  if(!q_bar(0).N) { y.clear(); if(!!J) J.clear(); return; }
-  J_bar(0).reshape(q_bar(0).N, J_bar(0).N/q_bar(0).N);
-  J_bar(1).reshape(q_bar(1).N, J_bar(1).N/q_bar(1).N);
-  
-  if(k==1)  y = (q_bar(1)-q_bar(0))/tau; //penalize velocity
-  if(k==2)  y = (q_bar(2)-2.*q_bar(1)+q_bar(0))/tau2; //penalize acceleration
-  if(k==3)  y = (q_bar(3)-3.*q_bar(2)+3.*q_bar(1)-q_bar(0))/tau3; //penalize jerk
-  if(!!J) {
-    uintA qidx(Ktuple.N);
-    qidx(0)=0;
-    for(uint i=1; i<Ktuple.N; i++) qidx(i) = qidx(i-1)+Ktuple(i-1)->q.N;
-    J = zeros(y.N, qidx.last()+Ktuple.last()->q.N);
-    if(k==1) { J.setMatrixBlock(J_bar(1), 0, qidx(offset+1));  J.setMatrixBlock(-J_bar(0), 0, qidx(offset+0));  J/=tau; }
-    if(k==2) { J.setMatrixBlock(J_bar(2), 0, qidx(offset+2));  J.setMatrixBlock(-2.*J_bar(1), 0, qidx(offset+1));  J.setMatrixBlock(J_bar(0)   , 0, qidx(offset+0));  J/=tau2; }
-    if(k==3) { J.setMatrixBlock(J_bar(3), 0, qidx(offset+3));  J.setMatrixBlock(-3.*J_bar(2), 0, qidx(offset+2));  J.setMatrixBlock(3.*J_bar(1), 0, qidx(offset+1));  J.setMatrixBlock(-J_bar(0), 0, qidx(offset+0));  J/=tau3; }
+extern bool isSwitched(rai::Frame *f0, rai::Frame *f1);
+
+void F_qZeroVel::phi(arr& y, arr& J, const WorldL& Ktuple){
+  if(!Ktuple(-1)->frames(i)->joint){
+    HALT("shouldn't be here");
+    y.resize(0).setZero();
+    if(!!J) J.resize(0, getKtupleDim(Ktuple).last()).setZero();
+    return;
+  }
+  if(order==1 && isSwitched(Ktuple(-1)->frames(i), Ktuple(-2)->frames(i))){
+    HALT("shouldn't be here");
+    y.resize(Ktuple(-1)->frames(i)->joint->dim).setZero();
+    if(!!J) J.resize(y.N, getKtupleDim(Ktuple).last()).setZero();
+    return;
+  }
+  F_qItself q({(uint)i}, false);
+  q.order=order;
+  q.Feature::__phi(y, J, Ktuple);
+  if(Ktuple(-1)->frames(i)->joint->type==rai::JT_transXYPhi){
+    arr s = ARR(10.,10.,1.);
+    y = s%y;
+    if(!!J) J = s%J;
+  }
+  if(Ktuple(-1)->frames(i)->joint->type==rai::JT_free){
+    arr s = ARR(10., 10., 10., 1., 1., 1., 1.);
+    y = s%y;
+    if(!!J) J = s%J;
   }
 }
 
-uint TM_qZeroVels::dim_phi(const WorldL& Ktuple) {
-  if(order==0) return dim_phi(*Ktuple.last());
-  else {
-    if(dimPhi.find(Ktuple.last()) == dimPhi.end()) {
-      arr y;
-      phi(y, NoArr, Ktuple);
-      dimPhi[Ktuple.last()] = y.N;
-      return y.N;
-    } else {
-      return dimPhi[Ktuple.last()];
-    }
+uint F_qZeroVel::dim_phi(const rai::KinematicWorld& K){
+  rai::Frame *a = K.frames(i);
+  if(!a->joint){
+    return 0;
+//    LOG(-1) <<"reconfiguring to become link";
+//    a = a->getUpwardLink();
+//    i = a->ID;
   }
-  return 0;
+  return a->joint->dim;
 }
 
 //===========================================================================
@@ -343,6 +316,46 @@ rai::Array<rai::Joint*> getMatchingJoints(const WorldL& Ktuple, bool zeroVelJoin
 
 //===========================================================================
 
+void F_qLimits::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
+//  if(!limits.N)
+  limits=G.getLimits(); //G might change joint ordering (kinematic switches), need to query limits every time
+  G.kinematicsLimitsCost(y, J, limits);
+}
+
+//===========================================================================
+
+void F_qQuaternionNorms::phi(arr &y, arr &J, const rai::KinematicWorld &G) {
+  uint n=dim_phi(G);
+  y.resize(n);
+  if(!!J) J.resize(n, G.q.N).setZero();
+  uint i=0;
+  for(const rai::Joint *j: G.fwdActiveJoints) if(j->type==rai::JT_quatBall || j->type==rai::JT_free || j->type==rai::JT_XBall) {
+      arr q;
+      if(j->type==rai::JT_quatBall) q.referToRange(G.q, j->qIndex+0, j->qIndex+3);
+      if(j->type==rai::JT_XBall)    q.referToRange(G.q, j->qIndex+1, j->qIndex+4);
+      if(j->type==rai::JT_free)     q.referToRange(G.q, j->qIndex+3, j->qIndex+6);
+      double norm = sumOfSqr(q);
+      y(i) = norm - 1.;
+
+      if(!!J) {
+        if(j->type==rai::JT_quatBall) J(i, {j->qIndex+0, j->qIndex+3}) = 2.*q;
+        if(j->type==rai::JT_XBall)    J(i, {j->qIndex+1, j->qIndex+4}) = 2.*q;
+        if(j->type==rai::JT_free)     J(i, {j->qIndex+3, j->qIndex+6}) = 2.*q;
+      }
+      i++;
+    }
+}
+
+uint F_qQuaternionNorms::dim_phi(const rai::KinematicWorld &G) {
+  uint i=0;
+  for(const rai::Joint* j:G.fwdActiveJoints) {
+    if(j->type==rai::JT_quatBall || j->type==rai::JT_free || j->type==rai::JT_XBall) i++;
+  }
+  return i;
+}
+
+//===========================================================================
+
 rai::Array<rai::Joint*> getSwitchedJoints(const rai::KinematicWorld& G0, const rai::KinematicWorld& G1, int verbose) {
 
   HALT("retired: we only look at switched objects");
@@ -355,7 +368,7 @@ rai::Array<rai::Joint*> getSwitchedJoints(const rai::KinematicWorld& G0, const r
         switchedJoints.append({NULL,j1});
         continue;
       }
-      rai::Joint *j0 = G0.getJointByBodyIndices(j1->from()->ID, j1->frame->ID);
+      rai::Joint *j0 = G0.getJointByFrameIndices(j1->from()->ID, j1->frame->ID);
       if(!j0 || j0->type!=j1->type) {
         if(G0.frames(j1->frame->ID)->joint) { //out-body had (in G0) one inlink...
           j0 = G0.frames(j1->frame->ID)->joint;

@@ -220,7 +220,7 @@ OptNewton::StopCriterion OptNewton::step() {
 #define STOPIF(expr, code, ret) if(expr){ if(o.verbose>1) cout <<"\t\t\t\t\t\t--- stopping criterion='" <<#expr <<"'" <<endl; code; return stopCriterion=ret; }
   
   STOPIF(absMax(Delta)<o.stopTolerance, , stopCrit1);
-  STOPIF(numTinySteps>4, numTinySteps=0, stopCrit2);
+  STOPIF(numTinySteps>4, numTinySteps=0, stopTinySteps);
 //  STOPIF(alpha*absMax(Delta)<1e-3*o.stopTolerance, stopCrit2);
   STOPIF(evals>=o.stopEvals, , stopCritEvals);
   STOPIF(its>=o.stopIters, , stopCritEvals);

@@ -6,12 +6,13 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "TM_ContactConstraints.h"
-#include "TM_PairCollision.h"
+#include "F_contacts.h"
+#include "F_PairCollision.h"
 #include "frame.h"
 #include "contact.h"
 #include <Geo/pairCollision.h>
 #include "TM_angVel.h"
+#include "TM_default.h"
 
 void POA_distance(arr& y, arr& J, rai::Contact* con, bool b_or_a){
   rai::Shape *s = con->a.shape;
@@ -393,13 +394,13 @@ void TM_Contact_ElasticVel::phi(arr& y, arr& J, const WorldL& Ktuple){
   }
 }
 
-void TM_Contact_ElasticVelIsComplementary::phi(arr& y, arr& J, const WorldL& Ktuple){
+void TM_Contact_NormalVelIsComplementary::phi(arr& y, arr& J, const WorldL& Ktuple){
   rai::KinematicWorld& K = *Ktuple(-2);
   rai::Contact *con = getContact(K,a,b);
 
   //-- get the pre and post V:
-  arr v0, Jv0, v1, Jv1;
-  POA_rel_vel(v0, Jv0, Ktuple, con, false);
+  arr /*v0, Jv0, */v1, Jv1;
+//  POA_rel_vel(v0, Jv0, Ktuple, con, false);
   POA_rel_vel(v1, Jv1, Ktuple, con, true);
 
   //-- get the force

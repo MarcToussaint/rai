@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "taskMaps.h"
+#include "feature.h"
 
 struct TM_PairCollision : Feature {
   enum Type { _none=-1, _negScalar, _vector, _normal, _center, _p1, _p2 };

@@ -1,20 +1,19 @@
 #include "komo-ext.h"
 
-#include <Kin/TM_ContactConstraints.h>
+#include <Kin/F_contacts.h>
 //#include <KOMOcsail/komo-CSAIL.h>
 #include <Kin/TM_default.h>
-#include <Kin/TM_linTrans.h>
-#include <Kin/TM_qItself.h>
-#include <Kin/TM_InsideBox.h>
-#include <Kin/TM_PairCollision.h>
-#include <Kin/F_grasping.h>
+#include <Kin/F_qFeatures.h>
+#include <Kin/F_geometrics.h>
+#include <Kin/F_PairCollision.h>
 
 double shapeSize(const rai::KinematicWorld& K, const char* name, uint i);
 
 void addBoxGrasp(KOMO& komo, const char* object, const char* endeff, int axis){
   //  komo.addObjective(0., 0., OT_eq, FS_accumulatedCollisions, {}, 1e0);
     if(komo.world["endeffWorkspace"]){
-        komo.addObjective(0., 0., new TM_LinTrans(make_shared<TM_Default>(TMT_posDiff, komo.world, "endeffWorkspace", NoVector, object), {2,3,{1.,0.,0., 0.,1.,0.}}, {}), OT_sos, {}, 1e2);
+      HALT("TODO: fix the following syntax")
+//        komo.addObjective(0., 0., make_shared<TM_Default>(TMT_posDiff, komo.world, "endeffWorkspace", NoVector, object), OT_sos, {}, {2,3,{1e2,0.,0., 0.,1e2,0.}});
     }
 
   //height to grasp
@@ -69,9 +68,9 @@ void addMotionTo(KOMO& komo, const arr& target_q, const StringA& target_joints, 
   }
 
   if(!target_joints.N){
-    komo.addObjective(1.,1., new TM_qItself(), OT_eq, target_q, 1e1);
+    komo.addObjective(1.,1., new F_qItself(), OT_eq, target_q, 1e1);
   }else{
-    komo.addObjective(1.,1., new TM_qItself(QIP_byJointNames, target_joints, komo.world), OT_eq, target_q, 1e1);
+    komo.addObjective(1.,1., new F_qItself(F_qItself::byJointNames, target_joints, komo.world), OT_eq, target_q, 1e1);
   }
 
   komo.setSlow(0.,0., 1e2, true);
