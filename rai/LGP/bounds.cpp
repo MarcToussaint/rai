@@ -22,8 +22,8 @@ template<> const char* rai::Enum<BoundType>::names []= {
 rai::Array<SkeletonSymbol> modes = { SY_stable, SY_stableOn, SY_dynamic, SY_dynamicOn, SY_dynamicTrans, };
 
 void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
-                    const rai::KinematicWorld& startKinematics,
-                    const rai::KinematicWorld& effKinematics,
+                    const rai::Configuration& startKinematics,
+                    const rai::Configuration& effKinematics,
                     bool collisions, const arrA& waypoints){
   double maxPhase=0;
   for(const SkeletonEntry& s:S){
@@ -215,7 +215,7 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
 
 
 
-ptr<CG> skeleton2CGO(const Skeleton& S, const rai::KinematicWorld& startKinematics, bool collisions){
+ptr<CG> skeleton2CGO(const Skeleton& S, const rai::Configuration& startKinematics, bool collisions){
   cout <<"*** " <<RAI_HERE <<endl;
   writeSkeleton(cout, S);
 
@@ -408,9 +408,9 @@ ptr<CG> skeleton2CGO(const Skeleton& S, const rai::KinematicWorld& startKinemati
 
 }
 
-void CG2komo(KOMO& komo, const SubCG& scg, const rai::KinematicWorld& C, bool collisions){
+void CG2komo(KOMO& komo, const SubCG& scg, const rai::Configuration& C, bool collisions){
   //C is the template; pick only the relevant frames
-  rai::KinematicWorld *c = komo.configurations.append(new rai::KinematicWorld);
+  rai::Configuration *c = komo.configurations.append(new rai::Configuration);
   rai::Array<FrameL> framesPerT(scg.maxT+1);
   for(Node *f:scg.frames){
     rai::String obj=f->keys.last();

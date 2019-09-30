@@ -8,7 +8,7 @@
 int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
-  rai::KinematicWorld C;
+  rai::Configuration C;
   rai::Frame *f = C.addFrame("base");
   f->setShape(rai::ST_ssBox, {8., 8., .2, .02});
   f->setColor({.5, .5, .5});

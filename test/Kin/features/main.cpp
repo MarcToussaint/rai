@@ -12,7 +12,7 @@ extern bool rai_Kin_frame_ignoreQuatNormalizationWarning;
 //===========================================================================
 
 void testFeature() {
-  rai::KinematicWorld K;
+  rai::Configuration K;
   rai::Frame world(K), obj1(&world), obj2(&world);
   world.name = "world";
   obj1.name = "obj1";
@@ -37,7 +37,7 @@ void testFeature() {
   K.calc_fwdPropagateFrames();
 
   K.setTimes(.1);
-  rai::KinematicWorld K1(K), K2(K);
+  rai::Configuration K1(K), K2(K);
   WorldL Ktuple = {&K, &K1, &K2};
   uint n=3*K.getJointStateDimension();
 

@@ -50,7 +50,7 @@ void drawEnv(void*) {
   glDrawFloor(4.,1,1,1);
 }
 
-void oneStep(const arr &q,rai::KinematicWorld *C,OdeModule *ode,SwiftInterface *swift) {
+void oneStep(const arr &q,rai::Configuration *C,OdeModule *ode,SwiftInterface *swift) {
   C->setJointState(q);
 #ifdef RAI_ODE
   if(ode) {
@@ -71,7 +71,7 @@ void oneStep(const arr &q,rai::KinematicWorld *C,OdeModule *ode,SwiftInterface *
   
 }
 
-void controlledStep(arr &q,arr &W,rai::KinematicWorld *C,OdeModule *ode,SwiftInterface *swift,TaskVariableList& TVs) {
+void controlledStep(arr &q,arr &W,rai::Configuration *C,OdeModule *ode,SwiftInterface *swift,TaskVariableList& TVs) {
   static arr dq;
   updateState(TVs);
   updateChanges(TVs); //computeXchangeWithAttractor(globalSpace);
@@ -110,7 +110,7 @@ void ActionInterface::loadConfiguration(const char* ors_filename) {
   chdir(path);
   
   if(C) delete C;
-  C = new rai::KinematicWorld();
+  C = new rai::Configuration();
   *C <<FILE(name);
   //C->reconfigureRoot(C->getName("rfoot"));
   
@@ -241,7 +241,7 @@ void ActionInterface::relaxPosition() {
 //   TaskVariable x("endeffector",*C,posTVT,man_id,0,0,0,arr());
 //   x.setGainsAsAttractor(20,.2);
 //   x.y_prec=1000.;
-//   rai::KinematicWorld::node obj=C->getName(obj_id);
+//   rai::Configuration::node obj=C->getName(obj_id);
 //
 //   uint t;
 //   arr q,dq;
@@ -514,7 +514,7 @@ bool ActionInterface::partOfBody(uint id) {
 
 uint ActionInterface::getCatched(uint man_id) {
 #if 0
-  //   rai::KinematicWorld::node n = C->bodies(man_id);
+  //   rai::Configuration::node n = C->bodies(man_id);
   rai::Proxy *p;
   //  cout << "davor";
   uint obj=C->getBodyByName(convertObjectID2name(man_id))->index;

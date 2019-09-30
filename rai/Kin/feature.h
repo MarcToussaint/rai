@@ -21,27 +21,27 @@ struct Feature {
   arr scale, target;     ///< optional linear transformation
   bool flipTargetSignOnNegScalarProduct; ///< for order==1 (vel mode), when taking temporal difference, flip sign when scalar product it negative [specific to quats -> move to special TM for quats only]
 protected:
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& K) = 0; ///< this needs to be overloaded
+  virtual void phi(arr& y, arr& J, const rai::Configuration& K) = 0; ///< this needs to be overloaded
   virtual void phi(arr& y, arr& J, const WorldL& Ktuple); ///< if not overloaded this computes the generic pos/vel/acc depending on order
-  virtual uint dim_phi(const rai::KinematicWorld& K) = 0; ///< the dimensionality of $y$
+  virtual uint dim_phi(const rai::Configuration& K) = 0; ///< the dimensionality of $y$
   virtual uint dim_phi(const WorldL& Ktuple) { return dim_phi(*Ktuple.last()); } ///< if not overloaded, returns dim_phi for last configuration
 public:
-  void __phi(arr& y, arr& J, const rai::KinematicWorld& K){ phi(y,J,K); applyLinearTrans(y,J); }
+  void __phi(arr& y, arr& J, const rai::Configuration& K){ phi(y,J,K); applyLinearTrans(y,J); }
   void __phi(arr& y, arr& J, const WorldL& Ktuple){ phi(y,J,Ktuple); applyLinearTrans(y,J); }
-  uint __dim_phi(const rai::KinematicWorld& K){ uint d=dim_phi(K); return applyLinearTrans_dim(d); }
+  uint __dim_phi(const rai::Configuration& K){ uint d=dim_phi(K); return applyLinearTrans_dim(d); }
   uint __dim_phi(const WorldL& Ktuple){ uint d=dim_phi(Ktuple); return applyLinearTrans_dim(d); }
 
   Feature() : order(0), flipTargetSignOnNegScalarProduct(false) {}
   virtual ~Feature() {}
-  virtual rai::String shortTag(const rai::KinematicWorld& K) { NIY; }
-  virtual Graph getSpec(const rai::KinematicWorld& K){ return Graph({{"description", shortTag(K)}}); }
+  virtual rai::String shortTag(const rai::Configuration& K) { NIY; }
+  virtual Graph getSpec(const rai::Configuration& K){ return Graph({{"description", shortTag(K)}}); }
   
   //-- helpers
-  arr phi(const rai::KinematicWorld& K) { arr y; phi(y,NoArr,K); return y; } ///< evaluate without computing Jacobian
+  arr phi(const rai::Configuration& K) { arr y; phi(y,NoArr,K); return y; } ///< evaluate without computing Jacobian
   Value operator()(const WorldL& Ktuple){ arr y,J; phi(y, J, Ktuple); return Value(y,J); }
-  Value operator()(const rai::KinematicWorld& K){ arr y,J; phi(y, J, K); return Value(y,J); }
+  Value operator()(const rai::Configuration& K){ arr y,J; phi(y, J, K); return Value(y,J); }
 
-  VectorFunction vf(rai::KinematicWorld& K);
+  VectorFunction vf(rai::Configuration& K);
   VectorFunction vf(WorldL& Ktuple);
 private:
   void applyLinearTrans(arr& y, arr& J);
@@ -57,7 +57,7 @@ inline uintA getKtupleDim(const WorldL& Ktuple) {
   return dim;
 }
 
-inline int initIdArg(const rai::KinematicWorld &K, const char* frameName) {
+inline int initIdArg(const rai::Configuration &K, const char* frameName) {
   rai::Frame *a = 0;
   if(frameName && frameName[0]) a = K.getFrameByName(frameName);
   if(a) return a->ID;

@@ -32,7 +32,7 @@
 
 typedef unsigned int uint;
 namespace rai {
-struct KinematicWorld;
+struct Configuration;
 }
 struct OdeInterface;
 struct SwiftInterface;
@@ -108,7 +108,7 @@ public:
   
   OpenGL *gl;
 //private:
-  rai::KinematicWorld *C;
+  rai::Configuration *C;
   OdeInterface *ode; // HIER PARAMETER verstellen
   SwiftInterface *swift;
   TaskVariableList TVs;

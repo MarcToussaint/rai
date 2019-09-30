@@ -66,7 +66,7 @@ namespace rai {
 
 /// a Frame can have a link (also joint), shape (visual or coll), and/or intertia (mass) attached to it
 struct Frame : NonCopyable{
-  struct KinematicWorld& K;  ///< a Frame is uniquely associated with a KinematicConfiguration
+  struct Configuration& K;  ///< a Frame is uniquely associated with a KinematicConfiguration
   uint ID;                   ///< unique identifier
   String name;               ///< name
   Frame *parent=NULL;        ///< parent frame
@@ -92,7 +92,7 @@ public:
   Inertia *inertia=NULL;     ///< this frame has inertia (is a mass)
   Array<Contact*> contacts;  ///< this frame is in (near-) contact with other frames
 
-  Frame(KinematicWorld& _K, const Frame *copyFrame=NULL);
+  Frame(Configuration& _K, const Frame *copyFrame=NULL);
   Frame(Frame *_parent);
   ~Frame();
   
@@ -148,7 +148,7 @@ public:
   arr getMeshPoints();
   arr getMeshCorePoints();
 
-  friend struct KinematicWorld;
+  friend struct Configuration;
   friend struct KinematicSwitch;
   friend struct Joint;
   friend struct Transformation_Xtoken;

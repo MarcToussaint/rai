@@ -15,7 +15,7 @@ struct KinPathViewer;
 struct LGP_Tree;
 typedef rai::Array<rai::Transformation> TransformationA;
 
-void initFolStateFromKin(FOL_World& L, const rai::KinematicWorld& K);
+void initFolStateFromKin(FOL_World& L, const rai::Configuration& K);
 
 struct LGP_Tree_SolutionData : GLDrawer {
   LGP_Tree& tree;
@@ -47,7 +47,7 @@ struct LGP_Tree : GLDrawer {
 
   LGP_Node *root=0, *focusNode=0;
   FOL_World fol;
-  rai::KinematicWorld kin;
+  rai::Configuration kin;
 
   KOMO finalGeometryObjectives;
   
@@ -69,8 +69,8 @@ struct LGP_Tree : GLDrawer {
   
   //high-level
   LGP_Tree();
-  LGP_Tree(const rai::KinematicWorld& _kin, const char *folFileName="fol.g");
-  LGP_Tree(const rai::KinematicWorld& _kin, const FOL_World& _fol);
+  LGP_Tree(const rai::Configuration& _kin, const char *folFileName="fol.g");
+  LGP_Tree(const rai::Configuration& _kin, const FOL_World& _fol);
   ~LGP_Tree();
   
   //-- methods called in the run loop
@@ -120,7 +120,7 @@ public:
 };
 
 struct LGP_Tree_Thread : LGP_Tree, Thread{
-  LGP_Tree_Thread(const rai::KinematicWorld& _kin, const char *folFileName="fol.g")
+  LGP_Tree_Thread(const rai::Configuration& _kin, const char *folFileName="fol.g")
     : LGP_Tree(_kin, folFileName), Thread("LGP_Tree", -1){}
 
   void open(){ LGP_Tree::init(); }

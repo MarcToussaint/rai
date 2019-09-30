@@ -2,7 +2,7 @@
 #include "TM_default.h"
 #include <Geo/geo.h>
 
-void angVel_base(const rai::KinematicWorld& K0, rai::KinematicWorld& K1, uint i, arr& y, arr& J){
+void angVel_base(const rai::Configuration& K0, rai::Configuration& K1, uint i, arr& y, arr& J){
   rai::Frame *f0 = K0.frames(i);
   rai::Frame *f1 = K1.frames(i);
 
@@ -138,7 +138,7 @@ void TM_AngVel::phi(arr& y, arr& J, const WorldL& Ktuple) {
   }
 }
 
-uint TM_AngVel::dim_phi(const rai::KinematicWorld &G){ return 3; }
+uint TM_AngVel::dim_phi(const rai::Configuration &G){ return 3; }
 
 //===========================================================================
 
@@ -165,7 +165,7 @@ void TM_LinAngVel::phi(arr& y, arr& J, const WorldL& Ktuple){
   ang.phi(y({3,5})(), (!!J?J({3,5})():NoArr), Ktuple);
 }
 
-uint TM_LinAngVel::dim_phi(const rai::KinematicWorld& G){ return 6; }
+uint TM_LinAngVel::dim_phi(const rai::Configuration& G){ return 6; }
 
 //===========================================================================
 
@@ -207,6 +207,6 @@ void TM_NoJumpFromParent::phi(arr& y, arr& J, const WorldL& Ktuple){
 //  }
 }
 
-uint TM_NoJumpFromParent::dim_phi(const rai::KinematicWorld& G){
+uint TM_NoJumpFromParent::dim_phi(const rai::Configuration& G){
   return 7;
 }

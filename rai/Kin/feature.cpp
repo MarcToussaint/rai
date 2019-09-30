@@ -51,7 +51,7 @@ void Feature::phi(arr& y, arr& J, const WorldL& Ktuple) {
 #endif
 }
 
-VectorFunction Feature::vf(rai::KinematicWorld& K) { ///< direct conversion to vector function: use to check gradient or evaluate
+VectorFunction Feature::vf(rai::Configuration& K) { ///< direct conversion to vector function: use to check gradient or evaluate
   return [this, &K](arr& y, arr& J, const arr& x) -> void {
     K.setJointState(x);
     phi(y, J, K);

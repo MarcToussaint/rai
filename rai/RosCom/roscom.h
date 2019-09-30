@@ -81,7 +81,7 @@ arr                 conv_points2arr(const std::vector<geometry_msgs::Point>& pts
 arr                 conv_colors2arr(const std::vector<std_msgs::ColorRGBA>& pts);
 CtrlMsg             conv_JointState2CtrlMsg(const rai_msgs::JointState& msg);
 arr                 conv_JointState2arr(const sensor_msgs::JointState& msg);
-rai::KinematicWorld conv_MarkerArray2KinematicWorld(const visualization_msgs::MarkerArray& markers);
+rai::Configuration conv_MarkerArray2Configuration(const visualization_msgs::MarkerArray& markers);
 std_msgs::Float32MultiArray conv_floatA2Float32Array(const floatA&);
 std_msgs::Float64MultiArray conv_arr2Float64Array(const arr&);
 arr conv_arr2arr(const rai_msgs::arr& x);
@@ -101,7 +101,7 @@ rai_msgs::JointState   conv_CtrlMsg2JointState(const CtrlMsg& ctrl);
 floatA conv_Float32Array2FloatA(const std_msgs::Float32MultiArray&);
 arr conv_Float32Array2arr(const std_msgs::Float32MultiArray &msg);
 visualization_msgs::Marker conv_Shape2Marker(const rai::Shape& sh);
-visualization_msgs::MarkerArray conv_Kin2Markers(const rai::KinematicWorld& K);
+visualization_msgs::MarkerArray conv_Kin2Markers(const rai::Configuration& K);
 
 //-- get transformations
 rai::Transformation ros_getTransform(const std::string& from, const std::string& to, tf::TransformListener& listener);

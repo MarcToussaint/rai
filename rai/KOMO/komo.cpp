@@ -45,9 +45,9 @@ using namespace rai;
 
 //===========================================================================
 
-double shapeSize(const KinematicWorld& K, const char* name, uint i=2);
+double shapeSize(const Configuration& K, const char* name, uint i=2);
 
-Shape *getShape(const KinematicWorld& K, const char* name) {
+Shape *getShape(const Configuration& K, const char* name) {
   Frame *f = K.getFrameByName(name);
   Shape *s = f->shape;
   if(!s) {
@@ -60,7 +60,7 @@ KOMO::KOMO() : useSwift(true), useSwitches(true), verbose(1), komo_problem(*this
   verbose = getParameter<int>("KOMO/verbose",1);
 }
 
-KOMO::KOMO(const KinematicWorld& K, bool _useSwift)
+KOMO::KOMO(const Configuration& K, bool _useSwift)
   : KOMO() {
   setModel(K, _useSwift);
   world.optimizeTree();
@@ -77,7 +77,7 @@ KOMO::~KOMO() {
   listDelete(configurations);
 }
 
-void KOMO::setModel(const KinematicWorld& K, bool _useSwift) {
+void KOMO::setModel(const Configuration& K, bool _useSwift) {
   if(&K!=&world) world.copy(K, _useSwift);
   useSwift = _useSwift;
   if(useSwift) world.swift();
@@ -1259,7 +1259,7 @@ void KOMO::setLiftDownUp(double time, const char *endeff, double timeToLift) {
 //
 
 void KOMO::setConfigFromFile() {
-  KinematicWorld K(getParameter<String>("KOMO/modelfile"));
+  Configuration K(getParameter<String>("KOMO/modelfile"));
 //  K.optimizeTree();
   setModel(
     K,
@@ -1376,7 +1376,7 @@ void setTasks(KOMO_ext& MP,
 #endif
 }
 
-void KOMO_ext::setMoveTo(KinematicWorld& world, Frame& endeff, Frame& target, byte whichAxesToAlign) {
+void KOMO_ext::setMoveTo(Configuration& world, Frame& endeff, Frame& target, byte whichAxesToAlign) {
 //  if(MP) delete MP;
 //  MP = new KOMO(world);
   setModel(world);
@@ -1471,7 +1471,7 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, 
 }
 
 void KOMO::run() {
-  KinematicWorld::setJointStateCount=0;
+  Configuration::setJointStateCount=0;
   double timeZero = timerStart();
   CHECK(T,"");
   if(logFile) (*logFile) <<"KOMO_run_log: [" <<endl;
@@ -1523,13 +1523,13 @@ void KOMO::run() {
   if(verbose>0) {
     cout <<"** optimization time=" <<runTime
         <<" (kin:" <<timeKinematics <<" coll:" <<timeCollisions <<" feat:" <<timeFeatures <<" newton: " <<timeNewton <<")"
-         <<" setJointStateCount=" <<KinematicWorld::setJointStateCount <<endl;
+         <<" setJointStateCount=" <<Configuration::setJointStateCount <<endl;
   }
   if(verbose>0) cout <<getReport(verbose>1) <<endl;
 }
 
 void KOMO::run_sub(const uintA& X, const uintA& Y) {
-  KinematicWorld::setJointStateCount=0;
+  Configuration::setJointStateCount=0;
   double timeZero = timerStart();
   if(opt) delete opt;
 
@@ -1552,7 +1552,7 @@ void KOMO::run_sub(const uintA& X, const uintA& Y) {
   if(verbose>0) {
     cout <<"** optimization time=" <<runTime
         <<" (kin:" <<timeKinematics <<" coll:" <<timeCollisions <<" feat:" <<timeFeatures <<" newton: " <<timeNewton <<")"
-       <<" setJointStateCount=" <<KinematicWorld::setJointStateCount <<endl;
+       <<" setJointStateCount=" <<Configuration::setJointStateCount <<endl;
   }
   if(verbose>0) cout <<getReport(verbose>1) <<endl;
 }
@@ -1773,7 +1773,7 @@ bool KOMO::displayTrajectory(double delay, bool watch, bool overlayPaths, const 
   DrawPaths drawX(X);
 
   for(int t=-(int)k_order; t<(int)T; t++) {
-    rai::KinematicWorld& K = *configurations(t+k_order);
+    rai::Configuration& K = *configurations(t+k_order);
     timetag.clear() <<tag <<" (config:" <<t <<'/' <<T <<"  s:" <<conv_step2time(t,stepsPerPhase) <<" tau:" <<K.frames.first()->tau <<')';
     if(addText) timetag <<addText;
 //    K.reportProxies();
@@ -1851,7 +1851,7 @@ void KOMO::setupConfigurations() {
 
   computeMeshNormals(world.frames, true);
 
-  configurations.append(new KinematicWorld())->copy(world, true);
+  configurations.append(new Configuration())->copy(world, true);
   configurations.last()->setTimes(tau); //(-tau*k_order);
   configurations.last()->calc_q();
   configurations.last()->checkConsistency();
@@ -1861,8 +1861,8 @@ void KOMO::setupConfigurations() {
     }
   }
   for(uint s=1; s<k_order+T; s++) {
-    configurations.append(new KinematicWorld())->copy(*configurations(s-1), true);
-    rai::KinematicWorld& K = *configurations(s);
+    configurations.append(new Configuration())->copy(*configurations(s-1), true);
+    rai::Configuration& K = *configurations(s);
     K.setTimes(tau); //(tau*(int(s)-int(k_order)));
     K.checkConsistency();
     CHECK_EQ(configurations(s), configurations.last(), "");
@@ -1988,7 +1988,7 @@ rai::Array<rai::Transformation> KOMO::reportEffectiveJoints(std::ostream& os) {
   }
 
 //  for(uint t=0;t<T+k_order;t++){
-//    rai::KinematicWorld *K = configurations(t);
+//    rai::Configuration *K = configurations(t);
 //    for(rai::Frame *f:K->frames){
 //      if(f->joint && f->joint->constrainToZeroVel)
 //        os <<" t=" <<t-k_order <<'\t' <<f->name <<" \t" <<f->joint->type <<" \tq=" <<f->joint->getQ() <<" \tQ=" <<f->Q <<endl;
@@ -2314,7 +2314,7 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
     //store old lambdas directly in the constraints....
     uint C=0;
     for(uint t=0; t<komo.T; t++) {
-      KinematicWorld& K = *komo.configurations(t+komo.k_order);
+      Configuration& K = *komo.configurations(t+komo.k_order);
       for(Frame *f:K.frames) for(Contact *c:f->contacts) if(&c->a==f) {
         c->lagrangeParameter = lambda(dimPhi + C);
         C++;
@@ -2410,7 +2410,7 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
   bool updateLambda = ((&lambda) && lambda.N==dimPhi);
   for(uint t=0; t<komo.T; t++) {
     WorldL Ktuple = komo.configurations({t, t+komo.k_order});
-    KinematicWorld& K = *komo.configurations(t+komo.k_order);
+    Configuration& K = *komo.configurations(t+komo.k_order);
     for(Frame *f:K.frames) for(Contact *c:f->contacts) if(&c->a==f) {
           Feature *map = c->getTM_ContactNegDistance();
           map->phi(y, (!!J?Jy:NoArr), Ktuple, komo.tau, t);
@@ -2717,7 +2717,7 @@ void KOMO::Conv_MotionProblem_GraphProblem::getPartialPhi(arr& phi, arrA& J, arr
   if(!!J) J = J.sub(whichPhi);
 }
 
-rai::KinematicWorld& KOMO::getConfiguration(double phase) {
+rai::Configuration& KOMO::getConfiguration(double phase) {
   uint s = k_order + (uint)(phase*double(stepsPerPhase));
   return *configurations(s);
 }

@@ -36,7 +36,7 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple) {
   if(order==0) HALT("that doesn't make sense");
   
   if(order==1) {
-    rai::KinematicWorld& K = *Ktuple(-1);
+    rai::Configuration& K = *Ktuple(-1);
     
     arr p0, J0, p1, J1, pc, Jc;
     //check equal # of frames in each world
@@ -110,7 +110,7 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple) {
   }
   
   if(order==2) {
-    rai::KinematicWorld& K = *Ktuple(-2);
+    rai::Configuration& K = *Ktuple(-2);
     
     arr acc, Jacc;
     arr acc_ref = {0.,0.,-gravity};
@@ -213,7 +213,7 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple) {
 }
 
 uint TM_Gravity::dim_phi(const WorldL &Ktuple) {
-  rai::KinematicWorld& K = *Ktuple(-1);
+  rai::Configuration& K = *Ktuple(-1);
   uint d = 0;
   for(rai::Frame *a: K.frames) if(a->flags & (1<<FL_gravityAcc)) {
       d+=3;

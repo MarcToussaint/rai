@@ -47,7 +47,7 @@ void rai::Transformation_Qtoken::operator=(const rai::Transformation& _Q){ f.Q=_
 
 bool rai_Kin_frame_ignoreQuatNormalizationWarning = false;
 
-rai::Frame::Frame(KinematicWorld& _K, const Frame* copyFrame)
+rai::Frame::Frame(Configuration& _K, const Frame* copyFrame)
   : K(_K) {
   
   ID=K.frames.N;
@@ -55,7 +55,7 @@ rai::Frame::Frame(KinematicWorld& _K, const Frame* copyFrame)
   if(copyFrame) {
     const Frame& f = *copyFrame;
     name=f.name; Q=f.Q; X=f.X; tau=f.tau; ats=f.ats;
-    //we cannot copy link! because we can't know if the frames already exist. KinematicWorld::copy copies the rel's !!
+    //we cannot copy link! because we can't know if the frames already exist. Configuration::copy copies the rel's !!
     if(copyFrame->joint) new Joint(*this, copyFrame->joint);
     if(copyFrame->shape) new Shape(*this, copyFrame->shape);
     if(copyFrame->inertia) new Inertia(*this, copyFrame->inertia);

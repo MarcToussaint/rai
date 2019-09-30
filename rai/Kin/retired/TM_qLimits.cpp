@@ -10,7 +10,7 @@
 
 //===========================================================================
 
-void LimitsConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
+void LimitsConstraint::phi(arr& y, arr& J, const rai::Configuration& G) {
 //  if(!limits.N)
   limits = G.getLimits();
   G.kinematicsLimitsCost(y, J, limits, margin);

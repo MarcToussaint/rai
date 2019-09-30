@@ -36,9 +36,9 @@ struct Plan{
 
 struct Simulation : GLDrawer{
   struct Simulation_self *self=0;
-  rai::KinematicWorld K;
+  rai::Configuration K;
 
-  Simulation(const rai::KinematicWorld& _K, double dt=.01);
+  Simulation(const rai::Configuration& _K, double dt=.01);
   ~Simulation();
 
   //-- stepping forward in time

@@ -13,13 +13,13 @@ TM_AlignStacking::TM_AlignStacking(int iShape)
   : i(iShape) {
 }
 
-TM_AlignStacking::TM_AlignStacking(const rai::KinematicWorld& G, const char* iShapeName)
+TM_AlignStacking::TM_AlignStacking(const rai::Configuration& G, const char* iShapeName)
   :i(-1) {
   rai::Frame *a = iShapeName ? G.getFrameByName(iShapeName):NULL;
   if(a) i=a->ID;
 }
 
-void TM_AlignStacking::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
+void TM_AlignStacking::phi(arr& y, arr& J, const rai::Configuration& G) {
   rai::Frame *b=G.frames(i);
   
   rai::Joint *j=b->joint;
@@ -72,6 +72,6 @@ void TM_AlignStacking::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
 #endif
 }
 
-rai::String TM_AlignStacking::shortTag(const rai::KinematicWorld &G) {
+rai::String TM_AlignStacking::shortTag(const rai::Configuration &G) {
   return STRING("AlignStacking:"<<(i<0?"WORLD":G.frames(i)->name));
 }

@@ -15,13 +15,13 @@
 //
 
 void TEST(LoadSave){
-  rai::KinematicWorld C;
+  rai::Configuration C;
   C.addFile("../../../../rai-robotModels/panda/panda.g");
   cout <<C <<endl;
   C.sortFrames();
   FILE("z.g") <<C;
 
-  rai::KinematicWorld C2("z.g");
+  rai::Configuration C2("z.g");
   C2.watch(true);
 }
 
@@ -31,7 +31,7 @@ void TEST(LoadSave){
 //
 
 void testJacobianInFile(const char* filename, const char* shape){
-  rai::KinematicWorld K(filename);
+  rai::Configuration K(filename);
 
   rai::Frame *a=K.getFrameByName(shape);
 
@@ -56,10 +56,10 @@ void TEST(Kinematics){
 
   struct MyFct : VectorFunction{
     enum Mode {Pos, Vec, Quat, RelPos, RelVec} mode;
-    rai::KinematicWorld& K;
+    rai::Configuration& K;
     rai::Frame *b, *b2;
     rai::Vector &vec, &vec2;
-    MyFct(Mode _mode, rai::KinematicWorld &_K,
+    MyFct(Mode _mode, rai::Configuration &_K,
           rai::Frame *_b, rai::Vector &_vec, rai::Frame *_b2, rai::Vector &_vec2)
       : mode(_mode), K(_K), b(_b), b2(_b2), vec(_vec), vec2(_vec2){
       VectorFunction::operator= ( [this](arr& y, arr& J, const arr& x) -> void{
@@ -78,10 +78,10 @@ void TEST(Kinematics){
     VectorFunction& operator()(){ return *this; }
   };
 
-//  rai::KinematicWorld G("arm7.g");
-  rai::KinematicWorld G("kinematicTests.g");
-//  rai::KinematicWorld G("../../../../rai-robotModels/pr2/pr2.g");
-//  rai::KinematicWorld G("../../../projects/17-LGP-push/quatJacTest.g");
+//  rai::Configuration G("arm7.g");
+  rai::Configuration G("kinematicTests.g");
+//  rai::Configuration G("../../../../rai-robotModels/pr2/pr2.g");
+//  rai::Configuration G("../../../projects/17-LGP-push/quatJacTest.g");
 //  G.watch(true);
 
   for(uint k=0;k<10;k++){
@@ -112,10 +112,10 @@ void TEST(Kinematics){
 void TEST(Graph){
   if(!rai::FileToken("../../../../rai-robotModels/pr2/pr2.g", false).exists()) return;
   
-//  rai::KinematicWorld G("arm7.g");
-//  rai::KinematicWorld K("kinematicTests.g");
-  rai::KinematicWorld K("../../../../rai-robotModels/pr2/pr2.g");
-//  rai::KinematicWorld G("../../../projects/17-LGP-push/quatJacTest.g");
+//  rai::Configuration G("arm7.g");
+//  rai::Configuration K("kinematicTests.g");
+  rai::Configuration K("../../../../rai-robotModels/pr2/pr2.g");
+//  rai::Configuration G("../../../projects/17-LGP-push/quatJacTest.g");
 //  G.watch(true);
 
   K.prefixNames();
@@ -140,7 +140,7 @@ void TEST(Graph){
 //
 
 void TEST(QuaternionKinematics){
-  rai::KinematicWorld G("kinematicTestQuat.g");
+  rai::Configuration G("kinematicTestQuat.g");
   G.orsDrawJoints=false;
 
   for(uint k=0;k<3;k++){
@@ -169,9 +169,9 @@ void TEST(QuaternionKinematics){
 //
 
 void TEST(Copy){
-  rai::KinematicWorld G1("kinematicTests.g");
-  //rai::KinematicWorld G1("../../../data/pr2_model/pr2_model.ors");
-  rai::KinematicWorld G2(G1);
+  rai::Configuration G1("kinematicTests.g");
+  //rai::Configuration G1("../../../data/pr2_model/pr2_model.ors");
+  rai::Configuration G2(G1);
 
   G1.checkConsistency();
   G2.checkConsistency();
@@ -195,9 +195,9 @@ void TEST(Copy){
 void TEST(KinematicSpeed){
 #define NUM 100000
 #if 1
-//  rai::KinematicWorld K("kinematicTests.g");
+//  rai::Configuration K("kinematicTests.g");
   if(!rai::FileToken("../../../../rai-robotModels/pr2/pr2.g", false).exists()) return;
-  rai::KinematicWorld K("../../../../rai-robotModels/pr2/pr2.g");
+  rai::Configuration K("../../../../rai-robotModels/pr2/pr2.g");
   K.optimizeTree();
   uint n=K.getJointStateDimension();
   arr x(n);
@@ -238,7 +238,7 @@ void TEST(KinematicSpeed){
 //
 
 void TEST(Contacts){
-  rai::KinematicWorld G("arm7.g");
+  rai::Configuration G("arm7.g");
   
   arr x,con,grad;
   uint t;
@@ -272,7 +272,7 @@ void TEST(Contacts){
 //===========================================================================
 
 void TEST(Limits){
-  rai::KinematicWorld G("arm7.g");
+  rai::Configuration G("arm7.g");
 
   arr limits = G.getLimits();
   VectorFunction F = [&G, &limits](arr& y, arr& J, const arr& x){
@@ -314,7 +314,7 @@ void generateSequence(arr &X, uint T, uint n){
 }
 
 void TEST(PlayStateSequence){
-  rai::KinematicWorld G("arm7.g");
+  rai::Configuration G("arm7.g");
   uint n=G.getJointStateDimension();
   arr X;
   generateSequence(X, 200, n);
@@ -332,7 +332,7 @@ void TEST(PlayStateSequence){
 
 #ifdef RAI_ODE
 void TEST(PlayTorqueSequenceInOde){
-  rai::KinematicWorld G("arm7.g");
+  rai::Configuration G("arm7.g");
   G.ode();
   uint n=G.getJointStateDimension();
   arr F,Xt,Vt;
@@ -351,7 +351,7 @@ void TEST(PlayTorqueSequenceInOde){
 }
 
 void TEST(MeshShapesInOde){
-  rai::KinematicWorld G("testOdeMesh.g");
+  rai::Configuration G("testOdeMesh.g");
   for(uint t=0;t<1000;t++){
     //G.clearJointErrors(); exportStateToOde(C,); //try doing this without clearing joint errors...!
     G.ode().step(0.03);
@@ -367,7 +367,7 @@ void TEST(MeshShapesInOde){
 //
 
 void TEST(FollowRedundantSequence){  
-  rai::KinematicWorld G("arm7.g");
+  rai::Configuration G("arm7.g");
 
   uint t,T,n=G.getJointStateDimension();
   arr x(n),y,J,invJ;
@@ -412,12 +412,12 @@ void TEST(FollowRedundantSequence){
 //  //static arr conswit;
 //  //bool hasContact=false;
 //  bool addContactsToDynamics=false;
-//  rai::KinematicWorld *G;
+//  rai::Configuration *G;
 //}
 
 //---------- test standard dynamic control
 void TEST(Dynamics){
-  rai::KinematicWorld G("arm7.g");
+  rai::Configuration G("arm7.g");
   G.optimizeTree();
   G.sortFrames();
   cout <<G <<endl;
@@ -564,7 +564,7 @@ static void drawTrimesh(void* _mesh){
 void TEST(BlenderImport){
   rai::timerStart();
   rai::Mesh mesh;
-  rai::KinematicWorld bl;
+  rai::Configuration bl;
   readBlender("blender-export",mesh,bl);
   cout <<"loading time =" <<rai::timerRead() <<"sec" <<endl;
   OpenGL gl;
@@ -581,7 +581,7 @@ void TEST(BlenderImport){
 void TEST(InverseKinematics) {
   // we're testing some big steps / target positions, some of which are not
   // reachable to check if the IK handle it
-  rai::KinematicWorld world("drawer.g");
+  rai::Configuration world("drawer.g");
 
   rai::Frame* drawer = world.getFrameByName("cabinet_drawer");
   rai::Frame* marker = world.getFrameByName("marker");

@@ -25,16 +25,16 @@ class PxMaterial;
 struct PhysXInterface : GLDrawer {
   struct sPhysXInterface *s;
   
-  PhysXInterface(const rai::KinematicWorld& world);
+  PhysXInterface(const rai::Configuration& world);
   ~PhysXInterface();
   
   void step(double tau=.01);
   
   void pushKinematicStates(const FrameL& frames);
-  void pushFullState(const FrameL& frames, const arr& vels=NoArr, rai::KinematicWorld *Kt_1=NULL, rai::KinematicWorld *Kt_2=NULL, double tau=-1., bool onlyKinematic=false);
+  void pushFullState(const FrameL& frames, const arr& vels=NoArr, rai::Configuration *Kt_1=NULL, rai::Configuration *Kt_2=NULL, double tau=-1., bool onlyKinematic=false);
   void pullDynamicStates(FrameL& frames, arr &vels=NoArr);
 
-  void setArticulatedBodiesKinematic(const rai::KinematicWorld& C);
+  void setArticulatedBodiesKinematic(const rai::Configuration& C);
   void ShutdownPhysX();
   
   void glDraw(OpenGL&);
@@ -44,7 +44,7 @@ struct PhysXInterface : GLDrawer {
   void addForce(rai::Vector& force, rai::Frame* b, rai::Vector& pos);
 };
 
-void bindOrsToPhysX(rai::KinematicWorld& graph, OpenGL& gl, PhysXInterface& physx);
+void bindOrsToPhysX(rai::Configuration& graph, OpenGL& gl, PhysXInterface& physx);
 
 #endif
 /// @}

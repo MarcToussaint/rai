@@ -136,7 +136,7 @@ F_Wrench::F_Wrench(int iShape, const arr& _vec, bool _torqueOnly) : i(iShape), v
 void F_Wrench::phi(arr &y, arr &J, const WorldL &Ktuple) {
   CHECK_EQ(order, 2, "");
 
-  rai::KinematicWorld& K = *Ktuple(-2); // ! THIS IS THE MID TIME SLICE !
+  rai::Configuration& K = *Ktuple(-2); // ! THIS IS THE MID TIME SLICE !
   rai::Frame *a = K.frames(i);
 //  if((a->flags & (1<<FL_impulseExchange))){
 //    y.resize(3).setZero();
@@ -209,7 +209,7 @@ void F_Energy::phi(arr &y, arr &J, const WorldL &Ktuple) {
 
   CHECK_EQ(order, 1, "");
 
-  rai::KinematicWorld& K = *Ktuple(-1);
+  rai::Configuration& K = *Ktuple(-1);
 
   double E=0.;
   arr p, Jp, v, Jv, w, Jw;
@@ -261,7 +261,7 @@ F_StaticStability::F_StaticStability(int iShape, double _margin)
   : i(iShape), margin(_margin) {
 }
 
-F_StaticStability::F_StaticStability(const rai::KinematicWorld& G, const char* iShapeName, double _margin)
+F_StaticStability::F_StaticStability(const rai::Configuration& G, const char* iShapeName, double _margin)
   :i(-1), margin(_margin) {
   rai::Frame *a = iShapeName ? G.getFrameByName(iShapeName):NULL;
   if(a) i=a->ID;
@@ -274,7 +274,7 @@ FrameL getShapesAbove(rai::Frame *a) {
   return aboves;
 }
 
-void F_StaticStability::phi(arr& y, arr& J, const rai::KinematicWorld& K) {
+void F_StaticStability::phi(arr& y, arr& J, const rai::Configuration& K) {
   //get shapes above
   rai::Frame *a = K.frames(i);
   FrameL aboves = getShapesAbove(a);
@@ -324,6 +324,6 @@ void F_StaticStability::phi(arr& y, arr& J, const rai::KinematicWorld& K) {
 #endif
 }
 
-rai::String F_StaticStability::shortTag(const rai::KinematicWorld &K) {
+rai::String F_StaticStability::shortTag(const rai::Configuration &K) {
   return STRING("StaticStability:"<<(i<0?"WORLD":K.frames(i)->name));
 }

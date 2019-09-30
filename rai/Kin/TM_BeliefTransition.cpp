@@ -9,7 +9,7 @@
 #include "TM_BeliefTransition.h"
 #include "frame.h"
 
-uint TM_BeliefTransition::dim_phi(const rai::KinematicWorld& G) {
+uint TM_BeliefTransition::dim_phi(const rai::Configuration& G) {
   uint n=0;
   for(rai::Joint *j : G.fwdActiveJoints) if(j->uncertainty) {
       n += j->dim;

@@ -92,7 +92,7 @@ void PR2Interface::step() {
   }
 }
 
-void PR2Interface::initialize(rai::KinematicWorld* realWorld, rai::KinematicWorld* realWorldSimulation, rai::KinematicWorld* modelWorld, TaskSpaceController* controller) {
+void PR2Interface::initialize(rai::Configuration* realWorld, rai::Configuration* realWorldSimulation, rai::Configuration* modelWorld, TaskSpaceController* controller) {
 
   cout << "TODO: nochmal eine World mehr" << endl;
   
@@ -186,7 +186,7 @@ void PR2Interface::initialize(rai::KinematicWorld* realWorld, rai::KinematicWorl
     
     this->ctrl_ref.set() = ctrlMsg;
     
-    this->dynamicSimulation->initializeSimulation(new rai::KinematicWorld(*this->realWorld));
+    this->dynamicSimulation->initializeSimulation(new rai::Configuration(*this->realWorld));
     this->dynamicSimulation->startSimulation();
   }
   this->realWorld->watch(false);
@@ -195,7 +195,7 @@ void PR2Interface::initialize(rai::KinematicWorld* realWorld, rai::KinematicWorl
   cout << "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << endl;
 }
 
-void PR2Interface::initialize(rai::KinematicWorld* realWorld, rai::KinematicWorld* modelWorld, TaskSpaceController* controller) {
+void PR2Interface::initialize(rai::Configuration* realWorld, rai::Configuration* modelWorld, TaskSpaceController* controller) {
   this->initialize(realWorld, realWorld, modelWorld, controller);
 }
 
@@ -275,7 +275,7 @@ void PR2Interface::goToPosition(arr pos, rai::String shape, double executionTime
 
 void PR2Interface::goToTasks(rai::Array<LinTaskSpaceAccLaw*> laws, double executionTime, bool useMotionPlanner) {
   if(useMotionPlanner) {
-    rai::KinematicWorld copiedWorld(*this->modelWorld);
+    rai::Configuration copiedWorld(*this->modelWorld);
     KOMO MP(copiedWorld);
     
     MP.x0 = modelWorld->getJointState(); //TODO nix modelWorld, copiedWorld?
@@ -424,10 +424,10 @@ void PR2Interface::clearLog() {
 
 REGISTER_MODULE(PR2Interface)
 
-void showTrajectory(const arr& traj, rai::KinematicWorld& _world, bool copyWorld, double delay, rai::String text) {
-  rai::KinematicWorld* world;
+void showTrajectory(const arr& traj, rai::Configuration& _world, bool copyWorld, double delay, rai::String text) {
+  rai::Configuration* world;
   if(copyWorld) {
-    world = new rai::KinematicWorld(_world);
+    world = new rai::Configuration(_world);
   } else {
     world = &_world;
   }

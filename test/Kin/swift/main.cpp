@@ -4,7 +4,7 @@
 #include <Kin/frame.h>
 
 void TEST(Swift) {
-  rai::KinematicWorld K("swift_test.g");
+  rai::Configuration K("swift_test.g");
 
   K.swift().setCutoff(2.);
   K.stepSwift();
@@ -26,7 +26,7 @@ void TEST(Swift) {
 }
 
 void TEST(CollisionTiming){
-  rai::KinematicWorld K("../../../../rai-robotModels/pr2/pr2.g");
+  rai::Configuration K("../../../../rai-robotModels/pr2/pr2.g");
 
   K.swift().setCutoff(1.);
 

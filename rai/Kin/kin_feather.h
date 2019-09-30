@@ -40,11 +40,11 @@ stdOutPipe(F_Link)
 typedef rai::Array<F_Link> F_LinkTree;
 
 struct FeatherstoneInterface {
-  rai::KinematicWorld& K;
+  rai::Configuration& K;
   
   rai::Array<F_Link> tree;
   
-  FeatherstoneInterface(rai::KinematicWorld& K):K(K) {}
+  FeatherstoneInterface(rai::Configuration& K):K(K) {}
   
   void update();
   

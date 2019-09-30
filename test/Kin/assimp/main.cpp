@@ -8,7 +8,7 @@
 //
 
 void TEST(LoadAssimp){
-  rai::KinematicWorld K;
+  rai::Configuration K;
 
   const char* filename = "/home/mtoussai/CAD/LG14-Modell.dae";
   if(rai::argc>1) filename = rai::argv[1];

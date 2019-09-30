@@ -16,7 +16,7 @@ TM_AboveBox::TM_AboveBox(int iShape, int jShape, double _margin)
   : i(iShape), j(jShape), margin(_margin) {
 }
 
-TM_AboveBox::TM_AboveBox(const rai::KinematicWorld& K, const char* iShapeName, const char* jShapeName, double _margin)
+TM_AboveBox::TM_AboveBox(const rai::Configuration& K, const char* iShapeName, const char* jShapeName, double _margin)
   :i(-1), j(-1), margin(_margin) {
   rai::Frame *a = iShapeName ? K.getFrameByName(iShapeName):NULL;
   rai::Frame *b = jShapeName ? K.getFrameByName(jShapeName):NULL;
@@ -24,7 +24,7 @@ TM_AboveBox::TM_AboveBox(const rai::KinematicWorld& K, const char* iShapeName, c
   if(b) j=b->ID;
 }
 
-void TM_AboveBox::phi(arr& y, arr& J, const rai::KinematicWorld& K) {
+void TM_AboveBox::phi(arr& y, arr& J, const rai::Configuration& K) {
   rai::Shape *pnt=K.frames(i)->shape;
   rai::Shape *box=K.frames(j)->shape;
   CHECK(pnt && box,"I need shapes!");
@@ -70,11 +70,11 @@ void TM_AboveBox::phi(arr& y, arr& J, const rai::KinematicWorld& K) {
   }
 }
 
-rai::String TM_AboveBox::shortTag(const rai::KinematicWorld &G) {
+rai::String TM_AboveBox::shortTag(const rai::Configuration &G) {
     return STRING("AboveBox:"<<(i<0?"WORLD":G.frames(i)->name) <<':' <<(j<0?"WORLD":G.frames(j)->name));
 }
 
-Graph TM_AboveBox::getSpec(const rai::KinematicWorld& K){
+Graph TM_AboveBox::getSpec(const rai::Configuration& K){
     return Graph({ {"feature", "above"}, {"o1", K.frames(i)->name}, {"o2", K.frames(j)->name}});
 }
 
@@ -84,7 +84,7 @@ TM_InsideBox::TM_InsideBox(int iShape, int jShape)
   : i(iShape), j(jShape), margin(.01) {
 }
 
-TM_InsideBox::TM_InsideBox(const rai::KinematicWorld& G, const char* iShapeName, const rai::Vector &_ivec, const char* jShapeName, double _margin)
+TM_InsideBox::TM_InsideBox(const rai::Configuration& G, const char* iShapeName, const rai::Vector &_ivec, const char* jShapeName, double _margin)
   :i(-1), j(-1), margin(_margin) {
   rai::Frame *a = iShapeName ? G.getFrameByName(iShapeName):NULL;
   rai::Frame *b = jShapeName ? G.getFrameByName(jShapeName):NULL;
@@ -93,7 +93,7 @@ TM_InsideBox::TM_InsideBox(const rai::KinematicWorld& G, const char* iShapeName,
   if(!!_ivec) ivec=_ivec; else ivec.setZero();
 }
 
-void TM_InsideBox::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
+void TM_InsideBox::phi(arr& y, arr& J, const rai::Configuration& G) {
   rai::Shape *pnt=G.frames(i)->shape;
   rai::Shape *box=G.frames(j)->shape;
   CHECK(pnt && box,"I need shapes!");
@@ -125,7 +125,7 @@ void TM_InsideBox::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
 
 //===========================================================================
 
-void TM_InsideLine::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
+void TM_InsideLine::phi(arr& y, arr& J, const rai::Configuration& G) {
   rai::Shape *pnt=G.frames(i)->shape;
   rai::Shape *box=G.frames(j)->shape;
   CHECK(pnt && box,"I need shapes!");
@@ -149,7 +149,7 @@ void TM_InsideLine::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
 
 //===========================================================================
 
-void F_GraspOppose::phi(arr& y, arr& J, const rai::KinematicWorld& K){
+void F_GraspOppose::phi(arr& y, arr& J, const rai::Configuration& K){
     Value D1 = TM_PairCollision(i, k, TM_PairCollision::_vector, true)(K);
     Value D2 = TM_PairCollision(j, k, TM_PairCollision::_vector, true)(K);
 

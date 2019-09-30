@@ -13,7 +13,7 @@ TM_PushConsistent::TM_PushConsistent(int iShape, int jShape) : i(iShape), j(jSha
   order=1;
 }
 
-TM_PushConsistent::TM_PushConsistent(const rai::KinematicWorld &G,
+TM_PushConsistent::TM_PushConsistent(const rai::Configuration &G,
                                      const char* iShapeName, const char* jShapeName) : i(-1), j(-1) {
   rai::Frame *a = iShapeName ? G.getFrameByName(iShapeName):NULL;
   rai::Frame *b = jShapeName ? G.getFrameByName(jShapeName):NULL;
@@ -33,8 +33,8 @@ TM_PushConsistent::TM_PushConsistent(const rai::KinematicWorld &G,
 void TM_PushConsistent::phi(arr& y, arr& J, const WorldL& Ktuple) {
   CHECK_GE(Ktuple.N, order+1,"I need at least " <<order+1 <<" configurations to evaluate");
   
-  const rai::KinematicWorld& G2 = *Ktuple.elem(-1);
-  const rai::KinematicWorld& G1 = *Ktuple.elem(-2);
+  const rai::Configuration& G2 = *Ktuple.elem(-1);
+  const rai::Configuration& G1 = *Ktuple.elem(-2);
   
   rai::Frame *body_i1 = G1.frames(i);
   rai::Frame *body_i2 = G2.frames(i);
@@ -79,6 +79,6 @@ void TM_PushConsistent::phi(arr& y, arr& J, const WorldL& Ktuple) {
 #endif
 }
 
-rai::String TM_PushConsistent::shortTag(const rai::KinematicWorld &G) {
+rai::String TM_PushConsistent::shortTag(const rai::Configuration &G) {
   return STRING("PushConsistent:"<<(i<0?"WORLD":G.frames(i)->name) <<':' <<(j<0?"WORLD":G.frames(j)->name));
 }

@@ -15,7 +15,7 @@
 
 //===========================================================================
 
-KinViewer::KinViewer(const Var<rai::KinematicWorld>& _kin, double beatIntervalSec, const char* _cameraFrameName)
+KinViewer::KinViewer(const Var<rai::Configuration>& _kin, double beatIntervalSec, const char* _cameraFrameName)
   : Thread("KinViewer", beatIntervalSec),
     world(this, _kin, (beatIntervalSec<0.)){
   if(_cameraFrameName && strlen(_cameraFrameName)>0){
@@ -155,7 +155,7 @@ void KinPathViewer::step() {
 //===========================================================================
 
 void renderConfigurations(const WorldL& cs, const char* filePrefix, int tprefix, int w, int h, rai::Camera *camera) {
-  rai::KinematicWorld copy;
+  rai::Configuration copy;
   copy.orsDrawMarkers=false;
   rai::system(STRING("mkdir -p " <<filePrefix));
   rai::system(STRING("rm -f " <<filePrefix <<"*.ppm"));
@@ -183,15 +183,15 @@ void renderConfigurations(const WorldL& cs, const char* filePrefix, int tprefix,
 //    gl(STRING("KinPoseViewer: " <<poseVarNames)) {
 //  for(const String& varname: poseVarNames) {
 //    poses.append(new Var<arr>(this, varname, (beatIntervalSec<0.)));   //listen only when beatInterval=1.
-//    copies.append(new rai::KinematicWorld());
+//    copies.append(new rai::Configuration());
 //  }
 //  copy = model.get();
 //  computeMeshNormals(copy.frames);
-//  for(rai::KinematicWorld *w: copies) w->copy(copy, true);
+//  for(rai::Configuration *w: copies) w->copy(copy, true);
 //  if(beatIntervalSec>=0.) threadLoop();
 //}
 
-KinPoseViewer::KinPoseViewer(Var<rai::KinematicWorld>& _kin, const Var<arr>& _frameState, double beatIntervalSec)
+KinPoseViewer::KinPoseViewer(Var<rai::Configuration>& _kin, const Var<arr>& _frameState, double beatIntervalSec)
   : Thread("KinPoseViewer", beatIntervalSec),
     model(this, _kin, (beatIntervalSec<0.)),
     frameState(this, _frameState, (beatIntervalSec<0.)){
@@ -203,7 +203,7 @@ KinPoseViewer::~KinPoseViewer() {
   threadClose();
 }
 
-void KinPoseViewer::recopyKinematics(const rai::KinematicWorld& world) {
+void KinPoseViewer::recopyKinematics(const rai::Configuration& world) {
   stepMutex.lock(RAI_HERE);
   if(!!world) copy = world;
   else copy = model.get();
@@ -255,7 +255,7 @@ void KinPoseViewer::glDraw(OpenGL &gl) {
 
 //===========================================================================
 
-ComputeCameraView::ComputeCameraView(const Var<rai::KinematicWorld>& _modelWorld, double beatIntervalSec)
+ComputeCameraView::ComputeCameraView(const Var<rai::Configuration>& _modelWorld, double beatIntervalSec)
   : Thread("ComputeCameraView", beatIntervalSec),
     modelWorld(this, _modelWorld, (beatIntervalSec<.0)),
     cameraView(this), //"cameraView"),

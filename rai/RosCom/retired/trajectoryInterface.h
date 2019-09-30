@@ -19,8 +19,8 @@
 struct TrajectoryInterface {
   struct sTrajectoryInterface *S;
   arr q,qdot;
-  rai::KinematicWorld *world_robot;
-  rai::KinematicWorld *world_plan;
+  rai::Configuration *world_robot;
+  rai::Configuration *world_plan;
   bool useRos, fixBase,fixTorso, useMarker;
   
   CtrlMsg refs;
@@ -30,7 +30,7 @@ struct TrajectoryInterface {
   arr logXdes,logXref,logXplan,logX,logFL,logFR,logT,logU;
   arrA logM;
   
-  TrajectoryInterface(rai::KinematicWorld &world_plan_, rai::KinematicWorld& world_robot_);
+  TrajectoryInterface(rai::Configuration &world_plan_, rai::Configuration& world_robot_);
   ~TrajectoryInterface() { threadCloseModules(); }
   
   /// execute trajectory X in T seconds

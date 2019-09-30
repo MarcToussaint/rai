@@ -18,7 +18,7 @@ void drawEnv(void*, OpenGL& gl) { glStandardLight(NULL, gl); glDrawFloor(10., .9
 void drawBase(void*, OpenGL& gl) { glDrawAxes(1.); }
 
 struct sSimulator {
-  rai::KinematicWorld G;
+  rai::Configuration G;
   double margin;
   double dynamicNoise;
   bool gravity;
@@ -196,7 +196,7 @@ void Simulator::stepPhysx(const arr& qdot, double tau) {
   s->G.physx().step(tau);
 }
 
-rai::KinematicWorld& Simulator::getOrsGraph() {
+rai::Configuration& Simulator::getOrsGraph() {
   return s->G;
 }
 

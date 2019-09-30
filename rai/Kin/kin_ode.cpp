@@ -47,7 +47,7 @@ static bool ODEinitialized=false;
 // Ode implementations
 //
 
-OdeInterface::OdeInterface(rai::KinematicWorld &_C):C(_C) {
+OdeInterface::OdeInterface(rai::Configuration &_C):C(_C) {
   time=0.;
   
   noGravity=noContactJoints=false;
@@ -943,7 +943,7 @@ void OdeInterface::slGetProxies() {
   importProxiesFromOde();
 }
 
-/*void OdeInterface::slGetProxyGradient(arr &dx, const arr &x, rai::KinematicWorld &C){
+/*void OdeInterface::slGetProxyGradient(arr &dx, const arr &x, rai::Configuration &C){
   if(C.proxies.N){
     arr dp, J;
     C.getContactGradient(dp);
@@ -955,7 +955,7 @@ void OdeInterface::slGetProxies() {
   }
 }
 
-void OdeInterface::slGetProxyGradient(arr &dx, const arr &x, rai::KinematicWorld &C, OdeInterface &ode){
+void OdeInterface::slGetProxyGradient(arr &dx, const arr &x, rai::Configuration &C, OdeInterface &ode){
   slGetProxies(x, C, ode);
   slGetProxyGradient(dx, x, C);
 }*/
@@ -1041,7 +1041,7 @@ void OdeInterface::createOde(OdeInterface& ode);
 void OdeInterface::slGetProxies(OdeInterface &ode);
 
 /// \ingroup sl
-//void OdeInterface::slGetProxyGradient(arr &dx, const arr &x, rai::KinematicWorld &C, OdeInterface &ode);
+//void OdeInterface::slGetProxyGradient(arr &dx, const arr &x, rai::Configuration &C, OdeInterface &ode);
 
 /// \ingroup sl
 void OdeInterface::reportContacts(OdeInterface& ode);
@@ -1051,7 +1051,7 @@ bool inFloorContacts(rai::Vector& x);
 #endif
 
 #else
-OdeInterface::OdeInterface(rai::KinematicWorld &_C):C(_C) { RAI_MSG("WARNING - creating dummy OdeInterface"); }
+OdeInterface::OdeInterface(rai::Configuration &_C):C(_C) { RAI_MSG("WARNING - creating dummy OdeInterface"); }
 OdeInterface::~OdeInterface() {}
 void OdeInterface::step(double dtime) {}
 void OdeInterface::clear() {}

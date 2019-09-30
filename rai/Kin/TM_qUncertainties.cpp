@@ -11,7 +11,7 @@
 
 TM_qUncertainties::TM_qUncertainties() {}
 
-void TM_qUncertainties::phi(arr& q, arr& J, const rai::KinematicWorld& G) {
+void TM_qUncertainties::phi(arr& q, arr& J, const rai::Configuration& G) {
   uint n=dim_phi(G);
   
   q.resize(n);
@@ -28,12 +28,12 @@ void TM_qUncertainties::phi(arr& q, arr& J, const rai::KinematicWorld& G) {
   CHECK_EQ(i, n, "");
 }
 
-uint TM_qUncertainties::dim_phi(const rai::KinematicWorld& G) {
+uint TM_qUncertainties::dim_phi(const rai::Configuration& G) {
   uint n=0;
   for(rai::Joint *j : G.fwdActiveJoints) if(j->uncertainty) n += j->dim;
   return n;
 }
 
-rai::String TM_qUncertainties::shortTag(const rai::KinematicWorld& G) {
+rai::String TM_qUncertainties::shortTag(const rai::Configuration& G) {
   return STRING("qUncertainties");
 }

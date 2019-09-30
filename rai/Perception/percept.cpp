@@ -75,7 +75,7 @@ void PercCluster::write(ostream& os) const {
 
 //============================================================================
 
-void PercMesh::syncWith(rai::KinematicWorld& K) {
+void PercMesh::syncWith(rai::Configuration& K) {
   rai::Frame *f = K.getFrameByName(STRING("perc_"<<id), false);
   if(!f) {
     f = new rai::Frame(K);
@@ -126,7 +126,7 @@ void PercPlane::write(ostream& os) const {
 //  os <<"plane_" <<id <<":"; // center=" <<center <<" normal=" <<normal;
 }
 
-void PercPlane::syncWith(rai::KinematicWorld &K) {
+void PercPlane::syncWith(rai::Configuration &K) {
   rai::String plane_name = STRING("perc_" << id);
   
   rai::Frame *body = K.getFrameByName(plane_name, false);
@@ -204,7 +204,7 @@ double PercBox::fuse(PerceptPtr& other) {
   return 0.;
 }
 
-void PercBox::syncWith(rai::KinematicWorld &K) {
+void PercBox::syncWith(rai::Configuration &K) {
   rai::String box_name = STRING("perc_" << id);
   
   rai::Frame *body = K.getFrameByName(box_name, false);
@@ -257,7 +257,7 @@ void PercAlvar::write(ostream& os) const {
 
 //============================================================================
 
-void PercCluster::syncWith(rai::KinematicWorld& K) {
+void PercCluster::syncWith(rai::Configuration& K) {
   rai::String cluster_name = STRING("perc_" << id);
   
   rai::Frame *body = K.getFrameByName(cluster_name, false);
@@ -281,7 +281,7 @@ void PercCluster::syncWith(rai::KinematicWorld& K) {
 
 //============================================================================
 
-void PercAlvar::syncWith(rai::KinematicWorld& K) {
+void PercAlvar::syncWith(rai::Configuration& K) {
   rai::String alvar_name = STRING("perc_" << id);
   
   rai::Frame *body = K.getFrameByName(alvar_name, false);
@@ -298,7 +298,7 @@ void PercAlvar::syncWith(rai::KinematicWorld& K) {
   body->setPose(pose);
 }
 
-void OptitrackBody::syncWith(rai::KinematicWorld &K) {
+void OptitrackBody::syncWith(rai::Configuration &K) {
   rai::String optitrackbody_name = STRING("perc_" << id);
   
   rai::Frame *body = K.getFrameByName(optitrackbody_name, false);
@@ -315,7 +315,7 @@ void OptitrackBody::syncWith(rai::KinematicWorld &K) {
   body->setPose(pose);
 }
 
-void OptitrackMarker::syncWith(rai::KinematicWorld &K) {
+void OptitrackMarker::syncWith(rai::Configuration &K) {
   rai::String optitrackmarker_name = STRING("perc_" << id);
   
   rai::Frame *body = K.getFrameByName(optitrackmarker_name, false);

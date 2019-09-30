@@ -143,7 +143,7 @@ double distance_(rai::Frame& A, rai::Frame& B, rai::Vector& Pa, rai::Vector& Pb)
 }
 
 void TEST(Distance){
-  rai::KinematicWorld C;
+  rai::Configuration C;
   rai::Frame A(C), B(C);
   new rai::Shape(A);
   new rai::Shape(B);

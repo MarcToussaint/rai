@@ -12,20 +12,20 @@
 
 //===========================================================================
 
-void CollisionConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
+void CollisionConstraint::phi(arr& y, arr& J, const rai::Configuration& G) {
   G.kinematicsProxyCost(y, J, margin);
   y -= .5;
 }
 
 //===========================================================================
 
-PairCollisionConstraint::PairCollisionConstraint(const rai::KinematicWorld &G, const char *iShapeName, const char *jShapeName, double _margin)
+PairCollisionConstraint::PairCollisionConstraint(const rai::Configuration &G, const char *iShapeName, const char *jShapeName, double _margin)
   : i(G.getFrameByName(iShapeName)->ID),
     j(G.getFrameByName(jShapeName)->ID),
     margin(_margin) {
 }
 
-void PairCollisionConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
+void PairCollisionConstraint::phi(arr& y, arr& J, const rai::Configuration& G) {
   y.resize(1) = -1.; //default value if not overwritten below
   if(!!J) J.resize(1,G.q.N).setZero();
   if(j>=0) { //against a concrete j
@@ -69,10 +69,10 @@ void PairCollisionConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G) 
 
 //===========================================================================
 
-PlaneConstraint::PlaneConstraint(const rai::KinematicWorld &G, const char *iShapeName, const arr &_planeParams)
+PlaneConstraint::PlaneConstraint(const rai::Configuration &G, const char *iShapeName, const arr &_planeParams)
   : i(G.getFrameByName(iShapeName)->ID), planeParams(_planeParams) {}
 
-void PlaneConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
+void PlaneConstraint::phi(arr& y, arr& J, const rai::Configuration& G) {
   rai::Frame *body_i = G.frames(i);
   rai::Vector vec_i = 0;
   
@@ -89,7 +89,7 @@ void PlaneConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
 
 //===========================================================================
 
-void ConstraintStickiness::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
+void ConstraintStickiness::phi(arr& y, arr& J, const rai::Configuration& G) {
   map.__phi(y, J, G);
   for(uint j=0; j<y.N; j++) y(j) = -y(j);
   if(!!J) for(uint j=0; j<J.d0; j++) J[j]() *= -1.;
@@ -97,7 +97,7 @@ void ConstraintStickiness::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
 
 //===========================================================================
 
-void PointEqualityConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
+void PointEqualityConstraint::phi(arr& y, arr& J, const rai::Configuration& G) {
   rai::Vector vec_i = ivec;
   rai::Vector vec_j = jvec;
   rai::Frame *a = i<0?NULL: G.frames(i);
@@ -119,13 +119,13 @@ void PointEqualityConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G) 
 
 //===========================================================================
 
-ContactEqualityConstraint::ContactEqualityConstraint(const rai::KinematicWorld &G, const char *iShapeName, const char *jShapeName, double _margin)
+ContactEqualityConstraint::ContactEqualityConstraint(const rai::Configuration &G, const char *iShapeName, const char *jShapeName, double _margin)
   : i(G.getFrameByName(iShapeName)->ID),
     j(G.getFrameByName(jShapeName)->ID),
     margin(_margin) {
 }
 
-void ContactEqualityConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
+void ContactEqualityConstraint::phi(arr& y, arr& J, const rai::Configuration& G) {
   y.resize(1) = 0.;
   if(!!J) J.resize(1,G.q.N).setZero();
   for(const rai::Proxy& p: G.proxies) {
@@ -138,7 +138,7 @@ void ContactEqualityConstraint::phi(arr& y, arr& J, const rai::KinematicWorld& G
 
 //===========================================================================
 
-VelAlignConstraint::VelAlignConstraint(const rai::KinematicWorld& G,
+VelAlignConstraint::VelAlignConstraint(const rai::Configuration& G,
                                        const char* iShapeName, const rai::Vector& _ivec,
                                        const char* jShapeName, const rai::Vector& _jvec, double _target) {
   rai::Frame *a = iShapeName ? G.getFrameByName(iShapeName):NULL;
@@ -208,7 +208,7 @@ void VelAlignConstraint::phi(arr& y, arr& J, const WorldL& G) {
 
 //===========================================================================
 
-void qItselfConstraint::phi(arr& q, arr& J, const rai::KinematicWorld& G) {
+void qItselfConstraint::phi(arr& q, arr& J, const rai::Configuration& G) {
   G.getJointState(q);
   if(M.N) {
     if(M.nd==1) {

@@ -44,14 +44,14 @@ struct KinematicSwitch {
                   const rai::Transformation& jFrom=NoTransformation, const rai::Transformation& jTo=NoTransformation);
   KinematicSwitch(SwitchType op, JointType type,
                   const char* ref1, const char* ref2,
-                  const rai::KinematicWorld& K,
+                  const rai::Configuration& K,
                   SwitchInitializationType _init=SWInit_zero,
                   int _timeOfApplication=0,
                   const rai::Transformation& jFrom=NoTransformation, const rai::Transformation& jTo=NoTransformation);
   void setTimeOfApplication(double time, bool before, int stepsPerPhase, uint T);
-  void apply(KinematicWorld& K);
-  rai::String shortTag(const KinematicWorld* G) const;
-  void write(std::ostream& os, rai::KinematicWorld *K=NULL) const;
+  void apply(Configuration& K);
+  rai::String shortTag(const Configuration* G) const;
+  void write(std::ostream& os, rai::Configuration *K=NULL) const;
 };
 
 } // namespace rai

@@ -994,8 +994,8 @@ void FeatherstoneInterface::fwdDynamics_MF(arr& qdd,
 }
 
 // #else ///RAI_FEATHERSTONE
-// void GraphToTree(F_LinkTree& tree, const rai::KinematicWorld& C) { NIY; }
-// void updateGraphToTree(F_LinkTree& tree, const rai::KinematicWorld& C) { NIY; }
+// void GraphToTree(F_LinkTree& tree, const rai::Configuration& C) { NIY; }
+// void updateGraphToTree(F_LinkTree& tree, const rai::Configuration& C) { NIY; }
 // void Featherstone::equationOfMotion(arr& H, arr& C,
 //                                     const F_LinkTree& tree,
 //                                     const arr& qd) { NIY; }

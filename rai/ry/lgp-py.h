@@ -7,11 +7,11 @@
 
 namespace ry{
 
-  typedef Var<rai::KinematicWorld> Config;
+  typedef Var<rai::Configuration> Config;
 
   struct LGPpy_self : LGP_Tree{
     Config& kin;
-    rai::KinematicWorld K;
+    rai::Configuration K;
     FOL_World L;
 
     LGPpy_self(Config& _kin, const std::string& folFileName);

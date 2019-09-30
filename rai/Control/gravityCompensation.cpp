@@ -116,7 +116,7 @@ arr GravityCompensation::compensateFTR(const arr& q) {
   return featuresFT(q, "endeffR")*betaFTR;
 }
 
-GravityCompensation::GravityCompensation(const rai::KinematicWorld& world) : world(world) {
+GravityCompensation::GravityCompensation(const rai::Configuration& world) : world(world) {
   TLeftArm = zeros(leftJoints.N, world.getJointStateDimension());
   for(uint i = 0; i < leftJoints.N; i++) {
     TLeftArm(i, world.getFrameByName(leftJoints(i))->joint->qIndex) = 1;
@@ -534,7 +534,7 @@ struct CV : public CrossValidation {
     return sqrt(sumOfSqr(y_pred-y)/y.N); //returns RMSE on test data
   }
   
-  void calculateBetaWithCV(arr& optimalBeta, const StringA& joints, const arr& Phi, const arr& lambdas, const arr& Q, const arr& U, rai::KinematicWorld& world, bool verbose, arr& m) {
+  void calculateBetaWithCV(arr& optimalBeta, const StringA& joints, const arr& Phi, const arr& lambdas, const arr& Q, const arr& U, rai::Configuration& world, bool verbose, arr& m) {
     m = zeros(joints.N);
     //double su = 0.0;
     
@@ -668,7 +668,7 @@ arr GravityCompensation::compensate(arr q, StringA joints) {
   return u;
 }
 
-GravityCompensation::GravityCompensation(const rai::KinematicWorld& world) : world(world) {
+GravityCompensation::GravityCompensation(const rai::Configuration& world) : world(world) {
   TLeftArm = zeros(leftJoints.N, world.getJointStateDimension());
   for(uint i = 0; i < leftJoints.N; i++) {
     TLeftArm(i, world.getJointByName(leftJoints(i))->qIndex) = 1;

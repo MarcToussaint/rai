@@ -7,7 +7,7 @@
 #include <Kin/F_geometrics.h>
 #include <Kin/F_PairCollision.h>
 
-double shapeSize(const rai::KinematicWorld& K, const char* name, uint i);
+double shapeSize(const rai::Configuration& K, const char* name, uint i);
 
 void addBoxGrasp(KOMO& komo, const char* object, const char* endeff, int axis){
   //  komo.addObjective(0., 0., OT_eq, FS_accumulatedCollisions, {}, 1e0);
@@ -77,7 +77,7 @@ void addMotionTo(KOMO& komo, const arr& target_q, const StringA& target_joints, 
   komo.setSlow(1.,1., 1e2, true);
 }
 
-void chooseBoxGrasp(rai::KinematicWorld& K, const char* endeff, const char* object){
+void chooseBoxGrasp(rai::Configuration& K, const char* endeff, const char* object){
   KOMO komo;
   komo.setModel(K, true);
   komo.setIKOpt();
@@ -114,7 +114,7 @@ void chooseBoxGrasp(rai::KinematicWorld& K, const char* endeff, const char* obje
   }
 }
 
-void findOpposingGrasp(rai::KinematicWorld& K, const char* fingerL, const char* fingerR, const char* object){
+void findOpposingGrasp(rai::Configuration& K, const char* fingerL, const char* fingerR, const char* object){
     KOMO komo;
     komo.setModel(K, true);
     komo.setIKOpt();

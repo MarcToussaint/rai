@@ -40,9 +40,9 @@ struct Flag {
     : flag(flag), frameId(frameId), stepOfApplication(stepOfApplication), persist(persist), setTrue(setTrue) {}
   ~Flag() {}
   
-  void apply(KinematicWorld& K);
+  void apply(Configuration& K);
   
-  void write(std::ostream& os, KinematicWorld* K=NULL) const;
+  void write(std::ostream& os, Configuration* K=NULL) const;
 };
 
 }

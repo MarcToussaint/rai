@@ -22,7 +22,7 @@ void POA_distance(arr& y, arr& J, rai::Contact* con, bool b_or_a){
   rai::Mesh *m = &s->sscCore();  if(!m->V.N) { m = &s->mesh(); r=0.; }
 
   CHECK_EQ(&con->a.K, &con->b.K, "");
-  rai::KinematicWorld &K = con->a.K;
+  rai::Configuration &K = con->a.K;
 
   rai::Mesh M0;
   M0.setDot();
@@ -40,7 +40,7 @@ void POA_distance(arr& y, arr& J, rai::Contact* con, bool b_or_a){
 }
 
 void POA_rel_vel2(arr& y, arr& J, const WorldL& Ktuple, rai::Contact* con, bool after_or_before){
-  rai::KinematicWorld *Kc = Ktuple(-2);
+  rai::Configuration *Kc = Ktuple(-2);
 
   // p1, p2 are the CENTERS! of the frame a and b
   // v1, v2 are the CENTER velocities of the frame a and b
@@ -64,7 +64,7 @@ void POA_rel_vel2(arr& y, arr& J, const WorldL& Ktuple, rai::Contact* con, bool 
   arr Jrela = ~Ra * (Jcp - Jp0a);
   arr Jrelb = ~Rb * (Jcp - Jp0b);
 
-  rai::KinematicWorld *K;
+  rai::Configuration *K;
   if(after_or_before) K = Ktuple(-1);
   else K = Ktuple(-3);
   rai::Frame *fa = K->frames(con->a.ID);
@@ -93,7 +93,7 @@ void POA_rel_vel2(arr& y, arr& J, const WorldL& Ktuple, rai::Contact* con, bool 
 void POA_rel_vel(arr& y, arr& J, const WorldL& Ktuple, rai::Contact* con, bool after_or_before){
   CHECK_EQ(Ktuple.N, 3, "");
 
-  rai::KinematicWorld *Kc = Ktuple(-2);
+  rai::Configuration *Kc = Ktuple(-2);
 
   arr cp, Jcp;
   Kc->kinematicsContactPOA(cp, Jcp, con);
@@ -170,7 +170,7 @@ void POA_vel(arr& y, arr& J, const WorldL& Ktuple, rai::Contact* con, bool b_or_
   if(!!J) J = Jv - skew(w) * (Jcp - Jp) + skew(cp-p) * Jw;
 }
 
-rai::Contact *getContact(const rai::KinematicWorld &K, int aId, int bId){
+rai::Contact *getContact(const rai::Configuration &K, int aId, int bId){
   rai::Frame *a = K.frames(aId);
   rai::Frame *b = K.frames(bId);
   for(rai::Contact *c : a->contacts) if(&c->a==a && &c->b==b) return c;
@@ -178,15 +178,15 @@ rai::Contact *getContact(const rai::KinematicWorld &K, int aId, int bId){
   return NULL;
 }
 
-void TM_Contact_POA::phi(arr& y, arr& J, const rai::KinematicWorld& C){
+void TM_Contact_POA::phi(arr& y, arr& J, const rai::Configuration& C){
   C.kinematicsContactPOA(y, J, getContact(C,a,b));
 }
 
-void TM_Contact_Force::phi(arr& y, arr& J, const rai::KinematicWorld& C){
+void TM_Contact_Force::phi(arr& y, arr& J, const rai::Configuration& C){
   C.kinematicsContactForce(y, J, getContact(C,a,b));
 }
 
-void TM_Contact_ForceIsNormal::phi(arr &y, arr &J, const rai::KinematicWorld &K) {
+void TM_Contact_ForceIsNormal::phi(arr &y, arr &J, const rai::Configuration &K) {
   //-- from the contact we need force
   Value force = TM_Contact_Force(a,b) (K);
 
@@ -198,7 +198,7 @@ void TM_Contact_ForceIsNormal::phi(arr &y, arr &J, const rai::KinematicWorld &K)
   if(!!J) J = force.J - (normal.y*~normal.y*force.J + normal.y*~force.y*normal.J + scalarProduct(normal.y, force.y)*normal.J);
 }
 
-void TM_Contact_ForceIsComplementary::phi(arr &y, arr &J, const rai::KinematicWorld &K) {
+void TM_Contact_ForceIsComplementary::phi(arr &y, arr &J, const rai::Configuration &K) {
   rai::Contact *con = getContact(K,a,b);
 
   //-- from the contact we need force
@@ -225,10 +225,10 @@ void TM_Contact_ForceIsComplementary::phi(arr &y, arr &J, const rai::KinematicWo
   }
 }
 
-uint TM_Contact_ForceIsComplementary::dim_phi(const rai::KinematicWorld& K){ return 6; }
+uint TM_Contact_ForceIsComplementary::dim_phi(const rai::Configuration& K){ return 6; }
 
 
-void TM_Contact_ForceIsPositive::phi(arr &y, arr &J, const rai::KinematicWorld &K) {
+void TM_Contact_ForceIsPositive::phi(arr &y, arr &J, const rai::Configuration &K) {
   //-- from the contact we need force
   Value force = TM_Contact_Force(a,b) (K);
 
@@ -243,7 +243,7 @@ void TM_Contact_ForceIsPositive::phi(arr &y, arr &J, const rai::KinematicWorld &
 
 
 
-void TM_Contact_POAisInIntersection_InEq::phi(arr& y, arr& J, const rai::KinematicWorld& K){
+void TM_Contact_POAisInIntersection_InEq::phi(arr& y, arr& J, const rai::Configuration& K){
   rai::Contact *con = getContact(K,a,b);
 
   y.resize(2).setZero();
@@ -286,7 +286,7 @@ void TM_Contact_POAisInIntersection_InEq::phi(arr& y, arr& J, const rai::Kinemat
 void TM_ContactConstraints_Vel::phi(arr& y, arr& J, const WorldL& Ktuple){
   CHECK_EQ(order, 1, "");
 
-  rai::KinematicWorld& K = *Ktuple(-2); //!!! use LAST contact, and velocities AFTER contact
+  rai::Configuration& K = *Ktuple(-2); //!!! use LAST contact, and velocities AFTER contact
 
   rai::Contact *con = getContact(K,a,b);
 
@@ -326,7 +326,7 @@ void TM_ContactConstraints_Vel::phi(arr& y, arr& J, const WorldL& Ktuple){
   if(!!J) J = Jvc1 - Jvc2;
 }
 
-uint TM_ContactConstraints_Vel::dim_phi(const rai::KinematicWorld& K)
+uint TM_ContactConstraints_Vel::dim_phi(const rai::Configuration& K)
 {
   return 3;
 }
@@ -395,7 +395,7 @@ void TM_Contact_ElasticVel::phi(arr& y, arr& J, const WorldL& Ktuple){
 }
 
 void TM_Contact_NormalVelIsComplementary::phi(arr& y, arr& J, const WorldL& Ktuple){
-  rai::KinematicWorld& K = *Ktuple(-2);
+  rai::Configuration& K = *Ktuple(-2);
   rai::Contact *con = getContact(K,a,b);
 
   //-- get the pre and post V:

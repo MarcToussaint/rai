@@ -5,7 +5,7 @@
 struct RobotOperation {
   std::shared_ptr<struct sRobotOperation> s;
 
-  RobotOperation(const rai::KinematicWorld& _K, double dt=.01, const char* rosNodeName="rai_node");
+  RobotOperation(const rai::Configuration& _K, double dt=.01, const char* rosNodeName="rai_node");
   ~RobotOperation();
 
   //-- real switch
@@ -26,5 +26,5 @@ struct RobotOperation {
   arr getJointPositions(const StringA& joints={});
   bool getGripperGrabbed(const std::string& whichArm="right");
   bool getGripperOpened(const std::string& whichArm="right");
-  void sync(rai::KinematicWorld& K);                                ///< copies current robot pose into K
+  void sync(rai::Configuration& K);                                ///< copies current robot pose into K
 };

@@ -91,7 +91,7 @@ arr buildTrajectory(RRT& rrt, uint node, bool forward) {
   return q;
 }
 
-rai::RRTPlanner::RRTPlanner(rai::KinematicWorld *G, KOMO &problem, double stepsize, bool verbose) :
+rai::RRTPlanner::RRTPlanner(rai::Configuration *G, KOMO &problem, double stepsize, bool verbose) :
   G(G), problem(problem) {
   arr q; G->getJointState(q);
   s = new rai::sRRTPlanner(this, RRT(q, stepsize), verbose);

@@ -9,7 +9,7 @@ using namespace std;
 
 void TEST(KomoSequence){
 
-  rai::KinematicWorld K("model.g");
+  rai::Configuration K("model.g");
   K.optimizeTree(false);
   makeConvexHulls(K.frames);
 

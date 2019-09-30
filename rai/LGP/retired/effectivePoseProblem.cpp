@@ -13,7 +13,7 @@
 
 //===========================================================================
 
-EffectivePoseProblem::EffectivePoseProblem(rai::KinematicWorld& effKinematics_before,
+EffectivePoseProblem::EffectivePoseProblem(rai::Configuration& effKinematics_before,
     const Graph& KB, const Graph& symbolicState_before, const Graph& symbolicState_after,
     int verbose)
   : effKinematics(effKinematics_before),

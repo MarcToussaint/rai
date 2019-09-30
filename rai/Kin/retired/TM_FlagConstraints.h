@@ -16,10 +16,10 @@ struct TM_FlagConstraints : Feature {
   double g=1.; //gravity constant, usually 9.81
   TM_FlagConstraints() { g = rai::getParameter<double>("FlagConstraints/gravity", 1.); }
   virtual void phi(arr& y, arr& J, const WorldL& G);
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G) { HALT("can only be of order 1"); }
-  virtual uint dim_phi(const rai::KinematicWorld& K) { HALT("can only be of order 1"); }
+  virtual void phi(arr& y, arr& J, const rai::Configuration& G) { HALT("can only be of order 1"); }
+  virtual uint dim_phi(const rai::Configuration& K) { HALT("can only be of order 1"); }
   virtual uint dim_phi(const WorldL& Ktuple);
-  virtual rai::String shortTag(const rai::KinematicWorld& G) { return STRING("FlagConstraints"); }
+  virtual rai::String shortTag(const rai::Configuration& G) { return STRING("FlagConstraints"); }
 };
 
 //===========================================================================
@@ -27,8 +27,8 @@ struct TM_FlagConstraints : Feature {
 struct TM_FlagCosts : Feature {
   TM_FlagCosts() {}
   virtual void phi(arr& y, arr& J, const WorldL& G);
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G) { HALT("can only be of order 1"); }
-  virtual uint dim_phi(const rai::KinematicWorld& K) { HALT("can only be of order 1"); }
+  virtual void phi(arr& y, arr& J, const rai::Configuration& G) { HALT("can only be of order 1"); }
+  virtual uint dim_phi(const rai::Configuration& K) { HALT("can only be of order 1"); }
   virtual uint dim_phi(const WorldL& Ktuple);
-  virtual rai::String shortTag(const rai::KinematicWorld& G) { return STRING("TM_FlagCosts"); }
+  virtual rai::String shortTag(const rai::Configuration& G) { return STRING("TM_FlagCosts"); }
 };

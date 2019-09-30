@@ -14,7 +14,7 @@ TM_PairCollision::TM_PairCollision(int _i, int _j, Type _type, bool _neglectRadi
   : i(_i), j(_j), type(_type), neglectRadii(_neglectRadii) {
 }
 
-TM_PairCollision::TM_PairCollision(const rai::KinematicWorld& K, const char* s1, const char* s2, Type _type, bool neglectRadii)
+TM_PairCollision::TM_PairCollision(const rai::Configuration& K, const char* s1, const char* s2, Type _type, bool neglectRadii)
   : i(initIdArg(K, s1)), j(initIdArg(K, s2)),
     type(_type), neglectRadii(neglectRadii) {
   CHECK_GE(i, 0,"shape name '" <<s1 <<"' does not exist");
@@ -25,7 +25,7 @@ TM_PairCollision::~TM_PairCollision(){
   if(coll) delete coll;
 }
 
-void TM_PairCollision::phi(arr& y, arr& J, const rai::KinematicWorld& K) {
+void TM_PairCollision::phi(arr& y, arr& J, const rai::Configuration& K) {
   rai::Shape *s1 = i<0?NULL: K.frames(i)->shape;
   rai::Shape *s2 = j<0?NULL: K.frames(j)->shape;
   CHECK(s1 && s2,"");
@@ -65,10 +65,10 @@ void TM_PairCollision::phi(arr& y, arr& J, const rai::KinematicWorld& K) {
   }
 }
 
-rai::String TM_PairCollision::shortTag(const rai::KinematicWorld &G) {
+rai::String TM_PairCollision::shortTag(const rai::Configuration &G) {
   return STRING("PairCollision-"<<(i<0?"WORLD":G.frames(i)->name) <<'-' <<(j<0?"WORLD":G.frames(j)->name));
 }
 
-Graph TM_PairCollision::getSpec(const rai::KinematicWorld& K){
+Graph TM_PairCollision::getSpec(const rai::Configuration& K){
     return Graph({ {"feature", "dist"}, {"o1", K.frames(i)->name}, {"o2", K.frames(j)->name}});
 }

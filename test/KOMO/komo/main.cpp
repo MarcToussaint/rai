@@ -9,7 +9,7 @@
 //===========================================================================
 
 void TEST(Easy){
-  rai::KinematicWorld K("arm.g");
+  rai::Configuration K("arm.g");
   cout <<"configuration space dim=" <<K.q.N <<endl;
 
   //-- add time DOFs
@@ -45,7 +45,7 @@ void TEST(Easy){
 //===========================================================================
 
 void TEST(Align){
-  rai::KinematicWorld K("arm.g");
+  rai::Configuration K("arm.g");
   cout <<"configuration space dim=" <<K.q.N <<endl;
   KOMO_ext komo;
   komo.setModel(K);
@@ -70,7 +70,7 @@ void TEST(Align){
 //===========================================================================
 
 void TEST(PR2){
-  rai::KinematicWorld K("model.g");
+  rai::Configuration K("model.g");
   K.optimizeTree(true);
 //  makeConvexHulls(K.frames);
   cout <<"configuration space dim=" <<K.getJointStateDimension() <<endl;
@@ -107,7 +107,7 @@ void TEST(PR2){
 //===========================================================================
 
 void TEST(FinalPosePR2){
-  rai::KinematicWorld K("model.g");
+  rai::Configuration K("model.g");
   K.pruneRigidJoints();
   K.optimizeTree();
   makeConvexHulls(K.frames);

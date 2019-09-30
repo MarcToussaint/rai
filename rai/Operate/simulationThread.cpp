@@ -42,7 +42,7 @@ struct SimulationThread_self{
 };
 
 
-SimulationThread::SimulationThread(const rai::KinematicWorld& _K, double dt, bool _pubSubToROS)
+SimulationThread::SimulationThread(const rai::Configuration& _K, double dt, bool _pubSubToROS)
   : Thread("SimulationIO", dt),
     SIM(_K, dt),
     pubSubToROS(_pubSubToROS) {

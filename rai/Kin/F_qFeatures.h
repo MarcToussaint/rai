@@ -20,16 +20,16 @@ struct F_qItself : Feature {
   bool relative_q0; ///< if true, absolute values are given relative to Joint::q0
   
   F_qItself(bool relative_q0=false);
-  F_qItself(PickMode pickMode, const StringA& picks, const rai::KinematicWorld& G, bool relative_q0=false);
+  F_qItself(PickMode pickMode, const StringA& picks, const rai::Configuration& G, bool relative_q0=false);
   F_qItself(const uintA& _selectedFrames, bool relative_q0=false);
   
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
+  virtual void phi(arr& y, arr& J, const rai::Configuration& G);
   virtual void phi(arr& y, arr& J, const WorldL& Ktuple);
-  virtual uint dim_phi(const rai::KinematicWorld& G);
+  virtual uint dim_phi(const rai::Configuration& G);
   virtual uint dim_phi(const WorldL& Ktuple);
-  virtual rai::String shortTag(const rai::KinematicWorld& G);
+  virtual rai::String shortTag(const rai::Configuration& G);
 private:
-  std::map<rai::KinematicWorld*, uint> dimPhi;
+  std::map<rai::Configuration*, uint> dimPhi;
 };
 
 //===========================================================================
@@ -38,12 +38,12 @@ struct F_qZeroVel : Feature {
   int i;               ///< which shapes does it refer to?
 
   F_qZeroVel(int iShape=-1) : i(iShape) { order=1; }
-  F_qZeroVel(const rai::KinematicWorld& K, const char* iShapeName=NULL) : F_qZeroVel(initIdArg(K,iShapeName)){}
+  F_qZeroVel(const rai::Configuration& K, const char* iShapeName=NULL) : F_qZeroVel(initIdArg(K,iShapeName)){}
 
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G){ NIY; }
+  virtual void phi(arr& y, arr& J, const rai::Configuration& G){ NIY; }
   virtual void phi(arr& y, arr& J, const WorldL& Ktuple);
-  virtual uint dim_phi(const rai::KinematicWorld& G);
-  virtual rai::String shortTag(const rai::KinematicWorld& G){ return STRING("qZeroVel-" <<G.frames(i)->name); }
+  virtual uint dim_phi(const rai::Configuration& G);
+  virtual rai::String shortTag(const rai::Configuration& G){ return STRING("qZeroVel-" <<G.frames(i)->name); }
 };
 
 //===========================================================================
@@ -53,23 +53,23 @@ struct F_qLimits : Feature {
   arr limits;
 
   F_qLimits(const arr& _limits=NoArr) { if(!!_limits) limits=_limits; } ///< if no limits are provided, they are taken from G's joints' attributes on the first call of phi
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
-  virtual uint dim_phi(const rai::KinematicWorld& G) { return 1; }
-  virtual rai::String shortTag(const rai::KinematicWorld& G) { return STRING("qLimits"); }
+  virtual void phi(arr& y, arr& J, const rai::Configuration& G);
+  virtual uint dim_phi(const rai::Configuration& G) { return 1; }
+  virtual rai::String shortTag(const rai::Configuration& G) { return STRING("qLimits"); }
 };
 
 //===========================================================================
 
 struct F_qQuaternionNorms : Feature {
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
-  virtual uint dim_phi(const rai::KinematicWorld& G);
-  virtual rai::String shortTag(const rai::KinematicWorld& G) { return STRING("QuaternionNorms"); }
+  virtual void phi(arr& y, arr& J, const rai::Configuration& G);
+  virtual uint dim_phi(const rai::Configuration& G);
+  virtual rai::String shortTag(const rai::Configuration& G) { return STRING("QuaternionNorms"); }
 };
 
 //===========================================================================
 
 rai::Array<rai::Joint*> getMatchingJoints(const WorldL& Ktuple, bool zeroVelJointsOnly);
-rai::Array<rai::Joint*> getSwitchedJoints(const rai::KinematicWorld& G0, const rai::KinematicWorld& G1, int verbose=0);
-uintA getSwitchedBodies(const rai::KinematicWorld& G0, const rai::KinematicWorld& G1, int verbose=0);
+rai::Array<rai::Joint*> getSwitchedJoints(const rai::Configuration& G0, const rai::Configuration& G1, int verbose=0);
+uintA getSwitchedBodies(const rai::Configuration& G0, const rai::Configuration& G1, int verbose=0);
 uintA getNonSwitchedBodies(const WorldL& Ktuple);
 

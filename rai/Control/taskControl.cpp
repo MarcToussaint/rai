@@ -347,7 +347,7 @@ CtrlTask::~CtrlTask() {
   }
 }
 
-ActStatus CtrlTask::update(double tau, const rai::KinematicWorld& world) {
+ActStatus CtrlTask::update(double tau, const rai::Configuration& world) {
   map->__phi(y, J_y, world);
   if(world.qdot.N) v = J_y*world.qdot; else v.resize(y.N).setZero();
   ActStatus s_old = status.get();
@@ -379,7 +379,7 @@ void CtrlTask::setTarget(const arr& y_target) {
   ref->resetState();
 }
 
-void CtrlTask::getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const rai::KinematicWorld& world) {
+void CtrlTask::getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const rai::Configuration& world) {
   //-- get necessary Jacobians
   ptr<TM_Default> m = std::dynamic_pointer_cast<TM_Default>(map);
   CHECK(m,"this only works for the default position task map");
@@ -441,7 +441,7 @@ CtrlTask* TaskControlMethods::addPDTask(CtrlTaskL& tasks, const char* name, doub
 //  return t;
 //}
 
-void TaskControlMethods::lockJointGroup(const char* groupname, rai::KinematicWorld& world, bool lockThem) {
+void TaskControlMethods::lockJointGroup(const char* groupname, rai::Configuration& world, bool lockThem) {
   if(!groupname) {
     if(lockThem) {
       lockJoints = consts<byte>(true, world.q.N);
@@ -825,7 +825,7 @@ arr TaskControlMethods::calcOptimalControlProjected(CtrlTaskL& tasks, arr &Kp, a
   return u0 + Kp*q + Kd*qdot;
 }
 
-void fwdSimulateControlLaw(arr& Kp, arr& Kd, arr& u0, rai::KinematicWorld& world) {
+void fwdSimulateControlLaw(arr& Kp, arr& Kd, arr& u0, rai::Configuration& world) {
   arr M, F;
   world.equationOfMotion(M, F, false);
   
@@ -840,7 +840,7 @@ void fwdSimulateControlLaw(arr& Kp, arr& Kd, arr& u0, rai::KinematicWorld& world
   }
 }
 
-void TaskControlMethods::calcForceControl(CtrlTaskL& tasks, arr& K_ft, arr& J_ft_inv, arr& fRef, double& gamma, const rai::KinematicWorld& world) {
+void TaskControlMethods::calcForceControl(CtrlTaskL& tasks, arr& K_ft, arr& J_ft_inv, arr& fRef, double& gamma, const rai::Configuration& world) {
   uint nForceTasks=0;
   for(CtrlTask* task : tasks) if(task->active && task->f_ref.N) {
       nForceTasks++;

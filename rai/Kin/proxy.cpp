@@ -24,7 +24,7 @@ rai::Proxy::~Proxy() {
   del_coll();
 }
 
-void rai::Proxy::copy(const rai::KinematicWorld& K, const rai::Proxy& p){
+void rai::Proxy::copy(const rai::Configuration& K, const rai::Proxy& p){
   del_coll();
   if(!!K){
     a = K.frames(p.a->ID); CHECK(a, "");
@@ -37,7 +37,7 @@ void rai::Proxy::copy(const rai::KinematicWorld& K, const rai::Proxy& p){
   colorCode = p.colorCode;
 }
 
-void rai::Proxy::calc_coll(const KinematicWorld& K) {
+void rai::Proxy::calc_coll(const Configuration& K) {
   CHECK_EQ(&a->K, &K, "");
   CHECK_EQ(&b->K, &K, "");
   rai::Shape *s1 = a->shape;

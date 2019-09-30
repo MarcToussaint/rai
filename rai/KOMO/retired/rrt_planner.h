@@ -15,17 +15,17 @@ struct KOMO;
 struct OpenGL;
 
 namespace rai {
-struct KinematicWorld;
+struct Configuration;
 struct RRTPlanner {
 private:
   struct sRRTPlanner *s;
 public:
-  KinematicWorld *G;                 ///< the graph to plan in
+  Configuration *G;                 ///< the graph to plan in
   KOMO& problem;   ///< the KOMO gives the feasibility test for new states
   
   arr joint_max, joint_min; ///< in which range are the joints allowed (boundaries for the sample space)
   
-  RRTPlanner(rai::KinematicWorld* G, KOMO &problem, double stepsize, bool verbose = false);
+  RRTPlanner(rai::Configuration* G, KOMO &problem, double stepsize, bool verbose = false);
   
   arr getTrajectoryTo(const arr& target, int max_iter=0); ///< returns the trajectory created by the RRT
 };

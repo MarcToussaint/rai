@@ -22,7 +22,7 @@ int MAIN(int argc,char **argv){
     if(rai::argc>=2 && rai::argv[1][0]!='-') file=rai::argv[1];
     cout <<"opening file `" <<file <<"'" <<endl;
 
-    rai::KinematicWorld K;
+    rai::Configuration K;
     for(;;){
     Inotify ino(file);
     try {

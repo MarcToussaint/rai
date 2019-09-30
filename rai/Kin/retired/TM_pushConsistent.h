@@ -14,12 +14,12 @@ struct TM_PushConsistent : Feature {
   
   TM_PushConsistent(int iShape=-1, int jShape=-1);
   
-  TM_PushConsistent(const rai::KinematicWorld& G,
+  TM_PushConsistent(const rai::Configuration& G,
                     const char* iShapeName=NULL, const char* jShapeName=NULL);
                     
   virtual void phi(arr& y, arr& J, const WorldL& Ktuple);
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G) {  HALT("you shouldn't be here!");  }
-  virtual uint dim_phi(const rai::KinematicWorld& G) { return 3; }
-  virtual rai::String shortTag(const rai::KinematicWorld& G);
+  virtual void phi(arr& y, arr& J, const rai::Configuration& G) {  HALT("you shouldn't be here!");  }
+  virtual uint dim_phi(const rai::Configuration& G) { return 3; }
+  virtual rai::String shortTag(const rai::Configuration& G);
 };
 

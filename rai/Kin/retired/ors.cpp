@@ -23,7 +23,7 @@
    }
 */
 
-//void rai::KinematicWorld::addObject(rai::Body *b) {
+//void rai::Configuration::addObject(rai::Body *b) {
 //  bodies.append(b);
 //  int ibody = bodies.N - 1;
 //  uint i; rai::Shape *s;
@@ -34,7 +34,7 @@
 //  }
 //}
 
-rai::KinematicWorld* rai::KinematicWorld::newClone() const {
+rai::Configuration* rai::Configuration::newClone() const {
   Graph *G=new Graph();
   G->q_dim=q_dim;
   listCopy(G->proxies, proxies);
@@ -61,7 +61,7 @@ rai::KinematicWorld* rai::KinematicWorld::newClone() const {
   return G;
 }
 
-//void rai::KinematicWorld::copyShapesAndJoints(const Graph& G) {
+//void rai::Configuration::copyShapesAndJoints(const Graph& G) {
 //  uint i;  Shape *s;  Body *b;  Joint *j;
 //  for_list(Type,  s,  shapes)(*s) = *G.shapes(i);
 //  for_list(Type,  j,  joints)(*j) = *G.joints(i);
@@ -75,20 +75,20 @@ rai::KinematicWorld* rai::KinematicWorld::newClone() const {
 //}
 
 ///// find body index with specific name
-//uint rai::KinematicWorld::getBodyIndexByName(const char* name) const {
+//uint rai::Configuration::getBodyIndexByName(const char* name) const {
 //  Body *b=getBodyByName(name);
 //  return b?b->index:0;
 //}
 
 ///// find shape index with specific name
-//uint rai::KinematicWorld::getShapeIndexByName(const char* name) const {
+//uint rai::Configuration::getShapeIndexByName(const char* name) const {
 //  Shape *s=getShapeByName(name);
 //  return s?s->index:0;
 //}
 
 /** @brief if two bodies touch, the are not yet connected, and one of them has
   the `glue' attribute, add a new edge of FIXED type between them */
-//void rai::KinematicWorld::glueTouchingBodies() {
+//void rai::Configuration::glueTouchingBodies() {
 //  uint i, A, B;
 //  Body *a, *b;//, c;
 //  bool ag, bg;
@@ -108,7 +108,7 @@ rai::KinematicWorld* rai::KinematicWorld::newClone() const {
 //}
 
 #if 0 //obsolete:
-void rai::KinematicWorld::getContactMeasure(arr &x, double margin, bool linear) const {
+void rai::Configuration::getContactMeasure(arr &x, double margin, bool linear) const {
   x.resize(1);
   x=0.;
   uint i;
@@ -139,7 +139,7 @@ void rai::KinematicWorld::getContactMeasure(arr &x, double margin, bool linear) 
 }
 
 /// gradient (=scalar Jacobian) of this contact cost
-double rai::KinematicWorld::getContactGradient(arr &grad, double margin, bool linear) const {
+double rai::Configuration::getContactGradient(arr &grad, double margin, bool linear) const {
   rai::Vector normal;
   uint i;
   Shape *a, *b;
@@ -189,7 +189,7 @@ double rai::KinematicWorld::getContactGradient(arr &grad, double margin, bool li
 #endif
 
 #if 0 //alternative implementation : cost=1 -> contact, other discounting...
-double rai::KinematicWorld::getContactGradient(arr &grad, double margin) {
+double rai::Configuration::getContactGradient(arr &grad, double margin) {
   rai::Vector normal;
   uint i;
   Shape *a, *b;
@@ -235,13 +235,13 @@ double rai::KinematicWorld::getContactGradient(arr &grad, double margin) {
 #endif
 
 /// [prelim] some kind of gyroscope
-void rai::KinematicWorld::getGyroscope(rai::Vector& up) const {
+void rai::Configuration::getGyroscope(rai::Vector& up) const {
   up.set(0, 0, 1);
   up=bodies(0)->X.rot*up;
 }
 
 /** @brief returns a k-dim vector containing the penetration depths of all bodies */
-void rai::KinematicWorld::getPenetrationState(arr &vec) const {
+void rai::Configuration::getPenetrationState(arr &vec) const {
   vec.resize(bodies.N);
   vec.setZero();
   rai::Vector d;
@@ -255,7 +255,7 @@ void rai::KinematicWorld::getPenetrationState(arr &vec) const {
 }
 
 /** @brief a vector describing the incoming forces (penetrations) on one object */
-void rai::KinematicWorld::getGripState(arr& grip, uint j) const {
+void rai::Configuration::getGripState(arr& grip, uint j) const {
   rai::Vector d, p;
   rai::Vector sumOfD; sumOfD.setZero();
   rai::Vector torque; torque.setZero();
@@ -299,7 +299,7 @@ void rai::KinematicWorld::getGripState(arr& grip, uint j) const {
 
 #if 0 //OBSOLETE
 /// returns the number of touch-sensors
-uint rai::KinematicWorld::getTouchDimension() {
+uint rai::Configuration::getTouchDimension() {
   Body *n;
   uint i=0, j;
   
@@ -310,7 +310,7 @@ uint rai::KinematicWorld::getTouchDimension() {
 }
 
 /// returns the touch vector (penetrations) of all touch-sensors
-void rai::KinematicWorld::getTouchState(arr& touch) {
+void rai::Configuration::getTouchState(arr& touch) {
   if(!td) td=getTouchDimension();
   arr pen;
   getPenetrationState(pen);
@@ -327,7 +327,7 @@ void rai::KinematicWorld::getTouchState(arr& touch) {
 #endif
 
 /** @brief get the center of mass, total velocity, and total angular momemtum */
-void rai::KinematicWorld::getTotals(rai::Vector& c, rai::Vector& v, rai::Vector& l, rai::Quaternion& ori) const {
+void rai::Configuration::getTotals(rai::Vector& c, rai::Vector& v, rai::Vector& l, rai::Quaternion& ori) const {
   Body *n;
   uint j;
   double m, M;
@@ -364,7 +364,7 @@ void rai::KinematicWorld::getTotals(rai::Vector& c, rai::Vector& v, rai::Vector&
 }
 
 /** @brief dump a list body pairs for which the upper conditions hold */
-void rai::KinematicWorld::reportGlue(std::ostream *os) {
+void rai::Configuration::reportGlue(std::ostream *os) {
   uint i, A, B;
   Body *a, *b;
   bool ag, bg;

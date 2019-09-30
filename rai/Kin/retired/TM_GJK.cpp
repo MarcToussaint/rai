@@ -51,14 +51,14 @@ TM_GJK::TM_GJK(const rai::Frame* s1, const rai::Frame *s2, bool exact, bool nega
   j = s2->ID;
 }
 
-TM_GJK::TM_GJK(const rai::KinematicWorld& W, const char* s1, const char* s2, bool exact, bool negative) : exact(exact), negScalar(negative) {
+TM_GJK::TM_GJK(const rai::Configuration& W, const char* s1, const char* s2, bool exact, bool negative) : exact(exact), negScalar(negative) {
   CHECK(s1 && s2,"");
   rai::Frame *s;
   s=W.getFrameByName(s1); CHECK(s,"shape name '" <<s1 <<"' does not exist"); i=s->ID;
   s=W.getFrameByName(s2); CHECK(s,"shape name '" <<s2 <<"' does not exist"); j=s->ID;
 }
 
-TM_GJK::TM_GJK(const rai::KinematicWorld& W, const Graph& specs, bool exact) : exact(exact) {
+TM_GJK::TM_GJK(const rai::Configuration& W, const Graph& specs, bool exact) : exact(exact) {
   Node *it;
   if((it=specs["sym2"])) { auto name=it->get<rai::String>(); auto *s=W.getFrameByName(name); CHECK(s,"shape name '" <<name <<"' does not exist"); i=s->ID; }
   if((it=specs["sym3"])) { auto name=it->get<rai::String>(); auto *s=W.getFrameByName(name); CHECK(s,"shape name '" <<name <<"' does not exist"); j=s->ID; }
@@ -66,7 +66,7 @@ TM_GJK::TM_GJK(const rai::KinematicWorld& W, const Graph& specs, bool exact) : e
 //  if((it=specs["vec2"])) vec2 = rai::Vector(it->get<arr>());  else vec2.setZero();
 }
 
-void TM_GJK::phi(arr& v, arr& J, const rai::KinematicWorld& W) {
+void TM_GJK::phi(arr& v, arr& J, const rai::Configuration& W) {
   rai::Shape *s1 = i<0?NULL: W.frames(i)->shape;
   rai::Shape *s2 = j<0?NULL: W.frames(j)->shape;
   CHECK(s1 && s2,"");
@@ -163,7 +163,7 @@ void TM_GJK::phi(arr& v, arr& J, const rai::KinematicWorld& W) {
 //  CHECK_ZERO(l2-d2, 1e-6,"");
 }
 
-rai::String TM_GJK::shortTag(const rai::KinematicWorld &G) {
+rai::String TM_GJK::shortTag(const rai::Configuration &G) {
   return STRING("TM_GJK"<<(i<0?"WORLD":G.frames(i)->name) <<':' <<(j<0?"WORLD":G.frames(j)->name));
 }
 

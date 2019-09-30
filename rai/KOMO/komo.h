@@ -98,7 +98,7 @@ struct KOMO : NonCopyable {
   rai::Array<rai::KinematicSwitch*> switches;  ///< list of kinematic switches along the motion
   
   //-- internals
-  rai::KinematicWorld world;   ///< original world; which is the blueprint for all time-slice worlds (almost const: only makeConvexHulls modifies it)
+  rai::Configuration world;   ///< original world; which is the blueprint for all time-slice worlds (almost const: only makeConvexHulls modifies it)
   WorldL configurations;       ///< copies for each time slice; including kinematic switches; only these are optimized
   bool useSwift;               ///< whether swift (collisions/proxies) is evaluated whenever new configurations are set (needed if tasks read proxy list)
   bool useSwitches;            ///< if true, switches change kinematic topology; if false, switches only impose relative pose constraints
@@ -126,11 +126,11 @@ struct KOMO : NonCopyable {
   ofstream *logFile=0;
   
   KOMO();
-  KOMO(const rai::KinematicWorld& K, bool _useSwift=true);
+  KOMO(const rai::Configuration& K, bool _useSwift=true);
   ~KOMO();
   
   //-- setup the problem
-  void setModel(const rai::KinematicWorld& K, bool _useSwift=true);
+  void setModel(const rai::Configuration& K, bool _useSwift=true);
   void setTiming(double _phases=1., uint _stepsPerPhase=10, double durationPerPhase=5., uint _k_order=2);
   void setPairedTimes();
   void activateCollisions(const char* s1, const char* s2);
@@ -267,7 +267,7 @@ struct KOMO : NonCopyable {
   void run_sub(const uintA& X, const uintA& Y);
   void optimize(bool initialize=true);
 
-  rai::KinematicWorld& getConfiguration(double phase);
+  rai::Configuration& getConfiguration(double phase);
   arr getJointState(double phase);
   arr getFrameState(double phase);
   arr getPath_decisionVariable();

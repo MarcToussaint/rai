@@ -44,7 +44,7 @@ uint TM_FlagConstraints::dim_phi(const WorldL& Ktuple) {
 void TM_FlagConstraints::phi(arr& y, arr& J, const WorldL& Ktuple) {
   CHECK_GE(order, 1, "FlagConstraints needs k-order 1");
   
-  rai::KinematicWorld& K = *Ktuple.last();
+  rai::Configuration& K = *Ktuple.last();
   
   y.resize(dim_phi(Ktuple)).setZero();
   if(!!J) {
@@ -138,7 +138,7 @@ uint TM_FlagCosts::dim_phi(const WorldL& Ktuple) {
 void TM_FlagCosts::phi(arr& y, arr& J, const WorldL& Ktuple) {
   CHECK_GE(order, 1, "FlagConstraints needs k-order 1");
   
-  rai::KinematicWorld& K = *Ktuple.last();
+  rai::Configuration& K = *Ktuple.last();
   
   y.resize(dim_phi(Ktuple)).setZero();
   if(!!J) {

@@ -10,7 +10,7 @@
 
 //===========================================================================
 
-void TM_Max::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
+void TM_Max::phi(arr& y, arr& J, const rai::Configuration& G) {
   map->__phi(y, J, G);
   uint i=argmax(y);
   y = ARR(y(i));
@@ -20,13 +20,13 @@ void TM_Max::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
 
 //===========================================================================
 
-void TM_Norm::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
+void TM_Norm::phi(arr& y, arr& J, const rai::Configuration& G) {
   map->__phi(y, J, G);
   double l = sqrt(sumOfSqr(y));
   if(!!J) J = ~(y/l)*J;
   y = ARR(l);
 }
 
-uint TM_Norm::dim_phi(const rai::KinematicWorld& G) {
+uint TM_Norm::dim_phi(const rai::Configuration& G) {
   return 1;
 }

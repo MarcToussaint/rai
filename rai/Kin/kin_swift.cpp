@@ -41,7 +41,7 @@ SwiftInterface::~SwiftInterface() {
   //cout <<" -- SwiftInterface closed" <<endl;
 }
 
-SwiftInterface::SwiftInterface(const rai::KinematicWorld& world, double _cutoff)
+SwiftInterface::SwiftInterface(const rai::Configuration& world, double _cutoff)
   : scene(NULL), cutoff(_cutoff) {
   bool r, add;
 
@@ -132,7 +132,7 @@ void SwiftInterface::reinitShape(const rai::Frame *f) {
   if(s->cont) scene->Activate(sw);
 }
 
-void SwiftInterface::initActivations(const rai::KinematicWorld& world) {
+void SwiftInterface::initActivations(const rai::Configuration& world) {
   /* deactivate some collision pairs:
     -- no `cont' -> no collisions with this object at all
     -- no collisions between shapes of same body
@@ -216,7 +216,7 @@ void SwiftInterface::deactivate(rai::Frame *s) {
   scene->Deactivate(INDEXshape2swift(s->ID));
 }
 
-void SwiftInterface::pushToSwift(const rai::KinematicWorld& world) {
+void SwiftInterface::pushToSwift(const rai::Configuration& world) {
   //CHECK_EQ(INDEXshape2swift.N,world.shapes.N,"the number of shapes has changed");
   CHECK_LE(INDEXshape2swift.N ,  world.frames.N, "the number of shapes has changed");
   rai::Matrix rot;
@@ -232,7 +232,7 @@ void SwiftInterface::pushToSwift(const rai::KinematicWorld& world) {
   }
 }
 
-void SwiftInterface::pullFromSwift(rai::KinematicWorld& world, bool dumpReport) {
+void SwiftInterface::pullFromSwift(rai::Configuration& world, bool dumpReport) {
   int i, j, k, np;
   int *oids=0, *num_contacts=0;
   SWIFT_Real *dists=0, *nearest_pts=0, *normals=0;
@@ -357,7 +357,7 @@ void SwiftInterface::pullFromSwift(rai::KinematicWorld& world, bool dumpReport) 
   }
 }
 
-void SwiftInterface::step(rai::KinematicWorld& world, bool dumpReport) {
+void SwiftInterface::step(rai::Configuration& world, bool dumpReport) {
   pushToSwift(world);
   pullFromSwift(world, dumpReport);
 }
@@ -384,16 +384,16 @@ uint SwiftInterface::countObjects() {
 
 #else
 #include <Core/util.h>
-void SwiftInterface::step(rai::KinematicWorld &world, bool dumpReport=false) {}
+void SwiftInterface::step(rai::Configuration &world, bool dumpReport=false) {}
 void SwiftInterface::pushToSwift() {}
-void SwiftInterface::pullFromSwift(const KinematicWorld &world, bool dumpReport) {}
+void SwiftInterface::pullFromSwift(const Configuration &world, bool dumpReport) {}
 
 void SwiftInterface::reinitShape(const rai::Shape *s) {}
 //  void close();
 void SwiftInterface::deactivate(rai::Shape *s1, rai::Shape *s2) {}
 void SwiftInterface::deactivate(const rai::Array<rai::Shape*>& shapes) {}
 void SwiftInterface::deactivate(const rai::Array<rai::Frame*>& frames) {}
-void SwiftInterface::initActivations(const KinematicWorld &world) {}
+void SwiftInterface::initActivations(const Configuration &world) {}
 void SwiftInterface::swiftQueryExactDistance() {}
 #endif
 /** @} */

@@ -62,7 +62,7 @@ rai::KinematicSwitch::KinematicSwitch(SwitchType _symbol, JointType _jointType, 
   if(!!jTo)   jB = jTo;
 }
 
-rai::KinematicSwitch::KinematicSwitch(rai::SwitchType op, rai::JointType type, const char* ref1, const char* ref2, const rai::KinematicWorld& K, rai::SwitchInitializationType _init, int _timeOfApplication, const rai::Transformation& jFrom, const rai::Transformation& jTo)
+rai::KinematicSwitch::KinematicSwitch(rai::SwitchType op, rai::JointType type, const char* ref1, const char* ref2, const rai::Configuration& K, rai::SwitchInitializationType _init, int _timeOfApplication, const rai::Transformation& jFrom, const rai::Transformation& jTo)
   : KinematicSwitch(op, type, initIdArg(K,ref1), initIdArg(K,ref2), _init, _timeOfApplication, jFrom, jTo)
 {}
 
@@ -71,7 +71,7 @@ void rai::KinematicSwitch::setTimeOfApplication(double time, bool before, int st
   timeOfApplication = (time<0.?0:conv_time2step(time, stepsPerPhase))+(before?0:1);
 }
 
-void rai::KinematicSwitch::apply(KinematicWorld& K) {
+void rai::KinematicSwitch::apply(Configuration& K) {
   Frame *from=NULL, *to=NULL;
   if(fromId!=-1) from=K.frames(fromId);
   if(toId!=-1) to=K.frames(toId);
@@ -166,7 +166,7 @@ void rai::KinematicSwitch::apply(KinematicWorld& K) {
   HALT("shouldn't be here!");
 }
 
-rai::String rai::KinematicSwitch::shortTag(const rai::KinematicWorld* G) const {
+rai::String rai::KinematicSwitch::shortTag(const rai::Configuration* G) const {
   rai::String str;
   str <<"  timeOfApplication=" <<timeOfApplication;
   str <<"  symbol=" <<symbol;
@@ -176,7 +176,7 @@ rai::String rai::KinematicSwitch::shortTag(const rai::KinematicWorld* G) const {
   return str;
 }
 
-void rai::KinematicSwitch::write(std::ostream& os, rai::KinematicWorld* K) const {
+void rai::KinematicSwitch::write(std::ostream& os, rai::Configuration* K) const {
   os <<"SWITCH  timeOfApplication=" <<timeOfApplication;
   os <<"  symbol=" <<symbol;
   os <<"  jointType=" <<jointType;
@@ -189,7 +189,7 @@ void rai::KinematicSwitch::write(std::ostream& os, rai::KinematicWorld* K) const
 //===========================================================================
 
 /*
-rai::KinematicSwitch* rai::KinematicSwitch::newSwitch(const Node *specs, const rai::KinematicWorld& world, int stepsPerPhase, uint T) {
+rai::KinematicSwitch* rai::KinematicSwitch::newSwitch(const Node *specs, const rai::Configuration& world, int stepsPerPhase, uint T) {
   if(specs->parents.N<2) return NULL;
   
   //-- get tags
@@ -214,7 +214,7 @@ rai::KinematicSwitch* rai::KinematicSwitch::newSwitch(const Node *specs, const r
 */
 
 /*
-rai::KinematicSwitch* rai::KinematicSwitch::newSwitch(const rai::String& type, const char* ref1, const char* ref2, const rai::KinematicWorld& world, int _timeOfApplication, const rai::Transformation& jFrom, const rai::Transformation& jTo) {
+rai::KinematicSwitch* rai::KinematicSwitch::newSwitch(const rai::String& type, const char* ref1, const char* ref2, const rai::Configuration& world, int _timeOfApplication, const rai::Transformation& jFrom, const rai::Transformation& jTo) {
   //-- create switch
   rai::KinematicSwitch *sw= new rai::KinematicSwitch();
   if(type=="addRigid") { sw->symbol=rai::SW_joint; sw->jointType=rai::JT_rigid; }

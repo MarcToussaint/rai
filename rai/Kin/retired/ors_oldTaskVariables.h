@@ -92,12 +92,12 @@ struct TaskVariable {
   void shiftTargets(int offset);
   
   /// @name updates
-  virtual void updateState(const rai::KinematicWorld &ors, double tau=1.) = 0; //updates both, state and Jacobian -> TODO: rename update(..)
+  virtual void updateState(const rai::Configuration &ors, double tau=1.) = 0; //updates both, state and Jacobian -> TODO: rename update(..)
   void updateChange(int t=-1, double tau=1.);
-  virtual void getHessian(const rai::KinematicWorld& ors, arr& H) { NIY; }
+  virtual void getHessian(const rai::Configuration& ors, arr& H) { NIY; }
   
   /// @name I/O
-  virtual void write(ostream& os, const rai::KinematicWorld& ors) const;
+  virtual void write(ostream& os, const rai::Configuration& ors) const;
   void write(ostream& os) const {NIY};
 };
 stdOutPipe(TaskVariable);
@@ -114,14 +114,14 @@ struct DefaultTaskVariable:public TaskVariable {
   DefaultTaskVariable();
   DefaultTaskVariable(
     const char* _name,
-    const rai::KinematicWorld& _ors,
+    const rai::Configuration& _ors,
     TVtype _type,
     const char *iBodyName, const char *iframe,
     const char *jBodyName, const char *jframe,
     const arr& _params);
   DefaultTaskVariable(
     const char* _name,
-    const rai::KinematicWorld& _ors,
+    const rai::Configuration& _ors,
     TVtype _type,
     const char *iShapeName,
     const char *jShapeName,
@@ -131,23 +131,23 @@ struct DefaultTaskVariable:public TaskVariable {
   
   void set(
     const char* _name,
-    const rai::KinematicWorld& _ors,
+    const rai::Configuration& _ors,
     TVtype _type,
     int _i, const rai::Transformation& _irel,
     int _j, const rai::Transformation& _jrel,
     const arr& _params);
-  //void set(const char* _name, rai::KinematicWorld& _ors, TVtype _type, const char *iname, const char *jname, const char *reltext);
+  //void set(const char* _name, rai::Configuration& _ors, TVtype _type, const char *iname, const char *jname, const char *reltext);
   
   /// @name updates
-  void updateState(const rai::KinematicWorld& ors, double tau=1.);
-  void getHessian(const rai::KinematicWorld& ors, arr& H);
+  void updateState(const rai::Configuration& ors, double tau=1.);
+  void getHessian(const rai::Configuration& ors, arr& H);
   
   /// @name virtual user update
-  virtual void userUpdate(const rai::KinematicWorld& ors) { NIY; } //updates both, state and Jacobian
+  virtual void userUpdate(const rai::Configuration& ors) { NIY; } //updates both, state and Jacobian
   
   
   /// @name I/O
-  void write(ostream& os, const rai::KinematicWorld& ors) const;
+  void write(ostream& os, const rai::Configuration& ors) const;
 };
 //stdOutPipe(DefaultTaskVariable);
 
@@ -174,7 +174,7 @@ struct ProxyTaskVariable:public TaskVariable {
   /// @name initialization
   ProxyTaskVariable();
   ProxyTaskVariable(const char* _name,
-                    rai::KinematicWorld& _ors,
+                    rai::Configuration& _ors,
                     CTVtype _type,
                     uintA _shapes,
                     double _margin=.02,
@@ -182,7 +182,7 @@ struct ProxyTaskVariable:public TaskVariable {
   TaskVariable* newClone() { return new ProxyTaskVariable(*this); }
   
   /// @name updates
-  void updateState(const rai::KinematicWorld& ors, double tau=1.);
+  void updateState(const rai::Configuration& ors, double tau=1.);
 };
 
 /** proxy align task variable */
@@ -196,7 +196,7 @@ struct ProxyAlignTaskVariable:public TaskVariable {
   /// @name initialization
   ProxyAlignTaskVariable();
   ProxyAlignTaskVariable(const char* _name,
-                         rai::KinematicWorld& _ors,
+                         rai::Configuration& _ors,
                          CTVtype _type,
                          uintA _shapes,
                          double _margin=3.,
@@ -204,7 +204,7 @@ struct ProxyAlignTaskVariable:public TaskVariable {
   TaskVariable* newClone() { return new ProxyAlignTaskVariable(*this); }
   
   /// @name updates
-  void updateState(const rai::KinematicWorld& ors, double tau=1.);
+  void updateState(const rai::Configuration& ors, double tau=1.);
 };
 
 //===========================================================================
@@ -219,7 +219,7 @@ void reportState(TaskVariableList& CS, ostream& os, bool onlyActives=true);
 void reportErrors(TaskVariableList& CS, ostream& os, bool onlyActives=true, int t=-1);
 void reportNames(TaskVariableList& CS, ostream& os, bool onlyActives=true);
 void activateAll(TaskVariableList& CS, bool active);
-void updateState(TaskVariableList& CS, const rai::KinematicWorld& ors);
+void updateState(TaskVariableList& CS, const rai::Configuration& ors);
 void updateChanges(TaskVariableList& CS, int t=-1);
 void getJointJacobian(TaskVariableList& CS, arr& J);
 void getJointYchange(TaskVariableList& CS, arr& y_change);

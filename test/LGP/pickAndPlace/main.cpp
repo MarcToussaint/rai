@@ -7,7 +7,7 @@
 #include <KOMO/komo.h>
 
 
-void generateProblem(rai::KinematicWorld& K){
+void generateProblem(rai::Configuration& K){
   uint numObj = 4;
   for(;;){
     K.clear();
@@ -49,7 +49,7 @@ void generateProblem(rai::KinematicWorld& K){
 
 
 void solve(){
-  rai::KinematicWorld K;
+  rai::Configuration K;
   generateProblem(K);
   //  K.addFile("model2.g");
   K.selectJointsByGroup({"base","armL","armR"}, true, true);
@@ -70,7 +70,7 @@ void solve(){
 
 
 void testBounds(){
-  rai::KinematicWorld K;
+  rai::Configuration K;
   generateProblem(K);
 //  K.addFile("model2.g");
   K.selectJointsByGroup({"base","armL","armR"}, true, true);

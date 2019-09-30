@@ -68,7 +68,7 @@ struct DisplayThread : MiniThread {
   }
 };
 
-void initFolStateFromKin(FOL_World& L, const rai::KinematicWorld& K) {
+void initFolStateFromKin(FOL_World& L, const rai::Configuration& K) {
   for(rai::Frame *a:K.frames) if(a->ats["logical"]) {
     const Graph& G = a->ats["logical"]->graph();
     for(Node *n:G) L.addFact({n->keys.last(), a->name});
@@ -120,7 +120,7 @@ LGP_Tree::LGP_Tree()
   cameraFocus = rai::getParameter<arr>("LGP/cameraFocus", {});
 }
 
-LGP_Tree::LGP_Tree(const rai::KinematicWorld& _kin, const char *folFileName) : LGP_Tree() {
+LGP_Tree::LGP_Tree(const rai::Configuration& _kin, const char *folFileName) : LGP_Tree() {
   kin.copy(_kin);
   if(collisions) kin.swift(); //initialize swift in root model (SwiftInterface is reference by all child models)
   fol.init(folFileName);
@@ -132,7 +132,7 @@ LGP_Tree::LGP_Tree(const rai::KinematicWorld& _kin, const char *folFileName) : L
   focusNode = root;
 }
 
-LGP_Tree::LGP_Tree(const rai::KinematicWorld& _kin, const FOL_World& _fol) : LGP_Tree() {
+LGP_Tree::LGP_Tree(const rai::Configuration& _kin, const FOL_World& _fol) : LGP_Tree() {
   kin.copy(_kin);
   fol.copy(_fol);
   finalGeometryObjectives.setModel(kin);
@@ -669,7 +669,7 @@ LGP_Tree_SolutionData::LGP_Tree_SolutionData(LGP_Tree& _tree, LGP_Node *_node) :
   decisions = node->getTreePathString('\n');
   
   //--init geoms
-  const rai::KinematicWorld& K = node->startKinematics;
+  const rai::Configuration& K = node->startKinematics;
   uintA frameIDs;
   for(uint f=0; f<K.frames.N; f++) {
     const rai::Frame *a = K.frames(f);

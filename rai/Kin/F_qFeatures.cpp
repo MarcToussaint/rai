@@ -14,7 +14,7 @@
 
 F_qItself::F_qItself(bool relative_q0) : moduloTwoPi(true), relative_q0(relative_q0) {}
 
-F_qItself::F_qItself(PickMode pickMode, const StringA& picks, const rai::KinematicWorld& K, bool relative_q0)
+F_qItself::F_qItself(PickMode pickMode, const StringA& picks, const rai::Configuration& K, bool relative_q0)
   : moduloTwoPi(true), relative_q0(relative_q0) {
   if(pickMode==byJointGroups) {
     for(rai::Frame *f: K.frames) {
@@ -48,7 +48,7 @@ F_qItself::F_qItself(const uintA& _selectedFrames, bool relative_q0)
   : selectedFrames(_selectedFrames), moduloTwoPi(true), relative_q0(relative_q0) {
 }
 
-void F_qItself::phi(arr& q, arr& J, const rai::KinematicWorld& G) {
+void F_qItself::phi(arr& q, arr& J, const rai::Configuration& G) {
   if(!selectedFrames.nd) {
     G.getJointState(q);
     if(relative_q0) {
@@ -183,7 +183,7 @@ void F_qItself::phi(arr& y, arr& J, const WorldL& Ktuple) {
   }
 }
 
-uint F_qItself::dim_phi(const rai::KinematicWorld& G) {
+uint F_qItself::dim_phi(const rai::Configuration& G) {
   if(selectedFrames.nd) {
     uint n=0;
     for(uint i=0;i<selectedFrames.d0;i++) {
@@ -222,7 +222,7 @@ uint F_qItself::dim_phi(const WorldL& Ktuple) {
   return 0;
 }
 
-rai::String F_qItself::shortTag(const rai::KinematicWorld& G) {
+rai::String F_qItself::shortTag(const rai::Configuration& G) {
   rai::String s="qItself";
   if(selectedFrames.nd) {
     if(selectedFrames.N<=3) {
@@ -268,7 +268,7 @@ void F_qZeroVel::phi(arr& y, arr& J, const WorldL& Ktuple){
   }
 }
 
-uint F_qZeroVel::dim_phi(const rai::KinematicWorld& K){
+uint F_qZeroVel::dim_phi(const rai::Configuration& K){
   rai::Frame *a = K.frames(i);
   if(!a->joint){
     return 0;
@@ -316,7 +316,7 @@ rai::Array<rai::Joint*> getMatchingJoints(const WorldL& Ktuple, bool zeroVelJoin
 
 //===========================================================================
 
-void F_qLimits::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
+void F_qLimits::phi(arr& y, arr& J, const rai::Configuration& G) {
 //  if(!limits.N)
   limits=G.getLimits(); //G might change joint ordering (kinematic switches), need to query limits every time
   G.kinematicsLimitsCost(y, J, limits);
@@ -324,7 +324,7 @@ void F_qLimits::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
 
 //===========================================================================
 
-void F_qQuaternionNorms::phi(arr &y, arr &J, const rai::KinematicWorld &G) {
+void F_qQuaternionNorms::phi(arr &y, arr &J, const rai::Configuration &G) {
   uint n=dim_phi(G);
   y.resize(n);
   if(!!J) J.resize(n, G.q.N).setZero();
@@ -346,7 +346,7 @@ void F_qQuaternionNorms::phi(arr &y, arr &J, const rai::KinematicWorld &G) {
     }
 }
 
-uint F_qQuaternionNorms::dim_phi(const rai::KinematicWorld &G) {
+uint F_qQuaternionNorms::dim_phi(const rai::Configuration &G) {
   uint i=0;
   for(const rai::Joint* j:G.fwdActiveJoints) {
     if(j->type==rai::JT_quatBall || j->type==rai::JT_free || j->type==rai::JT_XBall) i++;
@@ -356,7 +356,7 @@ uint F_qQuaternionNorms::dim_phi(const rai::KinematicWorld &G) {
 
 //===========================================================================
 
-rai::Array<rai::Joint*> getSwitchedJoints(const rai::KinematicWorld& G0, const rai::KinematicWorld& G1, int verbose) {
+rai::Array<rai::Joint*> getSwitchedJoints(const rai::Configuration& G0, const rai::Configuration& G1, int verbose) {
 
   HALT("retired: we only look at switched objects");
   
@@ -407,7 +407,7 @@ bool isSwitched(rai::Frame *f0, rai::Frame *f1){
 
 //===========================================================================
 
-uintA getSwitchedBodies(const rai::KinematicWorld& G0, const rai::KinematicWorld& G1, int verbose) {
+uintA getSwitchedBodies(const rai::Configuration& G0, const rai::Configuration& G1, int verbose) {
   uintA switchedBodies;
   
   for(rai::Frame *b1:G1.frames) {
@@ -442,12 +442,12 @@ uintA getSwitchedBodies(const rai::KinematicWorld& G0, const rai::KinematicWorld
 uintA getNonSwitchedBodies(const WorldL& Ktuple) {
   uintA nonSwitchedBodies;
 
-  rai::KinematicWorld& K0 = *Ktuple(0);
+  rai::Configuration& K0 = *Ktuple(0);
   for(rai::Frame *f0:K0.frames) {
     bool succ = true;
     uint id = f0->ID;
     for(uint i=1;i<Ktuple.N;i++){
-      rai::KinematicWorld& K1 = *Ktuple(i);
+      rai::Configuration& K1 = *Ktuple(i);
       if(id>=K1.frames.N){ succ=false; break; }
       if(isSwitched(f0, K1.frames(id))){ succ=false; break; }
     }

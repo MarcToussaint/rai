@@ -11,7 +11,7 @@ struct SimulationThread : Thread, RobotAbstraction {
   struct SimulationThread_self* self=0;
   arr q0;
 
-  SimulationThread(const rai::KinematicWorld& _K, double dt=.01, bool pubSubToROS=false);
+  SimulationThread(const rai::Configuration& _K, double dt=.01, bool pubSubToROS=false);
   ~SimulationThread();
 
   //non threaded looping

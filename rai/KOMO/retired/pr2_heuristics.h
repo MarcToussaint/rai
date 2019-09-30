@@ -11,8 +11,8 @@
 #include <Core/array.h>
 
 namespace rai {
-struct KinematicWorld;
+struct Configuration;
 };
 
-arr pr2_reasonable_W(const rai::KinematicWorld& world);
-uintA pr2_get_shapes(const rai::KinematicWorld& world);
+arr pr2_reasonable_W(const rai::Configuration& world);
+uintA pr2_get_shapes(const rai::Configuration& world);

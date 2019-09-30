@@ -18,7 +18,7 @@ void setTasks(KOMO& MP,
 
 //===========================================================================
 
-arr moveTo(rai::KinematicWorld& world,
+arr moveTo(rai::Configuration& world,
            rai::Shape &endeff,
            rai::Shape& target,
            byte whichAxesToAlign,
@@ -39,7 +39,7 @@ arr moveTo(rai::KinematicWorld& world,
 
   //-- optimize
   double colPrec = rai::getParameter<double>("KOMO/moveTo/collisionPrecision", -1e0);
-  rai::KinematicWorld::setJointStateCount=0;
+  rai::Configuration::setJointStateCount=0;
   for(uint k=0; k<iterate; k++) {
     rai::timerStart();
     if(colPrec<0) {
@@ -50,7 +50,7 @@ arr moveTo(rai::KinematicWorld& world,
       optNewton(x, Convert(MP.komo_problem));
     }
     cout <<"** optimization time=" <<rai::timerRead()
-         <<" setJointStateCount=" <<rai::KinematicWorld::setJointStateCount <<endl;
+         <<" setJointStateCount=" <<rai::Configuration::setJointStateCount <<endl;
     //    checkJacobian(Convert(MF), x, 1e-5);
     //MP.costReport();
   }

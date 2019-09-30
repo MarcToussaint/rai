@@ -28,7 +28,7 @@ struct VertGroup {
 //template class rai::Array<VertGroup>;
 //template class rai::Array<String>;
 
-void readBlender(const char* filename, rai::Mesh& mesh, rai::KinematicWorld& bl) {
+void readBlender(const char* filename, rai::Mesh& mesh, rai::Configuration& bl) {
   ifstream is(filename, std::ios::binary);
   CHECK(is.good(), "couldn't open file " <<filename);
   

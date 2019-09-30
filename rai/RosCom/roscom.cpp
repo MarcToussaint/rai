@@ -325,8 +325,8 @@ rai_msgs::JointState conv_CtrlMsg2JointState(const CtrlMsg& ctrl) {
   return jointState;
 }
 
-rai::KinematicWorld conv_MarkerArray2KinematicWorld(const visualization_msgs::MarkerArray& markers) {
-  rai::KinematicWorld world;
+rai::Configuration conv_MarkerArray2Configuration(const visualization_msgs::MarkerArray& markers) {
+  rai::Configuration world;
   tf::TransformListener listener;
   for(const visualization_msgs::Marker& marker:markers.markers) {
     rai::String name;
@@ -476,7 +476,7 @@ visualization_msgs::Marker conv_Shape2Marker(const rai::Shape& sh) {
   return new_marker;
 }
 
-visualization_msgs::MarkerArray conv_Kin2Markers(const rai::KinematicWorld& K) {
+visualization_msgs::MarkerArray conv_Kin2Markers(const rai::Configuration& K) {
   visualization_msgs::MarkerArray M;
   for(rai::Frame *f : K.frames) M.markers.push_back(conv_Shape2Marker(*f->shape));
 //  M.header.frame_id = "1";

@@ -22,7 +22,7 @@ enum EditMode { emNone, emMove, emOde };
 
 struct sOrsSceneGui:OpenGL::GLKeyCall,OpenGL::GLHoverCall,OpenGL::GLClickCall {
   OpenGL *gl;
-  rai::KinematicWorld *ors;
+  rai::Configuration *ors;
   EditMode mode;
   rai::Body *movingBody;
   rai::Vector selpos;
@@ -153,12 +153,12 @@ bool sOrsSceneGui::keyCallback(OpenGL&) {
 }
 
 struct EditConfigurationHoverCall:OpenGL::GLHoverCall {
-  rai::KinematicWorld *ors;
-  EditConfigurationHoverCall(rai::KinematicWorld& _ors);
+  rai::Configuration *ors;
+  EditConfigurationHoverCall(rai::Configuration& _ors);
   bool hoverCallback(OpenGL& gl);
 };
 
-OrsSceneGui::OrsSceneGui(rai::KinematicWorld& ors, OpenGL* gl) {
+OrsSceneGui::OrsSceneGui(rai::Configuration& ors, OpenGL* gl) {
   s=new sOrsSceneGui();
   s->ors = &ors;
   orsDrawZlines=true;

@@ -35,7 +35,7 @@ inline bool stopButtons(const arr& gamepadState){
   return false;
 }
 
-Gamepad2Tasks::Gamepad2Tasks(TaskControlMethods& _TC, const rai::KinematicWorld& K, const arr& _q0)
+Gamepad2Tasks::Gamepad2Tasks(TaskControlMethods& _TC, const rai::Configuration& K, const arr& _q0)
   : TC(_TC), q0(_q0),
     endeffR(NULL), endeffL(NULL), base(NULL), torso(NULL), head(NULL), headAxes(NULL), limits(NULL), coll(NULL), gripperL(NULL), gripperR(NULL) {
     
@@ -101,7 +101,7 @@ double gamepadSignalMap(double x) {
   return rai::sign(x)*(exp(rai::sqr(x))-1.);
 }
 
-bool Gamepad2Tasks::updateTasks(arr& gamepadState, const rai::KinematicWorld& K) {
+bool Gamepad2Tasks::updateTasks(arr& gamepadState, const rai::Configuration& K) {
   if(stopButtons(gamepadState)) return true;
   
   //for(ptr<CtrlTask>& pdt:TC.tasks) pdt->active=false;

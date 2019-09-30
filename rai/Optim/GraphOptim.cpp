@@ -102,7 +102,7 @@ void SubGraphProblem::optim(int verbose){
 
   checkStructure(x);
 
-  //    KinematicWorld::setJointStateCount=0;
+  //    Configuration::setJointStateCount=0;
   rai::timerStart();
 #if 0
   ModGraphProblem Gsel(*this);

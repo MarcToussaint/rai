@@ -8,7 +8,7 @@
 
 #include "TM_time.h"
 
-void TM_Time::phi(arr &y, arr &J, const rai::KinematicWorld &K) {
+void TM_Time::phi(arr &y, arr &J, const rai::Configuration &K) {
   y = ARR(K.frames(0)->tau);
   
   if(!!J) {

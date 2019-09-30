@@ -3,7 +3,7 @@
 
 //===========================================================================
 
-rai::CameraView::CameraView(const rai::KinematicWorld& _K, bool _offscreen, int _watchComputations)
+rai::CameraView::CameraView(const rai::Configuration& _K, bool _offscreen, int _watchComputations)
   : gl("CameraView", 640, 480, _offscreen), watchComputations(_watchComputations) {
 
   updateConfiguration(_K);
@@ -63,7 +63,7 @@ rai::CameraView::Sensor& rai::CameraView::selectSensor(const char* sensorName){
   return *sen;
 }
 
-void rai::CameraView::updateConfiguration(const rai::KinematicWorld& newC){
+void rai::CameraView::updateConfiguration(const rai::Configuration& newC){
   arr X = newC.getFrameState();
   auto _dataLock = gl.dataLock(RAI_HERE);
   if(X.d0==K.frames.N){
@@ -226,7 +226,7 @@ void rai::CameraView::done(const char* _func_){
 
 //===========================================================================
 
-rai::Sim_CameraView::Sim_CameraView(Var<rai::KinematicWorld>& _kin,
+rai::Sim_CameraView::Sim_CameraView(Var<rai::Configuration>& _kin,
                                     Var<byteA> _color,
                                     Var<floatA> _depth,
                                     double beatIntervalSec, const char* _cameraFrameName, bool _idColors, const byteA& _frameIDmap)

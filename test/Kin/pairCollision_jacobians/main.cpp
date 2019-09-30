@@ -15,7 +15,7 @@ extern bool orsDrawWires;
 //===========================================================================
 
 void TEST(GJK_Jacobians) {
-  rai::KinematicWorld K;
+  rai::Configuration K;
   rai::Frame base(K), b1(K), B1(K), b2(K), B2(K);
   rai::Joint j1(base, b1), J1(b1, B1), j2(B1, b2), J2(b2, B2);
   rai::Shape s1(B1), s2(B2);
@@ -99,7 +99,7 @@ void TEST(GJK_Jacobians) {
 //===========================================================================
 
 void TEST(GJK_Jacobians2) {
-  rai::KinematicWorld K;
+  rai::Configuration K;
   rai::Frame base(K);
   for(uint i=0;i<20;i++){
     rai::Frame *a = new rai::Frame(K);
@@ -174,7 +174,7 @@ void TEST(GJK_Jacobians2) {
 //===========================================================================
 
 void TEST(GJK_Jacobians3) {
-  rai::KinematicWorld K;
+  rai::Configuration K;
   rai::Frame base(K), B1(K), B2(K);
   rai::Joint J1(base, B1), J2(base, B2);
   rai::Shape s1(B1), s2(B2);

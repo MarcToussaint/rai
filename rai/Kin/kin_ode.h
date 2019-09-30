@@ -38,7 +38,7 @@ typedef struct dxJointGroup *dJointGroupID;
  * callback function, and basic stepping function.
  */
 struct OdeInterface {
-  rai::KinematicWorld& C;
+  rai::Configuration& C;
   double time;
   dxSpace *space;
   dxGeom *plane0, *planex1, *planex2, *planey1, *planey2;
@@ -54,7 +54,7 @@ struct OdeInterface {
   rai::Array<dxJoint*> motors;
   rai::Array<dContactGeom*> conts;
   
-  OdeInterface(rai::KinematicWorld &_C);
+  OdeInterface(rai::Configuration &_C);
   ~OdeInterface();
   
   /** @brief reinstantiates a new ODE world (and space) clear of all previous objects */

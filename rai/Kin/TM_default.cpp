@@ -34,13 +34,13 @@ TM_Default::TM_Default(TM_DefaultType _type,
   if(type==TMT_quat) flipTargetSignOnNegScalarProduct=true;
 }
 
-TM_Default::TM_Default(TM_DefaultType _type, const rai::KinematicWorld &K,
+TM_Default::TM_Default(TM_DefaultType _type, const rai::Configuration &K,
                        const char* iShapeName, const rai::Vector& _ivec,
                        const char* jShapeName, const rai::Vector& _jvec)
   : TM_Default(_type, initIdArg(K, iShapeName), _ivec, initIdArg(K, jShapeName), _jvec) {
 }
 
-TM_Default::TM_Default(const Graph& specs, const rai::KinematicWorld& G)
+TM_Default::TM_Default(const Graph& specs, const rai::Configuration& G)
   :type(TMT_no), i(-1), j(-1) {
   Node *it=specs["type"];
   if(!it) it=specs["map"];
@@ -62,7 +62,7 @@ TM_Default::TM_Default(const Graph& specs, const rai::KinematicWorld& G)
   if(type==TMT_quat) flipTargetSignOnNegScalarProduct=true;
 }
 
-TM_Default::TM_Default(const Node *specs, const rai::KinematicWorld& G)
+TM_Default::TM_Default(const Node *specs, const rai::Configuration& G)
   :type(TMT_no), i(-1), j(-1) {
   CHECK(specs->parents.N>1,"");
   //  rai::String& tt=specs->parents(0)->keys.last();
@@ -90,7 +90,7 @@ TM_Default::TM_Default(const Node *specs, const rai::KinematicWorld& G)
   if(type==TMT_quat) flipTargetSignOnNegScalarProduct=true;
 }
 
-void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
+void TM_Default::phi(arr& y, arr& J, const rai::Configuration& G) {
   rai::Frame *a = i<0?NULL: G.frames(i);
   rai::Frame *b = j<0?NULL: G.frames(j);
 
@@ -297,7 +297,7 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
   HALT("no such TVT");
 }
 
-uint TM_Default::dim_phi(const rai::KinematicWorld& G) {
+uint TM_Default::dim_phi(const rai::Configuration& G) {
   switch(type) {
     case TMT_pos: return 3;
     case TMT_vec: return 3;
@@ -314,7 +314,7 @@ uint TM_Default::dim_phi(const rai::KinematicWorld& G) {
   }
 }
 
-rai::String TM_Default::shortTag(const rai::KinematicWorld& K) {
+rai::String TM_Default::shortTag(const rai::Configuration& K) {
   rai::String s="Default-";
   s <<order;
   s <<'-' <<type;
@@ -323,7 +323,7 @@ rai::String TM_Default::shortTag(const rai::KinematicWorld& K) {
   return s;
 }
 
-Graph TM_Default::getSpec(const rai::KinematicWorld& K){
+Graph TM_Default::getSpec(const rai::Configuration& K){
   Graph G;
   G.newNode<rai::String>({"feature"}, {}, STRING(type));
   if(i>=0) G.newNode<rai::String>({"o1"}, {}, K.frames(i)->name);

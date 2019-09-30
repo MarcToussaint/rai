@@ -33,7 +33,7 @@ BulletInterface::BulletInterface(){
   self->dynamicsWorld->setGravity(btVector3(0, 0, gravity));
 }
 
-BulletInterface::BulletInterface(const rai::KinematicWorld& K)
+BulletInterface::BulletInterface(const rai::Configuration& K)
   : BulletInterface() {
   defaultInit(K);
 }
@@ -147,7 +147,7 @@ void BulletInterface::addFrames(const FrameL& frames){
   }
 }
 
-void BulletInterface::defaultInit(const rai::KinematicWorld& K){
+void BulletInterface::defaultInit(const rai::Configuration& K){
   addGround();
   addFrames(K.frames);
 }
@@ -266,12 +266,12 @@ void BulletInterface::saveBulletFile(const char* filename){
 #else
 
 BulletInterface::BulletInterface(){ NICO }
-BulletInterface::BulletInterface(const rai::KinematicWorld& K){ NICO }
+BulletInterface::BulletInterface(const rai::Configuration& K){ NICO }
 BulletInterface::~BulletInterface(){ NICO }
 btRigidBody* BulletInterface::addGround(){ NICO }
 btRigidBody* BulletInterface::addFrame(const rai::Frame* f){ NICO }
 void BulletInterface::addFrames(const FrameL& frames){ NICO }
-void BulletInterface::defaultInit(const rai::KinematicWorld& K){ NICO }
+void BulletInterface::defaultInit(const rai::Configuration& K){ NICO }
 void BulletInterface::step(double tau){ NICO }
 void BulletInterface::pushFullState(const FrameL& frames, const arr& vel){ NICO }
 void BulletInterface::pushKinematicStates(const FrameL& frames){ NICO }

@@ -36,7 +36,7 @@ inline bool stopButtons(const arr& gamepadState){
 }
 
 
-Teleop2Tasks::Teleop2Tasks(TaskControlMethods& _MP, const rai::KinematicWorld& K):fmc(_MP) {
+Teleop2Tasks::Teleop2Tasks(TaskControlMethods& _MP, const rai::Configuration& K):fmc(_MP) {
   effPosR = fmc.addPDTask(tasks, "MoveEffTo_endeffR", .2, 1.8, make_shared<TM_Default>(TMT_pos, K,"endeffR",NoVector,"base_footprint"));
   effPosR->PD().y_target = {0.8, -.5, 1.};
   
@@ -116,7 +116,7 @@ void Teleop2Tasks::updateMovement(floatA& cal_pose, arr& old_pos, arr& old_effpo
   copy(old_pos, pos);
 }
 
-void Teleop2Tasks::updateTasks(floatA cal_pose_rh, floatA cal_pose_lh, float calibrated_gripper_lh, float calibrated_gripper_rh, arr drive, int button, const rai::KinematicWorld& K) {
+void Teleop2Tasks::updateTasks(floatA cal_pose_rh, floatA cal_pose_lh, float calibrated_gripper_lh, float calibrated_gripper_rh, arr drive, int button, const rai::Configuration& K) {
 
   effPosR->active = true;
   effPosL->active = false;

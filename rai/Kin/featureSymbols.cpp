@@ -48,7 +48,7 @@ template<> const char* rai::Enum<FeatureSymbol>::names []= {
 };
 
 
-double shapeSize(const rai::KinematicWorld& K, const char* name, uint i=2) {
+double shapeSize(const rai::Configuration& K, const char* name, uint i=2) {
   rai::Frame *f = K.getFrameByName(name);
   rai::Shape *s = f->shape;
   if(!s) {
@@ -58,7 +58,7 @@ double shapeSize(const rai::KinematicWorld& K, const char* name, uint i=2) {
   return s->size(i);
 }
 
-ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const rai::KinematicWorld& world, const arr& scale, const arr& target, int order){
+ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const rai::Configuration& world, const arr& scale, const arr& target, int order){
   ptr<Feature> f;
   if(feat==FS_distance) {  f=make_shared<TM_PairCollision>(world, frames(0), frames(1), TM_PairCollision::_negScalar, false); }
   else if(feat==FS_oppose) {  f=make_shared<F_GraspOppose>(world, frames(0), frames(1), frames(2)); }

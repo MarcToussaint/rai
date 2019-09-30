@@ -55,7 +55,7 @@ static PxSimulationFilterShader gDefaultFilterShader=PxDefaultSimulationFilterSh
  * @param gl the gl output.
  * @param physx the PhyxXInteface which handles the ors graph.
  */
-void bindOrsToPhysX(rai::KinematicWorld& graph, OpenGL& gl, PhysXInterface& physx) {
+void bindOrsToPhysX(rai::Configuration& graph, OpenGL& gl, PhysXInterface& physx) {
   //  physx.create(graph);
   
   RAI_MSG("I don't understand this: why do you need a 2nd opengl window? (This is only for sanity check in the example.)");
@@ -151,7 +151,7 @@ struct sPhysXInterface {
 
 // ============================================================================
 
-PhysXInterface::PhysXInterface(const rai::KinematicWorld& world): s(NULL) {
+PhysXInterface::PhysXInterface(const rai::Configuration& world): s(NULL) {
   s = new sPhysXInterface;
   
   if(!mFoundation) {
@@ -249,7 +249,7 @@ void PhysXInterface::step(double tau) {
   }
 }
 
-void PhysXInterface::setArticulatedBodiesKinematic(const rai::KinematicWorld& C) {
+void PhysXInterface::setArticulatedBodiesKinematic(const rai::Configuration& C) {
   HALT("NOT SURE IF THIS IS DESIRED");
   for(rai::Joint* j:C.fwdActiveJoints) if(j->type!=rai::JT_free) {
       if(j->from()->inertia && j->from()->inertia->type==rai::BT_dynamic) j->from()->inertia->type=rai::BT_kinematic;
@@ -554,7 +554,7 @@ void PhysXInterface::pullDynamicStates(FrameL& frames, arr& vels) {
 //  K->calc_q_from_Q();
 }
 
-void PhysXInterface::pushFullState(const FrameL& frames, const arr& vels, rai::KinematicWorld *Kt_1, rai::KinematicWorld *Kt_2, double tau, bool onlyKinematic) {
+void PhysXInterface::pushFullState(const FrameL& frames, const arr& vels, rai::Configuration *Kt_1, rai::Configuration *Kt_2, double tau, bool onlyKinematic) {
   for(rai::Frame *f : frames) {
     if(s->actors.N <= f->ID) continue;
     PxRigidActor* a = s->actors(f->ID);
@@ -729,15 +729,15 @@ void PhysXInterface::addForce(rai::Vector& force, rai::Frame* b, rai::Vector& po
 #else //RAI_PHYSX
 
 #include "kin_physx.h"
-PhysXInterface::PhysXInterface(const rai::KinematicWorld& _world) : s(NULL) { NICO }
+PhysXInterface::PhysXInterface(const rai::Configuration& _world) : s(NULL) { NICO }
 PhysXInterface::~PhysXInterface() { NICO }
 
 void PhysXInterface::step(double tau) { NICO }
 void PhysXInterface::pushKinematicStates(const FrameL& frames){ NICO }
-void PhysXInterface::pushFullState(const FrameL& frames, const arr& vels, rai::KinematicWorld *Kt_1, rai::KinematicWorld *Kt_2, double tau, bool onlyKinematic){ NICO }
+void PhysXInterface::pushFullState(const FrameL& frames, const arr& vels, rai::Configuration *Kt_1, rai::Configuration *Kt_2, double tau, bool onlyKinematic){ NICO }
 void PhysXInterface::pullDynamicStates(FrameL& frames, arr &vels){ NICO }
 
-void PhysXInterface::setArticulatedBodiesKinematic(const rai::KinematicWorld& C) { NICO }
+void PhysXInterface::setArticulatedBodiesKinematic(const rai::Configuration& C) { NICO }
 void PhysXInterface::ShutdownPhysX() { NICO }
 void PhysXInterface::watch(bool pause, const char *txt) { NICO }
 void PhysXInterface::glDraw(OpenGL&) { NICO }
@@ -745,7 +745,7 @@ void PhysXInterface::addForce(rai::Vector& force, rai::Frame* b) { NICO }
 void PhysXInterface::addForce(rai::Vector& force, rai::Frame* b, rai::Vector& pos) { NICO }
 
 void glPhysXInterface(void *classP) { NICO }
-void bindOrsToPhysX(rai::KinematicWorld& graph, OpenGL& gl, PhysXInterface& physx) { NICO }
+void bindOrsToPhysX(rai::Configuration& graph, OpenGL& gl, PhysXInterface& physx) { NICO }
 
 #endif
 /** @} */

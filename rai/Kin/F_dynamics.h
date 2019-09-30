@@ -18,15 +18,15 @@ struct F_NewtonEuler : Feature {
     order = 2;
     gravity = rai::getParameter<double>("TM_NewtonEuler/gravity", 9.81);
   }
-  F_NewtonEuler(const rai::KinematicWorld& K, const char* iShapeName, bool _transOnly=false) : F_NewtonEuler(initIdArg(K,iShapeName), _transOnly){}
+  F_NewtonEuler(const rai::Configuration& K, const char* iShapeName, bool _transOnly=false) : F_NewtonEuler(initIdArg(K,iShapeName), _transOnly){}
   
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& K) { HALT("can only be of higher order"); }
-  virtual uint dim_phi(const rai::KinematicWorld& K) { HALT("can only be of higher order"); }
+  virtual void phi(arr& y, arr& J, const rai::Configuration& K) { HALT("can only be of higher order"); }
+  virtual uint dim_phi(const rai::Configuration& K) { HALT("can only be of higher order"); }
   
   virtual void phi(arr& y, arr& J, const WorldL& Ktuple);
   virtual uint dim_phi(const WorldL& Ktuple){ return 6; }
   
-  virtual rai::String shortTag(const rai::KinematicWorld& K) { return STRING("NewtonEuler-" <<K.frames(i)->name); }
+  virtual rai::String shortTag(const rai::Configuration& K) { return STRING("NewtonEuler-" <<K.frames(i)->name); }
 };
 
 //===========================================================================
@@ -44,15 +44,15 @@ struct F_NewtonEuler_DampedVelocities : Feature {
       gravity = rai::getParameter<double>("TM_NewtonEuler/gravity", 9.81);
     }
   }
-  F_NewtonEuler_DampedVelocities(const rai::KinematicWorld& K, const char* iShapeName, double _gravity=-1., bool _onlyXYPhi=false) : F_NewtonEuler_DampedVelocities(initIdArg(K,iShapeName), _gravity, _onlyXYPhi){}
+  F_NewtonEuler_DampedVelocities(const rai::Configuration& K, const char* iShapeName, double _gravity=-1., bool _onlyXYPhi=false) : F_NewtonEuler_DampedVelocities(initIdArg(K,iShapeName), _gravity, _onlyXYPhi){}
 
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& K) { HALT("can only be of higher order"); }
-  virtual uint dim_phi(const rai::KinematicWorld& K) { HALT("can only be of higher order"); }
+  virtual void phi(arr& y, arr& J, const rai::Configuration& K) { HALT("can only be of higher order"); }
+  virtual uint dim_phi(const rai::Configuration& K) { HALT("can only be of higher order"); }
 
   virtual void phi(arr& y, arr& J, const WorldL& Ktuple);
   virtual uint dim_phi(const WorldL& Ktuple){ return 6; }
 
-  virtual rai::String shortTag(const rai::KinematicWorld& K) { return STRING("NewtonEuler_DampedVelocities-" <<K.frames(i)->name); }
+  virtual rai::String shortTag(const rai::Configuration& K) { return STRING("NewtonEuler_DampedVelocities-" <<K.frames(i)->name); }
 };
 
 //===========================================================================
@@ -64,15 +64,15 @@ struct F_Wrench : Feature{
   bool torqueOnly=false;
 
   F_Wrench(int iShape, const arr& _vec, bool _torqueOnly=false);
-  F_Wrench(const rai::KinematicWorld& K, const char* iShapeName, const arr& _vec, bool _transOnly=false) : F_Wrench(initIdArg(K,iShapeName), _vec, _transOnly){}
+  F_Wrench(const rai::Configuration& K, const char* iShapeName, const arr& _vec, bool _transOnly=false) : F_Wrench(initIdArg(K,iShapeName), _vec, _transOnly){}
 
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& K) { HALT("can only be of higher order"); }
-  virtual uint dim_phi(const rai::KinematicWorld& K) { HALT("can only be of higher order"); }
+  virtual void phi(arr& y, arr& J, const rai::Configuration& K) { HALT("can only be of higher order"); }
+  virtual uint dim_phi(const rai::Configuration& K) { HALT("can only be of higher order"); }
 
   virtual void phi(arr& y, arr& J, const WorldL& Ktuple);
   virtual uint dim_phi(const WorldL& Ktuple);
 
-  virtual rai::String shortTag(const rai::KinematicWorld& K) { return STRING("Wrench-" <<K.frames(i)->name); }
+  virtual rai::String shortTag(const rai::Configuration& K) { return STRING("Wrench-" <<K.frames(i)->name); }
 };
 
 //===========================================================================
@@ -82,13 +82,13 @@ struct F_Energy : Feature {
 
   F_Energy();
 
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& K) { HALT("can only be of higher order"); }
-  virtual uint dim_phi(const rai::KinematicWorld& K) { HALT("can only be of higher order"); }
+  virtual void phi(arr& y, arr& J, const rai::Configuration& K) { HALT("can only be of higher order"); }
+  virtual uint dim_phi(const rai::Configuration& K) { HALT("can only be of higher order"); }
 
   virtual void phi(arr& y, arr& J, const WorldL& Ktuple);
   virtual uint dim_phi(const WorldL& Ktuple);
 
-  virtual rai::String shortTag(const rai::KinematicWorld& G) { return STRING("Energy-"<<order); }
+  virtual rai::String shortTag(const rai::Configuration& G) { return STRING("Energy-"<<order); }
 };
 
 //===========================================================================
@@ -98,10 +98,10 @@ struct F_StaticStability : Feature {
   double margin;
 
   F_StaticStability(int iShape=-1, double _margin=.01);
-  F_StaticStability(const rai::KinematicWorld& G,
+  F_StaticStability(const rai::Configuration& G,
                      const char* iShapeName=NULL, double _margin=.01);
 
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
-  virtual uint dim_phi(const rai::KinematicWorld& G) { return 4; }
-  virtual rai::String shortTag(const rai::KinematicWorld& G);
+  virtual void phi(arr& y, arr& J, const rai::Configuration& G);
+  virtual uint dim_phi(const rai::Configuration& G) { return 4; }
+  virtual rai::String shortTag(const rai::Configuration& G);
 };

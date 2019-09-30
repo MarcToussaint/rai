@@ -3,7 +3,7 @@
 
 //===========================================================================
 
-void F_Pose::phi(arr& y, arr& J, const rai::KinematicWorld& C){
+void F_Pose::phi(arr& y, arr& J, const rai::Configuration& C){
     NIY;
 }
 
@@ -82,7 +82,7 @@ void F_Pose::phi(arr& y, arr& J, const WorldL& Ctuple){
 
 //===========================================================================
 
-void F_PoseDiff::phi(arr& y, arr& J, const rai::KinematicWorld& C){
+void F_PoseDiff::phi(arr& y, arr& J, const rai::Configuration& C){
     NIY;
 }
 
@@ -101,7 +101,7 @@ void F_PoseDiff::phi(arr& y, arr& J, const WorldL& Ctuple){
 
 //===========================================================================
 
-void F_PoseRel::phi(arr& y, arr& J, const rai::KinematicWorld& C){
+void F_PoseRel::phi(arr& y, arr& J, const rai::Configuration& C){
     NIY;
 }
 
@@ -120,7 +120,7 @@ void F_PoseRel::phi(arr& y, arr& J, const WorldL& Ctuple){
 
 //===========================================================================
 
-TM_Align::TM_Align(const rai::KinematicWorld& K, const char* iName, const char* jName)
+TM_Align::TM_Align(const rai::Configuration& K, const char* iName, const char* jName)
   : i(-1), j(-1) {
   rai::Frame *a = iName ? K.getFrameByName(iName):NULL;
   rai::Frame *b = jName ? K.getFrameByName(jName):NULL;
@@ -128,7 +128,7 @@ TM_Align::TM_Align(const rai::KinematicWorld& K, const char* iName, const char* 
   if(b) j=b->ID;
 }
 
-void TM_Align::phi(arr& y, arr& J, const rai::KinematicWorld& K) {
+void TM_Align::phi(arr& y, arr& J, const rai::Configuration& K) {
   y.resize(3);
   if(!!J) J.resize(3, K.q.N);
 
@@ -153,6 +153,6 @@ void TM_Align::phi(arr& y, arr& J, const rai::KinematicWorld& K) {
   if(!!J) J[2] = ~zj * Ji + ~zi * Jj;
 }
 
-rai::String TM_Align::shortTag(const rai::KinematicWorld &G) {
+rai::String TM_Align::shortTag(const rai::Configuration &G) {
   return STRING("TM_Align:"<<(i<0?"WORLD":G.frames(i)->name) <<':' <<(j<0?"WORLD":G.frames(j)->name));
 }

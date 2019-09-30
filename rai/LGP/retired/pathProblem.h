@@ -14,15 +14,15 @@
 //===========================================================================
 
 struct PathProblem {
-  rai::KinematicWorld world;
+  rai::Configuration world;
   const Graph& symbolicState;
   uint microSteps;
   int verbose;
   
   KOMO MP;
   
-  PathProblem(const rai::KinematicWorld& world_initial,
-              const rai::KinematicWorld& world_final,
+  PathProblem(const rai::Configuration& world_initial,
+              const rai::Configuration& world_final,
               const Graph& symbolicState,
               uint microSteps,
               int verbose);

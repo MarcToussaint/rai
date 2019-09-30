@@ -22,7 +22,7 @@ void TM_ImpulsExchange::phi(arr &y, arr &J, const WorldL &Ktuple) {
   pos1.Feature::__phi(a1, (!!J?J1:NoArr), Ktuple);
   
 //  {
-//    rai::KinematicWorld &K = *Ktuple.last();
+//    rai::Configuration &K = *Ktuple.last();
 //    rai::Frame *a = K(i)->getUpwardLink();
 //    if(a->flags && a->flags & (1<<FL_kinematic)){
 //      pos1.order=1;
@@ -40,7 +40,7 @@ void TM_ImpulsExchange::phi(arr &y, arr &J, const WorldL &Ktuple) {
   //projection matrix onto 'table' to which object 2 will be attached
   arr P;
   {
-    rai::KinematicWorld &K = *Ktuple.last();
+    rai::Configuration &K = *Ktuple.last();
     rai::Frame *b = K(j)->getUpwardLink();
     if(b->joint && b->joint->type==rai::JT_transXYPhi) {
       arr R = b->joint->X().rot.getArr();

@@ -282,7 +282,7 @@ void rai::Link::updateFeatherstones() {
   _f(3)=fo.x;  _f(4)=fo.y;  _f(5)=fo.z;
 }
 
-void GraphToTree(rai::Array<rai::Link>& tree, const rai::KinematicWorld& C) {
+void GraphToTree(rai::Array<rai::Link>& tree, const rai::Configuration& C) {
   tree.resize(C.bodies.N);
   
   for(rai::Link& link:tree) { link.parent=-1; link.qIndex=-1; }
@@ -327,7 +327,7 @@ void GraphToTree(rai::Array<rai::Link>& tree, const rai::KinematicWorld& C) {
   for(rai::Link& link:tree) link.setFeatherstones();
 }
 
-void updateGraphToTree(rai::Array<rai::Link>& tree, const rai::KinematicWorld& C) {
+void updateGraphToTree(rai::Array<rai::Link>& tree, const rai::Configuration& C) {
   CHECK_EQ(tree.N,C.bodies.N, "");
   
   uint i;
@@ -1034,8 +1034,8 @@ void rai::fwdDynamics_MF(arr& qdd,
 }
 
 #else ///RAI_FEATHERSTONE
-void GraphToTree(rai::LinkTree& tree, const rai::KinematicWorld& C) { NIY; }
-void updateGraphToTree(rai::LinkTree& tree, const rai::KinematicWorld& C) { NIY; }
+void GraphToTree(rai::LinkTree& tree, const rai::Configuration& C) { NIY; }
+void updateGraphToTree(rai::LinkTree& tree, const rai::Configuration& C) { NIY; }
 void Featherstone::equationOfMotion(arr& H, arr& C,
                                     const rai::LinkTree& tree,
                                     const arr& qd) { NIY; }

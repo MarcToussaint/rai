@@ -22,8 +22,8 @@ struct PR2Interface : Thread {
   VAR(CtrlMsg, ctrl_obs)
   VAR(AlvarMarkers, ar_pose_markers)
   
-  rai::KinematicWorld* realWorld;
-  rai::KinematicWorld* modelWorld;
+  rai::Configuration* realWorld;
+  rai::Configuration* modelWorld;
   
   DynamicSimulation* dynamicSimulation;
   
@@ -43,8 +43,8 @@ struct PR2Interface : Thread {
   ~PR2Interface() {threadCloseModules();}
   virtual void step();
   
-  void initialize(rai::KinematicWorld* realWorld, rai::KinematicWorld* realWorldSimulation, rai::KinematicWorld* modelWorld, TaskSpaceController* controller = NULL);
-  void initialize(rai::KinematicWorld* realWorld, rai::KinematicWorld* modelWorld, TaskSpaceController* controller = NULL);
+  void initialize(rai::Configuration* realWorld, rai::Configuration* realWorldSimulation, rai::Configuration* modelWorld, TaskSpaceController* controller = NULL);
+  void initialize(rai::Configuration* realWorld, rai::Configuration* modelWorld, TaskSpaceController* controller = NULL);
   void startInterface();
   void sendCommand(const arr& u0, const arr& Kp, const arr& Kd, const arr& K_ft, const arr& J_ft_inv, const arr& fRef, const double& gamma);
   void goToPosition(arr pos, rai::String shape, double executionTime = 10.0, bool useMotionPlaner = true, rai::String name = "goToPosition");
@@ -59,6 +59,6 @@ struct PR2Interface : Thread {
   void clearLog();
 };
 
-void showTrajectory(const arr& traj, rai::KinematicWorld& _world, bool copyWorld = true, double delay = 0.03, rai::String text = "");
+void showTrajectory(const arr& traj, rai::Configuration& _world, bool copyWorld = true, double delay = 0.03, rai::String text = "");
 
 #endif // PR2INTERFACE_H

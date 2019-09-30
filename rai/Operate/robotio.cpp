@@ -32,7 +32,7 @@ struct RobotAbstraction_KukaWSG : RobotAbstraction{
     arr q0;
     uint gripperCommandCounter=0;
 
-    RobotAbstraction_KukaWSG(const rai::KinematicWorld& _K)
+    RobotAbstraction_KukaWSG(const rai::Configuration& _K)
         : jointState(),
           tfMessages(),
           gripperCommand(){
@@ -62,7 +62,7 @@ struct RobotAbstraction_SimulationThread : RobotAbstraction {
 
     arr q0;
 
-    RobotAbstraction_SimulationThread(const rai::KinematicWorld& _K)
+    RobotAbstraction_SimulationThread(const rai::Configuration& _K)
         : S(_K, .01, false){
         q0 = _K.getJointState();
     }
@@ -116,7 +116,7 @@ struct RobotAbstraction_SimulationThread : RobotAbstraction {
     }
 };
 
-RobotIO::RobotIO(const rai::KinematicWorld& _K, RobotType _type)
+RobotIO::RobotIO(const rai::Configuration& _K, RobotType _type)
     : type(_type){
 
     switch(type){
@@ -302,7 +302,7 @@ StringA RobotAbstraction_KukaWSG::getJointNames() {
 
 #else
 
-RobotIO::RobotIO(const rai::KinematicWorld& _K, RobotType _type)
+RobotIO::RobotIO(const rai::Configuration& _K, RobotType _type)
     : type(_type){
     NICO
 }

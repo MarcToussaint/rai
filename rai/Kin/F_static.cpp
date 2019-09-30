@@ -18,7 +18,7 @@ F_netForce::F_netForce(int iShape, bool _transOnly, bool _zeroGravity) : i(iShap
   }
 }
 
-void F_netForce::phi(arr &y, arr &J, const rai::KinematicWorld& K) {
+void F_netForce::phi(arr &y, arr &J, const rai::Configuration& K) {
   rai::Frame *a = K.frames(i);
 
   arr force = zeros(3);
@@ -92,7 +92,7 @@ void F_netForce::phi(arr &y, arr &J, const rai::KinematicWorld& K) {
   }
 }
 
-uint F_netForce::dim_phi(const rai::KinematicWorld& K){
+uint F_netForce::dim_phi(const rai::Configuration& K){
   if(transOnly) return 3;
   return 6;
 }

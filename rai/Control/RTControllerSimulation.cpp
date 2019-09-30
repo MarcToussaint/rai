@@ -10,7 +10,7 @@
 #include <Kin/proxy.h>
 #include <Kin/frame.h>
 
-void force(rai::KinematicWorld* world, arr& fR) {
+void force(rai::Configuration* world, arr& fR) {
   world->stepSwift();
   //world->contactsToForces(100.0);
   
@@ -32,7 +32,7 @@ void force(rai::KinematicWorld* world, arr& fR) {
   }
 }
 
-void forceSimulateContactOnly(rai::KinematicWorld* world, arr& fR) {
+void forceSimulateContactOnly(rai::Configuration* world, arr& fR) {
   world->stepSwift();
   for(const rai::Proxy& p : world->proxies) {
     if(p.a->name == "endeffR" && p.b->name == "b") {
@@ -144,7 +144,7 @@ void RTControlStep(
   
 }
 
-RTControllerSimulation::RTControllerSimulation(const rai::KinematicWorld& realWorld, const Var<CtrlMsg>& _ctrl_ref, const Var<CtrlMsg>& _ctrl_obs, double tau, bool gravity, double _systematicErrorSdv)
+RTControllerSimulation::RTControllerSimulation(const rai::Configuration& realWorld, const Var<CtrlMsg>& _ctrl_ref, const Var<CtrlMsg>& _ctrl_obs, double tau, bool gravity, double _systematicErrorSdv)
   : Thread("DynmSim", -1.)
   , ctrl_ref(this, _ctrl_ref, true)
   , ctrl_obs(this, _ctrl_obs)
@@ -153,8 +153,8 @@ RTControllerSimulation::RTControllerSimulation(const rai::KinematicWorld& realWo
   , gravity(gravity)
   , stepCount(0)
   , systematicErrorSdv(_systematicErrorSdv) {
-  //world = new rai::KinematicWorld(realWorld);
-  world = new rai::KinematicWorld(rai::raiPath("data/pr2_model/pr2_model.ors"));
+  //world = new rai::Configuration(realWorld);
+  world = new rai::Configuration(rai::raiPath("data/pr2_model/pr2_model.ors"));
   
   //Object o(*world);
   //o.generateObject("b", 0.16, 0.16, 0.1, 0.55, -0.1, 0.55); //0.5 for x
@@ -166,10 +166,10 @@ RTControllerSimulation::RTControllerSimulation(const rai::KinematicWorld& realWo
 }
 
 void RTControllerSimulation::open() {
-  //world = new rai::KinematicWorld;
+  //world = new rai::Configuration;
   //world->copy(modelWorld.get()());
-  //world = new rai::KinematicWorld(modelWorld.get());
-  //world = new rai::KinematicWorld(rai::raiPath("data/pr2_model/pr2_model.ors"));
+  //world = new rai::Configuration(modelWorld.get());
+  //world = new rai::Configuration(rai::raiPath("data/pr2_model/pr2_model.ors"));
   
   makeConvexHulls(world->frames);
   arr q, qDot;

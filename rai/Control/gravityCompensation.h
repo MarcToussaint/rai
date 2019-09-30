@@ -19,7 +19,7 @@ struct GravityCompensation {
 
   struct CV;
   
-  rai::KinematicWorld world;
+  rai::Configuration world;
   
   arr TLeftArm, TRightArm, THead;
   StringA leftJoints = {"l_shoulder_pan_joint","l_shoulder_lift_joint","l_upper_arm_roll_joint","l_elbow_flex_joint",
@@ -44,7 +44,7 @@ struct GravityCompensation {
   arr compensateFTL(const arr& q);
   arr compensateFTR(const arr& q);
   
-  GravityCompensation(const rai::KinematicWorld& world);
+  GravityCompensation(const rai::Configuration& world);
   
   arr featuresGC(arr q, arr qSign, const rai::String& joint);
   
@@ -84,7 +84,7 @@ struct GravityCompensation {
   arr compensate(arr q, bool compensateLeftArm, bool compensateRightArm, bool compensateHead);
   arr compensate(arr q, StringA joints);
   
-  GravityCompensation(const rai::KinematicWorld& world);
+  GravityCompensation(const rai::Configuration& world);
   
   //for debugging
   void testForLimits();

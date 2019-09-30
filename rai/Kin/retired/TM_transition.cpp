@@ -11,7 +11,7 @@
 #include "frame.h"
 #include "flag.h"
 
-TM_Transition::TM_Transition(const rai::KinematicWorld& G, bool effectiveJointsOnly)
+TM_Transition::TM_Transition(const rai::Configuration& G, bool effectiveJointsOnly)
   : effectiveJointsOnly(effectiveJointsOnly) {
   posCoeff = rai::getParameter<double>("Motion/TaskMapTransition/posCoeff",.0);
   velCoeff = rai::getParameter<double>("Motion/TaskMapTransition/velCoeff",.0);

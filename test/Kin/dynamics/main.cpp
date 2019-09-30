@@ -19,13 +19,13 @@
 //  //static arr conswit;
 //  //bool hasContact=false;
 //  bool addContactsToDynamics=false;
-//  rai::KinematicWorld *G;
+//  rai::Configuration *G;
 //}
 
 //---------- test standard dynamic control
 void TEST(Dynamics){
-//  rai::KinematicWorld G("arm7.g");
-  rai::KinematicWorld G("mypr2.g");
+//  rai::Configuration G("arm7.g");
+  rai::Configuration G("mypr2.g");
   G.optimizeTree(true);
   G.sortFrames();
   cout <<G <<endl;

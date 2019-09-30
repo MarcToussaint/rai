@@ -23,7 +23,7 @@ struct sTaskControlThread {
 struct sTaskControlThread {};
 #endif
 
-TaskControlThread::TaskControlThread(const char* _robot, const rai::KinematicWorld& world)
+TaskControlThread::TaskControlThread(const char* _robot, const rai::Configuration& world)
   : Thread("TaskControlThread", .01)
   , s(NULL)
   , taskController(NULL)

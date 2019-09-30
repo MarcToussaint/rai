@@ -29,7 +29,7 @@ struct Shape;
 struct Frame;
 struct Proxy;
 struct Contact;
-struct KinematicWorld;
+struct Configuration;
 struct KinematicSwitch;
 
 struct FclInterface;
@@ -38,7 +38,7 @@ struct FclInterface;
 
 //===========================================================================
 
-extern rai::KinematicWorld& NoWorld;
+extern rai::Configuration& NoWorld;
 
 typedef rai::Array<rai::Joint*> JointL;
 //typedef rai::Array<rai::Shape*> ShapeL;
@@ -47,15 +47,15 @@ typedef rai::Array<rai::Proxy*> ProxyL;
 typedef rai::Array<rai::Proxy> ProxyA;
 typedef rai::Array<rai::Contact*> ContactL;
 typedef rai::Array<rai::KinematicSwitch*> KinematicSwitchL;
-typedef rai::Array<rai::KinematicWorld*> WorldL;
+typedef rai::Array<rai::Configuration*> WorldL;
 
 //===========================================================================
 
 namespace rai {
 
 /// data structure to store a whole physical situation (lists of bodies, joints, shapes, proxies)
-struct KinematicWorld : GLDrawer {
-  struct sKinematicWorld *s;
+struct Configuration : GLDrawer {
+  struct sConfiguration *s;
   
   //-- fundamental structure
   FrameL frames;     ///< list of coordinate frames, with shapes, joints, inertias attached
@@ -82,12 +82,12 @@ struct KinematicWorld : GLDrawer {
   uint orsDrawLimit=0;
   
   /// @name constructors
-  KinematicWorld();
-  KinematicWorld(const rai::KinematicWorld& other, bool referenceSwiftOnCopy=false);
-  KinematicWorld(const char* filename);
-  virtual ~KinematicWorld();
-  void operator=(const rai::KinematicWorld& K) { copy(K); }
-  void copy(const rai::KinematicWorld& K, bool referenceSwiftOnCopy=false);
+  Configuration();
+  Configuration(const rai::Configuration& other, bool referenceSwiftOnCopy=false);
+  Configuration(const char* filename);
+  virtual ~Configuration();
+  void operator=(const rai::Configuration& K) { copy(K); }
+  void copy(const rai::Configuration& K, bool referenceSwiftOnCopy=false);
   bool operator!() const;
 
   /// @name initializations
@@ -258,7 +258,7 @@ struct KinematicWorld : GLDrawer {
   void filterProxiesToContacts(double margin=.01); ///< proxies are returns from a collision engine; contacts stable constraints
   void proxiesToContacts(double margin=.01); ///< proxies are returns from a collision engine; contacts stable constraints
   double totalContactPenetration(); ///< proxies are returns from a collision engine; contacts stable constraints
-  void copyProxies(const KinematicWorld& K);
+  void copyProxies(const Configuration& K);
 
   /// @name I/O
   void write(std::ostream& os) const;
@@ -282,7 +282,7 @@ struct KinematicWorld : GLDrawer {
 
 } //namespace rai
 
-stdPipes(rai::KinematicWorld)
+stdPipes(rai::Configuration)
 
 //===========================================================================
 //
@@ -305,25 +305,25 @@ void lib_ors();
 void makeConvexHulls(FrameL& frames, bool onlyContactShapes=true);
 void computeOptimalSSBoxes(FrameL& frames);
 void computeMeshNormals(FrameL& frames, bool force=false);
-double forceClosureFromProxies(rai::KinematicWorld& C, uint frameIndex,
+double forceClosureFromProxies(rai::Configuration& C, uint frameIndex,
                                double distanceThreshold=0.01,
                                double mu=.5,     //friction coefficient
                                double discountTorques=1.);  //friction coefficient
 
-void transferQbetweenTwoWorlds(arr& qto, const arr& qfrom, const rai::KinematicWorld& to, const rai::KinematicWorld& from);
-void transferQDotbetweenTwoWorlds(arr& qDotTo, const arr& qDotFrom, const rai::KinematicWorld& to, const rai::KinematicWorld& from);
-void transferKpBetweenTwoWorlds(arr& KpTo, const arr& KpFrom, const rai::KinematicWorld& to, const rai::KinematicWorld& from);
-void transferKdBetweenTwoWorlds(arr& KdTo, const arr& KdFrom, const rai::KinematicWorld& to, const rai::KinematicWorld& from);
-void transferU0BetweenTwoWorlds(arr& u0To, const arr& u0From, const rai::KinematicWorld& to, const rai::KinematicWorld& from);
-void transferKI_ft_BetweenTwoWorlds(arr& KI_ft_To, const arr& KI_ft_From, const rai::KinematicWorld& to, const rai::KinematicWorld& from);
+void transferQbetweenTwoWorlds(arr& qto, const arr& qfrom, const rai::Configuration& to, const rai::Configuration& from);
+void transferQDotbetweenTwoWorlds(arr& qDotTo, const arr& qDotFrom, const rai::Configuration& to, const rai::Configuration& from);
+void transferKpBetweenTwoWorlds(arr& KpTo, const arr& KpFrom, const rai::Configuration& to, const rai::Configuration& from);
+void transferKdBetweenTwoWorlds(arr& KdTo, const arr& KdFrom, const rai::Configuration& to, const rai::Configuration& from);
+void transferU0BetweenTwoWorlds(arr& u0To, const arr& u0From, const rai::Configuration& to, const rai::Configuration& from);
+void transferKI_ft_BetweenTwoWorlds(arr& KI_ft_To, const arr& KI_ft_From, const rai::Configuration& to, const rai::Configuration& from);
 
-void displayState(const arr& x, rai::KinematicWorld& G, const char *tag);
-void displayTrajectory(const arr& x, int steps, rai::KinematicWorld& G, const KinematicSwitchL& switches, const char *tag, double delay=0., uint dim_z=0, bool copyG=false);
-inline void displayTrajectory(const arr& x, int steps, rai::KinematicWorld& G, const char *tag, double delay=0., uint dim_z=0, bool copyG=false) {
+void displayState(const arr& x, rai::Configuration& G, const char *tag);
+void displayTrajectory(const arr& x, int steps, rai::Configuration& G, const KinematicSwitchL& switches, const char *tag, double delay=0., uint dim_z=0, bool copyG=false);
+inline void displayTrajectory(const arr& x, int steps, rai::Configuration& G, const char *tag, double delay=0., uint dim_z=0, bool copyG=false) {
   displayTrajectory(x, steps, G, {}, tag, delay, dim_z, copyG);
 }
-void editConfiguration(const char* orsfile, rai::KinematicWorld& G);
-int animateConfiguration(rai::KinematicWorld& G, struct Inotify *ino=NULL);
+void editConfiguration(const char* orsfile, rai::Configuration& G);
+int animateConfiguration(rai::Configuration& G, struct Inotify *ino=NULL);
 
 void kinVelocity(arr& y, arr& J, uint frameId, const WorldL& Ktuple, double tau);
 void kinAngVelocity(arr& y, arr& J, uint frameId, const WorldL& Ktuple, double tau);

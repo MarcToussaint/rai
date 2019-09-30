@@ -25,7 +25,7 @@ Filter::~Filter() {
 }
 
 void Filter::open() {
-  Var<rai::KinematicWorld> modelWorld(this, "modelWorld");
+  Var<rai::Configuration> modelWorld(this, "modelWorld");
   modelWorld.readAccess();
   for(rai::Frame *b:modelWorld().frames) {
     if(b->ats["percept"]) {
