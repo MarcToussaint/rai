@@ -54,7 +54,7 @@ rai::Frame::Frame(KinematicWorld& _K, const Frame* copyFrame)
   K.frames.append(this);
   if(copyFrame) {
     const Frame& f = *copyFrame;
-    name=f.name; Q=f.Q; X=f.X; tau=f.tau; ats=f.ats; flags=f.flags;
+    name=f.name; Q=f.Q; X=f.X; tau=f.tau; ats=f.ats;
     //we cannot copy link! because we can't know if the frames already exist. KinematicWorld::copy copies the rel's !!
     if(copyFrame->joint) new Joint(*this, copyFrame->joint);
     if(copyFrame->shape) new Shape(*this, copyFrame->shape);
@@ -86,7 +86,6 @@ rai::Frame::~Frame() {
 void rai::Frame::calc_X_from_parent() {
   CHECK(parent, "");
   CHECK(parent->_state_X_isGood, "");
-  CHECK(K._state_Q_isGood, "");
 
   tau = parent->tau;
   Transformation &from = parent->X;
@@ -123,9 +122,13 @@ const rai::Transformation& rai::Frame::ensure_X(){
   return X;
 }
 
-const rai::Transformation& rai::Frame::ensure_Q(){
-  if(!K._state_Q_isGood){ K.calc_Q_from_q(); }
+const rai::Transformation& rai::Frame::get_Q(){
   return Q;
+}
+
+const rai::Transformation& rai::Frame::get_X() const{
+  CHECK(_state_X_isGood, "");
+  return X;
 }
 
 void rai::Frame::_state_updateAfterTouchingX(){
@@ -136,18 +139,9 @@ void rai::Frame::_state_updateAfterTouchingX(){
 
 void rai::Frame::_state_updateAfterTouchingQ(){
   _state_setXBadinBranch();
-  K._state_q_isGood = false;
+  if(joint) K._state_q_isGood = false;
 }
 
-const rai::Transformation& rai::Frame::X_const() const{
-  CHECK(_state_X_isGood, "");
-  return X;
-}
-
-const rai::Transformation& rai::Frame::Q_const() const{
-  CHECK(K._state_Q_isGood, "");
-  return Q;
-}
 
 void rai::Frame::getRigidSubFrames(FrameL &F) {
   for(Frame *child:parentOf)
@@ -469,10 +463,10 @@ void rai::Frame::unLink() {
   ensure_X();
   parent->parentOf.removeValue(this);
   parent=NULL;
-  Q.setZero(); // = X;
+  Q.setZero();
   _state_updateAfterTouchingQ();
   _state_X_isGood=true;
-  if(joint) { delete joint; joint=NULL; }
+  if(joint){  delete joint;  joint=NULL;  }
 }
 
 void rai::Frame::linkFrom(rai::Frame *_parent, bool adoptRelTransform) {
@@ -536,14 +530,12 @@ rai::Joint::~Joint() {
   //if(frame->parent) frame->unLink();
 }
 
-const rai::Transformation&rai::Joint::X() const {
-  CHECK(frame->parent->_state_X_isGood,"");
-  return frame->parent->X;
+const rai::Transformation& rai::Joint::X() const {
+  return frame->parent->get_X();
 }
 
-const rai::Transformation&rai::Joint::Q() const {
-  CHECK(frame->K._state_Q_isGood,"");
-  return frame->Q;
+const rai::Transformation& rai::Joint::Q() const {
+  return frame->get_Q();
 }
 
 void rai::Joint::calc_Q_from_q(const arr &q_full, uint _qIndex) {
@@ -561,7 +553,7 @@ void rai::Joint::calc_Q_from_q(const arr &q_full, uint _qIndex) {
     qp = q_copy->p;
   }
   if(mimic) {
-    Q = mimic->frame->Q;
+    Q = mimic->frame->get_Q();
   } else {
     switch(type) {
       case JT_hingeX: {
@@ -660,7 +652,8 @@ void rai::Joint::calc_Q_from_q(const arr &q_full, uint _qIndex) {
   }
   CHECK_EQ(Q.pos.x, Q.pos.x, "NAN transform");
   CHECK_EQ(Q.rot.w, Q.rot.w, "NAN transform");
-  
+
+  frame->_state_setXBadinBranch();
   //    link->link = A * Q * B; //total rel transformation
 }
 
@@ -934,7 +927,7 @@ void rai::Joint::read(const Graph &G) {
     
     CHECK(follow->parent, "");
     CHECK(!follow->joint, "");
-    follow->Q = B;
+    follow->set_Q() = B;
     B.setZero();
   }
   
@@ -943,7 +936,7 @@ void rai::Joint::read(const Graph &G) {
     A.setZero();
   }
   
-  G.get(frame->Q, "Q");
+  if(G["Q"]) frame->set_Q()->setText(G.get<rai::String>("Q"));
   G.get(H, "ctrl_H");
   G.get(scale, "joint_scale");
   if(G.get(d, "joint"))        type=(JointType)d;
@@ -956,7 +949,7 @@ void rai::Joint::read(const Graph &G) {
   
   if(G.get(d, "q")) {
     if(!dim) { //HACK convention
-      frame->Q.rot.setRad(d, 1., 0., 0.);
+      frame->set_Q()->rot.setRad(d, 1., 0., 0.);
     } else {
       CHECK(dim, "setting q (in config file) for 0-dim joint");
       q0 = consts<double>(d, dim);

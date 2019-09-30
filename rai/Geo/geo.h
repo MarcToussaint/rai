@@ -158,7 +158,7 @@ struct Quaternion {
   double* getMatrix(double* m) const;
   double* getMatrixOde(double* m) const; //in Ode foramt: 3x4 memory storae
   double* getMatrixGL(double* m) const;  //in OpenGL format: transposed 4x4 memory storage
-  arr getEulerRPY();
+  arr getEulerRPY() const;
   
   arr getJacobian() const;
   arr getMatrixJacobian() const;

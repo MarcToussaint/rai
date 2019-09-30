@@ -912,7 +912,7 @@ double* Quaternion::getMatrixGL(double* m) const {
   return m;
 }
 
-arr Quaternion::getEulerRPY() {
+arr Quaternion::getEulerRPY() const {
   double roll, pitch, yaw;
 
   // roll (x-axis rotation)

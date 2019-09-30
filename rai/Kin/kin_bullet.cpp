@@ -113,7 +113,7 @@ btRigidBody* BulletInterface::addFrame(const rai::Frame* f){
   self->collisionShapes.push_back(colShape);
 
   //-- create a bullet body
-  rai::Transformation fX = f->X_const();
+  rai::Transformation fX = f->get_X();
   btTransform pose(btQuaternion(fX.rot.x, fX.rot.y, fX.rot.z, fX.rot.w),
                    btVector3(fX.pos.x, fX.pos.y, fX.pos.z));
   btScalar mass(1.0f);
@@ -175,7 +175,7 @@ void BulletInterface::pushFullState(const FrameL& frames, const arr& vel){
     btRigidBody* b = self->frameID_to_btBody(i);
     const rai::Frame *f = frames(i);
     if(f && b){
-      rai::Transformation fX = f->X_const();
+      rai::Transformation fX = f->get_X();
       btTransform pose(btQuaternion(fX.rot.x, fX.rot.y, fX.rot.z, fX.rot.w),
                        btVector3(fX.pos.x, fX.pos.y, fX.pos.z));
       b->setWorldTransform(pose);
@@ -199,7 +199,7 @@ void BulletInterface::pushKinematicStates(const FrameL& frames){
       if(f->inertia) type = f->inertia->type;
 
       if(type==rai::BT_kinematic){
-        rai::Transformation fX = f->X_const();
+        rai::Transformation fX = f->get_X();
         btTransform pose(btQuaternion(fX.rot.x, fX.rot.y, fX.rot.z, fX.rot.w),
                          btVector3(fX.pos.x, fX.pos.y, fX.pos.z));
         if(b->getMotionState()) {

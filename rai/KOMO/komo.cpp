@@ -2001,7 +2001,7 @@ rai::Array<rai::Transformation> KOMO::reportEffectiveJoints(std::ostream& os) {
     if(!n->parents.N) { //a root node -> accumulate all info
       EffJointInfo& info = n->get<EffJointInfo>();
       info.t_start = info.t_end = info.t;
-      info.Q = info.j->frame->ensure_Q();
+      info.Q = info.j->frame->get_Q();
       info.accum += 1.;
       Node *c=n;
       for(;;) {
@@ -2009,8 +2009,8 @@ rai::Array<rai::Transformation> KOMO::reportEffectiveJoints(std::ostream& os) {
         c = c->parentOf.scalar();
         EffJointInfo& cinfo = c->get<EffJointInfo>();
         if(info.t_end<cinfo.t) info.t_end=cinfo.t;
-        info.Q.rot.add(cinfo.j->frame->ensure_Q().rot);
-        info.Q.pos += cinfo.j->frame->ensure_Q().pos;
+        info.Q.rot.add(cinfo.j->frame->get_Q().rot);
+        info.Q.pos += cinfo.j->frame->get_Q().pos;
         info.accum += 1.;
 //        cout <<" t=" <<cinfo.t <<'\t' <<c->keys <<" \t" <<cinfo.j->type <<" \tq=" <<cinfo.j->getQ() <<" \tQ=" <<cinfo.j->frame->Q <<endl;
       }

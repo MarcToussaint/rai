@@ -287,7 +287,7 @@ void FeatherstoneInterface::update() {
       link.X = f->ensure_X();
       if(f->parent) { //is not a root
         link.parent = f->parent->ID;
-        link.Q = f->ensure_Q();
+        link.Q = f->get_Q();
         rai::Joint *j;
         if((j=f->joint)) {
           link.type   = j->type;
@@ -308,7 +308,7 @@ void FeatherstoneInterface::update() {
     for(rai::Frame *f: K.frames) {
       F_Link& link=tree(f->ID);
       link.X = f->ensure_X();
-      if(f->parent) link.Q = f->ensure_Q();
+      if(f->parent) link.Q = f->get_Q();
       
       if(f->inertia) {
         link.force=f->inertia->force;

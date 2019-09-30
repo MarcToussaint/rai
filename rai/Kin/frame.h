@@ -74,22 +74,23 @@ struct Frame : NonCopyable{
 protected:
   Transformation Q=0;        ///< relative transform to parent
   Transformation X=0;        ///< frame's absolute pose
+  //data structure state (lazy evaluation leave the state structure out of sync)
+  bool _state_X_isGood=true; // X represents the current state
   void _state_setXBadinBranch();
   void _state_updateAfterTouchingX();
   void _state_updateAfterTouchingQ();
+  //low-level fwd kinematics computation
+  void calc_X_from_parent();
+  void calc_Q_from_parent(bool enforceWithinJoint = true);
 public:
   double tau=0.;            ///< frame's absolute time (could be thought as part of the transformation X in space-time)
   Graph ats;                 ///< list of any-type attributes
-  int flags=0;               ///< various flags that are used by task maps to impose costs/constraints in KOMO
   
   //attachments to the frame
   Joint *joint=NULL;         ///< this frame is an articulated joint
   Shape *shape=NULL;         ///< this frame has a (collision or visual) geometry
   Inertia *inertia=NULL;     ///< this frame has inertia (is a mass)
   Array<Contact*> contacts;  ///< this frame is in (near-) contact with other frames
-
-  //-- data structure state (lazy evaluation leave the state structure out of sync)
-  bool _state_X_isGood=true; // X represents the current state
 
   Frame(KinematicWorld& _K, const Frame *copyFrame=NULL);
   Frame(Frame *_parent);
@@ -99,15 +100,11 @@ public:
   Shape& getShape();
   Inertia& getInertia();
 
-  //low-level fwd kinematics computation
-  void calc_X_from_parent();
-  void calc_Q_from_parent(bool enforceWithinJoint = true);
   const Transformation& ensure_X();
-  const Transformation& ensure_Q();
+  const Transformation& get_Q();
+  const Transformation& get_X() const;
   Transformation_Xtoken set_X(){ return Transformation_Xtoken(*this); }
   Transformation_Qtoken set_Q(){ return Transformation_Qtoken(*this); }
-  const Transformation& X_const() const;
-  const Transformation& Q_const() const;
 
   //structural operations
   Frame* insertPreLink(const rai::Transformation& A=0);

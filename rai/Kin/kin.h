@@ -70,7 +70,6 @@ struct KinematicWorld : GLDrawer {
   //-- data structure state (lazy evaluation leave the state structure out of sync)
   bool _state_activeSets_areGood=false; // the active sets, esp. their topological sorting, are up to date
   bool _state_q_isGood=false; // the q-vector represents the current relative transforms (and force dofs)
-  bool _state_Q_isGood=true; // the Q-transformations represents the current relative transforms
   bool _state_proxies_isGood=false; // the proxies have been created for the current state
   
   static uint setJointStateCount;
@@ -160,7 +159,6 @@ struct KinematicWorld : GLDrawer {
 
   /// @name ensure state consistencies
   void ensure_activeSets(){   if(!_state_activeSets_areGood) calc_activeSets();  }
-  void ensure_Q(){  if(!_state_Q_isGood) calc_Q_from_q();  }
   void ensure_q(){  if(!_state_q_isGood) calc_q_from_Q();  }
   void ensure_proxies(){  if(!_state_proxies_isGood) stepSwift();  }
 
@@ -172,7 +170,7 @@ struct KinematicWorld : GLDrawer {
   void setJointState(const arr& _q, const arr& _qdot=NoArr);
   void setJointState(const arr& _q, const StringA&);
   void setJointState(const arr& _q, const uintA&);
-  void setFrameState(const arr& X, const StringA& frameNames={}, bool calc_q_from_X=true, bool warnOnDifferentDim=true);
+  void setFrameState(const arr& X, const StringA& frameNames={}, bool warnOnDifferentDim=true);
   void setTimes(double t);
   void operator=(const arr& X){
     if(X.d0==frames.N) setFrameState(X);

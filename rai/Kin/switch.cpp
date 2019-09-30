@@ -106,8 +106,9 @@ void rai::KinematicSwitch::apply(KinematicWorld& K) {
       j->frame->Q.setZero();
       j->calc_Q_from_q(q, 0);
     }
+    j->frame->_state_updateAfterTouchingQ();
 
-    K.reset_q();
+    //K.reset_q();
     //K.calc_q(); K.checkConsistency();
     return;
   }

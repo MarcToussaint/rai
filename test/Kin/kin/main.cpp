@@ -372,7 +372,7 @@ void TEST(FollowRedundantSequence){
   uint t,T,n=G.getJointStateDimension();
   arr x(n),y,J,invJ;
   x=.8;     //initialize with intermediate joint positions (non-singular positions)
-  rai::Vector rel = G.getFrameByName("endeff")->ensure_Q().pos; //this frame describes the relative position of the endeffector wrt. 7th body
+  rai::Vector rel = G.getFrameByName("endeff")->get_Q().pos; //this frame describes the relative position of the endeffector wrt. 7th body
 
   //-- generate a random endeffector trajectory
   arr Z, Zt; //desired and true endeffector trajectories
