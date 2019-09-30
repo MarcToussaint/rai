@@ -65,7 +65,7 @@ struct sBaxterInterface {
 baxter_core_msgs::JointCommand conv_qRef2baxterMessage(const arr& q_ref, const rai::Configuration& baxterModel, const char* prefix) {
   baxter_core_msgs::JointCommand msg;
   msg.mode = 1;
-  for(rai::Joint *j:baxterModel.fwdActiveJoints) if(j->frame->name.startsWith(prefix)) {
+  for(rai::Joint *j:baxterModel.activeJoints) if(j->frame->name.startsWith(prefix)) {
       msg.command.push_back(q_ref(j->qIndex));
       msg.names.push_back(j->frame->name.p);
     }

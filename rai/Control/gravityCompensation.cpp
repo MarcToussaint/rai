@@ -245,9 +245,11 @@ arr GravityCompensation::featuresGC(arr q, arr qSign, const rai::String& joint) 
   if(dynamicFeature) {
     arr Phi_tmp;
     for(uint t = 0; t < q.d0; t++) {
-      world.setJointState(q[t], q[t]*0.);
+      arr qDot = zeros(world.q.N); HALT("WARNING: qDot should be maintained outside world!");
+      
+      world.setJointState(q[t]);
       arr M,F;
-      world.equationOfMotion(M,F);
+      world.equationOfMotion(M, F, qDot);
       Phi_tmp.append(~(T*F));
       //Phi_tmp.append(~F);
     }

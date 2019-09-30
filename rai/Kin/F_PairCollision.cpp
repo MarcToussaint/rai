@@ -43,8 +43,8 @@ void TM_PairCollision::phi(arr& y, arr& J, const rai::Configuration& K) {
   
   if(type==_negScalar) {
     arr Jp1, Jp2;
-    K.jacobianPos(Jp1, &s1->frame, coll->p1);
-    K.jacobianPos(Jp2, &s2->frame, coll->p2);
+    K.jacobian_pos(Jp1, &s1->frame, coll->p1);
+    K.jacobian_pos(Jp2, &s2->frame, coll->p2);
     coll->kinDistance(y, J, Jp1, Jp2);
     y *= -1.;
     if(!!J) J *= -1.;
@@ -52,10 +52,10 @@ void TM_PairCollision::phi(arr& y, arr& J, const rai::Configuration& K) {
   }else{
     arr Jp1, Jp2, Jx1, Jx2;
     if(!!J) {
-      K.jacobianPos(Jp1, &s1->frame, coll->p1);
-      K.jacobianPos(Jp2, &s2->frame, coll->p2);
-      K.axesMatrix(Jx1, &s1->frame);
-      K.axesMatrix(Jx2, &s2->frame);
+      K.jacobian_pos(Jp1, &s1->frame, coll->p1);
+      K.jacobian_pos(Jp2, &s2->frame, coll->p2);
+      K.jacobian_angular(Jx1, &s1->frame);
+      K.jacobian_angular(Jx2, &s2->frame);
     }
     if(type==_vector) coll->kinVector(y, J, Jp1, Jp2, Jx1, Jx2);
     if(type==_normal) coll->kinNormal(y, J, Jp1, Jp2, Jx1, Jx2);

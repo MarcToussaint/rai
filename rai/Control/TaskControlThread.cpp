@@ -40,7 +40,7 @@ TaskControlThread::TaskControlThread(const Var<rai::Configuration>& _ctrl_config
   //initialize Kp and Kd
   Kp_base = zeros(q0.N);
   Kd_base = zeros(q0.N);
-  for(rai::Joint *j:ctrl_config.get()->fwdActiveJoints) {
+  for(rai::Joint *j:ctrl_config.get()->activeJoints) {
     arr *gains = j->frame->ats.find<arr>("gains");
     if(gains) {
       for(uint i=0; i<j->qDim(); i++) {
@@ -75,7 +75,7 @@ void TaskControlThread::step() {
         q_real = state->q;
         qdot_real = state->qdot;
       }
-      ctrl_config.set()->setJointState(q_real, qdot_real);
+      ctrl_config.set()->setJointState(q_real);
 //      model_real.setJointState(q_real);
       q_model = q_real;
       qdot_model = qdot_real;
@@ -98,7 +98,7 @@ void TaskControlThread::step() {
 
 //  model_real.setJointState(q_real);
   if(true){
-    ctrl_config.set()->setJointState(q_real, qdot_real);
+    ctrl_config.set()->setJointState(q_real);
     q_model = q_real;
     qdot_model = qdot_real;
   }

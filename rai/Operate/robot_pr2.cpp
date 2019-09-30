@@ -51,7 +51,7 @@ Robot_PR2_PathThread::Robot_PR2_PathThread(const rai::Configuration& _K)
 
     Kp_base = zeros(q0.N);
     Kd_base = zeros(q0.N);
-    for(rai::Joint *j: K.fwdActiveJoints) if(j->qDim()>0) {
+    for(rai::Joint *j: K.activeJoints) if(j->qDim()>0) {
         arr *gains = j->frame->ats.find<arr>("gains");
         if(gains) {
           for(uint i=0; i<j->qDim(); i++) {

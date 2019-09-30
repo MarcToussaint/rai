@@ -14,7 +14,6 @@ void TEST(Swift) {
   for(t=0;t<50;t++){
     K.frames(0)->set_X()->addRelativeTranslation(0,0,-.01);
     K.frames(0)->set_X()->addRelativeRotationDeg(10,1,0,0);
-    K.calc_fwdPropagateFrames();
 
     K.stepSwift();
 
@@ -33,7 +32,7 @@ void TEST(CollisionTiming){
   cout <<"# objects:" <<K.swift().countObjects() <<endl;
 
   arr q0,q;
-  K.getJointState(q0);
+  q0 = K.getJointState();
   rai::timerStart();
   uint t;
   for(t=0;t<1000;t++){

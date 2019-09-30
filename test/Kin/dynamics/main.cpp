@@ -33,11 +33,9 @@ void TEST(Dynamics){
   arr u;
   bool friction=false;
   VectorFunction diffEqn = [&G,&u,&friction](arr& y,arr&,const arr& x){
-    G.setJointState(x[0], x[1]);
+    G.setJointState(x[0]);
     if(!u.N) u.resize(x.d1).setZero();
     if(friction) u = -10. * x[1];
-    G.clearForces();
-    G.gravityToForces();
     /*if(T2::addContactsToDynamics){
         G.contactsToForces(100.,10.);
       }*/
@@ -45,14 +43,14 @@ void TEST(Dynamics){
   };
   
   uint t,T=720,n=G.getJointStateDimension();
-  arr q,qd,qdd(n),qdd_(n);
-  G.getJointState(q, qd);
+  arr q,qd(n),qdd(n),qdd_(n);
+  q = G.getJointState();
+  qd.setZero();
   qdd.setZero();
   
   double dt=.01;
 
   ofstream z("z.dyn");
-  G.clearForces();
   G.watch();
 //  for(rai::Body *b:G.bodies){ b->mass=1.; b->inertia.setZero(); }
 
@@ -70,9 +68,9 @@ void TEST(Dynamics){
       q  += .5*dt*qd;
       qd +=    dt*qdd;
       q  += .5*dt*qd;
-      G.setJointState(q,qd);
+      G.setJointState(q);
       //cout <<q <<qd <<qdd <<endl;
-      G.gl().text.clear() <<"t=" <<t <<"  torque controlled damping (acc = - vel)\n(checking consistency of forward and inverse dynamics),  energy=" <<G.getEnergy();
+      G.gl().text.clear() <<"t=" <<t <<"  torque controlled damping (acc = - vel)\n(checking consistency of forward and inverse dynamics),  energy=" <<G.getEnergy(qd);
     }else{
       //cout <<q <<qd <<qdd <<' ' <<G.getEnergy() <<endl;
       arr x=cat(q,qd).reshape(2,q.N);
@@ -80,10 +78,10 @@ void TEST(Dynamics){
       q=x[0]; qd=x[1];
       if(t>300){
         friction=true;
-        G.gl().text.clear() <<"t=" <<t <<"  friction swing using RK4,  energy=" <<G.getEnergy();
+        G.gl().text.clear() <<"t=" <<t <<"  friction swing using RK4,  energy=" <<G.getEnergy(qd);
       }else{
         friction=false;
-        G.gl().text.clear() <<"t=" <<t <<"  free swing using RK4,  energy=" <<G.getEnergy();
+        G.gl().text.clear() <<"t=" <<t <<"  free swing using RK4,  energy=" <<G.getEnergy(qd);
       }
     }
     G.watch(false);

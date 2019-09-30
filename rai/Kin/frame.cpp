@@ -54,7 +54,7 @@ rai::Frame::Frame(Configuration& _K, const Frame* copyFrame)
   K.frames.append(this);
   if(copyFrame) {
     const Frame& f = *copyFrame;
-    name=f.name; Q=f.Q; X=f.X; tau=f.tau; ats=f.ats;
+    name=f.name; Q=f.Q; X=f.X; _state_X_isGood=f._state_X_isGood; tau=f.tau; ats=f.ats;
     //we cannot copy link! because we can't know if the frames already exist. Configuration::copy copies the rel's !!
     if(copyFrame->joint) new Joint(*this, copyFrame->joint);
     if(copyFrame->shape) new Shape(*this, copyFrame->shape);
@@ -65,8 +65,8 @@ rai::Frame::Frame(Configuration& _K, const Frame* copyFrame)
 rai::Frame::Frame(Frame *_parent)
   : Frame(_parent->K) {
   CHECK(_parent, "");
-  X = _parent->X;
-  linkFrom(_parent, true);
+  _state_X_isGood=false;
+  linkFrom(_parent, false);
 }
 
 rai::Frame::~Frame() {
@@ -230,7 +230,7 @@ void rai::Frame::read(const Graph& ats) {
       f->name <<'|' <<name; //the joint frame is actually the link frame of all child frames
       f->ats.copy(ats, false, true);
       this->unLink();
-      this->linkFrom(f);
+      this->linkFrom(f, false);
       new Joint(*f);
       f->joint->read(ats);
     }else{
@@ -521,7 +521,7 @@ rai::Joint::Joint(Frame &f, Joint *copyJoint)
 
 rai::Joint::Joint(Frame &from, Frame &f, Joint *copyJoint)
   : Joint(f, copyJoint) {
-  frame->linkFrom(&from);
+  frame->linkFrom(&from, false);
 }
 
 rai::Joint::~Joint() {
@@ -928,12 +928,10 @@ void rai::Joint::read(const Graph &G) {
     CHECK(follow->parent, "");
     CHECK(!follow->joint, "");
     follow->set_Q() = B;
-    B.setZero();
   }
   
   if(!A.isZero()) {
     frame->insertPreLink(A);
-    A.setZero();
   }
   
   if(G["Q"]) frame->set_Q()->setText(G.get<rai::String>("Q"));
@@ -1256,8 +1254,6 @@ rai::Inertia::Inertia(Frame &f, Inertia *copyInertia) : frame(f), type(BT_dynami
     matrix = copyInertia->matrix;
     type = copyInertia->type;
     com = copyInertia->com;
-    force = copyInertia->force;
-    torque = copyInertia->torque;
   }
 }
 
@@ -1280,11 +1276,12 @@ void rai::Inertia::defaultInertiaByShape() {
 }
 
 arr rai::Inertia::getFrameRelativeWrench() {
+  NIY;
   arr f(6);
-  rai::Vector fo = frame.ensure_X().rot/force;
-  rai::Vector to = frame.ensure_X().rot/(torque + ((frame.ensure_X().rot*com)^force));
-  f(0)=to.x;  f(1)=to.y;  f(2)=to.z;
-  f(3)=fo.x;  f(4)=fo.y;  f(5)=fo.z;
+//  rai::Vector fo = frame.ensure_X().rot/force;
+//  rai::Vector to = frame.ensure_X().rot/(torque + ((frame.ensure_X().rot*com)^force));
+//  f(0)=to.x;  f(1)=to.y;  f(2)=to.z;
+//  f(3)=fo.x;  f(4)=fo.y;  f(5)=fo.z;
   return f;
 }
 

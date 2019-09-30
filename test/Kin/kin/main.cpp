@@ -21,7 +21,10 @@ void TEST(LoadSave){
   C.sortFrames();
   FILE("z.g") <<C;
 
+  C["panda_finger_joint1"]->ensure_X();
+
   rai::Configuration C2("z.g");
+  C.watch();
   C2.watch(true);
 }
 
@@ -149,8 +152,7 @@ void TEST(QuaternionKinematics){
     G.getFrameByName("ref")->set_Q()->rot = target;
     G.getFrameByName("marker")->set_Q()->rot = target;
     rai::Frame *endeff = G.getFrameByName("endeff");
-    arr x;
-    G.getJointState(x);
+    arr x = G.getJointState();
     for(uint t=0;t<100;t++){
       arr y,J;
       G.kinematicsQuat(y, J, endeff);  //get the new endeffector position
@@ -320,7 +322,7 @@ void TEST(PlayStateSequence){
   generateSequence(X, 200, n);
   arr v(X.d1); v=0.;
   for(uint t=0;t<X.d0;t++){
-    G.setJointState(X[t](),v);
+    G.setJointState(X[t]());
     G.watch(false, STRING("replay of a state sequence -- time " <<t));
   }
 }
@@ -426,7 +428,7 @@ void TEST(Dynamics){
   bool friction=false;
   VectorFunction diffEqn = [&G,&u,&friction](arr& y, arr&, const arr& x){
     checkNan(x);
-    G.setJointState(x[0], x[1]);
+    G.setJointState(x[0]);
     if(!u.N) u.resize(x.d1).setZero();
     if(friction) u = -1e-0 * x[1];
     checkNan(u);
@@ -438,14 +440,14 @@ void TEST(Dynamics){
   };
   
   uint t,T=720,n=G.getJointStateDimension();
-  arr q,qd,qdd(n),qdd_(n);
-  G.getJointState(q, qd);
+  arr q,qd(n),qdd(n),qdd_(n);
+  q = G.getJointState();
+  qd.setZero();
   qdd.setZero();
   
   double dt=.01;
 
   ofstream z("z.dyn");
-  G.clearForces();
   G.watch();
 //  for(rai::Body *b:G.bodies){ b->mass=1.; b->inertia.setZero(); }
 
@@ -463,9 +465,9 @@ void TEST(Dynamics){
       q  += .5*dt*qd;
       qd +=    dt*qdd;
       q  += .5*dt*qd;
-      G.setJointState(q,qd);
+      G.setJointState(q);
       //cout <<q <<qd <<qdd <<endl;
-      G.gl().text.clear() <<"t=" <<t <<"  torque controlled damping (acc = - vel)\n(checking consistency of forward and inverse dynamics),  energy=" <<G.getEnergy();
+      G.gl().text.clear() <<"t=" <<t <<"  torque controlled damping (acc = - vel)\n(checking consistency of forward and inverse dynamics),  energy=" <<G.getEnergy(qd);
     }else{
       //cout <<q <<qd <<qdd <<' ' <<G.getEnergy() <<endl;
       arr x=cat(q, qd).reshape(2, q.N);
@@ -473,10 +475,10 @@ void TEST(Dynamics){
       q=x[0]; qd=x[1];
       if(t>300){
         friction=true;
-        G.gl().text.clear() <<"t=" <<t <<"  friction swing using RK4,  energy=" <<G.getEnergy();
+        G.gl().text.clear() <<"t=" <<t <<"  friction swing using RK4,  energy=" <<G.getEnergy(qd);
       }else{
         friction=false;
-        G.gl().text.clear() <<"t=" <<t <<"  free swing using RK4,  energy=" <<G.getEnergy();
+        G.gl().text.clear() <<"t=" <<t <<"  free swing using RK4,  energy=" <<G.getEnergy(qd);
       }
     }
     G.watch(false);

@@ -349,7 +349,7 @@ CtrlTask::~CtrlTask() {
 
 ActStatus CtrlTask::update(double tau, const rai::Configuration& world) {
   map->__phi(y, J_y, world);
-  if(world.qdot.N) v = J_y*world.qdot; else v.resize(y.N).setZero();
+  //if(world.qdot.N) v = J_y*world.qdot; else v.resize(y.N).setZero();
   ActStatus s_old = status.get();
   ActStatus s_new = s_old;
   if(ref) s_new = ref->update(y_ref, v_ref, tau, y, v);
@@ -445,7 +445,6 @@ void TaskControlMethods::lockJointGroup(const char* groupname, rai::Configuratio
   if(!groupname) {
     if(lockThem) {
       lockJoints = consts<byte>(true, world.q.N);
-      world.qdot.setZero();
     } else lockJoints.clear();
     return;
   }
@@ -455,7 +454,7 @@ void TaskControlMethods::lockJointGroup(const char* groupname, rai::Configuratio
       if(f->ats[groupname]) {
         for(uint i=0; i<j->qDim(); i++) {
           lockJoints(j->qIndex+i) = lockThem;
-          if(lockThem && world.qdot.N) world.qdot(j->qIndex+i) = 0.;
+          //if(lockThem && world.qdot.N) world.qdot(j->qIndex+i) = 0.;
         }
       }
     }
@@ -826,17 +825,20 @@ arr TaskControlMethods::calcOptimalControlProjected(CtrlTaskL& tasks, arr &Kp, a
 }
 
 void fwdSimulateControlLaw(arr& Kp, arr& Kd, arr& u0, rai::Configuration& world) {
+  arr qDot = zeros(world.q.N); HALT("WARNING: qDot should be maintained outside world!");
+
   arr M, F;
-  world.equationOfMotion(M, F, false);
-  
-  arr u = u0 - Kp*world.q - Kd*world.qdot;
+  world.equationOfMotion(M, F, qDot, false);
+
+  arr u = u0 - Kp*world.q - Kd*qDot;
   arr qdd;
-  world.fwdDynamics(qdd, world.qdot, u);
+  //  world.fwdDynamics(qdd, qDot, u);
+  HALT("why compute M and F, but then call fwd dynamics??");
   
   for(uint tt=0; tt<10; tt++) {
-    world.qdot += .001*qdd;
-    world.q += .001*world.qdot;
-    world.setJointState(world.q, world.qdot);
+    qDot += .001*qdd;
+    world.q += .001*qDot;
+    world.setJointState(world.q);
   }
 }
 

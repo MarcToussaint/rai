@@ -35,9 +35,9 @@ F_qItself::F_qItself(PickMode pickMode, const StringA& picks, const rai::Configu
     return;
   }
   if(pickMode==byExcludeJointNames) {
-    for(rai::Frame *f: K.fwdActiveSet) if(f->joint) {
-        if(picks.contains(f->name)) continue;
-        selectedFrames.setAppend(f->ID);
+    for(rai::Joint *j: K.activeJoints) {
+        if(picks.contains(j->frame->name)) continue;
+        selectedFrames.setAppend(j->frame->ID);
       }
     return;
   }
@@ -50,9 +50,9 @@ F_qItself::F_qItself(const uintA& _selectedFrames, bool relative_q0)
 
 void F_qItself::phi(arr& q, arr& J, const rai::Configuration& G) {
   if(!selectedFrames.nd) {
-    G.getJointState(q);
+    q = G.getJointState();
     if(relative_q0) {
-      for(rai::Joint* j: G.fwdActiveJoints) if(j->q0.N && j->qDim()==1) q(j->qIndex) -= j->q0.scalar();
+      for(rai::Joint* j: G.activeJoints) if(j->q0.N && j->qDim()==1) q(j->qIndex) -= j->q0.scalar();
     }
     if(!!J) J.setId(q.N);
   } else {
@@ -176,7 +176,7 @@ void F_qItself::phi(arr& y, arr& J, const WorldL& Ktuple) {
     if(k==2) { J.setMatrixBlock(J_bar(2), 0, qidx(offset+2));  J.setMatrixBlock(-2.*J_bar(1), 0, qidx(offset+1));  J.setMatrixBlock(J_bar(0)   , 0, qidx(offset+0));  J/=tau2; }
     if(k==3) { J.setMatrixBlock(J_bar(3), 0, qidx(offset+3));  J.setMatrixBlock(-3.*J_bar(2), 0, qidx(offset+2));  J.setMatrixBlock(3.*J_bar(1), 0, qidx(offset+1));  J.setMatrixBlock(-J_bar(0), 0, qidx(offset+0));  J/=tau3; }
 
-    arr Jtau;  Ktuple(-1)->jacobianTime(Jtau, Ktuple(-1)->frames(0));  expandJacobian(Jtau, Ktuple, -1);
+    arr Jtau;  Ktuple(-1)->jacobian_time(Jtau, Ktuple(-1)->frames(0));  expandJacobian(Jtau, Ktuple, -1);
 //    arr Jtau2;  Ktuple(-2)->jacobianTime(Jtau2, Ktuple(-2)->frames(0));  expandJacobian(Jtau2, Ktuple, -2);
 //    arr Jtau = Jtau1 - Jtau2;
     if(k==1) J += (-1./tau)*y*Jtau;
@@ -329,7 +329,7 @@ void F_qQuaternionNorms::phi(arr &y, arr &J, const rai::Configuration &G) {
   y.resize(n);
   if(!!J) J.resize(n, G.q.N).setZero();
   uint i=0;
-  for(const rai::Joint *j: G.fwdActiveJoints) if(j->type==rai::JT_quatBall || j->type==rai::JT_free || j->type==rai::JT_XBall) {
+  for(const rai::Joint *j: G.activeJoints) if(j->type==rai::JT_quatBall || j->type==rai::JT_free || j->type==rai::JT_XBall) {
       arr q;
       if(j->type==rai::JT_quatBall) q.referToRange(G.q, j->qIndex+0, j->qIndex+3);
       if(j->type==rai::JT_XBall)    q.referToRange(G.q, j->qIndex+1, j->qIndex+4);
@@ -348,7 +348,7 @@ void F_qQuaternionNorms::phi(arr &y, arr &J, const rai::Configuration &G) {
 
 uint F_qQuaternionNorms::dim_phi(const rai::Configuration &G) {
   uint i=0;
-  for(const rai::Joint* j:G.fwdActiveJoints) {
+  for(const rai::Joint* j:G.activeJoints) {
     if(j->type==rai::JT_quatBall || j->type==rai::JT_free || j->type==rai::JT_XBall) i++;
   }
   return i;

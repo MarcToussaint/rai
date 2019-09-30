@@ -41,11 +41,14 @@ typedef rai::Array<F_Link> F_LinkTree;
 
 struct FeatherstoneInterface {
   rai::Configuration& K;
+
+  FrameL sortedFrames;
   
   rai::Array<F_Link> tree;
   
-  FeatherstoneInterface(rai::Configuration& K):K(K) {}
+  FeatherstoneInterface(rai::Configuration& K):K(K) { sortedFrames = K.calc_topSort(); }
   
+  void setGravity(double g=-9.81);
   void update();
   
   void equationOfMotion(arr& M, arr& F,  const arr& qd);

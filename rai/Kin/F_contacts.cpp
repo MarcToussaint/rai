@@ -34,7 +34,7 @@ void POA_distance(arr& y, arr& J, rai::Contact* con, bool b_or_a){
   PairCollision coll(M0, *m, X0, s->frame.ensure_X(), 0., r);
 
   arr Jp;
-  K.jacobianPos(Jp, &s->frame, coll.p1);
+  K.jacobian_pos(Jp, &s->frame, coll.p1);
 
   coll.kinDistance(y, J, Jpos, Jp);
 }
@@ -269,8 +269,8 @@ void TM_Contact_POAisInIntersection_InEq::phi(arr& y, arr& J, const rai::Configu
   PairCollision coll2(M0, *m2, X0, s2->frame.ensure_X(), 0., r2);
 
   arr Jp1, Jp2;
-  K.jacobianPos(Jp1, &s1->frame, coll1.p1);
-  K.jacobianPos(Jp2, &s2->frame, coll2.p2);
+  K.jacobian_pos(Jp1, &s1->frame, coll1.p1);
+  K.jacobian_pos(Jp2, &s2->frame, coll2.p2);
 
   coll1.kinDistance(y({0,0})(), (!!J?J[0]():NoArr), Jpos, Jp1);
   coll2.kinDistance(y({1,1})(), (!!J?J[1]():NoArr), Jpos, Jp2);

@@ -34,7 +34,6 @@ void testFeature() {
 
   rai::Contact con(obj1, obj2);
 
-  K.calc_fwdPropagateFrames();
 
   K.setTimes(.1);
   rai::Configuration K1(K), K2(K);

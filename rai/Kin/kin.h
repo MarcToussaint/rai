@@ -61,11 +61,10 @@ struct Configuration : GLDrawer {
   FrameL frames;     ///< list of coordinate frames, with shapes, joints, inertias attached
   ContactL contacts; ///< list of (force) interactions between frames
   ProxyA proxies;    ///< list of current collision proximities between frames
-  arr q, qdot;       ///< the current joint configuration vector and velocities
+  arr q;             ///< the current joint configuration vector and velocities
 
   //-- derived: computed with calc_q(); reset with reset_q()
-  FrameL fwdActiveSet;
-  JointL fwdActiveJoints;
+  JointL activeJoints;
 
   //-- data structure state (lazy evaluation leave the state structure out of sync)
   bool _state_activeSets_areGood=false; // the active sets, esp. their topological sorting, are up to date
@@ -86,6 +85,7 @@ struct Configuration : GLDrawer {
   Configuration(const rai::Configuration& other, bool referenceSwiftOnCopy=false);
   Configuration(const char* filename);
   virtual ~Configuration();
+
   void operator=(const rai::Configuration& K) { copy(K); }
   void copy(const rai::Configuration& K, bool referenceSwiftOnCopy=false);
   bool operator!() const;
@@ -105,7 +105,6 @@ struct Configuration : GLDrawer {
   Frame *operator()(int i) { return frames(i); }
   Frame *getFrameByName(const char* name, bool warnIfNotExist=true, bool reverse=false) const;
   FrameL getFramesByNames(const StringA& frameNames) const;
-//  Link  *getLinkByBodies(const Frame* from, const Frame* to) const;
   Joint *getJointByFrames(const Frame* from, const Frame* to) const;
   Joint *getJointByFrameNames(const char* from, const char* to) const;
   Joint *getJointByFrameIndices(uint ifrom, uint ito) const;
@@ -123,6 +122,7 @@ struct Configuration : GLDrawer {
   bool check_topSort() const;
   void calc_activeSets();
   void calc_q();
+
   void reconfigureRoot(Frame *newRoot, bool ofLinkOnly);  ///< n becomes the root of the kinematic tree; joints accordingly reversed; lists resorted
   void flipFrames(rai::Frame *a, rai::Frame *b);
   void pruneRigidJoints(int verbose=0);        ///< delete rigid joints -> they become just links
@@ -141,16 +141,13 @@ struct Configuration : GLDrawer {
   uint analyzeJointStateDimensions() const; ///< sort of private: count the joint dimensionalities and assign j->q_index
   
   /// @name computations on the graph
-  void calc_Q_from_q();  ///< from the set (q,qdot) compute the joint's Q transformations
-  void calc_q_from_Q();  ///< updates (q,qdot) based on the joint's Q transformations
-  void calc_fwdPropagateFrames();    ///< elementary forward kinematics; also computes all Shape frames
-  arr calc_fwdPropagateVelocities();    ///< elementary forward kinematics; also computes all Shape frames
-  void calc_Q_from_Frames();    ///< fill in the joint transformations assuming that frame poses are known (makes sense when reading files)
+  void calc_Q_from_q();  ///< from q compute the joint's Q transformations
+  void calc_q_from_Q();  ///< updates q based on the joint's Q transformations
+  arr calc_fwdPropagateVelocities(const arr& qdot);    ///< elementary forward kinematics; also computes all Shape frames
   
   /// @name get state
   uint getJointStateDimension() const;
-  void getJointState(arr &_q, arr& _qdot=NoArr) const;
-  arr getJointState() const;
+  const arr& getJointState() const;
   arr getJointState(const StringA&) const;
   arr getJointState(const uintA&) const;
   arr getFrameState() const;
@@ -167,7 +164,7 @@ struct Configuration : GLDrawer {
   void selectJointsByName(const StringA&, bool notThose=false);
   
   /// @name set state
-  void setJointState(const arr& _q, const arr& _qdot=NoArr);
+  void setJointState(const arr& _q);
   void setJointState(const arr& _q, const StringA&);
   void setJointState(const arr& _q, const uintA&);
   void setFrameState(const arr& X, const StringA& frameNames={}, bool warnOnDifferentDim=true);
@@ -178,61 +175,39 @@ struct Configuration : GLDrawer {
     else HALT("wrong dimension");
   }
 
-  /// @name features
-  void evalFeature(arr& y, arr& J, FeatureSymbol fs, const StringA &symbols) const;
+  /// @name Jacobians and kinematics (low level)
+  /// what is the linear velocity of a world point (pos_world) attached to frame a for a given joint velocity?
+  void jacobian_pos(arr& J, Frame *a, const rai::Vector& pos_world, bool sparse=false) const; //usually called internally with kinematicsPos
+  /// what is the angular velocity of frame a for a given joint velocity?
+  void jacobian_angular(arr& J, Frame *a, bool sparse=false) const; //usually called internally with kinematicsVec or Quat
+  /// how does the time coordinate of frame a change with q-change?
+  void jacobian_time(arr& J, Frame*a) const;
 
-  /// @name kinematics (low level)
   void kinematicsPos(arr& y, arr& J, Frame *a, const Vector& rel=NoVector) const;  //TODO: make vector& not vector*
   void kinematicsVec(arr& y, arr& J, Frame *a, const Vector& vec=NoVector) const;
   void kinematicsQuat(arr& y, arr& J, Frame *a) const;
+  void kinematicsPos_wrtFrame(arr& y, arr& J, Frame *b, const rai::Vector& rel, Frame *s) const;
   void hessianPos(arr& H, Frame *a, Vector *rel=0) const;
-  void jacobianPos(arr& J, Frame *a, const rai::Vector& pos_world, bool sparse=false) const; //usually called internally with kinematicsPos
   void kinematicsTau(double& tau, arr& J) const;
-  void jacobianTime(arr& J, Frame*a) const;
-  void axesMatrix(arr& J, Frame *a, bool sparse=false) const; //usually called internally with kinematicsVec or Quat
   void kinematicsRelPos(arr& y, arr& J, Frame *a, const Vector& vec1, Frame *b, const Vector& vec2) const;
   void kinematicsRelVec(arr& y, arr& J, Frame *a, const Vector& vec1, Frame *b) const;
-//  void kinematicsRelRot(arr& y, arr& J, Frame *a, Frame *b) const;
 
   void kinematicsContactPOA(arr& y, arr& J, Contact *c) const;
   void kinematicsContactForce(arr& y, arr& J, Contact *c) const;
   
-  void kinematicsPenetrations(arr& y, arr& J=NoArr, bool penetrationsOnly=true, double activeMargin=0.) const; ///< true: if proxy(i).distance>0. => y(i)=0; else y(i)=-proxy(i).distance
-  void kinematicsProxyDist(arr& y, arr& J, const Proxy& p, double margin=.02, bool useCenterDist=true, bool addValues=false) const;
   void kinematicsProxyCost(arr& y, arr& J, const Proxy& p, double margin=.0, bool addValues=false) const;
   void kinematicsProxyCost(arr& y, arr& J, double margin=.0) const;
-  void kinematicsContactCost(arr& y, arr& J, const Contact *p, double margin=.0, bool addValues=false) const;
-  void kinematicsContactCost(arr& y, arr& J, double margin=.0) const;
-  void kinematicsProxyConstraint(arr& g, arr& J, const Proxy& p, double margin=.02) const;
-  void kinematicsContactConstraints(arr& y, arr &J) const; //TODO: deprecated?
-  void kinematicsPos_wrtFrame(arr& y, arr& J, Frame *b, const rai::Vector& rel, Frame *s) const;
-  void getLimitsMeasure(arr &x, const arr& limits, double margin=.1) const;
+
   void kinematicsLimitsCost(arr& y, arr& J, const arr& limits, double margin=.1) const;
-  
-  /// @name active set selection
-  void setAgent(uint) { NIY }
-  
+
+  /// @name features
+  void evalFeature(arr& y, arr& J, FeatureSymbol fs, const StringA &symbols) const;
   /// @name High level (inverse) kinematics
   void inverseKinematicsPos(Frame& frame, const arr& ytarget, const rai::Vector& rel_offset=NoVector, int max_iter=3);
-  
-  /// @name dynamics
-  void fwdDynamics(arr& qdd, const arr& qd, const arr& tau, bool gravity=true);
-  void inverseDynamics(arr& tau, const arr& qd, const arr& qdd, bool gravity=true);
-  void equationOfMotion(arr& M, arr& F, bool gravity=true);
-  void inertia(arr& M);
-  double getEnergy();
-  
+
+
   /// @name get infos
   arr getHmetric() const;
-  
-  /// @name forces and gravity
-  void clearForces();
-  void addForce(rai::Vector force, Frame *n);
-  void addForce(rai::Vector force, Frame *n, rai::Vector pos);
-  void contactsToForces(double hook=.01, double damp=.0003);
-  void gravityToForces(double g=-9.81);
-  void frictionToForces(double coeff);
-  void NewtonEuler_backward();
   
   /// @name extensions on demand
   OpenGL& gl(const char* window_title=NULL, bool offscreen=false);
@@ -252,12 +227,16 @@ struct Configuration : GLDrawer {
   void stepFcl();
   void stepPhysx(double tau);
   void stepOde(double tau);
-  void stepDynamics(const arr& u_control, double tau, double dynamicNoise = 0.0, bool gravity = true);
-  
-  /// @name contacts
-  void filterProxiesToContacts(double margin=.01); ///< proxies are returns from a collision engine; contacts stable constraints
-  void proxiesToContacts(double margin=.01); ///< proxies are returns from a collision engine; contacts stable constraints
-  double totalContactPenetration(); ///< proxies are returns from a collision engine; contacts stable constraints
+  void stepDynamics(arr& qdot, const arr& u_control, double tau, double dynamicNoise = 0.0, bool gravity = true);
+
+  /// @name dynamics based on the fs() interface
+  void equationOfMotion(arr& M, arr& F, const arr& qdot, bool gravity=true);
+  void fwdDynamics(arr& qdd, const arr& qd, const arr& tau, bool gravity=true);
+  void inverseDynamics(arr& tau, const arr& qd, const arr& qdd, bool gravity=true);
+  double getEnergy(const arr& qdot);
+
+  /// @name collisions & proxies
+  double totalCollisionPenetration(); ///< proxies are returns from a collision engine; contacts stable constraints
   void copyProxies(const Configuration& K);
 
   /// @name I/O
@@ -278,6 +257,45 @@ struct Configuration : GLDrawer {
   void writePlyFile(const char* filename) const; //TODO: move outside
   
   friend struct KinematicSwitch;
+};
+
+/// extension: containing deprecated functionalities
+struct Configuration_ext : Configuration {
+  arr qdot;
+
+  void calc_fwdPropagateFrames();    ///< elementary forward kinematics; also computes all Shape frames
+  void calc_Q_from_Frames();    ///< fill in the joint transformations assuming that frame poses are known (makes sense when reading files)
+
+  void getJointState(arr &_q, arr& _qdot=NoArr) const;
+  void setJointState(const arr& _q, const arr& _qdot=NoArr);
+
+  /// @name Jacobians and kinematics (low level)
+  void kinematicsPenetrations(arr& y, arr& J=NoArr, bool penetrationsOnly=true, double activeMargin=0.) const; ///< true: if proxy(i).distance>0. => y(i)=0; else y(i)=-proxy(i).distance
+  void kinematicsProxyDist(arr& y, arr& J, const Proxy& p, double margin=.02, bool useCenterDist=true, bool addValues=false) const;
+  void kinematicsContactCost(arr& y, arr& J, const Contact *p, double margin=.0, bool addValues=false) const;
+  void kinematicsContactCost(arr& y, arr& J, double margin=.0) const;
+  void kinematicsProxyConstraint(arr& g, arr& J, const Proxy& p, double margin=.02) const;
+  void kinematicsContactConstraints(arr& y, arr &J) const; //TODO: deprecated?
+  void getLimitsMeasure(arr &x, const arr& limits, double margin=.1) const;
+
+  /// @name active set selection
+  void setAgent(uint) { NIY }
+
+  /// @name High level (inverse) kinematics
+  void inverseKinematicsPos(Frame& frame, const arr& ytarget, const rai::Vector& rel_offset=NoVector, int max_iter=3);
+
+  /// @name dynamics
+  void inertia(arr& M);
+
+  /// @name forces and gravity
+  void contactsToForces(double hook=.01, double damp=.0003);
+  void gravityToForces(double g=-9.81);
+  void frictionToForces(double coeff);
+  void NewtonEuler_backward();
+
+  /// @name collisions & proxies
+  void filterProxiesToContacts(double margin=.01); ///< proxies are returns from a collision engine; contacts stable constraints
+  void proxiesToContacts(double margin=.01); ///< proxies are returns from a collision engine; contacts stable constraints
 };
 
 } //namespace rai

@@ -348,7 +348,7 @@ rai::Configuration conv_MarkerArray2Configuration(const visualization_msgs::Mark
     s->size(1) = marker.scale.y;
     s->size(2) = marker.scale.z;
     s->size(3) = .25*(marker.scale.x+marker.scale.y);
-    s->frame.X = ros_getTransform("/base_link", marker.header, listener) * conv_pose2transformation(marker.pose);
+    s->frame.set_X() = ros_getTransform("/base_link", marker.header, listener) * conv_pose2transformation(marker.pose);
   }
   return world;
 }
@@ -441,7 +441,7 @@ visualization_msgs::Marker conv_Shape2Marker(const rai::Shape& sh) {
   new_marker.id = sh.frame.ID;
   new_marker.action = visualization_msgs::Marker::ADD;
   new_marker.lifetime = ros::Duration();
-  new_marker.pose = conv_transformation2pose(sh.frame.X);
+  new_marker.pose = conv_transformation2pose(sh.frame.ensure_X());
   new_marker.color.r = 0.0f;
   new_marker.color.g = 1.0f;
   new_marker.color.b = 0.0f;

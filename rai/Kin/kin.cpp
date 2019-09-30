@@ -304,9 +304,7 @@ void rai::Configuration::clear() {
 
 void rai::Configuration::reset_q() {
   q.clear();
-  qdot.clear();
-  fwdActiveSet.clear();
-  fwdActiveJoints.clear();
+  activeJoints.clear();
 
   _state_activeSets_areGood=false;
   _state_q_isGood=false;
@@ -335,25 +333,24 @@ FrameL rai::Configuration::calc_topSort() const {
 }
 
 bool rai::Configuration::check_topSort() const {
-  if(fwdActiveSet.N != frames.N) return false;
-  
   //compute levels
   intA level = consts<int>(0, frames.N);
-  for(Frame *f: fwdActiveSet) if(f->parent) level(f->ID) = level(f->parent->ID)+1;
+  for(Frame *f: frames) if(f->parent) level(f->ID) = level(f->parent->ID)+1;
   //check levels are strictly increasing across links
-  for(Frame *f: fwdActiveSet) if(f->parent && level(f->parent->ID) >= level(f->ID)) return false;
+  for(Frame *f: frames) if(f->parent && level(f->parent->ID) >= level(f->ID)) return false;
   
   return true;
 }
 
 void rai::Configuration::calc_activeSets() {
   reset_q();
-  if(!check_topSort()) {
-    fwdActiveSet = calc_topSort(); //graphGetTopsortOrder<Frame>(frames);
-  }
-  fwdActiveJoints.clear();
-  for(Frame *f:fwdActiveSet) if(f->joint && f->joint->active)
-    fwdActiveJoints.append(f->joint);
+//  FrameL sortedFrames = frames;
+//  if(!check_topSort()) {
+//    sortedFrames = calc_topSort(); //graphGetTopsortOrder<Frame>(frames);
+//  }
+  activeJoints.clear();
+  for(Frame *f:frames) if(f->joint && f->joint->active)
+    activeJoints.append(f->joint);
 
   _state_activeSets_areGood=true;
 }
@@ -381,7 +378,6 @@ void rai::Configuration::copy(const rai::Configuration& K, bool referenceSwiftOn
   //copy swift reference
   if(referenceSwiftOnCopy) s->swift = K.s->swift;
   q = K.q;
-  qdot = K.qdot;
   _state_q_isGood = K._state_q_isGood;
   calc_activeSets();
 }
@@ -391,19 +387,19 @@ bool rai::Configuration::operator!() const { return this==&NoWorld; }
 /** @brief KINEMATICS: given the (absolute) frames of root nodes and the relative frames
     on the edges, this calculates the absolute frames of all other nodes (propagating forward
     through trees and testing consistency of loops). */
-void rai::Configuration::calc_fwdPropagateFrames() {
+void rai::Configuration_ext::calc_fwdPropagateFrames() {
   HALT("don't use this anymore");
-  if(fwdActiveSet.N!=frames.N) calc_activeSets();
-  for(Frame *f:fwdActiveSet) if(f->parent) f->calc_X_from_parent();
+//  if(fwdActiveSet.N!=frames.N) calc_activeSets();
+//  for(Frame *f:fwdActiveSet) if(f->parent) f->calc_X_from_parent();
 }
 
-arr rai::Configuration::calc_fwdPropagateVelocities() {
-  if(fwdActiveSet.N!=frames.N) calc_activeSets();
+arr rai::Configuration::calc_fwdPropagateVelocities(const arr& qdot) {
+  CHECK(check_topSort(), "this needs a top sorted configuration")
   arr vel(frames.N, 2, 3);  //for every frame we have a linVel and angVel, each 3D
   vel.setZero();
   rai::Transformation f;
   Vector linVel, angVel, q_vel, q_angvel;
-  for(Frame *f : fwdActiveSet) { //this has no bailout for loopy graphs!
+  for(Frame *f : frames) { //this has no bailout for loopy graphs!
     f->ensure_X();
     if(f->parent) {
       Frame *from = f->parent;
@@ -453,7 +449,7 @@ arr rai::Configuration::calc_fwdPropagateVelocities() {
 /** @brief given the absolute frames of all nodes and the two rigid (relative)
     frames A & B of each edge, this calculates the dynamic (relative) joint
     frame X for each edge (which includes joint transformation and errors) */
-void rai::Configuration::calc_Q_from_Frames() {
+void rai::Configuration_ext::calc_Q_from_Frames() {
   HALT("should never be called (anymore)");
   for(Frame *f:frames) if(f->parent) {
     f->calc_Q_from_parent();
@@ -479,7 +475,7 @@ arr rai::Configuration::naturalQmetric(double power) const {
   }
   if(!q.N) getJointStateDimension();
   arr Wdiag(q.N);
-  for(Joint *j: fwdActiveJoints) {
+  for(Joint *j: activeJoints) {
     for(uint i=0; i<j->qDim(); i++) {
       Wdiag(j->qIndex+i) = ::pow(BM(j->frame->ID), power);
     }
@@ -520,7 +516,7 @@ void rai::Configuration::reconfigureRoot(Frame *newRoot, bool ofLinkOnly) {
 
 uint rai::Configuration::analyzeJointStateDimensions() const {
   uint qdim=0;
-  for(Joint *j: fwdActiveJoints) {
+  for(Joint *j: activeJoints) {
     if(!j->mimic) {
       j->dim = j->getDimFromType();
       j->qIndex = qdim;
@@ -548,7 +544,7 @@ uint rai::Configuration::getJointStateDimension() const {
   return q.N;
 }
 
-void rai::Configuration::getJointState(arr &_q, arr& _qdot) const {
+void rai::Configuration_ext::getJointState(arr &_q, arr& _qdot) const {
   if(!q.nd)((Configuration*)this)->calc_q();
   _q=q;
   if(!!_qdot) {
@@ -557,7 +553,7 @@ void rai::Configuration::getJointState(arr &_q, arr& _qdot) const {
   }
 }
 
-arr rai::Configuration::getJointState() const {
+const arr& rai::Configuration::getJointState() const {
   if(!q.nd)((Configuration*)this)->calc_q();
   return q;
 }
@@ -610,7 +606,7 @@ arr rai::Configuration::getLimits() const {
   uint N=getJointStateDimension();
   arr limits(N,2);
   limits.setZero();
-  for(Joint *j: fwdActiveJoints) {
+  for(Joint *j: activeJoints) {
     uint i=j->qIndex;
     uint d=j->qDim();
     for(uint k=0; k<d; k++) { //in case joint has multiple dimensions
@@ -631,10 +627,9 @@ void rai::Configuration::calc_q_from_Q() {
   uint N=q.N;
   if(!N) N=analyzeJointStateDimensions();
   q.resize(N).setZero();
-  qdot.resize(N).setZero();
   
   uint n=0;
-  for(Joint *j: fwdActiveJoints) {
+  for(Joint *j: activeJoints) {
     if(j->mimic) continue; //don't count dependent joints
     CHECK_EQ(j->qIndex, n, "joint indexing is inconsistent");
     arr joint_q = j->calc_q_from_Q(j->frame->Q);
@@ -663,7 +658,7 @@ void rai::Configuration::calc_Q_from_q() {
   CHECK(_state_q_isGood, "");
 
   uint n=0;
-  for(Joint *j: fwdActiveJoints) {
+  for(Joint *j: activeJoints) {
     if(!j->mimic) CHECK_EQ(j->qIndex, n, "joint indexing is inconsistent");
     j->calc_Q_from_q(q, j->qIndex);
     if(!j->mimic) {
@@ -725,26 +720,35 @@ void rai::Configuration::selectJointsByName(const StringA& names, bool notThose)
 
 /** @brief sets the joint state vectors separated in positions and
   velocities */
-void rai::Configuration::setJointState(const arr& _q, const arr& _qdot) {
+void rai::Configuration::setJointState(const arr& _q) {
   setJointStateCount++; //global counter
-  
+
 #ifndef RAI_NOCHECK
   uint N=getJointStateDimension();
   CHECK_EQ(_q.N, N, "wrong joint state dimensionalities");
-  if(!!_qdot) CHECK_EQ(_qdot.N, N, "wrong joint velocity dimensionalities");
 #endif
 
   q=_q;
-  if(!!_qdot) qdot=_qdot; else qdot.clear();
 
   proxies.clear();
 
   _state_q_isGood=true;
   _state_proxies_isGood=false;
   for(Frame *f:frames) if(f->parent) f->_state_X_isGood=false;
-  
+
   calc_Q_from_q();
-//  calc_fwdPropagateFrames();
+}
+
+/** @brief sets the joint state vectors separated in positions and
+  velocities */
+void rai::Configuration_ext::setJointState(const arr& _q, const arr& _qdot) {
+  Configuration::setJointState(q);
+  if(!!_qdot){
+    CHECK_EQ(_qdot.N, q.N, "wrong joint velocity dimensionalities");
+    qdot=_qdot;
+  }else{
+    qdot.clear();
+  }
 }
 
 void rai::Configuration::setJointState(const arr& _q, const StringA& joints) {
@@ -766,7 +770,6 @@ void rai::Configuration::setJointState(const arr& _q, const StringA& joints) {
       i += j->dim-1;
     }
   }
-  qdot.clear();
 
   proxies.clear();
 
@@ -775,7 +778,6 @@ void rai::Configuration::setJointState(const arr& _q, const StringA& joints) {
   for(Frame *f:frames) if(f->parent) f->_state_X_isGood=false;
 
   calc_Q_from_q();
-//  calc_fwdPropagateFrames();
 }
 
 void rai::Configuration::setJointState(const arr& _q, const uintA& joints) {
@@ -790,11 +792,14 @@ void rai::Configuration::setJointState(const arr& _q, const uintA& joints) {
     nd += j->dim;
   }
   CHECK_EQ(_q.N, nd, "");
-  qdot.clear();
+
+  proxies.clear();
+
+  _state_q_isGood=true;
+  _state_proxies_isGood=false;
+  for(Frame *f:frames) if(f->parent) f->_state_X_isGood=false;
 
   calc_Q_from_q();
-
-  calc_fwdPropagateFrames();
 }
 
 void rai::Configuration::setFrameState(const arr& X, const StringA& frameNames, bool warnOnDifferentDim){
@@ -852,29 +857,8 @@ void rai::Configuration::evalFeature(arr& y, arr& J, FeatureSymbol fs, const Str
 // core: kinematics and dynamics
 //
 
-/** @brief return the jacobian \f$J = \frac{\partial\phi_i(q)}{\partial q}\f$ of the position
-  of the i-th body (3 x n tensor)*/
-void rai::Configuration::kinematicsPos(arr& y, arr& J, Frame *a, const rai::Vector& rel) const {
-  CHECK_EQ(&a->K, this, "given frame is not element of this Configuration");
-  
-  if(!a) {
-    RAI_MSG("WARNING: calling kinematics for NULL body");
-    if(!!y) y.resize(3).setZero();
-    if(!!J) J.resize(3, getJointStateDimension()).setZero();
-    return;
-  }
-
-  //get position
-  rai::Vector pos_world = a->ensure_X().pos;
-  if(!!rel && !rel.isZero) pos_world += a->ensure_X().rot*rel;
-  if(!!y) y = conv_vec2arr(pos_world); //return the output
-  if(!J) return; //do not return the Jacobian
-  
-  jacobianPos(J, a, pos_world, SPARSE_JACOBIANS);
-}
-
 #if 1
-void rai::Configuration::jacobianPos(arr& J, Frame *a, const rai::Vector& pos_world, bool sparse) const {
+void rai::Configuration::jacobian_pos(arr& J, Frame *a, const rai::Vector& pos_world, bool sparse) const {
   CHECK_EQ(&a->K, this, "");
 
   a->ensure_X();
@@ -981,26 +965,53 @@ void rai::Configuration::jacobianPos(arr& J, Frame *a, const rai::Vector& pos_wo
 }
 #endif
 
-void rai::Configuration::kinematicsTau(double& tau, arr& J) const {
-  Frame *a = frames.first();
-  CHECK(a && a->joint && a->joint->type==JT_time, "this configuration does not have a tau DOF");
+//* This Jacobian directly gives the implied rotation vector: multiplied with \dot q it gives the angular velocity of body b */
+void rai::Configuration::jacobian_angular(arr& J, Frame *a, bool sparse) const {
+  a->ensure_X();
 
-  Joint *j = a->joint;
-  tau = a->tau;
-  if(!!J){
-    uint N=getJointStateDimension();
-    J.resize(1, N).setZero();
-    J(0, j->qIndex) += 1e-1;
+  uint N = getJointStateDimension();
+  if(!sparse){
+    J.resize(3, N).setZero();
+  }else{
+    J.sparse().resize(3, N, 0);
+  }
+
+  while(a) { //loop backward down the kinematic tree
+    Joint *j=a->joint;
+    if(j && j->active) {
+      uint j_idx=j->qIndex;
+      if(j_idx>=N) CHECK_EQ(j->type, JT_rigid, "");
+      if(j_idx<N) {
+        if((j->type>=JT_hingeX && j->type<=JT_hingeZ) || j->type==JT_transXYPhi || j->type==JT_phiTransXY) {
+          if(j->type==JT_transXYPhi) j_idx += 2; //refer to the phi only
+          J.elem(0, j_idx) += j->scale * j->axis.x;
+          J.elem(1, j_idx) += j->scale * j->axis.y;
+          J.elem(2, j_idx) += j->scale * j->axis.z;
+        }
+        if(j->type==JT_quatBall || j->type==JT_free || j->type==JT_XBall) {
+          uint offset = 0;
+          if(j->type==JT_XBall) offset=1;
+          if(j->type==JT_free) offset=3;
+          arr Jrot = j->X().rot.getArr() * a->get_Q().rot.getJacobian(); //transform w-vectors into world coordinate
+          Jrot /= sqrt(sumOfSqr(q({j->qIndex+offset,j->qIndex+offset+3}))); //account for the potential non-normalization of q
+          //          for(uint i=0;i<4;i++) for(uint k=0;k<3;k++) J.elem(k,j_idx+offset+i) += Jrot(k,i);
+          Jrot *= j->scale;
+          J.setMatrixBlock(Jrot, 0, j_idx+offset);
+        }
+        //all other joints: J=0 !!
+      }
+    }
+    a = a->parent;
   }
 }
 
-void rai::Configuration::jacobianTime(arr& J, rai::Frame *a) const {
+void rai::Configuration::jacobian_time(arr& J, rai::Frame *a) const {
   CHECK_EQ(&a->K, this, "");
 
   //get Jacobian
   uint N=getJointStateDimension();
   J.resize(1, N).setZero();
-  
+
   while(a) { //loop backward down the kinematic tree
     Joint *j=a->joint;
     if(j && j->active) {
@@ -1014,6 +1025,72 @@ void rai::Configuration::jacobianTime(arr& J, rai::Frame *a) const {
     }
     if(!a->parent) break; //frame has no inlink -> done
     a = a->parent;
+  }
+}
+
+
+/** @brief return the jacobian \f$J = \frac{\partial\phi_i(q)}{\partial q}\f$ of the position
+  of the i-th body (3 x n tensor)*/
+void rai::Configuration::kinematicsPos(arr& y, arr& J, Frame *a, const rai::Vector& rel) const {
+  CHECK_EQ(&a->K, this, "given frame is not element of this Configuration");
+
+  rai::Vector pos_world = a->ensure_X().pos;
+  if(!!rel && !rel.isZero) pos_world += a->ensure_X().rot*rel;
+  if(!!y) y = conv_vec2arr(pos_world);
+  if(!!J) jacobian_pos(J, a, pos_world, SPARSE_JACOBIANS);
+}
+
+
+/* takes the joint state x and returns the jacobian dz of
+   the position of the ith body (w.r.t. all joints) -> 2D array */
+/// Jacobian of the i-th body's z-orientation vector
+void rai::Configuration::kinematicsVec(arr& y, arr& J, Frame *a, const rai::Vector& vec) const {
+  CHECK_EQ(&a->K, this, "");
+
+  rai::Vector vec_world;
+  if(!!vec) vec_world = a->ensure_X().rot*vec;
+  else     vec_world = a->ensure_X().rot.getZ();
+  if(!!y) y = conv_vec2arr(vec_world);
+  if(!!J) {
+    arr A;
+    jacobian_angular(A, a, SPARSE_JACOBIANS);
+    J = crossProduct(A, conv_vec2arr(vec_world));
+  }
+}
+
+/* takes the joint state x and returns the jacobian dz of
+   the position of the ith body (w.r.t. all joints) -> 2D array */
+/// Jacobian of the i-th body's z-orientation vector
+void rai::Configuration::kinematicsQuat(arr& y, arr& J, Frame *a) const { //TODO: allow for relative quat
+  CHECK_EQ(&a->K, this, "");
+
+  const rai::Quaternion& rot_a = a->ensure_X().rot;
+  if(!!y) y = rot_a.getArr4d();
+  if(!!J) {
+    arr A;
+    jacobian_angular(A, a);
+    J.resize(4, A.d1);
+    for(uint i=0; i<J.d1; i++) {
+      rai::Quaternion tmp(0., 0.5*A(0,i), 0.5*A(1,i), 0.5*A(2,i));  //this is unnormalized!!
+      tmp = tmp * rot_a;
+      J(0, i) = tmp.w;
+      J(1, i) = tmp.x;
+      J(2, i) = tmp.y;
+      J(3, i) = tmp.z;
+    }
+  }
+}
+
+void rai::Configuration::kinematicsTau(double& tau, arr& J) const {
+  Frame *a = frames.first();
+  CHECK(a && a->joint && a->joint->type==JT_time, "this configuration does not have a tau DOF");
+
+  Joint *j = a->joint;
+  tau = a->tau;
+  if(!!J){
+    uint N=getJointStateDimension();
+    J.resize(1, N).setZero();
+    J(0, j->qIndex) += 1e-1;
   }
 }
 
@@ -1118,45 +1195,6 @@ void rai::Configuration::hessianPos(arr& H, Frame *a, rai::Vector *rel) const {
   }
 }
 
-/* takes the joint state x and returns the jacobian dz of
-   the position of the ith body (w.r.t. all joints) -> 2D array */
-/// Jacobian of the i-th body's z-orientation vector
-void rai::Configuration::kinematicsVec(arr& y, arr& J, Frame *a, const rai::Vector& vec) const {
-  CHECK_EQ(&a->K, this, "");
-  //get the vectoreference frame
-  rai::Vector vec_world;
-  if(!!vec) vec_world = a->ensure_X().rot*vec;
-  else     vec_world = a->ensure_X().rot.getZ();
-  if(!!y) y = conv_vec2arr(vec_world); //return the vec
-  if(!!J) {
-    arr A;
-    axesMatrix(A, a, SPARSE_JACOBIANS);
-    J = crossProduct(A, conv_vec2arr(vec_world));
-  }
-}
-
-/* takes the joint state x and returns the jacobian dz of
-   the position of the ith body (w.r.t. all joints) -> 2D array */
-/// Jacobian of the i-th body's z-orientation vector
-void rai::Configuration::kinematicsQuat(arr& y, arr& J, Frame *a) const { //TODO: allow for relative quat
-  CHECK_EQ(&a->K, this, "");
-  const rai::Quaternion& rot_a = a->ensure_X().rot;
-  if(!!y) y = rot_a.getArr4d();
-  if(!!J) {
-    arr A;
-    axesMatrix(A, a);
-    J.resize(4, A.d1);
-    for(uint i=0; i<J.d1; i++) {
-      rai::Quaternion tmp(0., 0.5*A(0,i), 0.5*A(1,i), 0.5*A(2,i));  //this is unnormalized!!
-      tmp = tmp * rot_a;
-      J(0, i) = tmp.w;
-      J(1, i) = tmp.x;
-      J(2, i) = tmp.y;
-      J(3, i) = tmp.z;
-    }
-  }
-}
-
 ////* This Jacobian directly gives the implied rotation vector: multiplied with \dot q it gives the angular velocity of body b */
 //void rai::Configuration::posMatrix(arr& J, Frame *a) const {
 //  uint N = getJointStateDimension();
@@ -1178,46 +1216,6 @@ void rai::Configuration::kinematicsQuat(arr& y, arr& J, Frame *a) const { //TODO
 //  }
 //}
 
-//* This Jacobian directly gives the implied rotation vector: multiplied with \dot q it gives the angular velocity of body b */
-void rai::Configuration::axesMatrix(arr& J, Frame *a, bool sparse) const {
-  a->ensure_X();
-
-  uint N = getJointStateDimension();
-  if(!sparse){
-    J.resize(3, N).setZero();
-  }else{
-    J.sparse().resize(3, N, 0);
-  }
-
-  while(a) { //loop backward down the kinematic tree
-    Joint *j=a->joint;
-    if(j && j->active) {
-      uint j_idx=j->qIndex;
-      if(j_idx>=N) CHECK_EQ(j->type, JT_rigid, "");
-      if(j_idx<N) {
-        if((j->type>=JT_hingeX && j->type<=JT_hingeZ) || j->type==JT_transXYPhi || j->type==JT_phiTransXY) {
-          if(j->type==JT_transXYPhi) j_idx += 2; //refer to the phi only
-          J.elem(0, j_idx) += j->scale * j->axis.x;
-          J.elem(1, j_idx) += j->scale * j->axis.y;
-          J.elem(2, j_idx) += j->scale * j->axis.z;
-        }
-        if(j->type==JT_quatBall || j->type==JT_free || j->type==JT_XBall) {
-          uint offset = 0;
-          if(j->type==JT_XBall) offset=1;
-          if(j->type==JT_free) offset=3;
-          arr Jrot = j->X().rot.getArr() * a->get_Q().rot.getJacobian(); //transform w-vectors into world coordinate
-          Jrot /= sqrt(sumOfSqr(q({j->qIndex+offset,j->qIndex+offset+3}))); //account for the potential non-normalization of q
-          //          for(uint i=0;i<4;i++) for(uint k=0;k<3;k++) J.elem(k,j_idx+offset+i) += Jrot(k,i);
-          Jrot *= j->scale;
-          J.setMatrixBlock(Jrot, 0, j_idx+offset);
-        }
-        //all other joints: J=0 !!
-      }
-    }
-    a = a->parent;
-  }
-}
-
 /// The position vec1, attached to b1, relative to the frame of b2 (plus vec2)
 void rai::Configuration::kinematicsRelPos(arr& y, arr& J, Frame *a, const rai::Vector& vec1, Frame *b, const rai::Vector& vec2) const {
   arr y1,y2,J1,J2;
@@ -1227,7 +1225,7 @@ void rai::Configuration::kinematicsRelPos(arr& y, arr& J, Frame *a, const rai::V
   y = Rinv * (y1 - y2);
   if(!!J) {
     arr A;
-    axesMatrix(A, b, SPARSE_JACOBIANS);
+    jacobian_angular(A, b, SPARSE_JACOBIANS);
     J = Rinv * (J1 - J2 - crossProduct(A, y1 - y2));
   }
 }
@@ -1243,7 +1241,7 @@ void rai::Configuration::kinematicsRelVec(arr& y, arr& J, Frame *a, const rai::V
   y = Rinv * y1;
   if(!!J) {
     arr A;
-    axesMatrix(A, b, SPARSE_JACOBIANS);
+    jacobian_angular(A, b, SPARSE_JACOBIANS);
     J = Rinv * (J1 - crossProduct(A, y1));
   }
 }
@@ -1282,7 +1280,7 @@ void rai::Configuration::kinematicsContactForce(arr& y, arr& J, rai::Contact *c)
 }
 
 /** @brief return the configuration's inertia tensor $M$ (n x n tensor)*/
-void rai::Configuration::inertia(arr& M) {
+void rai::Configuration_ext::inertia(arr& M) {
   uint j1_idx, j2_idx;
   rai::Transformation Xa, Xi, Xj;
   Joint *j1, *j2;
@@ -1335,25 +1333,17 @@ void rai::Configuration::inertia(arr& M) {
   for(j1_idx=0; j1_idx<N; j1_idx++) for(j2_idx=0; j2_idx<j1_idx; j2_idx++) M(j2_idx, j1_idx) = M(j1_idx, j2_idx);
 }
 
-void rai::Configuration::equationOfMotion(arr& M, arr& F, bool gravity) {
-  if(gravity) {
-    clearForces();
-    gravityToForces();
-  }
+void rai::Configuration::equationOfMotion(arr& M, arr& F, const arr& qdot, bool gravity) {
   fs().update();
-  //  cout <<tree <<endl;
-  if(!qdot.N) qdot.resize(q.N).setZero();
+  fs().setGravity();
   fs().equationOfMotion(M, F, qdot);
 }
 
 /** @brief return the joint accelerations \f$\ddot q\f$ given the
   joint torques \f$\tau\f$ (computed via Featherstone's Articulated Body Algorithm in O(n)) */
 void rai::Configuration::fwdDynamics(arr& qdd, const arr& qd, const arr& tau, bool gravity) {
-  if(gravity) {
-    clearForces();
-    gravityToForces();
-  }
   fs().update();
+  fs().setGravity();
   //  cout <<tree <<endl;
   fs().fwdDynamics_MF(qdd, qd, tau);
   //  fs().fwdDynamics_aba_1D(qdd, qd, tau); //works
@@ -1363,11 +1353,8 @@ void rai::Configuration::fwdDynamics(arr& qdd, const arr& qd, const arr& tau, bo
 /** @brief return the necessary joint torques \f$\tau\f$ to achieve joint accelerations
   \f$\ddot q\f$ (computed via the Recursive Newton-Euler Algorithm in O(n)) */
 void rai::Configuration::inverseDynamics(arr& tau, const arr& qd, const arr& qdd, bool gravity) {
-  if(gravity) {
-    clearForces();
-    gravityToForces();
-  }
   fs().update();
+  fs().setGravity();
   fs().invDynamics(tau, qd, qdd);
 }
 
@@ -1459,7 +1446,7 @@ uintA rai::Configuration::getQindicesByNames(const StringA& jointNames) const{
 StringA rai::Configuration::getJointNames() const {
   if(!q.nd)((Configuration*)this)->calc_q();
   StringA names(getJointStateDimension());
-  for(Joint *j:fwdActiveJoints) {
+  for(Joint *j:activeJoints) {
     rai::String name=j->frame->name;
     if(!name) name <<'q' <<j->qIndex;
     if(j->dim==1) names(j->qIndex) <<name;
@@ -1651,7 +1638,7 @@ void rai::Configuration::stepOde(double tau) {
 #endif
 }
 
-void rai::Configuration::stepDynamics(const arr& Bu_control, double tau, double dynamicNoise, bool gravity) {
+void rai::Configuration::stepDynamics(arr& qdot, const arr& Bu_control, double tau, double dynamicNoise, bool gravity) {
 
   struct DiffEqn:VectorFunction {
     rai::Configuration &S;
@@ -1663,9 +1650,9 @@ void rai::Configuration::stepDynamics(const arr& Bu_control, double tau, double 
       });
     }
     void fv(arr& y, arr& J, const arr& x) {
-      S.setJointState(x[0], x[1]);
+      S.setJointState(x[0]);
       arr M,Minv,F;
-      S.equationOfMotion(M, F, gravity);
+      S.equationOfMotion(M, F, x[1], gravity);
       inverse_SymPosDef(Minv, M);
       //Minv = inverse(M); //TODO why does symPosDef fail?
       y = Minv * (Bu - F);
@@ -1689,7 +1676,8 @@ void rai::Configuration::stepDynamics(const arr& Bu_control, double tau, double 
   if(dynamicNoise) rndGauss(x1[1](), ::sqrt(tau)*dynamicNoise, true);
 #endif
   
-  setJointState(x1[0], x1[1]);
+  setJointState(x1[0]);
+  qdot = x1[1];
 }
 
 void __merge(rai::Contact *c, rai::Proxy *p) {
@@ -1752,7 +1740,7 @@ void rai::Configuration::filterProxiesToContacts(double margin) {
 }
 #endif
 
-void rai::Configuration::proxiesToContacts(double margin) {
+void rai::Configuration_ext::proxiesToContacts(double margin) {
   for(Frame *f:frames) while(f->contacts.N) delete f->contacts.last();
   
   for(Proxy& p:proxies) {
@@ -1783,7 +1771,7 @@ void rai::Configuration::proxiesToContacts(double margin) {
   //  for(Contact *c:old) delete c;
 }
 
-double rai::Configuration::totalContactPenetration() {
+double rai::Configuration::totalCollisionPenetration() {
   CHECK(_state_proxies_isGood, "");
 
   double D=0.;
@@ -2027,17 +2015,15 @@ void rai::Configuration::displayDot() {
 }
 
 void rai::Configuration::report(std::ostream &os) const {
-  CHECK_EQ(fwdActiveSet.N, frames.N, "you need to calc_activeSets before");
   uint nShapes=0, nUc=0;
-  for(Frame *f:fwdActiveSet) if(f->shape) nShapes++;
-  for(Joint *j:fwdActiveJoints) if(j->uncertainty) nUc++;
+  for(Frame *f:frames) if(f->shape) nShapes++;
+  for(Joint *j:activeJoints) if(j->uncertainty) nUc++;
   
-  os <<"Config: q.N=" <<q.N
+  os <<"Config: q.N=" <<getJointStateDimension()
     <<" #frames=" <<frames.N
-   <<" #activeFrames=" <<fwdActiveSet.N
-  <<" #activeJoints=" <<fwdActiveJoints.N
-  <<" #activeShapes=" <<nShapes
-  <<" #activeUncertainties=" <<nUc
+   <<" #joints=" <<activeJoints.N
+  <<" #shapes=" <<nShapes
+  <<" #ucertainties=" <<nUc
   <<" #proxies=" <<proxies.N
   <<" #contacts=" <<contacts.N
   <<" #evals=" <<setJointStateCount
@@ -2075,7 +2061,8 @@ void rai::Configuration::init(const Graph& G, bool addInsteadOfClear) {
     
     Frame *b = NULL;
     if(!n->parents.N) b = new Frame(*this);
-    if(n->parents.N==1) b = new Frame(node2frame(n->parents(0)->index)); //getFrameByName(n->parents(0)->keys.last()));
+    else if(n->parents.N==1) b = new Frame(node2frame(n->parents(0)->index)); //getFrameByName(n->parents(0)->keys.last()));
+    else HALT("a frame can only have one parent");
     node2frame(n->index) = b;
     if(n->keys.N && n->keys.last()!="frame") b->name=n->keys.last();
     b->ats.copy(n->graph(), false, true);
@@ -2262,47 +2249,10 @@ bool ProxySortComp(const rai::Proxy *a, const rai::Proxy *b) {
   return (a->a < b->a) || (a->a==b->a && a->b<b->b) || (a->a==b->a && a->b==b->b && a->d < b->d);
 }
 
-/// clear all forces currently stored at bodies
-void rai::Configuration::clearForces() {
-  for(Frame *f:  frames) if(f->inertia) {
-    f->inertia->force.setZero();
-    f->inertia->torque.setZero();
-  }
-}
-
-/// apply a force on body n
-void rai::Configuration::addForce(rai::Vector force, rai::Frame *f) {
-  CHECK(f->inertia, "");
-  f->inertia->force += force;
-  if(!s->physx) {
-    NIY;
-  } else {
-    s->physx->addForce(force, f);
-  }
-  //n->torque += (pos - n->X.p) ^ force;
-}
-
-/// apply a force on body n at position pos (in world coordinates)
-void rai::Configuration::addForce(rai::Vector force, rai::Frame *f, rai::Vector pos) {
-  CHECK(f->inertia, "");
-  f->inertia->force += force;
-  if(!s->physx) {
-    NIY;
-  } else {
-    s->physx->addForce(force, f, pos);
-  }
-  //n->torque += (pos - n->X.p) ^ force;
-}
-
-void rai::Configuration::gravityToForces(double g) {
-  rai::Vector grav(0, 0, g);
-  for(Frame *f: frames) if(f->inertia) f->inertia->force += f->inertia->mass * grav;
-}
-
 /** similar to invDynamics using NewtonEuler; but only computing the backward pass */
-void rai::Configuration::NewtonEuler_backward() {
-  CHECK_EQ(fwdActiveSet.N, frames.N, "you need to calc_activeSets before");
-  uint N=fwdActiveSet.N;
+void rai::Configuration_ext::NewtonEuler_backward() {
+  CHECK(check_topSort(), "this needs a topology sorted configuration");
+  uint N=frames.N;
   rai::Array<arr> h(N);
   arr Q(N, 6, 6);
   arr force(frames.N,6);
@@ -2310,7 +2260,7 @@ void rai::Configuration::NewtonEuler_backward() {
   
   for(uint i=0; i<N; i++) {
     h(i).resize(6).setZero();
-    Frame *f = fwdActiveSet.elem(i);
+    Frame *f = frames.elem(i);
     if(f->joint) {
       h(i) = f->joint->get_h();
     }
@@ -2325,7 +2275,7 @@ void rai::Configuration::NewtonEuler_backward() {
   }
   
   for(uint i=N; i--;) {
-    Frame *f = fwdActiveSet.elem(i);
+    Frame *f = frames.elem(i);
     if(f->parent) force[f->parent->ID] += ~Q[i] * force[f->ID];
   }
   
@@ -2338,7 +2288,7 @@ void rai::Configuration::NewtonEuler_backward() {
 }
 
 /// compute forces from the current contacts
-void rai::Configuration::contactsToForces(double hook, double damp) {
+void rai::Configuration_ext::contactsToForces(double hook, double damp) {
   rai::Vector trans, transvel, force;
   for(const Proxy& p:proxies) if(p.d<0.) {
     //if(!i || proxies(i-1).a!=a || proxies(i-1).b!=b) continue; //no old reference sticking-frame
@@ -2352,12 +2302,13 @@ void rai::Configuration::contactsToForces(double hook, double damp) {
     //force += damp * transvel;
     SL_DEBUG(1, cout <<"applying force: [" <<*p.a <<':' <<*p.b <<"] " <<force <<endl);
 
-    addForce(force, p.a, p.posA);
-    addForce(-force, p.b, p.posB);
+    NIY;
+//    addForce(force, p.a, p.posA);
+//    addForce(-force, p.b, p.posB);
   }
 }
 
-void rai::Configuration::kinematicsPenetrations(arr& y, arr& J, bool penetrationsOnly, double activeMargin) const {
+void rai::Configuration_ext::kinematicsPenetrations(arr& y, arr& J, bool penetrationsOnly, double activeMargin) const {
   CHECK(_state_proxies_isGood, "");
 
   y.resize(proxies.N).setZero();
@@ -2368,8 +2319,8 @@ void rai::Configuration::kinematicsPenetrations(arr& y, arr& J, bool penetration
     
     arr Jp1, Jp2;
     if(!!J) {
-      jacobianPos(Jp1, p.a, p.coll->p1);
-      jacobianPos(Jp2, p.b, p.coll->p2);
+      jacobian_pos(Jp1, p.a, p.coll->p1);
+      jacobian_pos(Jp2, p.b, p.coll->p2);
     }
     
     arr y_dist, J_dist;
@@ -2382,7 +2333,7 @@ void rai::Configuration::kinematicsPenetrations(arr& y, arr& J, bool penetration
   }
 }
 
-void rai::Configuration::kinematicsProxyDist(arr& y, arr& J, const Proxy& p, double margin, bool useCenterDist, bool addValues) const {
+void rai::Configuration_ext::kinematicsProxyDist(arr& y, arr& J, const Proxy& p, double margin, bool useCenterDist, bool addValues) const {
   y.resize(1);
   if(!!J) J.resize(1, getJointStateDimension());
   if(!addValues) { y.setZero();  if(!!J) J.setZero(); }
@@ -2419,8 +2370,8 @@ void rai::Configuration::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, dou
   
   arr Jp1, Jp2;
   if(!!J) {
-    jacobianPos(Jp1, p.a, p.coll->p1);
-    jacobianPos(Jp2, p.b, p.coll->p2);
+    jacobian_pos(Jp1, p.a, p.coll->p1);
+    jacobian_pos(Jp2, p.b, p.coll->p2);
   }
   
   arr y_dist, J_dist;
@@ -2442,7 +2393,7 @@ void rai::Configuration::kinematicsProxyCost(arr &y, arr& J, double margin) cons
   }
 }
 
-void rai::Configuration::kinematicsContactCost(arr& y, arr& J, const Contact* c, double margin, bool addValues) const {
+void rai::Configuration_ext::kinematicsContactCost(arr& y, arr& J, const Contact* c, double margin, bool addValues) const {
   NIY;
   //  Feature *map = c->getTM_ContactNegDistance();
   //  arr y_dist, J_dist;
@@ -2459,7 +2410,7 @@ void rai::Configuration::kinematicsContactCost(arr& y, arr& J, const Contact* c,
   //  if(!!J)  J -= J_dist;
 }
 
-void rai::Configuration::kinematicsContactCost(arr &y, arr& J, double margin) const {
+void rai::Configuration_ext::kinematicsContactCost(arr &y, arr& J, double margin) const {
   y.resize(1).setZero();
   if(!!J) J.resize(1, getJointStateDimension()).setZero();
   for(Frame *f:frames) for(Contact *c:f->contacts) if(&c->a==f) {
@@ -2467,7 +2418,7 @@ void rai::Configuration::kinematicsContactCost(arr &y, arr& J, double margin) co
   }
 }
 
-void rai::Configuration::kinematicsProxyConstraint(arr& g, arr& J, const Proxy& p, double margin) const {
+void rai::Configuration_ext::kinematicsProxyConstraint(arr& g, arr& J, const Proxy& p, double margin) const {
   if(!!J) J.resize(1, getJointStateDimension()).setZero();
   
   g.resize(1) = margin - p.d;
@@ -2494,7 +2445,7 @@ void rai::Configuration::kinematicsProxyConstraint(arr& g, arr& J, const Proxy& 
   }
 }
 
-void rai::Configuration::kinematicsContactConstraints(arr& y, arr &J) const {
+void rai::Configuration_ext::kinematicsContactConstraints(arr& y, arr &J) const {
   J.clear();
   rai::Vector normal;
   uint con=0;
@@ -2537,9 +2488,8 @@ void rai::Configuration::kinematicsLimitsCost(arr &y, arr &J, const arr& limits,
 /// Compute the new configuration q such that body is located at ytarget (with deplacement rel).
 void rai::Configuration::inverseKinematicsPos(Frame& frame, const arr& ytarget,
                                                const rai::Vector& rel_offset, int max_iter) {
-  arr q0, q;
-  getJointState(q0);
-  q = q0;
+  arr q0 = getJointState();
+  arr q = q0;
   arr y; // endeff pos
   arr J; // Jacobian
   arr invJ;
@@ -2599,12 +2549,12 @@ const rai::Proxy* rai::Configuration::getContact(uint a, uint b) const {
 #endif
 
 /** @brief */
-double rai::Configuration::getEnergy() {
+double rai::Configuration::getEnergy(const arr& qdot) {
   double m, v, E;
   rai::Matrix I;
   rai::Vector w;
 
-  arr vel = calc_fwdPropagateVelocities();
+  arr vel = calc_fwdPropagateVelocities(qdot);
 
   E=0.;
   for(Frame *f: frames) if(f->inertia) {
@@ -2626,7 +2576,7 @@ double rai::Configuration::getEnergy() {
 
 arr rai::Configuration::getHmetric() const {
   arr H = zeros(getJointStateDimension());
-  for(Joint *j: fwdActiveJoints) {
+  for(Joint *j: activeJoints) {
     double h=j->H;
     //    CHECK(h>0.,"Hmetric should be larger than 0");
     if(j->type==JT_transXYPhi) {
@@ -2695,8 +2645,7 @@ void rai::Configuration::optimizeTree(bool _pruneRigidJoints, bool pruneNamed, b
 }
 
 void rai::Configuration::sortFrames() {
-  CHECK_EQ(fwdActiveSet.N ,frames.N, "you need to calc_activeSets before");
-  frames = fwdActiveSet;
+  frames = calc_topSort();
   uint i=0;
   for(Frame *f: frames) f->ID = i++;
 }
@@ -2741,11 +2690,10 @@ bool rai::Configuration::checkConsistency() const {
     uint N = analyzeJointStateDimensions();
     CHECK_EQ(1, q.nd, "");
     CHECK_EQ(N, q.N, "");
-    if(qdot.N) CHECK_EQ(N, qdot.N, "");
     
     //count dimensions yourself and check...
     uint myqdim = 0;
-    for(Joint *j: fwdActiveJoints) {
+    for(Joint *j: activeJoints) {
       if(j->mimic) {
         CHECK_EQ(j->qIndex, j->mimic->qIndex, "");
       } else {
@@ -2764,7 +2712,7 @@ bool rai::Configuration::checkConsistency() const {
     CHECK_EQ(myqdim, N, "qdim is wrong");
 
     //consistency with Q
-    for(Joint *j: fwdActiveJoints) {
+    for(Joint *j: activeJoints) {
       arr jq = j->calc_q_from_Q(j->frame->Q);
       CHECK_EQ(jq.N, j->dim, "");
       for(int i=0;i<jq.N;i++) CHECK_ZERO(jq.elem(i) - q.elem(j->qIndex+i), 1e-6, "");
@@ -2820,22 +2768,20 @@ bool rai::Configuration::checkConsistency() const {
 
   //check topsort
   if(_state_activeSets_areGood){
-    CHECK_EQ(fwdActiveSet.N, frames.N, "");
-
     intA level = consts<int>(0, frames.N);
     //compute levels
-    for(Frame *f: fwdActiveSet)
-      if(f->parent) level(f->ID) = level(f->parent->ID)+1;
-    //check levels are strictly increasing across links
-    for(Frame *f: fwdActiveSet) if(f->parent) {
-      CHECK(level(f->parent->ID) < level(f->ID), "joint from '" <<f->parent->name <<"'[" <<f->parent->ID <<"] to '" <<f->name <<"'[" <<f->ID <<"] does not go forward");
-    }
+//    for(Frame *f: fwdActiveSet)
+//      if(f->parent) level(f->ID) = level(f->parent->ID)+1;
+//    //check levels are strictly increasing across links
+//    for(Frame *f: fwdActiveSet) if(f->parent) {
+//      CHECK(level(f->parent->ID) < level(f->ID), "joint from '" <<f->parent->name <<"'[" <<f->parent->ID <<"] to '" <<f->name <<"'[" <<f->ID <<"] does not go forward");
+//    }
   }
 
   //check active sets
   if(_state_activeSets_areGood){
     boolA jointIsInActiveSet = consts<byte>(false, frames.N);
-    for(Joint *j: fwdActiveJoints) { CHECK(j->active, ""); jointIsInActiveSet.elem(j->frame->ID)=true; }
+    for(Joint *j: activeJoints) { CHECK(j->active, ""); jointIsInActiveSet.elem(j->frame->ID)=true; }
     if(q.nd) {
       for(Frame *f: frames) if(f->joint && f->joint->active) CHECK(jointIsInActiveSet(f->ID), "");
     }
@@ -2920,13 +2866,13 @@ void rai::Configuration::glDraw(OpenGL& gl) {
   glDraw_sub(gl);
   
   bool displayUncertainties = false;
-  for(Joint *j:fwdActiveJoints) if(j->uncertainty) {
+  for(Joint *j:activeJoints) if(j->uncertainty) {
     displayUncertainties=true; break;
   }
 
   if(displayUncertainties) {
     arr q_org = getJointState();
-    for(Joint *j:fwdActiveJoints) if(j->uncertainty) {
+    for(Joint *j:activeJoints) if(j->uncertainty) {
       for(uint i=0; i<j->qDim(); i++) {
         arr q=q_org;
         q(j->qIndex+i) -= j->uncertainty->sigma(i);
@@ -3510,7 +3456,7 @@ void _glDrawOdeWorld(dWorldID world)
 
 int animateConfiguration(rai::Configuration& K, Inotify *ino) {
   arr x, x0;
-  K.getJointState(x0);
+  x0 = K.getJointState();
   arr lim = K.getLimits();
   const int steps = 50;
   K.checkConsistency();

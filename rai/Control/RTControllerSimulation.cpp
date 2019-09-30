@@ -172,8 +172,9 @@ void RTControllerSimulation::open() {
   //world = new rai::Configuration(rai::raiPath("data/pr2_model/pr2_model.ors"));
   
   makeConvexHulls(world->frames);
-  arr q, qDot;
-  world->getJointState(q,qDot);
+  arr q = world->getJointState();
+  arr qDot = zeros(q.N);
+  
   
   //makeConvexHulls(world->shapes);
   
@@ -214,8 +215,8 @@ void RTControllerSimulation::step() {
   CtrlMsg cmd = ctrl_ref.get();
   
   arr u, base_v;
-  arr q, qDot;
-  world->getJointState(q, qDot);
+  arr q = world->getJointState();
+  arr qDot = zeros(q.N); HALT("WARNING: qDot should be maintained outside world!");
   
   if(!(stepCount%200) && systematicErrorSdv>0.) {
     systematicError.resize(q.N);
@@ -235,7 +236,7 @@ void RTControllerSimulation::step() {
     //force(world, fR);
     forceSimulateContactOnly(world, fR);
     //u(3) = 0.0;
-    world->stepDynamics(u, tau, 0., this->gravity);
+    world->stepDynamics(qDot, u, tau, 0., this->gravity);
     
   }
   

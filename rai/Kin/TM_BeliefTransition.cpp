@@ -11,7 +11,7 @@
 
 uint TM_BeliefTransition::dim_phi(const rai::Configuration& G) {
   uint n=0;
-  for(rai::Joint *j : G.fwdActiveJoints) if(j->uncertainty) {
+  for(rai::Joint *j : G.activeJoints) if(j->uncertainty) {
       n += j->dim;
     }
   return n;
@@ -58,7 +58,7 @@ void TM_BeliefTransition::phi(arr &y, arr &J, const WorldL &Ktuple) {
     J_xi *= 2.;
   }
   
-  for(rai::Joint *j1 : Ktuple.elem(-1)->fwdActiveJoints) if(j1->uncertainty) {
+  for(rai::Joint *j1 : Ktuple.elem(-1)->activeJoints) if(j1->uncertainty) {
       rai::Joint *j0 = Ktuple.elem(-2)->frames(j1->frame->ID)->joint;
       CHECK(j0, "");
       CHECK(j0->uncertainty, "");

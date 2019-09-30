@@ -31,7 +31,6 @@ void TEST(GJK_Jacobians) {
 
   K.calc_activeSets();
   K.calc_q_from_Q();
-  K.calc_fwdPropagateFrames();
   arr q = K.getJointState();
 
   orsDrawWires=true;
@@ -118,7 +117,6 @@ void TEST(GJK_Jacobians2) {
     s->mesh().C = {.5,.5,.8,.6};
   }
   K.calc_activeSets();
-  K.calc_fwdPropagateFrames();
 
   K.watch();
 
@@ -197,7 +195,6 @@ void TEST(GJK_Jacobians3) {
   s2.mesh().C = {.5,.5,.8,.9};
 
   K.calc_activeSets();
-  K.calc_fwdPropagateFrames();
 
   K.watch();
 

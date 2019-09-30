@@ -84,7 +84,7 @@ void rai::KinematicSwitch::apply(Configuration& K) {
 
     //create a new joint
     rai::Transformation orgX = to->ensure_X();
-    to->linkFrom(from);
+    to->linkFrom(from, false);
     Joint *j = new Joint(*to);
     j->setType(jointType);
 

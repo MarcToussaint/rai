@@ -20,7 +20,6 @@ void generateProblem(rai::Configuration& K){
       rai::Frame *f = K.addFrame(STRING("obj"<<i), "table1", "type:ssBox size:[.1 .1 .2 .02] color:[1. 0. 0.], contact, logical={ object }, joint:rigid" );
       f->setRelativePosition({rnd.uni(-.3, .3), rnd.uni(-1.,1.), .15});
       f->setRelativeQuaternion(rai::Quaternion(0).addZ(rnd.uni(-RAI_PI,RAI_PI)).getArr4d());
-      f->calc_X_from_parent();
     }
     K.stepSwift();
     arr y;
@@ -44,7 +43,6 @@ void generateProblem(rai::Configuration& K){
 //  K.addFrame("", "tray", "type:ssBox size:[.04 .3 .1 .02] Q:<d(90 0 0 1) t(+.13 0 .03)> color:[0. 1. 0.], contact" );
 //  K.addFrame("", "tray", "type:ssBox size:[.04 .3 .1 .02] Q:<d(90 0 0 1) t(-.13 0 .03)> color:[0. 1. 0.], contact" );
 
-  K.calc_fwdPropagateFrames();
 }
 
 

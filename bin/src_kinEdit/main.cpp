@@ -49,7 +49,7 @@ int MAIN(int argc,char **argv){
     }
     K.calc_q();
     K.checkConsistency();
-    if(K.fwdActiveSet.N == K.frames.N) K.sortFrames();
+    K.sortFrames();
 
 //    makeConvexHulls(G.frames);
 //    computeOptimalSSBoxes(G.shapes);

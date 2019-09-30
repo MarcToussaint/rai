@@ -149,6 +149,7 @@ public:
   arr getMeshCorePoints();
 
   friend struct Configuration;
+  friend struct Configuration_ext;
   friend struct KinematicSwitch;
   friend struct Joint;
   friend struct Transformation_Xtoken;
@@ -222,7 +223,7 @@ struct Inertia : NonCopyable {
   Matrix matrix=0;
   Enum<BodyType> type;
   Vector com=0;             ///< its center of mass
-  Vector force=0, torque=0; ///< current forces applying on the body
+//  Vector force=0, torque=0; ///< current forces applying on the body
   
   Inertia(Frame& f, rai::Inertia *copyInertia=NULL);
   ~Inertia();
