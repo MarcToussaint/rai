@@ -2714,7 +2714,11 @@ bool rai::Configuration::checkConsistency() const {
     //consistency with Q
     for(Joint *j: activeJoints) {
       arr jq = j->calc_q_from_Q(j->frame->Q);
-      CHECK_EQ(jq.N, j->dim, "");
+      if(!j->mimic){
+        CHECK_EQ(jq.N, j->dim, "");
+      }else{
+        CHECK_EQ(0, j->dim, "");
+      }
       for(int i=0;i<jq.N;i++) CHECK_ZERO(jq.elem(i) - q.elem(j->qIndex+i), 1e-6, "");
     }
   }
