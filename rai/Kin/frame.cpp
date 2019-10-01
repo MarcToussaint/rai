@@ -170,7 +170,7 @@ rai::Frame *rai::Frame::getUpwardLink(rai::Transformation &Qtotal, bool untilPar
     if(!untilPartBreak){
       if(f->joint) break;
     }else{
-      if(f->joint && f->joint->getDimFromType()!=1 && !f->joint->mimic) break;
+      if(f->joint->isPartBreak() ) break;
     }
     if(!!Qtotal) Qtotal = f->Q*Qtotal;
     f = f->parent;
@@ -203,7 +203,7 @@ rai::Inertia &rai::Frame::getInertia() {
   return *inertia;
 }
 
-const char*rai::Frame::isPart(){
+const char* rai::Frame::isPart(){
   rai::String *p = ats.find<rai::String>("part");
   if(p) return p->p;
   return 0;
@@ -870,9 +870,7 @@ double& rai::Joint::getQ() {
 }
 
 void rai::Joint::makeRigid() {
-  if(type!=JT_rigid){
-    type=JT_rigid; frame->K.reset_q();
-  }
+  setType(JT_rigid);
 }
 
 void rai::Joint::makeFree(double H_cost){

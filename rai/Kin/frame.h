@@ -83,7 +83,7 @@ protected:
   void calc_X_from_parent();
   void calc_Q_from_parent(bool enforceWithinJoint = true);
 public:
-  double tau=0.;            ///< frame's absolute time (could be thought as part of the transformation X in space-time)
+  double tau=0.;             ///< frame's absolute time (could be thought as part of the transformation X in space-time)
   Graph ats;                 ///< list of any-type attributes
   
   //attachments to the frame
@@ -161,7 +161,7 @@ stdOutPipe(Frame)
 
 /// for a Frame with Joint-Link, the relative transformation 'Q' is articulated
 struct Joint : NonCopyable{
-  Frame *frame;
+  Frame *frame;      ///< this is the frame that Joint articulates! I.e., the output frame
   
   // joint information
   uint dim=0;
@@ -186,8 +186,8 @@ struct Joint : NonCopyable{
   Joint(Frame& from, Frame& f, Joint* copyJoint=NULL);
   ~Joint();
   
-  const Transformation& X() const;
-  const Transformation& Q() const;
+  const Transformation& X() const; ///< the frame where the joint STARTS (i.e. parent->X)
+  const Transformation& Q() const; ///< the transformation realized by this joint (i.e. from parent->X to frame->X)
   Frame *from() const { return frame->parent; }
   
   uint qDim() { return dim; }
@@ -197,7 +197,7 @@ struct Joint : NonCopyable{
   uint getDimFromType() const;
   arr get_h() const;
   
-  bool isPartBreak(){ return dim!=1 || type==JT_time; }
+  bool isPartBreak(){ return (dim!=1 && !mimic) || type==JT_time; }
 
   //access the K's q vector
   double& getQ();
@@ -256,10 +256,6 @@ struct Shape : NonCopyable, GLDrawer {
 
   void createMeshes();
 
-//  Enum<ShapeType> type;
-//  arr size;
-//  Mesh mesh, sscCore;
-//  double mesh_radius=0.;
   char cont=0;           ///< are contacts registered (or filtered in the callback)
   bool visual=true;
   
