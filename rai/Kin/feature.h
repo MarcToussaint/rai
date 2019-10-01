@@ -7,8 +7,8 @@
     --------------------------------------------------------------  */
 
 #pragma once
-#include <Kin/kin.h>
-#include <Kin/frame.h>
+#include "kin.h"
+#include "frame.h"
 
 struct Value{
   arr y,J;
@@ -40,6 +40,7 @@ public:
   arr phi(const rai::Configuration& K) { arr y; phi(y,NoArr,K); return y; } ///< evaluate without computing Jacobian
   Value operator()(const WorldL& Ktuple){ arr y,J; phi(y, J, Ktuple); return Value(y,J); }
   Value operator()(const rai::Configuration& K){ arr y,J; phi(y, J, K); return Value(y,J); }
+  Value eval(const rai::Configuration& C){ arr y,J; phi(y, J, C); return Value(y,J); }
 
   VectorFunction vf(rai::Configuration& K);
   VectorFunction vf(WorldL& Ktuple);

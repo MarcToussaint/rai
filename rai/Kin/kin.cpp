@@ -847,8 +847,12 @@ void rai::Configuration::setTimes(double t) {
 // features
 //
 
-void rai::Configuration::evalFeature(arr& y, arr& J, FeatureSymbol fs, const StringA& symbols) const{
-  ptr<Feature> f = symbols2feature(fs, symbols, *this);
+ptr<Feature> rai::Configuration::feature(FeatureSymbol fs, const StringA& frames) const{
+  return symbols2feature(fs, frames, *this);
+}
+
+void rai::Configuration::evalFeature(arr& y, arr& J, FeatureSymbol fs, const StringA& frames) const{
+  ptr<Feature> f = symbols2feature(fs, frames, *this);
   f->__phi(y, J, *this);
 }
 

@@ -1036,10 +1036,14 @@ template<class T> rai::Array<T> rai::Array<T>::sub(int i, int I, Array<uint> col
 }
 
 template<class T> rai::Array<T> rai::Array<T>::sub(Array<uint> elems) const {
-  CHECK_EQ(nd, 1, "1D range error ");
   rai::Array<T> x;
-  x.resize(elems.N);
-  for(int l=0; l<(int)elems.N; l++) x(l)=operator()(elems(l));
+  if(nd==1){
+    x.resize(elems.N);
+    for(int l=0; l<(int)elems.N; l++) x(l)=operator()(elems(l));
+  }else if(nd==2){
+    x.resize(elems.N, d1);
+    for(int l=0; l<(int)elems.N; l++) for(uint j=0;j<d1;j++) x(l, j)=operator()(elems(l), j);
+  }else NIY;
   return x;
 }
 

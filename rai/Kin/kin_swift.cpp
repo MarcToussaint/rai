@@ -152,10 +152,10 @@ void SwiftInterface::initActivations(const rai::Configuration& world) {
       }
     }
   //shapes within a link
-  for(rai::Frame *f: world.frames) if(f->shape && f->shape->cont){
-    rai::Frame *p = f->getUpwardLink();
-    FrameL F = {p};
-    p->getRigidSubFrames(F);
+  FrameL links = world.getLinks();
+  for(rai::Frame *f: links){
+    FrameL F = {f};
+    f->getRigidSubFrames(F);
     for(uint i=F.N;i--;) if(!F(i)->shape || !F(i)->shape->cont) F.remove(i);
     deactivate(F);
   }

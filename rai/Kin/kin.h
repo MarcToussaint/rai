@@ -201,7 +201,9 @@ struct Configuration : GLDrawer {
   void kinematicsLimitsCost(arr& y, arr& J, const arr& limits, double margin=.1) const;
 
   /// @name features
-  void evalFeature(arr& y, arr& J, FeatureSymbol fs, const StringA &symbols) const;
+  ptr<Feature> feature(FeatureSymbol fs, const StringA &frames={}) const;
+  void evalFeature(arr& y, arr& J, FeatureSymbol fs, const StringA &frames={}) const;
+
   /// @name High level (inverse) kinematics
   void inverseKinematicsPos(Frame& frame, const arr& ytarget, const rai::Vector& rel_offset=NoVector, int max_iter=3);
 

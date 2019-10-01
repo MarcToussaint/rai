@@ -17,7 +17,7 @@ struct Objective {
   rai::String name;
   intA vars; //either a (0,1)-indicator per time slice, or a list of variable tuples
   
-  Objective(const ptr<Feature>& _map, const ObjectiveType& _type) : map(_map), type(_type) {}
+  Objective(const ptr<Feature>& _map, const ObjectiveType& _type, const rai::String& _name=rai::String()) : map(_map), type(_type), name(_name) {}
   ~Objective() {}
   
   void setCostSpecs(int fromStep, int toStep, bool sparse=false);
