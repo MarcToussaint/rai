@@ -885,7 +885,7 @@ void KOMO::setGraspSlide(double time, const char* endeff, const char* object, co
 
   //-- slide constraints!
   //keep height of object above table
-  double h = .5*(shapeSize(world, object) + shapeSize(world, placeRef));
+//  double h = .5*(shapeSize(world, object) + shapeSize(world, placeRef));
   HALT("TODO: fix syntax:")
 //  addObjective(startTime, endTime,
 //          make_shared<TM_Default>(TMT_posDiff, world, object, NoVector, placeRef),
@@ -1655,7 +1655,7 @@ void KOMO::checkGradients(bool dense) {
     if(dense) CP = &dense_problem;
 
     VectorFunction F = [CP](arr& phi, arr& J, const arr& x) {
-      return CP->phi(phi, J, NoArr, NoTermTypeA, x, NoArr);
+      return CP->phi(phi, J, NoArr, NoTermTypeA, x);
     };
 //    checkJacobian(F, x, tolerance);
     arr J;
@@ -2304,29 +2304,8 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::getStructure(uintA& variableDimensio
 
 bool WARN_FIRST_TIME=true;
 
-void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, ObjectiveTypeA& tt, const arr& x, arr& lambda) {
-  //==================
-  if(!!lambda) prevLambda = lambda;
+void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, ObjectiveTypeA& tt, const arr& x) {
   const uintA prevPhiIndex=phiIndex, prevPhiDim=phiDim;
-
-#if 0
-  if(!!lambda && lambda.N>dimPhi) {
-    //store old lambdas directly in the constraints....
-    uint C=0;
-    for(uint t=0; t<komo.T; t++) {
-      Configuration& K = *komo.configurations(t+komo.k_order);
-      for(Frame *f:K.frames) for(Contact *c:f->contacts) if(&c->a==f) {
-        c->lagrangeParameter = lambda(dimPhi + C);
-        C++;
-      }
-    }
-    //    cout <<"ENTER: #" <<C <<" constraints" <<endl;
-    CHECK_EQ(dimPhi+C, lambda.N, "");
-    //cut of the stored lambdas
-    lambda.resizeCopy(dimPhi);
-  }
-#endif
-  //==================
 
   //-- set the trajectory
   komo.set_x(x);
@@ -2337,7 +2316,6 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
   phi.resize(dimPhi);
   if(!!tt) tt.resize(dimPhi);
   if(!!J) J.resize(dimPhi);
-  if(!!lambda && lambda.N) { lambda.resize(dimPhi); lambda.setZero(); }
 
   arr y, Jy;
   uint M=0;
@@ -2369,11 +2347,6 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
           for(uint i=0; i<y.N; i++) J(M+i) = Jy[i]; //copy it to J(M+i); which is the Jacobian of the M+i'th feature w.r.t. its variables
         }
         if(!!tt) for(uint i=0; i<y.N; i++) tt(M+i) = task->type;
-
-        //transfer Lambda values
-        if(!!lambda && lambda.N && y.N==prevPhiDim(t,i)) {
-          lambda.setVectorBlock(prevLambda({prevPhiIndex(t,i), prevPhiIndex(t,i)+y.N-1}), M);
-        }
 
 //        //store indexing phi <-> tasks
 //        phiIndex(t, i) = M;
@@ -2438,7 +2411,7 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
 
 }
 
-void KOMO::Conv_MotionProblem_DenseProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda) {
+void KOMO::Conv_MotionProblem_DenseProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x) {
   //-- set the trajectory
   komo.set_x(x);
 
@@ -2449,7 +2422,6 @@ void KOMO::Conv_MotionProblem_DenseProblem::phi(arr& phi, arr& J, arr& H, Object
   phi.resize(dimPhi);
   if(!!tt) tt.resize(dimPhi);
   if(!!J) J.resize(dimPhi, x.N).setZero();
-  if(!!lambda && lambda.N) { lambda.resize(dimPhi); lambda.setZero(); }
 
   uintA x_index = getKtupleDim(komo.configurations({komo.k_order,-1}));
   x_index.prepend(0);

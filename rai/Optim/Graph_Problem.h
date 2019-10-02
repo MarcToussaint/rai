@@ -44,7 +44,7 @@ struct Conv_Graph_ConstrainedProblem : ConstrainedProblem {
   uint queryCount=0;
   
   Conv_Graph_ConstrainedProblem(GraphProblem& _G, ostream *_log=0);
-  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda);
+  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x);
 
   void reportProblem(ostream& os);
 };

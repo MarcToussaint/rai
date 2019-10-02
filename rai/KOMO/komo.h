@@ -315,16 +315,15 @@ struct KOMO : NonCopyable {
   struct Conv_MotionProblem_KOMO_Problem : KOMO_Problem {
     KOMO& komo;
     uint dimPhi;
-    arr prevLambda;
     uintA phiIndex, phiDim;
     StringA featureNames;
     
     Conv_MotionProblem_KOMO_Problem(KOMO& _komo) : komo(_komo) {}
-    void clear(){ dimPhi=0; prevLambda.clear(); phiIndex.clear(); phiDim.clear(); featureNames.clear(); }
+    void clear(){ dimPhi=0; phiIndex.clear(); phiDim.clear(); featureNames.clear(); }
 
     virtual uint get_k() { return komo.k_order; }
     virtual void getStructure(uintA& variableDimensions, uintA& featureTimes, ObjectiveTypeA& featureTypes);
-    virtual void phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, ObjectiveTypeA& tt, const arr& x, arr& lambda);
+    virtual void phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, ObjectiveTypeA& tt, const arr& x);
   } komo_problem;
 
   struct Conv_MotionProblem_DenseProblem : ConstrainedProblem {
@@ -336,7 +335,7 @@ struct KOMO : NonCopyable {
 
     void getDimPhi();
 
-    virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda);
+    virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x);
   } dense_problem;
 
   struct Conv_MotionProblem_GraphProblem : GraphProblem {

@@ -197,7 +197,7 @@ void ParticleAroundWalls2::getStructure(uintA& variableDimensions, uintA& featur
   }
 }
 
-void ParticleAroundWalls2::phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, ObjectiveTypeA& tt, const arr& x, arr& lambda) {
+void ParticleAroundWalls2::phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, ObjectiveTypeA& tt, const arr& x) {
 
   uint M=x.N + 4*3;
   phi.resize(M);

@@ -20,7 +20,7 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
   struct fitSSBoxProblem : ConstrainedProblem {
     const arr& X;
     fitSSBoxProblem(const arr& X):X(X) {}
-    void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda) {
+    void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x) {
       phi.resize(5+X.d0);
       if(!!tt) { tt.resize(5+X.d0); tt=OT_ineq; }
       if(!!J) {  J.resize(5+X.d0,11); J.setZero(); }
@@ -167,7 +167,7 @@ void minimalConvexCore(arr& core, const arr& points, double radius, int verbose)
       gl.add(m0);
       gl.add(m1);
     }
-    void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda) {
+    void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x) {
       uint n = X.d0;
       arr _x = x.ref().reshape(-1,3);
       //n inequalities on distances
@@ -410,7 +410,7 @@ struct LinearProgram : ConstrainedProblem {
 
   uint dim_x() { return c.N; }
 
-  virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& ot, const arr& x, arr& lambda) {
+  virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& ot, const arr& x) {
     phi.resize(1+G.d0);
     if(!!ot) ot.resize(phi.N);
     if(!!J) J.resize(phi.N, x.N).setZero();
@@ -465,7 +465,7 @@ double sphereReduceConvex(rai::Mesh& M, double radius, int verbose){
 struct FitSphereProblem : ConstrainedProblem {
   const arr& X;
   FitSphereProblem(const arr& X):X(X) {}
-  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda) {
+  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x) {
     CHECK_EQ(x.N, 4, "");  //x,y,z,radius
     phi.resize(1+X.d0);
     if(!!tt) { tt.resize(1+X.d0); tt=OT_ineq; }
@@ -496,7 +496,7 @@ struct FitSphereProblem : ConstrainedProblem {
 struct FitCapsuleProblem : ConstrainedProblem {
   const arr& X;
   FitCapsuleProblem(const arr& X):X(X) {}
-  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda) {
+  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x) {
     CHECK_EQ(x.N, 7, "");  //x,y,z, x,y,z, radius
     phi.resize(2+X.d0);
     if(!!tt) { tt.resize(2+X.d0); tt=OT_ineq; }
