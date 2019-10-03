@@ -9,7 +9,7 @@ constexpr float gravity = -10.0f;
 constexpr float groundRestitution = 0.1f;
 constexpr float objectRestitution = 0.1f;
 
-struct sBulletInterface{
+struct BulletInterface_self{
   btDefaultCollisionConfiguration *collisionConfiguration;
   btCollisionDispatcher *dispatcher;
   btBroadphaseInterface *overlappingPairCache;
@@ -17,13 +17,16 @@ struct sBulletInterface{
   btDiscreteDynamicsWorld *dynamicsWorld;
   btAlignedObjectArray<btCollisionShape*> collisionShapes;
 
-  rai::Array<btRigidBody*> frameID_to_btBody;
+  rai::Array<btRigidBody*> actors;
+  rai::Array<rai::BodyType> actorTypes;
 
   uint stepCount=0;
 };
 
-BulletInterface::BulletInterface(){
-  self = new sBulletInterface;
+BulletInterface::BulletInterface(bool verbose){
+  self = new BulletInterface_self;
+
+  if(verbose) LOG(0) <<"starting bullet engine ...";
 
   self->collisionConfiguration = new btDefaultCollisionConfiguration();
   self->dispatcher = new btCollisionDispatcher(self->collisionConfiguration);
@@ -31,11 +34,13 @@ BulletInterface::BulletInterface(){
   self->solver = new btSequentialImpulseConstraintSolver;
   self->dynamicsWorld = new btDiscreteDynamicsWorld(self->dispatcher, self->overlappingPairCache, self->solver, self->collisionConfiguration);
   self->dynamicsWorld->setGravity(btVector3(0, 0, gravity));
+
+  if(verbose) LOG(0) <<"... done starting bullet engine";
 }
 
-BulletInterface::BulletInterface(const rai::Configuration& K)
+BulletInterface::BulletInterface(rai::Configuration& K, bool verbose)
   : BulletInterface() {
-  defaultInit(K);
+  defaultInit(K, verbose);
 }
 
 BulletInterface::~BulletInterface(){
@@ -74,10 +79,20 @@ btRigidBody* BulletInterface::addGround(){
   return body;
 }
 
-btRigidBody* BulletInterface::addFrame(const rai::Frame* f){
+btRigidBody* BulletInterface::addFrame(rai::Frame* f, bool verbose){
+  FrameL parts = {f};
+  f->getRigidSubFrames(parts);
+  bool hasShape=false;
+  for(rai::Frame *p:parts) if(p->shape && p->getShape().type()!=rai::ST_marker){ hasShape=true; break; }
+
   rai::BodyType type = rai::BT_dynamic;
-  if(f->joint) type = rai::BT_kinematic;
-  if(f->inertia) type = f->inertia->type;
+  if(hasShape){
+    if(f->joint)   type = rai::BT_kinematic;
+    if(f->inertia) type = f->inertia->type;
+  }
+  self->actorTypes(f->ID) = type;
+
+  if(verbose) LOG(0) <<"adding link anchored at '" <<f->name <<"' as " <<rai::Enum<rai::BodyType>(type);
 
   //-- create a bullet collision shape
   CHECK(f->shape && f->shape->_mesh, "can only add frames with meshes");
@@ -112,6 +127,8 @@ btRigidBody* BulletInterface::addFrame(const rai::Frame* f){
   }
   self->collisionShapes.push_back(colShape);
 
+  if(verbose) LOG(0) <<"adding link anchored at '" <<f->name <<"' as " <<rai::Enum<rai::BodyType>(type);
+
   //-- create a bullet body
   rai::Transformation fX = f->get_X();
   btTransform pose(btQuaternion(fX.rot.x, fX.rot.y, fX.rot.z, fX.rot.w),
@@ -135,21 +152,26 @@ btRigidBody* BulletInterface::addFrame(const rai::Frame* f){
     body->setActivationState(DISABLE_DEACTIVATION);
   }
 
-  while(self->frameID_to_btBody.N<=f->ID) self->frameID_to_btBody.append(0);
-  CHECK(!self->frameID_to_btBody(f->ID), "you already added a frame with ID" <<f->ID);
-  self->frameID_to_btBody(f->ID) = body;
+  while(self->actors.N<=f->ID) self->actors.append(0);
+  CHECK(!self->actors(f->ID), "you already added a frame with ID" <<f->ID);
+  self->actors(f->ID) = body;
   return body;
 }
 
-void BulletInterface::addFrames(const FrameL& frames){
-  for(const rai::Frame *f:frames){
-    if(f->shape && f->shape->_mesh) addFrame(f);
-  }
+void BulletInterface::addFrames(FrameL& frames, bool verbose){
+  for(rai::Frame *f:frames) addFrame(f, verbose);
 }
 
-void BulletInterface::defaultInit(const rai::Configuration& K){
+void BulletInterface::defaultInit(rai::Configuration& C, bool verbose){
   addGround();
-  addFrames(K.frames);
+  if(verbose) LOG(0) <<"creating Configuration within bullet ...";
+
+  self->actors.resize(C.frames.N); self->actors.setZero();
+  self->actorTypes.resize(C.frames.N); self->actorTypes.setZero();
+  FrameL links = C.getLinks();
+  addFrames(links, verbose);
+
+  if(verbose) LOG(0) <<"... done creating Configuration within bullet";
 }
 
 void BulletInterface::step(double tau){
@@ -171,8 +193,8 @@ void BulletInterface::step(double tau){
 }
 
 void BulletInterface::pushFullState(const FrameL& frames, const arr& vel){
-  for(uint i=0;i<self->frameID_to_btBody.N;i++){
-    btRigidBody* b = self->frameID_to_btBody(i);
+  for(uint i=0;i<self->actors.N;i++){
+    btRigidBody* b = self->actors(i);
     const rai::Frame *f = frames(i);
     if(f && b){
       rai::Transformation fX = f->get_X();
@@ -190,8 +212,8 @@ void BulletInterface::pushFullState(const FrameL& frames, const arr& vel){
 }
 
 void BulletInterface::pushKinematicStates(const FrameL& frames){
-  for(uint i=0;i<self->frameID_to_btBody.N;i++){
-    btRigidBody* b = self->frameID_to_btBody(i);
+  for(uint i=0;i<self->actors.N;i++){
+    btRigidBody* b = self->actors(i);
     rai::Frame *f = frames(i);
     if(f && b){
       rai::BodyType type = rai::BT_dynamic;
@@ -215,8 +237,8 @@ void BulletInterface::pushKinematicStates(const FrameL& frames){
 void BulletInterface::pullDynamicStates(FrameL& frames, arr& vel){
   if(!!vel) vel.resize(frames.N,6).setZero();
 
-  for(uint i=0;i<self->frameID_to_btBody.N;i++){
-    btRigidBody* b = self->frameID_to_btBody(i);
+  for(uint i=0;i<self->actors.N;i++){
+    btRigidBody* b = self->actors(i);
     rai::Frame *f = frames(i);
     if(f && b){
       rai::BodyType type = rai::BT_dynamic;
@@ -277,4 +299,12 @@ void BulletInterface::pushFullState(const FrameL& frames, const arr& vel){ NICO 
 void BulletInterface::pushKinematicStates(const FrameL& frames){ NICO }
 void BulletInterface::pullDynamicStates(FrameL& frames, arr& vel){ NICO }
 void BulletInterface::saveBulletFile(const char* filename){ NICO }
+
+#endif
+
+#ifdef RAI_BULLET
+RUN_ON_INIT_BEGIN(kin_bullet)
+rai::Array<btRigidBody*>::memMove=true;
+rai::Array<rai::BodyType>::memMove=true;
+RUN_ON_INIT_END(kin_bullet)
 #endif

@@ -35,6 +35,8 @@ rai::Transformation_Qtoken::~Transformation_Qtoken() { f._state_updateAfterTouch
 
 rai::Transformation* rai::Transformation_Xtoken::operator->(){ f.ensure_X(); return &f.X; }
 rai::Transformation* rai::Transformation_Qtoken::operator->(){ return &f.Q; }
+rai::Transformation& rai::Transformation_Xtoken::operator*(){ f.ensure_X(); return f.X; }
+rai::Transformation& rai::Transformation_Qtoken::operator*(){ return f.Q; }
 
 void rai::Transformation_Xtoken::operator=(const rai::Transformation& _X){ f.X=_X; }
 void rai::Transformation_Qtoken::operator=(const rai::Transformation& _Q){ f.Q=_Q; }
@@ -132,6 +134,7 @@ const rai::Transformation& rai::Frame::get_X() const{
 }
 
 void rai::Frame::_state_updateAfterTouchingX(){
+  _state_setXBadinBranch();
   _state_X_isGood = true;
   if(!parent){} // Q = X;
   else calc_Q_from_parent(true);

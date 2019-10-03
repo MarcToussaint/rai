@@ -23,9 +23,9 @@ class PxMaterial;
  * @{
  */
 struct PhysXInterface : GLDrawer {
-  struct sPhysXInterface *s;
+  struct PhysXInterface_self *self;
   
-  PhysXInterface(const rai::Configuration& world);
+  PhysXInterface(const rai::Configuration& world, bool verbose=false);
   ~PhysXInterface();
   
   void step(double tau=.01);
@@ -43,8 +43,6 @@ struct PhysXInterface : GLDrawer {
   void addForce(rai::Vector& force, rai::Frame* b);
   void addForce(rai::Vector& force, rai::Frame* b, rai::Vector& pos);
 };
-
-void bindOrsToPhysX(rai::Configuration& graph, OpenGL& gl, PhysXInterface& physx);
 
 #endif
 /// @}

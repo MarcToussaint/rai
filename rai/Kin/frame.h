@@ -51,6 +51,7 @@ namespace rai {
     Transformation_Xtoken(Frame& _f):f(_f) {}
     ~Transformation_Xtoken();
     Transformation* operator->();
+    Transformation& operator*();
     void operator=(const Transformation&);
   };
 
@@ -59,6 +60,7 @@ namespace rai {
     Transformation_Qtoken(Frame& _f):f(_f) {}
     ~Transformation_Qtoken();
     Transformation* operator->();
+    Transformation& operator*();
     void operator=(const Transformation&);
   };
 

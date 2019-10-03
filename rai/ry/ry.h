@@ -58,6 +58,7 @@ namespace ry{
   struct RyLGP_Tree { ptr<LGP_Tree_Thread> lgp; };
 
   struct RyFeature { ptr<Feature> feature; };
+
   struct RyFrame {
     ptr<Var_data<rai::Configuration>> config; //only to ensure the containing configuration is not destroyed
     rai::Frame *frame=0;

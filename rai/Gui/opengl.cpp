@@ -1724,7 +1724,9 @@ void OpenGL::Draw(int w, int h, rai::Camera *cam, bool callerHasAlreadyLocked) {
   if(mode==GL_SELECT) glInitNames();
   for(uint i=0; i<drawers.N; i++) {
     if(mode==GL_SELECT) glLoadName(i);
+//    drawers(i)->glDrawerMutex.lock(RAI_HERE);
     drawers(i)->glDraw(*this);
+//    drawers(i)->glDrawerMutex.unlock();
     glLoadIdentity();
   }
   
@@ -1834,7 +1836,9 @@ void OpenGL::Select(bool callerHasAlreadyLocked) {
   if(mouseView==-1) {
     for(i=0; i<drawers.N; i++) {
       glLoadName(i);
+//      drawers(i)->glDrawerMutex.lock(RAI_HERE);
       drawers(i)->glDraw(*this);
+//      drawers(i)->glDrawerMutex.unlock();
       GLint s;
       glGetIntegerv(GL_NAME_STACK_DEPTH, &s);
       if(s!=0) RAI_MSG("OpenGL name stack has not depth 1 (pushs>pops) in SELECT mode:" <<s);

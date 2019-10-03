@@ -3,16 +3,16 @@
 class btRigidBody;
 
 struct BulletInterface{
-  struct sBulletInterface *self=0;
+  struct BulletInterface_self *self=0;
 
-  BulletInterface();
-  BulletInterface(const rai::Configuration& K);
+  BulletInterface(bool verbose=false);
+  BulletInterface(rai::Configuration& K, bool verbose=false);
   ~BulletInterface();
 
   btRigidBody* addGround();
-  btRigidBody* addFrame(const rai::Frame *f);
-  void addFrames(const FrameL& frames);
-  void defaultInit(const rai::Configuration& K);
+  btRigidBody* addFrame(rai::Frame* f, bool verbose);
+  void addFrames(FrameL& frames, bool verbose);
+  void defaultInit(rai::Configuration& K, bool verbose);
 
   void step(double tau=.01);
   void pushFullState(const FrameL& frames, const arr& vel);
