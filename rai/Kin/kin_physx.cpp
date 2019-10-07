@@ -683,7 +683,7 @@ void PhysXInterface::addForce(rai::Vector& force, rai::Frame* b, rai::Vector& po
 #else //RAI_PHYSX
 
 #include "kin_physx.h"
-PhysXInterface::PhysXInterface(const rai::Configuration& _world) : self(NULL) { NICO }
+PhysXInterface::PhysXInterface(const rai::Configuration& _world, bool verbose) : self(NULL) { NICO }
 PhysXInterface::~PhysXInterface() { NICO }
 
 void PhysXInterface::step(double tau) { NICO }

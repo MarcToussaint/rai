@@ -45,7 +45,7 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
   //-- evaluate constrained problem and buffer
   if(_x!=x) {
     x=_x;
-    P.phi(phi_x, J_x, H_x, tt_x, x, lambda);
+    P.phi(phi_x, J_x, H_x, tt_x, x);
   } else { //we evaluated this before - use buffered values; the meta F is still recomputed as (dual) parameters might have changed
   }
   CHECK(x.N, "zero-dim optimization variables!");

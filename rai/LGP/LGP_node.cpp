@@ -302,9 +302,10 @@ ptr<KOMO> LGP_Node::optSubCG(const SubCG& scg, bool collisions, int verbose) {
 
   Graph result = komo->getReport(komo->verbose>0);
   DEBUG(FILE("z.problem.cost") <<result;);
-  double cost_here = result.get<double>({"total","sqrCosts"});
-  double constraints_here = result.get<double>({"total","constraints"});
-  bool feas = (constraints_here<1.);
+
+  //double cost_here = result.get<double>({"total","sqrCosts"});
+  //double constraints_here = result.get<double>({"total","constraints"});
+  //bool feas = (constraints_here<1.);
 
   return komo;
 }

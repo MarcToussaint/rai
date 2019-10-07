@@ -96,7 +96,7 @@ void Conv_Graph_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA
 #else
 
 //sparse
-void Conv_Graph_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda) {
+void Conv_Graph_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x) {
   G.phi(phi, J_G, H_G, x);
 
   if(!!tt) tt = featureTypes;
@@ -162,7 +162,6 @@ void Conv_Graph_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA
     Graph data = { {"graphQuery", queryCount},
                    {"errors", err},
                    {"x", x},
-                   {"lambda", lambda},
                    {"phi", phi}
                  };
 

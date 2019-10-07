@@ -137,7 +137,7 @@ void F_Wrench::phi(arr &y, arr &J, const WorldL &Ktuple) {
   CHECK_EQ(order, 2, "");
 
   rai::Configuration& K = *Ktuple(-2); // ! THIS IS THE MID TIME SLICE !
-  rai::Frame *a = K.frames(i);
+//  rai::Frame *a = K.frames(i);
 //  if((a->flags & (1<<FL_impulseExchange))){
 //    y.resize(3).setZero();
 //    if(!!J) J.resize(3, getKtupleDim(Ktuple).last()).setZero();

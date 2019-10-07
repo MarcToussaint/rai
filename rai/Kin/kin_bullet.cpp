@@ -287,13 +287,13 @@ void BulletInterface::saveBulletFile(const char* filename){
 
 #else
 
-BulletInterface::BulletInterface(){ NICO }
-BulletInterface::BulletInterface(const rai::Configuration& K){ NICO }
+BulletInterface::BulletInterface(bool verbose){ NICO }
+BulletInterface::BulletInterface(rai::Configuration& K, bool verbose){ NICO }
 BulletInterface::~BulletInterface(){ NICO }
 btRigidBody* BulletInterface::addGround(){ NICO }
-btRigidBody* BulletInterface::addFrame(const rai::Frame* f){ NICO }
-void BulletInterface::addFrames(const FrameL& frames){ NICO }
-void BulletInterface::defaultInit(const rai::Configuration& K){ NICO }
+btRigidBody* BulletInterface::addFrame(rai::Frame* f, bool verbose){ NICO }
+void BulletInterface::addFrames(FrameL& frames, bool verbose){ NICO }
+void BulletInterface::defaultInit(rai::Configuration& K, bool verbose){ NICO }
 void BulletInterface::step(double tau){ NICO }
 void BulletInterface::pushFullState(const FrameL& frames, const arr& vel){ NICO }
 void BulletInterface::pushKinematicStates(const FrameL& frames){ NICO }

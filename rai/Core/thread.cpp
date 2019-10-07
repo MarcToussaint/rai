@@ -104,7 +104,6 @@ void Signaler::broadcast(Signaler* messenger) {
 }
 
 void Event::listenTo(Var_base& v) {
-  CHECK(&v, "");
   auto lock = statusMutex(RAI_HERE);
   v.readAccess();
   variables.append(&v);

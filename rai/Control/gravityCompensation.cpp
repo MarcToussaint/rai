@@ -141,8 +141,8 @@ arr GravityCompensation::featuresGC(arr q, arr qSign, const rai::String& joint) 
   
   uint index = world.getFrameByName(joint)->joint->qIndex;
   arr T;
-  FeatureType featureType;
-  bool dynamicFeature, cosFeature, sinFeature, stictionFeature;
+  FeatureType featureType = linearFT;
+  bool dynamicFeature=false, cosFeature=false, sinFeature=false, stictionFeature=false;
   if(joint == "l_shoulder_pan_joint") {
     T = TLeftArm;
     featureType = linearFT;

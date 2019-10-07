@@ -118,7 +118,7 @@ bool OptConstrained::step() {
   }
   
   //run newton on the Lagrangian problem
-  OptNewton::StopCriterion newtonStop;
+  OptNewton::StopCriterion newtonStop = newton.stopNone;
   if(newtonOnce || opt.constrainedMethod==squaredPenaltyFixed) {
     newtonStop = newton.run();
   } else {

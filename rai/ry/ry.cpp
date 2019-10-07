@@ -200,7 +200,6 @@ PYBIND11_MODULE(libry, m) {
       auto Kset = self.set();
       rai::Frame *f = Kset->getFrameByName(frame.c_str(), true);
       f->set_Q()->set(conv_stdvec2arr(x));
-      Kset->calc_fwdPropagateFrames();
   }, "TODO remove -> use frame" )
 
   .def("delFrame", [](ry::Config& self, const std::string& frameName) {
@@ -309,17 +308,15 @@ PYBIND11_MODULE(libry, m) {
     return pybind11::array(X.dim(), X.p);
   }, "TODO remove -> use individual frame!" )
 
-  .def("setFrameState", [](ry::Config& self, const std::vector<double>& X, const ry::I_StringA& frames, bool calc_q_from_X){
+  .def("setFrameState", [](ry::Config& self, const std::vector<double>& X, const ry::I_StringA& frames){
     arr _X = conv_stdvec2arr(X);
     _X.reshape(_X.N/7, 7);
-    self.set()->setFrameState(_X, I_conv(frames), calc_q_from_X);
+    self.set()->setFrameState(_X, I_conv(frames));
   },
     "set the frame state, optionally only for a subset of frames specified as list of frame names. \
- By default this also computes and sets the consistent joint state based on the relative poses.\
- Setting calc_q_from_x to false will not compute the joint state and leave the configuration in an inconsistent state!",
+ This also computes the consistent joint state based on the relative poses.",
     py::arg("X"),
-    py::arg("frames") = ry::I_StringA(),
-    py::arg("calc_q_from_X") = true
+    py::arg("frames") = ry::I_StringA()
   )
 
   .def("setFrameState", [](ry::Config& self, const pybind11::array& X, const ry::I_StringA& frames, bool calc_q_from_X){
@@ -333,14 +330,6 @@ Setting calc_q_from_x to false will not compute the joint state and leave the co
     py::arg("X"),
     py::arg("frames") = ry::I_StringA(),
     py::arg("calc_q_from_X") = true
-  )
-
-  .def("fwdChainFrames", [](ry::Config& self) {
-     self.set()->calc_fwdPropagateFrames();
-  },
-  "recompute all absolute frames by forward chaining the relative transformations in the frame tree.\
-  This is automatically done in setJointState. A user hardly ever has to do this. An exception is if the\
-  user calls Frame->setPosition for a frame with children - then fwd propagation is not automatically done."
   )
 
   .def("feature", [](ry::Config& self, FeatureSymbol featureSymbol, const ry::I_StringA& frameNames) {
@@ -521,7 +510,7 @@ py::arg("featureSymbol"),
 
   .def("bullet", [](ry::Config& self){
     ry::RyBullet bullet;
-    bullet.bullet = make_shared<BulletInterface>(self.get());
+    bullet.bullet = make_shared<BulletInterface>(self.set());
     return bullet;
   },
   "create a Bullet engine for physical simulation from the configuration: The configuration\
@@ -550,42 +539,28 @@ py::arg("featureSymbol"),
     self.set()->sortFrames();
   })
     
-  .def("equationOfMotion", [](ry::Config& self, bool gravity){
+  .def("equationOfMotion", [](ry::Config& self, std::vector<double>& qdot, bool gravity){
     arr M, F;
-    self.set()->equationOfMotion(M, F, gravity);
+    arr _qdot = conv_stdvec2arr(qdot);
+    self.set()->equationOfMotion(M, F, _qdot, gravity);
     return pybind11::make_tuple(pybind11::array(M.dim(), M.p), pybind11::array(F.dim(), F.p));
   }, "",
+    py::arg("qdot"),
     py::arg("gravity"))
 
-  .def("stepDynamics", [](ry::Config& self, std::vector<double>& u_control, double tau, double dynamicNoise, bool gravity){
+  .def("stepDynamics", [](ry::Config& self, std::vector<double>& qdot, std::vector<double>& u_control, double tau, double dynamicNoise, bool gravity){
+    arr _qdot = conv_stdvec2arr(qdot);
     arr _u = conv_stdvec2arr(u_control);
-    self.set()->stepDynamics(_u, tau, dynamicNoise, gravity);
+    self.set()->stepDynamics(_qdot, _u, tau, dynamicNoise, gravity);
+    return pybind11::array(_qdot.dim(), _qdot.p);
   }, "",
+    py::arg("qdot"),
     py::arg("u_control"),
     py::arg("tau"),
     py::arg("dynamicNoise"),
     py::arg("gravity"))
 
- .def("getJointState_qdot", [](ry::Config& self, const ry::I_StringA& joints) {
-   arr q, qdot;
-   self.get()->getJointState(q, qdot);
-   return pybind11::make_tuple(pybind11::array(q.dim(), q.p), pybind11::array(qdot.dim(), qdot.p));
-  }, "",
-  py::arg("joints") = ry::I_StringA() )
-    
-  .def("setJointState_qdot", [](ry::Config& self, const std::vector<double>& q, const std::vector<double>& qdot){
-    arr _q = conv_stdvec2arr(q);
-    arr _qdot = conv_stdvec2arr(qdot);
-    self.set()->setJointState(_q, _qdot);
-  }, "",
-    py::arg("q"),
-    py::arg("qdot") )
-    
-  ;
-
-//  py::class_<ry::Display>(m, "Display")
-//      .def("update", (void (ry::Display::*)(bool)) &ry::Display::update)
-//      .def("update", (void (ry::Display::*)(std::string, bool)) &ry::Display::update);
+    ;
 
   //===========================================================================
 
@@ -749,7 +724,6 @@ py::arg("featureSymbol"),
   .def("setRelativePose", [](ry::RyFrame& self, const std::string& pose){
     WToken<rai::Configuration> token(*self.config, &self.config->data);
     self.frame->set_Q()->setText(pose.c_str());
-    self.frame->calc_X_from_parent();
   } )
 
   .def("setRelativePosition", [](ry::RyFrame& self, const std::vector<double>& pos){
@@ -1143,13 +1117,11 @@ py::arg("featureSymbol"),
     self.physx->pushKinematicStates(C.get()->frames);
     self.physx->step();
     self.physx->pullDynamicStates(C.set()->frames);
-    C.set()->calc_fwdPropagateFrames();
   } )
 
   .def("getState", [](ry::RyPhysX& self, ry::Config& C){
     arr V;
     self.physx->pullDynamicStates(C.set()->frames, V);
-    C.set()->calc_fwdPropagateFrames();
     return pybind11::array(V.dim(), V.p);
   } )
 

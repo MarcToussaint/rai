@@ -463,8 +463,8 @@ void TaskControlMethods::lockJointGroup(const char* groupname, rai::Configuratio
 double TaskControlMethods::getIKCosts(CtrlTaskL& tasks, const arr& q, const arr& q0, arr& g, arr& H) {
   double c=0.;
   arr y,J;
-  if(!!g) { CHECK(&q,""); g = zeros(q.N); }
-  if(!!H) { CHECK(&q,""); H = zeros(q.N, q.N); }
+  if(!!g) { CHECK(!!q,""); g = zeros(q.N); }
+  if(!!H) { CHECK(!!q,""); H = zeros(q.N, q.N); }
   for(CtrlTask* t: tasks) {
     if(t->active && t->ref) {
       y = t->scale*(t->y_ref - t->y);
