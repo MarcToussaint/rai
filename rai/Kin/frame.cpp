@@ -136,8 +136,8 @@ const rai::Transformation& rai::Frame::get_X() const{
 void rai::Frame::_state_updateAfterTouchingX(){
   _state_setXBadinBranch();
   _state_X_isGood = true;
-  if(!parent){} // Q = X;
-  else calc_Q_from_parent(true);
+  if(parent) Q.setDifference(parent->ensure_X(), X); //calc_Q_from_parent(true);
+//  else Q = X;
 }
 
 void rai::Frame::_state_updateAfterTouchingQ(){
@@ -303,7 +303,7 @@ void rai::Frame::write(std::ostream& os) const {
   } else {
     if(!X.isZero()) os <<" X:<" <<X <<'>';
   }
-  
+
 //  if(flags) {
 //    Enum<FrameFlagType> fl;
 //    os <<" FLAGS:";
@@ -544,7 +544,7 @@ const rai::Transformation& rai::Joint::Q() const {
 void rai::Joint::calc_Q_from_q(const arr &q_full, uint _qIndex) {
   CHECK_LE(_qIndex+dim, q_full.N, "");
   rai::Transformation &Q = frame->Q;
-  //  if(type!=JT_rigid) Q.setZero();
+  if(type!=JT_rigid) Q.setZero();
   std::shared_ptr<arr> q_copy;
   double *qp;
   if(scale==1.){
