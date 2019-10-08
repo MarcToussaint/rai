@@ -491,6 +491,7 @@ py::arg("featureSymbol"),
     komo.komo = make_shared<KOMO>(self.get(), useSwift);
     komo.config.set() = komo.komo->world;
     komo.komo->setPathOpt(phases, stepsPerPhase, timePerPhase);
+    komo.komo->setSquaredQAccVelHoming();
     return komo;
   },
   "create KOMO solver configured for sparse path optimization",
@@ -964,7 +965,7 @@ py::arg("featureSymbol"),
   } )
 
   .def("getReport", [](ry::RyKOMO& self){
-    Graph G = self.komo->getProblemGraph(true);
+    Graph G = self.komo->getProblemGraph(true, false);
     return graph2list(G);
   } )
 
@@ -1277,51 +1278,53 @@ py::arg("featureSymbol"),
       .export_values();
 
   py::enum_<FeatureSymbol>(m, "FS")
-      ENUMVAL(FS,none)
-      ENUMVAL(FS,position)
-      ENUMVAL(FS,positionDiff)
-      ENUMVAL(FS,positionRel)
-      ENUMVAL(FS,quaternion)
-      ENUMVAL(FS,quaternionDiff)
-      ENUMVAL(FS,quaternionRel)
-      ENUMVAL(FS,pose)
-      ENUMVAL(FS,poseDiff)
-      ENUMVAL(FS,poseRel)
-      ENUMVAL(FS,vectorX)
-      ENUMVAL(FS,vectorXDiff)
-      ENUMVAL(FS,vectorXRel)
-      ENUMVAL(FS,vectorY)
-      ENUMVAL(FS,vectorYDiff)
-      ENUMVAL(FS,vectorYRel)
-      ENUMVAL(FS,vectorZ)
-      ENUMVAL(FS,vectorZDiff)
-      ENUMVAL(FS,vectorZRel)
-      ENUMVAL(FS,scalarProductXX)
-      ENUMVAL(FS,scalarProductXY)
-      ENUMVAL(FS,scalarProductXZ)
-      ENUMVAL(FS,scalarProductYX)
-      ENUMVAL(FS,scalarProductYY)
-      ENUMVAL(FS,scalarProductYZ)
-      ENUMVAL(FS,scalarProductZZ)
-      ENUMVAL(FS,gazeAt)
+        ENUMVAL(FS,position)
+        ENUMVAL(FS,positionDiff)
+        ENUMVAL(FS,positionRel)
+        ENUMVAL(FS,quaternion)
+        ENUMVAL(FS,quaternionDiff)
+        ENUMVAL(FS,quaternionRel)
+        ENUMVAL(FS,pose)
+        ENUMVAL(FS,poseDiff)
+        ENUMVAL(FS,poseRel)
+        ENUMVAL(FS,vectorX)
+        ENUMVAL(FS,vectorXDiff)
+        ENUMVAL(FS,vectorXRel)
+        ENUMVAL(FS,vectorY)
+        ENUMVAL(FS,vectorYDiff)
+        ENUMVAL(FS,vectorYRel)
+        ENUMVAL(FS,vectorZ)
+        ENUMVAL(FS,vectorZDiff)
+        ENUMVAL(FS,vectorZRel)
+        ENUMVAL(FS,scalarProductXX)
+        ENUMVAL(FS,scalarProductXY)
+        ENUMVAL(FS,scalarProductXZ)
+        ENUMVAL(FS,scalarProductYX)
+        ENUMVAL(FS,scalarProductYY)
+        ENUMVAL(FS,scalarProductYZ)
+        ENUMVAL(FS,scalarProductZZ)
+        ENUMVAL(FS,gazeAt)
 
-      ENUMVAL(FS,accumulatedCollisions)
-      ENUMVAL(FS,jointLimits)
-      ENUMVAL(FS,distance)
+        ENUMVAL(FS,angularVel)
 
-      ENUMVAL(FS,qItself)
+        ENUMVAL(FS,accumulatedCollisions)
+        ENUMVAL(FS,jointLimits)
+        ENUMVAL(FS,distance)
+        ENUMVAL(FS,oppose)
 
-      ENUMVAL(FS,aboveBox)
-      ENUMVAL(FS,insideBox)
+        ENUMVAL(FS,qItself)
 
-      ENUMVAL(FS,standingAbove)
+        ENUMVAL(FS,aboveBox)
+        ENUMVAL(FS,insideBox)
 
-      ENUMVAL(FS,physics)
-      ENUMVAL(FS,contactConstraints)
-      ENUMVAL(FS,energy)
+        ENUMVAL(FS,standingAbove)
 
-      ENUMVAL(FS,transAccelerations)
-      ENUMVAL(FS,transVelocities)
+        ENUMVAL(FS,physics)
+        ENUMVAL(FS,contactConstraints)
+        ENUMVAL(FS,energy)
+
+        ENUMVAL(FS,transAccelerations)
+        ENUMVAL(FS,transVelocities)
       .export_values();
 
 #undef ENUMVAL
