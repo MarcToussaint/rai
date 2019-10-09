@@ -2673,8 +2673,7 @@ void rai::Configuration::makeObjectsFree(const StringA &objects, double H_cost){
 }
 
 void rai::Configuration::addTimeJoint(){
-  rai::Joint *jt = new rai::Joint(*frames.first());
-  jt->type = rai::JT_time;
+  rai::Joint *jt = new rai::Joint(*frames.first(), rai::JT_time);
   jt->H = 0.;
 }
 

@@ -1872,12 +1872,6 @@ void KOMO::setupConfigurations() {
         sw->apply(K);
       }
     }
-    //apply potential PERSISTENT flags
-//    for(Flag *fl:flags) {
-//      if(fl->persist && fl->stepOfApplication+k_order==s) {
-//        fl->apply(K);
-//      }
-//    }
     K.calc_q();
     K.checkConsistency();
 //    {
@@ -1887,15 +1881,6 @@ void KOMO::setupConfigurations() {
 ////      K.glClose();
 //    }
   }
-
-  //now apply NON-PERSISTENT flags
-//  for(uint s=1; s<k_order+T; s++) {
-//    for(Flag *fl:flags) {
-//      if(!fl->persist && fl->stepOfApplication+k_order==s) {
-//        fl->apply(*configurations(s));
-//      }
-//    }
-//  }
 }
 
 void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {

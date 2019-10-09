@@ -166,7 +166,7 @@ struct Joint : NonCopyable{
   Frame *frame;      ///< this is the frame that Joint articulates! I.e., the output frame
   
   // joint information
-  uint dim=0;
+  uint dim=UINT_MAX;
   uint qIndex;
   byte generator;    ///< (7bits), h in Featherstone's code (indicates basis vectors of the Lie algebra, but including the middle quaternion w)
   arr limits;        ///< joint limits (lo, up, [maxvel, maxeffort])
@@ -192,7 +192,7 @@ struct Joint : NonCopyable{
   const Transformation& Q() const; ///< the transformation realized by this joint (i.e. from parent->X to frame->X)
   Frame *from() const { return frame->parent; }
   
-  uint qDim() { return dim; }
+  uint qDim();
   void calc_Q_from_q(const arr& q, uint n);
   arr calc_q_from_Q(const Transformation &Q) const;
   arr getScrewMatrix();
