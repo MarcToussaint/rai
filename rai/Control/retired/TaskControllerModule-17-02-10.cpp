@@ -57,9 +57,9 @@ TaskControlThread::TaskControlThread(const char* _robot, const rai::Configuratio
       realWorld = modelWorld.get();
     } else {
       if(robot=="pr2") {
-        realWorld.init(rai::raiPath("data/pr2_model/pr2_model.ors").p);
+        realWorld.init(rai::raiPath("data/pr2_model/pr2_model.g").p);
       } else if(robot=="baxter") {
-        realWorld.init(rai::raiPath("data/baxter_model/baxter.ors").p);
+        realWorld.init(rai::raiPath("data/baxter_model/baxter.g").p);
       } else {
         HALT("robot not known!")
       }

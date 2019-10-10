@@ -172,7 +172,7 @@ void TEST(QuaternionKinematics){
 
 void TEST(Copy){
   rai::Configuration G1("kinematicTests.g");
-  //rai::Configuration G1("../../../data/pr2_model/pr2_model.ors");
+  //rai::Configuration G1("../../../data/pr2_model/pr2_model.g");
   rai::Configuration G2(G1);
 
   G1.checkConsistency();

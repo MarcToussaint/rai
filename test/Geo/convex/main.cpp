@@ -178,7 +178,7 @@ void drawInit(void*){
 /*
 void TEST(FCinOrs){
   rai::Configuration C;
-  C <<FILE("../../data/configurations/forceClosureTest.ors");
+  C <<FILE("../../data/configurations/forceClosureTest.g");
 
   OpenGL gl;
   gl.add(drawInit,0);

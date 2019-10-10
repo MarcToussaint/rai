@@ -154,7 +154,7 @@ RTControllerSimulation::RTControllerSimulation(const rai::Configuration& realWor
   , stepCount(0)
   , systematicErrorSdv(_systematicErrorSdv) {
   //world = new rai::Configuration(realWorld);
-  world = new rai::Configuration(rai::raiPath("data/pr2_model/pr2_model.ors"));
+  world = new rai::Configuration(rai::raiPath("data/pr2_model/pr2_model.g"));
   
   //Object o(*world);
   //o.generateObject("b", 0.16, 0.16, 0.1, 0.55, -0.1, 0.55); //0.5 for x
@@ -169,7 +169,7 @@ void RTControllerSimulation::open() {
   //world = new rai::Configuration;
   //world->copy(modelWorld.get()());
   //world = new rai::Configuration(modelWorld.get());
-  //world = new rai::Configuration(rai::raiPath("data/pr2_model/pr2_model.ors"));
+  //world = new rai::Configuration(rai::raiPath("data/pr2_model/pr2_model.g"));
   
   makeConvexHulls(world->frames);
   arr q = world->getJointState();
