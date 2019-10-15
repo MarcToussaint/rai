@@ -193,7 +193,7 @@ endif
 ifeq ($(IT++),1)
 CXXFLAGS  += -DRAI_ITpp
 CPATH	  := $(CPATH):$(IT++)/include
-LPATH	  := $(LPATH):$(IT++)/lib
+LPATHS += $(IT++)/lib
 LIBS += -lit++ -lit++external -lg2c
 CygwinLibs+= -lit++ -lit++external -lg2c
 endif
@@ -257,14 +257,14 @@ endif
 ifeq ($(OPENCV4),1)
 CXXFLAGS  += -DRAI_OPENCV
 CPATH := $(HOME)/opt/include/opencv4/:$(CPATH)
-LPATH := $(HOME)/opt/lib:$(LPATH)
+LPATHS += $(HOME)/opt/lib
 LIBS += -lopencv_core -lopencv_highgui
 endif
 
 ifeq ($(HSL),1)
 CXXFLAGS  += -DRAI_HSL
 CPATH	  := $(CPATH):$(LIBPATH)/HSL-archive/include
-LPATH	  := $(LPATH):$(LIBPATH)/HSL-archive/lib
+LPATHS += $(LIBPATH)/HSL-archive/lib
 LIBS += -lHSL-debr
 endif
 
@@ -335,43 +335,43 @@ endif
 ifeq ($URGLASER),1)
 CPATH     := $(CPATH):$(LIBPATH)/urg-0.8.16/include/c
 CPATH     := $(CPATH):$(LIBPATH)/urg-0.8.16/include/cpp
-LPATH     := $(LPATH):$(LIBPATH)/urg-0.8.16/src/c/urg/.libs
-LPATH     := $(LPATH):$(LIBPATH)/urg-0.8.16/src/c/system/.libs
-LPATH     := $(LPATH):$(LIBPATH)/urg-0.8.16/src/c/connection/.libs
+LPATHS += $(LIBPATH)/urg-0.8.16/src/c/urg/.libs
+LPATHS += $(LIBPATH)/urg-0.8.16/src/c/system/.libs
+LPATHS += $(LIBPATH)/urg-0.8.16/src/c/connection/.libs
 LIBS += -lc_urg -lc_urg_system -lc_urg_connection
 endif
 
 ifeq ($(DYNAMIXEL),1)
 CXXFLAGS  += -DRAI_DYNAMIXEL
 CPATH     := $(CPATH):$(LIBPATH)/dynamixel/include
-LPATH     := $(LPATH):$(LIBPATH)/dynamixel/lib
+LPATHS += $(LIBPATH)/dynamixel/lib
 LIBS      += -ldxl
 endif
 
 ifeq ($(BUMBLE),1)
 CXXFLAGS  += -DRAI_BUMBLE
 #CPATH     := $(CPATH):$(LIBPATH)/pgrlibdcstereo/
-#LPATH     := $(LPATH):$(LIBPATH)/pgrlibdcstereo/
+#LPATHS += $(LIBPATH)/pgrlibdcstereo/
 LIBS += -ldc1394 # -lpgrlibdcstereo
 endif
 
 ifeq ($(FELZ),1)
 CXXFLAGS  += -DRAI_FELZ
 CPATH     := $(CPATH):$(LIBPATH)/libcolorseg/include
-LPATH     := $(LPATH):$(LIBPATH)/libcolorseg/lib
+LPATHS += $(LIBPATH)/libcolorseg/lib
 LIBS += -lcolorseg
 endif
 
 ifeq ($(ESS),1)
 CXXFLAGS  += -DRAI_ESS
 CPATH     := $(CPATH):$(LIBPATH)/blaschko-ESS-1.1/include
-LPATH     := $(LPATH):$(LIBPATH)/blaschko-ESS-1.1/lib
+LPATHS += $(LIBPATH)/blaschko-ESS-1.1/lib
 LIBS += -less
 endif
 
 ifeq ($(SURF),1)
 CPATH     := $(CPATH):$(LIBPATH)/opensurf/
-LPATH     := $(LPATH):$(LIBPATH)/opensurf/
+LPATHS += $(LIBPATH)/opensurf/
 LIBS += -lopensurf_$(ARCH)
 endif
 
@@ -383,7 +383,7 @@ endif
 ifeq ($(DART),1)
 CXXFLAGS += -DRAI_DART -std=c++14
 CPATH := $(CPATH):$(HOME)/git/dart/build:$(HOME)/git/dart
-LPATH := $(HOME)/git/dart/build/lib:$(LPATH)
+LPATHS += $(HOME)/git/dart/build/lib
 LIBS += -ldart-gui -ldart-utils-urdf -ldart-utils -ldart -lboost_system
 endif
 
@@ -391,7 +391,7 @@ ifeq ($(PHYSX),1)
 CXXFLAGS += -DRAI_PHYSX -D_DEBUG -DPX_DISABLE_FLUIDS -DCORELIB -DPX32 -DLINUX
 CPATH := $(CPATH):$(HOME)/opt/physx3.4/include:$(HOME)/opt/physx3.4/include/physx
 #PhysX/Include:$(RAI_LIBPATH)/PhysX/Include/extensions:$(RAI_LIBPATH)/PhysX/Include/foundation:$(RAI_LIBPATH)/PhysX/Include/deprecated
-LPATH := $(HOME)/opt/physx3.4/lib:$(LPATH)
+LPATHS += $(HOME)/opt/physx3.4/lib
 LIBS += -lpthread -lrt\
 -lPhysX3Extensions -lPhysX3_x64 -lPhysX3Cooking_x64 -lPhysX3Common_x64 -lPxFoundation_x64
 
@@ -416,7 +416,7 @@ ifeq ($(BULLET),1)
 #BULLET_PATH=$(HOME)/git/bullet3
 CXXFLAGS  += -DRAI_BULLET -DBT_USE_DOUBLE_PRECISION
 CPATH := $(HOME)/opt/include/bullet/:$(CPATH)
-LPATH := $(HOME)/opt/lib:$(LPATH)
+LPATHS += $(HOME)/opt/lib
 #LPATH := $(BULLET_PATH)/bin:$(LPATH)
 #CPATH := $(CPATH):$(BULLET_PATH)/src
 #btLIB = _gmake_x64_release

@@ -102,7 +102,7 @@ struct Configuration : GLDrawer {
 
   /// @name access
   Frame *operator[](const char* name) { return getFrameByName(name, true); }
-  Frame *operator()(int i) { return frames(i); }
+  Frame *operator()(int i) const { return frames(i); }
   Frame *getFrameByName(const char* name, bool warnIfNotExist=true, bool reverse=false) const;
   FrameL getFramesByNames(const StringA& frameNames) const;
   Joint *getJointByFrames(const Frame* from, const Frame* to) const;
