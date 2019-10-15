@@ -157,21 +157,19 @@ LIBS := $(DEPEND:%=-l%) $(LIBS)
 
 ################################################################################
 #
-# export Linux/MSVC include/lib paths
+# export include/lib paths
 #
 ################################################################################
 
 CPATH := $(CPATH):$(CPATHS:%=:%:)
 LPATH := $(LPATH):$(LPATHS:%=:%:)
-LDFLAGS += $(LPATHS:%=-L%)
+LDFLAGS += $(LPATHS:%=-L%) #$(LPATHS:%=-Wl,-rpath,%)
 LD_RUN_PATH := $(LD_RUN_PATH):$(LPATH)
 LD_LIBRARY_PATH := $(LD_LIBRARY_PATH):$(LPATH)
 export CPATH
 export LPATH
 export LD_RUN_PATH
 export LD_LIBRARY_PATH
-export MSVC_CPATH
-export MSVC_LPATH
 
 
 ################################################################################
@@ -240,8 +238,6 @@ info: force
 	@echo "  LPATHS =" "$(LPATHS)"
 	@echo "  LPATH =" "$(LPATH)"
 	@echo "  LD_RUN_PATH =" "$(LD_RUN_PATH)"
-	@echo "  MSVC_CPATH =" "$(MSVC_CPATH)"
-	@echo "  MSVC_LPATH =" "$(MSVC_LPATH)"
 	@echo "  SRCS =" "$(SRCS)"
 	@echo "  OBJS =" "$(OBJS)"
 	@echo "  LIBS =" "$(LIBS)"

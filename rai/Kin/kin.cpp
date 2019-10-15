@@ -2058,7 +2058,9 @@ void rai::Configuration::init(const Graph& G, bool addInsteadOfClear) {
   }
   
   for(Node *n: G) {
-    if(n->keys(0)=="body" || n->keys(0)=="shape" || n->keys(0)=="joint") continue;
+    if(n->keys.N){
+      if(n->keys(0)=="body" || n->keys(0)=="shape" || n->keys(0)=="joint") continue;
+    }
     //    CHECK_EQ(n->keys(0),"frame","");
     CHECK(n->isGraph(), "frame must have value Graph");
     CHECK_LE(n->parents.N, 1,"frames must have no or one parent: specs=" <<*n <<' ' <<n->index);
