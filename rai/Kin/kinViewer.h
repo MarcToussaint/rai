@@ -59,18 +59,15 @@ struct KinPathViewer : Thread {
 
 struct KinPoseViewer : Thread, GLDrawer {
   Var<rai::Configuration> model;
-  Var<arr> frameState; ///< poses to be watched
+  Var<arr> frameState;
+  MeshA meshesCopy;
   uint frameCount=0;
   //-- internal (private)
   OpenGL gl;
-  rai::Configuration copy;
-  WorldL copies;
   
 //  KinPoseViewer(const char* modelVarName, const StringA& poseVarNames, double beatIntervalSec=-1.);
   KinPoseViewer(Var<rai::Configuration>& _kin, const Var<arr>& _frameState, double beatIntervalSec=-1.);
   ~KinPoseViewer();
-  
-  void recopyKinematics(const rai::Configuration& world=NoWorld);
   
   void open();
   void step();

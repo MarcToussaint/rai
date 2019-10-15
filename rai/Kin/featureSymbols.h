@@ -36,7 +36,7 @@ enum FeatureSymbol {
   FS_accumulatedCollisions,
   FS_jointLimits,
   FS_distance,
-    FS_oppose,
+  FS_oppose,
 
   FS_qItself,
 

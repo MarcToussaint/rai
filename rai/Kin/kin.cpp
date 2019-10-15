@@ -554,7 +554,7 @@ void rai::Configuration_ext::getJointState(arr &_q, arr& _qdot) const {
 }
 
 const arr& rai::Configuration::getJointState() const {
-  if(!q.nd)((Configuration*)this)->calc_q();
+  if(!_state_q_isGood) ((Configuration*)this)->ensure_q();
   return q;
 }
 
@@ -624,6 +624,8 @@ arr rai::Configuration::getLimits() const {
 }
 
 void rai::Configuration::calc_q_from_Q() {
+  ensure_activeSets();
+
   uint N=q.N;
   if(!N) N=analyzeJointStateDimensions();
   q.resize(N).setZero();
@@ -811,7 +813,11 @@ void rai::Configuration::setFrameState(const arr& X, const StringA& frameNames, 
     for(uint i=0;i<frames.N && i<X.d0;i++){
       frames(i)->X.set(X[i]);
       frames(i)->X.rot.normalize();
-      frames(i)->_state_updateAfterTouchingX();
+      frames(i)->_state_setXBadinBranch();
+      frames(i)->_state_X_isGood = true;
+    }
+    for(uint i=0;i<frames.N && i<X.d0;i++){
+      if(frames(i)->parent) frames(i)->Q.setDifference(frames(i)->parent->X, frames(i)->X);
     }
   }else{
     if(X.nd==1){
@@ -834,6 +840,7 @@ void rai::Configuration::setFrameState(const arr& X, const StringA& frameNames, 
   }
   _state_q_isGood=false;
 
+  checkConsistency();
 //  calc_Q_from_Frames();
 //  if(calc_q_from_X) ensure_q();
 }
@@ -2668,8 +2675,7 @@ void rai::Configuration::makeObjectsFree(const StringA &objects, double H_cost){
 }
 
 void rai::Configuration::addTimeJoint(){
-  rai::Joint *jt = new rai::Joint(*frames.first());
-  jt->type = rai::JT_time;
+  rai::Joint *jt = new rai::Joint(*frames.first(), rai::JT_time);
   jt->H = 0.;
 }
 

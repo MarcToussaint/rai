@@ -136,8 +136,8 @@ const rai::Transformation& rai::Frame::get_X() const{
 void rai::Frame::_state_updateAfterTouchingX(){
   _state_setXBadinBranch();
   _state_X_isGood = true;
-  if(!parent){} // Q = X;
-  else calc_Q_from_parent(true);
+  if(parent) Q.setDifference(parent->ensure_X(), X); //calc_Q_from_parent(true);
+//  else Q = X;
 }
 
 void rai::Frame::_state_updateAfterTouchingQ(){
@@ -303,7 +303,7 @@ void rai::Frame::write(std::ostream& os) const {
   } else {
     if(!X.isZero()) os <<" X:<" <<X <<'>';
   }
-  
+
 //  if(flags) {
 //    Enum<FrameFlagType> fl;
 //    os <<" FLAGS:";
@@ -541,10 +541,16 @@ const rai::Transformation& rai::Joint::Q() const {
   return frame->get_Q();
 }
 
+uint rai::Joint::qDim() {
+  if(dim==UINT_MAX) dim=getDimFromType();
+  return dim;
+}
+
 void rai::Joint::calc_Q_from_q(const arr &q_full, uint _qIndex) {
+  CHECK(dim!=UINT_MAX, "");
   CHECK_LE(_qIndex+dim, q_full.N, "");
   rai::Transformation &Q = frame->Q;
-  //  if(type!=JT_rigid) Q.setZero();
+  if(type!=JT_rigid) Q.setZero();
   std::shared_ptr<arr> q_copy;
   double *qp;
   if(scale==1.){
@@ -656,7 +662,9 @@ void rai::Joint::calc_Q_from_q(const arr &q_full, uint _qIndex) {
   CHECK_EQ(Q.pos.x, Q.pos.x, "NAN transform");
   CHECK_EQ(Q.rot.w, Q.rot.w, "NAN transform");
 
-  frame->_state_setXBadinBranch();
+  if(type!=JT_time){
+    frame->_state_setXBadinBranch();
+  }
   //    link->link = A * Q * B; //total rel transformation
 }
 
@@ -769,6 +777,7 @@ arr rai::Joint::calc_q_from_Q(const rai::Transformation &Q) const {
 }
 
 arr rai::Joint::getScrewMatrix() {
+  CHECK(dim!=UINT_MAX, "");
   arr S(2, dim, 3);
   S.setZero();
   rai::Vector axis;
@@ -950,6 +959,7 @@ void rai::Joint::read(const Graph &G) {
     if(!dim) { //HACK convention
       frame->set_Q()->rot.setRad(d, 1., 0., 0.);
     } else {
+      CHECK(dim!=UINT_MAX, "setting q (in config file) for 0-dim joint");
       CHECK(dim, "setting q (in config file) for 0-dim joint");
       q0 = consts<double>(d, dim);
       calc_Q_from_q(q0, 0);

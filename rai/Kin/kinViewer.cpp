@@ -195,19 +195,11 @@ KinPoseViewer::KinPoseViewer(Var<rai::Configuration>& _kin, const Var<arr>& _fra
   : Thread("KinPoseViewer", beatIntervalSec),
     model(this, _kin, (beatIntervalSec<0.)),
     frameState(this, _frameState, (beatIntervalSec<0.)){
-  copy = model.get();
   if(beatIntervalSec>=0.) threadLoop(); else threadStep();
 }
 
 KinPoseViewer::~KinPoseViewer() {
   threadClose();
-}
-
-void KinPoseViewer::recopyKinematics(const rai::Configuration& world) {
-  stepMutex.lock(RAI_HERE);
-  if(!!world) copy = world;
-  else copy = model.get();
-  stepMutex.unlock();
 }
 
 void KinPoseViewer::open() {
@@ -216,8 +208,23 @@ void KinPoseViewer::open() {
 }
 
 void KinPoseViewer::step() {
+  {
+    auto modelGet = model.get();
+    if(true || modelGet->frames.N!=meshesCopy.N) { //need to copy meshes
+      uint n=modelGet->frames.N;
+      auto _dataLock = gl.dataLock(RAI_HERE);
+      meshesCopy.resize(n);
+      for(uint i=0; i<n; i++) {
+        rai::Frame* f = modelGet->frames.elem(i);
+        if(f->shape) meshesCopy.elem(i) = f->shape->mesh();
+        else meshesCopy.elem(i).clear();
+      }
+    }
+  }
+
   gl.text.clear() <<"step: " <<frameCount <<"\n[temporal profile is not displayed accuratly (tau path ignored)]";
-  gl.update(); //NULL, false, false, true);
+  gl.text <<" path-T: " <<frameState.get()->d0 <<" frames: " <<meshesCopy.N;
+  gl.update(NULL, true); //NULL, false, false, true);
 }
 
 void KinPoseViewer::close() {
@@ -226,27 +233,24 @@ void KinPoseViewer::close() {
 
 void KinPoseViewer::glDraw(OpenGL &gl) {
 #if 1 //def RAI_GL
-  auto modelGet = model.get();
-  auto frameStateGet = frameState.get();
+  arr X = frameState.get();
 
-  if(!modelGet->frames.N) return;
-  if(!frameStateGet->N) return;
+  if(!meshesCopy.N) return;
+  if(!X.N) return;
 
   glStandardScene(NULL, gl);
 
-
-  CHECK_EQ(frameStateGet->nd, 3, "");
-  uint n=modelGet->frames.N;
-  if(frameStateGet->d0<n) n=frameStateGet->d0;
+  CHECK_EQ(X.nd, 3, "");
+  uint n=meshesCopy.N;
+  if(X.d1<n) n=X.d1;
 
   for(uint i=0; i<n; i++) {
-    rai::Shape* sh = modelGet->frames(i)->shape;
-    if(sh && sh->_mesh){
-      if(frameCount >= frameStateGet->d1) frameCount = 0;
-      rai::Transformation X;
-      X.set(&frameStateGet->operator()(i, frameCount, 0));
-      glTransform(X);
-      sh->mesh().glDraw(gl);
+    if(meshesCopy.elem(i).V.N){
+      if(frameCount >= X.d0) frameCount = 0;
+      rai::Transformation T;
+      T.set(&X.operator()(frameCount, i, 0));
+      glTransform(T);
+      meshesCopy.elem(i).glDraw(gl);
     }
   }
   frameCount++;

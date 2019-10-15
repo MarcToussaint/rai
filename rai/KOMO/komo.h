@@ -284,7 +284,7 @@ struct KOMO : NonCopyable {
 
   void reportProblem(ostream &os=std::cout);
   Graph getReport(bool gnuplt=false, int reportFeatures=0, ostream& featuresOs=std::cout); ///< return a 'dictionary' summarizing the optimization results (optional: gnuplot task costs; output detailed cost features per time slice)
-  Graph getProblemGraph(bool includeValues);
+  Graph getProblemGraph(bool includeValues, bool includeSolution=true);
   double getConstraintViolations();
   double getCosts();
   void reportProxies(ostream& os=std::cout, double belowMargin=.1); ///< report the proxies (collisions) for each time slice

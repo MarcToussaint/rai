@@ -1872,12 +1872,6 @@ void KOMO::setupConfigurations() {
         sw->apply(K);
       }
     }
-    //apply potential PERSISTENT flags
-//    for(Flag *fl:flags) {
-//      if(fl->persist && fl->stepOfApplication+k_order==s) {
-//        fl->apply(K);
-//      }
-//    }
     K.calc_q();
     K.checkConsistency();
 //    {
@@ -1887,15 +1881,6 @@ void KOMO::setupConfigurations() {
 ////      K.glClose();
 //    }
   }
-
-  //now apply NON-PERSISTENT flags
-//  for(uint s=1; s<k_order+T; s++) {
-//    for(Flag *fl:flags) {
-//      if(!fl->persist && fl->stepOfApplication+k_order==s) {
-//        fl->apply(*configurations(s));
-//      }
-//    }
-//  }
 }
 
 void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
@@ -2187,7 +2172,7 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
 }
 
 /// output the defined problem as a generic graph, that can also be displayed, saved and loaded
-Graph KOMO::getProblemGraph(bool includeValues){
+Graph KOMO::getProblemGraph(bool includeValues, bool includeSolution){
   Graph K;
   //header
 #if 1
@@ -2205,16 +2190,19 @@ Graph KOMO::getProblemGraph(bool includeValues){
   g.newNode<bool>({"useSwift"}, {}, useSwift);
 #endif
 
-  //full configuration paths
-  g.newNode<arr>({"X"}, {}, getPath_frames());
-  g.newNode<arrA>({"x"}, {}, getPath_q());
-  g.newNode<arr>({"dual"}, {}, dual);
+  if(includeSolution){
+    //full configuration paths
+    g.newNode<arr>({"X"}, {}, getPath_frames());
+    g.newNode<arrA>({"x"}, {}, getPath_q());
+    g.newNode<arr>({"dual"}, {}, dual);
+  }
 
   //objectives
   for(Objective* ob : objectives){
     Graph& g = K.newSubgraph({ob->name});
     g.newNode<double>({"order"}, {}, ob->map->order);
     g.newNode<String>({"type"}, {}, STRING(ob->type));
+    g.newNode<String>({"feature"}, {}, STRING(ob->name));
     if(ob->vars.N) g.newNode<intA>({"vars"}, {}, ob->vars);
 //    g.copy(task->map->getSpec(world), true);
     if(includeValues){
