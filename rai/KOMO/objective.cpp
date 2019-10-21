@@ -65,10 +65,10 @@ void Objective::write(std::ostream& os) const {
       else os <<" ("<<vars <<')';
     }else os <<" (" <<vars.first() <<".." <<vars.last() <<')';
   }else os <<" ()";
-  os <<"  type=" <<type
-    <<"  order=" <<map->order
-   <<"  target=[" <<map->target <<']'
-  <<"  scale=" <<map->scale;
+  os <<"  type:" <<type
+    <<"  order:" <<map->order
+   <<"  target:" <<map->target
+  <<"  scale:" <<map->scale;
 }
 
 

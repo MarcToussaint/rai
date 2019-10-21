@@ -1669,6 +1669,11 @@ template<class T> T rai::Array<T>::median_nonConst(){
   return *(p+N/2);
 }
 
+template<class T> T rai::Array<T>::nthElement_nonConst(uint n){
+  CHECK_GE(N, n+1, "");
+  std::nth_element(p, p+n, p+N);
+  return *(p+n);
+}
 
 /// sort this list
 template<class T> rai::Array<T>& rai::Array<T>::sort(ElemCompare comp) {

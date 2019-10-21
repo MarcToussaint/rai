@@ -102,10 +102,12 @@ struct PhysXInterface_self {
   rai::Array<PxD6Joint*> joints;
   OpenGL *gl=NULL;
   rai::Configuration *C=NULL;
+
+  PxMaterial *defaultMaterial;
   
 //  debugger::comm::PvdConnection* connection = NULL;
   
-  void addLink(rai::Frame *b, physx::PxMaterial *material, bool verbose);
+  void addLink(rai::Frame *b, bool verbose);
   void addJoint(rai::Joint *jj);
   
   void lockJoint(PxD6Joint *joint, rai::Joint *rai_joint);
@@ -156,7 +158,7 @@ PhysXInterface::PhysXInterface(const rai::Configuration& world, bool verbose): s
   self->gScene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, 1.0f);
   
   //-- Create objects
-  PxMaterial* mMaterial = mPhysics->createMaterial(10.f, 10.f, 0.1f);
+  self->defaultMaterial = mPhysics->createMaterial(10.f, 10.f, 0.1f);
   
   //Create ground plane
   PxTransform pose = PxTransform(PxVec3(0.f, 0.f, 0.f), PxQuat(-PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f)));
@@ -164,7 +166,7 @@ PhysXInterface::PhysXInterface(const rai::Configuration& world, bool verbose): s
   PxRigidStatic* plane = mPhysics->createRigidStatic(pose);
   CHECK(plane, "create plane failed!");
   
-  PxShape* planeShape = plane->createShape(PxPlaneGeometry(), *mMaterial);
+  PxShape* planeShape = plane->createShape(PxPlaneGeometry(), *self->defaultMaterial);
   CHECK(planeShape, "create shape failed!");
   self->gScene->addActor(*plane);
 
@@ -177,7 +179,7 @@ PhysXInterface::PhysXInterface(const rai::Configuration& world, bool verbose): s
   self->actorTypes.resize(world.frames.N); self->actorTypes.setZero();
   for(rai::Frame *a : world.frames) a->ensure_X();
   FrameL links = world.getLinks();
-  for(rai::Frame *a : links) self->addLink(a, mMaterial, verbose);
+  for(rai::Frame *a : links) self->addLink(a, verbose);
   //  for(rai::Joint *j : world.activeJoints) self->addJoint(j); //DONT ADD JOINTS!!!!
 
   if(verbose) LOG(0) <<"... done creating Configuration within PhysX";
@@ -373,21 +375,23 @@ void PhysXInterface_self::unlockJoint(PxD6Joint *joint, rai::Joint *rai_joint) {
   }
 }
 
-void PhysXInterface_self::addLink(rai::Frame *f, physx::PxMaterial *mMaterial, bool verbose) {
+void PhysXInterface_self::addLink(rai::Frame *f, bool verbose) {
+  //-- collect all shapes of that link
   FrameL parts = {f};
   f->getRigidSubFrames(parts);
   bool hasShape=false;
   for(rai::Frame *p:parts) if(p->shape && p->getShape().type()!=rai::ST_marker){ hasShape=true; break; }
 
+  //-- decide on the type
   rai::BodyType type = rai::BT_static;
   if(hasShape){
     if(f->joint)   type = rai::BT_kinematic;
     if(f->inertia) type = f->inertia->type;
   }
   actorTypes(f->ID) = type;
-
   if(verbose) LOG(0) <<"adding link anchored at '" <<f->name <<"' as " <<rai::Enum<rai::BodyType>(type);
-  
+
+  //-- create a PhysX actor
   PxRigidDynamic* actor=NULL;
   switch(type) {
     case rai::BT_static:
@@ -406,10 +410,11 @@ void PhysXInterface_self::addLink(rai::Frame *f, physx::PxMaterial *mMaterial, b
       break;
   }
   CHECK(actor, "create actor failed!");
-  
+
 //  cout <<RAI_HERE <<"adding '" <<b->name <<"' as " <<rai::Enum<rai::BodyType>(type) <<" with parts";
 //  for(auto* p:parts) cout <<' ' <<p->name; cout <<endl;
 
+  //-- for each shape create its geometry with the respective material
   for(rai::Frame *p: parts) {
     rai::Shape *s = p->shape;
     if(!s) continue;
@@ -456,8 +461,14 @@ void PhysXInterface_self::addLink(rai::Frame *f, physx::PxMaterial *mMaterial, b
     }
     
     if(geometry) {
-      PxShape* shape = NULL;
-      shape = actor->createShape(*geometry, *mMaterial);
+      //-- decide/create a specific material
+      PxMaterial *mMaterial = defaultMaterial;
+      double fric=-1.;
+      if(s->frame.ats.get<double>(fric, "friction")){
+        mMaterial = mPhysics->createMaterial(fric, fric, .1f);
+      }
+
+      PxShape* shape = actor->createShape(*geometry, *mMaterial);
       if(&s->frame!=f) {
         if(s->frame.parent==f){
           shape->setLocalPose(conv_Transformation2PxTrans(s->frame.get_Q()));
@@ -468,7 +479,6 @@ void PhysXInterface_self::addLink(rai::Frame *f, physx::PxMaterial *mMaterial, b
       }
       CHECK(shape, "create shape failed!");
     }
-    //actor = PxCreateDynamic(*mPhysics, RaiTrans2PxTrans(self->X), *geometry, *mMaterial, 1.f);
   }
 
   if(type != rai::BT_static) {
