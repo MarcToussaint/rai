@@ -1875,6 +1875,7 @@ void glDrawMeshes(void *P, OpenGL&) {
 }
 
 void rai::MeshCollection::glDraw(OpenGL& gl){
+#ifdef RAI_GL
   CHECK_EQ(X.nd, 2, "");
   CHECK_EQ(X.d0, M.N, "");
   CHECK_EQ(X.d1, 7, "");
@@ -1888,6 +1889,7 @@ void rai::MeshCollection::glDraw(OpenGL& gl){
     M(i)->glDraw(gl);
     glPopMatrix();
   }
+#endif
 }
 
 //==============================================================================

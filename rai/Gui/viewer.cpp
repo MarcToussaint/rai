@@ -345,7 +345,8 @@ void PlotViewer::close() {
 }
 
 void PlotViewer::glDraw(OpenGL&){
-//  rai::Color c;
+#ifdef RAI_GL
+  //  rai::Color c;
 //  glColor(c.r, c.g, c.b);
   glColor(0.,0.,0.);
   for(uint i=0;i<plot.d1;i++){
@@ -357,6 +358,7 @@ void PlotViewer::glDraw(OpenGL&){
     }
     glEnd();
   }
+#endif
 }
 
 

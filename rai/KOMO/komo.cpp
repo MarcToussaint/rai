@@ -1699,6 +1699,7 @@ struct DrawPaths : GLDrawer {
   arr& X;
   DrawPaths(arr& X): X(X) {}
   void glDraw(OpenGL& gl) {
+#ifdef RAI_GL
     glColor(0.,0.,0.);
     for(uint i=0; i<X.d1; i++) {
       glBegin(GL_LINES);
@@ -1710,6 +1711,7 @@ struct DrawPaths : GLDrawer {
       }
       glEnd();
     }
+#endif
   }
 };
 

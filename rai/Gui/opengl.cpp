@@ -453,6 +453,16 @@ void OpenGL::resize(int w,int h) {
 
 #endif
 
+
+#ifndef RAI_GL
+int GLUT_ACTIVE_SHIFT = 1;
+
+struct sOpenGL : NonCopyable {
+  sOpenGL(OpenGL *gl){ NICO }
+};
+
+#endif
+
 //===========================================================================
 //
 // force instantiations
@@ -1444,8 +1454,8 @@ void glDrawTexQuad(uint texture,
                    float x1, float y1, float z1, float x2, float y2, float z2,
                    float x3, float y3, float z3, float x4, float y4, float z4,
                    float mulX, float mulY) { NICO }
-void OpenGL::watchImage(const floatA &_img, bool wait, float _zoom) { NICO }
-void OpenGL::watchImage(const byteA &_img, bool wait, float _zoom) { NICO }
+int OpenGL::watchImage(const floatA &_img, bool wait, float _zoom) { NICO }
+int OpenGL::watchImage(const byteA &_img, bool wait, float _zoom) { NICO }
 void glDrawUI(void *p) { NICO }
 bool glUI::hoverCallback(OpenGL& gl) { NICO }
 bool glUI::clickCallback(OpenGL& gl) { NICO }

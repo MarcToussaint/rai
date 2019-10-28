@@ -1873,6 +1873,7 @@ arr Camera::getGLProjectionMatrix() const{
     P(3,2) = 2. * zFar * zNear / (zNear-zFar);
     return ~Tinv * P; //(P is already transposed!)
   }
+#ifdef RAI_GL
   if(heightAbs > 0.) { //ortho mode
     CHECK(!focalLength, "");
     glOrtho(-whRatio*heightAbs/2., whRatio*heightAbs/2.,
@@ -1880,6 +1881,7 @@ arr Camera::getGLProjectionMatrix() const{
     NIY;
 //    return T * Pinv;
   }
+#endif
   NIY;
   return arr();
 }
