@@ -179,6 +179,7 @@ template<class T> struct Array : std::vector<T>, Serializable {
   /// @name access by reference (direct memory access)
   Array<T> ref() const; //a reference on this
   T& elem(int i) const;
+  T& elem(int i, int j); //access that also handles sparse matrices
 //  T& elem(const Array<int> &I) const;
   T& elem(const Array<uint> &I) const;
   T& scalar() const;
@@ -263,6 +264,7 @@ template<class T> struct Array : std::vector<T>, Serializable {
   
   /// @name sorting and permuting this array
   T median_nonConst(); //this modifies the array!
+  T nthElement_nonConst(uint n); //this modifies the array!
   Array<T>& sort(ElemCompare comp=lowerEqual<T>);
   bool isSorted(ElemCompare comp=lowerEqual<T>) const;
   uint rankInSorted(const T& x, ElemCompare comp=lowerEqual<T>, bool rankAfterIfEqual=false) const;
@@ -287,7 +289,9 @@ template<class T> struct Array : std::vector<T>, Serializable {
   /// @name special matrices [TODO: move outside, use 'special']
   double sparsity();
   SparseMatrix& sparse();
+  const SparseMatrix& sparse() const;
   SparseVector& sparseVec();
+  const SparseVector& sparseVec() const;
 
   /// @name I/O
   void write(std::ostream& os=std::cout, const char *ELEMSEP=NULL, const char *LINESEP=NULL, const char *BRACKETS=NULL, bool dimTag=false, bool binary=false) const;
@@ -905,7 +909,7 @@ struct SpecialArray {
   virtual ~SpecialArray() {}
 };
 
-template<class T> bool isNotSpecial(const rai::Array<T>& X)   { return !X.special || X.special->type==SpecialArray::ST_none; }
+template<class T> bool isSpecial(const rai::Array<T>& X)      { return X.special && X.special->type!=SpecialArray::ST_none; }
 template<class T> bool isNoArr(const rai::Array<T>& X)        { return X.special && X.special->type==SpecialArray::ST_NoArr; }
 template<class T> bool isRowShifted(const rai::Array<T>& X)   { return X.special && X.special->type==SpecialArray::RowShiftedST; }
 template<class T> bool isSparseMatrix(const rai::Array<T>& X) { return X.special && X.special->type==SpecialArray::sparseMatrixST; }
@@ -944,34 +948,61 @@ struct SparseVector: SpecialArray {
   arr& Z;      ///< references the array itself
   intA elems;  ///< for every non-zero (in memory order), the index
   SparseVector(arr& _Z);
+  SparseVector(arr& _Z, const SparseVector& s);
   void resize(uint d0, uint n);
   double& entry(uint i, uint k);
+  double& addEntry(int i);
   void setFromDense(const arr& x);
   arr unsparse();
 };
 
 struct SparseMatrix : SpecialArray {
-  arr& Z;      ///< references the array itself
+  arr& Z;      ///< references the array itself, which linearly stores numbers
   intA elems;  ///< for every non-zero (in memory order), the (row,col) index tuple
   uintAA cols; ///< for every column, for every non-zero the (row,memory) index tuple
   uintAA rows; ///< for every row   , for every non-zero the (column,memory) index tuple
 
   SparseMatrix(arr& _Z);
-  SparseMatrix(arr& _Z, SparseMatrix& s);
-  void resize(uint d0, uint d1, uint n);
-  void reshape(uint d0, uint d1);
-  double& entry(uint i,uint j,uint k);
+  SparseMatrix(arr& _Z, const SparseMatrix& s);
+  //access
+  double& entry(uint i, uint j, uint k);
   double& elem(uint i, uint j);
   double& addEntry(int i, int j);
+  arr getSparseRow(uint i);
+  //construction
   void setFromDense(const arr& X);
   void setupRowsCols();
+  //manipulations
+  void resize(uint d0, uint d1, uint n);
+  void resizeCopy(uint d0, uint d1, uint n);
+  void reshape(uint d0, uint d1);
+  void rowShift(int shift);
+  //computations
   arr At_x(const arr& x);
   arr At_A();
+  arr A_B(const arr& B) const;
+  arr B_A(const arr& B) const;
+  void transpose();
   void rowWiseMult(const arr& a);
+  void add(const arr& a);
+  void subtract(const SparseMatrix& a);
   arr unsparse();
 };
 
 }//namespace rai
+
+#define UpdateOperator( op ) \
+void operator op (rai::SparseMatrix& x, const rai::SparseMatrix& y); \
+void operator op (rai::SparseMatrix& x, double y );
+UpdateOperator(|=)
+UpdateOperator(^=)
+UpdateOperator(&=)
+UpdateOperator(+=)
+UpdateOperator(-=)
+UpdateOperator(*=)
+UpdateOperator(/=)
+UpdateOperator(%=)
+#undef UpdateOperator
 
 //struct RowSparseMatrix : SpecialArray {
 //  RowSparseMatrix()

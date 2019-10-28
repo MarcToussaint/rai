@@ -580,9 +580,14 @@ void glColorId(uint id) {
   glColor3ubv(rgb);
 }
 
+extern bool Geo_mesh_drawColors;
+
 void OpenGL::drawId(uint id) {
   if(drawMode_idColor) {
     glColorId(id);
+    Geo_mesh_drawColors=false;
+  }else{
+    Geo_mesh_drawColors=true;
   }
 }
 
@@ -1729,7 +1734,9 @@ void OpenGL::Draw(int w, int h, rai::Camera *cam, bool callerHasAlreadyLocked) {
   if(mode==GL_SELECT) glInitNames();
   for(uint i=0; i<drawers.N; i++) {
     if(mode==GL_SELECT) glLoadName(i);
+//    drawers(i)->glDrawerMutex.lock(RAI_HERE);
     drawers(i)->glDraw(*this);
+//    drawers(i)->glDrawerMutex.unlock();
     glLoadIdentity();
   }
   
@@ -1839,7 +1846,9 @@ void OpenGL::Select(bool callerHasAlreadyLocked) {
   if(mouseView==-1) {
     for(i=0; i<drawers.N; i++) {
       glLoadName(i);
+//      drawers(i)->glDrawerMutex.lock(RAI_HERE);
       drawers(i)->glDraw(*this);
+//      drawers(i)->glDrawerMutex.unlock();
       GLint s;
       glGetIntegerv(GL_NAME_STACK_DEPTH, &s);
       if(s!=0) RAI_MSG("OpenGL name stack has not depth 1 (pushs>pops) in SELECT mode:" <<s);
@@ -2392,19 +2401,19 @@ void OpenGL::renderInBack(int w, int h) {
   if(w<0) w=width;
   if(h<0) h=height;
   
-  singletonGlSpinner(); //ensure that glut is initialized (if the drawer called glut)
+//  singletonGlSpinner(); //ensure that glut is initialized (if the drawer called glut)
   
-  auto mut=singleGLAccess();
-  auto _dataLock = dataLock(RAI_HERE);
-  xBackgroundContext()->makeCurrent();
-  
+//  auto mut=singleGLAccess();
+//  auto _dataLock = dataLock(RAI_HERE);
+//  xBackgroundContext()->makeCurrent();
+
   CHECK_EQ(w%4,0,"should be devidable by 4!!");
   
   isUpdating.waitForStatusEq(0);
   isUpdating.setStatus(1);
   
   if(!rboColor || !rboDepth) { //need to initialize
-    glewInit();
+//    glewInit();
     glGenRenderbuffers(1, &rboColor);  // Create a new renderbuffer unique name.
     glBindRenderbuffer(GL_RENDERBUFFER, rboColor);  // Set it as the current.
     glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, w, h); // Sets storage type for currently bound renderbuffer.
@@ -2470,7 +2479,7 @@ void OpenGL::renderInBack(int w, int h) {
           break;
         }
       }
-      exit(EXIT_FAILURE);
+      HALT("couldn't create framebuffer");
     }
   }
   
@@ -2493,8 +2502,6 @@ void OpenGL::renderInBack(int w, int h) {
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
   
   isUpdating.setStatus(0);
-
-
 #endif
 }
 

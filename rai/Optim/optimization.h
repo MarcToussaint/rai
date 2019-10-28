@@ -39,7 +39,7 @@ extern ObjectiveTypeA& NoTermTypeA;
 struct ConstrainedProblem {
   //TODO: add getStructure -> dim_x, tt
   virtual ~ConstrainedProblem() = default;
-  virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& ot, const arr& x, arr& lambda) = 0;
+  virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& ot, const arr& x) = 0;
 };
 
 //===========================================================================
@@ -52,7 +52,7 @@ typedef std::function<void(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const a
 struct Conv_Lambda_ConstrainedProblem : ConstrainedProblem {
   ConstrainedProblemLambda f;
   Conv_Lambda_ConstrainedProblem(const ConstrainedProblemLambda& f): f(f) {}
-  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& ot, const arr& x, arr& lambda) { f(phi, J, H, ot, x); }
+  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& ot, const arr& x) { f(phi, J, H, ot, x); }
 };
 
 //===========================================================================

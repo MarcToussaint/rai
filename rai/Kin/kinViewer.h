@@ -21,12 +21,12 @@ void renderConfigurations(const WorldL& cs, const char* filePrefix="vid/z.", int
 //===========================================================================
 
 struct KinViewer : Thread {
-  Var<rai::KinematicWorld> world;
+  Var<rai::Configuration> world;
   MeshA meshesCopy;
   ProxyA proxiesCopy;
   struct OpenGL *gl;
   int cameraFrameID=-1;
-  KinViewer(const Var<rai::KinematicWorld>& _kin, double beatIntervalSec=-1., const char* _cameraFrameName=NULL);
+  KinViewer(const Var<rai::Configuration>& _kin, double beatIntervalSec=-1., const char* _cameraFrameName=NULL);
   ~KinViewer();
   void open();
   void step();
@@ -38,7 +38,7 @@ struct KinViewer : Thread {
 struct KinPathViewer : Thread {
   Var<WorldL> configurations;
   //-- internal (private)
-  rai::KinematicWorld copy;
+  rai::Configuration copy;
   struct OpenGL *gl;
   uint t;
   int tprefix;
@@ -58,19 +58,16 @@ struct KinPathViewer : Thread {
 //===========================================================================
 
 struct KinPoseViewer : Thread, GLDrawer {
-  Var<rai::KinematicWorld> model;
-  Var<arr> frameState; ///< poses to be watched
+  Var<rai::Configuration> model;
+  Var<arr> frameState;
+  MeshA meshesCopy;
   uint frameCount=0;
   //-- internal (private)
   OpenGL gl;
-  rai::KinematicWorld copy;
-  WorldL copies;
   
 //  KinPoseViewer(const char* modelVarName, const StringA& poseVarNames, double beatIntervalSec=-1.);
-  KinPoseViewer(Var<rai::KinematicWorld>& _kin, const Var<arr>& _frameState, double beatIntervalSec=-1.);
+  KinPoseViewer(Var<rai::Configuration>& _kin, const Var<arr>& _frameState, double beatIntervalSec=-1.);
   ~KinPoseViewer();
-  
-  void recopyKinematics(const rai::KinematicWorld& world=NoWorld);
   
   void open();
   void step();
@@ -82,17 +79,17 @@ struct KinPoseViewer : Thread, GLDrawer {
 //===========================================================================
 
 struct ComputeCameraView : Thread {
-  Var<rai::KinematicWorld> modelWorld;
+  Var<rai::Configuration> modelWorld;
   Var<byteA> cameraView;
   Var<uint16A> cameraDepth;
   Var<rai::Transformation> cameraFrame;
   
   //-- internal (private)
   OpenGL gl;
-  rai::KinematicWorld copy;
+  rai::Configuration copy;
   bool getDepth;
   
-  ComputeCameraView(const Var<rai::KinematicWorld>& _modelWorld, double beatIntervalSec=-1.);
+  ComputeCameraView(const Var<rai::Configuration>& _modelWorld, double beatIntervalSec=-1.);
   ~ComputeCameraView();
   void open();
   void step();

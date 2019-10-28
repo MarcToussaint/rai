@@ -15,11 +15,13 @@ struct AssimpLoader {
   std::string directory;
 
   AssimpLoader(std::string const &path);
+  AssimpLoader(const struct aiScene* scene);
 
   rai::Mesh getSingleMesh();
 
+
 private:
-  void loadNode(struct aiNode *node, const struct aiScene *scene, arr T);
-  rai::Mesh loadMesh(struct aiMesh *mesh, const struct aiScene *scene);
+  void loadNode(const struct aiNode *node, const struct aiScene *scene, arr T);
+  rai::Mesh loadMesh(const struct aiMesh *mesh, const struct aiScene *scene);
 };
 

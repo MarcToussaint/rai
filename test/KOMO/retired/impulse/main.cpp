@@ -14,7 +14,7 @@
 #include <Kin/kinViewer.h>
 
 void plan(){
-  rai::KinematicWorld K("model.g");
+  rai::Configuration K("model.g");
 
   K["ball2"]->joint->type=rai::JT_rigid;
   K.reset_q();

@@ -24,14 +24,14 @@ struct SwiftInterface {
   intA INDEXswift2frame, INDEXshape2swift;
   double cutoff;
   
-  SwiftInterface(const rai::KinematicWorld& world, double _cutoff=.2);
+  SwiftInterface(const rai::Configuration& world, double _cutoff=.2);
   ~SwiftInterface();
   
   void setCutoff(double _cutoff) { cutoff=_cutoff; }
   
-  void step(rai::KinematicWorld& world, bool dumpReport=false);
-  void pushToSwift(const rai::KinematicWorld& world);
-  void pullFromSwift(rai::KinematicWorld& world, bool dumpReport);
+  void step(rai::Configuration& world, bool dumpReport=false);
+  void pushToSwift(const rai::Configuration& world);
+  void pullFromSwift(rai::Configuration& world, bool dumpReport);
   
   void reinitShape(const rai::Frame *s);
 //  void close();
@@ -42,7 +42,7 @@ struct SwiftInterface {
   void deactivate(const FrameL& shapes1, const FrameL& shapes2);
   void deactivate(const FrameL& shapes);
   
-  void initActivations(const rai::KinematicWorld& world);
+  void initActivations(const rai::Configuration& world);
   void swiftQueryExactDistance();
   uint countObjects();
 };

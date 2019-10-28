@@ -5,7 +5,7 @@
 #include <Kin/kin_swift.h>
 #include <Kin/proxy.h>
 
-arr computeNextFeasibleConfiguration(rai::KinematicWorld& K, arr q_ref, StringA& jointsInLimit, StringA& collisionPairs);
+arr computeNextFeasibleConfiguration(rai::Configuration& K, arr q_ref, StringA& jointsInLimit, StringA& collisionPairs);
 
 struct Sensor{
   rai::String name;
@@ -20,7 +20,7 @@ struct Simulation_self{
 
   Mutex threadLock;
 
-  rai::KinematicWorld K_compute;
+  rai::Configuration K_compute;
   OpenGL gl;
 
   StringA currentlyUsedJoints; //the joints that the spline refers to
@@ -29,7 +29,7 @@ struct Simulation_self{
   uint stepCount=0; // number of simulation steps
 };
 
-Simulation::Simulation(const rai::KinematicWorld& _K, double dt)
+Simulation::Simulation(const rai::Configuration& _K, double dt)
   : K(_K){
   self = new Simulation_self;
   setUsedRobotJoints(K.getJointNames());
@@ -97,13 +97,13 @@ void Simulation::setJointStateSafe(arr q_ref, StringA &jointsInLimit, StringA &c
   arr q0 = K.getJointState(self->currentlyUsedJoints);
 
   self->K_compute.setJointState(q0, self->currentlyUsedJoints);
-  rai::KinematicWorld& KK = self->K_compute;
+  rai::Configuration& KK = self->K_compute;
 
   jointsInLimit.clear();
   collisionPairs.clear();
 
   //-- first check limits -> box constraints -> clip
-  for(rai::Joint *j:KK.fwdActiveJoints){
+  for(rai::Joint *j:KK.activeJoints){
     bool active=false;
     if(j->limits.N){
       for(uint d=0;d<j->dim;d++){
@@ -260,7 +260,7 @@ arr Simulation::getObjectPoses(const StringA &objects){
   }
 
   arr X(objs.N, 7);
-  for(uint i=0;i<objs.N;i++) X[i] = objs.elem(i)->X.getArr7d();
+  for(uint i=0;i<objs.N;i++) X[i] = objs.elem(i)->ensure_X().getArr7d();
   return X;
 }
 
@@ -293,7 +293,7 @@ void Simulation::glDraw(OpenGL &gl){
 //=============================================================================
 
 #if 0
-arr computeNextFeasibleConfiguration(rai::KinematicWorld& K, arr q_ref, StringA& jointsInLimit, StringA& collisionPairs){
+arr computeNextFeasibleConfiguration(rai::Configuration& K, arr q_ref, StringA& jointsInLimit, StringA& collisionPairs){
   arr q = q_ref;
   arr q0 = K.getJointState();
 

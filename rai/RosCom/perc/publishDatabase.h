@@ -9,7 +9,7 @@
 /// 'publishes' to both, ROS topics and modelWorld
 struct PublishDatabase : Thread{
   Var<PerceptL> percepts_filtered;
-  VAR(rai::KinematicWorld, modelWorld)
+  VAR(rai::Configuration, modelWorld)
 
   PublishDatabase();
 

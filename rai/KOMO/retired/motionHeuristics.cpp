@@ -310,7 +310,7 @@ void setGraspGoals_PR2(KOMO& MP, uint T, uint shapeId, uint side, uint phase) {
 }
 #endif
 
-void reattachShape(rai::KinematicWorld& ors, SwiftInterface *swift, const char* objShape, const char* toBody);
+void reattachShape(rai::Configuration& ors, SwiftInterface *swift, const char* objShape, const char* toBody);
 
 #if 0
 void setPlaceGoals(KOMO& MP, uint T, uint shapeId, int belowToShapeId, const arr& locationTo) {

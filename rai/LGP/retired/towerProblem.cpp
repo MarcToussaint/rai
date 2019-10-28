@@ -71,7 +71,7 @@ void TowerProblem::setRandom() {
   world.calc_fwdPropagateShapeFrames();
 }
 
-double TowerProblem::reward(const rai::KinematicWorld& world, const Graph& symbols) {
+double TowerProblem::reward(const rai::Configuration& world, const Graph& symbols) {
   //-- find max depth
   double depth=0.;
   Node *depthSymbol=symbols["depth"];

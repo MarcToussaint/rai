@@ -41,7 +41,7 @@ SwiftInterface::~SwiftInterface() {
   //cout <<" -- SwiftInterface closed" <<endl;
 }
 
-SwiftInterface::SwiftInterface(const rai::KinematicWorld& world, double _cutoff)
+SwiftInterface::SwiftInterface(const rai::Configuration& world, double _cutoff)
   : scene(NULL), cutoff(_cutoff) {
   bool r, add;
 
@@ -132,7 +132,7 @@ void SwiftInterface::reinitShape(const rai::Frame *f) {
   if(s->cont) scene->Activate(sw);
 }
 
-void SwiftInterface::initActivations(const rai::KinematicWorld& world) {
+void SwiftInterface::initActivations(const rai::Configuration& world) {
   /* deactivate some collision pairs:
     -- no `cont' -> no collisions with this object at all
     -- no collisions between shapes of same body
@@ -152,10 +152,10 @@ void SwiftInterface::initActivations(const rai::KinematicWorld& world) {
       }
     }
   //shapes within a link
-  for(rai::Frame *f: world.frames) if(f->shape && f->shape->cont){
-    rai::Frame *p = f->getUpwardLink();
-    FrameL F = {p};
-    p->getRigidSubFrames(F);
+  FrameL links = world.getLinks();
+  for(rai::Frame *f: links){
+    FrameL F = {f};
+    f->getRigidSubFrames(F);
     for(uint i=F.N;i--;) if(!F(i)->shape || !F(i)->shape->cont) F.remove(i);
     deactivate(F);
   }
@@ -216,15 +216,15 @@ void SwiftInterface::deactivate(rai::Frame *s) {
   scene->Deactivate(INDEXshape2swift(s->ID));
 }
 
-void SwiftInterface::pushToSwift(const rai::KinematicWorld& world) {
+void SwiftInterface::pushToSwift(const rai::Configuration& world) {
   //CHECK_EQ(INDEXshape2swift.N,world.shapes.N,"the number of shapes has changed");
   CHECK_LE(INDEXshape2swift.N ,  world.frames.N, "the number of shapes has changed");
   rai::Matrix rot;
   for(rai::Frame *f: world.frames) {
     if(f->shape) {
       if(f->ID<INDEXshape2swift.N && INDEXshape2swift(f->ID)!=-1) {
-        rot = f->X.rot.getMatrix();
-        scene->Set_Object_Transformation(INDEXshape2swift(f->ID), rot.p(), f->X.pos.p());
+        rot = f->ensure_X().rot.getMatrix();
+        scene->Set_Object_Transformation(INDEXshape2swift(f->ID), rot.p(), f->getPosition().p);
         if(!f->shape->cont) scene->Deactivate(INDEXshape2swift(f->ID));
         //else         scene->Activate( INDEXshape2swift(f->ID) );
       }
@@ -232,7 +232,7 @@ void SwiftInterface::pushToSwift(const rai::KinematicWorld& world) {
   }
 }
 
-void SwiftInterface::pullFromSwift(rai::KinematicWorld& world, bool dumpReport) {
+void SwiftInterface::pullFromSwift(rai::Configuration& world, bool dumpReport) {
   int i, j, k, np;
   int *oids=0, *num_contacts=0;
   SWIFT_Real *dists=0, *nearest_pts=0, *normals=0;
@@ -272,6 +272,7 @@ void SwiftInterface::pullFromSwift(rai::KinematicWorld& world, bool dumpReport) 
   }
   
   for(rai::Proxy& p:world.proxies) p.del_coll();
+  world.proxies.clear();
   world.proxies.resize(np);
   
   //add contacts to list
@@ -282,8 +283,8 @@ void SwiftInterface::pullFromSwift(rai::KinematicWorld& world, bool dumpReport) 
     proxy.a = world.frames(INDEXswift2frame(oids[i <<1]));
     proxy.b = world.frames(INDEXswift2frame(oids[(i <<1)+1]));
     proxy.d = -.0; //dists[i];
-    proxy.posA = proxy.a->X.pos;
-    proxy.posB = proxy.b->X.pos;
+    proxy.posA = proxy.a->ensure_X().pos;
+    proxy.posB = proxy.b->ensure_X().pos;
 
 #if 0
     //non-penetrating pair of objects
@@ -329,7 +330,7 @@ void SwiftInterface::pullFromSwift(rai::KinematicWorld& world, bool dumpReport) 
         
         //relative rotation and translation of shapes
         rai::Transformation rel;
-        rel.setDifference(global_ANN_shape->frame.X, s->frame.X);
+        rel.setDifference(global_ANN_shape->frame.ensure_X(), s->frame.ensure_X());
         rel.rot.getMatrix(R.p);
         t = conv_vec2arr(rel.pos);
         
@@ -348,15 +349,15 @@ void SwiftInterface::pullFromSwift(rai::KinematicWorld& world, bool dumpReport) 
         proxy->a = &global_ANN_shape->frame;
         proxy->b = &s->frame;
         proxy->d = _dists(0);
-        proxy->posA.set(&global_ANN_shape->mesh().V(_idx(0), 0));  proxy->posA = global_ANN_shape->frame.X * proxy->posA;
-        proxy->posB.set(&s->mesh().V(_i, 0));                      proxy->posB = s->frame.X * proxy->posB;
+        proxy->posA.set(&global_ANN_shape->mesh().V(_idx(0), 0));  proxy->posA = global_ANN_shape->frame.ensure_X() * proxy->posA;
+        proxy->posB.set(&s->mesh().V(_i, 0));                      proxy->posB = s->frame.ensure_X() * proxy->posB;
         proxy->normal = proxy->posA - proxy->posB;
         proxy->normal.normalize();
       }
   }
 }
 
-void SwiftInterface::step(rai::KinematicWorld& world, bool dumpReport) {
+void SwiftInterface::step(rai::Configuration& world, bool dumpReport) {
   pushToSwift(world);
   pullFromSwift(world, dumpReport);
 }
@@ -383,16 +384,16 @@ uint SwiftInterface::countObjects() {
 
 #else
 #include <Core/util.h>
-void SwiftInterface::step(rai::KinematicWorld &world, bool dumpReport=false) {}
+void SwiftInterface::step(rai::Configuration &world, bool dumpReport=false) {}
 void SwiftInterface::pushToSwift() {}
-void SwiftInterface::pullFromSwift(const KinematicWorld &world, bool dumpReport) {}
+void SwiftInterface::pullFromSwift(const Configuration &world, bool dumpReport) {}
 
 void SwiftInterface::reinitShape(const rai::Shape *s) {}
 //  void close();
 void SwiftInterface::deactivate(rai::Shape *s1, rai::Shape *s2) {}
 void SwiftInterface::deactivate(const rai::Array<rai::Shape*>& shapes) {}
 void SwiftInterface::deactivate(const rai::Array<rai::Frame*>& frames) {}
-void SwiftInterface::initActivations(const KinematicWorld &world) {}
+void SwiftInterface::initActivations(const Configuration &world) {}
 void SwiftInterface::swiftQueryExactDistance() {}
 #endif
 /** @} */

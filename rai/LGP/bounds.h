@@ -15,8 +15,8 @@ enum BoundType{ BD_all=-1,
 void skeleton2Bound(KOMO& komo,
                     BoundType boundType,
                     const Skeleton& S,
-                    const rai::KinematicWorld& startKinematics,
-                    const rai::KinematicWorld& parentEffKinematics,
+                    const rai::Configuration& startKinematics,
+                    const rai::Configuration& parentEffKinematics,
                     bool collisions,
                     const arrA& waypoints={}
                     );
@@ -44,10 +44,10 @@ struct CG{
 };
 
 ptr<CG> skeleton2CGO(const Skeleton& S,
-                     const rai::KinematicWorld& startKinematics,
+                     const rai::Configuration& startKinematics,
                      bool collisions);
 
 void CG2komo(KOMO& komo,
              const SubCG& scg,
-             const rai::KinematicWorld& C,
+             const rai::Configuration& C,
              bool collisions);

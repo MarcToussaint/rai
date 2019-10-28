@@ -16,7 +16,7 @@
 void PhaseOneProblem::initialize(arr& x){
   arr phi;
   ObjectiveTypeA ot;
-  f_orig.phi(phi, NoArr, NoArr, ot, x, NoArr);
+  f_orig.phi(phi, NoArr, NoArr, ot, x);
   dim_x=x.N;
   dim_eq=dim_ineq=0;
   double gmax=0.;
@@ -32,14 +32,14 @@ void PhaseOneProblem::initialize(arr& x){
   x.append(gmax);
 }
 
-void PhaseOneProblem::phi(arr& meta_phi, arr& meta_J, arr& meta_H, ObjectiveTypeA& meta_ot, const arr& meta_x, arr& lambda) {
+void PhaseOneProblem::phi(arr& meta_phi, arr& meta_J, arr& meta_H, ObjectiveTypeA& meta_ot, const arr& meta_x) {
   CHECK_EQ(meta_x.N, dim_x+1, "");
   arr x = meta_x({0,-2});
   double s = meta_x(-1);
 
   arr phi, J;
   ObjectiveTypeA ot;
-  f_orig.phi(phi, J, NoArr, ot, x, NoArr);
+  f_orig.phi(phi, J, NoArr, ot, x);
 
   meta_phi.resize(1+dim_ineq+dim_eq);
   meta_ot.resize(1+dim_ineq+dim_eq);
@@ -118,13 +118,14 @@ bool OptConstrained::step() {
   }
   
   //run newton on the Lagrangian problem
+  OptNewton::StopCriterion newtonStop = newton.stopNone;
   if(newtonOnce || opt.constrainedMethod==squaredPenaltyFixed) {
-    newton.run();
+    newtonStop = newton.run();
   } else {
     double stopTol = newton.o.stopTolerance;
     if(earlyPhase) newton.o.stopTolerance *= 10.;
-    if(opt.constrainedMethod==anyTimeAula)  newton.run(20);
-    else                                    newton.run();
+    if(opt.constrainedMethod==anyTimeAula)  newtonStop = newton.run(20);
+    else                                    newtonStop = newton.run();
     newton.o.stopTolerance = stopTol;
   }
   
@@ -167,6 +168,15 @@ bool OptConstrained::step() {
         return true;
     }
   }
+//  if(its>=2 && newtonStop==OptNewton::stopTinySteps) {
+//    if(opt.verbose>0) cout <<"** optConstr. StoppingCriterion TinySteps<" <<opt.stopTolerance <<endl;
+//    if(earlyPhase) earlyPhase=false;
+//    else {
+//      if(opt.stopGTolerance<0.
+//          || L.get_sumOfGviolations() + L.get_sumOfHviolations() < opt.stopGTolerance)
+//        return true;
+//    }
+//  }
   if(newton.evals>=opt.stopEvals) {
     if(opt.verbose>0) cout <<"** optConstr. StoppingCriterion MAX EVALS" <<endl;
     return true;
@@ -207,8 +217,8 @@ bool OptConstrained::step() {
 uint OptConstrained::run() {
 //  earlyPhase=true;
   while(!step());
-  newton.beta *= 1e-3;
-  step();
+//  newton.beta *= 1e-3;
+//  step();
   return newton.evals;
 }
 

@@ -13,7 +13,7 @@
 
 //===========================================================================
 
-EffectivePoseProblem::EffectivePoseProblem(rai::KinematicWorld& effKinematics_before,
+EffectivePoseProblem::EffectivePoseProblem(rai::Configuration& effKinematics_before,
     const Graph& KB, const Graph& symbolicState_before, const Graph& symbolicState_after,
     int verbose)
   : effKinematics(effKinematics_before),
@@ -118,11 +118,11 @@ void EffectivePoseProblem::phi(arr& phi, arr& phiJ, arr& H, ObjectiveTypeA& tt, 
       arr y,J;
       effKinematics.kinematicsRelPos(y, J, b1, NoVector, b2, NoVector);
       arr range(3);
-      double d1 = .5*b1->shapes(0)->size(0) + b1->shapes(0)->size(3);
-      double d2 = .5*b2->shapes(0)->size(0) + b2->shapes(0)->size(3);
+      double d1 = .5*b1->shapes(0)->size(0) + b1->shapes(0)->size(-1);
+      double d2 = .5*b2->shapes(0)->size(0) + b2->shapes(0)->size(-1);
       range(0) = fabs(d1 - d2);
-      d1 = .5*b1->shapes(0)->size(1) + b1->shapes(0)->size(3);
-      d2 = .5*b2->shapes(0)->size(1) + b2->shapes(0)->size(3);
+      d1 = .5*b1->shapes(0)->size(1) + b1->shapes(0)->size(-1);
+      d2 = .5*b2->shapes(0)->size(1) + b2->shapes(0)->size(-1);
       range(1) = fabs(d1 - d2);
       range(2)=0.;
       if(verbose>2) cout <<y <<range

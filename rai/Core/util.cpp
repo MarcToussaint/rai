@@ -790,7 +790,7 @@ rai::LogToken::~LogToken() {
 // #endif
       if(log_level==-1) { cout <<"** WARNING:" <<rai::errString <<endl; }
       if(log_level==-2) { cerr <<"** ERROR:" <<rai::errString <<endl; /*throw does not WORK!!! Because this is a destructor. The THROW macro does it inline*/ }
-      if(log_level==-3) { cerr <<"** HARD EXIT! " <<rai::errString <<endl; /*rai::logServer().mutex.unlock();*/ exit(1); }
+      if(log_level==-3) { cerr <<"** HARD EXIT! " <<rai::errString <<endl;  exit(1); }
       if(log_level<=-3) raise(SIGUSR2);
     }
   }

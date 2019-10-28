@@ -8,7 +8,7 @@
 
 //===========================================================================
 
-Feature *Feature::newTaskMap(const Graph& params, const rai::KinematicWorld& world) {
+Feature *Feature::newTaskMap(const Graph& params, const rai::Configuration& world) {
   //-- get tags
   rai::String type = params.get<rai::String>("map", "default");
   
@@ -76,7 +76,7 @@ Feature *Feature::newTaskMap(const Graph& params, const rai::KinematicWorld& wor
 
 //===========================================================================
 
-Feature *Feature::newTaskMap(const Node* specs, const rai::KinematicWorld& world) {
+Feature *Feature::newTaskMap(const Node* specs, const rai::Configuration& world) {
   if(specs->parents.N<2) return NULL; //these are not task specs
   
   //-- get tags

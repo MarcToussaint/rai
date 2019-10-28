@@ -18,11 +18,11 @@ int MAIN(int argc,char **argv){
 
     cout <<USAGE <<endl;
 
-    rai::String file=rai::getParameter<rai::String>("file",STRING("test.ors"));
+    rai::String file=rai::getParameter<rai::String>("file",STRING("test.g"));
     if(rai::argc>=2 && rai::argv[1][0]!='-') file=rai::argv[1];
     cout <<"opening file `" <<file <<"'" <<endl;
 
-    rai::KinematicWorld K;
+    rai::Configuration K;
     for(;;){
     Inotify ino(file);
     try {
@@ -49,7 +49,7 @@ int MAIN(int argc,char **argv){
     }
     K.calc_q();
     K.checkConsistency();
-    if(K.fwdActiveSet.N == K.frames.N) K.sortFrames();
+    K.sortFrames();
 
 //    makeConvexHulls(G.frames);
 //    computeOptimalSSBoxes(G.shapes);

@@ -102,8 +102,8 @@ struct ObjectTransformator : public Module {
   void close() {}
   
   VAR(ObjectBeliefSet, kinect_objects)
-  VAR(rai::KinematicWorld, geoState)
-  rai::KinematicWorld geo;
+  VAR(rai::Configuration, geoState)
+  rai::Configuration geo;
 };
 
 #endif // RAI_PCL

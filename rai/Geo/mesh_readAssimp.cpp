@@ -35,6 +35,14 @@ AssimpLoader::AssimpLoader(const std::string& path) {
   loadNode(scene->mRootNode, scene, T);
 }
 
+AssimpLoader::AssimpLoader(const aiScene* scene){
+  arr T = eye(4);
+  T(1,1) = T(2,2) = 0.;
+  T(1,2) = -1;
+  T(2,1) = +1.;
+  loadNode(scene->mRootNode, scene, T);
+}
+
 rai::Mesh AssimpLoader::getSingleMesh() {
   CHECK(meshes.size(), "nothing loaded");
   if(meshes.size()==1) return meshes[0];
@@ -47,7 +55,7 @@ rai::Mesh AssimpLoader::getSingleMesh() {
 }
 
 uint depth=0;
-void AssimpLoader::loadNode(aiNode* node, const aiScene* scene, arr T) {
+void AssimpLoader::loadNode(const aiNode* node, const aiScene* scene, arr T) {
   arr t(4,4);
   for(uint i=0; i<4; i++) for(uint j=0; j<4; j++) t(i,j) = node->mTransformation[i][j];
 
@@ -78,7 +86,7 @@ void AssimpLoader::loadNode(aiNode* node, const aiScene* scene, arr T) {
   }
 }
 
-rai::Mesh AssimpLoader::loadMesh(aiMesh* mesh, const aiScene* scene) {
+rai::Mesh AssimpLoader::loadMesh(const aiMesh* mesh, const aiScene* scene) {
   //      cout <<"loading mesh: #V=" <<mesh->mNumVertices <<endl;
   rai::Mesh M;
   M.V.resize(mesh->mNumVertices, 3);

@@ -19,7 +19,7 @@ struct CameraView : GLDrawer {
   };
 
   //-- description of world configuration
-  rai::KinematicWorld K;       //COPY of the configuration
+  rai::Configuration K;       //COPY of the configuration
   rai::Array<Sensor> sensors;  //the list of sensors
 
   enum RenderMode{ all, seg, visuals };
@@ -32,7 +32,7 @@ struct CameraView : GLDrawer {
   byteA frameIDmap;
 
   //-- evaluation outputs
-  CameraView(const rai::KinematicWorld& _K, bool _offscreen=true, int _watchComputations=0);
+  CameraView(const rai::Configuration& _K, bool _offscreen=true, int _watchComputations=0);
   ~CameraView(){}
 
   //-- loading the configuration: the meshes, the robot model, the tote, the sensors; all ends up in K
@@ -41,7 +41,7 @@ struct CameraView : GLDrawer {
 
   Sensor& selectSensor(const char* sensorName); //set the OpenGL sensor
 
-  void updateConfiguration(const KinematicWorld& newC);
+  void updateConfiguration(const Configuration& newC);
 
   //-- compute/analyze a camera perspective (stored in classes' output fields)
   void computeImageAndDepth(byteA& image, floatA& depth);
@@ -62,7 +62,7 @@ private:
 //===========================================================================
 
 struct Sim_CameraView : Thread {
-  Var<rai::KinematicWorld> model;
+  Var<rai::Configuration> model;
 
   //-- outputs
   Var<byteA> color;
@@ -71,7 +71,7 @@ struct Sim_CameraView : Thread {
   //-- internal
   CameraView C;
 
-  Sim_CameraView(Var<rai::KinematicWorld>& _kin,
+  Sim_CameraView(Var<rai::Configuration>& _kin,
                  Var<byteA> _color,
                  Var<floatA> _depth,
                  double beatIntervalSec=-1., const char* _cameraFrameName=NULL, bool _idColors=false, const byteA& _frameIDmap=NoByteA);

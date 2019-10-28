@@ -30,7 +30,7 @@ struct sBaxterInterface {
 
   ptr<ros::NodeHandle> nh;
   ros::Publisher pubL, pubR, pubLg, pubRg, pubHead, pubGripperR, pubGripperL;
-  rai::KinematicWorld baxterModel;
+  rai::Configuration baxterModel;
 
   std::shared_ptr<Subscriber<sensor_msgs::JointState>> sub_state;
   std::shared_ptr<Subscriber<baxter_core_msgs::EndEffectorState>> sub_gripR;
@@ -62,17 +62,17 @@ struct sBaxterInterface {
   }
 };
 
-baxter_core_msgs::JointCommand conv_qRef2baxterMessage(const arr& q_ref, const rai::KinematicWorld& baxterModel, const char* prefix) {
+baxter_core_msgs::JointCommand conv_qRef2baxterMessage(const arr& q_ref, const rai::Configuration& baxterModel, const char* prefix) {
   baxter_core_msgs::JointCommand msg;
   msg.mode = 1;
-  for(rai::Joint *j:baxterModel.fwdActiveJoints) if(j->frame->name.startsWith(prefix)) {
+  for(rai::Joint *j:baxterModel.activeJoints) if(j->frame->name.startsWith(prefix)) {
       msg.command.push_back(q_ref(j->qIndex));
       msg.names.push_back(j->frame->name.p);
     }
   return msg;
 }
 
-bool baxter_get_q_qdot_u(arr& q, arr& v, arr& u, const sensor_msgs::JointState& msg, const rai::KinematicWorld& baxterModel) {
+bool baxter_get_q_qdot_u(arr& q, arr& v, arr& u, const sensor_msgs::JointState& msg, const rai::Configuration& baxterModel) {
   uint n = msg.name.size();
   if(!n) return false;
   if(!!q && q.N!=baxterModel.q.N) q.resize(baxterModel.q.N).setZero();
@@ -92,7 +92,7 @@ bool baxter_get_q_qdot_u(arr& q, arr& v, arr& u, const sensor_msgs::JointState& 
   return true;
 }
 
-baxter_core_msgs::HeadPanCommand getHeadMsg(const arr& q_ref, const rai::KinematicWorld& baxterModel) {
+baxter_core_msgs::HeadPanCommand getHeadMsg(const arr& q_ref, const rai::Configuration& baxterModel) {
   baxter_core_msgs::HeadPanCommand msg;
   rai::Joint *j = baxterModel.getFrameByName("head_pan")->joint;
   msg.target = q_ref(j->qIndex);
@@ -100,7 +100,7 @@ baxter_core_msgs::HeadPanCommand getHeadMsg(const arr& q_ref, const rai::Kinemat
   return msg;
 }
 
-baxter_core_msgs::EndEffectorCommand getElectricGripperMsg(const arr& q_ref, const rai::KinematicWorld& baxterModel) {
+baxter_core_msgs::EndEffectorCommand getElectricGripperMsg(const arr& q_ref, const rai::Configuration& baxterModel) {
   baxter_core_msgs::EndEffectorCommand msg;
   rai::Joint *j = baxterModel.getFrameByName("r_gripper_l_finger_joint")->joint;
   rai::String str;
@@ -122,7 +122,7 @@ baxter_core_msgs::EndEffectorCommand getElectricGripperMsg(const arr& q_ref, con
   return msg;
 }
 
-baxter_core_msgs::EndEffectorCommand getVacuumGripperMsg(const arr& q_ref, const rai::KinematicWorld& baxterModel) {
+baxter_core_msgs::EndEffectorCommand getVacuumGripperMsg(const arr& q_ref, const rai::Configuration& baxterModel) {
   baxter_core_msgs::EndEffectorCommand msg;
   rai::Joint *j = baxterModel.getFrameByName("l_gripper_l_finger_joint")->joint;
   rai::String str;
@@ -143,7 +143,7 @@ baxter_core_msgs::EndEffectorCommand getVacuumGripperMsg(const arr& q_ref, const
   return msg;
 }
 
-SendPositionCommandsToBaxter::SendPositionCommandsToBaxter(const rai::KinematicWorld& kw, const Var<CtrlMsg>& _ctrl_ref)
+SendPositionCommandsToBaxter::SendPositionCommandsToBaxter(const rai::Configuration& kw, const Var<CtrlMsg>& _ctrl_ref)
   : Thread("SendPositionCommandsToBaxter"),
     ctrl_ref(NULL, true),
     s(0) {
@@ -264,9 +264,9 @@ void BaxterInterface::send_q(const arr& q_ref, bool enableL, bool enableR){
 #else
 
 #ifdef RAI_ROS
-bool baxter_update_qReal(arr& qReal, const sensor_msgs::JointState& msg, const rai::KinematicWorld& baxterModel) { NICO }
+bool baxter_update_qReal(arr& qReal, const sensor_msgs::JointState& msg, const rai::Configuration& baxterModel) { NICO }
 
-SendPositionCommandsToBaxter::SendPositionCommandsToBaxter(const rai::KinematicWorld& kw, const Var<CtrlMsg>& _ctrl_ref)
+SendPositionCommandsToBaxter::SendPositionCommandsToBaxter(const rai::Configuration& kw, const Var<CtrlMsg>& _ctrl_ref)
   : Thread("SendPositionCommandsToBaxter"),
     ctrl_ref(NULL, _ctrl_ref, true),
     s(NULL),

@@ -14,7 +14,7 @@ struct sRobotOperation : Thread, GLDrawer{
   BaxterInterface baxter;
   arr q0, q_ref;
   StringA jointNames;
-  rai::KinematicWorld K_ref, K_baxter;
+  rai::Configuration K_ref, K_baxter;
   OpenGL gl;
   bool useBaxter=false;
   bool sendToBaxter=false;
@@ -22,7 +22,7 @@ struct sRobotOperation : Thread, GLDrawer{
   SplineRunner spline;
   double dt; // time stepping interval
 
-  sRobotOperation(const rai::KinematicWorld& _K, double _dt, bool useRosDefault)
+  sRobotOperation(const rai::Configuration& _K, double _dt, bool useRosDefault)
     : Thread("RobotInterface", _dt),
       baxter(useRosDefault),
       K_ref(_K),
@@ -91,7 +91,7 @@ struct sRobotOperation : Thread, GLDrawer{
 };
 
 
-RobotOperation::RobotOperation(const rai::KinematicWorld& _K, double dt, const char* rosNodeName) {
+RobotOperation::RobotOperation(const rai::Configuration& _K, double dt, const char* rosNodeName) {
   if(rosNodeName && strlen(rosNodeName)>3){
       rosCheckInit(rosNodeName);
       s = make_shared<sRobotOperation>(_K, dt, true);
@@ -193,7 +193,7 @@ bool RobotOperation::getGripperOpened(const std::string& whichArm){
   return s->baxter.get_opened(whichArm);
 }
 
-void RobotOperation::sync(rai::KinematicWorld& K){
+void RobotOperation::sync(rai::Configuration& K){
   auto lock = s->stepMutex(RAI_HERE);
   K.setJointState(getJointPositions(), s->jointNames);
 }

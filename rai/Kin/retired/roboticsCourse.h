@@ -57,7 +57,7 @@ struct Simulator {
   void stepPhysx(const arr& qdot, double tau);
   
   //-- internal
-  rai::KinematicWorld& getOrsGraph();
+  rai::Configuration& getOrsGraph();
 };
 
 struct VisionSimulator {

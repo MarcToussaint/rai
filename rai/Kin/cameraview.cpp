@@ -1,11 +1,9 @@
 #include "cameraview.h"
 #include <Kin/frame.h>
 
-extern bool Geo_mesh_drawColors; //UGLY!!
-
 //===========================================================================
 
-rai::CameraView::CameraView(const rai::KinematicWorld& _K, bool _offscreen, int _watchComputations)
+rai::CameraView::CameraView(const rai::Configuration& _K, bool _offscreen, int _watchComputations)
   : gl("CameraView", 640, 480, _offscreen), watchComputations(_watchComputations) {
 
   updateConfiguration(_K);
@@ -28,7 +26,7 @@ rai::CameraView::Sensor& rai::CameraView::addSensor(const char* name, const char
 
   cam.setWHRatio((double)width/height);
 
-  if(sen.frame>=0) cam.X = K.frames(sen.frame)->X;
+  if(sen.frame>=0) cam.X = K.frames(sen.frame)->ensure_X();
 
   done(__func__);
   return sen;
@@ -65,7 +63,7 @@ rai::CameraView::Sensor& rai::CameraView::selectSensor(const char* sensorName){
   return *sen;
 }
 
-void rai::CameraView::updateConfiguration(const rai::KinematicWorld& newC){
+void rai::CameraView::updateConfiguration(const rai::Configuration& newC){
   arr X = newC.getFrameState();
   auto _dataLock = gl.dataLock(RAI_HERE);
   if(X.d0==K.frames.N){
@@ -174,7 +172,7 @@ void rai::CameraView::watch_PCL(const arr& pts, const byteA& rgb){
 
 void rai::CameraView::updateCamera(){
   for(Sensor& sen:sensors){
-    if(sen.frame>=0) sen.cam.X = K.frames(sen.frame)->X;
+    if(sen.frame>=0) sen.cam.X = K.frames(sen.frame)->ensure_X();
   }
 
   if(currentSensor){
@@ -210,12 +208,10 @@ void rai::CameraView::glDraw(OpenGL& gl) {
     gl.setClearColors(1, 1, 1, 0);
     gl.background.clear();
     gl.drawMode_idColor = true;
-    Geo_mesh_drawColors = false;
     K.orsDrawMarkers = false;
     K.orsDrawVisualsOnly=true;
     K.glDraw(gl);
     gl.drawMode_idColor = false;
-    Geo_mesh_drawColors = true;
   }
 }
 
@@ -230,7 +226,7 @@ void rai::CameraView::done(const char* _func_){
 
 //===========================================================================
 
-rai::Sim_CameraView::Sim_CameraView(Var<rai::KinematicWorld>& _kin,
+rai::Sim_CameraView::Sim_CameraView(Var<rai::Configuration>& _kin,
                                     Var<byteA> _color,
                                     Var<floatA> _depth,
                                     double beatIntervalSec, const char* _cameraFrameName, bool _idColors, const byteA& _frameIDmap)

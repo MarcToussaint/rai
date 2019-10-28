@@ -42,7 +42,7 @@ struct SimulationThread_self{
 };
 
 
-SimulationThread::SimulationThread(const rai::KinematicWorld& _K, double dt, bool _pubSubToROS)
+SimulationThread::SimulationThread(const rai::Configuration& _K, double dt, bool _pubSubToROS)
   : Thread("SimulationIO", dt),
     SIM(_K, dt),
     pubSubToROS(_pubSubToROS) {
@@ -89,7 +89,7 @@ void SimulationThread::step(){
 
   SIM.stepKin();
 
-  K.set()->setFrameState(SIM.getFrameState(), {}, true, false);
+  K.set()->setFrameState(SIM.getFrameState(), {}, true);
   frameState.set() = SIM.getFrameState();
   jointState.set() = SIM.getJointState();
   timeToGo.set() = SIM.getTimeToGo();
@@ -164,7 +164,7 @@ void SimulationThread::addFile(const char* filename, const char* parentOfRoot, c
   auto lock = stepMutex(RAI_HERE);
   SIM.K.addFile(filename, parentOfRoot, relOfRoot);
   SIM.K.calc_activeSets();
-  SIM.K.calc_fwdPropagateFrames();
+  //SIM.K.calc_fwdPropagateFrames();
   SIM.K.checkConsistency();
   K.set() = SIM.K;
 }

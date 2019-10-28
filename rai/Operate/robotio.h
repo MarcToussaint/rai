@@ -7,7 +7,7 @@ enum RobotType { ROB_sim=0, ROB_pr2, ROB_baxter, ROB_kukaWSG };
 enum SensorId { SEN_depth };
 
 struct RobotAbstraction{
-    Var<rai::KinematicWorld> K;
+    Var<rai::Configuration> K;
     Var<arr> frameState;
     Var<arr> jointState;
     Var<double> timeToGo;
@@ -33,7 +33,7 @@ struct RobotIO : RobotAbstraction{
     std::shared_ptr<RobotAbstraction> self;
     rai::Enum<RobotType> type;
 
-    RobotIO(const rai::KinematicWorld& _K, RobotType type);
+    RobotIO(const rai::Configuration& _K, RobotType type);
     ~RobotIO();
 
     //-- just call virtuals

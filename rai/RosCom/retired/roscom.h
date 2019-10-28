@@ -36,20 +36,20 @@ struct SoftHandMsg {
  *
  * If useRos==false then nothing happens.
  */
-void initialSyncJointStateWithROS(rai::KinematicWorld& world, Var<CtrlMsg>& ctrl_obs, bool useRos);
+void initialSyncJointStateWithROS(rai::Configuration& world, Var<CtrlMsg>& ctrl_obs, bool useRos);
 
 /**
  * Sync the world with ctrl_obs from the robot.
  *
  * If useRos==false then nothing happens.
  */
-void syncJointStateWitROS(rai::KinematicWorld& world, Var<CtrlMsg>& ctrl_obs, bool useRos);
+void syncJointStateWitROS(rai::Configuration& world, Var<CtrlMsg>& ctrl_obs, bool useRos);
 
 //===========================================================================
 
 struct PerceptionObjects2Ors : Thread {
   Var<visualization_msgs::MarkerArray> perceptionObjects;
-  Var<rai::KinematicWorld> modelWorld;
+  Var<rai::Configuration> modelWorld;
   PerceptionObjects2Ors()
     : Thread("PerceptionObjects2Ors"),
       perceptionObjects(this, "perceptionObjects", true),

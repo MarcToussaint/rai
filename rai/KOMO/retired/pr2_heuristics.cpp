@@ -15,7 +15,7 @@ arr pr2_zero_pose() {
   return q;
 }
 
-arr pr2_reasonable_W(const rai::KinematicWorld& world) {
+arr pr2_reasonable_W(const rai::Configuration& world) {
 #if 0
   arr W = world.naturalQmetric(5.);
   rai::Joint *j = world.getJointByName("torso_lift_joint");
@@ -140,7 +140,7 @@ rai::Array<const char*> pr2_get_joints() {
     "l_gripper_joint"};
 }
 
-uintA pr2_get_shapes(const rai::KinematicWorld &G) {
+uintA pr2_get_shapes(const rai::Configuration &G) {
   rai::Array<const char*> bodynames = pr2_left_get_bodynames();
   uintA shape_idx;
   for(const char* bodyname: bodynames) {

@@ -94,7 +94,8 @@ CXXFLAGS += -Wno-terminate -fPIC
 CFLAGS += -fPIC
 
 ifndef RAI_NO_CXX11
-CXXFLAGS += -std=c++0x
+#CXXFLAGS += -std=c++0x
+CXXFLAGS += -std=c++14
 endif
 
 ifndef OPTIM
@@ -102,10 +103,10 @@ OPTIM = debug
 endif
 
 ifeq ($(OPTIM),debug)
-CXXFLAGS := -g -Wall $(CXXFLAGS)#-Wno-int-to-pointer-cast#-Wno-invalid-offsetof
+CXXFLAGS := -g -march=native -Wall $(CXXFLAGS)#-Wno-int-to-pointer-cast#-Wno-invalid-offsetof
 endif
 ifeq ($(OPTIM),fast_debug)
-CXXFLAGS := -g -O3 -Wall $(CXXFLAGS)
+CXXFLAGS := -g -O3 -march=native -Wall $(CXXFLAGS)
 endif
 ifeq ($(OPTIM),penibel)
 CXXFLAGS := -g -Wall -Wextra $(CXXFLAGS)
@@ -156,21 +157,19 @@ LIBS := $(DEPEND:%=-l%) $(LIBS)
 
 ################################################################################
 #
-# export Linux/MSVC include/lib paths
+# export include/lib paths
 #
 ################################################################################
 
 CPATH := $(CPATH):$(CPATHS:%=:%:)
 LPATH := $(LPATH):$(LPATHS:%=:%:)
-LDFLAGS += $(LPATHS:%=-L%)
+LDFLAGS += $(LPATHS:%=-L%) #$(LPATHS:%=-Wl,-rpath,%)
 LD_RUN_PATH := $(LD_RUN_PATH):$(LPATH)
 LD_LIBRARY_PATH := $(LD_LIBRARY_PATH):$(LPATH)
 export CPATH
 export LPATH
 export LD_RUN_PATH
 export LD_LIBRARY_PATH
-export MSVC_CPATH
-export MSVC_LPATH
 
 
 ################################################################################
@@ -239,8 +238,6 @@ info: force
 	@echo "  LPATHS =" "$(LPATHS)"
 	@echo "  LPATH =" "$(LPATH)"
 	@echo "  LD_RUN_PATH =" "$(LD_RUN_PATH)"
-	@echo "  MSVC_CPATH =" "$(MSVC_CPATH)"
-	@echo "  MSVC_LPATH =" "$(MSVC_LPATH)"
 	@echo "  SRCS =" "$(SRCS)"
 	@echo "  OBJS =" "$(OBJS)"
 	@echo "  LIBS =" "$(LIBS)"

@@ -38,7 +38,7 @@ struct sTrajectoryInterface {
   }
 };
 
-TrajectoryInterface::TrajectoryInterface(rai::KinematicWorld &world_plan_,rai::KinematicWorld &world_robot_)
+TrajectoryInterface::TrajectoryInterface(rai::Configuration &world_plan_,rai::Configuration &world_robot_)
   : S(NULL) {
   rosCheckInit("trajectoryInterface");
   

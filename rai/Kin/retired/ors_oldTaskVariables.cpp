@@ -33,7 +33,7 @@ DefaultTaskVariable::~DefaultTaskVariable() {
 
 DefaultTaskVariable::DefaultTaskVariable(
   const char* _name,
-  const rai::KinematicWorld& _ors,
+  const rai::Configuration& _ors,
   TVtype _type,
   const char *iname, const char *iframe,
   const char *jname, const char *jframe,
@@ -49,7 +49,7 @@ DefaultTaskVariable::DefaultTaskVariable(
 
 DefaultTaskVariable::DefaultTaskVariable(
   const char* _name,
-  const rai::KinematicWorld& _ors,
+  const rai::Configuration& _ors,
   TVtype _type,
   const char *iShapeName,
   const char *jShapeName,
@@ -70,7 +70,7 @@ TaskVariable::~TaskVariable() {
 
 void DefaultTaskVariable::set(
   const char* _name,
-  const rai::KinematicWorld& _ors,
+  const rai::Configuration& _ors,
   TVtype _type,
   int _i, const rai::Transformation& _irel,
   int _j, const rai::Transformation& _jrel,
@@ -87,7 +87,7 @@ void DefaultTaskVariable::set(
   v_target=v;
 }
 
-/*void TaskVariable::set(const char* _name, rai::KinematicWorld& _sl, TVtype _type, const char *iname, const char *jname, const char *reltext){
+/*void TaskVariable::set(const char* _name, rai::Configuration& _sl, TVtype _type, const char *iname, const char *jname, const char *reltext){
   set(
     _name, _sl, _type,
     _sl.getBodyByName(iname)->index,
@@ -316,7 +316,7 @@ void TaskVariable::shiftTargets(int offset) {
 #endif
 }
 
-void DefaultTaskVariable::updateState(const rai::KinematicWorld& ors, double tau) {
+void DefaultTaskVariable::updateState(const rai::Configuration& ors, double tau) {
   arr q, qd, p;
   rai::Vector pi, pj, c;
   arr zi, zj, Ji, Jj, JRj;
@@ -443,7 +443,7 @@ void DefaultTaskVariable::updateState(const rai::KinematicWorld& ors, double tau
   }
 }
 
-void DefaultTaskVariable::getHessian(const rai::KinematicWorld& ors, arr& H) {
+void DefaultTaskVariable::getHessian(const rai::Configuration& ors, arr& H) {
   switch(type) {
     case posTVT:
       if(j==-1) { kin.hessianPos(H, ors.bodies(i), &irel.pos); break; }
@@ -511,7 +511,7 @@ void TaskVariable::updateChange(int t, double tau) {
   }
     */
 
-void TaskVariable::write(ostream &os, const rai::KinematicWorld& ors) const {
+void TaskVariable::write(ostream &os, const rai::Configuration& ors) const {
   os <<"TaskVariable '" <<name <<'\'';
   os
       <<"\n  y=" <<y
@@ -530,7 +530,7 @@ void TaskVariable::write(ostream &os, const rai::KinematicWorld& ors) const {
       <<endl;
 }
 
-void DefaultTaskVariable::write(ostream &os, const rai::KinematicWorld& ors) const {
+void DefaultTaskVariable::write(ostream &os, const rai::Configuration& ors) const {
   TaskVariable::write(os);
   return;
   rai::Body *bi = ors.bodies(i);
@@ -554,7 +554,7 @@ void DefaultTaskVariable::write(ostream &os, const rai::KinematicWorld& ors) con
 }
 
 ProxyTaskVariable::ProxyTaskVariable(const char* _name,
-                                     rai::KinematicWorld& ors,
+                                     rai::Configuration& ors,
                                      CTVtype _type,
                                      uintA _shapes,
                                      double _margin,
@@ -570,7 +570,7 @@ ProxyTaskVariable::ProxyTaskVariable(const char* _name,
 }
 
 #if 0
-void addAContact(double& y, arr& J, const rai::Proxy *p, const rai::KinematicWorld& ors, double margin, bool linear) {
+void addAContact(double& y, arr& J, const rai::Proxy *p, const rai::Configuration& ors, double margin, bool linear) {
   double d;
   rai::Shape *a, *b;
   rai::Vector arel, brel;
@@ -599,7 +599,7 @@ void addAContact(double& y, arr& J, const rai::Proxy *p, const rai::KinematicWor
 }
 #endif
 
-void ProxyTaskVariable::updateState(const rai::KinematicWorld& ors, double tau) {
+void ProxyTaskVariable::updateState(const rai::Configuration& ors, double tau) {
   v_old=v;
   y_old=y;
   
@@ -757,7 +757,7 @@ void shiftTargets(TaskVariableList& CS, int offset) {
   for(uint i=0; i<CS.N; i++) CS(i)->shiftTargets(offset);
 }
 
-void updateState(TaskVariableList& CS, const rai::KinematicWorld& ors) {
+void updateState(TaskVariableList& CS, const rai::Configuration& ors) {
   for(uint i=0; i<CS.N; i++) {
     CS(i)->updateState(ors);
   }
@@ -806,7 +806,7 @@ void bayesianControl(TaskVariableList& CS, arr& dq, const arr& W) {
 
 #if 0
 
-void TaskVariableTable::init(const rai::KinematicWorld& ors) {
+void TaskVariableTable::init(const rai::Configuration& ors) {
   uint i,j,k,m=0,T=0,t,qdim;
   //count the total task dimension, q-d
   for_list(TaskVariable, v, list) {
@@ -828,7 +828,7 @@ void TaskVariableTable::init(const rai::KinematicWorld& ors) {
 }
 
 //recompute all phi in time slice t using the pose in ors
-void TaskVariableTable::updateTimeSlice(uint t, const rai::KinematicWorld& ors, bool alsoTargets) {
+void TaskVariableTable::updateTimeSlice(uint t, const rai::Configuration& ors, bool alsoTargets) {
   uint i,j,k,m=0;
   for_list(TaskVariable, v, list) {
     v->updateState(ors);
@@ -949,7 +949,7 @@ void additiveControl_obsolete(TaskVariableList& CS, arr& dq, const arr& W){
 }
 */
 /*OLD
-void bayesianPlanner_obsolete(rai::KinematicWorld *ors, TaskVariableList& CS, SwiftInterface *swift, OpenGL *gl,
+void bayesianPlanner_obsolete(rai::Configuration *ors, TaskVariableList& CS, SwiftInterface *swift, OpenGL *gl,
                      arr& q, uint T, const arr& W, uint iterations,
                      std::ostream* os, int display, bool repeat){
   //FOR THE OLD VERSION, SEE SMAC.CPP IN THE DEPOSIT

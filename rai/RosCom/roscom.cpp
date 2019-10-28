@@ -325,8 +325,8 @@ rai_msgs::JointState conv_CtrlMsg2JointState(const CtrlMsg& ctrl) {
   return jointState;
 }
 
-rai::KinematicWorld conv_MarkerArray2KinematicWorld(const visualization_msgs::MarkerArray& markers) {
-  rai::KinematicWorld world;
+rai::Configuration conv_MarkerArray2Configuration(const visualization_msgs::MarkerArray& markers) {
+  rai::Configuration world;
   tf::TransformListener listener;
   for(const visualization_msgs::Marker& marker:markers.markers) {
     rai::String name;
@@ -348,7 +348,7 @@ rai::KinematicWorld conv_MarkerArray2KinematicWorld(const visualization_msgs::Ma
     s->size(1) = marker.scale.y;
     s->size(2) = marker.scale.z;
     s->size(3) = .25*(marker.scale.x+marker.scale.y);
-    s->frame.X = ros_getTransform("/base_link", marker.header, listener) * conv_pose2transformation(marker.pose);
+    s->frame.set_X() = ros_getTransform("/base_link", marker.header, listener) * conv_pose2transformation(marker.pose);
   }
   return world;
 }
@@ -441,7 +441,7 @@ visualization_msgs::Marker conv_Shape2Marker(const rai::Shape& sh) {
   new_marker.id = sh.frame.ID;
   new_marker.action = visualization_msgs::Marker::ADD;
   new_marker.lifetime = ros::Duration();
-  new_marker.pose = conv_transformation2pose(sh.frame.X);
+  new_marker.pose = conv_transformation2pose(sh.frame.ensure_X());
   new_marker.color.r = 0.0f;
   new_marker.color.g = 1.0f;
   new_marker.color.b = 0.0f;
@@ -476,7 +476,7 @@ visualization_msgs::Marker conv_Shape2Marker(const rai::Shape& sh) {
   return new_marker;
 }
 
-visualization_msgs::MarkerArray conv_Kin2Markers(const rai::KinematicWorld& K) {
+visualization_msgs::MarkerArray conv_Kin2Markers(const rai::Configuration& K) {
   visualization_msgs::MarkerArray M;
   for(rai::Frame *f : K.frames) M.markers.push_back(conv_Shape2Marker(*f->shape));
 //  M.header.frame_id = "1";

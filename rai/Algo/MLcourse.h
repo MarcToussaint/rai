@@ -99,7 +99,7 @@ struct CrossValidation {
 //
 
 enum FeatureType { readFromCfgFileFT=0, linearFT=1, quadraticFT, cubicFT, rbfFT=4, piecewiseConstantFT=5, piecewiseLinearFT=6, constFT=7 };
-arr makeFeatures(const arr& X, FeatureType featureType=readFromCfgFileFT, const arr& rbfCenters=NoArr);
+arr makeFeatures(const arr& X, FeatureType featureType=readFromCfgFileFT, const arr& rbfCenters=NoArr, arr& Jacobian=NoArr);
 
 //===========================================================================
 //
@@ -109,7 +109,7 @@ arr makeFeatures(const arr& X, FeatureType featureType=readFromCfgFileFT, const 
 extern arr beta_true;
 enum ArtificialDataType { readFromCfgFileDT=0, linearData, sinusData, linearOutlier, linearRedundantData };
 
-void artificialData(arr& X, arr& y, ArtificialDataType dataType=readFromCfgFileDT);
+arr artificialData(arr& X, arr& y, ArtificialDataType dataType=readFromCfgFileDT);
 void artificialData_1D2Class(arr& X, arr& y);
 void artificialData_Hasties2Class(arr& X, arr& y);
 void artificialData_HastiesMultiClass(arr& X, arr& y);

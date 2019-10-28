@@ -685,7 +685,7 @@ void ShapeFitter::step() {
 }
 #endif
 
-void realizeObjectsInOrs(rai::KinematicWorld& ors, const rai::Array<RigidObjectRepresentation>& objects) {
+void realizeObjectsInOrs(rai::Configuration& ors, const rai::Array<RigidObjectRepresentation>& objects) {
   RigidObjectRepresentation *obj;  uint i;
   rai::Body *o = ors.getBodyByName("o1");
   uint indFirst = o->index;//hack to get consecutive bodies
@@ -717,7 +717,7 @@ void realizeObjectsInOrs(rai::KinematicWorld& ors, const rai::Array<RigidObjectR
   }
 }
 
-/*void copyShapeInfos(rai::KinematicWorld& A, const rai::KinematicWorld& B){
+/*void copyShapeInfos(rai::Configuration& A, const rai::Configuration& B){
   uint i; rai::Shape *s, *sa;
   for_list(Type,  s,  B.shapes){
     sa = A.shapes(i);
@@ -730,7 +730,7 @@ void realizeObjectsInOrs(rai::KinematicWorld& ors, const rai::Array<RigidObjectR
   }
 }*/
 
-void copyBodyInfos(rai::KinematicWorld& A, const rai::KinematicWorld& B) {
+void copyBodyInfos(rai::Configuration& A, const rai::Configuration& B) {
   uint i; rai::Body *b, *ba;
   rai::Shape *s, *sa;
   for_list(Type,  b,  B.bodies) if(b->shapes.N) {

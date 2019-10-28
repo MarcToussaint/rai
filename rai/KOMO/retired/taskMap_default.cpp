@@ -18,7 +18,7 @@ TM_Default::TM_Default(TM_DefaultType _type,
   if(!!_params) params=_params;
 }
 
-TM_Default::TM_Default(TM_DefaultType _type, const rai::KinematicWorld &G,
+TM_Default::TM_Default(TM_DefaultType _type, const rai::Configuration &G,
                        const char* iShapeName, const rai::Vector& _ivec,
                        const char* jShapeName, const rai::Vector& _jvec,
                        const arr& _params):type(_type), i(-1), j(-1) {
@@ -31,7 +31,7 @@ TM_Default::TM_Default(TM_DefaultType _type, const rai::KinematicWorld &G,
   if(!!_params) params=_params;
 }
 
-void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
+void TM_Default::phi(arr& y, arr& J, const rai::Configuration& G) {
   rai::Body *body_i = i<0?NULL: G.shapes(i)->body;
   rai::Body *body_j = j<0?NULL: G.shapes(j)->body;
   
@@ -167,7 +167,7 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
   }
 }
 
-uint TM_Default::dim_phi(const rai::KinematicWorld& G) {
+uint TM_Default::dim_phi(const rai::Configuration& G) {
   //get state
   switch(type) {
     case TMT_pos: return 3;

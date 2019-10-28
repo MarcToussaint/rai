@@ -11,7 +11,7 @@
 #include "TM_default.h"
 
 void TM_InertialMotion::phi(arr &y, arr &J, const WorldL &Ktuple) {
-  rai::KinematicWorld& K = *Ktuple(-1);
+  rai::Configuration& K = *Ktuple(-1);
   
   arr acc, Jacc;
   arr acc_ref = {0.,0.,g};

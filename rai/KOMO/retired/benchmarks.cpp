@@ -20,7 +20,7 @@ void setTasks(KOMO& MP,
               double duration);
 
 struct sPR2EndPoseProblem {
-  rai::KinematicWorld world;
+  rai::Configuration world;
   KOMO MP;
   Convert *CP;
   sPR2EndPoseProblem()

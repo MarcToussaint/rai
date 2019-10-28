@@ -7,11 +7,10 @@
     --------------------------------------------------------------  */
 
 #include "RTControllerSimulation.h"
-#include <Kin/taskMaps.h>
 #include <Kin/proxy.h>
 #include <Kin/frame.h>
 
-void force(rai::KinematicWorld* world, arr& fR) {
+void force(rai::Configuration* world, arr& fR) {
   world->stepSwift();
   //world->contactsToForces(100.0);
   
@@ -20,7 +19,7 @@ void force(rai::KinematicWorld* world, arr& fR) {
       if(p.d <= 0.0) {
         rai::Vector trans = p.posB - p.posA;
         rai::Vector force = 100.0*trans;
-        rai::Vector torque = (p.posA - p.a->X.pos) ^ force;
+        rai::Vector torque = (p.posA - p.a->ensure_X().pos) ^ force;
         fR(0) = force(0);
         fR(1) = force(1);
         fR(2) = force(2);
@@ -33,7 +32,7 @@ void force(rai::KinematicWorld* world, arr& fR) {
   }
 }
 
-void forceSimulateContactOnly(rai::KinematicWorld* world, arr& fR) {
+void forceSimulateContactOnly(rai::Configuration* world, arr& fR) {
   world->stepSwift();
   for(const rai::Proxy& p : world->proxies) {
     if(p.a->name == "endeffR" && p.b->name == "b") {
@@ -145,7 +144,7 @@ void RTControlStep(
   
 }
 
-RTControllerSimulation::RTControllerSimulation(const rai::KinematicWorld& realWorld, const Var<CtrlMsg>& _ctrl_ref, const Var<CtrlMsg>& _ctrl_obs, double tau, bool gravity, double _systematicErrorSdv)
+RTControllerSimulation::RTControllerSimulation(const rai::Configuration& realWorld, const Var<CtrlMsg>& _ctrl_ref, const Var<CtrlMsg>& _ctrl_obs, double tau, bool gravity, double _systematicErrorSdv)
   : Thread("DynmSim", -1.)
   , ctrl_ref(this, _ctrl_ref, true)
   , ctrl_obs(this, _ctrl_obs)
@@ -154,8 +153,8 @@ RTControllerSimulation::RTControllerSimulation(const rai::KinematicWorld& realWo
   , gravity(gravity)
   , stepCount(0)
   , systematicErrorSdv(_systematicErrorSdv) {
-  //world = new rai::KinematicWorld(realWorld);
-  world = new rai::KinematicWorld(rai::raiPath("data/pr2_model/pr2_model.ors"));
+  //world = new rai::Configuration(realWorld);
+  world = new rai::Configuration(rai::raiPath("data/pr2_model/pr2_model.g"));
   
   //Object o(*world);
   //o.generateObject("b", 0.16, 0.16, 0.1, 0.55, -0.1, 0.55); //0.5 for x
@@ -167,14 +166,15 @@ RTControllerSimulation::RTControllerSimulation(const rai::KinematicWorld& realWo
 }
 
 void RTControllerSimulation::open() {
-  //world = new rai::KinematicWorld;
+  //world = new rai::Configuration;
   //world->copy(modelWorld.get()());
-  //world = new rai::KinematicWorld(modelWorld.get());
-  //world = new rai::KinematicWorld(rai::raiPath("data/pr2_model/pr2_model.ors"));
+  //world = new rai::Configuration(modelWorld.get());
+  //world = new rai::Configuration(rai::raiPath("data/pr2_model/pr2_model.g"));
   
   makeConvexHulls(world->frames);
-  arr q, qDot;
-  world->getJointState(q,qDot);
+  arr q = world->getJointState();
+  arr qDot = zeros(q.N);
+  
   
   //makeConvexHulls(world->shapes);
   
@@ -215,8 +215,8 @@ void RTControllerSimulation::step() {
   CtrlMsg cmd = ctrl_ref.get();
   
   arr u, base_v;
-  arr q, qDot;
-  world->getJointState(q, qDot);
+  arr q = world->getJointState();
+  arr qDot = zeros(q.N); HALT("WARNING: qDot should be maintained outside world!");
   
   if(!(stepCount%200) && systematicErrorSdv>0.) {
     systematicError.resize(q.N);
@@ -236,7 +236,7 @@ void RTControllerSimulation::step() {
     //force(world, fR);
     forceSimulateContactOnly(world, fR);
     //u(3) = 0.0;
-    world->stepDynamics(u, tau, 0., this->gravity);
+    world->stepDynamics(qDot, u, tau, 0., this->gravity);
     
   }
   

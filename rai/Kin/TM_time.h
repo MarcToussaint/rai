@@ -11,11 +11,11 @@
 struct TM_Time : Feature {
   TM_Time() {}
   
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& K);
-  virtual uint dim_phi(const rai::KinematicWorld& K) { return 1; }
+  virtual void phi(arr& y, arr& J, const rai::Configuration& K);
+  virtual uint dim_phi(const rai::Configuration& K) { return 1; }
   
   virtual void phi(arr& y, arr& J, const WorldL& Ktuple);
   virtual uint dim_phi(const WorldL& Ktuple) { return 1; }
   
-  virtual rai::String shortTag(const rai::KinematicWorld& G) { return STRING("Time"); }
+  virtual rai::String shortTag(const rai::Configuration& G) { return STRING("Time"); }
 };

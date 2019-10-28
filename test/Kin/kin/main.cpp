@@ -15,13 +15,16 @@
 //
 
 void TEST(LoadSave){
-  rai::KinematicWorld C;
+  rai::Configuration C;
   C.addFile("../../../../rai-robotModels/panda/panda.g");
   cout <<C <<endl;
   C.sortFrames();
   FILE("z.g") <<C;
 
-  rai::KinematicWorld C2("z.g");
+  C["panda_finger_joint1"]->ensure_X();
+
+  rai::Configuration C2("z.g");
+  C.watch();
   C2.watch(true);
 }
 
@@ -31,7 +34,7 @@ void TEST(LoadSave){
 //
 
 void testJacobianInFile(const char* filename, const char* shape){
-  rai::KinematicWorld K(filename);
+  rai::Configuration K(filename);
 
   rai::Frame *a=K.getFrameByName(shape);
 
@@ -55,11 +58,11 @@ void testJacobianInFile(const char* filename, const char* shape){
 void TEST(Kinematics){
 
   struct MyFct : VectorFunction{
-    enum Mode {Pos, Vec, Quat, RelPos, RelVec, RelRot} mode;
-    rai::KinematicWorld& K;
+    enum Mode {Pos, Vec, Quat, RelPos, RelVec} mode;
+    rai::Configuration& K;
     rai::Frame *b, *b2;
     rai::Vector &vec, &vec2;
-    MyFct(Mode _mode, rai::KinematicWorld &_K,
+    MyFct(Mode _mode, rai::Configuration &_K,
           rai::Frame *_b, rai::Vector &_vec, rai::Frame *_b2, rai::Vector &_vec2)
       : mode(_mode), K(_K), b(_b), b2(_b2), vec(_vec), vec2(_vec2){
       VectorFunction::operator= ( [this](arr& y, arr& J, const arr& x) -> void{
@@ -70,7 +73,7 @@ void TEST(Kinematics){
           case Quat:   K.kinematicsQuat(y,J,b); break;
           case RelPos: K.kinematicsRelPos(y,J,b,vec,b2,vec2); break;
           case RelVec: K.kinematicsRelVec(y,J,b,vec,b2); break;
-          case RelRot: K.kinematicsRelRot(y,J,b,b2); break;
+//          case RelRot: K.kinematicsRelRot(y,J,b,b2); break;
         }
         //if(!!J) cout <<"\nJ=" <<J <<endl;
       } );
@@ -78,10 +81,10 @@ void TEST(Kinematics){
     VectorFunction& operator()(){ return *this; }
   };
 
-//  rai::KinematicWorld G("arm7.g");
-  rai::KinematicWorld G("kinematicTests.g");
-//  rai::KinematicWorld G("../../../data/pr2_model/pr2_model.ors");
-//  rai::KinematicWorld G("../../../projects/17-LGP-push/quatJacTest.g");
+//  rai::Configuration G("arm7.g");
+  rai::Configuration G("kinematicTests.g");
+//  rai::Configuration G("../../../../rai-robotModels/pr2/pr2.g");
+//  rai::Configuration G("../../../projects/17-LGP-push/quatJacTest.g");
 //  G.watch(true);
 
   for(uint k=0;k<10;k++){
@@ -98,7 +101,7 @@ void TEST(Kinematics){
     cout <<"kinematicsVec:   "; checkJacobian(MyFct(MyFct::Vec   , G, b, vec, b2, vec2)(), x, 1e-5);
     cout <<"kinematicsRelVec:"; checkJacobian(MyFct(MyFct::RelVec, G, b, vec, b2, vec2)(), x, 1e-5);
     cout <<"kinematicsQuat:  "; checkJacobian(MyFct(MyFct::Quat  , G, b, vec, b2, vec2)(), x, 1e-5);
-    cout <<"kinematicsRelRot:"; checkJacobian(MyFct(MyFct::RelRot, G, b, vec, b2, vec2)(), x, 1e-5);
+//    cout <<"kinematicsRelRot:"; checkJacobian(MyFct(MyFct::RelRot, G, b, vec, b2, vec2)(), x, 1e-5);
 
     //checkJacobian(Convert(T1::f_hess, NULL), x, 1e-5);
   }
@@ -112,10 +115,10 @@ void TEST(Kinematics){
 void TEST(Graph){
   if(!rai::FileToken("../../../../rai-robotModels/pr2/pr2.g", false).exists()) return;
   
-//  rai::KinematicWorld G("arm7.g");
-//  rai::KinematicWorld K("kinematicTests.g");
-  rai::KinematicWorld K("../../../../rai-robotModels/pr2/pr2.g");
-//  rai::KinematicWorld G("../../../projects/17-LGP-push/quatJacTest.g");
+//  rai::Configuration G("arm7.g");
+//  rai::Configuration K("kinematicTests.g");
+  rai::Configuration K("../../../../rai-robotModels/pr2/pr2.g");
+//  rai::Configuration G("../../../projects/17-LGP-push/quatJacTest.g");
 //  G.watch(true);
 
   K.prefixNames();
@@ -140,17 +143,16 @@ void TEST(Graph){
 //
 
 void TEST(QuaternionKinematics){
-  rai::KinematicWorld G("kinematicTestQuat.g");
+  rai::Configuration G("kinematicTestQuat.g");
   G.orsDrawJoints=false;
 
   for(uint k=0;k<3;k++){
     rai::Quaternion target;
     target.setRandom();
-    G.getFrameByName("ref")->Q.rot = target;
-    G.getFrameByName("marker")->Q.rot = target;
+    G.getFrameByName("ref")->set_Q()->rot = target;
+    G.getFrameByName("marker")->set_Q()->rot = target;
     rai::Frame *endeff = G.getFrameByName("endeff");
-    arr x;
-    G.getJointState(x);
+    arr x = G.getJointState();
     for(uint t=0;t<100;t++){
       arr y,J;
       G.kinematicsQuat(y, J, endeff);  //get the new endeffector position
@@ -169,9 +171,9 @@ void TEST(QuaternionKinematics){
 //
 
 void TEST(Copy){
-  rai::KinematicWorld G1("kinematicTests.g");
-  //rai::KinematicWorld G1("../../../data/pr2_model/pr2_model.ors");
-  rai::KinematicWorld G2(G1);
+  rai::Configuration G1("kinematicTests.g");
+  //rai::Configuration G1("../../../data/pr2_model/pr2_model.g");
+  rai::Configuration G2(G1);
 
   G1.checkConsistency();
   G2.checkConsistency();
@@ -195,9 +197,9 @@ void TEST(Copy){
 void TEST(KinematicSpeed){
 #define NUM 100000
 #if 1
-//  rai::KinematicWorld K("kinematicTests.g");
+//  rai::Configuration K("kinematicTests.g");
   if(!rai::FileToken("../../../../rai-robotModels/pr2/pr2.g", false).exists()) return;
-  rai::KinematicWorld K("../../../../rai-robotModels/pr2/pr2.g");
+  rai::Configuration K("../../../../rai-robotModels/pr2/pr2.g");
   K.optimizeTree();
   uint n=K.getJointStateDimension();
   arr x(n);
@@ -238,7 +240,7 @@ void TEST(KinematicSpeed){
 //
 
 void TEST(Contacts){
-  rai::KinematicWorld G("arm7.g");
+  rai::Configuration G("arm7.g");
   
   arr x,con,grad;
   uint t;
@@ -272,7 +274,7 @@ void TEST(Contacts){
 //===========================================================================
 
 void TEST(Limits){
-  rai::KinematicWorld G("arm7.g");
+  rai::Configuration G("arm7.g");
 
   arr limits = G.getLimits();
   VectorFunction F = [&G, &limits](arr& y, arr& J, const arr& x){
@@ -314,13 +316,13 @@ void generateSequence(arr &X, uint T, uint n){
 }
 
 void TEST(PlayStateSequence){
-  rai::KinematicWorld G("arm7.g");
+  rai::Configuration G("arm7.g");
   uint n=G.getJointStateDimension();
   arr X;
   generateSequence(X, 200, n);
   arr v(X.d1); v=0.;
   for(uint t=0;t<X.d0;t++){
-    G.setJointState(X[t](),v);
+    G.setJointState(X[t]());
     G.watch(false, STRING("replay of a state sequence -- time " <<t));
   }
 }
@@ -332,7 +334,7 @@ void TEST(PlayStateSequence){
 
 #ifdef RAI_ODE
 void TEST(PlayTorqueSequenceInOde){
-  rai::KinematicWorld G("arm7.g");
+  rai::Configuration G("arm7.g");
   G.ode();
   uint n=G.getJointStateDimension();
   arr F,Xt,Vt;
@@ -351,7 +353,7 @@ void TEST(PlayTorqueSequenceInOde){
 }
 
 void TEST(MeshShapesInOde){
-  rai::KinematicWorld G("testOdeMesh.g");
+  rai::Configuration G("testOdeMesh.g");
   for(uint t=0;t<1000;t++){
     //G.clearJointErrors(); exportStateToOde(C,); //try doing this without clearing joint errors...!
     G.ode().step(0.03);
@@ -367,12 +369,12 @@ void TEST(MeshShapesInOde){
 //
 
 void TEST(FollowRedundantSequence){  
-  rai::KinematicWorld G("arm7.g");
+  rai::Configuration G("arm7.g");
 
   uint t,T,n=G.getJointStateDimension();
   arr x(n),y,J,invJ;
   x=.8;     //initialize with intermediate joint positions (non-singular positions)
-  rai::Vector rel = G.getFrameByName("endeff")->Q.pos; //this frame describes the relative position of the endeffector wrt. 7th body
+  rai::Vector rel = G.getFrameByName("endeff")->get_Q().pos; //this frame describes the relative position of the endeffector wrt. 7th body
 
   //-- generate a random endeffector trajectory
   arr Z, Zt; //desired and true endeffector trajectories
@@ -384,15 +386,16 @@ void TEST(FollowRedundantSequence){
   G.kinematicsPos(y, NoArr, endeff, rel);
   for(t=0;t<T;t++) Z[t]() += y; //adjust coordinates to be inside the arm range
   plotLine(Z);
-  G.glAdd(glDrawPlot,&plotModule);
+  G.glAdd(glDrawPlot,&plotModule()());
   G.watch(false);
   //-- follow the trajectory kinematically
   for(t=0;t<T;t++){
     //Z[t] is the desired endeffector trajectory
     //x is the full joint state, z the endeffector position, J the Jacobian
     G.kinematicsPos(y, J, endeff, rel);  //get the new endeffector position
-    invJ = ~J*inverse_SymPosDef(J*~J);
-    x += invJ * (Z[t]-y);                  //simulate a time step (only kinematically)
+//    invJ = ~J*inverse_SymPosDef(J*~J);
+//    x += invJ * (Z[t]-y);                  //simulate a time step (only kinematically)
+    x += ~J * lapack_Ainv_b_sym(J*~J, Z[t]-y);
     G.setJointState(x);
 //    cout <<J * invJ <<endl <<x <<endl <<"tracking error = " <<maxDiff(Z[t],y) <<endl;
     G.watch(false, STRING("follow redundant trajectory -- time " <<t));
@@ -411,12 +414,12 @@ void TEST(FollowRedundantSequence){
 //  //static arr conswit;
 //  //bool hasContact=false;
 //  bool addContactsToDynamics=false;
-//  rai::KinematicWorld *G;
+//  rai::Configuration *G;
 //}
 
 //---------- test standard dynamic control
 void TEST(Dynamics){
-  rai::KinematicWorld G("arm7.g");
+  rai::Configuration G("arm7.g");
   G.optimizeTree();
   G.sortFrames();
   cout <<G <<endl;
@@ -425,7 +428,7 @@ void TEST(Dynamics){
   bool friction=false;
   VectorFunction diffEqn = [&G,&u,&friction](arr& y, arr&, const arr& x){
     checkNan(x);
-    G.setJointState(x[0], x[1]);
+    G.setJointState(x[0]);
     if(!u.N) u.resize(x.d1).setZero();
     if(friction) u = -1e-0 * x[1];
     checkNan(u);
@@ -437,14 +440,14 @@ void TEST(Dynamics){
   };
   
   uint t,T=720,n=G.getJointStateDimension();
-  arr q,qd,qdd(n),qdd_(n);
-  G.getJointState(q, qd);
+  arr q,qd(n),qdd(n),qdd_(n);
+  q = G.getJointState();
+  qd.setZero();
   qdd.setZero();
   
   double dt=.01;
 
   ofstream z("z.dyn");
-  G.clearForces();
   G.watch();
 //  for(rai::Body *b:G.bodies){ b->mass=1.; b->inertia.setZero(); }
 
@@ -462,9 +465,9 @@ void TEST(Dynamics){
       q  += .5*dt*qd;
       qd +=    dt*qdd;
       q  += .5*dt*qd;
-      G.setJointState(q,qd);
+      G.setJointState(q);
       //cout <<q <<qd <<qdd <<endl;
-      G.gl().text.clear() <<"t=" <<t <<"  torque controlled damping (acc = - vel)\n(checking consistency of forward and inverse dynamics),  energy=" <<G.getEnergy();
+      G.gl().text.clear() <<"t=" <<t <<"  torque controlled damping (acc = - vel)\n(checking consistency of forward and inverse dynamics),  energy=" <<G.getEnergy(qd);
     }else{
       //cout <<q <<qd <<qdd <<' ' <<G.getEnergy() <<endl;
       arr x=cat(q, qd).reshape(2, q.N);
@@ -472,10 +475,10 @@ void TEST(Dynamics){
       q=x[0]; qd=x[1];
       if(t>300){
         friction=true;
-        G.gl().text.clear() <<"t=" <<t <<"  friction swing using RK4,  energy=" <<G.getEnergy();
+        G.gl().text.clear() <<"t=" <<t <<"  friction swing using RK4,  energy=" <<G.getEnergy(qd);
       }else{
         friction=false;
-        G.gl().text.clear() <<"t=" <<t <<"  free swing using RK4,  energy=" <<G.getEnergy();
+        G.gl().text.clear() <<"t=" <<t <<"  free swing using RK4,  energy=" <<G.getEnergy(qd);
       }
     }
     G.watch(false);
@@ -563,7 +566,7 @@ static void drawTrimesh(void* _mesh){
 void TEST(BlenderImport){
   rai::timerStart();
   rai::Mesh mesh;
-  rai::KinematicWorld bl;
+  rai::Configuration bl;
   readBlender("blender-export",mesh,bl);
   cout <<"loading time =" <<rai::timerRead() <<"sec" <<endl;
   OpenGL gl;
@@ -580,11 +583,11 @@ void TEST(BlenderImport){
 void TEST(InverseKinematics) {
   // we're testing some big steps / target positions, some of which are not
   // reachable to check if the IK handle it
-  rai::KinematicWorld world("drawer.g");
+  rai::Configuration world("drawer.g");
 
   rai::Frame* drawer = world.getFrameByName("cabinet_drawer");
   rai::Frame* marker = world.getFrameByName("marker");
-  arr destination = conv_vec2arr(marker->X.pos);
+  arr destination = conv_vec2arr(marker->ensure_X().pos);
 
   cout << "destination: " << destination << endl;
   cout << "world state: " << world.q << endl;
@@ -596,16 +599,16 @@ void TEST(InverseKinematics) {
   world.watch(true, STRING("press key to continue"));
 
   cout << "moving destination (can't be reached)" << endl;
-  marker->X.pos.set(2., 1., 1);
-  destination = conv_vec2arr(marker->X.pos);
+  marker->set_X()->pos.set(2., 1., 1);
+  destination = conv_vec2arr(marker->ensure_X().pos);
   world.inverseKinematicsPos(*drawer, destination);
   cout << "destination: " << destination << endl;
   cout << "world state: " << world.q << endl;
   world.watch(true, STRING("press key to continue"));
 
   cout << "moving destination (can't be reached)" << endl;
-  marker->X.pos.set(-2., 0.1, 1.2);
-  destination = conv_vec2arr(marker->X.pos);
+  marker->set_X()->pos.set(-2., 0.1, 1.2);
+  destination = conv_vec2arr(marker->ensure_X().pos);
   world.inverseKinematicsPos(*drawer, destination);
   cout << "destination: " << destination << endl;
   cout << "world state: " << world.q << endl;

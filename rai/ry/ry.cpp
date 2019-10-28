@@ -199,8 +199,7 @@ PYBIND11_MODULE(libry, m) {
   .def("setFrameRelativePose", [](ry::Config& self, const std::string& frame, const std::vector<double>& x) {
       auto Kset = self.set();
       rai::Frame *f = Kset->getFrameByName(frame.c_str(), true);
-      f->Q.set(conv_stdvec2arr(x));
-      Kset->calc_fwdPropagateFrames();
+      f->set_Q()->set(conv_stdvec2arr(x));
   }, "TODO remove -> use frame" )
 
   .def("delFrame", [](ry::Config& self, const std::string& frameName) {
@@ -305,21 +304,19 @@ PYBIND11_MODULE(libry, m) {
     arr X;
     auto Kget = self.get();
     rai::Frame *f = Kget->getFrameByName(frame, true);
-    if(f) X = f->X.getArr7d();
+    if(f) X = f->ensure_X().getArr7d();
     return pybind11::array(X.dim(), X.p);
   }, "TODO remove -> use individual frame!" )
 
-  .def("setFrameState", [](ry::Config& self, const std::vector<double>& X, const ry::I_StringA& frames, bool calc_q_from_X){
+  .def("setFrameState", [](ry::Config& self, const std::vector<double>& X, const ry::I_StringA& frames){
     arr _X = conv_stdvec2arr(X);
     _X.reshape(_X.N/7, 7);
-    self.set()->setFrameState(_X, I_conv(frames), calc_q_from_X);
+    self.set()->setFrameState(_X, I_conv(frames));
   },
     "set the frame state, optionally only for a subset of frames specified as list of frame names. \
- By default this also computes and sets the consistent joint state based on the relative poses.\
- Setting calc_q_from_x to false will not compute the joint state and leave the configuration in an inconsistent state!",
+ This also computes the consistent joint state based on the relative poses.",
     py::arg("X"),
-    py::arg("frames") = ry::I_StringA(),
-    py::arg("calc_q_from_X") = true
+    py::arg("frames") = ry::I_StringA()
   )
 
   .def("setFrameState", [](ry::Config& self, const pybind11::array& X, const ry::I_StringA& frames, bool calc_q_from_X){
@@ -333,14 +330,6 @@ Setting calc_q_from_x to false will not compute the joint state and leave the co
     py::arg("X"),
     py::arg("frames") = ry::I_StringA(),
     py::arg("calc_q_from_X") = true
-  )
-
-  .def("fwdChainFrames", [](ry::Config& self) {
-     self.set()->calc_fwdPropagateFrames();
-  },
-  "recompute all absolute frames by forward chaining the relative transformations in the frame tree.\
-  This is automatically done in setJointState. A user hardly ever has to do this. An exception is if the\
-  user calls Frame->setPosition for a frame with children - then fwd propagation is not automatically done."
   )
 
   .def("feature", [](ry::Config& self, FeatureSymbol featureSymbol, const ry::I_StringA& frameNames) {
@@ -457,7 +446,7 @@ py::arg("featureSymbol"),
   )
 
   .def("edit", [](ry::Config& self, const char* fileName){
-    rai::KinematicWorld K;
+    rai::Configuration K;
     editConfiguration(fileName, K);
     self.set() = K;
   },
@@ -502,6 +491,7 @@ py::arg("featureSymbol"),
     komo.komo = make_shared<KOMO>(self.get(), useSwift);
     komo.config.set() = komo.komo->world;
     komo.komo->setPathOpt(phases, stepsPerPhase, timePerPhase);
+    komo.komo->setSquaredQAccVelHoming();
     return komo;
   },
   "create KOMO solver configured for sparse path optimization",
@@ -521,7 +511,7 @@ py::arg("featureSymbol"),
 
   .def("bullet", [](ry::Config& self){
     ry::RyBullet bullet;
-    bullet.bullet = make_shared<BulletInterface>(self.get());
+    bullet.bullet = make_shared<BulletInterface>(self.set());
     return bullet;
   },
   "create a Bullet engine for physical simulation from the configuration: The configuration\
@@ -550,42 +540,28 @@ py::arg("featureSymbol"),
     self.set()->sortFrames();
   })
     
-  .def("equationOfMotion", [](ry::Config& self, bool gravity){
+  .def("equationOfMotion", [](ry::Config& self, std::vector<double>& qdot, bool gravity){
     arr M, F;
-    self.set()->equationOfMotion(M, F, gravity);
+    arr _qdot = conv_stdvec2arr(qdot);
+    self.set()->equationOfMotion(M, F, _qdot, gravity);
     return pybind11::make_tuple(pybind11::array(M.dim(), M.p), pybind11::array(F.dim(), F.p));
   }, "",
+    py::arg("qdot"),
     py::arg("gravity"))
 
-  .def("stepDynamics", [](ry::Config& self, std::vector<double>& u_control, double tau, double dynamicNoise, bool gravity){
+  .def("stepDynamics", [](ry::Config& self, std::vector<double>& qdot, std::vector<double>& u_control, double tau, double dynamicNoise, bool gravity){
+    arr _qdot = conv_stdvec2arr(qdot);
     arr _u = conv_stdvec2arr(u_control);
-    self.set()->stepDynamics(_u, tau, dynamicNoise, gravity);
+    self.set()->stepDynamics(_qdot, _u, tau, dynamicNoise, gravity);
+    return pybind11::array(_qdot.dim(), _qdot.p);
   }, "",
+    py::arg("qdot"),
     py::arg("u_control"),
     py::arg("tau"),
     py::arg("dynamicNoise"),
     py::arg("gravity"))
 
- .def("getJointState_qdot", [](ry::Config& self, const ry::I_StringA& joints) {
-   arr q, qdot;
-   self.get()->getJointState(q, qdot);
-   return pybind11::make_tuple(pybind11::array(q.dim(), q.p), pybind11::array(qdot.dim(), qdot.p));
-  }, "",
-  py::arg("joints") = ry::I_StringA() )
-    
-  .def("setJointState_qdot", [](ry::Config& self, const std::vector<double>& q, const std::vector<double>& qdot){
-    arr _q = conv_stdvec2arr(q);
-    arr _qdot = conv_stdvec2arr(qdot);
-    self.set()->setJointState(_q, _qdot);
-  }, "",
-    py::arg("q"),
-    py::arg("qdot") )
-    
-  ;
-
-//  py::class_<ry::Display>(m, "Display")
-//      .def("update", (void (ry::Display::*)(bool)) &ry::Display::update)
-//      .def("update", (void (ry::Display::*)(std::string, bool)) &ry::Display::update);
+    ;
 
   //===========================================================================
 
@@ -714,12 +690,12 @@ py::arg("featureSymbol"),
   .def("setPointCloud", [](ry::RyFrame& self, const pybind11::array& points, const pybind11::array_t<byte>& colors){
     arr _points = numpy2arr(points);
     byteA _colors = numpy2arr(colors);
-    WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    WToken<rai::Configuration> token(*self.config, &self.config->data);
     self.frame->setPointCloud(_points, _colors);
   } )
 
   .def("setShape", [](ry::RyFrame& self, rai::ShapeType shape, const std::vector<double>& size){
-    WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    WToken<rai::Configuration> token(*self.config, &self.config->data);
     self.frame->setShape(shape, size);
   },
   py::arg("type"),
@@ -727,99 +703,98 @@ py::arg("featureSymbol"),
   )
 
   .def("setColor", [](ry::RyFrame& self, const std::vector<double>& color){
-    WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    WToken<rai::Configuration> token(*self.config, &self.config->data);
     self.frame->setColor(color);
   } )
 
   .def("setPose", [](ry::RyFrame& self, const std::string& pose){
-    WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
-    self.frame->X.setText(pose.c_str());
+    WToken<rai::Configuration> token(*self.config, &self.config->data);
+    self.frame->set_X()->setText(pose.c_str());
   } )
 
   .def("setPosition", [](ry::RyFrame& self, const std::vector<double>& pos){
-    WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    WToken<rai::Configuration> token(*self.config, &self.config->data);
     self.frame->setPosition(pos);
   } )
 
   .def("setQuaternion", [](ry::RyFrame& self, const std::vector<double>& quat){
-    WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    WToken<rai::Configuration> token(*self.config, &self.config->data);
     self.frame->setQuaternion(quat);
   } )
 
   .def("setRelativePose", [](ry::RyFrame& self, const std::string& pose){
-    WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
-    self.frame->Q.setText(pose.c_str());
-    self.frame->calc_X_from_parent();
+    WToken<rai::Configuration> token(*self.config, &self.config->data);
+    self.frame->set_Q()->setText(pose.c_str());
   } )
 
   .def("setRelativePosition", [](ry::RyFrame& self, const std::vector<double>& pos){
-    WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    WToken<rai::Configuration> token(*self.config, &self.config->data);
     self.frame->setRelativePosition(pos);
   } )
 
   .def("setRelativeQuaternion", [](ry::RyFrame& self, const std::vector<double>& quat){
-    WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    WToken<rai::Configuration> token(*self.config, &self.config->data);
     self.frame->setRelativeQuaternion(quat);
   } )
 
   .def("setJoint", [](ry::RyFrame& self, rai::JointType jointType){
-    WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    WToken<rai::Configuration> token(*self.config, &self.config->data);
     self.frame->setJoint(jointType);
   } )
 
   .def("setContact", [](ry::RyFrame& self, int cont){
-    WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    WToken<rai::Configuration> token(*self.config, &self.config->data);
     self.frame->setContact(cont);
   } )
 
   .def("setMass", [](ry::RyFrame& self, double mass){
-    WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    WToken<rai::Configuration> token(*self.config, &self.config->data);
     self.frame->setMass(mass);
   } )
 
   .def("getPosition", [](ry::RyFrame& self){
-    RToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    RToken<rai::Configuration> token(*self.config, &self.config->data);
     arr x = self.frame->getPosition();
     return pybind11::array_t<double>(x.dim(), x.p);
   } )
 
   .def("getQuaternion", [](ry::RyFrame& self){
-    RToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    RToken<rai::Configuration> token(*self.config, &self.config->data);
     arr x = self.frame->getQuaternion();
     return pybind11::array_t<double>(x.dim(), x.p);
   } )
 
   .def("getRotationMatrix", [](ry::RyFrame& self){
-    RToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    RToken<rai::Configuration> token(*self.config, &self.config->data);
     arr x = self.frame->getRotationMatrix();
     return pybind11::array_t<double>(x.dim(), x.p);
   } )
 
   .def("getRelativePosition", [](ry::RyFrame& self){
-    RToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    RToken<rai::Configuration> token(*self.config, &self.config->data);
     arr x = self.frame->getRelativePosition();
     return pybind11::array_t<double>(x.dim(), x.p);
   } )
 
   .def("getRelativeQuaternion", [](ry::RyFrame& self){
-    RToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    RToken<rai::Configuration> token(*self.config, &self.config->data);
     arr x = self.frame->getRelativeQuaternion();
     return pybind11::array_t<double>(x.dim(), x.p);
   } )
 
   .def("getMeshPoints", [](ry::RyFrame& self){
-    RToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    RToken<rai::Configuration> token(*self.config, &self.config->data);
     arr x = self.frame->getMeshPoints();
     return pybind11::array_t<double>(x.dim(), x.p);
   } )
 
   .def("info", [](ry::RyFrame& self){
     Graph G;
-    WToken<rai::KinematicWorld> token(*self.config, &self.config->data);
+    WToken<rai::Configuration> token(*self.config, &self.config->data);
     G.newNode<rai::String>({"name"}, {}, self.frame->name);
     G.newNode<int>({"ID"}, {}, self.frame->ID);
     self.frame->write(G);
-    if(!G["X"]) G.newNode<arr>({"X"}, {}, self.frame->X.getArr7d());
+    if(!G["X"]) G.newNode<arr>({"X"}, {}, self.frame->ensure_X().getArr7d());
     return graph2dict(G);
   } )
 
@@ -957,7 +932,7 @@ py::arg("featureSymbol"),
 
   //-- reinitialize with configuration
   .def("setConfigurations", [](ry::RyKOMO& self, ry::Config& C){
-    for(rai::KinematicWorld *c:self.komo->configurations){
+    for(rai::Configuration *c:self.komo->configurations){
       c->setFrameState(C.get()->getFrameState());
     }
     self.komo->reset(0.);
@@ -990,7 +965,7 @@ py::arg("featureSymbol"),
   } )
 
   .def("getReport", [](ry::RyKOMO& self){
-    Graph G = self.komo->getProblemGraph(true);
+    Graph G = self.komo->getProblemGraph(true, false);
     return graph2list(G);
   } )
 
@@ -1143,13 +1118,11 @@ py::arg("featureSymbol"),
     self.physx->pushKinematicStates(C.get()->frames);
     self.physx->step();
     self.physx->pullDynamicStates(C.set()->frames);
-    C.set()->calc_fwdPropagateFrames();
   } )
 
   .def("getState", [](ry::RyPhysX& self, ry::Config& C){
     arr V;
     self.physx->pullDynamicStates(C.set()->frames, V);
-    C.set()->calc_fwdPropagateFrames();
     return pybind11::array(V.dim(), V.p);
   } )
 
@@ -1305,51 +1278,53 @@ py::arg("featureSymbol"),
       .export_values();
 
   py::enum_<FeatureSymbol>(m, "FS")
-      ENUMVAL(FS,none)
-      ENUMVAL(FS,position)
-      ENUMVAL(FS,positionDiff)
-      ENUMVAL(FS,positionRel)
-      ENUMVAL(FS,quaternion)
-      ENUMVAL(FS,quaternionDiff)
-      ENUMVAL(FS,quaternionRel)
-      ENUMVAL(FS,pose)
-      ENUMVAL(FS,poseDiff)
-      ENUMVAL(FS,poseRel)
-      ENUMVAL(FS,vectorX)
-      ENUMVAL(FS,vectorXDiff)
-      ENUMVAL(FS,vectorXRel)
-      ENUMVAL(FS,vectorY)
-      ENUMVAL(FS,vectorYDiff)
-      ENUMVAL(FS,vectorYRel)
-      ENUMVAL(FS,vectorZ)
-      ENUMVAL(FS,vectorZDiff)
-      ENUMVAL(FS,vectorZRel)
-      ENUMVAL(FS,scalarProductXX)
-      ENUMVAL(FS,scalarProductXY)
-      ENUMVAL(FS,scalarProductXZ)
-      ENUMVAL(FS,scalarProductYX)
-      ENUMVAL(FS,scalarProductYY)
-      ENUMVAL(FS,scalarProductYZ)
-      ENUMVAL(FS,scalarProductZZ)
-      ENUMVAL(FS,gazeAt)
+        ENUMVAL(FS,position)
+        ENUMVAL(FS,positionDiff)
+        ENUMVAL(FS,positionRel)
+        ENUMVAL(FS,quaternion)
+        ENUMVAL(FS,quaternionDiff)
+        ENUMVAL(FS,quaternionRel)
+        ENUMVAL(FS,pose)
+        ENUMVAL(FS,poseDiff)
+        ENUMVAL(FS,poseRel)
+        ENUMVAL(FS,vectorX)
+        ENUMVAL(FS,vectorXDiff)
+        ENUMVAL(FS,vectorXRel)
+        ENUMVAL(FS,vectorY)
+        ENUMVAL(FS,vectorYDiff)
+        ENUMVAL(FS,vectorYRel)
+        ENUMVAL(FS,vectorZ)
+        ENUMVAL(FS,vectorZDiff)
+        ENUMVAL(FS,vectorZRel)
+        ENUMVAL(FS,scalarProductXX)
+        ENUMVAL(FS,scalarProductXY)
+        ENUMVAL(FS,scalarProductXZ)
+        ENUMVAL(FS,scalarProductYX)
+        ENUMVAL(FS,scalarProductYY)
+        ENUMVAL(FS,scalarProductYZ)
+        ENUMVAL(FS,scalarProductZZ)
+        ENUMVAL(FS,gazeAt)
 
-      ENUMVAL(FS,accumulatedCollisions)
-      ENUMVAL(FS,jointLimits)
-      ENUMVAL(FS,distance)
+        ENUMVAL(FS,angularVel)
 
-      ENUMVAL(FS,qItself)
+        ENUMVAL(FS,accumulatedCollisions)
+        ENUMVAL(FS,jointLimits)
+        ENUMVAL(FS,distance)
+        ENUMVAL(FS,oppose)
 
-      ENUMVAL(FS,aboveBox)
-      ENUMVAL(FS,insideBox)
+        ENUMVAL(FS,qItself)
 
-      ENUMVAL(FS,standingAbove)
+        ENUMVAL(FS,aboveBox)
+        ENUMVAL(FS,insideBox)
 
-      ENUMVAL(FS,physics)
-      ENUMVAL(FS,contactConstraints)
-      ENUMVAL(FS,energy)
+        ENUMVAL(FS,standingAbove)
 
-      ENUMVAL(FS,transAccelerations)
-      ENUMVAL(FS,transVelocities)
+        ENUMVAL(FS,physics)
+        ENUMVAL(FS,contactConstraints)
+        ENUMVAL(FS,energy)
+
+        ENUMVAL(FS,transAccelerations)
+        ENUMVAL(FS,transVelocities)
       .export_values();
 
 #undef ENUMVAL

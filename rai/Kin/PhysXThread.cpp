@@ -11,8 +11,8 @@
 #include <Kin/kinViewer.h>
 
 struct PhysXThread : Thread {
-  Var<rai::KinematicWorld> modelWorld;
-  Var<rai::KinematicWorld> physxWorld;
+  Var<rai::Configuration> modelWorld;
+  Var<rai::Configuration> physxWorld;
   Var<arr> ctrl_q_ref;
   PhysXInterface *px;
   KinViewer *view;
@@ -41,7 +41,7 @@ struct PhysXThread : Thread {
 #endif
     px = new PhysXInterface(physxWorld.get());
     px->setArticulatedBodiesKinematic(physxWorld.get());
-    view = new KinViewer(Var<rai::KinematicWorld>()); NIY //("physxWorld", .1);
+    view = new KinViewer(Var<rai::Configuration>()); NIY //("physxWorld", .1);
     view->threadLoop();
   }
   

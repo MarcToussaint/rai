@@ -19,7 +19,7 @@
 struct LinTaskSpaceAccLaw {
   Feature* map;
   
-  rai::KinematicWorld* world;
+  rai::Configuration* world;
   
   rai::String name;
   
@@ -43,7 +43,7 @@ struct LinTaskSpaceAccLaw {
   bool trajectoryDotActive = false;
   bool trajectoryDDotActive = false;
   
-  LinTaskSpaceAccLaw(Feature* map, rai::KinematicWorld* world, rai::String name = "nonameLaw");
+  LinTaskSpaceAccLaw(Feature* map, rai::Configuration* world, rai::String name = "nonameLaw");
   
   void setRef(const arr& yRef = NoArr, const arr& yDotRef = NoArr, const arr& yDDotRef = NoArr);
   
@@ -84,7 +84,7 @@ struct ConstrainedTaskLaw : LinTaskSpaceAccLaw {
   arr force;
   arr alpha;
   double gamma = 0.0;
-  ConstrainedTaskLaw(Feature* map, rai::KinematicWorld* world, rai::String name = "") : LinTaskSpaceAccLaw(map, world, name) {}
+  ConstrainedTaskLaw(Feature* map, rai::Configuration* world, rai::String name = "") : LinTaskSpaceAccLaw(map, world, name) {}
   void setForce(arr force);
   arr getForce();
   void setAlpha(arr alpha);
@@ -96,13 +96,13 @@ struct ConstrainedTaskLaw : LinTaskSpaceAccLaw {
 
 struct TaskSpaceController {
   rai::Array<LinTaskSpaceAccLaw*> taskSpaceAccLaws;
-  rai::KinematicWorld* world;
+  rai::Configuration* world;
   
   bool gravity = false;
   
   rai::Array<ConstrainedTaskLaw*> constrainedTaskLaws;
   
-  TaskSpaceController(rai::KinematicWorld* world) : world(world) {}
+  TaskSpaceController(rai::Configuration* world) : world(world) {}
   ~TaskSpaceController() {}
   
   void addLinTaskSpaceAccLaw(LinTaskSpaceAccLaw* law);

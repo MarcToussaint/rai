@@ -53,7 +53,7 @@ struct ArrCloudView:Primitive {
 
 struct DisplayPrimitives : GLDrawer {
   rai::Array<Primitive*> P;
-  rai::KinematicWorld G;
+  rai::Configuration G;
   arr pc[2];
   
   void glDraw(struct OpenGL&);

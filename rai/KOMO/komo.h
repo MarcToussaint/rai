@@ -13,19 +13,29 @@
 #include <Optim/KOMO_Problem.h>
 #include "objective.h"
 #include <Kin/switch.h>
-#include <Kin/flag.h>
 #include <Kin/featureSymbols.h>
 
 //===========================================================================
 
 enum SkeletonSymbol{
   SY_none=-1,
+
+  //geometric:
   SY_touch,
   SY_above,
   SY_inside,
-  SY_impulse,
+  SY_oppose,
+
+  SY_impulse, //old
   SY_initial,
-  SY_free,
+  SY_free, //old
+
+  //pose constraints:
+  SY_poseEq,
+  SY_stableRelPose,
+  SY_stablePose,
+
+  //mode switches:
   SY_stable,
   SY_stableOn,
   SY_dynamic,
@@ -33,29 +43,31 @@ enum SkeletonSymbol{
   SY_dynamicTrans,
   SY_quasiStatic,
   SY_quasiStaticOn,
-  SY_liftDownUp,
+  SY_liftDownUp, //old
   SY_break,
 
+  //interactions:
   SY_contact,
   SY_contactStick,
+  SY_contactComplementary,
   SY_bounce,
 
+  //mode switches:
   SY_magic,
   SY_magicTrans,
 
-  SY_push,
-  SY_graspSlide,
+  SY_push,  //old
+  SY_graspSlide, //old
 
   SY_dampMotion,
 
-  SY_noCollision,
+  SY_noCollision, //old
   SY_identical,
 
   SY_alignByInt,
 
   SY_makeFree,
-  SY_stableRelPose,
-  SY_stablePose,
+
 };
 
 
@@ -83,11 +95,10 @@ struct KOMO : NonCopyable {
   double tau=0.;               ///< real time duration of single step (used when evaluating task space velocities/accelerations)
   uint k_order=0;              ///< the (Markov) order of the KOMO problem (default 2)
   rai::Array<Objective*> objectives;     ///< list of tasks
-  rai::Array<rai::Flag*> flags;     ///< list of flaggings that are applied to the frames/joints in the configurations and modify tasks
   rai::Array<rai::KinematicSwitch*> switches;  ///< list of kinematic switches along the motion
   
   //-- internals
-  rai::KinematicWorld world;   ///< original world; which is the blueprint for all time-slice worlds (almost const: only makeConvexHulls modifies it)
+  rai::Configuration world;   ///< original world; which is the blueprint for all time-slice worlds (almost const: only makeConvexHulls modifies it)
   WorldL configurations;       ///< copies for each time slice; including kinematic switches; only these are optimized
   bool useSwift;               ///< whether swift (collisions/proxies) is evaluated whenever new configurations are set (needed if tasks read proxy list)
   bool useSwitches;            ///< if true, switches change kinematic topology; if false, switches only impose relative pose constraints
@@ -115,11 +126,11 @@ struct KOMO : NonCopyable {
   ofstream *logFile=0;
   
   KOMO();
-  KOMO(const rai::KinematicWorld& K, bool _useSwift=true);
+  KOMO(const rai::Configuration& K, bool _useSwift=true);
   ~KOMO();
   
   //-- setup the problem
-  void setModel(const rai::KinematicWorld& K, bool _useSwift=true);
+  void setModel(const rai::Configuration& K, bool _useSwift=true);
   void setTiming(double _phases=1., uint _stepsPerPhase=10, double durationPerPhase=5., uint _k_order=2);
   void setPairedTimes();
   void activateCollisions(const char* s1, const char* s2);
@@ -143,20 +154,19 @@ struct KOMO : NonCopyable {
    * they allow the user to add a cost task, or a kinematic switch in the problem definition
    * Typically, the user does not call them directly, but uses the many methods below
    * Think of all of the below as examples for how to set arbirary tasks/switches yourself */
-  struct Objective* addObjective(double startTime, double endTime, const ptr<Feature>& map, ObjectiveType type=OT_sos, const arr& target=NoArr, double scale=-1., int order=-1, int deltaFromStep=0, int deltaToStep=0);
-  struct Objective* addObjective(double startTime, double endTime, Feature* map, ObjectiveType type=OT_sos, const arr& target=NoArr, double scale=-1., int order=-1, int deltaFromStep=0, int deltaToStep=0);
+  struct Objective* addObjective(double startTime, double endTime, const ptr<Feature>& map, ObjectiveType type=OT_sos, const arr& target=NoArr, double scale=1., int order=-1, int deltaFromStep=0, int deltaToStep=0);
+  struct Objective* addObjective(double startTime, double endTime, Feature* map, ObjectiveType type=OT_sos, const arr& target=NoArr, double scale=1., int order=-1, int deltaFromStep=0, int deltaToStep=0);
   struct Objective* addObjective(const arr& times, ObjectiveType type, const FeatureSymbol& feat, const StringA& frames={}, const arr& scale=NoArr, const arr& target=NoArr, int order=-1);
 
   void addSwitch(double time, bool before, rai::KinematicSwitch* sw);
   void addSwitch(double time, bool before, rai::JointType type, rai::SwitchInitializationType init,
                        const char* ref1, const char* ref2,
                        const rai::Transformation& jFrom=NoTransformation, const rai::Transformation& jTo=NoTransformation);
-  void addFlag(double time, rai::Flag* fl, int deltaStep=0);
   void addContact_slide(double startTime, double endTime, const char *from, const char* to);
   void addContact_stick(double startTime, double endTime, const char *from, const char* to);
   void addContact_elasticBounce(double time, const char *from, const char* to, double elasticity=.8, double stickiness=0.);
   void addContact_noFriction(double startTime, double endTime, const char *from, const char* to);
-  void addContact_Complementary(double startTime, double endTime, const char *from, const char* to);
+  void addContact_ComplementarySlide(double startTime, double endTime, const char *from, const char* to);
   //  void addContact_Relaxed(double startTime, double endTime, const char *from, const char* to);
   void addContact_staticPush(double startTime, double endTime, const char *from, const char* to);
 
@@ -168,11 +178,11 @@ struct KOMO : NonCopyable {
   //
 
   //-- tasks mid-level
-  void setSquaredQAccelerations(double startTime=0., double endTime=-1., double prec=1.);
+//  void setSquaredQAccelerations(double startTime=0., double endTime=-1., double prec=1.);
   void setSquaredQAccVelHoming(double startTime=0., double endTime=-1., double accPrec=1., double velPrec=0., double homingPrec=1e-2);
-  void setSquaredQVelocities(double startTime=0., double endTime=-1., double prec=1.);
-  void setFixEffectiveJoints(double startTime=0., double endTime=-1., double prec=3e1);
-  void setFixSwitchedObjects(double startTime=0., double endTime=-1., double prec=3e1);
+//  void setSquaredQVelocities(double startTime=0., double endTime=-1., double prec=1.);
+//  void setFixEffectiveJoints(double startTime=0., double endTime=-1., double prec=3e1);
+//  void setFixSwitchedObjects(double startTime=0., double endTime=-1., double prec=3e1);
   void setSquaredQuaternionNorms(double startTime=0., double endTime=-1., double prec=3e0);
 
   void setHoming(double startTime=0., double endTime=-1., double prec=1e-1, const char *keyword="robot");
@@ -188,7 +198,7 @@ struct KOMO : NonCopyable {
   void add_touch(double startTime, double endTime, const char* shape1, const char* shape2, ObjectiveType type=OT_eq, const arr& target=NoArr, double prec=1e2);
   void add_aboveBox(double startTime, double endTime, const char* shape1, const char* shape2, double prec=1e1);
   void add_insideBox(double startTime, double endTime, const char* shape1, const char* shape2, double prec=1e1);
-  void add_impulse(double time, const char* shape1, const char* shape2, ObjectiveType type=OT_eq, double prec=1e1);
+//  void add_impulse(double time, const char* shape1, const char* shape2, ObjectiveType type=OT_eq, double prec=1e1);
   void add_stable(double time,  const char* shape1, const char* shape2, ObjectiveType type=OT_eq, double prec=1e1);
   
   //-- core kinematic switch symbols of skeletons
@@ -257,7 +267,7 @@ struct KOMO : NonCopyable {
   void run_sub(const uintA& X, const uintA& Y);
   void optimize(bool initialize=true);
 
-  rai::KinematicWorld& getConfiguration(double phase);
+  rai::Configuration& getConfiguration(double phase);
   arr getJointState(double phase);
   arr getFrameState(double phase);
   arr getPath_decisionVariable();
@@ -274,7 +284,7 @@ struct KOMO : NonCopyable {
 
   void reportProblem(ostream &os=std::cout);
   Graph getReport(bool gnuplt=false, int reportFeatures=0, ostream& featuresOs=std::cout); ///< return a 'dictionary' summarizing the optimization results (optional: gnuplot task costs; output detailed cost features per time slice)
-  Graph getProblemGraph(bool includeValues);
+  Graph getProblemGraph(bool includeValues, bool includeSolution=true);
   double getConstraintViolations();
   double getCosts();
   void reportProxies(ostream& os=std::cout, double belowMargin=.1); ///< report the proxies (collisions) for each time slice
@@ -285,7 +295,7 @@ struct KOMO : NonCopyable {
 
   void plotTrajectory();
   void plotPhaseTrajectory();
-  bool displayTrajectory(double delay=1., bool watch=true, bool overlayPaths=true, const char* saveVideoPrefix=NULL); ///< display the trajectory; use "vid/z." as vid prefix
+  bool displayTrajectory(double delay=1., bool watch=true, bool overlayPaths=true, const char* saveVideoPath=NULL, const char* addText=NULL); ///< display the trajectory; use "vid/z." as vid prefix
   bool displayPath(bool watch=true, bool full=true); ///< display the trajectory; use "vid/z." as vid prefix
   rai::Camera& displayCamera();   ///< access to the display camera to change the view
   
@@ -305,16 +315,15 @@ struct KOMO : NonCopyable {
   struct Conv_MotionProblem_KOMO_Problem : KOMO_Problem {
     KOMO& komo;
     uint dimPhi;
-    arr prevLambda;
     uintA phiIndex, phiDim;
     StringA featureNames;
     
     Conv_MotionProblem_KOMO_Problem(KOMO& _komo) : komo(_komo) {}
-    void clear(){ dimPhi=0; prevLambda.clear(); phiIndex.clear(); phiDim.clear(); featureNames.clear(); }
+    void clear(){ dimPhi=0; phiIndex.clear(); phiDim.clear(); featureNames.clear(); }
 
     virtual uint get_k() { return komo.k_order; }
     virtual void getStructure(uintA& variableDimensions, uintA& featureTimes, ObjectiveTypeA& featureTypes);
-    virtual void phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, ObjectiveTypeA& tt, const arr& x, arr& lambda);
+    virtual void phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, ObjectiveTypeA& tt, const arr& x);
   } komo_problem;
 
   struct Conv_MotionProblem_DenseProblem : ConstrainedProblem {
@@ -326,7 +335,7 @@ struct KOMO : NonCopyable {
 
     void getDimPhi();
 
-    virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda);
+    virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x);
   } dense_problem;
 
   struct Conv_MotionProblem_GraphProblem : GraphProblem {

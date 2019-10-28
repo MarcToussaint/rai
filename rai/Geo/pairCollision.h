@@ -14,8 +14,8 @@ struct PairCollision : GLDrawer {
   //INPUTS
   const rai::Mesh *mesh1=0;
   const rai::Mesh *mesh2=0;
-  rai::Transformation *t1=0;
-  rai::Transformation *t2=0;
+  const rai::Transformation *t1=0;
+  const rai::Transformation *t2=0;
   double rad1=0., rad2=0.; ///< only kinVector and glDraw account for this; the basic collision geometry (OUTPUTS below) is computed neglecting radii!!
   
   //OUTPUTS
@@ -32,7 +32,7 @@ struct PairCollision : GLDrawer {
   
   PairCollision(){}
   PairCollision(const rai::Mesh& mesh1, const rai::Mesh& mesh2,
-                rai::Transformation& t1, rai::Transformation& t2,
+                const rai::Transformation& t1, const rai::Transformation& t2,
                 double rad1=0., double rad2=0.);
   ~PairCollision(){}
                 

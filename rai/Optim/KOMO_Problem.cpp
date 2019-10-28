@@ -18,7 +18,7 @@ bool KOMO_Problem::checkStructure(const arr& x) {
   getStructure(variableDimensions, featureTimes, featureTypes);
   uintA varDimIntegral = integral(variableDimensions);
   
-  phi(y, J, H, phiTimes, tt, x, NoArr);
+  phi(y, J, H, phiTimes, tt, x);
   
 #ifndef RAI_NOCHECK
   uint m=y.N;
@@ -71,9 +71,9 @@ void KOMO_GraphProblem::getStructure(uintA& variableDimensions, uintAA& featureV
   }
 }
 
-void KOMO_GraphProblem::phi(arr& phi, arrA& J, arrA& H, const arr& x, arr& lambda) {
+void KOMO_GraphProblem::phi(arr& phi, arrA& J, arrA& H, const arr& x) {
   ObjectiveTypeA featureTypes; //TODO: redundant -> remove
-  KOMO.phi(phi, J, H, NoUintA, featureTypes, x, lambda);
+  KOMO.phi(phi, J, H, NoUintA, featureTypes, x);
 }
 
 Conv_KOMO_ConstrainedProblem::Conv_KOMO_ConstrainedProblem(KOMO_Problem& P) : KOMO(P) {
@@ -81,8 +81,8 @@ Conv_KOMO_ConstrainedProblem::Conv_KOMO_ConstrainedProblem(KOMO_Problem& P) : KO
   varDimIntegral = integral(variableDimensions);
 }
 
-void Conv_KOMO_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& featureTypes, const arr& x, arr& lambda) {
-  KOMO.phi(phi, (!!J?J_KOMO:NoArrA), (!!H?H_KOMO:NoArrA), featureTimes, featureTypes, x, lambda);
+void Conv_KOMO_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& featureTypes, const arr& x) {
+  KOMO.phi(phi, (!!J?J_KOMO:NoArrA), (!!H?H_KOMO:NoArrA), featureTimes, featureTypes, x);
   
   //-- construct a row-shifed J from the array of featureJs
   if(!!J) {

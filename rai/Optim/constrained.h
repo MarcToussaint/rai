@@ -47,7 +47,7 @@ inline uint optConstrained(arr& x, arr &dual, ConstrainedProblem& P, int verbose
 inline void evaluateConstrainedProblem(const arr& x, ConstrainedProblem& P, std::ostream& os) {
   arr phi_x;
   ObjectiveTypeA tt_x;
-  P.phi(phi_x, NoArr, NoArr, tt_x, x, NoArr);
+  P.phi(phi_x, NoArr, NoArr, tt_x, x);
   double Ef=0., Eh=0., Eg=0.;
   for(uint i=0; i<phi_x.N; i++) {
     if(tt_x(i)==OT_f) Ef += phi_x(i);
@@ -72,6 +72,6 @@ struct PhaseOneProblem : ConstrainedProblem {
   
   PhaseOneProblem(ConstrainedProblem &f_orig):f_orig(f_orig) {}
   void initialize(arr& x);
-  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& meta_ot, const arr& x, arr& lambda);
+  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& meta_ot, const arr& x);
 };
 

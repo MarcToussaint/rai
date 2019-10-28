@@ -7,8 +7,10 @@
     --------------------------------------------------------------  */
 
 #include "gamepad2tasks.h"
-#include <Kin/taskMaps.h>
 #include <Kin/frame.h>
+#include <Kin/F_qFeatures.h>
+#include <Kin/TM_default.h>
+#include <Kin/TM_proxy.h>
 
 enum BUTTON {
   BTN_NONE = 0,
@@ -33,48 +35,48 @@ inline bool stopButtons(const arr& gamepadState){
   return false;
 }
 
-Gamepad2Tasks::Gamepad2Tasks(TaskControlMethods& _TC, const rai::KinematicWorld& K, const arr& _q0)
+Gamepad2Tasks::Gamepad2Tasks(TaskControlMethods& _TC, const rai::Configuration& K, const arr& _q0)
   : TC(_TC), q0(_q0),
     endeffR(NULL), endeffL(NULL), base(NULL), torso(NULL), head(NULL), headAxes(NULL), limits(NULL), coll(NULL), gripperL(NULL), gripperR(NULL) {
     
   robot = rai::getParameter<rai::String>("robot", "pr2");
   
   if(true || rai::getParameter<bool>("oldfashinedTaskControl", true)) {
-    homing = new CtrlTask("qHoming", make_shared<TM_qItself>(), .5, 1., .2, 10.);
+    homing = new CtrlTask("qHoming", make_shared<F_qItself>(), .5, 1., .2, 10.);
     homing->PD().setTarget(q0);
     endeffR = new CtrlTask("pr2R", make_shared<TM_Default>(TMT_pos, K, "pr2R", NoVector, "base_footprint"), .5, .8, 1., 1.);
     endeffL = new CtrlTask("pr2L", make_shared<TM_Default>(TMT_pos, K, "pr2L", NoVector, "base_footprint"), .5, .8, 1., 1.);
     //  base = new CtrlTask("endeffBase", make_shared<TM_qItself>(MP.world, "worldTranslationRotation"), .2, .8, 1., 1.);
     //  torso = new CtrlTask("torso_lift_link", make_shared<TM_Default>(TMT_pos, MP.world, "torso_lift_link_1"), .2, .8, 1., 1.);
     head = new CtrlTask("endeffHead", make_shared<TM_Default>(TMT_gazeAt, K, "endeffHead", Vector_z, "base_footprint"), .5, 1., 1., 1.);
-    if(robot=="pr2") headAxes = new CtrlTask("endeffHead", make_shared<TM_qItself>(QIP_byJointNames, StringA({"head_pan_joint", "head_tilt_joint"}), K), .5, 1., 1., 1.);
-    if(robot=="baxter") headAxes = new CtrlTask("endeffHead", make_shared<TM_qItself>(QIP_byJointNames, StringA({"head_pan"}), K), .5, 1., 1., 1.);
-    limits = new CtrlTask("limits", make_shared<TM_qLimits>(), .2, .8, 1., 1.);
+    if(robot=="pr2") headAxes = new CtrlTask("endeffHead", make_shared<F_qItself>(F_qItself::byJointNames, StringA({"head_pan_joint", "head_tilt_joint"}), K), .5, 1., 1., 1.);
+    if(robot=="baxter") headAxes = new CtrlTask("endeffHead", make_shared<F_qItself>(F_qItself::byJointNames, StringA({"head_pan"}), K), .5, 1., 1., 1.);
+    limits = new CtrlTask("limits", make_shared<F_qLimits>(), .2, .8, 1., 1.);
     coll = new CtrlTask("collisions", make_shared<TM_Proxy>(TMT_allP, uintA({0u}), .1), .2, .8, 1., 1.);
     if(robot=="pr2") {
-      base = new CtrlTask("endeffBase", make_shared<TM_qItself>(QIP_byJointNames, StringA({"worldTranslationRotation"}), K), .2, .8, 1., 1.);
+      base = new CtrlTask("endeffBase", make_shared<F_qItself>(F_qItself::byJointNames, StringA({"worldTranslationRotation"}), K), .2, .8, 1., 1.);
       torso = new CtrlTask("torso_lift_link", make_shared<TM_Default>(TMT_pos, K, "torso_lift_link_1"), .2, .8, 1., 1.);
-      gripperL = new CtrlTask("gripperL", make_shared<TM_qItself>(QIP_byJointNames, StringA({"l_gripper_joint"}), K), 2., .8, 1., 1.);
-      gripperR = new CtrlTask("gripperR", make_shared<TM_qItself>(QIP_byJointNames, StringA({"r_gripper_joint"}), K), 2., .8, 1., 1.);
+      gripperL = new CtrlTask("gripperL", make_shared<F_qItself>(F_qItself::byJointNames, StringA({"l_gripper_joint"}), K), 2., .8, 1., 1.);
+      gripperR = new CtrlTask("gripperR", make_shared<F_qItself>(F_qItself::byJointNames, StringA({"r_gripper_joint"}), K), 2., .8, 1., 1.);
     }
     if(robot=="baxter") {
-      gripperL = new CtrlTask("gripperL", make_shared<TM_qItself>(QIP_byJointNames, StringA({"l_gripper_l_finger_joint"}), K), 2., .8, 1., 1.);
-      gripperR = new CtrlTask("gripperR", make_shared<TM_qItself>(QIP_byJointNames, StringA({"r_gripper_l_finger_joint"}), K), 2., .8, 1., 1.);
+      gripperL = new CtrlTask("gripperL", make_shared<F_qItself>(F_qItself::byJointNames, StringA({"l_gripper_l_finger_joint"}), K), 2., .8, 1., 1.);
+      gripperR = new CtrlTask("gripperR", make_shared<F_qItself>(F_qItself::byJointNames, StringA({"r_gripper_l_finger_joint"}), K), 2., .8, 1., 1.);
     }
   } else {
-    homing = new CtrlTask("qHoming", make_shared<TM_qItself>(), .5, 1., 0., 0.);
+    homing = new CtrlTask("qHoming", make_shared<F_qItself>(), .5, 1., 0., 0.);
 //    homing->PD().setGains(10., 2.);
     homing->PD().setTarget(q0);
     endeffR = new CtrlTask("pr2R", make_shared<TM_Default>(TMT_pos, K, "pr2R", NoVector, "base_footprint"), 1., .1, 1., 1.);
     endeffL = new CtrlTask("pr2L", make_shared<TM_Default>(TMT_pos, K, "pr2L", NoVector, "base_footprint"), .5, .8, 1., 1.);
-    base = new CtrlTask("endeffBase", make_shared<TM_qItself>(QIP_byJointNames, StringA({"worldTranslationRotation"}), K), .2, .8, 1., 1.);
+    base = new CtrlTask("endeffBase", make_shared<F_qItself>(F_qItself::byJointNames, StringA({"worldTranslationRotation"}), K), .2, .8, 1., 1.);
     torso = new CtrlTask("torso_lift_link", make_shared<TM_Default>(TMT_pos, K, "torso_lift_link_0"), .2, .8, 1., 1.);
     head = new CtrlTask("endeffHead", make_shared<TM_Default>(TMT_gazeAt, K, "endeffHead", Vector_z, "base_footprint"), 1., .8, 1., 1.);
-    headAxes = new CtrlTask("endeffHead", make_shared<TM_qItself>(QIP_byJointNames, StringA({"head_pan_joint", "head_tilt_joint"}), K), .5, 1., 1., 1.);
-    limits = new CtrlTask("limits", make_shared<TM_qLimits>(), .2, .8, 1., 1.);
+    headAxes = new CtrlTask("endeffHead", make_shared<F_qItself>(F_qItself::byJointNames, StringA({"head_pan_joint", "head_tilt_joint"}), K), .5, 1., 1., 1.);
+    limits = new CtrlTask("limits", make_shared<F_qLimits>(), .2, .8, 1., 1.);
     coll = new CtrlTask("collisions", make_shared<TM_Proxy>(TMT_allP, uintA({0u}), .1), .2, .8, 1., 1.);
-    gripperL = new CtrlTask("gripperL", make_shared<TM_qItself>(QIP_byJointNames, StringA({"l_gripper_joint"}), K), 2., .8, 1., 1.);
-    gripperR = new CtrlTask("gripperR", make_shared<TM_qItself>(QIP_byJointNames, StringA({"r_gripper_joint"}), K), 2., .8, 1., 1.);
+    gripperL = new CtrlTask("gripperL", make_shared<F_qItself>(F_qItself::byJointNames, StringA({"l_gripper_joint"}), K), 2., .8, 1., 1.);
+    gripperR = new CtrlTask("gripperR", make_shared<F_qItself>(F_qItself::byJointNames, StringA({"r_gripper_joint"}), K), 2., .8, 1., 1.);
     
     endeffR->PD().setGains(40.,2.);
     endeffL->PD().setGains(10.,1.); //endeffL->maxAcc=.5;
@@ -99,7 +101,7 @@ double gamepadSignalMap(double x) {
   return rai::sign(x)*(exp(rai::sqr(x))-1.);
 }
 
-bool Gamepad2Tasks::updateTasks(arr& gamepadState, const rai::KinematicWorld& K) {
+bool Gamepad2Tasks::updateTasks(arr& gamepadState, const rai::Configuration& K) {
   if(stopButtons(gamepadState)) return true;
   
   //for(ptr<CtrlTask>& pdt:TC.tasks) pdt->active=false;
@@ -155,7 +157,7 @@ HALT("change code: add a qNull here explicitly");
       rai::Vector vel(gamepadLeftRight, gamepadForwardBack, gamepadUpDown);
       if(sel==down) {
         vel.set(.5*gamepadLeftRight, .5*gamepadRotate, 2.*gamepadForwardBack);
-        vel = K.getFrameByName("endeffBase") -> X.rot * vel;
+        vel = K.getFrameByName("endeffBase") -> ensure_X().rot * vel;
       }
 //      vel = MP.world.getShapeByName("endeffBase")->X.rot*vel;
       arr ve;

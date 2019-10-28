@@ -10,6 +10,7 @@
 #include "filter.h"
 #include <Control/taskControl.h>
 #include <Kin/frame.h>
+#include <Kin/TM_default.h>
 
 Filter::Filter()
   : Thread("Filter", -1.),
@@ -24,7 +25,7 @@ Filter::~Filter() {
 }
 
 void Filter::open() {
-  Var<rai::KinematicWorld> modelWorld(this, "modelWorld");
+  Var<rai::Configuration> modelWorld(this, "modelWorld");
   modelWorld.readAccess();
   for(rai::Frame *b:modelWorld().frames) {
     if(b->ats["percept"]) {
@@ -37,7 +38,7 @@ void Filter::open() {
         rai::Shape *s=b->shape;
         switch(s->type()) {
           case rai::ST_box: {
-            PerceptPtr p = make_shared<PercBox>(b->X, s->size(), s->mesh().C);
+            PerceptPtr p = make_shared<PercBox>(b->ensure_X(), s->size(), s->mesh().C);
             p->id = nextId++;
             p->bodyId = b->ID;
             percepts_filtered.set()->append(p);

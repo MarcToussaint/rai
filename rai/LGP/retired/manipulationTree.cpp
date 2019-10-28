@@ -517,7 +517,7 @@ void MNode::solvePoseProblem() {
     cout <<"KOMO FAILED: " <<msg <<endl;
   }
   COUNT_evals += komo.opt->newton.evals;
-  COUNT_kin += rai::KinematicWorld::setJointStateCount;
+  COUNT_kin += rai::Configuration::setJointStateCount;
   COUNT_opt(level)++;
   count(level)++;
 
@@ -589,7 +589,7 @@ void MNode::solveSeqProblem(int verbose) {
     cout <<"KOMO FAILED: " <<msg <<endl;
   }
   COUNT_evals += komo.opt->newton.evals;
-  COUNT_kin += rai::KinematicWorld::setJointStateCount;
+  COUNT_kin += rai::Configuration::setJointStateCount;
   COUNT_opt(level)++;
   count(level)++;
 
@@ -651,7 +651,7 @@ void MNode::solvePathProblem(uint microSteps, int verbose) {
     cout <<"KOMO FAILED: " <<msg <<endl;
   }
   COUNT_evals += komo.opt->newton.evals;
-  COUNT_kin += rai::KinematicWorld::setJointStateCount;
+  COUNT_kin += rai::Configuration::setJointStateCount;
   COUNT_opt(level)++;
   count(level)++;
 

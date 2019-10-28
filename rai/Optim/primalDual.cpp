@@ -41,7 +41,7 @@ double PrimalDualProblem::primalDual(arr &r, arr &R, const arr &x_lambda) {
   CHECK_EQ(n, x_lambda.N, "");
   CHECK_EQ(x.N+n_eq+n_ineq, x_lambda.N, "");
 
-  L.mu = .1;
+  L.mu = 0.; //1e-2;
   L.nu = L.muLB = 0.;
   
   arr dL, HL;
@@ -55,6 +55,7 @@ double PrimalDualProblem::primalDual(arr &r, arr &R, const arr &x_lambda) {
     if(L.tt_x.p[i]==OT_ineq) {
       if(L.phi_x.p[i] > 0.) { primalFeasible=false; /*break;*/ }
 //      if(L.phi_x.p[i] > 0.) dualityMeasure += ::fabs(L.phi_x.p[i]); else
+      HALT("Isn't this wrong for positive phi? Should we exclude those from the duality measure? (Because for those we want lambda positive!!)");
       dualityMeasure += ::fabs(L.lambda.p[i] * L.phi_x.p[i]);
     }
     if(L.tt_x.p[i]==OT_eq) {
@@ -237,6 +238,8 @@ uint OptPrimalDual::run(uint maxIt) {
     }
 
     PD.updateMu();
+
+    newton.reinit(newton.x); //potential to optimize! don't recompute everything naively
 
     x = newton.x({0,x.N-1});
   

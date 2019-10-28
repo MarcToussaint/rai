@@ -2,8 +2,8 @@
 
 #include <KOMO/komo-ext.h>
 
-rai::String validatePath(const rai::KinematicWorld& _K, const arr& q_now, const StringA& joints, const arr& q, const arr& tau){
-  rai::KinematicWorld K;
+rai::String validatePath(const rai::Configuration& _K, const arr& q_now, const StringA& joints, const arr& q, const arr& tau){
+  rai::Configuration K;
   K.copy(_K, true);
 
 //  arr q0 = K.getJointState();
@@ -57,11 +57,11 @@ rai::String validatePath(const rai::KinematicWorld& _K, const arr& q_now, const 
 //  }
 //}
 
-std::pair<arr, arr> computePath(const rai::KinematicWorld& K, const arr& target_q, const StringA& target_joints, const char* endeff, double up, double down){
+std::pair<arr, arr> computePath(const rai::Configuration& K, const arr& target_q, const StringA& target_joints, const char* endeff, double up, double down){
     KOMO komo;
     komo.setModel(K, true);
     komo.setPathOpt(1., 20, 3.);
-    komo.setSquaredQAccelerations();
+    komo.setSquaredQAccVelHoming();
 
     addMotionTo(komo, target_q, target_joints, endeff, up, down);
     komo.verbose=1;

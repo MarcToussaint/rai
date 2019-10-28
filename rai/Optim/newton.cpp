@@ -56,10 +56,11 @@ OptNewton::StopCriterion OptNewton::step() {
   if(!(fx==fx)) HALT("you're calling a newton step with initial function value = NAN");
 
   rai::timerRead(true);
+
   //-- compute Delta
   arr R=Hx;
   if(beta) { //Levenberg Marquardt damping
-    if(isNotSpecial(R)){
+    if(!isSpecial(R)){
       for(uint i=0; i<R.d0; i++) R(i,i) += beta;
     }else if(isRowShifted(R)) {
       for(uint i=0; i<R.d0; i++) R(i,0) += beta; //(R(i,0) is the diagonal in the packed matrix!!)
@@ -69,7 +70,7 @@ OptNewton::StopCriterion OptNewton::step() {
   }
   if(additionalRegularizer) { //obsolete -> retire
     if(isRowShifted(R)) R = unpack(R);
-    else if(!isNotSpecial(R)) NIY;
+    else if(isSpecial(R)) NIY;
     Delta = lapack_Ainv_b_sym(R + (*additionalRegularizer), -(gx+(*additionalRegularizer)*vectorShaped(x)));
   } else {
     bool inversionFailed=false;
@@ -155,7 +156,7 @@ OptNewton::StopCriterion OptNewton::step() {
     if(o.verbose>5) cout <<" \tprobing y=" <<y;
     if(o.verbose>1) cout <<" \tevals=" <<std::setw(4) <<evals <<" \talpha=" <<std::setw(11) <<alpha <<" \tf(y)=" <<fy <<flush;
     bool wolfe = (fy <= fx + o.wolfe*alpha*scalarProduct(Delta,gx));
-//    if(rootFinding) wolfe=true;
+    if(rootFinding) wolfe=true;
     if(fy==fy && (wolfe || o.nonStrictSteps==-1 || o.nonStrictSteps>(int)its)) { //fy==fy is for NAN?
       //accept new point
       if(o.verbose>1) cout <<" - ACCEPT" <<endl;
@@ -219,7 +220,7 @@ OptNewton::StopCriterion OptNewton::step() {
 #define STOPIF(expr, code, ret) if(expr){ if(o.verbose>1) cout <<"\t\t\t\t\t\t--- stopping criterion='" <<#expr <<"'" <<endl; code; return stopCriterion=ret; }
   
   STOPIF(absMax(Delta)<o.stopTolerance, , stopCrit1);
-  STOPIF(numTinySteps>4, numTinySteps=0, stopCrit2);
+  STOPIF(numTinySteps>4, numTinySteps=0, stopTinySteps);
 //  STOPIF(alpha*absMax(Delta)<1e-3*o.stopTolerance, stopCrit2);
   STOPIF(evals>=o.stopEvals, , stopCritEvals);
   STOPIF(its>=o.stopIters, , stopCritEvals);

@@ -13,7 +13,7 @@
 //===========================================================================
 
 struct TowerProblem {
-  rai::KinematicWorld world;
+  rai::Configuration world;
   Graph symbols;
   uint nObjects;
   
@@ -23,5 +23,5 @@ struct TowerProblem {
     nObjects = world.bodies.N - nObjects;
   }
   void setRandom();
-  double reward(const rai::KinematicWorld& world, const Graph& symbols);
+  double reward(const rai::Configuration& world, const Graph& symbols);
 };

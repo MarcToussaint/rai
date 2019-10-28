@@ -46,8 +46,8 @@ struct LGP_Node {
   Graph *folAddToState=NULL; ///< facts that are added to the state /after/ the fol.transition, e.g., infeasibility predicates
   
   //-- kinematics: the kinematic structure of the world after the decision path
-  const rai::KinematicWorld& startKinematics; ///< initial start state kinematics
-  rai::KinematicWorld effKinematics; ///< TODO: REMOVE the effective kinematics (computed from kinematics and symbolic state)
+  const rai::Configuration& startKinematics; ///< initial start state kinematics
+  rai::Configuration effKinematics; ///< TODO: REMOVE the effective kinematics (computed from kinematics and symbolic state)
   
   bool isExpanded=false;
   bool isInfeasible=false;

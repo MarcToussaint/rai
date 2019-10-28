@@ -7,11 +7,12 @@
     --------------------------------------------------------------  */
 
 #include "taskControl.h"
-#include <Kin/kin_swift.h>
 #include <KOMO/komo.h>
-#include <Kin/frame.h>
-#include <Kin/taskMaps.h>
 #include <Core/graph.h>
+#include <Kin/frame.h>
+#include <Kin/kin_swift.h>
+#include <Kin/TM_default.h>
+#include <Kin/F_qFeatures.h>
 
 //===========================================================================
 
@@ -346,9 +347,9 @@ CtrlTask::~CtrlTask() {
   }
 }
 
-ActStatus CtrlTask::update(double tau, const rai::KinematicWorld& world) {
+ActStatus CtrlTask::update(double tau, const rai::Configuration& world) {
   map->__phi(y, J_y, world);
-  if(world.qdot.N) v = J_y*world.qdot; else v.resize(y.N).setZero();
+  //if(world.qdot.N) v = J_y*world.qdot; else v.resize(y.N).setZero();
   ActStatus s_old = status.get();
   ActStatus s_new = s_old;
   if(ref) s_new = ref->update(y_ref, v_ref, tau, y, v);
@@ -378,7 +379,7 @@ void CtrlTask::setTarget(const arr& y_target) {
   ref->resetState();
 }
 
-void CtrlTask::getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const rai::KinematicWorld& world) {
+void CtrlTask::getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const rai::Configuration& world) {
   //-- get necessary Jacobians
   ptr<TM_Default> m = std::dynamic_pointer_cast<TM_Default>(map);
   CHECK(m,"this only works for the default position task map");
@@ -440,11 +441,10 @@ CtrlTask* TaskControlMethods::addPDTask(CtrlTaskL& tasks, const char* name, doub
 //  return t;
 //}
 
-void TaskControlMethods::lockJointGroup(const char* groupname, rai::KinematicWorld& world, bool lockThem) {
+void TaskControlMethods::lockJointGroup(const char* groupname, rai::Configuration& world, bool lockThem) {
   if(!groupname) {
     if(lockThem) {
       lockJoints = consts<byte>(true, world.q.N);
-      world.qdot.setZero();
     } else lockJoints.clear();
     return;
   }
@@ -454,7 +454,7 @@ void TaskControlMethods::lockJointGroup(const char* groupname, rai::KinematicWor
       if(f->ats[groupname]) {
         for(uint i=0; i<j->qDim(); i++) {
           lockJoints(j->qIndex+i) = lockThem;
-          if(lockThem && world.qdot.N) world.qdot(j->qIndex+i) = 0.;
+          //if(lockThem && world.qdot.N) world.qdot(j->qIndex+i) = 0.;
         }
       }
     }
@@ -463,8 +463,8 @@ void TaskControlMethods::lockJointGroup(const char* groupname, rai::KinematicWor
 double TaskControlMethods::getIKCosts(CtrlTaskL& tasks, const arr& q, const arr& q0, arr& g, arr& H) {
   double c=0.;
   arr y,J;
-  if(!!g) { CHECK(&q,""); g = zeros(q.N); }
-  if(!!H) { CHECK(&q,""); H = zeros(q.N, q.N); }
+  if(!!g) { CHECK(!!q,""); g = zeros(q.N); }
+  if(!!H) { CHECK(!!q,""); H = zeros(q.N, q.N); }
   for(CtrlTask* t: tasks) {
     if(t->active && t->ref) {
       y = t->scale*(t->y_ref - t->y);
@@ -632,7 +632,7 @@ arr TaskControlMethods::getComplianceProjection(CtrlTaskL& tasks) {
       if(!P.N) P = eye(t->J_y.d1);
 
       //special case! qItself feature!
-      if(t->compliance.N==1 && std::dynamic_pointer_cast<TM_qItself>(t->map)){
+      if(t->compliance.N==1 && std::dynamic_pointer_cast<F_qItself>(t->map)){
         double compliance = t->compliance.scalar();
         CHECK_GE(compliance, 0., "");
         CHECK_LE(compliance, 1., "");
@@ -824,22 +824,25 @@ arr TaskControlMethods::calcOptimalControlProjected(CtrlTaskL& tasks, arr &Kp, a
   return u0 + Kp*q + Kd*qdot;
 }
 
-void fwdSimulateControlLaw(arr& Kp, arr& Kd, arr& u0, rai::KinematicWorld& world) {
+void fwdSimulateControlLaw(arr& Kp, arr& Kd, arr& u0, rai::Configuration& world) {
+  arr qDot = zeros(world.q.N); HALT("WARNING: qDot should be maintained outside world!");
+
   arr M, F;
-  world.equationOfMotion(M, F, false);
-  
-  arr u = u0 - Kp*world.q - Kd*world.qdot;
+  world.equationOfMotion(M, F, qDot, false);
+
+  arr u = u0 - Kp*world.q - Kd*qDot;
   arr qdd;
-  world.fwdDynamics(qdd, world.qdot, u);
+  //  world.fwdDynamics(qdd, qDot, u);
+  HALT("why compute M and F, but then call fwd dynamics??");
   
   for(uint tt=0; tt<10; tt++) {
-    world.qdot += .001*qdd;
-    world.q += .001*world.qdot;
-    world.setJointState(world.q, world.qdot);
+    qDot += .001*qdd;
+    world.q += .001*qDot;
+    world.setJointState(world.q);
   }
 }
 
-void TaskControlMethods::calcForceControl(CtrlTaskL& tasks, arr& K_ft, arr& J_ft_inv, arr& fRef, double& gamma, const rai::KinematicWorld& world) {
+void TaskControlMethods::calcForceControl(CtrlTaskL& tasks, arr& K_ft, arr& J_ft_inv, arr& fRef, double& gamma, const rai::Configuration& world) {
   uint nForceTasks=0;
   for(CtrlTask* task : tasks) if(task->active && task->f_ref.N) {
       nForceTasks++;

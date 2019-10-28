@@ -10,7 +10,7 @@
 struct Robot_PR2_PathThread : Thread{
   Mutex threadLock;
   RosCom ROS;
-  rai::KinematicWorld K;
+  rai::Configuration K;
   arr q0, q_real, qdot_real; //< real state
   arr Kp_base, Kd_base; //< Kp, Kd parameters defined in the model file
   double kp_factor, kd_factor, ki_factor;
@@ -28,7 +28,7 @@ struct Robot_PR2_PathThread : Thread{
   double dt=.01; // time stepping interval
   uint stepCount=0; // number of simulation steps
 
-  Robot_PR2_PathThread(const rai::KinematicWorld& _K);
+  Robot_PR2_PathThread(const rai::Configuration& _K);
   ~Robot_PR2_PathThread();
 
   void open(){}
@@ -36,7 +36,7 @@ struct Robot_PR2_PathThread : Thread{
   void close(){}
 };
 
-Robot_PR2_PathThread::Robot_PR2_PathThread(const rai::KinematicWorld& _K)
+Robot_PR2_PathThread::Robot_PR2_PathThread(const rai::Configuration& _K)
     : Thread("Robot_PR2_PathThread", .01),
       K(_K),
       ctrl_ref(this, "/marc_rt_controller/jointReference"),
@@ -51,7 +51,7 @@ Robot_PR2_PathThread::Robot_PR2_PathThread(const rai::KinematicWorld& _K)
 
     Kp_base = zeros(q0.N);
     Kd_base = zeros(q0.N);
-    for(rai::Joint *j: K.fwdActiveJoints) if(j->qDim()>0) {
+    for(rai::Joint *j: K.activeJoints) if(j->qDim()>0) {
         arr *gains = j->frame->ats.find<arr>("gains");
         if(gains) {
           for(uint i=0; i<j->qDim(); i++) {
@@ -153,7 +153,7 @@ void Robot_PR2_PathThread::step()
     }
 }
 
-Robot_PR2::Robot_PR2(const rai::KinematicWorld& _K){
+Robot_PR2::Robot_PR2(const rai::Configuration& _K){
     self = new Robot_PR2_PathThread(_K);
 }
 

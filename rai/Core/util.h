@@ -688,7 +688,10 @@ template<class T> Mutex Singleton<T>::mutex;
 // just a hook to make things gl drawable
 //
 
-struct GLDrawer    { virtual void glDraw(struct OpenGL&) = 0; virtual ~GLDrawer() {} };
+struct GLDrawer {
+  virtual void glDraw(struct OpenGL&) = 0;
+  virtual ~GLDrawer() {}
+};
 
 //===========================================================================
 

@@ -545,8 +545,8 @@ void Quaternion::addY(double angle) {
   set(a.w, a.x, a.y, a.z);
 }
 
-void Quaternion::addZ(double radians) {
-  if(!radians) { return; }
+Quaternion& Quaternion::addZ(double radians) {
+  if(!radians) { return *this; }
   radians/=2.;
   double cw=cos(radians);
   double cz=sin(radians);
@@ -558,6 +558,7 @@ void Quaternion::addZ(double radians) {
   a.z = w*cz + z*cw;
   
   set(a.w, a.x, a.y, a.z);
+  return *this;
 }
 
 void Quaternion::append(const Quaternion& q) {
@@ -911,7 +912,7 @@ double* Quaternion::getMatrixGL(double* m) const {
   return m;
 }
 
-arr Quaternion::getEulerRPY() {
+arr Quaternion::getEulerRPY() const {
   double roll, pitch, yaw;
 
   // roll (x-axis rotation)
@@ -1374,7 +1375,7 @@ double* Transformation::getInverseAffineMatrixGL(double *m) const {
   return m;
 }
 
-arr Transformation::getArr7d() {
+arr Transformation::getArr7d() const {
   arr t(7);
   t.p[0]=pos.x;
   t.p[1]=pos.y;
@@ -1386,7 +1387,7 @@ arr Transformation::getArr7d() {
   return t;
 }
 
-arr Transformation::getWrenchTransform() {
+arr Transformation::getWrenchTransform() const {
   arr z(3, 3);  z.setZero();
   arr r = skew(pos.getArr()); //(3, 3);  Featherstone::skew(r, &pos.x); skew pos
   arr R = rot.getArr(); //(3, 3);  rot.getMatrix(R.p);

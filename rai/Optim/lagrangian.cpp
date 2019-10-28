@@ -45,7 +45,7 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
   //-- evaluate constrained problem and buffer
   if(_x!=x) {
     x=_x;
-    P.phi(phi_x, J_x, H_x, tt_x, x, lambda);
+    P.phi(phi_x, J_x, H_x, tt_x, x);
   } else { //we evaluated this before - use buffered values; the meta F is still recomputed as (dual) parameters might have changed
   }
   CHECK(x.N, "zero-dim optimization variables!");
@@ -63,7 +63,7 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
   double L=0.; //L value
   for(uint i=0; i<phi_x.N; i++) {
     if(tt_x.p[i]==OT_f) L += phi_x.p[i];                                                  // direct cost term
-    if(tt_x.p[i]==OT_sos) L += rai::sqr(phi_x.p[i]);                                 // sumOfSqr term
+    if(tt_x.p[i]==OT_sos) L += rai::sqr(phi_x.p[i]);                                      // sumOfSqr term
     if(muLB     && tt_x.p[i]==OT_ineq) { if(phi_x.p[i]>0.) return NAN;  L -= muLB * ::log(-phi_x.p[i]); }                   //log barrier, check feasibility
     if(mu       && tt_x.p[i]==OT_ineq && I_lambda_x.p[i]) L += gpenalty(phi_x.p[i]);      //g-penalty
     if(lambda.N && tt_x.p[i]==OT_ineq && lambda.p[i]>0.) L += lambda.p[i] * phi_x.p[i];   //g-lagrange terms
@@ -103,12 +103,7 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
       arr sqrtCoeff = sqrt(coeff);
       tmp.sparse().rowWiseMult(sqrtCoeff);
     }
-#if 1
     HL = comp_At_A(tmp); //Gauss-Newton type!
-#else
-    arr tmpt = comp_At(tmp);
-    HL = comp_A_At(tmpt); //Gauss-Newton type!
-#endif
     
     if(fterm!=-1 && H_x.N) { //For f-terms, the Hessian must be given explicitly, and is not \propto J^T J
       HL += H_x;
@@ -234,7 +229,7 @@ void LagrangianProblem::aulaUpdate(bool anyTimeVariant, double lambdaStepsize, d
   }
 }
 
-#if 0
+#if 1
 double LagrangianProblem::gpenalty(double g) { return mu*g*g; }
 double LagrangianProblem::gpenalty_d(double g) { return 2.*mu*g; }
 double LagrangianProblem::gpenalty_dd(double g) { return 2.*mu; }
@@ -244,7 +239,7 @@ double LagrangianProblem::gpenalty_d(double g) { g*=mu; if(g>0.) return mu*(2.*g
 double LagrangianProblem::gpenalty_dd(double g) { g*=mu; if(g>0.) return mu*mu*(2. + 6.*g);  return 2.*mu*mu; }
 #endif
 
-#if 0
+#if 1
 double LagrangianProblem::hpenalty(double h) { return nu*h*h;  }
 double LagrangianProblem::hpenalty_d(double h) { return 2.*nu*h;  }
 double LagrangianProblem::hpenalty_dd(double h) { return 2.*nu;  }

@@ -18,7 +18,7 @@
 /// the problem is defined by the list of CtrlTasks
 struct TaskControlThread : Thread {
 
-  Var<rai::KinematicWorld> ctrl_config;
+  Var<rai::Configuration> ctrl_config;
   Var<CtrlMsg> ctrl_ref;
   Var<CtrlMsg> ctrl_state;
   Var<CtrlTaskL> ctrl_tasks;
@@ -34,7 +34,7 @@ struct TaskControlThread : Thread {
   bool requiresInitialSync; //< whether the step() should reinit the state from the ros message
   int verbose;
   
-  TaskControlThread(const Var<rai::KinematicWorld>& _ctrl_config,
+  TaskControlThread(const Var<rai::Configuration>& _ctrl_config,
                     const Var<CtrlMsg>& _ctrl_ref,
                     const Var<CtrlMsg>& _ctrl_state,
                     const Var<CtrlTaskL>& _ctrl_tasks);
@@ -47,10 +47,10 @@ struct TaskControlThread : Thread {
 
 #if 0 //draft
 struct TaskControlUserInterface {
-  Var<rai::KinematicWorld> ctrl_config;
+  Var<rai::Configuration> ctrl_config;
   Var<CtrlTaskL> ctrl_tasks;
 
-  TaskControlUserInterface(const Var<rai::KinematicWorld>& _ctrl_config, const Var<CtrlTaskL>& _ctrl_tasks);
+  TaskControlUserInterface(const Var<rai::Configuration>& _ctrl_config, const Var<CtrlTaskL>& _ctrl_tasks);
 
   //add your wish function
 };
@@ -58,22 +58,22 @@ struct TaskControlUserInterface {
 #endif
 
 ptr<CtrlTask> addCtrlTask(Var<CtrlTaskL>& ctrlTasks,
-                          Var<rai::KinematicWorld>& ctrl_config,
+                          Var<rai::Configuration>& ctrl_config,
                           const char* name, const ptr<Feature>& map,
                           const ptr<MotionProfile>& ref);
 
 ptr<CtrlTask> addCtrlTask(Var<CtrlTaskL>& ctrlTasks,
-                          Var<rai::KinematicWorld>& ctrl_config,
+                          Var<rai::Configuration>& ctrl_config,
                           const char* name, FeatureSymbol fs, const StringA& frames,
                           const ptr<MotionProfile>& ref);
 
 ptr<CtrlTask> addCtrlTask(Var<CtrlTaskL>& ctrlTasks,
-                          Var<rai::KinematicWorld>& ctrl_config,
+                          Var<rai::Configuration>& ctrl_config,
                           const char* name, FeatureSymbol fs, const StringA& frames,
                           double duration);
 
 ptr<CtrlTask> addCompliance(Var<CtrlTaskL>& ctrlTasks,
-                            Var<rai::KinematicWorld>& ctrl_config,
+                            Var<rai::Configuration>& ctrl_config,
                             const char* name, FeatureSymbol fs, const StringA& frames,
                             const arr& compliance);
 

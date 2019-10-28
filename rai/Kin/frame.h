@@ -42,28 +42,59 @@ extern rai::Frame& NoFrame;
 namespace rai {
 
 //===========================================================================
+  //
+  // Transformation tokens allow setting frame state (in destructor) after manipulating a transform
+  //
+
+  struct Transformation_Xtoken{
+    Frame& f;
+    Transformation_Xtoken(Frame& _f):f(_f) {}
+    ~Transformation_Xtoken();
+    Transformation* operator->();
+    Transformation& operator*();
+    void operator=(const Transformation&);
+  };
+
+  struct Transformation_Qtoken{
+    Frame& f;
+    Transformation_Qtoken(Frame& _f):f(_f) {}
+    ~Transformation_Qtoken();
+    Transformation* operator->();
+    Transformation& operator*();
+    void operator=(const Transformation&);
+  };
+
+//===========================================================================
 
 /// a Frame can have a link (also joint), shape (visual or coll), and/or intertia (mass) attached to it
 struct Frame : NonCopyable{
-  struct KinematicWorld& K;  ///< a Frame is uniquely associated with a KinematicConfiguration
+  struct Configuration& K;  ///< a Frame is uniquely associated with a KinematicConfiguration
   uint ID;                   ///< unique identifier
   String name;               ///< name
   Frame *parent=NULL;        ///< parent frame
   FrameL parentOf;           ///< list of children [TODO: rename]
+protected:
   Transformation Q=0;        ///< relative transform to parent
   Transformation X=0;        ///< frame's absolute pose
-  double tau=0.;            ///< frame's absolute time (could be thought as part of the transformation X in space-time)
+  //data structure state (lazy evaluation leave the state structure out of sync)
+  bool _state_X_isGood=true; // X represents the current state
+  void _state_setXBadinBranch();
+  void _state_updateAfterTouchingX();
+  void _state_updateAfterTouchingQ();
+  //low-level fwd kinematics computation
+  void calc_X_from_parent();
+  void calc_Q_from_parent(bool enforceWithinJoint = true);
+public:
+  double tau=0.;             ///< frame's absolute time (could be thought as part of the transformation X in space-time)
   Graph ats;                 ///< list of any-type attributes
-  bool active=true;          ///< if false, this frame is skipped in computations (e.g. in fwd propagation)
-  int flags=0;               ///< various flags that are used by task maps to impose costs/constraints in KOMO
   
   //attachments to the frame
   Joint *joint=NULL;         ///< this frame is an articulated joint
   Shape *shape=NULL;         ///< this frame has a (collision or visual) geometry
   Inertia *inertia=NULL;     ///< this frame has inertia (is a mass)
   Array<Contact*> contacts;  ///< this frame is in (near-) contact with other frames
-  
-  Frame(KinematicWorld& _K, const Frame *copyBody=NULL);
+
+  Frame(Configuration& _K, const Frame *copyFrame=NULL);
   Frame(Frame *_parent);
   ~Frame();
   
@@ -71,10 +102,12 @@ struct Frame : NonCopyable{
   Shape& getShape();
   Inertia& getInertia();
 
-  //low-level fwd kinematics computation
-  void calc_X_from_parent();
-  void calc_Q_from_parent(bool enforceWithinJoint = true);
-  
+  const Transformation& ensure_X();
+  const Transformation& get_Q();
+  const Transformation& get_X() const;
+  Transformation_Xtoken set_X(){ return Transformation_Xtoken(*this); }
+  Transformation_Qtoken set_Q(){ return Transformation_Qtoken(*this); }
+
   //structural operations
   Frame* insertPreLink(const rai::Transformation& A=0);
   Frame* insertPostLink(const rai::Transformation& B=0);
@@ -84,10 +117,11 @@ struct Frame : NonCopyable{
   //structural information/retrieval
   bool isChildOf(const Frame* par, int order=1) const;
   void getRigidSubFrames(FrameL& F); ///< recursively collect all rigidly attached sub-frames (e.g., shapes of a link), (THIS is not included)
+  void getPartSubFrames(FrameL& F); ///< recursively collect all frames of this part
   FrameL getPathToRoot();
   Frame* getUpwardLink(rai::Transformation& Qtotal=NoTransformation, bool untilPartBreak=false) const; ///< recurse upward BEFORE the next joint and return relative transform (this->Q is not included!b)
+  FrameL getPathToUpwardLink(bool untilPartBreak=false); ///< recurse upward BEFORE the next joint and return relative transform (this->Q is not included!b)
   const char* isPart();
-  void getPartSubFrames(FrameL& F); ///< recursively collect all frames of this part
 
   //I/O
   void read(const Graph &ats);
@@ -96,6 +130,7 @@ struct Frame : NonCopyable{
 
   //-- HIGHER LEVEL USER INTERFACE
   void setShape(rai::ShapeType shape, const std::vector<double>& size);
+  void setPose(const rai::Transformation& _X);
   void setPosition(const std::vector<double>& pos);
   void setQuaternion(const std::vector<double>& quat);
   void setRelativePosition(const std::vector<double>& pos);
@@ -107,13 +142,20 @@ struct Frame : NonCopyable{
   void setContact(int cont);
   void setMass(double mass);
 
-  arr getPosition(){ return X.pos.getArr(); }
-  arr getQuaternion(){ return X.rot.getArr4d(); }
-  arr getRotationMatrix(){ return X.rot.getArr(); }
-  arr getRelativePosition(){ return Q.pos.getArr(); }
-  arr getRelativeQuaternion(){ return Q.rot.getArr(); }
+  arr getPosition(){ return ensure_X().pos.getArr(); }
+  arr getQuaternion(){ return ensure_X().rot.getArr4d(); }
+  arr getRotationMatrix(){ return ensure_X().rot.getArr(); }
+  arr getRelativePosition(){ return ensure_X().pos.getArr(); }
+  arr getRelativeQuaternion(){ return ensure_X().rot.getArr(); }
   arr getMeshPoints();
   arr getMeshCorePoints();
+
+  friend struct Configuration;
+  friend struct Configuration_ext;
+  friend struct KinematicSwitch;
+  friend struct Joint;
+  friend struct Transformation_Xtoken;
+  friend struct Transformation_Qtoken;
 };
 stdOutPipe(Frame)
 
@@ -121,10 +163,10 @@ stdOutPipe(Frame)
 
 /// for a Frame with Joint-Link, the relative transformation 'Q' is articulated
 struct Joint : NonCopyable{
-  Frame *frame;
+  Frame *frame;      ///< this is the frame that Joint articulates! I.e., the output frame
   
   // joint information
-  uint dim=0;
+  uint dim=UINT_MAX;
   uint qIndex;
   byte generator;    ///< (7bits), h in Featherstone's code (indicates basis vectors of the Lie algebra, but including the middle quaternion w)
   arr limits;        ///< joint limits (lo, up, [maxvel, maxeffort])
@@ -146,18 +188,18 @@ struct Joint : NonCopyable{
   Joint(Frame& from, Frame& f, Joint* copyJoint=NULL);
   ~Joint();
   
-  const Transformation& X() const { return frame->parent->X; }
-  const Transformation& Q() const { return frame->Q; }
+  const Transformation& X() const; ///< the frame where the joint STARTS (i.e. parent->X)
+  const Transformation& Q() const; ///< the transformation realized by this joint (i.e. from parent->X to frame->X)
   Frame *from() const { return frame->parent; }
   
-  uint qDim() { return dim; }
+  uint qDim();
   void calc_Q_from_q(const arr& q, uint n);
   arr calc_q_from_Q(const Transformation &Q) const;
   arr getScrewMatrix();
   uint getDimFromType() const;
   arr get_h() const;
   
-  bool isPartBreak(){ return dim!=1 || type==JT_time; }
+  bool isPartBreak(){ return (dim!=1 && !mimic) || type==JT_time; }
 
   //access the K's q vector
   double& getQ();
@@ -183,7 +225,7 @@ struct Inertia : NonCopyable {
   Matrix matrix=0;
   Enum<BodyType> type;
   Vector com=0;             ///< its center of mass
-  Vector force=0, torque=0; ///< current forces applying on the body
+//  Vector force=0, torque=0; ///< current forces applying on the body
   
   Inertia(Frame& f, rai::Inertia *copyInertia=NULL);
   ~Inertia();
@@ -216,14 +258,10 @@ struct Shape : NonCopyable, GLDrawer {
 
   void createMeshes();
 
-//  Enum<ShapeType> type;
-//  arr size;
-//  Mesh mesh, sscCore;
-//  double mesh_radius=0.;
   char cont=0;           ///< are contacts registered (or filtered in the callback)
   bool visual=true;
   
-  Shape(Frame& f, const Shape *copyShape=NULL); //new Shape, being added to graph and body's shape lists
+  Shape(Frame& f, const Shape *copyShape=NULL); //new Shape, being added to graph and frame's shape lists
   virtual ~Shape();
 
   bool canCollideWith(const Frame *f) const{

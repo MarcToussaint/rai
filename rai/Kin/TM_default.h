@@ -36,16 +36,16 @@ struct TM_Default : Feature {
              int iShape=-1, const rai::Vector& ivec=NoVector,
              int jShape=-1, const rai::Vector& jvec=NoVector);
              
-  TM_Default(TM_DefaultType type, const rai::KinematicWorld& K,
+  TM_Default(TM_DefaultType type, const rai::Configuration& K,
              const char* iShapeName=NULL, const rai::Vector& ivec=NoVector,
              const char* jShapeName=NULL, const rai::Vector& jvec=NoVector);
              
-  TM_Default(const Graph &parameters, const rai::KinematicWorld& G);
-  TM_Default(const Node *parameters, const rai::KinematicWorld& G);
+  TM_Default(const Graph &parameters, const rai::Configuration& G);
+  TM_Default(const Node *parameters, const rai::Configuration& G);
   
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
-  virtual uint dim_phi(const rai::KinematicWorld& G);
-  virtual rai::String shortTag(const rai::KinematicWorld& K);
-  virtual Graph getSpec(const rai::KinematicWorld& K);
+  virtual void phi(arr& y, arr& J, const rai::Configuration& G);
+  virtual uint dim_phi(const rai::Configuration& G);
+  virtual rai::String shortTag(const rai::Configuration& K);
+  virtual Graph getSpec(const rai::Configuration& K);
 };
 

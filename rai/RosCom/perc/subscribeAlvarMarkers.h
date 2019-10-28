@@ -17,11 +17,11 @@ namespace ar = ar_track_alvar_msgs;
 //ROSSUB("/ar_pose_marker", AlvarMarkers, ar_pose_marker)
 
 //===========================================================================
-// using rai::KinematicWorld;  // this is necessary to make the macro work.
+// using rai::Configuration;  // this is necessary to make the macro work.
 
 // /// Simple syncing of the ors world "modelWorld" with ar_pose_marker
 // BEGIN_ROSMODULE("/ar_pose_marker", AlvarMarkers, markers)
-//   VAR(KinematicWorld, modelWorld)
+//   VAR(Configuration, modelWorld)
 // END_ROSMODULE()
 
 //===========================================================================
@@ -37,10 +37,10 @@ void setBody(rai::Frame& body, const ar::AlvarMarker& marker);
  *
  * Note: this never deletes old markers.
  */
-void syncMarkers(rai::KinematicWorld& world, const ar::AlvarMarkers& markers);
+void syncMarkers(rai::Configuration& world, const ar::AlvarMarkers& markers);
 
 struct AlvarSyncer : Thread {
-  Var<rai::KinematicWorld> modelWorld;
+  Var<rai::Configuration> modelWorld;
   Var<ar::AlvarMarkers> ar_pose_markers;
   AlvarSyncer()
    : Thread("AlvarSyncer"),

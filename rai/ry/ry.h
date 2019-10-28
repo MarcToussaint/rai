@@ -21,7 +21,7 @@ struct PhysXInterface;
 
 namespace ry{
 
-  typedef Var<rai::KinematicWorld> Config;
+  typedef Var<rai::Configuration> Config;
 
   struct ConfigViewer { ptr<KinViewer> view; };
   struct PathViewer { ptr<KinPoseViewer> view; };
@@ -51,15 +51,16 @@ namespace ry{
     }
 
     ptr<KOMO> komo;
-    Var<rai::KinematicWorld> config;
+    Var<rai::Configuration> config;
     Var<arr> path;
   };
 
   struct RyLGP_Tree { ptr<LGP_Tree_Thread> lgp; };
 
   struct RyFeature { ptr<Feature> feature; };
+
   struct RyFrame {
-    ptr<Var_data<rai::KinematicWorld>> config; //only to ensure the containing configuration is not destroyed
+    ptr<Var_data<rai::Configuration>> config; //only to ensure the containing configuration is not destroyed
     rai::Frame *frame=0;
   };
 

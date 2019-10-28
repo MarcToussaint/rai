@@ -8,7 +8,7 @@
 
 #include "adaptiveMotionExecution.h"
 
-AdaptiveMotionExecution::AdaptiveMotionExecution(rai::KinematicWorld &_world, arr& _trajRef, double _dt, double _TRef, arr &_x0, arr &_q0, MObject &_goalMO, \
+AdaptiveMotionExecution::AdaptiveMotionExecution(rai::Configuration &_world, arr& _trajRef, double _dt, double _TRef, arr &_x0, arr &_q0, MObject &_goalMO, \
     bool _useOrientation):
   world(&_world),
   dt(_dt),

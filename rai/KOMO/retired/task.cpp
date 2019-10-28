@@ -8,7 +8,7 @@
 
 //===========================================================================
 
-Task* Task::newTask(const Node* specs, const rai::KinematicWorld& world, int stepsPerPhase, uint T) {
+Task* Task::newTask(const Node* specs, const rai::Configuration& world, int stepsPerPhase, uint T) {
   if(specs->parents.N<2) return NULL; //these are not task specs
   
   //-- check the term type first
