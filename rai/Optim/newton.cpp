@@ -188,12 +188,16 @@ OptNewton::StopCriterion OptNewton::step() {
       break;
     } else {
       //reject new point
-      if(o.verbose>1) cout <<" - reject" <<flush;
+      if(o.verbose>1) cout <<" - reject (lineSearch:" <<lineSearchSteps <<")" <<flush;
       if(logFile){
         (*logFile) <<"{ lineSearch: " <<lineSearchSteps <<", alpha: " <<alpha <<", beta: " <<beta <<", f_x: " <<fx <<", f_y: " <<fy <<", wolfe: " <<wolfe <<", accept: False }," <<endl;
       }
       if(evals>o.stopEvals) {
         if(o.verbose>1) cout <<" (evals>stopEvals)" <<endl;
+        break; //WARNING: this may lead to non-monotonicity -> make evals high!
+      }
+      if(lineSearchSteps>10) {
+        if(o.verbose>1) cout <<" (lineSearchSteps>10)" <<endl;
         break; //WARNING: this may lead to non-monotonicity -> make evals high!
       }
       if(alpha<.01 && o.dampingInc!=1.) {

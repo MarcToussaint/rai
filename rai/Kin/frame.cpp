@@ -1226,7 +1226,7 @@ void rai::Shape::createMeshes() {
       break;
     case rai::ST_mesh:
     case rai::ST_pointCloud:
-      if(!mesh().V.N) LOG(-1) <<"mesh needs to be loaded";
+//      if(!mesh().V.N) LOG(-1) <<"mesh needs to be loaded";
       break;
     case rai::ST_ssCvx:
       CHECK(size(-1)>1e-10,"");
