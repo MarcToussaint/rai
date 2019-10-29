@@ -148,6 +148,9 @@ LGP_Tree::~LGP_Tree() {
   delete root;
   root=NULL;
   if(filNodes) { delete filNodes; filNodes=NULL; }
+  solutions.writeAccess();
+  listDelete(solutions());
+  solutions.deAccess();
 }
 
 void LGP_Tree::initDisplay() {
