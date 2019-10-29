@@ -167,11 +167,9 @@ Objective *KOMO::addObjective(double startTime, double endTime,
   Objective *task = new Objective(map, type);
   task->name = map->shortTag(world);
   objectives.append(task);
-  if(startTime!=-123. && endTime!=-123.){ //very special case!: Only when KOMO::addObjective calls (see below) we don't set the variables
-    task->setCostSpecs(startTime, endTime, stepsPerPhase, T, deltaFromStep, deltaToStep, denseOptimization || sparseOptimization);
-    if(denseOptimization || sparseOptimization){
-      CHECK_EQ(task->vars.nd, 2, "");
-    }
+  task->setCostSpecs(startTime, endTime, stepsPerPhase, T, deltaFromStep, deltaToStep, denseOptimization || sparseOptimization);
+  if(denseOptimization || sparseOptimization){
+    CHECK_EQ(task->vars.nd, 2, "");
   }
   return task;
 }
@@ -183,33 +181,16 @@ Objective* KOMO::addObjective(double startTime, double endTime, Feature* map, Ob
 Objective* KOMO::addObjective(const arr& times, ObjectiveType type, const FeatureSymbol& feat, const StringA& frames, const arr& scale, const arr& target, int order){
   ptr<Feature> f = symbols2feature(feat, frames, world, scale, target, order);
 
-  Objective *task = addObjective(-123.,-123., f, type);
-
-  if(!denseOptimization){
-    if(!times.N){
-      task->setCostSpecs(0, T-1);
-    }else if(times.N==1){
-      task->setCostSpecs(times(0), times(0), stepsPerPhase, T, 0, 0, denseOptimization || sparseOptimization);
-    }else{
-      CHECK_EQ(times.N, 2, "");
-      task->setCostSpecs(times(0), times(1), stepsPerPhase, T, 0, 0, denseOptimization || sparseOptimization);
-    }
+  Objective *task = 0;
+  if(!times.N){
+    task = addObjective(0., -1., f, type);
+  }else if(times.N==1){
+    task = addObjective(times(0), times(0), f, type);
   }else{
-    intA vars = convert<int,double>(times);
-    if(!vars.N){
-      vars.resize(T, f->order+1);
-      for(uint t=0;t<vars.d0;t++)
-        for(uint i=0;i<vars.d1;i++) vars(t,i) = t+i-int(f->order);
-      task->vars = vars;
-    }else{
-      uint order = vars.N-1;
-      CHECK_GE(k_order, order, "task requires larger k-order: " <<task->map->shortTag(world));
-      task->map->order = order;
-      task->vars = vars;
-      task->vars.reshape(1,vars.N);
-    }
-    CHECK_EQ(task->vars.nd, 2, "");
+    CHECK_EQ(times.N, 2, "");
+    task = addObjective(times(0), times(1), f, type);
   }
+
   return task;
 }
 
@@ -2482,7 +2463,8 @@ void KOMO::Conv_MotionProblem_DenseProblem::getDimPhi() {
   for(uint i=0; i<komo.objectives.N; i++) {
     Objective *task = komo.objectives.elem(i);
     for(uint t=0;t<task->vars.d0;t++) {
-      M += task->map->__dim_phi(komo.configurations({t,t+komo.k_order})); //dimensionality of this task
+      WorldL Ktuple = komo.configurations.sub(convert<uint,int>(task->vars[t]+(int)komo.k_order));
+      M += task->map->__dim_phi(Ktuple); //dimensionality of this task
     }
   }
   dimPhi = M;
