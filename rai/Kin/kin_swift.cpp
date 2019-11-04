@@ -222,11 +222,14 @@ void SwiftInterface::pushToSwift(const rai::Configuration& world) {
   rai::Matrix rot;
   for(rai::Frame *f: world.frames) {
     if(f->shape) {
-      if(f->ID<INDEXshape2swift.N && INDEXshape2swift(f->ID)!=-1) {
-        rot = f->ensure_X().rot.getMatrix();
-        scene->Set_Object_Transformation(INDEXshape2swift(f->ID), rot.p(), f->getPosition().p);
-        if(!f->shape->cont) scene->Deactivate(INDEXshape2swift(f->ID));
+      if(f->ID<INDEXshape2swift.N){
+        int swiftID = INDEXshape2swift(f->ID);
+        if(swiftID!=-1) {
+          rot = f->ensure_X().rot.getMatrix();
+          scene->Set_Object_Transformation(swiftID, rot.p(), &f->get_X().pos.x);
+          if(!f->shape->cont) scene->Deactivate(swiftID);
         //else         scene->Activate( INDEXshape2swift(f->ID) );
+        }
       }
     }
   }

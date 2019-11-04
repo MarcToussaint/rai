@@ -498,6 +498,7 @@ bool rai::Frame::isChildOf(const rai::Frame* par, int order) const{
 }
 
 rai::Joint::Joint(rai::Frame& f, rai::JointType _type) : Joint(f, (Joint*)NULL){
+  CHECK(frame->parent, "a frame without parent cannot be a joint");
   setType(_type);
 }
 

@@ -285,6 +285,22 @@ NodeL neighbors(Node*);
 
 int distance(NodeL A, NodeL B);
 
+template<class VertexType>
+rai::Array<VertexType*> getNeighbors(VertexType* v){
+  rai::Array<VertexType*> N;
+  for(Node *edge:v->parentOf) {
+    for(Node *n:edge->parents) if(n!=v) N.setAppend(dynamic_cast<VertexType*>(n));
+  }
+  return N;
+}
+
+template<class EdgeType>
+rai::Array<EdgeType*> getEdges(Node* v){
+  rai::Array<EdgeType*> E(v->parentOf.N);
+  for(uint i=0;i<E.N;i++) E.elem(i) = dynamic_cast<EdgeType*>(v->parentOf.elem(i));
+  return E;
+}
+
 
 //===========================================================================
 
