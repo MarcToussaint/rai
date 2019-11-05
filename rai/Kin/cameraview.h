@@ -37,7 +37,7 @@ struct CameraView : GLDrawer {
 
   //-- loading the configuration: the meshes, the robot model, the tote, the sensors; all ends up in K
   Sensor& addSensor(const char* name, const char* frameAttached, uint width, uint height, double focalLength=-1., double orthoAbsHeight=-1., const arr& zRange={}, const char* backgroundImageFile=0);
-  Sensor& addSensor(const char* name, const char* frameAttached); //read everything from the frame attributes
+  Sensor& addSensor(const char* frameAttached); //read everything from the frame attributes
 
   Sensor& selectSensor(const char* sensorName); //set the OpenGL sensor
 

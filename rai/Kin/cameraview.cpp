@@ -32,7 +32,7 @@ rai::CameraView::Sensor& rai::CameraView::addSensor(const char* name, const char
   return sen;
 }
 
-rai::CameraView::Sensor& rai::CameraView::addSensor(const char* name, const char* frameAttached){
+rai::CameraView::Sensor& rai::CameraView::addSensor(const char* frameAttached){
   rai::Frame *frame = K.getFrameByName(frameAttached);
 
   CHECK(frame, "frame '" <<frameAttached <<"' is not defined");
@@ -48,7 +48,7 @@ rai::CameraView::Sensor& rai::CameraView::addSensor(const char* name, const char
   frame->ats.get<double>(width, "width");
   frame->ats.get<double>(height, "height");
 
-  return addSensor(name, frameAttached, width, height, focalLength, orthoAbsHeight, zRange);
+  return addSensor(frameAttached, frameAttached, width, height, focalLength, orthoAbsHeight, zRange);
 }
 
 rai::CameraView::Sensor& rai::CameraView::selectSensor(const char* sensorName){
@@ -236,7 +236,7 @@ rai::Sim_CameraView::Sim_CameraView(Var<rai::Configuration>& _kin,
     depth(this, _depth),
     C(model.get()()){
   if(_cameraFrameName){
-    C.addSensor(_cameraFrameName, _cameraFrameName);
+    C.addSensor(_cameraFrameName);
     C.selectSensor(_cameraFrameName);
   }
   if(_idColors){

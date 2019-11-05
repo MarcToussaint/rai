@@ -1381,11 +1381,22 @@ int OpenGL::watchImage(const byteA &_img, bool wait, float _zoom) {
   glWatchImage(img, wait, 20);
 }*/
 
+int OpenGL::displayGrey(const floatA &x, bool wait, float _zoom) {
+  static byteA img;
+  resizeAs(img, x);
+  float mi=x.min(), ma=x.max();
+  text.clear() <<"displayGrey" <<" max:" <<ma <<" min:" <<mi <<endl;
+  for(uint i=0; i<x.N; i++) {
+    img.elem(i)=(byte)(255.*(x.elem(i)-mi)/(ma-mi));
+  }
+  return watchImage(img, wait, _zoom);
+}
+
 int OpenGL::displayGrey(const arr &x, bool wait, float _zoom) {
   static byteA img;
   resizeAs(img, x);
   double mi=x.min(), ma=x.max();
-  text.clear() <<"displayGrey" <<" max=" <<ma <<"min=" <<mi <<endl;
+  text.clear() <<"displayGrey" <<" max:" <<ma <<"min:" <<mi <<endl;
   for(uint i=0; i<x.N; i++) {
     img.elem(i)=(byte)(255.*(x.elem(i)-mi)/(ma-mi));
   }
