@@ -1823,6 +1823,8 @@ arr lapack_Ainv_b_triangular(const arr& L, const arr& b) { return inverse(L)*b; 
 // Eigen
 //
 
+#ifdef RAI_EIGEN
+
 Eigen::SparseMatrix<double> conv_sparseArr2sparseEigen(const rai::SparseMatrix& S){
   arr& Z = S.Z;
   Eigen::SparseMatrix<double> E;
@@ -1888,6 +1890,13 @@ arr eigen_Ainv_b(const arr& A, const arr& b){
     return NoArr;
 }
 
+#else //RAI_EIGEN
+
+//Eigen::SparseMatrix<double> conv_sparseArr2sparseEigen(const rai::SparseMatrix& S){ NICO }
+//arr conv_sparseEigen2sparseArr(Eigen::SparseMatrix<double>& E){ NICO }
+arr eigen_Ainv_b(const arr& A, const arr& b){ NICO }
+
+#endif //RAI_EIGEN
 
 //===========================================================================
 //
@@ -2384,6 +2393,8 @@ void SparseMatrix::rowShift(int shift){
   }
 }
 
+#ifdef RAI_EIGEN
+
 arr SparseMatrix::At_x(const arr& x){
   Eigen::SparseMatrix<double> A_eig = conv_sparseArr2sparseEigen(*this);
   Eigen::MatrixXd x_eig = conv_arr2eigen(x);
@@ -2421,6 +2432,15 @@ arr SparseMatrix::B_A(const arr& B) const{
 
   return conv_sparseEigen2sparseArr(W);
 }
+
+#else //RAI_EIGEN
+
+arr SparseMatrix::At_x(const arr& x){ NICO }
+arr SparseMatrix::At_A(){ NICO }
+arr SparseMatrix::A_B(const arr& B) const{ NICO }
+arr SparseMatrix::B_A(const arr& B) const{ NICO }
+
+#endif //RAI_EIGEN
 
 void SparseMatrix::transpose(){
   uint d0 = Z.d0;
