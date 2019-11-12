@@ -147,7 +147,8 @@ template<> const rai::SparseMatrix& rai::Array<double>::sparse() const{
 }
 
 #define NONSENSE( type ) \
-template<> rai::SparseMatrix& rai::Array<type>::sparse() { NIY; return *(new SparseMatrix(NoArr)); }
+template<> rai::SparseMatrix& rai::Array<type>::sparse() { NIY; return *(new SparseMatrix(NoArr)); } \
+template<> const rai::SparseMatrix& rai::Array<type>::sparse() const{ NIY; return *(new SparseMatrix(NoArr)); }
 NONSENSE(float)
 NONSENSE(uint)
 NONSENSE(int)

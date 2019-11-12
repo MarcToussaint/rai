@@ -2231,12 +2231,12 @@ Graph KOMO::getProblemGraph(bool includeValues, bool includeSolution){
 
 double KOMO::getConstraintViolations(){
   Graph R = getReport(false);
-  return R.get<double>("ineq") + R.get<double>("eq");
+  return R.get<double>("ineq_sumOfPos") + R.get<double>("eq_sumOfAbs");
 }
 
 double KOMO::getCosts(){
   Graph R = getReport(false);
-  return R.get<double>("sos");
+  return R.get<double>("sos_sumOfSqr");
 }
 
 void KOMO::Conv_MotionProblem_KOMO_Problem::getStructure(uintA& variableDimensions, uintA& featureTimes, ObjectiveTypeA& featureTypes) {
