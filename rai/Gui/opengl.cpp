@@ -457,6 +457,11 @@ void OpenGL::resize(int w,int h) {
 #ifndef RAI_GL
 int GLUT_ACTIVE_SHIFT = 1;
 
+void OpenGL::openWindow() {}
+void OpenGL::closeWindow() {}
+void OpenGL::postRedrawEvent(bool fromWithinCallback) {}
+void OpenGL::resize(int w,int h) {}
+
 struct sOpenGL : NonCopyable {
   sOpenGL(OpenGL *gl){ NICO }
 };
@@ -483,6 +488,26 @@ uint OpenGL::selectionBuffer[1000];
 //
 // utility implementations
 //
+
+void id2color(byte rgb[3], uint id) {
+  rgb[0] = ((id>> 6)&0x3f) | ((id&1)<<7) | ((id& 8)<<3);
+  rgb[1] = ((id>>12)&0x3f) | ((id&2)<<6) | ((id&16)<<2);
+  rgb[2] = ((id>>18)&0x3f) | ((id&4)<<5) | ((id&32)<<1);
+}
+
+uint color2id(byte rgb[3]) {
+  uint id = 0;
+  id |= (rgb[0]&0x80)>>7 | (rgb[1]&0x80)>>6 | (rgb[2]&0x80)>>5;
+  id |= (rgb[0]&0x40)>>3 | (rgb[1]&0x40)>>2 | (rgb[2]&0x40)>>1;
+  id |= (rgb[0]&0x3f)<<6 | (rgb[1]&0x3f)<<12 | (rgb[2]&0x3f)<<18;
+  return id;
+}
+
+arr id2color(uint id){
+  byteA rgb(3);
+  id2color(rgb.p, id);
+  return ARR(rgb(0)/256., rgb(1)/256., rgb(2)/256.);
+}
 
 #ifdef RAI_GL
 void glStandardLight(void*, OpenGL&) {
@@ -551,26 +576,6 @@ void glColor(float *rgb) { glColor(rgb[0], rgb[1], rgb[2], 1.); }
 void glColor(const arr& col) {
   if(col.N==3) glColor(col.p[0], col.p[1], col.p[2], 1.);
   if(col.N==4) glColor(col.p[0], col.p[1], col.p[2], col.p[3]);
-}
-
-void id2color(byte rgb[3], uint id) {
-  rgb[0] = ((id>> 6)&0x3f) | ((id&1)<<7) | ((id& 8)<<3);
-  rgb[1] = ((id>>12)&0x3f) | ((id&2)<<6) | ((id&16)<<2);
-  rgb[2] = ((id>>18)&0x3f) | ((id&4)<<5) | ((id&32)<<1);
-}
-
-uint color2id(byte rgb[3]) {
-  uint id = 0;
-  id |= (rgb[0]&0x80)>>7 | (rgb[1]&0x80)>>6 | (rgb[2]&0x80)>>5;
-  id |= (rgb[0]&0x40)>>3 | (rgb[1]&0x40)>>2 | (rgb[2]&0x40)>>1;
-  id |= (rgb[0]&0x3f)<<6 | (rgb[1]&0x3f)<<12 | (rgb[2]&0x3f)<<18;
-  return id;
-}
-
-arr id2color(uint id){
-  byteA rgb(3);
-  id2color(rgb.p, id);
-  return ARR(rgb(0)/256., rgb(1)/256., rgb(2)/256.);
 }
 
 void glColorId(uint id) {
@@ -1457,15 +1462,19 @@ void glDrawDiamond(float, float, float, float, float, float) { NICO }
 void glDrawSphere(float radius) { NICO }
 void glDrawFloor(float, float, float, float) { NICO }
 void glDrawCappedCylinder(float, float) { NICO }
-void glStandardLight(void*) { NICO }
-void glDrawAxes(double) { NICO }
+void glStandardLight(void*, OpenGL&) { NICO }
+void glDrawAxis(double) { NICO }
+void glDrawAxes(double, bool) { NICO }
 void glDrawDiamond(float, float, float) { NICO }
 void glDrawBox(float, float, float, bool) { NICO }
+void glDrawCamera(const rai::Camera&) { NICO }
 void glDrawCylinder(float, float, bool) { NICO }
 
 // void glStandardLight(void*) { NICO }   // TOBIAS: das hier wird doch schon ueber opengl_void.cxx definiert
-void glStandardScene(void*) { NICO }
+void glStandardScene(void*, OpenGL&) { NICO }
+void glStandardOriginAxes(void*, OpenGL&) { NICO }
 uint glImageTexture(const byteA &img) { NICO }
+void glDrawText(const char* txt, float x, float y, float z, bool largeFont){ NICO }
 void glDrawTexQuad(uint texture,
                    float x1, float y1, float z1, float x2, float y2, float z2,
                    float x3, float y3, float z3, float x4, float y4, float z4,

@@ -115,6 +115,7 @@ namespace rai{
     }
 
     void glDraw(OpenGL &gl){
+#ifdef RAI_GL
       glStandardScene(NULL, gl);
       Ccopy.glDraw(gl);
 
@@ -137,6 +138,9 @@ namespace rai{
         glRasterImage(.3, .05, image, scale);
         glRasterImage(.65, .05, dep, scale);
       }
+#else
+    NICO
+#endif
     }
   };
 
