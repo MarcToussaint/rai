@@ -156,6 +156,10 @@ void rai::Frame::getPartSubFrames(FrameL &F) {
     if(!child->joint || !child->joint->isPartBreak()) { F.append(child); child->getRigidSubFrames(F); }
 }
 
+void rai::Frame::getFullSubtree(FrameL &F) {
+  for(Frame *child:parentOf){ F.append(child); child->getFullSubtree(F); }
+}
+
 FrameL rai::Frame::getPathToRoot(){
   FrameL pathToRoot;
   rai::Frame *f = this;
