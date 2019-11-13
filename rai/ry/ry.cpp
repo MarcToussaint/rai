@@ -549,6 +549,12 @@ py::arg("featureSymbol"),
     py::arg("qdot"),
     py::arg("gravity"))
 
+  .def("getEnergy", [](ry::Config& self, std::vector<double>& qdot){
+    arr _qdot = conv_stdvec2arr(qdot);
+    return self.set()->getEnergy(_qdot);
+  }, "",
+    py::arg("qdot"))
+    
   .def("stepDynamics", [](ry::Config& self, std::vector<double>& qdot, std::vector<double>& u_control, double tau, double dynamicNoise, bool gravity){
     arr _qdot = conv_stdvec2arr(qdot);
     arr _u = conv_stdvec2arr(u_control);
