@@ -9,7 +9,7 @@
 #include "solver_AStar.h"
 
 AStar_Node::AStar_Node(AStar &astar, MCTS_Environment& world)
-  : astar(astar), world(world), parent(NULL), d(0), time(0.) {
+  : astar(astar), world(world), parent(nullptr), d(0), time(0.) {
   astar.size++;
   //this is the root node!
   world.reset_state();
@@ -23,7 +23,7 @@ AStar_Node::AStar_Node(AStar_Node* parent, const MCTS_Environment::Handle& a)
   if(d>astar.depth) astar.depth=d;
   parent->children.append(this);
   world.set_state(parent->state);
-  CHECK(a,"giving a 'NULL' shared pointer??");
+  CHECK(a,"giving a 'nullptr' shared pointer??");
   ret = world.transition(action);
   state = world.get_stateCopy();
   time = parent->time + ret.duration;
@@ -102,7 +102,7 @@ void AStar_Node::write(ostream& os, bool recursive) const {
 
 //===========================================================================
 
-AStar::AStar(MCTS_Environment& world) : root(NULL), size(0), depth(0) {
+AStar::AStar(MCTS_Environment& world) : root(nullptr), size(0), depth(0) {
   root = new AStar_Node(*this, world);
   queue.add(0., root);
 }

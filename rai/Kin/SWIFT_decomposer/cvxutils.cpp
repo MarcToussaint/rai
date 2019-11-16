@@ -55,8 +55,8 @@
 #include "cvxutils.h"
 using std::cerr;
 
-RAPID_model* rm1 = NULL;
-RAPID_model* rm2 = NULL;
+RAPID_model* rm1 = nullptr;
+RAPID_model* rm2 = nullptr;
 SWIFT_Array<bool> exclude;
 SWIFT_Array<int> exclude_idx;
 
@@ -100,19 +100,19 @@ void Prepare_Mesh_For_Decomposition( SWIFT_Tri_Mesh* m )
     // Compute the edge convexities (local convexity)
     for( i = 0; i < m->Num_Faces(); i++ ) {
 
-        if( m->Faces()[i].Edge1().Twin() != NULL && m->Faces()[i].Inside(
+        if( m->Faces()[i].Edge1().Twin() != nullptr && m->Faces()[i].Inside(
                             m->Faces()[i].Edge1().Twin()->Prev()->Origin() )
         ) {
             m->Faces()[i].Edge1().Mark();
             m->Faces()[i].Edge1().Twin()->Mark();
         }
-        if( m->Faces()[i].Edge2().Twin() != NULL && m->Faces()[i].Inside(
+        if( m->Faces()[i].Edge2().Twin() != nullptr && m->Faces()[i].Inside(
                     m->Faces()[i].Edge2().Twin()->Prev()->Origin() )
         ) {
             m->Faces()[i].Edge2().Mark();
             m->Faces()[i].Edge2().Twin()->Mark();
         }
-        if( m->Faces()[i].Edge3().Twin() != NULL && m->Faces()[i].Inside(
+        if( m->Faces()[i].Edge3().Twin() != nullptr && m->Faces()[i].Inside(
                     m->Faces()[i].Edge3().Twin()->Prev()->Origin() )
         ) {
             m->Faces()[i].Edge3().Mark();
@@ -328,7 +328,7 @@ void Create_First_Face( SWIFT_Tri_Face* f,
     chull.Set_Length( 2 );
     cfs.Set_Length( 2 );
     cfs[0] = f;
-    cfs[1] = NULL;
+    cfs[1] = nullptr;
     chull[0] = *f;
     chull[0].Reset_Internal_Edge_Pointers();
 
@@ -372,7 +372,7 @@ void Create_First_Face( SWIFT_Tri_Face* f,
 // must not cause the new convex hull to go outside of the original model.
 //
 // The second parameter is the full convex hull that is currently
-// being maintained.  The third is a list of face pointers which are NULL if
+// being maintained.  The third is a list of face pointers which are nullptr if
 // the corresponding face is a virtual face otherwise the pointer points to the
 // corresponding model face.
 //
@@ -422,7 +422,7 @@ bool Add_To_Convex_Hull( SWIFT_Tri_Mesh* m,
             if( chull[i].Outside( v ) ) {
                 // If the face is on the model then reject since we cannot
                 // destroy a model face (violates global convexity).
-                if( cfs[i] != NULL ) {
+                if( cfs[i] != nullptr ) {
                     // Undo the marking on the edges
                     for( j = 0; j < vis_faces.Length(); j++ ) {
                         chull[vis_faces[j]].Edge1().Unmark();
@@ -525,7 +525,7 @@ bool Add_To_Convex_Hull( SWIFT_Tri_Mesh* m,
             hor_edges[0] = hor_edges[i];
             hor_edges[i] = e1;
         }
-        orig_faces[i] = NULL;
+        orig_faces[i] = nullptr;
     }
 
     // Sort the horizon edges
@@ -577,7 +577,7 @@ bool Add_To_Convex_Hull( SWIFT_Tri_Mesh* m,
         new_faces[i].Edge3().Set_Direction_N( -(hor_edges[i]->Direction()) );
         hor_edges[i] = new_faces[i].Edge3P();
         if( i < k-1 ) {
-            if( orig_faces[i] == NULL ) {
+            if( orig_faces[i] == nullptr ) {
                 new_faces[i].Edge2().Compute_Direction_Length();
                 new_faces[i].Compute_Plane_From_Edges();
             } else {
@@ -591,7 +591,7 @@ bool Add_To_Convex_Hull( SWIFT_Tri_Mesh* m,
             new_faces[i].Edge2().Set_Length( new_faces[0].Edge1().Length() );
             new_faces[i].Edge2().Set_Direction_N(
                                         -new_faces[0].Edge1().Direction() );
-            if( orig_faces[i] == NULL ) {
+            if( orig_faces[i] == nullptr ) {
                 new_faces[i].Compute_Plane_From_Edges();
             } else {
                 new_faces[i].Set_Normal_N( orig_faces[i]->Normal() );
@@ -613,11 +613,11 @@ bool Add_To_Convex_Hull( SWIFT_Tri_Mesh* m,
         bool hopped = false;
         // At this point, we have the invariant that e1->Origin() ==
         // e2->Origin().  ie. we have lined up the first pair of vertices
-        if( e2 == NULL ) {
+        if( e2 == nullptr ) {
             hopped = true;
 
             // Search for the starting edge on the other side
-            for( e2 = e->Twin()->Next(); e2->Twin() != NULL;
+            for( e2 = e->Twin()->Next(); e2->Twin() != nullptr;
                                          e2 = e2->Twin()->Prev() );
         }
         e2 = e2->Next();
@@ -627,9 +627,9 @@ bool Add_To_Convex_Hull( SWIFT_Tri_Mesh* m,
             e3 = e2->Prev();
         } else {
             e3 = e2->Twin();
-            if( e3 == NULL ) {
+            if( e3 == nullptr ) {
                 // Search for the starting edge on the other side
-                for( e3 = e->Twin()->Next(); e3->Twin() != NULL;
+                for( e3 = e->Twin()->Next(); e3->Twin() != nullptr;
                                              e3 = e3->Twin()->Prev() );
             }
         }
@@ -653,8 +653,8 @@ bool Add_To_Convex_Hull( SWIFT_Tri_Mesh* m,
                 for( e2 = e3; e2 != e->Twin()->Next() && e2->Origin() !=
                               hor_edges[i]->Origin();
                 ) {
-                    if( e2->Next()->Twin() == NULL ) {
-                        for( ; e2->Twin() != NULL; e2 = e2->Twin()->Prev() );
+                    if( e2->Next()->Twin() == nullptr ) {
+                        for( ; e2->Twin() != nullptr; e2 = e2->Twin()->Prev() );
                     } else {
                         e2 = e2->Next()->Twin();
                     }
@@ -680,14 +680,14 @@ bool Add_To_Convex_Hull( SWIFT_Tri_Mesh* m,
         j = m->Face_Id( e1->Adj_Face() );
         exclude_idx.Add( j );
         exclude[j] = true;
-        if( e1->Twin() == NULL ) {
+        if( e1->Twin() == nullptr ) {
             break;
         }
         e1 = e1->Twin()->Next();
     } while( e1 != e->Twin()->Prev() );
-    if( e1->Twin() == NULL ) {
+    if( e1->Twin() == nullptr ) {
         e1 = e->Twin()->Next()->Twin();
-        while( e1 != NULL ) {
+        while( e1 != nullptr ) {
             j = m->Face_Id( e1->Adj_Face() );
             exclude_idx.Add( j );
             exclude[j] = true;
@@ -795,7 +795,7 @@ bool Add_To_Convex_Hull( SWIFT_Tri_Mesh* m,
                     // non self-intersecting
                     for( j = 1; j < k; j++ ) {
                         // Only test against the non-model (virtual) faces
-                        if( orig_faces[j] != NULL &&
+                        if( orig_faces[j] != nullptr &&
                             Intersect_Edge( new_faces[j], e1->Next()->Origin(),
                                             e1->Prev()->Origin() )
                         ) {
@@ -815,7 +815,7 @@ bool Add_To_Convex_Hull( SWIFT_Tri_Mesh* m,
                     for( j = 1; j < k; j++ ) {
                         // Only test against the non-model (virtual) faces and
                         // the new faces that are not adjacent to this neighbor
-                        if( orig_faces[j] != NULL && j != i && j != l &&
+                        if( orig_faces[j] != nullptr && j != i && j != l &&
                             Intersect_Edge( new_faces[j], adjv,
                                             hor_edges[i]->Origin() )
                         ) {
@@ -933,9 +933,9 @@ bool Add_To_Convex_Hull( SWIFT_Tri_Mesh* m,
             j = m->Face_Id( e1->Adj_Face() );
             exclude_idx.Add( j );
             exclude[j] = true;
-            if( e1->Twin() == NULL ) {
+            if( e1->Twin() == nullptr ) {
                 // Find the other boundary edge
-                while( e1->Prev()->Twin() != NULL ) {
+                while( e1->Prev()->Twin() != nullptr ) {
                     e1 = e1->Prev()->Twin();
                 }
             } else {
@@ -972,7 +972,7 @@ bool Add_To_Convex_Hull( SWIFT_Tri_Mesh* m,
     // in this piece from being counted/reported.
     rm2->BeginModel();
     for( i = 1; i < k; i++ ) {
-        if( orig_faces[i] == NULL ) {
+        if( orig_faces[i] == nullptr ) {
             // Add this face to the rapid model
             rm2->AddTri( hor_edges[i]->Origin()->Coords().Value(),
                          hor_edges[i]->Next()->Origin()->Coords().Value(),
@@ -1025,7 +1025,7 @@ bool Add_To_Convex_Hull( SWIFT_Tri_Mesh* m,
     chull[ chull.Length()-2 ].Mark();
     chull[ chull.Length()-1 ].Mark();
 
-    e1 = NULL;
+    e1 = nullptr;
     for( i = 0; i < chull.Length() && k > 0; i++ ) {
         // We can reuse the spots in the array that have been vacated (marked)
         if( chull[i].Marked() ) {
@@ -1060,7 +1060,7 @@ bool Add_To_Convex_Hull( SWIFT_Tri_Mesh* m,
             hor_edges[k]->Twin()->Set_Twin( chull[i].Edge3P() );
             chull[i].Edge3().Set_Twin( hor_edges[k]->Twin() );
 
-            if( e1 == NULL ) {
+            if( e1 == nullptr ) {
                 // This is the first face.  Save the last twin in e2.
                 e2 = chull[i].Edge2P();
             } else {
@@ -1092,7 +1092,7 @@ bool Add_To_Convex_Hull( SWIFT_Tri_Mesh* m,
 void Attach_Twins( SWIFT_Array<SWIFT_Tri_Face>& new_faces )
 {
     int l;
-    if( new_faces.Last().Edge1().Twin() == NULL ) {
+    if( new_faces.Last().Edge1().Twin() == nullptr ) {
         for( l = 0; l < new_faces.Length()-1; l++ ) { 
             if( new_faces[l].Edge1().Origin() ==
                 new_faces.Last().Edge2().Origin() &&
@@ -1134,7 +1134,7 @@ void Attach_Twins( SWIFT_Array<SWIFT_Tri_Face>& new_faces )
             new_faces.Last().Edge1().Compute_Direction_Length();
         }
     }
-    if( new_faces.Last().Edge2().Twin() == NULL ) {
+    if( new_faces.Last().Edge2().Twin() == nullptr ) {
         for( l = 0; l < new_faces.Length()-1; l++ ) {
             if( new_faces[l].Edge1().Origin() ==
                 new_faces.Last().Edge3().Origin() &&
@@ -1176,7 +1176,7 @@ void Attach_Twins( SWIFT_Array<SWIFT_Tri_Face>& new_faces )
             new_faces.Last().Edge2().Compute_Direction_Length();
         }
     }
-    if( new_faces.Last().Edge3().Twin() == NULL ) {
+    if( new_faces.Last().Edge3().Twin() == nullptr ) {
         for( l = 0; l < new_faces.Length()-1; l++ ) {
             if( new_faces[l].Edge1().Origin() ==
                 new_faces.Last().Edge1().Origin() &&

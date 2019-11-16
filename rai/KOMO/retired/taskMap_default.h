@@ -40,8 +40,8 @@ struct TM_Default:Feature {
              const arr& params=NoArr);
              
   TM_Default(TM_DefaultType type, const rai::Configuration& G,
-             const char* iShapeName=NULL, const rai::Vector& ivec=NoVector,
-             const char* jShapeName=NULL, const rai::Vector& jvec=NoVector,
+             const char* iShapeName=nullptr, const rai::Vector& ivec=NoVector,
+             const char* jShapeName=nullptr, const rai::Vector& jvec=NoVector,
              const arr& params=NoArr);
              
   virtual void phi(arr& y, arr& J, const rai::Configuration& G);

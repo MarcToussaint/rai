@@ -20,7 +20,7 @@ void testProjection(){
 
   gl.add(glStandardLight);
   gl.add(M);
-  gl.update(NULL, true);
+  gl.update(nullptr, true);
 
   gl2.add( [&gl,&M](OpenGL &gl2){
     byteA &img = gl2.background;

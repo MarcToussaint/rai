@@ -27,7 +27,7 @@ struct OptNewton {
   StopCriterion stopCriterion;
   arr bound_lo, bound_hi;
   bool rootFinding=false;
-  ostream *logFile=NULL;
+  ostream *logFile=nullptr;
   double timeNewton=0., timeEval=0.;
   
   OptNewton(arr& x, const ScalarFunction& f, OptOptions o=NOOPT, ostream* _logFile=0);

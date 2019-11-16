@@ -20,7 +20,7 @@ struct sVideoEncoder_OpenCV {
   const char* filename;
   uint fps;
   uint numFrames; //,width,height;
-  sVideoEncoder_OpenCV():video(NULL) {}
+  sVideoEncoder_OpenCV():video(nullptr) {}
   void open(uint width, uint height);
 };
 

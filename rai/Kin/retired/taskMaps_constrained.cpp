@@ -100,8 +100,8 @@ void ConstraintStickiness::phi(arr& y, arr& J, const rai::Configuration& G) {
 void PointEqualityConstraint::phi(arr& y, arr& J, const rai::Configuration& G) {
   rai::Vector vec_i = ivec;
   rai::Vector vec_j = jvec;
-  rai::Frame *a = i<0?NULL: G.frames(i);
-  rai::Frame *b = j<0?NULL: G.frames(j);
+  rai::Frame *a = i<0?nullptr: G.frames(i);
+  rai::Frame *b = j<0?nullptr: G.frames(j);
   rai::Vector pi = a ? a->ensure_X() * vec_i : vec_i;
   rai::Vector pj = b ? b->ensure_X() * vec_j : vec_j;
   y = conv_vec2arr(pi-pj);
@@ -141,8 +141,8 @@ void ContactEqualityConstraint::phi(arr& y, arr& J, const rai::Configuration& G)
 VelAlignConstraint::VelAlignConstraint(const rai::Configuration& G,
                                        const char* iShapeName, const rai::Vector& _ivec,
                                        const char* jShapeName, const rai::Vector& _jvec, double _target) {
-  rai::Frame *a = iShapeName ? G.getFrameByName(iShapeName):NULL;
-  rai::Frame *b = jShapeName ? G.getFrameByName(jShapeName):NULL;
+  rai::Frame *a = iShapeName ? G.getFrameByName(iShapeName):nullptr;
+  rai::Frame *b = jShapeName ? G.getFrameByName(jShapeName):nullptr;
   if(a) i=a->ID;
   if(b) j=b->ID;
   if(!!_ivec) ivec=_ivec; else ivec.setZero();
@@ -151,7 +151,7 @@ VelAlignConstraint::VelAlignConstraint(const rai::Configuration& G,
   target = _target;
 }
 
-void VelAlignConstraint::phi(arr& y, arr& J, const WorldL& G) {
+void VelAlignConstraint::phi(arr& y, arr& J, const ConfigurationL& G) {
   uint k=order;
   
   // compute body j orientation

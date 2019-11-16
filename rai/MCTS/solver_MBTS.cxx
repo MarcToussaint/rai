@@ -9,7 +9,7 @@
 #include "solver_MBTS.h"
 
 MBTS_Node::MBTS_Node(MBTS &MBTS, MCTS_Environment& world)
-  : MBTS(MBTS), world(world), parent(NULL), d(0), time(0.) {
+  : MBTS(MBTS), world(world), parent(nullptr), d(0), time(0.) {
   MBTS.size++;
   //this is the root node!
   world.reset_state();
@@ -23,7 +23,7 @@ MBTS_Node::MBTS_Node(MBTS_Node* parent, const MCTS_Environment::Handle& a)
   if(d>MBTS.depth) MBTS.depth=d;
   parent->children.append(this);
   world.set_state(parent->state);
-  CHECK(a,"giving a 'NULL' shared pointer??");
+  CHECK(a,"giving a 'nullptr' shared pointer??");
   ret = world.transition(action);
   state = world.get_stateCopy();
   time = parent->time + ret.duration;
@@ -103,7 +103,7 @@ void MBTS_Node::write(ostream& os, bool recursive) const {
 //===========================================================================
 
 MBTS::MBTS(MCTS_Environment &world, MBTS_Heuristic &heuristic, uint L)
-  : root(NULL), heuristic(heuristic), size(0), depth(0) {
+  : root(nullptr), heuristic(heuristic), size(0), depth(0) {
   root = new NodeT(*this, world);
   queue.resize(L);
   queue(0).add(0., root);

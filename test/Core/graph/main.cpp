@@ -1,7 +1,7 @@
 #include <Core/graph.h>
 
 //const char *filename="/home/mtoussai/git/3rdHand/documents/USTT/14-meeting3TUD/box.g";
-const char *filename=NULL;
+const char *filename=nullptr;
 
 //===========================================================================
 
@@ -60,7 +60,7 @@ const Graph& rndContainer(const Graph& G){
 Graph& rndSubgraph(Graph& G){
   Graph *g=&G;
   while(rnd.uni()<.8){
-    NodeL subgraphs = g->getNodesOfType<Graph>(NULL);
+    NodeL subgraphs = g->getNodesOfType<Graph>(nullptr);
     if(!subgraphs.N) break;
     Node *subgraph=subgraphs.rndElem();
     g = &subgraph->graph();

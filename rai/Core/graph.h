@@ -28,8 +28,8 @@ struct RenderingInfo;
 struct GraphEditCallback;
 typedef rai::Array<Node*> NodeL;
 typedef rai::Array<GraphEditCallback*> GraphEditCallbackL;
-extern NodeL& NoNodeL; //this is a reference to NULL! (for optional arguments)
-extern Graph& NoGraph; //this is a reference to NULL! (for optional arguments)
+extern NodeL& NoNodeL; //this is a reference to nullptr! (for optional arguments)
+extern Graph& NoGraph; //this is a reference to nullptr! (for optional arguments)
 
 //===========================================================================
 
@@ -126,13 +126,13 @@ struct Graph : NodeL {
   void delNode(Node *n) { delete n; }
   
   //-- basic node retrieval -- users usually use the higher-level wrappers below
-  Node* findNode(const StringA& keys=StringA(), bool recurseUp=false, bool recurseDown=false) const;   ///< returns NULL if not found
+  Node* findNode(const StringA& keys=StringA(), bool recurseUp=false, bool recurseDown=false) const;   ///< returns nullptr if not found
   NodeL findNodes(const StringA& keys=StringA(), bool recurseUp=false, bool recurseDown=false) const;
   Node* findNodeOfType(const std::type_info& type, const StringA& keys=StringA(), bool recurseUp=false, bool recurseDown=false) const;
   NodeL findNodesOfType(const std::type_info& type, const StringA& keys=StringA(), bool recurseUp=false, bool recurseDown=false) const;
   
   //-- get nodes
-  Node* operator[](const char *key) const { return findNode({key}); } ///< returns NULL if not found
+  Node* operator[](const char *key) const { return findNode({key}); } ///< returns nullptr if not found
   Node* getNode(const char *key) const { return findNode({key}); }
   Node* getNode(const StringA &keys) const { return findNode(keys); }
   Node* getEdge(Node *p1, Node *p2) const;
@@ -147,8 +147,8 @@ struct Graph : NodeL {
   NodeL getAllNodesRecursively() const;
   
   //-- get values directly
-  template<class T> T* find(const char *key)     const { Node *n = findNodeOfType(typeid(T), {key}); if(!n) return NULL;  return n->getValue<T>(); }
-  template<class T> T* find(const StringA &keys) const { Node *n = findNodeOfType(typeid(T), keys);  if(!n) return NULL;  return n->getValue<T>(); }
+  template<class T> T* find(const char *key)     const { Node *n = findNodeOfType(typeid(T), {key}); if(!n) return nullptr;  return n->getValue<T>(); }
+  template<class T> T* find(const StringA &keys) const { Node *n = findNodeOfType(typeid(T), keys);  if(!n) return nullptr;  return n->getValue<T>(); }
   template<class T> T& get(const char *key) const;
   template<class T> T& get(const StringA &keys) const;
   template<class T> const T& get(const char *key, const T& defaultValue) const;
@@ -158,7 +158,7 @@ struct Graph : NodeL {
   template<class T> T& getNew(const StringA &keys);
   
   //-- get lists of all values of a certain type T (or derived from T)
-  template<class T> rai::Array<T*> getValuesOfType(const char* key=NULL);
+  template<class T> rai::Array<T*> getValuesOfType(const char* key=nullptr);
   
   //-- editing nodes
   Node *edit(Node *ed); ///< ed describes how another node should be edited; ed is removed after editing is done
@@ -186,7 +186,7 @@ struct Graph : NodeL {
   void writeHtml(std::ostream& os, std::istream& is);
   void writeParseInfo(std::ostream& os);
   
-  void displayDot(Node *highlight=NULL);
+  void displayDot(Node *highlight=nullptr);
   
   //private:
   friend struct Node;
@@ -223,7 +223,7 @@ struct ArrayG : rai::Array<T*>, GraphEditCallback {
   }
   ~ArrayG() {
     G.callbacks.removeValue(this);
-    for(T* x:*this) if(x) { delete x; x=NULL; }
+    for(T* x:*this) if(x) { delete x; x=nullptr; }
     this->clear();
   }
   T& operator()(Node *n) {
@@ -233,8 +233,8 @@ struct ArrayG : rai::Array<T*>, GraphEditCallback {
     if(!x) x = new T(); //...assigned here
     return *x;
   }
-  virtual void cb_new(Node *n) { this->insert(n->index+1, (T*)NULL); }
-  virtual void cb_delete(Node *n) { T* &x = this->elem(n->index+1); if(x) { delete x; x=NULL; } this->remove(n->index+1); }
+  virtual void cb_new(Node *n) { this->insert(n->index+1, (T*)nullptr); }
+  virtual void cb_delete(Node *n) { T* &x = this->elem(n->index+1); if(x) { delete x; x=nullptr; } this->remove(n->index+1); }
 };
 
 //===========================================================================
@@ -347,7 +347,7 @@ template<class T>
 struct Node_typed : Node {
   T value;
   
-  Node_typed():value(NULL) { HALT("shouldn't be called, right? You always want to append to a container"); }
+  Node_typed():value(nullptr) { HALT("shouldn't be called, right? You always want to append to a container"); }
   
   Node_typed(Graph& container, const T& _value)
     : Node(typeid(T), &this->value, container), value(_value) {
@@ -413,13 +413,13 @@ struct Node_typed : Node {
 
 template<class T> T* Node::getValue() {
   Node_typed<T>* typed = dynamic_cast<Node_typed<T>*>(this);
-  if(!typed) return NULL;
+  if(!typed) return nullptr;
   return &typed->value;
 }
 
 template<class T> const T* Node::getValue() const {
   const Node_typed<T>* typed = dynamic_cast<const Node_typed<T>*>(this);
-  if(!typed) return NULL;
+  if(!typed) return nullptr;
   return &typed->value;
 }
 
@@ -428,7 +428,7 @@ template<class T> std::shared_ptr<T> Node::getPtr() const {
 //  std::shared_ptr<T> typed = std::dynamic_pointer_cast<T>(std::shared_ptr<T>(value_ptr));
   return std::shared_ptr<T>();
 //  const Node_typed<std::shared_ptr<T>>* typed = dynamic_cast<const Node_typed<std::shared_ptr<T>>*>(this);
-//  if(!typed) return NULL;
+//  if(!typed) return nullptr;
 //  return typed->value;
 }
 

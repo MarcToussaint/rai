@@ -19,15 +19,15 @@
 //===========================================================================
 
 template<> const char* rai::Enum<rai::ShapeType>::names []= {
-  "box", "sphere", "capsule", "mesh", "cylinder", "marker", "SSBox", "pointCloud", "ssCvx", "ssBox", NULL
+  "box", "sphere", "capsule", "mesh", "cylinder", "marker", "SSBox", "pointCloud", "ssCvx", "ssBox", nullptr
 };
 
 template<> const char* rai::Enum<rai::JointType>::names []= {
-  "hingeX", "hingeY", "hingeZ", "transX", "transY", "transZ", "transXY", "trans3", "transXYPhi", "universal", "rigid", "quatBall", "phiTransXY", "XBall", "free", "time", NULL
+  "hingeX", "hingeY", "hingeZ", "transX", "transY", "transZ", "transXY", "trans3", "transXYPhi", "universal", "rigid", "quatBall", "phiTransXY", "XBall", "free", "time", nullptr
 };
 
 template<> const char* rai::Enum<rai::BodyType>::names []= {
-  "dynamic", "kinematic", "static", NULL
+  "dynamic", "kinematic", "static", nullptr
 };
 
 rai::Transformation_Xtoken::~Transformation_Xtoken() { f._state_updateAfterTouchingX(); }
@@ -404,7 +404,7 @@ void rai::Frame::setColor(const std::vector<double>& color){
 }
 
 void rai::Frame::setJoint(rai::JointType jointType){
-  if(joint) { delete joint; joint=NULL; }
+  if(joint) { delete joint; joint=nullptr; }
   new Joint(*this, jointType);
 }
 
@@ -469,11 +469,11 @@ void rai::Frame::unLink() {
   CHECK(parent,"");
   ensure_X();
   parent->parentOf.removeValue(this);
-  parent=NULL;
+  parent=nullptr;
   Q.setZero();
   _state_updateAfterTouchingQ();
   _state_X_isGood=true;
-  if(joint){  delete joint;  joint=NULL;  }
+  if(joint){  delete joint;  joint=nullptr;  }
 }
 
 void rai::Frame::linkFrom(rai::Frame *_parent, bool adoptRelTransform) {
@@ -501,7 +501,7 @@ bool rai::Frame::isChildOf(const rai::Frame* par, int order) const{
   return false;
 }
 
-rai::Joint::Joint(rai::Frame& f, rai::JointType _type) : Joint(f, (Joint*)NULL){
+rai::Joint::Joint(rai::Frame& f, rai::JointType _type) : Joint(f, (Joint*)nullptr){
   CHECK(frame->parent, "a frame without parent cannot be a joint");
   setType(_type);
 }
@@ -534,7 +534,7 @@ rai::Joint::Joint(Frame &from, Frame &f, Joint *copyJoint)
 
 rai::Joint::~Joint() {
   frame->K.reset_q();
-  frame->joint = NULL;
+  frame->joint = nullptr;
   //if(frame->parent) frame->unLink();
 }
 
@@ -1040,7 +1040,7 @@ rai::Shape::Shape(Frame &f, const Shape *copyShape)
 }
 
 rai::Shape::~Shape() {
-  frame.shape = NULL;
+  frame.shape = nullptr;
 }
 
 void rai::Shape::setMeshMimic(const rai::Frame *f) {
@@ -1274,7 +1274,7 @@ rai::Inertia::Inertia(Frame &f, Inertia *copyInertia) : frame(f), type(BT_dynami
 }
 
 rai::Inertia::~Inertia() {
-  frame.inertia = NULL;
+  frame.inertia = nullptr;
 }
 
 void rai::Inertia::defaultInertiaByShape() {

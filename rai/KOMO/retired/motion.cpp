@@ -89,10 +89,10 @@ void KOMO::costReport(bool gnuplt) {
   fil <<endl;
   //rest: just the matrix?
   if(!dualSolution.N) {
-    plotData.write(fil,NULL,NULL,"  ");
+    plotData.write(fil,nullptr,nullptr,"  ");
   } else {
     dualSolution.reshape(T, dualSolution.N/(T));
-    catCol(plotData, dualSolution).write(fil,NULL,NULL,"  ");
+    catCol(plotData, dualSolution).write(fil,nullptr,nullptr,"  ");
   }
   fil.close();
   

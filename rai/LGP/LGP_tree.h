@@ -39,8 +39,7 @@ struct LGP_Tree : GLDrawer {
   bool displayTree=true;
   BoundType displayBound=BD_seqPath;
   bool collisions=false;
-  bool useSwitches=true;
-  struct DisplayThread *dth=NULL;
+  struct DisplayThread *dth=nullptr;
   rai::String dataPath;
   arr cameraFocus;
   bool firstTimeDisplayTree=true;
@@ -78,7 +77,7 @@ private:
   LGP_Node* getBest(LGP_NodeL& fringe, uint level);
   LGP_Node* popBest(LGP_NodeL& fringe, uint level);
   LGP_Node* getBest() { return getBest(fringe_solved, 3); }
-  LGP_Node *expandNext(int stopOnLevel=-1, LGP_NodeL* addIfTerminal=NULL);
+  LGP_Node *expandNext(int stopOnLevel=-1, LGP_NodeL* addIfTerminal=nullptr);
 
   void optBestOnLevel(BoundType bound, LGP_NodeL& drawFringe, BoundType drawBound, LGP_NodeL* addIfTerminal, LGP_NodeL* addChildren);
   void optFirstOnLevel(BoundType bound, LGP_NodeL& fringe, LGP_NodeL* addIfTerminal);

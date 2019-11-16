@@ -35,5 +35,5 @@ struct SimulationThread : Thread, RobotAbstraction {
   virtual arr getJointPositions(const StringA& joints={});
 
   //--- artificial intervention
-  void addFile(const char* filename, const char* parentOfRoot=NULL, const rai::Transformation& relOfRoot=0);
+  void addFile(const char* filename, const char* parentOfRoot=nullptr, const rai::Transformation& relOfRoot=0);
 };

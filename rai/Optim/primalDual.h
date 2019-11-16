@@ -40,7 +40,7 @@ struct OptPrimalDual {
   OptNewton newton;
   OptOptions opt;
   uint its=0;
-  ofstream *fil=NULL;
+  ofstream *fil=nullptr;
   
   OptPrimalDual(arr& x, arr &dual, ConstrainedProblem& P, int verbose=-1, OptOptions opt=NOOPT);
   ~OptPrimalDual();

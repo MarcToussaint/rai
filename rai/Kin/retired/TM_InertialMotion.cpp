@@ -10,7 +10,7 @@
 #include "flag.h"
 #include "TM_default.h"
 
-void TM_InertialMotion::phi(arr &y, arr &J, const WorldL &Ktuple) {
+void TM_InertialMotion::phi(arr &y, arr &J, const ConfigurationL &Ktuple) {
   rai::Configuration& K = *Ktuple(-1);
   
   arr acc, Jacc;
@@ -40,7 +40,7 @@ void TM_InertialMotion::phi(arr &y, arr &J, const WorldL &Ktuple) {
   }
 }
 
-uint TM_InertialMotion::dim_phi(const WorldL &Ktuple) {
+uint TM_InertialMotion::dim_phi(const ConfigurationL &Ktuple) {
   return 3;
 }
 

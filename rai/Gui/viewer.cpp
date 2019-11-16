@@ -215,7 +215,7 @@ void PointCloudViewer::step() {
     if(W!=s->gl.width || H!=s->gl.height) s->gl.resize(W,H);
   }
   
-  s->gl.update(); //NULL, false, false, true);
+  s->gl.update(); //nullptr, false, false, true);
 }
 
 //===========================================================================
@@ -260,7 +260,7 @@ void PointCloudViewerCallback::call(Var_base* v){
     if(W!=s->gl.width || H!=s->gl.height) s->gl.resize(W,H);
   }
 
-  s->gl.update(); //NULL, false, false, true);
+  s->gl.update(); //nullptr, false, false, true);
 }
 
 
@@ -296,7 +296,7 @@ void MeshAViewer::step() {
     copy = meshes.get();
   }
   
-  gl->update(); //NULL, false, false, true);
+  gl->update(); //nullptr, false, false, true);
 }
 
 

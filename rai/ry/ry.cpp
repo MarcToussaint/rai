@@ -663,7 +663,7 @@ py::arg("featureSymbol"),
     return ret;
   } )
   .def("eval", [](ry::RyFeature& self, pybind11::tuple& Kpytuple){
-    WorldL Ktuple;
+    ConfigurationL Ktuple;
     for(uint i=0;i<Kpytuple.size();i++){
       ry::Config& K = Kpytuple[i].cast<ry::Config&>();
       Ktuple.append(&K.set()());
@@ -876,7 +876,7 @@ py::arg("featureSymbol"),
 
   .def("add_StableRelativePose", [](ry::RyKOMO& self, const std::vector<int>& confs, const char* gripper, const char* object){
       for(uint i=1;i<confs.size();i++)
-        self.komo->addObjective(ARR(confs[0], confs[i]), OT_eq, FS_poseDiff, {gripper, object});
+        self.komo->addObjective(ARR(confs[0], confs[i]), FS_poseDiff, {gripper, object}, OT_eq);
       //  for(uint i=0;i<confs.size();i++) self.self->configurations(self.self->k_order+confs[i]) -> makeObjectsFree({object});
       self.komo->world.makeObjectsFree({object});
   },"", py::arg("confs"),
@@ -885,28 +885,28 @@ py::arg("featureSymbol"),
 
   .def("add_StablePose", [](ry::RyKOMO& self, const std::vector<int>& confs, const char* object){
     for(uint i=1;i<confs.size();i++)
-      self.komo->addObjective(ARR(confs[0], confs[i]), OT_eq, FS_pose, {object});
+      self.komo->addObjective(ARR(confs[0], confs[i]), FS_pose, {object}, OT_eq);
     //  for(uint i=0;i<confs.size();i++) self.self->configurations(self.self->k_order+confs[i]) -> makeObjectsFree({object});
     self.komo->world.makeObjectsFree({object});
   },"", py::arg("confs"),
       py::arg("object") )
 
   .def("add_grasp", [](ry::RyKOMO& self, int conf, const char* gripper, const char* object){
-    self.komo->addObjective(ARR(conf), OT_eq, FS_distance, {gripper, object});
+    self.komo->addObjective(ARR(conf), FS_distance, {gripper, object}, OT_eq);
   } )
 
   .def("add_place", [](ry::RyKOMO& self, int conf, const char* object, const char* table){
-    self.komo->addObjective(ARR(conf), OT_ineq, FS_aboveBox, {table, object});
-    self.komo->addObjective(ARR(conf), OT_eq, FS_standingAbove, {table, object});
-    self.komo->addObjective(ARR(conf), OT_sos, FS_vectorZ, {object}, {}, {0.,0.,1.});
+    self.komo->addObjective(ARR(conf), FS_aboveBox, {table, object}, OT_ineq);
+    self.komo->addObjective(ARR(conf), FS_standingAbove, {table, object}, OT_eq);
+    self.komo->addObjective(ARR(conf), FS_vectorZ, {object}, OT_sos, {}, {0.,0.,1.});
   } )
 
   .def("add_resting", [](ry::RyKOMO& self, int conf1, int conf2, const char* object){
-    self.komo->addObjective(ARR(conf1, conf2), OT_eq, FS_pose, {object});
+    self.komo->addObjective(ARR(conf1, conf2), FS_pose, {object}, OT_eq);
   } )
 
   .def("add_restingRelative", [](ry::RyKOMO& self, int conf1, int conf2, const char* object, const char* tableOrGripper){
-    self.komo->addObjective(ARR(conf1, conf2), OT_eq, FS_poseDiff, {tableOrGripper, object});
+    self.komo->addObjective(ARR(conf1, conf2), FS_poseDiff, {tableOrGripper, object}, OT_eq);
   } )
 
   .def("addSkeleton", [](ry::RyKOMO& self, const py::list& L){

@@ -482,7 +482,7 @@ void CrossValidation::crossValidateMultipleLambdas(const arr& X, const arr& y, c
   scoreSDVs.resizeAs(lambdas);
   scoreTrains.resizeAs(lambdas);
   for(uint i=0; i<lambdas.N; i++) {
-    crossValidateSingleLambda(X, y, lambdas(i), k_fold, permute, NULL, NULL, &scoreMeans(i), &scoreSDVs(i), &scoreTrains(i));
+    crossValidateSingleLambda(X, y, lambdas(i), k_fold, permute, nullptr, nullptr, &scoreMeans(i), &scoreSDVs(i), &scoreTrains(i));
   }
 }
 

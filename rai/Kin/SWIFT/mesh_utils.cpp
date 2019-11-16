@@ -293,7 +293,7 @@ void Compute_Convex_Hull( coordT* vs, int vn, int*& fs, int& fn )
     vertexT **vertexp;
     setT *vertices;
 
-    qh_init_A( stdin, stdout, stderr, 0, NULL );
+    qh_init_A( stdin, stdout, stderr, 0, nullptr );
     if( (exitcode = setjmp (qh errexit)) ) exit(exitcode);
     qh_initflags( options );
     qh_init_B( vs, vn, 3, True );

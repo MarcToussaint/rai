@@ -25,7 +25,7 @@ struct OptConstrained {
   OptOptions opt;
   uint its=0;
   bool earlyPhase=false;
-  ostream *logFile=NULL;
+  ostream *logFile=nullptr;
   
   OptConstrained(arr& x, arr &dual, ConstrainedProblem& P, int verbose=-1, OptOptions opt=NOOPT, ostream* _logFile=0);
   ~OptConstrained();

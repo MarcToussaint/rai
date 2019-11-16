@@ -107,10 +107,10 @@ void OpenGL::resize(int w,int h) {
 Display* OpenGL::xdisplay() { return s->xdisplay; }
 Drawable OpenGL::xdraw() { return s->xdraw; }
 
-sOpenGL::sOpenGL(OpenGL *_gl):gl(_gl), container(NULL), glArea(NULL), gldrawable(NULL), ownWin(false) {
+sOpenGL::sOpenGL(OpenGL *_gl):gl(_gl), container(nullptr), glArea(nullptr), gldrawable(nullptr), ownWin(false) {
 }
 
-sOpenGL::sOpenGL(OpenGL *_gl, void *_container): gl(_gl), container(GTK_WIDGET(_container)), glArea(NULL), gldrawable(NULL), ownWin(false) {
+sOpenGL::sOpenGL(OpenGL *_gl, void *_container): gl(_gl), container(GTK_WIDGET(_container)), glArea(nullptr), gldrawable(nullptr), ownWin(false) {
   ownWin = false;
 }
 
@@ -140,7 +140,7 @@ void sOpenGL::createGlArea() {
                                        
   gtk_widget_set_gl_capability(glArea,
                                glconfig,
-                               NULL,
+                               nullptr,
                                TRUE,
                                GDK_GL_RGBA_TYPE);
                                
@@ -150,16 +150,16 @@ void sOpenGL::createGlArea() {
                         GDK_BUTTON_RELEASE_MASK|
                         GDK_POINTER_MOTION_MASK);
                         
-  g_signal_connect(G_OBJECT(glArea), "expose_event",        G_CALLBACK(expose), NULL);
-  g_signal_connect(G_OBJECT(glArea), "motion_notify_event", G_CALLBACK(motion_notify), NULL);
-  g_signal_connect(G_OBJECT(glArea), "button_press_event",  G_CALLBACK(button_press), NULL);
-  g_signal_connect(G_OBJECT(glArea), "button_release_event",G_CALLBACK(button_release), NULL);
-  g_signal_connect(G_OBJECT(glArea), "scroll_event",        G_CALLBACK(scroll_event), NULL);
-  g_signal_connect(G_OBJECT(glArea), "destroy",             G_CALLBACK(destroy), NULL);
-  g_signal_connect(G_OBJECT(glArea), "size_allocate",       G_CALLBACK(size_allocate_event), NULL);
+  g_signal_connect(G_OBJECT(glArea), "expose_event",        G_CALLBACK(expose), nullptr);
+  g_signal_connect(G_OBJECT(glArea), "motion_notify_event", G_CALLBACK(motion_notify), nullptr);
+  g_signal_connect(G_OBJECT(glArea), "button_press_event",  G_CALLBACK(button_press), nullptr);
+  g_signal_connect(G_OBJECT(glArea), "button_release_event",G_CALLBACK(button_release), nullptr);
+  g_signal_connect(G_OBJECT(glArea), "scroll_event",        G_CALLBACK(scroll_event), nullptr);
+  g_signal_connect(G_OBJECT(glArea), "destroy",             G_CALLBACK(destroy), nullptr);
+  g_signal_connect(G_OBJECT(glArea), "size_allocate",       G_CALLBACK(size_allocate_event), nullptr);
   
   g_signal_connect_swapped(G_OBJECT(container), "key_press_event",G_CALLBACK(key_press_event), glArea);
-  //g_signal_connect(G_OBJECT(window), "destroy",             G_CALLBACK(window_destroy), NULL);
+  //g_signal_connect(G_OBJECT(window), "destroy",             G_CALLBACK(window_destroy), nullptr);
   
   //if(GTK_IS_SCROLLED_WINDOW(container)){
   //  gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(container), glArea);
@@ -200,8 +200,8 @@ sOpenGL::~sOpenGL() {
   if(glArea) { gtkLock();  gtk_widget_destroy(glArea);  gtkUnlock(); }
   //if(ownViewport) gtk_widget_destroy(GTK_WIDGET(gtk_container_get_children(GTK_CONTAINER(container))->data));
   if(ownWin) { gtkLock();  gtk_widget_destroy(GTK_WIDGET(container));  gtkUnlock(); }
-  gl->s = NULL;
-  gl = NULL;
+  gl->s = nullptr;
+  gl = nullptr;
 }
 
 //===========================================================================
@@ -237,7 +237,7 @@ void sOpenGL::beginGlContext() {
 
 void sOpenGL::endGlContext() {
   if(gldrawable) gdk_gl_drawable_gl_end(gldrawable);
-  glXMakeCurrent(xdisplay, None, NULL);
+  glXMakeCurrent(xdisplay, None, nullptr);
   //this is not necessary anymore, since the main loop is running in one thread now
 }
 

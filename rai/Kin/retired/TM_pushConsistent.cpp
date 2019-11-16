@@ -15,8 +15,8 @@ TM_PushConsistent::TM_PushConsistent(int iShape, int jShape) : i(iShape), j(jSha
 
 TM_PushConsistent::TM_PushConsistent(const rai::Configuration &G,
                                      const char* iShapeName, const char* jShapeName) : i(-1), j(-1) {
-  rai::Frame *a = iShapeName ? G.getFrameByName(iShapeName):NULL;
-  rai::Frame *b = jShapeName ? G.getFrameByName(jShapeName):NULL;
+  rai::Frame *a = iShapeName ? G.getFrameByName(iShapeName):nullptr;
+  rai::Frame *b = jShapeName ? G.getFrameByName(jShapeName):nullptr;
   if(a) i=a->ID;
   if(b) j=b->ID;
   order=1;
@@ -30,7 +30,7 @@ TM_PushConsistent::TM_PushConsistent(const rai::Configuration &G,
 //  if(!!J2) J2 = -skew(x1);
 //}
 
-void TM_PushConsistent::phi(arr& y, arr& J, const WorldL& Ktuple) {
+void TM_PushConsistent::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   CHECK_GE(Ktuple.N, order+1,"I need at least " <<order+1 <<" configurations to evaluate");
   
   const rai::Configuration& G2 = *Ktuple.elem(-1);

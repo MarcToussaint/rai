@@ -28,7 +28,7 @@ public:
   arr position;
   arr force;
 
-  Contact(Frame &a, Frame &b, Contact *copyContact=NULL);
+  Contact(Frame &a, Frame &b, Contact *copyContact=nullptr);
   ~Contact();
 
   void setZero();

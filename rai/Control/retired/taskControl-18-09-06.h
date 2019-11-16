@@ -120,7 +120,7 @@ struct CtrlTask {
   arr y, v, J_y;     ///< update() will evaluate these for a given kinematic configuration
   
   //-- pos/vel ctrl task
-  MotionProfile *ref;  ///< non-NULL iff this is a pos/vel task
+  MotionProfile *ref;  ///< non-nullptr iff this is a pos/vel task
   arr y_ref, v_ref;    ///< update() will define compute these references (reference=NOW, target=FUTURE)
   arr prec;            ///< Cholesky(!) of C, not C itself: sumOfSqr(prec*(y-y_ref)) is the error, and prec*J the Jacobian
   uint hierarchy;      ///< hierarchy level in hiearchycal inverse kinematics: higher = higher priority
@@ -175,7 +175,7 @@ struct TaskControlMethods {
   void lockJointGroup(const char *groupname, rai::Configuration& world, bool lockThem=true);
   
   double getIKCosts(const arr& q=NoArr, const arr& q0=NoArr, arr& g=NoArr, arr& H=NoArr);
-  arr inverseKinematics(arr& qdot, const arr& nullRef=NoArr, double* cost=NULL);
+  arr inverseKinematics(arr& qdot, const arr& nullRef=NoArr, double* cost=nullptr);
   arr inverseKinematics_hierarchical();
   arr getComplianceProjection();
   arr operationalSpaceControl();

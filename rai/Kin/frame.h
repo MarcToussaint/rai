@@ -71,7 +71,7 @@ struct Frame : NonCopyable{
   struct Configuration& K;  ///< a Frame is uniquely associated with a KinematicConfiguration
   uint ID;                   ///< unique identifier
   String name;               ///< name
-  Frame *parent=NULL;        ///< parent frame
+  Frame *parent=nullptr;        ///< parent frame
   FrameL parentOf;           ///< list of children [TODO: rename]
 protected:
   Transformation Q=0;        ///< relative transform to parent
@@ -89,12 +89,12 @@ public:
   Graph ats;                 ///< list of any-type attributes
   
   //attachments to the frame
-  Joint *joint=NULL;         ///< this frame is an articulated joint
-  Shape *shape=NULL;         ///< this frame has a (collision or visual) geometry
-  Inertia *inertia=NULL;     ///< this frame has inertia (is a mass)
+  Joint *joint=nullptr;         ///< this frame is an articulated joint
+  Shape *shape=nullptr;         ///< this frame has a (collision or visual) geometry
+  Inertia *inertia=nullptr;     ///< this frame has inertia (is a mass)
   Array<Contact*> contacts;  ///< this frame is in (near-) contact with other frames
 
-  Frame(Configuration& _K, const Frame *copyFrame=NULL);
+  Frame(Configuration& _K, const Frame *copyFrame=nullptr);
   Frame(Frame *_parent);
   ~Frame();
   
@@ -175,18 +175,18 @@ struct Joint : NonCopyable{
   double H=1.;       ///< control cost scalar
   double scale=1.;   ///< scaling robot-q = scale * q-vector
   
-  Joint *mimic=NULL; ///< if non-NULL, this joint's state is identical to another's
+  Joint *mimic=nullptr; ///< if non-nullptr, this joint's state is identical to another's
   
   Vector axis=0;          ///< joint axis (same as X.rot.getX() for standard hinge joints)
   Enum<JointType> type;   ///< joint type
   bool active=true;  ///< if false, this joint is not considered part of the q-vector
   
   //attachments to the joint
-  struct Uncertainty *uncertainty=NULL;
+  struct Uncertainty *uncertainty=nullptr;
   
   Joint(Frame& f, JointType type);
-  Joint(Frame& f, Joint* copyJoint=NULL);
-  Joint(Frame& from, Frame& f, Joint* copyJoint=NULL);
+  Joint(Frame& f, Joint* copyJoint=nullptr);
+  Joint(Frame& from, Frame& f, Joint* copyJoint=nullptr);
   ~Joint();
   
   const Transformation& X() const; ///< the frame where the joint STARTS (i.e. parent->X)
@@ -228,7 +228,7 @@ struct Inertia : NonCopyable {
   Vector com=0;             ///< its center of mass
 //  Vector force=0, torque=0; ///< current forces applying on the body
   
-  Inertia(Frame& f, rai::Inertia *copyInertia=NULL);
+  Inertia(Frame& f, rai::Inertia *copyInertia=nullptr);
   ~Inertia();
   
   void defaultInertiaByShape();
@@ -262,7 +262,7 @@ struct Shape : NonCopyable, GLDrawer {
   char cont=0;           ///< are contacts registered (or filtered in the callback)
   bool visual=true;
   
-  Shape(Frame& f, const Shape *copyShape=NULL); //new Shape, being added to graph and frame's shape lists
+  Shape(Frame& f, const Shape *copyShape=nullptr); //new Shape, being added to graph and frame's shape lists
   virtual ~Shape();
 
   bool canCollideWith(const Frame *f) const{

@@ -112,7 +112,7 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr *addRegularizer, do
   if(o.fmin_return) *o.fmin_return=fx;
   if(o.verbose>0) fil.close();
 #ifndef RAI_MSVC
-  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", NULL, true);
+  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", nullptr, true);
 #endif
   if(o.verbose>1) cout <<"--- optNewtonStop: f(x)=" <<fx <<endl;
   if(fx_user) *fx_user = fx;

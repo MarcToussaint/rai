@@ -88,7 +88,7 @@ struct CrossValidation {
   virtual double test(const arr& X, const arr& y, const arr& beta) = 0;
   
   //beta_k_fold will contain k parameter sets for the partitions
-  void crossValidateSingleLambda(const arr& X, const arr& y, double lambda, uint k_fold, bool permute, arr* beta_k_fold=NULL, arr *beta_total=NULL, double *scoreMean=NULL, double *scoreSDV=NULL, double *scoreTrain=NULL);
+  void crossValidateSingleLambda(const arr& X, const arr& y, double lambda, uint k_fold, bool permute, arr* beta_k_fold=nullptr, arr *beta_total=nullptr, double *scoreMean=nullptr, double *scoreSDV=nullptr, double *scoreTrain=nullptr);
   void crossValidateMultipleLambdas(const arr& X, const arr& y, const arr& lambdas, uint k_fold, bool permute);
   void plot();
 };

@@ -26,7 +26,7 @@ struct GtkThread:Thread {
     argv[0] = (char*)"x.exe";
     
     XInitThreads();
-//      g_thread_init(NULL);
+//      g_thread_init(nullptr);
     gdk_threads_init();
     gdk_threads_enter();
     gtk_init(&argc, &argv);
@@ -74,7 +74,7 @@ void gtkCheckInitialized() {
     argv[0] = (char*)"x.exe";
     
     XInitThreads();
-    g_thread_init(NULL); 1
+    g_thread_init(nullptr); 1
     gdk_threads_init();
 //    gdk_threads_enter();
     gtk_init(&argc, &argv);
@@ -98,7 +98,7 @@ static void menuitem_response(int choice) { menuChoice.setStatus(choice); }
 int gtkPopupMenuChoice(StringL& choices) {
   //create menu
   GtkWidget *menu = gtk_menu_new();
-  gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL, 0, gtk_get_current_event_time());
+  gtk_menu_popup(GTK_MENU(menu), nullptr, nullptr, nullptr, nullptr, 0, gtk_get_current_event_time());
   for_list(rai::String,  s,  choices) {
     GtkWidget *item = gtk_menu_item_new_with_label(s->p);
     gtk_container_add(GTK_CONTAINER(menu), item);

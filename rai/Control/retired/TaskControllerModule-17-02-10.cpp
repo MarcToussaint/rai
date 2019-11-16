@@ -25,8 +25,8 @@ struct sTaskControlThread {};
 
 TaskControlThread::TaskControlThread(const char* _robot, const rai::Configuration& world)
   : Thread("TaskControlThread", .01)
-  , s(NULL)
-  , taskController(NULL)
+  , s(nullptr)
+  , taskController(nullptr)
   , oldfashioned(true)
   , useRos(false)
   , requiresInitialSync(true)

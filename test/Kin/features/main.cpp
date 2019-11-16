@@ -37,7 +37,7 @@ void testFeature() {
 
   K.setTimes(.1);
   rai::Configuration K1(K), K2(K);
-  WorldL Ktuple = {&K, &K1, &K2};
+  ConfigurationL Ktuple = {&K, &K1, &K2};
   uint n=3*K.getJointStateDimension();
 
   rai::Array<Feature*> F;

@@ -37,7 +37,7 @@ inline bool stopButtons(const arr& gamepadState){
 
 Gamepad2Tasks::Gamepad2Tasks(TaskControlMethods& _TC, const rai::Configuration& K, const arr& _q0)
   : TC(_TC), q0(_q0),
-    endeffR(NULL), endeffL(NULL), base(NULL), torso(NULL), head(NULL), headAxes(NULL), limits(NULL), coll(NULL), gripperL(NULL), gripperR(NULL) {
+    endeffR(nullptr), endeffL(nullptr), base(nullptr), torso(nullptr), head(nullptr), headAxes(nullptr), limits(nullptr), coll(nullptr), gripperL(nullptr), gripperR(nullptr) {
     
   robot = rai::getParameter<rai::String>("robot", "pr2");
   
@@ -139,14 +139,14 @@ HALT("change code: add a qNull here explicitly");
   
   switch(mode) {
     case 0: { //(NIL) motion rate control
-      CtrlTask *pdt=NULL;
+      CtrlTask *pdt=nullptr;
       switch(sel) {
         case right:  pdt=endeffR;  cout <<"effR control" <<endl;  break;
         case left:   pdt=endeffL;  cout <<"effL control" <<endl;  break;
 //        case up:     pdt=torso;  cout <<"torso control" <<endl;  break;
         case up:     pdt=headAxes; cout <<"head control" <<endl;  break;
         case down:   pdt=base;  cout <<"base control" <<endl;  break;
-        case none:   pdt=NULL;  break;
+        case none:   pdt=nullptr;  break;
         case downRot: break;
       }
       if(!pdt) break;
@@ -195,11 +195,11 @@ HALT("change code: add a qNull here explicitly");
     case 4:
     case 8: { //open/close hand
       cout <<"open/close hand" <<endl;
-      CtrlTask *pdt=NULL;
+      CtrlTask *pdt=nullptr;
       switch(sel) {
         case right:  pdt=gripperR;  break;
         case left:   pdt=gripperL;  break;
-        default:     pdt=NULL;  break;
+        default:     pdt=nullptr;  break;
       }
       if(!pdt) break;
       if(robot=="pr2") {

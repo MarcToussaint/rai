@@ -314,7 +314,7 @@ void reattachShape(rai::Configuration& ors, SwiftInterface *swift, const char* o
 
 #if 0
 void setPlaceGoals(KOMO& MP, uint T, uint shapeId, int belowToShapeId, const arr& locationTo) {
-  CHECK(belowToShapeId == -1 || &locationTo == NULL, "Only one thing at a time");
+  CHECK(belowToShapeId == -1 || &locationTo == nullptr, "Only one thing at a time");
   MP.setState(MP.x0, MP.v0);;
   
   double midPrec          = rai::getParameter<double>("placeMidPrec");
@@ -335,11 +335,11 @@ void setPlaceGoals(KOMO& MP, uint T, uint shapeId, int belowToShapeId, const arr
   
   //activate collision testing with target shape
   rai::Shape *obj  = MP.world.shapes(shapeId);
-  rai::Shape *onto = NULL;
+  rai::Shape *onto = nullptr;
   if(belowToShapeId != -1)
     onto = MP.world.shapes(belowToShapeId);
   if(obj->body!=MP.world.getBodyByName("m9")) {
-    reattachShape(MP.world, NULL, obj->name, "m9");
+    reattachShape(MP.world, nullptr, obj->name, "m9");
   }
   CHECK_EQ(obj->body,MP.world.getBodyByName("m9"), "called planPlaceTrajectory without right object in hand");
   obj->cont=true;
@@ -358,7 +358,7 @@ void setPlaceGoals(KOMO& MP, uint T, uint shapeId, int belowToShapeId, const arr
   }
   
   //endeff
-  V = new DefaultTaskVariable("graspCenter", MP.world, posTVT, "graspCenter", NULL, NoArr);
+  V = new DefaultTaskVariable("graspCenter", MP.world, posTVT, "graspCenter", nullptr, NoArr);
   ((DefaultTaskVariable*)V)->irel = obj->rel;
   V->updateState(MP.world);
   V->y_target = xtarget;

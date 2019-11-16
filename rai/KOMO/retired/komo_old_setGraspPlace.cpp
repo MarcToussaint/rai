@@ -18,7 +18,7 @@ void KOMO::setGrasp(double time, const char* endeffRef, const char* object) {
 //#    (MinSumOfSqr posDiff Hand Obj){ time=[.98 1] scale=1e3 }
 //#    (MinSumOfSqr quatDiff Hand Obj){ time=[.98 1] scale=1e3 }
 
-  setKinematicSwitch(time, "delete", object, NULL);
+  setKinematicSwitch(time, "delete", object, nullptr);
   setKinematicSwitch(time, "rigidZero", graspRef, object);
 //#    (MakeJoint delete Obj){ time=1 }
 //#    (MakeJoint rigidZero Hand Obj){ time=1 }

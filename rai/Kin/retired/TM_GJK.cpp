@@ -67,8 +67,8 @@ TM_GJK::TM_GJK(const rai::Configuration& W, const Graph& specs, bool exact) : ex
 }
 
 void TM_GJK::phi(arr& v, arr& J, const rai::Configuration& W) {
-  rai::Shape *s1 = i<0?NULL: W.frames(i)->shape;
-  rai::Shape *s2 = j<0?NULL: W.frames(j)->shape;
+  rai::Shape *s1 = i<0?nullptr: W.frames(i)->shape;
+  rai::Shape *s2 = j<0?nullptr: W.frames(j)->shape;
   CHECK(s1 && s2,"");
   CHECK(s1->type()==rai::ST_mesh || s1->type()==rai::ST_ssCvx || s1->type()==rai::ST_ssBox,"");
   CHECK(s2->type()==rai::ST_mesh || s2->type()==rai::ST_ssCvx || s2->type()==rai::ST_ssBox,"");

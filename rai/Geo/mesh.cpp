@@ -1927,8 +1927,8 @@ void inertiaCylinder(double *I, double& mass, double density, double height, dou
 //
 
 #ifdef RAI_extern_GJK
-GJK_point_type& NoPointType = *((GJK_point_type*)NULL);
-template<> const char* rai::Enum<GJK_point_type>::names []= { "GJK_none", "GJK_vertex", "GJK_edge", "GJK_face", NULL };
+GJK_point_type& NoPointType = *((GJK_point_type*)nullptr);
+template<> const char* rai::Enum<GJK_point_type>::names []= { "GJK_none", "GJK_vertex", "GJK_edge", "GJK_face", nullptr };
 double GJK_sqrDistance(const rai::Mesh& mesh1, const rai::Mesh& mesh2,
                        const rai::Transformation& t1, const rai::Transformation& t2,
                        rai::Vector& p1, rai::Vector& p2,
@@ -1937,8 +1937,8 @@ double GJK_sqrDistance(const rai::Mesh& mesh1, const rai::Mesh& mesh2,
   // convert meshes to 'Object_structures'
   Object_structure m1,m2;
   rai::Array<double*> Vhelp1, Vhelp2;
-  m1.numpoints = mesh1.V.d0;  m1.vertices = mesh1.V.getCarray(Vhelp1);  m1.rings=NULL; //TODO: rings would make it faster
-  m2.numpoints = mesh2.V.d0;  m2.vertices = mesh2.V.getCarray(Vhelp2);  m2.rings=NULL;
+  m1.numpoints = mesh1.V.d0;  m1.vertices = mesh1.V.getCarray(Vhelp1);  m1.rings=nullptr; //TODO: rings would make it faster
+  m2.numpoints = mesh2.V.d0;  m2.vertices = mesh2.V.getCarray(Vhelp2);  m2.rings=nullptr;
   
   // convert transformations to affine matrices
   arr T1,T2;
@@ -1948,7 +1948,7 @@ double GJK_sqrDistance(const rai::Mesh& mesh1, const rai::Mesh& mesh2,
   
   // call GJK
   simplex_point simplex;
-  double d2 = gjk_distance(&m1, Thelp1.p, &m2, Thelp2.p, (!p1?NULL:p1.p()), (!p2?NULL:p2.p()), &simplex, 0);
+  double d2 = gjk_distance(&m1, Thelp1.p, &m2, Thelp2.p, (!p1?nullptr:p1.p()), (!p2?nullptr:p2.p()), &simplex, 0);
   
 //  cout <<"simplex npts=" <<simplex.npts <<endl;
 //  cout <<"simplex lambda=" <<arr(simplex.lambdas, 4) <<endl;

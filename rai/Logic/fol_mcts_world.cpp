@@ -39,7 +39,7 @@ void FOL_World::Decision::write(ostream& os) const {
 
 FOL_World::FOL_World()
   : hasWait(true), gamma(0.9), stepCost(0.1), timeCost(1.), deadEndCost(100.), maxHorizon(100),
-    state(NULL), lastDecisionInState(NULL), verbose(0), verbFil(0),
+    state(nullptr), lastDecisionInState(nullptr), verbose(0), verbFil(0),
     lastStepReward(0.), lastStepDuration(0.), lastStepProbability(1.), lastStepObservation(0), count(0) {
   KB.isDoubleLinked=false;
 }
@@ -196,7 +196,7 @@ MCTS_Environment::TransitionReturn FOL_World::transition(const Handle& action) {
   lastStepReward -= lastStepDuration*timeCost; //cost per real time
   
   //-- generic world transitioning
-  forwardChaining_FOL(*state, worldRules, NULL, NoGraph, verbose-3, &lastStepObservation);
+  forwardChaining_FOL(*state, worldRules, nullptr, NoGraph, verbose-3, &lastStepObservation);
   
   //-- check for QUIT
   successEnd = getEqualFactInKB(*state, Quit_literal);
@@ -231,7 +231,7 @@ const std::vector<FOL_World::Handle> FOL_World::get_actions() {
   if(verbose>2) cout <<"****************** FOL_World: Computing possible decisions" <<flush;
   rai::Array<Handle> decisions; //tuples of rule and substitution
   if(hasWait) {
-    decisions.append(Handle(new Decision(true, NULL, {}, decisions.N))); //the wait decision (true as first argument, no rule, no substitution)
+    decisions.append(Handle(new Decision(true, nullptr, {}, decisions.N))); //the wait decision (true as first argument, no rule, no substitution)
   }
   for(Node* rule:decisionRules) {
     NodeL subs = getRuleSubstitutions2(*state, rule, verbose-3);
@@ -320,7 +320,7 @@ void FOL_World::reset_state() {
   DEBUG(FILE("z.after") <<KB;)
   
   //-- forward chain rules
-  forwardChaining_FOL(KB, KB.get<Graph>("STATE"), NULL, NoGraph, verbose-3); //, &decisionObservation);
+  forwardChaining_FOL(KB, KB.get<Graph>("STATE"), nullptr, NoGraph, verbose-3); //, &decisionObservation);
   
   //-- check for terminal
 //  successEnd = allFactsHaveEqualsInKB(*state, *terminal);
@@ -376,7 +376,7 @@ Graph* FOL_World::getState() {
 }
 
 void FOL_World::setState(Graph *s, int setT_step) {
-  CHECK(s, "can't set state to NULL graph");
+  CHECK(s, "can't set state to nullptr graph");
   if(state) {
     CHECK(s->isNodeOfGraph != state->isNodeOfGraph,"you are setting the state to itself");
   }

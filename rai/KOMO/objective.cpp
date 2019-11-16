@@ -29,8 +29,18 @@ void Objective::setCostSpecs(int fromStep, int toStep, bool sparse) {
   }
 }
 
-void Objective::setCostSpecs(double fromTime, double toTime, int stepsPerPhase, uint T,
+void Objective::setCostSpecs(const arr& times, int stepsPerPhase, uint T,
                              int deltaFromStep, int deltaToStep, bool sparse) {
+
+  double fromTime=0, toTime=-1.;
+  if(!times.N){
+  }else if(times.N==1){
+    fromTime = toTime = times(0);
+  }else{
+    CHECK_EQ(times.N, 2, "");
+    fromTime = times(0);
+    toTime = times(1);
+  }
 
   if(toTime>double(T)/stepsPerPhase+1.){
     LOG(-1) <<"beyond the time!: endTime=" <<toTime <<" phases=" <<double(T)/stepsPerPhase;

@@ -373,7 +373,7 @@ void G4Rec::appendBam(const char *bam, const arr &data) {
 }
 
 bool G4Rec::hasBam(const char *bam) {
-  return kvg.getNode({"bam", bam}) != NULL;
+  return kvg.getNode({"bam", bam}) != nullptr;
 }
 
 arr G4Rec::query(const char *bam) {
@@ -442,7 +442,7 @@ arr G4Rec::query(const char *type, const char *sensor, uint f) {
 
 /*   Graph *skvg1 = &s->kvg_sensors.get<Graph>(sensor1); */
 /*   Graph *skvg2 = &s->kvg_sensors.get<Graph>(sensor2); */
-/*   CHECK(s->kvg.getNode(type) != NULL, STRING("BAM '" << type << "' does not exist.")); */
+/*   CHECK(s->kvg.getNode(type) != nullptr, STRING("BAM '" << type << "' does not exist.")); */
 /*   CHECK(skvg1, STRING("Sensor '" << sensor1 << "' does not exist.")); */
 /*   CHECK(skvg2, STRING("Sensor '" << sensor2 << "' does not exist.")); */
 
@@ -463,7 +463,7 @@ arr G4Rec::query(const char *type, const char *sensor, uint f) {
 /* arr G4Data::query(const char *type, const char *sensor1, const char *sensor2, uint f) { */
 /*   Graph *skvg1 = &s->kvg_sensors.get<Graph>(sensor1); */
 /*   Graph *skvg2 = &s->kvg_sensors.get<Graph>(sensor2); */
-/*   CHECK(s->kvg.getNode(type) != NULL, STRING("BAM '" << type << "' does not exist.")); */
+/*   CHECK(s->kvg.getNode(type) != nullptr, STRING("BAM '" << type << "' does not exist.")); */
 /*   CHECK(skvg1, STRING("Sensor '" << sensor1 << "' does not exist.")); */
 /*   CHECK(skvg2, STRING("Sensor '" << sensor2 << "' does not exist.")); */
 

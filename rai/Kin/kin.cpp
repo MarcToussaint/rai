@@ -74,9 +74,9 @@ uint rai::Configuration::setJointStateCount = 0;
 // contants
 //
 
-rai::Frame& NoFrame = *((rai::Frame*)NULL);
-rai::Shape& NoShape = *((rai::Shape*)NULL);
-rai::Joint& NoJoint = *((rai::Joint*)NULL);
+rai::Frame& NoFrame = *((rai::Frame*)nullptr);
+rai::Shape& NoShape = *((rai::Shape*)nullptr);
+rai::Joint& NoJoint = *((rai::Joint*)nullptr);
 rai::Configuration __NoWorld;
 rai::Configuration& NoWorld = *((rai::Configuration*)&__NoWorld);
 
@@ -142,8 +142,8 @@ namespace rai {
     ptr<FclInterface> fcl;
     PhysXInterface *physx;
     OdeInterface *ode;
-    FeatherstoneInterface *fs = NULL;
-    sConfiguration():gl(NULL), physx(NULL), ode(NULL) {}
+    FeatherstoneInterface *fs = nullptr;
+    sConfiguration():gl(nullptr), physx(nullptr), ode(nullptr) {}
     ~sConfiguration() {
       if(gl) delete gl;
       if(physx) delete physx;
@@ -153,7 +153,7 @@ namespace rai {
 
 }
 
-rai::Configuration::Configuration() : s(NULL) {
+rai::Configuration::Configuration() : s(nullptr) {
   frames.memMove=proxies.memMove=true;
   s=new sConfiguration;
 }
@@ -169,7 +169,7 @@ rai::Configuration::Configuration(const char* filename) : Configuration() {
 rai::Configuration::~Configuration() {
   //delete OpenGL and the extensions first!
   delete s;
-  s=NULL;
+  s=nullptr;
   clear();
 }
 
@@ -1419,26 +1419,26 @@ FrameL rai::Configuration::getFramesByNames(const StringA& frameNames) const{
 /// find joint connecting two bodies
 //rai::Link* rai::Configuration::getLinkByBodies(const Frame* from, const Frame* to) const {
 //  if(to->link && to->link->from==from) return to->link;
-//  return NULL;
+//  return nullptr;
 //}
 
 /// find joint connecting two bodies
 rai::Joint* rai::Configuration::getJointByFrames(const Frame* from, const Frame* to) const {
   if(to->joint && to->parent==from) return to->joint;
-  return NULL;
+  return nullptr;
 }
 
 /// find joint connecting two bodies with specific names
 rai::Joint* rai::Configuration::getJointByFrameNames(const char* from, const char* to) const {
   Frame *f = getFrameByName(from);
   Frame *t = getFrameByName(to);
-  if(!f || !t) return NULL;
+  if(!f || !t) return nullptr;
   return getJointByFrames(f, t);
 }
 
 /// find joint connecting two bodies with specific names
 rai::Joint* rai::Configuration::getJointByFrameIndices(uint ifrom, uint ito) const {
-  if(ifrom>=frames.N || ito>=frames.N) return NULL;
+  if(ifrom>=frames.N || ito>=frames.N) return nullptr;
   Frame *f = frames(ifrom);
   Frame *t = frames(ito);
   return getJointByFrames(f, t);
@@ -1564,7 +1564,7 @@ void rai::Configuration::glAdd(void (*call)(void*,OpenGL&), void* classP){
 }
 
 int rai::Configuration::glAnimate() {
-  return animateConfiguration(*this, NULL);
+  return animateConfiguration(*this, nullptr);
 }
 
 void rai::Configuration::glClose(){
@@ -1574,7 +1574,7 @@ void rai::Configuration::glClose(){
 void rai::Configuration::glGetMasks(int w, int h, bool rgbIndices) {
   if(s->gl && !s->gl->offscreen){
     LOG(0) <<"can't make this offscreen anymore!";
-  }else gl(NULL, true);
+  }else gl(nullptr, true);
 
   gl().clear();
   gl().addDrawer(this);
@@ -1584,7 +1584,7 @@ void rai::Configuration::glGetMasks(int w, int h, bool rgbIndices) {
     orsDrawMarkers = orsDrawJoints = orsDrawProxies = false;
   }
 
-  gl().update(NULL, true);
+  gl().update(nullptr, true);
 
   gl().clear();
   gl().add(glStandardScene, 0);
@@ -1722,7 +1722,7 @@ void rai::Configuration::filterProxiesToContacts(double margin) {
   for(Proxy& p:proxies) {
     if(!p.coll) p.calc_coll(*this);
     if(p.coll->distance-(p.coll->rad1+p.coll->rad2)>margin) continue;
-    Contact *candidate=NULL;
+    Contact *candidate=nullptr;
     double candidateMatchingCost=0.;
     for(Contact *c:p.a->contacts) {
       if((&c->a==p.a && &c->b==p.b) || (&c->a==p.b && &c->b==p.a)) {
@@ -1756,7 +1756,7 @@ void rai::Configuration_ext::proxiesToContacts(double margin) {
   
   for(Proxy& p:proxies) {
     if(!p.coll) p.calc_coll(*this);
-    Contact *candidate=NULL;
+    Contact *candidate=nullptr;
     for(Contact *c:p.a->contacts) {
       if((&c->a==p.a && &c->b==p.b) || (&c->a==p.b && &c->b==p.a)) {
         candidate = c;
@@ -1988,7 +1988,7 @@ Graph rai::Configuration::getGraph() const {
 
 namespace rai {
   struct Link {
-    Frame* joint=NULL;
+    Frame* joint=nullptr;
     FrameL frames;
     Frame *from() {
       Frame *a = joint->parent;
@@ -2072,7 +2072,7 @@ void rai::Configuration::init(const Graph& G, bool addInsteadOfClear) {
     CHECK(n->isGraph(), "frame must have value Graph");
     CHECK_LE(n->parents.N, 1,"frames must have no or one parent: specs=" <<*n <<' ' <<n->index);
     
-    Frame *b = NULL;
+    Frame *b = nullptr;
     if(!n->parents.N) b = new Frame(*this);
     else if(n->parents.N==1) b = new Frame(node2frame(n->parents(0)->index)); //getFrameByName(n->parents(0)->keys.last()));
     else HALT("a frame can only have one parent");
@@ -2556,7 +2556,7 @@ const rai::Proxy* rai::Configuration::getContact(uint a, uint b) const {
     if(p.a->ID==a && p.b->ID==b) return &p;
     if(p.a->ID==b && p.b->ID==a) return &p;
   }
-  return NULL;
+  return nullptr;
 }
 
 #endif
@@ -2848,10 +2848,10 @@ FrameL rai::Configuration::getParts() const{
 //    //reassociate shapes with a
 //    if(b->shape){
 //      b->shape->frame=a;
-//      CHECK_EQ(a->shape, NULL,"");
+//      CHECK_EQ(a->shape, nullptr,"");
 //      a->shape = b->shape;
 //    }
-//    b->shape = NULL;
+//    b->shape = nullptr;
 //    //joints from b-to-c now become joints a-to-c
 //    for(Frame *f: b->parentOf) {
 //      Joint *j = f->joint();
@@ -2993,7 +2993,7 @@ void rai::Configuration::glDraw_sub(OpenGL& gl) {
 
 //===========================================================================
 
-void kinVelocity(arr &y, arr &J, uint frameId, const WorldL &Ktuple, double tau) {
+void kinVelocity(arr &y, arr &J, uint frameId, const ConfigurationL &Ktuple, double tau) {
   CHECK_GE(Ktuple.N, 1, "");
   rai::Configuration &K0 = *Ktuple(-2);
   rai::Configuration &K1 = *Ktuple(-1);
@@ -3038,7 +3038,7 @@ double forceClosureFromProxies(rai::Configuration& K, uint frameIndex, double di
   }
   C .reshape(C.N/3, 3);
   Cn.reshape(C.N/3, 3);
-  double fc=forceClosure(C, Cn, K.frames(frameIndex)->ensure_X().pos, mu, torqueWeights, NULL);
+  double fc=forceClosure(C, Cn, K.frames(frameIndex)->ensure_X().pos, mu, torqueWeights, nullptr);
   return fc;
 }
 
@@ -3512,7 +3512,7 @@ int animateConfiguration(rai::Configuration& K, Inotify *ino) {
   return K.watch(false);
 }
 
-rai::Frame *movingBody=NULL;
+rai::Frame *movingBody=nullptr;
 rai::Vector selpos;
 double seld, selx, sely, selz;
 
@@ -3551,8 +3551,8 @@ struct EditConfigurationHoverCall:OpenGL::GLHoverCall {
   bool hoverCallback(OpenGL& gl) {
     //    if(!movingBody) return false;
     if(!movingBody) {
-      rai::Joint *j=NULL;
-      rai::Frame *s=NULL;
+      rai::Joint *j=nullptr;
+      rai::Frame *s=nullptr;
       rai::timerStart(true);
       gl.Select(true);
       OpenGL::GLSelect *top=gl.topSelection;
@@ -3595,9 +3595,9 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
   EditConfigurationKeyCall(rai::Configuration& _K, bool& _exit): K(_K), exit(_exit) {}
   bool keyCallback(OpenGL& gl) {
     if(false && gl.pressedkey==' ') { //grab a body
-      if(movingBody) { movingBody=NULL; return true; }
-      rai::Joint *j=NULL;
-      rai::Frame *s=NULL;
+      if(movingBody) { movingBody=nullptr; return true; }
+      rai::Joint *j=nullptr;
+      rai::Frame *s=nullptr;
       gl.Select();
       OpenGL::GLSelect *top=gl.topSelection;
       if(!top) { cout <<"No object below mouse!" <<endl;  return false; }

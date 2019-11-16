@@ -116,7 +116,7 @@ namespace rai{
 
     void glDraw(OpenGL &gl){
 #ifdef RAI_GL
-      glStandardScene(NULL, gl);
+      glStandardScene(nullptr, gl);
       Ccopy.glDraw(gl);
 
       if(image.N && depth.N){

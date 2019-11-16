@@ -42,7 +42,7 @@ struct Flag {
   
   void apply(Configuration& K);
   
-  void write(std::ostream& os, Configuration* K=NULL) const;
+  void write(std::ostream& os, Configuration* K=nullptr) const;
 };
 
 }

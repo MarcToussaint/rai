@@ -91,12 +91,12 @@ void KinViewer::step() {
     for(uint i=0; i<X.N; i++) meshesCopy(i).glX = X(i);
   }
   
-  gl->update(NULL, true); //NULL, false, false, true);
+  gl->update(nullptr, true); //nullptr, false, false, true);
 }
 
 //===========================================================================
 
-void KinPathViewer::setConfigurations(const WorldL& cs) {
+void KinPathViewer::setConfigurations(const ConfigurationL& cs) {
   configurations.writeAccess();
   listResize(configurations(), cs.N);
   for(uint i=0; i<cs.N; i++) configurations()(i)->copy(*cs(i), true);
@@ -108,7 +108,7 @@ void KinPathViewer::clear() {
   text.clear();
 }
 
-KinPathViewer::KinPathViewer(const Var<WorldL>& _configurations, double beatIntervalSec, int tprefix)
+KinPathViewer::KinPathViewer(const Var<ConfigurationL>& _configurations, double beatIntervalSec, int tprefix)
   : Thread(STRING("KinPathViewer_"<<_configurations.name()), beatIntervalSec),
     configurations(this, _configurations, (beatIntervalSec<0.)),
     t(0), tprefix(tprefix), writeToFiles(false) {
@@ -154,7 +154,7 @@ void KinPathViewer::step() {
 
 //===========================================================================
 
-void renderConfigurations(const WorldL& cs, const char* filePrefix, int tprefix, int w, int h, rai::Camera *camera) {
+void renderConfigurations(const ConfigurationL& cs, const char* filePrefix, int tprefix, int w, int h, rai::Camera *camera) {
   rai::Configuration copy;
   copy.orsDrawMarkers=false;
   rai::system(STRING("mkdir -p " <<filePrefix));
@@ -224,7 +224,7 @@ void KinPoseViewer::step() {
 
   gl.text.clear() <<"step: " <<frameCount <<"\n[temporal profile is not displayed accuratly (tau path ignored)]";
   gl.text <<" path-T: " <<frameState.get()->d0 <<" frames: " <<meshesCopy.N;
-  gl.update(NULL, true); //NULL, false, false, true);
+  gl.update(nullptr, true); //nullptr, false, false, true);
 }
 
 void KinPoseViewer::close() {
@@ -238,7 +238,7 @@ void KinPoseViewer::glDraw(OpenGL &gl) {
   if(!meshesCopy.N) return;
   if(!X.N) return;
 
-  glStandardScene(NULL, gl);
+  glStandardScene(nullptr, gl);
 
   CHECK_EQ(X.nd, 3, "");
   uint n=meshesCopy.N;

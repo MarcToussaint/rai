@@ -105,7 +105,7 @@ visualization_msgs::MarkerArray conv_Kin2Markers(const rai::Configuration& K);
 
 //-- get transformations
 rai::Transformation ros_getTransform(const std::string& from, const std::string& to, tf::TransformListener& listener);
-rai::Transformation ros_getTransform(const std::string& from, const std_msgs::Header& to, tf::TransformListener& listener, tf::Transform* returnRosTransform=NULL);
+rai::Transformation ros_getTransform(const std::string& from, const std_msgs::Header& to, tf::TransformListener& listener, tf::Transform* returnRosTransform=nullptr);
 bool ros_getTransform(const std::string& from, const std::string& to, tf::TransformListener& listener, rai::Transformation& result);
 
 struct SubscriberType { virtual ~SubscriberType() {} }; ///< if types derive from RootType, more tricks are possible
@@ -118,10 +118,10 @@ struct SubscriberType { virtual ~SubscriberType() {} }; ///< if types derive fro
 template<class msg_type>
 struct Subscriber : SubscriberType {
   Var<msg_type>& var;
-  ros::NodeHandle *nh=NULL;
+  ros::NodeHandle *nh=nullptr;
   ros::Subscriber sub;
   uint revision=0;
-  Subscriber(Var<msg_type>& _var, const char* topic_name=NULL)
+  Subscriber(Var<msg_type>& _var, const char* topic_name=nullptr)
     : var(_var) {
     if(rai::getParameter<bool>("useRos", true)) {
       if(!topic_name) topic_name = var.name();
@@ -152,7 +152,7 @@ struct Publisher : Thread {
   Publisher(const Var<msg_type>& _var)
     : Thread(STRING("Publisher_"<<_var.name()), -1.),
       var(this, _var, true),
-      nh(NULL) {
+      nh(nullptr) {
     if(rai::getParameter<bool>("useRos", true)) {
       rai::String topic_name = var.name();
       LOG(0) <<"publishing to topic '" <<topic_name <<"' <" <<typeid(msg_type).name() <<">";
@@ -188,8 +188,8 @@ struct SubscriberConv : SubscriberType {
   ros::NodeHandle *nh;
   ros::Subscriber sub;
   tf::TransformListener *listener;
-  SubscriberConv(Var<var_type>& _var, const char* topic_name=NULL, Var<rai::Transformation> *_frame=NULL)
-    : var(NULL, _var), frame(_frame), nh(NULL), listener(NULL) {
+  SubscriberConv(Var<var_type>& _var, const char* topic_name=nullptr, Var<rai::Transformation> *_frame=nullptr)
+    : var(nullptr, _var), frame(_frame), nh(nullptr), listener(nullptr) {
     if(rai::getParameter<bool>("useRos", true)) {
       if(!topic_name) topic_name = var.name();
       nh = new ros::NodeHandle;
@@ -199,8 +199,8 @@ struct SubscriberConv : SubscriberType {
       sub = nh->subscribe(topic_name, 1, &SubscriberConv::callback, this);
     }
   }
-  SubscriberConv(const char* topic_name, const char* var_name, Var<rai::Transformation> *_frame=NULL)
-    : var(NULL, var_name), frame(_frame), nh(NULL), listener(NULL) {
+  SubscriberConv(const char* topic_name, const char* var_name, Var<rai::Transformation> *_frame=nullptr)
+    : var(nullptr, var_name), frame(_frame), nh(nullptr), listener(nullptr) {
     if(rai::getParameter<bool>("useRos", true)) {
       if(!topic_name) topic_name = var_name;
       nh = new ros::NodeHandle;
@@ -233,8 +233,8 @@ struct SubscriberConvNoHeader : SubscriberType {
   Var<var_type> var;
   ros::NodeHandle *nh;
   ros::Subscriber sub;
-  SubscriberConvNoHeader(Var<var_type>& _var, const char* topic_name=NULL)
-    : var(NULL, _var), nh(NULL) {
+  SubscriberConvNoHeader(Var<var_type>& _var, const char* topic_name=nullptr)
+    : var(nullptr, _var), nh(nullptr) {
     if(rai::getParameter<bool>("useRos", true)) {
       if(!topic_name) topic_name = var.name();
       nh = new ros::NodeHandle;
@@ -243,8 +243,8 @@ struct SubscriberConvNoHeader : SubscriberType {
       sub = nh->subscribe(topic_name, 1, &SubscriberConvNoHeader::callback, this);
     }
   }
-  SubscriberConvNoHeader(const char* var_name, const char* topic_name=NULL)
-    : var(NULL, var_name), nh(NULL) {
+  SubscriberConvNoHeader(const char* var_name, const char* topic_name=nullptr)
+    : var(nullptr, var_name), nh(nullptr) {
     if(rai::getParameter<bool>("useRos", true)) {
       if(!topic_name) topic_name = var_name;
       nh = new ros::NodeHandle;
@@ -274,10 +274,10 @@ struct PublisherConv : Thread {
   ros::Publisher pub;
   rai::String topic_name;
   
-  PublisherConv(const Var<var_type>& _var, const char* _topic_name=NULL, double beatIntervalSec=-1.)
+  PublisherConv(const Var<var_type>& _var, const char* _topic_name=nullptr, double beatIntervalSec=-1.)
     : Thread(STRING("Publisher_"<<_var.name() <<"->" <<_topic_name), beatIntervalSec),
       var(this, _var, beatIntervalSec<0.),
-      nh(NULL),
+      nh(nullptr),
       topic_name(_topic_name) {
     if(rai::getParameter<bool>("useRos", true)) {
       if(!_topic_name) topic_name = var.name();
@@ -287,10 +287,10 @@ struct PublisherConv : Thread {
       rai::wait(.1); //I hate this -- no idea why the publisher isn't ready right away..
     }
   }
-  PublisherConv(const char* var_name, const char* _topic_name=NULL, double beatIntervalSec=-1.)
+  PublisherConv(const char* var_name, const char* _topic_name=nullptr, double beatIntervalSec=-1.)
     : Thread(STRING("Publisher_"<<var_name <<"->" <<_topic_name), beatIntervalSec),
       var(this, var_name, beatIntervalSec<0.),
-      nh(NULL),
+      nh(nullptr),
       topic_name(_topic_name) {
     if(rai::getParameter<bool>("useRos", true)) {
       if(!_topic_name) topic_name = var_name;

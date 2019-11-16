@@ -21,8 +21,8 @@ void TEST(Easy){
   komo.setSquaredQAccVelHoming();
 
   //-- set a time optim objective
-//  komo.addObjective(-1., -1., new TM_Time(), OT_sos, {}, 1e2, 1); //smooth time evolution
-//  komo.addObjective(-1., -1., new TM_Time(), OT_sos, {komo.tau}, 1e1, 0); //prior on timing
+//  komo.addObjective({}, make_shared<TM_Time>(), OT_sos, {1e2}, {}, 1); //smooth time evolution
+//  komo.addObjective({}, make_shared<TM_Time>(), OT_sos, {1e1}, {komo.tau}, 0); //prior on timing
 
   komo.setPosition(1., 1., "endeff", "target", OT_sos);
   komo.setSlowAround(1., .05);
@@ -53,11 +53,11 @@ void TEST(Align){
   komo.setSquaredQAccVelHoming();
 
 //  komo.setPosition(1., 1., "endeff", "target");
-  komo.addObjective({1.}, OT_sos, FS_positionRel, {"target", "endeff"});
+  komo.addObjective({1.}, FS_positionRel, {"target", "endeff"}, OT_sos);
 //  komo.setOrientation(1., 1., "endeff", "target", OT_eq);
-//  komo.addObjective({1.}, OT_eq, FS_scalarProductXZ, {"target", "endeff"});
-//  komo.addObjective({1.}, OT_eq, FS_scalarProductYZ, {"target", "endeff"});
-  komo.addObjective({1.}, OT_sos, FS_scalarProductZZ, {"target", "endeff"}, {1e2}, {1.});
+//  komo.addObjective({1.}, FS_scalarProductXZ, {"target", "endeff"}, OT_eq);
+//  komo.addObjective({1.}, FS_scalarProductYZ, {"target", "endeff"}, OT_eq);
+  komo.addObjective({1.}, FS_scalarProductZZ, {"target", "endeff"}, OT_sos, {1e2}, {1.});
   komo.setSlowAround(1., .02);
   komo.add_collision(true);
 

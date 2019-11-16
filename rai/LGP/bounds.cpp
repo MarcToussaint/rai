@@ -16,7 +16,7 @@ template<> const char* rai::Enum<BoundType>::names []= {
   "seqVelPath",
   "poseFromSub",
   "max",
-  NULL
+  nullptr
 };
 
 rai::Array<SkeletonSymbol> modes = { SY_stable, SY_stableOn, SY_dynamic, SY_dynamicOn, SY_dynamicTrans, };
@@ -164,7 +164,7 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
       uint waypointsStepsPerPhase = waypoints.N/(T+1);
       CHECK_EQ(waypoints.N, waypointsStepsPerPhase * (T+1), "waypoint steps not clear");
       for(uint i=0;i<waypoints.N-1;i++){
-        komo.addObjective(ARR(conv_step2time(i, waypointsStepsPerPhase)), OT_sos, FS_qItself, {}, {1e-1}, waypoints(i));
+        komo.addObjective(ARR(conv_step2time(i, waypointsStepsPerPhase)), FS_qItself, {}, OT_sos, {1e-1}, waypoints(i));
       }
 
       komo.setSkeleton(S);
@@ -191,8 +191,8 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
 
       CHECK_EQ(waypoints.N-1, floor(maxPhase+.5), "");
       for(uint i=0;i<waypoints.N-1;i++){
-        komo.addObjective(ARR(double(i+1)), OT_sos, FS_qItself, {}, {1e-1}, waypoints(i));
-//        komo.addObjective(ARR(double(i+1)), OT_eq, FS_qItself, {}, {1e0}, waypoints(i));
+        komo.addObjective(ARR(double(i+1)), FS_qItself, {}, OT_sos, {1e-1}, waypoints(i));
+//        komo.addObjective(ARR(double(i+1)), FS_qItself, {}, OT_eq, {1e0}, waypoints(i));
       }
 //      uint O = komo.objectives.N;
 

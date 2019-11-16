@@ -26,7 +26,7 @@ struct Objective {
   arr target, prec;     ///< optional linear, time-dependent, rescaling (with semantics of target & precision)
   
   Objective(Feature *m, const ObjectiveType& type) : map(m), type(type) {}
-  ~Objective() { if(map) delete map; map=NULL; }
+  ~Objective() { if(map) delete map; map=nullptr; }
   
   void setCostSpecs(int fromTime, int toTime,
                     const arr& _target=ARR(0.),
@@ -53,7 +53,7 @@ stdOutPipe(Task)
 
 struct KOMO {
   rai::Configuration& world;  ///< the original world, which also defines the 'start conditions'
-  WorldL configurations;       ///< copies for each time slice; including kinematic switches; only these are optimized
+  ConfigurationL configurations;       ///< copies for each time slice; including kinematic switches; only these are optimized
   bool useSwift;
   
   rai::Array<Objective*> tasks; ///< task cost descriptions

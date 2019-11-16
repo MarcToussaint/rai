@@ -185,7 +185,7 @@ CT_Status MotionProfile_Path::update(arr& yRef, arr& ydotRef, double tau, const 
 //===========================================================================
 
 CtrlTask::CtrlTask(const char* name, Feature* map)
-  : map(map), name(name), active(true), status(CT_init), ref(NULL), prec(ARR(1.)), hierarchy(1) {
+  : map(map), name(name), active(true), status(CT_init), ref(nullptr), prec(ARR(1.)), hierarchy(1) {
   //  ref = new MotionProfile_PD();
 }
 
@@ -202,8 +202,8 @@ CtrlTask::CtrlTask(const char* name, Feature* map, const Graph& params)
 }
 
 CtrlTask::~CtrlTask() {
-  if(map) delete map; map=NULL;
-  if(ref) delete ref; ref=NULL;
+  if(map) delete map; map=nullptr;
+  if(ref) delete ref; ref=nullptr;
 }
 
 CT_Status CtrlTask::update(double tau, const rai::Configuration& world) {

@@ -126,7 +126,7 @@ struct OpenGL {
   struct GLKeyCall  { virtual bool keyCallback(OpenGL&) = 0; };
   struct GLEvent    { int button, key, x, y; float dx, dy; void set(int b, int k, int _x, int _y, float _dx, float _dy) { button=b; key=k; x=_x; y=_y; dx=_dx; dy=_dy; } };
   struct GLSelect   { int name; double dmin, dmax, x,y,z; };
-  struct GLView     { double le, ri, bo, to;  rai::Array<GLDrawer*> drawers;  rai::Camera camera;  byteA *img;  rai::String text;  GLView() { img=NULL; le=bo=0.; ri=to=1.; } };
+  struct GLView     { double le, ri, bo, to;  rai::Array<GLDrawer*> drawers;  rai::Camera camera;  byteA *img;  rai::String text;  GLView() { img=nullptr; le=bo=0.; ri=to=1.; } };
   
   /// @name data fields
   rai::Array<GLView> views;            ///< list of subviews
@@ -176,8 +176,8 @@ struct OpenGL {
   
   /// @name adding drawing routines and callbacks
   void clear();
-  void add(void (*call)(void*,OpenGL&), void* classP=NULL);
-  void addInit(void (*call)(void*), void* classP=NULL);
+  void add(void (*call)(void*,OpenGL&), void* classP=nullptr);
+  void addInit(void (*call)(void*), void* classP=nullptr);
   void add(std::function<void(OpenGL&)> drawer);
   void add(GLDrawer& c) { auto _dataLock = dataLock(RAI_HERE); drawers.append(&c); }
   template<class T> void add(Var<T>& c) { add(c.set()); }
@@ -194,13 +194,13 @@ struct OpenGL {
   void clearSubView(uint view);
   
   /// @name the core draw routines (actually only for internal use)
-  void Draw(int w, int h, rai::Camera *cam=NULL, bool callerHasAlreadyLocked=false);
+  void Draw(int w, int h, rai::Camera *cam=nullptr, bool callerHasAlreadyLocked=false);
   void Select(bool callerHasAlreadyLocked=false);
   void renderInBack(int w=-1, int h=-1);
   
   /// @name showing, updating, and watching
-  int update(const char *text=NULL, bool nonThreaded=false);
-  int watch(const char *text=NULL);
+  int update(const char *text=nullptr, bool nonThreaded=false);
+  int watch(const char *text=nullptr);
   int timedupdate(double sec);
   void resize(int w, int h);
   void setClearColors(float r, float g, float b, float a);

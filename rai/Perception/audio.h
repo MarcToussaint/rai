@@ -30,7 +30,7 @@ private:
   
 public:
   /// Pulseaudio audio grabber using given device name
-  AudioPoller_PA(const char* appname="mt_audiopoller", const char* dev=NULL);
+  AudioPoller_PA(const char* appname="mt_audiopoller", const char* dev=nullptr);
   virtual ~AudioPoller_PA();
   
   /// read from the device until buf is filled. returns true on success, false on EOF

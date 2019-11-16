@@ -95,7 +95,7 @@ void F_qItself::phi(arr& q, arr& J, const rai::Configuration& G) {
   }
 }
 
-void F_qItself::phi(arr& y, arr& J, const WorldL& Ktuple) {
+void F_qItself::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   CHECK_GE(Ktuple.N, order+1,"I need at least " <<order+1 <<" configurations to evaluate");
   uint k=order;
   if(k==0){
@@ -136,7 +136,7 @@ void F_qItself::phi(arr& y, arr& J, const WorldL& Ktuple) {
       if(j) {
         for(uint s=0; s<=k; s++) {
           rai::Joint *jmatch = Ktuple(offset+s)->getJointByFrameNames(j->from()->name, j->frame->name);
-          if(jmatch && j->type!=jmatch->type) jmatch=NULL;
+          if(jmatch && j->type!=jmatch->type) jmatch=nullptr;
           if(!jmatch) { useIt(i) = false; break; }
           jointMatchLists(s, i) = jmatch;
         }
@@ -207,7 +207,7 @@ uint F_qItself::dim_phi(const rai::Configuration& G) {
   return G.getJointStateDimension();
 }
 
-uint F_qItself::dim_phi(const WorldL& Ktuple) {
+uint F_qItself::dim_phi(const ConfigurationL& Ktuple) {
   if(order==0) return dim_phi(*Ktuple.last());
   else {
     if(dimPhi.find(Ktuple.last()) == dimPhi.end()) {
@@ -240,7 +240,7 @@ rai::String F_qItself::shortTag(const rai::Configuration& G) {
 
 extern bool isSwitched(rai::Frame *f0, rai::Frame *f1);
 
-void F_qZeroVel::phi(arr& y, arr& J, const WorldL& Ktuple){
+void F_qZeroVel::phi(arr& y, arr& J, const ConfigurationL& Ktuple){
   if(!Ktuple(-1)->frames(i)->joint){
     HALT("shouldn't be here");
     y.resize(0).setZero();
@@ -281,7 +281,7 @@ uint F_qZeroVel::dim_phi(const rai::Configuration& K){
 
 //===========================================================================
 
-rai::Array<rai::Joint*> getMatchingJoints(const WorldL& Ktuple, bool zeroVelJointsOnly) {
+rai::Array<rai::Joint*> getMatchingJoints(const ConfigurationL& Ktuple, bool zeroVelJointsOnly) {
   rai::Array<rai::Joint*> matchingJoints;
   rai::Array<rai::Joint*> matches(Ktuple.N);
   bool matchIsGood;
@@ -365,7 +365,7 @@ rai::Array<rai::Joint*> getSwitchedJoints(const rai::Configuration& G0, const ra
   rai::Joint *j1;
   for(rai::Frame *f: G1.frames) if((j1=f->joint) && j1->active) {
       if(j1->from()->ID>=G0.frames.N || j1->frame->ID>=G0.frames.N) {
-        switchedJoints.append({NULL,j1});
+        switchedJoints.append({nullptr,j1});
         continue;
       }
       rai::Joint *j0 = G0.getJointByFrameIndices(j1->from()->ID, j1->frame->ID);
@@ -439,7 +439,7 @@ uintA getSwitchedBodies(const rai::Configuration& G0, const rai::Configuration& 
 
 //===========================================================================
 
-uintA getNonSwitchedBodies(const WorldL& Ktuple) {
+uintA getNonSwitchedBodies(const ConfigurationL& Ktuple) {
   uintA nonSwitchedBodies;
 
   rai::Configuration& K0 = *Ktuple(0);

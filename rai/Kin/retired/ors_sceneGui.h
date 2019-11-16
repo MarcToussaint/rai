@@ -17,7 +17,7 @@
 struct OrsSceneGui {
   struct sOrsSceneGui *s;
   
-  OrsSceneGui(rai::Configuration& ors, OpenGL *gl=NULL);
+  OrsSceneGui(rai::Configuration& ors, OpenGL *gl=nullptr);
   
   void edit();
   

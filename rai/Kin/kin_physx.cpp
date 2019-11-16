@@ -29,9 +29,9 @@
 
 using namespace physx;
 
-static PxFoundation* mFoundation = NULL;
-static PxPhysics* mPhysics = NULL;
-static PxCooking* mCooking = NULL;
+static PxFoundation* mFoundation = nullptr;
+static PxPhysics* mPhysics = nullptr;
+static PxCooking* mCooking = nullptr;
 static PxDefaultErrorCallback gDefaultErrorCallback;
 static PxDefaultAllocator gDefaultAllocatorCallback;
 static PxSimulationFilterShader gDefaultFilterShader=PxDefaultSimulationFilterShader;
@@ -68,7 +68,7 @@ PxConvexMesh* createConvexMesh(PxPhysics& physics, PxCooking& cooking, const PxV
   
   PxDefaultMemoryOutputStream buf;
   if(!cooking.cookConvexMesh(convexDesc, buf))
-    return NULL;
+    return nullptr;
     
   PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
   return physics.createConvexMesh(input);
@@ -87,7 +87,7 @@ PxTriangleMesh* createTriangleMesh32(PxPhysics& physics, PxCooking& cooking, con
   PxDefaultMemoryOutputStream writeBuffer;
   bool status = cooking.cookTriangleMesh(meshDesc, writeBuffer);
   if(!status)
-    return NULL;
+    return nullptr;
     
   PxDefaultMemoryInputData readBuffer(writeBuffer.getData(), writeBuffer.getSize());
   return physics.createTriangleMesh(readBuffer);
@@ -96,16 +96,16 @@ PxTriangleMesh* createTriangleMesh32(PxPhysics& physics, PxCooking& cooking, con
 // ============================================================================
 
 struct PhysXInterface_self {
-  PxScene* gScene = NULL;
+  PxScene* gScene = nullptr;
   rai::Array<PxRigidActor*> actors;
   rai::Array<rai::BodyType> actorTypes;
   rai::Array<PxD6Joint*> joints;
-  OpenGL *gl=NULL;
-  rai::Configuration *C=NULL;
+  OpenGL *gl=nullptr;
+  rai::Configuration *C=nullptr;
 
   PxMaterial *defaultMaterial;
   
-//  debugger::comm::PvdConnection* connection = NULL;
+//  debugger::comm::PvdConnection* connection = nullptr;
   
   void addLink(rai::Frame *b, bool verbose);
   void addJoint(rai::Joint *jj);
@@ -116,7 +116,7 @@ struct PhysXInterface_self {
 
 // ============================================================================
 
-PhysXInterface::PhysXInterface(const rai::Configuration& world, bool verbose): self(NULL) {
+PhysXInterface::PhysXInterface(const rai::Configuration& world, bool verbose): self(nullptr) {
   self = new PhysXInterface_self;
 
   if(verbose) LOG(0) <<"starting PhysX engine ...";
@@ -243,7 +243,7 @@ void PhysXInterface::setArticulatedBodiesKinematic(const rai::Configuration& C) 
 void PhysXInterface_self::addJoint(rai::Joint *jj) {
   HALT("REALLY?");
   while(joints.N <= jj->frame->ID)
-    joints.append(NULL);
+    joints.append(nullptr);
     
   //  cout <<"ADDING JOINT " <<jj->frame->parent->name <<'-' <<jj->frame->name <<endl;
   
@@ -252,7 +252,7 @@ void PhysXInterface_self::addJoint(rai::Joint *jj) {
   
   if(!jj->frame->inertia || !from || !from->inertia) return;
   CHECK(jj->frame->inertia, "this joint belongs to a frame '" <<jj->frame->name <<"' without inertia");
-  CHECK(from, "this joint ('" <<jj->frame->name <<"') links from NULL");
+  CHECK(from, "this joint ('" <<jj->frame->name <<"') links from nullptr");
   CHECK(from->inertia, "this joint ('" <<jj->frame->name <<"') links from a frame '" <<from->name <<"' without inertia");
   
   PxTransform A = conv_Transformation2PxTrans(rel);
@@ -392,7 +392,7 @@ void PhysXInterface_self::addLink(rai::Frame *f, bool verbose) {
   if(verbose) LOG(0) <<"adding link anchored at '" <<f->name <<"' as " <<rai::Enum<rai::BodyType>(type);
 
   //-- create a PhysX actor
-  PxRigidDynamic* actor=NULL;
+  PxRigidDynamic* actor=nullptr;
   switch(type) {
     case rai::BT_static:
       actor = (PxRigidDynamic*) mPhysics->createRigidStatic(conv_Transformation2PxTrans(f->ensure_X()));
@@ -454,7 +454,7 @@ void PhysXInterface_self::addLink(rai::Frame *f, bool verbose) {
         geometry = new PxConvexMeshGeometry(triangleMesh);
       } break;
       case rai::ST_marker: {
-        geometry = NULL;
+        geometry = nullptr;
       } break;
       default:
         NIY;
@@ -578,15 +578,15 @@ void PhysXInterface::ShutdownPhysX() {
     }
 //  if(self->connection) {
 //    self->connection->release();
-//    self->connection=NULL;
+//    self->connection=nullptr;
 //  }
   if(self->gScene) {
     self->gScene->release();
-    self->gScene = NULL;
+    self->gScene = nullptr;
   }
   if(self->gl) {
     delete self->gl;
-    self->gl=NULL;
+    self->gl=nullptr;
   }
   
   mCooking->release();
@@ -665,7 +665,7 @@ void PhysXInterface::watch(bool pause, const char *txt) {
   NIY;
 //  if(!s->gl) {
 //    self->gl = new OpenGL("PHYSX direct");
-//    self->gl->add(glStandardScene, NULL);
+//    self->gl->add(glStandardScene, nullptr);
 //    self->gl->add(*this);
 //    self->gl->camera.setDefault();
 //  }
@@ -693,7 +693,7 @@ void PhysXInterface::addForce(rai::Vector& force, rai::Frame* b, rai::Vector& po
 #else //RAI_PHYSX
 
 #include "kin_physx.h"
-PhysXInterface::PhysXInterface(const rai::Configuration& _world, bool verbose) : self(NULL) { NICO }
+PhysXInterface::PhysXInterface(const rai::Configuration& _world, bool verbose) : self(nullptr) { NICO }
 PhysXInterface::~PhysXInterface() { NICO }
 
 void PhysXInterface::step(double tau) { NICO }

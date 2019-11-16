@@ -10,7 +10,7 @@
 
 //===========================================================================
 
-void Feature::phi(arr& y, arr& J, const WorldL& Ktuple) {
+void Feature::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   CHECK_GE(Ktuple.N, order+1,"I need at least " <<order+1 <<" configurations to evaluate");
   if(order==0) {
     phi(y, J, *Ktuple(-1));
@@ -59,7 +59,7 @@ VectorFunction Feature::vf(rai::Configuration& K) { ///< direct conversion to ve
 }
 
 
-VectorFunction Feature::vf(WorldL& Ktuple) { ///< direct conversion to vector function: use to check gradient or evaluate
+VectorFunction Feature::vf(ConfigurationL& Ktuple) { ///< direct conversion to vector function: use to check gradient or evaluate
   return [this, &Ktuple](arr& y, arr& J, const arr& x) -> void {
     uintA qdim = getKtupleDim(Ktuple);
     qdim.prepend(0);

@@ -16,9 +16,9 @@ struct TM_qZeroVels:Feature {
   TM_qZeroVels() { }
 
   virtual void phi(arr& y, arr& J, const rai::Configuration& G) {NIY}
-  virtual void phi(arr& y, arr& J, const WorldL& Ktuple);
+  virtual void phi(arr& y, arr& J, const ConfigurationL& Ktuple);
   virtual uint dim_phi(const rai::Configuration& G) {NIY}
-  virtual uint dim_phi(const WorldL& Ktuple);
+  virtual uint dim_phi(const ConfigurationL& Ktuple);
 private:
   std::map<rai::Configuration*, uint> dimPhi;
 };

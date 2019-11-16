@@ -52,7 +52,7 @@ rai::CameraView::Sensor& rai::CameraView::addSensor(const char* frameAttached){
 }
 
 rai::CameraView::Sensor& rai::CameraView::selectSensor(const char* sensorName){
-  CHECK(sensorName, "you need to specify a sensor name, NULL not allowed");
+  CHECK(sensorName, "you need to specify a sensor name, nullptr not allowed");
   Sensor *sen=0;
   for(Sensor& s:sensors) if(s.name==sensorName){ sen=&s; break; }
   if(!sen) LOG(-2) <<"can't find that sensor: " <<sensorName;
@@ -88,7 +88,7 @@ void rai::CameraView::updateConfiguration(const rai::Configuration& newC){
 void rai::CameraView::computeImageAndDepth(byteA& image, floatA& depth){
   updateCamera();
   //  renderMode=all;
-  gl.update(NULL, true);
+  gl.update(nullptr, true);
   image = gl.captureImage;
   flip_image(image);
   if(renderMode==seg && frameIDmap.N){
@@ -118,7 +118,7 @@ void rai::CameraView::computeImageAndDepth(byteA& image, floatA& depth){
 void rai::CameraView::computeSegmentation(byteA& segmentation){
   updateCamera();
   renderMode=seg;
-  gl.update(NULL, true);
+  gl.update(nullptr, true);
   segmentation = gl.captureImage;
   flip_image(segmentation);
   done(__func__);
@@ -184,7 +184,7 @@ void rai::CameraView::updateCamera(){
 
 void rai::CameraView::glDraw(OpenGL& gl) {
   if(renderMode==all || renderMode==visuals){
-    glStandardScene(NULL, gl);
+    glStandardScene(nullptr, gl);
     gl.drawMode_idColor = false;
     if(renderMode==visuals){
       K.orsDrawVisualsOnly=true;

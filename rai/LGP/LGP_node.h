@@ -41,9 +41,9 @@ struct LGP_Node {
   FOL_World& fol; ///< the symbolic KB (all Graphs below are subgraphs of this large KB)
   FOL_World::Handle decision; ///< the decision that led to this node
   FOL_World::TransitionReturn ret;
-  Graph *folState=NULL; ///< the symbolic state after the decision
-  Node  *folDecision=NULL; ///< the predicate in the folState that represents the decision
-  Graph *folAddToState=NULL; ///< facts that are added to the state /after/ the fol.transition, e.g., infeasibility predicates
+  Graph *folState=nullptr; ///< the symbolic state after the decision
+  Node  *folDecision=nullptr; ///< the predicate in the folState that represents the decision
+  Graph *folAddToState=nullptr; ///< facts that are added to the state /after/ the fol.transition, e.g., infeasibility predicates
   
   //-- kinematics: the kinematic structure of the world after the decision path
   const rai::Configuration& startKinematics; ///< initial start state kinematics
@@ -104,8 +104,8 @@ private:
 public:
   void write(ostream& os=cout, bool recursive=false, bool path=true) const;
   Graph getInfo() const;
-  void getGraph(Graph& G, Node *n=NULL, bool brief=false);
-  Graph getGraph(bool brief=false) { Graph G; getGraph(G, NULL, brief); G.checkConsistency(); return G; }
+  void getGraph(Graph& G, Node *n=nullptr, bool brief=false);
+  Graph getGraph(bool brief=false) { Graph G; getGraph(G, nullptr, brief); G.checkConsistency(); return G; }
   void displayBound(ptr<OpenGL>& gl, BoundType bound);
 };
 

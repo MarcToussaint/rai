@@ -49,7 +49,7 @@ PlotModule::PlotModule() {
 
 PlotModule::~PlotModule() {
 #ifdef RAI_GL
-  if(gl) { delete gl; gl=NULL; }
+  if(gl) { delete gl; gl=nullptr; }
 #endif
   delete s;
 }
@@ -87,7 +87,7 @@ void plotInitGL(double xl=-1., double xh=1., double yl=-1., double yh=1., double
 }
 
 void plotCloseGL() {
-  if(plotModule()->gl) { delete plotModule()->gl; plotModule()->gl=NULL; }
+  if(plotModule()->gl) { delete plotModule()->gl; plotModule()->gl=nullptr; }
 }
 #endif
 
@@ -428,7 +428,7 @@ void plotDrawOpenGL(void *_data, OpenGL& gl) {
   double x=0., y=0., z=0.;
   
   //light?
-  if(plotModule()->light) glStandardLight(NULL, gl);
+  if(plotModule()->light) glStandardLight(nullptr, gl);
   
   if(plotModule()->drawBox) {
     glColor3f(.7, .7, .7);

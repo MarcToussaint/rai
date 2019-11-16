@@ -14,7 +14,7 @@ struct TM_ImpulsExchange : Feature {
   TM_ImpulsExchange(const rai::Configuration &K, const char* i_name, const char* j_name)
     : i(initIdArg(K, i_name)), j(initIdArg(K, j_name)) {}
     
-  void phi(arr& y, arr& J, const WorldL& Ktuple);
+  void phi(arr& y, arr& J, const ConfigurationL& Ktuple);
   uint dim_phi(const rai::Configuration& K) { return 6; }
   
   void phi(arr& y, arr& J, const rai::Configuration& K) { HALT(""); }
@@ -28,7 +28,7 @@ struct TM_ImpulsExchange_weak : Feature {
   TM_ImpulsExchange_weak(const rai::Configuration &K, const char* i_name, const char* j_name)
     : i(initIdArg(K, i_name)), j(initIdArg(K, j_name)) {}
     
-  void phi(arr& y, arr& J, const WorldL& Ktuple);
+  void phi(arr& y, arr& J, const ConfigurationL& Ktuple);
   uint dim_phi(const rai::Configuration& K) { return 3; }
   
   void phi(arr& y, arr& J, const rai::Configuration& K) { HALT(""); }

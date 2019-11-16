@@ -24,7 +24,7 @@ struct sPR2EndPoseProblem {
   KOMO MP;
   Convert *CP;
   sPR2EndPoseProblem()
-    :world("model.kvg"), MP(world), CP(NULL) {}
+    :world("model.kvg"), MP(world), CP(nullptr) {}
 };
 
 PR2EndPoseProblem::PR2EndPoseProblem()

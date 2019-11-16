@@ -16,7 +16,7 @@ void TM_Time::phi(arr &y, arr &J, const rai::Configuration &K) {
   }
 }
 
-void TM_Time::phi(arr &y, arr &J, const WorldL &Ktuple) {
+void TM_Time::phi(arr &y, arr &J, const ConfigurationL &Ktuple) {
   if(order==0) {
     phi(y, J, *Ktuple(-1));
     if(!!J) expandJacobian(J, Ktuple, -1);

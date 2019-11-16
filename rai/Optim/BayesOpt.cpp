@@ -14,7 +14,7 @@
 BayesOpt::BayesOpt(const ScalarFunction& _f, const arr& bounds_lo, const arr& bounds_hi, double init_lengthScale, double prior_var, OptOptions o)
   : f(_f),
     bounds_lo(bounds_lo), bounds_hi(bounds_hi),
-    f_now(NULL), f_smaller(NULL),
+    f_now(nullptr), f_smaller(nullptr),
     alphaMinima_now(ScalarFunction(), bounds_lo, bounds_hi),
     alphaMinima_smaller(ScalarFunction(), bounds_lo, bounds_hi) {
     

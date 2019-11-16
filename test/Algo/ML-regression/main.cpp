@@ -6,7 +6,7 @@ bool plotDev=true;
 
 //===========================================================================
 
-void testLinReg(const char *datafile=NULL) {
+void testLinReg(const char *datafile=nullptr) {
   if(!datafile){ //store artificial data to a file
     datafile="z.train";
     arr X,y;
@@ -71,7 +71,7 @@ void testLinReg(const char *datafile=NULL) {
 
 //===========================================================================
 
-void testRobustRegression(const char *datafile=NULL) {
+void testRobustRegression(const char *datafile=nullptr) {
   if(!datafile){ //store artificial data to a file
     datafile="z.train";
     arr X,y;
@@ -150,7 +150,7 @@ void testKernelGradients() {
 
 //===========================================================================
 
-void testKernelReg(const char *datafile=NULL) {
+void testKernelReg(const char *datafile=nullptr) {
   if(!datafile){ //store artificial data to a file
     datafile="z.train";
     arr X,y;

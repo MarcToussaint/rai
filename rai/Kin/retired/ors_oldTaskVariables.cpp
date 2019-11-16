@@ -54,8 +54,8 @@ DefaultTaskVariable::DefaultTaskVariable(
   const char *iShapeName,
   const char *jShapeName,
   const arr& _params) {
-  rai::Shape *a = iShapeName ? _ors.getShapeByName(iShapeName):NULL;
-  rai::Shape *b = jShapeName ? _ors.getShapeByName(jShapeName):NULL;
+  rai::Shape *a = iShapeName ? _ors.getShapeByName(iShapeName):nullptr;
+  rai::Shape *b = jShapeName ? _ors.getShapeByName(jShapeName):nullptr;
   set(
     _name, _ors, _type,
     a ? (int)a->body->index : -1,

@@ -145,7 +145,7 @@ baxter_core_msgs::EndEffectorCommand getVacuumGripperMsg(const arr& q_ref, const
 
 SendPositionCommandsToBaxter::SendPositionCommandsToBaxter(const rai::Configuration& kw, const Var<CtrlMsg>& _ctrl_ref)
   : Thread("SendPositionCommandsToBaxter"),
-    ctrl_ref(NULL, true),
+    ctrl_ref(nullptr, true),
     s(0) {
 
   s = new sBaxterInterface(true);
@@ -268,8 +268,8 @@ bool baxter_update_qReal(arr& qReal, const sensor_msgs::JointState& msg, const r
 
 SendPositionCommandsToBaxter::SendPositionCommandsToBaxter(const rai::Configuration& kw, const Var<CtrlMsg>& _ctrl_ref)
   : Thread("SendPositionCommandsToBaxter"),
-    ctrl_ref(NULL, _ctrl_ref, true),
-    s(NULL),
+    ctrl_ref(nullptr, _ctrl_ref, true),
+    s(nullptr),
     baxterModel(kw) {
   NICO;
 }

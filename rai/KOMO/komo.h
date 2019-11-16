@@ -78,7 +78,7 @@ struct SkeletonEntry {
   StringA frames; //strings referring to things
   SkeletonEntry() {}
   SkeletonEntry(double phase0, double phase1, SkeletonSymbol symbol, StringA frames) : phase0(phase0), phase1(phase1), symbol(symbol), frames(frames){}
-  void write(ostream& os) const { os <<symbol <<' '; frames.write(os," ",NULL,"()"); os <<" from " <<phase0 <<" to " <<phase1; }
+  void write(ostream& os) const { os <<symbol <<' '; frames.write(os," ",nullptr,"()"); os <<" from " <<phase0 <<" to " <<phase1; }
 };
 stdOutPipe(SkeletonEntry)
 typedef rai::Array<SkeletonEntry> Skeleton;
@@ -99,9 +99,8 @@ struct KOMO : NonCopyable {
   
   //-- internals
   rai::Configuration world;   ///< original world; which is the blueprint for all time-slice worlds (almost const: only makeConvexHulls modifies it)
-  WorldL configurations;       ///< copies for each time slice; including kinematic switches; only these are optimized
+  ConfigurationL configurations;       ///< copies for each time slice; including kinematic switches; only these are optimized
   bool useSwift;               ///< whether swift (collisions/proxies) is evaluated whenever new configurations are set (needed if tasks read proxy list)
-  bool useSwitches;            ///< if true, switches change kinematic topology; if false, switches only impose relative pose constraints
 
   //-- optimizer
   bool denseOptimization=false;///< calls optimization with a dense (instead of banded) representation
@@ -116,8 +115,6 @@ struct KOMO : NonCopyable {
   arr featureValues;           ///< storage of all features in all time slices
   arrA featureJacobians;           ///< storage of all features in all time slices
   ObjectiveTypeA featureTypes; ///< storage of all feature-types in all time slices
-  bool featureDense;
-//  arr dualSolution;            ///< the dual solution computed during constrained optimization
   ptr<struct OpenGL> gl;              ///< internal only: used in 'displayTrajectory'
   int verbose;                 ///< verbosity level
   int animateOptimization=0;   ///< display the current path for each evaluation during optimization
@@ -126,19 +123,18 @@ struct KOMO : NonCopyable {
   ofstream *logFile=0;
   
   KOMO();
-  KOMO(const rai::Configuration& K, bool _useSwift=true);
+  KOMO(const rai::Configuration& C, bool _useSwift=true);
   ~KOMO();
   
   //-- setup the problem
-  void setModel(const rai::Configuration& K, bool _useSwift=true);
+  void setModel(const rai::Configuration& C, bool _useSwift=true);
   void setTiming(double _phases=1., uint _stepsPerPhase=10, double durationPerPhase=5., uint _k_order=2);
   void setPairedTimes();
   void activateCollisions(const char* s1, const char* s2);
   void deactivateCollisions(const char* s1, const char* s2);
   void setTimeOptimization();
   
-  //-- higher-level setup defaults
-  void setConfigFromFile();
+  //-- higher-level default setups
   void setIKOpt();
   void setDiscreteOpt(uint k);
   void setPoseOpt();
@@ -154,9 +150,10 @@ struct KOMO : NonCopyable {
    * they allow the user to add a cost task, or a kinematic switch in the problem definition
    * Typically, the user does not call them directly, but uses the many methods below
    * Think of all of the below as examples for how to set arbirary tasks/switches yourself */
-  struct Objective* addObjective(double startTime, double endTime, const ptr<Feature>& map, ObjectiveType type=OT_sos, const arr& target=NoArr, double scale=1., int order=-1, int deltaFromStep=0, int deltaToStep=0);
-  struct Objective* addObjective(double startTime, double endTime, Feature* map, ObjectiveType type=OT_sos, const arr& target=NoArr, double scale=1., int order=-1, int deltaFromStep=0, int deltaToStep=0);
-  struct Objective* addObjective(const arr& times, ObjectiveType type, const FeatureSymbol& feat, const StringA& frames={}, const arr& scale=NoArr, const arr& target=NoArr, int order=-1);
+  struct Objective* addObjective(const arr& times, const ptr<Feature>& f,
+                                 ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr, int order=-1, int deltaFromStep=0, int deltaToStep=0);
+  struct Objective* addObjective(const arr& times, const FeatureSymbol& feat, const StringA& frames,
+                                 ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr, int order=-1, int deltaFromStep=0, int deltaToStep=0);
 
   void addSwitch(double time, bool before, rai::KinematicSwitch* sw);
   void addSwitch(double time, bool before, rai::JointType type, rai::SwitchInitializationType init,
@@ -228,27 +225,27 @@ struct KOMO : NonCopyable {
   //macros for pick-and-place in CGO -- should perhaps not be here.. KOMOext?
   void add_StableRelativePose(const std::vector<int>& confs, const char* gripper, const char* object){
     for(uint i=1;i<confs.size();i++)
-      addObjective(ARR(confs[0], confs[i]), OT_eq, FS_poseRel, {gripper, object});
+      addObjective(ARR(confs[0], confs[i]), FS_poseRel, {gripper, object}, OT_eq);
     world.makeObjectsFree({object});
   }
   void add_StablePose(const std::vector<int>& confs, const char* object){
     for(uint i=1;i<confs.size();i++)
-      addObjective(ARR(confs[0], confs[i]), OT_eq, FS_pose, {object});
+      addObjective(ARR(confs[0], confs[i]), FS_pose, {object}, OT_eq);
     world.makeObjectsFree({object});
   }
   void add_grasp(int conf, const char* gripper, const char* object){
-    addObjective(ARR(conf), OT_eq, FS_distance, {gripper, object});
+    addObjective(ARR(conf), FS_distance, {gripper, object}, OT_eq);
   }
   void add_place(int conf, const char* object, const char* table){
-    addObjective(ARR(conf), OT_ineq, FS_aboveBox, {table, object});
-    addObjective(ARR(conf), OT_eq, FS_standingAbove, {table, object});
-    addObjective(ARR(conf), OT_sos, FS_vectorZ, {object}, {}, {0.,0.,1.});
+    addObjective(ARR(conf), FS_aboveBox, {table, object}, OT_ineq);
+    addObjective(ARR(conf), FS_standingAbove, {table, object}, OT_eq);
+    addObjective(ARR(conf), FS_vectorZ, {object}, OT_sos, {}, {0.,0.,1.});
   }
   void add_resting(int conf1, int conf2, const char* object){
-    addObjective(ARR(conf1, conf2), OT_eq, FS_pose, {object});
+    addObjective(ARR(conf1, conf2), FS_pose, {object}, OT_eq);
   }
   void add_restingRelative(int conf1, int conf2, const char* object, const char* tableOrGripper){
-    addObjective(ARR(conf1, conf2), OT_eq, FS_poseRel, {tableOrGripper, object});
+    addObjective(ARR(conf1, conf2), FS_poseRel, {tableOrGripper, object}, OT_eq);
   }
 
 
@@ -295,20 +292,17 @@ struct KOMO : NonCopyable {
 
   void plotTrajectory();
   void plotPhaseTrajectory();
-  bool displayTrajectory(double delay=1., bool watch=true, bool overlayPaths=true, const char* saveVideoPath=NULL, const char* addText=NULL); ///< display the trajectory; use "vid/z." as vid prefix
+  bool displayTrajectory(double delay=1., bool watch=true, bool overlayPaths=true, const char* saveVideoPath=nullptr, const char* addText=nullptr); ///< display the trajectory; use "vid/z." as vid prefix
   bool displayPath(bool watch=true, bool full=true); ///< display the trajectory; use "vid/z." as vid prefix
   rai::Camera& displayCamera();   ///< access to the display camera to change the view
   
   //===========================================================================
   //
-  // internal (kind of private); old interface of 'KOMO'; kept for compatibility
+  // internal (kind of private)
   //
   
-  //-- (not much in use..) specs gives as logic expressions in a Graph (or config file)
   void clearObjectives();
-//  Task* addTask(const char* name, Feature *map, const ObjectiveType& termType); ///< manually add a task
   void setupConfigurations();   ///< this creates the @configurations@, that is, copies the original world T times (after setTiming!) perhaps modified by KINEMATIC SWITCHES and FLAGS
-//  arr getInitialization();      ///< this reads out the initial state trajectory after 'setupConfigurations'
   void set_x(const arr& x, const uintA& selectedConfigurationsOnly=NoUintA);            ///< set the state trajectory of all configurations
   uint dim_x(uint t) { return configurations(t+k_order)->getJointStateDimension(); }
 

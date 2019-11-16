@@ -30,7 +30,7 @@
 //
 
 RWLock::RWLock() {
-  int rc = pthread_rwlock_init(&rwLock, NULL);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  int rc = pthread_rwlock_init(&rwLock, nullptr);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   rwCount=0;
 }
 
@@ -76,7 +76,7 @@ bool RWLock::isWriteLocked() {
 
 Signaler::Signaler(int initialStatus)
   : status(initialStatus) {
-  int rc = pthread_cond_init(&cond, NULL);    if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  int rc = pthread_cond_init(&cond, nullptr);    if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
 }
 
 Signaler::~Signaler() {
@@ -311,7 +311,7 @@ void Metronome::waitForTic() {
     ticTime.tv_nsec -= 1000000000l;
   }
   //wait for target time
-  int rc = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &ticTime, NULL);
+  int rc = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &ticTime, nullptr);
   if(rc && errno) RAI_MSG("clock_nanosleep() failed " <<rc <<" errno=" <<errno <<' ' <<strerror(errno));
   
   tics++;
@@ -378,7 +378,7 @@ rai::String CycleTimer::report() {
 void* MiniThread_staticMain(void *_self) {
   MiniThread *th=(MiniThread*)_self;
   th->pthreadMain();
-  return NULL;
+  return nullptr;
 }
 
 MiniThread::MiniThread(const char* _name) : Signaler(tsIsClosed), name(_name) {
@@ -421,7 +421,7 @@ void MiniThread::threadClose(double timeoutForce) {
 //    }
   }
   int rc;
-  rc = pthread_join(thread, NULL);     if(rc) HALT("pthread_join failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  rc = pthread_join(thread, nullptr);     if(rc) HALT("pthread_join failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   thread=0;
 }
 
@@ -431,7 +431,7 @@ void MiniThread::threadCancel() {
   if(!thread) { setStatus(tsIsClosed); return; }
   int rc;
   rc = pthread_cancel(thread);         if(rc) HALT("pthread_cancel failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-  rc = pthread_join(thread, NULL);     if(rc) HALT("pthread_join failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  rc = pthread_join(thread, nullptr);     if(rc) HALT("pthread_join failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   thread=0;
 }
 
@@ -468,7 +468,7 @@ void MiniThread::pthreadMain() {
 void* Thread_staticMain(void *_self) {
   Thread *th=(Thread*)_self;
   th->main();
-  return NULL;
+  return nullptr;
 }
 
 #ifdef RAI_QThread
@@ -559,12 +559,12 @@ void Thread::threadClose(double timeoutForce) {
   }
 #ifndef RAI_QThread
   int rc;
-  rc = pthread_join(thread, NULL);     if(rc) HALT("pthread_join failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  rc = pthread_join(thread, nullptr);     if(rc) HALT("pthread_join failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   thread=0;
 #else
   thread->close();
   delete thread;
-  thread=NULL;
+  thread=nullptr;
 #endif
 }
 
@@ -575,7 +575,7 @@ void Thread::threadCancel() {
 #ifndef RAI_QThread
   int rc;
   rc = pthread_cancel(thread);         if(rc) HALT("pthread_cancel failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-  rc = pthread_join(thread, NULL);     if(rc) HALT("pthread_join failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  rc = pthread_join(thread, nullptr);     if(rc) HALT("pthread_join failed with err " <<rc <<" '" <<strerror(rc) <<"'");
   thread=0;
 #else
   NIY;

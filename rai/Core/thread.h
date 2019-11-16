@@ -82,9 +82,9 @@ struct Var_base : NonCopyable {
 
   /// @name access control
   /// to be called by a thread before access, returns the revision
-  int readAccess(Thread* th=NULL);  //might set the caller to sleep
-  int writeAccess(Thread* th=NULL); //might set the caller to sleep
-  int deAccess(Thread* th=NULL);
+  int readAccess(Thread* th=nullptr);  //might set the caller to sleep
+  int writeAccess(Thread* th=nullptr); //might set the caller to sleep
+  int deAccess(Thread* th=nullptr);
 
   int getRevision() { rwlock.readLock(); int r=revision; rwlock.unlock(); return r; }
 };
@@ -96,7 +96,7 @@ struct RToken {
   Var_base *var;
   T *data;
   Thread *th;
-  RToken(Var_base& _var, T* _data, Thread* _th=NULL, int* getRevision=NULL, bool isAlreadyLocked=false)
+  RToken(Var_base& _var, T* _data, Thread* _th=nullptr, int* getRevision=nullptr, bool isAlreadyLocked=false)
     : var(&_var), data(_data), th(_th) {
     if(!isAlreadyLocked) var->readAccess(th);
     if(getRevision) *getRevision=var->revision;
@@ -112,12 +112,12 @@ struct WToken {
   Var_base *var;
   T *data;
   Thread *th;
-  WToken(Var_base& _var, T* _data, Thread* _th=NULL, int* getRevision=NULL)
+  WToken(Var_base& _var, T* _data, Thread* _th=nullptr, int* getRevision=nullptr)
     : var(&_var), data(_data), th(_th) {
     var->writeAccess(_th);
     if(getRevision) *getRevision=var->revision+1;
   }
-  WToken(const double& dataTime, Var_base& _var, T* _data, Thread* _th=NULL, int* getRevision=NULL)
+  WToken(const double& dataTime, Var_base& _var, T* _data, Thread* _th=nullptr, int* getRevision=nullptr)
     : var(&_var), data(_data), th(_th) {
     var->writeAccess(th);
     var->data_time=dataTime;
@@ -163,7 +163,7 @@ struct Var {
 
   Var();
 
-  Var(const Var<T>& v) : Var(NULL, v, false) {}
+  Var(const Var<T>& v) : Var(nullptr, v, false) {}
 
   /// searches for globally registrated variable 'name', checks type equivalence, and becomes an access for '_thread'
   Var(Thread* _thread, bool threadListens=false);
@@ -230,9 +230,9 @@ struct Signaler {
   Signaler(int initialStatus=0);
   virtual ~Signaler(); //virtual, to enforce polymorphism
   
-  void setStatus(int i, Signaler* messenger=NULL); ///< sets status and broadcasts
-  int  incrementStatus(Signaler* messenger=NULL);  ///< increase status by 1
-  void broadcast(Signaler* messenger=NULL);        ///< wake up waitForSignal callers
+  void setStatus(int i, Signaler* messenger=nullptr); ///< sets status and broadcasts
+  int  incrementStatus(Signaler* messenger=nullptr);  ///< increase status by 1
+  void broadcast(Signaler* messenger=nullptr);        ///< wake up waitForSignal callers
   
   void statusLock();   //the user can manually lock/unlock, if he needs locked state access for longer -> use userHasLocked=true below!
   void statusUnlock();
@@ -304,7 +304,7 @@ struct CycleTimer {
   double cyclDt, cyclDtMean, cyclDtMax;  ///< internal variables to measure step time
   timespec now, lastTime;
   const char* name;                      ///< name
-  CycleTimer(const char *_name=NULL);
+  CycleTimer(const char *_name=nullptr);
   ~CycleTimer();
   void reset();
   void cycleStart();
@@ -318,7 +318,7 @@ struct CycleTimer {
  */
 struct MiniThread : Signaler {
   rai::String name;
-  pthread_t thread = 0;             ///< the underlying pthread; NULL iff not opened
+  pthread_t thread = 0;             ///< the underlying pthread; nullptr iff not opened
   pid_t tid = 0;                    ///< system thread id
 
   /// @name c'tor/d'tor
@@ -347,7 +347,7 @@ struct MiniThread : Signaler {
 struct Thread {
   Event event;
   rai::String name;
-  pthread_t thread;             ///< the underlying pthread; NULL iff not opened
+  pthread_t thread;             ///< the underlying pthread; nullptr iff not opened
   pid_t tid;                    ///< system thread id
   Mutex stepMutex;              ///< This is set whenever the 'main' is in step (or open, or close) --- use this in all service methods callable from outside!!
   uint step_count;              ///< how often the step was called

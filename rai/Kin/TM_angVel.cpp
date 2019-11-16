@@ -39,7 +39,7 @@ void angVel_base(const rai::Configuration& K0, rai::Configuration& K1, uint i, a
 
 //===========================================================================
 
-void TM_LinVel::phi(arr& y, arr& J, const WorldL& Ktuple){
+void TM_LinVel::phi(arr& y, arr& J, const ConfigurationL& Ktuple){
   if(order==1){
     rai::Frame *f0 = Ktuple(-2)->frames(i);
     rai::Frame *f1 = Ktuple(-1)->frames(i);
@@ -92,7 +92,7 @@ void TM_LinVel::phi(arr& y, arr& J, const WorldL& Ktuple){
 
 //===========================================================================
 
-void TM_AngVel::phi(arr& y, arr& J, const WorldL& Ktuple) {
+void TM_AngVel::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   if(order==1){
     arr J_tmp;
     angVel_base(*Ktuple(-2), *Ktuple(-1), i, y, J_tmp);
@@ -142,7 +142,7 @@ uint TM_AngVel::dim_phi(const rai::Configuration &G){ return 3; }
 
 //===========================================================================
 
-void TM_LinAngVel::phi(arr& y, arr& J, const WorldL& Ktuple){
+void TM_LinAngVel::phi(arr& y, arr& J, const ConfigurationL& Ktuple){
   y.resize(6);
   if(!!J) J.resize(6, getKtupleDim(Ktuple).last()).setZero();
 
@@ -169,7 +169,7 @@ uint TM_LinAngVel::dim_phi(const rai::Configuration& G){ return 6; }
 
 //===========================================================================
 
-void TM_NoJumpFromParent::phi(arr& y, arr& J, const WorldL& Ktuple){
+void TM_NoJumpFromParent::phi(arr& y, arr& J, const ConfigurationL& Ktuple){
   rai::Frame *obj = Ktuple.elem(-2)->frames(i);
   rai::Frame *link = obj->getUpwardLink();
   rai::Frame *parent = link->parent;

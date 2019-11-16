@@ -58,4 +58,4 @@ namespace rai{
 }
 struct Feature;
 
-ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA &symbols, const rai::Configuration& world, const arr& scale=NoArr, const arr& target=NoArr, int order=-1);
+ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA &frames, const rai::Configuration& world, const arr& scale=NoArr, const arr& target=NoArr, int order=-1);

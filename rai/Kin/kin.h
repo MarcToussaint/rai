@@ -47,7 +47,7 @@ typedef rai::Array<rai::Proxy*> ProxyL;
 typedef rai::Array<rai::Proxy> ProxyA;
 typedef rai::Array<rai::Contact*> ContactL;
 typedef rai::Array<rai::KinematicSwitch*> KinematicSwitchL;
-typedef rai::Array<rai::Configuration*> WorldL;
+typedef rai::Array<rai::Configuration*> ConfigurationL;
 
 //===========================================================================
 
@@ -96,7 +96,7 @@ struct Configuration : GLDrawer {
   Frame* addFile(const char* filename);
   Frame* addFile(const char* filename, const char* parentOfRoot, const rai::Transformation& relOfRoot);
   void addAssimp(const char* filename);
-  Frame* addFrame(const char* name, const char* parent=NULL, const char* args=NULL);
+  Frame* addFrame(const char* name, const char* parent=nullptr, const char* args=nullptr);
   Frame* addObject(const char* name, const char* parent, rai::ShapeType shape, const arr& size={}, const arr& col={}, const arr& pos={}, const arr& rot={}, bool isSubFrame=false);
   void addFramesCopy(const FrameL& F);
 
@@ -212,14 +212,14 @@ struct Configuration : GLDrawer {
   arr getHmetric() const;
   
   /// @name extensions on demand
-  OpenGL& gl(const char* window_title=NULL, bool offscreen=false);
+  OpenGL& gl(const char* window_title=nullptr, bool offscreen=false);
   SwiftInterface& swift();
   FclInterface& fcl();
   void swiftDelete();
   PhysXInterface& physx();
   OdeInterface& ode();
   FeatherstoneInterface& fs();
-  int watch(bool pause=false, const char* txt=NULL);
+  int watch(bool pause=false, const char* txt=nullptr);
   void saveVideoPic(uint& t, const char* pathPrefix="vid/");
   void glAdd(void (*call)(void*, OpenGL&), void* classP);
   int glAnimate();
@@ -343,9 +343,9 @@ inline void displayTrajectory(const arr& x, int steps, rai::Configuration& G, co
   displayTrajectory(x, steps, G, {}, tag, delay, dim_z, copyG);
 }
 void editConfiguration(const char* orsfile, rai::Configuration& G);
-int animateConfiguration(rai::Configuration& G, struct Inotify *ino=NULL);
+int animateConfiguration(rai::Configuration& G, struct Inotify *ino=nullptr);
 
-void kinVelocity(arr& y, arr& J, uint frameId, const WorldL& Ktuple, double tau);
-void kinAngVelocity(arr& y, arr& J, uint frameId, const WorldL& Ktuple, double tau);
+void kinVelocity(arr& y, arr& J, uint frameId, const ConfigurationL& Ktuple, double tau);
+void kinAngVelocity(arr& y, arr& J, uint frameId, const ConfigurationL& Ktuple, double tau);
 
 #endif //RAI_ors_h

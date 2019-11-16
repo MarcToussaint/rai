@@ -22,7 +22,7 @@ struct PlanSkeletonEntry{
   double timeTo=-1.;
   PlanSkeletonEntry(){}
   PlanSkeletonEntry(StringA symbols,double _timeFrom,double _timeTo):symbols(symbols), timeStart(_timeFrom), timeTo(_timeTo){}
-  void write(ostream& os) const{ symbols.write(os," ",NULL,"()"); os <<" from " <<timeStart <<" to " <<timeTo; }
+  void write(ostream& os) const{ symbols.write(os," ",nullptr,"()"); os <<" from " <<timeStart <<" to " <<timeTo; }
 };
 stdOutPipe(PlanSkeletonEntry)
 

@@ -46,7 +46,7 @@ inline const char* getObjectString(uint ID) {
 arr q0,W;
 
 void drawEnv(void*,OpenGL&) {
-  glStandardLight(NULL);
+  glStandardLight(nullptr);
   glDrawFloor(4.,1,1,1);
 }
 

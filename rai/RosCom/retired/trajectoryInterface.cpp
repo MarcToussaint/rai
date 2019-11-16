@@ -29,9 +29,9 @@ struct sTrajectoryInterface {
   RosCom_Spinner spinner;
   
   sTrajectoryInterface():
-    ctrl_ref(NULL, "ctrl_ref"),
-    ctrl_obs(NULL, "ctrl_obs"),
-    ar_pose_markers(NULL, "ar_pose_markers"),
+    ctrl_ref(nullptr, "ctrl_ref"),
+    ctrl_obs(nullptr, "ctrl_obs"),
+    ar_pose_markers(nullptr, "ar_pose_markers"),
     pub("/marc_rt_controller/jointReference", ctrl_ref),
     sub("/marc_rt_controller/jointState", ctrl_obs),
     markerSub("/ar_pose_marker", (Var<ar::AlvarMarkers>&)ar_pose_markers) {
@@ -39,7 +39,7 @@ struct sTrajectoryInterface {
 };
 
 TrajectoryInterface::TrajectoryInterface(rai::Configuration &world_plan_,rai::Configuration &world_robot_)
-  : S(NULL) {
+  : S(nullptr) {
   rosCheckInit("trajectoryInterface");
   
   S = new sTrajectoryInterface();

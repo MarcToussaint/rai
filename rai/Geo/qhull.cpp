@@ -99,7 +99,7 @@ double distanceToConvexHull(const arr &X, const arr &y, arr& distances, arr &pro
   int exitcode;
   //static const char* cmd = "qhull Tv i p";
   static char* cmd = (char*) "qhull ";
-  exitcode = qh_new_qhull(X.d1, X.d0, X.p, false, cmd, NULL, stderr);
+  exitcode = qh_new_qhull(X.d1, X.d0, X.p, false, cmd, nullptr, stderr);
   if(exitcode) HALT("qh_new_qhull error - exitcode " <<exitcode);
   
   facetT *bestfacet;
@@ -309,7 +309,7 @@ double forceClosure(const arr& C, const arr& Cn, const rai::Vector& center,
   origin.setZero();
   if(!dFdC) {
     //note: distance to hull is negative if inside the hull
-    d = -distanceToConvexHull(X, origin, NoArr, NoArr, NULL, true);
+    d = -distanceToConvexHull(X, origin, NoArr, NoArr, nullptr, true);
   } else {
     arr dFdX;
     d = -distanceToConvexHullGradient(dFdX, X, origin, true);
@@ -330,7 +330,7 @@ arr getHull(const arr& V, uintA& T) {
   int exitcode;
   uint dim=V.d1;
   static char* cmd = (char*) "qhull Qt ";
-  exitcode = qh_new_qhull(V.d1, V.d0, V.p, false, cmd, NULL, stderr);
+  exitcode = qh_new_qhull(V.d1, V.d0, V.p, false, cmd, nullptr, stderr);
   if(exitcode) HALT("qh_new_qhull error - exitcode " <<exitcode);
   
   qh_triangulate();
@@ -381,7 +381,7 @@ void getDelaunayEdges(uintA& E, const arr& V) {
   if(V.d0<3) { E.clear(); return; }
   int exitcode;
   static char* cmd = (char*) "qhull d Qbb Qt ";
-  exitcode = qh_new_qhull(V.d1, V.d0, V.p, false, cmd, NULL, stderr);
+  exitcode = qh_new_qhull(V.d1, V.d0, V.p, false, cmd, nullptr, stderr);
   if(exitcode) HALT("qh_new_qhull error - exitcode " <<exitcode);
   
   facetT *facet;
@@ -439,7 +439,7 @@ void delaunay(Graph<N, E>& g, uint dim=2) {
     //P(i, 2)=g.nodes(i)->feat.z;
   }
   
-  if(!qh_new_qhull(dim, g.N, P.p, false, "qhull d Qbb T0", NULL, stderr)) {
+  if(!qh_new_qhull(dim, g.N, P.p, false, "qhull d Qbb T0", nullptr, stderr)) {
     facetT *facet;
     vertexT *vertex, **vertexp;
     uint *face, k, l;

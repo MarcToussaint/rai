@@ -93,8 +93,8 @@ rai::Configuration* rai::Configuration::newClone() const {
 //  Body *a, *b;//, c;
 //  bool ag, bg;
 //  for(i=0; i<proxies.N; i++) {
-//    A=proxies(i)->a; a=(A==(uint)-1?NULL:bodies(A));
-//    B=proxies(i)->b; b=(B==(uint)-1?NULL:bodies(B));
+//    A=proxies(i)->a; a=(A==(uint)-1?nullptr:bodies(A));
+//    B=proxies(i)->b; b=(B==(uint)-1?nullptr:bodies(B));
 //    if(!a || !b) continue;
 //    ag=a->ats.find<bool>("glue");
 //    bg=b->ats.find<bool>("glue");
@@ -370,8 +370,8 @@ void rai::Configuration::reportGlue(std::ostream *os) {
   bool ag, bg;
   (*os) <<"Glue report: " <<endl;
   for(i=0; i<proxies.N; i++) {
-    A=proxies(i)->a; a=(A==(uint)-1?NULL:bodies(A));
-    B=proxies(i)->b; b=(B==(uint)-1?NULL:bodies(B));
+    A=proxies(i)->a; a=(A==(uint)-1?nullptr:bodies(A));
+    B=proxies(i)->b; b=(B==(uint)-1?nullptr:bodies(B));
     if(!a || !b) continue;
     ag=a->ats.find<bool>("glue");
     bg=b->ats.find<bool>("glue");

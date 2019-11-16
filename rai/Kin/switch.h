@@ -51,7 +51,7 @@ struct KinematicSwitch {
   void setTimeOfApplication(double time, bool before, int stepsPerPhase, uint T);
   void apply(Configuration& K);
   rai::String shortTag(const Configuration* G) const;
-  void write(std::ostream& os, rai::Configuration *K=NULL) const;
+  void write(std::ostream& os, rai::Configuration *K=nullptr) const;
 };
 
 } // namespace rai

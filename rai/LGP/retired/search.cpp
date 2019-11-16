@@ -62,7 +62,7 @@ void runMonteCarlo(Graph& G) {
         applyEffectLiterals(state, effect->graph(), d.second, &d.first->graph());
         
         //hack: apply depth effect:
-        Node *depth0=NULL, *depth1=NULL;
+        Node *depth0=nullptr, *depth1=nullptr;
         for(Node *fact:d.second(0)->parentOf) if(&fact->container==&state && fact->parents(0)==depthSymbol) {
             depth0=fact; break;
           }

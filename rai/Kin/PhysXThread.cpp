@@ -18,7 +18,7 @@ struct PhysXThread : Thread {
   KinViewer *view;
   OpenGL *gl;
   
-  PhysXThread() : Thread("PhysX", .03), px(NULL), view(NULL), gl(NULL) {
+  PhysXThread() : Thread("PhysX", .03), px(nullptr), view(nullptr), gl(nullptr) {
     threadLoop(true);
   }
   
@@ -50,7 +50,7 @@ struct PhysXThread : Thread {
     physxWorld().setJointState(ctrl_q_ref.get());
     px->step();
     physxWorld.deAccess();
-    if(gl) if(!(step_count%10)) gl->update(NULL, true);
+    if(gl) if(!(step_count%10)) gl->update(nullptr, true);
   }
   
   void close() {

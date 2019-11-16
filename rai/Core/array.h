@@ -22,8 +22,8 @@
 #include <vector>
 
 //-- don't require previously defined iterators
-#define for_list(Type, it, X)     Type *it=NULL; for(uint it##_COUNT=0;   it##_COUNT<X.N && ((it=X(it##_COUNT)) || true); it##_COUNT++)
-#define for_list_rev(Type, it, X) Type *it=NULL; for(uint it##_COUNT=X.N; it##_COUNT--   && ((it=X(it##_COUNT)) || true); )
+#define for_list(Type, it, X)     Type *it=nullptr; for(uint it##_COUNT=0;   it##_COUNT<X.N && ((it=X(it##_COUNT)) || true); it##_COUNT++)
+#define for_list_rev(Type, it, X) Type *it=nullptr; for(uint it##_COUNT=X.N; it##_COUNT--   && ((it=X(it##_COUNT)) || true); )
 
 #define ARR ARRAY<double> ///< write ARR(1., 4., 5., 7.) to generate a double-Array
 #define TUP ARRAY<uint> ///< write TUP(1, 2, 3) to generate a uint-Array
@@ -294,7 +294,7 @@ template<class T> struct Array : std::vector<T>, Serializable {
   const SparseVector& sparseVec() const;
 
   /// @name I/O
-  void write(std::ostream& os=std::cout, const char *ELEMSEP=NULL, const char *LINESEP=NULL, const char *BRACKETS=NULL, bool dimTag=false, bool binary=false) const;
+  void write(std::ostream& os=std::cout, const char *ELEMSEP=nullptr, const char *LINESEP=nullptr, const char *BRACKETS=nullptr, bool dimTag=false, bool binary=false) const;
   void read(std::istream& is);
   void writeTagged(std::ostream& os, const char* tag, bool binary=false) const;
   bool readTagged(std::istream& is, const char *tag);
@@ -454,7 +454,6 @@ BinaryFunction(fmod);
 /// @{
 
 typedef rai::Array<double> arr;
-typedef rai::Array<float>  arrf;
 typedef rai::Array<double> doubleA;
 typedef rai::Array<float>  floatA;
 typedef rai::Array<uint>   uintA;
@@ -480,13 +479,13 @@ typedef rai::Array<rai::String*> StringL;
 /// @name constant non-arrays
 /// @{
 
-extern arr& NoArr; //this is a pointer to NULL!!!! I use it for optional arguments
-extern arrA& NoArrA; //this is a pointer to NULL!!!! I use it for optional arguments
-extern uintA& NoUintA; //this is a pointer to NULL!!!! I use it for optional arguments
-extern byteA& NoByteA; //this is a pointer to NULL!!!! I use it for optional arguments
-extern intAA& NoIntAA; //this is a pointer to NULL!!!! I use it for optional arguments
-extern uintAA& NoUintAA; //this is a pointer to NULL!!!! I use it for optional arguments
-extern uint16A& NoUint16A; //this is a pointer to NULL!!!! I use it for optional arguments
+extern arr& NoArr; //this is a pointer to nullptr!!!! I use it for optional arguments
+extern arrA& NoArrA; //this is a pointer to nullptr!!!! I use it for optional arguments
+extern uintA& NoUintA; //this is a pointer to nullptr!!!! I use it for optional arguments
+extern byteA& NoByteA; //this is a pointer to nullptr!!!! I use it for optional arguments
+extern intAA& NoIntAA; //this is a pointer to nullptr!!!! I use it for optional arguments
+extern uintAA& NoUintAA; //this is a pointer to nullptr!!!! I use it for optional arguments
+extern uint16A& NoUint16A; //this is a pointer to nullptr!!!! I use it for optional arguments
 
 //===========================================================================
 /// @}
@@ -648,7 +647,7 @@ double cofactor(const arr& A, uint i, uint j);
 uintA getIndexTuple(uint i, const uintA &d);  //? that also exists inside of array!
 void lognormScale(arr& P, double& logP, bool force=true);
 
-void gnuplot(const arr& X, bool pauseMouse=false, bool persist=false, const char* PDFfile=NULL);
+void gnuplot(const arr& X, bool pauseMouse=false, bool persist=false, const char* PDFfile=nullptr);
 //these are obsolete, use catCol instead
 void write(const arrL& X, const char *filename, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
 
@@ -1021,11 +1020,11 @@ arr makeRowSparse(const arr& X);
 /*  TODO: realize list simpler: let the Array class have a 'listMode' flag. When this flag is true, the read, write, resize, find etc routines
 will simply be behave differently */
 
-template<class T> char listWrite(const rai::Array<std::shared_ptr<T> >& L, std::ostream& os=std::cout, const char *ELEMSEP=" ", const char *delim=NULL);
-template<class T> char listWrite(const rai::Array<T*>& L, std::ostream& os=std::cout, const char *ELEMSEP=" ", const char *delim=NULL);
+template<class T> char listWrite(const rai::Array<std::shared_ptr<T> >& L, std::ostream& os=std::cout, const char *ELEMSEP=" ", const char *delim=nullptr);
+template<class T> char listWrite(const rai::Array<T*>& L, std::ostream& os=std::cout, const char *ELEMSEP=" ", const char *delim=nullptr);
 template<class T> void listWriteNames(const rai::Array<T*>& L, std::ostream& os);
 template<class T> rai::String listString(const rai::Array<T*>& L);
-template<class T> void listRead(rai::Array<T*>& L, std::istream& is, const char *delim=NULL);
+template<class T> void listRead(rai::Array<T*>& L, std::istream& is, const char *delim=nullptr);
 template<class T> void listCopy(rai::Array<T*>& L, const rai::Array<T*>& M);  //copy a list by calling the copy constructor for each element
 template<class T> void listClone(rai::Array<T*>& L, const rai::Array<T*>& M); //copy a list by calling the 'newClone' method of each element (works for virtual types)
 template<class T> void listDelete(rai::Array<T*>& L);

@@ -52,7 +52,7 @@ struct LinTaskSpaceAccLaw {
   void setC(arr C);
   
   void setTrajectory(uint trajLength, const arr& traj = NoArr, const arr& trajDot = NoArr, const arr& trajDDot = NoArr);
-  void setSpline(rai::Spline* yS = NULL, rai::Spline* yDotS = NULL, rai::Spline* yDDotS = NULL);
+  void setSpline(rai::Spline* yS = nullptr, rai::Spline* yDotS = nullptr, rai::Spline* yDDotS = nullptr);
   
   void setTargetEvalSpline(double s);
   

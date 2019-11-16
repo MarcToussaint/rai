@@ -64,9 +64,9 @@ uint get_single_color_segmentation(uintA& segmentation,  // segmented image
   CHECK_EQ(seg_counter, num_segments, "LUT assignment: seg_counter != (num_segments+1)");
   
   // unwrap data and clean up
-  image_pff->data = NULL;
+  image_pff->data = nullptr;
   delete image_pff->access;
-  image_pff->access = NULL;
+  image_pff->access = nullptr;
   delete image_pff;
   delete seg_pff;
   

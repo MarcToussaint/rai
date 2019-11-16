@@ -32,7 +32,7 @@ TaskControlThread::TaskControlThread(const Var<rai::Configuration>& _ctrl_config
   double hyper = rai::getParameter<double>("hyperSpeed", -1.);
   if(hyper>0.) this->metronome.reset(.01/hyper);
 
-  //memorize the "NULL position", which is the initial model position
+  //memorize the "nullptr position", which is the initial model position
   q0 = ctrl_config.get()->getJointState();
   q_real = q_model = q0;
   qdot_real = qdot_model = zeros(q0.N);
@@ -66,7 +66,7 @@ arr TaskControlThread::whatsTheForce(const ptr<CtrlTask>& t){
 
 void TaskControlThread::step() {
 //  rai::Frame *transF = model_real.getFrameByName("worldTranslationRotation", false);
-//  rai::Joint *trans = (transF?transF->joint:NULL);
+//  rai::Joint *trans = (transF?transF->joint:nullptr);
   
   if(requiresInitialSync){
     if(ctrl_state.getRevision()>1){

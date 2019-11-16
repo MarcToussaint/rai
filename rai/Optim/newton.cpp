@@ -25,7 +25,7 @@ OptNewton::OptNewton(arr& _x, const ScalarFunction& _f,  OptOptions _o, ostream*
   x(_x), f(_f), o(_o), logFile(_logFile) {
   alpha = o.initStep;
   beta = o.damping;
-  additionalRegularizer=NULL;
+  additionalRegularizer=nullptr;
   if(f) reinit(_x);
 }
 
@@ -237,7 +237,7 @@ OptNewton::StopCriterion OptNewton::step() {
 OptNewton::~OptNewton() {
   if(o.fmin_return) *o.fmin_return=fx;
 #ifndef RAI_MSVC
-//  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", NULL, true);
+//  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", nullptr, true);
 #endif
   if(o.verbose>1) cout <<"--- optNewtonStop: f(x)=" <<fx <<endl;
 }

@@ -13,7 +13,7 @@
 double alpha = .2;
 
 template<> const char* rai::Enum<Percept::Type>::names []=
-{ "PT_cluster", "PT_plane", "PT_box", "PT_mesh", "PT_alvar", "PT_optitrackmarker", "PT_optitrackbody", NULL };
+{ "PT_cluster", "PT_plane", "PT_box", "PT_mesh", "PT_alvar", "PT_optitrackmarker", "PT_optitrackbody", nullptr };
 
 Percept::Percept(Type type)
   : type(type), pose(0) {

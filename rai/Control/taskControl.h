@@ -155,7 +155,7 @@ struct CtrlTask {
   arr y, v, J_y;           ///< update() will evaluate these for a given kinematic configuration
 
   //-- if motion task: defines the reference in task space
-  ptr<MotionProfile> ref;  ///< non-NULL iff this is a pos/vel task
+  ptr<MotionProfile> ref;  ///< non-nullptr iff this is a pos/vel task
   arr y_ref, v_ref;        ///< update() will define compute these references (reference=NOW, target=FUTURE)
   double scale;            ///< additional scaling (precision) for each task (redundant with map->scale! use latter for non-isotropic!)
   uint hierarchy;          ///< hierarchy level in hiearchycal inverse kinematics: higher = higher priority
@@ -210,7 +210,7 @@ struct TaskControlMethods {
   void lockJointGroup(const char *groupname, rai::Configuration& world, bool lockThem=true);
   
   double getIKCosts(CtrlTaskL& tasks, const arr& q=NoArr, const arr& q0=NoArr, arr& g=NoArr, arr& H=NoArr);
-  arr inverseKinematics(CtrlTaskL& tasks, arr& qdot, const arr& P_compliance, const arr& nullRef=NoArr, double* cost=NULL);
+  arr inverseKinematics(CtrlTaskL& tasks, arr& qdot, const arr& P_compliance, const arr& nullRef=NoArr, double* cost=nullptr);
   arr inverseKinematics_hierarchical(CtrlTaskL& tasks);
   arr getComplianceProjection(CtrlTaskL& tasks);
   arr operationalSpaceControl(CtrlTaskL& tasks);

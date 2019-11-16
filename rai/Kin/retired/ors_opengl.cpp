@@ -479,7 +479,7 @@ void animateConfiguration(rai::Configuration& C, Inotify *ino) {
   C.gl().update("", false, false, true);
 }
 
-rai::Body *movingBody=NULL;
+rai::Body *movingBody=nullptr;
 rai::Vector selpos;
 double seld, selx, sely, selz;
 
@@ -517,8 +517,8 @@ struct EditConfigurationHoverCall:OpenGL::GLHoverCall {
   bool hoverCallback(OpenGL& gl) {
 //    if(!movingBody) return false;
     if(!movingBody) {
-      rai::Joint *j=NULL;
-      rai::Shape *s=NULL;
+      rai::Joint *j=nullptr;
+      rai::Shape *s=nullptr;
       rai::timerStart(true);
       gl.Select(true);
       OpenGL::GLSelect *top=gl.topSelection;
@@ -561,9 +561,9 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
   EditConfigurationKeyCall(rai::Configuration& _ors, bool& _exit): ors(_ors), exit(_exit) {}
   bool keyCallback(OpenGL& gl) {
     if(gl.pressedkey==' ') { //grab a body
-      if(movingBody) { movingBody=NULL; return true; }
-      rai::Joint *j=NULL;
-      rai::Shape *s=NULL;
+      if(movingBody) { movingBody=nullptr; return true; }
+      rai::Joint *j=nullptr;
+      rai::Shape *s=nullptr;
       gl.Select();
       OpenGL::GLSelect *top=gl.topSelection;
       if(!top) { cout <<"No object below mouse!" <<endl;  return false; }

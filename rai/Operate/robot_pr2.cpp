@@ -79,7 +79,7 @@ void Robot_PR2_PathThread::step()
     auto lock = threadLock(RAI_HERE);
 
     rai::Frame *transF = K.getFrameByName("worldTranslationRotation", false);
-    rai::Joint *trans = (transF?transF->joint:NULL);
+    rai::Joint *trans = (transF?transF->joint:nullptr);
 
     //-- read real state
     if(ctrl_obs.last_read_revision<10){

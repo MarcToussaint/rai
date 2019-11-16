@@ -21,10 +21,10 @@ struct TM_Transition:Feature {
   
   TM_Transition(const rai::Configuration& G, bool effectiveJointsOnly=false);
   
-  virtual void phi(arr& y, arr& J, const WorldL& Ktuple);
+  virtual void phi(arr& y, arr& J, const ConfigurationL& Ktuple);
   virtual void phi(arr& y, arr& J, const rai::Configuration& G) { HALT("can only be of higher order"); }
   virtual uint dim_phi(const rai::Configuration& G) { return G.getJointStateDimension(); }
-  virtual uint dim_phi(const WorldL& G);
+  virtual uint dim_phi(const ConfigurationL& G);
   virtual rai::String shortTag(const rai::Configuration& G) { return STRING("Transition:"<<(effectiveJointsOnly?"eDOF":"") <<":pos" <<posCoeff <<":vel" <<velCoeff<<":acc"<<accCoeff); }
   virtual Graph getSpec(const rai::Configuration& K){ return Graph({{"feature", "Transition"}}); }
 };

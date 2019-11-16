@@ -95,7 +95,7 @@ OptGrad::~OptGrad() {
   if(o.fmin_return) *o.fmin_return=fx;
   if(o.verbose>0) fil.close();
 #ifndef RAI_MSVC
-//  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", NULL, true);
+//  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", nullptr, true);
 #endif
   if(o.verbose>1) cout <<"--- OptGradStop: f(x)=" <<fx <<endl;
 }
@@ -108,7 +108,7 @@ OptGrad::StopCriterion OptGrad::run(uint maxIt) {
     if(stopCriterion==stopCritLineSteps) { reinit();   continue; }
     if(stopCriterion>=stopCrit1) break;
   }
-//  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", NULL, false);
+//  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", nullptr, false);
   if(o.fmin_return) *o.fmin_return= fx;
   return stopCriterion;
 }
@@ -190,7 +190,7 @@ bool sRprop::step(arr& w, const arr& grad, uint *singleI) {
 bool Rprop::step(arr& x, const ScalarFunction& f) {
   arr grad;
   f(grad, NoArr, x);
-  return s->step(x, grad, NULL);
+  return s->step(x, grad, nullptr);
 }
 
 //----- the rprop wrapped with stopping criteria
@@ -253,7 +253,7 @@ uint Rprop::loop(arr& _x,
     }
     
     //update x
-    s->step(x, J, NULL);
+    s->step(x, J, nullptr);
     
     //check stopping criterion based on step-length in x
     diff=maxDiff(x, x_min);
@@ -263,7 +263,7 @@ uint Rprop::loop(arr& _x,
     if(evals>maxEvals) break;
   }
   if(verbose>0) fil.close();
-//  if(verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", NULL, true);
+//  if(verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", nullptr, true);
   if(fmin_return) *fmin_return= fx_min;
   _x=x_min;
   return evals;

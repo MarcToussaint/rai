@@ -14,7 +14,7 @@
 #include <Plot/plot.h>
 #include <Algo/algos.h>
 
-void drawEnv(void*, OpenGL& gl) { glStandardLight(NULL, gl); glDrawFloor(10., .9, .9, .9); }
+void drawEnv(void*, OpenGL& gl) { glStandardLight(nullptr, gl); glDrawFloor(10., .9, .9, .9); }
 void drawBase(void*, OpenGL& gl) { glDrawAxes(1.); }
 
 struct sSimulator {

@@ -21,7 +21,7 @@
 #  include <png.h>
 #endif
 
-OpenGL& NoOpenGL = *((OpenGL*)(NULL));
+OpenGL& NoOpenGL = *((OpenGL*)(nullptr));
 
 //===========================================================================
 
@@ -68,7 +68,7 @@ public:
 
   void delGL(uint i, OpenGL* gl) {
     CHECK_EQ(glwins(i), gl, "");
-    glwins(i)=NULL;
+    glwins(i)=nullptr;
     numWins--;
     if(!numWins){ //stop looping
       OpenGLMutex().unlock();
@@ -161,7 +161,7 @@ void OpenGL::postRedrawEvent(bool fromWithinCallback) {
   openWindow();
   glutSetWindow(s->windowID);
   glutPostRedisplay();
-//  glXMakeCurrent(fgDisplay.Display, None, NULL);
+//  glXMakeCurrent(fgDisplay.Display, None, nullptr);
 }
 
 void OpenGL::resize(int w,int h) {
@@ -171,7 +171,7 @@ void OpenGL::resize(int w,int h) {
     auto fg=singletonGlSpinner();
     glutSetWindow(s->windowID);
     glutReshapeWindow(w,h);
-//    glXMakeCurrent(fgDisplay.Display, None, NULL);
+//    glXMakeCurrent(fgDisplay.Display, None, nullptr);
   }
 }
 
@@ -283,7 +283,7 @@ struct GlfwSpinner : Thread {
       glfwMakeContextCurrent(gl->s->window);
       gl->Draw(gl->width,gl->height);
       glfwSwapBuffers(gl->s->window);
-      glfwMakeContextCurrent(NULL);
+      glfwMakeContextCurrent(nullptr);
 
       gl->s->needsRedraw--;
       gl->isUpdating.setStatus(0);
@@ -303,7 +303,7 @@ struct GlfwSpinner : Thread {
     glfwMakeContextCurrent(gl->s->window);
     gl->Draw(gl->width,gl->height);
     glfwSwapBuffers(gl->s->window);
-    glfwMakeContextCurrent(NULL);
+    glfwMakeContextCurrent(nullptr);
 #endif
     if(glwins.N==1) start=true; //start looping
     mutex.unlock();
@@ -384,7 +384,7 @@ void OpenGL::openWindow() {
       glfwWindowHint(GLFW_VISIBLE, GL_TRUE);
     }
     if(!title.N) title="GLFW window";
-    s->window = glfwCreateWindow(width, height, title.p, NULL, NULL);
+    s->window = glfwCreateWindow(width, height, title.p, nullptr, nullptr);
     glfwMakeContextCurrent(s->window);
     glfwSetWindowUserPointer(s->window, this);
     glfwSetMouseButtonCallback(s->window, GlfwSpinner::_MouseButton);
@@ -395,7 +395,7 @@ void OpenGL::openWindow() {
     glfwSetWindowCloseCallback(s->window, GlfwSpinner::_Close);
 
     glfwSwapInterval(1);
-    glfwMakeContextCurrent(NULL);
+    glfwMakeContextCurrent(nullptr);
     fg->mutex.unlock();
 
     fg->addGL(this);
@@ -434,7 +434,7 @@ void OpenGL::beginNonThreadedDraw(){
 void OpenGL::endNonThreadedDraw(){
   auto fg = singletonGlSpinner();
   glfwSwapBuffers(s->window);
-  glfwMakeContextCurrent(NULL);
+  glfwMakeContextCurrent(nullptr);
   fg->mutex.unlock();
 }
 
@@ -529,7 +529,7 @@ void glStandardLight(void*, OpenGL&) {
 
 void glStandardScene(void*, OpenGL& gl) {
   glPushAttrib(GL_CURRENT_BIT);
-  glStandardLight(NULL, gl);
+  glStandardLight(nullptr, gl);
   //  glDrawFloor(10, .8, .8, .8);
   //  glDrawFloor(10, 1.5, 0.83, .0);
   glDrawFloor(10., 108./255., 123./255., 139./255.);
@@ -1500,14 +1500,14 @@ bool glUI::clickCallback(OpenGL& gl) { NICO }
 //
 
 OpenGL::OpenGL(const char* _title, int w, int h, bool _offscreen)
-  : s(NULL), title(_title), width(w), height(h), offscreen(_offscreen), reportEvents(false), topSelection(NULL), fboId(0), rboColor(0), rboDepth(0) {
+  : s(nullptr), title(_title), width(w), height(h), offscreen(_offscreen), reportEvents(false), topSelection(nullptr), fboId(0), rboColor(0), rboDepth(0) {
   //RAI_MSG("creating OpenGL=" <<this);
   s=new sOpenGL(this); //this might call some callbacks (Reshape/Draw) already!
   init();
 }
 
 OpenGL::OpenGL(void *container)
-  : s(NULL), width(0), height(0), reportEvents(false), topSelection(NULL), fboId(0), rboColor(0), rboDepth(0) {
+  : s(nullptr), width(0), height(0), reportEvents(false), topSelection(nullptr), fboId(0), rboColor(0), rboDepth(0) {
   s=new sOpenGL(this); //this might call some callbacks (Reshape/Draw) already!
   init();
 }
@@ -1516,7 +1516,7 @@ OpenGL::~OpenGL() {
   clear();
   closeWindow();
   delete s;
-  s=NULL;
+  s=nullptr;
 }
 
 OpenGL* OpenGL::newClone() const {
@@ -1569,7 +1569,7 @@ struct CstyleInitCall : OpenGL::GLInitCall {
 
 /// add a draw routine
 void OpenGL::add(void (*call)(void*,OpenGL&), void* classP) {
-  CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
+  CHECK(call!=0, "OpenGL: nullptr pointer to drawing routine");
   auto _dataLock = dataLock(RAI_HERE);
   toBeDeletedOnCleanup.append(new CstyleDrawer(call, classP));
   drawers.append(toBeDeletedOnCleanup.last());
@@ -1578,14 +1578,14 @@ void OpenGL::add(void (*call)(void*,OpenGL&), void* classP) {
 
 /// add a draw routine
 void OpenGL::addInit(void (*call)(void*), void* classP) {
-  CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
+  CHECK(call!=0, "OpenGL: nullptr pointer to drawing routine");
   auto _dataLock = dataLock(RAI_HERE);
   initCalls.append(new CstyleInitCall(call, classP));
 
 }
 
 void OpenGL::add(std::function<void (OpenGL&)> call){
-  CHECK(call, "OpenGL: NULL std::function to drawing routine");
+  CHECK(call, "OpenGL: nullptr std::function to drawing routine");
   auto _dataLock = dataLock(RAI_HERE);
 //  toBeDeletedOnCleanup.append(new CstyleDrawer(call, classP));
   drawers.append(new LambdaDrawer(call));
@@ -1594,7 +1594,7 @@ void OpenGL::add(std::function<void (OpenGL&)> call){
 
 /// add a draw routine to a view
 void OpenGL::addSubView(uint v, void (*call)(void*,OpenGL&), void* classP) {
-  CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
+  CHECK(call!=0, "OpenGL: nullptr pointer to drawing routine");
   auto _dataLock = dataLock(RAI_HERE);
   if(v>=views.N) views.resizeCopy(v+1);
   toBeDeletedOnCleanup.append(new CstyleDrawer(call, classP));
@@ -1633,7 +1633,7 @@ void OpenGL::clearSubView(uint v) {
 
 /// remove a draw routine
 //void OpenGL::remove(void (*call)(void*), const void* classP) {
-//  CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
+//  CHECK(call!=0, "OpenGL: nullptr pointer to drawing routine");
 //  uint i;
 //  for(i=0; i<drawers.N; i++) if(drawers(i).call==call && drawers(i).classP==classP) break;
 //  CHECK(i<drawers.N, "value to remove not found");
@@ -1879,7 +1879,7 @@ void OpenGL::Select(bool callerHasAlreadyLocked) {
   }
   
 #else
-  Draw(width, height, NULL, true);
+  Draw(width, height, nullptr, true);
 #endif
   glLoadIdentity();
   
@@ -1888,7 +1888,7 @@ void OpenGL::Select(bool callerHasAlreadyLocked) {
   selection.resize(n);
   
   GLuint *obj, maxD=(GLuint)(-1);
-  topSelection=NULL;
+  topSelection=nullptr;
   for(j=0, i=0; i<(uint)n; i++) {
     obj=selectionBuffer+j;
     j+=3+obj[0];
@@ -2079,7 +2079,7 @@ void OpenGL::saveEPS(const char *filename) {
                    GL2PS_EPS, GL2PS_BSP_SORT, GL2PS_SILENT |
                    GL2PS_SIMPLE_LINE_OFFSET | GL2PS_NO_BLENDING |
                    GL2PS_OCCLUSION_CULL | GL2PS_BEST_ROOT,
-                   GL_RGBA, 0, NULL, 0, 0, 0, buffsize,
+                   GL_RGBA, 0, nullptr, 0, 0, 0, buffsize,
                    fp, filename);
     Draw(width, height);
     state = gl2psEndPage();
@@ -2199,7 +2199,7 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y) {
     drawFocus = false;
     if(!downPressed){
       drawMode_idColor = true;
-      Draw(w, h, NULL, true);
+      Draw(w, h, nullptr, true);
       double x=mouseposx, y=mouseposy, d = captureDepth(mouseposy, mouseposx);
       if(d<.01 || d==1.) {
         cout <<"NO SELECTION: SELECTION DEPTH = " <<d <<' ' <<camera.glConvertToTrueDepth(d) <<endl;
@@ -2354,9 +2354,9 @@ struct XBackgroundContext {
     static int visual_attribs[] = { None };
     int context_attribs[] = { GLX_CONTEXT_MAJOR_VERSION_ARB, 3, GLX_CONTEXT_MINOR_VERSION_ARB, 0, None };
     
-    dpy = NULL; //XOpenDisplay(0);
+    dpy = nullptr; //XOpenDisplay(0);
     fbcount = 0;
-    fbc = NULL;
+    fbc = nullptr;
     
     /* open display */
     if(!(dpy = XOpenDisplay(0))) HALT("Failed to open display");
@@ -2506,7 +2506,7 @@ void OpenGL::renderInBack(int w, int h) {
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fboId);
   
   //-- draw!
-  Draw(w, h, NULL, true);
+  Draw(w, h, nullptr, true);
   glFlush();
   
   //-- read
@@ -2619,7 +2619,7 @@ void read_png(byteA &img, const char *file_name, bool swap_rows) {
 
   FILE *fp = fopen(file_name, "rb");
   
-  png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+  png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
   CHECK(png, "");
   
   png_infop info = png_create_info_struct(png);

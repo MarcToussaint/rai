@@ -35,7 +35,7 @@ double Forsyth(arr& J, const arr& x, double a) {
   return f;
 };
 
-void TM_BeliefTransition::phi(arr &y, arr &J, const WorldL &Ktuple) {
+void TM_BeliefTransition::phi(arr &y, arr &J, const ConfigurationL &Ktuple) {
   uint i=0;
   y.resize(dim_phi(*Ktuple.last())).setZero();
   if(!!J) J.resize(y.N, Ktuple.N, Ktuple.elem(-1)->q.N).setZero();

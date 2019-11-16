@@ -18,7 +18,7 @@ void shapeFunction(double &x, double &dx);
 
 //===========================================================================
 
-void F_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
+void F_NewtonEuler::phi(arr &y, arr &J, const ConfigurationL &Ktuple) {
   CHECK_EQ(order, 2, "");
 
   rai::Frame *a = Ktuple(-2)->frames(i);
@@ -72,7 +72,7 @@ void F_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
 
 //===========================================================================
 
-void F_NewtonEuler_DampedVelocities::phi(arr &y, arr &J, const WorldL &Ktuple) {
+void F_NewtonEuler_DampedVelocities::phi(arr &y, arr &J, const ConfigurationL &Ktuple) {
   CHECK_EQ(order, 1, "");
 
   //get linear and angular velocities
@@ -133,7 +133,7 @@ F_Wrench::F_Wrench(int iShape, const arr& _vec, bool _torqueOnly) : i(iShape), v
   gravity = rai::getParameter<double>("TM_Wrench/gravity", 9.81);
 }
 
-void F_Wrench::phi(arr &y, arr &J, const WorldL &Ktuple) {
+void F_Wrench::phi(arr &y, arr &J, const ConfigurationL &Ktuple) {
   CHECK_EQ(order, 2, "");
 
   rai::Configuration& K = *Ktuple(-2); // ! THIS IS THE MID TIME SLICE !
@@ -172,7 +172,7 @@ void F_Wrench::phi(arr &y, arr &J, const WorldL &Ktuple) {
   }
 }
 
-uint F_Wrench::dim_phi(const WorldL& Ktuple){
+uint F_Wrench::dim_phi(const ConfigurationL& Ktuple){
   if(torqueOnly) return 3;
   return 6;
 }
@@ -185,7 +185,7 @@ F_Energy::F_Energy() {
   gravity = rai::getParameter<double>("TM_Physics/gravity", 9.81);
 }
 
-void F_Energy::phi(arr &y, arr &J, const WorldL &Ktuple) {
+void F_Energy::phi(arr &y, arr &J, const ConfigurationL &Ktuple) {
   if(order==2){
     arr y0, y1, J0, J1;
     order=1;
@@ -251,7 +251,7 @@ void F_Energy::phi(arr &y, arr &J, const WorldL &Ktuple) {
   y = ARR(E);
 }
 
-uint F_Energy::dim_phi(const WorldL &Ktuple) {
+uint F_Energy::dim_phi(const ConfigurationL &Ktuple) {
   return 1;
 }
 
@@ -263,7 +263,7 @@ F_StaticStability::F_StaticStability(int iShape, double _margin)
 
 F_StaticStability::F_StaticStability(const rai::Configuration& G, const char* iShapeName, double _margin)
   :i(-1), margin(_margin) {
-  rai::Frame *a = iShapeName ? G.getFrameByName(iShapeName):NULL;
+  rai::Frame *a = iShapeName ? G.getFrameByName(iShapeName):nullptr;
   if(a) i=a->ID;
 }
 

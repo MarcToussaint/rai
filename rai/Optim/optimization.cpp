@@ -10,10 +10,10 @@
 
 uint eval_count=0;
 Singleton<OptOptions> globalOptOptions;
-ObjectiveTypeA& NoTermTypeA = *((ObjectiveTypeA*)NULL);
+ObjectiveTypeA& NoTermTypeA = *((ObjectiveTypeA*)nullptr);
 
 template<> const char* rai::Enum<ObjectiveType>::names []= {
-  "none", "f", "sos", "ineq", "eq", NULL
+  "none", "f", "sos", "ineq", "eq", nullptr
 };
 
 //===========================================================================
@@ -53,7 +53,7 @@ bool checkHessianCP(ConstrainedProblem &P, const arr& x, double tolerance) {
 
 OptOptions::OptOptions() {
   verbose    = rai::getParameter<int> ("opt/verbose", 1);
-  fmin_return=NULL;
+  fmin_return=nullptr;
   stopTolerance= rai::getParameter<double>("opt/stopTolerance", 1e-2);
   stopFTolerance= rai::getParameter<double>("opt/stopFTolerance", 1e-1);
   stopGTolerance= rai::getParameter<double>("opt/stopGTolerance", -1.);
@@ -159,7 +159,7 @@ uint optGradDescent(arr& x, const ScalarFunction& f, OptOptions o) {
     if(k>o.stopIters) break;
   }
   if(o.verbose>0) fil.close();
-  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l",NULL,true);
+  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", true);
   return evals;
 }
 

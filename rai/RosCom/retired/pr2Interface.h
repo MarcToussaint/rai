@@ -43,8 +43,8 @@ struct PR2Interface : Thread {
   ~PR2Interface() {threadCloseModules();}
   virtual void step();
   
-  void initialize(rai::Configuration* realWorld, rai::Configuration* realWorldSimulation, rai::Configuration* modelWorld, TaskSpaceController* controller = NULL);
-  void initialize(rai::Configuration* realWorld, rai::Configuration* modelWorld, TaskSpaceController* controller = NULL);
+  void initialize(rai::Configuration* realWorld, rai::Configuration* realWorldSimulation, rai::Configuration* modelWorld, TaskSpaceController* controller = nullptr);
+  void initialize(rai::Configuration* realWorld, rai::Configuration* modelWorld, TaskSpaceController* controller = nullptr);
   void startInterface();
   void sendCommand(const arr& u0, const arr& Kp, const arr& Kd, const arr& K_ft, const arr& J_ft_inv, const arr& fRef, const double& gamma);
   void goToPosition(arr pos, rai::String shape, double executionTime = 10.0, bool useMotionPlaner = true, rai::String name = "goToPosition");

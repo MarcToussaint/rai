@@ -29,7 +29,7 @@ struct Vector {
   Vector(double x, double y, double z) { set(x, y, z); }
   Vector(const Vector& v) { set(v.x, v.y, v.z); }
   Vector(const arr& x) { CHECK_EQ(x.N,3, "");  set(x.p); }
-  Vector(const arrf& x) { CHECK_EQ(x.N,3, "");  set(x(0), x(1), x(2)); }
+  Vector(const floatA& x) { CHECK_EQ(x.N,3, "");  set(x(0), x(1), x(2)); }
   double *p() { return &x; }
   bool operator!() const;
 

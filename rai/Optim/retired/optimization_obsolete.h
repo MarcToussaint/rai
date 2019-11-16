@@ -12,8 +12,8 @@
 //-- return types
 //struct     SqrPotential { arr A, a;          double c; }; ///< return type representing \f$x'A x - 2x'a + c\f$
 //struct PairSqrPotential { arr A, B, C, a, b; double c; }; ///< return type representing \f$(x,y)' [A C, C' B] (x,y) - 2(x,y)'(a,b) + c\f$
-//extern SqrPotential& NoPot; ///< reference to NULL! used for optional arguments
-//extern PairSqrPotential& NoPairPot; ///< reference to NULL! used for optional arguments
+//extern SqrPotential& NoPot; ///< reference to nullptr! used for optional arguments
+//extern PairSqrPotential& NoPairPot; ///< reference to nullptr! used for optional arguments
 
 /// a locally quadratic function TODO: replace by scalar with hessian!
 //struct QuadraticFunction { virtual double fq(SqrPotential& S, const arr& x) = 0; };
@@ -167,8 +167,8 @@ struct SGD {
   }
 };
 
-inline double ModelStaticL(const arr& w, void* p) {    return ((OptimizationProblem*)p)->totalLoss(w, NULL, NULL); }
-inline void   ModelStaticDL(arr& grad, const arr& w, void* p) {((OptimizationProblem*)p)->totalLoss(w, &grad, NULL); }
+inline double ModelStaticL(const arr& w, void* p) {    return ((OptimizationProblem*)p)->totalLoss(w, nullptr, nullptr); }
+inline void   ModelStaticDL(arr& grad, const arr& w, void* p) {((OptimizationProblem*)p)->totalLoss(w, &grad, nullptr); }
 //void   ModelStaticF (arr& out , const arr& w, void* p){ ((OptimizationProblem*)p)->f(out, w); }
 // void   ModelStaticDF(arr& grad, const arr& w, void* p){ ((OptimizationProblem*)p)->df(grad, w); }
 

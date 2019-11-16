@@ -242,7 +242,7 @@ void ConstraintForceTask::updateConstraintControl(const arr& _g, const double& l
 //===========================================================================
 
 TaskControlMethods::TaskControlMethods(rai::Configuration& _world, bool _useSwift)
-  : world(_world), qNullCostRef(NULL, NULL), useSwift(_useSwift) {
+  : world(_world), qNullCostRef(nullptr, nullptr), useSwift(_useSwift) {
   computeMeshNormals(world.shapes);
   if(useSwift) {
     makeConvexHulls(world.shapes);

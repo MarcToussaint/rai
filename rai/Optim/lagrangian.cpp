@@ -166,7 +166,7 @@ void LagrangianProblem::aulaUpdate(bool anyTimeVariant, double lambdaStepsize, d
   if(anyTimeVariant) {
     //collect gradients of active constraints
     arr A;
-    RowShifted *Aaux=NULL, *Jaux=NULL;
+    RowShifted *Aaux=nullptr, *Jaux=nullptr;
     if(isRowShifted(J_x)) {
       Aaux = makeRowShifted(A, 0, J_x.d1, x.N);
       Jaux = castRowShifted(J_x);

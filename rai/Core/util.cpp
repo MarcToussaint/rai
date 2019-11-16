@@ -102,7 +102,7 @@ double timerPauseTime=-1.;
 bool timerUseRealTime=false;
 
 #ifdef RAI_QT
-QApplication *myApp=NULL;
+QApplication *myApp=nullptr;
 #endif
 
 /// running a system command and checking return value
@@ -165,7 +165,7 @@ void skipOne(std::istream& is) {
 /// tell you about the next char (after skip()) but puts it back in the stream
 char getNextChar(std::istream& is, const char *skipSymbols, bool skipCommentLines) {
   char c;
-  skip(is, skipSymbols, NULL, skipCommentLines);
+  skip(is, skipSymbols, nullptr, skipCommentLines);
   is.get(c);
   if(!is.good()) return 0;
   return c;
@@ -527,24 +527,24 @@ void wait(double sec, bool msg_on_fail) {
   ts.tv_sec = (long)(floor(sec));
   sec -= (double)ts.tv_sec;
   ts.tv_nsec = long(floor(1e9d*sec));
-  int rc = clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);
+  int rc = clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, nullptr);
   if(rc && msg_on_fail) {
     RAI_MSG("clock_nanosleep() failed " <<rc <<" '" <<strerror(rc) <<"' trying select instead");
     timeval tv;
     tv.tv_sec = ts.tv_sec;
     tv.tv_usec = ts.tv_nsec/1000l;
-    rc = select(1, NULL, NULL, NULL, &tv);
+    rc = select(1, nullptr, nullptr, nullptr, &tv);
     if(rc==-1) RAI_MSG("select() failed " <<rc <<" '" <<strerror(errno) <<"'");
   }
 #else
   Sleep((int)(1000.*sec));
-  //MsgWaitForMultipleObjects( 0, NULL, FALSE, (int)(1000.*sec), QS_ALLEVENTS);
+  //MsgWaitForMultipleObjects( 0, nullptr, FALSE, (int)(1000.*sec), QS_ALLEVENTS);
 #endif
   
 #if 0
 #ifndef RAI_TIMEB
   /* r=0 time is up
-     r!=0 data in NULL stream available (nonsense)
+     r!=0 data in nullptr stream available (nonsense)
      */
 #else
   double t=realTime(); while(realTime()-t<sec);
@@ -579,7 +579,7 @@ int x11_getKey() {
   rai::String txt="PRESS KEY";
   int key=0;
 
-  Display *disp = XOpenDisplay(NULL);
+  Display *disp = XOpenDisplay(nullptr);
   CHECK(disp, "Cannot open display");
   
   Window win = XCreateSimpleWindow(disp, DefaultRootWindow(disp),
@@ -588,7 +588,7 @@ int x11_getKey() {
   XSelectInput(disp, win, KeyPressMask | ExposureMask | ButtonPressMask);
   XMapWindow(disp, win);
   
-  GC gc = XCreateGC(disp, win, 0, NULL);
+  GC gc = XCreateGC(disp, win, 0, nullptr);
   XSetFont(disp, gc,  XLoadFont(disp,"fixed")); //-adobe-courier-bold-r-*-*-*-220-*-*-*-*-*-*"));
   XSetForeground(disp, gc, 0x000000);
   
@@ -605,7 +605,7 @@ int x11_getKey() {
         break;
       case KeyPress:
         char string[4];
-        XLookupString(&ev.xkey, string, 4, NULL, NULL);
+        XLookupString(&ev.xkey, string, 4, nullptr, nullptr);
         key = string[0];
         quit=true;
         break;
@@ -688,14 +688,14 @@ bool checkCmdLineTag(const char *tag) {
   return false;
 }
 
-/// returns the argument after the cmd-line tag; NULL if the tag is not found
+/// returns the argument after the cmd-line tag; nullptr if the tag is not found
 char *getCmdLineArgument(const char *tag) {
   int n;
   for(n=1; n<argc; n++) if(argv[n][0]=='-' && !strcmp(tag, argv[n]+1)) {
       if(n+1==argc) return (char*)"1";
       return argv[n+1];
     }
-  return NULL;
+  return nullptr;
 }
 
 String raiPath(const char* rel) {
@@ -876,7 +876,7 @@ void rai::String::resize(uint n, bool copy) {
   resetIstream();
 }
 
-void rai::String::init() { p=0; N=0; M=0; buffer.string=this; flushCallback=NULL; }
+void rai::String::init() { p=0; N=0; M=0; buffer.string=this; flushCallback=nullptr; }
 
 /// standard constructor
 rai::String::String() : std::iostream(&buffer) { init(); clearStream(); }
@@ -992,7 +992,7 @@ bool rai::String::contains(const String& substring) const {
   if(!p && substring.p) return false;
   if(!substring.p && p) return true;
   char* p = strstr(this->p, substring.p);
-  return p != NULL;
+  return p != nullptr;
 }
 
 /// Return true iff the string starts with 'substring'.
@@ -1374,7 +1374,7 @@ void Mutex::unlock() {}
 
 struct GnuplotServer {
   FILE *gp;
-  GnuplotServer():gp(NULL) {}
+  GnuplotServer():gp(nullptr) {}
   ~GnuplotServer() {
     if(gp) {
       cout <<"Closing Gnuplot" <<endl;

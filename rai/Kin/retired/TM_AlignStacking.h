@@ -15,7 +15,7 @@ struct TM_AlignStacking : Feature {
   TM_AlignStacking(int iShape=-1);
   
   TM_AlignStacking(const rai::Configuration& G,
-                   const char* iShapeName=NULL);
+                   const char* iShapeName=nullptr);
                    
   virtual void phi(arr& y, arr& J, const rai::Configuration& G);
   virtual uint dim_phi(const rai::Configuration& G) { return 2; }

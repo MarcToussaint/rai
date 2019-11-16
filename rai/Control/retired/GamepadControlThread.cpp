@@ -15,9 +15,9 @@
 
 GamepadControlThread::GamepadControlThread()
   : Thread("Act_GamepadControl", 0.01),
-    g2t(NULL),
-    gamepadPoller(NULL),
-    tc(NULL) {
+    g2t(nullptr),
+    gamepadPoller(nullptr),
+    tc(nullptr) {
   threadLoop();
 }
 
@@ -58,8 +58,8 @@ void GamepadControlThread::step() {
 
 void GamepadControlThread::close() {
   gamepadPoller->threadClose();
-  delete g2t; g2t=NULL;
-  delete gamepadPoller; gamepadPoller=NULL;
+  delete g2t; g2t=nullptr;
+  delete gamepadPoller; gamepadPoller=nullptr;
 }
 
 //===========================================================================

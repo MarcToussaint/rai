@@ -60,8 +60,8 @@ OdeInterface::OdeInterface(rai::Configuration &_C):C(_C) {
   coll_CFM = 1e-5;  //softness
   friction = 0.1;   //alternative: dInfinity;
   
-  world=NULL;
-  space=NULL;
+  world=nullptr;
+  space=nullptr;
   contactgroup=0;
   
   if(!ODEinitialized) {  dInitODE();  ODEinitialized=true; }
@@ -105,9 +105,9 @@ OdeInterface::OdeInterface(rai::Configuration &_C):C(_C) {
     for_list(rai::Shape,  s,  n->shapes) {
       if(!(s->rel.rot.isZero) || !(s->rel.pos.isZero)) { //we need a relative transformation
         trans = dCreateGeomTransform(space);
-        myspace = NULL; //the object is added to no space, but (below) associated with the transform
+        myspace = nullptr; //the object is added to no space, but (below) associated with the transform
       } else {
-        trans = NULL;
+        trans = nullptr;
         myspace = space; //the object is added normally to the main space
       }
       

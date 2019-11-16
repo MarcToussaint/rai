@@ -15,7 +15,7 @@
 
 //===========================================================================
 
-void Feature::phi(arr& y, arr& J, const WorldL& G, double tau, int t) {
+void Feature::phi(arr& y, arr& J, const ConfigurationL& G, double tau, int t) {
   CHECK_GE(G.N, order+1,"I need at least " <<order+1 <<" configurations to evaluate");
   uint k=order;
   if(k==0) { // basic case: order=0
@@ -66,12 +66,12 @@ void Task::setCostSpecs(uint fromTime,
 //===========================================================================
 
 Feature *newTaskMap(const Node* specs, const rai::Configuration& world) {
-  if(specs->parents.N<2) return NULL;
+  if(specs->parents.N<2) return nullptr;
   
   //-- get tags
   rai::String& tt=specs->parents(0)->keys.last();
   rai::String& type=specs->parents(1)->keys.last();
-  const char *ref1=NULL, *ref2=NULL;
+  const char *ref1=nullptr, *ref2=nullptr;
   if(specs->parents.N>2) ref1=specs->parents(2)->keys.last().p;
   if(specs->parents.N>3) ref2=specs->parents(3)->keys.last().p;
   
@@ -80,7 +80,7 @@ Feature *newTaskMap(const Node* specs, const rai::Configuration& world) {
   if(tt=="MinSumOfSqr") termType=OT_sos;
   else if(tt=="LowerEqualZero") termType=OT_ineq;
   else if(tt=="EqualZero") termType=OT_eq;
-  else return NULL;
+  else return nullptr;
   
   //-- create a task map
   Feature *map;
@@ -132,7 +132,7 @@ Feature *newTaskMap(const Node* specs, const rai::Configuration& world) {
 Task* newTask(const Node* specs, const rai::Configuration& world, uint Tinterval, uint Tzero) {
   //-- try to crate a map
   Feature *map = newTaskMap(specs, world);
-  if(!map) return NULL;
+  if(!map) return nullptr;
   //-- create a task
   Task *task = new Task(map);
   //-- check for additional continuous parameters
@@ -149,16 +149,16 @@ Task* newTask(const Node* specs, const rai::Configuration& world, uint Tinterval
 //===========================================================================
 
 rai::KinematicSwitch* newSwitch(const Node *specs, const rai::Configuration& world, uint Tinterval, uint Tzero=0) {
-  if(specs->parents.N<2) return NULL;
+  if(specs->parents.N<2) return nullptr;
   
   //-- get tags
   rai::String& tt=specs->parents(0)->keys.last();
   rai::String& type=specs->parents(1)->keys.last();
-  const char *ref1=NULL, *ref2=NULL;
+  const char *ref1=nullptr, *ref2=nullptr;
   if(specs->parents.N>2) ref1=specs->parents(2)->keys.last().p;
   if(specs->parents.N>3) ref2=specs->parents(3)->keys.last().p;
   
-  if(tt!="MakeJoint") return NULL;
+  if(tt!="MakeJoint") return nullptr;
   
   //-- create switch
   rai::KinematicSwitch *sw= new rai::KinematicSwitch();
@@ -184,7 +184,7 @@ rai::KinematicSwitch* newSwitch(const Node *specs, const rai::Configuration& wor
     } else if(b->inLinks.N==0 && b->parentOf.N==0) {
       RAI_MSG("No link to delete for shape '" <<ref1 <<"'");
       delete sw;
-      return NULL;
+      return nullptr;
     } else HALT("that's ambiguous");
   } else {
     sw->toId = world.getShapeByName(ref2)->index;
@@ -415,7 +415,7 @@ void KOMO::displayTrajectory(int steps, const char* tag, double delay) {
     gl.watch(STRING(tag <<" (time " <<std::setw(3) <<T <<'/' <<T <<')').p);
 }
 
-bool KOMO::getPhi(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, const WorldL &G, double tau) {
+bool KOMO::getPhi(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, const ConfigurationL &G, double tau) {
   phi.clear();
   if(!!tt) tt.clear();
   if(!!J) J.clear();
@@ -622,10 +622,10 @@ void KOMO::costReport(bool gnuplt) {
   fil <<endl;
   //rest: just the matrix?
   if(!dualMatrix.N) {
-    plotData.write(fil,NULL,NULL,"  ");
+    plotData.write(fil,nullptr,nullptr,"  ");
   } else {
     dualMatrix.reshape(T+1, dualMatrix.N/(T+1));
-    catCol(plotData, dualMatrix).write(fil,NULL,NULL,"  ");
+    catCol(plotData, dualMatrix).write(fil,nullptr,nullptr,"  ");
   }
   fil.close();
   

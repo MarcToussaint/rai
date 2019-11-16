@@ -14,7 +14,7 @@
 #include <Kin/TM_PairCollision.h>
 #include <Kin/TM_angVel.h>
 
-bool JointDidNotSwitch(const rai::Frame *a1, const WorldL& Ktuple, int order);
+bool JointDidNotSwitch(const rai::Frame *a1, const ConfigurationL& Ktuple, int order);
 
 void shapeFunction(double &x, double &dx) {
   if(x>0.) { x=0.; dx=0.; return; }
@@ -28,7 +28,7 @@ TM_Gravity::TM_Gravity() {
   gravity = rai::getParameter<double>("TM_Gravity/gravity", 9.81);
 }
 
-void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple) {
+void TM_Gravity::phi(arr &y, arr &J, const ConfigurationL &Ktuple) {
 
   y.clear();
   if(!!J) J.clear();
@@ -212,7 +212,7 @@ void TM_Gravity::phi(arr &y, arr &J, const WorldL &Ktuple) {
   if(!!J) J.reshape(y.N, KD.last());
 }
 
-uint TM_Gravity::dim_phi(const WorldL &Ktuple) {
+uint TM_Gravity::dim_phi(const ConfigurationL &Ktuple) {
   rai::Configuration& K = *Ktuple(-1);
   uint d = 0;
   for(rai::Frame *a: K.frames) if(a->flags & (1<<FL_gravityAcc)) {
@@ -226,7 +226,7 @@ TM_Gravity2::TM_Gravity2(int iShape) : i(iShape) {
   gravity = rai::getParameter<double>("FlagConstraints/gravity", 1.);
 }
 
-void TM_Gravity2::phi(arr& y, arr& J, const WorldL& Ktuple){
+void TM_Gravity2::phi(arr& y, arr& J, const ConfigurationL& Ktuple){
   CHECK_GE(order, 2, "needs k-order 2");
 
   rai::Frame *a = Ktuple(-2)->frames(i);
@@ -260,7 +260,7 @@ TM_ZeroAcc::TM_ZeroAcc(int iShape) : i(iShape) {
   order=2;
 }
 
-void TM_ZeroAcc::phi(arr& y, arr& J, const WorldL& Ktuple){
+void TM_ZeroAcc::phi(arr& y, arr& J, const ConfigurationL& Ktuple){
   CHECK_GE(order, 2, "needs k-order 2");
 
   rai::Frame *a = Ktuple(-2)->frames(i);

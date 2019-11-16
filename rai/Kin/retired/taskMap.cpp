@@ -57,7 +57,7 @@ Feature *Feature::newTaskMap(const Graph& params, const rai::Configuration& worl
   } else if(type=="qItself") {
     if(params["ref1"] && params["ref2"]) {
       rai::Joint *j=world.getJointByBodyNames(params.get<rai::String>("ref1"), params.get<rai::String>("ref2"));
-      if(!j) return NULL;
+      if(!j) return nullptr;
       map = new TM_qItself({j->frame.ID}, false);
     } else if(params["ref1"]) map = new TM_qItself(QIP_byJointNames, {params.get<rai::String>("ref1")}, world);
     else if(params["Hmetric"]) { NIY /* map = new TM_qItself(params.get<double>("Hmetric")*world.getHmetric());*/ } //world.naturalQmetric()); //
@@ -77,17 +77,17 @@ Feature *Feature::newTaskMap(const Graph& params, const rai::Configuration& worl
 //===========================================================================
 
 Feature *Feature::newTaskMap(const Node* specs, const rai::Configuration& world) {
-  if(specs->parents.N<2) return NULL; //these are not task specs
+  if(specs->parents.N<2) return nullptr; //these are not task specs
   
   //-- get tags
   rai::String& type=specs->parents(1)->keys.last();
-  const char *ref1=NULL, *ref2=NULL;
+  const char *ref1=nullptr, *ref2=nullptr;
   if(specs->parents.N>2) ref1=specs->parents(2)->keys.last().p;
   if(specs->parents.N>3) ref2=specs->parents(3)->keys.last().p;
   
   //-- create a task map
   Feature *map;
-  const Graph* params=NULL;
+  const Graph* params=nullptr;
   if(specs->isGraph()) params = &specs->graph();
 //  rai::String type = specs.get<rai::String>("type", "pos");
   if(type=="wheels") {
@@ -125,7 +125,7 @@ Feature *Feature::newTaskMap(const Node* specs, const rai::Configuration& world)
   } else if(type=="qItself") {
     if(ref1 && ref2) {
       rai::Joint *j=world.getJointByBodyNames(ref1, ref2);
-      if(!j) return NULL;
+      if(!j) return nullptr;
       map = new TM_qItself({j->frame.ID}, false);
     } else if(ref1) map = new TM_qItself(QIP_byJointNames, {ref1}, world);
     else if(params && params->getNode("Hmetric")) { NIY /*map = new TM_qItself(params->getNode("Hmetric")->get<double>()*world.getHmetric()); */} //world.naturalQmetric()); //

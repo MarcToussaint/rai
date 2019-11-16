@@ -13,13 +13,13 @@
 #include "flag.h"
 #include "TM_angVel.h"
 
-uint TM_FixSwichedObjects::dim_phi(const WorldL& G) {
+uint TM_FixSwichedObjects::dim_phi(const ConfigurationL& G) {
   uintA switchedBodies = getSwitchedBodies(*G.elem(-2), *G.elem(-1));
 //  if(order==2) switchedBodies.setAppend( getSwitchedBodies(*G.elem(-3), *G.elem(-2)) );
   return switchedBodies.N*6;
 }
 
-void TM_FixSwichedObjects::phi(arr& y, arr& J, const WorldL& Ktuple) {
+void TM_FixSwichedObjects::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   //TODO: so far this only fixes switched objects to zero pose vel
   //better: constrain to zero relative velocity with BOTH, pre-attached and post-attached
   

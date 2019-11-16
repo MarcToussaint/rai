@@ -15,7 +15,7 @@ TM_AlignStacking::TM_AlignStacking(int iShape)
 
 TM_AlignStacking::TM_AlignStacking(const rai::Configuration& G, const char* iShapeName)
   :i(-1) {
-  rai::Frame *a = iShapeName ? G.getFrameByName(iShapeName):NULL;
+  rai::Frame *a = iShapeName ? G.getFrameByName(iShapeName):nullptr;
   if(a) i=a->ID;
 }
 

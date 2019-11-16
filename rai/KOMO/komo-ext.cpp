@@ -10,10 +10,10 @@
 double shapeSize(const rai::Configuration& K, const char* name, uint i);
 
 void addBoxGrasp(KOMO& komo, const char* object, const char* endeff, int axis){
-  //  komo.addObjective(0., 0., OT_eq, FS_accumulatedCollisions, {}, 1e0);
+  //  komo.addObjective(0., 0., FS_accumulatedCollisions, {}, OT_eq, 1e0);
     if(komo.world["endeffWorkspace"]){
       HALT("TODO: fix the following syntax")
-//        komo.addObjective(0., 0., make_shared<TM_Default>(TMT_posDiff, komo.world, "endeffWorkspace", NoVector, object), OT_sos, {}, {2,3,{1e2,0.,0., 0.,1e2,0.}});
+//        komo.addObjective({0., 0.}, make_shared<TM_Default>(TMT_posDiff, komo.world, "endeffWorkspace", NoVector, object), OT_sos, {}, {}{2,3,{1e2,0.,0., 0.,1e2,0.}});
     }
 
   //height to grasp
@@ -28,28 +28,28 @@ void addBoxGrasp(KOMO& komo, const char* object, const char* endeff, int axis){
   core_setTouch(0., 0., endeff, object);
 #else
   //perfect central
-  komo.addObjective({}, OT_eq, FS_positionDiff, {endeff, object}, {1e2}, {0,0,h});
+  komo.addObjective({}, FS_positionDiff, {endeff, object}, OT_eq, {1e2}, {0,0,h});
 #endif
 
   //anti-podal
   switch(axis){
     case 0:
-      komo.addObjective({}, OT_eq, FS_scalarProductXY, {endeff, object}, {1e1});
-      komo.addObjective({}, OT_eq, FS_scalarProductXZ, {endeff, object}, {1e1});
+      komo.addObjective({}, FS_scalarProductXY, {endeff, object}, OT_eq, {1e1});
+      komo.addObjective({}, FS_scalarProductXZ, {endeff, object}, OT_eq, {1e1});
       break;
     case 1:
-      komo.addObjective({}, OT_eq, FS_scalarProductXX, {endeff, object}, {1e1});
-      komo.addObjective({}, OT_eq, FS_scalarProductXZ, {endeff, object}, {1e1});
+      komo.addObjective({}, FS_scalarProductXX, {endeff, object}, OT_eq, {1e1});
+      komo.addObjective({}, FS_scalarProductXZ, {endeff, object}, OT_eq, {1e1});
       break;
     case 2:
-      komo.addObjective({}, OT_eq, FS_scalarProductXX, {endeff, object}, {1e1});
-      komo.addObjective({}, OT_eq, FS_scalarProductXY, {endeff, object}, {1e1});
+      komo.addObjective({}, FS_scalarProductXX, {endeff, object}, OT_eq, {1e1});
+      komo.addObjective({}, FS_scalarProductXY, {endeff, object}, OT_eq, {1e1});
       break;
     default: HALT("axis " <<axis <<" needs to be in {0,1,2}");
   }
 
   //vertical
-  komo.addObjective({}, OT_sos, FS_vectorZ, {endeff}, {3e0}, {0.,0.,1.} );
+  komo.addObjective({}, FS_vectorZ, {endeff}, OT_sos, {3e0}, {0.,0.,1.} );
 }
 
 void addMotionTo(KOMO& komo, const arr& target_q, const StringA& target_joints, const char* endeff, double up, double down){
@@ -59,18 +59,18 @@ void addMotionTo(KOMO& komo, const arr& target_q, const StringA& target_joints, 
 //    profile.setZero();
 
     if(up>0.){
-      komo.addObjective(0., up, new TM_Default(TMT_posDiff, komo.world, endeff), OT_sos, {0.,0.,.05}, 1e2, 2);
+      komo.addObjective({0., up}, make_shared<TM_Default>(TMT_posDiff, komo.world, endeff), OT_sos, {1e2}, {0.,0.,.05}, 2);
     }
 
     if(down>0.){
-      komo.addObjective(down, 1., new TM_Default(TMT_posDiff, komo.world, endeff), OT_sos, {0.,0.,-.05}, 1e2, 2);
+      komo.addObjective({down, 1.}, make_shared<TM_Default>(TMT_posDiff, komo.world, endeff), OT_sos, {1e2}, {0.,0.,-.05}, 2);
     }
   }
 
   if(!target_joints.N){
-    komo.addObjective(1.,1., new F_qItself(), OT_eq, target_q, 1e1);
+    komo.addObjective({1.,1.}, make_shared<F_qItself>(), OT_eq, {1e1}, target_q);
   }else{
-    komo.addObjective(1.,1., new F_qItself(F_qItself::byJointNames, target_joints, komo.world), OT_eq, target_q, 1e1);
+    komo.addObjective({1.,1.}, make_shared<F_qItself>(F_qItself::byJointNames, target_joints, komo.world), OT_eq, {1e1}, target_q);
   }
 
   komo.setSlow(0.,0., 1e2, true);
@@ -82,10 +82,10 @@ void chooseBoxGrasp(rai::Configuration& K, const char* endeff, const char* objec
   komo.setModel(K, true);
   komo.setIKOpt();
 
-  //  komo.addObjective(0., 0., OT_eq, FS_accumulatedCollisions, {}, 1e0);
+  //  komo.addObjective(0., 0., FS_accumulatedCollisions, {}, OT_eq, 1e0);
   //open gripper
-  //  komo.addObjective(0.,0., OT_sos, FS_qItself, {"r_gripper_joint"}, 1e1, {.08} );
-  //  komo.addObjective(0.,0., OT_sos, FS_qItself, {"r_gripper_l_finger_joint"}, 1e1, {.8} );
+  //  komo.addObjective(0.,0., FS_qItself, {"r_gripper_joint"}, OT_sos, 1e1, {.08} );
+  //  komo.addObjective(0.,0., FS_qItself, {"r_gripper_l_finger_joint"}, OT_sos, 1e1, {.8} );
 
   addBoxGrasp(komo, object, endeff, 0);
   komo.optimize();
@@ -120,27 +120,27 @@ void findOpposingGrasp(rai::Configuration& K, const char* fingerL, const char* f
     komo.setIKOpt();
 
 
-    komo.addObjective(1., 1., make_shared<F_GraspOppose>(K, fingerL, fingerR, object), OT_eq, {}, 1e2);
+    komo.addObjective({1., 1.}, make_shared<F_GraspOppose>(K, fingerL, fingerR, object), OT_eq, {1e2});
 
 //    //anti-podal
 //    switch(axis){
 //      case 0:
-//        komo.addObjective({}, OT_eq, FS_scalarProductXY, {endeff, object}, {1e1});
-//        komo.addObjective({}, OT_eq, FS_scalarProductXZ, {endeff, object}, {1e1});
+//        komo.addObjective({}, FS_scalarProductXY, {endeff, object}, OT_eq, {1e1});
+//        komo.addObjective({}, FS_scalarProductXZ, {endeff, object}, OT_eq, {1e1});
 //        break;
 //      case 1:
-//        komo.addObjective({}, OT_eq, FS_scalarProductXX, {endeff, object}, {1e1});
-//        komo.addObjective({}, OT_eq, FS_scalarProductXZ, {endeff, object}, {1e1});
+//        komo.addObjective({}, FS_scalarProductXX, {endeff, object}, OT_eq, {1e1});
+//        komo.addObjective({}, FS_scalarProductXZ, {endeff, object}, OT_eq, {1e1});
 //        break;
 //      case 2:
-//        komo.addObjective({}, OT_eq, FS_scalarProductXX, {endeff, object}, {1e1});
-//        komo.addObjective({}, OT_eq, FS_scalarProductXY, {endeff, object}, {1e1});
+//        komo.addObjective({}, FS_scalarProductXX, {endeff, object}, OT_eq, {1e1});
+//        komo.addObjective({}, FS_scalarProductXY, {endeff, object}, OT_eq, {1e1});
 //        break;
 //      default: HALT("axis " <<axis <<" needs to be in {0,1,2}");
 //    }
 
 //    //vertical
-//    komo.addObjective({}, OT_sos, FS_vectorZ, {endeff}, {3e0}, {0.,0.,1.} );
+//    komo.addObjective({}, FS_vectorZ, {endeff}, OT_sos, {3e0}, {0.,0.,1.} );
 
     komo.optimize();
 

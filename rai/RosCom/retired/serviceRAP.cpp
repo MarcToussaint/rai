@@ -21,7 +21,7 @@ struct sServiceRAP {
   sServiceRAP() {}
 };
 
-ServiceRAP::ServiceRAP() : s(NULL) {
+ServiceRAP::ServiceRAP() : s(nullptr) {
   if(rai::getParameter<bool>("useRos")) {
     cout <<"*** Starting ROS Service RAP" <<endl;
     s = new sServiceRAP;
@@ -65,7 +65,7 @@ bool sServiceRAP::cb_service(rai_msgs::StringString::Request& _request, rai_msgs
 #else
 
 struct sServiceRAP {};
-ServiceRAP::ServiceRAP() : s(NULL) {}
+ServiceRAP::ServiceRAP() : s(nullptr) {}
 ServiceRAP::~ServiceRAP() {}
 
 #endif

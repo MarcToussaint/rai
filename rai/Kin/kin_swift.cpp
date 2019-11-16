@@ -31,18 +31,18 @@
 #undef min
 #undef max
 
-ANN *global_ANN=NULL;
+ANN *global_ANN=nullptr;
 rai::Shape *global_ANN_shape;
 
 SwiftInterface::~SwiftInterface() {
   if(scene) delete scene;
   if(global_ANN) delete global_ANN;
-  scene=NULL;
+  scene=nullptr;
   //cout <<" -- SwiftInterface closed" <<endl;
 }
 
 SwiftInterface::SwiftInterface(const rai::Configuration& world, double _cutoff)
-  : scene(NULL), cutoff(_cutoff) {
+  : scene(nullptr), cutoff(_cutoff) {
   bool r, add;
 
   if(scene) delete scene;

@@ -6,7 +6,7 @@
 #include <Gui/opengl.h>
 
 void draw1(void*,OpenGL& gl){
-  glStandardLight(NULL, gl);
+  glStandardLight(nullptr, gl);
   glColor(1,0,0);
   glFrontFace(GL_CW);
 //  glutSolidTeapot(1.);
@@ -55,7 +55,7 @@ int main(int argc, char ** argv)
     EGL_NONE,
   };
   EGLSurface eglSurface = eglCreatePbufferSurface(eglDisplay, eglConfig, pbufferAttribs);
-  //  eglSurface = eglCreateWindowSurface(eglDisplay, eglConfig, native_window, NULL);
+  //  eglSurface = eglCreateWindowSurface(eglDisplay, eglConfig, native_window, nullptr);
   CHECK_EQ(eglGetError(), EGL_SUCCESS, "");
 
   // 4. Bind the API
@@ -63,7 +63,7 @@ int main(int argc, char ** argv)
 
   // 5. Create a context and make it current
   EGLContext eglContext = eglCreateContext(eglDisplay, eglConfig, EGL_NO_CONTEXT, 
-					   NULL);
+					   nullptr);
   CHECK_EQ(eglGetError(), EGL_SUCCESS, "");
 
   eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext);
@@ -76,7 +76,7 @@ int main(int argc, char ** argv)
 #if 1
   OpenGL gl("bla", 400, 400, true);
   gl.add(draw1,0);
-//  gl.Draw(400,400, NULL, true);
+//  gl.Draw(400,400, nullptr, true);
   gl.renderInBack(w,h);
   img = gl.captureImage;
 #else

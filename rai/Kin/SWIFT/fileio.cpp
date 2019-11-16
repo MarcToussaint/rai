@@ -90,7 +90,7 @@ bool SWIFT_Basic_File_Reader::Read( ifstream& fin, SWIFT_Real*& vs, int*& fs,
         fin >> vn >> fn;
         vs = new SWIFT_Real[vn*3];
         fs = new int[fn*3];
-        fv = NULL;
+        fv = nullptr;
 
         if (!vs || !fs) {
             cerr << "Error: Array allocation during file reading failed" << endl;
@@ -368,7 +368,7 @@ bool SWIFT_File_Read_Dispatcher::Read( const char* filename, SWIFT_Real*& vs,
     SWIFT_Array<int> cur_match;
 
     // Try to open the file
-    if( filename == NULL ) {
+    if( filename == nullptr ) {
         cerr << "Error: Invalid filename given to read file" << endl;
         return false;
     }
@@ -489,7 +489,7 @@ bool SWIFT_File_Type( const char* filename, SWIFT_FILE_TYPE& ft )
     ifstream fin;
 
     // Try to open the file
-    if( filename == NULL ) {
+    if( filename == nullptr ) {
         cerr << "Error: Invalid filename given to read file" << endl;
         return false;
     }
@@ -548,7 +548,7 @@ bool SWIFT_File_Read_Decomposition(
     ifstream fin;
 
     // Try to open the file
-    if( filename == NULL ) {
+    if( filename == nullptr ) {
         cerr << "Error: Invalid filename given to read file" << endl;
         return false;
     }
@@ -670,7 +670,7 @@ bool SWIFT_File_Read_Decomposition(
     delete rvs; delete vs;
     if( !result ) {
         delete fs;
-        delete mesh; mesh = NULL;
+        delete mesh; mesh = nullptr;
         fin.close();
         return false;
     }
@@ -817,7 +817,7 @@ bool SWIFT_File_Read_Hierarchy( const char* filename, SWIFT_Tri_Mesh*& mesh,
     ifstream fin;
 
     // Try to open the file
-    if( filename == NULL ) {
+    if( filename == nullptr ) {
         cerr << "Error: Invalid filename given to read file" << endl;
         return false;
     }
@@ -1057,11 +1057,11 @@ bool SWIFT_File_Read_Hierarchy( const char* filename, SWIFT_Tri_Mesh*& mesh,
     }
 
     for( i = 0, j = 0; i < nof; i++, j += 3 ) {
-        mesh->Faces()[i].Edge1().Set_Twin( fs[j] == -1 ? NULL :
+        mesh->Faces()[i].Edge1().Set_Twin( fs[j] == -1 ? nullptr :
                             mesh->Faces()[fs[j]>>2].EdgeP( fs[j]&0x3 ) );
-        mesh->Faces()[i].Edge2().Set_Twin( fs[j+1] == -1 ? NULL :
+        mesh->Faces()[i].Edge2().Set_Twin( fs[j+1] == -1 ? nullptr :
                             mesh->Faces()[fs[j+1]>>2].EdgeP( fs[j+1]&0x3 ) );
-        mesh->Faces()[i].Edge3().Set_Twin( fs[j+2] == -1 ? NULL :
+        mesh->Faces()[i].Edge3().Set_Twin( fs[j+2] == -1 ? nullptr :
                             mesh->Faces()[fs[j+2]>>2].EdgeP( fs[j+2]&0x3 ) );
         mesh->Faces()[i].Edge1().Origin()->Set_Adj_Edge(
                                                 mesh->Faces()[i].Edge1P() );
@@ -1128,7 +1128,7 @@ bool SWIFT_File_Read_Hierarchy( const char* filename, SWIFT_Tri_Mesh*& mesh,
 
         // Set parent and children
         j = *((int*)(cs+4*sizeof(int)));
-        mesh->BVs()[i].Set_Parent( j == -1 ? NULL : mesh->BVs()(j) );
+        mesh->BVs()[i].Set_Parent( j == -1 ? nullptr : mesh->BVs()(j) );
         j = *((int*)(cs+5*sizeof(int)));
         if( j != -1 ) {
             mesh->BVs()[i].Children().Create( 2 );

@@ -14,7 +14,7 @@
 
 //===========================================================================
 
-bool JointDidNotSwitch(const rai::Frame *a1, const WorldL& Ktuple, int order) {
+bool JointDidNotSwitch(const rai::Frame *a1, const ConfigurationL& Ktuple, int order) {
   CHECK_EQ(&a1->K, Ktuple.last(), "");
   if(order<1) return true;
   for(int i=0; i<order; i++) {
@@ -30,7 +30,7 @@ bool JointDidNotSwitch(const rai::Frame *a1, const WorldL& Ktuple, int order) {
 
 //===========================================================================
 
-uint TM_FlagConstraints::dim_phi(const WorldL& Ktuple) {
+uint TM_FlagConstraints::dim_phi(const ConfigurationL& Ktuple) {
   uint d=0;
   for(rai::Frame *a : Ktuple.last()->frames) {
     if(a->flags & (1<<FL_zeroVel)) d += 7;
@@ -41,7 +41,7 @@ uint TM_FlagConstraints::dim_phi(const WorldL& Ktuple) {
   return d;
 }
 
-void TM_FlagConstraints::phi(arr& y, arr& J, const WorldL& Ktuple) {
+void TM_FlagConstraints::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   CHECK_GE(order, 1, "FlagConstraints needs k-order 1");
   
   rai::Configuration& K = *Ktuple.last();
@@ -124,7 +124,7 @@ void TM_FlagConstraints::phi(arr& y, arr& J, const WorldL& Ktuple) {
 
 //===========================================================================
 
-uint TM_FlagCosts::dim_phi(const WorldL& Ktuple) {
+uint TM_FlagCosts::dim_phi(const ConfigurationL& Ktuple) {
   uint d=0;
   for(rai::Frame *a : Ktuple.last()->frames) {
     if(order>=2 && a->flags & (1<<FL_xPosAccCosts)) d+=3;
@@ -135,7 +135,7 @@ uint TM_FlagCosts::dim_phi(const WorldL& Ktuple) {
   return d;
 }
 
-void TM_FlagCosts::phi(arr& y, arr& J, const WorldL& Ktuple) {
+void TM_FlagCosts::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   CHECK_GE(order, 1, "FlagConstraints needs k-order 1");
   
   rai::Configuration& K = *Ktuple.last();

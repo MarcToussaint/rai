@@ -79,8 +79,8 @@ struct PointEqualityConstraint:Feature {
   rai::Vector ivec, jvec; ///< additional position or vector
   
   PointEqualityConstraint(const rai::Configuration &G,
-                          const char* iShapeName=NULL, const rai::Vector& _ivec=NoVector,
-                          const char* jShapeName=NULL, const rai::Vector& _jvec=NoVector) {
+                          const char* iShapeName=nullptr, const rai::Vector& _ivec=NoVector,
+                          const char* jShapeName=nullptr, const rai::Vector& _jvec=NoVector) {
     TM_Default dummy(TMT_pos, G, iShapeName, _ivec, jShapeName, _jvec); //is deleted in a sec..
     i=dummy.i;
     j=dummy.j;
@@ -115,11 +115,11 @@ struct VelAlignConstraint:Feature {
   
   double margin;
   VelAlignConstraint(const rai::Configuration& G,
-                     const char* iShapeName=NULL, const rai::Vector& _ivec=NoVector,
-                     const char* jShapeName=NULL, const rai::Vector& _jvec=NoVector, double _target = 0.);
+                     const char* iShapeName=nullptr, const rai::Vector& _ivec=NoVector,
+                     const char* jShapeName=nullptr, const rai::Vector& _jvec=NoVector, double _target = 0.);
                      
   virtual void phi(arr& y, arr& J, const rai::Configuration& G, int t=1) { } ;
-  virtual void phi(arr& y, arr& J, const WorldL& G);
+  virtual void phi(arr& y, arr& J, const ConfigurationL& G);
   virtual uint dim_phi(const rai::Configuration& G) { return 1; }
 };
 

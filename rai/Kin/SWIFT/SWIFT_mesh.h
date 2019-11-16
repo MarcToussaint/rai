@@ -103,7 +103,7 @@ class SWIFT_Tri_Mesh;
 class SWIFT_Tri_Vertex {
   public:
     SWIFT_Tri_Vertex( )
-    {   edge = NULL;
+    {   edge = nullptr;
     }
     ~SWIFT_Tri_Vertex( ) { }
 
@@ -149,8 +149,8 @@ class SWIFT_Tri_Vertex {
 class SWIFT_Tri_Edge {
   public:
     SWIFT_Tri_Edge( )
-    {   next = twin = NULL, orig = NULL, face = NULL;
-        twins = NULL;
+    {   next = twin = nullptr, orig = nullptr, face = nullptr;
+        twins = nullptr;
     }
     ~SWIFT_Tri_Edge( ) { delete twins; }
 
@@ -195,7 +195,7 @@ class SWIFT_Tri_Edge {
                                     { return twins[glevel-Starting_Level()]; }
 
     // Nullify the twins array
-    void Nullify_Twins( ) { twins = NULL; }
+    void Nullify_Twins( ) { twins = nullptr; }
 
     // Retrieve the classification for a certain level in the hierarchy.  Note
     // that an edge has the most powerful classification between its own face
@@ -480,7 +480,7 @@ class SWIFT_Tri_Face {
 class SWIFT_BV {
   public:
     // p is the parent of this bv.
-    SWIFT_BV( SWIFT_BV* p = NULL ) { parent = p;
+    SWIFT_BV( SWIFT_BV* p = nullptr ) { parent = p;
         level = 0;
     }
     ~SWIFT_BV( );
@@ -694,7 +694,7 @@ class SWIFT_Tri_Mesh {
     bool Create( const SWIFT_Real* vs, const int* fs, int vn, int fn,
                  const SWIFT_Orientation& orient,
                  const SWIFT_Translation& trans,
-                 SWIFT_Real sc, const int* fv = NULL
+                 SWIFT_Real sc, const int* fv = nullptr
                 );
 
 
@@ -800,7 +800,7 @@ inline SWIFT_Tri_Edge* SWIFT_Tri_Vertex::Adj_Edge( SWIFT_Tri_Vertex* v ) const
 {
 #ifdef SWIFT_ALLOW_BOUNDARY
     SWIFT_Tri_Edge* medge = edge;
-    for( ; medge->Twin() != NULL; medge = medge->Twin()->Next() ) {
+    for( ; medge->Twin() != nullptr; medge = medge->Twin()->Next() ) {
         if( medge->Next()->Origin() == v ) { 
             return medge;
         }   
@@ -828,15 +828,15 @@ inline SWIFT_Tri_Face* SWIFT_Tri_Vertex::Adj_Face( SWIFT_Tri_Vertex* v ) const
 inline SWIFT_Triple SWIFT_Tri_Vertex::Gathered_Normal( ) const
 {
 #ifdef SWIFT_ALLOW_BOUNDARY
-    SWIFT_Tri_Edge* medge = edge->Twin() == NULL ? edge : edge->Twin()->Next();
+    SWIFT_Tri_Edge* medge = edge->Twin() == nullptr ? edge : edge->Twin()->Next();
     SWIFT_Triple tri = edge->Adj_Face()->Normal();
-    for( ; medge != edge && medge->Twin() != NULL;
+    for( ; medge != edge && medge->Twin() != nullptr;
            medge = medge->Twin()->Next()
     ) {
         tri += medge->Adj_Face()->Normal();
     }
-    if( medge->Twin() == NULL ) {
-        for( medge = edge->Prev()->Twin(); medge != NULL;
+    if( medge->Twin() == nullptr ) {
+        for( medge = edge->Prev()->Twin(); medge != nullptr;
              medge = medge->Prev()->Twin()
         ) {
             tri += medge->Adj_Face()->Normal();
@@ -855,15 +855,15 @@ inline SWIFT_Triple SWIFT_Tri_Vertex::Gathered_Normal( ) const
 inline SWIFT_Triple SWIFT_Tri_Vertex::Gathered_Direction( ) const
 {
 #ifdef SWIFT_ALLOW_BOUNDARY
-    SWIFT_Tri_Edge* medge = edge->Twin() == NULL ? edge : edge->Twin()->Next();
+    SWIFT_Tri_Edge* medge = edge->Twin() == nullptr ? edge : edge->Twin()->Next();
     SWIFT_Triple tri = edge->Direction();
-    for( ; medge != edge && medge->Twin() != NULL;
+    for( ; medge != edge && medge->Twin() != nullptr;
            medge = medge->Twin()->Next()
     ) {
         tri += medge->Direction();
     }
-    if( medge->Twin() == NULL ) {
-        for( medge = edge->Prev()->Twin(); medge != NULL;
+    if( medge->Twin() == nullptr ) {
+        for( medge = edge->Prev()->Twin(); medge != nullptr;
              medge = medge->Prev()->Twin()
         ) {
             tri += medge->Direction();

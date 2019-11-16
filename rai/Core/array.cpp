@@ -861,7 +861,7 @@ double determinantSubroutine(double **A, uint n) {
     }
     d+=((i&1)?-1.:1.) * A[i][0] * determinantSubroutine(B, n-1);
   }
-  delete[] B; B=NULL;
+  delete[] B; B=nullptr;
   return d;
 }
 
@@ -1215,7 +1215,7 @@ void scanArrFile(const char* name) {
   for(;;) {
     tag.read(is, " \n\r\t", " \n\r\t");
     if(!is.good() || tag.N==0) return;
-    x.readTagged(is, NULL);
+    x.readTagged(is, nullptr);
     x.writeTagged(cout, tag);  cout <<endl;
     if(!is.good()) return;
   }
@@ -1561,9 +1561,9 @@ arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
 //      sig.resize(N);
 //      dsyev_ ((char*)"N", (char*)"L", &N, A.p, &N, sig.p, WORK.p, &LWORK, &INFO);
 //      lapack_EigenDecomp(A, sig, NoArr);
-      dsyevx_((char*)"N", (char*)"I", (char*)"L", &N, Acopy.p, &LDAB, &VL, &VU, &IL, &IU, &ABSTOL, &M, sig.p, (double*)NULL, &LDZ, WORK.p, &LWORK, IWORK.p, IFAIL.p, &INFO);
+      dsyevx_((char*)"N", (char*)"I", (char*)"L", &N, Acopy.p, &LDAB, &VL, &VU, &IL, &IU, &ABSTOL, &M, sig.p, (double*)nullptr, &LDZ, WORK.p, &LWORK, IWORK.p, IFAIL.p, &INFO);
     } else if(isRowShifted(A)){
-      dsbevx_((char*)"N", (char*)"I", (char*)"L", &N, &KD, Acopy.p, &LDAB, (double*)NULL, &LDQ, &VL, &VU, &IL, &IU, &ABSTOL, &M, sig.p, (double*)NULL, &LDZ, WORK.p, IWORK.p, IFAIL.p, &INFO);
+      dsbevx_((char*)"N", (char*)"I", (char*)"L", &N, &KD, Acopy.p, &LDAB, (double*)nullptr, &LDQ, &VL, &VU, &IL, &IU, &ABSTOL, &M, sig.p, (double*)nullptr, &LDZ, WORK.p, IWORK.p, IFAIL.p, &INFO);
     } else NIY;
     sig.resizeCopy(k);
 #else
@@ -1645,9 +1645,9 @@ arr lapack_kSmallestEigenValues_sym(const arr& A, uint k) {
   double VL=0., VU=0., ABSTOL=1e-8;
   arr sig(N);
   if(!isRowShifted(A)) {
-    dsyevx_((char*)"N", (char*)"I", (char*)"L", &N, Acopy.p, &LDAB, &VL, &VU, &IL, &IU, &ABSTOL, &M, sig.p, (double*)NULL, &LDZ, WORK.p, &LWORK, IWORK.p, IFAIL.p, &INFO);
+    dsyevx_((char*)"N", (char*)"I", (char*)"L", &N, Acopy.p, &LDAB, &VL, &VU, &IL, &IU, &ABSTOL, &M, sig.p, (double*)nullptr, &LDZ, WORK.p, &LWORK, IWORK.p, IFAIL.p, &INFO);
   } else {
-    dsbevx_((char*)"N", (char*)"I", (char*)"L", &N, &KD, Acopy.p, &LDAB, (double*)NULL, &LDQ, &VL, &VU, &IL, &IU, &ABSTOL, &M, sig.p, (double*)NULL, &LDZ, WORK.p, IWORK.p, IFAIL.p, &INFO);
+    dsbevx_((char*)"N", (char*)"I", (char*)"L", &N, &KD, Acopy.p, &LDAB, (double*)nullptr, &LDQ, &VL, &VU, &IL, &IU, &ABSTOL, &M, sig.p, (double*)nullptr, &LDZ, WORK.p, IWORK.p, IFAIL.p, &INFO);
   }
   sig.resizeCopy(k);
   return sig;
@@ -1939,7 +1939,7 @@ RowShifted *makeRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d1) {
 }
 
 RowShifted::~RowShifted() {
-  Z.special = NULL;
+  Z.special = nullptr;
 }
 
 double RowShifted::elem(uint i, uint j) {

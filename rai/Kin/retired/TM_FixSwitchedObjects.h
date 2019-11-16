@@ -16,9 +16,9 @@
 /// accelerations or velocities over consecutive time steps
 struct TM_FixSwichedObjects:Feature {
   TM_FixSwichedObjects() {}
-  virtual void phi(arr& y, arr& J, const WorldL& Ktuple);
+  virtual void phi(arr& y, arr& J, const ConfigurationL& Ktuple);
   virtual void phi(arr& y, arr& J, const rai::Configuration& G) { HALT("can only be of order 1"); }
   virtual uint dim_phi(const rai::Configuration& G) { HALT("can only be of order 1"); }
-  virtual uint dim_phi(const WorldL& G);
+  virtual uint dim_phi(const ConfigurationL& G);
   virtual rai::String shortTag(const rai::Configuration& G) { return STRING("FixSwichedObjects"); }
 };

@@ -30,7 +30,7 @@ TM_Transition::TM_Transition(const rai::Configuration& G, bool effectiveJointsOn
   H_rate_diag = H_rate*H_diag;
 }
 
-uint TM_Transition::dim_phi(const WorldL& G) {
+uint TM_Transition::dim_phi(const ConfigurationL& G) {
   bool handleSwitches=effectiveJointsOnly;
   uint qN=G(0)->q.N;
   for(uint i=0; i<G.N; i++) if(G.elem(i)->q.N!=qN) { handleSwitches=true; break; }
@@ -50,7 +50,7 @@ uint TM_Transition::dim_phi(const WorldL& G) {
   return uint(-1);
 }
 
-void TM_Transition::phi(arr& y, arr& J, const WorldL& Ktuple) {
+void TM_Transition::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   if(velCoeff) CHECK(order>=1, "a velocity feature needs to have order>=1");
   if(accCoeff) CHECK(order>=2, "an acceleration feature needs to have order>=2");
 

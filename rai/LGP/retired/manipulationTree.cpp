@@ -90,7 +90,7 @@ void MNode::solvePoseProblem() {
     poseProblemSpecs = &n->graph();
     poseProblemSpecs->copy(*folState, &fol.KB);
     NodeL komoRules = fol.KB.getNodes("PoseProblemRule");  //  listWrite(komoRules, cout, "\n"); cout <<endl;
-    forwardChaining_FOL(*poseProblemSpecs, komoRules/*, NULL, NoGraph, 5*/);
+    forwardChaining_FOL(*poseProblemSpecs, komoRules/*, nullptr, NoGraph, 5*/);
     cout <<"POSE PROBLEM:" <<*poseProblemSpecs <<endl;
     
     poseProblem = new KOMO(effKinematics, true);
@@ -169,7 +169,7 @@ void MNode::solveSeqProblem(int verbose) {
       CHECK(node->s > 0,""); //don't add anything for the root
       Graph tmp(*node->folState);
       Graph& changes = fol.KB.newSubgraph({}, {})->graph();
-      forwardChaining_FOL(tmp, komoRules, NULL, changes); //use the rules to add to the specs
+      forwardChaining_FOL(tmp, komoRules, nullptr, changes); //use the rules to add to the specs
       changes.checkConsistency();
       for(Node *n:changes) {
         Graph *p;
@@ -264,7 +264,7 @@ void MNode::solvePathProblem(uint microSteps, int verbose) {
   for(MNode *node:treepath) if(node->folDecision) {
       CHECK(node->s > 0,"");
       node->folDecision->newClone(*pathProblemSpecs);
-      forwardChaining_FOL(*pathProblemSpecs, komoRules); //, NULL, NoGraph, 4);
+      forwardChaining_FOL(*pathProblemSpecs, komoRules); //, nullptr, NoGraph, 4);
       pathProblem->parseTasks(*pathProblemSpecs, microSteps, (node->s-1)*microSteps);
       cout <<"PATH PROBLEM: (s=" <<node->s <<")\n" <<*pathProblemSpecs <<endl;
       pathProblemSpecs->clear();

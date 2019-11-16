@@ -81,7 +81,7 @@ struct GaussianProcess {
   void setKernel(double(*_cov)(void *P, const arr& x, const arr& y), void *_kernelP) {
     kernelP=_kernelP;
     cov=_cov;
-    dcov=NULL;
+    dcov=nullptr;
   }
   void setKernel(double(*_cov)(void *P, const arr& x, const arr& y), void (*_dcov)(arr& grad, void *P, const arr& x, const arr& y), void *_kernelP) {
     kernelP=_kernelP;

@@ -99,7 +99,7 @@ bool rai::checkGradient(void (*f)(arr&, arr*, const arr&, void*),
   for(i=0; i<x.N; i++) {
     dx=x;
     dx.elem(i) += eps;
-    f(dy, NULL, dx, data);
+    f(dy, nullptr, dx, data);
     dy = (dy-y)/eps;
     for(k=0; k<y.N; k++) JJ(k, i)=dy.elem(k);
   }
@@ -131,7 +131,7 @@ bool rai::checkGradient(double(*f)(arr*, const arr&, void*),
   for(i=0; i<x.N; i++) {
     dx=x;
     dx.elem(i) += eps;
-    dy = f(NULL, dx, data);
+    dy = f(nullptr, dx, data);
     dy = (dy-y)/eps;
     JJ(i)=dy;
   }
@@ -1062,7 +1062,7 @@ double CG_f(double x[], void *data) {
   //printf("[CGf]");
   fc++;
   xref.referTo(x, n); xref.reshapeAs(*startx);
-  y=f(NULL, xref, data);
+  y=f(nullptr, xref, data);
   //printf("minimization (#f=%3i #df=%3i): current f-value = %g  \n", fc, dfc, y);
   return y;
 }
@@ -1078,7 +1078,7 @@ void LM_f(double *p, double *hx, longinteger m, longinteger n, void *adata) {
   //printf("%li %li", n, m);
   fc++;
   xref.referTo(p, n); xref.reshapeAs(*startx);
-  y = f(NULL, xref, adata);
+  y = f(nullptr, xref, adata);
   //printf("minimization (#f=%3i #df=%3i): current f-value = %g  \n", fc, dfc, y);
   int i;
   for(i=0; i<n; i++) hx[i]=y;
@@ -1096,7 +1096,7 @@ void LM_df(double *p, double *J, longinteger m, longinteger n, void *adata) {
 double RP_f(const arr& x, void *data) {
   //printf("[RPf]");
   fc++;
-  y=f(NULL, x, data);
+  y=f(nullptr, x, data);
   //printf("minimization (#f=%3i #df=%3i): current f-value = %g  \n", fc, dfc, y);
   return y;
 }
@@ -1175,7 +1175,7 @@ int rai::minimize(double(*f)(arr*, const arr&, void*),
       /*i=dlevmar_der(minimizeStatic::LM_f,
         minimizeStatic::LM_df,
         x.p, LM_target.p, x.N, x.N, 1000,
-        NULL, NULL, NULL, NULL, data);*/
+        nullptr, nullptr, nullptr, nullptr, data);*/
       break;
     case 3: //Rprop + conj Grad
       int j;

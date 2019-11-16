@@ -18,8 +18,8 @@ TM_AboveBox::TM_AboveBox(int iShape, int jShape, double _margin)
 
 TM_AboveBox::TM_AboveBox(const rai::Configuration& K, const char* iShapeName, const char* jShapeName, double _margin)
   :i(-1), j(-1), margin(_margin) {
-  rai::Frame *a = iShapeName ? K.getFrameByName(iShapeName):NULL;
-  rai::Frame *b = jShapeName ? K.getFrameByName(jShapeName):NULL;
+  rai::Frame *a = iShapeName ? K.getFrameByName(iShapeName):nullptr;
+  rai::Frame *b = jShapeName ? K.getFrameByName(jShapeName):nullptr;
   if(a) i=a->ID;
   if(b) j=b->ID;
 }
@@ -86,8 +86,8 @@ TM_InsideBox::TM_InsideBox(int iShape, int jShape)
 
 TM_InsideBox::TM_InsideBox(const rai::Configuration& G, const char* iShapeName, const rai::Vector &_ivec, const char* jShapeName, double _margin)
   :i(-1), j(-1), margin(_margin) {
-  rai::Frame *a = iShapeName ? G.getFrameByName(iShapeName):NULL;
-  rai::Frame *b = jShapeName ? G.getFrameByName(jShapeName):NULL;
+  rai::Frame *a = iShapeName ? G.getFrameByName(iShapeName):nullptr;
+  rai::Frame *b = jShapeName ? G.getFrameByName(jShapeName):nullptr;
   if(a) i=a->ID;
   if(b) j=b->ID;
   if(!!_ivec) ivec=_ivec; else ivec.setZero();

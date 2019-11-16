@@ -126,7 +126,7 @@ void OpenGL::createOffscreen(int width, int height) {
   if(s->osContext && (width>s->osPixmap->width() || height>s->osPixmap->height())) {
     delete s->osContext;
     delete s->osPixmap;
-    s->osContext=NULL;
+    s->osContext=nullptr;
   }
   if(!s->osContext) {
     s->osPixmap=new QPixmap(width, height);

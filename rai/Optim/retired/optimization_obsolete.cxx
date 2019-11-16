@@ -95,8 +95,8 @@ double evaluateVCF(VectorChainFunction& f, const arr& x) {
   uint n=X.d0;
   uintA E=edges();
   double f=0.;
-  for(uint i=0;i<n;i++)    f += fi(NULL, i, X[i]);
-  for(uint i=0;i<E.d0;i++) f += fij(NULL, NULL, E(i,0), E(i,1), X[E(i,0)], X[E(i,1)]);
+  for(uint i=0;i<n;i++)    f += fi(nullptr, i, X[i]);
+  for(uint i=0;i<E.d0;i++) f += fij(nullptr, nullptr, E(i,0), E(i,1), X[E(i,0)], X[E(i,1)]);
   return f;
 }
 
@@ -110,13 +110,13 @@ struct Tmp:public ScalarFunction{
     arr gi, gj;
     if(grad) (*grad).resizeAs(X);
     for(i=0;i<n;i++){
-      f += sgf->fi((grad?&gi:NULL), i, X[i]);
+      f += sgf->fi((grad?&gi:nullptr), i, X[i]);
       if(grad) (*grad)[i]() += gi;
     }
     for(k=0;k<E.d0;k++){
       i=E(k,0);
       j=E(i,1);
-      f += sgf->fij((grad?&gi:NULL), (grad?&gj:NULL), i, j, X[i], X[j]);
+      f += sgf->fij((grad?&gi:nullptr), (grad?&gj:nullptr), i, j, X[i], X[j]);
       if(grad) (*grad)[i]() += gi;
       if(grad) (*grad)[j]() += gj;
     }
@@ -192,7 +192,7 @@ uint optNodewise(arr& x, VectorChainFunction& f, OptOptions o) {
   }
   if(o.fmin_return) *o.fmin_return=fx;
   if(o.verbose>0) fil.close();
-  if(o.verbose>1) gnuplot("plot 'z.nodewise' us 1:3 w l",NULL,true);
+  if(o.verbose>1) gnuplot("plot 'z.nodewise' us 1:3 w l",nullptr,true);
   
   return evals;
 }
@@ -293,7 +293,7 @@ uint optNodewise(arr& x, VectorChainFunction& f, OptOptions o) {
 //    if(o.verbose>0) fil <<evals <<' ' <<eval_cost <<' ' <<fx <<' ' <<damping <<endl;
 //  }
 //  if(o.verbose>0) fil.close();
-//  if(o.verbose>1) gnuplot("plot 'z.DP' us 1:3 w l",NULL,true);
+//  if(o.verbose>1) gnuplot("plot 'z.DP' us 1:3 w l",nullptr,true);
 //  return evals;
 //}
 
@@ -454,7 +454,7 @@ uint optNodewise(arr& x, VectorChainFunction& f, OptOptions o) {
 //  if(o.verbose>1) cout <<"optMSGN " <<evals <<' ' <<eval_cost <<' ' <<fx <<' ' <<damping <<endl;
 //  if(o.verbose>0) fil <<evals <<' ' <<eval_cost <<' ' <<fx <<' ' <<damping <<endl;
 //  if(o.verbose>0) fil.close();
-//  if(o.verbose>1) gnuplot("plot 'z.MSGN' us 1:3 w l",NULL,true);
+//  if(o.verbose>1) gnuplot("plot 'z.MSGN' us 1:3 w l",nullptr,true);
 //  return evals;
 //}
 
@@ -846,13 +846,13 @@ void SlalomProblem::fv_i(arr& y, arr& J, uint i, const arr& x_i) {
     uint obstacle=i/(T/K);
     if(obstacle&1) { //top obstacle
       double d=(x_i(0)-1.)/margin;
-//       y(0) = tannenbaum((J?&(*J)(0,0):NULL), d, power);
-      y(0) = border((!!J?&J(0,0):NULL), d, power);
+//       y(0) = tannenbaum((J?&(*J)(0,0):nullptr), d, power);
+      y(0) = border((!!J?&J(0,0):nullptr), d, power);
       if(!!J) J(0,0) /= margin;
     } else {
       double d=-(x_i(0)+1.)/margin;
-//       y(0) = tannenbaum((J?&J(0,0):NULL), d, power);
-      y(0) = border((!!J?&J(0,0):NULL), d, power);
+//       y(0) = tannenbaum((J?&J(0,0):nullptr), d, power);
+      y(0) = border((!!J?&J(0,0):nullptr), d, power);
       if(!!J) J(0,0) /= -margin;
     }
   }

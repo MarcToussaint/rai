@@ -70,7 +70,7 @@ struct sRobotOperation : Thread, GLDrawer{
 
   void glDraw(OpenGL& gl){
     //        auto lock = stepMutex(RAI_HERE);
-    glStandardScene(NULL, gl);
+    glStandardScene(nullptr, gl);
     K_ref.glDraw(gl);
 //    auto lock = gl.dataLock(RAI_HERE);
     if(useBaxter){
@@ -154,10 +154,10 @@ double RobotOperation::timeToGo(){
 //void RobotInterface::execGripper(const rai::String& gripper, double position, double force){
 //  auto lock = stepMutex(RAI_HERE);
 //  if(gripper=="pr2R"){
-//    //  komo->addObjective(0., 0., OT_eq, FS_accumulatedCollisions, {}, 1e0);
+//    //  komo->addObjective(0., 0., FS_accumulatedCollisions, {}, OT_eq, 1e0);
 //    //open gripper
-//    //  komo->addObjective(0.,0., OT_sos, FS_qItself, {"r_gripper_joint"}, 1e1, {.08} );
-//    //  komo->addObjective(0.,0., OT_sos, FS_qItself, {"r_gripper_l_finger_joint"}, 1e1, {.8} );
+//    //  komo->addObjective(0.,0., FS_qItself, {"r_gripper_joint"}, OT_sos, 1e1, {.08} );
+//    //  komo->addObjective(0.,0., FS_qItself, {"r_gripper_l_finger_joint"}, OT_sos, 1e1, {.8} );
 
 //    SIM.setUsedRobotJoints({"r_gripper_joint", "r_gripper_l_finger_joint"});
 //    SIM.exec({1,2, {position, position*10.}}, {1.}, true);

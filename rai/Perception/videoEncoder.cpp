@@ -43,12 +43,12 @@ struct sVideoEncoder_libav_simple {
   double encoding_time, video_time, csp_time;
   
   sVideoEncoder_libav_simple() :
-    fps(0), isOpen(false), i(0), out_size(0), num_pixels(0), outbuf_size(0), qp(0), codec(NULL), picture(NULL),
-    outbuf(NULL), picture_buf(NULL), frame_count(0), encoding_time(0.0), video_time(0.0), csp_time(0.0), is_rgb(false)
+    fps(0), isOpen(false), i(0), out_size(0), num_pixels(0), outbuf_size(0), qp(0), codec(nullptr), picture(nullptr),
+    outbuf(nullptr), picture_buf(nullptr), frame_count(0), encoding_time(0.0), video_time(0.0), csp_time(0.0), is_rgb(false)
   {}
   sVideoEncoder_libav_simple(const char* filename, double fps, uint qp, bool is_rgb) :
     filename(filename), fps(fps), isOpen(false), i(0), out_size(0), num_pixels(0), outbuf_size(0), qp(qp),
-    codec(NULL), picture(NULL), outbuf(NULL), picture_buf(NULL), frame_count(0), encoding_time(0.0), video_time(0.0), csp_time(0.0), is_rgb(is_rgb)
+    codec(nullptr), picture(nullptr), outbuf(nullptr), picture_buf(nullptr), frame_count(0), encoding_time(0.0), video_time(0.0), csp_time(0.0), is_rgb(is_rgb)
   {}
   void open(uint width, uint height);
   void addFrame(const byteA& rgb);
@@ -111,7 +111,7 @@ void sVideoEncoder_libav_simple::open(uint width, uint height) {
   if(!strcmp(container_context->oformat->name, "mp4"))
     video_stream->codec->flags |= CODEC_FLAG_GLOBAL_HEADER;
     
-  AVDictionary *opts = NULL;
+  AVDictionary *opts = nullptr;
   char opt_str[4];
   sprintf(opt_str,"%d", 0);
   av_dict_set(&opts, "qp", opt_str, qp);
@@ -202,7 +202,7 @@ void sVideoEncoder_libav_simple::addFrame(const byteA& rgb) {
 void sVideoEncoder_libav_simple::close() {
   /* get the delayed frames */
   do {
-    out_size = avcodec_encode_video(video_stream->codec, outbuf, outbuf_size, NULL);
+    out_size = avcodec_encode_video(video_stream->codec, outbuf, outbuf_size, nullptr);
     writeFrame();
   } while(out_size > 0);
   

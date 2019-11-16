@@ -32,14 +32,14 @@ template<> const char* rai::Enum<rai::SwitchType>::names []= {
   "makeKinematic",
   "delContact",
   "addContact",
-  NULL
+  nullptr
 };
 
 template<> const char* rai::Enum<rai::SwitchInitializationType>::names []= {
   "zero",
   "copy",
   "random",
-  NULL
+  nullptr
 };
 
 //===========================================================================
@@ -72,7 +72,7 @@ void rai::KinematicSwitch::setTimeOfApplication(double time, bool before, int st
 }
 
 void rai::KinematicSwitch::apply(Configuration& K) {
-  Frame *from=NULL, *to=NULL;
+  Frame *from=nullptr, *to=nullptr;
   if(fromId!=-1) from=K.frames(fromId);
   if(toId!=-1) to=K.frames(toId);
 
@@ -156,7 +156,7 @@ void rai::KinematicSwitch::apply(Configuration& K) {
 
   if(symbol==SW_delContact) {
     CHECK_EQ(jointType, JT_none, "");
-    rai::Contact *c = NULL;
+    rai::Contact *c = nullptr;
     for(rai::Contact *cc:to->contacts) if(&cc->a==from || &cc->b==from){ c=cc; break; }
     if(!c) HALT("not found");
     delete c;
@@ -171,7 +171,7 @@ rai::String rai::KinematicSwitch::shortTag(const rai::Configuration* G) const {
   str <<"  timeOfApplication=" <<timeOfApplication;
   str <<"  symbol=" <<symbol;
   str <<"  jointType=" <<jointType;
-  str <<"  fromId=" <<(fromId==-1?"NULL":(G?G->frames(fromId)->name:STRING(fromId)));
+  str <<"  fromId=" <<(fromId==-1?"nullptr":(G?G->frames(fromId)->name:STRING(fromId)));
   str <<"  toId=" <<(G?G->frames(toId)->name:STRING(toId)) <<endl;
   return str;
 }
@@ -190,16 +190,16 @@ void rai::KinematicSwitch::write(std::ostream& os, rai::Configuration* K) const 
 
 /*
 rai::KinematicSwitch* rai::KinematicSwitch::newSwitch(const Node *specs, const rai::Configuration& world, int stepsPerPhase, uint T) {
-  if(specs->parents.N<2) return NULL;
+  if(specs->parents.N<2) return nullptr;
   
   //-- get tags
   rai::String& tt=specs->parents(0)->keys.last();
   rai::String& type=specs->parents(1)->keys.last();
-  const char *ref1=NULL, *ref2=NULL;
+  const char *ref1=nullptr, *ref2=nullptr;
   if(specs->parents.N>2) ref1=specs->parents(2)->keys.last().p;
   if(specs->parents.N>3) ref2=specs->parents(3)->keys.last().p;
   
-  if(tt!="MakeJoint") return NULL;
+  if(tt!="MakeJoint") return nullptr;
   rai::KinematicSwitch* sw = newSwitch(type, ref1, ref2, world, stepsPerPhase + 1);
   
   if(specs->isGraph()) {
@@ -249,7 +249,7 @@ rai::KinematicSwitch* rai::KinematicSwitch::newSwitch(const rai::String& type, c
 //    }else if(b->hasJoint()==0 && b->parentOf.N==0){
 //      RAI_MSG("No link to delete for shape '" <<ref1 <<"'");
 //      delete sw;
-//      return NULL;
+//      return nullptr;
 //    }else HALT("that's ambiguous");
 //  }else{
 

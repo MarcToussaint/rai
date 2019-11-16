@@ -44,7 +44,7 @@ template<> const char* rai::Enum<FeatureSymbol>::names []= {
   "energy",
   "transAccelerations",
   "transVelocities",
-  NULL
+  nullptr
 };
 
 
@@ -132,6 +132,8 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
   if(!!scale) f->scale = scale;
   if(!!target) f->target = target;
   if(order>=0) f->order = order;
+
+  f->fs = feat;
 
   return f;
 }

@@ -73,7 +73,7 @@ void Surfels::recomputeSurfelIndices() {
     gl.add(glDrawSurfelIndices, this);
     gl.camera.setKinect();
   }
-//  gl.update(NULL, true);
+//  gl.update(nullptr, true);
   gl.renderInBack();
   flip_image(gl.captureImage);
   idxImage = gl.captureImage;

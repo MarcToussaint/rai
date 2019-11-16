@@ -160,7 +160,7 @@ void TEST(ForceClosure) {
 
     FCtest::center=center;
     FCtest::Xn=Xn;
-    checkGradient(Convert(FCtest::f, NULL), X, 1e-4);
+    checkGradient(Convert(FCtest::f, nullptr), X, 1e-4);
   }
 }
 

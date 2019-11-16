@@ -10,7 +10,7 @@
 #include "TM_default.h"
 #include "TM_PairCollision.h"
 
-void TM_ImpulsExchange::phi(arr &y, arr &J, const WorldL &Ktuple) {
+void TM_ImpulsExchange::phi(arr &y, arr &J, const ConfigurationL &Ktuple) {
   CHECK_GE(Ktuple.N, 3, "");
   CHECK_GE(order, 2,"");
   
@@ -119,7 +119,7 @@ void TM_ImpulsExchange::phi(arr &y, arr &J, const WorldL &Ktuple) {
   if(!!J) CHECK_EQ(J.d0, y.N, "");
 }
 
-void TM_ImpulsExchange_weak::phi(arr &y, arr &J, const WorldL &Ktuple) {
+void TM_ImpulsExchange_weak::phi(arr &y, arr &J, const ConfigurationL &Ktuple) {
   CHECK_GE(Ktuple.N, 3, "");
   CHECK_GE(order, 2,"");
   

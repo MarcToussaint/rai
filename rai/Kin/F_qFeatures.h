@@ -24,9 +24,9 @@ struct F_qItself : Feature {
   F_qItself(const uintA& _selectedFrames, bool relative_q0=false);
   
   virtual void phi(arr& y, arr& J, const rai::Configuration& G);
-  virtual void phi(arr& y, arr& J, const WorldL& Ktuple);
+  virtual void phi(arr& y, arr& J, const ConfigurationL& Ktuple);
   virtual uint dim_phi(const rai::Configuration& G);
-  virtual uint dim_phi(const WorldL& Ktuple);
+  virtual uint dim_phi(const ConfigurationL& Ktuple);
   virtual rai::String shortTag(const rai::Configuration& G);
 private:
   std::map<rai::Configuration*, uint> dimPhi;
@@ -38,10 +38,10 @@ struct F_qZeroVel : Feature {
   int i;               ///< which shapes does it refer to?
 
   F_qZeroVel(int iShape=-1) : i(iShape) { order=1; }
-  F_qZeroVel(const rai::Configuration& K, const char* iShapeName=NULL) : F_qZeroVel(initIdArg(K,iShapeName)){}
+  F_qZeroVel(const rai::Configuration& K, const char* iShapeName=nullptr) : F_qZeroVel(initIdArg(K,iShapeName)){}
 
   virtual void phi(arr& y, arr& J, const rai::Configuration& G){ NIY; }
-  virtual void phi(arr& y, arr& J, const WorldL& Ktuple);
+  virtual void phi(arr& y, arr& J, const ConfigurationL& Ktuple);
   virtual uint dim_phi(const rai::Configuration& G);
   virtual rai::String shortTag(const rai::Configuration& G){ return STRING("qZeroVel-" <<G.frames(i)->name); }
 };
@@ -68,8 +68,8 @@ struct F_qQuaternionNorms : Feature {
 
 //===========================================================================
 
-rai::Array<rai::Joint*> getMatchingJoints(const WorldL& Ktuple, bool zeroVelJointsOnly);
+rai::Array<rai::Joint*> getMatchingJoints(const ConfigurationL& Ktuple, bool zeroVelJointsOnly);
 rai::Array<rai::Joint*> getSwitchedJoints(const rai::Configuration& G0, const rai::Configuration& G1, int verbose=0);
 uintA getSwitchedBodies(const rai::Configuration& G0, const rai::Configuration& G1, int verbose=0);
-uintA getNonSwitchedBodies(const WorldL& Ktuple);
+uintA getNonSwitchedBodies(const ConfigurationL& Ktuple);
 

@@ -111,7 +111,6 @@ LGP_Tree::LGP_Tree()
   if(!filNodes) filNodes = new ofstream(dataPath + "nodes");
 
   collisions = rai::getParameter<bool>("LGP/collisions", true);
-  useSwitches = rai::getParameter<bool>("LGP/useSwitches", true);
   displayTree = rai::getParameter<bool>("LGP/displayTree", false);
 
   verbose = rai::getParameter<int>("LGP/verbose", 2);
@@ -146,8 +145,8 @@ LGP_Tree::~LGP_Tree() {
   views.clear();
   if(dth) delete dth;
   delete root;
-  root=NULL;
-  if(filNodes) { delete filNodes; filNodes=NULL; }
+  root=nullptr;
+  if(filNodes) { delete filNodes; filNodes=nullptr; }
   solutions.writeAccess();
   listDelete(solutions());
   solutions.deAccess();
@@ -156,9 +155,9 @@ LGP_Tree::~LGP_Tree() {
 void LGP_Tree::initDisplay() {
   if(verbose>2 && !views.N) {
     views.resize(4);
-    views(1) = make_shared<KinPathViewer>(Var<WorldL>(), 1.2, -1);
-    views(2) = make_shared<KinPathViewer>(Var<WorldL>(), 1.2, -1);
-    views(3) = make_shared<KinPathViewer>(Var<WorldL>(), .05, -2);
+    views(1) = make_shared<KinPathViewer>(Var<ConfigurationL>(), 1.2, -1);
+    views(2) = make_shared<KinPathViewer>(Var<ConfigurationL>(), 1.2, -1);
+    views(3) = make_shared<KinPathViewer>(Var<ConfigurationL>(), .05, -2);
     for(auto& v:views) if(v) v->copy.orsDrawJoints=v->copy.orsDrawMarkers=v->copy.orsDrawProxies=false;
   }
   if(!dth) dth = new DisplayThread(this);
@@ -214,7 +213,7 @@ void LGP_Tree::updateDisplay() {
   solutions.writeAccess();
   for(uint i=0; i<solutions().N && i<6; i++) {
     if(dth->gl.views.N<=i || !dth->gl.views(i).drawers.N) {
-      dth->gl.addSubView(i, glStandardScene, NULL);
+      dth->gl.addSubView(i, glStandardScene, nullptr);
       dth->gl.addSubView(i, *solutions()(i));
       dth->gl.views(i).camera.setDefault();
       if(cameraFocus.N) dth->gl.views(i).camera.focus(cameraFocus, true);
@@ -443,8 +442,8 @@ bool LGP_Tree::execChoice(rai::String cmd) {
 }
 
 LGP_Node *LGP_Tree::getBest(LGP_NodeL &fringe, uint level) {
-  if(!fringe.N) return NULL;
-  LGP_Node* best=NULL;
+  if(!fringe.N) return nullptr;
+  LGP_Node* best=nullptr;
   for(LGP_Node* n:fringe) {
     if(n->isInfeasible || !n->count(level)) continue;
     if(!best || (n->feasible(level) && n->cost(level)<best->cost(level))) best=n;
@@ -453,9 +452,9 @@ LGP_Node *LGP_Tree::getBest(LGP_NodeL &fringe, uint level) {
 }
 
 LGP_Node *LGP_Tree::popBest(LGP_NodeL &fringe, uint level) {
-  if(!fringe.N) return NULL;
+  if(!fringe.N) return nullptr;
   LGP_Node* best=getBest(fringe, level);
-  if(!best) return NULL;
+  if(!best) return nullptr;
   fringe.removeValue(best);
   return best;
 }
@@ -466,7 +465,7 @@ LGP_Node *LGP_Tree::expandNext(int stopOnDepth, LGP_NodeL *addIfTerminal) { //ex
   LGP_Node *n =  fringe_expand.popFirst();
   
   CHECK(n,"");
-  if(stopOnDepth>0 && n->step>=(uint)stopOnDepth) return NULL;
+  if(stopOnDepth>0 && n->step>=(uint)stopOnDepth) return nullptr;
   n->expand();
   for(LGP_Node* ch:n->children) {
     if(ch->isTerminal) {
@@ -568,9 +567,9 @@ void LGP_Tree::step() {
   
 //  if(rnd.uni()<.5) optBestOnLevel(BD_pose, fringe_pose, BD_symbolic, &fringe_seq, &fringe_pose);
   optFirstOnLevel(BD_pose, fringe_poseToGoal, &fringe_seq);
-  optBestOnLevel(BD_seq, fringe_seq, BD_pose, &fringe_path, NULL);
+  optBestOnLevel(BD_seq, fringe_seq, BD_pose, &fringe_path, nullptr);
   if(verbose>0 && fringe_path.N) cout <<"EVALUATING PATH " <<fringe_path.last()->getTreePathString() <<endl;
-  optBestOnLevel(BD_seqPath, fringe_path, BD_seq, &fringe_solved, NULL);
+  optBestOnLevel(BD_seqPath, fringe_path, BD_seq, &fringe_solved, nullptr);
   
   if(fringe_solved.N>numSol) {
     if(verbose>0) cout <<"NEW SOLUTION FOUND! " <<fringe_solved.last()->getTreePathString() <<endl;

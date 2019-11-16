@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
     eglBindAPI(EGL_OPENGL_API);
 
     // 4. create the context
-    EGLContext eglCtx = eglCreateContext(eglDpy, eglCfg, EGL_NO_CONTEXT, NULL);
+    EGLContext eglCtx = eglCreateContext(eglDpy, eglCfg, EGL_NO_CONTEXT, nullptr);
 
 #ifdef USE_EGL_SURFACE
     // 5. create the surface and make the context current current

@@ -18,7 +18,7 @@ struct Simulator {
   Simulator(const char* orsFile);
   ~Simulator();
   
-  void watch(bool pause=true, const char *txt=NULL);                                    //pauses and lets you watch the OpenGL window
+  void watch(bool pause=true, const char *txt=nullptr);                                    //pauses and lets you watch the OpenGL window
   
   //-- KINEMATICS
   //set the joint angles AND compute the frames of all bodies via

@@ -26,8 +26,8 @@ TM_PairCollision::~TM_PairCollision(){
 }
 
 void TM_PairCollision::phi(arr& y, arr& J, const rai::Configuration& K) {
-  rai::Shape *s1 = i<0?NULL: K.frames(i)->shape;
-  rai::Shape *s2 = j<0?NULL: K.frames(j)->shape;
+  rai::Shape *s1 = i<0?nullptr: K.frames(i)->shape;
+  rai::Shape *s2 = j<0?nullptr: K.frames(j)->shape;
   CHECK(s1 && s2,"");
   double r1=s1->radius();
   double r2=s2->radius();

@@ -7,7 +7,7 @@ void F_Pose::phi(arr& y, arr& J, const rai::Configuration& C){
     NIY;
 }
 
-void F_Pose::phi(arr& y, arr& J, const WorldL& Ctuple){
+void F_Pose::phi(arr& y, arr& J, const ConfigurationL& Ctuple){
 #if 1
     TM_Default tmp(TMT_pos, a);
     tmp.order = order;
@@ -86,7 +86,7 @@ void F_PoseDiff::phi(arr& y, arr& J, const rai::Configuration& C){
     NIY;
 }
 
-void F_PoseDiff::phi(arr& y, arr& J, const WorldL& Ctuple){
+void F_PoseDiff::phi(arr& y, arr& J, const ConfigurationL& Ctuple){
     arr yq, Jq;
     TM_Default tmp(TMT_posDiff, a, NoVector, b, NoVector);
     tmp.order = order;
@@ -105,7 +105,7 @@ void F_PoseRel::phi(arr& y, arr& J, const rai::Configuration& C){
     NIY;
 }
 
-void F_PoseRel::phi(arr& y, arr& J, const WorldL& Ctuple){
+void F_PoseRel::phi(arr& y, arr& J, const ConfigurationL& Ctuple){
     arr yq, Jq;
     TM_Default tmp(TMT_pos, a, NoVector, b, NoVector);
     tmp.order = order;
@@ -122,8 +122,8 @@ void F_PoseRel::phi(arr& y, arr& J, const WorldL& Ctuple){
 
 TM_Align::TM_Align(const rai::Configuration& K, const char* iName, const char* jName)
   : i(-1), j(-1) {
-  rai::Frame *a = iName ? K.getFrameByName(iName):NULL;
-  rai::Frame *b = jName ? K.getFrameByName(jName):NULL;
+  rai::Frame *a = iName ? K.getFrameByName(iName):nullptr;
+  rai::Frame *b = jName ? K.getFrameByName(jName):nullptr;
   if(a) i=a->ID;
   if(b) j=b->ID;
 }

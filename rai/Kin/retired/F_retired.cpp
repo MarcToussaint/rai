@@ -2,7 +2,7 @@
 
 //===========================================================================
 
-void TM_qZeroVels::phi(arr& y, arr& J, const WorldL& Ktuple) {
+void TM_qZeroVels::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   HALT("deprecated")
   CHECK_EQ(order, 1,"NIY");
   CHECK_GE(Ktuple.N, order+1,"I need at least " <<order+1 <<" configurations to evaluate");
@@ -17,7 +17,7 @@ void TM_qZeroVels::phi(arr& y, arr& J, const WorldL& Ktuple) {
   rai::Joint *j;
   for(rai::Frame *f:Ktuple.last()->frames) if((j=f->joint) && j->active) {
       rai::Joint *jmatch = Ktuple.last(-2)->getJointByFrameIndices(j->from()->ID, j->frame->ID);
-      if(jmatch && j->type!=jmatch->type) jmatch=NULL;
+      if(jmatch && j->type!=jmatch->type) jmatch=nullptr;
       if(jmatch) {
         for(uint i=0; i<j->qDim(); i++) {
           q_bar(0).append(Ktuple.last(-2)->q(jmatch->qIndex+i));
@@ -45,7 +45,7 @@ void TM_qZeroVels::phi(arr& y, arr& J, const WorldL& Ktuple) {
   }
 }
 
-uint TM_qZeroVels::dim_phi(const WorldL& Ktuple) {
+uint TM_qZeroVels::dim_phi(const ConfigurationL& Ktuple) {
   if(order==0) return dim_phi(*Ktuple.last());
   else {
     if(dimPhi.find(Ktuple.last()) == dimPhi.end()) {

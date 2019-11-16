@@ -37,8 +37,8 @@ struct TM_Default : Feature {
              int jShape=-1, const rai::Vector& jvec=NoVector);
              
   TM_Default(TM_DefaultType type, const rai::Configuration& K,
-             const char* iShapeName=NULL, const rai::Vector& ivec=NoVector,
-             const char* jShapeName=NULL, const rai::Vector& jvec=NoVector);
+             const char* iShapeName=nullptr, const rai::Vector& ivec=NoVector,
+             const char* jShapeName=nullptr, const rai::Vector& jvec=NoVector);
              
   TM_Default(const Graph &parameters, const rai::Configuration& G);
   TM_Default(const Node *parameters, const rai::Configuration& G);

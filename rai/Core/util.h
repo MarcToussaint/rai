@@ -103,7 +103,7 @@ int x11_getKey();
 
 //----- strings and streams
 bool contains(const char *s, char c);
-char skip(std::istream& is, const char *skipSymbols=" \n\r\t", const char *stopSymbols=NULL, bool skipCommentLines=true);
+char skip(std::istream& is, const char *skipSymbols=" \n\r\t", const char *stopSymbols=nullptr, bool skipCommentLines=true);
 void skipRestOfLine(std::istream& is);
 void skipOne(std::istream& is);
 char getNextChar(std::istream& is, const char *skipSymbols=" \n\r\t", bool skipCommentLines=true);
@@ -284,7 +284,7 @@ public:
   
   /// @name I/O
   void write(std::ostream& os) const;
-  uint read(std::istream& is, const char* skipSymbols=NULL, const char *stopSymbols=NULL, int eatStopSymbol=-1);
+  uint read(std::istream& is, const char* skipSymbols=nullptr, const char *stopSymbols=nullptr, int eatStopSymbol=-1);
 };
 stdPipes(String)
 }
@@ -421,7 +421,7 @@ extern String errString;
 
 namespace rai {
 
-String raiPath(const char* rel=NULL);
+String raiPath(const char* rel=nullptr);
 
 /** @brief A ostream/istream wrapper that allows easier initialization of objects, like:
 arr X = FILE("inname");
@@ -662,7 +662,7 @@ struct Singleton {
 //      static Mutex m; //pthread might already be deinitialized...
 //      m.lock();
       T *mine=singleton;
-      singleton=NULL;
+      singleton=nullptr;
       if(mine) delete mine;
 //      m.unlock();
     }
@@ -680,7 +680,7 @@ struct Singleton {
   Token operator()() { return Token(*this); }
 };
 
-template<class T> T *Singleton<T>::singleton=NULL;
+template<class T> T *Singleton<T>::singleton=nullptr;
 template<class T> Mutex Singleton<T>::mutex;
 
 //===========================================================================
@@ -751,7 +751,7 @@ inline bool operator==(Type& t1, Type& t2) { return t1.typeId() == t2.typeId(); 
 // gnuplot calls
 //
 
-void gnuplot(const char *command, bool pauseMouse=false, bool persist=false, const char* PDFfile=NULL);
+void gnuplot(const char *command, bool pauseMouse=false, bool persist=false, const char* PDFfile=nullptr);
 void gnuplotClose();
 
 //===========================================================================

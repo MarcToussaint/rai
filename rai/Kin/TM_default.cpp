@@ -22,7 +22,7 @@ template<> const char* rai::Enum<TM_DefaultType>::names []= {
   "pose",
   "poseDiff",
   "pos1D",
-  NULL,
+  nullptr,
 };
 
 TM_Default::TM_Default(TM_DefaultType _type,
@@ -67,7 +67,7 @@ TM_Default::TM_Default(const Node *specs, const rai::Configuration& G)
   CHECK(specs->parents.N>1,"");
   //  rai::String& tt=specs->parents(0)->keys.last();
   rai::String& Type=specs->parents(1)->keys.last();
-  const char *ref1=NULL, *ref2=NULL;
+  const char *ref1=nullptr, *ref2=nullptr;
   if(specs->parents.N>2) ref1=specs->parents(2)->keys.last().p;
   if(specs->parents.N>3) ref2=specs->parents(3)->keys.last().p;
   if(Type=="pos") type=TMT_pos;
@@ -91,8 +91,8 @@ TM_Default::TM_Default(const Node *specs, const rai::Configuration& G)
 }
 
 void TM_Default::phi(arr& y, arr& J, const rai::Configuration& G) {
-  rai::Frame *a = i<0?NULL: G.frames(i);
-  rai::Frame *b = j<0?NULL: G.frames(j);
+  rai::Frame *a = i<0?nullptr: G.frames(i);
+  rai::Frame *b = j<0?nullptr: G.frames(j);
 
   if(a) a->ensure_X();
   if(b) b->ensure_X();
@@ -101,7 +101,7 @@ void TM_Default::phi(arr& y, arr& J, const rai::Configuration& G) {
     rai::Vector vec_i = ivec;
     rai::Vector vec_j = jvec;
     CHECK(a,"");
-    if(b==NULL) { //simple, no j reference
+    if(b==nullptr) { //simple, no j reference
       G.kinematicsPos(y, J, a, vec_i);
       y -= conv_vec2arr(vec_j);
     }else{
@@ -129,7 +129,7 @@ void TM_Default::phi(arr& y, arr& J, const rai::Configuration& G) {
     rai::Vector vec_i = ivec;
     //    rai::Vector vec_j = j<0?jvec: G.shapes(j)->rel.rot*jvec;
     if(vec_i.isZero) RAI_MSG("attached vector is zero -- can't control that");
-    if(b==NULL) { //simple, no j reference
+    if(b==nullptr) { //simple, no j reference
       G.kinematicsVec(y, J, a, vec_i);
     }else{
       //relative
@@ -169,7 +169,7 @@ void TM_Default::phi(arr& y, arr& J, const rai::Configuration& G) {
     rai::Vector vec_j = jvec;
     arr zi,Ji,zj,Jj;
     G.kinematicsVec(zi, Ji, a, vec_i);
-    if(b==NULL) {
+    if(b==nullptr) {
       zj = conv_vec2arr(vec_j);
       if(!!J) { Jj.resizeAs(Ji); Jj.setZero(); }
     } else {
@@ -212,7 +212,7 @@ void TM_Default::phi(arr& y, arr& J, const rai::Configuration& G) {
     G.kinematicsPos(pi, Jpi, a, vec_i);
     G.kinematicsVec(xi, Jxi, a, Vector_x);
     G.kinematicsVec(yi, Jyi, a, Vector_y);
-    if(b==NULL) { //we look at WORLD
+    if(b==nullptr) { //we look at WORLD
       pj = conv_vec2arr(vec_j);
       if(!!J) { Jpj.resizeAs(Jpi); Jpj.setZero(); }
     } else {
@@ -230,7 +230,7 @@ void TM_Default::phi(arr& y, arr& J, const rai::Configuration& G) {
   }
   
   if(type==TMT_quat) {
-    if(b==NULL) { //simple, no j reference
+    if(b==nullptr) { //simple, no j reference
       G.kinematicsQuat(y, J, a);
     }else{
       arr qa,qb,Ja,Jb;

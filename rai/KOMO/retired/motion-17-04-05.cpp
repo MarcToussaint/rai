@@ -45,7 +45,7 @@ void Task::setCostSpecs(double fromTime, double toTime, int stepsPerPhase, uint 
 //===========================================================================
 
 Task* Task::newTask(const Node* specs, const rai::Configuration& world, int stepsPerPhase, uint T) {
-  if(specs->parents.N<2) return NULL; //these are not task specs
+  if(specs->parents.N<2) return nullptr; //these are not task specs
   
   //-- check the term type first
   ObjectiveType termType;
@@ -53,11 +53,11 @@ Task* Task::newTask(const Node* specs, const rai::Configuration& world, int step
   if(tt=="MinSumOfSqr") termType=OT_sos;
   else if(tt=="LowerEqualZero") termType=OT_ineq;
   else if(tt=="EqualZero") termType=OT_eq;
-  else return NULL;
+  else return nullptr;
   
   //-- try to crate a map
   Feature *map = Feature::newTaskMap(specs, world);
-  if(!map) return NULL;
+  if(!map) return nullptr;
   
   //-- create a task
   Task *task = new Task(map, termType);
@@ -83,7 +83,7 @@ Task* Task::newTask(const Node* specs, const rai::Configuration& world, int step
 //===========================================================================
 
 KOMO::KOMO(rai::Configuration& originalWorld, bool useSwift)
-  : world(originalWorld) , useSwift(useSwift), T(0), tau(0.), k_order(2), gl(NULL), invKin_problem(*this), komo_problem(*this) {
+  : world(originalWorld) , useSwift(useSwift), T(0), tau(0.), k_order(2), gl(nullptr), invKin_problem(*this), komo_problem(*this) {
   if(useSwift) {
     makeConvexHulls(originalWorld.shapes);
     originalWorld.swift().setCutoff(2.*rai::getParameter<double>("swiftCutoff", 0.11));
@@ -367,7 +367,7 @@ void KOMO::reportFeatures(bool brief, ostream& os) {
     if(sw->timeOfApplication+k_order<configurations.N)
       os <<sw->shortTag(configurations(sw->timeOfApplication+k_order));
     else
-      os <<sw->shortTag(NULL);
+      os <<sw->shortTag(nullptr);
   }
   
   //-- collect all task costs and constraints
@@ -502,10 +502,10 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures) {
   
   //rest: just the matrix
   if(!dualSolution.N) {
-    err.write(fil,NULL,NULL,"  ");
+    err.write(fil,nullptr,nullptr,"  ");
   } else {
     dualSolution.reshape(T, dualSolution.N/(T));
-    catCol(err, dualSolution).write(fil,NULL,NULL,"  ");
+    catCol(err, dualSolution).write(fil,nullptr,nullptr,"  ");
   }
   fil.close();
   

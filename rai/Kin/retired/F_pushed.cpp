@@ -4,13 +4,13 @@
 #include "TM_angVel.h"
 #include <Kin/contact.h>
 
-void POA_vel(arr& y, arr& J, const WorldL& Ktuple, rai::Contact* con, bool b_or_a);
+void POA_vel(arr& y, arr& J, const ConfigurationL& Ktuple, rai::Contact* con, bool b_or_a);
 
 F_pushed::F_pushed(int iShape) : i(iShape){
   order=1;
 }
 
-void F_pushed::phi(arr& y, arr& J, const WorldL& Ktuple){
+void F_pushed::phi(arr& y, arr& J, const ConfigurationL& Ktuple){
   CHECK_EQ(order, 1, "");
 
   //get linear and angular velocities

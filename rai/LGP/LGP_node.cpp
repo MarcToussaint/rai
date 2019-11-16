@@ -25,7 +25,7 @@ uint COUNT_node=0;
 uintA COUNT_opt=consts<uint>(0, BD_max);
 double COUNT_time=0.;
 rai::String OptLGPDataPath;
-ofstream *filNodes=NULL;
+ofstream *filNodes=nullptr;
 
 bool LGP_useHoming = true;
 
@@ -42,7 +42,7 @@ void LGP_Node::resetData() {
 }
 
 LGP_Node::LGP_Node(LGP_Tree* _tree, uint levels)
-  : parent(NULL), tree(_tree), step(0), time(0.), id(COUNT_node++),
+  : parent(nullptr), tree(_tree), step(0), time(0.), id(COUNT_node++),
     fol(tree->fol),
     startKinematics(tree->kin),
     L(levels) {
@@ -63,7 +63,7 @@ LGP_Node::LGP_Node(LGP_Node* parent, MCTS_Environment::Handle& a)
   parent->children.append(this);
   
   fol.setState(parent->folState, parent->step);
-  CHECK(a,"giving a 'NULL' shared pointer??");
+  CHECK(a,"giving a 'nullptr' shared pointer??");
   ret = fol.transition(a);
   time = parent->time + ret.duration;
   isTerminal = fol.successEnd;
@@ -151,8 +151,6 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
     CHECK(komoProblem(BD_seq), "BD_seq needs to be computed before");
     waypoints = komoProblem(BD_seq)->getPath_q();
   }
-
-  komo.useSwitches = tree->useSwitches;
 
   skeleton2Bound(komo, bound, S,
                  startKinematics, (parent?parent->effKinematics:startKinematics),
@@ -461,7 +459,7 @@ LGP_Node *LGP_Node::getChildByAction(Node *folDecision) {
     if(tuplesAreEqual(ch->folDecision->parents, folDecision->parents)) return ch;
   }
   LOG(-1) <<"a child with action '" <<*folDecision <<"' does not exist";
-  return NULL;
+  return nullptr;
 }
 
 void LGP_Node::getAll(LGP_NodeL& L) {
@@ -470,8 +468,8 @@ void LGP_Node::getAll(LGP_NodeL& L) {
 }
 
 LGP_Node *LGP_Node::treePolicy_random() {
-  if(isInfeasible) return NULL;
-  if(isTerminal) return NULL;
+  if(isInfeasible) return nullptr;
+  if(isTerminal) return nullptr;
   if(children.N) return children.rndElem()->treePolicy_random();
   return this;
 }
@@ -479,7 +477,7 @@ LGP_Node *LGP_Node::treePolicy_random() {
 bool LGP_Node::recomputeAllFolStates() {
   if(!parent) { //this is root
     folState->copy(*fol.start_state);
-    if(folAddToState) applyEffectLiterals(*folState, *folAddToState, {}, NULL);
+    if(folAddToState) applyEffectLiterals(*folState, *folAddToState, {}, nullptr);
   } else {
     fol.setState(parent->folState, parent->step);
     if(fol.is_feasible_action(decision)) {
@@ -493,7 +491,7 @@ bool LGP_Node::recomputeAllFolStates() {
       }
       fol.state->index();
       folState->copy(*fol.state);
-      if(folAddToState) applyEffectLiterals(*folState, *folAddToState, {}, NULL);
+      if(folAddToState) applyEffectLiterals(*folState, *folAddToState, {}, nullptr);
       folDecision = folState->getNode("decision");
     } else {
       if(!feasible(BD_seq) && !feasible(BD_path)) //seq or path have already proven it feasible! Despite the logic...

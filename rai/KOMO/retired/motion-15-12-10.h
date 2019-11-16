@@ -26,7 +26,7 @@ struct Feature {
   ObjectiveType type; // element of {cost_feature, inequality, equality} MAYBE: move this to Task?
   uint order;       ///< 0=position, 1=vel, etc
   virtual void phi(arr& y, arr& J, const rai::Configuration& G, int t=-1) = 0; ///< this needs to be overloaded
-  virtual void phi(arr& y, arr& J, const WorldL& G, double tau, int t=-1); ///< if not overloaded this computes the generic pos/vel/acc depending on order
+  virtual void phi(arr& y, arr& J, const ConfigurationL& G, double tau, int t=-1); ///< if not overloaded this computes the generic pos/vel/acc depending on order
   virtual uint dim_phi(const rai::Configuration& G) = 0; //the dimensionality of $y$
   
   VectorFunction vf(rai::Configuration& G) {
@@ -74,7 +74,7 @@ Objective* newTask(const Node* specs, const rai::Configuration& world, uint Tint
 struct KOMO {
   //engines to compute things
   rai::Configuration& world;  ///< the original world
-  WorldL configurations;       ///< copies for each time slice; including kinematic switches
+  ConfigurationL configurations;       ///< copies for each time slice; including kinematic switches
   bool useSwift;
   
   //******* the following three sections are parameters that define the problem
@@ -122,7 +122,7 @@ struct KOMO {
 //                             const arr& y_finalTarget, double y_finalPrec, const arr& y_midTarget=NoArr, double y_midPrec=-1., double earlyFraction=-1.);
 
   //-- cost infos
-  bool getPhi(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, const WorldL& G, double tau); ///< the general task vector and its Jacobian
+  bool getPhi(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, const ConfigurationL& G, double tau); ///< the general task vector and its Jacobian
   uint dim_phi(const rai::Configuration& G, uint t);
   uint dim_g(const rai::Configuration& G, uint t);
   uint dim_h(const rai::Configuration& G, uint t);

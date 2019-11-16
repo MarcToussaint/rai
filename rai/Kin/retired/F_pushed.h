@@ -17,8 +17,8 @@ struct F_pushed : Feature {
   virtual void phi(arr& y, arr& J, const rai::Configuration& K){ HALT("can't be here"); }
   virtual uint dim_phi(const rai::Configuration& K){ HALT("can't be here"); }
 
-  virtual void phi(arr& y, arr& J, const WorldL& Ktuple);
-  virtual uint dim_phi(const WorldL& Ktuple){ return 6; }
+  virtual void phi(arr& y, arr& J, const ConfigurationL& Ktuple);
+  virtual uint dim_phi(const ConfigurationL& Ktuple){ return 6; }
 
   virtual rai::String shortTag(const rai::Configuration& K) { return STRING("pushed-" <<K.frames(i)->name); }
 };
