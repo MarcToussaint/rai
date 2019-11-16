@@ -937,7 +937,6 @@ void KOMO::setSlow(double startTime, double endTime, double prec, bool hardConst
   if(stepsPerPhase>2) { //otherwise: no velocities
 #if 1
     uintA selectedBodies;
-    arr scale;
     for(rai::Frame *f:world.frames) if(f->joint && f->joint->dim>0 && f->joint->dim<7 && f->joint->type!=rai::JT_time && f->joint->active && f->joint->H>0.){
       selectedBodies.append(TUP(f->ID, f->parent->ID));
     }

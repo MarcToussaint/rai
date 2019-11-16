@@ -1,22 +1,12 @@
-#include <Kin/kin.h>
-#include <Kin/frame.h>
-#include <Gui/opengl.h>
-#include <KOMO/komo-ext.h>
-#include <Kin/F_contacts.h>
-#include <Kin/TM_time.h>
-#include <Kin/TM_default.h>
+#include <KOMO/komo.h>
 
 //===========================================================================
 
 void TEST(Easy){
-  rai::Configuration K("arm.g");
-  cout <<"configuration space dim=" <<K.q.N <<endl;
-
-  //-- add time DOFs
-//  K.addTimeJoint();
-
-  KOMO_ext komo;
-  komo.setModel(K, true);
+  rai::Configuration C("arm.g");
+  cout <<"configuration space dim=" <<C.getJointSpaceDimension() <<endl;
+  KOMO komo;
+  komo.setModel(C);
   komo.setPathOpt(1., 100, 5.);
   komo.setSquaredQAccVelHoming();
 
@@ -24,10 +14,10 @@ void TEST(Easy){
 //  komo.addObjective({}, make_shared<TM_Time>(), OT_sos, {1e2}, {}, 1); //smooth time evolution
 //  komo.addObjective({}, make_shared<TM_Time>(), OT_sos, {1e1}, {komo.tau}, 0); //prior on timing
 
-  komo.setPosition(1., 1., "endeff", "target", OT_sos);
-  komo.setSlowAround(1., .05);
-//  komo.setTask(.3, .7, new TM_Default(TMT_posDiff, komo.world, "endeff", NoVector, "target"), OT_sos, NoArr, 1e2, 2);
-  komo.add_collision(false);
+  komo.addObjective({1.}, FS_positionDiff, {"endeff", "target"}, OT_sos, {1e1});
+  komo.addObjective({.98,1.}, FS_qItself, {}, OT_sos, {1e1}, {}, 1);
+  komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1.});
+
   komo.reportProblem();
 
   komo.reset();
@@ -35,31 +25,25 @@ void TEST(Easy){
   komo.run();
   cout <<"TIME OPTIM: total=" <<sum(komo.getPath_times()) <<komo.getPath_times() <<endl;
   komo.plotTrajectory();
-  cout <<komo.getReport(true) <<endl;
 //  komo.reportProxies();
   komo.checkGradients();
   for(uint i=0;i<2;i++) komo.displayTrajectory();
-//  while(komo.displayTrajectory());
 }
 
 //===========================================================================
 
 void TEST(Align){
-  rai::Configuration K("arm.g");
-  cout <<"configuration space dim=" <<K.q.N <<endl;
-  KOMO_ext komo;
-  komo.setModel(K);
+  rai::Configuration C("arm.g");
+  cout <<"configuration space dim=" <<C.getJointStateDimension() <<endl;
+  KOMO komo;
+  komo.setModel(C);
   komo.setPathOpt(1., 100, 5.);
   komo.setSquaredQAccVelHoming();
 
-//  komo.setPosition(1., 1., "endeff", "target");
-  komo.addObjective({1.}, FS_positionRel, {"target", "endeff"}, OT_sos);
-//  komo.setOrientation(1., 1., "endeff", "target", OT_eq);
-//  komo.addObjective({1.}, FS_scalarProductXZ, {"target", "endeff"}, OT_eq);
-//  komo.addObjective({1.}, FS_scalarProductYZ, {"target", "endeff"}, OT_eq);
-  komo.addObjective({1.}, FS_scalarProductZZ, {"target", "endeff"}, OT_sos, {1e2}, {1.});
-  komo.setSlowAround(1., .02);
-  komo.add_collision(true);
+  komo.addObjective({1.}, FS_positionDiff, {"endeff", "target"}, OT_eq, {1e1});
+  komo.addObjective({1.}, FS_quaternionDiff, {"endeff", "target"}, OT_eq, {1e1});
+  komo.addObjective({.98,1.}, FS_qItself, {}, OT_sos, {1e1}, {}, 1);
+  komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1.});
 
   komo.reset();
   komo.run();
@@ -70,37 +54,32 @@ void TEST(Align){
 //===========================================================================
 
 void TEST(PR2){
-  rai::Configuration K("model.g");
-  K.optimizeTree(true);
-//  makeConvexHulls(K.frames);
-  cout <<"configuration space dim=" <<K.getJointStateDimension() <<endl;
+  rai::Configuration C("model.g");
+  C.optimizeTree(true);
+  cout <<"configuration space dim=" <<C.getJointStateDimension() <<endl;
   double rand = rai::getParameter<double>("KOMO/moveTo/randomizeInitialPose", .0);
   if(rand){
     rnd.seed(rai::getParameter<uint>("rndSeed", 0));
-    rndGauss(K.q,rand,true);
-    K.setJointState(K.q);
+    rndGauss(C.q,rand,true);
+    C.setJointState(C.q);
   }
 
-//  K["worldTranslationRotation"]->joint->scale = 10.;
-  
-  KOMO_ext komo;
+  KOMO komo;
   komo.logFile = new ofstream("z.dat");
 //  komo.denseOptimization=true;
   komo.sparseOptimization=true;
-  komo.setModel(K);
+  komo.setModel(C);
   komo.setPathOpt(1., 100, 10.);
   komo.setSquaredQAccVelHoming();
-  komo.setPosition(1., 1., "endeff", "target");
-  komo.setSlowAround(1., .02);
-  komo.add_collision(false);
-//  komo.setTask(-1., -1., new TM_ContactConstraints(), OT_ineq);
-//  komo.setTask(-1., -1., new TM_ContactConstraints(), OT_ineq, NoArr, 1e2);
+  komo.addObjective({1.}, FS_positionDiff, {"endeff", "target"}, OT_eq, {1e1});
+  komo.addObjective({.98,1.}, FS_qItself, {}, OT_sos, {1e1}, {}, 1);
+  komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1.});
 
   komo.reset();
 //  komo.setSpline(10);
   komo.run();
-//  komo.checkGradients();
   komo.plotTrajectory();
+//  komo.checkGradients();
   for(uint i=0;i<2;i++) komo.displayTrajectory();
 }
 
@@ -124,8 +103,8 @@ int main(int argc,char** argv){
 
 //  rnd.clockSeed();
 
-//  testEasy();
-//  testAlign();
+  testEasy();
+  testAlign();
   testPR2();
 
   return 0;

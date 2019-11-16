@@ -56,7 +56,7 @@ void tutorialBasics(){
    *
    * order=0 means that the task is about the position(absolute value) in task space
    * order=1 means that the task is about the velocity in task space
-   * order=0 means that the task is about the acceleration in task space
+   * order=2 means that the task is about the acceleration in task space
    *
    * For instance, setSquaredQAccelerations sets a tasks about the acceleration in the identity map
    *
