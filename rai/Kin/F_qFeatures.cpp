@@ -46,6 +46,7 @@ F_qItself::F_qItself(PickMode pickMode, const StringA& picks, const rai::Configu
 
 F_qItself::F_qItself(const uintA& _selectedFrames, bool relative_q0)
   : selectedFrames(_selectedFrames), moduloTwoPi(true), relative_q0(relative_q0) {
+  fs = FS_qItself;
 }
 
 void F_qItself::phi(arr& q, arr& J, const rai::Configuration& G) {

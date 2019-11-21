@@ -2047,24 +2047,24 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
     }
   }else{ //featureDense=true
     for(uint i=0; i<objectives.N; i++) {
-      Objective *task = objectives.elem(i);
-      for(uint t=0;t<task->vars.d0;t++) {
-        ConfigurationL Ktuple = configurations.sub(convert<uint,int>(task->vars[t]+(int)k_order));
+      Objective *ob = objectives.elem(i);
+      for(uint l=0;l<ob->vars.d0;l++) {
+        ConfigurationL Ktuple = configurations.sub(convert<uint,int>(ob->vars[l]+(int)k_order));
         uint d=0;
-        uint time=task->vars(t,-1);
+        uint time=ob->vars(l,-1);
         if(wasRun) {
-          d=task->map->__dim_phi(Ktuple);
-          for(uint j=0; j<d; j++) CHECK_EQ(featureTypes(M+j), task->type,"");
+          d=ob->map->__dim_phi(Ktuple);
+          for(uint j=0; j<d; j++) CHECK_EQ(featureTypes(M+j), ob->type,"");
           if(d) {
-            if(task->type==OT_sos) {
+            if(ob->type==OT_sos) {
               for(uint j=0; j<d; j++) err(time,i) += sqr(featureValues(M+j));
               taskC(i) += err(time,i);
             }
-            if(task->type==OT_ineq) {
+            if(ob->type==OT_ineq) {
               for(uint j=0; j<d; j++) err(time,i) += MAX(0., featureValues(M+j));
               taskG(i) += err(time,i);
             }
-            if(task->type==OT_eq) {
+            if(ob->type==OT_eq) {
               for(uint j=0; j<d; j++) err(time,i) += fabs(featureValues(M+j));
               taskH(i) += err(time,i);
             }
@@ -2072,10 +2072,10 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
           }
         }
         if(reportFeatures==1) {
-          featuresOs <<std::setw(4) <<time <<' ' <<std::setw(2) <<i <<' ' <<std::setw(2) <<d <<task->vars[t]
-                    <<' ' <<std::setw(40) <<task->name
-                   <<" k=" <<task->map->order <<" ot=" <<task->type <<" prec=" <<std::setw(4) <<task->map->scale;
-          if(task->map->target.N<5) featuresOs <<" y*=[" <<task->map->target <<']'; else featuresOs<<"y*=[..]";
+          featuresOs <<std::setw(4) <<time <<' ' <<std::setw(2) <<i <<' ' <<std::setw(2) <<d <<ob->vars[l]
+                    <<' ' <<std::setw(40) <<ob->name
+                   <<" k=" <<ob->map->order <<" ot=" <<ob->type <<" prec=" <<std::setw(4) <<ob->map->scale;
+          if(ob->map->target.N<5) featuresOs <<" y*=[" <<ob->map->target <<']'; else featuresOs<<"y*=[..]";
           featuresOs <<" y^2=" <<err(time,i) <<endl;
         }
       }
@@ -2183,8 +2183,8 @@ Graph KOMO::getProblemGraph(bool includeValues, bool includeSolution){
           J.append(Jy);
         }
       }else{
-        for(uint t=0;t<ob->vars.d0;t++) {
-          ConfigurationL Ktuple = configurations.sub(convert<uint,int>(ob->vars[t]+(int)k_order));
+        for(uint l=0;l<ob->vars.d0;l++) {
+          ConfigurationL Ktuple = configurations.sub(convert<uint,int>(ob->vars[l]+(int)k_order));
           ob->map->__phi(y, Jy, Ktuple);
           if(isSpecial(Jy)) Jy = unpack(Jy);
 
@@ -2384,14 +2384,14 @@ void KOMO::Conv_MotionProblem_DenseProblem::phi(arr& phi, arr& J, arr& H, Object
   arr y, Jy;
   uint M=0;
   for(uint i=0; i<komo.objectives.N; i++) {
-    Objective *task = komo.objectives.elem(i);
-    for(uint t=0;t<task->vars.d0;t++) {
-      ConfigurationL Ktuple = komo.configurations.sub(convert<uint,int>(task->vars[t]+(int)komo.k_order));
+    Objective *ob = komo.objectives.elem(i);
+    for(uint l=0;l<ob->vars.d0;l++) {
+      ConfigurationL Ktuple = komo.configurations.sub(convert<uint,int>(ob->vars[l]+(int)komo.k_order));
       uintA kdim = getKtupleDim(Ktuple);
       kdim.prepend(0);
 
       //query the task map and check dimensionalities of returns
-      task->map->__phi(y, (!!J?Jy:NoArr), Ktuple);
+      ob->map->__phi(y, (!!J?Jy:NoArr), Ktuple);
       if(!!J) CHECK_EQ(y.N, Jy.d0, "");
       if(!!J) CHECK_EQ(Jy.nd, 2, "");
       if(!!J) CHECK_EQ(Jy.d1, kdim.last(), "");
@@ -2404,14 +2404,14 @@ void KOMO::Conv_MotionProblem_DenseProblem::phi(arr& phi, arr& J, arr& H, Object
       if(!!J) {
         if(isSpecial(Jy)) Jy = unpack(Jy);
 //        Jy *= task->prec(t);
-        for(uint j=0;j<task->vars.d1;j++){
-          if(task->vars(t,j)>=0){
-            J.setMatrixBlock(Jy.sub(0,-1,kdim(j),kdim(j+1)-1), M, x_index(task->vars(t,j)));
+        for(uint j=0;j<ob->vars.d1;j++){
+          if(ob->vars(l,j)>=0){
+            J.setMatrixBlock(Jy.sub(0,-1,kdim(j),kdim(j+1)-1), M, x_index(ob->vars(l,j)));
           }
         }
       }
 
-      if(!!tt) for(uint i=0; i<y.N; i++) tt(M+i) = task->type;
+      if(!!tt) for(uint i=0; i<y.N; i++) tt(M+i) = ob->type;
 
       //counter for features phi
       M += y.N;
@@ -2442,10 +2442,10 @@ void KOMO::Conv_MotionProblem_DenseProblem::getDimPhi() {
   CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet: use komo.reset()");
   uint M=0;
   for(uint i=0; i<komo.objectives.N; i++) {
-    Objective *task = komo.objectives.elem(i);
-    for(uint t=0;t<task->vars.d0;t++) {
-      ConfigurationL Ktuple = komo.configurations.sub(convert<uint,int>(task->vars[t]+(int)komo.k_order));
-      M += task->map->__dim_phi(Ktuple); //dimensionality of this task
+    Objective *ob = komo.objectives.elem(i);
+    for(uint l=0;l<ob->vars.d0;l++) {
+      ConfigurationL Ktuple = komo.configurations.sub(convert<uint,int>(ob->vars[l]+(int)komo.k_order));
+      M += ob->map->__dim_phi(Ktuple); //dimensionality of this task
     }
   }
   dimPhi = M;
@@ -2463,10 +2463,10 @@ void KOMO::Conv_MotionProblem_GraphProblem::getStructure(uintA& variableDimensio
   uint M=0;
   for(Objective *ob:komo.objectives) {
     CHECK_EQ(ob->vars.nd, 2, "in sparse mode, vars need to be tuples of variables");
-    for(uint t=0;t<ob->vars.d0;t++) {
-      ConfigurationL Ktuple = komo.configurations.sub(convert<uint,int>(ob->vars[t]+(int)komo.k_order));
+    for(uint l=0;l<ob->vars.d0;l++) {
+      ConfigurationL Ktuple = komo.configurations.sub(convert<uint,int>(ob->vars[l]+(int)komo.k_order));
       uint m = ob->map->__dim_phi(Ktuple); //dimensionality of this task
-      if(!!featureVariables) featureVariables.append(ob->vars[t], m);
+      if(!!featureVariables) featureVariables.append(ob->vars[l], m);
       if(!!featureTypes) featureTypes.append(ob->type, m);
       M += m;
     }
@@ -2485,8 +2485,8 @@ void KOMO::Conv_MotionProblem_GraphProblem::getSemantics(StringA& varNames, Stri
   uint M=0;
   for(Objective *ob:komo.objectives) {
     CHECK_EQ(ob->vars.nd, 2, "in sparse mode, vars need to be tuples of variables");
-    for(uint t=0;t<ob->vars.d0;t++) {
-      ConfigurationL Ktuple = komo.configurations.sub(convert<uint,int>(ob->vars[t]+(int)komo.k_order));
+    for(uint l=0;l<ob->vars.d0;l++) {
+      ConfigurationL Ktuple = komo.configurations.sub(convert<uint,int>(ob->vars[l]+(int)komo.k_order));
       uint m = ob->map->__dim_phi(Ktuple); //dimensionality of this task
       phiNames.append(ob->name, m);
       M += m;
@@ -2512,8 +2512,8 @@ void KOMO::Conv_MotionProblem_GraphProblem::phi(arr& phi, arrA& J, arrA& H, cons
   uint M=0;
   for(Objective *ob:komo.objectives) {
     CHECK_EQ(ob->vars.nd, 2, "in sparse mode, vars need to be tuples of variables");
-    for(uint t=0;t<ob->vars.d0;t++) {
-      ConfigurationL Ktuple = komo.configurations.sub(convert<uint,int>(ob->vars[t]+(int)komo.k_order));
+    for(uint l=0;l<ob->vars.d0;l++) {
+      ConfigurationL Ktuple = komo.configurations.sub(convert<uint,int>(ob->vars[l]+(int)komo.k_order));
       uintA kdim = getKtupleDim(Ktuple);
       kdim.prepend(0);
 
@@ -2530,7 +2530,7 @@ void KOMO::Conv_MotionProblem_GraphProblem::phi(arr& phi, arrA& J, arrA& H, cons
 
       if(!!J) {
         for(uint j=ob->vars.d1;j--;){
-          if(ob->vars(t,j)<0){
+          if(ob->vars(l,j)<0){
             if(isSpecial(Jy)) Jy = unpack(Jy);
             Jy.delColumns(kdim(j),kdim(j+1)-kdim(j)); //delete the columns that correspond to the prefix!!
           }
@@ -2586,8 +2586,8 @@ void KOMO::Conv_MotionProblem_GraphProblem::getPartialPhi(arr& phi, arrA& J, arr
     uint M=0;
     for(Objective *ob:komo.objectives) {
       CHECK_EQ(ob->vars.nd, 2, "in sparse mode, vars need to be tuples of variables");
-      for(uint t=0;t<ob->vars.d0;t++) {
-        ConfigurationL Ktuple = komo.configurations.sub(convert<uint,int>(ob->vars[t]+(int)komo.k_order));
+      for(uint l=0;l<ob->vars.d0;l++) {
+        ConfigurationL Ktuple = komo.configurations.sub(convert<uint,int>(ob->vars[l]+(int)komo.k_order));
         uintA kdim = getKtupleDim(Ktuple);
         kdim.prepend(0);
 
@@ -2606,7 +2606,7 @@ void KOMO::Conv_MotionProblem_GraphProblem::getPartialPhi(arr& phi, arrA& J, arr
 
         if(!!J) {
           for(uint j=ob->vars.d1;j--;){
-            if(ob->vars(t,j)<0){
+            if(ob->vars(l,j)<0){
               Jy.delColumns(kdim(j),kdim(j+1)-kdim(j)); //delete the columns that correspond to the prefix!!
             }
           }
