@@ -23,10 +23,10 @@ to explain.
 ## Documentation
 
 I only recently started better documentation of some parts. So far, bits and pieces of documentation are scattered:
-* The [Wiki page](wiki) contains an introduction to KOMO. There is also an older KOMO tech report on arxiv: <https://arxiv.org/abs/1407.0414>
-* The [rai-maintenence help](rai-maintenance/tree/master/help) contains various info
+* The [Wiki page](../../wiki) contains an introduction to KOMO. There is also an older KOMO tech report on arxiv: <https://arxiv.org/abs/1407.0414>
+* The [rai-maintenence help](https://github.com/MarcToussaint/rai-maintenance/tree/master/help) contains various info
 * The [rai-python Jupyter notebooks](https://github.com/MarcToussaint/rai-python/tree/master/docs) also help understanding the underlying code
-* The [test main.cpp files](tree/master/test) might help as well
+* The [test main.cpp files](test/) might help as well
 
 ## Quick Start
 
