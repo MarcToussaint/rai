@@ -4,7 +4,7 @@
 
 void TEST(Easy){
   rai::Configuration C("arm.g");
-  cout <<"configuration space dim=" <<C.getJointSpaceDimension() <<endl;
+  cout <<"configuration space dim=" <<C.getJointStateDimension() <<endl;
   KOMO komo;
   komo.setModel(C);
   komo.setPathOpt(1., 100, 5.);
@@ -85,16 +85,16 @@ void TEST(PR2){
 
 //===========================================================================
 
-void TEST(FinalPosePR2){
-  rai::Configuration K("model.g");
-  K.pruneRigidJoints();
-  K.optimizeTree();
-  makeConvexHulls(K.frames);
-  cout <<"configuration space dim=" <<K.getJointStateDimension() <<endl;
-  arr x = finalPoseTo(K, *K.getFrameByName("endeff"), *K.getFrameByName("target"));
-  K.setJointState(x.reshape(x.N));
-  K.watch(true);
-}
+// void TEST(FinalPosePR2){
+//   rai::Configuration K("model.g");
+//   K.pruneRigidJoints();
+//   K.optimizeTree();
+//   makeConvexHulls(K.frames);
+//   cout <<"configuration space dim=" <<K.getJointStateDimension() <<endl;
+//   arr x = finalPoseTo(K, *K.getFrameByName("endeff"), *K.getFrameByName("target"));
+//   K.setJointState(x.reshape(x.N));
+//   K.watch(true);
+// }
 
 //===========================================================================
 
