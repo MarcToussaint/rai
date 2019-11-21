@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2019 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #pragma once
 
 #include "simulation.h"
@@ -20,8 +28,8 @@ struct SimulationThread : Thread, RobotAbstraction {
   //--- Thread
 
   void step();
-  void close(){}
-  void open(){}
+  void close() {}
+  void open() {}
 
   //--- RobotIO
   //-- basic info
@@ -30,9 +38,9 @@ struct SimulationThread : Thread, RobotAbstraction {
   //-- execution
   virtual bool executeMotion(const StringA& joints, const arr& path, const arr& times, double timeScale=1., bool append=false);
   virtual void execGripper(const rai::String& gripperName, double position, double force=40.);
-  virtual void attach(const char *a, const char *b);
+  virtual void attach(const char* a, const char* b);
   //-- feedback
-  virtual arr getJointPositions(const StringA& joints={});
+  virtual arr getJointPositions(const StringA& joints= {});
 
   //--- artificial intervention
   void addFile(const char* filename, const char* parentOfRoot=nullptr, const rai::Transformation& relOfRoot=0);

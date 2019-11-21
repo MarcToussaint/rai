@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2019 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #pragma once
 
 #include <vector>
@@ -19,84 +27,84 @@
 struct BulletInterface;
 struct PhysXInterface;
 
-namespace ry{
+namespace ry {
 
-  typedef Var<rai::Configuration> Config;
+typedef Var<rai::Configuration> Config;
 
-  struct ConfigViewer { ptr<KinViewer> view; };
-  struct PathViewer { ptr<KinPoseViewer> view; };
-  struct ImageViewer { ptr<::ImageViewer> view; };
-  struct PointCloudViewer { ptr<::PointCloudViewer> view; };
+struct ConfigViewer { ptr<KinViewer> view; };
+struct PathViewer { ptr<KinPoseViewer> view; };
+struct ImageViewer { ptr<::ImageViewer> view; };
+struct PointCloudViewer { ptr<::PointCloudViewer> view; };
 
-  struct RyKOMO{
-    RyKOMO(){}
-    RyKOMO(ry::Config& self, bool useSwift){
-      komo = make_shared<KOMO>(self.get(), useSwift);
-      config.set() = komo->world;
-      komo->setIKOpt();
-    }
-    RyKOMO(ry::Config& self, uint numConfigs, bool useSwift){
-      CHECK_GE(numConfigs, 1, "");
-      komo = make_shared<KOMO>(self.get(), useSwift);
-      config.set() = komo->world;
-      komo->setDiscreteOpt(numConfigs);
-    }
-    RyKOMO(ry::Config& self, double phases, uint stepsPerPhase, double timePerPhase, bool useSwift){
-      komo = make_shared<KOMO>(self.get(), useSwift);
-      config.set() = komo->world;
-      komo->setPathOpt(phases, stepsPerPhase, timePerPhase);
-    }
-    RyKOMO(const ptr<KOMO>& _komo){
-      komo = _komo;
-    }
+struct RyKOMO {
+  RyKOMO() {}
+  RyKOMO(ry::Config& self, bool useSwift) {
+    komo = make_shared<KOMO>(self.get(), useSwift);
+    config.set() = komo->world;
+    komo->setIKOpt();
+  }
+  RyKOMO(ry::Config& self, uint numConfigs, bool useSwift) {
+    CHECK_GE(numConfigs, 1, "");
+    komo = make_shared<KOMO>(self.get(), useSwift);
+    config.set() = komo->world;
+    komo->setDiscreteOpt(numConfigs);
+  }
+  RyKOMO(ry::Config& self, double phases, uint stepsPerPhase, double timePerPhase, bool useSwift) {
+    komo = make_shared<KOMO>(self.get(), useSwift);
+    config.set() = komo->world;
+    komo->setPathOpt(phases, stepsPerPhase, timePerPhase);
+  }
+  RyKOMO(const ptr<KOMO>& _komo) {
+    komo = _komo;
+  }
 
-    ptr<KOMO> komo;
-    Var<rai::Configuration> config;
-    Var<arr> path;
-  };
+  ptr<KOMO> komo;
+  Var<rai::Configuration> config;
+  Var<arr> path;
+};
 
-  struct RyLGP_Tree { ptr<LGP_Tree_Thread> lgp; };
+struct RyLGP_Tree { ptr<LGP_Tree_Thread> lgp; };
 
-  struct RyFeature { ptr<Feature> feature; };
+struct RyFeature { ptr<Feature> feature; };
 
-  struct RyFrame {
-    ptr<Var_data<rai::Configuration>> config; //only to ensure the containing configuration is not destroyed
-    rai::Frame *frame=0;
-  };
+struct RyFrame {
+  ptr<Var_data<rai::Configuration>> config; //only to ensure the containing configuration is not destroyed
+  rai::Frame* frame=0;
+};
 
-  struct RyCameraView {
-    ptr<rai::CameraView> cam;
-    Var<byteA> image;
-    Var<floatA> depth;
-    Var<byteA> segmentation;
-    Var<arr> pts;
-  };
+struct RyCameraView {
+  ptr<rai::CameraView> cam;
+  Var<byteA> image;
+  Var<floatA> depth;
+  Var<byteA> segmentation;
+  Var<arr> pts;
+};
 
-  struct RyBullet { std::shared_ptr<BulletInterface> bullet; };
+struct RyBullet { std::shared_ptr<BulletInterface> bullet; };
 
-  struct RyPhysX { std::shared_ptr<PhysXInterface> physx; };
+struct RyPhysX { std::shared_ptr<PhysXInterface> physx; };
 
-  struct RyOperate { std::shared_ptr<RobotOperation> R; };
+struct RyOperate { std::shared_ptr<RobotOperation> R; };
 
-  struct RyCamera {
-    Var<byteA> rgb;
-    Var<floatA> depth;
-    std::shared_ptr<RosCamera> C;
-    RyCamera(const char* rosNodeName,
-             const char* rgb_topic,
-             const char* depth_topic,
-             bool useUint=false)
-      : C(make_shared<RosCamera>(rgb, depth, rosNodeName, rgb_topic, depth_topic, useUint)) {}
-  };
+struct RyCamera {
+  Var<byteA> rgb;
+  Var<floatA> depth;
+  std::shared_ptr<RosCamera> C;
+  RyCamera(const char* rosNodeName,
+           const char* rgb_topic,
+           const char* depth_topic,
+           bool useUint=false)
+    : C(make_shared<RosCamera>(rgb, depth, rosNodeName, rgb_topic, depth_topic, useUint)) {}
+};
 
 }
 
-namespace ry{
+namespace ry {
 
-typedef std::pair<std::vector<unsigned int>, std::vector<double> > I_arr;
+typedef std::pair<std::vector<unsigned int>, std::vector<double>> I_arr;
 typedef std::vector<std::string> I_StringA;
 typedef std::map<std::string, std::string> I_dict;
-typedef std::map<std::string, std::vector<double> > I_args;
+typedef std::map<std::string, std::vector<double>> I_args;
 
 typedef std::tuple<std::vector<double>, int, int, I_StringA, I_args> I_feature;
 typedef std::vector<I_feature> I_features;
@@ -104,7 +112,7 @@ typedef std::vector<I_feature> I_features;
 typedef std::tuple<std::vector<double>, std::string, I_StringA, I_args> I_objective;
 typedef std::vector<I_objective> I_objectives;
 
-struct FrameInfo{
+struct FrameInfo {
   int ID;
   std::string name;
   std::string parent;
@@ -115,30 +123,30 @@ struct FrameInfo{
 
 }
 
-inline StringA I_conv(const ry::I_StringA& x){
+inline StringA I_conv(const ry::I_StringA& x) {
   StringA y(x.size());
-  for(uint i=0;i<y.N;i++) y(i) = x[i];
+  for(uint i=0; i<y.N; i++) y(i) = x[i];
   return y;
 }
 
-inline ry::I_StringA I_conv(const StringA& x){
+inline ry::I_StringA I_conv(const StringA& x) {
   ry::I_StringA y;
   for(const rai::String& s:x) y.push_back(s.p);
   return y;
 }
 
-inline Graph I_conv(const ry::I_dict& x){
+inline Graph I_conv(const ry::I_dict& x) {
   return Graph(x);
 }
 
-inline ry::I_arr I_conv(const arr& x){
+inline ry::I_arr I_conv(const arr& x) {
   ry::I_arr y;
   y.first = x.dim();
   y.second = x;
   return y;
 }
 
-inline arr I_conv(const ry::I_arr& x){
+inline arr I_conv(const ry::I_arr& x) {
   arr y;
   y = conv_stdvec2arr(x.second);
   y.reshape(conv_stdvec2arr(x.first));

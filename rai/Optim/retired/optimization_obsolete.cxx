@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -78,7 +78,7 @@ struct VectorChainFunction;
 //}
 
 double evaluateVCF(VectorChainFunction& f, const arr& x) {
-  double ncost=0.,pcost=0.;
+  double ncost=0., pcost=0.;
   uint T=x.d0-1;
   arr y;
   f.fv_i(y, NoArr, 0, x[0]);  ncost += sumOfSqr(y);
@@ -134,12 +134,12 @@ Tmp convert_ScalarFunction(ScalarGraphFunction& f){
 uint optNodewise(arr& x, VectorChainFunction& f, OptOptions o) {
 
   struct MyVectorFunction:VectorFunction {
-    VectorChainFunction *f;
+    VectorChainFunction* f;
     uint t;
     arr x_ref;
-    uint *evals;
+    uint* evals;
     void fv(arr& y, arr& J, const arr& x) {
-      arr yij,Ji,Jj;
+      arr yij, Ji, Jj;
       f->fv_i(y, J, t, x); (*evals)++;
       if(t>0) {
         f->fv_ij(yij, (!!J?Ji:NoArr), (!!J?Jj:NoArr), t-1, t, x_ref[t-1], x);
@@ -153,22 +153,22 @@ uint optNodewise(arr& x, VectorChainFunction& f, OptOptions o) {
       }
     }
   };
-  
+
   uint evals = 0;
-  
+
   MyVectorFunction f_loc;
   f_loc.f = &f;
   f_loc.evals = &evals;
-  
+
   ofstream fil;
   double fx=evaluateVCF(f, x);
   if(o.verbose>0) fil.open("z.nodewise");
   if(o.verbose>0) fil <<0 <<' ' <<eval_count <<' ' <<fx <<endl;
   if(o.verbose>1) cout <<"optNodewise initial cost " <<fx <<endl;
-  
+
   OptOptions op;
   op.stopTolerance=o.stopTolerance, op.stopEvals=10, op.maxStep=o.maxStep, op.verbose=0;
-  
+
   uint k;
   for(k=0; k<o.stopIters; k++) {
     arr x_old=x;
@@ -188,12 +188,12 @@ uint optNodewise(arr& x, VectorChainFunction& f, OptOptions o) {
     }
     fx = evaluateVCF(f, x);
     if(o.verbose>0) fil <<evals <<' ' <<eval_count <<' ' <<fx <<endl;
-    if(maxDiff(x,x_old)<o.stopTolerance) break;
+    if(maxDiff(x, x_old)<o.stopTolerance) break;
   }
   if(o.fmin_return) *o.fmin_return=fx;
   if(o.verbose>0) fil.close();
-  if(o.verbose>1) gnuplot("plot 'z.nodewise' us 1:3 w l",nullptr,true);
-  
+  if(o.verbose>1) gnuplot("plot 'z.nodewise' us 1:3 w l", nullptr, true);
+
   return evals;
 }
 
@@ -460,17 +460,17 @@ uint optNodewise(arr& x, VectorChainFunction& f, OptOptions o) {
 
 struct sConvert {
   struct VectorChainFunction_ScalarFunction:ScalarFunction { //actual converter objects
-    VectorChainFunction *f;
+    VectorChainFunction* f;
     VectorChainFunction_ScalarFunction(VectorChainFunction& _f):f(&_f) {}
     virtual double fs(arr& grad, arr& H, const arr& x);
   };
-  
+
   struct VectorChainFunction_VectorFunction:VectorFunction { //actual converter objects
-    VectorChainFunction *f;
+    VectorChainFunction* f;
     VectorChainFunction_VectorFunction(VectorChainFunction& _f):f(&_f) {}
     virtual void   fv(arr& y, arr& J, const arr& x);
   };
-  
+
   //  struct VectorChainFunction_QuadraticChainFunction:QuadraticChainFunction {
   //    VectorChainFunction *f;
   //    VectorChainFunction_QuadraticChainFunction(VectorChainFunction& _f):f(&_f) {}
@@ -488,7 +488,7 @@ struct sConvert {
   //     uint get_m(uint t);
   //     void phi_t(arr& phi, arr& J, uint t, const arr& x_bar, const arr& z=NoArr, const arr& J_z=NoArr);
   //   };
-  
+
   //   struct ControlledSystem_2OrderMarkovFunction:KOrderMarkovFunction {
   //     ControlledSystem *sys;
   //     ControlledSystem_2OrderMarkovFunction(ControlledSystem& _sys):sys(&_sys){}
@@ -501,7 +501,7 @@ struct sConvert {
   // #endif
 };
 
-Convert::operator VectorChainFunction&() {
+Convert::operator VectorChainFunction& () {
   if(!s->vcf) {
   }
   if(!s->vcf) HALT("");
@@ -519,10 +519,10 @@ Convert::operator VectorChainFunction&() {
 double sConvert::VectorChainFunction_ScalarFunction::fs(arr& grad, arr& H, const arr& x) {
   uint T=f->get_T();
   arr z;  z.referTo(x);
-  z.reshape(T+1,z.N/(T+1)); //x as chain representation (splitted in nodes assuming each has same dimensionality!)
-  
+  z.reshape(T+1, z.N/(T+1)); //x as chain representation (splitted in nodes assuming each has same dimensionality!)
+
   double cost=0.;
-  arr y,J,Ji,Jj;
+  arr y, J, Ji, Jj;
   if(!!grad) {
     grad.resizeAs(x);
     grad.setZero();
@@ -549,32 +549,32 @@ double sConvert::VectorChainFunction_ScalarFunction::fs(arr& grad, arr& H, const
 void sConvert::VectorChainFunction_VectorFunction::fv(arr& y, arr& J, const arr& x) {
   uint T=f->get_T();
   arr z;  z.referTo(x);
-  z.reshape(T+1,z.N/(T+1)); //x as chain representation (splitted in nodes assuming each has same dimensionality!)
-  
+  z.reshape(T+1, z.N/(T+1)); //x as chain representation (splitted in nodes assuming each has same dimensionality!)
+
   //probing dimensionality (ugly..)
   arr tmp;
   f->fv_i(tmp, NoArr, 0, z[0]);
   uint di=tmp.N; //dimensionality at nodes
   if(T>0) f->fv_ij(tmp, NoArr, NoArr, 0, 1, z[0], z[1]);
   uint dij=tmp.N; //dimensionality at pairs
-  
+
   //resizing things:
-  arr yi(T+1,di);  //the part of y which will collect all node potentials
-  arr yij(T  ,dij); //the part of y which will collect all pair potentials
+  arr yi(T+1, di); //the part of y which will collect all node potentials
+  arr yij(T, dij);  //the part of y which will collect all pair potentials
   arr Ji;  Ji .resize(TUP(T+1, di, z.d0, z.d1)); //first indices as yi, last: gradient w.r.t. x
-  arr Jij; Jij.resize(TUP(T  , dij, z.d0, z.d1)); //first indices as yi, last: gradient w.r.t. x
+  arr Jij; Jij.resize(TUP(T, dij, z.d0, z.d1));   //first indices as yi, last: gradient w.r.t. x
   Ji.setZero();
   Jij.setZero();
-  
-  arr y_loc,J_loc,Ji_loc,Jj_loc;
-  uint t,i,j;
+
+  arr y_loc, J_loc, Ji_loc, Jj_loc;
+  uint t, i, j;
   //first collect all node potentials
   for(t=0; t<=T; t++) {
     f->fv_i(y_loc, (!!J?J_loc:NoArr), t, z[t]);
     yi[t] = y_loc;
     if(!!J) {
       for(i=0; i<di; i++) for(j=0; j<z.d1; j++) //copy into the right place...
-          Ji.elem(TUP(t,i,t,j)) = J_loc(i,j);
+          Ji.elem(TUP(t, i, t, j)) = J_loc(i, j);
     }
   }
   //then collect all pair potentials
@@ -583,9 +583,9 @@ void sConvert::VectorChainFunction_VectorFunction::fv(arr& y, arr& J, const arr&
     yij[t] = y_loc;
     if(!!J) {
       for(i=0; i<dij; i++) for(j=0; j<z.d1; j++) //copy into the right place...
-          Jij.elem(TUP(t,i,t  ,j)) = Ji_loc(i,j);
+          Jij.elem(TUP(t, i, t, j)) = Ji_loc(i, j);
       for(i=0; i<dij; i++) for(j=0; j<z.d1; j++) //copy into the right place...
-          Jij.elem(TUP(t,i,t+1,j)) = Jj_loc(i,j);
+          Jij.elem(TUP(t, i, t+1, j)) = Jj_loc(i, j);
     }
   }
   yi.reshape((T+1)*di);
@@ -766,17 +766,17 @@ void sConvert::VectorChainFunction_VectorFunction::fv(arr& y, arr& J, const arr&
 // }
 // #endif
 
-VectorChainCost::VectorChainCost(uint _T,uint _n) {
+VectorChainCost::VectorChainCost(uint _T, uint _n) {
   T=_T; n=_n;
-  A.resize(T+1,n,n);  a.resize(T+1,n);
-  Wi.resize(T,n,n);  Wj.resize(T,n,n);    w.resize(T,n);
+  A.resize(T+1, n, n);  a.resize(T+1, n);
+  Wi.resize(T, n, n);  Wj.resize(T, n, n);    w.resize(T, n);
   for(uint t=0; t<=T; t++) generateConditionedRandomProjection(A[t](), n, 100.);
   for(uint t=0; t<T; t++) {
     generateConditionedRandomProjection(Wi[t](), n, 100.);
     generateConditionedRandomProjection(Wj[t](), n, 100.);
   }
-  rndUniform(a,-1.,1.,false);
-  rndUniform(w,-1.,1.,false);
+  rndUniform(a, -1., 1., false);
+  rndUniform(w, -1., 1., false);
   nonlinear=false;
 }
 
@@ -805,7 +805,7 @@ void VectorChainCost::fv_ij(arr& y, arr* Ji, arr* Jj, uint i, uint j, const arr&
     arr xj=atan(x_j);
     y=Wi[i]*xi + Wj[i]*xj + w[i];
     if(Ji && Ji) {
-      arr gi(xi.N),gj(xi.N);
+      arr gi(xi.N), gj(xi.N);
       for(uint k=0; k<gi.N; k++) gi(k) = 1./(1.+x_i(k)*x_i(k));
       for(uint k=0; k<gj.N; k++) gj(k) = 1./(1.+x_j(k)*x_j(k));
       *Ji = Wi[i]*diag(gi);
@@ -823,37 +823,37 @@ SlalomProblem::SlalomProblem(uint _T, uint _K, double _margin, double _w, double
   power = _power;
 }
 
-double border(double *grad, double x, double power=8.) {
+double border(double* grad, double x, double power=8.) {
   if(x>0.) { if(grad) *grad=0.; return 0.; }
-  double y = pow(x,power);
-  if(grad) *grad = power*pow(x,power-1.);
+  double y = pow(x, power);
+  if(grad) *grad = power*pow(x, power-1.);
   return y;
 }
 
-double tannenbaum(double *grad, double x, double power=8.) {
+double tannenbaum(double* grad, double x, double power=8.) {
   double y=x*x;
-  if(grad) *grad = power*pow(y-floor(y),power-1.) * (2.*x);
-  y=floor(y) + pow(y-floor(y),power);
+  if(grad) *grad = power*pow(y-floor(y), power-1.) * (2.*x);
+  y=floor(y) + pow(y-floor(y), power);
   return y;
 }
 
 void SlalomProblem::fv_i(arr& y, arr& J, uint i, const arr& x_i) {
   eval_count++;
-  CHECK_EQ(x_i.N,2,"");
+  CHECK_EQ(x_i.N, 2, "");
   y.resize(1);  y(0)=0.;
-  if(!!J) { J.resize(1,2);  J.setZero(); }
+  if(!!J) { J.resize(1, 2);  J.setZero(); }
   if(!(i%(T/K))) {
     uint obstacle=i/(T/K);
     if(obstacle&1) { //top obstacle
       double d=(x_i(0)-1.)/margin;
 //       y(0) = tannenbaum((J?&(*J)(0,0):nullptr), d, power);
-      y(0) = border((!!J?&J(0,0):nullptr), d, power);
-      if(!!J) J(0,0) /= margin;
+      y(0) = border((!!J?&J(0, 0):nullptr), d, power);
+      if(!!J) J(0, 0) /= margin;
     } else {
       double d=-(x_i(0)+1.)/margin;
 //       y(0) = tannenbaum((J?&J(0,0):nullptr), d, power);
-      y(0) = border((!!J?&J(0,0):nullptr), d, power);
-      if(!!J) J(0,0) /= -margin;
+      y(0) = border((!!J?&J(0, 0):nullptr), d, power);
+      if(!!J) J(0, 0) /= -margin;
     }
   }
 }
@@ -861,7 +861,7 @@ void SlalomProblem::fv_i(arr& y, arr& J, uint i, const arr& x_i) {
 void SlalomProblem::fv_ij(arr& y, arr& Ji, arr& Jj, uint i, uint j, const arr& x_i, const arr& x_j) {
   y.resize(1);
   double tau=.01;
-  arr A= {1., tau, 0., 1.};  A.reshape(2,2);
+  arr A= {1., tau, 0., 1.};  A.reshape(2, 2);
   arr M=w*diag({2./(tau*tau), 1./tau});  //penalize variance in position & in velocity (control)
   y=M*(x_j - A*x_i);
   if(!!Ji) { Ji = -M*A; }
@@ -891,7 +891,7 @@ bool DecideSign::step(double x) {
 bool DecideSign::step(double x) { NIY; }
 #endif
 
-void OnlineRprop::init(OptimizationProblem *_m, double initialRate, uint _N, const arr& w0) {
+void OnlineRprop::init(OptimizationProblem* _m, double initialRate, uint _N, const arr& w0) {
   rprop.init(initialRate);
   t=0;
   m=_m;

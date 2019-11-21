@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -39,17 +39,17 @@ Twiddle
 
 struct BayesOpt {
   ScalarFunction f;
-  KernelFunction *kernel;
-  KernelRidgeRegression *model;
-  arr X,y;
-  
+  KernelFunction* kernel;
+  KernelRidgeRegression* model;
+  arr X, y;
+
   BayesOpt(arr& x, const ScalarFunction& f, OptOptions o=NOOPT);
   ~BayesOpt();
-  
+
   void step();
   void run(uint maxIt = 1000);
-  
-private:
+
+ private:
   void query(const arr& x);
 };
 
@@ -57,23 +57,23 @@ private:
 
 /// Wrapper for CMA stochastic optimization
 struct SearchCMA {
-  struct sSearchCMA *s;
-  
+  struct sSearchCMA* s;
+
   SearchCMA();
   ~SearchCMA();
-  
+
   /// D=problem dimension, lambda=#samples taken in each iteration, mu \approx lambda/3 specifies the selection size, lo and hi specify an initialization range
   void init(uint D, int mu=-1, int lambda=-1, double lo=-1., double hi=1.);
-  
+
   /// instead of lo and hi, explicitly give a start point and standard deviation around this point
-  void init(uint D, int mu, int lambda, const arr &startPoint, double _startDev);
-  
-  void init(uint D, int mu, int lambda, const arr &startPoint, const arr &startDev);
-  
+  void init(uint D, int mu, int lambda, const arr& startPoint, double _startDev);
+
+  void init(uint D, int mu, int lambda, const arr& startPoint, const arr& startDev);
+
   /// first call: generate initial random samples
   /// further calls: costs needs to contain the cost function values for all elements in samples; returns a new set of samples
   void step(arr& samples, arr& costs);
-  
+
   void getBestSample(arr& sample);
   void getMean(arr& mean);
 };

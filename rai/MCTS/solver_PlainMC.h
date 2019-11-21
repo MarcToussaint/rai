@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -36,15 +36,15 @@ struct PlainMC {
   int verbose;
   uint topSize;
   StringA blackList;
-  
+
   //partly internal: results of a rollout
   uint rolloutStep;
   double rolloutR, rolloutDiscount;
   rai::Array<MCTS_Environment::Handle> rolloutDecisions;
-  
+
   PlainMC(MCTS_Environment& world);
   void reset();
-  
+
   double initRollout(const rai::Array<MCTS_Environment::Handle>& prefixDecisions);
   double finishRollout(int stepAbort=-1);
   double generateRollout(int stepAbort=-1, const rai::Array<MCTS_Environment::Handle>& prefixDecisions= {});

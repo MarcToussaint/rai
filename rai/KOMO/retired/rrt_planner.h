@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -17,16 +17,16 @@ struct OpenGL;
 namespace rai {
 struct Configuration;
 struct RRTPlanner {
-private:
-  struct sRRTPlanner *s;
-public:
-  Configuration *G;                 ///< the graph to plan in
+ private:
+  struct sRRTPlanner* s;
+ public:
+  Configuration* G;                 ///< the graph to plan in
   KOMO& problem;   ///< the KOMO gives the feasibility test for new states
-  
+
   arr joint_max, joint_min; ///< in which range are the joints allowed (boundaries for the sample space)
-  
-  RRTPlanner(rai::Configuration* G, KOMO &problem, double stepsize, bool verbose = false);
-  
+
+  RRTPlanner(rai::Configuration* G, KOMO& problem, double stepsize, bool verbose = false);
+
   arr getTrajectoryTo(const arr& target, int max_iter=0); ///< returns the trajectory created by the RRT
 };
 }

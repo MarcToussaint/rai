@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -32,8 +32,8 @@ double _RastriginFunction(arr& g, arr& H, const arr& x) {
     for(uint i=0; i<x.N; i++) g(i) = 2*x(i) + 10.*A*::sin(10.*x(i));
   }
   if(!!H) {
-    H.resize(x.N,x.N);  H.setZero();
-    for(uint i=0; i<x.N; i++) H(i,i) = 2 + 100.*A*::cos(10.*x(i));
+    H.resize(x.N, x.N);  H.setZero();
+    for(uint i=0; i<x.N; i++) H(i, i) = 2 + 100.*A*::cos(10.*x(i));
   }
   return f;
 }
@@ -54,7 +54,7 @@ ScalarFunction SquareFunction() { return _SquareFunction; }
 
 double _SumFunction(arr& g, arr& H, const arr& x) {
   if(!!g) { g.resize(x.N); g=1.; }
-  if(!!H) { H.resize(x.N,x.N); H.setZero(); }
+  if(!!H) { H.resize(x.N, x.N); H.setZero(); }
   return sum(x);
 }
 
@@ -82,7 +82,7 @@ struct _ChoiceFunction : ScalarFunction {
       [this](arr& g, arr& H, const arr& x) -> double { return this->fs(g, H, x); }
     );
   }
-  
+
   double fs(arr& g, arr& H, const arr& x) {
     //initialize on first call
     if(which==none) {
@@ -92,12 +92,12 @@ struct _ChoiceFunction : ScalarFunction {
       condition.resize(x.N);
       double cond = rai::getParameter<double>("condition");
       if(x.N>1) {
-        for(uint i=0; i<x.N; i++) condition(i) = pow(cond,0.5*i/(x.N-1));
+        for(uint i=0; i<x.N; i++) condition(i) = pow(cond, 0.5*i/(x.N-1));
       } else {
         condition = cond;
       }
     }
-    
+
     arr y = x;
     y *= condition; //elem-wise product
     double f;
@@ -113,11 +113,11 @@ struct _ChoiceFunction : ScalarFunction {
     if(!!H) H = condition%H%condition;
     return f;
   }
-  
+
   //  ScalarFunction get_f(){
   //    return [this](arr& g, arr& H, const arr& x) -> double { return this->fs(g, H, x); };
   //  }
-  
+
 } choice;
 
 ScalarFunction ChoiceFunction() { return (ScalarFunction&)choice; }
@@ -125,13 +125,13 @@ ScalarFunction ChoiceFunction() { return (ScalarFunction&)choice; }
 //===========================================================================
 
 void generateConditionedRandomProjection(arr& M, uint n, double condition) {
-  uint i,j;
+  uint i, j;
   //let M be a ortho-normal matrix (=random rotation matrix)
-  M.resize(n,n);
-  rndUniform(M,-1.,1.,false);
+  M.resize(n, n);
+  rndUniform(M, -1., 1., false);
   //orthogonalize
   for(i=0; i<n; i++) {
-    for(j=0; j<i; j++) M[i]()-=scalarProduct(M[i],M[j])*M[j];
+    for(j=0; j<i; j++) M[i]()-=scalarProduct(M[i], M[j])*M[j];
     M[i]()/=length(M[i]);
   }
   //we condition each column of M with powers of the condition
@@ -152,25 +152,25 @@ void SquaredCost::initRandom(uint _n, double condition) {
   //arr U,d,V;    svd(U, d, V, C);    cout <<U <<d <<V <<M <<C <<endl;
 }
 
-void SquaredCost::fv(arr& y, arr& J,const arr& x) {
-  CHECK_EQ(x.N,n,"");
+void SquaredCost::fv(arr& y, arr& J, const arr& x) {
+  CHECK_EQ(x.N, n, "");
   y = M*x;
   if(!!J) J=M;
 }
 
 //===========================================================================
 
-NonlinearlyWarpedSquaredCost::NonlinearlyWarpedSquaredCost(uint _n, double condition):sq(_n,condition) {
+NonlinearlyWarpedSquaredCost::NonlinearlyWarpedSquaredCost(uint _n, double condition):sq(_n, condition) {
   n=_n;
 }
 
 void NonlinearlyWarpedSquaredCost::initRandom(uint _n, double condition) {
   n=_n;
-  sq.initRandom(n,condition);
+  sq.initRandom(n, condition);
 }
 
-void NonlinearlyWarpedSquaredCost::fv(arr& y, arr& J,const arr& x) {
-  CHECK_EQ(x.N,n,"");
+void NonlinearlyWarpedSquaredCost::fv(arr& y, arr& J, const arr& x) {
+  CHECK_EQ(x.N, n, "");
   arr xx=atan(x);
   y=sq.M*xx;
   if(!!J) {
@@ -183,8 +183,8 @@ void NonlinearlyWarpedSquaredCost::fv(arr& y, arr& J,const arr& x) {
 //===========================================================================
 
 void ParticleAroundWalls2::getStructure(uintA& variableDimensions, uintA& featureTimes, ObjectiveTypeA& featureTypes) {
-  variableDimensions = consts<uint>(n,T);
-  
+  variableDimensions = consts<uint>(n, T);
+
   if(!!featureTimes) featureTimes.clear();
   if(!!featureTypes) featureTypes.clear();
   for(uint t=0; t<T; t++) {
@@ -203,7 +203,7 @@ void ParticleAroundWalls2::phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, 
   phi.resize(M);
   if(!!J) J.resize(M);
   if(!!tt) tt.resize(M);
-  
+
   uint m=0;
   for(uint t=0; t<T; t++) {
     //-- construct x_bar
@@ -211,56 +211,56 @@ void ParticleAroundWalls2::phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, 
     if(t>=k) {
       x_bar.referToRange(x, t-k, t);
     } else { //x_bar includes the prefix
-      x_bar.resize(k+1,n);
+      x_bar.resize(k+1, n);
       for(int i=t-k; i<=(int)t; i++) x_bar[i-t+k]() = (i<0)? zeros(n) : x[i];
     }
-    
+
     //-- assert some dimensions
-    CHECK_EQ(x_bar.d0,k+1,"");
-    CHECK_EQ(x_bar.d1,n,"");
-    
+    CHECK_EQ(x_bar.d0, k+1, "");
+    CHECK_EQ(x_bar.d1, n, "");
+
     //-- transition costs
     for(uint i=0; i<n; i++) {
       if(k==1) {
-        phi(m) = x_bar(1,i)-x_bar(0,i); //penalize velocity
-        if(!!J) { J(m).resize(k+1,n).setZero(); J(m)(1,i) = 1.;  J(m)(0,i) = -1.; }
+        phi(m) = x_bar(1, i)-x_bar(0, i); //penalize velocity
+        if(!!J) { J(m).resize(k+1, n).setZero(); J(m)(1, i) = 1.;  J(m)(0, i) = -1.; }
       }
       if(k==2) {
-        phi(m) = x_bar(2,i)-2.*x_bar(1,i)+x_bar(0,i); //penalize acceleration
-        if(!!J) { J(m).resize(k+1,n).setZero(); J(m)(2,i) = 1.;  J(m)(1,i) = -2.;  J(m)(0,i) = 1.; }
+        phi(m) = x_bar(2, i)-2.*x_bar(1, i)+x_bar(0, i); //penalize acceleration
+        if(!!J) { J(m).resize(k+1, n).setZero(); J(m)(2, i) = 1.;  J(m)(1, i) = -2.;  J(m)(0, i) = 1.; }
       }
       if(k==3) {
-        phi(m) = x_bar(3,i)-3.*x_bar(2,i)+3.*x_bar(1,i)-x_bar(0,i); //penalize jerk
-        if(!!J) { J(m).resize(k+1,n).setZero(); J(m)(3,i) = 1.;  J(m)(2,i) = -3.;  J(m)(1,i) = +3.;  J(m)(0,i) = -1.; }
+        phi(m) = x_bar(3, i)-3.*x_bar(2, i)+3.*x_bar(1, i)-x_bar(0, i); //penalize jerk
+        if(!!J) { J(m).resize(k+1, n).setZero(); J(m)(3, i) = 1.;  J(m)(2, i) = -3.;  J(m)(1, i) = +3.;  J(m)(0, i) = -1.; }
       }
-      if(!!J && t<k) J(m) = J(m).sub(k-t,-1,0,-1); //cut the prefix Jacobians
+      if(!!J && t<k) J(m) = J(m).sub(k-t, -1, 0, -1); //cut the prefix Jacobians
       if(!!tt) tt(m) = OT_sos;
       m++;
     }
-    
+
     //-- wall constraints
     if(t==T/4 || t==T/2 || t==3*T/4 || t==T-1) {
       for(uint i=0; i<n; i++) { //add barrier costs to each dimension
         if(t==T/4) {
-          phi(m) = (i+1.-x_bar(k,i));  //``greater than i+1''
-          if(!!J) { J(m).resize(k+1,n).setZero(); J(m)(k,i) = -1.; }
+          phi(m) = (i+1.-x_bar(k, i)); //``greater than i+1''
+          if(!!J) { J(m).resize(k+1, n).setZero(); J(m)(k, i) = -1.; }
         }
         if(t==T/2) {
-          phi(m) = (x_bar(k,i)+i+1.);  //``lower than -i-1''
-          if(!!J) { J(m).resize(k+1,n).setZero(); J(m)(k,i) = +1.; }
+          phi(m) = (x_bar(k, i)+i+1.); //``lower than -i-1''
+          if(!!J) { J(m).resize(k+1, n).setZero(); J(m)(k, i) = +1.; }
         }
         if(t==3*T/4) {
-          phi(m) = (i+1.-x_bar(k,i));  //``greater than i+1''
-          if(!!J) { J(m).resize(k+1,n).setZero(); J(m)(k,i) = -1.; }
+          phi(m) = (i+1.-x_bar(k, i)); //``greater than i+1''
+          if(!!J) { J(m).resize(k+1, n).setZero(); J(m)(k, i) = -1.; }
         }
         if(t==T-1) {
-          phi(m) = (x_bar(k,i)+i+1.);  //``lower than -i-1''
-          if(!!J) { J(m).resize(k+1,n).setZero(); J(m)(k,i) = +1.; }
+          phi(m) = (x_bar(k, i)+i+1.); //``lower than -i-1''
+          if(!!J) { J(m).resize(k+1, n).setZero(); J(m)(k, i) = +1.; }
         }
         if(!!tt) tt(m) = OT_ineq;
         m++;
       }
     }
   }
-  CHECK_EQ(m,M,"");
+  CHECK_EQ(m, M, "");
 }

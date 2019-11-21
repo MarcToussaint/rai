@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -28,7 +28,7 @@ void DisplayPrimitives::glDraw(struct OpenGL& gl) {
 }
 
 void Plane::glDraw() {
-  rai::Vector p(nx,ny,nz);
+  rai::Vector p(nx, ny, nz);
   rai::Vector axis = Vector_z ^ p;
   double angle = acos(p.z / p.length());
   p *= -c/(p*p);
@@ -36,7 +36,7 @@ void Plane::glDraw() {
   glTranslatef(p.x, p.y, p.z);
   glRotated(180.*angle/RAI_PI, axis.x, axis.y, axis.z);
   glDisable(GL_CULL_FACE);
-  glDrawRect(0,0,0,1.);
+  glDrawRect(0, 0, 0, 1.);
   glLoadIdentity();
 }
 

@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -32,11 +32,11 @@ void VideoEncoderModule::step() {
   double time = img.data->revisionTime();
   byteA image = img();
   img.deAccess();
-  
+
   //save image
   flip_image(image);
   video->addFrame(image);
-  
+
   //save time tag
   rai::String tag;
   tag.resize(30, false);

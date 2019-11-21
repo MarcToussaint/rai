@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -29,10 +29,10 @@ void randomSpline(arr& X, arr& dX, uint dim, uint points, uint intersteps=100, d
 
 //----- gradient optimization
 bool checkGradient(double(*f)(arr*, const arr&, void*),  //double valued with optional gradient
-                   void *data,
+                   void* data,
                    const arr& x, double tolerance);
 bool checkGradient(void (*f)(arr&, arr*, const arr&, void*), //vector valued with optional gradient
-                   void *data,
+                   void* data,
                    const arr& x, double tolerance);
 //obsolete:
 /*void checkGradient(void (*f)(arr&, const arr&, void*),
@@ -44,14 +44,14 @@ void checkGradient(double(*f)(const arr&, void*),
                    void *data,
                    const arr& x, double tolerance);*/
 int minimize(double(*f)(arr*, const arr&, void*),
-             void *data,
+             void* data,
              arr& x,
-             double *fmin_return,
+             double* fmin_return,
              int method,
              uint maxIterations,
              double stoppingTolerance,
              bool chkGrad);
-             
+
 //----- LU decomposition
 double determinant_LU(const arr& X);
 void inverse_LU(arr& Xinv, const arr& X);
@@ -82,11 +82,11 @@ bool rk4dd_switch(arr& x1, arr& v1, arr& s1, const arr& x0, const arr& v0, const
                   void (*ddf)(arr& xdd, const arr& x, const arr& v),
                   void (*sf)(arr& s, const arr& x, const arr& v),
                   double& dt, double tol);
-                  
+
 //bandpass filtering
-void convolution(arr &y, const arr &x, double(*h)(double), double scale=1.);
-void bandpassFilter(arr &y, const arr &x, double loWavelength, double hiWavelength);
-void bandpassEnergy(arr &y, const arr &x, double loWavelength, double hiWavelength);
+void convolution(arr& y, const arr& x, double(*h)(double), double scale=1.);
+void bandpassFilter(arr& y, const arr& x, double loWavelength, double hiWavelength);
+void bandpassEnergy(arr& y, const arr& x, double loWavelength, double hiWavelength);
 
 //----- comparing connectivity matrices
 double matdistance(intA& fix, intA& fox, uintA& p, bool sub);
@@ -101,7 +101,7 @@ double matannealing(intA& fix, intA& fox, uintA& p, bool sub, double annealingRe
 
 /** a trivial solver for monotonic unimodal 1D functions */
 class MonSolver {
-public:
+ public:
   double min, max;
   int phase;
   MonSolver();
@@ -120,7 +120,7 @@ public:
     own, simply to average or calculate (co-)variances \ingroup
     regression */
 class LinearStatistics {
-public:
+ public:
   double accum;  ///< the accumulation norm (=number of collected data points if not weighted)
   arr meanX, meanY, varX, covXY; //<! these are not normalized or centered bufferes
   arr MeanX; ///< X mean
@@ -129,9 +129,9 @@ public:
   arr CovXY; ///< XY covariance
   double lambda; ///< forgetting rate [default=0]
   bool computed; ///< internal indicator whether recomputation is needed
-  
+
   LinearStatistics();
-  
+
   //feed data
   void learn(const arr& x, const arr& y, double weight=1.);
   void learn(const arr& x, double y, double weight);
@@ -139,7 +139,7 @@ public:
   void learn(const arr& x, double weight);
   void clear();
   void forget(double lambda=1.);
-  
+
   //get information
   uint inDim();
   double variance();
@@ -149,11 +149,11 @@ public:
   void regressor(arr& A);
   void regressor(arr& A, arr& a);
   void predict(const arr& x, arr& y);
-  
+
   //used internally
   void compute();
   void computeZeroMean();
-  
+
   //output
   void write(std::ostream& os) const;
 };
@@ -165,7 +165,7 @@ stdOutPipe(LinearStatistics);
 //
 
 class TupleIndex:public uintA {
-public:
+ public:
   uintA tri;
   void init(uint k, uint n);
   uint index(uintA i);
@@ -184,12 +184,12 @@ class Kalman {
   Q, //covariance of forward transition x(t) = A*x(t-1) + \NN(0, Q)
   C, //linear observation matrix
   R; //covariance of observation: y = C*x + \NN(0, R)
-  
+
   void setTransitions(uint d, double varT, double varO);
-  void filter(arr& Y, arr& X, arr& V, arr *Rt=0);
-  void smooth(arr& Y, arr& X, arr& V, arr *Vxx=0, arr *Rt=0);
-  void EMupdate(arr& Y, arr *Rt=0);
-  void fb(arr& y, arr& f, arr& F, arr& g, arr& G, arr& p, arr& P, arr *Rt=0);
+  void filter(arr& Y, arr& X, arr& V, arr* Rt=0);
+  void smooth(arr& Y, arr& X, arr& V, arr* Vxx=0, arr* Rt=0);
+  void EMupdate(arr& Y, arr* Rt=0);
+  void fb(arr& y, arr& f, arr& F, arr& g, arr& G, arr& p, arr& P, arr* Rt=0);
 };
 
 //===========================================================================
@@ -198,15 +198,15 @@ class Kalman {
 //
 
 class XSpline {
-public:
+ public:
   double DELTA;     // Distance between each
-  
+
   arr V; //vertices
   arr W; //weights associated to each vertex
-  
+
   XSpline();
   ~XSpline();
-  
+
   void setWeights(double w);
   void type(bool hit, double smooth);
   void referTo(arr& P);
@@ -226,22 +226,22 @@ public:
     implementation uses the Singular Value Decomposition routine rai::svd and
     the LinearStatistics. \ingroup regression */
 class PartialLeastSquares {
-public:
+ public:
   LinearStatistics S; //<! the statistics collected with learning
-  
+
   arr W, Q, B; //the transformation matricies
-  
+
   arr resErr; //the residual errors
-  
+
   rai::Parameter<uint> maxProj;
-  
+
   PartialLeastSquares():maxProj("PLSmaxProjections", 0) { }
-  
+
   //feed data
   void learn(const arr& x, const arr& y, double weight=1.);
   void learn(const arr& x, double y, double weight=1.);
   void clear();
-  
+
   //access
   void map(const arr& x, arr& y);
   void map(const arr& x, double& y);
@@ -249,9 +249,9 @@ public:
   arr projection(uint k);
   uint inDim();
   uint outDim();
-  
+
   void write(std::ostream& os) const;
-  
+
   //internally used
   void SIMPLS();
 };

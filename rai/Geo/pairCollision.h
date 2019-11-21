@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -12,12 +12,12 @@
 
 struct PairCollision : GLDrawer {
   //INPUTS
-  const rai::Mesh *mesh1=0;
-  const rai::Mesh *mesh2=0;
-  const rai::Transformation *t1=0;
-  const rai::Transformation *t2=0;
+  const rai::Mesh* mesh1=0;
+  const rai::Mesh* mesh2=0;
+  const rai::Transformation* t1=0;
+  const rai::Transformation* t2=0;
   double rad1=0., rad2=0.; ///< only kinVector and glDraw account for this; the basic collision geometry (OUTPUTS below) is computed neglecting radii!!
-  
+
   //OUTPUTS
   double distance=0.; ///< negative=penetration
   arr p1, p2;      ///< closest points on the shapes
@@ -27,19 +27,19 @@ struct PairCollision : GLDrawer {
 //  arr dSimplex1, dSimplex2;
 
 //  arr m1, m2, eig1, eig2; ///< output of marginAnalysis: mean and eigenvalues of ALL point on the objs (not only simplex) that define the collision
-  
+
   arr poly, polyNorm;
-  
-  PairCollision(){}
+
+  PairCollision() {}
   PairCollision(const rai::Mesh& mesh1, const rai::Mesh& mesh2,
                 const rai::Transformation& t1, const rai::Transformation& t2,
                 double rad1=0., double rad2=0.);
-  ~PairCollision(){}
-                
+  ~PairCollision() {}
+
   void write(std::ostream& os) const;
-  
+
   void glDraw(struct OpenGL&);
-  
+
   double getDistance() { return distance-rad1-rad2; }
 
   void kinDistance(arr& y, arr& J,
@@ -59,13 +59,13 @@ struct PairCollision : GLDrawer {
   void kinCenter(arr& y, arr& J,
                  const arr& Jp1, const arr& Jp2,
                  const arr& Jx1, const arr& Jx2);
-                    
+
   void nearSupportAnalysis(double eps=1e-6); ///< analyses not only closest obj support (the simplex) but all points within a margin
-  
+
   void computeSupportPolygon();
-  
-private:
-  double libccd_MPR(const rai::Mesh& m1,const rai::Mesh& m2); //calls ccdMPRPenetration of libccd
+
+ private:
+  double libccd_MPR(const rai::Mesh& m1, const rai::Mesh& m2); //calls ccdMPRPenetration of libccd
   double GJK_sqrDistance(); //gjk_distance of libGJK
   bool simplexType(uint i, uint j) { return simplex1.d0==i && simplex2.d0==j; } //helper
 };

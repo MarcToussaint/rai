@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -56,7 +56,7 @@ PlotModule::~PlotModule() {
 
 void plotDrawOpenGL(void* data, OpenGL& gl);
 void plotDrawGnuplot(void* data, bool pauseMouse);
-void glDrawPlot(void *module, OpenGL& gl) { plotDrawOpenGL(((PlotModule*)module)->s, gl); }
+void glDrawPlot(void* module, OpenGL& gl) { plotDrawOpenGL(((PlotModule*)module)->s, gl); }
 
 //===========================================================================
 //
@@ -174,14 +174,14 @@ void plotFunction(const arr& f, double x0, double x1) {
 }
 
 void plotFunctions(const arr& F, double x0, double x1) {
-  CHECK_EQ(F.nd,2, "");
+  CHECK_EQ(F.nd, 2, "");
   arr tF;
   transpose(tF, F);
   for(uint j=0; j<tF.d0; j++) plotFunction(tF[j], x0, x1);
 }
 
 void plotFunctionPoints(const arr& x, const arr& f) {
-  CHECK_EQ(x.d0,f.d0, "Domain and image of function have different size!")
+  CHECK_EQ(x.d0, f.d0, "Domain and image of function have different size!")
   arr X(x.d0, x.d1+1);
   uint i, j;
   for(i=0; i<X.d0; i++) {
@@ -192,8 +192,8 @@ void plotFunctionPoints(const arr& x, const arr& f) {
 }
 
 void plotFunction(const arr& x, const arr& f) {
-  CHECK_EQ(x.d0,f.d0, "Domain and image of function have different size!")
-  CHECK_EQ(f.nd,1, "Function image should be 1D")
+  CHECK_EQ(x.d0, f.d0, "Domain and image of function have different size!")
+  CHECK_EQ(f.nd, 1, "Function image should be 1D")
   CHECK(x.d[x.nd-1]<3, "Can handle up to 2D domains")
   arr X(x.d0, x.d1+1);
   uint i, j;
@@ -205,7 +205,7 @@ void plotFunction(const arr& x, const arr& f) {
 }
 
 void plotFunctionPrecision(const arr& x, const arr& f, const arr& h, const arr& l) {
-  CHECK_EQ(x.d0,f.d0, "Domain and image of function have different size!")
+  CHECK_EQ(x.d0, f.d0, "Domain and image of function have different size!")
   CHECK(f.nd==1&&h.nd==1&&l.nd==1, "Function image should be 1D")
   CHECK(x.d[x.nd-1]<2, "Can handle up to 1D domains")
   arr X(x.d0, x.d1+3);
@@ -304,7 +304,7 @@ void plotCovariance(const arr& mean, const arr& cov) {
     svd(U, w, V, Cov);
     for(i=0; i<w.N; i++) w(i)=sqrt(w(i)); //trace of eig^2 becomes N!
     for(i=0; i<d.d0; i++) { d[i]()*=w; d[i]=V*d[i]; d(i, 0)+=mean(0); d(i, 1)+=mean(1); }
-    
+
     plotModule()->s->lines.append(d);
   }
   if(d==3) {
@@ -324,7 +324,7 @@ void plotCovariance(const arr& mean, const arr& cov) {
       phi=RAI_2PI*((double)i)/(101-1);
       d(202+i, 0)=0.; d(202+i, 1)=cos(phi); d(202+i, 2)=sin(phi);
     }
-    CHECK_EQ(cov.d0,3, "");
+    CHECK_EQ(cov.d0, 3, "");
     //lapack_cholesky(V, cov);
     svd(U, w, V, cov);
     for(i=0; i<w.N; i++) w(i)=sqrt(w(i)); //trace of eig^2 becomes N!
@@ -386,7 +386,7 @@ void plotVectorField(const arr& X, const arr& dX) {
 }
 
 void plotMatrixFlow(uintA& M, double len) {
-  CHECK_EQ(M.nd,2, "");
+  CHECK_EQ(M.nd, 2, "");
   uint i, j;
   arr X, dX;
   X.resize(M.d0, M.d1, 2);
@@ -418,18 +418,18 @@ void plotGaussians(const GaussianL& G) {
 // OpenGL draw routine
 //
 
-void plotDrawOpenGL(void *_data, OpenGL& gl) {
+void plotDrawOpenGL(void* _data, OpenGL& gl) {
 #ifdef RAI_GL
   sPlotModule& data=(*((sPlotModule*)_data));
   uint a, i, j;
-  
+
   rai::Color c;
-  
+
   double x=0., y=0., z=0.;
-  
+
   //light?
   if(plotModule()->light) glStandardLight(nullptr, gl);
-  
+
   if(plotModule()->drawBox) {
     glColor3f(.7, .7, .7);
     glBegin(GL_LINE_LOOP);
@@ -457,18 +457,18 @@ void plotDrawOpenGL(void *_data, OpenGL& gl) {
     glVertex3f(-1, 1, 1);
     glEnd();
   }
-  
+
   //draw images
   for(a=0; a<data.images.N; a++) {
   }
-  
+
   //draw arrays
   for(a=0; a<data.array.N; a++) {
     CHECK_LE(data.array(a).nd, 2, "can't display 3(or higher)-dim arrays");
     if(data.array(a).nd==1 || (data.array(a).nd==2 && data.array(a).d1==1)) { //1D functions
       c.setIndex(a);
       glColor(c.r, c.g, c.b);
-      
+
       for(i=1; i<data.array(a).N; i++) {
         glBegin(GL_LINES);
         glVertex3f(2.*(i-1)/(data.array(a).N-1)-1., data.array(a).elem(i-1), 0);
@@ -497,7 +497,7 @@ void plotDrawOpenGL(void *_data, OpenGL& gl) {
       c.setIndex(a);
       if(!plotModule()->grid) { //as a mesh
         c.whiten(.5);
-        CHECK_EQ(Y*X,data.mesh.V.d0, "you must recall display(data.array) when dimensions changed");
+        CHECK_EQ(Y*X, data.mesh.V.d0, "you must recall display(data.array) when dimensions changed");
         for(j=0; j<Y; j++) for(i=0; i<X; i++) {
             x= 2.*(double)i/(X-1.)-1.;
             y= 2.*(double)j/(Y-1.)-1.;
@@ -541,7 +541,7 @@ void plotDrawOpenGL(void *_data, OpenGL& gl) {
       }
     }
   }
-  
+
   //draw points
   for(i=0; i<data.points.N; i++) {
     c.setIndex(i);
@@ -577,16 +577,16 @@ void plotDrawOpenGL(void *_data, OpenGL& gl) {
     }
     if(plotModule()->drawDots) glEnd();
   }
-  
+
   //draw lines
   for(i=0; i<data.lines.N; i++) {
     if(plotModule()->colors) c.setIndex(i); else c.setIndex(0);
     glColor(c.r, c.g, c.b);
-    
+
     if(plotModule()->thickLines) {
       glLineWidth(plotModule()->thickLines);
     }
-    
+
     glBegin(GL_LINE_STRIP);
     for(j=0; j<data.lines(i).d0; j++) {
       if(data.lines(i).d1==1) glVertex3d((double)j, data.lines(i)(j, 0), 0.);
@@ -595,7 +595,7 @@ void plotDrawOpenGL(void *_data, OpenGL& gl) {
     }
     glEnd();
   }
-  
+
   //draw planes
   for(i=0; i<data.planes.N; i+=4) {
     c.setIndex(i/4+1);
@@ -621,31 +621,31 @@ void plotDrawOpenGL(void *_data, OpenGL& gl) {
 #define PLOTEVERY(block, with)  gnuplotcmd \
       <<"'z.plotdata' every :::" <<(block) <<"::" <<(block) <<(with);
 
-void plotDrawGnuplot(void *_data, bool pauseMouse) {
+void plotDrawGnuplot(void* _data, bool pauseMouse) {
   sPlotModule& data=(*((sPlotModule*)_data));
   uint i;
-  
+
   //openfiles
   rai::String gnuplotcmd;
   std::ofstream gnuplotdata;
   rai::open(gnuplotdata, "z.plotdata");
   uint block=0;
-  
+
   // include custom definition file if exists
-  FILE *incf = fopen("z.plotcmd.inc", "r");
+  FILE* incf = fopen("z.plotcmd.inc", "r");
   if(incf) { fclose(incf);  gnuplotcmd <<"load 'z.plotcmd.inc'\n";}
-  
+
   //gnuplotcmd <<"set size square\n";
   //if(wait) gnuplotcmd <<"set title 'CLICK LEFT TO CONTINUE'\n";
-  
+
   if(data.lines.N+data.points.N) gnuplotcmd <<"\nplot \\\n";
-  
+
   //pipe data
   bool ior=rai::IOraw;
   rai::IOraw=true;
   //lines
   for(i=0; i<data.lines.N; i++) {
-    data.lines(i).write(gnuplotdata," ","\n","  ",false,false);
+    data.lines(i).write(gnuplotdata, " ", "\n", "  ", false, false);
     gnuplotdata <<'\n' <<std::endl;
     if(block) gnuplotcmd <<", \\\n";
     if(data.lines(i).d1!=4) {
@@ -659,10 +659,10 @@ void plotDrawGnuplot(void *_data, bool pauseMouse) {
     }
     block++;
   }
-  
+
   //points
   for(i=0; i<data.points.N; i++) {
-    data.points(i).write(gnuplotdata," ","\n","  ",false,false);
+    data.points(i).write(gnuplotdata, " ", "\n", "  ", false, false);
     gnuplotdata <<'\n' <<std::endl;
     if(block) gnuplotcmd <<", \\\n";
     rai::String a=" with p pt 3";
@@ -670,9 +670,9 @@ void plotDrawGnuplot(void *_data, bool pauseMouse) {
     PLOTEVERY(block, a);
     block++;
   }
-  
+
   if(data.array.N) gnuplotcmd <<"\n\npause mouse\nset dgrid3d\n\nsplot \\\n";
-  
+
   //surfaces
   for(i=0; i<data.array.N; i++) {
     uint j, k, X=data.array(i).d1, Y=data.array(i).d0;
@@ -688,10 +688,10 @@ void plotDrawGnuplot(void *_data, bool pauseMouse) {
   }
   rai::IOraw=ior;
   gnuplotcmd <<endl;
-  
+
   //close files
   gnuplotdata.close();
-  
+
   //call gnuplot
   gnuplot(gnuplotcmd, pauseMouse, false, "z.pdf");
 }

@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -35,7 +35,7 @@ struct KinematicSwitch {
   Enum<SwitchInitializationType> init;
   int timeOfApplication;
   int fromId, toId;
-  rai::Transformation jA,jB;
+  rai::Transformation jA, jB;
   KinematicSwitch();
   KinematicSwitch(SwitchType op, JointType type,
                   int aFrame, int bFrame,
@@ -51,7 +51,7 @@ struct KinematicSwitch {
   void setTimeOfApplication(double time, bool before, int stepsPerPhase, uint T);
   void apply(Configuration& K);
   rai::String shortTag(const Configuration* G) const;
-  void write(std::ostream& os, rai::Configuration *K=nullptr) const;
+  void write(std::ostream& os, rai::Configuration* K=nullptr) const;
 };
 
 } // namespace rai

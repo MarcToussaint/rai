@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -62,16 +62,16 @@ void rai::KinematicSwitch::setTimeOfApplication(double time, bool before, int st
 }
 
 void rai::KinematicSwitch::apply(Configuration& K) {
-  Frame *from=nullptr, *to=nullptr;
+  Frame* from=nullptr, *to=nullptr;
   if(fromId!=UINT_MAX) from=K.frames(fromId);
   if(toId!=UINT_MAX) to=K.frames(toId);
-  
+
   if(symbol==deleteJoint) {
     CHECK_EQ(jointType, JT_none, "");
-    
+
 #if 1
     //first search for the joint below frame
-    Frame *f = to;
+    Frame* f = to;
     for(;;) {
       if(!f->parent) break;
       if(f->joint) break;
@@ -84,11 +84,11 @@ void rai::KinematicSwitch::apply(Configuration& K) {
     }
 #else
     //this deletes ALL links downward from to until a named or shape-attached one!
-    Frame *f = to;
+    Frame* f = to;
     uint i=0;
     for(;;) {
       if(!f->link) break;
-      Frame *from = f->link->from;
+      Frame* from = f->link->from;
       delete f->link;
       i++;
       if(from->name.N || from->shape || from->inertia) break;
@@ -102,14 +102,14 @@ void rai::KinematicSwitch::apply(Configuration& K) {
     K.checkConsistency();
     return;
   }
-  
+
   bool newVersion = true;
   if(symbol==SW_effJoint || symbol==SW_actJoint || symbol==SW_insertEffJoint || symbol==insertActuated) {
     //first find lowest frame below to
     if(!newVersion) {
       rai::Transformation Q = 0;
 #if 1
-      rai::Frame *link = to->getUpwardLink(Q);
+      rai::Frame* link = to->getUpwardLink(Q);
       if(link && link!=to) to = link;
 #else
       while(to->parent) {
@@ -121,11 +121,11 @@ void rai::KinematicSwitch::apply(Configuration& K) {
       if(!Q.isZero())
         jA.appendTransformation(-Q);
     }
-    
-    Joint *j = nullptr;
+
+    Joint* j = nullptr;
     if(symbol!=SW_insertEffJoint && symbol!=insertActuated) {
       if(newVersion) {
-        rai::Frame *link = to->getUpwardLink();
+        rai::Frame* link = to->getUpwardLink();
         if(link->parent) link->unLink();
         K.reconfigureRootOfSubtree(to);
       } else {
@@ -136,14 +136,14 @@ void rai::KinematicSwitch::apply(Configuration& K) {
     } else {
       CHECK(!from, "from should not be specified");
       CHECK(to->parent, "to needs to have a link already");
-      Frame *mid = to->insertPreLink(rai::Transformation(0));
+      Frame* mid = to->insertPreLink(rai::Transformation(0));
       j = new Joint(*mid);
     }
     if(!jA.isZero()) {
       if(newVersion) {
         j->frame.insertPreLink(jA);
       } else { //in the old version: when not reconfiguring the grasped frame to root, you need to insert -Q AFTER the joint to transform back to the old link's root
-        Frame *mid = to->insertPreLink();
+        Frame* mid = to->insertPreLink();
         delete j;
         j = new rai::Joint(*mid);
         to->Q = jA;
@@ -173,44 +173,44 @@ void rai::KinematicSwitch::apply(Configuration& K) {
     K.checkConsistency();
     return;
   }
-  
+
   if(symbol==addSliderMechanism) {
 //    HALT("I think it is better if there is fixed  slider mechanisms in the world, that may jump; no dynamic creation of bodies");
-    Frame *slider1 = new Frame(K); //{ type=ST_box size=[.2 .1 .05 0] color=[0 0 0] }
-    Frame *slider2 = new Frame(K); //{ type=ST_box size=[.2 .1 .05 0] color=[1 0 0] }
-    Shape *s1 = new Shape(*slider1); s1->type()=ST_box; s1->size()= {.2,.1,.05}; s1->mesh().C= {0.,0,0};
-    Shape *s2 = new Shape(*slider2); s2->type()=ST_box; s2->size()= {.2,.1,.05}; s2->mesh().C= {1.,0,0};
-    
+    Frame* slider1 = new Frame(K); //{ type=ST_box size=[.2 .1 .05 0] color=[0 0 0] }
+    Frame* slider2 = new Frame(K); //{ type=ST_box size=[.2 .1 .05 0] color=[1 0 0] }
+    Shape* s1 = new Shape(*slider1); s1->type()=ST_box; s1->size()= {.2, .1, .05}; s1->mesh().C= {0., 0, 0};
+    Shape* s2 = new Shape(*slider2); s2->type()=ST_box; s2->size()= {.2, .1, .05}; s2->mesh().C= {1., 0, 0};
+
     //unlink to
     if(to->parent) to->unLink();
-    
+
     //placement of the slider1 on the table -> fixed
     slider1->linkFrom(from);
-    Joint *j1 = new Joint(*slider1);
+    Joint* j1 = new Joint(*slider1);
     j1->type = JT_transXYPhi;
     j1->constrainToZeroVel=true;
     //the actual sliding translation -> articulated
     slider2->linkFrom(slider1);
-    Joint *j2 = new Joint(*slider2);
+    Joint* j2 = new Joint(*slider2);
     j2->type = JT_transX;
     j2->constrainToZeroVel=false;
     //orientation of the object on the slider2 -> fixed
     to->linkFrom(slider2);
-    Joint *j3 = new Joint(*to);
+    Joint* j3 = new Joint(*to);
     j3->type = JT_hingeZ;
     j3->constrainToZeroVel=true;
-    
+
     //    NIY;//j3->B = jB;
     if(!jA.isZero()) {
       slider1->insertPreLink(jA);
     }
-    
+
     K.calc_q();
     K.calc_fwdPropagateFrames();
     K.checkConsistency();
     return;
   }
-  
+
   if(symbol==addJointAtTo) {
     if(to->parent) to->unLink();
     to->linkFrom(from, true);
@@ -226,24 +226,24 @@ void rai::KinematicSwitch::apply(Configuration& K) {
     K.checkConsistency();
     return;
   }
-  
+
   if(symbol==SW_fixCurrent) {
     CHECK_EQ(jointType, JT_none, "");
-    
+
     if(to->parent) to->unLink();
     to->linkFrom(from, true);
-    
+
     K.calc_q();
     K.calc_fwdPropagateFrames();
     K.checkConsistency();
     return;
   }
-  
+
   if(symbol==makeDynamic) {
     CHECK_EQ(jointType, JT_none, "");
     CHECK_EQ(to, 0, "");
     CHECK(from->inertia, "can only make frames with intertia dynamic");
-    
+
     from->inertia->type=rai::BT_dynamic;
     if(from->joint) {
       from->joint->constrainToZeroVel=false;
@@ -251,12 +251,12 @@ void rai::KinematicSwitch::apply(Configuration& K) {
     }
     return;
   }
-  
+
   if(symbol==makeKinematic) {
     CHECK_EQ(jointType, JT_none, "");
     CHECK_EQ(to, 0, "");
     CHECK(from->inertia, "can only make frames with intertia kinematic");
-    
+
     from->inertia->type=rai::BT_kinematic;
 //    if(from->joint){
 //      from->joint->constrainToZeroVel=false;
@@ -275,8 +275,8 @@ void rai::KinematicSwitch::apply(Configuration& K) {
 
   if(symbol==SW_delContact) {
     CHECK_EQ(jointType, JT_none, "");
-    rai::Contact *c = nullptr;
-    for(rai::Contact *cc:to->contacts) if(&cc->a==from || &cc->b==from){ c=cc; break; }
+    rai::Contact* c = nullptr;
+    for(rai::Contact* cc:to->contacts) if(&cc->a==from || &cc->b==from) { c=cc; break; }
     if(!c) HALT("not found");
     delete c;
     return;
@@ -307,22 +307,22 @@ void rai::KinematicSwitch::write(std::ostream& os, rai::Configuration* K) const 
 
 //===========================================================================
 
-rai::KinematicSwitch* rai::KinematicSwitch::newSwitch(const Node *specs, const rai::Configuration& world, int stepsPerPhase, uint T) {
+rai::KinematicSwitch* rai::KinematicSwitch::newSwitch(const Node* specs, const rai::Configuration& world, int stepsPerPhase, uint T) {
   if(specs->parents.N<2) return nullptr;
-  
+
   //-- get tags
   rai::String& tt=specs->parents(0)->keys.last();
   rai::String& type=specs->parents(1)->keys.last();
-  const char *ref1=nullptr, *ref2=nullptr;
+  const char* ref1=nullptr, *ref2=nullptr;
   if(specs->parents.N>2) ref1=specs->parents(2)->keys.last().p;
   if(specs->parents.N>3) ref2=specs->parents(3)->keys.last().p;
-  
+
   if(tt!="MakeJoint") return nullptr;
   rai::KinematicSwitch* sw = newSwitch(type, ref1, ref2, world, stepsPerPhase + 1);
-  
+
   if(specs->isGraph()) {
     const Graph& params = specs->graph();
-    sw->setTimeOfApplication(params.get<double>("time",1.), params.get<bool>("time", false), stepsPerPhase, T);
+    sw->setTimeOfApplication(params.get<double>("time", 1.), params.get<bool>("time", false), stepsPerPhase, T);
 //    sw->timeOfApplication = *stepsPerPhase + 1;
     params.get(sw->jA, "from");
     params.get(sw->jB, "to");
@@ -332,7 +332,7 @@ rai::KinematicSwitch* rai::KinematicSwitch::newSwitch(const Node *specs, const r
 
 rai::KinematicSwitch* rai::KinematicSwitch::newSwitch(const rai::String& type, const char* ref1, const char* ref2, const rai::Configuration& world, int _timeOfApplication, const rai::Transformation& jFrom, const rai::Transformation& jTo) {
   //-- create switch
-  rai::KinematicSwitch *sw= new rai::KinematicSwitch();
+  rai::KinematicSwitch* sw= new rai::KinematicSwitch();
   if(type=="addRigid") { sw->symbol=rai::SW_effJoint; sw->jointType=rai::JT_rigid; }
 //  else if(type=="addRigidRel"){ sw->symbol = rai::KinematicSwitch::addJointAtTo; sw->jointType=rai::JT_rigid; }
   else if(type=="rigidAtTo") { sw->symbol = rai::addJointAtTo; sw->jointType=rai::JT_rigid; }

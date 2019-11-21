@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2019 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #ifdef RAI_OPENCV
 
 #include "opencv.h"
@@ -12,14 +20,13 @@ OpencvCamera::OpencvCamera(const Var<byteA>& _rgb)
   threadLoop();
 }
 
-OpencvCamera::~OpencvCamera(){
+OpencvCamera::~OpencvCamera() {
   threadClose();
 }
 
-
 void OpencvCamera::open() {
   s->capture.open(0);
-  for(std::map<int,double>::const_iterator i = properties.begin(); i != properties.end(); ++i) {
+  for(std::map<int, double>::const_iterator i = properties.begin(); i != properties.end(); ++i) {
     if(!s->capture.set(i->first, i->second)) {
       cerr << "could not set property " << i->first << " to value " << i->second << endl;
     }

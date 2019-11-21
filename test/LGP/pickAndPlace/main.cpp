@@ -6,7 +6,6 @@
 #include <LGP/LGP_tree.h>
 #include <KOMO/komo.h>
 
-
 void generateProblem(rai::Configuration& K){
   uint numObj = 4;
   for(;;){
@@ -45,7 +44,6 @@ void generateProblem(rai::Configuration& K){
 
 }
 
-
 void solve(){
   rai::Configuration K;
   generateProblem(K);
@@ -67,7 +65,6 @@ void solve(){
     lgp.renderToVideo();
   }
 }
-
 
 void testBounds(){
   rai::Configuration K;

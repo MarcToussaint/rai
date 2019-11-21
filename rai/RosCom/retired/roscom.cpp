@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -22,13 +22,13 @@
 void PerceptionObjects2Ors::step() {
   perceptionObjects.readAccess();
   modelWorld.readAccess();
-  
+
   for(visualization_msgs::Marker& marker : perceptionObjects().markers) {
     rai::String name;
     name <<"obj" <<marker.id;
-    rai::Shape *s = modelWorld->getFrameByName(name)->shape;
+    rai::Shape* s = modelWorld->getFrameByName(name)->shape;
     if(!s) {
-      rai::Frame *f = new rai::Frame(modelWorld());
+      rai::Frame* f = new rai::Frame(modelWorld());
       s = new rai::Shape(*f);
       if(marker.type==marker.CYLINDER) {
         s->type() = rai::ST_cylinder;
@@ -41,7 +41,7 @@ void PerceptionObjects2Ors::step() {
       } else NIY;
     }
   }
-  
+
   perceptionObjects.deAccess();
   modelWorld.deAccess();
 }
@@ -122,18 +122,18 @@ void PerceptionObjects2Ors::step() {
 // Helper function so sync ors with the real PR2
 void initialSyncJointStateWithROS(rai::Configuration& world,
                                   Var<CtrlMsg>& ctrl_obs, bool useRos) {
-                                  
+
   if(not useRos) { return; }
-  
+
   //-- wait for first q observation!
   cout << "** Waiting for ROS message of joints for initial configuration.." << endl
        << "   If nothing is happening: is the controller running?" << endl;
-       
+
   for(uint trials = 0; trials < 20; trials++) {
     ctrl_obs.waitForNextRevision();
     cout << "REMOTE joint dimension=" << ctrl_obs.get()->q.N << endl;
     cout << "LOCAL  joint dimension=" << world.q.N << endl;
-    
+
     if(ctrl_obs.get()->q.N == world.q.N and ctrl_obs.get()->qdot.N == world.q.N) {
       // set current state
       cout << "** Updating world state" << endl;
@@ -147,12 +147,12 @@ void initialSyncJointStateWithROS(rai::Configuration& world,
 
 void syncJointStateWitROS(rai::Configuration& world,
                           Var<CtrlMsg>& ctrl_obs, bool useRos) {
-                          
+
   if(not useRos) { return; }
-  
+
   for(uint trials = 0; trials < 2; trials++) {
     ctrl_obs.waitForNextRevision();
-    
+
     if(ctrl_obs.get()->q.N == world.q.N and ctrl_obs.get()->qdot.N == world.q.N) {
       // set current state
       world.setJointState(ctrl_obs.get()->q, ctrl_obs.get()->qdot);
@@ -180,12 +180,12 @@ void RosCom_Spinner::close() {}
 //===========================================================================
 // CosCom_ControllerSync
 struct sRosCom_ControllerSync {
-  RosCom_ControllerSync *base;
+  RosCom_ControllerSync* base;
   ros::NodeHandle nh;
   ros::Subscriber sub_jointState;
 //  ros::Subscriber sub_odom;
   ros::Publisher pub_jointReference;
-  
+
   void joinstState_callback(const marc_controller_pkg::JointState::ConstPtr& msg) {
     //  cout <<"** joinstState_callback" <<endl;
     CtrlMsg m(conv_stdvec2arr(msg->q), conv_stdvec2arr(msg->qdot), conv_stdvec2arr(msg->fL), conv_stdvec2arr(msg->fR), conv_stdvec2arr(msg->u_bias), conv_stdvec2arr(msg->J_ft_inv), msg->velLimitRatio, msg->effLimitRatio, msg->gamma);
@@ -238,18 +238,18 @@ void RosCom_ControllerSync::close() {
 // Helper function so sync ors with the real PR2
 void initialSyncJointStateWithROS(rai::Configuration& world,
                                   Var<CtrlMsg>& ctrl_obs, bool useRos) {
-                                  
+
   if(not useRos) { return; }
-  
+
   //-- wait for first q observation!
   cout << "** Waiting for ROS message of joints for initial configuration.." << endl
        << "   If nothing is happening: is the controller running?" << endl;
-       
+
   for(uint trials = 0; trials < 20; trials++) {
     ctrl_obs.data->waitForNextRevision();
     cout << "REMOTE joint dimension=" << ctrl_obs.get()->q.N << endl;
     cout << "LOCAL  joint dimension=" << world.q.N << endl;
-    
+
     if(ctrl_obs.get()->q.N == world.q.N and ctrl_obs.get()->qdot.N == world.q.N) {
       // set current state
       cout << "** Updating world state" << endl;
@@ -263,12 +263,12 @@ void initialSyncJointStateWithROS(rai::Configuration& world,
 
 void syncJointStateWitROS(rai::Configuration& world,
                           Var<CtrlMsg>& ctrl_obs, bool useRos) {
-                          
+
   if(not useRos) { return; }
-  
+
   for(uint trials = 0; trials < 2; trials++) {
     ctrl_obs.data->waitForNextRevision();
-    
+
     if(ctrl_obs.get()->q.N == world.q.N and ctrl_obs.get()->qdot.N == world.q.N) {
       // set current state
       world.setJointState(ctrl_obs.get()->q, ctrl_obs.get()->qdot);
@@ -281,12 +281,12 @@ void syncJointStateWitROS(rai::Configuration& world,
 //===========================================================================
 // RosCom_KinectSync
 struct sRosCom_KinectSync {
-  RosCom_KinectSync *base;
+  RosCom_KinectSync* base;
   ros::NodeHandle nh;
   ros::Subscriber sub_rgb;
   ros::Subscriber sub_depth;
   tf::TransformListener listener;
-  
+
   void cb_rgb(const sensor_msgs::Image::ConstPtr& msg) {
     //  cout <<"** sRosCom_KinectSync callback" <<endl;
     base->kinect_rgb.set(conv_time2double(msg->header.stamp)) = conv_stdvec2arr(msg->data).reshape(msg->height, msg->width, 3);
@@ -320,7 +320,7 @@ void RosCom_KinectSync::close() {
 //===========================================================================
 // RosCom_CamsSync
 struct sRosCom_CamsSync {
-  RosCom_CamsSync *base;
+  RosCom_CamsSync* base;
   ros::NodeHandle nh;
   ros::Subscriber sub_left;
   ros::Subscriber sub_right;
@@ -350,7 +350,7 @@ void RosCom_CamsSync::close() {
 //===========================================================================
 // RosCom_ArmCamsSync
 struct sRosCom_ArmCamsSync {
-  RosCom_ArmCamsSync *base;
+  RosCom_ArmCamsSync* base;
   ros::NodeHandle nh;
   ros::Subscriber sub_left;
   ros::Subscriber sub_right;
@@ -380,21 +380,21 @@ void RosCom_ArmCamsSync::close() {
 //===========================================================================
 // RosCom_ForceSensorSync
 struct sRosCom_ForceSensorSync {
-  RosCom_ForceSensorSync *base;
+  RosCom_ForceSensorSync* base;
   ros::NodeHandle nh;
   ros::Subscriber sub_left;
   ros::Subscriber sub_right;
   void cb_left(const geometry_msgs::WrenchStamped::ConstPtr& msg) {
-    const geometry_msgs::Vector3 &f=msg->wrench.force;
-    const geometry_msgs::Vector3 &t=msg->wrench.torque;
+    const geometry_msgs::Vector3& f=msg->wrench.force;
+    const geometry_msgs::Vector3& t=msg->wrench.torque;
     base->wrenchL.set() = ARR(f.x, f.y, f.z, t.x, t.y, t.z);
   }
   void cb_right(const geometry_msgs::WrenchStamped::ConstPtr& msg) {
-    const geometry_msgs::Vector3 &f=msg->wrench.force;
-    const geometry_msgs::Vector3 &t=msg->wrench.torque;
+    const geometry_msgs::Vector3& f=msg->wrench.force;
+    const geometry_msgs::Vector3& t=msg->wrench.torque;
     base->wrenchR.set() = ARR(f.x, f.y, f.z, t.x, t.y, t.z);
   }
-  
+
 };
 
 void RosCom_ForceSensorSync::open() {
@@ -415,7 +415,7 @@ void RosCom_ForceSensorSync::close() {
 //===========================================================================
 // RosCom_SoftHandSync
 struct sRosCom_SoftHandSync {
-  RosCom_SoftHandSync *base;
+  RosCom_SoftHandSync* base;
   ros::NodeHandle nh;
   ros::Publisher pub_shReference;
 };

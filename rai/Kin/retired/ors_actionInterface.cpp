@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -52,7 +52,7 @@ void drawOrsActionInterfaceEnv(void*) {
   glDrawFloor(4., 1, 1, 1);
 }
 
-void oneStep(const arr &q, rai::Configuration *C, OdeInterface *ode, SwiftInterface *swift) {
+void oneStep(const arr& q, rai::Configuration* C, OdeInterface* ode, SwiftInterface* swift) {
   C->setJointState(q);
 #ifdef RAI_ODE
   if(ode) {
@@ -70,10 +70,10 @@ void oneStep(const arr &q, rai::Configuration *C, OdeInterface *ode, SwiftInterf
     C->ode().importProxiesFromOde();
 #endif
   }
-  
+
 }
 
-void controlledStep(arr &q, arr &W, rai::Configuration *C, OdeInterface *ode, SwiftInterface *swift, TaskVariableList& TVs) {
+void controlledStep(arr& q, arr& W, rai::Configuration* C, OdeInterface* ode, SwiftInterface* swift, TaskVariableList& TVs) {
   static arr dq;
   updateState(TVs, *C);
   updateChanges(TVs); //computeXchangeWithAttractor(globalSpace);
@@ -87,7 +87,7 @@ ActionInterface::ActionInterface() {
   gl=0;
   ode=0;
   swift=0;
-  
+
   Tabort = SEC_ACTION_ABORT;
 }
 
@@ -115,9 +115,9 @@ void ActionInterface::loadConfiguration(const char* ors_filename) {
   C = new rai::Configuration();
   FILE(ors_filename) >> *C;
   //C->reconfigureRoot(C->getName("rfoot"));
-  
+
   C->getJointState(q0);
-  
+
   //compute generic q-metric depending on tree depth
   uint i;
   arr BM(C->bodies.N);
@@ -133,7 +133,7 @@ void ActionInterface::loadConfiguration(const char* ors_filename) {
   //Wdiag <<"[20 20 20 10 10 10 10 1 1 1 1 10 10 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
 // 1 1 20 20 10 10 10 10 10 10 ]";
   W.setDiag(Wdiag);
-  
+
   // determine number of objects
   noObjects = 0;
   // assuming that all objects start with "o"
@@ -141,12 +141,12 @@ void ActionInterface::loadConfiguration(const char* ors_filename) {
   for(i=1;; i++) {
     ss.str("");
     ss <<"o" <<i;
-    rai::Body *n = C->getBodyByName(ss.str().c_str());
+    rai::Body* n = C->getBodyByName(ss.str().c_str());
     if(n==0)
       break;
     noObjects++;
   }
-  
+
   if(gl) return;
   gl=new OpenGL;
   gl->add(drawOrsActionInterfaceEnv, 0);
@@ -171,7 +171,7 @@ void ActionInterface::startOde(double ode_coll_bounce, double ode_coll_erp,
   CHECK(C, "load a configuration first");
 #ifdef RAI_ODE
   C->ode();
-  
+
   // SIMULATOR PARAMETER
   C->ode().coll_bounce = ode_coll_bounce; // huepfen der bloecke, falls sie zb runterfallen
   C->ode().coll_ERP = ode_coll_erp;   //usually .2!! stiffness (time-scale of contact reaction) umso groesser, desto mehr Fehlerkorrektur; muss zwischen 0.1 und 0.5 sein (ungefaehr)
@@ -210,14 +210,14 @@ void ActionInterface::simulate(uint t) {
 void ActionInterface::relaxPosition() {
   arr q, dq;
   C->getJointState(q);
-  
+
   arr I(q.N, q.N); I.setId();
-  
+
   DefaultTaskVariable x("full state", *C, qLinearTVT, 0, 0, 0, 0, I);
   x.setGainsAsAttractor(20, .1);
   x.y_prec=1000.;
   x.y_target=q0;
-  
+
 //   /*DefaultTaskVariable c("collision", *C, collTVT, 0, 0, 0, 0, arr());*/
 //   c.setGainsAsAttractor(20, .1);
 //   c.y_prec=10000.;
@@ -262,11 +262,11 @@ void ActionInterface::relaxPosition() {
 //   catchObject("fing1c", obj);
 // }
 
-void ActionInterface::moveTo(const char *man_id, const arr& target) {
+void ActionInterface::moveTo(const char* man_id, const arr& target) {
   DefaultTaskVariable x("endeffector", *C, posTVT, man_id, 0, 0, 0, arr());
   x.setGainsAsAttractor(20, .2);
   x.y_prec=1000.;
-  
+
   uint t;
   arr q, dq;
   C->getJointState(q);
@@ -280,13 +280,13 @@ void ActionInterface::moveTo(const char *man_id, const arr& target) {
   if(t==Tabort) { indicateFailure(); return; }
 }
 
-void ActionInterface::grab(const char *man_id, const char *obj_id) {
-  rai::Body *obj=C->getBodyByName(obj_id);
-  
+void ActionInterface::grab(const char* man_id, const char* obj_id) {
+  rai::Body* obj=C->getBodyByName(obj_id);
+
   DefaultTaskVariable x("endeffector", *C, posTVT, man_id, 0, 0, 0, arr());
   x.setGainsAsAttractor(20, .2);
   x.y_prec=1000.;
-  
+
 //   DefaultTaskVariable c("collision", *C, collTVT, 0, 0, 0, 0, arr());
 //   c.setGainsAsAttractor(20, .1);
 //   c.y_prec=10000.;
@@ -298,7 +298,7 @@ void ActionInterface::grab(const char *man_id, const char *obj_id) {
     NIY;
     //C->del_edge(e);
   }
-  
+
   // (2) move towards new object
   uint t;
   arr q, dq;
@@ -311,14 +311,14 @@ void ActionInterface::grab(const char *man_id, const char *obj_id) {
     if(x.err<.05 || C->getContact(x.i, obj->index)) break;
   }
   if(t==Tabort) { indicateFailure(); return; }
-  
+
   // (3) grasp if not table or world
   if(obj->index!=getTableID()) {
     C->glueBodies(C->bodies(x.i), obj);
   } else {
     //indicateFailure()?
   }
-  
+
   // (4) move upwards (to avoid collisions)
   for(t=0; t<Tabort; t++) {
     x.y_target = conv_vec2arr(obj->X.pos);
@@ -339,7 +339,7 @@ void ActionInterface::grab(const char* obj) {
   grab("fing1c", obj);
 }
 
-void ActionInterface::dropObjectAbove(const char *obj_id55, const char *rel_id) {
+void ActionInterface::dropObjectAbove(const char* obj_id55, const char* rel_id) {
   arr I(q0.N, q0.N); I.setId();
   bool obj_is_inhand = strlen(obj_id55) > 0;
   char* obj_id1;
@@ -348,7 +348,7 @@ void ActionInterface::dropObjectAbove(const char *obj_id55, const char *rel_id) 
     strcpy(obj_id1, obj_id55);
   } else
     obj_id1 = (char*) "fing1c";
-    
+
   DefaultTaskVariable x("obj", *C, posTVT, obj_id1, 0, 0, 0, arr());
   DefaultTaskVariable z;
   //
@@ -369,7 +369,7 @@ void ActionInterface::dropObjectAbove(const char *obj_id55, const char *rel_id) 
   //
   DefaultTaskVariable r("full state", *C, qLinearTVT, 0, 0, 0, 0, I);
   DefaultTaskVariable c("collision", *C, collTVT, 0, 0, 0, 0, arr());
-  
+
   r.setGainsAsAttractor(50, .1);
   r.y_prec=1.;
   r.y_target=q0;
@@ -379,15 +379,15 @@ void ActionInterface::dropObjectAbove(const char *obj_id55, const char *rel_id) 
   z.setGainsAsAttractor(20, .2);
   z.y_prec=1000.;
   z.y_target.resize(1);  z.y_target = 1.;
-  
+
   c.setGainsAsAttractor(20, .1);
   c.y_prec=10000.;
   if(!swift) c.active=false;
-  
+
   uint t;
   arr q, dq;
   C->getJointState(q);
-  
+
   // tl, 02 july 08
   // Noise for puton position
   double x_noise, y_noise;
@@ -417,7 +417,7 @@ void ActionInterface::dropObjectAbove(const char *obj_id55, const char *rel_id) 
     y_noise = std_dev_noise * rnd.gauss();
   }
   // hard noise [END]
-  
+
   //phase 1: up
   updateState(TVs, *C);
   x.y_target(2) += .3;
@@ -430,10 +430,10 @@ void ActionInterface::dropObjectAbove(const char *obj_id55, const char *rel_id) 
     if(x.err<.05) break;
   }
   if(t==Tabort) { indicateFailure(); return; }
-  
+
   //phase 2: above object
   double HARD_LIMIT_DIST_Y = -0.8;
-  
+
   double z_target;
   for(t=0; t<Tabort; t++) {
     x.y_target = conv_vec2arr(C->getBodyByName(rel_id)->X.pos);
@@ -452,10 +452,10 @@ void ActionInterface::dropObjectAbove(const char *obj_id55, const char *rel_id) 
     if(x.err<.05) break;
   }
   if(t==Tabort) { indicateFailure(); return; }
-  
+
   //turn off collision avoidance
   c.active=false;
-  
+
   //phase 3: down
   double* obj_shape = getShape(obj_index);
   for(t=0; t<Tabort; t++) {
@@ -477,7 +477,7 @@ void ActionInterface::dropObjectAbove(const char *obj_id55, const char *rel_id) 
     if(x.err<.002 && z.err<.002) break;
   }
   if(t==Tabort) { indicateFailure(); return; }
-  
+
   if(obj_is_inhand) {
     NIY;
     //rai::Joint *e=C->bodies(x.i)->inLinks(0);
@@ -501,7 +501,7 @@ bool ActionInterface::partOfBody(uint id) {
 uint ActionInterface::getCatched(uint man_id) {
 #if 0
   //   rai::Configuration::node n = C->bodies(man_id);
-  rai::Proxy *p;
+  rai::Proxy* p;
   //  cout <<"davor";
   uint obj=C->getBodyByName(convertObjectID2name(man_id))->index;
   //   cout <<"danach";
@@ -525,7 +525,7 @@ uint ActionInterface::getCatched(uint man_id) {
     }
   return UINT_MAX;
 #else
-  rai::Joint *e;
+  rai::Joint* e;
   e=C->bodies(man_id)->parentOf(0);
   if(!e) return UINT_MAX;
   return e->to->index;
@@ -537,7 +537,7 @@ uint ActionInterface::getCatched() {
 }
 
 void ActionInterface::writeAllContacts(uint id) {
-  rai::Proxy *p;
+  rai::Proxy* p;
   //  cout <<"davor";
   uint obj=C->getBodyByName(convertObjectID2name(id))->index;
   //   cout <<"danach";
@@ -561,9 +561,9 @@ void ActionInterface::writeAllContacts(uint id) {
   cout <<endl;
 }
 
-void ActionInterface::getObjectsAbove(uintA& list, const char *obj_id) {
+void ActionInterface::getObjectsAbove(uintA& list, const char* obj_id) {
   list.clear();
-  rai::Proxy *p;
+  rai::Proxy* p;
   uint obj=C->getBodyByName(obj_id)->index;
 //   writeAllContacts(convertObjectName2ID(obj_id));
   uint i;
@@ -629,14 +629,14 @@ void ActionInterface::getManipulableObjects(uintA& objects) {
   for(i=1; i<=noObjects; i++) {
     ss.str("");
     ss <<"o" <<i;
-    rai::Body *n = C->getBodyByName(ss.str().c_str());
+    rai::Body* n = C->getBodyByName(ss.str().c_str());
     obj=n->index;
     objects.append(obj);
   }
 }
 
 uint ActionInterface::getTableID() {
-  rai::Body *n = C->getBodyByName("table");
+  rai::Body* n = C->getBodyByName("table");
   return n->index;
 }
 
@@ -647,7 +647,7 @@ bool ActionInterface::inContact(uint a, uint b) {
 
 bool ActionInterface::isUpright(uint id) {
   double TOLERANCE = 0.05; // in radians
-  
+
   rai::Quaternion rot;
   rot = C->bodies(id)->X.rot;
   rai::Vector upvec; double maxz=-2;
@@ -659,7 +659,7 @@ bool ActionInterface::isUpright(uint id) {
   if((rot*(-Vector_z)).z>maxz) { upvec=-Vector_z; maxz=(rot*upvec).z; }
   double angle;
   angle = acos(maxz);
-  
+
 //   cout <<id <<" angle = " <<angle <<endl;
   if(fabs(angle) < TOLERANCE)
     return true;
@@ -734,7 +734,7 @@ void ActionInterface::indicateFailure() {
 // if z-value of objects is beneath THRESHOLD
 bool ActionInterface::onBottom(uint id) {
   double THRESHOLD = 0.15;
-  rai::Body *obj=C->bodies(id);
+  rai::Body* obj=C->bodies(id);
   if(obj->X.pos.z < THRESHOLD)
     return true;
   else

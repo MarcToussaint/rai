@@ -1,16 +1,25 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2019 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #pragma once
 
 #include <KOMO/komo.h>
 
-enum BoundType{ BD_all=-1,
-                BD_symbolic=0,
-                BD_pose,
-                BD_seq,
-                BD_path,
-                BD_seqPath,
-                BD_seqVelPath,
-                BD_poseFromSeq,
-                BD_max };
+enum BoundType { BD_all=-1,
+                 BD_symbolic=0,
+                 BD_pose,
+                 BD_seq,
+                 BD_path,
+                 BD_seqPath,
+                 BD_seqVelPath,
+                 BD_poseFromSeq,
+                 BD_max
+               };
 
 void skeleton2Bound(KOMO& komo,
                     BoundType boundType,
@@ -18,27 +27,25 @@ void skeleton2Bound(KOMO& komo,
                     const rai::Configuration& startKinematics,
                     const rai::Configuration& parentEffKinematics,
                     bool collisions,
-                    const arrA& waypoints={}
-                    );
+                    const arrA& waypoints= {}
+                   );
 
-
-
-struct SubCG{
+struct SubCG {
   NodeL frames;
   NodeL constraints;
   uint maxT;
   int merged=-1;
-  void write(ostream& os) const{
+  void write(ostream& os) const {
     cout <<"*** subproblem (merged:" <<merged <<")" <<endl;
     cout <<"  frames:";
-    for(Node *f:frames) cout <<' ' <<*f;
+    for(Node* f:frames) cout <<' ' <<*f;
     cout <<"\n  constraints:";
-    for(Node *c:constraints) cout <<"\n    " <<*c;
+    for(Node* c:constraints) cout <<"\n    " <<*c;
     cout <<endl;
   }
 };
 stdOutPipe(SubCG)
-struct CG{
+struct CG {
   Graph G;
   rai::Array<std::shared_ptr<SubCG>> subproblems;
 };

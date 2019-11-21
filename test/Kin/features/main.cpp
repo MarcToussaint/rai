@@ -34,7 +34,6 @@ void testFeature() {
 
   rai::Contact con(obj1, obj2);
 
-
   K.setTimes(.1);
   rai::Configuration K1(K), K2(K);
   ConfigurationL Ktuple = {&K, &K1, &K2};

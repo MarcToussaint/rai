@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -19,11 +19,11 @@ namespace rai {
 Spline::Spline(uint degree) : degree(degree) {}
 
 Spline::Spline(uint T, const arr& X, uint degree) : points(X) {
-  CHECK_EQ(points.nd, 2,"");
+  CHECK_EQ(points.nd, 2, "");
   setUniformNonperiodicBasis(T, points.d0, degree);
 }
 
-void Spline::clear(){
+void Spline::clear() {
   points.clear();
   times.clear();
   basis.clear();
@@ -120,8 +120,8 @@ void Spline::setBasisAndTimeGradient(uint T, uint K) {
             dbt(j, i, t) = x * dbt_0(j, i, t);
             if(i<K) dbt(j, i, t) += y * dbt_0(j, i+1, t);
             if(j==i)            dbt(j, i, t) += DIV((x-1), xx, true) * b_0(i, t);
-            if(j==i+p)          dbt(j, i, t) -= DIV(x , xx, true) * b_0(i, t);
-            if(i<K && j==i+1)   dbt(j, i, t) += DIV(y , yy, true) * b_0(i+1, t);
+            if(j==i+p)          dbt(j, i, t) -= DIV(x, xx, true) * b_0(i, t);
+            if(i<K && j==i+1)   dbt(j, i, t) += DIV(y, yy, true) * b_0(i+1, t);
             if(i<K && j==i+p+1) dbt(j, i, t) -= DIV((y-1), yy, true) * b_0(i+1, t);
           }
         }
@@ -136,16 +136,16 @@ void Spline::setUniformNonperiodicBasis() {
   setUniformNonperiodicBasis(0, points.d0, degree);
 }
 
-void Spline::set(uint _degree, const arr &x, const arr& t) {
+void Spline::set(uint _degree, const arr& x, const arr& t) {
   CHECK_EQ(x.d0, t.N, "");
   degree = _degree;
-  
+
   points = x;
   for(uint i=0; i<degree/2; i++) {
     points.prepend(x[0]);
     points.append(x[x.d0-1]);
   }
-  
+
   uint m=t.N+2*degree;
   times.resize(m+1);
   for(uint i=0; i<=m; i++) {
@@ -188,13 +188,13 @@ arr Spline::eval(uint t) const { return (~basis[t]*points).reshape(points.d1); }
 arr Spline::eval() const { return basis*points; }
 
 arr Spline::smooth(double lambda) const {
-  CHECK_GE(lambda ,  0, "Lambda must be non-negative");
+  CHECK_GE(lambda,  0, "Lambda must be non-negative");
   uint T = basis.d0 - 1;
   uint K = basis.d1 - 1;
   arr ddbasis(T+1, K+1);
   for(uint t=0; t<=T; t++)
     ddbasis[t] = getCoeffs((double)t/K, K, 2);
-    
+
   arr A = ~ddbasis * ddbasis / (double)T;
   return basis*inverse(eye(K+1) + lambda*A)*points;
 }

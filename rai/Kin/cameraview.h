@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2019 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #pragma once
 
 #include <Kin/kin.h>
@@ -14,29 +22,29 @@ struct CameraView : GLDrawer {
     uint width=640, height=480;
     byteA backgroundImage;
     int frame=-1;
-    Sensor(){}
-    rai::Transformation& pose(){ return cam.X; }
+    Sensor() {}
+    rai::Transformation& pose() { return cam.X; }
   };
 
   //-- description of world configuration
   rai::Configuration K;       //COPY of the configuration
   rai::Array<Sensor> sensors;  //the list of sensors
 
-  enum RenderMode{ all, seg, visuals };
+  enum RenderMode { all, seg, visuals };
   OpenGL gl;
 
   //-- run parameter
-  Sensor *currentSensor=0;
+  Sensor* currentSensor=0;
   int watchComputations=0;
   RenderMode renderMode=all;
   byteA frameIDmap;
 
   //-- evaluation outputs
   CameraView(const rai::Configuration& _K, bool _offscreen=true, int _watchComputations=0);
-  ~CameraView(){}
+  ~CameraView() {}
 
   //-- loading the configuration: the meshes, the robot model, the tote, the sensors; all ends up in K
-  Sensor& addSensor(const char* name, const char* frameAttached, uint width, uint height, double focalLength=-1., double orthoAbsHeight=-1., const arr& zRange={}, const char* backgroundImageFile=0);
+  Sensor& addSensor(const char* name, const char* frameAttached, uint width, uint height, double focalLength=-1., double orthoAbsHeight=-1., const arr& zRange= {}, const char* backgroundImageFile=0);
   Sensor& addSensor(const char* frameAttached); //read everything from the frame attributes
 
   Sensor& selectSensor(const char* sensorName); //set the OpenGL sensor
@@ -52,9 +60,9 @@ struct CameraView : GLDrawer {
   //-- displays
   void watch_PCL(const arr& pts, const byteA& rgb);
 
-  void glDraw(OpenGL &gl);
+  void glDraw(OpenGL& gl);
 
-private:
+ private:
   void updateCamera();
   void done(const char* _code_);
 };

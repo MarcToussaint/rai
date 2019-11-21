@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -25,15 +25,15 @@ GlobalIterativeNewton::~GlobalIterativeNewton() {
 }
 
 void addRun(GlobalIterativeNewton& gin, const arr& x, double fx, double tol) {
-  GlobalIterativeNewton::LocalMinimum *found=nullptr;
+  GlobalIterativeNewton::LocalMinimum* found=nullptr;
   for(GlobalIterativeNewton::LocalMinimum& m:gin.localMinima) {
     double d = euclideanDistance(x, m.x);
-    if(euclideanDistance(x,m.x)<tol) {
+    if(euclideanDistance(x, m.x)<tol) {
       if(!found) found = &m;
-      else if(d<euclideanDistance(x,found->x)) found = &m;
+      else if(d<euclideanDistance(x, found->x)) found = &m;
     }
   }
-  
+
   if(found) {
     found->hits++;
     if(fx<found->fx) {
@@ -45,7 +45,7 @@ void addRun(GlobalIterativeNewton& gin, const arr& x, double fx, double tol) {
     found = &gin.localMinima.last();
     gin.best = nullptr;
   }
-  
+
   if(!gin.best) {
     gin.best = &gin.localMinima.first();
     for(GlobalIterativeNewton::LocalMinimum& m:gin.localMinima) if(m.fx < gin.best->fx) gin.best = &m;

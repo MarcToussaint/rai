@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -15,12 +15,12 @@
 #include <Gui/opengl.h>
 
 struct OrsSceneGui {
-  struct sOrsSceneGui *s;
-  
-  OrsSceneGui(rai::Configuration& ors, OpenGL *gl=nullptr);
-  
+  struct sOrsSceneGui* s;
+
+  OrsSceneGui(rai::Configuration& ors, OpenGL* gl=nullptr);
+
   void edit();
-  
+
 };
 
 /// @}

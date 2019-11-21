@@ -145,7 +145,6 @@ void testKernelGradients() {
     checkHessian(f, x1, 1e-5);
   }
 
-
 }
 
 //===========================================================================
@@ -187,7 +186,6 @@ void testKernelReg(const char *datafile=nullptr) {
     arr fx,sig;
     fx = f.evaluate(opt.x.reshape(1,opt.x.N), sig);
     cout <<fx << ' ' <<fx - sqrt(sig) <<endl;
-
 
 //    OptGrad(x, f.getF(1.), OPT(verbose=2)).run();
 //    cout <<"optimum at x=" <<x <<endl;

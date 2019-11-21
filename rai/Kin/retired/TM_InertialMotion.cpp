@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -10,37 +10,37 @@
 #include "flag.h"
 #include "TM_default.h"
 
-void TM_InertialMotion::phi(arr &y, arr &J, const ConfigurationL &Ktuple) {
+void TM_InertialMotion::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   rai::Configuration& K = *Ktuple(-1);
-  
+
   arr acc, Jacc;
-  arr acc_ref = {0.,0.,g};
+  arr acc_ref = {0., 0., g};
   arr Jacc_ref = zeros(3, K.q.N);
   {
-    rai::Frame *a = K.frames(i);
+    rai::Frame* a = K.frames(i);
     if(a->flags & (1<<FL_gravityAcc)) RAI_MSG("frame '" <<a->name <<"' has InertialMotion AND Gravity objectivies");
     if(a->joint && a->joint->H && !(a->flags && !(a->flags & (1<<FL_normalControlCosts))))
       RAI_MSG("frame '" <<a->name <<"' has InertialMotion AND control cost objectivies");
   }
-  
+
   TM_Default pos(TMT_pos, i);
   pos.order=2;
   pos.Feature::__phi(acc, (!!J?Jacc:NoArr), Ktuple);
-  
+
   y = acc - acc_ref;
   if(!!J) {
     J = zeros(3, Jacc.d1);
     J.setMatrixBlock(-Jacc_ref, 0, Jacc.d1-Jacc_ref.d1);
     J += Jacc;
   }
-  
+
   if(Ktuple(-2)->frames(i)->flags & (1<<FL_impulseExchange)) {
     y.setZero();
     if(!!J) J.setZero();
   }
 }
 
-uint TM_InertialMotion::dim_phi(const ConfigurationL &Ktuple) {
+uint TM_InertialMotion::dim_phi(const ConfigurationL& Ktuple) {
   return 3;
 }
 

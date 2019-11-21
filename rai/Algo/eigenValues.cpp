@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -25,7 +25,7 @@ void ExtremeEigenValues::stepPowerMethod(uint k) {
     x_hi = A*x_hi;
     lambda_hi=length(x_hi);
     x_hi /= lambda_hi;
-    
+
     x_lo = (lambda_hi*eye(A.d0) - A) * x_lo;
     lambda_lo=length(x_lo);
     x_lo /= lambda_lo;

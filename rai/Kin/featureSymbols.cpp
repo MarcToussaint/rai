@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2019 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "featureSymbols.h"
 
 #include "F_pose.h"
@@ -61,26 +69,25 @@ template<> const char* rai::Enum<FeatureSymbol>::names []= {
   nullptr
 };
 
-
 double shapeSize(const rai::Configuration& K, const char* name, uint i=2) {
-  rai::Frame *f = K.getFrameByName(name);
-  rai::Shape *s = f->shape;
+  rai::Frame* f = K.getFrameByName(name);
+  rai::Shape* s = f->shape;
   if(!s) {
-    for(rai::Frame *b:f->parentOf) if(b->name==name && b->shape) { s=b->shape; break; }
+    for(rai::Frame* b:f->parentOf) if(b->name==name && b->shape) { s=b->shape; break; }
   }
   if(!s) return 0;
   return s->size(i);
 }
 
-ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const rai::Configuration& world, const arr& scale, const arr& target, int order){
+ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const rai::Configuration& world, const arr& scale, const arr& target, int order) {
   ptr<Feature> f;
   if(feat==FS_distance) {  f=make_shared<TM_PairCollision>(world, frames(0), frames(1), TM_PairCollision::_negScalar, false); }
   else if(feat==FS_oppose) {  f=make_shared<F_GraspOppose>(world, frames(0), frames(1), frames(2)); }
   else if(feat==FS_aboveBox) {  f=make_shared<TM_AboveBox>(world, frames(1), frames(0), .05); }
   else if(feat==FS_standingAbove) {
     double h = .5*(shapeSize(world, frames(0)) + shapeSize(world, frames(1)));
-    f = make_shared<TM_Default>(TMT_posDiff, world, frames(0), rai::Vector(0.,0.,h), frames(1), NoVector);
-    f->scale = arr(1,3,{0.,0.,1.});
+    f = make_shared<TM_Default>(TMT_posDiff, world, frames(0), rai::Vector(0., 0., h), frames(1), NoVector);
+    f->scale = arr(1, 3, {0., 0., 1.});
   }
 
   else if(feat==FS_position) {  f=make_shared<TM_Default>(TMT_pos, world, frames(0)); }
@@ -135,13 +142,13 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
   else if(feat==FS_energy) { f=make_shared<F_Energy>(); }
 
   else if(feat==FS_transAccelerations) { HALT("obsolete"); /*f=make_shared<TM_Transition>(world);*/ }
-  else if(feat==FS_transVelocities) { HALT("obsolete");
+  else if(feat==FS_transVelocities) {
+    HALT("obsolete");
 //    auto map = make_shared<TM_Transition>(world);
 //    map->velCoeff = 1.;
 //    map->accCoeff = 0.;
 //    f = map;
-  }
-  else HALT("can't interpret feature symbols: " <<feat);
+  } else HALT("can't interpret feature symbols: " <<feat);
 
   if(!!scale) f->scale = scale;
   if(!!target) f->target = target;

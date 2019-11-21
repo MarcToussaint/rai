@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -35,20 +35,20 @@ TaskControlThread::TaskControlThread(const char* _robot, const rai::Configuratio
   , useDynSim(true)
   , compensateGravity(false)
   , compensateFTSensors(false) {
-  
+
   s = new sTaskControlThread();
-  useRos = rai::getParameter<bool>("useRos",false);
+  useRos = rai::getParameter<bool>("useRos", false);
   oldfashioned = rai::getParameter<bool>("oldfashinedTaskControl", true);
   useDynSim = !oldfashioned && !useRos; //rai::getParameter<bool>("useDynSim", true);
-  
+
   robot = rai::getParameter<rai::String>("robot");
-  
+
   //-- deciding on the kinematic model. Priority:
   // 1) an explicit model is given as argument
   // 2) modelWorld has been set before
   // 3) the "robot" flag in cfg file
   // 4) the "robot" argument here
-  
+
   if(!!world) {
     realWorld = world;
     modelWorld.set()() = realWorld;
@@ -66,17 +66,17 @@ TaskControlThread::TaskControlThread(const char* _robot, const rai::Configuratio
       modelWorld.set()() = realWorld;
     }
   }
-  
+
   if(robot != "pr2" && robot != "baxter") {
     HALT("robot not known!")
   }
-  
+
   q0 = realWorld.q;
-  
+
   qSign.set()() = zeros(q0.N);
-  
+
   fRInitialOffset = ARR(-0.17119, 0.544316, -1.2, 0.023718, 0.00802182, 0.0095804);
-  
+
 }
 
 TaskControlThread::~TaskControlThread() {
@@ -94,19 +94,19 @@ void TaskControlThread::open() {
   if(compensateFTSensors) {
     gc->learnFTModel();
   }
-  
+
   modelWorld.set()() = realWorld;
-  
+
   makeConvexHulls(modelWorld.set()->shapes);
 // modelWorld.set() = realWorld;
   taskController = new TaskControlMethods(modelWorld.set()(), false);
-  
+
   modelWorld.get()->getJointState(q_model, qdot_model);
-  
+
   taskController->qNullCostRef.y_ref = q0;
   taskController->qNullCostRef.setGains(0., 1.);
   taskController->qNullCostRef.prec = rai::getParameter<double>("Hrate", .1)*modelWorld.get()->getHmetric();
-  
+
 #if 1
   modelWorld.writeAccess();
   modelWorld().gl().add(changeColor);
@@ -114,9 +114,9 @@ void TaskControlThread::open() {
   modelWorld().gl().add(changeColor2);
   modelWorld.deAccess();
 #endif
-  
+
   if(useRos || !oldfashioned) syncModelStateWithReal=true;
-  
+
   if(!oldfashioned && !useRos) {
     dynSim = new RTControllerSimulation(realWorld, 0.01, false, 0.);
     dynSim->threadLoop();
@@ -126,9 +126,9 @@ void TaskControlThread::open() {
 void TaskControlThread::step() {
   static uint t=0;
   t++;
-  
-  rai::Joint *trans= realWorld.getJointByName("worldTranslationRotation", false);
-  
+
+  rai::Joint* trans= realWorld.getJointByName("worldTranslationRotation", false);
+
   //-- read real state
   if(useRos || !oldfashioned) {
     bool succ=true;
@@ -142,7 +142,7 @@ void TaskControlThread::step() {
       if(q_real.N==realWorld.q.N && pr2odom.N==3) {
         q_real({trans->qIndex, trans->qIndex+2}) = pr2odom;
       }
-      
+
       if(qLastReading.d0 > 0) {
         qSign.writeAccess();
         for(uint i = 0; i < q_real.N; i++) {
@@ -164,9 +164,9 @@ void TaskControlThread::step() {
 #endif
       qdot_real = zeros(q_real.N);
     }
-    
+
     ctrl_q_real.set() = q_real;
-    
+
     if(succ && q_real.N==realWorld.q.N && qdot_real.N==realWorld.q.N) { //we received a good reading
       realWorld.setJointState(q_real, qdot_real);
       if(syncModelStateWithReal) {
@@ -175,7 +175,7 @@ void TaskControlThread::step() {
         modelWorld.set()->setJointState(q_model, qdot_model);
         q_history.prepend(q_real); q_history.reshape(q_history.N/q_real.N, q_real.N);
         if(q_history.d0>5) q_history.resizeCopy(5, q_real.N);
-        
+
         if(q_history.d0>0) lowPassUpdate(q_lowPass, q_history[0]);
         if(q_history.d0>1) lowPassUpdate(qdot_lowPass, (q_history[0]-q_history[1])/.01);
         if(q_history.d0>2) lowPassUpdate(qddot_lowPass, (q_history[0]-2.*q_history[1]+q_history[2])/(.01*.01));
@@ -190,7 +190,7 @@ void TaskControlThread::step() {
       }
     }
   }
-  
+
   //-- sync the model world with the AlvarMarkers
 //  modelWorld.writeAccess();
 //  AlvarMarkers alvarMarkers = ar_pose_marker.get();
@@ -204,11 +204,11 @@ void TaskControlThread::step() {
     //modelWorld.set()->watch(false, STRING("model world state t="<<(double)t/100.));
 #endif
   }
-  
+
   //-- compute the feedback controller step and iterate to compute a forward reference
   CtrlMsg refs;
   if(oldfashioned) {
-  
+
     //now operational space control
     modelWorld.writeAccess();
     ctrlTasks.readAccess();
@@ -240,15 +240,15 @@ void TaskControlThread::step() {
     if(verbose) taskController->reportCurrentState();
     ctrlTasks.deAccess();
     modelWorld.deAccess();
-    
+
     //arr Kp, Kd, k, JCJ;
     //taskController->getDesiredLinAccLaw(Kp, Kd, k, JCJ);
-    
+
     //Kp = .01 * JCJ;
     //Kp += .2*diag(ones(Kp.d0));
-    
+
     ctrl_q_ref.set() = q_model;
-    
+
     //-- first zero references
     refs.q =  q_model;
     refs.qdot = zeros(q_model.N);
@@ -263,12 +263,12 @@ void TaskControlThread::step() {
     refs.u_bias = zeros(q_model.N);
     refs.intLimitRatio = 0.7;
     refs.qd_filt = .99;
-    
+
     //-- compute the force feedback control coefficients
     uint count=0;
     ctrlTasks.readAccess();
     taskController->tasks = ctrlTasks();
-    for(CtrlTask *t : taskController->tasks) {
+    for(CtrlTask* t : taskController->tasks) {
       if(t->active && t->f_ref.N) {
         count++;
         if(count!=1) HALT("you have multiple active force control tasks - NIY");
@@ -277,15 +277,15 @@ void TaskControlThread::step() {
     }
     if(count==1) refs.Kp = .5;
     ctrlTasks.deAccess();
-    
+
   } else {
-  
+
     ctrlTasks.readAccess();
     modelWorld.writeAccess();
     taskController->tasks = ctrlTasks();
-    
+
     modelWorld().stepSwift();
-    
+
 #if 0
     arr u_bias, Kp, Kd;
     arr M, F;
@@ -293,12 +293,12 @@ void TaskControlThread::step() {
     arr u_mean = taskController->calcOptimalControlProjected(Kp, Kd, u_bias, M, F); // TODO: what happens when changing the LAWs?
     arr q_ref = zeros(q_model.N);
 #else
-    
+
     //-- compute desired acceleration law in q-space
     arr a, Kp, Kd, k;
     a = taskController->getDesiredLinAccLaw(Kp, Kd, k);
     checkNan(k);
-    
+
     //-- translate to motor torques
     arr M, F;
     taskController->world.equationOfMotion(M, F, false);
@@ -315,7 +315,7 @@ void TaskControlThread::step() {
     Kp = M*Kp;
     Kd = M*Kd;
     checkNan(Kp);
-    
+
     //-- compute the error between expected change in velocity and true one
 #if 0
     if(!a_last.N) a_last = a;
@@ -329,20 +329,20 @@ void TaskControlThread::step() {
     u_bias -= .01 * M * aErrorIntegral;
 #endif
 #endif
-    
+
     // F/T limit control
     arr K_ft, J_ft_inv, fRef;
     double gamma;
     taskController->calcForceControl(K_ft, J_ft_inv, fRef, gamma);
-    
+
     if(verbose) {
       LOG(0) <<"************** Tasks Report **********";
       taskController->reportCurrentState();
     }
-    
+
     modelWorld.deAccess();
     ctrlTasks.deAccess();
-    
+
     refs.q =  q_ref;
     refs.qdot = zeros(q_model.N);
     refs.fR_gamma = gamma;
@@ -353,19 +353,19 @@ void TaskControlThread::step() {
     refs.fR = fRef;
     refs.KiFTR = K_ft;
     refs.J_ft_invR = J_ft_inv;
-    
+
     if(compensateGravity) {
       //u_bias += gc->compensate(realWorld.getJointState(),{"l_shoulder_pan_joint","l_shoulder_lift_joint","l_upper_arm_roll_joint","l_elbow_flex_joint"
       // ,"l_wrist_flex_joint"});
       //u_bias += gc->compensate(realWorld.getJointState(), qSign.get()(),{"l_shoulder_pan_joint","l_shoulder_lift_joint","l_forearm_roll_joint","l_wrist_flex_joint"});
       u_bias += gc->compensate(realWorld.getJointState(), qSign.get()(), {"r_shoulder_pan_joint"
-                               ,"r_shoulder_lift_joint"
-                               ,"r_forearm_roll_joint"
-                               ,"r_wrist_flex_joint"
+                               , "r_shoulder_lift_joint"
+                               , "r_forearm_roll_joint"
+                               , "r_wrist_flex_joint"
                                                                          });
     }
     refs.u_bias = u_bias;
-    
+
     if(compensateFTSensors) {
       refs.fL_offset = gc->compensateFTL(realWorld.getJointState());
       refs.fR_offset = gc->compensateFTR(realWorld.getJointState()) + fRInitialOffset;
@@ -373,13 +373,13 @@ void TaskControlThread::step() {
       refs.fL_offset = zeros(6);
       refs.fR_offset = zeros(6);
     }
-    
+
     refs.intLimitRatio = 0.7;
     refs.qd_filt = .99;
   }
-  
+
   ctrl_q_ref.set() = refs.q;
-  
+
   //-- send base motion command
   if(useRos) {
     if(!fixBase.get() && trans && trans->qDim()==3) {
@@ -388,7 +388,7 @@ void TaskControlThread::step() {
       refs.qdot(trans->qIndex+2) = qdot_model(trans->qIndex+2);
     }
   }
-  
+
   //-- send the computed movement to the robot
   if(!requiresInitialSync && (useRos || useDynSim)) {
     ctrl_ref.set() = refs;

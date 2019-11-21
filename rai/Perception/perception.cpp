@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -31,7 +31,7 @@ struct sVideoEncoder {
   VideoEncoder_libav_simple video;
   ofstream timeTagFile;
   byteA buffer;
-  
+
   sVideoEncoder(const char* _filename, double fps, bool is_rgb=false):filename(_filename), video(filename.p, fps, 0, is_rgb) {
     timeTagFile.open(STRING(filename <<".times"));
   }
@@ -52,10 +52,10 @@ void VideoEncoder::step() {
   double time = img.data->write_time;
   s->buffer = img();
   img.deAccess();
-  
+
   //save image
   s->video.addFrame(s->buffer);
-  
+
   //save time tag
   rai::String tag;
   tag.resize(30, false);
@@ -97,10 +97,10 @@ void VideoEncoderX264::step() {
   double time = img.data->write_time;
   s->buffer = img();
   img.deAccess();
-  
+
   //save image
   s->video.addFrame(s->buffer);
-  
+
   //save time tag
   rai::String tag;
   tag.resize(30, false);
@@ -196,7 +196,7 @@ struct sOpencvCamera {  cv::VideoCapture capture;  };
 void OpencvCamera::open() {
   s = new sOpencvCamera;
   s->capture.open(0);
-  for(std::map<int,double>::const_iterator i = properties.begin(); i != properties.end(); ++i) {
+  for(std::map<int, double>::const_iterator i = properties.begin(); i != properties.end(); ++i) {
     if(!s->capture.set(i->first, i->second)) {
       cerr << "could not set property " << i->first << " to value " << i->second << endl;
     }
@@ -211,7 +211,7 @@ void OpencvCamera::close() {
 }
 
 void OpencvCamera::step() {
-  cv::Mat img,imgRGB;
+  cv::Mat img, imgRGB;
   s->capture.read(img);
   if(!img.empty()) {
     cv::cvtColor(img, imgRGB, CV_BGR2RGB);
@@ -236,16 +236,16 @@ bool OpencvCamera::set(int propId, double value) {
 void CvtGray::open() {}
 void CvtGray::close() {}
 void CvtGray::step() {
-  byteA _rgb,_gray;
+  byteA _rgb, _gray;
   _rgb = rgb.get();
-  
-  _gray.resize(_rgb.d0,_rgb.d1);
-  
+
+  _gray.resize(_rgb.d0, _rgb.d1);
+
   if(!_rgb.N) return;
   cv::Mat ref=conv_Arr2CvRef(_gray);
   cv::Mat src=conv_Arr2CvRef(_rgb);
   cv::cvtColor(src, ref, CV_RGB2GRAY);
-  
+
   gray.set() = _gray;
 }
 
@@ -257,16 +257,16 @@ void CvtGray::step() {
 void CvtHsv::open() {}
 void CvtHsv::close() {}
 void CvtHsv::step() {
-  byteA rgbA,hsvA;
+  byteA rgbA, hsvA;
   rgbA = rgb.get();
-  
+
   hsvA.resizeAs(rgbA);
-  
+
   if(!rgbA.N) return;
   cv::Mat ref=conv_Arr2CvRef(hsvA);
   cv::Mat src=conv_Arr2CvRef(rgbA);
   cv::cvtColor(src, ref, CV_RGB2HSV);
-  
+
   hsv.set() = hsvA;
 }
 
@@ -279,12 +279,12 @@ struct sHsvFilter {
   floatA hsvMean, hsvDeviation;
   float hsvDifference(const byteA& hsv) {
     float difference = 0.f;
-    
+
     //measure hue distance circularly
     float tmp = hsvMean(0) - hsv(0);
     if(tmp < -128.f) tmp += 255.f;
     if(tmp > 128.f) tmp -= 255.f;
-    
+
     // calculate squared z scores and sum up
     difference += (tmp / hsvDeviation(0)) * (tmp / hsvDeviation(0));
     difference += ((hsvMean(1) - hsv(1)) / hsvDeviation(1)) * ((hsvMean(1) - hsv(1)) / hsvDeviation(1));
@@ -306,23 +306,23 @@ void HsvFilter::close() {
 void HsvFilter::step() {
   s->hsvMean      = rai::getParameter<floatA>("hsvMean");
   s->hsvDeviation = rai::getParameter<floatA>("hsvDeviation");
-  
+
   byteA hsvA;
   hsvA = hsv.get();
   uint w=hsvA.d1, h=hsvA.d0;
-  
+
   floatA evidence;
   evidence.resize(w*h);
-  
-  hsvA.reshape(w*h,3);
-  
+
+  hsvA.reshape(w*h, 3);
+
   for(uint i = 0; i < evidence.N; ++i) {
     if(hsvA(i, 0) > 0 || hsvA(i, 1) > 0 || hsvA(i, 2) > 0) {
       evidence(i) = exp(-.5 * s->hsvDifference(hsvA[i]));
     }
   }
-  
-  evidence.reshape(1,h,w);
+
+  evidence.reshape(1, h, w);
   evi.set() = evidence;
 }
 
@@ -344,29 +344,29 @@ void MotionFilter::close() {
 }
 
 void MotionFilter::step() {
-  byteA rgbA,grayA;
+  byteA rgbA, grayA;
   rgbA = rgb.get();
-  uint H=rgbA.d0,W=rgbA.d1;
-  
+  uint H=rgbA.d0, W=rgbA.d1;
+
   if(s->old_rgb.N!=rgbA.N) {
     s->old_rgb=rgbA;
     return;
   }
-  
+
   grayA.resize(rgbA.d0*rgbA.d1);
-  rgbA.reshape(grayA.N,3);
-  s->old_rgb.reshape(grayA.N,3);
+  rgbA.reshape(grayA.N, 3);
+  s->old_rgb.reshape(grayA.N, 3);
   for(uint i=0; i<grayA.N; i++) {
     uint diff
-      = abs((int)rgbA(i,0)-(int)s->old_rgb(i,0))
-        + abs((int)rgbA(i,1)-(int)s->old_rgb(i,1))
-        + abs((int)rgbA(i,2)-(int)s->old_rgb(i,2));
+      = abs((int)rgbA(i, 0)-(int)s->old_rgb(i, 0))
+        + abs((int)rgbA(i, 1)-(int)s->old_rgb(i, 1))
+        + abs((int)rgbA(i, 2)-(int)s->old_rgb(i, 2));
     grayA(i) = diff/3;
   }
-  
-  grayA.reshape(H,W);
+
+  grayA.reshape(H, W);
   s->old_rgb=rgbA;
-  
+
   motion.set() = grayA;
 }
 
@@ -379,27 +379,27 @@ void DifferenceFilter::open() {}
 void DifferenceFilter::close() {}
 void DifferenceFilter::step() {
   uint threshold = 50;
-  byteA rgb1,rgb2,diff;
+  byteA rgb1, rgb2, diff;
   rgb1 = i1.get();
   rgb2 = i2.get();
-  
+
   if(rgb1.N!=rgb2.N) {
     rgb2=rgb1;
     i2.set() = rgb2;
   }
-  
+
   uint d0=rgb1.d0, d1=rgb1.d1;
-  rgb1.reshape(rgb1.N/3,3);
-  rgb2.reshape(rgb2.N/3,3);
+  rgb1.reshape(rgb1.N/3, 3);
+  rgb2.reshape(rgb2.N/3, 3);
   diff.resizeAs(rgb1);
   diff.setZero();
-  
+
   for(uint i=0; i<diff.d0; i++) {
-    uint d = abs(rgb1(i,0)-rgb2(i,0)) + abs(rgb1(i,1)-rgb2(i,1)) + abs(rgb1(i,2)-rgb2(i,2));
+    uint d = abs(rgb1(i, 0)-rgb2(i, 0)) + abs(rgb1(i, 1)-rgb2(i, 1)) + abs(rgb1(i, 2)-rgb2(i, 2));
     if(d>threshold) diff[i] = rgb1[i];
   }
-  
-  diff.reshape(d0,d1,3);
+
+  diff.reshape(d0, d1, 3);
   diffImage.set() = diff;
 }
 
@@ -412,7 +412,7 @@ void CannyFilter::open() {}
 void CannyFilter::close() {}
 void CannyFilter::step() {
   float cannyThreshold = 50.f;
-  byteA gray,canny;
+  byteA gray, canny;
   gray = grayImage.get();
   if(!gray.N) return;
   canny.resizeAs(gray);
@@ -429,20 +429,20 @@ void CannyFilter::step() {
 void Patcher::open() {}
 void Patcher::close() {}
 void Patcher::step() {
-  byteA rgb,display;
+  byteA rgb, display;
   uintA patching; //for each pixel an integer
   arr pch_cen;    //patch centers
   uintA pch_edges; //patch Delauney edges
   floatA pch_rgb; //patch mean colors
-  
+
   rgb = rgbImage.get();
   uint np=get_single_color_segmentation(patching, rgb, 3.f, 64.f, 400);
   np=incremental_patch_ids(patching);
   get_patch_centroids(pch_cen, patching, np);
   get_patch_colors(pch_rgb, rgb, patching, np);
-  pch2img(display,patching,pch_rgb);
+  pch2img(display, patching, pch_rgb);
   //getDelaunayEdges(pch_edges, pch_cen);
-  
+
   patchImage.writeAccess();
   patchImage().patching=patching;
   patchImage().pch_cen=pch_cen;
@@ -473,20 +473,20 @@ void SURFer::close() {
 }
 
 void SURFer::step() {
-  byteA gray,display;
+  byteA gray, display;
   gray = grayImage.get();
   if(!gray.N) return;
-  
+
   std::vector<cv::KeyPoint> keypoints;
   std::vector<float> descriptors;
   //(*surf)(conv_Arr2CvRef(gray), cv::Mat(), keypoints, descriptors);
-  
+
   display=gray;
   cv::Mat ref = conv_Arr2CvRef(display);
   for(uint i=0; i<keypoints.size(); i++) {
     circle(ref, keypoints[i].pt, 3, cv::Scalar(255));
   }
-  
+
   features.writeAccess();
   features().keypoints = keypoints;
   features().descriptors = descriptors;
@@ -502,10 +502,10 @@ void SURFer::step() {
 void HoughLineFilter::open() {}
 void HoughLineFilter::close() {}
 void HoughLineFilter::step() {
-  byteA gray,display;
+  byteA gray, display;
   gray = grayImage.get();
   if(!gray.N) return;
-  
+
   std::vector<cv::Vec4i> lines;
   cv::HoughLinesP(conv_Arr2CvRef(gray), lines, 1, CV_PI/180, 50, 30, 10);
   display = gray;
@@ -514,7 +514,7 @@ void HoughLineFilter::step() {
     cv::line(ref, cv::Point(lines[i][0], lines[i][1]),
              cv::Point(lines[i][2], lines[i][3]), cv::Scalar(255), 3);
   }
-  
+
   houghLines.writeAccess();
   houghLines().lines = lines;
   houghLines().display = display;
@@ -547,12 +547,12 @@ byteA evidence2RGB(const floatA& evidence) {
   byteA tmp;
   if(!evidence.N) return tmp;
   tmp.resize(evidence.N, 3);
-  
+
   for(uint i = 0; i < evidence.N; i++)
     tmp(i, 0) = tmp(i, 1) = tmp(i, 2) = 255.f * evidence.elem(i);
-    
+
   tmp.reshape(evidence.N/evidence.d2, evidence.d2, 3);
-  
+
   return tmp;
 }
 
@@ -565,7 +565,7 @@ byteA evidence2RGB(const floatA& evidence) {
 //  ModuleL processes;
 //  processes.append(new ObjectClusterer);
 //  processes.append(new ObjectFitter);
-  
+
 //  processes.append(new ObjectFilter("Object Filter"));
 //  processes.append(new ObjectTransformator("Object Transformator"));
 //  return processes;
@@ -586,7 +586,7 @@ void openGlUnlock();
 
 void draw1(void*) {
   glStandardLight(nullptr);
-  glColor(1,0,0);
+  glColor(1, 0, 0);
   glFrontFace(GL_CW);
 //  glutSolidTeapot(1.);
   glDrawAxes(1.);

@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -38,7 +38,7 @@ typedef rai::Array<Module*> ModuleL;
 //  virtual void close(){}
 //};
 
-inline bool operator==(const Module&,const Module&) { return false; }
+inline bool operator==(const Module&, const Module&) { return false; }
 
 //===========================================================================
 //
@@ -112,9 +112,9 @@ struct Recorder : Thread {
   Var<T> access;
   T buffer;
   ofstream fil;
-  
+
   Recorder(const char* var_name) : Thread(STRING("Recorder_"<<var_name)), access(this, var_name, true) {}
-  
+
   void open() {
     rai::open(fil, STRING("z." <<access.name() <<'.' <<rai::getNowString() <<".dat"));
   }

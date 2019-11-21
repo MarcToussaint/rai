@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -19,7 +19,7 @@ struct TM_qZeroVels:Feature {
   virtual void phi(arr& y, arr& J, const ConfigurationL& Ktuple);
   virtual uint dim_phi(const rai::Configuration& G) {NIY}
   virtual uint dim_phi(const ConfigurationL& Ktuple);
-private:
+ private:
   std::map<rai::Configuration*, uint> dimPhi;
 };
 

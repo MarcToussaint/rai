@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -18,15 +18,15 @@ bool baxter_get_q_qdot_u(arr& q, arr& q_dot, arr& u, const sensor_msgs::JointSta
 
 struct SendPositionCommandsToBaxter : Thread {
   Var<CtrlMsg> ctrl_ref;
-  struct sBaxterInterface *s;
-  
+  struct sBaxterInterface* s;
+
   SendPositionCommandsToBaxter(const rai::Configuration& baxterWorld, const Var<CtrlMsg>& _ctrl_ref);
   ~SendPositionCommandsToBaxter() {}
-  
+
   void open();
   void step();
   void close();
-  
+
   bool enablePositionControlL = true;
   bool enablePositionControlR = true;
   bool totalTorqueModeL = false;
@@ -34,7 +34,7 @@ struct SendPositionCommandsToBaxter : Thread {
 };
 
 struct BaxterInterface {
-  struct sBaxterInterface *s;
+  struct sBaxterInterface* s;
 
   BaxterInterface(bool useRosDefault);
   ~BaxterInterface();

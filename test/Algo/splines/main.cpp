@@ -142,7 +142,6 @@ void TEST(BSpline2){
 
   //Cost cost;
 
-
   plotClose();
 }
 

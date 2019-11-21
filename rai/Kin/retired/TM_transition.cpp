@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -13,9 +13,9 @@
 
 TM_Transition::TM_Transition(const rai::Configuration& G, bool effectiveJointsOnly)
   : effectiveJointsOnly(effectiveJointsOnly) {
-  posCoeff = rai::getParameter<double>("Motion/TaskMapTransition/posCoeff",.0);
-  velCoeff = rai::getParameter<double>("Motion/TaskMapTransition/velCoeff",.0);
-  accCoeff = rai::getParameter<double>("Motion/TaskMapTransition/accCoeff",1.);
+  posCoeff = rai::getParameter<double>("Motion/TaskMapTransition/posCoeff", .0);
+  velCoeff = rai::getParameter<double>("Motion/TaskMapTransition/velCoeff", .0);
+  accCoeff = rai::getParameter<double>("Motion/TaskMapTransition/accCoeff", 1.);
 
   order = 2;
 
@@ -34,16 +34,16 @@ uint TM_Transition::dim_phi(const ConfigurationL& G) {
   bool handleSwitches=effectiveJointsOnly;
   uint qN=G(0)->q.N;
   for(uint i=0; i<G.N; i++) if(G.elem(i)->q.N!=qN) { handleSwitches=true; break; }
-  
+
   if(!handleSwitches) {
     return G.last()->getJointStateDimension();
   } else {
 //    for(uint i=0;i<G.N;i++) cout <<i <<' ' <<G(i)->joints.N <<' ' <<G(i)->q.N <<' ' <<G(i)->getJointStateDimension() <<endl;
-    rai::Array<rai::Joint*> matchingJoints = getMatchingJoints(G.sub(-1-order,-1), effectiveJointsOnly);
+    rai::Array<rai::Joint*> matchingJoints = getMatchingJoints(G.sub(-1-order, -1), effectiveJointsOnly);
     uint ydim=0;
     for(uint i=0; i<matchingJoints.d0; i++) {
 //      cout <<i <<' ' <<matchingJoints(i,0)->qIndex <<' ' <<matchingJoints(i,0)->qDim() <<' ' <<matchingJoints(i,0)->name <<endl;
-      ydim += matchingJoints(i,0)->qDim();
+      ydim += matchingJoints(i, 0)->qDim();
     }
     return ydim;
   }
@@ -57,24 +57,24 @@ void TM_Transition::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   bool handleSwitches=effectiveJointsOnly;
   uint qN=Ktuple(0)->q.N;
   for(uint i=0; i<Ktuple.N; i++) if(Ktuple(i)->q.N!=qN) { handleSwitches=true; break; }
-  
+
   double tau = Ktuple(-1)->frames(0)->tau; // - Ktuple(-2)->frames(0)->time;
-  
+
   if(!handleSwitches) { //simple implementation
     //-- transition costs
     y.resize(Ktuple.last()->q.N).setZero();
-    
+
     //individual weights
     double hbase = H_rate*sqrt(tau), tau2=tau*tau;
 //    hbase = H_rate;
     arr h = zeros(y.N);
-    for(rai::Joint *j:Ktuple.last()->fwdActiveJoints) for(uint i=0; i<j->qDim(); i++) {
+    for(rai::Joint* j:Ktuple.last()->fwdActiveJoints) for(uint i=0; i<j->qDim(); i++) {
         h(j->qIndex+i) = hbase*j->H;
         if(j->frame->flags && !(j->frame->flags & (1<<FL_normalControlCosts))) {
           h(j->qIndex+i)=0.;
         }
       }
-      
+
     if(order==1) velCoeff = 1.;
     if(order>=0 && posCoeff) y +=  posCoeff      *(Ktuple.elem(-1)->q); //penalize position
 #if 0
@@ -97,30 +97,30 @@ void TM_Transition::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
     }
 #endif
     if(order>=3) NIY; //  y = (x_bar[3]-3.*x_bar[2]+3.*x_bar[1]-x_bar[0])/tau3; //penalize jerk
-    
+
     //multiply with h...
 #if 1
     y *= h;
 #else
-    for(rai::Joint *j:Ktuple.last()->fwdActiveJoints) for(uint i=0; i<j->qDim(); i++) {
+    for(rai::Joint* j:Ktuple.last()->fwdActiveJoints) for(uint i=0; i<j->qDim(); i++) {
         double hj = h*j->H;
         if(j->frame->flags && !(j->frame->flags & (1<<FL_normalControlCosts))) hj=0.;
         y(j->qIndex+i) *= hj;
       }
 #endif
-    
+
     if(!!J) {
       arr Jtau;  Ktuple(-1)->jacobianTime(Jtau, Ktuple(-1)->frames(0));  expandJacobian(Jtau, Ktuple, -1);
 //      arr Jtau2;  Ktuple(-2)->jacobianTime(Jtau2, Ktuple(-2)->frames(0));  expandJacobian(Jtau2, Ktuple, -2);
 //      arr Jtau = Jtau1 - Jtau2;
-      
+
       uint n = Ktuple.last()->q.N;
       J.resize(y.N, Ktuple.N, n).setZero();
       for(uint i=0; i<n; i++) {
-        if(order>=0 && posCoeff) { J(i,Ktuple.N-1-0,i) += posCoeff; }
-        if(order>=1 && velCoeff) { J(i,Ktuple.N-1-1,i) += velCoeff/tau;  J(i,Ktuple.N-1-0,i) += -velCoeff/tau; }
+        if(order>=0 && posCoeff) { J(i, Ktuple.N-1-0, i) += posCoeff; }
+        if(order>=1 && velCoeff) { J(i, Ktuple.N-1-1, i) += velCoeff/tau;  J(i, Ktuple.N-1-0, i) += -velCoeff/tau; }
 #if 0
-        if(order>=2 && accCoeff) { J(i,G.N-1-2,i) += accCoeff/tau2; J(i,G.N-1-1,i) += -2.*accCoeff/tau2;  J(i,G.N-1-0,i) += accCoeff/tau2; }
+        if(order>=2 && accCoeff) { J(i, G.N-1-2, i) += accCoeff/tau2; J(i, G.N-1-1, i) += -2.*accCoeff/tau2;  J(i, G.N-1-0, i) += accCoeff/tau2; }
 #else //EQUIVALENT, but profiled - optimized for speed
         if(order>=2 && accCoeff) {
           uint j = i*J.d1*J.d2 + i;
@@ -132,12 +132,12 @@ void TM_Transition::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
         //      if(order>=3){ J(i,3,i) = 1.;  J(i,2,i) = -3.;  J(i,1,i) = +3.;  J(i,0,i) = -1.; }
       }
       J.reshape(y.N, Ktuple.N*n);
-      
+
 #if 1
       J = h%J;
       J += (-1.5/tau)*y*Jtau;
 #else
-      for(rai::Joint *j: Ktuple.last()->fwdActiveJoints) for(uint i=0; i<j->qDim(); i++) {
+      for(rai::Joint* j: Ktuple.last()->fwdActiveJoints) for(uint i=0; i<j->qDim(); i++) {
           double hj = h*j->H;
           if(j->frame->flags && !(j->frame->flags & (1<<FL_normalControlCosts))) hj=0.;
 #if 1
@@ -150,22 +150,22 @@ void TM_Transition::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
 #endif
         }
 #endif
-      
+
     }
   } else { //with switches
-    rai::Array<rai::Joint*> matchingJoints = getMatchingJoints(Ktuple.sub(-1-order,-1), effectiveJointsOnly);
+    rai::Array<rai::Joint*> matchingJoints = getMatchingJoints(Ktuple.sub(-1-order, -1), effectiveJointsOnly);
     double h = H_rate*sqrt(tau), tau2=tau*tau;
-    
+
     uint ydim=0;
     uintA qidx(Ktuple.N);
-    for(uint i=0; i<matchingJoints.d0; i++) ydim += matchingJoints(i,0)->qDim();
+    for(uint i=0; i<matchingJoints.d0; i++) ydim += matchingJoints(i, 0)->qDim();
     y.resize(ydim).setZero();
     if(!!J) {
       qidx(0)=0;
       for(uint i=1; i<Ktuple.N; i++) qidx(i) = qidx(i-1)+Ktuple(i-1)->q.N;
       J.resize(ydim, qidx.last()+Ktuple.last()->q.N).setZero();
     }
-    
+
     uint m=0;
     for(uint i=0; i<matchingJoints.d0; i++) {
       rai::Array<rai::Joint*> joints = matchingJoints[i];
@@ -174,7 +174,7 @@ void TM_Transition::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
         if(order>=0) qi1 = joints.elem(-1)->qIndex+j;
         if(order>=1) qi2 = joints.elem(-2)->qIndex+j;
         if(order>=2 && accCoeff) qi3 = joints.elem(-3)->qIndex+j;
-        rai::Joint *jl = joints.last();
+        rai::Joint* jl = joints.last();
         double hj = h * jl->H;
         if(jl->frame->flags && !(jl->frame->flags & (1<<FL_normalControlCosts))) hj=0.;
         //TODO: adding vels + accs before squareing does not make much sense!
@@ -189,7 +189,7 @@ void TM_Transition::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
         m++;
       }
     }
-    CHECK_EQ(m, ydim,"");
+    CHECK_EQ(m, ydim, "");
   }
 }
 

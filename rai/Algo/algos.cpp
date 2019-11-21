@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -13,18 +13,18 @@ namespace rai {
 void rk4(arr& x1, const arr& x0,
          const VectorFunction& f,
          double dt) {
-  arr k1,k2,k3,k4;
+  arr k1, k2, k3, k4;
   f(k1, NoArr, x0);
   f(k2, NoArr, x0 + 0.5*dt*k1);
   f(k3, NoArr, x0 + 0.5*dt*k2);
   f(k4, NoArr, x0 +     dt*k3);
-  
+
   if(&x1!=&x0) x1 = x0;
   x1 += (dt/6.)*(k1 + 2.*k2 + 2.*k3 + k4);
 }
 
 void rk4_2ndOrder(arr& x, const arr& x0, const VectorFunction& f, double dt) {
-  CHECK(x0.nd==2 && x0.d0==2,"need a 2-times-n array   rk4_2ndOrder input");
+  CHECK(x0.nd==2 && x0.d0==2, "need a 2-times-n array   rk4_2ndOrder input");
   struct F2:VectorFunction {
     const VectorFunction& f;
     F2(const VectorFunction& _f):f(_f) {
@@ -33,7 +33,7 @@ void rk4_2ndOrder(arr& x, const arr& x0, const VectorFunction& f, double dt) {
       });
     }
     void fv(arr& y, arr& J, const arr& x) {
-      CHECK(x.nd==2 && x.d0==2,"");
+      CHECK(x.nd==2 && x.d0==2, "");
       y.resizeAs(x);
       y[0]=x[1];
       f(y[1](), NoArr, x);
@@ -59,11 +59,11 @@ bool rk4_switch(arr& x1, arr& s1, const arr& x0, const arr& s0,
       break;
     }
   if(!change) { x1=xb; s1=sb; return false; } //no problems: no switch
-  
+
   //we have a switch - so we must find it precisely!
   double a=0., b=dt; //time interval [a, b]
   double m, min_m;   //where to cut the interval (determined by linear interpolation)
-  
+
   cout <<"entering zero-crossing detection loop" <<endl;
   for(; fabs(b-a)>tol;) {
     //compute new m
@@ -81,7 +81,7 @@ bool rk4_switch(arr& x1, arr& s1, const arr& x0, const arr& s0,
     change=false;
     sn=s0.N<sm.N?s0.N:sm.N;
     for(i=0; i<sn; i++) if(s0(i)*sm(i)<0.) { change=true; break; }
-    
+
     //cout <<"a=" <<a <<" b=" <<b <<" m=" <<m <<" sa=" <<sa <<" sb=" <<sb <<" sm=" <<sm <<endl;
     cout <<" sm=" <<sm <<endl;
     if(!change) {
@@ -94,7 +94,7 @@ bool rk4_switch(arr& x1, arr& s1, const arr& x0, const arr& s0,
       xb=xm;
     }
   }
-  
+
   //take right limit of time interval
   dt=b;
   x1=xb;
@@ -107,19 +107,19 @@ bool rk4dd_switch(arr& x1, arr& v1, arr& s1, const arr& x0, const arr& v0, const
                   void (*ddf)(arr& xdd, const arr& x, const arr& v),
                   void (*sf)(arr& s, const arr& x, const arr& v),
                   double& dt, double tol) {
-                  
+
   global_ddf = ddf;
   global_sf  = sf;
-  
+
   uint n=x0.N;
-  
+
   arr X(2, n), Y(2*n);
   X[0]=x0;
   X[1]=v0;
   X.reshape(2*n);
-  
+
   bool change=rk4_switch(Y, s1, X, s0, rk_df, rk_sf, dt, tol);
-  
+
   Y.reshape(2, n);
   x1=Y[0];
   v1=Y[1];

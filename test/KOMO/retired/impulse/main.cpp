@@ -57,7 +57,6 @@ void plan(){
   //renderConfigurations(komo.configurations, filePrefix, -komo.k_order, 600, 600, &komo.gl->camera);
 }
 
-
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 

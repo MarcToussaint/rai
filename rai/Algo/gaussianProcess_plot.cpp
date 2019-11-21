@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -15,7 +15,7 @@ void plotBelief(GaussianProcess& gp, double lo, double hi, bool pause) {
   //there should be at least 1 observation to guess the dimensionality from
   dim = gp.X.d1 ? gp.X.d1 : gp.dX.d1;
   CHECK(dim > 0, "still no data here. I have no clue about dimensionality!?!");
-  
+
   X.setGrid(dim, lo, hi, 100);
   gp.evaluate(X, Y, S);
   plotClear();

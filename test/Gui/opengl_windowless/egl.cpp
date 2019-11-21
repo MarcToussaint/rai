@@ -90,7 +90,6 @@ int main(int argc, char ** argv)
   write_ppm(img, "z.ppm", true);
 //  write_ppm(convert<byte>(255.f*gl.captureDepth), "z.ppm", true);
 
-
   std::cout <<"DONE" <<std::endl;
   return EXIT_SUCCESS;
 }

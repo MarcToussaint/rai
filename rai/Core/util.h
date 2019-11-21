@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -60,7 +60,6 @@ using std::ifstream;
 template<class T> using ptr=std::shared_ptr<T>;
 using std::make_shared;
 
-
 //----- macros to define the standard <<and >>operatos for most my classes:
 #define stdInPipe(type)\
   inline std::istream& operator>>(std::istream& is, type& x){ x.read(is); return is; }
@@ -95,24 +94,24 @@ extern int interactivity;
 void system(const char* cmd);
 
 //----- files
-void open(std::ofstream& fs, const char *name, const char *errmsg="");
-void open(std::ifstream& fs, const char *name, const char *errmsg="");
+void open(std::ofstream& fs, const char* name, const char* errmsg="");
+void open(std::ifstream& fs, const char* name, const char* errmsg="");
 
 //----- basic ui
 int x11_getKey();
 
 //----- strings and streams
-bool contains(const char *s, char c);
-char skip(std::istream& is, const char *skipSymbols=" \n\r\t", const char *stopSymbols=nullptr, bool skipCommentLines=true);
+bool contains(const char* s, char c);
+char skip(std::istream& is, const char* skipSymbols=" \n\r\t", const char* stopSymbols=nullptr, bool skipCommentLines=true);
 void skipRestOfLine(std::istream& is);
 void skipOne(std::istream& is);
-char getNextChar(std::istream& is, const char *skipSymbols=" \n\r\t", bool skipCommentLines=true);
-char peerNextChar(std::istream& is, const char *skipSymbols=" \n\r\t", bool skipCommentLines=true);
-bool parse(std::istream& is, const char *str, bool silent=false);
-bool skipUntil(std::istream& is, const char *tag);
+char getNextChar(std::istream& is, const char* skipSymbols=" \n\r\t", bool skipCommentLines=true);
+char peerNextChar(std::istream& is, const char* skipSymbols=" \n\r\t", bool skipCommentLines=true);
+bool parse(std::istream& is, const char* str, bool silent=false);
+bool skipUntil(std::istream& is, const char* tag);
 
 //----- functions
-byte bit(byte *str, uint i);
+byte bit(byte* str, uint i);
 void flip(byte& b, uint i);
 void flip(int& b, uint i);
 double MIN(double a, double b);
@@ -158,10 +157,10 @@ double cpuTime();
 double sysTime();
 double totalTime();
 double toTime(const tm& t);
-char *date();
-char *date(double sec);
-char *date2(bool subsec=false);
-char *date2(double sec, bool subsec);
+char* date();
+char* date(double sec);
+char* date2(bool subsec=false);
+char* date2(double sec, bool subsec);
 void wait(double sec, bool msg_on_fail=true);
 bool wait(bool useX11=true);
 
@@ -176,16 +175,16 @@ double timerPause();
 void   timerResume();
 
 //----- command line handling
-void initCmdLine(int _argc, char *_argv[]);
-bool checkCmdLineTag(const char *tag);
-char *getCmdLineArgument(const char *tag);
+void initCmdLine(int _argc, char* _argv[]);
+bool checkCmdLineTag(const char* tag);
+char* getCmdLineArgument(const char* tag);
 
 //----- parameter grabbing from command line, config file, or default value
-template<class T> T getParameter(const char *tag);
-template<class T> T getParameter(const char *tag, const T& Default);
-template<class T> void getParameter(T& x, const char *tag, const T& Default);
-template<class T> void getParameter(T& x, const char *tag);
-template<class T> bool checkParameter(const char *tag);
+template<class T> T getParameter(const char* tag);
+template<class T> T getParameter(const char* tag, const T& Default);
+template<class T> void getParameter(T& x, const char* tag, const T& Default);
+template<class T> void getParameter(T& x, const char* tag);
+template<class T> bool checkParameter(const char* tag);
 
 template<class T> void putParameter(const char* tag, const T& x);
 template<class T> bool getFromMap(T& x, const char* tag);
@@ -196,7 +195,7 @@ bool getInteractivity();
 }
 
 //----- stream parsing
-struct PARSE { const char *str; PARSE(const char* _str):str(_str) {} };
+struct PARSE { const char* str; PARSE(const char* _str):str(_str) {} };
 std::istream& operator>>(std::istream& is, const PARSE&);
 
 //===========================================================================
@@ -214,77 +213,77 @@ istream, but also can be send to an ostream or read from an
 istream. It is based on a simple streambuf derived from the
 rai::Mem class */
 struct String:public std::iostream {
-private:
+ private:
   struct StringBuf:std::streambuf {
-    String *string;
+    String* string;
     virtual int overflow(int C = traits_type::eof());
     virtual int sync();
-    void setIpos(char *p);
-    char *getIpos();
+    void setIpos(char* p);
+    char* getIpos();
   } buffer;
   void init();
-  
-public:
+
+ public:
   /// @name data fields
-  char *p;    ///< pointer to memory
+  char* p;    ///< pointer to memory
   uint N;     ///< \# elements (excluding zero)
   uint M;     ///< actual buffer size (in terms of # elements)
-  static const char *readSkipSymbols; ///< default argument to read method (also called by operator>>)
-  static const char *readStopSymbols; ///< default argument to read method (also called by operator>>)
+  static const char* readSkipSymbols; ///< default argument to read method (also called by operator>>)
+  static const char* readStopSymbols; ///< default argument to read method (also called by operator>>)
   static int readEatStopSymbol;       ///< default argument to read method (also called by operator>>)
   void (*flushCallback)(String&);
-  
+
   /// @name constructors
   String();
   String(const String& s);
-  String(const char *s);
+  String(const char* s);
   explicit String(const std::string& s);
   explicit String(std::istream& is);
   ~String();
-  
+
   /// @name access
-  operator char*();
-  operator const char*() const;
-  char &operator()(int i) const;
+  operator char* ();
+  operator const char* () const;
+  char& operator()(int i) const;
   std::iostream& stream();            ///< explicitly returns this as an std::iostream&
   String& operator()();               ///< explicitly return this as a (non-const!) String&
   String getSubString(int start, int end) const;
   String getFirstN(uint n) const;
   String getLastN(uint n) const;
-  
+
   /// @name setting
   String& operator=(const String& s);
   String& operator=(const std::string& s);
-  String& operator=(const char *s);
-  void set(const char *s, uint n);
-  String& printf(const char *format, ...);
+  String& operator=(const char* s);
+  void set(const char* s, uint n);
+  String& printf(const char* format, ...);
   void resize(uint n, bool copy); //low-level resizing the string buffer - with additinal final 0
   void append(char x);
   void prepend(const String& s);
   String& setRandom();
-  
+
   /// @name resetting
   String& clear();       //as with Array: resize(0)
   String& clearStream(); //call IOstream::clear();
   String& resetIstream();
-  
+
   /// @name equality
-  bool operator==(const char *s) const;
+  bool operator==(const char* s) const;
   bool operator==(const String& s) const;
-  bool operator!=(const char *s) const;
+  bool operator!=(const char* s) const;
   bool operator!=(const String& s) const;
   bool operator<=(const String& s) const;
-  
+
   /// @name misc
   bool contains(const String& substring) const;
   bool startsWith(const String& substring) const;
   bool startsWith(const char* substring) const;
   bool endsWith(const String& substring) const;
   bool endsWith(const char* substring) const;
-  
+
   /// @name I/O
   void write(std::ostream& os) const;
-  uint read(std::istream& is, const char* skipSymbols=nullptr, const char *stopSymbols=nullptr, int eatStopSymbol=-1);
+  uint read(std::istream& is, const char* skipSymbols=nullptr, const char* stopSymbols=nullptr, int eatStopSymbol=-1);
 };
 stdPipes(String)
 }
@@ -312,7 +311,7 @@ struct LogObject {
   LogObject(const char* key, int defaultLogCoutLevel=0, int defaultLogFileLevel=0);
   ~LogObject();
   LogObject& getNonConst() const { return *((LogObject*)this); } //ugly... but Logs are often members of classes, and they are accessed in const methods of these classes...
-  struct LogToken getToken(int log_level, const char *code_file, const char *code_func, uint code_line);
+  struct LogToken getToken(int log_level, const char* code_file, const char* code_func, uint code_line);
 };
 
 /// A Token to such a Log object which, on destruction, writes into the Log
@@ -320,9 +319,9 @@ struct LogToken {
   rai::String msg;
   LogObject& log;
   int log_level;
-  const char *code_file, *code_func;
+  const char* code_file, *code_func;
   uint code_line;
-  LogToken(LogObject& log, int log_level, const char *code_file, const char *code_func, uint code_line)
+  LogToken(LogObject& log, int log_level, const char* code_file, const char* code_func, uint code_line)
     : log(log), log_level(log_level), code_file(code_file), code_func(code_func), code_line(code_line) {}
   ~LogToken(); //that's where the magic happens!
   std::ostream& os() { return msg; }
@@ -344,14 +343,12 @@ void setLogLevels(int fileLogLevel=3, int consoleLogLevel=2);
 // macros for halting/MSGs etc
 //
 
-
 //----- error handling:
 //#define RAI_HERE __FILE__<<':' <<__FUNCTION__ <<':' <<__LINE__ <<' ' //":" <<std::setprecision(5) <<rai::realTime() <<"s "
 #define S1(x) #x
 #define S2(x) S1(x)
 #define RAI_HERE __FILE__ ":" S2(__LINE__)
 //#define RAI_HERE __FILE__ ## ":" ## #__FUNCTION__ ## ":" ## #__LINE__
-
 
 namespace rai {
 extern String errString;
@@ -432,21 +429,21 @@ struct FileToken {
   rai::String path, name, cwd;
   std::shared_ptr<std::ofstream> os;
   std::shared_ptr<std::ifstream> is;
-  
+
   FileToken();
   FileToken(const char* _filename, bool change_dir=false);
   FileToken(const FileToken& ft);
   ~FileToken();
   FileToken& operator()() { return *this; }
-  
+
   void decomposeFilename();
   void cd_start();
   void cd_file();
   bool exists();
   std::ofstream& getOs(bool change_dir=false);
   std::ifstream& getIs(bool change_dir=false);
-  operator std::istream&() { return getIs(); }
-  operator std::ostream&() { return getOs(); }
+  operator std::istream& () { return getIs(); }
+  operator std::ostream& () { return getOs(); }
 
   rai::String absolutePathName() const;
 };
@@ -498,13 +495,13 @@ struct Enum {
     }
     CHECK(!strcmp(names[x], str.p), "");
   }
-  static bool contains(const rai::String& str){
+  static bool contains(const rai::String& str) {
     for(int i=0; names[i]; i++) {
       if(str==names[i]) return true;
     }
     return false;
   }
-  static const char* name(int i){
+  static const char* name(int i) {
     return names[i];
   }
   const char* name() const {
@@ -527,28 +524,28 @@ namespace rai {
   rai::rnd of a \c Rnd object is created. Use this one object to get
   random numbers.*/
 class Rnd {
-private:
+ private:
   bool ready;
   int32_t rpoint;     /* Feldindex    */
   int32_t rfield[256];   /* Schieberegisterfeld  */
-  
-  
-public:
+
+
+ public:
   /// ...
   Rnd() { ready=false; }
-  
-  
-public:/// @name initialization
+
+
+ public:/// @name initialization
   /// initialize with a specific seed
   uint32_t seed(uint32_t n);
-  
+
   /// use Parameter<uint>("seed") as seed
   uint32_t seed();
-  
+
   /// uses the internal clock to generate a seed
   uint32_t clockSeed();
-  
-public:/// @name access
+
+ public:/// @name access
   /// a initeger random number uniformly distributed in [0, ?]
   uint32_t num() { if(!ready) seed(); return (uint32_t)rnd250() >>5; }
   /// same as \c num()
@@ -571,14 +568,14 @@ public:/// @name access
     \c mean; is case \c mean>100, a (positive) gauss number
     \c floor(mean+gauss(sqrt(mean))+.5) is returned */
   uint32_t poisson(double mean);
-  
-private:
+
+ private:
   int32_t rnd250() {
     rpoint = (rpoint+1) & 255;          // Index erhoehen
     return rfield[rpoint] =  rfield[(rpoint-250) & 255]
                              ^ rfield[(rpoint-103) & 255];
   }
-  
+
   void seed250(int32_t seed);
 };
 
@@ -593,13 +590,13 @@ extern rai::Rnd rnd;
 
 struct Inotify {
   int fd, wd;
-  char *buffer;
+  char* buffer;
   uint buffer_size;
-  rai::FileToken *fil;
-  Inotify(const char *filename);
+  rai::FileToken* fil;
+  Inotify(const char* filename);
   ~Inotify();
   bool poll(bool block=false, bool verbose=false);
-  
+
 //  void waitAndReport(){ pollForModification(false, true); }
 //  void waitForModification(bool verbose=false){ while(!pollForModification(true, verbose)); }
 };
@@ -618,24 +615,24 @@ struct Mutex {
   const char* lockInfo;
   Mutex();
   ~Mutex();
-  void lock(const char *_lockInfo);
+  void lock(const char* _lockInfo);
   void unlock();
-  
+
   struct Token {
-    Mutex &m;
-    Token(Mutex& m, const char *_lockInfo):m(m) { m.lock(_lockInfo); }
+    Mutex& m;
+    Token(Mutex& m, const char* _lockInfo):m(m) { m.lock(_lockInfo); }
     ~Token() { m.unlock(); }
   };
-  struct Token operator()(const char *_lockInfo) { return Token(*this, _lockInfo); }
+  struct Token operator()(const char* _lockInfo) { return Token(*this, _lockInfo); }
 
   template<class T> struct TypedToken {
-    Mutex &m;
-    T *data;
-    TypedToken(Mutex& m, T *data, const char *_lockInfo):m(m),data(data) { m.lock(_lockInfo); }
+    Mutex& m;
+    T* data;
+    TypedToken(Mutex& m, T* data, const char* _lockInfo):m(m), data(data) { m.lock(_lockInfo); }
     ~TypedToken() { m.unlock(); }
     T* operator->() { return data; }
   };
-  template<class T> TypedToken<T> operator()(T *data, const char *_lockInfo) { return TypedToken<T>(*this, data, _lockInfo); }
+  template<class T> TypedToken<T> operator()(T* data, const char* _lockInfo) { return TypedToken<T>(*this, data, _lockInfo); }
 };
 
 //===========================================================================
@@ -646,9 +643,9 @@ struct Mutex {
 template<class T>
 struct Singleton {
   static Mutex mutex;
-  static T *singleton;
-  
-  T *getSingleton() const {
+  static T* singleton;
+
+  T* getSingleton() const {
     if(!singleton) {
       mutex.lock(RAI_HERE);
       if(!singleton) singleton = new T;
@@ -656,31 +653,31 @@ struct Singleton {
     }
     return singleton;
   }
-  
+
   ~Singleton() {
     if(singleton) {
 //      static Mutex m; //pthread might already be deinitialized...
 //      m.lock();
-      T *mine=singleton;
+      T* mine=singleton;
       singleton=nullptr;
       if(mine) delete mine;
 //      m.unlock();
     }
   }
-  
+
   struct Token {
     const Singleton<T>& base;
     Token(Singleton<T>& _base) : base(_base) { base.getSingleton(); base.mutex.lock(RAI_HERE); }
     ~Token() { base.mutex.unlock(); }
     T* operator->() { return base.getSingleton(); }
-    operator T&() { return *base.getSingleton(); }
+    operator T& () { return *base.getSingleton(); }
     T& operator()() { return *base.getSingleton(); }
   };
-  
+
   Token operator()() { return Token(*this); }
 };
 
-template<class T> T *Singleton<T>::singleton=nullptr;
+template<class T> T* Singleton<T>::singleton=nullptr;
 template<class T> Mutex Singleton<T>::mutex;
 
 //===========================================================================
@@ -696,7 +693,7 @@ struct GLDrawer {
 //===========================================================================
 
 struct NonCopyable {
-  NonCopyable & operator=(const NonCopyable&) = delete;
+  NonCopyable& operator=(const NonCopyable&) = delete;
   NonCopyable(const NonCopyable&) = delete;
   NonCopyable() = default;
 };
@@ -751,7 +748,7 @@ inline bool operator==(Type& t1, Type& t2) { return t1.typeId() == t2.typeId(); 
 // gnuplot calls
 //
 
-void gnuplot(const char *command, bool pauseMouse=false, bool persist=false, const char* PDFfile=nullptr);
+void gnuplot(const char* command, bool pauseMouse=false, bool persist=false, const char* PDFfile=nullptr);
 void gnuplotClose();
 
 //===========================================================================
