@@ -29,19 +29,33 @@ template<> const char* rai::Enum<FeatureSymbol>::names []= {
   "vectorZ",
   "vectorZDiff",
   "vectorZRel",
-  "scalarProductZ",
+  "scalarProductXX",
+  "scalarProductXY",
+  "scalarProductXZ",
+  "scalarProductYX",
+  "scalarProductYY",
+  "scalarProductYZ",
+  "scalarProductZZ",
   "gazeAt",
+
+  "angularVel",
+
   "accumulatedCollisions",
   "jointLimits",
   "distance",
-    "oppose",
+  "oppose",
+
   "qItself",
+
   "aboveBox",
   "insideBox",
+
   "standingAbove",
+
   "physics",
   "contactConstraints",
   "energy",
+
   "transAccelerations",
   "transVelocities",
   nullptr

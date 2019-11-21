@@ -25,7 +25,7 @@ void Objective::setCostSpecs(int fromStep, int toStep, bool sparse) {
       vars.resize(1+toStep-fromStep, map->order+1);
     else vars.resize(0, map->order+1);
     for(int t=fromStep; t<=toStep; t++)
-      for(uint i=0;i<vars.d1;i++) vars(t-fromStep,i) = t+i-int(map->order);
+      for(uint j=0;j<vars.d1;j++) vars(t-fromStep,j) = t+j-int(map->order);
   }
 }
 

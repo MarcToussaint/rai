@@ -860,15 +860,15 @@ py::arg("featureSymbol"),
       py::arg("elasticity") = .8,
       py::arg("stickiness") = 0. )
 
-  .def("addObjective", [](ry::RyKOMO& self, const std::vector<double>& time, const ObjectiveType& type, const FeatureSymbol& feature, const ry::I_StringA& frames, const std::vector<double> scale, const std::vector<std::vector<double>> scaleTrans, const std::vector<double>& target, int order){
+  .def("addObjective", [](ry::RyKOMO& self, const std::vector<double>& time, const FeatureSymbol& feature, const ry::I_StringA& frames, const ObjectiveType& type, const std::vector<double> scale, const std::vector<std::vector<double>> scaleTrans, const std::vector<double>& target, int order){
     arr _scale;
     if(scale.size()) _scale=conv_stdvec2arr(scale);
     if(scaleTrans.size()) _scale=vecvec2arr(scaleTrans);
-    self.komo->addObjective(arr(time), type, feature, I_conv(frames), _scale, arr(target), order);
+    self.komo->addObjective(arr(time), feature, I_conv(frames), type, _scale, arr(target), order);
   },"", py::arg("time")=std::vector<double>(),
-      py::arg("type"),
       py::arg("feature"),
       py::arg("frames")=ry::I_StringA(),
+      py::arg("type"),
       py::arg("scale")=std::vector<double>(),
       py::arg("scaleTrans")=std::vector<std::vector<double>>(),
       py::arg("target")=std::vector<double>(),
