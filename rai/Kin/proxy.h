@@ -14,7 +14,7 @@
 #include <memory>
 
 namespace rai {
-struct KinematicWorld;
+struct Configuration;
 struct Frame;
 }
 
@@ -37,8 +37,8 @@ struct Proxy : GLDrawer {
   Proxy();
   ~Proxy();
 
-  void copy(const KinematicWorld& K, const Proxy& p);
-  void calc_coll(const KinematicWorld &K);
+  void copy(const Configuration& K, const Proxy& p);
+  void calc_coll(const Configuration &K);
   void del_coll() { coll.reset(); }
   void glDraw(OpenGL&);
 };

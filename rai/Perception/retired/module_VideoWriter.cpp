@@ -11,7 +11,7 @@
 
 REGISTER_MODULE(VideoEncoderModule)
 
-VideoEncoderModule::VideoEncoderModule() : Thread("FloatA_Recorder"), fps(30), video(NULL) {
+VideoEncoderModule::VideoEncoderModule() : Thread("FloatA_Recorder"), fps(30), video(nullptr) {
 }
 
 void VideoEncoderModule::open() {
@@ -23,7 +23,7 @@ void VideoEncoderModule::open() {
 void VideoEncoderModule::close() {
   timeTagFile.close();
   delete video;
-  video = NULL;
+  video = nullptr;
 }
 
 void VideoEncoderModule::step() {

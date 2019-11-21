@@ -9,12 +9,16 @@
 #include "F_static.h"
 #include "contact.h"
 
-F_static::F_static(int iShape, bool _transOnly) : i(iShape), transOnly(_transOnly) {
+F_netForce::F_netForce(int iShape, bool _transOnly, bool _zeroGravity) : i(iShape), transOnly(_transOnly) {
   order=0;
-  gravity = rai::getParameter<double>("F_static/gravity", 9.81);
+  if(_zeroGravity){
+    gravity = 0.;
+  }else{
+    gravity = rai::getParameter<double>("F_static/gravity", 9.81);
+  }
 }
 
-void F_static::phi(arr &y, arr &J, const rai::KinematicWorld& K) {
+void F_netForce::phi(arr &y, arr &J, const rai::Configuration& K) {
   rai::Frame *a = K.frames(i);
 
   arr force = zeros(3);
@@ -24,15 +28,36 @@ void F_static::phi(arr &y, arr &J, const rai::KinematicWorld& K) {
     Jforce = Jtorque = zeros(3, K.getJointStateDimension());
   }
 
-  double mass=.1;
-  if(a->inertia) mass = a->inertia->mass;
-  force(2) += gravity * mass;
+  if(gravity){
+    double mass=.1;
+    if(a->inertia) mass = a->inertia->mass;
+    force(2) += gravity * mass;
+  }
 
+  //-- collect contacts and signs FOR ALL shapes attached to this link
+  rai::Array<rai::Contact*> contacts;
+  arr signs;
+  FrameL F;
+  F.append(a);
+  a->getRigidSubFrames(F);
+  for(rai::Frame *f:F){
+    for(rai::Contact *con:f->contacts){
+      CHECK(&con->a==f || &con->b==f, "");
+      contacts.append(con);
+      signs.append( (&con->a==f ? +1. : -1.) );
+    }
+  }
 
+#if 0
   for(rai::Contact *con:a->contacts){
     double sign = +1.;
     CHECK(&con->a==a || &con->b==a, "");
     if(&con->b==a) sign=-1.;
+#else
+  for(uint i=0;i<contacts.N;i++){
+    rai::Contact *con = contacts(i);
+    double sign = signs(i);
+#endif
 
     //get the force
     arr f, Jf;
@@ -67,7 +92,7 @@ void F_static::phi(arr &y, arr &J, const rai::KinematicWorld& K) {
   }
 }
 
-uint F_static::dim_phi(const rai::KinematicWorld& K){
+uint F_netForce::dim_phi(const rai::Configuration& K){
   if(transOnly) return 3;
   return 6;
 }

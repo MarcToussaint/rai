@@ -94,7 +94,7 @@ tri_contact(box *b1, box *b2)
 // The exclusion only applies to model1
 int 
 collide_recursive(box *b1, box *b2, double R[3][3], double T[3]
-                    , bool* exclude = NULL
+                    , bool* exclude = nullptr
                     )
 {
   int rc;      // return codes
@@ -272,7 +272,7 @@ RAPID_Collide(double R1[3][3], double T1[3], double s1, RAPID_model *RAPID_model
   RAPID_num_contacts = 0;
 
   // make the call
-  return collide_recursive(b1, b2, R, T , NULL);
+  return collide_recursive(b1, b2, R, T , nullptr);
 }
 
 int

@@ -7,7 +7,10 @@
     --------------------------------------------------------------  */
 
 #include <map>
-#include <jsoncpp/json/json.h>
+
+#ifdef RAI_JSON
+#  include <jsoncpp/json/json.h>
+#endif
 
 #include "util.tpp"
 #include "array.tpp"
@@ -15,8 +18,11 @@
 
 #define DEBUG(x) //x
 
-NodeL& NoNodeL=*((NodeL*)NULL);
-Graph& NoGraph=*((Graph*)NULL);
+Graph __NoGraph;
+Graph& NoGraph = __NoGraph;
+
+NodeL& NoNodeL=*((NodeL*)nullptr);
+//Graph& NoGraph=*((Graph*)nullptr);
 
 //===========================================================================
 //
@@ -46,7 +52,7 @@ inline Node *reg_findType(const char* key) {
     if(rai::String(ti->get<std::shared_ptr<Type> >()->typeId().name())==key) return ti;
     if(ti->matches(key)) return ti;
   }
-  return NULL;
+  return nullptr;
 }
 
 //===========================================================================
@@ -57,7 +63,7 @@ inline Node *reg_findType(const char* key) {
 inline Node* readTypeIntoNode(Graph& container, const char* key, std::istream& is) {
   Node *ti = reg_findType(key);
   if(ti) return ti->get<std::shared_ptr<Type> >()->readIntoNewNode(container, is);
-  return NULL;
+  return nullptr;
 }
 
 //===========================================================================
@@ -74,7 +80,7 @@ Node::Node(const std::type_info& _type, void* _value_ptr, Graph& _container)
 
 Node::Node(const std::type_info& _type, void* _value_ptr, Graph& _container, const StringA& _keys, const NodeL& _parents)
   : type(_type), value_ptr(_value_ptr), container(_container), keys(_keys) {
-  CHECK(&container!=&NoGraph, "This is a NGraph (NULL) -- don't do that anymore!");
+  CHECK(&container!=&NoGraph, "This is a NGraph (nullptr) -- don't do that anymore!");
   index=container.N;
   container.NodeL::append(this);
   if(_parents.N) for(Node *p: _parents) addParent(p);
@@ -93,8 +99,8 @@ Node::~Node() {
 }
 
 void Node::addParent(Node *p) {
-  CHECK(p,"you gave me a NULL parent");
-  if(parents.contains(p)) return;
+  CHECK(p,"you gave me a nullptr parent");
+//  if(parents.contains(p)) return; //allow the same parent twice!
   parents.append(p);
   p->numChildren++;
   if(container.isDoubleLinked) p->parentOf.append(this);
@@ -108,7 +114,7 @@ void Node::removeParent(Node *p) {
 }
 
 void Node::swapParent(uint i, Node *p) {
-  CHECK(p,"you gave me a NULL parent");
+  CHECK(p,"you gave me a nullptr parent");
   parents(i)->numChildren--;
   if(container.isDoubleLinked) parents(i)->parentOf.removeValue(this);
   parents(i) = p;
@@ -128,14 +134,19 @@ bool Node::matches(const StringA &query_keys) {
   return true;
 }
 
-void Node::write(std::ostream& os, bool pythonMode) const {
+void Node::write(std::ostream& os, bool yamlMode) const {
   if(!container.isIndexed) container.index();
   
   //-- write keys
-  if(pythonMode)
-    keys.write(os, " ", "", "\"\"");
-  else
-    keys.write(os, " ", "", "\0\0");
+  if(keys.N){
+    if(yamlMode){
+      if(keys.N!=1) os <<'"';
+      keys.write(os, " ", "", "\0\0");
+//      keys.write(os, " ", "", "\"\"");
+      if(keys.N!=1) os <<'"';
+    }else
+      keys.write(os, " ", "", "\0\0");
+  }
 
   //-- write parents
   if(parents.N) {
@@ -151,58 +162,77 @@ void Node::write(std::ostream& os, bool pythonMode) const {
     }
     os <<')';
   }
+
+  //-- boolean special
+  if(isOfType<bool>()) {
+    bool x = *getValue<bool>();
+    if(yamlMode){ if(x) os <<": True"; else os <<": False"; }
+    else { if(!x) os <<'!'; }
+    return;
+  }
+
+  //-- colon separator
+  if(keys.N || parents.N){
+    if(yamlMode) os <<": ";
+    else os <<':';
+  }
   
   //-- write value
   if(isGraph()) {
-    os <<':';
-    graph().write(os, ", ", "{}");
+    graph().write(os, ", ", "{  }", yamlMode);
   } else if(isOfType<NodeL>()) {
-    os <<":(";
+    os <<"(";
     for(Node *it: (*getValue<NodeL>())) os <<' ' <<it->keys.last();
     os <<" )";
   } else if(isOfType<rai::String>()) {
-    if(pythonMode){
-      os <<":\"" <<*getValue<rai::String>() <<'"';
+    if(yamlMode){
+      os <<'"' <<*getValue<rai::String>() <<'"';
     }else{
       const rai::String& str = *getValue<rai::String>();
-      char c=str(0);
-      if((c>='a'&& c<='z') || (c>='A'&& c<='Z') ) os <<":" <<str;
-      else os <<":\"" <<str <<'"';
+      bool onlyLetters=true;
+      for(uint i=0;i<str.N;i++){
+        char c=str(i);
+        if( ! ((c>='a'&& c<='z') || (c>='A'&& c<='Z')) ){
+          onlyLetters=false;
+          break;
+        }
+      }
+      if(onlyLetters) os <<str;
+      else os <<'"' <<str <<'"';
     }
   } else if(isOfType<rai::FileToken>()) {
-    os <<":'" <<getValue<rai::FileToken>()->name <<'\'';
+    os <<'\'' <<getValue<rai::FileToken>()->absolutePathName() <<'\'';
   } else if(isOfType<arr>()) {
-    os <<':'; getValue<arr>()->write(os, ", ", NULL, "[]");
+    getValue<arr>()->write(os, ", ", nullptr, "[]");
+  } else if(isOfType<intA>()) {
+    getValue<intA>()->write(os, ", ", nullptr, "[]");
+  } else if(isOfType<intAA>()) {
+    getValue<intAA>()->write(os, ", ", nullptr, "[]");
+  } else if(isOfType<uintA>()) {
+    getValue<uintA>()->write(os, ", ", nullptr, "[]");
+  } else if(isOfType<StringA>()) {
+    os <<"[";
+    for(const rai::String& s:get<StringA>()) os <<'\"' <<s <<"\", ";
+    os <<']';
   } else if(isOfType<double>()) {
-    os <<':' <<*getValue<double>();
+    os <<*getValue<double>();
   } else if(isOfType<int>()) {
-    os <<':' <<*getValue<int>();
+    os <<*getValue<int>();
   } else if(isOfType<uint>()) {
-    os <<':' <<*getValue<uint>();
-  } else if(isOfType<bool>()) {
-    if(*getValue<bool>()) os <<":True"; else os <<":False";
+    os <<*getValue<uint>();
   } else if(isOfType<Type*>()) {
-    os <<':'; get<Type*>()->write(os);
+    get<Type*>()->write(os);
   } else {
-    Node *it = reg_findType(type.name());
-    if(it && it->keys.N>1) {
-      os <<":<" <<it->keys(1) <<' ';
-      writeValue(os);
-      os <<'>';
-    } else {
-      os <<":\"";
-      writeValue(os);
-      os <<'"';
-    }
+    writeValue(os);
   }
 }
 
-Nod::Nod(const char* key) {
+NodeInitializer::NodeInitializer(const char* key) {
   n = G.newNode<bool>(true);
   n->keys.append(STRING(key));
 }
 
-Nod::Nod(const char* key, const char* stringValue) {
+NodeInitializer::NodeInitializer(const char* key, const char* stringValue) {
   n = G.newNode<rai::String>(STRING(stringValue));
   n->keys.append(STRING(key));
 }
@@ -212,11 +242,13 @@ Nod::Nod(const char* key, const char* stringValue) {
 //  Graph methods
 //
 
-Graph::Graph() : isNodeOfGraph(NULL), pi(NULL), ri(NULL) {
+Graph::Graph() : isNodeOfGraph(nullptr), pi(nullptr), ri(nullptr) {
 }
 
 Graph::Graph(const char* filename): Graph() {
-  read(rai::FileToken(filename).getIs());
+  rai::FileToken file(filename, true);
+  read(file);
+  file.cd_start();
 }
 
 Graph::Graph(istream& is) : Graph() {
@@ -227,17 +259,17 @@ Graph::Graph(const std::map<std::string, std::string>& dict) : Graph() {
   appendDict(dict);
 }
 
-Graph::Graph(std::initializer_list<Nod> list) : Graph() {
-  for(const Nod& ni:list) newNode(ni);
+Graph::Graph(std::initializer_list<NodeInitializer> list) : Graph() {
+  for(const NodeInitializer& ni:list) newNode(ni);
 }
 
-Graph::Graph(std::initializer_list<const char*> list) : Graph(){
-  for(const char* s:list){
-    rai::String str(s);
-    Graph &g=newSubgraph();
-    g.read(str);
-  }
-}
+//Graph::Graph(std::initializer_list<const char*> list) : Graph(){
+//  for(const char* s:list){
+//    rai::String str(s);
+//    Graph &g=newSubgraph();
+//    g.read(str);
+//  }
+//}
 
 Graph::Graph(const Graph& G) : Graph() {
   *this = G;
@@ -247,9 +279,13 @@ Graph::~Graph() {
   clear();
 }
 
+bool Graph::operator!() const {
+  return this==&__NoGraph;
+}
+
 void Graph::clear() {
-  if(ri) { delete ri; ri=NULL; }
-  if(pi) { delete pi; pi=NULL; }
+  if(ri) { delete ri; ri=nullptr; }
+  if(pi) { delete pi; pi=nullptr; }
   DEBUG(checkConsistency();)
       if(!isNodeOfGraph) { //this is not a subgraph; save to delete connections in batch -> faster
     NodeL all = getAllNodesRecursively();
@@ -271,7 +307,7 @@ void Graph::clear() {
   isIndexed=true;
 }
 
-Graph& Graph::newNode(const Nod& ni) {
+Graph& Graph::newNode(const NodeInitializer& ni) {
   Node *clone = ni.n->newClone(*this); //this appends sequentially clones of all nodes to 'this'
   for(const rai::String& s:ni.parents) {
     Node *p = findNode({s}, true, false);
@@ -304,7 +340,7 @@ void Graph::appendDict(const std::map<std::string, std::string>& dict) {
 
 Node* Graph::findNode(const StringA& keys, bool recurseUp, bool recurseDown) const {
   for(Node* n: (*this)) if(n->matches(keys)) return n;
-  Node* ret=NULL;
+  Node* ret=nullptr;
   if(recurseUp && isNodeOfGraph) ret = isNodeOfGraph->container.findNode(keys, true, false);
   if(ret) return ret;
   if(recurseDown) for(Node *n: (*this)) if(n->isGraph()) {
@@ -316,7 +352,7 @@ Node* Graph::findNode(const StringA& keys, bool recurseUp, bool recurseDown) con
 
 Node* Graph::findNodeOfType(const std::type_info& type, const StringA& keys, bool recurseUp, bool recurseDown) const {
   for(Node* n: (*this)) if(n->type==type && n->matches(keys)) return n;
-  Node* ret=NULL;
+  Node* ret=nullptr;
   if(recurseUp && isNodeOfGraph) ret = isNodeOfGraph->container.findNodeOfType(type, keys, true, false);
   if(ret) return ret;
   if(recurseDown) for(Node *n: (*this)) if(n->isGraph()) {
@@ -345,13 +381,13 @@ NodeL Graph::findNodesOfType(const std::type_info& type, const StringA& keys, bo
 //Node* Graph::getNode(const char *key) const {
 //  for(Node *n: (*this)) if(n->matches(key)) return n;
 //  if(isNodeOfGraph) return isNodeOfGraph->container.getNode(key);
-//  return NULL;
+//  return nullptr;
 //}
 
 //Node* Graph::getNode(const StringA &keys) const {
 //  for(Node *n: (*this)) if(n->matches(keys)) return n;
 //  if(isNodeOfGraph) return isNodeOfGraph->container.getNode(keys);
-//  return NULL;
+//  return nullptr;
 //}
 
 //NodeL Graph::getNodes(const StringA &keys) const {
@@ -377,14 +413,14 @@ Node* Graph::getEdge(Node *p1, Node *p2) const {
       if(p1->parentOf.findValue(i)!=-1) return i;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 Node* Graph::getEdge(const NodeL& parents) const {
   CHECK(parents.N>0,"");
   //grap 'sparsest' parent:
   uint minSize = this->N;
-  Node *sparsestParent = NULL;
+  Node *sparsestParent = nullptr;
   for(Node *p:parents) if(p->parentOf.N<minSize) { sparsestParent=p; minSize=p->parentOf.N; }
   if(!sparsestParent) {
     for(Node *e:*this) if(e->parents==parents) return e;
@@ -393,7 +429,7 @@ Node* Graph::getEdge(const NodeL& parents) const {
       if(e->parents==parents) return e;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 NodeL Graph::getNodesOfDegree(uint deg) {
@@ -439,13 +475,34 @@ Node* Graph::edit(Node *ed) {
   if(!edited){
     RAI_MSG("no nodes edited!");
   }
-  if(&ed->container==this) { delete ed; ed=NULL; }
-  return NULL;
+  if(&ed->container==this) { delete ed; ed=nullptr; }
+  return nullptr;
+}
+
+void Graph::collapse(Node* a, Node* b){
+  NodeL ab={a,b}, ba={b,a};
+//  cout <<"collapsing " <<a->keys.first() <<' ' <<b->keys.first() <<endl;
+//  cout <<"collapsing " <<*a <<listString(a->parentOf) <<" and " <<*b <<listString(b->parentOf) <<endl;
+//  a->keys.first() <<'_' <<b->keys.first();
+  for(Node *ch:a->parentOf) if(ch->parents==ab || ch->parents==ba) delete ch;
+  NodeL b_parentOf = b->parentOf;
+  for(Node *ch:b_parentOf){
+    for(Node*& p:ch->parents) if(p==b){
+      p=a;
+      b->parentOf.removeValue(ch);
+      b->numChildren--;
+      a->parentOf.prepend(ch);
+      a->numChildren++;
+    }
+  }
+//  cout <<"... becomes " <<*a <<listString(a->parentOf) <<" and " <<*b <<listString(b->parentOf) <<endl;
+//  checkConsistency();
+  delete b;
 }
 
 void Graph::copy(const Graph& G, bool appendInsteadOfClear, bool enforceCopySubgraphToNonsubgraph) {
-  DEBUG(G.checkConsistency();)
-      if(!G.isIndexed) HALT("can't copy non-indexed graph");
+  DEBUG(G.checkConsistency());
+  if(!G.isIndexed) HALT("can't copy non-indexed graph");
   
   CHECK(this!=&G, "Graph self copy -- never do this");
   
@@ -473,7 +530,7 @@ void Graph::copy(const Graph& G, bool appendInsteadOfClear, bool enforceCopySubg
 
   //-- first, just clone nodes with their values -- 'parents' still point to the origin nodes
   for(Node *n:G) {
-    Node *newn=NULL;
+    Node *newn=nullptr;
     if(n->isGraph()) {
       // why we can't copy the subgraph yet:
       // copying the subgraph would require to fully rewire the subgraph (code below)
@@ -500,7 +557,7 @@ void Graph::copy(const Graph& G, bool appendInsteadOfClear, bool enforceCopySubg
   for(Node *n:newNodes) {
     for(uint i=0; i<n->parents.N; i++) {
       Node *p=n->parents(i); //the parent in the origin graph
-      Node *newp=NULL;
+      Node *newp=nullptr;
       if(isChildOfGraph(p->container)) continue;
       if(&p->container==&G) { //parent is directly in G, no need for complicated search
         newp = newNodes.elem(p->index);  //the true parent in the new graph
@@ -525,15 +582,16 @@ void Graph::copy(const Graph& G, bool appendInsteadOfClear, bool enforceCopySubg
 }
 
 void Graph::read(std::istream& is, bool parseInfo) {
-  if(parseInfo) getParseInfo(NULL).beg=is.tellg();
+  if(parseInfo) getParseInfo(nullptr).beg=is.tellg();
   rai::String namePrefix;
   for(;;) {
     DEBUG(checkConsistency());
     char c=rai::peerNextChar(is, " \n\r\t,");
     if(!is.good() || c=='}') { is.clear(); break; }
     Node *n = readNode(is, false, parseInfo);
+    if(!n) break;
     if(n->keys.N==1 && n->keys.first()=="Quit") {
-      delete n; n=NULL;
+      delete n; n=nullptr;
     }
     if(!n) break;
     if(n->keys.N==1 && n->keys.last()=="Include") {
@@ -544,19 +602,19 @@ void Graph::read(std::istream& is, bool parseInfo) {
         namePrefix.clear();
       }
       n->get<rai::FileToken>().cd_start();
-      delete n; n=NULL;
+      delete n; n=nullptr;
     } else if(n->keys.N==1 && n->keys.last()=="Prefix") {
       namePrefix = n->get<rai::String>();
-      delete n; n=NULL;
+      delete n; n=nullptr;
     } else if(n->keys.N==1 && n->keys.last()=="ChDir") {
       n->get<rai::FileToken>().cd_file();
     } else if(n->keys.N>0 && n->keys.first()=="Delete") {
       n->keys.remove(0);
       NodeL dels = getNodes(n->keys);
-      for(Node* d: dels) { delete d; d=NULL; }
+      for(Node* d: dels) { delete d; d=nullptr; }
     }
   }
-  if(parseInfo) getParseInfo(NULL).end=is.tellg();
+  if(parseInfo) getParseInfo(nullptr).end=is.tellg();
   
   DEBUG(checkConsistency());
 
@@ -575,7 +633,7 @@ void Graph::read(std::istream& is, bool parseInfo) {
     Node *n=elem(i);
     if(n->keys.N==1 && n->keys(0)=="ChDir") {
       n->get<rai::FileToken>().cd_start();
-      delete n; n=NULL;
+      delete n; n=nullptr;
     }
   }
 
@@ -619,7 +677,7 @@ void readNodeParents(Graph &G, std::istream& is, NodeL& parents, ParseInfo& pinf
         pinfo.parents_end=is.tellg();
       } else {
         PARSERR("unknown " <<j <<". parent '" <<str <<"'", pinfo);
-        rai::skip(is, NULL, ")", false);
+        rai::skip(is, nullptr, ")", false);
       }
     }
   }
@@ -650,7 +708,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, rai::Strin
   }
   DEBUG(checkConsistency());
 
-      if(verbose) { cout <<" keys:" <<keys <<flush; }
+  if(verbose) { cout <<" keys:" <<keys <<flush; }
   
   //-- read parents
   NodeL parents;
@@ -664,7 +722,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, rai::Strin
   if(verbose) { cout <<" parents:"; if(!parents.N) cout <<"none"; else listWrite(parents,cout," ","()"); cout <<flush; }
   
   //-- read value
-  Node *node=NULL;
+  Node *node=nullptr;
   pinfo.value_beg=(long int)is.tellg()-1;
   if(c=='=' || c==':' || c=='{' || c=='[' || c=='<' || c=='!' || c=='\'') {
     if(c=='=' || c==':') c=rai::getNextChar(is," \t");
@@ -689,7 +747,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, rai::Strin
           node = newNode<rai::FileToken>(keys, parents, rai::FileToken(str, false));
 //          node->get<rai::FileToken>().getIs();  //creates the ifstream and might throw an error
         } catch(...) {
-          delete node; node=NULL;
+          delete node; node=nullptr;
           PARSERR("file " <<str <<" does not exist -> converting to string!", pinfo);
           node = newNode<rai::String>(keys, parents, str);
         }
@@ -766,7 +824,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, rai::Strin
       default: { //error
         is.putback(c);
         PARSERR("unknown value indicator '" <<c <<"'", pinfo);
-        return NULL;
+        return nullptr;
       }
     }
   } else { //no ':' or '{' -> boolean
@@ -786,7 +844,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, rai::Strin
   
   if(!node) {
     cerr <<"FAILED reading node with keys ";
-    keys.write(cerr, " ", NULL, "()");
+    keys.write(cerr, " ", nullptr, "()");
     cerr <<" and parents ";
     listWrite(parents,cerr," ","()");
     cerr <<endl;
@@ -799,6 +857,7 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, rai::Strin
   return node;
 }
 
+#ifdef RAI_JSON
 void addJasonValues(Graph& G, const char* key, Json::Value& value);
 
 void Json2Graph(Graph& G, Json::Value& value) {
@@ -874,17 +933,25 @@ void Graph::readJson(std::istream &is) {
   is >>root;
   Json2Graph(*this, root);
 }
+#else
+void Graph::readJson(std::istream &is) {
+  NICO
+}
+#endif
 
 #undef PARSERR
 
-void Graph::write(std::ostream& os, const char *ELEMSEP, const char *BRACKETS) const {
-  if(BRACKETS) os <<BRACKETS[0];
-  for(uint i=0; i<N; i++) { if(i) os <<ELEMSEP;  if(elem(i)) elem(i)->write(os); else os <<"<NULL>"; }
-  if(BRACKETS) os <<BRACKETS[1] <<std::flush;
+void Graph::write(std::ostream& os, const char *ELEMSEP, const char *BRACKETS, bool yamlMode) const {
+  uint BRACKETSlength=0;
+  if(BRACKETS) BRACKETSlength=strlen(BRACKETS);
+  for(uint b=0;b<BRACKETSlength/2;b++) os <<BRACKETS[b];
+  for(uint i=0; i<N; i++) { if(i) os <<ELEMSEP;  if(elem(i)) elem(i)->write(os, yamlMode); else os <<"<nullptr>"; }
+  for(uint b=BRACKETSlength/2; b<BRACKETSlength; b++) os <<BRACKETS[b];
+  os <<std::flush;
 }
 
 void Graph::writeParseInfo(std::ostream& os) {
-  os <<"GRAPH " <<getParseInfo(NULL) <<endl;
+  os <<"GRAPH " <<getParseInfo(nullptr) <<endl;
   for(Node *n:*this)
     os <<"NODE '" <<*n <<"' " <<getParseInfo(n) <<endl;
 }
@@ -903,7 +970,7 @@ void Graph::displayDot(Node *highlight) {
 
 void Graph::writeHtml(std::ostream& os, std::istream& is) {
   char c;
-  long int g=getParseInfo(NULL).beg;
+  long int g=getParseInfo(nullptr).beg;
   is.seekg(g);
 #define GO { is.get(c); if(c=='\n') os <<"<br>" <<endl; else os <<c; g++; }
   for(Node *n:list()) {
@@ -921,7 +988,7 @@ void Graph::writeHtml(std::ostream& os, std::istream& is) {
     while(g<pinfo.value_end)GO
         os <<"</font>";
   }
-  while(g<getParseInfo(NULL).end)GO
+  while(g<getParseInfo(nullptr).end)GO
     #undef GO
 }
 
@@ -929,7 +996,7 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
   if(!withoutHeader) {
     os <<"digraph G{" <<endl;
     os <<"graph [ rankdir=\"LR\", ranksep=0.05";
-    if(hasRenderingInfo(NULL)) os <<' ' <<getRenderingInfo(NULL).dotstyle;
+    if(hasRenderingInfo(nullptr)) os <<' ' <<getRenderingInfo(nullptr).dotstyle;
     os << " ];" <<endl;
     os <<"node [ fontsize=9, width=.3, height=.3 ];" <<endl;
     os <<"edge [ arrowtail=dot, arrowsize=.5, fontsize=6 ];" <<endl;
@@ -947,11 +1014,15 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
         label <<k;
         newline=true;
       }
-    } else if(n->parents.N) {
-      label <<"(" <<n->parents(0)->keys.last();
-      for(uint i=1; i<n->parents.N; i++) label <<' ' <<n->parents(i)->keys.last();
-      label <<")";
+    } else {
+//      if(n->parents.N) {
+//        label <<"(" <<n->parents(0)->keys.last();
+//        for(uint i=1; i<n->parents.N; i++) label <<' ' <<n->parents(i)->keys.last();
+//        label <<")";
+//      }
     }
+    if(label.N) label <<"\\n";
+    n->writeValue(label);
     
     rai::String shape;
     if(n->keys.contains("box")) shape <<", shape=box"; else shape <<", shape=ellipse";
@@ -1019,7 +1090,7 @@ ParseInfo& Graph::getParseInfo(Node* n) {
   return pi->operator()(n);
   //  if(pi.N!=N+1){
   //    listResizeCopy(pi, N+1);
-  //    pi(0)->node=NULL;
+  //    pi(0)->node=nullptr;
   //    for(uint i=1;i<pi.N;i++) pi(i)->node=elem(i-1);
   //  }
   //  if(!n) return *pi(0);
@@ -1034,7 +1105,7 @@ RenderingInfo& Graph::getRenderingInfo(Node* n) {
 #else
   if(ri.N!=N+1) {
     ri.resizeCopy(N+1); //listResizeCopy(ri, N+1);
-    //    ri.elem(0)->node=NULL;
+    //    ri.elem(0)->node=nullptr;
     //    for(uint i=1;i<ri.N;i++) ri.elem(i)->node=elem(i-1);
   }
   if(!n) return ri.elem(0);
@@ -1149,6 +1220,47 @@ NodeL neighbors(Node* it) {
   return N;
 }
 
+int distance(NodeL A, NodeL B){
+  CHECK(A.N, "");
+  CHECK(B.N, "");
+  Graph& G=A.first()->container;
+  CHECK_EQ(&B.first()->container, &G, "");
+
+  boolA doneA(G.N), doneB(G.N);
+  doneA.setZero();
+  doneB.setZero();
+  NodeL fringeA = A;
+  NodeL fringeB = B;
+  int D=0;
+  for(Node *a:fringeA) doneA(a->index) = true;
+  for(Node *b:fringeB){ if(doneA(b->index)) return D; doneB(b->index) = true; }
+  for(;;){
+    D++;
+    NodeL newA;
+    for(Node *a:fringeA){
+      NodeL neighA = neighbors(a);
+      for(Node *n:neighA){
+        if(doneB(n->index)) return D;
+        if(!doneA(n->index)){ newA.append(n); doneA(n->index)=true; }
+      }
+    }
+    D++;
+    NodeL newB;
+    for(Node *b:fringeB){
+      NodeL neighB = neighbors(b);
+      for(Node *n:neighB){
+        if(doneA(n->index)) return D;
+        if(!doneB(n->index)){ newB.append(n); doneB(n->index)=true; }
+      }
+    }
+    if(!newA.N && !newB.N) break; //failure
+    fringeA = newA;
+    fringeB = newB;
+  }
+  return -1;
+}
+
+
 //===========================================================================
 //
 // global singleton TypeRegistrationSpace
@@ -1158,6 +1270,7 @@ Singleton<Graph> registry;
 
 struct RegistryInitializer {
   Mutex lock;
+//  Graph cfgParameters;
   RegistryInitializer() {
     int n;
     for(n=1; n<rai::argc; n++) {

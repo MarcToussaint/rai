@@ -72,7 +72,7 @@ struct ChoiceConstraintFunction : ConstrainedProblem {
     which = (WhichConstraint) rai::getParameter<int>("constraintChoice");
     n = rai::getParameter<uint>("dim", 2);
   }
-  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda) {
+  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x) {
     CHECK_EQ(x.N,n,"");
     phi.clear();  if(!!tt) tt.clear();  if(!!J) J.clear();
     
@@ -221,7 +221,7 @@ struct ParticleAroundWalls2 : KOMO_Problem {
   uint get_k() { return k; }
   void getStructure(uintA& variableDimensions, uintA& featureTimes, ObjectiveTypeA& featureTypes);
   
-  void phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, ObjectiveTypeA& tt, const arr& x, arr& lambda);
+  void phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, ObjectiveTypeA& tt, const arr& x);
 };
 
 //===========================================================================

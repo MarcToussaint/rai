@@ -14,13 +14,13 @@
 //===========================================================================
 
 struct EffectivePoseProblem:ConstrainedProblem {
-  rai::KinematicWorld& effKinematics;
+  rai::Configuration& effKinematics;
   const Graph& KB;
   const Graph& symbolicState_before;
   const Graph& symbolicState_after;
   arr x0;
   int verbose;
-  EffectivePoseProblem(rai::KinematicWorld& effKinematics_before,
+  EffectivePoseProblem(rai::Configuration& effKinematics_before,
                        const Graph& KB, const Graph& symbolicState_before, const Graph& symbolicState_after,
                        int verbose);
   void phi(arr& phi, arr& phiJ, arr& H, ObjectiveTypeA& tt, const arr& x);

@@ -39,13 +39,13 @@ struct TM_Default:Feature {
              int jShape=-1, const rai::Vector& jvec=NoVector,
              const arr& params=NoArr);
              
-  TM_Default(TM_DefaultType type, const rai::KinematicWorld& G,
-             const char* iShapeName=NULL, const rai::Vector& ivec=NoVector,
-             const char* jShapeName=NULL, const rai::Vector& jvec=NoVector,
+  TM_Default(TM_DefaultType type, const rai::Configuration& G,
+             const char* iShapeName=nullptr, const rai::Vector& ivec=NoVector,
+             const char* jShapeName=nullptr, const rai::Vector& jvec=NoVector,
              const arr& params=NoArr);
              
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
-  virtual uint dim_phi(const rai::KinematicWorld& G);
+  virtual void phi(arr& y, arr& J, const rai::Configuration& G);
+  virtual uint dim_phi(const rai::Configuration& G);
 };
 
 #endif

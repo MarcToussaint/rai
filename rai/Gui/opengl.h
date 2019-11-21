@@ -56,9 +56,9 @@ struct Transformation;
 // utility functions
 //
 
-void glStandardLight(void*);
-void glStandardScene(void*);
-void glStandardOriginAxes(void*);
+void glStandardLight(void*, OpenGL&);
+void glStandardScene(void*, OpenGL&);
+void glStandardOriginAxes(void*, OpenGL&);
 
 void glColor(float r, float g, float b, float a=1.f);
 void glColor(int col);
@@ -126,7 +126,7 @@ struct OpenGL {
   struct GLKeyCall  { virtual bool keyCallback(OpenGL&) = 0; };
   struct GLEvent    { int button, key, x, y; float dx, dy; void set(int b, int k, int _x, int _y, float _dx, float _dy) { button=b; key=k; x=_x; y=_y; dx=_dx; dy=_dy; } };
   struct GLSelect   { int name; double dmin, dmax, x,y,z; };
-  struct GLView     { double le, ri, bo, to;  rai::Array<GLDrawer*> drawers;  rai::Camera camera;  byteA *img;  rai::String text;  GLView() { img=NULL; le=bo=0.; ri=to=1.; } };
+  struct GLView     { double le, ri, bo, to;  rai::Array<GLDrawer*> drawers;  rai::Camera camera;  byteA *img;  rai::String text;  GLView() { img=nullptr; le=bo=0.; ri=to=1.; } };
   
   /// @name data fields
   rai::Array<GLView> views;            ///< list of subviews
@@ -176,8 +176,8 @@ struct OpenGL {
   
   /// @name adding drawing routines and callbacks
   void clear();
-  void add(void (*call)(void*), void* classP=NULL);
-  void addInit(void (*call)(void*), void* classP=NULL);
+  void add(void (*call)(void*,OpenGL&), void* classP=nullptr);
+  void addInit(void (*call)(void*), void* classP=nullptr);
   void add(std::function<void(OpenGL&)> drawer);
   void add(GLDrawer& c) { auto _dataLock = dataLock(RAI_HERE); drawers.append(&c); }
   template<class T> void add(Var<T>& c) { add(c.set()); }
@@ -187,20 +187,20 @@ struct OpenGL {
   void addHoverCall(GLHoverCall *c) { hoverCalls.append(c); }
   void addClickCall(GLClickCall *c) { clickCalls.append(c); }
   void addKeyCall(GLKeyCall *c) { keyCalls.append(c); }
-  void addSubView(uint view, void (*call)(void*), void* classP=0);
+  void addSubView(uint view, void (*call)(void*,OpenGL&), void* classP=0);
   void addSubView(uint view, GLDrawer& c);
   void setSubViewTiles(uint cols, uint rows);
   void setSubViewPort(uint view, double l, double r, double b, double t);
   void clearSubView(uint view);
   
   /// @name the core draw routines (actually only for internal use)
-  void Draw(int w, int h, rai::Camera *cam=NULL, bool callerHasAlreadyLocked=false);
+  void Draw(int w, int h, rai::Camera *cam=nullptr, bool callerHasAlreadyLocked=false);
   void Select(bool callerHasAlreadyLocked=false);
   void renderInBack(int w=-1, int h=-1);
   
   /// @name showing, updating, and watching
-  int update(const char *text=NULL, bool nonThreaded=false);
-  int watch(const char *text=NULL);
+  int update(const char *text=nullptr, bool nonThreaded=false);
+  int watch(const char *text=nullptr);
   int timedupdate(double sec);
   void resize(int w, int h);
   void setClearColors(float r, float g, float b, float a);
@@ -213,16 +213,18 @@ struct OpenGL {
   void about(std::ostream& os=std::cout);
   
   /// @name to display image data (kind of misuse)
-  int watchImage(const byteA &img, bool wait, float backgroundZoom);
-  int watchImage(const floatA &img, bool wait, float backgroundZoom);
-  int displayGrey(const arr &x, bool wait, float backgroundZoom);
-  int displayRedBlue(const arr &x, bool wait, float backgroundZoom);
+  int watchImage(const byteA &img, bool wait, float backgroundZoom=1.);
+  int watchImage(const floatA &img, bool wait, float backgroundZoom=1.);
+  int displayGrey(const floatA &x, bool wait, float backgroundZoom=1.);
+  int displayGrey(const arr &x, bool wait, float backgroundZoom=1.);
+  int displayRedBlue(const arr &x, bool wait, float backgroundZoom=1.);
   
   void drawId(uint id);
   
 public: //driver dependent methods
   void openWindow();
   void closeWindow();
+  void setTitle(const char* _title=0);
   void beginNonThreadedDraw();
   void endNonThreadedDraw();
   void postRedrawEvent(bool fromWithinCallback);
@@ -273,14 +275,14 @@ struct glUI:OpenGL::GLHoverCall,OpenGL::GLClickCall {
   glUI() { top=-1; }
   
   void addButton(uint x, uint y, const char *name, const char *img1=0, const char *img2=0);
-  void glDraw();
+  void glDraw(OpenGL& gl);
   bool checkMouse(int _x, int _y);
   
   bool hoverCallback(OpenGL&);
   bool clickCallback(OpenGL&);
 };
 
-void glDrawUI(void *p);
+void glDrawUI(void *p, OpenGL&);
 
 extern OpenGL& NoOpenGL;
 

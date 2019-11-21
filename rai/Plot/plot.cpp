@@ -20,7 +20,7 @@
 // global structures
 //
 
-PlotModule plotModule;
+Singleton<PlotModule> plotModule;
 
 struct sPlotModule {
   rai::Array<arr> array;
@@ -49,14 +49,14 @@ PlotModule::PlotModule() {
 
 PlotModule::~PlotModule() {
 #ifdef RAI_GL
-  if(gl) { delete gl; gl=NULL; }
+  if(gl) { delete gl; gl=nullptr; }
 #endif
   delete s;
 }
 
-void plotDrawOpenGL(void* data);
+void plotDrawOpenGL(void* data, OpenGL& gl);
 void plotDrawGnuplot(void* data, bool pauseMouse);
-void glDrawPlot(void *module) { plotDrawOpenGL(((PlotModule*)module)->s); }
+void glDrawPlot(void *module, OpenGL& gl) { plotDrawOpenGL(((PlotModule*)module)->s, gl); }
 
 //===========================================================================
 //
@@ -70,24 +70,24 @@ void glDrawPlot(void *module) { plotDrawOpenGL(((PlotModule*)module)->s); }
 
 #ifdef RAI_GL
 void plotInitGL(double xl=-1., double xh=1., double yl=-1., double yh=1., double zl=-1., double zh=1., const char* name=0, uint width=600, uint height=600, int posx=0, int posy=0) {
-  if(!plotModule.gl) {
-    plotModule.gl=new OpenGL(name, width, height);
-    plotModule.gl->add(glDrawPlot, &plotModule);
-    plotModule.gl->setClearColors(1., 1., 1., 1.);
+  if(!plotModule()->gl) {
+    plotModule()->gl=new OpenGL(name, width, height);
+    plotModule()->gl->add(glDrawPlot, &plotModule);
+    plotModule()->gl->setClearColors(1., 1., 1., 1.);
   }
-  plotModule.gl->camera.setPosition(.5*(xh+xl), .5*(yh+yl), 5.);
-  plotModule.gl->camera.focus(.5*(xh+xl), .5*(yh+yl), .0);
-  plotModule.gl->camera.setWHRatio((xh-xl)/(yh-yl));
-  if(plotModule.perspective) {
-    plotModule.gl->camera.setHeightAngle(45.);
+  plotModule()->gl->camera.setPosition(.5*(xh+xl), .5*(yh+yl), 5.);
+  plotModule()->gl->camera.focus(.5*(xh+xl), .5*(yh+yl), .0);
+  plotModule()->gl->camera.setWHRatio((xh-xl)/(yh-yl));
+  if(plotModule()->perspective) {
+    plotModule()->gl->camera.setHeightAngle(45.);
   } else {
-    plotModule.gl->camera.setHeightAbs(1.2*(yh-yl));
+    plotModule()->gl->camera.setHeightAbs(1.2*(yh-yl));
   }
-  plotModule.gl->update();
+  plotModule()->gl->update();
 }
 
 void plotCloseGL() {
-  if(plotModule.gl) { delete plotModule.gl; plotModule.gl=NULL; }
+  if(plotModule()->gl) { delete plotModule()->gl; plotModule()->gl=nullptr; }
 }
 #endif
 
@@ -95,17 +95,17 @@ void plot(bool wait, const char* txt) {
   if(!rai::getInteractivity()) {
     wait=false;
   }
-  switch(plotModule.mode) {
+  switch(plotModule()->mode) {
     case gnupl:
-      plotDrawGnuplot(plotModule.s, wait);
+      plotDrawGnuplot(plotModule()->s, wait);
 //      if(wait) rai::wait();
       break;
 #ifdef RAI_GL
     case opengl:
-      if(txt) plotModule.gl->text = txt;
+      if(txt) plotModule()->gl->text = txt;
       //plotInitGL();
-      if(wait) plotModule.gl->watch();
-      else plotModule.gl->update();
+      if(wait) plotModule()->gl->watch();
+      else plotModule()->gl->update();
       break;
 #else
     case opengl:
@@ -120,35 +120,35 @@ void plot(bool wait, const char* txt) {
 
 void plotClose() {
 #ifdef RAI_GL
-  if(plotModule.mode==opengl) plotCloseGL();
+  if(plotModule()->mode==opengl) plotCloseGL();
 #endif
 }
 
 void plotClear() {
-  plotModule.s->array.clear();
-  plotModule.s->points.clear();
-  plotModule.s->lines.clear();
+  plotModule()->s->array.clear();
+  plotModule()->s->points.clear();
+  plotModule()->s->lines.clear();
 #ifdef RAI_GL
-  plotModule.s->planes.clear();
+  plotModule()->s->planes.clear();
 #endif
 }
 
-void plotGnuplot() { plotModule.mode=gnupl; }
+void plotGnuplot() { plotModule()->mode=gnupl; }
 
 #ifdef RAI_GL
-void plotOpengl() { plotModule.mode=opengl; plotInitGL(); }
+void plotOpengl() { plotModule()->mode=opengl; plotInitGL(); }
 
 void plotOpengl(bool perspective, double xl, double xh, double yl, double yh, double zl, double zh) {
-  plotModule.mode=opengl;
-  plotModule.perspective=perspective;
-  if(!plotModule.gl) plotInitGL(xl, xh, yl, yh, zl, zh);
+  plotModule()->mode=opengl;
+  plotModule()->perspective=perspective;
+  if(!plotModule()->gl) plotInitGL(xl, xh, yl, yh, zl, zh);
 }
 #else
 void plotOpengl() { RAI_MSG("dummy routine - compile with RAI_FREEGLUT to use this!"); }
 void plotOpengl(bool perspective, double xl, double xh, double yl, double yh, double zl, double zh) { NICO }
 #endif
 
-void plotImage(const arr& x) { plotModule.s->images.append(x); }
+void plotImage(const arr& x) { plotModule()->s->images.append(x); }
 
 void plotFunction(const arr& f, double x0, double x1) {
   arr X;
@@ -170,7 +170,7 @@ void plotFunction(const arr& f, double x0, double x1) {
       X.reshape(X.N, 1);
     }
   }
-  plotModule.s->lines.append(X);
+  plotModule()->s->lines.append(X);
 }
 
 void plotFunctions(const arr& F, double x0, double x1) {
@@ -188,7 +188,7 @@ void plotFunctionPoints(const arr& x, const arr& f) {
     for(j=0; j<x.d1; j++) X(i, j)=x(i, j);
     X(i, j)=f(i);
   }
-  plotModule.s->points.append(X);
+  plotModule()->s->points.append(X);
 }
 
 void plotFunction(const arr& x, const arr& f) {
@@ -201,7 +201,7 @@ void plotFunction(const arr& x, const arr& f) {
     for(j=0; j<x.d1; j++) X(i, j)=x(i, j);
     X(i, j)=f(i);
   }
-  plotModule.s->lines.append(X);
+  plotModule()->s->lines.append(X);
 }
 
 void plotFunctionPrecision(const arr& x, const arr& f, const arr& h, const arr& l) {
@@ -216,40 +216,40 @@ void plotFunctionPrecision(const arr& x, const arr& f, const arr& h, const arr& 
     X(i, j+1)=l(i);
     X(i, j+2)=h(i);
   }
-  plotModule.s->lines.append(X);
+  plotModule()->s->lines.append(X);
 }
 
 void plotSurface(const arr& X) {
-  plotModule.s->array.append(X);
+  plotModule()->s->array.append(X);
 #ifdef RAI_GL
-  plotModule.s->mesh.clear();
-  plotModule.s->mesh.V.resize(X.N, 3);
-  plotModule.s->mesh.C.resize(X.N, 3);
-  plotModule.s->mesh.setGrid(X.d1, X.d0);
-  //plotModule.s->mesh.gridToStrips(X.d1, X.d0);
+  plotModule()->s->mesh.clear();
+  plotModule()->s->mesh.V.resize(X.N, 3);
+  plotModule()->s->mesh.C.resize(X.N, 3);
+  plotModule()->s->mesh.setGrid(X.d1, X.d0);
+  //plotModule()->s->mesh.gridToStrips(X.d1, X.d0);
 #endif
 }
 
 void plotPoint(double x, double y, double z) {
   arr p(1, 3); p(0, 0)=x; p(0, 1)=y; p(0, 2)=z;
-  plotModule.s->points.append(p);
+  plotModule()->s->points.append(p);
 }
 
 void plotPoint(const arr& x) {
   arr p; p.referTo(x); p.reshape(1, p.N);
-  plotModule.s->points.append(p);
+  plotModule()->s->points.append(p);
 }
 
 void plotPoints(const arr& X) {
-  plotModule.s->points.append(X);
+  plotModule()->s->points.append(X);
 }
 
 void plotClearPoints() {
-  plotModule.s->points.clear();
+  plotModule()->s->points.clear();
 }
 
 void plotLine(const arr& X, bool closed) {
-  arr& app = plotModule.s->lines.append(X);
+  arr& app = plotModule()->s->lines.append(X);
   if(closed && app.d0) {
     arr x;
     x = app[0];
@@ -270,7 +270,7 @@ void plotPoints(const arr& X, const arr& Y) {
     P.resize(X.d0, 2);
     for(i=0; i<P.d0; i++) { P(i, 0)=X(i); P(i, 1)=Y(i); }
   }
-  plotModule.s->points.append(P);
+  plotModule()->s->points.append(P);
 }
 
 void plotCovariance(const arr& mean, const arr& cov) {
@@ -305,7 +305,7 @@ void plotCovariance(const arr& mean, const arr& cov) {
     for(i=0; i<w.N; i++) w(i)=sqrt(w(i)); //trace of eig^2 becomes N!
     for(i=0; i<d.d0; i++) { d[i]()*=w; d[i]=V*d[i]; d(i, 0)+=mean(0); d(i, 1)+=mean(1); }
     
-    plotModule.s->lines.append(d);
+    plotModule()->s->lines.append(d);
   }
   if(d==3) {
 #if 1
@@ -330,9 +330,9 @@ void plotCovariance(const arr& mean, const arr& cov) {
     for(i=0; i<w.N; i++) w(i)=sqrt(w(i)); //trace of eig^2 becomes N!
     for(i=0; i<d.d0; i++) { d[i]()*=w; d[i]=V*d[i]; d[i]()+=mean; }
     d.reshape(3, 101, 3);
-    plotModule.s->lines.append(d[0]);
-    plotModule.s->lines.append(d[1]);
-    plotModule.s->lines.append(d[2]);
+    plotModule()->s->lines.append(d[0]);
+    plotModule()->s->lines.append(d[1]);
+    plotModule()->s->lines.append(d[2]);
 #else
     arr d(101, 2), dd(101, 3), Cov, U, V, w;
     double phi;
@@ -347,7 +347,7 @@ void plotCovariance(const arr& mean, const arr& cov) {
     for(i=0; i<w.N; i++) w(i)=sqrt(w(i)); //trace of eig^2 becomes N!
     for(i=0; i<d.d0; i++) { mult(d[i](), d[i], w); d[i]=V*d[i]; d(i, 0)+=mean(0); d(i, 1)+=mean(1); }
     for(i=0; i<d.d0; i++) { dd(i, 0)=d(i, 0); dd(i, 1)=d(i, 1); dd(i, 2)=mean(2); }
-    plotModule.s->lines.append(dd);
+    plotModule()->s->lines.append(dd);
     //y-z
     Cov=cov.sub(1, 2, 1, 2);
     for(i=0; i<d.d0; i++) { //standard circle
@@ -358,7 +358,7 @@ void plotCovariance(const arr& mean, const arr& cov) {
     for(i=0; i<w.N; i++) w(i)=sqrt(w(i)); //trace of eig^2 becomes N!
     for(i=0; i<d.d0; i++) { mult(d[i](), d[i], w); d[i]=V*d[i]; d(i, 0)+=mean(1); d(i, 1)+=mean(2); }
     for(i=0; i<d.d0; i++) { dd(i, 0)=mean(0); dd(i, 1)=d(i, 0); dd(i, 2)=d(i, 1); }
-    plotModule.s->lines.append(dd);
+    plotModule()->s->lines.append(dd);
     //x-z
     Cov(0, 0)=cov(0, 0); Cov(1, 0)=cov(2, 0); Cov(0, 1)=cov(0, 2); Cov(1, 1)=cov(2, 2);
     for(i=0; i<d.d0; i++) { //standard circle
@@ -369,7 +369,7 @@ void plotCovariance(const arr& mean, const arr& cov) {
     for(i=0; i<w.N; i++) w(i)=sqrt(w(i)); //trace of eig^2 becomes N!
     for(i=0; i<d.d0; i++) { mult(d[i](), d[i], w); d[i]=V*d[i]; d(i, 0)+=mean(0); d(i, 1)+=mean(2); }
     for(i=0; i<d.d0; i++) { dd(i, 0)=d(i, 0); dd(i, 1)=mean(1); dd(i, 2)=d(i, 1); }
-    plotModule.s->lines.append(dd);
+    plotModule()->s->lines.append(dd);
 #endif
   }
 }
@@ -381,7 +381,7 @@ void plotVectorField(const arr& X, const arr& dX) {
   for(i=0; i<X.d0; i++) {
     l[0]() = X[i];
     l[1]() = X[i]+dX[i];
-    plotModule.s->lines.append(l);
+    plotModule()->s->lines.append(l);
   }
 }
 
@@ -418,7 +418,7 @@ void plotGaussians(const GaussianL& G) {
 // OpenGL draw routine
 //
 
-void plotDrawOpenGL(void *_data) {
+void plotDrawOpenGL(void *_data, OpenGL& gl) {
 #ifdef RAI_GL
   sPlotModule& data=(*((sPlotModule*)_data));
   uint a, i, j;
@@ -428,9 +428,9 @@ void plotDrawOpenGL(void *_data) {
   double x=0., y=0., z=0.;
   
   //light?
-  if(plotModule.light) glStandardLight(NULL);
+  if(plotModule()->light) glStandardLight(nullptr, gl);
   
-  if(plotModule.drawBox) {
+  if(plotModule()->drawBox) {
     glColor3f(.7, .7, .7);
     glBegin(GL_LINE_LOOP);
     glVertex3f(-1, -1, -1);
@@ -495,7 +495,7 @@ void plotDrawOpenGL(void *_data) {
     if(data.array(a).nd==2 && data.array(a).d1>2) { //2D landscapes
       uint i, j, X=data.array(a).d1, Y=data.array(a).d0;
       c.setIndex(a);
-      if(!plotModule.grid) { //as a mesh
+      if(!plotModule()->grid) { //as a mesh
         c.whiten(.5);
         CHECK_EQ(Y*X,data.mesh.V.d0, "you must recall display(data.array) when dimensions changed");
         for(j=0; j<Y; j++) for(i=0; i<X; i++) {
@@ -547,13 +547,13 @@ void plotDrawOpenGL(void *_data) {
     c.setIndex(i);
     glColor(c.r, c.g, c.b);
     //glBegin(GL_LINES);
-    if(plotModule.drawDots) glBegin(GL_POINTS);
+    if(plotModule()->drawDots) glBegin(GL_POINTS);
     if(data.points(i).nd==2) {
       for(j=0; j<data.points(i).d0; j++) {
         if(data.points(i).d1==1) { x=(double)j; y=data.points(i)(j, 0); z=0.; }
         if(data.points(i).d1==2) { x=data.points(i)(j, 0); y=data.points(i)(j, 1); z=1.; }
         if(data.points(i).d1>=3) { x=data.points(i)(j, 0); y=data.points(i)(j, 1); z=data.points(i)(j, 2); }
-        if(!plotModule.drawDots) {
+        if(!plotModule()->drawDots) {
           glPushMatrix();
           glTranslatef(x, y, z);
           glDrawDiamond(.01, .01, .01);
@@ -566,7 +566,7 @@ void plotDrawOpenGL(void *_data) {
       if(data.points(i).d0==1) { x=data.points(i)(0); y=0.; z=0.; }
       if(data.points(i).d0==2) { x=data.points(i)(0); y=data.points(i)(1); z=0.; }
       if(data.points(i).d0>=3) { x=data.points(i)(0); y=data.points(i)(1); z=data.points(i)(2); }
-      if(!plotModule.drawDots) {
+      if(!plotModule()->drawDots) {
         glPushMatrix();
         glTranslatef(x, y, z);
         glDrawDiamond(.02, .02, .02);
@@ -575,16 +575,16 @@ void plotDrawOpenGL(void *_data) {
         glVertex3d(x, y, z);
       }
     }
-    if(plotModule.drawDots) glEnd();
+    if(plotModule()->drawDots) glEnd();
   }
   
   //draw lines
   for(i=0; i<data.lines.N; i++) {
-    if(plotModule.colors) c.setIndex(i); else c.setIndex(0);
+    if(plotModule()->colors) c.setIndex(i); else c.setIndex(0);
     glColor(c.r, c.g, c.b);
     
-    if(plotModule.thickLines) {
-      glLineWidth(plotModule.thickLines);
+    if(plotModule()->thickLines) {
+      glLineWidth(plotModule()->thickLines);
     }
     
     glBegin(GL_LINE_STRIP);

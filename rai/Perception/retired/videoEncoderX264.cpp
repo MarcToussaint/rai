@@ -35,7 +35,7 @@ struct sVideoEncoder_x264_simple {
   
   sVideoEncoder_x264_simple(const char* filename, double fps, uint qp, rai::PixelFormat in_format) :
     filename(filename), fps(fps), isOpen(false), i(0), out_size(0), x(0), y(0), outbuf_size(0), qp(qp), pts(0),
-    f(NULL), encoder(NULL), nals(NULL), first(false), in_format(in_format),
+    f(nullptr), encoder(nullptr), nals(nullptr), first(false), in_format(in_format),
     frame_count(0), encoding_time(0.0), video_time(0.0), scale_time(0.0) {
     std::clog << "Encoder for " << filename << " expects pixel format " << in_format << std::endl;
   }
@@ -96,7 +96,7 @@ void sVideoEncoder_x264_simple::open(uint width, uint height) {
   }
   std::clog << endl;
   
-  x264_param_default_preset(&params, "ultrafast", NULL);
+  x264_param_default_preset(&params, "ultrafast", nullptr);
   params.i_csp = cspace;
   params.i_threads = 0;
   params.i_width = width;

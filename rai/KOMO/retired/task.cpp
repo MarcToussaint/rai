@@ -8,8 +8,8 @@
 
 //===========================================================================
 
-Task* Task::newTask(const Node* specs, const rai::KinematicWorld& world, int stepsPerPhase, uint T) {
-  if(specs->parents.N<2) return NULL; //these are not task specs
+Task* Task::newTask(const Node* specs, const rai::Configuration& world, int stepsPerPhase, uint T) {
+  if(specs->parents.N<2) return nullptr; //these are not task specs
   
   //-- check the term type first
   ObjectiveType termType;
@@ -17,11 +17,11 @@ Task* Task::newTask(const Node* specs, const rai::KinematicWorld& world, int ste
   if(tt=="MinSumOfSqr") termType=OT_sos;
   else if(tt=="LowerEqualZero") termType=OT_ineq;
   else if(tt=="EqualZero") termType=OT_eq;
-  else return NULL;
+  else return nullptr;
   
   //-- try to crate a map
   Feature *map = Feature::newTaskMap(specs, world);
-  if(!map) return NULL;
+  if(!map) return nullptr;
   
   //-- create a task
   Task *task = new Task(map, termType);

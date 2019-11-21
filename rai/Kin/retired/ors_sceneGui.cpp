@@ -22,7 +22,7 @@ enum EditMode { emNone, emMove, emOde };
 
 struct sOrsSceneGui:OpenGL::GLKeyCall,OpenGL::GLHoverCall,OpenGL::GLClickCall {
   OpenGL *gl;
-  rai::KinematicWorld *ors;
+  rai::Configuration *ors;
   EditMode mode;
   rai::Body *movingBody;
   rai::Vector selpos;
@@ -32,7 +32,7 @@ struct sOrsSceneGui:OpenGL::GLKeyCall,OpenGL::GLHoverCall,OpenGL::GLClickCall {
   }
   
   static void drawBase(void*) {
-    glStandardLight(NULL);
+    glStandardLight(nullptr);
     glDrawFloor(10,.8,.8,.8);
     glColor(1.,.5,0.);
   }
@@ -60,8 +60,8 @@ bool sOrsSceneGui::clickCallback(OpenGL&) {
 bool sOrsSceneGui::hoverCallback(OpenGL&) {
   switch(mode) {
     case emNone: {
-      rai::Joint *j=NULL;
-      rai::Shape *s=NULL;
+      rai::Joint *j=nullptr;
+      rai::Shape *s=nullptr;
       gl->Select(true);
       OpenGL::GLSelect *top=gl->topSelection;
       if(!top) { gl->text.clear();  return false; }
@@ -107,18 +107,18 @@ bool sOrsSceneGui::hoverCallback(OpenGL&) {
 bool sOrsSceneGui::keyCallback(OpenGL&) {
   switch(gl->pressedkey) {
     case ' ': { //move x-y the object
-      if(mode==emMove) { mode=emNone; movingBody=NULL; cout <<"move off" <<endl; return true; }
+      if(mode==emMove) { mode=emNone; movingBody=nullptr; cout <<"move off" <<endl; return true; }
       cout <<"move mode" <<endl;
       mode=emMove;
       gl->Select();
       OpenGL::GLSelect *top=gl->topSelection;
       if(!top) {
         cout <<"No object below mouse!" <<endl;
-        return NULL;
+        return nullptr;
       }
       uint i=top->name;
       //cout <<"HOVER call: id = 0x" <<std::hex <<gl->topSelection->name <<endl;
-      rai::Body *b=NULL;
+      rai::Body *b=nullptr;
       if((i&3)==1) b=ors->shapes(i>>2)->body;
       if(b) {
         cout <<"selected body " <<b->name <<endl;
@@ -153,12 +153,12 @@ bool sOrsSceneGui::keyCallback(OpenGL&) {
 }
 
 struct EditConfigurationHoverCall:OpenGL::GLHoverCall {
-  rai::KinematicWorld *ors;
-  EditConfigurationHoverCall(rai::KinematicWorld& _ors);
+  rai::Configuration *ors;
+  EditConfigurationHoverCall(rai::Configuration& _ors);
   bool hoverCallback(OpenGL& gl);
 };
 
-OrsSceneGui::OrsSceneGui(rai::KinematicWorld& ors, OpenGL* gl) {
+OrsSceneGui::OrsSceneGui(rai::Configuration& ors, OpenGL* gl) {
   s=new sOrsSceneGui();
   s->ors = &ors;
   orsDrawZlines=true;

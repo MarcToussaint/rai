@@ -32,7 +32,7 @@ struct RobotAbstraction_KukaWSG : RobotAbstraction{
     arr q0;
     uint gripperCommandCounter=0;
 
-    RobotAbstraction_KukaWSG(const rai::KinematicWorld& _K)
+    RobotAbstraction_KukaWSG(const rai::Configuration& _K)
         : jointState(),
           tfMessages(),
           gripperCommand(){
@@ -62,7 +62,7 @@ struct RobotAbstraction_SimulationThread : RobotAbstraction {
 
     arr q0;
 
-    RobotAbstraction_SimulationThread(const rai::KinematicWorld& _K)
+    RobotAbstraction_SimulationThread(const rai::Configuration& _K)
         : S(_K, .01, false){
         q0 = _K.getJointState();
     }
@@ -78,10 +78,10 @@ struct RobotAbstraction_SimulationThread : RobotAbstraction {
     virtual void execGripper(const rai::String& gripper, double position, double force=40.){
         auto lock = S.stepMutex(RAI_HERE);
         if(gripper=="pr2R"){
-            //  komo->addObjective(0., 0., OT_eq, FS_accumulatedCollisions, {}, 1e0);
+            //  komo->addObjective(0., 0., FS_accumulatedCollisions, {}, OT_eq, 1e0);
             //open gripper
-            //  komo->addObjective(0.,0., OT_sos, FS_qItself, {"r_gripper_joint"}, 1e1, {.08} );
-            //  komo->addObjective(0.,0., OT_sos, FS_qItself, {"r_gripper_l_finger_joint"}, 1e1, {.8} );
+            //  komo->addObjective(0.,0., FS_qItself, {"r_gripper_joint"}, OT_sos, 1e1, {.08} );
+            //  komo->addObjective(0.,0., FS_qItself, {"r_gripper_l_finger_joint"}, OT_sos, 1e1, {.8} );
 
             S.SIM.setUsedRobotJoints({"r_gripper_joint", "r_gripper_l_finger_joint"});
             S.SIM.exec({1,2, {position, position*10.}}, {1.}, true);
@@ -116,7 +116,7 @@ struct RobotAbstraction_SimulationThread : RobotAbstraction {
     }
 };
 
-RobotIO::RobotIO(const rai::KinematicWorld& _K, RobotType _type)
+RobotIO::RobotIO(const rai::Configuration& _K, RobotType _type)
     : type(_type){
 
     switch(type){
@@ -302,7 +302,7 @@ StringA RobotAbstraction_KukaWSG::getJointNames() {
 
 #else
 
-RobotIO::RobotIO(const rai::KinematicWorld& _K, RobotType _type)
+RobotIO::RobotIO(const rai::Configuration& _K, RobotType _type)
     : type(_type){
     NICO
 }

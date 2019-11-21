@@ -14,7 +14,7 @@ struct GraphView {
   struct sGraphView *s;
   bool verbose;
   
-  GraphView(Graph& G, const char* title="rai::GraphvizGtk", void *container=NULL);
+  GraphView(Graph& G, const char* title="rai::GraphvizGtk", void *container=nullptr);
   ~GraphView();
   
   void writeFile(const char* filename);

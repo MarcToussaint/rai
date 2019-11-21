@@ -8,6 +8,7 @@
 ARCH = $(shell uname -m)
 
 ifeq ($(JSON),1)
+DEPEND_UBUNTU += libjsoncpp-dev
 LIBS += -ljsoncpp
 endif
 
@@ -162,6 +163,7 @@ LIBS += -lFreeSOLID
 endif
 
 ifeq ($(ANN),1)
+DEPEND_UBUNTU += libann-dev
 CXXFLAGS  += -DRAI_ANN
 LIBS += -lann
 endif
@@ -191,7 +193,7 @@ endif
 ifeq ($(IT++),1)
 CXXFLAGS  += -DRAI_ITpp
 CPATH	  := $(CPATH):$(IT++)/include
-LPATH	  := $(LPATH):$(IT++)/lib
+LPATHS += $(IT++)/lib
 LIBS += -lit++ -lit++external -lg2c
 CygwinLibs+= -lit++ -lit++external -lg2c
 endif
@@ -227,6 +229,7 @@ endif
 
 ##LAPACK MUST BE BEFORE OPENCV! (since OpenCV includes its own lapack binaries, which screw things up...)
 ifeq ($(LAPACK),1)
+DEPEND_UBUNTU += liblapack-dev libf2c2-dev
 CXXFLAGS  += -DRAI_LAPACK
 CPATH	  := $(LIBPATH)/lapack/include:$(CPATH)
 LIBS += -llapack -lblas
@@ -237,6 +240,7 @@ MinGWLibs += -lcblas -lclapack -lcblaswr -latlas -lI77 -lF77 -lcygwin
 endif
 
 ifeq ($(OPENCV),1)
+DEPEND_UBUNTU += libopencv-dev
   ifeq ($(OLDUBUNTU),1)
     CXXFLAGS  += -DRAI_OPENCV `pkg-config --cflags-only-other opencv-2.3.1`
     CXXFLAGS += `pkg-config --cflags-only-I opencv-2.3.1`
@@ -253,14 +257,14 @@ endif
 ifeq ($(OPENCV4),1)
 CXXFLAGS  += -DRAI_OPENCV
 CPATH := $(HOME)/opt/include/opencv4/:$(CPATH)
-LPATH := $(HOME)/opt/lib:$(LPATH)
+LPATHS += $(HOME)/opt/lib
 LIBS += -lopencv_core -lopencv_highgui
 endif
 
 ifeq ($(HSL),1)
 CXXFLAGS  += -DRAI_HSL
 CPATH	  := $(CPATH):$(LIBPATH)/HSL-archive/include
-LPATH	  := $(LPATH):$(LIBPATH)/HSL-archive/lib
+LPATHS += $(LIBPATH)/HSL-archive/lib
 LIBS += -lHSL-debr
 endif
 
@@ -304,6 +308,7 @@ CPATH := $(CPATH):/usr/include/pcl-1.7:
 endif
 
 ifeq ($(EIGEN),1)
+DEPEND_UBUNTU += libeigen3-dev
 CXXFLAGS += -DRAI_EIGEN
 CPATH := $(CPATH):/usr/include/eigen3
 endif
@@ -330,43 +335,43 @@ endif
 ifeq ($URGLASER),1)
 CPATH     := $(CPATH):$(LIBPATH)/urg-0.8.16/include/c
 CPATH     := $(CPATH):$(LIBPATH)/urg-0.8.16/include/cpp
-LPATH     := $(LPATH):$(LIBPATH)/urg-0.8.16/src/c/urg/.libs
-LPATH     := $(LPATH):$(LIBPATH)/urg-0.8.16/src/c/system/.libs
-LPATH     := $(LPATH):$(LIBPATH)/urg-0.8.16/src/c/connection/.libs
+LPATHS += $(LIBPATH)/urg-0.8.16/src/c/urg/.libs
+LPATHS += $(LIBPATH)/urg-0.8.16/src/c/system/.libs
+LPATHS += $(LIBPATH)/urg-0.8.16/src/c/connection/.libs
 LIBS += -lc_urg -lc_urg_system -lc_urg_connection
 endif
 
 ifeq ($(DYNAMIXEL),1)
 CXXFLAGS  += -DRAI_DYNAMIXEL
 CPATH     := $(CPATH):$(LIBPATH)/dynamixel/include
-LPATH     := $(LPATH):$(LIBPATH)/dynamixel/lib
+LPATHS += $(LIBPATH)/dynamixel/lib
 LIBS      += -ldxl
 endif
 
 ifeq ($(BUMBLE),1)
 CXXFLAGS  += -DRAI_BUMBLE
 #CPATH     := $(CPATH):$(LIBPATH)/pgrlibdcstereo/
-#LPATH     := $(LPATH):$(LIBPATH)/pgrlibdcstereo/
+#LPATHS += $(LIBPATH)/pgrlibdcstereo/
 LIBS += -ldc1394 # -lpgrlibdcstereo
 endif
 
 ifeq ($(FELZ),1)
 CXXFLAGS  += -DRAI_FELZ
 CPATH     := $(CPATH):$(LIBPATH)/libcolorseg/include
-LPATH     := $(LPATH):$(LIBPATH)/libcolorseg/lib
+LPATHS += $(LIBPATH)/libcolorseg/lib
 LIBS += -lcolorseg
 endif
 
 ifeq ($(ESS),1)
 CXXFLAGS  += -DRAI_ESS
 CPATH     := $(CPATH):$(LIBPATH)/blaschko-ESS-1.1/include
-LPATH     := $(LPATH):$(LIBPATH)/blaschko-ESS-1.1/lib
+LPATHS += $(LIBPATH)/blaschko-ESS-1.1/lib
 LIBS += -less
 endif
 
 ifeq ($(SURF),1)
 CPATH     := $(CPATH):$(LIBPATH)/opensurf/
-LPATH     := $(LPATH):$(LIBPATH)/opensurf/
+LPATHS += $(LIBPATH)/opensurf/
 LIBS += -lopensurf_$(ARCH)
 endif
 
@@ -375,13 +380,23 @@ CXXFLAGS  += -DRAI_PTHREAD
 LIBS += -lpthread
 endif
 
+ifeq ($(DART),1)
+CXXFLAGS += -DRAI_DART -std=c++14
+CPATH := $(CPATH):$(HOME)/git/dart/build:$(HOME)/git/dart
+LPATHS += $(HOME)/git/dart/build/lib
+LIBS += -ldart-gui -ldart-utils-urdf -ldart-utils -ldart -lboost_system
+endif
+
 ifeq ($(PHYSX),1)
 CXXFLAGS += -DRAI_PHYSX -D_DEBUG -DPX_DISABLE_FLUIDS -DCORELIB -DPX32 -DLINUX
-CPATH := $(CPATH):$(HOME)/opt/include:$(HOME)/opt/include/physx
+CPATH := $(CPATH):$(HOME)/opt/physx3.4/include:$(HOME)/opt/physx3.4/include/physx
 #PhysX/Include:$(RAI_LIBPATH)/PhysX/Include/extensions:$(RAI_LIBPATH)/PhysX/Include/foundation:$(RAI_LIBPATH)/PhysX/Include/deprecated
-LPATH := $(HOME)/opt/lib/physx:$(LPATH)
-LIBS += -Wl,--start-group -lpthread -lrt\
--lLowLevel \
+LPATHS += $(HOME)/opt/physx3.4/lib
+LIBS += -lpthread -lrt\
+-lPhysX3Extensions -lPhysX3_x64 -lPhysX3Cooking_x64 -lPhysX3Common_x64 -lPxFoundation_x64
+
+#Physx-3.3:
+#-lLowLevel \
 -lLowLevelCloth \
 -lPhysX3CharacterKinematic \
 -lPhysX3 \
@@ -401,7 +416,7 @@ ifeq ($(BULLET),1)
 #BULLET_PATH=$(HOME)/git/bullet3
 CXXFLAGS  += -DRAI_BULLET -DBT_USE_DOUBLE_PRECISION
 CPATH := $(HOME)/opt/include/bullet/:$(CPATH)
-LPATH := $(HOME)/opt/lib:$(LPATH)
+LPATHS += $(HOME)/opt/lib
 #LPATH := $(BULLET_PATH)/bin:$(LPATH)
 #CPATH := $(CPATH):$(BULLET_PATH)/src
 #btLIB = _gmake_x64_release
@@ -429,6 +444,7 @@ CXXFLAGS += -DX264_INSTALLED
 endif
 
 ifeq ($(ROS),1)
+
 CXXFLAGS  += -DRAI_ROS
 ROSP=pr2_mechanism/pr2_controller_interface\
 pr2_mechanism/pr2_mechanism_model\
@@ -452,9 +468,14 @@ CXXFLAGS  += -DRAI_ROS_INDIGO
 LIBS += -rdynamic -lkdl_parser -lurdf -lurdfdom_model -lurdfdom_model_state -lurdfdom_sensor -lurdfdom_world -lcollada_parser -lrosconsole_bridge -lroscpp -lxmlrpcpp -ltinyxml -lclass_loader -lPocoFoundation -ldl -lrosconsole -llog4cxx -lroslib -lmessage_filters -lconsole_bridge -lroscpp_serialization -lrostime -lpthread -lcpp_common -lorocos-kdl -ltf -lboost_system -lpcl_ros_tf
 endif
 ifeq ($(ROS_VERSION),kinetic)
+DEPEND_UBUNTU += ros-kinetic-desktop ros-kinetic-object-recognition-msgs ros-kinetic-ar-track-alvar-msgs
 CXXFLAGS  += -DRAI_ROS_KINETIC 
 LIBS += -rdynamic -lkdl_parser -lurdf -lurdfdom_model -lurdfdom_model_state -lurdfdom_sensor -lurdfdom_world -lcollada_parser -lrosconsole_bridge -lroscpp -lxmlrpcpp -ltinyxml -lclass_loader -lPocoFoundation -ldl -lrosconsole -llog4cxx -lroslib -lmessage_filters -lconsole_bridge -lroscpp_serialization -lrostime -lpthread -lcpp_common -lorocos-kdl -ltf -lboost_system
 endif
-
+ifeq ($(ROS_VERSION),melodic)
+DEPEND_UBUNTU += ros-melodic-desktop ros-melodic-object-recognition-msgs ros-melodic-ar-track-alvar-msgs
+CXXFLAGS  += -DRAI_ROS_MELODIC 
+LIBS += -rdynamic -lkdl_parser -lurdf -lurdfdom_model -lurdfdom_model_state -lurdfdom_sensor -lurdfdom_world -lrosconsole_bridge -lroscpp -lxmlrpcpp -ltinyxml -lclass_loader -lPocoFoundation -ldl -lrosconsole -llog4cxx -lroslib -lmessage_filters -lconsole_bridge -lroscpp_serialization -lrostime -lpthread -lcpp_common -lorocos-kdl -ltf -lboost_system
+endif
 
 endif

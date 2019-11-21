@@ -5,8 +5,8 @@
 
 //implement a drawer
 struct MyDrawer : GLDrawer{
-  void glDraw(OpenGL&){
-    glStandardLight(NULL);
+  void glDraw(OpenGL& gl){
+    glStandardLight(nullptr, gl);
     glColor(1,0,0);
     glFrontFace(GL_CW);
     glutSolidTeapot(1.);

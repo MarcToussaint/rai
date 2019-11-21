@@ -101,7 +101,7 @@ main(int argc, char **argv)
     rai::wait(.01);
   }
 //  glutDestroyWindow(1);
-//  glXMakeCurrent(fgDisplay.Display, None, NULL);
+//  glXMakeCurrent(fgDisplay.Display, None, nullptr);
 //  glutExit();
 
   return 0;             /* ANSI C requires main to return int. */

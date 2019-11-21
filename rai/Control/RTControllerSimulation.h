@@ -17,9 +17,9 @@
 struct RTControllerSimulation : Thread {
   Var<CtrlMsg> ctrl_ref;
   Var<CtrlMsg> ctrl_obs;
-  //Var<rai::KinematicWorld> modelWorld;
+  //Var<rai::Configuration> modelWorld;
   
-  rai::KinematicWorld* world;
+  rai::Configuration* world;
   rai::Joint *j_baseTranslationRotation;
   double tau;
   bool gravity;
@@ -32,7 +32,7 @@ struct RTControllerSimulation : Thread {
   arr Kp_base, Kd_base, limits;
   arr I_term;
   
-  RTControllerSimulation(const rai::KinematicWorld& realWorld,
+  RTControllerSimulation(const rai::Configuration& realWorld,
                          const Var<CtrlMsg>& _ctrl_ref,
                          const Var<CtrlMsg>& _ctrl_obs,
                          double tau=0.01, bool gravity=false, double _systematicErrorSdv=0.);

@@ -3,9 +3,9 @@
 #include <Kin/frame.h>
 
 void TEST(GetRobotMask){
-  rai::KinematicWorld robot("../../../../rai-robotModels/pr2/pr2.g");
+  rai::Configuration robot("../../../../rai-robotModels/pr2/pr2.g");
   robot.gl().camera.setKinect();
-  robot.gl().camera.X = robot.getFrameByName("endeffEyes")->X * robot.gl().camera.X;
+  robot.gl().camera.X = robot.getFrameByName("endeffEyes")->ensure_X() * robot.gl().camera.X;
   robot.watch(true); //if commented, glut/gtk is never initiated
   byteA indexRgb, depth;
   robot.glGetMasks(580, 480);

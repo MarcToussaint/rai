@@ -16,7 +16,7 @@ struct Uncertainty {
   Joint *joint;
   arr sigma;
   
-  Uncertainty(Joint *j, Uncertainty *copyUncertainty=NULL);
+  Uncertainty(Joint *j, Uncertainty *copyUncertainty=nullptr);
   
   void read(const Graph &ats);
 };

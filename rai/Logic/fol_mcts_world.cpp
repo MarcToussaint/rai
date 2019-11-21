@@ -1,3 +1,4 @@
+
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
@@ -38,7 +39,7 @@ void FOL_World::Decision::write(ostream& os) const {
 
 FOL_World::FOL_World()
   : hasWait(true), gamma(0.9), stepCost(0.1), timeCost(1.), deadEndCost(100.), maxHorizon(100),
-    state(NULL), lastDecisionInState(NULL), verbose(0), verbFil(0),
+    state(nullptr), lastDecisionInState(nullptr), verbose(0), verbFil(0),
     lastStepReward(0.), lastStepDuration(0.), lastStepProbability(1.), lastStepObservation(0), count(0) {
   KB.isDoubleLinked=false;
 }
@@ -64,8 +65,12 @@ void FOL_World::init(const Graph& _KB){
   Terminate_keyword = KB["Terminate"];  CHECK(Terminate_keyword, "You need to declare the Terminate keyword");
   Quit_keyword = KB["QUIT"];            CHECK(Quit_keyword, "You need to declare the QUIT keyword");
   Wait_keyword = KB["WAIT"];            //CHECK(Wait_keyword, "You need to declare the WAIT keyword");
+  Subgoal_keyword = KB["SubgoalDone"];            //CHECK(Wait_keyword, "You need to declare the WAIT keyword");
   Quit_literal = KB.newNode<bool>({}, {Quit_keyword}, true);
-  
+  if(Subgoal_keyword){
+    Subgoal_literal = KB.newNode<bool>({"tmp"}, {Subgoal_keyword}, true);
+  }
+
   Graph *params = KB.find<Graph>("FOL_World");
   if(params) {
     hasWait = params->get<bool>("hasWait", hasWait);
@@ -101,7 +106,7 @@ MCTS_Environment::TransitionReturn FOL_World::transition(const Handle& action) {
   lastStepDuration = 0.;
   lastStepProbability = 1.;
   lastStepObservation = 0;
-  
+
   T_step++;
   
   CHECK(!hasWait || Wait_keyword,"if the FOL uses wait, the WAIT keyword needs to be declared");
@@ -191,7 +196,7 @@ MCTS_Environment::TransitionReturn FOL_World::transition(const Handle& action) {
   lastStepReward -= lastStepDuration*timeCost; //cost per real time
   
   //-- generic world transitioning
-  forwardChaining_FOL(*state, worldRules, NULL, NoGraph, verbose-3, &lastStepObservation);
+  forwardChaining_FOL(*state, worldRules, nullptr, NoGraph, verbose-3, &lastStepObservation);
   
   //-- check for QUIT
   successEnd = getEqualFactInKB(*state, Quit_literal);
@@ -226,7 +231,7 @@ const std::vector<FOL_World::Handle> FOL_World::get_actions() {
   if(verbose>2) cout <<"****************** FOL_World: Computing possible decisions" <<flush;
   rai::Array<Handle> decisions; //tuples of rule and substitution
   if(hasWait) {
-    decisions.append(Handle(new Decision(true, NULL, {}, decisions.N))); //the wait decision (true as first argument, no rule, no substitution)
+    decisions.append(Handle(new Decision(true, nullptr, {}, decisions.N))); //the wait decision (true as first argument, no rule, no substitution)
   }
   for(Node* rule:decisionRules) {
     NodeL subs = getRuleSubstitutions2(*state, rule, verbose-3);
@@ -281,6 +286,7 @@ bool FOL_World::is_terminal_state() const {
 
 void FOL_World::make_current_state_new_start() {
   if(!start_state) start_state = &KB.newSubgraph({"START_STATE"}, state->isNodeOfGraph->parents);
+  state->index();
   start_state->copy(*state);
   start_state->isNodeOfGraph->keys(0)="START_STATE";
   start_T_step = T_step;
@@ -314,7 +320,7 @@ void FOL_World::reset_state() {
   DEBUG(FILE("z.after") <<KB;)
   
   //-- forward chain rules
-  forwardChaining_FOL(KB, KB.get<Graph>("STATE"), NULL, NoGraph, verbose-3); //, &decisionObservation);
+  forwardChaining_FOL(KB, KB.get<Graph>("STATE"), nullptr, NoGraph, verbose-3); //, &decisionObservation);
   
   //-- check for terminal
 //  successEnd = allFactsHaveEqualsInKB(*state, *terminal);
@@ -370,7 +376,7 @@ Graph* FOL_World::getState() {
 }
 
 void FOL_World::setState(Graph *s, int setT_step) {
-  CHECK(s, "can't set state to NULL graph");
+  CHECK(s, "can't set state to nullptr graph");
   if(state) {
     CHECK(s->isNodeOfGraph != state->isNodeOfGraph,"you are setting the state to itself");
   }
@@ -394,6 +400,161 @@ Graph* FOL_World::createStateCopy() {
   new_state->copy(*state);
   return new_state;
 }
+
+void FOL_World::writePDDLdomain(std::ostream& os, const char* domainName) const {
+  os <<"(define (domain " <<domainName;
+
+  //collect all predicate symbols used in the rules
+  CHECK(KB.isIndexed, "");
+  boolA used(KB.N);
+  used=false;
+  NodeL predicates;
+  for(Node* rule:decisionRules) {
+    Graph& Rule = rule->graph();
+    Graph& precond = Rule.elem(-2)->graph();
+    Graph& effect = Rule.elem(-1)->graph();
+    for(Node *n:precond){
+      if(n->keys.N) continue; //no temporary facts
+      uint ID = n->parents(0)->index;
+      if(!used(ID)){ predicates.setAppend(n); used(ID)=true; }
+    }
+    for(Node *n:effect){
+      if(n->keys.N) continue; //no temporary facts
+      uint ID = n->parents(0)->index;
+      if(!used(ID)){ predicates.setAppend(n); used(ID)=true; }
+    }
+  }
+  //output them
+  os <<")\n   (:predicates";
+  for(Node *n:predicates){
+    os <<" (" <<n->parents(0)->keys.last();
+    for(uint i=1;i<n->parents.N;i++) os <<" ?" <<n->parents(i)->keys.last();
+    os <<')';
+  }
+
+  for(Node* rule:decisionRules) {
+    os <<")\n   (:action " <<rule->keys.last();
+
+    Graph& Rule = rule->graph();
+    Graph& precond = Rule.elem(-2)->graph();
+    Graph& effect = Rule.elem(-1)->graph();
+
+    os <<"\n      :parameters (";
+    for(Node *n:Rule) if(n->keys.N>0 && n->parents.N==0 && n->isOfType<bool>()) os <<" ?" <<n->keys.last();
+
+    os <<")\n      :precondition (and";
+    for(Node *n:precond){
+      if(n->keys.N) continue; //no temporary facts
+      bool neg = n->isOfType<bool>() && !n->get<bool>();
+      if(neg) os <<" (not";
+      os <<" (" <<n->parents(0)->keys.last();
+      for(uint i=1;i<n->parents.N;i++) os <<" ?" <<n->parents(i)->keys.last();
+      os <<')';
+      if(neg) os <<')';
+    }
+
+    os <<")\n      :effect (and";
+    for(Node *n:effect){
+      if(n->keys.N) continue; //no temporary facts
+      bool neg = n->isOfType<bool>() && !n->get<bool>();
+      if(neg) os <<" (not";
+      os <<" (" <<n->parents(0)->keys.last();
+      for(uint i=1;i<n->parents.N;i++) os <<" ?" <<n->parents(i)->keys.last();
+      os <<')';
+      if(neg) os <<')';
+    }
+
+    os <<')';
+  }
+  os <<")\n)" <<endl;
+}
+
+void FOL_World::writePDDLproblem(std::ostream& os, const char* domainName, const char* problemName) const {
+  os <<"(define (problem " <<problemName;
+
+  os <<")\n   (:domain " <<domainName;
+
+  //collect all constants used in the start state
+  CHECK(KB.isIndexed, "");
+  boolA used(KB.N);
+  used=false;
+  NodeL constants;
+  {
+    for(Node *n:*start_state){
+      if(n->keys.N) continue; //no temporary facts
+      for(uint i=1;i<n->parents.N;i++){
+        uint ID = n->parents(i)->index;
+        if(!used(ID)){ constants.setAppend(n->parents(i)); used(ID)=true; }
+      }
+    }
+  }
+  //output them
+  os <<")\n   (:objects";
+  for(Node *n:constants) os <<' ' <<n->keys.last();
+
+  //-- start state
+  os <<")\n   (:init";
+  for(Node *n:*start_state) os <<' ' <<*n;
+
+  //-- terminal rules
+  os <<")\n   (:goal"; // add an " (or" here if PDDL would support disjunction of goals
+  uint numGoals=0;
+  for(Node* rule:worldRules) {
+    Graph& Rule = rule->graph();
+    if(Rule.elem(-1)->isOfType<arr>()) continue; //this is a probabilistic rule!
+    Graph& precond = Rule.elem(-2)->graph();
+    Graph& effect = Rule.elem(-1)->graph();
+
+    if(effect.N==1 && effect(0)->parents.N==1 && effect(0)->parents(0)==Quit_keyword){ //this is a termination rule
+      os <<" (and";
+      CHECK(!numGoals, "downward (in standard config) doesnt work for multiple goals!");
+      numGoals++;
+      for(Node *n:precond){
+        bool neg = n->isOfType<bool>() && !n->get<bool>();
+        if(neg) os <<" (not";
+        os <<' ' <<*n;
+//        os <<" (";
+//        for(uint i=0;i<n->parents.N;i++) os <<n->parents(i)->keys.last();
+//        os <<')';
+        if(neg) os <<')';
+      }
+      os <<')';
+    }
+  }
+  os <<")\n)" <<endl;
+}
+
+void FOL_World::writePDDLfiles(rai::String name){
+  ofstream f1(name+".domain.pddl");
+  ofstream f2(name+".problem.pddl");
+  writePDDLdomain(f1, name+"-domain");
+  writePDDLproblem(f2, name+"-domain", name+"-problem");
+}
+
+rai::String FOL_World::callPDDLsolver(){
+  writePDDLfiles("z");
+
+  rai::String cmd = "~/git/downward/fast-downward.py";
+  cmd <<" z.domain.pddl z.problem.pddl";
+  cmd <<" --search \"astar(ff(transform=no_transform(), cache_estimates=true))\"";
+
+  rai::system(cmd);
+
+  rai::system("mv sas_plan z.sas_plan; mv output.sas z.output.sas");
+
+  rai::String plan(FILE("z.sas_plan"));
+
+  //cut the last line comment with ';'
+  uint i=plan.N;
+  for(;i--;) if(plan(i)==';') break;
+  plan.resize(i, true);
+
+  cout <<"FOUND PLAN: " <<plan << endl;
+
+  return plan;
+}
+
+
 
 Node* FOL_World::addSymbol(const char* name) {
   return KB.newNode<bool>({name}, {}, true);
@@ -446,4 +607,10 @@ void FOL_World::addTerminalRule(const StringAA& literals) {
   }
   
   cout <<"CREATED RULE NODE:" <<*rule.isNodeOfGraph <<endl;
+}
+
+void FOL_World::addDecisionSequence(std::istream& is){
+  Graph& seq = KB.newSubgraph({"Decisions"}, {});
+  seq.read(is);
+  cout <<"CREATED DECISION SEQUENCE:" <<*seq.isNodeOfGraph <<endl;
 }

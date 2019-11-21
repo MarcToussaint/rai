@@ -10,7 +10,7 @@
 #include <Gui/opengl.h>
 #include <Kin/frame.h>
 
-PerceptViewer::PerceptViewer(Var<PerceptL>& _percepts, Var<rai::KinematicWorld> _kin)
+PerceptViewer::PerceptViewer(Var<PerceptL>& _percepts, Var<rai::Configuration> _kin)
   : Thread(STRING("PercViewer_"<<_percepts.name()), -1.),
     percepts(this, _percepts, true),
     kin(this, _kin, false) {
@@ -21,7 +21,7 @@ PerceptViewer::~PerceptViewer() {
   threadClose();
 }
 
-void glDrawPercepts(void *P) {
+void glDrawPercepts(void *P, OpenGL&) {
   PerceptL& percepts = *((PerceptL*)P);
   for(std::shared_ptr<Percept>& p:percepts) {
     glTransform(p->pose);
@@ -81,6 +81,6 @@ void PerceptViewer::step() {
 //  if(X.N==modelCopy.N) for(uint i=0; i<X.N; i++) modelCopy(i).glX = X(i);
 //  gl->dataLock.unlock();
   
-  gl->update(NULL, false); //NULL, false, false, true);
+  gl->update(nullptr, false); //nullptr, false, false, true);
 }
 

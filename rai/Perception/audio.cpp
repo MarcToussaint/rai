@@ -29,7 +29,7 @@ private:
   AVStream *s;
   
 public:
-  sAudioWriter_libav(const char* filename) : codec(NULL), oc(NULL), s(NULL) {
+  sAudioWriter_libav(const char* filename) : codec(nullptr), oc(nullptr), s(nullptr) {
     register_libav();
     
     oc = avformat_alloc_context();
@@ -59,13 +59,13 @@ public:
       oc->flags |= CODEC_FLAG_GLOBAL_HEADER;
       
     /* open it */
-    if(avcodec_open2(s->codec, codec, NULL) < 0)
+    if(avcodec_open2(s->codec, codec, nullptr) < 0)
       HALT("Encoder failed to open");
       
     if(avio_open(&(oc->pb), filename, AVIO_FLAG_WRITE) < 0) {
       HALT("Could not open " << filename);
     }
-    avformat_write_header(oc, NULL);
+    avformat_write_header(oc, nullptr);
   }
   ~sAudioWriter_libav() {
     avcodec_close(s->codec);
@@ -75,7 +75,7 @@ public:
   void write(const byteA& audio_samples) {
     AVPacket pkt;
     av_init_packet(&pkt);
-    pkt.data = NULL;
+    pkt.data = nullptr;
     
     AVFrame frame;
     frame.data[0] = audio_samples.p;
@@ -139,7 +139,7 @@ public:
     ss.channels = 2;
     
     int error;
-    if(!(pa = pa_simple_new(NULL, appname, PA_STREAM_RECORD, dev, "record", &ss, NULL, NULL, &error))) {
+    if(!(pa = pa_simple_new(nullptr, appname, PA_STREAM_RECORD, dev, "record", &ss, nullptr, nullptr, &error))) {
       HALT(": pa_simple_new() failed: " << pa_strerror(error));
     }
   }

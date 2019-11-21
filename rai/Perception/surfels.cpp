@@ -10,8 +10,8 @@
 #include <Geo/geo.h>
 #include <Perception/kinect2pointCloud.h>
 
-void glDrawSurfels(void *classP) { ((Surfels*)classP)->glDraw(false); }
-void glDrawSurfelIndices(void *classP) { ((Surfels*)classP)->glDraw(true); }
+void glDrawSurfels(void *classP, OpenGL&) { ((Surfels*)classP)->glDraw(false); }
+void glDrawSurfelIndices(void *classP, OpenGL&) { ((Surfels*)classP)->glDraw(true); }
 
 void Surfels::setRandom(uint N) {
   pos.resize(N,3);
@@ -73,7 +73,7 @@ void Surfels::recomputeSurfelIndices() {
     gl.add(glDrawSurfelIndices, this);
     gl.camera.setKinect();
   }
-//  gl.update(NULL, true);
+//  gl.update(nullptr, true);
   gl.renderInBack();
   flip_image(gl.captureImage);
   idxImage = gl.captureImage;

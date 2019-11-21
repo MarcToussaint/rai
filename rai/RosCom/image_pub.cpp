@@ -63,7 +63,7 @@ struct sImagePublisher {
     link_name = ros::names::resolve(str.str());
     
     // get seconds since epoch for 00:00 today (to offsets marc's %86400 stuff)
-    time_offset = time(NULL);
+    time_offset = time(nullptr);
     time_offset -= (((time_t)time_offset)%86400);
     
 #ifdef HAVE_ROS_IMAGE_TRANSPORT

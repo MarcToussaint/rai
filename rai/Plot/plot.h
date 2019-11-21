@@ -35,7 +35,7 @@ struct PlotModule {
   PlotModule();
   ~PlotModule();
 };
-extern PlotModule plotModule;
+extern Singleton<PlotModule> plotModule;
 
 //===========================================================================
 
@@ -67,7 +67,7 @@ void plotMatrixFlow(uintA& M, double len);
 void plotGaussians(const GaussianA& G);
 void plotGaussians(const GaussianL& G);
 
-void glDrawPlot(void *module);
+void glDrawPlot(void *module, OpenGL&);
 
 #endif
 

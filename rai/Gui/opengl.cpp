@@ -21,7 +21,7 @@
 #  include <png.h>
 #endif
 
-OpenGL& NoOpenGL = *((OpenGL*)(NULL));
+OpenGL& NoOpenGL = *((OpenGL*)(nullptr));
 
 //===========================================================================
 
@@ -37,7 +37,7 @@ Singleton<SingleGLAccess> singleGLAccess;
 // A freeglut singleton to ensure once initialization
 //
 
-//Mutex& OpenGLMutex();
+Mutex& OpenGLMutex();
 
 class FreeglutSpinner : Thread{
 private:
@@ -68,12 +68,12 @@ public:
 
   void delGL(uint i, OpenGL* gl) {
     CHECK_EQ(glwins(i), gl, "");
-    glwins(i)=NULL;
+    glwins(i)=nullptr;
     numWins--;
     if(!numWins){ //stop looping
       OpenGLMutex().unlock();
       threadClose();
-      OpenGLMutex().lock();
+      OpenGLMutex().lock(RAI_HERE);
       for(uint i=0;i<10;i++) glutMainLoopEvent(); //ensure that all windows are being closed
     }
   }
@@ -84,16 +84,16 @@ public:
 
   void open() {}
   void step() {
-    OpenGLMutex().lock();
+    OpenGLMutex().lock(RAI_HERE);
     glutMainLoopEvent();
     OpenGLMutex().unlock();
   }
   void close() {}
 };
 
-Singleton<FreeglutSpinner> singleGlProcess;
+Singleton<FreeglutSpinner> singletonGlSpinner; //();singleGlProcess;
 
-Mutex& OpenGLMutex() { return singleGlProcess.mutex; }
+Mutex& OpenGLMutex() { return singletonGlSpinner.mutex; }
 
 //===========================================================================
 //
@@ -107,14 +107,14 @@ struct sOpenGL : NonCopyable{
   
   //-- callbacks
   static void _Void() { }
-  static void _Draw() { auto fg=singleGlProcess();  OpenGL *gl=fg->getGL(glutGetWindow()); gl->Draw(gl->width,gl->height); glutSwapBuffers(); gl->isUpdating.setStatus(0); }
-  static void _Key(unsigned char key, int x, int y) {        singleGlProcess()->getGL(glutGetWindow())->Key(key); }
-  static void _Mouse(int button, int updown, int x, int y) { singleGlProcess()->getGL(glutGetWindow())->MouseButton(button,updown,x,y); }
-  static void _Motion(int x, int y) {                        singleGlProcess()->getGL(glutGetWindow())->MouseMotion(x,y); }
-  static void _PassiveMotion(int x, int y) {                 singleGlProcess()->getGL(glutGetWindow())->MouseMotion(x,y); }
-  static void _Reshape(int w,int h) {                        singleGlProcess()->getGL(glutGetWindow())->Reshape(w,h); }
-  static void _MouseWheel(int wheel, int dir, int x, int y) { singleGlProcess()->getGL(glutGetWindow())->Scroll(wheel,dir); }
-  static void _WindowStatus(int status)                     { singleGlProcess()->getGL(glutGetWindow())->WindowStatus(status); }
+  static void _Draw() { auto fg=singletonGlSpinner();  OpenGL *gl=fg->getGL(glutGetWindow()); gl->Draw(gl->width,gl->height); glutSwapBuffers(); gl->isUpdating.setStatus(0); }
+  static void _Key(unsigned char key, int x, int y) {        singletonGlSpinner()->getGL(glutGetWindow())->Key(key); }
+  static void _Mouse(int button, int updown, int x, int y) { singletonGlSpinner()->getGL(glutGetWindow())->MouseButton(button,updown,x,y); }
+  static void _Motion(int x, int y) {                        singletonGlSpinner()->getGL(glutGetWindow())->MouseMotion(x,y); }
+  static void _PassiveMotion(int x, int y) {                 singletonGlSpinner()->getGL(glutGetWindow())->MouseMotion(x,y); }
+  static void _Reshape(int w,int h) {                        singletonGlSpinner()->getGL(glutGetWindow())->Reshape(w,h); }
+  static void _MouseWheel(int wheel, int dir, int x, int y) { singletonGlSpinner()->getGL(glutGetWindow())->Scroll(wheel,dir); }
+  static void _WindowStatus(int status)                     { singletonGlSpinner()->getGL(glutGetWindow())->WindowStatus(status); }
 };
 
 //===========================================================================
@@ -125,7 +125,7 @@ struct sOpenGL : NonCopyable{
 void OpenGL::openWindow() {
   if(s->windowID==-1) {
     {
-      auto fg = singleGlProcess();
+      auto fg = singletonGlSpinner();
       glutInitWindowSize(width, height);
       //  glutInitWindowPosition(posx,posy);
       glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
@@ -149,7 +149,7 @@ void OpenGL::openWindow() {
 
 void OpenGL::closeWindow() {
   if(s->windowID!=-1) {
-    auto fg=singleGlProcess();
+    auto fg=singletonGlSpinner();
     glutDestroyWindow(s->windowID);
     fg->delGL(s->windowID, this);
   }
@@ -157,22 +157,37 @@ void OpenGL::closeWindow() {
 }
 
 void OpenGL::postRedrawEvent(bool fromWithinCallback) {
-  auto fg=singleGlProcess();
+  auto fg=singletonGlSpinner();
   openWindow();
   glutSetWindow(s->windowID);
   glutPostRedisplay();
-//  glXMakeCurrent(fgDisplay.Display, None, NULL);
+//  glXMakeCurrent(fgDisplay.Display, None, nullptr);
 }
 
 void OpenGL::resize(int w,int h) {
   if(s->windowID==-1) {
     Reshape(w, h);
   } else {
-    auto fg=singleGlProcess();
+    auto fg=singletonGlSpinner();
     glutSetWindow(s->windowID);
     glutReshapeWindow(w,h);
-//    glXMakeCurrent(fgDisplay.Display, None, NULL);
+//    glXMakeCurrent(fgDisplay.Display, None, nullptr);
   }
+}
+
+void OpenGL::beginNonThreadedDraw(){
+  openWindow();
+  NIY;
+//  auto fg = singletonGlSpinner();
+//  fg->mutex.lock(RAI_HERE);
+//  glutSetWindow(s->windowID);
+//  glfwMakeContextCurrent(s->window);
+}
+
+void OpenGL::endNonThreadedDraw(){
+//  auto fg = singletonGlSpinner();
+//  glfwSwapBuffers(s->window);
+//  fg->mutex.unlock();
 }
 
 #elif 0
@@ -200,13 +215,13 @@ struct sOpenGL {
   
   //-- callbacks
   // static void _Void() { }
-  // static void _Draw() { auto fg=singleGlProcess();  OpenGL *gl=fg->getGL(glutGetWindow()); gl->Draw(gl->width,gl->height); glutSwapBuffers(); gl->isUpdating.setStatus(0); }
-  // static void _Key(unsigned char key, int x, int y) {        singleGlProcess()->getGL(glutGetWindow())->Key(key,x,y); }
-  // static void _Mouse(int button, int updown, int x, int y) { singleGlProcess()->getGL(glutGetWindow())->Mouse(button,updown,x,y); }
-  // static void _Motion(int x, int y) {                        singleGlProcess()->getGL(glutGetWindow())->Motion(x,y); }
-  // static void _PassiveMotion(int x, int y) {                 singleGlProcess()->getGL(glutGetWindow())->Motion(x,y); }
-  // static void _Reshape(int w,int h) {                        singleGlProcess()->getGL(glutGetWindow())->Reshape(w,h); }
-  // static void _MouseWheel(int wheel, int dir, int x, int y){ singleGlProcess()->getGL(glutGetWindow())->MouseWheel(wheel,dir,x,y); }
+  // static void _Draw() { auto fg=singletonGlSpinner();  OpenGL *gl=fg->getGL(glutGetWindow()); gl->Draw(gl->width,gl->height); glutSwapBuffers(); gl->isUpdating.setStatus(0); }
+  // static void _Key(unsigned char key, int x, int y) {        singletonGlSpinner()->getGL(glutGetWindow())->Key(key,x,y); }
+  // static void _Mouse(int button, int updown, int x, int y) { singletonGlSpinner()->getGL(glutGetWindow())->Mouse(button,updown,x,y); }
+  // static void _Motion(int x, int y) {                        singletonGlSpinner()->getGL(glutGetWindow())->Motion(x,y); }
+  // static void _PassiveMotion(int x, int y) {                 singletonGlSpinner()->getGL(glutGetWindow())->Motion(x,y); }
+  // static void _Reshape(int w,int h) {                        singletonGlSpinner()->getGL(glutGetWindow())->Reshape(w,h); }
+  // static void _MouseWheel(int wheel, int dir, int x, int y){ singletonGlSpinner()->getGL(glutGetWindow())->MouseWheel(wheel,dir,x,y); }
   
   void accessWindow() {  //same as above, but also sets gl cocntext (glXMakeCurrent)
   }
@@ -262,11 +277,14 @@ struct GlfwSpinner : Thread {
 //    cout <<"HERE" <<count++;
     mutex.lock(RAI_HERE);
     glfwPollEvents();
-    for(OpenGL* gl: glwins) if(gl->s->window && gl->s->needsRedraw){
-      glfwMakeContextCurrent(gl->s->window);
+    for(OpenGL* gl: glwins) if(gl->s && gl->s->window && gl->s->needsRedraw){
       gl->isUpdating.setStatus(1);
+
+      glfwMakeContextCurrent(gl->s->window);
       gl->Draw(gl->width,gl->height);
       glfwSwapBuffers(gl->s->window);
+      glfwMakeContextCurrent(nullptr);
+
       gl->s->needsRedraw--;
       gl->isUpdating.setStatus(0);
     }
@@ -285,6 +303,7 @@ struct GlfwSpinner : Thread {
     glfwMakeContextCurrent(gl->s->window);
     gl->Draw(gl->width,gl->height);
     glfwSwapBuffers(gl->s->window);
+    glfwMakeContextCurrent(nullptr);
 #endif
     if(glwins.N==1) start=true; //start looping
     mutex.unlock();
@@ -365,7 +384,7 @@ void OpenGL::openWindow() {
       glfwWindowHint(GLFW_VISIBLE, GL_TRUE);
     }
     if(!title.N) title="GLFW window";
-    s->window = glfwCreateWindow(width, height, title.p, NULL, NULL);
+    s->window = glfwCreateWindow(width, height, title.p, nullptr, nullptr);
     glfwMakeContextCurrent(s->window);
     glfwSetWindowUserPointer(s->window, this);
     glfwSetMouseButtonCallback(s->window, GlfwSpinner::_MouseButton);
@@ -376,6 +395,7 @@ void OpenGL::openWindow() {
     glfwSetWindowCloseCallback(s->window, GlfwSpinner::_Close);
 
     glfwSwapInterval(1);
+    glfwMakeContextCurrent(nullptr);
     fg->mutex.unlock();
 
     fg->addGL(this);
@@ -383,17 +403,24 @@ void OpenGL::openWindow() {
 }
 
 void OpenGL::closeWindow() {
+  s->needsRedraw=0;
   if(s->window) {
     {
       auto fg = singletonGlSpinner();
       fg->mutex.lock(RAI_HERE);
       glfwDestroyWindow(s->window);
-      s->window=0;
       fg->mutex.unlock();
       isUpdating.setStatus(0);
       watching.setStatus(0);
     }
     singletonGlSpinner()->delGL(this);
+  }
+}
+
+void OpenGL::setTitle(const char* _title){
+  if(_title) title = _title;
+  if(s->window){
+    glfwSetWindowTitle(s->window, title.p);
   }
 }
 
@@ -407,6 +434,7 @@ void OpenGL::beginNonThreadedDraw(){
 void OpenGL::endNonThreadedDraw(){
   auto fg = singletonGlSpinner();
   glfwSwapBuffers(s->window);
+  glfwMakeContextCurrent(nullptr);
   fg->mutex.unlock();
 }
 
@@ -419,9 +447,24 @@ void OpenGL::postRedrawEvent(bool fromWithinCallback) {
 
 void OpenGL::resize(int w,int h) {
   openWindow();
-  glfwSetWindowSize(s->window, w, h);
   Reshape(w, h);
+  glfwSetWindowSize(s->window, width, height);
 }
+
+#endif
+
+
+#ifndef RAI_GL
+int GLUT_ACTIVE_SHIFT = 1;
+
+void OpenGL::openWindow() {}
+void OpenGL::closeWindow() {}
+void OpenGL::postRedrawEvent(bool fromWithinCallback) {}
+void OpenGL::resize(int w,int h) {}
+
+struct sOpenGL : NonCopyable {
+  sOpenGL(OpenGL *gl){ NICO }
+};
 
 #endif
 
@@ -446,8 +489,28 @@ uint OpenGL::selectionBuffer[1000];
 // utility implementations
 //
 
+void id2color(byte rgb[3], uint id) {
+  rgb[0] = ((id>> 6)&0x3f) | ((id&1)<<7) | ((id& 8)<<3);
+  rgb[1] = ((id>>12)&0x3f) | ((id&2)<<6) | ((id&16)<<2);
+  rgb[2] = ((id>>18)&0x3f) | ((id&4)<<5) | ((id&32)<<1);
+}
+
+uint color2id(byte rgb[3]) {
+  uint id = 0;
+  id |= (rgb[0]&0x80)>>7 | (rgb[1]&0x80)>>6 | (rgb[2]&0x80)>>5;
+  id |= (rgb[0]&0x40)>>3 | (rgb[1]&0x40)>>2 | (rgb[2]&0x40)>>1;
+  id |= (rgb[0]&0x3f)<<6 | (rgb[1]&0x3f)<<12 | (rgb[2]&0x3f)<<18;
+  return id;
+}
+
+arr id2color(uint id){
+  byteA rgb(3);
+  id2color(rgb.p, id);
+  return ARR(rgb(0)/256., rgb(1)/256., rgb(2)/256.);
+}
+
 #ifdef RAI_GL
-void glStandardLight(void*) {
+void glStandardLight(void*, OpenGL&) {
   glEnable(GL_LIGHTING);
   static GLfloat ambient[]   = { .5, .5, .5, 1.0 };
   static GLfloat diffuse[]   = { .2, .2, .2, 1.0 };
@@ -464,9 +527,9 @@ void glStandardLight(void*) {
   glEnable(GL_LIGHT0);
 }
 
-void glStandardScene(void*) {
+void glStandardScene(void*, OpenGL& gl) {
   glPushAttrib(GL_CURRENT_BIT);
-  glStandardLight(NULL);
+  glStandardLight(nullptr, gl);
   //  glDrawFloor(10, .8, .8, .8);
   //  glDrawFloor(10, 1.5, 0.83, .0);
   glDrawFloor(10., 108./255., 123./255., 139./255.);
@@ -474,7 +537,7 @@ void glStandardScene(void*) {
   glPopAttrib();
 }
 
-void glStandardOriginAxes(void*) {
+void glStandardOriginAxes(void*, OpenGL&) {
   glDrawAxes(.1);
 }
 
@@ -515,26 +578,6 @@ void glColor(const arr& col) {
   if(col.N==4) glColor(col.p[0], col.p[1], col.p[2], col.p[3]);
 }
 
-void id2color(byte rgb[3], uint id) {
-  rgb[0] = ((id>> 6)&0x3f) | ((id&1)<<7) | ((id& 8)<<3);
-  rgb[1] = ((id>>12)&0x3f) | ((id&2)<<6) | ((id&16)<<2);
-  rgb[2] = ((id>>18)&0x3f) | ((id&4)<<5) | ((id&32)<<1);
-}
-
-uint color2id(byte rgb[3]) {
-  uint id = 0;
-  id |= (rgb[0]&0x80)>>7 | (rgb[1]&0x80)>>6 | (rgb[2]&0x80)>>5;
-  id |= (rgb[0]&0x40)>>3 | (rgb[1]&0x40)>>2 | (rgb[2]&0x40)>>1;
-  id |= (rgb[0]&0x3f)<<6 | (rgb[1]&0x3f)<<12 | (rgb[2]&0x3f)<<18;
-  return id;
-}
-
-arr id2color(uint id){
-  byteA rgb(3);
-  id2color(rgb.p, id);
-  return ARR(rgb(0)/256., rgb(1)/256., rgb(2)/256.);
-}
-
 void glColorId(uint id) {
   byte rgb[3];
   glDisable(GL_LIGHTING);
@@ -542,9 +585,14 @@ void glColorId(uint id) {
   glColor3ubv(rgb);
 }
 
+extern bool Geo_mesh_drawColors;
+
 void OpenGL::drawId(uint id) {
   if(drawMode_idColor) {
     glColorId(id);
+    Geo_mesh_drawColors=false;
+  }else{
+    Geo_mesh_drawColors=true;
   }
 }
 
@@ -1338,11 +1386,22 @@ int OpenGL::watchImage(const byteA &_img, bool wait, float _zoom) {
   glWatchImage(img, wait, 20);
 }*/
 
+int OpenGL::displayGrey(const floatA &x, bool wait, float _zoom) {
+  static byteA img;
+  resizeAs(img, x);
+  float mi=x.min(), ma=x.max();
+  text.clear() <<"displayGrey" <<" max:" <<ma <<" min:" <<mi <<endl;
+  for(uint i=0; i<x.N; i++) {
+    img.elem(i)=(byte)(255.*(x.elem(i)-mi)/(ma-mi));
+  }
+  return watchImage(img, wait, _zoom);
+}
+
 int OpenGL::displayGrey(const arr &x, bool wait, float _zoom) {
   static byteA img;
   resizeAs(img, x);
   double mi=x.min(), ma=x.max();
-  text.clear() <<"displayGrey" <<" max=" <<ma <<"min=" <<mi <<endl;
+  text.clear() <<"displayGrey" <<" max:" <<ma <<"min:" <<mi <<endl;
   for(uint i=0; i<x.N; i++) {
     img.elem(i)=(byte)(255.*(x.elem(i)-mi)/(ma-mi));
   }
@@ -1364,9 +1423,9 @@ int OpenGL::displayRedBlue(const arr &x, bool wait, float _zoom) {
   return watchImage(img, wait, _zoom);
 }
 
-void glDrawUI(void *p) {
+void glDrawUI(void *p, OpenGL& gl) {
   glPushName(0x10);
-  ((glUI*)p)->glDraw();
+  ((glUI*)p)->glDraw(gl);
   glPopName();
 }
 
@@ -1403,21 +1462,25 @@ void glDrawDiamond(float, float, float, float, float, float) { NICO }
 void glDrawSphere(float radius) { NICO }
 void glDrawFloor(float, float, float, float) { NICO }
 void glDrawCappedCylinder(float, float) { NICO }
-void glStandardLight(void*) { NICO }
-void glDrawAxes(double) { NICO }
+void glStandardLight(void*, OpenGL&) { NICO }
+void glDrawAxis(double) { NICO }
+void glDrawAxes(double, bool) { NICO }
 void glDrawDiamond(float, float, float) { NICO }
 void glDrawBox(float, float, float, bool) { NICO }
+void glDrawCamera(const rai::Camera&) { NICO }
 void glDrawCylinder(float, float, bool) { NICO }
 
 // void glStandardLight(void*) { NICO }   // TOBIAS: das hier wird doch schon ueber opengl_void.cxx definiert
-void glStandardScene(void*) { NICO }
+void glStandardScene(void*, OpenGL&) { NICO }
+void glStandardOriginAxes(void*, OpenGL&) { NICO }
 uint glImageTexture(const byteA &img) { NICO }
+void glDrawText(const char* txt, float x, float y, float z, bool largeFont){ NICO }
 void glDrawTexQuad(uint texture,
                    float x1, float y1, float z1, float x2, float y2, float z2,
                    float x3, float y3, float z3, float x4, float y4, float z4,
                    float mulX, float mulY) { NICO }
-void OpenGL::watchImage(const floatA &_img, bool wait, float _zoom) { NICO }
-void OpenGL::watchImage(const byteA &_img, bool wait, float _zoom) { NICO }
+int OpenGL::watchImage(const floatA &_img, bool wait, float _zoom) { NICO }
+int OpenGL::watchImage(const byteA &_img, bool wait, float _zoom) { NICO }
 void glDrawUI(void *p) { NICO }
 bool glUI::hoverCallback(OpenGL& gl) { NICO }
 bool glUI::clickCallback(OpenGL& gl) { NICO }
@@ -1437,14 +1500,14 @@ bool glUI::clickCallback(OpenGL& gl) { NICO }
 //
 
 OpenGL::OpenGL(const char* _title, int w, int h, bool _offscreen)
-  : s(NULL), title(_title), width(w), height(h), offscreen(_offscreen), reportEvents(false), topSelection(NULL), fboId(0), rboColor(0), rboDepth(0) {
+  : s(nullptr), title(_title), width(w), height(h), offscreen(_offscreen), reportEvents(false), topSelection(nullptr), fboId(0), rboColor(0), rboDepth(0) {
   //RAI_MSG("creating OpenGL=" <<this);
   s=new sOpenGL(this); //this might call some callbacks (Reshape/Draw) already!
   init();
 }
 
 OpenGL::OpenGL(void *container)
-  : s(NULL), width(0), height(0), reportEvents(false), topSelection(NULL), fboId(0), rboColor(0), rboDepth(0) {
+  : s(nullptr), width(0), height(0), reportEvents(false), topSelection(nullptr), fboId(0), rboColor(0), rboDepth(0) {
   s=new sOpenGL(this); //this might call some callbacks (Reshape/Draw) already!
   init();
 }
@@ -1453,7 +1516,7 @@ OpenGL::~OpenGL() {
   clear();
   closeWindow();
   delete s;
-  s=NULL;
+  s=nullptr;
 }
 
 OpenGL* OpenGL::newClone() const {
@@ -1486,9 +1549,9 @@ void OpenGL::init() {
 
 struct CstyleDrawer : GLDrawer {
   void *classP;
-  void (*call)(void*);
-  CstyleDrawer(void (*call)(void*), void* classP) : classP(classP), call(call) {}
-  void glDraw(OpenGL&) { call(classP); }
+  void (*call)(void*,OpenGL&);
+  CstyleDrawer(void (*call)(void*,OpenGL&), void* classP) : classP(classP), call(call) {}
+  void glDraw(OpenGL& gl) { call(classP, gl); }
 };
 
 struct LambdaDrawer : GLDrawer {
@@ -1505,8 +1568,8 @@ struct CstyleInitCall : OpenGL::GLInitCall {
 };
 
 /// add a draw routine
-void OpenGL::add(void (*call)(void*), void* classP) {
-  CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
+void OpenGL::add(void (*call)(void*,OpenGL&), void* classP) {
+  CHECK(call!=0, "OpenGL: nullptr pointer to drawing routine");
   auto _dataLock = dataLock(RAI_HERE);
   toBeDeletedOnCleanup.append(new CstyleDrawer(call, classP));
   drawers.append(toBeDeletedOnCleanup.last());
@@ -1515,14 +1578,14 @@ void OpenGL::add(void (*call)(void*), void* classP) {
 
 /// add a draw routine
 void OpenGL::addInit(void (*call)(void*), void* classP) {
-  CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
+  CHECK(call!=0, "OpenGL: nullptr pointer to drawing routine");
   auto _dataLock = dataLock(RAI_HERE);
   initCalls.append(new CstyleInitCall(call, classP));
 
 }
 
 void OpenGL::add(std::function<void (OpenGL&)> call){
-  CHECK(call, "OpenGL: NULL std::function to drawing routine");
+  CHECK(call, "OpenGL: nullptr std::function to drawing routine");
   auto _dataLock = dataLock(RAI_HERE);
 //  toBeDeletedOnCleanup.append(new CstyleDrawer(call, classP));
   drawers.append(new LambdaDrawer(call));
@@ -1530,8 +1593,8 @@ void OpenGL::add(std::function<void (OpenGL&)> call){
 }
 
 /// add a draw routine to a view
-void OpenGL::addSubView(uint v, void (*call)(void*), void* classP) {
-  CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
+void OpenGL::addSubView(uint v, void (*call)(void*,OpenGL&), void* classP) {
+  CHECK(call!=0, "OpenGL: nullptr pointer to drawing routine");
   auto _dataLock = dataLock(RAI_HERE);
   if(v>=views.N) views.resizeCopy(v+1);
   toBeDeletedOnCleanup.append(new CstyleDrawer(call, classP));
@@ -1570,7 +1633,7 @@ void OpenGL::clearSubView(uint v) {
 
 /// remove a draw routine
 //void OpenGL::remove(void (*call)(void*), const void* classP) {
-//  CHECK(call!=0, "OpenGL: NULL pointer to drawing routine");
+//  CHECK(call!=0, "OpenGL: nullptr pointer to drawing routine");
 //  uint i;
 //  for(i=0; i<drawers.N; i++) if(drawers(i).call==call && drawers(i).classP==classP) break;
 //  CHECK(i<drawers.N, "value to remove not found");
@@ -1691,7 +1754,9 @@ void OpenGL::Draw(int w, int h, rai::Camera *cam, bool callerHasAlreadyLocked) {
   if(mode==GL_SELECT) glInitNames();
   for(uint i=0; i<drawers.N; i++) {
     if(mode==GL_SELECT) glLoadName(i);
+//    drawers(i)->glDrawerMutex.lock(RAI_HERE);
     drawers(i)->glDraw(*this);
+//    drawers(i)->glDrawerMutex.unlock();
     glLoadIdentity();
   }
   
@@ -1801,7 +1866,9 @@ void OpenGL::Select(bool callerHasAlreadyLocked) {
   if(mouseView==-1) {
     for(i=0; i<drawers.N; i++) {
       glLoadName(i);
+//      drawers(i)->glDrawerMutex.lock(RAI_HERE);
       drawers(i)->glDraw(*this);
+//      drawers(i)->glDrawerMutex.unlock();
       GLint s;
       glGetIntegerv(GL_NAME_STACK_DEPTH, &s);
       if(s!=0) RAI_MSG("OpenGL name stack has not depth 1 (pushs>pops) in SELECT mode:" <<s);
@@ -1812,7 +1879,7 @@ void OpenGL::Select(bool callerHasAlreadyLocked) {
   }
   
 #else
-  Draw(width, height, NULL, true);
+  Draw(width, height, nullptr, true);
 #endif
   glLoadIdentity();
   
@@ -1821,7 +1888,7 @@ void OpenGL::Select(bool callerHasAlreadyLocked) {
   selection.resize(n);
   
   GLuint *obj, maxD=(GLuint)(-1);
-  topSelection=NULL;
+  topSelection=nullptr;
   for(j=0, i=0; i<(uint)n; i++) {
     obj=selectionBuffer+j;
     j+=3+obj[0];
@@ -1874,7 +1941,7 @@ int OpenGL::update(const char *txt, bool nonThreaded) {
   openWindow();
   if(txt) text.clear() <<txt;
 #ifdef RAI_GL
-#if 0
+#if RAI_FREEGLUT
   if(nonThreaded) isUpdating.waitForStatusEq(0);
   isUpdating.setStatus(1);
   postRedrawEvent(false);
@@ -2012,7 +2079,7 @@ void OpenGL::saveEPS(const char *filename) {
                    GL2PS_EPS, GL2PS_BSP_SORT, GL2PS_SILENT |
                    GL2PS_SIMPLE_LINE_OFFSET | GL2PS_NO_BLENDING |
                    GL2PS_OCCLUSION_CULL | GL2PS_BEST_ROOT,
-                   GL_RGBA, 0, NULL, 0, 0, 0, buffsize,
+                   GL_RGBA, 0, nullptr, 0, 0, 0, buffsize,
                    fp, filename);
     Draw(width, height);
     state = gl2psEndPage();
@@ -2092,7 +2159,7 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y) {
   mouseposx=_x; mouseposy=_y;
   lastEvent.set(mouse_button, -1, _x, _y, 0., 0.);
   
-  GLView *v;
+  GLView *v=0;
   rai::Camera *cam=&camera;
   rai::Vector vec;
   for(mouseView=views.N; mouseView--;) {
@@ -2103,7 +2170,10 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y) {
       break;
     }
   }
-  if(mouseView==-1) getSphereVector(vec, _x, _y, 0, w, 0, h);
+  if(mouseView==-1){
+    getSphereVector(vec, _x, _y, 0, w, 0, h);
+    v=0;
+  }
   CALLBACK_DEBUG("associated to view " <<mouseView <<" x=" <<vec.x <<" y=" <<vec.y <<endl);
   
   if(!downPressed) {  //down press
@@ -2129,7 +2199,7 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y) {
     drawFocus = false;
     if(!downPressed){
       drawMode_idColor = true;
-      Draw(w, h, NULL, true);
+      Draw(w, h, nullptr, true);
       double x=mouseposx, y=mouseposy, d = captureDepth(mouseposy, mouseposx);
       if(d<.01 || d==1.) {
         cout <<"NO SELECTION: SELECTION DEPTH = " <<d <<' ' <<camera.glConvertToTrueDepth(d) <<endl;
@@ -2152,9 +2222,16 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y) {
     if(d<.001 || d==1.) {
       cout <<"NO SELECTION: SELECTION DEPTH = " <<d <<' ' <<camera.glConvertToTrueDepth(d) <<endl;
     } else {
-      double x=mouseposx, y=mouseposy;
-      unproject(x, y, d, true, mouseView);
-      cam->focus(x, y, d);
+      arr x = {(double)mouseposx, (double)mouseposy, d};
+      if(v){
+        x(0) -= double(v->le)*width;
+        x(1) -= double(v->bo)*height;
+        v->camera.unproject_fromPixelsAndGLDepth(x, (v->ri-v->le)*width, (v->to-v->bo)*height);
+        v->camera.focus(x);
+      }else{
+        cam->unproject_fromPixelsAndGLDepth(x, width, height);
+        cam->focus(x);
+      }
     }
   }
   
@@ -2169,8 +2246,17 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y) {
 void OpenGL::Scroll(int wheel, int direction) {
   auto _dataLock = dataLock(RAI_HERE);
   CALLBACK_DEBUG("Mouse Wheel Callback: " <<wheel <<' ' <<direction);
-  if(direction>0) camera.X.pos += camera.X.rot*Vector_z * (.1 * (camera.X.pos-camera.foc).length());
-  else            camera.X.pos -= camera.X.rot*Vector_z * (.1 * (camera.X.pos-camera.foc).length());
+  rai::Camera *cam=&camera;
+  for(mouseView=views.N; mouseView--;) {
+    GLView *v = &views(mouseView);
+    if(mouseposx<v->ri*width && mouseposx>v->le*width && mouseposy<v->to*height && mouseposy>v->bo*height) {
+      cam=&views(mouseView).camera;
+      break;
+    }
+  }
+
+  if(direction>0) cam->X.pos += cam->X.rot*Vector_z * (.1 * (cam->X.pos-cam->foc).length());
+  else            cam->X.pos -= cam->X.rot*Vector_z * (.1 * (cam->X.pos-cam->foc).length());
 
   postRedrawEvent(true);
 }
@@ -2268,9 +2354,9 @@ struct XBackgroundContext {
     static int visual_attribs[] = { None };
     int context_attribs[] = { GLX_CONTEXT_MAJOR_VERSION_ARB, 3, GLX_CONTEXT_MINOR_VERSION_ARB, 0, None };
     
-    dpy = NULL; //XOpenDisplay(0);
+    dpy = nullptr; //XOpenDisplay(0);
     fbcount = 0;
-    fbc = NULL;
+    fbc = nullptr;
     
     /* open display */
     if(!(dpy = XOpenDisplay(0))) HALT("Failed to open display");
@@ -2335,19 +2421,19 @@ void OpenGL::renderInBack(int w, int h) {
   if(w<0) w=width;
   if(h<0) h=height;
   
-  singletonGlSpinner(); //ensure that glut is initialized (if the drawer called glut)
+//  singletonGlSpinner(); //ensure that glut is initialized (if the drawer called glut)
   
-  auto mut=singleGLAccess();
-  auto _dataLock = dataLock(RAI_HERE);
-  xBackgroundContext()->makeCurrent();
-  
+//  auto mut=singleGLAccess();
+//  auto _dataLock = dataLock(RAI_HERE);
+//  xBackgroundContext()->makeCurrent();
+
   CHECK_EQ(w%4,0,"should be devidable by 4!!");
   
   isUpdating.waitForStatusEq(0);
   isUpdating.setStatus(1);
   
   if(!rboColor || !rboDepth) { //need to initialize
-    glewInit();
+//    glewInit();
     glGenRenderbuffers(1, &rboColor);  // Create a new renderbuffer unique name.
     glBindRenderbuffer(GL_RENDERBUFFER, rboColor);  // Set it as the current.
     glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, w, h); // Sets storage type for currently bound renderbuffer.
@@ -2413,14 +2499,14 @@ void OpenGL::renderInBack(int w, int h) {
           break;
         }
       }
-      exit(EXIT_FAILURE);
+      HALT("couldn't create framebuffer");
     }
   }
   
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fboId);
   
   //-- draw!
-  Draw(w, h, NULL, true);
+  Draw(w, h, nullptr, true);
   glFlush();
   
   //-- read
@@ -2436,8 +2522,6 @@ void OpenGL::renderInBack(int w, int h) {
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
   
   isUpdating.setStatus(0);
-
-
 #endif
 }
 
@@ -2467,7 +2551,7 @@ void glUI::addButton(uint x, uint y, const char *name, const char *img1, const c
   b.img2=img;    add_alpha_channel(b.img2, 200);
 }
 
-void glUI::glDraw() {
+void glUI::glDraw(OpenGL& gl) {
 #ifdef RAI_GL
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
@@ -2535,7 +2619,7 @@ void read_png(byteA &img, const char *file_name, bool swap_rows) {
 
   FILE *fp = fopen(file_name, "rb");
   
-  png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+  png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
   CHECK(png, "");
   
   png_infop info = png_create_info_struct(png);

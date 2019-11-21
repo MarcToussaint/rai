@@ -120,7 +120,7 @@ struct CtrlTask {
   arr y, v, J_y;     ///< update() will evaluate these for a given kinematic configuration
   
   //-- pos/vel ctrl task
-  MotionProfile *ref;  ///< non-NULL iff this is a pos/vel task
+  MotionProfile *ref;  ///< non-nullptr iff this is a pos/vel task
   arr y_ref, v_ref;    ///< update() will define compute these references (reference=NOW, target=FUTURE)
   arr prec;            ///< Cholesky(!) of C, not C itself: sumOfSqr(prec*(y-y_ref)) is the error, and prec*J the Jacobian
   uint hierarchy;      ///< hierarchy level in hiearchycal inverse kinematics: higher = higher priority
@@ -137,11 +137,11 @@ struct CtrlTask {
   CtrlTask(const char* name, Feature* map, const Graph& params);
   ~CtrlTask();
   
-  CT_Status update(double tau, const rai::KinematicWorld& world);
+  CT_Status update(double tau, const rai::Configuration& world);
   void resetState() { if(ref) ref->resetState(); status=CT_init; }
   
   arr getPrec();
-  void getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const rai::KinematicWorld& world);
+  void getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const rai::Configuration& world);
   
   MotionProfile_PD& PD();
   void setRef(MotionProfile *_ref);
@@ -153,8 +153,8 @@ struct CtrlTask {
 
 //===========================================================================
 
-void getForceControlCoeffs(arr& f_des, arr& u_bias, arr& KfL, arr& J_ft, const rai::KinematicWorld& world);
-void fwdSimulateControlLaw(arr &Kp, arr &Kd, arr &u0, rai::KinematicWorld& world);
+void getForceControlCoeffs(arr& f_des, arr& u_bias, arr& KfL, arr& J_ft, const rai::Configuration& world);
+void fwdSimulateControlLaw(arr &Kp, arr &Kd, arr &u0, rai::Configuration& world);
 
 //===========================================================================
 
@@ -165,24 +165,24 @@ struct TaskControlMethods {
   CtrlTask qNullCostRef; ///< defines the 'desired behavior' in qddot-space (regularization of operational space control)
   boolA lockJoints;
   
-  TaskControlMethods(const rai::KinematicWorld& world);
+  TaskControlMethods(const rai::Configuration& world);
   
   CtrlTask* addPDTask(const char* name, double decayTime, double dampingRatio, Feature *map);
   
-  void updateCtrlTasks(double tau, const rai::KinematicWorld& world);
+  void updateCtrlTasks(double tau, const rai::Configuration& world);
   void resetCtrlTasksState();
   
-  void lockJointGroup(const char *groupname, rai::KinematicWorld& world, bool lockThem=true);
+  void lockJointGroup(const char *groupname, rai::Configuration& world, bool lockThem=true);
   
   double getIKCosts(const arr& q=NoArr, const arr& q0=NoArr, arr& g=NoArr, arr& H=NoArr);
-  arr inverseKinematics(arr& qdot, const arr& nullRef=NoArr, double* cost=NULL);
+  arr inverseKinematics(arr& qdot, const arr& nullRef=NoArr, double* cost=nullptr);
   arr inverseKinematics_hierarchical();
   arr getComplianceProjection();
   arr operationalSpaceControl();
   arr calcOptimalControlProjected(arr &Kp, arr &Kd, arr &u0, const arr& q, const arr& qdot, const arr& M, const arr& F); ///< returns the linearized control law
   arr getDesiredLinAccLaw(arr &Kp, arr &Kd, arr &u0, const arr& q, const arr& qdot); ///< returns the linearized control law
   arr getDesiredConstraintForces(); ///< J^T lambda^*
-  void calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, double& gamma, const rai::KinematicWorld& world); ///< returns the force controller coefficients
+  void calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, double& gamma, const rai::Configuration& world); ///< returns the force controller coefficients
   void reportCurrentState();
 };
 

@@ -25,11 +25,11 @@
 struct Feature {
   ObjectiveType type; // element of {cost_feature, inequality, equality} MAYBE: move this to Task?
   uint order;       ///< 0=position, 1=vel, etc
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G, int t=-1) = 0; ///< this needs to be overloaded
-  virtual void phi(arr& y, arr& J, const WorldL& G, double tau, int t=-1); ///< if not overloaded this computes the generic pos/vel/acc depending on order
-  virtual uint dim_phi(const rai::KinematicWorld& G) = 0; //the dimensionality of $y$
+  virtual void phi(arr& y, arr& J, const rai::Configuration& G, int t=-1) = 0; ///< this needs to be overloaded
+  virtual void phi(arr& y, arr& J, const ConfigurationL& G, double tau, int t=-1); ///< if not overloaded this computes the generic pos/vel/acc depending on order
+  virtual uint dim_phi(const rai::Configuration& G) = 0; //the dimensionality of $y$
   
-  VectorFunction vf(rai::KinematicWorld& G) {
+  VectorFunction vf(rai::Configuration& G) {
     return [this, &G](arr& y, arr& J, const arr& x) -> void {
       G.setJointState(x);
       phi(y, J, G, -1);
@@ -52,7 +52,7 @@ struct Objective {
   bool active;
   arr target, prec;  ///< optional linear, potentially time-dependent, rescaling (with semantics of target & precision)
   
-  uint dim_phi(const rai::KinematicWorld& G, uint t) {
+  uint dim_phi(const rai::Configuration& G, uint t) {
     if(!active || prec.N<=t || !prec(t)) return 0; return map.dim_phi(G);
   }
   
@@ -63,7 +63,7 @@ struct Objective {
                     double _prec=1.);
 };
 
-Objective* newTask(const Node* specs, const rai::KinematicWorld& world, uint Tinterval, uint Tzero=0);
+Objective* newTask(const Node* specs, const rai::Configuration& world, uint Tinterval, uint Tzero=0);
 
 //===========================================================================
 //
@@ -73,8 +73,8 @@ Objective* newTask(const Node* specs, const rai::KinematicWorld& world, uint Tin
 /// This class allows you to DESCRIBE a motion planning problem, nothing more
 struct KOMO {
   //engines to compute things
-  rai::KinematicWorld& world;  ///< the original world
-  WorldL configurations;       ///< copies for each time slice; including kinematic switches
+  rai::Configuration& world;  ///< the original world
+  ConfigurationL configurations;       ///< copies for each time slice; including kinematic switches
   bool useSwift;
   
   //******* the following three sections are parameters that define the problem
@@ -104,7 +104,7 @@ struct KOMO {
   arr dualMatrix;
   rai::Array<ObjectiveTypeA> ttMatrix;
   
-  KOMO(rai::KinematicWorld& _world, bool useSwift=true);
+  KOMO(rai::Configuration& _world, bool useSwift=true);
   
   KOMO& operator=(const KOMO& other);
   
@@ -122,11 +122,11 @@ struct KOMO {
 //                             const arr& y_finalTarget, double y_finalPrec, const arr& y_midTarget=NoArr, double y_midPrec=-1., double earlyFraction=-1.);
 
   //-- cost infos
-  bool getPhi(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, const WorldL& G, double tau); ///< the general task vector and its Jacobian
-  uint dim_phi(const rai::KinematicWorld& G, uint t);
-  uint dim_g(const rai::KinematicWorld& G, uint t);
-  uint dim_h(const rai::KinematicWorld& G, uint t);
-  StringA getPhiNames(const rai::KinematicWorld& G, uint t);
+  bool getPhi(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, const ConfigurationL& G, double tau); ///< the general task vector and its Jacobian
+  uint dim_phi(const rai::Configuration& G, uint t);
+  uint dim_g(const rai::Configuration& G, uint t);
+  uint dim_h(const rai::Configuration& G, uint t);
+  StringA getPhiNames(const rai::Configuration& G, uint t);
   void reportFeatures(bool brief=false);
   void costReport(bool gnuplt=true); ///< also computes the costMatrix
   Graph getReport();

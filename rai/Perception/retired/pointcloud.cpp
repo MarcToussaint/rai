@@ -454,7 +454,7 @@ ObjectTransformator::ObjectTransformator(const char* name) : Thread(name) {
 void ObjectTransformator::open() {
 }
 
-void createOrsObject(rai::KinematicWorld& world, rai::Body& body, const ObjectBelief *object, const arr& transformation) {
+void createOrsObject(rai::Configuration& world, rai::Body& body, const ObjectBelief *object, const arr& transformation) {
   rai::Transformation t;
   t.pos = object->position;
   t.rot = object->rotation;

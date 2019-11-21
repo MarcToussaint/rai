@@ -27,6 +27,7 @@ extern ::Mutex cvMutex;
 inline cv::Mat CV(const byteA& img) {
   if(img.nd==2) return cv::Mat(img.d0, img.d1, CV_8UC1, img.p);
   if(img.nd==3) return cv::Mat(img.d0, img.d1, CV_8UC3, img.p);
+  if(img.nd==4) return cv::Mat(img.d0, img.d1, CV_8UC4, img.p);
   return cv::Mat();
 }
 
@@ -68,6 +69,7 @@ void getDiffProb(floatA& diff, const byteA& img0, const byteA& img1, float pixSd
 
 #else
 
+#include <Core/array.h>
 inline char cvShow(const byteA& img, const char *window="opencv", bool wait=false) { NICO }
 inline char cvShow(const floatA& img, const char *window="opencv", bool wait=false) { NICO };
 void getDiffProb(floatA& diff, const byteA& img0, const byteA& img1, float pixSdv, uint range) { NICO };

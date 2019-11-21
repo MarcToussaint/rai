@@ -31,7 +31,9 @@ struct LagrangianProblem : ScalarFunction { //TODO: rename: UnconstrainedLagrang
   arr x;               ///< point where P was last evaluated
   arr phi_x, J_x, H_x; ///< features at x
   ObjectiveTypeA tt_x; ///< feature types at x
-  
+
+  ostream *logFile=nullptr;  ///< file for logging
+
   LagrangianProblem(ConstrainedProblem &P, OptOptions opt=NOOPT, arr& lambdaInit=NoArr);
   
   double lagrangian(arr& dL, arr& HL, const arr& x); ///< CORE METHOD: the unconstrained scalar function F
@@ -41,7 +43,7 @@ struct LagrangianProblem : ScalarFunction { //TODO: rename: UnconstrainedLagrang
   double get_sumOfHviolations(); ///< info on the terms from last call
   uint get_dimOfType(const ObjectiveType& tt); ///< info on the terms from last call
   
-  void aulaUpdate(bool anyTimeVariant, double lambdaStepsize=1., double muInc=1., double *L_x=NULL, arr &dL_x=NoArr, arr &HL_x=NoArr);
+  void aulaUpdate(bool anyTimeVariant, double lambdaStepsize=1., double muInc=1., double *L_x=nullptr, arr &dL_x=NoArr, arr &HL_x=NoArr);
   
   //private: used gpenalty function
   double gpenalty(double g);

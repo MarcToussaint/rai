@@ -27,14 +27,14 @@ struct TaskControlThread : Thread {
   VAR(CtrlMsg, ctrl_obs) //< the message received from the RTController
   VAR(rai::Array<CtrlTask*>, ctrlTasks)
   VAR(rai::String, effects)
-  VAR(rai::KinematicWorld, modelWorld)
+  VAR(rai::Configuration, modelWorld)
   VAR(bool, fixBase)
   VAR(arr, pr2_odom)
   
   VAR(arr, qSign)
   
 //private:
-  rai::KinematicWorld realWorld;
+  rai::Configuration realWorld;
   TaskControlMethods *taskController;
   arr q_real, qdot_real; //< real state
   arr q_model, qdot_model; //< model state
@@ -60,7 +60,7 @@ struct TaskControlThread : Thread {
   arr fRInitialOffset;
   
 public:
-  TaskControlThread(const char* robot="none", const rai::KinematicWorld& world = NoWorld);
+  TaskControlThread(const char* robot="none", const rai::Configuration& world = NoWorld);
   ~TaskControlThread();
   
   void open();

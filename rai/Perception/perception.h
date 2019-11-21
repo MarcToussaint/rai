@@ -44,7 +44,7 @@ struct GenericDisplayViewer : Thread {
   Var<T> var;
   GenericDisplayViewer(const char* var_name)
     : Thread("GenericDisplayViewer", -1.)
-    , gl(NULL)
+    , gl(nullptr)
     , var(this, var_name, true) {}
   virtual void open() { gl = new OpenGL(STRING("GenericDisplayViewer '"<<var.data->name()<<'\'')); }
   virtual void step() {
@@ -282,7 +282,7 @@ struct Patcher : Thread {
 #define BEGIN_MODULE(name) \
   struct name : Thread { \
     struct s##name *s; \
-    name(): Thread(#name), s(NULL) {} \
+    name(): Thread(#name), s(nullptr) {} \
     virtual void open(); \
     virtual void step(); \
     virtual void close();

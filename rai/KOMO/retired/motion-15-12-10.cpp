@@ -15,7 +15,7 @@
 
 //===========================================================================
 
-void Feature::phi(arr& y, arr& J, const WorldL& G, double tau, int t) {
+void Feature::phi(arr& y, arr& J, const ConfigurationL& G, double tau, int t) {
   CHECK_GE(G.N, order+1,"I need at least " <<order+1 <<" configurations to evaluate");
   uint k=order;
   if(k==0) { // basic case: order=0
@@ -65,13 +65,13 @@ void Task::setCostSpecs(uint fromTime,
 
 //===========================================================================
 
-Feature *newTaskMap(const Node* specs, const rai::KinematicWorld& world) {
-  if(specs->parents.N<2) return NULL;
+Feature *newTaskMap(const Node* specs, const rai::Configuration& world) {
+  if(specs->parents.N<2) return nullptr;
   
   //-- get tags
   rai::String& tt=specs->parents(0)->keys.last();
   rai::String& type=specs->parents(1)->keys.last();
-  const char *ref1=NULL, *ref2=NULL;
+  const char *ref1=nullptr, *ref2=nullptr;
   if(specs->parents.N>2) ref1=specs->parents(2)->keys.last().p;
   if(specs->parents.N>3) ref2=specs->parents(3)->keys.last().p;
   
@@ -80,14 +80,14 @@ Feature *newTaskMap(const Node* specs, const rai::KinematicWorld& world) {
   if(tt=="MinSumOfSqr") termType=OT_sos;
   else if(tt=="LowerEqualZero") termType=OT_ineq;
   else if(tt=="EqualZero") termType=OT_eq;
-  else return NULL;
+  else return nullptr;
   
   //-- create a task map
   Feature *map;
   const Graph& params = specs->graph();
 //  rai::String type = specs.get<rai::String>("type", "pos");
   if(type=="wheels") {
-    map = new TM_qItself(world, "worldTranslationRotation");
+    map = new F_qItself(world, "worldTranslationRotation");
   } else if(type=="collisionIneq") {
     map = new CollisionConstraint((params?params->get<double>("margin", 0.1):0.1));
   } else if(type=="collisionPairs") {
@@ -109,9 +109,9 @@ Feature *newTaskMap(const Node* specs, const rai::KinematicWorld& world) {
   } else if(type=="proxy") {
     map = new TM_Proxy(TMT_allP, {0u}, (params?params->get<double>("margin", 0.1):0.1));
   } else if(type=="qItself") {
-    if(ref1) map = new TM_qItself(world, ref1);
-    else if(params && params->getNode("Hmetric")) map = new TM_qItself(params->getNode("Hmetric")->get<double>()*world.getHmetric()); //world.naturalQmetric()); //
-    else map = new TM_qItself();
+    if(ref1) map = new F_qItself(world, ref1);
+    else if(params && params->getNode("Hmetric")) map = new F_qItself(params->getNode("Hmetric")->get<double>()*world.getHmetric()); //world.naturalQmetric()); //
+    else map = new F_qItself();
   } else if(type=="GJK") {
     map = new TM_GJK(world, ref1, ref2, true);
   } else {
@@ -129,10 +129,10 @@ Feature *newTaskMap(const Node* specs, const rai::KinematicWorld& world) {
 
 //===========================================================================
 
-Task* newTask(const Node* specs, const rai::KinematicWorld& world, uint Tinterval, uint Tzero) {
+Task* newTask(const Node* specs, const rai::Configuration& world, uint Tinterval, uint Tzero) {
   //-- try to crate a map
   Feature *map = newTaskMap(specs, world);
-  if(!map) return NULL;
+  if(!map) return nullptr;
   //-- create a task
   Task *task = new Task(map);
   //-- check for additional continuous parameters
@@ -148,17 +148,17 @@ Task* newTask(const Node* specs, const rai::KinematicWorld& world, uint Tinterva
 
 //===========================================================================
 
-rai::KinematicSwitch* newSwitch(const Node *specs, const rai::KinematicWorld& world, uint Tinterval, uint Tzero=0) {
-  if(specs->parents.N<2) return NULL;
+rai::KinematicSwitch* newSwitch(const Node *specs, const rai::Configuration& world, uint Tinterval, uint Tzero=0) {
+  if(specs->parents.N<2) return nullptr;
   
   //-- get tags
   rai::String& tt=specs->parents(0)->keys.last();
   rai::String& type=specs->parents(1)->keys.last();
-  const char *ref1=NULL, *ref2=NULL;
+  const char *ref1=nullptr, *ref2=nullptr;
   if(specs->parents.N>2) ref1=specs->parents(2)->keys.last().p;
   if(specs->parents.N>3) ref2=specs->parents(3)->keys.last().p;
   
-  if(tt!="MakeJoint") return NULL;
+  if(tt!="MakeJoint") return nullptr;
   
   //-- create switch
   rai::KinematicSwitch *sw= new rai::KinematicSwitch();
@@ -184,7 +184,7 @@ rai::KinematicSwitch* newSwitch(const Node *specs, const rai::KinematicWorld& wo
     } else if(b->inLinks.N==0 && b->parentOf.N==0) {
       RAI_MSG("No link to delete for shape '" <<ref1 <<"'");
       delete sw;
-      return NULL;
+      return nullptr;
     } else HALT("that's ambiguous");
   } else {
     sw->toId = world.getShapeByName(ref2)->index;
@@ -199,7 +199,7 @@ rai::KinematicSwitch* newSwitch(const Node *specs, const rai::KinematicWorld& wo
 
 //===========================================================================
 
-KOMO::KOMO(rai::KinematicWorld& _world, bool useSwift)
+KOMO::KOMO(rai::Configuration& _world, bool useSwift)
   : world(_world) , useSwift(useSwift), T(0), tau(0.), k_order(2) {
   if(useSwift) {
     makeConvexHulls(world.shapes);
@@ -211,7 +211,7 @@ KOMO::KOMO(rai::KinematicWorld& _world, bool useSwift)
 }
 
 KOMO& KOMO::operator=(const KOMO& other) {
-  world = const_cast<rai::KinematicWorld&>(other.world);
+  world = const_cast<rai::Configuration&>(other.world);
   useSwift = other.useSwift;
   tasks = other.tasks;
   T = other.T;
@@ -274,7 +274,7 @@ void KOMO::parseTasks(const Graph& specs, int Tinterval, uint Tzero) {
   
   //-- add TransitionTask for InvKinematics
   if(!T) {
-    Feature *map = new TM_qItself();
+    Feature *map = new F_qItself();
     map->order = 0;
     map->type=OT_sos;
     Task *task = new Task(map);
@@ -342,7 +342,7 @@ void KOMO::setState(const arr& q, const arr& v) {
   if(useSwift) world.stepSwift();
 }
 
-uint KOMO::dim_phi(const rai::KinematicWorld &G, uint t) {
+uint KOMO::dim_phi(const rai::Configuration &G, uint t) {
   uint m=0;
   for(Task *c: tasks) {
     if(c->active && c->prec.N>t && c->prec(t)) m += c->dim_phi(G, t); //counts also constraints
@@ -350,7 +350,7 @@ uint KOMO::dim_phi(const rai::KinematicWorld &G, uint t) {
   return m;
 }
 
-uint KOMO::dim_g(const rai::KinematicWorld &G, uint t) {
+uint KOMO::dim_g(const rai::Configuration &G, uint t) {
   uint m=0;
   for(Task *c: tasks) {
     if(c->map.type==OT_ineq && c->active && c->prec.N>t && c->prec(t))  m += c->map.dim_phi(G);
@@ -358,7 +358,7 @@ uint KOMO::dim_g(const rai::KinematicWorld &G, uint t) {
   return m;
 }
 
-uint KOMO::dim_h(const rai::KinematicWorld &G, uint t) {
+uint KOMO::dim_h(const rai::Configuration &G, uint t) {
   uint m=0;
   for(Task *c: tasks) {
     if(c->map.type==OT_eq && c->active && c->prec.N>t && c->prec(t))  m += c->map.dim_phi(G);
@@ -371,9 +371,9 @@ void KOMO::setConfigurationStates() {
   //Therefore configurations(0) is for time=-k and configurations(k+t) is for time=t
   if(configurations.N!=k_order+T+1) {
     listDelete(configurations);
-    configurations.append(new rai::KinematicWorld())->copy(world, true);
+    configurations.append(new rai::Configuration())->copy(world, true);
     for(uint t=1; t<=k_order+T; t++) {
-      configurations.append(new rai::KinematicWorld())->copy(*configurations(t-1), true);
+      configurations.append(new rai::Configuration())->copy(*configurations(t-1), true);
       CHECK_EQ(configurations(t), configurations.last(), "");
       //apply potential graph switches
       for(rai::KinematicSwitch *sw:switches) {
@@ -415,7 +415,7 @@ void KOMO::displayTrajectory(int steps, const char* tag, double delay) {
     gl.watch(STRING(tag <<" (time " <<std::setw(3) <<T <<'/' <<T <<')').p);
 }
 
-bool KOMO::getPhi(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, const WorldL &G, double tau) {
+bool KOMO::getPhi(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, const ConfigurationL &G, double tau) {
   phi.clear();
   if(!!tt) tt.clear();
   if(!!J) J.clear();
@@ -452,7 +452,7 @@ bool KOMO::getPhi(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, const WorldL &G,
   return ineqHold;
 }
 
-StringA KOMO::getPhiNames(const rai::KinematicWorld& G, uint t) {
+StringA KOMO::getPhiNames(const rai::Configuration& G, uint t) {
   StringA names(dim_phi(G, t));
   uint m=0;
   for(Task *c: tasks) if(c->active && c->prec.N>t && c->prec(t)) {
@@ -622,10 +622,10 @@ void KOMO::costReport(bool gnuplt) {
   fil <<endl;
   //rest: just the matrix?
   if(!dualMatrix.N) {
-    plotData.write(fil,NULL,NULL,"  ");
+    plotData.write(fil,nullptr,nullptr,"  ");
   } else {
     dualMatrix.reshape(T+1, dualMatrix.N/(T+1));
-    catCol(plotData, dualMatrix).write(fil,NULL,NULL,"  ");
+    catCol(plotData, dualMatrix).write(fil,nullptr,nullptr,"  ");
   }
   fil.close();
   
@@ -754,7 +754,7 @@ void MotionProblemFunction::phi_t(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, 
   //-- manage configurations and set x_bar states
   if(configurations.N!=k+1 || (MP.switches.N && t==0)) {
     listDelete(configurations);
-    for(uint i=0; i<=k; i++) configurations.append(new rai::KinematicWorld())->copy(MP.world, true);
+    for(uint i=0; i<=k; i++) configurations.append(new rai::Configuration())->copy(MP.world, true);
   }
 #if 0
   //find matches
@@ -897,5 +897,5 @@ void getAcc(arr& a, const arr& q, double tau) {
 }
 
 RUN_ON_INIT_BEGIN(motion)
-rai::Array<rai::KinematicWorld*>::memMove=true;
+rai::Array<rai::Configuration*>::memMove=true;
 RUN_ON_INIT_END(motion)

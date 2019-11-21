@@ -6,20 +6,23 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
+#pragma once
+
 #include "feature.h"
 
-struct F_static : Feature {
+struct F_netForce : Feature {
   int i;               ///< which shapes does it refer to?
   double gravity=9.81;
   bool transOnly=false;
+
+  F_netForce(int iShape, bool _transOnly=false, bool _zeroGravity=false);
+  F_netForce(const rai::Configuration& K, const char* iShapeName, bool _transOnly=false, bool _zeroGravity=false)
+    : F_netForce(initIdArg(K,iShapeName), _transOnly, _zeroGravity){}
   
-  F_static(int iShape, bool _transOnly=false);
-  F_static(const rai::KinematicWorld& K, const char* iShapeName, bool _transOnly=false) : F_static(initIdArg(K,iShapeName), _transOnly){}
+  virtual void phi(arr& y, arr& J, const rai::Configuration& K);
+  virtual uint dim_phi(const rai::Configuration& K);
   
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& K);
-  virtual uint dim_phi(const rai::KinematicWorld& K);
-  
-  virtual rai::String shortTag(const rai::KinematicWorld& K) { return STRING("static-" <<K.frames(i)->name); }
+  virtual rai::String shortTag(const rai::Configuration& K) { return STRING("static-" <<K.frames(i)->name); }
 };
 
 

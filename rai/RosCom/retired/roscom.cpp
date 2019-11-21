@@ -120,7 +120,7 @@ void PerceptionObjects2Ors::step() {
 
 //===========================================================================
 // Helper function so sync ors with the real PR2
-void initialSyncJointStateWithROS(rai::KinematicWorld& world,
+void initialSyncJointStateWithROS(rai::Configuration& world,
                                   Var<CtrlMsg>& ctrl_obs, bool useRos) {
                                   
   if(not useRos) { return; }
@@ -145,7 +145,7 @@ void initialSyncJointStateWithROS(rai::KinematicWorld& world,
   HALT("sync'ing real PR2 with simulated failed");
 }
 
-void syncJointStateWitROS(rai::KinematicWorld& world,
+void syncJointStateWitROS(rai::Configuration& world,
                           Var<CtrlMsg>& ctrl_obs, bool useRos) {
                           
   if(not useRos) { return; }
@@ -236,7 +236,7 @@ void RosCom_ControllerSync::close() {
 
 //===========================================================================
 // Helper function so sync ors with the real PR2
-void initialSyncJointStateWithROS(rai::KinematicWorld& world,
+void initialSyncJointStateWithROS(rai::Configuration& world,
                                   Var<CtrlMsg>& ctrl_obs, bool useRos) {
                                   
   if(not useRos) { return; }
@@ -261,7 +261,7 @@ void initialSyncJointStateWithROS(rai::KinematicWorld& world,
   HALT("sync'ing real PR2 with simulated failed");
 }
 
-void syncJointStateWitROS(rai::KinematicWorld& world,
+void syncJointStateWitROS(rai::Configuration& world,
                           Var<CtrlMsg>& ctrl_obs, bool useRos) {
                           
   if(not useRos) { return; }

@@ -13,12 +13,12 @@
 
 struct PerceptViewer : Thread {
   Var<PerceptL> percepts;
-  Var<rai::KinematicWorld> kin;
+  Var<rai::Configuration> kin;
   PerceptL copy;
   MeshA modelCopy;
   struct OpenGL *gl;
   
-  PerceptViewer(Var<PerceptL>& _percepts, Var<rai::KinematicWorld> _kin);
+  PerceptViewer(Var<PerceptL>& _percepts, Var<rai::Configuration> _kin);
   ~PerceptViewer();
   void open();
   void step();

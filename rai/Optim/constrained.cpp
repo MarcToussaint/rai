@@ -13,23 +13,65 @@
 // PhaseOneProblem
 //
 
-void PhaseOneProblem::phi(arr& meta_phi, arr& meta_J, arr& meta_H, ObjectiveTypeA& tt, const arr& x, arr& lambda) {
-  NIY;
-  arr g, Jg;
-//  f_orig(NoArr, NoArr, g, (&meta_Jg?Jg:NoArr), x.sub(0,-2)); //the underlying problem only receives a x.N-1 dimensional x
+void PhaseOneProblem::initialize(arr& x){
+  arr phi;
+  ObjectiveTypeA ot;
+  f_orig.phi(phi, NoArr, NoArr, ot, x);
+  dim_x=x.N;
+  dim_eq=dim_ineq=0;
+  double gmax=0.;
+  for(uint i=0;i<phi.N;i++){
+    if(ot.elem(i)==OT_ineq){
+      dim_ineq++;
+      gmax = rai::MAX(gmax, phi.elem(i));
+    }
+    if(ot.elem(i)==OT_eq){
+      dim_eq++;
+    }
+  }
+  x.append(gmax);
+}
 
-  // meta_g.resize(g.N+1);
-  // meta_g(0) = x.last();                                       //cost
-  // for(uint i=0;i<g.N;i++) meta_g(i) = g(i)-x.last();  //slack constraints
-  // meta_g.last() = -x.last();                                  //last constraint
-  
-  // if(!!meta_Jg){
-  //   meta_Jg.resize(meta_g.N, x.N);  meta_Jg.setZero();
-  //   meta_Jg(0,x.N-1) = 1.; //cost
-  //   for(uint i=0;i<g.N;i++) for(uint j=0;j<x.N-1;j++) meta_Jg(i,j) = Jg(i,j);
-  //   for(uint i=0;i<g.N;i++) meta_Jg(i,x.N-1) = -1.;
-  //   meta_Jg(g.N, x.N-1) = -1.;
-  // }
+void PhaseOneProblem::phi(arr& meta_phi, arr& meta_J, arr& meta_H, ObjectiveTypeA& meta_ot, const arr& meta_x) {
+  CHECK_EQ(meta_x.N, dim_x+1, "");
+  arr x = meta_x({0,-2});
+  double s = meta_x(-1);
+
+  arr phi, J;
+  ObjectiveTypeA ot;
+  f_orig.phi(phi, J, NoArr, ot, x);
+
+  meta_phi.resize(1+dim_ineq+dim_eq);
+  meta_ot.resize(1+dim_ineq+dim_eq);
+
+  uint m=0;
+  for(uint i=0;i<phi.N;i++) if(ot.elem(i)==OT_ineq){
+    meta_phi(m) = phi(i) - s; //subtract slack!
+    meta_ot(m) = OT_ineq;
+    m++;
+  }
+  for(uint i=0;i<phi.N;i++) if(ot.elem(i)==OT_eq){
+    meta_phi(m) = phi(i);
+    meta_ot(m) = OT_eq;
+    m++;
+  }
+  CHECK_EQ(m, dim_ineq+dim_eq, "");
+  meta_phi(m) = s;
+
+   if(!!meta_J){
+     meta_J.resize(meta_phi.N, meta_x.N).setZero();
+     m=0;
+     for(uint i=0;i<phi.N;i++) if(ot.elem(i)==OT_ineq){
+       meta_J[m] = J[i];
+       m++;
+     }
+     for(uint i=0;i<phi.N;i++) if(ot.elem(i)==OT_eq){
+       meta_J[m] = J[i];
+       m++;
+     }
+     meta_J(-1,-1) = 1.;
+     CHECK_EQ(m, dim_ineq+dim_eq, "");
+   }
 }
 
 //==============================================================================
@@ -41,18 +83,22 @@ const char* MethodName[]= { "NoMethod", "SquaredPenalty", "AugmentedLagrangian",
 
 //==============================================================================
 
-OptConstrained::OptConstrained(arr& _x, arr &_dual, ConstrainedProblem& P, int verbose, OptOptions _opt)
-  : L(P, _opt, _dual), newton(_x, L, _opt), dual(_dual), opt(_opt) {
+OptConstrained::OptConstrained(arr& _x, arr &_dual, ConstrainedProblem& P, int verbose, OptOptions _opt, std::ostream* _logFile)
+  : L(P, _opt, _dual), newton(_x, L, _opt, _logFile), dual(_dual), opt(_opt), logFile(_logFile) {
 
   if(verbose>=0) opt.verbose=verbose;
   newton.o.verbose = rai::MAX(opt.verbose-1,0);
   
   if(opt.verbose>0) cout <<"***** optConstrained: method=" <<MethodName[opt.constrainedMethod] <<endl;
+
+  if(logFile){
+    (*logFile) <<"{ optConstraint: " <<its <<", mu: " <<L.mu <<", nu: " <<L.nu <<", L_x: " <<newton.fx <<", errors: ["<<L.get_costs() <<", " <<L.get_sumOfGviolations() <<", " <<L.get_sumOfHviolations() <<"], lambda: " <<L.lambda <<" }," <<endl;
+  }
 }
 
 bool OptConstrained::step() {
-  if(fil)(*fil) <<"constr " <<its <<' ' <<newton.evals <<' ' <<L.get_costs() <<' ' <<L.get_sumOfGviolations() <<' ' <<L.get_sumOfHviolations() <<endl;
-  newton.fil = fil;
+  newton.logFile = logFile;
+  L.logFile = logFile;
   
   if(opt.verbose>0) {
     cout <<"** optConstr. it=" <<its
@@ -72,13 +118,14 @@ bool OptConstrained::step() {
   }
   
   //run newton on the Lagrangian problem
+  OptNewton::StopCriterion newtonStop = newton.stopNone;
   if(newtonOnce || opt.constrainedMethod==squaredPenaltyFixed) {
-    newton.run();
+    newtonStop = newton.run();
   } else {
     double stopTol = newton.o.stopTolerance;
-    newton.o.stopTolerance *= (earlyPhase?10.:2.);
-    if(opt.constrainedMethod==anyTimeAula)  newton.run(20);
-    else                                    newton.run();
+    if(earlyPhase) newton.o.stopTolerance *= 10.;
+    if(opt.constrainedMethod==anyTimeAula)  newtonStop = newton.run(20);
+    else                                    newtonStop = newton.run();
     newton.o.stopTolerance = stopTol;
   }
   
@@ -121,11 +168,20 @@ bool OptConstrained::step() {
         return true;
     }
   }
+//  if(its>=2 && newtonStop==OptNewton::stopTinySteps) {
+//    if(opt.verbose>0) cout <<"** optConstr. StoppingCriterion TinySteps<" <<opt.stopTolerance <<endl;
+//    if(earlyPhase) earlyPhase=false;
+//    else {
+//      if(opt.stopGTolerance<0.
+//          || L.get_sumOfGviolations() + L.get_sumOfHviolations() < opt.stopGTolerance)
+//        return true;
+//    }
+//  }
   if(newton.evals>=opt.stopEvals) {
     if(opt.verbose>0) cout <<"** optConstr. StoppingCriterion MAX EVALS" <<endl;
     return true;
   }
-  if(newton.it>=opt.stopIters) {
+  if(newton.its>=opt.stopIters) {
     if(opt.verbose>0) cout <<"** optConstr. StoppingCriterion MAX ITERS" <<endl;
     return true;
   }
@@ -134,6 +190,8 @@ bool OptConstrained::step() {
     return true;
   }
   
+  double L_x_before = newton.fx;
+
   //upate Lagrange parameters
   switch(opt.constrainedMethod) {
 //  case squaredPenalty: UCP.mu *= opt.aulaMuInc;  break;
@@ -146,15 +204,21 @@ bool OptConstrained::step() {
   }
   
   if(!!dual) dual=L.lambda;
-  
+
   its++;
-  
+
+  if(logFile){
+    (*logFile) <<"{ optConstraint: " <<its <<", mu: " <<L.mu <<", nu: " <<L.nu <<", L_x_beforeUpdate: " <<L_x_before <<", L_x_afterUpdate: " <<newton.fx <<", errors: ["<<L.get_costs() <<", " <<L.get_sumOfGviolations() <<", " <<L.get_sumOfHviolations() <<"], lambda: " <<L.lambda <<" }," <<endl;
+  }
+
   return false;
 }
 
 uint OptConstrained::run() {
 //  earlyPhase=true;
   while(!step());
+//  newton.beta *= 1e-3;
+//  step();
   return newton.evals;
 }
 

@@ -14,8 +14,8 @@ struct PairCollision : GLDrawer {
   //INPUTS
   const rai::Mesh *mesh1=0;
   const rai::Mesh *mesh2=0;
-  rai::Transformation *t1=0;
-  rai::Transformation *t2=0;
+  const rai::Transformation *t1=0;
+  const rai::Transformation *t2=0;
   double rad1=0., rad2=0.; ///< only kinVector and glDraw account for this; the basic collision geometry (OUTPUTS below) is computed neglecting radii!!
   
   //OUTPUTS
@@ -32,7 +32,7 @@ struct PairCollision : GLDrawer {
   
   PairCollision(){}
   PairCollision(const rai::Mesh& mesh1, const rai::Mesh& mesh2,
-                rai::Transformation& t1, rai::Transformation& t2,
+                const rai::Transformation& t1, const rai::Transformation& t2,
                 double rad1=0., double rad2=0.);
   ~PairCollision(){}
                 
@@ -71,7 +71,7 @@ private:
 };
 
 //return normals and closes points for 1-on-3 simplices or 2-on-2 simplices
-double coll_1on2(arr& p2, arr& normal, const arr& pts1, const arr& pts2);
+double coll_1on2(arr& p2, arr& normal, double& s, const arr& pts1, const arr& pts2);
 double coll_1on3(arr& p2, arr& normal, const arr& pts1, const arr& pts2);
 double coll_2on2(arr& p1, arr& p2, arr& normal, const arr& pts1, const arr& pts2);
 double coll_2on3(arr& p1, arr& p2, arr& normal, const arr& pts1, const arr& pts2, const arr& center);

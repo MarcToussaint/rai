@@ -29,7 +29,7 @@ struct Vector {
   Vector(double x, double y, double z) { set(x, y, z); }
   Vector(const Vector& v) { set(v.x, v.y, v.z); }
   Vector(const arr& x) { CHECK_EQ(x.N,3, "");  set(x.p); }
-  Vector(const arrf& x) { CHECK_EQ(x.N,3, "");  set(x(0), x(1), x(2)); }
+  Vector(const floatA& x) { CHECK_EQ(x.N,3, "");  set(x(0), x(1), x(2)); }
   double *p() { return &x; }
   bool operator!() const;
 
@@ -123,6 +123,7 @@ struct Quaternion {
   Quaternion& setRpy(double r, double p, double y);
   void setVec(Vector w);
   void setMatrix(double* m);
+  void setMatrix(const arr& R){ CHECK_EQ(R.N, 9, ""); setMatrix(R.p); }
   void setDiff(const Vector& from, const Vector& to);
   void setInterpolate(double t, const Quaternion& a, const Quaternion b);
   void add(const Quaternion b, double w_b=1., double w_this=1.);
@@ -134,7 +135,7 @@ struct Quaternion {
   
   void addX(double radians);
   void addY(double radians);
-  void addZ(double radians);
+  Quaternion& addZ(double radians);
   void append(const Quaternion& q);
   
   double diffZero() const;
@@ -157,7 +158,7 @@ struct Quaternion {
   double* getMatrix(double* m) const;
   double* getMatrixOde(double* m) const; //in Ode foramt: 3x4 memory storae
   double* getMatrixGL(double* m) const;  //in OpenGL format: transposed 4x4 memory storage
-  arr getEulerRPY();
+  arr getEulerRPY() const;
   
   arr getJacobian() const;
   arr getMatrixJacobian() const;
@@ -177,12 +178,13 @@ struct Transformation {
   Transformation(const Vector _pos, const Quaternion _rot) : pos(_pos), rot(_rot) {}
   Transformation(const Transformation &t) : pos(t.pos), rot(t.rot) {}
   Transformation(const char* init) { setText(init); }
+  Transformation(const arr& t) { set(t); }
   void operator=(const Transformation& f) { memcpy(this, &f, sizeof(Transformation)); }
   bool operator!() const;
 
   Transformation& setZero();
   Transformation& setText(const char* txt);
-  void set(double* p);
+  void set(const double* p);
   void set(const arr& t);
   void setRandom();
   void setInverse(const Transformation& f);
@@ -209,9 +211,10 @@ struct Transformation {
   arr getInverseAffineMatrix() const;
   double* getAffineMatrixGL(double *m) const;       // in OpenGL format (transposed memory storage!!)
   double* getInverseAffineMatrixGL(double *m) const;// in OpenGL format (transposed memory storage!!)
-  arr getArr7d();
-  arr getWrenchTransform();
+  arr getArr7d() const;
+  arr getWrenchTransform() const;
   
+  void applyOnPoint(arr& pt) const;
   void applyOnPointArray(arr& pts) const;
   
   void write(std::ostream& os) const;
@@ -291,12 +294,15 @@ struct Camera {
   double glConvertToTrueDepth(double d) const;
   double glConvertToLinearDepth(double d) const;
   void project2PixelsAndTrueDepth(arr& x, double width, double height) const;
-  void unproject(arr& x_in2DwithTrueDepth) const;
   void unproject_fromPixelsAndTrueDepth(arr& x, double width, double height) const;
   void unproject_fromPixelsAndGLDepth(arr& x, uint width, uint height) const;
 
+  arr getIntrinsicMatrix(double W, double H) const;
+
   //retired
   void setCameraProjectionMatrix(const arr& P); //P is in standard convention -> computes fixedProjectionMatrix in OpenGL convention from this
+
+  void report(ostream& os=cout);
 };
 
 //===========================================================================

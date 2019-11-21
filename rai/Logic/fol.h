@@ -65,8 +65,8 @@ bool applyEffectLiterals(Graph& facts, NodeL& effects, const NodeL& subst, Graph
 
 //------------ fwd chaining
 
-bool forwardChaining_FOL(Graph& state, NodeL& rules, Node* query=NULL, Graph& changes=NoGraph, int verbose=0, int* samplingObservation=NULL);
-bool forwardChaining_FOL(Graph& KB, Graph& state, Node* query, Graph& changes=NoGraph, int verbose=0, int* samplingObservation=NULL);
+bool forwardChaining_FOL(Graph& state, NodeL& rules, Node* query=nullptr, Graph& changes=NoGraph, int verbose=0, int* samplingObservation=nullptr);
+bool forwardChaining_FOL(Graph& KB, Graph& state, Node* query, Graph& changes=NoGraph, int verbose=0, int* samplingObservation=nullptr);
 bool forwardChaining_propositional(Graph& KB, Node* q);
 
 //------------ functions

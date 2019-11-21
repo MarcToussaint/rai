@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <float.h>
 #include "MarchingCubes.h"
-#include "ply.h"
+#include "../ply/ply.h"
 #include "LookUpTable.h"
 
 // step size of the arrays of vertices and triangles
@@ -42,16 +42,16 @@ MarchingCubes::MarchingCubes( const int size_x /*= -1*/, const int size_y /*= -1
   _size_x    (size_x),
   _size_y    (size_y),
   _size_z    (size_z),
-  _data      ((MCreal *)NULL),
-  _x_verts   (( int *)NULL),
-  _y_verts   (( int *)NULL),
-  _z_verts   (( int *)NULL),
+  _data      ((MCreal *)nullptr),
+  _x_verts   (( int *)nullptr),
+  _y_verts   (( int *)nullptr),
+  _z_verts   (( int *)nullptr),
   _nverts    (0),
   _ntrigs    (0),
   _Nverts    (0),
   _Ntrigs    (0),
-  _vertices  (( Vertex *)NULL),
-  _triangles ((Triangle*)NULL)
+  _vertices  (( Vertex *)nullptr),
+  _triangles ((Triangle*)nullptr)
 {}
 //_____________________________________________________________________________
 
@@ -154,10 +154,10 @@ void MarchingCubes::clean_temps()
   delete [] _z_verts;
 
   if( !_ext_data )
-    _data     = (MCreal*)NULL ;
-  _x_verts  = (int*)NULL ;
-  _y_verts  = (int*)NULL ;
-  _z_verts  = (int*)NULL ;
+    _data     = (MCreal*)nullptr ;
+  _x_verts  = (int*)nullptr ;
+  _y_verts  = (int*)nullptr ;
+  _z_verts  = (int*)nullptr ;
 }
 //_____________________________________________________________________________
 
@@ -171,8 +171,8 @@ void MarchingCubes::clean_all()
   clean_temps() ;
   delete [] _vertices  ;
   delete [] _triangles ;
-  _vertices  = (Vertex   *)NULL ;
-  _triangles = (Triangle *)NULL ;
+  _vertices  = (Vertex   *)nullptr ;
+  _triangles = (Triangle *)nullptr ;
   _nverts = _ntrigs = 0 ;
   _Nverts = _Ntrigs = 0 ;
 

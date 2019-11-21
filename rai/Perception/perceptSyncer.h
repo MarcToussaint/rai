@@ -14,9 +14,9 @@
 /// syncs percepts with modelWorld
 struct SyncFiltered : Thread {
   Var<PerceptL> percepts;
-  Var<rai::KinematicWorld> kin;
+  Var<rai::Configuration> kin;
   
-  SyncFiltered(Var<PerceptL>& _percepts, Var<rai::KinematicWorld>& _kin);
+  SyncFiltered(Var<PerceptL>& _percepts, Var<rai::Configuration>& _kin);
   ~SyncFiltered();
   
   virtual void step();

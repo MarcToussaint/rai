@@ -110,15 +110,15 @@ template<class T> rai::Array<T>::~Array() {
 }
 
 template<class T> bool rai::Array<T>::operator!() const {
-    if(((char*)this)+1==(char*)1) return true;
-    return isNoArr<T>(*this);
+  if(((char*)this)+1==(char*)1) return true;
+  return isNoArr<T>(*this);
 }
 
 
 //***** resize
 
 /// frees all memory; this becomes an empty array
-template<class T> void rai::Array<T>::clear() { freeMEM(); }
+template<class T> rai::Array<T>&  rai::Array<T>::clear() { freeMEM(); return *this;}
 
 /// resize 1D array, discard the previous contents
 template<class T> rai::Array<T>& rai::Array<T>::resize(uint D0) { nd=1; d0=D0; resetD(); resizeMEM(d0, false); return *this; }
@@ -127,7 +127,12 @@ template<class T> rai::Array<T>& rai::Array<T>::resize(uint D0) { nd=1; d0=D0; r
 template<class T> rai::Array<T>& rai::Array<T>::resizeCopy(uint D0) { nd=1; d0=D0; resetD(); resizeMEM(d0, true); return *this; }
 
 /// reshape the dimensionality (e.g. from 2D to 1D); throw an error if this actually requires to resize the memory
-template<class T> rai::Array<T>& rai::Array<T>::reshape(uint D0) { CHECK_EQ(N, D0, "reshape must preserve total memory size"); nd=1; d0=D0; d1=d2=0; resetD(); return *this; }
+template<class T> rai::Array<T>& rai::Array<T>::reshape(int D0) {
+    if(D0<0) D0=N;
+    CHECK_EQ((int)N, D0, "reshape must preserve total memory size");
+    nd=1; d0=D0; d1=d2=0; resetD();
+    return *this;
+}
 
 /// same for 2D ...
 template<class T> rai::Array<T>& rai::Array<T>::resize(uint D0, uint D1) { nd=2; d0=D0; d1=D1; resetD(); resizeMEM(d0*d1, false); return *this; }
@@ -136,7 +141,13 @@ template<class T> rai::Array<T>& rai::Array<T>::resize(uint D0, uint D1) { nd=2;
 template<class T> rai::Array<T>& rai::Array<T>::resizeCopy(uint D0, uint D1) { nd=2; d0=D0; d1=D1; resetD(); resizeMEM(d0*d1, true); return *this; }
 
 /// ...
-template<class T> rai::Array<T>& rai::Array<T>::reshape(uint D0, uint D1) { CHECK_EQ(N,D0*D1, "reshape must preserve total memory size"); nd=2; d0=D0; d1=D1; d2=0; resetD(); return *this; }
+template<class T> rai::Array<T>& rai::Array<T>::reshape(int D0, int D1) {
+  if(D0<0) D0=N/D1; else if(D1<0) D1=N/D0;
+  CHECK_EQ((int)N, D0*D1, "reshape must preserve total memory size");
+  nd=2; d0=D0; d1=D1; d2=0;
+  resetD();
+  return *this;
+}
 
 /// same for 3D ...
 template<class T> rai::Array<T>& rai::Array<T>::resize(uint D0, uint D1, uint D2) { nd=3; d0=D0; d1=D1; d2=D2; resetD(); resizeMEM(d0*d1*d2, false); return *this; }
@@ -587,9 +598,11 @@ template<class T> void rai::Array<T>::replace(uint i, uint n, const rai::Array<T
 }
 
 /// deletes the i-th row [must be 2D]
-template<class T> void rai::Array<T>::delRows(uint i, uint k) {
+template<class T> void rai::Array<T>::delRows(int i, uint k) {
   CHECK(memMove, "only with memMove");
   CHECK_EQ(nd,2, "only for matricies");
+  if(i<0) i+=d0;
+  CHECK_GE(i, 0, "range check error");
   CHECK_LE(i+k, d0, "range check error");
   uint n=d1;
   if(i+k<d0) memmove(p+i*n, p+(i+k)*n, sizeT*(d0-i-k)*n);
@@ -680,6 +693,19 @@ template<class T> T& rai::Array<T>::elem(int i) const {
   return p[i];
 }
 
+/// access that invariantly works for sparse and non-sparse matrices
+template<class T> T& rai::Array<T>::elem(int i, int j) {
+  if(i<0) i += d0;
+  if(j<0) j += d1;
+  CHECK(nd==2 && (uint)i<d0 && (uint)j<d1,
+        "2D range error (" <<nd <<"=2, " <<i <<"<" <<d0 <<", " <<j <<"<" <<d1 <<")");
+  if(isSparseMatrix(*this)){
+    return sparse().addEntry(i,j);
+  }
+  return p[i*d1+j];
+
+}
+
 /// multi-dimensional (tensor) access
 //template<class T> T& rai::Array<T>::elem(const Array<int> &I) const {
 //  CHECK_EQ(I.N , nd, "wrong dimensions");
@@ -756,6 +782,12 @@ template<class T> T& rai::Array<T>::operator()(int i, int j, int k) const {
   return p[(i*d1+j)*d2+k];
 }
 
+template<class T> rai::Array<T> rai::Array<T>::ref() const {
+  Array<T> x;
+  x.referTo(*this);
+  return x;
+}
+
 template<class T> rai::Array<T> rai::Array<T>::operator()(std::pair<int, int> I) const {
   rai::Array<T> z;
   z.referToRange(*this, I.first, I.second);
@@ -799,24 +831,7 @@ template<class T> rai::Array<T> rai::Array<T>::operator()(int i, int j, std::ini
 template<class T> rai::Array<T> rai::Array<T>::operator[](int i) const {
 //  return Array(*this, i);
   rai::Array<T> z;
-#if 1
   z.referToDim(*this, i);
-#else
-  CHECK(nd>1, "can't create subarray of array less than 2 dimensions");
-  CHECK(i<d0, "SubDim range error (" <<i <<"<" <<d0 <<")");
-  z.reference=true; z.memMove=memMove;
-  if(nd==2) {
-    z.nd=1; z.d0=d1; z.N=z.d0;
-  }
-  if(nd==3) {
-    z.nd=2; z.d0=d1; z.d1=d2; z.N=z.d0*z.d1;
-  }
-  if(nd>3) {
-    z.nd=nd-1; z.d0=d1; z.d1=d2; z.d2=d[3]; z.N=N/d0;
-    if(z.nd>3) { z.d=new uint[z.nd];  memmove(z.d, d+1, z.nd*sizeof(uint)); }
-  }
-  z.p=p+i*z.N;
-#endif
   return z;
 }
 
@@ -888,15 +903,15 @@ template<class T> T maxA(const rai::Array<T>& v, uint & ind, uint start, uint en
 
 /** @brief the index of the maxium; precondition: the comparision operator
   > exists for type T */
-template<class T> uint rai::Array<T>::maxIndex() const { uint i, m=0; for(i=0; i<N; i++) if(p[i]>p[m]) m=i; return m; }
+template<class T> uint rai::Array<T>::argmax() const { uint i, m=0; for(i=0; i<N; i++) if(p[i]>p[m]) m=i; return m; }
 
 /** @brief the index of the maxium; precondition: the comparision operator
   > exists for type T */
-template<class T> void rai::Array<T>::maxIndex(uint& i, uint& j) const { CHECK_EQ(nd,2, "needs 2D array"); j=maxIndex(); i=j/d1; j=j%d1; }
+template<class T> void rai::Array<T>::argmax(uint& i, uint& j) const { CHECK_EQ(nd,2, "needs 2D array"); j=argmax(); i=j/d1; j=j%d1; }
 
 /** @brief the index of the maxium; precondition: the comparision operator
   > exists for type T */
-template<class T> void rai::Array<T>::maxIndex(uint& i, uint& j, uint& k) const { CHECK_EQ(nd,3, "needs 3D array"); k=maxIndex(); i=k/(d1*d2); k=k%(d1*d2); j=k/d2; k=k%d2; }
+template<class T> void rai::Array<T>::argmax(uint& i, uint& j, uint& k) const { CHECK_EQ(nd,3, "needs 3D array"); k=argmax(); i=k/(d1*d2); k=k%(d1*d2); j=k/d2; k=k%d2; }
 
 /// get the maximal and second maximal value
 template<class T> void rai::Array<T>::maxIndeces(uint& m1, uint& m2) const {
@@ -915,7 +930,7 @@ template<class T> void rai::Array<T>::maxIndeces(uint& m1, uint& m2) const {
 }
 
 /// the index of the minimum; precondition: the comparision operator > exists for type T
-template<class T> uint rai::Array<T>::minIndex() const { uint i, m=0; for(i=0; i<N; i++) if(p[i]<p[m]) m=i; return m; }
+template<class T> uint rai::Array<T>::argmin() const { uint i, m=0; for(i=0; i<N; i++) if(p[i]<p[m]) m=i; return m; }
 
 /// return the index of an entry equal to x, or -1
 template<class T> int rai::Array<T>::findValue(const T& x) const { uint i; for(i=0; i<N; i++) if(p[i]==x) return i; return -1; }
@@ -1021,10 +1036,17 @@ template<class T> rai::Array<T> rai::Array<T>::sub(int i, int I, Array<uint> col
 }
 
 template<class T> rai::Array<T> rai::Array<T>::sub(Array<uint> elems) const {
-  CHECK_EQ(nd, 1, "1D range error ");
   rai::Array<T> x;
-  x.resize(elems.N);
-  for(int l=0; l<(int)elems.N; l++) x(l)=operator()(elems(l));
+  if(nd==1){
+    x.resize(elems.N);
+    for(int l=0; l<(int)elems.N; l++) x(l)=operator()(elems(l));
+  }else if(nd==2){
+    x.resize(elems.N, d1);
+    for(int l=0; l<(int)elems.N; l++) for(uint j=0;j<d1;j++) x(l, j)=operator()(elems(l), j);
+  }else if(nd==3){
+    x.resize(elems.N, d1, d2);
+    for(int l=0; l<(int)elems.N; l++) for(uint j=0;j<d1;j++) for(uint k=0;k<d2;k++) x(l, j, k)=operator()(elems(l), j, k);
+  }else NIY;
   return x;
 }
 
@@ -1163,7 +1185,7 @@ template<class T> rai::Array<T>& rai::Array<T>::operator=(std::initializer_list<
 template<class T> rai::Array<T>& rai::Array<T>::operator=(const T& v) {
   uint i;
   //if(memMove && typeid(T)==typeid(T)) memset(p, *((int*)&v), N); else
-  CHECK(N,"assigning constant to empty array");
+//  CHECK(N,"assigning constant to empty array");
   for(i=0; i<N; i++) p[i]=v;
   return *this;
 }
@@ -1177,13 +1199,20 @@ template<class T> rai::Array<T>& rai::Array<T>::operator=(const rai::Array<T>& a
   if(memMove) memmove(p, a.p, sizeT*N);
   else for(i=0; i<N; i++) p[i]=a.p[i];
   if(special) { delete special; special=NULL; }
-  if(isRowShifted(a)) {
-    CHECK(typeid(T) == typeid(double),"");
-    special = new RowShifted(*((arr*)this),*((RowShifted*)a.special));
-  }
-  if(isSparseMatrix(a)) {
-    CHECK(typeid(T) == typeid(double), "");
-    special = new SparseMatrix(*((arr*)this), *((SparseMatrix*)a.special));
+  if(isSpecial(a)){
+    if(isRowShifted(a)) {
+      CHECK(typeid(T) == typeid(double),"");
+      special = new RowShifted(*((arr*)this), *dynamic_cast<RowShifted*>(a.special));
+    }
+    else if(isSparseVector(a)) {
+      CHECK(typeid(T) == typeid(double), "");
+      special = new SparseVector(*((arr*)this), *dynamic_cast<SparseVector*>(a.special));
+    }
+    else if(isSparseMatrix(a)) {
+      CHECK(typeid(T) == typeid(double), "");
+      special = new SparseMatrix(*((arr*)this), *dynamic_cast<SparseMatrix*>(a.special));
+    }
+    else NIY;
   }
   return *this;
 }
@@ -1292,15 +1321,32 @@ template<class T> void rai::Array<T>::setMatrixBlock(const rai::Array<T>& B, uin
   if(B.nd==2) {
     CHECK(nd==2 && lo0+B.d0<=d0 && lo1+B.d1<=d1, "");
     uint i, j;
-    if(memMove) {
-      for(i=0; i<B.d0; i++) memmove(p+(lo0+i)*d1+lo1, B.p+i*B.d1, B.d1*sizeT);
-    } else {
-      for(i=0; i<B.d0; i++) for(j=0; j<B.d1; j++) p[(lo0+i)*d1+lo1+j] = B.p[i*B.d1+j];   // operator()(lo0+i, lo1+j)=B(i, j);
+    if(!isSparseMatrix(*this)){
+      CHECK(!isSparseMatrix(B), "");
+      if(memMove) {
+        for(i=0; i<B.d0; i++) memmove(p+(lo0+i)*d1+lo1, B.p+i*B.d1, B.d1*sizeT);
+      } else {
+        for(i=0; i<B.d0; i++) for(j=0; j<B.d1; j++) p[(lo0+i)*d1+lo1+j] = B.p[i*B.d1+j];   // operator()(lo0+i, lo1+j)=B(i, j);
+      }
+    }else{
+      if(!isSparseMatrix(B)){
+        for(i=0; i<B.d0; i++) for(j=0; j<B.d1; j++) sparse().addEntry(lo0+i,lo1+j) = B.p[i*B.d1+j];
+      }else{
+        SparseMatrix& S = sparse();
+        const SparseMatrix& BS = B.sparse();
+        for(i=0; i<B.N; i++){
+          S.addEntry(lo0 + BS.elems(i,0), lo1 + BS.elems(i,1)) = B.elem(i);
+        }
+      }
     }
   } else {
     CHECK(nd==2 && lo0+B.d0<=d0 && lo1+1<=d1, "");
     uint i;
-    for(i=0; i<B.d0; i++) p[(lo0+i)*d1+lo1] = B.p[i];  // operator()(lo0+i, lo1+j)=B(i, j);
+    if(!isSparseMatrix(*this)){
+      for(i=0; i<B.d0; i++) p[(lo0+i)*d1+lo1] = B.p[i];  // operator()(lo0+i, lo1+j)=B(i, j);
+    }else{
+      for(i=0; i<B.d0; i++) sparse().addEntry(lo0+i,lo1) = B.p[i];
+    }
   }
 }
 
@@ -1474,6 +1520,7 @@ template<class T> void rai::Array<T>::referToRange(const Array<T>& a, int i, int
 /// make this array a subarray reference to \c a
 template<class T> void rai::Array<T>::referToDim(const rai::Array<T>& a, int i) {
   CHECK(a.nd>1, "can't create subarray of array less than 2 dimensions");
+  CHECK(!isSparseMatrix(*this), "can't refer to row of sparse matrix");
   if(i<0) i+=a.d0;
   
   CHECK(i>=0 && i<(int)a.d0, "SubDim range error (" <<i <<"<" <<a.d0 <<")");
@@ -1616,10 +1663,22 @@ rai::Array<T>::setGrid(uint dim, T lo, T hi, uint steps) {
 }
 
 //----- sorting etc
+template<class T> T rai::Array<T>::median_nonConst(){
+  CHECK_GE(N, 1, "");
+  std::nth_element(p, p+N/2, p+N);
+  return *(p+N/2);
+}
+
+template<class T> T rai::Array<T>::nthElement_nonConst(uint n){
+  CHECK_GE(N, n+1, "");
+  std::nth_element(p, p+n, p+N);
+  return *(p+n);
+}
+
 /// sort this list
-template<class T> void rai::Array<T>::sort(ElemCompare comp) {
-  T *pstop=p+N;
-  std::sort(p, pstop, comp);
+template<class T> rai::Array<T>& rai::Array<T>::sort(ElemCompare comp) {
+  std::sort(p, p+N, comp);
+  return *this;
 }
 
 /// check whether list is sorted
@@ -1690,6 +1749,11 @@ template<class T> void rai::Array<T>::removeValueInSorted(const T& x, ElemCompar
   remove(i);
 }
 
+template<class T> rai::Array<T>& rai::Array<T>::removeDoublesInSorted() {
+  for(int i=N-1;i>0;i--) if(elem(i)==elem(i-1)) remove(i);
+  return *this;
+}
+
 //***** permutations
 
 /// permute the elements \c i and \c j
@@ -1750,14 +1814,33 @@ template<class T> void rai::Array<T>::shift(int offset, bool wrapAround) {
   }
 }
 
+template<typename T> struct is_shared_ptr : std::false_type {};
+template<typename T> struct is_shared_ptr<std::shared_ptr<T>> : std::true_type {};
+
+template <class T>
+typename std::enable_if<is_shared_ptr<T>::value, std::ostream&>::type
+operator<<(std::ostream& os, const rai::Array<T>& x) {
+  os <<'{';
+  for(uint i=0; i<x.N; i++){ if(x.elem(i)) os <<' ' <<*x.elem(i); else os <<" <NULL>"; }
+  os <<" }" <<std::flush;
+  //  x.write(os);
+  return os;
+}
+
+template <class T>
+typename std::enable_if<!is_shared_ptr<T>::value, std::ostream&>::type
+operator<<(std::ostream& os, const rai::Array<T>& x) {
+  x.write(os); return os;
+}
+
 /** @brief prototype for operator<<, writes the array by separating elements with ELEMSEP, separating rows with LINESEP, using BRACKETS[0] and BRACKETS[1] to brace the data, optionally writs a dimensionality tag before the data (see below), and optinally in binary format */
 template<class T> void rai::Array<T>::write(std::ostream& os, const char *ELEMSEP, const char *LINESEP, const char *BRACKETS, bool dimTag, bool binary) const {
   CHECK(!binary || memMove, "binary write works only for memMoveable data");
   uint i, j, k;
-  
   if(!ELEMSEP) ELEMSEP=rai::arrayElemsep;
   if(!LINESEP) LINESEP=rai::arrayLinesep;
   if(!BRACKETS) BRACKETS=rai::arrayBrackets;
+
   
   if(binary) {
     writeDim(os);
@@ -1774,8 +1857,8 @@ template<class T> void rai::Array<T>::write(std::ostream& os, const char *ELEMSE
     for(uint i=0; i<N; i++) cout <<'(' <<elems[i] <<") " <<elem(i) <<endl;
   } else {
     if(BRACKETS[0]) os <<BRACKETS[0];
-    if(dimTag || nd>=3) { os <<' '; writeDim(os); if(nd==2) os <<LINESEP; else os <<' '; }
-    if(nd>=3) os <<LINESEP;
+    if(dimTag || nd>3) { os <<' '; writeDim(os); if(nd==2) os <<'\n'; else os <<' '; }
+    if(nd>=3) os <<'\n';
     if(nd==0 && N==1) {
       os <<(const T&)scalar();
     }
@@ -1791,7 +1874,7 @@ template<class T> void rai::Array<T>::write(std::ostream& os, const char *ELEMSE
         for(i=0; i<d1; i++) os <<(i?ELEMSEP:"") <<operator()(j, i);
       }
     if(nd==3) for(k=0; k<d0; k++) {
-        if(k) os <<LINESEP;
+        if(k) os <<'\n';
         for(j=0; j<d1; j++) {
           for(i=0; i<d2; i++) os <<(i?ELEMSEP:"") <<operator()(k, j, i);
           os <<LINESEP;
@@ -1847,7 +1930,7 @@ template<class T> void rai::Array<T>::read(std::istream& is) {
     uint i=0;
     d=0;
     for(;;) {
-      rai::skip(is, " \r\t", NULL, true);
+      rai::skip(is, " ,\r\t", NULL, true);
       is.get(c);
       if(c==']' || !is.good()) { is.clear(); break; }
       if(c==';' || c=='\n') {  //set an array width
@@ -2020,6 +2103,11 @@ template<class T> void transpose(rai::Array<T>& x, const rai::Array<T>& y) {
     return;
   }
   if(y.nd==2) {
+    if(isSparseMatrix(y)) {
+      x = y;
+      x.sparse().transpose();
+      return;
+    }
     x.resize(y.d1, y.d0);
 //    for(i=0; i<d0; i++)
     T *xp=x.p;
@@ -2558,7 +2646,12 @@ void innerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>&
       return;
     }
 #endif
-    if(rai::useLapack && typeid(T)==typeid(double)) { blas_MM(x, y, z); return; }
+    if(rai::useLapack && typeid(T)==typeid(double)) {
+      if(isSparseMatrix(y)){ x = dynamic_cast<const rai::SparseMatrix*>(y.special)->A_B(z); return; }
+      if(isSparseMatrix(z)){ x = dynamic_cast<const rai::SparseMatrix*>(z.special)->B_A(y); return; }
+      blas_MM(x, y, z);
+      return;
+    }
     T *a, *astop, *b, *c;
     x.resize(d0, d1); x.setZero();
     c=x.p;
@@ -2727,7 +2820,9 @@ rai::Array<T> crossProduct(const rai::Array<T>& y, const rai::Array<T>& z) {
   }
   if(y.nd==2 && z.nd==1) { //every COLUMN of y is cross-product'd with z!
     CHECK(y.d0==3 && z.N==3,"cross product only works for 3D vectors!");
-#if 0
+#if 1
+    return skew(-z) * y;
+#elif 0
     rai::Array<T> x(3, y.d1);
     for(uint i=0; i<y.d1; i++) {
       x(0,i)=y(1,i)*z(2)-y(2,i)*z(1);
@@ -3367,6 +3462,7 @@ void setMinus(rai::Array<T>& x, const rai::Array<T>& y) {
   }
 }
 
+/// x becomes the section of y and z
 template<class T> rai::Array<T> setSectionSorted(const rai::Array<T>& x, const rai::Array<T>& y,
     bool (*comp)(const T& a, const T& b)) {
   rai::Array<T> R;
@@ -3385,17 +3481,30 @@ template<class T> rai::Array<T> setSectionSorted(const rai::Array<T>& x, const r
   return R;
 }
 
-/// x becomes the section of y and z
 template<class T>
 void setMinusSorted(rai::Array<T>& x, const rai::Array<T>& y,
                     bool (*comp)(const T& a, const T& b)) {
-  T *yp=y.p, *ystop=y.p+y.N;
+#if 1
+  int i=x.N-1, j=y.N-1;
+  if(j<0) return;
+  if(i<0) return;
+  for(;;){
+    while(j>=0 && !comp(y.elem(j),x.elem(i))) j--;
+    if(j<0) break;
+    while(i>=0 && !comp(x.elem(i),y.elem(j))) i--;
+    if(i<0) break;
+    if(x.elem(i)==y.elem(j)){ x.remove(i); i--; }
+    if(i<0) break;
+  }
+#else
+    T *yp=y.p, *ystop=y.p+y.N;
   for(uint i=0; i<x.N;) {
-    while(yp!=ystop && comp(*yp,x(i))) yp++;
+    while(yp!=ystop && comp(*yp,x.elem(i))) yp++;
     if(yp==ystop) break;
-    if(*yp==x(i)) x.remove(i);
+    if(*yp==x.elem(i)) x.remove(i);
     else i++;
   }
+#endif
 }
 
 /// share x and y at least one element?
@@ -3474,10 +3583,17 @@ template<class T> uint softMax(const rai::Array<T>& a, arr& soft, double beta) {
 
 //===========================================================================
 //
-/// @name certain initializations
+/// @name operators
 //
 
 namespace rai {
+  //addition
+  template<class T> Array<T> operator+(const Array<T>& y, const Array<T>& z){ Array<T> x(y); x+=z; return x; }
+
+  //subtraction
+  template<class T> Array<T> operator-(const Array<T>& y, const Array<T>& z){ Array<T> x(y); x-=z; return x; }
+
+
 /// transpose
 template<class T> Array<T> operator~(const Array<T>& y) { Array<T> x; transpose(x, y); return x; }
 /// negative
@@ -3493,7 +3609,7 @@ template<class T> Array<T> operator*(const Array<T>& y, T z) {             Array
 template<class T> Array<T> operator*(T y, const Array<T>& z) {             Array<T> x(z); x*=y; return x; }
 
 /// inverse
-template<class T> Array<T> operator/(int y, const Array<T>& z) {  Array<T> x=inverse(z); CHECK_EQ(y,1,""); return x; }
+template<class T> Array<T> operator/(int y, const Array<T>& z) {  CHECK_EQ(y,1,""); Array<T> x=inverse(z); return x; }
 /// scalar division
 template<class T> Array<T> operator/(const Array<T>& y, T z) {             Array<T> x(y); x/=z; return x; }
 /// element-wise division
@@ -3516,7 +3632,9 @@ template<class T> Array<T> operator%(const Array<T>& y, const Array<T>& z) { Arr
 
 #define UpdateOperator( op )        \
   template<class T> Array<T>& operator op (Array<T>& x, const Array<T>& y){ \
-    CHECK_EQ(x.N,y.N, "binary operator on different array dimensions (" <<x.N <<", " <<y.N <<")"); \
+    if(isSparseMatrix(x) && isSparseMatrix(y)){ x.sparse() op y.sparse(); return x; }  \
+    CHECK(!isSpecial(x), "");  \
+    CHECK_EQ(x.N, y.N, "binary operator on different array dimensions (" <<x.N <<", " <<y.N <<")"); \
     T *xp=x.p, *xstop=xp+x.N;              \
     const T *yp=y.p;              \
     for(; xp!=xstop; xp++, yp++) *xp op *yp;       \
@@ -3524,19 +3642,25 @@ template<class T> Array<T> operator%(const Array<T>& y, const Array<T>& z) { Arr
   }                 \
   \
   template<class T> Array<T>& operator op (Array<T>& x, T y ){ \
+    if(isSparseMatrix(x)){ x.sparse() op y; return x; }  \
+    CHECK(!isSpecial(x), "");  \
     T *xp=x.p, *xstop=xp+x.N;              \
     for(; xp!=xstop; xp++) *xp op y;        \
     return x;           \
   } \
   \
   template<class T> void operator op (Array<T>&& x, const Array<T>& y){ \
-    CHECK_EQ(x.N,y.N, "binary operator on different array dimensions (" <<x.N <<", " <<y.N <<")"); \
+    if(isSparseMatrix(x) && isSparseMatrix(y)){ x.sparse() op y.sparse(); return; }  \
+    CHECK(!isSpecial(x), "");  \
+    CHECK_EQ(x.N, y.N, "binary operator on different array dimensions (" <<x.N <<", " <<y.N <<")"); \
     T *xp=x.p, *xstop=xp+x.N;              \
     const T *yp=y.p;              \
     for(; xp!=xstop; xp++, yp++) *xp op *yp;       \
   }                 \
   \
   template<class T> void operator op (Array<T>&& x, T y ){ \
+    if(isSparseMatrix(x)){ x.sparse() op y; return; }  \
+    CHECK(!isSpecial(x), "");  \
     T *xp=x.p, *xstop=xp+x.N;              \
     for(; xp!=xstop; xp++) *xp op y;        \
   }
@@ -3552,7 +3676,6 @@ UpdateOperator(%=)
 #undef UpdateOperator
 
 #define BinaryOperator( op, updateOp)         \
-  template<class T> Array<T> operator op(const Array<T>& y, const Array<T>& z){ Array<T> x(y); x updateOp z; return x; } \
   template<class T> Array<T> operator op(T y, const Array<T>& z){               Array<T> x; x.resizeAs(z); x=y; x updateOp z; return x; } \
   template<class T> Array<T> operator op(const Array<T>& y, T z){               Array<T> x(y); x updateOp z; return x; }
 
@@ -3568,10 +3691,18 @@ BinaryOperator(- , -=);
 /// calls Array<T>::read
 template<class T> std::istream& operator>>(std::istream& is, Array<T>& x) { x.read(is); return is; }
 
+
 /// calls Array<T>::write
-template<class T> std::ostream& operator<<(std::ostream& os, const Array<T>& x) {
-  x.write(os); return os;
-}
+//template<class T> std::ostream& operator<<(std::ostream& os, const Array<T>& x) {
+//  if(is_shared_ptr<T>::value == true){
+//    os <<'{';
+//    for(uint i=0; i<x.N; i++){ if(x.elem(i)) os <<' ' <<*x.elem(i); else os <<" <NULL>"; }
+//    os <<" }" <<std::flush;
+//  }else{
+//    x.write(os);
+//  }
+//  return os;
+//}
 
 /// equal in size and all elements
 template<class T> bool operator==(const Array<T>& v, const Array<T>& w) {

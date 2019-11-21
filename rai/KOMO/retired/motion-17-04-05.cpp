@@ -44,8 +44,8 @@ void Task::setCostSpecs(double fromTime, double toTime, int stepsPerPhase, uint 
 
 //===========================================================================
 
-Task* Task::newTask(const Node* specs, const rai::KinematicWorld& world, int stepsPerPhase, uint T) {
-  if(specs->parents.N<2) return NULL; //these are not task specs
+Task* Task::newTask(const Node* specs, const rai::Configuration& world, int stepsPerPhase, uint T) {
+  if(specs->parents.N<2) return nullptr; //these are not task specs
   
   //-- check the term type first
   ObjectiveType termType;
@@ -53,11 +53,11 @@ Task* Task::newTask(const Node* specs, const rai::KinematicWorld& world, int ste
   if(tt=="MinSumOfSqr") termType=OT_sos;
   else if(tt=="LowerEqualZero") termType=OT_ineq;
   else if(tt=="EqualZero") termType=OT_eq;
-  else return NULL;
+  else return nullptr;
   
   //-- try to crate a map
   Feature *map = Feature::newTaskMap(specs, world);
-  if(!map) return NULL;
+  if(!map) return nullptr;
   
   //-- create a task
   Task *task = new Task(map, termType);
@@ -82,8 +82,8 @@ Task* Task::newTask(const Node* specs, const rai::KinematicWorld& world, int ste
 
 //===========================================================================
 
-KOMO::KOMO(rai::KinematicWorld& originalWorld, bool useSwift)
-  : world(originalWorld) , useSwift(useSwift), T(0), tau(0.), k_order(2), gl(NULL), invKin_problem(*this), komo_problem(*this) {
+KOMO::KOMO(rai::Configuration& originalWorld, bool useSwift)
+  : world(originalWorld) , useSwift(useSwift), T(0), tau(0.), k_order(2), gl(nullptr), invKin_problem(*this), komo_problem(*this) {
   if(useSwift) {
     makeConvexHulls(originalWorld.shapes);
     originalWorld.swift().setCutoff(2.*rai::getParameter<double>("swiftCutoff", 0.11));
@@ -101,7 +101,7 @@ KOMO::~KOMO() {
 
 KOMO& KOMO::operator=(const KOMO& other) {
   HALT("does the following work and make sense?");
-  world = other.world; //const_cast<const rai::KinematicWorld&>(other.world);
+  world = other.world; //const_cast<const rai::Configuration&>(other.world);
   useSwift = other.useSwift;
   tasks = other.tasks;
   T = other.T;
@@ -149,7 +149,7 @@ void KOMO::parseTasks(const Graph& specs, int stepsPerPhase) {
   
   //-- add TransitionTask for InvKinematics
   if(!T) {
-    Feature *map = new TM_qItself();
+    Feature *map = new F_qItself();
     map->order = 0;
     Task *task = new Task(map, OT_sos);
     task->name="InvKinTransition";
@@ -195,9 +195,9 @@ void KOMO::setupConfigurations() {
   CHECK(!configurations.N,"why setup again?");
 //    listDelete(configurations);
 
-  configurations.append(new rai::KinematicWorld())->copy(world, true);
+  configurations.append(new rai::Configuration())->copy(world, true);
   for(uint s=1; s<k_order+T; s++) {
-    configurations.append(new rai::KinematicWorld())->copy(*configurations(s-1), true);
+    configurations.append(new rai::Configuration())->copy(*configurations(s-1), true);
     CHECK_EQ(configurations(s), configurations.last(), "");
     //apply potential graph switches
     for(rai::KinematicSwitch *sw:switches) {
@@ -233,7 +233,7 @@ void KOMO::set_x(const arr& x) {
 void KOMO::set_fixConfiguration(const arr& x, uint t) {
   if(!configurations.N) setupConfigurations();
   CHECK(t<T,"");
-  rai::KinematicWorld *W=configurations(t+k_order);
+  rai::Configuration *W=configurations(t+k_order);
   W->setJointState(x);
   if(useSwift) W->stepSwift();
   W->zeroGaugeJoints();
@@ -367,7 +367,7 @@ void KOMO::reportFeatures(bool brief, ostream& os) {
     if(sw->timeOfApplication+k_order<configurations.N)
       os <<sw->shortTag(configurations(sw->timeOfApplication+k_order));
     else
-      os <<sw->shortTag(NULL);
+      os <<sw->shortTag(nullptr);
   }
   
   //-- collect all task costs and constraints
@@ -502,10 +502,10 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures) {
   
   //rest: just the matrix
   if(!dualSolution.N) {
-    err.write(fil,NULL,NULL,"  ");
+    err.write(fil,nullptr,nullptr,"  ");
   } else {
     dualSolution.reshape(T, dualSolution.N/(T));
-    catCol(err, dualSolution).write(fil,NULL,NULL,"  ");
+    catCol(err, dualSolution).write(fil,nullptr,nullptr,"  ");
   }
   fil.close();
   
@@ -608,7 +608,7 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, Obje
 
 //===========================================================================
 
-arr getH_rate_diag(const rai::KinematicWorld& world) {
+arr getH_rate_diag(const rai::Configuration& world) {
   //transition cost metric
   arr W_diag;
   if(rai::checkParameter<arr>("Wdiag")) {
@@ -648,5 +648,5 @@ void getAcc(arr& a, const arr& q, double tau) {
 }
 
 RUN_ON_INIT_BEGIN(motion)
-rai::Array<rai::KinematicWorld*>::memMove=true;
+rai::Array<rai::Configuration*>::memMove=true;
 RUN_ON_INIT_END(motion)

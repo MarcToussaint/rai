@@ -36,6 +36,7 @@ enum FeatureSymbol {
   FS_accumulatedCollisions,
   FS_jointLimits,
   FS_distance,
+  FS_oppose,
 
   FS_qItself,
 
@@ -50,11 +51,13 @@ enum FeatureSymbol {
 
   FS_transAccelerations,
   FS_transVelocities,
+
+  FS_qQuaternionNorms,
 };
 
 namespace rai{
-  struct KinematicWorld;
+  struct Configuration;
 }
 struct Feature;
 
-ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA &symbols, const rai::KinematicWorld& world, const arr& scale=NoArr, const arr& target=NoArr, int order=-1);
+ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA &frames, const rai::Configuration& world, const arr& scale=NoArr, const arr& target=NoArr, int order=-1);

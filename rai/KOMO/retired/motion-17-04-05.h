@@ -26,7 +26,7 @@ struct Objective {
   arr target, prec;     ///< optional linear, time-dependent, rescaling (with semantics of target & precision)
   
   Objective(Feature *m, const ObjectiveType& type) : map(m), type(type) {}
-  ~Objective() { if(map) delete map; map=NULL; }
+  ~Objective() { if(map) delete map; map=nullptr; }
   
   void setCostSpecs(int fromTime, int toTime,
                     const arr& _target=ARR(0.),
@@ -42,7 +42,7 @@ struct Objective {
        <<" prec=" <<prec;
   }
   
-  static Objective* newTask(const Node* specs, const rai::KinematicWorld& world, int stepsPerPhase, uint T); ///< create a new Task from specs
+  static Objective* newTask(const Node* specs, const rai::Configuration& world, int stepsPerPhase, uint T); ///< create a new Task from specs
 };
 stdOutPipe(Task)
 
@@ -52,8 +52,8 @@ stdOutPipe(Task)
 //
 
 struct KOMO {
-  rai::KinematicWorld& world;  ///< the original world, which also defines the 'start conditions'
-  WorldL configurations;       ///< copies for each time slice; including kinematic switches; only these are optimized
+  rai::Configuration& world;  ///< the original world, which also defines the 'start conditions'
+  ConfigurationL configurations;       ///< copies for each time slice; including kinematic switches; only these are optimized
   bool useSwift;
   
   rai::Array<Objective*> tasks; ///< task cost descriptions
@@ -71,7 +71,7 @@ struct KOMO {
   
   struct OpenGL *gl; //internal only: used in 'displayTrajectory'
   
-  KOMO(rai::KinematicWorld& originalWorld, bool useSwift=true);
+  KOMO(rai::Configuration& originalWorld, bool useSwift=true);
   ~KOMO();
   
   KOMO& operator=(const KOMO& other);
@@ -135,7 +135,7 @@ struct KOMO {
 // basic helpers (TODO: move to a different place)
 //
 
-arr getH_rate_diag(const rai::KinematicWorld& world);
+arr getH_rate_diag(const rai::Configuration& world);
 void sineProfile(arr& q, const arr& q0, const arr& qT,uint T);
 arr reverseTrajectory(const arr& q);
 void getVel(arr& v, const arr& q, double tau);

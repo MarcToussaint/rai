@@ -17,14 +17,16 @@
 #  include <pcl_conversions/pcl_conversions.h>
 #endif
 
+Singleton<RosCom_Spinner> singletonRosSpinner;
+
 RosCom::RosCom(const char* node_name) {
   rosCheckInit(node_name);
-  spinner = new RosCom_Spinner(node_name);
+  singletonRosSpinner();
+//  spinner = new RosCom_Spinner(node_name);
   rai::wait(.1);
 }
 
 RosCom::~RosCom() {
-  delete spinner;
 }
 
 bool rosOk() {
@@ -247,6 +249,24 @@ byteA conv_image2byteA(const sensor_msgs::Image& msg) {
   return img;
 }
 
+floatA conv_imageu162floatA(const sensor_msgs::Image& msg) {
+  CHECK_EQ(msg.encoding, "16UC1", "wrong image encoding");
+  byteA data = conv_stdvec2arr<byte>(msg.data);
+  uint16A ref((const uint16_t*)data.p, data.N/2);
+  //  uint16A ref((const uint16_t*)msg.data.data(), msg.data.size()/2);
+  ref.reshape(msg.height, msg.width);
+  floatA img(ref.d0, ref.d1);
+  for(uint i=0;i<img.N;i++) img.elem(i) = 0.001f*float(ref.elem(i));
+  return img;
+}
+
+floatA conv_imageFloat32_floatA(const sensor_msgs::Image& msg) {
+  CHECK_EQ(msg.encoding, "32FC1", "wrong image encoding");
+  floatA x((const float*)msg.data.data(), msg.data.size()/4);
+  x.reshape(msg.height, msg.width);
+  return x;
+}
+
 uint16A conv_image2uint16A(const sensor_msgs::Image& msg) {
   byteA data = conv_stdvec2arr<byte>(msg.data);
   uint16A ref((const uint16_t*)data.p, data.N/2);
@@ -305,8 +325,8 @@ rai_msgs::JointState conv_CtrlMsg2JointState(const CtrlMsg& ctrl) {
   return jointState;
 }
 
-rai::KinematicWorld conv_MarkerArray2KinematicWorld(const visualization_msgs::MarkerArray& markers) {
-  rai::KinematicWorld world;
+rai::Configuration conv_MarkerArray2Configuration(const visualization_msgs::MarkerArray& markers) {
+  rai::Configuration world;
   tf::TransformListener listener;
   for(const visualization_msgs::Marker& marker:markers.markers) {
     rai::String name;
@@ -328,7 +348,7 @@ rai::KinematicWorld conv_MarkerArray2KinematicWorld(const visualization_msgs::Ma
     s->size(1) = marker.scale.y;
     s->size(2) = marker.scale.z;
     s->size(3) = .25*(marker.scale.x+marker.scale.y);
-    s->frame.X = ros_getTransform("/base_link", marker.header, listener) * conv_pose2transformation(marker.pose);
+    s->frame.set_X() = ros_getTransform("/base_link", marker.header, listener) * conv_pose2transformation(marker.pose);
   }
   return world;
 }
@@ -421,7 +441,7 @@ visualization_msgs::Marker conv_Shape2Marker(const rai::Shape& sh) {
   new_marker.id = sh.frame.ID;
   new_marker.action = visualization_msgs::Marker::ADD;
   new_marker.lifetime = ros::Duration();
-  new_marker.pose = conv_transformation2pose(sh.frame.X);
+  new_marker.pose = conv_transformation2pose(sh.frame.ensure_X());
   new_marker.color.r = 0.0f;
   new_marker.color.g = 1.0f;
   new_marker.color.b = 0.0f;
@@ -456,7 +476,7 @@ visualization_msgs::Marker conv_Shape2Marker(const rai::Shape& sh) {
   return new_marker;
 }
 
-visualization_msgs::MarkerArray conv_Kin2Markers(const rai::KinematicWorld& K) {
+visualization_msgs::MarkerArray conv_Kin2Markers(const rai::Configuration& K) {
   visualization_msgs::MarkerArray M;
   for(rai::Frame *f : K.frames) M.markers.push_back(conv_Shape2Marker(*f->shape));
 //  M.header.frame_id = "1";

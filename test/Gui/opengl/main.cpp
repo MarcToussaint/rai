@@ -12,8 +12,8 @@ using namespace std;
 
 /************ first test ************/
 
-void draw1(void*){
-  glStandardLight(NULL);
+void draw1(void*,OpenGL& gl){
+  glStandardLight(nullptr, gl);
   glColor(1,0,0);
   glFrontFace(GL_CW);
   glutSolidTeapot(1.);
@@ -70,15 +70,15 @@ void TEST(Grab) {
   gl.watch();
 
   //grap the depth image from current view:
-  gl.update(NULL, true);
+  gl.update(nullptr, true);
   cout <<"max " <<(int)gl.captureDepth.max() <<" min " <<(int)gl.captureDepth.min() <<endl;
   gl.watchImage(gl.captureDepth,true,1);
 }
 
 /************ second test ************/
 
-static void draw2(void*){
-  glStandardLight(NULL);
+static void draw2(void*, OpenGL& gl){
+  glStandardLight(nullptr, gl);
   glDrawAxes(1.);
   glColor(1.,1.,1.);
   glDisable(GL_CULL_FACE);
@@ -189,8 +189,8 @@ void TEST(Menu){
 
 byteA texImg;
 static GLuint texName;
-void draw5(void*){
-  glStandardScene(NULL);
+void draw5(void*, OpenGL& gl){
+  glStandardScene(nullptr, gl);
 
 #if 1
   glDisable(GL_CULL_FACE);
@@ -224,12 +224,14 @@ void draw5(void*){
 
 }
 
+#ifdef RAI_PNG
+
 #include <png.h>
 
 void read_png(byteA &img, const char *file_name, bool swap_rows) {
   FILE *fp = fopen(file_name, "rb");
 
-  png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+  png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
   CHECK(png, "");
 
   png_infop info = png_create_info_struct(png);
@@ -289,10 +291,12 @@ void read_png(byteA &img, const char *file_name, bool swap_rows) {
   if(swap_rows) flip_image(img);
 }
 
+#endif
+
 void TEST(Texture) {
   OpenGL gl;
-//  read_ppm(texImg, "box.ppm", false);
-  read_png(texImg, "box.png", false);
+  read_ppm(texImg, "box.ppm", false);
+  //  read_png(texImg, "box.png", false);
 //  remove_alpha_channel(texImg);
 //  write_ppm(texImg, "z.ppm");
 //  texName=glImageTexture(texImg);
@@ -318,7 +322,7 @@ void TEST(Texture2) {
 void TEST(OfflineRendering){
   OpenGL gl("view", 40, 40, true);
   gl.add(draw1,0);
-  gl.update(NULL, true);
+  gl.update(nullptr, true);
 //  gl.renderInBack(200, 200);
   write_ppm(gl.captureImage,"z.ppm");
 //  OpenGL gl2("captured", gl.captureImage.d1, gl.captureImage.d0);
@@ -328,9 +332,9 @@ void TEST(OfflineRendering){
 
 /************ test clicking on and identifying objects in the scene ************/
 
-void draw3(void*){
+void draw3(void*, OpenGL& gl){
   glPushName(0xa0);
-  glStandardLight(NULL);
+  glStandardLight(nullptr, gl);
   glColor(1,0,0);
   glutSolidTeapot(1.);
   glPopName();

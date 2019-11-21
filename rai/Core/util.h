@@ -103,7 +103,7 @@ int x11_getKey();
 
 //----- strings and streams
 bool contains(const char *s, char c);
-char skip(std::istream& is, const char *skipSymbols=" \n\r\t", const char *stopSymbols=NULL, bool skipCommentLines=true);
+char skip(std::istream& is, const char *skipSymbols=" \n\r\t", const char *stopSymbols=nullptr, bool skipCommentLines=true);
 void skipRestOfLine(std::istream& is);
 void skipOne(std::istream& is);
 char getNextChar(std::istream& is, const char *skipSymbols=" \n\r\t", bool skipCommentLines=true);
@@ -169,7 +169,7 @@ bool wait(bool useX11=true);
 long mem();
 
 //----- timer functions
-void   timerStart(bool useRealTime=false);
+double timerStart(bool useRealTime=false);
 double timerRead(bool reset=false);
 double timerRead(bool reset, double startTime);
 double timerPause();
@@ -273,7 +273,7 @@ public:
   bool operator==(const String& s) const;
   bool operator!=(const char *s) const;
   bool operator!=(const String& s) const;
-  bool operator<(const String& s) const;
+  bool operator<=(const String& s) const;
   
   /// @name misc
   bool contains(const String& substring) const;
@@ -284,7 +284,7 @@ public:
   
   /// @name I/O
   void write(std::ostream& os) const;
-  uint read(std::istream& is, const char* skipSymbols=NULL, const char *stopSymbols=NULL, int eatStopSymbol=-1);
+  uint read(std::istream& is, const char* skipSymbols=nullptr, const char *stopSymbols=nullptr, int eatStopSymbol=-1);
 };
 stdPipes(String)
 }
@@ -421,7 +421,7 @@ extern String errString;
 
 namespace rai {
 
-String raiPath(const char* rel=NULL);
+String raiPath(const char* rel=nullptr);
 
 /** @brief A ostream/istream wrapper that allows easier initialization of objects, like:
 arr X = FILE("inname");
@@ -447,6 +447,8 @@ struct FileToken {
   std::ifstream& getIs(bool change_dir=false);
   operator std::istream&() { return getIs(); }
   operator std::ostream&() { return getOs(); }
+
+  rai::String absolutePathName() const;
 };
 template<class T> FileToken& operator>>(FileToken& fil, T& x) { fil.getIs() >>x;  return fil; }
 template<class T> std::ostream& operator<<(FileToken& fil, const T& x) { fil.getOs() <<x;  return fil.getOs(); }
@@ -469,9 +471,9 @@ struct Enum {
   enum_T x;
   static const char* names [];
   Enum():x((enum_T)-1) {}
-  explicit Enum(const enum_T& y):x(y) {}
+  explicit Enum(enum_T y):x(y) {}
   explicit Enum(const rai::String& str):Enum() { operator=(str); }
-  const enum_T& operator=(const enum_T& y) { x=y; return x; }
+  const enum_T& operator=(enum_T y) { x=y; return x; }
   bool operator==(const enum_T& y) const { return x==y; }
   bool operator!=(const enum_T& y) const { return x!=y; }
   operator enum_T() const { return x; }
@@ -660,7 +662,7 @@ struct Singleton {
 //      static Mutex m; //pthread might already be deinitialized...
 //      m.lock();
       T *mine=singleton;
-      singleton=NULL;
+      singleton=nullptr;
       if(mine) delete mine;
 //      m.unlock();
     }
@@ -678,7 +680,7 @@ struct Singleton {
   Token operator()() { return Token(*this); }
 };
 
-template<class T> T *Singleton<T>::singleton=NULL;
+template<class T> T *Singleton<T>::singleton=nullptr;
 template<class T> Mutex Singleton<T>::mutex;
 
 //===========================================================================
@@ -686,7 +688,10 @@ template<class T> Mutex Singleton<T>::mutex;
 // just a hook to make things gl drawable
 //
 
-struct GLDrawer    { virtual void glDraw(struct OpenGL&) = 0; virtual ~GLDrawer() {} };
+struct GLDrawer {
+  virtual void glDraw(struct OpenGL&) = 0;
+  virtual ~GLDrawer() {}
+};
 
 //===========================================================================
 
@@ -746,7 +751,7 @@ inline bool operator==(Type& t1, Type& t2) { return t1.typeId() == t2.typeId(); 
 // gnuplot calls
 //
 
-void gnuplot(const char *command, bool pauseMouse=false, bool persist=false, const char* PDFfile=NULL);
+void gnuplot(const char *command, bool pauseMouse=false, bool persist=false, const char* PDFfile=nullptr);
 void gnuplotClose();
 
 //===========================================================================

@@ -27,21 +27,20 @@ typedef rai::Array<Thread*> ThreadL;
 //===========================================================================
 
 template<class F> struct Callback {
-  const void* id; //only needed to delete callbacks from callback lists!
   std::function<F> callback;
+  const void* id; //only needed to delete callbacks from callback lists!
   Callback(const void* _id) : id(_id) {}
-  Callback(const void* _id, const std::function<F>& c) : id(_id), callback(c) {}
+  Callback(const void* _id, const std::function<F>& c) : callback(c), id(_id) {}
   std::function<F>& call() { CHECK(callback,"is not initialized!!"); return callback; }
 };
-template<class F> bool operator==(const Callback<F>& a, const Callback<F>& b) { return a.id==b.id; }
 
 template<class F>
 struct CallbackL : rai::Array<Callback<F>*> {
   void removeCallback(const void* id) {
-    Callback<F>* c = listFindValue(*this, Callback<F>(id));
-    CHECK(c,"");
-    this->removeValue(c);
-    delete c;
+    uint i;
+    for(i=0; i<this->N; i++) if(this->elem(i)->id==id) break;
+    delete this->elem(i);
+    this->remove(i);
   }
 };
 
@@ -79,15 +78,13 @@ struct Var_base : NonCopyable {
   /// @name c'tor/d'tor
   virtual ~Var_base();
 
-  void addCallback(const std::function<void(Var_base*)>& call, const void* callbackID){
-    callbacks.append(new Callback<void(Var_base*)>(callbackID, call));
-  }
+  void addCallback(const std::function<void(Var_base*)>& call, const void* callbackID);
 
   /// @name access control
   /// to be called by a thread before access, returns the revision
-  int readAccess(Thread* th=NULL);  //might set the caller to sleep
-  int writeAccess(Thread* th=NULL); //might set the caller to sleep
-  int deAccess(Thread* th=NULL);
+  int readAccess(Thread* th=nullptr);  //might set the caller to sleep
+  int writeAccess(Thread* th=nullptr); //might set the caller to sleep
+  int deAccess(Thread* th=nullptr);
 
   int getRevision() { rwlock.readLock(); int r=revision; rwlock.unlock(); return r; }
 };
@@ -99,7 +96,7 @@ struct RToken {
   Var_base *var;
   T *data;
   Thread *th;
-  RToken(Var_base& _var, T* _data, Thread* _th=NULL, int* getRevision=NULL, bool isAlreadyLocked=false)
+  RToken(Var_base& _var, T* _data, Thread* _th=nullptr, int* getRevision=nullptr, bool isAlreadyLocked=false)
     : var(&_var), data(_data), th(_th) {
     if(!isAlreadyLocked) var->readAccess(th);
     if(getRevision) *getRevision=var->revision;
@@ -115,12 +112,12 @@ struct WToken {
   Var_base *var;
   T *data;
   Thread *th;
-  WToken(Var_base& _var, T* _data, Thread* _th=NULL, int* getRevision=NULL)
+  WToken(Var_base& _var, T* _data, Thread* _th=nullptr, int* getRevision=nullptr)
     : var(&_var), data(_data), th(_th) {
     var->writeAccess(_th);
     if(getRevision) *getRevision=var->revision+1;
   }
-  WToken(const double& dataTime, Var_base& _var, T* _data, Thread* _th=NULL, int* getRevision=NULL)
+  WToken(const double& dataTime, Var_base& _var, T* _data, Thread* _th=nullptr, int* getRevision=nullptr)
     : var(&_var), data(_data), th(_th) {
     var->writeAccess(th);
     var->data_time=dataTime;
@@ -161,21 +158,18 @@ template<class T> void operator<<(ostream& os, const Var_data<T>& v) { os <<"Var
 template<class T>
 struct Var {
   ptr<Var_data<T>> data;
-  Thread *thread;  ///< which thread is this a member of
+  Thread *thread;             ///< which thread is the owner
   int last_read_revision;     ///< last revision that has been accessed (read or write)
 
   Var();
 
-  Var(const Var<T>& v) : Var(NULL, v, false) {}
+  Var(const Var<T>& v) : Var(nullptr, v, false) {}
 
   /// searches for globally registrated variable 'name', checks type equivalence, and becomes an access for '_thread'
   Var(Thread* _thread, bool threadListens=false);
 
-  /// A "copy" of acc: An access to the same variable as acc refers to, but now for '_thred'
-  Var(Thread* _thread, const Var<T>& acc, bool threadListens=false);
-
-  /// A "copy" of acc: An access to the same variable as acc refers to, but now for '_thred'
-  Var(Thread* _thread, const ptr<Var_base>& var, bool threadListens=false);
+  /// A "copy" of acc: An access to the same variable as v refers to, but now for '_thread'
+  Var(Thread* _thread, const Var<T>& v, bool threadListens=false);
 
   ~Var();
 
@@ -216,7 +210,6 @@ struct Var {
     data->addCallback(call, callbackID);
   }
 
-
   void write(ostream& os) {
     readAccess();
     os <<"VAR " <<name() <<" [" <<data->getStatus() <<"] " <<data->data <<endl;
@@ -237,9 +230,9 @@ struct Signaler {
   Signaler(int initialStatus=0);
   virtual ~Signaler(); //virtual, to enforce polymorphism
   
-  void setStatus(int i, Signaler* messenger=NULL); ///< sets status and broadcasts
-  int  incrementStatus(Signaler* messenger=NULL);  ///< increase status by 1
-  void broadcast(Signaler* messenger=NULL);        ///< wake up waitForSignal callers
+  void setStatus(int i, Signaler* messenger=nullptr); ///< sets status and broadcasts
+  int  incrementStatus(Signaler* messenger=nullptr);  ///< increase status by 1
+  void broadcast(Signaler* messenger=nullptr);        ///< wake up waitForSignal callers
   
   void statusLock();   //the user can manually lock/unlock, if he needs locked state access for longer -> use userHasLocked=true below!
   void statusUnlock();
@@ -285,7 +278,6 @@ inline bool wait(const VarL& acts, double timeout=-1.){
 }
 
 //===========================================================================
-
 //
 // Timing helpers
 //
@@ -312,7 +304,7 @@ struct CycleTimer {
   double cyclDt, cyclDtMean, cyclDtMax;  ///< internal variables to measure step time
   timespec now, lastTime;
   const char* name;                      ///< name
-  CycleTimer(const char *_name=NULL);
+  CycleTimer(const char *_name=nullptr);
   ~CycleTimer();
   void reset();
   void cycleStart();
@@ -326,7 +318,7 @@ struct CycleTimer {
  */
 struct MiniThread : Signaler {
   rai::String name;
-  pthread_t thread = 0;             ///< the underlying pthread; NULL iff not opened
+  pthread_t thread = 0;             ///< the underlying pthread; nullptr iff not opened
   pid_t tid = 0;                    ///< system thread id
 
   /// @name c'tor/d'tor
@@ -355,7 +347,7 @@ struct MiniThread : Signaler {
 struct Thread {
   Event event;
   rai::String name;
-  pthread_t thread;             ///< the underlying pthread; NULL iff not opened
+  pthread_t thread;             ///< the underlying pthread; nullptr iff not opened
   pid_t tid;                    ///< system thread id
   Mutex stepMutex;              ///< This is set whenever the 'main' is in step (or open, or close) --- use this in all service methods callable from outside!!
   uint step_count;              ///< how often the step was called
@@ -433,111 +425,11 @@ inline ptr<ScriptThread> run(const std::function<int ()>& script, double beatInt
 }
 
 
-//===========================================================================
-//
-// high-level methods to control threads
-
-Signaler* moduleShutdown();
-ptr<Var_base> getVariable(const char* name);
-template<class T> Var_data<T>& getVariable(const char* name) {
-  ptr<Var_base> v = getVariable(name);
-  if(!v) HALT("can't find variable of name '" <<name <<"'");
-  ptr<Var_data<T>> var = std::dynamic_pointer_cast<Var_data<T>>(v);
-  if(!var) HALT("can't convert variable '" <<v->name <<"' to type '" <<NAME(typeid(T)) <<"'");
-  return *var;
-}
-
-rai::Array<ptr<Var_base>*> getVariables();
-
-template<class T> rai::Array<ptr<Var<T>>> getVariablesOfType() {
-  rai::Array<ptr<Var<T>>> ret;
-  rai::Array<ptr<Var_base>*> vars = getVariables();
-  for(ptr<Var_base>* v : vars) {
-    ptr<Var_data<T>> var = std::dynamic_pointer_cast<Var_data<T>>(v);
-    if(var) ret.append(std::make_shared<Var<T>>(var->get()));
-//    ptr<VariableData<T>> var = std::dynamic_pointer_cast<VariableData<T>>(*v);
-//    if(var) ret.append(Var<T>(NULL, var));
-  }
-  return ret;
-}
-
-void threadCloseModules(); //might lead to a hangup of the main loop, but processes should close
-void threadCancelModules();
-
 // ================================================
 //
-// TStream utilities, for concurrent access to ostreams
+// template definitions
 //
 
-#include <map>
-
-// TODO: share a mutex between different ostreams
-class TStream {
-private:
-  std::ostream &out;
-  Mutex mutex;
-  RWLock lock;
-  std::map<const void*, const char*> map;
-  
-public:
-  class Access;
-  class Register;
-  
-  TStream(std::ostream &o);
-  
-  Access operator()(const void *obj = NULL);
-  Register reg(const void *obj = NULL);
-  void unreg(const void *obj);
-  void unreg_all();
-  bool get(const void *obj, char **head);
-  
-private:
-  void reg_private(const void *obj, char *head, bool l);
-  void unreg_private(const void *obj, bool l);
-  bool get_private(const void *obj, char **head, bool l);
-};
-
-class TStream::Access: public std::ostream {
-private:
-  TStream *tstream;
-  std::stringstream stream;
-  const void *obj;
-  
-public:
-  Access(TStream *ts, const void *o);
-  Access(const Access &a);
-  ~Access();
-  
-  template<class T>
-  std::stringstream& operator<<(const T &t);
-};
-
-class TStream::Register: public std::ostream {
-private:
-  TStream *tstream;
-  std::stringstream stream;
-  const void *obj;
-  
-public:
-  Register(TStream *ts, const void *o);
-  Register(const Register &r);
-  ~Register();
-  
-  template<class T>
-  std::stringstream& operator<<(const T &t);
-};
-
-template<class T>
-std::stringstream& TStream::Access::operator<<(const T &t) {
-  stream << t;
-  return stream;
-}
-
-template<class T>
-std::stringstream& TStream::Register::operator<<(const T &t) {
-  stream << t;
-  return stream;
-}
 
 #else //RAI_MSVC
 
@@ -569,16 +461,8 @@ Var<T>::Var(Thread* _thread, bool threadListens)
 }
 
 template<class T>
-Var<T>::Var(Thread* _thread, const Var<T>& acc, bool threadListens)
-  : data(acc.data), thread(_thread), last_read_revision(0) {
-  if(thread && threadListens) thread->event.listenTo(*data);
-}
-
-template<class T>
-Var<T>::Var(Thread* _thread, const ptr<Var_base>& var, bool threadListens)
-  : data(NULL), thread(_thread), last_read_revision(0) {
-  data = std::dynamic_pointer_cast<Var_data<T>>(var);
-  if(!data) HALT("types don't match!");
+Var<T>::Var(Thread* _thread, const Var<T>& v, bool threadListens)
+  : data(v.data), thread(_thread), last_read_revision(0) {
   if(thread && threadListens) thread->event.listenTo(*data);
 }
 
@@ -589,9 +473,6 @@ Var<T>::~Var() {
 
 template<class T>
 int Var<T>::waitForRevisionGreaterThan(int rev) {
-#if 0
-  return data->waitForStatusGreaterThan(rev);
-#else
   EventFunction evFct = [&rev](const rai::Array<Var_base*>& vars, int whoChanged) -> int {
     CHECK_EQ(vars.N, 1, ""); //this event only checks the revision for a single var
     if(vars.scalar()->revision > (uint)rev) return 1;
@@ -601,7 +482,6 @@ int Var<T>::waitForRevisionGreaterThan(int rev) {
   Event ev({data.get()}, evFct, 0);
   ev.waitForStatusEq(1);
   return data->getRevision();
-#endif
 }
 
 template<class T>

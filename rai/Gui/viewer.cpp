@@ -177,7 +177,7 @@ PointCloudViewer::~PointCloudViewer() {
 void PointCloudViewer::open() {
   s = new sPointCloudViewer(STRING("PointCloudViewer: "<<pts.name() <<' ' <<rgb.name()));
 #if 1
-  s->gl.add(glDrawAxes);
+  s->gl.add(glStandardOriginAxes);
   s->gl.add(glStandardLight);
   s->gl.add(s->pc);
   //  s->gl.reportSelects = true;
@@ -215,7 +215,7 @@ void PointCloudViewer::step() {
     if(W!=s->gl.width || H!=s->gl.height) s->gl.resize(W,H);
   }
   
-  s->gl.update(); //NULL, false, false, true);
+  s->gl.update(); //nullptr, false, false, true);
 }
 
 //===========================================================================
@@ -260,7 +260,7 @@ void PointCloudViewerCallback::call(Var_base* v){
     if(W!=s->gl.width || H!=s->gl.height) s->gl.resize(W,H);
   }
 
-  s->gl.update(); //NULL, false, false, true);
+  s->gl.update(); //nullptr, false, false, true);
 }
 
 
@@ -296,7 +296,7 @@ void MeshAViewer::step() {
     copy = meshes.get();
   }
   
-  gl->update(); //NULL, false, false, true);
+  gl->update(); //nullptr, false, false, true);
 }
 
 
@@ -345,7 +345,8 @@ void PlotViewer::close() {
 }
 
 void PlotViewer::glDraw(OpenGL&){
-//  rai::Color c;
+#ifdef RAI_GL
+  //  rai::Color c;
 //  glColor(c.r, c.g, c.b);
   glColor(0.,0.,0.);
   for(uint i=0;i<plot.d1;i++){
@@ -357,6 +358,7 @@ void PlotViewer::glDraw(OpenGL&){
     }
     glEnd();
   }
+#endif
 }
 
 

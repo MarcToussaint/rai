@@ -22,7 +22,7 @@ struct PlanSkeletonEntry{
   double timeTo=-1.;
   PlanSkeletonEntry(){}
   PlanSkeletonEntry(StringA symbols,double _timeFrom,double _timeTo):symbols(symbols), timeStart(_timeFrom), timeTo(_timeTo){}
-  void write(ostream& os) const{ symbols.write(os," ",NULL,"()"); os <<" from " <<timeStart <<" to " <<timeTo; }
+  void write(ostream& os) const{ symbols.write(os," ",nullptr,"()"); os <<" from " <<timeStart <<" to " <<timeTo; }
 };
 stdOutPipe(PlanSkeletonEntry)
 
@@ -36,9 +36,9 @@ struct Plan{
 
 struct Simulation : GLDrawer{
   struct Simulation_self *self=0;
-  rai::KinematicWorld K;
+  rai::Configuration K;
 
-  Simulation(const rai::KinematicWorld& _K, double dt=.01);
+  Simulation(const rai::Configuration& _K, double dt=.01);
   ~Simulation();
 
   //-- stepping forward in time

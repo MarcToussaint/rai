@@ -160,7 +160,7 @@ void TEST(ForceClosure) {
 
     FCtest::center=center;
     FCtest::Xn=Xn;
-    checkGradient(Convert(FCtest::f, NULL), X, 1e-4);
+    checkGradient(Convert(FCtest::f, nullptr), X, 1e-4);
   }
 }
 
@@ -177,8 +177,8 @@ void drawInit(void*){
 
 /*
 void TEST(FCinOrs){
-  rai::KinematicWorld C;
-  C <<FILE("../../data/configurations/forceClosureTest.ors");
+  rai::Configuration C;
+  C <<FILE("../../data/configurations/forceClosureTest.g");
 
   OpenGL gl;
   gl.add(drawInit,0);

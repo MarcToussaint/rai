@@ -7,8 +7,10 @@
     --------------------------------------------------------------  */
 
 #include "teleop2tasks.h"
-#include <Kin/taskMaps.h>
 #include <Kin/frame.h>
+#include <Kin/F_qFeatures.h>
+#include <Kin/TM_default.h>
+#include <Kin/TM_proxy.h>
 
 enum BUTTON {
   BTN_NONE = 0,
@@ -34,7 +36,7 @@ inline bool stopButtons(const arr& gamepadState){
 }
 
 
-Teleop2Tasks::Teleop2Tasks(TaskControlMethods& _MP, const rai::KinematicWorld& K):fmc(_MP) {
+Teleop2Tasks::Teleop2Tasks(TaskControlMethods& _MP, const rai::Configuration& K):fmc(_MP) {
   effPosR = fmc.addPDTask(tasks, "MoveEffTo_endeffR", .2, 1.8, make_shared<TM_Default>(TMT_pos, K,"endeffR",NoVector,"base_footprint"));
   effPosR->PD().y_target = {0.8, -.5, 1.};
   
@@ -47,11 +49,11 @@ Teleop2Tasks::Teleop2Tasks(TaskControlMethods& _MP, const rai::KinematicWorld& K
   fc->f_alpha = .075;
   fc->active = true;
   
-  gripperR = fmc.addPDTask(tasks, "gripperR", .3, 1.8, make_shared<TM_qItself>(QIP_byJointNames, StringA({"r_gripper_joint"}), K));
+  gripperR = fmc.addPDTask(tasks, "gripperR", .3, 1.8, make_shared<F_qItself>(F_qItself::byJointNames, StringA({"r_gripper_joint"}), K));
   gripperR->PD().setTarget({0.01});
   //gripperR->PD().y_target = {.08};  // open gripper 8cm
   
-  gripperL = fmc.addPDTask(tasks, "gripperL", .3, 1.8, make_shared<TM_qItself>(QIP_byJointNames, StringA({"l_gripper_joint"}), K));
+  gripperL = fmc.addPDTask(tasks, "gripperL", .3, 1.8, make_shared<F_qItself>(F_qItself::byJointNames, StringA({"l_gripper_joint"}), K));
   gripperL->PD().setTarget({0.01});
   //gripperL->PD().y_target = {.08};  // open gripper 8cm
   
@@ -63,7 +65,7 @@ Teleop2Tasks::Teleop2Tasks(TaskControlMethods& _MP, const rai::KinematicWorld& K
   effOrientationL->PD().y_target = {1., 0., 0., 0.};
   effOrientationL->PD().flipTargetSignOnNegScalarProduct = true;
   
-  base = fmc.addPDTask(tasks, "basepos", .2,.8,make_shared<TM_qItself>(QIP_byJointNames, StringA({"worldTranslationRotation"}), K));
+  base = fmc.addPDTask(tasks, "basepos", .2,.8,make_shared<F_qItself>(F_qItself::byJointNames, StringA({"worldTranslationRotation"}), K));
   base->PD().y_target= {0.,0.,0.};
   base->active =false;
 }
@@ -114,7 +116,7 @@ void Teleop2Tasks::updateMovement(floatA& cal_pose, arr& old_pos, arr& old_effpo
   copy(old_pos, pos);
 }
 
-void Teleop2Tasks::updateTasks(floatA cal_pose_rh, floatA cal_pose_lh, float calibrated_gripper_lh, float calibrated_gripper_rh, arr drive, int button, const rai::KinematicWorld& K) {
+void Teleop2Tasks::updateTasks(floatA cal_pose_rh, floatA cal_pose_lh, float calibrated_gripper_lh, float calibrated_gripper_rh, arr drive, int button, const rai::Configuration& K) {
 
   effPosR->active = true;
   effPosL->active = false;
@@ -158,7 +160,7 @@ void Teleop2Tasks::updateTasks(floatA cal_pose_rh, floatA cal_pose_lh, float cal
     initialised = true;
   }
   
-  rai::Quaternion orsquats = K.getFrameByName("endeffBase") -> X.rot;
+  rai::Quaternion orsquats = K.getFrameByName("endeffBase") -> ensure_X().rot;
 //  rai::Joint *trans = K.getJointByName("worldTranslationRotation");
 //  orsquats.setRad( q(trans->qIndex+2),{0.,0.,1.} );
   rai::Quaternion orsquatsacc;

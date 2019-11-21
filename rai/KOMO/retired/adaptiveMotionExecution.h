@@ -21,7 +21,7 @@
 
 struct AdaptiveMotionExecution {
 
-  AdaptiveMotionExecution(rai::KinematicWorld &_world, arr& _trajRef, double _dt, double _TRef, arr &_x0, arr &_q0, MObject &_goalMO, \
+  AdaptiveMotionExecution(rai::Configuration &_world, arr& _trajRef, double _dt, double _TRef, arr &_x0, arr &_q0, MObject &_goalMO, \
                           bool _useOrientation);
   void printState();
   void plotState();
@@ -32,7 +32,7 @@ struct AdaptiveMotionExecution {
   void moveGoal(arr &_pos);
   
   void computeIK(arr &q, arr &qd);
-  rai::KinematicWorld *world;
+  rai::Configuration *world;
   
   double dt;
   double TRef;

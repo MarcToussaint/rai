@@ -163,7 +163,7 @@ void CtrlTask::getDesiredLinAccLaw(arr& Kp_y, arr& Kd_y, arr& a0_y) {
   }
 }
 
-void CtrlTask::getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const rai::KinematicWorld& world) {
+void CtrlTask::getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const rai::Configuration& world) {
   //-- get necessary Jacobians
   TM_Default *m = dynamic_cast<TM_Default*>(&map);
   CHECK(m,"this only works for the default position task map");
@@ -241,8 +241,8 @@ void ConstraintForceTask::updateConstraintControl(const arr& _g, const double& l
 
 //===========================================================================
 
-TaskControlMethods::TaskControlMethods(rai::KinematicWorld& _world, bool _useSwift)
-  : world(_world), qNullCostRef(NULL, NULL), useSwift(_useSwift) {
+TaskControlMethods::TaskControlMethods(rai::Configuration& _world, bool _useSwift)
+  : world(_world), qNullCostRef(nullptr, nullptr), useSwift(_useSwift) {
   computeMeshNormals(world.shapes);
   if(useSwift) {
     makeConvexHulls(world.shapes);

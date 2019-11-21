@@ -12,6 +12,10 @@
 
 #include <limits>
 
+#define RAI_extern_ply
+#define RAI_extern_GJK
+#define RAI_extern_Lewiner
+
 #ifdef RAI_extern_ply
 #  include "ply/ply.h"
 #endif
@@ -70,6 +74,7 @@ void rai::Mesh::setBox() {
   T.setCarray(tris , 36);
   V.reshape(8, 3);
   T.reshape(12, 3);
+  Vn.clear(); Tn.clear();
   //cout <<V <<endl;  for(uint i=0;i<4;i++) cout <<length(V[i]) <<endl;
 }
 
@@ -94,6 +99,7 @@ void rai::Mesh::setTetrahedron() {
   T.setCarray(tris , 12);
   V.reshape(4, 3);
   T.reshape(4, 3);
+  Vn.clear(); Tn.clear();
   //cout <<V <<endl;  for(uint i=0;i<4;i++) cout <<length(V[i]) <<endl;
 }
 
@@ -114,6 +120,7 @@ void rai::Mesh::setOctahedron() {
   T.setCarray(tris , 24);
   V.reshape(6, 3);
   T.reshape(8, 3);
+  Vn.clear(); Tn.clear();
   //cout <<V <<endl;  for(uint i=0;i<4;i++) cout <<length(V[i]) <<endl;
 }
 
@@ -153,6 +160,7 @@ void rai::Mesh::setDodecahedron() {
   T.setCarray(tris , 108);
   V.reshape(20, 3);
   T.reshape(36, 3);
+  Vn.clear(); Tn.clear();
 }
 
 void rai::Mesh::setSphere(uint fineness) {
@@ -212,6 +220,7 @@ void rai::Mesh::setCylinder(double r, double l, uint fineness) {
     T(4*i+3, 1)=i+div;
     T(4*i+3, 2)=2*div+1;
   }
+  Vn.clear(); Tn.clear();
 }
 
 void rai::Mesh::setSSBox(double x_width, double y_width, double z_height, double r, uint fineness) {
@@ -355,7 +364,7 @@ void rai::Mesh::addMesh(const Mesh& mesh2, const rai::Transformation& X) {
 }
 
 void rai::Mesh::makeConvexHull() {
-  if(!V.N) return;
+  if(V.d0<=1) return;
 #if 1
   V = getHull(V, T);
   if(C.nd==2) C = mean(C);
@@ -405,7 +414,7 @@ void rai::Mesh::makeLineStrip() {
   }
 }
 
-void rai::Mesh::setSSCvx(const rai::Mesh& m, double r, uint fineness) {
+void rai::Mesh::setSSCvx(const arr& core, double r, uint fineness) {
   if(r>0.) {
     Mesh ball;
     ball.setSphere(fineness);
@@ -413,16 +422,17 @@ void rai::Mesh::setSSCvx(const rai::Mesh& m, double r, uint fineness) {
     
     arr c=C;
     clear();
-    for(uint i=0; i<m.V.d0; i++) {
-      ball.translate(m.V(i,0), m.V(i,1), m.V(i,2));
+    for(uint i=0; i<core.d0; i++) {
+      ball.translate(core(i,0), core(i,1), core(i,2));
       addMesh(ball);
-      ball.translate(-m.V(i,0), -m.V(i,1), -m.V(i,2));
+      ball.translate(-core(i,0), -core(i,1), -core(i,2));
     }
     makeConvexHull();
     C=c;
   } else {
     arr c=C;
-    operator=(m);
+    V = core;
+    makeConvexHull();
     C=c;
   }
 }
@@ -1850,7 +1860,7 @@ void glTransform(const rai::Transformation&) { NICO }
 
 extern OpenGL& NoOpenGL;
 
-void glDrawMeshes(void *P) {
+void glDrawMeshes(void *P, OpenGL&) {
 #ifdef RAI_GL
   MeshA& meshes = *((MeshA*)P);
   double GLmatrix[16];
@@ -1865,6 +1875,7 @@ void glDrawMeshes(void *P) {
 }
 
 void rai::MeshCollection::glDraw(OpenGL& gl){
+#ifdef RAI_GL
   CHECK_EQ(X.nd, 2, "");
   CHECK_EQ(X.d0, M.N, "");
   CHECK_EQ(X.d1, 7, "");
@@ -1878,6 +1889,7 @@ void rai::MeshCollection::glDraw(OpenGL& gl){
     M(i)->glDraw(gl);
     glPopMatrix();
   }
+#endif
 }
 
 //==============================================================================
@@ -1915,8 +1927,8 @@ void inertiaCylinder(double *I, double& mass, double density, double height, dou
 //
 
 #ifdef RAI_extern_GJK
-GJK_point_type& NoPointType = *((GJK_point_type*)NULL);
-template<> const char* rai::Enum<GJK_point_type>::names []= { "GJK_none", "GJK_vertex", "GJK_edge", "GJK_face", NULL };
+GJK_point_type& NoPointType = *((GJK_point_type*)nullptr);
+template<> const char* rai::Enum<GJK_point_type>::names []= { "GJK_none", "GJK_vertex", "GJK_edge", "GJK_face", nullptr };
 double GJK_sqrDistance(const rai::Mesh& mesh1, const rai::Mesh& mesh2,
                        const rai::Transformation& t1, const rai::Transformation& t2,
                        rai::Vector& p1, rai::Vector& p2,
@@ -1925,8 +1937,8 @@ double GJK_sqrDistance(const rai::Mesh& mesh1, const rai::Mesh& mesh2,
   // convert meshes to 'Object_structures'
   Object_structure m1,m2;
   rai::Array<double*> Vhelp1, Vhelp2;
-  m1.numpoints = mesh1.V.d0;  m1.vertices = mesh1.V.getCarray(Vhelp1);  m1.rings=NULL; //TODO: rings would make it faster
-  m2.numpoints = mesh2.V.d0;  m2.vertices = mesh2.V.getCarray(Vhelp2);  m2.rings=NULL;
+  m1.numpoints = mesh1.V.d0;  m1.vertices = mesh1.V.getCarray(Vhelp1);  m1.rings=nullptr; //TODO: rings would make it faster
+  m2.numpoints = mesh2.V.d0;  m2.vertices = mesh2.V.getCarray(Vhelp2);  m2.rings=nullptr;
   
   // convert transformations to affine matrices
   arr T1,T2;
@@ -1936,7 +1948,7 @@ double GJK_sqrDistance(const rai::Mesh& mesh1, const rai::Mesh& mesh2,
   
   // call GJK
   simplex_point simplex;
-  double d2 = gjk_distance(&m1, Thelp1.p, &m2, Thelp2.p, (!p1?NULL:p1.p()), (!p2?NULL:p2.p()), &simplex, 0);
+  double d2 = gjk_distance(&m1, Thelp1.p, &m2, Thelp2.p, (!p1?nullptr:p1.p()), (!p2?nullptr:p2.p()), &simplex, 0);
   
 //  cout <<"simplex npts=" <<simplex.npts <<endl;
 //  cout <<"simplex lambda=" <<arr(simplex.lambdas, 4) <<endl;
@@ -2210,7 +2222,7 @@ void closestPointOnBox(arr& closest, arr& signs, const rai::Transformation& t, d
   closest = a_rel;
   arr del_abs = fabs(a_rel)-dim;
   if(del_abs.max()<0.) { //inside
-    uint side=del_abs.maxIndex(); //which side are we closest to?
+    uint side=del_abs.argmax(); //which side are we closest to?
     //in positive or neg direction?
     if(a_rel(side)>0) { closest(side) = dim(side);  signs(side)=+1.; }
     else             { closest(side) =-dim(side);  signs(side)=-1.; }
@@ -2238,7 +2250,7 @@ double DistanceFunction_Box::f(arr& g, arr& H, const arr& x) {
   arr del_abs = fabs(a_rel)-dim;
   //-- find closest point on box and distance to it
   if(del_abs.max()<0.) { //inside
-    uint side=del_abs.maxIndex(); //which side are we closest to?
+    uint side=del_abs.argmax(); //which side are we closest to?
     if(a_rel(side)>0) closest(side) = dim(side);  else  closest(side)=-dim(side); //in positive or neg direction?
   } else { //outside
     closest = elemWiseMax(-dim,closest);
@@ -2297,18 +2309,20 @@ ScalarFunction DistanceFunction_SSBox = [](arr& g, arr& H, const arr& x) -> doub
   return d;
 };
 
-uint rai::Mesh::support(const arr &dir) {
-  if(!graph.N) { //build graph
-    graph.resize(V.d0);
-    for(uint i=0; i<T.d0; i++) {
-      graph(T(i,0)).setAppend(T(i,1));
-      graph(T(i,0)).setAppend(T(i,2));
-      graph(T(i,1)).setAppend(T(i,0));
-      graph(T(i,1)).setAppend(T(i,2));
-      graph(T(i,2)).setAppend(T(i,0));
-      graph(T(i,2)).setAppend(T(i,1));
-    }
+void rai::Mesh::buildGraph(){
+  graph.resize(V.d0);
+  for(uint i=0; i<T.d0; i++) {
+    graph(T(i,0)).setAppend(T(i,1));
+    graph(T(i,0)).setAppend(T(i,2));
+    graph(T(i,1)).setAppend(T(i,0));
+    graph(T(i,1)).setAppend(T(i,2));
+    graph(T(i,2)).setAppend(T(i,0));
+    graph(T(i,2)).setAppend(T(i,1));
   }
+}
+
+uint rai::Mesh::support(const arr &dir) {
+  if(!graph.N) buildGraph();
   
   arr q(V.d0);
   for(uint i=0; i<V.d0; i++) q(i) = scalarProduct(dir, V[i]);

@@ -18,7 +18,7 @@ struct sANN {
   //PartialLeastSquares pls;
   rai::Array<double*> cpointers;
   uint treeSize;   //for how many entries in X have we build the tree?
-  void clear() { if(tree) delete tree;   tree=NULL;  cpointers.clear();  treeSize=0; }
+  void clear() { if(tree) delete tree;   tree=nullptr;  cpointers.clear();  treeSize=0; }
 };
 
 ANN::ANN() {
@@ -144,6 +144,7 @@ void ANN::getkNN(arr& xx             , const arr& x, uint k, double eps, bool ve
 ANN::ANN() { NICO }
 ANN::~ANN() { NICO }
 
+void ANN::calculate() { NICO }
 void ANN::setX(const arr& _XX) { NICO }
 void ANN::append(const arr& x) { NICO }
 uint ANN::getNN(const arr& x, double eps, bool verbose) { NICO }

@@ -15,7 +15,7 @@ GlobalIterativeNewton::GlobalIterativeNewton(const ScalarFunction& f, const arr&
     newton(x, f, opt),
     grad(x, f, opt),
     bounds_lo(bounds_lo), bounds_hi(bounds_hi),
-    best(NULL) {
+    best(nullptr) {
   newton.bound_lo = bounds_lo;
   newton.bound_hi = bounds_hi;
   newton.o.verbose = 0;
@@ -25,7 +25,7 @@ GlobalIterativeNewton::~GlobalIterativeNewton() {
 }
 
 void addRun(GlobalIterativeNewton& gin, const arr& x, double fx, double tol) {
-  GlobalIterativeNewton::LocalMinimum *found=NULL;
+  GlobalIterativeNewton::LocalMinimum *found=nullptr;
   for(GlobalIterativeNewton::LocalMinimum& m:gin.localMinima) {
     double d = euclideanDistance(x, m.x);
     if(euclideanDistance(x,m.x)<tol) {
@@ -43,7 +43,7 @@ void addRun(GlobalIterativeNewton& gin, const arr& x, double fx, double tol) {
   } else {
     gin.localMinima.append({x, fx, 1});
     found = &gin.localMinima.last();
-    gin.best = NULL;
+    gin.best = nullptr;
   }
   
   if(!gin.best) {

@@ -185,7 +185,7 @@ CT_Status MotionProfile_Path::update(arr& yRef, arr& ydotRef, double tau, const 
 //===========================================================================
 
 CtrlTask::CtrlTask(const char* name, Feature* map)
-  : map(map), name(name), active(true), status(CT_init), ref(NULL), prec(ARR(1.)), hierarchy(1) {
+  : map(map), name(name), active(true), status(CT_init), ref(nullptr), prec(ARR(1.)), hierarchy(1) {
   //  ref = new MotionProfile_PD();
 }
 
@@ -202,11 +202,11 @@ CtrlTask::CtrlTask(const char* name, Feature* map, const Graph& params)
 }
 
 CtrlTask::~CtrlTask() {
-  if(map) delete map; map=NULL;
-  if(ref) delete ref; ref=NULL;
+  if(map) delete map; map=nullptr;
+  if(ref) delete ref; ref=nullptr;
 }
 
-CT_Status CtrlTask::update(double tau, const rai::KinematicWorld& world) {
+CT_Status CtrlTask::update(double tau, const rai::Configuration& world) {
   map->phi(y, J_y, world);
   if(world.qdot.N) v = J_y*world.qdot; else v.resize(y.N).setZero();
   CT_Status s=status;
@@ -248,7 +248,7 @@ arr CtrlTask::getPrec() {
   return comp_At_A(prec);
 }
 
-void CtrlTask::getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const rai::KinematicWorld& world) {
+void CtrlTask::getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const rai::Configuration& world) {
   //-- get necessary Jacobians
   TM_Default *m = dynamic_cast<TM_Default*>(map);
   CHECK(m,"this only works for the default position task map");
@@ -282,14 +282,14 @@ void CtrlTask::reportState(ostream& os) {
 
 //===========================================================================
 
-TaskControlMethods::TaskControlMethods(const rai::KinematicWorld& world)
-  : Hmetric(world.getHmetric()), qNullCostRef("qNullPD", new TM_qItself()) {
+TaskControlMethods::TaskControlMethods(const rai::Configuration& world)
+  : Hmetric(world.getHmetric()), qNullCostRef("qNullPD", new F_qItself()) {
 //  qNullCostRef.PD().setGains(0.,1.);
 //  qNullCostRef.prec = ::sqrt(rai::getParameter<double>("Hrate", .1)*Hmetric);
 //  qNullCostRef.PD().setTarget(world.q);
 }
 
-void TaskControlMethods::updateCtrlTasks(double tau, const rai::KinematicWorld& world) {
+void TaskControlMethods::updateCtrlTasks(double tau, const rai::Configuration& world) {
   qNullCostRef.update(tau, world);
   for(CtrlTask* t: tasks) t->update(tau, world);
 }
@@ -322,7 +322,7 @@ CtrlTask* TaskControlMethods::addPDTask(const char* name, double decayTime, doub
 //  return t;
 //}
 
-void TaskControlMethods::lockJointGroup(const char* groupname, rai::KinematicWorld& world, bool lockThem) {
+void TaskControlMethods::lockJointGroup(const char* groupname, rai::Configuration& world, bool lockThem) {
   if(!groupname) {
     if(lockThem) {
       lockJoints = consts<byte>(true, world.q.N);
@@ -673,7 +673,7 @@ arr TaskControlMethods::calcOptimalControlProjected(arr &Kp, arr &Kd, arr &u0, c
   return u0 + Kp*q + Kd*qdot;
 }
 
-void fwdSimulateControlLaw(arr& Kp, arr& Kd, arr& u0, rai::KinematicWorld& world) {
+void fwdSimulateControlLaw(arr& Kp, arr& Kd, arr& u0, rai::Configuration& world) {
   arr M, F;
   world.equationOfMotion(M, F, false);
   
@@ -688,7 +688,7 @@ void fwdSimulateControlLaw(arr& Kp, arr& Kd, arr& u0, rai::KinematicWorld& world
   }
 }
 
-void TaskControlMethods::calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, double& gamma, const rai::KinematicWorld& world) {
+void TaskControlMethods::calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, double& gamma, const rai::Configuration& world) {
   uint nForceTasks=0;
   for(CtrlTask* task : this->tasks) if(task->active && task->f_ref.N) {
       nForceTasks++;

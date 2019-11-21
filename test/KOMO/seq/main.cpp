@@ -9,18 +9,15 @@ using namespace std;
 
 void TEST(KomoSequence){
 
-  rai::KinematicWorld K("model.g");
+  rai::Configuration K("model.g");
   K.optimizeTree(false);
   makeConvexHulls(K.frames);
 
   KOMO_ext komo;
   komo.setModel(K);
   komo.setPathOpt(2., 20, 10.);
-//  komo.setConfigFromFile();
 
-  //  komo.setHoming(-1., -1., 1e-1);
-  //  komo.setSquaredQVelocities();
-  komo.setSquaredQAccelerations();
+  komo.setSquaredQAccVelHoming();
 
   komo.setGrasp(1., "humanR", "Long1");
   komo.setPlace(1.8, "humanR", "Long1", "tableL");

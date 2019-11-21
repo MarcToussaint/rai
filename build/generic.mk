@@ -34,62 +34,6 @@ endif
 
 ################################################################################
 #
-# basic compiler settings
-#
-################################################################################
-# (a tag like `OPTIM=fast' in the local Makefiles changes default debug mode)
-
-ifndef CXX
-CXX	= g++
-CC	= gcc
-endif
-MOC = moc
-UIC = uic
-YACC = bison -d
-
-LINK	= $(CXX)
-CPATHS	+= $(BASE)/rai
-ifdef BASE2
-CPATHS	+= $(BASE2)
-endif
-LPATHS	+= $(BASE_REAL)/lib /usr/local/lib
-LIBS += -lrt
-SHAREFLAG = -shared #-Wl,--warn-unresolved-symbols #-Wl,--no-allow-shlib-undefined
-
-CXXFLAGS += -fPIC
-CFLAGS += -fPIC
-
-ifndef RAI_NO_CXX11
-CXXFLAGS += -std=c++0x
-endif
-
-ifndef OPTIM
-OPTIM = debug
-endif
-
-ifeq ($(OPTIM),debug)
-CXXFLAGS := -g -Wall $(CXXFLAGS)#-Wno-int-to-pointer-cast#-Wno-invalid-offsetof
-endif
-ifeq ($(OPTIM),fast_debug)
-CXXFLAGS := -g -O3 -Wall $(CXXFLAGS)
-endif
-ifeq ($(OPTIM),penibel)
-CXXFLAGS := -g -Wall -Wextra $(CXXFLAGS)
-endif
-ifeq ($(OPTIM),fast)
-CXXFLAGS := -O3 -Wall $(CXXFLAGS)
-endif
-ifeq ($(OPTIM),prof)
-CXXFLAGS := -O3 -pg -Wall -DRAI_NOCHECK -fno-inline $(CXXFLAGS)
-LDFLAGS += -pg
-endif
-ifeq ($(OPTIM),callgrind)
-CXXFLAGS := -O -g -Wall -DRAI_NOCHECK -fno-inline $(CXXFLAGS)
-endif
-
-
-################################################################################
-#
 # default target
 #
 ################################################################################
@@ -124,6 +68,63 @@ include $(BASE)/build/defines.mk
 
 ################################################################################
 #
+# basic compiler settings
+#
+################################################################################
+# (a tag like `OPTIM=fast' in the local Makefiles changes default debug mode)
+
+ifndef CXX
+CXX	= g++
+CC	= gcc
+endif
+MOC = moc
+UIC = uic
+YACC = bison -d
+
+LINK	= $(CXX)
+CPATHS	+= $(BASE)/rai
+ifdef BASE2
+CPATHS	+= $(BASE2)
+endif
+LPATHS	+= $(BASE_REAL)/lib /usr/local/lib
+LIBS += -lrt
+SHAREFLAG = -shared #-Wl,--warn-unresolved-symbols #-Wl,--no-allow-shlib-undefined
+
+CXXFLAGS += -Wno-terminate -fPIC
+CFLAGS += -fPIC
+
+ifndef RAI_NO_CXX11
+#CXXFLAGS += -std=c++0x
+CXXFLAGS += -std=c++14
+endif
+
+ifndef OPTIM
+OPTIM = debug
+endif
+
+ifeq ($(OPTIM),debug)
+CXXFLAGS := -g -march=native -Wall $(CXXFLAGS)#-Wno-int-to-pointer-cast#-Wno-invalid-offsetof
+endif
+ifeq ($(OPTIM),fast_debug)
+CXXFLAGS := -g -O3 -march=native -Wall $(CXXFLAGS)
+endif
+ifeq ($(OPTIM),penibel)
+CXXFLAGS := -g -Wall -Wextra $(CXXFLAGS)
+endif
+ifeq ($(OPTIM),fast)
+CXXFLAGS := -O3 -Wall $(CXXFLAGS)
+endif
+ifeq ($(OPTIM),prof)
+CXXFLAGS := -O3 -pg -Wall -DRAI_NOCHECK -fno-inline $(CXXFLAGS)
+LDFLAGS += -pg
+endif
+ifeq ($(OPTIM),callgrind)
+CXXFLAGS := -O -g -Wall -DRAI_NOCHECK -fno-inline $(CXXFLAGS)
+endif
+
+
+################################################################################
+#
 # VARS for SWIG wrappers
 #
 ################################################################################
@@ -151,26 +152,24 @@ SWIG_FLAGS=-c++ -python $(SWIG_INCLUDE)
 
 BUILDS := $(DEPEND:%=inPath_makeLib/%) $(BUILDS)
 LIBS := $(DEPEND:%=-l%) $(LIBS)
-CXXFLAGS := $(DEPEND:%=-DRAI_%) $(CXXFLAGS)
+#CXXFLAGS := $(DEPEND:%=-DRAI_%) $(CXXFLAGS)
 
 
 ################################################################################
 #
-# export Linux/MSVC include/lib paths
+# export include/lib paths
 #
 ################################################################################
 
 CPATH := $(CPATH):$(CPATHS:%=:%:)
 LPATH := $(LPATH):$(LPATHS:%=:%:)
-LDFLAGS += $(LPATHS:%=-L%)
+LDFLAGS += $(LPATHS:%=-L%) #$(LPATHS:%=-Wl,-rpath,%)
 LD_RUN_PATH := $(LD_RUN_PATH):$(LPATH)
 LD_LIBRARY_PATH := $(LD_LIBRARY_PATH):$(LPATH)
 export CPATH
 export LPATH
 export LD_RUN_PATH
 export LD_LIBRARY_PATH
-export MSVC_CPATH
-export MSVC_LPATH
 
 
 ################################################################################
@@ -195,7 +194,7 @@ cleanLibs: force
 	@echo "   *** cleanLibs  " $(PWD)
 	@find $(BASE)/rai $(BASE2) \( -type f -or -type l \) \( -name 'lib*.so' -or -name 'lib*.a' \)  -delete -print
 
-cleanAll: cleanLocks force
+cleanAll: cleanLocks cleanDepends force
 	@echo "   *** cleanAll   " $(PWD)
 	@find $(PWD) $(BASE) $(BASE2) \( -type f -or -type l \) \( -name '*.o' -or -name 'lib*.so' -or -name 'lib*.a' -or -name 'x.exe' \) -delete -print
 
@@ -205,14 +204,17 @@ cleanDepends: force
 installUbuntu: force
 	sudo apt-get -q $(APTGETYES) install $(DEPEND_UBUNTU)
 
-printUbuntuPackages: force
+printUbuntu: force
 	@echo $(DEPEND_UBUNTU)
+
+printDepend: force
+	@echo $(DEPEND)
 
 depend: generate_Makefile.dep
 
-dependAll: force
-	@echo "   *** dependAll   " $(PWD)
-	@find $(PWD) $(BASE) $(BASE2) -type f -name 'Makefile' -execdir $(MAKE) depend \;
+# dependAll: force
+# 	@echo "   *** dependAll   " $(PWD)
+# 	@find $(PWD) $(BASE) $(BASE2) -type f -name 'Makefile' -execdir $(MAKE) depend \;
 
 
 info: force
@@ -236,8 +238,6 @@ info: force
 	@echo "  LPATHS =" "$(LPATHS)"
 	@echo "  LPATH =" "$(LPATH)"
 	@echo "  LD_RUN_PATH =" "$(LD_RUN_PATH)"
-	@echo "  MSVC_CPATH =" "$(MSVC_CPATH)"
-	@echo "  MSVC_LPATH =" "$(MSVC_LPATH)"
 	@echo "  SRCS =" "$(SRCS)"
 	@echo "  OBJS =" "$(OBJS)"
 	@echo "  LIBS =" "$(LIBS)"
@@ -295,6 +295,10 @@ pywrapper: $(OUTPUT) $(MODULE_NAME)py.so $(MODULE_NAME)py.py
 	$(LINK) $(LDFLAGS) -o $@ $(OBJS) $(LIBS) $(SHAREFLAG)
 	cp $@ $(BASE)/lib
 
+#%.so: $(PREOBJS) $(BUILDS) z.SRCS.o
+#	$(LINK) $(LDFLAGS) -o $@ z.SRCS.o $(LIBS) $(SHAREFLAG)
+#	cp $@ $(BASE)/lib
+
 %.lib: $(PREOBJS) $(BUILDS) $(OBJS)
 	$(LINK) $(LDFLAGS) -o $@ $(OBJS) $(LIBS) -static ### $(SHAREFLAG)
 
@@ -348,8 +352,9 @@ endif
 generate_Makefile.dep: $(SRCS)
 	-$(CXX) -MM $(SRCS) $(CFLAGS) $(CXXFLAGS) > Makefile.dep
 
-includeAll.cxx: force
-	find . -maxdepth 1 -name '*.cpp' -exec echo "#include \"{}\"" \; > includeAll.cxx
+z.SRCS.cxx: $(SRCS)
+	@echo "$(SRCS:%=#include\"%\"\n)" > z.SRCS.cxx
+#	find . -maxdepth 1 -name '*.cpp' -exec echo "#include \"{}\"" \; > libInc.cxx
 
 
 ################################################################################
@@ -422,9 +427,13 @@ inPath_installUbuntu/%: $(BASE2)/%
 	@-$(MAKE) -C $< installUbuntu --no-print-directory
 endif
 
-inPath_printUbuntuPackages/%: $(BASE)/rai/%
+inPath_printUbuntu/%: $(BASE)/rai/%
 	@echo "#" $*
-	@-$(MAKE) -C $< printUbuntuPackages --no-print-directory
+	@-$(MAKE) -C $< printUbuntu --no-print-directory
+
+inPath_printDepend/%: $(BASE)/rai/%
+	@echo "#" $*
+	@-$(MAKE) -C $< printDepend --no-print-directory
 
 inPath_makePython/%: %
 	make --directory=$< pywrapper

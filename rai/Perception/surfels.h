@@ -43,7 +43,7 @@ struct SurfelStatistics {
 struct Surfels {
   OpenGL gl;
   Mutex mx;
-  arrf pos, norm, col, rad;
+  floatA pos, norm, col, rad;
   rai::Array<SurfelStatistics> D;
   uint32A surfelIdx, rndPerm;
   byteA mask,idxImage;

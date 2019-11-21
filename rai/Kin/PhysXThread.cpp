@@ -11,14 +11,14 @@
 #include <Kin/kinViewer.h>
 
 struct PhysXThread : Thread {
-  Var<rai::KinematicWorld> modelWorld;
-  Var<rai::KinematicWorld> physxWorld;
+  Var<rai::Configuration> modelWorld;
+  Var<rai::Configuration> physxWorld;
   Var<arr> ctrl_q_ref;
   PhysXInterface *px;
   KinViewer *view;
   OpenGL *gl;
   
-  PhysXThread() : Thread("PhysX", .03), px(NULL), view(NULL), gl(NULL) {
+  PhysXThread() : Thread("PhysX", .03), px(nullptr), view(nullptr), gl(nullptr) {
     threadLoop(true);
   }
   
@@ -39,9 +39,9 @@ struct PhysXThread : Thread {
     }
     physxWorld.deAccess();
 #endif
-    px = new PhysXInterface(physxWorld.set());
-    px->setArticulatedBodiesKinematic();
-    view = new KinViewer(Var<rai::KinematicWorld>()); NIY //("physxWorld", .1);
+    px = new PhysXInterface(physxWorld.get());
+    px->setArticulatedBodiesKinematic(physxWorld.get());
+    view = new KinViewer(Var<rai::Configuration>()); NIY //("physxWorld", .1);
     view->threadLoop();
   }
   
@@ -50,7 +50,7 @@ struct PhysXThread : Thread {
     physxWorld().setJointState(ctrl_q_ref.get());
     px->step();
     physxWorld.deAccess();
-    if(gl) if(!(step_count%10)) gl->update(NULL, true);
+    if(gl) if(!(step_count%10)) gl->update(nullptr, true);
   }
   
   void close() {

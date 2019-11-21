@@ -15,7 +15,7 @@ struct GamepadControlThread : Thread {
   struct Gamepad2Tasks *g2t;
   VAR(arr, gamepadState)
   VAR(CtrlTaskL, ctrlTasks)
-  VAR(rai::KinematicWorld, modelWorld)
+  VAR(rai::Configuration, modelWorld)
   
   struct GamepadInterface *gamepadPoller;
   TaskControlMethods *tc;

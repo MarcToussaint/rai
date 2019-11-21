@@ -273,9 +273,17 @@ void F_Link::updateFeatherstones() {
   _f(3)=fo.x;  _f(4)=fo.y;  _f(5)=fo.z;
 }
 
+void FeatherstoneInterface::setGravity(double g){
+  rai::Vector grav(0, 0, g);
+  for(rai::Frame *f: K.frames) {
+    F_Link& link=tree(f->ID);
+    link.force = link.mass * grav;
+  }
+}
+
 void FeatherstoneInterface::update() {
   if(tree.N != K.frames.N) { //new instance -> create the tree
-    CHECK_EQ(K.frames, K.fwdActiveSet, "Featherstone requires a sorted optimized frame tree (call optimizeTree and fwdIndexIDs)");
+    CHECK_EQ(K.frames, sortedFrames, "Featherstone requires a sorted optimized frame tree (call optimizeTree and fwdIndexIDs)");
     tree.clear();
     tree.resize(K.frames.N);
     
@@ -284,10 +292,10 @@ void FeatherstoneInterface::update() {
     for(rai::Frame* f : K.frames) {
       F_Link& link=tree(f->ID);
       link.ID = f->ID;
-      link.X = f->X;
+      link.X = f->ensure_X();
       if(f->parent) { //is not a root
         link.parent = f->parent->ID;
-        link.Q = f->Q;
+        link.Q = f->get_Q();
         rai::Joint *j;
         if((j=f->joint)) {
           link.type   = j->type;
@@ -300,23 +308,13 @@ void FeatherstoneInterface::update() {
         link.com = f->inertia->com;
         link.mass=f->inertia->mass; CHECK(link.mass>0. || link.qIndex==-1, "a moving link without mass -> this will diverge");
         link.inertia=f->inertia->matrix;
-        link.force=f->inertia->force;
-        link.torque=f->inertia->torque;
       }
     }
   } else { //just update an existing structure
     for(rai::Frame *f: K.frames) {
       F_Link& link=tree(f->ID);
-      link.X = f->X;
-      if(f->parent) link.Q = f->Q;
-      
-      if(f->inertia) {
-        link.force=f->inertia->force;
-        link.torque=f->inertia->torque;
-      } else {
-        link.force.setZero();
-        link.torque.setZero();
-      }
+      link.X = f->ensure_X();
+      if(f->parent) link.Q = f->get_Q();
     }
   }
   
@@ -994,8 +992,8 @@ void FeatherstoneInterface::fwdDynamics_MF(arr& qdd,
 }
 
 // #else ///RAI_FEATHERSTONE
-// void GraphToTree(F_LinkTree& tree, const rai::KinematicWorld& C) { NIY; }
-// void updateGraphToTree(F_LinkTree& tree, const rai::KinematicWorld& C) { NIY; }
+// void GraphToTree(F_LinkTree& tree, const rai::Configuration& C) { NIY; }
+// void updateGraphToTree(F_LinkTree& tree, const rai::Configuration& C) { NIY; }
 // void Featherstone::equationOfMotion(arr& H, arr& C,
 //                                     const F_LinkTree& tree,
 //                                     const arr& qd) { NIY; }

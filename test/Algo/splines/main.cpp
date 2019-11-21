@@ -58,7 +58,7 @@ void TEST(BSpline){
   cout <<"times = " <<S.times <<endl;
 
   plotOpengl();
-  plotModule.drawBox=true;
+  plotModule()->drawBox=true;
   S.plotBasis();
   
   arr path = S.eval();
@@ -123,6 +123,29 @@ void TEST(BSpline){
   plotClose();
 }
 
+void TEST(BSpline2){
+
+  arr X(5, 1, {0., 2., 1.9, 1.8, 2.});
+  arr T = {0., 10.9, 11., 11.1, 12.};
+
+  rai::Spline S;
+  S.set(2, X, T);
+
+  cout <<"times = " <<S.times <<endl;
+
+  ofstream fil("z.test");
+  for(double t=T.first();t<=T.last();t+=.001){
+    fil <<t <<' ' <<S.eval(t) <<endl;
+  }
+  fil.close();
+  gnuplot("plot 'z.test' us 1:2", false, true);
+
+  //Cost cost;
+
+
+  plotClose();
+}
+
 void TEST(Path){
   arr X(11,1);
   rndUniform(X,-1,1,false);
@@ -164,7 +187,8 @@ void TEST(Path){
 int MAIN(int argc,char** argv){
   rai::initCmdLine(argc, argv);
 
-  testBSpline();
+//  testBSpline();
+  testBSpline2();
 //  testPath();
 
   return 0;

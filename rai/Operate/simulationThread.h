@@ -11,7 +11,7 @@ struct SimulationThread : Thread, RobotAbstraction {
   struct SimulationThread_self* self=0;
   arr q0;
 
-  SimulationThread(const rai::KinematicWorld& _K, double dt=.01, bool pubSubToROS=false);
+  SimulationThread(const rai::Configuration& _K, double dt=.01, bool pubSubToROS=false);
   ~SimulationThread();
 
   //non threaded looping
@@ -35,5 +35,5 @@ struct SimulationThread : Thread, RobotAbstraction {
   virtual arr getJointPositions(const StringA& joints={});
 
   //--- artificial intervention
-  void addFile(const char* filename, const char* parentOfRoot=NULL, const rai::Transformation& relOfRoot=0);
+  void addFile(const char* filename, const char* parentOfRoot=nullptr, const rai::Transformation& relOfRoot=0);
 };

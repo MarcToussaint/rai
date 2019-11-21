@@ -10,6 +10,7 @@
 #include "filter.h"
 #include <Control/taskControl.h>
 #include <Kin/frame.h>
+#include <Kin/TM_default.h>
 
 Filter::Filter()
   : Thread("Filter", -1.),
@@ -24,7 +25,7 @@ Filter::~Filter() {
 }
 
 void Filter::open() {
-  Var<rai::KinematicWorld> modelWorld(this, "modelWorld");
+  Var<rai::Configuration> modelWorld(this, "modelWorld");
   modelWorld.readAccess();
   for(rai::Frame *b:modelWorld().frames) {
     if(b->ats["percept"]) {
@@ -37,7 +38,7 @@ void Filter::open() {
         rai::Shape *s=b->shape;
         switch(s->type()) {
           case rai::ST_box: {
-            PerceptPtr p = make_shared<PercBox>(b->X, s->size(), s->mesh().C);
+            PerceptPtr p = make_shared<PercBox>(b->ensure_X(), s->size(), s->mesh().C);
             p->id = nextId++;
             p->bodyId = b->ID;
             percepts_filtered.set()->append(p);
@@ -224,7 +225,7 @@ PerceptL Filter::assign(const PerceptL& inputs, const PerceptL& database, const 
   uint num_new = inputs.N;
   
   for(uint i = 0; i < ha.starred.dim(0); ++i) {   //index over inputs
-    uint col = ha.starred[i]().maxIndex();        //index over database
+    uint col = ha.starred[i]().argmax();        //index over database
     // 3 cases:
     // 1) Existed before, no longer exists. If i > num_new
     // 2) Existed before and still exists. If costs < distannce_threshold

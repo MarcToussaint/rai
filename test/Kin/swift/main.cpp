@@ -4,7 +4,7 @@
 #include <Kin/frame.h>
 
 void TEST(Swift) {
-  rai::KinematicWorld K("swift_test.g");
+  rai::Configuration K("swift_test.g");
 
   K.swift().setCutoff(2.);
   K.stepSwift();
@@ -12,9 +12,8 @@ void TEST(Swift) {
 
   uint t;
   for(t=0;t<50;t++){
-    K.frames(0)->X.addRelativeTranslation(0,0,-.01);
-    K.frames(0)->X.addRelativeRotationDeg(10,1,0,0);
-    K.calc_fwdPropagateFrames();
+    K.frames(0)->set_X()->addRelativeTranslation(0,0,-.01);
+    K.frames(0)->set_X()->addRelativeRotationDeg(10,1,0,0);
 
     K.stepSwift();
 
@@ -26,14 +25,14 @@ void TEST(Swift) {
 }
 
 void TEST(CollisionTiming){
-  rai::KinematicWorld K("../../../../rai-robotModels/pr2/pr2.g");
+  rai::Configuration K("../../../../rai-robotModels/pr2/pr2.g");
 
   K.swift().setCutoff(1.);
 
   cout <<"# objects:" <<K.swift().countObjects() <<endl;
 
   arr q0,q;
-  K.getJointState(q0);
+  q0 = K.getJointState();
   rai::timerStart();
   uint t;
   for(t=0;t<1000;t++){

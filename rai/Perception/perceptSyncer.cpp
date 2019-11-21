@@ -9,7 +9,7 @@
 #include "perceptSyncer.h"
 #include <Kin/frame.h>
 
-SyncFiltered::SyncFiltered(Var<PerceptL>& _percepts, Var<rai::KinematicWorld>& _kin)
+SyncFiltered::SyncFiltered(Var<PerceptL>& _percepts, Var<rai::Configuration>& _kin)
   : Thread("SyncFiltered", -1.),
     percepts(this, _percepts, true),
     kin(this, _kin, false) {

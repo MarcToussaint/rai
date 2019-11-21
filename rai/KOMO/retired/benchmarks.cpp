@@ -20,11 +20,11 @@ void setTasks(KOMO& MP,
               double duration);
 
 struct sPR2EndPoseProblem {
-  rai::KinematicWorld world;
+  rai::Configuration world;
   KOMO MP;
   Convert *CP;
   sPR2EndPoseProblem()
-    :world("model.kvg"), MP(world), CP(NULL) {}
+    :world("model.kvg"), MP(world), CP(nullptr) {}
 };
 
 PR2EndPoseProblem::PR2EndPoseProblem()

@@ -90,7 +90,7 @@ public:
   
   OpenGL *gl;
 //private:
-  rai::KinematicWorld *C;
+  rai::Configuration *C;
   OdeModule *ode; // HIER PARAMETER verstellen
   SwiftInterface *swift;
   TaskVariableList TVs;

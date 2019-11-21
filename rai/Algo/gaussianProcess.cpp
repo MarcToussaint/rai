@@ -16,9 +16,9 @@ double const_0(const arr &x, const void *p) {return 0.;}
 GaussianProcess::GaussianProcess() :
   mu(0.),
   mu_func(const_0),
-  priorP(NULL),
+  priorP(nullptr),
   obsVar(.1),
-  kernelP(NULL)
+  kernelP(nullptr)
 {}
 
 /** set Gauss cov function, its parameters, and GP prior
@@ -28,7 +28,7 @@ void GaussianProcess::setGaussKernelGP(
   double _mu) {
   mu = _mu;
   mu_func = const_0;
-  priorP = NULL;
+  priorP = nullptr;
   kernelP=_kernelP;
   cov=GaussKernel;
   dcov=dGaussKernel;

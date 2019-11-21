@@ -38,10 +38,10 @@ struct TM_Proxy : Feature {
            double _margin=.0);
   virtual ~TM_Proxy() {}
   
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
-  virtual uint dim_phi(const rai::KinematicWorld& G);
-  virtual rai::String shortTag(const rai::KinematicWorld& G) { return STRING("ProxyCost"); }
-  virtual Graph getSpec(const rai::KinematicWorld& K){ return Graph({{"feature", "ProxyCost"}}); }
+  virtual void phi(arr& y, arr& J, const rai::Configuration& G);
+  virtual uint dim_phi(const rai::Configuration& G);
+  virtual rai::String shortTag(const rai::Configuration& G) { return STRING("ProxyCost"); }
+  virtual Graph getSpec(const rai::Configuration& K){ return Graph({{"feature", "ProxyCost"}}); }
 };
 
 //===========================================================================
@@ -51,7 +51,7 @@ struct TM_ProxyConstraint : Feature {
   TM_ProxyConstraint(PTMtype _type,
                      uintA _shapes,
                      double _margin=.02);
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G);
-  virtual uint dim_phi(const rai::KinematicWorld& G) { return 1; }
-  virtual rai::String shortTag(const rai::KinematicWorld& G) { return "ProxyConstraint"; }
+  virtual void phi(arr& y, arr& J, const rai::Configuration& G);
+  virtual uint dim_phi(const rai::Configuration& G) { return 1; }
+  virtual rai::String shortTag(const rai::Configuration& G) { return "ProxyConstraint"; }
 };

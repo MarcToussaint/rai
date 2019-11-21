@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include <Kin/taskMaps.h>
 #include <Algo/spline.h>
 #include <Core/thread.h>
+#include <Kin/kin.h>
 
 /**
  * @file
@@ -125,14 +125,15 @@ struct MotionProfile_PD : MotionProfile {
 
 struct MotionProfile_Path: MotionProfile {
   rai::Spline spline;
-  double executionTime;
-  double phase;
-  MotionProfile_Path(const arr& path, double executionTime);
+  double endTime;
+  double time;
+  MotionProfile_Path(const arr& path, double endTime);
+  MotionProfile_Path(const arr& path, const arr& times);
   virtual ActStatus update(arr& yRef, arr& ydotRef, double tau,const arr& y, const arr& ydot);
   virtual void setTarget(const arr& ytarget, const arr& vtarget=NoArr){ HALT("can't directly set target of a path"); }
-  virtual void setTimeScale(double d){ executionTime = d; }
+  virtual void setTimeScale(double d){ endTime = d; }
   virtual void resetState() { NIY }
-  virtual bool isDone() { return phase>=1.; }
+  virtual bool isDone() { return time>=endTime; }
 };
 
 //===========================================================================
@@ -154,7 +155,7 @@ struct CtrlTask {
   arr y, v, J_y;           ///< update() will evaluate these for a given kinematic configuration
 
   //-- if motion task: defines the reference in task space
-  ptr<MotionProfile> ref;  ///< non-NULL iff this is a pos/vel task
+  ptr<MotionProfile> ref;  ///< non-nullptr iff this is a pos/vel task
   arr y_ref, v_ref;        ///< update() will define compute these references (reference=NOW, target=FUTURE)
   double scale;            ///< additional scaling (precision) for each task (redundant with map->scale! use latter for non-isotropic!)
   uint hierarchy;          ///< hierarchy level in hiearchycal inverse kinematics: higher = higher priority
@@ -173,11 +174,11 @@ struct CtrlTask {
   CtrlTask(const char* name, const ptr<Feature>& _map, const Graph& params);
   ~CtrlTask();
   
-  ActStatus update(double tau, const rai::KinematicWorld& world);
+  ActStatus update(double tau, const rai::Configuration& world);
   void resetState() { if(ref) ref->resetState(); status.set()=AS_init; }
   
   arr getPrec();
-  void getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const rai::KinematicWorld& world);
+  void getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const rai::Configuration& world);
   
   MotionProfile_PD& PD();
   void setRef(ptr<MotionProfile> _ref);
@@ -189,8 +190,8 @@ struct CtrlTask {
 
 //===========================================================================
 
-void getForceControlCoeffs(arr& f_des, arr& u_bias, arr& KfL, arr& J_ft, const rai::KinematicWorld& world);
-void fwdSimulateControlLaw(arr &Kp, arr &Kd, arr &u0, rai::KinematicWorld& world);
+void getForceControlCoeffs(arr& f_des, arr& u_bias, arr& KfL, arr& J_ft, const rai::Configuration& world);
+void fwdSimulateControlLaw(arr &Kp, arr &Kd, arr &u0, rai::Configuration& world);
 
 //===========================================================================
 
@@ -203,20 +204,20 @@ struct TaskControlMethods {
   
   CtrlTask* addPDTask(CtrlTaskL& tasks, const char* name, double decayTime, double dampingRatio, ptr<Feature> map);
 
-//  void updateCtrlTasks(double tau, const rai::KinematicWorld& world);
+//  void updateCtrlTasks(double tau, const rai::Configuration& world);
 //  void resetCtrlTasksState();
 
-  void lockJointGroup(const char *groupname, rai::KinematicWorld& world, bool lockThem=true);
+  void lockJointGroup(const char *groupname, rai::Configuration& world, bool lockThem=true);
   
   double getIKCosts(CtrlTaskL& tasks, const arr& q=NoArr, const arr& q0=NoArr, arr& g=NoArr, arr& H=NoArr);
-  arr inverseKinematics(CtrlTaskL& tasks, arr& qdot, const arr& P_compliance, const arr& nullRef=NoArr, double* cost=NULL);
+  arr inverseKinematics(CtrlTaskL& tasks, arr& qdot, const arr& P_compliance, const arr& nullRef=NoArr, double* cost=nullptr);
   arr inverseKinematics_hierarchical(CtrlTaskL& tasks);
   arr getComplianceProjection(CtrlTaskL& tasks);
   arr operationalSpaceControl(CtrlTaskL& tasks);
   arr calcOptimalControlProjected(CtrlTaskL& tasks, arr &Kp, arr &Kd, arr &u0, const arr& q, const arr& qdot, const arr& M, const arr& F); ///< returns the linearized control law
   arr getDesiredLinAccLaw(CtrlTaskL& tasks, arr &Kp, arr &Kd, arr &u0, const arr& q, const arr& qdot); ///< returns the linearized control law
   arr getDesiredConstraintForces(CtrlTaskL& tasks); ///< J^T lambda^*
-  void calcForceControl(CtrlTaskL& tasks, arr& K_ft, arr& J_ft_inv, arr& fRef, double& gamma, const rai::KinematicWorld& world); ///< returns the force controller coefficients
+  void calcForceControl(CtrlTaskL& tasks, arr& K_ft, arr& J_ft_inv, arr& fRef, double& gamma, const rai::Configuration& world); ///< returns the force controller coefficients
   void reportCurrentState(CtrlTaskL& tasks);
 };
 

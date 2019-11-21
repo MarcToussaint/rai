@@ -15,7 +15,7 @@
 PublishDatabase::PublishDatabase()
   : Thread("PublishDatabase", -1),
     percepts_filtered(this, "percepts_filtered", true),
-    nh(NULL)
+    nh(nullptr)
 {}
 
 void PublishDatabase::open(){

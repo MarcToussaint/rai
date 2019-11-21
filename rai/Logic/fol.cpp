@@ -32,7 +32,7 @@ NodeL getSymbolsOfScope(const Graph& KB) {
 
 Node *getFirstNonSymbolOfScope(Graph& KB) {
   for(Node *i:KB) if(!(i->keys.N>0 && i->parents.N==0 && i->isOfType<bool>())) return i;
-  return NULL;
+  return nullptr;
 }
 
 /// returns all variables of the literal
@@ -59,7 +59,7 @@ Node *getFirstVariable(Node* literal, Graph* varScope) {
       CHECK(i->keys.N>0 && i->parents.N==0 && i->isOfType<bool>(),"");
       return i;
     }
-  return NULL;
+  return nullptr;
 }
 
 /// check if these are literally equal (all arguments are identical, be they vars or consts) -- fact1 is only a tuple, not an node of the graph
@@ -140,7 +140,7 @@ Node *getEqualFactInList(Node* fact, NodeL& facts, bool checkAlsoValue) {
 //  NodeL candidates=facts;
 //  for(Node *p:fact->parents) candidates = setSection(candidates, p->parentOf);
   for(Node *fact1:facts) if(factsAreEqual(fact, fact1, checkAlsoValue)) return fact1; //matches.append(fact1);
-  return NULL;
+  return nullptr;
 }
 
 ///// try to find a fact within 'facts' that is exactly equal to 'literal'
@@ -174,7 +174,7 @@ bool getEqualFactInKB(Graph& KB, Node* literal, const NodeL& subst, const Graph*
 /// find, modulo ignoring variables (i.e., for all possible subst), all facts that match the tuple (from those, possible substitutions can be found)
 NodeL getPotentiallyEqualFactsInKB(Graph& KB, Node* tuple, const Graph& varScope, bool checkAlsoValue) {
 #if 0
-  Node *rarestSymbol=NULL;
+  Node *rarestSymbol=nullptr;
   uint rarestSymbolN=0;
   for(Node *sym:tuple->parents) if(&sym->container!=&varScope) { //loop through all grounded symbols, not variables
       if(!rarestSymbol || sym->parentOf.N<rarestSymbolN) {
@@ -230,7 +230,7 @@ void removeInfeasibleSymbolsFromDomain(Graph& facts, NodeL& domain, Node* litera
   for(Node *fact:facts) { //for(Node *fact:predicate->parentOf) if(&fact->container==&facts){
     //-- check that all arguments are the same, except for var!
     bool match=true;
-    Node *value=NULL;
+    Node *value=nullptr;
     for(uint i=0; i<literal->parents.N; i++) {
       Node *lit_arg = literal->parents(i);
       Node *fact_arg = fact->parents(i);
@@ -261,7 +261,7 @@ Node *createNewFact(Graph& facts, const NodeL& symbols) {
   return facts.newNode<bool>({}, symbols, true);
 }
 
-/// create a new fact by substituting all variables with subst(var->index) (if non-NULL)
+/// create a new fact by substituting all variables with subst(var->index) (if non-nullptr)
 /// add the new literal to KB
 Node* createNewSubstitutedLiteral(Graph& facts, Node* literal, const NodeL& subst, Graph* subst_scope) {
   Node *fact = literal->newClone(facts);
@@ -269,7 +269,7 @@ Node* createNewSubstitutedLiteral(Graph& facts, Node* literal, const NodeL& subs
     Node *arg=fact->parents(i);
     CHECK(&arg->container==subst_scope || &arg->container==&facts.isNodeOfGraph->container,"the literal argument should be a constant (KB scope) or variable (1st level local scope)");
     if(&arg->container==subst_scope) { //is a variable, and subst exists
-      CHECK(subst(arg->index)!=NULL,"a variable (=argument in local scope) requires a substitution, no?");
+      CHECK(subst(arg->index)!=nullptr,"a variable (=argument in local scope) requires a substitution, no?");
       //CHECK_EQ(arg->container.N, subst.N, "somehow the substitution does not fit the container of literal arguments");
 //      fact->parents(i) = subst(arg->index);
 //arg->numChildren--;//      arg->parentOf.removeValue(fact);
@@ -367,7 +367,7 @@ bool substitutedRulePreconditionHolds(Graph& KB, Node* rule, const NodeL& subst,
 /// we return all feasible substitutions of the literal's variables by constants
 /// the return value is an array: for every item of the literal's scope:
 /// if item=variable the array contains a pointer to the constant
-/// if item=non-variable the arrach contains a NULL pointer
+/// if item=non-variable the arrach contains a nullptr pointer
 
 NodeL getSubstitutions2(Graph& KB, NodeL& relations, int verbose) {
   CHECK(relations.N,"");
@@ -487,10 +487,10 @@ NodeL getSubstitutions2(Graph& KB, NodeL& relations, int verbose) {
       uintA valueIndex = getIndexTuple(config, domainN);
       bool feasible=true;
       for(uint i=0; i<vars.N; i++) values(vars(i)->index) = domainOf(i)(valueIndex(i)); //assign the configuration
-      //only allow for disjoint assignments
-      for(uint i=0; i<values.N && feasible; i++) for(uint j=i+1; j<values.N && feasible; j++) {
-          if(values(i)==values(j)) feasible=false;
-        }
+      //only allow for disjoint assignments -- DISABLED!
+//        for(uint i=0; i<values.N && feasible; i++) for(uint j=i+1; j<values.N && feasible; j++) {
+//          if(values(i)==values(j)) feasible=false;
+//        }
       if(!feasible) continue;
       for(Node* literal:constraints) { //loop through all constraints
         //         if(literal->parents.N && literal->parents(0)==EQ){ //check equality of subsequent literals

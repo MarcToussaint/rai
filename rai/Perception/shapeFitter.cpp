@@ -277,7 +277,7 @@ pmPreprocessImage(floatA &img, int iterations=5) {
 //  CvMatDonor cvMatDonor;
   //CV_MOP_OPEN(iterations) equals to erode(iterations);dilate(iterations)
   //cvSmooth(CVMAT(img), CVMAT(img), CV_MEDIAN);
-  //cvMorphologyEx(CVMAT(img), CVMAT(img), NULL, NULL, CV_MOP_OPEN, iterations);
+  //cvMorphologyEx(CVMAT(img), CVMAT(img), nullptr, nullptr, CV_MOP_OPEN, iterations);
   
   return true;
 }
@@ -285,7 +285,7 @@ pmPreprocessImage(floatA &img, int iterations=5) {
 #ifdef RAI_OPENCV
 bool getShapeParamsFromEvidence(arr& params, arr& points,
                                 const uint& type, const floatA& theta,
-                                byteA *disp=NULL, bool reuseParams=false) {
+                                byteA *disp=nullptr, bool reuseParams=false) {
   ENABLE_CVMAT
   if(disp) {
     *disp=evi2rgb(theta);
@@ -506,7 +506,7 @@ bool getShapeParamsFromEvidence(arr& params, arr& points,
     problem.type=type;
     problem.N=20;
     problem.distImage = pow(distImage, 2.f);
-    problem.display = biros().getParameter<bool>("shapeFitter_display", NULL);;
+    problem.display = biros().getParameter<bool>("shapeFitter_display", nullptr);;
     if(type==0) problem.radius = params(0);
     else problem.radius = 0;
     
@@ -582,7 +582,7 @@ void ShapeFitter::step() {
       suc=getShapeParamsFromEvidence(obj->shapeParamsR,
                                      obj->shapePointsR,
                                      obj->shapeType,
-                                     hsvR[h], NULL, obj->found);
+                                     hsvR[h], nullptr, obj->found);
       if(!suc) { obj->found=0; continue; }
       
       //-- smooth!
@@ -653,14 +653,14 @@ void ShapeFitter::step() {
       obj->found++;
     } else { //other index is just point mass, just single contour point
       uintA boxL, boxR; floatA axis, points;
-      findMaxRegionInEvidence(boxL, &points, NULL, hsvL[h], .5);//just use this information
+      findMaxRegionInEvidence(boxL, &points, nullptr, hsvL[h], .5);//just use this information
       if(points.N && boxL.N) {
         obj->shapePointsL = arr(1, 2);
         obj->shapePointsL(0, 0) = points(0);
         obj->shapePointsL(0, 1) = points(1);
         cvRectangle(CVMAT(disp), cvPoint(boxL(0), boxL(1)), cvPoint(boxL(2), boxL(3)), cvScalar(255, 0, 0), 3);
       }
-      findMaxRegionInEvidence(boxR, &points, NULL, hsvR[h], .5);//just use this information
+      findMaxRegionInEvidence(boxR, &points, nullptr, hsvR[h], .5);//just use this information
       if(points.N && boxR.N) {
         obj->shapePointsR = arr(1, 2);
         obj->shapePointsR(0, 0) = points(0);
@@ -685,7 +685,7 @@ void ShapeFitter::step() {
 }
 #endif
 
-void realizeObjectsInOrs(rai::KinematicWorld& ors, const rai::Array<RigidObjectRepresentation>& objects) {
+void realizeObjectsInOrs(rai::Configuration& ors, const rai::Array<RigidObjectRepresentation>& objects) {
   RigidObjectRepresentation *obj;  uint i;
   rai::Body *o = ors.getBodyByName("o1");
   uint indFirst = o->index;//hack to get consecutive bodies
@@ -717,7 +717,7 @@ void realizeObjectsInOrs(rai::KinematicWorld& ors, const rai::Array<RigidObjectR
   }
 }
 
-/*void copyShapeInfos(rai::KinematicWorld& A, const rai::KinematicWorld& B){
+/*void copyShapeInfos(rai::Configuration& A, const rai::Configuration& B){
   uint i; rai::Shape *s, *sa;
   for_list(Type,  s,  B.shapes){
     sa = A.shapes(i);
@@ -730,7 +730,7 @@ void realizeObjectsInOrs(rai::KinematicWorld& ors, const rai::Array<RigidObjectR
   }
 }*/
 
-void copyBodyInfos(rai::KinematicWorld& A, const rai::KinematicWorld& B) {
+void copyBodyInfos(rai::Configuration& A, const rai::Configuration& B) {
   uint i; rai::Body *b, *ba;
   rai::Shape *s, *sa;
   for_list(Type,  b,  B.bodies) if(b->shapes.N) {

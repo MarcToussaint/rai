@@ -22,8 +22,10 @@ const rai::Quaternion Quaternion_Id(1, 0, 0, 0);
 const rai::Quaternion Quaternion_x(RAI_SQRT2/2., RAI_SQRT2/2., 0, 0);
 const rai::Quaternion Quaternion_y(RAI_SQRT2/2., 0, RAI_SQRT2/2., 0);
 const rai::Quaternion Quaternion_z(RAI_SQRT2/2., 0, 0, RAI_SQRT2/2.);
-rai::Vector& NoVector = *((rai::Vector*)NULL);
-rai::Transformation& NoTransformation = *((rai::Transformation*)NULL);
+rai::Vector __NoVector;
+rai::Vector& NoVector = __NoVector;
+rai::Transformation __NoTransformation;
+rai::Transformation& NoTransformation = __NoTransformation;
 
 namespace rai {
 
@@ -138,7 +140,7 @@ Vector Vector::getNormalVectorNormalToThis() const {
     RAI_MSG("every vector is normal to a zero vector");
   }
   arr s = ARR(fabs(x), fabs(y), fabs(z));
-  uint c = s.maxIndex();
+  uint c = s.argmax();
   double xv, yv, zv;
   if(c == 0) {
     xv = -(y+z)/x;
@@ -179,8 +181,8 @@ arr Vector::generateOrthonormalSystemMatrix() const {
 
 //{ I/O
 void Vector::write(std::ostream& os) const {
-  if(!rai::IOraw) os <<'(' <<x <<' ' <<y <<' ' <<z <<')';
-  else os <<' ' <<x <<' ' <<y <<' ' <<z;
+  if(!rai::IOraw) os <<'[' <<x <<", " <<y <<", " <<z <<']';
+  else os <<' ' <<x <<", " <<y <<' ' <<z;
 }
 
 void Vector::read(std::istream& is) {
@@ -402,10 +404,10 @@ double Matrix::diffZero() const {
 }
 
 void Matrix::write(std::ostream& os) const {
-  os <<"\n " <<m00 <<' ' <<m01 <<' ' <<m02;
-  os <<"\n " <<m10 <<' ' <<m11 <<' ' <<m12;
-  os <<"\n " <<m20 <<' ' <<m21 <<' ' <<m22;
-  os <<endl;
+  os <<"\n[" <<m00 <<", " <<m01 <<", " <<m02;
+  os <<"\n " <<m10 <<", " <<m11 <<", " <<m12;
+  os <<"\n " <<m20 <<", " <<m21 <<", " <<m22;
+  os <<']' <<endl;
 }
 void Matrix::read(std::istream& is) {
   NIY;
@@ -543,8 +545,8 @@ void Quaternion::addY(double angle) {
   set(a.w, a.x, a.y, a.z);
 }
 
-void Quaternion::addZ(double radians) {
-  if(!radians) { return; }
+Quaternion& Quaternion::addZ(double radians) {
+  if(!radians) { return *this; }
   radians/=2.;
   double cw=cos(radians);
   double cz=sin(radians);
@@ -556,6 +558,7 @@ void Quaternion::addZ(double radians) {
   a.z = w*cz + z*cw;
   
   set(a.w, a.x, a.y, a.z);
+  return *this;
 }
 
 void Quaternion::append(const Quaternion& q) {
@@ -909,7 +912,7 @@ double* Quaternion::getMatrixGL(double* m) const {
   return m;
 }
 
-arr Quaternion::getEulerRPY() {
+arr Quaternion::getEulerRPY() const {
   double roll, pitch, yaw;
 
   // roll (x-axis rotation)
@@ -976,7 +979,7 @@ arr Quaternion::getMatrixJacobian() const {
 
 void Quaternion::writeNice(std::ostream& os) const { os <<"Quaternion: " <<getDeg() <<" around " <<getVec() <<"\n"; }
 void Quaternion::write(std::ostream& os) const {
-  if(!rai::IOraw) os <<'(' <<w <<' ' <<x <<' ' <<y <<' ' <<z <<')';
+  if(!rai::IOraw) os <<'[' <<w <<", " <<x <<", " <<y <<", " <<z <<']';
   else os <<' ' <<w <<' ' <<x <<' ' <<y <<' ' <<z;
 }
 void Quaternion::read(std::istream& is) { is >>PARSE("(") >>w >>x >>y  >>z >>PARSE(")"); normalize();}
@@ -1226,7 +1229,7 @@ Transformation& Transformation::setZero() {
   return *this;
 }
 
-void Transformation::set(double *p) { pos.set(p); rot.set(p+3); }
+void Transformation::set(const double *p) { pos.set(p); rot.set(p+3); }
 
 void Transformation::set(const arr &t) { CHECK_EQ(t.N,7, "");  set(t.p); }
 
@@ -1372,7 +1375,7 @@ double* Transformation::getInverseAffineMatrixGL(double *m) const {
   return m;
 }
 
-arr Transformation::getArr7d() {
+arr Transformation::getArr7d() const {
   arr t(7);
   t.p[0]=pos.x;
   t.p[1]=pos.y;
@@ -1384,7 +1387,7 @@ arr Transformation::getArr7d() {
   return t;
 }
 
-arr Transformation::getWrenchTransform() {
+arr Transformation::getWrenchTransform() const {
   arr z(3, 3);  z.setZero();
   arr r = skew(pos.getArr()); //(3, 3);  Featherstone::skew(r, &pos.x); skew pos
   arr R = rot.getArr(); //(3, 3);  rot.getMatrix(R.p);
@@ -1394,6 +1397,12 @@ arr Transformation::getWrenchTransform() {
   //cout <<"\nz=" <<z <<"\nr=" <<r <<"\nR=" <<R <<"\nX=" <<X <<endl;
 }
 
+void Transformation::applyOnPoint(arr& pt) const {
+  CHECK_EQ(pt.N, 3, "");
+  if(!rot.isZero) pt = rot.getArr() * pt;
+  if(!pos.isZero) pt += pos.getArr();
+}
+
 void Transformation::applyOnPointArray(arr& pts) const {
   if(!((pts.nd==2 && pts.d1==3) || (pts.nd==3 && pts.d2==3))) {
     LOG(-1) <<"wrong pts dimensions for transformation:" <<pts.dim();
@@ -1401,7 +1410,6 @@ void Transformation::applyOnPointArray(arr& pts) const {
   }
   if(!rot.isZero){
     arr R = ~rot.getArr(); //transposed, only to make it applicable to an n-times-3 array
-    arr t = conv_vec2arr(pos);
     pts = pts * R;
   }
   if(!pos.isZero){
@@ -1435,23 +1443,28 @@ void Transformation::checkNan() const{
 
 /// operator<<
 void Transformation::write(std::ostream& os) const {
-  os <<pos.x <<' ' <<pos.y <<' ' <<pos.z <<' '
-    <<rot.w <<' ' <<rot.x <<' ' <<rot.y <<' ' <<rot.z;
+  os <<'[' <<pos.x <<", " <<pos.y <<", " <<pos.z <<", "
+    <<rot.w <<", " <<rot.x <<", " <<rot.y <<", " <<rot.z <<']';
 }
 
 /// operator>>
 void Transformation::read(std::istream& is) {
   setZero();
   char c;
-  double x[4];
+  double x[7];
   rai::skip(is, " \n\r\t<|");
   for(;;) {
     is >>c;
     if(is.fail()) return;  //EOF I guess
-    if((c>='0' && c<='9') || c=='.' || c=='-') {  //read a 7-vector (pos+quat) for the transformation
-      is.putback(c);
-      is>>x[0]>>x[1]>>x[2];       addRelativeTranslation(x[0], x[1], x[2]);
-      is>>x[0]>>x[1]>>x[2]>>x[3]; addRelativeRotationQuat(x[0], x[1], x[2], x[3]);
+    if((c>='0' && c<='9') || c=='.' || c=='-' || c=='['){  //read a 7-vector (pos+quat) for the transformation
+      if(c=='['){
+        is>>x[0]>>PARSE(",") >>x[1]>>PARSE(",") >>x[2]>>PARSE(",") >>x[3]>>PARSE(",") >>x[4]>>PARSE(",") >>x[5]>>PARSE(",") >>x[6] >>PARSE("]");
+      }else{
+        is.putback(c);
+        is>>x[0]>>x[1]>>x[2]>>x[3]>>x[4]>>x[5]>>x[6];
+      }
+      addRelativeTranslation(x[0], x[1], x[2]);
+      addRelativeRotationQuat(x[3], x[4], x[5], x[6]);
       break;
     } else switch(c) {
         //case '<': break; //do nothing -- assume this is an opening tag
@@ -1460,6 +1473,10 @@ void Transformation::read(std::istream& is) {
         case 'r': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>x[3]>>PARSE(")"); addRelativeRotationRad(x[0], x[1], x[2], x[3]); break;
         case 'd': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>x[3]>>PARSE(")"); addRelativeRotationDeg(x[0], x[1], x[2], x[3]); break;
         case 'E': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>PARSE(")"); addRelativeRotation(Quaternion().setRpy(x[0], x[1], x[2])); break;
+        case 'p':{
+	  is>>PARSE("(")>>x[0]>>x[1]>>x[2];       addRelativeTranslation(x[0], x[1], x[2]);
+	  is>>x[0]>>x[1]>>x[2]>>x[3]>>PARSE(")"); addRelativeRotationQuat(x[0], x[1], x[2], x[3]);
+	} break;
         //case 's': is>>PARSE("(")>>x[0]>>PARSE(")");                   scale(x[0]); break;
         case 'T': break; //old convention
         case '|':
@@ -1645,8 +1662,8 @@ double DynamicTransformation::diffZero() const {
 
 /// operator<<
 void DynamicTransformation::write(std::ostream& os) const {
-  os <<pos.x <<' ' <<pos.y <<' ' <<pos.z <<' '
-     <<rot.w <<' ' <<rot.x <<' ' <<rot.y <<' ' <<rot.z;
+  os <<pos.x <<", " <<pos.y <<", " <<pos.z <<", "
+     <<rot.w <<", " <<rot.x <<", " <<rot.y <<", " <<rot.z;
   if(!zeroVels) {
     os <<" v" <<vel <<" w" <<angvel;
   }
@@ -1746,14 +1763,12 @@ void Camera::watchDirection(const Vector& d) {
 void Camera::upright(const Vector& up) {
 #if 1
   //construct desired X:
-  Vector fwd(0, 0, -1), x(1, 0, 0), xDesired;
-  x=X.rot*x; //true X
-  fwd=X.rot*fwd;
-//  if(fabs(fwd.z)<1.) up.set(0, 0, 1); else up.set(0, 1, 0);
-  xDesired=up^fwd; //desired X
-  if(xDesired*x<=0) xDesired=-xDesired;
+  Vector y=X.rot.getY();
+  Vector fwd = -X.rot.getZ();
+  Vector yDesired=fwd^(up^fwd); //desired Y
+  if(yDesired*up<=0) yDesired=-yDesired;
   Quaternion r;
-  r.setDiff(x, xDesired);
+  r.setDiff(y, yDesired);
   X.rot=r*X.rot;
 #else
   if(X.Z[2]<1.) X.Y.set(0, 0, 1); else X.Y.set(0, 1, 0);
@@ -1779,6 +1794,12 @@ void Camera::setCameraProjectionMatrix(const arr& P) {
   cout <<"glP=" <<glP <<endl;
   //glLoadMatrixd(glP.p);
   //fixedProjectionMatrix = glP;
+}
+
+void Camera::report(std::ostream& os){
+  os <<"camera pose X=" <<X <<endl;
+  os <<"camera focal length=" <<focalLength <<endl;
+  os <<"intrinsic matrix=\n" <<getIntrinsicMatrix(640, 480) <<endl;
 }
 
 /** sets OpenGL's GL_PROJECTION matrix accordingly -- should be
@@ -1853,6 +1874,7 @@ arr Camera::getGLProjectionMatrix() const{
     P(3,2) = 2. * zFar * zNear / (zNear-zFar);
     return ~Tinv * P; //(P is already transposed!)
   }
+#ifdef RAI_GL
   if(heightAbs > 0.) { //ortho mode
     CHECK(!focalLength, "");
     glOrtho(-whRatio*heightAbs/2., whRatio*heightAbs/2.,
@@ -1860,6 +1882,7 @@ arr Camera::getGLProjectionMatrix() const{
     NIY;
 //    return T * Pinv;
   }
+#endif
   NIY;
   return arr();
 }
@@ -1909,7 +1932,7 @@ void Camera::project2PixelsAndTrueDepth(arr& x, double width, double height) con
 }
 
 void Camera::unproject_fromPixelsAndTrueDepth(arr& x, double width, double height) const{
-  CHECK_LE(fabs(width/height - whRatio), 1e-6, "given width and height don't match whRatio");
+  CHECK_LE(fabs(width/height - whRatio), 1e-2, "given width and height don't match whRatio");
   if(x.N==3) x.append(1.);
   CHECK_EQ(x.N, 4, "");
   arr Pinv = getInverseProjectionMatrix();
@@ -1924,6 +1947,7 @@ void Camera::unproject_fromPixelsAndTrueDepth(arr& x, double width, double heigh
 }
 
 void Camera::unproject_fromPixelsAndGLDepth(arr& x, uint width, uint height) const{
+#if 0
   CHECK_LE(fabs(double(width)/height - whRatio), 1e-6, "given width and height don't match whRatio");
   arr I = eye(4);
   arr P = getGLProjectionMatrix();
@@ -1933,8 +1957,29 @@ void Camera::unproject_fromPixelsAndGLDepth(arr& x, uint width, uint height) con
 //  cout <<"\nM=\n" <<I <<"\nP=\n" <<P <<"\nV=\n" <<viewPort <<endl;
   gluUnProject(x(0), x(1), x(2), I.p, P.p, viewPort.p, &_x, &_y, &_z);
   x(0)=_x; x(1)=_y; x(2)=_z;
+#else
+  if(x.N==3) x.append(1.);
+  CHECK_EQ(x.N, 4, "");
+  x(2) = glConvertToTrueDepth(x(2));
+  unproject_fromPixelsAndTrueDepth(x, width, height);
+#endif
 }
 
+arr Camera::getIntrinsicMatrix(double W, double H) const{
+  if(focalLength>0.) { //normal perspective mode
+    CHECK(!heightAbs, "");
+    arr K(3,3);
+    K.setZero();
+    K(0,0) = focalLength*H;
+    K(1,1) = -focalLength*H;
+    K(2,2) = -1.; //depth is flipped to become positive for 'in front of camera'
+    K(0,2) = -0.5*W;
+    K(1,2) = -0.5*H;
+    return K;
+  }
+  NIY;
+  return arr();
+}
 
 void Camera::setKinect() {
   setZero();
@@ -1948,7 +1993,7 @@ void Camera::setKinect() {
 void Camera::setDefault() {
   setHeightAngle(24.);
   setZRange(.02, 200.);
-  setPosition(8., -12., 6.);
+  setPosition(8., 12., 6.);
 //  setPosition(10., -4., 10.);
   focus(0, 0, 1.);
 //  focus(.9, 0., 1.3);

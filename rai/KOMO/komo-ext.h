@@ -6,7 +6,8 @@
 
 // IK problems
 void addBoxGrasp(KOMO& komo, const char* object, const char* endeff, int axis=1);
-void chooseBoxGrasp(rai::KinematicWorld& K, const char* endeff, const char* object);
+void chooseBoxGrasp(rai::Configuration& K, const char* endeff, const char* object);
+void findOpposingGrasp(rai::Configuration& K, const char* fingerL, const char* fingerR, const char* object);
 
 // motion interpolation
 void addMotionTo(KOMO& komo, const arr &target_q, const StringA& target_joints, const char* endeff, double up, double down);
@@ -15,15 +16,17 @@ void addMotionTo(KOMO& komo, const arr &target_q, const StringA& target_joints, 
 
 struct KOMO_ext : KOMO{
 
+  void setConfigFromFile();
+
   //should be done by set model
   void useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThese=true);
 
 
   //-- tasks mid-level
-  void setPosition(double startTime, double endTime, const char* shape, const char* shapeRel=NULL, ObjectiveType type=OT_sos, const arr& target=NoArr, double prec=1e2);
+  void setPosition(double startTime, double endTime, const char* shape, const char* shapeRel=nullptr, ObjectiveType type=OT_sos, const arr& target=NoArr, double prec=1e2);
   void setOrientation(double startTime, double endTime, const char* shape, const char* shapeRel, ObjectiveType type=OT_sos, const arr& target=NoArr, double prec=1e2);
-  void setVelocity(double startTime, double endTime, const char* shape, const char* shapeRel=NULL, ObjectiveType type=OT_sos, const arr& target=NoArr, double prec=1e2);
-  void setAlign(double startTime, double endTime, const char* shape,  const arr& whichAxis=ARR(1.,0.,0.), const char* shapeRel=NULL, const arr& whichAxisRel=ARR(1.,0.,0.), ObjectiveType type=OT_sos, const arr& target=ARR(1.), double prec=1e2);
+  void setVelocity(double startTime, double endTime, const char* shape, const char* shapeRel=nullptr, ObjectiveType type=OT_sos, const arr& target=NoArr, double prec=1e2);
+  void setAlign(double startTime, double endTime, const char* shape,  const arr& whichAxis=ARR(1.,0.,0.), const char* shapeRel=nullptr, const arr& whichAxisRel=ARR(1.,0.,0.), ObjectiveType type=OT_sos, const arr& target=ARR(1.), double prec=1e2);
   void setAlignedStacking(double time, const char* object, ObjectiveType type=OT_sos, double prec=1e2);
   void setLastTaskToBeVelocity();
 
@@ -32,7 +35,6 @@ struct KOMO_ext : KOMO{
   // high-level 'script elements' to define tasks: typically adding multiple tasks to realize some kind of 'action'
   //
 
-  void setAbstractTask(double phase, const Graph& facts, int verbose=0);
   //-- dynamic
   void setImpact(double time, const char* a, const char* b);
   void setOverTheEdge(double time, const char* object, const char* from, double margin=.0);
@@ -52,9 +54,9 @@ struct KOMO_ext : KOMO{
 
   //DEPRECATED
   void setGraspStick(double time, const char* endeffRef, const char* object, int verbose=0, double weightFromTop=1e1, double timeToLift=.15);
-  void setFine_grasp(double time, const char* endeff, const char* object, double above, double gripSize=.05, const char* gripper=NULL, const char* gripper2=NULL);
+  void setFine_grasp(double time, const char* endeff, const char* object, double above, double gripSize=.05, const char* gripper=nullptr, const char* gripper2=nullptr);
   void setTowersAlign();
-  void setMoveTo(rai::KinematicWorld& world, //in initial state
+  void setMoveTo(rai::Configuration& world, //in initial state
                  rai::Frame& endeff,         //endeffector to be moved
                  rai::Frame& target,         //target shape
                  byte whichAxesToAlign=0);   //bit coded options to align axes
@@ -75,13 +77,13 @@ struct KOMO_ext : KOMO{
 
   //-- (not much in use..) specs gives as logic expressions in a Graph (or config file)
   KOMO_ext() : KOMO() {}
-  KOMO_ext(const rai::KinematicWorld& K) : KOMO_ext() { setModel(K); } //for compatibility only
+  KOMO_ext(const rai::Configuration& K) : KOMO_ext() { setModel(K); } //for compatibility only
 
 };
 
 //===========================================================================
 
-inline arr finalPoseTo(rai::KinematicWorld& world,
+inline arr finalPoseTo(rai::Configuration& world,
                        rai::Frame& endeff,
                        rai::Frame& target,
                        byte whichAxesToAlign=0,

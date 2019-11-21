@@ -41,14 +41,14 @@ SearchCMA::~SearchCMA() {
 }
 
 void SearchCMA::init(uint D, int mu, int lambda, const arr &startPoint, const arr &startDev) {
-  cmaes_init(&s->evo, NULL, D, startPoint.p, startDev.p, 1, lambda, mu, NULL);
+  cmaes_init(&s->evo, nullptr, D, startPoint.p, startDev.p, 1, lambda, mu, nullptr);
 }
 
 void SearchCMA::init(uint D, int mu, int lambda, const arr &startPoint, double _startDev) {
   CHECK_EQ(startPoint.N,D,"");
   arr startDev(D);
   startDev=_startDev;
-  cmaes_init(&s->evo, NULL, D, startPoint.p, startDev.p, 1, lambda, mu, NULL);
+  cmaes_init(&s->evo, nullptr, D, startPoint.p, startDev.p, 1, lambda, mu, nullptr);
 }
 
 void SearchCMA::init(uint D, int mu, int lambda, double lo, double hi) {
@@ -66,7 +66,7 @@ void SearchCMA::step(arr& samples, arr& costs) {
   }
   
   //generate samples
-  double *const*rgx = cmaes_SampleDistribution(&s->evo, NULL);
+  double *const*rgx = cmaes_SampleDistribution(&s->evo, nullptr);
   for(uint i=0; i<samples.d0; i++) samples[i].setCarray(rgx[i], samples.d1);
 }
 

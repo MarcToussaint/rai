@@ -20,7 +20,7 @@ double distanceToConvexHull(const arr &X,        //points
                             const arr &y,        //query point
                             arr& distances=NoArr,
                             arr& projectedPoints=NoArr, //return query point projected on closest facet
-                            uintA *faceVertices=NULL, //return indices of vertices of closest facet
+                            uintA *faceVertices=nullptr, //return indices of vertices of closest facet
                             bool freeqhull=true);     //free allocated qhull engine after request [true]
 
 double distanceToConvexHullGradient(arr& dDdX,       //gradient (or same dim as X)
@@ -33,7 +33,7 @@ double forceClosure(const arr& X,  //contact points (size Nx3)
                     const rai::Vector& center, //object center
                     double mu=.5,     //friction coefficient
                     double discountTorques=1.,   //friction coefficient
-                    arr *dFdX=NULL);    //optional: also compute gradient
+                    arr *dFdX=nullptr);    //optional: also compute gradient
 
 arr getHull(const arr& V, uintA& T=NoUintA);
 

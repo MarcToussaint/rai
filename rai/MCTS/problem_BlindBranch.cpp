@@ -19,7 +19,7 @@ MCTS_Environment::TransitionReturn BlindBranch::transition(const MCTS_Environmen
   T++;
   double r=0.;
   if(is_terminal_state()) r = (double)state/H;
-  return {Handle(NULL), r, 1.};
+  return {Handle(nullptr), r, 1.};
 }
 
 MCTS_Environment::TransitionReturn BlindBranch::transition_randomly() {

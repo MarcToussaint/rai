@@ -43,8 +43,8 @@ struct LagrangianProblem {
   
 //  operator const ScalarFunction&(){ return Lag; }
 
-  void aulaUpdate(double lambdaStepsize=1., double muInc=1., double *L_x=NULL, arr &dL_x=NoArr, arr &HL_x=NoArr);
-  void anyTimeAulaUpdate(double lambdaStepsize=1., double muInc=1., double *L_x=NULL, arr &dL_x=NoArr, arr &HL_x=NoArr);
+  void aulaUpdate(double lambdaStepsize=1., double muInc=1., double *L_x=nullptr, arr &dL_x=NoArr, arr &HL_x=NoArr);
+  void anyTimeAulaUpdate(double lambdaStepsize=1., double muInc=1., double *L_x=nullptr, arr &dL_x=NoArr, arr &HL_x=NoArr);
   bool anyTimeAulaUpdateStopCriterion(const arr& dL_x);
 };
 

@@ -120,17 +120,17 @@ void AudioReader::open() {
 #ifdef HAVE_PULSEAUDIO
   poller = new AudioPoller_PA();
 #else
-  poller = NULL;
+  poller = nullptr;
 #endif
 }
 void AudioReader::close() {
-  if(poller != NULL) {
+  if(poller != nullptr) {
     delete poller;
-    poller = NULL;
+    poller = nullptr;
   }
 }
 void AudioReader::step() {
-  if(poller == NULL) {
+  if(poller == nullptr) {
     return;
   }
   pcms16ne2c.writeAccess();
@@ -143,17 +143,17 @@ void AudioWriter::open() {
 #ifdef HAVE_LIBAV
   writer = new AudioWriter_libav(STRING("z.audio" <<'.' <<rai::getNowString() <<".wav"));
 #else
-  writer = NULL;
+  writer = nullptr;
 #endif
 }
 void AudioWriter::close() {
-  if(writer != NULL) {
+  if(writer != nullptr) {
     delete writer;
-    writer = NULL;
+    writer = nullptr;
   }
 }
 void AudioWriter::step() {
-  if(writer == NULL) {
+  if(writer == nullptr) {
     return;
   }
   writer->writeSamples_R48000_2C_S16_NE(pcms16ne2c.get());
@@ -585,7 +585,7 @@ void openGlLock();
 void openGlUnlock();
 
 void draw1(void*) {
-  glStandardLight(NULL);
+  glStandardLight(nullptr);
   glColor(1,0,0);
   glFrontFace(GL_CW);
 //  glutSolidTeapot(1.);

@@ -42,6 +42,7 @@
 //#  include <Plot/plot.h>
 #endif
 
+#define RAI_extern_ply
 #ifdef RAI_extern_ply
 #  include <Geo/ply/ply.h>
 #endif
@@ -64,19 +65,22 @@ void lib_ors() { cout <<"force loading lib/ors" <<endl; }
 
 #ifndef RAI_ORS_ONLY_BASICS
 
-uint rai::KinematicWorld::setJointStateCount = 0;
+uint rai::Configuration::setJointStateCount = 0;
+
+#define SPARSE_JACOBIANS false
 
 //===========================================================================
 //
 // contants
 //
 
-rai::Frame& NoFrame = *((rai::Frame*)NULL);
-rai::Shape& NoShape = *((rai::Shape*)NULL);
-rai::Joint& NoJoint = *((rai::Joint*)NULL);
-rai::KinematicWorld& NoWorld = *((rai::KinematicWorld*)NULL);
+rai::Frame& NoFrame = *((rai::Frame*)nullptr);
+rai::Shape& NoShape = *((rai::Shape*)nullptr);
+rai::Joint& NoJoint = *((rai::Joint*)nullptr);
+rai::Configuration __NoWorld;
+rai::Configuration& NoWorld = *((rai::Configuration*)&__NoWorld);
 
-uintA stringListToShapeIndices(const rai::Array<const char*>& names, const rai::KinematicWorld& K) {
+uintA stringListToShapeIndices(const rai::Array<const char*>& names, const rai::Configuration& K) {
   uintA I(names.N);
   for(uint i=0; i<names.N; i++) {
     rai::Frame *f = K.getFrameByName(names(i));
@@ -128,22 +132,20 @@ bool always_unlocked(void*) { return false; }
 
 //===========================================================================
 //
-// KinematicWorld
+// Configuration
 //
 
 namespace rai {
-  struct sKinematicWorld {
+  struct sConfiguration {
     OpenGL *gl;
-    SwiftInterface *swift;
+    std::shared_ptr<SwiftInterface> swift;
     ptr<FclInterface> fcl;
     PhysXInterface *physx;
     OdeInterface *ode;
-    FeatherstoneInterface *fs = NULL;
-    bool swiftIsReference;
-    sKinematicWorld():gl(NULL), swift(NULL), physx(NULL), ode(NULL), swiftIsReference(false) {}
-    ~sKinematicWorld() {
+    FeatherstoneInterface *fs = nullptr;
+    sConfiguration():gl(nullptr), physx(nullptr), ode(nullptr) {}
+    ~sConfiguration() {
       if(gl) delete gl;
-      if(swift && !swiftIsReference) delete swift;
       if(physx) delete physx;
       if(ode) delete ode;
     }
@@ -151,27 +153,27 @@ namespace rai {
 
 }
 
-rai::KinematicWorld::KinematicWorld() : s(NULL) {
+rai::Configuration::Configuration() : s(nullptr) {
   frames.memMove=proxies.memMove=true;
-  s=new sKinematicWorld;
+  s=new sConfiguration;
 }
 
-rai::KinematicWorld::KinematicWorld(const rai::KinematicWorld& other, bool referenceSwiftOnCopy) : KinematicWorld() {
+rai::Configuration::Configuration(const rai::Configuration& other, bool referenceSwiftOnCopy) : Configuration() {
   copy(other, referenceSwiftOnCopy);
 }
 
-rai::KinematicWorld::KinematicWorld(const char* filename) : KinematicWorld() {
+rai::Configuration::Configuration(const char* filename) : Configuration() {
   init(filename);
 }
 
-rai::KinematicWorld::~KinematicWorld() {
+rai::Configuration::~Configuration() {
   //delete OpenGL and the extensions first!
   delete s;
-  s=NULL;
+  s=nullptr;
   clear();
 }
 
-void rai::KinematicWorld::init(const char* filename) {
+void rai::Configuration::init(const char* filename) {
   rai::FileToken file(filename, true);
   Graph G(file);
   G.checkConsistency();
@@ -179,7 +181,7 @@ void rai::KinematicWorld::init(const char* filename) {
   file.cd_start();
 }
 
-rai::Frame* rai::KinematicWorld::addFile(const char* filename) {
+rai::Frame* rai::Configuration::addFile(const char* filename) {
   uint n=frames.N;
   rai::FileToken file(filename, true);
   Graph G(file);
@@ -189,20 +191,20 @@ rai::Frame* rai::KinematicWorld::addFile(const char* filename) {
   return frames(n); //returns 1st frame of added file
 }
 
-rai::Frame* rai::KinematicWorld::addFile(const char* filename, const char* parentOfRoot, const rai::Transformation& relOfRoot){
+rai::Frame* rai::Configuration::addFile(const char* filename, const char* parentOfRoot, const rai::Transformation& relOfRoot){
   rai::Frame *f = addFile(filename);
   if(parentOfRoot){
     CHECK(f, "nothing added?");
     f->linkFrom(getFrameByName(parentOfRoot));
     new rai::Joint(*f, rai::JT_rigid);
-    f->Q = relOfRoot;
+    f->set_Q() = relOfRoot;
   }
-  calc_activeSets();
-  calc_fwdPropagateFrames();
+//  calc_activeSets();
+//  calc_fwdPropagateFrames();
   return f;
 }
 
-void rai::KinematicWorld::addAssimp(const char* filename) {
+void rai::Configuration::addAssimp(const char* filename) {
   AssimpLoader A(filename);
   for(rai::Mesh &m:A.meshes){
     rai::Frame *f = new rai::Frame(*this);
@@ -212,26 +214,30 @@ void rai::KinematicWorld::addAssimp(const char* filename) {
   }
 }
 
-rai::Frame* rai::KinematicWorld::addFrame(const char* name, const char* parent, const char* args){
+rai::Frame* rai::Configuration::addFrame(const char* name, const char* parent, const char* args){
   rai::Frame *f = new rai::Frame(*this);
   f->name = name;
 
-  if(parent){
+  if(parent && parent[0]){
     rai::Frame *p = getFrameByName(parent);
-    if(p) f->linkFrom(p);
+    if(p){
+      f->set_X() = p->ensure_X();
+      f->linkFrom(p, true);
+    }
   }
 
-  if(args){
+  if(args && args[0]){
     rai::String(args) >>f->ats;
     f->read(f->ats);
   }
 
-  if(f->parent) f->X = f->parent->X * f->Q;
+//  if(f->parent) f->calc_X_from_parent();
 
   return f;
 }
 
-rai::Frame* rai::KinematicWorld::addObject(rai::ShapeType shape, const arr& size, const arr& col, double radius){
+#if 0
+rai::Frame* rai::Configuration::addObject(rai::ShapeType shape, const arr& size, const arr& col){
   rai::Frame *f = new rai::Frame(*this);
   rai::Shape *s = new rai::Shape(*f);
   s->type() = shape;
@@ -239,59 +245,72 @@ rai::Frame* rai::KinematicWorld::addObject(rai::ShapeType shape, const arr& size
   if(radius>0.) s->size() = ARR(radius);
   if(shape!=ST_mesh && shape!=ST_ssCvx){
     if(size.N>=1) s->size() = size;
-    s->getGeom().createMeshes();
+    s->createMeshes();
   }else{
     if(shape==ST_mesh){
       s->mesh().V = size;
-      s->mesh().V.reshape(size.N/3,3);
+      s->mesh().V.reshape(-1,3);
     }
     if(shape==ST_ssCvx){
       s->sscCore().V = size;
-      s->sscCore().V.reshape(size.N/3,3);
+      s->sscCore().V.reshape(-1,3);
       CHECK(radius>0., "radius must be greater zero");
-      s->size() = ARR(0.,0.,0.,radius);
+      s->size() = ARR(radius);
     }
   }
   return f;
 }
+#endif
 
-rai::Frame* rai::KinematicWorld::addObject(const char* name, rai::ShapeType shape, const arr& size, const arr& col, double radius, const char* parent, const arr& pos, const arr& rot){
-  rai::Frame *f = addObject(shape, size, col, radius);
-  f->name=name;
-
-  if(parent){
-    rai::Frame *p = getFrameByName(parent);
-    if(p){
-//      f->linkFrom(p);
-      rai::Joint *j = new rai::Joint(*p, *f);
-      j->setType(rai::JT_rigid);
-    }
+rai::Frame* rai::Configuration::addObject(const char* name, const char* parent, rai::ShapeType shape, const arr& size, const arr& col, const arr& pos, const arr& rot, bool isSubFrame){
+  rai::Frame *f = addFrame(name, parent);
+  if(f->parent && !isSubFrame) f->setJoint(rai::JT_rigid);
+  f->setShape(shape, size);
+  f->setContact(-1);
+  if(col.N) f->setColor(col);
+  if(f->parent){
+    if(pos.N) f->setRelativePosition(pos);
+    if(rot.N) f->setRelativeQuaternion(rot);
+  }else{
+    if(pos.N) f->setPosition(pos);
+    if(rot.N) f->setQuaternion(rot);
   }
-
-  if(pos.N){ f->Q.pos = pos; }
-  if(rot.N){ f->Q.rot = rot; f->Q.rot.normalize(); }
-
-  if(f->parent) f->X = f->parent->X * f->Q;
-  else f->X = f->Q;
-
   return f;
 }
 
-void rai::KinematicWorld::clear() {
+/// the list F can be from another (not this) Configuration
+void rai::Configuration::addFramesCopy(const FrameL& F){
+  uint maxId=0;
+  for(Frame *f:F) if(f->ID>maxId) maxId=f->ID;
+  intA FId2thisId(maxId+1);
+  FId2thisId = -1;
+  for(Frame *f:F) {
+    Frame *a = new Frame(*this, f);
+    FId2thisId(f->ID)=a->ID;
+  }
+  for(Frame *f:F) if(f->parent && f->parent->ID<=maxId && FId2thisId(f->parent->ID)!=-1){
+    frames(FId2thisId(f->ID))->linkFrom(frames(FId2thisId(f->parent->ID)));
+  }
+}
+
+void rai::Configuration::clear() {
   reset_q();
   proxies.clear(); //while(proxies.N){ delete proxies.last(); /*checkConsistency();*/ }
   while(frames.N) { delete frames.last(); /*checkConsistency();*/ }
   reset_q();
+
+  _state_proxies_isGood=false;
 }
 
-void rai::KinematicWorld::reset_q() {
+void rai::Configuration::reset_q() {
   q.clear();
-  qdot.clear();
-  fwdActiveSet.clear();
-  fwdActiveJoints.clear();
+  activeJoints.clear();
+
+  _state_activeSets_areGood=false;
+  _state_q_isGood=false;
 }
 
-FrameL rai::KinematicWorld::calc_topSort() const {
+FrameL rai::Configuration::calc_topSort() const {
   FrameL fringe;
   FrameL order;
   boolA done = consts<byte>(false, frames.N);
@@ -313,35 +332,36 @@ FrameL rai::KinematicWorld::calc_topSort() const {
   return order;
 }
 
-bool rai::KinematicWorld::check_topSort() const {
-  if(fwdActiveSet.N != frames.N) return false;
-  
+bool rai::Configuration::check_topSort() const {
   //compute levels
   intA level = consts<int>(0, frames.N);
-  for(Frame *f: fwdActiveSet) if(f->parent) level(f->ID) = level(f->parent->ID)+1;
+  for(Frame *f: frames) if(f->parent) level(f->ID) = level(f->parent->ID)+1;
   //check levels are strictly increasing across links
-  for(Frame *f: fwdActiveSet) if(f->parent && level(f->parent->ID) >= level(f->ID)) return false;
+  for(Frame *f: frames) if(f->parent && level(f->parent->ID) >= level(f->ID)) return false;
   
   return true;
 }
 
-void rai::KinematicWorld::calc_activeSets() {
+void rai::Configuration::calc_activeSets() {
   reset_q();
-  if(!check_topSort()) {
-    fwdActiveSet = calc_topSort(); //graphGetTopsortOrder<Frame>(frames);
-  }
-  fwdActiveJoints.clear();
-  for(Frame *f:fwdActiveSet) if(f->joint && f->joint->active)
-    fwdActiveJoints.append(f->joint);
+//  FrameL sortedFrames = frames;
+//  if(!check_topSort()) {
+//    sortedFrames = calc_topSort(); //graphGetTopsortOrder<Frame>(frames);
+//  }
+  activeJoints.clear();
+  for(Frame *f:frames) if(f->joint && f->joint->active)
+    activeJoints.append(f->joint);
+
+  _state_activeSets_areGood=true;
 }
 
-void rai::KinematicWorld::calc_q() {
+void rai::Configuration::calc_q() {
   calc_activeSets();
   analyzeJointStateDimensions();
   calc_q_from_Q();
 }
 
-void rai::KinematicWorld::copy(const rai::KinematicWorld& K, bool referenceSwiftOnCopy) {
+void rai::Configuration::copy(const rai::Configuration& K, bool referenceSwiftOnCopy) {
   CHECK(this != &K, "never copy K onto itself");
 
   clear();
@@ -356,52 +376,31 @@ void rai::KinematicWorld::copy(const rai::KinematicWorld& K, bool referenceSwift
   //copy contacts
   for(Contact *c:K.contacts) new Contact(*frames(c->a.ID), *frames(c->b.ID), c);
   //copy swift reference
-  if(referenceSwiftOnCopy) {
-    s->swift = K.s->swift;
-    s->swiftIsReference=true;
-  }
+  if(referenceSwiftOnCopy) s->swift = K.s->swift;
   q = K.q;
-  qdot = K.qdot;
+  _state_q_isGood = K._state_q_isGood;
   calc_activeSets();
 }
 
-bool rai::KinematicWorld::operator!() const { return this==&NoWorld; }
+bool rai::Configuration::operator!() const { return this==&NoWorld; }
 
 /** @brief KINEMATICS: given the (absolute) frames of root nodes and the relative frames
     on the edges, this calculates the absolute frames of all other nodes (propagating forward
     through trees and testing consistency of loops). */
-void rai::KinematicWorld::calc_fwdPropagateFrames() {
-  if(fwdActiveSet.N!=frames.N) calc_activeSets();
-  for(Frame *f:fwdActiveSet) {
-#if 1
-    if(f->parent) f->calc_X_from_parent();
-#else
-    if(f->parent) {
-      Transformation &from = f->parent->X;
-      Transformation &to = f->X;
-      to = from;
-      to.appendTransformation(f->Q);
-      CHECK_EQ(to.pos.x, to.pos.x, "NAN transformation:" <<from <<'*' <<f->Q);
-      if(f->joint) {
-        Joint *j = f->joint;
-        if(j->type==JT_hingeX || j->type==JT_transX || j->type==JT_XBall)  j->axis = from.rot.getX();
-        if(j->type==JT_hingeY || j->type==JT_transY)  j->axis = from.rot.getY();
-        if(j->type==JT_hingeZ || j->type==JT_transZ)  j->axis = from.rot.getZ();
-        if(j->type==JT_transXYPhi)  j->axis = from.rot.getZ();
-        if(j->type==JT_phiTransXY)  j->axis = from.rot.getZ();
-      }
-    }
-#endif
-  }
+void rai::Configuration_ext::calc_fwdPropagateFrames() {
+  HALT("don't use this anymore");
+//  if(fwdActiveSet.N!=frames.N) calc_activeSets();
+//  for(Frame *f:fwdActiveSet) if(f->parent) f->calc_X_from_parent();
 }
 
-arr rai::KinematicWorld::calc_fwdPropagateVelocities() {
-  if(fwdActiveSet.N!=frames.N) calc_activeSets();
+arr rai::Configuration::calc_fwdPropagateVelocities(const arr& qdot) {
+  CHECK(check_topSort(), "this needs a top sorted configuration")
   arr vel(frames.N, 2, 3);  //for every frame we have a linVel and angVel, each 3D
   vel.setZero();
   rai::Transformation f;
   Vector linVel, angVel, q_vel, q_angvel;
-  for(Frame *f : fwdActiveSet) { //this has no bailout for loopy graphs!
+  for(Frame *f : frames) { //this has no bailout for loopy graphs!
+    f->ensure_X();
     if(f->parent) {
       Frame *from = f->parent;
       Joint *j = f->joint;
@@ -427,7 +426,7 @@ arr rai::KinematicWorld::calc_fwdPropagateVelocities() {
         Vector qV(R*q_vel); //relative vel in global coords
         Vector qW(R*q_angvel); //relative ang vel in global coords
         linVel += angVel^(f->X.pos - from->X.pos);
-        /*if(!isLinkTree) */linVel += qW^(f->X.pos - j->X().pos);
+        /*if(!isLinkTree) */linVel += qW^(f->get_X().pos - j->X().pos);
         linVel += qV;
         angVel += qW;
         
@@ -437,7 +436,7 @@ arr rai::KinematicWorld::calc_fwdPropagateVelocities() {
         linVel = vel(from->ID, 0, {});
         angVel = vel(from->ID, 1, {});
         
-        linVel += angVel^(f->X.pos - from->X.pos);
+        linVel += angVel^(f->get_X().pos - from->get_X().pos);
         
         for(uint i=0; i<3; i++) vel(f->ID, 0, i) = linVel(i);
         for(uint i=0; i<3; i++) vel(f->ID, 1, i) = angVel(i);
@@ -450,13 +449,14 @@ arr rai::KinematicWorld::calc_fwdPropagateVelocities() {
 /** @brief given the absolute frames of all nodes and the two rigid (relative)
     frames A & B of each edge, this calculates the dynamic (relative) joint
     frame X for each edge (which includes joint transformation and errors) */
-void rai::KinematicWorld::calc_Q_from_BodyFrames() {
+void rai::Configuration_ext::calc_Q_from_Frames() {
+  HALT("should never be called (anymore)");
   for(Frame *f:frames) if(f->parent) {
-    f->Q.setDifference(f->parent->X, f->X);
+    f->calc_Q_from_parent();
   }
 }
 
-arr rai::KinematicWorld::naturalQmetric(double power) const {
+arr rai::Configuration::naturalQmetric(double power) const {
   HALT("don't use this anymore. use getHmetric instead");
 #if 0
   if(!q.N) getJointStateDimension();
@@ -475,7 +475,7 @@ arr rai::KinematicWorld::naturalQmetric(double power) const {
   }
   if(!q.N) getJointStateDimension();
   arr Wdiag(q.N);
-  for(Joint *j: fwdActiveJoints) {
+  for(Joint *j: activeJoints) {
     for(uint i=0; i<j->qDim(); i++) {
       Wdiag(j->qIndex+i) = ::pow(BM(j->frame->ID), power);
     }
@@ -486,7 +486,7 @@ arr rai::KinematicWorld::naturalQmetric(double power) const {
 
 /** @brief revert the topological orientation of a joint (edge),
    e.g., when choosing another body as root of a tree */
-void rai::KinematicWorld::flipFrames(rai::Frame *a, rai::Frame *b) {
+void rai::Configuration::flipFrames(rai::Frame *a, rai::Frame *b) {
   CHECK_EQ(b->parent, a, "");
   CHECK(!a->parent, "");
   CHECK(!a->joint, "");
@@ -501,24 +501,22 @@ void rai::KinematicWorld::flipFrames(rai::Frame *a, rai::Frame *b) {
 
 /** @brief re-orient all joints (edges) such that n becomes
   the root of the configuration */
-void rai::KinematicWorld::reconfigureRootOfSubtree(Frame *root) {
+void rai::Configuration::reconfigureRoot(Frame *newRoot, bool ofLinkOnly) {
   FrameL pathToOldRoot;
-  rai::Frame *f = root;
-  while(f->parent) {
-    pathToOldRoot.prepend(f);
-    f = f->parent;
-  }
+
+  if(ofLinkOnly) pathToOldRoot = newRoot->getPathToUpwardLink();
+  else pathToOldRoot = newRoot->getPathToRoot();
   
   for(Frame *f : pathToOldRoot) {
-    flipFrames(f->parent, f);
+    if(f->parent) flipFrames(f->parent, f);
   }
   
   checkConsistency();
 }
 
-uint rai::KinematicWorld::analyzeJointStateDimensions() const {
+uint rai::Configuration::analyzeJointStateDimensions() const {
   uint qdim=0;
-  for(Joint *j: fwdActiveJoints) {
+  for(Joint *j: activeJoints) {
     if(!j->mimic) {
       j->dim = j->getDimFromType();
       j->qIndex = qdim;
@@ -541,13 +539,13 @@ uint rai::KinematicWorld::analyzeJointStateDimensions() const {
 }
 
 /** @brief returns the joint (actuator) dimensionality */
-uint rai::KinematicWorld::getJointStateDimension() const {
-  if(!q.nd)((KinematicWorld*)this)->calc_q();
+uint rai::Configuration::getJointStateDimension() const {
+  if(!q.nd)((Configuration*)this)->calc_q();
   return q.N;
 }
 
-void rai::KinematicWorld::getJointState(arr &_q, arr& _qdot) const {
-  if(!q.nd)((KinematicWorld*)this)->calc_q();
+void rai::Configuration_ext::getJointState(arr &_q, arr& _qdot) const {
+  if(!q.nd)((Configuration*)this)->calc_q();
   _q=q;
   if(!!_qdot) {
     _qdot=qdot;
@@ -555,13 +553,13 @@ void rai::KinematicWorld::getJointState(arr &_q, arr& _qdot) const {
   }
 }
 
-arr rai::KinematicWorld::getJointState() const {
-  if(!q.nd)((KinematicWorld*)this)->calc_q();
+const arr& rai::Configuration::getJointState() const {
+  if(!_state_q_isGood) ((Configuration*)this)->ensure_q();
   return q;
 }
 
-arr rai::KinematicWorld::getJointState(const StringA& joints) const {
-  if(!q.nd)((KinematicWorld*)this)->calc_q();
+arr rai::Configuration::getJointState(const StringA& joints) const {
+  if(!q.nd)((Configuration*)this)->calc_q();
   arr x(joints.N);
   for(uint i=0; i<joints.N; i++) {
     String s = joints.elem(i);
@@ -574,8 +572,8 @@ arr rai::KinematicWorld::getJointState(const StringA& joints) const {
   return x;
 }
 
-arr rai::KinematicWorld::getJointState(const uintA& joints) const {
-  if(!q.nd)((KinematicWorld*)this)->calc_q();
+arr rai::Configuration::getJointState(const uintA& joints) const {
+  if(!q.nd)((Configuration*)this)->calc_q();
   uint nd=0;
   for(uint i=0; i<joints.N; i++) {
     rai::Joint *j = frames(joints(i))->joint;
@@ -595,20 +593,20 @@ arr rai::KinematicWorld::getJointState(const uintA& joints) const {
   return x;
 }
 
-arr rai::KinematicWorld::getFrameState() const{
+arr rai::Configuration::getFrameState() const{
   arr X(frames.N, 7);
   for(uint i=0; i<X.d0; i++) {
-    X[i] = frames(i)->X.getArr7d();
+    X[i] = frames(i)->ensure_X().getArr7d();
   }
   return X;
 }
 
 /** @brief returns the vector of joint limts */
-arr rai::KinematicWorld::getLimits() const {
+arr rai::Configuration::getLimits() const {
   uint N=getJointStateDimension();
   arr limits(N,2);
   limits.setZero();
-  for(Joint *j: fwdActiveJoints) {
+  for(Joint *j: activeJoints) {
     uint i=j->qIndex;
     uint d=j->qDim();
     for(uint k=0; k<d; k++) { //in case joint has multiple dimensions
@@ -625,14 +623,15 @@ arr rai::KinematicWorld::getLimits() const {
   return limits;
 }
 
-void rai::KinematicWorld::calc_q_from_Q() {
+void rai::Configuration::calc_q_from_Q() {
+  ensure_activeSets();
+
   uint N=q.N;
   if(!N) N=analyzeJointStateDimensions();
   q.resize(N).setZero();
-  qdot.resize(N).setZero();
   
   uint n=0;
-  for(Joint *j: fwdActiveJoints) {
+  for(Joint *j: activeJoints) {
     if(j->mimic) continue; //don't count dependent joints
     CHECK_EQ(j->qIndex, n, "joint indexing is inconsistent");
     arr joint_q = j->calc_q_from_Q(j->frame->Q);
@@ -653,11 +652,15 @@ void rai::KinematicWorld::calc_q_from_Q() {
     n += c->qDim();
   }
   CHECK_EQ(n,N,"");
+
+  _state_q_isGood=true;
 }
 
-void rai::KinematicWorld::calc_Q_from_q() {
+void rai::Configuration::calc_Q_from_q() {
+  CHECK(_state_q_isGood, "");
+
   uint n=0;
-  for(Joint *j: fwdActiveJoints) {
+  for(Joint *j: activeJoints) {
     if(!j->mimic) CHECK_EQ(j->qIndex, n, "joint indexing is inconsistent");
     j->calc_Q_from_q(q, j->qIndex);
     if(!j->mimic) {
@@ -676,7 +679,7 @@ void rai::KinematicWorld::calc_Q_from_q() {
   CHECK_EQ(n, q.N, "");
 }
 
-void rai::KinematicWorld::selectJointsByGroup(const StringA &groupNames, bool OnlyTheseOrNotThese, bool deleteInsteadOfLock) {
+void rai::Configuration::selectJointsByGroup(const StringA &groupNames, bool OnlyTheseOrNotThese, bool deleteInsteadOfLock) {
   Joint *j;
   for(Frame *f:frames) if((j=f->joint)) {
     bool select;
@@ -702,7 +705,7 @@ void rai::KinematicWorld::selectJointsByGroup(const StringA &groupNames, bool On
 
 
 /// @name active set selection
-void rai::KinematicWorld::selectJointsByName(const StringA& names, bool notThose) {
+void rai::Configuration::selectJointsByName(const StringA& names, bool notThose) {
   for(Frame *f: frames) if(f->joint) f->joint->active = notThose;
   for(const String& s:names) {
     Frame *f = getFrameByName(s);
@@ -719,24 +722,38 @@ void rai::KinematicWorld::selectJointsByName(const StringA& names, bool notThose
 
 /** @brief sets the joint state vectors separated in positions and
   velocities */
-void rai::KinematicWorld::setJointState(const arr& _q, const arr& _qdot) {
+void rai::Configuration::setJointState(const arr& _q) {
   setJointStateCount++; //global counter
-  
+
 #ifndef RAI_NOCHECK
   uint N=getJointStateDimension();
   CHECK_EQ(_q.N, N, "wrong joint state dimensionalities");
-  if(!!_qdot) CHECK_EQ(_qdot.N, N, "wrong joint velocity dimensionalities");
 #endif
 
   q=_q;
-  if(!!_qdot) qdot=_qdot; else qdot.clear();
-  
+
+  proxies.clear();
+
+  _state_q_isGood=true;
+  _state_proxies_isGood=false;
+  for(Joint *j:activeJoints) j->frame->_state_setXBadinBranch();
+
   calc_Q_from_q();
-  
-  calc_fwdPropagateFrames();
 }
 
-void rai::KinematicWorld::setJointState(const arr& _q, const StringA& joints) {
+/** @brief sets the joint state vectors separated in positions and
+  velocities */
+void rai::Configuration_ext::setJointState(const arr& _q, const arr& _qdot) {
+  Configuration::setJointState(q);
+  if(!!_qdot){
+    CHECK_EQ(_qdot.N, q.N, "wrong joint velocity dimensionalities");
+    qdot=_qdot;
+  }else{
+    qdot.clear();
+  }
+}
+
+void rai::Configuration::setJointState(const arr& _q, const StringA& joints) {
   setJointStateCount++; //global counter
   getJointState();
   
@@ -755,14 +772,17 @@ void rai::KinematicWorld::setJointState(const arr& _q, const StringA& joints) {
       i += j->dim-1;
     }
   }
-  qdot.clear();
-  
+
+  proxies.clear();
+
+  _state_q_isGood=true;
+  _state_proxies_isGood=false;
+  for(Frame *f:frames) if(f->parent) f->_state_X_isGood=false;
+
   calc_Q_from_q();
-  
-  calc_fwdPropagateFrames();
 }
 
-void rai::KinematicWorld::setJointState(const arr& _q, const uintA& joints) {
+void rai::Configuration::setJointState(const arr& _q, const uintA& joints) {
   setJointStateCount++; //global counter
   getJointState();
 
@@ -774,14 +794,17 @@ void rai::KinematicWorld::setJointState(const arr& _q, const uintA& joints) {
     nd += j->dim;
   }
   CHECK_EQ(_q.N, nd, "");
-  qdot.clear();
+
+  proxies.clear();
+
+  _state_q_isGood=true;
+  _state_proxies_isGood=false;
+  for(Frame *f:frames) if(f->parent) f->_state_X_isGood=false;
 
   calc_Q_from_q();
-
-  calc_fwdPropagateFrames();
 }
 
-void rai::KinematicWorld::setFrameState(const arr& X, const StringA& frameNames, bool calc_q_from_X, bool warnOnDifferentDim){
+void rai::Configuration::setFrameState(const arr& X, const StringA& frameNames, bool warnOnDifferentDim){
   if(!frameNames.N){
     if(warnOnDifferentDim){
       if(X.d0 > frames.N) LOG(-1) <<"X.d0=" <<X.d0 <<" is larger than frames.N=" <<frames.N;
@@ -790,6 +813,11 @@ void rai::KinematicWorld::setFrameState(const arr& X, const StringA& frameNames,
     for(uint i=0;i<frames.N && i<X.d0;i++){
       frames(i)->X.set(X[i]);
       frames(i)->X.rot.normalize();
+      frames(i)->_state_setXBadinBranch();
+      frames(i)->_state_X_isGood = true;
+    }
+    for(uint i=0;i<frames.N && i<X.d0;i++){
+      if(frames(i)->parent) frames(i)->Q.setDifference(frames(i)->parent->X, frames(i)->X);
     }
   }else{
     if(X.nd==1){
@@ -798,6 +826,7 @@ void rai::KinematicWorld::setFrameState(const arr& X, const StringA& frameNames,
       if(!f) return;
       f->X.set(X);
       f->X.rot.normalize();
+      f->_state_updateAfterTouchingX();
     }else{
       CHECK_EQ(X.d0, frameNames.N, "X.d0 does not equal #frames");
       for(uint i=0;i<X.d0;i++){
@@ -805,16 +834,18 @@ void rai::KinematicWorld::setFrameState(const arr& X, const StringA& frameNames,
         if(!f) return;
         f->X.set(X[i]);
         f->X.rot.normalize();
+        f->_state_updateAfterTouchingX();
       }
     }
   }
-  if(calc_q_from_X){
-    calc_Q_from_BodyFrames();
-    calc_q_from_Q();
-  }
+  _state_q_isGood=false;
+
+  checkConsistency();
+//  calc_Q_from_Frames();
+//  if(calc_q_from_X) ensure_q();
 }
 
-void rai::KinematicWorld::setTimes(double t) {
+void rai::Configuration::setTimes(double t) {
   for(Frame *a:frames) a->tau = t;
 }
 
@@ -823,8 +854,12 @@ void rai::KinematicWorld::setTimes(double t) {
 // features
 //
 
-void rai::KinematicWorld::evalFeature(arr& y, arr& J, FeatureSymbol& fs, const StringA& symbols) const{
-  ptr<Feature> f = symbols2feature(fs, symbols, *this);
+ptr<Feature> rai::Configuration::feature(FeatureSymbol fs, const StringA& frames) const{
+  return symbols2feature(fs, frames, *this);
+}
+
+void rai::Configuration::evalFeature(arr& y, arr& J, FeatureSymbol fs, const StringA& frames) const{
+  ptr<Feature> f = symbols2feature(fs, frames, *this);
   f->__phi(y, J, *this);
 }
 
@@ -833,34 +868,19 @@ void rai::KinematicWorld::evalFeature(arr& y, arr& J, FeatureSymbol& fs, const S
 // core: kinematics and dynamics
 //
 
-/** @brief return the jacobian \f$J = \frac{\partial\phi_i(q)}{\partial q}\f$ of the position
-  of the i-th body (3 x n tensor)*/
-void rai::KinematicWorld::kinematicsPos(arr& y, arr& J, Frame *a, const rai::Vector& rel) const {
-  CHECK_EQ(&a->K, this, "given frame is not element of this KinematicWorld");
-  
-  if(!a) {
-    RAI_MSG("WARNING: calling kinematics for NULL body");
-    if(!!y) y.resize(3).setZero();
-    if(!!J) J.resize(3, getJointStateDimension()).setZero();
-    return;
-  }
-
-  //get position
-  rai::Vector pos_world = a->X.pos;
-  if(!!rel && !rel.isZero) pos_world += a->X.rot*rel;
-  if(!!y) y = conv_vec2arr(pos_world); //return the output
-  if(!J) return; //do not return the Jacobian
-  
-  jacobianPos(J, a, pos_world);
-}
-
 #if 1
-void rai::KinematicWorld::jacobianPos(arr& J, Frame *a, const rai::Vector& pos_world) const {
+void rai::Configuration::jacobian_pos(arr& J, Frame *a, const rai::Vector& pos_world, bool sparse) const {
   CHECK_EQ(&a->K, this, "");
 
-  //get Jacobian
+  a->ensure_X();
+
   uint N=getJointStateDimension();
-  J.resize(3, N).setZero();
+  if(!sparse){
+    J.resize(3, N).setZero();
+  }else{
+    J.sparse().resize(3, N, 0);
+  }
+
   while(a) { //loop backward down the kinematic tree
     if(!a->parent) break; //frame has no inlink -> done
     Joint *j=a->joint;
@@ -870,43 +890,51 @@ void rai::KinematicWorld::jacobianPos(arr& J, Frame *a, const rai::Vector& pos_w
       if(j_idx<N) {
         if(j->type==JT_hingeX || j->type==JT_hingeY || j->type==JT_hingeZ) {
           rai::Vector tmp = j->axis ^ (pos_world-j->X()*j->Q().pos);
-          J(0, j_idx) += tmp.x;
-          J(1, j_idx) += tmp.y;
-          J(2, j_idx) += tmp.z;
+          tmp *= j->scale;
+          J.elem(0, j_idx) += tmp.x;
+          J.elem(1, j_idx) += tmp.y;
+          J.elem(2, j_idx) += tmp.z;
         } else if(j->type==JT_transX || j->type==JT_transY || j->type==JT_transZ || j->type==JT_XBall) {
-          J(0, j_idx) += j->axis.x;
-          J(1, j_idx) += j->axis.y;
-          J(2, j_idx) += j->axis.z;
+          J.elem(0, j_idx) += j->scale * j->axis.x;
+          J.elem(1, j_idx) += j->scale * j->axis.y;
+          J.elem(2, j_idx) += j->scale * j->axis.z;
         } else if(j->type==JT_transXY) {
           if(j->mimic) NIY;
           arr R = j->X().rot.getArr();
+          R *= j->scale;
           J.setMatrixBlock(R.sub(0,-1,0,1), 0, j_idx);
         } else if(j->type==JT_transXYPhi) {
           if(j->mimic) NIY;
           arr R = j->X().rot.getArr();
+          R *= j->scale;
           J.setMatrixBlock(R.sub(0,-1,0,1), 0, j_idx);
           rai::Vector tmp = j->axis ^ (pos_world-(j->X().pos + j->X().rot*a->Q.pos));
-          J(0, j_idx+2) += tmp.x;
-          J(1, j_idx+2) += tmp.y;
-          J(2, j_idx+2) += tmp.z;
+          tmp *= j->scale;
+          J.elem(0, j_idx+2) += tmp.x;
+          J.elem(1, j_idx+2) += tmp.y;
+          J.elem(2, j_idx+2) += tmp.z;
         } else if(j->type==JT_phiTransXY) {
           if(j->mimic) NIY;
           rai::Vector tmp = j->axis ^ (pos_world-j->X().pos);
-          J(0, j_idx) += tmp.x;
-          J(1, j_idx) += tmp.y;
-          J(2, j_idx) += tmp.z;
+          tmp *= j->scale;
+          J.elem(0, j_idx) += tmp.x;
+          J.elem(1, j_idx) += tmp.y;
+          J.elem(2, j_idx) += tmp.z;
           arr R = (j->X().rot*a->Q.rot).getArr();
+          R *= j->scale;
           J.setMatrixBlock(R.sub(0,-1,0,1), 0, j_idx+1);
         }
         if(j->type==JT_XBall) {
           if(j->mimic) NIY;
           arr R = conv_vec2arr(j->X().rot.getX());
+          R *= j->scale;
           R.reshape(3,1);
           J.setMatrixBlock(R, 0, j_idx);
         }
         if(j->type==JT_trans3 || j->type==JT_free) {
           if(j->mimic) NIY;
           arr R = j->X().rot.getArr();
+          R *= j->scale;
           J.setMatrixBlock(R, 0, j_idx);
         }
         if(j->type==JT_quatBall || j->type==JT_free || j->type==JT_XBall) {
@@ -916,7 +944,8 @@ void rai::KinematicWorld::jacobianPos(arr& J, Frame *a, const rai::Vector& pos_w
           arr Jrot = j->X().rot.getArr() * a->Q.rot.getJacobian(); //transform w-vectors into world coordinate
           Jrot = crossProduct(Jrot, conv_vec2arr(pos_world-(j->X().pos+j->X().rot*a->Q.pos)));  //cross-product of all 4 w-vectors with lever
           Jrot /= sqrt(sumOfSqr(q({j->qIndex+offset, j->qIndex+offset+3})));   //account for the potential non-normalization of q
-          //          for(uint i=0;i<4;i++) for(uint k=0;k<3;k++) J(k,j_idx+offset+i) += Jrot(k,i);
+          //          for(uint i=0;i<4;i++) for(uint k=0;k<3;k++) J.elem(k,j_idx+offset+i) += Jrot(k,i);
+          Jrot *= j->scale;
           J.setMatrixBlock(Jrot, 0, j_idx+offset);
         }
       }
@@ -926,7 +955,7 @@ void rai::KinematicWorld::jacobianPos(arr& J, Frame *a, const rai::Vector& pos_w
 }
 
 #else
-void rai::KinematicWorld::jacobianPos(arr& J, Frame *a, const rai::Vector& pos_world) const {
+void rai::Configuration::jacobianPos(arr& J, Frame *a, const rai::Vector& pos_world) const {
   J.resize(3, getJointStateDimension()).setZero();
   while(a) { //loop backward down the kinematic tree
     if(!a->parent) break; //frame has no inlink -> done
@@ -947,26 +976,53 @@ void rai::KinematicWorld::jacobianPos(arr& J, Frame *a, const rai::Vector& pos_w
 }
 #endif
 
-void rai::KinematicWorld::kinematicsTau(double& tau, arr& J) const {
-  Frame *a = frames.first();
-  CHECK(a && a->joint && a->joint->type==JT_time, "this configuration does not have a tau DOF");
+//* This Jacobian directly gives the implied rotation vector: multiplied with \dot q it gives the angular velocity of body b */
+void rai::Configuration::jacobian_angular(arr& J, Frame *a, bool sparse) const {
+  a->ensure_X();
 
-  Joint *j = a->joint;
-  tau = a->tau;
-  if(!!J){
-    uint N=getJointStateDimension();
-    J.resize(1, N).setZero();
-    J(0, j->qIndex) += 1e-1;
+  uint N = getJointStateDimension();
+  if(!sparse){
+    J.resize(3, N).setZero();
+  }else{
+    J.sparse().resize(3, N, 0);
+  }
+
+  while(a) { //loop backward down the kinematic tree
+    Joint *j=a->joint;
+    if(j && j->active) {
+      uint j_idx=j->qIndex;
+      if(j_idx>=N) CHECK_EQ(j->type, JT_rigid, "");
+      if(j_idx<N) {
+        if((j->type>=JT_hingeX && j->type<=JT_hingeZ) || j->type==JT_transXYPhi || j->type==JT_phiTransXY) {
+          if(j->type==JT_transXYPhi) j_idx += 2; //refer to the phi only
+          J.elem(0, j_idx) += j->scale * j->axis.x;
+          J.elem(1, j_idx) += j->scale * j->axis.y;
+          J.elem(2, j_idx) += j->scale * j->axis.z;
+        }
+        if(j->type==JT_quatBall || j->type==JT_free || j->type==JT_XBall) {
+          uint offset = 0;
+          if(j->type==JT_XBall) offset=1;
+          if(j->type==JT_free) offset=3;
+          arr Jrot = j->X().rot.getArr() * a->get_Q().rot.getJacobian(); //transform w-vectors into world coordinate
+          Jrot /= sqrt(sumOfSqr(q({j->qIndex+offset,j->qIndex+offset+3}))); //account for the potential non-normalization of q
+          //          for(uint i=0;i<4;i++) for(uint k=0;k<3;k++) J.elem(k,j_idx+offset+i) += Jrot(k,i);
+          Jrot *= j->scale;
+          J.setMatrixBlock(Jrot, 0, j_idx+offset);
+        }
+        //all other joints: J=0 !!
+      }
+    }
+    a = a->parent;
   }
 }
 
-void rai::KinematicWorld::jacobianTime(arr& J, rai::Frame *a) const {
+void rai::Configuration::jacobian_time(arr& J, rai::Frame *a) const {
   CHECK_EQ(&a->K, this, "");
 
   //get Jacobian
   uint N=getJointStateDimension();
   J.resize(1, N).setZero();
-  
+
   while(a) { //loop backward down the kinematic tree
     Joint *j=a->joint;
     if(j && j->active) {
@@ -983,23 +1039,89 @@ void rai::KinematicWorld::jacobianTime(arr& J, rai::Frame *a) const {
   }
 }
 
+
+/** @brief return the jacobian \f$J = \frac{\partial\phi_i(q)}{\partial q}\f$ of the position
+  of the i-th body (3 x n tensor)*/
+void rai::Configuration::kinematicsPos(arr& y, arr& J, Frame *a, const rai::Vector& rel) const {
+  CHECK_EQ(&a->K, this, "given frame is not element of this Configuration");
+
+  rai::Vector pos_world = a->ensure_X().pos;
+  if(!!rel && !rel.isZero) pos_world += a->ensure_X().rot*rel;
+  if(!!y) y = conv_vec2arr(pos_world);
+  if(!!J) jacobian_pos(J, a, pos_world, SPARSE_JACOBIANS);
+}
+
+
+/* takes the joint state x and returns the jacobian dz of
+   the position of the ith body (w.r.t. all joints) -> 2D array */
+/// Jacobian of the i-th body's z-orientation vector
+void rai::Configuration::kinematicsVec(arr& y, arr& J, Frame *a, const rai::Vector& vec) const {
+  CHECK_EQ(&a->K, this, "");
+
+  rai::Vector vec_world;
+  if(!!vec) vec_world = a->ensure_X().rot*vec;
+  else     vec_world = a->ensure_X().rot.getZ();
+  if(!!y) y = conv_vec2arr(vec_world);
+  if(!!J) {
+    arr A;
+    jacobian_angular(A, a, SPARSE_JACOBIANS);
+    J = crossProduct(A, conv_vec2arr(vec_world));
+  }
+}
+
+/* takes the joint state x and returns the jacobian dz of
+   the position of the ith body (w.r.t. all joints) -> 2D array */
+/// Jacobian of the i-th body's z-orientation vector
+void rai::Configuration::kinematicsQuat(arr& y, arr& J, Frame *a) const { //TODO: allow for relative quat
+  CHECK_EQ(&a->K, this, "");
+
+  const rai::Quaternion& rot_a = a->ensure_X().rot;
+  if(!!y) y = rot_a.getArr4d();
+  if(!!J) {
+    arr A;
+    jacobian_angular(A, a);
+    J.resize(4, A.d1);
+    for(uint i=0; i<J.d1; i++) {
+      rai::Quaternion tmp(0., 0.5*A(0,i), 0.5*A(1,i), 0.5*A(2,i));  //this is unnormalized!!
+      tmp = tmp * rot_a;
+      J(0, i) = tmp.w;
+      J(1, i) = tmp.x;
+      J(2, i) = tmp.y;
+      J(3, i) = tmp.z;
+    }
+  }
+}
+
+void rai::Configuration::kinematicsTau(double& tau, arr& J) const {
+  Frame *a = frames.first();
+  CHECK(a && a->joint && a->joint->type==JT_time, "this configuration does not have a tau DOF");
+
+  Joint *j = a->joint;
+  tau = a->tau;
+  if(!!J){
+    uint N=getJointStateDimension();
+    J.resize(1, N).setZero();
+    J(0, j->qIndex) += 1e-1;
+  }
+}
+
 /** @brief return the jacobian \f$J = \frac{\partial\phi_i(q)}{\partial q}\f$ of the position
   of the i-th body W.R.T. the 6 axes of an arbitrary shape-frame, NOT the robot's joints (3 x 6 tensor)
   WARNING: this does not check if s is actually in the kinematic chain from root to b.
 */
-void rai::KinematicWorld::kinematicsPos_wrtFrame(arr& y, arr& J, Frame *b, const rai::Vector& rel, Frame *s) const {
+void rai::Configuration::kinematicsPos_wrtFrame(arr& y, arr& J, Frame *b, const rai::Vector& rel, Frame *s) const {
   if(!b && !!J) { J.resize(3, getJointStateDimension()).setZero();  return; }
   
   //get position
-  rai::Vector pos_world = b->X.pos;
-  if(!!rel) pos_world += b->X.rot*rel;
+  rai::Vector pos_world = b->ensure_X().pos;
+  if(!!rel) pos_world += b->ensure_X().rot*rel;
   if(!!y) y = conv_vec2arr(pos_world); //return the output
   if(!J) return; //do not return the Jacobian
   
   //get Jacobian
   J.resize(3, 6).setZero();
-  rai::Vector diff = pos_world - s->X.pos;
-  rai::Array<rai::Vector> axes = {s->X.rot.getX(), s->X.rot.getY(), s->X.rot.getZ()};
+  rai::Vector diff = pos_world - s->ensure_X().pos;
+  rai::Array<rai::Vector> axes = {s->ensure_X().rot.getX(), s->ensure_X().rot.getY(), s->ensure_X().rot.getZ()};
   
   //3 translational axes
   for(uint i=0; i<3; i++) {
@@ -1019,7 +1141,7 @@ void rai::KinematicWorld::kinematicsPos_wrtFrame(arr& y, arr& J, Frame *b, const
 
 /** @brief return the Hessian \f$H = \frac{\partial^2\phi_i(q)}{\partial q\partial q}\f$ of the position
   of the i-th body (3 x n x n tensor) */
-void rai::KinematicWorld::hessianPos(arr& H, Frame *a, rai::Vector *rel) const {
+void rai::Configuration::hessianPos(arr& H, Frame *a, rai::Vector *rel) const {
   HALT("this is buggy: a sign error: see examples/Kin/ors testKinematics");
   Joint *j1, *j2;
   uint j1_idx, j2_idx;
@@ -1032,8 +1154,8 @@ void rai::KinematicWorld::hessianPos(arr& H, Frame *a, rai::Vector *rel) const {
   H.setZero();
   
   //get reference frame
-  pos_a = a->X.pos;
-  if(rel) pos_a += a->X.rot*(*rel);
+  pos_a = a->ensure_X().pos;
+  if(rel) pos_a += a->ensure_X().rot*(*rel);
   
   if((j1=a->joint)) {
     while(j1) {
@@ -1084,47 +1206,8 @@ void rai::KinematicWorld::hessianPos(arr& H, Frame *a, rai::Vector *rel) const {
   }
 }
 
-/* takes the joint state x and returns the jacobian dz of
-   the position of the ith body (w.r.t. all joints) -> 2D array */
-/// Jacobian of the i-th body's z-orientation vector
-void rai::KinematicWorld::kinematicsVec(arr& y, arr& J, Frame *a, const rai::Vector& vec) const {
-  CHECK_EQ(&a->K, this, "");
-  //get the vectoreference frame
-  rai::Vector vec_world;
-  if(!!vec) vec_world = a->X.rot*vec;
-  else     vec_world = a->X.rot.getZ();
-  if(!!y) y = conv_vec2arr(vec_world); //return the vec
-  if(!!J) {
-    arr A;
-    axesMatrix(A, a);
-    J = crossProduct(A, conv_vec2arr(vec_world));
-  }
-}
-
-/* takes the joint state x and returns the jacobian dz of
-   the position of the ith body (w.r.t. all joints) -> 2D array */
-/// Jacobian of the i-th body's z-orientation vector
-void rai::KinematicWorld::kinematicsQuat(arr& y, arr& J, Frame *a) const { //TODO: allow for relative quat
-  CHECK_EQ(&a->K, this, "");
-  rai::Quaternion rot_a = a->X.rot;
-  if(!!y) y = conv_quat2arr(rot_a); //return the vec
-  if(!!J) {
-    arr A;
-    axesMatrix(A, a);
-    J.resize(4, A.d1);
-    for(uint i=0; i<J.d1; i++) {
-      rai::Quaternion tmp(0., 0.5*A(0,i), 0.5*A(1,i), 0.5*A(2,i));  //this is unnormalized!!
-      tmp = tmp * rot_a;
-      J(0, i) = tmp.w;
-      J(1, i) = tmp.x;
-      J(2, i) = tmp.y;
-      J(3, i) = tmp.z;
-    }
-  }
-}
-
 ////* This Jacobian directly gives the implied rotation vector: multiplied with \dot q it gives the angular velocity of body b */
-//void rai::KinematicWorld::posMatrix(arr& J, Frame *a) const {
+//void rai::Configuration::posMatrix(arr& J, Frame *a) const {
 //  uint N = getJointStateDimension();
 //  J.resize(3, N).setZero();
 
@@ -1144,69 +1227,39 @@ void rai::KinematicWorld::kinematicsQuat(arr& y, arr& J, Frame *a) const { //TOD
 //  }
 //}
 
-//* This Jacobian directly gives the implied rotation vector: multiplied with \dot q it gives the angular velocity of body b */
-void rai::KinematicWorld::axesMatrix(arr& J, Frame *a) const {
-  uint N = getJointStateDimension();
-  J.resize(3, N).setZero();
-  
-  while(a) { //loop backward down the kinematic tree
-    Joint *j=a->joint;
-    if(j && j->active) {
-      uint j_idx=j->qIndex;
-      if(j_idx>=N) CHECK_EQ(j->type, JT_rigid, "");
-      if(j_idx<N) {
-        if((j->type>=JT_hingeX && j->type<=JT_hingeZ) || j->type==JT_transXYPhi || j->type==JT_phiTransXY) {
-          if(j->type==JT_transXYPhi) j_idx += 2; //refer to the phi only
-          J(0, j_idx) += j->axis.x;
-          J(1, j_idx) += j->axis.y;
-          J(2, j_idx) += j->axis.z;
-        }
-        if(j->type==JT_quatBall || j->type==JT_free || j->type==JT_XBall) {
-          uint offset = 0;
-          if(j->type==JT_XBall) offset=1;
-          if(j->type==JT_free) offset=3;
-          arr Jrot = j->X().rot.getArr() * a->Q.rot.getJacobian(); //transform w-vectors into world coordinate
-          Jrot /= sqrt(sumOfSqr(q({j->qIndex+offset,j->qIndex+offset+3}))); //account for the potential non-normalization of q
-          //          for(uint i=0;i<4;i++) for(uint k=0;k<3;k++) J(k,j_idx+offset+i) += Jrot(k,i);
-          J.setMatrixBlock(Jrot, 0, j_idx+offset);
-        }
-        //all other joints: J=0 !!
-      }
-    }
-    a = a->parent;
-  }
-}
-
 /// The position vec1, attached to b1, relative to the frame of b2 (plus vec2)
-void rai::KinematicWorld::kinematicsRelPos(arr& y, arr& J, Frame *a, const rai::Vector& vec1, Frame *b, const rai::Vector& vec2) const {
+void rai::Configuration::kinematicsRelPos(arr& y, arr& J, Frame *a, const rai::Vector& vec1, Frame *b, const rai::Vector& vec2) const {
   arr y1,y2,J1,J2;
   kinematicsPos(y1, J1, a, vec1);
   kinematicsPos(y2, J2, b, vec2);
-  arr Rinv = ~(b->X.rot.getArr());
+  arr Rinv = ~(b->ensure_X().rot.getArr());
   y = Rinv * (y1 - y2);
   if(!!J) {
     arr A;
-    axesMatrix(A, b);
+    jacobian_angular(A, b, SPARSE_JACOBIANS);
     J = Rinv * (J1 - J2 - crossProduct(A, y1 - y2));
   }
 }
 
 /// The vector vec1, attached to b1, relative to the frame of b2
-void rai::KinematicWorld::kinematicsRelVec(arr& y, arr& J, Frame *a, const rai::Vector& vec1, Frame *b) const {
+void rai::Configuration::kinematicsRelVec(arr& y, arr& J, Frame *a, const rai::Vector& vec1, Frame *b) const {
   arr y1,J1;
+  a->ensure_X();
+  b->ensure_X();
   kinematicsVec(y1, J1, a, vec1);
   //  kinematicsVec(y2, J2, b2, vec2);
-  arr Rinv = ~(b->X.rot.getArr());
+  arr Rinv = ~(b->ensure_X().rot.getArr());
   y = Rinv * y1;
   if(!!J) {
     arr A;
-    axesMatrix(A, b);
+    jacobian_angular(A, b, SPARSE_JACOBIANS);
     J = Rinv * (J1 - crossProduct(A, y1));
   }
 }
 
+#if 0
 /// The position vec1, attached to b1, relative to the frame of b2 (plus vec2)
-void rai::KinematicWorld::kinematicsRelRot(arr& y, arr& J, Frame *a, Frame *b) const {
+void rai::Configuration::kinematicsRelRot(arr& y, arr& J, Frame *a, Frame *b) const {
   rai::Quaternion rot_b = a->X.rot;
   if(!!y) y = conv_vec2arr(rot_b.getVec());
   if(!!J) {
@@ -1214,13 +1267,14 @@ void rai::KinematicWorld::kinematicsRelRot(arr& y, arr& J, Frame *a, Frame *b) c
     double s=2.*phi/sin(phi);
     double ss=-2./(1.-rai::sqr(rot_b.w)) * (1.-phi/tan(phi));
     arr A;
-    axesMatrix(A, a);
+    axesMatrix(A, a, SPARSE_JACOBIANS);
     J = 0.5 * (rot_b.w*A*s + crossProduct(A, y));
     J -= 0.5 * ss/s/s*(y*~y*A);
   }
 }
+#endif
 
-void rai::KinematicWorld::kinematicsContactPOA(arr& y, arr& J, rai::Contact *c) const{
+void rai::Configuration::kinematicsContactPOA(arr& y, arr& J, rai::Contact *c) const{
   y = c->position;
   if(!!J){
     J = zeros(3, q.N);
@@ -1228,7 +1282,7 @@ void rai::KinematicWorld::kinematicsContactPOA(arr& y, arr& J, rai::Contact *c) 
   }
 }
 
-void rai::KinematicWorld::kinematicsContactForce(arr& y, arr& J, rai::Contact *c) const{
+void rai::Configuration::kinematicsContactForce(arr& y, arr& J, rai::Contact *c) const{
   y = c->force;
   if(!!J){
     J = zeros(3, q.N);
@@ -1237,7 +1291,7 @@ void rai::KinematicWorld::kinematicsContactForce(arr& y, arr& J, rai::Contact *c
 }
 
 /** @brief return the configuration's inertia tensor $M$ (n x n tensor)*/
-void rai::KinematicWorld::inertia(arr& M) {
+void rai::Configuration_ext::inertia(arr& M) {
   uint j1_idx, j2_idx;
   rai::Transformation Xa, Xi, Xj;
   Joint *j1, *j2;
@@ -1252,13 +1306,13 @@ void rai::KinematicWorld::inertia(arr& M) {
   
   for(Frame *a: frames) {
     //get reference frame
-    Xa = a->X;
+    Xa = a->ensure_X();
     
     j1=a->joint;
     while(j1) {
       j1_idx=j1->qIndex;
       
-      Xi = j1->from()->X;
+      Xi = j1->from()->ensure_X();
       //      Xi.appendTransformation(j1->A);
       ti = Xi.rot.getX();
       
@@ -1268,7 +1322,7 @@ void rai::KinematicWorld::inertia(arr& M) {
       while(j2) {
         j2_idx=j2->qIndex;
         
-        Xj = j2->from()->X;
+        Xj = j2->from()->ensure_X();
         //        Xj.appendTransformation(j2->A);
         tj = Xj.rot.getX();
         
@@ -1290,25 +1344,17 @@ void rai::KinematicWorld::inertia(arr& M) {
   for(j1_idx=0; j1_idx<N; j1_idx++) for(j2_idx=0; j2_idx<j1_idx; j2_idx++) M(j2_idx, j1_idx) = M(j1_idx, j2_idx);
 }
 
-void rai::KinematicWorld::equationOfMotion(arr& M, arr& F, bool gravity) {
-  if(gravity) {
-    clearForces();
-    gravityToForces();
-  }
+void rai::Configuration::equationOfMotion(arr& M, arr& F, const arr& qdot, bool gravity) {
   fs().update();
-  //  cout <<tree <<endl;
-  if(!qdot.N) qdot.resize(q.N).setZero();
+  fs().setGravity();
   fs().equationOfMotion(M, F, qdot);
 }
 
 /** @brief return the joint accelerations \f$\ddot q\f$ given the
   joint torques \f$\tau\f$ (computed via Featherstone's Articulated Body Algorithm in O(n)) */
-void rai::KinematicWorld::fwdDynamics(arr& qdd, const arr& qd, const arr& tau, bool gravity) {
-  if(gravity) {
-    clearForces();
-    gravityToForces();
-  }
+void rai::Configuration::fwdDynamics(arr& qdd, const arr& qd, const arr& tau, bool gravity) {
   fs().update();
+  fs().setGravity();
   //  cout <<tree <<endl;
   fs().fwdDynamics_MF(qdd, qd, tau);
   //  fs().fwdDynamics_aba_1D(qdd, qd, tau); //works
@@ -1317,16 +1363,13 @@ void rai::KinematicWorld::fwdDynamics(arr& qdd, const arr& qd, const arr& tau, b
 
 /** @brief return the necessary joint torques \f$\tau\f$ to achieve joint accelerations
   \f$\ddot q\f$ (computed via the Recursive Newton-Euler Algorithm in O(n)) */
-void rai::KinematicWorld::inverseDynamics(arr& tau, const arr& qd, const arr& qdd, bool gravity) {
-  if(gravity) {
-    clearForces();
-    gravityToForces();
-  }
+void rai::Configuration::inverseDynamics(arr& tau, const arr& qd, const arr& qdd, bool gravity) {
   fs().update();
+  fs().setGravity();
   fs().invDynamics(tau, qd, qdd);
 }
 
-/*void rai::KinematicWorld::impulsePropagation(arr& qd1, const arr& qd0){
+/*void rai::Configuration::impulsePropagation(arr& qd1, const arr& qd0){
   static rai::Array<Featherstone::Link> tree;
   if(!tree.N) GraphToTree(tree, *this);
   else updateGraphToTree(tree, *this);
@@ -1335,7 +1378,7 @@ void rai::KinematicWorld::inverseDynamics(arr& tau, const arr& qd, const arr& qd
 }*/
 
 /** @brief checks if all names of the bodies are disjoint */
-bool rai::KinematicWorld::checkUniqueNames() const {
+bool rai::Configuration::checkUniqueNames() const {
   for(Frame *a:  frames) for(Frame *b: frames) {
     if(a==b) break;
     if(a->name==b->name) return false;
@@ -1344,7 +1387,7 @@ bool rai::KinematicWorld::checkUniqueNames() const {
 }
 
 /// find body with specific name
-rai::Frame* rai::KinematicWorld::getFrameByName(const char* name, bool warnIfNotExist, bool reverse) const {
+rai::Frame* rai::Configuration::getFrameByName(const char* name, bool warnIfNotExist, bool reverse) const {
   if(!reverse){
     for(Frame *b: frames) if(b->name==name) return b;
   }else{
@@ -1355,53 +1398,53 @@ rai::Frame* rai::KinematicWorld::getFrameByName(const char* name, bool warnIfNot
   return 0;
 }
 
-FrameL rai::KinematicWorld::getFramesByNames(const StringA& frameNames) const{
+FrameL rai::Configuration::getFramesByNames(const StringA& frameNames) const{
   FrameL F;
   for(const rai::String& name:frameNames) F.append(getFrameByName(name), true);
   return F;
 }
 
 ///// find shape with specific name
-//rai::Shape* rai::KinematicWorld::getShapeByName(const char* name, bool warnIfNotExist) const {
+//rai::Shape* rai::Configuration::getShapeByName(const char* name, bool warnIfNotExist) const {
 //  Frame *f = getFrameByName(name, warnIfNotExist);
 //  return f->shape;
 //}
 
 ///// find shape with specific name
-//rai::Joint* rai::KinematicWorld::getJointByName(const char* name, bool warnIfNotExist) const {
+//rai::Joint* rai::Configuration::getJointByName(const char* name, bool warnIfNotExist) const {
 //  Frame *f = getFrameByName(name, warnIfNotExist);
 //  return f->joint();
 //}
 
 /// find joint connecting two bodies
-//rai::Link* rai::KinematicWorld::getLinkByBodies(const Frame* from, const Frame* to) const {
+//rai::Link* rai::Configuration::getLinkByBodies(const Frame* from, const Frame* to) const {
 //  if(to->link && to->link->from==from) return to->link;
-//  return NULL;
+//  return nullptr;
 //}
 
 /// find joint connecting two bodies
-rai::Joint* rai::KinematicWorld::getJointByBodies(const Frame* from, const Frame* to) const {
+rai::Joint* rai::Configuration::getJointByFrames(const Frame* from, const Frame* to) const {
   if(to->joint && to->parent==from) return to->joint;
-  return NULL;
+  return nullptr;
 }
 
 /// find joint connecting two bodies with specific names
-rai::Joint* rai::KinematicWorld::getJointByBodyNames(const char* from, const char* to) const {
+rai::Joint* rai::Configuration::getJointByFrameNames(const char* from, const char* to) const {
   Frame *f = getFrameByName(from);
   Frame *t = getFrameByName(to);
-  if(!f || !t) return NULL;
-  return getJointByBodies(f, t);
+  if(!f || !t) return nullptr;
+  return getJointByFrames(f, t);
 }
 
 /// find joint connecting two bodies with specific names
-rai::Joint* rai::KinematicWorld::getJointByBodyIndices(uint ifrom, uint ito) const {
-  if(ifrom>=frames.N || ito>=frames.N) return NULL;
+rai::Joint* rai::Configuration::getJointByFrameIndices(uint ifrom, uint ito) const {
+  if(ifrom>=frames.N || ito>=frames.N) return nullptr;
   Frame *f = frames(ifrom);
   Frame *t = frames(ito);
-  return getJointByBodies(f, t);
+  return getJointByFrames(f, t);
 }
 
-uintA rai::KinematicWorld::getQindicesByNames(const StringA& jointNames) const{
+uintA rai::Configuration::getQindicesByNames(const StringA& jointNames) const{
   FrameL F = getFramesByNames(jointNames);
   uintA Qidx;
   for(rai::Frame* f: F){
@@ -1411,10 +1454,10 @@ uintA rai::KinematicWorld::getQindicesByNames(const StringA& jointNames) const{
   return Qidx;
 }
 
-StringA rai::KinematicWorld::getJointNames() const {
-  if(!q.nd)((KinematicWorld*)this)->calc_q();
+StringA rai::Configuration::getJointNames() const {
+  if(!q.nd)((Configuration*)this)->calc_q();
   StringA names(getJointStateDimension());
-  for(Joint *j:fwdActiveJoints) {
+  for(Joint *j:activeJoints) {
     rai::String name=j->frame->name;
     if(!name) name <<'q' <<j->qIndex;
     if(j->dim==1) names(j->qIndex) <<name;
@@ -1431,7 +1474,7 @@ StringA rai::KinematicWorld::getJointNames() const {
   return names;
 }
 
-StringA rai::KinematicWorld::getFrameNames() const {
+StringA rai::Configuration::getFrameNames() const {
   StringA names(frames.N);
   for(uint i=0;i<frames.N;i++) {
     names(i) = frames(i)->name;
@@ -1440,15 +1483,15 @@ StringA rai::KinematicWorld::getFrameNames() const {
 }
 
 /** @brief creates uniques names by prefixing the node-index-number to each name */
-void rai::KinematicWorld::prefixNames(bool clear) {
+void rai::Configuration::prefixNames(bool clear) {
   if(!clear) for(Frame *a: frames) a->name=STRING('_' <<a->ID <<'_' <<a->name);
   else       for(Frame *a: frames) a->name.clear() <<a->ID;
 }
 
 /// return a OpenGL extension
-OpenGL& rai::KinematicWorld::gl(const char* window_title) {
+OpenGL& rai::Configuration::gl(const char* window_title, bool offscreen) {
   if(!s->gl) {
-    s->gl = new OpenGL(window_title);
+    s->gl = new OpenGL(window_title, 400,400, offscreen);
     s->gl->add(glStandardScene, 0);
     s->gl->addDrawer(this);
     s->gl->camera.setDefault();
@@ -1457,18 +1500,18 @@ OpenGL& rai::KinematicWorld::gl(const char* window_title) {
 }
 
 /// return a Swift extension
-SwiftInterface& rai::KinematicWorld::swift() {
-  if(!s->swift) s->swift = new SwiftInterface(*this, .1);
+SwiftInterface& rai::Configuration::swift() {
+  if(!s->swift) s->swift = make_shared<SwiftInterface>(*this, .1);
   return *s->swift;
 }
 
-rai::FclInterface& rai::KinematicWorld::fcl(){
+rai::FclInterface& rai::Configuration::fcl(){
   if(!s->fcl){
-    Array<ptr<Geom>> geometries(frames.N);
+    Array<ptr<Mesh>> geometries(frames.N);
     for(Frame *f:frames){
       if(f->shape && f->shape->cont){
-        if(!f->shape->mesh().V.N) f->shape->getGeom().createMeshes();
-        geometries(f->ID) = f->shape->geom;
+        if(!f->shape->mesh().V.N) f->shape->createMeshes();
+        geometries(f->ID) = f->shape->_mesh;
       }
     }
     s->fcl = make_shared<rai::FclInterface>(geometries, .0);
@@ -1476,13 +1519,12 @@ rai::FclInterface& rai::KinematicWorld::fcl(){
   return *s->fcl;
 }
 
-void rai::KinematicWorld::swiftDelete() {
-  delete s->swift;
-  s->swift = nullptr;
+void rai::Configuration::swiftDelete() {
+  s->swift.reset();
 }
 
 /// return a PhysX extension
-PhysXInterface& rai::KinematicWorld::physx() {
+PhysXInterface& rai::Configuration::physx() {
   if(!s->physx) {
     s->physx = new PhysXInterface(*this);
     //    s->physx->setArticulatedBodiesKinematic();
@@ -1491,17 +1533,17 @@ PhysXInterface& rai::KinematicWorld::physx() {
 }
 
 /// return a ODE extension
-OdeInterface& rai::KinematicWorld::ode() {
+OdeInterface& rai::Configuration::ode() {
   if(!s->ode) s->ode = new OdeInterface(*this);
   return *s->ode;
 }
 
-FeatherstoneInterface& rai::KinematicWorld::fs() {
+FeatherstoneInterface& rai::Configuration::fs() {
   if(!s->fs) s->fs = new FeatherstoneInterface(*this);
   return *s->fs;
 }
 
-int rai::KinematicWorld::watch(bool pause, const char* txt) {
+int rai::Configuration::watch(bool pause, const char* txt) {
 //  gl().pressedkey=0;
   int key;
   if(pause){
@@ -1513,52 +1555,61 @@ int rai::KinematicWorld::watch(bool pause, const char* txt) {
   return key;
 }
 
-void rai::KinematicWorld::saveVideoPic(uint& t, const char* pathPrefix){
+void rai::Configuration::saveVideoPic(uint& t, const char* pathPrefix){
   write_ppm(gl().captureImage, STRING(pathPrefix <<std::setw(4)<<std::setfill('0')<<t++<<".ppm"));
 }
 
-void rai::KinematicWorld::glAdd(void (*call)(void*), void* classP){
+void rai::Configuration::glAdd(void (*call)(void*,OpenGL&), void* classP){
   gl().add(call, classP);
 }
 
-int rai::KinematicWorld::glAnimate() {
-  return animateConfiguration(*this, NULL);
+int rai::Configuration::glAnimate() {
+  return animateConfiguration(*this, nullptr);
 }
 
-void rai::KinematicWorld::glGetMasks(int w, int h, bool rgbIndices) {
+void rai::Configuration::glClose(){
+  if(s->gl){ delete s->gl; s->gl=0; }
+}
+
+void rai::Configuration::glGetMasks(int w, int h, bool rgbIndices) {
+  if(s->gl && !s->gl->offscreen){
+    LOG(0) <<"can't make this offscreen anymore!";
+  }else gl(nullptr, true);
+
   gl().clear();
   gl().addDrawer(this);
   if(rgbIndices) {
+    gl().drawMode_idColor = true;
     gl().setClearColors(0,0,0,0);
-    orsDrawIndexColors = true;
     orsDrawMarkers = orsDrawJoints = orsDrawProxies = false;
   }
-  gl().renderInBack(w, h);
-  //  indexRgb = gl().captureImage;
-  //  depth = gl().captureDepth;
+
+  gl().update(nullptr, true);
 
   gl().clear();
   gl().add(glStandardScene, 0);
   gl().addDrawer(this);
   if(rgbIndices) {
     gl().setClearColors(1,1,1,0);
-    orsDrawIndexColors = false;
+    gl().drawMode_idColor = false;
     orsDrawMarkers = orsDrawJoints = orsDrawProxies = true;
   }
 }
 
-void rai::KinematicWorld::stepSwift() {
+void rai::Configuration::stepSwift() {
   swift().step(*this, false);
   //  reportProxies();
   //  watch(true);
   //  gl().closeWindow();
+
+  _state_proxies_isGood=true;
 }
 
-void rai::KinematicWorld::stepFcl(){
+void rai::Configuration::stepFcl(){
   arr X(frames.N, 7);
   X.setZero();
   for(Frame *f:frames){
-    if(f->shape && f->shape->cont) X[f->ID] = f->X.getArr7d();
+    if(f->shape && f->shape->cont) X[f->ID] = f->ensure_X().getArr7d();
   }
   fcl().step(X);
   uintA& COL = fcl().collisions;
@@ -1577,18 +1628,20 @@ void rai::KinematicWorld::stepFcl(){
       p.a = frames(COL(i,0));
       p.b = frames(COL(i,1));
       p.d = -0.;
-      p.posA = frames(COL(i,0))->shape->geom->mesh.getCenter();
-      p.posB = frames(COL(i,1))->shape->geom->mesh.getCenter();
+      p.posA = frames(COL(i,0))->shape->mesh().getCenter();
+      p.posB = frames(COL(i,1))->shape->mesh().getCenter();
       j++;
     }
   }
+
+  _state_proxies_isGood=true;
 }
 
-void rai::KinematicWorld::stepPhysx(double tau) {
+void rai::Configuration::stepPhysx(double tau) {
   physx().step(tau);
 }
 
-void rai::KinematicWorld::stepOde(double tau) {
+void rai::Configuration::stepOde(double tau) {
 #ifdef RAI_ODE
   ode().setMotorVel(qdot, 100.);
   ode().step(tau);
@@ -1596,21 +1649,21 @@ void rai::KinematicWorld::stepOde(double tau) {
 #endif
 }
 
-void rai::KinematicWorld::stepDynamics(const arr& Bu_control, double tau, double dynamicNoise, bool gravity) {
+void rai::Configuration::stepDynamics(arr& qdot, const arr& Bu_control, double tau, double dynamicNoise, bool gravity) {
 
   struct DiffEqn:VectorFunction {
-    rai::KinematicWorld &S;
+    rai::Configuration &S;
     const arr& Bu;
     bool gravity;
-    DiffEqn(rai::KinematicWorld& _S, const arr& _Bu, bool _gravity):S(_S), Bu(_Bu), gravity(_gravity) {
+    DiffEqn(rai::Configuration& _S, const arr& _Bu, bool _gravity):S(_S), Bu(_Bu), gravity(_gravity) {
       VectorFunction::operator=([this](arr& y, arr& J, const arr& x) -> void {
         this->fv(y, J, x);
       });
     }
     void fv(arr& y, arr& J, const arr& x) {
-      S.setJointState(x[0], x[1]);
+      S.setJointState(x[0]);
       arr M,Minv,F;
-      S.equationOfMotion(M, F, gravity);
+      S.equationOfMotion(M, F, x[1], gravity);
       inverse_SymPosDef(Minv, M);
       //Minv = inverse(M); //TODO why does symPosDef fail?
       y = Minv * (Bu - F);
@@ -1634,7 +1687,8 @@ void rai::KinematicWorld::stepDynamics(const arr& Bu_control, double tau, double
   if(dynamicNoise) rndGauss(x1[1](), ::sqrt(tau)*dynamicNoise, true);
 #endif
   
-  setJointState(x1[0], x1[1]);
+  setJointState(x1[0]);
+  qdot = x1[1];
 }
 
 void __merge(rai::Contact *c, rai::Proxy *p) {
@@ -1659,16 +1713,16 @@ double __matchingCost(rai::Contact *c, rai::Proxy *p) {
   return cost;
 }
 
-void __new(rai::KinematicWorld& K, rai::Proxy *p) {
+void __new(rai::Configuration& K, rai::Proxy *p) {
   rai::Contact *c = new rai::Contact(*p->a, *p->b);
   __merge(c, p);
 }
 
-void rai::KinematicWorld::filterProxiesToContacts(double margin) {
+void rai::Configuration::filterProxiesToContacts(double margin) {
   for(Proxy& p:proxies) {
     if(!p.coll) p.calc_coll(*this);
     if(p.coll->distance-(p.coll->rad1+p.coll->rad2)>margin) continue;
-    Contact *candidate=NULL;
+    Contact *candidate=nullptr;
     double candidateMatchingCost=0.;
     for(Contact *c:p.a->contacts) {
       if((&c->a==p.a && &c->b==p.b) || (&c->a==p.b && &c->b==p.a)) {
@@ -1697,12 +1751,12 @@ void rai::KinematicWorld::filterProxiesToContacts(double margin) {
 }
 #endif
 
-void rai::KinematicWorld::proxiesToContacts(double margin) {
+void rai::Configuration_ext::proxiesToContacts(double margin) {
   for(Frame *f:frames) while(f->contacts.N) delete f->contacts.last();
   
   for(Proxy& p:proxies) {
     if(!p.coll) p.calc_coll(*this);
-    Contact *candidate=NULL;
+    Contact *candidate=nullptr;
     for(Contact *c:p.a->contacts) {
       if((&c->a==p.a && &c->b==p.b) || (&c->a==p.b && &c->b==p.a)) {
         candidate = c;
@@ -1728,11 +1782,13 @@ void rai::KinematicWorld::proxiesToContacts(double margin) {
   //  for(Contact *c:old) delete c;
 }
 
-double rai::KinematicWorld::totalContactPenetration() {
+double rai::Configuration::totalCollisionPenetration() {
+  CHECK(_state_proxies_isGood, "");
+
   double D=0.;
   for(const Proxy& p:proxies) {
     //early check: if swift is way out of collision, don't bother computing it precise
-    if(p.d > p.a->shape->radius()+p.a->shape->radius()+.01) continue;
+    if(p.d > p.a->shape->radius()+p.b->shape->radius()+.01) continue;
     //exact computation
     if(!p.coll) ((Proxy*)&p)->calc_coll(*this);
     double d = p.coll->getDistance();
@@ -1744,13 +1800,14 @@ double rai::KinematicWorld::totalContactPenetration() {
   return D;
 }
 
-void rai::KinematicWorld::copyProxies(const rai::KinematicWorld& K){
+void rai::Configuration::copyProxies(const rai::Configuration& K){
+  proxies.clear();
   proxies.resize(K.proxies.N);
   for(uint i=0;i<proxies.N;i++) proxies(i).copy(*this, K.proxies(i));
 }
 
 /** @brief prototype for \c operator<< */
-void rai::KinematicWorld::write(std::ostream& os) const {
+void rai::Configuration::write(std::ostream& os) const {
   for(Frame *f: frames) if(!f->name.N) f->name <<'_' <<f->ID;
   for(Frame *f: frames) { //fwdActiveSet) {
     //    os <<"frame " <<f->name;
@@ -1779,12 +1836,12 @@ void rai::KinematicWorld::write(std::ostream& os) const {
   //  }
 }
 
-void rai::KinematicWorld::write(Graph& G) const {
+void rai::Configuration::write(Graph& G) const {
   for(Frame *f: frames) if(!f->name.N) f->name <<'_' <<f->ID;
-  for(Frame *f: frames) f->write(G);
+  for(Frame *f: frames) f->write(G.newSubgraph({f->name}));
 }
 
-void rai::KinematicWorld::writeURDF(std::ostream &os, const char* robotName) const {
+void rai::Configuration::writeURDF(std::ostream &os, const char* robotName) const {
   os <<"<?xml version=\"1.0\"?>\n";
   os <<"<robot name=\"" <<robotName <<"\">\n";
   
@@ -1835,7 +1892,7 @@ void rai::KinematicWorld::writeURDF(std::ostream &os, const char* robotName) con
         }
         os <<"      <material> <color rgba=\"" <<b->shape->mesh().C <<"\" /> </material>\n";
         os <<"    </geometry>\n";
-        os <<"  <origin xyz=\"" <<b->Q.pos.getArr() <<"\" rpy=\"" <<b->Q.rot.getEulerRPY() <<"\" />\n";
+        os <<"  <origin xyz=\"" <<b->get_Q().pos.getArr() <<"\" rpy=\"" <<b->get_Q().rot.getEulerRPY() <<"\" />\n";
         os <<"  <inertial>  <mass value=\"1\"/>  </inertial>\n";
         os <<"  </visual>\n";
       }
@@ -1845,7 +1902,7 @@ void rai::KinematicWorld::writeURDF(std::ostream &os, const char* robotName) con
     os <<"<joint name=\"" <<a->name <<"\" type=\"fixed\" >\n";
     rai::Transformation Q=0;
     Frame *p=a->parent;
-    while(p && !p->joint) { Q=p->Q*Q; p=p->parent; }
+    while(p && !p->joint) { Q=p->get_Q()*Q; p=p->parent; }
     if(!p)    os <<"  <parent link=\"base_link\"/>\n";
     else      os <<"  <parent link=\"" <<p->name <<"\"/>\n";
     os <<"  <child  link=\"" <<a->name <<"\"/>\n";
@@ -1856,7 +1913,7 @@ void rai::KinematicWorld::writeURDF(std::ostream &os, const char* robotName) con
   os <<"</robot>";
 }
 
-void rai::KinematicWorld::writeMeshes(const char *pathPrefix) const {
+void rai::Configuration::writeMeshes(const char *pathPrefix) const {
   for(rai::Frame *f:frames) {
     if(f->shape &&
        (f->shape->type()==rai::ST_mesh || f->shape->type()==rai::ST_ssCvx)) {
@@ -1872,7 +1929,7 @@ void rai::KinematicWorld::writeMeshes(const char *pathPrefix) const {
 #define DEBUG(x) //x
 
 /** @brief prototype for \c operator>> */
-void rai::KinematicWorld::read(std::istream& is) {
+void rai::Configuration::read(std::istream& is) {
   Graph G(is);
   G.checkConsistency();
   //  cout <<"***KVG:\n" <<G <<endl;
@@ -1880,7 +1937,7 @@ void rai::KinematicWorld::read(std::istream& is) {
   init(G);
 }
 
-Graph rai::KinematicWorld::getGraph() const {
+Graph rai::Configuration::getGraph() const {
 #if 1
   Graph G;
   //first just create nodes
@@ -1889,7 +1946,7 @@ Graph rai::KinematicWorld::getGraph() const {
     Node *n = G.elem(f->ID);
     if(f->parent) {
       n->addParent(G.elem(f->parent->ID));
-      n->keys.append(STRING("Q= " <<f->Q));
+      n->keys.append(STRING("Q= " <<f->get_Q()));
     }
     if(f->joint) {
       n->keys.append(STRING("joint " <<f->joint->type));
@@ -1931,7 +1988,7 @@ Graph rai::KinematicWorld::getGraph() const {
 
 namespace rai {
   struct Link {
-    Frame* joint=NULL;
+    Frame* joint=nullptr;
     FrameL frames;
     Frame *from() {
       Frame *a = joint->parent;
@@ -1941,7 +1998,7 @@ namespace rai {
   };
 }
 
-//rai::Array<rai::Link *> rai::KinematicWorld::getLinks(){
+//rai::Array<rai::Link *> rai::Configuration::getLinks(){
 //  rai::Array<Link*> links;
 
 //  FrameL bases;
@@ -1957,35 +2014,38 @@ namespace rai {
 //  return links;
 //}
 
-rai::Array<rai::Frame*> rai::KinematicWorld::getLinks() {
+rai::Array<rai::Frame*> rai::Configuration::getLinks() const {
   FrameL links;
   for(Frame *a:frames) if(!a->parent || a->joint) links.append(a);
   return links;
 }
 
-void rai::KinematicWorld::displayDot() {
+void rai::Configuration::displayDot() {
   Graph G = getGraph();
   G.displayDot();
 }
 
-void rai::KinematicWorld::report(std::ostream &os) const {
-  CHECK_EQ(fwdActiveSet.N, frames.N, "you need to calc_activeSets before");
+void rai::Configuration::report(std::ostream &os) const {
   uint nShapes=0, nUc=0;
-  for(Frame *f:fwdActiveSet) if(f->shape) nShapes++;
-  for(Joint *j:fwdActiveJoints) if(j->uncertainty) nUc++;
+  for(Frame *f:frames) if(f->shape) nShapes++;
+  for(Joint *j:activeJoints) if(j->uncertainty) nUc++;
   
-  os <<"Kin: q.N=" <<q.N
+  os <<"Config: q.N=" <<getJointStateDimension()
     <<" #frames=" <<frames.N
-   <<" #activeFrames=" <<fwdActiveSet.N
-  <<" #activeJoints=" <<fwdActiveJoints.N
-  <<" #activeShapes=" <<nShapes
-  <<" #activeUncertainties=" <<nUc
+   <<" #joints=" <<activeJoints.N
+  <<" #shapes=" <<nShapes
+  <<" #ucertainties=" <<nUc
   <<" #proxies=" <<proxies.N
+  <<" #contacts=" <<contacts.N
   <<" #evals=" <<setJointStateCount
   <<endl;
+
+  FrameL parts = getParts();
+  os <<"PARTS: ";
+  for(Frame *f:parts) os <<*f <<endl;
 }
 
-void rai::KinematicWorld::init(const Graph& G, bool addInsteadOfClear) {
+void rai::Configuration::init(const Graph& G, bool addInsteadOfClear) {
   if(!addInsteadOfClear) clear();
 
   FrameL node2frame(G.N);
@@ -2005,14 +2065,17 @@ void rai::KinematicWorld::init(const Graph& G, bool addInsteadOfClear) {
   }
   
   for(Node *n: G) {
-    if(n->keys(0)=="body" || n->keys(0)=="shape" || n->keys(0)=="joint") continue;
+    if(n->keys.N){
+      if(n->keys(0)=="body" || n->keys(0)=="shape" || n->keys(0)=="joint") continue;
+    }
     //    CHECK_EQ(n->keys(0),"frame","");
     CHECK(n->isGraph(), "frame must have value Graph");
     CHECK_LE(n->parents.N, 1,"frames must have no or one parent: specs=" <<*n <<' ' <<n->index);
     
-    Frame *b = NULL;
+    Frame *b = nullptr;
     if(!n->parents.N) b = new Frame(*this);
-    if(n->parents.N==1) b = new Frame(node2frame(n->parents(0)->index)); //getFrameByName(n->parents(0)->keys.last()));
+    else if(n->parents.N==1) b = new Frame(node2frame(n->parents(0)->index)); //getFrameByName(n->parents(0)->keys.last()));
+    else HALT("a frame can only have one parent");
     node2frame(n->index) = b;
     if(n->keys.N && n->keys.last()!="frame") b->name=n->keys.last();
     b->ats.copy(n->graph(), false, true);
@@ -2084,6 +2147,8 @@ void rai::KinematicWorld::init(const Graph& G, bool addInsteadOfClear) {
       j->mimic = mimicFrame->joint;
       if(!j->mimic) HALT("The joint '" <<*j <<"' is declared coupled to '" <<jointName <<"' -- but that doesn't exist!");
       j->type = j->mimic->type;
+      j->q0 = j->mimic->q0;
+      j->calc_Q_from_q(j->q0, 0);
 
       delete mim;
       f->ats.index();
@@ -2105,12 +2170,12 @@ void rai::KinematicWorld::init(const Graph& G, bool addInsteadOfClear) {
   }
   
   //-- clean up the graph
-  calc_q();
+//  calc_q();
+//  calc_fwdPropagateFrames();
   checkConsistency();
-  calc_fwdPropagateFrames();
 }
 
-void rai::KinematicWorld::writePlyFile(const char* filename) const {
+void rai::Configuration::writePlyFile(const char* filename) const {
   ofstream os;
   rai::open(os, filename);
   uint nT=0,nV=0;
@@ -2140,7 +2205,7 @@ void rai::KinematicWorld::writePlyFile(const char* filename) const {
     m = &s->mesh();
     arr col = m->C;
     CHECK_EQ(col.N, 3,"");
-    t = s->frame.X;
+    t = s->frame.ensure_X();
     if(m->C.d0!=m->V.d0) {
       m->C.resizeAs(m->V);
       for(j=0; j<m->C.d0; j++) m->C[j]=col;
@@ -2164,7 +2229,9 @@ void rai::KinematicWorld::writePlyFile(const char* filename) const {
 }
 
 /// dump the list of current proximities on the screen
-void rai::KinematicWorld::reportProxies(std::ostream& os, double belowMargin, bool brief) const {
+void rai::Configuration::reportProxies(std::ostream& os, double belowMargin, bool brief) const {
+  CHECK(_state_proxies_isGood, "");
+
   os <<"Proximity report: #" <<proxies.N <<endl;
   uint i=0;
   for(const Proxy& p: proxies) {
@@ -2195,47 +2262,10 @@ bool ProxySortComp(const rai::Proxy *a, const rai::Proxy *b) {
   return (a->a < b->a) || (a->a==b->a && a->b<b->b) || (a->a==b->a && a->b==b->b && a->d < b->d);
 }
 
-/// clear all forces currently stored at bodies
-void rai::KinematicWorld::clearForces() {
-  for(Frame *f:  frames) if(f->inertia) {
-    f->inertia->force.setZero();
-    f->inertia->torque.setZero();
-  }
-}
-
-/// apply a force on body n
-void rai::KinematicWorld::addForce(rai::Vector force, rai::Frame *f) {
-  CHECK(f->inertia, "");
-  f->inertia->force += force;
-  if(!s->physx) {
-    NIY;
-  } else {
-    s->physx->addForce(force, f);
-  }
-  //n->torque += (pos - n->X.p) ^ force;
-}
-
-/// apply a force on body n at position pos (in world coordinates)
-void rai::KinematicWorld::addForce(rai::Vector force, rai::Frame *f, rai::Vector pos) {
-  CHECK(f->inertia, "");
-  f->inertia->force += force;
-  if(!s->physx) {
-    NIY;
-  } else {
-    s->physx->addForce(force, f, pos);
-  }
-  //n->torque += (pos - n->X.p) ^ force;
-}
-
-void rai::KinematicWorld::gravityToForces(double g) {
-  rai::Vector grav(0, 0, g);
-  for(Frame *f: frames) if(f->inertia) f->inertia->force += f->inertia->mass * grav;
-}
-
 /** similar to invDynamics using NewtonEuler; but only computing the backward pass */
-void rai::KinematicWorld::NewtonEuler_backward() {
-  CHECK_EQ(fwdActiveSet.N, frames.N, "you need to calc_activeSets before");
-  uint N=fwdActiveSet.N;
+void rai::Configuration_ext::NewtonEuler_backward() {
+  CHECK(check_topSort(), "this needs a topology sorted configuration");
+  uint N=frames.N;
   rai::Array<arr> h(N);
   arr Q(N, 6, 6);
   arr force(frames.N,6);
@@ -2243,12 +2273,12 @@ void rai::KinematicWorld::NewtonEuler_backward() {
   
   for(uint i=0; i<N; i++) {
     h(i).resize(6).setZero();
-    Frame *f = fwdActiveSet.elem(i);
+    Frame *f = frames.elem(i);
     if(f->joint) {
       h(i) = f->joint->get_h();
     }
     if(f->parent) {
-      Q[i] = f->Q.getWrenchTransform();
+      Q[i] = f->get_Q().getWrenchTransform();
     } else {
       Q[i].setId();
     }
@@ -2258,12 +2288,12 @@ void rai::KinematicWorld::NewtonEuler_backward() {
   }
   
   for(uint i=N; i--;) {
-    Frame *f = fwdActiveSet.elem(i);
+    Frame *f = frames.elem(i);
     if(f->parent) force[f->parent->ID] += ~Q[i] * force[f->ID];
   }
   
   for(Frame *f:frames) {
-    rai::Transformation R = f->X; //rotate to world, but no translate to origin
+    rai::Transformation R = f->ensure_X(); //rotate to world, but no translate to origin
     R.pos.setZero();
     force[f->ID] = ~R.getWrenchTransform() * force[f->ID];
     cout <<f->name <<":\t " <<force[f->ID] <<endl;
@@ -2271,7 +2301,7 @@ void rai::KinematicWorld::NewtonEuler_backward() {
 }
 
 /// compute forces from the current contacts
-void rai::KinematicWorld::contactsToForces(double hook, double damp) {
+void rai::Configuration_ext::contactsToForces(double hook, double damp) {
   rai::Vector trans, transvel, force;
   for(const Proxy& p:proxies) if(p.d<0.) {
     //if(!i || proxies(i-1).a!=a || proxies(i-1).b!=b) continue; //no old reference sticking-frame
@@ -2285,12 +2315,15 @@ void rai::KinematicWorld::contactsToForces(double hook, double damp) {
     //force += damp * transvel;
     SL_DEBUG(1, cout <<"applying force: [" <<*p.a <<':' <<*p.b <<"] " <<force <<endl);
 
-    addForce(force, p.a, p.posA);
-    addForce(-force, p.b, p.posB);
+    NIY;
+//    addForce(force, p.a, p.posA);
+//    addForce(-force, p.b, p.posB);
   }
 }
 
-void rai::KinematicWorld::kinematicsPenetrations(arr& y, arr& J, bool penetrationsOnly, double activeMargin) const {
+void rai::Configuration_ext::kinematicsPenetrations(arr& y, arr& J, bool penetrationsOnly, double activeMargin) const {
+  CHECK(_state_proxies_isGood, "");
+
   y.resize(proxies.N).setZero();
   if(!!J) J.resize(y.N, getJointStateDimension()).setZero();
   uint i=0;
@@ -2299,8 +2332,8 @@ void rai::KinematicWorld::kinematicsPenetrations(arr& y, arr& J, bool penetratio
     
     arr Jp1, Jp2;
     if(!!J) {
-      jacobianPos(Jp1, p.a, p.coll->p1);
-      jacobianPos(Jp2, p.b, p.coll->p2);
+      jacobian_pos(Jp1, p.a, p.coll->p1);
+      jacobian_pos(Jp2, p.b, p.coll->p2);
     }
     
     arr y_dist, J_dist;
@@ -2313,24 +2346,11 @@ void rai::KinematicWorld::kinematicsPenetrations(arr& y, arr& J, bool penetratio
   }
 }
 
-void rai::KinematicWorld::kinematicsProxyDist(arr& y, arr& J, const Proxy& p, double margin, bool useCenterDist, bool addValues) const {
+void rai::Configuration_ext::kinematicsProxyDist(arr& y, arr& J, const Proxy& p, double margin, bool useCenterDist, bool addValues) const {
   y.resize(1);
   if(!!J) J.resize(1, getJointStateDimension());
   if(!addValues) { y.setZero();  if(!!J) J.setZero(); }
   
-  //  //costs
-  //  if(a->type==rai::ST_sphere && b->type==rai::ST_sphere){
-  //    rai::Vector diff=a->X.pos-b->X.pos;
-  //    double d = diff.length() - a->size(3) - b->size(3);
-  //    y(0) = d;
-  //    if(!!J){
-  //      arr Jpos;
-  //      arr normal = conv_vec2arr(diff)/diff.length(); normal.reshape(1, 3);
-  //      kinematicsPos(NoArr, Jpos, a->body);  J += (normal*Jpos);
-  //      kinematicsPos(NoArr, Jpos, b->body);  J -= (normal*Jpos);
-  //    }
-  //    return;
-  //  }
   y(0) = p.d;
   if(!!J) {
     arr Jpos;
@@ -2346,7 +2366,7 @@ void rai::KinematicWorld::kinematicsProxyDist(arr& y, arr& J, const Proxy& p, do
   }
 }
 
-void rai::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, double margin, bool addValues) const {
+void rai::Configuration::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, double margin, bool addValues) const {
   CHECK(p.a->shape,"");
   CHECK(p.b->shape,"");
 
@@ -2355,17 +2375,16 @@ void rai::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, do
   if(!addValues) { y.setZero();  if(!!J) J.setZero(); }
 
   //early check: if swift is way out of collision, don't bother computing it precise
-  if(p.d>p.a->shape->radius()+p.a->shape->radius()+.01+margin) return;
+  if(p.d > p.a->shape->radius() + p.b->shape->radius() + .01 + margin) return;
   
-#if 1
   if(!p.coll) ((Proxy*)&p)->calc_coll(*this);
 
   if(p.coll->getDistance()>margin) return;
   
   arr Jp1, Jp2;
   if(!!J) {
-    jacobianPos(Jp1, p.a, p.coll->p1);
-    jacobianPos(Jp2, p.b, p.coll->p2);
+    jacobian_pos(Jp1, p.a, p.coll->p1);
+    jacobian_pos(Jp2, p.b, p.coll->p2);
   }
   
   arr y_dist, J_dist;
@@ -2374,70 +2393,12 @@ void rai::KinematicWorld::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, do
   if(y_dist.scalar()>margin) return;
   y += margin-y_dist.scalar();
   if(!!J)  J -= J_dist;
-  
-#else
-  CHECK(a->shape->mesh_radius>0.,"");
-  CHECK(b->shape->mesh_radius>0.,"");
-  
-  y.resize(1);
-  if(!!J) J.resize(1, getJointStateDimension());
-  if(!addValues) { y.setZero();  if(!!J) J.setZero(); }
-  
-  //costs
-  if(a->shape->type()==rai::ST_sphere && b->shape->type()==rai::ST_sphere) {
-    rai::Vector diff=a->X.pos-b->X.pos;
-    double d = diff.length() - a->shape->size(3) - b->shape->size(3);
-    y(0) = 1. - d/margin;
-    if(!!J) {
-      arr Jpos;
-      arr normal = conv_vec2arr(diff)/diff.length(); normal.reshape(1, 3);
-      kinematicsPos(NoArr, Jpos, a);  J -= 1./margin*(normal*Jpos);
-      kinematicsPos(NoArr, Jpos, b);  J += 1./margin*(normal*Jpos);
-    }
-    return;
-  }
-  double ab_radius = margin + 10.*(a->shape->mesh_radius+b->shape->mesh_radius);
-  CHECK(p->d<(1.+1e-6)*margin, "something's really wierd here!");
-  CHECK(p->cenD<(1.+1e-6)*ab_radius, "something's really wierd here! You disproved the triangle inequality :-)");
-  double d1 = 1.-p->d/margin;
-  double d2 = 1.-p->cenD/ab_radius;
-  if(d2<0.) d2=0.;
-  if(!useCenterDist) d2=1.;
-  y(0) += d1*d2;
-  
-  //Jacobian
-  if(!!J) {
-    arr Jpos;
-    rai::Vector arel, brel;
-    if(p->d>0.) { //we have a gradient on pos only when outside
-      arel=a->X.rot/(p->posA-a->X.pos);
-      brel=b->X.rot/(p->posB-b->X.pos);
-      CHECK(p->normal.isNormalized(), "proxy normal is not normalized");
-      arr normal; normal.referTo(&p->normal.x, 3); normal.reshape(1, 3);
-
-      kinematicsPos(NoArr, Jpos, a, arel);  J -= d2/margin*(normal*Jpos);
-      kinematicsPos(NoArr, Jpos, b, brel);  J += d2/margin*(normal*Jpos);
-    }
-
-    if(useCenterDist && d2>0.) {
-      arel=a->X.rot/(p->cenA-a->X.pos);
-      brel=b->X.rot/(p->cenB-b->X.pos);
-      //      CHECK(p->cenN.isNormalized(), "proxy normal is not normalized");
-      if(!p->cenN.isNormalized()) {
-        RAI_MSG("proxy->cenN is not normalized: objects seem to be at exactly the same place");
-      } else {
-        arr normal; normal.referTo(&p->cenN.x, 3); normal.reshape(1, 3);
-
-        kinematicsPos(NoArr, Jpos, a, arel);  J -= d1/ab_radius*(normal*Jpos);
-        kinematicsPos(NoArr, Jpos, b, brel);  J += d1/ab_radius*(normal*Jpos);
-      }
-    }
-  }
-#endif
 }
 
 /// measure (=scalar kinematics) for the contact cost summed over all bodies
-void rai::KinematicWorld::kinematicsProxyCost(arr &y, arr& J, double margin) const {
+void rai::Configuration::kinematicsProxyCost(arr &y, arr& J, double margin) const {
+  CHECK(_state_proxies_isGood, "");
+
   y.resize(1).setZero();
   if(!!J) J.resize(1, getJointStateDimension()).setZero();
   for(const Proxy& p:proxies) { /*if(p.d<margin)*/
@@ -2445,7 +2406,7 @@ void rai::KinematicWorld::kinematicsProxyCost(arr &y, arr& J, double margin) con
   }
 }
 
-void rai::KinematicWorld::kinematicsContactCost(arr& y, arr& J, const Contact* c, double margin, bool addValues) const {
+void rai::Configuration_ext::kinematicsContactCost(arr& y, arr& J, const Contact* c, double margin, bool addValues) const {
   NIY;
   //  Feature *map = c->getTM_ContactNegDistance();
   //  arr y_dist, J_dist;
@@ -2462,7 +2423,7 @@ void rai::KinematicWorld::kinematicsContactCost(arr& y, arr& J, const Contact* c
   //  if(!!J)  J -= J_dist;
 }
 
-void rai::KinematicWorld::kinematicsContactCost(arr &y, arr& J, double margin) const {
+void rai::Configuration_ext::kinematicsContactCost(arr &y, arr& J, double margin) const {
   y.resize(1).setZero();
   if(!!J) J.resize(1, getJointStateDimension()).setZero();
   for(Frame *f:frames) for(Contact *c:f->contacts) if(&c->a==f) {
@@ -2470,7 +2431,7 @@ void rai::KinematicWorld::kinematicsContactCost(arr &y, arr& J, double margin) c
   }
 }
 
-void rai::KinematicWorld::kinematicsProxyConstraint(arr& g, arr& J, const Proxy& p, double margin) const {
+void rai::Configuration_ext::kinematicsProxyConstraint(arr& g, arr& J, const Proxy& p, double margin) const {
   if(!!J) J.resize(1, getJointStateDimension()).setZero();
   
   g.resize(1) = margin - p.d;
@@ -2497,7 +2458,7 @@ void rai::KinematicWorld::kinematicsProxyConstraint(arr& g, arr& J, const Proxy&
   }
 }
 
-void rai::KinematicWorld::kinematicsContactConstraints(arr& y, arr &J) const {
+void rai::Configuration_ext::kinematicsContactConstraints(arr& y, arr &J) const {
   J.clear();
   rai::Vector normal;
   uint con=0;
@@ -2524,7 +2485,7 @@ void rai::KinematicWorld::kinematicsContactConstraints(arr& y, arr &J) const {
   J.reshape(con, q.N);
 }
 
-void rai::KinematicWorld::kinematicsLimitsCost(arr &y, arr &J, const arr& limits, double margin) const {
+void rai::Configuration::kinematicsLimitsCost(arr &y, arr &J, const arr& limits, double margin) const {
   y.resize(1).setZero();
   if(!!J) J.resize(1, getJointStateDimension()).setZero();
   double d;
@@ -2538,11 +2499,10 @@ void rai::KinematicWorld::kinematicsLimitsCost(arr &y, arr &J, const arr& limits
 }
 
 /// Compute the new configuration q such that body is located at ytarget (with deplacement rel).
-void rai::KinematicWorld::inverseKinematicsPos(Frame& body, const arr& ytarget,
+void rai::Configuration::inverseKinematicsPos(Frame& frame, const arr& ytarget,
                                                const rai::Vector& rel_offset, int max_iter) {
-  arr q0, q;
-  getJointState(q0);
-  q = q0;
+  arr q0 = getJointState();
+  arr q = q0;
   arr y; // endeff pos
   arr J; // Jacobian
   arr invJ;
@@ -2552,7 +2512,7 @@ void rai::KinematicWorld::inverseKinematicsPos(Frame& body, const arr& ytarget,
   // first iteration: $q* = q' + J^# (y* - y')$
   // next iterations: $q* = q' + J^# (y* - y') + (I - J# J)(q0 - q')$
   for(int i = 0; i < max_iter; i++) {
-    kinematicsPos(y, J, &body, rel_offset);
+    kinematicsPos(y, J, &frame, rel_offset);
     invJ = ~J * inverse(J * ~J);  // inverse_SymPosDef should work!?
     q = q + invJ * (ytarget - y);
     
@@ -2563,8 +2523,9 @@ void rai::KinematicWorld::inverseKinematicsPos(Frame& body, const arr& ytarget,
   }
 }
 
+#if 0
 /// center of mass of the whole configuration (3 vector)
-double rai::KinematicWorld::getCenterOfMass(arr& x_) const {
+double rai::Configuration::getCenterOfMass(arr& x_) const {
   double M=0.;
   rai::Vector x;
   x.setZero();
@@ -2578,7 +2539,7 @@ double rai::KinematicWorld::getCenterOfMass(arr& x_) const {
 }
 
 /// gradient (Jacobian) of the COM w.r.t. q (3 x n tensor)
-void rai::KinematicWorld::getComGradient(arr &grad) const {
+void rai::Configuration::getComGradient(arr &grad) const {
   double M=0.;
   arr J(3, getJointStateDimension());
   grad.resizeAs(J); grad.setZero();
@@ -2590,17 +2551,45 @@ void rai::KinematicWorld::getComGradient(arr &grad) const {
   grad/=M;
 }
 
-const rai::Proxy* rai::KinematicWorld::getContact(uint a, uint b) const {
+const rai::Proxy* rai::Configuration::getContact(uint a, uint b) const {
   for(const rai::Proxy& p: proxies) if(p.d<0.) {
     if(p.a->ID==a && p.b->ID==b) return &p;
     if(p.a->ID==b && p.b->ID==a) return &p;
   }
-  return NULL;
+  return nullptr;
 }
 
-arr rai::KinematicWorld::getHmetric() const {
+#endif
+
+/** @brief */
+double rai::Configuration::getEnergy(const arr& qdot) {
+  double m, v, E;
+  rai::Matrix I;
+  rai::Vector w;
+
+  arr vel = calc_fwdPropagateVelocities(qdot);
+
+  E=0.;
+  for(Frame *f: frames) if(f->inertia) {
+    Vector linVel = vel(f->ID, 0, {});
+    Vector angVel = vel(f->ID, 1, {});
+
+    m=f->inertia->mass;
+    const rai::Quaternion &rot = f->ensure_X().rot;
+    I=(rot).getMatrix() * f->inertia->matrix * (-rot).getMatrix();
+    v = linVel.length();
+    w = angVel;
+    E += .5*m*v*v;
+    E += 9.81 * m * (f->ensure_X()*f->inertia->com).z;
+    E += .5*(w*(I*w));
+  }
+
+  return E;
+}
+
+arr rai::Configuration::getHmetric() const {
   arr H = zeros(getJointStateDimension());
-  for(Joint *j: fwdActiveJoints) {
+  for(Joint *j: activeJoints) {
     double h=j->H;
     //    CHECK(h>0.,"Hmetric should be larger than 0");
     if(j->type==JT_transXYPhi) {
@@ -2614,40 +2603,14 @@ arr rai::KinematicWorld::getHmetric() const {
   return H;
 }
 
-/** @brief */
-double rai::KinematicWorld::getEnergy() {
-  double m, v, E;
-  rai::Matrix I;
-  rai::Vector w;
-  
-  arr vel = calc_fwdPropagateVelocities();
-  
-  E=0.;
-  for(Frame *f: frames) if(f->inertia) {
-    Vector linVel = vel(f->ID, 0, {});
-    Vector angVel = vel(f->ID, 1, {});
-
-    m=f->inertia->mass;
-    rai::Quaternion &rot = f->X.rot;
-    I=(rot).getMatrix() * f->inertia->matrix * (-rot).getMatrix();
-    v = linVel.length();
-    w = angVel;
-    E += .5*m*v*v;
-    E += 9.81 * m * (f->X*f->inertia->com).z;
-    E += .5*(w*(I*w));
-  }
-
-  return E;
-}
-
-void rai::KinematicWorld::pruneRigidJoints(int verbose) {
+void rai::Configuration::pruneRigidJoints(int verbose) {
   rai::Joint *j;
   for(Frame *f:frames) if((j=f->joint)) {
     if(j->type == rai::JT_rigid) delete j; //that's all there is to do
   }
 }
 
-void rai::KinematicWorld::reconnectLinksToClosestJoints() {
+void rai::Configuration::reconnectLinksToClosestJoints() {
   reset_q();
   for(Frame *f:frames) if(f->parent) {
 #if 0
@@ -2668,26 +2631,13 @@ void rai::KinematicWorld::reconnectLinksToClosestJoints() {
         f->parent->parentOf.removeValue(f);
         link->parentOf.append(f);
         f->parent = link;
-        f->Q = Q;
+        f->set_Q() = Q;
       }
-
-      //      if(!link->shape && f->shape && f->Q.isZero()){ //f has a shape, link not -> move shape to link
-      //        LOG(-1) <<"Shape '" <<f->name <<"' could be reassociated to link '" <<link->name <<"' (child of '" <<(link->parent?link->parent->name:STRING("NONE")) <<"')";
-      ////        link->shape = f->shape;
-      ////        f->shape = NULL;
-      //      }
-
-      //      if(!link->inertia && f->inertia && f->Q.isZero()){ //f has a shape, link not -> move shape to link
-      //        LOG(-1) <<"Inertia '" <<f->name <<"' could be reassociated to link '" <<link->name <<"' (child of '" <<(link->parent?link->parent->name:STRING("NONE")) <<"')";
-      ////        link->shape = f->shape;
-      ////        f->shape = NULL;
-      //      }
-
     }
   }
 }
 
-void rai::KinematicWorld::pruneUselessFrames(bool pruneNamed, bool pruneNonContactNonMarker) {
+void rai::Configuration::pruneUselessFrames(bool pruneNamed, bool pruneNonContactNonMarker) {
   for(uint i=frames.N; i--;) {
     Frame *f=frames.elem(i);
     if((pruneNamed || !f->name) && !f->parentOf.N && !f->joint && !f->inertia) {
@@ -2699,7 +2649,7 @@ void rai::KinematicWorld::pruneUselessFrames(bool pruneNamed, bool pruneNonConta
   }
 }
 
-void rai::KinematicWorld::optimizeTree(bool _pruneRigidJoints, bool pruneNamed, bool pruneNonContactNonMarker) {
+void rai::Configuration::optimizeTree(bool _pruneRigidJoints, bool pruneNamed, bool pruneNonContactNonMarker) {
   if(_pruneRigidJoints) pruneRigidJoints(); //problem: rigid joints bear the semantics of where a body ends
   reconnectLinksToClosestJoints();
   pruneUselessFrames(pruneNamed, pruneNonContactNonMarker);
@@ -2707,14 +2657,13 @@ void rai::KinematicWorld::optimizeTree(bool _pruneRigidJoints, bool pruneNamed, 
   checkConsistency();
 }
 
-void rai::KinematicWorld::sortFrames() {
-  CHECK_EQ(fwdActiveSet.N ,frames.N, "you need to calc_activeSets before");
-  frames = fwdActiveSet;
+void rai::Configuration::sortFrames() {
+  frames = calc_topSort();
   uint i=0;
   for(Frame *f: frames) f->ID = i++;
 }
 
-void rai::KinematicWorld::makeObjectsFree(const StringA &objects, double H_cost){
+void rai::Configuration::makeObjectsFree(const StringA &objects, double H_cost){
   for(auto s:objects){
     rai::Frame *a = getFrameByName(s, true);
     CHECK(a, "");
@@ -2725,28 +2674,38 @@ void rai::KinematicWorld::makeObjectsFree(const StringA &objects, double H_cost)
   }
 }
 
-void rai::KinematicWorld::addTimeJoint(){
-  rai::Joint *jt = new rai::Joint(*frames.first());
-  jt->type = rai::JT_time;
+void rai::Configuration::addTimeJoint(){
+  rai::Joint *jt = new rai::Joint(*frames.first(), rai::JT_time);
   jt->H = 0.;
 }
 
-bool rai::KinematicWorld::hasTimeJoint(){
+bool rai::Configuration::hasTimeJoint(){
   Frame *f = frames.first();
   return f && f->joint && (f->joint->type==JT_time);
 }
 
-bool rai::KinematicWorld::checkConsistency() {
+bool rai::Configuration::checkConsistency() const {
+  /* state consistency concept:
+     the configuration represents exactly one concrete current configuration, not multiple different ones in q or Q or X
+     'good' means correctly reflecting the current configuration
+     the relative transforms Q of all frames are ALWAYS 'good'
+     when a frame has no parent, Q is identical to X and X is 'good'
+     when a frame has a parent, X may be non-good, but can always be computed using ensure_X
+     q may generaly be non-good
+     when setJointState is called, q becomes good and all Q are recomputed to stay consistent
+     when frame_setX... is called, q becomes non-good, all frame descendents will have non-good X, Q for that frame is recomputed (from its parent's X), and X for that frame is good as well
+
+     when initially loading a configuration, q and all X are typically non-good
+     */
   //check qdim
-  if(q.nd) {
+  if(_state_q_isGood) {
     uint N = analyzeJointStateDimensions();
     CHECK_EQ(1, q.nd, "");
     CHECK_EQ(N, q.N, "");
-    if(qdot.N) CHECK_EQ(N, qdot.N, "");
     
-    //count yourself and check...
+    //count dimensions yourself and check...
     uint myqdim = 0;
-    for(Joint *j: fwdActiveJoints) {
+    for(Joint *j: activeJoints) {
       if(j->mimic) {
         CHECK_EQ(j->qIndex, j->mimic->qIndex, "");
       } else {
@@ -2763,6 +2722,17 @@ bool rai::KinematicWorld::checkConsistency() {
       myqdim += c->qDim();
     }
     CHECK_EQ(myqdim, N, "qdim is wrong");
+
+    //consistency with Q
+    for(Joint *j: activeJoints) {
+      arr jq = j->calc_q_from_Q(j->frame->Q);
+      if(!j->mimic){
+        CHECK_EQ(jq.N, j->dim, "");
+      }else{
+        CHECK_EQ(0, j->dim, "");
+      }
+      for(uint i=0;i<jq.N;i++) CHECK_ZERO(jq.elem(i) - q.elem(j->qIndex+i), 1e-6, "");
+    }
   }
   
   for(Frame *a: frames) {
@@ -2779,6 +2749,18 @@ bool rai::KinematicWorld::checkConsistency() {
     a->X.checkNan();
     CHECK_ZERO(a->Q.rot.normalization()-1., 1e-4, "");
     CHECK_ZERO(a->X.rot.normalization()-1., 1e-4, "");
+
+    // frame has no parent -> Q and X are identical, X is good
+    if(!a->parent){
+      CHECK(a->_state_X_isGood, "");
+      CHECK(a->Q.isZero(), "");
+    }
+    // frame has a parent -> X may be non-good, otherwise it must be consistent with Q
+    if(a->parent && a->_state_X_isGood){
+      CHECK(a->parent->_state_X_isGood, "");
+      rai::Transformation test = a->parent->X * a->Q;
+      CHECK_ZERO((a->X / test).diffZero(), 1e-6, "");
+    }
   }
   
   Joint *j;
@@ -2801,21 +2783,24 @@ bool rai::KinematicWorld::checkConsistency() {
   }
 
   //check topsort
-  intA level = consts<int>(0, frames.N);
-  //compute levels
-  for(Frame *f: fwdActiveSet)
-    if(f->parent) level(f->ID) = level(f->parent->ID)+1;
-  //check levels are strictly increasing across links
-  for(Frame *f: fwdActiveSet) if(f->parent) {
-    CHECK(level(f->parent->ID) < level(f->ID), "joint from '" <<f->parent->name <<"'[" <<f->parent->ID <<"] to '" <<f->name <<"'[" <<f->ID <<"] does not go forward");
+  if(_state_activeSets_areGood){
+    intA level = consts<int>(0, frames.N);
+    //compute levels
+//    for(Frame *f: fwdActiveSet)
+//      if(f->parent) level(f->ID) = level(f->parent->ID)+1;
+//    //check levels are strictly increasing across links
+//    for(Frame *f: fwdActiveSet) if(f->parent) {
+//      CHECK(level(f->parent->ID) < level(f->ID), "joint from '" <<f->parent->name <<"'[" <<f->parent->ID <<"] to '" <<f->name <<"'[" <<f->ID <<"] does not go forward");
+//    }
   }
 
   //check active sets
-  for(Frame *f: fwdActiveSet) CHECK(f->active, "");
-  boolA jointIsInActiveSet = consts<byte>(false, frames.N);
-  for(Joint *j: fwdActiveJoints) { CHECK(j->active, ""); jointIsInActiveSet.elem(j->frame->ID)=true; }
-  if(q.nd) {
-    for(Frame *f: frames) if(f->joint && f->joint->active) CHECK(jointIsInActiveSet(f->ID), "");
+  if(_state_activeSets_areGood){
+    boolA jointIsInActiveSet = consts<byte>(false, frames.N);
+    for(Joint *j: activeJoints) { CHECK(j->active, ""); jointIsInActiveSet.elem(j->frame->ID)=true; }
+    if(q.nd) {
+      for(Frame *f: frames) if(f->joint && f->joint->active) CHECK(jointIsInActiveSet(f->ID), "");
+    }
   }
   
   //check isZero for all transformations
@@ -2834,18 +2819,24 @@ bool rai::KinematicWorld::checkConsistency() {
   return true;
 }
 
-rai::Joint* rai::KinematicWorld::attach(Frame* a, Frame* b){
+rai::Joint* rai::Configuration::attach(Frame* a, Frame* b){
   b = b->getUpwardLink();
   if(b->parent) b->unLink();
   b->linkFrom(a, true);
   return new rai::Joint(*b, rai::JT_rigid);
 }
 
-rai::Joint* rai::KinematicWorld::attach(const char* _a, const char* _b){
-  return attach(getFrameByName(_a), getFrameByName(_b));
+rai::Joint* rai::Configuration::attach(const char* _a, const char* _b){
+    return attach(getFrameByName(_a), getFrameByName(_b));
 }
 
-//void rai::KinematicWorld::meldFixedJoints(int verbose) {
+FrameL rai::Configuration::getParts() const{
+  FrameL F;
+  for(Frame *f:frames) if(f->isPart()) F.append(f);
+  return F;
+}
+
+//void rai::Configuration::meldFixedJoints(int verbose) {
 //  NIY
 //#if 0
 //  checkConsistency();
@@ -2857,10 +2848,10 @@ rai::Joint* rai::KinematicWorld::attach(const char* _a, const char* _b){
 //    //reassociate shapes with a
 //    if(b->shape){
 //      b->shape->frame=a;
-//      CHECK_EQ(a->shape, NULL,"");
+//      CHECK_EQ(a->shape, nullptr,"");
 //      a->shape = b->shape;
 //    }
-//    b->shape = NULL;
+//    b->shape = nullptr;
 //    //joints from b-to-c now become joints a-to-c
 //    for(Frame *f: b->parentOf) {
 //      Joint *j = f->joint();
@@ -2887,17 +2878,17 @@ rai::Joint* rai::KinematicWorld::attach(const char* _a, const char* _b){
 //#endif
 //}
 
-void rai::KinematicWorld::glDraw(OpenGL& gl) {
+void rai::Configuration::glDraw(OpenGL& gl) {
   glDraw_sub(gl);
   
   bool displayUncertainties = false;
-  for(Joint *j:fwdActiveJoints) if(j->uncertainty) {
+  for(Joint *j:activeJoints) if(j->uncertainty) {
     displayUncertainties=true; break;
   }
 
   if(displayUncertainties) {
     arr q_org = getJointState();
-    for(Joint *j:fwdActiveJoints) if(j->uncertainty) {
+    for(Joint *j:activeJoints) if(j->uncertainty) {
       for(uint i=0; i<j->qDim(); i++) {
         arr q=q_org;
         q(j->qIndex+i) -= j->uncertainty->sigma(i);
@@ -2913,8 +2904,8 @@ void rai::KinematicWorld::glDraw(OpenGL& gl) {
   }
 }
 
-/// GL routine to draw a rai::KinematicWorld
-void rai::KinematicWorld::glDraw_sub(OpenGL& gl) {
+/// GL routine to draw a rai::Configuration
+void rai::Configuration::glDraw_sub(OpenGL& gl) {
 #ifdef RAI_GL
   rai::Transformation f;
   double GLmatrix[16];
@@ -2927,10 +2918,13 @@ void rai::KinematicWorld::glDraw_sub(OpenGL& gl) {
     orsDrawProxies=orsDrawJoints=orsDrawMarkers=false;
 
   //proxies
-  if(orsDrawProxies) for(const Proxy& p: proxies)((Proxy*)&p)->glDraw(gl);
+  if(orsDrawProxies) for(const Proxy& p: proxies){
+    ((Proxy*)&p)->glDraw(gl);
+  }
 
   //contacts
-  if(orsDrawProxies) for(const Frame *fr: frames) for(rai::Contact *c:fr->contacts) if(&c->a==fr) {
+//  if(orsDrawProxies)
+  for(const Frame *fr: frames) for(rai::Contact *c:fr->contacts) if(&c->a==fr) {
     c->glDraw(gl);
   }
 
@@ -2963,7 +2957,7 @@ void rai::KinematicWorld::glDraw_sub(OpenGL& gl) {
     glRotatef(90, 0, 1, 0);  glDrawCylinder(.05*s, .3*s);  glRotatef(-90, 0, 1, 0);
 
     //joint frame B
-    f.appendTransformation(fr->Q);
+    f.appendTransformation(fr->get_Q());
     f.getAffineMatrixGL(GLmatrix);
     glLoadMatrixd(GLmatrix);
     glDrawAxes(s);
@@ -2999,10 +2993,10 @@ void rai::KinematicWorld::glDraw_sub(OpenGL& gl) {
 
 //===========================================================================
 
-void kinVelocity(arr &y, arr &J, uint frameId, const WorldL &Ktuple, double tau) {
+void kinVelocity(arr &y, arr &J, uint frameId, const ConfigurationL &Ktuple, double tau) {
   CHECK_GE(Ktuple.N, 1, "");
-  rai::KinematicWorld &K0 = *Ktuple(-2);
-  rai::KinematicWorld &K1 = *Ktuple(-1);
+  rai::Configuration &K0 = *Ktuple(-2);
+  rai::Configuration &K1 = *Ktuple(-1);
   rai::Frame *f0 = K0.frames(frameId);
   rai::Frame *f1 = K1.frames(frameId);
   
@@ -3024,14 +3018,14 @@ void kinVelocity(arr &y, arr &J, uint frameId, const WorldL &Ktuple, double tau)
 
 #undef LEN
 
-double forceClosureFromProxies(rai::KinematicWorld& K, uint bodyIndex, double distanceThreshold, double mu, double torqueWeights) {
+double forceClosureFromProxies(rai::Configuration& K, uint frameIndex, double distanceThreshold, double mu, double torqueWeights) {
   rai::Vector c, cn;
   arr C, Cn;
   for(const rai::Proxy& p: K.proxies) {
     int body_a = p.a?p.a->ID:-1;
     int body_b = p.b?p.b->ID:-1;
-    if(p.d<distanceThreshold && (body_a==(int)bodyIndex || body_b==(int)bodyIndex)) {
-      if(body_a==(int)bodyIndex) {
+    if(p.d<distanceThreshold && (body_a==(int)frameIndex || body_b==(int)frameIndex)) {
+      if(body_a==(int)frameIndex) {
         c = p.posA;
         cn=-p.normal;
       } else {
@@ -3044,11 +3038,11 @@ double forceClosureFromProxies(rai::KinematicWorld& K, uint bodyIndex, double di
   }
   C .reshape(C.N/3, 3);
   Cn.reshape(C.N/3, 3);
-  double fc=forceClosure(C, Cn, K.frames(bodyIndex)->X.pos, mu, torqueWeights, NULL);
+  double fc=forceClosure(C, Cn, K.frames(frameIndex)->ensure_X().pos, mu, torqueWeights, nullptr);
   return fc;
 }
 
-void transferQbetweenTwoWorlds(arr& qto, const arr& qfrom, const rai::KinematicWorld& to, const rai::KinematicWorld& from) {
+void transferQbetweenTwoWorlds(arr& qto, const arr& qfrom, const rai::Configuration& to, const rai::Configuration& from) {
   arr q = to.getJointState();
   uint T = qfrom.d0;
   uint Nfrom = qfrom.d1;
@@ -3061,7 +3055,7 @@ void transferQbetweenTwoWorlds(arr& qto, const arr& qfrom, const rai::KinematicW
   match = -1;
   rai::Joint* jfrom;
   for(rai::Frame* f: from.frames) if((jfrom=f->joint)) {
-    rai::Joint* jto = to.getJointByBodyNames(jfrom->from()->name, jfrom->frame->name);
+    rai::Joint* jto = to.getJointByFrameNames(jfrom->from()->name, jfrom->frame->name);
     if(!jto || !jfrom->qDim() || !jto->qDim()) continue;
     CHECK_EQ(jfrom->qDim(), jto->qDim(), "joints must have same dimensionality");
     for(uint i=0; i<jfrom->qDim(); i++) {
@@ -3083,7 +3077,7 @@ void transferQbetweenTwoWorlds(arr& qto, const arr& qfrom, const rai::KinematicW
 }
 
 #if 0 //nonsensical
-void transferQDotbetweenTwoWorlds(arr& qDotTo, const arr& qDotFrom, const rai::KinematicWorld& to, const rai::KinematicWorld& from) {
+void transferQDotbetweenTwoWorlds(arr& qDotTo, const arr& qDotFrom, const rai::Configuration& to, const rai::Configuration& from) {
   //TODO: for saveness reasons, the velocities are zeroed.
   arr qDot;
   qDot = zeros(to.getJointStateDimension());
@@ -3122,7 +3116,7 @@ void transferQDotbetweenTwoWorlds(arr& qDotTo, const arr& qDotFrom, const rai::K
   
 }
 
-void transferKpBetweenTwoWorlds(arr& KpTo, const arr& KpFrom, const rai::KinematicWorld& to, const rai::KinematicWorld& from) {
+void transferKpBetweenTwoWorlds(arr& KpTo, const arr& KpFrom, const rai::Configuration& to, const rai::Configuration& from) {
   KpTo = zeros(to.getJointStateDimension(),to.getJointStateDimension());
   //use Kp gains from ors file for toWorld, if there are no entries of this joint in fromWorld
   for_list(rai::Joint, j, to.joints) {
@@ -3153,7 +3147,7 @@ void transferKpBetweenTwoWorlds(arr& KpTo, const arr& KpFrom, const rai::Kinemat
   }
 }
 
-void transferKdBetweenTwoWorlds(arr& KdTo, const arr& KdFrom, const rai::KinematicWorld& to, const rai::KinematicWorld& from) {
+void transferKdBetweenTwoWorlds(arr& KdTo, const arr& KdFrom, const rai::Configuration& to, const rai::Configuration& from) {
   KdTo = zeros(to.getJointStateDimension(),to.getJointStateDimension());
   
   //use Kd gains from ors file for toWorld, if there are no entries of this joint in fromWorld
@@ -3185,7 +3179,7 @@ void transferKdBetweenTwoWorlds(arr& KdTo, const arr& KdFrom, const rai::Kinemat
   }
 }
 
-void transferU0BetweenTwoWorlds(arr& u0To, const arr& u0From, const rai::KinematicWorld& to, const rai::KinematicWorld& from) {
+void transferU0BetweenTwoWorlds(arr& u0To, const arr& u0From, const rai::Configuration& to, const rai::Configuration& from) {
   u0To = zeros(to.getJointStateDimension());
   
   intA match(u0From.d0);
@@ -3204,7 +3198,7 @@ void transferU0BetweenTwoWorlds(arr& u0To, const arr& u0From, const rai::Kinemat
   }
 }
 
-void transferKI_ft_BetweenTwoWorlds(arr& KI_ft_To, const arr& KI_ft_From, const rai::KinematicWorld& to, const rai::KinematicWorld& from) {
+void transferKI_ft_BetweenTwoWorlds(arr& KI_ft_To, const arr& KI_ft_From, const rai::Configuration& to, const rai::Configuration& from) {
   uint numberOfColumns = KI_ft_From.d1;
   if(KI_ft_From.d1 == 0) {
     numberOfColumns = 1;
@@ -3251,14 +3245,14 @@ void transferKI_ft_BetweenTwoWorlds(arr& KI_ft_To, const arr& KI_ft_From, const 
  * @param graph the ors graph.
  * @param gl OpenGL which shows the ors graph.
  */
-void bindOrsToOpenGL(rai::KinematicWorld& graph, OpenGL& gl) {
+void bindOrsToOpenGL(rai::Configuration& graph, OpenGL& gl) {
   gl.add(glStandardScene, 0);
   gl.add(rai::glDrawGraph, &graph);
   //  gl.setClearColors(1., 1., 1., 1.);
 
   rai::Frame* glCamera = graph.getFrameByName("glCamera");
   if(glCamera) {
-    gl.camera.X = glCamera->X;
+    gl.camera.X = glCamera->ensure_X();
     gl.resize(500,500);
   } else {
     gl.camera.setPosition(10., -15., 8.);
@@ -3271,9 +3265,9 @@ void bindOrsToOpenGL(rai::KinematicWorld& graph, OpenGL& gl) {
 
 #ifndef RAI_ORS_ONLY_BASICS
 
-/// static GL routine to draw a rai::KinematicWorld
-void rai::glDrawGraph(void *classP) {
-  ((rai::KinematicWorld*)classP)->glDraw(NoOpenGL);
+/// static GL routine to draw a rai::Configuration
+void rai::glDrawGraph(void *classP, OpenGL& gl) {
+  ((rai::Configuration*)classP)->glDraw(gl);
 }
 
 void rai::glDrawProxies(void *P) {
@@ -3285,12 +3279,12 @@ void rai::glDrawProxies(void *P) {
 #endif
 }
 
-void displayState(const arr& x, rai::KinematicWorld& G, const char *tag) {
+void displayState(const arr& x, rai::Configuration& G, const char *tag) {
   G.setJointState(x);
   G.watch(true, tag);
 }
 
-void displayTrajectory(const arr& _x, int steps, rai::KinematicWorld& G, const KinematicSwitchL& switches, const char *tag, double delay, uint dim_z, bool copyG) {
+void displayTrajectory(const arr& _x, int steps, rai::Configuration& G, const KinematicSwitchL& switches, const char *tag, double delay, uint dim_z, bool copyG) {
   NIY;
 #if 0
   if(!steps) return;
@@ -3300,11 +3294,11 @@ void displayTrajectory(const arr& _x, int steps, rai::KinematicWorld& G, const K
       s->mesh.computeNormals();
     }
   }
-  rai::KinematicWorld *Gcopy;
+  rai::Configuration *Gcopy;
   if(switches.N) copyG=true;
   if(!copyG) Gcopy=&G;
   else {
-    Gcopy = new rai::KinematicWorld;
+    Gcopy = new rai::Configuration;
     Gcopy->copy(G,true);
   }
   arr x,z;
@@ -3476,9 +3470,9 @@ void _glDrawOdeWorld(dWorldID world)
 }
 */
 
-int animateConfiguration(rai::KinematicWorld& K, Inotify *ino) {
+int animateConfiguration(rai::Configuration& K, Inotify *ino) {
   arr x, x0;
-  K.getJointState(x0);
+  x0 = K.getJointState();
   arr lim = K.getLimits();
   const int steps = 50;
   K.checkConsistency();
@@ -3504,10 +3498,13 @@ int animateConfiguration(rai::KinematicWorld& K, Inotify *ino) {
       // Joint limits
       checkNan(x);
       K.setJointState(x);
-      int key = K.watch(false, STRING("DOF = " <<i <<" : " <<jointNames(i) <<" [" <<lim[i] <<"]"));
+      int key = K.gl().update(STRING("DOF = " <<i <<" : " <<jointNames(i) <<" [" <<lim[i] <<"]"), true);
       //      write_ppm(gl.captureImage, STRING("vid/" <<std::setw(3)<<std::setfill('0')<<saveCount++<<".ppm"));
 
-      if(key==13 || key==32 || key==27 || key=='q') return key;
+      if(key==13 || key==32 || key==27 || key=='q'){
+        K.setJointState(x0);
+        return key;
+      }
       rai::wait(0.01);
     }
   }
@@ -3515,13 +3512,13 @@ int animateConfiguration(rai::KinematicWorld& K, Inotify *ino) {
   return K.watch(false);
 }
 
-rai::Frame *movingBody=NULL;
+rai::Frame *movingBody=nullptr;
 rai::Vector selpos;
 double seld, selx, sely, selz;
 
 struct EditConfigurationClickCall:OpenGL::GLClickCall {
-  rai::KinematicWorld *ors;
-  EditConfigurationClickCall(rai::KinematicWorld& _ors) { ors=&_ors; }
+  rai::Configuration *ors;
+  EditConfigurationClickCall(rai::Configuration& _ors) { ors=&_ors; }
   bool clickCallback(OpenGL& gl) {
     OpenGL::GLSelect *top=gl.topSelection;
     if(!top) return false;
@@ -3530,7 +3527,7 @@ struct EditConfigurationClickCall:OpenGL::GLClickCall {
     gl.text.clear();
     if((i&3)==1) {
       rai::Frame *s=ors->frames(i>>2);
-      gl.text <<"shape selection: shape=" <<s->name <<" X=" <<s->X <<endl;
+      gl.text <<"shape selection: shape=" <<s->name <<" X=" <<s->ensure_X() <<endl;
       //      listWrite(s->ats, gl.text, "\n");
       cout <<gl.text;
     }
@@ -3549,13 +3546,13 @@ struct EditConfigurationClickCall:OpenGL::GLClickCall {
 };
 
 struct EditConfigurationHoverCall:OpenGL::GLHoverCall {
-  rai::KinematicWorld *ors;
-  EditConfigurationHoverCall(rai::KinematicWorld& _ors);// { ors=&_ors; }
+  rai::Configuration *ors;
+  EditConfigurationHoverCall(rai::Configuration& _ors);// { ors=&_ors; }
   bool hoverCallback(OpenGL& gl) {
     //    if(!movingBody) return false;
     if(!movingBody) {
-      rai::Joint *j=NULL;
-      rai::Frame *s=NULL;
+      rai::Joint *j=nullptr;
+      rai::Frame *s=nullptr;
       rai::timerStart(true);
       gl.Select(true);
       OpenGL::GLSelect *top=gl.topSelection;
@@ -3566,7 +3563,7 @@ struct EditConfigurationHoverCall:OpenGL::GLHoverCall {
       if((i&3)==2) j=ors->frames(i>>2)->joint;
       gl.text.clear();
       if(s) {
-        gl.text <<"shape selection: body=" <<s->name <<" X=" <<s->X;
+        gl.text <<"shape selection: body=" <<s->name <<" X=" <<s->ensure_X();
       }
       if(j) {
         gl.text
@@ -3582,25 +3579,25 @@ struct EditConfigurationHoverCall:OpenGL::GLHoverCall {
       double x=gl.mouseposx, y=gl.mouseposy, z=seld;
       gl.unproject(x, y, z, true);
       cout <<"x=" <<x <<" y=" <<y <<" z=" <<z <<" d=" <<seld <<endl;
-      movingBody->X.pos = selpos + ARR(x-selx, y-sely, z-selz);
+      movingBody->setPosition(selpos.getArr() + ARR(x-selx, y-sely, z-selz));
     }
     return true;
   }
 };
 
-EditConfigurationHoverCall::EditConfigurationHoverCall(rai::KinematicWorld& _ors) {
+EditConfigurationHoverCall::EditConfigurationHoverCall(rai::Configuration& _ors) {
   ors=&_ors;
 }
 
 struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
-  rai::KinematicWorld &K;
+  rai::Configuration &K;
   bool &exit;
-  EditConfigurationKeyCall(rai::KinematicWorld& _K, bool& _exit): K(_K), exit(_exit) {}
+  EditConfigurationKeyCall(rai::Configuration& _K, bool& _exit): K(_K), exit(_exit) {}
   bool keyCallback(OpenGL& gl) {
     if(false && gl.pressedkey==' ') { //grab a body
-      if(movingBody) { movingBody=NULL; return true; }
-      rai::Joint *j=NULL;
-      rai::Frame *s=NULL;
+      if(movingBody) { movingBody=nullptr; return true; }
+      rai::Joint *j=nullptr;
+      rai::Frame *s=nullptr;
       gl.Select();
       OpenGL::GLSelect *top=gl.topSelection;
       if(!top) { cout <<"No object below mouse!" <<endl;  return false; }
@@ -3615,7 +3612,7 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
         selz=top->z;
         seld=top->dmin;
         cout <<"x=" <<selx <<" y=" <<sely <<" z=" <<selz <<" d=" <<seld <<endl;
-        selpos = s->X.pos;
+        selpos = s->ensure_X().pos;
         movingBody=s;
       }
       if(j) {
@@ -3657,7 +3654,7 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
   }
 };
 
-void editConfiguration(const char* filename, rai::KinematicWorld& K){
+void editConfiguration(const char* filename, rai::Configuration& K){
   K.checkConsistency();
 
   //  gl.exitkeys="1234567890qhjklias, "; //TODO: move the key handling to the keyCall!
@@ -3668,7 +3665,7 @@ void editConfiguration(const char* filename, rai::KinematicWorld& K){
   Inotify ino(filename);
   for(; !exit;) {
     cout <<"reloading `" <<filename <<"' ... " <<std::endl;
-    rai::KinematicWorld W;
+    rai::Configuration W;
     try {
       rai::lineCount=1;
       W.init(filename);
@@ -3708,14 +3705,14 @@ void editConfiguration(const char* filename, rai::KinematicWorld& K){
 
 #else ///RAI_GL
 #ifndef RAI_ORS_ONLY_BASICS
-void bindOrsToOpenGL(rai::KinematicWorld&, OpenGL&) { NICO };
-void rai::KinematicWorld::glDraw(OpenGL&) { NICO }
+void bindOrsToOpenGL(rai::Configuration&, OpenGL&) { NICO };
+void rai::Configuration::glDraw(OpenGL&) { NICO }
 void rai::glDrawGraph(void *classP) { NICO }
-void editConfiguration(const char* orsfile, rai::KinematicWorld& C) { NICO }
-void animateConfiguration(rai::KinematicWorld& C, OpenGL&, Inotify*) { NICO }
+void editConfiguration(const char* orsfile, rai::Configuration& C) { NICO }
+void animateConfiguration(rai::Configuration& C, OpenGL&, Inotify*) { NICO }
 void glTransform(const rai::Transformation&) { NICO }
-void displayTrajectory(const arr&, int, rai::KinematicWorld&, const char*, double) { NICO }
-void displayState(const arr&, rai::KinematicWorld&, const char*) { NICO }
+void displayTrajectory(const arr&, int, rai::Configuration&, const char*, double) { NICO }
+void displayState(const arr&, rai::Configuration&, const char*) { NICO }
 #endif
 #endif
 /** @} */

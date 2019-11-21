@@ -8,8 +8,8 @@
 
 #include "gravityCompensation.h"
 #include <Algo/MLcourse.h>
-#include <Kin/taskMaps.h>
 #include <Kin/frame.h>
+#include <Kin/F_qFeatures.h>
 
 struct GravityCompensation::CV : public CrossValidation {
   void  train(const arr& X, const arr& y, double param, arr& beta) {
@@ -29,7 +29,7 @@ struct GravityCompensation::CV : public CrossValidation {
     }
     if(verbose) cout <<"10-fold CV:\n  costMeans= " << this->scoreMeans << "\n  costSDVs= " << this->scoreSDVs << endl;
     
-    uint bestIndex = this->scoreMeans.minIndex();
+    uint bestIndex = this->scoreMeans.argmin();
     
     c = (1-scoreMeans(bestIndex)/scoreMeans.last())*100;
     
@@ -116,7 +116,7 @@ arr GravityCompensation::compensateFTR(const arr& q) {
   return featuresFT(q, "endeffR")*betaFTR;
 }
 
-GravityCompensation::GravityCompensation(const rai::KinematicWorld& world) : world(world) {
+GravityCompensation::GravityCompensation(const rai::Configuration& world) : world(world) {
   TLeftArm = zeros(leftJoints.N, world.getJointStateDimension());
   for(uint i = 0; i < leftJoints.N; i++) {
     TLeftArm(i, world.getFrameByName(leftJoints(i))->joint->qIndex) = 1;
@@ -141,8 +141,8 @@ arr GravityCompensation::featuresGC(arr q, arr qSign, const rai::String& joint) 
   
   uint index = world.getFrameByName(joint)->joint->qIndex;
   arr T;
-  FeatureType featureType;
-  bool dynamicFeature, cosFeature, sinFeature, stictionFeature;
+  FeatureType featureType = linearFT;
+  bool dynamicFeature=false, cosFeature=false, sinFeature=false, stictionFeature=false;
   if(joint == "l_shoulder_pan_joint") {
     T = TLeftArm;
     featureType = linearFT;
@@ -245,9 +245,11 @@ arr GravityCompensation::featuresGC(arr q, arr qSign, const rai::String& joint) 
   if(dynamicFeature) {
     arr Phi_tmp;
     for(uint t = 0; t < q.d0; t++) {
-      world.setJointState(q[t], q[t]*0.);
+      arr qDot = zeros(world.q.N); HALT("WARNING: qDot should be maintained outside world!");
+      
+      world.setJointState(q[t]);
       arr M,F;
-      world.equationOfMotion(M,F);
+      world.equationOfMotion(M, F, qDot);
       Phi_tmp.append(~(T*F));
       //Phi_tmp.append(~F);
     }
@@ -297,7 +299,7 @@ void GravityCompensation::testForLimits() {
   uint j = 0;
   for(uint i = 0; i < q.d0; i++) {
     world.setJointState(q[i]);
-    LimitsConstraint limits(0.03);
+    F_qLimits limits; //(0.03);
     arr y;
     limits.phi(y,NoArr,world);
     if(y(0) > 0) {
@@ -321,7 +323,7 @@ void GravityCompensation::removeLimits() {
   
   for(uint i = 0; i < q.d0; i++) {
     world.setJointState(q[i]);
-    LimitsConstraint limits;
+    F_qLimits limits;
     arr y;
     limits.phi(y, NoArr, world);
     if(y(0) <= 0) {
@@ -534,7 +536,7 @@ struct CV : public CrossValidation {
     return sqrt(sumOfSqr(y_pred-y)/y.N); //returns RMSE on test data
   }
   
-  void calculateBetaWithCV(arr& optimalBeta, const StringA& joints, const arr& Phi, const arr& lambdas, const arr& Q, const arr& U, rai::KinematicWorld& world, bool verbose, arr& m) {
+  void calculateBetaWithCV(arr& optimalBeta, const StringA& joints, const arr& Phi, const arr& lambdas, const arr& Q, const arr& U, rai::Configuration& world, bool verbose, arr& m) {
     m = zeros(joints.N);
     //double su = 0.0;
     
@@ -668,7 +670,7 @@ arr GravityCompensation::compensate(arr q, StringA joints) {
   return u;
 }
 
-GravityCompensation::GravityCompensation(const rai::KinematicWorld& world) : world(world) {
+GravityCompensation::GravityCompensation(const rai::Configuration& world) : world(world) {
   TLeftArm = zeros(leftJoints.N, world.getJointStateDimension());
   for(uint i = 0; i < leftJoints.N; i++) {
     TLeftArm(i, world.getJointByName(leftJoints(i))->qIndex) = 1;

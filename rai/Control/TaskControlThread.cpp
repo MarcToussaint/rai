@@ -10,7 +10,7 @@
 #include <RosCom/baxter.h>
 #include <Kin/frame.h>
 
-TaskControlThread::TaskControlThread(const Var<rai::KinematicWorld>& _ctrl_config,
+TaskControlThread::TaskControlThread(const Var<rai::Configuration>& _ctrl_config,
                                      const Var<CtrlMsg>& _ctrl_ref,
                                      const Var<CtrlMsg>& _ctrl_state,
                                      const Var<CtrlTaskL>& _ctrl_tasks)
@@ -32,7 +32,7 @@ TaskControlThread::TaskControlThread(const Var<rai::KinematicWorld>& _ctrl_confi
   double hyper = rai::getParameter<double>("hyperSpeed", -1.);
   if(hyper>0.) this->metronome.reset(.01/hyper);
 
-  //memorize the "NULL position", which is the initial model position
+  //memorize the "nullptr position", which is the initial model position
   q0 = ctrl_config.get()->getJointState();
   q_real = q_model = q0;
   qdot_real = qdot_model = zeros(q0.N);
@@ -40,7 +40,7 @@ TaskControlThread::TaskControlThread(const Var<rai::KinematicWorld>& _ctrl_confi
   //initialize Kp and Kd
   Kp_base = zeros(q0.N);
   Kd_base = zeros(q0.N);
-  for(rai::Joint *j:ctrl_config.get()->fwdActiveJoints) {
+  for(rai::Joint *j:ctrl_config.get()->activeJoints) {
     arr *gains = j->frame->ats.find<arr>("gains");
     if(gains) {
       for(uint i=0; i<j->qDim(); i++) {
@@ -66,7 +66,7 @@ arr TaskControlThread::whatsTheForce(const ptr<CtrlTask>& t){
 
 void TaskControlThread::step() {
 //  rai::Frame *transF = model_real.getFrameByName("worldTranslationRotation", false);
-//  rai::Joint *trans = (transF?transF->joint:NULL);
+//  rai::Joint *trans = (transF?transF->joint:nullptr);
   
   if(requiresInitialSync){
     if(ctrl_state.getRevision()>1){
@@ -75,13 +75,13 @@ void TaskControlThread::step() {
         q_real = state->q;
         qdot_real = state->qdot;
       }
-      ctrl_config.set()->setJointState(q_real, qdot_real);
+      ctrl_config.set()->setJointState(q_real);
 //      model_real.setJointState(q_real);
       q_model = q_real;
       qdot_model = qdot_real;
       requiresInitialSync = false;
     }else{
-      LOG(0) <<"waiting for ctrl_state messages...";
+//      LOG(0) <<"waiting for ctrl_state messages...";
       return;
     }
   }
@@ -98,7 +98,7 @@ void TaskControlThread::step() {
 
 //  model_real.setJointState(q_real);
   if(true){
-    ctrl_config.set()->setJointState(q_real, qdot_real);
+    ctrl_config.set()->setJointState(q_real);
     q_model = q_real;
     qdot_model = qdot_real;
   }
@@ -212,7 +212,7 @@ void TaskControlThread::step() {
 }
 
 ptr<CtrlTask> addCtrlTask(Var<CtrlTaskL>& ctrl_tasks,
-                          Var<rai::KinematicWorld>& ctrl_config,
+                          Var<rai::Configuration>& ctrl_config,
                           const char* name, const ptr<Feature>& map,
                           const ptr<MotionProfile>& ref){
   ptr<CtrlTask> t = make_shared<CtrlTask>(name, map, ref);
@@ -223,7 +223,7 @@ ptr<CtrlTask> addCtrlTask(Var<CtrlTaskL>& ctrl_tasks,
 }
 
 ptr<CtrlTask> addCtrlTask(Var<CtrlTaskL>& ctrl_tasks,
-                          Var<rai::KinematicWorld>& ctrl_config,
+                          Var<rai::Configuration>& ctrl_config,
                           const char* name, FeatureSymbol fs, const StringA& frames,
                           const ptr<MotionProfile>& ref){
   return addCtrlTask(ctrl_tasks, ctrl_config, name,
@@ -232,7 +232,7 @@ ptr<CtrlTask> addCtrlTask(Var<CtrlTaskL>& ctrl_tasks,
 }
 
 ptr<CtrlTask> addCtrlTask(Var<CtrlTaskL>& ctrl_tasks,
-                          Var<rai::KinematicWorld>& ctrl_config,
+                          Var<rai::Configuration>& ctrl_config,
                           const char* name, FeatureSymbol fs, const StringA& frames,
                           double duration){
   return addCtrlTask(ctrl_tasks, ctrl_config, name,
@@ -241,7 +241,7 @@ ptr<CtrlTask> addCtrlTask(Var<CtrlTaskL>& ctrl_tasks,
 }
 
 ptr<CtrlTask> addCompliance(Var<CtrlTaskL>& ctrl_tasks,
-                            Var<rai::KinematicWorld>& ctrl_config,
+                            Var<rai::Configuration>& ctrl_config,
                             const char* name, FeatureSymbol fs, const StringA& frames,
                             const arr& compliance){
   ptr<CtrlTask> t = make_shared<CtrlTask>(name, symbols2feature(fs, frames, ctrl_config.get()));

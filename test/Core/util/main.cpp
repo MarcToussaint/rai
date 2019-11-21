@@ -83,8 +83,8 @@ void TEST(Logging){
 void TEST(Exception){
   try{
     CHECK_EQ(2,1,"two is not equal to one")
-  }catch(const char* err){
-    LOG(0) <<"Exception caught: " <<err;
+  }catch(const std::runtime_error& err){
+    LOG(0) <<"Exception caught: " <<err.what();
   }
 }
 

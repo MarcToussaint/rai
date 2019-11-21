@@ -13,14 +13,14 @@
 
 #ifdef RAI_ROS
 #include <sensor_msgs/JointState.h>
-bool baxter_get_q_qdot_u(arr& q, arr& q_dot, arr& u, const sensor_msgs::JointState& msg, const rai::KinematicWorld& baxterModel);
+bool baxter_get_q_qdot_u(arr& q, arr& q_dot, arr& u, const sensor_msgs::JointState& msg, const rai::Configuration& baxterModel);
 #endif
 
 struct SendPositionCommandsToBaxter : Thread {
   Var<CtrlMsg> ctrl_ref;
   struct sBaxterInterface *s;
   
-  SendPositionCommandsToBaxter(const rai::KinematicWorld& baxterWorld, const Var<CtrlMsg>& _ctrl_ref);
+  SendPositionCommandsToBaxter(const rai::Configuration& baxterWorld, const Var<CtrlMsg>& _ctrl_ref);
   ~SendPositionCommandsToBaxter() {}
   
   void open();
@@ -36,12 +36,14 @@ struct SendPositionCommandsToBaxter : Thread {
 struct BaxterInterface {
   struct sBaxterInterface *s;
 
-  BaxterInterface();
+  BaxterInterface(bool useRosDefault);
   ~BaxterInterface();
 
   arr get_q();
   arr get_qdot();
   arr get_u();
+  bool get_grabbed(const std::string& whichArm);
+  bool get_opened(const std::string& whichArm);
 
   void send_q(const arr& q_ref, bool enableL=true, bool enableR=true);
 };

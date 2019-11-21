@@ -219,7 +219,7 @@ def qdump__rai__Frame(d, value):
             d.putSubItem("Q", value["Q"])
             d.putSubItem("X", value["X"])
             d.putSubItem("ats", value["ats"])
-            d.putSubItem("active", value["active"])
+            d.putSubItem("_state_X_isGood", value["_state_X_isGood"])
             d.putSubItem("K", value["K"])
 
 #end

@@ -28,7 +28,7 @@ public:
   arr position;
   arr force;
 
-  Contact(Frame &a, Frame &b, Contact *copyContact=NULL);
+  Contact(Frame &a, Frame &b, Contact *copyContact=nullptr);
   ~Contact();
 
   void setZero();
@@ -48,9 +48,9 @@ struct TM_ContactNegDistance : Feature {
   
   TM_ContactNegDistance(const Contact& contact) : C(contact) {}
   
-  void phi(arr& y, arr& J, const rai::KinematicWorld& K);
-  virtual uint dim_phi(const rai::KinematicWorld& K) { return 1; }
-  virtual rai::String shortTag(const rai::KinematicWorld& K) { return STRING("ContactNegDistance-"<<C.a.name<<'-'<<C.b.name); }
+  void phi(arr& y, arr& J, const rai::Configuration& K);
+  virtual uint dim_phi(const rai::Configuration& K) { return 1; }
+  virtual rai::String shortTag(const rai::Configuration& K) { return STRING("ContactNegDistance-"<<C.a.name<<'-'<<C.b.name); }
 };
 
 } //rai

@@ -35,7 +35,7 @@ rai::Contact::~Contact() {
 void rai::Contact::setZero(){
 //  a_rel.setZero(); b_rel.setZero(); a_norm.setZero(); b_norm.setZero(); a_rad=b_rad=0.; a_type=b_type=1;
   force.resize(3).setZero();
-  position = (.5*(a.X.pos + b.X.pos)).getArr();
+  position = (.5*(a.ensure_X().pos + b.ensure_X().pos)).getArr();
   if(__coll){ delete __coll; __coll=0; }
 }
 
@@ -57,11 +57,11 @@ PairCollision *rai::Contact::coll(){
     rai::Shape *s1 = a.shape;
     rai::Shape *s2 = b.shape;
     CHECK(s1 && s2,"");
-    double r1=s1->size(3);
-    double r2=s2->size(3);
+    double r1=s1->size(-1);
+    double r2=s2->size(-1);
     rai::Mesh *m1 = &s1->sscCore();  if(!m1->V.N) { m1 = &s1->mesh(); r1=0.; }
     rai::Mesh *m2 = &s2->sscCore();  if(!m2->V.N) { m2 = &s2->mesh(); r2=0.; }
-    __coll = new PairCollision(*m1, *m2, s1->frame.X, s2->frame.X, r1, r2);
+    __coll = new PairCollision(*m1, *m2, s1->frame.ensure_X(), s2->frame.ensure_X(), r1, r2);
   }
   return __coll;
 }

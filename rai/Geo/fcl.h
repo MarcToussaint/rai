@@ -25,9 +25,9 @@ struct FCL_Interface {
   
   void setCutoff(double _cutoff) { cutoff=_cutoff; }
   
-  void step(rai::KinematicWorld& world, bool dumpReport=false);
-  void pushToSwift(const rai::KinematicWorld& world);
-  void pullFromSwift(rai::KinematicWorld& world, bool dumpReport);
+  void step(rai::Configuration& world, bool dumpReport=false);
+  void pushToSwift(const rai::Configuration& world);
+  void pullFromSwift(rai::Configuration& world, bool dumpReport);
   
   void reinitShape(const rai::Frame *s);
 //  void close();
@@ -37,7 +37,7 @@ struct FCL_Interface {
   void deactivate(rai::Frame *s1, rai::Frame *s2);
   void deactivate(const rai::Array<rai::Frame*>& bodies);
   
-  void initActivations(const rai::KinematicWorld& world, uint parentLevelsToDeactivate=1);
+  void initActivations(const rai::Configuration& world, uint parentLevelsToDeactivate=1);
   void swiftQueryExactDistance();
 };
 

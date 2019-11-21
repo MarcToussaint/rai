@@ -25,60 +25,60 @@ REG_VIEW(PerceptionOutput)
 //===========================================================================
 
 void Image_View::glInit() {
-  ((Image*)object)->get_img(copy, NULL);
+  ((Image*)object)->get_img(copy, nullptr);
   gl->img = &copy;
 }
 
 void Image_View::glDraw() {
-  ((Image*)object)->get_img(copy, NULL);
+  ((Image*)object)->get_img(copy, nullptr);
   gl->img = &copy;
 }
 
 //===========================================================================
 
 void HoughLines_View::glInit() {
-  ((HoughLines*)object)->get_display(copy, NULL);
+  ((HoughLines*)object)->get_display(copy, nullptr);
   gl->img = &copy;
 }
 
 void HoughLines_View::glDraw() {
-  ((HoughLines*)object)->get_display(copy, NULL);
+  ((HoughLines*)object)->get_display(copy, nullptr);
   gl->img = &copy;
 }
 
 //===========================================================================
 
 void Patching_View::glInit() {
-  ((Patching*)object)->get_display(copy, NULL);
+  ((Patching*)object)->get_display(copy, nullptr);
   gl->img = &copy;
 }
 
 void Patching_View::glDraw() {
-  ((Patching*)object)->get_display(copy, NULL);
+  ((Patching*)object)->get_display(copy, nullptr);
   gl->img = &copy;
 }
 
 //===========================================================================
 
 void SURFfeatures_View::glInit() {
-  ((SURFfeatures*)object)->get_display(copy, NULL);
+  ((SURFfeatures*)object)->get_display(copy, nullptr);
   gl->img = &copy;
 }
 
 void SURFfeatures_View::glDraw() {
-  ((SURFfeatures*)object)->get_display(copy, NULL);
+  ((SURFfeatures*)object)->get_display(copy, nullptr);
   gl->img = &copy;
 }
 
 //===========================================================================
 
 void PerceptionOutput_View::glInit() {
-  ((PerceptionOutput*)object)->get_display(copy, NULL);
+  ((PerceptionOutput*)object)->get_display(copy, nullptr);
   gl->img = &copy;
 }
 
 void PerceptionOutput_View::glDraw() {
-  ((PerceptionOutput*)object)->get_display(copy, NULL);
+  ((PerceptionOutput*)object)->get_display(copy, nullptr);
   gl->img = &copy;
 }
 

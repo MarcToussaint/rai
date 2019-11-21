@@ -9,14 +9,14 @@
 #include "convert.h"
 
 //the Convert is essentially only a ``garbage collector'', creating all the necessary conversion objects and then deleting them on destruction
-Convert::Convert(const ScalarFunction& p):kom(NULL), cstyle_fs(NULL), cstyle_fv(NULL), data(NULL) { sf=p; }
-Convert::Convert(const VectorFunction& p):kom(NULL), cstyle_fs(NULL), cstyle_fv(NULL), data(NULL) { vf=p; }
+Convert::Convert(const ScalarFunction& p):kom(nullptr), cstyle_fs(nullptr), cstyle_fv(nullptr), data(nullptr) { sf=p; }
+Convert::Convert(const VectorFunction& p):kom(nullptr), cstyle_fs(nullptr), cstyle_fv(nullptr), data(nullptr) { vf=p; }
 //Convert::Convert(QuadraticFunction& p){ sf=&p; }
 //Convert::Convert(VectorChainFunction& p) { vcf=&p; }
 //Convert::Convert(QuadraticChainFunction& p) { qcf=&p; }
-Convert::Convert(KOrderMarkovFunction& p):kom(&p), cstyle_fs(NULL), cstyle_fv(NULL), data(NULL) { }
-Convert::Convert(double(*fs)(arr*, const arr&, void*),void *data):kom(NULL), cstyle_fs(fs), cstyle_fv(NULL), data(data) {  }
-Convert::Convert(void (*fv)(arr&, arr*, const arr&, void*),void *data):kom(NULL), cstyle_fs(NULL), cstyle_fv(fv), data(data) {  }
+Convert::Convert(KOrderMarkovFunction& p):kom(&p), cstyle_fs(nullptr), cstyle_fv(nullptr), data(nullptr) { }
+Convert::Convert(double(*fs)(arr*, const arr&, void*),void *data):kom(nullptr), cstyle_fs(fs), cstyle_fv(nullptr), data(data) {  }
+Convert::Convert(void (*fv)(arr&, arr*, const arr&, void*),void *data):kom(nullptr), cstyle_fs(nullptr), cstyle_fv(fv), data(data) {  }
 
 #ifndef libRoboticsCourse
 //Convert::Convert(ControlledSystem& p) { cs=&p; }

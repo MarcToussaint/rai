@@ -14,7 +14,7 @@
 #include <Kin/kinViewer.h>
 
 void plan(){
-  rai::KinematicWorld K("model.g");
+  rai::Configuration K("model.g");
 
   K["ball2"]->joint->type=rai::JT_rigid;
   K.reset_q();
@@ -25,11 +25,11 @@ void plan(){
   komo.setSquaredQAccelerations();
   
   //permanent tasks: no collision, gravity
-  komo.addObjective(-1., -1., new TM_PairCollision(K, "ball1", "ball2", TM_PairCollision::_negScalar, false), OT_ineq, {}, 1e2);
+  komo.addObjective({}, make_shared<TM_PairCollision>(K, "ball1", "ball2", TM_PairCollision::_negScalar, false), OT_ineq, {1e2});
 
   //-- action 1
 //  komo.setImpact(1., "ball1", "ball2");
-//  komo.setPlace(1., NULL, "ball1", "table1");
+//  komo.setPlace(1., nullptr, "ball1", "table1");
   komo.addSwitch_dynamicOn(1., -1., "world", "ball2");
 //  komo.setKinematicSwitch(1., true, new rai::KinematicSwitch(rai::SW_actJoint, rai::JT_transXY, "world", "ball2", K));
 //  komo.setFlag(1., new rai::Flag(FL_zeroAcc, K["ball2"]->ID, 0, true));
@@ -44,7 +44,7 @@ void plan(){
 //  komo.setFlag(2., new rai::Flag(FL_gravityAcc, K["ball2"]->ID, 0, true));
 
   // final target for ball2
-  komo.addObjective(3., 3., new TM_Default(TMT_posDiff, K, "ball2"), OT_sos, {+2.,-0.,.3}, 1e1);
+  komo.addObjective({3., 3.}, make_shared<TM_Default>(TMT_posDiff, K, "ball2"), OT_sos, {+2.,-0.,.3}, 1e1);
 
   komo.reset();
   komo.reportProblem();

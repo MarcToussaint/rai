@@ -15,7 +15,7 @@
 #include "bounds.h"
 
 struct LGP_Node;
-typedef rai::Array<LGP_Node*> MNodeL;
+typedef rai::Array<LGP_Node*> LGP_NodeL;
 
 //struct SkeletonEntry{ StringL symbols; uint k0,k1; double phase0, phase1; };
 //typedef rai::Array<SkeletonEntry> Skeleton;
@@ -31,6 +31,7 @@ extern bool LGP_useHoming;
 
 struct LGP_Node {
   LGP_Node *parent;
+  struct LGP_Tree* tree=0;
   rai::Array<LGP_Node*> children;
   uint step;            ///< decision depth/step of this node
   double time;          ///< real time
@@ -40,13 +41,13 @@ struct LGP_Node {
   FOL_World& fol; ///< the symbolic KB (all Graphs below are subgraphs of this large KB)
   FOL_World::Handle decision; ///< the decision that led to this node
   FOL_World::TransitionReturn ret;
-  Graph *folState=NULL; ///< the symbolic state after the decision
-  Node  *folDecision=NULL; ///< the predicate in the folState that represents the decision
-  Graph *folAddToState=NULL; ///< facts that are added to the state /after/ the fol.transition, e.g., infeasibility predicates
+  Graph *folState=nullptr; ///< the symbolic state after the decision
+  Node  *folDecision=nullptr; ///< the predicate in the folState that represents the decision
+  Graph *folAddToState=nullptr; ///< facts that are added to the state /after/ the fol.transition, e.g., infeasibility predicates
   
   //-- kinematics: the kinematic structure of the world after the decision path
-  const rai::KinematicWorld& startKinematics; ///< initial start state kinematics
-  rai::KinematicWorld effKinematics; ///< the effective kinematics (computed from kinematics and symbolic state)
+  const rai::Configuration& startKinematics; ///< initial start state kinematics
+  rai::Configuration effKinematics; ///< TODO: REMOVE the effective kinematics (computed from kinematics and symbolic state)
   
   bool isExpanded=false;
   bool isInfeasible=false;
@@ -68,7 +69,7 @@ struct LGP_Node {
   rai::String note;
   
   /// root node init
-  LGP_Node(rai::KinematicWorld& kin, FOL_World& fol, uint levels);
+  LGP_Node(LGP_Tree* _tree, uint levels);
   
   /// child node creation
   LGP_Node(LGP_Node *parent, FOL_World::Handle& a);
@@ -78,19 +79,21 @@ struct LGP_Node {
   //- computations on the node
   void expand(int verbose=0);           ///< expand this node (symbolically: compute possible decisions and add their effect nodes)
   void optBound(BoundType bound, bool collisions=false, int verbose=-1);
+  ptr<KOMO> optSubCG(const SubCG& scg, bool collisions, int verbose);
+  ptr<CG> getCGO(bool collisions=false, int verbose=-1);
   void resetData();
   void computeEndKinematics();
   
   //-- helpers to get other nodes
-  MNodeL getTreePath() const; ///< return the decision path in terms of a list of nodes (just walking to the root)
+  LGP_NodeL getTreePath() const; ///< return the decision path in terms of a list of nodes (just walking to the root)
   rai::String getTreePathString(char sep=' ') const;
   LGP_Node* getRoot(); ///< return the decision path in terms of a list of nodes (just walking to the root)
   LGP_Node* getChildByAction(Node  *folDecision); ///<
-  void getAll(MNodeL& L);
-  MNodeL getAll() { MNodeL L; getAll(L); return L; }
+  void getAll(LGP_NodeL& L);
+  LGP_NodeL getAll() { LGP_NodeL L; getAll(L); return L; }
   void checkConsistency();
   
-  Skeleton getSkeleton(StringA predicateFilter={}, bool finalStateOnly=false) const;
+  Skeleton getSkeleton(bool finalStateOnly=false) const;
 private:
   void setInfeasible(); ///< set this and all children infeasible
   void labelInfeasible(); ///< sets this infeasible AND propagates this label up-down to others
@@ -101,8 +104,9 @@ private:
 public:
   void write(ostream& os=cout, bool recursive=false, bool path=true) const;
   Graph getInfo() const;
-  void getGraph(Graph& G, Node *n=NULL, bool brief=false);
-  Graph getGraph(bool brief=false) { Graph G; getGraph(G, NULL, brief); G.checkConsistency(); return G; }
+  void getGraph(Graph& G, Node *n=nullptr, bool brief=false);
+  Graph getGraph(bool brief=false) { Graph G; getGraph(G, nullptr, brief); G.checkConsistency(); return G; }
+  void displayBound(ptr<OpenGL>& gl, BoundType bound);
 };
 
 inline ostream& operator<<(ostream& os, const LGP_Node& n) { n.write(os); return os; }

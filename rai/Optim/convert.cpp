@@ -10,18 +10,18 @@
 #include "KOMO_Problem.h"
 
 //the Convert is essentially only a ``garbage collector'', creating all the necessary conversion objects and then deleting them on destruction
-Convert::Convert(const ScalarFunction& p) : cstyle_fs(NULL), cstyle_fv(NULL), data(NULL), cpm(NULL) { sf=p; }
-Convert::Convert(const VectorFunction& p) : cstyle_fs(NULL), cstyle_fv(NULL), data(NULL), cpm(NULL) { vf=p; }
-//Convert::Convert(KOrderMarkovFunction& p):kom(&p), cstyle_fs(NULL), cstyle_fv(NULL), data(NULL) { }
-Convert::Convert(double(*fs)(arr*, const arr&, void*),void *data) : cstyle_fs(fs), cstyle_fv(NULL), data(data), cpm(NULL) {  }
-Convert::Convert(void (*fv)(arr&, arr*, const arr&, void*),void *data) : cstyle_fs(NULL), cstyle_fv(fv), data(data), cpm(NULL) {  }
+Convert::Convert(const ScalarFunction& p) : cstyle_fs(nullptr), cstyle_fv(nullptr), data(nullptr), cpm(nullptr) { sf=p; }
+Convert::Convert(const VectorFunction& p) : cstyle_fs(nullptr), cstyle_fv(nullptr), data(nullptr), cpm(nullptr) { vf=p; }
+//Convert::Convert(KOrderMarkovFunction& p):kom(&p), cstyle_fs(nullptr), cstyle_fv(nullptr), data(nullptr) { }
+Convert::Convert(double(*fs)(arr*, const arr&, void*),void *data) : cstyle_fs(fs), cstyle_fv(nullptr), data(data), cpm(nullptr) {  }
+Convert::Convert(void (*fv)(arr&, arr*, const arr&, void*),void *data) : cstyle_fs(nullptr), cstyle_fv(fv), data(data), cpm(nullptr) {  }
 
 #ifndef libRoboticsCourse
 //Convert::Convert(ControlledSystem& p) { cs=&p; }
 #endif
 
 Convert::~Convert() {
-  if(cpm) { delete cpm; cpm=NULL; }
+  if(cpm) { delete cpm; cpm=nullptr; }
 }
 
 //void conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction& f, arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x);
@@ -102,16 +102,16 @@ ScalarFunction conv_VectorFunction2ScalarFunction(const VectorFunction& f) {
   };
 }
 
-void Conv_linearlyReparameterize_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& z, arr& lambda) {
+void Conv_linearlyReparameterize_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& z) {
   arr x = B*z;
-  P.phi(phi, J, H, tt, x, NoArr);
+  P.phi(phi, J, H, tt, x);
   if(!!J) J = comp_A_x(J,B);
   if(!!H && H.N) NIY;
 }
 
 //===========================================================================
 
-Convert::Convert(KOMO_Problem& p) : cstyle_fs(NULL), cstyle_fv(NULL), data(NULL), cpm(NULL) {
+Convert::Convert(KOMO_Problem& p) : cstyle_fs(nullptr), cstyle_fv(nullptr), data(nullptr), cpm(nullptr) {
   cpm = new Conv_KOMO_ConstrainedProblem(p);
 }
 

@@ -69,7 +69,7 @@ struct CtrlTask { //TODO: rename/refactor to become LinearAccelerationLaw (LAW) 
   
   arr getDesiredAcceleration();
   void getDesiredLinAccLaw(arr& Kp_y, arr& Kd_y, arr& a0);
-  void getForceControlCoeffs(arr& f_des, arr& u_bias, arr& KfL, arr& J_ft, const rai::KinematicWorld& world);
+  void getForceControlCoeffs(arr& f_des, arr& u_bias, arr& KfL, arr& J_ft, const rai::Configuration& world);
   
   double error();
   bool isConverged(double tolerance=1e-2);
@@ -97,22 +97,22 @@ struct ConstraintForceTask {
  * TaskControlMethods contains all individual motions/CtrlTasks.
  */
 struct TaskControlMethods {
-  rai::KinematicWorld& world;
+  rai::Configuration& world;
   rai::Array<CtrlTask*> tasks;
   rai::Array<ConstraintForceTask*> forceTasks;
   CtrlTask qNullCostRef;
   boolA lockJoints;
   bool useSwift;
   
-  TaskControlMethods(rai::KinematicWorld& _world, bool _useSwift=true);
+  TaskControlMethods(rai::Configuration& _world, bool _useSwift=true);
   
   /// @{ @name adding tasks
   CtrlTask* addPDTask(const char* name, double decayTime, double dampingRatio, Feature *map);
   CtrlTask* addPDTask(const char* name,
                       double decayTime, double dampingRatio,
                       TM_DefaultType type,
-                      const char* iShapeName=NULL, const rai::Vector& ivec=NoVector,
-                      const char* jShapeName=NULL, const rai::Vector& jvec=NoVector);
+                      const char* iShapeName=nullptr, const rai::Vector& ivec=NoVector,
+                      const char* jShapeName=nullptr, const rai::Vector& jvec=NoVector);
   ConstraintForceTask* addConstraintForceTask(const char* name, Feature *map);
   /// @}
   

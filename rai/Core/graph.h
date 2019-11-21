@@ -28,8 +28,8 @@ struct RenderingInfo;
 struct GraphEditCallback;
 typedef rai::Array<Node*> NodeL;
 typedef rai::Array<GraphEditCallback*> GraphEditCallbackL;
-extern NodeL& NoNodeL; //this is a reference to NULL! (for optional arguments)
-extern Graph& NoGraph; //this is a reference to NULL! (for optional arguments)
+extern NodeL& NoNodeL; //this is a reference to nullptr! (for optional arguments)
+extern Graph& NoGraph; //this is a reference to nullptr! (for optional arguments)
 
 //===========================================================================
 
@@ -59,6 +59,7 @@ struct Node {
   template<class T> T& get() { T *x=getValue<T>(); CHECK(x, "this node is not of type '" <<typeid(T).name() <<"' but type '" <<type.name() <<"'"); return *x; }
   template<class T> const T& get() const { const T *x=getValue<T>(); CHECK(x, "this node is not of type '" <<typeid(T).name() <<"' but type '" <<type.name() <<"'"); return *x; }
   template<class T> bool getFromString(T& x) const; ///< return value = false means parsing object of type T from the string failed
+  template<class T> bool getFromArr(T& x) const; ///< return value = false means parsing object of type T from the string failed
   bool isBoolAndTrue() const { if(type!=typeid(bool)) return false; return *((bool*)value_ptr) == true; }
   bool isBoolAndFalse() const { if(type!=typeid(bool)) return false; return *((bool*)value_ptr) == false; }
   bool isGraph() const;//{ return type==typeid(Graph); }
@@ -71,7 +72,7 @@ struct Node {
   bool matches(const char *key); ///< return true, if 'key' is in keys
   bool matches(const StringA &query_keys); ///< return true, if all query_keys are in keys
   
-  void write(std::ostream &os, bool pythonMode=false) const;
+  void write(std::ostream &os, bool yamlMode=false) const;
   
   //-- virtuals implemented by Node_typed
   virtual void copyValue(Node*) {NIY}
@@ -100,11 +101,10 @@ struct Graph : NodeL {
   explicit Graph(const char* filename);                  ///< read from a file
   explicit Graph(istream& is);                           ///< read from a stream
   Graph(const std::map<std::string, std::string>& dict); ///< useful to represent Python dicts
-  Graph(std::initializer_list<struct Nod> list);         ///< initialize, e.g.: {"x", "b", {"a", 3.}, {"b", {"x"}, 5.}, {"c", rai::String("BLA")} };
-  Graph(std::initializer_list<const char*> list);
+  Graph(std::initializer_list<struct NodeInitializer> list);         ///< initialize, e.g.: {"x", "b", {"a", 3.}, {"b", {"x"}, 5.}, {"c", rai::String("BLA")} };
   Graph(const Graph& G);                                 ///< copy constructor
   ~Graph();
-  bool operator!() const { return this==&NoGraph; } ///< check if NoGraph
+  bool operator!() const;                                ///< check if NoGraph
 
   void clear();
   NodeL& list() { return *this; }
@@ -120,19 +120,19 @@ struct Graph : NodeL {
   Node_typed<int>* newNode(const uintA& parentIdxs); ///< add 'vertex tupes' (like edges) where vertices are referred to by integers
   Graph& newSubgraph(const StringA& keys={}, const NodeL& parents={}, const Graph& x=NoGraph);
   void appendDict(const std::map<std::string, std::string>& dict);
-  Graph& newNode(const Nod& ni); ///< (internal) append a node initializer
+  Graph& newNode(const NodeInitializer& ni); ///< (internal) append a node initializer
   
   //-- deleting nodes
   void delNode(Node *n) { delete n; }
   
   //-- basic node retrieval -- users usually use the higher-level wrappers below
-  Node* findNode(const StringA& keys=StringA(), bool recurseUp=false, bool recurseDown=false) const;   ///< returns NULL if not found
+  Node* findNode(const StringA& keys=StringA(), bool recurseUp=false, bool recurseDown=false) const;   ///< returns nullptr if not found
   NodeL findNodes(const StringA& keys=StringA(), bool recurseUp=false, bool recurseDown=false) const;
   Node* findNodeOfType(const std::type_info& type, const StringA& keys=StringA(), bool recurseUp=false, bool recurseDown=false) const;
   NodeL findNodesOfType(const std::type_info& type, const StringA& keys=StringA(), bool recurseUp=false, bool recurseDown=false) const;
   
   //-- get nodes
-  Node* operator[](const char *key) const { return findNode({key}); } ///< returns NULL if not found
+  Node* operator[](const char *key) const { return findNode({key}); } ///< returns nullptr if not found
   Node* getNode(const char *key) const { return findNode({key}); }
   Node* getNode(const StringA &keys) const { return findNode(keys); }
   Node* getEdge(Node *p1, Node *p2) const;
@@ -147,8 +147,8 @@ struct Graph : NodeL {
   NodeL getAllNodesRecursively() const;
   
   //-- get values directly
-  template<class T> T* find(const char *key)     const { Node *n = findNodeOfType(typeid(T), {key}); if(!n) return NULL;  return n->getValue<T>(); }
-  template<class T> T* find(const StringA &keys) const { Node *n = findNodeOfType(typeid(T), keys);  if(!n) return NULL;  return n->getValue<T>(); }
+  template<class T> T* find(const char *key)     const { Node *n = findNodeOfType(typeid(T), {key}); if(!n) return nullptr;  return n->getValue<T>(); }
+  template<class T> T* find(const StringA &keys) const { Node *n = findNodeOfType(typeid(T), keys);  if(!n) return nullptr;  return n->getValue<T>(); }
   template<class T> T& get(const char *key) const;
   template<class T> T& get(const StringA &keys) const;
   template<class T> const T& get(const char *key, const T& defaultValue) const;
@@ -158,11 +158,12 @@ struct Graph : NodeL {
   template<class T> T& getNew(const StringA &keys);
   
   //-- get lists of all values of a certain type T (or derived from T)
-  template<class T> rai::Array<T*> getValuesOfType(const char* key=NULL);
+  template<class T> rai::Array<T*> getValuesOfType(const char* key=nullptr);
   
   //-- editing nodes
   Node *edit(Node *ed); ///< ed describes how another node should be edited; ed is removed after editing is done
   void edit(const NodeL& L) { for(Node *ed:L) edit(ed); }
+  void collapse(Node *a, Node *b);
   
   //-- hierarchical finding: up and down in the graph hierarchy
   const Graph* getRootGraph() const;
@@ -180,12 +181,12 @@ struct Graph : NodeL {
   void read(std::istream& is, bool parseInfo=false);
   Node* readNode(std::istream& is, bool verbose=false, bool parseInfo=false, rai::String prefixedKey=rai::String()); //used only internally..
   void readJson(std::istream& is);
-  void write(std::ostream& os=std::cout, const char *ELEMSEP=",\n", const char *BRACKETS="{}") const;
+  void write(std::ostream& os=std::cout, const char *ELEMSEP=",\n", const char *BRACKETS="{}", bool yamlMode=false) const;
   void writeDot(std::ostream& os, bool withoutHeader=false, bool defaultEdges=false, int nodesOrEdges=0, int focusIndex=-1, bool subGraphsAsNodes=false);
   void writeHtml(std::ostream& os, std::istream& is);
   void writeParseInfo(std::ostream& os);
   
-  void displayDot(Node *highlight=NULL);
+  void displayDot(Node *highlight=nullptr);
   
   //private:
   friend struct Node;
@@ -222,7 +223,7 @@ struct ArrayG : rai::Array<T*>, GraphEditCallback {
   }
   ~ArrayG() {
     G.callbacks.removeValue(this);
-    for(T* x:*this) if(x) { delete x; x=NULL; }
+    for(T* x:*this) if(x) { delete x; x=nullptr; }
     this->clear();
   }
   T& operator()(Node *n) {
@@ -232,8 +233,8 @@ struct ArrayG : rai::Array<T*>, GraphEditCallback {
     if(!x) x = new T(); //...assigned here
     return *x;
   }
-  virtual void cb_new(Node *n) { this->insert(n->index+1, (T*)NULL); }
-  virtual void cb_delete(Node *n) { T* &x = this->elem(n->index+1); if(x) { delete x; x=NULL; } this->remove(n->index+1); }
+  virtual void cb_new(Node *n) { this->insert(n->index+1, (T*)nullptr); }
+  virtual void cb_delete(Node *n) { T* &x = this->elem(n->index+1); if(x) { delete x; x=nullptr; } this->remove(n->index+1); }
 };
 
 //===========================================================================
@@ -263,22 +264,43 @@ struct ArrayG : rai::Array<T*>, GraphEditCallback {
 
 /// This is a Node initializer, specifically for Graph(std::initializer_list<struct Nod> list); and the operator<< below
 /// not to be used otherwise
-struct Nod {
-  Nod(const char* key);
-  Nod(const char* key, const char* stringValue);
-  template<class T> Nod(const char* key, const T& x);
-  template<class T> Nod(const char* key, const StringA& parents, const T& x);
+struct NodeInitializer {
+  NodeInitializer(const char* key);
+  NodeInitializer(const char* key, const char* stringValue);
+  template<class T> NodeInitializer(const char* key, const T& x);
+  template<class T> NodeInitializer(const char* key, const StringA& parents, const T& x);
   Graph G;
   Node *n;
   StringA parents;
 };
 
 /// pipe node initializers into a graph (to append nodes)
-inline Graph& operator<<(Graph& G, const Nod& n) { G.newNode(n); return G; }
+inline Graph& operator<<(Graph& G, const NodeInitializer& n) { G.newNode(n); return G; }
 
 //===========================================================================
+//
+// algorithms
 
 NodeL neighbors(Node*);
+
+int distance(NodeL A, NodeL B);
+
+template<class VertexType>
+rai::Array<VertexType*> getNeighbors(VertexType* v){
+  rai::Array<VertexType*> N;
+  for(Node *edge:v->parentOf) {
+    for(Node *n:edge->parents) if(n!=v) N.setAppend(dynamic_cast<VertexType*>(n));
+  }
+  return N;
+}
+
+template<class EdgeType>
+rai::Array<EdgeType*> getEdges(Node* v){
+  rai::Array<EdgeType*> E(v->parentOf.N);
+  for(uint i=0;i<E.N;i++) E.elem(i) = dynamic_cast<EdgeType*>(v->parentOf.elem(i));
+  return E;
+}
+
 
 //===========================================================================
 
@@ -311,7 +333,7 @@ typedef rai::Array<std::shared_ptr<Type> > TypeInfoL;
 //===========================================================================
 //===========================================================================
 //
-// definition of template methods
+// definition of template methods - could move this to graph.tpp
 //
 //===========================================================================
 //===========================================================================
@@ -325,7 +347,7 @@ template<class T>
 struct Node_typed : Node {
   T value;
   
-  Node_typed():value(NULL) { HALT("shouldn't be called, right? You always want to append to a container"); }
+  Node_typed():value(nullptr) { HALT("shouldn't be called, right? You always want to append to a container"); }
   
   Node_typed(Graph& container, const T& _value)
     : Node(typeid(T), &this->value, container), value(_value) {
@@ -391,13 +413,13 @@ struct Node_typed : Node {
 
 template<class T> T* Node::getValue() {
   Node_typed<T>* typed = dynamic_cast<Node_typed<T>*>(this);
-  if(!typed) return NULL;
+  if(!typed) return nullptr;
   return &typed->value;
 }
 
 template<class T> const T* Node::getValue() const {
   const Node_typed<T>* typed = dynamic_cast<const Node_typed<T>*>(this);
-  if(!typed) return NULL;
+  if(!typed) return nullptr;
   return &typed->value;
 }
 
@@ -406,7 +428,7 @@ template<class T> std::shared_ptr<T> Node::getPtr() const {
 //  std::shared_ptr<T> typed = std::dynamic_pointer_cast<T>(std::shared_ptr<T>(value_ptr));
   return std::shared_ptr<T>();
 //  const Node_typed<std::shared_ptr<T>>* typed = dynamic_cast<const Node_typed<std::shared_ptr<T>>*>(this);
-//  if(!typed) return NULL;
+//  if(!typed) return nullptr;
 //  return typed->value;
 }
 
@@ -418,18 +440,25 @@ template<class T> bool Node::getFromString(T& x) const {
   return false;
 }
 
+template<class T> bool Node::getFromArr(T& x) const {
+  if(!isOfType<arr>()) return false;
+  arr z = get<arr>();
+  x.set(z);
+  return true;
+}
+
 template<class T> T& Node::get(const char* key) {
   Graph *x=getValue<Graph>();
   CHECK(x, "this node is not of type '" <<typeid(Graph).name() <<"' but type '" <<type.name() <<"'");
   return x->get<T>(key);
 }
 
-template<class T> Nod::Nod(const char* key, const T& x) {
+template<class T> NodeInitializer::NodeInitializer(const char* key, const T& x) {
   n = G.newNode<T>(x);
   n->keys.append(STRING(key));
 }
 
-template<class T> Nod::Nod(const char* key, const StringA& parents, const T& x)
+template<class T> NodeInitializer::NodeInitializer(const char* key, const StringA& parents, const T& x)
   : parents(parents) {
   n = G.newNode<T>(x);
   n->keys.append(STRING(key));
@@ -461,13 +490,12 @@ template<class T> const T& Graph::get(const char *key, const T& defaultValue) co
 
 template<class T> bool Graph::get(T& x, const StringA &keys) const {
   Node *n = findNodeOfType(typeid(T), keys);
-  if(!n) {
-    n = findNodeOfType(typeid(rai::String), keys);
-    if(!n) return false;
-    return n->getFromString<T>(x);
-  }
-  x=n->get<T>();
-  return true;
+  if(n) { x=n->get<T>();  return true; }
+
+  n = findNodeOfType(typeid(rai::String), keys);
+  if(n) return n->getFromString<T>(x);
+
+  return false;
 }
 
 template<class T> rai::Array<T*> Graph::getValuesOfType(const char* key) {

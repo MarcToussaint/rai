@@ -159,7 +159,7 @@ void Draw_Triangle_Mesh( SWIFT_Tri_Mesh* m, bool color
 {
     int i;
 
-    if( m != NULL ) {
+    if( m != nullptr ) {
         glBegin( GL_TRIANGLES );
         if( color ) {
             for( i = 0; i < m->Faces().Length(); i++ ) {
@@ -177,7 +177,7 @@ void Draw_Triangle_Mesh( SWIFT_Tri_Mesh* m, bool color
 
 void Draw_Vertices( SWIFT_Tri_Mesh* m )
 {
-    if( m != NULL ) {
+    if( m != nullptr ) {
         int i;
         glDisable( GL_LIGHTING );
         glPointSize( 5.0 );
@@ -196,7 +196,7 @@ void Draw_Edge_Convexity( SWIFT_Tri_Mesh* m, SWIFT_Array<bool>& ecs )
 {
     int i, j;
 
-    if( m != NULL ) {
+    if( m != nullptr ) {
         glDisable( GL_LIGHTING );
         glLineWidth( 2.0 );
 
@@ -238,7 +238,7 @@ void Draw_Convex_Pieces( SWIFT_Tri_Mesh* m, bool color, bool vfaces, bool tcol,
 {
     int i, j;
 
-    if( m != NULL ) {
+    if( m != nullptr ) {
         glMatrixMode( GL_MODELVIEW );
         for( i = 0; i < wcps.Length(); i++ ) {
             if( explode ) {
@@ -326,21 +326,21 @@ void Draw_Hierarchy( SWIFT_Tri_Mesh* m, bool color, bool vfaces, bool tcol,
                                     which_pieces[i]->Other_Faces()[j] ) ] % 6 );
                             } else {
                                 if( which_pieces[i]->Other_Faces()[j]->
-                                    Edge1().Twin() != NULL
+                                    Edge1().Twin() != nullptr
                                 ) {
                                     Set_Color( piece_ids[ m->Face_Id(
                                         which_pieces[i]->Other_Faces()[j]->
                                         Edge1().Twin()->Twin()->Adj_Face() ) ]
                                                 % 6 );
                                 } else if( which_pieces[i]->Other_Faces()[j]->
-                                           Edge2().Twin() != NULL
+                                           Edge2().Twin() != nullptr
                                 ) {
                                     Set_Color( piece_ids[ m->Face_Id(
                                         which_pieces[i]->Other_Faces()[j]->
                                         Edge2().Twin()->Twin()->Adj_Face() ) ]
                                                 % 6 );
                                 } else if( which_pieces[i]->Other_Faces()[j]->
-                                           Edge3().Twin() != NULL
+                                           Edge3().Twin() != nullptr
                                 ) {
                                     Set_Color( piece_ids[ m->Face_Id(
                                         which_pieces[i]->Other_Faces()[j]->

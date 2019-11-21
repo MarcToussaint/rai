@@ -311,9 +311,9 @@ void TEST(Exception){
   bool caught=false;
   try{
     cout <<A(2);
-  }catch(const char *e){
+  }catch(const std::runtime_error& err){
     caught=true;
-    cout <<"exception caught `" <<e <<"'" <<endl;
+    cout <<"exception caught `" <<err.what() <<"'" <<endl;
   }
   CHECK(caught,"exception not caught");
 }
@@ -355,7 +355,7 @@ void TEST(BinaryIO){
   CHECK_ZERO(maxDiff(a,b), 1e-4, "ascii write-read error");
 
   rai::timerStart();
-  a.write(bout,NULL,NULL,NULL,true,true);
+  a.write(bout,nullptr,nullptr,nullptr,true,true);
   cout <<"binary write time: " <<rai::timerRead() <<"sec" <<endl;
   bout.close();
 

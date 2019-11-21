@@ -13,12 +13,15 @@
 #include <Kin/cameraview.h>
 #include <Gui/viewer.h>
 #include <LGP/LGP_tree.h>
+#include <Operate/robotOperation.h>
+#include <RosCom/rosCamera.h>
 
 struct BulletInterface;
+struct PhysXInterface;
 
 namespace ry{
 
-  typedef Var<rai::KinematicWorld> Config;
+  typedef Var<rai::Configuration> Config;
 
   struct ConfigViewer { ptr<KinViewer> view; };
   struct PathViewer { ptr<KinPoseViewer> view; };
@@ -27,19 +30,19 @@ namespace ry{
 
   struct RyKOMO{
     RyKOMO(){}
-    RyKOMO(ry::Config& self){
-      komo = make_shared<KOMO>(self.get());
+    RyKOMO(ry::Config& self, bool useSwift){
+      komo = make_shared<KOMO>(self.get(), useSwift);
       config.set() = komo->world;
       komo->setIKOpt();
     }
-    RyKOMO(ry::Config& self, uint numConfigs){
+    RyKOMO(ry::Config& self, uint numConfigs, bool useSwift){
       CHECK_GE(numConfigs, 1, "");
-      komo = make_shared<KOMO>(self.get());
+      komo = make_shared<KOMO>(self.get(), useSwift);
       config.set() = komo->world;
       komo->setDiscreteOpt(numConfigs);
     }
-    RyKOMO(ry::Config& self, double phases, uint stepsPerPhase, double timePerPhase){
-      komo = make_shared<KOMO>(self.get());
+    RyKOMO(ry::Config& self, double phases, uint stepsPerPhase, double timePerPhase, bool useSwift){
+      komo = make_shared<KOMO>(self.get(), useSwift);
       config.set() = komo->world;
       komo->setPathOpt(phases, stepsPerPhase, timePerPhase);
     }
@@ -48,14 +51,18 @@ namespace ry{
     }
 
     ptr<KOMO> komo;
-    Var<rai::KinematicWorld> config;
+    Var<rai::Configuration> config;
     Var<arr> path;
   };
 
   struct RyLGP_Tree { ptr<LGP_Tree_Thread> lgp; };
 
   struct RyFeature { ptr<Feature> feature; };
-  struct RyFrame { rai::Frame *frame=0; };
+
+  struct RyFrame {
+    ptr<Var_data<rai::Configuration>> config; //only to ensure the containing configuration is not destroyed
+    rai::Frame *frame=0;
+  };
 
   struct RyCameraView {
     ptr<rai::CameraView> cam;
@@ -66,6 +73,22 @@ namespace ry{
   };
 
   struct RyBullet { std::shared_ptr<BulletInterface> bullet; };
+
+  struct RyPhysX { std::shared_ptr<PhysXInterface> physx; };
+
+  struct RyOperate { std::shared_ptr<RobotOperation> R; };
+
+  struct RyCamera {
+    Var<byteA> rgb;
+    Var<floatA> depth;
+    std::shared_ptr<RosCamera> C;
+    RyCamera(const char* rosNodeName,
+             const char* rgb_topic,
+             const char* depth_topic,
+             bool useUint=false)
+      : C(make_shared<RosCamera>(rgb, depth, rosNodeName, rgb_topic, depth_topic, useUint)) {}
+  };
+
 }
 
 namespace ry{

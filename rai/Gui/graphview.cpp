@@ -42,7 +42,7 @@ struct sGraphView {
   GVC_t *gv_context;
   GVJ_t *gvJob() { return gvjobs_first(gv_context); }
   
-  sGraphView():gvGraph(NULL) {}
+  sGraphView():gvGraph(nullptr) {}
   void init();
   void updateGraphvizGraph(bool isSubGraph=false);
   void writeFile(const char* filename);
@@ -114,7 +114,7 @@ void sGraphView::updateGraphvizGraph(bool isSubGraph) {
   if(gvGraph) agclose(gvGraph);
   
   if(!isSubGraph) {
-    gvGraph = agopen(STR("new_graph"), Agdirected, NULL);
+    gvGraph = agopen(STR("new_graph"), Agdirected, nullptr);
     agattr(gvGraph, AGRAPH,STR("rankdir"), STR("LR"));
     agattr(gvGraph, AGRAPH,STR("ranksep"), STR("0.05"));
     
@@ -157,10 +157,10 @@ void sGraphView::updateGraphvizGraph(bool isSubGraph) {
       for(Node *n: e->parents) {
         if(n->index<e->index) {
 //          ge=agedge(gvGraph, gvNodes(n->index), gvNodes(e->index), STRING(label(n) <<"--" <<label(e)), true);
-          agedge(gvGraph, gvNodes(n->index), gvNodes(e->index), NULL, true);
+          agedge(gvGraph, gvNodes(n->index), gvNodes(e->index), nullptr, true);
         } else {
 //          ge=agedge(gvGraph, gvNodes(n->index), gvNodes(e->index), STRING(label(n) <<"--" <<label(e)), true);
-          agedge(gvGraph, gvNodes(n->index), gvNodes(e->index), NULL, true);
+          agedge(gvGraph, gvNodes(n->index), gvNodes(e->index), nullptr, true);
         }
 //        agset(ge, STR("label"), STRING(linkId));
 
@@ -188,7 +188,7 @@ void sGraphView::writeFile(const char* filename) {
 void sGraphView::init() {
   gtkLock();
   gv_context = ::gvContext();
-  char *bla[] = {STR("dot"), STR("-Tx11"), NULL};
+  char *bla[] = {STR("dot"), STR("-Tx11"), nullptr};
   gvParseArgs(gv_context, 2, bla);
   
   if(!container) {
@@ -204,13 +204,13 @@ void sGraphView::init() {
   gtk_widget_set_size_request(drawingarea, 300, 300);
   gtk_widget_set_events(drawingarea, GDK_EXPOSURE_MASK | GDK_POINTER_MOTION_MASK | GDK_BUTTON_MOTION_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK);
   
-  g_signal_connect((gpointer) container, "delete_event",  G_CALLBACK(on_container_delete_event),  NULL);
-  g_signal_connect((gpointer) drawingarea, "expose_event",  G_CALLBACK(on_drawingarea_expose_event),  NULL);
-  g_signal_connect((gpointer) drawingarea, "motion_notify_event",  G_CALLBACK(on_drawingarea_motion_notify_event),  NULL);
-  g_signal_connect((gpointer) drawingarea, "configure_event",  G_CALLBACK(on_drawingarea_configure_event),  NULL);
-  g_signal_connect((gpointer) drawingarea, "button_press_event",  G_CALLBACK(on_drawingarea_button_press_event),  NULL);
-  g_signal_connect((gpointer) drawingarea, "button_release_event",  G_CALLBACK(on_drawingarea_button_release_event),  NULL);
-  g_signal_connect((gpointer) drawingarea, "scroll_event",  G_CALLBACK(on_drawingarea_scroll_event),  NULL);
+  g_signal_connect((gpointer) container, "delete_event",  G_CALLBACK(on_container_delete_event),  nullptr);
+  g_signal_connect((gpointer) drawingarea, "expose_event",  G_CALLBACK(on_drawingarea_expose_event),  nullptr);
+  g_signal_connect((gpointer) drawingarea, "motion_notify_event",  G_CALLBACK(on_drawingarea_motion_notify_event),  nullptr);
+  g_signal_connect((gpointer) drawingarea, "configure_event",  G_CALLBACK(on_drawingarea_configure_event),  nullptr);
+  g_signal_connect((gpointer) drawingarea, "button_press_event",  G_CALLBACK(on_drawingarea_button_press_event),  nullptr);
+  g_signal_connect((gpointer) drawingarea, "button_release_event",  G_CALLBACK(on_drawingarea_button_release_event),  nullptr);
+  g_signal_connect((gpointer) drawingarea, "scroll_event",  G_CALLBACK(on_drawingarea_scroll_event),  nullptr);
   
   gtk_widget_show(container);
   gtkUnlock();

@@ -26,7 +26,7 @@ void OptGrad::reinit(const arr& _x) {
   if(o.verbose>1) cout <<"*** optGrad: starting point f(x)=" <<fx <<" alpha=" <<alpha <<endl;
   if(o.verbose>2) cout <<"             x=" <<x <<endl;
   if(o.verbose>0) fil.open("z.opt");
-  if(o.verbose>0) fil <<0 <<' ' <<eval_cost <<' ' <<fx <<' ' <<alpha;
+  if(o.verbose>0) fil <<0 <<' ' <<eval_count <<' ' <<fx <<' ' <<alpha;
   if(o.verbose>2) fil <<' ' <<x;
   if(o.verbose>0) fil <<endl;
 }
@@ -74,7 +74,7 @@ OptGrad::StopCriterion OptGrad::step() {
     }
   }
   
-  if(o.verbose>0) fil <<evals <<' ' <<eval_cost <<' ' <<fx <<' ' <<alpha;
+  if(o.verbose>0) fil <<evals <<' ' <<eval_count <<' ' <<fx <<' ' <<alpha;
   if(o.verbose>2) fil <<' ' <<x;
   if(o.verbose>0) fil <<endl;
   
@@ -95,7 +95,7 @@ OptGrad::~OptGrad() {
   if(o.fmin_return) *o.fmin_return=fx;
   if(o.verbose>0) fil.close();
 #ifndef RAI_MSVC
-//  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", NULL, true);
+//  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", nullptr, true);
 #endif
   if(o.verbose>1) cout <<"--- OptGradStop: f(x)=" <<fx <<endl;
 }
@@ -108,7 +108,7 @@ OptGrad::StopCriterion OptGrad::run(uint maxIt) {
     if(stopCriterion==stopCritLineSteps) { reinit();   continue; }
     if(stopCriterion>=stopCrit1) break;
   }
-//  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", NULL, false);
+//  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", nullptr, false);
   if(o.fmin_return) *o.fmin_return= fx;
   return stopCriterion;
 }
@@ -190,7 +190,7 @@ bool sRprop::step(arr& w, const arr& grad, uint *singleI) {
 bool Rprop::step(arr& x, const ScalarFunction& f) {
   arr grad;
   f(grad, NoArr, x);
-  return s->step(x, grad, NULL);
+  return s->step(x, grad, nullptr);
 }
 
 //----- the rprop wrapped with stopping criteria
@@ -219,8 +219,8 @@ uint Rprop::loop(arr& _x,
     //compute value and gradient at x
     fx = f(J, NoArr, x);  evals++;
     
-    if(verbose>0) fil <<evals <<' ' <<eval_cost <<' ' << fx <<' ' <<diff <<' ' <<x <<endl;
-    if(verbose>1) cout <<"optRprop " <<evals <<' ' <<eval_cost <<" \tf(x)=" <<fx <<" \tdiff=" <<diff <<" \tx=" <<(x.N<20?x:arr()) <<endl;
+    if(verbose>0) fil <<evals <<' ' <<eval_count <<' ' << fx <<' ' <<diff <<' ' <<x <<endl;
+    if(verbose>1) cout <<"optRprop " <<evals <<' ' <<eval_count <<" \tf(x)=" <<fx <<" \tdiff=" <<diff <<" \tx=" <<(x.N<20?x:arr()) <<endl;
     
     //infeasible point! undo the previous step
     if(fx!=fx) { //is NAN
@@ -253,7 +253,7 @@ uint Rprop::loop(arr& _x,
     }
     
     //update x
-    s->step(x, J, NULL);
+    s->step(x, J, nullptr);
     
     //check stopping criterion based on step-length in x
     diff=maxDiff(x, x_min);
@@ -263,7 +263,7 @@ uint Rprop::loop(arr& _x,
     if(evals>maxEvals) break;
   }
   if(verbose>0) fil.close();
-//  if(verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", NULL, true);
+//  if(verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", nullptr, true);
   if(fmin_return) *fmin_return= fx_min;
   _x=x_min;
   return evals;

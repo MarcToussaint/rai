@@ -9,9 +9,9 @@
 #include "TM_BeliefTransition.h"
 #include "frame.h"
 
-uint TM_BeliefTransition::dim_phi(const rai::KinematicWorld& G) {
+uint TM_BeliefTransition::dim_phi(const rai::Configuration& G) {
   uint n=0;
-  for(rai::Joint *j : G.fwdActiveJoints) if(j->uncertainty) {
+  for(rai::Joint *j : G.activeJoints) if(j->uncertainty) {
       n += j->dim;
     }
   return n;
@@ -35,7 +35,7 @@ double Forsyth(arr& J, const arr& x, double a) {
   return f;
 };
 
-void TM_BeliefTransition::phi(arr &y, arr &J, const WorldL &Ktuple) {
+void TM_BeliefTransition::phi(arr &y, arr &J, const ConfigurationL &Ktuple) {
   uint i=0;
   y.resize(dim_phi(*Ktuple.last())).setZero();
   if(!!J) J.resize(y.N, Ktuple.N, Ktuple.elem(-1)->q.N).setZero();
@@ -58,7 +58,7 @@ void TM_BeliefTransition::phi(arr &y, arr &J, const WorldL &Ktuple) {
     J_xi *= 2.;
   }
   
-  for(rai::Joint *j1 : Ktuple.elem(-1)->fwdActiveJoints) if(j1->uncertainty) {
+  for(rai::Joint *j1 : Ktuple.elem(-1)->activeJoints) if(j1->uncertainty) {
       rai::Joint *j0 = Ktuple.elem(-2)->frames(j1->frame->ID)->joint;
       CHECK(j0, "");
       CHECK(j0->uncertainty, "");

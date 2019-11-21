@@ -7,14 +7,14 @@
     --------------------------------------------------------------  */
 
 #include "BayesOpt.h"
-#include <Plot/plot.h>
-
-#include <Algo/MLcourse.h>
+#include "RidgeRegression.h"
+//#include <Plot/plot.h>
+//#include <Algo/MLcourse.h>
 
 BayesOpt::BayesOpt(const ScalarFunction& _f, const arr& bounds_lo, const arr& bounds_hi, double init_lengthScale, double prior_var, OptOptions o)
   : f(_f),
     bounds_lo(bounds_lo), bounds_hi(bounds_hi),
-    f_now(NULL), f_smaller(NULL),
+    f_now(nullptr), f_smaller(nullptr),
     alphaMinima_now(ScalarFunction(), bounds_lo, bounds_hi),
     alphaMinima_smaller(ScalarFunction(), bounds_lo, bounds_hi) {
     
@@ -89,6 +89,9 @@ void BayesOpt::report(bool display, const ScalarFunction& f) {
     locmin2_y.append(l.fx);
   }
   
+#if 1
+  HALT("dependence on plot deprecated")
+#else
   plotGnuplot();
   plotClear();
   plotFunctionPrecision(X_grid, y_grid, y_grid+s_grid, y_grid-s_grid);
@@ -100,6 +103,7 @@ void BayesOpt::report(bool display, const ScalarFunction& f) {
 //  plotPoints(locmin_X, locmin_y);
 //  plotPoints(locmin2_X, locmin2_y);
   plot(false);
+#endif
 }
 
 void BayesOpt::addDataPoint(const arr& x, double y) {

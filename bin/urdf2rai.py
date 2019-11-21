@@ -9,10 +9,15 @@ xmlData = etree.parse(inFile)
 def writeShape(link):
     elem = link.find("origin")
     if elem is not None:
-        if elem.find("rby") is not None:
-           print 'rel:<T t(%s) E(%s)>' % (elem.attrib['xyz'], elem.attrib['rpy']),
+        xyz = elem.attrib.get('xyz')
+        rpy = elem.attrib.get('rpy')
+        if xyz is not None and rpy is not None:
+            print 'Q:<t(%s) E(%s)>' % (xyz, rpy),
         else:
-           print 'rel:<T t(%s)>' % elem.attrib['xyz'],
+            if rpy is not None:
+                print 'Q:<E(%s)>' % (rpy),
+            if xyz is not None:
+                print 'Q:<t(%s)>' % (xyz),
 
     elem = link.find("geometry/box")
     if elem is not None:
@@ -104,11 +109,15 @@ for joint in joints:
 
         elem = joint.find("origin")
         if elem is not None:
-            att = elem.attrib.get('rpy')
-            if att is not None:
-                print 'A:<T t(%s) E(%s)>' % (elem.attrib['xyz'], att),
+            xyz = elem.attrib.get('xyz')
+            rpy = elem.attrib.get('rpy')
+            if xyz is not None and rpy is not None:
+                print 'A:<t(%s) E(%s)>' % (xyz, rpy),
             else:
-                print 'A:<T t(%s)>' % (elem.attrib['xyz']),
+                if rpy is not None:
+                    print 'A:<E(%s)>' % (rpy),
+                if xyz is not None:
+                    print 'A:<t(%s)>' % (xyz),
 
         elem = joint.find("safety_controller")
         if elem is not None:

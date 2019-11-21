@@ -42,7 +42,7 @@ struct SimulationThread_self{
 };
 
 
-SimulationThread::SimulationThread(const rai::KinematicWorld& _K, double dt, bool _pubSubToROS)
+SimulationThread::SimulationThread(const rai::Configuration& _K, double dt, bool _pubSubToROS)
   : Thread("SimulationIO", dt),
     SIM(_K, dt),
     pubSubToROS(_pubSubToROS) {
@@ -89,7 +89,7 @@ void SimulationThread::step(){
 
   SIM.stepKin();
 
-  K.set()->setFrameState(SIM.getFrameState(), {}, true, false);
+  K.set()->setFrameState(SIM.getFrameState(), {}, true);
   frameState.set() = SIM.getFrameState();
   jointState.set() = SIM.getJointState();
   timeToGo.set() = SIM.getTimeToGo();
@@ -123,10 +123,10 @@ bool SimulationThread::executeMotion(const StringA& joints, const arr& path, con
 void SimulationThread::execGripper(const rai::String& gripper, double position, double force){
   auto lock = stepMutex(RAI_HERE);
   if(gripper=="pr2R"){
-    //  komo->addObjective(0., 0., OT_eq, FS_accumulatedCollisions, {}, 1e0);
+    //  komo->addObjective(0., 0., FS_accumulatedCollisions, {}, OT_eq, 1e0);
     //open gripper
-    //  komo->addObjective(0.,0., OT_sos, FS_qItself, {"r_gripper_joint"}, 1e1, {.08} );
-    //  komo->addObjective(0.,0., OT_sos, FS_qItself, {"r_gripper_l_finger_joint"}, 1e1, {.8} );
+    //  komo->addObjective(0.,0., FS_qItself, {"r_gripper_joint"}, OT_sos, 1e1, {.08} );
+    //  komo->addObjective(0.,0., FS_qItself, {"r_gripper_l_finger_joint"}, OT_sos, 1e1, {.8} );
 
     SIM.setUsedRobotJoints({"r_gripper_joint", "r_gripper_l_finger_joint"});
     SIM.exec({1,2, {position, position*10.}}, {1.}, true);
@@ -164,7 +164,7 @@ void SimulationThread::addFile(const char* filename, const char* parentOfRoot, c
   auto lock = stepMutex(RAI_HERE);
   SIM.K.addFile(filename, parentOfRoot, relOfRoot);
   SIM.K.calc_activeSets();
-  SIM.K.calc_fwdPropagateFrames();
+  //SIM.K.calc_fwdPropagateFrames();
   SIM.K.checkConsistency();
   K.set() = SIM.K;
 }

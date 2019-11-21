@@ -3,7 +3,7 @@
 byteA img;
 
 void Draw(void*){
-  glStandardScene(NULL);
+  glStandardScene(nullptr);
 
   glDisable(GL_CULL_FACE);
   glEnable(GL_TEXTURE_2D);
@@ -29,7 +29,7 @@ void Draw(void*){
 int main(int argc, char **argv){
   read_ppm(img, "box.ppm", false);
   OpenGL gl;
-  gl.add(Draw, NULL);
+  gl.add(Draw, nullptr);
   gl.background = img;
   gl.watch();
   return 0;

@@ -8,9 +8,7 @@
 
 #pragma once
 
-#ifndef RAI_ROS
-# error "Sorry, you can include this only when compiling against ROS"
-#endif
+#ifdef RAI_ROS
 
 #include <tf/transform_listener.h>
 #include <tf/tf.h>
@@ -52,9 +50,9 @@
 // utils
 //
 
-void rosCheckInit(const char* node_name="pr2_module");
+void rosCheckInit(const char* node_name="rai_node");
 bool rosOk();
-struct RosInit { RosInit(const char* node_name="rai_module"); };
+struct RosInit { RosInit(const char* node_name="rai_node"); };
 
 //-- ROS <--> RAI
 std_msgs::String    conv_string2string(const rai::String&);
@@ -72,6 +70,9 @@ timespec            conv_time2timespec(const ros::Time&);
 arr                 conv_wrench2arr(const geometry_msgs::WrenchStamped& msg);
 byteA               conv_image2byteA(const sensor_msgs::Image& msg);
 uint16A             conv_image2uint16A(const sensor_msgs::Image& msg);
+floatA              conv_imageu162floatA(const sensor_msgs::Image& msg);
+floatA              conv_imageFloat32_floatA(const sensor_msgs::Image& msg);
+
 floatA              conv_laserScan2arr(const sensor_msgs::LaserScan& msg);
 #ifdef RAI_PCL
 PclC                 conv_pointcloud22pcl(const sensor_msgs::PointCloud2& msg);
@@ -80,7 +81,7 @@ arr                 conv_points2arr(const std::vector<geometry_msgs::Point>& pts
 arr                 conv_colors2arr(const std::vector<std_msgs::ColorRGBA>& pts);
 CtrlMsg             conv_JointState2CtrlMsg(const rai_msgs::JointState& msg);
 arr                 conv_JointState2arr(const sensor_msgs::JointState& msg);
-rai::KinematicWorld conv_MarkerArray2KinematicWorld(const visualization_msgs::MarkerArray& markers);
+rai::Configuration conv_MarkerArray2Configuration(const visualization_msgs::MarkerArray& markers);
 std_msgs::Float32MultiArray conv_floatA2Float32Array(const floatA&);
 std_msgs::Float64MultiArray conv_arr2Float64Array(const arr&);
 arr conv_arr2arr(const rai_msgs::arr& x);
@@ -100,11 +101,11 @@ rai_msgs::JointState   conv_CtrlMsg2JointState(const CtrlMsg& ctrl);
 floatA conv_Float32Array2FloatA(const std_msgs::Float32MultiArray&);
 arr conv_Float32Array2arr(const std_msgs::Float32MultiArray &msg);
 visualization_msgs::Marker conv_Shape2Marker(const rai::Shape& sh);
-visualization_msgs::MarkerArray conv_Kin2Markers(const rai::KinematicWorld& K);
+visualization_msgs::MarkerArray conv_Kin2Markers(const rai::Configuration& K);
 
 //-- get transformations
 rai::Transformation ros_getTransform(const std::string& from, const std::string& to, tf::TransformListener& listener);
-rai::Transformation ros_getTransform(const std::string& from, const std_msgs::Header& to, tf::TransformListener& listener, tf::Transform* returnRosTransform=NULL);
+rai::Transformation ros_getTransform(const std::string& from, const std_msgs::Header& to, tf::TransformListener& listener, tf::Transform* returnRosTransform=nullptr);
 bool ros_getTransform(const std::string& from, const std::string& to, tf::TransformListener& listener, rai::Transformation& result);
 
 struct SubscriberType { virtual ~SubscriberType() {} }; ///< if types derive from RootType, more tricks are possible
@@ -117,10 +118,10 @@ struct SubscriberType { virtual ~SubscriberType() {} }; ///< if types derive fro
 template<class msg_type>
 struct Subscriber : SubscriberType {
   Var<msg_type>& var;
-  ros::NodeHandle *nh=NULL;
+  ros::NodeHandle *nh=nullptr;
   ros::Subscriber sub;
   uint revision=0;
-  Subscriber(Var<msg_type>& _var, const char* topic_name=NULL)
+  Subscriber(Var<msg_type>& _var, const char* topic_name=nullptr)
     : var(_var) {
     if(rai::getParameter<bool>("useRos", true)) {
       if(!topic_name) topic_name = var.name();
@@ -151,9 +152,9 @@ struct Publisher : Thread {
   Publisher(const Var<msg_type>& _var)
     : Thread(STRING("Publisher_"<<_var.name()), -1.),
       var(this, _var, true),
-      nh(NULL) {
+      nh(nullptr) {
     if(rai::getParameter<bool>("useRos", true)) {
-      rai::String topic_name = STRING("rai/" <<var.name());
+      rai::String topic_name = var.name();
       LOG(0) <<"publishing to topic '" <<topic_name <<"' <" <<typeid(msg_type).name() <<">";
       nh = new ros::NodeHandle;
       pub = nh->advertise<msg_type>(topic_name.p, 1);
@@ -187,8 +188,8 @@ struct SubscriberConv : SubscriberType {
   ros::NodeHandle *nh;
   ros::Subscriber sub;
   tf::TransformListener *listener;
-  SubscriberConv(Var<var_type>& _var, const char* topic_name=NULL, Var<rai::Transformation> *_frame=NULL)
-    : var(NULL, _var), frame(_frame), nh(NULL), listener(NULL) {
+  SubscriberConv(Var<var_type>& _var, const char* topic_name=nullptr, Var<rai::Transformation> *_frame=nullptr)
+    : var(nullptr, _var), frame(_frame), nh(nullptr), listener(nullptr) {
     if(rai::getParameter<bool>("useRos", true)) {
       if(!topic_name) topic_name = var.name();
       nh = new ros::NodeHandle;
@@ -198,8 +199,8 @@ struct SubscriberConv : SubscriberType {
       sub = nh->subscribe(topic_name, 1, &SubscriberConv::callback, this);
     }
   }
-  SubscriberConv(const char* topic_name, const char* var_name, Var<rai::Transformation> *_frame=NULL)
-    : var(NULL, var_name), frame(_frame), nh(NULL), listener(NULL) {
+  SubscriberConv(const char* topic_name, const char* var_name, Var<rai::Transformation> *_frame=nullptr)
+    : var(nullptr, var_name), frame(_frame), nh(nullptr), listener(nullptr) {
     if(rai::getParameter<bool>("useRos", true)) {
       if(!topic_name) topic_name = var_name;
       nh = new ros::NodeHandle;
@@ -232,8 +233,8 @@ struct SubscriberConvNoHeader : SubscriberType {
   Var<var_type> var;
   ros::NodeHandle *nh;
   ros::Subscriber sub;
-  SubscriberConvNoHeader(Var<var_type>& _var, const char* topic_name=NULL)
-    : var(NULL, _var), nh(NULL) {
+  SubscriberConvNoHeader(Var<var_type>& _var, const char* topic_name=nullptr)
+    : var(nullptr, _var), nh(nullptr) {
     if(rai::getParameter<bool>("useRos", true)) {
       if(!topic_name) topic_name = var.name();
       nh = new ros::NodeHandle;
@@ -242,8 +243,8 @@ struct SubscriberConvNoHeader : SubscriberType {
       sub = nh->subscribe(topic_name, 1, &SubscriberConvNoHeader::callback, this);
     }
   }
-  SubscriberConvNoHeader(const char* var_name, const char* topic_name=NULL)
-    : var(NULL, var_name), nh(NULL) {
+  SubscriberConvNoHeader(const char* var_name, const char* topic_name=nullptr)
+    : var(nullptr, var_name), nh(nullptr) {
     if(rai::getParameter<bool>("useRos", true)) {
       if(!topic_name) topic_name = var_name;
       nh = new ros::NodeHandle;
@@ -273,10 +274,10 @@ struct PublisherConv : Thread {
   ros::Publisher pub;
   rai::String topic_name;
   
-  PublisherConv(const Var<var_type>& _var, const char* _topic_name=NULL, double beatIntervalSec=-1.)
+  PublisherConv(const Var<var_type>& _var, const char* _topic_name=nullptr, double beatIntervalSec=-1.)
     : Thread(STRING("Publisher_"<<_var.name() <<"->" <<_topic_name), beatIntervalSec),
       var(this, _var, beatIntervalSec<0.),
-      nh(NULL),
+      nh(nullptr),
       topic_name(_topic_name) {
     if(rai::getParameter<bool>("useRos", true)) {
       if(!_topic_name) topic_name = var.name();
@@ -286,10 +287,10 @@ struct PublisherConv : Thread {
       rai::wait(.1); //I hate this -- no idea why the publisher isn't ready right away..
     }
   }
-  PublisherConv(const char* var_name, const char* _topic_name=NULL, double beatIntervalSec=-1.)
+  PublisherConv(const char* var_name, const char* _topic_name=nullptr, double beatIntervalSec=-1.)
     : Thread(STRING("Publisher_"<<var_name <<"->" <<_topic_name), beatIntervalSec),
       var(this, var_name, beatIntervalSec<0.),
-      nh(NULL),
+      nh(nullptr),
       topic_name(_topic_name) {
     if(rai::getParameter<bool>("useRos", true)) {
       if(!_topic_name) topic_name = var_name;
@@ -317,7 +318,6 @@ struct PublisherConv : Thread {
 //===========================================================================
 
 struct RosCom {
-  struct RosCom_Spinner* spinner;
   RosCom(const char* node_name="rai_module");
   ~RosCom();
   template<class T, class P> void publish(std::shared_ptr<P>& pub, Var<T>& v, bool wait=true) {
@@ -335,3 +335,10 @@ struct RosCom {
   template<class T> std::shared_ptr<Subscriber<T>> subscribe(Var<T>& v) { return std::make_shared<Subscriber<T>>(v); }
   template<class T> std::shared_ptr<Publisher<T>> publish(Var<T>& v) { return std::make_shared<Publisher<T>>(v); }
 };
+
+#else
+
+#include <Core/util.h>
+inline void rosCheckInit(const char* node_name="rai_node"){ NICO }
+
+#endif

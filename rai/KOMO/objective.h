@@ -17,26 +17,13 @@ struct Objective {
   rai::String name;
   intA vars; //either a (0,1)-indicator per time slice, or a list of variable tuples
   
-  Objective(const ptr<Feature>& _map, const ObjectiveType& _type) : map(_map), type(_type) {}
+  Objective(const ptr<Feature>& _map, const ObjectiveType& _type, const rai::String& _name=rai::String()) : map(_map), type(_type), name(_name) {}
   ~Objective() {}
   
-  void setCostSpecs(int fromStep, int toStep);
-  void setCostSpecs(double fromTime, double toTime, int stepsPerPhase, uint T,
-                    int deltaFromStep=0, int deltaToStep=0);
-  void setCostSpecsDense(const intA& _vars);
+  void setCostSpecs(int fromStep, int toStep, bool sparse=false);
+  void setCostSpecs(const arr& times, int stepsPerPhase, uint T,
+                    int deltaFromStep=0, int deltaToStep=0, bool sparse=false);
   bool isActive(uint t);
-  void write(std::ostream& os) const {
-    os <<"TASK '" <<name <<"'";
-    if(vars.N){
-      if(vars.d0==1){
-        if(vars.N>4) writeConsecutiveConstant(os,vars);
-        else os <<" ("<<vars <<')';
-      }else os <<" (" <<vars.first() <<".." <<vars.last() <<')';
-    }else os <<" ()";
-    os <<"  type=" <<type
-       <<"  order=" <<map->order
-       <<"  target=[" <<map->target <<']'
-       <<"  scale=" <<map->scale;
-  }
+  void write(std::ostream& os) const;
 };
 stdOutPipe(Objective)

@@ -21,13 +21,13 @@ void testGraphProblem() {
        <<endl;
 
   //-- convert to GraphProblem
-  KOMO_GraphProblem G(P);
+  //  KOMO_GraphProblem G(P);
 
   //-- convert directly to ConstrainedProblem (efficient)
   Conv_KOMO_ConstrainedProblem C2(P); //(direct conversion - just for testing..)
 
   //-- convert to unstructued ConstrainedProblem (not efficient yet)
-  Conv_Graph_ConstrainedProblem C(G);
+  //  Conv_Graph_ConstrainedProblem C(G);
 
   //-- gradient check: this is slow!
   arr x(sum(d));
@@ -35,8 +35,8 @@ void testGraphProblem() {
   for(uint k=0;k<0;k++){
     rndUniform(x,-1.,1.);
     P.checkStructure(x);
-    checkJacobianCP(C, x, 1e-3);
-//    checkJacobianCP(C2, x, 1e-3);
+    //    checkJacobianCP(C, x, 1e-3);
+    checkJacobianCP(C2, x, 1e-3);
   }
 
   //-- optimize

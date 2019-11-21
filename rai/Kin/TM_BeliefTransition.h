@@ -12,10 +12,10 @@
 
 struct TM_BeliefTransition : Feature {
   Feature *viewError;
-  TM_BeliefTransition(Feature *viewError = NULL) : viewError(viewError) {}
+  TM_BeliefTransition(Feature *viewError = nullptr) : viewError(viewError) {}
   ~TM_BeliefTransition() { if(viewError) delete viewError; }
-  virtual void phi(arr& y, arr& J, const WorldL& Ktuple);
-  virtual void phi(arr& y, arr& J, const rai::KinematicWorld& G) { HALT("can only be of higher order"); }
-  virtual uint dim_phi(const rai::KinematicWorld& G);
-  virtual rai::String shortTag(const rai::KinematicWorld& G) { return STRING("BeliefTransition"); }
+  virtual void phi(arr& y, arr& J, const ConfigurationL& Ktuple);
+  virtual void phi(arr& y, arr& J, const rai::Configuration& G) { HALT("can only be of higher order"); }
+  virtual uint dim_phi(const rai::Configuration& G);
+  virtual rai::String shortTag(const rai::Configuration& G) { return STRING("BeliefTransition"); }
 };

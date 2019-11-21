@@ -10,7 +10,7 @@
 #define BEGIN_MODULE(name) \
   struct name : Thread { \
     struct s##name *s; \
-    name(): Thread(#name), s(NULL) {} \
+    name(): Thread(#name), s(nullptr) {} \
     virtual void open(); \
     virtual void step(); \
     virtual void close();

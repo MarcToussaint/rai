@@ -47,7 +47,7 @@ extern void glDrawText(const char* txt, float x, float y, float z);
  * @param graph the ors graph.
  * @param gl OpenGL which shows the ors graph.
  */
-void bindOrsToOpenGL(rai::KinematicWorld& graph, OpenGL& gl) {
+void bindOrsToOpenGL(rai::Configuration& graph, OpenGL& gl) {
   gl.add(glStandardScene, 0);
   gl.add(rai::glDrawGraph, &graph);
 //  gl.setClearColors(1., 1., 1., 1.);
@@ -67,9 +67,9 @@ void bindOrsToOpenGL(rai::KinematicWorld& graph, OpenGL& gl) {
 
 #ifndef RAI_ORS_ONLY_BASICS
 
-/// static GL routine to draw a rai::KinematicWorld
+/// static GL routine to draw a rai::Configuration
 void rai::glDrawGraph(void *classP) {
-  ((rai::KinematicWorld*)classP)->glDraw(NoOpenGL);
+  ((rai::Configuration*)classP)->glDraw(NoOpenGL);
 }
 
 void rai::Shape::glDraw(OpenGL& gl) {
@@ -171,8 +171,8 @@ void rai::Shape::glDraw(OpenGL& gl) {
   glPopName();
 }
 
-/// GL routine to draw a rai::KinematicWorld
-void rai::KinematicWorld::glDraw(OpenGL& gl) {
+/// GL routine to draw a rai::Configuration
+void rai::Configuration::glDraw(OpenGL& gl) {
   uint i=0;
   rai::Transformation f;
   double GLmatrix[16];
@@ -262,21 +262,21 @@ void rai::KinematicWorld::glDraw(OpenGL& gl) {
   glPopMatrix();
 }
 
-void displayState(const arr& x, rai::KinematicWorld& G, const char *tag) {
+void displayState(const arr& x, rai::Configuration& G, const char *tag) {
   G.setJointState(x);
   G.gl().watch(tag);
 }
 
-void displayTrajectory(const arr& _x, int steps, rai::KinematicWorld& G, const KinematicSwitchL& switches, const char *tag, double delay, uint dim_z, bool copyG) {
+void displayTrajectory(const arr& _x, int steps, rai::Configuration& G, const KinematicSwitchL& switches, const char *tag, double delay, uint dim_z, bool copyG) {
   if(!steps) return;
   for(rai::Shape *s : G.shapes) if(s->mesh.V.d0!=s->mesh.Vn.d0 || s->mesh.T.d0!=s->mesh.Tn.d0) {
       s->mesh.computeNormals();
     }
-  rai::KinematicWorld *Gcopy;
+  rai::Configuration *Gcopy;
   if(switches.N) copyG=true;
   if(!copyG) Gcopy=&G;
   else {
-    Gcopy = new rai::KinematicWorld;
+    Gcopy = new rai::Configuration;
     Gcopy->copy(G,true);
   }
   arr x,z;
@@ -447,7 +447,7 @@ void _glDrawOdeWorld(dWorldID world)
 }
 */
 
-void animateConfiguration(rai::KinematicWorld& C, Inotify *ino) {
+void animateConfiguration(rai::Configuration& C, Inotify *ino) {
   arr x, x0;
   uint t, i;
   C.getJointState(x0);
@@ -479,13 +479,13 @@ void animateConfiguration(rai::KinematicWorld& C, Inotify *ino) {
   C.gl().update("", false, false, true);
 }
 
-rai::Body *movingBody=NULL;
+rai::Body *movingBody=nullptr;
 rai::Vector selpos;
 double seld, selx, sely, selz;
 
 struct EditConfigurationClickCall:OpenGL::GLClickCall {
-  rai::KinematicWorld *ors;
-  EditConfigurationClickCall(rai::KinematicWorld& _ors) { ors=&_ors; }
+  rai::Configuration *ors;
+  EditConfigurationClickCall(rai::Configuration& _ors) { ors=&_ors; }
   bool clickCallback(OpenGL& gl) {
     OpenGL::GLSelect *top=gl.topSelection;
     if(!top) return false;
@@ -512,13 +512,13 @@ struct EditConfigurationClickCall:OpenGL::GLClickCall {
 };
 
 struct EditConfigurationHoverCall:OpenGL::GLHoverCall {
-  rai::KinematicWorld *ors;
-  EditConfigurationHoverCall(rai::KinematicWorld& _ors);// { ors=&_ors; }
+  rai::Configuration *ors;
+  EditConfigurationHoverCall(rai::Configuration& _ors);// { ors=&_ors; }
   bool hoverCallback(OpenGL& gl) {
 //    if(!movingBody) return false;
     if(!movingBody) {
-      rai::Joint *j=NULL;
-      rai::Shape *s=NULL;
+      rai::Joint *j=nullptr;
+      rai::Shape *s=nullptr;
       rai::timerStart(true);
       gl.Select(true);
       OpenGL::GLSelect *top=gl.topSelection;
@@ -551,19 +551,19 @@ struct EditConfigurationHoverCall:OpenGL::GLHoverCall {
   }
 };
 
-EditConfigurationHoverCall::EditConfigurationHoverCall(rai::KinematicWorld& _ors) {
+EditConfigurationHoverCall::EditConfigurationHoverCall(rai::Configuration& _ors) {
   ors=&_ors;
 }
 
 struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
-  rai::KinematicWorld &ors;
+  rai::Configuration &ors;
   bool &exit;
-  EditConfigurationKeyCall(rai::KinematicWorld& _ors, bool& _exit): ors(_ors), exit(_exit) {}
+  EditConfigurationKeyCall(rai::Configuration& _ors, bool& _exit): ors(_ors), exit(_exit) {}
   bool keyCallback(OpenGL& gl) {
     if(gl.pressedkey==' ') { //grab a body
-      if(movingBody) { movingBody=NULL; return true; }
-      rai::Joint *j=NULL;
-      rai::Shape *s=NULL;
+      if(movingBody) { movingBody=nullptr; return true; }
+      rai::Joint *j=nullptr;
+      rai::Shape *s=nullptr;
       gl.Select();
       OpenGL::GLSelect *top=gl.topSelection;
       if(!top) { cout <<"No object below mouse!" <<endl;  return false; }
@@ -620,7 +620,7 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
   }
 };
 
-void editConfiguration(const char* filename, rai::KinematicWorld& C) {
+void editConfiguration(const char* filename, rai::Configuration& C) {
 //  gl.exitkeys="1234567890qhjklias, "; //TODO: move the key handling to the keyCall!
   bool exit=false;
 //  C.gl().addHoverCall(new EditConfigurationHoverCall(C));
@@ -629,7 +629,7 @@ void editConfiguration(const char* filename, rai::KinematicWorld& C) {
   Inotify ino(filename);
   for(; !exit;) {
     cout <<"reloading `" <<filename <<"' ... " <<std::endl;
-    rai::KinematicWorld W;
+    rai::Configuration W;
     try {
       rai::lineCount=1;
       W <<FILE(filename);
@@ -658,7 +658,7 @@ void editConfiguration(const char* filename, rai::KinematicWorld& C) {
 }
 
 #if 0 //RAI_ODE
-void testSim(const char* filename, rai::KinematicWorld *C, Ode *ode) {
+void testSim(const char* filename, rai::Configuration *C, Ode *ode) {
   C.gl().watch();
   uint t, T=200;
   arr x, v;
@@ -681,14 +681,14 @@ void testSim(const char* filename, rai::KinematicWorld *C, Ode *ode) {
 
 #else ///RAI_GL
 #ifndef RAI_ORS_ONLY_BASICS
-void bindOrsToOpenGL(rai::KinematicWorld&, OpenGL&) { NICO };
-void rai::KinematicWorld::glDraw(OpenGL&) { NICO }
+void bindOrsToOpenGL(rai::Configuration&, OpenGL&) { NICO };
+void rai::Configuration::glDraw(OpenGL&) { NICO }
 void rai::glDrawGraph(void *classP) { NICO }
-void editConfiguration(const char* orsfile, rai::KinematicWorld& C) { NICO }
-void animateConfiguration(rai::KinematicWorld& C, Inotify*) { NICO }
+void editConfiguration(const char* orsfile, rai::Configuration& C) { NICO }
+void animateConfiguration(rai::Configuration& C, Inotify*) { NICO }
 void glTransform(const rai::Transformation&) { NICO }
-void displayTrajectory(const arr&, int, rai::KinematicWorld&, const char*, double) { NICO }
-void displayState(const arr&, rai::KinematicWorld&, const char*) { NICO }
+void displayTrajectory(const arr&, int, rai::Configuration&, const char*, double) { NICO }
+void displayState(const arr&, rai::Configuration&, const char*) { NICO }
 #endif
 #endif
 /** @} */
