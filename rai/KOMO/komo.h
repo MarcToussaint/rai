@@ -260,7 +260,7 @@ struct KOMO : NonCopyable {
   void setInitialConfigurations(const arr& q);
   void initWithConstant(const arr& q);
   void initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase=1, bool sineProfile=true);
-  void run();                        ///< run the optimization (using OptConstrained -- its parameters are read from the cfg file)
+  void run(const OptOptions options=NOOPT);                        ///< run the optimization (using OptConstrained -- its parameters are read from the cfg file)
   void run_sub(const uintA& X, const uintA& Y);
   void optimize(bool initialize=true);
 

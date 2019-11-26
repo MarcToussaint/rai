@@ -1399,8 +1399,9 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, 
   for(uint i=0;i<steps.N;i++) {
     uint Tstop=T;
     if(i+1<steps.N && steps(i+1)<T) Tstop=steps(i+1);
-    for(uint t=steps(i); t<Tstop; t++)
+    for(uint t=steps(i); t<Tstop; t++){
       configurations(k_order+t)->setJointState(waypoints(i));
+    }  
   }
 
   //interpolate
@@ -1434,7 +1435,7 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, 
   reset(0.);
 }
 
-void KOMO::run() {
+void KOMO::run(const OptOptions options) {
   Configuration::setJointStateCount=0;
   double timeZero = timerStart();
   CHECK(T,"");
@@ -1442,7 +1443,7 @@ void KOMO::run() {
   if(opt) delete opt;
   if(denseOptimization){
     CHECK(!splineB.N, "NIY");
-    OptConstrained _opt(x, dual, dense_problem, rai::MAX(verbose-2, 0));
+    OptConstrained _opt(x, dual, dense_problem, rai::MAX(verbose-2, 0), options);
 //    OptPrimalDual _opt(x, dual, dense_problem, rai::MAX(verbose-2, 0));
     _opt.logFile = logFile;
     _opt.run();
@@ -1453,7 +1454,7 @@ void KOMO::run() {
 //    ModGraphProblem selG(graph_problem);
 //    Conv_Graph_ConstrainedProblem C(selG);
     Conv_Graph_ConstrainedProblem C(graph_problem, logFile);
-    OptConstrained _opt(x, dual, C, rai::MAX(verbose-2, 0), NOOPT, logFile);
+    OptConstrained _opt(x, dual, C, rai::MAX(verbose-2, 0), options, logFile);
 //    OptPrimalDual _opt(x, dual, C, rai::MAX(verbose-2, 0));
     _opt.run();
     {
@@ -1471,7 +1472,7 @@ void KOMO::run() {
 #endif
   } else if(!splineB.N) { //DEFAULT CASE
     Convert C(komo_problem);
-    opt = new OptConstrained(x, dual, C, rai::MAX(verbose-2, 0));
+    opt = new OptConstrained(x, dual, C, rai::MAX(verbose-2, 0), options);
     opt->logFile = logFile;
     opt->run();
   } else {
