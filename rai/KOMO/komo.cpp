@@ -1377,7 +1377,13 @@ void KOMO::reset(double initNoise) {
 }
 
 void KOMO::setInitialConfigurations(const arr& q){
-  for(uint s=0;s<k_order;s++) configurations(s)->setJointState(q);
+  for(uint s=0;s<k_order;s++){
+    configurations(s)->setJointState(q);
+  }
+}
+
+void KOMO::setConfiguration(int t, const arr& q){
+  configurations(t+k_order)->setJointState(q);
 }
 
 void KOMO::initWithConstant(const arr& q){
