@@ -27,3 +27,9 @@ struct Objective {
   void write(std::ostream& os) const;
 };
 stdOutPipe(Objective)
+
+struct GroundedObjective {
+  ConfigurationL Ctuple;
+  intA signature;
+  uint dim;
+};

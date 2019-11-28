@@ -64,7 +64,7 @@ KOMO::KOMO(const Configuration& C, bool _useSwift)
   : KOMO() {
   setModel(C, _useSwift);
   world.optimizeTree();
-  world.calc_q();
+  world.ensure_q();
 }
 
 KOMO::~KOMO() {
@@ -81,7 +81,7 @@ void KOMO::setModel(const Configuration& C, bool _useSwift) {
   if(&C!=&world) world.copy(C, _useSwift);
   useSwift = _useSwift;
   if(useSwift) world.swift();
-  world.calc_q();
+  world.ensure_q();
 }
 
 void KOMO_ext::useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThese) {
@@ -133,7 +133,7 @@ void KOMO::deactivateCollisions(const char* s1, const char* s2) {
 }
 
 void KOMO::setTimeOptimization() {
-  world.addTimeJoint();
+  world.addTauJoint();
   Objective* o = addObjective({}, make_shared<TM_Time>(), OT_sos, {1e2}, {}, 1); //smooth time evolution
 #if 1 //break the constraint at phase switches:
   CHECK(o->vars.nd==1 && o->vars.N==T, "");
@@ -529,7 +529,7 @@ void KOMO::setSquaredQAccVelHoming(double startTime, double endTime, double accP
 
   uintA selectedBodies;
   arr scale;
-  for(rai::Frame* f:world.frames) if(f->joint && f->joint->dim>0 && f->joint->H>0. && f->joint->type!=JT_time && f->joint->active) {
+  for(rai::Frame* f:world.frames) if(f->joint && f->joint->dim>0 && f->joint->H>0. && f->joint->type!=JT_tau && f->joint->active) {
       CHECK(!f->joint->mimic, "")
       selectedBodies.append(TUP(f->ID, f->parent->ID));
       scale.append(f->joint->H, f->joint->dim);
@@ -935,7 +935,7 @@ void KOMO::setSlow(double startTime, double endTime, double prec, bool hardConst
   if(stepsPerPhase>2) { //otherwise: no velocities
 #if 1
     uintA selectedBodies;
-    for(rai::Frame* f:world.frames) if(f->joint && f->joint->dim>0 && f->joint->dim<7 && f->joint->type!=rai::JT_time && f->joint->active && f->joint->H>0.) {
+    for(rai::Frame* f:world.frames) if(f->joint && f->joint->dim>0 && f->joint->dim<7 && f->joint->type!=rai::JT_tau && f->joint->active && f->joint->H>0.) {
         selectedBodies.append(TUP(f->ID, f->parent->ID));
       }
     selectedBodies.reshape(selectedBodies.N/2, 2);
@@ -1808,13 +1808,12 @@ void KOMO::setupConfigurations() {
   //IMPORTANT: The configurations need to include the k prefix configurations!
   //Therefore configurations(0) is for time=-k and configurations(k+t) is for time=t
   CHECK(!configurations.N, "why setup again?");
-//    listDelete(configurations);
 
   computeMeshNormals(world.frames, true);
 
   configurations.append(new Configuration())->copy(world, true);
   configurations.last()->setTimes(tau); //(-tau*k_order);
-  configurations.last()->calc_q();
+  configurations.last()->ensure_q();
   configurations.last()->checkConsistency();
   for(KinematicSwitch* sw:switches) {
     if(sw->timeOfApplication+(int)k_order<=0) {
@@ -1833,16 +1832,47 @@ void KOMO::setupConfigurations() {
         sw->apply(K);
       }
     }
-    K.calc_q();
+    K.ensure_q();
     K.checkConsistency();
-//    {
-//      cout <<"CONFIGURATION s-k_order=" <<int(s)-k_order <<endl;
-//      K.glAnimate();
-//      rai::wait();
-////      K.glClose();
-//    }
   }
 }
+
+//===========================================================================
+
+void KOMO::setupRepresentations() {
+  setupConfigurations();
+
+  CHECK(!objs.N,"why setup again?");
+
+  uintA Cdims = getKtupleDim(configurations);
+  Cdims.prepend(0);
+
+//  uint M=0;
+  for(Objective *ob:objectives) {
+    CHECK_EQ(ob->vars.nd, 2, "in sparse mode, vars need to be tuples of variables");
+    for(uint l=0;l<ob->vars.d0;l++) {
+      ConfigurationL Ctuple = configurations.sub(convert<uint,int>(ob->vars[l]+(int)k_order));
+      uintA cdim = getKtupleDim(Ctuple);
+      cdim.prepend(0);
+
+      intA S;
+      //query the task map and check dimensionalities of returns
+      ob->map->signature(S, Ctuple);
+      for(int k:ob->vars[l]) if(k>=0){
+        for(int& i:S){
+          if(i>=(int)cdim(k) && i<(int)cdim(k+1)) i = i - cdim(k) + Cdims(ob->vars(l,k));
+        }
+      }
+      ptr<GroundedObjective> o = make_shared<GroundedObjective>();
+      o->Ctuple = Ctuple;
+      o->signature = S;
+      o->dim = ob->map->__dim_phi(Ctuple);
+      objs.append(o);
+    }
+  }
+}
+
+//===========================================================================
 
 void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
   if(!configurations.N) setupConfigurations();
@@ -1876,6 +1906,19 @@ void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
 //    configurations(s)->checkConsistency();
   }
   CHECK_EQ(x_count, x.N, "");
+
+  if(animateOptimization>0) {
+    if(animateOptimization>1){
+//      if(animateOptimization>2)
+//        cout <<getReport(true) <<endl;
+      displayPath(true);
+    }else{
+      displayPath(false);
+    }
+//    komo.plotPhaseTrajectory();
+//    rai::wait();
+  }
+
 }
 
 void KOMO::reportProxies(std::ostream& os, double belowMargin) {
@@ -2217,7 +2260,7 @@ double KOMO::getCosts() {
   return R.get<double>("sos_sumOfSqr");
 }
 
-void KOMO::Conv_MotionProblem_KOMO_Problem::getStructure(uintA& variableDimensions, uintA& featureTimes, ObjectiveTypeA& featureTypes) {
+void KOMO::Conv_KOMO_KOMOProblem::getStructure(uintA& variableDimensions, uintA& featureTimes, ObjectiveTypeA& featureTypes) {
   CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet: use komo.reset()");
   if(!!variableDimensions) {
     variableDimensions.resize(komo.T);
@@ -2253,7 +2296,7 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::getStructure(uintA& variableDimensio
 
 bool WARN_FIRST_TIME=true;
 
-void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, ObjectiveTypeA& tt, const arr& x) {
+void KOMO::Conv_KOMO_KOMOProblem::phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, ObjectiveTypeA& tt, const arr& x) {
   const uintA prevPhiIndex=phiIndex, prevPhiDim=phiDim;
 
   //-- set the trajectory
@@ -2312,54 +2355,9 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, uint
   komo.featureValues = phi;
   if(!!J) komo.featureJacobians = J;
   if(!!tt) komo.featureTypes = tt;
-
-  if(komo.animateOptimization>0) {
-    if(komo.animateOptimization>1) {
-      if(komo.animateOptimization>2)
-        cout <<komo.getReport(true) <<endl;
-      komo.displayPath(true);
-    } else {
-      komo.displayPath(false);
-    }
-//    komo.plotPhaseTrajectory();
-//    rai::wait();
-  }
-
-  //==================
-#if 0
-  uint C=0;
-  bool updateLambda = ((&lambda) && lambda.N==dimPhi);
-  for(uint t=0; t<komo.T; t++) {
-    ConfigurationL Ktuple = komo.configurations({t, t+komo.k_order});
-    Configuration& K = *komo.configurations(t+komo.k_order);
-    for(Frame* f:K.frames) for(Contact* c:f->contacts) if(&c->a==f) {
-          Feature* map = c->getTM_ContactNegDistance();
-          map->phi(y, (!!J?Jy:NoArr), Ktuple, komo.tau, t);
-          c->y = y.scalar();
-          phi.append(c->y);
-//      featureTypes.append(OT_ineq);
-          if(!!featureTimes) featureTimes.append(t);
-          if(!!J) {
-            if(t<komo.k_order) Jy.delColumns(0, (komo.k_order-t)*komo.configurations(0)->q.N); //delete the columns that correspond to the prefix!!
-            J.append(Jy);   //copy it to J(M+i); which is the Jacobian of the M+i'th feature w.r.t. its variables
-          }
-          if(!!tt) tt.append(OT_ineq);
-
-          if(updateLambda) {
-            lambda.append(c->lagrangeParameter);
-//        cout <<"APPENDED: " <<C <<" t=" <<t <<' ' <<*c <<endl;
-          }
-          C++;
-        }
-  }
-  if(updateLambda) CHECK_EQ(lambda.N, phi.N, "");
-//  cout <<"EXIT:  #" <<C <<" constraints" <<endl;
-#endif
-  //==================
-
 }
 
-void KOMO::Conv_MotionProblem_DenseProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x) {
+void KOMO::Conv_KOMO_DenseProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x) {
   //-- set the trajectory
   komo.set_x(x);
 
@@ -2373,8 +2371,6 @@ void KOMO::Conv_MotionProblem_DenseProblem::phi(arr& phi, arr& J, arr& H, Object
 
   uintA x_index = getKtupleDim(komo.configurations({komo.k_order, -1}));
   x_index.prepend(0);
-//  for(uint t=0; t<komo.T; t++) {
-//    //build the Ktuple with order given by map
 
   arr y, Jy;
   uint M=0;
@@ -2398,7 +2394,6 @@ void KOMO::Conv_MotionProblem_DenseProblem::phi(arr& phi, arr& J, arr& H, Object
 
       if(!!J) {
         if(isSpecial(Jy)) Jy = unpack(Jy);
-//        Jy *= task->prec(t);
         for(uint j=0; j<ob->vars.d1; j++) {
           if(ob->vars(l, j)>=0) {
             J.setMatrixBlock(Jy.sub(0, -1, kdim(j), kdim(j+1)-1), M, x_index(ob->vars(l, j)));
@@ -2414,26 +2409,12 @@ void KOMO::Conv_MotionProblem_DenseProblem::phi(arr& phi, arr& J, arr& H, Object
   }
 
   CHECK_EQ(M, dimPhi, "");
-//  if(!!lambda) CHECK_EQ(prevLambda, lambda, ""); //this ASSERT only holds is none of the tasks is variable dim!
   komo.featureValues = phi;
   if(!!J) komo.featureJacobians.resize(1).scalar() = J;
   if(!!tt) komo.featureTypes = tt;
-
-  if(komo.animateOptimization>0) {
-    if(komo.animateOptimization>1) {
-      if(komo.animateOptimization>2)
-        cout <<komo.getReport(true) <<endl;
-      komo.displayPath(true);
-    } else {
-      komo.displayPath(false);
-    }
-//    komo.plotPhaseTrajectory();
-//    rai::wait();
-  }
-
 }
 
-void KOMO::Conv_MotionProblem_DenseProblem::getDimPhi() {
+void KOMO::Conv_KOMO_DenseProblem::getDimPhi() {
   CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet: use komo.reset()");
   uint M=0;
   for(uint i=0; i<komo.objectives.N; i++) {
@@ -2446,7 +2427,7 @@ void KOMO::Conv_MotionProblem_DenseProblem::getDimPhi() {
   dimPhi = M;
 }
 
-void KOMO::Conv_MotionProblem_GraphProblem::getStructure(uintA& variableDimensions, intAA& featureVariables, ObjectiveTypeA& featureTypes) {
+void KOMO::Conv_KOMO_GraphProblem::getStructure(uintA& variableDimensions, intAA& featureVariables, ObjectiveTypeA& featureTypes) {
   CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet: use komo.reset()");
   if(!!variableDimensions) {
     variableDimensions.resize(komo.T);
@@ -2472,7 +2453,7 @@ void KOMO::Conv_MotionProblem_GraphProblem::getStructure(uintA& variableDimensio
   dimPhi = M;
 }
 
-void KOMO::Conv_MotionProblem_GraphProblem::getSemantics(StringA& varNames, StringA& phiNames) {
+void KOMO::Conv_KOMO_GraphProblem::getSemantics(StringA& varNames, StringA& phiNames) {
   varNames.resize(komo.T);
   for(uint t=0; t<komo.T; t++) varNames(t) <<"config_" <<t;
 
@@ -2489,7 +2470,7 @@ void KOMO::Conv_MotionProblem_GraphProblem::getSemantics(StringA& varNames, Stri
   }
 }
 
-void KOMO::Conv_MotionProblem_GraphProblem::phi(arr& phi, arrA& J, arrA& H, const arr& x) {
+void KOMO::Conv_KOMO_GraphProblem::phi(arr& phi, arrA& J, arrA& H, const arr& x) {
   //-- set the trajectory
   komo.set_x(x);
 
@@ -2498,11 +2479,9 @@ void KOMO::Conv_MotionProblem_GraphProblem::phi(arr& phi, arrA& J, arrA& H, cons
   phi.resize(dimPhi);
   if(!!J) J.resize(dimPhi);
 
-//  uintA x_index = getKtupleDim(komo.configurations({komo.k_order,-1}));
-//  x_index.prepend(0);
-
   rai::timerStart();
   arr y, Jy;
+  Jy.sparse();
   uint M=0;
   for(Objective* ob:komo.objectives) {
     CHECK_EQ(ob->vars.nd, 2, "in sparse mode, vars need to be tuples of variables");
@@ -2518,6 +2497,8 @@ void KOMO::Conv_MotionProblem_GraphProblem::phi(arr& phi, arrA& J, arrA& H, cons
       if(!!J) CHECK_EQ(Jy.d1, kdim.last(), "");
       if(!y.N) continue;
       if(absMax(y)>1e10) RAI_MSG("WARNING y=" <<y);
+
+      if(!!Jy) CHECK(isSparseMatrix(J), "");
 
       //write into phi and J
       phi.setVectorBlock(y, M);
@@ -2544,28 +2525,14 @@ void KOMO::Conv_MotionProblem_GraphProblem::phi(arr& phi, arrA& J, arrA& H, cons
   komo.timeFeatures += rai::timerRead(true);
 
   CHECK_EQ(M, dimPhi, "");
-  //  if(!!lambda) CHECK_EQ(prevLambda, lambda, ""); //this ASSERT only holds is none of the tasks is variable dim!
   komo.featureValues = phi;
-
-  if(komo.animateOptimization>0) {
-    if(komo.animateOptimization>1) {
-      if(komo.animateOptimization>2)
-        cout <<komo.getReport(true) <<endl;
-      komo.displayPath(true);
-    } else {
-      komo.displayPath(false);
-    }
-    //    komo.plotPhaseTrajectory();
-    //    rai::wait();
-  }
-
 }
 
-void KOMO::Conv_MotionProblem_GraphProblem::setPartialX(const uintA& whichX, const arr& x) {
+void KOMO::Conv_KOMO_GraphProblem::setPartialX(const uintA& whichX, const arr& x) {
   komo.set_x(x, whichX);
 }
 
-void KOMO::Conv_MotionProblem_GraphProblem::getPartialPhi(arr& phi, arrA& J, arrA& H, const uintA& whichPhi) {
+void KOMO::Conv_KOMO_GraphProblem::getPartialPhi(arr& phi, arrA& J, arrA& H, const uintA& whichPhi) {
   //NON EFFICIENT
 
   {
@@ -2616,18 +2583,6 @@ void KOMO::Conv_MotionProblem_GraphProblem::getPartialPhi(arr& phi, arrA& J, arr
     CHECK_EQ(M, dimPhi, "");
     //  if(!!lambda) CHECK_EQ(prevLambda, lambda, ""); //this ASSERT only holds is none of the tasks is variable dim!
     if(!!phi) komo.featureValues = phi;
-
-    if(komo.animateOptimization>0) {
-      if(komo.animateOptimization>1) {
-        if(komo.animateOptimization>2)
-          cout <<komo.getReport(true) <<endl;
-        komo.displayPath(true);
-      } else {
-        komo.displayPath(false);
-      }
-      //    komo.plotPhaseTrajectory();
-      //    rai::wait();
-    }
   }
 
   //now subselect features

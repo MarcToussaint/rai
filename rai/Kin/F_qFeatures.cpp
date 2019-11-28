@@ -50,6 +50,7 @@ F_qItself::F_qItself(const uintA& _selectedFrames, bool relative_q0)
 }
 
 void F_qItself::phi(arr& q, arr& J, const rai::Configuration& G) {
+  CHECK(G._state_q_isGood, "");
   if(!selectedFrames.nd) {
     q = G.getJointState();
     if(relative_q0) {
@@ -59,8 +60,13 @@ void F_qItself::phi(arr& q, arr& J, const rai::Configuration& G) {
   } else {
     uint n=dim_phi(G);
     q.resize(n);
-    G.getJointState();
-    if(!!J) J.resize(n, G.q.N).setZero();
+    if(!!J){
+      if(!isSparseMatrix(J)) {
+        J.resize(n, G.q.N).setZero();
+      } else {
+        J.sparse().resize(n, G.q.N, 0);
+      }
+    }
     uint m=0;
     uint qIndex=0;
     if(selectedFrames.nd) {
@@ -85,8 +91,8 @@ void F_qItself::phi(arr& q, arr& J, const rai::Configuration& G) {
           if(flipSign) q(m) *= -1.;
           if(relative_q0 && j->q0.N) q(m) -= j->q0(k);
           if(!!J) {
-            if(flipSign) J(m, qIndex+k) = -1.;
-            else J(m, qIndex+k) = 1.;
+            if(flipSign) J.elem(m, qIndex+k) = -1.;
+            else J.elem(m, qIndex+k) = 1.;
           }
           m++;
         }
@@ -117,7 +123,8 @@ void F_qItself::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
     for(uint id:sw) selectedFrames.removeValue(id, false);
   }
   for(uint i=0; i<=k; i++) {
-    phi(q_bar(i), J_bar(i), *Ktuple(offset+i));
+    if(!!J && isSparseMatrix(J)) J_bar(i).sparse();
+    phi(q_bar(i), (!!J?J_bar(i):NoArr), *Ktuple(offset+i));
   }
   selectedFrames = selectedBodies_org;
 
@@ -172,12 +179,19 @@ void F_qItself::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
     uintA qidx(Ktuple.N);
     qidx(0)=0;
     for(uint i=1; i<Ktuple.N; i++) qidx(i) = qidx(i-1)+Ktuple(i-1)->q.N;
-    J = zeros(y.N, qidx.last()+Ktuple.last()->q.N);
-    if(k==1) { J.setMatrixBlock(J_bar(1), 0, qidx(offset+1));  J.setMatrixBlock(-J_bar(0), 0, qidx(offset+0));  J/=tau; }
-    if(k==2) { J.setMatrixBlock(J_bar(2), 0, qidx(offset+2));  J.setMatrixBlock(-2.*J_bar(1), 0, qidx(offset+1));  J.setMatrixBlock(J_bar(0), 0, qidx(offset+0));  J/=tau2; }
-    if(k==3) { J.setMatrixBlock(J_bar(3), 0, qidx(offset+3));  J.setMatrixBlock(-3.*J_bar(2), 0, qidx(offset+2));  J.setMatrixBlock(3.*J_bar(1), 0, qidx(offset+1));  J.setMatrixBlock(-J_bar(0), 0, qidx(offset+0));  J/=tau3; }
+    if(!isSparseMatrix(J)){
+      J = zeros(y.N, qidx.last()+Ktuple.last()->q.N);
+      if(k==1) { J.setMatrixBlock(J_bar(1), 0, qidx(offset+1));  J.setMatrixBlock(-J_bar(0), 0, qidx(offset+0));  J/=tau; }
+      if(k==2) { J.setMatrixBlock(J_bar(2), 0, qidx(offset+2));  J.setMatrixBlock(-2.*J_bar(1), 0, qidx(offset+1));  J.setMatrixBlock(J_bar(0), 0, qidx(offset+0));  J/=tau2; }
+      if(k==3) { J.setMatrixBlock(J_bar(3), 0, qidx(offset+3));  J.setMatrixBlock(-3.*J_bar(2), 0, qidx(offset+2));  J.setMatrixBlock(3.*J_bar(1), 0, qidx(offset+1));  J.setMatrixBlock(-J_bar(0), 0, qidx(offset+0));  J/=tau3; }
+    }else{
+      J.sparse().resize(y.N, qidx.last()+Ktuple.last()->q.N, 0);
+      if(k==1) { J_bar(0) *= -1.;  J+=J_bar(0);  J+=J_bar(1);  J/=tau; }
+      if(k==1) { J_bar(1) *= -2.;  J+=J_bar(0);  J+=J_bar(1);  J+=J_bar(2);  J/=tau2; }
+      if(k==3) { NIY }
+    }
 
-    arr Jtau;  Ktuple(-1)->jacobian_time(Jtau, Ktuple(-1)->frames(0));  expandJacobian(Jtau, Ktuple, -1);
+    arr Jtau;  Ktuple(-1)->jacobian_tau(Jtau, Ktuple(-1)->frames(0));  expandJacobian(Jtau, Ktuple, -1);
 //    arr Jtau2;  Ktuple(-2)->jacobianTime(Jtau2, Ktuple(-2)->frames(0));  expandJacobian(Jtau2, Ktuple, -2);
 //    arr Jtau = Jtau1 - Jtau2;
     if(k==1) J += (-1./tau)*y*Jtau;
@@ -221,6 +235,27 @@ uint F_qItself::dim_phi(const ConfigurationL& Ktuple) {
     }
   }
   return 0;
+}
+
+void F_qItself::signature(intA& S, const rai::Configuration& C){
+  CHECK(selectedFrames.N, "");
+  S.clear();
+  for(uint i=0;i<selectedFrames.d0;i++) {
+    rai::Joint *j=0;
+    if(selectedFrames.nd==1){
+      rai::Frame *f = C.frames.elem(selectedFrames.elem(i));
+      j = f->joint;
+      CHECK(j, "selected frame " <<selectedFrames.elem(i) <<" ('" <<f->name <<"') is not a joint");
+    }else{
+      rai::Frame *a = C.frames.elem(selectedFrames(i,0));
+      rai::Frame *b = C.frames.elem(selectedFrames(i,1));
+      if(a->parent==b) j=a->joint;
+      else if(b->parent==a) j=b->joint;
+      else HALT("a and b are not linked");
+      CHECK(j, "");
+    }
+    for(uint k=0;k<j->qDim();k++) S.append(j->qIndex+k);
+  }
 }
 
 rai::String F_qItself::shortTag(const rai::Configuration& G) {
@@ -353,6 +388,15 @@ uint F_qQuaternionNorms::dim_phi(const rai::Configuration& G) {
     if(j->type==rai::JT_quatBall || j->type==rai::JT_free || j->type==rai::JT_XBall) i++;
   }
   return i;
+}
+
+void F_qQuaternionNorms::signature(intA& S, const rai::Configuration& C){
+  S.clear();
+  for(const rai::Joint* j:C.activeJoints) {
+    if(j->type==rai::JT_quatBall) S.append((int)j->qIndex + intA({0,1,2,3}));
+    if(j->type==rai::JT_free) S.append((int)j->qIndex + intA({3,4,5,6}));
+    if(j->type==rai::JT_XBall) S.append((int)j->qIndex + intA({1,2,3,4}));
+  }
 }
 
 //===========================================================================

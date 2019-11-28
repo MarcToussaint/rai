@@ -2383,6 +2383,8 @@ void SparseMatrix::setupRowsCols() {
 }
 
 void SparseMatrix::rowShift(int shift) {
+  rows.clear();
+  cols.clear();
   for(uint i=0; i<elems.d0; i++) {
     int& j = elems(i, 1);
     CHECK_GE(j+shift, 0, "");

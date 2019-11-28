@@ -98,7 +98,7 @@ void rai::KinematicSwitch::apply(Configuration& K) {
       LOG(-1) <<"there were no deletable links below '" <<to->name <<"'! Deleted before?";
     }
 #endif
-    K.calc_q();
+    K.ensure_q();
     K.checkConsistency();
     return;
   }
@@ -168,7 +168,7 @@ void rai::KinematicSwitch::apply(Configuration& K) {
       j->calc_Q_from_q(q, 0);
 //      j->frame.Q.pos.setZero();
     }
-    K.calc_q();
+    K.ensure_q();
     K.calc_fwdPropagateFrames();
     K.checkConsistency();
     return;
@@ -205,7 +205,7 @@ void rai::KinematicSwitch::apply(Configuration& K) {
       slider1->insertPreLink(jA);
     }
 
-    K.calc_q();
+    K.ensure_q();
     K.calc_fwdPropagateFrames();
     K.checkConsistency();
     return;
@@ -221,7 +221,7 @@ void rai::KinematicSwitch::apply(Configuration& K) {
 //    jA.setDifference(from->X, to->X);
 //    j->frame.insertPreLink(jA);
 
-    K.calc_q();
+    K.ensure_q();
     K.calc_fwdPropagateFrames();
     K.checkConsistency();
     return;
@@ -233,7 +233,7 @@ void rai::KinematicSwitch::apply(Configuration& K) {
     if(to->parent) to->unLink();
     to->linkFrom(from, true);
 
-    K.calc_q();
+    K.ensure_q();
     K.calc_fwdPropagateFrames();
     K.checkConsistency();
     return;

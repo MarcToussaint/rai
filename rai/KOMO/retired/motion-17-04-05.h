@@ -117,13 +117,13 @@ struct KOMO {
     };
   } invKin_problem;
   void inverseKinematics(arr& y, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x);
-
-  struct Conv_MotionProblem_KOMO_Problem : KOMO_Problem {
+  
+  struct Conv_KOMO_KOMOProblem : KOMO_Problem {
     KOMO& MP;
     uint dimPhi;
-
-    Conv_MotionProblem_KOMO_Problem(KOMO& P) : MP(P) {}
-
+    
+    Conv_KOMO_KOMOProblem(KOMO& P) : MP(P) {}
+    
     virtual uint get_k() { return MP.k_order; }
     virtual void getStructure(uintA& variableDimensions, uintA& featureTimes, ObjectiveTypeA& featureTypes);
     virtual void phi(arr& phi, arrA& J, arrA& H, ObjectiveTypeA& tt, const arr& x);

@@ -435,7 +435,7 @@ void CG2komo(KOMO& komo, const SubCG& scg, const rai::Configuration& C, bool col
 //    if(!f->parent && f->joint) delete f->joint;
   c->checkConsistency();
 
-  c->calc_q();
+  c->ensure_q();
   cout <<*c <<endl;
   c->report(cout);
   c->watch(true);
