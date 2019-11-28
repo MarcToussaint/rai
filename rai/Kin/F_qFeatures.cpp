@@ -278,7 +278,7 @@ extern bool isSwitched(rai::Frame* f0, rai::Frame* f1);
 
 void F_qZeroVel::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   if(!Ktuple(-1)->frames(i)->joint) {
-    HALT("shouldn't be here");
+    HALT("shouldn't be here  " <<*Ktuple(-1)->frames(i));
     y.resize(0).setZero();
     if(!!J) J.resize(0, getKtupleDim(Ktuple).last()).setZero();
     return;

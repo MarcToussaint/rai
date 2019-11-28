@@ -229,15 +229,18 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
       //        if(k_order>1) addObjective({time}, make_shared<TM_NoJumpFromParent>(world, to), OT_eq, {1e2}, NoArr, 1, 0, 0);
 
       if(k_order>1) {
+#if 1   //no jump: zero pose velocity
         if(prevFrom) addObjective({time}, FS_poseRel, {prevFrom, to}, OT_eq, {1e2}, NoArr, 1, 0, 0);
         else addObjective({time}, FS_pose, {to}, OT_eq, {1e0}, NoArr, 1, +0, +1);
+#elif 1 //no jump: zero pose acceleration
+        addObjective({time}, FS_pose, {to}, OT_eq, {1e2}, NoArr, 2, +0, +1);
+#elif 1 //no jump: zero linang velocity
+        if(prevFrom) addObjective({time}, make_shared<TM_LinAngVel>(world, to), OT_eq, {1e2}, NoArr, 2, +0, +1);
+        else addObjective({time}, make_shared<TM_LinAngVel>(world, to), OT_eq, {1e1}, NoArr, 1, +0, +1);
+#endif
+      } else {
+        addObjective({time}, make_shared<TM_NoJumpFromParent>(world, to), OT_eq, {1e2}, NoArr, 1, 0, 0);
       }
-      //        if(k_order>1) addObjective({time}, FS_pose, {to}, OT_eq, {1e2}, NoArr, 2, +0, +1);
-      //        if(k_order>1){
-      //          if(prevFrom) addObjective({time}, make_shared<TM_LinAngVel>(world, to), OT_eq, {1e2}, NoArr, 2, +0, +1);
-      //          else addObjective({time}, make_shared<TM_LinAngVel>(world, to), OT_eq, {1e1}, NoArr, 1, +0, +1);
-      //        }
-      else addObjective({time}, make_shared<TM_NoJumpFromParent>(world, to), OT_eq, {1e2}, NoArr, 1, 0, 0);
     } else {
       //-- no acceleration at start: +1 EXCLUDES (x-2, x-1, x0), ASSUMPTION: this is a placement that can excert impact
       if(k_order>1) addObjective({time}, make_shared<TM_LinAngVel>(world, to), OT_eq, {1e2}, NoArr, 2, +1, +1);
@@ -1820,6 +1823,7 @@ void KOMO::setupConfigurations() {
       sw->apply(*configurations.last());
     }
   }
+  if(useSwift) configurations.last()->stepSwift();
   for(uint s=1; s<k_order+T; s++) {
     configurations.append(new Configuration())->copy(*configurations(s-1), true);
     rai::Configuration& K = *configurations(s);
@@ -1832,6 +1836,7 @@ void KOMO::setupConfigurations() {
         sw->apply(K);
       }
     }
+    if(useSwift && s<k_order) K.stepSwift();
     K.ensure_q();
     K.checkConsistency();
   }
@@ -2481,7 +2486,7 @@ void KOMO::Conv_KOMO_GraphProblem::phi(arr& phi, arrA& J, arrA& H, const arr& x)
 
   rai::timerStart();
   arr y, Jy;
-  Jy.sparse();
+//  Jy.sparse();
   uint M=0;
   for(Objective* ob:komo.objectives) {
     CHECK_EQ(ob->vars.nd, 2, "in sparse mode, vars need to be tuples of variables");
@@ -2498,7 +2503,7 @@ void KOMO::Conv_KOMO_GraphProblem::phi(arr& phi, arrA& J, arrA& H, const arr& x)
       if(!y.N) continue;
       if(absMax(y)>1e10) RAI_MSG("WARNING y=" <<y);
 
-      if(!!Jy) CHECK(isSparseMatrix(J), "");
+//      if(!!Jy) CHECK(isSparseMatrix(J), "");
 
       //write into phi and J
       phi.setVectorBlock(y, M);

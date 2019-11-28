@@ -187,12 +187,12 @@ FrameL rai::Frame::getPathToUpwardLink(bool untilPartBreak) {
   FrameL pathToLink;
   rai::Frame* f = this;
   while(f) {
+    pathToLink.prepend(f);
     if(!untilPartBreak) {
       if(f->joint) break;
     } else {
       if(f->joint && f->joint->getDimFromType()!=1 && !f->joint->mimic) break;
     }
-    pathToLink.prepend(f);
     f = f->parent;
   }
   return pathToLink;

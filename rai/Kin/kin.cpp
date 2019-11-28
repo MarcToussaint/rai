@@ -485,12 +485,23 @@ void rai::Configuration::flipFrames(rai::Frame* a, rai::Frame* b) {
 void rai::Configuration::reconfigureRoot(Frame* newRoot, bool ofLinkOnly) {
   FrameL pathToOldRoot;
 
-  if(ofLinkOnly) pathToOldRoot = newRoot->getPathToUpwardLink();
+  if(ofLinkOnly) pathToOldRoot = newRoot->getPathToUpwardLink(true);
   else pathToOldRoot = newRoot->getPathToRoot();
+
+//  listWrite(pathToOldRoot);
+
+  Frame *oldRoot=pathToOldRoot.first();
+  Frame *rootParent=oldRoot->parent;
+  if(rootParent) oldRoot->unLink();
 
   for(Frame* f : pathToOldRoot) {
     if(f->parent) flipFrames(f->parent, f);
   }
+
+//  if(rootParent){
+//    newRoot->linkFrom(rootParent);
+//    newRoot->setJoint(JT_rigid);
+//  }
 
   checkConsistency();
 }
