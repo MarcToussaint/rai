@@ -154,8 +154,8 @@ void rai::Frame::getPartSubFrames(FrameL& F) {
     if(!child->joint || !child->joint->isPartBreak()) { F.append(child); child->getRigidSubFrames(F); }
 }
 
-void rai::Frame::getFullSubtree(FrameL& F) {
-  for(Frame* child:parentOf) { F.append(child); child->getFullSubtree(F); }
+void rai::Frame::getSubtree(FrameL& F) {
+  for(Frame* child:parentOf) { F.append(child); child->getSubtree(F); }
 }
 
 FrameL rai::Frame::getPathToRoot() {
@@ -212,6 +212,13 @@ const char* rai::Frame::isPart() {
   rai::String* p = ats.find<rai::String>("part");
   if(p) return p->p;
   return 0;
+}
+
+void rai::Frame::prefixSubtree(const char* prefix){
+  FrameL F = {this};
+  getSubtree(F);
+  for(auto *f:F) f->name.prepend(prefix);
+
 }
 
 void rai::Frame::_state_setXBadinBranch() {

@@ -118,11 +118,13 @@ struct Frame : NonCopyable {
   bool isChildOf(const Frame* par, int order=1) const;
   void getRigidSubFrames(FrameL& F); ///< recursively collect all rigidly attached sub-frames (e.g., shapes of a link), (THIS is not included)
   void getPartSubFrames(FrameL& F); ///< recursively collect all frames of this part
-  void getFullSubtree(FrameL& F);
+  void getSubtree(FrameL& F);
   FrameL getPathToRoot();
   Frame* getUpwardLink(rai::Transformation& Qtotal=NoTransformation, bool untilPartBreak=false) const; ///< recurse upward BEFORE the next joint and return relative transform (this->Q is not included!b)
   FrameL getPathToUpwardLink(bool untilPartBreak=false); ///< recurse upward BEFORE the next joint and return relative transform (this->Q is not included!b)
   const char* isPart();
+
+  void prefixSubtree(const char* prefix);
 
   //I/O
   void read(const Graph& ats);
