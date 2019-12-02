@@ -160,10 +160,11 @@ void Conv_Graph_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA
     arr err = summarizeErrors(phi, featureTypes);
 
     Graph data = { {"graphQuery", queryCount},
-      {"errors", err},
-      {"x", x},
-      {"phi", phi}
-    };
+                   {"errors", err},
+                   {"x", x},
+                   {"phi", phi},
+                   {"J", J}
+                 };
 
     data.write(*logFile, ",\n", "{\n\n}");
     (*logFile) <<',' <<endl;

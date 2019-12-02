@@ -64,19 +64,19 @@ void F_netForce::phi(arr& y, arr& J, const rai::Configuration& K) {
     K.kinematicsContactForce(f, Jf, con);
 
     //get the POA
-    arr cp, Jcp;
-    K.kinematicsContactPOA(cp, Jcp, con);
+    arr poa, Jpoa;
+    K.kinematicsContactPOA(poa, Jpoa, con);
 
     //get object center
     arr p, Jp;
     K.kinematicsPos(p, Jp, a);
 
     force -= sign * con->force;
-    if(!transOnly) torque += sign * crossProduct(cp-p, con->force);
+    if(!transOnly) torque += sign * crossProduct(poa-p, con->force);
 
     if(!!J) {
       Jforce -= sign * Jf;
-      if(!transOnly) Jtorque += sign * (skew(cp-p) * Jf - skew(con->force) * (Jcp-Jp));
+      if(!transOnly) Jtorque += sign * (skew(poa-p) * Jf - skew(con->force) * (Jpoa-Jp));
     }
   }
 

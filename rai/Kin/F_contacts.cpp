@@ -280,7 +280,22 @@ void TM_Contact_POAisInIntersection_InEq::phi(arr& y, arr& J, const rai::Configu
   if(!!J) checkNan(J);
 }
 
-void TM_ContactConstraints_Vel::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
+void TM_Contact_POA_isAtWitnesspoint::phi(arr& y, arr& J, const rai::Configuration& C){
+  rai::Contact *con = getContact(C,a,b);
+
+  arr poa, Jpoa;
+  C.kinematicsContactPOA(poa, Jpoa, con);
+
+  TM_PairCollision coll(a, b, (!use2ndObject ? TM_PairCollision::_p1 : TM_PairCollision::_p2) , false);
+  arr wit, Jwit;
+  coll.phi(wit, Jwit, C);
+
+  y = poa - wit;
+  if(!!J){ J = Jpoa - Jwit; }
+}
+
+
+void TM_ContactConstraints_Vel::phi(arr& y, arr& J, const ConfigurationL& Ktuple){
   CHECK_EQ(order, 1, "");
 
   rai::Configuration& K = *Ktuple(-2); //!!! use LAST contact, and velocities AFTER contact
@@ -341,7 +356,32 @@ void TM_Contact_POAmovesContinuously::phi(arr& y, arr& J, const ConfigurationL& 
   }
 }
 
-void TM_Contact_POAzeroRelVel::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
+
+void TM_Contact_NormalForceEqualsNormalPOAmotion::phi(arr& y, arr& J, const ConfigurationL& Ktuple){
+
+  TM_Contact_POA poa(a,b);
+  poa.order=1;
+  Value poavel = poa.eval(Ktuple);
+
+  Value force = TM_Contact_Force(a,b) (*Ktuple(-1));
+
+  Value normal = TM_PairCollision(a, b, TM_PairCollision::_normal, true) (*Ktuple(-1));
+
+  double forceScaling = 1e1;
+  force.y *= forceScaling;
+  force.J *= forceScaling;
+
+  expandJacobian(force.J, Ktuple, -1);
+  expandJacobian(normal.J, Ktuple, -1);
+
+  //-- force needs to align with normal -> project force along normal
+  y.resize(1);
+  y.scalar() = scalarProduct(normal.y, force.y - poavel.y);
+  if(!!J) J = ~normal.y*(force.J - poavel.J) + ~(force.y - poavel.y) * normal.J;
+}
+
+
+void TM_Contact_POAzeroRelVel::phi(arr& y, arr& J, const ConfigurationL& Ktuple){
   rai::Contact* con = getContact(*Ktuple(-2), a, b);
 #if 0
   POA_rel_vel(y, J, Ktuple, con, true);
@@ -351,6 +391,12 @@ void TM_Contact_POAzeroRelVel::phi(arr& y, arr& J, const ConfigurationL& Ktuple)
   POA_vel(v2, Jv2, Ktuple, con, true);
   y = v1 - v2;
   if(!!J) J = Jv1 - Jv2;
+  if(normalOnly){
+    Value normal = TM_PairCollision(a, b, TM_PairCollision::_normal, true) (*Ktuple(-1));
+    expandJacobian(normal.J, Ktuple, -1);
+    if(!!J) J = ~normal.y*J + ~y*normal.J;
+    y = ARR(scalarProduct(normal.y, y));
+  }
 #endif
 }
 

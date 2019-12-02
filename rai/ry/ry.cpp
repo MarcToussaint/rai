@@ -369,7 +369,7 @@ many mapping refer to one or several frames, which need to be specified using fr
   .def("selectJointsByTag", [](ry::Config& self, const ry::I_StringA& jointGroups) {
     auto Kset = self.set();
     Kset->selectJointsByGroup(I_conv(jointGroups), true, true);
-    Kset->calc_q();
+    Kset->ensure_q();
   },
   "redefine what are considered the DOFs of this configuration: only joint that have a tag listed in jointGroups are considered\
   part of the joint state and define the number of DOFs",

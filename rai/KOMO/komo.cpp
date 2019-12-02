@@ -2417,6 +2417,13 @@ void KOMO::Conv_KOMO_DenseProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA&
   komo.featureValues = phi;
   if(!!J) komo.featureJacobians.resize(1).scalar() = J;
   if(!!tt) komo.featureTypes = tt;
+
+  if(quadraticPotentialLinear.N){
+      tt.append(OT_f);
+      phi.append( (~x * quadraticPotentialHessian * x).scalar() + scalarProduct(quadraticPotentialLinear, x));
+      J.append(quadraticPotentialLinear);
+      H = quadraticPotentialHessian;
+  }
 }
 
 void KOMO::Conv_KOMO_DenseProblem::getDimPhi() {

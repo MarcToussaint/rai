@@ -568,9 +568,11 @@ arr rai::Configuration::getJointState(const StringA& joints) const {
   for(uint i=0; i<joints.N; i++) {
     String s = joints.elem(i);
     uint d=0;
-    if(s(-2)==':') { d=s(-1)-'0'; s.resize(s.N-2, true); }
+    bool subdim=false;
+    if(s(-2)==':') { d=s(-1)-'0'; s.resize(s.N-2, true); subdim=true; }
     Joint* j = getFrameByName(s)->joint;
     CHECK(!j->dim || d<j->dim, "");
+    CHECK(j->dim==1 || subdim, "the joint '" <<s <<"' is multi-dimensional - you need to select a subdim");
     x(i) = q(j->qIndex+d);
   }
   return x;

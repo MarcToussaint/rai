@@ -45,6 +45,7 @@ public:
   Value operator()(const ConfigurationL& Ctuple){ arr y,J; phi(y, J, Ctuple); return Value(y,J); }
   Value operator()(const rai::Configuration& C){ arr y,J; phi(y, J, C); return Value(y,J); }
   Value eval(const rai::Configuration& C){ arr y,J; phi(y, J, C); return Value(y,J); }
+  Value eval(const ConfigurationL& Ctuple){ arr y,J; phi(y, J, Ctuple); return Value(y,J); }
 
   VectorFunction vf(rai::Configuration& C);
   VectorFunction vf(ConfigurationL& Ctuple);

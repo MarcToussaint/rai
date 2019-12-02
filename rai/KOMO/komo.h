@@ -324,6 +324,8 @@ struct KOMO : NonCopyable {
     KOMO& komo;
     uint dimPhi=0;
 
+    arr quadraticPotentialLinear, quadraticPotentialHessian;
+
     Conv_KOMO_DenseProblem(KOMO& _komo) : komo(_komo) {}
     void clear(){ dimPhi=0; }
 
