@@ -98,7 +98,7 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
         if(!std::dynamic_pointer_cast<F_qItself>(o->map)
             && !std::dynamic_pointer_cast<TM_NoJumpFromParent>(o->map)
             && o->map->order>0) {
-          o->vars.clear();
+          o->configs.clear();
         }
       }
 

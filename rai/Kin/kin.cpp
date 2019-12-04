@@ -854,6 +854,50 @@ void rai::Configuration::setTimes(double t) {
   for(Frame* a:frames) a->tau = t;
 }
 
+void rai::Configuration::vars_ensureFrames(){
+  if(!vars_frames.N){
+    for(Frame* f: frames) if(f->joint && f->joint->type!=JT_rigid){
+      bool isVar = true;
+      Frame *p=f;
+      while(p->parent){
+        if(p->parent->joint && p->parent->joint->type!=JT_rigid){ isVar=false; break; }
+        p=p->parent;
+      }
+      if(isVar) vars_frames.append(f);
+    }
+  }
+}
+
+const rai::String&rai::Configuration::vars_getName(uint i){
+  vars_ensureFrames();
+  return vars_frames(i)->name;
+}
+
+uint rai::Configuration::vars_getDim(uint i){
+  Frame *f = vars_frames(i);
+  FrameL F = {f};
+  f->getSubtree(F);
+  uint d =0;
+  for(Frame* f:F) if(f->joint) d += f->joint->qDim();
+  return d;
+}
+
+void rai::Configuration::vars_activate(uint i){
+  Frame *f = vars_frames(i);
+  FrameL F = {f};
+  f->getSubtree(F);
+  for(Frame* f:F) if(f->joint) f->joint->active=true;
+  reset_q();
+}
+
+void rai::Configuration::vars_deactivate(uint i){
+  Frame *f = vars_frames(i);
+  FrameL F = {f};
+  f->getSubtree(F);
+  for(Frame* f:F) if(f->joint) f->joint->active=false;
+  reset_q();
+}
+
 //===========================================================================
 //
 // features

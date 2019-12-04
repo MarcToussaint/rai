@@ -174,6 +174,15 @@ struct Configuration : GLDrawer {
     else HALT("wrong dimension");
   }
 
+  /// @name variable (groups of DOFs, e.g. agents) interface
+  FrameL vars_frames;
+  void vars_ensureFrames();
+  uint vars_getNum(){ vars_ensureFrames();  return vars_frames.N; }
+  const String& vars_getName(uint i);
+  uint vars_getDim(uint i);
+  void vars_activate(uint i);
+  void vars_deactivate(uint i);
+
   /// @name Jacobians and kinematics (low level)
   /// what is the linear velocity of a world point (pos_world) attached to frame a for a given joint velocity?
   void jacobian_pos(arr& J, Frame* a, const rai::Vector& pos_world, bool sparse=false) const; //usually called internally with kinematicsPos

@@ -304,6 +304,7 @@ struct KOMO : NonCopyable {
   void setupConfigurations();   ///< this creates the @configurations@, that is, copies the original world T times (after setTiming!) perhaps modified by KINEMATIC SWITCHES and FLAGS
   void setupRepresentations();
   void set_x(const arr& x, const uintA& selectedConfigurationsOnly=NoUintA);            ///< set the state trajectory of all configurations
+//  void setState(const arr& x, const uintA& selectedVariablesOnly=NoUintA);            ///< set the state trajectory of all configurations
   uint dim_x(uint t) { return configurations(t+k_order)->getJointStateDimension(); }
 
   struct Conv_KOMO_KOMOProblem : KOMO_Problem {
