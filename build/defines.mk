@@ -258,7 +258,7 @@ ifeq ($(OPENCV4),1)
 CXXFLAGS  += -DRAI_OPENCV
 CPATH := $(HOME)/opt/include/opencv4/:$(CPATH)
 LPATHS += $(HOME)/opt/lib
-LIBS += -lopencv_core -lopencv_highgui
+LIBS += -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_videoio
 endif
 
 ifeq ($(HSL),1)

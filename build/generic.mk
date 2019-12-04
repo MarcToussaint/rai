@@ -103,7 +103,7 @@ OPTIM = debug
 endif
 
 ifeq ($(OPTIM),debug)
-CXXFLAGS := -g -march=native -Wall $(CXXFLAGS)#-Wno-int-to-pointer-cast#-Wno-invalid-offsetof
+CXXFLAGS := -ggdb3 -g -Wall $(CXXFLAGS)#-Wno-int-to-pointer-cast#-Wno-invalid-offsetof
 endif
 ifeq ($(OPTIM),fast_debug)
 CXXFLAGS := -g -O3 -march=native -Wall $(CXXFLAGS)
