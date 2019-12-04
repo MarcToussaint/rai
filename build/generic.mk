@@ -196,7 +196,7 @@ cleanLibs: force
 
 cleanAll: cleanLocks cleanDepends force
 	@echo "   *** cleanAll   " $(PWD)
-	@find $(PWD) $(BASE) $(BASE2) \( -type f -or -type l \) \( -name '*.o' -or -name 'lib*.so' -or -name 'lib*.a' -or -name 'x.exe' \) -delete -print
+	@find $(BASE) $(BASE2) \( -type f -or -type l \) \( -name '*.o' -or -name 'lib*.so' -or -name 'lib*.a' -or -name 'x.exe' \) -delete -print
 
 cleanDepends: force
 	@find $(BASE) $(BASE2) -type f -name 'Makefile.dep' -delete -print
