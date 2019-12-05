@@ -80,7 +80,9 @@ struct SkeletonEntry {
   void write(ostream& os) const { os <<symbol <<' '; frames.write(os, " ", nullptr, "()"); os <<" from " <<phase0 <<" to " <<phase1; }
 };
 stdOutPipe(SkeletonEntry)
+
 typedef rai::Array<SkeletonEntry> Skeleton;
+
 intA getSwitchesFromSkeleton(const Skeleton& S);
 void writeSkeleton(std::ostream& os, const Skeleton& S, const intA& switches= {});
 
