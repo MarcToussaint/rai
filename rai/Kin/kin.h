@@ -161,6 +161,7 @@ struct Configuration : GLDrawer {
   /// @name active set selection
   void selectJointsByGroup(const StringA& groupNames, bool OnlyTheseOrNotThese=true, bool deleteInsteadOfLock=true);
   void selectJointsByName(const StringA&, bool notThose=false);
+  void selectJointsBySubtrees(const StringA& roots, bool notThose=false);
 
   /// @name set state
   void setJointState(const arr& _q);

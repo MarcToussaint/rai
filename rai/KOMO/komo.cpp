@@ -1519,8 +1519,8 @@ void KOMO::run_sub(const uintA& X, const uintA& Y) {
   if(verbose>0) cout <<getReport(verbose>1) <<endl;
 }
 
-void KOMO::optimize(bool initialize) {
-  if(initialize) reset();
+void KOMO::optimize(bool initNoise) {
+  reset(initNoise);
   CHECK_EQ(configurations.N, T+k_order, "");
 
   if(verbose>0) reportProblem();
@@ -1802,6 +1802,18 @@ Camera& KOMO::displayCamera() {
     gl->camera.setDefault();
   }
   return gl->camera;
+}
+
+void KOMO::selectJointsBySubtrees(StringA& roots){
+  if(!configurations.N) setupConfigurations();
+
+  world.selectJointsBySubtrees(roots);
+
+  for(Configuration* C:configurations){
+    C->selectJointsBySubtrees(roots);
+    C->ensure_q();
+    C->checkConsistency();
+  }
 }
 
 //===========================================================================

@@ -725,6 +725,18 @@ void rai::Configuration::selectJointsByName(const StringA& names, bool notThose)
   checkConsistency();
 }
 
+void rai::Configuration::selectJointsBySubtrees(const StringA& roots, bool notThose){
+  for(Frame* f: frames) if(f->joint) f->joint->active = notThose;
+  for(const String& s: roots) {
+    Frame* f = getFrameByName(s);
+    CHECK(f, "");
+    FrameL F = {f};
+    f->getSubtree(F);
+    for(Frame *g:F) if(g->joint) g->joint->active = !notThose;
+  }
+  reset_q();
+}
+
 /** @brief sets the joint state vectors separated in positions and
   velocities */
 void rai::Configuration::setJointState(const arr& _q) {

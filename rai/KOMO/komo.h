@@ -261,7 +261,7 @@ struct KOMO : NonCopyable {
   void initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase=1, bool sineProfile=true);
   void run();                        ///< run the optimization (using OptConstrained -- its parameters are read from the cfg file)
   void run_sub(const uintA& X, const uintA& Y);
-  void optimize(bool initialize=true);
+  void optimize(bool initNoise=true);
 
   rai::Configuration& getConfiguration(double phase);
   arr getJointState(double phase);
@@ -300,6 +300,7 @@ struct KOMO : NonCopyable {
   // internal (kind of private)
   //
 
+  void selectJointsBySubtrees(StringA& roots);
   void clearObjectives();
   void setupConfigurations();   ///< this creates the @configurations@, that is, copies the original world T times (after setTiming!) perhaps modified by KINEMATIC SWITCHES and FLAGS
   void setupRepresentations();

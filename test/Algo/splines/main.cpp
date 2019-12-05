@@ -78,6 +78,7 @@ void TEST(BSpline){
   }
 
   ofstream fil("z.test");
+  rai::arrayBrackets="  ";
   for(uint t=0;t<=1000;t++){
     fil <<(double)t/1000 <<' ' <<S.eval(t/10) <<' ' <<S.eval((double)t/1000) <<endl;
   }
@@ -134,15 +135,12 @@ void TEST(BSpline2){
   cout <<"times = " <<S.times <<endl;
 
   ofstream fil("z.test");
+  rai::arrayBrackets="  ";
   for(double t=T.first();t<=T.last();t+=.001){
     fil <<t <<' ' <<S.eval(t) <<endl;
   }
   fil.close();
-  gnuplot("plot 'z.test' us 1:2", false, true);
-
-  //Cost cost;
-
-  plotClose();
+  gnuplot("plot 'z.test' us 1:2", true);
 }
 
 void TEST(Path){
@@ -165,10 +163,6 @@ void TEST(Path){
     checkJacobian(Test, x, 1e-4);
   }
 
-  //-- transform spline
-//  P.transform_CurrentBecomes_EndFixed(ARR(1.), .25);
-//  P.transform_CurrentFixed_EndBecomes(ARR(-1.), .25);
-
   //-- write spline
   rai::arrayBrackets="  ";
   FILE("z.points") <<X;
@@ -187,8 +181,8 @@ int MAIN(int argc,char** argv){
   rai::initCmdLine(argc, argv);
 
 //  testBSpline();
-  testBSpline2();
-//  testPath();
+//  testBSpline2();
+  testPath();
 
   return 0;
 }
