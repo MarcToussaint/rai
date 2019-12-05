@@ -25,7 +25,7 @@ struct Simulation {
 
   Simulation(Configuration& _C, SimulatorEngine _engine, bool _display=true);
 
-  void step(const arr& u_control, double tau=.01, ControlMode _uMode = _velocity);
+  void step(const arr& u_control, double tau=.01, ControlMode u_mode = _velocity);
 
   //-- store and reset the state of the simulation
   ptr<SimulationState> getState();

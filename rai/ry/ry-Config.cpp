@@ -5,6 +5,7 @@
 #include "ry-Bullet.h"
 #include "ry-PhysX.h"
 #include "ry-Operate.h"
+#include "ry-Simulation.h"
 
 #include "types.h"
 
@@ -15,6 +16,7 @@
 #include <Kin/proxy.h>
 #include <Kin/kinViewer.h>
 #include <Kin/cameraview.h>
+#include <Kin/simulation.h>
 #include <Gui/viewer.h>
 #include <LGP/LGP_tree.h>
 
@@ -395,6 +397,18 @@ is being exported into a bullet instance, which can be stepped forward, and the 
 is being exported into a bullet instance, which can be stepped forward, and the result syced back to this configuration"
     )
 
+.def("simulation", [](ry::Config& self, rai::Simulation::SimulatorEngine engine, bool display) {
+  ry::RySimulation sim;
+  sim.sim = make_shared<rai::Simulation>(self.set(), engine, display);
+  return sim;
+},
+"create a generic Simulation engine, which can internally call PhysX, Bullet, or just kinematics to forward simulate,\
+allows you to control robot motors by position, velocity, or accelerations,\
+    and allows you go query camera images and depth",
+    pybind11::arg("engine"),
+    pybind11::arg("display")
+    )
+
 .def("operate", [](ry::Config& self, const char* rosNodeName) {
   ry::RyOperate op;
   op.R = make_shared<RobotOperation>(self.get(), .01, rosNodeName);
@@ -616,5 +630,20 @@ pybind11::class_<ry::RyFeature>(m, "Feature")
   ENUMVAL(FS, transAccelerations)
   ENUMVAL(FS, transVelocities)
   .export_values();
+
+#undef ENUMVAL
+#define ENUMVAL(x) .value(#x, rai::Simulation::_##x)
+
+  pybind11::enum_<rai::Simulation::SimulatorEngine>(m, "SimulatorEngine")
+      ENUMVAL(physx)
+      ENUMVAL(bullet)
+      ENUMVAL(kinematic)
+      .export_values();
+
+  pybind11::enum_<rai::Simulation::ControlMode>(m, "ControlMode")
+      ENUMVAL(position)
+      ENUMVAL(velocity)
+      ENUMVAL(acceleration)
+      .export_values();
 
 }
