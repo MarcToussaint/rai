@@ -63,7 +63,7 @@ namespace rai {
 
 /// a wrapper around a spline with methods specific to online path adaptation
 struct Path : Spline {
-  Path(arr& X, uint degree=3):Spline(0, X, degree) {}
+  Path(arr& X, uint degree=3) : Spline(0, X, degree) {}
 
   arr getPosition(double t) const;
   arr getVelocity(double t) const;

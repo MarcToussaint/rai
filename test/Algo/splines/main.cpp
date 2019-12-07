@@ -147,7 +147,7 @@ void TEST(Path){
   arr X(11,1);
   rndUniform(X,-1,1,false);
 
-  rai::Path P(X);
+  rai::Path P(X,2);
   cout <<"times = " <<P.times
       <<"\npoints= " <<P.points <<endl;
 
@@ -173,7 +173,7 @@ void TEST(Path){
     fil <<time <<' ' <<P.getPosition(time) <<' ' <<P.getVelocity(time) <<endl;
   }
   fil.close();
-  gnuplot("plot 'z.test' us 1:2 t 'pos', '' us 1:3 t 'vel', 'z.points' us ($0/10):1 w p", true);
+  gnuplot("plot 'z.test' us 1:2 t 'pos', '' us 1:3 t 'vel', 'z.points' us ($0/10):1 w p", true, true);
 
 }
 

@@ -482,7 +482,7 @@ void rai::Frame::unLink() {
 
 void rai::Frame::linkFrom(rai::Frame* _parent, bool adoptRelTransform) {
   CHECK(_parent, "you need to set a parent to link from");
-  CHECK(!parent, "this frame is already linked to a parent");
+  CHECK(!parent, "this frame ('" <<name <<"') is already linked to a parent");
   if(parent==_parent) return;
 
   if(adoptRelTransform) ensure_X();
@@ -1028,7 +1028,7 @@ void rai::Joint::write(std::ostream& os) const {
 rai::Shape::Shape(Frame& f, const Shape* copyShape)
   : frame(f), _type(ST_none) {
 
-  CHECK(!frame.shape, "this frame already has a shape attached");
+  CHECK(!frame.shape, "this frame ('" <<frame.name <<"') already has a shape attached");
   frame.shape = this;
   if(copyShape) {
     const Shape& s = *copyShape;
@@ -1263,7 +1263,7 @@ void rai::Shape::createMeshes() {
 }
 
 rai::Inertia::Inertia(Frame& f, Inertia* copyInertia) : frame(f), type(BT_dynamic) {
-  CHECK(!frame.inertia, "this frame already has inertia");
+  CHECK(!frame.inertia, "this frame ('" <<frame.name <<"') already has inertia");
   frame.inertia = this;
   if(copyInertia) {
     mass = copyInertia->mass;

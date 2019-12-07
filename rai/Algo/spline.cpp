@@ -44,8 +44,8 @@ arr Spline::getCoeffs(double t, uint K, uint derivative) const {
   arr b(K+1), b_0(K+1), db(K+1), db_0(K+1), ddb(K+1), ddb_0(K+1);
   for(uint p=0; p<=degree; p++) {
     b_0=b; b.setZero();
-    db_0=db; db.setZero();
-    ddb_0=ddb; ddb.setZero();
+    if(derivative>0){ db_0=db; db.setZero(); }
+    if(derivative>1){ ddb_0=ddb; ddb.setZero(); }
     for(uint k=0; k<=K; k++) {
       if(!p) {
         if(!k && t<times(0)) b(k)=1.;
@@ -57,16 +57,16 @@ arr Spline::getCoeffs(double t, uint K, uint derivative) const {
           double xden = times(k+p) - times(k);
           double x = DIV(xnom, xden, true);
           b(k) = x * b_0(k);
-          db(k) = DIV(1., xden, true) * b_0(k) + x * db_0(k);
-          ddb(k) = DIV(2., xden, true) * db_0(k) + x * ddb_0(k);
+          if(derivative>0) db(k) = DIV(1., xden, true) * b_0(k) + x * db_0(k);
+          if(derivative>1) ddb(k) = DIV(2., xden, true) * db_0(k) + x * ddb_0(k);
         }
         if(k<K && k+p+1<times.N) {
           double ynom = times(k+p+1) - t;
           double yden = times(k+p+1) - times(k+1);
           double y = DIV(ynom, yden, true);
           b(k) += y * b_0(k+1);
-          db(k) += DIV(-1., yden, true) * b_0(k+1) + y * db_0(k+1);
-          ddb(k) += DIV(-2., yden, true) * db_0(k+1) + y * ddb_0(k+1);
+          if(derivative>0) db(k) += DIV(-1., yden, true) * b_0(k+1) + y * db_0(k+1);
+          if(derivative>1) ddb(k) += DIV(-2., yden, true) * db_0(k+1) + y * ddb_0(k+1);
         }
       }
     }
@@ -180,7 +180,12 @@ void Spline::setUniformNonperiodicBasis(uint T, uint nPoints, uint _degree) {
 
 arr Spline::eval(double t, uint derivative) const {
   uint K = points.d0-1;
-  return (~getCoeffs(t, K, derivative) * points).reshape(points.d1);
+  arr coeffs = getCoeffs(t, K, derivative);
+//  if(!derivative){
+//      cout <<"t: " <<t <<" dot: " <<derivative <<" a: " <<coeffs <<endl;
+//      cout <<"t: " <<t <<" dot: " <<derivative <<" a: " <<rai::getCoeffs(t, times({2,4}), 0) <<endl;
+//  }
+  return (~coeffs * points).reshape(points.d1);
 }
 
 arr Spline::eval(uint t) const { return (~basis[t]*points).reshape(points.d1); }
