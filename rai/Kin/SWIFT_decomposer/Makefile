@@ -3,7 +3,6 @@ NAME   = $(shell basename `pwd`)
 OUTPUT = libextern_$(NAME).a
 
 QHULL = 1
-RAI_NO_CXX11 = 1
 
 CXXFLAGS += -DSWIFT_DECOMP -O3 -fPIC -w -IRAPID
 
