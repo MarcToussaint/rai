@@ -624,7 +624,7 @@ void sineProfile(arr& q, const arr& q0, const arr& qT, uint T) {
   for(uint t=0; t<=T; t++) q[t] = q0 + .5 * (1.-cos(RAI_PI*t/T)) * (qT-q0);
 }
 
-arr reverseTrajectory(const arr& q) {
+arr reversePath(const arr& q) {
   uint T=q.d0-1;
   arr r(T+1, q.d1);
   for(uint t=0; t<=T; t++) r[T-t] = q[t];

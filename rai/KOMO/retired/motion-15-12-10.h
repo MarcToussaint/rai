@@ -203,7 +203,7 @@ struct MotionProblem_EndPoseFunction {
 //
 
 void sineProfile(arr& q, const arr& q0, const arr& qT, uint T);
-arr reverseTrajectory(const arr& q);
+arr reversePath(const arr& q);
 void getVel(arr& v, const arr& q, double tau);
 void getAcc(arr& a, const arr& q, double tau);
 

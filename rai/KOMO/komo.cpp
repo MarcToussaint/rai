@@ -1804,15 +1804,28 @@ Camera& KOMO::displayCamera() {
   return gl->camera;
 }
 
-void KOMO::selectJointsBySubtrees(StringA& roots){
+void KOMO::selectJointsBySubtrees(const StringA& roots, const arr& times){
   if(!configurations.N) setupConfigurations();
 
   world.selectJointsBySubtrees(roots);
 
-  for(Configuration* C:configurations){
-    C->selectJointsBySubtrees(roots);
-    C->ensure_q();
-    C->checkConsistency();
+  if(!times.N){
+    for(Configuration* C:configurations){
+      C->selectJointsBySubtrees(roots);
+      C->ensure_q();
+      C->checkConsistency();
+    }
+  }else{
+    int tfrom = conv_time2step(times(0), stepsPerPhase);
+    int tto   = conv_time2step(times(1), stepsPerPhase);
+    for(uint s=0;s<configurations.N;s++){
+      Configuration* C = configurations(s);
+      int t = int(s) - k_order;
+      if(t<=tfrom || t>tto) C->selectJointsBySubtrees({});
+      else C->selectJointsBySubtrees(roots);
+      C->ensure_q();
+      C->checkConsistency();
+    }
   }
 }
 
@@ -1822,35 +1835,38 @@ void KOMO::setupConfigurations() {
 
   //IMPORTANT: The configurations need to include the k prefix configurations!
   //Therefore configurations(0) is for time=-k and configurations(k+t) is for time=t
-  CHECK(!configurations.N, "why setup again?");
+  CHECK(configurations.N != k_order+T, "why setup again?");
 
-  computeMeshNormals(world.frames, true);
+  if(!configurations.N){ //add the initial configuration (with index -k_order )
+    computeMeshNormals(world.frames, true);
 
-  configurations.append(new Configuration())->copy(world, true);
-  configurations.last()->setTimes(tau); //(-tau*k_order);
-  configurations.last()->ensure_q();
-  configurations.last()->checkConsistency();
-  for(KinematicSwitch* sw:switches) {
-    if(sw->timeOfApplication+(int)k_order<=0) {
-      sw->apply(*configurations.last());
-    }
-  }
-  if(useSwift) configurations.last()->stepSwift();
-  for(uint s=1; s<k_order+T; s++) {
-    configurations.append(new Configuration())->copy(*configurations(s-1), true);
-    rai::Configuration& K = *configurations(s);
-    K.setTimes(tau); //(tau*(int(s)-int(k_order)));
-    K.checkConsistency();
-    CHECK_EQ(configurations(s), configurations.last(), "");
-    //apply potential graph switches
-    for(KinematicSwitch* sw:switches) {
-      if(sw->timeOfApplication+k_order==s) {
-        sw->apply(K);
+    rai::Configuration *C = configurations.append(new Configuration());
+    C->copy(world, true);
+    C->setTimes(tau);
+    for(KinematicSwitch* sw:switches) { //apply potential switches
+      if(sw->timeOfApplication+(int)k_order<=0) {
+        sw->apply(*C);
       }
     }
-    if(useSwift && s<k_order) K.stepSwift();
-    K.ensure_q();
-    K.checkConsistency();
+    if(useSwift) C->stepSwift();
+    C->ensure_q();
+    C->checkConsistency();
+  }
+
+  while(configurations.N<k_order+T) { //add further configurations
+    uint s = configurations.N;
+    rai::Configuration *C = configurations.append(new Configuration());
+    C->copy(*configurations(s-1), true);
+    CHECK_EQ(configurations(s), configurations.last(), "");
+    C->setTimes(tau);
+    for(KinematicSwitch* sw:switches) { //apply potential switches
+      if(sw->timeOfApplication+k_order==s) {
+        sw->apply(*C);
+      }
+    }
+    if(useSwift && s<k_order) C->stepSwift();
+    C->ensure_q();
+    C->checkConsistency();
   }
 }
 
@@ -2704,18 +2720,87 @@ void KOMO::Conv_KOMO_GraphProblem::getPartialPhi(arr& phi, arrA& J, arrA& H, con
   if(!!J) J = J.sub(whichPhi);
 }
 
+void KOMO::TimeSliceProblem::getDimPhi() {
+  CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet: use komo.reset()");
+  uint M=0;
+  for(uint i=0; i<komo.objectives.N; i++) {
+    Objective* ob = komo.objectives.elem(i);
+    CHECK_EQ(ob->configs.nd, 2, "only in sparse mode!");
+    if(ob->configs.d1!=1) continue; //ONLY USE order 0 objectives!!!!!
+    for(uint l=0; l<ob->configs.d0; l++) {
+      if(ob->configs(l,0)!=slice) continue; //ONLY USE objectives for this slice
+      ConfigurationL Ktuple = komo.configurations.sub(convert<uint, int>(ob->configs[l]+(int)komo.k_order));
+      M += ob->map->__dim_phi(Ktuple); //dimensionality of this task
+    }
+  }
+  dimPhi = M;
+}
+
+void KOMO::TimeSliceProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x){
+  komo.set_x(x, {slice});
+
+  if(!dimPhi) getDimPhi();
+
+  phi.resize(dimPhi);
+  if(!!tt) tt.resize(dimPhi);
+  if(!!J) J.resize(dimPhi, x.N).setZero();
+
+  uintA x_index = getKtupleDim(komo.configurations({komo.k_order, -1}));
+  x_index.prepend(0);
+
+  arr y, Jy;
+  uint M=0;
+  for(uint i=0; i<komo.objectives.N; i++) {
+    Objective* ob = komo.objectives.elem(i);
+    CHECK_EQ(ob->configs.nd, 2, "only in sparse mode!");
+    if(ob->configs.d1!=1) continue; //ONLY USE order 0 objectives!!!!!
+    for(uint l=0; l<ob->configs.d0; l++) {
+      if(ob->configs(l,0)!=slice) continue; //ONLY USE objectives for this slice
+      ConfigurationL Ktuple = komo.configurations.sub(convert<uint, int>(ob->configs[l]+(int)komo.k_order));
+      uintA kdim = getKtupleDim(Ktuple);
+      kdim.prepend(0);
+
+      //query the task map and check dimensionalities of returns
+      ob->map->__phi(y, (!!J?Jy:NoArr), Ktuple);
+      if(!!J) CHECK_EQ(y.N, Jy.d0, "");
+      if(!!J) CHECK_EQ(Jy.nd, 2, "");
+      if(!!J) CHECK_EQ(Jy.d1, kdim.last(), "");
+      if(!y.N) continue;
+      if(absMax(y)>1e10) RAI_MSG("WARNING y=" <<y);
+
+      //write into phi and J
+      phi.setVectorBlock(y, M);
+
+      if(!!J) {
+        if(isSpecial(Jy)) Jy = unpack(Jy);
+        J.setMatrixBlock(Jy, M, 0);
+      }
+
+      if(!!tt) for(uint i=0; i<y.N; i++) tt(M+i) = ob->type;
+
+      //counter for features phi
+      M += y.N;
+    }
+  }
+
+  CHECK_EQ(M, dimPhi, "");
+  komo.featureValues = phi;
+  if(!!J) komo.featureJacobians.resize(1).scalar() = J;
+  if(!!tt) komo.featureTypes = tt;
+}
+
 rai::Configuration& KOMO::getConfiguration(double phase) {
-  uint s = k_order + (uint)(phase*double(stepsPerPhase));
+  uint s = k_order + conv_time2step(phase, stepsPerPhase);
   return *configurations(s);
 }
 
 arr KOMO::getJointState(double phase) {
-  uint s = k_order + (uint)(phase*double(stepsPerPhase));
+  uint s = k_order + conv_time2step(phase, stepsPerPhase);
   return configurations(s)->getJointState();
 }
 
 arr KOMO::getFrameState(double phase) {
-  uint s = k_order + (uint)(phase*double(stepsPerPhase));
+  uint s = k_order + conv_time2step(phase, stepsPerPhase);
   return configurations(s)->getFrameState();
 }
 
@@ -2907,3 +2992,4 @@ void writeSkeleton(ostream& os, const Skeleton& S, const intA& switches) {
     }
   }
 }
+

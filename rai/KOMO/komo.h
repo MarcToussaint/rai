@@ -302,7 +302,7 @@ struct KOMO : NonCopyable {
   // internal (kind of private)
   //
 
-  void selectJointsBySubtrees(StringA& roots);
+  void selectJointsBySubtrees(const StringA& roots, const arr& times={});
   void clearObjectives();
   void setupConfigurations();   ///< this creates the @configurations@, that is, copies the original world T times (after setTiming!) perhaps modified by KINEMATIC SWITCHES and FLAGS
   void setupRepresentations();
@@ -352,5 +352,17 @@ struct KOMO : NonCopyable {
     virtual void getPartialPhi(arr& phi, arrA& J, arrA& H, const uintA& whichPhi);
     virtual void getSemantics(StringA& varNames, StringA& phiNames);
   } graph_problem;
+
+  struct TimeSliceProblem : ConstrainedProblem {
+    KOMO& komo;
+    int slice;
+    uint dimPhi=0;
+
+    TimeSliceProblem(KOMO& _komo, int _slice) : komo(_komo), slice(_slice) {}
+
+    void getDimPhi();
+    virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x);
+  };
+
 };
 
