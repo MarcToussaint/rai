@@ -53,17 +53,31 @@ void rai::Simulation::step(const arr& u_control, double tau, ControlMode u_mode)
 
 ptr<rai::SimulationState> rai::Simulation::getState() {
   arr qdot;
-  self->bullet->pullDynamicStates(C.frames, qdot);
+  if(engine==_physx) {
+    self->physx->pullDynamicStates(C.frames, qdot);
+  }else{
+    self->bullet->pullDynamicStates(C.frames, qdot);
+  }
   return make_shared<SimulationState>(C.getFrameState(), qdot);
 }
 
-void rai::Simulation::setState(const ptr<SimulationState>& state) {
-  C.setFrameState(state->frameState);
-  self->bullet->pushFullState(C.frames, state->frameVels);
+void rai::Simulation::setState(const arr& frameState, const arr& frameVelocities){
+  C.setFrameState(frameState);
+  if(engine==_physx) {
+    self->physx->pushFullState(C.frames, frameVelocities);
+  }else{
+    self->bullet->pushFullState(C.frames, frameVelocities);
+  }
 }
 
-void rai::Simulation::setState(const Configuration& C, const arr& qdot) {
-  NIY;
+void rai::Simulation::resetToPreviousState(const ptr<SimulationState>& state) {
+  setState(state->frameState, state->frameVels);
+}
+
+void rai::Simulation::pushConfigurationToSimulator(const arr& frameVelocities) {
+  if(engine==_physx) {
+    self->physx->pushFullState(C.frames, frameVelocities);
+  }
 }
 
 const arr& rai::Simulation::qdot() {

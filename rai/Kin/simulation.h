@@ -29,8 +29,9 @@ struct Simulation {
 
   //-- store and reset the state of the simulation
   ptr<SimulationState> getState();
-  void setState(const ptr<SimulationState>& state);
-  void setState(const Configuration& C, const arr& qdot=NoArr);
+  void setState(const arr& frameState, const arr& frameVelocities=NoArr);
+  void resetToPreviousState(const ptr<SimulationState>& state);
+  void pushConfigurationToSimulator(const arr& frameVelocities=NoArr);
 
   //-- state information
   const arr& qdot();

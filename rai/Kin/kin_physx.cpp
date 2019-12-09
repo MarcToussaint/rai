@@ -496,8 +496,8 @@ void PhysXInterface_self::addLink(rai::Frame* f, bool verbose) {
   actors(f->ID) = actor;
 }
 
-void PhysXInterface::pullDynamicStates(FrameL& frames, arr& vels) {
-  if(!!vels) vels.resize(frames.N, 2, 3).setZero();
+void PhysXInterface::pullDynamicStates(FrameL& frames, arr& frameVelocities) {
+  if(!!frameVelocities) frameVelocities.resize(frames.N, 2, 3).setZero();
   for(rai::Frame* f : frames) {
     if(self->actors.N <= f->ID) continue;
     PxRigidActor* a = self->actors(f->ID);
@@ -507,10 +507,10 @@ void PhysXInterface::pullDynamicStates(FrameL& frames, arr& vels) {
       rai::Transformation X;
       PxTrans2raiTrans(X, a->getGlobalPose());
       f->set_X() = X;
-      if(!!vels && a->getType() == PxActorType::eRIGID_DYNAMIC) {
+      if(!!frameVelocities && a->getType() == PxActorType::eRIGID_DYNAMIC) {
         PxRigidBody* px_body = (PxRigidBody*) a;
-        vels(f->ID, 0, {}) = conv_PxVec3_arr(px_body->getLinearVelocity());
-        vels(f->ID, 1, {}) = conv_PxVec3_arr(px_body->getAngularVelocity());
+        frameVelocities(f->ID, 0, {}) = conv_PxVec3_arr(px_body->getLinearVelocity());
+        frameVelocities(f->ID, 1, {}) = conv_PxVec3_arr(px_body->getAngularVelocity());
       }
     }
   }
@@ -518,7 +518,7 @@ void PhysXInterface::pullDynamicStates(FrameL& frames, arr& vels) {
 //  K->calc_q_from_Q();
 }
 
-void PhysXInterface::pushFullState(const FrameL& frames, const arr& vels, rai::Configuration* Kt_1, rai::Configuration* Kt_2, double tau, bool onlyKinematic) {
+void PhysXInterface::pushFullState(const FrameL& frames, const arr& frameVelocities, rai::Configuration* Kt_1, rai::Configuration* Kt_2, double tau, bool onlyKinematic) {
   for(rai::Frame* f : frames) {
     if(self->actors.N <= f->ID) continue;
     PxRigidActor* a = self->actors(f->ID);
@@ -558,8 +558,8 @@ void PhysXInterface::pushFullState(const FrameL& frames, const arr& vels, rai::C
     } else {
       ((PxRigidDynamic*)a)->setKinematicTarget(conv_Transformation2PxTrans(f->ensure_X()));
     }
-    if(!!vels && self->actorTypes(f->ID)==rai::BT_dynamic) {
-      arr v = vels(f->ID, 0, {}), w = vels(f->ID, 1, {});
+    if(!!frameVelocities && frameVelocities.N && self->actorTypes(f->ID)==rai::BT_dynamic) {
+      arr v = frameVelocities(f->ID, 0, {}), w = frameVelocities(f->ID, 1, {});
       PxRigidBody* px_body = (PxRigidBody*) a;
       px_body->setLinearVelocity(PxVec3(v.elem(0), v.elem(1), v.elem(2)));
       px_body->setAngularVelocity(PxVec3(w.elem(0), w.elem(1), w.elem(2)));

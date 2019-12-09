@@ -400,6 +400,7 @@ is being exported into a bullet instance, which can be stepped forward, and the 
 .def("simulation", [](ry::Config& self, rai::Simulation::SimulatorEngine engine, bool display) {
   ry::RySimulation sim;
   sim.sim = make_shared<rai::Simulation>(self.set(), engine, display);
+  sim.config = make_shared<Var<rai::Configuration>>(self);
   return sim;
 },
 "create a generic Simulation engine, which can internally call PhysX, Bullet, or just kinematics to forward simulate,\
