@@ -1519,8 +1519,8 @@ void KOMO::run_sub(const uintA& X, const uintA& Y) {
   if(verbose>0) cout <<getReport(verbose>1) <<endl;
 }
 
-void KOMO::optimize(bool initNoise) {
-  reset(initNoise);
+void KOMO::optimize(bool initialize) {
+  if(initialize) reset();
   CHECK_EQ(configurations.N, T+k_order, "");
 
   if(verbose>0) reportProblem();
