@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -10,7 +10,7 @@
 #include <Gui/opengl.h>
 #include <Kin/frame.h>
 
-PerceptViewer::PerceptViewer(Var<PerceptL>& _percepts, Var<rai::KinematicWorld> _kin)
+PerceptViewer::PerceptViewer(Var<PerceptL>& _percepts, Var<rai::Configuration> _kin)
   : Thread(STRING("PercViewer_"<<_percepts.name()), -1.),
     percepts(this, _percepts, true),
     kin(this, _kin, false) {
@@ -21,7 +21,7 @@ PerceptViewer::~PerceptViewer() {
   threadClose();
 }
 
-void glDrawPercepts(void *P, OpenGL&) {
+void glDrawPercepts(void* P, OpenGL&) {
   PerceptL& percepts = *((PerceptL*)P);
   for(std::shared_ptr<Percept>& p:percepts) {
     glTransform(p->pose);
@@ -29,9 +29,9 @@ void glDrawPercepts(void *P, OpenGL&) {
     p->glDraw(NoOpenGL);
     glPopMatrix();
     glTranslated(p->com.x, p->com.y, p->com.z);
-    glColor3f(0,0,0);
-    glDrawText(STRING(p->id),0,0,0, true);
-    glColor3f(0,1,0);
+    glColor3f(0, 0, 0);
+    glDrawText(STRING(p->id), 0, 0, 0, true);
+    glColor3f(0, 1, 0);
   }
 }
 
@@ -40,7 +40,7 @@ void PerceptViewer::open() {
   gl->add(glStandardScene);
 //  gl->add(glDrawMeshes, &modelCopy);
   gl->add(glDrawPercepts, &copy);
-  
+
 //  modelWorld.writeAccess();
 //  modelCopy.resize(modelWorld().frames.N);
 //  for(rai::Frame *f: modelWorld().frames) {
@@ -76,11 +76,11 @@ void PerceptViewer::step() {
 //  X.resize(modelWorld().frames.N);
 //  for(rai::Frame *f:modelWorld().frames) X(f->ID) = f->X;
 //  modelWorld.deAccess();
-  
+
 //  gl->dataLock.writeLock();
 //  if(X.N==modelCopy.N) for(uint i=0; i<X.N; i++) modelCopy(i).glX = X(i);
 //  gl->dataLock.unlock();
-  
-  gl->update(NULL, false); //NULL, false, false, true);
+
+  gl->update(nullptr, false); //nullptr, false, false, true);
 }
 

@@ -175,7 +175,7 @@ _ccd_inline void ccdVec3Cross(ccd_vec3_t *d, const ccd_vec3_t *a, const ccd_vec3
 
 /**
  * Returns distance^2 of point P to segment ab.
- * If witness is non-NULL it is filled with coordinates of point from which
+ * If witness is non-nullptr it is filled with coordinates of point from which
  * was computed distance to point P.
  */
 _ccd_export ccd_real_t ccdVec3PointSegmentDist2(const ccd_vec3_t *P,

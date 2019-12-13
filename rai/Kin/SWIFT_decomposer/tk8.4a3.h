@@ -202,7 +202,7 @@ typedef struct Tk_OptionSpec {
  * carefully.
  */
 
-#define TK_OPTION_NULL_OK		(1 << 0)
+#define TK_OPTION_nullptr_OK		(1 << 0)
 #define TK_OPTION_DONT_SET_DEFAULT	(1 << 3)
 
 /*
@@ -265,7 +265,7 @@ typedef struct Tk_SavedOption {
 					 * the option. */
     Tcl_Obj *valuePtr;			/* The old value of the option, in
 					 * the form of a Tcl object; may be
-					 * NULL if the value wasn't saved as
+					 * nullptr if the value wasn't saved as
 					 * an object. */
     double internalForm;		/* The old value of the option, in
 					 * some internal representation such
@@ -299,7 +299,7 @@ typedef struct Tk_SavedOptions {
     struct Tk_SavedOptions *nextPtr;	/* Points to next structure in list;	
 					 * needed if too many options changed
 					 * to hold all the old values in a
-					 * single structure.  NULL means no
+					 * single structure.  nullptr means no
 					 * more structures. */
 } Tk_SavedOptions;
 
@@ -348,7 +348,7 @@ typedef struct Tk_ConfigSpec {
 				 * see definitions below.  Last option in
 				 * table must have type TK_CONFIG_END. */
     char *argvName;		/* Switch used to specify option in argv.
-				 * NULL means this spec is part of a group. */
+				 * nullptr means this spec is part of a group. */
     char *dbName;		/* Name for option in option database. */
     char *dbClass;		/* Class for option in database. */
     char *defValue;		/* Default value for option if not
@@ -394,7 +394,7 @@ typedef enum {
  * tkOldConfig.c (internal-use-only flags are defined there).
  */
 
-#define TK_CONFIG_NULL_OK		(1 << 0)
+#define TK_CONFIG_nullptr_OK		(1 << 0)
 #define TK_CONFIG_COLOR_ONLY		(1 << 1)
 #define TK_CONFIG_MONO_ONLY		(1 << 2)
 #define TK_CONFIG_DONT_SET_DEFAULT	(1 << 3)
@@ -468,7 +468,7 @@ typedef enum {
  * Relief values returned by Tk_GetRelief:
  */
 
-#define TK_RELIEF_NULL		-1
+#define TK_RELIEF_nullptr		-1
 #define TK_RELIEF_FLAT		0
 #define TK_RELIEF_GROOVE	1
 #define TK_RELIEF_RAISED	2
@@ -576,21 +576,21 @@ typedef struct Tk_ClassProcs {
 
 /*
  * Simple accessor for Tk_ClassProcs structure.  Checks that the structure
- * is not NULL, then checks the size field and returns either the requested
- * field, if present, or NULL if the structure is too small to have the field
- * (or NULL if the structure is NULL).
+ * is not nullptr, then checks the size field and returns either the requested
+ * field, if present, or nullptr if the structure is too small to have the field
+ * (or nullptr if the structure is nullptr).
  *
  * A more general version of this function may be useful if other
  * size-versioned structure pop up in the future:
  *
  *	#define Tk_GetField(name, who, which) \
- *	    (((who) == NULL) ? NULL :
- *	    (((who)->size <= Tk_Offset(name, which)) ? NULL :(name)->which))
+ *	    (((who) == nullptr) ? nullptr :
+ *	    (((who)->size <= Tk_Offset(name, which)) ? nullptr :(name)->which))
  */
 
 #define Tk_GetClassProc(procs, which) \
-    (((procs) == NULL) ? NULL : \
-    (((procs)->size <= Tk_Offset(Tk_ClassProcs, which)) ? NULL:(procs)->which))
+    (((procs) == nullptr) ? nullptr : \
+    (((procs)->size <= Tk_Offset(Tk_ClassProcs, which)) ? nullptr:(procs)->which))
 
 /*
  * Each geometry manager (the packer, the placer, etc.) is represented
@@ -613,7 +613,7 @@ typedef struct Tk_GeomMgr {
     Tk_GeomLostSlaveProc *lostSlaveProc;
 				/* Procedure to invoke when a slave is
 				 * taken away from one geometry manager
-				 * by another.  NULL means geometry manager
+				 * by another.  nullptr means geometry manager
 				 * doesn't care when slaves are lost. */
 } Tk_GeomMgr;
 
@@ -789,7 +789,7 @@ typedef struct Tk_FakeWin {
  *				details.
  * TK_CHECKED_IC:		1 means we've already tried to get an input
  *				context for this window;  if the ic field
- *				is NULL it means that there isn't a context
+ *				is nullptr it means that there isn't a context
  *				for the field.
  * TK_DONT_DESTROY_WINDOW:	1 means that Tk_DestroyWindow should not
  *				invoke XDestroyWindow to destroy this widget's
@@ -859,7 +859,7 @@ typedef struct Tk_FakeWin {
  */
 
 typedef enum {
-    TK_STATE_NULL = -1, TK_STATE_ACTIVE, TK_STATE_DISABLED,
+    TK_STATE_nullptr = -1, TK_STATE_ACTIVE, TK_STATE_DISABLED,
     TK_STATE_NORMAL, TK_STATE_HIDDEN
 } Tk_State;
 
@@ -1031,7 +1031,7 @@ typedef struct Tk_ItemType {
     Tk_ItemTranslateProc *translateProc;/* Procedure to translate items of
 					 * this type. */
     Tk_ItemIndexProc *indexProc;	/* Procedure to determine index of
-					 * indicated character.  NULL if
+					 * indicated character.  nullptr if
 					 * item doesn't support indexing. */
     Tk_ItemCursorProc *icursorProc;	/* Procedure to set insert cursor pos.
 					 * to just before a given position. */
@@ -1067,7 +1067,7 @@ typedef struct Tk_CanvasTextInfo {
 				 * Read-only to items. */
     XColor *selFgColorPtr;	/* Foreground color for selected text.
 				 * Read-only to items. */
-    Tk_Item *selItemPtr;	/* Pointer to selected item.  NULL means
+    Tk_Item *selItemPtr;	/* Pointer to selected item.  nullptr means
 				 * selection isn't in this canvas.
 				 * Writable by items. */
     int selectFirst;		/* Character index of first selected
@@ -1088,7 +1088,7 @@ typedef struct Tk_CanvasTextInfo {
     int insertBorderWidth;	/* Width of 3-D border around insert cursor.
 				 * Read-only to items. */
     Tk_Item *focusItemPtr;	/* Item that currently has the input focus,
-				 * or NULL if no such item.  Read-only to
+				 * or nullptr if no such item.  Read-only to
 				 * items.  */
     int gotFocus;		/* Non-zero means that the canvas widget has
 				 * the input focus.  Read-only to items.*/

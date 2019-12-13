@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2019 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #pragma once
 
 #include <Core/array.h>
@@ -36,6 +44,7 @@ enum FeatureSymbol {
   FS_accumulatedCollisions,
   FS_jointLimits,
   FS_distance,
+  FS_oppose,
 
   FS_qItself,
 
@@ -50,11 +59,13 @@ enum FeatureSymbol {
 
   FS_transAccelerations,
   FS_transVelocities,
+
+  FS_qQuaternionNorms,
 };
 
-namespace rai{
-  struct KinematicWorld;
+namespace rai {
+struct Configuration;
 }
 struct Feature;
 
-ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA &symbols, const rai::KinematicWorld& world, const arr& scale=NoArr, const arr& target=NoArr, int order=-1);
+ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const rai::Configuration& world, const arr& scale=NoArr, const arr& target=NoArr, int order=-1);

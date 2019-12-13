@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -20,12 +20,12 @@ struct PhaseOptimization : KOrderMarkovFunction {
   double w; // weight of transition costs of phase
   uint T;
   rai::Spline* p;
-  
-  PhaseOptimization(arr &X, uint _kX, double _w=1.);
-  
+
+  PhaseOptimization(arr& X, uint _kX, double _w=1.);
+
   arr getInitialization();
-  void getSolution(arr &xOpt, arr &sOpt);
-  
+  void getSolution(arr& xOpt, arr& sOpt);
+
   //implementations of the kOrderMarkov virtuals
   void phi_t(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, const arr& x_bar);
   uint get_T() { return T; }

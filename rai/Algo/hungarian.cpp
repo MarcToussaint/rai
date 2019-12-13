@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -43,13 +43,13 @@ void Hungarian::minimize() {
   covered_rows = covered_cols = zeros(dim);
   starred = primed = zeros(dim, dim);
   for(uint i = 0; i < dim; i++) {
-    double minRow = costs[i]().minIndex();
+    double minRow = costs[i]().argmin();
     costs[i]() -= costs(i, minRow);
   }
   costs = ~costs;
-  
+
   for(uint i = 0; i < dim; i++) {
-    double minRow = costs[i]().minIndex();
+    double minRow = costs[i]().argmin();
     costs[i]() -= costs(i, minRow);
   }
   costs = ~costs;
@@ -60,20 +60,20 @@ void Hungarian::starZeros() {
   for(uint i = 0; i < dim; i++) {
     if(covered_rows(i))
       continue;
-      
+
     for(uint j = 0; j < dim; j++) {
       if(covered_cols(j))
         continue;
-        
-      if(costs(i,j) == 0) {
-        starred(i,j) = 1;
+
+      if(costs(i, j) == 0) {
+        starred(i, j) = 1;
         covered_rows(i) = 1;
         covered_cols(j) = 1;
         break;
       }
     }
   }
-  
+
   covered_rows = zeros(dim);
   covered_cols = covered_rows;
   coverColumns();
@@ -89,10 +89,10 @@ void Hungarian::coverColumns() {
     }
   }
   starred = ~starred;
-  
+
   if(count == dim)
     return;
-    
+
   prime();
 }
 
@@ -101,15 +101,15 @@ void Hungarian::prime() {
   for(uint i = 0; i < dim; i++) {
     if(covered_rows(i))
       continue;
-      
+
     for(uint j = 0; j < dim; j++) {
       if(covered_cols(j))
         continue;
-        
-      if(costs(i,j) == 0) {
-        primed(i,j) = 1;
+
+      if(costs(i, j) == 0) {
+        primed(i, j) = 1;
         // Check to see if there is a starred zero in this row.
-        
+
         if(sum(starred[i]()) == 0) {
           path_row.clear();
           path_row.push_back(i);
@@ -121,7 +121,7 @@ void Hungarian::prime() {
           // Cover this row
           covered_rows(i) = 1;
           // Uncover columns containing star
-          uint maxIndex = starred[i]().maxIndex();
+          uint maxIndex = starred[i]().argmax();
           covered_cols(maxIndex) = 0;
           prime();
           return;
@@ -135,39 +135,39 @@ void Hungarian::prime() {
 
 void Hungarian::makePath() {
   uint count = 0;
-  
+
   while(1) {
     starred = ~starred;
     // find the star in the column
-    int row = starred[path_col.at(count)]().maxIndex();
-    
+    int row = starred[path_col.at(count)]().argmax();
+
     starred = ~starred;
     if(starred(row, path_col.at(count)) == 0)
       break;
-      
+
     count++;
     path_row.push_back(row);
     path_col.push_back(path_col.at(count - 1));
-    
+
     // find the prime in this row
-    int col = primed[row]().maxIndex();
+    int col = primed[row]().argmax();
     count++;
     path_row.push_back(path_row.at(count - 1));
     path_col.push_back(col);
   }
-  
+
   // Modify it.
   for(uint i = 0; i <= count; i++) {
     uint row = path_row.at(i);
     uint col = path_col.at(i);
-    
-    if(starred(row,col)) {
-      starred(row,col) = 0;
+
+    if(starred(row, col)) {
+      starred(row, col) = 0;
     } else {
-      starred(row,col) = 1;
+      starred(row, col) = 1;
     }
   }
-  
+
   // Clear covers and primes, call cover columns.
   covered_rows = covered_cols = zeros(dim);
   primed = zeros(dim, dim);
@@ -179,25 +179,25 @@ void Hungarian::modifyCost() {
   for(uint i = 0; i < dim; i++) {
     if(covered_rows(i))
       continue;
-      
+
     for(uint j = 0; j < dim; j++) {
       if(covered_cols(j))
         continue;
-        
-      if(costs(i,j) < minCost)
-        minCost = costs(i,j);
+
+      if(costs(i, j) < minCost)
+        minCost = costs(i, j);
     }
   }
   // Modify the costs
   for(uint i = 0; i < dim; i++) {
     for(uint j = 0; j < dim; j++) {
       if(covered_rows(i)) {
-        costs(i,j) += minCost;
+        costs(i, j) += minCost;
       } else if(!covered_cols(j)) {
-        costs(i,j) -= minCost;
+        costs(i, j) -= minCost;
       }
     }
   }
-  
+
   prime();
 }

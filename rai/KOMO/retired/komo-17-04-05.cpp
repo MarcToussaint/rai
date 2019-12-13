@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -9,7 +9,7 @@
 //===========================================================================
 
 void setTasks(KOMO& MP,
-              rai::Shape &endeff,
+              rai::Shape& endeff,
               rai::Shape& target,
               byte whichAxesToAlign,
               uint iterate,
@@ -18,28 +18,28 @@ void setTasks(KOMO& MP,
 
 //===========================================================================
 
-arr moveTo(rai::KinematicWorld& world,
-           rai::Shape &endeff,
+arr moveTo(rai::Configuration& world,
+           rai::Shape& endeff,
            rai::Shape& target,
            byte whichAxesToAlign,
            uint iterate,
            int timeSteps,
            double duration) {
-           
+
   KOMO MP(world);
-  
+
   setTasks(MP, endeff, target, whichAxesToAlign, iterate, timeSteps, duration);
-  
+
   //-- create the Optimization problem (of type kOrderMarkov)
   arr x = MP.getInitialization();
-  rndGauss(x,.01,true); //don't initialize at a singular config
-  
+  rndGauss(x, .01, true); //don't initialize at a singular config
+
 //  MP.komo_problem.checkStructure(x);
 //  checkJacobianCP(Conv_KOMO_ConstrainedProblem(MP.komo_problem), x, 1e-4);
 
   //-- optimize
   double colPrec = rai::getParameter<double>("KOMO/moveTo/collisionPrecision", -1e0);
-  rai::KinematicWorld::setJointStateCount=0;
+  rai::Configuration::setJointStateCount=0;
   for(uint k=0; k<iterate; k++) {
     rai::timerStart();
     if(colPrec<0) {
@@ -50,11 +50,11 @@ arr moveTo(rai::KinematicWorld& world,
       optNewton(x, Convert(MP.komo_problem));
     }
     cout <<"** optimization time=" <<rai::timerRead()
-         <<" setJointStateCount=" <<rai::KinematicWorld::setJointStateCount <<endl;
+         <<" setJointStateCount=" <<rai::Configuration::setJointStateCount <<endl;
     //    checkJacobian(Convert(MF), x, 1e-5);
     //MP.costReport();
   }
-  
+
   return x;
 }
 

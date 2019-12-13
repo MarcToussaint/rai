@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -14,12 +14,13 @@ struct AssimpLoader {
   std::vector<rai::Mesh> meshes;
   std::string directory;
 
-  AssimpLoader(std::string const &path);
+  AssimpLoader(std::string const& path);
+  AssimpLoader(const struct aiScene* scene);
 
   rai::Mesh getSingleMesh();
 
-private:
-  void loadNode(struct aiNode *node, const struct aiScene *scene, arr T);
-  rai::Mesh loadMesh(struct aiMesh *mesh, const struct aiScene *scene);
+ private:
+  void loadNode(const struct aiNode* node, const struct aiScene* scene, arr T);
+  rai::Mesh loadMesh(const struct aiMesh* mesh, const struct aiScene* scene);
 };
 

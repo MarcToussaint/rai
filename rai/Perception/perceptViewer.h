@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -13,12 +13,12 @@
 
 struct PerceptViewer : Thread {
   Var<PerceptL> percepts;
-  Var<rai::KinematicWorld> kin;
+  Var<rai::Configuration> kin;
   PerceptL copy;
   MeshA modelCopy;
-  struct OpenGL *gl;
-  
-  PerceptViewer(Var<PerceptL>& _percepts, Var<rai::KinematicWorld> _kin);
+  struct OpenGL* gl;
+
+  PerceptViewer(Var<PerceptL>& _percepts, Var<rai::Configuration> _kin);
   ~PerceptViewer();
   void open();
   void step();

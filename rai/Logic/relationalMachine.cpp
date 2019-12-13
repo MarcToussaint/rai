@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -9,11 +9,11 @@
 #include "relationalMachine.h"
 
 RelationalMachine::RelationalMachine()
-  : state(NULL), tmp(NULL), _log("RelationalMachine", 1, 0) {
+  : state(nullptr), tmp(nullptr), _log("RelationalMachine", 1, 0) {
 }
 
 RelationalMachine::RelationalMachine(const char* filename)
-  : state(NULL), tmp(NULL), _log("RelationalMachine", 1, 0) {
+  : state(nullptr), tmp(nullptr), _log("RelationalMachine", 1, 0) {
   init(filename);
 }
 
@@ -50,7 +50,7 @@ bool RelationalMachine::applyEffect(rai::String effect, bool fwdChain) {
   try {
     effect >>*tmp;
     tmp->checkConsistency();
-    e = applyEffectLiterals(*state, *tmp, {}, NULL);
+    e = applyEffectLiterals(*state, *tmp, {}, nullptr);
   } catch(...) {
     LOG(-1) <<"applyEffect "<<effect <<" -- syntax error of query";
 //    return false;
@@ -62,7 +62,7 @@ bool RelationalMachine::applyEffect(rai::String effect, bool fwdChain) {
 }
 
 bool RelationalMachine::applyEffect(Node* literal, bool fwdChain) {
-  bool e = applySubstitutedLiteral(*state, literal, {}, NULL);
+  bool e = applySubstitutedLiteral(*state, literal, {}, nullptr);
   LOG(1) <<"  effects=" <<*literal;
   LOG(2) <<"  new state=\n  " <<getState();
   if(fwdChain) fwdChainRules();
@@ -71,14 +71,14 @@ bool RelationalMachine::applyEffect(Node* literal, bool fwdChain) {
 
 NodeL RelationalMachine::fwdChainRules() {
   tmp->clear();
-  forwardChaining_FOL(KB, KB.get<Graph>("STATE"), NULL, *tmp, false);
+  forwardChaining_FOL(KB, KB.get<Graph>("STATE"), nullptr, *tmp, false);
   LOG(2) <<"  changes=" <<*tmp;
   LOG(2) <<"  new state=\n  " <<getState();
   return *tmp;
 }
 
 Node* RelationalMachine::declareNewSymbol(rai::String symbolStr) {
-  Node *it = KB.readNode(symbolStr);
+  Node* it = KB.readNode(symbolStr);
   return it;
 }
 

@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -27,26 +27,26 @@ namespace rai {
 /// a mesh (arrays of vertices, triangles, colors & normals)
 struct Mesh : GLDrawer {
   arr V;                ///< vertices
-  arr Vn;               ///< triangle normals (optional)
+  arr Vn;               ///< vertex normals (optional)
   arr C;                ///< vertex colors (optional, may be just 3 numbers -> global color)
-  
+
   uintA T;              ///< triangles (faces, empty -> point cloud)
   arr   Tn;             ///< triangle normals (optional)
-  
+
   uintA Tt;             ///< triangle texture indices
   arr tex;              ///< texture coordinates
   byteA texImg;         ///< texture image
   int texture=-1;       ///< GL texture name created with glBindTexture
-  
+
   uintAA graph;         ///< for every vertex, the set of neighboring vertices
-  
+
   rai::Transformation glX; ///< transform (only used for drawing! Otherwise use applyOnPoints)  (optional)
-  
+
   long parsing_pos_start;
   long parsing_pos_end;
-  
+
   Mesh();
-  
+
   /// @name set or create
   void clear();
   void setBox();
@@ -60,12 +60,12 @@ struct Mesh : GLDrawer {
   void setCylinder(double r, double l, uint fineness=2);
   void setCappedCylinder(double r, double l, uint fineness=2);
   void setSSBox(double x_width, double y_width, double z_height, double r, uint fineness=2);
-  void setSSCvx(const rai::Mesh& m, double r, uint fineness=2);
+  void setSSCvx(const arr& core, double r, uint fineness=2);
   void setImplicitSurface(ScalarFunction f, double lo=-10., double hi=+10., uint res=100);
   void setImplicitSurface(ScalarFunction f, double xLo, double xHi, double yLo, double yHi, double zLo, double zHi, uint res);
   void setRandom(uint vertices=10);
   void setGrid(uint X, uint Y);
-  
+
   /// @name transform and modify
   void subDivide();
   void subDivide(uint tri);
@@ -80,13 +80,14 @@ struct Mesh : GLDrawer {
   void makeConvexHull();
   void makeTriangleFan();
   void makeLineStrip();
-  
+
   /// @name support function
-  uint support(const arr &dir);
+  uint support(const arr& dir);
   void supportMargin(uintA& verts, const arr& dir, double margin, int initialization=-1);
-  
+
   /// @name internal computations & cleanup
   void computeNormals();
+  void buildGraph();
   void deleteUnusedVertices();
   void fuseNearVertices(double tol=1e-5);
   void clean();
@@ -101,16 +102,16 @@ struct Mesh : GLDrawer {
   double getCircum() const;
   double getCircum(uint tri) const;
   double getVolume() const;
-  
+
   /// Comparing two Meshes - static function
-  static double meshMetric(const Mesh &trueMesh, const Mesh &estimatedMesh); // Haussdorf metric
-  
+  static double meshMetric(const Mesh& trueMesh, const Mesh& estimatedMesh); // Haussdorf metric
+
   //[preliminary]]
   void skin(uint i);
-  
+
   /// @name IO
   void write(std::ostream&) const; ///< only writes generic info
-  void read(std::istream&, const char* fileExtension, const char* filename=NULL);
+  void read(std::istream&, const char* fileExtension, const char* filename=nullptr);
   void readFile(const char* filename);
   void readTriFile(std::istream& is);
   void readObjFile(std::istream& is);
@@ -119,11 +120,11 @@ struct Mesh : GLDrawer {
   bool readStlFile(std::istream& is);
   void writeTriFile(const char* filename);
   void writeOffFile(const char* filename);
-  void writePLY(const char *fn, bool bin);
-  void readPLY(const char *fn);
+  void writePLY(const char* fn, bool bin);
+  void readPLY(const char* fn);
   void writeArr(std::ostream&);
   void readArr(std::istream&);
-  
+
   void glDraw(struct OpenGL&);
 };
 } //END of namespace
@@ -132,7 +133,7 @@ stdOutPipe(rai::Mesh)
 //===========================================================================
 
 namespace rai {
-struct MeshCollection : GLDrawer{
+struct MeshCollection : GLDrawer {
   Array<Mesh*> M;
   arr X;
   void glDraw(struct OpenGL&);
@@ -152,9 +153,9 @@ uintA getSubMeshPositions(const char* filename);
 // C-style functions
 //
 
-void inertiaSphere(double *Inertia, double& mass, double density, double radius);
-void inertiaBox(double *Inertia, double& mass, double density, double dx, double dy, double dz);
-void inertiaCylinder(double *Inertia, double& mass, double density, double height, double radius);
+void inertiaSphere(double* Inertia, double& mass, double density, double radius);
+void inertiaBox(double* Inertia, double& mass, double density, double dx, double dy, double dz);
+void inertiaCylinder(double* Inertia, double& mass, double density, double height, double radius);
 
 /// @} end of group_geo
 

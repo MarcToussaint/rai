@@ -1,9 +1,17 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2019 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "path.h"
 
 #include <KOMO/komo-ext.h>
 
-rai::String validatePath(const rai::KinematicWorld& _K, const arr& q_now, const StringA& joints, const arr& q, const arr& tau){
-  rai::KinematicWorld K;
+rai::String validatePath(const rai::Configuration& _K, const arr& q_now, const StringA& joints, const arr& q, const arr& tau) {
+  rai::Configuration K;
   K.copy(_K, true);
 
 //  arr q0 = K.getJointState();
@@ -17,23 +25,22 @@ rai::String validatePath(const rai::KinematicWorld& _K, const arr& q_now, const 
   rai::String txt;
   txt <<"VALIDATE ";
 
-  if(q.d0>1){
+  if(q.d0>1) {
     double startVel, endVel, maxVel=0.;
     startVel = length(q[0]-q_now)/(tau(0));
     endVel = length(q[-1]-q[-2])/(tau(-1)-tau(-2));
-    for(uint t=1;t<q.d0;t++){
+    for(uint t=1; t<q.d0; t++) {
       double v = length(q[t]-q[t-1])/(tau(t)-tau(t-1));
       if(v>maxVel) maxVel = v;
     }
     txt <<"\nv0=" <<startVel <<" vT=" <<endVel <<" vMax=" <<maxVel;
   }
-  if(joints.N<=3){
+  if(joints.N<=3) {
     txt <<"\n" <<joints;
   }
   txt <<"\n";
   return txt;
 }
-
 
 //  PlanDrawer planDrawer(K, q_now, joints, q, tau);
 //  K.gl().remove(K);
@@ -57,41 +64,41 @@ rai::String validatePath(const rai::KinematicWorld& _K, const arr& q_now, const 
 //  }
 //}
 
-std::pair<arr, arr> computePath(const rai::KinematicWorld& K, const arr& target_q, const StringA& target_joints, const char* endeff, double up, double down){
-    KOMO komo;
-    komo.setModel(K, true);
-    komo.setPathOpt(1., 20, 3.);
-    komo.setSquaredQAccelerations();
+std::pair<arr, arr> computePath(const rai::Configuration& K, const arr& target_q, const StringA& target_joints, const char* endeff, double up, double down) {
+  KOMO komo;
+  komo.setModel(K, true);
+  komo.setPathOpt(1., 20, 3.);
+  komo.setSquaredQAccVelHoming();
 
-    addMotionTo(komo, target_q, target_joints, endeff, up, down);
-    komo.verbose=1;
-    komo.optimize();
+  addMotionTo(komo, target_q, target_joints, endeff, up, down);
+  komo.verbose=1;
+  komo.optimize();
 
-    arr path = komo.getPath(K.getJointNames());
-    path[path.d0-1] = target_q; //overwrite last config
-    arr tau = komo.getPath_times();
-    cout <<validatePath(K, K.getJointState(), target_joints, path, tau) <<endl;
-    bool go = komo.displayPath(true, true);//;/komo.display();
-    if(!go){
-        cout <<"ABORT!" <<endl;
-        return {arr(), arr()};
-    }
-    return {path, tau};
+  arr path = komo.getPath(K.getJointNames());
+  path[path.d0-1] = target_q; //overwrite last config
+  arr tau = komo.getPath_times();
+  cout <<validatePath(K, K.getJointState(), target_joints, path, tau) <<endl;
+  bool go = komo.displayPath(true, true);//;/komo.display();
+  if(!go) {
+    cout <<"ABORT!" <<endl;
+    return {arr(), arr()};
+  }
+  return {path, tau};
 }
 
-void mirrorDuplicate(std::pair<arr, arr>& path){
-    arr& q = path.first;
-    arr& t = path.second;
+void mirrorDuplicate(std::pair<arr, arr>& path) {
+  arr& q = path.first;
+  arr& t = path.second;
 
-    if(!q.N) return;
+  if(!q.N) return;
 
-    uint T=q.d0-1;
-    double D=2.*t.last();
+  uint T=q.d0-1;
+  double D=2.*t.last();
 
-    q.resizeCopy(2*T+1, q.d1);
-    t.resizeCopy(2*T+1);
-    for(uint i=1;i<=T;i++){
-        q[T+i] = q[T-i];
-        t(T+i) = D - t(T-i);
-    }
+  q.resizeCopy(2*T+1, q.d1);
+  t.resizeCopy(2*T+1);
+  for(uint i=1; i<=T; i++) {
+    q[T+i] = q[T-i];
+    t(T+i) = D - t(T-i);
+  }
 }

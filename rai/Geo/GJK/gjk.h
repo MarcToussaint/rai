@@ -5,6 +5,8 @@
 
 */
 
+#pragma once
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -253,13 +255,13 @@ int gjk_extract_point( struct simplex_point *simp,
  * of the) distance between the witness points.
  *
  * The 7th parameter is a pointer to a simplex_point structure.  If
- * this is non-NULL then a special form of the witness points is
+ * this is non-nullptr then a special form of the witness points is
  * stored in the structure by the routine, suitable for passing to
  * this routine as seed points for any further calls involving these
  * two objects. The 8th parameter is a flag, which when set tells the
  * routine to use the given simplex_point structure instance as as
  * seed, otherwise it just uses any seed.  (If the 7th parameter is
- * NULL then no harm is done.)
+ * nullptr then no harm is done.)
  *
  * Note that with this version one field of the simplex_point structure
  * can be used to pass back the confidence region for the routine: when

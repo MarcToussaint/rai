@@ -6,8 +6,7 @@
 #include <LGP/LGP_tree.h>
 #include <KOMO/komo.h>
 
-
-void generateProblem(rai::KinematicWorld& K){
+void generateProblem(rai::Configuration& K){
   uint numObj = 4;
   for(;;){
     K.clear();
@@ -18,9 +17,8 @@ void generateProblem(rai::KinematicWorld& K){
     K.addFile(rai::raiPath("../rai-robotModels/objects/tables.g"));
     for(uint i=0;i<numObj;i++){
       rai::Frame *f = K.addFrame(STRING("obj"<<i), "table1", "type:ssBox size:[.1 .1 .2 .02] color:[1. 0. 0.], contact, logical={ object }, joint:rigid" );
-      f->Q.pos = {rnd.uni(-.3, .3), rnd.uni(-1.,1.), .15};
-      f->Q.rot.addZ(rnd.uni(-RAI_PI,RAI_PI));
-      f->X = f->parent->X * f->Q;
+      f->setRelativePosition({rnd.uni(-.3, .3), rnd.uni(-1.,1.), .15});
+      f->setRelativeQuaternion(rai::Quaternion(0).addZ(rnd.uni(-RAI_PI,RAI_PI)).getArr4d());
     }
     K.stepSwift();
     arr y;
@@ -34,7 +32,7 @@ void generateProblem(rai::KinematicWorld& K){
   K.proxies.clear();
 
   rai::Frame *f = K.addFrame("tray", "table2", "type:ssBox size:[.15 .15 .04 .02] color:[0. 1. 0.], logical={ table }" );
- f->Q.pos = {0.,0.,.07};
+  f->setRelativePosition({0.,0.,.07});
 //  f->Q.pos = {rnd.uni(-.3, .3), rnd.uni(-1.,1.), .07};
 //  f->Q.rot.addZ(rnd.uni(-RAI_PI,RAI_PI));
 
@@ -44,12 +42,10 @@ void generateProblem(rai::KinematicWorld& K){
 //  K.addFrame("", "tray", "type:ssBox size:[.04 .3 .1 .02] Q:<d(90 0 0 1) t(+.13 0 .03)> color:[0. 1. 0.], contact" );
 //  K.addFrame("", "tray", "type:ssBox size:[.04 .3 .1 .02] Q:<d(90 0 0 1) t(-.13 0 .03)> color:[0. 1. 0.], contact" );
 
-  K.calc_fwdPropagateFrames();
 }
 
-
 void solve(){
-  rai::KinematicWorld K;
+  rai::Configuration K;
   generateProblem(K);
   //  K.addFile("model2.g");
   K.selectJointsByGroup({"base","armL","armR"}, true, true);
@@ -58,17 +54,20 @@ void solve(){
   LGP_Tree lgp(K, "fol-pnp-switch.g");
   lgp.fol.addTerminalRule("(on tray obj0) (on tray obj1) (on tray obj2)");
   lgp.displayBound = BD_seqPath;
-  lgp.verbose=2;
+  //lgp.verbose=2;
+
+  lgp.fol.writePDDLfiles("z");
 
   lgp.run();
 
-  rai::wait();
-  lgp.renderToVideo();
+  if(lgp.verbose>1){
+    rai::wait();
+    lgp.renderToVideo();
+  }
 }
 
-
 void testBounds(){
-  rai::KinematicWorld K;
+  rai::Configuration K;
   generateProblem(K);
 //  K.addFile("model2.g");
   K.selectJointsByGroup({"base","armL","armR"}, true, true);
@@ -83,9 +82,9 @@ int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 //  rnd.clockSeed();
 
-//  solve();
+  solve();
 
-  testBounds();
+//  testBounds();
 
   return 0;
 }

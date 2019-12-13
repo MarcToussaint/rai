@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -27,15 +27,15 @@ typedef rai::Array<Gaussian*> GaussianL;
 typedef enum { opengl, xfig, gnupl } PlotMode;
 
 struct PlotModule {
-  struct sPlotModule *s;
+  struct sPlotModule* s;
   PlotMode mode;
-  OpenGL *gl;
+  OpenGL* gl;
   bool light, grid, colors, drawBox, drawDots, perspective;
   uint thickLines;//display options
   PlotModule();
   ~PlotModule();
 };
-extern PlotModule plotModule;
+extern Singleton<PlotModule> plotModule;
 
 //===========================================================================
 
@@ -67,7 +67,7 @@ void plotMatrixFlow(uintA& M, double len);
 void plotGaussians(const GaussianA& G);
 void plotGaussians(const GaussianL& G);
 
-void glDrawPlot(void *module, OpenGL&);
+void glDrawPlot(void* module, OpenGL&);
 
 #endif
 

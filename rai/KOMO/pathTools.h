@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2019 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include <Core/array.h>
 
 arr getVelocities(const arr& q, double tau) {
@@ -20,8 +28,8 @@ void getAccelerations(const arr& q, double tau) {
   return a;
 }
 
-arr sineProfile(const arr& q0, const arr& qT,uint T) {
-  arr q(T+1,q0.N);
+arr sineProfile(const arr& q0, const arr& qT, uint T) {
+  arr q(T+1, q0.N);
   for(uint t=0; t<=T; t++) q[t] = q0 + .5 * (1.-cos(RAI_PI*t/T)) * (qT-q0);
   return q;
 }

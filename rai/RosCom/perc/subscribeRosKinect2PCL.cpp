@@ -11,9 +11,9 @@
 #include <pcl_ros/transforms.h>
 
 struct sSubscribeRosKinect2PCL{
-  ros::NodeHandle *nh = NULL;
+  ros::NodeHandle *nh = nullptr;
   ros::Subscriber sub;
-  tf::TransformListener *listener = NULL;
+  tf::TransformListener *listener = nullptr;
 
   pcl::PCLPointCloud2 pcl_pc2;
   Pcl pcl;
@@ -21,8 +21,8 @@ struct sSubscribeRosKinect2PCL{
 };
 
 SubscribeRosKinect2PCL::SubscribeRosKinect2PCL(const char* cloud_name, const char* topic_name)
-  : cloud(NULL, cloud_name),
-    kinect_frame(NULL, "kinect_frame"){
+  : cloud(nullptr, cloud_name),
+    kinect_frame(nullptr, "kinect_frame"){
   s = new sSubscribeRosKinect2PCL;
   if(rai::getParameter<bool>("useRos")){
     s->nh = new ros::NodeHandle;

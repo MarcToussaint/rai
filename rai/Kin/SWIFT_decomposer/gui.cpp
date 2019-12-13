@@ -169,7 +169,7 @@ int num_leaves;
 #ifdef DECOMP_GRAPHICS
 void Initialize_For_New_Model( )
 {
-    if( mesh != NULL ) {
+    if( mesh != nullptr ) {
         SWIFT_Triple mint, maxt;
         mesh->Compute_Bounding_Box( mint, maxt );
         explode_center = 0.5 * (mint + maxt);
@@ -749,7 +749,7 @@ int Key_K_CB( Togl *togl, int argc, const char *argv[] )
             SWIFT_BV* parent;
 
             new_which_pieces.Set_Length( 0 );
-            parent = NULL;
+            parent = nullptr;
             for( i = 0; i < which_pieces.Length(); i++ ) {
                 if( uleaves && which_pieces[i]->Is_Leaf() &&
                     which_pieces[i]->Level() < level
@@ -887,11 +887,11 @@ void Ensure_Mouse_Released( )
     if( dragging ) {
         // Another mouse button is already down.  Simulate a release of it
         if( which_mouse == 1 ) {
-            Mouse_1_Up_CB( t, 0, NULL );
+            Mouse_1_Up_CB( t, 0, nullptr );
         } else if( which_mouse == 2 ) {
-            Mouse_2_Up_CB( t, 0, NULL );
+            Mouse_2_Up_CB( t, 0, nullptr );
         } else {
-            Mouse_3_Up_CB( t, 0, NULL );
+            Mouse_3_Up_CB( t, 0, nullptr );
         }
     }
 }
@@ -1046,11 +1046,11 @@ void Gui_Init_Before_TclTk( char* filename )
     }
 #endif
 
-    mesh = NULL;
+    mesh = nullptr;
 
     Mesh_Utils_Initialize();
 
-    if( filename != NULL ) {
+    if( filename != nullptr ) {
         int i, j, k;
 
         if( !Load_File( filename, mesh, split, already_decomp, already_hier,
@@ -1077,7 +1077,7 @@ void Gui_Init_Before_TclTk( char* filename )
                 cerr << "Flipping edges with tolerance = " << edge_flip_tol
                      << endl << endl;
                 Edge_Flip( mesh, edge_flip_tol );
-                if( ef_filename != NULL ) {
+                if( ef_filename != nullptr ) {
                     cerr << "Saving edge flipped mesh" << endl << endl;
                     Save_Model_File( ef_filename, mesh );
                 }
@@ -1109,7 +1109,7 @@ void Gui_Init_Before_TclTk( char* filename )
                 cerr << "Creating convex hierarchy" << endl;
                 mesh->Create_BV_Hierarchy( split, piece_ids, model_faces,
                                            virtual_faces, st_faces, st_twins );
-                if( hier_filename != NULL ) {
+                if( hier_filename != nullptr ) {
                     cerr << "Saving convex hierarchy" << endl << endl;
                     Save_Hierarchy_File( hier_filename, mesh,
                                          st_faces, st_twins );

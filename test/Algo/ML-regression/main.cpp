@@ -6,7 +6,7 @@ bool plotDev=true;
 
 //===========================================================================
 
-void testLinReg(const char *datafile=NULL) {
+void testLinReg(const char *datafile=nullptr) {
   if(!datafile){ //store artificial data to a file
     datafile="z.train";
     arr X,y;
@@ -71,7 +71,7 @@ void testLinReg(const char *datafile=NULL) {
 
 //===========================================================================
 
-void testRobustRegression(const char *datafile=NULL) {
+void testRobustRegression(const char *datafile=nullptr) {
   if(!datafile){ //store artificial data to a file
     datafile="z.train";
     arr X,y;
@@ -145,12 +145,11 @@ void testKernelGradients() {
     checkHessian(f, x1, 1e-5);
   }
 
-
 }
 
 //===========================================================================
 
-void testKernelReg(const char *datafile=NULL) {
+void testKernelReg(const char *datafile=nullptr) {
   if(!datafile){ //store artificial data to a file
     datafile="z.train";
     arr X,y;
@@ -187,7 +186,6 @@ void testKernelReg(const char *datafile=NULL) {
     arr fx,sig;
     fx = f.evaluate(opt.x.reshape(1,opt.x.N), sig);
     cout <<fx << ' ' <<fx - sqrt(sig) <<endl;
-
 
 //    OptGrad(x, f.getF(1.), OPT(verbose=2)).run();
 //    cout <<"optimum at x=" <<x <<endl;
@@ -321,7 +319,7 @@ void TEST(MultiClass){
   p_pred = exp(Phi*beta);
   for(uint i=0; i<label.N; i++) {
     p_pred[i]() /= sum(p_pred[i]);
-    label(i) = y[i].maxIndex();
+    label(i) = y[i].argmax();
   }
   rai::arrayBrackets="  ";
   FILE("z.train") <<catCol(X, label, y, p_pred);
@@ -468,6 +466,7 @@ int main(int argc, char *argv[]) {
     break;
   }
   
+  plotClear();
   return 0;
 }
 

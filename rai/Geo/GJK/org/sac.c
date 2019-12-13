@@ -48,7 +48,7 @@ int sac_qhull( int npts, const double (*input_array)[DIM],
   
   ismalloc= False; 	/* True if qh_freeqhull should 'free(array)' */
 
-  qh_init_A (stdin, stdout, stderr, 0, NULL);
+  qh_init_A (stdin, stdout, stderr, 0, nullptr);
   exitcode= setjmp (qh errexit);
   if (exitcode) {
 	    return exitcode;

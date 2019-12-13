@@ -83,7 +83,7 @@ class SWIFT_Lookup_Table {
     void Create( SWIFT_BV* p );
     // Lookup table query function
     SWIFT_Tri_Edge* Lookup( const SWIFT_Triple& dir )
-                { return type == LUT_NONE ? NULL : Lookup_Internal( dir ); }
+                { return type == LUT_NONE ? nullptr : Lookup_Internal( dir ); }
 
 #ifdef SWIFT_DEBUG
     void Dump( );

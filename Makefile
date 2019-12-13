@@ -1,3 +1,4 @@
+
 BASE = .
 
 target: src
@@ -19,6 +20,8 @@ installUbuntuAll: force
 	@find rai -mindepth 1 -maxdepth 1 -type d -exec make installUbuntu -C {} \;
 
 printUbuntuAll: $(DEPEND:%=inPath_printUbuntu/%) printUbuntu
+
+printDependAll: $(DEPEND:%=inPath_printDepend/%) printDepend
 
 tests: $(test_paths:%=inPath_make/%)
 

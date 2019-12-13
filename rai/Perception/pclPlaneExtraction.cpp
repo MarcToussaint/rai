@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -10,20 +10,20 @@
 
 #include "pclPlaneExtraction.h"
 
-void extractPlanes(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointCloud<PointT>::Ptr outCloud, std::vector<pcl::ModelCoefficients::Ptr> &outCoefficients, std::vector<pcl::PointIndices::Ptr> &outInliers , uint numPlanes) {
+void extractPlanes(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointCloud<PointT>::Ptr outCloud, std::vector<pcl::ModelCoefficients::Ptr>& outCoefficients, std::vector<pcl::PointIndices::Ptr>& outInliers, uint numPlanes) {
   pcl::PointCloud<PointT>::Ptr cloud_be(inCloud);
   for(uint i = 0; i<numPlanes; i++) {
-  
+
     pcl::ModelCoefficients::Ptr coefficients_plane(new pcl::ModelCoefficients);
     pcl::PointIndices::Ptr inliers_plane(new pcl::PointIndices);
-    planeDetector(cloud_be,coefficients_plane,inliers_plane);
-    substractPlane(cloud_be,inliers_plane,outCloud);
-    
+    planeDetector(cloud_be, coefficients_plane, inliers_plane);
+    substractPlane(cloud_be, inliers_plane, outCloud);
+
     outCoefficients.push_back(coefficients_plane);
     outInliers.push_back(inliers_plane);
-    
+
     cloud_be = outCloud;
-    
+
   }
   //cout << "Number of points after normal extraction: " << outCloud->size() << endl;
 }
@@ -68,7 +68,7 @@ void passthroughFilter(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointCloud<Poi
   //cerr << "PointCloud after passthroughFilter: " << outCloud->points.size () << " data points." << endl;
 }
 
-void normalEstimator(pcl::PointCloud<PointT>::Ptr inCloud,pcl::PointCloud<pcl::Normal>::Ptr outNormal,int knn) {
+void normalEstimator(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointCloud<pcl::Normal>::Ptr outNormal, int knn) {
   pcl::search::KdTree<PointT>::Ptr tree(new pcl::search::KdTree<PointT> ());
   pcl::NormalEstimation<PointT, pcl::Normal> ne;
   // Estimate point normals
@@ -83,7 +83,7 @@ void planeDetector(pcl::PointCloud<PointT>::Ptr inCloud, pcl::ModelCoefficients:
 
 {
   pcl::SACSegmentation<PointT> seg;
-  
+
   // Create the segmentation object for the planar model and set all the parameters
   seg.setOptimizeCoefficients(true);
   seg.setModelType(pcl::SACMODEL_PLANE);
@@ -96,11 +96,11 @@ void planeDetector(pcl::PointCloud<PointT>::Ptr inCloud, pcl::ModelCoefficients:
   //cerr << "Plane coefficients: " << *outCoefficients << endl;
 }
 
-void planeDetectorWithNormals(pcl::PointCloud<PointT>::Ptr inCloud,pcl::PointCloud<pcl::Normal>::Ptr inCloudNormal, pcl::ModelCoefficients::Ptr outCoefficients, pcl::PointIndices::Ptr outInliersPlane)
+void planeDetectorWithNormals(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointCloud<pcl::Normal>::Ptr inCloudNormal, pcl::ModelCoefficients::Ptr outCoefficients, pcl::PointIndices::Ptr outInliersPlane)
 
 {
   pcl::SACSegmentationFromNormals<PointT, pcl::Normal> seg;
-  
+
   // Create the segmentation object for the planar model and set all the parameters
   seg.setOptimizeCoefficients(true);
   seg.setModelType(pcl::SACMODEL_NORMAL_PLANE);
@@ -115,7 +115,7 @@ void planeDetectorWithNormals(pcl::PointCloud<PointT>::Ptr inCloud,pcl::PointClo
   //cerr << "Plane coefficients: " << *outCoefficients << endl;
 }
 
-void substractPlane(pcl::PointCloud<PointT>::Ptr inCloud,pcl::PointIndices::Ptr inInliersPlane, pcl::PointCloud<PointT>::Ptr outCloud) {
+void substractPlane(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointIndices::Ptr inInliersPlane, pcl::PointCloud<PointT>::Ptr outCloud) {
   pcl::ExtractIndices<PointT> extract;
   extract.setInputCloud(inCloud);
   extract.setIndices(inInliersPlane);

@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -12,18 +12,18 @@ TM_Default::TM_Default(TM_DefaultType _type,
                        int iShape, const rai::Vector& _ivec,
                        int jShape, const rai::Vector& _jvec,
                        const arr& _params):type(_type), i(iShape), j(jShape) {
-                       
+
   if(!!_ivec) ivec=_ivec; else ivec.setZero();
   if(!!_jvec) jvec=_jvec; else jvec.setZero();
   if(!!_params) params=_params;
 }
 
-TM_Default::TM_Default(TM_DefaultType _type, const rai::KinematicWorld &G,
+TM_Default::TM_Default(TM_DefaultType _type, const rai::Configuration& G,
                        const char* iShapeName, const rai::Vector& _ivec,
                        const char* jShapeName, const rai::Vector& _jvec,
                        const arr& _params):type(_type), i(-1), j(-1) {
-  rai::Shape *a = iShapeName ? G.getShapeByName(iShapeName):NULL;
-  rai::Shape *b = jShapeName ? G.getShapeByName(jShapeName):NULL;
+  rai::Shape* a = iShapeName ? G.getShapeByName(iShapeName):nullptr;
+  rai::Shape* b = jShapeName ? G.getShapeByName(jShapeName):nullptr;
   if(a) i=a->index;
   if(b) j=b->index;
   if(!!_ivec) ivec=_ivec; else ivec.setZero();
@@ -31,16 +31,16 @@ TM_Default::TM_Default(TM_DefaultType _type, const rai::KinematicWorld &G,
   if(!!_params) params=_params;
 }
 
-void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
-  rai::Body *body_i = i<0?NULL: G.shapes(i)->body;
-  rai::Body *body_j = j<0?NULL: G.shapes(j)->body;
-  
+void TM_Default::phi(arr& y, arr& J, const rai::Configuration& G) {
+  rai::Body* body_i = i<0?nullptr: G.shapes(i)->body;
+  rai::Body* body_j = j<0?nullptr: G.shapes(j)->body;
+
   //get state
   switch(type) {
     case TMT_pos: {
       rai::Vector vec_i = i<0?ivec: G.shapes(i)->rel*ivec;
       rai::Vector vec_j = j<0?jvec: G.shapes(j)->rel*jvec;
-      if(body_j==NULL) {
+      if(body_j==nullptr) {
         G.kinematicsPos(y, J, body_i, &vec_i);
         y -= conv_vec2arr(vec_j);
         break;
@@ -68,7 +68,7 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
     case TMT_vec: {
       rai::Vector vec_i = i<0?ivec: G.shapes(i)->rel.rot*ivec;
 //      rai::Vector vec_j = j<0?jvec: G.shapes(j)->rel.rot*jvec;
-      if(body_j==NULL) {
+      if(body_j==nullptr) {
         G.kinematicsVec(y, J, body_i, &vec_i);
         break;
       }
@@ -82,13 +82,13 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
       NIY; //TODO: Jacobian?
     } break;
     case TMT_vecAlign: {
-      CHECK(fabs(ivec.length()-1.)<1e-10,"vector references must be normalized");
-      CHECK(fabs(jvec.length()-1.)<1e-10,"vector references must be normalized");
+      CHECK(fabs(ivec.length()-1.)<1e-10, "vector references must be normalized");
+      CHECK(fabs(jvec.length()-1.)<1e-10, "vector references must be normalized");
       rai::Vector vec_i = i<0?ivec: G.shapes(i)->rel.rot*ivec;
       rai::Vector vec_j = j<0?jvec: G.shapes(j)->rel.rot*jvec;
-      arr zi,Ji,zj,Jj;
+      arr zi, Ji, zj, Jj;
       G.kinematicsVec(zi, Ji, body_i, &vec_i);
-      if(body_j==NULL) {
+      if(body_j==nullptr) {
         zj = conv_vec2arr(vec_j);
         if(!!J) { Jj.resizeAs(Ji); Jj.setZero(); }
       } else {
@@ -102,7 +102,7 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
       }
     } break;
     case TMT_quat:
-      if(body_j==NULL) {
+      if(body_j==nullptr) {
         G.kinematicsQuat(y, J, body_i);
         break;
       }
@@ -154,7 +154,7 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
         J.clear();
         for(uint k=0; k<params.N; k++) {
           uint l=(uint)params(k);
-          G.kinematicsPos(NoArr, Ji, G.bodies(l), NULL);
+          G.kinematicsPos(NoArr, Ji, G.bodies(l), nullptr);
           vi = G.bodies(l)->X.rot.getY();
           vi *= -1.;
           zi = conv_vec2arr(vi);
@@ -167,7 +167,7 @@ void TM_Default::phi(arr& y, arr& J, const rai::KinematicWorld& G) {
   }
 }
 
-uint TM_Default::dim_phi(const rai::KinematicWorld& G) {
+uint TM_Default::dim_phi(const rai::Configuration& G) {
   //get state
   switch(type) {
     case TMT_pos: return 3;

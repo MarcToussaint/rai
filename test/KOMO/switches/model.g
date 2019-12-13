@@ -1,4 +1,4 @@
-frame table1{ shape:ssBox, X:<t(.8 0 .7)>, size:[2. 3. .2 .02], color:[.3 .3 .3] fixed, contact, logical:{ table } }
+frame table1{ shape:ssBox, X:<t(.8 0 .7)>, size:[2. 3. .2 .02], color:[.3 .3 .3] contact, logical:{ table } }
 
 ### arm
 
@@ -30,5 +30,5 @@ frame stick (table1){
   joint:rigid
 }
 
-frame stickTip (stick) { Q:<t(.4 .1 0) d(90 0 0 1)> type:ssBox size:[.2 .026 .04 0.01] color:[.6 .3 0], logical:{ object, pusher }, contact }
+frame stickTip (stick) { Q:<t(.4 .1 0) d(90 0 0 1)> shape:ssBox size:[.2 .026 .04 0.01] color:[.6 .3 0], logical:{ object, pusher }, contact }
 

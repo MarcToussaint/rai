@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -32,7 +32,7 @@ CtrlTask::CtrlTask(const char* name, Feature* map, const Graph& params)
 }
 
 void CtrlTask::set(const Graph& params) {
-  Node *it;
+  Node* it;
   if((it=params["PD"])) {
     arr pd=it->get<arr>();
     setGainsAsNatural(pd(0), pd(1));
@@ -81,8 +81,8 @@ void makeGainsMatrices(arr& Kp, arr& Kd, uint n) {
   if(Kd.N==1) Kd = diag(Kd.scalar(), n);
   if(Kp.nd==1) Kp = diag(Kp);
   if(Kd.nd==1) Kd = diag(Kd);
-  CHECK(Kp.nd==2 && Kp.d0==n && Kp.d1==n,"");
-  CHECK(Kd.nd==2 && Kd.d0==n && Kd.d1==n,"");
+  CHECK(Kp.nd==2 && Kp.d0==n && Kp.d1==n, "");
+  CHECK(Kd.nd==2 && Kd.d0==n && Kd.d1==n, "");
 }
 
 arr CtrlTask::get_y_ref() {
@@ -119,7 +119,7 @@ arr CtrlTask::getDesiredAcceleration() {
   arr Kd_y = Kd;
   makeGainsMatrices(Kp_y, Kd_y, y.N);
   arr a = Kp_y*(get_y_ref()-y) + Kd_y*(get_ydot_ref()-v);
-  
+
   //check vel/acc limits
   double accNorm = length(a);
   if(accNorm<1e-4) return a;
@@ -135,25 +135,25 @@ void CtrlTask::getDesiredLinAccLaw(arr& Kp_y, arr& Kd_y, arr& a0_y) {
   Kp_y = Kp;
   Kd_y = Kd;
   makeGainsMatrices(Kp_y, Kd_y, y.N);
-  
+
   arr y_delta = get_y_ref() - y;
   double y_delta_length = length(y_delta);
   if(maxVel && y_delta_length>maxVel)
     y_delta *= maxVel/y_delta_length;
-    
+
   a0_y = Kp_y*(y+y_delta) + Kd_y*get_ydot_ref();
   arr a = a0_y - Kp_y*y - Kd_y*v; //linear law
   double accNorm = length(a);
-  
+
   return;
-  
+
   //check vel limit -> change a0, no change in gains
   if(maxVel) {
     double velRatio = scalarProduct(v, a/accNorm)/maxVel;
     if(velRatio>1.) a0_y -= a; //a becomes zero
     else if(velRatio>.9) a0_y -= a*(10.*(velRatio-.9));
   }
-  
+
   //check acc limits -> change all
   if(maxAcc>1e-4 && accNorm>maxAcc) {
     double scale = maxAcc/accNorm;
@@ -163,19 +163,19 @@ void CtrlTask::getDesiredLinAccLaw(arr& Kp_y, arr& Kd_y, arr& a0_y) {
   }
 }
 
-void CtrlTask::getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const rai::KinematicWorld& world) {
+void CtrlTask::getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const rai::Configuration& world) {
   //-- get necessary Jacobians
-  TM_Default *m = dynamic_cast<TM_Default*>(&map);
-  CHECK(m,"this only works for the default position task map");
-  CHECK_EQ(m->type, TMT_pos,"this only works for the default positioni task map");
-  CHECK_GE(m->i, 0,"this only works for the default position task map");
-  rai::Body *body = world.shapes(m->i)->body;
+  TM_Default* m = dynamic_cast<TM_Default*>(&map);
+  CHECK(m, "this only works for the default position task map");
+  CHECK_EQ(m->type, TMT_pos, "this only works for the default positioni task map");
+  CHECK_GE(m->i, 0, "this only works for the default position task map");
+  rai::Body* body = world.shapes(m->i)->body;
   rai::Vector vec = world.shapes(m->i)->rel*m->ivec;
   rai::Shape* l_ft_sensor = world.getShapeByName("l_ft_sensor");
   arr J_ft, J;
   world.kinematicsPos(NoArr, J,   body, vec);
-  world.kinematicsPos_wrtFrame(NoArr, J_ft,body, vec, l_ft_sensor);
-  
+  world.kinematicsPos_wrtFrame(NoArr, J_ft, body, vec, l_ft_sensor);
+
   //-- compute the control coefficients
   u_bias = ~J*f_ref;
   f_des = f_ref;
@@ -212,28 +212,28 @@ void CtrlTask::reportState(ostream& os) {
 //===========================================================================
 
 void ConstraintForceTask::updateConstraintControl(const arr& _g, const double& lambda_desired) {
-  CHECK_EQ(_g.N,1, "can handle only 1D constraints so far");
+  CHECK_EQ(_g.N, 1, "can handle only 1D constraints so far");
   double g=_g(0);
   CHECK_GE(lambda_desired, 0., "lambda must be positive or zero");
-  
+
   if(g<0 && lambda_desired>0.) { //steer towards constraint
     desiredApproach.y_ref=ARR(.05); //set goal to overshoot!
     desiredApproach.setGainsAsNatural(.3, 1.);
     desiredApproach.prec=ARR(1e4);
   }
-  
+
   if(g>-1e-2 && lambda_desired>0.) { //stay in constraint -> constrain dynamics
     desiredApproach.y_ref=ARR(0.);
     desiredApproach.setGainsAsNatural(.05, .7);
     desiredApproach.prec=ARR(1e6);
   }
-  
+
   if(g>-0.02 && lambda_desired==0.) { //release constraint -> softly push out
     desiredApproach.y_ref=ARR(-0.04);
     desiredApproach.setGainsAsNatural(.3, 1.);
     desiredApproach.prec=ARR(1e4);
   }
-  
+
   if(g<=-0.02 && lambda_desired==0.) { //stay out of contact -> constrain dynamics
     desiredApproach.active=false;
   }
@@ -241,20 +241,20 @@ void ConstraintForceTask::updateConstraintControl(const arr& _g, const double& l
 
 //===========================================================================
 
-TaskControlMethods::TaskControlMethods(rai::KinematicWorld& _world, bool _useSwift)
-  : world(_world), qNullCostRef(NULL, NULL), useSwift(_useSwift) {
+TaskControlMethods::TaskControlMethods(rai::Configuration& _world, bool _useSwift)
+  : world(_world), qNullCostRef(nullptr, nullptr), useSwift(_useSwift) {
   computeMeshNormals(world.shapes);
   if(useSwift) {
     makeConvexHulls(world.shapes);
     world.swift().setCutoff(2.*rai::getParameter<double>("swiftCutoff", 0.11));
   }
   qNullCostRef.name="qitselfPD";
-  qNullCostRef.setGains(0.,100.);
+  qNullCostRef.setGains(0., 100.);
   qNullCostRef.prec = getH_rate_diag(world);
   qNullCostRef.setTarget(world.q);
 }
 
-CtrlTask* TaskControlMethods::addPDTask(const char* name, double decayTime, double dampingRatio, Feature *map) {
+CtrlTask* TaskControlMethods::addPDTask(const char* name, double decayTime, double dampingRatio, Feature* map) {
   return tasks.append(new CtrlTask(name, map, decayTime, dampingRatio, 1., 1.));
 }
 
@@ -267,8 +267,8 @@ CtrlTask* TaskControlMethods::addPDTask(const char* name,
                                    decayTime, dampingRatio, 1., 1.));
 }
 
-ConstraintForceTask* TaskControlMethods::addConstraintForceTask(const char* name, Feature *map) {
-  ConstraintForceTask *t = new ConstraintForceTask(map);
+ConstraintForceTask* TaskControlMethods::addConstraintForceTask(const char* name, Feature* map) {
+  ConstraintForceTask* t = new ConstraintForceTask(map);
   t->name=name;
   t->desiredApproach.name=STRING(name <<"_PD");
   t->desiredApproach.active=false;
@@ -286,7 +286,7 @@ void TaskControlMethods::lockJointGroup(const char* groupname, bool lockThem) {
     return;
   }
   if(!lockJoints.N) lockJoints = consts<bool>(false, world.q.N);
-  for(rai::Joint *j:world.joints) {
+  for(rai::Joint* j:world.joints) {
     if(j->ats.getNode(groupname)) {
       for(uint i=0; i<j->qDim(); i++) {
         lockJoints(j->qIndex+i) = lockThem;
@@ -339,7 +339,7 @@ arr TaskControlMethods::getDesiredConstraintForces() {
   for(ConstraintForceTask* t: forceTasks) {
     if(t->active) {
       t->map.phi(y, J_y, world);
-      CHECK_EQ(y.N,1," can only handle 1D constraints for now");
+      CHECK_EQ(y.N, 1, " can only handle 1D constraints for now");
       Jl += ~J_y * t->desiredForce;
     }
   }
@@ -350,7 +350,7 @@ arr TaskControlMethods::getDesiredConstraintForces() {
 arr TaskControlMethods::operationalSpaceControl() {
   arr yddot_des, J;
   getTaskCoeffs(yddot_des, J); //this corresponds to $J_\phi$ and $c$ in the reference (they include C^{1/2})
-  if(!yddot_des.N && !qNullCostRef.active) return zeros(world.q.N,1).reshape(world.q.N);
+  if(!yddot_des.N && !qNullCostRef.active) return zeros(world.q.N, 1).reshape(world.q.N);
   arr A = qNullCostRef.getC();
   arr a = zeros(A.d0);
   qNullCostRef.y=world.q;
@@ -366,74 +366,74 @@ arr TaskControlMethods::operationalSpaceControl() {
     CHECK_EQ(lockJoints.N, a.N, "");
     for(uint i=0; i<a.N; i++) if(lockJoints(i)) {
         a(i)=0.;
-        for(uint j=0; j<a.N; j++) A(i,j) = A(j,i) = 0.;
-        A(i,i)=1.;
+        for(uint j=0; j<a.N; j++) A(i, j) = A(j, i) = 0.;
+        A(i, i)=1.;
       }
   }
-  arr q_ddot = lapack_Ainv_b_sym(A,a); // inverse_SymPosDef(A) * a;
+  arr q_ddot = lapack_Ainv_b_sym(A, a); // inverse_SymPosDef(A) * a;
   return q_ddot;
 }
 
-arr TaskControlMethods::getDesiredLinAccLaw(arr &Kp, arr &Kd, arr &k) {
+arr TaskControlMethods::getDesiredLinAccLaw(arr& Kp, arr& Kd, arr& k) {
   arr Kp_y, Kd_y, k_y, C_y;
   qNullCostRef.y=world.q;
   qNullCostRef.v=world.qdot;
   qNullCostRef.getDesiredLinAccLaw(Kp_y, Kd_y, k_y);
   arr H = qNullCostRef.getC();
-  
+
   Kp = H * Kp_y;
   Kd = H * Kd_y;
   k  = H * k_y;
-  
+
   arr JCJ = zeros(world.q.N, world.q.N);
-  
+
   for(CtrlTask* task : tasks) if(task->active) {
       arr J_y;
       task->map.phi(task->y, J_y, world);
       task->v = J_y*world.qdot;
       task->getDesiredLinAccLaw(Kp_y, Kd_y, k_y);
       C_y = task->getC();
-      
+
       arr JtC_y = ~J_y*C_y;
-      
+
       JCJ += JtC_y*J_y;
-      
+
       Kp += JtC_y*Kp_y*J_y;
       Kd += JtC_y*Kd_y*J_y;
       k  += JtC_y*(k_y + Kp_y*(J_y*world.q - task->y));
     }
   arr invA = inverse_SymPosDef(H + JCJ);
-  
+
   /*arr E = zeros(4,world.q.N);
   E(0,0) = 1; //Fix Base
   E(1,1) = 1; //Fix Base
   E(2,2) = 1; //Fix Base
-  
+
   E(3,3) = 1; //Fix Torso
-  
+
   invA = invA*(eye(world.q.N)-~E*inverse_SymPosDef(E*invA*~E)*E*invA);*/
-  
+
   Kp = invA*Kp;
   Kd = invA*Kd;
   k  = invA*k;
-  
+
   return k - Kp*world.q - Kd*world.qdot;
 }
 
-arr TaskControlMethods::calcOptimalControlProjected(arr &Kp, arr &Kd, arr &u0, const arr& M, const arr& F) {
+arr TaskControlMethods::calcOptimalControlProjected(arr& Kp, arr& Kd, arr& u0, const arr& M, const arr& F) {
   uint n=F.N;
-  
+
 //  arr q0, q, qDot;
 //  world.getJointState(q,qDot);
 
   arr H = inverse(M); //TODO: Other metrics (have significant influence)
-  
+
   arr A = ~M*H*M; //TODO: The M matrix is symmetric, isn't it? And also symmetric? Furthermore, if H = M^{-1}, this should be calculated more efficiently
   arr a = zeros(n); //TODO M*eye(world.getJointStateDimension())*5.0*(-qDot);// //TODO: other a possible
   u0 = ~M*H*(a-F);
   arr y, J_y, Kp_y, Kd_y, a0_y;
   arr tempJPrec, tempKp;
-  
+
 //  q0 = q;
   Kp = zeros(n, n);
   Kd = zeros(n, n);
@@ -446,17 +446,17 @@ arr TaskControlMethods::calcOptimalControlProjected(arr &Kp, arr &Kd, arr &u0, c
       law->v = J_y*world.qdot;
       tempJPrec = ~J_y*law->getC();
       A += tempJPrec*J_y;
-      
+
       law->getDesiredLinAccLaw(Kp_y, Kd_y, a0_y);
-      
+
       u0 += tempJPrec*a0_y;
-      
+
       tempKp = tempJPrec*Kp_y;
-      
+
       u0 += tempKp*(-y + J_y*world.q);
-      
+
       //u0 += ~J*law->getC()*law->getDDotRef(); //TODO: add ydd_ref
-      
+
       Kp += tempKp*J_y;
       Kd += tempJPrec*Kd_y*J_y;
     }
@@ -464,18 +464,18 @@ arr TaskControlMethods::calcOptimalControlProjected(arr &Kp, arr &Kd, arr &u0, c
   Kp = M*invA*Kp;
   Kd = M*invA*Kd;
   u0 = M*invA*u0 + F;
-  
+
   return u0 + Kp*world.q + Kd*world.qdot;
 }
 
 void TaskControlMethods::fwdSimulateControlLaw(arr& Kp, arr& Kd, arr& u0) {
   arr M, F;
   world.equationOfMotion(M, F, false);
-  
+
   arr u = u0 - Kp*world.q - Kd*world.qdot;
   arr qdd;
   world.fwdDynamics(qdd, world.qdot, u);
-  
+
   for(uint tt=0; tt<10; tt++) {
     world.qdot += .001*qdd;
     world.q += .001*world.qdot;
@@ -499,15 +499,15 @@ void TaskControlMethods::calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, d
       fRef = law->f_ref;
       gamma = law->f_gamma;
     }
-    
+
   CHECK_LE(nForceTasks, 1, "Multiple force laws not allowed at the moment");
   if(!nForceTasks) {
     K_ft = zeros(world.getJointStateDimension());
     fRef = ARR(0.0);
-    J_ft_inv = zeros(1,6);
+    J_ft_inv = zeros(1, 6);
     gamma = 0.0;
   }
-  
+
 }
 
 RUN_ON_INIT_BEGIN(CtrlTask)

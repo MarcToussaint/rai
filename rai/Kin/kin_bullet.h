@@ -1,18 +1,26 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2019 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include <Kin/kin.h>
 
 class btRigidBody;
 
-struct BulletInterface{
-  struct sBulletInterface *self=0;
+struct BulletInterface {
+  struct BulletInterface_self* self=0;
 
-  BulletInterface();
-  BulletInterface(const rai::KinematicWorld& K);
+  BulletInterface(bool verbose=false);
+  BulletInterface(rai::Configuration& K, bool verbose=false);
   ~BulletInterface();
 
   btRigidBody* addGround();
-  btRigidBody* addFrame(const rai::Frame *f);
-  void addFrames(const FrameL& frames);
-  void defaultInit(const rai::KinematicWorld& K);
+  btRigidBody* addFrame(rai::Frame* f, bool verbose);
+  void addFrames(FrameL& frames, bool verbose);
+  void defaultInit(rai::Configuration& K, bool verbose);
 
   void step(double tau=.01);
   void pushFullState(const FrameL& frames, const arr& vel);

@@ -121,8 +121,8 @@
 #endif
 
 
-#ifndef NULL
-#define NULL    0
+#ifndef nullptr
+#define nullptr    0
 #endif
 
 

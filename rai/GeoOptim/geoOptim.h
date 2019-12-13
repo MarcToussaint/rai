@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -12,3 +12,11 @@
 #include <Geo/mesh.h>
 
 void computeOptimalSSBox(rai::Mesh& mesh, arr& x, rai::Transformation& t, const arr& X, uint trials=10, int verbose=0);
+
+void minimalConvexCore(arr& core, const arr& points, double radius, int verbose=0);
+
+void minimalConvexCore2(arr& core, const arr& points, double radius, int verbose=0);
+void minimalConvexCore3(arr& core, const arr& points, double radius, int verbose=0);
+double sphereReduceConvex(rai::Mesh& M, double radius, int verbose=0);
+
+void optimalSphere(arr& core, uint num, const arr& points, double& radius, int verbose=0);

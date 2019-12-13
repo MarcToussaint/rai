@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -60,7 +60,7 @@ MotionProfile_PD::MotionProfile_PD(const arr& _y_target, double decayTime, doubl
 
 MotionProfile_PD::MotionProfile_PD(const Graph& params)
   : MotionProfile_PD() {
-  Node *it;
+  Node* it;
   if((it=params["PD"])) {
     arr pd=it->get<arr>();
     setGainsAsNatural(pd(0), pd(1));
@@ -90,8 +90,8 @@ void MotionProfile_PD::setGainsAsNatural(double decayTime, double dampingRatio) 
 CT_Status MotionProfile_PD::update(arr& yRef, arr& vRef, double tau, const arr& y, const arr& ydot) {
   //only on initialization the true state is used; otherwise ignored!
   if(y_ref.N!=y.N) { y_ref=y; v_ref=ydot; }
-  if(y_target.N!=y_ref.N){ y_target=y_ref; v_target=v_ref; }
-  
+  if(y_target.N!=y_ref.N) { y_target=y_ref; v_target=v_ref; }
+
   if(flipTargetSignOnNegScalarProduct && scalarProduct(y_target, y_ref) < 0) {
     y_target = -y_target;
   }
@@ -99,22 +99,22 @@ CT_Status MotionProfile_PD::update(arr& yRef, arr& vRef, double tau, const arr& 
       while(y_target(i) < y_ref(i)-RAI_PI) y_target(i)+=RAI_2PI;
       while(y_target(i) > y_ref(i)+RAI_PI) y_target(i)-=RAI_2PI;
     }
-    
+
   arr a = getDesiredAcceleration();
-  
+
   y_ref += tau*v_ref + (.5*tau*tau)*a;
   v_ref += tau*a;
-  
+
   yRef = y_ref;
   vRef = v_ref;
-  
+
   if(isConverged(-1.)) return CT_conv;
   return CT_running;
 }
 
 arr MotionProfile_PD::getDesiredAcceleration() {
   arr a = kp*(y_target-y_ref) + kd*(v_target-v_ref);
-  
+
   //check vel/acc limits
   double accNorm = length(a);
   if(accNorm>1e-4) {
@@ -168,7 +168,7 @@ bool MotionProfile_PD::isConverged(double _tolerance) {
 //===========================================================================
 
 MotionProfile_Path::MotionProfile_Path(const arr& path, double executionTime) : executionTime(executionTime), phase(0.) {
-  CHECK_EQ(path.nd, 2,"need a properly shaped path!");
+  CHECK_EQ(path.nd, 2, "need a properly shaped path!");
   spline.points = path;
   spline.setUniformNonperiodicBasis();
 }
@@ -185,7 +185,7 @@ CT_Status MotionProfile_Path::update(arr& yRef, arr& ydotRef, double tau, const 
 //===========================================================================
 
 CtrlTask::CtrlTask(const char* name, Feature* map)
-  : map(map), name(name), active(true), status(CT_init), ref(NULL), prec(ARR(1.)), hierarchy(1) {
+  : map(map), name(name), active(true), status(CT_init), ref(nullptr), prec(ARR(1.)), hierarchy(1) {
   //  ref = new MotionProfile_PD();
 }
 
@@ -197,16 +197,16 @@ CtrlTask::CtrlTask(const char* name, Feature* map, double decayTime, double damp
 CtrlTask::CtrlTask(const char* name, Feature* map, const Graph& params)
   : CtrlTask(name, map) {
   ref = new MotionProfile_PD(params);
-  Node *n;
+  Node* n;
   if((n=params["prec"])) prec = n->get<arr>();
 }
 
 CtrlTask::~CtrlTask() {
-  if(map) delete map; map=NULL;
-  if(ref) delete ref; ref=NULL;
+  if(map) delete map; map=nullptr;
+  if(ref) delete ref; ref=nullptr;
 }
 
-CT_Status CtrlTask::update(double tau, const rai::KinematicWorld& world) {
+CT_Status CtrlTask::update(double tau, const rai::Configuration& world) {
   map->phi(y, J_y, world);
   if(world.qdot.N) v = J_y*world.qdot; else v.resize(y.N).setZero();
   CT_Status s=status;
@@ -220,7 +220,7 @@ CT_Status CtrlTask::update(double tau, const rai::KinematicWorld& world) {
 
 MotionProfile_PD& CtrlTask::PD() {
   if(!ref) ref = new MotionProfile_PD();
-  MotionProfile_PD *pd = dynamic_cast<MotionProfile_PD*>(ref);
+  MotionProfile_PD* pd = dynamic_cast<MotionProfile_PD*>(ref);
   if(!pd) {
     LOG(-1) <<"you've created a non-PD ref for this before, of type " <<typeid(*ref).name();
     delete ref;
@@ -230,13 +230,13 @@ MotionProfile_PD& CtrlTask::PD() {
   return *pd;
 }
 
-void CtrlTask::setRef(MotionProfile *_ref) {
+void CtrlTask::setRef(MotionProfile* _ref) {
   CHECK(!ref, "ref is already set");
   ref = _ref;
 }
 
 void CtrlTask::setTarget(const arr& y_target) {
-  CHECK(ref,"need a ref to set target");
+  CHECK(ref, "need a ref to set target");
   ref->setTarget(y_target);
   ref->resetState();
 }
@@ -248,18 +248,18 @@ arr CtrlTask::getPrec() {
   return comp_At_A(prec);
 }
 
-void CtrlTask::getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const rai::KinematicWorld& world) {
+void CtrlTask::getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const rai::Configuration& world) {
   //-- get necessary Jacobians
-  TM_Default *m = dynamic_cast<TM_Default*>(map);
-  CHECK(m,"this only works for the default position task map");
-  CHECK_EQ(m->type, TMT_pos,"this only works for the default positioni task map");
-  CHECK_GE(m->i, 0,"this only works for the default position task map");
-  rai::Frame *body = world.frames(m->i);
+  TM_Default* m = dynamic_cast<TM_Default*>(map);
+  CHECK(m, "this only works for the default position task map");
+  CHECK_EQ(m->type, TMT_pos, "this only works for the default positioni task map");
+  CHECK_GE(m->i, 0, "this only works for the default position task map");
+  rai::Frame* body = world.frames(m->i);
   rai::Frame* l_ft_sensor = world.getFrameByName("l_ft_sensor");
   arr J_ft, J;
   world.kinematicsPos(NoArr, J,   body, m->ivec);
-  world.kinematicsPos_wrtFrame(NoArr, J_ft,body, m->ivec, l_ft_sensor);
-  
+  world.kinematicsPos_wrtFrame(NoArr, J_ft, body, m->ivec, l_ft_sensor);
+
   //-- compute the control coefficients
   u_bias = ~J*f_ref;
   f_des = f_ref;
@@ -282,14 +282,14 @@ void CtrlTask::reportState(ostream& os) {
 
 //===========================================================================
 
-TaskControlMethods::TaskControlMethods(const rai::KinematicWorld& world)
-  : Hmetric(world.getHmetric()), qNullCostRef("qNullPD", new TM_qItself()) {
+TaskControlMethods::TaskControlMethods(const rai::Configuration& world)
+  : Hmetric(world.getHmetric()), qNullCostRef("qNullPD", new F_qItself()) {
 //  qNullCostRef.PD().setGains(0.,1.);
 //  qNullCostRef.prec = ::sqrt(rai::getParameter<double>("Hrate", .1)*Hmetric);
 //  qNullCostRef.PD().setTarget(world.q);
 }
 
-void TaskControlMethods::updateCtrlTasks(double tau, const rai::KinematicWorld& world) {
+void TaskControlMethods::updateCtrlTasks(double tau, const rai::Configuration& world) {
   qNullCostRef.update(tau, world);
   for(CtrlTask* t: tasks) t->update(tau, world);
 }
@@ -299,7 +299,7 @@ void TaskControlMethods::resetCtrlTasksState() {
   for(CtrlTask* t: tasks) t->resetState();
 }
 
-CtrlTask* TaskControlMethods::addPDTask(const char* name, double decayTime, double dampingRatio, Feature *map) {
+CtrlTask* TaskControlMethods::addPDTask(const char* name, double decayTime, double dampingRatio, Feature* map) {
   return tasks.append(new CtrlTask(name, map, decayTime, dampingRatio, 1., 1.));
 }
 
@@ -322,7 +322,7 @@ CtrlTask* TaskControlMethods::addPDTask(const char* name, double decayTime, doub
 //  return t;
 //}
 
-void TaskControlMethods::lockJointGroup(const char* groupname, rai::KinematicWorld& world, bool lockThem) {
+void TaskControlMethods::lockJointGroup(const char* groupname, rai::Configuration& world, bool lockThem) {
   if(!groupname) {
     if(lockThem) {
       lockJoints = consts<byte>(true, world.q.N);
@@ -331,8 +331,8 @@ void TaskControlMethods::lockJointGroup(const char* groupname, rai::KinematicWor
     return;
   }
   if(!lockJoints.N) lockJoints = consts<byte>(false, world.q.N);
-  rai::Joint *j;
-  for(rai::Frame *f : world.frames) if((j=f->joint)) {
+  rai::Joint* j;
+  for(rai::Frame* f : world.frames) if((j=f->joint)) {
       if(f->ats[groupname]) {
         for(uint i=0; i<j->qDim(); i++) {
           lockJoints(j->qIndex+i) = lockThem;
@@ -344,9 +344,9 @@ void TaskControlMethods::lockJointGroup(const char* groupname, rai::KinematicWor
 
 double TaskControlMethods::getIKCosts(const arr& q, const arr& q0, arr& g, arr& H) {
   double c=0.;
-  arr y,J;
-  if(!!g) { CHECK(&q,""); g = zeros(q.N); }
-  if(!!H) { CHECK(&q,""); H = zeros(q.N, q.N); }
+  arr y, J;
+  if(!!g) { CHECK(&q, ""); g = zeros(q.N); }
+  if(!!H) { CHECK(&q, ""); H = zeros(q.N, q.N); }
   for(CtrlTask* t: tasks) {
     if(t->active && t->ref) {
       y = t->prec%(t->y_ref - t->y);
@@ -356,7 +356,7 @@ double TaskControlMethods::getIKCosts(const arr& q, const arr& q0, arr& g, arr& 
       if(!!H) H += 2.*comp_At_A(J);
     }
   }
-  
+
   if(!!q && !!q0) {
     arr dq = q-q0;
     c += sum(dq%Hmetric%dq);
@@ -415,7 +415,7 @@ if(true || cost>10.) { //calling an optimizer!
 #endif
 
 arr TaskControlMethods::inverseKinematics(arr& qdot, const arr& nullRef, double* cost) {
-  arr y,v,J;
+  arr y, v, J;
   for(CtrlTask* t: tasks) {
     if(t->active && t->ref) {
       y.append(t->prec%(t->y_ref - t->y));
@@ -425,7 +425,7 @@ arr TaskControlMethods::inverseKinematics(arr& qdot, const arr& nullRef, double*
   }
   if(!y.N) return zeros(Hmetric.d0);
   J.reshape(y.N, J.N/y.N);
-  
+
   arr Winv = oneover(Hmetric);
   if(lockJoints.N) {
     uint n=Winv.N;
@@ -434,7 +434,7 @@ arr TaskControlMethods::inverseKinematics(arr& qdot, const arr& nullRef, double*
   }
 
   if(J.d1 > Winv.N) Winv.append(1e6, Winv.N-J.d1); //append high costs for joints not represented in Hmetric
-  
+
   arr Jinv = pseudoInverse(J, Winv, 1e-1);
   checkNan(Jinv);
   checkNan(y);
@@ -455,16 +455,16 @@ arr TaskControlMethods::inverseKinematics_hierarchical() {
       if(t->hierarchy>maxHierarchy) maxHierarchy=t->hierarchy;
       if(!n) n=t->J_y.d1; else CHECK_EQ(n, t->J_y.d1, "");
     }
-    
+
   arr Winv = oneover(Hmetric);
   if(lockJoints.N) {
     CHECK_EQ(lockJoints.N, n, "");
     for(uint i=0; i<n; i++) if(lockJoints(i)) Winv(i) = 0.;
   }
-  
+
   arr dq = zeros(n);
   for(uint h=0; h<=maxHierarchy; h++) { //start with lowest priorities; end with highest
-    arr y,J;
+    arr y, J;
     for(CtrlTask* t: tasks) if(t->active && t->ref && t->hierarchy==h) {
         y.append(t->prec%(t->y_ref - t->y));
         J.append(t->prec%(t->J_y));
@@ -475,7 +475,7 @@ arr TaskControlMethods::inverseKinematics_hierarchical() {
     dq = (eye(n) - Jinv*J)*dq; //projection into the null space
     dq += Jinv*y;
   }
-  
+
   return dq;
 }
 
@@ -485,20 +485,20 @@ arr TaskControlMethods::getComplianceProjection() {
   for(CtrlTask* t: tasks) {
     if(t->active && t->complianceDirection.N) {
       if(!P.N) P = eye(t->J_y.d1);
-      
-      CHECK(!count,"only implemented for ONE compliance task yet -> subtract more dimensions?");
+
+      CHECK(!count, "only implemented for ONE compliance task yet -> subtract more dimensions?");
       CHECK_EQ(t->complianceDirection.N, t->y.N, "compliance direction has wrong dim");
       double factor = length(t->complianceDirection);
       CHECK(factor>0 && factor<=1., "compliance direction needs length in (0,1]");
-      
+
       arr J = t->J_y;
-      
+
       if(lockJoints.N) {
         uint n=J.d1;
         CHECK_EQ(lockJoints.N, n, "");
-        for(uint i=0; i<n; i++) if(lockJoints(i)) for(uint j=0; j<J.d0; j++) J(j,i) = 0.; //zeroing all locked joint Jacobians;
+        for(uint i=0; i<n; i++) if(lockJoints(i)) for(uint j=0; j<J.d0; j++) J(j, i) = 0.; //zeroing all locked joint Jacobians;
       }
-      
+
 #if 1
       arr Winv = oneover(Hmetric);
       if(lockJoints.N) {
@@ -512,7 +512,7 @@ arr TaskControlMethods::getComplianceProjection() {
       arr d = ~J * t->complianceDirection;
 #endif
       P -= factor*d*~d/(sumOfSqr(d)+1e-6);
-      
+
       count++;
     }
   }
@@ -561,7 +561,7 @@ arr TaskControlMethods::operationalSpaceControl() {
   }
   if(yddot_des.N) J.reshape(yddot_des.N, J.N/yddot_des.N);
   if(!yddot_des.N && !qNullCostRef.active) return zeros(J.d1);
-  
+
   //regularization: null-cost-behavior
   arr A = qNullCostRef.getPrec();
   arr a = zeros(A.d0);
@@ -577,70 +577,70 @@ arr TaskControlMethods::operationalSpaceControl() {
     CHECK_EQ(lockJoints.N, a.N, "");
     for(uint i=0; i<a.N; i++) if(lockJoints(i)) {
         a(i)=0.;
-        for(uint j=0; j<a.N; j++) A(i,j) = A(j,i) = 0.;
-        A(i,i)=1.;
+        for(uint j=0; j<a.N; j++) A(i, j) = A(j, i) = 0.;
+        A(i, i)=1.;
       }
   }
-  arr q_ddot = lapack_Ainv_b_sym(A,a); // inverse_SymPosDef(A) * a;
+  arr q_ddot = lapack_Ainv_b_sym(A, a); // inverse_SymPosDef(A) * a;
   return q_ddot;
 }
 
-arr TaskControlMethods::getDesiredLinAccLaw(arr &Kp, arr &Kd, arr &k, const arr& q, const arr& qdot) {
+arr TaskControlMethods::getDesiredLinAccLaw(arr& Kp, arr& Kd, arr& k, const arr& q, const arr& qdot) {
   arr Kp_y, Kd_y, k_y, C_y;
   qNullCostRef.PD().getDesiredLinAccLaw(Kp_y, Kd_y, k_y);
   arr H = qNullCostRef.getPrec();
-  
+
   Kp = H * Kp_y;
   Kd = H * Kd_y;
   k  = H * k_y;
-  
+
   arr JCJ = zeros(q.N, q.N);
-  
+
   for(CtrlTask* task : tasks) if(task->active) {
       arr J_y;
       task->PD().getDesiredLinAccLaw(Kp_y, Kd_y, k_y);
       C_y = task->getPrec();
-      
+
       arr JtC_y = ~J_y*C_y;
-      
+
       JCJ += JtC_y*J_y;
-      
+
       Kp += JtC_y*Kp_y*J_y;
       Kd += JtC_y*Kd_y*J_y;
       k  += JtC_y*(k_y + Kp_y*(J_y*q - task->y));
     }
   arr invA = inverse_SymPosDef(H + JCJ);
-  
+
   /*arr E = zeros(4,world.q.N);
   E(0,0) = 1; //Fix Base
   E(1,1) = 1; //Fix Base
   E(2,2) = 1; //Fix Base
-  
+
   E(3,3) = 1; //Fix Torso
-  
+
   invA = invA*(eye(world.q.N)-~E*inverse_SymPosDef(E*invA*~E)*E*invA);*/
-  
+
   Kp = invA*Kp;
   Kd = invA*Kd;
   k  = invA*k;
-  
+
   return k - Kp*q - Kd*qdot;
 }
 
-arr TaskControlMethods::calcOptimalControlProjected(arr &Kp, arr &Kd, arr &u0, const arr& q, const arr& qdot, const arr& M, const arr& F) {
+arr TaskControlMethods::calcOptimalControlProjected(arr& Kp, arr& Kd, arr& u0, const arr& q, const arr& qdot, const arr& M, const arr& F) {
   uint n=F.N;
-  
+
 //  arr q0, q, qDot;
 //  world.getJointState(q,qDot);
 
   arr H = inverse(M); //TODO: Other metrics (have significant influence)
-  
+
   arr A = ~M*H*M; //TODO: The M matrix is symmetric, isn't it? And also symmetric? Furthermore, if H = M^{-1}, this should be calculated more efficiently
   arr a = zeros(n); //TODO M*eye(world.getJointStateDimension())*5.0*(-qDot);// //TODO: other a possible
   u0 = ~M*H*(a-F);
   arr y, J_y, Kp_y, Kd_y, a0_y;
   arr tempJPrec, tempKp;
-  
+
 //  q0 = q;
   Kp = zeros(n, n);
   Kd = zeros(n, n);
@@ -651,17 +651,17 @@ arr TaskControlMethods::calcOptimalControlProjected(arr &Kp, arr &Kd, arr &u0, c
   for(CtrlTask* law : tasks) if(law->active) {
       tempJPrec = ~J_y*law->getPrec();
       A += tempJPrec*J_y;
-      
+
       law->PD().getDesiredLinAccLaw(Kp_y, Kd_y, a0_y);
-      
+
       u0 += tempJPrec*a0_y;
-      
+
       tempKp = tempJPrec*Kp_y;
-      
+
       u0 += tempKp*(-y + J_y*q);
-      
+
       //u0 += ~J*law->getC()*law->getDDotRef(); //TODO: add ydd_ref
-      
+
       Kp += tempKp*J_y;
       Kd += tempJPrec*Kd_y*J_y;
     }
@@ -669,18 +669,18 @@ arr TaskControlMethods::calcOptimalControlProjected(arr &Kp, arr &Kd, arr &u0, c
   Kp = M*invA*Kp;
   Kd = M*invA*Kd;
   u0 = M*invA*u0 + F;
-  
+
   return u0 + Kp*q + Kd*qdot;
 }
 
-void fwdSimulateControlLaw(arr& Kp, arr& Kd, arr& u0, rai::KinematicWorld& world) {
+void fwdSimulateControlLaw(arr& Kp, arr& Kd, arr& u0, rai::Configuration& world) {
   arr M, F;
   world.equationOfMotion(M, F, false);
-  
+
   arr u = u0 - Kp*world.q - Kd*world.qdot;
   arr qdd;
   world.fwdDynamics(qdd, world.qdot, u);
-  
+
   for(uint tt=0; tt<10; tt++) {
     world.qdot += .001*qdd;
     world.q += .001*world.qdot;
@@ -688,7 +688,7 @@ void fwdSimulateControlLaw(arr& Kp, arr& Kd, arr& u0, rai::KinematicWorld& world
   }
 }
 
-void TaskControlMethods::calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, double& gamma, const rai::KinematicWorld& world) {
+void TaskControlMethods::calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, double& gamma, const rai::Configuration& world) {
   uint nForceTasks=0;
   for(CtrlTask* task : this->tasks) if(task->active && task->f_ref.N) {
       nForceTasks++;
@@ -703,15 +703,15 @@ void TaskControlMethods::calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, d
       fRef = task->f_ref;
       gamma = task->f_gamma;
     }
-    
+
   CHECK_LE(nForceTasks, 1, "Multiple force laws not allowed at the moment");
   if(!nForceTasks) {
     K_ft = zeros(world.getJointStateDimension());
     fRef = ARR(0.0);
-    J_ft_inv = zeros(1,6);
+    J_ft_inv = zeros(1, 6);
     gamma = 0.0;
   }
-  
+
 }
 
 RUN_ON_INIT_BEGIN(CtrlTask)

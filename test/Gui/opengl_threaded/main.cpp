@@ -2,7 +2,7 @@
 #include <Core/thread.h>
 
 void draw1(void*, OpenGL& gl){
-  glStandardLight(NULL, gl);
+  glStandardLight(nullptr, gl);
   glColor3f(1,0,0);
   //glDrawBox(1.,1.,1.);
   glutSolidTeapot(1.);

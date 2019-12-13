@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -22,8 +22,8 @@
 #include <vector>
 
 //-- don't require previously defined iterators
-#define for_list(Type, it, X)     Type *it=NULL; for(uint it##_COUNT=0;   it##_COUNT<X.N && ((it=X(it##_COUNT)) || true); it##_COUNT++)
-#define for_list_rev(Type, it, X) Type *it=NULL; for(uint it##_COUNT=X.N; it##_COUNT--   && ((it=X(it##_COUNT)) || true); )
+#define for_list(Type, it, X)     Type *it=nullptr; for(uint it##_COUNT=0;   it##_COUNT<X.N && ((it=X(it##_COUNT)) || true); it##_COUNT++)
+#define for_list_rev(Type, it, X) Type *it=nullptr; for(uint it##_COUNT=X.N; it##_COUNT--   && ((it=X(it##_COUNT)) || true); )
 
 #define ARR ARRAY<double> ///< write ARR(1., 4., 5., 7.) to generate a double-Array
 #define TUP ARRAY<uint> ///< write TUP(1, 2, 3) to generate a uint-Array
@@ -32,7 +32,7 @@ typedef unsigned char byte;
 typedef unsigned int uint;
 struct SpecialArray;
 
-struct Serializable{
+struct Serializable {
   virtual uint serial_size() = 0;
   virtual uint serial_encode(char* data, uint data_size) = 0;
   virtual uint serial_decode(char* data, uint data_size) = 0;
@@ -77,23 +77,23 @@ template<class T> struct ArrayIterationEnumerated;
   header, which contains lots of functions that can be applied on
   Arrays. */
 template<class T> struct Array : std::vector<T>, Serializable {
-  T *p;     ///< the pointer on the linear memory allocated
+  T* p;     ///< the pointer on the linear memory allocated
   uint N;   ///< number of elements
   uint nd;  ///< number of dimensions
-  uint d0,d1,d2;  ///< 0th, 1st, 2nd dim
-  uint *d;  ///< pointer to dimensions (for nd<=3 points to d0)
+  uint d0, d1, d2; ///< 0th, 1st, 2nd dim
+  uint* d;  ///< pointer to dimensions (for nd<=3 points to d0)
   uint M;   ///< size of actually allocated memory (may be greater than N)
   bool reference; ///< true if this refers to some external memory
-  
+
   static int  sizeT;   ///< constant for each type T: stores the sizeof(T)
   static char memMove; ///< constant for each type T: decides whether memmove can be used instead of individual copies
-  
+
   //-- special: arrays can be sparse/packed/etc and augmented with aux data to support this
-  SpecialArray *special; ///< arbitrary auxiliary data, depends on special
-  
+  SpecialArray* special; ///< arbitrary auxiliary data, depends on special
+
   typedef std::vector<T> vec_type;
   typedef std::function<bool(const T& a, const T& b)> ElemCompare;
-  
+
   /// @name constructors
   Array();
   Array(const Array<T>& a);                 //copy constructor
@@ -115,7 +115,7 @@ template<class T> struct Array : std::vector<T>, Serializable {
   Array<T>& operator=(const T& v);
   Array<T>& operator=(const Array<T>& a);
   Array<T>& operator=(const std::vector<T>& values);
-  
+
   /// @name iterators
   ArrayIterationEnumerated<T> enumerated() { return ArrayIterationEnumerated<T>(*this); }
 //  typedef T* iterator;
@@ -129,24 +129,24 @@ template<class T> struct Array : std::vector<T>, Serializable {
   Array<T>& resize(uint D0);
   Array<T>& resize(uint D0, uint D1);
   Array<T>& resize(uint D0, uint D1, uint D2);
-  Array<T>& resize(uint ND, uint *dim);
-  Array<T>& resize(const Array<uint> &dim);
-  Array<T>& reshape(uint D0);
+  Array<T>& resize(uint ND, uint* dim);
+  Array<T>& resize(const Array<uint>& dim);
+  Array<T>& reshape(int D0);
   Array<T>& reshape(int D0, int D1);
   Array<T>& reshape(uint D0, uint D1, uint D2);
-  Array<T>& reshape(uint ND, uint *dim);
-  Array<T>& reshape(const Array<uint> &dim);
+  Array<T>& reshape(uint ND, uint* dim);
+  Array<T>& reshape(const Array<uint>& dim);
   Array<T>& resizeCopy(uint D0);
   Array<T>& resizeCopy(uint D0, uint D1);
   Array<T>& resizeCopy(uint D0, uint D1, uint D2);
-  Array<T>& resizeCopy(uint ND, uint *dim);
-  Array<T>& resizeCopy(const Array<uint> &dim);
+  Array<T>& resizeCopy(uint ND, uint* dim);
+  Array<T>& resizeCopy(const Array<uint>& dim);
   Array<T>& resizeAs(const Array<T>& a);
   Array<T>& reshapeAs(const Array<T>& a);
   Array<T>& resizeCopyAs(const Array<T>& a);
   Array<T>& reshapeFlat();
   Array<T>& dereference();
-  
+
   /// @name initializing/assigning entries
   rai::Array<T>& clear();
   void setZero(byte zero=0);
@@ -162,9 +162,9 @@ template<class T> struct Array : std::vector<T>, Serializable {
   void setStraightPerm(int n=-1);
   void setReversePerm(int n=-1);
   void setRandomPerm(int n=-1);
-  void setCarray(const T *buffer, uint D0);
-  void setCarray(const T **buffer, uint D0, uint D1);
-  void referTo(const T *buffer, uint n);
+  void setCarray(const T* buffer, uint D0);
+  void setCarray(const T** buffer, uint D0, uint D1);
+  void referTo(const T* buffer, uint n);
   void referTo(const Array<T>& a);
   void referToRange(const Array<T>& a, int i, int I); // -> referTo(a,{i,I})
   void referToRange(const Array<T>& a, int i, int j, int J); // -> referTo(a,{i,I})
@@ -175,11 +175,13 @@ template<class T> struct Array : std::vector<T>, Serializable {
   void takeOver(Array<T>& a);  //a becomes a reference to its previously owned memory!
   void swap(Array<T>& a);      //the two arrays swap their contents!
   void setGrid(uint dim, T lo, T hi, uint steps);
-  
+
   /// @name access by reference (direct memory access)
+  Array<T> ref() const; //a reference on this
   T& elem(int i) const;
+  T& elem(int i, int j); //access that also handles sparse matrices
 //  T& elem(const Array<int> &I) const;
-  T& elem(const Array<uint> &I) const;
+  T& elem(const Array<uint>& I) const;
   T& scalar() const;
   T& first() const;
   T& last(int i=-1) const;
@@ -187,7 +189,6 @@ template<class T> struct Array : std::vector<T>, Serializable {
   T& operator()(int i) const;
   T& operator()(int i, int j) const;
   T& operator()(int i, int j, int k) const;
-  Array<T> ref() const; //a reference on this
   Array<T> operator()(std::pair<int, int> I) const;
   Array<T> operator()(int i, std::pair<int, int> J) const;
   Array<T> operator()(int i, int j, std::initializer_list<int> K) const;
@@ -196,8 +197,8 @@ template<class T> struct Array : std::vector<T>, Serializable {
   Array<T>& operator()() { return *this; } //TODO: make this the scalar reference!
   T** getCarray(Array<T*>& Cpointers) const;
   Array<T*> getCarray() const;
-  
-  
+
+
   /// @name access by copy
   Array<T> copy() const;
   Array<T> sub(int i, int I) const;
@@ -209,39 +210,39 @@ template<class T> struct Array : std::vector<T>, Serializable {
   Array<T> rows(uint start_row, uint end_row) const;
   Array<T> col(uint col_index) const;
   Array<T> cols(uint start_col, uint end_col) const;
-  
+
   /// @name dimensionality access
   uint dim(uint k) const;
   Array<uint> dim() const;
-  
+
   void getMatrixBlock(Array<T>& B, uint lo0, uint lo1) const; // -> return array
   void getVectorBlock(Array<T>& B, uint lo) const;
-  void copyInto(T *buffer) const;
-  void copyInto2D(T **buffer) const;
+  void copyInto(T* buffer) const;
+  void copyInto2D(T** buffer) const;
   T& min() const;
   T& max() const;
   void minmax(T& minVal, T& maxVal) const;
-  uint minIndex() const; // -> argmin
-  uint maxIndex() const; // -> argmax
+  uint argmin() const;
+  uint argmax() const;
   void maxIndeces(uint& m1, uint& m2) const; //best and 2nd best -> remove
-  void maxIndex(uint& i, uint& j) const; //-> remove, or return uintA
-  void maxIndex(uint& i, uint& j, uint& k) const; //-> remove
+  void argmax(uint& i, uint& j) const; //-> remove, or return uintA
+  void argmax(uint& i, uint& j, uint& k) const; //-> remove
   int findValue(const T& x) const;
   void findValues(rai::Array<uint>& indices, const T& x) const;
   bool contains(const T& x) const { return findValue(x)!=-1; }
   bool contains(const Array<T>& X) const { for(const T& x:X) if(findValue(x)==-1) return false; return true; }
   bool containsDoubles() const;
   uint getMemsize() const; // -> remove
-  void getIndexTuple(Array<uint> &I, uint i) const; // -> remove?
-  
+  void getIndexTuple(Array<uint>& I, uint i) const; // -> remove?
+
   /// @name appending etc
   T& append();
   T& append(const T& x);
   void append(const T& x, uint multiple);
   void append(const Array<T>& x);
-  void append(const T *p, uint n);
-  void prepend(const T& x) { insert(0,x); }
-  void prepend(const Array<T>& x) { insert(0,x); }
+  void append(const T* p, uint n);
+  void prepend(const T& x) { insert(0, x); }
+  void prepend(const Array<T>& x) { insert(0, x); }
   void replicate(uint copies);
   void insert(uint i, const T& x);
   void insert(uint i, const Array<T>& x);
@@ -260,9 +261,10 @@ template<class T> struct Array : std::vector<T>, Serializable {
   T popFirst();
   T popLast();
   void removeLast();
-  
+
   /// @name sorting and permuting this array
   T median_nonConst(); //this modifies the array!
+  T nthElement_nonConst(uint n); //this modifies the array!
   Array<T>& sort(ElemCompare comp=lowerEqual<T>);
   bool isSorted(ElemCompare comp=lowerEqual<T>) const;
   uint rankInSorted(const T& x, ElemCompare comp=lowerEqual<T>, bool rankAfterIfEqual=false) const;
@@ -280,22 +282,24 @@ template<class T> struct Array : std::vector<T>, Serializable {
   void permuteInv(const Array<uint>& permutation);
   void permuteRows(const Array<uint>& permutation);
   void permuteRowsInv(const Array<uint>& permutation);
-  
+
   void permuteRandomly();
   void shift(int offset, bool wrapAround=true);
-  
+
   /// @name special matrices [TODO: move outside, use 'special']
   double sparsity();
   SparseMatrix& sparse();
+  const SparseMatrix& sparse() const;
   SparseVector& sparseVec();
+  const SparseVector& sparseVec() const;
 
   /// @name I/O
-  void write(std::ostream& os=std::cout, const char *ELEMSEP=NULL, const char *LINESEP=NULL, const char *BRACKETS=NULL, bool dimTag=false, bool binary=false) const;
+  void write(std::ostream& os=std::cout, const char* ELEMSEP=nullptr, const char* LINESEP=nullptr, const char* BRACKETS=nullptr, bool dimTag=false, bool binary=false) const;
   void read(std::istream& is);
   void writeTagged(std::ostream& os, const char* tag, bool binary=false) const;
-  bool readTagged(std::istream& is, const char *tag);
+  bool readTagged(std::istream& is, const char* tag);
   void writeTagged(const char* filename, const char* tag, bool binary=false) const;
-  bool readTagged(const char* filename, const char *tag);
+  bool readTagged(const char* filename, const char* tag);
   void writeDim(std::ostream& os=std::cout) const;
   void readDim(std::istream& is);
   void writeRaw(std::ostream& os) const;
@@ -303,7 +307,7 @@ template<class T> struct Array : std::vector<T>, Serializable {
   void writeWithIndex(std::ostream& os=std::cout) const;
   const Array<T>& ioraw() const;
   const char* prt(); //gdb pretty print
-  
+
   /// @name kind of private
   void resizeMEM(uint n, bool copy, int Mforce=-1);
   void anticipateMEM(uint Mforce) { resizeMEM(N, true, Mforce); if(!nd) nd=1; }
@@ -357,7 +361,7 @@ template<class T> Array<T> operator/(int mustBeOne, const Array<T>& z_tobeinvert
 template<class T> Array<T> operator/(const Array<T>& y, T z);
 template<class T> Array<T> operator/(const Array<T>& y, const Array<T>& z); //element-wise devision
 template<class T> Array<T> operator|(const Array<T>& A, const Array<T>& B); //A^-1 B
-template<class T> Array<T> operator,(const Array<T>& y, const Array<T>& z); //concat
+template<class T> Array<T> operator, (const Array<T>& y, const Array<T>& z); //concat
 
 template<class T> Array<T>& operator<<(Array<T>& x, const T& y); //append
 template<class T> Array<T>& operator<<(Array<T>& x, const Array<T>& y); //append
@@ -392,8 +396,8 @@ UpdateOperator(%=)
   template<class T> Array<T> operator op(const Array<T>& y, const Array<T>& z); \
   template<class T> Array<T> operator op(T y, const Array<T>& z);  \
   template<class T> Array<T> operator op(const Array<T>& y, T z)
-BinaryOperator(+ , +=);
-BinaryOperator(- , -=);
+BinaryOperator(+, +=);
+BinaryOperator(-, -=);
 //BinaryOperator(% , *=);
 //BinaryOperator(/ , /=);
 #undef BinaryOperator
@@ -450,7 +454,6 @@ BinaryFunction(fmod);
 /// @{
 
 typedef rai::Array<double> arr;
-typedef rai::Array<float>  arrf;
 typedef rai::Array<double> doubleA;
 typedef rai::Array<float>  floatA;
 typedef rai::Array<uint>   uintA;
@@ -476,13 +479,13 @@ typedef rai::Array<rai::String*> StringL;
 /// @name constant non-arrays
 /// @{
 
-extern arr& NoArr; //this is a pointer to NULL!!!! I use it for optional arguments
-extern arrA& NoArrA; //this is a pointer to NULL!!!! I use it for optional arguments
-extern uintA& NoUintA; //this is a pointer to NULL!!!! I use it for optional arguments
-extern byteA& NoByteA; //this is a pointer to NULL!!!! I use it for optional arguments
-extern intAA& NoIntAA; //this is a pointer to NULL!!!! I use it for optional arguments
-extern uintAA& NoUintAA; //this is a pointer to NULL!!!! I use it for optional arguments
-extern uint16A& NoUint16A; //this is a pointer to NULL!!!! I use it for optional arguments
+extern arr& NoArr; //this is a pointer to nullptr!!!! I use it for optional arguments
+extern arrA& NoArrA; //this is a pointer to nullptr!!!! I use it for optional arguments
+extern uintA& NoUintA; //this is a pointer to nullptr!!!! I use it for optional arguments
+extern byteA& NoByteA; //this is a pointer to nullptr!!!! I use it for optional arguments
+extern intAA& NoIntAA; //this is a pointer to nullptr!!!! I use it for optional arguments
+extern uintAA& NoUintAA; //this is a pointer to nullptr!!!! I use it for optional arguments
+extern uint16A& NoUint16A; //this is a pointer to nullptr!!!! I use it for optional arguments
 
 //===========================================================================
 /// @}
@@ -593,8 +596,8 @@ arr repmat(const arr& A, uint m, uint n);
 
 //inline double max(const arr& x) { return x.max(); }
 //inline double min(const arr& x) { return x.min(); }
-inline uint argmax(const arr& x) { return x.maxIndex(); }
-inline uint argmin(const arr& x) { return x.minIndex(); }
+inline uint argmax(const arr& x) { return x.argmax(); }
+inline uint argmin(const arr& x) { return x.argmin(); }
 
 inline uintA randperm(uint n) {  uintA z;  z.setRandomPerm(n);  return z; }
 inline arr linspace(double base, double limit, uint n) {  arr z;  z.setGrid(1, base, limit, n);  return z;  }
@@ -622,7 +625,7 @@ extern bool useLapack;
 
 uint svd(arr& U, arr& d, arr& V, const arr& A, bool sort2Dpoints=true);
 void svd(arr& U, arr& V, const arr& A);
-void pca(arr &Y, arr &v, arr &W, const arr &X, uint npc = 0);
+void pca(arr& Y, arr& v, arr& W, const arr& X, uint npc = 0);
 
 arr  oneover(const arr& A); //element-wise reciprocal (devision, 1./A)
 
@@ -641,23 +644,23 @@ void rotationFromAtoB(arr& R, const arr& a, const arr& v);
 double determinant(const arr& A);
 double cofactor(const arr& A, uint i, uint j);
 
-uintA getIndexTuple(uint i, const uintA &d);  //? that also exists inside of array!
+uintA getIndexTuple(uint i, const uintA& d);  //? that also exists inside of array!
 void lognormScale(arr& P, double& logP, bool force=true);
 
-void gnuplot(const arr& X, bool pauseMouse=false, bool persist=false, const char* PDFfile=NULL);
+void gnuplot(const arr& X, bool pauseMouse=false, bool persist=false, const char* PDFfile=nullptr);
 //these are obsolete, use catCol instead
-void write(const arrL& X, const char *filename, const char *ELEMSEP=" ", const char *LINESEP="\n ", const char *BRACKETS="  ", bool dimTag=false, bool binary=false);
+void write(const arrL& X, const char* filename, const char* ELEMSEP=" ", const char* LINESEP="\n ", const char* BRACKETS="  ", bool dimTag=false, bool binary=false);
 
-void write_ppm(const byteA &img, const char *file_name, bool swap_rows=true);
-void read_ppm(byteA &img, const char *file_name, bool swap_rows=true);
-void add_alpha_channel(byteA &img, byte alpha);
-void remove_alpha_channel(byteA &img);
-void make_grey(byteA &img);
-void make_RGB(byteA &img);
-void make_RGB2BGRA(byteA &img);
-void swap_RGB_BGR(byteA &img);
-void flip_image(byteA &img);
-void flip_image(floatA &img);
+void write_ppm(const byteA& img, const char* file_name, bool swap_rows=true);
+void read_ppm(byteA& img, const char* file_name, bool swap_rows=true);
+void add_alpha_channel(byteA& img, byte alpha);
+void remove_alpha_channel(byteA& img);
+void make_grey(byteA& img);
+void make_RGB(byteA& img);
+void make_RGB2BGRA(byteA& img);
+void swap_RGB_BGR(byteA& img);
+void flip_image(byteA& img);
+void flip_image(floatA& img);
 void image_halfResolution(byteA& img);
 
 void scanArrFile(const char* name);
@@ -721,7 +724,7 @@ template<class T> void eliminatePartial(rai::Array<T>& x, const rai::Array<T>& y
 
 #ifndef SWIG
 template<class T> T sqrDistance(const rai::Array<T>& v, const rai::Array<T>& w);
-template<class T> T maxDiff(const rai::Array<T>& v, const rai::Array<T>& w, uint *maxi=0);
+template<class T> T maxDiff(const rai::Array<T>& v, const rai::Array<T>& w, uint* maxi=0);
 template<class T> T maxRelDiff(const rai::Array<T>& v, const rai::Array<T>& w, T tol);
 //template<class T> T sqrDistance(const rai::Array<T>& v, const rai::Array<T>& w, const rai::Array<bool>& mask);
 template<class T> T sqrDistance(const rai::Array<T>& g, const rai::Array<T>& v, const rai::Array<T>& w);
@@ -757,8 +760,8 @@ template<class T> rai::Array<T> diagProduct(const rai::Array<T>& v, const rai::A
 
 template<class T> rai::Array<T> elemWiseMin(const rai::Array<T>& v, const rai::Array<T>& w);
 template<class T> rai::Array<T> elemWiseMax(const rai::Array<T>& v, const rai::Array<T>& w);
-template<class T> rai::Array<T> elemWisemax(const rai::Array<T>& x,const T& y);
-template<class T> rai::Array<T> elemWisemax(const T& x,const rai::Array<T>& y);
+template<class T> rai::Array<T> elemWisemax(const rai::Array<T>& x, const T& y);
+template<class T> rai::Array<T> elemWisemax(const T& x, const rai::Array<T>& y);
 template<class T> rai::Array<T> elemWiseHinge(const rai::Array<T>& x);
 
 template<class T> void writeConsecutiveConstant(std::ostream& os, const rai::Array<T>& x);
@@ -772,12 +775,13 @@ template<class T> rai::Array<T> cat(const rai::Array<T>& y, const rai::Array<T>&
 template<class T> rai::Array<T> cat(const rai::Array<T>& y, const rai::Array<T>& z, const rai::Array<T>& w) { rai::Array<T> x; x.append(y); x.append(z); x.append(w); return x; }
 template<class T> rai::Array<T> cat(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c, const rai::Array<T>& d) { rai::Array<T> x; x.append(a); x.append(b); x.append(c); x.append(d); return x; }
 template<class T> rai::Array<T> cat(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c, const rai::Array<T>& d, const rai::Array<T>& e) { rai::Array<T> x; x.append(a); x.append(b); x.append(c); x.append(d); x.append(e); return x; }
+template<class T> rai::Array<T> cat(const rai::Array<rai::Array<T>>& X) {  rai::Array<T> x; for(const rai::Array<T>& z: X) x.append(z); return x; }
 template<class T> rai::Array<T> catCol(const rai::Array<rai::Array<T>*>& X);
-template<class T> rai::Array<T> catCol(const rai::Array<rai::Array<T> >& X);
-template<class T> rai::Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b) { return catCol(LIST<rai::Array<T> >(a,b)); }
-template<class T> rai::Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c) { return catCol(LIST<rai::Array<T> >(a,b,c)); }
-template<class T> rai::Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c, const rai::Array<T>& d) { return catCol(LIST<rai::Array<T> >(a,b,c,d)); }
-template<class T> rai::Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c, const rai::Array<T>& d, const rai::Array<T>& e) { return catCol(LIST<rai::Array<T> >(a,b,c,d,e)); }
+template<class T> rai::Array<T> catCol(const rai::Array<rai::Array<T>>& X);
+template<class T> rai::Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b) { return catCol(LIST<rai::Array<T>>(a, b)); }
+template<class T> rai::Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c) { return catCol(LIST<rai::Array<T>>(a, b, c)); }
+template<class T> rai::Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c, const rai::Array<T>& d) { return catCol(LIST<rai::Array<T>>(a, b, c, d)); }
+template<class T> rai::Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c, const rai::Array<T>& d, const rai::Array<T>& e) { return catCol(LIST<rai::Array<T>>(a, b, c, d, e)); }
 
 //===========================================================================
 /// @}
@@ -808,22 +812,22 @@ template<class T> rai::Array<T> sqr(const rai::Array<T>& y) { rai::Array<T> x; x
 /// @name tensor functions
 /// @{
 
-template<class T> void tensorCondNormalize(rai::Array<T> &X, int left);
-template<class T> void tensorCondMax(rai::Array<T> &X, uint left);
-template<class T> void tensorCondSoftMax(rai::Array<T> &X, uint left, double beta);
+template<class T> void tensorCondNormalize(rai::Array<T>& X, int left);
+template<class T> void tensorCondMax(rai::Array<T>& X, uint left);
+template<class T> void tensorCondSoftMax(rai::Array<T>& X, uint left, double beta);
 template<class T> void tensorCond11Rule(rai::Array<T>& X, uint left, double rate);
-template<class T> void tensorCheckCondNormalization(const rai::Array<T> &X, uint left, double tol=1e-10);
-template<class T> void tensorCheckCondNormalization_with_logP(const rai::Array<T> &X, uint left, double logP, double tol=1e-10);
+template<class T> void tensorCheckCondNormalization(const rai::Array<T>& X, uint left, double tol=1e-10);
+template<class T> void tensorCheckCondNormalization_with_logP(const rai::Array<T>& X, uint left, double logP, double tol=1e-10);
 
-template<class T> void tensorEquation(rai::Array<T> &X, const rai::Array<T> &A, const uintA &pickA, const rai::Array<T> &B, const uintA &pickB, uint sum=0);
-template<class T> void tensorPermutation(rai::Array<T> &Y, const rai::Array<T> &X, const uintA &Yid);
-template<class T> void tensorMarginal(rai::Array<T> &Y, const rai::Array<T> &X, const uintA &Yid);
-template<class T> void tensorMaxMarginal(rai::Array<T> &Y, const rai::Array<T> &X, const uintA &Yid);
-template<class T> void tensorMarginal_old(rai::Array<T> &y, const rai::Array<T> &x, const uintA &xd, const uintA &ids);
-template<class T> void tensorMultiply(rai::Array<T> &X, const rai::Array<T> &Y, const uintA &Yid);
-template<class T> void tensorAdd(rai::Array<T> &X, const rai::Array<T> &Y, const uintA &Yid);
-template<class T> void tensorMultiply_old(rai::Array<T> &x, const rai::Array<T> &y, const uintA &d, const uintA &ids);
-template<class T> void tensorDivide(rai::Array<T> &X, const rai::Array<T> &Y, const uintA &Yid);
+template<class T> void tensorEquation(rai::Array<T>& X, const rai::Array<T>& A, const uintA& pickA, const rai::Array<T>& B, const uintA& pickB, uint sum=0);
+template<class T> void tensorPermutation(rai::Array<T>& Y, const rai::Array<T>& X, const uintA& Yid);
+template<class T> void tensorMarginal(rai::Array<T>& Y, const rai::Array<T>& X, const uintA& Yid);
+template<class T> void tensorMaxMarginal(rai::Array<T>& Y, const rai::Array<T>& X, const uintA& Yid);
+template<class T> void tensorMarginal_old(rai::Array<T>& y, const rai::Array<T>& x, const uintA& xd, const uintA& ids);
+template<class T> void tensorMultiply(rai::Array<T>& X, const rai::Array<T>& Y, const uintA& Yid);
+template<class T> void tensorAdd(rai::Array<T>& X, const rai::Array<T>& Y, const uintA& Yid);
+template<class T> void tensorMultiply_old(rai::Array<T>& x, const rai::Array<T>& y, const uintA& d, const uintA& ids);
+template<class T> void tensorDivide(rai::Array<T>& X, const rai::Array<T>& Y, const uintA& Yid);
 
 //===========================================================================
 /// @}
@@ -845,7 +849,7 @@ template<class T, class S> void copy(rai::Array<T>& x, const rai::Array<S>& a) {
 }
 template<class T, class S> rai::Array<T> convert(const rai::Array<S>& a) {
   rai::Array<T> x;
-  copy<T,S>(x,a);
+  copy<T, S>(x, a);
   return x;
 }
 /// check whether this and \c a have same dimensions
@@ -879,11 +883,10 @@ void lapack_choleskySymPosDef(arr& Achol, const arr& A);
 double lapack_determinantSymPosDef(const arr& A);
 inline arr lapack_inverseSymPosDef(const arr& A) { arr Ainv; lapack_inverseSymPosDef(Ainv, A); return Ainv; }
 arr lapack_Ainv_b_sym(const arr& A, const arr& b);
-void lapack_min_Ax_b(arr& x,const arr& A, const arr& b);
-arr lapack_Ainv_b_symPosDef_givenCholesky(const arr& U, const arr&b);
+void lapack_min_Ax_b(arr& x, const arr& A, const arr& b);
+arr lapack_Ainv_b_symPosDef_givenCholesky(const arr& U, const arr& b);
 arr lapack_Ainv_b_triangular(const arr& L, const arr& b);
 arr eigen_Ainv_b(const arr& A, const arr& b);
-
 
 //===========================================================================
 /// @}
@@ -904,7 +907,7 @@ struct SpecialArray {
   virtual ~SpecialArray() {}
 };
 
-template<class T> bool isNotSpecial(const rai::Array<T>& X)   { return !X.special || X.special->type==SpecialArray::ST_none; }
+template<class T> bool isSpecial(const rai::Array<T>& X)      { return X.special && X.special->type!=SpecialArray::ST_none; }
 template<class T> bool isNoArr(const rai::Array<T>& X)        { return X.special && X.special->type==SpecialArray::ST_NoArr; }
 template<class T> bool isRowShifted(const rai::Array<T>& X)   { return X.special && X.special->type==SpecialArray::RowShiftedST; }
 template<class T> bool isSparseMatrix(const rai::Array<T>& X) { return X.special && X.special->type==SpecialArray::sparseMatrixST; }
@@ -917,9 +920,9 @@ struct RowShifted : SpecialArray {
   uintA rowLen;     ///< number of non-zeros in the row
   uintA colPatches; ///< column-patch: (nd=2,d0=real_d1,d1=2) range of non-zeros in a COLUMN; starts with 'a', ends with 'b'-1
   bool symmetric;   ///< flag: if true, this stores a symmetric (banded) matrix: only the upper triangle
-  
+
   RowShifted(arr& X);
-  RowShifted(arr& X, RowShifted &aux);
+  RowShifted(arr& X, RowShifted& aux);
   ~RowShifted();
   double elem(uint i, uint j); //TODO rename to 'elem'
   void reshift(); //shift all cols to start with non-zeros
@@ -943,34 +946,61 @@ struct SparseVector: SpecialArray {
   arr& Z;      ///< references the array itself
   intA elems;  ///< for every non-zero (in memory order), the index
   SparseVector(arr& _Z);
+  SparseVector(arr& _Z, const SparseVector& s);
   void resize(uint d0, uint n);
   double& entry(uint i, uint k);
+  double& addEntry(int i);
   void setFromDense(const arr& x);
   arr unsparse();
 };
 
 struct SparseMatrix : SpecialArray {
-  arr& Z;      ///< references the array itself
+  arr& Z;      ///< references the array itself, which linearly stores numbers
   intA elems;  ///< for every non-zero (in memory order), the (row,col) index tuple
   uintAA cols; ///< for every column, for every non-zero the (row,memory) index tuple
   uintAA rows; ///< for every row   , for every non-zero the (column,memory) index tuple
 
   SparseMatrix(arr& _Z);
-  SparseMatrix(arr& _Z, SparseMatrix& s);
-  void resize(uint d0, uint d1, uint n);
-  void reshape(uint d0, uint d1);
-  double& entry(uint i,uint j,uint k);
+  SparseMatrix(arr& _Z, const SparseMatrix& s);
+  //access
+  double& entry(uint i, uint j, uint k);
   double& elem(uint i, uint j);
   double& addEntry(int i, int j);
+  arr getSparseRow(uint i);
+  //construction
   void setFromDense(const arr& X);
   void setupRowsCols();
+  //manipulations
+  void resize(uint d0, uint d1, uint n);
+  void resizeCopy(uint d0, uint d1, uint n);
+  void reshape(uint d0, uint d1);
+  void rowShift(int shift);
+  //computations
   arr At_x(const arr& x);
   arr At_A();
+  arr A_B(const arr& B) const;
+  arr B_A(const arr& B) const;
+  void transpose();
   void rowWiseMult(const arr& a);
+  void add(const arr& a);
+  void subtract(const SparseMatrix& a);
   arr unsparse();
 };
 
 }//namespace rai
+
+#define UpdateOperator( op ) \
+  void operator op (rai::SparseMatrix& x, const rai::SparseMatrix& y); \
+  void operator op (rai::SparseMatrix& x, double y );
+UpdateOperator(|=)
+UpdateOperator(^=)
+UpdateOperator(&=)
+UpdateOperator(+=)
+UpdateOperator(-=)
+UpdateOperator(*=)
+UpdateOperator(/=)
+UpdateOperator(%=)
+#undef UpdateOperator
 
 //struct RowSparseMatrix : SpecialArray {
 //  RowSparseMatrix()
@@ -978,7 +1008,7 @@ struct SparseMatrix : SpecialArray {
 
 arr unpack(const arr& Z); //returns an unpacked matrix in case this is packed
 arr packRowShifted(const arr& X);
-RowShifted *makeRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d1);
+RowShifted* makeRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d1);
 arr makeRowSparse(const arr& X);
 
 //===========================================================================
@@ -989,11 +1019,11 @@ arr makeRowSparse(const arr& X);
 /*  TODO: realize list simpler: let the Array class have a 'listMode' flag. When this flag is true, the read, write, resize, find etc routines
 will simply be behave differently */
 
-template<class T> char listWrite(const rai::Array<std::shared_ptr<T> >& L, std::ostream& os=std::cout, const char *ELEMSEP=" ", const char *delim=NULL);
-template<class T> char listWrite(const rai::Array<T*>& L, std::ostream& os=std::cout, const char *ELEMSEP=" ", const char *delim=NULL);
+template<class T> char listWrite(const rai::Array<std::shared_ptr<T>>& L, std::ostream& os=std::cout, const char* ELEMSEP=" ", const char* delim=nullptr);
+template<class T> char listWrite(const rai::Array<T*>& L, std::ostream& os=std::cout, const char* ELEMSEP=" ", const char* delim=nullptr);
 template<class T> void listWriteNames(const rai::Array<T*>& L, std::ostream& os);
 template<class T> rai::String listString(const rai::Array<T*>& L);
-template<class T> void listRead(rai::Array<T*>& L, std::istream& is, const char *delim=NULL);
+template<class T> void listRead(rai::Array<T*>& L, std::istream& is, const char* delim=nullptr);
 template<class T> void listCopy(rai::Array<T*>& L, const rai::Array<T*>& M);  //copy a list by calling the copy constructor for each element
 template<class T> void listClone(rai::Array<T*>& L, const rai::Array<T*>& M); //copy a list by calling the 'newClone' method of each element (works for virtual types)
 template<class T> void listDelete(rai::Array<T*>& L);
@@ -1010,7 +1040,7 @@ template<class T> rai::Array<T*> getList(const rai::Array<T>& A) {
   for(uint i=0; i<A.N; i++) L.elem(i) = &A.elem(i);
   return L;
 }
-template<class T> T* new_elem(rai::Array<T*>& L) { T *e=new T; e->index=L.N; L.append(e); return e; }
+template<class T> T* new_elem(rai::Array<T*>& L) { T* e=new T; e->index=L.N; L.append(e); return e; }
 
 //===========================================================================
 /// @}
@@ -1021,16 +1051,16 @@ void graphRandomUndirected(uintA& E, uint n, double connectivity);
 void graphRandomFixedDegree(uintA& E, uint N, uint degree);
 void graphRandomTree(uintA& E, uint N, uint roots=1);
 
-template<class vert, class edge> edge* graphGetEdge(vert *from, vert *to);
+template<class vert, class edge> edge* graphGetEdge(vert* from, vert* to);
 template<class vert, class edge> void graphMakeLists(rai::Array<vert*>& V, rai::Array<edge*>& E);
 template<class vert, class edge> void graphRandomUndirected(rai::Array<vert*>& V, rai::Array<edge*>& E, uint N, double connectivity);
 template<class vert, class edge> void graphRandomFixedDegree(rai::Array<vert*>& V, rai::Array<edge*>& E, uint N, uint degree);
 template<class vert, class edge> void graphRandomLinear(rai::Array<vert*>& V, rai::Array<edge*>& E, uint N);
 template<class vert, class edge> void graphConnectUndirected(rai::Array<vert*>& V, rai::Array<edge*>& E);
 template<class vert, class edge> void graphLayered(rai::Array<vert*>& V, rai::Array<edge*>& E, const uintA& layers, bool interConnections);
-template<class vert, class edge> edge *newEdge(vert *a, vert *b, rai::Array<edge*>& E);
-template<class edge> edge *newEdge(uint a , uint b, rai::Array<edge*>& E);
-template<class vert, class edge> edge *del_edge(edge *e, rai::Array<vert*>& V, rai::Array<edge*>& E, bool remakeLists);
+template<class vert, class edge> edge* newEdge(vert* a, vert* b, rai::Array<edge*>& E);
+template<class edge> edge* newEdge(uint a, uint b, rai::Array<edge*>& E);
+template<class vert, class edge> edge* del_edge(edge* e, rai::Array<vert*>& V, rai::Array<edge*>& E, bool remakeLists);
 template<class vert, class edge> void graphWriteDirected(std::ostream& os, const rai::Array<vert*>& V, const rai::Array<edge*>& E);
 template<class vert, class edge> void graphWriteUndirected(std::ostream& os, const rai::Array<vert*>& V, const rai::Array<edge*>& E);
 template<class vert, class edge> bool graphTopsort(rai::Array<vert*>& V, rai::Array<edge*>& E);

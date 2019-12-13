@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2019 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include <RosCom/roscom.h>
 
 #include "rosCamera.h"
@@ -10,11 +18,11 @@ struct sRosCamera {
   ptr<SubscriberConv<sensor_msgs::Image, floatA, &conv_imageFloat32_floatA>> subDepthFloat;
   ptr<SubscriberConv<sensor_msgs::Image, floatA, &conv_imageu162floatA>> subDepthUint16;
 
-  sRosCamera(const char* rosNodeName, Var<byteA>& rgb, Var<floatA>& depth, bool useUint) : ROS(rosNodeName){
+  sRosCamera(const char* rosNodeName, Var<byteA>& rgb, Var<floatA>& depth, bool useUint) : ROS(rosNodeName) {
     if(rgb.name().N) ROS.subscribe(subRgb, rgb);
-    if(useUint){
+    if(useUint) {
       if(depth.name().N) ROS.subscribe(subDepthUint16, depth);
-    }else{
+    } else {
       if(depth.name().N) ROS.subscribe(subDepthFloat, depth);
     }
   }
@@ -31,16 +39,16 @@ RosCamera::RosCamera(Var<byteA>& _rgb, Var<floatA> _depth,
   s = make_shared<sRosCamera>(rosNodeName, rgb, depth, useUint);
 }
 
-RosCamera::~RosCamera(){
+RosCamera::~RosCamera() {
 }
 
 #else //RAI_ROS
 
 RosCamera::RosCamera(Var<byteA>& _rgb, Var<floatA> _depth,
-		     const char* rosNodeName,
-		     const char* rgb_topic,
-		     const char* depth_topic,
-		     bool useUint){ NICO }
-RosCamera::~RosCamera(){ NICO }
+                     const char* rosNodeName,
+                     const char* rgb_topic,
+                     const char* depth_topic,
+                     bool useUint) { NICO }
+RosCamera::~RosCamera() { NICO }
 
 #endif

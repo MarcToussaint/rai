@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -20,23 +20,23 @@
 //===========================================================================
 
 struct LogicGeometricProgram {
-  rai::KinematicWorld world_root;
+  rai::Configuration world_root;
   FOL_World fol_root;
-  
+
   LogicGeometricProgram() {}
   ~LogicGeometricProgram() {}
-  
-  virtual bool isFeasible(const rai::KinematicWorld& world, const Graph& symbols) = 0;
-  virtual double psi(const rai::KinematicWorld& world, const Graph& symbols) = 0;
-  virtual KOMO& getPathProblem(const rai::KinematicWorld& world, const Graph& symbols) = 0;
-  virtual ConstrainedProblem& getEffPoseProblem(const rai::KinematicWorld& world, const Graph& symbols) = 0;
+
+  virtual bool isFeasible(const rai::Configuration& world, const Graph& symbols) = 0;
+  virtual double psi(const rai::Configuration& world, const Graph& symbols) = 0;
+  virtual KOMO& getPathProblem(const rai::Configuration& world, const Graph& symbols) = 0;
+  virtual ConstrainedProblem& getEffPoseProblem(const rai::Configuration& world, const Graph& symbols) = 0;
 };
 
 //===========================================================================
 
 struct TowerProblem_new:LogicGeometricProgram {
   uint nObjects;
-  
+
   TowerProblem_new() {
     world_root.init("LGP-world.g");
     fol_root.init(FILE("LGP-symbols.g"));
@@ -46,11 +46,11 @@ struct TowerProblem_new:LogicGeometricProgram {
   }
   ~TowerProblem_new() {}
   void setRandom();
-  
-  bool isFeasible(const rai::KinematicWorld& world, const Graph& symbols) { NIY }
-  double psi(const rai::KinematicWorld& world, const Graph& symbols) { NIY }
-  KOMO& getPathProblem(const rai::KinematicWorld& world, const Graph& symbols) { NIY }
-  ConstrainedProblem& getEffPoseProblem(const rai::KinematicWorld& world, const Graph& symbols) { NIY }
+
+  bool isFeasible(const rai::Configuration& world, const Graph& symbols) { NIY }
+  double psi(const rai::Configuration& world, const Graph& symbols) { NIY }
+  KOMO& getPathProblem(const rai::Configuration& world, const Graph& symbols) { NIY }
+  ConstrainedProblem& getEffPoseProblem(const rai::Configuration& world, const Graph& symbols) { NIY }
 };
 
 //===========================================================================
@@ -61,11 +61,11 @@ struct SticksProblem:LogicGeometricProgram {
     fol_root.init(FILE("LGP-sticks-symbols.g"));
   }
   ~SticksProblem() {}
-  
-  bool isFeasible(const rai::KinematicWorld& world, const Graph& symbols) { NIY }
-  double psi(const rai::KinematicWorld& world, const Graph& symbols) { NIY }
-  KOMO& getPathProblem(const rai::KinematicWorld& world, const Graph& symbols) { NIY }
-  ConstrainedProblem& getEffPoseProblem(const rai::KinematicWorld& world, const Graph& symbols) { NIY }
+
+  bool isFeasible(const rai::Configuration& world, const Graph& symbols) { NIY }
+  double psi(const rai::Configuration& world, const Graph& symbols) { NIY }
+  KOMO& getPathProblem(const rai::Configuration& world, const Graph& symbols) { NIY }
+  ConstrainedProblem& getEffPoseProblem(const rai::Configuration& world, const Graph& symbols) { NIY }
 };
 
 //===========================================================================

@@ -5,7 +5,7 @@ struct SubscribeOptitrack{
   Subscriber<tf::tfMessage> sub;
 
   SubscribeOptitrack()
-    : tf_messages(NULL, "tf_messages"),
+    : tf_messages(nullptr, "tf_messages"),
       sub("/tf", tf_messages) {
   }
   ~SubscribeOptitrack(){

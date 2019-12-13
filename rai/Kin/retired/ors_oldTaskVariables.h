@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -44,30 +44,30 @@ struct TaskVariable {
   TVtype type;          ///< which type has this variable (arguably: this could be member of DefaultTV -- but useful here)
   TargetType targetType;///< what target type
   rai::String name;      ///< its name
-  
+
   arr y, y_old, v, v_old, y_target, v_target; ///< current state and final target of this variable
   arr J, Jt;                                  ///< current Jacobian and its transpose
   double y_prec, v_prec;                      ///< precision (=1/variance) associated with this variable
   arr y_trajectory, y_prec_trajectory;        ///< target & precision over a whole trajectory
   arr v_trajectory, v_prec_trajectory;        ///< target & precision over a whole trajectory
-  
+
   //used for feedback control:
   arr y_ref, v_ref;                           ///< immediate (next step) desired target reference
   double Pgain, Dgain;                        ///< parameters of the PD controller or attractor dynamics
-  
+
   //a bit obsolete
   double err, derr;
-  
+
   /// @name initialization
   TaskVariable();
   virtual ~TaskVariable() = 0;
   virtual TaskVariable* newClone() = 0;
-  
+
   /// @name online target parameters
   void setGains(double Pgain, double Dgain, bool onReal=true);
   void setGainsAsNatural(double decaySteps, double dampingRatio, bool onReal=true);
   void setGainsAsAttractor(double decaySteps, double oscillations=.2, bool onReal=true);
-  
+
   /// @name trajectory target parameters
   /// @todo REMOVE ALL of the following options:
   void setConstantTargetTrajectory(uint T);
@@ -78,26 +78,26 @@ struct TaskVariable {
   void setPrecisionVTrajectoryConstant(uint T, double constant_prec);
   void setIntervalPrecisions(uint T, arr& y_precs, arr& v_precs);
   void setTrajectory(uint T, double funnelsdv=0., double funnelvsdv=0.); //OBSOLETE
-  
+
   //only keep those:
   void setInterpolatedTargetsEndPrecisions(uint T, double mid_y_prec, double final_y_prec, double mid_v_prec, double final_v_prec);
   void setInterpolatedTargetsConstPrecisions(uint T, double y_prec, double v_prec);
   void setConstTargetsConstPrecisions(uint T, double y_prec, double v_prec);
-  
+
   void setInterpolatedTargetsEndPrecisions(uint T, double mid_y_prec, double mid_v_prec); //those versions assume y_prec and v_prec were set and use this.
   void setInterpolatedTargetsConstPrecisions(uint T);
   void setConstTargetsConstPrecisions(uint T);
   void appendConstTargetsAndPrecs(uint T);
-  
+
   void shiftTargets(int offset);
-  
+
   /// @name updates
-  virtual void updateState(const rai::KinematicWorld &ors, double tau=1.) = 0; //updates both, state and Jacobian -> TODO: rename update(..)
+  virtual void updateState(const rai::Configuration& ors, double tau=1.) = 0; //updates both, state and Jacobian -> TODO: rename update(..)
   void updateChange(int t=-1, double tau=1.);
-  virtual void getHessian(const rai::KinematicWorld& ors, arr& H) { NIY; }
-  
+  virtual void getHessian(const rai::Configuration& ors, arr& H) { NIY; }
+
   /// @name I/O
-  virtual void write(ostream& os, const rai::KinematicWorld& ors) const;
+  virtual void write(ostream& os, const rai::Configuration& ors) const;
   void write(ostream& os) const {NIY};
 };
 stdOutPipe(TaskVariable);
@@ -109,45 +109,45 @@ struct DefaultTaskVariable:public TaskVariable {
   int i, j;             ///< which body(-ies) does it refer to?
   rai::Transformation irel, jrel; ///< relative position to the body
   arr params;           ///< parameters of the variable (e.g., liner coefficients, limits, etc)
-  
+
   /// @name initialization
   DefaultTaskVariable();
   DefaultTaskVariable(
     const char* _name,
-    const rai::KinematicWorld& _ors,
+    const rai::Configuration& _ors,
     TVtype _type,
-    const char *iBodyName, const char *iframe,
-    const char *jBodyName, const char *jframe,
+    const char* iBodyName, const char* iframe,
+    const char* jBodyName, const char* jframe,
     const arr& _params);
   DefaultTaskVariable(
     const char* _name,
-    const rai::KinematicWorld& _ors,
+    const rai::Configuration& _ors,
     TVtype _type,
-    const char *iShapeName,
-    const char *jShapeName,
+    const char* iShapeName,
+    const char* jShapeName,
     const arr& _params);
   ~DefaultTaskVariable();
   TaskVariable* newClone() { return new DefaultTaskVariable(*this); }
-  
+
   void set(
     const char* _name,
-    const rai::KinematicWorld& _ors,
+    const rai::Configuration& _ors,
     TVtype _type,
     int _i, const rai::Transformation& _irel,
     int _j, const rai::Transformation& _jrel,
     const arr& _params);
-  //void set(const char* _name, rai::KinematicWorld& _ors, TVtype _type, const char *iname, const char *jname, const char *reltext);
-  
+  //void set(const char* _name, rai::Configuration& _ors, TVtype _type, const char *iname, const char *jname, const char *reltext);
+
   /// @name updates
-  void updateState(const rai::KinematicWorld& ors, double tau=1.);
-  void getHessian(const rai::KinematicWorld& ors, arr& H);
-  
+  void updateState(const rai::Configuration& ors, double tau=1.);
+  void getHessian(const rai::Configuration& ors, arr& H);
+
   /// @name virtual user update
-  virtual void userUpdate(const rai::KinematicWorld& ors) { NIY; } //updates both, state and Jacobian
-  
-  
+  virtual void userUpdate(const rai::Configuration& ors) { NIY; } //updates both, state and Jacobian
+
+
   /// @name I/O
-  void write(ostream& os, const rai::KinematicWorld& ors) const;
+  void write(ostream& os, const rai::Configuration& ors) const;
 };
 //stdOutPipe(DefaultTaskVariable);
 
@@ -167,44 +167,44 @@ enum CTVtype {
 struct ProxyTaskVariable:public TaskVariable {
   /// @name data fields
   CTVtype type;
-  uintA shapes,shapes2;
+  uintA shapes, shapes2;
   double margin;
   bool linear;
-  
+
   /// @name initialization
   ProxyTaskVariable();
   ProxyTaskVariable(const char* _name,
-                    rai::KinematicWorld& _ors,
+                    rai::Configuration& _ors,
                     CTVtype _type,
                     uintA _shapes,
                     double _margin=.02,
                     bool _linear=false);
   TaskVariable* newClone() { return new ProxyTaskVariable(*this); }
-  
+
   /// @name updates
-  void updateState(const rai::KinematicWorld& ors, double tau=1.);
+  void updateState(const rai::Configuration& ors, double tau=1.);
 };
 
 /** proxy align task variable */
 struct ProxyAlignTaskVariable:public TaskVariable {
   /// @name data fields
   CTVtype type;
-  uintA shapes,shapes2;
+  uintA shapes, shapes2;
   double margin;
   bool linear;
-  
+
   /// @name initialization
   ProxyAlignTaskVariable();
   ProxyAlignTaskVariable(const char* _name,
-                         rai::KinematicWorld& _ors,
+                         rai::Configuration& _ors,
                          CTVtype _type,
                          uintA _shapes,
                          double _margin=3.,
                          bool _linear=true);
   TaskVariable* newClone() { return new ProxyAlignTaskVariable(*this); }
-  
+
   /// @name updates
-  void updateState(const rai::KinematicWorld& ors, double tau=1.);
+  void updateState(const rai::Configuration& ors, double tau=1.);
 };
 
 //===========================================================================
@@ -219,7 +219,7 @@ void reportState(TaskVariableList& CS, ostream& os, bool onlyActives=true);
 void reportErrors(TaskVariableList& CS, ostream& os, bool onlyActives=true, int t=-1);
 void reportNames(TaskVariableList& CS, ostream& os, bool onlyActives=true);
 void activateAll(TaskVariableList& CS, bool active);
-void updateState(TaskVariableList& CS, const rai::KinematicWorld& ors);
+void updateState(TaskVariableList& CS, const rai::Configuration& ors);
 void updateChanges(TaskVariableList& CS, int t=-1);
 void getJointJacobian(TaskVariableList& CS, arr& J);
 void getJointYchange(TaskVariableList& CS, arr& y_change);

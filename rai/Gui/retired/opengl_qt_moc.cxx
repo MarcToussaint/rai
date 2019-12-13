@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -37,7 +37,7 @@ static const uint qt_meta_data_sOpenGL[] = {
   0,    0, // constructors
   0,       // flags
   0,       // signalCount
-  
+
   0        // eod
 };
 
@@ -45,7 +45,7 @@ static const char qt_meta_stringdata_sOpenGL[] = {
   "sOpenGL\0"
 };
 
-void sOpenGL::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a) {
+void sOpenGL::qt_static_metacall(QObject* _o, QMetaObject::Call _c, int _id, void** _a) {
   Q_UNUSED(_o);
   Q_UNUSED(_id);
   Q_UNUSED(_c);
@@ -64,21 +64,21 @@ const QMetaObject sOpenGL::staticMetaObject = {
 };
 
 #ifdef Q_NO_DATA_RELOCATION
-const QMetaObject &sOpenGL::getStaticMetaObject() { return staticMetaObject; }
+const QMetaObject& sOpenGL::getStaticMetaObject() { return staticMetaObject; }
 #endif //Q_NO_DATA_RELOCATION
 
-const QMetaObject *sOpenGL::metaObject() const {
+const QMetaObject* sOpenGL::metaObject() const {
   return QObject::d_ptr->metaObject ? QObject::d_ptr->metaObject : &staticMetaObject;
 }
 
-void *sOpenGL::qt_metacast(const char *_clname) {
+void* sOpenGL::qt_metacast(const char* _clname) {
   if(!_clname) return 0;
   if(!strcmp(_clname, qt_meta_stringdata_sOpenGL))
     return static_cast<void*>(const_cast< sOpenGL*>(this));
   return QGLWidget::qt_metacast(_clname);
 }
 
-int sOpenGL::qt_metacall(QMetaObject::Call _c, int _id, void **_a) {
+int sOpenGL::qt_metacall(QMetaObject::Call _c, int _id, void** _a) {
   _id = QGLWidget::qt_metacall(_c, _id, _a);
   if(_id < 0)
     return _id;

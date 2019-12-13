@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -10,7 +10,7 @@
 #define BEGIN_MODULE(name) \
   struct name : Thread { \
     struct s##name *s; \
-    name(): Thread(#name), s(NULL) {} \
+    name(): Thread(#name), s(nullptr) {} \
     virtual void open(); \
     virtual void step(); \
     virtual void close();

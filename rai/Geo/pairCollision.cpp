@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -19,11 +19,11 @@ extern "C" {
 #include "ccd/quat.h"
 #include <Geo/qhull.h>
 
-PairCollision::PairCollision(const rai::Mesh &_mesh1, const rai::Mesh &_mesh2, rai::Transformation &_t1, rai::Transformation &_t2, double rad1, double rad2)
+PairCollision::PairCollision(const rai::Mesh& _mesh1, const rai::Mesh& _mesh2, const rai::Transformation& _t1, const rai::Transformation& _t2, double rad1, double rad2)
   : mesh1(&_mesh1), mesh2(&_mesh2), t1(&_t1), t2(&_t2), rad1(rad1), rad2(rad2) {
-  
+
   double d2 = GJK_sqrDistance();
-  
+
   if(d2>1e-10) {
     distance = sqrt(d2);
   } else {
@@ -33,26 +33,26 @@ PairCollision::PairCollision(const rai::Mesh &_mesh1, const rai::Mesh &_mesh2, r
     distance = - libccd_MPR(M1, M2);
   }
 
-  if(fabs(distance)<1e-10){ //exact touch: the GJK computed things, let's make them consisten
+  if(fabs(distance)<1e-10) { //exact touch: the GJK computed things, let's make them consisten
     p1 = p2 = .5*(p1+p2);
   }
-  
+
   //ensure that the normal always points 'against obj1' (along p1-p2 relative to NON-penetration)
   if(rai::sign(distance) * scalarProduct(normal, p1-p2) < 0.)
     normal *= -1.;
 
-  if(distance>1e-10){
+  if(distance>1e-10) {
     CHECK_ZERO(length(normal) - 1., 1e-5, "");
   }
 
   CHECK_ZERO(scalarProduct(normal, p1-p2) - distance, 1e-5, "");
 
   CHECK_GE(rai::sign(distance) * scalarProduct(normal, p1-p2), -1e-10, "");
-  
+
   //in current state, the rad1, rad2, have not been used at all!!
 }
 
-void PairCollision::write(std::ostream &os) const {
+void PairCollision::write(std::ostream& os) const {
   os <<"PairCollide INFO" <<endl;
   if(distance>0.) {
     os <<"  distance=" <<distance <<endl;
@@ -64,23 +64,23 @@ void PairCollision::write(std::ostream &os) const {
 //  if(eig1.N || eig2.N) os <<"  EIG #: " <<eig1.d0<<'-' <<eig2.d0 <<endl;
 }
 
-void support_mesh(const void *_obj, const ccd_vec3_t *_dir, ccd_vec3_t *v) {
-  rai::Mesh *m = (rai::Mesh*)_obj;
+void support_mesh(const void* _obj, const ccd_vec3_t* _dir, ccd_vec3_t* v) {
+  rai::Mesh* m = (rai::Mesh*)_obj;
   arr dir(_dir->v, 3, true);
   uint vertex = m->support(dir);
   memmove(v->v, &m->V(vertex, 0), 3*m->V.sizeT);
 }
 
-void center_mesh(const void *obj, ccd_vec3_t *center) {
-  rai::Mesh *m = (rai::Mesh*)obj;
+void center_mesh(const void* obj, ccd_vec3_t* center) {
+  rai::Mesh* m = (rai::Mesh*)obj;
   rai::Vector c = m->getCenter();
   memmove(center->v, &c.x, 3*sizeof(double));
 }
 
-double PairCollision::libccd_MPR(const rai::Mesh& m1,const rai::Mesh& m2) {
+double PairCollision::libccd_MPR(const rai::Mesh& m1, const rai::Mesh& m2) {
   ccd_t ccd;
   CCD_INIT(&ccd); // initialize ccd_t struct
-  
+
   // set up ccd_t struct
   ccd.support1       = support_mesh; // support function for first object
   ccd.support2       = support_mesh; // support function for second object
@@ -88,17 +88,17 @@ double PairCollision::libccd_MPR(const rai::Mesh& m1,const rai::Mesh& m2) {
   ccd.epa_tolerance  = 1e-4;  // maximal tolerance fro EPA part
   ccd.center1       = center_mesh; // support function for first object
   ccd.center2       = center_mesh; // support function for second object
-  
+
   ccd_real_t _depth;
   ccd_vec3_t _dir, _pos;
   ccd_vec3_t simplex[8];
-  
+
   //    S.m1.translate(randn(3));
   //    int intersect = ccdGJKIntersect(&S.m1, &S.m2, &ccd, &v1, &v2);
   //  int non_intersect = ccdGJKPenetration(&m1, &m2, &ccd, &depth, &_dir, &_pos);
   //    int intersect = ccdMPRIntersect(&S.m1, &S.m2, &ccd);
   int ret = ccdMPRPenetration(&m1, &m2, &ccd, &_depth, &_dir, &_pos, simplex);
-  
+
   if(ret<0) return 0.; //no intersection
   //res == 1  // Touching contact on portal's v1.
   //res == 2  // Origin lies on v0-v1 segment.
@@ -106,8 +106,8 @@ double PairCollision::libccd_MPR(const rai::Mesh& m1,const rai::Mesh& m2) {
 
   normal.setCarray(_dir.v, 3);
 
-  simplex1.resize(0,3);
-  simplex2.resize(0,3);
+  simplex1.resize(0, 3);
+  simplex2.resize(0, 3);
   arr c1=m1.getMean();
   arr c2=m2.getMean();
   arr s(3);
@@ -120,17 +120,19 @@ double PairCollision::libccd_MPR(const rai::Mesh& m1,const rai::Mesh& m2) {
   for(uint i=0; i<4; i++) {
     s = arr(simplex[0+i].v, 3);
     append=true;
+    for(uint i=0; i<3; i++) if(!(s.p[i]==s.p[i])) append=false; //don't append nan!
     if(sqrDistance(s, c1)<1e-10) append=false;
     for(uint i=0; i<simplex1.d0; i++) if(sqrDistance(s, simplex1[i])<1e-10) { append=false; break; }
     if(append) simplex1.append(s);
-    
+
     s = arr(simplex[4+i].v, 3);
     append=true;
+    for(uint i=0; i<3; i++) if(!(s.p[i]==s.p[i])) append=false; //don't append nan!
     if(sqrDistance(s, c2)<1e-10) append=false;
     for(uint i=0; i<simplex2.d0; i++) if(sqrDistance(s, simplex2[i])<1e-10) { append=false; break; }
     if(append) simplex2.append(s);
   }
-  
+
   //compute witness points
   double d=0.;
   if(simplexType(1, 3)) {
@@ -153,40 +155,44 @@ double PairCollision::libccd_MPR(const rai::Mesh& m1,const rai::Mesh& m2) {
   if(simplexType(3, 3)) {
     d=coll_3on3(p2, p1, normal, simplex2, simplex1, arr(_pos.v, 3));
   }
-  
+
 //  CHECK_ZERO(_depth - fabs(d), 1e-4, ""); //compare depth by ccd with ours
+  if(fabs(d) < 1e-10) {
+    checkNan(p1);
+    checkNan(p2);
+  }
 
   return fabs(d);
 }
 
 double PairCollision::GJK_sqrDistance() {
   // convert meshes to 'Object_structures'
-  Object_structure m1,m2;
+  Object_structure m1, m2;
   rai::Array<double*> Vhelp1, Vhelp2;
-  m1.numpoints = mesh1->V.d0;  m1.vertices = mesh1->V.getCarray(Vhelp1);  m1.rings=NULL; //TODO: rings would make it faster
-  m2.numpoints = mesh2->V.d0;  m2.vertices = mesh2->V.getCarray(Vhelp2);  m2.rings=NULL;
-  
+  m1.numpoints = mesh1->V.d0;  m1.vertices = mesh1->V.getCarray(Vhelp1);  m1.rings=nullptr; //TODO: rings would make it faster
+  m2.numpoints = mesh2->V.d0;  m2.vertices = mesh2->V.getCarray(Vhelp2);  m2.rings=nullptr;
+
   // convert transformations to affine matrices
-  arr T1,T2;
+  arr T1, T2;
   rai::Array<double*> Thelp1, Thelp2;
   if(!!t1) {  T1=t1->getAffineMatrix();  T1.getCarray(Thelp1);  }
   if(!!t2) {  T2=t2->getAffineMatrix();  T2.getCarray(Thelp2);  }
-  
+
   // call GJK
   simplex_point simplex;
   p1.resize(3).setZero();
   p2.resize(3).setZero();
   double d2 = gjk_distance(&m1, Thelp1.p, &m2, Thelp2.p, p1.p, p2.p, &simplex, 0);
-  
+
   normal = p1-p2;
   double l = length(normal);
-  if(l){
+  if(l) {
     normal /= l;
   }
-  
+
   //grab simplex points
-  simplex1.resize(0,3);
-  simplex2.resize(0,3);
+  simplex1.resize(0, 3);
+  simplex2.resize(0, 3);
   if(simplex.npts>=1) {
     simplex1.append(arr(simplex.coords1[0], 3));
     simplex2.append(arr(simplex.coords2[0], 3));
@@ -199,34 +205,34 @@ double PairCollision::GJK_sqrDistance() {
     if(simplex.simplex1[2]!=simplex.simplex1[0] && simplex.simplex1[2]!=simplex.simplex1[1]) simplex1.append(arr(simplex.coords1[2], 3));
     if(simplex.simplex2[2]!=simplex.simplex2[0] && simplex.simplex2[2]!=simplex.simplex2[1]) simplex2.append(arr(simplex.coords2[2], 3));
   }
-  
+
   return d2;
 }
 
-void PairCollision::glDraw(OpenGL &) {
+void PairCollision::glDraw(OpenGL&) {
 #ifdef RAI_GL
   arr P1=p1, P2=p2;
   if(rad1>0.) P1 -= rad1*normal;
   if(rad2>0.) P2 += rad2*normal;
-  
+
   glColor(0., 1., 0., 1.);
   glDrawDiamond(P1(0), P1(1), P1(2), .005, .005, .005);
   for(uint i=0; i<simplex1.d0; i++) simplex1[i] -= rad1*normal;
   glDrawPolygon(simplex1);
-  for(uint i=0;i<simplex1.d0;i++) simplex1[i] += rad1*normal;
+  for(uint i=0; i<simplex1.d0; i++) simplex1[i] += rad1*normal;
 
   glColor(0., 0., 1., 1.);
   glDrawDiamond(P2(0), P2(1), P2(2), .005, .005, .005);
   for(uint i=0; i<simplex2.d0; i++) simplex2[i] += rad2*normal;
   glDrawPolygon(simplex2);
-  for(uint i=0;i<simplex2.d0;i++) simplex2[i] -= rad2*normal;
+  for(uint i=0; i<simplex2.d0; i++) simplex2[i] -= rad2*normal;
 
   glColor(1., 0., 0., 1.);
   glLineWidth(2.f);
   glDrawProxy(P1, P2, .02);
   glLineWidth(1.f);
   glLoadIdentity();
-  
+
   if(poly.N) {
     glColor(0., 1., 1., 1.);
     glLineWidth(1.f);
@@ -244,8 +250,8 @@ void PairCollision::glDraw(OpenGL &) {
 #endif
 }
 
-void PairCollision::kinDistance(arr &y, arr &J,
-                                const arr &Jp1, const arr &Jp2) {
+void PairCollision::kinDistance(arr& y, arr& J,
+                                const arr& Jp1, const arr& Jp2) {
   y = ARR(distance-rad1-rad2);
   if(!!J) {
     arr Jdiff = Jp1 - Jp2;
@@ -254,8 +260,8 @@ void PairCollision::kinDistance(arr &y, arr &J,
 }
 
 void PairCollision::kinNormal(arr& y, arr& J,
-                              const arr &Jp1, const arr &Jp2,
-                              const arr &Jx1, const arr &Jx2) {
+                              const arr& Jp1, const arr& Jp2,
+                              const arr& Jx1, const arr& Jx2) {
   y = normal;
   if(!!J) {
     J.resize(3, Jp1.d1).setZero();
@@ -268,11 +274,11 @@ void PairCollision::kinNormal(arr& y, arr& J,
     if(simplexType(2, 2)) {
       arr a = simplex1[1]-simplex1[0];  a/=length(a);
       arr b = simplex2[1]-simplex2[0];  b/=length(b);
-      double ab=scalarProduct(a,b);
+      double ab=scalarProduct(a, b);
       if(1.-ab*ab>1e-8) { //the edges are not colinear
         double nn = ::sqrt(1.-ab*ab);
-        double sign = ::sign(scalarProduct(normal, crossProduct(b,a)));
-        J += ((sign/nn) * (eye(3,3) - normal*~normal)) * (skew(b) * crossProduct(Jx1, a) - skew(a) * crossProduct(Jx2, b));
+        double sign = ::sign(scalarProduct(normal, crossProduct(b, a)));
+        J = ((sign/nn) * (eye(3, 3) - normal*~normal)) * (skew(b) * crossProduct(Jx1, a) - skew(a) * crossProduct(Jx2, b));
       }
     }
     if(simplexType(2, 1)) {
@@ -301,8 +307,8 @@ void PairCollision::kinNormal(arr& y, arr& J,
 }
 
 void PairCollision::kinVector(arr& y, arr& J,
-                              const arr &Jp1, const arr &Jp2,
-                              const arr &Jx1, const arr &Jx2) {
+                              const arr& Jp1, const arr& Jp2,
+                              const arr& Jx1, const arr& Jx2) {
   y = p1 - p2;
   if(!!J) {
     J = Jp1 - Jp2;
@@ -318,11 +324,11 @@ void PairCollision::kinVector(arr& y, arr& J,
       J = normal*(~normal*J);
       arr a = simplex1[1]-simplex1[0];  a/=length(a);
       arr b = simplex2[1]-simplex2[0];  b/=length(b);
-      double ab=scalarProduct(a,b);
+      double ab=scalarProduct(a, b);
       if(1.-ab*ab>1e-8) { //the edges are not colinear
         double nn = ::sqrt(1.-ab*ab);
-        double sign = ::sign(scalarProduct(normal, crossProduct(b,a)));
-        J += ((distance * sign/nn) * (eye(3,3) - normal*~normal)) * (skew(b) * crossProduct(Jx1, a) - skew(a) * crossProduct(Jx2, b));
+        double sign = ::sign(scalarProduct(normal, crossProduct(b, a)));
+        J += ((distance * sign/nn) * (eye(3, 3) - normal*~normal)) * (skew(b) * crossProduct(Jx1, a) - skew(a) * crossProduct(Jx2, b));
       }
     }
     if(simplexType(2, 1)) {
@@ -337,7 +343,7 @@ void PairCollision::kinVector(arr& y, arr& J,
     }
     checkNan(J);
   }
-  
+
   //-- account for radii
   if(rad1>0. || rad2>0.) {
     double rad=rad1+rad2;
@@ -352,8 +358,7 @@ void PairCollision::kinVector(arr& y, arr& J,
   }
 }
 
-
-void PairCollision::kinPointP1(arr& y, arr& J, const arr& Jp1, const arr& Jp2, const arr& Jx1, const arr& Jx2){
+void PairCollision::kinPointP1(arr& y, arr& J, const arr& Jp1, const arr& Jp2, const arr& Jx1, const arr& Jx2) {
   y = p1;
   if(!!J) {
     J = Jp1;
@@ -365,17 +370,17 @@ void PairCollision::kinPointP1(arr& y, arr& J, const arr& Jp1, const arr& Jp2, c
     if(simplexType(2, 2)) {
       arr a = simplex1[1]-simplex1[0];  a/=length(a);
       arr b = simplex2[1]-simplex2[0];  b/=length(b);
-      double ab=scalarProduct(a,b);
+      double ab=scalarProduct(a, b);
 
       J = Jp1;
       arr c = b*ab-a;
-      double ac = scalarProduct(a,c);
+      double ac = scalarProduct(a, c);
       J += (1./ac) * a*(~c*(Jp2-Jp1));
 
       arr x = p1-p2;
-      arr Jc = (b*~b-eye(3,3))* crossProduct(Jx1, a) + (ab*eye(3,3) + b*~a - 2.*a*~b)*crossProduct(Jx2, b);
-      J += (1./ac) * scalarProduct(c,x) * (eye(3,3) - (1./ac)*a*~c) * crossProduct(Jx1, a);
-      J -= (1./ac) * (a * ~x) * (eye(3,3) - (1./ac)*c*~a) * Jc;
+      arr Jc = (b*~b-eye(3, 3))* crossProduct(Jx1, a) + (ab*eye(3, 3) + b*~a - 2.*a*~b)*crossProduct(Jx2, b);
+      J += (1./ac) * scalarProduct(c, x) * (eye(3, 3) - (1./ac)*a*~c) * crossProduct(Jx1, a);
+      J -= (1./ac) * (a * ~x) * (eye(3, 3) - (1./ac)*c*~a) * Jc;
     }
     if(simplexType(2, 1)) {
       arr a = simplex1[1]-simplex1[0];  a/=length(a);
@@ -386,7 +391,7 @@ void PairCollision::kinPointP1(arr& y, arr& J, const arr& Jp1, const arr& Jp2, c
   }
 }
 
-void PairCollision::kinPointP2(arr& y, arr& J, const arr& Jp1, const arr& Jp2, const arr& Jx1, const arr& Jx2){
+void PairCollision::kinPointP2(arr& y, arr& J, const arr& Jp1, const arr& Jp2, const arr& Jx1, const arr& Jx2) {
   y = p2;
   if(!!J) {
     J = Jp2;
@@ -398,17 +403,17 @@ void PairCollision::kinPointP2(arr& y, arr& J, const arr& Jp1, const arr& Jp2, c
     if(simplexType(2, 2)) {
       arr a = simplex2[1]-simplex2[0];  a/=length(a);
       arr b = simplex1[1]-simplex1[0];  b/=length(b);
-      double ab=scalarProduct(a,b);
+      double ab=scalarProduct(a, b);
 
       J = Jp2;
       arr c = b*ab-a;
-      double ac = scalarProduct(a,c);
+      double ac = scalarProduct(a, c);
       J += (1./ac) * a*(~c*(Jp1-Jp2));
 
       arr x = p2-p1;
-      arr Jc = (b*~b-eye(3,3))* crossProduct(Jx2, a) + (ab*eye(3,3) + b*~a - 2.*a*~b)*crossProduct(Jx1, b);
-      J += (1./ac) * scalarProduct(c,x) * (eye(3,3) - (1./ac)*a*~c) * crossProduct(Jx2, a);
-      J -= (1./ac) * (a * ~x) * (eye(3,3) - (1./ac)*c*~a) * Jc;
+      arr Jc = (b*~b-eye(3, 3))* crossProduct(Jx2, a) + (ab*eye(3, 3) + b*~a - 2.*a*~b)*crossProduct(Jx1, b);
+      J += (1./ac) * scalarProduct(c, x) * (eye(3, 3) - (1./ac)*a*~c) * crossProduct(Jx2, a);
+      J -= (1./ac) * (a * ~x) * (eye(3, 3) - (1./ac)*c*~a) * Jc;
     }
     if(simplexType(1, 2)) {
       arr b = simplex2[1]-simplex2[0];  b/=length(b);
@@ -419,9 +424,9 @@ void PairCollision::kinPointP2(arr& y, arr& J, const arr& Jp1, const arr& Jp2, c
   }
 }
 
-void PairCollision::kinCenter(arr& y, arr& J, const arr& Jp1, const arr& Jp2, const arr& Jx1, const arr& Jx2){
+void PairCollision::kinCenter(arr& y, arr& J, const arr& Jp1, const arr& Jp2, const arr& Jx1, const arr& Jx2) {
   y = .5 * (p1 + p2 + (rad2-rad1)*normal);
-  if(!!J){
+  if(!!J) {
     arr JP1, JP2, Jn, yy;
     kinPointP1(yy, JP1, Jp1, Jp2, Jx1, Jx2);
     kinPointP2(yy, JP2, Jp1, Jp2, Jx1, Jx2);
@@ -433,7 +438,7 @@ void PairCollision::kinCenter(arr& y, arr& J, const arr& Jp1, const arr& Jp2, co
 void PairCollision::nearSupportAnalysis(double eps) {
   rai::Mesh M1(*mesh1); t1->applyOnPointArray(M1.V);
   rai::Mesh M2(*mesh2); t2->applyOnPointArray(M2.V);
-  
+
   //get the set of vertices that are maximal/minimal in normal direction
   //(these might be more than the simplex: esp 4 points for box)
   uintA pts1, pts2;
@@ -451,7 +456,7 @@ void PairCollision::nearSupportAnalysis(double eps) {
 //  m1 = mean(S1);
 //  m2 = mean(S2);
   arr cen = .5*(mean(S1) + mean(S2));
-  
+
   //get projection onto the normal plane
   rai::Quaternion R;
   R.setDiff(normal, Vector_z);
@@ -479,86 +484,104 @@ void PairCollision::nearSupportAnalysis(double eps) {
   }
 }
 
-double coll_1on2(arr &p2, arr& normal, const arr &pts1, const arr &pts2) {
+double coll_1on2(arr& p2, arr& normal, double& s, const arr& pts1, const arr& pts2) {
   CHECK(pts1.nd==2 && pts1.d0==1 && pts1.d1==3, "I need a set of 1 pts1");
   CHECK(pts2.nd==2 && pts2.d0==2 && pts2.d1==3, "I need a set of 2 pts2");
 
   const arr& p1 = pts1[0];
 
-  arr b = pts2[1]-pts2[0];  b/=length(b);
+  arr b = pts2[1]-pts2[0];
 
-  p2 = pts2[0];
-  p2 += scalarProduct(p1-p2, b)*b;
+  s = scalarProduct(p1-pts2[0], b);
+  s /= sumOfSqr(b);
+
+  if(s<=0.) { //1on1 with pts2[0]
+    p2 = pts2[0];
+  } else if(s>=1.) { //1on1 with pts2[1]
+    p2 = pts2[1];
+  } else {
+    p2 = pts2[0];
+    p2 += s*b;
+  }
 
   normal = p1-p2;
   double d = length(normal);
-  normal /= d;
+  if(d>1e-10) normal /= d;
   return d;
 }
 
-double coll_1on3(arr &p2, arr& normal, const arr &pts1, const arr &pts2) {
+double coll_1on3(arr& p2, arr& normal, const arr& pts1, const arr& pts2) {
   CHECK(pts1.nd==2 && pts1.d0==1 && pts1.d1==3, "I need a set of 1 pts1");
   CHECK(pts2.nd==2 && pts2.d0==3 && pts2.d1==3, "I need a set of 3 pts2");
-  
+
   //choose pts1-vertex as origin
   arr tri = pts2;
   for(uint i=0; i<tri.d0; i++) tri[i] -= pts1[0];
-  
+
   //compute normal of tri (plane eq first three parameters)
   arr a=tri[1]-tri[0], b=tri[2]-tri[0];
   normal = crossProduct(b, a);
   normal /= length(normal);
-  
+
   //find plane eq offset parameter
   double d = scalarProduct(normal, tri[0]);
-  
+
   p2 = d*normal + pts1[0];
   return d;
 }
 
-double coll_2on2(arr &p1, arr& p2, arr& normal, const arr &pts1, const arr &pts2) {
+double coll_2on2(arr& p1, arr& p2, arr& normal, const arr& pts1, const arr& pts2) {
   CHECK(pts1.nd==2 && pts1.d0==2 && pts1.d1==3, "I need a set of 2 pts1");
   CHECK(pts2.nd==2 && pts2.d0==2 && pts2.d1==3, "I need a set of 2 pts2");
-  
+
   //compute normal
   arr a=pts1[1]-pts1[0], b=pts2[1]-pts2[0];
   normal = crossProduct(b, a);
-  normal /= length(normal);
-  
+  double n_len = length(normal);
+  if(n_len<1e-10) {
+    double s;
+    p1 = pts1[0];
+    arr PTS1 = pts1[1];
+    PTS1.reshape(1, 3);
+    return coll_1on2(p2, normal, s, PTS1, pts2);
+  }
+  normal /= n_len;
+
   //distance
   double d = scalarProduct(normal, pts2[0]-pts1[0]);
-  
+
   //2nd plane
   arr n = crossProduct(normal, b);
   double t = scalarProduct(pts2[0]-pts1[0], n)/scalarProduct(a, n);//https://en.wikipedia.org/wiki/Line%E2%80%93plane_intersection
-  
+
   p1 = pts1[0] + t*a;
   p2 = p1 + d*normal;
-  
+
   return d;
 }
 
-double coll_2on3(arr &p1, arr& p2, arr& normal, const arr &pts1, const arr &pts2, const arr& center) {
+double coll_2on3(arr& p1, arr& p2, arr& normal, const arr& pts1, const arr& pts2, const arr& center) {
   CHECK(pts1.nd==2 && pts1.d0==2 && pts1.d1==3, "I need a set of 2 pts1");
   //collide center on line to get p1:
   arr cen = center;
-  cen.reshape(1,3);
-  coll_1on2(p1, normal, cen, pts1);
+  cen.reshape(1, 3);
+  double s;
+  coll_1on2(p1, normal, s, cen, pts1);
 //  p1 = .5*(pts1[0]+pts1[1]); //take center of line segment as single point
-  p1.reshape(1,3);
+  p1.reshape(1, 3);
   double d = coll_1on3(p2, normal, p1, pts2);
   p1.reshape(3);
   return d;
 }
 
-double coll_3on3(arr &p1, arr& p2, arr& normal, const arr &pts1, const arr &pts2, const arr& center) {
+double coll_3on3(arr& p1, arr& p2, arr& normal, const arr& pts1, const arr& pts2, const arr& center) {
   CHECK(pts1.nd==2 && pts1.d0==3 && pts1.d1==3, "I need a set of 2 pts1");
   //collide center on tri1 to get p1:
   arr cen = center;
-  cen.reshape(1,3);
+  cen.reshape(1, 3);
   coll_1on3(p1, normal, cen, pts1);
 //  p1 = (1./3.)*(pts1[0]+pts1[1]+pts1[2]); //take center of line tri as single point
-  p1.reshape(1,3);
+  p1.reshape(1, 3);
   double d = coll_1on3(p2, normal, p1, pts2);
   p1.reshape(3);
   return d;

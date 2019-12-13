@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -21,13 +21,13 @@ extern const char* MethodName[];
 struct OptConstrained {
   LagrangianProblem L;
   OptNewton newton;
-  arr &dual;
+  arr& dual;
   OptOptions opt;
   uint its=0;
   bool earlyPhase=false;
-  ostream *logFile=NULL;
-  
-  OptConstrained(arr& x, arr &dual, ConstrainedProblem& P, int verbose=-1, OptOptions opt=NOOPT, ostream* _logFile=0);
+  ostream* logFile=nullptr;
+
+  OptConstrained(arr& x, arr& dual, ConstrainedProblem& P, int verbose=-1, OptOptions opt=NOOPT, ostream* _logFile=0);
   ~OptConstrained();
   bool step();
   uint run();
@@ -35,7 +35,7 @@ struct OptConstrained {
 };
 
 //TODO: remove:
-inline uint optConstrained(arr& x, arr &dual, ConstrainedProblem& P, int verbose=-1, OptOptions opt=NOOPT) {
+inline uint optConstrained(arr& x, arr& dual, ConstrainedProblem& P, int verbose=-1, OptOptions opt=NOOPT) {
   return OptConstrained(x, dual, P, verbose, opt).run();
 }
 
@@ -47,7 +47,7 @@ inline uint optConstrained(arr& x, arr &dual, ConstrainedProblem& P, int verbose
 inline void evaluateConstrainedProblem(const arr& x, ConstrainedProblem& P, std::ostream& os) {
   arr phi_x;
   ObjectiveTypeA tt_x;
-  P.phi(phi_x, NoArr, NoArr, tt_x, x, NoArr);
+  P.phi(phi_x, NoArr, NoArr, tt_x, x);
   double Ef=0., Eh=0., Eg=0.;
   for(uint i=0; i<phi_x.N; i++) {
     if(tt_x(i)==OT_f) Ef += phi_x(i);
@@ -67,11 +67,11 @@ inline void evaluateConstrainedProblem(const arr& x, ConstrainedProblem& P, std:
 //
 
 struct PhaseOneProblem : ConstrainedProblem {
-  ConstrainedProblem &f_orig;
+  ConstrainedProblem& f_orig;
   uint dim_x, dim_ineq, dim_eq;
-  
-  PhaseOneProblem(ConstrainedProblem &f_orig):f_orig(f_orig) {}
+
+  PhaseOneProblem(ConstrainedProblem& f_orig):f_orig(f_orig) {}
   void initialize(arr& x);
-  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& meta_ot, const arr& x, arr& lambda);
+  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& meta_ot, const arr& x);
 };
 

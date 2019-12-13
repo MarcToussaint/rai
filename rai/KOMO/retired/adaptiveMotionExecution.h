@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -21,27 +21,27 @@
 
 struct AdaptiveMotionExecution {
 
-  AdaptiveMotionExecution(rai::KinematicWorld &_world, arr& _trajRef, double _dt, double _TRef, arr &_x0, arr &_q0, MObject &_goalMO, \
+  AdaptiveMotionExecution(rai::Configuration& _world, arr& _trajRef, double _dt, double _TRef, arr& _x0, arr& _q0, MObject& _goalMO, \
                           bool _useOrientation);
   void printState();
   void plotState();
   void warpTrajectory();
-  void iterate(arr &state, double _dtReal=0.);
-  void getNextState(arr &state, arr &dstate);
-  
-  void moveGoal(arr &_pos);
-  
-  void computeIK(arr &q, arr &qd);
-  rai::KinematicWorld *world;
-  
+  void iterate(arr& state, double _dtReal=0.);
+  void getNextState(arr& state, arr& dstate);
+
+  void moveGoal(arr& _pos);
+
+  void computeIK(arr& q, arr& qd);
+  rai::Configuration* world;
+
   double dt;
   double TRef;
   double dsRef;
-  
+
   bool useOrientation;
-  
-  MObject *goalMO;
-  
+
+  MObject* goalMO;
+
   // Actual Trajectory
   arr traj;
   arr x0; // start pos
@@ -50,24 +50,24 @@ struct AdaptiveMotionExecution {
   arr goal;
   arr lastGoal;
   arr state;
-  
+
   arr desState;
   arr desVel;
-  
+
   // Costs
   arr posCosts;
   arr vecCosts;
   arr colCosts;
-  
+
   // Wrapped Trajectory
-  rai::Path *trajWrap;
-  
+  rai::Path* trajWrap;
+
   // Reference Trajectory
-  rai::Path *trajRef;
+  rai::Path* trajRef;
   arr dtrajRef;
   arr goalRef;
   arr sRef;
-  
+
   String scene;
   arr joints_bk;
 };

@@ -1,8 +1,16 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2019 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "bounds.h"
 //#include <Kin/switch.h>
-#include <Kin/TM_qItself.h>
+#include <Kin/F_qFeatures.h>
 #include <Kin/TM_angVel.h>
-#include <Kin/TM_gravity.h>
+#include <Kin/F_dynamics.h>
 #include <Kin/TM_default.h>
 
 double conv_step2time(int step, uint stepsPerPhase);
@@ -16,17 +24,17 @@ template<> const char* rai::Enum<BoundType>::names []= {
   "seqVelPath",
   "poseFromSub",
   "max",
-  NULL
+  nullptr
 };
 
 rai::Array<SkeletonSymbol> modes = { SY_stable, SY_stableOn, SY_dynamic, SY_dynamicOn, SY_dynamicTrans, };
 
 void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
-                    const rai::KinematicWorld& startKinematics,
-                    const rai::KinematicWorld& effKinematics,
-                    bool collisions, const arrA& waypoints){
+                    const rai::Configuration& startKinematics,
+                    const rai::Configuration& effKinematics,
+                    bool collisions, const arrA& waypoints) {
   double maxPhase=0;
-  for(const SkeletonEntry& s:S){
+  for(const SkeletonEntry& s:S) {
     if(s.phase0>maxPhase) maxPhase=s.phase0;
     if(s.phase1>maxPhase) maxPhase=s.phase1;
   }
@@ -40,9 +48,9 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
 
       //-- remove non-switches
       Skeleton finalS;
-      for(const SkeletonEntry& s:S){
+      for(const SkeletonEntry& s:S) {
         if(modes.contains(s.symbol)
-           || s.phase0>=maxPhase){
+            || s.phase0>=maxPhase) {
           SkeletonEntry& fs = finalS.append(s);
           fs.phase0 -= maxPhase-optHorizon;
           fs.phase1 -= maxPhase-optHorizon;
@@ -53,14 +61,14 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
 #if 0
       //-- grep only the latest entries in the skeleton
       Skeleton finalS;
-      for(const SkeletonEntry& s:S) if(s.phase0>=maxPhase){
-        finalS.append(s);
-        finalS.last().phase0 -= maxPhase-1.;
-        finalS.last().phase1 -= maxPhase-1.;
-      }
+      for(const SkeletonEntry& s:S) if(s.phase0>=maxPhase) {
+          finalS.append(s);
+          finalS.last().phase0 -= maxPhase-1.;
+          finalS.last().phase1 -= maxPhase-1.;
+        }
 #endif
 
-      if(komo.verbose>1){
+      if(komo.verbose>1) {
         cout <<"POSE skeleton:" <<endl;
         writeSkeleton(cout, finalS, getSwitchesFromSkeleton(finalS));
       }
@@ -86,10 +94,10 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
 //          o->vars.clear();
 //        }
 //      }
-      for(Objective *o:komo.objectives){
-        if(!std::dynamic_pointer_cast<TM_qItself>(o->map)
-           && !std::dynamic_pointer_cast<TM_NoJumpFromParent>(o->map)
-           && o->map->order>0){
+      for(Objective* o:komo.objectives) {
+        if(!std::dynamic_pointer_cast<F_qItself>(o->map)
+            && !std::dynamic_pointer_cast<TM_NoJumpFromParent>(o->map)
+            && o->map->order>0) {
           o->vars.clear();
         }
       }
@@ -163,8 +171,8 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
       uint T = floor(maxPhase+.5);
       uint waypointsStepsPerPhase = waypoints.N/(T+1);
       CHECK_EQ(waypoints.N, waypointsStepsPerPhase * (T+1), "waypoint steps not clear");
-      for(uint i=0;i<waypoints.N-1;i++){
-        komo.addObjective(ARR(conv_step2time(i, waypointsStepsPerPhase)), OT_sos, FS_qItself, {}, {1e-1}, waypoints(i));
+      for(uint i=0; i<waypoints.N-1; i++) {
+        komo.addObjective(ARR(conv_step2time(i, waypointsStepsPerPhase)), FS_qItself, {}, OT_sos, {1e-1}, waypoints(i));
       }
 
       komo.setSkeleton(S);
@@ -186,13 +194,13 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
       komo.setTiming(maxPhase+.5, stepsPerPhase, 10., 1);
 
       komo.setHoming(0., -1., 1e-2);
-      komo.setSquaredQVelocities();
+      komo.setSquaredQAccVelHoming(0, -1., 0., 1., 1e-2);
       komo.setSquaredQuaternionNorms();
 
       CHECK_EQ(waypoints.N-1, floor(maxPhase+.5), "");
-      for(uint i=0;i<waypoints.N-1;i++){
-        komo.addObjective(ARR(double(i+1)), OT_sos, FS_qItself, {}, {1e-1}, waypoints(i));
-//        komo.addObjective(ARR(double(i+1)), OT_eq, FS_qItself, {}, {1e0}, waypoints(i));
+      for(uint i=0; i<waypoints.N-1; i++) {
+        komo.addObjective(ARR(double(i+1)), FS_qItself, {}, OT_sos, {1e-1}, waypoints(i));
+//        komo.addObjective(ARR(double(i+1)), FS_qItself, {}, OT_eq, {1e0}, waypoints(i));
       }
 //      uint O = komo.objectives.N;
 
@@ -212,22 +220,19 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
   }
 }
 
-
-
-
-ptr<CG> skeleton2CGO(const Skeleton& S, const rai::KinematicWorld& startKinematics, bool collisions){
+ptr<CG> skeleton2CGO(const Skeleton& S, const rai::Configuration& startKinematics, bool collisions) {
   cout <<"*** " <<RAI_HERE <<endl;
   writeSkeleton(cout, S);
 
   double maxPhase=0;
-  for(const SkeletonEntry& s:S){
+  for(const SkeletonEntry& s:S) {
     if(s.phase0>maxPhase) maxPhase=s.phase0;
     if(s.phase1>maxPhase) maxPhase=s.phase1;
   }
   cout <<"maxPhase:" <<maxPhase <<endl;
 
   StringA frames;
-  for(const SkeletonEntry& s:S){
+  for(const SkeletonEntry& s:S) {
     frames.append(s.frames);
   }
   frames.sort().removeDoublesInSorted();
@@ -235,22 +240,22 @@ ptr<CG> skeleton2CGO(const Skeleton& S, const rai::KinematicWorld& startKinemati
 
   //-- create graph vertices
   ptr<CG> cg = make_shared<CG>();
-  for(int t=0;t<=maxPhase;t++){
-    for(rai::String& f:frames){
+  for(int t=0; t<=maxPhase; t++) {
+    for(rai::String& f:frames) {
       cg->G.newNode<int>({STRING(f <<'_' <<t)}, {}, t);
     }
   }
 
   //-- add graph constraints
-  for(const SkeletonEntry& s:S){
+  for(const SkeletonEntry& s:S) {
     int s_end=s.phase1;
     if(s_end<0) s_end = maxPhase;
-    for(int t=s.phase0; t<=s_end;t++){
+    for(int t=s.phase0; t<=s_end; t++) {
       NodeL parents;
       for(const rai::String& f:s.frames) parents.append(cg->G.getNode(STRING(f <<'_' <<t)));
       cg->G.newNode<rai::Enum<SkeletonSymbol>>({}, parents, s.symbol);
-      if(s.symbol==SY_stable || s.symbol==SY_stableOn){
-        for(int t2=t+1; t2<=s_end+1 && t2<=maxPhase; t2++){
+      if(s.symbol==SY_stable || s.symbol==SY_stableOn) {
+        for(int t2=t+1; t2<=s_end+1 && t2<=maxPhase; t2++) {
           NodeL parents2=parents;
           for(const rai::String& f:s.frames) parents2.append(cg->G.getNode(STRING(f <<'_' <<t2)));
           cg->G.newNode<rai::Enum<SkeletonSymbol>>({}, parents2, s.symbol);
@@ -261,54 +266,54 @@ ptr<CG> skeleton2CGO(const Skeleton& S, const rai::KinematicWorld& startKinemati
 //  cout <<"initial CGO:" <<cg->G <<endl;
 
   //-- add implicit identical and collision constraints
-  for(rai::String& f:frames){
-    for(uint t=0;t<=maxPhase;t++){
+  for(rai::String& f:frames) {
+    for(uint t=0; t<=maxPhase; t++) {
       bool stop=false;
-      Node *n = cg->G.getNode(STRING(f <<'_' <<t));
-      for(Node *c:n->parentOf){
+      Node* n = cg->G.getNode(STRING(f <<'_' <<t));
+      for(Node* c:n->parentOf) {
         SkeletonSymbol s = c->getValue<rai::Enum<SkeletonSymbol>>()->x;
         if(s==SY_stable
-           || s==SY_stableOn
-           || s==SY_dynamic
-           || s==SY_dynamicOn
-           || s==SY_dynamicTrans) stop=true;
+            || s==SY_stableOn
+            || s==SY_dynamic
+            || s==SY_dynamicOn
+            || s==SY_dynamicTrans) stop=true;
         if(stop) break;
       }
-      if(t>0){
+      if(t>0) {
         cg->G.newNode<rai::Enum<SkeletonSymbol>>({}, {cg->G.getNode(STRING(f <<'_' <<t-1)), n}, rai::Enum<SkeletonSymbol>(SY_identical));
       }
       if(stop) break;
     }
   }
-  for(rai::String& f0:frames) if(f0.startsWith("obj")){
-    for(rai::String& f1:frames) if(f1!=f0 && f0<=f1 && f1.startsWith("obj")){
-      for(uint t=0; t<=maxPhase;t++){
-        cg->G.newNode<rai::Enum<SkeletonSymbol>>({},
-                                               {cg->G.getNode(STRING(f0 <<'_' <<t)), cg->G.getNode(STRING(f1 <<'_' <<t))},
-                                               rai::Enum<SkeletonSymbol>(SY_noCollision));
-      }
+  for(rai::String& f0:frames) if(f0.startsWith("obj")) {
+      for(rai::String& f1:frames) if(f1!=f0 && f0<=f1 && f1.startsWith("obj")) {
+          for(uint t=0; t<=maxPhase; t++) {
+            cg->G.newNode<rai::Enum<SkeletonSymbol>>({},
+            {cg->G.getNode(STRING(f0 <<'_' <<t)), cg->G.getNode(STRING(f1 <<'_' <<t))},
+            rai::Enum<SkeletonSymbol>(SY_noCollision));
+          }
+        }
     }
-  }
 //  cout <<"CGO with identicals:" <<cg->G <<endl;
 
   //-- collapse identicals
   NodeL ids;
-  for(Node *c:cg->G){
+  for(Node* c:cg->G) {
     if(c->isOfType<rai::Enum<SkeletonSymbol>>()
-       && c->getValue<rai::Enum<SkeletonSymbol>>()->x == SY_identical) ids.append(c);
+        && c->getValue<rai::Enum<SkeletonSymbol>>()->x == SY_identical) ids.append(c);
   }
-  for(Node *c:ids){
-    Node *a=c->parents(0), *b=c->parents(1);
-    cg->G.collapse(a,b);
+  for(Node* c:ids) {
+    Node* a=c->parents(0), *b=c->parents(1);
+    cg->G.collapse(a, b);
 #if 1
     //delete duplicate children
     NodeL dels;
-    for(uint i=0;i<a->parentOf.N;i++) for(uint j=i+1;j<a->parentOf.N;j++){
-      Node *ch1 = a->parentOf.elem(i);
-      Node *ch2 = a->parentOf.elem(j);
-      if(ch1!=ch2 && ch1->parents==ch2->parents && ch1->hasEqualValue(ch2)) dels.append(ch2);
-    }
-    for(Node *d:dels) delete d;
+    for(uint i=0; i<a->parentOf.N; i++) for(uint j=i+1; j<a->parentOf.N; j++) {
+        Node* ch1 = a->parentOf.elem(i);
+        Node* ch2 = a->parentOf.elem(j);
+        if(ch1!=ch2 && ch1->parents==ch2->parents && ch1->hasEqualValue(ch2)) dels.append(ch2);
+      }
+    for(Node* d:dels) delete d;
 #endif
   }
 
@@ -321,29 +326,29 @@ ptr<CG> skeleton2CGO(const Skeleton& S, const rai::KinematicWorld& startKinemati
   //size 1
 #if 1
   StringA noSeeds = {"initial", "stable", "stableOn", "noCollision"};
-  for(Node *c:cg->G){
+  for(Node* c:cg->G) {
     if(c->isOfType<rai::Enum<SkeletonSymbol>>()
-       && !noSeeds.contains(c->getValue<rai::Enum<SkeletonSymbol>>()->name())){
+        && !noSeeds.contains(c->getValue<rai::Enum<SkeletonSymbol>>()->name())) {
 
       auto sp = make_shared<SubCG>();
       cg->subproblems.append(sp);
 
       sp->maxT = (uint)maxPhase;
       //frames
-      for(Node *p:c->parents) sp->frames.append(p);
+      for(Node* p:c->parents) sp->frames.append(p);
       sp->frames.sort();
       //constraints
-      for(Node *c2:cg->G){
+      for(Node* c2:cg->G) {
         if(c2->isOfType<rai::Enum<SkeletonSymbol>>()
-           && sp->frames.contains(c2->parents) ){
+            && sp->frames.contains(c2->parents)) {
           sp->constraints.append(c2);
         }
       }
     }
   }
 #else
-  for(Node *v:cg->G){
-    if(v->isOfType<int>()){
+  for(Node* v:cg->G) {
+    if(v->isOfType<int>()) {
       auto sp = make_shared<SubCG>();
       cg->subproblems.append(sp);
 
@@ -351,9 +356,9 @@ ptr<CG> skeleton2CGO(const Skeleton& S, const rai::KinematicWorld& startKinemati
       //frames
       sp->frames.append(v);
       //constraints
-      for(Node *c2:cg->G){
+      for(Node* c2:cg->G) {
         if(c2->isOfType<rai::Enum<SkeletonSymbol>>()
-           && sp->frames.contains(c2->parents) ){
+            && sp->frames.contains(c2->parents)) {
           sp->constraints.append(c2);
         }
       }
@@ -364,25 +369,24 @@ ptr<CG> skeleton2CGO(const Skeleton& S, const rai::KinematicWorld& startKinemati
 //  cout <<"PROBLEMS size 1:" <<cg->subproblems;
   return cg;
 
-
   //size 2
-  for(uint lev=1;;lev++){
+  for(uint lev=1;; lev++) {
     //compute distances between subproblems
     arr D(cg->subproblems.N, cg->subproblems.N);
     D = -1;
     double mind=-1;
     int mini=-1, minj=-1;
-    for(uint i=0;i<D.d0;i++) for(uint j=i+1;j<D.d1;j++){
-      NodeL join = cat(cg->subproblems(i)->frames, cg->subproblems(j)->frames).sort().removeDoublesInSorted();
-      bool exists=false;
-      for(auto& sp:cg->subproblems) if(join==sp->frames){ exists=true; break; }
-      if(exists) continue;
+    for(uint i=0; i<D.d0; i++) for(uint j=i+1; j<D.d1; j++) {
+        NodeL join = cat(cg->subproblems(i)->frames, cg->subproblems(j)->frames).sort().removeDoublesInSorted();
+        bool exists=false;
+        for(auto& sp:cg->subproblems) if(join==sp->frames) { exists=true; break; }
+        if(exists) continue;
 
-      double d = distance(cg->subproblems(i)->frames, cg->subproblems(j)->frames);
-      if(d>=0.) d += 0.01 * join.N;
-      D(i,j) = D(j,i) = d;
-      if(d>=0. && (mind<0 || d<mind)){ mind=d; mini=i; minj=j; }
-    }
+        double d = distance(cg->subproblems(i)->frames, cg->subproblems(j)->frames);
+        if(d>=0.) d += 0.01 * join.N;
+        D(i, j) = D(j, i) = d;
+        if(d>=0. && (mind<0 || d<mind)) { mind=d; mini=i; minj=j; }
+      }
     cout <<"SP distance:\n" <<D <<endl;
     rai::wait();
     if(mind==-1.) break;
@@ -393,9 +397,9 @@ ptr<CG> skeleton2CGO(const Skeleton& S, const rai::KinematicWorld& startKinemati
     sp->frames = cat(cg->subproblems(mini)->frames, cg->subproblems(minj)->frames);
     sp->frames.sort();
     sp->frames.removeDoublesInSorted();
-    for(Node *c:cg->G){
+    for(Node* c:cg->G) {
       if(c->isOfType<rai::Enum<SkeletonSymbol>>()
-         && sp->frames.contains(c->parents) ){
+          && sp->frames.contains(c->parents)) {
         sp->constraints.append(c);
       }
     }
@@ -408,20 +412,20 @@ ptr<CG> skeleton2CGO(const Skeleton& S, const rai::KinematicWorld& startKinemati
 
 }
 
-void CG2komo(KOMO& komo, const SubCG& scg, const rai::KinematicWorld& C, bool collisions){
+void CG2komo(KOMO& komo, const SubCG& scg, const rai::Configuration& C, bool collisions) {
   //C is the template; pick only the relevant frames
-  rai::KinematicWorld *c = komo.configurations.append(new rai::KinematicWorld);
+  rai::Configuration* c = komo.configurations.append(new rai::Configuration);
   rai::Array<FrameL> framesPerT(scg.maxT+1);
-  for(Node *f:scg.frames){
+  for(Node* f:scg.frames) {
     rai::String obj=f->keys.last();
     uint t=0;
     obj.getLastN(1) >>t;
     obj = obj.getFirstN(obj.N-2);
-    rai::Frame *f_C = C.getFrameByName(obj);
+    rai::Frame* f_C = C.getFrameByName(obj);
     CHECK(f_C, "");
     framesPerT(t).append(f_C->getPathToRoot());
   }
-  for(uint t=0;t<=scg.maxT;t++){
+  for(uint t=0; t<=scg.maxT; t++) {
     framesPerT(t).sort().removeDoublesInSorted();
     c->addFramesCopy(framesPerT(t));
 //    if(!t) for(rai::Frame *f:c->frames) if(f->joint) delete f->joint; //kill all DOFs at t=0

@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -38,7 +38,7 @@ ObjectClusterer::ObjectClusterer() : Thread("ObjectClusterer") {
   NIY;//listenTo(data_3d);
 }
 
-void findMinMaxOfCylinder(double &min, double &max, arr &start, const pcl::PointCloud<PointT>::Ptr &cloud, const arr &direction) {
+void findMinMaxOfCylinder(double& min, double& max, arr& start, const pcl::PointCloud<PointT>::Ptr& cloud, const arr& direction) {
   arr dir = direction/length(direction);
   min = std::numeric_limits<double>::max();
   max = -std::numeric_limits<double>::max();
@@ -55,9 +55,9 @@ void findMinMaxOfCylinder(double &min, double &max, arr &start, const pcl::Point
 
 struct sObjectFitter {
   sObjectFitter(ObjectFitter* p) : p(p) {}
-  ObjectFitter *p;
-  
-  FittingJob createNewJob(const pcl::PointCloud<PointT>::Ptr &cloud, const pcl::PointIndices::Ptr &inliers) {
+  ObjectFitter* p;
+
+  FittingJob createNewJob(const pcl::PointCloud<PointT>::Ptr& cloud, const pcl::PointIndices::Ptr& inliers) {
     FittingJob outliers(new pcl::PointCloud<PointT>());
     pcl::ExtractIndices<PointT> extract;
     extract.setInputCloud(cloud);
@@ -66,8 +66,8 @@ struct sObjectFitter {
     extract.filter(*outliers);
     return outliers;
   }
-  
-  double confidenceForCylinder(pcl::PointIndices::Ptr &inliers, FittingResult& object, const pcl::PointCloud<PointT>::Ptr &cloud, const pcl::PointCloud<pcl::Normal>::Ptr &normals) {
+
+  double confidenceForCylinder(pcl::PointIndices::Ptr& inliers, FittingResult& object, const pcl::PointCloud<PointT>::Ptr& cloud, const pcl::PointCloud<pcl::Normal>::Ptr& normals) {
     // Create the segmentation object for cylinder segmentation and set all the parameters
     // TODO: make parameters
     pcl::SACSegmentationFromNormals<PointT, pcl::Normal> seg;
@@ -84,11 +84,11 @@ struct sObjectFitter {
     seg.setRadiusLimits(minRadius, maxRadius);
     seg.setInputCloud(cloud);
     seg.setInputNormals(normals);
-    
+
     pcl::PointIndices::Ptr inliers_cylinder(new pcl::PointIndices);
     pcl::ModelCoefficients::Ptr coefficients_cylinder(new pcl::ModelCoefficients);
     seg.segment(*inliers_cylinder, *coefficients_cylinder);
-    
+
     uint minCloudSize = rai::getParameter<int>("minCloudSize", 500);
     if(inliers_cylinder->indices.size() < minCloudSize) {
       object.reset();
@@ -99,8 +99,8 @@ struct sObjectFitter {
       return 1./(1 + cloud->size() - inliers->indices.size());
     }
   }
-  
-  double confidenceForSphere(pcl::PointIndices::Ptr &inliers, FittingResult& object, const pcl::PointCloud<PointT>::Ptr &cloud, const pcl::PointCloud<pcl::Normal>::Ptr &normals) {
+
+  double confidenceForSphere(pcl::PointIndices::Ptr& inliers, FittingResult& object, const pcl::PointCloud<PointT>::Ptr& cloud, const pcl::PointCloud<pcl::Normal>::Ptr& normals) {
     // Create the segmentation object for sphere segmentation and set all the parameters
     // TODO: make parameters
     pcl::SACSegmentationFromNormals<PointT, pcl::Normal> seg;
@@ -115,7 +115,7 @@ struct sObjectFitter {
     seg.setRadiusLimits(0.01, 0.1);
     seg.setInputCloud(cloud);
     seg.setInputNormals(normals);
-    
+
     pcl::PointIndices::Ptr inliers_sphere(new pcl::PointIndices);
     pcl::ModelCoefficients::Ptr coefficients_sphere(new pcl::ModelCoefficients);
     seg.segment(*inliers_sphere, *coefficients_sphere);
@@ -126,7 +126,7 @@ struct sObjectFitter {
     } else {
       object = coefficients_sphere;
       inliers = inliers_sphere;
-      
+
       // if rest points are enough create new job
       //if (cloud->size() - inliers_sphere->indices.size() > 500) {
       //createNewJob(cloud, inliers_sphere);
@@ -134,30 +134,30 @@ struct sObjectFitter {
       return 1./(1 + cloud->size() - inliers->indices.size());
     }
   }
-  
-  bool doWork(FittingResult &object, FittingJob &anotherJob, const FittingJob &cloud) {
+
+  bool doWork(FittingResult& object, FittingJob& anotherJob, const FittingJob& cloud) {
     // Build kd-tree from cloud
     pcl::search::KdTree<PointT>::Ptr tree(new pcl::search::KdTree<PointT>);
     tree->setInputCloud(cloud);
-    
+
     // Estimate point normals
     pcl::NormalEstimation<PointT, pcl::Normal> ne;
     ne.setSearchMethod(tree);
     ne.setInputCloud(cloud);
     ne.setKSearch(50);
-    
+
     pcl::PointCloud<pcl::Normal>::Ptr cloud_normals(new pcl::PointCloud<pcl::Normal>);
     ne.compute(*cloud_normals);
-    
+
     FittingResult cyl_object;
     pcl::PointIndices::Ptr cyl_inliers;
     double cylinder_confidence = confidenceForCylinder(cyl_inliers, cyl_object, cloud, cloud_normals);
     FittingResult sphere_object;
     pcl::PointIndices::Ptr sphere_inliers;
     double sphere_confidence = confidenceForSphere(sphere_inliers, sphere_object, cloud, cloud_normals);
-    
+
     double threshold = 0.;
-    
+
     pcl::PointIndices::Ptr inliers;
     if(sphere_confidence > threshold && sphere_confidence > cylinder_confidence) {
       object = sphere_object;
@@ -185,14 +185,14 @@ struct sObjectFitter {
       object->values[3] = direction(0);
       object->values[4] = direction(1);
       object->values[5] = direction(2);
-      
+
       //DEBUG_VAR(pointcloud, st);
     } else {
       object.reset();
       return false;
     }
     //if rest points are enough create new job
-    
+
     uint minCloudSize = rai::getParameter<int>("minCloudSize", 500);
     if(cloud->size() - inliers->indices.size() > minCloudSize) {
       anotherJob = createNewJob(cloud, inliers);
@@ -209,23 +209,23 @@ void ObjectClusterer::close() {}
 void ObjectClusterer::step() {
   //get a copy of the kinect data
   pcl::PointCloud<PointT>::Ptr cloud(data_3d.get()());
-  
+
   if(cloud->points.size() == 0) return;
-  
+
   //DEBUG_VAR(pointcloud, cloud->points.size());
-  
+
   // filter all points too far away
   pcl::PointCloud<PointT>::Ptr cloud_filtered(new pcl::PointCloud<PointT>());
   pcl::PassThrough<PointT> passthrough;
   passthrough.setInputCloud(cloud);
   passthrough.setFilterFieldName("z");
-  passthrough.setFilterLimits(0,1.0);
+  passthrough.setFilterLimits(0, 1.0);
   passthrough.filter(*cloud_filtered);
   passthrough.setInputCloud(cloud_filtered);
   passthrough.setFilterFieldName("x");
-  passthrough.setFilterLimits(-0.4,0.25);
+  passthrough.setFilterLimits(-0.4, 0.25);
   passthrough.filter(*cloud_filtered);
-  
+
   // filter away the table. This is done by fitting a plane to all data and
   // remove all inliers. This assumes that there is one big plane, which
   // contains all other objects.
@@ -236,18 +236,18 @@ void ObjectClusterer::step() {
   ransac.setDistanceThreshold(0.01);
   ransac.computeModel();
   ransac.getInliers(*inliers);
-  
+
   pcl::ExtractIndices<PointT> extract;
   extract.setInputCloud(cloud_filtered);
   extract.setIndices(inliers);
   extract.setNegative(true);
   extract.filter(*cloud_filtered);
-  
+
   if(cloud_filtered->points.size() == 0) return;
-  
+
   pcl::search::KdTree<PointT>::Ptr tree(new pcl::search::KdTree<PointT>);
   tree->setInputCloud(cloud_filtered);
-  
+
   std::vector<pcl::PointIndices> cluster_indices;
   pcl::EuclideanClusterExtraction<PointT> ec;
   ec.setClusterTolerance(0.01);
@@ -257,7 +257,7 @@ void ObjectClusterer::step() {
   ec.setSearchMethod(tree);
   ec.setInputCloud(cloud_filtered);
   ec.extract(cluster_indices);
-  
+
   PointCloudL _point_clouds;
   // append cluster to PointCloud list
   for(std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin(); it != cluster_indices.end(); ++it) {
@@ -271,10 +271,10 @@ void ObjectClusterer::step() {
     Eigen::Matrix4f transform(rai::getParameter<floatA>("kinect_trans_mat").p);
     transform.transposeInPlace();
     pcl::transformPointCloud(*cloud_cluster, *cluster_transformed, transform);
-    
+
     _point_clouds.append(cluster_transformed);
   }
-  
+
   point_clouds.set() = _point_clouds;
 }
 
@@ -288,7 +288,7 @@ void ObjectFitter::open() {}
 
 void ObjectFitter::step() {
   rai::Array<FittingResult> results;
-  
+
   PointCloudL plist = objectClusters.get();
   PointCloudL next;
   while(plist.N) {
@@ -306,7 +306,7 @@ void ObjectFitter::step() {
     plist = next;
     next.clear();
   }
-  
+
   //write back
   objects.set() = results;
 }
@@ -321,31 +321,31 @@ struct sObjectFilter {
     }
     return false;
   }
-  
-  void filterCylinders(arr& pos, FittingResultL& cylinders, const FittingResultL& objects, Module *p) {
+
+  void filterCylinders(arr& pos, FittingResultL& cylinders, const FittingResultL& objects, Module* p) {
     intA nums;
     pos.clear();
     nums.resize(0);
-    pos.resize(0,7);
+    pos.resize(0, 7);
     for(uint i = 0; i< objects.N; ++i) {
       if(!objects(i)) continue;
       if(objects(i)->values.size() != 7) continue;
       cylinders.append(objects(i));
       bool found = false;
       arr measurement;
-      measurement.resize(1,7);
+      measurement.resize(1, 7);
       std::copy(objects(i)->values.begin(), objects(i)->values.end(), measurement.p);
       arr measurement_;
       //DEBUG_VAR(pointcloud, measurement);
-      arr pos_ = measurement.sub(0,0,0,2)+0.5*measurement.sub(0,0,3,5);
-      measurement(0,0) = pos_(0,0);
-      measurement(0,1) = pos_(0,1);
-      measurement(0,2) = pos_(0,2);
+      arr pos_ = measurement.sub(0, 0, 0, 2)+0.5*measurement.sub(0, 0, 3, 5);
+      measurement(0, 0) = pos_(0, 0);
+      measurement(0, 1) = pos_(0, 1);
+      measurement(0, 2) = pos_(0, 2);
       //DEBUG_VAR(pointcloud, measurement);
-      measurement_.append(measurement.sub(0,0,0,2));
-      measurement_.append(-measurement.sub(0,0,3,5));
-      measurement_.append(measurement(0,6));
-      measurement_.resize(1,7);
+      measurement_.append(measurement.sub(0, 0, 0, 2));
+      measurement_.append(-measurement.sub(0, 0, 3, 5));
+      measurement_.append(measurement(0, 6));
+      measurement_.resize(1, 7);
       double epsilon = rai::getParameter<double>("objectDistance");
       for(uint j = 0; j<pos.d0; ++j) {
         if(filterShape(pos, nums, measurement, j, epsilon)) { found = true; break;}
@@ -356,20 +356,20 @@ struct sObjectFilter {
         nums.append(1);
       }
     }
-    
+
   }
   void filterSpheres(arr& pos, FittingResultL& spheres, const FittingResultL& objects, Module* p) {
     intA nums;
     pos.clear();
     nums.resize(0);
-    pos.resize(0,4);
+    pos.resize(0, 4);
     for(uint i = 0; i< objects.N; ++i) {
       if(!objects(i)) continue;
       if(objects(i)->values.size() != 4) continue;
       spheres.append(objects(i));
       bool found = false;
       arr measurement;
-      measurement.resize(1,4);
+      measurement.resize(1, 4);
       std::copy(objects(i)->values.begin(), objects(i)->values.end(), measurement.p);
       double epsilon = rai::getParameter<double>("objectDistance");
       for(uint j = 0; j<pos.d0; ++j) {
@@ -395,8 +395,8 @@ void ObjectFilter::open() {
 
 void ObjectFilter::step() {
   arr cyl_pos, sph_pos;
-  cyl_pos.resize(0,7);
-  sph_pos.resize(0,7);
+  cyl_pos.resize(0, 7);
+  sph_pos.resize(0, 7);
   FittingResultL pcl_cyls, pcl_sph;
   in_objects.readAccess();
   FittingResult o;
@@ -407,7 +407,7 @@ void ObjectFilter::step() {
   out_objects->clear();
   // HACK! We assume max two cylinders
   for(uint i = 0; i<cyl_pos.d0; i++) {
-    double height = length(ARR(cyl_pos(i,3), cyl_pos(i,4), cyl_pos(i,5)));
+    double height = length(ARR(cyl_pos(i, 3), cyl_pos(i, 4), cyl_pos(i, 5)));
     // if cylinder is higher then real cylinder there are probably two...
     if(height > 0.15) {
       int oldd0 = cyl_pos.d0;
@@ -417,7 +417,7 @@ void ObjectFilter::step() {
       cyl_pos(i, 0) += .5*cyl_pos(i, 3);
       cyl_pos(i, 1) += .5*cyl_pos(i, 4);
       cyl_pos(i, 2) += .5*cyl_pos(i, 5);
-      cyl_pos.append(cyl_pos.sub(i,i,0,-1));
+      cyl_pos.append(cyl_pos.sub(i, i, 0, -1));
       cyl_pos.reshape(oldd0+1, 7);
       cyl_pos(oldd0, 0) -= cyl_pos(i, 3);
       cyl_pos(oldd0, 1) -= cyl_pos(i, 4);
@@ -425,19 +425,19 @@ void ObjectFilter::step() {
     }
   }
   for(uint i = 0; i<cyl_pos.d0; i++) {
-    ObjectBelief *cyl = new ObjectBelief();
-    cyl->position = ARR(cyl_pos(i,0), cyl_pos(i,1), cyl_pos(i,2));
-    cyl->rotation.setDiff(ARR(0,0,1), ARR(cyl_pos(i,3), cyl_pos(i,4), cyl_pos(i,5)));
-    cyl->shapeParams(RADIUS) = cyl_pos(i,6);//.025;
-    cyl->shapeParams(HEIGHT) = length(ARR(cyl_pos(i,3), cyl_pos(i,4), cyl_pos(i,5)));
+    ObjectBelief* cyl = new ObjectBelief();
+    cyl->position = ARR(cyl_pos(i, 0), cyl_pos(i, 1), cyl_pos(i, 2));
+    cyl->rotation.setDiff(ARR(0, 0, 1), ARR(cyl_pos(i, 3), cyl_pos(i, 4), cyl_pos(i, 5)));
+    cyl->shapeParams(RADIUS) = cyl_pos(i, 6); //.025;
+    cyl->shapeParams(HEIGHT) = length(ARR(cyl_pos(i, 3), cyl_pos(i, 4), cyl_pos(i, 5)));
     cyl->shapeType = rai::ST_cylinder;
     //cyl->pcl_object = pcl_cyls(i);
     out_objects->append(cyl);
   }
   for(uint i = 0; i<sph_pos.d0; i++) {
-    ObjectBelief *sph = new ObjectBelief;
-    sph->position = ARR(sph_pos(i,0), sph_pos(i,1), sph_pos(i,2));
-    sph->shapeParams(RADIUS) = sph_pos(i,3);
+    ObjectBelief* sph = new ObjectBelief;
+    sph->position = ARR(sph_pos(i, 0), sph_pos(i, 1), sph_pos(i, 2));
+    sph->shapeParams(RADIUS) = sph_pos(i, 3);
     sph->shapeType = rai::ST_sphere;
     //sph->pcl_object = pcl_sph(i);
     out_objects->append(sph);
@@ -454,24 +454,24 @@ ObjectTransformator::ObjectTransformator(const char* name) : Thread(name) {
 void ObjectTransformator::open() {
 }
 
-void createOrsObject(rai::KinematicWorld& world, rai::Body& body, const ObjectBelief *object, const arr& transformation) {
+void createOrsObject(rai::Configuration& world, rai::Body& body, const ObjectBelief* object, const arr& transformation) {
   rai::Transformation t;
   t.pos = object->position;
   t.rot = object->rotation;
-  
+
   rai::Transformation sensor_to_ors;
   sensor_to_ors.setAffineMatrix(transformation.p);
-  
+
   t.appendTransformation(sensor_to_ors);
-  
+
   arr size = ARR(0., 0., object->shapeParams(HEIGHT), object->shapeParams(RADIUS));
-  
+
   rai::Shape* s = new rai::Shape(world, body);
   for(uint i = 0; i < 4; ++i) s->size[i] = size(i);
   for(uint i = 0; i < 3; ++i) s->color[i] = .3;
   s->type = object->shapeType;
   s->name = "pointcloud_shape";
-  
+
   body.X = t;
 }
 
@@ -497,19 +497,19 @@ void ObjectTransformator::step() {
   DEBUG(pointcloud, "geo pull");
   geo = geoState.get();
   DEBUG(pointcloud, "done");
-  
+
   ShapeL cylinders;
   ShapeL spheres;
   for(int i=geo.shapes.N-1; i>=0; i--) {
     if(strncmp(geo.shapes(i)->name, "thing", 5) == 0 && geo.shapes(i)->type == rai::ST_cylinder) {
-      rai::Shape *s = geo.shapes(i);
+      rai::Shape* s = geo.shapes(i);
       cylinders.append(s);
     } else if(strncmp(geo.shapes(i)->name, "thing", 5) == 0 && geo.shapes(i)->type == rai::ST_sphere) {
-      rai::Shape *s = geo.shapes(i);
+      rai::Shape* s = geo.shapes(i);
       spheres.append(s);
     }
   }
-  
+
   DEBUG(pointcloud, "filteredObject mutex");
   kinect_objects.readAccess();
   uint c = 0, s = 0;
@@ -528,7 +528,7 @@ void ObjectTransformator::step() {
   }
   kinect_objects.deAccess();
   DEBUG(pointcloud, "filtered Objects mutex unlock");
-  
+
   geo.calc_fwdPropagateFrames();
   DEBUG(pointcloud, "set ors");
   geoState.set() = geo;

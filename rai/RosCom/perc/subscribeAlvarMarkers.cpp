@@ -18,7 +18,7 @@ void setBody(rai::Frame& body, const ar::AlvarMarker& marker) {
   body.X = conv_pose2transformation(marker.pose.pose);
 }
 
-void syncMarkers(rai::KinematicWorld& world, const ar::AlvarMarkers& markers) {
+void syncMarkers(rai::Configuration& world, const ar::AlvarMarkers& markers) {
   bool createdNewMarkers = false;
 
   // transform: torso_lift_link is the reference frame_id
@@ -76,5 +76,5 @@ void syncMarkers(rai::KinematicWorld& world, const ar::AlvarMarkers& markers) {
 }
 #else
 //void setBody(rai::Body& body, const AlvarMarker& marker) {}
-//void syncMarkers(rai::KinematicWorld& world, AlvarMarkers& markers) {}
+//void syncMarkers(rai::Configuration& world, AlvarMarkers& markers) {}
 #endif

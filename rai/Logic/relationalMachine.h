@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -22,19 +22,19 @@
  */
 struct RelationalMachine {
   Graph KB;     ///< knowledge base
-  Graph *state; ///< the state within the KB (is a subgraph item of KB)
-  Graph *tmp;   ///< a tmp subgraph of the KB (private)
+  Graph* state; ///< the state within the KB (is a subgraph item of KB)
+  Graph* tmp;   ///< a tmp subgraph of the KB (private)
   rai::LogObject _log;
-  
+
   RelationalMachine();
   RelationalMachine(const char* filename);
   void init(const char* filename);
-  
+
   bool queryCondition(rai::String query) const; ///< return indicates coverage of the condition
   bool applyEffect(rai::String effect, bool fwdChain=false);   ///< return indicates change of state
   bool applyEffect(Node* literal, bool fwdChain=false);
   NodeL fwdChainRules();                 ///< progresses the state by applying all rules until convergence
-  
+
   Node* declareNewSymbol(rai::String symbolStr);
   rai::String getKB();
   rai::String getState() const;

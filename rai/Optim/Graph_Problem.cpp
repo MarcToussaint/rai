@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -35,11 +35,11 @@ bool GraphProblem::checkStructure(const arr& x) {
   return true;
 }
 
-Conv_Graph_ConstrainedProblem::Conv_Graph_ConstrainedProblem(GraphProblem& _G,  ostream *_log) : G(_G), logFile(_log) {
+Conv_Graph_ConstrainedProblem::Conv_Graph_ConstrainedProblem(GraphProblem& _G,  ostream* _log) : G(_G), logFile(_log) {
   G.getStructure(variableDimensions, featureVariables, featureTypes);
   varDimIntegral = integral(variableDimensions);
 
-  if(logFile){
+  if(logFile) {
     StringA varNames, phiNames;
     G.getSemantics(varNames, phiNames);
 
@@ -47,14 +47,14 @@ Conv_Graph_ConstrainedProblem::Conv_Graph_ConstrainedProblem(GraphProblem& _G,  
     rai::arrayBrackets="[]";
 
     Graph data = { {"graphStructureQuery", true},
-                   {"numVariables", variableDimensions.N},
-                   {"variableNames", varNames},
-                   {"variableDimensions", variableDimensions},
-                   {"numFeatures", featureVariables.N},
-                   {"featureNames", phiNames},
-                   {"featureVariables", featureVariables},
-                   {"featureTypes", featureTypes},
-                 };
+      {"numVariables", variableDimensions.N},
+      {"variableNames", varNames},
+      {"variableDimensions", variableDimensions},
+      {"numFeatures", featureVariables.N},
+      {"featureNames", phiNames},
+      {"featureVariables", featureVariables},
+      {"featureTypes", featureTypes},
+    };
 
     data.write(*logFile, ",\n", "{\n\n}");
     (*logFile) <<',' <<endl;
@@ -66,20 +66,20 @@ Conv_Graph_ConstrainedProblem::Conv_Graph_ConstrainedProblem(GraphProblem& _G,  
 //dense
 void Conv_Graph_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda) {
   G.phi(phi, J_G, H_G, x, lambda);
-  
+
   if(!!tt) tt = featureTypes;
-  
+
   //-- construct a dense J from the array of feature Js
   if(!!J) {
     J.resize(phi.N, x.N).setZero();
-    
+
     for(uint i=0; i<phi.N; i++) { //loop over features
       arr& Ji = J_G(i);
       uint c=0;
       for(uint& j:featureVariables(i)) { //loop over variables of this features
         uint xjN = variableDimensions(j);
 #if 0
-        memmove(&J(i,(j?varDimIntegral(j-1):0)), Ji.p+c, xjN+Ji.sizeT);
+        memmove(&J(i, (j?varDimIntegral(j-1):0)), Ji.p+c, xjN+Ji.sizeT);
         c+=xjN;
 #else
         for(uint xi=0; xi<xjN; xi++) { //loop over variable dimension
@@ -96,7 +96,7 @@ void Conv_Graph_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA
 #else
 
 //sparse
-void Conv_Graph_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda) {
+void Conv_Graph_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x) {
   G.phi(phi, J_G, H_G, x);
 
   if(!!tt) tt = featureTypes;
@@ -105,9 +105,13 @@ void Conv_Graph_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA
   if(!!J) {
     //count non-zeros!
     uint k=0;
-    for(uint i=0;i<J_G.N;i++){
+    for(uint i=0; i<J_G.N; i++) {
       arr& Ji = J_G(i);
-      for(uint j=0;j<Ji.N;j++) if(Ji(j)) k++;
+      if(!isSparseVector(Ji)) {
+        for(uint j=0; j<Ji.N; j++) if(Ji(j)) k++;
+      } else {
+        k += Ji.sparseVec().Z.N;
+      }
     }
 
     //any sparse matrix is k-times-3
@@ -117,33 +121,49 @@ void Conv_Graph_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA
     k=0;
     for(uint i=0; i<J_G.N; i++) { //loop over features
       arr& Ji = J_G(i);
-      uint c=0;
-      for(int& j:featureVariables(i)) if(j>=0){ //loop over variables of this features
-        uint xjN = variableDimensions(j);
-        for(uint xi=0; xi<xjN; xi++) { //loop over variable dimension
-          double J_value = Ji.elem(c);
-          if(J_value){
-            uint jj = (j?varDimIntegral(j-1):0) + xi;
-            J.sparse().entry(i, jj, k) = J_value;
-            k++;
+      if(!isSparseVector(Ji)) {
+        CHECK(!isSpecial(Ji), "");
+        uint c=0;
+        for(int& j:featureVariables(i)) if(j>=0) { //loop over variables of this features
+            uint xj_dim = variableDimensions(j);
+            for(uint xi=0; xi<xj_dim; xi++) { //loop over variable dimension
+              double J_value = Ji.elem(c);
+              if(J_value) {
+                uint jj = (j?varDimIntegral(j-1):0) + xi;
+                J.sparse().entry(i, jj, k) = J_value;
+                k++;
+              }
+              c++;
+            }
           }
-          c++;
+        CHECK_EQ(c, Ji.N, "you didn't count through all indexes");
+      } else { //sparse vector
+        for(uint l=0; l<Ji.N; l++) {
+          double J_value = Ji.elem(l);
+          uint   xi      = Ji.sparseVec().elems(l); //column index
+          for(int& j:featureVariables(i)) if(j>=0) {
+              uint xj_dim = variableDimensions(j);
+              if(xi<xj_dim) { //xj is the variable, and xi is the index within the variable
+                uint jj = (j?varDimIntegral(j-1):0) + xi;
+                J.sparse().entry(i, jj, k) = J_value;
+                k++;
+              }
+              xi -= xj_dim; //xj is not yet the variable, skip over xj, and shift xi
+            }
         }
       }
-      CHECK_EQ(c, Ji.N, "you didn't count through all indexes");
     }
     CHECK_EQ(k, J.N, ""); //one entry for each non-zero
   }
 
-  if(logFile){
+  if(logFile) {
     arr err = summarizeErrors(phi, featureTypes);
 
     Graph data = { {"graphQuery", queryCount},
-                   {"errors", err},
-                   {"x", x},
-                   {"lambda", lambda},
-                   {"phi", phi}
-                 };
+      {"errors", err},
+      {"x", x},
+      {"phi", phi}
+    };
 
     data.write(*logFile, ",\n", "{\n\n}");
     (*logFile) <<',' <<endl;
@@ -152,26 +172,26 @@ void Conv_Graph_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA
   queryCount++;
 }
 
-void Conv_Graph_ConstrainedProblem::reportProblem(std::ostream& os){
+void Conv_Graph_ConstrainedProblem::reportProblem(std::ostream& os) {
   uint nG=0, nH=0;
-  for(ObjectiveType t:featureTypes) if(t==OT_ineq) nG++; else if(t==OT_eq) nH++;
+    for(ObjectiveType t:featureTypes) if(t==OT_ineq) nG++; else if(t==OT_eq) nH++;
   os <<"\n# GraphProblem";
   os <<"\n# num_vars: " <<variableDimensions.N <<" num_feat: " <<featureTypes.N <<" num_ineq: " <<nG <<" num_eq: " <<nH;
   StringA varNames, phiNames;
   G.getSemantics(varNames, phiNames);
   os <<"\n# vars: ";
-  for(uint i=0;i<varNames.N;i++) os <<"\n#   " <<varNames.elem(i) <<"  (" <<variableDimensions.elem(i) <<")";
+  for(uint i=0; i<varNames.N; i++) os <<"\n#   " <<varNames.elem(i) <<"  (" <<variableDimensions.elem(i) <<")";
   os <<"\n# features: ";
-  for(uint i=0;i<phiNames.N;i++) os <<"\n#   " <<phiNames.elem(i) <<"  (" <<featureTypes.elem(i) <<")";
+  for(uint i=0; i<phiNames.N; i++) os <<"\n#   " <<phiNames.elem(i) <<"  (" <<featureTypes.elem(i) <<")";
   os <<endl;
 }
 
 #endif
 
-void ModGraphProblem::getStructure(uintA& variableDimensions, intAA& featureVariables, ObjectiveTypeA& featureTypes){
+void ModGraphProblem::getStructure(uintA& variableDimensions, intAA& featureVariables, ObjectiveTypeA& featureTypes) {
   G.getStructure(variableDimensions, featureVariables, featureTypes);
-  for(uint i=0;i<featureVariables.N;i++){
-    if(featureTypes(i)==OT_ineq || featureTypes(i)==OT_eq){
+  for(uint i=0; i<featureVariables.N; i++) {
+    if(featureTypes(i)==OT_ineq || featureTypes(i)==OT_eq) {
       subselectFeatures.append(i);
     }
   }
@@ -179,12 +199,12 @@ void ModGraphProblem::getStructure(uintA& variableDimensions, intAA& featureVari
   featureTypes = featureTypes.sub(subselectFeatures);
 }
 
-void ModGraphProblem::getSemantics(StringA& varNames, StringA& phiNames){
+void ModGraphProblem::getSemantics(StringA& varNames, StringA& phiNames) {
   G.getSemantics(varNames, phiNames);
   phiNames = phiNames.sub(subselectFeatures);
 }
 
-void ModGraphProblem::phi(arr& phi, arrA& J, arrA& H, const arr& x){
+void ModGraphProblem::phi(arr& phi, arrA& J, arrA& H, const arr& x) {
   G.phi(phi, J, H, x);
   phi = phi.sub(subselectFeatures);
   J = J.sub(subselectFeatures);

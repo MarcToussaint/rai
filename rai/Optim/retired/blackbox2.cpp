@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -40,15 +40,15 @@ SearchCMA::~SearchCMA() {
   delete s;
 }
 
-void SearchCMA::init(uint D, int mu, int lambda, const arr &startPoint, const arr &startDev) {
-  cmaes_init(&s->evo, NULL, D, startPoint.p, startDev.p, 1, lambda, mu, NULL);
+void SearchCMA::init(uint D, int mu, int lambda, const arr& startPoint, const arr& startDev) {
+  cmaes_init(&s->evo, nullptr, D, startPoint.p, startDev.p, 1, lambda, mu, nullptr);
 }
 
-void SearchCMA::init(uint D, int mu, int lambda, const arr &startPoint, double _startDev) {
-  CHECK_EQ(startPoint.N,D,"");
+void SearchCMA::init(uint D, int mu, int lambda, const arr& startPoint, double _startDev) {
+  CHECK_EQ(startPoint.N, D, "");
   arr startDev(D);
   startDev=_startDev;
-  cmaes_init(&s->evo, NULL, D, startPoint.p, startDev.p, 1, lambda, mu, NULL);
+  cmaes_init(&s->evo, nullptr, D, startPoint.p, startDev.p, 1, lambda, mu, nullptr);
 }
 
 void SearchCMA::init(uint D, int mu, int lambda, double lo, double hi) {
@@ -64,19 +64,19 @@ void SearchCMA::step(arr& samples, arr& costs) {
     samples.resize(s->evo.sp.lambda, s->evo.sp.N);
     costs.resize(s->evo.sp.lambda).setZero();
   }
-  
+
   //generate samples
-  double *const*rgx = cmaes_SampleDistribution(&s->evo, NULL);
+  double* const* rgx = cmaes_SampleDistribution(&s->evo, nullptr);
   for(uint i=0; i<samples.d0; i++) samples[i].setCarray(rgx[i], samples.d1);
 }
 
-void SearchCMA::getBestSample(arr &sample) {
+void SearchCMA::getBestSample(arr& sample) {
   sample.resize(s->evo.sp.N);
-  sample.setCarray(s->evo.rgxbestever,sample.N);
+  sample.setCarray(s->evo.rgxbestever, sample.N);
 }
 
-void SearchCMA::getMean(arr &mean) {
+void SearchCMA::getMean(arr& mean) {
   mean.resize(s->evo.sp.N);
-  mean.setCarray(s->evo.rgxmean,mean.N);
+  mean.setCarray(s->evo.rgxmean, mean.N);
 }
 

@@ -1,5 +1,4 @@
 
-
 #include <Kin/frame.h>
 #include <Kin/cameraview.h>
 #include <Gui/viewer.h>
@@ -7,7 +6,7 @@
 //===========================================================================
 
 void TEST(CameraView){
-  rai::KinematicWorld K;
+  rai::Configuration K;
   K.addFile("../../../../rai-robotModels/pr2/pr2.g");
   K.addFile("../../../../rai-robotModels/objects/kitchen.g");
   K.optimizeTree();
