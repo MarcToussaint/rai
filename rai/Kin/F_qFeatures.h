@@ -27,6 +27,7 @@ struct F_qItself : Feature {
   virtual void phi(arr& y, arr& J, const ConfigurationL& Ktuple);
   virtual uint dim_phi(const rai::Configuration& G);
   virtual uint dim_phi(const ConfigurationL& Ktuple);
+  virtual void signature(intA& S, const rai::Configuration& C);
   virtual rai::String shortTag(const rai::Configuration& G);
  private:
   std::map<rai::Configuration*, uint> dimPhi;
@@ -64,6 +65,7 @@ struct F_qQuaternionNorms : Feature {
   F_qQuaternionNorms() { fs = FS_qQuaternionNorms; }
   virtual void phi(arr& y, arr& J, const rai::Configuration& G);
   virtual uint dim_phi(const rai::Configuration& G);
+  virtual void signature(intA& S, const rai::Configuration& C);
   virtual rai::String shortTag(const rai::Configuration& G) { return STRING("QuaternionNorms"); }
 };
 

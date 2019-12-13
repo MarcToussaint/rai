@@ -389,6 +389,14 @@ void PairCollision::kinPointP1(arr& y, arr& J, const arr& Jp1, const arr& Jp2, c
     }
     checkNan(J);
   }
+
+  //-- account for radii
+  if(rad1>0.) {
+    arr norm, Jnorm;
+    kinNormal(norm, Jnorm, Jp1, Jp2, Jx1, Jx2);
+    y -= rad1 * norm;
+    if(!!J) J -= rad1 * Jnorm;
+  }
 }
 
 void PairCollision::kinPointP2(arr& y, arr& J, const arr& Jp1, const arr& Jp2, const arr& Jx1, const arr& Jx2) {
@@ -421,6 +429,14 @@ void PairCollision::kinPointP2(arr& y, arr& J, const arr& Jp1, const arr& Jp2, c
       J += b*(~b*crossProduct(Jx2, p2-p1));
     }
     checkNan(J);
+  }
+
+  //-- account for radii
+  if(rad2>0.) {
+    arr norm, Jnorm;
+    kinNormal(norm, Jnorm, Jp1, Jp2, Jx1, Jx2);
+    y += rad2 * norm;
+    if(!!J) J += rad2 * Jnorm;
   }
 }
 

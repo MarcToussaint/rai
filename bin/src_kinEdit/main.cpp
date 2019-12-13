@@ -46,7 +46,7 @@ int MAIN(int argc,char **argv){
     }else{
       K.optimizeTree(false, false, false);
     }
-    K.calc_q();
+    K.ensure_q();
     K.checkConsistency();
     K.sortFrames();
 

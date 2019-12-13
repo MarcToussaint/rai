@@ -41,7 +41,7 @@ rai::Simulation::Simulation(rai::Configuration& _C, rai::Simulation::SimulatorEn
   if(display) self->display = make_shared<Simulation_DisplayThread>(C);
 }
 
-void rai::Simulation::step(const arr& u_control, double tau, ControlMode _uMode) {
+void rai::Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
   time += tau;
   if(engine==_physx) {
     self->physx->pushKinematicStates(C.frames);

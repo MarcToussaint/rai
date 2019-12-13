@@ -232,7 +232,7 @@ arr Path::getPosition(double t) const {
 }
 
 arr Path::getVelocity(double t) const {
-  return Spline::eval(t, true);
+  return Spline::eval(t, 1);
 }
 
 void Path::transform_CurrentBecomes_EndFixed(const arr& current, double t) {

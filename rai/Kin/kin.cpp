@@ -301,7 +301,7 @@ void rai::Configuration::reset_q() {
   q.clear();
   activeJoints.clear();
 
-  _state_activeSets_areGood=false;
+  _state_indexedJoints_areGood=false;
   _state_q_isGood=false;
 }
 
@@ -337,25 +337,6 @@ bool rai::Configuration::check_topSort() const {
   return true;
 }
 
-void rai::Configuration::calc_activeSets() {
-  reset_q();
-//  FrameL sortedFrames = frames;
-//  if(!check_topSort()) {
-//    sortedFrames = calc_topSort(); //graphGetTopsortOrder<Frame>(frames);
-//  }
-  activeJoints.clear();
-  for(Frame* f:frames) if(f->joint && f->joint->active)
-      activeJoints.append(f->joint);
-
-  _state_activeSets_areGood=true;
-}
-
-void rai::Configuration::calc_q() {
-  calc_activeSets();
-  analyzeJointStateDimensions();
-  calc_q_from_Q();
-}
-
 void rai::Configuration::copy(const rai::Configuration& K, bool referenceSwiftOnCopy) {
   CHECK(this != &K, "never copy K onto itself");
 
@@ -374,7 +355,7 @@ void rai::Configuration::copy(const rai::Configuration& K, bool referenceSwiftOn
   if(referenceSwiftOnCopy) s->swift = K.s->swift;
   q = K.q;
   _state_q_isGood = K._state_q_isGood;
-  calc_activeSets();
+  ensure_indexedJoints();
 }
 
 bool rai::Configuration::operator!() const { return this==&NoWorld; }
@@ -499,26 +480,47 @@ void rai::Configuration::flipFrames(rai::Frame* a, rai::Frame* b) {
 void rai::Configuration::reconfigureRoot(Frame* newRoot, bool ofLinkOnly) {
   FrameL pathToOldRoot;
 
-  if(ofLinkOnly) pathToOldRoot = newRoot->getPathToUpwardLink();
+  if(ofLinkOnly) pathToOldRoot = newRoot->getPathToUpwardLink(true);
   else pathToOldRoot = newRoot->getPathToRoot();
+
+//  listWrite(pathToOldRoot);
+
+  Frame *oldRoot=pathToOldRoot.first();
+  Frame *rootParent=oldRoot->parent;
+  if(rootParent) oldRoot->unLink();
 
   for(Frame* f : pathToOldRoot) {
     if(f->parent) flipFrames(f->parent, f);
   }
 
+//  if(rootParent){
+//    newRoot->linkFrom(rootParent);
+//    newRoot->setJoint(JT_rigid);
+//  }
+
   checkConsistency();
 }
 
-uint rai::Configuration::analyzeJointStateDimensions() const {
-  uint qdim=0;
+void rai::Configuration::calc_indexedActiveJoints() {
+  reset_q();
+
+  //-- collect active joints
+  activeJoints.clear();
+  for(Frame* f:frames) if(f->joint && f->joint->active)
+      activeJoints.append(f->joint);
+
+  _state_indexedJoints_areGood=true;
+
+  //-- count
+  uint qcount=0;
   for(Joint* j: activeJoints) {
     if(!j->mimic) {
       j->dim = j->getDimFromType();
-      j->qIndex = qdim;
+      j->qIndex = qcount;
       if(!j->uncertainty)
-        qdim += j->qDim();
+        qcount += j->qDim();
       else
-        qdim += 2*j->qDim();
+        qcount += 2*j->qDim();
     } else {
       j->dim = 0;
       j->qIndex = j->mimic->qIndex;
@@ -526,21 +528,23 @@ uint rai::Configuration::analyzeJointStateDimensions() const {
   }
   for(Contact* c: contacts) {
     CHECK_EQ(c->qDim(), 6, "");
-    //    c->dim = c->getDimFromType();
-    c->qIndex = qdim;
-    qdim += c->qDim();
+    c->qIndex = qcount;
+    qcount += c->qDim();
   }
-  return qdim;
+
+  //-- resize q
+  q.resize(qcount).setZero();
+  _state_q_isGood = false;
 }
 
 /** @brief returns the joint (actuator) dimensionality */
 uint rai::Configuration::getJointStateDimension() const {
-  if(!q.nd)((Configuration*)this)->calc_q();
+  if(!q.nd)((Configuration*)this)->ensure_q();
   return q.N;
 }
 
 void rai::Configuration_ext::getJointState(arr& _q, arr& _qdot) const {
-  if(!q.nd)((Configuration*)this)->calc_q();
+  if(!q.nd)((Configuration*)this)->ensure_q();
   _q=q;
   if(!!_qdot) {
     _qdot=qdot;
@@ -554,21 +558,23 @@ const arr& rai::Configuration::getJointState() const {
 }
 
 arr rai::Configuration::getJointState(const StringA& joints) const {
-  if(!q.nd)((Configuration*)this)->calc_q();
+  if(!q.nd)((Configuration*)this)->ensure_q();
   arr x(joints.N);
   for(uint i=0; i<joints.N; i++) {
     String s = joints.elem(i);
     uint d=0;
-    if(s(-2)==':') { d=s(-1)-'0'; s.resize(s.N-2, true); }
+    bool subdim=false;
+    if(s(-2)==':') { d=s(-1)-'0'; s.resize(s.N-2, true); subdim=true; }
     Joint* j = getFrameByName(s)->joint;
     CHECK(!j->dim || d<j->dim, "");
+    CHECK(j->dim==1 || subdim, "the joint '" <<s <<"' is multi-dimensional - you need to select a subdim");
     x(i) = q(j->qIndex+d);
   }
   return x;
 }
 
 arr rai::Configuration::getJointState(const uintA& joints) const {
-  if(!q.nd)((Configuration*)this)->calc_q();
+  if(!q.nd)((Configuration*)this)->ensure_q();
   uint nd=0;
   for(uint i=0; i<joints.N; i++) {
     rai::Joint* j = frames(joints(i))->joint;
@@ -619,10 +625,9 @@ arr rai::Configuration::getLimits() const {
 }
 
 void rai::Configuration::calc_q_from_Q() {
-  ensure_activeSets();
+  ensure_indexedJoints();
 
   uint N=q.N;
-  if(!N) N=analyzeJointStateDimensions();
   q.resize(N).setZero();
 
   uint n=0;
@@ -653,6 +658,7 @@ void rai::Configuration::calc_q_from_Q() {
 
 void rai::Configuration::calc_Q_from_q() {
   CHECK(_state_q_isGood, "");
+  CHECK(_state_indexedJoints_areGood, "");
 
   uint n=0;
   for(Joint* j: activeJoints) {
@@ -694,7 +700,7 @@ void rai::Configuration::selectJointsByGroup(const StringA& groupNames, bool Onl
     }
   reset_q();
   checkConsistency();
-  calc_q();
+  ensure_q();
   checkConsistency();
 }
 
@@ -710,8 +716,20 @@ void rai::Configuration::selectJointsByName(const StringA& names, bool notThose)
   }
   reset_q();
   checkConsistency();
-  calc_q();
+  ensure_q();
   checkConsistency();
+}
+
+void rai::Configuration::selectJointsBySubtrees(const StringA& roots, bool notThose){
+  for(Frame* f: frames) if(f->joint) f->joint->active = notThose;
+  for(const String& s: roots) {
+    Frame* f = getFrameByName(s);
+    CHECK(f, "");
+    FrameL F = {f};
+    f->getSubtree(F);
+    for(Frame *g:F) if(g->joint) g->joint->active = !notThose;
+  }
+  reset_q();
 }
 
 /** @brief sets the joint state vectors separated in positions and
@@ -843,6 +861,50 @@ void rai::Configuration::setTimes(double t) {
   for(Frame* a:frames) a->tau = t;
 }
 
+void rai::Configuration::vars_ensureFrames(){
+  if(!vars_frames.N){
+    for(Frame* f: frames) if(f->joint && f->joint->type!=JT_rigid){
+      bool isVar = true;
+      Frame *p=f;
+      while(p->parent){
+        if(p->parent->joint && p->parent->joint->type!=JT_rigid){ isVar=false; break; }
+        p=p->parent;
+      }
+      if(isVar) vars_frames.append(f);
+    }
+  }
+}
+
+const rai::String&rai::Configuration::vars_getName(uint i){
+  vars_ensureFrames();
+  return vars_frames(i)->name;
+}
+
+uint rai::Configuration::vars_getDim(uint i){
+  Frame *f = vars_frames(i);
+  FrameL F = {f};
+  f->getSubtree(F);
+  uint d =0;
+  for(Frame* f:F) if(f->joint) d += f->joint->qDim();
+  return d;
+}
+
+void rai::Configuration::vars_activate(uint i){
+  Frame *f = vars_frames(i);
+  FrameL F = {f};
+  f->getSubtree(F);
+  for(Frame* f:F) if(f->joint) f->joint->active=true;
+  reset_q();
+}
+
+void rai::Configuration::vars_deactivate(uint i){
+  Frame *f = vars_frames(i);
+  FrameL F = {f};
+  f->getSubtree(F);
+  for(Frame* f:F) if(f->joint) f->joint->active=false;
+  reset_q();
+}
+
 //===========================================================================
 //
 // features
@@ -946,6 +1008,11 @@ void rai::Configuration::jacobian_pos(arr& J, Frame* a, const rai::Vector& pos_w
     }
     a = a->parent;
   }
+
+  if(sparse && sparseJacobianOffset){
+    J.sparse().reshape(J.d0, J.d1+sparseJacobianOffset);
+    J.sparse().rowShift(sparseJacobianOffset);
+  }
 }
 
 #else
@@ -1010,8 +1077,10 @@ void rai::Configuration::jacobian_angular(arr& J, Frame* a, bool sparse) const {
   }
 }
 
-void rai::Configuration::jacobian_time(arr& J, rai::Frame* a) const {
+void rai::Configuration::jacobian_tau(arr& J, rai::Frame* a, bool sparse) const {
   CHECK_EQ(&a->K, this, "");
+
+  if(sparse) NIY;
 
   //get Jacobian
   uint N=getJointStateDimension();
@@ -1023,7 +1092,7 @@ void rai::Configuration::jacobian_time(arr& J, rai::Frame* a) const {
       uint j_idx=j->qIndex;
       if(j_idx>=N) CHECK_EQ(j->type, JT_rigid, "");
       if(j_idx<N) {
-        if(j->type==JT_time) {
+        if(j->type==JT_tau) {
           J(0, j_idx) += 1e-1;
         }
       }
@@ -1072,7 +1141,7 @@ void rai::Configuration::kinematicsQuat(arr& y, arr& J, Frame* a) const { //TODO
   if(!!J) {
     arr A;
     jacobian_angular(A, a);
-    J.resize(4, A.d1);
+    J.clear().resize(4, A.d1);
     for(uint i=0; i<J.d1; i++) {
       rai::Quaternion tmp(0., 0.5*A(0, i), 0.5*A(1, i), 0.5*A(2, i)); //this is unnormalized!!
       tmp = tmp * rot_a;
@@ -1086,7 +1155,7 @@ void rai::Configuration::kinematicsQuat(arr& y, arr& J, Frame* a) const { //TODO
 
 void rai::Configuration::kinematicsTau(double& tau, arr& J) const {
   Frame* a = frames.first();
-  CHECK(a && a->joint && a->joint->type==JT_time, "this configuration does not have a tau DOF");
+  CHECK(a && a->joint && a->joint->type==JT_tau, "this configuration does not have a tau DOF");
 
   Joint* j = a->joint;
   tau = a->tau;
@@ -1447,7 +1516,7 @@ uintA rai::Configuration::getQindicesByNames(const StringA& jointNames) const {
 }
 
 StringA rai::Configuration::getJointNames() const {
-  if(!q.nd)((Configuration*)this)->calc_q();
+  if(!q.nd)((Configuration*)this)->ensure_q();
   StringA names(getJointStateDimension());
   for(Joint* j:activeJoints) {
     rai::String name=j->frame->name;
@@ -2592,7 +2661,7 @@ void rai::Configuration::optimizeTree(bool _pruneRigidJoints, bool pruneNamed, b
   if(_pruneRigidJoints) pruneRigidJoints(); //problem: rigid joints bear the semantics of where a body ends
   reconnectLinksToClosestJoints();
   pruneUselessFrames(pruneNamed, pruneNonContactNonMarker);
-  calc_activeSets();
+  ensure_indexedJoints();
   checkConsistency();
 }
 
@@ -2613,14 +2682,14 @@ void rai::Configuration::makeObjectsFree(const StringA& objects, double H_cost) 
   }
 }
 
-void rai::Configuration::addTimeJoint() {
-  rai::Joint* jt = new rai::Joint(*frames.first(), rai::JT_time);
+void rai::Configuration::addTauJoint() {
+  rai::Joint* jt = new rai::Joint(*frames.first(), rai::JT_tau);
   jt->H = 0.;
 }
 
-bool rai::Configuration::hasTimeJoint() {
+bool rai::Configuration::hasTauJoint() {
   Frame* f = frames.first();
-  return f && f->joint && (f->joint->type==JT_time);
+  return f && f->joint && (f->joint->type==JT_tau);
 }
 
 bool rai::Configuration::checkConsistency() const {
@@ -2638,9 +2707,7 @@ bool rai::Configuration::checkConsistency() const {
      */
   //check qdim
   if(_state_q_isGood) {
-    uint N = analyzeJointStateDimensions();
     CHECK_EQ(1, q.nd, "");
-    CHECK_EQ(N, q.N, "");
 
     //count dimensions yourself and check...
     uint myqdim = 0;
@@ -2660,7 +2727,7 @@ bool rai::Configuration::checkConsistency() const {
       CHECK_EQ(c->qIndex, myqdim, "joint indexing is inconsistent");
       myqdim += c->qDim();
     }
-    CHECK_EQ(myqdim, N, "qdim is wrong");
+    CHECK_EQ(myqdim, q.N, "qdim is wrong");
 
     //consistency with Q
     for(Joint* j: activeJoints) {
@@ -2704,13 +2771,13 @@ bool rai::Configuration::checkConsistency() const {
 
   Joint* j;
   for(Frame* f: frames) if((j=f->joint)) {
-      if(j->type.x!=JT_time) {
+      if(j->type.x!=JT_tau) {
         CHECK(j->from(), "");
         CHECK(j->from()->parentOf.findValue(j->frame)>=0, "");
       }
       CHECK_EQ(j->frame->joint, j, "");
       CHECK_GE(j->type.x, 0, "");
-      CHECK_LE(j->type.x, JT_time, "");
+      CHECK_LE(j->type.x, JT_tau, "");
 
       if(j->mimic) {
         CHECK_EQ(j->dim, 0, "");
@@ -2722,7 +2789,7 @@ bool rai::Configuration::checkConsistency() const {
     }
 
   //check topsort
-  if(_state_activeSets_areGood) {
+  if(_state_indexedJoints_areGood) {
     intA level = consts<int>(0, frames.N);
     //compute levels
 //    for(Frame *f: fwdActiveSet)
@@ -2734,7 +2801,7 @@ bool rai::Configuration::checkConsistency() const {
   }
 
   //check active sets
-  if(_state_activeSets_areGood) {
+  if(_state_indexedJoints_areGood) {
     boolA jointIsInActiveSet = consts<byte>(false, frames.N);
     for(Joint* j: activeJoints) { CHECK(j->active, ""); jointIsInActiveSet.elem(j->frame->ID)=true; }
     if(q.nd) {

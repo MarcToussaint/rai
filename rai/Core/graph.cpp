@@ -770,16 +770,22 @@ Node* Graph::readNode(std::istream& is, bool verbose, bool parseInfo, rai::Strin
             rai::String::readStopSymbols = "\n\r";
             rai::String::readEatStopSymbol = 1;
             node = newNode<StringA>(keys, parents, strings);
-          } else if((c2>='a' && c2<='z') || (c2>='A' && c2<='Z')) { //StringA}
-            is.putback(c2);
-            is.putback(c);
-            StringA strings;
-            rai::String::readStopSymbols=" \n\t]";
-            rai::String::readEatStopSymbol = 0;
-            is >>strings;
-            rai::String::readStopSymbols = "\n\r";
-            rai::String::readEatStopSymbol = 1;
-            node = newNode<StringA>(keys, parents, strings);
+          } else if(c2=='['){ //arrA
+              is.putback(c2);
+              is.putback(c);
+              arrA reals;
+              is >>reals;
+              node = newNode<arrA>(keys, parents, reals);
+          } else if((c2>='a' && c2<='z') || (c2>='A' && c2<='Z')){ //StringA}
+              is.putback(c2);
+              is.putback(c);
+              StringA strings;
+              rai::String::readStopSymbols=" \n\t]";
+              rai::String::readEatStopSymbol = 0;
+              is >>strings;
+              rai::String::readStopSymbols = "\n\r";
+              rai::String::readEatStopSymbol = 1;
+              node = newNode<StringA>(keys, parents, strings);
           } else {
             is.putback(c2);
             is.putback(c);

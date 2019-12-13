@@ -15,7 +15,7 @@ struct Objective {
   ptr<Feature> map;
   const rai::Enum<ObjectiveType> type;  ///< element of {sumOfSqr, inequality, equality}
   rai::String name;
-  intA vars; //either a (0,1)-indicator per time slice, or a list of variable tuples
+  intA configs; //either a (0,1)-indicator per time slice, or a list of variable tuples
 
   Objective(const ptr<Feature>& _map, const ObjectiveType& _type, const rai::String& _name=rai::String()) : map(_map), type(_type), name(_name) {}
   ~Objective() {}
@@ -27,3 +27,9 @@ struct Objective {
   void write(std::ostream& os) const;
 };
 stdOutPipe(Objective)
+
+struct GroundedObjective {
+  ConfigurationL Ctuple;
+  intA signature;
+  uint dim;
+};

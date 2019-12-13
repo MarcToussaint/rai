@@ -35,7 +35,7 @@ void F_NewtonEuler::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   pos.phi(y, J, Ktuple);
 
   //add gravity
-  if(Ktuple(-1)->hasTimeJoint()) {
+  if(Ktuple(-1)->hasTauJoint()) {
     double tau; arr Jtau;
     Ktuple(-1)->kinematicsTau(tau, Jtau);
     y(2) += gravity*tau;
@@ -86,7 +86,7 @@ void F_NewtonEuler_DampedVelocities::phi(arr& y, arr& J, const ConfigurationL& K
 
   //add gravity
   if(gravity) {
-    if(Ktuple(-1)->hasTimeJoint()) {
+    if(Ktuple(-1)->hasTauJoint()) {
       double tau; arr Jtau;
       Ktuple(-1)->kinematicsTau(tau, Jtau);
       y(2) += gravity*tau;
