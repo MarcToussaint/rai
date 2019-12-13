@@ -49,4 +49,9 @@ runTests: tests
 
 ################################################################################
 
+deletePotentiallyNonfreeCode: force
+	@rm -Rf rai/Kin/SWIFT rai/Kin/SWIFT_decomposer rai/Geo/Lewiner
+
+################################################################################
+
 include $(BASE)/build/generic.mk

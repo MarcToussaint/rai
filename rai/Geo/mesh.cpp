@@ -12,10 +12,6 @@
 
 #include <limits>
 
-#define RAI_extern_ply
-#define RAI_extern_GJK
-#define RAI_extern_Lewiner
-
 #ifdef RAI_extern_ply
 #  include "ply/ply.h"
 #endif
