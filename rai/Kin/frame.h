@@ -27,7 +27,7 @@ struct Joint;
 struct Shape;
 struct Inertia;
 struct Contact;
-enum JointType { JT_none=-1, JT_hingeX=0, JT_hingeY=1, JT_hingeZ=2, JT_transX=3, JT_transY=4, JT_transZ=5, JT_transXY=6, JT_trans3=7, JT_transXYPhi=8, JT_universal=9, JT_rigid=10, JT_quatBall=11, JT_phiTransXY=12, JT_XBall, JT_free, JT_time };
+enum JointType { JT_none=-1, JT_hingeX=0, JT_hingeY=1, JT_hingeZ=2, JT_transX=3, JT_transY=4, JT_transZ=5, JT_transXY=6, JT_trans3=7, JT_transXYPhi=8, JT_universal=9, JT_rigid=10, JT_quatBall=11, JT_phiTransXY=12, JT_XBall, JT_free, JT_tau };
 enum BodyType  { BT_none=-1, BT_dynamic=0, BT_kinematic, BT_static };
 }
 
@@ -118,11 +118,13 @@ struct Frame : NonCopyable {
   bool isChildOf(const Frame* par, int order=1) const;
   void getRigidSubFrames(FrameL& F); ///< recursively collect all rigidly attached sub-frames (e.g., shapes of a link), (THIS is not included)
   void getPartSubFrames(FrameL& F); ///< recursively collect all frames of this part
-  void getFullSubtree(FrameL& F);
+  void getSubtree(FrameL& F);
   FrameL getPathToRoot();
   Frame* getUpwardLink(rai::Transformation& Qtotal=NoTransformation, bool untilPartBreak=false) const; ///< recurse upward BEFORE the next joint and return relative transform (this->Q is not included!b)
   FrameL getPathToUpwardLink(bool untilPartBreak=false); ///< recurse upward BEFORE the next joint and return relative transform (this->Q is not included!b)
   const char* isPart();
+
+  void prefixSubtree(const char* prefix);
 
   //I/O
   void read(const Graph& ats);
@@ -200,7 +202,7 @@ struct Joint : NonCopyable {
   uint getDimFromType() const;
   arr get_h() const;
 
-  bool isPartBreak() { return (dim!=1 && !mimic) || type==JT_time; }
+  bool isPartBreak() { return (dim!=1 && !mimic) || type==JT_tau; }
 
   //access the K's q vector
   double& getQ();

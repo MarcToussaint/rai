@@ -12,7 +12,7 @@ void TM_Time::phi(arr& y, arr& J, const rai::Configuration& K) {
   y = ARR(K.frames(0)->tau);
 
   if(!!J) {
-    K.jacobian_time(J, K.frames(0));
+    K.jacobian_tau(J, K.frames(0));
   }
 }
 

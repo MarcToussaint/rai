@@ -228,7 +228,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
     }
 
     effKinematics.reset_q();
-    effKinematics.calc_q();
+    effKinematics.ensure_q();
     DEBUG(effKinematics.checkConsistency();)
   } else {
     cost_here += cost(BD_symbolic); //account for the symbolic costs

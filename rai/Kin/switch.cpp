@@ -77,13 +77,17 @@ void rai::KinematicSwitch::apply(Configuration& K) {
   if(toId!=-1) to=K.frames(toId);
 
   if(symbol==SW_joint || symbol==SW_joint) {
+    rai::Transformation orgX = to->ensure_X();
+
     //first find link frame above 'to', and make it a root
-    rai::Frame* link = to->getUpwardLink(NoTransformation, false); //THIS IS A PROBLEM FOR THE CRAWLER!
+#if 0 //THIS is the standard version that worked with pnp LGP tests - but is a problem for the crawler
+    rai::Frame* link = to->getUpwardLink(NoTransformation, false);
     if(link->parent) link->unLink();
-//    K.reconfigureRoot(to, true); //TODO: really? do you need this when you took the link??
+#else //THIS is the version that works for the crawler; I guess the major difference is 'upward until part break' and 'flip frames'
+    K.reconfigureRoot(to, true);
+#endif
 
     //create a new joint
-    rai::Transformation orgX = to->ensure_X();
     to->linkFrom(from, false);
     Joint* j = new Joint(*to);
     j->setType(jointType);
@@ -110,6 +114,10 @@ void rai::KinematicSwitch::apply(Configuration& K) {
 
     //K.reset_q();
     //K.calc_q(); K.checkConsistency();
+//    {
+//      static int i=0;
+//      FILE(STRING("z.switch_"<<i++<<".g")) <<K;
+//    }
     return;
   }
 

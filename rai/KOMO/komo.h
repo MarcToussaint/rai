@@ -80,7 +80,9 @@ struct SkeletonEntry {
   void write(ostream& os) const { os <<symbol <<' '; frames.write(os, " ", nullptr, "()"); os <<" from " <<phase0 <<" to " <<phase1; }
 };
 stdOutPipe(SkeletonEntry)
+
 typedef rai::Array<SkeletonEntry> Skeleton;
+
 intA getSwitchesFromSkeleton(const Skeleton& S);
 void writeSkeleton(std::ostream& os, const Skeleton& S, const intA& switches= {});
 
@@ -101,10 +103,14 @@ struct KOMO : NonCopyable {
   ConfigurationL configurations;       ///< copies for each time slice; including kinematic switches; only these are optimized
   bool useSwift;               ///< whether swift (collisions/proxies) is evaluated whenever new configurations are set (needed if tasks read proxy list)
 
+  //-- experimental!
+  rai::Configuration pathConfig;
+  rai::Array<ptr<GroundedObjective>> objs;
+
   //-- optimizer
   bool denseOptimization=false;///< calls optimization with a dense (instead of banded) representation
-  bool sparseOptimization=false;///< calls optimization with a sparse (instead of banded) representation
-  OptConstrained* opt=0;       ///< optimizer; created in run()
+  bool sparseOptimization=true;///< calls optimization with a sparse (instead of banded) representation
+  OptConstrained *opt=0;       ///< optimizer; created in run()
   arr x, dual;                 ///< the primal and dual solution
   arr z, splineB;              ///< when a spline representation is used: z are the nodes; splineB the B-spline matrix; x = splineB * z
   //return values
@@ -257,7 +263,7 @@ struct KOMO : NonCopyable {
   void initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase=1, bool sineProfile=true);
   void run();                        ///< run the optimization (using OptConstrained -- its parameters are read from the cfg file)
   void run_sub(const uintA& X, const uintA& Y);
-  void optimize(bool initialize=true);
+  void optimize(bool initNoise=true);
 
   rai::Configuration& getConfiguration(double phase);
   arr getJointState(double phase);
@@ -296,43 +302,48 @@ struct KOMO : NonCopyable {
   // internal (kind of private)
   //
 
+  void selectJointsBySubtrees(StringA& roots);
   void clearObjectives();
   void setupConfigurations();   ///< this creates the @configurations@, that is, copies the original world T times (after setTiming!) perhaps modified by KINEMATIC SWITCHES and FLAGS
+  void setupRepresentations();
   void set_x(const arr& x, const uintA& selectedConfigurationsOnly=NoUintA);            ///< set the state trajectory of all configurations
+//  void setState(const arr& x, const uintA& selectedVariablesOnly=NoUintA);            ///< set the state trajectory of all configurations
   uint dim_x(uint t) { return configurations(t+k_order)->getJointStateDimension(); }
 
-  struct Conv_MotionProblem_KOMO_Problem : KOMO_Problem {
+  struct Conv_KOMO_KOMOProblem : KOMO_Problem {
     KOMO& komo;
     uint dimPhi;
     uintA phiIndex, phiDim;
     StringA featureNames;
-
-    Conv_MotionProblem_KOMO_Problem(KOMO& _komo) : komo(_komo) {}
-    void clear() { dimPhi=0; phiIndex.clear(); phiDim.clear(); featureNames.clear(); }
+    
+    Conv_KOMO_KOMOProblem(KOMO& _komo) : komo(_komo) {}
+    void clear(){ dimPhi=0; phiIndex.clear(); phiDim.clear(); featureNames.clear(); }
 
     virtual uint get_k() { return komo.k_order; }
     virtual void getStructure(uintA& variableDimensions, uintA& featureTimes, ObjectiveTypeA& featureTypes);
     virtual void phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, ObjectiveTypeA& tt, const arr& x);
   } komo_problem;
 
-  struct Conv_MotionProblem_DenseProblem : ConstrainedProblem {
+  struct Conv_KOMO_DenseProblem : ConstrainedProblem {
     KOMO& komo;
     uint dimPhi=0;
 
-    Conv_MotionProblem_DenseProblem(KOMO& _komo) : komo(_komo) {}
-    void clear() { dimPhi=0; }
+    arr quadraticPotentialLinear, quadraticPotentialHessian;
+
+    Conv_KOMO_DenseProblem(KOMO& _komo) : komo(_komo) {}
+    void clear(){ dimPhi=0; }
 
     void getDimPhi();
 
     virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x);
   } dense_problem;
 
-  struct Conv_MotionProblem_GraphProblem : GraphProblem {
+  struct Conv_KOMO_GraphProblem : GraphProblem {
     KOMO& komo;
     uint dimPhi=0;
 
-    Conv_MotionProblem_GraphProblem(KOMO& _komo) : komo(_komo) {}
-    void clear() { dimPhi=0; }
+    Conv_KOMO_GraphProblem(KOMO& _komo) : komo(_komo) {}
+    void clear(){ dimPhi=0; }
 
     virtual void getStructure(uintA& variableDimensions, intAA& featureVariables, ObjectiveTypeA& featureTypes);
     virtual void phi(arr& phi, arrA& J, arrA& H, const arr& x);

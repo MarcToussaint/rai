@@ -63,13 +63,15 @@ struct Configuration : GLDrawer {
   ProxyA proxies;    ///< list of current collision proximities between frames
   arr q;             ///< the current joint configuration vector and velocities
 
-  //-- derived: computed with calc_q(); reset with reset_q()
+  //-- derived: computed with ensure_activeSets(); reset with reset_q()
   JointL activeJoints;
 
   //-- data structure state (lazy evaluation leave the state structure out of sync)
-  bool _state_activeSets_areGood=false; // the active sets, esp. their topological sorting, are up to date
+  bool _state_indexedJoints_areGood=false; // the active sets, esp. their topological sorting, are up to date
   bool _state_q_isGood=false; // the q-vector represents the current relative transforms (and force dofs)
   bool _state_proxies_isGood=false; // the proxies have been created for the current state
+
+  uint sparseJacobianOffset=0; // if>0, this is added to the q-index of all nonzero entries of Jacobians!
 
   static uint setJointStateCount;
 
@@ -120,8 +122,6 @@ struct Configuration : GLDrawer {
   void reset_q();
   FrameL calc_topSort() const;
   bool check_topSort() const;
-  void calc_activeSets();
-  void calc_q();
 
   void reconfigureRoot(Frame* newRoot, bool ofLinkOnly);  ///< n becomes the root of the kinematic tree; joints accordingly reversed; lists resorted
   void flipFrames(rai::Frame* a, rai::Frame* b);
@@ -131,19 +131,23 @@ struct Configuration : GLDrawer {
   void optimizeTree(bool _pruneRigidJoints=false, bool pruneNamed=false, bool pruneNonContactNonMarker=false);        ///< call the three above methods in this order
   void sortFrames();
   void makeObjectsFree(const StringA& objects, double H_cost=0.);
-  void addTimeJoint();
-  bool hasTimeJoint();
+  void addTauJoint();
+  bool hasTauJoint();
   bool checkConsistency() const;
   Joint* attach(Frame* a, Frame* b);
   Joint* attach(const char* a, const char* b);
   FrameL getParts() const;
 
-  uint analyzeJointStateDimensions() const; ///< sort of private: count the joint dimensionalities and assign j->q_index
-
   /// @name computations on the graph
+  void calc_indexedActiveJoints(); ///< sort of private: count the joint dimensionalities and assign j->q_index
   void calc_Q_from_q();  ///< from q compute the joint's Q transformations
   void calc_q_from_Q();  ///< updates q based on the joint's Q transformations
-  arr calc_fwdPropagateVelocities(const arr& qdot);    ///< elementary forward kinematics; also computes all Shape frames
+  arr calc_fwdPropagateVelocities(const arr& qdot);    ///< elementary forward kinematics
+
+  /// @name ensure state consistencies
+  void ensure_indexedJoints() {   if(!_state_indexedJoints_areGood) calc_indexedActiveJoints();  }
+  void ensure_q() {  if(!_state_q_isGood) calc_q_from_Q();  }
+  void ensure_proxies() {  if(!_state_proxies_isGood) stepSwift();  }
 
   /// @name get state
   uint getJointStateDimension() const;
@@ -154,14 +158,10 @@ struct Configuration : GLDrawer {
   arr naturalQmetric(double power=.5) const;               ///< returns diagonal of a natural metric in q-space, depending on tree depth
   arr getLimits() const;
 
-  /// @name ensure state consistencies
-  void ensure_activeSets() {   if(!_state_activeSets_areGood) calc_activeSets();  }
-  void ensure_q() {  if(!_state_q_isGood) calc_q_from_Q();  }
-  void ensure_proxies() {  if(!_state_proxies_isGood) stepSwift();  }
-
   /// @name active set selection
   void selectJointsByGroup(const StringA& groupNames, bool OnlyTheseOrNotThese=true, bool deleteInsteadOfLock=true);
   void selectJointsByName(const StringA&, bool notThose=false);
+  void selectJointsBySubtrees(const StringA& roots, bool notThose=false);
 
   /// @name set state
   void setJointState(const arr& _q);
@@ -175,13 +175,22 @@ struct Configuration : GLDrawer {
     else HALT("wrong dimension");
   }
 
+  /// @name variable (groups of DOFs, e.g. agents) interface
+  FrameL vars_frames;
+  void vars_ensureFrames();
+  uint vars_getNum(){ vars_ensureFrames();  return vars_frames.N; }
+  const String& vars_getName(uint i);
+  uint vars_getDim(uint i);
+  void vars_activate(uint i);
+  void vars_deactivate(uint i);
+
   /// @name Jacobians and kinematics (low level)
   /// what is the linear velocity of a world point (pos_world) attached to frame a for a given joint velocity?
   void jacobian_pos(arr& J, Frame* a, const rai::Vector& pos_world, bool sparse=false) const; //usually called internally with kinematicsPos
   /// what is the angular velocity of frame a for a given joint velocity?
   void jacobian_angular(arr& J, Frame* a, bool sparse=false) const; //usually called internally with kinematicsVec or Quat
   /// how does the time coordinate of frame a change with q-change?
-  void jacobian_time(arr& J, Frame* a) const;
+  void jacobian_tau(arr& J, Frame* a, bool sparse=false) const;
 
   void kinematicsPos(arr& y, arr& J, Frame* a, const Vector& rel=NoVector) const;  //TODO: make vector& not vector*
   void kinematicsVec(arr& y, arr& J, Frame* a, const Vector& vec=NoVector) const;
@@ -255,8 +264,7 @@ struct Configuration : GLDrawer {
   //some info
   void report(std::ostream& os=std::cout) const;
   void reportProxies(std::ostream& os=std::cout, double belowMargin=1., bool brief=true) const;
-  void writePlyFile(const char* filename) const; //TODO: move outside
-
+  
   friend struct KinematicSwitch;
 };
 

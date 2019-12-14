@@ -14,6 +14,8 @@ void tutorialBasics(){
    * 2) the timing parameters (duration/phases, number os time slices per phase)
    * 3) the tasks */
 
+  komo.sparseOptimization = true;
+
   //-- setting the model; false -> NOT calling collision detection (SWIFT) -> faster
   komo.setModel(C, false);
 

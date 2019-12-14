@@ -23,7 +23,7 @@ template<> const char* rai::Enum<rai::ShapeType>::names []= {
 };
 
 template<> const char* rai::Enum<rai::JointType>::names []= {
-  "hingeX", "hingeY", "hingeZ", "transX", "transY", "transZ", "transXY", "trans3", "transXYPhi", "universal", "rigid", "quatBall", "phiTransXY", "XBall", "free", "time", nullptr
+  "hingeX", "hingeY", "hingeZ", "transX", "transY", "transZ", "transXY", "trans3", "transXYPhi", "universal", "rigid", "quatBall", "phiTransXY", "XBall", "free", "tau", nullptr
 };
 
 template<> const char* rai::Enum<rai::BodyType>::names []= {
@@ -154,8 +154,8 @@ void rai::Frame::getPartSubFrames(FrameL& F) {
     if(!child->joint || !child->joint->isPartBreak()) { F.append(child); child->getRigidSubFrames(F); }
 }
 
-void rai::Frame::getFullSubtree(FrameL& F) {
-  for(Frame* child:parentOf) { F.append(child); child->getFullSubtree(F); }
+void rai::Frame::getSubtree(FrameL& F) {
+  for(Frame* child:parentOf) { F.append(child); child->getSubtree(F); }
 }
 
 FrameL rai::Frame::getPathToRoot() {
@@ -187,12 +187,12 @@ FrameL rai::Frame::getPathToUpwardLink(bool untilPartBreak) {
   FrameL pathToLink;
   rai::Frame* f = this;
   while(f) {
+    pathToLink.prepend(f);
     if(!untilPartBreak) {
       if(f->joint) break;
     } else {
       if(f->joint && f->joint->getDimFromType()!=1 && !f->joint->mimic) break;
     }
-    pathToLink.prepend(f);
     f = f->parent;
   }
   return pathToLink;
@@ -212,6 +212,13 @@ const char* rai::Frame::isPart() {
   rai::String* p = ats.find<rai::String>("part");
   if(p) return p->p;
   return 0;
+}
+
+void rai::Frame::prefixSubtree(const char* prefix){
+  FrameL F = {this};
+  getSubtree(F);
+  for(auto *f:F) f->name.prepend(prefix);
+
 }
 
 void rai::Frame::_state_setXBadinBranch() {
@@ -654,7 +661,7 @@ void rai::Joint::calc_Q_from_q(const arr& q_full, uint _qIndex) {
       case JT_rigid:
         break;
 
-      case JT_time:
+      case JT_tau:
         frame->tau = 1e-1 * qp[0];
         if(frame->tau<1e-10) frame->tau=1e-10;
         break;
@@ -664,7 +671,7 @@ void rai::Joint::calc_Q_from_q(const arr& q_full, uint _qIndex) {
   CHECK_EQ(Q.pos.x, Q.pos.x, "NAN transform");
   CHECK_EQ(Q.rot.w, Q.rot.w, "NAN transform");
 
-  if(type!=JT_time) {
+  if(type!=JT_tau) {
     frame->_state_setXBadinBranch();
   }
   //    link->link = A * Q * B; //total rel transformation
@@ -768,7 +775,7 @@ arr rai::Joint::calc_q_from_Q(const rai::Transformation& Q) const {
       q(3)=Q.rot.y;
       q(4)=Q.rot.z;
       break;
-    case JT_time:
+    case JT_tau:
       q.resize(1);
       q(0) = 1e1 * frame->tau;
       break;
@@ -857,7 +864,7 @@ uint rai::Joint::getDimFromType() const {
   if(type==JT_free) return 7;
   if(type==JT_rigid || type==JT_none) return 0;
   if(type==JT_XBall) return 5;
-  if(type==JT_time) return 1;
+  if(type==JT_tau) return 1;
   HALT("shouldn't be here");
   return 0;
 }

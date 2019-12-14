@@ -9,6 +9,8 @@ GL = 1
 PHYSX = 1
 ODE = 0
 
+CXXFLAGS += -DRAI_extern_SWIFT
+
 DEPEND = Core Geo GeoOptim Algo Gui extern_SWIFT extern_SWIFT_decomposer
 
 SRCS = $(shell find . -maxdepth 1 -name '*.cpp' )

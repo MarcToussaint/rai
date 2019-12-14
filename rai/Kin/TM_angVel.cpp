@@ -64,7 +64,7 @@ void TM_LinVel::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
     }
 
 #if 1
-    if(Ktuple(-1)->hasTimeJoint()) {
+    if(Ktuple(-1)->hasTauJoint()) {
       double tau; arr Jtau;
       Ktuple(-1)->kinematicsTau(tau, (!!J?Jtau:NoArr));
       CHECK_GE(tau, 1e-10, "");
@@ -111,7 +111,7 @@ void TM_AngVel::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
     }
 
 #if 1
-    if(Ktuple(-1)->hasTimeJoint()) {
+    if(Ktuple(-1)->hasTauJoint()) {
       double tau; arr Jtau;
       Ktuple(-1)->kinematicsTau(tau, (!!J?Jtau:NoArr));
       CHECK_GE(tau, 1e-10, "");

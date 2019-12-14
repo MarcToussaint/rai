@@ -104,10 +104,7 @@ template<class T> rai::Array<T>::Array(rai::FileToken& f):Array() {
 
 template<class T> rai::Array<T>::Array(SpecialArray* _special) : Array() { special=_special; }
 
-template<class T> rai::Array<T>::~Array() {
-  if(special) { delete special; special=NULL; }
-  freeMEM();
-}
+template<class T> rai::Array<T>::~Array() { clear(); }
 
 template<class T> bool rai::Array<T>::operator!() const {
   if(((char*)this)+1==(char*)1) return true;
@@ -117,7 +114,11 @@ template<class T> bool rai::Array<T>::operator!() const {
 //***** resize
 
 /// frees all memory; this becomes an empty array
-template<class T> rai::Array<T>&  rai::Array<T>::clear() { freeMEM(); return *this;}
+template<class T> rai::Array<T>&  rai::Array<T>::clear() {
+  if(special) { delete special; special=NULL; }
+  freeMEM();
+  return *this;
+}
 
 /// resize 1D array, discard the previous contents
 template<class T> rai::Array<T>& rai::Array<T>::resize(uint D0) { nd=1; d0=D0; resetD(); resizeMEM(d0, false); return *this; }
