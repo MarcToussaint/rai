@@ -1,3 +1,5 @@
+#ifdef RAI_PYBIND
+
 #include "ry-LGP_Tree.h"
 #include "ry-KOMO.h"
 #include "types.h"
@@ -87,3 +89,5 @@ pybind11::class_<ry::RyLGP_Tree>(m, "LGP_Tree")
 })
 ;
 }
+
+#endif

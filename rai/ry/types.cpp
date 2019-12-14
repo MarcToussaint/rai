@@ -1,3 +1,5 @@
+#ifdef RAI_PYBIND
+
 #include "types.h"
 #include <Geo/geoms.h>
 
@@ -115,3 +117,5 @@ arr vecvec2arr(const std::vector<std::vector<double> >& X) {
   for(uint i=0; i<Y.d0; i++) for(uint j=0; j<Y.d1; j++) Y(i, j) = X[i][j];
   return Y;
 }
+
+#endif

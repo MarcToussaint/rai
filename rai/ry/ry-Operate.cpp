@@ -1,3 +1,5 @@
+#ifdef RAI_PYBIND
+
 #include "ry-Operate.h"
 #include "ry-Config.h"
 #include "types.h"
@@ -52,3 +54,5 @@ pybind11::class_<ry::RyOperate>(m, "RyOperate")
 })
 ;
 }
+
+#endif

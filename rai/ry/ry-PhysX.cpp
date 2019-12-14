@@ -1,3 +1,5 @@
+#ifdef RAI_PYBIND
+
 #include "ry-PhysX.h"
 #include "ry-Config.h"
 #include "types.h"
@@ -27,3 +29,5 @@ pybind11::class_<ry::RyPhysX>(m, "RyPhysX")
 })
 ;
 }
+
+#endif

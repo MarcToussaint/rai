@@ -1,3 +1,5 @@
+#ifdef RAI_PYBIND
+
 #include "ry-Config.h"
 #include "ry-Frame.h"
 #include "ry-KOMO.h"
@@ -647,3 +649,5 @@ pybind11::class_<ry::RyFeature>(m, "Feature")
       .export_values();
 
 }
+
+#endif
