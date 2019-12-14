@@ -1,3 +1,5 @@
+#ifdef RAI_PYBIND
+
 #include "ry-Camera.h"
 #include "types.h"
 
@@ -41,3 +43,5 @@ pybind11::class_<ry::RyCamera>(m, "Camera")
 })
 ;
 }
+
+#endif

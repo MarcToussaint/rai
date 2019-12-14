@@ -46,14 +46,14 @@ void getQhullState(uint D, arr& points, arr& vertices, arr& lines) {
   vertexT* vertex, **vertexp;
   facetT* facet;
 
-//  plotOpengl();
-//  plotClear();
+//  plot->Opengl();
+//  plot->Clear();
 
   cout <<"\n** points:";
   FORALLpoints {
     points.setCarray(point, D);
     cout <<"\n  " <<points;
-//    plotPoints(x);
+//    plot->Points(x);
   }
 
   cout <<"\n** vertices:";
@@ -76,7 +76,7 @@ void getQhullState(uint D, arr& points, arr& vertices, arr& lines) {
     x.setCarray(((vertexT*)(facet->vertices->e[0].p))->point, D);
     lines.append(x);
     lines.reshape(lines.N/D, D);
-//    plotLine(line);
+//    plot->Line(line);
   }
   cout <<endl;
 }
@@ -153,16 +153,16 @@ double distanceToConvexHull(const arr& X, const arr& y, arr& distances, arr& pro
 //    arr line;
 //    NIY;
 ////    plotQhullState(X.d1);
-////    plotPoints(y);
+////    plot->Points(y);
 //    if(projectedPoint) {
 //      line.clear();
 //      line.append(y);
 //      line.append(*projectedPoint);
-////      plotPoints(*projectedPoint);
+////      plot->Points(*projectedPoint);
 //      line.reshape(2, X.d1);
-////      plotLine(line);
+////      plot->Line(line);
 //    }
-//    plot();
+//    plot->update();
 
 //    //cout <<"**best facet: " <<bestfacet->id <<endl;
 //    //FOREACHvertex_(facet->vertices) cout <<vertex->id <<' ';
@@ -642,13 +642,13 @@ arr convconv_intersect(const arr& A, const arr& B) {
   arr C;
   C.setCarray((double*)res->v, 2*res->len);
   C.reshape(C.N/2, 2);
-
-//  plotClear();
-//  plotLine(C+.002, true); cout <<"#C=" <<C.d0 <<endl;
-//  plotLine(C-.002, true);
-//  plotLine(AA, true);
-//  plotLine(BB, true);
-//  plotOpengl();
+  
+//  plot->Clear();
+//  plot->Line(C+.002, true); cout <<"#C=" <<C.d0 <<endl;
+//  plot->Line(C-.002, true);
+//  plot->Line(AA, true);
+//  plot->Line(BB, true);
+//  plot->Opengl();
 //  cout <<"\n====\n" <<AA <<"\n----\n" <<B <<"\n----\n" <<C<<"\n====\n" <<endl;
 //  rai::wait();
 

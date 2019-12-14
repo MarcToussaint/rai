@@ -1,3 +1,5 @@
+#ifdef RAI_PYBIND
+
 #include "ry-Simulation.h"
 //#include "ry-Config.h"
 #include "types.h"
@@ -72,3 +74,5 @@ void init_Simulation(pybind11::module &m) {
 
   ;
 }
+
+#endif

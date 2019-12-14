@@ -1,3 +1,4 @@
+
 BASE = .
 
 target: src
@@ -48,6 +49,11 @@ runTests: tests
 	@rm -f z.test-report
 	@find test -mindepth 2 -maxdepth 2 -type d \
 		-exec build/run-path.sh {} \;
+
+################################################################################
+
+deletePotentiallyNonfreeCode: force
+	@rm -Rf rai/Kin/SWIFT rai/Kin/SWIFT_decomposer rai/Geo/Lewiner
 
 ################################################################################
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#ifdef RAI_PYBIND
+
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
@@ -61,3 +63,5 @@ inline arr I_conv(const ry::I_arr& x) {
   y.reshape(conv_stdvec2arr(x.first));
   return y;
 }
+
+#endif

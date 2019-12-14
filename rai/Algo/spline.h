@@ -52,7 +52,7 @@ struct Spline {
   /// gradient w.r.t. the timings of the point
   void partial(arr& dCdx, arr& dCdt, const arr& dCdf, bool clip=true) const;
 
-  void plotBasis();
+  void plotBasis(struct PlotModule& plt);
 };
 
 } //namespace rai

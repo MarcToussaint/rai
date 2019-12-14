@@ -654,6 +654,8 @@ struct Singleton {
     return singleton;
   }
 
+  T* operator->() const { return getSingleton(); }
+  
   ~Singleton() {
     if(singleton) {
 //      static Mutex m; //pthread might already be deinitialized...

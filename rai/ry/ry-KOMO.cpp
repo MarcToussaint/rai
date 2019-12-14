@@ -1,3 +1,5 @@
+#ifdef RAI_PYBIND
+
 #include "ry-KOMO.h"
 #include "types.h"
 
@@ -236,3 +238,5 @@ ENUMVAL(SY, graspSlide)
 .export_values();
 
 }
+
+#endif

@@ -48,7 +48,7 @@ ScalarFunction cost = [](arr &g, arr &H, const arr &x) -> double{
 };
 
 void TEST(BSpline){
-  uint K=6,T=100; //6 spline point, discrete path with T=100
+  uint K=10,T=100; //6 spline point, discrete path with T=100
 
   arr X(K,2); //spline points
   rndUniform(X,-1,1,false);
@@ -57,34 +57,40 @@ void TEST(BSpline){
 
   cout <<"times = " <<S.times <<endl;
 
-  plotOpengl();
-  plotModule()->drawBox=true;
-  S.plotBasis();
-  
   arr path = S.eval();
-  plotClear();
-  plotFunction(path);
-  plotFunction(S.points);
-  plotPoints(S.points);
-  plot(false);
+//  plot->Gnuplot();
+  plot->Opengl();
+  plot->drawBox=true;
+  S.plotBasis(plot());
+  plot->update();
+  
+  plot->Clear();
+  plot->Function(path);
+  plot->Function(S.points);
+  plot->Points(S.points);
+  plot->update();
 
   for(double lambda = 0.; lambda < .1; lambda += .001) {
     path = S.smooth(lambda);
-    plotClear();
-    plotFunction(path);
-    plotFunction(S.points);
-    plotPoints(S.points);
-    plot(false);
+    plot->Clear();
+    plot->Function(path);
+    plot->Function(S.points);
+    plot->Points(S.points);
+    plot->update(false);
   }
+  plot->update();
 
+  rai::arrayBrackets="  ";
   ofstream fil("z.test");
   rai::arrayBrackets="  ";
   for(uint t=0;t<=1000;t++){
     fil <<(double)t/1000 <<' ' <<S.eval(t/10) <<' ' <<S.eval((double)t/1000) <<endl;
   }
+  FILE("z.data") <<X;
   fil.close();
-  gnuplot("plot 'z.test' us 1:2, '' us 1:4", true);
+  gnuplot("plot 'z.test' us 1:2, '' us 1:4, 'z.data' us ($0/9):1 w p", true, true);
 
+  rai::wait();
   //Cost cost;
 
   ScalarFunction splineCost = [&S](arr &g, arr &H, const arr &x) -> double{
@@ -112,16 +118,15 @@ void TEST(BSpline){
     path = S.eval();
     cout <<cost(NoArr, NoArr, path) <<endl;
 
-    plotClear();
-    plotFunction(path);
-    plotFunction(S.points);
-    plotPoints(S.points);
-    plot(false);
+    plot->Clear();
+    plot->Function(path);
+    plot->Function(S.points);
+    plot->Points(S.points);
+    plot->update(false);
   }
+  plot->update();
 
-  plot(true);
-
-  plotClose();
+  plot->Close();
 }
 
 void TEST(BSpline2){
@@ -141,6 +146,8 @@ void TEST(BSpline2){
   }
   fil.close();
   gnuplot("plot 'z.test' us 1:2", true);
+
+  plot->Close();
 }
 
 void TEST(Path){
@@ -180,9 +187,9 @@ void TEST(Path){
 int MAIN(int argc,char** argv){
   rai::initCmdLine(argc, argv);
 
-//  testBSpline();
-//  testBSpline2();
-  testPath();
+  testBSpline();
+  //  testBSpline2();
+//  testPath();
 
   return 0;
 }

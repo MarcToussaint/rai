@@ -151,6 +151,7 @@ template<> const rai::SparseMatrix& rai::Array<double>::sparse() const {
 NONSENSE(float)
 NONSENSE(uint)
 NONSENSE(int)
+NONSENSE(byte)
 #undef NONSENSE
 
 }

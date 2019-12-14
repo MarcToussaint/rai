@@ -20,7 +20,6 @@
 #include "frame.h"
 #include <Algo/ann.h>
 
-#define RAI_extern_SWIFT
 #ifdef RAI_extern_SWIFT
 
 #ifdef RAI_SINGLE
@@ -385,18 +384,29 @@ uint SwiftInterface::countObjects() {
   return n;
 }
 
-#else
-#include <Core/util.h>
-void SwiftInterface::step(rai::Configuration& world, bool dumpReport=false) {}
-void SwiftInterface::pushToSwift() {}
-void SwiftInterface::pullFromSwift(const Configuration& world, bool dumpReport) {}
+#else //RAI_extern_SWIFT
 
-void SwiftInterface::reinitShape(const rai::Shape* s) {}
-//  void close();
-void SwiftInterface::deactivate(rai::Shape* s1, rai::Shape* s2) {}
-void SwiftInterface::deactivate(const rai::Array<rai::Shape*>& shapes) {}
-void SwiftInterface::deactivate(const rai::Array<rai::Frame*>& frames) {}
-void SwiftInterface::initActivations(const Configuration& world) {}
-void SwiftInterface::swiftQueryExactDistance() {}
+#include <Core/util.h>
+
+SwiftInterface::~SwiftInterface() { NICO }
+SwiftInterface::SwiftInterface(const rai::Configuration& world, double _cutoff){ NICO }
+
+void SwiftInterface::step(rai::Configuration& world, bool dumpReport) { NICO }
+void SwiftInterface::pushToSwift(const rai::Configuration& world) { NICO }
+void SwiftInterface::pullFromSwift(rai::Configuration& world, bool dumpReport) { NICO }
+
+void SwiftInterface::reinitShape(const rai::Frame *s){ NICO }
+//  void close(){ NICO }
+void SwiftInterface::activate(rai::Frame *s){ NICO }
+void SwiftInterface::deactivate(rai::Frame *s){ NICO }
+void SwiftInterface::activate(rai::Frame *s1, rai::Frame *s2){ NICO }
+void SwiftInterface::deactivate(rai::Frame *s1, rai::Frame *s2){ NICO }
+void SwiftInterface::deactivate(const FrameL& shapes1, const FrameL& shapes2){ NICO }
+void SwiftInterface::deactivate(const FrameL& shapes){ NICO }
+
+void SwiftInterface::initActivations(const rai::Configuration &world) { NICO }
+void SwiftInterface::swiftQueryExactDistance() { NICO }
+uint SwiftInterface::countObjects(){ NICO }
+
 #endif
 /** @} */

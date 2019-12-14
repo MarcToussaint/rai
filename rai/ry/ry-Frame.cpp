@@ -1,3 +1,5 @@
+#ifdef RAI_PYBIND
+
 #include "ry-Frame.h"
 #include "types.h"
 
@@ -134,3 +136,5 @@ pybind11::arg("size")
 })
 ;
 }
+
+#endif
