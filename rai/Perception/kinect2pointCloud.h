@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -20,17 +20,17 @@ struct Kinect2PointCloud : Thread {
   Var<arr> pr2_odom;
   //outputs
   Var<arr> kinect_points;
-  
-  arr pts,cols;
+
+  arr pts, cols;
   uint16A depth;
   byteA rgb; //helpers
   rai::Transformation frame;
-  int depthShift_dx,depthShift_dy;
+  int depthShift_dx, depthShift_dy;
   arr frameShift;
-  
+
   Kinect2PointCloud();
   virtual ~Kinect2PointCloud();
-  
+
   void open() {}
   void step();
   void close() {}

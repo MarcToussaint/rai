@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -75,8 +75,8 @@
 // Bag container
 //
 
-const char *rai::String::readSkipSymbols = " \t";
-const char *rai::String::readStopSymbols = "\n\r";
+const char* rai::String::readSkipSymbols = " \t";
+const char* rai::String::readStopSymbols = "\n\r";
 int   rai::String::readEatStopSymbol     = 1;
 rai::String rai::errString;
 Mutex coutMutex;
@@ -102,11 +102,11 @@ double timerPauseTime=-1.;
 bool timerUseRealTime=false;
 
 #ifdef RAI_QT
-QApplication *myApp=nullptr;
+QApplication* myApp=nullptr;
 #endif
 
 /// running a system command and checking return value
-void system(const char *cmd) {
+void system(const char* cmd) {
   cout <<"SYSTEM CMD: " <<cmd <<endl;
   int r = ::system(cmd);
   rai::wait(.1);
@@ -114,7 +114,7 @@ void system(const char *cmd) {
 }
 
 /// open an output-file with name '\c name'
-void open(std::ofstream& fs, const char *name, const char *errmsg) {
+void open(std::ofstream& fs, const char* name, const char* errmsg) {
   fs.clear();
   fs.open(name);
   LOG(3) <<"opening output file '" <<name <<"'" <<std::endl;
@@ -122,7 +122,7 @@ void open(std::ofstream& fs, const char *name, const char *errmsg) {
 }
 
 /// open an input-file with name '\c name'
-void open(std::ifstream& fs, const char *name, const char *errmsg) {
+void open(std::ifstream& fs, const char* name, const char* errmsg) {
   fs.clear();
   fs.open(name);
   LOG(3) <<"opening input file '" <<name <<"'" <<std::endl;
@@ -130,14 +130,14 @@ void open(std::ifstream& fs, const char *name, const char *errmsg) {
 }
 
 /// returns true if the (0-terminated) string s contains c
-bool contains(const char *s, char c) {
+bool contains(const char* s, char c) {
   if(!s) return false;
   for(uint i=0; s[i]; i++) if(s[i]==c) return true;
   return false;
 }
 
 /// skips the chars (typically white characters) when parsing from the istream, returns first non-skipped char
-char skip(std::istream& is, const char *skipSymbols, const char *stopSymbols, bool skipCommentLines) {
+char skip(std::istream& is, const char* skipSymbols, const char* stopSymbols, bool skipCommentLines) {
   char c;
   for(;;) {
     c=is.get();
@@ -163,7 +163,7 @@ void skipOne(std::istream& is) {
 }
 
 /// tell you about the next char (after skip()) but puts it back in the stream
-char getNextChar(std::istream& is, const char *skipSymbols, bool skipCommentLines) {
+char getNextChar(std::istream& is, const char* skipSymbols, bool skipCommentLines) {
   char c;
   skip(is, skipSymbols, nullptr, skipCommentLines);
   is.get(c);
@@ -172,7 +172,7 @@ char getNextChar(std::istream& is, const char *skipSymbols, bool skipCommentLine
 }
 
 /// tell you about the next char (after skip()) but puts it back in the stream
-char peerNextChar(std::istream& is, const char *skipSymbols, bool skipCommentLines) {
+char peerNextChar(std::istream& is, const char* skipSymbols, bool skipCommentLines) {
   char c=getNextChar(is, skipSymbols, skipCommentLines);
   if(!is.good()) return 0;
   is.putback(c);
@@ -180,9 +180,9 @@ char peerNextChar(std::istream& is, const char *skipSymbols, bool skipCommentLin
 }
 
 /// skip throught a stream until the tag is found (which is eaten)
-bool skipUntil(std::istream& is, const char *tag) {
+bool skipUntil(std::istream& is, const char* tag) {
   unsigned n=strlen(tag);
-  char *buf=new char [n+1];
+  char* buf=new char [n+1];
   memset(buf, 0, n+1);
   while(is.good()) {
     memmove(buf, buf+1, n);
@@ -196,7 +196,7 @@ bool skipUntil(std::istream& is, const char *tag) {
 }
 
 /// a global operator to scan (parse) strings from a stream
-bool parse(std::istream& is, const char *str, bool silent) {
+bool parse(std::istream& is, const char* str, bool silent) {
   if(!is.good()) { if(!silent) RAI_MSG("bad stream tag when scanning for '" <<str <<"'"); return false; }  //is.clear(); }
   uint i, n=strlen(str);
   char buf[n+1]; buf[n]=0;
@@ -213,7 +213,7 @@ bool parse(std::istream& is, const char *str, bool silent) {
 }
 
 /// returns the i-th of str
-byte bit(byte *str, uint i) { return (str[i>>3] >>(7-(i&7))) & 1; }
+byte bit(byte* str, uint i) { return (str[i>>3] >>(7-(i&7))) & 1; }
 //byte bit(byte b, uint i){ return (b >>(7-(i&7))) & 1; }
 //void set(byte *state, uint i){ state[i>>3] |= 1 <<(7-(i&7)); }
 //void del(byte *state, uint i){ state[i>>3] &= (byte)~(1 <<(7-(i&7))); }
@@ -359,10 +359,10 @@ eps = 0.1
 g(x) = heavy(x-eps)*(x-eps/2) + (1-heavy(x-eps))*x**2/(2*eps)
 plot [-.5:.5] g(abs(x))
 */
-double POW(double x, double power) { if(power==1.) return x; if(power==2.) return x*x; return pow(x,power); }
+double POW(double x, double power) { if(power==1.) return x; if(power==2.) return x*x; return pow(x, power); }
 double smoothRamp(double x, double eps, double power) {
   if(x<0.) return 0.;
-  if(power!=1.) return pow(smoothRamp(x,eps,1.),power);
+  if(power!=1.) return pow(smoothRamp(x, eps, 1.), power);
   if(!eps) return x;
   if(x>eps) return x - .5*eps;
   return x*x/(2*eps);
@@ -370,7 +370,7 @@ double smoothRamp(double x, double eps, double power) {
 
 double d_smoothRamp(double x, double eps, double power) {
   if(x<0.) return 0.;
-  if(power!=1.) return power*pow(smoothRamp(x,eps,1.),power-1.)*d_smoothRamp(x,eps,1.);
+  if(power!=1.) return power*pow(smoothRamp(x, eps, 1.), power-1.)*d_smoothRamp(x, eps, 1.);
   if(!eps || x>eps) return 1.;
   return x/eps;
 }
@@ -387,7 +387,7 @@ double ineqConstraintCost(double g, double margin, double power) {
   if(y<0.) return 0.;
   if(power==1.) return y;
   if(power==2.) return y*y;
-  return pow(y,power);
+  return pow(y, power);
 }
 
 double d_ineqConstraintCost(double g, double margin, double power) {
@@ -395,21 +395,21 @@ double d_ineqConstraintCost(double g, double margin, double power) {
   if(y<0.) return 0.;
   if(power==1.) return 1.;
   if(power==2.) return 2.*y;
-  return power*pow(y,power-1.);
+  return power*pow(y, power-1.);
 }
 
 double eqConstraintCost(double h, double margin, double power) {
   double y=h/margin;
   if(power==1.) return fabs(y);
   if(power==2.) return y*y;
-  return pow(fabs(y),power);
+  return pow(fabs(y), power);
 }
 
 double d_eqConstraintCost(double h, double margin, double power) {
   double y=h/margin;
   if(power==1.) return rai::sign(y)/margin;
   if(power==2.) return 2.*y/margin;
-  return power*pow(y,power-1.)*rai::sign(y)/margin;
+  return power*pow(y, power-1.)*rai::sign(y)/margin;
 }
 
 /** @brief double time on the clock
@@ -483,15 +483,15 @@ double totalTime() {
 }
 
 /// the absolute double time and date as string
-char *date() {
+char* date() {
   return date(clockTime(false));
 }
 
-char *date(double sec) {
+char* date(double sec) {
   time_t nowtime;
-  struct tm *nowtm;
+  struct tm* nowtm;
   static char tmbuf[64], buf[64];
-  
+
   nowtime = (long)(floor(sec));
   sec -= (double)nowtime;
   nowtm = localtime(&nowtime);
@@ -500,15 +500,15 @@ char *date(double sec) {
   return buf;
 }
 
-char *date2(bool subsec) {
+char* date2(bool subsec) {
   return date2(clockTime(false), subsec);
 }
 
-char *date2(double sec, bool subsec) {
+char* date2(double sec, bool subsec) {
   time_t nowtime;
-  struct tm *nowtm;
+  struct tm* nowtm;
   static char tmbuf[64], buf[64];
-  
+
   nowtime = (long)(floor(sec));
   sec -= (double)nowtime;
   nowtm = localtime(&nowtime);
@@ -540,7 +540,7 @@ void wait(double sec, bool msg_on_fail) {
   Sleep((int)(1000.*sec));
   //MsgWaitForMultipleObjects( 0, nullptr, FALSE, (int)(1000.*sec), QS_ALLEVENTS);
 #endif
-  
+
 #if 0
 #ifndef RAI_TIMEB
   /* r=0 time is up
@@ -579,19 +579,19 @@ int x11_getKey() {
   rai::String txt="PRESS KEY";
   int key=0;
 
-  Display *disp = XOpenDisplay(nullptr);
+  Display* disp = XOpenDisplay(nullptr);
   CHECK(disp, "Cannot open display");
-  
+
   Window win = XCreateSimpleWindow(disp, DefaultRootWindow(disp),
                                    10, 10, 80, 50, //24
                                    2, 0x000000, 0x20a0f0);
   XSelectInput(disp, win, KeyPressMask | ExposureMask | ButtonPressMask);
   XMapWindow(disp, win);
-  
+
   GC gc = XCreateGC(disp, win, 0, nullptr);
-  XSetFont(disp, gc,  XLoadFont(disp,"fixed")); //-adobe-courier-bold-r-*-*-*-220-*-*-*-*-*-*"));
+  XSetFont(disp, gc,  XLoadFont(disp, "fixed")); //-adobe-courier-bold-r-*-*-*-220-*-*-*-*-*-*"));
   XSetForeground(disp, gc, 0x000000);
-  
+
   bool quit=false;
   for(; !quit;) {
     XEvent ev;
@@ -614,7 +614,7 @@ int x11_getKey() {
         break;
     }
   }
-  
+
   XCloseDisplay(disp);
   return key;
 }
@@ -672,7 +672,7 @@ void timerResume() {
 }
 
 /// memorize the command line arguments and open a log file
-void initCmdLine(int _argc, char *_argv[]) {
+void initCmdLine(int _argc, char* _argv[]) {
   argc=_argc; argv=_argv;
   rai::String msg;
   msg <<"** cmd line arguments: '"; for(int i=0; i<argc; i++) msg <<argv[i] <<' ';
@@ -681,7 +681,7 @@ void initCmdLine(int _argc, char *_argv[]) {
 }
 
 /// returns true if the tag was found on command line
-bool checkCmdLineTag(const char *tag) {
+bool checkCmdLineTag(const char* tag) {
   for(int n=1; n<argc; n++) if(argv[n][0]=='-' && !strcmp(tag, argv[n]+1)) {
       return true;
     }
@@ -689,7 +689,7 @@ bool checkCmdLineTag(const char *tag) {
 }
 
 /// returns the argument after the cmd-line tag; nullptr if the tag is not found
-char *getCmdLineArgument(const char *tag) {
+char* getCmdLineArgument(const char* tag) {
   int n;
   for(n=1; n<argc; n++) if(argv[n][0]=='-' && !strcmp(tag, argv[n]+1)) {
       if(n+1==argc) return (char*)"1";
@@ -732,7 +732,7 @@ struct LogServer {
     timerStartTime=rai::cpuTime();
     startTime = clockTime(false);
   }
-  
+
   ~LogServer() {
   }
 };
@@ -742,7 +742,7 @@ Singleton<rai::LogServer> logServer;
 
 rai::LogObject::LogObject(const char* key, int defaultLogCoutLevel, int defaultLogFileLevel)
   : key(key), logCoutLevel(defaultLogCoutLevel), logFileLevel(defaultLogFileLevel) {
-  if(!strcmp(key,"global")) {
+  if(!strcmp(key, "global")) {
     fil.open("z.log.global");
     fil <<"** compiled at:     " <<__DATE__ <<" " <<__TIME__ <<'\n';
     fil <<"** execution start: " <<rai::date(rai::startTime) <<std::endl;
@@ -753,7 +753,7 @@ rai::LogObject::LogObject(const char* key, int defaultLogCoutLevel, int defaultL
 }
 
 rai::LogObject::~LogObject() {
-  if(!strcmp(key,"global")) {
+  if(!strcmp(key, "global")) {
     fil <<"** execution stop: " <<rai::date()
         <<"\n** real time: " <<rai::realTime()
         <<"sec\n** CPU time: " <<rai::cpuTime()
@@ -776,12 +776,12 @@ rai::LogToken::~LogToken() {
     if(log_level>=0) std::cout <<code_file <<':' <<code_func <<':' <<code_line <<'(' <<log_level <<") " <<msg <<endl;
     if(log_level<0) {
 
-      if(log_level<=-2){
-        void *trace_elems[10];
-        int trace_elem_count = backtrace( trace_elems, 10 );
-        char **stack_syms = backtrace_symbols( trace_elems, trace_elem_count );
+      if(log_level<=-2) {
+        void* trace_elems[10];
+        int trace_elem_count = backtrace(trace_elems, 10);
+        char** stack_syms = backtrace_symbols(trace_elems, trace_elem_count);
         for(int i=trace_elem_count; i--;) std::cout <<"STACK" <<i <<' ' <<stack_syms[i] <<'\n';
-        free( stack_syms );
+        free(stack_syms);
       }
 
       rai::errString.clear() <<code_file <<':' <<code_func <<':' <<code_line <<'(' <<log_level <<") " <<msg;
@@ -816,7 +816,7 @@ std::istream& operator>>(std::istream& is, const PARSE& x) {
 }
 
 /// the same global operator for non-const string
-std::istream& operator>>(std::istream& is, char *str) {
+std::istream& operator>>(std::istream& is, char* str) {
   rai::parse(is, (const char*)str); return is;
 }
 
@@ -835,14 +835,14 @@ int rai::String::StringBuf::sync() {
   return 0;
 }
 
-void rai::String::StringBuf::setIpos(char *p) { setg(string->p, p, string->p+string->N); }
+void rai::String::StringBuf::setIpos(char* p) { setg(string->p, p, string->p+string->N); }
 
-char *rai::String::StringBuf::getIpos() { return gptr(); }
+char* rai::String::StringBuf::getIpos() { return gptr(); }
 
 //-- direct memory operations
 void rai::String::append(char x) { resize(N+1, true); operator()(N-1)=x; }
 
-void rai::String::prepend(const rai::String& s){
+void rai::String::prepend(const rai::String& s) {
   uint n=N;
   resize(n+s.N, true);
   memmove(p+s.N, p, n);
@@ -850,14 +850,14 @@ void rai::String::prepend(const rai::String& s){
 }
 
 rai::String& rai::String::setRandom() {
-  resize(rnd(2,6), false);
-  for(uint i=0; i<N; i++) operator()(i)=rnd('a','z');
+  resize(rnd(2, 6), false);
+  for(uint i=0; i<N; i++) operator()(i)=rnd('a', 'z');
   return *this;
 }
 
 void rai::String::resize(uint n, bool copy) {
   if(N==n && M>N) return;
-  char *pold=p;
+  char* pold=p;
   uint Mold=M;
   //flexible allocation (more than needed in case of multiple resizes)
   if(M==0) {  //first time
@@ -885,7 +885,7 @@ rai::String::String() : std::iostream(&buffer) { init(); clearStream(); }
 rai::String::String(const String& s) : std::iostream(&buffer) { init(); this->operator=(s); }
 
 /// copy constructor for an ordinary C-string (needs to be 0-terminated)
-rai::String::String(const char *s) : std::iostream(&buffer) { init(); if(s) this->operator=(s); }
+rai::String::String(const char* s) : std::iostream(&buffer) { init(); if(s) this->operator=(s); }
 
 rai::String::String(const std::string& s) : std::iostream(&buffer) { init(); this->operator=(s.c_str()); }
 
@@ -901,10 +901,10 @@ rai::String& rai::String::operator()() { return *this; }
 
 /** @brief returns the true memory buffer (C-string) of this class (which is
 always kept 0-terminated) */
-rai::String::operator char*() { return p; }
+rai::String::operator char* () { return p; }
 
 /// as above but const
-rai::String::operator const char*() const { return p; }
+rai::String::operator const char* () const { return p; }
 
 /// returns the i-th char
 char& rai::String::operator()(int i) const {
@@ -919,7 +919,7 @@ rai::String rai::String::getSubString(int start, int end) const {
   if(end<0) end+=N;
   CHECK_GE(start, 0, "start < 0");
   CHECK_LE(end, (int)N, "end out of range");
-  CHECK_LE(start ,  end, "end before start");
+  CHECK_LE(start,  end, "end before start");
   String tmp;
   tmp.set(p+start, 1+end-start);
 //  for(int i = start; i < end; i++) tmp.append((*this)(i));
@@ -949,12 +949,12 @@ rai::String& rai::String::operator=(const String& s) {
   return *this;
 }
 
-rai::String& rai::String::operator=(const std::string& s){
+rai::String& rai::String::operator=(const std::string& s) {
   return this->operator=(s.c_str());
 }
 
 /// copies from the C-string
-rai::String& rai::String::operator=(const char *s) {
+rai::String& rai::String::operator=(const char* s) {
   if(!s) {  clear();  return *this;  }
   uint ls = strlen(s);
   if(!ls) {  clear();  return *this;  }
@@ -968,9 +968,9 @@ rai::String& rai::String::operator=(const char *s) {
   return *this;
 }
 
-void rai::String::set(const char *s, uint n) { resize(n, false); memmove(p, s, n); }
+void rai::String::set(const char* s, uint n) { resize(n, false); memmove(p, s, n); }
 
-rai::String& rai::String::printf(const char *format, ...) {
+rai::String& rai::String::printf(const char* format, ...) {
   resize(100, false);
   va_list valist;
   va_start(valist, format);
@@ -981,10 +981,10 @@ rai::String& rai::String::printf(const char *format, ...) {
 }
 
 /// shorthand for the !strcmp command
-bool rai::String::operator==(const char *s) const { return p && !strcmp(p, s); }
+bool rai::String::operator==(const char* s) const { return p && !strcmp(p, s); }
 /// shorthand for the !strcmp command
 bool rai::String::operator==(const String& s) const { return p && s.p && !strcmp(p, s.p); }
-bool rai::String::operator!=(const char *s) const { return !operator==(s); }
+bool rai::String::operator!=(const char* s) const { return !operator==(s); }
 bool rai::String::operator!=(const String& s) const { return !(operator==(s)); }
 bool rai::String::operator<=(const String& s) const { return p && s.p && strcmp(p, s.p)<=0; }
 
@@ -1030,7 +1030,7 @@ void rai::String::write(std::ostream& os) const { if(N) os <<p; }
 
 /** @brief reads the string from some istream: first skip until one of the stopSymbols
 is encountered (default: newline symbols) */
-uint rai::String::read(std::istream& is, const char* skipSymbols, const char *stopSymbols, int eatStopSymbol) {
+uint rai::String::read(std::istream& is, const char* skipSymbols, const char* stopSymbols, int eatStopSymbol) {
   if(!skipSymbols) skipSymbols=readSkipSymbols;
   if(!stopSymbols) stopSymbols=readStopSymbols;
   if(eatStopSymbol==-1) eatStopSymbol=readEatStopSymbol;
@@ -1054,8 +1054,8 @@ uint rai::String::read(std::istream& is, const char* skipSymbols, const char *st
  * yy-mm-dd--hh-mm-mm */
 rai::String rai::getNowString() {
   time_t t = time(0);
-  struct tm *now = localtime(&t);
-  
+  struct tm* now = localtime(&t);
+
   rai::String str;
   str.resize(19, false); //-- just enough
   sprintf(str.p, "%02d-%02d-%02d-%02d:%02d:%02d",
@@ -1128,7 +1128,7 @@ bool rai::FileToken::exists() {
 }
 
 std::ofstream& rai::FileToken::getOs(bool change_dir) {
-  CHECK(!is,"don't use a FileToken both as input and output");
+  CHECK(!is, "don't use a FileToken both as input and output");
   if(!os) {
     if(change_dir) cd_file();
     os = std::make_shared<std::ofstream>();
@@ -1140,7 +1140,7 @@ std::ofstream& rai::FileToken::getOs(bool change_dir) {
 }
 
 std::ifstream& rai::FileToken::getIs(bool change_dir) {
-  CHECK(!os,"don't use a FileToken both as input and output");
+  CHECK(!os, "don't use a FileToken both as input and output");
   if(!is) {
     if(change_dir) cd_file();
     is = std::make_shared<std::ifstream>();
@@ -1151,7 +1151,7 @@ std::ifstream& rai::FileToken::getIs(bool change_dir) {
   return *is;
 }
 
-rai::String rai::FileToken::absolutePathName() const{
+rai::String rai::FileToken::absolutePathName() const {
   rai::String str;
   str <<cwd;
   if(path.N) str <<'/' <<path;
@@ -1223,24 +1223,24 @@ uint32_t rai::Rnd::poisson(double mean) {
 void  rai::Rnd::seed250(int32_t seed) {
   int32_t      i;
   int32_t     j, k;
-  
+
   if(seed<=0) seed=1;
-  
+
   for(i=0; i<250; ++i) {  // Schleife ueber Zufallsfeld
     k = seed / 127773;          // Modulozufallszahlengenerator
     seed = 16807 * (seed - k*127773) - 2836 * k;
     if(seed<0) seed += 0x7FFFFFFF;
     rfield[i] = seed;
   }
-  
+
   // Masken ueberlagern
   k = 0x7FFFFFFF;
   j = 0x40000000;
   for(i=1; i<250; i+=8) rfield[i] = (rfield[i] & k) | j;
-  
+
   // rpoint initialisieren
   rpoint = 249;
-  
+
   // Anfangszahlen verwerfen
   for(i=0; i<4711; ++i) rnd250();
 }
@@ -1273,16 +1273,16 @@ bool Inotify::poll(bool block, bool verbose) {
   if(!block) {
     struct pollfd fd_poll = {fd, POLLIN, 0};
     int r = ::poll(&fd_poll, 1, 0);
-    CHECK_GE(r, 0,"poll failed");
+    CHECK_GE(r, 0, "poll failed");
     if(!r) return false;
   }
-  
+
   int length = read(fd, buffer, buffer_size);
   CHECK_GE(length, 0, "read failed");
-  
+
   //-- process event list
   for(int i=0; i<length;) {
-    struct inotify_event *event = (struct inotify_event *) &buffer[ i ];
+    struct inotify_event* event = (struct inotify_event*) &buffer[ i ];
     if(verbose) {
       if(event->len) {
         if(event->mask & IN_CREATE)
@@ -1307,7 +1307,7 @@ bool Inotify::poll(bool block, bool verbose) {
       ) return true; //report modification on specific file
     i += sizeof(struct inotify_event) + event->len;
   }
-  
+
   return false;
 }
 
@@ -1373,7 +1373,7 @@ void Mutex::unlock() {}
 //
 
 struct GnuplotServer {
-  FILE *gp;
+  FILE* gp;
   GnuplotServer():gp(nullptr) {}
   ~GnuplotServer() {
     if(gp) {
@@ -1382,8 +1382,8 @@ struct GnuplotServer {
 //      fclose(gp);
     }
   }
-  
-  void send(const char *cmd, bool persist) {
+
+  void send(const char* cmd, bool persist) {
 #ifndef RAI_MSVC
     if(!gp) {
       if(!persist) gp=popen("env gnuplot -noraise -geometry 600x600-0-0 2> /dev/null", "w");
@@ -1401,22 +1401,22 @@ struct GnuplotServer {
 
 Singleton<GnuplotServer> gnuplotServer;
 
-void gnuplot(const char *command, bool pauseMouse, bool persist, const char *PDFfile) {
+void gnuplot(const char* command, bool pauseMouse, bool persist, const char* PDFfile) {
   if(!rai::getInteractivity()) {
     pauseMouse=false;
     persist=false;
   }
-  
+
   rai::String cmd;
   cmd <<"set style data lines\n";
-  
+
   // run standard files
   if(!access("~/gnuplot.cfg", R_OK)) cmd <<"load '~/gnuplot.cfg'\n";
   if(!access("gnuplot.cfg", R_OK)) cmd <<"load 'gnuplot.cfg'\n";
-  
+
   cmd <<"set title '(Gui/plot.h -> gnuplot pipe)'\n"
       <<command <<std::endl;
-      
+
   if(PDFfile) {
     cmd <<"set terminal push\n"
         <<"set terminal pdfcairo\n"
@@ -1424,10 +1424,10 @@ void gnuplot(const char *command, bool pauseMouse, bool persist, const char *PDF
         <<command <<std::endl
         <<"\nset terminal pop\n";
   }
-  
+
   if(pauseMouse) cmd <<"\n pause mouse" <<std::endl;
   gnuplotServer()->send(cmd.p, persist);
-  
+
   if(!rai::getInteractivity()) {
     rai::wait(.05);
   }
@@ -1477,7 +1477,7 @@ double gaussIntExpectation(double x) {
  */
 std::string getcwd_string() {
   char buff[PATH_MAX];
-  char *succ=getcwd(buff, PATH_MAX);
+  char* succ=getcwd(buff, PATH_MAX);
   if(!succ) HALT("could not call getcwd: errno=" <<errno <<' ' <<strerror(errno));
   return std::string(buff);
 }

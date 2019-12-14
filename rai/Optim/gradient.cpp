@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -21,7 +21,7 @@ OptGrad::OptGrad(arr& _x, const ScalarFunction& _f,  OptOptions _o):
 void OptGrad::reinit(const arr& _x) {
   if(!!_x && &_x!=&x) x=_x;
   fx = f(gx, NoArr, x);  evals++;
-  
+
   //startup verbose
   if(o.verbose>1) cout <<"*** optGrad: starting point f(x)=" <<fx <<" alpha=" <<alpha <<endl;
   if(o.verbose>2) cout <<"             x=" <<x <<endl;
@@ -34,15 +34,15 @@ void OptGrad::reinit(const arr& _x) {
 OptGrad::StopCriterion OptGrad::step() {
   double fy;
   arr y, gy, Delta;
-  
+
   it++;
   if(o.verbose>1) cout <<"optGrad it=" <<std::setw(4) <<it <<flush;
-  
+
   if(!(fx==fx)) HALT("you're calling a gradient step with initial function value = NAN");
-  
+
   //compute Delta
   Delta = gx / (-length(gx));
-  
+
   //line search
   uint lineSteps=0;
   for(;; lineSteps++) {
@@ -50,7 +50,7 @@ OptGrad::StopCriterion OptGrad::step() {
     fy = f(gy, NoArr, y);  evals++;
     if(o.verbose>2) cout <<" \tprobing y=" <<y;
     if(o.verbose>1) cout <<" \tevals=" <<std::setw(4) <<evals <<" \talpha=" <<std::setw(11) <<alpha <<" \tf(y)=" <<fy <<flush;
-    bool wolfe = (fy <= fx + o.wolfe*alpha*scalarProduct(Delta,gx));
+    bool wolfe = (fy <= fx + o.wolfe*alpha*scalarProduct(Delta, gx));
     if(fy==fy && (wolfe || o.nonStrictSteps==-1 || o.nonStrictSteps>(int)it)) { //fy==fy is for NAN?
       //accept new point
       if(o.verbose>1) cout <<" - ACCEPT" <<endl;
@@ -73,21 +73,21 @@ OptGrad::StopCriterion OptGrad::step() {
       alpha *= o.stepDec;
     }
   }
-  
+
   if(o.verbose>0) fil <<evals <<' ' <<eval_count <<' ' <<fx <<' ' <<alpha;
   if(o.verbose>2) fil <<' ' <<x;
   if(o.verbose>0) fil <<endl;
-  
+
   //stopping criteria
 #define STOPIF(expr, code, ret) if(expr){ if(o.verbose>1) cout <<"\t\t\t\t\t\t--- stopping criterion='" <<#expr <<"'" <<endl; code; return stopCriterion=ret; }
   //  STOPIF(absMax(Delta)<o.stopTolerance, , stopCrit1);
   STOPIF(numTinySteps>o.stopTinySteps, numTinySteps=0, stopCrit2);
   //  STOPIF(alpha<1e-3*o.stopTolerance, stopCrit2);
-  STOPIF(lineSteps>=o.stopLineSteps, , stopCritLineSteps);
-  STOPIF(evals>=o.stopEvals, , stopCritEvals);
-  STOPIF(it>=o.stopIters, , stopCritEvals);
+  STOPIF(lineSteps>=o.stopLineSteps,, stopCritLineSteps);
+  STOPIF(evals>=o.stopEvals,, stopCritEvals);
+  STOPIF(it>=o.stopIters,, stopCritEvals);
 #undef STOPIF
-  
+
   return stopCriterion=stopNone;
 }
 
@@ -131,7 +131,7 @@ struct sRprop {
   double delta0;
   arr lastGrad; // last error gradient
   arr stepSize; // last update
-  bool step(arr& w, const arr& grad, uint *singleI);
+  bool step(arr& w, const arr& grad, uint* singleI);
 };
 
 Rprop::Rprop() {
@@ -156,16 +156,16 @@ void Rprop::init(double initialStepSize, double minStepSize, double maxStepSize)
   s->dMax = maxStepSize;
 }
 
-bool sRprop::step(arr& w, const arr& grad, uint *singleI) {
+bool sRprop::step(arr& w, const arr& grad, uint* singleI) {
   if(!stepSize.N) { //initialize
     stepSize.resize(w.N);
     lastGrad.resize(w.N);
     lastGrad.setZero();
     stepSize = delta0;
   }
-  CHECK_EQ(grad.N,stepSize.N, "Rprop: gradient dimensionality changed!");
-  CHECK_EQ(w.N,stepSize.N   , "Rprop: parameter dimensionality changed!");
-  
+  CHECK_EQ(grad.N, stepSize.N, "Rprop: gradient dimensionality changed!");
+  CHECK_EQ(w.N, stepSize.N, "Rprop: parameter dimensionality changed!");
+
   uint i=0, I=w.N;
   if(singleI) { i=*(singleI); I=i+1; }
   for(; i<I; i++) {
@@ -183,7 +183,7 @@ bool sRprop::step(arr& w, const arr& grad, uint *singleI) {
       lastGrad(i) = grad.elem(i);                    //memorize gradient
     }
   }
-  
+
   return stepSize.max() < incr*dMin;
 }
 
@@ -196,32 +196,32 @@ bool Rprop::step(arr& x, const ScalarFunction& f) {
 //----- the rprop wrapped with stopping criteria
 uint Rprop::loop(arr& _x,
                  const ScalarFunction& f,
-                 double *fmin_return,
+                 double* fmin_return,
                  double stoppingTolerance,
                  double initialStepSize,
                  uint maxEvals,
                  int verbose) {
-                 
+
   if(!s->stepSize.N) init(initialStepSize);
   arr x, J(_x.N), x_min, J_min;
   double fx, fx_min=0;
   uint rejects=0, small_steps=0;
   x=_x;
-  
+
   if(verbose>1) cout <<"*** optRprop: starting point x=" <<x <<endl;
   ofstream fil;
   if(verbose>0) fil.open("z.opt");
-  
+
   uint evals=0;
   double diff=0.;
   for(;;) {
     //checkGradient(p, x, stoppingTolerance);
     //compute value and gradient at x
     fx = f(J, NoArr, x);  evals++;
-    
+
     if(verbose>0) fil <<evals <<' ' <<eval_count <<' ' << fx <<' ' <<diff <<' ' <<x <<endl;
     if(verbose>1) cout <<"optRprop " <<evals <<' ' <<eval_count <<" \tf(x)=" <<fx <<" \tdiff=" <<diff <<" \tx=" <<(x.N<20?x:arr()) <<endl;
-    
+
     //infeasible point! undo the previous step
     if(fx!=fx) { //is NAN
       if(!evals) HALT("can't start Rprop with unfeasible point");
@@ -232,7 +232,7 @@ uint Rprop::loop(arr& _x,
       J=J_min;
       rejects=0;
     }
-    
+
     //update best-so-far
     if(evals<=1) { fx_min= fx; x_min=x; }
     if(fx<=fx_min) {
@@ -251,13 +251,13 @@ uint Rprop::loop(arr& _x,
         rejects=0;
       }
     }
-    
+
     //update x
     s->step(x, J, nullptr);
-    
+
     //check stopping criterion based on step-length in x
     diff=maxDiff(x, x_min);
-    
+
     if(diff<stoppingTolerance) { small_steps++; } else { small_steps=0; }
     if(small_steps>3)  break;
     if(evals>maxEvals) break;

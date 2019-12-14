@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -8,7 +8,7 @@
 
 #include "solver_MBTS.h"
 
-MBTS_Node::MBTS_Node(MBTS &MBTS, MCTS_Environment& world)
+MBTS_Node::MBTS_Node(MBTS& MBTS, MCTS_Environment& world)
   : MBTS(MBTS), world(world), parent(nullptr), d(0), time(0.) {
   MBTS.size++;
   //this is the root node!
@@ -23,7 +23,7 @@ MBTS_Node::MBTS_Node(MBTS_Node* parent, const MCTS_Environment::Handle& a)
   if(d>MBTS.depth) MBTS.depth=d;
   parent->children.append(this);
   world.set_state(parent->state);
-  CHECK(a,"giving a 'nullptr' shared pointer??");
+  CHECK(a, "giving a 'nullptr' shared pointer??");
   ret = world.transition(action);
   state = world.get_stateCopy();
   time = parent->time + ret.duration;
@@ -33,7 +33,7 @@ MBTS_Node::MBTS_Node(MBTS_Node* parent, const MCTS_Environment::Handle& a)
 }
 
 void MBTS_Node::expand() {
-  CHECK(!isExpanded && !children.N,"");
+  CHECK(!isExpanded && !children.N, "");
   if(isTerminal) return;
   FILE("z.1") <<world <<endl;
   world.set_state(state);
@@ -47,7 +47,7 @@ void MBTS_Node::expand() {
 
 MBTS_NodeL MBTS_Node::getTreePath() {
   MBTS_NodeL path;
-  MBTS_Node *node=this;
+  MBTS_Node* node=this;
   for(; node;) {
     path.prepend(node);
     node = node->parent;
@@ -85,24 +85,24 @@ void MBTS_Node::getGraph(Graph& G, Node* n) {
 //  if(inFringe2) G.getRenderingInfo(n).dotstyle <<" peripheries=3";
 
 //  n->keys.append(STRING("reward:" <<effPoseReward));
-  for(MBTS_Node *ch:children) ch->getGraph(G, n);
+  for(MBTS_Node* ch:children) ch->getGraph(G, n);
 }
 
 void MBTS_Node::getAll(MBTS_NodeL& L) {
   L.append(this);
-  for(MBTS_Node *ch:children) ch->getAll(L);
+  for(MBTS_Node* ch:children) ch->getAll(L);
 }
 
 void MBTS_Node::write(ostream& os, bool recursive) const {
   if(action) os <<" a= " <<*action;
   else os <<" a=<ROOT>";
   cout <<"d:" <<d <<" t:" <<time <<" f:" <<g+h <<" g:" <<g <<" h:" <<h <<endl;
-  if(recursive) for(MBTS_Node *n:children) n->write(os);
+  if(recursive) for(MBTS_Node* n:children) n->write(os);
 }
 
 //===========================================================================
 
-MBTS::MBTS(MCTS_Environment &world, MBTS_Heuristic &heuristic, uint L)
+MBTS::MBTS(MCTS_Environment& world, MBTS_Heuristic& heuristic, uint L)
   : root(nullptr), heuristic(heuristic), size(0), depth(0) {
   root = new NodeT(*this, world);
   queue.resize(L);
@@ -114,12 +114,12 @@ bool MBTS::step(int level) {
     if(level==0) LOG(-1) <<"MBTS: queue is empty -> failure?";
     return false;
   }
-  MBTS_Node *next =  queue.pop();
-  
+  MBTS_Node* next =  queue.pop();
+
   if(level>0 && next->parent) {
-    CHECK(next->parent->isEvaluated(level-1),"");
+    CHECK(next->parent->isEvaluated(level-1), "");
   }
-  
+
   //evaluate
   MBTS_Heuristic::Return ret = heuristic.evaluate(next, level);
   if(level==0 && ret.terminal) {
@@ -130,7 +130,7 @@ bool MBTS::step(int level) {
   next->h(level) = ret.h;
   if(!ret.feasible) next->labelInfeasible();
   next->isEvaluated(level)=true;
-  
+
   //-- expand (feed same-level queue)
   if(level==0) {
     next->expand();
@@ -138,15 +138,15 @@ bool MBTS::step(int level) {
       queue(0).add(ch->g(level) + ch->h(level), ch, true);
     }
   }
-  
+
   if(level==1) {
     for(MBTS_Node* ch:next->children) {
       queue(1).add(ch->g(level) + ch->h(level), ch, true);
     }
   }
-  
+
   //-- propagate (feed higher level queues)
-  
+
   return false;
 }
 

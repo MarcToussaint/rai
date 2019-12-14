@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -49,10 +49,12 @@
 
 #else
 
-struct ROSSUB_##var_name : Thread { \
+struct ROSSUB_##var_name : Thread {
+  \
   VAR(msg_type, var_name) \
   ROSSUB_##var_name() : Thread(#var_name) {} \
-  void open() { \
+  void open() {
+    \
     LOG(-1) <<"fake subscriber: " <<#var_name <<" -- compiled without RAI_ROS flag"; \
   } \
   void step() {} \

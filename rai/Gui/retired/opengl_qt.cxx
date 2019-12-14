@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -14,39 +14,39 @@
 //
 
 bool qtInitialized=false;
-QApplication *qtApp;
+QApplication* qtApp;
 
 void initGlEngine() {
   if(!qtInitialized) {
     int argc=1;
-    char **argv = new char*[1];
+    char** argv = new char* [1];
     argv[0] = (char*)"x.exe";
     glutInit(&argc, argv);
-    
+
     qtApp = new QApplication(argc, argv);
     qtInitialized = true;
   }
 }
 
-sOpenGL::sOpenGL(OpenGL *_gl, void *container)
-  :QGLWidget(QGLFormat(GLformat),(QWidget*)container) {
+sOpenGL::sOpenGL(OpenGL* _gl, void* container)
+  :QGLWidget(QGLFormat(GLformat), (QWidget*)container) {
   gl=_gl;
   //ownWin = false;
   init();
 }
 
-sOpenGL::sOpenGL(QWidget *container)
-  :QGLWidget(QGLFormat(GLformat),container) {
+sOpenGL::sOpenGL(QWidget* container)
+  :QGLWidget(QGLFormat(GLformat), container) {
   gl = new OpenGL;
   //ownWin = false;
   init();
 }
 
-sOpenGL::sOpenGL(OpenGL *_gl, const char* title,int width,int height,int posx,int posy)
+sOpenGL::sOpenGL(OpenGL* _gl, const char* title, int width, int height, int posx, int posy)
   :QGLWidget(QGLFormat(GLformat)) {
   gl = _gl;
-  QGLWidget::move(posx,posy);
-  QGLWidget::resize(width,height);
+  QGLWidget::move(posx, posy);
+  QGLWidget::resize(width, height);
   QWidget::setWindowTitle(title);
   init();
 }
@@ -79,8 +79,8 @@ void OpenGL::exitEventLoop() {  qtApp->exit(); }
 //int OpenGL::height(){ return s->QGLWidget::height(); }
 
 /// resize the window
-void OpenGL::resize(int w,int h) {
-  s->QGLWidget::resize(w,h);
+void OpenGL::resize(int w, int h) {
+  s->QGLWidget::resize(w, h);
   processEvents();
 }
 
@@ -97,7 +97,7 @@ void OpenGL::about(std::ostream& os) {
      <<"stereo:           " <<f.stereo() <<"\n"
      <<"overlay:          " <<f.hasOverlay() <<"\n"
      <<"plane:            " <<f.plane() <<std::endl;
-     
+
 #if 0
   if(!s->osContext) {
     os <<"no off-screen context created yet" <<std::endl;
@@ -139,7 +139,7 @@ void OpenGL::createOffscreen(int width, int height) {
 /** @brief return the RGBA-image of the given perspective; rendering is done
     off-screen (on an internal QPixmap) */
 void OpenGL::offscreenGrab(byteA& image) {
-  if(image.nd==3) { CHECK_EQ(image.d2,4, "3rd dim of image has to be 4 for RGBA");} else { CHECK_EQ(image.nd,2, "image has to be either 2- or 3(for RGBA)-dimensional");}
+  if(image.nd==3) { CHECK_EQ(image.d2, 4, "3rd dim of image has to be 4 for RGBA");} else { CHECK_EQ(image.nd, 2, "image has to be either 2- or 3(for RGBA)-dimensional");}
   setOffscreen(image.d1, image.d0);
   Draw(image.d1, image.d0);
   glGrabImage(image);
@@ -148,8 +148,8 @@ void OpenGL::offscreenGrab(byteA& image) {
 /** @brief return the RGBA-image of the given perspective; rendering
     is done off-screen (on an internal QPixmap) */
 void OpenGL::offscreenGrab(byteA& image, byteA& depth) {
-  if(image.nd==3) { CHECK_EQ(image.d2,4, "3rd dim of image has to be 4 for RGBA");} else { CHECK_EQ(image.nd,2, "image has to be either 2- or 3(for RGBA)-dimensional");}
-  CHECK_EQ(depth.nd,2, "depth buffer has to be either 2-dimensional");
+  if(image.nd==3) { CHECK_EQ(image.d2, 4, "3rd dim of image has to be 4 for RGBA");} else { CHECK_EQ(image.nd, 2, "image has to be either 2- or 3(for RGBA)-dimensional");}
+  CHECK_EQ(depth.nd, 2, "depth buffer has to be either 2-dimensional");
   setOffscreen(image.d1, image.d0);
   Draw(image.d1, image.d0);
   glGrabImage(image);
@@ -159,7 +159,7 @@ void OpenGL::offscreenGrab(byteA& image, byteA& depth) {
 /** @brief return only the depth gray-scale map of given perspective;
     rendering is done off-screen (on an internal QPixmap) */
 void OpenGL::offscreenGrabDepth(byteA& depth) {
-  CHECK_EQ(depth.nd,2, "depth buffer has to be either 2-dimensional");
+  CHECK_EQ(depth.nd, 2, "depth buffer has to be either 2-dimensional");
   setOffscreen(depth.d1, depth.d0);
   Draw(depth.d1, depth.d0);
   glGrabDepth(depth);
@@ -168,7 +168,7 @@ void OpenGL::offscreenGrabDepth(byteA& depth) {
 /** @brief return only the depth gray-scale map of given perspective;
     rendering is done off-screen (on an internal QPixmap) */
 void OpenGL::offscreenGrabDepth(floatA& depth) {
-  CHECK_EQ(depth.nd,2, "depth buffer has to be either 2-dimensional");
+  CHECK_EQ(depth.nd, 2, "depth buffer has to be either 2-dimensional");
   setOffscreen(depth.d1, depth.d0);
   Draw(depth.d1, depth.d0);
   glGrabDepth(depth);

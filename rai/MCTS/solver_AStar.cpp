@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -8,7 +8,7 @@
 
 #include "solver_AStar.h"
 
-AStar_Node::AStar_Node(AStar &astar, MCTS_Environment& world)
+AStar_Node::AStar_Node(AStar& astar, MCTS_Environment& world)
   : astar(astar), world(world), parent(nullptr), d(0), time(0.) {
   astar.size++;
   //this is the root node!
@@ -23,7 +23,7 @@ AStar_Node::AStar_Node(AStar_Node* parent, const MCTS_Environment::Handle& a)
   if(d>astar.depth) astar.depth=d;
   parent->children.append(this);
   world.set_state(parent->state);
-  CHECK(a,"giving a 'nullptr' shared pointer??");
+  CHECK(a, "giving a 'nullptr' shared pointer??");
   ret = world.transition(action);
   state = world.get_stateCopy();
   time = parent->time + ret.duration;
@@ -33,7 +33,7 @@ AStar_Node::AStar_Node(AStar_Node* parent, const MCTS_Environment::Handle& a)
 }
 
 void AStar_Node::expand() {
-  CHECK(!isExpanded && !children.N,"");
+  CHECK(!isExpanded && !children.N, "");
   if(isTerminal) return;
 //  FILE("z.1") <<world <<endl;
   world.set_state(state);
@@ -47,7 +47,7 @@ void AStar_Node::expand() {
 
 AStar_NodeL AStar_Node::getTreePath() {
   AStar_NodeL path;
-  AStar_Node *node=this;
+  AStar_Node* node=this;
   for(; node;) {
     path.prepend(node);
     node = node->parent;
@@ -85,19 +85,19 @@ void AStar_Node::getGraph(Graph& G, Node* n) {
 //  if(inFringe2) G.getRenderingInfo(n).dotstyle <<" peripheries=3";
 
 //  n->keys.append(STRING("reward:" <<effPoseReward));
-  for(AStar_Node *ch:children) ch->getGraph(G, n);
+  for(AStar_Node* ch:children) ch->getGraph(G, n);
 }
 
 void AStar_Node::getAll(AStar_NodeL& L) {
   L.append(this);
-  for(AStar_Node *ch:children) ch->getAll(L);
+  for(AStar_Node* ch:children) ch->getAll(L);
 }
 
 void AStar_Node::write(ostream& os, bool recursive) const {
   if(action) os <<" a= " <<*action;
   else os <<" a=<ROOT>";
   cout <<"d:" <<d <<" t:" <<time <<" f:" <<g+h <<" g:" <<g <<" h:" <<h <<endl;
-  if(recursive) for(AStar_Node *n:children) n->write(os);
+  if(recursive) for(AStar_Node* n:children) n->write(os);
 }
 
 //===========================================================================

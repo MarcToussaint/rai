@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -22,9 +22,9 @@ struct F_Link {
   double mass=0.;
   rai::Matrix inertia=0;
   uint dof();
-  
+
   arr _h, _Q, _I, _f; //featherstone types
-  
+
   F_Link() {}
   void setFeatherstones();
   void updateFeatherstones();
@@ -43,14 +43,14 @@ struct FeatherstoneInterface {
   rai::Configuration& K;
 
   FrameL sortedFrames;
-  
+
   rai::Array<F_Link> tree;
-  
+
   FeatherstoneInterface(rai::Configuration& K):K(K) { sortedFrames = K.calc_topSort(); }
-  
+
   void setGravity(double g=-9.81);
   void update();
-  
+
   void equationOfMotion(arr& M, arr& F,  const arr& qd);
   void fwdDynamics_MF(arr& qdd, const arr& qd, const arr& u);
   void fwdDynamics_aba_nD(arr& qdd, const arr& qd, const arr& tau);

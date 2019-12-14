@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -31,21 +31,21 @@ struct VertGroup {
 void readBlender(const char* filename, rai::Mesh& mesh, rai::Configuration& bl) {
   ifstream is(filename, std::ios::binary);
   CHECK(is.good(), "couldn't open file " <<filename);
-  
+
   arr vertices, normals, frames, tailsHeads;
   uintA faces;
   rai::Array<VertGroup> G;
   uintA graph;
   rai::Array<rai::String> names;
-  
+
   String tag, name;
   char c;
   uint i, j;
   arr x0, x1, x2, x3;
-  
+
   String::readSkipSymbols="\"\n\r\t ";
   String::readEatStopSymbol = true;
-  
+
   for(;;) {
     CHECK(is.good(), "error in scanning the file (previous tag = `" <<tag <<"'");
     String::readStopSymbols="\n\r\t ";  //space terminates tags
@@ -68,9 +68,9 @@ void readBlender(const char* filename, rai::Mesh& mesh, rai::Configuration& bl) 
     if(tag=="graph") {
       is >>PARSE("{") >>i >>j >>PARSE("}");
       graph.resize(j, 2);
-      c=is.get(); CHECK_EQ(c,'\n', "couldn't read newline after ascii tag :-(");
+      c=is.get(); CHECK_EQ(c, '\n', "couldn't read newline after ascii tag :-(");
       is.read((char*)graph.p, graph.sizeT*graph.N);
-      c=is.get(); CHECK_EQ(c,'\n', "couldn't read newline after array buffer :-(");
+      c=is.get(); CHECK_EQ(c, '\n', "couldn't read newline after array buffer :-(");
       continue;
     }
     if(tag=="names") {
@@ -83,14 +83,14 @@ void readBlender(const char* filename, rai::Mesh& mesh, rai::Configuration& bl) 
     if(tag=="quit") { CHECK(is.good(), "not perfect import..."); break; }
     HALT("unknown tag `" <<tag <<"'");
   }
-  
-  rai::Vector *w;
+
+  rai::Vector* w;
   rai::Quaternion r; r.setDeg(0, 1, 0, 0); //don't rotate the mesh
   for(i=0; i<vertices.d0; i++) {
     w = (rai::Vector*)&vertices(i, 0);
     *w = r*(*w);
   }
-  
+
   mesh.V=vertices;
   mesh.T=faces;
   mesh.Tn=normals;
@@ -104,18 +104,18 @@ void readBlender(const char* filename, rai::Mesh& mesh, rai::Configuration& bl) 
       for(j=0; j<G(i).verts.N; j++) mesh.G(G(i).verts(j))=b;
     }
   }*/
-  
+
   mesh.computeNormals();
-  
+
   double v[4], l;
-  rai::Body *n, *p;
-  rai::Shape *s;
+  rai::Body* n, *p;
+  rai::Shape* s;
   String parent;
-  rai::Joint *e;
+  rai::Joint* e;
   rai::Vector h, t;
   rai::Transformation f;
   rai::Quaternion ROT; ROT.setDeg(90, 1, 0, 0); //rotate the armature
-  
+
   for(i=0; i<frames.d0; i++) {
     n=new rai::Body(bl);
     s=new rai::Shape(bl, *n); //always create a shape for a body...
@@ -127,7 +127,7 @@ void readBlender(const char* filename, rai::Mesh& mesh, rai::Configuration& bl) 
     f.addRelativeRotationDeg(90, 1, 0, 0);   f.rot=ROT*f.rot;
     t.set(&tailsHeads(i, 0, 0)); t=ROT*t;
     h.set(&tailsHeads(i, 1, 0)); h=ROT*h;
-    
+
 #if 0
     n->X.p = f.p;
     n->cog = f.r/(t-h)/2.;
@@ -135,7 +135,7 @@ void readBlender(const char* filename, rai::Mesh& mesh, rai::Configuration& bl) 
     n->X.pos = f.pos + (t-h)/2.;
 #endif
     n->X.rot = f.rot;
-    
+
     s->type=rai::ST_box;
     l=(t-h).length();
     v[0]=v[1]=v[3]=l/20.; v[2]=l;
@@ -151,7 +151,7 @@ void readBlender(const char* filename, rai::Mesh& mesh, rai::Configuration& bl) 
     f.rot.setMatrix(frames[graph(i, 1)].sub(0, 2, 0, 2).p);
     f.rot.invert();
     f.addRelativeRotationDeg(90, 1, 0, 0);  f.rot=ROT*f.rot;
-    
+
     e->A.setDifference(p->X, f);
     e->B.setDifference(f, n->X); //p=(h-t)/2;
   }
@@ -165,14 +165,14 @@ void readBlender(const char* filename, rai::Mesh& mesh, rai::Configuration& bl) 
   mesh.collectTriGroups();
   //bl.calcNodeFramesFromEdges();
   */
-  
+
   /*
   bl.topsort();
   bl.orderAsIndexed();
   bl.indexAllAsOrdered();
   */
   RAI_MSG("warning - structure is not sorted!");
-  
+
   String::readEatStopSymbol = false;
 }
 

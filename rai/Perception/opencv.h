@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -45,7 +45,7 @@ inline cv::Mat CV(const doubleA& img) {
 }
 
 inline byteA conv_cvMat2byteA(const cv::Mat& mat) {
-  CHECK_EQ(mat.dims,2,"");
+  CHECK_EQ(mat.dims, 2, "");
   if(mat.elemSize()==1) return byteA(mat.data, mat.total());
   if(mat.elemSize()==3) return byteA(mat.data, 3*mat.total()).reshape(mat.rows, mat.cols, 3);
   NIY;
@@ -53,25 +53,25 @@ inline byteA conv_cvMat2byteA(const cv::Mat& mat) {
 }
 
 inline floatA conv_cvMat2floatA(const cv::Mat& mat) {
-  CHECK_EQ(mat.dims,2,"");
+  CHECK_EQ(mat.dims, 2, "");
   floatA X(mat.rows, mat.cols);
-  if(mat.isContinuous()){
+  if(mat.isContinuous()) {
     X.setCarray((float*)mat.data, X.N);
-  }else{
+  } else {
     for(int i=0; i<mat.rows; i++) X[i].setCarray((float*)mat.ptr<uchar>(i), mat.cols);
   }
   return X;
 }
 
-char cvShow(const byteA& img, const char *window="opencv", bool wait=false);
-char cvShow(const floatA& img, const char *window="opencv", bool wait=false);
+char cvShow(const byteA& img, const char* window="opencv", bool wait=false);
+char cvShow(const floatA& img, const char* window="opencv", bool wait=false);
 void getDiffProb(floatA& diff, const byteA& img0, const byteA& img1, float pixSdv, uint range);
 
 #else
 
 #include <Core/array.h>
-inline char cvShow(const byteA& img, const char *window="opencv", bool wait=false) { NICO }
-inline char cvShow(const floatA& img, const char *window="opencv", bool wait=false) { NICO };
+inline char cvShow(const byteA& img, const char* window="opencv", bool wait=false) { NICO }
+inline char cvShow(const floatA& img, const char* window="opencv", bool wait=false) { NICO };
 void getDiffProb(floatA& diff, const byteA& img0, const byteA& img1, float pixSdv, uint range) { NICO };
 
 #endif //RAI_OPENCV

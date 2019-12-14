@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -9,29 +9,29 @@
 //this is the old implementation of optNewton as single function
 //the class should be 100% equivalent
 
-uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr *addRegularizer, double *fx_user, arr *gx_user, arr *Hx_user) {
+uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr* addRegularizer, double* fx_user, arr* gx_user, arr* Hx_user) {
   double alpha = 1.;
   double lambda = o.damping;
   double fx, fy;
   arr gx, Hx, gy, Hy;
   arr Delta, y;
   uint evals=0;
-  
+
   //compute initial costs
   if(fx_user && gx_user && Hx_user) { //pre-condition!: assumes S is correctly evaluated at x!!
     if(sanityCheck) {
       fx = f.fs(gx, Hx, x);
-      CHECK(fabs(fx-*fx_user) <1e-6,"");
-      CHECK((maxDiff(gx,*gx_user) + maxDiff(Hx,*Hx_user) + fabs(fx-*fx_user))<1e-6,"");
+      CHECK(fabs(fx-*fx_user) <1e-6, "");
+      CHECK((maxDiff(gx, *gx_user) + maxDiff(Hx, *Hx_user) + fabs(fx-*fx_user))<1e-6, "");
     }
     fx = *fx_user;
     gx = *gx_user;
     Hx = *Hx_user;
   } else {
     fx = f.fs(gx, Hx, x);  evals++;
-    if(addRegularizer)  fx += scalarProduct(x,(*addRegularizer)*vectorShaped(x));
+    if(addRegularizer)  fx += scalarProduct(x, (*addRegularizer)*vectorShaped(x));
   }
-  
+
   //startup verbose
   if(o.verbose>1) cout <<"*** optNewton: starting point f(x)=" <<fx <<" alpha=" <<alpha <<" lambda=" <<lambda <<endl;
   if(o.verbose>2) cout <<"\nx=" <<x <<endl;
@@ -40,17 +40,17 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr *addRegularizer, do
   if(o.verbose>0) fil <<0 <<' ' <<eval_cost <<' ' <<fx <<' ' <<alpha;
   if(o.verbose>2) fil <<' ' <<x;
   if(o.verbose>0) fil <<endl;
-  
+
   for(uint it=1;; it++) { //iterations and lambda adaptation loop
-  
+
     if(o.verbose>1) cout <<"optNewton it=" <<std::setw(3) <<it << " \tlambd=" <<std::setprecision(3) <<lambda <<flush;
-    
+
     //compute Delta
     //RAI_MSG("\nx=" <<x <<"\ngx=" <<gx <<"\nHx=" <<Hx);
     arr R=Hx;
     if(lambda) { //Levenberg Marquardt damping
-      if(R.special==arr::RowShiftedST) for(uint i=0; i<R.d0; i++) R(i,0) += lambda; //(R(i,0) is the diagonal in the packed matrix!!)
-      else for(uint i=0; i<R.d0; i++) R(i,i) += lambda;
+      if(R.special==arr::RowShiftedST) for(uint i=0; i<R.d0; i++) R(i, 0) += lambda; //(R(i,0) is the diagonal in the packed matrix!!)
+      else for(uint i=0; i<R.d0; i++) R(i, i) += lambda;
     }
     if(addRegularizer) {
       if(R.special==arr::RowShiftedST) R = unpack(R);
@@ -61,17 +61,17 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr *addRegularizer, do
     }
     if(o.maxStep>0. && absMax(Delta)>o.maxStep)  Delta *= o.maxStep/absMax(Delta);
     if(o.verbose>1) cout <<" \t|Delta|=" <<absMax(Delta) <<flush;
-    
+
     //lazy stopping criterion: stop without any update
     if(lambda<2. && absMax(Delta)<1e-1*o.stopTolerance) {
       if(o.verbose>1) cout <<" \t - NO UPDATE" <<endl;
       break;
     }
-    
+
     for(;;) { //stepsize adaptation loop -- doesn't iterate for useDamping option
       y = x + alpha*Delta;
       fy = f.fs(gy, Hy, y);  evals++;
-      if(addRegularizer) fy += scalarProduct(y,(*addRegularizer)*vectorShaped(y));
+      if(addRegularizer) fy += scalarProduct(y, (*addRegularizer)*vectorShaped(y));
       if(o.verbose>2) cout <<" \tprobing y=" <<y;
       if(o.verbose>1) cout <<" \tevals=" <<evals <<" \talpha=" <<alpha <<" \tf(y)=" <<fy <<flush;
       //CHECK_EQ(fy,fy, "cost seems to be NAN: ly=" <<fy);
@@ -96,11 +96,11 @@ uint optNewton(arr& x, ScalarFunction& f,  OptOptions o, arr *addRegularizer, do
         if(o.dampingInc!=1.) break; //we need to recompute Delta
       }
     }
-    
+
     if(o.verbose>0) fil <<evals <<' ' <<eval_cost <<' ' <<fx <<' ' <<alpha;
     if(o.verbose>2) fil <<' ' <<x;
     if(o.verbose>0) fil <<endl;
-    
+
     //stopping criteria
 #define STOPIF(expr) if(expr){ if(o.verbose>1) cout <<"\t\t\t\t\t\t--- stopping criterion='" <<#expr <<"'" <<endl; break; }
     STOPIF(lambda<2. && absMax(Delta)<o.stopTolerance);

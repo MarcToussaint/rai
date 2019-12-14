@@ -1,8 +1,16 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2019 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "GraphOptim.h"
 
 //===========================================================================
 
-GraphProblem_Structure::GraphProblem_Structure(GraphProblem& _G) : G(_G){
+GraphProblem_Structure::GraphProblem_Structure(GraphProblem& _G) : G(_G) {
   //get signature
   uintA variableDimensions, varDimIntegral;
   intAA featureVariables;
@@ -15,7 +23,7 @@ GraphProblem_Structure::GraphProblem_Structure(GraphProblem& _G) : G(_G){
 
   //setup variable nodes
   V.resize(variableDimensions.N);
-  for(uint i=0;i<V.N;i++){
+  for(uint i=0; i<V.N; i++) {
     V(i).x_index = i;
     V(i).x_dim = variableDimensions(i);
     V(i).description = varNames(i);
@@ -23,10 +31,10 @@ GraphProblem_Structure::GraphProblem_Structure(GraphProblem& _G) : G(_G){
 
   //setup objective nodes
   O.resize(featureVariables.N);
-  for(uint k=0;k<O.N;k++){
+  for(uint k=0; k<O.N; k++) {
     O(k).phi_index = k;
     O(k).vars = featureVariables(k);
-    for(int i=O(k).vars.N;i--;) if(O(k).vars(i)<0) O(k).vars.remove(i); //remove variables of negative index
+    for(int i=O(k).vars.N; i--;) if(O(k).vars(i)<0) O(k).vars.remove(i); //remove variables of negative index
     O(k).type = featureTypes(k);
     for(int i:O(k).vars) if(i>=0) V(i).objs.setAppendInSorted(k);
     O(k).description = phiNames(k);
@@ -47,36 +55,36 @@ SubGraphProblem::SubGraphProblem(GraphProblem_Structure& G, const uintA& _X, con
   reset(_X, _Y);
 }
 
-void SubGraphProblem::reset(const uintA& _X, const uintA& _Y){
+void SubGraphProblem::reset(const uintA& _X, const uintA& _Y) {
   X = _X;
   Y = _Y;
   for(uint i:Y) CHECK(!X.containsInSorted((i)), "");
 
   Gindex2SubIndex = consts<int>(-1, G.V.N);
-  for(uint i=0;i<X.N;i++) Gindex2SubIndex(_X(i)) = i;
+  for(uint i=0; i<X.N; i++) Gindex2SubIndex(_X(i)) = i;
 
   uintA allVars;
   for(uint i:X) allVars.setAppendInSorted(i);
   for(uint i:Y) allVars.setAppendInSorted(i);
 
   Phi.clear();
-  for(uint i:X){ //include only objectives linked to X!
-    for(uint k:G.V(i).objs){
+  for(uint i:X) { //include only objectives linked to X!
+    for(uint k:G.V(i).objs) {
       bool contains=true;
-      for(int j:G.O(k).vars){
-        if(j>=0 && !allVars.containsInSorted(j)){ //only objectives that link only to X \cup Y
+      for(int j:G.O(k).vars) {
+        if(j>=0 && !allVars.containsInSorted(j)) { //only objectives that link only to X \cup Y
           contains=false;
           break;
         }
       }
 
-      if(contains){
+      if(contains) {
         Phi.setAppendInSorted(k);
       }
     }
   }
 
-  if(false){
+  if(false) {
     cout <<" ** subproblem - VARIABLES:  #=" <<X.N <<endl;
     if(X.N<30) for(uint i:X) cout <<"    " <<i <<": " <<G.V(i).description <<endl;
     cout <<" ** subproblem - CONSTANTS:  #=" <<Y.N <<endl;
@@ -88,17 +96,17 @@ void SubGraphProblem::reset(const uintA& _X, const uintA& _Y){
 
 ofstream logFile;
 
-void SubGraphProblem::optim(int verbose){
+void SubGraphProblem::optim(int verbose) {
   uint m=0;
   for(uint i:X) m += G.V(i).x_dim;
   arr x(m);
   m=0;
-  for(uint i:X){
+  for(uint i:X) {
     uint d = G.V(i).x_dim;
-    if(d) x({m,m+d-1}) = G.V(i).value;
+    if(d) x({m, m+d-1}) = G.V(i).value;
     m+=d;
   }
-  CHECK_EQ(m,x.N, "");
+  CHECK_EQ(m, x.N, "");
 
   checkStructure(x);
 
@@ -124,7 +132,7 @@ void SubGraphProblem::optim(int verbose){
   //read out return values
   f = sos = eq = ineq = 0.;
   conflictSet.clear();
-  for(uint k:Phi){
+  for(uint k:Phi) {
     ObjectiveNode& o = G.O(k);
     if(o.type==OT_sos) sos += rai::sqr(o.value);
     else if(o.type==OT_eq) eq += fabs(o.value);
@@ -133,15 +141,15 @@ void SubGraphProblem::optim(int verbose){
     if(o.type==OT_eq && fabs(o.value)>.5) conflictSet.append(k);
     if(o.type==OT_ineq && o.value>.5) conflictSet.append(k);
   }
-  if(eq+ineq>1.){
+  if(eq+ineq>1.) {
     feasible = false;
     f = NAN;
-  }else{
+  } else {
     feasible = true;
     f = sos;
   }
 
-  if(verbose>0){
+  if(verbose>0) {
     cout <<"   sos=" <<sos <<" ineq=" <<ineq <<" eq=" <<eq <<" #conflicts=" <<conflictSet.N <<endl;
   }
 
@@ -149,16 +157,16 @@ void SubGraphProblem::optim(int verbose){
 //  rai::wait();
 }
 
-void SubGraphProblem::getStructure(uintA& variableDimensions, intAA& featureVariables, ObjectiveTypeA& featureTypes){
-  if(!!variableDimensions){
+void SubGraphProblem::getStructure(uintA& variableDimensions, intAA& featureVariables, ObjectiveTypeA& featureTypes) {
+  if(!!variableDimensions) {
     variableDimensions.resize(X.N);
-    for(uint i=0;i<X.N;i++) variableDimensions(i) = G.V(X(i)).x_dim;
+    for(uint i=0; i<X.N; i++) variableDimensions(i) = G.V(X(i)).x_dim;
   }
 
   if(!!featureVariables) featureVariables.resize(Phi.N);
   if(!!featureTypes) featureTypes.resize(Phi.N);
-  for(uint k=0;k<Phi.N;k++){
-    if(!!featureVariables){
+  for(uint k=0; k<Phi.N; k++) {
+    if(!!featureVariables) {
       featureVariables(k) = G.O(Phi(k)).vars;
       for(int& j:featureVariables(k)) j = Gindex2SubIndex(j);
     }
@@ -166,39 +174,39 @@ void SubGraphProblem::getStructure(uintA& variableDimensions, intAA& featureVari
   }
 }
 
-void SubGraphProblem::getSemantics(StringA& varNames, StringA& phiNames){
-  if(!!varNames){
+void SubGraphProblem::getSemantics(StringA& varNames, StringA& phiNames) {
+  if(!!varNames) {
     varNames.resize(X.N);
-    for(uint i=0;i<X.N;i++) varNames(i) = G.V(X(i)).description;
+    for(uint i=0; i<X.N; i++) varNames(i) = G.V(X(i)).description;
   }
 
   if(!!phiNames) phiNames.resize(Phi.N);
-  for(uint k=0;k<Phi.N;k++){
+  for(uint k=0; k<Phi.N; k++) {
     if(!!phiNames) phiNames(k) = G.O(Phi(k)).description;
   }
 }
 
-void SubGraphProblem::phi(arr& phi, arrA& J, arrA& H, const arr& x){
+void SubGraphProblem::phi(arr& phi, arrA& J, arrA& H, const arr& x) {
   G.G.setPartialX(X, x);
   G.G.getPartialPhi(phi, J, H, Phi);
 
   //kill columns of J that refer to non-variables
-  if(!!J){
+  if(!!J) {
     CHECK_EQ(J.N, Phi.N, "");
-    for(uint Jk=0;Jk<J.N;Jk++){
+    for(uint Jk=0; Jk<J.N; Jk++) {
       uint k = Phi(Jk);
       //what are the original variables that k refers to?
       intA Gvars = G.O(k).vars;
       //what are the dimensions of these original variables?
       uintA kdim = consts<uint>(0, Gvars.N+1);
-      for(uint j=0;j<Gvars.N;j++){
+      for(uint j=0; j<Gvars.N; j++) {
         kdim(j+1) = kdim(j);
         if(Gvars(j)>=0) kdim(j+1) += G.V(Gvars(j)).x_dim;
       }
       //check if some of the original variables map to not-included-here -> remove columns from J
-      for(uint j=Gvars.N;j--;){
-        if(Gvars(j)>=0 && Gindex2SubIndex(Gvars(j))<0){
-          J(Jk).remove(kdim(j),kdim(j+1)-kdim(j)); //delete the columns that correspond to the prefix!!
+      for(uint j=Gvars.N; j--;) {
+        if(Gvars(j)>=0 && Gindex2SubIndex(Gvars(j))<0) {
+          J(Jk).remove(kdim(j), kdim(j+1)-kdim(j)); //delete the columns that correspond to the prefix!!
         }
       }
     }
@@ -206,15 +214,15 @@ void SubGraphProblem::phi(arr& phi, arrA& J, arrA& H, const arr& x){
 
   //store this query and evaluation
   uint m=0;
-  for(uint i:X){
+  for(uint i:X) {
     uint d = G.V(i).x_dim;
-    if(d) G.V(i).value = x({m,m+d-1});
+    if(d) G.V(i).value = x({m, m+d-1});
     m += d;
   }
   CHECK_EQ(m, x.N, "");
-  if(!!phi){
+  if(!!phi) {
     CHECK_EQ(phi.N, Phi.N, "");
-    for(uint k=0;k<Phi.N;k++){
+    for(uint k=0; k<Phi.N; k++) {
       G.O(Phi(k)).value = phi(k);
     }
   }
@@ -222,47 +230,47 @@ void SubGraphProblem::phi(arr& phi, arrA& J, arrA& H, const arr& x){
 
 //===========================================================================
 
-BacktrackingGraphOptimization::BacktrackingGraphOptimization(GraphProblem& _G) : G(_G){
+BacktrackingGraphOptimization::BacktrackingGraphOptimization(GraphProblem& _G) : G(_G) {
 }
 
-int BacktrackingGraphOptimization::chooseNextVariableToAssign(const uintA& Y){
+int BacktrackingGraphOptimization::chooseNextVariableToAssign(const uintA& Y) {
   uint n = G.V.N;
-  for(uint i=n;i--;){
+  for(uint i=n; i--;) {
 //  for(uint i=0;i<n;i++){
     if(!Y.contains(i)) return i;
   }
   return -1;
 }
 
-uintA BacktrackingGraphOptimization::getVariablesForObjectives(uintA& O){
+uintA BacktrackingGraphOptimization::getVariablesForObjectives(uintA& O) {
   uintA X;
   for(uint k:O) for(int i:G.O(k).vars) if(i>=0) X.setAppendInSorted(i);
   return X;
 }
 
-void BacktrackingGraphOptimization::evaluate(const arr& x){
+void BacktrackingGraphOptimization::evaluate(const arr& x) {
   uintA X;
   X.setStraightPerm(G.V.N);
   SubGraphProblem G_X(G, X, {});
   G_X.phi(NoArr, NoArrA, NoArrA, x);
 }
 
-bool BacktrackingGraphOptimization::run(){
+bool BacktrackingGraphOptimization::run() {
   uintA Y; //assigned variables
   uintA X; //active variables
   f_low=0.;
 
   logFile.open("z.optim");
 
-  for(;;){
+  for(;;) {
     int next = chooseNextVariableToAssign(Y);
     if(next<0) return true; //success: no next variable
     X = {uint(next)};
     cout <<"** BGO: solve (" <<X <<"|" <<Y <<")" <<endl;
     SubGraphProblem G_XY(G, X, Y);
     G_XY.optim();
-    while(!G_XY.feasible){
-      if(!Y.N){
+    while(!G_XY.feasible) {
+      if(!Y.N) {
         infeasibleSubset = X;
         conflictSet = G_XY.conflictSet;
         return false;
@@ -279,18 +287,18 @@ bool BacktrackingGraphOptimization::run(){
       */
       uintA pi_C = getVariablesForObjectives(G_XY.conflictSet);
       setMinusSorted(pi_C, X);
-      if(!pi_C.N){
+      if(!pi_C.N) {
         uint prev = Y.popLast();
         X.setAppendInSorted(prev);
-      }else{
-        for(uint i:pi_C){
+      } else {
+        for(uint i:pi_C) {
           Y.removeValue(i, false);
           X.setAppendInSorted(i);
         }
       }
       CHECK(X.isSorted(), "");
       for(uint i:Y) CHECK(!X.containsInSorted((i)), "");
-      G_XY.reset(X,Y);
+      G_XY.reset(X, Y);
       G_XY.optim();
     }
     Y.append(X);
@@ -301,7 +309,7 @@ bool BacktrackingGraphOptimization::run(){
   return true;
 }
 
-bool BacktrackingGraphOptimization::runFull(){
+bool BacktrackingGraphOptimization::runFull() {
   uintA X;
   X.setStraightPerm(G.V.N);
   SubGraphProblem G_X(G, X, {});

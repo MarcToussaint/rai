@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -21,7 +21,7 @@ TM_Proxy::TM_Proxy(PTMtype _type,
 void TM_Proxy::phi(arr& y, arr& J, const rai::Configuration& G) {
   y.resize(1).setZero();
   if(!!J) J.resize(1, G.getJointStateDimension()).setZero();
-  
+
   switch(type) {
     case TMT_allP:
       for(const rai::Proxy& p: G.proxies) {
@@ -62,12 +62,12 @@ void TM_Proxy::phi(arr& y, arr& J, const rai::Configuration& G) {
       }
       break;
     case TMT_pairsP: {
-      shapes.reshape(shapes.N/2,2);
+      shapes.reshape(shapes.N/2, 2);
       // only explicit paris in 2D array shapes
       uint j;
       for(const rai::Proxy& p: G.proxies) {
         for(j=0; j<shapes.d0; j++) {
-          if((shapes(j,0)==p.a->ID && shapes(j,1)==p.b->ID) || (shapes(j,0)==p.b->ID && shapes(j,1)==p.a->ID))
+          if((shapes(j, 0)==p.a->ID && shapes(j, 1)==p.b->ID) || (shapes(j, 0)==p.b->ID && shapes(j, 1)==p.a->ID))
             break;
         }
         if(j<shapes.d0) { //if a pair was found
@@ -77,12 +77,12 @@ void TM_Proxy::phi(arr& y, arr& J, const rai::Configuration& G) {
       }
     } break;
     case TMT_allExceptPairsP: {
-      shapes.reshape(shapes.N/2,2);
+      shapes.reshape(shapes.N/2, 2);
       // only explicit paris in 2D array shapes
       uint j;
       for(const rai::Proxy& p: G.proxies) {
         for(j=0; j<shapes.d0; j++) {
-          if((shapes(j,0)==p.a->ID && shapes(j,1)==p.b->ID) || (shapes(j,0)==p.b->ID && shapes(j,1)==p.a->ID))
+          if((shapes(j, 0)==p.a->ID && shapes(j, 1)==p.b->ID) || (shapes(j, 0)==p.b->ID && shapes(j, 1)==p.a->ID))
             break;
         }
         if(j==shapes.d0) { //if a pair was not found
@@ -93,13 +93,13 @@ void TM_Proxy::phi(arr& y, arr& J, const rai::Configuration& G) {
     } break;
     case TMT_vectorP: {
       //outputs a vector of collision meassures, with entry for each explicit pair
-      shapes.reshape(shapes.N/2,2);
+      shapes.reshape(shapes.N/2, 2);
       y.resize(shapes.d0, 1);  y.setZero();
-      if(!!J) { J.resize(shapes.d0,J.d1);  J.setZero(); }
+      if(!!J) { J.resize(shapes.d0, J.d1);  J.setZero(); }
       uint j;
       for(const rai::Proxy& p: G.proxies) {
         for(j=0; j<shapes.d0; j++) {
-          if((shapes(j,0)==p.a->ID && shapes(j,1)==p.b->ID) || (shapes(j,0)==p.b->ID && shapes(j,1)==p.a->ID))
+          if((shapes(j, 0)==p.a->ID && shapes(j, 1)==p.b->ID) || (shapes(j, 0)==p.b->ID && shapes(j, 1)==p.a->ID))
             break;
         }
         if(j<shapes.d0) {

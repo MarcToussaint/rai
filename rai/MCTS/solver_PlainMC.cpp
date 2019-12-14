@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -36,15 +36,15 @@ void PlainMC::reset() {
 
 double PlainMC::initRollout(const rai::Array<MCTS_Environment::Handle>& prefixDecisions) {
   world.reset_state();
-  
+
   //reset rollout 'return' variables
   rolloutStep=0;
   rolloutR=0.;
   rolloutDiscount=1.;
   rolloutDecisions.clear();
-  
+
   MCTS_Environment::TransitionReturn ret;
-  
+
   //-- follow prefixDecisions
   for(uint i=0; i<prefixDecisions.N; i++) {
     MCTS_Environment::Handle& a = prefixDecisions(i);
@@ -54,13 +54,13 @@ double PlainMC::initRollout(const rai::Array<MCTS_Environment::Handle>& prefixDe
     rolloutR += rolloutDiscount * ret.reward;
     rolloutDiscount *= pow(gamma, ret.duration);  //  discount *= gamma;
   }
-  
+
   return rolloutR;
 }
 
 double PlainMC::finishRollout(int stepAbort) {
   MCTS_Environment::TransitionReturn ret;
-  
+
   //-- continue with random rollout
   while(!world.is_terminal_state() && (stepAbort<0 || rolloutStep++<(uint)stepAbort)) {
     rai::Array<MCTS_Environment::Handle> actions;
@@ -77,10 +77,10 @@ double PlainMC::finishRollout(int stepAbort) {
     rolloutR += rolloutDiscount * ret.reward;
     rolloutDiscount *= pow(gamma, ret.duration);    //    discount *= gamma;
   }
-  
+
   if(stepAbort>=0 && rolloutStep>=(uint)stepAbort) rolloutR -= 100.;
   if(verbose>0) cout <<"****************** MC: terminal state reached; step=" <<rolloutStep <<" Return=" <<rolloutR <<endl;
-  
+
   return rolloutR;
 }
 
@@ -90,15 +90,15 @@ double PlainMC::generateRollout(int stepAbort, const rai::Array<MCTS_Environment
   return finishRollout(stepAbort);
 #else
   world.reset_state();
-  
+
   //reset rollout 'return' variables
   rolloutStep=0;
   rolloutR=0.;
   rolloutDiscount=1.;
   rolloutDecisions.clear();
-  
+
   MCTS_Environment::TransitionReturn ret;
-  
+
   //-- follow prefixDecisions
   for(uint i=0; i<prefixDecisions.N; i++) {
     MCTS_Environment::Handle& a = prefixDecisions(i);
@@ -108,7 +108,7 @@ double PlainMC::generateRollout(int stepAbort, const rai::Array<MCTS_Environment
     rolloutR += rolloutDiscount * ret.reward;
     rolloutDiscount *= pow(gamma, ret.duration);  //  discount *= gamma;
   }
-  
+
   //-- continue with random rollout
   while(!world.is_terminal_state() && (stepAbort<0 || rolloutStep++<(uint)stepAbort)) {
     rai::Array<MCTS_Environment::Handle> actions;
@@ -125,10 +125,10 @@ double PlainMC::generateRollout(int stepAbort, const rai::Array<MCTS_Environment
     rolloutR += rolloutDiscount * ret.reward;
     rolloutDiscount *= pow(gamma, ret.duration);    //    discount *= gamma;
   }
-  
+
   if(stepAbort>=0 && rolloutStep>=(uint)stepAbort) rolloutR -= 100.;
   if(verbose>0) cout <<"****************** MC: terminal state reached; step=" <<rolloutStep <<" Return=" <<rolloutR <<endl;
-  
+
   return rolloutR;
 #endif
 }
@@ -136,10 +136,10 @@ double PlainMC::generateRollout(int stepAbort, const rai::Array<MCTS_Environment
 double PlainMC::addRollout(int stepAbort) {
   // random first choice
   uint a = rnd(A.N);
-  
+
   //generate rollout
   generateRollout(stepAbort, {A(a)});
-  
+
   if(blackList.N) {
     rai::String decisionsString;
     for(const auto& a:rolloutDecisions) decisionsString <<*a <<' ';
@@ -150,10 +150,10 @@ double PlainMC::addRollout(int stepAbort) {
       }
     }
   }
-  
+
   //-- collect data
   addReturnToStatistics(rolloutR, A(a), a);
-  
+
   return rolloutR;
 }
 
@@ -165,7 +165,7 @@ void PlainMC::addReturnToStatistics(double rolloutR, MCTS_Environment::Handle de
 //    listWrite(A);
     uint i;
     for(i=0; i<A.N; i++) if(*A(i)==*decision) break;
-    CHECK(i<A.N,"");
+    CHECK(i<A.N, "");
     decisionIndex=i;
   }
   D(decisionIndex).add(rolloutR);

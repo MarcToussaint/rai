@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -15,8 +15,8 @@ struct TM_GJK:Feature {
 //  rai::Vector vec1, vec2; ///< additional position or vector
   bool exact;
   bool negScalar;
-  
-  TM_GJK(const rai::Frame *s1, const rai::Frame *s2, bool exact, bool negScalar=false);
+
+  TM_GJK(const rai::Frame* s1, const rai::Frame* s2, bool exact, bool negScalar=false);
   TM_GJK(const rai::Configuration& W, const char* s1, const char* s2, bool exact, bool negScalar=false);
   TM_GJK(const rai::Configuration& W, const Graph& specs, bool exact);
   virtual void phi(arr& y, arr& J, const rai::Configuration& W);

@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -35,13 +35,13 @@ struct Flag {
   uint stepOfApplication;
   bool persist=false;
   bool setTrue=true;
-  
+
   Flag(FrameFlagType flag, uint frameId, uint stepOfApplication=0, bool persist=false, bool setTrue=true)
     : flag(flag), frameId(frameId), stepOfApplication(stepOfApplication), persist(persist), setTrue(setTrue) {}
   ~Flag() {}
-  
+
   void apply(Configuration& K);
-  
+
   void write(std::ostream& os, Configuration* K=nullptr) const;
 };
 

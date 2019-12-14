@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -78,7 +78,7 @@ NodeL RelationalMachine::fwdChainRules() {
 }
 
 Node* RelationalMachine::declareNewSymbol(rai::String symbolStr) {
-  Node *it = KB.readNode(symbolStr);
+  Node* it = KB.readNode(symbolStr);
   return it;
 }
 

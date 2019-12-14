@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -40,7 +40,7 @@ class AudioWriter_libav;
 
 template<class T>
 struct GenericDisplayViewer : Thread {
-  OpenGL *gl;
+  OpenGL* gl;
   Var<T> var;
   GenericDisplayViewer(const char* var_name)
     : Thread("GenericDisplayViewer", -1.)
@@ -57,14 +57,14 @@ struct GenericDisplayViewer : Thread {
 };
 
 struct VideoEncoder : Thread {
-  struct sVideoEncoder *s;
+  struct sVideoEncoder* s;
   bool is_rgb;
   double fps;
   Var<byteA> img;
   VideoEncoder(const Var<byteA>& _img)
     : Thread("VideoEncoder"), is_rgb(false), fps(30), img(this, _img, true) {}
   virtual ~VideoEncoder() {}
-  
+
   virtual void open();
   virtual void step();
   virtual void close();
@@ -75,13 +75,13 @@ struct VideoEncoder : Thread {
 };
 
 struct VideoEncoderX264 : Thread {
-  struct sVideoEncoderX264 *s;
+  struct sVideoEncoderX264* s;
   bool is_rgb;
   double fps;
   Var<byteA> img;
   VideoEncoderX264(const Var<byteA>& _img) : Thread("VideoEncoderX264"), is_rgb(false), img(this, _img, true) {}
   virtual ~VideoEncoderX264() {}
-  
+
   virtual void open();
   virtual void step();
   virtual void close();
@@ -97,16 +97,16 @@ struct VideoEncoderX264 : Thread {
 
 struct RigidObjectRepresentation {
   uint found;
-  
+
   //-- 2d shape
   uint shapeType;
   arr shapeParamsL, shapeParamsR, shapePointsL, shapePointsR;
-  
+
   //-- 3d information
   arr shapePoints3d;
   arr center3d, orsShapeParams;
   arr diagDiff;
-  
+
   RigidObjectRepresentation() { found=0; }
 };
 
@@ -130,8 +130,8 @@ struct HoughLines {
 #endif
   byteA display;
 };
-inline void operator>>(istream& is,HoughLines& hl) {}
-inline void operator<<(ostream& os,const HoughLines& hl) {}
+inline void operator>>(istream& is, HoughLines& hl) {}
+inline void operator<<(ostream& os, const HoughLines& hl) {}
 
 //===========================================================================
 
@@ -142,8 +142,8 @@ struct Patching {
   floatA pch_rgb;  //patch mean colors
   byteA display;
 };
-inline void operator>>(istream& is,Patching& hl) {}
-inline void operator<<(ostream& os,const Patching& hl) {}
+inline void operator>>(istream& is, Patching& hl) {}
+inline void operator<<(ostream& os, const Patching& hl) {}
 
 //===========================================================================
 
@@ -154,8 +154,8 @@ struct SURFfeatures {
 #endif
   byteA display;
 };
-inline void operator>>(istream& is,SURFfeatures& hl) {}
-inline void operator<<(ostream& os,const SURFfeatures& hl) {}
+inline void operator>>(istream& is, SURFfeatures& hl) {}
+inline void operator<<(ostream& os, const SURFfeatures& hl) {}
 
 //===========================================================================
 
@@ -170,7 +170,7 @@ niyPipes(PerceptionOutput);
 #if 0
 BEGIN_MODULE(ImageViewer)      VAR(byteA, img)       END_MODULE()
 BEGIN_MODULE(PointCloudViewer) VAR(arr, pts)         VAR(arr, cols)        END_MODULE()
-BEGIN_MODULE(OpencvCamera)     VAR(byteA, rgb)       std::map<int,double> properties; bool set(int prop, double value);  END_MODULE()
+BEGIN_MODULE(OpencvCamera)     VAR(byteA, rgb)       std::map<int, double> properties; bool set(int prop, double value);  END_MODULE()
 BEGIN_MODULE(CvtGray)          VAR(byteA, rgb)       VAR(byteA, gray)      END_MODULE()
 BEGIN_MODULE(CvtHsv)           VAR(byteA, rgb)       VAR(byteA, hsv)       END_MODULE()
 BEGIN_MODULE(HsvFilter)        VAR(byteA, hsv)       VAR(floatA, evi)      END_MODULE()
@@ -181,14 +181,14 @@ BEGIN_MODULE(Patcher)          VAR(byteA, rgbImage)  VAR(Patching, patchImage)  
 BEGIN_MODULE(SURFer)           VAR(byteA, grayImage) VAR(SURFfeatures, features)  END_MODULE()
 BEGIN_MODULE(HoughLineFilter)  VAR(byteA, grayImage) VAR(HoughLines, houghLines)  END_MODULE()
 BEGIN_MODULE(ShapeFitter)      VAR(floatA, eviL)     VAR(floatA, eviR)            VAR(PerceptionOutput, perc)      END_MODULE()
-BEGIN_MODULE(AudioReader)    AudioPoller_PA *poller; VAR(byteA, pcms16ne2c) END_MODULE()
-BEGIN_MODULE(AudioWriter)    AudioWriter_libav *writer; VAR(byteA, pcms16ne2c) END_MODULE()
+BEGIN_MODULE(AudioReader)    AudioPoller_PA* poller; VAR(byteA, pcms16ne2c) END_MODULE()
+BEGIN_MODULE(AudioWriter)    AudioWriter_libav* writer; VAR(byteA, pcms16ne2c) END_MODULE()
 #else
 
 struct OpencvCamera : Thread {
-  struct sOpencvCamera *s;
+  struct sOpencvCamera* s;
   Var<byteA> rgb;
-  std::map<int,double> properties; bool set(int prop, double status);
+  std::map<int, double> properties; bool set(int prop, double status);
   OpencvCamera(const Var<byteA>& _rgb) : Thread(STRING("OpencvCamera_"<<_rgb.name()), 0.), rgb(this, _rgb) {}
   void open();
   void step();
@@ -196,10 +196,10 @@ struct OpencvCamera : Thread {
 };
 
 struct CvtGray : Thread {
-  struct sCvtGray *s;
+  struct sCvtGray* s;
   Var<byteA> rgb;
   Var<byteA> gray;
-  std::map<int,double> properties; bool set(int prop, double status);
+  std::map<int, double> properties; bool set(int prop, double status);
   CvtGray(const Var<byteA>& _rgb, const Var<byteA>& _gray)
     : Thread(STRING("CvtGray_"<<_rgb.name()), -1), rgb(this, _rgb, true), gray(this, _gray) {}
   void open();
@@ -208,7 +208,7 @@ struct CvtGray : Thread {
 };
 
 struct MotionFilter : Thread {
-  struct sMotionFilter *s;
+  struct sMotionFilter* s;
   Var<byteA> rgb;
   Var<byteA> motion;
   MotionFilter(const Var<byteA>& _rgb, const Var<byteA>& _motion)
@@ -219,7 +219,7 @@ struct MotionFilter : Thread {
 };
 
 struct DifferenceFilter : Thread {
-  struct sDifferenceFilter *s;
+  struct sDifferenceFilter* s;
   Var<byteA> i1;
   Var<byteA> i2;
   Var<byteA> diffImage;
@@ -231,7 +231,7 @@ struct DifferenceFilter : Thread {
 };
 
 struct CannyFilter : Thread {
-  struct sCannyFilter *s;
+  struct sCannyFilter* s;
   Var<byteA> grayImage;
   Var<byteA> cannyImage;
   CannyFilter(const Var<byteA>& _grayImage, const Var<byteA>& _cannyImage)
@@ -244,7 +244,7 @@ struct CannyFilter : Thread {
 };
 
 struct Patcher : Thread {
-  struct sPatcher *s;
+  struct sPatcher* s;
   Var<byteA> rgbImage;
   Var<Patching> patchImage;
   Patcher(const Var<byteA>& _rgbImage, const Var<Patching>& _patchImage)

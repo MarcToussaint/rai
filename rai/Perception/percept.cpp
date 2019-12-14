@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -76,7 +76,7 @@ void PercCluster::write(ostream& os) const {
 //============================================================================
 
 void PercMesh::syncWith(rai::Configuration& K) {
-  rai::Frame *f = K.getFrameByName(STRING("perc_"<<id), false);
+  rai::Frame* f = K.getFrameByName(STRING("perc_"<<id), false);
   if(!f) {
     f = new rai::Frame(K);
     f->name <<"perc_" <<id;
@@ -93,8 +93,8 @@ void PercMesh::syncWith(rai::Configuration& K) {
 
 double PercMesh::fuse(PerceptPtr& other) {
   Percept::fuse(other);
-  const PercMesh *x = dynamic_cast<const PercMesh*>(other.get());
-  CHECK(x,"can't fuse " <<type <<" with "<<other->type);
+  const PercMesh* x = dynamic_cast<const PercMesh*>(other.get());
+  CHECK(x, "can't fuse " <<type <<" with "<<other->type);
   mesh = x->mesh;
   return 0.;
 }
@@ -108,15 +108,15 @@ double PercPlane::idMatchingCost(const Percept& other) {
   if(other.type!=PT_plane) return -1.;
   const PercPlane* otherPlane = dynamic_cast<const PercPlane*>(&other);
   if(!otherPlane) { RAI_MSG("WHY?????"); return -1.; }
-  CHECK(otherPlane,"");
+  CHECK(otherPlane, "");
   rai::Vector diff = (this->pose.pos - otherPlane->pose.pos);
   return diff.length();
 }
 
 double PercPlane::fuse(PerceptPtr& other) {
   Percept::fuse(other);
-  const PercPlane *x = dynamic_cast<const PercPlane*>(other.get());
-  CHECK(x,"can't fuse " <<type <<" with "<<other->type);
+  const PercPlane* x = dynamic_cast<const PercPlane*>(other.get());
+  CHECK(x, "can't fuse " <<type <<" with "<<other->type);
   hull = x->hull;
   return 0.;
 }
@@ -126,15 +126,15 @@ void PercPlane::write(ostream& os) const {
 //  os <<"plane_" <<id <<":"; // center=" <<center <<" normal=" <<normal;
 }
 
-void PercPlane::syncWith(rai::Configuration &K) {
+void PercPlane::syncWith(rai::Configuration& K) {
   rai::String plane_name = STRING("perc_" << id);
-  
-  rai::Frame *body = K.getFrameByName(plane_name, false);
+
+  rai::Frame* body = K.getFrameByName(plane_name, false);
   if(not body) {
     //cout << plane_name << " does not exist yet; adding it..." << endl;
     body = new rai::Frame(K);
     body->name = plane_name;
-    rai::Shape *shape = new rai::Shape(*body);
+    rai::Shape* shape = new rai::Shape(*body);
     shape->type() = rai::ST_pointCloud;
 //    shape = new rai::Shape(K, *body);
 //    shape->name = plane_name;
@@ -143,13 +143,13 @@ void PercPlane::syncWith(rai::Configuration &K) {
 //    stored_planes.append(id);
   }
   body->setPose(pose);
-  
+
   body->shape->mesh() = hull;
 }
 
 void PercPlane::glDraw(OpenGL& gl) {
   hull.glDraw(gl);
-  
+
 //  if(hull.C.N==3){
 //    glColor(hull.C(0), hull.C(1), hull.C(2), 1.f);
 //  }
@@ -183,7 +183,7 @@ double PercBox::fuse(PerceptPtr& other) {
   double score_0 = qdiff.sqrDiffZero();
   qdiff.addZ(+RAI_PI);  double score_1 = qdiff.sqrDiffZero(); //flip by 180
   if(score_1<score_0) other->pose.rot.addZ(-RAI_PI);
-  
+
   if(size(0)>.8*size(1) && size(0)<1.2*size(1)) { //almost quadratic shape -> check flip by 90
     qdiff = (-pose.rot) * other->pose.rot;
     double score_0 = qdiff.sqrDiffZero();
@@ -193,10 +193,10 @@ double PercBox::fuse(PerceptPtr& other) {
     if(score_1<score_0 && score_1<score_2) other->pose.rot.addZ(-0.5*RAI_PI);
     if(score_2<score_0 && score_2<score_1) other->pose.rot.addZ(+0.5*RAI_PI);
   }
-  
+
   Percept::fuse(other);
-  const PercBox *x = dynamic_cast<const PercBox*>(other.get());
-  CHECK(x,"can't fuse " <<type <<" with "<<other->type);
+  const PercBox* x = dynamic_cast<const PercBox*>(other.get());
+  CHECK(x, "can't fuse " <<type <<" with "<<other->type);
   if(x->size.N!=size.N) size.N=x->size.N;
   else size = (1.-alpha)*size + alpha*x->size;
   if(x->color.N!=color.N) color = x->color;
@@ -204,15 +204,15 @@ double PercBox::fuse(PerceptPtr& other) {
   return 0.;
 }
 
-void PercBox::syncWith(rai::Configuration &K) {
+void PercBox::syncWith(rai::Configuration& K) {
   rai::String box_name = STRING("perc_" << id);
-  
-  rai::Frame *body = K.getFrameByName(box_name, false);
+
+  rai::Frame* body = K.getFrameByName(box_name, false);
   if(not body) {
     //cout << plane_name << " does not exist yet; adding it..." << endl;
     body = new rai::Frame(K);
     body->name = box_name;
-    rai::Shape *shape = new rai::Shape(*body);
+    rai::Shape* shape = new rai::Shape(*body);
     shape->type() = rai::ST_box;
   }
   body->setPose(pose);
@@ -259,21 +259,21 @@ void PercAlvar::write(ostream& os) const {
 
 void PercCluster::syncWith(rai::Configuration& K) {
   rai::String cluster_name = STRING("perc_" << id);
-  
-  rai::Frame *body = K.getFrameByName(cluster_name, false);
+
+  rai::Frame* body = K.getFrameByName(cluster_name, false);
   if(not body) {
     //cout << cluster_name << " does not exist yet; adding it..." << endl;
     body = new rai::Frame(K);
     body->name = cluster_name;
-    rai::Shape *shape = new rai::Shape(*body);
+    rai::Shape* shape = new rai::Shape(*body);
     shape->type() = rai::ST_pointCloud;
     shape = new rai::Shape(*body);
     shape->type() = rai::ST_marker;
-    shape->size() = consts<double>(.2,3);
+    shape->size() = consts<double>(.2, 3);
 //    stored_clusters.append(id);
   }
   body->setPose(pose);
-  
+
   pose = body->ensure_X();
   //((Cluster*)cluster)->mean = ARR(cen.x, cen.y, cen.z);
   /* If we change the mean, we compare the transformed mean to an untransformed mean later...*/
@@ -283,52 +283,52 @@ void PercCluster::syncWith(rai::Configuration& K) {
 
 void PercAlvar::syncWith(rai::Configuration& K) {
   rai::String alvar_name = STRING("perc_" << id);
-  
-  rai::Frame *body = K.getFrameByName(alvar_name, false);
+
+  rai::Frame* body = K.getFrameByName(alvar_name, false);
   if(not body) {
 //    cout << alvar_name << " does not exist yet; adding it..." << endl;
     body = new rai::Frame(K);
     body->name = alvar_name;
-    rai::Shape *shape = new rai::Shape(*body);
+    rai::Shape* shape = new rai::Shape(*body);
     shape->type() = rai::ST_marker;
-    shape->size() = consts<double>(.2,3);
+    shape->size() = consts<double>(.2, 3);
 //    stored_alvars.append(id);
   }
-  
+
   body->setPose(pose);
 }
 
-void OptitrackBody::syncWith(rai::Configuration &K) {
+void OptitrackBody::syncWith(rai::Configuration& K) {
   rai::String optitrackbody_name = STRING("perc_" << id);
-  
-  rai::Frame *body = K.getFrameByName(optitrackbody_name, false);
+
+  rai::Frame* body = K.getFrameByName(optitrackbody_name, false);
   if(not body) {
     cout << optitrackbody_name << " does not exist yet; adding it..." << endl;
     body = new rai::Frame(K);
     body->name = optitrackbody_name;
-    rai::Shape *shape = new rai::Shape(*body);
+    rai::Shape* shape = new rai::Shape(*body);
     shape->type() = rai::ST_marker;
-    shape->size() = consts<double>(.1,3);
+    shape->size() = consts<double>(.1, 3);
 //    stored_optitrackbodies.append(id);
   }
-  
+
   body->setPose(pose);
 }
 
-void OptitrackMarker::syncWith(rai::Configuration &K) {
+void OptitrackMarker::syncWith(rai::Configuration& K) {
   rai::String optitrackmarker_name = STRING("perc_" << id);
-  
-  rai::Frame *body = K.getFrameByName(optitrackmarker_name, false);
+
+  rai::Frame* body = K.getFrameByName(optitrackmarker_name, false);
   if(not body) {
     cout << optitrackmarker_name << " does not exist yet; adding it..." << endl;
     body = new rai::Frame(K);
     body->name = optitrackmarker_name;
-    rai::Shape *shape = new rai::Shape(*body);
+    rai::Shape* shape = new rai::Shape(*body);
     shape->type() = rai::ST_sphere;
     shape->size() = consts<double>(.03, 3);
 //    stored_optitrackmarkers.append(id);
   }
-  
+
   body->setPose(pose);
 }
 

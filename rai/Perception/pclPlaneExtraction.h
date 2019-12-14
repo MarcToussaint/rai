@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -24,15 +24,15 @@
 
 typedef pcl::PointXYZRGB PointT;
 
-void extractPlanes(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointCloud<PointT>::Ptr outCloud, std::vector<pcl::ModelCoefficients::Ptr> &outCoefficients, std::vector<pcl::PointIndices::Ptr> &outInliers , uint numPlanes);
+void extractPlanes(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointCloud<PointT>::Ptr outCloud, std::vector<pcl::ModelCoefficients::Ptr>& outCoefficients, std::vector<pcl::PointIndices::Ptr>& outInliers, uint numPlanes);
 //void extractPlanes(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointCloud<PointT>::Ptr outCloud, std::vector<pcl::ModelCoefficients::Ptr> &outCoefficients, std::vector<pcl::PointCloud<PointT>::Ptr> &outInliers , uint numPlanes);
 
-void passthroughFilter(pcl::PointCloud<PointT>::Ptr inCloud,pcl::PointCloud<PointT>::Ptr outCloud,double minLimit, double maxLimit);
+void passthroughFilter(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointCloud<PointT>::Ptr outCloud, double minLimit, double maxLimit);
 
-void normalEstimator(pcl::PointCloud<PointT>::Ptr inCloud,pcl::PointCloud<pcl::Normal>::Ptr outNormal,int knn);
+void normalEstimator(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointCloud<pcl::Normal>::Ptr outNormal, int knn);
 
 void planeDetector(pcl::PointCloud<PointT>::Ptr inCloud, pcl::ModelCoefficients::Ptr outCoefficients, pcl::PointIndices::Ptr outInliersPlane);
 
-void planeDetectorWithNormals(pcl::PointCloud<PointT>::Ptr inCloud,pcl::PointCloud<pcl::Normal>::Ptr inCloudNormal, pcl::ModelCoefficients::Ptr outCoefficients, pcl::PointIndices::Ptr outInliersPlane);
+void planeDetectorWithNormals(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointCloud<pcl::Normal>::Ptr inCloudNormal, pcl::ModelCoefficients::Ptr outCoefficients, pcl::PointIndices::Ptr outInliersPlane);
 
-void substractPlane(pcl::PointCloud<PointT>::Ptr inCloud,pcl::PointIndices::Ptr inInliersPlane, pcl::PointCloud<PointT>::Ptr outCloud);
+void substractPlane(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointIndices::Ptr inInliersPlane, pcl::PointCloud<PointT>::Ptr outCloud);

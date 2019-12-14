@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -35,14 +35,14 @@ struct CollisionConstraint:Feature {
 //===========================================================================
 
 struct PairCollisionConstraint:Feature {
-  int i,j;       ///< which shapes does it refer to?
+  int i, j;      ///< which shapes does it refer to?
   double margin;
-  
+
   PairCollisionConstraint(double _margin)
     : i(-1), j(-1), margin(_margin) {
   }
   PairCollisionConstraint(const rai::Configuration& G, const char* iShapeName, const char* jShapeName, double _margin=.02);
-  
+
   virtual void phi(arr& y, arr& J, const rai::Configuration& G);
   virtual uint dim_phi(const rai::Configuration& G) { return 1; }
 };
@@ -52,9 +52,9 @@ struct PairCollisionConstraint:Feature {
 struct PlaneConstraint:Feature {
   int i;       ///< which shapes does it refer to?
   arr planeParams;  ///< parameters of the variable (e.g., liner coefficients, limits, etc)
-  
+
   PlaneConstraint(const rai::Configuration& G, const char* iShapeName, const arr& _planeParams);
-  
+
   virtual void phi(arr& y, arr& J, const rai::Configuration& G);
   virtual uint dim_phi(const rai::Configuration& G) { return 1; }
 };
@@ -67,7 +67,7 @@ struct ConstraintStickiness:Feature {
   ConstraintStickiness(Feature& _map)
     : map(_map) {
   }
-  
+
   virtual void phi(arr& y, arr& J, const rai::Configuration& G);
   virtual uint dim_phi(const rai::Configuration& G) { return 1; }
 };
@@ -77,8 +77,8 @@ struct ConstraintStickiness:Feature {
 struct PointEqualityConstraint:Feature {
   int i, j;               ///< which shapes does it refer to?
   rai::Vector ivec, jvec; ///< additional position or vector
-  
-  PointEqualityConstraint(const rai::Configuration &G,
+
+  PointEqualityConstraint(const rai::Configuration& G,
                           const char* iShapeName=nullptr, const rai::Vector& _ivec=NoVector,
                           const char* jShapeName=nullptr, const rai::Vector& _jvec=NoVector) {
     TM_Default dummy(TMT_pos, G, iShapeName, _ivec, jShapeName, _jvec); //is deleted in a sec..
@@ -87,7 +87,7 @@ struct PointEqualityConstraint:Feature {
     ivec=dummy.ivec;
     jvec=dummy.jvec;
   }
-  
+
   virtual void phi(arr& y, arr& J, const rai::Configuration& G);
   virtual uint dim_phi(const rai::Configuration& G) { return 3; }
 };
@@ -98,7 +98,7 @@ struct ContactEqualityConstraint:Feature {
   int i;       ///< which shapes does it refer to?
   int j;       ///< which shapes does it refer to?
   double margin;
-  ContactEqualityConstraint(const rai::Configuration& G, const char* iShapeName, const char* jShapeName,double _margin);
+  ContactEqualityConstraint(const rai::Configuration& G, const char* iShapeName, const char* jShapeName, double _margin);
   virtual void phi(arr& y, arr& J, const rai::Configuration& G);
   virtual uint dim_phi(const rai::Configuration& G) {
     return 1;
@@ -112,12 +112,12 @@ struct VelAlignConstraint:Feature {
   int j;       ///< which shapes does it refer to?
   rai::Vector ivec, jvec; ///< additional position or vector
   double target;
-  
+
   double margin;
   VelAlignConstraint(const rai::Configuration& G,
                      const char* iShapeName=nullptr, const rai::Vector& _ivec=NoVector,
                      const char* jShapeName=nullptr, const rai::Vector& _jvec=NoVector, double _target = 0.);
-                     
+
   virtual void phi(arr& y, arr& J, const rai::Configuration& G, int t=1) { } ;
   virtual void phi(arr& y, arr& J, const ConfigurationL& G);
   virtual uint dim_phi(const rai::Configuration& G) { return 1; }
@@ -127,10 +127,10 @@ struct VelAlignConstraint:Feature {
 
 struct qItselfConstraint:Feature {
   arr M;
-  
-  qItselfConstraint(uint singleQ, uint qN) { M=zeros(1,qN); M(0,singleQ)=1.; }
+
+  qItselfConstraint(uint singleQ, uint qN) { M=zeros(1, qN); M(0, singleQ)=1.; }
   qItselfConstraint(const arr& _M=NoArr) { if(!!_M) M=_M; }
-  
+
   virtual void phi(arr& y, arr& J, const rai::Configuration& G);
   virtual uint dim_phi(const rai::Configuration& G) {
     if(M.nd==2) return M.d0;

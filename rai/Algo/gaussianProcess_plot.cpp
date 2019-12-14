@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -15,31 +15,31 @@ void plotBelief(GaussianProcess& gp, double lo, double hi, bool pause) {
   //there should be at least 1 observation to guess the dimensionality from
   dim = gp.X.d1 ? gp.X.d1 : gp.dX.d1;
   CHECK(dim > 0, "still no data here. I have no clue about dimensionality!?!");
-  
+
   X.setGrid(dim, lo, hi, 100);
   gp.evaluate(X, Y, S);
-  plotClear();
+  plot->Clear();
   switch(dim) {
     case 1:
-      plotFunctionPrecision(X, Y, Y+S, Y-S);
-      //plotFunction(X, Y);
-      //plotFunction(X, Y+S);
-      //plotFunction(X, Y-S);
-      plotPoints(gp.X, gp.Y);
-      plotPoints(gp.dX, gp.dY);
+      plot->FunctionPrecision(X, Y, Y+S, Y-S);
+      //plot->Function(X, Y);
+      //plot->Function(X, Y+S);
+      //plot->Function(X, Y-S);
+      plot->Points(gp.X, gp.Y);
+      plot->Points(gp.dX, gp.dY);
       break;
     case 2:
-      //plotFunction(X, Y);
-      //plotFunction(X, Y+S);
-      //plotFunction(X, Y-S);
-      plotPoints(gp.X, gp.Y);
-      plotPoints(gp.dX, gp.dY);
+      //plot->Function(X, Y);
+      //plot->Function(X, Y+S);
+      //plot->Function(X, Y-S);
+      plot->Points(gp.X, gp.Y);
+      plot->Points(gp.dX, gp.dY);
       break;
     default :
       HALT("Space is either 0- or higher than 3-dimensional. Tell me how to plot that!")
       break;
   }
-  plot(pause);
+  plot->update(pause);
 }
 
 void plotKernel1D(GaussianProcess& gp, double lo, double hi, bool pause) {
@@ -54,11 +54,11 @@ void plotKernel1D(GaussianProcess& gp, double lo, double hi, bool pause) {
     KD1(i) = gp.covF_D(0, gp.kernelP, null, X[i]);
     KD2(i) = gp.covDD_F(0, 0, gp.kernelP, X[i], null);
   }
-  plotClear();
-  plotFunction(X, K);
-  plotFunction(X, KD1);
-  plotFunction(X, KD2);
-  plot(pause);
+  plot->Clear();
+  plot->Function(X, K);
+  plot->Function(X, KD1);
+  plot->Function(X, KD2);
+  plot->update(pause);
 }
 
 void plotKernel2D(GaussianProcess& gp, double lo, double hi, bool pause) {
@@ -75,9 +75,9 @@ void plotKernel2D(GaussianProcess& gp, double lo, double hi, bool pause) {
       KD2(i, j) = gp.covDD_F(0, 0, gp.kernelP, X[i], null);
     }
   }
-  plotClear();
-  plotSurface(K);
-  plotSurface(KD1);
-  plotSurface(KD2);
-  plot(pause);
+  plot->Clear();
+  plot->Surface(K);
+  plot->Surface(KD1);
+  plot->Surface(KD2);
+  plot->update(pause);
 }

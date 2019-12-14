@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -12,7 +12,7 @@
 #include <Optim/convert.h>
 
 void setTasks(KOMO& MP,
-              rai::Shape &endeff,
+              rai::Shape& endeff,
               rai::Shape& target,
               byte whichAxesToAlign,
               uint iterate,
@@ -22,25 +22,25 @@ void setTasks(KOMO& MP,
 struct sPR2EndPoseProblem {
   rai::Configuration world;
   KOMO MP;
-  Convert *CP;
+  Convert* CP;
   sPR2EndPoseProblem()
     :world("model.kvg"), MP(world), CP(nullptr) {}
 };
 
 PR2EndPoseProblem::PR2EndPoseProblem()
   : s(*(new sPR2EndPoseProblem())) {
-  
-  for(rai::Shape *sh:s.world.shapes) sh->cont=true;
-  
+
+  for(rai::Shape* sh:s.world.shapes) sh->cont=true;
+
   setTasks(s.MP, *s.world.getShapeByName("endeff"), *s.world.getShapeByName("target"), 0, 1, 0, 5.);
-  
+
   s.CP = new Convert(s.MP.komo_problem);
   ConstrainedProblem::operator=(*s.CP);  //conv_KOrderMarkovFunction2ConstrainedProblem(s.MP.komo_problem) );
 }
 
 arr PR2EndPoseProblem::getInitialization() {
   arr x = s.MP.getInitialization();
-  rndGauss(x,.01,true); //don't initialize at a singular config
+  rndGauss(x, .01, true); //don't initialize at a singular config
   return x;
 }
 

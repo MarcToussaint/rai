@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -32,27 +32,27 @@ void GamepadControlThread::open() {
 
 void GamepadControlThread::step() {
   if(!g2t) {
-    TaskControlThread *taskController = getThread<TaskControlThread>("TaskControlThread");
-    CHECK(taskController,"that didn't work");
+    TaskControlThread* taskController = getThread<TaskControlThread>("TaskControlThread");
+    CHECK(taskController, "that didn't work");
     taskController->waitForStatusSmallerThan(tsToOpen);
     tc = taskController->taskController;
     if(!tc) return;
     g2t = new Gamepad2Tasks(*tc, modelWorld.get(), taskController->q0);
-    
+
     ctrlTasks.writeAccess();
 //    taskController->taskController->qNullCostRef.active = false;
-    for(CtrlTask *t:ctrlTasks()) t->active = false;
+    for(CtrlTask* t:ctrlTasks()) t->active = false;
     ctrlTasks().append(g2t->getTasks());
     ctrlTasks.deAccess();
   }
-  
+
   arr gamepad = gamepadState.get();
   ctrlTasks.writeAccess();
   g2t->updateTasks(gamepad, modelWorld.get());
   ctrlTasks.deAccess();
-  
+
   if(step_count>10 && stopButtons(gamepad)) threadClose();
-  
+
 //  if(step_count>10 && gamepad_shutdown) moduleShutdown()->incrementValue();
 }
 

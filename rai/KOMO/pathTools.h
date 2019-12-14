@@ -1,35 +1,44 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2019 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include <Core/array.h>
+#include <Kin/kin.h>
+#include <Algo/spline.h>
 
-arr getVelocities(const arr& q, double tau) {
-  arr v;
-  v.resizeAs(q);
-  for(uint t=1; t<q.d0-1; t++) {
-    v[t] = (q[t+1]-q[t-1])/(2.*tau);
-  }
-  v[0] = (q[1] - q[0])/tau;
-  v[T] = (q[T] - q[T-1])/tau;
-  return v;
-}
+//-- PATH ANALYSIS
 
-void getAccelerations(const arr& q, double tau) {
-  arr a;
-  a.resizeAs(q);
-  for(uint t=1; t<q.d0-1; t++)  a[t] = (q[t+1] + q[t-1] - 2.*q[t])/(tau*tau);
-  a[0] = a[1]/2.;
-  a[T] = a[T-1]/2.;
-  return a;
-}
+//central finite differencing to get velocities/acc (in same time resolution)
+arr getVelocities_centralDifference(const arr& q, double tau);
+arr getAccelerations_centralDifference(const arr& q, double tau);
 
-arr sineProfile(const arr& q0, const arr& qT,uint T) {
-  arr q(T+1,q0.N);
-  for(uint t=0; t<=T; t++) q[t] = q0 + .5 * (1.-cos(RAI_PI*t/T)) * (qT-q0);
-  return q;
-}
+double getNaturalDuration(const arr& q, double maxVel=1., double maxAcc=1.);
 
-arr reverseTrajectory(const arr& q) {
-  uint T=q.d0-1;
-  arr r(T+1, q.d1);
-  for(uint t=0; t<=T; t++) r[T-t] = q[t];
-  return r;
-}
+rai::Spline getSpline(const arr& q, uint degree=2);
+
+//test max velocities, collision avoidance, consistence with q_now
+rai::String validatePath(const rai::Configuration& _C, const arr& q_now, const StringA& joints, const arr& q, const arr& times);
+
+//-- PATH GENERATION
+
+//generate a sine motion profile from q0 to qT in T steps
+arr getSineProfile(const arr& q0, const arr& qT, uint T);
+
+//call KOMO to compute a collision free start-goal path
+std::pair<arr, arr> getStartGoalPath(const rai::Configuration& K, const arr& target_q, const StringA& target_joints= {}, const char* endeff=nullptr, double up=.2, double down=.8);
+
+//-- PATH MODIFICATION
+
+//return the same path backward
+arr reversePath(const arr& q);
+
+//append a reverse version of path to itself, including times
+void mirrorDuplicate(std::pair<arr, arr>& path);
+
+//convert to spline, then resample to new length
+arr path_resample(const arr& q, double durationScale);
 

@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -21,28 +21,28 @@ struct PR2Interface : Thread {
   VAR(CtrlMsg, ctrl_ref)
   VAR(CtrlMsg, ctrl_obs)
   VAR(AlvarMarkers, ar_pose_markers)
-  
+
   rai::Configuration* realWorld;
   rai::Configuration* modelWorld;
-  
+
   DynamicSimulation* dynamicSimulation;
-  
+
   TaskSpaceController* controller;
-  
+
   CtrlMsg ctrlMsg;
-  
+
   bool logState = true;
   arr logT, logQRef, logQObs, logQDotRef, logQDotObs, logUObs, logU0, logKp, logKd, logFLObs, logFRObs, logKiFt, logJ_ft_inv, logFRef;
   std::map<rai::String, arr> logMap;
-  
+
   arr lGripperRef, rGripperRef, torsoLiftRef;
-  
+
   bool useROS = false;
-  
+
   PR2Interface();
   ~PR2Interface() {threadCloseModules();}
   virtual void step();
-  
+
   void initialize(rai::Configuration* realWorld, rai::Configuration* realWorldSimulation, rai::Configuration* modelWorld, TaskSpaceController* controller = nullptr);
   void initialize(rai::Configuration* realWorld, rai::Configuration* modelWorld, TaskSpaceController* controller = nullptr);
   void startInterface();

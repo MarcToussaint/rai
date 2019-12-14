@@ -1,3 +1,10 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2019 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
 
 /*  ------------------------------------------------------------------
     Copyright (c) 2017 Marc Toussaint
@@ -65,7 +72,7 @@ struct sBaxterInterface {
 baxter_core_msgs::JointCommand conv_qRef2baxterMessage(const arr& q_ref, const rai::Configuration& baxterModel, const char* prefix) {
   baxter_core_msgs::JointCommand msg;
   msg.mode = 1;
-  for(rai::Joint *j:baxterModel.activeJoints) if(j->frame->name.startsWith(prefix)) {
+  for(rai::Joint* j:baxterModel.activeJoints) if(j->frame->name.startsWith(prefix)) {
       msg.command.push_back(q_ref(j->qIndex));
       msg.names.push_back(j->frame->name.p);
     }
@@ -79,9 +86,9 @@ bool baxter_get_q_qdot_u(arr& q, arr& v, arr& u, const sensor_msgs::JointState& 
   if(!!v && v.N!=baxterModel.q.N) v.resize(baxterModel.q.N).setZero();
   if(!!u && u.N!=baxterModel.q.N) u.resize(baxterModel.q.N).setZero();
   for(uint i=0; i<n; i++) {
-    rai::Frame *f = baxterModel.getFrameByName(msg.name[i].c_str(), false);
-    if(f){
-      rai::Joint *j = f->joint;
+    rai::Frame* f = baxterModel.getFrameByName(msg.name[i].c_str(), false);
+    if(f) {
+      rai::Joint* j = f->joint;
       if(j) {
         if(!!q) q(j->qIndex) = msg.position[i];
         if(!!v) v(j->qIndex) = msg.velocity[i];
@@ -94,7 +101,7 @@ bool baxter_get_q_qdot_u(arr& q, arr& v, arr& u, const sensor_msgs::JointState& 
 
 baxter_core_msgs::HeadPanCommand getHeadMsg(const arr& q_ref, const rai::Configuration& baxterModel) {
   baxter_core_msgs::HeadPanCommand msg;
-  rai::Joint *j = baxterModel.getFrameByName("head_pan")->joint;
+  rai::Joint* j = baxterModel.getFrameByName("head_pan")->joint;
   msg.target = q_ref(j->qIndex);
   msg.speed_ratio = 1.;
   return msg;
@@ -102,18 +109,18 @@ baxter_core_msgs::HeadPanCommand getHeadMsg(const arr& q_ref, const rai::Configu
 
 baxter_core_msgs::EndEffectorCommand getElectricGripperMsg(const arr& q_ref, const rai::Configuration& baxterModel) {
   baxter_core_msgs::EndEffectorCommand msg;
-  rai::Joint *j = baxterModel.getFrameByName("r_gripper_l_finger_joint")->joint;
+  rai::Joint* j = baxterModel.getFrameByName("r_gripper_l_finger_joint")->joint;
   rai::String str;
-  
+
   bool position = bool(q_ref(j->qIndex));
 
 //  str <<"{ \"position\":" <<1000.*q_ref(j->qIndex) <<", \"dead zone\":5.0, \"force\": 40.0, \"holding force\": 30.0, \"velocity\": 50.0 }";
   str <<"{ \"position\":" << position<<", \"dead zone\":5.0, \"force\": 40.0, \"holding force\": 30.0, \"velocity\": 50.0 }";
-  
+
   msg.id = 65538;
-  if(position){
+  if(position) {
     msg.command = msg.CMD_GRIP; //CMD_GO;
-  }else{
+  } else {
     msg.command = msg.CMD_RELEASE;
   }
   msg.args = str.p;
@@ -124,17 +131,17 @@ baxter_core_msgs::EndEffectorCommand getElectricGripperMsg(const arr& q_ref, con
 
 baxter_core_msgs::EndEffectorCommand getVacuumGripperMsg(const arr& q_ref, const rai::Configuration& baxterModel) {
   baxter_core_msgs::EndEffectorCommand msg;
-  rai::Joint *j = baxterModel.getFrameByName("l_gripper_l_finger_joint")->joint;
+  rai::Joint* j = baxterModel.getFrameByName("l_gripper_l_finger_joint")->joint;
   rai::String str;
-  
+
   bool suction = bool(q_ref(j->qIndex));
 
   str <<"{ \"blowing\" : false,\n  \"suction\" : "<<suction<<",\n  \"vacuum\" : false,\n \"vacuum threshold\" : 46}";
-  
+
   msg.id = 65537;
-  if(suction){
+  if(suction) {
     msg.command = msg.CMD_GRIP;
-  }else{
+  } else {
     msg.command = msg.CMD_RELEASE;
   }
   msg.args = str.p;
@@ -160,19 +167,19 @@ void SendPositionCommandsToBaxter::step() {
   if(s) {
     arr q_ref = ctrl_ref.get()->q;
     if(!q_ref.N) return;
-    
+
     if(totalTorqueModeL)
       s->pubLg.publish(std_msgs::Empty());
-      
+
     if(totalTorqueModeR)
       s->pubRg.publish(std_msgs::Empty());
-      
+
     if(enablePositionControlL && !totalTorqueModeL)
       s->pubL.publish(conv_qRef2baxterMessage(q_ref, s->baxterModel, "left_"));
-      
+
     if(enablePositionControlR && !totalTorqueModeR)
       s->pubR.publish(conv_qRef2baxterMessage(q_ref, s->baxterModel, "right_"));
-      
+
     s->pubHead.publish(getHeadMsg(q_ref, s->baxterModel));
     s->pubGripperR.publish(getElectricGripperMsg(q_ref, s->baxterModel));
     s->pubGripperL.publish(getVacuumGripperMsg(q_ref, s->baxterModel));
@@ -186,40 +193,39 @@ void SendPositionCommandsToBaxter::close() {
   if(s) delete s;
 }
 
-BaxterInterface::BaxterInterface(bool useRosDefault) : s(0){
+BaxterInterface::BaxterInterface(bool useRosDefault) : s(0) {
   s = new sBaxterInterface(useRosDefault);
 }
 
-BaxterInterface::~BaxterInterface(){
+BaxterInterface::~BaxterInterface() {
   delete s;
 }
 
-arr BaxterInterface::get_q(){
+arr BaxterInterface::get_q() {
   arr q;
   baxter_get_q_qdot_u(q, NoArr, NoArr, s->state.get(), s->baxterModel);
   return q;
 }
 
-arr BaxterInterface::get_qdot(){
+arr BaxterInterface::get_qdot() {
   arr qdot;
   baxter_get_q_qdot_u(NoArr, qdot, NoArr, s->state.get(), s->baxterModel);
   return qdot;
 }
 
-arr BaxterInterface::get_u(){
+arr BaxterInterface::get_u() {
   arr u;
   baxter_get_q_qdot_u(NoArr, NoArr, u, s->state.get(), s->baxterModel);
   return u;
 }
 
-bool BaxterInterface::get_grabbed(const std::string& whichArm){
+bool BaxterInterface::get_grabbed(const std::string& whichArm) {
   bool grabbed;
   baxter_core_msgs::EndEffectorState msgs;
 
-  if(whichArm=="left"){
+  if(whichArm=="left") {
     msgs = s->gripL.get();
-  }
-  else{
+  } else {
     msgs = s->gripR.get();
   }
   grabbed=bool(int(msgs.gripping));
@@ -227,29 +233,27 @@ bool BaxterInterface::get_grabbed(const std::string& whichArm){
   return grabbed;
 }
 
-bool BaxterInterface::get_opened(const std::string& whichArm){
+bool BaxterInterface::get_opened(const std::string& whichArm) {
   bool opened, grabbed;
   baxter_core_msgs::EndEffectorState msgs;
 
-  if(whichArm=="left"){
+  if(whichArm=="left") {
     msgs = s->gripL.get();
-  }
-  else{
+  } else {
     msgs = s->gripR.get();
   }
   grabbed=get_grabbed(whichArm);
 
-  if(msgs.position>90 && !get_grabbed(whichArm)){
+  if(msgs.position>90 && !get_grabbed(whichArm)) {
     opened=true;
-  }
-  else{
+  } else {
     opened=false;
   }
 
   return opened;
 }
 
-void BaxterInterface::send_q(const arr& q_ref, bool enableL, bool enableR){
+void BaxterInterface::send_q(const arr& q_ref, bool enableL, bool enableR) {
   if(enableL)
     s->pubL.publish(conv_qRef2baxterMessage(q_ref, s->baxterModel, "left_"));
 
@@ -279,21 +283,20 @@ void SendPositionCommandsToBaxter::close() { NICO }
 
 #endif
 
-
 #endif
 #else
 
-BaxterInterface::BaxterInterface(bool useRosDefault){ NICO }
-BaxterInterface::~BaxterInterface(){ NICO }
+BaxterInterface::BaxterInterface(bool useRosDefault) { NICO }
+BaxterInterface::~BaxterInterface() { NICO }
 
-arr BaxterInterface::get_q(){ NICO }
-arr BaxterInterface::get_qdot(){ NICO }
-arr BaxterInterface::get_u(){ NICO }
+arr BaxterInterface::get_q() { NICO }
+arr BaxterInterface::get_qdot() { NICO }
+arr BaxterInterface::get_u() { NICO }
 
-bool BaxterInterface::get_grabbed(const std::string& whichArm){ NICO }
-bool BaxterInterface::get_opened(const std::string& whichArm){ NICO }
+bool BaxterInterface::get_grabbed(const std::string& whichArm) { NICO }
+bool BaxterInterface::get_opened(const std::string& whichArm) { NICO }
 
-void BaxterInterface::send_q(const arr& q_ref, bool enableL, bool enableR){ NICO }
+void BaxterInterface::send_q(const arr& q_ref, bool enableL, bool enableR) { NICO }
 
 #endif
 

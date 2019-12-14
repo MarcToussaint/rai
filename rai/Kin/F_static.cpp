@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -11,24 +11,24 @@
 
 F_netForce::F_netForce(int iShape, bool _transOnly, bool _zeroGravity) : i(iShape), transOnly(_transOnly) {
   order=0;
-  if(_zeroGravity){
+  if(_zeroGravity) {
     gravity = 0.;
-  }else{
+  } else {
     gravity = rai::getParameter<double>("F_static/gravity", 9.81);
   }
 }
 
-void F_netForce::phi(arr &y, arr &J, const rai::Configuration& K) {
-  rai::Frame *a = K.frames(i);
+void F_netForce::phi(arr& y, arr& J, const rai::Configuration& K) {
+  rai::Frame* a = K.frames(i);
 
   arr force = zeros(3);
   arr torque = zeros(3);
   arr Jforce, Jtorque;
-  if(!!J){
+  if(!!J) {
     Jforce = Jtorque = zeros(3, K.getJointStateDimension());
   }
 
-  if(gravity){
+  if(gravity) {
     double mass=.1;
     if(a->inertia) mass = a->inertia->mass;
     force(2) += gravity * mass;
@@ -40,22 +40,22 @@ void F_netForce::phi(arr &y, arr &J, const rai::Configuration& K) {
   FrameL F;
   F.append(a);
   a->getRigidSubFrames(F);
-  for(rai::Frame *f:F){
-    for(rai::Contact *con:f->contacts){
+  for(rai::Frame* f:F) {
+    for(rai::Contact* con:f->contacts) {
       CHECK(&con->a==f || &con->b==f, "");
       contacts.append(con);
-      signs.append( (&con->a==f ? +1. : -1.) );
+      signs.append((&con->a==f ? +1. : -1.));
     }
   }
 
 #if 0
-  for(rai::Contact *con:a->contacts){
+  for(rai::Contact* con:a->contacts) {
     double sign = +1.;
     CHECK(&con->a==a || &con->b==a, "");
     if(&con->b==a) sign=-1.;
 #else
-  for(uint i=0;i<contacts.N;i++){
-    rai::Contact *con = contacts(i);
+  for(uint i=0; i<contacts.N; i++) {
+    rai::Contact* con = contacts(i);
     double sign = signs(i);
 #endif
 
@@ -64,19 +64,19 @@ void F_netForce::phi(arr &y, arr &J, const rai::Configuration& K) {
     K.kinematicsContactForce(f, Jf, con);
 
     //get the POA
-    arr cp, Jcp;
-    K.kinematicsContactPOA(cp, Jcp, con);
+    arr poa, Jpoa;
+    K.kinematicsContactPOA(poa, Jpoa, con);
 
     //get object center
     arr p, Jp;
     K.kinematicsPos(p, Jp, a);
 
     force -= sign * con->force;
-    if(!transOnly) torque += sign * crossProduct(cp-p, con->force);
+    if(!transOnly) torque += sign * crossProduct(poa-p, con->force);
 
-    if(!!J){
+    if(!!J) {
       Jforce -= sign * Jf;
-      if(!transOnly) Jtorque += sign * (skew(cp-p) * Jf - skew(con->force) * (Jcp-Jp));
+      if(!transOnly) Jtorque += sign * (skew(poa-p) * Jf - skew(con->force) * (Jpoa-Jp));
     }
   }
 
@@ -92,7 +92,7 @@ void F_netForce::phi(arr &y, arr &J, const rai::Configuration& K) {
   }
 }
 
-uint F_netForce::dim_phi(const rai::Configuration& K){
+uint F_netForce::dim_phi(const rai::Configuration& K) {
   if(transOnly) return 3;
   return 6;
 }

@@ -1,5 +1,4 @@
 
-
 #include <Kin/frame.h>
 #include <Kin/cameraview.h>
 #include <Gui/viewer.h>

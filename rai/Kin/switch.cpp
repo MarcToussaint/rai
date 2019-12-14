@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -63,7 +63,7 @@ rai::KinematicSwitch::KinematicSwitch(SwitchType _symbol, JointType _jointType, 
 }
 
 rai::KinematicSwitch::KinematicSwitch(rai::SwitchType op, rai::JointType type, const char* ref1, const char* ref2, const rai::Configuration& K, rai::SwitchInitializationType _init, int _timeOfApplication, const rai::Transformation& jFrom, const rai::Transformation& jTo)
-  : KinematicSwitch(op, type, initIdArg(K,ref1), initIdArg(K,ref2), _init, _timeOfApplication, jFrom, jTo)
+  : KinematicSwitch(op, type, initIdArg(K, ref1), initIdArg(K, ref2), _init, _timeOfApplication, jFrom, jTo)
 {}
 
 void rai::KinematicSwitch::setTimeOfApplication(double time, bool before, int stepsPerPhase, uint T) {
@@ -72,29 +72,33 @@ void rai::KinematicSwitch::setTimeOfApplication(double time, bool before, int st
 }
 
 void rai::KinematicSwitch::apply(Configuration& K) {
-  Frame *from=nullptr, *to=nullptr;
+  Frame* from=nullptr, *to=nullptr;
   if(fromId!=-1) from=K.frames(fromId);
   if(toId!=-1) to=K.frames(toId);
 
   if(symbol==SW_joint || symbol==SW_joint) {
+    rai::Transformation orgX = to->ensure_X();
+
     //first find link frame above 'to', and make it a root
-    rai::Frame *link = to->getUpwardLink(NoTransformation, false); //THIS IS A PROBLEM FOR THE CRAWLER!
+#if 0 //THIS is the standard version that worked with pnp LGP tests - but is a problem for the crawler
+    rai::Frame* link = to->getUpwardLink(NoTransformation, false);
     if(link->parent) link->unLink();
-//    K.reconfigureRoot(to, true); //TODO: really? do you need this when you took the link??
+#else //THIS is the version that works for the crawler; I guess the major difference is 'upward until part break' and 'flip frames'
+    K.reconfigureRoot(to, true);
+#endif
 
     //create a new joint
-    rai::Transformation orgX = to->ensure_X();
     to->linkFrom(from, false);
-    Joint *j = new Joint(*to);
+    Joint* j = new Joint(*to);
     j->setType(jointType);
 
     if(!jA.isZero()) j->frame->insertPreLink(jA);
-    if(!jB.isZero()){ HALT("only to be careful: does the orgX still work?"); j->frame->insertPostLink(jB); }
+    if(!jB.isZero()) { HALT("only to be careful: does the orgX still work?"); j->frame->insertPostLink(jB); }
 
     //initialize to zero, copy, or random
     if(init==SWInit_zero) { //initialize the joint with zero transform
       j->frame->Q.setZero();
-    }else if(init==SWInit_copy) { //set Q to the current relative transform, modulo DOFs
+    } else if(init==SWInit_copy) { //set Q to the current relative transform, modulo DOFs
       j->frame->Q = orgX / j->frame->parent->ensure_X(); //that's important for the initialization of x during the very first komo.setupConfigurations !!
       //cout <<j->frame->Q <<' ' <<j->frame->Q.rot.normalization() <<endl;
       arr q = j->calc_q_from_Q(j->frame->Q);
@@ -110,36 +114,40 @@ void rai::KinematicSwitch::apply(Configuration& K) {
 
     //K.reset_q();
     //K.calc_q(); K.checkConsistency();
+//    {
+//      static int i=0;
+//      FILE(STRING("z.switch_"<<i++<<".g")) <<K;
+//    }
     return;
   }
-  
+
   if(symbol==SW_noJointLink) {
     CHECK_EQ(jointType, JT_none, "");
-    
+
     if(to->parent) to->unLink();
     to->linkFrom(from, true);
-    
+
     K.reset_q();
     return;
   }
-  
+
   if(symbol==makeDynamic) {
     CHECK_EQ(jointType, JT_none, "");
     CHECK_EQ(to, 0, "");
     CHECK(from->inertia, "can only make frames with intertia dynamic");
-    
+
     from->inertia->type=rai::BT_dynamic;
     if(from->joint) {
       from->joint->H = 1e-1;
     }
     return;
   }
-  
+
   if(symbol==makeKinematic) {
     CHECK_EQ(jointType, JT_none, "");
     CHECK_EQ(to, 0, "");
     CHECK(from->inertia, "can only make frames with intertia kinematic");
-    
+
     from->inertia->type=rai::BT_kinematic;
 //    if(from->joint){
 //      from->joint->constrainToZeroVel=false;
@@ -156,8 +164,8 @@ void rai::KinematicSwitch::apply(Configuration& K) {
 
   if(symbol==SW_delContact) {
     CHECK_EQ(jointType, JT_none, "");
-    rai::Contact *c = nullptr;
-    for(rai::Contact *cc:to->contacts) if(&cc->a==from || &cc->b==from){ c=cc; break; }
+    rai::Contact* c = nullptr;
+    for(rai::Contact* cc:to->contacts) if(&cc->a==from || &cc->b==from) { c=cc; break; }
     if(!c) HALT("not found");
     delete c;
     return;
@@ -191,17 +199,17 @@ void rai::KinematicSwitch::write(std::ostream& os, rai::Configuration* K) const 
 /*
 rai::KinematicSwitch* rai::KinematicSwitch::newSwitch(const Node *specs, const rai::Configuration& world, int stepsPerPhase, uint T) {
   if(specs->parents.N<2) return nullptr;
-  
+
   //-- get tags
   rai::String& tt=specs->parents(0)->keys.last();
   rai::String& type=specs->parents(1)->keys.last();
   const char *ref1=nullptr, *ref2=nullptr;
   if(specs->parents.N>2) ref1=specs->parents(2)->keys.last().p;
   if(specs->parents.N>3) ref2=specs->parents(3)->keys.last().p;
-  
+
   if(tt!="MakeJoint") return nullptr;
   rai::KinematicSwitch* sw = newSwitch(type, ref1, ref2, world, stepsPerPhase + 1);
-  
+
   if(specs->isGraph()) {
     const Graph& params = specs->graph();
     sw->setTimeOfApplication(params.get<double>("time",1.), params.get<bool>("time", false), stepsPerPhase, T);

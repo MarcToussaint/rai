@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2019 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #pragma once
 
 #include <LGP/LGP_tree.h>
@@ -5,26 +13,26 @@
 
 #include "ry.h"
 
-namespace ry{
+namespace ry {
 
-  typedef Var<rai::Configuration> Config;
+typedef Var<rai::Configuration> Config;
 
-  struct LGPpy_self : LGP_Tree{
-    Config& kin;
-    rai::Configuration K;
-    FOL_World L;
+struct LGPpy_self : LGP_Tree {
+  Config& kin;
+  rai::Configuration K;
+  FOL_World L;
 
-    LGPpy_self(Config& _kin, const std::string& folFileName);
-    ~LGPpy_self();
-  };
+  LGPpy_self(Config& _kin, const std::string& folFileName);
+  ~LGPpy_self();
+};
 
-  struct LGPpy{
-    ptr<LGPpy_self> self;
+struct LGPpy {
+  ptr<LGPpy_self> self;
 
-    LGPpy(Config& _kin, const std::string& folFileName);
-    ~LGPpy();
+  LGPpy(Config& _kin, const std::string& folFileName);
+  ~LGPpy();
 
-    void optimizeFixedSequence(const std::string& seq);
-  };
+  void optimizeFixedSequence(const std::string& seq);
+};
 
 }

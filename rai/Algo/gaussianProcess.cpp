@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -11,7 +11,7 @@
 #define RAI_GP_DEBUG 0
 
 /** prior of 0 */
-double const_0(const arr &x, const void *p) {return 0.;}
+double const_0(const arr& x, const void* p) {return 0.;}
 
 GaussianProcess::GaussianProcess() :
   mu(0.),
@@ -24,7 +24,7 @@ GaussianProcess::GaussianProcess() :
 /** set Gauss cov function, its parameters, and GP prior
  */
 void GaussianProcess::setGaussKernelGP(
-  void *_kernelP,
+  void* _kernelP,
   double _mu) {
   mu = _mu;
   mu_func = const_0;
@@ -41,9 +41,9 @@ void GaussianProcess::setGaussKernelGP(
 /** set Gauss cov function, its parameters, and GP prior
  */
 void GaussianProcess::setGaussKernelGP(
-  void *_kernelP,
+  void* _kernelP,
   double(*_mu)(const arr&, const void*),
-  void *_priorP) {
+  void* _priorP) {
   mu_func = _mu;
   priorP = _priorP;
   mu = 0;
@@ -148,7 +148,7 @@ void GaussianProcess::evaluate(const arr& x, double& y, double& sig, bool calcSi
   for(i=0; i<N; i++) { xi.referToDim(X, i); k(i)=cov(kernelP, x, xi); }
   //derivative observations
   for(i=0; i<dN; i++) { xi.referToDim(dX, i); k(N+i)=covF_D(dI(i), kernelP, x, xi); }
-  
+
   y = scalarProduct(k, GinvY) + mu_func(x, priorP) + mu;
   if(calcSig) {
     innerProduct(Ginvk, Ginv, k);
@@ -177,7 +177,7 @@ double GaussianProcess::log_likelihood() {
 void GaussianProcess::k_star(const arr& x, arr& k) {
   uint i, N=Y.N, dN=dY.N;
   arr xi;
-  
+
   if(k.N!=N+dN) k.resize(N+dN);
   for(i=0; i<N; i++) { xi.referToDim(X, i); k(i)=cov(kernelP, x, xi); }
   for(i=0; i<dN; i++) { xi.referToDim(dX, i); k(N+i)=covF_D(dI(i), kernelP, x, xi); }
@@ -187,7 +187,7 @@ void GaussianProcess::k_star(const arr& x, arr& k) {
 void GaussianProcess::dk_star(const arr& x, arr& k) {
   uint i, j, N=Y.N, dN=dY.N, d=x.N;
   arr xi;
-  
+
   if(k.N!=N+dN) k.resize(N+dN, d);
   for(j=0; j<d; ++j) {
     for(i=0; i<N; i++) {
@@ -247,7 +247,7 @@ the resulting \(\nabla f(x) \) is vector of the dimensionality of the GP
 *
 */
 void GaussianProcess::gradient(arr& grad, const arr& x) {
-  CHECK(X.N || dX.N , "can't recompute gradient without data");
+  CHECK(X.N || dX.N, "can't recompute gradient without data");
   CHECK((X.N && x.N==X.d1) || (dX.N && x.N==dX.d1), "dimensions don't match!");
   uint i, d, N=Y.N, dN=dY.N, dim;
   dim = X.d1?X.d1:dX.d1;
@@ -338,7 +338,7 @@ end
 */
 void GaussianProcess::hessianPos(arr& hess, const arr& x) {
   //Danny: I think that this is wrong.. Or at least numerical Hessian checking fails
-  CHECK(X.N || dX.N , "can't recompute Hessian without data");
+  CHECK(X.N || dX.N, "can't recompute Hessian without data");
   CHECK((X.N && x.N==X.d1) || (dX.N && x.N==dX.d1), "dimensions don't match!");
   uint i, j, n, N=Y.N, dN=dY.N, dim;
   dim = X.d1?X.d1:dX.d1;

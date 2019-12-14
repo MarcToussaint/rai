@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -25,7 +25,7 @@ RRT::RRT(const arr& q0, double _stepsize) : s(new sRRT()) {
 double RRT::getProposalTowards(arr& proposal, const arr& q) {
   //find NN
   s->nearest=s->ann.getNN(q);
-  
+
   //compute little step
   arr d = q - s->ann.X[s->nearest]; //difference vector between q and nearest neighbor
   double dist = length(d);
