@@ -92,17 +92,17 @@ void BayesOpt::report(bool display, const ScalarFunction& f) {
 #if 1
   HALT("dependence on plot deprecated")
 #else
-  plotGnuplot();
-  plotClear();
-  plotFunctionPrecision(X_grid, y_grid, y_grid+s_grid, y_grid-s_grid);
-//  plotFunction(X_grid, y2_grid);
-  plotFunction(X_grid, y_grid-2.*s_grid);
-  plotFunction(X_grid, y2_grid-2.*s2_grid);
-  if(f) plotFunction(X_grid, f_grid);
-  plotPoints(data_X, data_y);
-//  plotPoints(locmin_X, locmin_y);
-//  plotPoints(locmin2_X, locmin2_y);
-  plot(false);
+  plot->Gnuplot();
+  plot->Clear();
+  plot->FunctionPrecision(X_grid, y_grid, y_grid+s_grid, y_grid-s_grid);
+//  plot->Function(X_grid, y2_grid);
+  plot->Function(X_grid, y_grid-2.*s_grid);
+  plot->Function(X_grid, y2_grid-2.*s2_grid);
+  if(f) plot->Function(X_grid, f_grid);
+  plot->Points(data_X, data_y);
+//  plot->Points(locmin_X, locmin_y);
+//  plot->Points(locmin2_X, locmin2_y);
+  plot->update(false);
 #endif
 }
 

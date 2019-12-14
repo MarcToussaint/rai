@@ -31,13 +31,13 @@ void Spline::clear() {
   basis_timeGradient.clear();
 }
 
-void Spline::plotBasis() {
-  plotClear();
+void Spline::plotBasis(PlotModule& plt) {
+  plt.Clear();
   arr b_sum(basis.d0);
   tensorMarginal(b_sum, basis_trans, TUP(1u));
-  plotFunction(b_sum, -1, 1);
-  for(uint i=0; i<points.d0; i++) plotFunction(basis_trans[i], -1, 1);
-  plot();
+  plt.Function(b_sum, -1, 1);
+  for(uint i=0; i<points.d0; i++) plt.Function(basis_trans[i], -1, 1);
+  plt.update();
 }
 
 arr Spline::getCoeffs(double t, uint K, uint derivative) const {
