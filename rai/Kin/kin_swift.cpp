@@ -256,6 +256,12 @@ void SwiftInterface::pullFromSwift(rai::Configuration& world, bool dumpReport) {
     world.proxies.clear();
     cout <<"... catching error '" <<e.what() <<"' -- SWIFT failed! .. no proxies for this posture!!..." <<endl;
     return;
+  } catch(std::pair<int,int>& e) {
+    world.proxies.clear();
+    cout <<"... catching error at pair ("
+        <<e.first <<'(' <<world.frames(INDEXswift2frame(e.first))->name <<") "
+        <<e.second <<'(' <<world.frames(INDEXswift2frame(e.second))->name <<") -- SWIFT failed! .. no proxies for this posture!!..." <<endl;
+    return;
   }
 
   if(dumpReport) {

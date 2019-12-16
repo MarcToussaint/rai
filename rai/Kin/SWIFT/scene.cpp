@@ -942,9 +942,10 @@ bool SWIFT_Scene::Query_Intersection(
         while( pair != nullptr ) {
             o1 = pair->Id0();
             o2 = pair->Id1();
-            if( pair->Tolerance( objects[o1], objects[o2],
-                                 0.0 )
-            ) {
+            try {
+              if( pair->Tolerance( objects[o1], objects[o2],
+                                   0.0 )
+                  ) {
                 if( early_exit ) {
                     num_pairs = 0;
                     return true;
@@ -952,6 +953,10 @@ bool SWIFT_Scene::Query_Intersection(
                 ois[k] = user_object_ids[o1];
                 ois[k+1] = user_object_ids[o2];
                 k += 2;
+              }
+            } catch(const char* msg) {
+              std::cerr <<"... catching error '" <<msg <<"' -- in pair " <<o1 <<' ' <<o2 <<endl;
+              throw std::pair<int,int>(o1,o2);
             }
             pair = pair->Next();
         }
@@ -1011,6 +1016,7 @@ bool SWIFT_Scene::Query_Tolerance_Verification( bool early_exit,
         while( pair != nullptr ) {
             o1 = pair->Id0();
             o2 = pair->Id1();
+            try {
             if( pair->Tolerance( objects[o1], objects[o2], tolerance ) ) {
                 if( early_exit ) {
                     num_pairs = 0;
@@ -1019,6 +1025,10 @@ bool SWIFT_Scene::Query_Tolerance_Verification( bool early_exit,
                 ois[k] = user_object_ids[o1];
                 ois[k+1] = user_object_ids[o2];
                 k += 2;
+            }
+            } catch(const char* msg) {
+              std::cerr <<"... catching error '" <<msg <<"' -- in pair->Tolerance (" <<o1 <<' ' <<o2 <<") -- continuing!" <<endl;
+//              throw std::pair<int,int>(o1,o2);
             }
             pair = pair->Next();
         }
@@ -1034,6 +1044,7 @@ bool SWIFT_Scene::Query_Tolerance_Verification( bool early_exit,
                 }
                 o1 = objects[i]->Pairs()[j].Id0();
                 o2 = objects[i]->Pairs()[j].Id1();
+                try {
                 if( objects[i]->Pairs()[j].Tolerance( objects[o1], objects[o2],
                                                       tolerance )
                 ) {
@@ -1044,6 +1055,10 @@ bool SWIFT_Scene::Query_Tolerance_Verification( bool early_exit,
                     ois[k] = user_object_ids[o1];
                     ois[k+1] = user_object_ids[o2];
                     k += 2;
+                }
+                } catch(const char* msg) {
+                  std::cerr <<"... catching error '" <<msg <<"' -- in pair->Tolerance (" <<o1 <<' ' <<o2 <<") -- continuing!" <<endl;
+    //              throw std::pair<int,int>(o1,o2);
                 }
             }
         }

@@ -78,6 +78,23 @@ inline arr summarizeErrors(const arr& phi, const ObjectiveTypeA& tt) {
 
 //===========================================================================
 //
+// accumulative constraints
+//
+
+inline void accumulateInequalities(arr& y, arr& J, const arr& yAll, const arr& JAll){
+  y.resize(1).setZero();
+  if(!!J) J.resize(1,JAll.d1).setZero();
+
+  for(uint i=0;i<yAll.N;i++){
+    if(yAll.elem(i)>0.){
+      y.scalar() += yAll.elem(i);
+      if(!!J && !!JAll) J[0] += JAll[i];
+    }
+  }
+}
+
+//===========================================================================
+//
 // generic optimization options
 //
 

@@ -2938,11 +2938,9 @@ template<class T> rai::Array<T> elemWiseMax(const T& v, const rai::Array<T>& w) 
 }
 
 template<class T> rai::Array<T> elemWiseHinge(const rai::Array<T>& x) {
-  rai::Array<T> z;
-  z.resizeAs(x);
-  for(uint i=0; i<x.N; i++) z.elem(i) = x.elem(i)>0?x.elem(i):0;
+  rai::Array<T> z = x;
+  for(T& v:z) if(v<0.) v=0.;
   return z;
-
 }
 
 template<class T> void writeConsecutiveConstant(std::ostream& os, const rai::Array<T>& x) {

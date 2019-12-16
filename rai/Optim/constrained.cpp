@@ -117,6 +117,8 @@ bool OptConstrained::step() {
     newtonOnce=true;
   }
 
+  if(L.lambda.N) CHECK_EQ(L.lambda.N, L.phi_x.N, "");
+
   //run newton on the Lagrangian problem
   OptNewton::StopCriterion newtonStop = newton.stopNone;
   if(newtonOnce || opt.constrainedMethod==squaredPenaltyFixed) {
@@ -128,6 +130,8 @@ bool OptConstrained::step() {
     else                                    newtonStop = newton.run();
     newton.o.stopTolerance = stopTol;
   }
+
+  if(L.lambda.N) CHECK_EQ(L.lambda.N, L.phi_x.N, "the evaluation (within newton) changed the phi-dimensionality");
 
   if(opt.verbose>0) {
     cout <<"** optConstr. it=" <<its
