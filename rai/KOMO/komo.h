@@ -109,7 +109,7 @@ struct KOMO : NonCopyable {
 
   //-- optimizer
   bool denseOptimization=false;///< calls optimization with a dense (instead of banded) representation
-  bool sparseOptimization=true;///< calls optimization with a sparse (instead of banded) representation
+  bool sparseOptimization=false;///< calls optimization with a sparse (instead of banded) representation
   OptConstrained *opt=0;       ///< optimizer; created in run()
   arr x, dual;                 ///< the primal and dual solution
   arr z, splineB;              ///< when a spline representation is used: z are the nodes; splineB the B-spline matrix; x = splineB * z
