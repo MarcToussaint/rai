@@ -70,6 +70,7 @@ struct Configuration : GLDrawer {
   bool _state_indexedJoints_areGood=false; // the active sets, esp. their topological sorting, are up to date
   bool _state_q_isGood=false; // the q-vector represents the current relative transforms (and force dofs)
   bool _state_proxies_isGood=false; // the proxies have been created for the current state
+  //TODO: need a _state for all the plugin engines (SWIFT, PhysX)? To auto-reinitialize them when the config changed structurally?
 
   uint sparseJacobianOffset=0; // if>0, this is added to the q-index of all nonzero entries of Jacobians!
 

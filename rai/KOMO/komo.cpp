@@ -528,7 +528,7 @@ void KOMO::setHoming(double startTime, double endTime, double prec, const char* 
 //  addObjective({startTime, endTime}, make_shared<TM_Transition>(world), OT_sos, {}, NoArrprec);
 //}
 
-void KOMO::setSquaredQAccVelHoming(double startTime, double endTime, double accPrec, double velPrec, double homingPrec) {
+void KOMO::setSquaredQAccVelHoming(double startTime, double endTime, double accPrec, double velPrec, double homingPrec, int deltaFromStep, int deltaToStep) {
 
   uintA selectedBodies;
   arr scale;
@@ -543,19 +543,19 @@ void KOMO::setSquaredQAccVelHoming(double startTime, double endTime, double accP
   if(accPrec) {
     //sqr accel
     CHECK_GE(k_order, 2, "");
-    Objective* o = addObjective({startTime, endTime}, make_shared<F_qItself>(selectedBodies), OT_sos, {accPrec}, NoArr, 2);
+    Objective* o = addObjective({startTime, endTime}, make_shared<F_qItself>(selectedBodies), OT_sos, {accPrec}, NoArr, 2, deltaFromStep, deltaToStep);
     o->map->scale = accPrec*scale;
   }
   if(velPrec) {
     //sqr vel
     CHECK_GE(k_order, 1, "");
-    Objective* o = addObjective({startTime, endTime}, make_shared<F_qItself>(selectedBodies), OT_sos, {velPrec}, NoArr, 1);
+    Objective* o = addObjective({startTime, endTime}, make_shared<F_qItself>(selectedBodies), OT_sos, {velPrec}, NoArr, 1, deltaFromStep, deltaToStep);
     o->map->scale = velPrec*scale;
   }
   if(homingPrec) {
     //sqr homing
     homingPrec *= sqrt(tau);
-    addObjective({startTime, endTime}, make_shared<F_qItself>(selectedBodies, true), OT_sos, {homingPrec}, NoArr, 0);
+    addObjective({startTime, endTime}, make_shared<F_qItself>(selectedBodies, true), OT_sos, {homingPrec}, NoArr, 0, deltaFromStep, deltaToStep);
   }
 }
 
@@ -1393,13 +1393,13 @@ void KOMO::initWithConstant(const arr& q) {
 }
 
 void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, bool sineProfile) {
-  //assume waypoints correspond to phase times 1,2,3... and get steps
+  //compute in which steps (configuration time slices) the waypoints are imposed
   uintA steps(waypoints.N);
   for(uint i=0; i<steps.N; i++) {
     steps(i) = conv_time2step(conv_step2time(i, waypointStepsPerPhase), stepsPerPhase);
   }
 
-  //set the path piece-wise CONSTANT with waypoints (each waypoint may have different dimension!...)
+  //first set the path piece-wise CONSTANT at waypoints and the subsequent steps (each waypoint may have different dimension!...)
   for(uint i=0; i<steps.N; i++) {
     uint Tstop=T;
     if(i+1<steps.N && steps(i+1)<T) Tstop=steps(i+1);
@@ -1408,7 +1408,7 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, 
     }  
   }
 
-  //interpolate
+  //then interpolate w.r.t. non-switching frames within the intervals
 #if 1
   for(uint i=0; i<steps.N; i++) {
     uint i1=steps(i);
@@ -1416,7 +1416,7 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, 
     //motion profile
     if(i1<T) {
       for(uint j=i0+1; j<=i1; j++) {
-        uintA nonSwitched = getNonSwitchedBodies({configurations(k_order+j), configurations(k_order+i1)});
+        uintA nonSwitched = getNonSwitchedFrames({configurations(k_order+j), configurations(k_order+i1)});
         arr q0 = configurations(k_order+j)->getJointState(nonSwitched);
         arr q1 = configurations(k_order+i1)->getJointState(nonSwitched);
         arr q;
@@ -1526,8 +1526,8 @@ void KOMO::run_sub(const uintA& X, const uintA& Y) {
   if(verbose>0) cout <<getReport(verbose>1) <<endl;
 }
 
-void KOMO::optimize(bool initialize) {
-  if(initialize) reset();
+void KOMO::optimize(bool initialize, double initNoise) {
+  if(initialize) reset(initNoise);
   CHECK_EQ(configurations.N, T+k_order, "");
 
   if(verbose>0) reportProblem();
@@ -1611,7 +1611,7 @@ void KOMO::reportProblem(std::ostream& os) {
 //  }
 }
 
-void KOMO::checkGradients(bool dense) {
+void KOMO::checkGradients() {
   CHECK(T, "");
   if(!splineB.N) {
 #if 0
@@ -1619,9 +1619,16 @@ void KOMO::checkGradients(bool dense) {
 #else
     double tolerance=1e-4;
 
-    Conv_KOMO_ConstrainedProblem CP_komo(komo_problem);
-    ConstrainedProblem* CP=&CP_komo;
-    if(dense) CP = &dense_problem;
+    ptr<ConstrainedProblem> CP;
+
+    if(denseOptimization) {
+      CP = ptr<ConstrainedProblem>((ConstrainedProblem*)&dense_problem);
+    } else if(sparseOptimization) {
+      CP = make_shared<Conv_Graph_ConstrainedProblem>(graph_problem);
+    } else { //DEFAULT CASE
+      CP = make_shared<Conv_KOMO_ConstrainedProblem>(komo_problem);
+    }
+
 
     VectorFunction F = [CP](arr& phi, arr& J, const arr& x) {
       return CP->phi(phi, J, NoArr, NoTermTypeA, x);
@@ -1636,8 +1643,8 @@ void KOMO::checkGradients(bool dense) {
       double md=maxDiff(J[i], JJ[i], &j);
       if(md>mmd) mmd=md;
       if(md>tolerance && md>fabs(J(i, j))*tolerance) {
-        if(!dense) {
-          LOG(-1) <<"FAILURE in line " <<i <<" t=" <<CP_komo.featureTimes(i) <<' ' <<komo_problem.featureNames(i) <<" -- max diff=" <<md <<" |"<<J(i, j)<<'-'<<JJ(i, j)<<"| (stored in files z.J_*)";
+        if(!denseOptimization) {
+          LOG(-1) <<"FAILURE in line " <<i <<" t=" <</*CP_komo.featureTimes(i) <<*/' ' <<komo_problem.featureNames(i) <<" -- max diff=" <<md <<" |"<<J(i, j)<<'-'<<JJ(i, j)<<"| (stored in files z.J_*)";
         } else {
           LOG(-1) <<"FAILURE in line " <<i <<" t=" <</*CP_komo.featureTimes(i) <<' ' <<komo_problem.featureNames(i) <<*/" -- max diff=" <<md <<" |"<<J(i, j)<<'-'<<JJ(i, j)<<"| (stored in files z.J_*)";
         }
@@ -1871,7 +1878,7 @@ void KOMO::setupConfigurations() {
         sw->apply(*C);
       }
     }
-    if(useSwift && s<k_order) C->stepSwift();
+    if(useSwift) C->stepSwift(); // && s<k_order
     C->ensure_q();
     C->checkConsistency();
   }
@@ -1938,7 +1945,6 @@ void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
       if(useSwift) {
         configurations(s)->stepSwift();
 //        configurations(s)->stepFcl();
-        //configurations(s)->proxiesToContacts(1.1);
       }
       timeCollisions += rai::timerRead(true);
       x_count += x_dim;
@@ -1949,8 +1955,10 @@ void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
 
   if(animateOptimization>0) {
     if(animateOptimization>1){
-//      if(animateOptimization>2)
-//        cout <<getReport(true) <<endl;
+      if(animateOptimization>2){
+        reportProxies();
+        cout <<getReport(true) <<endl;
+      }
       displayPath(true);
     }else{
       displayPath(false);

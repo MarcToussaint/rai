@@ -40,7 +40,7 @@ SwiftInterface::~SwiftInterface() {
   //cout <<" -- SwiftInterface closed" <<endl;
 }
 
-SwiftInterface::SwiftInterface(const rai::Configuration& world, double _cutoff)
+SwiftInterface::SwiftInterface(const rai::Configuration& world, double _cutoff, int verbose)
   : scene(nullptr), cutoff(_cutoff) {
   bool r, add;
 
@@ -51,11 +51,11 @@ SwiftInterface::SwiftInterface(const rai::Configuration& world, double _cutoff)
   INDEXswift2frame.resize(world.frames.N);  INDEXswift2frame=-1;
   INDEXshape2swift.resize(world.frames.N);  INDEXshape2swift=-1;
 
-//  cout <<" -- SwiftInterface init";
+  if(verbose>0) cout <<" -- SwiftInterface init";
   rai::Shape* s;
   for(rai::Frame* f: world.frames) if((s=f->shape) && s->cont) {
-      //cout <<'.' <<flush;
-      //cout <<'.' <<f->name <<flush;
+      if(verbose>0) cout <<'.' <<flush;
+      if(verbose>1) cout <<f->name <<flush;
       add=true;
       switch(s->type()) {
         case rai::ST_none: HALT("shapes should have a type - somehow wrong initialization..."); break;
@@ -108,7 +108,7 @@ SwiftInterface::SwiftInterface(const rai::Configuration& world, double _cutoff)
   initActivations(world);
 
   pushToSwift(world);
-//  cout <<"...done" <<endl;
+  if(verbose>0) cout <<"...done" <<endl;
 }
 
 void SwiftInterface::reinitShape(const rai::Frame* f) {
@@ -395,7 +395,7 @@ uint SwiftInterface::countObjects() {
 #include <Core/util.h>
 
 SwiftInterface::~SwiftInterface() { NICO }
-SwiftInterface::SwiftInterface(const rai::Configuration& world, double _cutoff){ NICO }
+SwiftInterface::SwiftInterface(const rai::Configuration& world, double _cutoff, int verbose){ NICO }
 
 void SwiftInterface::step(rai::Configuration& world, bool dumpReport) { NICO }
 void SwiftInterface::pushToSwift(const rai::Configuration& world) { NICO }

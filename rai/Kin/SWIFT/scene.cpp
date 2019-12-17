@@ -1057,8 +1057,8 @@ bool SWIFT_Scene::Query_Tolerance_Verification( bool early_exit,
                     k += 2;
                 }
                 } catch(const char* msg) {
-                  std::cerr <<"... catching error '" <<msg <<"' -- in pair->Tolerance (" <<o1 <<' ' <<o2 <<") -- continuing!" <<endl;
-    //              throw std::pair<int,int>(o1,o2);
+//                  std::cerr <<"... catching error '" <<msg <<"' -- in pair->Tolerance (" <<o1 <<' ' <<o2 <<") -- continuing!" <<endl;
+//                  throw std::pair<int,int>(o1,o2);
                 }
             }
         }

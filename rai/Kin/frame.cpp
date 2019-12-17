@@ -1130,6 +1130,7 @@ void rai::Shape::write(std::ostream& os) const {
   if((n=frame.ats["mesh"])) os <<", " <<*n;
   if((n=frame.ats["meshscale"])) os <<", " <<*n;
   if(cont) os <<", contact:" <<(int)cont;
+  os <<',';
 }
 
 void rai::Shape::write(Graph& g) {

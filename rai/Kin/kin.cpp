@@ -1563,7 +1563,8 @@ OpenGL& rai::Configuration::gl(const char* window_title, bool offscreen) {
 
 /// return a Swift extension
 SwiftInterface& rai::Configuration::swift() {
-  if(!s->swift) s->swift = make_shared<SwiftInterface>(*this, .1);
+  if(s->swift && s->swift->INDEXshape2swift.N != frames.N) s->swift.reset();
+  if(!s->swift) s->swift = make_shared<SwiftInterface>(*this, .1, 0);
   return *s->swift;
 }
 

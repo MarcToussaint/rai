@@ -65,7 +65,7 @@ void TEST(PR2){
   }
 
   KOMO komo;
-  komo.logFile = new ofstream("z.dat");
+//  komo.logFile = new ofstream("z.dat");
 //  komo.denseOptimization=true;
   komo.sparseOptimization=true;
   komo.setModel(C);

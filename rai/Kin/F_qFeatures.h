@@ -74,5 +74,5 @@ struct F_qQuaternionNorms : Feature {
 rai::Array<rai::Joint*> getMatchingJoints(const ConfigurationL& Ktuple, bool zeroVelJointsOnly);
 rai::Array<rai::Joint*> getSwitchedJoints(const rai::Configuration& G0, const rai::Configuration& G1, int verbose=0);
 uintA getSwitchedBodies(const rai::Configuration& G0, const rai::Configuration& G1, int verbose=0);
-uintA getNonSwitchedBodies(const ConfigurationL& Ktuple);
+uintA getNonSwitchedFrames(const ConfigurationL& Ktuple);
 

@@ -484,8 +484,8 @@ uintA getSwitchedBodies(const rai::Configuration& G0, const rai::Configuration& 
 
 //===========================================================================
 
-uintA getNonSwitchedBodies(const ConfigurationL& Ktuple) {
-  uintA nonSwitchedBodies;
+uintA getNonSwitchedFrames(const ConfigurationL& Ktuple) {
+  uintA nonSwitchedFrames;
 
   rai::Configuration& K0 = *Ktuple(0);
   for(rai::Frame* f0:K0.frames) {
@@ -496,7 +496,7 @@ uintA getNonSwitchedBodies(const ConfigurationL& Ktuple) {
       if(id>=K1.frames.N) { succ=false; break; }
       if(isSwitched(f0, K1.frames(id))) { succ=false; break; }
     }
-    if(succ) nonSwitchedBodies.append(id);
+    if(succ) nonSwitchedFrames.append(id);
   }
-  return nonSwitchedBodies;
+  return nonSwitchedFrames;
 }

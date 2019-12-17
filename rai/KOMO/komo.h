@@ -179,7 +179,7 @@ struct KOMO : NonCopyable {
 
   //-- tasks mid-level
 //  void setSquaredQAccelerations(double startTime=0., double endTime=-1., double prec=1.);
-  void setSquaredQAccVelHoming(double startTime=0., double endTime=-1., double accPrec=1., double velPrec=0., double homingPrec=1e-2);
+  void setSquaredQAccVelHoming(double startTime=0., double endTime=-1., double accPrec=1., double velPrec=0., double homingPrec=1e-2, int deltaFromStep=0, int deltaToStep=0);
 //  void setSquaredQVelocities(double startTime=0., double endTime=-1., double prec=1.);
 //  void setFixEffectiveJoints(double startTime=0., double endTime=-1., double prec=3e1);
 //  void setFixSwitchedObjects(double startTime=0., double endTime=-1., double prec=3e1);
@@ -264,7 +264,7 @@ struct KOMO : NonCopyable {
   void initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase=1, bool sineProfile=true);
   void run(const OptOptions options=NOOPT);                        ///< run the optimization (using OptConstrained -- its parameters are read from the cfg file)
   void run_sub(const uintA& X, const uintA& Y);
-  void optimize(bool initNoise=true);
+  void optimize(bool inititialize=true, double initNoise=.01);
 
   rai::Configuration& getConfiguration(double phase);
   arr getJointState(double phase);
@@ -290,7 +290,7 @@ struct KOMO : NonCopyable {
   Graph getContacts(); ///< report the contacts
   rai::Array<rai::Transformation> reportEffectiveJoints(ostream& os=std::cout);
 
-  void checkGradients(bool dense=false);          ///< checks all gradients numerically
+  void checkGradients();          ///< checks all gradients numerically
 
   void plotTrajectory();
   void plotPhaseTrajectory();

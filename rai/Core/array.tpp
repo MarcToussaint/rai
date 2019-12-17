@@ -1847,10 +1847,10 @@ template<class T> void rai::Array<T>::write(std::ostream& os, const char* ELEMSE
     os <<std::endl;
   } else if(isSparseVector(*this)) {
     intA& elems = dynamic_cast<SparseVector*>(special)->elems;
-    for(uint i=0; i<N; i++) cout <<"( " <<elems(i) <<" ) " <<elem(i) <<endl;
+    for(uint i=0; i<N; i++) os <<"( " <<elems(i) <<" ) " <<elem(i) <<endl;
   } else if(isSparseMatrix(*this)) {
     intA& elems = dynamic_cast<SparseMatrix*>(special)->elems;
-    for(uint i=0; i<N; i++) cout <<'(' <<elems[i] <<") " <<elem(i) <<endl;
+    for(uint i=0; i<N; i++) os <<'(' <<elems[i] <<") " <<elem(i) <<endl;
   } else {
     if(BRACKETS[0]) os <<BRACKETS[0];
     if(dimTag || nd>3) { os <<' '; writeDim(os); if(nd==2) os <<'\n'; else os <<' '; }

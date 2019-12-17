@@ -118,6 +118,7 @@ double MIN(double a, double b);
 double MAX(double a, double b);
 uint MAX(uint a, uint b);
 int MAX(int a, int b);
+inline void maxEq(double& x, double a){ if(a>x) x=a; }
 double indicate(bool expr);
 double modMetric(double x, double y, double mod);
 double sign(double x);
