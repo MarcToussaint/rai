@@ -71,7 +71,7 @@ KOMO::~KOMO() {
   gl.reset();
   if(opt) delete opt;
   if(logFile) delete logFile;
-  listDelete(objectives);
+  objectives.clear();
 //  listDelete(flags);
   listDelete(switches);
   listDelete(configurations);
@@ -134,7 +134,7 @@ void KOMO::deactivateCollisions(const char* s1, const char* s2) {
 
 void KOMO::setTimeOptimization() {
   world.addTauJoint();
-  Objective* o = addObjective({}, make_shared<TM_Time>(), OT_sos, {1e2}, {}, 1); //smooth time evolution
+  ptr<Objective> o = addObjective({}, make_shared<TM_Time>(), OT_sos, {1e2}, {}, 1); //smooth time evolution
 #if 1 //break the constraint at phase switches:
   CHECK(o->configs.nd==1 && o->configs.N==T, "");
   CHECK_GE(stepsPerPhase, 10, "NIY")
@@ -151,11 +151,11 @@ void KOMO::setTimeOptimization() {
 //
 
 void KOMO::clearObjectives() {
-  listDelete(objectives);
+  objectives.clear(); //listDelete(objectives);
   listDelete(switches);
 }
 
-Objective* KOMO::addObjective(const arr& times,
+ptr<Objective> KOMO::addObjective(const arr& times,
                               const ptr<Feature>& f, ObjectiveType type,
                               const arr& scale, const arr& target, int order,
                               int deltaFromStep, int deltaToStep) {
@@ -164,7 +164,7 @@ Objective* KOMO::addObjective(const arr& times,
   if(order>=0) f->order = order;
 
   CHECK_GE(k_order, f->order, "task requires larger k-order: " <<f->shortTag(world));
-  Objective* task = new Objective(f, type);
+  ptr<Objective> task = make_shared<Objective>(f, type);
   task->name = f->shortTag(world);
   objectives.append(task);
   task->setCostSpecs(times, stepsPerPhase, T, deltaFromStep, deltaToStep, denseOptimization || sparseOptimization);
@@ -172,7 +172,7 @@ Objective* KOMO::addObjective(const arr& times,
   return task;
 }
 
-Objective* KOMO::addObjective(const arr& times, const FeatureSymbol& feat, const StringA& frames,
+ptr<Objective> KOMO::addObjective(const arr& times, const FeatureSymbol& feat, const StringA& frames,
                               ObjectiveType type, const arr& scale, const arr& target, int order,
                               int deltaFromStep, int deltaToStep) {
   return addObjective(times, symbols2feature(feat, frames, world), type, scale, target, order, deltaFromStep, deltaToStep);
@@ -286,7 +286,7 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
     addObjective({time, endTime}, make_shared<F_NewtonEuler_DampedVelocities>(world, to, 0., false), OT_eq, {1e2}, NoArr, 1, +0, -1);
 #else
     //eq for 3DOFs only
-    Objective* o = addObjective({time, endTime}, make_shared<F_NewtonEuler_DampedVelocities>(world, to, 0., false), OT_eq, {1e2}, NoArr, 1, +0, -1);
+    ptr<Objective> o = addObjective({time, endTime}, make_shared<F_NewtonEuler_DampedVelocities>(world, to, 0., false), OT_eq, {1e2}, NoArr, 1, +0, -1);
     o->map->scale=1e2 * arr(3, 6, {
       1, 0, 0, 0, 0, 0,
       0, 1, 0, 0, 0, 0,
@@ -543,13 +543,13 @@ void KOMO::setSquaredQAccVelHoming(double startTime, double endTime, double accP
   if(accPrec) {
     //sqr accel
     CHECK_GE(k_order, 2, "");
-    Objective* o = addObjective({startTime, endTime}, make_shared<F_qItself>(selectedBodies), OT_sos, {accPrec}, NoArr, 2, deltaFromStep, deltaToStep);
+    ptr<Objective> o = addObjective({startTime, endTime}, make_shared<F_qItself>(selectedBodies), OT_sos, {accPrec}, NoArr, 2, deltaFromStep, deltaToStep);
     o->map->scale = accPrec*scale;
   }
   if(velPrec) {
     //sqr vel
     CHECK_GE(k_order, 1, "");
-    Objective* o = addObjective({startTime, endTime}, make_shared<F_qItself>(selectedBodies), OT_sos, {velPrec}, NoArr, 1, deltaFromStep, deltaToStep);
+    ptr<Objective> o = addObjective({startTime, endTime}, make_shared<F_qItself>(selectedBodies), OT_sos, {velPrec}, NoArr, 1, deltaFromStep, deltaToStep);
     o->map->scale = velPrec*scale;
   }
   if(homingPrec) {
@@ -1588,7 +1588,7 @@ void KOMO::reportProblem(std::ostream& os) {
   }
 
   os <<"  usingSwift:" <<useSwift <<endl;
-  for(Objective* t:objectives) os <<"    " <<*t <<endl;
+  for(ptr<Objective>& t:objectives) os <<"    " <<*t <<endl;
   for(KinematicSwitch* sw:switches) {
     os <<"    ";
     if(sw->timeOfApplication+k_order >= configurations.N) {
@@ -1818,14 +1818,14 @@ Camera& KOMO::displayCamera() {
   return gl->camera;
 }
 
-void KOMO::selectJointsBySubtrees(const StringA& roots, const arr& times){
+void KOMO::selectJointsBySubtrees(const StringA& roots, const arr& times, bool notThose){
   if(!configurations.N) setupConfigurations();
 
-  world.selectJointsBySubtrees(roots);
+  world.selectJointsBySubtrees(roots, notThose);
 
   if(!times.N){
     for(Configuration* C:configurations){
-      C->selectJointsBySubtrees(roots);
+      C->selectJointsBySubtrees(roots, notThose);
       C->ensure_q();
       C->checkConsistency();
     }
@@ -1836,7 +1836,7 @@ void KOMO::selectJointsBySubtrees(const StringA& roots, const arr& times){
       Configuration* C = configurations(s);
       int t = int(s) - k_order;
       if(t<=tfrom || t>tto) C->selectJointsBySubtrees({});
-      else C->selectJointsBySubtrees(roots);
+      else C->selectJointsBySubtrees(roots, notThose);
       C->ensure_q();
       C->checkConsistency();
     }
@@ -1895,7 +1895,7 @@ void KOMO::setupRepresentations() {
   Cdims.prepend(0);
 
 //  uint M=0;
-  for(Objective *ob:objectives) {
+  for(ptr<Objective>& ob:objectives) {
     CHECK_EQ(ob->configs.nd, 2, "in sparse mode, vars need to be tuples of variables");
     for(uint l=0;l<ob->configs.d0;l++) {
       ConfigurationL Ctuple = configurations.sub(convert<uint,int>(ob->configs[l]+(int)k_order));
@@ -2166,7 +2166,7 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
   if(!denseOptimization && !sparseOptimization) {
     for(uint t=0; t<T; t++) {
       for(uint i=0; i<objectives.N; i++) {
-        Objective* task = objectives(i);
+        ptr<Objective> task = objectives(i);
         if(task->isActive(t)) {
           uint d=0;
           if(wasRun) {
@@ -2203,7 +2203,7 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
     }
   } else { //featureDense=true
     for(uint i=0; i<objectives.N; i++) {
-      Objective* ob = objectives.elem(i);
+      ptr<Objective> ob = objectives.elem(i);
       for(uint l=0; l<ob->configs.d0; l++) {
         ConfigurationL Ktuple = configurations.sub(convert<uint, int>(ob->configs[l]+(int)k_order));
         uint d=0;
@@ -2243,7 +2243,7 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
   Graph report;
   double totalC=0., totalG=0., totalH=0.;
   for(uint i=0; i<objectives.N; i++) {
-    Objective* c = objectives(i);
+    ptr<Objective> c = objectives(i);
     Graph& g = report.newSubgraph({c->name}, {});
     g.newNode<double>({"order"}, {}, c->map->order);
     g.newNode<String>({"type"}, {}, STRING(c->type.name()));
@@ -2320,7 +2320,7 @@ Graph KOMO::getProblemGraph(bool includeValues, bool includeSolution) {
   }
 
   //objectives
-  for(Objective* ob : objectives) {
+  for(ptr<Objective>& ob : objectives) {
     Graph& g = K.newSubgraph({ob->name});
     g.newNode<double>({"order"}, {}, ob->map->order);
     g.newNode<String>({"type"}, {}, STRING(ob->type));
@@ -2393,7 +2393,7 @@ void KOMO::Conv_KOMO_KOMOProblem::getStructure(uintA& variableDimensions, uintA&
   phiDim.resize(komo.T, komo.objectives.N);   phiDim.setZero();
   for(uint t=0; t<komo.T; t++) {
     for(uint i=0; i<komo.objectives.N; i++) {
-      Objective* task = komo.objectives.elem(i);
+      ptr<Objective> task = komo.objectives.elem(i);
       if(task->isActive(t)) {
         uint m = task->map->__dim_phi(komo.configurations({t, t+komo.k_order})); //dimensionality of this task
 
@@ -2435,7 +2435,7 @@ void KOMO::Conv_KOMO_KOMOProblem::phi(arr& phi, arrA& J, arrA& H, uintA& feature
     uintA Ktuple_dim = getKtupleDim(Ktuple);
 
     for(uint i=0; i<komo.objectives.N; i++) {
-      Objective* task = komo.objectives.elem(i);
+      ptr<Objective> task = komo.objectives.elem(i);
       if(task->isActive(t)) {
         //query the task map and check dimensionalities of returns
         task->map->__phi(y, (!!J?Jy:NoArr), Ktuple);
@@ -2493,7 +2493,7 @@ void KOMO::Conv_KOMO_DenseProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA&
   arr y, Jy;
   uint M=0;
   for(uint i=0; i<komo.objectives.N; i++) {
-    Objective* ob = komo.objectives.elem(i);
+    ptr<Objective> ob = komo.objectives.elem(i);
     for(uint l=0; l<ob->configs.d0; l++) {
       ConfigurationL Ktuple = komo.configurations.sub(convert<uint, int>(ob->configs[l]+(int)komo.k_order));
       uintA kdim = getKtupleDim(Ktuple);
@@ -2543,7 +2543,7 @@ void KOMO::Conv_KOMO_DenseProblem::getDimPhi() {
   CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet: use komo.reset()");
   uint M=0;
   for(uint i=0; i<komo.objectives.N; i++) {
-    Objective* ob = komo.objectives.elem(i);
+    ptr<Objective> ob = komo.objectives.elem(i);
     for(uint l=0; l<ob->configs.d0; l++) {
       ConfigurationL Ktuple = komo.configurations.sub(convert<uint, int>(ob->configs[l]+(int)komo.k_order));
       M += ob->map->__dim_phi(Ktuple); //dimensionality of this task
@@ -2572,7 +2572,7 @@ void KOMO::Conv_KOMO_GraphProblem::getStructure(uintA& variableDimensions, intAA
   if(!!featureVariables) featureVariables.clear();
   if(!!featureTypes) featureTypes.clear();
   uint M=0;
-  for(Objective* ob:komo.objectives) {
+  for(ptr<Objective>& ob:komo.objectives) {
     CHECK_EQ(ob->configs.nd, 2, "in sparse mode, vars need to be tuples of variables");
     for(uint l=0; l<ob->configs.d0; l++) {
       ConfigurationL Ktuple = komo.configurations.sub(convert<uint, int>(ob->configs[l]+(int)komo.k_order));
@@ -2604,7 +2604,7 @@ void KOMO::Conv_KOMO_GraphProblem::getSemantics(StringA& varNames, StringA& phiN
 
   phiNames.clear();
   uint M=0;
-  for(Objective* ob:komo.objectives) {
+  for(ptr<Objective>& ob:komo.objectives) {
     CHECK_EQ(ob->configs.nd, 2, "in sparse mode, vars need to be tuples of variables");
     for(uint l=0; l<ob->configs.d0; l++) {
       ConfigurationL Ktuple = komo.configurations.sub(convert<uint, int>(ob->configs[l]+(int)komo.k_order));
@@ -2628,7 +2628,7 @@ void KOMO::Conv_KOMO_GraphProblem::phi(arr& phi, arrA& J, arrA& H, const arr& x)
   arr y, Jy;
 //  Jy.sparse();
   uint M=0;
-  for(Objective* ob:komo.objectives) {
+  for(ptr<Objective>& ob:komo.objectives) {
     CHECK_EQ(ob->configs.nd, 2, "in sparse mode, vars need to be tuples of variables");
     for(uint l=0; l<ob->configs.d0; l++) {
       ConfigurationL Ktuple = komo.configurations.sub(convert<uint, int>(ob->configs[l]+(int)komo.k_order));
@@ -2691,7 +2691,7 @@ void KOMO::Conv_KOMO_GraphProblem::getPartialPhi(arr& phi, arrA& J, arrA& H, con
 
     arr y, Jy;
     uint M=0;
-    for(Objective* ob:komo.objectives) {
+    for(ptr<Objective>& ob:komo.objectives) {
       CHECK_EQ(ob->configs.nd, 2, "in sparse mode, vars need to be tuples of variables");
       for(uint l=0; l<ob->configs.d0; l++) {
         ConfigurationL Ktuple = komo.configurations.sub(convert<uint, int>(ob->configs[l]+(int)komo.k_order));
@@ -2739,7 +2739,7 @@ void KOMO::TimeSliceProblem::getDimPhi() {
   CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet: use komo.reset()");
   uint M=0;
   for(uint i=0; i<komo.objectives.N; i++) {
-    Objective* ob = komo.objectives.elem(i);
+    ptr<Objective> ob = komo.objectives.elem(i);
     CHECK_EQ(ob->configs.nd, 2, "only in sparse mode!");
     if(ob->configs.d1!=1) continue; //ONLY USE order 0 objectives!!!!!
     for(uint l=0; l<ob->configs.d0; l++) {
@@ -2766,7 +2766,7 @@ void KOMO::TimeSliceProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, c
   arr y, Jy;
   uint M=0;
   for(uint i=0; i<komo.objectives.N; i++) {
-    Objective* ob = komo.objectives.elem(i);
+    ptr<Objective> ob = komo.objectives.elem(i);
     CHECK_EQ(ob->configs.nd, 2, "only in sparse mode!");
     if(ob->configs.d1!=1) continue; //ONLY USE order 0 objectives!!!!!
     for(uint l=0; l<ob->configs.d0; l++) {

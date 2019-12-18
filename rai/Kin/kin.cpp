@@ -1544,6 +1544,17 @@ StringA rai::Configuration::getFrameNames() const {
   return names;
 }
 
+uintA rai::Configuration::getNormalJointFramesAndScale(arr& scale) const {
+  uintA selectedBodies;
+  for(rai::Frame* f:frames) if(f->joint && f->joint->dim>0 && f->joint->H>0. && f->joint->type!=JT_tau && f->joint->active) {
+    CHECK(!f->joint->mimic, "");
+    selectedBodies.append(TUP(f->ID, f->parent->ID));
+    if(!!scale) scale.append(f->joint->H, f->joint->dim);
+  }
+  selectedBodies.reshape(selectedBodies.N/2, 2);
+  return selectedBodies;
+}
+
 /** @brief creates uniques names by prefixing the node-index-number to each name */
 void rai::Configuration::prefixNames(bool clear) {
   if(!clear) for(Frame* a: frames) a->name=STRING('_' <<a->ID <<'_' <<a->name);

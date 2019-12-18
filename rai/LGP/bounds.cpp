@@ -94,7 +94,7 @@ void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
 //          o->vars.clear();
 //        }
 //      }
-      for(Objective* o:komo.objectives) {
+      for(ptr<Objective>& o:komo.objectives) {
         if(!std::dynamic_pointer_cast<F_qItself>(o->map)
             && !std::dynamic_pointer_cast<TM_NoJumpFromParent>(o->map)
             && o->map->order>0) {
