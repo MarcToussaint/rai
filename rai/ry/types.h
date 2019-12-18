@@ -9,6 +9,7 @@
 #include <Core/array.h>
 #include <Core/graph.h>
 
+
 namespace ry {
   typedef std::pair<std::vector<unsigned int>, std::vector<double>> I_arr;
   typedef std::vector<std::string> I_StringA;
@@ -31,6 +32,12 @@ pybind11::tuple uintA2tuple(const uintA& tup);
 arr numpy2arr(const pybind11::array& X);
 
 byteA numpy2arr(const pybind11::array_t<byte>& X);
+
+uintA numpy2arr(const pybind11::array_t<uint>& X);
+
+intA numpy2arr(const pybind11::array_t<int>& X);
+
+floatA numpy2arr(const pybind11::array_t<float>& X);
 
 arr vecvec2arr(const std::vector<std::vector<double>>& X);
 
@@ -63,5 +70,35 @@ inline arr I_conv(const ry::I_arr& x) {
   y.reshape(conv_stdvec2arr(x.first));
   return y;
 }
+
+namespace pybind11 { namespace detail {
+    template <typename T> struct type_caster<rai::Array<T>> {
+    public:
+        PYBIND11_TYPE_CASTER(rai::Array<T>, _("rai::Array<T>"));
+
+        /**
+         * Conversion part 1 (Python->C++): convert numpy array to rai::Array<T>
+         */
+        bool load(handle src, bool) {
+
+            auto buf = pybind11::array_t<T>::ensure(src);
+            if ( !buf )
+                return false;
+            rai::Array<T> a = numpy2arr(buf);
+            value = a;
+            /* Ensure return code was OK (to avoid out-of-range errors etc) */
+            return !PyErr_Occurred();
+        }
+
+        /**
+         * Conversion part 2 (C++ -> Python): convert rai::Array<T> instance
+         * to numpy array.
+         */
+        static handle cast(rai::Array<T> src, return_value_policy /* policy */, handle /* parent */) {
+            pybind11::array ret(src.dim(), src.p);
+            return ret.release();
+        }
+    };
+}} // namespace pybind11::detail
 
 #endif

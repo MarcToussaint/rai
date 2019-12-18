@@ -111,6 +111,105 @@ byteA numpy2arr(const pybind11::array_t<byte>& X) {
   return Y;
 }
 
+uintA numpy2arr(const pybind11::array_t<uint> &X)
+{
+  uintA Y;
+  uintA dim(X.ndim());
+  for (uint i = 0; i < dim.N; i++)
+    dim(i) = X.shape()[i];
+  Y.resize(dim);
+  auto ref = X.unchecked<>();
+  if (Y.nd == 1)
+  {
+    for (uint i = 0; i < Y.d0; i++)
+      Y(i) = ref(i);
+    return Y;
+  }
+  else if (Y.nd == 2)
+  {
+    for (uint i = 0; i < Y.d0; i++)
+      for (uint j = 0; j < Y.d1; j++)
+        Y(i, j) = ref(i, j);
+    return Y;
+  }
+  else if (Y.nd == 3)
+  {
+    for (uint i = 0; i < Y.d0; i++)
+      for (uint j = 0; j < Y.d1; j++)
+        for (uint k = 0; k < Y.d2; k++)
+          Y(i, j, k) = ref(i, j, k);
+    return Y;
+  }
+  NIY;
+  return Y;
+}
+
+floatA numpy2arr(const pybind11::array_t<float> &X)
+{
+  floatA Y;
+  uintA dim(X.ndim());
+  for (uint i = 0; i < dim.N; i++)
+    dim(i) = X.shape()[i];
+  Y.resize(dim);
+  auto ref = X.unchecked<>();
+  if (Y.nd == 1)
+  {
+    for (uint i = 0; i < Y.d0; i++)
+      Y(i) = ref(i);
+    return Y;
+  }
+  else if (Y.nd == 2)
+  {
+    for (uint i = 0; i < Y.d0; i++)
+      for (uint j = 0; j < Y.d1; j++)
+        Y(i, j) = ref(i, j);
+    return Y;
+  }
+  else if (Y.nd == 3)
+  {
+    for (uint i = 0; i < Y.d0; i++)
+      for (uint j = 0; j < Y.d1; j++)
+        for (uint k = 0; k < Y.d2; k++)
+          Y(i, j, k) = ref(i, j, k);
+    return Y;
+  }
+  NIY;
+  return Y;
+}
+
+intA numpy2arr(const pybind11::array_t<int> &X)
+{
+  intA Y;
+  uintA dim(X.ndim());
+  for (uint i = 0; i < dim.N; i++)
+    dim(i) = X.shape()[i];
+  Y.resize(dim);
+  auto ref = X.unchecked<>();
+  if (Y.nd == 1)
+  {
+    for (uint i = 0; i < Y.d0; i++)
+      Y(i) = ref(i);
+    return Y;
+  }
+  else if (Y.nd == 2)
+  {
+    for (uint i = 0; i < Y.d0; i++)
+      for (uint j = 0; j < Y.d1; j++)
+        Y(i, j) = ref(i, j);
+    return Y;
+  }
+  else if (Y.nd == 3)
+  {
+    for (uint i = 0; i < Y.d0; i++)
+      for (uint j = 0; j < Y.d1; j++)
+        for (uint k = 0; k < Y.d2; k++)
+          Y(i, j, k) = ref(i, j, k);
+    return Y;
+  }
+  NIY;
+  return Y;
+}
+
 arr vecvec2arr(const std::vector<std::vector<double> >& X) {
   CHECK(X.size()>0, "");
   arr Y(X.size(), X[0].size());
