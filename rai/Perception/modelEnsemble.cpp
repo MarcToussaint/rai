@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -20,8 +20,8 @@ ModelEnsemble::~ModelEnsemble() {
 }
 
 bool ModelEnsemble::addNewRegionGrowingModel(DataNeighbored& data) {
-  MinEigModel *model = new MinEigModel(data, NOISE_MARGIN);
-  
+  MinEigModel* model = new MinEigModel(data, NOISE_MARGIN);
+
 //  if(models.N>5) return false;
 
   //-- find a random seed
@@ -32,32 +32,32 @@ bool ModelEnsemble::addNewRegionGrowingModel(DataNeighbored& data) {
 //      LOG(0) <<"no unused data points found";
       return false;
     }
-    
+
     i=rnd(data.n());
     if(!data.valid(i)) continue;
     if(data.isModelledWeights(i)>.1) continue;
-    
+
     idel = data.getKneighborhood(i, 20);
     double w=0.;
     for(uint j:idel) w += data.isModelledWeights(j);
     w/=idel.N;
     cout <<"SEED TESTED. w=" <<w <<endl;
     if(w>.1) continue;
-    
+
     break; //success!
   }
-  
+
   //-- initialize with neighborhood of size 400
   model->setPoints(data.getKneighborhood(i, 400));
   model->calc(false);
-  
+
   //-- expand until fringe is empty
   for(uint k=0;; k++) {
     model->expand(10);
     if(!model->fringe.N) break;
     model->calc(true);
   }
-  
+
   //-- check success
   model->calcDensity();
   cout <<"TESTED MODEL: ";
@@ -68,7 +68,7 @@ bool ModelEnsemble::addNewRegionGrowingModel(DataNeighbored& data) {
     return false;
   }
   cout <<"-- ACCEPT" <<endl;
-  
+
   for(uint i:model->pts) if(data.isModelledWeights(i)<model->weights(i)) data.isModelledWeights(i)=model->weights(i);
   model->label=models.N;
   models.append(model);
@@ -77,7 +77,7 @@ bool ModelEnsemble::addNewRegionGrowingModel(DataNeighbored& data) {
 
 void ModelEnsemble::reoptimizeModels(DataNeighbored& data) {
   data.isModelledWeights.setZero();
-  for(MinEigModel *model:models) {
+  for(MinEigModel* model:models) {
 //    model->expand(10);
 //    model->setWeightsToOne();
 //    model->calc(false);
@@ -99,11 +99,11 @@ void ModelEnsemble::reoptimizeModels(DataNeighbored& data) {
 
 void ModelEnsemble::reestimateVert() {
   for(auto m:models) {
-    double sp = scalarProduct(m->eig.x_lo,vert);
+    double sp = scalarProduct(m->eig.x_lo, vert);
     if(sp<0.) { m->eig.x_lo *= -1.; sp *=-1; }
     if(sp>.95) m->label=1;
   }
-  
+
   double n=0.;
   arr mu=zeros(3);
   for(auto m:models) if(m->label==1) {
@@ -116,7 +116,7 @@ void ModelEnsemble::reestimateVert() {
 }
 
 void ModelEnsemble::glDraw(OpenGL& gl) {
-  for(MinEigModel *m:models) {
+  for(MinEigModel* m:models) {
     glColor(m->label);
     m->glDraw(gl);
   }

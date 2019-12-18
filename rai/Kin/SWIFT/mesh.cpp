@@ -108,7 +108,7 @@ bool SWIFT_Tri_Vertex::Verify_Topology( int pos ) const
 {
     bool result = true;
 
-    if( edge == NULL ) {
+    if( edge == nullptr ) {
         cerr << "Vertex at position " << pos << " does not have edge" << endl;
         result = false;
     }
@@ -127,13 +127,13 @@ bool SWIFT_Tri_Edge::Verify_Topology( int pos1, int pos2 ) const
 {
     bool result = true;
 
-    if( orig == NULL ) {
+    if( orig == nullptr ) {
         cerr << "Edge at position " << pos1 << ", " << pos2
              << " does not have vertex" << endl;
         result = false;
     }
 
-    if( face == NULL ) {
+    if( face == nullptr ) {
         cerr << "Edge at position " << pos1 << ", " << pos2
              << " does not have face" << endl;
         result = false;
@@ -145,7 +145,7 @@ bool SWIFT_Tri_Edge::Verify_Topology( int pos1, int pos2 ) const
         result = false;
     }
 
-    if( next == NULL ) {
+    if( next == nullptr ) {
         cerr << "Edge at position " << pos1 << ", " << pos2
              << " does not have next" << endl;
         result = false;
@@ -170,7 +170,7 @@ bool SWIFT_Tri_Edge::Verify_Geometry( int pos1, int pos2 ) const
 {
     bool result = true;
 
-    if( twin != NULL ) {
+    if( twin != nullptr ) {
         if( !(len == twin->Length()) ) {
             cerr << "Edge at position " << pos1 << ", " << pos2
                  << " does not have twin len" << endl;
@@ -570,7 +570,7 @@ SWIFT_Real SWIFT_BV::Extremal_Vertex( const SWIFT_Triple& dir,
 {
     SWIFT_Real d1, d2;
     SWIFT_Tri_Edge* e = starte->Twin( level );
-    SWIFT_Tri_Edge* nexte = NULL;
+    SWIFT_Tri_Edge* nexte = nullptr;
     SWIFT_Tri_Edge* ende = e;
 
     d1 = dir * starte->Origin()->Coords();
@@ -591,14 +591,14 @@ SWIFT_Real SWIFT_BV::Extremal_Vertex( const SWIFT_Triple& dir,
                 nexte = e;
             }
         }
-        if( nexte == NULL ) {
+        if( nexte == nullptr ) {
             break;
         }
         // Set up the edges for the next iteration
         e = nexte->Twin( level )->Next()->Twin( level )->Next()->Twin( level );
         ende = nexte->Prev();
         starte = nexte;
-        nexte = NULL;
+        nexte = nullptr;
     }
     return d1;
 }
@@ -617,7 +617,7 @@ void SWIFT_Tri_Mesh::Prepare_For_Delete( )
             bvs[i].Faces().Nullify();
             bvs[i].Other_Faces().Nullify();
         }
-        // Set all the edge twin pointers to NULL
+        // Set all the edge twin pointers to nullptr
         faces.Set_Length( faces.Max_Length() );
         for( i = 0; i < faces.Max_Length(); i++ ) {
             faces[i].Edge1().Nullify_Twins();
@@ -665,8 +665,8 @@ bool SWIFT_Tri_Mesh::Create( const SWIFT_Real* vs, const int* fs,
 
     // Initialize the other level arrays.
     for( i = 1; i < MAX_LEVELS; i++ ) {
-        qverts[i] = NULL;
-        qfaces[i] = NULL;
+        qverts[i] = nullptr;
+        qfaces[i] = nullptr;
     }
 
     // Initialize the transformation arrays
@@ -750,7 +750,7 @@ bool SWIFT_Tri_Mesh::Create( const SWIFT_Real* vs, const int* fs,
         delete mdl;
     }
 
-    // Call the hierarchy-given creation function.  fv is given as NULL since
+    // Call the hierarchy-given creation function.  fv is given as nullptr since
     // all the faces produced by qhull are triangles.
     Create( qverts, qfaces, qvert_lens, qface_lens, j, true, &triang_edges,
             qorient, qtrans, qsc );
@@ -941,8 +941,8 @@ bool SWIFT_Tri_Mesh::Create( const SWIFT_Real* vs, const int* fs,
             // Found a lone edge.
             // It must be on the boundary so snip it.
             sort_edges[i]->Twin()->Mark();
-            sort_edges[i]->Twin()->Set_Twin( NULL );
-            sort_edges[i]->Set_Twin( NULL );
+            sort_edges[i]->Twin()->Set_Twin( nullptr );
+            sort_edges[i]->Set_Twin( nullptr );
             i++;
             j++;
         }
@@ -2354,9 +2354,9 @@ void SWIFT_Tri_Mesh::Compute_All_Hierarchy_Geometry( )
         const int lev = bvs[i].Level();
         for( j = 0; j < bvs[i].Num_Faces(); j++ ) {
 #ifdef SWIFT_DEBUG
-            if( bvs[i].Faces()[j].Edge1().Twin( lev ) == NULL ||
-                bvs[i].Faces()[j].Edge2().Twin( lev ) == NULL ||
-                bvs[i].Faces()[j].Edge3().Twin( lev ) == NULL
+            if( bvs[i].Faces()[j].Edge1().Twin( lev ) == nullptr ||
+                bvs[i].Faces()[j].Edge2().Twin( lev ) == nullptr ||
+                bvs[i].Faces()[j].Edge3().Twin( lev ) == nullptr
             ) {
                 cerr << "Found null edge when computing all hier geom" << endl;
             }
@@ -2531,22 +2531,22 @@ void SWIFT_Tri_Mesh::Compute_Edge_Convexities( SWIFT_Array<bool>& ecs )
 
     ecs.Create( Num_Faces()*3 );
     for( i = 0, j = 0; i < Num_Faces(); i++, j += 3 ) {
-        ce1 = faces[i].Edge1().Twin() == NULL ? false :
+        ce1 = faces[i].Edge1().Twin() == nullptr ? false :
               faces[i].Inside( faces[i].Edge1().Twin()->Prev()->Origin() );
-        ce2 = faces[i].Edge2().Twin() == NULL ? false :
+        ce2 = faces[i].Edge2().Twin() == nullptr ? false :
               faces[i].Inside( faces[i].Edge2().Twin()->Prev()->Origin() );
-        ce3 = faces[i].Edge3().Twin() == NULL ? false :
+        ce3 = faces[i].Edge3().Twin() == nullptr ? false :
               faces[i].Inside( faces[i].Edge3().Twin()->Prev()->Origin() );
         ecs[j] = ce1;
         ecs[j+1] = ce2;
         ecs[j+2] = ce3;
-        if( faces[i].Edge1().Twin() != NULL ) {
+        if( faces[i].Edge1().Twin() != nullptr ) {
             ecs[ Edge_Id( faces[i].Edge1().Twin() ) ] = ce1;
         }
-        if( faces[i].Edge2().Twin() != NULL ) {
+        if( faces[i].Edge2().Twin() != nullptr ) {
             ecs[ Edge_Id( faces[i].Edge2().Twin() ) ] = ce2;
         }
-        if( faces[i].Edge3().Twin() != NULL ) {
+        if( faces[i].Edge3().Twin() != nullptr ) {
             ecs[ Edge_Id( faces[i].Edge3().Twin() ) ] = ce3;
         }
     }
@@ -2645,7 +2645,7 @@ void SWIFT_Tri_Mesh::Compute_Geometry( )
     // Compute edge lengths, directions, vertex-edge planes, and face planes
     for( i = 0; i < Num_Faces(); i++ ) {
         if( faces[i].Edge1().Unmarked() ) {
-            if( faces[i].Edge1().Twin() != NULL ) {
+            if( faces[i].Edge1().Twin() != nullptr ) {
                 // Compute direction and length of the edge and its twin
                 faces[i].Edge1().Compute_Direction_Length_Twin();
                 // Compute edge distance
@@ -2659,7 +2659,7 @@ void SWIFT_Tri_Mesh::Compute_Geometry( )
             faces[i].Edge1().Unmark();
         }
         if( faces[i].Edge2().Unmarked() ) {
-            if( faces[i].Edge2().Twin() != NULL ) {
+            if( faces[i].Edge2().Twin() != nullptr ) {
                 faces[i].Edge2().Compute_Direction_Length_Twin();
                 faces[i].Edge2().Set_Origin_On_Plane_Twin();
                 faces[i].Edge2().Twin()->Mark();
@@ -2671,7 +2671,7 @@ void SWIFT_Tri_Mesh::Compute_Geometry( )
             faces[i].Edge2().Unmark();
         }
         if( faces[i].Edge3().Unmarked() ) {
-            if( faces[i].Edge3().Twin() != NULL ) {
+            if( faces[i].Edge3().Twin() != nullptr ) {
                 faces[i].Edge3().Compute_Direction_Length_Twin();
                 faces[i].Edge3().Set_Origin_On_Plane_Twin();
                 faces[i].Edge3().Twin()->Mark();
@@ -2916,7 +2916,7 @@ void SWIFT_Tri_Mesh::Process_Faces( const int* fs, int fn, const int* fv,
 
     only_tris = true;
 
-    if( fv != NULL ) {
+    if( fv != nullptr ) {
         tn = 0;
         for( i = 0; i < fn; i++ ) {
             if( fv[i] != 3 ) {

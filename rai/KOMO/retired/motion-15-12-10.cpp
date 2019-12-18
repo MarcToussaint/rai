@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -15,8 +15,8 @@
 
 //===========================================================================
 
-void Feature::phi(arr& y, arr& J, const WorldL& G, double tau, int t) {
-  CHECK_GE(G.N, order+1,"I need at least " <<order+1 <<" configurations to evaluate");
+void Feature::phi(arr& y, arr& J, const ConfigurationL& G, double tau, int t) {
+  CHECK_GE(G.N, order+1, "I need at least " <<order+1 <<" configurations to evaluate");
   uint k=order;
   if(k==0) { // basic case: order=0
     arr J_bar;
@@ -25,7 +25,7 @@ void Feature::phi(arr& y, arr& J, const WorldL& G, double tau, int t) {
       J = zeros(G.N, y.N, J_bar.d1);
       J[G.N-1]() = J_bar;
       arr tmp(J);
-      tensorPermutation(J, tmp, TUP(1u,0u,2u));
+      tensorPermutation(J, tmp, TUP(1u, 0u, 2u));
       J.reshape(y.N, G.N*J_bar.d1);
     }
     return;
@@ -46,7 +46,7 @@ void Feature::phi(arr& y, arr& J, const WorldL& G, double tau, int t) {
     if(k==2) { J[G.N-1-2]() =  J_bar(2);  J[G.N-1-1]() = -2.*J_bar(1);  J[G.N-1-0]() = J_bar(0);  J/=tau2; }
     if(k==3) { J[G.N-1-3]() = -J_bar(3);  J[G.N-1-2]() =  3.*J_bar(2);  J[G.N-1-1]() = -3.*J_bar(1);  J[G.N-1-0]() = J_bar(0);  J/=tau3; }
     arr tmp(J);
-    tensorPermutation(J, tmp, TUP(1u,0u,2u));
+    tensorPermutation(J, tmp, TUP(1u, 0u, 2u));
     J.reshape(y.N, G.N*J_bar(0).d1);
   }
 }
@@ -58,32 +58,32 @@ void Task::setCostSpecs(uint fromTime,
                         const arr& _target,
                         double _prec) {
   if(!!_target) target = _target; else target = {0.};
-  CHECK_GE(toTime, fromTime,"");
+  CHECK_GE(toTime, fromTime, "");
   prec.resize(toTime+1).setZero();
   for(uint t=fromTime; t<=toTime; t++) prec(t) = _prec;
 }
 
 //===========================================================================
 
-Feature *newTaskMap(const Node* specs, const rai::Configuration& world) {
-  if(specs->parents.N<2) return NULL;
-  
+Feature* newTaskMap(const Node* specs, const rai::Configuration& world) {
+  if(specs->parents.N<2) return nullptr;
+
   //-- get tags
   rai::String& tt=specs->parents(0)->keys.last();
   rai::String& type=specs->parents(1)->keys.last();
-  const char *ref1=NULL, *ref2=NULL;
+  const char* ref1=nullptr, *ref2=nullptr;
   if(specs->parents.N>2) ref1=specs->parents(2)->keys.last().p;
   if(specs->parents.N>3) ref2=specs->parents(3)->keys.last().p;
-  
+
   //-- check the term type
   ObjectiveType termType;
   if(tt=="MinSumOfSqr") termType=OT_sos;
   else if(tt=="LowerEqualZero") termType=OT_ineq;
   else if(tt=="EqualZero") termType=OT_eq;
-  else return NULL;
-  
+  else return nullptr;
+
   //-- create a task map
-  Feature *map;
+  Feature* map;
   const Graph& params = specs->graph();
 //  rai::String type = specs.get<rai::String>("type", "pos");
   if(type=="wheels") {
@@ -93,16 +93,16 @@ Feature *newTaskMap(const Node* specs, const rai::Configuration& world) {
   } else if(type=="collisionPairs") {
     uintA shapes;
     for(uint i=2; i<specs->parents.N; i++) {
-      rai::Shape *s = world.getShapeByName(specs->parents(i)->keys.last());
-      CHECK(s,"No Shape '" <<specs->parents(i)->keys.last() <<"'");
+      rai::Shape* s = world.getShapeByName(specs->parents(i)->keys.last());
+      CHECK(s, "No Shape '" <<specs->parents(i)->keys.last() <<"'");
       shapes.append(s->index);
     }
     map = new ProxyConstraint(TMT_pairsP, shapes, (params?params->get<double>("margin", 0.1):0.1));
   } else if(type=="collisionExceptPairs") {
     uintA shapes;
     for(uint i=2; i<specs->parents.N; i++) {
-      rai::Shape *s = world.getShapeByName(specs->parents(i)->keys.last());
-      CHECK(s,"No Shape '" <<specs->parents(i)->keys.last() <<"'");
+      rai::Shape* s = world.getShapeByName(specs->parents(i)->keys.last());
+      CHECK(s, "No Shape '" <<specs->parents(i)->keys.last() <<"'");
       shapes.append(s->index);
     }
     map = new ProxyConstraint(TMT_allExceptPairsP, shapes, (params?params->get<double>("margin", 0.1):0.1));
@@ -118,7 +118,7 @@ Feature *newTaskMap(const Node* specs, const rai::Configuration& world) {
     map = new TM_Default(specs, world);
   }
   map->type=termType;
-  
+
   //-- check additional real-valued parameters: order
   if(specs->isGraph()) {
     const Graph& params = specs->graph();
@@ -131,14 +131,14 @@ Feature *newTaskMap(const Node* specs, const rai::Configuration& world) {
 
 Task* newTask(const Node* specs, const rai::Configuration& world, uint Tinterval, uint Tzero) {
   //-- try to crate a map
-  Feature *map = newTaskMap(specs, world);
-  if(!map) return NULL;
+  Feature* map = newTaskMap(specs, world);
+  if(!map) return nullptr;
   //-- create a task
-  Task *task = new Task(map);
+  Task* task = new Task(map);
   //-- check for additional continuous parameters
   if(specs->isGraph()) {
     const Graph& params = specs->graph();
-    arr time = params->get<arr>("time", {0.,1.});
+    arr time = params->get<arr>("time", {0., 1.});
     task->setCostSpecs(Tzero + time(0)*Tinterval, Tzero + time(1)*Tinterval, params->get<arr>("target", {}), params->get<double>("scale", {1.}));
   } else {
     task->setCostSpecs(Tzero, Tzero+Tinterval, {}, 1.);
@@ -148,20 +148,20 @@ Task* newTask(const Node* specs, const rai::Configuration& world, uint Tinterval
 
 //===========================================================================
 
-rai::KinematicSwitch* newSwitch(const Node *specs, const rai::Configuration& world, uint Tinterval, uint Tzero=0) {
-  if(specs->parents.N<2) return NULL;
-  
+rai::KinematicSwitch* newSwitch(const Node* specs, const rai::Configuration& world, uint Tinterval, uint Tzero=0) {
+  if(specs->parents.N<2) return nullptr;
+
   //-- get tags
   rai::String& tt=specs->parents(0)->keys.last();
   rai::String& type=specs->parents(1)->keys.last();
-  const char *ref1=NULL, *ref2=NULL;
+  const char* ref1=nullptr, *ref2=nullptr;
   if(specs->parents.N>2) ref1=specs->parents(2)->keys.last().p;
   if(specs->parents.N>3) ref2=specs->parents(3)->keys.last().p;
-  
-  if(tt!="MakeJoint") return NULL;
-  
+
+  if(tt!="MakeJoint") return nullptr;
+
   //-- create switch
-  rai::KinematicSwitch *sw= new rai::KinematicSwitch();
+  rai::KinematicSwitch* sw= new rai::KinematicSwitch();
   if(type=="addRigid") { sw->symbol=rai::SW_effJoint; sw->jointType=rai::JT_rigid; }
 //  else if(type=="addRigidRel"){ sw->symbol = rai::addJointAtTo; sw->jointType=rai::JT_rigid; }
   else if(type=="rigid") { sw->symbol = rai::addJointAtTo; sw->jointType=rai::JT_rigid; }
@@ -173,7 +173,7 @@ rai::KinematicSwitch* newSwitch(const Node *specs, const rai::Configuration& wor
   sw->fromId = world.getShapeByName(ref1)->index;
   if(!ref2) {
     CHECK_EQ(sw->symbol, rai::deleteJoint, "");
-    rai::Body *b = world.shapes(sw->fromId)->body;
+    rai::Body* b = world.shapes(sw->fromId)->body;
     if(b->inLinks.N==1) {
 //      CHECK_EQ(b->parentOf.N, 0, "");
       sw->toId = sw->fromId;
@@ -184,7 +184,7 @@ rai::KinematicSwitch* newSwitch(const Node *specs, const rai::Configuration& wor
     } else if(b->inLinks.N==0 && b->parentOf.N==0) {
       RAI_MSG("No link to delete for shape '" <<ref1 <<"'");
       delete sw;
-      return NULL;
+      return nullptr;
     } else HALT("that's ambiguous");
   } else {
     sw->toId = world.getShapeByName(ref2)->index;
@@ -192,7 +192,7 @@ rai::KinematicSwitch* newSwitch(const Node *specs, const rai::Configuration& wor
   sw->timeOfApplication = Tzero + Tinterval + 1;
   if(specs->isGraph()) {
     const Graph& params = specs->graph();
-    sw->timeOfApplication = Tzero + params->get<double>("time",1.)*Tinterval + 1;
+    sw->timeOfApplication = Tzero + params->get<double>("time", 1.)*Tinterval + 1;
   }
   return sw;
 }
@@ -200,7 +200,7 @@ rai::KinematicSwitch* newSwitch(const Node *specs, const rai::Configuration& wor
 //===========================================================================
 
 KOMO::KOMO(rai::Configuration& _world, bool useSwift)
-  : world(_world) , useSwift(useSwift), T(0), tau(0.), k_order(2) {
+  : world(_world), useSwift(useSwift), T(0), tau(0.), k_order(2) {
   if(useSwift) {
     makeConvexHulls(world.shapes);
     world.swift().setCutoff(2.*rai::getParameter<double>("swiftCutoff", 0.11));
@@ -242,26 +242,26 @@ arr KOMO::getH_rate_diag() {
   return rai::getParameter<double>("Hrate", 1.)*W_diag;
 }
 
-Task* KOMO::addTask(const char* name, Feature *m) {
-  Task *t = new Task(m);
+Task* KOMO::addTask(const char* name, Feature* m) {
+  Task* t = new Task(m);
   t->name=name;
   tasks.append(t);
   return t;
 }
 
-bool KOMO::parseTask(const Node *n, int Tinterval, uint Tzero) {
+bool KOMO::parseTask(const Node* n, int Tinterval, uint Tzero) {
   if(Tinterval==-1) Tinterval=T;
   //-- task?
-  Task *task = newTask(n, world, Tinterval, Tzero);
+  Task* task = newTask(n, world, Tinterval, Tzero);
   if(task) {
     if(n->keys.N) task->name=n->keys.last(); else {
-      for(Node *p:n->parents) task->name <<'_' <<p->keys.last();
+      for(Node* p:n->parents) task->name <<'_' <<p->keys.last();
     }
     tasks.append(task);
     return true;
   }
   //-- switch?
-  rai::KinematicSwitch *sw = newSwitch(n, world, Tinterval, Tzero);
+  rai::KinematicSwitch* sw = newSwitch(n, world, Tinterval, Tzero);
   if(sw) {
     switches.append(sw);
     return true;
@@ -270,14 +270,14 @@ bool KOMO::parseTask(const Node *n, int Tinterval, uint Tzero) {
 }
 
 void KOMO::parseTasks(const Graph& specs, int Tinterval, uint Tzero) {
-  for(Node *n:specs) parseTask(n, Tinterval, Tzero);
-  
+  for(Node* n:specs) parseTask(n, Tinterval, Tzero);
+
   //-- add TransitionTask for InvKinematics
   if(!T) {
-    Feature *map = new F_qItself();
+    Feature* map = new F_qItself();
     map->order = 0;
     map->type=OT_sos;
-    Task *task = new Task(map);
+    Task* task = new Task(map);
     task->name="InvKinTransition";
     task->setCostSpecs(0, 0, x0, 1./(tau*tau));
     tasks.append(task);
@@ -286,14 +286,14 @@ void KOMO::parseTasks(const Graph& specs, int Tinterval, uint Tzero) {
 
 #if 0
 void KOMO::setInterpolatingCosts(
-  Task *c,
+  Task* c,
   TaskCostInterpolationType inType,
   const arr& y_finalTarget, double y_finalPrec, const arr& y_midTarget, double y_midPrec, double earlyFraction) {
   uint m=c->map.dim_phi(world);
-  setState(x0,v0);
+  setState(x0, v0);
   arr y0;
   c->map.phi(y0, NoArr, world);
-  arr midTarget=zeros(m),finTarget=zeros(m);
+  arr midTarget=zeros(m), finTarget=zeros(m);
   if(!!y_finalTarget) { if(y_finalTarget.N==1) finTarget = y_finalTarget(0); else finTarget=y_finalTarget; }
   if(!!y_midTarget) {   if(y_midTarget.N==1)   midTarget = y_midTarget(0);   else midTarget=y_midTarget; }
   switch(inType) {
@@ -324,7 +324,7 @@ void KOMO::setInterpolatingCosts(
     } break;
     case early_restConst: {
       uint t;
-      CHECK(earlyFraction>=0. && earlyFraction<=1.,"");
+      CHECK(earlyFraction>=0. && earlyFraction<=1., "");
       uint Tearly=earlyFraction*T;
       c->target.resize(T+1, m).setZero();
       for(t=0; t<Tearly; t++) c->target[t]() = midTarget;
@@ -342,25 +342,25 @@ void KOMO::setState(const arr& q, const arr& v) {
   if(useSwift) world.stepSwift();
 }
 
-uint KOMO::dim_phi(const rai::Configuration &G, uint t) {
+uint KOMO::dim_phi(const rai::Configuration& G, uint t) {
   uint m=0;
-  for(Task *c: tasks) {
+  for(Task* c: tasks) {
     if(c->active && c->prec.N>t && c->prec(t)) m += c->dim_phi(G, t); //counts also constraints
   }
   return m;
 }
 
-uint KOMO::dim_g(const rai::Configuration &G, uint t) {
+uint KOMO::dim_g(const rai::Configuration& G, uint t) {
   uint m=0;
-  for(Task *c: tasks) {
+  for(Task* c: tasks) {
     if(c->map.type==OT_ineq && c->active && c->prec.N>t && c->prec(t))  m += c->map.dim_phi(G);
   }
   return m;
 }
 
-uint KOMO::dim_h(const rai::Configuration &G, uint t) {
+uint KOMO::dim_h(const rai::Configuration& G, uint t) {
   uint m=0;
-  for(Task *c: tasks) {
+  for(Task* c: tasks) {
     if(c->map.type==OT_eq && c->active && c->prec.N>t && c->prec(t))  m += c->map.dim_phi(G);
   }
   return m;
@@ -376,7 +376,7 @@ void KOMO::setConfigurationStates() {
       configurations.append(new rai::Configuration())->copy(*configurations(t-1), true);
       CHECK_EQ(configurations(t), configurations.last(), "");
       //apply potential graph switches
-      for(rai::KinematicSwitch *sw:switches) {
+      for(rai::KinematicSwitch* sw:switches) {
         if(sw->timeOfApplication==t-k_order) {
           sw->apply(*configurations(t));
 //          if(MP.useSwift) configurations(t)->swift().initActivations(*configurations(t));
@@ -387,19 +387,19 @@ void KOMO::setConfigurationStates() {
 }
 
 void KOMO::temporallyAlignKinematicSwitchesInConfiguration(uint t) {
-  for(rai::KinematicSwitch *sw:switches) if(sw->timeOfApplication<=t) {
+  for(rai::KinematicSwitch* sw:switches) if(sw->timeOfApplication<=t) {
       sw->temporallyAlign(*configurations(t+k_order-1), *configurations(t+k_order));
     }
 }
 
 void KOMO::displayTrajectory(int steps, const char* tag, double delay) {
   OpenGL gl;
-  
+
   uint num;
   if(steps==1 || steps==-1) num=T; else num=steps;
   for(uint k=0; k<=(uint)num; k++) {
     uint t = (T?(k*T/num):0);
-    
+
     gl.clear();
     gl.add(glStandardScene, 0);
     gl.addDrawer(configurations(t+k_order));
@@ -415,13 +415,13 @@ void KOMO::displayTrajectory(int steps, const char* tag, double delay) {
     gl.watch(STRING(tag <<" (time " <<std::setw(3) <<T <<'/' <<T <<')').p);
 }
 
-bool KOMO::getPhi(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, const WorldL &G, double tau) {
+bool KOMO::getPhi(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, const ConfigurationL& G, double tau) {
   phi.clear();
   if(!!tt) tt.clear();
   if(!!J) J.clear();
   arr y, Jy;
   bool ineqHold=true;
-  for(Task *c: tasks) if(c->active && c->prec.N>t && c->prec(t)) {
+  for(Task* c: tasks) if(c->active && c->prec.N>t && c->prec(t)) {
       c->map.phi(y, (!!J?Jy:NoArr), G, tau, t);
       if(absMax(y)>1e10) RAI_MSG("WARNING y=" <<y);
       //linear transform (target shift)
@@ -438,9 +438,9 @@ bool KOMO::getPhi(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, const WorldL &G,
       if(c->map.type==OT_ineq && max(y)>0.) ineqHold=false;
     }
   if(!!J) J.reshape(phi.N, G.N*G.last()->getJointStateDimension());
-  
+
   CHECK_EQ(phi.N, dim_phi(*G.last(), t), "");
-  
+
   //memorize for report
   if(!phiMatrix.N) phiMatrix.resize(T+1);
   phiMatrix(t) = phi;
@@ -448,14 +448,14 @@ bool KOMO::getPhi(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, const WorldL &G,
     if(!ttMatrix.N) ttMatrix.resize(T+1);
     ttMatrix(t) = tt;
   }
-  
+
   return ineqHold;
 }
 
 StringA KOMO::getPhiNames(const rai::Configuration& G, uint t) {
   StringA names(dim_phi(G, t));
   uint m=0;
-  for(Task *c: tasks) if(c->active && c->prec.N>t && c->prec(t)) {
+  for(Task* c: tasks) if(c->active && c->prec.N>t && c->prec(t)) {
       if(c->map.type==OT_sos) {
         uint d = c->dim_phi(G, t); //counts also constraints
         for(uint i=0; i<d; i++) {
@@ -465,7 +465,7 @@ StringA KOMO::getPhiNames(const rai::Configuration& G, uint t) {
         m+=d;
       }
     }
-  for(Task *c: tasks) if(c->active && c->prec.N>t && c->prec(t)) {
+  for(Task* c: tasks) if(c->active && c->prec.N>t && c->prec(t)) {
       if(c->map.type==OT_ineq) {
         uint d = c->dim_phi(G, t); //counts also constraints
         for(uint i=0; i<d; i++) {
@@ -475,17 +475,17 @@ StringA KOMO::getPhiNames(const rai::Configuration& G, uint t) {
         m+=d;
       }
     }
-  CHECK_EQ(m , names.N,"");
+  CHECK_EQ(m, names.N, "");
   return names;
 }
 
 void KOMO::activateAllTaskCosts(bool active) {
-  for(Task *c: tasks) c->active=active;
+  for(Task* c: tasks) c->active=active;
 }
 
 void KOMO::reportFeatures(bool brief) {
   cout <<"*** KOMO -- FeatureReport " <<endl;
-  
+
   cout <<"  useSwift=" <<useSwift <<endl;
   cout <<"  T=" <<T <<endl;
   cout <<"  tau=" <<tau <<endl;
@@ -494,12 +494,12 @@ void KOMO::reportFeatures(bool brief) {
   cout <<"  v0=" <<v0 <<endl;
   cout <<"  prefix=" <<prefix <<endl;
   cout <<"  TASKS (time idx name order type target scale ttMatrix phiMatrix):" <<endl;
-  
+
   //-- collect all task costs and constraints
   for(uint t=0; t<=T; t++) {
     uint m=0;
     for(uint i=0; i<tasks.N; i++) {
-      Task *c = tasks(i);
+      Task* c = tasks(i);
       uint d=c->dim_phi(world, t);
       if(brief) {
         if(d) {
@@ -510,7 +510,7 @@ void KOMO::reportFeatures(bool brief) {
           cout <<' ' <<c->prec(t);
           if(ttMatrix.N) {
             cout <<' ' <<ttMatrix(t).elem(m)
-                 <<' ' <<sumOfSqr(phiMatrix(t)({m,m+d-1}));
+                 <<' ' <<sumOfSqr(phiMatrix(t)({m, m+d-1}));
           }
           cout <<endl;
         }
@@ -521,7 +521,7 @@ void KOMO::reportFeatures(bool brief) {
                <<' ' <<c->map.order <<' ' <<c->map.type <<' ';
           if(c->target.N==1) cout <<c->target.elem(0);
           else if(c->target.nd==1) cout <<c->target(i);
-          else if(c->target.nd==2) cout <<c->target(t,i);
+          else if(c->target.nd==2) cout <<c->target(t, i);
           else cout <<"00";
           cout <<' ' <<c->prec(t);
           if(ttMatrix.N) {
@@ -533,25 +533,25 @@ void KOMO::reportFeatures(bool brief) {
       }
       m += d;
     }
-    if(phiMatrix.N) CHECK_EQ(m , phiMatrix(t).N, "");
+    if(phiMatrix.N) CHECK_EQ(m, phiMatrix(t).N, "");
   }
-  
+
   cout <<"  SWITCHES: " <<switches.N <<endl;
-  for(rai::KinematicSwitch *sw:switches) {
+  for(rai::KinematicSwitch* sw:switches) {
     cout <<*sw <<endl;
   }
-  
+
 }
 
 void KOMO::costReport(bool gnuplt) {
   cout <<"*** KOMO -- CostReport" <<endl;
   if(phiMatrix.N!=T+1) {
-    CHECK_EQ(phiMatrix.N, 0,"");
+    CHECK_EQ(phiMatrix.N, 0, "");
     phiMatrix.resize(T+1);
   }
-  
-  arr plotData(T+1,tasks.N); plotData.setZero();
-  
+
+  arr plotData(T+1, tasks.N); plotData.setZero();
+
   //-- collect all task costs and constraints
   double a;
   arr taskC(tasks.N); taskC.setZero();
@@ -559,54 +559,54 @@ void KOMO::costReport(bool gnuplt) {
   for(uint t=0; t<=T; t++) {
     uint m=0;
     for(uint i=0; i<tasks.N; i++) {
-      Task *c = tasks(i);
+      Task* c = tasks(i);
       uint d=c->dim_phi(world, t);
-      if(ttMatrix.N) for(uint i=0; i<d; i++) CHECK_EQ(ttMatrix(t)(m+i), c->map.type,"");
+      if(ttMatrix.N) for(uint i=0; i<d; i++) CHECK_EQ(ttMatrix(t)(m+i), c->map.type, "");
       if(d) {
         if(c->map.type==OT_sos) {
-          taskC(i) += a = sumOfSqr(phiMatrix(t).sub(m,m+d-1));
-          plotData(t,i) = a;
+          taskC(i) += a = sumOfSqr(phiMatrix(t).sub(m, m+d-1));
+          plotData(t, i) = a;
         }
         if(c->map.type==OT_ineq) {
-          double gpos=0.,gall=0.;
+          double gpos=0., gall=0.;
           for(uint j=0; j<d; j++) {
             double g=phiMatrix(t)(m+j);
             if(g>0.) gpos+=g;
             gall += g;
           }
           taskG(i) += gpos;
-          plotData(t,i) = gall;
+          plotData(t, i) = gall;
         }
         if(c->map.type==OT_eq) {
-          double gpos=0.,gall=0.;
+          double gpos=0., gall=0.;
           for(uint j=0; j<d; j++) {
             double h=phiMatrix(t)(m+j);
             gpos+=fabs(h);
             gall += h;
           }
           taskG(i) += gpos;
-          plotData(t,i) = gall;
+          plotData(t, i) = gall;
         }
         m += d;
       }
     }
-    CHECK_EQ(m , phiMatrix(t).N, "");
+    CHECK_EQ(m, phiMatrix(t).N, "");
   }
-  
+
   //-- generate output
   cout <<" * task costs:" <<endl;
   double totalC=0., totalG=0.;
   for(uint i=0; i<tasks.N; i++) {
-    Task *c = tasks(i);
+    Task* c = tasks(i);
     cout <<"\t '" <<c->name <<"' order=" <<c->map.order <<" type=" <<c->map.type;
     cout <<" \tcosts=" <<taskC(i) <<" \tconstraints=" <<taskG(i) <<endl;
     totalC += taskC(i);
     totalG += taskG(i);
   }
-  
+
   cout <<"\t total task        = " <<totalC <<endl;
   cout <<"\t total constraints = " <<totalG <<endl;
-  
+
   //-- write a nice gnuplot file
   ofstream fil("z.costReport");
   //first line: legend
@@ -622,13 +622,13 @@ void KOMO::costReport(bool gnuplt) {
   fil <<endl;
   //rest: just the matrix?
   if(!dualMatrix.N) {
-    plotData.write(fil,NULL,NULL,"  ");
+    plotData.write(fil, nullptr, nullptr, "  ");
   } else {
     dualMatrix.reshape(T+1, dualMatrix.N/(T+1));
-    catCol(plotData, dualMatrix).write(fil,NULL,NULL,"  ");
+    catCol(plotData, dualMatrix).write(fil, nullptr, nullptr, "  ");
   }
   fil.close();
-  
+
   ofstream fil2("z.costReport.plt");
   fil2 <<"set key autotitle columnheader" <<endl;
   fil2 <<"set title 'costReport ( plotting sqrt(costs) )'" <<endl;
@@ -637,27 +637,27 @@ void KOMO::costReport(bool gnuplt) {
   if(dualMatrix.N) for(uint i=0; i<tasks.N; i++) fil2 <<"  ,'' u 0:"<<1+tasks.N+i<<" w l \\" <<endl;
   fil2 <<endl;
   fil2.close();
-  
+
   if(gnuplt) gnuplot("load 'z.costReport.plt'");
 }
 
 Graph KOMO::getReport() {
   if(phiMatrix.N!=T+1) {
-    CHECK_EQ(phiMatrix.N, 0,"");
+    CHECK_EQ(phiMatrix.N, 0, "");
     phiMatrix.resize(T+1);
   }
-  
+
   //-- collect all task costs and constraints
   arr taskC(tasks.N); taskC.setZero();
   arr taskG(tasks.N); taskG.setZero();
   for(uint t=0; t<=T; t++) {
     uint m=0;
     for(uint i=0; i<tasks.N; i++) {
-      Task *c = tasks(i);
+      Task* c = tasks(i);
       uint d=c->dim_phi(world, t);
-      for(uint i=0; i<d; i++) CHECK_EQ(ttMatrix(t)(m+i), c->map.type,"");
+      for(uint i=0; i<d; i++) CHECK_EQ(ttMatrix(t)(m+i), c->map.type, "");
       if(d) {
-        if(c->map.type==OT_sos) taskC(i) += sumOfSqr(phiMatrix(t).sub(m,m+d-1));
+        if(c->map.type==OT_sos) taskC(i) += sumOfSqr(phiMatrix(t).sub(m, m+d-1));
         if(c->map.type==OT_ineq) {
           for(uint j=0; j<d; j++) {
             double g=phiMatrix(t)(m+j);
@@ -670,14 +670,14 @@ Graph KOMO::getReport() {
         m += d;
       }
     }
-    CHECK_EQ(m , phiMatrix(t).N, "");
+    CHECK_EQ(m, phiMatrix(t).N, "");
   }
-  
+
   Graph report;
   double totalC=0., totalG=0.;
   for(uint i=0; i<tasks.N; i++) {
-    Task *c = tasks(i);
-    Graph *g = &newSupGraph(report, {c->name}, {})->value;
+    Task* c = tasks(i);
+    Graph* g = &newSupGraph(report, {c->name}, {})->value;
     g->newNode<double>({"order"}, {}, c->map.order);
     g->newNode<rai::String>({"type"}, {}, STRING(ObjectiveTypeString[c->map.type]));
     g->newNode<double>({"sqrCosts"}, {}, taskC(i));
@@ -685,9 +685,9 @@ Graph KOMO::getReport() {
     totalC += taskC(i);
     totalG += taskG(i);
   }
-  report.newNode<double>({"total","sqrCosts"}, {}, totalC);
-  report.newNode<double>({"total","constraints"}, {}, totalG);
-  
+  report.newNode<double>({"total", "sqrCosts"}, {}, totalC);
+  report.newNode<double>({"total", "constraints"}, {}, totalG);
+
   return report;
 }
 
@@ -696,7 +696,7 @@ arr KOMO::getInitialization() {
 }
 
 void KOMO::inverseKinematics(arr& y, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x) {
-  CHECK(!T,"");
+  CHECK(!T, "");
 //  CHECK(!k_order,"");
 //  CHECK(!switches.N,"");
 
@@ -731,16 +731,16 @@ arr MotionProblemFunction::get_postfix() {
 
 void MotionProblemFunction::phi_t(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, const arr& x_bar) {
   uint T=get_T(), n=dim_x()+dim_z(), k=get_k();
-  
+
   //assert some dimensions
-  CHECK_EQ(x_bar.d0,k+1,"");
-  CHECK_EQ(x_bar.d1,n,"");
-  CHECK_LE(t, T,"");
-  
+  CHECK_EQ(x_bar.d0, k+1, "");
+  CHECK_EQ(x_bar.d1, n, "");
+  CHECK_LE(t, T, "");
+
 #define NEWCODE
 #ifdef NEWCODE
   MP.setConfigurationStates();
-  
+
   //set states
   for(uint i=0; i<=k; i++) {
     if(x_bar[i]!=MP.configurations(t+i)->q) {
@@ -775,7 +775,7 @@ void MotionProblemFunction::phi_t(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, 
   }
 #endif
   //apply potential graph switches
-  for(rai::KinematicSwitch *sw:MP.switches) {
+  for(rai::KinematicSwitch* sw:MP.switches) {
     for(uint i=0; i<=k; i++) {
       if(t+i>=k && sw->timeOfApplication==t-k+i) {
         sw->apply(*configurations(i));
@@ -791,12 +791,12 @@ void MotionProblemFunction::phi_t(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, 
     }
   }
 #endif
-  
+
   //-- task cost (which are taken w.r.t. x_bar[k])
   arr _phi, _J;
   ObjectiveTypeA _tt;
 #ifdef NEWCODE
-  MP.getPhi(_phi, (!!J?_J:NoArr), (!!tt?_tt:NoTermTypeA), t, MP.configurations({t,t+k}), MP.tau);
+  MP.getPhi(_phi, (!!J?_J:NoArr), (!!tt?_tt:NoTermTypeA), t, MP.configurations({t, t+k}), MP.tau);
 #else
   MP.getPhi(_phi, (!!J?_J:NoArr), (!!tt?_tt:NoTermTypeA), t, MP.configurations, MP.tau);
 #endif
@@ -809,8 +809,8 @@ void MotionProblemFunction::phi_t(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, 
 //    for(auto& c:configurations) c->setAgent(0);
 //  }
 
-  if(!!tt) CHECK_EQ(tt.N, phi.N,"");
-  if(!!J) CHECK_EQ(J.d0, phi.N,"");
+  if(!!tt) CHECK_EQ(tt.N, phi.N, "");
+  if(!!J) CHECK_EQ(J.d0, phi.N, "");
 //  if(!!J_z) CHECK_EQ(J.d0,phi.N,"");
 
 }
@@ -844,15 +844,15 @@ void MotionProblem_EndPoseFunction::fv(arr& phi, arr& J, const arr& x) {
   if(!!J && _phi.N) {
     J.append(J_x);
   }
-  
+
   if(absMax(phi)>1e10) {
     RAI_MSG("\nx=" <<x <<"\nphi=" <<phi <<"\nJ=" <<J);
     MP.setState(x, NoArr);
     MP.getPhi(_phi, J_x, NoTermTypeA, MP.T, LIST(MP.world), MP.tau);
   }
-  
-  if(!!J) CHECK_EQ(J.d0,phi.N,"");
-  
+
+  if(!!J) CHECK_EQ(J.d0, phi.N, "");
+
   //store in CostMatrix
   MP.phiMatrix = phi;
 }
@@ -868,8 +868,8 @@ MotionProblem_EndPoseFunction::MotionProblem_EndPoseFunction(KOMO& _MP)
 
 //===========================================================================
 
-void sineProfile(arr& q, const arr& q0, const arr& qT,uint T) {
-  q.resize(T+1,q0.N);
+void sineProfile(arr& q, const arr& q0, const arr& qT, uint T) {
+  q.resize(T+1, q0.N);
   for(uint t=0; t<=T; t++) q[t] = q0 + .5 * (1.-cos(RAI_PI*t/T)) * (qT-q0);
 }
 

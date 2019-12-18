@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -43,8 +43,8 @@ bool rk4dd_switch(arr& x1, arr& v1, arr& s1, const arr& x0, const arr& v0, const
                   void (*ddf)(arr& xdd, const arr& x, const arr& v),
                   void (*sf)(arr& s, const arr& x, const arr& v),
                   double& dt, double tol);
-                  
-                  
+
+
 } //end namespace rai
 
 #endif

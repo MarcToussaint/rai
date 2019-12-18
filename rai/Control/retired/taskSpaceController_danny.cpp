@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -13,8 +13,8 @@
 LinTaskSpaceAccLaw::LinTaskSpaceAccLaw(Feature* map, rai::Configuration* world, rai::String name) : map(map), world(world), name(name) {
   this->setRef(); //TODO: is this the best way?
   uint dim = this->getPhiDim();
-  this->setC(zeros(dim,dim));
-  this->setGains(zeros(dim,dim),zeros(dim,dim));
+  this->setC(zeros(dim, dim));
+  this->setGains(zeros(dim, dim), zeros(dim, dim));
 }
 
 // TODO: enable to set ref and generate trajectory out of it
@@ -46,7 +46,7 @@ void LinTaskSpaceAccLaw::setC(arr C) {
   this->C = C;
 }
 
-void LinTaskSpaceAccLaw::setSpline(rai::Spline *yS, rai::Spline *yDotS, rai::Spline *yDDotS) {
+void LinTaskSpaceAccLaw::setSpline(rai::Spline* yS, rai::Spline* yDotS, rai::Spline* yDDotS) {
   this->trajectorySpline = yS;
   this->trajectoryDotSpline = yDotS;
   this->trajectoryDDotSpline = yDDotS;
@@ -69,12 +69,12 @@ void LinTaskSpaceAccLaw::setTrajectory(uint trajLength, const arr& traj, const a
   if(!!trajDot) {
     this->trajectoryDot = trajDot;
   } else if(!this->trajectoryDot.N) {
-    this->trajectoryDot = zeros(trajLength,this->getPhiDim());
+    this->trajectoryDot = zeros(trajLength, this->getPhiDim());
   }
   if(!!trajDDot) {
     this->trajectoryDDot = trajDDot;
   } else if(!this->trajectoryDDot.N) {
-    this->trajectoryDDot = zeros(trajLength,this->getPhiDim());
+    this->trajectoryDDot = zeros(trajLength, this->getPhiDim());
   }
 }
 
@@ -88,7 +88,7 @@ arr LinTaskSpaceAccLaw::getPhi() {
   return y;
 }
 
-void LinTaskSpaceAccLaw::getPhi(arr &y, arr &J) {
+void LinTaskSpaceAccLaw::getPhi(arr& y, arr& J) {
   this->map->phi(y, J, *this->world);
 }
 
@@ -164,28 +164,28 @@ void TaskSpaceController::addConstrainedTaskLaw(ConstrainedTaskLaw* law) {
   this->addLinTaskSpaceAccLaw(law);
 }
 
-void TaskSpaceController::calcOptimalControlProjected(arr &Kp, arr &Kd, arr &u0) {
+void TaskSpaceController::calcOptimalControlProjected(arr& Kp, arr& Kd, arr& u0) {
   arr M, F;
   world->equationOfMotion(M, F, this->gravity);
-  
+
   arr q0, q, qDot;
-  world->getJointState(q,qDot);
-  
+  world->getJointState(q, qDot);
+
   //arr H = /*diag(this->world->getHmetric());//*/0.1*eye(this->world->getJointStateDimension());
   //M = H;
   //F = zeros(this->world->getJointStateDimension());
-  
+
   arr H = inverse(M); //TODO: Other metrics (have significant influence)
-  
+
   arr A = ~M*H*M; //TODO: The M matrix is symmetric, isn't it? And also symmetric? Furthermore, if H = M^{-1}, this should be calculated more efficiently
   arr a = zeros(this->world->getJointStateDimension());//M*eye(this->world->getJointStateDimension())*5.0*(-qDot);// //TODO: other a possible
   u0 = ~M*H*(a-F);
   arr y, J;
   arr tempKp, tempKd;
-  
+
   q0 = q;
-  Kp = zeros(this->world->getJointStateDimension(),this->world->getJointStateDimension());
-  Kd = zeros(this->world->getJointStateDimension(),this->world->getJointStateDimension());
+  Kp = zeros(this->world->getJointStateDimension(), this->world->getJointStateDimension());
+  Kd = zeros(this->world->getJointStateDimension(), this->world->getJointStateDimension());
   for(LinTaskSpaceAccLaw* laws : this->taskSpaceAccLaws) {
     laws->getPhi(y, J);
     A += ~J*laws->getC()*J;
@@ -205,9 +205,9 @@ void TaskSpaceController::calcOptimalControlProjected(arr &Kp, arr &Kd, arr &u0)
 
 void TaskSpaceController::calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, double& gamma) {
   if(this->constrainedTaskLaws.N > 0) {
-    CHECK_EQ(this->constrainedTaskLaws.N ,  1, "Multiple force laws not allowed at the moment");
+    CHECK_EQ(this->constrainedTaskLaws.N,  1, "Multiple force laws not allowed at the moment");
     for(ConstrainedTaskLaw* law : this->constrainedTaskLaws) {
-      TM_Default *m = dynamic_cast<TM_Default*>(law->map);
+      TM_Default* m = dynamic_cast<TM_Default*>(law->map);
       rai::Body* body = this->world->shapes(m->i)->body;
       rai::Vector vec = this->world->shapes(m->i)->rel.pos;
       rai::Shape* lFtSensor = this->world->getShapeByName("l_ft_sensor");
@@ -222,7 +222,7 @@ void TaskSpaceController::calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, 
   } else {
     K_ft = zeros(this->world->getJointStateDimension());
     fRef = ARR(0.0);
-    J_ft_inv = zeros(1,6);
+    J_ft_inv = zeros(1, 6);
     gamma = 0.0;
   }
 }
@@ -263,7 +263,7 @@ void TaskSpaceController::generateTaskSpaceTrajectoryFromJointSpace(arr jointSpa
       }
       law->trajectory.append(y);
     }
-    
+
     if(law->getTrajectoryActive()) {
       this->world->setJointState(jointSpaceTrajectory[0]);
       law->getPhi(y0, NoArr);
@@ -274,7 +274,7 @@ void TaskSpaceController::generateTaskSpaceTrajectoryFromJointSpace(arr jointSpa
       yDot = law->getDotRef();
     }
     law->trajectoryDot.append(yDot);
-    
+
     for(uint i = 1; i < trajSteps-1; i++) {
       if(law->getTrajectoryActive()) {
         this->world->setJointState(jointSpaceTrajectory[i-1]);
@@ -287,13 +287,13 @@ void TaskSpaceController::generateTaskSpaceTrajectoryFromJointSpace(arr jointSpa
       }
       law->trajectoryDot.append(yDot);
     }
-    
+
     if(law->getTrajectoryActive()) {
       this->world->setJointState(jointSpaceTrajectory[jointSpaceTrajectory.d0-2]);
       law->getPhi(y0, NoArr);
       this->world->setJointState(jointSpaceTrajectory[jointSpaceTrajectory.d0-1]);
       law->getPhi(y1, NoArr);
-      
+
       yDot = (y1-y0)/0.1;
     } else {
       yDot = law->getDotRef();
@@ -311,7 +311,7 @@ void TaskSpaceController::generateTaskSpaceTrajectoryFromJointSpace(const arr& j
   uint trajSteps = jointSpaceTrajectory.d0;
   arr qOld, qDotOld, y, yDot, yDDot;
   this->world->getJointState(qOld, qDotOld);
-  
+
   for(uint i = 0; i < trajSteps; i++) {
     this->world->setJointState(jointSpaceTrajectory[i]);
     for(LinTaskSpaceAccLaw* law : this->taskSpaceAccLaws) {
@@ -334,9 +334,9 @@ void TaskSpaceController::generateTaskSpaceTrajectoryFromJointSpace(const arr& j
 
 void TaskSpaceController::generateTaskSpaceSplines() {
   for(LinTaskSpaceAccLaw* law : this->taskSpaceAccLaws) {
-    CHECK_GE(law->trajectory.d0 ,  3, "The trajectory must consists of at least 3 states for the spline to work");
-    CHECK_GE(law->trajectoryDot.d0 ,  3, "The trajectoryDot must consists of at least 3 states for the spline to work");
-    CHECK_GE(law->trajectoryDDot.d0 ,  3, "The trajectoryDDot must consists of at least 3 states for the spline to work");
+    CHECK_GE(law->trajectory.d0,  3, "The trajectory must consists of at least 3 states for the spline to work");
+    CHECK_GE(law->trajectoryDot.d0,  3, "The trajectoryDot must consists of at least 3 states for the spline to work");
+    CHECK_GE(law->trajectoryDDot.d0,  3, "The trajectoryDDot must consists of at least 3 states for the spline to work");
     //law->setSpline(new rai::Spline(law->trajectory.d0, law->trajectory), new rai::Spline(law->trajectory.d0, law->trajectoryDot));
     //law->setSpline(new rai::Spline(law->trajectory.d0, law->trajectory));
     law->setSpline(new rai::Spline(law->trajectory.d0, law->trajectory), new rai::Spline(law->trajectoryDot.d0, law->trajectoryDot), new rai::Spline(law->trajectoryDDot.d0, law->trajectoryDDot));

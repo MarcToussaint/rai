@@ -298,7 +298,7 @@ bool Distance_LC( RESULT_TYPE start_state,
 };
 
 void new_PairWorkspace(SWIFT_PairWorkspace*& s){ s = new SWIFT_PairWorkspace; }
-void delete_PairWorkspace(SWIFT_PairWorkspace*& s){ delete s; s=NULL; };
+void delete_PairWorkspace(SWIFT_PairWorkspace*& s){ delete s; s=nullptr; };
 
 //////////////////////////////////////////////////////////////////////////////
 // Initialization functions
@@ -334,7 +334,7 @@ inline void SWIFT_PairWorkspace::Setup_BV_Query( RESULT_TYPE& start_state,
     saved = false;
 #endif
 
-    if( feat1 == NULL ) {
+    if( feat1 == nullptr ) {
         // There are no last starting features so initialize the starting
         // features based on the normal map stored in the objects.
         fdir = (trans10 * bv1->Center_Of_Mass()) -
@@ -626,8 +626,8 @@ inline RESULT_TYPE SWIFT_PairWorkspace::Vertex_Edge( )
 
     SWIFT_Tri_Edge* edge;
     SWIFT_Real lambda;
-    SWIFT_Tri_Edge* et = NULL;
-    SWIFT_Tri_Edge* eh = NULL;
+    SWIFT_Tri_Edge* et = nullptr;
+    SWIFT_Tri_Edge* eh = nullptr;
 
     if( prev_state == CONTINUE_EE ) {
         // lam_min1 and lam_max1 are initialized correctly in EE
@@ -671,7 +671,7 @@ inline RESULT_TYPE SWIFT_PairWorkspace::Vertex_Edge( )
     } while( edge != ve1 );
 
     // Check the derivatives at the ends of the clipped edge
-    if( et != NULL ) {
+    if( et != nullptr ) {
         if( (*t2xp + (lam_min1 * e2->Length()) * (*u2xp) -
             v1->Coords()) * (*u2xp) > 0.0
         ) {
@@ -681,7 +681,7 @@ inline RESULT_TYPE SWIFT_PairWorkspace::Vertex_Edge( )
             return CONTINUE_EE;
         }
     }
-    if( eh != NULL ) {
+    if( eh != nullptr ) {
         if( (*t2xp + (lam_max1 * e2->Length()) * (*u2xp) -
             v1->Coords()) * (*u2xp) < 0.0
         ) {
@@ -830,8 +830,8 @@ inline RESULT_TYPE SWIFT_PairWorkspace::Vertex_Face( )
 
     // Find out which edge-face planes the head of the edge violates.
     // e2 will holds first one (if possible), edge holds possible second one.
-    edge = NULL;
-    e2 = NULL;
+    edge = nullptr;
+    e2 = nullptr;
     if( dr21 < 0.0 ) {
         e2 = f2->Edge1P();
         if( dr12 < 0.0 ) {
@@ -854,7 +854,7 @@ inline RESULT_TYPE SWIFT_PairWorkspace::Vertex_Face( )
     }
 
     // Check if any of the edge-face planes were violated.
-    if( e2 == NULL ) {
+    if( e2 == nullptr ) {
         // Check for penetration
         minfd = dist;
         dist = f2->Distance( *h1xp );
@@ -880,7 +880,7 @@ inline RESULT_TYPE SWIFT_PairWorkspace::Vertex_Face( )
     *u1xp = (*T01) & e1->Direction();
     SWIFT_Real ux_dot = *u1xp * e2->Face_Normal();
 
-    if( edge == NULL ) {
+    if( edge == nullptr ) {
         dr12 = dr21;
     } else {
         SWIFT_Real ux_dot2 = *u1xp * edge->Face_Normal();
@@ -940,8 +940,8 @@ inline RESULT_TYPE SWIFT_PairWorkspace::Vertex_Face( )
 // to edge2.
 void Compute_Closest_Points_Edge_Edge(
     SWIFT_Tri_Edge* edge1, SWIFT_Tri_Edge* edge2, SWIFT_Triple& tri1,
-    //SWIFT_Triple& tri2, SWIFT_Transformation& T_1_2, SWIFT_Triple* sv = NULL )
-    SWIFT_Triple& tri2, SWIFT_Transformation& T_1_2, SWIFT_Real* dist = NULL )
+    //SWIFT_Triple& tri2, SWIFT_Transformation& T_1_2, SWIFT_Triple* sv = nullptr )
+    SWIFT_Triple& tri2, SWIFT_Transformation& T_1_2, SWIFT_Real* dist = nullptr )
 {
     SWIFT_Triple tx = T_1_2 * edge1->Origin()->Coords();
     SWIFT_Triple ux = T_1_2 & edge1->Direction();   // Vector transform
@@ -998,7 +998,7 @@ void Compute_Closest_Points_Edge_Edge(
         tri2 = edge2->Origin()->Coords() + u * edge2->Direction();
     }
 
-    if( dist != NULL ) {
+    if( dist != nullptr ) {
         *dist = tri2.Dist( tx + t * ux );
     }
 }
@@ -1236,10 +1236,10 @@ RESULT_TYPE SWIFT_PairWorkspace::Edge_Edge( )
         }
     }
 
-    SWIFT_Tri_Edge* et2 = NULL;
-    SWIFT_Tri_Edge* eh2 = NULL;
-    SWIFT_Tri_Edge* et1 = NULL;
-    SWIFT_Tri_Edge* eh1 = NULL;
+    SWIFT_Tri_Edge* et2 = nullptr;
+    SWIFT_Tri_Edge* eh2 = nullptr;
+    SWIFT_Tri_Edge* et1 = nullptr;
+    SWIFT_Tri_Edge* eh1 = nullptr;
     SWIFT_Real lambda;
     bool fully_clipped1 = false;
     bool fully_clipped2 = false;
@@ -1345,7 +1345,7 @@ RESULT_TYPE SWIFT_PairWorkspace::Edge_Edge( )
 
     // Check the derivatives crossing to faces if the edges were clipped by the
     // edge-face planes
-    if( et2 != NULL ) {
+    if( et2 != nullptr ) {
         if( !fully_clipped2 ) {
             d1 = et2->Adj_Face()->Distance(
                                 *t1xp + (lam_min1 * e1->Length()) * (*u1xp) );
@@ -1382,7 +1382,7 @@ RESULT_TYPE SWIFT_PairWorkspace::Edge_Edge( )
             return result;
         }
     }
-    if( eh2 != NULL ) {
+    if( eh2 != nullptr ) {
         d1 = eh2->Adj_Face()->Distance(
                                 *t1xp + (lam_max1 * e1->Length()) * (*u1xp) );
         d2 = eh2->Adj_Face()->Normal() * (*u1xp);
@@ -1405,7 +1405,7 @@ RESULT_TYPE SWIFT_PairWorkspace::Edge_Edge( )
             return result;
         }
     }
-    if( et1 != NULL ) {
+    if( et1 != nullptr ) {
         if( !fully_clipped1 ) {
             d1 = et1->Adj_Face()->Distance(
                                 *t2xp + (lam_min2 * e2->Length()) * (*u2xp) );
@@ -1446,7 +1446,7 @@ RESULT_TYPE SWIFT_PairWorkspace::Edge_Edge( )
             return result;
         }
     }
-    if( eh1 != NULL ) {
+    if( eh1 != nullptr ) {
         d1 = eh1->Adj_Face()->Distance(
                                 *t2xp + (lam_max2 * e2->Length()) * (*u2xp) );
         d2 = eh1->Adj_Face()->Normal() * (*u2xp);
@@ -2032,7 +2032,7 @@ bool SWIFT_PairWorkspace::Walk_Convex_LC( RESULT_TYPE start_state )
                 // First time in the detector for this potential cycle.
                 // Initialize the cycle detector.
                 for( j = 0; j < cycle_detector_feats.Length(); j++ ) {
-                    cycle_detector_feats[j] = NULL;
+                    cycle_detector_feats[j] = nullptr;
                 }
                 j = 0;
             }
@@ -2232,7 +2232,7 @@ bool SWIFT_PairWorkspace::Tolerance_LC( RESULT_TYPE start_state, SWIFT_Real tole
 
 #ifdef SWIFT_FRONT_TRACKING
     SWIFT_Front_Node* new_node;
-    if( node != NULL ) {
+    if( node != nullptr ) {
         // This is the top level node (first call) and parent == node
         Save_State( node );
         node->Set_Close( result );
@@ -2250,7 +2250,7 @@ bool SWIFT_PairWorkspace::Tolerance_LC( RESULT_TYPE start_state, SWIFT_Real tole
             new_node->Set_BV1( bv1 );
             parent = new_node;
         } else {
-            parent = NULL;
+            parent = nullptr;
         }
     }
 #else
@@ -2284,7 +2284,7 @@ bool SWIFT_PairWorkspace::Tolerance_LC( RESULT_TYPE start_state, SWIFT_Real tole
             fdir = st - bv0->Center_Of_Mass();
             Initialize_From_Scratch( start_state );
 #ifdef SWIFT_FRONT_TRACKING
-            if( Tolerance_LC( start_state, tolerance, NULL, new_node ) ) {
+            if( Tolerance_LC( start_state, tolerance, nullptr, new_node ) ) {
                 // Link in the subtree and the non-visited subtree
                 parent->Set_Left_Child( new_node );
                 new_node = new SWIFT_Front_Node;
@@ -2309,10 +2309,10 @@ bool SWIFT_PairWorkspace::Tolerance_LC( RESULT_TYPE start_state, SWIFT_Real tole
 #ifdef SWIFT_FRONT_TRACKING
             parent->Set_Left_Child( new_node );
             new_node = parent;
-            result = Tolerance_LC( start_state, tolerance, NULL, new_node );
+            result = Tolerance_LC( start_state, tolerance, nullptr, new_node );
             parent->Set_Right_Child( new_node );
-            if( parent->Left_Child() == NULL ) {
-                if( parent->Right_Child() != NULL ) {
+            if( parent->Left_Child() == nullptr ) {
+                if( parent->Right_Child() != nullptr ) {
                     // Have to create a left child
                     new_node = new SWIFT_Front_Node;
                     new_node->Set_Parent( parent );
@@ -2323,7 +2323,7 @@ bool SWIFT_PairWorkspace::Tolerance_LC( RESULT_TYPE start_state, SWIFT_Real tole
                     pairfront->Count_Drop();
                 }
             } else {
-                if( parent->Right_Child() == NULL ) {
+                if( parent->Right_Child() == nullptr ) {
                     // Have to create a right child
                     new_node = new SWIFT_Front_Node;
                     new_node->Set_Parent( parent );
@@ -2351,7 +2351,7 @@ bool SWIFT_PairWorkspace::Tolerance_LC( RESULT_TYPE start_state, SWIFT_Real tole
             fdir = st - bv1->Center_Of_Mass();
             Initialize_From_Scratch2( start_state );
 #ifdef SWIFT_FRONT_TRACKING
-            if( Tolerance_LC( start_state, tolerance, NULL, new_node ) ) {
+            if( Tolerance_LC( start_state, tolerance, nullptr, new_node ) ) {
                 // Link in the subtree and the non-visited subtree
                 parent->Set_Left_Child( new_node );
                 new_node = new SWIFT_Front_Node;
@@ -2376,10 +2376,10 @@ bool SWIFT_PairWorkspace::Tolerance_LC( RESULT_TYPE start_state, SWIFT_Real tole
 #ifdef SWIFT_FRONT_TRACKING
             parent->Set_Left_Child( new_node );
             new_node = parent;
-            result = Tolerance_LC( start_state, tolerance, NULL, new_node );
+            result = Tolerance_LC( start_state, tolerance, nullptr, new_node );
             parent->Set_Right_Child( new_node );
-            if( parent->Left_Child() == NULL ) {
-                if( parent->Right_Child() != NULL ) {
+            if( parent->Left_Child() == nullptr ) {
+                if( parent->Right_Child() != nullptr ) {
                     // Have to create a left child
                     new_node = new SWIFT_Front_Node;
                     new_node->Set_Parent( parent );
@@ -2390,7 +2390,7 @@ bool SWIFT_PairWorkspace::Tolerance_LC( RESULT_TYPE start_state, SWIFT_Real tole
                     pairfront->Count_Drop();
                 }
             } else {
-                if( parent->Right_Child() == NULL ) {
+                if( parent->Right_Child() == nullptr ) {
                     // Have to create a right child
                     new_node = new SWIFT_Front_Node;
                     new_node->Set_Parent( parent );
@@ -2430,7 +2430,7 @@ bool SWIFT_PairWorkspace::Distance_LC( RESULT_TYPE start_state,
 
 #ifdef SWIFT_FRONT_TRACKING
     SWIFT_Front_Node* new_node;
-    if( node != NULL ) {
+    if( node != nullptr ) {
         // This is the top level node (first call) and parent == node
         Save_State( node );
         node->Set_Close( result );
@@ -2449,7 +2449,7 @@ bool SWIFT_PairWorkspace::Distance_LC( RESULT_TYPE start_state,
             new_node->Set_BV1( bv1 );
             parent = new_node;
         } else {
-            parent = NULL;
+            parent = nullptr;
         }
     }
 #else
@@ -2485,10 +2485,10 @@ bool SWIFT_PairWorkspace::Distance_LC( RESULT_TYPE start_state,
             Initialize_From_Scratch( start_state );
 #ifdef SWIFT_FRONT_TRACKING
             if( Distance_LC( start_state, tolerance, abs_error, rel_error,
-                             loc_dist, NULL, new_node, contacts )
+                             loc_dist, nullptr, new_node, contacts )
             ) {
                 // Link in the subtree and the non-visited subtree.  This might
-                // only happen when parent != NULL (intersection at prev level)
+                // only happen when parent != nullptr (intersection at prev level)
                 parent->Set_Left_Child( new_node );
                 new_node = new SWIFT_Front_Node;
                 new_node->Set_Parent( parent );
@@ -2516,14 +2516,14 @@ bool SWIFT_PairWorkspace::Distance_LC( RESULT_TYPE start_state,
             fdir = st - bv0->Center_Of_Mass();
             Initialize_From_Scratch( start_state );
 #ifdef SWIFT_FRONT_TRACKING
-            if( parent != NULL ) {
+            if( parent != nullptr ) {
                 parent->Set_Left_Child( new_node );
                 new_node = parent;
                 result = Distance_LC( start_state, tolerance, abs_error,
-                              rel_error, loc_dist, NULL, new_node, contacts );
+                              rel_error, loc_dist, nullptr, new_node, contacts );
                 parent->Set_Right_Child( new_node );
-                if( parent->Left_Child() == NULL ) {
-                    if( parent->Right_Child() != NULL ) {
+                if( parent->Left_Child() == nullptr ) {
+                    if( parent->Right_Child() != nullptr ) {
                         // Have to create a left child
                         new_node = new SWIFT_Front_Node;
                         new_node->Set_Parent( parent );
@@ -2534,7 +2534,7 @@ bool SWIFT_PairWorkspace::Distance_LC( RESULT_TYPE start_state,
                         pairfront->Count_Drop();
                     }
                 } else {
-                    if( parent->Right_Child() == NULL ) {
+                    if( parent->Right_Child() == nullptr ) {
                         // Have to create a right child
                         new_node = new SWIFT_Front_Node;
                         new_node->Set_Parent( parent );
@@ -2546,12 +2546,12 @@ bool SWIFT_PairWorkspace::Distance_LC( RESULT_TYPE start_state,
                     pairfront->Count_Drop();
                 }
 #ifdef SWIFT_DEBUG
-} else if( new_node != NULL ) {
+} else if( new_node != nullptr ) {
 cerr << "!!!!!!!!!!!!!!!! new node is null !!!!!!!!!!!!!!!!!" << endl;
 #endif
             } else {
                 result = Distance_LC( start_state, tolerance, abs_error,
-                              rel_error, loc_dist, NULL, new_node, contacts );
+                              rel_error, loc_dist, nullptr, new_node, contacts );
             }
 #else
             result = Distance_LC( start_state, tolerance, abs_error, rel_error,
@@ -2574,10 +2574,10 @@ cerr << "!!!!!!!!!!!!!!!! new node is null !!!!!!!!!!!!!!!!!" << endl;
             Initialize_From_Scratch2( start_state );
 #ifdef SWIFT_FRONT_TRACKING
             if( Distance_LC( start_state, tolerance, abs_error, rel_error,
-                             loc_dist, NULL, new_node, contacts )
+                             loc_dist, nullptr, new_node, contacts )
             ) {
                 // Link in the subtree and the non-visited subtree.  This might
-                // only happen when parent != NULL (intersection at prev level)
+                // only happen when parent != nullptr (intersection at prev level)
                 parent->Set_Left_Child( new_node );
                 new_node = new SWIFT_Front_Node;
                 new_node->Set_Parent( parent );
@@ -2605,14 +2605,14 @@ cerr << "!!!!!!!!!!!!!!!! new node is null !!!!!!!!!!!!!!!!!" << endl;
             fdir = st - bv1->Center_Of_Mass();
             Initialize_From_Scratch2( start_state );
 #ifdef SWIFT_FRONT_TRACKING
-            if( parent != NULL ) {
+            if( parent != nullptr ) {
                 parent->Set_Left_Child( new_node );
                 new_node = parent;
                 result = Distance_LC( start_state, tolerance, abs_error,
-                              rel_error, loc_dist, NULL, new_node, contacts );
+                              rel_error, loc_dist, nullptr, new_node, contacts );
                 parent->Set_Right_Child( new_node );
-                if( parent->Left_Child() == NULL ) {
-                    if( parent->Right_Child() != NULL ) {
+                if( parent->Left_Child() == nullptr ) {
+                    if( parent->Right_Child() != nullptr ) {
                         // Have to create a left child
                         new_node = new SWIFT_Front_Node;
                         new_node->Set_Parent( parent );
@@ -2623,7 +2623,7 @@ cerr << "!!!!!!!!!!!!!!!! new node is null !!!!!!!!!!!!!!!!!" << endl;
                         pairfront->Count_Drop();
                     }
                 } else {
-                    if( parent->Right_Child() == NULL ) {
+                    if( parent->Right_Child() == nullptr ) {
                         // Have to create a right child
                         new_node = new SWIFT_Front_Node;
                         new_node->Set_Parent( parent );
@@ -2635,12 +2635,12 @@ cerr << "!!!!!!!!!!!!!!!! new node is null !!!!!!!!!!!!!!!!!" << endl;
                     pairfront->Count_Drop();
                 }
 #ifdef SWIFT_DEBUG
-} else if( new_node != NULL ) {
+} else if( new_node != nullptr ) {
 cerr << "!!!!!!!!!!!!!!!! new node is null !!!!!!!!!!!!!!!!!" << endl;
 #endif
             } else {
                 result = Distance_LC( start_state, tolerance, abs_error,
-                              rel_error, loc_dist, NULL, new_node, contacts );
+                              rel_error, loc_dist, nullptr, new_node, contacts );
             }
 #else
             result = Distance_LC( start_state, tolerance, abs_error, rel_error,
@@ -2695,7 +2695,7 @@ bool SWIFT_Pair::Tolerance( SWIFT_Object* o0, SWIFT_Object* o1,
 #ifdef SWIFT_PIECE_CACHING
     // Try to compute a valid distance on this cached bv
     pair = this;
-    if( Cache_BV0() != NULL && (obj0->Mesh()->Root() != Cache_BV0() ||
+    if( Cache_BV0() != nullptr && (obj0->Mesh()->Root() != Cache_BV0() ||
                                 obj1->Mesh()->Root() != Cache_BV1())
     ) {
         bv0 = Cache_BV0(); bv1 = Cache_BV1();
@@ -2717,7 +2717,7 @@ bool SWIFT_Pair::Tolerance( SWIFT_Object* o0, SWIFT_Object* o1,
     }
     // Did not find intersection for the cached bv.  There is no longer a
     // cached bv.  One may be instated later.
-    Set_Cache_BV0( NULL );
+    Set_Cache_BV0( nullptr );
 #endif
 
 #ifdef SWIFT_FRONT_TRACKING
@@ -2809,10 +2809,10 @@ bool SWIFT_Pair::Handle_Full_Queue( SWIFT_Real tolerance, SWIFT_Real abs_error,
 #ifdef SWIFT_FRONT_TRACKING
         new_node = parent;
         if( Distance_LC( start_state, tolerance, abs_error, rel_error,
-                                                 loc_dist, NULL, new_node )
+                                                 loc_dist, nullptr, new_node )
         ) {
             // Link in the subtree and the non-visited subtree.  This might
-            // only happen when parent != NULL (intersection at prev level)
+            // only happen when parent != nullptr (intersection at prev level)
             parent->Set_Left_Child( new_node );
             new_node = new SWIFT_Front_Node;
             new_node->Set_Parent( parent );
@@ -2840,16 +2840,16 @@ bool SWIFT_Pair::Handle_Full_Queue( SWIFT_Real tolerance, SWIFT_Real abs_error,
         fdir = st - bv0->Center_Of_Mass();
         Initialize_From_Scratch( start_state );
 #ifdef SWIFT_FRONT_TRACKING
-        if( parent != NULL ) {
+        if( parent != nullptr ) {
             parent->Set_Left_Child( new_node );
             new_node = parent;
         }
         result = Distance_LC( start_state, tolerance, abs_error,
-                              rel_error, loc_dist, NULL, new_node );
-        if( parent != NULL ) {
+                              rel_error, loc_dist, nullptr, new_node );
+        if( parent != nullptr ) {
             parent->Set_Right_Child( new_node );
-            if( parent->Left_Child() == NULL ) {
-                if( parent->Right_Child() != NULL ) {
+            if( parent->Left_Child() == nullptr ) {
+                if( parent->Right_Child() != nullptr ) {
                     // Have to create a left child
                     new_node = new SWIFT_Front_Node;
                     new_node->Set_Parent( parent );
@@ -2860,7 +2860,7 @@ bool SWIFT_Pair::Handle_Full_Queue( SWIFT_Real tolerance, SWIFT_Real abs_error,
                     front.Count_Drop();
                 }
             } else {
-                if( parent->Right_Child() == NULL ) {
+                if( parent->Right_Child() == nullptr ) {
                     // Have to create a right child
                     new_node = new SWIFT_Front_Node;
                     new_node->Set_Parent( parent );
@@ -2888,10 +2888,10 @@ bool SWIFT_Pair::Handle_Full_Queue( SWIFT_Real tolerance, SWIFT_Real abs_error,
 #ifdef SWIFT_FRONT_TRACKING
         new_node = parent;
         if( Distance_LC( start_state, tolerance, abs_error, rel_error,
-                                                 loc_dist, NULL, new_node )
+                                                 loc_dist, nullptr, new_node )
         ) {
             // Link in the subtree and the non-visited subtree.  This might
-            // only happen when parent != NULL (intersection at prev level)
+            // only happen when parent != nullptr (intersection at prev level)
             parent->Set_Left_Child( new_node );
             new_node = new SWIFT_Front_Node;
             new_node->Set_Parent( parent );
@@ -2918,16 +2918,16 @@ bool SWIFT_Pair::Handle_Full_Queue( SWIFT_Real tolerance, SWIFT_Real abs_error,
         fdir = st - bv1->Center_Of_Mass();
         Initialize_From_Scratch2( start_state );
 #ifdef SWIFT_FRONT_TRACKING
-        if( parent != NULL ) {
+        if( parent != nullptr ) {
             parent->Set_Left_Child( new_node );
             new_node = parent;
         }
         result = Distance_LC( start_state, tolerance, abs_error,
-                              rel_error, loc_dist, NULL, new_node );
-        if( parent != NULL ) {
+                              rel_error, loc_dist, nullptr, new_node );
+        if( parent != nullptr ) {
             parent->Set_Right_Child( new_node );
-            if( parent->Left_Child() == NULL ) {
-                if( parent->Right_Child() != NULL ) {
+            if( parent->Left_Child() == nullptr ) {
+                if( parent->Right_Child() != nullptr ) {
                     // Have to create a left child
                     new_node = new SWIFT_Front_Node;
                     new_node->Set_Parent( parent );
@@ -2938,7 +2938,7 @@ bool SWIFT_Pair::Handle_Full_Queue( SWIFT_Real tolerance, SWIFT_Real abs_error,
                     front.Count_Drop();
                 }
             } else {
-                if( parent->Right_Child() == NULL ) {
+                if( parent->Right_Child() == nullptr ) {
                     // Have to create a right child
                     new_node = new SWIFT_Front_Node;
                     new_node->Set_Parent( parent );
@@ -2978,7 +2978,7 @@ bool SWIFT_Pair::Distance( SWIFT_Object* o0, SWIFT_Object* o1,
 #ifdef SWIFT_PIECE_CACHING
     // Try to compute a valid distance on this cached bv
     pair = this;
-    if( cache_bv0 != NULL && (obj0->Mesh()->Root() != cache_bv0 ||
+    if( cache_bv0 != nullptr && (obj0->Mesh()->Root() != cache_bv0 ||
                               obj1->Mesh()->Root() != cache_bv1)
     ) {
         bv0 = cache_bv0; bv1 = cache_bv1;
@@ -3116,11 +3116,11 @@ cerr << "Full Queue when processing leaves" << endl;
                     new_node->Set_Parent( dp.Front_Node() );
                     new_node->Set_BV0( bv0 );
                     new_node->Set_BV1( bv1 );
-                    // dp.Front_Node() != NULL
+                    // dp.Front_Node() != nullptr
                     dp.Front_Node()->Set_Left_Child( new_node );
                 } else {
-                    if( dp.Front_Node() != NULL ) {
-                        dp.Front_Node()->Set_Left_Child( NULL );
+                    if( dp.Front_Node() != nullptr ) {
+                        dp.Front_Node()->Set_Left_Child( nullptr );
                     }
                 }
 #endif
@@ -3141,7 +3141,7 @@ cerr << "Full Queue when processing leaves" << endl;
                         new_node->Set_BV0( dp.BV0()->Children()[1] );
                         new_node->Set_BV1( bv1 );
                         new_node->Set_Uninitialized();
-                        // dp.Front_Node() != NULL
+                        // dp.Front_Node() != nullptr
                         dp.Front_Node()->Set_Right_Child( new_node );
                         front.Count_Drop();
 #endif
@@ -3154,7 +3154,7 @@ cerr << "Full Queue when processing leaves" << endl;
                     // Insert this expansion into the queue -- there is room
                     pqueue.Insert(
 #ifdef SWIFT_FRONT_TRACKING
-                                    dp.Front_Node() == NULL ? NULL :
+                                    dp.Front_Node() == nullptr ? nullptr :
                                             dp.Front_Node()->Left_Child(),
 #endif
                                     bv0, bv1, c1, c2, loc_dist );
@@ -3177,16 +3177,16 @@ cerr << "Full Queue when processing leaves" << endl;
                     new_node->Set_Parent( dp.Front_Node() );
                     new_node->Set_BV0( bv0 );
                     new_node->Set_BV1( bv1 );
-                    // dp.Front_Node() != NULL
+                    // dp.Front_Node() != nullptr
                     dp.Front_Node()->Set_Right_Child( new_node );
                 } else {
-                    if( dp.Front_Node() != NULL ) {
-                        dp.Front_Node()->Set_Right_Child( NULL );
+                    if( dp.Front_Node() != nullptr ) {
+                        dp.Front_Node()->Set_Right_Child( nullptr );
                     }
                 }
-                if( dp.Front_Node() != NULL ) {
-                    if( dp.Front_Node()->Left_Child() == NULL ) {
-                        if( dp.Front_Node()->Right_Child() != NULL ) {
+                if( dp.Front_Node() != nullptr ) {
+                    if( dp.Front_Node()->Left_Child() == nullptr ) {
+                        if( dp.Front_Node()->Right_Child() != nullptr ) {
                             // Have to create a left child
                             new_node = new SWIFT_Front_Node;
                             new_node->Set_Parent( dp.Front_Node() );
@@ -3197,7 +3197,7 @@ cerr << "Full Queue when processing leaves" << endl;
                             front.Count_Drop();
                         }
                     } else {
-                        if( dp.Front_Node()->Right_Child() == NULL ) {
+                        if( dp.Front_Node()->Right_Child() == nullptr ) {
                             // Have to create a right child
                             new_node = new SWIFT_Front_Node;
                             new_node->Set_Parent( dp.Front_Node() );
@@ -3237,7 +3237,7 @@ cerr << "Full Queue when processing queue" << endl;
                         result = Handle_Full_Queue(
                                     tolerance, abs_error, rel_error, loc_dist
 #ifdef SWIFT_FRONT_TRACKING
-                                    , dp.Front_Node() == NULL ? NULL :
+                                    , dp.Front_Node() == nullptr ? nullptr :
                                         dp.Front_Node()->Right_Child()
 #endif
                                     );
@@ -3248,7 +3248,7 @@ cerr << "Full Queue when processing queue" << endl;
                     } else {
                         pqueue.Insert(
 #ifdef SWIFT_FRONT_TRACKING
-                                        dp.Front_Node() == NULL ? NULL :
+                                        dp.Front_Node() == nullptr ? nullptr :
                                             dp.Front_Node()->Right_Child(),
 #endif
                                         bv0, bv1, c1, c2, loc_dist );
@@ -3275,11 +3275,11 @@ cerr << "Full Queue when processing queue" << endl;
                     new_node->Set_Parent( dp.Front_Node() );
                     new_node->Set_BV0( bv0 );
                     new_node->Set_BV1( bv1 );
-                    // dp.Front_Node() is not NULL
+                    // dp.Front_Node() is not nullptr
                     dp.Front_Node()->Set_Left_Child( new_node );
                 } else {
-                    if( dp.Front_Node() != NULL ) {
-                        dp.Front_Node()->Set_Left_Child( NULL );
+                    if( dp.Front_Node() != nullptr ) {
+                        dp.Front_Node()->Set_Left_Child( nullptr );
                     }
                 }
 #endif
@@ -3299,7 +3299,7 @@ cerr << "Full Queue when processing queue" << endl;
                         new_node->Set_BV0( bv0 );
                         new_node->Set_BV1( dp.BV1()->Children()[1] );
                         new_node->Set_Uninitialized();
-                        // dp.Front_Node() is not NULL
+                        // dp.Front_Node() is not nullptr
                         dp.Front_Node()->Set_Right_Child( new_node );
                         front.Count_Drop();
 #endif
@@ -3312,7 +3312,7 @@ cerr << "Full Queue when processing queue" << endl;
                     // Insert this expansion into the queue -- there is room
                     pqueue.Insert(
 #ifdef SWIFT_FRONT_TRACKING
-                                    dp.Front_Node() == NULL ? NULL :
+                                    dp.Front_Node() == nullptr ? nullptr :
                                         dp.Front_Node()->Left_Child(),
 #endif
                                     bv0, bv1, c1, c2, loc_dist );
@@ -3337,13 +3337,13 @@ cerr << "Full Queue when processing queue" << endl;
                     new_node->Set_BV1( bv1 );
                     dp.Front_Node()->Set_Right_Child( new_node );
                 } else {
-                    if( dp.Front_Node() != NULL ) {
-                        dp.Front_Node()->Set_Right_Child( NULL );
+                    if( dp.Front_Node() != nullptr ) {
+                        dp.Front_Node()->Set_Right_Child( nullptr );
                     }
                 }
-                if( dp.Front_Node() != NULL ) {
-                    if( dp.Front_Node()->Left_Child() == NULL ) {
-                        if( dp.Front_Node()->Right_Child() != NULL ) {
+                if( dp.Front_Node() != nullptr ) {
+                    if( dp.Front_Node()->Left_Child() == nullptr ) {
+                        if( dp.Front_Node()->Right_Child() != nullptr ) {
                             // Have to create a left child
                             new_node = new SWIFT_Front_Node;
                             new_node->Set_Parent( dp.Front_Node() );
@@ -3354,7 +3354,7 @@ cerr << "Full Queue when processing queue" << endl;
                             front.Count_Drop();
                         }
                     } else {
-                        if( dp.Front_Node()->Right_Child() == NULL ) {
+                        if( dp.Front_Node()->Right_Child() == nullptr ) {
                             // Have to create a right child
                             new_node = new SWIFT_Front_Node;
                             new_node->Set_Parent( dp.Front_Node() );
@@ -3394,7 +3394,7 @@ cerr << "Full Queue when processing queue" << endl;
                         result = Handle_Full_Queue(
                                     tolerance, abs_error, rel_error, loc_dist
 #ifdef SWIFT_FRONT_TRACKING
-                                    , dp.Front_Node() == NULL ? NULL :
+                                    , dp.Front_Node() == nullptr ? nullptr :
                                         dp.Front_Node()->Right_Child()
 #endif
                                     );
@@ -3405,7 +3405,7 @@ cerr << "Full Queue when processing queue" << endl;
                     } else {
                         pqueue.Insert(
 #ifdef SWIFT_FRONT_TRACKING
-                                        dp.Front_Node() == NULL ? NULL :
+                                        dp.Front_Node() == nullptr ? nullptr :
                                             dp.Front_Node()->Right_Child(),
 #endif
                                         bv0, bv1, c1, c2, loc_dist );
@@ -3419,7 +3419,7 @@ cerr << "Full Queue when processing queue" << endl;
         // This root has gone incoherent if the intersection was not on the
         // root.  Set it to be uninitialized.
         if( !bv0->Is_Root() || !bv1->Is_Root() ) {
-            feat1 = NULL;
+            feat1 = nullptr;
         }
 #endif
     }

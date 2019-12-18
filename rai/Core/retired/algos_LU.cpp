@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -11,9 +11,9 @@
 
 #define TINY 1.0e-20
 
-void ludcmp(double **a, int n, int *indx, double *d);
-void lubksb(double **a, int n, int *indx, double b[]);
-double *vector(uint i, uint j) { return new double[j]; }
+void ludcmp(double** a, int n, int* indx, double* d);
+void lubksb(double** a, int n, int* indx, double b[]);
+double* vector(uint i, uint j) { return new double[j]; }
 void nrerror(const char* msg) { HALT(msg); }
 void free_vector(double* p, uint i, uint j) { delete[] p; }
 
@@ -29,7 +29,7 @@ double determinant_LU(const arr& X) {
   ludcmp(LU.getCarray(tmp), n, idx.p, d.p);
   double det=1.;
   for(i=0; i<n; i++) det *= LU(i, i);
-  
+
   //double ddet=determinant(X); CHECK_EQ(det,ddet, "");
   return det;
 }
@@ -55,13 +55,13 @@ void inverse_LU(arr& Xinv, const arr& X) {
     lubksb(LU.getCarray(tmp), n, idx.p, col.p);
     for(i=0; i<n; i++) Xinv(i, j)=col(i);
   }
-  
+
 #ifdef RAI_CHECK_INVERSE
   arr D, _D; D.setId(n);
   uint me;
   _D=X*Xinv;
   double err=maxDiff(_D, D, &me);
-  CHECK(err<RAI_CHECK_INVERSE , "inverting failed, error=" <<err <<" " <<_D.elem(me) <<"!=" <<D.elem(me));
+  CHECK(err<RAI_CHECK_INVERSE, "inverting failed, error=" <<err <<" " <<_D.elem(me) <<"!=" <<D.elem(me));
 #endif
 }
 
@@ -73,9 +73,9 @@ void LU_decomposition(arr& L, arr& U, const arr& X) {
   intA idx(n);
   doubleA d(n);
   rai::Array<double*> tmp;
-  
+
   ludcmp(LU.getCarray(tmp), n, idx.p, d.p);
-  
+
   L.resizeAs(LU);  L.setZero();
   U.resizeAs(LU);  U.setZero();
   for(i=0; i<n; i++) {
@@ -83,14 +83,14 @@ void LU_decomposition(arr& L, arr& U, const arr& X) {
     L(i, i)=1.;
     for(; j<n; j++)     U(i, j) = LU(i, j);
   }
-  cout <<X <<endl <<L*U <<endl <<idx <<endl <<d <<endl;
+  cout <<X <<endl <<L* U <<endl <<idx <<endl <<d <<endl;
 }
 }
 
-void ludcmp(double **a, int n, int *indx, double *d) {
+void ludcmp(double** a, int n, int* indx, double* d) {
   int i, imax=0, j, k;
   double big, dum, sum, temp;
-  double *vv;
+  double* vv;
   vv=vector(1, n);
   *d=1.0;
   for(i=0; i<n; i++) {
@@ -128,7 +128,7 @@ void ludcmp(double **a, int n, int *indx, double *d) {
     }
     indx[j]=imax;
     if(a[j][j] == 0.0) a[j][j]=TINY;
-    
+
     if(j != n) {
       dum=1.0/(a[j][j]);
       for(i=j+1; i<n; i++) a[i][j] *= dum;
@@ -137,7 +137,7 @@ void ludcmp(double **a, int n, int *indx, double *d) {
   free_vector(vv, 1, n);
 }
 
-void lubksb(double **a, int n, int *indx, double b[]) {
+void lubksb(double** a, int n, int* indx, double b[]) {
   int i, ii=0, ip, j;
   double sum;
   for(i=0; i<n; i++) {

@@ -12,7 +12,6 @@ viewing the model in the OpenGL window (after pressing ENTER).\n\
 Use the number keys 1 2 3 4 5 to toggle display options.\n\
 ";
 
-
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
@@ -47,7 +46,7 @@ int MAIN(int argc,char **argv){
     }else{
       K.optimizeTree(false, false, false);
     }
-    K.calc_q();
+    K.ensure_q();
     K.checkConsistency();
     K.sortFrames();
 

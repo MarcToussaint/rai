@@ -29,7 +29,6 @@ void TEST(GJK_Jacobians) {
   s1.mesh().C = {.5,.8,.5,.4};  s2.mesh().C = {.5,.5,.8,.4};
   s1.frame.name="s1";           s2.frame.name="s2";
 
-  K.calc_activeSets();
   K.calc_q_from_Q();
   arr q = K.getJointState();
 
@@ -116,7 +115,6 @@ void TEST(GJK_Jacobians2) {
     s->sscCore().setRandom();
     s->mesh().C = {.5,.5,.8,.6};
   }
-  K.calc_activeSets();
 
   K.watch();
 
@@ -193,8 +191,6 @@ void TEST(GJK_Jacobians3) {
   s1.createMeshes();
   s1.mesh().C = {.5,.8,.5,.9};
   s2.mesh().C = {.5,.5,.8,.9};
-
-  K.calc_activeSets();
 
   K.watch();
 

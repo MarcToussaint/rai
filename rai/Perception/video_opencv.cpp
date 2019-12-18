@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -16,11 +16,11 @@
 #include "opencv.h"
 
 struct sVideoEncoder_OpenCV {
-  CvVideoWriter *video;
+  CvVideoWriter* video;
   const char* filename;
   uint fps;
   uint numFrames; //,width,height;
-  sVideoEncoder_OpenCV():video(NULL) {}
+  sVideoEncoder_OpenCV():video(nullptr) {}
   void open(uint width, uint height);
 };
 
@@ -49,7 +49,7 @@ void VideoEncoder_OpenCV::addFrame(const byteA& img) {
   cvWriteFrame(s->video, &ipl_img);
 //  s->video <<conv_Arr2CvRef(img);
   s->numFrames++;
-#endif  
+#endif
 }
 
 void VideoEncoder_OpenCV::close() {

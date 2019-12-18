@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -16,7 +16,7 @@ struct TowerProblem {
   rai::Configuration world;
   Graph symbols;
   uint nObjects;
-  
+
   TowerProblem():world("world_base.kvg"), symbols("symbols_base.kvg") {
     nObjects = world.bodies.N;
     setRandom();

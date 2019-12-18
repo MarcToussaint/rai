@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -17,11 +17,11 @@ struct sServiceRAP {
   ros::NodeHandle nh;
   ros::ServiceServer service;
   bool cb_service(rai_msgs::StringString::Request& _request, rai_msgs::StringString::Response& response);
-  
+
   sServiceRAP() {}
 };
 
-ServiceRAP::ServiceRAP() : s(NULL) {
+ServiceRAP::ServiceRAP() : s(nullptr) {
   if(rai::getParameter<bool>("useRos")) {
     cout <<"*** Starting ROS Service RAP" <<endl;
     s = new sServiceRAP;
@@ -46,14 +46,14 @@ bool sServiceRAP::cb_service(rai_msgs::StringString::Request& _request, rai_msgs
     response.str = str.p;
     return true;
   }
-  
+
   cout <<"received new effect '" <<request <<"'" <<endl;
   if(!request.N) return false;
   RM.writeAccess();
   RM().applyEffect(request);
   RM().fwdChainRules();
   rai::String str;
-  RM().tmp->write(str," ");
+  RM().tmp->write(str, " ");
   RM.deAccess();
   if(str.N)
     response.str = str.p;
@@ -65,7 +65,7 @@ bool sServiceRAP::cb_service(rai_msgs::StringString::Request& _request, rai_msgs
 #else
 
 struct sServiceRAP {};
-ServiceRAP::ServiceRAP() : s(NULL) {}
+ServiceRAP::ServiceRAP() : s(nullptr) {}
 ServiceRAP::~ServiceRAP() {}
 
 #endif

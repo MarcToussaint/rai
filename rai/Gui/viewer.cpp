@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -28,7 +28,7 @@ struct sImageViewer {
 
 ImageViewer::ImageViewer(const Var<byteA>& _img, double beatIntervalSec)
   : Thread(STRING("ImageViewer_" <<_img.name()), beatIntervalSec),
-    img(this, _img, (beatIntervalSec<0.)){
+    img(this, _img, (beatIntervalSec<0.)) {
   if(beatIntervalSec>=0.) threadLoop(); else threadStep();
 }
 
@@ -53,7 +53,7 @@ void ImageViewer::step() {
     uint ci = s->gl.background.d0/2;
     uint cj = s->gl.background.d1/2;
     uint skip = s->gl.background.d1*s->gl.background.d2;
-    byte *p, *pstop;
+    byte* p, *pstop;
     p=&s->gl.background(ci-5, cj-5, 0);
     pstop=&s->gl.background(ci-5, cj+5, 0);
     for(; p<=pstop; p++) *p = 0;
@@ -72,7 +72,7 @@ void ImageViewer::step() {
     if(s->gl.height!= s->gl.background.d0 || s->gl.width!= s->gl.background.d1)
       s->gl.resize(s->gl.background.d1, s->gl.background.d0);
   }
-    
+
   s->gl.update(name, false); //, false, false, true);
 }
 
@@ -84,7 +84,7 @@ void ImageViewer::step() {
 ImageViewerFloat::ImageViewerFloat(const Var<floatA>& _img, double beatIntervalSec, float _scale)
   : Thread(STRING("ImageViewerFloat_" <<_img.name()), beatIntervalSec),
     img(this, _img, (beatIntervalSec<0.)),
-    scale(_scale){
+    scale(_scale) {
   gl = make_shared<OpenGL>(STRING("ImageViewerFloat: "<<img.data->name));
   if(beatIntervalSec>=0.) threadLoop(); else threadStep();
 }
@@ -111,17 +111,17 @@ void ImageViewerFloat::step() {
 //===========================================================================
 
 ImageViewerCallback::ImageViewerCallback(const Var<byteA>& _img)
-  : img(_img){
+  : img(_img) {
   img.data->callbacks.append(new Callback<void(Var_base*)>(this, std::bind(&ImageViewerCallback::call, this, std::placeholders::_1)));
 }
 
-ImageViewerCallback::~ImageViewerCallback(){
+ImageViewerCallback::~ImageViewerCallback() {
   img.data->callbacks.removeCallback(this);
   if(gl) delete gl;
 }
 
-void ImageViewerCallback::call(Var_base* v){
-  if(!gl){
+void ImageViewerCallback::call(Var_base* v) {
+  if(!gl) {
     gl = new OpenGL(STRING("ImageViewer: "<<img.data->name));
   }
 
@@ -139,7 +139,6 @@ void ImageViewerCallback::call(Var_base* v){
 
   gl->update(); //0, false, false, true);
 }
-
 
 //===========================================================================
 //
@@ -166,7 +165,7 @@ void glDrawAxes(void*) {
 PointCloudViewer::PointCloudViewer(const Var<arr>& _pts, const Var<byteA>& _rgb, double beatIntervalSec)
   : Thread(STRING("PointCloudViewer_"<<_pts.name() <<'_' <<_rgb.name()), beatIntervalSec),
     pts(this, _pts, (beatIntervalSec<0.)),
-    rgb(this, _rgb, (beatIntervalSec<0.)){
+    rgb(this, _rgb, (beatIntervalSec<0.)) {
   if(beatIntervalSec>=0.) threadLoop(); else threadStep();
 }
 
@@ -194,7 +193,7 @@ void PointCloudViewer::close() {
 }
 
 void PointCloudViewer::step() {
-  uint W,H;
+  uint W, H;
 
   {
     auto _dataLock = s->gl.dataLock(RAI_HERE);
@@ -208,37 +207,36 @@ void PointCloudViewer::step() {
       return;
     }
     s->pc.C /= 255.;
-    s->pc.V.reshape(n,3);
-    s->pc.C.reshape(n,3);
+    s->pc.V.reshape(n, 3);
+    s->pc.C.reshape(n, 3);
 
-
-    if(W!=s->gl.width || H!=s->gl.height) s->gl.resize(W,H);
+    if(W!=s->gl.width || H!=s->gl.height) s->gl.resize(W, H);
   }
-  
-  s->gl.update(); //NULL, false, false, true);
+
+  s->gl.update(); //nullptr, false, false, true);
 }
 
 //===========================================================================
 
 PointCloudViewerCallback::PointCloudViewerCallback(const Var<arr>& _pts, const Var<byteA>& _rgb)
   : pts(_pts),
-    rgb(_rgb){
+    rgb(_rgb) {
   pts.data->callbacks.append(new Callback<void(Var_base*)>(this, std::bind(&PointCloudViewerCallback::call, this, std::placeholders::_1)));
 }
 
-PointCloudViewerCallback::~PointCloudViewerCallback(){
+PointCloudViewerCallback::~PointCloudViewerCallback() {
   pts.data->callbacks.removeCallback(this);
   if(s) delete s;
 }
 
-void PointCloudViewerCallback::call(Var_base* v){
-  if(!s){
+void PointCloudViewerCallback::call(Var_base* v) {
+  if(!s) {
     s = new sPointCloudViewer(STRING("PointCloudViewer: "<<pts.name() <<' ' <<rgb.name()));
     s->gl.add(glStandardScene);
     s->gl.add(s->pc);
   }
 
-  uint W,H;
+  uint W, H;
 
   {
     auto _dataLock = s->gl.dataLock(RAI_HERE);
@@ -253,16 +251,14 @@ void PointCloudViewerCallback::call(Var_base* v){
       return;
     }
     s->pc.C /= 255.;
-    s->pc.V.reshape(n,3);
-    s->pc.C.reshape(n,3);
+    s->pc.V.reshape(n, 3);
+    s->pc.C.reshape(n, 3);
 
-
-    if(W!=s->gl.width || H!=s->gl.height) s->gl.resize(W,H);
+    if(W!=s->gl.width || H!=s->gl.height) s->gl.resize(W, H);
   }
 
-  s->gl.update(); //NULL, false, false, true);
+  s->gl.update(); //nullptr, false, false, true);
 }
-
 
 //===========================================================================
 //
@@ -295,10 +291,9 @@ void MeshAViewer::step() {
     auto _dataLock = gl->dataLock(RAI_HERE);
     copy = meshes.get();
   }
-  
-  gl->update(); //NULL, false, false, true);
-}
 
+  gl->update(); //nullptr, false, false, true);
+}
 
 //===========================================================================
 //
@@ -307,7 +302,7 @@ void MeshAViewer::step() {
 
 PlotViewer::PlotViewer(const Var<arr>& _data, double beatIntervalSec)
   : Thread(STRING("PlotViewer_" <<_data.name()), beatIntervalSec),
-    data(this, _data, (beatIntervalSec<0.)){
+    data(this, _data, (beatIntervalSec<0.)) {
   if(beatIntervalSec>=0.) threadLoop(); else threadOpen();
 }
 
@@ -327,13 +322,13 @@ void PlotViewer::open() {
   gl->camera.setHeightAbs(1.2*(yh-yl));
 }
 
-void PlotViewer::step(){
+void PlotViewer::step() {
   arr x = data.get();
   int r = data.getRevision();
   if(!x.N) return;
   if(x0.N!=x.N) x0=x;
   CHECK_EQ(x.nd, 1, "");
-  if(!plot.N) plot.resize(T-1,x0.N).setZero();
+  if(!plot.N) plot.resize(T-1, x0.N).setZero();
   plot.append(x);
   plot.reshape(plot.N/x.N, x.N);
   if(plot.d0>T) plot.delRows(0, plot.d0-T);
@@ -344,22 +339,20 @@ void PlotViewer::close() {
   delete gl;
 }
 
-void PlotViewer::glDraw(OpenGL&){
+void PlotViewer::glDraw(OpenGL&) {
 #ifdef RAI_GL
   //  rai::Color c;
 //  glColor(c.r, c.g, c.b);
-  glColor(0.,0.,0.);
-  for(uint i=0;i<plot.d1;i++){
+  glColor(0., 0., 0.);
+  for(uint i=0; i<plot.d1; i++) {
     glBegin(GL_LINE_STRIP);
-    for(uint x=0;x<plot.d0;x++){
+    for(uint x=0; x<plot.d0; x++) {
       float _x = float(x)/plot.d0;
-      float _y = plot(x,i) - x0(i);
+      float _y = plot(x, i) - x0(i);
       glVertex3f(_x, _y, -1.f);
     }
     glEnd();
   }
 #endif
 }
-
-
 

@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -50,7 +50,7 @@ struct sImagePublisher {
   std::string link_name, encoding;
   double time_offset;
   PixelFormat pix_fmt;
-  
+
   sImagePublisher(const std::string& base_topic, const std::string& camera_name, PixelFormat pix_fmt) :
 #ifdef HAVE_ROS_IMAGE_TRANSPORT
     n(base_topic), t(n), p_img(t.advertise("image_raw", 1)),
@@ -61,11 +61,11 @@ struct sImagePublisher {
     std::ostringstream str;
     str << camera_name << "_link";
     link_name = ros::names::resolve(str.str());
-    
+
     // get seconds since epoch for 00:00 today (to offsets marc's %86400 stuff)
-    time_offset = time(NULL);
+    time_offset = time(nullptr);
     time_offset -= (((time_t)time_offset)%86400);
-    
+
 #ifdef HAVE_ROS_IMAGE_TRANSPORT
     switch(pix_fmt) {
       case PIXEL_FORMAT_RAW8:
@@ -90,17 +90,17 @@ struct sImagePublisher {
     }
 #endif
   }
-  
+
   void publish(const byteA& image, double timestamp) {
 #ifdef HAVE_ROS_IMAGE_TRANSPORT
     sensor_msgs::fillImage(msg, encoding, image.d0, image.d1, bypp * image.d1, image.p);
     msg.header.seq    = seq++;
     msg.header.stamp  = ros::Time(timestamp + time_offset);
     msg.header.frame_id = link_name;
-    
+
     cinfo = cim.getCameraInfo();
     cinfo.header = msg.header;
-    
+
     p_img.publish(msg);
     p_info.publish(cinfo);
 #endif
@@ -109,7 +109,7 @@ struct sImagePublisher {
 
 ImagePublisher::ImagePublisher(const std::string& topic, const std::string& camera_name, const PixelFormat pix_fmt) :
   s(new sImagePublisher(topic, camera_name, pix_fmt)) {
-  
+
 }
 
 ImagePublisher::~ImagePublisher() {

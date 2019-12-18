@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -8,7 +8,6 @@
 
 #pragma once
 #include "feature.h"
-
 
 //===========================================================================
 
@@ -19,6 +18,6 @@ struct LimitsConstraint:Feature {
   virtual void phi(arr& y, arr& J, const rai::Configuration& G);
   virtual uint dim_phi(const rai::Configuration& G) { return 1; }
   virtual rai::String shortTag(const rai::Configuration& G) { return STRING("LimitsConstraint"); }
-  virtual Graph getSpec(const rai::Configuration& K){ return Graph({{"feature", "LimitsConstraint"}}); }
+  virtual Graph getSpec(const rai::Configuration& K) { return Graph({{"feature", "LimitsConstraint"}}); }
 };
 

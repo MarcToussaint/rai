@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -25,21 +25,21 @@ OptNewton::OptNewton(arr& _x, const ScalarFunction& _f,  OptOptions _o, ostream*
   x(_x), f(_f), o(_o), logFile(_logFile) {
   alpha = o.initStep;
   beta = o.damping;
-  additionalRegularizer=NULL;
+  additionalRegularizer=nullptr;
   if(f) reinit(_x);
 }
 
 void OptNewton::reinit(const arr& _x) {
   if(&x!=&_x) x = _x;
   fx = f(gx, Hx, x);  evals++;
-  if(additionalRegularizer)  fx += scalarProduct(x,(*additionalRegularizer)*vectorShaped(x));
-  
+  if(additionalRegularizer)  fx += scalarProduct(x, (*additionalRegularizer)*vectorShaped(x));
+
   //startup verbose
   if(o.verbose>1) cout <<"*** optNewton: starting point f(x)=" <<fx <<" alpha=" <<alpha <<" beta=" <<beta <<endl;
   if(o.verbose>3) cout <<"\nx=" <<x <<endl;
-  if(logFile){
+  if(logFile) {
     (*logFile) <<"{ newton: " <<its <<", evaluations: " <<evals <<", f_x: " <<fx <<", alpha: " <<alpha;
-    if(o.verbose>3) (*logFile) <<", x: " <<x;
+    if(o.verbose>3)(*logFile) <<", x: " <<x;
     (*logFile) <<" }," <<endl;
   }
 }
@@ -49,10 +49,10 @@ void OptNewton::reinit(const arr& _x) {
 OptNewton::StopCriterion OptNewton::step() {
   double fy;
   arr y, gy, Hy, Delta;
-  
+
   its++;
   if(o.verbose>1) cout <<"optNewton it=" <<std::setw(4) <<its << " \tbeta=" <<std::setw(8) <<beta <<flush;
-  
+
   if(!(fx==fx)) HALT("you're calling a newton step with initial function value = NAN");
 
   rai::timerRead(true);
@@ -60,13 +60,13 @@ OptNewton::StopCriterion OptNewton::step() {
   //-- compute Delta
   arr R=Hx;
   if(beta) { //Levenberg Marquardt damping
-    if(!isSpecial(R)){
-      for(uint i=0; i<R.d0; i++) R(i,i) += beta;
-    }else if(isRowShifted(R)) {
-      for(uint i=0; i<R.d0; i++) R(i,0) += beta; //(R(i,0) is the diagonal in the packed matrix!!)
-    }else if(isSparseMatrix(R)) {
-      for(uint i=0; i<R.d0; i++) R.sparse().addEntry(i,i) = beta;
-    }else NIY;
+    if(!isSpecial(R)) {
+      for(uint i=0; i<R.d0; i++) R(i, i) += beta;
+    } else if(isRowShifted(R)) {
+      for(uint i=0; i<R.d0; i++) R(i, 0) += beta; //(R(i,0) is the diagonal in the packed matrix!!)
+    } else if(isSparseMatrix(R)) {
+      for(uint i=0; i<R.d0; i++) R.sparse().addEntry(i, i) = beta;
+    } else NIY;
   }
   if(additionalRegularizer) { //obsolete -> retire
     if(isRowShifted(R)) R = unpack(R);
@@ -75,9 +75,9 @@ OptNewton::StopCriterion OptNewton::step() {
   } else {
     bool inversionFailed=false;
     try {
-      if(!rootFinding){
+      if(!rootFinding) {
         Delta = lapack_Ainv_b_sym(R, -gx);
-      }else{
+      } else {
         lapack_mldivide(Delta, R, -gx);
       }
     } catch(...) {
@@ -117,7 +117,7 @@ OptNewton::StopCriterion OptNewton::step() {
     }
 #endif
   }
-  
+
   //restrict stepsize
   double maxDelta = absMax(Delta);
   if(o.maxStep>0. && maxDelta>o.maxStep) {  Delta *= o.maxStep/maxDelta; maxDelta = o.maxStep; }
@@ -125,7 +125,7 @@ OptNewton::StopCriterion OptNewton::step() {
   double alphaLoLimit = 1e-1*o.stopTolerance/maxDelta;
 
   if(o.verbose>1) cout <<" \t|Delta|=" <<std::setw(11) <<maxDelta <<flush;
-  
+
   //lazy stopping criterion: stop without any update
   if(absMax(Delta)<1e-1*o.stopTolerance) {
     if(o.verbose>1) cout <<" \t - NO UPDATE" <<endl;
@@ -139,7 +139,7 @@ OptNewton::StopCriterion OptNewton::step() {
     for(uint i=0; i<x.N; i++) if(bound_hi(i)>bound_lo(i)) {
         if(x(i)+alpha*Delta(i)>bound_hi(i)) Delta(i) = (bound_hi(i)-x(i))/alpha;
         if(x(i)+alpha*Delta(i)<bound_lo(i)) Delta(i) = (bound_lo(i)-x(i))/alpha;
-    }
+      }
 #endif
   }
 
@@ -152,15 +152,15 @@ OptNewton::StopCriterion OptNewton::step() {
     double timeBefore = rai::timerStart();
     fy = f(gy, Hy, y);  evals++;
     timeEval += rai::timerRead(true, timeBefore);
-    if(additionalRegularizer) fy += scalarProduct(y,(*additionalRegularizer)*vectorShaped(y));
+    if(additionalRegularizer) fy += scalarProduct(y, (*additionalRegularizer)*vectorShaped(y));
     if(o.verbose>5) cout <<" \tprobing y=" <<y;
     if(o.verbose>1) cout <<" \tevals=" <<std::setw(4) <<evals <<" \talpha=" <<std::setw(11) <<alpha <<" \tf(y)=" <<fy <<flush;
-    bool wolfe = (fy <= fx + o.wolfe*alpha*scalarProduct(Delta,gx));
+    bool wolfe = (fy <= fx + o.wolfe*alpha*scalarProduct(Delta, gx));
     if(rootFinding) wolfe=true;
     if(fy==fy && (wolfe || o.nonStrictSteps==-1 || o.nonStrictSteps>(int)its)) { //fy==fy is for NAN?
       //accept new point
       if(o.verbose>1) cout <<" - ACCEPT" <<endl;
-      if(logFile){
+      if(logFile) {
         (*logFile) <<"{ lineSearch: " <<lineSearchSteps <<", alpha: " <<alpha <<", beta: " <<beta <<", f_x: " <<fx <<", f_y: " <<fy <<", wolfe: " <<wolfe <<", accept: True }," <<endl;
       }
       if(fx-fy<o.stopFTolerance) numTinySteps++; else numTinySteps=0;
@@ -189,7 +189,7 @@ OptNewton::StopCriterion OptNewton::step() {
     } else {
       //reject new point
       if(o.verbose>1) cout <<" - reject (lineSearch:" <<lineSearchSteps <<")" <<flush;
-      if(logFile){
+      if(logFile) {
         (*logFile) <<"{ lineSearch: " <<lineSearchSteps <<", alpha: " <<alpha <<", beta: " <<beta <<", f_x: " <<fx <<", f_y: " <<fy <<", wolfe: " <<wolfe <<", accept: False }," <<endl;
       }
       if(evals>o.stopEvals) {
@@ -212,32 +212,32 @@ OptNewton::StopCriterion OptNewton::step() {
       if(alpha<alphaLoLimit) endLineSearch=true;
     }
   }
-  
-  if(logFile){
+
+  if(logFile) {
     (*logFile) <<"{ newton: " <<its <<", evaluations: " <<evals <<", f_x: " <<fx <<", alpha: " <<alpha;
-    if(o.verbose>2) (*logFile) <<", Delta: " <<Delta;
+    if(o.verbose>2)(*logFile) <<", Delta: " <<Delta;
     (*logFile) <<" }," <<endl;
   }
-  
+
   //stopping criteria
-  
+
 #define STOPIF(expr, code, ret) if(expr){ if(o.verbose>1) cout <<"\t\t\t\t\t\t--- stopping criterion='" <<#expr <<"'" <<endl; code; return stopCriterion=ret; }
-  
-  STOPIF(absMax(Delta)<o.stopTolerance, , stopCrit1);
+
+  STOPIF(absMax(Delta)<o.stopTolerance,, stopCrit1);
   STOPIF(numTinySteps>4, numTinySteps=0, stopTinySteps);
 //  STOPIF(alpha*absMax(Delta)<1e-3*o.stopTolerance, stopCrit2);
-  STOPIF(evals>=o.stopEvals, , stopCritEvals);
-  STOPIF(its>=o.stopIters, , stopCritEvals);
-  
+  STOPIF(evals>=o.stopEvals,, stopCritEvals);
+  STOPIF(its>=o.stopIters,, stopCritEvals);
+
 #undef STOPIF
-  
+
   return stopCriterion=stopNone;
 }
 
 OptNewton::~OptNewton() {
   if(o.fmin_return) *o.fmin_return=fx;
 #ifndef RAI_MSVC
-//  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", NULL, true);
+//  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", nullptr, true);
 #endif
   if(o.verbose>1) cout <<"--- optNewtonStop: f(x)=" <<fx <<endl;
 }

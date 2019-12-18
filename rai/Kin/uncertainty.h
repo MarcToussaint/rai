@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -13,12 +13,12 @@
 namespace rai {
 
 struct Uncertainty {
-  Joint *joint;
+  Joint* joint;
   arr sigma;
-  
-  Uncertainty(Joint *j, Uncertainty *copyUncertainty=NULL);
-  
-  void read(const Graph &ats);
+
+  Uncertainty(Joint* j, Uncertainty* copyUncertainty=nullptr);
+
+  void read(const Graph& ats);
 };
 
 }//namespace rai

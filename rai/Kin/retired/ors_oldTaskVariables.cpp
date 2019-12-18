@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -35,8 +35,8 @@ DefaultTaskVariable::DefaultTaskVariable(
   const char* _name,
   const rai::Configuration& _ors,
   TVtype _type,
-  const char *iname, const char *iframe,
-  const char *jname, const char *jframe,
+  const char* iname, const char* iframe,
+  const char* jname, const char* jframe,
   const arr& _params) {
   set(
     _name, _ors, _type,
@@ -51,11 +51,11 @@ DefaultTaskVariable::DefaultTaskVariable(
   const char* _name,
   const rai::Configuration& _ors,
   TVtype _type,
-  const char *iShapeName,
-  const char *jShapeName,
+  const char* iShapeName,
+  const char* jShapeName,
   const arr& _params) {
-  rai::Shape *a = iShapeName ? _ors.getShapeByName(iShapeName):NULL;
-  rai::Shape *b = jShapeName ? _ors.getShapeByName(jShapeName):NULL;
+  rai::Shape* a = iShapeName ? _ors.getShapeByName(iShapeName):nullptr;
+  rai::Shape* b = jShapeName ? _ors.getShapeByName(jShapeName):nullptr;
   set(
     _name, _ors, _type,
     a ? (int)a->body->index : -1,
@@ -134,7 +134,7 @@ void TaskVariable::setTrajectory(uint T, double funnelsdv, double funnelvsdv) {
     a = (double)t/(T-1);
     y_trajectory[t]()  = ((double)1.-a)*y + a*y_target;
     y_prec_trajectory(t) = (double)1./rai::sqr(sqrt((double)1./y_prec) + ((double)1.-a)*funnelsdv);
-    
+
     v_trajectory[t]()  = ((double)1.-a)*v + a*v_target;
     v_prec_trajectory(t) = (double)1./rai::sqr(sqrt((double)1./v_prec) + ((double)1.-a)*funnelvsdv);
   }
@@ -225,8 +225,8 @@ void TaskVariable::setConstTargetsConstPrecisions(uint T, double y_prec, double 
 void TaskVariable::appendConstTargetsAndPrecs(uint T) {
   targetType=trajectoryTT;
   active=true;
-  uint t,t0=y_trajectory.d0;
-  CHECK(t0,"");
+  uint t, t0=y_trajectory.d0;
+  CHECK(t0, "");
   y_trajectory.resizeCopy(T+1, y.N);  y_prec_trajectory.resizeCopy(T+1);
   v_trajectory.resizeCopy(T+1, y.N);  v_prec_trajectory.resizeCopy(T+1);
   for(t=t0; t<=T; t++) {
@@ -289,13 +289,13 @@ void TaskVariable::setIntervalPrecisions(uint T, arr& y_precs, arr& v_precs) {
   CHECK(y_precs.nd==1 && v_precs.nd==1 && y_precs.N>0 && v_precs.N>0
         && y_precs.N<=T+1 && y_precs.N<=T+1,
         "number of intervals needs to be in [1, T+1].");
-        
+
   uint t;
   active=true;
-  
+
   v_prec_trajectory.resize(T+1);
   y_prec_trajectory.resize(T+1);
-  
+
   for(t=0; t<=T; ++t) {
     y_prec_trajectory(t) = y_precs(t * y_precs.N/(T+1));
     v_prec_trajectory(t) = v_precs(t * v_precs.N/(T+1));
@@ -322,13 +322,13 @@ void DefaultTaskVariable::updateState(const rai::Configuration& ors, double tau)
   arr zi, zj, Ji, Jj, JRj;
   rai::Transformation f, fi, fj;
   rai::Vector vi, vj, r, jk;
-  uint k,l;
-  rai::Body *bi = ors.bodies(i);
-  rai::Body *bj = ors.bodies(j);
-  
+  uint k, l;
+  rai::Body* bi = ors.bodies(i);
+  rai::Body* bj = ors.bodies(j);
+
   v_old=v;
   y_old=y;
-  
+
   //get state
   switch(type) {
     case posTVT:
@@ -352,7 +352,7 @@ void DefaultTaskVariable::updateState(const rai::Configuration& ors, double tau)
         jk -= bj->X.rot / (r ^(pi - pj));
         J(0, k)=jk.x; J(1, k)=jk.y; J(2, k)=jk.z;
       }
-      
+
       break;
     case zoriTVT:
       if(j==-1) {
@@ -427,16 +427,16 @@ void DefaultTaskVariable::updateState(const rai::Configuration& ors, double tau)
     default:  HALT("no such TVT");
   }
   transpose(Jt, J);
-  
+
   if(y_old.N!=y.N) {
     y_old=y;
     v.resizeAs(y); v.setZero();
     v_old=v;
   }
-  
+
   //v = .5*v + .5*(y - y_old);
   v = (y - y_old)/tau; //TODO: the velocity should be evaluated from the joint angle velocity (J*dq) to be consistent with the whole soc code!
-  
+
   if(y_target.N==y.N) {
     err=length(y - y_target);
     derr=err - length(y_old - y_target);
@@ -462,8 +462,8 @@ void TaskVariable::updateChange(int t, double tau) {
     yt.referTo(y_target);
     vt.referTo(v_target);
   }
-  CHECK_EQ(yt.N,y.N, "targets have wrong dimension -- perhaps need to be set before");
-  CHECK_EQ(vt.N,v.N, "targets have wrong dimension -- perhaps need to be set before");
+  CHECK_EQ(yt.N, y.N, "targets have wrong dimension -- perhaps need to be set before");
+  CHECK_EQ(vt.N, v.N, "targets have wrong dimension -- perhaps need to be set before");
   switch(targetType) {
     case trajectoryTT:
     case directTT: {
@@ -511,7 +511,7 @@ void TaskVariable::updateChange(int t, double tau) {
   }
     */
 
-void TaskVariable::write(ostream &os, const rai::Configuration& ors) const {
+void TaskVariable::write(ostream& os, const rai::Configuration& ors) const {
   os <<"TaskVariable '" <<name <<'\'';
   os
       <<"\n  y=" <<y
@@ -526,14 +526,14 @@ void TaskVariable::write(ostream &os, const rai::Configuration& ors) const {
       <<"\t  Dgain=" <<Dgain
       <<"\n  y_error=" <<sqrDistance(y, y_target)
       <<"\t  v_error=" <<sqrDistance(v, v_target)
-      <<"\t  error="  <<y_prec*sqrDistance(y, y_target)+v_prec*sqrDistance(v, v_target)
+      <<"\t  error="  <<y_prec* sqrDistance(y, y_target)+v_prec* sqrDistance(v, v_target)
       <<endl;
 }
 
-void DefaultTaskVariable::write(ostream &os, const rai::Configuration& ors) const {
+void DefaultTaskVariable::write(ostream& os, const rai::Configuration& ors) const {
   TaskVariable::write(os);
   return;
-  rai::Body *bi = ors.bodies(i);
+  rai::Body* bi = ors.bodies(i);
   switch(type) {
     case posTVT:     os <<"  (pos " <<bi->name <<")"; break;
     //case relPosTVT:  os <<"  (relPos " <<bi->name <<'-' <<bj->name <<")"; break;
@@ -570,21 +570,21 @@ ProxyTaskVariable::ProxyTaskVariable(const char* _name,
 }
 
 #if 0
-void addAContact(double& y, arr& J, const rai::Proxy *p, const rai::Configuration& ors, double margin, bool linear) {
+void addAContact(double& y, arr& J, const rai::Proxy* p, const rai::Configuration& ors, double margin, bool linear) {
   double d;
-  rai::Shape *a, *b;
+  rai::Shape* a, *b;
   rai::Vector arel, brel;
   arr Ja, Jb, dnormal;
-  
+
   a=ors.shapes(p->a); b=ors.shapes(p->b);
   d=1.-p->d/margin;
-  
+
   if(!linear) y += d*d;
   else        y += d;
-  
+
   arel.setZero();  arel=a->X.rot/(p->posA-a->X.pos);
   brel.setZero();  brel=b->X.rot/(p->posB-b->X.pos);
-  
+
   if(!!J) {
     CHECK(p->normal.isNormalized(), "proxy normal is not normalized");
     dnormal.referTo(&p->normal.x, 3); dnormal.reshape(1, 3);
@@ -602,26 +602,26 @@ void addAContact(double& y, arr& J, const rai::Proxy *p, const rai::Configuratio
 void ProxyTaskVariable::updateState(const rai::Configuration& ors, double tau) {
   v_old=v;
   y_old=y;
-  
+
   y.resize(1);  y.setZero();
   J.resize(1, ors.getJointStateDimension());  J.setZero();
-  
+
   switch(type) {
     case allCTVT:
-      for(rai::Proxy *p: ors.proxies)  if(p->d<margin) {
+      for(rai::Proxy* p: ors.proxies)  if(p->d<margin) {
           ors.kinematicsProxyCost(y, J, p, margin, linear, true);
           p->colorCode = 1;
         }
       break;
     case allListedCTVT:
-      for(rai::Proxy *p: ors.proxies)  if(p->d<margin) {
+      for(rai::Proxy* p: ors.proxies)  if(p->d<margin) {
           if(shapes.contains(p->a) && shapes.contains(p->b)) {
             ors.kinematicsProxyCost(y, J, p, margin, linear, true);
             p->colorCode = 2;
           }
         }
     case allExceptListedCTVT:
-      for(rai::Proxy *p: ors.proxies)  if(p->d<margin) {
+      for(rai::Proxy* p: ors.proxies)  if(p->d<margin) {
           if(!shapes.contains(p->a) && !shapes.contains(p->b)) {
             ors.kinematicsProxyCost(y, J, p, margin, linear, true);
             p->colorCode = 3;
@@ -629,7 +629,7 @@ void ProxyTaskVariable::updateState(const rai::Configuration& ors, double tau) {
         }
       break;
     case bipartiteCTVT:
-      for(rai::Proxy *p: ors.proxies)  if(p->d<margin) {
+      for(rai::Proxy* p: ors.proxies)  if(p->d<margin) {
           if((shapes.contains(p->a) && shapes2.contains(p->b)) ||
               (shapes.contains(p->b) && shapes2.contains(p->a))) {
             ors.kinematicsProxyCost(y, J, p, margin, linear, true);
@@ -637,12 +637,12 @@ void ProxyTaskVariable::updateState(const rai::Configuration& ors, double tau) {
           }
         }
     case pairsCTVT: {
-      shapes.reshape(shapes.N/2,2);
+      shapes.reshape(shapes.N/2, 2);
       // only explicit paris in 2D array shapes
       uint j;
-      for(rai::Proxy *p: ors.proxies)  if(p->d<margin) {
+      for(rai::Proxy* p: ors.proxies)  if(p->d<margin) {
           for(j=0; j<shapes.d0; j++) {
-            if((shapes(j,0)==(uint)p->a && shapes(j,1)==(uint)p->b) || (shapes(j,0)==(uint)p->b && shapes(j,1)==(uint)p->a))
+            if((shapes(j, 0)==(uint)p->a && shapes(j, 1)==(uint)p->b) || (shapes(j, 0)==(uint)p->b && shapes(j, 1)==(uint)p->a))
               break;
           }
           if(j<shapes.d0) { //if a pair was found
@@ -652,12 +652,12 @@ void ProxyTaskVariable::updateState(const rai::Configuration& ors, double tau) {
         }
     } break;
     case allExceptPairsCTVT: {
-      shapes.reshape(shapes.N/2,2);
+      shapes.reshape(shapes.N/2, 2);
       // only explicit paris in 2D array shapes
       uint j;
-      for(rai::Proxy *p: ors.proxies)  if(p->d<margin) {
+      for(rai::Proxy* p: ors.proxies)  if(p->d<margin) {
           for(j=0; j<shapes.d0; j++) {
-            if((shapes(j,0)==(uint)p->a && shapes(j,1)==(uint)p->b) || (shapes(j,0)==(uint)p->b && shapes(j,1)==(uint)p->a))
+            if((shapes(j, 0)==(uint)p->a && shapes(j, 1)==(uint)p->b) || (shapes(j, 0)==(uint)p->b && shapes(j, 1)==(uint)p->a))
               break;
           }
           if(j==shapes.d0) { //if a pair was not found
@@ -668,13 +668,13 @@ void ProxyTaskVariable::updateState(const rai::Configuration& ors, double tau) {
     } break;
     case vectorCTVT: {
       //outputs a vector of collision meassures, with entry for each explicit pair
-      shapes.reshape(shapes.N/2,2);
-      y.resize(shapes.d0,1).setZero();
-      J.resize(shapes.d0,J.d1).setZero();
+      shapes.reshape(shapes.N/2, 2);
+      y.resize(shapes.d0, 1).setZero();
+      J.resize(shapes.d0, J.d1).setZero();
       uint j;
-      for(rai::Proxy *p: ors.proxies)  if(p->d<margin) {
+      for(rai::Proxy* p: ors.proxies)  if(p->d<margin) {
           for(j=0; j<shapes.d0; j++) {
-            if((shapes(j,0)==(uint)p->a && shapes(j,1)==(uint)p->b) || (shapes(j,0)==(uint)p->b && shapes(j,1)==(uint)p->a))
+            if((shapes(j, 0)==(uint)p->a && shapes(j, 1)==(uint)p->b) || (shapes(j, 0)==(uint)p->b && shapes(j, 1)==(uint)p->a))
               break;
           }
           if(j<shapes.d0) {
@@ -687,14 +687,14 @@ void ProxyTaskVariable::updateState(const rai::Configuration& ors, double tau) {
     default: NIY;
   }
   transpose(Jt, J);
-  
+
   if(y_old.N!=y.N) {
     y_old=y;
     v.resizeAs(y); v.setZero();
     v_old=v;
   }
   v = (y - y_old)/tau; //TODO: the velocity should be evaluated from the joint angle velocity (J*dq) to be consistent with the whole soc code!
-  
+
   if(y_target.N==y.N) {
     err=length(y - y_target);
     derr=err - length(y_old - y_target);
@@ -807,7 +807,7 @@ void bayesianControl(TaskVariableList& CS, arr& dq, const arr& W) {
 #if 0
 
 void TaskVariableTable::init(const rai::Configuration& ors) {
-  uint i,j,k,m=0,T=0,t,qdim;
+  uint i, j, k, m=0, T=0, t, qdim;
   //count the total task dimension, q-d
   for_list(TaskVariable, v, list) {
     v->updateState(ors);
@@ -819,36 +819,36 @@ void TaskVariableTable::init(const rai::Configuration& ors) {
     }
   }
   //resize everything
-  y.resize(T,m);
-  phi.resize(T,m);
-  J.resize(T,m,qdim);
-  rho.resize(T,m);
-  
+  y.resize(T, m);
+  phi.resize(T, m);
+  J.resize(T, m, qdim);
+  rho.resize(T, m);
+
   updateState(0, ors, true);
 }
 
 //recompute all phi in time slice t using the pose in ors
 void TaskVariableTable::updateTimeSlice(uint t, const rai::Configuration& ors, bool alsoTargets) {
-  uint i,j,k,m=0;
+  uint i, j, k, m=0;
   for_list(TaskVariable, v, list) {
     v->updateState(ors);
     if(v->active) {
       for(j=0; j<v->y.N; j++) {
-        phi(t,m+j) = v->y(j);
-        for(k=0; k<J.d2; k++) J(t,m+j,k) = v->J(j,k);
+        phi(t, m+j) = v->y(j);
+        for(k=0; k<J.d2; k++) J(t, m+j, k) = v->J(j, k);
         if(alsoTargets) {
-          y(t,m+j) = v->y_trajectory(t,j);
-          rho(t,m+j) = v->y_prec_trajectroy(t,j);
+          y(t, m+j) = v->y_trajectory(t, j);
+          rho(t, m+j) = v->y_prec_trajectroy(t, j);
         }
       }
       m+=j;
     }
-    CHECK_EQ(m,y.d1,"");
+    CHECK_EQ(m, y.d1, "");
   }
 }
 
 double TaskVariableTable::totalCost() {
-  CHECK(y.N==phi.N && y.N == rho.N,"");
+  CHECK(y.N==phi.N && y.N == rho.N, "");
   double C = 0;
   for(uint i=0; i<y.N; i++) {
     C += rho.elem(i)*sqrDistance(y.elem(i), phi.elem(i));
@@ -1080,7 +1080,7 @@ void bayesianPlanner_obsolete(rai::Configuration *ors, TaskVariableList& CS, Swi
 #if 0
 void SMAC::readCVdef(std::istream& is) {
   char c;
-  TaskVariable *cv;
+  TaskVariable* cv;
   rai::String name, ref1, ref2;
   rai::Transformation f;
   uint i, j, k;

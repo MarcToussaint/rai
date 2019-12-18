@@ -1,7 +1,7 @@
 #include <Gui/opengl.h>
 
 void draw1(void*,OpenGL& gl){
-  glStandardLight(NULL, gl);
+  glStandardLight(nullptr, gl);
   glColor(1,0,0);
   glFrontFace(GL_CW);
   glutSolidTeapot(1.);

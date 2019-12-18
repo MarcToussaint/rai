@@ -89,7 +89,7 @@ class SWIFT_File_Reader {
     // more than three vertices, that is ok.  Just make sure that the *fs
     // array is long enough.  Set fn to be the number of faces.  fv is used if
     // some faces are non-triangular.  If ALL faces are triangular,
-    // set *fv = NULL.  Otherwise, allocate *fs to a length equal to the
+    // set *fv = nullptr.  Otherwise, allocate *fs to a length equal to the
     // number of faces.  Set each entry equal to the number of vertices in the
     // corresponding face.
     virtual bool Read( ifstream& fin, SWIFT_Real*& vs, int*& fs,

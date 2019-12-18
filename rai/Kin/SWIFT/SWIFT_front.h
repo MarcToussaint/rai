@@ -64,7 +64,7 @@
 //////////////////////////////////////////////////////////////////////////////
 class SWIFT_Front_Node {
   public:
-    //SWIFT_Front_Node( ) { parent = NULL; rchild = NULL; lchild = NULL; }
+    //SWIFT_Front_Node( ) { parent = nullptr; rchild = nullptr; lchild = nullptr; }
     SWIFT_Front_Node( ) { Make_Leaf(); }
     ~SWIFT_Front_Node( ) { delete lchild; delete rchild; }
 
@@ -90,23 +90,23 @@ class SWIFT_Front_Node {
     void Set_Left_Child( SWIFT_Front_Node* n ) { lchild = n; }
     void Set_Right_Child( SWIFT_Front_Node* n ) { rchild = n; }
     void Set_Close( bool i ) { close = i; }
-    void Set_Uninitialized( ) { feat1 = NULL; }
+    void Set_Uninitialized( ) { feat1 = nullptr; }
 
-    bool Is_Leaf( ) const { return lchild == NULL; }
+    bool Is_Leaf( ) const { return lchild == nullptr; }
     bool Is_Left_Child( ) const { return parent->Left_Child() == this; }
     bool Is_Right_Child( ) const { return parent->Right_Child() == this; }
-    bool Initialized( ) const { return feat1 != NULL; }
+    bool Initialized( ) const { return feat1 != nullptr; }
 
-    void Make_Leaf( ) { lchild = rchild = NULL; }
+    void Make_Leaf( ) { lchild = rchild = nullptr; }
     void Reset( ) {
-             feat1 = NULL;
-             parent = NULL; lchild = NULL; rchild = NULL; }
+             feat1 = nullptr;
+             parent = nullptr; lchild = nullptr; rchild = nullptr; }
 
   private:
     bool close;
 
     RESULT_TYPE state;
-    // if feat1 == NULL then the pair is not initialized
+    // if feat1 == nullptr then the pair is not initialized
     void* feat0;
     void* feat1;
     SWIFT_BV* bv0;
@@ -128,8 +128,8 @@ class SWIFT_Front {
     SWIFT_Front( ) { root.Set_Parent( &root ); size = 1; }
     ~SWIFT_Front( ) { Delete(); }
 
-    void Delete( ) { delete root.Left_Child(); root.Set_Left_Child( NULL );
-                     delete root.Right_Child(); root.Set_Right_Child( NULL ); }
+    void Delete( ) { delete root.Left_Child(); root.Set_Left_Child( nullptr );
+                     delete root.Right_Child(); root.Set_Right_Child( nullptr ); }
 
     int Num_Leaves( ) const { return size; }
     int Size( ) const { return size; }

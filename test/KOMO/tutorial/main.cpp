@@ -14,6 +14,8 @@ void tutorialBasics(){
    * 2) the timing parameters (duration/phases, number os time slices per phase)
    * 3) the tasks */
 
+  komo.sparseOptimization = true;
+
   //-- setting the model; false -> NOT calling collision detection (SWIFT) -> faster
   komo.setModel(C, false);
 
@@ -27,10 +29,10 @@ void tutorialBasics(){
   //-- simple tasks, called low-level
 
   //in phase-time [1,\infty] position-difference between "endeff" and "target" shall be zero (eq objective)
-  komo.addObjective({1.,-1.}, OT_eq, FS_positionDiff, {"endeff", "target"}, {1e0});
+  komo.addObjective({1.,-1.}, FS_positionDiff, {"endeff", "target"}, OT_eq, {1e0});
 
   //in phase-time [1,\infty] quaternion-difference between "endeff" and "target" shall be zero (eq objective)
-  komo.addObjective({1., -1.}, OT_eq, FS_quaternionDiff, {"endeff", "target"}, {1e1});
+  komo.addObjective({1., -1.}, FS_quaternionDiff, {"endeff", "target"}, OT_eq, {1e1});
   //I don't aleays recommend setting quaternion tasks! This is only for testing here. As an alternative, one can use alignment tasks as in test/KOMO/komo
 
   //slow down around phase-time 1. (not measured in seconds, but phase)
@@ -56,7 +58,7 @@ void tutorialBasics(){
    *
    * order=0 means that the task is about the position(absolute value) in task space
    * order=1 means that the task is about the velocity in task space
-   * order=0 means that the task is about the acceleration in task space
+   * order=2 means that the task is about the acceleration in task space
    *
    * For instance, setSquaredQAccelerations sets a tasks about the acceleration in the identity map
    *
@@ -86,8 +88,8 @@ void tutorialInverseKinematics(){
   komo.setSquaredQuaternionNorms(-1., -1., 1e3); //when the kinematics includes quaternion joints, keep them roughly regularized
 
   //-- simple tasks, called low-level
-  komo.addObjective({}, OT_eq, FS_positionDiff, {"endeff", "target"}, {1e0});
-  komo.addObjective({}, OT_eq, FS_quaternionDiff, {"endeff", "target"}, {1e1});
+  komo.addObjective({}, FS_positionDiff, {"endeff", "target"}, OT_eq, {1e0});
+  komo.addObjective({}, FS_quaternionDiff, {"endeff", "target"}, OT_eq, {1e1});
 
   //-- call the optimizer
   komo.reset();

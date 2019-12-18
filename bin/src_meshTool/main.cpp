@@ -13,7 +13,7 @@ Usage:  rai_meshTools file.[tri|obj|off|ply|stl] <tags...>\n\
 Tags can be -view, -box, -fuse, -clean, -center, -scale, -save, -qhull, -flip \n";
 
 void drawInit(void*, OpenGL& gl){
-  glStandardLight(NULL, gl);
+  glStandardLight(nullptr, gl);
   glDrawAxes(1.);
   glColor(1.,.5,0.);
 }
@@ -26,7 +26,7 @@ void TEST(MeshTools) {
   else HALT("the first argument needs to be a mesh file");
 
   cout <<"FILE=" <<file <<endl;
-  OpenGL *gl=NULL;
+  OpenGL *gl=nullptr;
 
   rai::Mesh mesh;
   mesh.readFile(file);

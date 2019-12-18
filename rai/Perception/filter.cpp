@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -27,7 +27,7 @@ Filter::~Filter() {
 void Filter::open() {
   Var<rai::Configuration> modelWorld(this, "modelWorld");
   modelWorld.readAccess();
-  for(rai::Frame *b:modelWorld().frames) {
+  for(rai::Frame* b:modelWorld().frames) {
     if(b->ats["percept"]) {
       //first check if it already is in the percept list
       bool done=false;
@@ -35,7 +35,7 @@ void Filter::open() {
       if(!done) {
         LOG(0) <<"ADDING this body " <<b->name <<" to the percept database, which ats:" <<endl;
         LOG(0) <<*b <<"--" <<b->ats <<endl;
-        rai::Shape *s=b->shape;
+        rai::Shape* s=b->shape;
         switch(s->type()) {
           case rai::ST_box: {
             PerceptPtr p = make_shared<PercBox>(b->ensure_X(), s->size(), s->mesh().C);
@@ -60,10 +60,10 @@ void Filter::step() {
     percepts_filtered.set() = percepts_input.get();
     return;
   }
-  
+
   percepts_input.writeAccess();
   percepts_filtered.writeAccess();
-  
+
   if(verbose>0) cout <<"FILTER: #inputs=" <<percepts_input().N <<" #database=" <<percepts_filtered().N <<endl;
   if(verbose>1) {
     cout <<"INPUTS:" <<endl;
@@ -71,20 +71,20 @@ void Filter::step() {
     cout <<"DATABASE:" <<endl;
     for(PerceptPtr& p:percepts_filtered()) cout <<(*p) <<endl;
   }
-  
+
   // If empty inputs, do nothing.
   if(percepts_input().N == 0 && percepts_input().N == 0) {
     percepts_filtered.deAccess();
     percepts_input.deAccess();
     return;
   }
-  
+
   PerceptL newCreations;
-  
+
   //-- step 1: discount precision of old percepts
   // in forward models, the variance of two Gaussians is ADDED -> precision is 1/variance
   for(PerceptPtr& p:percepts_filtered()) p->precision = 1./(1./p->precision + 1./precision_transition);
-  
+
   //-- step 2: compute matches within types and fuse
   // For each type of inputs, run the matching
   for(int t=0; t<=Percept::Type::PT_end; t++) {
@@ -93,16 +93,16 @@ void Filter::step() {
     PerceptL input_ofType, database_ofType;
     for(PerceptPtr& p : percepts_input())     if(p->type==type)  input_ofType.append(p);
     for(PerceptPtr& p : percepts_filtered())  if(p->type==type)  database_ofType.append(p);
-    
+
     //no percepts at all of this type..
     if(!input_ofType.N && !database_ofType.N) continue;
-    
+
     //create bipartite costs
     costs = createCostMatrix(input_ofType, database_ofType);
-    
+
     //run Hungarian algorithm
     Hungarian ha(costs);
-    
+
 #if 0
     // Now we have the optimal matching. Assign values.
     PerceptL assignedObjects = assign(input_ofType, database_ofType, ha);
@@ -128,7 +128,7 @@ void Filter::step() {
     }
 #endif
   }
-  
+
   //-- step 3: remove all database objects with too low precision and no body match; and append new creations
   for(uint i=percepts_filtered().N; i--;) {
     PerceptPtr& p = percepts_filtered()(i);
@@ -138,10 +138,10 @@ void Filter::step() {
   }
   percepts_filtered().append(newCreations);
   newCreations.clear();
-  
+
   //-- step 4: clean up remaining percepts
   percepts_input().clear();
-  
+
 #if 0
   //-- delete objects in percepts and database that are not filtered
   for(Percept* p : percepts_input()) {
@@ -149,7 +149,7 @@ void Filter::step() {
       delete p;
   }
   percepts_input().clear();
-  
+
   for(Percept* p : percepts_filtered()) {
     if(!filtered.contains(p))
       delete p;
@@ -157,7 +157,7 @@ void Filter::step() {
   percepts_filtered().clear();
   percepts_filtered() = filtered;
 #endif
-  
+
   //-- step 5: sync with modelWorld using inverse kinematics
   modelWorld.writeAccess();
   modelWorld->selectJointsByName({"S1"});
@@ -165,72 +165,72 @@ void Filter::step() {
   TaskControlMethods taskController(rai::getParameter<double>("Hrate", .1)*modelWorld->getHmetric());
   CtrlTaskL tasks;
   arr q=modelWorld().q;
-  
+
   // create task costs on the modelWorld for each percept
   for(PerceptPtr& p:percepts_filtered()) {
     if(p->bodyId>=0) {
-      rai::Frame *b = modelWorld->frames(p->bodyId);
+      rai::Frame* b = modelWorld->frames(p->bodyId);
       if(p->type==Percept::PT_box) {
-        rai::Shape *s=b->shape;
+        rai::Shape* s=b->shape;
 //        s->size() = (static_cast<PercBox*>(p))->size;
 //        s->mesh().setSSBox(s->size(0), s->size(1), s->size(2), 0.0001);
         s->mesh().C = std::dynamic_pointer_cast<PercBox>(p)->color;
         if(s->mesh().C.d0 > 3)
-          s->mesh().C=ARR(0.,0.,0.);
+          s->mesh().C=ARR(0., 0., 0.);
       }
 
-      CtrlTask *t;
-      
+      CtrlTask* t;
+
       t = new CtrlTask(STRING("syncPos_" <<b->name), make_shared<TM_Default>(TMT_pos, b->ID));
       t->ref = make_shared<MotionProfile_Const>(p->pose.pos.getArr());
       tasks.append(t);
-      
+
       t = new CtrlTask(STRING("syncQuat_" <<b->name), make_shared<TM_Default>(TMT_quat, b->ID));
       t->ref = make_shared<MotionProfile_Const>(p->pose.rot.getArr4d(), true);
       tasks.append(t);
     }
   }
-  
+
   double cost=0.;
   for(CtrlTask* t: tasks) t->update(.0, modelWorld()); //computes their values and Jacobians
   arr dq = taskController.inverseKinematics(tasks, NoArr, NoArr, NoArr, &cost);
   q += dq;
-  
+
   if(verbose>0) {
     LOG(0) <<"FILTER: IK cost=" <<cost <<" perc q vector = " <<q <<endl;
     taskController.reportCurrentState(tasks);
   }
-  
+
   listDelete(tasks); //cleanup tasks
-  
+
   modelWorld->setJointState(q);
   modelWorld->selectJointsByName({}, true);
   modelWorld.deAccess();
-  
+
   //-- done
-  
+
   if(verbose>1) {
     cout <<"AFTER FILTER: DATABASE:" <<endl;
     for(PerceptPtr& p:percepts_filtered()) cout <<(*p) <<endl;
   }
-  
+
   percepts_filtered.deAccess();
   percepts_input.deAccess();
 }
 
 PerceptL Filter::assign(const PerceptL& inputs, const PerceptL& database, const Hungarian& ha) {
   PerceptL new_database;
-  
+
   uint num_old = database.N;
   uint num_new = inputs.N;
-  
+
   for(uint i = 0; i < ha.starred.dim(0); ++i) {   //index over inputs
     uint col = ha.starred[i]().argmax();        //index over database
     // 3 cases:
     // 1) Existed before, no longer exists. If i > num_new
     // 2) Existed before and still exists. If costs < distannce_threshold
     // 3) Didn't exist before. This happens iff col >= num_old
-    
+
     // Existed before, doesn't exist now.
     if(i >= num_new) {
       //std::cout<< "Existed before, doesn't now." << std::endl;
@@ -261,7 +261,7 @@ PerceptL Filter::assign(const PerceptL& inputs, const PerceptL& database, const 
     }
     //std::cout << "Assigning \t" << i << "\tMatches:\t" << matched_ids(i).id << "\t Relevance: " << perceps(i).relevance << std::endl;
   }
-  
+
   //mt: this is already done in case 1) above!
 //  // For each of the old objects, update the relevance factor.
 //  for ( uint i = 0; i < database.N; ++i ) {
@@ -281,18 +281,18 @@ arr Filter::createCostMatrix(const PerceptL& inputs, const PerceptL& database) {
   uint num_old = database.N;
   uint dims = std::max(num_old, num_new);
   arr costs = -ones(dims, dims);
-  
+
   // Assign costs
   for(uint i=0; i<num_new; ++i) for(uint j=0; j<num_old; ++j) {
-      costs(i,j) = inputs(i)->idMatchingCost(*database(j));
+      costs(i, j) = inputs(i)->idMatchingCost(*database(j));
     }
-    
+
   // For every element that hasn't been set, set the costs to the max.
   double max_costs = costs.max();
-  
+
   for(uint i=0; i<dims; ++i) for(uint j=0; j<dims; ++j) {
       if((i >= num_new) || (j >= num_old))
-        costs(i,j) = max_costs;
+        costs(i, j) = max_costs;
     }
   return costs;
 }

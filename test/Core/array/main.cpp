@@ -355,7 +355,7 @@ void TEST(BinaryIO){
   CHECK_ZERO(maxDiff(a,b), 1e-4, "ascii write-read error");
 
   rai::timerStart();
-  a.write(bout,NULL,NULL,NULL,true,true);
+  a.write(bout,nullptr,nullptr,nullptr,true,true);
   cout <<"binary write time: " <<rai::timerRead() <<"sec" <<endl;
   bout.close();
 

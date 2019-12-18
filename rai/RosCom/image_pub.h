@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -27,13 +27,13 @@ namespace rai {
 struct sImagePublisher;
 
 class ImagePublisher {
-private:
-  sImagePublisher *s;
-public:
+ private:
+  sImagePublisher* s;
+ public:
   /** Create an image publisher for the give camera name and expecting that images have the specified pixel format. */
   ImagePublisher(const std::string& topic, const std::string& camera_name, const PixelFormat pix_fmt);
   ~ImagePublisher();
-  
+
   /** Publishes an image with the given capture timestamp. After this method returns, the content of "image" is
    * no longer needed, even though publishing may occur in the background.
    */

@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -46,7 +46,6 @@ extern "C" {
 #endif
 #endif //RAI_LAPACK
 
-
 namespace rai {
 //===========================================================================
 
@@ -89,49 +88,49 @@ to find the right function! Also use the man tools with Debian package lapack-do
 I've put the clapack.h directly into the rai directory - one only has to link to the Fortran lib
 */
 
-namespace rai{
+namespace rai {
 
 /// make sparse: create the \ref sparse index
 template<> rai::SparseVector& rai::Array<double>::sparseVec() {
-  SparseVector *s;
-  if(!special){
+  SparseVector* s;
+  if(!special) {
     s = new SparseVector(*this);
-    if(N){
+    if(N) {
       CHECK_EQ(nd, 1, "");
       arr copy;
       copy.swap(*this);
       s->setFromDense(copy);
-    }else{
+    } else {
       nd=1;
     }
-  }else{
+  } else {
     s = dynamic_cast<SparseVector*>(special);
     CHECK(s, "");
   }
   return *s;
 }
 
-template<> const rai::SparseVector& rai::Array<double>::sparseVec() const{
+template<> const rai::SparseVector& rai::Array<double>::sparseVec() const {
   CHECK(isSparseVector(*this), "");
-  SparseVector *s = dynamic_cast<SparseVector*>(special);
+  SparseVector* s = dynamic_cast<SparseVector*>(special);
   CHECK(s, "");
   return *s;
 }
 
 /// make sparse: create the \ref sparse index
 template<> rai::SparseMatrix& rai::Array<double>::sparse() {
-  SparseMatrix *s;
-  if(!special){
+  SparseMatrix* s;
+  if(!special) {
     s = new SparseMatrix(*this);
-    if(N){
+    if(N) {
       CHECK_EQ(nd, 2, "");
       arr copy;
       copy.swap(*this);
       s->setFromDense(copy);
-    }else{
+    } else {
       nd=2;
     }
-  }else{
+  } else {
     s = dynamic_cast<SparseMatrix*>(special);
     CHECK(s, "");
   }
@@ -139,19 +138,20 @@ template<> rai::SparseMatrix& rai::Array<double>::sparse() {
 }
 
 /// make sparse: create the \ref sparse index
-template<> const rai::SparseMatrix& rai::Array<double>::sparse() const{
+template<> const rai::SparseMatrix& rai::Array<double>::sparse() const {
   CHECK(isSparseMatrix(*this), "");
-  SparseMatrix *s = dynamic_cast<SparseMatrix*>(special);
+  SparseMatrix* s = dynamic_cast<SparseMatrix*>(special);
   CHECK(s, "");
   return *s;
 }
 
 #define NONSENSE( type ) \
-template<> rai::SparseMatrix& rai::Array<type>::sparse() { NIY; return *(new SparseMatrix(NoArr)); } \
-template<> const rai::SparseMatrix& rai::Array<type>::sparse() const{ NIY; return *(new SparseMatrix(NoArr)); }
+  template<> rai::SparseMatrix& rai::Array<type>::sparse() { NIY; return *(new SparseMatrix(NoArr)); } \
+  template<> const rai::SparseMatrix& rai::Array<type>::sparse() const{ NIY; return *(new SparseMatrix(NoArr)); }
 NONSENSE(float)
 NONSENSE(uint)
 NONSENSE(int)
+NONSENSE(byte)
 #undef NONSENSE
 
 }
@@ -162,7 +162,7 @@ NONSENSE(int)
 //
 
 arr grid(const arr& lo, const arr& hi, const uintA& steps) {
-  CHECK(lo.N==hi.N && lo.N==steps.N,"");
+  CHECK(lo.N==hi.N && lo.N==steps.N, "");
   arr X;
   uint i, j, k;
   if(lo.N==1) {
@@ -181,19 +181,19 @@ arr grid(const arr& lo, const arr& hi, const uintA& steps) {
   }
   if(lo.N==3) {
     arr delta = zeros(3);
-    for(uint i=0;i<3;i++) if(steps(i)) delta(i) = (hi(i)-lo(i))/steps(i);
+    for(uint i=0; i<3; i++) if(steps(i)) delta(i) = (hi(i)-lo(i))/steps(i);
 
     X.resize(TUP(steps(2)+1, steps(1)+1, steps(0)+1, 3));
     for(i=0; i<X.d0; i++) for(j=0; j<X.d1; j++) for(k=0; k<X.d2; k++) {
-      X.elem(TUP(i, j, k, 0))=lo(0)+delta(0)*k;
-      X.elem(TUP(i, j, k, 1))=lo(1)+delta(1)*j;
-      X.elem(TUP(i, j, k, 2))=lo(2)+delta(2)*i;
-    }
+          X.elem(TUP(i, j, k, 0))=lo(0)+delta(0)*k;
+          X.elem(TUP(i, j, k, 1))=lo(1)+delta(1)*j;
+          X.elem(TUP(i, j, k, 2))=lo(2)+delta(2)*i;
+        }
     X.reshape(X.d0*X.d1*X.d2, 3);
     return X;
   }
   HALT("not implemented yet");
-  
+
 }
 
 arr repmat(const arr& A, uint m, uint n) {
@@ -219,11 +219,11 @@ arr diag(double d, uint n) {
 
 void addDiag(arr& A, double d) {
   if(isRowShifted(A)) {
-    RowShifted *Aaux = (RowShifted*) A.special;
+    RowShifted* Aaux = (RowShifted*) A.special;
     if(!Aaux->symmetric) HALT("this is not a symmetric matrix");
-    for(uint i=0; i<A.d0; i++) A(i,0) += d;
+    for(uint i=0; i<A.d0; i++) A(i, 0) += d;
   } else {
-    for(uint i=0; i<A.d0; i++) A(i,i) += d;
+    for(uint i=0; i<A.d0; i++) A(i, i) += d;
   }
 }
 
@@ -257,7 +257,7 @@ void normalizeWithJac(arr& y, arr& J) {
   double l = length(y);
   CHECK(l>1e-10, "can't normalize");
   y /= l;
-  if(!!J && J.N){
+  if(!!J && J.N) {
     J -= y*(~y*J); //same as (y^y)*J;
     J /= l;
   }
@@ -293,7 +293,7 @@ uint svd(arr& U, arr& d, arr& V, const arr& A, bool sort) {
 #else
   r=own_SVD(U, d, V, A, sort);
 #endif
-  
+
 #ifdef RAI_CHECK_SVD
   bool uselapack=rai::useLapack;
   rai::useLapack=false;
@@ -319,7 +319,7 @@ uint svd(arr& U, arr& d, arr& V, const arr& A, bool sort) {
   }
   rai::useLapack=uselapack;
 #endif
-  
+
   return r;
 }
 
@@ -334,19 +334,19 @@ void svd(arr& U, arr& V, const arr& A) {
   //CHECK(maxDiff(A, U*~V) <1e-4, "");
 }
 
-void pca(arr &Y, arr &v, arr &W, const arr &X, uint npc) {
+void pca(arr& Y, arr& v, arr& W, const arr& X, uint npc) {
   CHECK(X.nd == 2 && X.d0 > 0 && X.d1 > 0, "Invalid data matrix X.");
-  CHECK_LE(npc ,  X.d1, "More principal components than data matrix X can offer.");
-  
+  CHECK_LE(npc,  X.d1, "More principal components than data matrix X can offer.");
+
   if(npc == 0)
     npc = X.d1;
-    
+
   // centering around the mean
   arr m = sum(X, 0) / (double)X.d0;
   arr D = X;
   for(uint i = 0; i < D.d0; i++)
     D[i]() -= m;
-    
+
   arr U;
   svd(U, v, W, D, true);
   v = v % v;
@@ -358,10 +358,10 @@ void pca(arr &Y, arr &v, arr &W, const arr &X, uint npc) {
   cout << "vv: " << v << endl;
   cout << "WW: " << W << endl;
   */
-  
+
   W = W.cols(0, npc);
   Y = D * W;
-  
+
   v *= 1./sum(v);
   v.sub(0, npc-1);
 }
@@ -374,9 +374,9 @@ void check_inverse(const arr& Ainv, const arr& A) {
   double err=maxDiff(_D, D, &me);
   cout <<"inverse is correct: " <<err <<endl;
   if(A.d0<10) {
-    CHECK(err<RAI_CHECK_INVERSE , "inverting failed, error=" <<err <<" " <<_D.elem(me) <<"!=" <<D.elem(me) <<"\nA=" <<A <<"\nAinv=" <<Ainv <<"\nA*Ainv=" <<_D);
+    CHECK(err<RAI_CHECK_INVERSE, "inverting failed, error=" <<err <<" " <<_D.elem(me) <<"!=" <<D.elem(me) <<"\nA=" <<A <<"\nAinv=" <<Ainv <<"\nA*Ainv=" <<_D);
   } else {
-    CHECK(err<RAI_CHECK_INVERSE , "inverting failed, error=" <<err <<" " <<_D.elem(me) <<"!=" <<D.elem(me));
+    CHECK(err<RAI_CHECK_INVERSE, "inverting failed, error=" <<err <<" " <<_D.elem(me) <<"!=" <<D.elem(me));
   }
 #endif
 }
@@ -399,25 +399,25 @@ uint inverse_SVD(arr& Ainv, const arr& A) {
   if(m==0 || n==0) return 0;
   if(m==n && m==1) { Ainv(0, 0)=1./A(0, 0); return 0; }
   if(m==n && m==2) { inverse2d(Ainv, A); return 0; }
-  
+
   r=svd(U, w, V, A, true);
-  
+
   //arr W;
   //setDiagonal(W, w);
   //CHECK(fabs(maxDiff(A, U*W*~V))<1e-10, "");
-  
+
   winv.resizeAs(w);
   for(i=0; i<r; i++) {
     if(w(i)>1e-10) winv(i) = 1./w(i); else winv(i) = 1e10;
   }
   for(; i<w.N; i++) winv(i) = 0.;
-  
+
 #if 0
   //arr W;
   setDiagonal(W, winv);
   Ainv = V * W * ~U;
 #else
-  double *Ainvij=&Ainv(0, 0);
+  double* Ainvij=&Ainv(0, 0);
   for(i=0; i<n; i++) for(j=0; j<m; j++) {
       double* vi = &V(i, 0);
       double* uj = &U(j, 0);
@@ -427,7 +427,7 @@ uint inverse_SVD(arr& Ainv, const arr& A) {
       Ainvij++;
     }
 #endif
-  
+
 #ifdef RAI_CHECK_INVERSE
   check_inverse(Ainv, A);
 #endif
@@ -460,10 +460,10 @@ void inverse_LU(arr& Xinv, const arr& X) {
     lubksb(LU.pp, n, idx, col.p);
     for(i=0; i<n; i++) Xinv(i, j)=col(i);
   }
-  
+
   delete[] idx;
   delete[] d;
-  
+
 #ifdef RAI_CHECK_INVERSE
   check_inverse(Xinv, X);
 #endif
@@ -471,7 +471,7 @@ void inverse_LU(arr& Xinv, const arr& X) {
 }
 
 void inverse_SymPosDef(arr& Ainv, const arr& A) {
-  CHECK_EQ(A.d0,A.d1, "");
+  CHECK_EQ(A.d0, A.d1, "");
 #ifdef RAI_LAPACK
   lapack_inverseSymPosDef(Ainv, A);
 #else
@@ -488,7 +488,7 @@ arr pseudoInverse(const arr& A, const arr& Winv, double eps) {
   if(!!Winv) {
     if(Winv.nd==1) AAt = A*(Winv%At); else AAt = A*Winv*At;
   } else AAt = A*At;
-  if(eps) for(uint i=0; i<AAt.d0; i++) AAt(i,i) += eps;
+  if(eps) for(uint i=0; i<AAt.d0; i++) AAt(i, i) += eps;
   arr AAt_inv = inverse_SymPosDef(AAt);
   arr Ainv = At * AAt_inv;
   if(!!Winv) { if(Winv.nd==1) Ainv = Winv%Ainv; else Ainv = Winv*Ainv; }
@@ -503,7 +503,7 @@ double determinant(const arr& A);
 double cofactor(const arr& A, uint i, uint j);
 
 void gaussFromData(arr& a, arr& A, const arr& X) {
-  CHECK_EQ(X.nd,2, "");
+  CHECK_EQ(X.nd, 2, "");
   uint N=X.d0, n=X.d1;
   arr ones(N); ones=1.;
   a = ones*X/(double)N; a.reshape(n);
@@ -512,7 +512,7 @@ void gaussFromData(arr& a, arr& A, const arr& X) {
 
 /* compute a rotation matrix that rotates a onto v in arbitrary dimensions */
 void rotationFromAtoB(arr& R, const arr& a, const arr& v) {
-  CHECK_EQ(a.N,v.N, "");
+  CHECK_EQ(a.N, v.N, "");
   CHECK(fabs(1.-length(a))<1e-10 && fabs(1.-length(v))<1e-10, "");
   uint n=a.N, i, j;
   if(maxDiff(a, v)<1e-10) { R.setId(n); return; }  //nothing to rotate!!
@@ -556,172 +556,172 @@ uint own_SVD(
   V.resize(n, n);
   w.resize(n);
   rai::Array<double*> Ap, Up, Vp;
-  double **a = A.getCarray(Ap); //Pointers(Apointers); /* input matrix */
-  double **u = U.getCarray(Up); //Pointers(Upointers); /* left vectors */
-  double **v = V.getCarray(Vp); //Pointers(Vpointers); /* right vectors */
-  
+  double** a = A.getCarray(Ap); //Pointers(Apointers); /* input matrix */
+  double** u = U.getCarray(Up); //Pointers(Upointers); /* left vectors */
+  double** v = V.getCarray(Vp); //Pointers(Vpointers); /* right vectors */
+
   int flag;
   unsigned i, its, j, jj, k, l, nm(0), r;
   double anorm, c, f, g, h, s, scale, x, y, z, t;
-  
+
   arr rv1(n);
-  
+
   /* copy A to U */
   for(i=0; i<m; i++) for(j=0; j<n; j++) u[i][j] = a[i][j];
-  
+
   /* householder reduction to pickBiagonal form */
   g = scale = anorm = 0.0;
-  
+
   for(i=0; i<n; i++) {
     l = i + 1;
     rv1(i) = scale * g;
     g = s = scale = 0.0;
-    
+
     if(i<m) {
       for(k=i; k<m; k++) scale += fabs(u[k][i]);
-      
+
       if(scale!=0.0) {
         for(k=i; k<m; k++) {
           u[k][i] /= scale;
           s += u[k][i] * u[k][i];
         }
-        
+
         f = u[i][i];
         g = -RAI_SIGN_SVD(sqrt(s), f);
         h = f * g - s;
         u[i][i] = f - g;
-        
+
         for(j=l; j<n; j++) {
           s = 0.0;
           for(k=i; k<m; k++) s += u[k][i] * u[k][j];
-          
+
           f = s / h;
           for(k=i; k<m; k++) u[k][j] += f * u[k][i];
         }
-        
+
         for(k=i; k<m; k++) u[k][i] *= scale;
       }
     }
-    
+
     w(i) = scale * g;
     g = s = scale = 0.0;
-    
+
     if(i<m && i!=n-1) {
       for(k=l; k<n; k++)scale += fabs(u[i][k]);
-      
+
       if(scale!=0.0) {
         for(k=l; k<n; k++) {
           u[i][k] /= scale;
           s += u[i][k] * u[i][k];
         }
-        
+
         f = u[i][l];
         g = -RAI_SIGN_SVD(sqrt(s), f);
         h = f * g - s;
         u[i][l] = f - g;
-        
+
         for(k=l; k<n; k++) rv1(k) = u[i][k] / h;
-        
+
         for(j=l; j<m; j++) {
           s = 0.0;
           for(k=l; k<n; k++) s += u[j][k] * u[i][k];
-          
+
           for(k=l; k<n; k++) u[j][k] += s * rv1(k);
         }
-        
+
         for(k=l; k<n; k++) u[i][k] *= scale;
       }
     }
-    
+
     anorm = RAI_max_SVD(anorm, fabs(w(i)) + fabs(rv1(i)));
   }
-  
+
   /* accumulation of right-hand transformations */
   for(l=i=n; i--; l--) {
     if(l<n) {
       if(g!=0.0) {
         /* double division avoids possible underflow */
         for(j=l; j<n; j++) v[j][i] = (u[i][j] / u[i][l]) / g;
-        
+
         for(j=l; j<n; j++) {
           s = 0.0;
           for(k=l; k<n; k++) s += u[i][k] * v[k][j];
-          
+
           for(k=l; k<n; k++) v[k][j] += s * v[k][i];
         }
       }
-      
+
       for(j=l; j<n; j++) v[i][j] = v[j][i] = 0.0;
     }
-    
+
     v[i][i] = 1.0;
     g = rv1(i);
   }
-  
+
   /* accumulation of left-hand transformations */
   for(l=i=(m<n?m:n); i--; l--) {
     g = w(i);
-    
+
     for(j=l; j<n; j++) u[i][j] = 0.0;
-    
+
     if(g!=0.0) {
       g = 1.0 / g;
-      
+
       for(j=l; j<n; j++) {
         s = 0.0;
         for(k=l; k<m; k++) s += u[k][i] * u[k][j];
-        
+
         /* double division avoids possible underflow */
         f = (s / u[i][i]) * g;
-        
+
         for(k=i; k<m; k++) u[k][j] += f * u[k][i];
       }
-      
+
       for(j=i; j<m; j++) u[j][i] *= g;
     } else {
       for(j=i; j<m; j++) u[j][i] = 0.0;
     }
-    
+
     u[i][i]++;
   }
-  
+
   /* diagonalization of the pickBiagonal form */
   for(k=n; k--;) {
     for(its=1; its<=30; its++) {
       flag = 1;
-      
+
       /* test for splitting */
       for(l = k + 1; l--;) {
         /* rv1 [0] is always zero, so there is no exit */
         nm = l - 1;
-        
+
         if(fabs(rv1(l)) + anorm == anorm) {
           flag = 0;
           break;
         }
-        
+
         //if(!l) break; //(mt 07-01-16)
         if(fabs(w(nm)) + anorm == anorm) break;
       }
-      
+
       if(flag) {
         /* cancellation of rv1 [l] if l greater than 0 */
         c = 0.0;
         s = 1.0;
-        
+
         for(i=l; i<=k; i++) {
           f = s * rv1(i);
           rv1(i) *= c;
-          
+
           if(fabs(f) + anorm == anorm) break;
-          
+
           g = w(i);
           h = hypot(f, g);
           w(i) = h;
           h = 1.0 / h;
           c = g * h;
           s = -f * h;
-          
+
           for(j=0; j<m; j++) {
             y = u[j][nm];
             z = u[j][i];
@@ -730,10 +730,10 @@ uint own_SVD(
           }
         }
       }
-      
+
       /* test for convergence */
       z = w(k);
-      
+
       if(l==k) {
         if(z<0.0) {
           w(k) = -z;
@@ -741,10 +741,10 @@ uint own_SVD(
         }
         break;
       }
-      
+
       if(its==50) HALT("svd failed");
       //if(its==30) throw k;
-      
+
       /* shift from bottom 2 by 2 minor */
       x = w(l);
       nm = k - 1;
@@ -754,10 +754,10 @@ uint own_SVD(
       f = ((y - z) * (y + z) + (g - h) * (g + h)) / (2.0 * h * y);
       g = hypot(f, 1.0);
       f = ((x - z) * (x + z) + h * ((y / (f + RAI_SIGN_SVD(g, f))) - h)) / x;
-      
+
       /* next qr transformation */
       c = s = 1.0;
-      
+
       for(j=l; j<k; j++) {
         i = j + 1;
         g = rv1(i);
@@ -772,27 +772,27 @@ uint own_SVD(
         g = g * c - x * s;
         h = y * s;
         y *= c;
-        
+
         for(jj=0; jj<n; jj++) {
           x = v[jj][j];
           z = v[jj][i];
           v[jj][j] = x * c + z * s;
           v[jj][i] = z * c - x * s;
         }
-        
+
         z = hypot(f, h);
         w(j) = z;
-        
+
         /* rotation can be arbitrary if z is zero */
         if(z!=0.0) {
           z = 1.0 / z;
           c = f * z;
           s = h * z;
         }
-        
+
         f = c * g + s * y;
         x = c * y - s * g;
-        
+
         for(jj=0; jj<m; jj++) {
           y = u[jj][j];
           z = u[jj][i];
@@ -800,33 +800,33 @@ uint own_SVD(
           u[jj][i] = z * c - y * s;
         }
       }
-      
+
       rv1(l) = 0.0;
       rv1(k) = f;
       w(k) = x;
     }
   }
-  
+
   //sorting:
   if(sort) {
     unsigned i, j, k;
     double   p;
-    
+
     for(i=0; i<n-1; i++) {
       p = w(k=i);
-      
+
       for(j=i+1; j<n; j++) if(w(j)>=p) p = w(k=j);
-      
+
       if(k!=i) {
         w(k) = w(i);
         w(i) = p;
-        
+
         for(j=0; j<n; j++) {
           p       = v[j][i];
           v[j][i] = v[j][k];
           v[j][k] = p;
         }
-        
+
         for(j=0; j<m; j++) {
           p       = u[j][i];
           u[j][i] = u[j][k];
@@ -835,25 +835,25 @@ uint own_SVD(
       }
     }
   }
-  
+
   //rank analysis
-  
+
   for(r=0; r<n && w(r)>RAI_SVD_MINVALUE; r++) {};
-  
+
   t = r < n ? fabs(w(n-1)) : 0.0;
   r = 0;
   s = 0.0;
   while(r<n && w(r)>t && w(r)+s>s) s += w(r++);
-  
+
   return r;
 }
 
-double determinantSubroutine(double **A, uint n) {
+double determinantSubroutine(double** A, uint n) {
   if(n==1) return A[0][0];
   if(n==2) return A[0][0]*A[1][1]-A[0][1]*A[1][0];
   uint i, j;
   double d=0;
-  double **B=new double*[n-1];
+  double** B=new double*[n-1];
   for(i=0; i<n; i++) {
     for(j=0; j<n; j++) {
       if(j<i) B[j]=&A[j][1];
@@ -861,7 +861,7 @@ double determinantSubroutine(double **A, uint n) {
     }
     d+=((i&1)?-1.:1.) * A[i][0] * determinantSubroutine(B, n-1);
   }
-  delete[] B; B=NULL;
+  delete[] B; B=nullptr;
   return d;
 }
 
@@ -892,7 +892,7 @@ uintA sampleMultinomial_SUS(const arr& p, uint n) {
     while(sum>ptr) { s(j)=i; j++; ptr+=1.; }
   }
   //now, 'sum' should = 'n' and 'ptr' has been 'n'-times increased -> 'j=n'
-  CHECK_EQ(j,n, "error in rnd::sampleMultinomial_SUS(p, n) -> p not normalized?");
+  CHECK_EQ(j, n, "error in rnd::sampleMultinomial_SUS(p, n) -> p not normalized?");
   return s;
 }
 
@@ -936,7 +936,7 @@ arr bootstrap(const arr& x) {
   return y;
 }
 
-void write(const arrL& X, const char *filename, const char *ELEMSEP, const char *LINESEP, const char *BRACKETS, bool dimTag, bool binary) {
+void write(const arrL& X, const char* filename, const char* ELEMSEP, const char* LINESEP, const char* BRACKETS, bool dimTag, bool binary) {
   std::ofstream fil;
   rai::open(fil, filename);
   catCol(X).write(fil, ELEMSEP, LINESEP, BRACKETS, dimTag, binary);
@@ -951,7 +951,7 @@ void write(const arrL& X, const char *filename, const char *ELEMSEP, const char 
 /** save data as ppm or pgm. Images are (height, width, [0, 2, 3, 4])-dim
   byte arrays, where the 3rd dimension determines whether it's a grey
   (0), grey-alpha (2), RGB (3), or RGBA (4) image */
-void write_ppm(const byteA &img, const char *file_name, bool swap_rows) {
+void write_ppm(const byteA& img, const char* file_name, bool swap_rows) {
   if(!img.N) RAI_MSG("empty image");
   CHECK(img.nd==2 || (img.nd==3 && img.d2==3), "only rgb or gray images to ppm");
   ofstream os;
@@ -973,7 +973,7 @@ void write_ppm(const byteA &img, const char *file_name, bool swap_rows) {
 }
 
 /** read data from an ppm or pgm file */
-void read_ppm(byteA &img, const char *file_name, bool swap_rows) {
+void read_ppm(byteA& img, const char* file_name, bool swap_rows) {
   uint mode, width, height, max;
   ifstream is;
   is.open(file_name, std::ios::in | std::ios::binary);
@@ -995,7 +995,7 @@ void read_ppm(byteA &img, const char *file_name, bool swap_rows) {
 }
 
 /// add an alpha channel to an image array
-void add_alpha_channel(byteA &img, byte alpha) {
+void add_alpha_channel(byteA& img, byte alpha) {
   uint w=img.d1, h=img.d0;
   img.reshape(h*w, 3);
   img.insColumns(3, 1);
@@ -1004,29 +1004,29 @@ void add_alpha_channel(byteA &img, byte alpha) {
 }
 
 /// add an alpha channel to an image array
-void remove_alpha_channel(byteA &img) {
+void remove_alpha_channel(byteA& img) {
   uint w=img.d1, h=img.d0;
   img.reshape(h*w, 4);
   img.delColumns(3, 1);
   img.reshape(h, w, 3);
 }
 
-void image_halfResolution(byteA &img) {
+void image_halfResolution(byteA& img) {
   byteA org = img;
   img.resize(org.d0/2, org.d1/2, org.d2);
   for(uint i=0; i<img.d0; i++) for(uint j=0; j<img.d1; j++) for(uint k=0; k<img.d2; k++) {
         float v = (float)org(2*i, 2*j, k) + (float)org(2*i, 2*j+1, k)
                   + (float)org(2*i+1, 2*j, k) +(float)org(2*i+1, 2*j+1, k);
         v /= 4;
-        img(i,j,k) = (byte)v;
+        img(i, j, k) = (byte)v;
       }
 }
 
-void flip_image(byteA &img) {
+void flip_image(byteA& img) {
   if(!img.N) return;
   uint h=img.d0, n=img.N/img.d0;
   byteA line(n);
-  byte *a, *b, *c;
+  byte* a, *b, *c;
   for(uint i=0; i<h/2; i++) {
     a=img.p+i*n;
     b=img.p+(h-1-i)*n;
@@ -1037,11 +1037,11 @@ void flip_image(byteA &img) {
   }
 }
 
-void flip_image(floatA &img) {
+void flip_image(floatA& img) {
   if(!img.N) return;
   uint h=img.d0, n=img.N/img.d0;
   floatA line(n);
-  float *a, *b, *c;
+  float* a, *b, *c;
   uint s=sizeof(float);
   for(uint i=0; i<h/2; i++) {
     a=img.p+i*n;
@@ -1054,7 +1054,7 @@ void flip_image(floatA &img) {
 }
 
 /// make grey scale image
-void make_grey(byteA &img) {
+void make_grey(byteA& img) {
   CHECK(img.nd==3 && (img.d2==3 || img.d1==4), "makeGray requires color image as input");
   byteA tmp;
   tmp.resize(img.d0, img.d1);
@@ -1065,8 +1065,8 @@ void make_grey(byteA &img) {
 }
 
 /// make a grey image and RGA image
-void make_RGB(byteA &img) {
-  CHECK_EQ(img.nd,2, "make_RGB requires grey image as input");
+void make_RGB(byteA& img) {
+  CHECK_EQ(img.nd, 2, "make_RGB requires grey image as input");
   byteA tmp;
   tmp.resize(img.d0, img.d1, 3);
   for(uint i=0; i<img.d0; i++) for(uint j=0; j<img.d1; j++) {
@@ -1078,7 +1078,7 @@ void make_RGB(byteA &img) {
 }
 
 /// make a grey image and RGA image
-void make_RGB2BGRA(byteA &img) {
+void make_RGB2BGRA(byteA& img) {
   CHECK(img.nd==3 && img.d2==3, "make_RGB2RGBA requires color image as input");
   byteA tmp;
   tmp.resize(img.d0, img.d1, 4);
@@ -1092,16 +1092,16 @@ void make_RGB2BGRA(byteA &img) {
 }
 
 /// make a grey image and RGA image
-void swap_RGB_BGR(byteA &img) {
+void swap_RGB_BGR(byteA& img) {
   CHECK(img.nd==3 && img.d2==3, "make_RGB2RGBA requires color image as input");
-  byte *b=img.p, *bstop=img.p+img.N;
+  byte* b=img.p, *bstop=img.p+img.N;
   byte z;
   for(; b<bstop; b+=3) {
     z=b[0]; b[0]=b[2]; b[2]=z;
   }
 }
 
-uintA getIndexTuple(uint i, const uintA &d) {
+uintA getIndexTuple(uint i, const uintA& d) {
   CHECK(i<product(d), "out of range");
   uintA I(d.N);
   I.setZero();
@@ -1141,9 +1141,9 @@ void sparseProduct(arr& y, arr& A, const arr& x) {
 #else
   if(isSparseMatrix(A) && !isSparseVector(x)) {
     uint i, j;
-    int *k, *kstop;
+    int* k, *kstop;
     y.resize(A.d0); y.setZero();
-    double *Ap=A.p;
+    double* Ap=A.p;
     intA& A_elems = dynamic_cast<rai::SparseMatrix*>(A.special)->elems;
     for(k=A_elems.p, kstop=A_elems.p+A_elems.N; k!=kstop; Ap++) {
       i=*k; k++;
@@ -1154,15 +1154,15 @@ void sparseProduct(arr& y, arr& A, const arr& x) {
   }
   if(isSparseMatrix(A) && isSparseVector(x)) {
     A.sparse().setupRowsCols();
-    rai::SparseVector *sx = dynamic_cast<rai::SparseVector*>(x.special);
+    rai::SparseVector* sx = dynamic_cast<rai::SparseVector*>(x.special);
     CHECK(x.nd==1 && A.nd==2 && x.d0==A.d1, "not a proper matrix-vector multiplication");
     uint i, j, n;
-    int *k, *kstop;
-    uint *l, *lstop;
+    int* k, *kstop;
+    uint* l, *lstop;
     y.sparseVec();
     y.d0 = A.d0;
     intA& y_elems= dynamic_cast<rai::SparseVector*>(y.special)->elems;
-    double *xp=x.p;
+    double* xp=x.p;
     intA& x_elems = sx->elems;
     for(k=x_elems.p, kstop=x_elems.p+x_elems.N; k!=kstop; xp++) {
       j=*k; k++;
@@ -1176,7 +1176,7 @@ void sparseProduct(arr& y, arr& A, const arr& x) {
           *slot=y.N;
           y.resizeMEM(y.N+1, true); y(y.N-1)=0.;
           y_elems.append(i);
-          CHECK_EQ(y_elems.N,y.N, "");
+          CHECK_EQ(y_elems.N, y.N, "");
         }
         i=*slot;
         y(i) += A.elem(n) * (*xp);
@@ -1192,9 +1192,9 @@ void sparseProduct(arr& y, arr& A, const arr& x) {
   }
   if(!isSparseMatrix(A) && isSparseVector(x)) {
     uint i, j, d1=A.d1;
-    int *k, *kstop;
+    int* k, *kstop;
     y.resize(A.d0); y.setZero();
-    double *xp=x.p;
+    double* xp=x.p;
     intA& elems = dynamic_cast<rai::SparseMatrix*>(x.special)->elems;
     for(k=elems.p, kstop=elems.p+elems.N; k!=kstop; xp++) {
       j=*k; k++;
@@ -1215,7 +1215,7 @@ void scanArrFile(const char* name) {
   for(;;) {
     tag.read(is, " \n\r\t", " \n\r\t");
     if(!is.good() || tag.N==0) return;
-    x.readTagged(is, NULL);
+    x.readTagged(is, nullptr);
     x.writeTagged(cout, tag);  cout <<endl;
     if(!is.good()) return;
   }
@@ -1230,7 +1230,7 @@ arr finiteDifferenceGradient(const ScalarFunction& f, const arr& x, arr& Janalyt
   arr dx, J;
   double y, dy;
   y=f(Janalytic, NoArr, x);
-  
+
   J.resize(x.N);
   double eps=CHECK_EPS;
   uint i;
@@ -1250,10 +1250,10 @@ arr finiteDifferenceJacobian(const VectorFunction& f, const arr& _x, arr& Janaly
   arr y, dx, dy, J;
   f(y, Janalytic, x);
   if(isRowShifted(Janalytic)
-     || isSparseMatrix(Janalytic)){
+      || isSparseMatrix(Janalytic)) {
     Janalytic = unpack(Janalytic);
   }
-  
+
   J.resize(y.N, x.N);
   double eps=CHECK_EPS;
   uint i, k;
@@ -1292,7 +1292,7 @@ bool checkHessian(const ScalarFunction& f, const arr& x, double tolerance, bool 
   arr g, H, dx, dy, Jg;
   f(g, H, x);
   if(isRowShifted(H)) H = unpack(H);
-  
+
   Jg.resize(g.N, x.N);
   double eps=CHECK_EPS;
   uint i, k;
@@ -1433,7 +1433,7 @@ void blas_A_At(arr& X, const arr& A) { X = A*~A; }
 void blas_At_A(arr& X, const arr& A) { X = ~A*A; }
 #else
 void blas_MM(arr& X, const arr& A, const arr& B) {
-  CHECK_EQ(A.d1,B.d0, "matrix multiplication: wrong dimensions");
+  CHECK_EQ(A.d1, B.d0, "matrix multiplication: wrong dimensions");
   X.resize(A.d0, B.d1);
   cblas_dgemm(CblasRowMajor,
               CblasNoTrans, CblasNoTrans,
@@ -1450,8 +1450,8 @@ void blas_MM(arr& X, const arr& A, const arr& B) {
 
 void blas_A_At(arr& X, const arr& A) {
   uint n=A.d0;
-  CHECK(n,"blas doesn't like n=0 !");
-  X.resize(n,n);
+  CHECK(n, "blas doesn't like n=0 !");
+  X.resize(n, n);
   cblas_dsyrk(CblasRowMajor, CblasUpper, CblasNoTrans,
               X.d0, A.d1,
               1.f, A.p, A.d1,
@@ -1466,8 +1466,8 @@ void blas_A_At(arr& X, const arr& A) {
 
 void blas_At_A(arr& X, const arr& A) {
   uint n=A.d1;
-  CHECK(n,"blas doesn't like n=0 !");
-  X.resize(n,n);
+  CHECK(n, "blas doesn't like n=0 !");
+  X.resize(n, n);
   cblas_dsyrk(CblasRowMajor, CblasUpper, CblasTrans,
               X.d0, A.d0,
               1.f, A.p, A.d1,
@@ -1481,7 +1481,7 @@ void blas_At_A(arr& X, const arr& A) {
 }
 
 void blas_Mv(arr& y, const arr& A, const arr& x) {
-  CHECK_EQ(A.d1,x.N, "matrix multiplication: wrong dimensions");
+  CHECK_EQ(A.d1, x.N, "matrix multiplication: wrong dimensions");
   y.resize(A.d0);
   if(!x.N && !A.d1) { y.setZero(); return; }
   cblas_dgemv(CblasRowMajor,
@@ -1498,7 +1498,7 @@ void blas_Mv(arr& y, const arr& A, const arr& x) {
 }
 
 void blas_MsymMsym(arr& X, const arr& A, const arr& B) {
-  CHECK_EQ(A.d1,B.d0, "matrix multiplication: wrong dimensions");
+  CHECK_EQ(A.d1, B.d0, "matrix multiplication: wrong dimensions");
   X.resize(A.d0, B.d1);
   cblas_dsymm(CblasRowMajor,
               CblasLeft, CblasUpper,
@@ -1532,7 +1532,7 @@ arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
     return x;
   }
   if(isRowShifted(A)) {
-    RowShifted *Aaux = (RowShifted*) A.special;
+    RowShifted* Aaux = (RowShifted*) A.special;
     if(!Aaux->symmetric) HALT("this is not a symmetric matrix");
     for(uint i=0; i<A.d0; i++) if(Aaux->rowShift(i)!=i) HALT("this is not shifted as an upper triangle");
   }
@@ -1561,9 +1561,9 @@ arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
 //      sig.resize(N);
 //      dsyev_ ((char*)"N", (char*)"L", &N, A.p, &N, sig.p, WORK.p, &LWORK, &INFO);
 //      lapack_EigenDecomp(A, sig, NoArr);
-      dsyevx_((char*)"N", (char*)"I", (char*)"L", &N, Acopy.p, &LDAB, &VL, &VU, &IL, &IU, &ABSTOL, &M, sig.p, (double*)NULL, &LDZ, WORK.p, &LWORK, IWORK.p, IFAIL.p, &INFO);
-    } else if(isRowShifted(A)){
-      dsbevx_((char*)"N", (char*)"I", (char*)"L", &N, &KD, Acopy.p, &LDAB, (double*)NULL, &LDQ, &VL, &VU, &IL, &IU, &ABSTOL, &M, sig.p, (double*)NULL, &LDZ, WORK.p, IWORK.p, IFAIL.p, &INFO);
+      dsyevx_((char*)"N", (char*)"I", (char*)"L", &N, Acopy.p, &LDAB, &VL, &VU, &IL, &IU, &ABSTOL, &M, sig.p, (double*)nullptr, &LDZ, WORK.p, &LWORK, IWORK.p, IFAIL.p, &INFO);
+    } else if(isRowShifted(A)) {
+      dsbevx_((char*)"N", (char*)"I", (char*)"L", &N, &KD, Acopy.p, &LDAB, (double*)nullptr, &LDQ, &VL, &VU, &IL, &IU, &ABSTOL, &M, sig.p, (double*)nullptr, &LDZ, WORK.p, IWORK.p, IFAIL.p, &INFO);
     } else NIY;
     sig.resizeCopy(k);
 #else
@@ -1606,7 +1606,7 @@ void lapack_LU(arr& LU, const arr& A) {
   CHECK(!info, "LAPACK SVD error info = " <<info);
 }
 
-void lapack_RQ(arr& R, arr &Q, const arr& A) {
+void lapack_RQ(arr& R, arr& Q, const arr& A) {
   transpose(Q, A);
   R.resizeAs(A); R.setZero();
   integer M=A.d0, N=A.d1, D=M<N?M:N, LWORK=M*N, info;
@@ -1645,9 +1645,9 @@ arr lapack_kSmallestEigenValues_sym(const arr& A, uint k) {
   double VL=0., VU=0., ABSTOL=1e-8;
   arr sig(N);
   if(!isRowShifted(A)) {
-    dsyevx_((char*)"N", (char*)"I", (char*)"L", &N, Acopy.p, &LDAB, &VL, &VU, &IL, &IU, &ABSTOL, &M, sig.p, (double*)NULL, &LDZ, WORK.p, &LWORK, IWORK.p, IFAIL.p, &INFO);
+    dsyevx_((char*)"N", (char*)"I", (char*)"L", &N, Acopy.p, &LDAB, &VL, &VU, &IL, &IU, &ABSTOL, &M, sig.p, (double*)nullptr, &LDZ, WORK.p, &LWORK, IWORK.p, IFAIL.p, &INFO);
   } else {
-    dsbevx_((char*)"N", (char*)"I", (char*)"L", &N, &KD, Acopy.p, &LDAB, (double*)NULL, &LDQ, &VL, &VU, &IL, &IU, &ABSTOL, &M, sig.p, (double*)NULL, &LDZ, WORK.p, IWORK.p, IFAIL.p, &INFO);
+    dsbevx_((char*)"N", (char*)"I", (char*)"L", &N, &KD, Acopy.p, &LDAB, (double*)nullptr, &LDQ, &VL, &VU, &IL, &IU, &ABSTOL, &M, sig.p, (double*)nullptr, &LDZ, WORK.p, IWORK.p, IFAIL.p, &INFO);
   }
   sig.resizeCopy(k);
   return sig;
@@ -1664,7 +1664,7 @@ bool lapack_isPositiveSemiDefinite(const arr& symmA) {
 
 /// A=C^T C (C is upper triangular!)
 void lapack_cholesky(arr& C, const arr& A) {
-  CHECK_EQ(A.d0,A.d1, "");
+  CHECK_EQ(A.d0, A.d1, "");
   integer n=A.d0;
   integer info;
   C=A;
@@ -1676,7 +1676,7 @@ void lapack_cholesky(arr& C, const arr& A) {
   for(i=0; i<C.d0; i++) for(j=0; j<i; j++) C(i, j)=0.;
 }
 
-const char *potrf_ERR="\n\
+const char* potrf_ERR="\n\
 *  INFO    (output) INTEGER\n\
 *          = 0:  successful exit\n\
 *          < 0:  if INFO = -i, the i-th argument had an illegal value\n\
@@ -1694,35 +1694,35 @@ void lapack_mldivide(arr& X, const arr& A, const arr& B) {
   CHECK_EQ(A.d0, A.d1, "A in Ax=b must be square matrix.");
   CHECK(B.nd==1 || B.nd==2, "b in Ax=b must be a vector or matrix.");
   CHECK_EQ(A.d0, B.d0, "b and A must have the same amount of rows in Ax=b.");
-  
+
   X = ~B;
   arr LU = ~A;
   integer N = A.d0, NRHS = (B.nd==1?1:B.d1), LDA = A.d1, INFO;
   rai::Array<integer> IPIV(N);
-  
+
   dgesv_(&N, &NRHS, LU.p, &LDA, IPIV.p, X.p, &LDA, &INFO);
   CHECK(!INFO, "LAPACK gaussian elemination error info = " <<INFO);
-  
+
   if(B.nd==1) X.reshape(X.N);
   else X = ~X;
 }
 
 void lapack_choleskySymPosDef(arr& Achol, const arr& A) {
   if(isRowShifted(A)) {
-    RowShifted *Aaux = (RowShifted*) A.special;
+    RowShifted* Aaux = (RowShifted*) A.special;
     if(!Aaux->symmetric) HALT("this is not a symmetric matrix");
     for(uint i=0; i<A.d0; i++) if(Aaux->rowShift(i)!=i) HALT("this is not shifted as an upper triangle");
-    
+
     Achol=A;
     integer N=A.d0, KD=A.d1-1, LDAB=A.d1, INFO;
-    
+
     dpbtrf_((char*)"L", &N, &KD, Achol.p, &LDAB, &INFO);
     CHECK(!INFO, "LAPACK Cholesky decomp error info = " <<INFO);
-    
+
   } else {
     NIY;
   }
-  
+
 }
 
 void lapack_inverseSymPosDef(arr& Ainv, const arr& A) {
@@ -1746,7 +1746,7 @@ double lapack_determinantSymPosDef(const arr& A) {
   return det;
 }
 
-void lapack_min_Ax_b(arr& x,const arr& A, const arr& b) {
+void lapack_min_Ax_b(arr& x, const arr& A, const arr& b) {
   CHECK(A.d0>=A.d1 && A.d0==b.N && b.nd==1 && A.nd==2, "");
   arr At = ~A;
   x=b;
@@ -1803,7 +1803,7 @@ void blas_At_A(arr& X, const arr& A) { NICO }
 void lapack_cholesky(arr& C, const arr& A) { NICO }
 uint lapack_SVD(arr& U, arr& d, arr& Vt, const arr& A) { NICO; }
 void lapack_LU(arr& LU, const arr& A) { NICO; }
-void lapack_RQ(arr& R, arr &Q, const arr& A) { NICO; }
+void lapack_RQ(arr& R, arr& Q, const arr& A) { NICO; }
 void lapack_EigenDecomp(const arr& symmA, arr& Evals, arr& Evecs) { NICO; }
 bool lapack_isPositiveSemiDefinite(const arr& symmA) { NICO; }
 void lapack_inverseSymPosDef(arr& Ainv, const arr& A) { NICO; }
@@ -1815,7 +1815,7 @@ arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
 };
 double lapack_determinantSymPosDef(const arr& A) { NICO; }
 void lapack_mldivide(arr& X, const arr& A, const arr& b) { NICO; }
-arr lapack_Ainv_b_symPosDef_givenCholesky(const arr& U, const arr&b) { return inverse(U)*b; }
+arr lapack_Ainv_b_symPosDef_givenCholesky(const arr& U, const arr& b) { return inverse(U)*b; }
 arr lapack_Ainv_b_triangular(const arr& L, const arr& b) { return inverse(L)*b; }
 #endif
 
@@ -1826,26 +1826,26 @@ arr lapack_Ainv_b_triangular(const arr& L, const arr& b) { return inverse(L)*b; 
 
 #ifdef RAI_EIGEN
 
-Eigen::SparseMatrix<double> conv_sparseArr2sparseEigen(const rai::SparseMatrix& S){
+Eigen::SparseMatrix<double> conv_sparseArr2sparseEigen(const rai::SparseMatrix& S) {
   arr& Z = S.Z;
   Eigen::SparseMatrix<double> E;
   E.resize(Z.d0, Z.d1);
   std::vector<Eigen::Triplet<double>> triplets;
   triplets.reserve(Z.N);
-  for(uint k=0;k<Z.N;k++) triplets.push_back(Eigen::Triplet<double>(S.elems.p[2*k], S.elems.p[2*k+1], Z.p[k]));
+  for(uint k=0; k<Z.N; k++) triplets.push_back(Eigen::Triplet<double>(S.elems.p[2*k], S.elems.p[2*k+1], Z.p[k]));
   E.setFromTriplets(triplets.begin(), triplets.end());
   return E;
 //  cout <<E <<endl;
 }
 
-arr conv_sparseEigen2sparseArr(Eigen::SparseMatrix<double>& E){
+arr conv_sparseEigen2sparseArr(Eigen::SparseMatrix<double>& E) {
   arr X;
   rai::SparseMatrix& Xs = X.sparse();
   Xs.resize(E.rows(), E.cols(), E.nonZeros());
 
   uint n=0;
-  for(int k=0; k<E.outerSize(); ++k){
-    for(Eigen::SparseMatrix<double>::InnerIterator it(E,k); it; ++it) {
+  for(int k=0; k<E.outerSize(); ++k) {
+    for(Eigen::SparseMatrix<double>::InnerIterator it(E, k); it; ++it) {
       Xs.entry(it.row(), it.col(), n) = it.value();
       n++;
     }
@@ -1853,15 +1853,14 @@ arr conv_sparseEigen2sparseArr(Eigen::SparseMatrix<double>& E){
   return X;
 }
 
-
-arr eigen_Ainv_b(const arr& A, const arr& b){
-  if(isSparseMatrix(A)){
+arr eigen_Ainv_b(const arr& A, const arr& b) {
+  if(isSparseMatrix(A)) {
     rai::SparseMatrix& As = *dynamic_cast<rai::SparseMatrix*>(A.special);
     Eigen::SparseMatrix<double> Aeig = conv_sparseArr2sparseEigen(As);
     Eigen::MatrixXd beig = conv_arr2eigen(b);
-    if(A.d0==A.d1){ //square matrix
+    if(A.d0==A.d1) { //square matrix
       Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> solver;
-  //    Eigen::SimplicialLLT<Eigen::SparseMatrix<double>> solver;
+      //    Eigen::SimplicialLLT<Eigen::SparseMatrix<double>> solver;
       solver.compute(Aeig);
       if(solver.info()!=Eigen::Success) {
         HALT("decomposition failed");
@@ -1873,8 +1872,8 @@ arr eigen_Ainv_b(const arr& A, const arr& b){
         return NoArr;
       }
       return conv_eigen2arr(x);
-    }else{ //non-square matrix
-      Eigen::SparseQR<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int> > solver;
+    } else { //non-square matrix
+      Eigen::SparseQR<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int>> solver;
       solver.compute(Aeig);
       if(solver.info()!=Eigen::Success) {
         HALT("decomposition failed");
@@ -1887,15 +1886,15 @@ arr eigen_Ainv_b(const arr& A, const arr& b){
       }
       return conv_eigen2arr(x);
     }
-  }else NIY;
-    return NoArr;
+  } else NIY;
+  return NoArr;
 }
 
 #else //RAI_EIGEN
 
 //Eigen::SparseMatrix<double> conv_sparseArr2sparseEigen(const rai::SparseMatrix& S){ NICO }
 //arr conv_sparseEigen2sparseArr(Eigen::SparseMatrix<double>& E){ NICO }
-arr eigen_Ainv_b(const arr& A, const arr& b){ NICO }
+arr eigen_Ainv_b(const arr& A, const arr& b) { NICO }
 
 #endif //RAI_EIGEN
 
@@ -1909,7 +1908,7 @@ RowShifted::RowShifted(arr& X):Z(X), real_d1(0), symmetric(false) {
   Z.special = this;
 }
 
-RowShifted::RowShifted(arr& X, RowShifted &aux):
+RowShifted::RowShifted(arr& X, RowShifted& aux):
   Z(X),
   real_d1(aux.real_d1),
   rowShift(aux.rowShift),
@@ -1920,8 +1919,8 @@ RowShifted::RowShifted(arr& X, RowShifted &aux):
   Z.special=this;
 }
 
-RowShifted *makeRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d1) {
-  RowShifted *Zaux;
+RowShifted* makeRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d1) {
+  RowShifted* Zaux;
   if(!Z.special) {
     Zaux = new RowShifted(Z);
   } else {
@@ -1939,7 +1938,7 @@ RowShifted *makeRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d1) {
 }
 
 RowShifted::~RowShifted() {
-  Z.special = NULL;
+  Z.special = nullptr;
 }
 
 double RowShifted::elem(uint i, uint j) {
@@ -1953,9 +1952,9 @@ void RowShifted::reshift() {
   for(uint i=0; i<Z.d0; i++) {
 #if 1
     //find number of leading and trailing zeros
-    double *Zp = Z.p + i*Z.d1;
-    double *Zlead = Zp;
-    double *Ztrail = Zp + Z.d1-1;
+    double* Zp = Z.p + i*Z.d1;
+    double* Zlead = Zp;
+    double* Ztrail = Zp + Z.d1-1;
     while(Ztrail>=Zlead && *Ztrail==0.) Ztrail--;
     while(Zlead<=Ztrail && *Zlead==0.) Zlead++;
     if(Ztrail<Zlead) { //all zeros
@@ -1973,17 +1972,17 @@ void RowShifted::reshift() {
 #else
     //find number of leading zeros
     uint j=0;
-    while(j<Z.d1 && Z(i,j)==0.) j++;
+    while(j<Z.d1 && Z(i, j)==0.) j++;
     //shift or so..
     if(j==Z.d1) { //all zeros...
     } else if(j) { //some zeros
       rowShift(i) += j;
-      memmove(&Z(i,0), &Z(i,j), (Z.d1-j)*Z.sizeT);
-      memset(&Z(i,Z.d1-j), 0, j*Z.sizeT);
+      memmove(&Z(i, 0), &Z(i, j), (Z.d1-j)*Z.sizeT);
+      memset(&Z(i, Z.d1-j), 0, j*Z.sizeT);
     }
     //find number of trailing zeros
     j=Z.d1;
-    while(j>0 && Z(i,j-1)==0.) j--;
+    while(j>0 && Z(i, j-1)==0.) j--;
     rowLen(i)=j;
 #endif
   }
@@ -1992,58 +1991,58 @@ void RowShifted::reshift() {
 arr packRowShifted(const arr& X) {
 #if 1
   arr Z;
-  RowShifted *Zaux = makeRowShifted(Z, X.d0, X.d1, X.d1);
+  RowShifted* Zaux = makeRowShifted(Z, X.d0, X.d1, X.d1);
   memmove(Z.p, X.p, Z.N*Z.sizeT);
   Zaux->reshift();
   return Z;
 #else
   arr Z;
-  RowShifted *Zaux = makeRowShifted(Z, X.d0, 0, X.d1);
+  RowShifted* Zaux = makeRowShifted(Z, X.d0, 0, X.d1);
   Z.setZero();
   //-- compute rowShifts and pack_d1:
   uint pack_d1=0;
   for(uint i=0; i<X.d0; i++) {
-    uint j=0,rs;
-    while(j<X.d1 && X(i,j)==0.) j++;
+    uint j=0, rs;
+    while(j<X.d1 && X(i, j)==0.) j++;
     Zaux->rowShift(i)=rs=j;
     j=X.d1;
-    while(j>rs && X(i,j-1)==0.) j--;
+    while(j>rs && X(i, j-1)==0.) j--;
     if(j-rs>pack_d1) pack_d1=j-rs;
   }
-  
-  Z.resize(X.d0,pack_d1);
+
+  Z.resize(X.d0, pack_d1);
   Z.setZero();
   for(uint i=0; i<Z.d0; i++) for(uint j=0; j<Z.d1 && Zaux->rowShift(i)+j<X.d1; j++)
-      Z(i,j) = X(i,Zaux->rowShift(i)+j);
+      Z(i, j) = X(i, Zaux->rowShift(i)+j);
   return Z;
 #endif
 }
 
 arr unpackRowShifted(const arr& Y) {
-  CHECK(isRowShifted(Y),"");
-  RowShifted *Yaux = (RowShifted*)Y.special;
+  CHECK(isRowShifted(Y), "");
+  RowShifted* Yaux = (RowShifted*)Y.special;
   arr X(Y.d0, Yaux->real_d1);
-  CHECK(!Yaux->symmetric || Y.d0==Yaux->real_d1,"cannot be symmetric!");
+  CHECK(!Yaux->symmetric || Y.d0==Yaux->real_d1, "cannot be symmetric!");
   X.setZero();
   for(uint i=0; i<Y.d0; i++) {
     uint rs=Yaux->rowShift(i);
     for(uint j=0; j<Y.d1 && rs+j<X.d1; j++) {
-      X(i,j+rs) = Y(i,j);
-      if(Yaux->symmetric) X(j+rs,i) = Y(i,j);
+      X(i, j+rs) = Y(i, j);
+      if(Yaux->symmetric) X(j+rs, i) = Y(i, j);
     }
   }
   return X;
 }
 
 void RowShifted::computeColPatches(bool assumeMonotonic) {
-  colPatches.resize(real_d1,2);
-  uint a=0,b=Z.d0;
+  colPatches.resize(real_d1, 2);
+  uint a=0, b=Z.d0;
   if(!assumeMonotonic) {
     for(uint j=0; j<real_d1; j++) {
       a=0;
-      while(a<Z.d0 && elem(a,j)==0) a++;
+      while(a<Z.d0 && elem(a, j)==0) a++;
       b=Z.d0;
-      while(b>a && elem(b-1,j)==0) b--;
+      while(b>a && elem(b-1, j)==0) b--;
       colPatches.p[2*j]=a;
       colPatches.p[2*j+1]=b;
     }
@@ -2063,7 +2062,7 @@ arr RowShifted::At_A() {
   //TODO use blas DSYRK instead?
   CHECK_EQ(rowLen.N, rowShift.N, "");
   arr R;
-  RowShifted *Raux = makeRowShifted(R, real_d1, Z.d1, real_d1);
+  RowShifted* Raux = makeRowShifted(R, real_d1, Z.d1, real_d1);
   R.setZero();
   for(uint i=0; i<R.d0; i++) Raux->rowShift(i) = i;
   Raux->symmetric=true;
@@ -2080,7 +2079,7 @@ arr RowShifted::At_A() {
         double* Rp=R.p + real_j*R.d1;
         double* Jp=Zi+j;
         double* Jpstop=Zi+rlen; //Z.d1;
-        for(; Jp!=Jpstop; Rp++,Jp++) if(*Jp!=0.) *Rp += Zij * *Jp;
+        for(; Jp!=Jpstop; Rp++, Jp++) if(*Jp!=0.) *Rp += Zij * *Jp;
       }
     }
   }
@@ -2094,28 +2093,28 @@ arr RowShifted::A_At() {
     uint rs_i=rowShift.p[i];
     for(uint j=Z.d0-1; j>=i+pack_d1; j--) {
       uint rs_j=rowShift.p[j];
-      uint a,b;
+      uint a, b;
       if(rs_i<rs_j) { a=rs_j; b=rs_i+Z.d1; } else { a=rs_i; b=rs_j+Z.d1; }
       if(real_d1<b) b=real_d1;
       if(a<b) if(pack_d1<j-i+1) pack_d1=j-i+1;
     }
   }
-  
+
   arr R;
-  RowShifted *Raux = makeRowShifted(R, Z.d0, pack_d1, Z.d0);
+  RowShifted* Raux = makeRowShifted(R, Z.d0, pack_d1, Z.d0);
   R.setZero();
   for(uint i=0; i<R.d0; i++) Raux->rowShift(i) = i;
   Raux->symmetric=true;
   if(!Z.d1) return R; //Z is identically zero, all rows fully packed -> return zero R
   for(uint i=0; i<Z.d0; i++) {
     uint rs_i=rowShift.p[i];
-    double* Zi=&Z(i,0);
+    double* Zi=&Z(i, 0);
     for(uint j=i; j<Z.d0 && j<i+pack_d1; j++) {
       uint rs_j=rowShift.p[j];
-      double* Zj=&Z(j,0);
-      double* Rij=&R(i,j-i);
-      
-      uint a,b;
+      double* Zj=&Z(j, 0);
+      double* Rij=&R(i, j-i);
+
+      uint a, b;
       if(rs_i<rs_j) { a=rs_j; b=rs_i+Z.d1; } else { a=rs_i; b=rs_j+Z.d1; }
       if(real_d1<b) b=real_d1;
       for(uint k=a; k<b; k++) *Rij += Zi[k-rs_i]*Zj[k-rs_j];
@@ -2126,7 +2125,7 @@ arr RowShifted::A_At() {
 
 arr RowShifted::At_x(const arr& x) {
   CHECK_EQ(rowLen.N, rowShift.N, "");
-  CHECK_EQ(x.N,Z.d0,"");
+  CHECK_EQ(x.N, Z.d0, "");
   arr y(real_d1);
   y.setZero();
 //  cout <<"SPARSITY = " <<Z.sparsity() <<endl;
@@ -2137,9 +2136,9 @@ arr RowShifted::At_x(const arr& x) {
 #if 0
     for(uint j=0; j<Z.d1; j++) y.p[rs+j] += xi * Z.p[i*Z.d1+j]; // sum += acc(i,j)*x(i);
 #else //PROFILED
-    double *Zp = Z.p + i*Z.d1;
-    double *yp = y.p + rs;
-    double *ypstop = yp + rowLen.p[i]; //+ Z.d1;
+    double* Zp = Z.p + i*Z.d1;
+    double* yp = y.p + rs;
+    double* ypstop = yp + rowLen.p[i]; //+ Z.d1;
     for(; yp!=ypstop;) { *yp += xi * *Zp;  Zp++;  yp++; }
 #endif
   }
@@ -2153,14 +2152,14 @@ arr RowShifted::A_x(const arr& x) {
     for(uint j=0; j<x.d1; j++) Y[j]() = A_x(X[j]);
     return ~Y;
   }
-  CHECK_EQ(x.N,real_d1,"");
+  CHECK_EQ(x.N, real_d1, "");
   arr y = zeros(Z.d0);
   if(!Z.d1) return y; //Z is identically zero, all rows fully packed -> return zero y
   for(uint i=0; i<Z.d0; i++) {
     double sum=0.;
     uint rs=rowShift.p[i];
     for(uint j=0; j<Z.d1 && j+rs<x.N; j++) {
-      sum += Z(i,j)*x(j+rs);
+      sum += Z(i, j)*x(j+rs);
     }
     y(i) = sum;
   }
@@ -2170,26 +2169,25 @@ arr RowShifted::A_x(const arr& x) {
 arr RowShifted::At() {
   uint width = 0;
   if(!colPatches.N) computeColPatches(false);
-  for(uint i=0; i<colPatches.d0; i++) { uint a=colPatches(i,1)-colPatches(i,0); if(a>width) width=a; }
-  
+  for(uint i=0; i<colPatches.d0; i++) { uint a=colPatches(i, 1)-colPatches(i, 0); if(a>width) width=a; }
+
   arr At;
   RowShifted* At_ = makeRowShifted(At, real_d1, width, Z.d0);
   for(uint i=0; i<real_d1; i++) {
-    uint rs = colPatches(i,0);
+    uint rs = colPatches(i, 0);
     At_->rowShift(i) = rs;
-    uint rlen = colPatches(i,1)-rs;
-    for(uint j=0; j<rlen; j++) At_->Z(i,j) = elem(rs+j,i);
+    uint rlen = colPatches(i, 1)-rs;
+    for(uint j=0; j<rlen; j++) At_->Z(i, j) = elem(rs+j, i);
   }
   return At;
 }
-
 
 //===========================================================================
 //
 // SparseMatrix
 //
 
-namespace rai{
+namespace rai {
 
 SparseVector::SparseVector(arr& _Z) : Z(_Z) {
   CHECK(!isSpecial(_Z), "only once yet");
@@ -2203,11 +2201,11 @@ SparseMatrix::SparseMatrix(arr& _Z) : Z(_Z) {
   Z.special = this;
 }
 
-SparseVector::SparseVector(arr& _Z, const SparseVector& s) : SparseVector(_Z){
+SparseVector::SparseVector(arr& _Z, const SparseVector& s) : SparseVector(_Z) {
   elems = s.elems;
 }
 
-SparseMatrix::SparseMatrix(arr& _Z, const SparseMatrix& s) : SparseMatrix(_Z){
+SparseMatrix::SparseMatrix(arr& _Z, const SparseMatrix& s) : SparseMatrix(_Z) {
   elems = s.elems;
 }
 
@@ -2218,7 +2216,7 @@ template<> double Array<double>::sparsity() {
   return ((double)m)/N;
 }
 
-void SparseVector::resize(uint d0, uint n){
+void SparseVector::resize(uint d0, uint n) {
   Z.nd=1; Z.d0=d0;
   Z.resizeMEM(n, false);
   Z.setZero();
@@ -2226,69 +2224,69 @@ void SparseVector::resize(uint d0, uint n){
   for(int& e:elems) e=-1;
 }
 
-void SparseMatrix::resize(uint d0, uint d1, uint n){
+void SparseMatrix::resize(uint d0, uint d1, uint n) {
   Z.nd=2; Z.d0=d0; Z.d1=d1;
   Z.resizeMEM(n, false);
   Z.setZero();
-  elems.resize(n,2);
+  elems.resize(n, 2);
   for(int& e:elems) e=-1;
 }
 
-void SparseMatrix::resizeCopy(uint d0, uint d1, uint n){
+void SparseMatrix::resizeCopy(uint d0, uint d1, uint n) {
   Z.nd=2; Z.d0=d0; Z.d1=d1;
   uint Nold = Z.N;
   Z.resizeMEM(n, true);
   if(n>Nold) memset(Z.p+Nold, 0, Z.sizeT*(n-Nold));
-  elems.resizeCopy(n,2);
-  for(uint i=Nold;i<n;i++) elems(i,0) = elems(i,1) =-1;
+  elems.resizeCopy(n, 2);
+  for(uint i=Nold; i<n; i++) elems(i, 0) = elems(i, 1) =-1;
 }
 
-void SparseMatrix::reshape(uint d0, uint d1){
+void SparseMatrix::reshape(uint d0, uint d1) {
   Z.nd=2; Z.d0=d0; Z.d1=d1;
 }
 
-double& SparseVector::entry(uint i, uint k){
+double& SparseVector::entry(uint i, uint k) {
   CHECK_LE(k, Z.N-1, "");
-  if(elems.p[k]==-1){ //new element
+  if(elems.p[k]==-1) { //new element
     elems.p[k]=i;
-  }else{
+  } else {
     CHECK_EQ(elems.p[k], (int)i, "");
   }
   return Z.p[k];
 }
 
-double& SparseMatrix::entry(uint i, uint j, uint k){
+double& SparseMatrix::entry(uint i, uint j, uint k) {
   CHECK_LE(k, Z.N-1, "");
-  int *elemsk = elems.p+2*k;
-  if(*elemsk==-1){ //new element
+  int* elemsk = elems.p+2*k;
+  if(*elemsk==-1) { //new element
     *elemsk=i;
     elemsk[1]=j;
     rows.clear();
     cols.clear();
-  }else{
+  } else {
     CHECK_EQ(*elemsk, (int)i, "");
     CHECK_EQ(elemsk[1], (int)j, "");
   }
   return Z.p[k];
 }
 
-double& SparseMatrix::elem(uint i, uint j){
-  if(rows.N){
+double& SparseMatrix::elem(uint i, uint j) {
+  if(rows.N) {
     uintA& r = rows(i);
     uintA& c = cols(j);
-    if(r.N < c.N){
-      for(uint rj=0;rj<r.d0;rj++) if(r(rj,0)==j) return Z.elem(r(rj,1));
-    }else{
-      for(uint ci=0;ci<c.d0;ci++) if(c(ci,0)==i) return Z.elem(c(ci,1));
+    if(r.N < c.N) {
+      for(uint rj=0; rj<r.d0; rj++) if(r(rj, 0)==j) return Z.elem(r(rj, 1));
+    } else {
+      for(uint ci=0; ci<c.d0; ci++) if(c(ci, 0)==i) return Z.elem(c(ci, 1));
     }
-  }else{
-    for(uint k=0;k<elems.d0;k++)
+  } else {
+    for(uint k=0; k<elems.d0; k++)
       if(elems.p[2*k]==(int)i && elems.p[2*k+1]==(int)j) return Z.elem(k);
   }
-  return addEntry(i,j);
+  return addEntry(i, j);
 }
 
-double& SparseVector::addEntry(int i){
+double& SparseVector::addEntry(int i) {
   if(i<0) i += Z.d0;
   CHECK(Z.nd==1 && (uint)i<Z.d0,
         "1D range error (" <<Z.nd <<"=1, " <<i <<"<" <<Z.d0 <<")");
@@ -2301,16 +2299,16 @@ double& SparseVector::addEntry(int i){
   return Z.last();
 }
 
-double& SparseMatrix::addEntry(int i, int j){
+double& SparseMatrix::addEntry(int i, int j) {
   if(i<0) i += Z.d0;
   if(j<0) j += Z.d1;
   CHECK(Z.nd==2 && (uint)i<Z.d0 && (uint)j<Z.d1,
         "2D range error (" <<Z.nd <<"=2, " <<i <<"<" <<Z.d0 <<", " <<j <<"<" <<Z.d1 <<")");
   uint k=Z.N;
   CHECK_EQ(elems.d0, k, "");
-  elems.resizeCopy(k+1,2);
-  elems(k,0)=i;
-  elems(k,1)=j;
+  elems.resizeCopy(k+1, 2);
+  elems(k, 0)=i;
+  elems(k, 1)=j;
   rows.clear();
   cols.clear();
   Z.resizeMEM(k+1, true);
@@ -2318,17 +2316,17 @@ double& SparseMatrix::addEntry(int i, int j){
   return Z.last();
 }
 
-arr SparseMatrix::getSparseRow(uint i){
+arr SparseMatrix::getSparseRow(uint i) {
   arr v;
   SparseVector& vS = v.sparseVec();
-  if(rows.N){
+  if(rows.N) {
     uintA& r = rows(i);
     uint n=r.d0;
     vS.resize(Z.d1, n);
-    for(uint k=0;k<n;k++){
-      vS.entry(r(k,0), k) = Z.elem(r(k,1));
+    for(uint k=0; k<n; k++) {
+      vS.entry(r(k, 0), k) = Z.elem(r(k, 1));
     }
-  }else{
+  } else {
     NIY
   }
   return v;
@@ -2344,10 +2342,10 @@ void SparseVector::setFromDense(const arr& x) {
   resize(x.d0, n);
   //set entries
   n=0;
-  for(uint i=0; i<x.d0; i++){
+  for(uint i=0; i<x.d0; i++) {
     double a = x.p[i];
-    if(a){
-      entry(i,n) = a;
+    if(a) {
+      entry(i, n) = a;
       n++;
     }
   }
@@ -2363,31 +2361,33 @@ void SparseMatrix::setFromDense(const arr& X) {
   resize(X.d0, X.d1, n);
   //set entries
   n=0;
-  for(uint i=0; i<X.d0; i++) for(uint j=0; j<X.d1; j++){
-    double a = X.p[i*X.d1+j];
-    if(a){
-      entry(i,j,n) = a;
-      n++;
+  for(uint i=0; i<X.d0; i++) for(uint j=0; j<X.d1; j++) {
+      double a = X.p[i*X.d1+j];
+      if(a) {
+        entry(i, j, n) = a;
+        n++;
+      }
     }
-  }
 }
 
-void SparseMatrix::setupRowsCols(){
+void SparseMatrix::setupRowsCols() {
   rows.resize(Z.d0);
   cols.resize(Z.d1);
-  for(uint k=0;k<elems.d0;k++){
-    uint i = elems(k,0);
-    uint j = elems(k,1);
-    rows(i).append(TUP(j,k));
-    cols(j).append(TUP(i,k));
+  for(uint k=0; k<elems.d0; k++) {
+    uint i = elems(k, 0);
+    uint j = elems(k, 1);
+    rows(i).append(TUP(j, k));
+    cols(j).append(TUP(i, k));
   }
-  for(uint i=0;i<Z.d0;i++) rows(i).reshape(rows(i).N/2,2);
-  for(uint j=0;j<Z.d1;j++) cols(j).reshape(cols(j).N/2,2);
+  for(uint i=0; i<Z.d0; i++) rows(i).reshape(rows(i).N/2, 2);
+  for(uint j=0; j<Z.d1; j++) cols(j).reshape(cols(j).N/2, 2);
 }
 
-void SparseMatrix::rowShift(int shift){
-  for(uint i=0;i<elems.d0;i++){
-    int &j = elems(i,1);
+void SparseMatrix::rowShift(int shift) {
+  rows.clear();
+  cols.clear();
+  for(uint i=0; i<elems.d0; i++) {
+    int& j = elems(i, 1);
     CHECK_GE(j+shift, 0, "");
     CHECK_LE(j+shift+1, (int)Z.d1, "");
     j += shift;
@@ -2396,18 +2396,18 @@ void SparseMatrix::rowShift(int shift){
 
 #ifdef RAI_EIGEN
 
-arr SparseMatrix::At_x(const arr& x){
+arr SparseMatrix::At_x(const arr& x) {
   Eigen::SparseMatrix<double> A_eig = conv_sparseArr2sparseEigen(*this);
   Eigen::MatrixXd x_eig = conv_arr2eigen(x);
 
   x_eig = A_eig.transpose() * x_eig;
 
   arr y(x_eig.rows());
-  for(uint i = 0; i<y.d0; i++) y(i) = x_eig(i,0);
+  for(uint i = 0; i<y.d0; i++) y(i) = x_eig(i, 0);
   return y;
 }
 
-arr SparseMatrix::At_A(){
+arr SparseMatrix::At_A() {
   Eigen::SparseMatrix<double> s = conv_sparseArr2sparseEigen(*this);
 
   Eigen::SparseMatrix<double> W(Z.d1, Z.d1);
@@ -2416,7 +2416,7 @@ arr SparseMatrix::At_A(){
   return conv_sparseEigen2sparseArr(W);
 }
 
-arr SparseMatrix::A_B(const arr& B) const{
+arr SparseMatrix::A_B(const arr& B) const {
   Eigen::SparseMatrix<double> A_eig = conv_sparseArr2sparseEigen(*this);
   Eigen::SparseMatrix<double> B_eig = conv_sparseArr2sparseEigen(B.copy().sparse());
 
@@ -2425,7 +2425,7 @@ arr SparseMatrix::A_B(const arr& B) const{
   return conv_sparseEigen2sparseArr(W);
 }
 
-arr SparseMatrix::B_A(const arr& B) const{
+arr SparseMatrix::B_A(const arr& B) const {
   Eigen::SparseMatrix<double> A_eig = conv_sparseArr2sparseEigen(*this);
   Eigen::SparseMatrix<double> B_eig = conv_sparseArr2sparseEigen(B.copy().sparse());
 
@@ -2436,71 +2436,70 @@ arr SparseMatrix::B_A(const arr& B) const{
 
 #else //RAI_EIGEN
 
-arr SparseMatrix::At_x(const arr& x){ NICO }
-arr SparseMatrix::At_A(){ NICO }
-arr SparseMatrix::A_B(const arr& B) const{ NICO }
-arr SparseMatrix::B_A(const arr& B) const{ NICO }
+arr SparseMatrix::At_x(const arr& x) { NICO }
+arr SparseMatrix::At_A() { NICO }
+arr SparseMatrix::A_B(const arr& B) const { NICO }
+arr SparseMatrix::B_A(const arr& B) const { NICO }
 
 #endif //RAI_EIGEN
 
-void SparseMatrix::transpose(){
+void SparseMatrix::transpose() {
   uint d0 = Z.d0;
   Z.d0 = Z.d1;
   Z.d1 = d0;
-  for(uint i=0;i<elems.d0;i++){
-    int k = elems(i,0);
-    elems(i,0) = elems(i,1);
-    elems(i,1) = k;
+  for(uint i=0; i<elems.d0; i++) {
+    int k = elems(i, 0);
+    elems(i, 0) = elems(i, 1);
+    elems(i, 1) = k;
   }
   cols.clear();
   rows.clear();
 }
 
-void SparseMatrix::rowWiseMult(const arr& a){
+void SparseMatrix::rowWiseMult(const arr& a) {
   CHECK_EQ(a.N, Z.d0, "");
-  for(uint k=0;k<Z.N;k++) Z.elem(k) *= a.elem(elems.p[2*k]);
+  for(uint k=0; k<Z.N; k++) Z.elem(k) *= a.elem(elems.p[2*k]);
 }
 
-void SparseMatrix::subtract(const SparseMatrix& a){
+void SparseMatrix::subtract(const SparseMatrix& a) {
   CHECK_EQ(a.Z.d0, Z.d0, "");
   CHECK_EQ(a.Z.d1, Z.d1, "");
   uint Nold=Z.N;
   resizeCopy(Z.d0, Z.d1, Z.N + a.Z.N);
-  for(uint j=0;j<a.Z.N;j++){
-    entry(a.elems(j,0), a.elems(j,1), Nold+j) = -a.Z.elem(j);
+  for(uint j=0; j<a.Z.N; j++) {
+    entry(a.elems(j, 0), a.elems(j, 1), Nold+j) = -a.Z.elem(j);
   }
 }
 
-arr SparseVector::unsparse(){
+arr SparseVector::unsparse() {
   arr x;
   x.resize(Z.d0).setZero();
-  for(uint k=0;k<Z.N;k++) x(elems(k)) += Z.elem(k);
+  for(uint k=0; k<Z.N; k++) x(elems(k)) += Z.elem(k);
   return x;
 }
 
-arr SparseMatrix::unsparse(){
+arr SparseMatrix::unsparse() {
   arr x;
   x.resize(Z.d0, Z.d1).setZero();
-  for(uint k=0;k<Z.N;k++) x(elems(k,0), elems(k,1)) += Z.elem(k);
+  for(uint k=0; k<Z.N; k++) x(elems(k, 0), elems(k, 1)) += Z.elem(k);
   return x;
 }
 
 } //namespace rai
 
-void operator -= (rai::SparseMatrix& x, const rai::SparseMatrix& y){ x.subtract(y); }
-void operator -= (rai::SparseMatrix& x, double y){ arr& X=x.Z; x.unsparse(); X -= y; }
+void operator -= (rai::SparseMatrix& x, const rai::SparseMatrix& y) { x.subtract(y); }
+void operator -= (rai::SparseMatrix& x, double y) { arr& X=x.Z; x.unsparse(); X -= y; }
 
-void operator += (rai::SparseMatrix& x, const rai::SparseMatrix& y){ NIY; }
-void operator += (rai::SparseMatrix& x, double y){ arr& X=x.Z; x.unsparse(); X += y; }
+void operator += (rai::SparseMatrix& x, const rai::SparseMatrix& y) { NIY; }
+void operator += (rai::SparseMatrix& x, double y) { arr& X=x.Z; x.unsparse(); X += y; }
 
-void operator *= (rai::SparseMatrix& x, const rai::SparseMatrix& y){ NIY; }
-void operator *= (rai::SparseMatrix& x, double y){ x.Z.ref() *= y; }
+void operator *= (rai::SparseMatrix& x, const rai::SparseMatrix& y) { NIY; }
+void operator *= (rai::SparseMatrix& x, double y) { x.Z.ref() *= y; }
 
-void operator /= (rai::SparseMatrix& x, const rai::SparseMatrix& y){ NIY; }
-void operator /= (rai::SparseMatrix& x, double y){ x.Z.ref() /= y; }
+void operator /= (rai::SparseMatrix& x, const rai::SparseMatrix& y) { NIY; }
+void operator /= (rai::SparseMatrix& x, double y) { x.Z.ref() /= y; }
 
 //void operator %= (rai::SparseMatrix& x, const rai::SparseMatrix& y){ NIY; }
-
 
 //===========================================================================
 //
@@ -2516,14 +2515,14 @@ arr unpack(const arr& X) {
 }
 
 arr comp_At_A(const arr& A) {
-  if(!isSpecial(A)) { arr X; blas_At_A(X,A); return X; }
+  if(!isSpecial(A)) { arr X; blas_At_A(X, A); return X; }
   if(isRowShifted(A)) return ((RowShifted*)A.special)->At_A();
   if(isSparseMatrix(A)) return ((rai::SparseMatrix*)A.special)->At_A();
   return NoArr;
 }
 
 arr comp_A_At(const arr& A) {
-  if(!isSpecial(A)) { arr X; blas_A_At(X,A); return X; }
+  if(!isSpecial(A)) { arr X; blas_A_At(X, A); return X; }
   if(isRowShifted(A)) return ((RowShifted*)A.special)->A_At();
   return NoArr;
 }
@@ -2561,10 +2560,10 @@ arr comp_A_x(const arr& A, const arr& x) {
 #ifdef RAI_EIGEN
 
 arr conv_eigen2arr(const Eigen::MatrixXd& in) {
-  if(in.cols()==1){
+  if(in.cols()==1) {
     arr out(in.rows());
     for(uint i = 0; i<in.rows(); i++)
-        out(i) = in(i, 0);
+      out(i) = in(i, 0);
     return out;
   }
   arr out(in.rows(), in.cols());
@@ -2588,7 +2587,7 @@ Eigen::MatrixXd conv_arr2eigen(const arr& in) {
     return out;
   }
   NIY;
-  return Eigen::MatrixXd(1,1);
+  return Eigen::MatrixXd(1, 1);
 }
 
 #endif
@@ -2601,16 +2600,16 @@ Eigen::MatrixXd conv_arr2eigen(const arr& in) {
 void graphRandomUndirected(uintA& E, uint n, double connectivity) {
   uint i, j;
   for(i=0; i<n; i++) for(j=i+1; j<n; j++) {
-      if(rnd.uni()<connectivity) E.append(TUP(i,j));
+      if(rnd.uni()<connectivity) E.append(TUP(i, j));
     }
-  E.reshape(E.N/2,2);
+  E.reshape(E.N/2, 2);
 }
 
 void graphRandomTree(uintA& E, uint N, uint roots) {
   uint i;
   CHECK_GE(roots, 1, "");
   for(i=roots; i<N; i++) E.append(TUP(rnd(i), i));
-  E.reshape(E.N/2,2);
+  E.reshape(E.N/2, 2);
 }
 
 void graphRandomFixedDegree(uintA& E, uint N, uint d) {
@@ -2622,21 +2621,21 @@ void graphRandomFixedDegree(uintA& E, uint N, uint d) {
   // from an almost uniform probability distribution over these graphs
   // (which becomes uniform in the limit that d is small and N goes
   // to infinity).
-  
-  CHECK_EQ((N*d)%2,0, "It's impossible to create a graph with " <<N<<" nodes and fixed degree " <<d);
-  
+
+  CHECK_EQ((N*d)%2, 0, "It's impossible to create a graph with " <<N<<" nodes and fixed degree " <<d);
+
   uint j;
-  
+
   bool ready = false;
   uint tries = 0;
   while(!ready) {
     tries++;
-    
+
     // Start with N*d points {0, 1, ..., N*d-1} (N*d even) in N groups.
     // Put U = {0, 1, ..., N*d-1}. (U denotes the set of unpaired points.)
     uintA U;
     U.setStraightPerm(N*d);
-    
+
     // Repeat the following until no suitable pair can be found: Choose
     // two random points i and j in U, and if they are suitable, pair
     // i with j and delete i and j from U.
@@ -2658,7 +2657,7 @@ void graphRandomFixedDegree(uintA& E, uint N, uint d) {
         }
       }
     }
-    E.reshape(E.N/2,2);
+    E.reshape(E.N/2, 2);
     if(!U.N) {
       // G is a graph with edge from vertex r to vertex s if and only if
       // there is a pair containing points in the r'th and s'th groups.
@@ -2666,8 +2665,8 @@ void graphRandomFixedDegree(uintA& E, uint N, uint d) {
       uintA degrees(N);
       degrees.setZero();
       for(j=0; j<E.d0; j++) {
-        degrees(E(j,0))++;
-        degrees(E(j,1))++;
+        degrees(E(j, 0))++;
+        degrees(E(j, 1))++;
       }
       ready = true;
       for(uint n=0; n<N; n++) {
@@ -2679,8 +2678,8 @@ void graphRandomFixedDegree(uintA& E, uint N, uint d) {
       }
     } else ready=false;
   }
-  
-  E.reshape(E.N/2,2);
+
+  E.reshape(E.N/2, 2);
 }
 
 //===========================================================================
@@ -2751,12 +2750,12 @@ template bool rai::checkParameter<arr>(char const*);
 template void rai::getParameter(uintA&, const char*, const uintA&);
 
 void linkArray() { cout <<"*** libArray.so dynamically loaded ***" <<endl; }
-                         
+
 //namespace rai{
 //template<> template<> Array<rai::String>::Array(std::initializer_list<const char*> list) {
 //  init();
 //  for(const char* t : list) append(rai::String(t));
 //}
 //}
-                         
+
 

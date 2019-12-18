@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2019 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "simulation.h"
 #include "splineRunner.h"
 
@@ -7,15 +15,15 @@
 
 arr computeNextFeasibleConfiguration(rai::Configuration& K, arr q_ref, StringA& jointsInLimit, StringA& collisionPairs);
 
-struct Sensor{
+struct Sensor {
   rai::String name;
   rai::Camera cam;
   uint width=640, height=480;
   byteA backgroundImage;
-  Sensor(){}
+  Sensor() {}
 };
 
-struct Simulation_self{
+struct Simulation_self {
   rai::Array<Sensor> sensors;
 
   Mutex threadLock;
@@ -30,7 +38,7 @@ struct Simulation_self{
 };
 
 Simulation::Simulation(const rai::Configuration& _K, double dt)
-  : K(_K){
+  : K(_K) {
   self = new Simulation_self;
   setUsedRobotJoints(K.getJointNames());
   self->dt = dt;
@@ -47,17 +55,17 @@ Simulation::Simulation(const rai::Configuration& _K, double dt)
 //  self->K_compute.swift().deactivate(K["table1"], K["stickTip"]);
 }
 
-Simulation::~Simulation(){
+Simulation::~Simulation() {
   delete self;
 }
 
-void Simulation::stepKin(){
+void Simulation::stepKin() {
   auto lock = self->threadLock(RAI_HERE);
 
   //read out the new reference
   arr q_ref = self->spline.run(self->dt);
 
-  if(q_ref.N){
+  if(q_ref.N) {
 //    self->K_ref.setJointState(q_ref); //for display only
 //    timeToGo.set() = conv_double2Float64(maxPhase-phase);
 
@@ -84,13 +92,13 @@ void Simulation::stepKin(){
 
 }
 
-void Simulation::setJointState(const StringA &joints, const arr &q_ref){
+void Simulation::setJointState(const StringA& joints, const arr& q_ref) {
   auto lock = self->threadLock(RAI_HERE);
 
   K.setJointState(q_ref, joints);
 }
 
-void Simulation::setJointStateSafe(arr q_ref, StringA &jointsInLimit, StringA &collisionPairs){
+void Simulation::setJointStateSafe(arr q_ref, StringA& jointsInLimit, StringA& collisionPairs) {
   auto lock = self->threadLock(RAI_HERE);
 
   arr q = q_ref;
@@ -103,15 +111,15 @@ void Simulation::setJointStateSafe(arr q_ref, StringA &jointsInLimit, StringA &c
   collisionPairs.clear();
 
   //-- first check limits -> box constraints -> clip
-  for(rai::Joint *j:KK.activeJoints){
+  for(rai::Joint* j:KK.activeJoints) {
     bool active=false;
-    if(j->limits.N){
-      for(uint d=0;d<j->dim;d++){
-        if(q(j->qIndex+d) < j->limits(0)){
+    if(j->limits.N) {
+      for(uint d=0; d<j->dim; d++) {
+        if(q(j->qIndex+d) < j->limits(0)) {
           q(j->qIndex+d) = j->limits(0);
           active=true;
         }
-        if(q(j->qIndex+d) > j->limits(1)){
+        if(q(j->qIndex+d) > j->limits(1)) {
           q(j->qIndex+d) = j->limits(1);
           active=true;
         }
@@ -131,12 +139,12 @@ void Simulation::setJointStateSafe(arr q_ref, StringA &jointsInLimit, StringA &c
   double margin = .03;
   KK.kinematicsProxyCost(y, NoArr, margin);
 
-  for(rai::Proxy& p:KK.proxies) if(p.d<margin){
-    collisionPairs.append({p.a->name, p.b->name});
-  }
+  for(rai::Proxy& p:KK.proxies) if(p.d<margin) {
+      collisionPairs.append({p.a->name, p.b->name});
+    }
   collisionPairs.reshape(2, collisionPairs.N/2);
 
-  if(y.scalar()>.9 || collisionPairs.N){
+  if(y.scalar()>.9 || collisionPairs.N) {
     //back to old config
     q = q0;
 
@@ -149,7 +157,7 @@ void Simulation::setJointStateSafe(arr q_ref, StringA &jointsInLimit, StringA &c
     uint k;
     for(k=0; k<10; k++) {
       JJ = J*~J;
-      for(uint i=0;i<JJ.d0;i++) JJ(i,i) += 1e-5;
+      for(uint i=0; i<JJ.d0; i++) JJ(i, i) += 1e-5;
       invJ = ~J * inverse_SymPosDef(JJ);
 
       arr qstep_nullspace = q_ref - q;
@@ -167,7 +175,7 @@ void Simulation::setJointStateSafe(arr q_ref, StringA &jointsInLimit, StringA &c
       KK.kinematicsProxyCost(y, J, margin);
     }
 
-    if(y.scalar()>1.){
+    if(y.scalar()>1.) {
       //failed -> back to old config
       q=q0;
       KK.setJointState(q, self->currentlyUsedJoints);
@@ -175,7 +183,7 @@ void Simulation::setJointStateSafe(arr q_ref, StringA &jointsInLimit, StringA &c
       KK.kinematicsProxyCost(y, J, margin);
     }
 
-    if(y.scalar()>1.){
+    if(y.scalar()>1.) {
       LOG(-1) <<"what's going on??? y=" <<y;
     }
   }
@@ -183,11 +191,11 @@ void Simulation::setJointStateSafe(arr q_ref, StringA &jointsInLimit, StringA &c
   K.setJointState(q, self->currentlyUsedJoints);
 }
 
-void Simulation::setUsedRobotJoints(const StringA& joints){
+void Simulation::setUsedRobotJoints(const StringA& joints) {
   auto lock = self->threadLock(RAI_HERE);
 
-  if(self->currentlyUsedJoints!=joints){
-    if(self->spline.refPoints.N){
+  if(self->currentlyUsedJoints!=joints) {
+    if(self->spline.refPoints.N) {
       LOG(-1) <<"you changed the robot joints before the spline was done -- killing spline execution";
       self->spline.stop();
     }
@@ -195,96 +203,95 @@ void Simulation::setUsedRobotJoints(const StringA& joints){
   }
 }
 
-
-void Simulation::exec(const arr &x, const arr &t, bool append){
+void Simulation::exec(const arr& x, const arr& t, bool append) {
   auto lock = self->threadLock(RAI_HERE);
 
-  if(x.d1 != self->currentlyUsedJoints.N){
+  if(x.d1 != self->currentlyUsedJoints.N) {
     LOG(-1) <<"you're sending me a motion reference of wrong dimension!"
-          <<"\n  I'm ignoring this"
-         <<"\n  my dimension=" <<self->currentlyUsedJoints.N <<"  your message=" <<x.d1
-        <<"\n  my joints=" <<self->currentlyUsedJoints;
+            <<"\n  I'm ignoring this"
+            <<"\n  my dimension=" <<self->currentlyUsedJoints.N <<"  your message=" <<x.d1
+            <<"\n  my joints=" <<self->currentlyUsedJoints;
     return;
   }
 
   self->spline.set(x, t, K.getJointState(self->currentlyUsedJoints), append);
 }
 
-void Simulation::exec(const StringA& command){
+void Simulation::exec(const StringA& command) {
   auto lock = self->threadLock(RAI_HERE);
 
   LOG(0) <<"CMD = " <<command <<endl;
-  if(command(0)=="attach"){
-    rai::Frame *a = K.getFrameByName(command(1));
-    rai::Frame *b = K.getFrameByName(command(2));
+  if(command(0)=="attach") {
+    rai::Frame* a = K.getFrameByName(command(1));
+    rai::Frame* b = K.getFrameByName(command(2));
     b = b->getUpwardLink();
 
     if(b->parent) b->unLink();
     b->linkFrom(a, true);
     (new rai::Joint(*b)) -> type=rai::JT_rigid;
-    K.calc_q();
+    K.ensure_q();
   }
 }
 
-void Simulation::stop(bool hard){
+void Simulation::stop(bool hard) {
   auto lock = self->threadLock(RAI_HERE);
 
   self->spline.stop();
 }
 
-double Simulation::getTimeToGo(){
+double Simulation::getTimeToGo() {
   auto lock = self->threadLock(RAI_HERE);
   return self->spline.timeToGo();
 }
 
-arr Simulation::getJointState(){
+arr Simulation::getJointState() {
   auto lock = self->threadLock(RAI_HERE);
   return K.getJointState(self->currentlyUsedJoints);
 }
 
-arr Simulation::getFrameState(){
+arr Simulation::getFrameState() {
   auto lock = self->threadLock(RAI_HERE);
   return K.getFrameState();
 }
 
-arr Simulation::getObjectPoses(const StringA &objects){
+arr Simulation::getObjectPoses(const StringA& objects) {
   auto lock = self->threadLock(RAI_HERE);
 
   FrameL objs;
-  if(objects.N){
+  if(objects.N) {
     for(const rai::String& s:objects) objs.append(K[s]);
-  }else{//non specified... go through the list and pick 'percets'
-    for(rai::Frame *a:K.frames){
+  } else { //non specified... go through the list and pick 'percets'
+    for(rai::Frame* a:K.frames) {
       if(a->ats["percept"]) objs.append(a);
     }
   }
 
   arr X(objs.N, 7);
-  for(uint i=0;i<objs.N;i++) X[i] = objs.elem(i)->ensure_X().getArr7d();
+  for(uint i=0; i<objs.N; i++) X[i] = objs.elem(i)->ensure_X().getArr7d();
   return X;
 }
 
-StringA Simulation::getJointNames(){
+StringA Simulation::getJointNames() {
   auto lock = self->threadLock(RAI_HERE);
 
   return K.getJointNames();
 }
 
-StringA Simulation::getObjectNames(){
+StringA Simulation::getObjectNames() {
   auto lock = self->threadLock(RAI_HERE);
 
   StringA objs;
-  for(rai::Frame *a:K.frames){
+  for(rai::Frame* a:K.frames) {
     if(a->ats["percept"]) objs.append(a->name);
   }
   return objs;
 }
 
-void Simulation::glDraw(OpenGL &gl){
-  glStandardLight(NULL, gl);
-   //  glEnable(GL_LIGHTING);
+void Simulation::glDraw(OpenGL& gl) {
+  glStandardLight(nullptr, gl);
+  //  glEnable(GL_LIGHTING);
 
-  for(Sensor& sen:self->sensors){
+  for(Sensor& sen:self->sensors) {
     glDrawCamera(sen.cam);
     glDrawText(STRING("SENSOR " <<sen.name), 0., 0., 0.);
   }
@@ -293,7 +300,7 @@ void Simulation::glDraw(OpenGL &gl){
 //=============================================================================
 
 #if 0
-arr computeNextFeasibleConfiguration(rai::Configuration& K, arr q_ref, StringA& jointsInLimit, StringA& collisionPairs){
+arr computeNextFeasibleConfiguration(rai::Configuration& K, arr q_ref, StringA& jointsInLimit, StringA& collisionPairs) {
   arr q = q_ref;
   arr q0 = K.getJointState();
 
@@ -301,15 +308,15 @@ arr computeNextFeasibleConfiguration(rai::Configuration& K, arr q_ref, StringA& 
   collisionPairs.clear();
 
   //-- first check limits -> box constraints -> clip
-  for(rai::Joint *j:K.fwdActiveJoints){
+  for(rai::Joint* j:K.fwdActiveJoints) {
     bool active=false;
-    if(j->limits.N){
-      for(uint d=0;d<j->dim;d++){
-        if(q(j->qIndex+d) < j->limits(0)){
+    if(j->limits.N) {
+      for(uint d=0; d<j->dim; d++) {
+        if(q(j->qIndex+d) < j->limits(0)) {
           q(j->qIndex+d) = j->limits(0);
           active=true;
         }
-        if(q(j->qIndex+d) > j->limits(1)){
+        if(q(j->qIndex+d) > j->limits(1)) {
           q(j->qIndex+d) = j->limits(1);
           active=true;
         }
@@ -325,14 +332,14 @@ arr computeNextFeasibleConfiguration(rai::Configuration& K, arr q_ref, StringA& 
 
   arr y;
   K.kinematicsPenetrations(y);
-  for(uint i=0;i<y.N;i++) if(y(i)>0.){
-    collisionPairs.append({K.proxies(i).a->name, K.proxies(i).b->name});
-  }
+  for(uint i=0; i<y.N; i++) if(y(i)>0.) {
+      collisionPairs.append({K.proxies(i).a->name, K.proxies(i).b->name});
+    }
   collisionPairs.reshape(2, collisionPairs.N/2);
 
   double margin = .03;
   K.kinematicsProxyCost(y, NoArr, margin);
-  if(y.scalar()>.9 || collisionPairs.N){
+  if(y.scalar()>.9 || collisionPairs.N) {
     //back to old config
     q = q0;
 
@@ -345,7 +352,7 @@ arr computeNextFeasibleConfiguration(rai::Configuration& K, arr q_ref, StringA& 
     uint k;
     for(k=0; k<10; k++) {
       JJ = J*~J;
-      for(uint i=0;i<JJ.d0;i++) JJ(i,i) += 1e-5;
+      for(uint i=0; i<JJ.d0; i++) JJ(i, i) += 1e-5;
       invJ = ~J * inverse_SymPosDef(JJ);
 
       arr qstep_nullspace = q_ref - q;
@@ -363,7 +370,7 @@ arr computeNextFeasibleConfiguration(rai::Configuration& K, arr q_ref, StringA& 
       K.kinematicsProxyCost(y, J, margin);
     }
 
-    if(y.scalar()>1.){
+    if(y.scalar()>1.) {
       //failed -> back to old config
       q=q0;
       K.setJointState(q);
@@ -371,7 +378,7 @@ arr computeNextFeasibleConfiguration(rai::Configuration& K, arr q_ref, StringA& 
       K.kinematicsProxyCost(y, J, margin);
     }
 
-    if(y.scalar()>1.){
+    if(y.scalar()>1.) {
       LOG(-1) <<"what's going on??? y=" <<y;
     }
   }

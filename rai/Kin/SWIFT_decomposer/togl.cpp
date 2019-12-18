@@ -133,7 +133,7 @@ typedef struct {
 } TkWinColormap;
 
 static LRESULT (CALLBACK *tkWinChildProc)(HWND hwnd, UINT message,
-				 WPARAM wParam, LPARAM lParam) = NULL;
+				 WPARAM wParam, LPARAM lParam) = nullptr;
 
 #define TK_WIN_CHILD_CLASS_NAME "TkChild"
 
@@ -145,7 +145,7 @@ static LRESULT (CALLBACK *tkWinChildProc)(HWND hwnd, UINT message,
 #define TCL_ERR(interp, string)			\
    do {						\
       Tcl_ResetResult(interp);			\
-      Tcl_AppendResult(interp, string, NULL);	\
+      Tcl_AppendResult(interp, string, nullptr);	\
       return TCL_ERROR;				\
    } while (0)
 
@@ -289,93 +289,93 @@ static void SetMacBufRect(struct Togl *togl);
 
 static Tk_ConfigSpec configSpecs[] = {
     {TK_CONFIG_PIXELS, "-height", "height", "Height",
-     DEFAULT_HEIGHT, Tk_Offset(struct Togl, Height), 0, NULL},
+     DEFAULT_HEIGHT, Tk_Offset(struct Togl, Height), 0, nullptr},
 
     {TK_CONFIG_PIXELS, "-width", "width", "Width",
-     DEFAULT_WIDTH, Tk_Offset(struct Togl, Width), 0, NULL},
+     DEFAULT_WIDTH, Tk_Offset(struct Togl, Width), 0, nullptr},
 
     {TK_CONFIG_BOOLEAN, "-rgba", "rgba", "Rgba",
-     "true", Tk_Offset(struct Togl, RgbaFlag), 0, NULL},
+     "true", Tk_Offset(struct Togl, RgbaFlag), 0, nullptr},
 
     {TK_CONFIG_INT, "-redsize", "redsize", "RedSize",
-     "1", Tk_Offset(struct Togl, RgbaRed), 0, NULL},
+     "1", Tk_Offset(struct Togl, RgbaRed), 0, nullptr},
 
     {TK_CONFIG_INT, "-greensize", "greensize", "GreenSize",
-     "1", Tk_Offset(struct Togl, RgbaGreen), 0, NULL},
+     "1", Tk_Offset(struct Togl, RgbaGreen), 0, nullptr},
 
     {TK_CONFIG_INT, "-bluesize", "bluesize", "BlueSize",
-     "1", Tk_Offset(struct Togl, RgbaBlue), 0, NULL},
+     "1", Tk_Offset(struct Togl, RgbaBlue), 0, nullptr},
 
     {TK_CONFIG_BOOLEAN, "-double", "double", "Double",
-     "false", Tk_Offset(struct Togl, DoubleFlag), 0, NULL},
+     "false", Tk_Offset(struct Togl, DoubleFlag), 0, nullptr},
 
     {TK_CONFIG_BOOLEAN, "-depth", "depth", "Depth",
-     "false", Tk_Offset(struct Togl, DepthFlag), 0, NULL},
+     "false", Tk_Offset(struct Togl, DepthFlag), 0, nullptr},
 
     {TK_CONFIG_INT, "-depthsize", "depthsize", "DepthSize",
-     "1", Tk_Offset(struct Togl, DepthSize), 0, NULL},
+     "1", Tk_Offset(struct Togl, DepthSize), 0, nullptr},
 
     {TK_CONFIG_BOOLEAN, "-accum", "accum", "Accum",
-     "false", Tk_Offset(struct Togl, AccumFlag), 0, NULL},
+     "false", Tk_Offset(struct Togl, AccumFlag), 0, nullptr},
 
     {TK_CONFIG_INT, "-accumredsize", "accumredsize", "AccumRedSize",
-     "1", Tk_Offset(struct Togl, AccumRed), 0, NULL},
+     "1", Tk_Offset(struct Togl, AccumRed), 0, nullptr},
 
     {TK_CONFIG_INT, "-accumgreensize", "accumgreensize", "AccumGreenSize",
-     "1", Tk_Offset(struct Togl, AccumGreen), 0, NULL},
+     "1", Tk_Offset(struct Togl, AccumGreen), 0, nullptr},
 
     {TK_CONFIG_INT, "-accumbluesize", "accumbluesize", "AccumBlueSize",
-     "1", Tk_Offset(struct Togl, AccumBlue), 0, NULL},
+     "1", Tk_Offset(struct Togl, AccumBlue), 0, nullptr},
 
     {TK_CONFIG_INT, "-accumalphasize", "accumalphasize", "AccumAlphaSize",
-     "1", Tk_Offset(struct Togl, AccumAlpha), 0, NULL},
+     "1", Tk_Offset(struct Togl, AccumAlpha), 0, nullptr},
 
     {TK_CONFIG_BOOLEAN, "-alpha", "alpha", "Alpha",
-     "false", Tk_Offset(struct Togl, AlphaFlag), 0, NULL},
+     "false", Tk_Offset(struct Togl, AlphaFlag), 0, nullptr},
 
     {TK_CONFIG_INT, "-alphasize", "alphasize", "AlphaSize",
-     "1", Tk_Offset(struct Togl, AlphaSize), 0, NULL},
+     "1", Tk_Offset(struct Togl, AlphaSize), 0, nullptr},
 
     {TK_CONFIG_BOOLEAN, "-stencil", "stencil", "Stencil",
-     "false", Tk_Offset(struct Togl, StencilFlag), 0, NULL},
+     "false", Tk_Offset(struct Togl, StencilFlag), 0, nullptr},
 
     {TK_CONFIG_INT, "-stencilsize", "stencilsize", "StencilSize",
-     "1", Tk_Offset(struct Togl, StencilSize), 0, NULL},
+     "1", Tk_Offset(struct Togl, StencilSize), 0, nullptr},
 
     {TK_CONFIG_INT, "-auxbuffers", "auxbuffers", "AuxBuffers",
-     "0", Tk_Offset(struct Togl, AuxNumber), 0, NULL},
+     "0", Tk_Offset(struct Togl, AuxNumber), 0, nullptr},
 
     {TK_CONFIG_BOOLEAN, "-privatecmap", "privateCmap", "PrivateCmap",
-     "false", Tk_Offset(struct Togl, PrivateCmapFlag), 0, NULL},
+     "false", Tk_Offset(struct Togl, PrivateCmapFlag), 0, nullptr},
 
     {TK_CONFIG_BOOLEAN, "-overlay", "overlay", "Overlay",
-     "false", Tk_Offset(struct Togl, OverlayFlag), 0, NULL},
+     "false", Tk_Offset(struct Togl, OverlayFlag), 0, nullptr},
 
     {TK_CONFIG_BOOLEAN, "-stereo", "stereo", "Stereo",
-     "false", Tk_Offset(struct Togl, StereoFlag), 0, NULL},
+     "false", Tk_Offset(struct Togl, StereoFlag), 0, nullptr},
 
 #ifndef NO_TK_CURSOR
     { TK_CONFIG_ACTIVE_CURSOR, "-cursor", "cursor", "Cursor",
-     "", Tk_Offset(struct Togl, Cursor), TK_CONFIG_NULL_OK },
+     "", Tk_Offset(struct Togl, Cursor), TK_CONFIG_nullptr_OK },
 #endif
 
     {TK_CONFIG_INT, "-time", "time", "Time",
-     DEFAULT_TIME, Tk_Offset(struct Togl, TimerInterval), 0, NULL},
+     DEFAULT_TIME, Tk_Offset(struct Togl, TimerInterval), 0, nullptr},
 
     {TK_CONFIG_STRING, "-sharelist", "sharelist", "ShareList",
-     NULL, Tk_Offset(struct Togl, ShareList), 0, NULL},
+     nullptr, Tk_Offset(struct Togl, ShareList), 0, nullptr},
 
     {TK_CONFIG_STRING, "-sharecontext", "sharecontext", "ShareContext",
-     NULL, Tk_Offset(struct Togl, ShareContext), 0, NULL},
+     nullptr, Tk_Offset(struct Togl, ShareContext), 0, nullptr},
 
     {TK_CONFIG_STRING, "-ident", "ident", "Ident",
-     DEFAULT_IDENT, Tk_Offset(struct Togl, Ident), 0, NULL},
+     DEFAULT_IDENT, Tk_Offset(struct Togl, Ident), 0, nullptr},
 
     {TK_CONFIG_BOOLEAN, "-indirect", "indirect", "Indirect",
-     "false", Tk_Offset(struct Togl, Indirect), 0, NULL},
+     "false", Tk_Offset(struct Togl, Indirect), 0, nullptr},
 
-    {TK_CONFIG_END, (char *) NULL, (char *) NULL, (char *) NULL,
-     (char *) NULL, 0, 0, NULL}
+    {TK_CONFIG_END, (char *) nullptr, (char *) nullptr, (char *) nullptr,
+     (char *) nullptr, 0, 0, nullptr}
 };
 
 
@@ -383,19 +383,19 @@ static Tk_ConfigSpec configSpecs[] = {
  * Default callback pointers.  When a new Togl widget is created it
  * will be assigned these initial callbacks.
  */
-static Togl_Callback *DefaultCreateProc = NULL;
-static Togl_Callback *DefaultDisplayProc = NULL;
-static Togl_Callback *DefaultReshapeProc = NULL;
-static Togl_Callback *DefaultDestroyProc = NULL;
-static Togl_Callback *DefaultOverlayDisplayProc = NULL;
-static Togl_Callback *DefaultTimerProc = NULL;
-static ClientData DefaultClientData = NULL;
+static Togl_Callback *DefaultCreateProc = nullptr;
+static Togl_Callback *DefaultDisplayProc = nullptr;
+static Togl_Callback *DefaultReshapeProc = nullptr;
+static Togl_Callback *DefaultDestroyProc = nullptr;
+static Togl_Callback *DefaultOverlayDisplayProc = nullptr;
+static Togl_Callback *DefaultTimerProc = nullptr;
+static ClientData DefaultClientData = nullptr;
 static Tcl_HashTable CommandTable;
 
 /*
  * Head of linked list of all Togl widgets
  */
-static struct Togl *ToglHead = NULL;
+static struct Togl *ToglHead = nullptr;
 
 /*
  * Add given togl widget to linked list.
@@ -411,7 +411,7 @@ static void AddToList(struct Togl *t)
  */
 static void RemoveFromList(struct Togl *t)
 {
-   struct Togl *prev = NULL;
+   struct Togl *prev = nullptr;
    struct Togl *pos = ToglHead;
    while (pos) {
       if (pos == t) {
@@ -439,7 +439,7 @@ static struct Togl *FindTogl(const char *ident)
          return t;
       t = t->Next;
    }
-   return NULL;
+   return nullptr;
 }
 
 
@@ -714,7 +714,7 @@ int Togl_Init(Tcl_Interp *interp)
    }
 
    Tcl_CreateCommand(interp, "togl", (Tcl_CmdProc *)Togl_Cmd,
-                     (ClientData) Tk_MainWindow(interp), NULL);
+                     (ClientData) Tk_MainWindow(interp), nullptr);
 
    Tcl_InitHashTable(&CommandTable, TCL_STRING_KEYS);
 
@@ -768,17 +768,17 @@ void Togl_TimerFunc( Togl_Callback *proc )
 
 
 /*
- * Reset default callback pointers to NULL.
+ * Reset default callback pointers to nullptr.
  */
 void Togl_ResetDefaultCallbacks( void )
 {
-   DefaultCreateProc = NULL;
-   DefaultDisplayProc = NULL;
-   DefaultReshapeProc = NULL;
-   DefaultDestroyProc = NULL;
-   DefaultOverlayDisplayProc = NULL;
-   DefaultTimerProc = NULL;
-   DefaultClientData = NULL;
+   DefaultCreateProc = nullptr;
+   DefaultDisplayProc = nullptr;
+   DefaultReshapeProc = nullptr;
+   DefaultDestroyProc = nullptr;
+   DefaultOverlayDisplayProc = nullptr;
+   DefaultTimerProc = nullptr;
+   DefaultClientData = nullptr;
 }
 
 
@@ -846,7 +846,7 @@ static void Togl_Timer( ClientData clientData )
 
 /*
  * Change the timer callback for a specific Togl widget.
- * Pass NULL to disable the callback.
+ * Pass nullptr to disable the callback.
  */
 void Togl_SetTimerFunc( struct Togl *togl, Togl_Callback *proc )
 {
@@ -1110,7 +1110,7 @@ int Togl_Widget(ClientData clientData, Tcl_Interp *interp,
 
    if (argc < 2) {
       Tcl_AppendResult(interp, "wrong # args: should be \"",
-                       argv[0], " ?options?\"", NULL);
+                       argv[0], " ?options?\"", nullptr);
       return TCL_ERROR;
    }
 
@@ -1120,7 +1120,7 @@ int Togl_Widget(ClientData clientData, Tcl_Interp *interp,
       if (argc == 2) {
          /* Return list of all configuration parameters */
          result = Tk_ConfigureInfo(interp, togl->TkWin, configSpecs,
-                                   (char *)togl, (char *)NULL, 0);
+                                   (char *)togl, (char *)nullptr, 0);
       }
       else if (argc == 3) {
          if (strcmp(argv[2],"-extensions")==0) {
@@ -1165,12 +1165,12 @@ int Togl_Widget(ClientData clientData, Tcl_Interp *interp,
             result = TCL_OK;
          }
          else {
-            Tcl_AppendResult(interp, "Could not allocate font",NULL);
+            Tcl_AppendResult(interp, "Could not allocate font",nullptr);
             result = TCL_ERROR;
          }
       }
       else {
-         Tcl_AppendResult(interp, "wrong # args",NULL);
+         Tcl_AppendResult(interp, "wrong # args",nullptr);
          result=TCL_ERROR;
       }
    }
@@ -1180,14 +1180,14 @@ int Togl_Widget(ClientData clientData, Tcl_Interp *interp,
          result = TCL_OK;
       }
       else {
-         Tcl_AppendResult(interp, "wrong # args",NULL);
+         Tcl_AppendResult(interp, "wrong # args",nullptr);
          result = TCL_ERROR;
       }
    }
    else {
       /* Probably a user-defined function */
       entry = Tcl_FindHashEntry(&CommandTable, argv[1]);
-      if (entry != NULL) {
+      if (entry != nullptr) {
          cmd_proc = (Togl_CmdProc *)Tcl_GetHashValue(entry);
          result = cmd_proc(togl, argc, argv);
       }
@@ -1195,12 +1195,12 @@ int Togl_Widget(ClientData clientData, Tcl_Interp *interp,
          Tcl_AppendResult(interp, "Togl: Unknown option: ", argv[1], "\n",
                           "Try: configure or render\n",
                           "or one of the user-defined commands:\n",
-                          NULL);
+                          nullptr);
          entry = Tcl_FirstHashEntry(&CommandTable, &search);
          while (entry) {
             Tcl_AppendResult(interp, "  ",
                              Tcl_GetHashKey(&CommandTable, entry),
-                             "\n", NULL);
+                             "\n", nullptr);
             entry = Tcl_NextHashEntry(&search);
          }
          result = TCL_ERROR;
@@ -1237,8 +1237,8 @@ static int Togl_Cmd(ClientData clientData, Tcl_Interp *interp,
 
    /* Create the window. */
    name = argv[1];
-   tkwin = Tk_CreateWindowFromPath(interp, main, name, (char *) NULL);
-   if (tkwin == NULL) {
+   tkwin = Tk_CreateWindowFromPath(interp, main, name, (char *) nullptr);
+   if (tkwin == nullptr) {
       return TCL_ERROR;
    }
 
@@ -1250,15 +1250,15 @@ static int Togl_Cmd(ClientData clientData, Tcl_Interp *interp,
       return TCL_ERROR;
    }
 
-   togl->Next = NULL;
+   togl->Next = nullptr;
 #if defined(WIN32)
-   togl->tglGLHdc = NULL;
-   togl->tglGLHglrc = NULL;
+   togl->tglGLHdc = nullptr;
+   togl->tglGLHglrc = nullptr;
 #elif defined(X11)
-   togl->GlCtx = NULL;
-   togl->OverlayCtx = NULL;
+   togl->GlCtx = nullptr;
+   togl->OverlayCtx = nullptr;
 #elif defined(macintosh)
-   togl->aglCtx = NULL;
+   togl->aglCtx = nullptr;
 #endif /* WIN32 */
    togl->display = Tk_Display( tkwin );
    togl->TkWin = tkwin;
@@ -1297,13 +1297,13 @@ static int Togl_Cmd(ClientData clientData, Tcl_Interp *interp,
    togl->DestroyProc = DefaultDestroyProc;
    togl->TimerProc = DefaultTimerProc;
    togl->OverlayDisplayProc = DefaultOverlayDisplayProc;
-   togl->ShareList = NULL;
-   togl->ShareContext = NULL;
-   togl->Ident = NULL;
+   togl->ShareList = nullptr;
+   togl->ShareContext = nullptr;
+   togl->Ident = nullptr;
    togl->Client_Data = DefaultClientData;
 
    /* for EPS Output */
-   togl->EpsRedMap = togl->EpsGreenMap = togl->EpsBlueMap = NULL;
+   togl->EpsRedMap = togl->EpsGreenMap = togl->EpsBlueMap = nullptr;
    togl->EpsMapSize = 0;
 
    /* Create command event handler */
@@ -1325,8 +1325,8 @@ static int Togl_Cmd(ClientData clientData, Tcl_Interp *interp,
      procsPtr = (Tk_ClassProcs*) Tcl_Alloc(sizeof(Tk_ClassProcs));
      procsPtr->size             = sizeof(Tk_ClassProcs);
      procsPtr->createProc       = Togl_CreateWindow;
-     procsPtr->worldChangedProc = NULL;
-     procsPtr->modalProc        = NULL;
+     procsPtr->worldChangedProc = nullptr;
+     procsPtr->modalProc        = nullptr;
      Tk_SetClassProcs(togl->TkWin,procsPtr,(ClientData)togl);
    }
    
@@ -1378,7 +1378,7 @@ static int Togl_Cmd(ClientData clientData, Tcl_Interp *interp,
       Tk_CreateTimerHandler( togl->TimerInterval, Togl_Timer, (ClientData)togl );
    }
 
-   Tcl_AppendResult(interp, Tk_PathName(tkwin), NULL);
+   Tcl_AppendResult(interp, Tk_PathName(tkwin), nullptr);
 
    /* Add to linked list */
    AddToList(togl);
@@ -1431,7 +1431,7 @@ static int SetupOverlay( struct Togl *togl )
    if (!visinfo){
       Tcl_AppendResult(togl->Interp,Tk_PathName(winPtr),
                        ": No suitable overlay index visual available",
-                       (char *) NULL);
+                       (char *) nullptr);
       togl->OverlayCtx = 0;
       togl->OverlayWindow = 0;
       togl->OverlayCmap = 0;
@@ -1528,7 +1528,7 @@ static LRESULT CALLBACK Win32WinProc( HWND hwnd, UINT message,
          * registered with windows.
          *
          */
-        if (tkWinChildProc == NULL) {
+        if (tkWinChildProc == nullptr) {
            GetClassInfo(Tk_GetHINSTANCE(),TK_WIN_CHILD_CLASS_NAME,
                         &childClass);
            tkWinChildProc = childClass.lpfnWndProc;
@@ -1555,7 +1555,7 @@ static Window Togl_CreateWindow(Tk_Window tkwin,
 				ClientData instanceData) {
   
   struct Togl *togl = (struct Togl*) instanceData;
-  XVisualInfo *visinfo = NULL;
+  XVisualInfo *visinfo = nullptr;
   Display *dpy;
   Tk_Window *winPtr = (Tk_Window *) togl->TkWin;  Colormap cmap;
   int scrnum;
@@ -1632,7 +1632,7 @@ static Window Togl_CreateWindow(Tk_Window tkwin,
             if ( togl->EpsRedMap) free( ( char *)togl->EpsRedMap);
             if ( togl->EpsGreenMap) free( ( char *)togl->EpsGreenMap);
             if ( togl->EpsBlueMap) free( ( char *)togl->EpsBlueMap);
-            togl->EpsRedMap = togl->EpsGreenMap = togl->EpsBlueMap = NULL;
+            togl->EpsRedMap = togl->EpsGreenMap = togl->EpsBlueMap = nullptr;
             togl->EpsMapSize = 0;
          }
          else {
@@ -1691,7 +1691,7 @@ static Window Togl_CreateWindow(Tk_Window tkwin,
 
       togl->VisInfo = visinfo;
 
-      if (visinfo==NULL) {
+      if (visinfo==nullptr) {
 	Tcl_SetResult(togl->Interp,"Togl: couldn't get visual",TCL_STATIC);
 	return DUMMY_WINDOW;
       }
@@ -1714,7 +1714,7 @@ static Window Togl_CreateWindow(Tk_Window tkwin,
          togl->GlCtx = glXCreateContext(dpy, visinfo, None, directCtx);
       }
 
-      if (togl->GlCtx == NULL) {
+      if (togl->GlCtx == nullptr) {
          Tcl_SetResult(togl->Interp, "could not create rendering context",TCL_STATIC);
 	 return DUMMY_WINDOW;
       }
@@ -1733,21 +1733,21 @@ static Window Togl_CreateWindow(Tk_Window tkwin,
        ToglClass.cbClsExtra = 0;
        ToglClass.cbWndExtra = 4;   /* to save struct Togl* */
        ToglClass.hInstance = hInstance;
-       ToglClass.hbrBackground = NULL;
-       ToglClass.lpszMenuName = NULL;
+       ToglClass.hbrBackground = nullptr;
+       ToglClass.lpszMenuName = nullptr;
        ToglClass.lpszClassName = TOGL_CLASS_NAME;
        ToglClass.lpfnWndProc = Win32WinProc;
-       ToglClass.hIcon = NULL;
-       ToglClass.hCursor = NULL;
+       ToglClass.hIcon = nullptr;
+       ToglClass.hCursor = nullptr;
        if (!RegisterClass(&ToglClass)){
            Tcl_SetResult(togl->Interp, "unable register Togl window class",TCL_STATIC);
 	   return DUMMY_WINDOW;
        }
    }
 
-   hwnd = CreateWindow(TOGL_CLASS_NAME, NULL, WS_CHILD | WS_CLIPCHILDREN
+   hwnd = CreateWindow(TOGL_CLASS_NAME, nullptr, WS_CHILD | WS_CLIPCHILDREN
                        | WS_CLIPSIBLINGS, 0, 0, togl->Width, togl->Height,
-                       parentWin, NULL, hInstance, NULL);
+                       parentWin, nullptr, hInstance, nullptr);
    SetWindowLong(hwnd, 0, (LONG) togl);
    SetWindowPos(hwnd, HWND_TOP, 0, 0, 0, 0,
   	            SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
@@ -1851,7 +1851,7 @@ static Window Togl_CreateWindow(Tk_Window tkwin,
       if ( togl->EpsRedMap) free( ( char *)togl->EpsRedMap);
       if ( togl->EpsGreenMap) free( ( char *)togl->EpsGreenMap);
       if ( togl->EpsBlueMap) free( ( char *)togl->EpsBlueMap);
-      togl->EpsRedMap = togl->EpsGreenMap = togl->EpsBlueMap = NULL;
+      togl->EpsRedMap = togl->EpsGreenMap = togl->EpsBlueMap = nullptr;
       togl->EpsMapSize = 0;
 
 #elif defined(macintosh)
@@ -1863,7 +1863,7 @@ static Window Togl_CreateWindow(Tk_Window tkwin,
          free((char *) togl->EpsGreenMap);
       if (togl->EpsBlueMap)
          free((char *) togl->EpsBlueMap);
-      togl->EpsRedMap = togl->EpsGreenMap = togl->EpsBlueMap = NULL;
+      togl->EpsRedMap = togl->EpsGreenMap = togl->EpsBlueMap = nullptr;
       togl->EpsMapSize = 0;
 #endif /* X11 */
    }
@@ -1953,7 +1953,7 @@ static Window Togl_CreateWindow(Tk_Window tkwin,
       visinfo = togl->VisInfo;
    
    } else {
-       AGLContext shareCtx = NULL;
+       AGLContext shareCtx = nullptr;
 
        /* Need to do this after mapping window, so MacDrawable structure is more
           completely filled in */
@@ -2007,7 +2007,7 @@ static Window Togl_CreateWindow(Tk_Window tkwin,
        }
        attribs[na++] = AGL_NONE;
 
-       if ((fmt = aglChoosePixelFormat(NULL, 0, attribs)) == NULL) {
+       if ((fmt = aglChoosePixelFormat(nullptr, 0, attribs)) == nullptr) {
 	 Tcl_SetResult(togl->Interp, "Togl: couldn't choose pixel format",TCL_STATIC);
 	 return DUMMY_WINDOW;
        }
@@ -2021,7 +2021,7 @@ static Window Togl_CreateWindow(Tk_Window tkwin,
           if (shareWith)
              shareCtx = shareWith->aglCtx;
        }
-       if ((togl->aglCtx = aglCreateContext(fmt, shareCtx)) == NULL) {
+       if ((togl->aglCtx = aglCreateContext(fmt, shareCtx)) == nullptr) {
           aglDestroyPixelFormat(fmt);
           Tcl_SetResult(togl->Interp, "Togl: couldn't create context",TCL_STATIC);
 	  return DUMMY_WINDOW;
@@ -2104,7 +2104,7 @@ static void ToglCmdDeletedProc( ClientData clientData )
    /*
     * This procedure could be invoked either because the window was
     * destroyed and the command was then deleted (in which case tkwin
-    * is NULL) or because the command was deleted, and then this procedure
+    * is nullptr) or because the command was deleted, and then this procedure
     * destroys the widget.
     */
 
@@ -2121,7 +2121,7 @@ static void ToglCmdDeletedProc( ClientData clientData )
    if (togl->GlCtx) {
       /* XXX this might be bad if two or more Togl widgets share a context */
       glXDestroyContext( togl->display, togl->GlCtx );
-      togl->GlCtx = NULL;
+      togl->GlCtx = nullptr;
    }
 #ifdef USE_OVERLAY
    if (togl->OverlayCtx) {
@@ -2133,13 +2133,13 @@ static void ToglCmdDeletedProc( ClientData clientData )
          Tcl_DeleteHashEntry(entryPtr);
       }
       glXDestroyContext( togl->display, togl->OverlayCtx );
-      togl->OverlayCtx = NULL;
+      togl->OverlayCtx = nullptr;
    }
 #endif /* USE_OVERLAY */
 #endif
 
-   if (tkwin != NULL) {
-      togl->TkWin = NULL;
+   if (tkwin != nullptr) {
+      togl->TkWin = nullptr;
       Tk_DestroyWindow(tkwin);
    }
 }
@@ -2240,14 +2240,14 @@ static void Togl_EventProc(ClientData clientData, XEvent *eventPtr)
       case MapNotify:
          break;
       case DestroyNotify:
-	 if (togl->TkWin != NULL) {
-	    togl->TkWin = NULL;
+	 if (togl->TkWin != nullptr) {
+	    togl->TkWin = nullptr;
 #if (TCL_MAJOR_VERSION * 100 + TCL_MINOR_VERSION) >= 800
             /* This function new in Tcl/Tk 8.0 */
             Tcl_DeleteCommandFromToken( togl->Interp, togl->widgetCmd );
 #endif
 	 }
-	 if (togl->TimerProc != NULL) {
+	 if (togl->TimerProc != nullptr) {
 #if (TK_MAJOR_VERSION * 100 + TK_MINOR_VERSION) >= 401
 	    Tcl_DeleteTimerHandler(togl->timerHandler);
 #else
@@ -2996,7 +2996,7 @@ unsigned char rojo[] = { 4, 36, 72, 109, 145, 182, 218, 251},
 #define BLEVELS     5
 
 /* to free dithered_rgb_colormap pixels allocated by Mesa */
-static unsigned long *ToglMesaUsedPixelCells = NULL;
+static unsigned long *ToglMesaUsedPixelCells = nullptr;
 static int ToglMesaUsedFreeCells = 0;
 
 static int get_free_color_cells( Display *display, int screen,
@@ -3043,7 +3043,7 @@ static void free_default_color_cells( Display *display, Colormap colormap)
       XFreeColors( display, colormap, ToglMesaUsedPixelCells,
                    ToglMesaUsedFreeCells, 0x00000000);
       free( ( char *)ToglMesaUsedPixelCells);
-      ToglMesaUsedPixelCells = NULL;
+      ToglMesaUsedPixelCells = nullptr;
       ToglMesaUsedFreeCells = 0;
    }
 }
@@ -3083,8 +3083,8 @@ static GLvoid *grabPixels(int inColor, unsigned int width, unsigned int height)
    }
 
    buffer = (GLvoid *) malloc(size);
-   if (buffer == NULL)
-      return NULL;
+   if (buffer == nullptr)
+      return nullptr;
 
    /* Save current modes. */
    glGetIntegerv(GL_PACK_SWAP_BYTES, &swapbytes);
@@ -3130,7 +3130,7 @@ static int generateEPS(const char *filename, int inColor,
    unsigned char bitpixel;
 
    pixels = grabPixels(inColor, width, height);
-   if (pixels == NULL)
+   if (pixels == nullptr)
       return 1;
    if (inColor)
       components = 3;     /* Red, green, blue. */
@@ -3138,7 +3138,7 @@ static int generateEPS(const char *filename, int inColor,
       components = 1;     /* Luminance. */
 
    fp = fopen(filename, "w");
-   if (fp == NULL) {
+   if (fp == nullptr) {
       return 2;
    }
    fprintf(fp, "%%!PS-Adobe-2.0 EPSF-1.2\n");
@@ -3436,7 +3436,7 @@ stereoMakeCurrent(Display *dpy, Window win, GLXContext ctx)
       int event, error;
       /* Make sure new Display supports SGIStereo */
       if (XSGIStereoQueryExtension(dpy, &event, &error) == False) {
-	dpy = NULL;
+	dpy = nullptr;
       }
     }
     if (dpy && win && (win != stereo.currentWindow)) {
@@ -3462,9 +3462,9 @@ static void
 stereoInit(struct Togl *togl,int stereoEnabled)
 {
   stereo.useSGIStereo = stereoEnabled;
-  stereo.currentDisplay = NULL;
+  stereo.currentDisplay = nullptr;
   stereo.currentWindow = None;
-  stereo.currentContext = NULL;
+  stereo.currentContext = nullptr;
   stereo.currentDrawBuffer = GL_NONE;
   stereo.currentStereoBuffer = STEREO_BUFFER_NONE;
   stereo.enabled = False;
@@ -3548,7 +3548,7 @@ int Togl_MacInit(void)
    InitFonts();
    InitWindows();
    InitMenus();
-   InitDialogs((long) NULL);
+   InitDialogs((long) nullptr);
    InitCursor();
 
    /*

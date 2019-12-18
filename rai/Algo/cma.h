@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -27,11 +27,11 @@ struct CMA {
   arr C; //the covariance matrix
   double sigma; //the step-size
   uint dim;
-  
+
   CMA();//
   ~CMA();
-  
-  
+
+
   void run();
 };
 

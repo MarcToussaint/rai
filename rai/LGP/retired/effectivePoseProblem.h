@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -24,7 +24,7 @@ struct EffectivePoseProblem:ConstrainedProblem {
                        const Graph& KB, const Graph& symbolicState_before, const Graph& symbolicState_after,
                        int verbose);
   void phi(arr& phi, arr& phiJ, arr& H, ObjectiveTypeA& tt, const arr& x);
-  
+
   double optimize(arr& x);
 };
 

@@ -99,16 +99,16 @@ const SPLIT_TYPE DEFAULT_SPLIT_TYPE = MIDPOINT;
 static const int DEFAULT_BOX_SETTING = BOX_SETTING_DEFAULT;
 static const SWIFT_Real DEFAULT_BOX_ENLARGE_REL = 0.0;      // No enlargement
 static const SWIFT_Real DEFAULT_BOX_ENLARGE_ABS = 0.0;      // No enlargement
-static const int* DEFAULT_FACE_VALENCES = NULL;             // Triangular model
+static const int* DEFAULT_FACE_VALENCES = nullptr;             // Triangular model
 static const int DEFAULT_COPY = -1;                         // No copy
 static const SWIFT_Real DEFAULT_CUBE_ASPECT_RATIO = 2.0;
 
 // Default query configuration
-static SWIFT_Real** NO_DISTANCES = NULL;
-static SWIFT_Real** NO_NEAREST_PTS = NULL;
-static SWIFT_Real** NO_NORMALS = NULL;
-static int** NO_FEAT_TYPES = NULL;
-static int** NO_FEAT_IDS = NULL;
+static SWIFT_Real** NO_DISTANCES = nullptr;
+static SWIFT_Real** NO_NEAREST_PTS = nullptr;
+static SWIFT_Real** NO_NORMALS = nullptr;
+static int** NO_FEAT_TYPES = nullptr;
+static int** NO_FEAT_IDS = nullptr;
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -361,10 +361,10 @@ class SWIFT_Scene {
     // the distance, the nearest points, the contact normals, and the nearest
     // features.  They are selected for reporting by passing an array pointer to
     // be assigned by SWIFT.  To not select an item for reporting, simply pass
-    // NULL for that array.  The default is that all items are deselected.
+    // nullptr for that array.  The default is that all items are deselected.
     // There is the possibility that there are multiple contacts per pair.  The
     // optional num_contacts array gives the number of contacts for each pair.
-    // It should be set non-NULL if any information other than the oids is
+    // It should be set non-nullptr if any information other than the oids is
     // required.
     // See the included documentation for a more detailed description of the
     // reported items.

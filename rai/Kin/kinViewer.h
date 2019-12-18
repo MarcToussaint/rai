@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -16,7 +16,7 @@
 
 //===========================================================================
 
-void renderConfigurations(const WorldL& cs, const char* filePrefix="vid/z.", int tprefix=0, int w=-1, int h=-1, rai::Camera *camera=NULL);
+void renderConfigurations(const ConfigurationL& cs, const char* filePrefix="vid/z.", int tprefix=0, int w=-1, int h=-1, rai::Camera* camera=nullptr);
 
 //===========================================================================
 
@@ -24,9 +24,9 @@ struct KinViewer : Thread {
   Var<rai::Configuration> world;
   MeshA meshesCopy;
   ProxyA proxiesCopy;
-  struct OpenGL *gl;
+  struct OpenGL* gl;
   int cameraFrameID=-1;
-  KinViewer(const Var<rai::Configuration>& _kin, double beatIntervalSec=-1., const char* _cameraFrameName=NULL);
+  KinViewer(const Var<rai::Configuration>& _kin, double beatIntervalSec=-1., const char* _cameraFrameName=nullptr);
   ~KinViewer();
   void open();
   void step();
@@ -36,19 +36,19 @@ struct KinViewer : Thread {
 //===========================================================================
 
 struct KinPathViewer : Thread {
-  Var<WorldL> configurations;
+  Var<ConfigurationL> configurations;
   //-- internal (private)
   rai::Configuration copy;
-  struct OpenGL *gl;
+  struct OpenGL* gl;
   uint t;
   int tprefix;
   bool writeToFiles;
   rai::String text;
-  
-  void setConfigurations(const WorldL& cs);
+
+  void setConfigurations(const ConfigurationL& cs);
   void clear();
-  
-  KinPathViewer(const Var<WorldL>& _configurations, double beatIntervalSec=.2, int tprefix=0);
+
+  KinPathViewer(const Var<ConfigurationL>& _configurations, double beatIntervalSec=.2, int tprefix=0);
   ~KinPathViewer();
   void open();
   void step();
@@ -64,16 +64,16 @@ struct KinPoseViewer : Thread, GLDrawer {
   uint frameCount=0;
   //-- internal (private)
   OpenGL gl;
-  
+
 //  KinPoseViewer(const char* modelVarName, const StringA& poseVarNames, double beatIntervalSec=-1.);
   KinPoseViewer(Var<rai::Configuration>& _kin, const Var<arr>& _frameState, double beatIntervalSec=-1.);
   ~KinPoseViewer();
-  
+
   void open();
   void step();
   void close();
 
-  void glDraw(OpenGL &gl);
+  void glDraw(OpenGL& gl);
 };
 
 //===========================================================================
@@ -83,12 +83,12 @@ struct ComputeCameraView : Thread {
   Var<byteA> cameraView;
   Var<uint16A> cameraDepth;
   Var<rai::Transformation> cameraFrame;
-  
+
   //-- internal (private)
   OpenGL gl;
   rai::Configuration copy;
   bool getDepth;
-  
+
   ComputeCameraView(const Var<rai::Configuration>& _modelWorld, double beatIntervalSec=-1.);
   ~ComputeCameraView();
   void open();

@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -15,9 +15,9 @@
 struct SyncFiltered : Thread {
   Var<PerceptL> percepts;
   Var<rai::Configuration> kin;
-  
+
   SyncFiltered(Var<PerceptL>& _percepts, Var<rai::Configuration>& _kin);
   ~SyncFiltered();
-  
+
   virtual void step();
 };

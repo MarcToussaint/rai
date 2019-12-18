@@ -6,7 +6,7 @@
 #include <Geo/qhull.h>
 
 void drawInit(void*, OpenGL& gl){
-  glStandardLight(NULL, gl);
+  glStandardLight(nullptr, gl);
   glDrawAxes(1.);
   glColor(1.,.5,0.);
 }
@@ -178,7 +178,7 @@ void TEST(DistanceFunctions) {
   t.setRandom();
   rai::Mesh m;
   OpenGL gl;
-  gl.add(glStandardScene,NULL);
+  gl.add(glStandardScene,nullptr);
   gl.add(m);
 
   rai::Array<ScalarFunction*> fcts = {
@@ -274,7 +274,7 @@ ScalarFunction cylinder = [](arr&,arr&, const arr& X){
 void TEST(SimpleImplicitSurfaces) {
   rai::Mesh m;
   OpenGL gl;
-  gl.add(glStandardScene,NULL);
+  gl.add(glStandardScene,nullptr);
   gl.add(m);
 
   rai::Array<ScalarFunction*> fcts = {&blobby, &sphere, &torus, &cylinder};

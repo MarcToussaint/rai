@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -29,7 +29,7 @@ typedef rai::Array<Module*> ModuleL;
     necessary */
 
 //struct Module : Thread {
-//  Module(const char* name=NULL, double beatIntervalSec=-1.):Thread(name, beatIntervalSec){
+//  Module(const char* name=nullptr, double beatIntervalSec=-1.):Thread(name, beatIntervalSec){
 ////    registry()->newNode<Module*>({"Module", name}, {}, this);
 //  }
 //  virtual ~Module(){}
@@ -38,7 +38,7 @@ typedef rai::Array<Module*> ModuleL;
 //  virtual void close(){}
 //};
 
-inline bool operator==(const Module&,const Module&) { return false; }
+inline bool operator==(const Module&, const Module&) { return false; }
 
 //===========================================================================
 //
@@ -50,7 +50,7 @@ inline bool operator==(const Module&,const Module&) { return false; }
 
 #define ACCESSold(type, name)\
   struct __##name##__Access:Var<type>{ \
-    __##name##__Access():Var<type>(NULL, #name){} \
+    __##name##__Access():Var<type>(nullptr, #name){} \
   } name;
 
 #else
@@ -61,7 +61,7 @@ inline bool operator==(const Module&,const Module&) { return false; }
 
 #define VAR(type, name) Var<type> name = Var<type>(this, #name);
 #define VARlisten(type, name) Var<type> name = Var<type>(this, #name, true);
-#define VARname(type, name) Var<type> name = Var<type>(NULL, #name);
+#define VARname(type, name) Var<type> name = Var<type>(nullptr, #name);
 
 //===========================================================================
 //
@@ -82,7 +82,7 @@ inline bool operator==(const Module&,const Module&) { return false; }
 #define BEGIN_MODULE(name) \
   struct name : Thread { \
     struct s##name *s; \
-    name(): Thread(#name), s(NULL) {} \
+    name(): Thread(#name), s(nullptr) {} \
     virtual void open(); \
     virtual void step(); \
     virtual void close();
@@ -112,9 +112,9 @@ struct Recorder : Thread {
   Var<T> access;
   T buffer;
   ofstream fil;
-  
+
   Recorder(const char* var_name) : Thread(STRING("Recorder_"<<var_name)), access(this, var_name, true) {}
-  
+
   void open() {
     rai::open(fil, STRING("z." <<access.name() <<'.' <<rai::getNowString() <<".dat"));
   }

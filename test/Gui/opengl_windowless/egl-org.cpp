@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 //
 // Sample demonstrating OpenGL context creation without X server
 //
@@ -18,7 +17,6 @@
 // use egl surface or manually managed FBO as render target
 #define USE_EGL_SURFACE
 #undef USE_EGL_SURFACE
-
 
 #ifdef USE_EGL_GET_DISPLAY
 #include <EGL/egl.h>
@@ -36,8 +34,6 @@
 #include <GL/glext.h>
 #endif
 
-
-
   static const EGLint configAttribs[] = {
           EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
           EGL_BLUE_SIZE, 8,
@@ -48,7 +44,6 @@
           EGL_NONE
   };
 
-
   static const int pbufferWidth = 9;
   static const int pbufferHeight = 9;
 
@@ -57,7 +52,6 @@
         EGL_HEIGHT, pbufferHeight,
         EGL_NONE,
   };
-
 
 int main(int argc, char *argv[])
 {
@@ -107,7 +101,7 @@ int main(int argc, char *argv[])
     eglBindAPI(EGL_OPENGL_API);
 
     // 4. create the context
-    EGLContext eglCtx = eglCreateContext(eglDpy, eglCfg, EGL_NO_CONTEXT, NULL);
+    EGLContext eglCtx = eglCreateContext(eglDpy, eglCfg, EGL_NO_CONTEXT, nullptr);
 
 #ifdef USE_EGL_SURFACE
     // 5. create the surface and make the context current current
@@ -163,7 +157,6 @@ int main(int argc, char *argv[])
     unsigned char* data = (unsigned char*) malloc(4 * pbufferWidth * pbufferHeight);
 
     glReadPixels(0, 0, pbufferWidth, pbufferHeight, GL_RGBA, GL_UNSIGNED_BYTE, data);
-
 
     // write  the data out in ppm format
     printf("P3\n");

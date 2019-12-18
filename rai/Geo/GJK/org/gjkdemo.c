@@ -209,7 +209,7 @@ int main( int argc, char ** argv)
    prog_name = argv[0];
 
    /* now deal with setting the intial value of the seed. */
-   original_seed = (unsigned long) time( NULL);
+   original_seed = (unsigned long) time( nullptr);
 
    if ( DIM != 3 )
      {

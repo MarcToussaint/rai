@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -13,7 +13,7 @@
 void force(rai::Configuration* world, arr& fR) {
   world->stepSwift();
   //world->contactsToForces(100.0);
-  
+
   for(const rai::Proxy& p : world->proxies) {
     if(p.a->name == "endeffR" && p.b->name == "b") {
       if(p.d <= 0.0) {
@@ -48,10 +48,10 @@ void calcFTintegral(arr& f_errIntegral, const arr& f_ref, const arr& f_obs, cons
   if(f_errIntegral.N != f_ref.N) {
     f_errIntegral = zeros(f_ref.N);
   }
-  
+
   f_errIntegral *= f_gamma;
   arr f_task = J_ft_inv*f_obs;
-  
+
   for(uint i=0; i<f_task.N; i++) {
     if(f_ref(i) < 0) {
       if(f_task(i) < f_ref(i)) {
@@ -89,15 +89,15 @@ void RTControlStep(
     u += (cmd.Kp * (cmd.q - q));
     u += (cmd.Kd * (cmd.qdot - qd));
   }
-  
+
   //-- I term
   if(cmd.Ki.N==1) {
     I_term += Kp_base % (cmd.Ki.scalar() *0.01 * (cmd.q - q));
     //limits: [q_lo, q_hi, vel_limit, u_limit, int_limit]
-    for(uint i=0; i<q.N; i++) clip(I_term(i), -cmd.intLimitRatio*limits(i,4), cmd.intLimitRatio*limits(i,4));
+    for(uint i=0; i<q.N; i++) clip(I_term(i), -cmd.intLimitRatio*limits(i, 4), cmd.intLimitRatio*limits(i, 4));
     u += I_term;
   }
-  
+
   //-- F/T sensor error
   //TODO: How to allow multiple Tasks? Upper AND Lower bounds simultaneously?
   //TODO(mt): don't distinguish between L and R -- all is just matrix equations..
@@ -117,7 +117,7 @@ void RTControlStep(
       u += cmd.KiFTR * fR_errIntegral;
     }
   }
-  
+
   //-- base velocities
   if(j_baseTranslationRotation && j_baseTranslationRotation->qDim()==3) {
     double phi = cmd.q(j_baseTranslationRotation->qIndex+2);
@@ -131,7 +131,7 @@ void RTControlStep(
   } else {
     base_v.clear();
   }
-  
+
   //-- clip torques
   for(uint i=0; i<q.N; i++) {
     /*double velM = marginMap(qd(i), -velLimitRatio*limits(i,2), velLimitRatio*limits(i,2), .1);
@@ -141,7 +141,7 @@ void RTControlStep(
       */
     //clip(u(i), -cmd.effLimitRatio*limits(i,3), cmd.effLimitRatio*limits(i,3));
   }
-  
+
 }
 
 RTControllerSimulation::RTControllerSimulation(const rai::Configuration& realWorld, const Var<CtrlMsg>& _ctrl_ref, const Var<CtrlMsg>& _ctrl_obs, double tau, bool gravity, double _systematicErrorSdv)
@@ -155,10 +155,10 @@ RTControllerSimulation::RTControllerSimulation(const rai::Configuration& realWor
   , systematicErrorSdv(_systematicErrorSdv) {
   //world = new rai::Configuration(realWorld);
   world = new rai::Configuration(rai::raiPath("data/pr2_model/pr2_model.g"));
-  
+
   //Object o(*world);
   //o.generateObject("b", 0.16, 0.16, 0.1, 0.55, -0.1, 0.55); //0.5 for x
-  
+
   //Object o(*world);
   //o.generateObject("b", 0.16, 0.16, 0.1, 0.55, -0.1, 0.55); //0.5 for x
   //Object ob(*world);
@@ -170,34 +170,34 @@ void RTControllerSimulation::open() {
   //world->copy(modelWorld.get()());
   //world = new rai::Configuration(modelWorld.get());
   //world = new rai::Configuration(rai::raiPath("data/pr2_model/pr2_model.g"));
-  
+
   makeConvexHulls(world->frames);
   arr q = world->getJointState();
   arr qDot = zeros(q.N);
-  
-  
+
+
   //makeConvexHulls(world->shapes);
-  
+
   I_term = zeros(q.N);
-  
+
   // read ctrl parameters from dfg file:
   Kp_base.resize(world->q.N).setZero();
   Kd_base.resize(world->q.N).setZero();
-  limits.resize(world->q.N,5).setZero();
-  rai::Joint *j;
+  limits.resize(world->q.N, 5).setZero();
+  rai::Joint* j;
   for(rai::Frame* f: world->frames) if((j=f->joint) && j->qDim()>0) {
-      arr *info;
+      arr* info;
       info = f->ats.find<arr>("gains");  if(info) {
         for(uint i=0; i<j->qDim(); i++) { Kp_base(j->qIndex+i)=info->elem(0); Kd_base(j->qIndex+i)=info->elem(1); }
       }
       info = f->ats.find<arr>("limits");  if(info) {
-        for(uint i=0; i<j->qDim(); i++) { limits(j->qIndex+i,0)=info->elem(0); limits(j->qIndex+i,1)=info->elem(1); }
+        for(uint i=0; i<j->qDim(); i++) { limits(j->qIndex+i, 0)=info->elem(0); limits(j->qIndex+i, 1)=info->elem(1); }
       }
       info = f->ats.find<arr>("ctrl_limits");  if(info) {
-        for(uint i=0; i<j->qDim(); i++) { limits(j->qIndex+i,2)=info->elem(0); limits(j->qIndex+i,3)=info->elem(1); limits(j->qIndex+i,4)=info->elem(2); }
+        for(uint i=0; i<j->qDim(); i++) { limits(j->qIndex+i, 2)=info->elem(0); limits(j->qIndex+i, 3)=info->elem(1); limits(j->qIndex+i, 4)=info->elem(2); }
       }
     }
-    
+
   this->ctrl_obs.writeAccess();
   this->ctrl_obs().q = q;
   this->ctrl_obs().qdot = qDot;
@@ -205,19 +205,19 @@ void RTControllerSimulation::open() {
   this->ctrl_obs().fR = zeros(6);
   this->ctrl_obs().u_bias = zeros(q.d0);
   this->ctrl_obs.deAccess();
-  
+
   j_baseTranslationRotation = world->getFrameByName("worldTranslationRotation")->joint;
 }
 
 void RTControllerSimulation::step() {
   stepCount++;
-  
+
   CtrlMsg cmd = ctrl_ref.get();
-  
+
   arr u, base_v;
   arr q = world->getJointState();
   arr qDot = zeros(q.N); HALT("WARNING: qDot should be maintained outside world!");
-  
+
   if(!(stepCount%200) && systematicErrorSdv>0.) {
     systematicError.resize(q.N);
     rndGauss(systematicError, systematicErrorSdv, false);
@@ -232,20 +232,20 @@ void RTControllerSimulation::step() {
     RTControlStep(u, base_v, I_term, NoArr, NoArr, q, qDot, NoArr, NoArr, cmd, Kp_base, Kd_base, limits, j_baseTranslationRotation);
     if(systematicError.N) u += systematicError;
 #endif
-    
+
     //force(world, fR);
     forceSimulateContactOnly(world, fR);
     //u(3) = 0.0;
     world->stepDynamics(qDot, u, tau, 0., this->gravity);
-    
+
   }
-  
+
   //cout << fR(2) << endl;
-  
+
   checkNan(q);
   checkNan(qDot);
   checkNan(u);
-  
+
   this->ctrl_obs.writeAccess();
   /*for(uint i = 0; i < q.N; i++) {
     q(i) = round(q(i)*1000)/1000.0;
@@ -255,7 +255,7 @@ void RTControllerSimulation::step() {
   this->ctrl_obs().u_bias = u;
   this->ctrl_obs().fR = fR;
   this->ctrl_obs.deAccess();
-  
+
   rai::wait(tau); //TODO: why does this change something??? FISHY!
 }
 

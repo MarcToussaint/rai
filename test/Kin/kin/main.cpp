@@ -103,7 +103,7 @@ void TEST(Kinematics){
     cout <<"kinematicsQuat:  "; checkJacobian(MyFct(MyFct::Quat  , G, b, vec, b2, vec2)(), x, 1e-5);
 //    cout <<"kinematicsRelRot:"; checkJacobian(MyFct(MyFct::RelRot, G, b, vec, b2, vec2)(), x, 1e-5);
 
-    //checkJacobian(Convert(T1::f_hess, NULL), x, 1e-5);
+    //checkJacobian(Convert(T1::f_hess, nullptr), x, 1e-5);
   }
 }
 
@@ -385,8 +385,8 @@ void TEST(FollowRedundantSequence){
   rai::Frame *endeff = G.getFrameByName("arm7");
   G.kinematicsPos(y, NoArr, endeff, rel);
   for(t=0;t<T;t++) Z[t]() += y; //adjust coordinates to be inside the arm range
-  plotLine(Z);
-  G.glAdd(glDrawPlot,&plotModule()());
+  plot->Line(Z);
+  G.gl().add(plot()());
   G.watch(false);
   //-- follow the trajectory kinematically
   for(t=0;t<T;t++){
@@ -570,7 +570,7 @@ void TEST(BlenderImport){
   readBlender("blender-export",mesh,bl);
   cout <<"loading time =" <<rai::timerRead() <<"sec" <<endl;
   OpenGL gl;
-  G.glAdd(glStandardScene, NULL);
+  G.glAdd(glStandardScene, nullptr);
   G.glAdd(drawTrimesh,&mesh);
   G.watch(true, "mesh only");
   G.glAdd(rai::glDrawGraph,&bl);
