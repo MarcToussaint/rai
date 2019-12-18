@@ -2792,6 +2792,7 @@ bool rai::Configuration::checkConsistency() const {
       CHECK_GE(j->type.x, 0, "");
       CHECK_LE(j->type.x, JT_tau, "");
 
+
       if(j->mimic) {
         CHECK_EQ(j->dim, 0, "");
         CHECK(j->mimic>(void*)1, "mimic was not parsed correctly");
