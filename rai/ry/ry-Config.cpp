@@ -1,6 +1,7 @@
 #ifdef RAI_PYBIND
 
 #include "ry-Config.h"
+#include "ry-Feature.h"
 #include "ry-Frame.h"
 #include "ry-KOMO.h"
 #include "ry-LGP_Tree.h"
@@ -11,17 +12,16 @@
 
 #include "types.h"
 
+#include <Kin/kin.h>
 #include <Kin/kin_bullet.h>
 #include <Kin/kin_physx.h>
 #include <Operate/robotOperation.h>
-#include <Kin/kin.h>
 #include <Kin/proxy.h>
 #include <Kin/kinViewer.h>
 #include <Kin/cameraview.h>
 #include <Kin/simulation.h>
 #include <Gui/viewer.h>
 #include <LGP/LGP_tree.h>
-
 
 void init_Config(pybind11::module &m) {
     pybind11::class_<ry::Config>(m, "Config", "This is a class docstring")
@@ -531,43 +531,8 @@ pybind11::arg("globalCoordinates") = true)
   ret.view = make_shared<ImageViewer>(self.segmentation);
   return ret;
 })
-
-//-- displays
-//      void watch_PCL(const arr& pts, const byteA& rgb);
 ;
 
-//===========================================================================
-
-pybind11::class_<ry::RyFeature>(m, "Feature")
-.def("eval", [](ry::RyFeature& self, ry::Config& K) {
-  arr y, J;
-  self.feature->__phi(y, J, K.get());
-  pybind11::tuple ret(2);
-  ret[0] = pybind11::array(y.dim(), y.p);
-  ret[1] = pybind11::array(J.dim(), J.p);
-  return ret;
-})
-.def("eval", [](ry::RyFeature& self, pybind11::tuple& Kpytuple) {
-  ConfigurationL Ktuple;
-  for(uint i=0; i<Kpytuple.size(); i++) {
-    ry::Config& K = Kpytuple[i].cast<ry::Config&>();
-    Ktuple.append(&K.set()());
-  }
-
-  arr y, J;
-  self.feature->order=Ktuple.N-1;
-  self.feature->__phi(y, J, Ktuple);
-  cout <<"THERE!!" <<J.dim() <<endl;
-  pybind11::tuple ret(2);
-  ret[0] = pybind11::array(y.dim(), y.p);
-  ret[1] = pybind11::array(J.dim(), J.p);
-  return ret;
-})
-.def("description", [](ry::RyFeature& self, ry::Config& K) {
-  std::string s = self.feature->shortTag(K.get()).p;
-  return s;
-})
-;
 
 #define ENUMVAL(pre, x) .value(#x, pre##_##x)
 
