@@ -95,7 +95,7 @@ struct KOMO : NonCopyable {
   uint T=0;                    ///< total number of time steps
   double tau=0.;               ///< real time duration of single step (used when evaluating task space velocities/accelerations)
   uint k_order=0;              ///< the (Markov) order of the KOMO problem (default 2)
-  rai::Array<Objective*> objectives;     ///< list of tasks
+  rai::Array<ptr<Objective>> objectives;    ///< list of tasks
   rai::Array<rai::KinematicSwitch*> switches;  ///< list of kinematic switches along the motion
 
   //-- internals
@@ -155,9 +155,9 @@ struct KOMO : NonCopyable {
    * they allow the user to add a cost task, or a kinematic switch in the problem definition
    * Typically, the user does not call them directly, but uses the many methods below
    * Think of all of the below as examples for how to set arbirary tasks/switches yourself */
-  struct Objective* addObjective(const arr& times, const ptr<Feature>& f,
+  ptr<struct Objective> addObjective(const arr& times, const ptr<Feature>& f,
                                  ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr, int order=-1, int deltaFromStep=0, int deltaToStep=0);
-  struct Objective* addObjective(const arr& times, const FeatureSymbol& feat, const StringA& frames,
+  ptr<struct Objective> addObjective(const arr& times, const FeatureSymbol& feat, const StringA& frames,
                                  ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr, int order=-1, int deltaFromStep=0, int deltaToStep=0);
 
   void addSwitch(double time, bool before, rai::KinematicSwitch* sw);
@@ -303,7 +303,7 @@ struct KOMO : NonCopyable {
   // internal (kind of private)
   //
 
-  void selectJointsBySubtrees(const StringA& roots, const arr& times={});
+  void selectJointsBySubtrees(const StringA& roots, const arr& times={}, bool notThose=false);
   void clearObjectives();
   void setupConfigurations();   ///< this creates the @configurations@, that is, copies the original world T times (after setTiming!) perhaps modified by KINEMATIC SWITCHES and FLAGS
   void setupRepresentations();

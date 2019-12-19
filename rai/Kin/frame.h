@@ -145,11 +145,12 @@ struct Frame : NonCopyable {
   void setContact(int cont);
   void setMass(double mass);
 
+  arr getPose() { return ensure_X().getArr7d(); }
   arr getPosition() { return ensure_X().pos.getArr(); }
   arr getQuaternion() { return ensure_X().rot.getArr4d(); }
   arr getRotationMatrix() { return ensure_X().rot.getArr(); }
-  arr getRelativePosition() { return ensure_X().pos.getArr(); }
-  arr getRelativeQuaternion() { return ensure_X().rot.getArr(); }
+  arr getRelativePosition() { return get_Q().pos.getArr(); }
+  arr getRelativeQuaternion() { return get_Q().rot.getArr(); }
   arr getMeshPoints();
   arr getMeshCorePoints();
 

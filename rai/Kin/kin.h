@@ -114,6 +114,8 @@ struct Configuration : GLDrawer {
   uintA getQindicesByNames(const StringA& jointNames) const;
   StringA getJointNames() const;
   StringA getFrameNames() const;
+  uintA getNormalJointFramesAndScale(arr& scale=NoArr) const;
+
 
   bool checkUniqueNames() const;
   void prefixNames(bool clear=false);

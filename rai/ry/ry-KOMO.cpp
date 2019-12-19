@@ -124,10 +124,12 @@ pybind11::arg("object"))
 
 //-- run
 
-.def("optimize", [](ry::RyKOMO& self, bool reinitialize_randomly) {
-  self.komo->optimize(reinitialize_randomly);
+.def("optimize", [](ry::RyKOMO& self, bool reinitialize, double initNoise) {
+  self.komo->optimize(reinitialize, initNoise);
   self.path.set() = self.komo->getPath_frames();
-})
+}, "",
+pybind11::arg("reinitialize")=true,
+pybind11::arg("initNoise")=0.01)
 
 //-- reinitialize with configuration
 .def("setConfigurations", [](ry::RyKOMO& self, ry::Config& C) {
