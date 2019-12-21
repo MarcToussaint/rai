@@ -37,7 +37,11 @@ rai::Simulation::Simulation(rai::Configuration& _C, rai::Simulation::SimulatorEn
     C(_C),
     engine(_engine),
     display(_display) {
-  if(engine==_physx) self->physx = make_shared<PhysXInterface>(C, true);
+  if(engine==_physx){
+    self->physx = make_shared<PhysXInterface>(C, true);
+  } else if(engine==_bullet){
+    self->bullet = make_shared<BulletInterface>(C, true);
+  } else NIY;
   if(display) self->display = make_shared<Simulation_DisplayThread>(C);
 }
 
@@ -47,7 +51,11 @@ void rai::Simulation::step(const arr& u_control, double tau, ControlMode u_mode)
     self->physx->pushKinematicStates(C.frames);
     self->physx->step(tau);
     self->physx->pullDynamicStates(C.frames);
-  }
+  }else if(engine==_bullet){
+    self->bullet->pushKinematicStates(C.frames);
+    self->bullet->step(tau);
+    self->bullet->pullDynamicStates(C.frames);
+  } else NIY;
   if(display) self->updateDisplayData(time, C.getFrameState());
 }
 
@@ -55,9 +63,9 @@ ptr<rai::SimulationState> rai::Simulation::getState() {
   arr qdot;
   if(engine==_physx) {
     self->physx->pullDynamicStates(C.frames, qdot);
-  }else{
+  }else if(engine==_bullet){
     self->bullet->pullDynamicStates(C.frames, qdot);
-  }
+  }else NIY;
   return make_shared<SimulationState>(C.getFrameState(), qdot);
 }
 
@@ -65,9 +73,9 @@ void rai::Simulation::setState(const arr& frameState, const arr& frameVelocities
   C.setFrameState(frameState);
   if(engine==_physx) {
     self->physx->pushFullState(C.frames, frameVelocities);
-  }else{
+  }else if(engine==_bullet){
     self->bullet->pushFullState(C.frames, frameVelocities);
-  }
+  }else NIY;
 }
 
 void rai::Simulation::resetToPreviousState(const ptr<SimulationState>& state) {
@@ -77,7 +85,9 @@ void rai::Simulation::resetToPreviousState(const ptr<SimulationState>& state) {
 void rai::Simulation::pushConfigurationToSimulator(const arr& frameVelocities) {
   if(engine==_physx) {
     self->physx->pushFullState(C.frames, frameVelocities);
-  }
+  }else if(engine==_bullet){
+    self->bullet->pushFullState(C.frames, frameVelocities);
+  }else NIY;
 }
 
 const arr& rai::Simulation::qdot() {

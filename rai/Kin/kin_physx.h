@@ -23,15 +23,15 @@ class PxMaterial;
  * @{
  */
 struct PhysXInterface : GLDrawer {
-  struct PhysXInterface_self* self;
+  struct PhysXInterface_self* self=0;
 
-  PhysXInterface(const rai::Configuration& world, bool verbose=false);
+  PhysXInterface(const rai::Configuration& C, bool verbose=false);
   ~PhysXInterface();
 
   void step(double tau=.01);
 
   void pushKinematicStates(const FrameL& frames);
-  void pushFullState(const FrameL& frames, const arr& frameVelocities=NoArr, rai::Configuration* Kt_1=nullptr, rai::Configuration* Kt_2=nullptr, double tau=-1., bool onlyKinematic=false);
+  void pushFullState(const FrameL& frames, const arr& frameVelocities=NoArr, bool onlyKinematic=false);
   void pullDynamicStates(FrameL& frames, arr& frameVelocities=NoArr);
 
   void setArticulatedBodiesKinematic(const rai::Configuration& C);
