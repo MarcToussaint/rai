@@ -295,16 +295,27 @@ endif
 ifeq ($(PCL),1)
 DEPEND_UBUNTU += libpcl-dev
 EIGEN = 1
-#QHULL = 1
-CXXFLAGS  +=  -DRAI_PCL -DEIGEN_USE_NEW_STDVECTOR -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET
-LIBS += -lpcl_keypoints -lpcl_visualization -lpcl_registration -lpcl_segmentation -lpcl_features -lpcl_surface -lpcl_tracking -lpcl_filters -lpcl_sample_consensus -lpcl_search -lpcl_kdtree -lpcl_octree -lpcl_common
-CPATH := $(CPATH):/usr/include/pcl-1.7:
+QHULL = 1
+CXXFLAGS  +=  -DRAI_PCL -DEIGEN_USE_NEW_STDVECTOR -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET -march=native -msse4.2 -mfpmath=sse
+LIBS += -lpcl_io -lpcl_recognition -lpcl_people -lpcl_outofcore -lpcl_tracking -lpcl_keypoints -lpcl_visualization -lpcl_registration -lpcl_segmentation -lpcl_features -lpcl_surface -lpcl_tracking -lpcl_filters -lpcl_sample_consensus -lpcl_search -lpcl_kdtree -lpcl_octree -lpcl_common
+CPATH := $(CPATH):/usr/include/pcl-1.8:/usr/include/vtk-6.3/:
 
 #CPATH := $(CPATH):/opt/ros/$(ROS_VERSION)/include/pcl_ros:/usr/include/eigen3:/usr/include/pcl-1.7:
 #CPATH := $(CPATH):/usr/include/eigen3:/home/lib/include/pcl-1.7:
 #LPATH += /opt/ros/$(ROS_VERSION)/lib
 #LPATH += /home/lib/lib/
 #FREENECT = 1
+endif
+
+ifeq ($(PCL19),1)
+EIGEN = 1
+QHULL = 1
+CPATH := $(HOME)/opt/include/pcl-1.9/:$(CPATH)
+LPATHS += $(HOME)/opt/lib
+CXXFLAGS  +=  -DRAI_PCL -DEIGEN_USE_NEW_STDVECTOR -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET -march=native -msse4.2 -mfpmath=sse
+LIBS += -lpcl_io -lpcl_recognition -lpcl_people -lpcl_outofcore -lpcl_tracking -lpcl_keypoints -lpcl_visualization -lpcl_registration -lpcl_segmentation -lpcl_features -lpcl_surface -lpcl_tracking -lpcl_filters -lpcl_sample_consensus -lpcl_search -lpcl_kdtree -lpcl_octree -lpcl_common
+CPATH := $(CPATH):/usr/include/vtk-6.3/:
+
 endif
 
 ifeq ($(EIGEN),1)

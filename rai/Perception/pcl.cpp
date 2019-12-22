@@ -8,7 +8,7 @@
 
 #include "pcl.h"
 
-#ifdef RAI_PCL
+#if 1
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
@@ -18,10 +18,10 @@ void conv_ArrCloud_PclCloud(Pcl& cloud,
   cloud.resize(pts.N/3);
   CHECK_EQ(cloud.size(), pts.N/3, "");
   double* p=pts.p;
-  for(pcl::PointXYZ& pt:cloud) {
-    pt.x = (*p++); //pts.elem(i*3+0);
-    pt.y = (*p++); //pts.elem(i*3+1);
-    pt.z = (*p++); //pts.elem(i*3+2);
+  for(uint i = 0; i<cloud.size(); i++) {
+    cloud[i].x = (*p++); //pts.elem(i*3+0);
+    cloud[i].y = (*p++); //pts.elem(i*3+1);
+    cloud[i].z = (*p++); //pts.elem(i*3+2);
   }
 }
 
