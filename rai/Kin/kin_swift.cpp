@@ -46,7 +46,7 @@ SwiftInterface::SwiftInterface(const rai::Configuration& world, double _cutoff, 
 
   if(scene) delete scene;
 
-  scene = new SWIFT_Scene(false, false);
+  scene = new SWIFT_Scene(false, true); //false, false);
 
   INDEXswift2frame.resize(world.frames.N);  INDEXswift2frame=-1;
   INDEXshape2swift.resize(world.frames.N);  INDEXshape2swift=-1;

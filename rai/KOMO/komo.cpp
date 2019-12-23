@@ -1561,7 +1561,8 @@ void KOMO_ext::playInPhysics(uint subSteps, bool display) {
   arr vels;
   PhysXInterface& px = world.physx();
   for(uint t=0; t<T; t++) {
-    px.pushFullState(configurations(k_order+t)->frames, NoArr, configurations(k_order+t-1), configurations(k_order+t-2), tau, true);
+    NIY; //get the velocity from consequtive frames?
+    px.pushFullState(configurations(k_order+t)->frames, NoArr, true);
     for(uint s=0; s<subSteps; s++) {
       if(display) px.watch(false, STRING("t="<<t<<";"<<s));
       world.physx().step(tau/subSteps);
@@ -1862,7 +1863,10 @@ void KOMO::setupConfigurations() {
         sw->apply(*C);
       }
     }
-    if(useSwift) C->stepSwift();
+    if(useSwift) {
+//      C->stepSwift();
+      C->stepFcl();
+    }
     C->ensure_q();
     C->checkConsistency();
   }
@@ -1878,7 +1882,10 @@ void KOMO::setupConfigurations() {
         sw->apply(*C);
       }
     }
-    if(useSwift) C->stepSwift(); // && s<k_order
+    if(useSwift) {
+//      C->stepSwift();
+      C->stepFcl();
+    }
     C->ensure_q();
     C->checkConsistency();
   }
@@ -1943,8 +1950,8 @@ void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
       else         configurations(s)->setJointState(x[t]);
       timeKinematics += rai::timerRead(true);
       if(useSwift) {
-        configurations(s)->stepSwift();
-//        configurations(s)->stepFcl();
+//        configurations(s)->stepSwift();
+        configurations(s)->stepFcl();
       }
       timeCollisions += rai::timerRead(true);
       x_count += x_dim;
@@ -2014,8 +2021,8 @@ void KOMO::setState(const arr& x, const uintA& selectedVariablesOnly){
       else         configurations(s)->setJointState(x[t]);
       timeKinematics += rai::timerRead(true);
       if(useSwift) {
-        configurations(s)->stepSwift();
-//        configurations(s)->stepFcl();
+//        configurations(s)->stepSwift();
+        configurations(s)->stepFcl();
         //configurations(s)->proxiesToContacts(1.1);
       }
       timeCollisions += rai::timerRead(true);
@@ -2752,7 +2759,7 @@ void KOMO::TimeSliceProblem::getDimPhi() {
 }
 
 void KOMO::TimeSliceProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x){
-  komo.set_x(x, {slice});
+  komo.set_x(x, TUP(slice));
 
   if(!dimPhi) getDimPhi();
 

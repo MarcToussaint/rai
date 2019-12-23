@@ -256,10 +256,11 @@ void rai::Mesh::setGrid(uint X, uint Y) {
   }
 }
 
-void rai::Mesh::setRandom(uint vertices) {
+rai::Mesh& rai::Mesh::setRandom(uint vertices) {
   V.resize(vertices, 3);
   rndUniform(V, -1., 1.);
   makeConvexHull();
+  return *this;
 }
 
 void rai::Mesh::subDivide() {

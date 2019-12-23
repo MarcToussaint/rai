@@ -63,7 +63,7 @@ struct Mesh : GLDrawer {
   void setSSCvx(const arr& core, double r, uint fineness=2);
   void setImplicitSurface(ScalarFunction f, double lo=-10., double hi=+10., uint res=100);
   void setImplicitSurface(ScalarFunction f, double xLo, double xHi, double yLo, double yHi, double zLo, double zHi, uint res);
-  void setRandom(uint vertices=10);
+  Mesh& setRandom(uint vertices=10);
   void setGrid(uint X, uint Y);
 
   /// @name transform and modify

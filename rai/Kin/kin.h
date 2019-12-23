@@ -140,6 +140,7 @@ struct Configuration : GLDrawer {
   Joint* attach(Frame* a, Frame* b);
   Joint* attach(const char* a, const char* b);
   FrameL getParts() const;
+  uintA getCollisionExcludePairIDs(bool verbose=false);
 
   /// @name computations on the graph
   void calc_indexedActiveJoints(); ///< sort of private: count the joint dimensionalities and assign j->q_index

@@ -103,8 +103,8 @@ int main(int argc,char** argv){
 
 //  rnd.clockSeed();
 
-  testEasy();
-  testAlign();
+//  testEasy();
+//  testAlign();
   testPR2();
 
   return 0;

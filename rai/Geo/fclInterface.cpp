@@ -35,7 +35,11 @@ rai::FclInterface::FclInterface(const rai::Array<ptr<Mesh>>& _geometries, double
     }
   }
 
+//  manager = new fcl::IntervalTreeCollisionManager();
   manager = new fcl::DynamicAABBTreeCollisionManager();
+//  manager = new fcl::SaPCollisionManager();
+//  manager = new fcl::NaiveCollisionManager();
+//  manager = new fcl::SpatialHashingCollisionManager();
   manager->registerObjects(objects);
   manager->setup();
 }
@@ -64,6 +68,12 @@ void rai::FclInterface::step(const arr& X) {
   collisions.reshape(collisions.N/2, 2);
 }
 
+void rai::FclInterface::addCollision(void* userData1, void* userData2){
+  uint a = (long int)userData1;
+  uint b = (long int)userData2;
+  collisions.append(TUP(a,b));
+}
+
 bool FclInterfaceBroadphaseCallback(fcl::CollisionObject* o1, fcl::CollisionObject* o2, void* cdata_) {
   rai::FclInterface* self = static_cast<rai::FclInterface*>(cdata_);
 
@@ -71,18 +81,14 @@ bool FclInterfaceBroadphaseCallback(fcl::CollisionObject* o1, fcl::CollisionObje
     fcl::CollisionRequest request;
     fcl::CollisionResult result;
     fcl::collide(o1, o2, request, result);
-    if(result.isCollision()) {
-      self->collisions.append(TUP((long int)o1->getUserData(), (long int)o2->getUserData()));
-    }
+    if(result.isCollision()) self->addCollision(o1->getUserData(), o2->getUserData());
   } else if(self->cutoff>0.) {
     fcl::DistanceRequest request;
     fcl::DistanceResult result;
     double d = fcl::distance(o1, o2, request, result);
-    if(d<self->cutoff) {
-      self->collisions.append(TUP((long int)o1->getUserData(), (long int)o2->getUserData()));
-    }
+    if(d<self->cutoff) self->addCollision(o1->getUserData(), o2->getUserData());
   } else {
-    self->collisions.append(TUP((long int)o1->getUserData(), (long int)o2->getUserData()));
+    self->addCollision(o1->getUserData(), o2->getUserData());
   }
   return false;
 }

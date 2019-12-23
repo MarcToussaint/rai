@@ -186,7 +186,7 @@ struct Transformation {
   Transformation& setText(const char* txt);
   void set(const double* p);
   void set(const arr& t);
-  void setRandom();
+  Transformation& setRandom();
   void setInverse(const Transformation& f);
   void setDifference(const Transformation& from, const Transformation& to);
   void setAffineMatrix(const double* m);

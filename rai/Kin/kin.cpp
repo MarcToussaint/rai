@@ -1588,7 +1588,8 @@ rai::FclInterface& rai::Configuration::fcl() {
         geometries(f->ID) = f->shape->_mesh;
       }
     }
-    s->fcl = make_shared<rai::FclInterface>(geometries, .0);
+    s->fcl = make_shared<rai::FclInterface>(geometries, -1.); //-1.=broadphase only -> many proxies
+    s->fcl->excludePairs = getCollisionExcludePairIDs();
   }
   return *s->fcl;
 }
@@ -1680,12 +1681,15 @@ void rai::Configuration::stepSwift() {
 }
 
 void rai::Configuration::stepFcl() {
+  //-- get the frame state of collision objects
   arr X(frames.N, 7);
   X.setZero();
   for(Frame* f:frames) {
     if(f->shape && f->shape->cont) X[f->ID] = f->ensure_X().getArr7d();
   }
+  //-- step fcl
   fcl().step(X);
+  //-- filter the resulting collisions
   uintA& COL = fcl().collisions;
   boolA filter(COL.d0);
   uint n=0;
@@ -1694,6 +1698,7 @@ void rai::Configuration::stepFcl() {
     filter(i) = canCollide;
     if(canCollide) n++;
   }
+  //-- copy them into proxies
   proxies.clear();
   proxies.resize(n);
   for(uint i=0, j=0; i<COL.d0; i++) {
@@ -2854,6 +2859,72 @@ FrameL rai::Configuration::getParts() const {
   FrameL F;
   for(Frame* f:frames) if(f->isPart()) F.append(f);
   return F;
+}
+
+void exclude(uintA& ex, FrameL& F1, FrameL& F2){
+  for(rai::Frame* f1:F1){
+    for(rai::Frame* f2:F2){
+      if(f1->ID < f2->ID){
+        ex.append(TUP(f1->ID, f2->ID));
+      }
+    }
+  }
+}
+
+uintA rai::Configuration::getCollisionExcludePairIDs(bool verbose){
+  /* exclude collision pairs:
+    -- no collisions between shapes of same body
+    -- no collisions between linked bodies
+    -- no collisions between bodies liked via the tree via 3 links
+  */
+
+  uintA ex;
+
+  //shapes within a link
+  FrameL links = getLinks();
+  for(rai::Frame* f: links) {
+    FrameL F = {f};
+    f->getRigidSubFrames(F);
+    for(uint i=F.N; i--;) if(!F(i)->shape || !F(i)->shape->cont) F.remove(i);
+    if(F.N>1){
+      if(verbose){
+        LOG(0) <<"excluding intra-link collisions: ";
+        cout <<"           ";  listWriteNames(F, cout);  cout <<endl;
+      }
+      exclude(ex, F, F);
+    }
+  }
+
+  //deactivate upward, depending on cont parameter (-1 indicates deactivate with parent)
+  for(rai::Frame* f: frames){
+    if(f->shape && f->shape->cont<0) {
+      FrameL F, P;
+      rai::Frame* p = f->getUpwardLink();
+      F = {p};
+      p->getRigidSubFrames(F);
+      for(uint i=F.N; i--;) if(!F(i)->shape || !F(i)->shape->cont) F.remove(i);
+
+      for(char i=0; i<-f->shape->cont; i++) {
+        p = p->parent;
+        if(!p) break;
+        p = p->getUpwardLink();
+        P = {p};
+        p->getRigidSubFrames(P);
+        for(uint i=P.N; i--;) if(!P(i)->shape || !P(i)->shape->cont) P.remove(i);
+
+        if(F.N && P.N){
+          if(verbose){
+            LOG(0) <<"excluding between-sets collisions: ";
+            cout <<"           ";  listWriteNames(F, cout);  cout <<endl;
+            cout <<"           ";  listWriteNames(P, cout);  cout <<endl;
+          }
+          exclude(ex, F, P);
+        }
+      }
+    }
+  }
+
+  return ex;
 }
 
 //void rai::Configuration::meldFixedJoints(int verbose) {

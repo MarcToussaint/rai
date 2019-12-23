@@ -1234,9 +1234,10 @@ void Transformation::set(const double* p) { pos.set(p); rot.set(p+3); }
 void Transformation::set(const arr& t) { CHECK_EQ(t.N, 7, "");  set(t.p); }
 
 /// randomize the frame
-void Transformation::setRandom() {
+Transformation& Transformation::setRandom() {
   rot.setRandom();
   pos.setRandom();
+  return *this;
 }
 
 /// move the turtle by the vector (x, z, y) WITH RESPECT TO the current orientation/scale
