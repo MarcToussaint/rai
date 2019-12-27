@@ -87,6 +87,7 @@ struct Mesh : GLDrawer {
 
   /// @name internal computations & cleanup
   void computeNormals();
+  arr computeTriDistances();
   void buildGraph();
   void deleteUnusedVertices();
   void fuseNearVertices(double tol=1e-5);

@@ -438,14 +438,13 @@ void rai::Mesh::setSSCvx(const arr& core, double r, uint fineness) {
   all adjacent triangles that are in the triangle list or member of
   a strip */
 void rai::Mesh::computeNormals() {
-  uint i;
   Vector a, b, c;
   Tn.resize(T.d0, 3);
   Tn.setZero();
   Vn.resize(V.d0, 3);
   Vn.setZero();
   //triangle normals and contributions
-  for(i=0; i<T.d0; i++) {
+  for(uint i=0; i<T.d0; i++) {
     uint* t=T.p+3*i;
     a.set(V.p+3*t[0]);
     b.set(V.p+3*t[1]);
@@ -458,7 +457,23 @@ void rai::Mesh::computeNormals() {
     Vn(t[2], 0)+=a.x;  Vn(t[2], 1)+=a.y;  Vn(t[2], 2)+=a.z;
   }
   Vector d;
-  for(i=0; i<Vn.d0; i++) { d.set(&Vn(i, 0)); Vn[i]()/=d.length(); }
+  for(uint i=0; i<Vn.d0; i++) { d.set(&Vn(i, 0)); Vn[i]()/=d.length(); }
+}
+
+arr rai::Mesh::computeTriDistances(){
+  if(!Tn.N) computeNormals();
+  arr d(T.d0);
+  Vector n, a, b, c;
+  for(uint i=0; i<T.d0; i++) {
+    uint* t=T.p+3*i;
+    a.set(V.p+3*t[0]);
+    b.set(V.p+3*t[1]);
+    c.set(V.p+3*t[2]);
+    n.set(Tn.p+3*i);
+
+    d(i) = a*n;
+  }
+  return d;
 }
 
 /** @brief add triangles according to the given grid; grid has to be a 2D

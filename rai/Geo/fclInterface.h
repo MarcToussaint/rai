@@ -20,12 +20,14 @@ namespace rai {
 
 struct FclInterface {
   Array<ptr<Mesh>> geometries;
+  Array<ptr<struct ConvexGeometryData>> convexGeometryData;
   std::vector<fcl::CollisionObject*> objects;
-  fcl::BroadPhaseCollisionManager* manager;
+  ptr<fcl::BroadPhaseCollisionManager> manager;
 
   double cutoff=0.;
   uintA collisions;
   uintA excludePairs;
+  arr X_lastQuery;
 
   FclInterface(const Array<ptr<Mesh>>& _geometries, double _cutoff=0.);
   ~FclInterface();

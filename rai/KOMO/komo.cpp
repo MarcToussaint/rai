@@ -41,6 +41,8 @@
 #  include <GL/gl.h>
 #endif
 
+#define USE_FCL
+
 using namespace rai;
 
 //===========================================================================
@@ -1864,8 +1866,11 @@ void KOMO::setupConfigurations() {
       }
     }
     if(useSwift) {
-//      C->stepSwift();
+#ifndef USE_FCL
+      C->stepSwift();
+#else
       C->stepFcl();
+#endif
     }
     C->ensure_q();
     C->checkConsistency();
@@ -1883,8 +1888,11 @@ void KOMO::setupConfigurations() {
       }
     }
     if(useSwift) {
-//      C->stepSwift();
+#ifndef USE_FCL
+      C->stepSwift();
+#else
       C->stepFcl();
+#endif
     }
     C->ensure_q();
     C->checkConsistency();
@@ -1950,8 +1958,11 @@ void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
       else         configurations(s)->setJointState(x[t]);
       timeKinematics += rai::timerRead(true);
       if(useSwift) {
-//        configurations(s)->stepSwift();
+#ifndef USE_FCL
+        configurations(s)->stepSwift();
+#else
         configurations(s)->stepFcl();
+#endif
       }
       timeCollisions += rai::timerRead(true);
       x_count += x_dim;
@@ -1974,6 +1985,7 @@ void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
 //    rai::wait();
   }
 
+//  reportProxies();
 }
 
 #if 0
@@ -2021,8 +2033,11 @@ void KOMO::setState(const arr& x, const uintA& selectedVariablesOnly){
       else         configurations(s)->setJointState(x[t]);
       timeKinematics += rai::timerRead(true);
       if(useSwift) {
-//        configurations(s)->stepSwift();
+#ifndef USE_FCL
+        configurations(s)->stepSwift();
+#else
         configurations(s)->stepFcl();
+#endif
         //configurations(s)->proxiesToContacts(1.1);
       }
       timeCollisions += rai::timerRead(true);

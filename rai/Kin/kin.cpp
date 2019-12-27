@@ -1588,7 +1588,7 @@ rai::FclInterface& rai::Configuration::fcl() {
         geometries(f->ID) = f->shape->_mesh;
       }
     }
-    s->fcl = make_shared<rai::FclInterface>(geometries, -1.); //-1.=broadphase only -> many proxies
+    s->fcl = make_shared<rai::FclInterface>(geometries, 0.); //-1.=broadphase only -> many proxies
     s->fcl->excludePairs = getCollisionExcludePairIDs();
   }
   return *s->fcl;
@@ -1707,8 +1707,8 @@ void rai::Configuration::stepFcl() {
       p.a = frames(COL(i, 0));
       p.b = frames(COL(i, 1));
       p.d = -0.;
-      p.posA = frames(COL(i, 0))->shape->mesh().getCenter();
-      p.posB = frames(COL(i, 1))->shape->mesh().getCenter();
+      p.posA = frames(COL(i, 0))->getPosition();
+      p.posB = frames(COL(i, 1))->getPosition();
       j++;
     }
   }
