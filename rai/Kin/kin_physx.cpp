@@ -29,12 +29,39 @@
 
 using namespace physx;
 
-static PxFoundation* mFoundation = nullptr;
-static PxPhysics* mPhysics = nullptr;
-static PxCooking* mCooking = nullptr;
-static PxDefaultErrorCallback gDefaultErrorCallback;
-static PxDefaultAllocator gDefaultAllocatorCallback;
-static PxSimulationFilterShader gDefaultFilterShader=PxDefaultSimulationFilterShader;
+struct PhysXSingleton{
+  PxFoundation* mFoundation = nullptr;
+  PxPhysics* mPhysics = nullptr;
+  PxCooking* mCooking = nullptr;
+  PxDefaultErrorCallback gDefaultErrorCallback;
+  PxDefaultAllocator gDefaultAllocatorCallback;
+  PxSimulationFilterShader gDefaultFilterShader=PxDefaultSimulationFilterShader;
+
+  void create(){
+    mFoundation = PxCreateFoundation(PX_FOUNDATION_VERSION, gDefaultAllocatorCallback, gDefaultErrorCallback);
+    mPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *mFoundation, PxTolerancesScale());
+    PxCookingParams cookParams(mPhysics->getTolerancesScale());
+    cookParams.skinWidth = .001f;
+    mCooking = PxCreateCooking(PX_PHYSICS_VERSION, *mFoundation, cookParams);
+    if(!mCooking) HALT("PxCreateCooking failed!");
+    if(!mPhysics) HALT("Error creating PhysX3 device.");
+    //if(!PxInitExtensions(*mPhysics)) HALT("PxInitExtensions failed!");
+  }
+
+  ~PhysXSingleton(){
+    if(mPhysics){
+      mCooking->release();
+      mPhysics->release();
+    }
+     //  mFoundation->release();
+  }
+};
+
+static PhysXSingleton& physxSingleton(){
+  static PhysXSingleton singleton;
+  return singleton;
+}
+
 
 // ============================================================================
 
@@ -124,21 +151,12 @@ PhysXInterface::PhysXInterface(const rai::Configuration& C, bool verbose): self(
 
   if(verbose) LOG(0) <<"starting PhysX engine ...";
 
-  if(!mFoundation) {
-    mFoundation = PxCreateFoundation(PX_FOUNDATION_VERSION, gDefaultAllocatorCallback, gDefaultErrorCallback);
-    mPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *mFoundation, PxTolerancesScale());
-    PxCookingParams cookParams(mPhysics->getTolerancesScale());
-    cookParams.skinWidth = .001f;
-    mCooking = PxCreateCooking(PX_PHYSICS_VERSION, *mFoundation, cookParams);
-    if(!mCooking) HALT("PxCreateCooking failed!");
-    if(!mPhysics) HALT("Error creating PhysX3 device.");
-    //if(!PxInitExtensions(*mPhysics)) HALT("PxInitExtensions failed!");
-  }
+  if(!physxSingleton().mFoundation) physxSingleton().create();
 
   //PxExtensionVisualDebugger::connect(mPhysics->getPvdConnectionManager(),"localhost",5425, 10000, true);
 
   //-- Create the scene
-  PxSceneDesc sceneDesc(mPhysics->getTolerancesScale());
+  PxSceneDesc sceneDesc(physxSingleton().mPhysics->getTolerancesScale());
   sceneDesc.gravity = PxVec3(0.f, 0.f, -9.8f);
 
   if(!sceneDesc.cpuDispatcher) {
@@ -149,10 +167,10 @@ PhysXInterface::PhysXInterface(const rai::Configuration& C, bool verbose): self(
     sceneDesc.cpuDispatcher = mCpuDispatcher;
   }
   if(!sceneDesc.filterShader) {
-    sceneDesc.filterShader  = gDefaultFilterShader;
+    sceneDesc.filterShader  = physxSingleton().gDefaultFilterShader;
   }
 
-  self->gScene = mPhysics->createScene(sceneDesc);
+  self->gScene = physxSingleton().mPhysics->createScene(sceneDesc);
   if(!self->gScene) {
     cerr << "createScene failed!" << endl;
   }
@@ -161,12 +179,12 @@ PhysXInterface::PhysXInterface(const rai::Configuration& C, bool verbose): self(
   self->gScene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, 1.0f);
 
   //-- Create objects
-  self->defaultMaterial = mPhysics->createMaterial(10.f, 10.f, 0.1f);
+  self->defaultMaterial = physxSingleton().mPhysics->createMaterial(10.f, 10.f, 0.1f);
 
   //Create ground plane
   PxTransform pose = PxTransform(PxVec3(0.f, 0.f, 0.f), PxQuat(-PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f)));
 
-  PxRigidStatic* plane = mPhysics->createRigidStatic(pose);
+  PxRigidStatic* plane = physxSingleton().mPhysics->createRigidStatic(pose);
   CHECK(plane, "create plane failed!");
 
   PxShape* planeShape = plane->createShape(PxPlaneGeometry(), *self->defaultMaterial);
@@ -317,7 +335,7 @@ void PhysXInterface_self::addJoint(rai::Joint* jj) {
     case rai::JT_hingeY:
     case rai::JT_hingeZ: {
 
-      PxD6Joint* desc = PxD6JointCreate(*mPhysics, actors(from->ID), A, actors(jj->frame->ID), B.getInverse());
+      PxD6Joint* desc = PxD6JointCreate(*physxSingleton().mPhysics, actors(from->ID), A, actors(jj->frame->ID), B.getInverse());
       CHECK(desc, "PhysX joint creation failed.");
 
       if(jj->frame->ats.find<arr>("drive")) {
@@ -351,7 +369,7 @@ void PhysXInterface_self::addJoint(rai::Joint* jj) {
     break;
     case rai::JT_rigid: {
       // PxFixedJoint* desc =
-      PxFixedJointCreate(*mPhysics, actors(jj->from()->ID), A, actors(jj->frame->ID), B.getInverse());
+      PxFixedJointCreate(*physxSingleton().mPhysics, actors(jj->from()->ID), A, actors(jj->frame->ID), B.getInverse());
       // desc->setProjectionLinearTolerance(1e10);
       // desc->setProjectionAngularTolerance(3.14);
     }
@@ -360,7 +378,7 @@ void PhysXInterface_self::addJoint(rai::Joint* jj) {
       break;
     }
     case rai::JT_transXYPhi: {
-      PxD6Joint* desc = PxD6JointCreate(*mPhysics, actors(jj->from()->ID), A, actors(jj->frame->ID), B.getInverse());
+      PxD6Joint* desc = PxD6JointCreate(*physxSingleton().mPhysics, actors(jj->from()->ID), A, actors(jj->frame->ID), B.getInverse());
       CHECK(desc, "PhysX joint creation failed.");
 
       desc->setMotion(PxD6Axis::eX, PxD6Motion::eFREE);
@@ -373,7 +391,7 @@ void PhysXInterface_self::addJoint(rai::Joint* jj) {
     case rai::JT_transX:
     case rai::JT_transY:
     case rai::JT_transZ: {
-      PxD6Joint* desc = PxD6JointCreate(*mPhysics, actors(jj->from()->ID), A, actors(jj->frame->ID), B.getInverse());
+      PxD6Joint* desc = PxD6JointCreate(*physxSingleton().mPhysics, actors(jj->from()->ID), A, actors(jj->frame->ID), B.getInverse());
       CHECK(desc, "PhysX joint creation failed.");
 
       if(jj->frame->ats.find<arr>("drive")) {
@@ -386,7 +404,7 @@ void PhysXInterface_self::addJoint(rai::Joint* jj) {
         desc->setMotion(PxD6Axis::eX, PxD6Motion::eLIMITED);
 
         arr limits = jj->frame->ats.get<arr>("limit");
-        PxJointLinearLimit limit(mPhysics->getTolerancesScale(), limits(0), 0.1f);
+        PxJointLinearLimit limit(physxSingleton().mPhysics->getTolerancesScale(), limits(0), 0.1f);
         limit.restitution = limits(2);
         //if(limits(3)>0) {
         //limit.spring = limits(3);
@@ -448,13 +466,13 @@ void PhysXInterface_self::addLink(rai::Frame* f, bool verbose) {
   PxRigidDynamic* actor=nullptr;
   switch(type) {
     case rai::BT_static:
-      actor = (PxRigidDynamic*) mPhysics->createRigidStatic(conv_Transformation2PxTrans(f->ensure_X()));
+      actor = (PxRigidDynamic*) physxSingleton().mPhysics->createRigidStatic(conv_Transformation2PxTrans(f->ensure_X()));
       break;
     case rai::BT_dynamic:
-      actor = mPhysics->createRigidDynamic(conv_Transformation2PxTrans(f->ensure_X()));
+      actor = physxSingleton().mPhysics->createRigidDynamic(conv_Transformation2PxTrans(f->ensure_X()));
       break;
     case rai::BT_kinematic:
-      actor = mPhysics->createRigidDynamic(conv_Transformation2PxTrans(f->ensure_X()));
+      actor = physxSingleton().mPhysics->createRigidDynamic(conv_Transformation2PxTrans(f->ensure_X()));
       actor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
       break;
     case rai::BT_none:
@@ -502,7 +520,7 @@ void PhysXInterface_self::addLink(rai::Frame* f, bool verbose) {
         Vfloat.clear();
         copy(Vfloat, s->mesh().V); //convert vertices from double to float array..
         PxConvexMesh* triangleMesh = PxToolkit::createConvexMesh(
-                                       *mPhysics, *mCooking, (PxVec3*)Vfloat.p, Vfloat.d0,
+                                       *physxSingleton().mPhysics, *physxSingleton().mCooking, (PxVec3*)Vfloat.p, Vfloat.d0,
                                        PxConvexFlag::eCOMPUTE_CONVEX | PxConvexFlag::eINFLATE_CONVEX);
         geometry = new PxConvexMeshGeometry(triangleMesh);
       } break;
@@ -518,7 +536,7 @@ void PhysXInterface_self::addLink(rai::Frame* f, bool verbose) {
       PxMaterial* mMaterial = defaultMaterial;
       double fric=-1.;
       if(s->frame.ats.get<double>(fric, "friction")) {
-        mMaterial = mPhysics->createMaterial(fric, fric, .1f);
+        mMaterial = physxSingleton().mPhysics->createMaterial(fric, fric, .1f);
       }
 
       PxShape* shape = actor->createShape(*geometry, *mMaterial);
@@ -571,8 +589,8 @@ void PhysXInterface::ShutdownPhysX() {
     self->gl=nullptr;
   }
 
-  mCooking->release();
-  mPhysics->release();
+//  mCooking->release();
+//  mPhysics->release();
   //  mFoundation->release();
 }
 

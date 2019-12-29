@@ -409,7 +409,9 @@ void rai::Frame::setColor(const std::vector<double>& color) {
 
 void rai::Frame::setJoint(rai::JointType jointType) {
   if(joint) { delete joint; joint=nullptr; }
-  new Joint(*this, jointType);
+  if(jointType != JT_none){
+    new Joint(*this, jointType);
+  }
 }
 
 void rai::Frame::setContact(int cont) {
@@ -417,7 +419,11 @@ void rai::Frame::setContact(int cont) {
 }
 
 void rai::Frame::setMass(double mass) {
-  getInertia().mass = mass;
+  if(mass<1.){
+    if(inertia) delete inertia;
+  }else{
+    getInertia().mass = mass;
+  }
 }
 
 arr rai::Frame::getMeshPoints() {
