@@ -22,15 +22,21 @@ extern "C" {
 PairCollision::PairCollision(const rai::Mesh& _mesh1, const rai::Mesh& _mesh2, const rai::Transformation& _t1, const rai::Transformation& _t2, double rad1, double rad2)
   : mesh1(&_mesh1), mesh2(&_mesh2), t1(&_t1), t2(&_t2), rad1(rad1), rad2(rad2) {
 
-  double d2 = GJK_sqrDistance();
+  //THIS IS COSTLY! DO WITHIN THE SUPPORT FUNCTION?
+  rai::Mesh M1(*mesh1); if(!t1->isZero()) t1->applyOnPointArray(M1.V);
+  rai::Mesh M2(*mesh2); if(!t2->isZero()) t2->applyOnPointArray(M2.V);
 
-  if(d2>1e-10) {
-    distance = sqrt(d2);
-  } else {
-    //THIS IS COSTLY? DO WITHIN THE SUPPORT FUNCTION!
-    rai::Mesh M1(*mesh1); t1->applyOnPointArray(M1.V);
-    rai::Mesh M2(*mesh2); t2->applyOnPointArray(M2.V);
-    distance = - libccd_MPR(M1, M2);
+  distance=-1.;
+
+//  GJK_sqrDistance();
+  libccd(M1, M2, _ccdGJKIntersect);
+
+//  libccd(M1, M2, _ccdMPRIntersect);
+//  if(distance<1e-10) libccd(M1, M2, _ccdGJKIntersect);
+//  if(distance<1e-10) GJK_sqrDistance();
+
+  if(distance<1e-10) {
+    libccd(M1, M2, _ccdMPRPenetration);
   }
 
   if(fabs(distance)<1e-10) { //exact touch: the GJK computed things, let's make them consisten
@@ -64,11 +70,10 @@ void PairCollision::write(std::ostream& os) const {
 //  if(eig1.N || eig2.N) os <<"  EIG #: " <<eig1.d0<<'-' <<eig2.d0 <<endl;
 }
 
-void support_mesh(const void* _obj, const ccd_vec3_t* _dir, ccd_vec3_t* v) {
+void support_mesh(const void* _obj, const ccd_vec3_t* dir, ccd_vec3_t* v) {
   rai::Mesh* m = (rai::Mesh*)_obj;
-  arr dir(_dir->v, 3, true);
-  uint vertex = m->support(dir);
-  memmove(v->v, &m->V(vertex, 0), 3*m->V.sizeT);
+  uint vertex = m->support(dir->v);
+  memmove(v->v, m->V.p+3*vertex, 3*m->V.sizeT);
 }
 
 void center_mesh(const void* obj, ccd_vec3_t* center) {
@@ -77,7 +82,7 @@ void center_mesh(const void* obj, ccd_vec3_t* center) {
   memmove(center->v, &c.x, 3*sizeof(double));
 }
 
-double PairCollision::libccd_MPR(const rai::Mesh& m1, const rai::Mesh& m2) {
+void PairCollision::libccd(rai::Mesh& m1, rai::Mesh& m2, CCDmethod method) {
   ccd_t ccd;
   CCD_INIT(&ccd); // initialize ccd_t struct
 
@@ -85,87 +90,221 @@ double PairCollision::libccd_MPR(const rai::Mesh& m1, const rai::Mesh& m2) {
   ccd.support1       = support_mesh; // support function for first object
   ccd.support2       = support_mesh; // support function for second object
   ccd.max_iterations = 100;   // maximal number of iterations
-  ccd.epa_tolerance  = 1e-4;  // maximal tolerance fro EPA part
+  ccd.epa_tolerance  = 1e-4;  // maximal tolerance for EPA part
   ccd.center1       = center_mesh; // support function for first object
   ccd.center2       = center_mesh; // support function for second object
 
   ccd_real_t _depth;
-  ccd_vec3_t _dir, _pos;
+  ccd_vec3_t _dir, _pos, _v1, _v2;
   ccd_vec3_t simplex[8];
 
-  //    S.m1.translate(randn(3));
-  //    int intersect = ccdGJKIntersect(&S.m1, &S.m2, &ccd, &v1, &v2);
-  //  int non_intersect = ccdGJKPenetration(&m1, &m2, &ccd, &depth, &_dir, &_pos);
-  //    int intersect = ccdMPRIntersect(&S.m1, &S.m2, &ccd);
-  int ret = ccdMPRPenetration(&m1, &m2, &ccd, &_depth, &_dir, &_pos, simplex);
+  if(method==_ccdMPRPenetration){
+    int ret = ccdMPRPenetration(&m1, &m2, &ccd, &_depth, &_dir, &_pos, simplex);
+    if(ret<0){
+      LOG(0) <<"WARNING: called MPR penetration for non intersecting meshes...";
+      m1._support_vertex = rnd(m1.V.d0);
+      m2._support_vertex = rnd(m2.V.d0);
+      libccd(m1, m2, _ccdGJKIntersect);
+      if(distance<0.){
+        LOG(0) <<"WARNING: but GJK says intersection";
+        distance=0;
+      }
+      return;
+    }
 
-  if(ret<0) return 0.; //no intersection
-  //res == 1  // Touching contact on portal's v1.
-  //res == 2  // Origin lies on v0-v1 segment.
-  //res == 0  // penetration
+    normal.setCarray(_dir.v, 3);
 
-  normal.setCarray(_dir.v, 3);
+    simplex1.resize(0, 3);
+    simplex2.resize(0, 3);
+    arr c1=m1.getMean();
+    arr c2=m2.getMean();
+    arr s(3);
 
-  simplex1.resize(0, 3);
-  simplex2.resize(0, 3);
-  arr c1=m1.getMean();
-  arr c2=m2.getMean();
-  arr s(3);
+    if(m1.V.d0==1) simplex1.append(c1); //m1 is a point/sphere
+    if(m2.V.d0==1) simplex2.append(c2); //m1 is a point/sphere
 
-  if(m1.V.d0==1) simplex1.append(c1); //m1 is a point/sphere
-  if(m2.V.d0==1) simplex2.append(c2); //m1 is a point/sphere
+    //grab simplex points
+    bool append;
+    for(uint i=0; i<4; i++) {
+      s = arr(simplex[0+i].v, 3);
+      append=true;
+      for(uint i=0; i<3; i++) if(!(s.p[i]==s.p[i])) append=false; //don't append nan!
+      if(sqrDistance(s, c1)<1e-10) append=false;
+      for(uint i=0; i<simplex1.d0; i++) if(sqrDistance(s, simplex1[i])<1e-10) { append=false; break; }
+      if(append) simplex1.append(s);
 
-  //grab simplex points
-  bool append;
-  for(uint i=0; i<4; i++) {
-    s = arr(simplex[0+i].v, 3);
-    append=true;
-    for(uint i=0; i<3; i++) if(!(s.p[i]==s.p[i])) append=false; //don't append nan!
-    if(sqrDistance(s, c1)<1e-10) append=false;
-    for(uint i=0; i<simplex1.d0; i++) if(sqrDistance(s, simplex1[i])<1e-10) { append=false; break; }
-    if(append) simplex1.append(s);
+      s = arr(simplex[4+i].v, 3);
+      append=true;
+      for(uint i=0; i<3; i++) if(!(s.p[i]==s.p[i])) append=false; //don't append nan!
+      if(sqrDistance(s, c2)<1e-10) append=false;
+      for(uint i=0; i<simplex2.d0; i++) if(sqrDistance(s, simplex2[i])<1e-10) { append=false; break; }
+      if(append) simplex2.append(s);
+    }
 
-    s = arr(simplex[4+i].v, 3);
-    append=true;
-    for(uint i=0; i<3; i++) if(!(s.p[i]==s.p[i])) append=false; //don't append nan!
-    if(sqrDistance(s, c2)<1e-10) append=false;
-    for(uint i=0; i<simplex2.d0; i++) if(sqrDistance(s, simplex2[i])<1e-10) { append=false; break; }
-    if(append) simplex2.append(s);
+    //compute witness points
+    double d=0.;
+    if(simplexType(1, 3)) {
+      p1 = simplex1[0];
+      d=coll_1on3(p2, normal, simplex1, simplex2);
+    }
+    if(simplexType(3, 1)) {
+      p2 = simplex2[0];
+      d=coll_1on3(p1, normal, simplex2, simplex1);
+    }
+    if(simplexType(2, 2)) {
+      d=coll_2on2(p1, p2, normal, simplex1, simplex2);
+    }
+    if(simplexType(2, 3)) {
+      d=coll_2on3(p1, p2, normal, simplex1, simplex2, arr(_pos.v, 3));
+    }
+    if(simplexType(3, 2)) {
+      d=coll_2on3(p2, p1, normal, simplex2, simplex1, arr(_pos.v, 3));
+    }
+    if(simplexType(3, 3)) {
+      d=coll_3on3(p2, p1, normal, simplex2, simplex1, arr(_pos.v, 3));
+    }
+
+  //  CHECK_ZERO(_depth - fabs(d), 1e-4, ""); //compare depth by ccd with ours
+    if(fabs(d) < 1e-10) {
+      checkNan(p1);
+      checkNan(p2);
+    }
+
+    distance=-fabs(d);
+    return;
+  }else if(method==_ccdGJKIntersect){
+    int ret = ccdGJKIntersect(&m1, &m2, &ccd, &_v1, &_v2, simplex);
+    if(ret){
+      distance = -1.;
+    }else{
+      p1.setCarray(_v1.v, 3);
+      p2.setCarray(_v2.v, 3);
+      normal = p1-p2;
+      distance = length(normal);
+      if(distance>1e-10) normal/=distance;
+
+#if 1
+      //INEFFICIENT!
+      //grab simplex points
+      simplex1.resize(0, 3);
+      simplex2.resize(0, 3);
+      bool append;
+      arr s(3);
+      for(uint i=0; i<4; i++) {
+        s = arr(simplex[0+i].v, 3);
+        append=true;
+        for(uint i=0; i<3; i++) if(!(s.p[i]==s.p[i])) append=false; //don't append nan!
+        if(absMax(s)<1e-10) append=false;
+        for(uint i=0; i<simplex1.d0; i++) if(sqrDistance(s, simplex1[i])<1e-10) { append=false; break; }
+        if(append) simplex1.append(s);
+
+        s = arr(simplex[4+i].v, 3);
+        append=true;
+        for(uint i=0; i<3; i++) if(!(s.p[i]==s.p[i])) append=false; //don't append nan!
+        if(absMax(s)<1e-10) append=false;
+        for(uint i=0; i<simplex2.d0; i++) if(sqrDistance(s, simplex2[i])<1e-10) { append=false; break; }
+        if(append) simplex2.append(s);
+      }
+  #else
+      //grab simplex points
+      uint ns1=1, ns2=1;
+      uint i,j,k;
+      for(i=1; i<4; i++) {
+        bool same=false;
+        for(k=0;k<i;k++){
+          if(simplex[i].v[0]==simplex[k].v[0] &&
+             simplex[i].v[1]==simplex[k].v[1] &&
+             simplex[i].v[2]==simplex[k].v[2]){ same=true; break; }
+        }
+        if(same) break;
+        ns1=i+1;
+      }
+      for(i=1; i<4; i++) {
+        bool same=false;
+        for(k=0;k<i;k++){
+          if(simplex[4+i].v[0]==simplex[4+k].v[0] &&
+             simplex[4+i].v[1]==simplex[4+k].v[1] &&
+             simplex[4+i].v[2]==simplex[4+k].v[2]){ same=true; break; }
+        }
+        if(same) break;
+        ns2=i+1;
+      }
+
+      CHECK_LE(ns1, 3, "");
+      CHECK_LE(ns2, 3, "");
+
+      simplex1.resize(ns1, 3);
+      simplex2.resize(ns2, 3);
+      for(i=0; i<ns1; i++) memmove(&simplex1(i,0), simplex[  i].v, 3*simplex1.sizeT);
+      for(i=0; i<ns2; i++) memmove(&simplex2(i,0), simplex[4+i].v, 3*simplex1.sizeT);
+#endif
+
+      //compute witness points
+      double d=0.;
+      if(simplexType(1, 1)) {
+        p1=simplex1[0];
+        p2=simplex2[0];
+        normal = p1-p2;
+        distance = length(normal);
+        if(distance>1e-10) normal/=distance;
+        d = distance;
+      }
+      if(simplexType(1, 2)) {
+        double s;
+        p1 = simplex1[0];
+        d=coll_1on2(p2, normal, s, simplex1, simplex2);
+      }
+      if(simplexType(2, 1)) {
+        double s;
+        p2 = simplex2[0];
+        d=coll_1on2(p1, normal, s, simplex2, simplex1);
+      }
+      if(simplexType(1, 3)) {
+        p1 = simplex1[0];
+        d=coll_1on3(p2, normal, simplex1, simplex2);
+      }
+      if(simplexType(3, 1)) {
+        p2 = simplex2[0];
+        d=coll_1on3(p1, normal, simplex2, simplex1);
+      }
+      if(simplexType(2, 2)) {
+        d=coll_2on2(p1, p2, normal, simplex1, simplex2);
+      }
+      if(simplexType(2, 3)) {
+        d=coll_2on3(p1, p2, normal, simplex1, simplex2, arr(_pos.v, 3));
+      }
+      if(simplexType(3, 2)) {
+        d=coll_2on3(p2, p1, normal, simplex2, simplex1, arr(_pos.v, 3));
+      }
+      if(simplexType(3, 3)) {
+        d=coll_3on3(p2, p1, normal, simplex2, simplex1, arr(_pos.v, 3));
+      }
+
+    //  CHECK_ZERO(_depth - fabs(d), 1e-4, ""); //compare depth by ccd with ours
+      if(fabs(d) < 1e-10) {
+        checkNan(p1);
+        checkNan(p2);
+      }
+
+      distance=fabs(d);
+    }
+    return;
+  }else if(method==_ccdGJKSeparate){
+//    intersect = !ccdGJKSeparate(&m1, &m2, &ccd, &v1, &v2);
+    NIY
+  }else if(method==_ccdMPRIntersect){
+    int ret = ccdMPRIntersect(&m1, &m2, &ccd);
+    if(ret) distance=1.;
+    else distance=-1.;
+    return;
+  }else if(method==_ccdGJKPenetration){
+//    intersect = !ccdGJKPenetration(&m1, &m2, &ccd, &depth, &_dir, &_pos);
+    NIY
   }
-
-  //compute witness points
-  double d=0.;
-  if(simplexType(1, 3)) {
-    p1 = simplex1[0];
-    d=coll_1on3(p2, normal, simplex1, simplex2);
-  }
-  if(simplexType(3, 1)) {
-    p2 = simplex2[0];
-    d=coll_1on3(p1, normal, simplex2, simplex1);
-  }
-  if(simplexType(2, 2)) {
-    d=coll_2on2(p1, p2, normal, simplex1, simplex2);
-  }
-  if(simplexType(2, 3)) {
-    d=coll_2on3(p1, p2, normal, simplex1, simplex2, arr(_pos.v, 3));
-  }
-  if(simplexType(3, 2)) {
-    d=coll_2on3(p2, p1, normal, simplex2, simplex1, arr(_pos.v, 3));
-  }
-  if(simplexType(3, 3)) {
-    d=coll_3on3(p2, p1, normal, simplex2, simplex1, arr(_pos.v, 3));
-  }
-
-//  CHECK_ZERO(_depth - fabs(d), 1e-4, ""); //compare depth by ccd with ours
-  if(fabs(d) < 1e-10) {
-    checkNan(p1);
-    checkNan(p2);
-  }
-
-  return fabs(d);
+  HALT("should not be here");
 }
 
-double PairCollision::GJK_sqrDistance() {
+void PairCollision::GJK_sqrDistance() {
   // convert meshes to 'Object_structures'
   Object_structure m1, m2;
   rai::Array<double*> Vhelp1, Vhelp2;
@@ -182,13 +321,11 @@ double PairCollision::GJK_sqrDistance() {
   simplex_point simplex;
   p1.resize(3).setZero();
   p2.resize(3).setZero();
-  double d2 = gjk_distance(&m1, Thelp1.p, &m2, Thelp2.p, p1.p, p2.p, &simplex, 0);
+  gjk_distance(&m1, Thelp1.p, &m2, Thelp2.p, p1.p, p2.p, &simplex, 0);
 
   normal = p1-p2;
-  double l = length(normal);
-  if(l) {
-    normal /= l;
-  }
+  distance = length(normal);
+  if(distance>1e-10) normal /= distance;
 
   //grab simplex points
   simplex1.resize(0, 3);
@@ -205,8 +342,6 @@ double PairCollision::GJK_sqrDistance() {
     if(simplex.simplex1[2]!=simplex.simplex1[0] && simplex.simplex1[2]!=simplex.simplex1[1]) simplex1.append(arr(simplex.coords1[2], 3));
     if(simplex.simplex2[2]!=simplex.simplex2[0] && simplex.simplex2[2]!=simplex.simplex2[1]) simplex2.append(arr(simplex.coords2[2], 3));
   }
-
-  return d2;
 }
 
 void PairCollision::glDraw(OpenGL&) {
@@ -217,15 +352,19 @@ void PairCollision::glDraw(OpenGL&) {
 
   glColor(0., 1., 0., 1.);
   glDrawDiamond(P1(0), P1(1), P1(2), .005, .005, .005);
-  for(uint i=0; i<simplex1.d0; i++) simplex1[i] -= rad1*normal;
-  glDrawPolygon(simplex1);
-  for(uint i=0; i<simplex1.d0; i++) simplex1[i] += rad1*normal;
+  if(simplex1.N){
+    for(uint i=0; i<simplex1.d0; i++) simplex1[i] -= rad1*normal;
+    glDrawPolygon(simplex1);
+    for(uint i=0; i<simplex1.d0; i++) simplex1[i] += rad1*normal;
+  }
 
   glColor(0., 0., 1., 1.);
   glDrawDiamond(P2(0), P2(1), P2(2), .005, .005, .005);
-  for(uint i=0; i<simplex2.d0; i++) simplex2[i] += rad2*normal;
-  glDrawPolygon(simplex2);
-  for(uint i=0; i<simplex2.d0; i++) simplex2[i] -= rad2*normal;
+  if(simplex2.N){
+    for(uint i=0; i<simplex2.d0; i++) simplex2[i] += rad2*normal;
+    glDrawPolygon(simplex2);
+    for(uint i=0; i<simplex2.d0; i++) simplex2[i] -= rad2*normal;
+  }
 
   glColor(1., 0., 0., 1.);
   glLineWidth(2.f);

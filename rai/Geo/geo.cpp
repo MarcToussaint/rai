@@ -586,7 +586,7 @@ void Quaternion::set(double _w, double _x, double _y, double _z) { w=_w; x=_x; y
 void Quaternion::setZero() { memset(this, 0, sizeof(Quaternion));  w=1.; isZero=true; }
 
 /// samples the rotation uniformly from the whole SO(3)
-void Quaternion::setRandom() {
+rai::Quaternion& Quaternion::setRandom() {
   double s, s1, s2, t1, t2;
   s=rnd.uni();
   s1=sqrt(1-s);
@@ -598,6 +598,7 @@ void Quaternion::setRandom() {
   y=cos(t1)*s1;
   z=sin(t2)*s2;
   isZero=false;
+  return *this;
 }
 
 /// sets this to a smooth interpolation between two rotations
@@ -933,6 +934,11 @@ arr Quaternion::getEulerRPY() const {
   yaw = atan2(siny, cosy);
 
   return {roll, pitch, yaw};
+}
+
+void Quaternion::applyOnPointArray(arr& pts){
+  arr R = ~getArr(); //transposed, to make it applicable to an n-times-3 array
+  pts = pts * R;
 }
 
 /// this is a 3-by-4 matrix $J$, giving the angular velocity vector $w = J \dot q$  induced by a $\dot q$

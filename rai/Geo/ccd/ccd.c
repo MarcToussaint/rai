@@ -88,9 +88,10 @@ void ccdFirstDirDefault(const void *o1, const void *o2, ccd_vec3_t *dir)
     ccdVec3Set(dir, CCD_ONE, CCD_ZERO, CCD_ZERO);
 }
 
-int ccdGJKIntersect(const void *obj1, const void *obj2, const ccd_t *ccd, ccd_vec3_t* v1, ccd_vec3_t* v2)
+int ccdGJKIntersect(const void *obj1, const void *obj2, const ccd_t *ccd, ccd_vec3_t* v1, ccd_vec3_t* v2, ccd_vec3_t _simplex[8])
 {
     ccd_simplex_t simplex;
+    memset(&simplex, 0, sizeof(ccd_simplex_t));
     int ret = __ccdGJK(obj1, obj2, ccd, &simplex);
     if(ret==-1){
       unsigned int min_i=0;
@@ -101,6 +102,10 @@ int ccdGJKIntersect(const void *obj1, const void *obj2, const ccd_t *ccd, ccd_ve
       }
       if(v1) (*v1) = simplex.ps[min_i].v1;
       if(v2) (*v2) = simplex.ps[min_i].v2;
+    }
+    for(unsigned int i=0;i<4;i++){
+       _simplex[0+i] = simplex.ps[i].v1;
+       _simplex[4+i] = simplex.ps[i].v2;
     }
     return ret == 0;
 }

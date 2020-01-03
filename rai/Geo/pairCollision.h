@@ -65,8 +65,10 @@ struct PairCollision : GLDrawer {
   void computeSupportPolygon();
 
  private:
-  double libccd_MPR(const rai::Mesh& m1, const rai::Mesh& m2); //calls ccdMPRPenetration of libccd
-  double GJK_sqrDistance(); //gjk_distance of libGJK
+  //wrappers of external libs
+  enum CCDmethod { _ccdGJKIntersect,  _ccdGJKSeparate, _ccdGJKPenetration, _ccdMPRIntersect, _ccdMPRPenetration };
+  void libccd(rai::Mesh& m1, rai::Mesh& m2, CCDmethod method); //calls ccdMPRPenetration of libccd
+  void GJK_sqrDistance(); //gjk_distance of libGJK
   bool simplexType(uint i, uint j) { return simplex1.d0==i && simplex2.d0==j; } //helper
 };
 

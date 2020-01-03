@@ -259,6 +259,8 @@ void rai::Mesh::setGrid(uint X, uint Y) {
 rai::Mesh& rai::Mesh::setRandom(uint vertices) {
   V.resize(vertices, 3);
   rndUniform(V, -1., 1.);
+//  rndGauss(V);
+  rai::Quaternion().setRandom().applyOnPointArray(V);
   makeConvexHull();
   return *this;
 }
@@ -2332,36 +2334,60 @@ void rai::Mesh::buildGraph() {
   }
 }
 
-uint rai::Mesh::support(const arr& dir) {
+inline double __scalarProduct(const double *p1, const double* p2){
+  return p1[0]*p2[0]+p1[1]*p2[1]+p1[2]*p2[2];
+}
+
+uint rai::Mesh::support(const double *dir) {
   if(!graph.N) buildGraph();
 
-  arr q(V.d0);
-  for(uint i=0; i<V.d0; i++) q(i) = scalarProduct(dir, V[i]);
+#if 0
+
+  arr q = V*dir;
   return argmax(q);
 
-#if 0
-  uint v=0;
-  arr q;
-  double ma = scalarProduct(dir, V[v]);
+#elif 0
+
+  double s = __scalarProduct(dir, V.p);
+  double ms=s;
+  uint mi=0;
+  for(uint i=0;i<V.d0;i++){
+    s = __scalarProduct(dir, V.p+3*i);
+    if(s>ms){ ms = s;  mi = i; }
+  }
+  _support_vertex = mi;
+  return _support_vertex;
+
+#else
+
+  uint mi = _support_vertex;
+  double s = __scalarProduct(dir, V.p+3*mi);
+  double ms=s;
   for(;;) {
     //comput scalar product for all neighbors
-    uintA& neigh=graph(v);
-    q.resize(neigh.N);
-    for(uint i=0; i<neigh.N; i++) q(i) = scalarProduct(dir, V[neigh(i)]);
-    uint bestNeighbor = argmax(q);
-    if(q(bestNeighbor)>ma) {
-      v = neigh(bestNeighbor);
-      ma = q(bestNeighbor);
-    } else {
-      return v;
+    uintA& neigh=graph.p[mi];
+
+    bool stop=true;
+    for(uint i:neigh){
+      s = __scalarProduct(dir, V.p+3*i);
+      if(s>ms){
+        mi = i;
+        ms = s;
+        stop = false;
+        break;
+      }
+    }
+    if(stop){
+      _support_vertex = mi;
+      return _support_vertex;
     }
   }
-  return -1;
+
 #endif
 }
 
 void rai::Mesh::supportMargin(uintA& verts, const arr& dir, double margin, int initialization) {
-  if(initialization<0 || !graph.N) initialization=support(dir);
+  if(initialization<0 || !graph.N) initialization=support(dir.p);
 
   arr p = V[initialization];
   double max = scalarProduct(p, dir);

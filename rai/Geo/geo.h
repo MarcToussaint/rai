@@ -111,7 +111,7 @@ struct Quaternion {
   void set(const std::vector<double>& x) { CHECK_EQ(x.size(), 4, "");  set(x.data()); }
   void set(const double* p);
   void setZero();
-  void setRandom();
+  Quaternion& setRandom();
   void setDeg(double degree, double axis0, double axis1, double axis2);
   void setDeg(double degree, const Vector& axis);
   void setRad(double radians, double axis0, double axis1, double axis2);
@@ -159,6 +159,7 @@ struct Quaternion {
   double* getMatrixOde(double* m) const; //in Ode foramt: 3x4 memory storae
   double* getMatrixGL(double* m) const;  //in OpenGL format: transposed 4x4 memory storage
   arr getEulerRPY() const;
+  void applyOnPointArray(arr& pts);
 
   arr getJacobian() const;
   arr getMatrixJacobian() const;

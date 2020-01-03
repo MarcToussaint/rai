@@ -45,6 +45,8 @@ struct Mesh : GLDrawer {
   long parsing_pos_start;
   long parsing_pos_end;
 
+  uint _support_vertex=0;
+
   Mesh();
 
   /// @name set or create
@@ -82,7 +84,7 @@ struct Mesh : GLDrawer {
   void makeLineStrip();
 
   /// @name support function
-  uint support(const arr& dir);
+  uint support(const double* dir);
   void supportMargin(uintA& verts, const arr& dir, double margin, int initialization=-1);
 
   /// @name internal computations & cleanup
