@@ -29,6 +29,7 @@ pybind11::class_<ry::RyKOMO>(m, "KOMOpy")
   }
 })
 
+
 .def("deactivateCollisionPairs", [](ry::RyKOMO& self, const std::vector<std::pair<std::string, std::string>>& collision_pairs) {
   for(const auto&  pair : collision_pairs) {
     self.komo->deactivateCollisions(rai::String(pair.first), rai::String(pair.second));
@@ -73,6 +74,9 @@ pybind11::arg("scaleTrans")=std::vector<std::vector<double>>(),
 pybind11::arg("target")=std::vector<double>(),
 pybind11::arg("order")=-1)
 
+.def("setSquaredQAccVelHoming", [](ry::RyKOMO& self, double startTime, double endTime, double accPrec, double velPrec, double homingPrec){
+  self.komo->setSquaredQAccVelHoming(startTime, endTime, accPrec, velPrec, homingPrec);
+})
 .def("add_StableRelativePose", [](ry::RyKOMO& self, const std::vector<int>& confs, const char* gripper, const char* object) {
   for(uint i=1; i<confs.size(); i++)
     self.komo->addObjective(ARR(confs[0], confs[i]), FS_poseDiff, {gripper, object}, OT_eq);

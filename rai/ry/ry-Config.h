@@ -12,9 +12,11 @@ struct KinPoseViewer;
 struct ImageViewer;
 struct PointCloudViewer;
 
+
 namespace ry{
 
 typedef Var<rai::Configuration> Config;
+
 
 struct RyFeature { ptr<Feature> feature; };
 

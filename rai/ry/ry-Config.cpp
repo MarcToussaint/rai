@@ -477,6 +477,9 @@ pybind11::arg("focalLength") = -1.,
 pybind11::arg("orthoAbsHeight") = -1.,
 pybind11::arg("zRange") = std::vector<double>(),
 pybind11::arg("backgroundImageFile") = std::string())
+.def("addSensor", [](ry::RyCameraView& self, const char* frameAttached) {
+  self.cam->addSensor(frameAttached);
+})
 
 .def("selectSensor", [](ry::RyCameraView& self, const char* sensorName) {
   self.cam->selectSensor(sensorName);

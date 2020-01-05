@@ -308,11 +308,11 @@ CPATH := $(CPATH):/usr/include/pcl-1.8:/usr/include/vtk-6.3/:
 endif
 
 ifeq ($(PCL19),1)
-EIGEN = 1
+EIGEN_NEW = 1
 QHULL = 1
 CPATH := $(HOME)/opt/include/pcl-1.9/:$(CPATH)
 LPATHS += $(HOME)/opt/lib
-CXXFLAGS  +=  -DRAI_PCL -DEIGEN_USE_NEW_STDVECTOR -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET -march=native -msse4.2 -mfpmath=sse
+CXXFLAGS  +=  -DRAI_PCL -DEIGEN_USE_NEW_STDVECTOR -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET -march=native -msse4.2 -mfpmath=sse -O2
 LIBS += -lpcl_io -lpcl_recognition -lpcl_people -lpcl_outofcore -lpcl_tracking -lpcl_keypoints -lpcl_visualization -lpcl_registration -lpcl_segmentation -lpcl_features -lpcl_surface -lpcl_tracking -lpcl_filters -lpcl_sample_consensus -lpcl_search -lpcl_kdtree -lpcl_octree -lpcl_common
 CPATH := $(CPATH):/usr/include/vtk-6.3/:
 
@@ -322,6 +322,12 @@ ifeq ($(EIGEN),1)
 DEPEND_UBUNTU += libeigen3-dev
 CXXFLAGS += -DRAI_EIGEN
 CPATH := $(CPATH):/usr/include/eigen3
+endif
+
+ifeq ($(EIGEN_NEW),1)
+DEPEND_UBUNTU += libeigen3-dev
+CXXFLAGS += -DRAI_EIGEN
+CPATH := $(CPATH):$(HOME)/opt/include/eigen3
 endif
 
 ifeq ($(HYBRID_AUTOMATON),1)
