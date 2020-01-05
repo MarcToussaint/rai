@@ -8,15 +8,18 @@
 
 #include "pairCollision.h"
 
-#ifdef RAI_extern_GJK
+#ifdef RAI_GJK
 extern "C" {
 #  include "GJK/gjk.h"
 }
 #endif
 
+#ifdef RAI_CCD
+#  include "ccd/ccd.h"
+#  include "ccd/quat.h"
+#endif
+
 #include <Gui/opengl.h>
-#include "ccd/ccd.h"
-#include "ccd/quat.h"
 #include <Geo/qhull.h>
 
 PairCollision::PairCollision(const rai::Mesh& _mesh1, const rai::Mesh& _mesh2, const rai::Transformation& _t1, const rai::Transformation& _t2, double rad1, double rad2)
@@ -70,6 +73,7 @@ void PairCollision::write(std::ostream& os) const {
 //  if(eig1.N || eig2.N) os <<"  EIG #: " <<eig1.d0<<'-' <<eig2.d0 <<endl;
 }
 
+#ifdef RAI_CCD
 void support_mesh(const void* _obj, const ccd_vec3_t* dir, ccd_vec3_t* v) {
   rai::Mesh* m = (rai::Mesh*)_obj;
   uint vertex = m->support(dir->v);
@@ -303,8 +307,14 @@ void PairCollision::libccd(rai::Mesh& m1, rai::Mesh& m2, CCDmethod method) {
   }
   HALT("should not be here");
 }
+#else
+void PairCollision::libccd(rai::Mesh& m1, rai::Mesh& m2, CCDmethod method) {
+  NICO
+}
+#endif
 
 void PairCollision::GJK_sqrDistance() {
+#ifdef RAI_GJK
   // convert meshes to 'Object_structures'
   Object_structure m1, m2;
   rai::Array<double*> Vhelp1, Vhelp2;
@@ -342,6 +352,9 @@ void PairCollision::GJK_sqrDistance() {
     if(simplex.simplex1[2]!=simplex.simplex1[0] && simplex.simplex1[2]!=simplex.simplex1[1]) simplex1.append(arr(simplex.coords1[2], 3));
     if(simplex.simplex2[2]!=simplex.simplex2[0] && simplex.simplex2[2]!=simplex.simplex2[1]) simplex2.append(arr(simplex.coords2[2], 3));
   }
+#else
+  NICO
+#endif
 }
 
 void PairCollision::glDraw(OpenGL&) {

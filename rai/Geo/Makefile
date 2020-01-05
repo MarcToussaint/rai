@@ -7,10 +7,12 @@ QHULL = 1
 GL = 1
 ASSIMP = 1
 FCL = 1
+PLY = 1
+GJK = 1
+CCD = 1
+Lewiner = 1
 
-CXXFLAGS += -DRAI_extern_GJK -DRAI_extern_Lewiner -DRAI_extern_ply -DRAI_extern_ccd
-
-DEPEND = Core extern_GJK extern_Lewiner extern_ply extern_ccd
+DEPEND = Core
 
 SRCS = $(shell find . -maxdepth 1 -name '*.cpp' )
 OBJS = $(SRCS:%.cpp=%.o)

@@ -17,7 +17,7 @@
 
 bool loadTextures = true;
 
-AssimpLoader::AssimpLoader(const std::string& path) {
+AssimpLoader::AssimpLoader(const std::string& path, bool flipYZ) {
   Assimp::Importer importer;
   const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
   if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
@@ -28,9 +28,11 @@ AssimpLoader::AssimpLoader(const std::string& path) {
   directory = path.substr(0, path.find_last_of('/'));
 
   arr T = eye(4);
-  T(1, 1) = T(2, 2) = 0.;
-  T(1, 2) = -1;
-  T(2, 1) = +1.;
+  if(flipYZ){
+    T(1, 1) = T(2, 2) = 0.;
+    T(1, 2) = -1;
+    T(2, 1) = +1.;
+  }
   loadNode(scene->mRootNode, scene, T);
 }
 
@@ -89,12 +91,12 @@ rai::Mesh AssimpLoader::loadMesh(const aiMesh* mesh, const aiScene* scene) {
   //      cout <<"loading mesh: #V=" <<mesh->mNumVertices <<endl;
   rai::Mesh M;
   M.V.resize(mesh->mNumVertices, 3);
-  M.Vn.resize(mesh->mNumVertices, 3);
+  if(mesh->mNormals) M.Vn.resize(mesh->mNumVertices, 3);
   if(loadTextures && mesh->mTextureCoords[0]) M.tex.resize(mesh->mNumVertices, 2);
 
   for(unsigned int i = 0; i < mesh->mNumVertices; i++) {
     M.V[i] = ARR(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
-    M.Vn[i] = ARR(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
+    if(mesh->mNormals) M.Vn[i] = ARR(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
     if(loadTextures && mesh->mTextureCoords[0]) M.tex[i] = ARR(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
   }
 
@@ -117,7 +119,9 @@ rai::Mesh AssimpLoader::loadMesh(const aiMesh* mesh, const aiScene* scene) {
     //        cout <<  m->mKey.C_Str() <<endl;
     if(!strcmp(m->mKey.C_Str(), "$clr.diffuse")) {
       float* col = (float*)m->mData;
-      M.C = ARR(col[0], col[1], col[2], col[3]);
+      if(col[3]){ //not completely transparent
+        M.C = ARR(col[0], col[1], col[2], col[3]);
+      }
     }
   }
 

@@ -352,7 +352,10 @@ void rai::Configuration::copy(const rai::Configuration& K, bool referenceSwiftOn
   //copy contacts
   for(Contact* c:K.contacts) new Contact(*frames(c->a.ID), *frames(c->b.ID), c);
   //copy swift reference
-  if(referenceSwiftOnCopy) s->swift = K.s->swift;
+  if(referenceSwiftOnCopy){
+    s->swift = K.s->swift;
+    s->fcl = K.s->fcl;
+  }
   q = K.q;
   _state_q_isGood = K._state_q_isGood;
   ensure_indexedJoints();

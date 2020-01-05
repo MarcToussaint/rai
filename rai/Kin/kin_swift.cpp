@@ -20,7 +20,7 @@
 #include "frame.h"
 #include <Algo/ann.h>
 
-#ifdef RAI_extern_SWIFT
+#ifdef RAI_SWIFT
 
 #ifdef RAI_SINGLE
 #  define SWIFT_USE_FLOAT
@@ -390,7 +390,7 @@ uint SwiftInterface::countObjects() {
   return n;
 }
 
-#else //RAI_extern_SWIFT
+#else //RAI_SWIFT
 
 #include <Core/util.h>
 

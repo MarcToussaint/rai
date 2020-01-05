@@ -8,8 +8,8 @@
 
 #include "colorseg.h"
 
-//#define RAI_extern_libcolorseg
-#ifdef RAI_extern_libcolorseg
+//#define RAI_libcolorseg
+#ifdef RAI_libcolorseg
 
 // Felzenszwalb's files
 #include "libcolorseg/image.h"

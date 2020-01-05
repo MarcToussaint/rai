@@ -8,7 +8,7 @@
 
 const char *USAGE=
 "\n\
-Usage:  rai_meshTools file.[tri|obj|off|ply|stl] <tags...>\n\
+Usage:  meshTools file.[tri|obj|off|ply|stl|dea] <tags...>\n\
 \n\
 Tags can be -view, -box, -fuse, -clean, -center, -scale, -save, -qhull, -flip \n";
 
@@ -41,6 +41,7 @@ void TEST(MeshTools) {
     cout <<"viewing..." <<endl;
     if(!gl) gl=new OpenGL;
     gl->clear();
+    gl->text = "before operations";
     gl->add(drawInit);
     gl->add(mesh);
     gl->watch();
@@ -65,9 +66,8 @@ void TEST(MeshTools) {
 #endif
   }
   if(rai::checkCmdLineTag("fuse")){
-    double f;
-    rai::getParameter(f,"fuse");
-    cout <<"fuse " <<f <<endl;
+    double f = rai::getParameter<double>("fuse");
+    cout <<"fuse near vertices " <<f <<endl;
     mesh.fuseNearVertices(f);
   }
   if(rai::checkCmdLineTag("clean")){
@@ -75,8 +75,7 @@ void TEST(MeshTools) {
     mesh.clean();
   }
   if(rai::checkCmdLineTag("flip")){
-    cout <<"clean" <<endl;
-    //mesh.fuseNearVertices(1e-2);
+    cout <<"flip flaces" <<endl;
     mesh.flipFaces();
   }
   if(rai::checkCmdLineTag("center")){
@@ -103,10 +102,13 @@ void TEST(MeshTools) {
   //   //   mesh.C(t,0) = col.r;  mesh.C(t,1) = col.g;  mesh.C(t,2) = col.b;
   //   // }
   // }
+  cout <<"#vertices = " <<mesh.V.d0 <<" #triangles=" <<mesh.T.d0 <<endl;
+
   if(rai::checkCmdLineTag("view")){
     cout <<"viewing..." <<endl;
     if(!gl) gl=new OpenGL;
     gl->clear();
+    gl->text = "after operations";
     gl->add(drawInit);
     gl->add(mesh);
     gl->watch();
@@ -121,7 +123,6 @@ void TEST(MeshTools) {
     mesh.writePLY(STRING(file<<"_x.ply"), true);
   }
 
-  cout <<"#vertices = " <<mesh.V.d0 <<" #triangles=" <<mesh.T.d0 <<endl;
 }
 
 int MAIN(int argc, char** argv){

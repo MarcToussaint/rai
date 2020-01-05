@@ -35,6 +35,32 @@ CXXFLAGS += -DRAI_PNG
 LIBS += -lpng
 endif
 
+ifeq ($(FCL),1)
+DEPEND_UBUNTU += libfcl-0.5-dev
+CXXFLAGS  += -DRAI_FCL
+LIBS      += -lfcl
+endif
+
+ifeq ($(CCD),1)
+DEPEND += extern_ccd
+CXXFLAGS += -DRAI_CCD
+endif
+
+ifeq ($(PLY),1)
+DEPEND += extern_ply
+CXXFLAGS += -DRAI_PLY
+endif
+
+ifeq ($(GJK),1)
+DEPEND += extern_GJK
+CXXFLAGS += -DRAI_GJK
+endif
+
+ifeq ($(Lewiner),1)
+DEPEND += extern_Lewiner
+CXXFLAGS += -DRAI_Lewiner
+endif
+
 ifeq ($(ASSIMP),1)
 DEPEND_UBUNTU += libassimp-dev
 CXXFLAGS += -DRAI_ASSIMP
@@ -136,30 +162,6 @@ ifeq ($(WX),1)
 CXXFLAGS  += -DRAI_WX -D_FILE_OFFSET_BITS=64 -D_LARGE_FILES -D__WXGTK__ -pthread
 CPATH := $(CPATH):/usr/lib/wx/include/gtk2-unicode-release-2.8:/usr/include/wx-2.8
 LIBS += -pthread -Wl,-Bsymbolic-functions  -lwx_gtk2u_richtext-2.8 -lwx_gtk2u_aui-2.8 -lwx_gtk2u_xrc-2.8 -lwx_gtk2u_qa-2.8 -lwx_gtk2u_html-2.8 -lwx_gtk2u_adv-2.8 -lwx_gtk2u_core-2.8 -lwx_baseu_xml-2.8 -lwx_baseu_net-2.8 -lwx_baseu-2.8
-endif
-
-ifeq ($(ODE),1)
-CXXFLAGS  += -DRAI_ODE -DdDOUBLE
-LIBS += -lode
-endif
-
-ifeq ($(FCL),1)
-DEPEND_UBUNTU += libfcl-0.5-dev
-CXXFLAGS  += -DRAI_FCL
-LIBS      += -lfcl
-endif
-
-ifeq ($(SWIFT),1)
-CXXFLAGS  += -DRAI_SWIFT
-CPATH	  := $(CPATH):$(LIBPATH)/SWIFT++_1.2/include
-LIBS += -lSWIFT++
-QHULL := 1
-endif
-
-ifeq ($(SOLID),1)
-CXXFLAGS  += -DRAI_SOLID
-CPATH     := $(CPATH):$(LIBPATH)/FreeSOLID-2.1.1/include
-LIBS += -lFreeSOLID
 endif
 
 ifeq ($(ANN),1)
@@ -378,6 +380,22 @@ endif
 ifeq ($(PTHREAD),1)
 CXXFLAGS  += -DRAI_PTHREAD
 LIBS += -lpthread
+endif
+
+ifeq ($(SWIFT),1)
+DEPEND += extern_SWIFT extern_SWIFT_decomposer
+CXXFLAGS += -DRAI_SWIFT
+endif
+
+ifeq ($(ODE),1)
+CXXFLAGS  += -DRAI_ODE -DdDOUBLE
+LIBS += -lode
+endif
+
+ifeq ($(SOLID),1)
+CXXFLAGS  += -DRAI_SOLID
+CPATH     := $(CPATH):$(LIBPATH)/FreeSOLID-2.1.1/include
+LIBS += -lFreeSOLID
 endif
 
 ifeq ($(DART),1)

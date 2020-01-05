@@ -105,7 +105,9 @@ void TEST(Meshes3) {
 }
 
 //===========================================================================
+// obsolete -> use PairCollision
 
+#if 0
 rai::Mesh m1, m2;
 rai::Transformation t1, t2;
 rai::Vector p1, p2;
@@ -155,12 +157,13 @@ void TEST(GJK) {
     gl.timedupdate(.1);
   }
 }
+#endif
 
 //===========================================================================
 
 void TEST(Volume){
   rai::Mesh m;
-  for(uint k=1;k<10;k++){
+  for(uint k=1;k<8;k++){
     cout <<"sphere fineness " <<k <<endl;
     m.setSphere(k);
     double A=m.getArea(), V=m.getVolume();
@@ -189,7 +192,7 @@ void TEST(DistanceFunctions) {
 
   for(ScalarFunction* f: fcts){
     //-- check hessian and gradient
-    for(uint i=0;i<1000;i++){
+    for(uint i=0;i<100;i++){
       arr x(3);
       rndUniform(x, -5., 5.);
       bool suc=true;
@@ -212,7 +215,7 @@ void TEST(DistanceFunctions) {
 
 void TEST(DistanceFunctions2) {
   //-- check hessian and gradient
-  for(uint i=0;i<1000;i++){
+  for(uint i=0;i<100;i++){
     arr x(14);
     rndUniform(x, -5., 5.);
 
@@ -294,7 +297,6 @@ int MAIN(int argc, char** argv){
   testMeshes();
   testMeshes2();
   testMeshes3();
-  testGJK();
   testVolume();
   testDistanceFunctions();
   testDistanceFunctions2();

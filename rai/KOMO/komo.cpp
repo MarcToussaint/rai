@@ -82,7 +82,13 @@ KOMO::~KOMO() {
 void KOMO::setModel(const Configuration& C, bool _useSwift) {
   if(&C!=&world) world.copy(C, _useSwift);
   useSwift = _useSwift;
-  if(useSwift) world.swift();
+  if(useSwift){
+#ifndef USE_FCL
+    world.swift();
+#else
+    world.fcl();
+#endif
+  }
   world.ensure_q();
 }
 

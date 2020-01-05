@@ -53,7 +53,7 @@ runTests: tests
 ################################################################################
 
 deletePotentiallyNonfreeCode: force
-	@rm -Rf rai/Kin/SWIFT rai/Kin/SWIFT_decomposer rai/Geo/Lewiner
+	@rm -Rf rai/Kin/SWIFT rai/Kin/SWIFT_decomposer rai/Geo/Lewiner rai/Geo/ply rai/Geo/GJK
 
 ################################################################################
 

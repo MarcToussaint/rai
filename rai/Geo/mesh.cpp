@@ -12,14 +12,8 @@
 
 #include <limits>
 
-#ifdef RAI_extern_ply
+#ifdef RAI_PLY
 #  include "ply/ply.h"
-#endif
-
-#ifdef RAI_extern_GJK
-extern "C" {
-#  include "GJK/gjk.h"
-}
 #endif
 
 #ifdef RAI_GL
@@ -1058,9 +1052,15 @@ void rai::Mesh::write(std::ostream& os) const {
 
 void rai::Mesh::readFile(const char* filename) {
   const char* fileExtension = filename+(strlen(filename)-3);
-//  if(!strcmp(fileExtension, "obj")) { *this = mesh_readAssimp(filename); } else
-  if(!strcmp(fileExtension, "dae") || !strcmp(fileExtension, "DAE")) { *this = AssimpLoader(filename).getSingleMesh(); }
-  else read(FILE(filename).getIs(), fileExtension, filename);
+  if(!strcmp(fileExtension, "ply")
+     || !strcmp(fileExtension, "PLY")
+     || !strcmp(fileExtension, "dae")
+     || !strcmp(fileExtension, "DAE")
+     ) {
+    *this = AssimpLoader(filename, false).getSingleMesh();
+  }else{
+    read(FILE(filename).getIs(), fileExtension, filename);
+  }
 }
 
 void rai::Mesh::read(std::istream& is, const char* fileExtension, const char* filename) {
@@ -1153,7 +1153,7 @@ void rai::Mesh::readPlyFile(std::istream& is) {
   }
 }
 
-#ifdef RAI_extern_ply
+#ifdef RAI_PLY
 void rai::Mesh::writePLY(const char* fn, bool bin) {
   struct PlyFace { unsigned char nverts;  int* verts; };
   struct Vertex { float x,  y,  z ;  };
@@ -1936,10 +1936,10 @@ void inertiaCylinder(double* I, double& mass, double density, double height, dou
 
 //===========================================================================
 //
-// GJK interface
+// GJK interface (obsolete - use PairCollision)
 //
 
-#ifdef RAI_extern_GJK
+#if 0 //def RAI_GJK
 GJK_point_type& NoPointType = *((GJK_point_type*)nullptr);
 template<> const char* rai::Enum<GJK_point_type>::names []= { "GJK_none", "GJK_vertex", "GJK_edge", "GJK_face", nullptr };
 double GJK_sqrDistance(const rai::Mesh& mesh1, const rai::Mesh& mesh2,
@@ -2056,7 +2056,7 @@ double GJK_distance(rai::Mesh& mesh1, rai::Mesh& mesh2,
 // Lewiner interface
 //
 
-#ifdef RAI_extern_Lewiner
+#ifdef RAI_Lewiner
 #  include "Lewiner/MarchingCubes.h"
 
 void rai::Mesh::setImplicitSurface(ScalarFunction f, double lo, double hi, uint res) {
@@ -2133,7 +2133,7 @@ void rai::Mesh::setImplicitSurface(ScalarFunction f, double xLo, double xHi, dou
   }
 }
 
-#else //extern_Lewiner
+#else //Lewiner
 void rai::Mesh::setImplicitSurface(ScalarFunction f, double lo, double hi, uint res) {
   NICO
 }
