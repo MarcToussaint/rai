@@ -336,6 +336,7 @@ void lib_ors();
 void makeConvexHulls(FrameL& frames, bool onlyContactShapes=true);
 void computeOptimalSSBoxes(FrameL& frames);
 void computeMeshNormals(FrameL& frames, bool force=false);
+void computeMeshGraphs(FrameL& frames, bool force=false);
 double forceClosureFromProxies(rai::Configuration& C, uint frameIndex,
                                double distanceThreshold=0.01,
                                double mu=.5,     //friction coefficient

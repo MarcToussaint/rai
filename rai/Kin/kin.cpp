@@ -123,6 +123,14 @@ void computeMeshNormals(FrameL& frames, bool force) {
     }
 }
 
+void computeMeshGraphs(FrameL& frames, bool force) {
+  for(rai::Frame* f: frames) if(f->shape) {
+      rai::Shape* s = f->shape;
+      if(force || s->mesh().V.d0!=s->mesh().graph.N|| s->mesh().T.d0!=s->mesh().Tn.d0) s->mesh().buildGraph();
+      if(force || s->sscCore().V.d0!=s->sscCore().graph.N || s->sscCore().T.d0!=s->sscCore().Tn.d0) s->sscCore().buildGraph();
+    }
+}
+
 bool always_unlocked(void*) { return false; }
 
 //===========================================================================
@@ -1591,7 +1599,7 @@ rai::FclInterface& rai::Configuration::fcl() {
         geometries(f->ID) = f->shape->_mesh;
       }
     }
-    s->fcl = make_shared<rai::FclInterface>(geometries, 0.); //-1.=broadphase only -> many proxies
+    s->fcl = make_shared<rai::FclInterface>(geometries, .0); //-1.=broadphase only -> many proxies
     s->fcl->excludePairs = getCollisionExcludePairIDs();
   }
   return *s->fcl;

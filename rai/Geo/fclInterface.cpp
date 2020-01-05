@@ -37,7 +37,7 @@ rai::FclInterface::FclInterface(const rai::Array<ptr<Mesh>>& _geometries, double
       for(uint i=0; i<mesh.T.d0; i++)
         model->addTriangle(fcl::Vec3f(&mesh.V(mesh.T(i, 0), 0)), fcl::Vec3f(&mesh.V(mesh.T(i, 1), 0)), fcl::Vec3f(&mesh.V(mesh.T(i, 2), 0)));
       model->endModel();
-#elif 0
+#elif 1
       mesh.computeNormals();
       std::shared_ptr<ConvexGeometryData> dat = make_shared<ConvexGeometryData>();
       dat->plane_dis = mesh.computeTriDistances();

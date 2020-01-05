@@ -1862,6 +1862,7 @@ void KOMO::setupConfigurations() {
 
   if(!configurations.N){ //add the initial configuration (with index -k_order )
     computeMeshNormals(world.frames, true);
+    computeMeshGraphs(world.frames, true);
 
     rai::Configuration *C = configurations.append(new Configuration());
     C->copy(world, true);

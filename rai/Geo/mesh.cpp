@@ -215,7 +215,7 @@ void rai::Mesh::setCylinder(double r, double l, uint fineness) {
 void rai::Mesh::setSSBox(double x_width, double y_width, double z_height, double r, uint fineness) {
   CHECK(r>=0. && x_width>=2.*r && y_width>=2.*r && z_height>=2.*r, "width/height includes radius!");
   setSphere(fineness);
-  scale(r);
+  scale(r*1.08);
   for(uint i=0; i<V.d0; i++) {
     V(i, 0) += rai::sign(V(i, 0))*(.5*x_width-r);
     V(i, 1) += rai::sign(V(i, 1))*(.5*y_width-r);
@@ -410,7 +410,7 @@ void rai::Mesh::setSSCvx(const arr& core, double r, uint fineness) {
   if(r>0.) {
     Mesh ball;
     ball.setSphere(fineness);
-    ball.scale(r);
+    ball.scale(r*1.08);
 
     arr c=C;
     clear();
