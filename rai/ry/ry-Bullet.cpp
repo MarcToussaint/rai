@@ -7,25 +7,24 @@
 #include <Kin/kin_bullet.h>
 
 void init_Bullet(pybind11::module &m) {
-pybind11::class_<ry::RyBullet>(m, "RyBullet")
-.def("step", [](ry::RyBullet& self) {
-  self.bullet->step();
+pybind11::class_<BulletInterface, std::shared_ptr<BulletInterface>>(m, "BulletInterface")
+
+.def("step", &BulletInterface::step)
+
+.def("step", [](BulletInterface& self, ry::Config& C) {
+  self.pushKinematicStates(C.get()->frames);
+  self.step();
+  self.pullDynamicStates(C.set()->frames);
 })
 
-.def("step", [](ry::RyBullet& self, ry::Config& C) {
-  self.bullet->pushKinematicStates(C.get()->frames);
-  self.bullet->step();
-  self.bullet->pullDynamicStates(C.set()->frames);
-})
-
-.def("getState", [](ry::RyBullet& self, ry::Config& C) {
+.def("getState", [](BulletInterface& self, ry::Config& C) {
   arr V;
-  self.bullet->pullDynamicStates(C.set()->frames, V);
+  self.pullDynamicStates(C.set()->frames, V);
   return pybind11::array(V.dim(), V.p);
 })
 
-.def("setState", [](ry::RyBullet& self, ry::Config& C, const pybind11::array& velocities) {
-  self.bullet->pushFullState(C.get()->frames, numpy2arr(velocities));
+.def("setState", [](BulletInterface& self, ry::Config& C, const pybind11::array& velocities) {
+  self.pushFullState(C.get()->frames, numpy2arr(velocities));
 })
 ;
 }

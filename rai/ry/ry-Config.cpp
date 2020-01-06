@@ -382,18 +382,14 @@ pybind11::arg("useSwift")
     )
 
 .def("bullet", [](ry::Config& self) {
-  ry::RyBullet bullet;
-  bullet.bullet = make_shared<BulletInterface>(self.set());
-  return bullet;
+  return make_shared<BulletInterface>(self.set());
 },
 "create a Bullet engine for physical simulation from the configuration: The configuration\
 is being exported into a bullet instance, which can be stepped forward, and the result syced back to this configuration"
     )
 
 .def("physx", [](ry::Config& self) {
-  ry::RyPhysX physx;
-  physx.physx = make_shared<PhysXInterface>(self.set());
-  return physx;
+  return make_shared<PhysXInterface>(self.set());
 },
 "create a PhysX engine for physical simulation from the configuration: The configuration\
 is being exported into a bullet instance, which can be stepped forward, and the result syced back to this configuration"

@@ -7,25 +7,24 @@
 #include <Kin/kin_physx.h>
 
 void init_PhysX(pybind11::module &m) {
-pybind11::class_<ry::RyPhysX>(m, "RyPhysX")
-.def("step", [](ry::RyPhysX& self) {
-  self.physx->step();
+pybind11::class_<PhysXInterface, std::shared_ptr<PhysXInterface>>(m, "PhysXInterface")
+
+.def("step", &PhysXInterface::step)
+
+.def("step", [](PhysXInterface& self, ry::Config& C) {
+  self.pushKinematicStates(C.get()->frames);
+  self.step();
+  self.pullDynamicStates(C.set()->frames);
 })
 
-.def("step", [](ry::RyPhysX& self, ry::Config& C) {
-  self.physx->pushKinematicStates(C.get()->frames);
-  self.physx->step();
-  self.physx->pullDynamicStates(C.set()->frames);
-})
-
-.def("getState", [](ry::RyPhysX& self, ry::Config& C) {
+.def("getState", [](PhysXInterface& self, ry::Config& C) {
   arr V;
-  self.physx->pullDynamicStates(C.set()->frames, V);
+  self.pullDynamicStates(C.set()->frames, V);
   return pybind11::array(V.dim(), V.p);
 })
 
-.def("setState", [](ry::RyPhysX& self, ry::Config& C, const pybind11::array& velocities) {
-  self.physx->pushFullState(C.get()->frames, numpy2arr(velocities));
+.def("setState", [](PhysXInterface& self, ry::Config& C, const pybind11::array& velocities) {
+  self.pushFullState(C.get()->frames, numpy2arr(velocities));
 })
 ;
 }
