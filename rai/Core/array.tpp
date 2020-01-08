@@ -1998,6 +1998,10 @@ template<class T> void rai::Array<T>::readRaw(std::istream& is) {
   }
 }
 
+//----- macros for piping doubles EXACTLY (without rounding errors) in hex coding:
+//#define OUTHEX(y) "0x" <<std::hex <<*((unsigned long*)&y) <<std::dec
+//#define INHEX(y)  std::hex >>*((unsigned long*)&y) >>std::dec
+
 /// same as write(os, " ", "\n", "  ");
 template<class T> void rai::Array<T>::writeRaw(std::ostream& os) const {
   write(os, " ", "\n", "  ");
