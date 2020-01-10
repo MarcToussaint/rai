@@ -71,3 +71,8 @@ The rai repo has its own old-fashioned GNU make build system, which is convenien
 In [rai-maintenence](https://github.com/MarcToussaint/rai-maintenance/tree/master/buildAlternatives) there is a minimalistic CMake example, showing how to compile selected sources into a single shared lib.
 
 In [rai-maintenence](https://github.com/MarcToussaint/rai-maintenance/tree/master/docker) there are also examples for testing in docker (Ubuntu 18.04 and 16.04).
+
+To install globally: (default path is ~/z.LOCAL)
+```
+sudo make install INSTALL_PATH=/usr/local
+```
