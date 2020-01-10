@@ -17,13 +17,14 @@ int rai::ConfigurationViewer::update(bool watch) {
   {
     auto _dataLock = gl->dataLock(RAI_HERE);
     gl->text = drawText;
+    if(watch) gl->text <<"\n[ENTER]";
   }
 
   if(watch) {
     gl->watch();
-  }else{
-    gl->update(nullptr, true);
+    gl->text = drawText();
   }
+  gl->update(nullptr, true);
   return gl->pressedkey;
 }
 
@@ -84,7 +85,7 @@ void rai::ConfigurationViewer::setPath(const arr& _framePath, const char* text, 
 }
 
 bool rai::ConfigurationViewer::playVideo(bool watch, double delay, const char* saveVideoPath) {
-  rai::String tag = drawText;
+  const rai::String tag = drawText;
 
   if(saveVideoPath) {
     rai::system(STRING("mkdir -p " <<saveVideoPath));
@@ -110,6 +111,7 @@ bool rai::ConfigurationViewer::playVideo(bool watch, double delay, const char* s
       if(saveVideoPath) write_ppm(gl->captureImage, STRING(saveVideoPath<<std::setw(4)<<std::setfill('0')<<t<<".ppm"));
     }
   }
+  drawText = tag;
   if(watch) {
     int key = update(true);
     return !(key==27 || key=='q');

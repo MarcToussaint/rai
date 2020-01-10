@@ -71,7 +71,7 @@ void rai::KinematicSwitch::setTimeOfApplication(double time, bool before, int st
   timeOfApplication = (time<0.?0:conv_time2step(time, stepsPerPhase))+(before?0:1);
 }
 
-void rai::KinematicSwitch::apply(Configuration& K) {
+rai::Frame* rai::KinematicSwitch::apply(Configuration& K) {
   Frame* from=nullptr, *to=nullptr;
   if(fromId!=-1) from=K.frames(fromId);
   if(toId!=-1) to=K.frames(toId);
@@ -83,8 +83,10 @@ void rai::KinematicSwitch::apply(Configuration& K) {
 #if 0 //THIS is the standard version that worked with pnp LGP tests - but is a problem for the crawler
     rai::Frame* link = to->getUpwardLink(NoTransformation, false);
     if(link->parent) link->unLink();
-#else //THIS is the version that works for the crawler; I guess the major difference is 'upward until part break' and 'flip frames'
+#elif 1 //THIS is the version that works for the crawler; I guess the major difference is 'upward until part break' and 'flip frames'
     K.reconfigureRoot(to, true);
+#else
+    if(to->parent) to->unLink();
 #endif
 
     //create a new joint
@@ -118,7 +120,7 @@ void rai::KinematicSwitch::apply(Configuration& K) {
 //      static int i=0;
 //      FILE(STRING("z.switch_"<<i++<<".g")) <<K;
 //    }
-    return;
+    return j->frame;
   }
 
   if(symbol==SW_noJointLink) {
@@ -128,7 +130,7 @@ void rai::KinematicSwitch::apply(Configuration& K) {
     to->linkFrom(from, true);
 
     K.reset_q();
-    return;
+    return to;
   }
 
   if(symbol==makeDynamic) {
@@ -140,7 +142,7 @@ void rai::KinematicSwitch::apply(Configuration& K) {
     if(from->joint) {
       from->joint->H = 1e-1;
     }
-    return;
+    return from;
   }
 
   if(symbol==makeKinematic) {
@@ -153,13 +155,13 @@ void rai::KinematicSwitch::apply(Configuration& K) {
 //      from->joint->constrainToZeroVel=false;
 //      from->joint->H = 1e-1;
 //    }
-    return;
+    return from;
   }
 
   if(symbol==SW_addContact) {
     CHECK_EQ(jointType, JT_none, "");
     new rai::Contact(*from, *to);
-    return;
+    return 0;
   }
 
   if(symbol==SW_delContact) {
@@ -168,10 +170,11 @@ void rai::KinematicSwitch::apply(Configuration& K) {
     for(rai::Contact* cc:to->contacts) if(&cc->a==from || &cc->b==from) { c=cc; break; }
     if(!c) HALT("not found");
     delete c;
-    return;
+    return 0;
   }
 
   HALT("shouldn't be here!");
+  return 0;
 }
 
 rai::String rai::KinematicSwitch::shortTag(const rai::Configuration* G) const {

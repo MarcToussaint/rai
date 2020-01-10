@@ -49,7 +49,7 @@ struct KinematicSwitch {
                   int _timeOfApplication=0,
                   const rai::Transformation& jFrom=NoTransformation, const rai::Transformation& jTo=NoTransformation);
   void setTimeOfApplication(double time, bool before, int stepsPerPhase, uint T);
-  void apply(Configuration& K);
+  Frame* apply(Configuration& K);
   rai::String shortTag(const Configuration* G) const;
   void write(std::ostream& os, rai::Configuration* K=nullptr) const;
 };

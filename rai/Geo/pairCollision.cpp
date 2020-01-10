@@ -22,26 +22,33 @@ extern "C" {
 #include <Gui/opengl.h>
 #include <Geo/qhull.h>
 
+//#define FCLmode
+
 PairCollision::PairCollision(const rai::Mesh& _mesh1, const rai::Mesh& _mesh2, const rai::Transformation& _t1, const rai::Transformation& _t2, double rad1, double rad2)
   : mesh1(&_mesh1), mesh2(&_mesh2), t1(&_t1), t2(&_t2), rad1(rad1), rad2(rad2) {
 
+  distance=-1.;
+
+#ifdef FCLmode
   //THIS IS COSTLY! DO WITHIN THE SUPPORT FUNCTION?
   rai::Mesh M1(*mesh1); if(!t1->isZero()) t1->applyOnPointArray(M1.V);
   rai::Mesh M2(*mesh2); if(!t2->isZero()) t2->applyOnPointArray(M2.V);
 
-  distance=-1.;
-
-//  GJK_sqrDistance();
   libccd(M1, M2, _ccdGJKIntersect);
+#else
+  GJK_sqrDistance();
+#endif
 
 //  libccd(M1, M2, _ccdMPRIntersect);
 //  if(distance<1e-10) libccd(M1, M2, _ccdGJKIntersect);
 //  if(distance<1e-10) GJK_sqrDistance();
 
   if(distance<1e-10) {
+#ifndef FCLmode
     //THIS IS COSTLY! DO WITHIN THE SUPPORT FUNCTION?
-//    rai::Mesh M1(*mesh1); if(!t1->isZero()) t1->applyOnPointArray(M1.V);
-//    rai::Mesh M2(*mesh2); if(!t2->isZero()) t2->applyOnPointArray(M2.V);
+    rai::Mesh M1(*mesh1); if(!t1->isZero()) t1->applyOnPointArray(M1.V);
+    rai::Mesh M2(*mesh2); if(!t2->isZero()) t2->applyOnPointArray(M2.V);
+#endif
     libccd(M1, M2, _ccdMPRPenetration);
   }
 
