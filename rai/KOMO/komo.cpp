@@ -1389,6 +1389,7 @@ void KOMO::setInitialConfigurations(const arr& q){
 }
 
 void KOMO::setConfiguration(int t, const arr& q){
+  if(t<0) CHECK_LE(-t, k_order,"");
   configurations(t+k_order)->setJointState(q);
 }
 
@@ -2090,7 +2091,11 @@ void KOMO::reportProxies(std::ostream& os, double belowMargin) {
   int s=0;
   for(auto& K:configurations) {
     os <<" **** KOMO PROXY REPORT t=" <<s-(int)k_order <<endl;
-    K->reportProxies(os, belowMargin);
+    if(K->_state_proxies_isGood){
+      K->reportProxies(os, belowMargin);
+    }else{
+      os <<"  [not evaluated]" <<endl;
+    }
     s++;
   }
 }
@@ -2854,6 +2859,11 @@ void KOMO::TimeSliceProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, c
 rai::Configuration& KOMO::getConfiguration(double phase) {
   uint s = k_order + conv_time2step(phase, stepsPerPhase);
   return *configurations(s);
+}
+
+Configuration&KOMO::getConfiguration_t(int t){
+  if(t<0) CHECK_LE(-t, k_order,"");
+  return *configurations(t+k_order);
 }
 
 arr KOMO::getJointState(double phase) {

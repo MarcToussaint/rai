@@ -267,6 +267,7 @@ struct KOMO : NonCopyable {
   void optimize(bool inititialize=true, double initNoise=.01);
 
   rai::Configuration& getConfiguration(double phase);
+  rai::Configuration& getConfiguration_t(int t);
   arr getJointState(double phase);
   arr getFrameState(double phase);
   arr getPath_decisionVariable();

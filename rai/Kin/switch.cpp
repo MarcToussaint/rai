@@ -83,7 +83,7 @@ rai::Frame* rai::KinematicSwitch::apply(Configuration& K) {
 #if 0 //THIS is the standard version that worked with pnp LGP tests - but is a problem for the crawler
     rai::Frame* link = to->getUpwardLink(NoTransformation, false);
     if(link->parent) link->unLink();
-#elif 1 //THIS is the version that works for the crawler; I guess the major difference is 'upward until part break' and 'flip frames'
+#elif 0 //THIS is the version that works for the crawler; I guess the major difference is 'upward until part break' and 'flip frames'
     K.reconfigureRoot(to, true);
 #else
     if(to->parent) to->unLink();
