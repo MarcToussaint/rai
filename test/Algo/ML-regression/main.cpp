@@ -264,7 +264,7 @@ void test2Class() {
 //  }
   if(X.d1==2){
     FILE("z.train") <<catCol(X, y);
-    FILE("z.model") <<~p_grid.reshape(51,51);
+    FILE("z.model") <<p_grid.reshape(51,51);
     gnuplot("load 'plt.contour'; pause mouse", false, true, "z.pdf");
     gnuplot("load 'plt.contour2'; pause mouse", false, true, "z.pdf");
   }
