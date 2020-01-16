@@ -486,6 +486,7 @@ extern byteA& NoByteA; //this is a pointer to nullptr!!!! I use it for optional 
 extern intAA& NoIntAA; //this is a pointer to nullptr!!!! I use it for optional arguments
 extern uintAA& NoUintAA; //this is a pointer to nullptr!!!! I use it for optional arguments
 extern uint16A& NoUint16A; //this is a pointer to nullptr!!!! I use it for optional arguments
+extern StringA& NoStringA; //this is a pointer to nullptr!!!! I use it for optional arguments
 
 //===========================================================================
 /// @}

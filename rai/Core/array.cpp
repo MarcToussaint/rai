@@ -78,6 +78,8 @@ intAA __NoIntAA(new SpecialArray(SpecialArray::ST_NoArr));
 intAA& NoIntAA = __NoIntAA;
 uintAA __NoUintAA(new SpecialArray(SpecialArray::ST_NoArr));
 uintAA& NoUintAA = __NoUintAA;
+StringA __NoStringA(new SpecialArray(SpecialArray::ST_NoArr));
+StringA& NoStringA = __NoStringA;
 
 /* LAPACK notes
 Use the documentation at

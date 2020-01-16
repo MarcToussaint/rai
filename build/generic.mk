@@ -49,7 +49,12 @@ all: $(OUTPUT) #this is for qtcreator, which by default uses the 'all' target
 #
 ################################################################################
 
-ifneq ("$(wildcard $(BASE)/../config.mk)","")
+ifneq ("$(wildcard config.mk)","")
+
+$(BASE)/config.mk:: config.mk
+	cp $< $@
+
+else ifneq ("$(wildcard $(BASE)/../config.mk)","")
 
 $(BASE)/config.mk:: $(BASE)/../config.mk
 	cp $< $@

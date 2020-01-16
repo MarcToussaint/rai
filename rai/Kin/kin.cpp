@@ -297,6 +297,9 @@ void rai::Configuration::addFramesCopy(const FrameL& F) {
 }
 
 void rai::Configuration::clear() {
+  glClose();
+  swiftDelete();
+
   reset_q();
   proxies.clear(); //while(proxies.N){ delete proxies.last(); /*checkConsistency();*/ }
   while(frames.N) { delete frames.last(); /*checkConsistency();*/ }
@@ -623,8 +626,8 @@ arr rai::Configuration::getLimits() const {
     uint d=j->qDim();
     for(uint k=0; k<d; k++) { //in case joint has multiple dimensions
       if(j->limits.N) {
-        limits(i+k, 0)=j->limits(0); //lo
-        limits(i+k, 1)=j->limits(1); //up
+        limits(i+k, 0)=j->limits(2*k+0); //lo
+        limits(i+k, 1)=j->limits(2*k+1); //up
       } else {
         limits(i+k, 0)=0.; //lo
         limits(i+k, 1)=0.; //up
@@ -1606,7 +1609,7 @@ rai::FclInterface& rai::Configuration::fcl() {
 }
 
 void rai::Configuration::swiftDelete() {
-  s->swift.reset();
+  if(s) s->swift.reset();
 }
 
 /// return a PhysX extension
@@ -1654,7 +1657,7 @@ int rai::Configuration::glAnimate() {
 }
 
 void rai::Configuration::glClose() {
-  if(s->gl) { delete s->gl; s->gl=0; }
+  if(s && s->gl) { delete s->gl; s->gl=0; }
 }
 
 void rai::Configuration::glGetMasks(int w, int h, bool rgbIndices) {
@@ -2276,7 +2279,7 @@ void rai::Configuration::reportProxies(std::ostream& os, double belowMargin, boo
     os  <<i <<" ("
         <<p.a->name <<")-("
         <<p.b->name
-        <<") d=" <<p.d;
+        <<") [" <<p.a->ID <<',' <<p.b->ID <<"] \td=" <<p.d;
     if(!brief)
       os <<" |A-B|=" <<(p.posB-p.posA).length()
          //        <<" d^2=" <<(p.posB-p.posA).lengthSqr()

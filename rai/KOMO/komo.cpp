@@ -41,7 +41,7 @@
 #  include <GL/gl.h>
 #endif
 
-#define USE_FCL
+//#define FCLmode
 
 using namespace rai;
 
@@ -83,7 +83,7 @@ void KOMO::setModel(const Configuration& C, bool _useSwift) {
   if(&C!=&world) world.copy(C, _useSwift);
   useSwift = _useSwift;
   if(useSwift){
-#ifndef USE_FCL
+#ifndef FCLmode
     world.swift();
 #else
     world.fcl();
@@ -1389,6 +1389,7 @@ void KOMO::setInitialConfigurations(const arr& q){
 }
 
 void KOMO::setConfiguration(int t, const arr& q){
+  if(t<0) CHECK_LE(-t, k_order,"");
   configurations(t+k_order)->setJointState(q);
 }
 
@@ -1854,7 +1855,7 @@ void KOMO::selectJointsBySubtrees(const StringA& roots, const arr& times, bool n
 
 //===========================================================================
 
-void KOMO::setupConfigurations() {
+void KOMO::setupConfigurations(const arr& q_init, const StringA& q_initJoints) {
 
   //IMPORTANT: The configurations need to include the k prefix configurations!
   //Therefore configurations(0) is for time=-k and configurations(k+t) is for time=t
@@ -1873,7 +1874,7 @@ void KOMO::setupConfigurations() {
       }
     }
     if(useSwift) {
-#ifndef USE_FCL
+#ifndef FCLmode
       C->stepSwift();
 #else
       C->stepFcl();
@@ -1889,13 +1890,14 @@ void KOMO::setupConfigurations() {
     C->copy(*configurations(s-1), true);
     CHECK_EQ(configurations(s), configurations.last(), "");
     C->setTimes(tau);
+    if(!!q_init && s>k_order) C->setJointState(q_init, q_initJoints);
     for(KinematicSwitch* sw:switches) { //apply potential switches
       if(sw->timeOfApplication+k_order==s) {
         sw->apply(*C);
       }
     }
     if(useSwift) {
-#ifndef USE_FCL
+#ifndef FCLmode
       C->stepSwift();
 #else
       C->stepFcl();
@@ -1903,6 +1905,23 @@ void KOMO::setupConfigurations() {
     }
     C->ensure_q();
     C->checkConsistency();
+  }
+}
+
+void KOMO::retrospectAddSwitches(rai::Array<KinematicSwitch*>& _switches){
+  for(KinematicSwitch* sw:_switches) {
+    uint s = sw->timeOfApplication+k_order;
+    rai::Configuration *C = configurations.elem(s);
+    rai::Frame *f = sw->apply(*C);
+    s++;
+    //apply the same switch on all following configurations!
+    for(;s<k_order+T;s++){
+      rai::Configuration *C1 = configurations.elem(s);
+      rai::Frame *f1 = sw->apply(*C1);
+      if(f && f1){
+        f1->set_Q() = f->get_Q(); //copy the relative pose (switch joint initialization) from the first application
+      }
+    }
   }
 }
 
@@ -1965,7 +1984,7 @@ void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
       else         configurations(s)->setJointState(x[t]);
       timeKinematics += rai::timerRead(true);
       if(useSwift) {
-#ifndef USE_FCL
+#ifndef FCLmode
         configurations(s)->stepSwift();
 #else
         configurations(s)->stepFcl();
@@ -2040,7 +2059,7 @@ void KOMO::setState(const arr& x, const uintA& selectedVariablesOnly){
       else         configurations(s)->setJointState(x[t]);
       timeKinematics += rai::timerRead(true);
       if(useSwift) {
-#ifndef USE_FCL
+#ifndef FCLmode
         configurations(s)->stepSwift();
 #else
         configurations(s)->stepFcl();
@@ -2072,7 +2091,11 @@ void KOMO::reportProxies(std::ostream& os, double belowMargin) {
   int s=0;
   for(auto& K:configurations) {
     os <<" **** KOMO PROXY REPORT t=" <<s-(int)k_order <<endl;
-    K->reportProxies(os, belowMargin);
+    if(K->_state_proxies_isGood){
+      K->reportProxies(os, belowMargin);
+    }else{
+      os <<"  [not evaluated]" <<endl;
+    }
     s++;
   }
 }
@@ -2836,6 +2859,11 @@ void KOMO::TimeSliceProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, c
 rai::Configuration& KOMO::getConfiguration(double phase) {
   uint s = k_order + conv_time2step(phase, stepsPerPhase);
   return *configurations(s);
+}
+
+Configuration&KOMO::getConfiguration_t(int t){
+  if(t<0) CHECK_LE(-t, k_order,"");
+  return *configurations(t+k_order);
 }
 
 arr KOMO::getJointState(double phase) {

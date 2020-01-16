@@ -3,6 +3,7 @@ NAME   = $(shell basename `pwd`)
 OUTPUT = lib$(NAME).so
 
 OPTIM = fast_debug
+
 QHULL = 1
 GL = 1
 ASSIMP = 1
