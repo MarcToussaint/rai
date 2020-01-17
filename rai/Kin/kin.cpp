@@ -297,7 +297,7 @@ void rai::Configuration::addFramesCopy(const FrameL& F) {
 }
 
 void rai::Configuration::clear() {
-  glClose();
+//  glClose();
   swiftDelete();
 
   reset_q();

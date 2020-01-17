@@ -55,6 +55,7 @@ using std::istream;
 using std::ofstream;
 using std::ifstream;
 template<class T> using ptr=std::shared_ptr<T>;
+using std::make_shared;
 
 //===========================================================================
 //
