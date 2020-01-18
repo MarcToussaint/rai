@@ -6,13 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-/// @file
-/// @ingroup group_Core
-/// @addtogroup group_Core
-/// @{
-
-#ifndef RAI_util_h
-#define RAI_util_h
+#pragma once
 
 #include <iostream>
 #include <fstream>
@@ -27,7 +21,11 @@
 #  define RAI_Linux
 #endif
 
-//----- basic defs:
+//===========================================================================
+//
+// defines
+//
+
 #define RAI_PI 3.14159265358979323846
 #define RAI_LN2 0.69314718055994528622676398299518041312694549560546875
 #define RAI_2PI 6.283195307179587
@@ -40,9 +38,8 @@
 // types
 //
 
-typedef unsigned char byte;            ///< byte
-typedef unsigned int uint;             ///< unsigned integer
-typedef const char* charp;
+typedef unsigned char byte;
+typedef unsigned int uint;
 
 //===========================================================================
 //
@@ -60,7 +57,11 @@ using std::ifstream;
 template<class T> using ptr=std::shared_ptr<T>;
 using std::make_shared;
 
-//----- macros to define the standard <<and >>operatos for most my classes:
+//===========================================================================
+//
+// macros to define the standard <<and >>operatos for most classes
+//
+
 #define stdInPipe(type)\
   inline std::istream& operator>>(std::istream& is, type& x){ x.read(is); return is; }
 #define stdOutPipe(type)\
@@ -73,10 +74,6 @@ using std::make_shared;
 #define niyPipes(type)\
   inline std::istream& operator>>(std::istream& is, type& x){ NIY; return is; }\
   inline std::ostream& operator<<(std::ostream& os, const type& x){ NIY; return os; }
-
-//----- macros for piping doubles EXACTLY (without rounding errors) in hex coding:
-#define OUTHEX(y) "0x" <<std::hex <<*((unsigned long*)&y) <<std::dec
-#define INHEX(y)  std::hex >>*((unsigned long*)&y) >>std::dec
 
 //===========================================================================
 //
@@ -91,13 +88,14 @@ extern uint lineCount;
 extern int verboseLevel;
 extern int interactivity;
 
+//----- execute a system command
 void system(const char* cmd);
 
 //----- files
 void open(std::ofstream& fs, const char* name, const char* errmsg="");
 void open(std::ifstream& fs, const char* name, const char* errmsg="");
 
-//----- basic ui
+//----- very basic ui
 int x11_getKey();
 
 //----- strings and streams
@@ -165,15 +163,15 @@ char* date2(double sec, bool subsec);
 void wait(double sec, bool msg_on_fail=true);
 bool wait(bool useX11=true);
 
-//----- memory
-long mem();
-
 //----- timer functions
 double timerStart(bool useRealTime=false);
 double timerRead(bool reset=false);
 double timerRead(bool reset, double startTime);
 double timerPause();
 void   timerResume();
+
+//----- memory usage
+long mem();
 
 //----- command line handling
 void initCmdLine(int _argc, char* _argv[]);
@@ -195,7 +193,7 @@ uint getVerboseLevel();
 bool getInteractivity();
 }
 
-//----- stream parsing
+//----- parsing strings in a stream
 struct PARSE { const char* str; PARSE(const char* _str):str(_str) {} };
 std::istream& operator>>(std::istream& is, const PARSE&);
 
@@ -294,14 +292,16 @@ inline rai::String operator+(const rai::String& a, const char* b) { rai::String 
 //===========================================================================
 //
 // string-filling routines
+//
 
 namespace rai {
-rai::String getNowString();
+rai::String getNowString();  //TODO:compare with getDate2
 }
 
 //===========================================================================
 //
 // logging
+//
 
 namespace rai {
 /// An object that represents a log file and/or cout logging, together with log levels read from a cfg file
@@ -766,7 +766,3 @@ template <typename T> T clip(T& x, const T& lower, const T& upper) {
 
 std::string getcwd_string();
 const char* NAME(const std::type_info& type);
-
-#endif
-
-/// @} //end group
