@@ -64,7 +64,7 @@ struct CoveringSpheresProblem : ConstrainedProblem {
 
       arr Jg_rj = -Jg_dij;
       Jg_cj.reshape(x.d0,3*s);
-      Jg.setBlockMatrix(Jg_cj, Jg_rj);
+      Jg = catCol(Jg_cj, Jg_rj);
       Jg.reshape(x.d0,c_r.d0);
     }
     return fx;

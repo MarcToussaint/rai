@@ -17,7 +17,7 @@
 /// given a scope (a subGraph, e.g. the full KB, or a rule or so), return all literals (defined by degree>0, keys.N=0)
 NodeL getLiteralsOfScope(Graph& KB) {
   NodeL state;
-  state.anticipateMEM(KB.N);
+  state.reserveMEM(KB.N);
   for(Node* i:KB) if(i->parents.N>0) state.append(i);
   return state;
 }
@@ -25,7 +25,7 @@ NodeL getLiteralsOfScope(Graph& KB) {
 /// return all variables (defined by keys.N>0, degree=0, isBoolean)
 NodeL getSymbolsOfScope(const Graph& KB) {
   NodeL vars;
-  vars.anticipateMEM(KB.N);
+  vars.reserveMEM(KB.N);
   for(Node* i:KB) if(i->keys.N>0 && i->parents.N==0 && i->isOfType<bool>()) vars.append(i);
   return vars;
 }
@@ -226,7 +226,7 @@ void removeInfeasibleSymbolsFromDomain(Graph& facts, NodeL& domain, Node* litera
 //  Node *predicate = literal->parents(0);
 
   NodeL dom;
-  dom.anticipateMEM(domain.N);
+  dom.reserveMEM(domain.N);
   for(Node* fact:facts) { //for(Node *fact:predicate->parentOf) if(&fact->container==&facts){
     //-- check that all arguments are the same, except for var!
     bool match=true;

@@ -6,13 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-/// @file
-/// @ingroup group_array
-/// @addtogroup group_array
-/// @{
-
-#ifndef RAI_array_h
-#define RAI_array_h
+#pragma once
 
 #include <iostream>
 #include <stdint.h>
@@ -30,30 +24,39 @@
 
 typedef unsigned char byte;
 typedef unsigned int uint;
-struct SpecialArray;
 
+//fwd declarations
 struct Serializable {
   virtual uint serial_size() = 0;
   virtual uint serial_encode(char* data, uint data_size) = 0;
   virtual uint serial_decode(char* data, uint data_size) = 0;
 };
 
-//-- global memory information and options TODO: hide -> array.cpp
+struct SpecialArray;
+
 namespace rai {
+
+struct FileToken;
+struct SparseVector;
+struct SparseMatrix;
+
+// OLD, TODO: hide -> array.cpp
 extern bool useLapack;
 extern const bool lapackSupported;
 extern uint64_t globalMemoryTotal, globalMemoryBound;
 extern bool globalMemoryStrict;
+
+// default write formatting
 extern const char* arrayElemsep;
 extern const char* arrayLinesep;
 extern const char* arrayBrackets;
-struct FileToken;
+
+// default sorting methods
 template<class T> bool lower(const T& a, const T& b) { return a<b; }
 template<class T> bool lowerEqual(const T& a, const T& b) { return a<=b; }
 template<class T> bool greater(const T& a, const T& b) { return a>b; }
 template<class T> bool greaterEqual(const T& a, const T& b) { return a>=b; }
-struct SparseVector;
-struct SparseMatrix;
+
 } //namespace
 
 //===========================================================================
@@ -82,14 +85,13 @@ template<class T> struct Array : std::vector<T>, Serializable {
   uint nd;  ///< number of dimensions
   uint d0, d1, d2; ///< 0th, 1st, 2nd dim
   uint* d;  ///< pointer to dimensions (for nd<=3 points to d0)
-  uint M;   ///< size of actually allocated memory (may be greater than N)
-  bool reference; ///< true if this refers to some external memory
+  bool isReference; ///< true if this refers to some external memory
 
   static int  sizeT;   ///< constant for each type T: stores the sizeof(T)
   static char memMove; ///< constant for each type T: decides whether memmove can be used instead of individual copies
 
   //-- special: arrays can be sparse/packed/etc and augmented with aux data to support this
-  SpecialArray* special; ///< arbitrary auxiliary data, depends on special
+  SpecialArray* special; ///< auxiliary data, e.g. if this is a sparse matrics, depends on special type
 
   typedef std::vector<T> vec_type;
   typedef std::function<bool(const T& a, const T& b)> ElemCompare;
@@ -106,8 +108,7 @@ template<class T> struct Array : std::vector<T>, Serializable {
   Array(uint D0, std::initializer_list<T> values);
   Array(uint D0, uint D1, std::initializer_list<T> values);
   Array(uint D0, uint D1, uint D2, std::initializer_list<T> values);
-  Array(rai::FileToken&); //read from a file
-  explicit Array(SpecialArray* _special);
+  explicit Array(SpecialArray* _special); //only used to define NoArrays
   virtual ~Array();
   bool operator!() const; ///< check if NoArr
 
@@ -118,12 +119,7 @@ template<class T> struct Array : std::vector<T>, Serializable {
 
   /// @name iterators
   ArrayIterationEnumerated<T> enumerated() { return ArrayIterationEnumerated<T>(*this); }
-//  typedef T* iterator;
-//  typedef const T* const_iterator;
-//  iterator begin() { return p; }
-//  iterator end() { return p+N; }
-//  const_iterator begin() const { return p; }
-//  const_iterator end() const { return p+N; }
+  //TODO: more: rows iterator, reverse iterator
 
   /// @name resizing
   Array<T>& resize(uint D0);
@@ -147,6 +143,10 @@ template<class T> struct Array : std::vector<T>, Serializable {
   Array<T>& reshapeFlat();
   Array<T>& dereference();
 
+  /// @name dimensionality access
+  uint dim(uint k) const;
+  Array<uint> dim() const;
+
   /// @name initializing/assigning entries
   rai::Array<T>& clear();
   void setZero(byte zero=0);
@@ -154,11 +154,11 @@ template<class T> struct Array : std::vector<T>, Serializable {
   void setId(int d=-1);
   void setDiag(const T& scalar, int d=-1);
   void setDiag(const Array<T>& vector);
-  void setBlockMatrix(const Array<T>& A, const Array<T>& B, const Array<T>& C, const Array<T>& D);
-  void setBlockMatrix(const Array<T>& A, const Array<T>& B);
-  void setBlockVector(const Array<T>& a, const Array<T>& b);
-  void setMatrixBlock(const Array<T>& B, uint lo0, uint lo1);
   void setVectorBlock(const Array<T>& B, uint lo);
+  void setMatrixBlock(const Array<T>& B, uint lo0, uint lo1);
+  //TODO setTensorBlock(const Array<T>& B, const Array<uint>& lo);
+  void setBlockMatrix(const Array<T>& A, const Array<T>& B, const Array<T>& C, const Array<T>& D);
+  void setBlockVector(const Array<T>& a, const Array<T>& b);
   void setStraightPerm(int n=-1);
   void setReversePerm(int n=-1);
   void setRandomPerm(int n=-1);
@@ -166,10 +166,10 @@ template<class T> struct Array : std::vector<T>, Serializable {
   void setCarray(const T** buffer, uint D0, uint D1);
   void referTo(const T* buffer, uint n);
   void referTo(const Array<T>& a);
-  void referToRange(const Array<T>& a, int i, int I); // -> referTo(a,{i,I})
-  void referToRange(const Array<T>& a, int i, int j, int J); // -> referTo(a,{i,I})
-  void referToRange(const Array<T>& a, int i, int j, int k, int K); // -> referTo(a,{i,I})
-  void referToDim(const Array<T>& a, int i); // -> referTo
+  void referToRange(const Array<T>& a, int i_lo, int i_up);
+  void referToRange(const Array<T>& a, int i, int j_lo, int j_up);
+  void referToRange(const Array<T>& a, int i, int j, int k_lo, int k_up);
+  void referToDim(const Array<T>& a, int i);
   void referToDim(const Array<T>& a, uint i, uint j);
   void referToDim(const Array<T>& a, uint i, uint j, uint k);
   void takeOver(Array<T>& a);  //a becomes a reference to its previously owned memory!
@@ -186,14 +186,16 @@ template<class T> struct Array : std::vector<T>, Serializable {
   T& first() const;
   T& last(int i=-1) const;
   T& rndElem() const;
+  //reference to single elements
   T& operator()(int i) const;
   T& operator()(int i, int j) const;
   T& operator()(int i, int j, int k) const;
+  //reference to sub ranges
   Array<T> operator()(std::pair<int, int> I) const;
   Array<T> operator()(int i, std::pair<int, int> J) const;
   Array<T> operator()(int i, int j, std::initializer_list<int> K) const;
   Array<T> operator[](int i) const;     // calls referToDim(*this, i)
-  Array<T> operator[](std::initializer_list<uint> list) const; //-> remove
+
   Array<T>& operator()() { return *this; } //TODO: make this the scalar reference!
   T** getCarray(Array<T*>& Cpointers) const;
   Array<T*> getCarray() const;
@@ -210,10 +212,6 @@ template<class T> struct Array : std::vector<T>, Serializable {
   Array<T> rows(uint start_row, uint end_row) const;
   Array<T> col(uint col_index) const;
   Array<T> cols(uint start_col, uint end_col) const;
-
-  /// @name dimensionality access
-  uint dim(uint k) const;
-  Array<uint> dim() const;
 
   void getMatrixBlock(Array<T>& B, uint lo0, uint lo1) const; // -> return array
   void getVectorBlock(Array<T>& B, uint lo) const;
@@ -282,11 +280,10 @@ template<class T> struct Array : std::vector<T>, Serializable {
   void permuteInv(const Array<uint>& permutation);
   void permuteRows(const Array<uint>& permutation);
   void permuteRowsInv(const Array<uint>& permutation);
-
   void permuteRandomly();
   void shift(int offset, bool wrapAround=true);
 
-  /// @name special matrices [TODO: move outside, use 'special']
+  /// @name special matrices
   double sparsity();
   SparseMatrix& sparse();
   const SparseMatrix& sparse() const;
@@ -310,10 +307,9 @@ template<class T> struct Array : std::vector<T>, Serializable {
 
   /// @name kind of private
   void resizeMEM(uint n, bool copy, int Mforce=-1);
-  void anticipateMEM(uint Mforce) { resizeMEM(N, true, Mforce); if(!nd) nd=1; }
+  void reserveMEM(uint Mforce) { resizeMEM(N, true, Mforce); if(!nd) nd=1; }
   void freeMEM();
   void resetD();
-//  void init();
 
   /// @name serialization
   uint serial_size();
@@ -894,19 +890,14 @@ arr eigen_Ainv_b(const arr& A, const arr& b);
 /// @name special matrices & packings
 /// @{
 
-arr unpack(const arr& X);
-arr comp_At_A(const arr& A);
-arr comp_A_At(const arr& A);
-arr comp_At_x(const arr& A, const arr& x);
-arr comp_At(const arr& A);
-arr comp_A_x(const arr& A, const arr& x);
-
 struct SpecialArray {
   enum Type { ST_none, ST_NoArr, hasCarrayST, sparseVectorST, sparseMatrixST, diagST, RowShiftedST, CpointerST };
   Type type;
   SpecialArray(Type _type=ST_none) : type(_type) {}
   virtual ~SpecialArray() {}
 };
+
+namespace rai {
 
 template<class T> bool isSpecial(const rai::Array<T>& X)      { return X.special && X.special->type!=SpecialArray::ST_none; }
 template<class T> bool isNoArr(const rai::Array<T>& X)        { return X.special && X.special->type==SpecialArray::ST_NoArr; }
@@ -940,8 +931,6 @@ inline RowShifted* castRowShifted(arr& X) {
   if(!X.special || X.special->type!=SpecialArray::RowShiftedST) throw("can't cast like this!");
   return dynamic_cast<RowShifted*>(X.special); //((RowShifted*)X.aux);
 }
-
-namespace rai {
 
 struct SparseVector: SpecialArray {
   arr& Z;      ///< references the array itself
@@ -988,6 +977,16 @@ struct SparseMatrix : SpecialArray {
   arr unsparse();
 };
 
+arr unpack(const arr& X);
+arr comp_At_A(const arr& A);
+arr comp_A_At(const arr& A);
+arr comp_At_x(const arr& A, const arr& x);
+arr comp_At(const arr& A);
+arr comp_A_x(const arr& A, const arr& x);
+arr packRowShifted(const arr& X);
+RowShifted* makeRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d1);
+arr makeRowSparse(const arr& X);
+
 }//namespace rai
 
 #define UpdateOperator( op ) \
@@ -1003,14 +1002,6 @@ UpdateOperator(/=)
 UpdateOperator(%=)
 #undef UpdateOperator
 
-//struct RowSparseMatrix : SpecialArray {
-//  RowSparseMatrix()
-//};
-
-arr unpack(const arr& Z); //returns an unpacked matrix in case this is packed
-arr packRowShifted(const arr& X);
-RowShifted* makeRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d1);
-arr makeRowSparse(const arr& X);
 
 //===========================================================================
 /// @}
@@ -1109,8 +1100,5 @@ void linkArray();
 //#endif
 
 #endif
-#endif
 
 // (note: http://www.informit.com/articles/article.aspx?p=31783&seqNum=2)
-
-/// @} //end group
