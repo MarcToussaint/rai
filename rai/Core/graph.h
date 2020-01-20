@@ -16,7 +16,6 @@
 
 #include "array.h"
 #include <map>
-#include <bits/shared_ptr.h>
 #include <memory>
 
 struct Node;

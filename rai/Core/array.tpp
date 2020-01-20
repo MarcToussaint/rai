@@ -351,9 +351,9 @@ template<class T> void rai::Array<T>::resizeMEM(uint n, bool copy, int Mforce) {
   if(n==N) return;
   CHECK(!reference, "resize of a reference (e.g. subarray) is not allowed! (only a resize without changing memory size)");
   vec_type::resize(n);
-  p = vec_type::_M_impl._M_start;
+  p = vec_type::data();
   N = n;
-  M = vec_type::_M_impl._M_end_of_storage - p;
+  M = vec_type::capacity();
 }
 
 /// free all memory and reset all pointers and sizes
@@ -409,9 +409,9 @@ template<class T> T& rai::Array<T>::append() {
 template<class T> T& rai::Array<T>::append(const T& x) {
   reshape(N);
   vec_type::push_back(x);
-  p = vec_type::_M_impl._M_start;
+  p = vec_type::data();
   d0 = N = vec_type::size();
-  M = vec_type::_M_impl._M_end_of_storage - p;
+  M = vec_type::capacity();
   return p[N-1];
 }
 
@@ -1621,7 +1621,7 @@ template<class T> void rai::Array<T>::swap(Array<T>& a) {
   SWAP(M, a.M);
 #undef SWAP
 
-  CHECK_EQ(p, vec_type::_M_impl._M_start, "");
+  CHECK_EQ(p, vec_type::data(), "");
 #endif
 }
 

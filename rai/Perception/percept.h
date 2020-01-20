@@ -11,7 +11,7 @@
 #include <Core/array.h>
 #include <Kin/kin.h>
 #include <Geo/mesh.h>
-#include <bits/shared_ptr.h>
+#include <memory>
 
 struct Percept;
 typedef std::shared_ptr<Percept> PerceptPtr;

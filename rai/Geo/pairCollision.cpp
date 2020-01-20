@@ -22,6 +22,9 @@ extern "C" {
 #include <Gui/opengl.h>
 #include <Geo/qhull.h>
 
+#ifndef RAI_GJK
+#  define FCLmode
+#endif
 //#define FCLmode
 
 PairCollision::PairCollision(const rai::Mesh& _mesh1, const rai::Mesh& _mesh2, const rai::Transformation& _t1, const rai::Transformation& _t2, double rad1, double rad2)

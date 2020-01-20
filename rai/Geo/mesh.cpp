@@ -1055,27 +1055,23 @@ void rai::Mesh::write(std::ostream& os) const {
 
 void rai::Mesh::readFile(const char* filename) {
   const char* fileExtension = filename+(strlen(filename)-3);
-  if(!strcmp(fileExtension, "ply")
-     || !strcmp(fileExtension, "PLY")
-     || !strcmp(fileExtension, "dae")
-     || !strcmp(fileExtension, "DAE")
-     ) {
-    *this = AssimpLoader(filename, false).getSingleMesh();
-  }else{
-    read(FILE(filename).getIs(), fileExtension, filename);
-  }
+  read(FILE(filename).getIs(), fileExtension, filename);
 }
 
 void rai::Mesh::read(std::istream& is, const char* fileExtension, const char* filename) {
-  bool loaded=false;
-  if(!strcmp(fileExtension, "obj")) { readObjFile(is); loaded=true; }
-  if(!strcmp(fileExtension, "off")) { readOffFile(is); loaded=true; }
-  if(!strcmp(fileExtension, "ply")) { readPLY(filename); loaded=true; }
-  if(!strcmp(fileExtension, "tri")) { readTriFile(is); loaded=true; }
-  if(!strcmp(fileExtension, "arr")) { readArr(is); loaded=true; }
-  if(!strcmp(fileExtension, "stl") || !strcmp(fileExtension, "STL")) { loaded = readStlFile(is); }
-  if(!strcmp(fileExtension, "dae") || !strcmp(fileExtension, "DAE")) { *this = AssimpLoader(filename).getSingleMesh(); loaded=true; }
-  if(!loaded) HALT("can't read fileExtension '" <<fileExtension <<"' file '" <<filename <<"'");
+  if(!strcmp(fileExtension, "ply")
+     || !strcmp(fileExtension, "PLY")
+     || !strcmp(fileExtension, "dae")
+     || !strcmp(fileExtension, "DAE")) {
+    *this = AssimpLoader(filename, false).getSingleMesh();
+  }
+  else if(!strcmp(fileExtension, "obj")) { readObjFile(is); }
+  else if(!strcmp(fileExtension, "off")) { readOffFile(is); }
+  else if(!strcmp(fileExtension, "ply")) { readPLY(filename); }
+  else if(!strcmp(fileExtension, "tri")) { readTriFile(is); }
+  else if(!strcmp(fileExtension, "arr")) { readArr(is); }
+  else if(!strcmp(fileExtension, "stl") || !strcmp(fileExtension, "STL")) { readStlFile(is); }
+  else HALT("can't read fileExtension '" <<fileExtension <<"' file '" <<filename <<"'");
 }
 
 void rai::Mesh::writeTriFile(const char* filename) {
