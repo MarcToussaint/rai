@@ -289,6 +289,7 @@ template<class T> struct Array : std::vector<T>, Serializable {
   const SparseMatrix& sparse() const;
   SparseVector& sparseVec();
   const SparseVector& sparseVec() const;
+  void setNoArr();
 
   /// @name I/O
   void write(std::ostream& os=std::cout, const char* ELEMSEP=nullptr, const char* LINESEP=nullptr, const char* BRACKETS=nullptr, bool dimTag=false, bool binary=false) const;

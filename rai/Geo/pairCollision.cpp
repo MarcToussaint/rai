@@ -474,12 +474,14 @@ void PairCollision::kinPointP1(arr& y, arr& J, const arr& Jp1, const arr& Jp2, c
       J = Jp1;
       arr c = b*ab-a;
       double ac = scalarProduct(a, c);
-      J += (1./ac) * a*(~c*(Jp2-Jp1));
+      if(fabs(ac)>1e-10){ //otherwise the Jacobian is singular...
+        J += (1./ac) * a*(~c*(Jp2-Jp1));
 
-      arr x = p1-p2;
-      arr Jc = (b*~b-eye(3, 3))* crossProduct(Jx1, a) + (ab*eye(3, 3) + b*~a - 2.*a*~b)*crossProduct(Jx2, b);
-      J += (1./ac) * scalarProduct(c, x) * (eye(3, 3) - (1./ac)*a*~c) * crossProduct(Jx1, a);
-      J -= (1./ac) * (a * ~x) * (eye(3, 3) - (1./ac)*c*~a) * Jc;
+        arr x = p1-p2;
+        arr Jc = (b*~b-eye(3, 3))* crossProduct(Jx1, a) + (ab*eye(3, 3) + b*~a - 2.*a*~b)*crossProduct(Jx2, b);
+        J += (1./ac) * scalarProduct(c, x) * (eye(3, 3) - (1./ac)*a*~c) * crossProduct(Jx1, a);
+        J -= (1./ac) * (a * ~x) * (eye(3, 3) - (1./ac)*c*~a) * Jc;
+      }
     }
     if(simplexType(2, 1)) {
       arr a = simplex1[1]-simplex1[0];  a/=length(a);
@@ -492,6 +494,7 @@ void PairCollision::kinPointP1(arr& y, arr& J, const arr& Jp1, const arr& Jp2, c
   //-- account for radii
   if(rad1>0.) {
     arr norm, Jnorm;
+    if(!J) Jnorm.setNoArr();
     kinNormal(norm, Jnorm, Jp1, Jp2, Jx1, Jx2);
     y -= rad1 * norm;
     if(!!J) J -= rad1 * Jnorm;
@@ -515,12 +518,14 @@ void PairCollision::kinPointP2(arr& y, arr& J, const arr& Jp1, const arr& Jp2, c
       J = Jp2;
       arr c = b*ab-a;
       double ac = scalarProduct(a, c);
-      J += (1./ac) * a*(~c*(Jp1-Jp2));
+      if(fabs(ac)>1e-10){ //otherwise the Jacobian is singular...
+        J += (1./ac) * a*(~c*(Jp1-Jp2));
 
-      arr x = p2-p1;
-      arr Jc = (b*~b-eye(3, 3))* crossProduct(Jx2, a) + (ab*eye(3, 3) + b*~a - 2.*a*~b)*crossProduct(Jx1, b);
-      J += (1./ac) * scalarProduct(c, x) * (eye(3, 3) - (1./ac)*a*~c) * crossProduct(Jx2, a);
-      J -= (1./ac) * (a * ~x) * (eye(3, 3) - (1./ac)*c*~a) * Jc;
+        arr x = p2-p1;
+        arr Jc = (b*~b-eye(3, 3))* crossProduct(Jx2, a) + (ab*eye(3, 3) + b*~a - 2.*a*~b)*crossProduct(Jx1, b);
+        J += (1./ac) * scalarProduct(c, x) * (eye(3, 3) - (1./ac)*a*~c) * crossProduct(Jx2, a);
+        J -= (1./ac) * (a * ~x) * (eye(3, 3) - (1./ac)*c*~a) * Jc;
+      }
     }
     if(simplexType(1, 2)) {
       arr b = simplex2[1]-simplex2[0];  b/=length(b);
@@ -533,6 +538,7 @@ void PairCollision::kinPointP2(arr& y, arr& J, const arr& Jp1, const arr& Jp2, c
   //-- account for radii
   if(rad2>0.) {
     arr norm, Jnorm;
+    if(!J) Jnorm.setNoArr();
     kinNormal(norm, Jnorm, Jp1, Jp2, Jx1, Jx2);
     y += rad2 * norm;
     if(!!J) J += rad2 * Jnorm;
@@ -540,14 +546,12 @@ void PairCollision::kinPointP2(arr& y, arr& J, const arr& Jp1, const arr& Jp2, c
 }
 
 void PairCollision::kinCenter(arr& y, arr& J, const arr& Jp1, const arr& Jp2, const arr& Jx1, const arr& Jx2) {
-  y = .5 * (p1 + p2 + (rad2-rad1)*normal);
-  if(!!J) {
-    arr JP1, JP2, Jn, yy;
-    kinPointP1(yy, JP1, Jp1, Jp2, Jx1, Jx2);
-    kinPointP2(yy, JP2, Jp1, Jp2, Jx1, Jx2);
-    kinNormal(yy, Jn, Jp1, Jp2, Jx1, Jx2);
-    J = .5 * (JP1 + JP2 + (rad2-rad1)*Jn);
-  }
+  arr _p1, _p2, JP1, JP2;
+  if(!J){ JP1.setNoArr(); JP2.setNoArr(); }
+  kinPointP1(_p1, JP1, Jp1, Jp2, Jx1, Jx2);
+  kinPointP2(_p2, JP2, Jp1, Jp2, Jx1, Jx2);
+  y = .5 * (_p1 + _p2);
+  if(!!J) J = .5 * (JP1 + JP2);
 }
 
 void PairCollision::nearSupportAnalysis(double eps) {

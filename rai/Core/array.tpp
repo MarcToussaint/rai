@@ -103,7 +103,7 @@ template<class T> rai::Array<T>::Array(SpecialArray* _special) : Array() { speci
 template<class T> rai::Array<T>::~Array() { clear(); }
 
 template<class T> bool rai::Array<T>::operator!() const {
-  if(((char*)this)+1==(char*)1) return true;
+  CHECK(((char*)this)+1!=(char*)1, "the zero pointer convention is deprecated!");
   return isNoArr<T>(*this);
 }
 
@@ -1481,11 +1481,11 @@ template<class T> void rai::Array<T>::referToRange(const rai::Array<T>& a, int i
     referTo(a.p+i_lo, i_up+1-i_lo);
   }
   if(a.nd==2) {
-    referTo(a.p+i_lo*d1, (i_up+1-i_lo)*a.d1);
+    referTo(a.p+i_lo*a.d1, (i_up+1-i_lo)*a.d1);
     nd=2;  d0=i_up+1-i_lo;  d1=a.d1;
   }
   if(a.nd==3) {
-    referTo(a.p+i_lo*d1*d2, (i_up+1-i_lo)*a.d1*a.d2);
+    referTo(a.p+i_lo*a.d1*a.d2, (i_up+1-i_lo)*a.d1*a.d2);
     nd=3;  d0=i_up+1-i_lo;  d1=a.d1;  d2=a.d2;
   }
 }
@@ -1809,6 +1809,11 @@ template<class T> void rai::Array<T>::shift(int offset, bool wrapAround) {
     memmove(p, p+m, sizeT*(N-m));
     if(wrapAround) memmove(p+(N-m), tmp.p, sizeT*m); else memset(p+(N-m), 0, sizeT*m);
   }
+}
+
+template<class T> void rai::Array<T>::setNoArr(){
+  clear();
+  special = new SpecialArray(SpecialArray::ST_NoArr);
 }
 
 template<typename T> struct is_shared_ptr : std::false_type {};
