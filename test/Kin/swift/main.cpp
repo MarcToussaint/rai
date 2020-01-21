@@ -62,9 +62,9 @@ void TEST(CollisionTiming){
   C.swift().setCutoff(1.);
   cout <<" SWIFT initialization time: " <<rai::timerRead(true) <<endl;
 
-  rai::timerStart();
-  C.fcl();
-  cout <<" FCL initialization time: " <<rai::timerRead(true) <<endl;
+  //  rai::timerStart();
+  //  C.fcl();
+  //  cout <<" FCL initialization time: " <<rai::timerRead(true) <<endl;
 
   arr q0,q;
   q0 = C.getJointState();
@@ -76,8 +76,8 @@ void TEST(CollisionTiming){
       a->set_X()->pos *= 5.;
     }
 
-//    C.stepSwift();
-    C.stepFcl();
+    C.stepSwift();
+//    C.stepFcl();
     cout <<"#proxies: " <<C.proxies.N <<endl; //this also calls pair collisions!!
     cout <<"time: " <<rai::timerRead() <<endl;
     cout <<"total penetration: " <<C.totalCollisionPenetration() <<endl; //this also calls pair collisions!!

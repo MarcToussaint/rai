@@ -493,7 +493,7 @@ void CrossValidation::plot() {
 }
 
 void linearFeatures(arr& Z, const arr& X) {
-  Z.setBlockMatrix(ones(X.d0, 1), X);
+  Z = catCol(ones(X.d0, 1), X);
 }
 
 void quadraticFeatures(arr& Z, const arr& X) {

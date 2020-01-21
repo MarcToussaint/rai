@@ -46,8 +46,8 @@ template<class T> int rai::Array<T>::sizeT=-1;
 //***** constructors
 
 /// standard constructor -- this becomes an empty array
-template<class T> rai::Array<T>::Array():d(&d0) {
-  reference=false;
+template<class T> rai::Array<T>::Array() : std::vector<T>(), d(&d0) {
+  isReference=false;
   if(sizeT==-1) sizeT=sizeof(T);
   if(memMove==(char)-1) {
     memMove=0;
@@ -64,7 +64,7 @@ template<class T> rai::Array<T>::Array():d(&d0) {
         typeid(T)==typeid(double)) memMove=1;
   }
   p=NULL;
-  M=N=nd=d0=d1=d2=0;
+  N=nd=d0=d1=d2=0;
 //  d=&d0;
   special=NULL;
 }
@@ -98,16 +98,12 @@ template<class T> rai::Array<T>::Array(uint D0, uint D1, std::initializer_list<T
 /// initialization via {1., 2., 3., ...} lists, with certain dimensionality
 template<class T> rai::Array<T>::Array(uint D0, uint D1, uint D2, std::initializer_list<T> values):Array() { operator=(values); reshape(D0, D1, D2); }
 
-template<class T> rai::Array<T>::Array(rai::FileToken& f):Array() {
-  read(f.getIs());
-}
-
 template<class T> rai::Array<T>::Array(SpecialArray* _special) : Array() { special=_special; }
 
 template<class T> rai::Array<T>::~Array() { clear(); }
 
 template<class T> bool rai::Array<T>::operator!() const {
-  if(((char*)this)+1==(char*)1) return true;
+  CHECK(((char*)this)+1!=(char*)1, "the zero pointer convention is deprecated!");
   return isNoArr<T>(*this);
 }
 
@@ -206,7 +202,7 @@ template<class T> rai::Array<T>& rai::Array<T>::reshape(const Array<uint>& newD)
 
 template<class T> rai::Array<T>& rai::Array<T>::resizeAs(const rai::Array<T>& a) {
   CHECK(this!=&a, "never do this!!!");
-  CHECK(!reference || N==a.N, "resize of a reference (e.g. subarray) is not allowed! (only a resize without changing memory size)");
+  CHECK(!isReference || N==a.N, "resize of a reference (e.g. subarray) is not allowed! (only a resize without changing memory size)");
   nd=a.nd; d0=a.d0; d1=a.d1; d2=a.d2;
   resetD();
   if(nd>3) { d=new uint[nd];  memmove(d, a.d, nd*sizeof(uint)); }
@@ -237,7 +233,7 @@ template<class T> rai::Array<T>& rai::Array<T>::reshapeFlat() {
 }
 
 /// return the size of memory allocated in bytes
-template<class T> uint rai::Array<T>::getMemsize() const { return M*sizeof(T); }
+template<class T> uint rai::Array<T>::getMemsize() const { return vec_type::capacity()*sizeof(T); }
 
 /// I becomes the index tuple for the absolute index i
 template<class T> void rai::Array<T>::getIndexTuple(Array<uint>& I, uint i) const {
@@ -345,42 +341,104 @@ template<class T> void rai::Array<T>::freeMEM() {
   reference=false;
 }
 
+//--------- this allocator class doesn't work as expected
+template<typename T>
+class ArrayAllocator { //      allocate(allocator_type& __a, size_type __n)
+
+public:
+  Array<T>& base;
+  std::allocator<T> defaultAlloc;
+  typedef std::size_t     size_type;
+  typedef T*              pointer;
+  typedef T               value_type;
+
+  ArrayAllocator(Array<T>& _base) : base(_base) {}
+
+  ArrayAllocator(const ArrayAllocator& other) throw() : base(other.base) {}
+
+//  template<typename U>
+//  ArrayAllocator(const ArrayAllocator<U>& other) throw() : memory_ptr(other.memory_ptr), memory_size(other.memory_size) {};
+
+  template<typename U>
+  ArrayAllocator& operator = (const ArrayAllocator<U>& other) { return *this; }
+  ArrayAllocator<T>& operator = (const ArrayAllocator& other) { return *this; }
+  ~ArrayAllocator() {}
+
+  T* allocate(size_t n, const void* hint = 0) {
+    if(!base.reference){
+      base.p = defaultAlloc.allocate(n, hint);
+      base.N = base.size();
+      base.M = base.capacity();
+    }
+    return base.p;
+  }
+
+  void deallocate(T* ptr, size_t n) {
+    if(!base.reference) defaultAlloc.deallocate(ptr, n);
+  }
+
+  size_t max_size() const {
+    if(base.reference) return base.M;
+    return defaultAlloc.max_size();
+  }
+};
+
 #else
 /// allocate memory (maybe using \ref flexiMem)
 template<class T> void rai::Array<T>::resizeMEM(uint n, bool copy, int Mforce) {
   if(n==N) return;
-  CHECK(!reference, "resize of a reference (e.g. subarray) is not allowed! (only a resize without changing memory size)");
+  CHECK(!isReference, "resize of a reference (e.g. subarray) is not allowed! (only a resize without changing memory size)");
+
+  //determine a new M (number of allocated items)
+  uint Mold=vec_type::capacity(), Mnew;
+  if(Mforce>=0) { //forced size
+    Mnew = Mforce;
+    CHECK_LE(n, Mnew, "Mforce is smaller than required!");
+  } else { //automatic
+    if(!ARRAY_flexiMem) {
+      Mnew=n;
+    } else {
+      if(n>0 && Mold==0) {
+        Mnew=n;      //first time: exact allocation
+      } else if(n>Mold || 10+2*n<Mold/4) {
+        Mnew=10+2*n; //big down-or-up-resize: allocate with some extra space
+      } else {
+        Mnew=Mold;   //small down-size: don't really resize memory
+      }
+    }
+  }
+
+  vec_type::reserve(Mnew);
   vec_type::resize(n);
   p = vec_type::data();
   N = n;
-  M = vec_type::capacity();
 }
 
 /// free all memory and reset all pointers and sizes
 template<class T> void rai::Array<T>::freeMEM() {
-  if(!reference) {
+  if(!isReference) {
     vec_type::clear();
   } else {
-    vec_type::_M_impl._M_start = NULL;
-    vec_type::_M_impl._M_finish = NULL;
-    vec_type::_M_impl._M_end_of_storage = NULL;
+    vec_type::_M_impl._M_start = 0;
+    vec_type::_M_impl._M_finish = 0;
+    vec_type::_M_impl._M_end_of_storage = 0;
   }
   if(d && d!=&d0) { delete[] d; d=NULL; }
   p=NULL;
-  M=N=nd=d0=d1=d2=0;
+  N=nd=d0=d1=d2=0;
   d=&d0;
-  reference=false;
+  isReference=false;
 }
 #endif
 
 ///this was a reference; becomes a copy
 template<class T> rai::Array<T>& rai::Array<T>::dereference() {
-  CHECK(reference, "can only dereference a reference!");
+  CHECK(isReference, "can only dereference a reference!");
   NIY; //not for the new vector versoin..
   uint n=N;
   T* pold=p;
-  reference=false;
-  N=M=0;
+  isReference=false;
+  N=0;
   p=NULL;
   resizeMEM(n, false);
   CHECK_EQ(memMove, 1, "only with memmove");
@@ -411,7 +469,6 @@ template<class T> T& rai::Array<T>::append(const T& x) {
   vec_type::push_back(x);
   p = vec_type::data();
   d0 = N = vec_type::size();
-  M = vec_type::capacity();
   return p[N-1];
 }
 
@@ -834,16 +891,6 @@ template<class T> rai::Array<T> rai::Array<T>::operator[](int i) const {
   return z;
 }
 
-template<class T> rai::Array<T> rai::Array<T>::operator[](std::initializer_list<uint> ix) const {
-  rai::Array<T> z;
-  uint* ixp=ix.begin();
-  if(ix.size()==1) z.referToDim(*this, ixp[0]);
-  else if(ix.size()==2) z.referToDim(*this, ixp[0], ixp[1]);
-  else if(ix.size()==3) z.referToDim(*this, ixp[0], ixp[1], ixp[2]);
-  else NIY;
-  return z;
-}
-
 /// convert a subarray into a reference (e.g. a[3]()+=.123)
 //template<class T> T& rai::Array<T>::operator()() const { return scalar(); } //return (*this); }
 
@@ -1132,8 +1179,8 @@ template<class T> T** rai::Array<T>::getCarray() const {
 /// makes this array a reference to the C buffer
 template<class T> void rai::Array<T>::referTo(const T* buffer, uint n) {
   freeMEM();
-  reference=true;
-  nd=1; d0=n; d1=d2=0; N=n;
+  isReference=true;
+  nd=1; d0=N=n; d1=d2=0;
   p=(T*)buffer;
   vec_type::_M_impl._M_start = p;
   vec_type::_M_impl._M_finish = p+N;
@@ -1294,15 +1341,6 @@ template<class T> void rai::Array<T>::setBlockMatrix(const rai::Array<T>& A, con
   for(i=0;i<D.d0;i++) for(j=0;j<D.d1;j++) operator()(i+a, j+b)=D(i, j);*/
 }
 
-/// constructs the block matrix X=[A, B ; C, D]
-template<class T> void rai::Array<T>::setBlockMatrix(const rai::Array<T>& A, const rai::Array<T>& B) {
-  CHECK(A.nd==2 && B.nd==2, "");
-  CHECK_EQ(A.d0, B.d0, "");
-  resize(A.d0, A.d1+B.d1);
-  setMatrixBlock(A, 0, 0);
-  setMatrixBlock(B, 0, A.d1);
-}
-
 /// constructs a vector x=[a, b]
 template<class T> void rai::Array<T>::setBlockVector(const rai::Array<T>& a, const rai::Array<T>& b) {
   CHECK(a.nd==1 && b.nd==1, "");
@@ -1346,7 +1384,7 @@ template<class T> void rai::Array<T>::setMatrixBlock(const rai::Array<T>& B, uin
   }
 }
 
-/// B (need to be sized before) becomes a sub-matrix of 'this' taken at location lo0, lo1
+/// return a sub-matrix of 'this' taken at location lo0, lo1
 template<class T> void rai::Array<T>::getMatrixBlock(rai::Array<T>& B, uint lo0, uint lo1) const {
   CHECK(nd==2 && B.nd==2 && lo0+B.d0<=d0 && lo1+B.d1<=d1, "");
   uint i, j;
@@ -1427,90 +1465,67 @@ template<class T> void rai::Array<T>::copyInto2D(T** buffer) const {
 
 /// make this array a reference to the array \c a
 template<class T> void rai::Array<T>::referTo(const rai::Array<T>& a) {
-  freeMEM();
-  reference=true; memMove=a.memMove;
-  N=a.N; nd=a.nd; d0=a.d0; d1=a.d1; d2=a.d2;
-  p=a.p;
-  vec_type::_M_impl._M_start = p;
-  vec_type::_M_impl._M_finish = p+N;
-  vec_type::_M_impl._M_end_of_storage = p+N;
+  referTo(a.p, a.N);
+  reshapeAs(a);
 }
 
 /// make this array a subarray reference to \c a
-template<class T> void rai::Array<T>::referToRange(const rai::Array<T>& a, int i, int I) {
+template<class T> void rai::Array<T>::referToRange(const rai::Array<T>& a, int i_lo, int i_up) {
   CHECK_LE(a.nd, 3, "not implemented yet");
-  freeMEM();
-  resetD();
-  reference=true; memMove=a.memMove;
-  if(i<0) i+=a.d0;
-  if(I<0) I+=a.d0;
-  if(i>I) return;
-  CHECK((uint)i<a.d0 && (uint)I<a.d0, "SubRange range error (" <<i <<"<" <<a.d0 <<", " <<I <<"<" <<a.d0 <<")");
+  if(i_lo<0) i_lo+=a.d0;
+  if(i_up<0) i_up+=a.d0;
+  if(i_lo>i_up) return;
+  CHECK((uint)i_lo<a.d0 && (uint)i_up<a.d0, "SubRange range error (" <<i_lo <<"<" <<a.d0 <<", " <<i_up <<"<" <<a.d0 <<")");
+
   if(a.nd==1) {
-    nd=1;  d0=I+1-i; d1=0; d2=0;  N=d0;
-    p=a.p+i;
+    referTo(a.p+i_lo, i_up+1-i_lo);
   }
   if(a.nd==2) {
-    nd=2;  d0=I+1-i; d1=a.d1; d2=0;  N=d0*d1;
-    p=a.p+i*d1;
+    referTo(a.p+i_lo*a.d1, (i_up+1-i_lo)*a.d1);
+    nd=2;  d0=i_up+1-i_lo;  d1=a.d1;
   }
   if(a.nd==3) {
-    nd=3;  d0=I+1-i; d1=a.d1; d2=a.d2;  N=d0*d1*d2;
-    p=a.p+i*d1*d2;
+    referTo(a.p+i_lo*a.d1*a.d2, (i_up+1-i_lo)*a.d1*a.d2);
+    nd=3;  d0=i_up+1-i_lo;  d1=a.d1;  d2=a.d2;
   }
-  vec_type::_M_impl._M_start = p;
-  vec_type::_M_impl._M_finish = p+N;
-  vec_type::_M_impl._M_end_of_storage = p+N;
 }
 
 /// make this array a subarray reference to \c a
-template<class T> void rai::Array<T>::referToRange(const Array<T>& a, int i, int j, int J) {
+template<class T> void rai::Array<T>::referToRange(const Array<T>& a, int i, int j_lo, int j_up) {
   CHECK(a.nd>1, "does not make sense");
   CHECK_LE(a.nd, 3, "not implemented yet");
-  freeMEM();
-  resetD();
-  reference=true; memMove=a.memMove;
   if(i<0) i+=a.d0;
-  if(j<0) j+=a.d1;
-  if(J<0) J+=a.d1;
-  if(j>J) return;
+  if(j_lo<0) j_lo+=a.d1;
+  if(j_up<0) j_up+=a.d1;
+  if(j_lo>j_up) return;
   CHECK((uint)i<a.d0, "SubRange range error (" <<i <<"<" <<a.d0 <<")");
-  CHECK((uint)j<a.d1 && (uint)J<a.d1, "SubRange range error (" <<j <<"<" <<a.d1 <<", " <<J <<"<" <<a.d1 <<")");
+  CHECK((uint)j_lo<a.d1 && (uint)j_up<a.d1, "SubRange range error (" <<j_lo <<"<" <<a.d1 <<", " <<j_up <<"<" <<a.d1 <<")");
+
   if(a.nd==2) {
-    nd=1;  d0=J+1-j; d1=0; d2=0;  N=d0;
-    p = &a(i, j);
+    referTo(&a(i, j_lo), (j_up+1-j_lo));
   }
   if(a.nd==3) {
-    nd=2;  d0=J+1-j; d1=a.d2; d2=0;  N=d0*d1;
-    p = &a(i, j, 0);
+    referTo(&a(i, j_lo, 0), (j_up+1-j_lo)*a.d2);
+    nd=2;  d0=j_up+1-j_lo;  d1=a.d2;
   }
-  vec_type::_M_impl._M_start = p;
-  vec_type::_M_impl._M_finish = p+N;
-  vec_type::_M_impl._M_end_of_storage = p+N;
 }
 
 /// make this array a subarray reference to \c a
-template<class T> void rai::Array<T>::referToRange(const Array<T>& a, int i, int j, int k, int K) {
+template<class T> void rai::Array<T>::referToRange(const Array<T>& a, int i, int j, int k_lo, int k_up) {
   CHECK(a.nd>2, "does not make sense");
   CHECK_LE(a.nd, 3, "not implemented yet");
-  freeMEM();
-  resetD();
-  reference=true; memMove=a.memMove;
   if(i<0) i+=a.d0;
   if(j<0) j+=a.d1;
-  if(k<0) k+=a.d2;
-  if(K<0) K+=a.d2;
-  if(k>K) return;
+  if(k_lo<0) k_lo+=a.d2;
+  if(k_up<0) k_up+=a.d2;
+  if(k_lo>k_up) return;
   CHECK((uint)i<a.d0, "SubRange range error (" <<i <<"<" <<a.d0 <<")");
   CHECK((uint)j<a.d1, "SubRange range error (" <<j <<"<" <<a.d1 <<")");
-  CHECK((uint)k<a.d2 && (uint)K<a.d2, "SubRange range error (" <<k <<"<" <<a.d2 <<", " <<K <<"<" <<a.d2 <<")");
+  CHECK((uint)k_lo<a.d2 && (uint)k_up<a.d2, "SubRange range error (" <<k_lo <<"<" <<a.d2 <<", " <<k_up <<"<" <<a.d2 <<")");
+
   if(a.nd==3) {
-    nd=1;  d0=K+1-k; d1=0; d2=0;  N=d0;
-    p = &a(i, j, k);
+    referTo(&a(i, j, k_lo), k_up+1-k_lo);
   }
-  vec_type::_M_impl._M_start = p;
-  vec_type::_M_impl._M_finish = p+N;
-  vec_type::_M_impl._M_end_of_storage = p+N;
 }
 
 /// make this array a subarray reference to \c a
@@ -1518,65 +1533,54 @@ template<class T> void rai::Array<T>::referToDim(const rai::Array<T>& a, int i) 
   CHECK(a.nd>1, "can't create subarray of array less than 2 dimensions");
   CHECK(!isSparseMatrix(*this), "can't refer to row of sparse matrix");
   if(i<0) i+=a.d0;
-
   CHECK(i>=0 && i<(int)a.d0, "SubDim range error (" <<i <<"<" <<a.d0 <<")");
-  freeMEM();
-  reference=true; memMove=a.memMove;
+
   if(a.nd==2) {
-    nd=1; d0=a.d1; d1=d2=0; N=d0;
+    referTo(a.p+i*a.d1, a.d1);
   }
   if(a.nd==3) {
-    nd=2; d0=a.d1; d1=a.d2; d2=0; N=d0*d1;
+    referTo(a.p+i*a.d1*a.d2, a.d1*a.d2);
+    nd=2;  d0=a.d1;  d1=a.d2;
   }
   if(a.nd>3) {
-    nd=a.nd-1; d0=a.d1; d1=a.d2; d2=a.d[3]; N=a.N/a.d0;
-    resetD();
+    uint n=a.N/a.d0;
+    referTo(a.p+i*n, n);
+    nd=a.nd-1;  d0=a.d1;  d1=a.d2;  d2=a.d[3];
     if(nd>3) { d=new uint[nd];  memmove(d, a.d+1, nd*sizeof(uint)); }
   }
-  p=a.p+i*N;
-  vec_type::_M_impl._M_start = p;
-  vec_type::_M_impl._M_finish = p+N;
-  vec_type::_M_impl._M_end_of_storage = p+N;
 }
 
 /// make this array a subarray reference to \c a
 template<class T> void rai::Array<T>::referToDim(const rai::Array<T>& a, uint i, uint j) {
   CHECK(a.nd>2, "can't create subsubarray of array less than 3 dimensions");
   CHECK(i<a.d0 && j<a.d1, "SubDim range error (" <<i <<"<" <<a.d0 <<", " <<j <<"<" <<a.d1 <<")");
-  freeMEM();
-  reference=true; memMove=a.memMove;
+
   if(a.nd==3) {
-    nd=1; d0=a.d2; d1=0; d2=0; N=d0;
-    p=&a(i, j, 0);
+    referTo(&a(i, j, 0), a.d2);
   } else {
     NIY // TODO
   }
-  vec_type::_M_impl._M_start = p;
-  vec_type::_M_impl._M_finish = p+N;
-  vec_type::_M_impl._M_end_of_storage = p+N;
 }
 
 /// make this array a subarray reference to \c a
 template<class T> void rai::Array<T>::referToDim(const rai::Array<T>& a, uint i, uint j, uint k) {
   CHECK(a.nd>3, "can't create subsubarray of array less than 3 dimensions");
   CHECK(i<a.d0 && j<a.d1 && k<a.d2, "SubDim range error (" <<i <<"<" <<a.d0 <<", " <<j <<"<" <<a.d1 <<", " <<k <<"<" <<a.d2 << ")");
-  freeMEM();
-  reference=true; memMove=a.memMove;
+
   if(a.nd==4) {
-    nd=1; d0=a.d[3]; d1=d2=0; N=d0;
+    referTo(&a(i, j, k), a.d[3]);
   }
   if(a.nd==5) {
-    nd=2; d0=a.d[3]; d1=a.d[4]; d2=0; N=d0*d1;
+      NIY;
+//    nd=2; d0=a.d[3]; d1=a.d[4]; d2=0; N=d0*d1;
   }
   if(a.nd>5) {
-    nd=a.nd-3; d0=a.d[3]; d1=a.d[4]; d2=a.d[5]; N=a.N/(a.d0*a.d1*a.d2);
-    resetD();
-    if(nd>3) { d=new uint[nd];  memmove(d, a.d+3, nd*sizeof(uint)); }
+      NIY;
+//    nd=a.nd-3; d0=a.d[3]; d1=a.d[4]; d2=a.d[5]; N=a.N/(a.d0*a.d1*a.d2);
+//    resetD();
+//    if(nd>3) { d=new uint[nd];  memmove(d, a.d+3, nd*sizeof(uint)); }
   }
-  p=a.p+(i*a.N+(j*a.N+(k*a.N/a.d2))/a.d1)/a.d0;
-  vec_type::_M_impl._M_start = p;
-  vec_type::_M_impl._M_finish = p+N;
-  vec_type::_M_impl._M_end_of_storage = p+N;
+//  p=a.p+(i*a.N+(j*a.N+(k*a.N/a.d2))/a.d1)/a.d0;
 }
 
 /** @brief takes over the memory buffer from a; afterwards, this is a
@@ -1587,9 +1591,7 @@ template<class T> void rai::Array<T>::takeOver(rai::Array<T>& a) {
   memMove=a.memMove;
   N=a.N; nd=a.nd; d0=a.d0; d1=a.d1; d2=a.d2;
   p=a.p;
-  M=a.M;
-  a.reference=true;
-  a.M=0;
+  a.isReference=true;
   HALT("vec not done yet");
 }
 
@@ -1603,7 +1605,7 @@ template<class T> void rai::Array<T>::swap(Array<T>& a) {
   a.p=p_tmp;
   HALT("vec not done yet");
 #else
-  CHECK(!reference && !a.reference, "NIY for references");
+  CHECK(!isReference && !a.isReference, "NIY for references");
   CHECK(nd<=3 && a.nd<=3, "only for 1D");
   std::swap((vec_type&)*this, (vec_type&)a);
 
@@ -1618,7 +1620,6 @@ template<class T> void rai::Array<T>::swap(Array<T>& a) {
   SWAP(d0, a.d0);
   SWAP(d1, a.d1);
   SWAP(d2, a.d2);
-  SWAP(M, a.M);
 #undef SWAP
 
   CHECK_EQ(p, vec_type::data(), "");
@@ -1808,6 +1809,11 @@ template<class T> void rai::Array<T>::shift(int offset, bool wrapAround) {
     memmove(p, p+m, sizeT*(N-m));
     if(wrapAround) memmove(p+(N-m), tmp.p, sizeT*m); else memset(p+(N-m), 0, sizeT*m);
   }
+}
+
+template<class T> void rai::Array<T>::setNoArr(){
+  clear();
+  special = new SpecialArray(SpecialArray::ST_NoArr);
 }
 
 template<typename T> struct is_shared_ptr : std::false_type {};
@@ -3422,7 +3428,7 @@ template<class T> void tensorMultiply_old(rai::Array<T>& x, const rai::Array<T>&
 template<class T>
 void setSection(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>& z) {
   x.clear();
-  x.anticipateMEM(rai::MIN(y.N, z.N));
+  x.reserveMEM(rai::MIN(y.N, z.N));
   T* yp=y.p, *zp=z.p, *ystop=y.p+y.N, *zstop=z.p+z.N;
   for(yp=y.p; yp!=ystop; yp++) {
     for(zp=z.p; zp!=zstop; zp++) {

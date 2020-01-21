@@ -80,6 +80,8 @@ void TEST(GJK_Jacobians) {
     //    cout <<"distance: " <<y <<" vec=" <<y2 <<" error=" <<length(y2)-fabs(y(0)) <<endl;
     if(!succ) cout <<collInfo;
 
+    s1.createMeshes();
+    s2.createMeshes();
     gl.add(collInfo);
     gl.add(K);
     gl.update();
