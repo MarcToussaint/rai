@@ -25,14 +25,12 @@ OptNewton::OptNewton(arr& _x, const ScalarFunction& _f,  OptOptions _o, ostream*
   x(_x), f(_f), o(_o), logFile(_logFile) {
   alpha = o.initStep;
   beta = o.damping;
-  additionalRegularizer=nullptr;
   if(f) reinit(_x);
 }
 
 void OptNewton::reinit(const arr& _x) {
   if(&x!=&_x) x = _x;
   fx = f(gx, Hx, x);  evals++;
-  if(additionalRegularizer)  fx += scalarProduct(x, (*additionalRegularizer)*vectorShaped(x));
 
   //startup verbose
   if(o.verbose>1) cout <<"*** optNewton: starting point f(x)=" <<fx <<" alpha=" <<alpha <<" beta=" <<beta <<endl;
@@ -45,6 +43,15 @@ void OptNewton::reinit(const arr& _x) {
 }
 
 //===========================================================================
+
+void boundClip(arr& y, const arr& bound_lo, const arr& bound_hi){
+  if(bound_lo.N && bound_hi.N) {
+    for(uint i=0; i<y.N; i++) if(bound_hi(i)>bound_lo(i)) {
+      if(y(i)>bound_hi(i)) y(i) = bound_hi(i);
+      if(y(i)<bound_lo(i)) y(i) = bound_lo(i);
+    }
+  }
+}
 
 OptNewton::StopCriterion OptNewton::step() {
   double fy;
@@ -68,11 +75,7 @@ OptNewton::StopCriterion OptNewton::step() {
       for(uint i=0; i<R.d0; i++) R.sparse().addEntry(i, i) = beta;
     } else NIY;
   }
-  if(additionalRegularizer) { //obsolete -> retire
-    if(isRowShifted(R)) R = unpack(R);
-    else if(isSpecial(R)) NIY;
-    Delta = lapack_Ainv_b_sym(R + (*additionalRegularizer), -(gx+(*additionalRegularizer)*vectorShaped(x)));
-  } else {
+  {
     bool inversionFailed=false;
     try {
       if(!rootFinding) {
@@ -97,25 +100,9 @@ OptNewton::StopCriterion OptNewton::step() {
         if(o.verbose>0) {
           cout <<"** hessian inversion failed ... using gradient descent direction" <<endl;
         }
-        Delta = -gx / length(gx) * o.maxStep;
-//        alpha = 1.;
+        Delta = gx * (-o.maxStep/length(gx));
       }
     }
-  }
-
-  //chop Delta to stay within bounds
-  if(bound_lo.N && bound_hi.N) {
-#if 0
-    double a=1.;
-    for(uint i=0; i<x.N; i++) if(bound_hi(i)>bound_lo(i)) {
-        if(x(i)+a*Delta(i)>bound_hi(i)) a = (bound_hi(i)-x(i))/Delta(i);
-        if(x(i)+a*Delta(i)<bound_lo(i)) a = (bound_lo(i)-x(i))/Delta(i);
-      }
-    if(a<1.) {
-      if(o.verbose>1) cout <<" \tboundClip=" <<std::setw(11) <<a <<flush;
-      Delta *= a;
-    }
-#endif
   }
 
   //restrict stepsize
@@ -133,31 +120,21 @@ OptNewton::StopCriterion OptNewton::step() {
   }
   timeNewton += rai::timerRead(true);
 
-  //chop Delta to stay within bounds
-  if(bound_lo.N && bound_hi.N) {
-#if 1
-    for(uint i=0; i<x.N; i++) if(bound_hi(i)>bound_lo(i)) {
-        if(x(i)+alpha*Delta(i)>bound_hi(i)) Delta(i) = (bound_hi(i)-x(i))/alpha;
-        if(x(i)+alpha*Delta(i)<bound_lo(i)) Delta(i) = (bound_lo(i)-x(i))/alpha;
-      }
-#endif
-  }
-
   //-- line search along Delta
   uint lineSearchSteps=0;
   for(bool endLineSearch=false; !endLineSearch; lineSearchSteps++) {
     if(!o.allowOverstep) if(alpha>1.) alpha=1.;
     if(alphaHiLimit>0. && alpha>alphaHiLimit) alpha=alphaHiLimit;
     y = x + alpha*Delta;
+    boundClip(y, bound_lo, bound_hi);
     double timeBefore = rai::timerStart();
     fy = f(gy, Hy, y);  evals++;
     timeEval += rai::timerRead(true, timeBefore);
-    if(additionalRegularizer) fy += scalarProduct(y, (*additionalRegularizer)*vectorShaped(y));
     if(o.verbose>5) cout <<" \tprobing y=" <<y;
     if(o.verbose>1) cout <<" \tevals=" <<std::setw(4) <<evals <<" \talpha=" <<std::setw(11) <<alpha <<" \tf(y)=" <<fy <<flush;
-    bool wolfe = (fy <= fx + o.wolfe*alpha*scalarProduct(Delta, gx));
+    bool wolfe = (fy <= fx + o.wolfe*scalarProduct(y-x, gx));
     if(rootFinding) wolfe=true;
-    if(fy==fy && (wolfe || o.nonStrictSteps==-1 || o.nonStrictSteps>(int)its)) { //fy==fy is for NAN?
+    if(fy==fy && (wolfe || o.nonStrictSteps==-1 || o.nonStrictSteps>(int)its)) { //fy==fy is for NAN
       //accept new point
       if(o.verbose>1) cout <<" - ACCEPT" <<endl;
       if(logFile) {

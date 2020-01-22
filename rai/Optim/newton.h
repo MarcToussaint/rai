@@ -17,7 +17,6 @@ struct OptNewton {
   arr& x;
   ScalarFunction f;
   OptOptions o;
-  arr* additionalRegularizer=0;
 
   enum StopCriterion { stopNone=0, stopCrit1, stopTinySteps, stopCritEvals, stopStepFailed };
   double fx;
