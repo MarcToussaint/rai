@@ -10,7 +10,8 @@
 
 uint eval_count=0;
 Singleton<OptOptions> globalOptOptions;
-ObjectiveTypeA& NoTermTypeA = *((ObjectiveTypeA*)nullptr);
+ObjectiveTypeA __NoTermTypeA(new SpecialArray(SpecialArray::ST_NoArr));
+ObjectiveTypeA& NoTermTypeA = __NoTermTypeA;
 
 template<> const char* rai::Enum<ObjectiveType>::names []= {
   "none", "f", "sos", "ineq", "eq", nullptr
