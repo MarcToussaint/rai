@@ -8,7 +8,8 @@
 
 .PRECIOUS: %.o
 
-BASE_REAL = $(shell realpath $(BASE))
+BASE_ORIGINAL := $(BASE)
+BASE := $(shell realpath -L $(PWD)/$(BASE))
 
 
 ################################################################################
@@ -91,7 +92,7 @@ CPATHS	+= $(BASE)/rai
 ifdef BASE2
 CPATHS	+= $(BASE2)
 endif
-LPATHS	+= $(BASE_REAL)/lib /usr/local/lib
+LPATHS	+= $(BASE)/lib /usr/local/lib
 LIBS += -lrt
 SHAREFLAG = -shared #-Wl,--warn-unresolved-symbols #-Wl,--no-allow-shlib-undefined
 
@@ -227,9 +228,9 @@ info: force
 	@echo "     " "environment configuration (see make-generic file)";
 	@echo ----------------------------------------; echo
 	@echo "  PWD =" "$(PWD)"
+	@echo "  BASE_ORIGINAL =" "$(BASE_ORIGINAL)"
 	@echo "  BASE =" "$(BASE)"
 	@echo "  BASE2 =" "$(BASE2)"
-	@echo "  BASE_REAL =" "$(BASE_REAL)"
 	@echo "  NAME =" "$(NAME)"
 	@echo "  LIBPATH =" "$(LIBPATH)"
 	@echo "  EXTERNALS =" "$(EXTERNALS)"
@@ -374,9 +375,14 @@ inPath_makeLib/extern_%: % $(PREOBJS)
 inPath_makeLib/Hardware_%: $(BASE2)/Hardware/% $(PREOBJS)
 	+@-$(BASE)/build/make-path.sh $< libHardware_$*.so
 
+inPath_makeLib/contrib/%: $(BASE)/rai/contrib/% $(PREOBJS)
+	+@-$(BASE)/build/make-path.sh $< lib$*.so
+
 inPath_makeLib/%: $(BASE)/rai/% $(PREOBJS)
 	+@-$(BASE)/build/make-path.sh $< lib$*.so
 
+inPath_makeLib/%: $(BASE)/rai/contrib/% $(PREOBJS)
+	+@-$(BASE)/build/make-path.sh $< lib$*.so
 ifdef BASE2
 inPath_makeLib/%: $(BASE2)/% $(PREOBJS)
 	+@-$(BASE)/build/make-path.sh $< lib$*.so

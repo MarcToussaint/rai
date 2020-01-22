@@ -9,6 +9,8 @@ DEPEND = $(shell find rai -mindepth 1 -maxdepth 1 -printf "%f ")
 
 src_paths =  $(shell find rai -mindepth 1 -maxdepth 1 -type d -not -name 'retired' -printf "%f ")
 
+contrib_paths =  $(shell find -L rai/contrib -mindepth 1 -maxdepth 1 -type d -not -name 'retired' -not -name '.git' -printf "%f ")
+
 test_paths = $(shell find test -mindepth 3 -maxdepth 3 -name 'Makefile' -printf "%h ")
 
 bin_paths = $(shell find bin -mindepth 2 -maxdepth 2 -name 'Makefile' -printf "%h ")
@@ -27,7 +29,7 @@ tests: $(test_paths:%=inPath_make/%)
 
 bin: $(bin_paths:%=inPath_make/%)
 
-src: $(src_paths:%=inPath_makeLib/%)
+src: $(src_paths:%=inPath_makeLib/%) $(contrib_paths:%=inPath_makeLib/contrib/%)
 
 dependAll: $(src_paths:%=inPath_depend/%)
 
@@ -37,6 +39,16 @@ cleanStart: force
 	@read -p " *** WARNING: This will rm ALL local files/changes (e.g. project/temporary/data files) - abort if you don't want to continue" yn
 	git clean -f -d -x
 	cp build/config.mk.default build/config.mk
+
+paths: force
+	@echo; echo ----------------------------------------
+	@echo "  paths ";
+	@echo ----------------------------------------; echo
+	@echo "  src_paths =" "$(src_paths)"
+	@echo "  contrib_paths =" "$(contrib_paths)"
+	@echo "  test_paths =" "$(test_paths)"
+	@echo "  bin_paths =" "$(bin_paths)"
+
 
 ################################################################################
 
