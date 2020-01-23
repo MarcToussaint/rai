@@ -6,15 +6,12 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include <Optim/constrained.h>
-
 #include "geoOptim.h"
-#include <Geo/qhull.h>
-#include <Gui/opengl.h>
-#include <Algo/ann.h>
-
-//#include <mpi_kmeans.h>
-#include <Geo/pairCollision.h>
+#include "../Optim/constrained.h"
+#include "../Geo/qhull.h"
+#include "../Gui/opengl.h"
+#include "../Algo/ann.h"
+#include "../Geo/pairCollision.h"
 
 void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
   struct fitSSBoxProblem : ConstrainedProblem {

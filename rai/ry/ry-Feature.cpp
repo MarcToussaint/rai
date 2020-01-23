@@ -4,7 +4,7 @@
 #include "ry-Config.h"
 #include "types.h"
 
-#include <Kin/feature.h>
+#include "../Kin/feature.h"
 
 void init_Feature(pybind11::module &m) {
 pybind11::class_<ry::RyFeature>(m, "Feature")

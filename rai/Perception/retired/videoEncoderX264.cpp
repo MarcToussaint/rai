@@ -8,7 +8,7 @@
 
 #include "videoEncoder.h"
 #include "colorspace.h"
-#include <Core/util.h>
+#include "../Core/util.h"
 
 #ifdef X264_INSTALLED
 

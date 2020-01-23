@@ -4,7 +4,7 @@
 #include "ry-Config.h"
 #include "types.h"
 
-#include <Kin/kin_physx.h>
+#include "../Kin/kin_physx.h"
 
 void init_PhysX(pybind11::module &m) {
 pybind11::class_<PhysXInterface, std::shared_ptr<PhysXInterface>>(m, "PhysXInterface")

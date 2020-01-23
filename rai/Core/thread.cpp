@@ -8,6 +8,7 @@
 
 #include "thread.h"
 #include "graph.h"
+
 #include <exception>
 #include <signal.h>
 #include <iomanip>

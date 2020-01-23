@@ -6,13 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-/// @file
-/// @ingroup group_Optim
-/// @addtogroup group_Optim
-/// @{
-
-#ifndef RAI_optimization_benchmarks_h
-#define RAI_optimization_benchmarks_h
+#pragma once
 
 #include "optimization.h"
 #include "KOMO_Problem.h"
@@ -223,8 +217,3 @@ struct ParticleAroundWalls2 : KOMO_Problem {
 
   void phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, ObjectiveTypeA& tt, const arr& x);
 };
-
-//===========================================================================
-
-#endif
-/// @}

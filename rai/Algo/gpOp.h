@@ -6,11 +6,10 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifndef dannyGPOP
-#define dannyGPOP
+#pragma once
 
-#include <Core/array.h>
-#include <Core/util.h>
+#include "../Core/array.h"
+#include "../Core/util.h"
 
 struct GaussianProcessKernel;
 
@@ -169,5 +168,3 @@ struct GaussianProcessInverseMultiQuadricKernel : GaussianProcessKernel {
     return new GaussianProcessInverseMultiQuadricKernel(*this);
   }
 };
-
-#endif

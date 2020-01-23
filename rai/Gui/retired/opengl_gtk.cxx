@@ -16,7 +16,7 @@
 //#include <GL/glut.h>
 //#include <GL/glext.h>
 
-#include <Geo/geo.h>
+#include "../Geo/geo.h"
 #include "opengl.h"
 #include "gtk.h"
 

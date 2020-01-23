@@ -20,7 +20,7 @@
 #include <pcl/sample_consensus/model_types.h>
 #include <pcl/segmentation/sac_segmentation.h>
 #include <vector>
-#include <Core/util.h>
+#include "../Core/util.h"
 
 typedef pcl::PointXYZRGB PointT;
 

@@ -6,8 +6,8 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include <Core/util.h>
 #include "MLcourse.h"
+#include "../Core/util.h"
 
 double NormalSdv(const double& a, const double& b, double sdv) {
   double d=(a-b)/sdv;

@@ -11,7 +11,7 @@
 #ifdef HAVE_LIBAV
 
 #include "colorspace.h"
-#include <Core/util.h>
+#include "../Core/util.h"
 
 extern "C" {
 #include <libavcodec/avcodec.h>

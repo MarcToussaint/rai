@@ -6,7 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include <Control/taskControl.h>
+#include "taskControl.h"
 
 struct Gamepad2Tasks {
   TaskControlMethods& TC;

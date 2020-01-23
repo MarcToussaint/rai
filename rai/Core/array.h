@@ -66,9 +66,6 @@ template<class T> bool greaterEqual(const T& a, const T& b) { return a>=b; }
 
 namespace rai {
 
-/// @addtogroup group_array
-/// @{
-
 template<class T> struct ArrayIterationEnumerated;
 
 /** Simple array container to store arbitrary-dimensional arrays (tensors).
@@ -400,7 +397,6 @@ BinaryOperator(-, -=);
 #undef BinaryOperator
 
 /// @} //name
-/// @} //group
 } //namespace
 
 //===========================================================================
@@ -1088,7 +1084,7 @@ template<class T> std::vector<T> conv_arr2stdvec(const rai::Array<T>& x) {
 arr conv_eigen2arr(const Eigen::MatrixXd& in);
 Eigen::MatrixXd conv_arr2eigen(const arr& in);
 
-#endif
+#endif //RAI_EIGEN
 
 //===========================================================================
 // implementations
@@ -1096,10 +1092,8 @@ Eigen::MatrixXd conv_arr2eigen(const arr& in);
 
 void linkArray();
 
-//#if defined RAI_IMPLEMENT_TEMPLATES | defined RAI_IMPLEMENTATION
-#  include "array.tpp"
-//#endif
+#include "array.tpp"
 
-#endif
+#endif //SWIG
 
 // (note: http://www.informit.com/articles/article.aspx?p=31783&seqNum=2)

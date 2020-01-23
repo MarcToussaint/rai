@@ -6,7 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include <Algo/spline.h>
+#include "../Algo/spline.h"
 
 struct SplineRunner {
   rai::Spline refSpline; // reference spline constructed from ref

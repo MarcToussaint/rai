@@ -9,8 +9,8 @@
 #ifndef _MT_motion_h
 #define _MT_motion_h
 
-#include <Kin/kin.h>
-#include <Optim/optimization.h>
+#include "../Kin/kin.h"
+#include "../Optim/optimization.h"
 
 /* Notes
   -- transition models: kinematic, non-holonomic (vel = B u), pseudo dynamic, non-hol dynamic (acc = B u), real dynamic

@@ -6,11 +6,10 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifndef RAI_kin_feather_h
-#define RAI_kin_feather_h
+#pragma once
 
-#include <Geo/geo.h>
-#include <Kin/kin.h>
+#include "kin.h"
+#include "../Geo/geo.h"
 
 struct F_Link {
   int ID=-1;
@@ -57,5 +56,3 @@ struct FeatherstoneInterface {
   void fwdDynamics_aba_1D(arr& qdd, const arr& qd, const arr& tau);
   void invDynamics(arr& tau, const arr& qd, const arr& qdd);
 };
-
-#endif

@@ -13,8 +13,8 @@
 #include <numeric>
 #include <limits>
 
-#include <Core/thread.h>
-#include <Core/array.h>
+#include "../Core/thread.h"
+#include "../Core/array.h"
 
 #include <pcl/point_cloud.h>
 #include <pcl/features/normal_3d.h>

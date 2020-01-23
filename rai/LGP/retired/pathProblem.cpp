@@ -7,10 +7,10 @@
     --------------------------------------------------------------  */
 
 #include "pathProblem.h"
-#include <Kin/taskMaps.h>
-#include <Kin/kin_swift.h>
-#include <Optim/constrained.h>
-#include <Kin/TM_proxy.h>
+#include "../Kin/taskMaps.h"
+#include "../Kin/kin_swift.h"
+#include "../Optim/constrained.h"
+#include "../Kin/TM_proxy.h"
 
 //===========================================================================
 

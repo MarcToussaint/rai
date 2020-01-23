@@ -6,13 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-/// @file
-/// @ingroup group_Core
-/// @addtogroup group_Core
-/// @{
-
-#ifndef RAI_algos_h
-#define RAI_algos_h
+#pragma once
 
 #include "array.h"
 #include "util.h"
@@ -255,7 +249,3 @@ class PartialLeastSquares {
   //internally used
   void SIMPLS();
 };
-
-#endif
-
-/// @} //end group

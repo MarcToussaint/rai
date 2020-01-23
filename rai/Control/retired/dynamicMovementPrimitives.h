@@ -9,9 +9,9 @@
 #ifndef DYNAMICMOVEMENTPRIMITIVES_H
 #define DYNAMICMOVEMENTPRIMITIVES_H
 
-#include <Core/util.h>
-#include <Core/array.h>
-#include <Kin/kin.h>
+#include "../Core/util.h"
+#include "../Core/array.h"
+#include "../Kin/kin.h"
 
 struct DynamicMovementPrimitives {
   DynamicMovementPrimitives(arr& y_ref_, uint nBase_, double dt_, double lambda_=1e-7);

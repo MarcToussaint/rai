@@ -8,12 +8,12 @@
 
 #include "komo-ext.h"
 
-#include <Kin/F_contacts.h>
+#include "../Kin/F_contacts.h"
 //#include <KOMOcsail/komo-CSAIL.h>
-#include <Kin/TM_default.h>
-#include <Kin/F_qFeatures.h>
-#include <Kin/F_geometrics.h>
-#include <Kin/F_PairCollision.h>
+#include "../Kin/TM_default.h"
+#include "../Kin/F_qFeatures.h"
+#include "../Kin/F_geometrics.h"
+#include "../Kin/F_PairCollision.h"
 
 double shapeSize(const rai::Configuration& K, const char* name, uint i);
 

@@ -7,9 +7,9 @@
     --------------------------------------------------------------  */
 
 #include "gravityCompensation.h"
-#include <Algo/MLcourse.h>
-#include <Kin/frame.h>
-#include <Kin/F_qFeatures.h>
+#include "../Algo/MLcourse.h"
+#include "../Kin/frame.h"
+#include "../Kin/F_qFeatures.h"
 
 struct GravityCompensation::CV : public CrossValidation {
   void  train(const arr& X, const arr& y, double param, arr& beta) {

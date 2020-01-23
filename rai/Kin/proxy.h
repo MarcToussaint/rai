@@ -6,11 +6,10 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifndef RAI_proxy_h
-#define RAI_proxy_h
+#pragma once
 
-#include <Geo/geo.h>
-#include <Geo/pairCollision.h>
+#include "../Geo/geo.h"
+#include "../Geo/pairCollision.h"
 #include <memory>
 
 namespace rai {
@@ -46,5 +45,3 @@ struct Proxy : GLDrawer {
 void glDrawProxies(void*);
 
 } //namespace rai
-
-#endif

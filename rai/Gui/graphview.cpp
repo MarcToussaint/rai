@@ -7,9 +7,9 @@
     --------------------------------------------------------------  */
 
 #include "graphview.h"
-#include <Core/util.tpp>
-#include <Core/array.tpp>
-#include <Gui/gtk.h>
+#include "../Core/util.tpp"
+#include "../Core/array.tpp"
+#include "../Gui/gtk.h"
 
 #if defined RAI_GTK and defined RAI_GRAPHVIZ
 

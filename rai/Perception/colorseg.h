@@ -6,10 +6,9 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifndef RAI_libcolorseg_h
-#define RAI_libcolorseg_h
+#pragma once
 
-#include <Core/array.h>
+#include "../Core/array.h"
 
 //----- patch analysis
 void pch2img(byteA& img, const uintA& pch, floatA& pch_colormap);
@@ -43,6 +42,3 @@ void get_multiple_color_segmentations(MultiSegmentations& segmentations,  // sca
                                       const arr& k,
                                       const intA& min
                                      );
-
-#endif
-

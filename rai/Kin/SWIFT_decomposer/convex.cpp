@@ -52,10 +52,10 @@ using std::cerr;
 
 
 
-#include <Kin/SWIFT/SWIFT.h>
-#include <Kin/SWIFT/SWIFT_common.h>
-#include <Kin/SWIFT/SWIFT_mesh.h>
-#include <Kin/SWIFT/SWIFT_mesh_utils.h>
+#include "../SWIFT/SWIFT.h"
+#include "../SWIFT/SWIFT_common.h"
+#include "../SWIFT/SWIFT_mesh.h"
+#include "../SWIFT/SWIFT_mesh_utils.h"
 
 #include "cvxutils.h"
 #include "convex.h"

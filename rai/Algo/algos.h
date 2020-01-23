@@ -6,15 +6,9 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-/// @file
-/// @ingroup group_Core
-/// @addtogroup group_Core
-/// @{
+#pragma once
 
-#ifndef RAI_algos_h
-#define RAI_algos_h
-
-#include <Core/array.h>
+#include "../Core/array.h"
 
 namespace rai {
 
@@ -46,7 +40,3 @@ bool rk4dd_switch(arr& x1, arr& v1, arr& s1, const arr& x0, const arr& v0, const
 
 
 } //end namespace rai
-
-#endif
-
-/// @} //end group

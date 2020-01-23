@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <Kin/kin.h>
+#include "kin.h"
 
 enum FrameFlagType {
   FL_zeroVel=0,

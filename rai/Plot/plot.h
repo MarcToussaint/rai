@@ -6,9 +6,9 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifndef RAI_plot_h
-#define RAI_plot_h
-#include <Core/util.h>
+#pragma once
+
+#include "../Core/util.h"
 
 //===========================================================================
 
@@ -76,8 +76,3 @@ struct PlotModule : GLDrawer {
 extern Singleton<rai::PlotModule> plot;
 
 //===========================================================================
-
-
-
-#endif
-

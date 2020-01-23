@@ -6,8 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifndef RAI_thread_h
-#define RAI_thread_h
+#pragma once
 
 #include "util.h"
 #include "array.h"
@@ -484,5 +483,3 @@ int Var<T>::waitForRevisionGreaterThan(int rev) {
 
 template<class T>
 void Var<T>::stopListening() { thread->event.stopListenTo(data); }
-
-#endif

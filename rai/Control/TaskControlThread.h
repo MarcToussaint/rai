@@ -8,11 +8,11 @@
 
 #pragma once
 
-#include <Core/thread.h>
-#include <Control/ctrlMsg.h>
-#include <Control/taskControl.h>
-#include <Control/RTControllerSimulation.h>
-#include <Control/gravityCompensation.h>
+#include "ctrlMsg.h"
+#include "taskControl.h"
+#include "RTControllerSimulation.h"
+#include "gravityCompensation.h"
+#include "../Core/thread.h"
 
 /// The task controller generates the message send to the RT_Controller
 /// the problem is defined by the list of CtrlTasks

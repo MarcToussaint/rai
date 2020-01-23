@@ -7,13 +7,11 @@
     --------------------------------------------------------------  */
 
 #include "rrt_planner.h"
-
-#include <Kin/kin.h>
-#include <Algo/rrt.h>
-#include <KOMO/komo.h>
-
-#include <Gui/opengl.h>
-#include <Plot/plot.h>
+#include "../Kin/kin.h"
+#include "../Algo/rrt.h"
+#include "../KOMO/komo.h"
+#include "../Gui/opengl.h"
+#include "../Plot/plot.h"
 
 namespace rai {
 struct sRRTPlanner {

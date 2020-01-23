@@ -375,14 +375,12 @@ inPath_makeLib/extern_%: % $(PREOBJS)
 inPath_makeLib/Hardware_%: $(BASE2)/Hardware/% $(PREOBJS)
 	+@-$(BASE)/build/make-path.sh $< libHardware_$*.so
 
-inPath_makeLib/contrib/%: $(BASE)/rai/contrib/% $(PREOBJS)
-	+@-$(BASE)/build/make-path.sh $< lib$*.so
-
 inPath_makeLib/%: $(BASE)/rai/% $(PREOBJS)
 	+@-$(BASE)/build/make-path.sh $< lib$*.so
 
 inPath_makeLib/%: $(BASE)/rai/contrib/% $(PREOBJS)
 	+@-$(BASE)/build/make-path.sh $< lib$*.so
+
 ifdef BASE2
 inPath_makeLib/%: $(BASE2)/% $(PREOBJS)
 	+@-$(BASE)/build/make-path.sh $< lib$*.so

@@ -7,11 +7,11 @@
     --------------------------------------------------------------  */
 
 #include "bounds.h"
-//#include <Kin/switch.h>
-#include <Kin/F_qFeatures.h>
-#include <Kin/TM_angVel.h>
-#include <Kin/F_dynamics.h>
-#include <Kin/TM_default.h>
+//#include "../Kin/switch.h"
+#include "../Kin/F_qFeatures.h"
+#include "../Kin/TM_angVel.h"
+#include "../Kin/F_dynamics.h"
+#include "../Kin/TM_default.h"
 
 double conv_step2time(int step, uint stepsPerPhase);
 

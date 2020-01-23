@@ -8,9 +8,8 @@
 
 #pragma once
 
-#include <Core/array.h>
-#include <Core/thread.h>
-//#include <boost/shared_ptr.hpp>
+#include "../Core/array.h"
+#include "../Core/thread.h"
 
 namespace pcl {
 struct PointXYZ;

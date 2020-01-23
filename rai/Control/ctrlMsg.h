@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <Core/array.h>
+#include "../Core/array.h"
 
 //-- a basic message type for communication with the PR2 controller
 struct CtrlMsg {

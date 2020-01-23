@@ -14,8 +14,8 @@
 
 #include <ros/service_traits.h>
 
-#include <rai_msgs/SendJointTrajectoryRequest.h>
-#include <rai_msgs/SendJointTrajectoryResponse.h>
+#include "../rai_msgs/SendJointTrajectoryRequest.h"
+#include "../rai_msgs/SendJointTrajectoryResponse.h"
 
 namespace rai_msgs {
 

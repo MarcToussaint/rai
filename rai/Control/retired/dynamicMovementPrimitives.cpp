@@ -7,8 +7,8 @@
     --------------------------------------------------------------  */
 
 #include "dynamicMovementPrimitives.h"
-#include <Plot/plot.h>
-#include <KOMO/komo.h>
+#include "../Plot/plot.h"
+#include "../KOMO/komo.h"
 
 DynamicMovementPrimitives::DynamicMovementPrimitives(arr& y_ref_, uint nBase_, double dt_, double lambda_) {
   y_ref = y_ref_;

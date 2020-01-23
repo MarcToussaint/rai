@@ -10,9 +10,9 @@
 #include "F_PairCollision.h"
 #include "frame.h"
 #include "contact.h"
-#include <Geo/pairCollision.h>
 #include "TM_angVel.h"
 #include "TM_default.h"
+#include "../Geo/pairCollision.h"
 
 void POA_distance(arr& y, arr& J, rai::Contact* con, bool b_or_a) {
   rai::Shape* s = con->a.shape;

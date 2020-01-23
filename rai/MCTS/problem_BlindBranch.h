@@ -9,7 +9,7 @@
 #pragma once
 
 #include "environment.h"
-#include <Core/array.h>
+#include "../Core/array.h"
 
 struct BlindBranch:MCTS_Environment {
   struct Action:SAO {

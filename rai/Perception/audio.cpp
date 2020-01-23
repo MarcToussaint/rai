@@ -10,7 +10,7 @@
 #include <iostream>
 using namespace std;
 
-#include <Core/util.h>
+#include "../Core/util.h"
 
 #ifdef HAVE_LIBAV
 extern "C" {

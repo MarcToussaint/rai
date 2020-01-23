@@ -7,8 +7,9 @@
     --------------------------------------------------------------  */
 
 #pragma once
-#include <Core/graph.h>
-#include <Algo/priorityQueue.h>
+
+#include "priorityQueue.h"
+#include "../Core/graph.h"
 
 //===========================================================================
 

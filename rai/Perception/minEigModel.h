@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include <Core/array.h>
-#include <Algo/eigenValues.h>
-#include <Geo/mesh.h>
-#include <Algo/dataNeighbored.h>
+#include "../Core/array.h"
+#include "../Algo/eigenValues.h"
+#include "../Geo/mesh.h"
+#include "../Algo/dataNeighbored.h"
 
 struct MinEigModel : GLDrawer {
   DataNeighbored& data;

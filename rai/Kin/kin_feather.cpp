@@ -1006,4 +1006,3 @@ void FeatherstoneInterface::fwdDynamics_MF(arr& qdd,
 //                                const arr& qd,
 //                                const arr& qdd) { NIY; }
 // #endif
-/** @} */

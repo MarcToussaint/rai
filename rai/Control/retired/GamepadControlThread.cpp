@@ -7,8 +7,8 @@
     --------------------------------------------------------------  */
 
 #include "GamepadControlThread.h"
-#include <Control/TaskControlThread.h>
-#include <Control/gamepad2tasks.h>
+#include "TaskControlThread.h"
+#include "gamepad2tasks.h"
 #include <Hardware/gamepad/gamepad.h>
 
 //===========================================================================

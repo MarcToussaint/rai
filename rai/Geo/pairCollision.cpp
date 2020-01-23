@@ -19,8 +19,8 @@ extern "C" {
 #  include "ccd/quat.h"
 #endif
 
-#include <Gui/opengl.h>
-#include <Geo/qhull.h>
+#include "../Gui/opengl.h"
+#include "qhull.h"
 
 #ifndef RAI_GJK
 #  define FCLmode

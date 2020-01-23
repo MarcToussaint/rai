@@ -6,15 +6,15 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
+#include "graph.h"
+#include "util.tpp"
+#include "array.tpp"
+
 #include <map>
 
 #ifdef RAI_JSON
 #  include <jsoncpp/json/json.h>
 #endif
-
-#include "util.tpp"
-#include "array.tpp"
-#include "graph.h"
 
 #define DEBUG(x) //x
 

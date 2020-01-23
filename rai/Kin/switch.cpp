@@ -8,8 +8,8 @@
 
 #include "switch.h"
 #include "kin.h"
-#include <climits>
 #include "contact.h"
+#include <climits>
 
 //===========================================================================
 

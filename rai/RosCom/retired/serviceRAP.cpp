@@ -9,7 +9,7 @@
 #include "serviceRAP.h"
 
 #ifdef RAI_ROS
-#include <rai_msgs/StringString.h>
+#include "../rai_msgs/StringString.h"
 
 #include <ros/ros.h>
 struct sServiceRAP {

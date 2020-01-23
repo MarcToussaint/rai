@@ -6,11 +6,10 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifndef RAI_simulator_h
-#define RAI_simulator_h
+#pragma once
 
-#include <Kin/kin.h>
-#include <Core/array.h>
+#include "kin.h"
+#include "../Core/array.h"
 
 struct Simulator {
   struct sSimulator* s; //hidden (private) space
@@ -101,6 +100,3 @@ struct CarSimulator {
   void getLinearObservationModelAtState(arr& C, arr& c, const arr& X);
 
 };
-
-#endif
-

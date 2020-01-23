@@ -1,7 +1,7 @@
 #pragma once
 
+#include "../Core/thread.h"
 #include <memory>
-#include <Core/thread.h>
 
 namespace rai{
   struct Simulation;

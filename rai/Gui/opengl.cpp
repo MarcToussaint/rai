@@ -6,13 +6,13 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include <Core/array.tpp>
-#include <Geo/geo.h>
 #ifdef RAI_GL
 #  include <GL/glew.h>
 #  include <GL/glx.h>
 #endif
 #include "opengl.h"
+#include "../Core/array.tpp"
+#include "../Geo/geo.h"
 #ifdef RAI_GLFW
 #  include <GLFW/glfw3.h>
 #endif

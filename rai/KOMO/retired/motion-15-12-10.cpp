@@ -8,8 +8,8 @@
 
 #include "motion.h"
 #include "taskMaps.h"
-#include <Gui/opengl.h>
-#include <Kin/kin_swift.h>
+#include "../Gui/opengl.h"
+#include "../Kin/kin_swift.h"
 #include <climits>
 #include <iomanip>
 

@@ -1,6 +1,7 @@
 #ifdef RAI_ROS
-#include <tf/tfMessage.h>
+
 #include "subscribeOptitrack.h"
+#include <tf/tfMessage.h>
 
 void Optitrack::open()
 {

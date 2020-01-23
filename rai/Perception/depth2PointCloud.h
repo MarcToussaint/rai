@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include <Core/thread.h>
-#include <Geo/geo.h>
+#include "../Core/thread.h"
+#include "../Geo/geo.h"
 
 struct Depth2PointCloud : Thread {
   //inputs

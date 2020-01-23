@@ -7,7 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "perception.h"
-#include <Gui/opengl.h>
+#include "../Gui/opengl.h"
 
 #if 0
 

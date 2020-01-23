@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include <Core/thread.h>
-#include <Kin/kin.h>
+#include "../Core/thread.h"
+#include "../Kin/kin.h"
 
 enum RobotType { ROB_sim=0, ROB_pr2, ROB_baxter, ROB_kukaWSG };
 enum SensorId { SEN_depth };

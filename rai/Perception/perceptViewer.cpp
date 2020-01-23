@@ -7,8 +7,8 @@
     --------------------------------------------------------------  */
 
 #include "perceptViewer.h"
-#include <Gui/opengl.h>
-#include <Kin/frame.h>
+#include "../Gui/opengl.h"
+#include "../Kin/frame.h"
 
 PerceptViewer::PerceptViewer(Var<PerceptL>& _percepts, Var<rai::Configuration> _kin)
   : Thread(STRING("PercViewer_"<<_percepts.name()), -1.),

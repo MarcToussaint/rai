@@ -9,7 +9,7 @@
 #include "simulation.h"
 #include "kin_bullet.h"
 #include "kin_physx.h"
-#include <Gui/opengl.h>
+#include "../Gui/opengl.h"
 
 namespace rai {
 struct Simulation_self {

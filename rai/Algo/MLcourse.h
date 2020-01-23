@@ -6,10 +6,9 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifndef RAI_linearRegression_h
-#define RAI_linearRegression_h
+#pragma once
 
-#include <Core/array.h>
+#include "../Core/array.h"
 
 //===========================================================================
 //
@@ -122,5 +121,3 @@ void load_data(arr& X, const char* filename, bool whiten);
 //
 
 double NormalSdv(const double& a, const double& b, double sdv);
-
-#endif

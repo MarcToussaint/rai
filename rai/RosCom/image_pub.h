@@ -17,7 +17,7 @@
 #define IMAGE_PUB_H_
 
 #include <string>
-#include <Perception/pixel_format.h>
+#include "../Perception/pixel_format.h"
 
 namespace rai {
 template<class T> struct Array;

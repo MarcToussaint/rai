@@ -1,7 +1,8 @@
 #pragma once
-#include <Core/thread.h>
-#include <Perception/percept.h>
-#include <RosCom/roscom.h>
+
+#include "../Core/thread.h"
+#include "../Perception/percept.h"
+#include "../RosCom/roscom.h"
 
 #include <ar_track_alvar_msgs/AlvarMarkers.h>
 namespace ar = ar_track_alvar_msgs;

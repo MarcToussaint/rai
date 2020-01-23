@@ -6,10 +6,11 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
+#include "algos.h"
+#include "array.tpp"
+
 #include <cmath>
 #include <cstdlib>
-#include "array.tpp"
-#include "algos.h"
 
 #ifdef RAI_SHARK
 #  define Array rai::Array

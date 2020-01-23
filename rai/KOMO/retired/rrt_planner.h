@@ -9,7 +9,7 @@
 #ifndef _HEADER_GUARD_RRT_PLANNER_H_
 #define _HEADER_GUARD_RRT_PLANNER_H_
 
-#include <Core/array.h>
+#include "../Core/array.h"
 
 struct KOMO;
 struct OpenGL;

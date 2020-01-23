@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include <Core/array.h>
 #include "mesh.h"
+#include "../Core/array.h"
 
 namespace rai {
 

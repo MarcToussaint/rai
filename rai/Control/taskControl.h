@@ -8,17 +8,9 @@
 
 #pragma once
 
-#include <Algo/spline.h>
-#include <Core/thread.h>
-#include <Kin/kin.h>
-
-/**
- * @file
- * With the feedback control we can define motions for operation space control.
- *
- * We simply define a set of motions via CtrlTasks/ConstraintForceTask and run
- * them.
- */
+#include "../Algo/spline.h"
+#include "../Core/thread.h"
+#include "../Kin/kin.h"
 
 struct CtrlTask;
 typedef rai::Array<CtrlTask*> CtrlTaskL;

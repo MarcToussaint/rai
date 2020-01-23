@@ -7,8 +7,8 @@
     --------------------------------------------------------------  */
 
 #include "plane.h"
-#include <Geo/mesh.h>
-#include <Gui/opengl.h>
+#include "../Geo/mesh.h"
+#include "../Gui/opengl.h"
 
 CostFct_PlanePoints::CostFct_PlanePoints(const arr& n, const arr& m, const arr& X, const arr& transform)
   : n(n), m(m), X(X), transform(transform), r(transform.sub(3, 6)) {

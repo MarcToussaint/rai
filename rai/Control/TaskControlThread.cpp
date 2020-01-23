@@ -7,8 +7,8 @@
     --------------------------------------------------------------  */
 
 #include "TaskControlThread.h"
-#include <RosCom/baxter.h>
-#include <Kin/frame.h>
+#include "../RosCom/baxter.h"
+#include "../Kin/frame.h"
 
 TaskControlThread::TaskControlThread(const Var<rai::Configuration>& _ctrl_config,
                                      const Var<CtrlMsg>& _ctrl_ref,

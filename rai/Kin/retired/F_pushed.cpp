@@ -8,9 +8,9 @@
 
 #include "F_pushed.h"
 #include "F_static.h"
-#include <Kin/kin.h>
 #include "TM_angVel.h"
-#include <Kin/contact.h>
+#include "kin.h"
+#include "contact.h"
 
 void POA_vel(arr& y, arr& J, const ConfigurationL& Ktuple, rai::Contact* con, bool b_or_a);
 

@@ -9,13 +9,13 @@
 #ifndef PR2INTERFACE_H
 #define PR2INTERFACE_H
 
-#include <Core/thread.h>
-#include <Core/array.h>
-#include <RosCom/roscom.h>
-#include <Kin/kin.h>
-#include <RosCom/pr2DynamicSimulation.h>
-#include <Control/taskSpaceController.h>
-#include <RosCom/subscribeAlvarMarkers.h>
+#include "../Core/thread.h"
+#include "../Core/array.h"
+#include "../RosCom/roscom.h"
+#include "../Kin/kin.h"
+#include "../RosCom/pr2DynamicSimulation.h"
+#include "../Control/taskSpaceController.h"
+#include "../RosCom/subscribeAlvarMarkers.h"
 
 struct PR2Interface : Thread {
   VAR(CtrlMsg, ctrl_ref)

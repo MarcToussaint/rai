@@ -2137,7 +2137,6 @@ void rai::Mesh::setImplicitSurface(ScalarFunction f, double lo, double hi, uint 
   NICO
 }
 #endif
-/** @} */
 
 //===========================================================================
 

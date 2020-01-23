@@ -29,8 +29,8 @@ using namespace image_transport;
 using namespace camera_info_manager;
 #endif
 
-#include <Core/array.h>
-#include <Core/util.h>
+#include "../Core/array.h"
+#include "../Core/util.h"
 #include <sstream>
 #include <time.h>
 

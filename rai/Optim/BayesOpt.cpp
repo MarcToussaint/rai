@@ -8,8 +8,8 @@
 
 #include "BayesOpt.h"
 #include "RidgeRegression.h"
-//#include <Plot/plot.h>
-//#include <Algo/MLcourse.h>
+//#include "../Plot/plot.h"
+//#include "../Algo/MLcourse.h"
 
 BayesOpt::BayesOpt(const ScalarFunction& _f, const arr& bounds_lo, const arr& bounds_hi, double init_lengthScale, double prior_var, OptOptions o)
   : f(_f),

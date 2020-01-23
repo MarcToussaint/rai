@@ -6,10 +6,10 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include <Core/array.h>
-#include <Core/thread.h>
-#include <Control/ctrlMsg.h>
-#include <Kin/kin.h>
+#include "../Core/array.h"
+#include "../Core/thread.h"
+#include "../Control/ctrlMsg.h"
+#include "../Kin/kin.h"
 
 #ifdef RAI_ROS
 #include <sensor_msgs/JointState.h>

@@ -57,9 +57,9 @@ using std::setprecision;
 #ifdef DECOMP_GRAPHICS
 #include <togl.h>
 #endif
-#include <Kin/SWIFT/SWIFT.h>
-#include <Kin/SWIFT/SWIFT_mesh.h>
-#include <Kin/SWIFT/SWIFT_fileio.h>
+#include "../SWIFT/SWIFT.h"
+#include "../SWIFT/SWIFT_mesh.h"
+#include "../SWIFT/SWIFT_fileio.h"
 
 #include "gui.h"
 

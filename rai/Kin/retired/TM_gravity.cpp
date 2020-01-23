@@ -7,12 +7,12 @@
     --------------------------------------------------------------  */
 
 #include "TM_gravity.h"
-#include <Kin/flag.h>
-#include <Kin/frame.h>
-#include <Kin/contact.h>
-#include <Kin/TM_default.h>
-#include <Kin/TM_PairCollision.h>
-#include <Kin/TM_angVel.h>
+#include "flag.h"
+#include "frame.h"
+#include "contact.h"
+#include "TM_default.h"
+#include "TM_PairCollision.h"
+#include "TM_angVel.h"
 
 bool JointDidNotSwitch(const rai::Frame* a1, const ConfigurationL& Ktuple, int order);
 

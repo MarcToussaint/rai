@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <Optim/optimization.h>
+#include "../Optim/optimization.h"
 
 struct PR2EndPoseProblem : ConstrainedProblem {
   struct sPR2EndPoseProblem& s;

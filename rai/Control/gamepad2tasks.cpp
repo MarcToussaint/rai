@@ -7,10 +7,10 @@
     --------------------------------------------------------------  */
 
 #include "gamepad2tasks.h"
-#include <Kin/frame.h>
-#include <Kin/F_qFeatures.h>
-#include <Kin/TM_default.h>
-#include <Kin/TM_proxy.h>
+#include "../Kin/frame.h"
+#include "../Kin/F_qFeatures.h"
+#include "../Kin/TM_default.h"
+#include "../Kin/TM_proxy.h"
 
 enum BUTTON {
   BTN_NONE = 0,

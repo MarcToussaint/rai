@@ -9,11 +9,11 @@
 #ifdef RAI_ROS
 
 #include "robot_pr2.h"
-#include <Algo/spline.h>
-#include <Control/ctrlMsg.h>
-#include <Kin/frame.h>
 #include "splineRunner.h"
-#include <RosCom/roscom.h>
+#include "../Algo/spline.h"
+#include "../Control/ctrlMsg.h"
+#include "../Kin/frame.h"
+#include "../RosCom/roscom.h"
 
 struct Robot_PR2_PathThread : Thread {
   Mutex threadLock;

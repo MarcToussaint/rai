@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include <Optim/optimization.h>
-#include <Kin/feature.h>
+#include "../Optim/optimization.h"
+#include "../Kin/feature.h"
 
 struct Objective {
   ptr<Feature> map;

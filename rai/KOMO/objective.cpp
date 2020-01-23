@@ -7,8 +7,8 @@
     --------------------------------------------------------------  */
 
 #include "objective.h"
-#include <Kin/switch.h>
-#include <Core/graph.h>
+#include "../Kin/switch.h"
+#include "../Core/graph.h"
 
 //===========================================================================
 

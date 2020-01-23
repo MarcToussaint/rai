@@ -9,9 +9,9 @@
 #ifndef Core_module_h
 #define Core_module_h
 
-#include <Core/array.h>
-#include <Core/graph.h>
-#include <Core/thread.h>
+#include "../Core/array.h"
+#include "../Core/graph.h"
+#include "../Core/thread.h"
 
 struct Access;
 typedef Thread Module;

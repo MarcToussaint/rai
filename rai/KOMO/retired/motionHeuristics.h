@@ -6,8 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifndef RAI_MotionPlanner_h
-#define RAI_MotionPlanner_h
+#pragma once
 
 #include "motion.h"
 
@@ -22,5 +21,3 @@ void interpolate_trajectory(arr& q, const arr& q0, const arr& qT, uint T);
 inline arr interpolate_trajectory(const arr& q0, const arr& qT, uint T) {
   arr q; interpolate_trajectory(q, q0, qT, T); return q;
 }
-
-#endif

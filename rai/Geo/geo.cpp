@@ -6,10 +6,10 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include <algorithm>
-#include <Core/array.h>
 #include "geo.h"
+#include "../Core/array.h"
 
+#include <algorithm>
 #ifdef RAI_GL
 #  include <GL/glu.h>
 #endif

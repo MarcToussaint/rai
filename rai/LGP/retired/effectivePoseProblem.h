@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include <Optim/optimization.h>
-#include <Kin/kin.h>
+#include "../Optim/optimization.h"
+#include "../Kin/kin.h"
 
 //===========================================================================
 

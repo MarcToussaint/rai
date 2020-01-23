@@ -7,8 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "taskSpaceController.h"
-
-#include <Algo/spline.h>
+#include "../Algo/spline.h"
 
 LinTaskSpaceAccLaw::LinTaskSpaceAccLaw(Feature* map, rai::Configuration* world, rai::String name) : map(map), world(world), name(name) {
   this->setRef(); //TODO: is this the best way?

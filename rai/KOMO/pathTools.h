@@ -6,9 +6,9 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include <Core/array.h>
-#include <Kin/kin.h>
-#include <Algo/spline.h>
+#include "../Core/array.h"
+#include "../Kin/kin.h"
+#include "../Algo/spline.h"
 
 //-- PATH ANALYSIS
 

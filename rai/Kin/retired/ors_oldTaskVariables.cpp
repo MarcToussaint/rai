@@ -6,15 +6,6 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-/**
- * @file
- * @ingroup group_ors
- */
-/**
- * @ingroup group_ors
- * @{
- */
-
 #include "kin.h"
 #include "kin_oldTaskVariables.h"
 
@@ -1166,4 +1157,3 @@ void SMAC::plotCVs() {
 }
 
 #endif
-/** @} */

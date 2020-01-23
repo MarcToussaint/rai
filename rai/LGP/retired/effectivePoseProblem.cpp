@@ -7,9 +7,9 @@
     --------------------------------------------------------------  */
 
 #include "effectivePoseProblem.h"
-#include <Gui/opengl.h>
-#include <Kin/taskMaps.h>
-#include <Optim/constrained.h>
+#include "../Gui/opengl.h"
+#include "../Kin/taskMaps.h"
+#include "../Optim/constrained.h"
 
 //===========================================================================
 

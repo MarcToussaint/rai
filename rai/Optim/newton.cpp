@@ -6,9 +6,8 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include <iomanip>
-
 #include "newton.h"
+#include <iomanip>
 
 bool sanityCheck=false; //true;
 

@@ -52,8 +52,8 @@
 #ifndef _CONVEX_H_
 #define _CONVEX_H_
 
-#include <Kin/SWIFT/SWIFT_array.h>
-#include <Kin/SWIFT/SWIFT_mesh.h>
+#include "../SWIFT/SWIFT_array.h"
+#include "../SWIFT/SWIFT_mesh.h"
 
 void Convex_Initialize( SWIFT_Tri_Mesh* m );
 

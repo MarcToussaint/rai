@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <Core/graph.h>
+#include "../Core/graph.h"
 
 /* WORDING:
 

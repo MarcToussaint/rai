@@ -9,9 +9,9 @@
 #ifndef PHASE_OPTIMIZATION_H
 #define PHASE_OPTIMIZATION_H
 
-#include <Optim/optimization.h>
-#include <Algo/spline.h>
-#include <Optim/kOrderMarkov.h>
+#include "../Optim/optimization.h"
+#include "../Algo/spline.h"
+#include "../Optim/kOrderMarkov.h"
 
 struct PhaseOptimization : KOrderMarkovFunction {
   //options of the problem

@@ -9,10 +9,10 @@
 #ifndef PR2DYNAMICSIMULATION_H
 #define PR2DYNAMICSIMULATION_H
 
-#include <Core/array.h>
-#include <Core/thread.h>
-#include <Kin/kin.h>
-#include <Control/ctrlMsg.h>
+#include "../Core/array.h"
+#include "../Core/thread.h"
+#include "../Kin/kin.h"
+#include "ctrlMsg.h"
 
 struct RTControllerSimulation : Thread {
   Var<CtrlMsg> ctrl_ref;

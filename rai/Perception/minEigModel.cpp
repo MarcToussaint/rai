@@ -6,11 +6,11 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include <Gui/opengl.h>
-#include <GL/gl.h>
-#include <Geo/geo.h>
-#include <Geo/qhull.h>
 #include "minEigModel.h"
+#include "../Gui/opengl.h"
+#include "../Geo/geo.h"
+#include "../Geo/qhull.h"
+#include <GL/gl.h>
 
 void MinEigModel::setPoints(const uintA& points) {
   pts = points;

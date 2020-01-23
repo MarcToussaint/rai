@@ -8,10 +8,9 @@
 
 #include "simulation.h"
 #include "splineRunner.h"
-
-#include <Algo/spline.h>
-#include <Kin/kin_swift.h>
-#include <Kin/proxy.h>
+#include "../Algo/spline.h"
+#include "../Kin/kin_swift.h"
+#include "../Kin/proxy.h"
 
 arr computeNextFeasibleConfiguration(rai::Configuration& K, arr q_ref, StringA& jointsInLimit, StringA& collisionPairs);
 

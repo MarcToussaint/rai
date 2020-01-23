@@ -1,10 +1,9 @@
 #ifdef RAI_PYBIND
 
 #include "ry-Simulation.h"
-//#include "ry-Config.h"
 #include "types.h"
 
-#include <Kin/simulation.h>
+#include "../Kin/simulation.h"
 
 namespace rai{
   struct SimulationState {

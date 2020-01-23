@@ -6,15 +6,9 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-/// @file
-/// @ingroup group_ors
-/// @addtogroup group_ors
-/// @{
+#pragma once
 
-#ifndef RAI_ors_actionInterface_h
-#define RAI_ors_actionInterface_h
-
-#include <Core/array.h>
+#include "../Core/array.h"
 
 // huepfen der bloecke, falls sie zb runterfallen
 #define ODE_COLL_BOUNCE 0.0
@@ -119,6 +113,3 @@ class ActionInterface {
 
   void indicateFailure();
 };
-
-#endif
-/// @}

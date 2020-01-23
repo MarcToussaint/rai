@@ -1,8 +1,8 @@
 #pragma once
 
+#include "../Core/array.h"
+#include "../Core/thread.h"
 #include <memory>
-#include <Core/array.h>
-#include <Core/thread.h>
 
 struct RosCamera;
 

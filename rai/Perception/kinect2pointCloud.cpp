@@ -7,7 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "kinect2pointCloud.h"
-#include <Kin/kin.h>
+#include "../Kin/kin.h"
 
 Kinect2PointCloud::Kinect2PointCloud()
   : Thread("Kinect2PointCloud"), kinect_depth(this, true) {

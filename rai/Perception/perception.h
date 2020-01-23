@@ -6,8 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifndef RAI_perception_h
-#define RAI_perception_h
+#pragma once
 
 #ifdef RAI_OPENCV
 #  undef COUNT
@@ -16,10 +15,10 @@
 #  undef MAX
 #endif
 
-#include <Core/thread.h>
-#include <Kin/kin.h>
-#include <Core/array.tpp>
-#include <Gui/opengl.h>
+#include "../Core/thread.h"
+#include "../Kin/kin.h"
+#include "../Core/array.tpp"
+#include "../Gui/opengl.h"
 #include <map>
 
 //===========================================================================
@@ -320,8 +319,6 @@ struct Patcher : Thread {
 //TODO Johannes VariableL newPointcloudVariables();
 
 //TODO: where should this go? maybe ors?
-
-#endif //RAI_perception_h
 
 /*
 

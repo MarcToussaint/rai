@@ -6,9 +6,8 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include <RosCom/roscom.h>
-
 #include "rosCamera.h"
+#include "../RosCom/roscom.h"
 
 #ifdef RAI_ROS
 

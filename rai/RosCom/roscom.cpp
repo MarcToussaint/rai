@@ -9,8 +9,8 @@
 #ifdef RAI_ROS
 
 #include "roscom.h"
-#include <Kin/frame.h>
 #include "spinner.h"
+#include "../Kin/frame.h"
 
 #ifdef RAI_PCL
 #  include <pcl/point_cloud.h>

@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include <Core/array.h>
 #include "optimization.h"
 
 //===========================================================================

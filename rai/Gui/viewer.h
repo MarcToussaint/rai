@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <Core/thread.h>
+#include "../Core/thread.h"
 
 namespace rai { struct Mesh; }
 typedef rai::Array<rai::Mesh> MeshA;

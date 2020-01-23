@@ -9,7 +9,7 @@
 #ifndef AUDIO_H
 #define AUDIO_H
 
-#include <Core/array.h>
+#include "../Core/array.h"
 
 class AudioWriter_libav {
  private:

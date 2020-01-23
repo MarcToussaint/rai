@@ -8,8 +8,8 @@
 
 #pragma once
 
+#include "../Core/thread.h"
 #include <ros/ros.h>
-#include <Core/thread.h>
 
 /** MACRO to create a RAI module that integrates data from ROS into the RAI
  *  module system.

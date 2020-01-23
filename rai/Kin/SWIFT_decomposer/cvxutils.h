@@ -52,9 +52,9 @@
 #ifndef _CVXUTILS_H_
 #define _CVXUTILS_H_
 
-#include <Kin/SWIFT/SWIFT_common.h>
-#include <Kin/SWIFT/SWIFT_array.h>
-#include <Kin/SWIFT/SWIFT_mesh.h>
+#include "../SWIFT/SWIFT_common.h"
+#include "../SWIFT/SWIFT_array.h"
+#include "../SWIFT/SWIFT_mesh.h"
 
 bool Check_Euler_Characteristic( SWIFT_Tri_Mesh* m, SWIFT_Array<int>& mfs,
                                  SWIFT_Array<SWIFT_Tri_Face>& vfs );

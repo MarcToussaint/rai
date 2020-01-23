@@ -8,8 +8,8 @@
 
 #include "benchmarks.h"
 #include "komo.h"
-//#include <Optim/kOrderMarkov.h>
-#include <Optim/convert.h>
+//#include "../Optim/kOrderMarkov.h"
+#include "../Optim/convert.h"
 
 void setTasks(KOMO& MP,
               rai::Shape& endeff,

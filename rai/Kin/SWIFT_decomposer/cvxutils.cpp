@@ -48,9 +48,9 @@
 
 
 #include <RAPID.h>
-#include <Kin/SWIFT/SWIFT.h>
-#include <Kin/SWIFT/SWIFT_mesh.h>
-#include <Kin/SWIFT/SWIFT_mesh_utils.h>
+#include "../SWIFT/SWIFT.h"
+#include "../SWIFT/SWIFT_mesh.h"
+#include "../SWIFT/SWIFT_mesh_utils.h"
 
 #include "cvxutils.h"
 using std::cerr;

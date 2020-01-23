@@ -14,8 +14,8 @@
 
 #include <ros/service_traits.h>
 
-#include <rai_msgs/StringStringRequest.h>
-#include <rai_msgs/StringStringResponse.h>
+#include "../rai_msgs/StringStringRequest.h"
+#include "../rai_msgs/StringStringResponse.h"
 
 namespace rai_msgs {
 

@@ -8,9 +8,8 @@
 
 #pragma once
 
-#include <Core/array.h>
 #include "optimization.h"
-#include <Algo/MLcourse.h>
+#include "../Algo/MLcourse.h"
 
 /*
 

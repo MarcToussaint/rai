@@ -10,12 +10,6 @@
 
 #include "kin.h"
 
-//===========================================================================
-/**
- * @defgroup rai_interface_SWIFT SWIFT Interface.
- * @{
- */
-
 class SWIFT_Scene;
 
 /// contains all information necessary to communicate with swift
@@ -46,4 +40,3 @@ struct SwiftInterface {
   void swiftQueryExactDistance();
   uint countObjects();
 };
-/** @} */

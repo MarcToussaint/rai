@@ -4,7 +4,7 @@
 #include "ry-KOMO.h"
 #include "types.h"
 
-#include <LGP/LGP_tree.h>
+#include "../LGP/LGP_tree.h"
 
 void init_LGP_Tree(pybind11::module &m) {
 pybind11::class_<ry::RyLGP_Tree>(m, "LGP_Tree")

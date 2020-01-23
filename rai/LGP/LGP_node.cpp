@@ -10,11 +10,11 @@
 #include "LGP_tree.h"
 #include "bounds.h"
 
-#include <MCTS/solver_PlainMC.h>
-#include <KOMO/komo.h>
-#include <Kin/switch.h>
-#include <Optim/GraphOptim.h>
-#include <Gui/opengl.h>
+#include "../MCTS/solver_PlainMC.h"
+#include "../KOMO/komo.h"
+#include "../Kin/switch.h"
+#include "../Optim/GraphOptim.h"
+#include "../Gui/opengl.h"
 
 #define DEBUG(x) //x
 #define DEL_INFEASIBLE(x) //x

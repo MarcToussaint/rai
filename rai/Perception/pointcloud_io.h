@@ -10,7 +10,7 @@
 #define POINTCLOUDSUBSCRIBER_H
 
 #include <string>
-#include <Core/array.h>
+#include "../Core/array.h"
 
 namespace rai {
 /// Typedef for depth image received event callbacks

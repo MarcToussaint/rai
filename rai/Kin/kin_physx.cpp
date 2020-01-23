@@ -25,7 +25,7 @@
 
 #include "kin_physx.h"
 #include "frame.h"
-#include <Gui/opengl.h>
+#include "../Gui/opengl.h"
 
 using namespace physx;
 
@@ -711,7 +711,6 @@ void PhysXInterface::addForce(rai::Vector& force, rai::Frame* b, rai::Vector& po
 void glPhysXInterface(void* classP) { NICO }
 
 #endif
-/** @} */
 
 #ifdef RAI_PHYSX
 RUN_ON_INIT_BEGIN(kin_physx)

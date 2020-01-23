@@ -1,10 +1,10 @@
 #pragma once
 
-#include <Core/thread.h>
-#include <Core/array.h>
-#include <RosCom/roscom.h>
+#include "../Core/thread.h"
+#include "../Core/array.h"
+#include "../RosCom/roscom.h"
 
-#include <Perception/percept.h>
+#include "../Perception/percept.h"
 
 /// 'publishes' to both, ROS topics and modelWorld
 struct PublishDatabase : Thread{

@@ -6,13 +6,12 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifndef RAI_kin_h
-#define RAI_kin_h
+#pragma once
 
-#include <Core/array.h>
-#include <Geo/geo.h>
-#include <Geo/geoms.h>
 #include "featureSymbols.h"
+#include "../Core/array.h"
+#include "../Geo/geo.h"
+#include "../Geo/geoms.h"
 
 struct OpenGL;
 struct PhysXInterface;
@@ -359,5 +358,3 @@ int animateConfiguration(rai::Configuration& G, struct Inotify* ino=nullptr);
 
 void kinVelocity(arr& y, arr& J, uint frameId, const ConfigurationL& Ktuple, double tau);
 void kinAngVelocity(arr& y, arr& J, uint frameId, const ConfigurationL& Ktuple, double tau);
-
-#endif //RAI_ors_h

@@ -7,7 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "TM_proxy.h"
-#include <Kin/proxy.h>
+#include "proxy.h"
 
 TM_Proxy::TM_Proxy(PTMtype _type,
                    uintA _shapes,

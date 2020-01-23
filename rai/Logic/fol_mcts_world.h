@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include <MCTS/environment.h>
-#include <Core/array.h>
-#include <Core/graph.h>
+#include "../MCTS/environment.h"
+#include "../Core/array.h"
+#include "../Core/graph.h"
 
 struct FOL_World : MCTS_Environment {
 

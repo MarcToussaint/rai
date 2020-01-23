@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include <Core/thread.h>
-#include <Control/taskControl.h>
+#include "taskControl.h"
+#include "../Core/thread.h"
 
 struct GamepadControlThread : Thread {
   struct Gamepad2Tasks* g2t;

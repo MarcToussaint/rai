@@ -7,8 +7,8 @@
     --------------------------------------------------------------  */
 
 #include "RTControllerSimulation.h"
-#include <Kin/proxy.h>
-#include <Kin/frame.h>
+#include "../Kin/proxy.h"
+#include "../Kin/frame.h"
 
 void force(rai::Configuration* world, arr& fR) {
   world->stepSwift();

@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include <LGP/LGP_tree.h>
-#include <Core/thread.h>
+#include "../LGP/LGP_tree.h"
+#include "../Core/thread.h"
 
 #include "ry.h"
 

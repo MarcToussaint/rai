@@ -6,22 +6,14 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-/// @file
-/// @ingroup group_ors
+#pragma once
 
-#ifndef RAI_ors_physx_h
-#define RAI_ors_physx_h
 #include "kin.h"
 
 namespace physx {
 class PxMaterial;
 }
 
-/**
- * @defgroup rai_interface_physx Interface to PhysX
- * @ingroup rai_interfaces
- * @{
- */
 struct PhysXInterface : GLDrawer {
   struct PhysXInterface_self* self=0;
 
@@ -43,7 +35,3 @@ struct PhysXInterface : GLDrawer {
   void addForce(rai::Vector& force, rai::Frame* b);
   void addForce(rai::Vector& force, rai::Frame* b, rai::Vector& pos);
 };
-
-#endif
-/// @}
-

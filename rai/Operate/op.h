@@ -6,7 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include <Core/thread.h>
+#include "../Core/thread.h"
 #include <iomanip>
 
 typedef std::function<int()> Script;

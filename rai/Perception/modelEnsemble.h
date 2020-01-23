@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include <Algo/dataNeighbored.h>
 #include "minEigModel.h"
-#include <Gui/opengl.h>
+#include "../Algo/dataNeighbored.h"
+#include "../Gui/opengl.h"
 
 struct ModelEnsemble :GLDrawer {
   rai::Array<MinEigModel*> models;

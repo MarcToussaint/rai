@@ -1,7 +1,7 @@
 #ifdef RAI_PYBIND
 
 #include "types.h"
-#include <Geo/geoms.h>
+#include "../Geo/geoms.h"
 
 pybind11::dict graph2dict(const Graph& G) {
   pybind11::dict dict;

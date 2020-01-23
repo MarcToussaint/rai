@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include <Core/array.h>
-#include <Gui/opengl.h>
+#include "../Core/array.h"
+#include "../Gui/opengl.h"
 
 struct SurfelStatistics {
   float n, x, y, z, xx, xy, xz, yy, yz, zz, nx, ny, nz, r, g, b;

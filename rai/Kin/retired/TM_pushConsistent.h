@@ -7,6 +7,7 @@
     --------------------------------------------------------------  */
 
 #pragma once
+
 #include "feature.h"
 
 struct TM_PushConsistent : Feature {

@@ -7,6 +7,7 @@
     --------------------------------------------------------------  */
 
 #pragma once
+
 #include "kin.h"
 #include "frame.h"
 #include "featureSymbols.h"

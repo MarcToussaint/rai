@@ -6,19 +6,6 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-/**
- * @file
- * @ingroup group_ors
- */
-/**
- * @addtogroup group_ors
- * @{
- */
-
-#undef abs
-#include <algorithm>
-#include <sstream>
-#include <climits>
 #include "kin.h"
 #include "frame.h"
 #include "contact.h"
@@ -30,13 +17,16 @@
 #include "kin_feather.h"
 #include "featureSymbols.h"
 #include "viewer.h"
-#include <Geo/fclInterface.h>
-#include <Geo/qhull.h>
-#include <Geo/mesh_readAssimp.h>
-#include <GeoOptim/geoOptim.h>
-#include <Gui/opengl.h>
-#include <Algo/algos.h>
+#include "../Geo/fclInterface.h"
+#include "../Geo/qhull.h"
+#include "../Geo/mesh_readAssimp.h"
+#include "../GeoOptim/geoOptim.h"
+#include "../Gui/opengl.h"
+#include "../Algo/algos.h"
 #include <iomanip>
+#include <algorithm>
+#include <sstream>
+#include <climits>
 
 #ifndef RAI_ORS_ONLY_BASICS
 #  include <Core/graph.h>
@@ -3825,28 +3815,18 @@ void displayTrajectory(const arr&, int, rai::Configuration&, const char*, double
 void displayState(const arr&, rai::Configuration&, const char*) { NICO }
 #endif
 #endif
-/** @} */
 
 //===========================================================================
-//===========================================================================
-// featherstone
-//===========================================================================
-//===========================================================================
-
-//===========================================================================
-//===========================================================================
+//
 // template instantiations
-//===========================================================================
-//===========================================================================
+//
 
-#include <Core/util.tpp>
+#include "../Core/util.tpp"
 
 #ifndef  RAI_ORS_ONLY_BASICS
 template rai::Array<rai::Shape*>::Array(uint);
 //template rai::Shape* listFindByName(const rai::Array<rai::Shape*>&,const char*);
 
-#include <Core/array.tpp>
+#include "../Core/array.tpp"
 template rai::Array<rai::Joint*>::Array();
 #endif
-/** @} */
-

@@ -8,11 +8,11 @@
 
 #pragma once
 
-#include <Core/thread.h>
-#include <Gui/opengl.h>
 #include "kin.h"
-#include <Geo/mesh.h>
 #include "proxy.h"
+#include "../Core/thread.h"
+#include "../Gui/opengl.h"
+#include "../Geo/mesh.h"
 
 //===========================================================================
 

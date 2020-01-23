@@ -6,15 +6,6 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-/**
- * @file
- * @ingroup group_ors
- */
-/**
- * @ingroup group_ors
- * @{
- */
-
 #include "kin_ode.h"
 
 #ifdef RAI_ODE
@@ -1063,4 +1054,3 @@ void OdeInterface::importProxiesFromOde() {}
 void OdeInterface::addJointForce(arr& f) {}
 void OdeInterface::pushPoseForShape(rai::Shape* s) {};
 #endif
-/** @} */

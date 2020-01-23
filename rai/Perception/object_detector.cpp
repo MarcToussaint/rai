@@ -9,12 +9,13 @@
 #ifdef RAI_PCL
 
 #include "object_detector.h"
+#include "../Core/array.h"
+#include "../Geo/geo.h"
+
 #include "pclPlaneExtraction.h"
 #include <pcl/common/pca.h>
 #include <pcl/common/transforms.h>
-#include <Core/array.h>
 #include <pcl/common/eigen.h>
-#include <Geo/geo.h>
 
 bool sphereDetector(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointCloud<pcl::Normal>::Ptr inCloudNormal, pcl::ModelCoefficients::Ptr outCoefficients, pcl::PointIndices::Ptr outInliersPlane, double min_radius, double max_radius) {
   pcl::SACSegmentationFromNormals<PointT, pcl::Normal> seg;

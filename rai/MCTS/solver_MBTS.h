@@ -7,9 +7,10 @@
     --------------------------------------------------------------  */
 
 #pragma once
+
 #include "environment.h"
-#include <Core/graph.h>
-#include <Algo/priorityQueue.h>
+#include "../Core/graph.h"
+#include "../Algo/priorityQueue.h"
 
 //===========================================================================
 

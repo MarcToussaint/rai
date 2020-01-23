@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include <Core/thread.h>
-#include <Gui/opengl.h>
-#include <Geo/geo.h>
+#include "../Core/thread.h"
+#include "../Gui/opengl.h"
+#include "../Geo/geo.h"
 
 struct Kinect2PointCloud : Thread {
   //inputs

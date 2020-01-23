@@ -7,8 +7,8 @@
     --------------------------------------------------------------  */
 
 #include "contact.h"
-#include <Gui/opengl.h>
-#include <Geo/pairCollision.h>
+#include "../Gui/opengl.h"
+#include "../Geo/pairCollision.h"
 
 rai::Contact::Contact(rai::Frame& a, rai::Frame& b, rai::Contact* copyContact)
   : a(a), b(b) {

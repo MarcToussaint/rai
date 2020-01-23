@@ -6,9 +6,9 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include <climits>
 #include "F_qFeatures.h"
 #include "frame.h"
+#include <climits>
 
 //===========================================================================
 

@@ -1,7 +1,7 @@
 #include "viewer.h"
 #include "frame.h"
+#include "../Gui/opengl.h"
 #include <iomanip>
-#include <Gui/opengl.h>
 
 rai::ConfigurationViewer::~ConfigurationViewer(){
   if(gl) gl.reset();

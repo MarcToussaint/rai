@@ -6,12 +6,11 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-//#include "pointcloud.h"
 #include "perception.h"
 #include "audio.h"
 #include "videoEncoder.h"
-#include <Core/util.tpp>
-#include <Gui/opengl.h>
+#include "../Core/util.tpp"
+#include "../Gui/opengl.h"
 
 void lib_Perception() { RAI_MSG("loading"); }
 

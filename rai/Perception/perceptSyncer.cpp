@@ -7,7 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "perceptSyncer.h"
-#include <Kin/frame.h>
+#include "../Kin/frame.h"
 
 SyncFiltered::SyncFiltered(Var<PerceptL>& _percepts, Var<rai::Configuration>& _kin)
   : Thread("SyncFiltered", -1.),

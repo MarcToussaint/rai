@@ -1,6 +1,6 @@
 #ifdef RAI_ROS
 #include "subscribeAlvarMarkers.h"
-#include <Kin/frame.h>
+#include "../Kin/frame.h"
 
 #include <ar_track_alvar_msgs/AlvarMarkers.h>
 namespace ar = ar_track_alvar_msgs;

@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include <Core/thread.h>
 #include "percept.h"
+#include "../Core/thread.h"
 
 struct PerceptViewer : Thread {
   Var<PerceptL> percepts;

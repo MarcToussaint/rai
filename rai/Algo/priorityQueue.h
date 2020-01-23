@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <Core/array.h>
+#include "../Core/array.h"
 
 template<class T> struct PriorityQueueEntry {
   double p;

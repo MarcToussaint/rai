@@ -6,10 +6,10 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-//#include <RosCom/actionMachine.h>
+//#include "../RosCom/actionMachine.h"
 //#include "manipSim.h"
-#include <Kin/kin.h>
-#include <Logic/fol.h>
+#include "../Kin/kin.h"
+#include "../Logic/fol.h"
 
 void runMonteCarlo(Graph& G) {
 //  rai::rnd.seed(3);

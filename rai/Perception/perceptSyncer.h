@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include <Core/thread.h>
-#include <Perception/percept.h>
+#include "percept.h"
+#include "../Core/thread.h"
 
 /// syncs percepts with modelWorld
 struct SyncFiltered : Thread {

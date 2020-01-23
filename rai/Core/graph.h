@@ -6,13 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-/// @file
-/// @ingroup group_Core
-/// @addtogroup group_Core
-/// @{
-
-#ifndef RAI_graph_h
-#define RAI_graph_h
+#pragma once
 
 #include "array.h"
 #include <map>
@@ -516,9 +510,3 @@ template<class T> Node_typed<T>* Graph::newNode(const StringA& keys, const NodeL
 template<class T> Node_typed<T>* Graph::newNode(const T& x) {
   return new Node_typed<T>(*this, x);
 }
-
-//===========================================================================
-
-#endif
-
-/// @} //end group

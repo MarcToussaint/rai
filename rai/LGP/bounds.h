@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <KOMO/komo.h>
+#include "../KOMO/komo.h"
 
 enum BoundType { BD_all=-1,
                  BD_symbolic=0,

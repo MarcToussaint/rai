@@ -9,7 +9,7 @@
 #pragma once
 
 #include "video.h"
-#include <Core/thread.h>
+#include "../Core/thread.h"
 
 struct VideoEncoderModule: Thread {
   VAR(byteA, img)

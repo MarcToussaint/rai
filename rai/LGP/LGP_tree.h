@@ -9,7 +9,7 @@
 #pragma once
 
 #include "LGP_node.h"
-#include <Core/thread.h>
+#include "../Core/thread.h"
 
 struct KinPathViewer;
 struct LGP_Tree;

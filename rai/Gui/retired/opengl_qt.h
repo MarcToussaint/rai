@@ -6,11 +6,10 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifndef RAI_opengl_qt_h
-#define RAI_opengl_qt_h
+#pragma once
 
 #include "opengl.h"
-#include <Geo/geo.h>
+#include "../Geo/geo.h"
 
 #include <GL/glut.h>
 #undef scroll
@@ -87,5 +86,3 @@ struct sOpenGL: QGLWidget {
   void setOffscreen(int width, int height);
 #endif
 };
-
-#endif

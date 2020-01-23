@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <Geo/mesh.h>
+#include "mesh.h"
 
 struct AssimpLoader {
   std::vector<rai::Mesh> meshes;

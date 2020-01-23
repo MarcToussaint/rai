@@ -6,11 +6,10 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifndef RAI_color_h
-#define RAI_color_h
+#pragma once
 
-#include <Core/util.h>
-#include <Core/array.h>
+#include "../Core/util.h"
+#include "../Core/array.h"
 
 namespace rai {
 /// simple float[3] color class
@@ -159,5 +158,3 @@ class Color {
 };
 }
 stdPipes(rai::Color);
-
-#endif

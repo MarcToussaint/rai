@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <Core/array.h>
+#include "../Core/array.h"
 
 struct DataNeighbored {
   arr X; ///< data (features for each point)

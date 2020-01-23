@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include <Core/array.h>
-#include <Core/graph.h>
-#include <Gui/opengl.h>
+#include "../Core/array.h"
+#include "../Core/graph.h"
+#include "../Gui/opengl.h"
 
 struct G4ID;
 struct G4Rec;

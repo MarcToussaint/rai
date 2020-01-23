@@ -11,8 +11,8 @@
 
 #pragma once
 
-#include <Core/array.h>
 #include "pixel_format.h"
+#include "../Core/array.h"
 #include <memory>
 
 /// Video encoder which creates a correct container, with metadata, of one

@@ -6,19 +6,10 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-/**
- * @file
- * @ingroup group_ors
- */
-/**
- * @ingroup group_ors
- * @{
- */
-
 #ifdef RAI_QHULL
 
-#include "mesh.h"
 #include "qhull.h"
+#include "mesh.h"
 
 extern "C" {
 #include <qhull/qhull_a.h>
@@ -471,8 +462,8 @@ void delaunay(Graph<N, E>& g, uint dim=2) {
 #endif
 
 #else ///RAI_QHULL
-#include <Core/util.h>
-#include <Core/array.h>
+#include "../Core/util.h"
+#include "../Core/array.h"
 #include "geo.h"
 int QHULL_DEBUG_LEVEL=0;
 const char* qhullVersion() { return "NONE"; }
@@ -483,7 +474,6 @@ double distanceToConvexHull(const arr& X, const arr& y, arr* projectedPoint, uin
 double distanceToConvexHullGradient(arr& dDdX, const arr& X, const arr& y, bool freeqhull) { NICO }
 void getDelaunayEdges(uintA& E, const arr& V) { NICO }
 #endif
-/** @} */
 
 typedef struct { double x, y; } vec_t;
 typedef vec_t* vec;

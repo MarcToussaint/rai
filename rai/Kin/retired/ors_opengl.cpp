@@ -6,18 +6,10 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-/**
- * @file
- * @ingroup group_ors
- */
-/**
- * @ingroup group_ors
- * @{
- */
-
 #include "kin.h"
-#include <Geo/mesh.h>
-#include <Gui/opengl.h>
+#include "../Geo/mesh.h"
+#include "../Gui/opengl.h"
+
 #include <iomanip>
 
 //global options
@@ -691,4 +683,3 @@ void displayTrajectory(const arr&, int, rai::Configuration&, const char*, double
 void displayState(const arr&, rai::Configuration&, const char*) { NICO }
 #endif
 #endif
-/** @} */

@@ -10,12 +10,6 @@
 
 #include "kin.h"
 
-//===========================================================================
-/**
- * @defgroup rai_interface_ode ODE interface
- * @{
- */
-
 struct dxWorld;   /* dynamics world */
 struct dxSpace;   /* collision space */
 struct dxBody;    /* rigid body (dynamics object) */
@@ -109,5 +103,3 @@ struct OdeInterface {
   bool inFloorContacts(rai::Vector& x);
   void pushPoseForShape(rai::Shape* s);
 };
-
-/** @} */

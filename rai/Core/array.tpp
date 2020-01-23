@@ -6,11 +6,11 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifndef RAI_array_tpp
-#define RAI_array_tpp
+#pragma once
 
 #include "array.h"
 #include "util.h"
+
 #include <math.h>
 #include <algorithm>
 #include <sstream>
@@ -4350,6 +4350,3 @@ void maximumSpanningTree(rai::Array<vert*>& V, rai::Array<edge*>& E, const Compa
 //    HALT("NEVER CALL THIS CONSTRUCTOR!")
 //}
 //}
-
-#endif
-

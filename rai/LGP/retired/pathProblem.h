@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include <Optim/optimization.h>
-#include <KOMO/komo.h>
+#include "../Optim/optimization.h"
+#include "../KOMO/komo.h"
 
 //===========================================================================
 

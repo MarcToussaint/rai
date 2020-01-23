@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include <Gui/opengl.h>
-#include <Geo/mesh.h>
-#include <Kin/kin.h>
-#include <Kin/frame.h>
+#include "../Gui/opengl.h"
+#include "../Geo/mesh.h"
+#include "../Kin/kin.h"
+#include "../Kin/frame.h"
 #include <iomanip>
 
 //=============================================================================

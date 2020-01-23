@@ -6,11 +6,11 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include <Core/array.h>
-#include <Core/util.h>
-#include <Geo/geo.h>
-#include <Core/graph.h>
 #include "g4data.h"
+#include "../Core/array.h"
+#include "../Core/util.h"
+#include "../Geo/geo.h"
+#include "../Core/graph.h"
 
 // =============================================================================
 // G4ID

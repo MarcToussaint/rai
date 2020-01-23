@@ -6,10 +6,9 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifndef Algo_spline_h
-#define Algo_spline_h
+#pragma once
 
-#include <Core/array.h>
+#include "../Core/array.h"
 
 namespace rai {
 
@@ -77,5 +76,3 @@ struct Path : Spline {
 };
 
 } //namespace rai
-
-#endif

@@ -6,17 +6,8 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-/**
- * @file
- * @ingroup group_ors
- */
-/**
- * @ingroup group_ors
- * @{
- */
-
-#include <Gui/opengl.h>
-#include <Plot/plot.h>
+#include "../Gui/opengl.h"
+#include "../Plot/plot.h"
 #include "kin.h"
 
 #include "kin_actionInterface.h"
@@ -810,4 +801,3 @@ double ActionInterface::highestPosition(double x, double y, double radius, uint 
   if(DEBUG>0) cout<<"max_z = "<<max_z<<endl;
   return max_z;
 }
-/** @} */

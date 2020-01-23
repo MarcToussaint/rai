@@ -12,8 +12,8 @@
 #define RAI_CCD
 #ifdef RAI_CCD
 
-#include <Geo/ccd/ccd.h>
-#include <Geo/ccd/quat.h> // for work with quaternions
+#include "../Geo/ccd/ccd.h"
+#include "../Geo/ccd/quat.h" // for work with quaternions
 
 void support_mesh(const void* _obj, const ccd_vec3_t* _dir, ccd_vec3_t* v);
 

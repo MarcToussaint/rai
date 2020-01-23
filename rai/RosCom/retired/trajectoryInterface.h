@@ -8,13 +8,13 @@
 
 #pragma once
 
-#include <Core/array.h>
-#include <Kin/kin.h>
-#include <KOMO/komo.h>
-#include <Kin/taskMaps.h>
-#include <Control/ctrlMsg.h>
-#include <Core/thread.h>
-#include <RosCom/subscribeAlvarMarkers.h>
+#include "../Core/array.h"
+#include "../Kin/kin.h"
+#include "../KOMO/komo.h"
+#include "../Kin/taskMaps.h"
+#include "../Control/ctrlMsg.h"
+#include "../Core/thread.h"
+#include "../RosCom/subscribeAlvarMarkers.h"
 
 struct TrajectoryInterface {
   struct sTrajectoryInterface* S;

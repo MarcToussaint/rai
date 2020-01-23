@@ -4,7 +4,7 @@
 #include "ry-Config.h"
 #include "types.h"
 
-#include <Operate/robotOperation.h>
+#include "../Operate/robotOperation.h"
 
 void init_Operate(pybind11::module &m) {
 pybind11::class_<ry::RyOperate>(m, "RyOperate")

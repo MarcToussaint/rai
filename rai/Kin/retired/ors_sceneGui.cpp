@@ -6,15 +6,6 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-/**
- * @file
- * @ingroup group_ors
- */
-/**
- * @ingroup group_ors
- * @{
- */
-
 #include "kin_ode.h"
 #include "kin_sceneGui.h"
 
@@ -209,4 +200,3 @@ void OrsSceneGui::edit() {
       gl.watch();
     }
 */
-/** @} */

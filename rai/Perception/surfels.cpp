@@ -7,8 +7,8 @@
     --------------------------------------------------------------  */
 
 #include "surfels.h"
-#include <Geo/geo.h>
-#include <Perception/kinect2pointCloud.h>
+#include "../Geo/geo.h"
+#include "kinect2pointCloud.h"
 
 void glDrawSurfels(void* classP, OpenGL&) { ((Surfels*)classP)->glDraw(false); }
 void glDrawSurfelIndices(void* classP, OpenGL&) { ((Surfels*)classP)->glDraw(true); }

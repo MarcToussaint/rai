@@ -6,11 +6,11 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include <unordered_set>
 #include "filter.h"
-#include <Control/taskControl.h>
-#include <Kin/frame.h>
-#include <Kin/TM_default.h>
+#include "../Control/taskControl.h"
+#include "../Kin/frame.h"
+#include "../Kin/TM_default.h"
+#include <unordered_set>
 
 Filter::Filter()
   : Thread("Filter", -1.),

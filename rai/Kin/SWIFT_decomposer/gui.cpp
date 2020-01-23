@@ -55,10 +55,10 @@ using std::cerr;
 #include <math.h>
 
 
-#include <Kin/SWIFT/SWIFT.h>
-#include <Kin/SWIFT/SWIFT_mesh.h>
-#include <Kin/SWIFT/SWIFT_mesh_utils.h>
-#include <Kin/SWIFT/SWIFT_fileio.h>
+#include "../SWIFT/SWIFT.h"
+#include "../SWIFT/SWIFT_mesh.h"
+#include "../SWIFT/SWIFT_mesh_utils.h"
+#include "../SWIFT/SWIFT_fileio.h"
 
 #ifdef DECOMP_GRAPHICS
 #include <GL/gl.h>

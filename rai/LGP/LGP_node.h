@@ -8,11 +8,11 @@
 
 #pragma once
 
-#include <Kin/kin.h>
-#include <Logic/fol_mcts_world.h>
-#include <Logic/fol.h>
-#include <KOMO/komo.h>
 #include "bounds.h"
+#include "../Kin/kin.h"
+#include "../Logic/fol_mcts_world.h"
+#include "../Logic/fol.h"
+#include "../KOMO/komo.h"
 
 struct LGP_Node;
 typedef rai::Array<LGP_Node*> LGP_NodeL;

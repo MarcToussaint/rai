@@ -10,7 +10,7 @@
 
 #ifdef RAI_BULLET
 
-#include <Kin/frame.h>
+#include "frame.h"
 #include <btBulletDynamicsCommon.h>
 
 // ============================================================================

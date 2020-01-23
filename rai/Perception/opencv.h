@@ -6,8 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifndef RAI_opencv_h
-#define RAI_opencv_h
+#pragma once
 
 //OpenCV (C++) wrappers
 
@@ -19,8 +18,8 @@
 #undef MIN
 #undef MAX
 
-#include <Core/array.h>
-#include <Core/util.h>
+#include "../Core/array.h"
+#include "../Core/util.h"
 
 extern ::Mutex cvMutex;
 
@@ -69,11 +68,9 @@ void getDiffProb(floatA& diff, const byteA& img0, const byteA& img1, float pixSd
 
 #else
 
-#include <Core/array.h>
+#include "../Core/array.h"
 inline char cvShow(const byteA& img, const char* window="opencv", bool wait=false) { NICO }
 inline char cvShow(const floatA& img, const char* window="opencv", bool wait=false) { NICO };
 void getDiffProb(floatA& diff, const byteA& img0, const byteA& img1, float pixSdv, uint range) { NICO };
 
 #endif //RAI_OPENCV
-
-#endif

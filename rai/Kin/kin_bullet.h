@@ -6,7 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include <Kin/kin.h>
+#include "kin.h"
 
 class btRigidBody;
 

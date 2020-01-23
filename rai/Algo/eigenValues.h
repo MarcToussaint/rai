@@ -13,7 +13,7 @@
 
 #pragma once
 
-#include <Core/array.h>
+#include "../Core/array.h"
 
 struct ExtremeEigenValues {
   arr A;

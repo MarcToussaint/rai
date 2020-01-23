@@ -6,9 +6,8 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include <iomanip>
-
 #include "gradient.h"
+#include <iomanip>
 
 //===========================================================================
 

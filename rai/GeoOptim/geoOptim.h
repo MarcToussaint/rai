@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include <Core/array.h>
-#include <Geo/mesh.h>
+#include "../Core/array.h"
+#include "../Geo/mesh.h"
 
 void computeOptimalSSBox(rai::Mesh& mesh, arr& x, rai::Transformation& t, const arr& X, uint trials=10, int verbose=0);
 

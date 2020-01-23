@@ -23,17 +23,17 @@
 #include <std_msgs/String.h>
 #include <sensor_msgs/JointState.h>
 #include <visualization_msgs/MarkerArray.h>
-#include <rai_msgs/MotionReference.h>
-#include <rai_msgs/StringA.h>
+#include "../rai_msgs/MotionReference.h"
+#include "../rai_msgs/StringA.h"
 #include <std_msgs/Float64.h>
 
 //===========================================================================
 
-#include <Core/thread.h>
-#include <Core/array.h>
-#include <Geo/geo.h>
-#include <Kin/kin.h>
-#include <Control/ctrlMsg.h>
+#include "../Core/thread.h"
+#include "../Core/array.h"
+#include "../Geo/geo.h"
+#include "../Kin/kin.h"
+#include "../Control/ctrlMsg.h"
 #include "rai_msgs/JointState.h"
 #ifdef RAI_PCL
 #  include <Perception/pcl.h>
@@ -337,7 +337,7 @@ struct RosCom {
 
 #else
 
-#include <Core/util.h>
+#include "../Core/util.h"
 inline void rosCheckInit(const char* node_name="rai_node") { NICO }
 
 #endif

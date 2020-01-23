@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include <Core/array.h>
-#include <Geo/geo.h>
+#include "../Core/array.h"
+#include "../Geo/geo.h"
 
 struct Plane {
   arr mean, normal;

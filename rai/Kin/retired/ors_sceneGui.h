@@ -6,13 +6,8 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-/// @file
-/// @ingroup group_ors
-/// @addtogroup group_ors
-/// @{
-
 #include "kin.h"
-#include <Gui/opengl.h>
+#include "../Gui/opengl.h"
 
 struct OrsSceneGui {
   struct sOrsSceneGui* s;
@@ -22,5 +17,3 @@ struct OrsSceneGui {
   void edit();
 
 };
-
-/// @}

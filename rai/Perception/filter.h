@@ -8,11 +8,10 @@
 
 #pragma once
 
-#include <Core/thread.h>
-#include <Core/array.h>
-
-#include <Algo/hungarian.h>
 #include "percept.h"
+#include "../Core/thread.h"
+#include "../Core/array.h"
+#include "../Algo/hungarian.h"
 
 /// clears the perceptual inputs (which is a FIFO) and merges these into the filtered percepts
 struct Filter : Thread {

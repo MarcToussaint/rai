@@ -20,13 +20,13 @@
 #ifdef RAI_ROS_BAXTER
 
 #include "roscom.h"
-#include <rai_msgs/baxter/HeadPanCommand.h>
-#include <rai_msgs/baxter/EndEffectorCommand.h>
-#include <rai_msgs/baxter/EndEffectorState.h>
-#include <rai_msgs/baxter/JointCommand.h>
-#include <RosCom/roscom.h>
+#include "../rai_msgs/baxter/HeadPanCommand.h"
+#include "../rai_msgs/baxter/EndEffectorCommand.h"
+#include "../rai_msgs/baxter/EndEffectorState.h"
+#include "../rai_msgs/baxter/JointCommand.h"
+#include "../RosCom/roscom.h"
 
-#include <Kin/frame.h>
+#include "../Kin/frame.h"
 
 struct sBaxterInterface {
   RosCom ROS;

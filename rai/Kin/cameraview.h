@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include <Kin/kin.h>
-#include <Gui/opengl.h>
+#include "kin.h"
+#include "../Gui/opengl.h"
 
 namespace rai {
 

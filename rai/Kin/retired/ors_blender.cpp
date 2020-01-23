@@ -6,15 +6,6 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-/**
- * @file
- * @ingroup group_ors
- */
-/**
- * @ingroup group_ors
- * @{
- */
-
 #include "kin.h"
 //#include "array.cpp"
 
@@ -175,5 +166,3 @@ void readBlender(const char* filename, rai::Mesh& mesh, rai::Configuration& bl) 
 
   String::readEatStopSymbol = false;
 }
-
-/** @} */

@@ -1,9 +1,8 @@
 #pragma once
 
-#include <Core/thread.h>
-#include <KOMO/komo.h>
-
 #include "ry-Config.h"
+#include "../Core/thread.h"
+#include "../KOMO/komo.h"
 
 namespace ry{
     struct RyKOMO {

@@ -6,19 +6,10 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-/**
- * @file
- * @ingroup group_ors
- */
-/**
- * @ingroup group_ors
- * @{
- */
-
 #include "kin_swift.h"
 #include "proxy.h"
 #include "frame.h"
-#include <Algo/ann.h>
+#include "../Algo/ann.h"
 
 #ifdef RAI_SWIFT
 
@@ -392,7 +383,7 @@ uint SwiftInterface::countObjects() {
 
 #else //RAI_SWIFT
 
-#include <Core/util.h>
+#include "../Core/util.h"
 
 SwiftInterface::~SwiftInterface() { NICO }
 SwiftInterface::SwiftInterface(const rai::Configuration& world, double _cutoff, int verbose){ NICO }
@@ -415,4 +406,3 @@ void SwiftInterface::swiftQueryExactDistance() { NICO }
 uint SwiftInterface::countObjects(){ NICO }
 
 #endif
-/** @} */

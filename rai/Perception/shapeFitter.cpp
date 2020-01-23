@@ -7,9 +7,9 @@
     --------------------------------------------------------------  */
 
 #include "shapeFitter.h"
-#include <Optim/optimization.h>
+#include "../Optim/optimization.h"
 //#include <RAI/vision.h>
-#include <Kin/kin.h>
+#include "../Kin/kin.h"
 //#include <RAI/calibration.h>
 
 #if 0

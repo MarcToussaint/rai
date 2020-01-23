@@ -12,10 +12,10 @@
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <Geo/geo.h>
-#include <Gui/opengl.h>
-#include <Kin/kin.h>
-#include <Core/thread.h>
+#include "../Geo/geo.h"
+#include "../Gui/opengl.h"
+#include "../Kin/kin.h"
+#include "../Core/thread.h"
 
 //#include "methods.h"
 

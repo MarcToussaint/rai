@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Kin/kin.h>
-#include <Core/thread.h>
+#include "../Kin/kin.h"
+#include "../Core/thread.h"
 
 #ifdef RAI_ROS
 #  include "roscom.h"

@@ -7,12 +7,12 @@
     --------------------------------------------------------------  */
 
 #include "roboticsCourse.h"
-#include <Kin/kin.h>
-#include <Kin/kin_swift.h>
-#include <Kin/kin_physx.h>
-#include <Gui/opengl.h>
-#include <Plot/plot.h>
-#include <Algo/algos.h>
+#include "kin.h"
+#include "kin_swift.h"
+#include "kin_physx.h"
+#include "../Gui/opengl.h"
+#include "../Plot/plot.h"
+#include "../Algo/algos.h"
 
 void drawEnv(void*, OpenGL& gl) { glStandardLight(nullptr, gl); glDrawFloor(10., .9, .9, .9); }
 void drawBase(void*, OpenGL& gl) { glDrawAxes(1.); }
@@ -411,5 +411,5 @@ void glDrawCarSimulator(void* classP, OpenGL&) {
 #endif
 }
 
-#include <Core/array.tpp>
+#include "../Core/array.tpp"
 template rai::Array<CarSimulator::Gaussian>& rai::Array<CarSimulator::Gaussian>::resize(uint);

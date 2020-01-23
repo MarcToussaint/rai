@@ -14,9 +14,9 @@ using std::cerr;
 using std::ios;
 using std::setprecision;
 
-#include <Kin/SWIFT/SWIFT.h>
-#include <Kin/SWIFT/SWIFT_mesh.h>
-#include <Kin/SWIFT/SWIFT_fileio.h>
+#include "../SWIFT/SWIFT.h"
+#include "../SWIFT/SWIFT_mesh.h"
+#include "../SWIFT/SWIFT_fileio.h"
 
 typedef long int intptr_t;
 

@@ -8,10 +8,9 @@
 
 #include "motionHeuristics.h"
 #include "taskMaps.h"
-#include <Optim/optimization.h>
-#include <Kin/kin_swift.h>
-
-#include <Gui/opengl.h>
+#include "../Optim/optimization.h"
+#include "../Kin/kin_swift.h"
+#include "../Gui/opengl.h"
 
 //===========================================================================
 //

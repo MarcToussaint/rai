@@ -7,7 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "pathTools.h"
-#include <KOMO/komo.h>
+#include "komo.h"
 
 arr getVelocities_centralDifference(const arr& q, double tau) {
   arr v;

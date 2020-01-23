@@ -3,9 +3,9 @@
 #include "ry-Frame.h"
 #include "types.h"
 
-#include <Core/thread.h>
-#include <Kin/kin.h>
-#include <Kin/frame.h>
+#include "../Core/thread.h"
+#include "../Kin/kin.h"
+#include "../Kin/frame.h"
 
 void init_Frame(pybind11::module &m) {
 pybind11::class_<ry::RyFrame>(m, "Frame")

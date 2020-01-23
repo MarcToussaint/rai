@@ -18,7 +18,7 @@
 #ifndef __CCD_H__
 #define __CCD_H__
 
-#include <Geo/ccd/vec3.h>
+#include "vec3.h"
 
 #ifdef __cplusplus
 extern "C" {

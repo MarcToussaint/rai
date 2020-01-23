@@ -8,16 +8,8 @@
 
 #pragma once
 
-#include <Kin/taskMaps.h>
-#include <Algo/spline.h>
-
-/**
- * @file
- * With the feedback control we can define motions for operation space control.
- *
- * We simply define a set of motions via CtrlTasks/ConstraintForceTask and run
- * them.
- */
+#include "../Kin/taskMaps.h"
+#include "../Algo/spline.h"
 
 struct CtrlTask;
 typedef rai::Array<CtrlTask*> CtrlTaskL;
@@ -185,5 +177,3 @@ struct TaskControlMethods {
   void calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, double& gamma, const rai::Configuration& world); ///< returns the force controller coefficients
   void reportCurrentState();
 };
-
-//===========================================================================

@@ -6,11 +6,10 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifndef RAI_gaussianProcess_h
-#define RAI_gaussianProcess_h
+#pragma once
 
-#include <Core/array.h>
-#include <Core/util.h>
+#include "../Core/array.h"
+#include "../Core/util.h"
 
 //===========================================================================
 //
@@ -266,9 +265,3 @@ inline void randomFunction(GaussianProcess& gp, arr& Xbase, bool illustrate, boo
 
   gp.obsVar=orgObsVar;
 }
-
-#ifdef  RAI_IMPLEMENTATION
-#  include "gaussianProcess.cpp"
-#endif
-
-#endif

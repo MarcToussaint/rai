@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <Core/thread.h>
+#include "../Core/thread.h"
 
 struct KinectDepthPacking : Thread {
   struct sKinectDepthPacking* s;

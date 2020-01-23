@@ -8,10 +8,10 @@
 
 #include "LGP_tree.h"
 
-#include <Kin/kinViewer.h>
-#include <Kin/viewer.h>
-#include <KOMO/komo.h>
-#include <Gui/opengl.h>
+#include "../Kin/kinViewer.h"
+#include "../Kin/viewer.h"
+#include "../KOMO/komo.h"
+#include "../Gui/opengl.h"
 #ifdef RAI_GL
 #  include <GL/gl.h>
 #  include <GL/glu.h>

@@ -3,8 +3,8 @@
 #include "ry-KOMO.h"
 #include "types.h"
 
-#include <LGP/bounds.h>
-#include <Kin/kinViewer.h>
+#include "../LGP/bounds.h"
+#include "../Kin/kinViewer.h"
 
 Skeleton list2skeleton(const pybind11::list& L) {
   Skeleton S;

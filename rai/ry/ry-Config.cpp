@@ -12,16 +12,16 @@
 
 #include "types.h"
 
-#include <Kin/kin.h>
-#include <Kin/kin_bullet.h>
-#include <Kin/kin_physx.h>
-#include <Operate/robotOperation.h>
-#include <Kin/proxy.h>
-#include <Kin/kinViewer.h>
-#include <Kin/cameraview.h>
-#include <Kin/simulation.h>
-#include <Gui/viewer.h>
-#include <LGP/LGP_tree.h>
+#include "../Kin/kin.h"
+#include "../Kin/kin_bullet.h"
+#include "../Kin/kin_physx.h"
+#include "../Operate/robotOperation.h"
+#include "../Kin/proxy.h"
+#include "../Kin/kinViewer.h"
+#include "../Kin/cameraview.h"
+#include "../Kin/simulation.h"
+#include "../Gui/viewer.h"
+#include "../LGP/LGP_tree.h"
 
 void init_Config(pybind11::module &m) {
     pybind11::class_<ry::Config>(m, "Config", "This is a class docstring")

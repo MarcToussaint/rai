@@ -8,7 +8,7 @@
 
 #include "avutil.h"
 #include <iostream>
-#include <Core/util.h>
+#include "../Core/util.h"
 
 #ifdef HAVE_LIBAV
 

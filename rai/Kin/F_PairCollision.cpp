@@ -8,7 +8,7 @@
 
 #include "F_PairCollision.h"
 #include "frame.h"
-#include <Geo/pairCollision.h>
+#include "../Geo/pairCollision.h"
 
 TM_PairCollision::TM_PairCollision(int _i, int _j, Type _type, bool _neglectRadii)
   : i(_i), j(_j), type(_type), neglectRadii(_neglectRadii) {

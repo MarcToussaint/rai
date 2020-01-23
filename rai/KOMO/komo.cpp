@@ -9,31 +9,30 @@
 #include "komo.h"
 #include "komo-ext.h"
 
-#include <Algo/spline.h>
-#include <Gui/opengl.h>
+#include "../Algo/spline.h"
+#include "../Gui/opengl.h"
 
-#include <Kin/frame.h>
-#include <Kin/switch.h>
-#include <Kin/contact.h>
-#include <Kin/kin_swift.h>
-#include <Kin/kin_physx.h>
+#include "../Kin/frame.h"
+#include "../Kin/switch.h"
+#include "../Kin/contact.h"
+#include "../Kin/kin_swift.h"
+#include "../Kin/kin_physx.h"
+#include "../Kin/F_qFeatures.h"
+#include "../Kin/TM_default.h"
+#include "../Kin/F_pose.h"
+#include "../Kin/TM_proxy.h"
+#include "../Kin/F_PairCollision.h"
+#include "../Kin/F_geometrics.h"
+#include "../Kin/F_operators.h"
+#include "../Kin/F_contacts.h"
+#include "../Kin/F_dynamics.h"
+#include "../Kin/TM_time.h"
+#include "../Kin/TM_angVel.h"
 
-#include <Kin/F_qFeatures.h>
-#include <Kin/TM_default.h>
-#include <Kin/F_pose.h>
-#include <Kin/TM_proxy.h>
-#include <Kin/F_PairCollision.h>
-#include <Kin/F_geometrics.h>
-#include <Kin/F_operators.h>
-#include <Kin/F_contacts.h>
-#include <Kin/F_dynamics.h>
-#include <Kin/TM_time.h>
-#include <Kin/TM_angVel.h>
-
-#include <Optim/optimization.h>
-#include <Optim/convert.h>
-#include <Optim/primalDual.h>
-#include <Optim/GraphOptim.h>
+#include "../Optim/optimization.h"
+#include "../Optim/convert.h"
+#include "../Optim/primalDual.h"
+#include "../Optim/GraphOptim.h"
 
 #include <iomanip>
 

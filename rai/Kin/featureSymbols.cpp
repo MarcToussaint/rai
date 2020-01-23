@@ -7,7 +7,6 @@
     --------------------------------------------------------------  */
 
 #include "featureSymbols.h"
-
 #include "F_pose.h"
 #include "TM_default.h"
 #include "TM_proxy.h"

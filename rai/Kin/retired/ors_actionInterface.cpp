@@ -6,21 +6,14 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-/** @file
- * @ingroup group_ors
- * The higher level interface to interarct with objects.
- */
-/** @ingroup group_ors
- * @{
- **/
-
 #include "kin.h"
 #include "kin_oldTaskVariables.h"
 #include "kin_swift.h"
 #include "kin_ode.h"
 #include "kin_actionInterface.h"
-#include <Gui/opengl.h>
-#include <Plot/plot.h>
+#include "../Gui/opengl.h"
+#include "../Plot/plot.h"
+
 #include <sstream>
 #include <limits.h>
 #include <unistd.h>
@@ -793,4 +786,3 @@ double ActionInterface::highestPosition(double x, double y, double radius, uint 
   if(DEBUG>0) cout <<"max_z = " <<max_z <<endl;
   return max_z;
 }
-/** @} */

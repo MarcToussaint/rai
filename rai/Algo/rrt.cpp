@@ -7,8 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "rrt.h"
-
-#include <Algo/ann.h>
+#include "ann.h"
 
 struct sRRT {
   ANN ann;
@@ -48,4 +47,3 @@ uint RRT::getNumberNodes() { return s->ann.X.d0; }
 arr RRT::getNode(uint i) { return s->ann.X[i]; }
 void RRT::getRandomNode(arr& q) { q = s->ann.X[rnd(s->ann.X.d0)]; }
 arr RRT::getRandomNode() { return s->ann.X[rnd(s->ann.X.d0)]; }
-

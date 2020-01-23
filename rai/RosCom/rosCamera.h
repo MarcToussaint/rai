@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include <Kin/kin.h>
-#include <Core/thread.h>
+#include "../Kin/kin.h"
+#include "../Core/thread.h"
 
 struct RosCamera {
   Var<byteA> rgb;

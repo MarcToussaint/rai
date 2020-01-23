@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include <Kin/kin.h>
-#include <Optim/optimization.h>
-#include <Optim/KOMO_Problem.h>
-#include "feature.h"
+#include "../Kin/kin.h"
+#include "../Optim/optimization.h"
+#include "../Optim/KOMO_Problem.h"
+#include "../Kin/feature.h"
 
 //===========================================================================
 //

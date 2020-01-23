@@ -3,8 +3,7 @@
 #include "ry-Bullet.h"
 #include "ry-Config.h"
 #include "types.h"
-
-#include <Kin/kin_bullet.h>
+#include "../Kin/kin_bullet.h"
 
 void init_Bullet(pybind11::module &m) {
 pybind11::class_<BulletInterface, std::shared_ptr<BulletInterface>>(m, "BulletInterface")

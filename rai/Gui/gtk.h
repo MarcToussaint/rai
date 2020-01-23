@@ -6,10 +6,9 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifndef RAI_gtk_h
-#define RAI_gtk_h
+#pragma once
 
-#include <Core/array.h>
+#include "../Core/array.h"
 
 typedef struct _GtkWidget GtkWidget;
 
@@ -23,5 +22,3 @@ int gtkPopupMenuChoice(StringL& choices);
 GtkWidget* gtkTopWindow(const char* title);
 
 void gtkProcessEvents();
-
-#endif

@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <Core/thread.h>
+#include "../Core/thread.h"
 
 struct RosCom_Spinner : Thread {
   bool useRos;

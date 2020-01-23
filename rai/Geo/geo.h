@@ -6,15 +6,9 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-/// @file
-/// @ingroup group_Core
-/// @addtogroup group_Core
-/// @{
+#pragma once
 
-#ifndef RAI_geo_h
-#define RAI_geo_h
-
-#include <Core/array.h>
+#include "../Core/array.h"
 
 namespace rai {
 
@@ -408,12 +402,3 @@ extern const rai::Quaternion Quaternion_y;
 extern const rai::Quaternion Quaternion_z;
 extern rai::Vector& NoVector;
 extern rai::Transformation& NoTransformation;
-
-//===========================================================================
-//
-// low level drivers
-//
-
-#endif
-
-/// @} //end group

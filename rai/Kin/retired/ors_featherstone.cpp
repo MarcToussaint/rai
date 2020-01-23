@@ -6,15 +6,6 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-/**
- * @file
- * @ingroup group_ors
- */
-/**
- * @ingroup group_ors
- * @{
- */
-
 #if 1 //def RAI_FEATHERSTONE
 
 #include "kin.h"
@@ -1048,4 +1039,3 @@ void Featherstone::invDynamics(arr& tau,
                                const arr& qd,
                                const arr& qdd) { NIY; }
 #endif
-/** @} */

@@ -7,11 +7,11 @@
     --------------------------------------------------------------  */
 
 #include "plot.h"
-#include <Core/array.tpp>
-#include <Geo/geo.h>
-#include <Geo/mesh.h>
-#include <Gui/opengl.h>
-#include <Gui/color.h>
+#include "../Core/array.tpp"
+#include "../Geo/geo.h"
+#include "../Geo/mesh.h"
+#include "../Gui/opengl.h"
+#include "../Gui/color.h"
 
 void drawGnuplot(rai::sPlotModule& data);
 
@@ -30,10 +30,8 @@ struct sPlotModule {
   rai::Array<arr> points;
   rai::Array<arr> lines;
   rai::Array<rai::String> legend;
-#ifdef RAI_geo_h
   rai::Array<rai::Vector> planes;
   rai::Mesh mesh;
-#endif
 };
 
 }

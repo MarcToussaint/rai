@@ -6,8 +6,8 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include <iomanip>
 #include "blackbox.h"
+#include <iomanip>
 
 //===========================================================================
 

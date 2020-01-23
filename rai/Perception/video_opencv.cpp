@@ -62,7 +62,7 @@ void VideoEncoder_OpenCV::close() {
 
 #else //RAI_OPENCV
 
-#include <Core/util.h>
+#include "../Core/util.h"
 #include "videoEncoder.h"
 
 VideoEncoder_OpenCV::VideoEncoder_OpenCV(const char* filename, uint fps) { RAI_MSG("WARNING - using dummy Revel module"); };

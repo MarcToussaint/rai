@@ -9,12 +9,12 @@
 #ifndef TASKSPACECONTROLLER_H
 #define TASKSPACECONTROLLER_H
 
-#include <Kin/kin.h>
-#include <Kin/taskMaps.h>
-#include <Core/array.h>
-#include <RosCom/roscom.h>
-#include <Algo/spline.h>
-#include <Core/thread.h>
+#include "../Kin/kin.h"
+#include "../Kin/taskMaps.h"
+#include "../Core/array.h"
+#include "../RosCom/roscom.h"
+#include "../Algo/spline.h"
+#include "../Core/thread.h"
 
 struct LinTaskSpaceAccLaw {
   Feature* map;

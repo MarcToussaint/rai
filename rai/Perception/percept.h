@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include <Core/array.h>
-#include <Kin/kin.h>
-#include <Geo/mesh.h>
+#include "../Core/array.h"
+#include "../Kin/kin.h"
+#include "../Geo/mesh.h"
 #include <memory>
 
 struct Percept;

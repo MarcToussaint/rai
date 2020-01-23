@@ -7,8 +7,8 @@
     --------------------------------------------------------------  */
 
 #include "PhysXThread.h"
-#include <Kin/kin_physx.h>
-#include <Kin/kinViewer.h>
+#include "kin_physx.h"
+#include "kinViewer.h"
 
 struct PhysXThread : Thread {
   Var<rai::Configuration> modelWorld;

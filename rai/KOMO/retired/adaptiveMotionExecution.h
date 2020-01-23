@@ -9,15 +9,15 @@
 #ifndef ADAPTIVEMOTIONEXECUTION_H
 #define ADAPTIVEMOTIONEXECUTION_H
 
-#include <Core/util.h>
-#include <Core/array.h>
-#include <Core/array.tpp>
-#include <Kin/kin.h>
-#include <Core/util.h>
+#include "../Core/util.h"
+#include "../Core/array.h"
+#include "../Core/array.tpp"
+#include "../Kin/kin.h"
+#include "../Core/util.h"
 #include <stdlib.h>
 #include "mobject.h"
-#include <Algo/spline.h>
-#include <Gui/opengl.h>
+#include "../Algo/spline.h"
+#include "../Gui/opengl.h"
 
 struct AdaptiveMotionExecution {
 

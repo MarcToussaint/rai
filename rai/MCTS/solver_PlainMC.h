@@ -8,10 +8,9 @@
 
 #pragma once
 
-#include <Core/array.h>
-#include <Core/graph.h>
-
 #include "environment.h"
+#include "../Core/array.h"
+#include "../Core/graph.h"
 
 //===========================================================================
 

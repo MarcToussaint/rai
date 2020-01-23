@@ -1,5 +1,6 @@
 #ifdef RAI_ROS
-#include <RosCom/roscom.h>
+
+#include "../RosCom/roscom.h"
 #include "perceptionCollection.h"
 
 Collector::Collector(const bool simulate)

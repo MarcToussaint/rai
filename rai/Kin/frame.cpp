@@ -6,14 +6,14 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include <climits>
 #include "frame.h"
 #include "kin.h"
 #include "uncertainty.h"
 #include "contact.h"
+#include <climits>
 
 #ifdef RAI_GL
-#include <Gui/opengl.h>
+#include "../Gui/opengl.h"
 #endif
 
 //===========================================================================

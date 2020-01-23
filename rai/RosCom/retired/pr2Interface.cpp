@@ -7,13 +7,12 @@
     --------------------------------------------------------------  */
 
 #include "pr2Interface.h"
-
+#include "../RosCom/roscom.h"
+#include "../RosCom/rosmacro.h"
+#include "../Core/thread.h"
+#include "../Gui/opengl.h"
+#include "../Core/util.h"
 #include <stdlib.h>
-#include <RosCom/roscom.h>
-#include <RosCom/rosmacro.h>
-#include <Core/thread.h>
-#include <Gui/opengl.h>
-#include <Core/util.h>
 
 PR2Interface::PR2Interface() : Thread("PR2_Interface") {
   this->useROS = rai::getParameter<bool>("useRos", false);

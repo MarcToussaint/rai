@@ -297,7 +297,7 @@ void random_colorMap(floatA& pch_col, uint np) {
 
 #else
 
-#include <Core/util.h>
+#include "../Core/util.h"
 void pch2img(byteA& img, const uintA& pch, floatA& pch_colormap) {NICO}
 void random_colorMap(floatA& pch_colormap, uint np) {NICO}
 uint incremental_patch_ids(uintA& pch) {NICO}

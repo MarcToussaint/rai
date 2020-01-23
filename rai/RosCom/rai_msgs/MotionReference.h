@@ -21,8 +21,8 @@
 #include <ros/builtin_message_traits.h>
 #include <ros/message_operations.h>
 
-#include <rai_msgs/arr.h>
-#include <rai_msgs/arr.h>
+#include "../rai_msgs/arr.h"
+#include "../rai_msgs/arr.h"
 
 namespace rai_msgs {
 template <class ContainerAllocator>

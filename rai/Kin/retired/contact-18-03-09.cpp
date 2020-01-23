@@ -7,7 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "contact.h"
-#include <Gui/opengl.h>
+#include "../Gui/opengl.h"
 
 double rai::Contact::getDistance() const {
   TM_ContactNegDistance map(*this);

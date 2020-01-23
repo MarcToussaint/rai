@@ -6,10 +6,11 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include <Core/util.tpp>
-#include <Core/array.tpp>
-#include <Core/thread.h>
 #include "gtk.h"
+#include "../Core/util.tpp"
+#include "../Core/array.tpp"
+#include "../Core/thread.h"
+
 #include <sys/syscall.h>
 
 #ifdef RAI_GTK

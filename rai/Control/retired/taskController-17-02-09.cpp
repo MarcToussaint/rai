@@ -7,9 +7,9 @@
     --------------------------------------------------------------  */
 
 #include "taskControl.h"
-#include <Kin/kin_swift.h>
-#include <KOMO/komo.h>
-#include <Kin/taskMaps.h>
+#include "../Kin/kin_swift.h"
+#include "../KOMO/komo.h"
+#include "../Kin/taskMaps.h"
 
 //===========================================================================
 

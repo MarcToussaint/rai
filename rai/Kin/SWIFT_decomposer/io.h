@@ -52,8 +52,8 @@
 #ifndef _IO_H_
 #define _IO_H_
 
-#include <Kin/SWIFT/SWIFT_array.h>
-#include <Kin/SWIFT/SWIFT_mesh.h>
+#include "../SWIFT/SWIFT_array.h"
+#include "../SWIFT/SWIFT_mesh.h"
 
 bool Load_File( const char* filename, SWIFT_Tri_Mesh*& mesh,
                 SPLIT_TYPE split, bool& already_decomp, bool& already_hier,

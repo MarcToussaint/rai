@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include <Core/array.h>
 #include "optimization.h"
 
 int optNewton(arr& x, const ScalarFunction& f, OptOptions opt=NOOPT);

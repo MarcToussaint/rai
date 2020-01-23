@@ -7,7 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "Graph_Problem.h"
-#include <Core/graph.h>
+#include "../Core/graph.h"
 
 bool GraphProblem::checkStructure(const arr& x) {
   arr y;

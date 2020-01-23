@@ -12,14 +12,14 @@
 
 #include <sensor_msgs/JointState.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <RosCom/roscom.h>
+#include "../RosCom/roscom.h"
 #include <ros/ros.h>
 
 #include <trajectory_msgs/JointTrajectory.h>
-#include <RosCom/rai_msgs/SendJointTrajectory.h>
-#include <RosCom/rai_msgs/StringString.h>
-#include <RosCom/rai_msgs/WSG_50_command.h>
-#include <RosCom/rai_msgs/WSG_50_state.h>
+#include "../RosCom/rai_msgs/SendJointTrajectory.h"
+#include "../RosCom/rai_msgs/StringString.h"
+#include "../RosCom/rai_msgs/WSG_50_command.h"
+#include "../RosCom/rai_msgs/WSG_50_state.h"
 
 #include "simulationThread.h"
 #include "robot_pr2.h"

@@ -6,7 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include <Core/array.h>
+#include "../Core/array.h"
 
 struct Kalman {
   arr b_mean, b_var;

@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <Kin/kin.h>
+#include "../Kin/kin.h"
 
 struct RobotOperation {
   std::shared_ptr<struct sRobotOperation> s;

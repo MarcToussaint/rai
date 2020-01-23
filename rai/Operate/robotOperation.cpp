@@ -6,13 +6,11 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include <RosCom/roscom.h>
-#include <RosCom/baxter.h>
-
-#include <Gui/opengl.h>
-
 #include "robotOperation.h"
 #include "splineRunner.h"
+#include "../RosCom/roscom.h"
+#include "../RosCom/baxter.h"
+#include "../Gui/opengl.h"
 
 //#include "SimulationThread_self.h"
 extern bool Geo_mesh_drawColors;

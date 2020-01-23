@@ -8,7 +8,7 @@
 
 #include "TM_angVel.h"
 #include "TM_default.h"
-#include <Geo/geo.h>
+#include "../Geo/geo.h"
 
 void angVel_base(const rai::Configuration& K0, rai::Configuration& K1, uint i, arr& y, arr& J) {
   rai::Frame* f0 = K0.frames(i);
