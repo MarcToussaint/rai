@@ -456,10 +456,10 @@ pybind11::class_<ry::ImageViewer>(m, "ImageViewer");
 pybind11::class_<ry::RyCameraView>(m, "CameraView")
 .def("updateConfig", [](ry::RyCameraView& self, ry::Config& config) {
   auto Cget = config.get();
-  if(Cget->frames.N!= self.cam->K.frames.N) {
-    self.cam->K.copy(Cget);
+  if(Cget->frames.N!= self.cam->C.frames.N) {
+    self.cam->C.copy(Cget);
   } else {
-    self.cam->K.setFrameState(Cget->getFrameState());
+    self.cam->C.setFrameState(Cget->getFrameState());
   }
 })
 

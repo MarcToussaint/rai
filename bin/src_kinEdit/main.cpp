@@ -21,13 +21,13 @@ int MAIN(int argc,char **argv){
     if(rai::argc>=2 && rai::argv[1][0]!='-') file=rai::argv[1];
     cout <<"opening file `" <<file <<"'" <<endl;
 
-    rai::Configuration K;
+    rai::Configuration C;
     for(;;){
     Inotify ino(file);
     try {
       rai::lineCount=1;
-      K.init(file);
-      K.report();
+      C.init(file);
+      C.report();
       break;
     } catch(std::runtime_error& err) {
       cout <<"line " <<rai::lineCount <<": " <<err.what() <<" -- please check the file and press ENTER" <<endl;
@@ -38,29 +38,29 @@ int MAIN(int argc,char **argv){
     }
     }
 
-    K.checkConsistency();
-    K >>FILE("z.g");
+    C.checkConsistency();
+    C >>FILE("z.g");
     //some optional manipulations
     if(rai::checkParameter<bool>("prune")){
-      K.optimizeTree(true, true, true);
+      C.optimizeTree(true, true, true);
     }else{
-      K.optimizeTree(false, false, false);
+      C.optimizeTree(false, false, false);
     }
-    K.ensure_q();
-    K.checkConsistency();
-    K.sortFrames();
+    C.ensure_q();
+    C.checkConsistency();
+    C.sortFrames();
 
 //    makeConvexHulls(G.frames);
 //    computeOptimalSSBoxes(G.shapes);
 
-    K >>FILE("z.g");
+    C >>FILE("z.g");
 
-    if(rai::checkParameter<bool>("dot")) K.displayDot();
-    K.writeURDF(FILE("z.urdf"));
+    if(rai::checkParameter<bool>("dot")) C.displayDot();
+    C.writeURDF(FILE("z.urdf"));
 
     if(rai::checkParameter<bool>("cleanOnly")) return 0;
 
-    editConfiguration(file, K);
+    editConfiguration(file, C);
 
   return 0;
 }

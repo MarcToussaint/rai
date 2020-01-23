@@ -89,13 +89,13 @@ rai::String validatePath(const rai::Configuration& _C, const arr& q_now, const S
 //  K.gl().remove(K);
 //  K.gl().add(planDrawer);
 //  for(;;){
-//    int key = K.gl().watch(txt);
+//    int key = K.watch(true, txt);
 
 //    if(key==13){ //validated
 //      K.gl().remove(planDrawer);
 //      K.gl().add(K);
 //      K.setJointState(q0);
-//      K.gl().update("validated");
+//      K.watch(false, "validated");
 //      return;
 //    }
 

@@ -27,7 +27,7 @@ struct CameraView : GLDrawer {
   };
 
   //-- description of world configuration
-  rai::Configuration K;       //COPY of the configuration
+  rai::Configuration C;       //COPY of the configuration
   rai::Array<Sensor> sensors;  //the list of sensors
 
   enum RenderMode { all, seg, visuals };
@@ -40,7 +40,7 @@ struct CameraView : GLDrawer {
   byteA frameIDmap;
 
   //-- evaluation outputs
-  CameraView(const rai::Configuration& _K, bool _offscreen=true, int _watchComputations=0);
+  CameraView(const rai::Configuration& _C, bool _offscreen=true, int _watchComputations=0);
   ~CameraView() {}
 
   //-- loading the configuration: the meshes, the robot model, the tote, the sensors; all ends up in K
@@ -77,7 +77,7 @@ struct Sim_CameraView : Thread {
   Var<floatA> depth;
 
   //-- internal
-  CameraView C;
+  CameraView V;
 
   Sim_CameraView(Var<rai::Configuration>& _kin,
                  Var<byteA> _color,

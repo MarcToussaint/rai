@@ -74,8 +74,8 @@ EffectivePoseProblem::EffectivePoseProblem(rai::Configuration& effKinematics_bef
 
 void EffectivePoseProblem::phi(arr& phi, arr& phiJ, arr& H, ObjectiveTypeA& tt, const arr& x) {
   effKinematics.setJointState(x);
-  if(verbose>1) effKinematics.gl().timedupdate(.1);
-  if(verbose>2) effKinematics.gl().watch();
+  if(verbose>1) effKinematics.watch(false);
+  if(verbose>2) effKinematics.watch(true);
 
   phi.clear();
   if(!!phiJ) phiJ.clear();

@@ -33,6 +33,7 @@ struct Configuration;
 struct KinematicSwitch;
 
 struct FclInterface;
+struct ConfigurationViewer;
 
 } // namespace rai
 
@@ -224,7 +225,7 @@ struct Configuration : GLDrawer {
   arr getHmetric() const;
 
   /// @name extensions on demand
-  OpenGL& gl(const char* window_title=nullptr, bool offscreen=false);
+  ConfigurationViewer& gl(const char* window_title=nullptr, bool offscreen=false);
   SwiftInterface& swift();
   FclInterface& fcl();
   void swiftDelete();
@@ -236,7 +237,6 @@ struct Configuration : GLDrawer {
   void glAdd(void (*call)(void*, OpenGL&), void* classP);
   int glAnimate();
   void glClose();
-  void glGetMasks(int w=-1, int h=-1, bool rgbIndices=true);
   void stepSwift();
   void stepFcl();
   void stepPhysx(double tau);

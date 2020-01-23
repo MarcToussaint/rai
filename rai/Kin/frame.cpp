@@ -1068,11 +1068,6 @@ void rai::Shape::read(const Graph& ats) {
     rai::FileToken fil;
 
     ats.get(size, "size");
-    if(ats.get(mesh().C, "color")) {
-      CHECK(mesh().C.N==3 || mesh().C.N==4, "");
-      //    if(x.N==3){ memmove(color, x.p, 3*sizeof(double)); color[3]=1.; }
-      //    else memmove(color, x.p, 4*sizeof(double));
-    }
     if(ats.get(d, "shape"))        { type()=(ShapeType)(int)d;}
     else if(ats.get(str, "shape")) { str>> type(); }
     else if(ats.get(d, "type"))    { type()=(ShapeType)(int)d;}
@@ -1084,6 +1079,9 @@ void rai::Shape::read(const Graph& ats) {
     }
     if(ats.get(d, "meshscale"))  { mesh().scale(d); }
     if(ats.get(x, "meshscale"))  { mesh().scale(x(0), x(1), x(2)); }
+    if(ats.get(mesh().C, "color")) {
+      CHECK(mesh().C.N==3 || mesh().C.N==4, "");
+    }
 
     if(mesh().V.N && type()==ST_none) type()=ST_mesh;
 
@@ -1101,7 +1099,6 @@ void rai::Shape::read(const Graph& ats) {
 
     createMeshes();
   }
-
 
   if(ats["contact"]) {
     double d;

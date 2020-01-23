@@ -29,6 +29,7 @@
 #include "kin_ode.h"
 #include "kin_feather.h"
 #include "featureSymbols.h"
+#include "viewer.h"
 #include <Geo/fclInterface.h>
 #include <Geo/qhull.h>
 #include <Geo/mesh_readAssimp.h>
@@ -140,15 +141,14 @@ bool always_unlocked(void*) { return false; }
 
 namespace rai {
 struct sConfiguration {
-  OpenGL* gl;
+  ptr<ConfigurationViewer> viewer;
   std::shared_ptr<SwiftInterface> swift;
   ptr<FclInterface> fcl;
   PhysXInterface* physx;
   OdeInterface* ode;
   FeatherstoneInterface* fs = nullptr;
-  sConfiguration():gl(nullptr), physx(nullptr), ode(nullptr) {}
+  sConfiguration() : physx(nullptr), ode(nullptr) {}
   ~sConfiguration() {
-    if(gl) delete gl;
     if(physx) delete physx;
     if(ode) delete ode;
   }
@@ -837,10 +837,10 @@ void rai::Configuration::setFrameState(const arr& X, const StringA& frameNames, 
       if(X.d0 > frames.N) LOG(-1) <<"X.d0=" <<X.d0 <<" is larger than frames.N=" <<frames.N;
       if(X.d0 < frames.N) LOG(-1) <<"X.d0=" <<X.d0 <<" is smaller than frames.N=" <<frames.N;
     }
+    for(auto f:frames) f->_state_X_isGood=false;
     for(uint i=0; i<frames.N && i<X.d0; i++) {
       frames(i)->X.set(X[i]);
       frames(i)->X.rot.normalize();
-      frames(i)->_state_setXBadinBranch();
       frames(i)->_state_X_isGood = true;
     }
     for(uint i=0; i<frames.N && i<X.d0; i++) {
@@ -1576,14 +1576,19 @@ void rai::Configuration::prefixNames(bool clear) {
 }
 
 /// return a OpenGL extension
-OpenGL& rai::Configuration::gl(const char* window_title, bool offscreen) {
+rai::ConfigurationViewer& rai::Configuration::gl(const char* window_title, bool offscreen) {
+#if 0
   if(!s->gl) {
     s->gl = new OpenGL(window_title, 400, 400, offscreen);
     s->gl->add(glStandardScene, 0);
     s->gl->addDrawer(this);
     s->gl->camera.setDefault();
   }
-  return *s->gl;
+#endif
+  if(!s->viewer){
+    s->viewer = make_shared<rai::ConfigurationViewer>(); //-1.=broadphase only -> many proxies
+  }
+  return *s->viewer;
 }
 
 /// return a Swift extension
@@ -1634,16 +1639,21 @@ FeatherstoneInterface& rai::Configuration::fs() {
 
 int rai::Configuration::watch(bool pause, const char* txt) {
 //  gl().pressedkey=0;
-  int key;
-  if(pause) {
-    if(!txt) txt="Config::watch";
-    key = gl().watch(txt);
-  } else {
-    key = gl().update(txt, true);
-  }
+  int key = gl().setConfiguration(*this, txt, pause);
+//  if(pause) {
+//    if(!txt) txt="Config::watch";
+//    key = watch(true, txt);
+//  } else {
+//    key = watch(false, txt, true);
+//  }
   return key;
 }
 
+void rai::Configuration::glClose() {
+  if(s && s->viewer) s->viewer.reset();
+}
+
+#if 0
 void rai::Configuration::saveVideoPic(uint& t, const char* pathPrefix) {
   write_ppm(gl().captureImage, STRING(pathPrefix <<std::setw(4)<<std::setfill('0')<<t++<<".ppm"));
 }
@@ -1654,10 +1664,6 @@ void rai::Configuration::glAdd(void (*call)(void*, OpenGL&), void* classP) {
 
 int rai::Configuration::glAnimate() {
   return animateConfiguration(*this, nullptr);
-}
-
-void rai::Configuration::glClose() {
-  if(s && s->gl) { delete s->gl; s->gl=0; }
 }
 
 void rai::Configuration::glGetMasks(int w, int h, bool rgbIndices) {
@@ -1684,6 +1690,7 @@ void rai::Configuration::glGetMasks(int w, int h, bool rgbIndices) {
     orsDrawMarkers = orsDrawJoints = orsDrawProxies = true;
   }
 }
+#endif
 
 void rai::Configuration::stepSwift() {
   swift().step(*this, false);
@@ -3428,14 +3435,14 @@ void displayTrajectory(const arr& _x, int steps, rai::Configuration& G, const Ki
     else Gcopy->setJointState(x[t]);
     if(delay<0.) {
       if(delay<-10.) FILE("z.graph") <<*Gcopy;
-      Gcopy->gl().watch(STRING(tag <<" (time " <<std::setw(3) <<t <<'/' <<T <<')').p);
+      Gcopy->watch(true, STRING(tag <<" (time " <<std::setw(3) <<t <<'/' <<T <<')').p);
     } else {
-      Gcopy->gl().update(STRING(tag <<" (time " <<std::setw(3) <<t <<'/' <<T <<')').p);
+      Gcopy->watch(false, STRING(tag <<" (time " <<std::setw(3) <<t <<'/' <<T <<')').p);
       if(delay) rai::wait(delay);
     }
   }
   if(steps==1)
-    Gcopy->gl().watch(STRING(tag <<" (time " <<std::setw(3) <<T <<'/' <<T <<')').p);
+    Gcopy->watch(true, STRING(tag <<" (time " <<std::setw(3) <<T <<'/' <<T <<')').p);
   if(copyG) delete Gcopy;
 #endif
 }
@@ -3575,17 +3582,17 @@ void _glDrawOdeWorld(dWorldID world)
 }
 */
 
-int animateConfiguration(rai::Configuration& K, Inotify* ino) {
+int animateConfiguration(rai::Configuration& C, Inotify* ino) {
   arr x, x0;
-  x0 = K.getJointState();
-  arr lim = K.getLimits();
+  x0 = C.getJointState();
+  arr lim = C.getLimits();
   const int steps = 50;
-  K.checkConsistency();
-  StringA jointNames = K.getJointNames();
+  C.checkConsistency();
+  StringA jointNames = C.getJointNames();
 
   //  uint saveCount=0;
 
-  K.gl().pressedkey=0;
+  C.gl().resetPressedKey();
   for(uint i=x0.N; i--;) {
     x=x0;
     double upper_lim = lim(i, 1);
@@ -3602,19 +3609,18 @@ int animateConfiguration(rai::Configuration& K, Inotify* ino) {
       x(i) = center + (delta*(0.5*cos(RAI_2PI*t/steps + offset)));
       // Joint limits
       checkNan(x);
-      K.setJointState(x);
-      int key = K.gl().update(STRING("DOF = " <<i <<" : " <<jointNames(i) <<" [" <<lim[i] <<"]"), true);
-      //      write_ppm(gl.captureImage, STRING("vid/" <<std::setw(3)<<std::setfill('0')<<saveCount++<<".ppm"));
+      C.setJointState(x);
+      int key = C.watch(false, STRING("DOF = " <<i <<" : " <<jointNames(i) <<lim[i]));
 
       if(key==13 || key==32 || key==27 || key=='q') {
-        K.setJointState(x0);
+        C.setJointState(x0);
         return key;
       }
       rai::wait(0.01);
     }
   }
-  K.setJointState(x0);
-  return K.watch(false);
+  C.setJointState(x0);
+  return C.watch(true);
 }
 
 rai::Frame* movingBody=nullptr;
@@ -3758,8 +3764,8 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
   }
 };
 
-void editConfiguration(const char* filename, rai::Configuration& K) {
-  K.checkConsistency();
+void editConfiguration(const char* filename, rai::Configuration& C) {
+  C.checkConsistency();
 
   //  gl.exitkeys="1234567890qhjklias, "; //TODO: move the key handling to the keyCall!
   bool exit=false;
@@ -3773,19 +3779,19 @@ void editConfiguration(const char* filename, rai::Configuration& K) {
     try {
       rai::lineCount=1;
       W.init(filename);
-      K.gl().dataLock.lock(RAI_HERE);
-      K = W;
-      K.gl().dataLock.unlock();
-      K.report();
+//      K.gl().dataLock.lock(RAI_HERE);
+      C = W;
+//      K.gl().dataLock.unlock();
+      C.report();
     } catch(std::runtime_error& err) {
       cout <<"line " <<rai::lineCount <<": " <<err.what() <<" -- please check the file and re-save" <<endl;
       //      continue;
     }
     cout <<"watching..." <<endl;
     int key = -1;
-    K.gl().pressedkey=0;
+//    K.gl().pressedkey=0;
     for(;;) {
-      key = K.watch(false);
+      key = C.watch(true);
       if(key==13 || key==32 || key==27 || key=='q') break;
       if(ino.poll(false, true)) break;
       rai::wait(.02);
@@ -3794,7 +3800,7 @@ void editConfiguration(const char* filename, rai::Configuration& K) {
     if(key==13 || key==32) {
       cout <<"animating.." <<endl;
       //while(ino.pollForModification());
-      key = animateConfiguration(K, &ino);
+      key = animateConfiguration(C, &ino);
     }
     if(key==27 || key=='q') break;
     if(key==-1) continue;

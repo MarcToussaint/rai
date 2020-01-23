@@ -51,6 +51,7 @@ void TEST(Dynamics){
   double dt=.01;
 
   ofstream z("z.dyn");
+  rai::String text;
   G.watch();
 //  for(rai::Body *b:G.bodies){ b->mass=1.; b->inertia.setZero(); }
 
@@ -70,7 +71,7 @@ void TEST(Dynamics){
       q  += .5*dt*qd;
       G.setJointState(q);
       //cout <<q <<qd <<qdd <<endl;
-      G.gl().text.clear() <<"t=" <<t <<"  torque controlled damping (acc = - vel)\n(checking consistency of forward and inverse dynamics),  energy=" <<G.getEnergy(qd);
+      text.clear() <<"t=" <<t <<"  torque controlled damping (acc = - vel)\n(checking consistency of forward and inverse dynamics),  energy=" <<G.getEnergy(qd);
     }else{
       //cout <<q <<qd <<qdd <<' ' <<G.getEnergy() <<endl;
       arr x=cat(q,qd).reshape(2,q.N);
@@ -78,13 +79,13 @@ void TEST(Dynamics){
       q=x[0]; qd=x[1];
       if(t>300){
         friction=true;
-        G.gl().text.clear() <<"t=" <<t <<"  friction swing using RK4,  energy=" <<G.getEnergy(qd);
+        text.clear() <<"t=" <<t <<"  friction swing using RK4,  energy=" <<G.getEnergy(qd);
       }else{
         friction=false;
-        G.gl().text.clear() <<"t=" <<t <<"  free swing using RK4,  energy=" <<G.getEnergy(qd);
+        text.clear() <<"t=" <<t <<"  free swing using RK4,  energy=" <<G.getEnergy(qd);
       }
     }
-    G.watch(false);
+    G.watch(false, text);
   }
 }
 
