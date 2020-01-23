@@ -1389,7 +1389,7 @@ void KOMO::setInitialConfigurations(const arr& q){
 }
 
 void KOMO::setConfiguration(int t, const arr& q){
-  if(t<0) CHECK_LE(-t, k_order,"");
+  if(t<0) CHECK_LE(-t, (int)k_order,"");
   configurations(t+k_order)->setJointState(q);
 }
 
@@ -1468,7 +1468,7 @@ void KOMO::run(const OptOptions options) {
 //    Conv_Graph_ConstrainedProblem C(selG);
     Conv_Graph_ConstrainedProblem C(graph_problem, logFile);
     OptConstrained _opt(x, dual, C, rai::MAX(verbose-2, 0), options, logFile);
-//    OptPrimalDual _opt(x, dual, C, rai::MAX(verbose-2, 0));
+//    OptPrimalDual _opt(x, dual, C, rai::MAX(verbose-2, 0), options);
     _opt.run();
     {
 //      testing primal dual:
@@ -2862,7 +2862,7 @@ rai::Configuration& KOMO::getConfiguration(double phase) {
 }
 
 Configuration&KOMO::getConfiguration_t(int t){
-  if(t<0) CHECK_LE(-t, k_order,"");
+  if(t<0) CHECK_LE(-t, (int)k_order,"");
   return *configurations(t+k_order);
 }
 
