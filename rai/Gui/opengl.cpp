@@ -9,6 +9,7 @@
 #ifdef RAI_GL
 #  include <GL/glew.h>
 #  include <GL/glx.h>
+#  undef Success
 #endif
 #include "opengl.h"
 #include "../Core/array.tpp"
