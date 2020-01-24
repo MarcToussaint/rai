@@ -40,7 +40,9 @@
 #  include <GL/gl.h>
 #endif
 
-//#define FCLmode
+#ifndef RAI_SWIFT
+#  define FCLmode
+#endif
 
 using namespace rai;
 

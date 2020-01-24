@@ -464,7 +464,10 @@ Node* Graph::edit(Node* ed) {
   uint edited=0;
   for(Node* n : KVG) if(n!=ed) {
       CHECK(ed->type == n->type, "can't edit/merge nodes of different types!");
-      for(Node* p:ed->parents) n->addParent(p);
+      if(ed->parents.N){ //replace parents
+        while(n->parents.N) n->removeParent(n->parents.last());
+        for(Node* p:ed->parents) n->addParent(p);
+      }
       if(n->isGraph()) { //merge the KVGs
         n->graph().edit(ed->graph());
       } else { //overwrite the value
