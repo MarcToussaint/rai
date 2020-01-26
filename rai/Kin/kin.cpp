@@ -28,6 +28,11 @@
 #include <sstream>
 #include <climits>
 
+#ifdef RAI_ASSIMP
+#  include <assimp/Exporter.hpp>
+#  include <assimp/scene.h>
+#endif
+
 #ifndef RAI_ORS_ONLY_BASICS
 #  include <Core/graph.h>
 //#  include <Plot/plot.h>
@@ -2003,6 +2008,81 @@ void rai::Configuration::writeURDF(std::ostream& os, const char* robotName) cons
   os <<"</robot>";
 }
 
+#ifdef RAI_ASSIMP
+void buildAiMesh(const rai::Mesh& M, aiMesh* pMesh){
+  pMesh->mVertices = new aiVector3D[ M.V.d0 ];
+//  pMesh->mNormals = new aiVector3D[ M.V.d0 ];
+  pMesh->mNumVertices = M.V.d0;
+
+//  pMesh->mTextureCoords[ 0 ] = new aiVector3D[ M.V.d0 ];
+//  pMesh->mNumUVComponents[ 0 ] = M.V.d0;
+
+  for(uint i=0;i<M.V.d0;i++){
+      pMesh->mVertices[i] = aiVector3D(M.V(i,0), M.V(i,1), M.V(i,2));
+//      pMesh->mNormals[ itr - vVertices.begin() ] = aiVector3D( normals[j].x, normals[j].y, normals[j].z );
+//      pMesh->mTextureCoords[0][ itr - vVertices.begin() ] = aiVector3D( uvs[j].x, uvs[j].y, 0 );
+  }
+
+  pMesh->mFaces = new aiFace[ M.T.d0 ];
+  pMesh->mNumFaces = M.T.d0;
+
+  for(uint i=0; i<M.T.d0; i++){
+    aiFace &face = pMesh->mFaces[i];
+    face.mIndices = new unsigned int[3];
+    face.mNumIndices = 3;
+    face.mIndices[0] = M.T(i,0);
+    face.mIndices[1] = M.T(i,1);
+    face.mIndices[2] = M.T(i,2);
+  }
+}
+
+void rai::Configuration::writeCollada(const char* filename) const {
+  // get mesh frames
+  FrameL F;
+  for(rai::Frame* f:frames) {
+    if(f->shape && f->shape->type()!=rai::ST_marker) F.append(f);
+  }
+  // create a new scene
+  aiScene scene;
+  scene.mRootNode = new aiNode("root");
+  // create a dummy material
+  scene.mMaterials = new aiMaterial *[1];
+  scene.mMaterials[0] = new aiMaterial();
+  scene.mNumMaterials = 1;
+  // create meshes
+  scene.mMeshes = new aiMesh *[F.N];
+  scene.mNumMeshes = F.N;
+  for(uint i=0;i<F.N;i++) {
+    auto mesh = scene.mMeshes[i] = new aiMesh();
+    scene.mMeshes[i]->mMaterialIndex = 0;
+    buildAiMesh(F(i)->shape->mesh(), mesh);
+  }
+  // create nodes for all frames
+  scene.mRootNode->mChildren = new aiNode* [F.N];
+  scene.mRootNode->mNumChildren = F.N;
+  arr T = eye(4);
+  for(uint i=0;i<F.N;i++){
+    aiNode *node = new aiNode(STRING("mesh_" <<i).p);
+    scene.mRootNode->mChildren[i] = node;
+    node->mParent = scene.mRootNode;
+    node->mMeshes = new unsigned[1];
+    node->mNumMeshes = 1;
+    node->mMeshes[0] = i;
+    F(i)->ensure_X().getAffineMatrix(T.p);
+    for(uint j=0;j<4;j++) for(uint k=0;k<4;k++){
+      node->mTransformation[j][k] = T(j,k);
+    }
+  }
+  // export
+  Assimp::Exporter exporter;
+  exporter.Export(&scene, "collada", filename);
+}
+#else
+void rai::Configuration::writeCollada(const char* filename) const {
+  NICO
+}
+#endif //ASSIMP
+
 void rai::Configuration::writeMeshes(const char* pathPrefix) const {
   for(rai::Frame* f:frames) {
     if(f->shape &&
@@ -3779,9 +3859,9 @@ void editConfiguration(const char* filename, rai::Configuration& C) {
     }
     cout <<"watching..." <<endl;
     int key = -1;
-//    K.gl().pressedkey=0;
+    C.gl().resetPressedKey();
     for(;;) {
-      key = C.watch(true);
+      key = C.watch(false);
       if(key==13 || key==32 || key==27 || key=='q') break;
       if(ino.poll(false, true)) break;
       rai::wait(.02);

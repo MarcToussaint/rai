@@ -256,6 +256,7 @@ struct Configuration : GLDrawer {
   void write(std::ostream& os) const;
   void write(Graph& G) const;
   void writeURDF(std::ostream& os, const char* robotName="myrobot") const;
+  void writeCollada(const char* filename) const;
   void writeMeshes(const char* pathPrefix="meshes/") const;
   void read(std::istream& is);
   void glDraw(struct OpenGL&);

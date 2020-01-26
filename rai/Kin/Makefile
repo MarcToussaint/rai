@@ -9,6 +9,7 @@ PHYSX = 1
 BULLET = 1
 ODE = 0
 SWIFT = 1
+ASSIMP = 1
 
 DEPEND = Core Geo GeoOptim Algo Gui 
 

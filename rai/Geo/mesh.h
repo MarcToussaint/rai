@@ -13,6 +13,7 @@
 
 namespace rai { struct Mesh; }
 typedef rai::Array<rai::Mesh> MeshA;
+typedef rai::Array<rai::Mesh*> MeshL;
 void glDrawMeshes(void*, OpenGL&);
 
 namespace rai {

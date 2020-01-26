@@ -23,4 +23,3 @@ struct AssimpLoader {
   void loadNode(const struct aiNode* node, const struct aiScene* scene, arr T);
   rai::Mesh loadMesh(const struct aiMesh* mesh, const struct aiScene* scene);
 };
-
