@@ -211,9 +211,9 @@ namespace rai {
 istream, but also can be send to an ostream or read from an
 istream. It is based on a simple streambuf derived from the
 rai::Mem class */
-struct String:public std::iostream {
+struct String : public std::iostream {
  private:
-  struct StringBuf:std::streambuf {
+  struct StringBuf : std::streambuf {
     String* string;
     virtual int overflow(int C = traits_type::eof());
     virtual int sync();
@@ -598,9 +598,6 @@ struct Inotify {
   Inotify(const char* filename);
   ~Inotify();
   bool poll(bool block=false, bool verbose=false);
-
-//  void waitAndReport(){ pollForModification(false, true); }
-//  void waitForModification(bool verbose=false){ while(!pollForModification(true, verbose)); }
 };
 
 //===========================================================================
@@ -622,7 +619,7 @@ struct Mutex {
 
   struct Token {
     Mutex& m;
-    Token(Mutex& m, const char* _lockInfo):m(m) { m.lock(_lockInfo); }
+    Token(Mutex& m, const char* _lockInfo) : m(m) { m.lock(_lockInfo); }
     ~Token() { m.unlock(); }
   };
   struct Token operator()(const char* _lockInfo) { return Token(*this, _lockInfo); }
@@ -630,9 +627,11 @@ struct Mutex {
   template<class T> struct TypedToken {
     Mutex& m;
     T* data;
-    TypedToken(Mutex& m, T* data, const char* _lockInfo):m(m), data(data) { m.lock(_lockInfo); }
+    TypedToken(Mutex& m, T* data, const char* _lockInfo) : m(m), data(data) { m.lock(_lockInfo); }
     ~TypedToken() { m.unlock(); }
     T* operator->() { return data; }
+    operator T& () { return *data; }
+    T& operator()() { return *data; }
   };
   template<class T> TypedToken<T> operator()(T* data, const char* _lockInfo) { return TypedToken<T>(*this, data, _lockInfo); }
 };
@@ -644,75 +643,27 @@ struct Mutex {
 
 template<class T>
 struct Singleton {
-  static Mutex mutex;
-  static T* singleton;
 
-  T* getSingleton() const {
-    if(!singleton) {
-      mutex.lock(RAI_HERE);
-      if(!singleton) singleton = new T;
-      mutex.unlock();
-    }
+  Mutex& getMutex() const {
+    static Mutex mutex;
+    return mutex;
+  }
+
+  T& getSingleton() const {
+    static T singleton;
     return singleton;
   }
 
-  T* operator->() const { return getSingleton(); }
+  T* operator->() const { return &getSingleton(); }
   
-  ~Singleton() {
-    if(singleton) {
-//      static Mutex m; //pthread might already be deinitialized...
-//      m.lock();
-      T* mine=singleton;
-      singleton=nullptr;
-      if(mine) delete mine;
-//      m.unlock();
-    }
-  }
+  Singleton() {}
+  Singleton(Singleton const&) = delete;
+  void operator=(Singleton const&) = delete;
 
-  struct Token {
-    const Singleton<T>& base;
-    Token(Singleton<T>& _base) : base(_base) { base.getSingleton(); base.mutex.lock(RAI_HERE); }
-    ~Token() { base.mutex.unlock(); }
-    T* operator->() { return base.getSingleton(); }
-    operator T& () { return *base.getSingleton(); }
-    T& operator()() { return *base.getSingleton(); }
-  };
+  ~Singleton() {}
 
-  Token operator()() { return Token(*this); }
+  Mutex::TypedToken<T> operator()(){ return getMutex()(&getSingleton(), RAI_HERE); }
 };
-
-
-#if 0
-class S
-{
-    public:
-        static S& getInstance()
-        {
-            static S    instance; // Guaranteed to be destroyed.
-                                  // Instantiated on first use.
-            return instance;
-        }
-    private:
-        S() {}                    // Constructor? (the {} brackets) are needed here.
-
-        // C++ 11
-        // =======
-        // We can use the better technique of deleting the methods
-        // we don't want.
-    public:
-        S(S const&)               = delete;
-        void operator=(S const&)  = delete;
-
-        // Note: Scott Meyers mentions in his Effective Modern
-        //       C++ book, that deleted functions should generally
-        //       be public as it results in better error messages
-        //       due to the compilers behavior to check accessibility
-        //       before deleted status
-};
-#endif
-
-template<class T> T* Singleton<T>::singleton=nullptr;
-template<class T> Mutex Singleton<T>::mutex;
 
 //===========================================================================
 //
@@ -747,7 +698,7 @@ struct CoutToken {
 
 //===========================================================================
 //
-// to register a type (instead of general thing/object), use this:
+// to register a type
 //
 
 struct Type {

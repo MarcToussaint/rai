@@ -1657,7 +1657,7 @@ void OpenGL::Draw(int w, int h, rai::Camera* cam, bool callerHasAlreadyLocked) {
 #ifdef RAI_GL
 
   if(!callerHasAlreadyLocked) {
-    singleGLAccess.mutex.lock(RAI_HERE);
+    singleGLAccess.getMutex().lock(RAI_HERE);
     dataLock.lock(RAI_HERE); //now accessing user data
   }
 
@@ -1822,7 +1822,7 @@ void OpenGL::Draw(int w, int h, rai::Camera* cam, bool callerHasAlreadyLocked) {
   if(!callerHasAlreadyLocked) {
     //now de-accessing user data
     dataLock.unlock();
-    singleGLAccess.mutex.unlock();
+    singleGLAccess.getMutex().unlock();
   }
 #endif
 }
@@ -1831,7 +1831,7 @@ void OpenGL::Select(bool callerHasAlreadyLocked) {
   if(reportEvents) { LOG(0) <<RAI_HERE <<" Select entry"; }
 
   if(!callerHasAlreadyLocked) {
-    singleGLAccess.mutex.lock(RAI_HERE);
+    singleGLAccess.getMutex().lock(RAI_HERE);
     dataLock.lock(RAI_HERE);
   }
 
@@ -1913,7 +1913,7 @@ void OpenGL::Select(bool callerHasAlreadyLocked) {
 #endif
   if(!callerHasAlreadyLocked) {
 
-    singleGLAccess.mutex.unlock();
+    singleGLAccess.getMutex().unlock();
   }
   if(reportEvents) { LOG(0) <<RAI_HERE <<" Select done"; }
 }
