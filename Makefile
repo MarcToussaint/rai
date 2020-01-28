@@ -3,13 +3,13 @@ BASE = .
 
 target: src
 
-DEPEND = $(shell find rai -mindepth 1 -maxdepth 1 -printf "%f ")
+DEPEND = $(shell find rai -mindepth 1 -maxdepth 1 -not -name 'contrib' -printf "%f ")
 
 ################################################################################
 
 src_paths =  $(shell find rai -mindepth 1 -maxdepth 1 -type d -not -name 'retired' -printf "%f ")
 
-contrib_paths =  $(shell find -L rai/contrib -mindepth 1 -maxdepth 1 -type d -not -name 'retired' -not -name '.git' -printf "%f ")
+#contrib_paths =  $(shell find -L rai/contrib -mindepth 1 -maxdepth 1 -type d -not -name 'retired' -not -name '.git' -printf "%f ")
 
 test_paths = $(shell find test -mindepth 3 -maxdepth 3 -name 'Makefile' -printf "%h ")
 
@@ -29,7 +29,7 @@ tests: $(test_paths:%=inPath_make/%)
 
 bin: $(bin_paths:%=inPath_make/%)
 
-src: $(src_paths:%=inPath_makeLib/%) $(contrib_paths:%=inPath_makeLib/contrib/%)
+src: $(src_paths:%=inPath_makeLib/%)
 
 dependAll: $(src_paths:%=inPath_depend/%)
 

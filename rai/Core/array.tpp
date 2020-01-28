@@ -416,6 +416,7 @@ template<class T> void rai::Array<T>::resizeMEM(uint n, bool copy, int Mforce) {
 
 /// free all memory and reset all pointers and sizes
 template<class T> void rai::Array<T>::freeMEM() {
+#ifndef RAI_NO_VEC_IMPL
   if(!isReference) {
     vec_type::clear();
   } else {
@@ -423,6 +424,9 @@ template<class T> void rai::Array<T>::freeMEM() {
     vec_type::_M_impl._M_finish = 0;
     vec_type::_M_impl._M_end_of_storage = 0;
   }
+#else
+  vec_type::clear();
+#endif
   if(d && d!=&d0) { delete[] d; d=NULL; }
   p=NULL;
   N=nd=d0=d1=d2=0;
@@ -1182,9 +1186,11 @@ template<class T> void rai::Array<T>::referTo(const T* buffer, uint n) {
   isReference=true;
   nd=1; d0=N=n; d1=d2=0;
   p=(T*)buffer;
+#ifndef RAI_NO_VEC_IMPL
   vec_type::_M_impl._M_start = p;
   vec_type::_M_impl._M_finish = p+N;
   vec_type::_M_impl._M_end_of_storage = p+N;
+#endif
 }
 
 /** @brief returns an ordinary 2-dimensional C-pointer to the Array content.
