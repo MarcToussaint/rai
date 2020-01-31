@@ -260,7 +260,7 @@ struct Configuration : GLDrawer {
   void writeMeshes(const char* pathPrefix="meshes/") const;
   void read(std::istream& is);
   void glDraw(struct OpenGL&);
-  void glDraw_sub(struct OpenGL&);
+  void glDraw_sub(struct OpenGL&, int drawOpaqueOrTransparanet=0);
   Graph getGraph() const;
   Array<Frame*> getLinks() const;
   void displayDot();

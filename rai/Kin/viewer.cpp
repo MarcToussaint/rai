@@ -144,20 +144,14 @@ rai::Camera& rai::ConfigurationViewer::displayCamera() {
 void rai::ConfigurationViewer::recopyMeshes(rai::Configuration& _C){
   ensure_gl();
 
-  uint n=_C.frames.N;
   {
     auto _dataLock = gl->dataLock(RAI_HERE);
     C.copy(_C, false);
     //deep copy meshes!
     for(rai::Frame* f:C.frames) if(f->shape) {
-        ptr<Mesh> org = f->shape->_mesh;
-        f->shape->_mesh = make_shared<Mesh> (*org.get());
-      }
-//    meshes.resize(n);
-//    for(uint i=0; i<n; i++) {
-//      if(_C.frames.elem(i)->shape) meshes.elem(i) = _C.frames.elem(i)->shape->mesh();
-//      else meshes.elem(i).clear();
-//    }
+      ptr<Mesh> org = f->shape->_mesh;
+      f->shape->_mesh = make_shared<Mesh> (*org.get());
+    }
   }
 }
 
@@ -172,20 +166,6 @@ void rai::ConfigurationViewer::glDraw(OpenGL& gl) {
   glPushMatrix();
 
   rai::Transformation T;
-  double GLmatrix[16];
-
-
-//  //proxies
-//  if(orsDrawProxies) for(const Proxy& p: proxies) {
-//      ((Proxy*)&p)->glDraw(gl);
-//    }
-
-//  //contacts
-////  if(orsDrawProxies)
-//  for(const Frame* fr: frames) for(rai::Contact* c:fr->contacts) if(&c->a==fr) {
-//        c->glDraw(gl);
-//      }
-
   if(drawTimeSlice>=0){
     uint t=drawTimeSlice;
     CHECK_LE(t+1, framePath.d0, "");
@@ -193,25 +173,7 @@ void rai::ConfigurationViewer::glDraw(OpenGL& gl) {
     CHECK_EQ(framePath.d2, 7, "");
 
     C.setFrameState(framePath[t]);
-    C.glDraw(gl);
-
-#if 0
-    //first non-transparent
-    for(uint i=0;i<framePath.d1;i++){
-      if(meshes.elem(i).C.N!=4 || meshes.elem(i).C.elem(3)==1.){
-        T.set(&framePath(t, i, 0));
-        glTransform(T);
-        meshes.elem(i).glDraw(gl);
-      }
-    }
-    for(uint i=0;i<framePath.d1;i++){
-      if(meshes.elem(i).C.N==4 && meshes.elem(i).C.elem(3)<1.){
-        T.set(&framePath(t, i, 0));
-        glTransform(T);
-        meshes.elem(i).glDraw(gl);
-      }
-    }
-#endif
+    C.glDraw_sub(gl, 0);
 
     //draw frame paths
     glColor(0., 0., 0.);
@@ -232,37 +194,17 @@ void rai::ConfigurationViewer::glDraw(OpenGL& gl) {
       CHECK_EQ(framePath.d2, 7, "");
       for(uint t=0;t<framePath.d0;t++){
         C.setFrameState(framePath[t]);
-        C.glDraw(gl);
+        C.glDraw_sub(gl, 1); //opaque
       }
-#if 0
-      for(uint i=0;i<framePath.d1;i++){
-        if(meshes.elem(i).C.N!=4 || meshes.elem(i).C.elem(3)==1.){
-          for(uint t=0;t<framePath.d0;t++){
-            T.set(&framePath(t,i,0));
-            glTransform(T);
-            meshes.elem(i).glDraw(gl);
-          }
-        }
+      for(uint t=0;t<framePath.d0;t++){
+        C.setFrameState(framePath[t]);
+        C.glDraw_sub(gl, 2); //transparent
       }
-      for(uint i=0;i<framePath.d1;i++){
-        if(meshes.elem(i).C.N==4 && meshes.elem(i).C.elem(3)<1.){
-          for(uint t=0;t<framePath.d0;t++){
-            T.set(&framePath(t,i,0));
-            glTransform(T);
-            meshes.elem(i).glDraw(gl);
-          }
-        }
-      }
-#endif
     }else{
       NIY;
     }
-//    gl->addDrawer(configurations.last());
-//    gl->add(drawX);
   }
 
-//  if(overlayPaths) gl->add(drawX);
   glPopMatrix();
-
 }
 

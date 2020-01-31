@@ -114,6 +114,7 @@ struct KOMO : NonCopyable {
   OptConstrained *opt=0;       ///< optimizer; created in run()
   arr x, dual;                 ///< the primal and dual solution
   arr z, splineB;              ///< when a spline representation is used: z are the nodes; splineB the B-spline matrix; x = splineB * z
+  arr bound_lo, bound_up;      ///< bounds for clipping within Newton
   //return values
   double sos, eq, ineq;
 
@@ -309,6 +310,8 @@ struct KOMO : NonCopyable {
   void clearObjectives();
   void setupConfigurations(const arr& q_init=NoArr, const StringA& q_initJoints=NoStringA);   ///< this creates the @configurations@, that is, copies the original world T times (after setTiming!) perhaps modified by KINEMATIC SWITCHES and FLAGS
   void setupRepresentations();
+  void setBounds();
+  void checkBounds(const arr& x);
   void retrospectAddSwitches(rai::Array<rai::KinematicSwitch*>& _switches);
   void set_x(const arr& x, const uintA& selectedConfigurationsOnly=NoUintA);            ///< set the state trajectory of all configurations
 //  void setState(const arr& x, const uintA& selectedVariablesOnly=NoUintA);            ///< set the state trajectory of all configurations

@@ -596,7 +596,7 @@ static void compute_subterms( struct simplex_point * simp) {
  
 static int default_distance( struct simplex_point * simplex) {
 
-   int s, j, k, ok, size;
+   int s, j, k, ok=0, size;
 
    size = simplex->npts;
 

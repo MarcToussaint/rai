@@ -1469,6 +1469,10 @@ void KOMO::run(const OptOptions options) {
 //    Conv_Graph_ConstrainedProblem C(selG);
     Conv_Graph_ConstrainedProblem C(graph_problem, logFile);
     OptConstrained _opt(x, dual, C, rai::MAX(verbose-2, 0), options, logFile);
+    if(bound_up.N && bound_lo.N){
+      _opt.newton.bound_lo = bound_lo;
+      _opt.newton.bound_hi = bound_up;
+    }
 //    OptPrimalDual _opt(x, dual, C, rai::MAX(verbose-2, 0), options);
     _opt.run();
     {
@@ -1487,6 +1491,10 @@ void KOMO::run(const OptOptions options) {
   } else if(!splineB.N) { //DEFAULT CASE
     Convert C(komo_problem);
     opt = new OptConstrained(x, dual, C, rai::MAX(verbose-2, 0), options);
+    if(bound_up.N && bound_lo.N){
+      opt->newton.bound_lo = bound_lo;
+      opt->newton.bound_hi = bound_up;
+    }
     opt->logFile = logFile;
     opt->run();
   } else {
@@ -1959,6 +1967,44 @@ void KOMO::setupRepresentations() {
       objs.append(o);
     }
   }
+}
+
+void KOMO::setBounds(){
+  if(!configurations.N) setupConfigurations();
+  CHECK_EQ(configurations.N, k_order+T, "configurations are not setup yet");
+
+  arr x = getPath_decisionVariable();
+  bound_lo.resize(x.N);
+  bound_up.resize(x.N);
+
+  uintA configs;
+  configs.setStraightPerm(T); //by default, we loop straight through all configurations
+
+  //-- set the configurations' states
+  uint x_count=0;
+  arr limits;
+  for(uint t:configs) {
+    int s = t+k_order;
+    uint x_dim = dim_x(t);
+    if(x_dim) {
+      limits = ~configurations(s)->getLimits();
+      bound_lo.setVectorBlock(limits[0], x_count);
+      bound_up.setVectorBlock(limits[1], x_count);
+      x_count += x_dim;
+    }
+  }
+  CHECK_EQ(x_count, x.N, "");
+}
+
+void KOMO::checkBounds(const arr& x){
+  CHECK_EQ(x.N, bound_lo.N, "");
+  CHECK_EQ(x.N, bound_up.N, "");
+
+  for(uint i=0;i<x.N;i++) if(bound_up.elem(i)>bound_lo.elem(i)){
+    if(x.elem(i)<bound_lo.elem(i)) cout <<"lower bound violation: x_" <<i <<"=" <<x.elem(i) <<" lo_" <<i <<"=" <<bound_lo.elem(i) <<endl;
+    if(x.elem(i)>bound_up.elem(i)) cout <<"lower upper violation: x_" <<i <<"=" <<x.elem(i) <<" up_" <<i <<"=" <<bound_up.elem(i) <<endl;
+  }
+
 }
 
 //===========================================================================

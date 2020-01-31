@@ -3087,7 +3087,7 @@ void rai::Configuration::glDraw(OpenGL& gl) {
 }
 
 /// GL routine to draw a rai::Configuration
-void rai::Configuration::glDraw_sub(OpenGL& gl) {
+void rai::Configuration::glDraw_sub(OpenGL& gl, int drawOpaqueOrTransparanet) {
 #ifdef RAI_GL
   rai::Transformation f;
   double GLmatrix[16];
@@ -3096,77 +3096,84 @@ void rai::Configuration::glDraw_sub(OpenGL& gl) {
 
   glColor(.5, .5, .5);
 
-  if(orsDrawVisualsOnly)
-    orsDrawProxies=orsDrawJoints=orsDrawMarkers=false;
+  if(drawOpaqueOrTransparanet!=2){
+    if(orsDrawVisualsOnly){
+      orsDrawProxies=orsDrawJoints=orsDrawMarkers=false;
+    }
 
-  //proxies
-  if(orsDrawProxies) for(const Proxy& p: proxies) {
+    //proxies
+    if(orsDrawProxies) for(const Proxy& p: proxies) {
       ((Proxy*)&p)->glDraw(gl);
     }
 
-  //contacts
-//  if(orsDrawProxies)
-  for(const Frame* fr: frames) for(rai::Contact* c:fr->contacts) if(&c->a==fr) {
-        c->glDraw(gl);
-      }
+    //contacts
+    //  if(orsDrawProxies)
+    for(const Frame* fr: frames) for(rai::Contact* c:fr->contacts) if(&c->a==fr) {
+      c->glDraw(gl);
+    }
 
-  //joints
-  Joint* e;
-  if(orsDrawJoints) for(Frame* fr: frames) if((e=fr->joint)) {
-        //set name (for OpenGL selection)
-        glPushName((fr->ID <<2) | 2);
+    //joints
+    Joint* e;
+    if(orsDrawJoints) for(Frame* fr: frames) if((e=fr->joint)) {
+      //set name (for OpenGL selection)
+      glPushName((fr->ID <<2) | 2);
 
-        //    double s=e->A.pos.length()+e->B.pos.length(); //some scale
-        double s=.1;
+      //    double s=e->A.pos.length()+e->B.pos.length(); //some scale
+      double s=.1;
 
-        //    //from body to joint
-        //    f=e->from->X;
-        //    f.getAffineMatrixGL(GLmatrix);
-        //    glLoadMatrixd(GLmatrix);
-        //    glColor(1, 1, 0);
-        //    //glDrawSphere(.1*s);
-        //    glBegin(GL_LINES);
-        //    glVertex3f(0, 0, 0);
-        //    glVertex3f(e->A.pos.x, e->A.pos.y, e->A.pos.z);
-        //    glEnd();
+      //    //from body to joint
+      //    f=e->from->X;
+      //    f.getAffineMatrixGL(GLmatrix);
+      //    glLoadMatrixd(GLmatrix);
+      //    glColor(1, 1, 0);
+      //    //glDrawSphere(.1*s);
+      //    glBegin(GL_LINES);
+      //    glVertex3f(0, 0, 0);
+      //    glVertex3f(e->A.pos.x, e->A.pos.y, e->A.pos.z);
+      //    glEnd();
 
-        //joint frame A
-        //    f.appendTransformation(e->A);
-        f.getAffineMatrixGL(GLmatrix);
-        glLoadMatrixd(GLmatrix);
-        glDrawAxes(s);
-        glColor(1, 0, 0);
-        glRotatef(90, 0, 1, 0);  glDrawCylinder(.05*s, .3*s);  glRotatef(-90, 0, 1, 0);
+      //joint frame A
+      //    f.appendTransformation(e->A);
+      f.getAffineMatrixGL(GLmatrix);
+      glLoadMatrixd(GLmatrix);
+      glDrawAxes(s);
+      glColor(1, 0, 0);
+      glRotatef(90, 0, 1, 0);  glDrawCylinder(.05*s, .3*s);  glRotatef(-90, 0, 1, 0);
 
-        //joint frame B
-        f.appendTransformation(fr->get_Q());
-        f.getAffineMatrixGL(GLmatrix);
-        glLoadMatrixd(GLmatrix);
-        glDrawAxes(s);
+      //joint frame B
+      f.appendTransformation(fr->get_Q());
+      f.getAffineMatrixGL(GLmatrix);
+      glLoadMatrixd(GLmatrix);
+      glDrawAxes(s);
 
-        //    //from joint to body
-        //    glColor(1, 0, 1);
-        //    glBegin(GL_LINES);
-        //    glVertex3f(0, 0, 0);
-        //    glVertex3f(e->B.pos.x, e->B.pos.y, e->B.pos.z);
-        //    glEnd();
-        //    glTranslatef(e->B.pos.x, e->B.pos.y, e->B.pos.z);
-        //    //glDrawSphere(.1*s);
+      //    //from joint to body
+      //    glColor(1, 0, 1);
+      //    glBegin(GL_LINES);
+      //    glVertex3f(0, 0, 0);
+      //    glVertex3f(e->B.pos.x, e->B.pos.y, e->B.pos.z);
+      //    glEnd();
+      //    glTranslatef(e->B.pos.x, e->B.pos.y, e->B.pos.z);
+      //    //glDrawSphere(.1*s);
 
-        glPopName();
-      }
+      glPopName();
+    }
+  }
 
   //shapes
   if(orsDrawBodies) {
-    //first non-transparent
-    for(Frame* f: frames) if(f->shape && f->shape->alpha()==1. && (f->shape->visual||!orsDrawVisualsOnly)) {
+    if(drawOpaqueOrTransparanet==0 || drawOpaqueOrTransparanet==1){
+      //first non-transparent
+      for(Frame* f: frames) if(f->shape && f->shape->alpha()==1. && (f->shape->visual||!orsDrawVisualsOnly)) {
         gl.drawId(f->ID);
         f->shape->glDraw(gl);
       }
-    for(Frame* f: frames) if(f->shape && f->shape->alpha()<1. && (f->shape->visual||!orsDrawVisualsOnly)) {
+    }
+    if(drawOpaqueOrTransparanet==0 || drawOpaqueOrTransparanet==2){
+      for(Frame* f: frames) if(f->shape && f->shape->alpha()<1. && (f->shape->visual||!orsDrawVisualsOnly)) {
         gl.drawId(f->ID);
         f->shape->glDraw(gl);
       }
+    }
   }
 
   glPopMatrix();
