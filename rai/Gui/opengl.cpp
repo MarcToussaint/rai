@@ -462,7 +462,7 @@ void OpenGL::postRedrawEvent(bool fromWithinCallback) {}
 void OpenGL::resize(int w, int h) {}
 
 struct sOpenGL : NonCopyable {
-  sOpenGL(OpenGL* gl) { NICO }
+  sOpenGL(OpenGL* gl) { }
 };
 
 #endif
@@ -1925,6 +1925,7 @@ int OpenGL::watch(const char* txt) {
     LOG(0) <<"can't watch an offscreen context";
     return 'q';
   }
+#ifdef RAI_GL
   update(STRING(txt<<" - press ENTER to continue"), true);
   if(rai::getInteractivity()) {
     watching.setStatus(1);
@@ -1932,6 +1933,7 @@ int OpenGL::watch(const char* txt) {
   } else {
     rai::wait(.1);
   }
+#endif
   return pressedkey;
 }
 

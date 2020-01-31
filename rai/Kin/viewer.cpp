@@ -102,6 +102,9 @@ void rai::ConfigurationViewer::setPath(const arr& _framePath, const char* text, 
 }
 
 bool rai::ConfigurationViewer::playVideo(bool watch, double delay, const char* saveVideoPath) {
+#ifndef RAI_GL
+  return false;
+#endif
   const rai::String tag = drawText;
 
   if(saveVideoPath) {
@@ -156,6 +159,7 @@ void rai::ConfigurationViewer::recopyMeshes(rai::Configuration& _C){
 }
 
 void rai::ConfigurationViewer::glDraw(OpenGL& gl) {
+#ifdef RAI_GL
   glStandardScene(NULL, gl);
 
   if(!framePath.N){
@@ -206,5 +210,8 @@ void rai::ConfigurationViewer::glDraw(OpenGL& gl) {
   }
 
   glPopMatrix();
+#else
+  NICO
+#endif
 }
 
