@@ -321,7 +321,7 @@ void conv_KOrderMarkovFunction_VectorFunction(KOrderMarkovFunction& f, arr& phi,
 
     //query
     arr f_t, J_t, Jz_t;
-    f.phi_t(f_t, (!!J?J_t:NoArr), NoTermTypeA, t, x_bar);
+    f.phi_t(f_t, (!!J?J_t:NoArr), NoObjectiveTypeA, t, x_bar);
     CHECK_EQ(f_t.N, dimf_t, "");
     phi.setVectorBlock(f_t, M);
     if(!!J) {

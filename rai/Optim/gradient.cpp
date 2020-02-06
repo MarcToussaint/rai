@@ -34,6 +34,8 @@ OptGrad::StopCriterion OptGrad::step() {
   double fy;
   arr y, gy, Delta;
 
+  if(!evals) reinit();
+
   it++;
   if(o.verbose>1) cout <<"optGrad it=" <<std::setw(4) <<it <<flush;
 

@@ -9,6 +9,7 @@
 #pragma once
 
 #include "optimization.h"
+#include "newOptim.h"
 #include "KOMO_Problem.h"
 
 extern ScalarFunction RosenbrockFunction();
@@ -17,6 +18,29 @@ extern ScalarFunction SquareFunction();
 extern ScalarFunction SumFunction();
 extern ScalarFunction HoleFunction();
 extern ScalarFunction ChoiceFunction();
+
+//===========================================================================
+
+struct MP_TrivialSquareFunction : MathematicalProgram {
+  uint dim;
+  double lo, hi;
+
+  MP_TrivialSquareFunction(uint dim=10, double lo=-1., double hi=1.) : dim(dim), lo(lo), hi(hi) {}
+
+  virtual uint getDimension(){ return dim; }
+  virtual void getBounds(arr& bounds_lo, arr& bounds_up){ //lower/upper bounds for the decision variable (may be {})
+    bounds_lo = consts<double>(lo, dim);
+    bounds_up = consts<double>(hi, dim);
+  }
+  virtual void getFeatureTypes(ObjectiveTypeA& featureTypes){
+    featureTypes = consts<ObjectiveType>(OT_sos, dim);
+  }
+
+  void evaluate(arr& phi, arr& J, arr& H, const arr& x) {
+    phi = x;
+    if(!!J) J.setId(x.N);
+  }
+};
 
 //===========================================================================
 

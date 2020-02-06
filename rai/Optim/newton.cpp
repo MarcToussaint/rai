@@ -43,10 +43,10 @@ void OptNewton::reinit(const arr& _x) {
 
 //===========================================================================
 
-void boundClip(arr& y, const arr& bound_lo, const arr& bound_hi){
-  if(bound_lo.N && bound_hi.N) {
-    for(uint i=0; i<y.N; i++) if(bound_hi(i)>bound_lo(i)) {
-      if(y(i)>bound_hi(i)) y(i) = bound_hi(i);
+void boundClip(arr& y, const arr& bound_lo, const arr& bound_up){
+  if(bound_lo.N && bound_up.N) {
+    for(uint i=0; i<y.N; i++) if(bound_up(i)>bound_lo(i)) {
+      if(y(i)>bound_up(i)) y(i) = bound_up(i);
       if(y(i)<bound_lo(i)) y(i) = bound_lo(i);
     }
   }
@@ -125,7 +125,7 @@ OptNewton::StopCriterion OptNewton::step() {
     if(!o.allowOverstep) if(alpha>1.) alpha=1.;
     if(alphaHiLimit>0. && alpha>alphaHiLimit) alpha=alphaHiLimit;
     y = x + alpha*Delta;
-    boundClip(y, bound_lo, bound_hi);
+    boundClip(y, bound_lo, bound_up);
     double timeBefore = rai::timerStart();
     fy = f(gy, Hy, y);  evals++;
     timeEval += rai::timerRead(true, timeBefore);

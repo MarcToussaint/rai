@@ -11,7 +11,7 @@
 uint eval_count=0;
 Singleton<OptOptions> globalOptOptions;
 ObjectiveTypeA __NoTermTypeA(new SpecialArray(SpecialArray::ST_NoArr));
-ObjectiveTypeA& NoTermTypeA = __NoTermTypeA;
+ObjectiveTypeA& NoObjectiveTypeA = __NoTermTypeA;
 
 template<> const char* rai::Enum<ObjectiveType>::names []= {
   "none", "f", "sos", "ineq", "eq", nullptr
@@ -24,7 +24,7 @@ template<> const char* rai::Enum<ObjectiveType>::names []= {
 
 bool checkJacobianCP(ConstrainedProblem& P, const arr& x, double tolerance) {
   VectorFunction F = [&P](arr& phi, arr& J, const arr& x) {
-    return P.phi(phi, J, NoArr, NoTermTypeA, x);
+    return P.phi(phi, J, NoArr, NoObjectiveTypeA, x);
   };
   return checkJacobian(F, x, tolerance);
 }
@@ -40,7 +40,7 @@ bool checkHessianCP(ConstrainedProblem& P, const arr& x, double tolerance) {
     return true;
   }
   ScalarFunction F = [&P, &phi, &J, i](arr& g, arr& H, const arr& x) -> double{
-    P.phi(phi, J, H, NoTermTypeA, x);
+    P.phi(phi, J, H, NoObjectiveTypeA, x);
     g = J[i];
     return phi(i);
   };

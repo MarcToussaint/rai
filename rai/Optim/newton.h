@@ -23,7 +23,7 @@ struct OptNewton {
   double alpha, beta;
   uint its=0, evals=0, numTinySteps=0;
   StopCriterion stopCriterion;
-  arr bound_lo, bound_hi;
+  arr bound_lo, bound_up;
   bool rootFinding=false;
   ostream* logFile=nullptr;
   double timeNewton=0., timeEval=0.;

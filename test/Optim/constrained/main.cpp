@@ -61,6 +61,29 @@ void TEST(CoveringSphere){
   cout <<"cr_opt=" <<cr <<endl;
 }
 
+//===========================================================================
+
+void TEST(MathematicalProgram){
+  auto P = make_shared<MP_TrivialSquareFunction>(2, 1., 2.);
+
+  arr x, phi;
+  x = P->getInitializationSample();
+
+  P->evaluate(phi, NoArr, NoArr, x);
+  cout <<x <<endl <<phi;
+
+  Conv_MathematicalProgram_ConstrainedProblem F(P);
+  checkJacobianCP(F, x, 1e-4);
+
+  OptConstrained opt(x, NoArr, F, 6);
+  P->getBounds(opt.newton.bound_lo, opt.newton.bound_up);
+  opt.run();
+
+  cout <<"optimum: " <<x <<endl;
+
+
+}
+
 //==============================================================================
 
 int main(int argc,char** argv){
@@ -69,10 +92,13 @@ int main(int argc,char** argv){
   ChoiceConstraintFunction F;
 //  RandomLPFunction F;
 //  SimpleConstraintFunction F;
-  testConstraint(F, F.dim_x());
+//  testConstraint(F, F.dim_x());
 //  testConstraint2(F, F.dim_x());
 
 //  testCoveringSphere();
+  testMathematicalProgram();
+
+
 
   return 0;
 }

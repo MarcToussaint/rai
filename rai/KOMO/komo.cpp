@@ -1471,7 +1471,7 @@ void KOMO::run(const OptOptions options) {
     OptConstrained _opt(x, dual, C, rai::MAX(verbose-2, 0), options, logFile);
     if(bound_up.N && bound_lo.N){
       _opt.newton.bound_lo = bound_lo;
-      _opt.newton.bound_hi = bound_up;
+      _opt.newton.bound_up = bound_up;
     }
 //    OptPrimalDual _opt(x, dual, C, rai::MAX(verbose-2, 0), options);
     _opt.run();
@@ -1493,7 +1493,7 @@ void KOMO::run(const OptOptions options) {
     opt = new OptConstrained(x, dual, C, rai::MAX(verbose-2, 0), options);
     if(bound_up.N && bound_lo.N){
       opt->newton.bound_lo = bound_lo;
-      opt->newton.bound_hi = bound_up;
+      opt->newton.bound_up = bound_up;
     }
     opt->logFile = logFile;
     opt->run();
@@ -1650,7 +1650,7 @@ void KOMO::checkGradients() {
 
 
     VectorFunction F = [CP](arr& phi, arr& J, const arr& x) {
-      return CP->phi(phi, J, NoArr, NoTermTypeA, x);
+      return CP->phi(phi, J, NoArr, NoObjectiveTypeA, x);
     };
 //    checkJacobian(F, x, tolerance);
     arr J;

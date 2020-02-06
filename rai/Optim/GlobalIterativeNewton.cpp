@@ -17,7 +17,7 @@ GlobalIterativeNewton::GlobalIterativeNewton(const ScalarFunction& f, const arr&
     bounds_lo(bounds_lo), bounds_hi(bounds_hi),
     best(nullptr) {
   newton.bound_lo = bounds_lo;
-  newton.bound_hi = bounds_hi;
+  newton.bound_up = bounds_hi;
   newton.o.verbose = 0;
 }
 

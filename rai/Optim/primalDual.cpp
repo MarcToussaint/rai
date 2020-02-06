@@ -213,8 +213,8 @@ OptPrimalDual::OptPrimalDual(arr& x, arr& dual, ConstrainedProblem& P, int verbo
 
   newton.rootFinding = true;
   newton.bound_lo.resize(newton.x.N).setZero();
-  newton.bound_hi.resize(newton.x.N) = -1.;
-  for(uint i=x.N+PD.n_eq; i<newton.x.N; i++) newton.bound_hi(i) = 1e10;
+  newton.bound_up.resize(newton.x.N) = -1.;
+  for(uint i=x.N+PD.n_eq; i<newton.x.N; i++) newton.bound_up(i) = 1e10;
 
   if(opt.verbose>0) cout <<"***** OptPrimalDual" <<endl;
 }

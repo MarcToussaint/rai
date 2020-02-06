@@ -26,7 +26,7 @@ typedef std::function<void(arr& y, arr& Jy, const arr& x)> VectorFunction;
 /// symbols to declare of which type an objective feature is
 enum ObjectiveType { OT_none=0, OT_f, OT_sos, OT_ineq, OT_eq };
 typedef rai::Array<ObjectiveType> ObjectiveTypeA;
-extern ObjectiveTypeA& NoTermTypeA;
+extern ObjectiveTypeA& NoObjectiveTypeA;
 
 /** A ConstrainedProblem returns a feature vector $phi$ and optionally its Jacobian $J$. For each entry of
  *  this feature vector $tt(i)$ determins whether this is an inequality constraint, an equality constraint,
