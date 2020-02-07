@@ -77,6 +77,15 @@ void rai::Contact::glDraw(OpenGL& gl) {
   glVertex3dv((position+force).p);
   glEnd();
   glLineWidth(1.f);
+
+  glBegin(GL_LINES);
+  glVertex3dv(&a.ensure_X().pos.x);
+  glVertex3dv(position.p);
+  glColor(.8, .5, .8, 1.);
+  glVertex3dv(position.p);
+  glVertex3dv(&b.ensure_X().pos.x);
+  glEnd();
+
   glLoadIdentity();
 
 //    f.pos=.5*(posA+posB);

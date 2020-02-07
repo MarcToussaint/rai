@@ -74,6 +74,8 @@ inline int initIdArg(const rai::Configuration& K, const char* frameName) {
 }
 
 inline void expandJacobian(arr& J, const ConfigurationL& Ktuple, int i=-1) {
+  CHECK(i<(int)Ktuple.N && -i<=(int)Ktuple.N, "")
+  if(Ktuple.N==1) return;
   uintA qdim = getKtupleDim(Ktuple);
   qdim.prepend(0);
   if(!isSparseMatrix(J)) {

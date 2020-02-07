@@ -58,7 +58,7 @@ void lib_ors() { cout <<"force loading lib/ors" <<endl; }
 
 uint rai::Configuration::setJointStateCount = 0;
 
-#define SPARSE_JACOBIANS false
+#define SPARSE_JACOBIANS true
 
 //===========================================================================
 //
@@ -1347,17 +1347,29 @@ void rai::Configuration::kinematicsRelRot(arr& y, arr& J, Frame* a, Frame* b) co
 
 void rai::Configuration::kinematicsContactPOA(arr& y, arr& J, rai::Contact* c) const {
   y = c->position;
+
   if(!!J) {
-    J = zeros(3, q.N);
-    for(uint i=0; i<3; i++) J(i, c->qIndex+i) = 1.;
+    if(!SPARSE_JACOBIANS) {
+      J.resize(3, q.N).setZero();
+    } else {
+      J.sparse().resize(3, q.N, 0);
+    }
+
+    for(uint i=0; i<3; i++) J.elem(i, c->qIndex+i) = 1.;
   }
 }
 
 void rai::Configuration::kinematicsContactForce(arr& y, arr& J, rai::Contact* c) const {
   y = c->force;
+
   if(!!J) {
-    J = zeros(3, q.N);
-    for(uint i=0; i<3; i++) J(i, c->qIndex+3+i) = 1.;
+    if(!SPARSE_JACOBIANS) {
+      J.resize(3, q.N).setZero();
+    } else {
+      J.sparse().resize(3, q.N, 0);
+    }
+
+    for(uint i=0; i<3; i++) J.elem(i, c->qIndex+3+i) = 1.;
   }
 }
 

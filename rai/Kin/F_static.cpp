@@ -9,6 +9,8 @@
 #include "F_static.h"
 #include "contact.h"
 
+#define SPARSE_JACOBIANS true
+
 F_netForce::F_netForce(int iShape, bool _transOnly, bool _zeroGravity) : i(iShape), transOnly(_transOnly) {
   order=0;
   if(_zeroGravity) {
@@ -25,7 +27,14 @@ void F_netForce::phi(arr& y, arr& J, const rai::Configuration& K) {
   arr torque = zeros(3);
   arr Jforce, Jtorque;
   if(!!J) {
-    Jforce = Jtorque = zeros(3, K.getJointStateDimension());
+    uint n = K.getJointStateDimension();
+    if(!SPARSE_JACOBIANS) {
+      Jforce.resize(3, n).setZero();
+      Jtorque.resize(3, n).setZero();
+    } else {
+      Jforce.sparse().resize(3, n, 0);
+      Jtorque.sparse().resize(3, n, 0);
+    }
   }
 
   if(gravity) {
@@ -86,9 +95,18 @@ void F_netForce::phi(arr& y, arr& J, const rai::Configuration& K) {
   if(!transOnly) y.setVectorBlock(torque, 3);
 
   if(!!J) {
-    J.resize(y.N, Jforce.d1).setZero();
-    J.setMatrixBlock(Jforce, 0, 0);
-    if(!transOnly) J.setMatrixBlock(Jtorque, 3, 0);
+    if(!SPARSE_JACOBIANS) {
+      J.resize(y.N, Jforce.d1).setZero();
+      J.setMatrixBlock(Jforce, 0, 0);
+      if(!transOnly) J.setMatrixBlock(Jtorque, 3, 0);
+    } else {
+      J.sparse().resize(y.N, Jforce.d1, 0);
+      Jforce.sparse().reshape(6, Jtorque.d1);
+      J += Jforce;
+      Jtorque.sparse().reshape(6, Jtorque.d1);
+      Jtorque.sparse().colShift(3);
+      J += Jtorque;
+    }
   }
 }
 

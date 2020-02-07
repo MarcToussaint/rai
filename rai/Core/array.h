@@ -961,7 +961,8 @@ struct SparseMatrix : SpecialArray {
   void resize(uint d0, uint d1, uint n);
   void resizeCopy(uint d0, uint d1, uint n);
   void reshape(uint d0, uint d1);
-  void rowShift(int shift);
+  void rowShift(int shift); //shift all rows to the right
+  void colShift(int shift); //shift all cols downward
   //computations
   arr At_x(const arr& x);
   arr At_A();
@@ -969,8 +970,7 @@ struct SparseMatrix : SpecialArray {
   arr B_A(const arr& B) const;
   void transpose();
   void rowWiseMult(const arr& a);
-  void add(const arr& a);
-  void subtract(const SparseMatrix& a);
+  void add(const SparseMatrix& a, double coeff=1.);
   arr unsparse();
 };
 

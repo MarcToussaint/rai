@@ -1641,7 +1641,7 @@ void KOMO::checkGradients() {
     ptr<ConstrainedProblem> CP;
 
     if(denseOptimization) {
-      CP = ptr<ConstrainedProblem>((ConstrainedProblem*)&dense_problem);
+      CP = make_shared<Conv_KOMO_DenseProblem>(*this);
     } else if(sparseOptimization) {
       CP = make_shared<Conv_Graph_ConstrainedProblem>(graph_problem);
     } else { //DEFAULT CASE
@@ -2584,7 +2584,14 @@ void KOMO::Conv_KOMO_DenseProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA&
 //  if(WARN_FIRST_TIME){ LOG(-1)<<"calling inefficient getStructure"; WARN_FIRST_TIME=false; }
   phi.resize(dimPhi);
   if(!!tt) tt.resize(dimPhi);
-  if(!!J) J.resize(dimPhi, x.N).setZero();
+  if(!!J){
+    bool SPARSE_JACOBIANS = true;
+    if(!SPARSE_JACOBIANS) {
+      J.resize(dimPhi, x.N).setZero();
+    } else {
+      J.sparse().resize(dimPhi, x.N, 0);
+    }
+  }
 
   uintA x_index = getKtupleDim(komo.configurations({komo.k_order, -1}));
   x_index.prepend(0);
@@ -2610,10 +2617,20 @@ void KOMO::Conv_KOMO_DenseProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA&
       phi.setVectorBlock(y, M);
 
       if(!!J) {
-        if(isSpecial(Jy)) Jy = unpack(Jy);
-        for(uint j=0; j<ob->configs.d1; j++) {
+        if(isSpecial(Jy) && ob->configs.d1!=1) Jy = unpack(Jy); //
+        if(!isSpecial(Jy)){
+          for(uint j=0; j<ob->configs.d1; j++) {
+            if(ob->configs(l, j)>=0) {
+              J.setMatrixBlock(Jy.sub(0, -1, kdim(j), kdim(j+1)-1), M, x_index(ob->configs(l, j)));
+            }
+          }
+        }else{
+          uint j=0;
           if(ob->configs(l, j)>=0) {
-            J.setMatrixBlock(Jy.sub(0, -1, kdim(j), kdim(j+1)-1), M, x_index(ob->configs(l, j)));
+            Jy.sparse().reshape(J.d0, J.d1);
+            Jy.sparse().colShift(M);
+            Jy.sparse().rowShift(x_index(ob->configs(l, j)));
+            J += Jy;
           }
         }
       }

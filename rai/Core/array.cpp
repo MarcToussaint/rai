@@ -2396,6 +2396,17 @@ void SparseMatrix::rowShift(int shift) {
   }
 }
 
+void SparseMatrix::colShift(int shift) {
+  rows.clear();
+  cols.clear();
+  for(uint i=0; i<elems.d0; i++) {
+    int& j = elems(i, 0);
+    CHECK_GE(j+shift, 0, "");
+    CHECK_LE(j+shift+1, (int)Z.d0, "");
+    j += shift;
+  }
+}
+
 #ifdef RAI_EIGEN
 
 arr SparseMatrix::At_x(const arr& x) {
@@ -2463,13 +2474,17 @@ void SparseMatrix::rowWiseMult(const arr& a) {
   for(uint k=0; k<Z.N; k++) Z.elem(k) *= a.elem(elems.p[2*k]);
 }
 
-void SparseMatrix::subtract(const SparseMatrix& a) {
+void SparseMatrix::add(const SparseMatrix& a, double coeff) {
   CHECK_EQ(a.Z.d0, Z.d0, "");
   CHECK_EQ(a.Z.d1, Z.d1, "");
   uint Nold=Z.N;
   resizeCopy(Z.d0, Z.d1, Z.N + a.Z.N);
   for(uint j=0; j<a.Z.N; j++) {
-    entry(a.elems(j, 0), a.elems(j, 1), Nold+j) = -a.Z.elem(j);
+    if(coeff==1.){
+      entry(a.elems(j, 0), a.elems(j, 1), Nold+j) = a.Z.elem(j);
+    }else{
+      entry(a.elems(j, 0), a.elems(j, 1), Nold+j) = coeff * a.Z.elem(j);
+    }
   }
 }
 
@@ -2489,10 +2504,10 @@ arr SparseMatrix::unsparse() {
 
 } //namespace rai
 
-void operator -= (rai::SparseMatrix& x, const rai::SparseMatrix& y) { x.subtract(y); }
+void operator -= (rai::SparseMatrix& x, const rai::SparseMatrix& y) { x.add(y, -1.); }
 void operator -= (rai::SparseMatrix& x, double y) { arr& X=x.Z; x.unsparse(); X -= y; }
 
-void operator += (rai::SparseMatrix& x, const rai::SparseMatrix& y) { NIY; }
+void operator += (rai::SparseMatrix& x, const rai::SparseMatrix& y) { x.add(y); }
 void operator += (rai::SparseMatrix& x, double y) { arr& X=x.Z; x.unsparse(); X += y; }
 
 void operator *= (rai::SparseMatrix& x, const rai::SparseMatrix& y) { NIY; }
