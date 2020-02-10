@@ -82,7 +82,7 @@ def qdump__rai__Array(d, value):
                 p += 1
                 i += 1
             d.putSubItem("p", value["p"])
-            d.putSubItem("reference", value["reference"])
+            d.putSubItem("isReference", value["isReference"])
             d.putSubItem("special", value["special"])
             
 def qdump__Node_typed(d, value):
