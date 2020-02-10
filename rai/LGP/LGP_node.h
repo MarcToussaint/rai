@@ -33,6 +33,7 @@ struct LGP_Node {
   LGP_Node* parent;
   struct LGP_Tree* tree=0;
   rai::Array<LGP_Node*> children;
+  rai::Array<ptr<ComputeObject>> computes;
   uint step;            ///< decision depth/step of this node
   double time;          ///< real time
   uint id;

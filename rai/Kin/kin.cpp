@@ -58,7 +58,7 @@ void lib_ors() { cout <<"force loading lib/ors" <<endl; }
 
 uint rai::Configuration::setJointStateCount = 0;
 
-#define SPARSE_JACOBIANS true
+#define SPARSE_JACOBIANS false
 
 //===========================================================================
 //

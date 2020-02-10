@@ -120,21 +120,21 @@ void LGP_Node::computeEndKinematics() {
 void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
   if(komoProblem(bound)) komoProblem(bound).reset();
   komoProblem(bound) = std::make_shared<KOMO>();
-  KOMO& komo(*komoProblem(bound));
+  ptr<KOMO>& komo = komoProblem(bound);
 
-  komo.verbose = rai::MAX(verbose, 0);
+  komo->verbose = rai::MAX(verbose, 0);
 
-  if(komo.verbose>0) {
+  if(komo->verbose>0) {
     cout <<"########## OPTIM lev " <<bound <<endl;
   }
 
-  komo.logFile = new ofstream(OptLGPDataPath + STRING("komo-" <<id <<'-' <<step <<'-' <<bound));
+  komo->logFile = new ofstream(OptLGPDataPath + STRING("komo-" <<id <<'-' <<step <<'-' <<bound));
 
   Skeleton S = getSkeleton();
 
-  if(komo.logFile) writeSkeleton(*komo.logFile, S, getSwitchesFromSkeleton(S));
+  if(komo->logFile) writeSkeleton(*komo->logFile, S, getSwitchesFromSkeleton(S));
 
-  if(komo.verbose>1) {
+  if(komo->verbose>1) {
     writeSkeleton(cout, S, getSwitchesFromSkeleton(S));
   }
 
@@ -152,66 +152,68 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
     waypoints = komoProblem(BD_seq)->getPath_q();
   }
 
-  skeleton2Bound(komo, bound, S,
-                 startKinematics, (parent?parent->effKinematics:startKinematics),
-                 collisions,
-                 waypoints);
+  auto comp = skeleton2Bound(komo, bound, S,
+                             startKinematics, (parent?parent->effKinematics:startKinematics),
+                             collisions,
+                             waypoints);
+  if(comp)
+    computes.append(comp);
 
   for(ptr<Objective>& o:tree->finalGeometryObjectives.objectives) {
     cout <<"FINAL objective: " <<*o <<endl;
-    ptr<Objective> co = komo.addObjective({0.}, o->map, o->type);
-    co->setCostSpecs(komo.T-1, komo.T-1, komo.sparseOptimization);
+    ptr<Objective> co = komo->addObjective({0.}, o->map, o->type);
+    co->setCostSpecs(komo->T-1, komo->T-1, komo->sparseOptimization);
     cout <<"FINAL objective: " <<*co <<endl;
   }
 
-  if(komo.logFile) {
-    komo.reportProblem(*komo.logFile);
-    (*komo.logFile) <<komo.getProblemGraph(false);
+  if(komo->logFile) {
+    komo->reportProblem(*komo->logFile);
+    (*komo->logFile) <<komo->getProblemGraph(false);
   }
 
-//  if(level==BD_seq) komo.denseOptimization=true;
+//  if(level==BD_seq) komo->denseOptimization=true;
 
   //-- optimize
   DEBUG(FILE("z.fol") <<fol;);
-  DEBUG(komo.getReport(false, 1, FILE("z.problem")););
-  if(komo.verbose>1) komo.reportProblem();
-  if(komo.verbose>5) komo.animateOptimization = komo.verbose-5;
+  DEBUG(komo->getReport(false, 1, FILE("z.problem")););
+  if(komo->verbose>1) komo->reportProblem();
+  if(komo->verbose>5) komo->animateOptimization = komo->verbose-5;
 
   try {
     if(bound != BD_poseFromSeq) {
-      komo.run();
+      komo->run();
     } else {
-      CHECK_EQ(step, komo.T-1, "");
-      komo.run_sub({komo.T-2}, {});
+      CHECK_EQ(step, komo->T-1, "");
+      komo->run_sub({komo->T-2}, {});
     }
   } catch(std::runtime_error& err) {
     cout <<"KOMO CRASHED: " <<err.what() <<endl;
     komoProblem(bound).reset();
     return;
   }
-  if(!komo.denseOptimization && !komo.sparseOptimization) COUNT_evals += komo.opt->newton.evals;
+  if(!komo->denseOptimization && !komo->sparseOptimization) COUNT_evals += komo->opt->newton.evals;
   COUNT_kin += rai::Configuration::setJointStateCount;
   COUNT_opt(bound)++;
-  COUNT_time += komo.runTime;
+  COUNT_time += komo->runTime;
   count(bound)++;
 
-  DEBUG(komo.getReport(false, 1, FILE("z.problem")););
-//  cout <<komo.getReport(true) <<endl;
-//  komo.reportProxies(cout, 0.);
-//  komo.checkGradients();
+  DEBUG(komo->getReport(false, 1, FILE("z.problem")););
+//  cout <<komo->getReport(true) <<endl;
+//  komo->reportProxies(cout, 0.);
+//  komo->checkGradients();
 
-  Graph result = komo.getReport((komo.verbose>0 && bound>=2));
+  Graph result = komo->getReport((komo->verbose>0 && bound>=2));
   DEBUG(FILE("z.problem.cost") <<result;);
   double cost_here = result.get<double>({"total", "sos_sumOfSqr"});
   double constraints_here = result.get<double>({"total", "eq_sumOfAbs"});
   constraints_here += result.get<double>({"total", "ineq_sumOfPos"});
   if(bound == BD_poseFromSeq) {
-    cost_here = komo.sos;
-    constraints_here = komo.ineq + komo.eq;
+    cost_here = komo->sos;
+    constraints_here = komo->ineq + komo->eq;
   }
   bool feas = (constraints_here<1.);
 
-  if(komo.verbose>0) {
+  if(komo->verbose>0) {
     cout <<"  RESULTS: cost: " <<cost_here <<" constraints: " <<constraints_here <<" feasible: " <<feas <<endl;
   }
 
@@ -220,9 +222,9 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
     cost_here -= 0.1*ret.reward; //account for the symbolic costs
     if(parent) cost_here += parent->cost(bound); //this is sequentially additive cost
 
-    effKinematics.copy(*komo.configurations.last(), true);
+    effKinematics.copy(*komo->configurations.last(), true);
 
-    for(rai::KinematicSwitch* sw: komo.switches) {
+    for(rai::KinematicSwitch* sw: komo->switches) {
       //    CHECK_EQ(sw->timeOfApplication, 1, "need to do this before the optimization..");
       if(sw->timeOfApplication>=2) sw->apply(effKinematics);
     }
@@ -244,8 +246,8 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
     cost(bound) = cost_here;
     constraints(bound) = constraints_here;
     feasible(bound) = feas;
-    opt(bound) = komo.x;
-    computeTime(bound) = komo.runTime;
+    opt(bound) = komo->x;
+    computeTime(bound) = komo->runTime;
   }
 
   if(!feasible(bound))
@@ -284,7 +286,7 @@ ptr<KOMO> LGP_Node::optSubCG(const SubCG& scg, bool collisions, int verbose) {
     komo->run();
   } catch(std::runtime_error& err) {
     cout <<"KOMO CRASHED: " <<err.what() <<endl;
-    komo.reset();
+    komo->reset();
     return komo;
   }
   if(!komo->denseOptimization) COUNT_evals += komo->opt->newton.evals;

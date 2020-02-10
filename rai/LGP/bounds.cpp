@@ -29,196 +29,261 @@ template<> const char* rai::Enum<BoundType>::names []= {
 
 rai::Array<SkeletonSymbol> modes = { SY_stable, SY_stableOn, SY_dynamic, SY_dynamicOn, SY_dynamicTrans, };
 
-void skeleton2Bound(KOMO& komo, BoundType boundType, const Skeleton& S,
+ptr<ComputeObject> skeleton2Bound(ptr<KOMO>& komo, BoundType boundType, const Skeleton& S,
                     const rai::Configuration& startKinematics,
                     const rai::Configuration& effKinematics,
                     bool collisions, const arrA& waypoints) {
+
+  if(boundType==BD_pose)
+    return make_shared<PoseBound>(komo, S, startKinematics, collisions);
+
+  if(boundType==BD_seq || boundType==BD_poseFromSeq)
+    return make_shared<SeqBound>(komo, S, startKinematics, collisions);
+
+  if(boundType==BD_path)
+    return make_shared<PathBound>(komo, S, startKinematics, collisions);
+
+  if(boundType==BD_seqPath)
+    return make_shared<SeqPathBound>(komo, S, startKinematics, collisions, waypoints);
+
+  if(boundType==BD_seqVelPath)
+    return make_shared<SeqVelPathBound>(komo, S, startKinematics, collisions, waypoints);
+
+  HALT("should not be here!");
+
+  return ptr<ComputeObject>();
+}
+
+//===========================================================================
+
+
+double getMaxPhase(const Skeleton& S){
   double maxPhase=0;
   for(const SkeletonEntry& s:S) {
     if(s.phase0>maxPhase) maxPhase=s.phase0;
     if(s.phase1>maxPhase) maxPhase=s.phase1;
   }
-  komo.clearObjectives();
-  //-- prepare the komo problem
-  switch(boundType) {
-    case BD_pose: {
-      double optHorizon=maxPhase;
-      if(optHorizon<1.) optHorizon=maxPhase=1.;
-      if(optHorizon>2.) optHorizon=2.;
-
-      //-- remove non-switches
-      Skeleton finalS;
-      for(const SkeletonEntry& s:S) {
-        if(modes.contains(s.symbol)
-            || s.phase0>=maxPhase) {
-          SkeletonEntry& fs = finalS.append(s);
-          fs.phase0 -= maxPhase-optHorizon;
-          fs.phase1 -= maxPhase-optHorizon;
-          if(fs.phase0<0.) fs.phase0=0.;
-          if(fs.phase1<0.) fs.phase1=0.;
-        }
-      }
-#if 0
-      //-- grep only the latest entries in the skeleton
-      Skeleton finalS;
-      for(const SkeletonEntry& s:S) if(s.phase0>=maxPhase) {
-          finalS.append(s);
-          finalS.last().phase0 -= maxPhase-1.;
-          finalS.last().phase1 -= maxPhase-1.;
-        }
-#endif
-
-      if(komo.verbose>1) {
-        cout <<"POSE skeleton:" <<endl;
-        writeSkeleton(cout, finalS, getSwitchesFromSkeleton(finalS));
-      }
-
-      komo.setModel(startKinematics, collisions);
-      komo.setTiming(optHorizon, 1, 10., 1);
-
-      komo.setSquaredQuaternionNorms();
-#if 0
-      komo.setHoming(0., -1., 1e-2);
-      komo.setSquaredQVelocities(1., -1., 1e-1); //IMPORTANT: do not penalize transitions of from prefix to x_{0} -> x_{0} is 'loose'
-#else
-      komo.setSquaredQAccVelHoming(0, -1., 0., 1e-2, 1e-2);
-#endif
-
-      komo.setSkeleton(finalS, false);
-
-      //-- deactivate all velocity objectives except for transition
-//      for(Objective *o:komo.objectives){
-//        if((std::dynamic_pointer_cast<TM_ZeroQVel>(o->map)
-//           || std::dynamic_pointer_cast<TM_Default>(o->map))
-//           && o->map->order==1){
-//          o->vars.clear();
-//        }
-//      }
-      for(ptr<Objective>& o:komo.objectives) {
-        if(!std::dynamic_pointer_cast<F_qItself>(o->map)
-            && !std::dynamic_pointer_cast<TM_NoJumpFromParent>(o->map)
-            && o->map->order>0) {
-          o->configs.clear();
-        }
-      }
-
-      if(collisions) komo.add_collision(false);
-
-      komo.reset();
-//      komo.setPairedTimes();
-    } break;
-    case BD_poseFromSeq:
-    case BD_seq: {
-      komo.setModel(startKinematics, collisions);
-      komo.setTiming(maxPhase+1., 1, 5., 1);
-      komo.sparseOptimization = true;
-      komo.animateOptimization = 0;
-
-      komo.setSquaredQuaternionNorms();
-#if 0
-      komo.setHoming(0., -1., 1e-2);
-      komo.setSquaredQVelocities(0., -1., 1e-2);
-#else
-      komo.setSquaredQAccVelHoming(0, -1., 0., 1e-2, 1e-2);
-#endif
-      komo.setSkeleton(S);
-
-      if(collisions) komo.add_collision(true);
-
-      komo.reset();
-//      komo.setPairedTimes();
-      //      cout <<komo.getPath_times() <<endl;
-    } break;
-    case BD_path: {
-      komo.setModel(startKinematics, collisions);
-      uint stepsPerPhase = rai::getParameter<uint>("LGP/stepsPerPhase", 10);
-      uint pathOrder = rai::getParameter<uint>("LGP/pathOrder", 2);
-      komo.setTiming(maxPhase+.5, stepsPerPhase, 10., pathOrder);
-      komo.animateOptimization = 0;
-
-      komo.setSquaredQuaternionNorms();
-#if 0
-      komo.setHoming(0., -1., 1e-2);
-      if(pathOrder==1) komo.setSquaredQVelocities();
-      else komo.setSquaredQAccelerations();
-#else
-      komo.setSquaredQAccVelHoming(0, -1., 1., 0., 1e-2);
-#endif
-
-      komo.setSkeleton(S);
-
-      if(collisions) komo.add_collision(true, 0., 1e1);
-
-      komo.reset();
-      //      cout <<komo.getPath_times() <<endl;
-    } break;
-    case BD_seqPath: {
-      komo.setModel(startKinematics, collisions);
-      uint stepsPerPhase = rai::getParameter<uint>("LGP/stepsPerPhase", 10);
-      uint pathOrder = rai::getParameter<uint>("LGP/pathOrder", 2);
-      komo.setTiming(maxPhase+.5, stepsPerPhase, 10., pathOrder);
-      komo.animateOptimization = 0;
-
-      komo.setSquaredQuaternionNorms();
-#if 0
-      komo.setHoming(0., -1., 1e-2);
-      if(pathOrder==1) komo.setSquaredQVelocities();
-      else komo.setSquaredQAccelerations();
-#else
-      komo.setSquaredQAccVelHoming(0, -1., 1., 0., 1e-2);
-#endif
-
-      uint T = floor(maxPhase+.5);
-      uint waypointsStepsPerPhase = waypoints.N/(T+1);
-      CHECK_EQ(waypoints.N, waypointsStepsPerPhase * (T+1), "waypoint steps not clear");
-      for(uint i=0; i<waypoints.N-1; i++) {
-        komo.addObjective(ARR(conv_step2time(i, waypointsStepsPerPhase)), FS_qItself, {}, OT_sos, {1e-1}, waypoints(i));
-      }
-
-      komo.setSkeleton(S);
-      //delete all added objectives! -> only keep switches
-//      uint O = komo.objectives.N;
-//      for(uint i=O; i<komo.objectives.N; i++) delete komo.objectives(i);
-//      komo.objectives.resizeCopy(O);
-
-      if(collisions) komo.add_collision(true, 0., 1e1);
-
-      komo.reset();
-      komo.initWithWaypoints(waypoints, waypointsStepsPerPhase);
-      //      cout <<komo.getPath_times() <<endl;
-    } break;
-
-    case BD_seqVelPath: {
-      komo.setModel(startKinematics, collisions);
-      uint stepsPerPhase = rai::getParameter<uint>("LGP/stepsPerPhase", 10);
-      komo.setTiming(maxPhase+.5, stepsPerPhase, 10., 1);
-
-      komo.setHoming(0., -1., 1e-2);
-      komo.setSquaredQAccVelHoming(0, -1., 0., 1., 1e-2);
-      komo.setSquaredQuaternionNorms();
-
-      CHECK_EQ(waypoints.N-1, floor(maxPhase+.5), "");
-      for(uint i=0; i<waypoints.N-1; i++) {
-        komo.addObjective(ARR(double(i+1)), FS_qItself, {}, OT_sos, {1e-1}, waypoints(i));
-//        komo.addObjective(ARR(double(i+1)), FS_qItself, {}, OT_eq, {1e0}, waypoints(i));
-      }
-//      uint O = komo.objectives.N;
-
-      komo.setSkeleton(S);
-      //delete all added objectives! -> only keep switches
-//      for(uint i=O; i<komo.objectives.N; i++) delete komo.objectives(i);
-//      komo.objectives.resizeCopy(O);
-
-      if(collisions) komo.add_collision(true, 0, 1e1);
-
-      komo.reset();
-      komo.initWithWaypoints(waypoints, false);
-      //      cout <<komo.getPath_times() <<endl;
-    } break;
-
-    default: NIY;
-  }
+  return maxPhase;
 }
+
+PoseBound::PoseBound(ptr<KOMO>& komo,
+                     const Skeleton& S, const rai::Configuration& startKinematics,
+                     bool collisions)
+  : komo(komo) {
+
+  double maxPhase = getMaxPhase(S);
+  komo->clearObjectives();
+
+  //-- prepare the komo problem
+  double optHorizon=maxPhase;
+  if(optHorizon<1.) optHorizon=maxPhase=1.;
+  if(optHorizon>2.) optHorizon=2.;
+
+  //-- remove non-switches
+  Skeleton finalS;
+  for(const SkeletonEntry& s:S) {
+    if(modes.contains(s.symbol)
+       || s.phase0>=maxPhase) {
+      SkeletonEntry& fs = finalS.append(s);
+      fs.phase0 -= maxPhase-optHorizon;
+      fs.phase1 -= maxPhase-optHorizon;
+      if(fs.phase0<0.) fs.phase0=0.;
+      if(fs.phase1<0.) fs.phase1=0.;
+    }
+  }
+#if 0
+  //-- grep only the latest entries in the skeleton
+  Skeleton finalS;
+  for(const SkeletonEntry& s:S) if(s.phase0>=maxPhase) {
+    finalS.append(s);
+    finalS.last().phase0 -= maxPhase-1.;
+    finalS.last().phase1 -= maxPhase-1.;
+  }
+#endif
+
+  if(komo->verbose>1) {
+    cout <<"POSE skeleton:" <<endl;
+    writeSkeleton(cout, finalS, getSwitchesFromSkeleton(finalS));
+  }
+
+  komo->setModel(startKinematics, collisions);
+  komo->setTiming(optHorizon, 1, 10., 1);
+
+  komo->setSquaredQuaternionNorms();
+#if 0
+  komo->setHoming(0., -1., 1e-2);
+  komo->setSquaredQVelocities(1., -1., 1e-1); //IMPORTANT: do not penalize transitions of from prefix to x_{0} -> x_{0} is 'loose'
+#else
+  komo->setSquaredQAccVelHoming(0, -1., 0., 1e-2, 1e-2);
+#endif
+
+  komo->setSkeleton(finalS, false);
+
+  //-- deactivate all velocity objectives except for transition
+  //      for(Objective *o:komo->objectives){
+  //        if((std::dynamic_pointer_cast<TM_ZeroQVel>(o->map)
+  //           || std::dynamic_pointer_cast<TM_Default>(o->map))
+  //           && o->map->order==1){
+  //          o->vars.clear();
+  //        }
+  //      }
+  for(ptr<Objective>& o:komo->objectives) {
+    if(!std::dynamic_pointer_cast<F_qItself>(o->map)
+       && !std::dynamic_pointer_cast<TM_NoJumpFromParent>(o->map)
+       && o->map->order>0) {
+      o->configs.clear();
+    }
+  }
+
+  if(collisions) komo->add_collision(false);
+
+  komo->reset();
+  //      komo->setPairedTimes();
+}
+
+SeqBound::SeqBound(ptr<KOMO>& komo,
+                   const Skeleton& S, const rai::Configuration& startKinematics,
+                   bool collisions)
+  : komo(komo) {
+
+  double maxPhase = getMaxPhase(S);
+  komo->clearObjectives();
+
+  komo->setModel(startKinematics, collisions);
+  komo->setTiming(maxPhase+1., 1, 5., 1);
+  komo->sparseOptimization = true;
+  komo->animateOptimization = 0;
+
+  komo->setSquaredQuaternionNorms();
+#if 0
+  komo->setHoming(0., -1., 1e-2);
+  komo->setSquaredQVelocities(0., -1., 1e-2);
+#else
+  komo->setSquaredQAccVelHoming(0, -1., 0., 1e-2, 1e-2);
+#endif
+  komo->setSkeleton(S);
+
+  if(collisions) komo->add_collision(true);
+
+  komo->reset();
+//      komo->setPairedTimes();
+  //      cout <<komo->getPath_times() <<endl;
+
+}
+
+PathBound::PathBound(ptr<KOMO>& komo,
+                     const Skeleton& S, const rai::Configuration& startKinematics,
+                     bool collisions)
+  : komo(komo){
+
+  double maxPhase = getMaxPhase(S);
+  komo->clearObjectives();
+
+  komo->setModel(startKinematics, collisions);
+  uint stepsPerPhase = rai::getParameter<uint>("LGP/stepsPerPhase", 10);
+  uint pathOrder = rai::getParameter<uint>("LGP/pathOrder", 2);
+  komo->setTiming(maxPhase+.5, stepsPerPhase, 10., pathOrder);
+  komo->animateOptimization = 0;
+
+  komo->setSquaredQuaternionNorms();
+#if 0
+  komo->setHoming(0., -1., 1e-2);
+  if(pathOrder==1) komo->setSquaredQVelocities();
+  else komo->setSquaredQAccelerations();
+#else
+  komo->setSquaredQAccVelHoming(0, -1., 1., 0., 1e-2);
+#endif
+
+  komo->setSkeleton(S);
+
+  if(collisions) komo->add_collision(true, 0., 1e1);
+
+  komo->reset();
+  //      cout <<komo->getPath_times() <<endl;
+
+}
+
+SeqPathBound::SeqPathBound(ptr<KOMO>& komo,
+                           const Skeleton& S, const rai::Configuration& startKinematics,
+                           bool collisions, const arrA& waypoints)
+  : komo(komo) {
+
+  double maxPhase = getMaxPhase(S);
+  komo->clearObjectives();
+
+  komo->setModel(startKinematics, collisions);
+  uint stepsPerPhase = rai::getParameter<uint>("LGP/stepsPerPhase", 10);
+  uint pathOrder = rai::getParameter<uint>("LGP/pathOrder", 2);
+  komo->setTiming(maxPhase+.5, stepsPerPhase, 10., pathOrder);
+  komo->animateOptimization = 0;
+
+  komo->setSquaredQuaternionNorms();
+#if 0
+  komo->setHoming(0., -1., 1e-2);
+  if(pathOrder==1) komo->setSquaredQVelocities();
+  else komo->setSquaredQAccelerations();
+#else
+  komo->setSquaredQAccVelHoming(0, -1., 1., 0., 1e-2);
+#endif
+
+  uint T = floor(maxPhase+.5);
+  uint waypointsStepsPerPhase = waypoints.N/(T+1);
+  CHECK_EQ(waypoints.N, waypointsStepsPerPhase * (T+1), "waypoint steps not clear");
+  for(uint i=0; i<waypoints.N-1; i++) {
+    komo->addObjective(ARR(conv_step2time(i, waypointsStepsPerPhase)), FS_qItself, {}, OT_sos, {1e-1}, waypoints(i));
+  }
+
+  komo->setSkeleton(S);
+  //delete all added objectives! -> only keep switches
+  //      uint O = komo->objectives.N;
+  //      for(uint i=O; i<komo->objectives.N; i++) delete komo->objectives(i);
+  //      komo->objectives.resizeCopy(O);
+
+  if(collisions) komo->add_collision(true, 0., 1e1);
+
+  komo->reset();
+  komo->initWithWaypoints(waypoints, waypointsStepsPerPhase);
+  //      cout <<komo->getPath_times() <<endl;
+
+}
+
+SeqVelPathBound::SeqVelPathBound(ptr<KOMO>& komo,
+                                 const Skeleton& S, const rai::Configuration& startKinematics,
+                                 bool collisions, const arrA& waypoints)
+  : komo(komo) {
+
+  double maxPhase = getMaxPhase(S);
+  komo->clearObjectives();
+
+  komo->setModel(startKinematics, collisions);
+  uint stepsPerPhase = rai::getParameter<uint>("LGP/stepsPerPhase", 10);
+  komo->setTiming(maxPhase+.5, stepsPerPhase, 10., 1);
+
+  komo->setHoming(0., -1., 1e-2);
+  komo->setSquaredQAccVelHoming(0, -1., 0., 1., 1e-2);
+  komo->setSquaredQuaternionNorms();
+
+  CHECK_EQ(waypoints.N-1, floor(maxPhase+.5), "");
+  for(uint i=0; i<waypoints.N-1; i++) {
+    komo->addObjective(ARR(double(i+1)), FS_qItself, {}, OT_sos, {1e-1}, waypoints(i));
+//        komo->addObjective(ARR(double(i+1)), FS_qItself, {}, OT_eq, {1e0}, waypoints(i));
+  }
+//      uint O = komo->objectives.N;
+
+  komo->setSkeleton(S);
+  //delete all added objectives! -> only keep switches
+//      for(uint i=O; i<komo->objectives.N; i++) delete komo->objectives(i);
+//      komo->objectives.resizeCopy(O);
+
+  if(collisions) komo->add_collision(true, 0, 1e1);
+
+  komo->reset();
+  komo->initWithWaypoints(waypoints, false);
+  //      cout <<komo->getPath_times() <<endl;
+
+}
+
+//===========================================================================
 
 ptr<CG> skeleton2CGO(const Skeleton& S, const rai::Configuration& startKinematics, bool collisions) {
   cout <<"*** " <<RAI_HERE <<endl;
@@ -409,7 +474,6 @@ ptr<CG> skeleton2CGO(const Skeleton& S, const rai::Configuration& startKinematic
   }
 
   return cg;
-
 }
 
 void CG2komo(KOMO& komo, const SubCG& scg, const rai::Configuration& C, bool collisions) {
@@ -440,3 +504,5 @@ void CG2komo(KOMO& komo, const SubCG& scg, const rai::Configuration& C, bool col
   c->report(cout);
   c->watch(true);
 }
+
+//===========================================================================

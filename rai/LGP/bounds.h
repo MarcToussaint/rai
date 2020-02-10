@@ -9,6 +9,79 @@
 #pragma once
 
 #include "../KOMO/komo.h"
+#include "compute.h"
+
+//===========================================================================
+
+struct PoseBound : ComputeObject {
+  ptr<KOMO> komo;
+
+  //the constructor creates the komo problem -- absorbes what previously was defined in skeleton2Bound!
+  PoseBound(ptr<KOMO>& komo, //TODO: eventually remove this!
+            const Skeleton& S,
+            const rai::Configuration& startKinematics,
+            bool collisions);
+
+  virtual ptr<ComputeReport> run(double timeBudget=-1.){NIY}
+};
+
+//===========================================================================
+
+struct SeqBound : ComputeObject {
+  ptr<KOMO> komo;
+
+  //the constructor creates the komo problem -- absorbes what previously was defined in skeleton2Bound!
+  SeqBound(ptr<KOMO>& komo, //TODO: eventually remove this!
+            const Skeleton& S,
+            const rai::Configuration& startKinematics,
+            bool collisions);
+
+  virtual ptr<ComputeReport> run(double timeBudget=-1.){NIY}
+};
+
+//===========================================================================
+
+struct PathBound : ComputeObject {
+  ptr<KOMO> komo;
+
+  //the constructor creates the komo problem -- absorbes what previously was defined in skeleton2Bound!
+  PathBound(ptr<KOMO>& komo, //TODO: eventually remove this!
+            const Skeleton& S,
+            const rai::Configuration& startKinematics,
+            bool collisions);
+
+  virtual ptr<ComputeReport> run(double timeBudget=-1.){NIY}
+};
+
+//===========================================================================
+
+struct SeqPathBound : ComputeObject {
+  ptr<KOMO> komo;
+
+  //the constructor creates the komo problem -- absorbes what previously was defined in skeleton2Bound!
+  SeqPathBound(ptr<KOMO>& komo, //TODO: eventually remove this!
+               const Skeleton& S,
+               const rai::Configuration& startKinematics,
+               bool collisions, const arrA& waypoints);
+
+  virtual ptr<ComputeReport> run(double timeBudget=-1.){NIY}
+};
+
+//===========================================================================
+
+struct SeqVelPathBound : ComputeObject {
+  ptr<KOMO> komo;
+
+  //the constructor creates the komo problem -- absorbes what previously was defined in skeleton2Bound!
+  SeqVelPathBound(ptr<KOMO>& komo, //TODO: eventually remove this!
+                  const Skeleton& S,
+                  const rai::Configuration& startKinematics,
+                  bool collisions, const arrA& waypoints);
+
+  virtual ptr<ComputeReport> run(double timeBudget=-1.){NIY}
+};
+
+//===========================================================================
 
 enum BoundType { BD_all=-1,
                  BD_symbolic=0,
@@ -21,7 +94,7 @@ enum BoundType { BD_all=-1,
                  BD_max
                };
 
-void skeleton2Bound(KOMO& komo,
+ptr<ComputeObject> skeleton2Bound(ptr<KOMO>& komo,
                     BoundType boundType,
                     const Skeleton& S,
                     const rai::Configuration& startKinematics,
