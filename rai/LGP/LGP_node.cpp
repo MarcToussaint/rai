@@ -156,8 +156,10 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
                              startKinematics, (parent?parent->effKinematics:startKinematics),
                              collisions,
                              waypoints);
-  if(comp)
-    computes.append(comp);
+
+  CHECK(comp, "no compute object returned");
+
+  computes.append(comp);
 
   for(ptr<Objective>& o:tree->finalGeometryObjectives.objectives) {
     cout <<"FINAL objective: " <<*o <<endl;
@@ -252,7 +254,6 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
 
   if(!feasible(bound))
     labelInfeasible();
-
 }
 
 ptr<KOMO> LGP_Node::optSubCG(const SubCG& scg, bool collisions, int verbose) {

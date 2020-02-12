@@ -69,7 +69,7 @@ double getMaxPhase(const Skeleton& S){
 PoseBound::PoseBound(ptr<KOMO>& komo,
                      const Skeleton& S, const rai::Configuration& startKinematics,
                      bool collisions)
-  : komo(komo) {
+  : KOMO_based_bound(komo) {
 
   double maxPhase = getMaxPhase(S);
   komo->clearObjectives();
@@ -144,7 +144,7 @@ PoseBound::PoseBound(ptr<KOMO>& komo,
 SeqBound::SeqBound(ptr<KOMO>& komo,
                    const Skeleton& S, const rai::Configuration& startKinematics,
                    bool collisions)
-  : komo(komo) {
+  : KOMO_based_bound(komo) {
 
   double maxPhase = getMaxPhase(S);
   komo->clearObjectives();
@@ -174,7 +174,7 @@ SeqBound::SeqBound(ptr<KOMO>& komo,
 PathBound::PathBound(ptr<KOMO>& komo,
                      const Skeleton& S, const rai::Configuration& startKinematics,
                      bool collisions)
-  : komo(komo){
+  : KOMO_based_bound(komo){
 
   double maxPhase = getMaxPhase(S);
   komo->clearObjectives();
@@ -206,7 +206,7 @@ PathBound::PathBound(ptr<KOMO>& komo,
 SeqPathBound::SeqPathBound(ptr<KOMO>& komo,
                            const Skeleton& S, const rai::Configuration& startKinematics,
                            bool collisions, const arrA& waypoints)
-  : komo(komo) {
+  : KOMO_based_bound(komo) {
 
   double maxPhase = getMaxPhase(S);
   komo->clearObjectives();
@@ -250,7 +250,7 @@ SeqPathBound::SeqPathBound(ptr<KOMO>& komo,
 SeqVelPathBound::SeqVelPathBound(ptr<KOMO>& komo,
                                  const Skeleton& S, const rai::Configuration& startKinematics,
                                  bool collisions, const arrA& waypoints)
-  : komo(komo) {
+  : KOMO_based_bound(komo) {
 
   double maxPhase = getMaxPhase(S);
   komo->clearObjectives();
