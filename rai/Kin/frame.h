@@ -26,7 +26,7 @@ struct Frame;
 struct Joint;
 struct Shape;
 struct Inertia;
-struct Contact;
+struct ForceExchange;
 enum JointType { JT_none=-1, JT_hingeX=0, JT_hingeY=1, JT_hingeZ=2, JT_transX=3, JT_transY=4, JT_transZ=5, JT_transXY=6, JT_trans3=7, JT_transXYPhi=8, JT_universal=9, JT_rigid=10, JT_quatBall=11, JT_phiTransXY=12, JT_XBall, JT_free, JT_tau };
 enum BodyType  { BT_none=-1, BT_dynamic=0, BT_kinematic, BT_static };
 }
@@ -92,7 +92,7 @@ struct Frame : NonCopyable {
   Joint* joint=nullptr;         ///< this frame is an articulated joint
   Shape* shape=nullptr;         ///< this frame has a (collision or visual) geometry
   Inertia* inertia=nullptr;     ///< this frame has inertia (is a mass)
-  Array<Contact*> contacts;  ///< this frame is in (near-) contact with other frames
+  Array<ForceExchange*> forces;  ///< this frame is in (near-) contact with other frames
 
   Frame(Configuration& _K, const Frame* copyFrame=nullptr);
   Frame(Frame* _parent);

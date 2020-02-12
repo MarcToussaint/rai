@@ -27,7 +27,7 @@ struct Joint;
 struct Shape;
 struct Frame;
 struct Proxy;
-struct Contact;
+struct ForceExchange;
 struct Configuration;
 struct KinematicSwitch;
 
@@ -45,7 +45,7 @@ typedef rai::Array<rai::Joint*> JointL;
 typedef rai::Array<rai::Frame*> FrameL;
 typedef rai::Array<rai::Proxy*> ProxyL;
 typedef rai::Array<rai::Proxy> ProxyA;
-typedef rai::Array<rai::Contact*> ContactL;
+typedef rai::Array<rai::ForceExchange*> ForceExchangeL;
 typedef rai::Array<rai::KinematicSwitch*> KinematicSwitchL;
 typedef rai::Array<rai::Configuration*> ConfigurationL;
 
@@ -59,7 +59,7 @@ struct Configuration : GLDrawer {
 
   //-- fundamental structure
   FrameL frames;     ///< list of coordinate frames, with shapes, joints, inertias attached
-  ContactL contacts; ///< list of (force) interactions between frames
+  ForceExchangeL forces; ///< list of force exchanges between frames
   ProxyA proxies;    ///< list of current collision proximities between frames
   arr q;             ///< the current joint configuration vector and velocities
 
@@ -207,8 +207,8 @@ struct Configuration : GLDrawer {
   void kinematicsRelPos(arr& y, arr& J, Frame* a, const Vector& vec1, Frame* b, const Vector& vec2) const;
   void kinematicsRelVec(arr& y, arr& J, Frame* a, const Vector& vec1, Frame* b) const;
 
-  void kinematicsContactPOA(arr& y, arr& J, Contact* c) const;
-  void kinematicsContactForce(arr& y, arr& J, Contact* c) const;
+  void kinematicsContactPOA(arr& y, arr& J, ForceExchange* c) const;
+  void kinematicsContactForce(arr& y, arr& J, ForceExchange* c) const;
 
   void kinematicsProxyCost(arr& y, arr& J, const Proxy& p, double margin=.0, bool addValues=false) const;
   void kinematicsProxyCost(arr& y, arr& J, double margin=.0) const;
@@ -287,7 +287,7 @@ struct Configuration_ext : Configuration {
   /// @name Jacobians and kinematics (low level)
   void kinematicsPenetrations(arr& y, arr& J=NoArr, bool penetrationsOnly=true, double activeMargin=0.) const; ///< true: if proxy(i).distance>0. => y(i)=0; else y(i)=-proxy(i).distance
   void kinematicsProxyDist(arr& y, arr& J, const Proxy& p, double margin=.02, bool useCenterDist=true, bool addValues=false) const;
-  void kinematicsContactCost(arr& y, arr& J, const Contact* p, double margin=.0, bool addValues=false) const;
+  void kinematicsContactCost(arr& y, arr& J, const ForceExchange* p, double margin=.0, bool addValues=false) const;
   void kinematicsContactCost(arr& y, arr& J, double margin=.0) const;
   void kinematicsProxyConstraint(arr& g, arr& J, const Proxy& p, double margin=.02) const;
   void kinematicsContactConstraints(arr& y, arr& J) const; //TODO: deprecated?

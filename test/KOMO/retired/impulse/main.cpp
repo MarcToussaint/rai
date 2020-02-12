@@ -6,7 +6,7 @@
 #include <Kin/proxy.h>
 #include <Kin/frame.h>
 #include <Kin/kin_swift.h>
-#include <Kin/contact.h>
+#include <Kin/forceExchange.h>
 #include <Kin/TM_ContactConstraints.h>
 #include <Kin/TM_FlagConstraints.h>
 #include <Kin/kin_physx.h>

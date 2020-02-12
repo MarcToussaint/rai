@@ -14,7 +14,7 @@
 
 #include "../Kin/frame.h"
 #include "../Kin/switch.h"
-#include "../Kin/contact.h"
+#include "../Kin/forceExchange.h"
 #include "../Kin/kin_swift.h"
 #include "../Kin/kin_physx.h"
 #include "../Kin/F_qFeatures.h"
@@ -2151,7 +2151,7 @@ Graph KOMO::getContacts() {
   Graph G;
   int s=0;
   for(auto& K:configurations) {
-    for(rai::Contact* con:K->contacts) {
+    for(rai::ForceExchange* con:K->forces) {
       Graph& g = G.newSubgraph();
       g.newNode<int>({"at"}, {}, s-(int)k_order);
       g.newNode<rai::String>({"from"}, {}, con->a.name);
@@ -2862,7 +2862,7 @@ void KOMO::Conv_KOMO_MathematicalProgram::createIndices(){
     int s = t+komo.k_order;
     komo.configurations(s)->ensure_indexedJoints();
     V += komo.configurations(s)->activeJoints.N;
-    V += komo.configurations(s)->contacts.N;
+    V += komo.configurations(s)->forces.N;
     N += komo.configurations(s)->getJointStateDimension();
   }
 
@@ -2879,7 +2879,7 @@ void KOMO::Conv_KOMO_MathematicalProgram::createIndices(){
       for(uint i=0;i<j->qDim();i++) xIndex2VarId(n++) = v;
       v++;
     }
-    for(rai::Contact *c:komo.configurations(s)->contacts){
+    for(rai::ForceExchange *c:komo.configurations(s)->forces){
       variableIndex(v).con = c;
       variableIndex(v).dim = c->qDim();
       for(uint i=0;i<c->qDim();i++) xIndex2VarId(n++) = v;

@@ -6,17 +6,17 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "contact.h"
+#include "forceExchange.h"
 #include "../Gui/opengl.h"
 
-double rai::Contact::getDistance() const {
+double rai::ForceExchange::getDistance() const {
   TM_ContactNegDistance map(*this);
   arr y;
   map.phi(y, NoArr, a.K);
   return -y.scalar();
 }
 
-Feature* rai::Contact::getTM_ContactNegDistance() const {
+Feature* rai::ForceExchange::getTM_ContactNegDistance() const {
   return new TM_ContactNegDistance(*this);
 }
 
@@ -66,7 +66,7 @@ void rai::TM_ContactNegDistance::phi(arr& y, arr& J, const rai::Configuration& K
 }
 
 #ifdef RAI_GL
-void rai::Contact::glDraw(OpenGL& gl) {
+void rai::ForceExchange::glDraw(OpenGL& gl) {
   rai::Vector pa = a.X * a_rel;
   rai::Vector pb = b.X * b_rel;
   rai::Vector n = .5*((b.X.rot * b_norm) - (a.X.rot * a_norm));
@@ -85,6 +85,6 @@ void rai::Contact::glDraw(OpenGL& gl) {
 }
 #endif
 
-void rai::Contact::write(std::ostream& os) const {
+void rai::ForceExchange::write(std::ostream& os) const {
   os <<a.name <<'-' <<b.name <<" type=" <<a_type <<'-' <<b_type <<" dist=" <<getDistance() <<" pDist=" <<get_pDistance() <<" y=" <<y <<" l=" <<lagrangeParameter;
 }

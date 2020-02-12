@@ -4,7 +4,7 @@
 #include <Kin/F_dynamics.h>
 #include <Kin/F_pose.h>
 #include <Kin/F_contacts.h>
-#include <Kin/contact.h>
+#include <Kin/forceExchange.h>
 #include <iomanip>
 
 extern bool orsDrawWires;
@@ -32,7 +32,7 @@ void testFeature() {
   m1.defaultInertiaByShape();
   m2.defaultInertiaByShape();
 
-  rai::Contact con(obj1, obj2);
+  rai::ForceExchange con(obj1, obj2);
 
   C.setTimes(.1);
 

@@ -9,12 +9,12 @@
 #include "F_contacts.h"
 #include "F_PairCollision.h"
 #include "frame.h"
-#include "contact.h"
+#include "forceExchange.h"
 #include "TM_angVel.h"
 #include "TM_default.h"
 #include "../Geo/pairCollision.h"
 
-void POA_distance(arr& y, arr& J, rai::Contact* con, bool b_or_a) {
+void POA_distance(arr& y, arr& J, rai::ForceExchange* con, bool b_or_a) {
   rai::Shape* s = con->a.shape;
   if(b_or_a) s = con->b.shape;
   CHECK(s, "contact object does not have a shape!");
@@ -39,7 +39,7 @@ void POA_distance(arr& y, arr& J, rai::Contact* con, bool b_or_a) {
   coll.kinDistance(y, J, Jpos, Jp);
 }
 
-void POA_rel_vel2(arr& y, arr& J, const ConfigurationL& Ktuple, rai::Contact* con, bool after_or_before) {
+void POA_rel_vel2(arr& y, arr& J, const ConfigurationL& Ktuple, rai::ForceExchange* con, bool after_or_before) {
   rai::Configuration* Kc = Ktuple(-2);
 
   // p1, p2 are the CENTERS! of the frame a and b
@@ -90,7 +90,7 @@ void POA_rel_vel2(arr& y, arr& J, const ConfigurationL& Ktuple, rai::Contact* co
 }
 
 //3-dim feature: the difference in POA velocities (V)
-void POA_rel_vel(arr& y, arr& J, const ConfigurationL& Ktuple, rai::Contact* con, bool after_or_before) {
+void POA_rel_vel(arr& y, arr& J, const ConfigurationL& Ktuple, rai::ForceExchange* con, bool after_or_before) {
   CHECK_EQ(Ktuple.N, 3, "");
 
   rai::Configuration* Kc = Ktuple(-2);
@@ -140,7 +140,7 @@ void POA_rel_vel(arr& y, arr& J, const ConfigurationL& Ktuple, rai::Contact* con
 }
 
 //3-dim feature: the POA velocities (V)
-void POA_vel(arr& y, arr& J, const ConfigurationL& Ktuple, rai::Contact* con, bool b_or_a) {
+void POA_vel(arr& y, arr& J, const ConfigurationL& Ktuple, rai::ForceExchange* con, bool b_or_a) {
   CHECK_GE(Ktuple.N, 2, "");
 
   rai::Frame* f = &con->a;
@@ -170,10 +170,10 @@ void POA_vel(arr& y, arr& J, const ConfigurationL& Ktuple, rai::Contact* con, bo
   if(!!J) J = Jv - skew(w) * (Jcp - Jp) + skew(cp-p) * Jw;
 }
 
-rai::Contact* getContact(const rai::Configuration& K, int aId, int bId) {
+rai::ForceExchange* getContact(const rai::Configuration& K, int aId, int bId) {
   rai::Frame* a = K.frames(aId);
   rai::Frame* b = K.frames(bId);
-  for(rai::Contact* c : a->contacts) if(&c->a==a && &c->b==b) return c;
+  for(rai::ForceExchange* c : a->forces) if(&c->a==a && &c->b==b) return c;
   HALT("can't retrieve contact " <<a->name <<"--" <<b->name);
   return nullptr;
 }
@@ -199,7 +199,7 @@ void TM_Contact_ForceIsNormal::phi(arr& y, arr& J, const rai::Configuration& K) 
 }
 
 void TM_Contact_ForceIsComplementary::phi(arr& y, arr& J, const rai::Configuration& K) {
-  rai::Contact* con = getContact(K, a, b);
+  rai::ForceExchange* con = getContact(K, a, b);
 
   //-- from the contact we need force
   arr force, Jforce;
@@ -241,7 +241,7 @@ void TM_Contact_ForceIsPositive::phi(arr& y, arr& J, const rai::Configuration& K
 }
 
 void TM_Contact_POAisInIntersection_InEq::phi(arr& y, arr& J, const rai::Configuration& K) {
-  rai::Contact* con = getContact(K, a, b);
+  rai::ForceExchange* con = getContact(K, a, b);
 
   y.resize(2).setZero();
   if(!!J) { J.resize(2, K.getJointStateDimension()).setZero(); }
@@ -281,7 +281,7 @@ void TM_Contact_POAisInIntersection_InEq::phi(arr& y, arr& J, const rai::Configu
 }
 
 void TM_Contact_POA_isAtWitnesspoint::phi(arr& y, arr& J, const rai::Configuration& C){
-  rai::Contact *con = getContact(C,a,b);
+  rai::ForceExchange *con = getContact(C,a,b);
 
   arr poa, Jpoa;
   C.kinematicsContactPOA(poa, Jpoa, con);
@@ -300,7 +300,7 @@ void TM_ContactConstraints_Vel::phi(arr& y, arr& J, const ConfigurationL& Ktuple
 
   rai::Configuration& K = *Ktuple(-2); //!!! use LAST contact, and velocities AFTER contact
 
-  rai::Contact* con = getContact(K, a, b);
+  rai::ForceExchange* con = getContact(K, a, b);
 
   arr cp, Jcp;
   K.kinematicsContactPOA(cp, Jcp, con);
@@ -382,7 +382,7 @@ void TM_Contact_NormalForceEqualsNormalPOAmotion::phi(arr& y, arr& J, const Conf
 
 
 void TM_Contact_POAzeroRelVel::phi(arr& y, arr& J, const ConfigurationL& Ktuple){
-  rai::Contact* con = getContact(*Ktuple(-2), a, b);
+  rai::ForceExchange* con = getContact(*Ktuple(-2), a, b);
 #if 0
   POA_rel_vel(y, J, Ktuple, con, true);
 #else
@@ -401,7 +401,7 @@ void TM_Contact_POAzeroRelVel::phi(arr& y, arr& J, const ConfigurationL& Ktuple)
 }
 
 void TM_Contact_ElasticVel::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
-  rai::Contact* con = getContact(*Ktuple(-2), a, b);
+  rai::ForceExchange* con = getContact(*Ktuple(-2), a, b);
   arr v0, Jv0, v1, Jv1;
   POA_rel_vel(v0, Jv0, Ktuple, con, false);
   POA_rel_vel(v1, Jv1, Ktuple, con, true);
@@ -438,7 +438,7 @@ void TM_Contact_ElasticVel::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
 
 void TM_Contact_NormalVelIsComplementary::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   rai::Configuration& K = *Ktuple(-2);
-  rai::Contact* con = getContact(K, a, b);
+  rai::ForceExchange* con = getContact(K, a, b);
 
   //-- get the pre and post V:
   arr /*v0, Jv0, */v1, Jv1;

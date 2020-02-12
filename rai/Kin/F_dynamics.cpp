@@ -8,7 +8,7 @@
 
 #include "F_dynamics.h"
 #include "frame.h"
-#include "contact.h"
+#include "forceExchange.h"
 #include "TM_default.h"
 #include "TM_angVel.h"
 #include "F_PairCollision.h"

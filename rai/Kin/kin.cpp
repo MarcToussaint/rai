@@ -8,7 +8,7 @@
 
 #include "kin.h"
 #include "frame.h"
-#include "contact.h"
+#include "forceExchange.h"
 #include "uncertainty.h"
 #include "proxy.h"
 #include "kin_swift.h"
@@ -359,7 +359,7 @@ void rai::Configuration::copy(const rai::Configuration& C, bool referenceSwiftOn
   //  for(Proxy& p:proxies) { p.a = frames(p.a->ID); p.b = frames(p.b->ID);  p.coll.reset(); }
 
   //copy contacts
-  for(Contact* c:C.contacts) new Contact(*frames(c->a.ID), *frames(c->b.ID), c);
+  for(ForceExchange* c:C.forces) new ForceExchange(*frames(c->a.ID), *frames(c->b.ID), c);
 
   //copy swift reference
   if(referenceSwiftOnCopy){
@@ -541,7 +541,7 @@ void rai::Configuration::calc_indexedActiveJoints() {
       j->qIndex = j->mimic->qIndex;
     }
   }
-  for(Contact* c: contacts) {
+  for(ForceExchange* c: forces) {
     CHECK_EQ(c->qDim(), 6, "");
     c->qIndex = qcount;
     qcount += c->qDim();
@@ -659,7 +659,7 @@ void rai::Configuration::calc_q_from_Q() {
       n += j->dim;
     }
   }
-  for(Contact* c: contacts) {
+  for(ForceExchange* c: forces) {
     CHECK_EQ(c->qIndex, n, "joint indexing is inconsistent");
     arr contact_q = c->calc_q_from_F();
     CHECK_EQ(contact_q.N, c->qDim(), "");
@@ -687,7 +687,7 @@ void rai::Configuration::calc_Q_from_q() {
       }
     }
   }
-  for(Contact* c: contacts) {
+  for(ForceExchange* c: forces) {
     CHECK_EQ(c->qIndex, n, "joint indexing is inconsistent");
     c->calc_F_from_q(q, c->qIndex);
     n += c->qDim();
@@ -1351,7 +1351,7 @@ void rai::Configuration::kinematicsRelRot(arr& y, arr& J, Frame* a, Frame* b) co
 }
 #endif
 
-void rai::Configuration::kinematicsContactPOA(arr& y, arr& J, rai::Contact* c) const {
+void rai::Configuration::kinematicsContactPOA(arr& y, arr& J, rai::ForceExchange* c) const {
   y = c->position;
 
   if(!!J) {
@@ -1365,7 +1365,7 @@ void rai::Configuration::kinematicsContactPOA(arr& y, arr& J, rai::Contact* c) c
   }
 }
 
-void rai::Configuration::kinematicsContactForce(arr& y, arr& J, rai::Contact* c) const {
+void rai::Configuration::kinematicsContactForce(arr& y, arr& J, rai::ForceExchange* c) const {
   y = c->force;
 
   if(!!J) {
@@ -1804,7 +1804,7 @@ void rai::Configuration::stepDynamics(arr& qdot, const arr& Bu_control, double t
   qdot = x1[1];
 }
 
-void __merge(rai::Contact* c, rai::Proxy* p) {
+void __merge(rai::ForceExchange* c, rai::Proxy* p) {
   CHECK(&c->a==p->a && &c->b==p->b, "");
   if(!p->coll) p->calc_coll(c->a.K);
   //  c->a_rel = c->a.X / rai::Vector(p->coll->p1);
@@ -1817,7 +1817,7 @@ void __merge(rai::Contact* c, rai::Proxy* p) {
 }
 
 #if 0
-double __matchingCost(rai::Contact* c, rai::Proxy* p) {
+double __matchingCost(rai::ForceExchange* c, rai::Proxy* p) {
   double cost=0.;
   if(!p->coll) p->calc_coll(c->a.K);
   cost += sqrDistance(c->a.X * c->a_rel, p->coll->p1);
@@ -1827,7 +1827,7 @@ double __matchingCost(rai::Contact* c, rai::Proxy* p) {
 }
 
 void __new(rai::Configuration& K, rai::Proxy* p) {
-  rai::Contact* c = new rai::Contact(*p->a, *p->b);
+  rai::ForceExchange* c = new rai::ForceExchange(*p->a, *p->b);
   __merge(c, p);
 }
 
@@ -1835,9 +1835,9 @@ void rai::Configuration::filterProxiesToContacts(double margin) {
   for(Proxy& p:proxies) {
     if(!p.coll) p.calc_coll(*this);
     if(p.coll->distance-(p.coll->rad1+p.coll->rad2)>margin) continue;
-    Contact* candidate=nullptr;
+    ForceExchange* candidate=nullptr;
     double candidateMatchingCost=0.;
-    for(Contact* c:p.a->contacts) {
+    for(ForceExchange* c:p.a->forces) {
       if((&c->a==p.a && &c->b==p.b) || (&c->a==p.b && &c->b==p.a)) {
         double cost = __matchingCost(c, &p);
         if(!candidate || cost<candidateMatchingCost) {
@@ -1856,21 +1856,21 @@ void rai::Configuration::filterProxiesToContacts(double margin) {
     }
   }
   //phase 2: cleanup old and distant contacts
-  rai::Array<Contact*> old;
-  for(Frame* f:frames) for(Contact* c:f->contacts) if(&c->a==f) {
+  rai::Array<ForceExchange*> old;
+  for(Frame* f:frames) for(ForceExchange* c:f->forces) if(&c->a==f) {
         if(/*c->get_pDistance()>margin+.05 ||*/ c->getDistance()>margin) old.append(c);
       }
-  for(Contact* c:old) delete c;
+  for(ForceExchange* c:old) delete c;
 }
 #endif
 
 void rai::Configuration_ext::proxiesToContacts(double margin) {
-  for(Frame* f:frames) while(f->contacts.N) delete f->contacts.last();
+  for(Frame* f:frames) while(f->forces.N) delete f->forces.last();
 
   for(Proxy& p:proxies) {
     if(!p.coll) p.calc_coll(*this);
-    Contact* candidate=nullptr;
-    for(Contact* c:p.a->contacts) {
+    ForceExchange* candidate=nullptr;
+    for(ForceExchange* c:p.a->forces) {
       if((&c->a==p.a && &c->b==p.b) || (&c->a==p.b && &c->b==p.a)) {
         candidate = c;
         break;
@@ -1879,20 +1879,20 @@ void rai::Configuration_ext::proxiesToContacts(double margin) {
     if(candidate) __merge(candidate, &p);
     else {
       if(p.coll->distance-(p.coll->rad1+p.coll->rad2)<margin) {
-        rai::Contact* c = new rai::Contact(*p.a, *p.b);
+        rai::ForceExchange* c = new rai::ForceExchange(*p.a, *p.b);
         __merge(c, &p);
       }
     }
   }
   //phase 2: cleanup old and distant contacts
   NIY;
-  //  rai::Array<Contact*> old;
-  //  for(Frame *f:frames) for(Contact *c:f->contacts) if(&c->a==f) {
+  //  rai::Array<ForceExchange*> old;
+  //  for(Frame *f:frames) for(ForceExchange *c:f->forces) if(&c->a==f) {
   //    if(c->getDistance()>2.*margin) {
   //      old.append(c);
   //    }
   //  }
-  //  for(Contact *c:old) delete c;
+  //  for(ForceExchange *c:old) delete c;
 }
 
 double rai::Configuration::totalCollisionPenetration() {
@@ -1907,7 +1907,7 @@ double rai::Configuration::totalCollisionPenetration() {
     double d = p.coll->getDistance();
     if(d<0.) D -= d;
   }
-  //  for(Frame *f:frames) for(Contact *c:f->contacts) if(&c->a==f) {
+  //  for(Frame *f:frames) for(ForceExchange *c:f->forces) if(&c->a==f) {
   //        double d = c->getDistance();
   //      }
   return D;
@@ -2224,7 +2224,7 @@ void rai::Configuration::report(std::ostream& os) const {
      <<" #shapes=" <<nShapes
      <<" #ucertainties=" <<nUc
      <<" #proxies=" <<proxies.N
-     <<" #contacts=" <<contacts.N
+     <<" #contacts=" <<forces.N
      <<" #evals=" <<setJointStateCount
      <<endl;
 
@@ -2385,8 +2385,8 @@ void rai::Configuration::reportProxies(std::ostream& os, double belowMargin, boo
     os <<endl;
     i++;
   }
-  os <<"Contact report:" <<endl;
-  for(Frame* a:frames) for(Contact* c:a->contacts) if(&c->a==a) {
+  os <<"ForceExchange report:" <<endl;
+  for(Frame* a:frames) for(ForceExchange* c:a->forces) if(&c->a==a) {
         c->coll();
         os <<*c <<endl;
       }
@@ -2541,7 +2541,7 @@ void rai::Configuration::kinematicsProxyCost(arr& y, arr& J, double margin) cons
   }
 }
 
-void rai::Configuration_ext::kinematicsContactCost(arr& y, arr& J, const Contact* c, double margin, bool addValues) const {
+void rai::Configuration_ext::kinematicsContactCost(arr& y, arr& J, const ForceExchange* c, double margin, bool addValues) const {
   NIY;
   //  Feature *map = c->getTM_ContactNegDistance();
   //  arr y_dist, J_dist;
@@ -2561,7 +2561,7 @@ void rai::Configuration_ext::kinematicsContactCost(arr& y, arr& J, const Contact
 void rai::Configuration_ext::kinematicsContactCost(arr& y, arr& J, double margin) const {
   y.resize(1).setZero();
   if(!!J) J.resize(1, getJointStateDimension()).setZero();
-  for(Frame* f:frames) for(Contact* c:f->contacts) if(&c->a==f) {
+  for(Frame* f:frames) for(ForceExchange* c:f->forces) if(&c->a==f) {
         kinematicsContactCost(y, J, c, margin, true);
       }
 }
@@ -2849,7 +2849,7 @@ bool rai::Configuration::checkConsistency() const {
           myqdim += 2*j->qDim();
       }
     }
-    for(Contact* c: contacts) {
+    for(ForceExchange* c: forces) {
       CHECK_EQ(c->qDim(), 6, "");
       CHECK_EQ(c->qIndex, myqdim, "joint indexing is inconsistent");
       myqdim += c->qDim();
@@ -3126,7 +3126,7 @@ void rai::Configuration::glDraw_sub(OpenGL& gl, int drawOpaqueOrTransparanet) {
 
     //contacts
     //  if(orsDrawProxies)
-    for(const Frame* fr: frames) for(rai::Contact* c:fr->contacts) if(&c->a==fr) {
+    for(const Frame* fr: frames) for(rai::ForceExchange* c:fr->forces) if(&c->a==fr) {
       c->glDraw(gl);
     }
 

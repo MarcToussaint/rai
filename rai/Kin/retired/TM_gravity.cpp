@@ -9,7 +9,7 @@
 #include "TM_gravity.h"
 #include "flag.h"
 #include "frame.h"
-#include "contact.h"
+#include "forceExchange.h"
 #include "TM_default.h"
 #include "TM_PairCollision.h"
 #include "TM_angVel.h"
@@ -54,8 +54,8 @@ void TM_Gravity::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
         arr v_ref = {0., 0., -gravity};
         arr Jv_ref = zeros(3, K.q.N);
 #if 0
-        if(false && a->contacts.N) {
-          for(rai::Contact* c:a->contacts) {
+        if(false && a->forces.N) {
+          for(rai::ForceExchange* c:a->forces) {
             if(&c->a == a) {
               K.kinematicsVec(pc, (!!J?Jc:NoArr), a, c->a_rel);
             } else {
@@ -132,9 +132,9 @@ void TM_Gravity::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
           J = Jerr;
         }
 
-        if(a->contacts.N) {
-          CHECK_EQ(a->contacts.N, 1, "");
-          for(rai::Contact* con:a->contacts) {
+        if(a->forces.N) {
+          CHECK_EQ(a->forces.N, 1, "");
+          for(rai::ForceExchange* con:a->forces) {
 
             arr d, Jd;
             TM_PairCollision dist(con->a.ID, con->b.ID, TM_PairCollision::_negScalar, false);

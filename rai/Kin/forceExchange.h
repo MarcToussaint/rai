@@ -16,8 +16,8 @@ struct PairCollision;
 
 namespace rai {
 
-///Description of a Contact
-struct Contact : NonCopyable, GLDrawer {
+///Description of a ForceExchange
+struct ForceExchange : NonCopyable, GLDrawer {
   Frame& a, &b;
 
  private:
@@ -28,8 +28,8 @@ struct Contact : NonCopyable, GLDrawer {
   arr position;
   arr force;
 
-  Contact(Frame& a, Frame& b, Contact* copyContact=nullptr);
-  ~Contact();
+  ForceExchange(Frame& a, Frame& b, ForceExchange* copyContact=nullptr);
+  ~ForceExchange();
 
   void setZero();
   uint qDim() { return 6; }
@@ -41,12 +41,12 @@ struct Contact : NonCopyable, GLDrawer {
   void glDraw(OpenGL&);
   void write(ostream& os) const;
 };
-stdOutPipe(Contact)
+stdOutPipe(ForceExchange)
 
 struct TM_ContactNegDistance : Feature {
-  const Contact& C;
+  const ForceExchange& C;
 
-  TM_ContactNegDistance(const Contact& contact) : C(contact) {}
+  TM_ContactNegDistance(const ForceExchange& contact) : C(contact) {}
 
   void phi(arr& y, arr& J, const rai::Configuration& K);
   virtual uint dim_phi(const rai::Configuration& K) { return 1; }

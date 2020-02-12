@@ -7,7 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "F_static.h"
-#include "contact.h"
+#include "forceExchange.h"
 
 F_netForce::F_netForce(int iShape, bool _transOnly, bool _zeroGravity) : i(iShape), transOnly(_transOnly) {
   order=0;
@@ -42,13 +42,13 @@ void F_netForce::phi(arr& y, arr& J, const rai::Configuration& C) {
   }
 
   //-- collect contacts and signs FOR ALL shapes attached to this link
-  rai::Array<rai::Contact*> contacts;
+  rai::Array<rai::ForceExchange*> contacts;
   arr signs;
   FrameL F;
   F.append(a);
   a->getRigidSubFrames(F);
   for(rai::Frame* f:F) {
-    for(rai::Contact* con:f->contacts) {
+    for(rai::ForceExchange* con:f->forces) {
       CHECK(&con->a==f || &con->b==f, "");
       contacts.append(con);
       signs.append((&con->a==f ? +1. : -1.));
@@ -56,13 +56,13 @@ void F_netForce::phi(arr& y, arr& J, const rai::Configuration& C) {
   }
 
 #if 0
-  for(rai::Contact* con:a->contacts) {
+  for(rai::ForceExchange* con:a->forces) {
     double sign = +1.;
     CHECK(&con->a==a || &con->b==a, "");
     if(&con->b==a) sign=-1.;
 #else
   for(uint i=0; i<contacts.N; i++) {
-    rai::Contact* con = contacts(i);
+    rai::ForceExchange* con = contacts(i);
     double sign = signs(i);
 #endif
 

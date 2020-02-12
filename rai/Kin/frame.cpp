@@ -9,7 +9,7 @@
 #include "frame.h"
 #include "kin.h"
 #include "uncertainty.h"
-#include "contact.h"
+#include "forceExchange.h"
 #include <climits>
 
 #ifdef RAI_GL
@@ -75,9 +75,8 @@ rai::Frame::~Frame() {
   if(shape) delete shape;
   if(inertia) delete inertia;
   if(parent) unLink();
-  while(contacts.N) delete contacts.last();
+  while(forces.N) delete forces.last();
   while(parentOf.N) parentOf.last()->unLink();
-//  K.frames.removeValue(this);
   CHECK_EQ(this, K.frames(ID), "")
   K.frames.remove(ID);
   listReindex(K.frames);

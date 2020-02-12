@@ -9,7 +9,7 @@
 #include "switch.h"
 #include "kin.h"
 #include "flag.h"
-#include "contact.h"
+#include "forceExchange.h"
 
 #include <climits>
 
@@ -268,7 +268,7 @@ void rai::KinematicSwitch::apply(Configuration& K) {
 
   if(symbol==SW_addContact || symbol==SW_addComplementaryContact) {
     CHECK_EQ(jointType, JT_none, "");
-    auto c = new rai::Contact(*from, *to);
+    auto c = new rai::ForceExchange(*from, *to);
     if(symbol==SW_addComplementaryContact) c->soft=true;
     c->setZero();
     return;
@@ -276,8 +276,8 @@ void rai::KinematicSwitch::apply(Configuration& K) {
 
   if(symbol==SW_delContact) {
     CHECK_EQ(jointType, JT_none, "");
-    rai::Contact* c = nullptr;
-    for(rai::Contact* cc:to->contacts) if(&cc->a==from || &cc->b==from) { c=cc; break; }
+    rai::ForceExchange* c = nullptr;
+    for(rai::ForceExchange* cc:to->forces) if(&cc->a==from || &cc->b==from) { c=cc; break; }
     if(!c) HALT("not found");
     delete c;
     return;
