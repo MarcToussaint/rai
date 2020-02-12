@@ -33,7 +33,7 @@ void MathematicalProgram::setSingleVariable(uint var_id, const arr& x){
   x_buffer = x;
 }
 
-void MathematicalProgram::evaluateSingleFeature(uint var_id, arr& phi, arr& J, arr& H){
+void MathematicalProgram::evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H){
   CHECK_EQ(isStructured(), false, "");
   evaluate(phi, J, H, x_buffer);
 }

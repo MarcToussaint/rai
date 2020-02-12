@@ -10,8 +10,10 @@ struct MathematicalProgram{
   virtual bool isStructured(){ return false; }    //whether this MP is "structured", i.e., x and phi are composed in blocks
   virtual void getStructure(uintA& variableDimensions, //the size of each variable block
                             uintA& featureDimensions,  //the size of each feature block
-                            intAA& featureVariables     //which variables the j-th feature block depends on
+                            intAA& featureVariables    //which variables the j-th feature block depends on
                             );
+
+  virtual void getSparseStructure(uintAA sparseness){ NIY }
 
   /// optional - for more semantic reports
   virtual void getSemantics(StringA& variableNames, StringA& featureNames){} //the names of each variable/feature block (or element if unstructured)
@@ -26,7 +28,7 @@ struct MathematicalProgram{
 
   //structured (local) interface
   virtual void setSingleVariable(uint var_id, const arr& x); //set a single variable block
-  virtual void evaluateSingleFeature(uint var_id, arr& phi, arr& J, arr& H); //get a single feature block
+  virtual void evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H); //get a single feature block
 
 private:
   arr x_buffer;

@@ -13,6 +13,7 @@
 #include "../Optim/optimization.h"
 #include "../Optim/constrained.h"
 #include "../Optim/KOMO_Problem.h"
+#include "../Optim/newOptim.h"
 #include "../Kin/switch.h"
 #include "../Kin/featureSymbols.h"
 
@@ -369,6 +370,41 @@ struct KOMO : NonCopyable {
 
     void getDimPhi();
     virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x);
+  };
+
+  struct Conv_KOMO_MathematicalProgram : MathematicalProgram {
+    KOMO& komo;
+    struct FeatureIndexEntry{ ptr<Objective> ob; ConfigurationL Ctuple; uint t; uint dim; };
+    rai::Array<FeatureIndexEntry> featureIndex;
+    struct VariableIndexEntry{ rai::Joint *joint=0; rai::Contact *con=0; uint dim; };
+    rai::Array<VariableIndexEntry> variableIndex;
+    uintA xIndex2VarId;
+
+    Conv_KOMO_MathematicalProgram(KOMO& _komo) : komo(_komo) {}
+
+  private:
+    void createIndices();
+
+  public:
+    ///-- signature/structure of the mathematical problem
+    virtual uint getDimension();
+    virtual void getBounds(arr& bounds_lo, arr& bounds_up);
+    virtual void getFeatureTypes(ObjectiveTypeA& featureTypes);
+    virtual void getSparseStructure(uintAA sparseness);
+    virtual bool isStructured();
+    virtual void getStructure(uintA& variableDimensions, //the size of each variable block
+                              uintA& featureDimensions,  //the size of each feature block
+                              intAA& featureVariables     //which variables the j-th feature block depends on
+                              );
+
+    ///--- evaluation
+
+    //unstructured (batch) interface (where J may/should be sparse! and H optional
+    virtual void evaluate(arr& phi, arr& J, arr& H, const arr& x); //default implementation: if isStructured, gets everything from there
+
+    //structured (local) interface
+    virtual void setSingleVariable(uint var_id, const arr& x); //set a single variable block
+    virtual void evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H); //get a single feature block
   };
 
 };
