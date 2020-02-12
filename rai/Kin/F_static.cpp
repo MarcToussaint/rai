@@ -9,8 +9,6 @@
 #include "F_static.h"
 #include "contact.h"
 
-#define SPARSE_JACOBIANS true
-
 F_netForce::F_netForce(int iShape, bool _transOnly, bool _zeroGravity) : i(iShape), transOnly(_transOnly) {
   order=0;
   if(_zeroGravity) {
@@ -20,15 +18,15 @@ F_netForce::F_netForce(int iShape, bool _transOnly, bool _zeroGravity) : i(iShap
   }
 }
 
-void F_netForce::phi(arr& y, arr& J, const rai::Configuration& K) {
-  rai::Frame* a = K.frames(i);
+void F_netForce::phi(arr& y, arr& J, const rai::Configuration& C) {
+  rai::Frame* a = C.frames(i);
 
   arr force = zeros(3);
   arr torque = zeros(3);
   arr Jforce, Jtorque;
   if(!!J) {
-    uint n = K.getJointStateDimension();
-    if(!SPARSE_JACOBIANS) {
+    uint n = C.getJointStateDimension();
+    if(!C.useSparseJacobians) {
       Jforce.resize(3, n).setZero();
       Jtorque.resize(3, n).setZero();
     } else {
@@ -70,15 +68,15 @@ void F_netForce::phi(arr& y, arr& J, const rai::Configuration& K) {
 
     //get the force
     arr f, Jf;
-    K.kinematicsContactForce(f, Jf, con);
+    C.kinematicsContactForce(f, Jf, con);
 
     //get the POA
     arr poa, Jpoa;
-    K.kinematicsContactPOA(poa, Jpoa, con);
+    C.kinematicsContactPOA(poa, Jpoa, con);
 
     //get object center
     arr p, Jp;
-    K.kinematicsPos(p, Jp, a);
+    C.kinematicsPos(p, Jp, a);
 
     force -= sign * con->force;
     if(!transOnly) torque += sign * crossProduct(poa-p, con->force);
@@ -95,7 +93,7 @@ void F_netForce::phi(arr& y, arr& J, const rai::Configuration& K) {
   if(!transOnly) y.setVectorBlock(torque, 3);
 
   if(!!J) {
-    if(!SPARSE_JACOBIANS) {
+    if(!C.useSparseJacobians) {
       J.resize(y.N, Jforce.d1).setZero();
       J.setMatrixBlock(Jforce, 0, 0);
       if(!transOnly) J.setMatrixBlock(Jtorque, 3, 0);

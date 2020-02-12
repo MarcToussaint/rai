@@ -58,8 +58,6 @@ void lib_ors() { cout <<"force loading lib/ors" <<endl; }
 
 uint rai::Configuration::setJointStateCount = 0;
 
-#define SPARSE_JACOBIANS false
-
 //===========================================================================
 //
 // contants
@@ -343,27 +341,35 @@ bool rai::Configuration::check_topSort() const {
   return true;
 }
 
-void rai::Configuration::copy(const rai::Configuration& K, bool referenceSwiftOnCopy) {
-  CHECK(this != &K, "never copy K onto itself");
+void rai::Configuration::copy(const rai::Configuration& C, bool referenceSwiftOnCopy) {
+  CHECK(this != &C, "never copy C onto itself");
 
   clear();
-  orsDrawProxies = K.orsDrawProxies;
+  orsDrawProxies = C.orsDrawProxies;
+  useSparseJacobians = C.useSparseJacobians;
+  xIndex = C.xIndex;
+
   //copy frames; first each Frame/Link/Joint directly, where all links go to the origin K (!!!); then relink to itself
-  for(Frame* f:K.frames) new Frame(*this, f);
-  for(Frame* f:K.frames) if(f->parent) frames(f->ID)->linkFrom(frames(f->parent->ID));
+  for(Frame* f:C.frames) new Frame(*this, f);
+  for(Frame* f:C.frames) if(f->parent) frames(f->ID)->linkFrom(frames(f->parent->ID));
+
   //copy proxies; first they point to origin frames; afterwards, let them point to own frames
-  copyProxies(K);
+  copyProxies(C);
   //  proxies = K.proxies;
   //  for(Proxy& p:proxies) { p.a = frames(p.a->ID); p.b = frames(p.b->ID);  p.coll.reset(); }
+
   //copy contacts
-  for(Contact* c:K.contacts) new Contact(*frames(c->a.ID), *frames(c->b.ID), c);
+  for(Contact* c:C.contacts) new Contact(*frames(c->a.ID), *frames(c->b.ID), c);
+
   //copy swift reference
   if(referenceSwiftOnCopy){
-    s->swift = K.s->swift;
-    s->fcl = K.s->fcl;
+    s->swift = C.s->swift;
+    s->fcl = C.s->fcl;
   }
-  q = K.q;
-  _state_q_isGood = K._state_q_isGood;
+
+  //copy vector state
+  q = C.q;
+  _state_q_isGood = C._state_q_isGood;
   ensure_indexedJoints();
 }
 
@@ -1019,9 +1025,9 @@ void rai::Configuration::jacobian_pos(arr& J, Frame* a, const rai::Vector& pos_w
     a = a->parent;
   }
 
-  if(sparse && sparseJacobianOffset){
-    J.sparse().reshape(J.d0, J.d1+sparseJacobianOffset);
-    J.sparse().rowShift(sparseJacobianOffset);
+  if(sparse && xIndex){
+    J.sparse().reshape(J.d0, J.d1+xIndex);
+    J.sparse().rowShift(xIndex);
   }
 }
 
@@ -1120,7 +1126,7 @@ void rai::Configuration::kinematicsPos(arr& y, arr& J, Frame* a, const rai::Vect
   rai::Vector pos_world = a->ensure_X().pos;
   if(!!rel && !rel.isZero) pos_world += a->ensure_X().rot*rel;
   if(!!y) y = conv_vec2arr(pos_world);
-  if(!!J) jacobian_pos(J, a, pos_world, SPARSE_JACOBIANS);
+  if(!!J) jacobian_pos(J, a, pos_world, useSparseJacobians);
 }
 
 /* takes the joint state x and returns the jacobian dz of
@@ -1135,7 +1141,7 @@ void rai::Configuration::kinematicsVec(arr& y, arr& J, Frame* a, const rai::Vect
   if(!!y) y = conv_vec2arr(vec_world);
   if(!!J) {
     arr A;
-    jacobian_angular(A, a, SPARSE_JACOBIANS);
+    jacobian_angular(A, a, useSparseJacobians);
     J = crossProduct(A, conv_vec2arr(vec_world));
   }
 }
@@ -1307,7 +1313,7 @@ void rai::Configuration::kinematicsRelPos(arr& y, arr& J, Frame* a, const rai::V
   y = Rinv * (y1 - y2);
   if(!!J) {
     arr A;
-    jacobian_angular(A, b, SPARSE_JACOBIANS);
+    jacobian_angular(A, b, useSparseJacobians);
     J = Rinv * (J1 - J2 - crossProduct(A, y1 - y2));
   }
 }
@@ -1323,7 +1329,7 @@ void rai::Configuration::kinematicsRelVec(arr& y, arr& J, Frame* a, const rai::V
   y = Rinv * y1;
   if(!!J) {
     arr A;
-    jacobian_angular(A, b, SPARSE_JACOBIANS);
+    jacobian_angular(A, b, useSparseJacobians);
     J = Rinv * (J1 - crossProduct(A, y1));
   }
 }
@@ -1338,7 +1344,7 @@ void rai::Configuration::kinematicsRelRot(arr& y, arr& J, Frame* a, Frame* b) co
     double s=2.*phi/sin(phi);
     double ss=-2./(1.-rai::sqr(rot_b.w)) * (1.-phi/tan(phi));
     arr A;
-    axesMatrix(A, a, SPARSE_JACOBIANS);
+    axesMatrix(A, a, useSparseJacobians);
     J = 0.5 * (rot_b.w*A*s + crossProduct(A, y));
     J -= 0.5 * ss/s/s*(y*~y*A);
   }
@@ -1349,7 +1355,7 @@ void rai::Configuration::kinematicsContactPOA(arr& y, arr& J, rai::Contact* c) c
   y = c->position;
 
   if(!!J) {
-    if(!SPARSE_JACOBIANS) {
+    if(!useSparseJacobians) {
       J.resize(3, q.N).setZero();
     } else {
       J.sparse().resize(3, q.N, 0);
@@ -1363,7 +1369,7 @@ void rai::Configuration::kinematicsContactForce(arr& y, arr& J, rai::Contact* c)
   y = c->force;
 
   if(!!J) {
-    if(!SPARSE_JACOBIANS) {
+    if(!useSparseJacobians) {
       J.resize(3, q.N).setZero();
     } else {
       J.sparse().resize(3, q.N, 0);

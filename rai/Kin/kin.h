@@ -72,7 +72,8 @@ struct Configuration : GLDrawer {
   bool _state_proxies_isGood=false; // the proxies have been created for the current state
   //TODO: need a _state for all the plugin engines (SWIFT, PhysX)? To auto-reinitialize them when the config changed structurally?
 
-  uint sparseJacobianOffset=0; // if>0, this is added to the q-index of all nonzero entries of Jacobians!
+  bool useSparseJacobians=false;
+  uint xIndex=0;   // the start-index of this configuration in a larger decision variable x (e.g. if x is a path of configurations) (analogous to qIndex of a joint)
 
   static uint setJointStateCount;
 
@@ -179,7 +180,7 @@ struct Configuration : GLDrawer {
     else HALT("wrong dimension");
   }
 
-  /// @name variable (groups of DOFs, e.g. agents) interface
+  /// @name variable (groups of DOFs, e.g. agents, joints, contacts) interface
   FrameL vars_frames;
   void vars_ensureFrames();
   uint vars_getNum(){ vars_ensureFrames();  return vars_frames.N; }
@@ -187,6 +188,7 @@ struct Configuration : GLDrawer {
   uint vars_getDim(uint i);
   void vars_activate(uint i);
   void vars_deactivate(uint i);
+  void vars_qIndex2varIndex(uint& varId, uint& varIndex, uint qIndex);
 
   /// @name Jacobians and kinematics (low level)
   /// what is the linear velocity of a world point (pos_world) attached to frame a for a given joint velocity?
