@@ -49,10 +49,10 @@ void rai::Transformation_Qtoken::operator=(const rai::Transformation& _Q) { f.Q=
 bool rai_Kin_frame_ignoreQuatNormalizationWarning = false;
 
 rai::Frame::Frame(Configuration& _K, const Frame* copyFrame)
-  : K(_K) {
+  : C(_K) {
 
-  ID=K.frames.N;
-  K.frames.append(this);
+  ID=C.frames.N;
+  C.frames.append(this);
   if(copyFrame) {
     const Frame& f = *copyFrame;
     name=f.name; Q=f.Q; X=f.X; _state_X_isGood=f._state_X_isGood; tau=f.tau; ats=f.ats;
@@ -64,7 +64,7 @@ rai::Frame::Frame(Configuration& _K, const Frame* copyFrame)
 }
 
 rai::Frame::Frame(Frame* _parent)
-  : Frame(_parent->K) {
+  : Frame(_parent->C) {
   CHECK(_parent, "");
   _state_X_isGood=false;
   linkFrom(_parent, false);
@@ -77,10 +77,10 @@ rai::Frame::~Frame() {
   if(parent) unLink();
   while(forces.N) delete forces.last();
   while(parentOf.N) parentOf.last()->unLink();
-  CHECK_EQ(this, K.frames(ID), "")
-  K.frames.remove(ID);
-  listReindex(K.frames);
-  K.reset_q();
+  CHECK_EQ(this, C.frames(ID), "")
+  C.frames.remove(ID);
+  listReindex(C.frames);
+  C.reset_q();
 }
 
 void rai::Frame::calc_X_from_parent() {
@@ -140,7 +140,7 @@ void rai::Frame::_state_updateAfterTouchingX() {
 
 void rai::Frame::_state_updateAfterTouchingQ() {
   _state_setXBadinBranch();
-  if(joint) K._state_q_isGood = false;
+  if(joint) C._state_q_isGood = false;
 }
 
 void rai::Frame::getRigidSubFrames(FrameL& F) {
@@ -444,7 +444,7 @@ rai::Frame* rai::Frame::insertPreLink(const rai::Transformation& A) {
     parent->parentOf.removeValue(this);
     f->name <<parent->name <<'>' <<name;
   } else {
-    f = new Frame(K);
+    f = new Frame(C);
     f->name <<"NIL>" <<name;
   }
   parent=f;
@@ -458,7 +458,7 @@ rai::Frame* rai::Frame::insertPreLink(const rai::Transformation& A) {
 
 rai::Frame* rai::Frame::insertPostLink(const rai::Transformation& B) {
   //new frame between: parent -> this -> f
-  Frame* f = new Frame(K);
+  Frame* f = new Frame(C);
   if(name) f->name <<'<' <<name;
 
   //reconnect all outlinks from -> to
@@ -519,7 +519,7 @@ rai::Joint::Joint(Frame& f, Joint* copyJoint)
   : frame(&f), qIndex(UINT_MAX) {
   CHECK(!frame->joint, "the Link already has a Joint");
   frame->joint = this;
-  frame->K.reset_q();
+  frame->C.reset_q();
 
   if(copyJoint) {
     qIndex=copyJoint->qIndex; dim=copyJoint->dim; mimic=reinterpret_cast<Joint*>(copyJoint->mimic?1l:0l);
@@ -527,7 +527,7 @@ rai::Joint::Joint(Frame& f, Joint* copyJoint)
     active=copyJoint->active;
 
     if(copyJoint->mimic) {
-      mimic = frame->K.frames(copyJoint->mimic->frame->ID)->joint;
+      mimic = frame->C.frames(copyJoint->mimic->frame->ID)->joint;
     }
 
     if(copyJoint->uncertainty) {
@@ -542,7 +542,7 @@ rai::Joint::Joint(Frame& from, Frame& f, Joint* copyJoint)
 }
 
 rai::Joint::~Joint() {
-  frame->K.reset_q();
+  frame->C.reset_q();
   frame->joint = nullptr;
   //if(frame->parent) frame->unLink();
 }
@@ -892,7 +892,7 @@ arr rai::Joint::get_h() const {
 }
 
 double& rai::Joint::getQ() {
-  return frame->K.q.elem(qIndex);
+  return frame->C.q.elem(qIndex);
 }
 
 void rai::Joint::makeRigid() {
@@ -908,7 +908,7 @@ void rai::Joint::setType(rai::JointType _type) {
   if(type!=_type) {
     type = _type;
     dim = getDimFromType();
-    frame->K.reset_q();
+    frame->C.reset_q();
   }
 }
 
@@ -917,7 +917,7 @@ void rai::Joint::flip() {
   frame = frame->parent;
   CHECK(!frame->joint, "");
   frame->joint = this;
-  frame->K.reset_q();
+  frame->C.reset_q();
 }
 
 void rai::Joint::read(const Graph& G) {
@@ -1148,17 +1148,17 @@ void rai::Shape::glDraw(OpenGL& gl) {
 #ifdef RAI_GL
   //set name (for OpenGL selection)
   glPushName((frame.ID <<2) | 1);
-  if(frame.K.orsDrawColors && !frame.K.orsDrawIndexColors && !gl.drawMode_idColor) {
+  if(frame.C.orsDrawColors && !frame.C.orsDrawIndexColors && !gl.drawMode_idColor) {
     if(mesh().C.N) glColor(mesh().C); //color[0], color[1], color[2], color[3]*world.orsDrawAlpha);
     else   glColor(.5, .5, .5);
   }
-  if(frame.K.orsDrawIndexColors) gl.drawId(frame.ID);
+  if(frame.C.orsDrawIndexColors) gl.drawId(frame.ID);
 
   double GLmatrix[16];
   frame.ensure_X().getAffineMatrixGL(GLmatrix);
   glLoadMatrixd(GLmatrix);
 
-  if(!frame.K.orsDrawShapes) {
+  if(!frame.C.orsDrawShapes) {
     double scale=.33*(size(0)+size(1)+size(2) + 2.*size(3)); //some scale
     if(!scale) scale=1.;
     scale*=.3;
@@ -1168,11 +1168,11 @@ void rai::Shape::glDraw(OpenGL& gl) {
   }
 
   //default!
-  if(frame.K.orsDrawShapes) {
+  if(frame.C.orsDrawShapes) {
     CHECK(_type!=rai::ST_none, "shape type is not initialized");
 
     if(_type==rai::ST_marker) {
-      if(frame.K.orsDrawMarkers) {
+      if(frame.C.orsDrawMarkers) {
         glDrawDiamond(size(0)/5., size(0)/5., size(0)/5.);
         glDrawAxes(size(0), !gl.drawMode_idColor);
       }
@@ -1185,7 +1185,7 @@ void rai::Shape::glDraw(OpenGL& gl) {
     }
   }
 
-  if(frame.K.orsDrawZlines) {
+  if(frame.C.orsDrawZlines) {
     glColor(0, .7, 0);
     glBegin(GL_LINES);
     glVertex3d(0., 0., 0.);
@@ -1193,7 +1193,7 @@ void rai::Shape::glDraw(OpenGL& gl) {
     glEnd();
   }
 
-  if(frame.K.orsDrawFrameNames) {
+  if(frame.C.orsDrawFrameNames) {
     glColor(1, 1, 1);
     glDrawText(frame.name, 0, 0, 0);
   }

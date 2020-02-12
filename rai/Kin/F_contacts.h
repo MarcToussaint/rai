@@ -21,15 +21,15 @@ struct TM_Contact_POA : Feature {
   rai::String shortTag(const rai::Configuration& K) { return STRING("TM_Contact_POA-" <<K.frames(a)->name <<'-' <<K.frames(b)->name); }
 };
 
-struct TM_Contact_Force : Feature {
+struct F_LinearForce : Feature {
   int a, b;
-  TM_Contact_Force(int aShape, int bShape) : a(aShape), b(bShape) {}
-  TM_Contact_Force(const rai::Configuration& K, const char* aShapeName=nullptr, const char* bShapeName=nullptr)
-    : TM_Contact_Force(initIdArg(K, aShapeName), initIdArg(K, bShapeName)) {}
+  F_LinearForce(int aShape, int bShape) : a(aShape), b(bShape) {}
+  F_LinearForce(const rai::Configuration& K, const char* aShapeName=nullptr, const char* bShapeName=nullptr)
+    : F_LinearForce(initIdArg(K, aShapeName), initIdArg(K, bShapeName)) {}
 
   void phi(arr& y, arr& J, const rai::Configuration& C);
   uint dim_phi(const rai::Configuration& K) { return 3; }
-  rai::String shortTag(const rai::Configuration& K) { return STRING("TM_Contact_Force-" <<K.frames(a)->name <<'-' <<K.frames(b)->name); }
+  rai::String shortTag(const rai::Configuration& K) { return STRING("F_LinearForce-" <<K.frames(a)->name <<'-' <<K.frames(b)->name); }
 };
 
 struct TM_Contact_ForceIsNormal : Feature {

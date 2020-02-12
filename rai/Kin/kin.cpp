@@ -635,7 +635,19 @@ arr rai::Configuration::getLimits() const {
       }
     }
   }
-  //  cout <<"limits:" <<limits <<endl;
+//  for(ForceExchange* f: forces) {
+//    uint i=f->qIndex;
+//    uint d=f->qDim();
+//    for(uint k=0; k<3; k++) { //in case joint has multiple dimensions
+//        limits(i+k, 0)=-10.; //lo
+//        limits(i+k, 1)=+10.; //up
+//    }
+//    for(uint k=3; k<6; k++) { //in case joint has multiple dimensions
+//        limits(i+k, 0)=-1.; //lo
+//        limits(i+k, 1)=+1.; //up
+//    }
+//  }
+//    cout <<"limits:" <<limits <<endl;
   return limits;
 }
 
@@ -942,7 +954,7 @@ void rai::Configuration::evalFeature(arr& y, arr& J, FeatureSymbol fs, const Str
 
 #if 1
 void rai::Configuration::jacobian_pos(arr& J, Frame* a, const rai::Vector& pos_world, bool sparse) const {
-  CHECK_EQ(&a->K, this, "");
+  CHECK_EQ(&a->C, this, "");
 
   a->ensure_X();
 
@@ -1094,7 +1106,7 @@ void rai::Configuration::jacobian_angular(arr& J, Frame* a, bool sparse) const {
 }
 
 void rai::Configuration::jacobian_tau(arr& J, rai::Frame* a, bool sparse) const {
-  CHECK_EQ(&a->K, this, "");
+  CHECK_EQ(&a->C, this, "");
 
   if(sparse) NIY;
 
@@ -1121,7 +1133,7 @@ void rai::Configuration::jacobian_tau(arr& J, rai::Frame* a, bool sparse) const 
 /** @brief return the jacobian \f$J = \frac{\partial\phi_i(q)}{\partial q}\f$ of the position
   of the i-th body (3 x n tensor)*/
 void rai::Configuration::kinematicsPos(arr& y, arr& J, Frame* a, const rai::Vector& rel) const {
-  CHECK_EQ(&a->K, this, "given frame is not element of this Configuration");
+  CHECK_EQ(&a->C, this, "given frame is not element of this Configuration");
 
   rai::Vector pos_world = a->ensure_X().pos;
   if(!!rel && !rel.isZero) pos_world += a->ensure_X().rot*rel;
@@ -1133,7 +1145,7 @@ void rai::Configuration::kinematicsPos(arr& y, arr& J, Frame* a, const rai::Vect
    the position of the ith body (w.r.t. all joints) -> 2D array */
 /// Jacobian of the i-th body's z-orientation vector
 void rai::Configuration::kinematicsVec(arr& y, arr& J, Frame* a, const rai::Vector& vec) const {
-  CHECK_EQ(&a->K, this, "");
+  CHECK_EQ(&a->C, this, "");
 
   rai::Vector vec_world;
   if(!!vec) vec_world = a->ensure_X().rot*vec;
@@ -1150,7 +1162,7 @@ void rai::Configuration::kinematicsVec(arr& y, arr& J, Frame* a, const rai::Vect
    the position of the ith body (w.r.t. all joints) -> 2D array */
 /// Jacobian of the i-th body's z-orientation vector
 void rai::Configuration::kinematicsQuat(arr& y, arr& J, Frame* a) const { //TODO: allow for relative quat
-  CHECK_EQ(&a->K, this, "");
+  CHECK_EQ(&a->C, this, "");
 
   const rai::Quaternion& rot_a = a->ensure_X().rot;
   if(!!y) y = rot_a.getArr4d();
@@ -1806,7 +1818,7 @@ void rai::Configuration::stepDynamics(arr& qdot, const arr& Bu_control, double t
 
 void __merge(rai::ForceExchange* c, rai::Proxy* p) {
   CHECK(&c->a==p->a && &c->b==p->b, "");
-  if(!p->coll) p->calc_coll(c->a.K);
+  if(!p->coll) p->calc_coll(c->a.C);
   //  c->a_rel = c->a.X / rai::Vector(p->coll->p1);
   //  c->b_rel = c->b.X / rai::Vector(p->coll->p2);
   //  c->a_norm = c->a.X.rot / rai::Vector(-p->coll->normal);
@@ -2869,8 +2881,8 @@ bool rai::Configuration::checkConsistency() const {
   }
 
   for(Frame* a: frames) {
-    CHECK(&a->K, "");
-    CHECK(&a->K==this, "");
+    CHECK(&a->C, "");
+    CHECK(&a->C==this, "");
     CHECK_EQ(a, frames(a->ID), "");
     for(Frame* b: a->parentOf) CHECK_EQ(b->parent, a, "");
     if(a->joint) CHECK_EQ(a->joint->frame, a, "");
@@ -2946,8 +2958,8 @@ bool rai::Configuration::checkConsistency() const {
   }
 
   for(const Proxy& p : proxies) {
-    CHECK_EQ(this, &p.a->K, "");
-    CHECK_EQ(this, &p.b->K, "");
+    CHECK_EQ(this, &p.a->C, "");
+    CHECK_EQ(this, &p.b->C, "");
   }
 
   return true;

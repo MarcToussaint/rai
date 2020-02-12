@@ -22,6 +22,6 @@ struct F_netForce : Feature {
   virtual void phi(arr& y, arr& J, const rai::Configuration& C);
   virtual uint dim_phi(const rai::Configuration& C);
 
-  virtual rai::String shortTag(const rai::Configuration& K) { return STRING("static-" <<K.frames(i)->name); }
+  virtual rai::String shortTag(const rai::Configuration& K) { return STRING("F_netForce-" <<K.frames(i)->name); }
 };
 

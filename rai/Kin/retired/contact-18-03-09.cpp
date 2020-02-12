@@ -12,7 +12,7 @@
 double rai::ForceExchange::getDistance() const {
   TM_ContactNegDistance map(*this);
   arr y;
-  map.phi(y, NoArr, a.K);
+  map.phi(y, NoArr, a.C);
   return -y.scalar();
 }
 

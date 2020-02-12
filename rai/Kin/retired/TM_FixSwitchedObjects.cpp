@@ -34,8 +34,8 @@ void TM_FixSwichedObjects::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   }
   for(uint i=0; i<switchedBodies.N; i++) {
     uint id = switchedBodies(i);
-    rai::Frame* b0 = Ktuple.elem(-2)->frames(id);    CHECK(&b0->K==Ktuple.elem(-2), "");
-    rai::Frame* b1 = Ktuple.elem(-1)->frames(id);    CHECK(&b1->K==Ktuple.elem(-1), "");
+    rai::Frame* b0 = Ktuple.elem(-2)->frames(id);    CHECK(&b0->C==Ktuple.elem(-2), "");
+    rai::Frame* b1 = Ktuple.elem(-1)->frames(id);    CHECK(&b1->C==Ktuple.elem(-1), "");
     CHECK_EQ(b0->ID, b1->ID, "");
     CHECK_EQ(b0->name, b1->name, "");
 //    cout <<"SWITCH " <<b0->parent->name <<'-' <<b0->name <<" => " <<b1->parent->name <<'-' <<b1->name <<endl;

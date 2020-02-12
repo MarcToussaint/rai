@@ -374,11 +374,12 @@ struct KOMO : NonCopyable {
 
   struct Conv_KOMO_MathematicalProgram : MathematicalProgram {
     KOMO& komo;
-    struct FeatureIndexEntry{ ptr<Objective> ob; ConfigurationL Ctuple; uint t; uint dim; };
-    rai::Array<FeatureIndexEntry> featureIndex;
-    struct VariableIndexEntry{ rai::Joint *joint=0; rai::ForceExchange *con=0; uint dim; };
-    rai::Array<VariableIndexEntry> variableIndex;
     uintA xIndex2VarId;
+    struct VariableIndexEntry{ rai::Joint *joint=0; rai::ForceExchange *con=0; uint dim; uint xIndex; };
+    rai::Array<VariableIndexEntry> variableIndex;
+
+    struct FeatureIndexEntry{ ptr<Objective> ob; ConfigurationL Ctuple; uint t; uint dim; intA varIds; };
+    rai::Array<FeatureIndexEntry> featureIndex;
 
     Conv_KOMO_MathematicalProgram(KOMO& _komo) : komo(_komo) {}
 
@@ -405,6 +406,8 @@ struct KOMO : NonCopyable {
     //structured (local) interface
     virtual void setSingleVariable(uint var_id, const arr& x); //set a single variable block
     virtual void evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H); //get a single feature block
+
+    void reportFeatures();
   };
 
 };

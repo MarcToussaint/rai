@@ -13,11 +13,11 @@
 rai::ForceExchange::ForceExchange(rai::Frame& a, rai::Frame& b, rai::ForceExchange* copyContact)
   : a(a), b(b) {
   CHECK(&a != &b, "");
-  CHECK_EQ(&a.K, &b.K, "contact between frames of different configuration!");
-  a.K.reset_q();
+  CHECK_EQ(&a.C, &b.C, "contact between frames of different configuration!");
+  a.C.reset_q();
   a.forces.append(this);
   b.forces.append(this);
-  a.K.forces.append(this);
+  a.C.forces.append(this);
   setZero();
   if(copyContact) {
     position = copyContact->position;
@@ -26,10 +26,10 @@ rai::ForceExchange::ForceExchange(rai::Frame& a, rai::Frame& b, rai::ForceExchan
 }
 
 rai::ForceExchange::~ForceExchange() {
-  a.K.reset_q();
+  a.C.reset_q();
   a.forces.removeValue(this);
   b.forces.removeValue(this);
-  a.K.forces.removeValue(this);
+  a.C.forces.removeValue(this);
 }
 
 void rai::ForceExchange::setZero() {

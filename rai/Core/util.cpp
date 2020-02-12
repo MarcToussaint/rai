@@ -13,6 +13,7 @@
 #include <signal.h>
 #include <stdexcept>
 #include <stdarg.h>
+#include <cxxabi.h>    // for __cxa_demangle
 #if defined RAI_Linux || defined RAI_Cygwin || defined RAI_Darwin
 #  include <limits.h>
 #  include <sys/time.h>
@@ -778,11 +779,31 @@ rai::LogToken::~LogToken() {
     if(log_level<0) {
 
       if(log_level<=-2) {
-        void* trace_elems[10];
-        int trace_elem_count = backtrace(trace_elems, 10);
-        char** stack_syms = backtrace_symbols(trace_elems, trace_elem_count);
-        for(int i=trace_elem_count; i--;) std::cout <<"STACK" <<i <<' ' <<stack_syms[i] <<'\n';
-        free(stack_syms);
+        void* callstack[10];
+        int stack_count = backtrace(callstack, 10);
+        char** symbols = backtrace_symbols(callstack, stack_count);
+        for(int i=stack_count; i--;)  {
+          char* beg = symbols[i];
+          while(*beg!='(') beg++;
+          beg++;
+          char *end=beg;
+          while(*end!='+') end++;
+          if(beg!=end){
+            *end=0;
+            char *demangled = NULL;
+            int status;
+            demangled = abi::__cxa_demangle(beg, NULL, 0, &status);
+            if(demangled){
+              std::cout <<"STACK" <<i <<' ' <<demangled <<'\n';
+              free(demangled);
+            }else{
+              std::cout <<"STACK" <<i <<' ' <<symbols[i] <<'\n';
+            }
+          }else{
+            std::cout <<"STACK" <<i <<' ' <<symbols[i] <<'\n';
+          }
+        }
+        free(symbols);
       }
 
       rai::errString.clear() <<code_file <<':' <<code_func <<':' <<code_line <<'(' <<log_level <<") " <<msg;

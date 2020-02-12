@@ -388,6 +388,7 @@ public:
 template<class T> void rai::Array<T>::resizeMEM(uint n, bool copy, int Mforce) {
   if(n==N) return;
   CHECK(!isReference, "resize of a reference (e.g. subarray) is not allowed! (only a resize without changing memory size)");
+  CHECK(!isNoArr(*this), "resize of NO-ARRAY is not allowed!");
 
   //determine a new M (number of allocated items)
   uint Mold=vec_type::capacity(), Mnew;

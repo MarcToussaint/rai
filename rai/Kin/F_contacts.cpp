@@ -21,8 +21,8 @@ void POA_distance(arr& y, arr& J, rai::ForceExchange* con, bool b_or_a) {
   double r=s->radius();
   rai::Mesh* m = &s->sscCore();  if(!m->V.N) { m = &s->mesh(); r=0.; }
 
-  CHECK_EQ(&con->a.K, &con->b.K, "");
-  rai::Configuration& K = con->a.K;
+  CHECK_EQ(&con->a.C, &con->b.C, "");
+  rai::Configuration& K = con->a.C;
 
   rai::Mesh M0;
   M0.setDot();
@@ -182,13 +182,13 @@ void TM_Contact_POA::phi(arr& y, arr& J, const rai::Configuration& C) {
   C.kinematicsContactPOA(y, J, getContact(C, a, b));
 }
 
-void TM_Contact_Force::phi(arr& y, arr& J, const rai::Configuration& C) {
+void F_LinearForce::phi(arr& y, arr& J, const rai::Configuration& C) {
   C.kinematicsContactForce(y, J, getContact(C, a, b));
 }
 
 void TM_Contact_ForceIsNormal::phi(arr& y, arr& J, const rai::Configuration& K) {
   //-- from the contact we need force
-  Value force = TM_Contact_Force(a, b)(K);
+  Value force = F_LinearForce(a, b)(K);
 
   //-- from the geometry we need normal
   Value normal = TM_PairCollision(a, b, TM_PairCollision::_normal, true)(K);
@@ -229,7 +229,7 @@ uint TM_Contact_ForceIsComplementary::dim_phi(const rai::Configuration& K) { ret
 
 void TM_Contact_ForceIsPositive::phi(arr& y, arr& J, const rai::Configuration& K) {
   //-- from the contact we need force
-  Value force = TM_Contact_Force(a, b)(K);
+  Value force = F_LinearForce(a, b)(K);
 
   //-- from the geometry we need normal
   Value normal = TM_PairCollision(a, b, TM_PairCollision::_normal, true)(K);
@@ -363,7 +363,7 @@ void TM_Contact_NormalForceEqualsNormalPOAmotion::phi(arr& y, arr& J, const Conf
   poa.order=1;
   Value poavel = poa.eval(Ktuple);
 
-  Value force = TM_Contact_Force(a,b) (*Ktuple(-1));
+  Value force = F_LinearForce(a,b) (*Ktuple(-1));
 
   Value normal = TM_PairCollision(a, b, TM_PairCollision::_normal, true) (*Ktuple(-1));
 

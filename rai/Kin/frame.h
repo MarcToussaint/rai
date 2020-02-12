@@ -68,7 +68,7 @@ struct Transformation_Qtoken {
 
 /// a Frame can have a link (also joint), shape (visual or coll), and/or intertia (mass) attached to it
 struct Frame : NonCopyable {
-  struct Configuration& K;  ///< a Frame is uniquely associated with a KinematicConfiguration
+  struct Configuration& C;  ///< a Frame is uniquely associated with a KinematicConfiguration
   uint ID;                   ///< unique identifier
   String name;               ///< name
   Frame* parent=nullptr;        ///< parent frame

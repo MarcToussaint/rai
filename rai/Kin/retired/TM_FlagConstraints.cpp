@@ -15,7 +15,7 @@
 //===========================================================================
 
 bool JointDidNotSwitch(const rai::Frame* a1, const ConfigurationL& Ktuple, int order) {
-  CHECK_EQ(&a1->K, Ktuple.last(), "");
+  CHECK_EQ(&a1->C, Ktuple.last(), "");
   if(order<1) return true;
   for(int i=0; i<order; i++) {
     if(a1->ID >= Ktuple(-2-i)->frames.N) return false;

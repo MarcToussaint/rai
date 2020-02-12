@@ -411,8 +411,8 @@ void KOMO::addContact_slide(double startTime, double endTime, const char* from, 
   addObjective({startTime, endTime}, make_shared<TM_PairCollision>(world, from, to, TM_PairCollision::_negScalar, false), OT_eq, {1e1});
 
   //regularization
-  addObjective({startTime, endTime}, make_shared<TM_Contact_Force>(world, from, to), OT_sos, {1e-2}, NoArr, 2, +2, 0);
-  addObjective({startTime, endTime}, make_shared<TM_Contact_Force>(world, from, to), OT_sos, {1e-2});
+  addObjective({startTime, endTime}, make_shared<F_LinearForce>(world, from, to), OT_sos, {1e-2}, NoArr, 2, +2, 0);
+  addObjective({startTime, endTime}, make_shared<F_LinearForce>(world, from, to), OT_sos, {1e-2});
   addObjective({startTime, endTime}, make_shared<TM_Contact_POA>(world, from, to), OT_sos, {1e-2}, NoArr, 2, +2, +0);
   addObjective({startTime, endTime}, make_shared<TM_Contact_POAzeroRelVel>(world, from, to), OT_sos, {1e-1}, NoArr, 1, +1, +0);
 }
@@ -429,7 +429,7 @@ void KOMO::addContact_stick(double startTime, double endTime, const char* from, 
 
   //regularization
 //  addObjective({startTime, endTime}, make_shared<TM_Contact_Force>(world, from, to), OT_sos, {1e-2}, NoArr, 2, +2, 0);
-  addObjective({startTime, endTime}, make_shared<TM_Contact_Force>(world, from, to), OT_sos, {1e-4});
+  addObjective({startTime, endTime}, make_shared<F_LinearForce>(world, from, to), OT_sos, {1e-4});
   addObjective({startTime, endTime}, make_shared<TM_Contact_POA>(world, from, to), OT_sos, {1e-2}, NoArr, 2, +2, +0);
   addObjective({startTime, endTime}, make_shared<TM_Contact_POA>(world, from, to), OT_sos, {1e-2}, NoArr, 1, +1, +0);
 }
@@ -445,7 +445,7 @@ void KOMO::addContact_ComplementarySlide(double startTime, double endTime, const
   addObjective({startTime, endTime}, make_shared<TM_PairCollision>(world, from, to, TM_PairCollision::_negScalar, false), OT_ineq, {1e1});
 
   //regularization
-  addObjective({startTime, endTime}, make_shared<TM_Contact_Force>(world, from, to), OT_sos, {1e-4});
+  addObjective({startTime, endTime}, make_shared<F_LinearForce>(world, from, to), OT_sos, {1e-4});
   addObjective({startTime, endTime}, make_shared<TM_Contact_POA>(world, from, to), OT_sos, {1e-2}, NoArr, 2, +3, +0);
   addObjective({startTime, endTime}, make_shared<TM_Contact_POA>(world, from, to), OT_sos, {1e-2}, NoArr, 1, +1, +0);
 //  addObjective({startTime, endTime}, make_shared<TM_Contact_POAzeroRelVel>(world, from, to), OT_sos, {1e-1}, NoArr, 1, +1, +0);
@@ -460,7 +460,7 @@ void KOMO::addContact_staticPush(double startTime, double endTime, const char* f
   addObjective({startTime, endTime}, make_shared<TM_Contact_ForceIsPositive>(world, from, to), OT_ineq, {1e2});
   addObjective({startTime, endTime}, make_shared<TM_Contact_POAisInIntersection_InEq>(world, from, to), OT_ineq, {1e1});
   addObjective({startTime, endTime}, make_shared<TM_Contact_POAmovesContinuously>(world, from, to), OT_sos, {1e0}, NoArr, 1, +1, +0);
-  addObjective({startTime, endTime}, make_shared<TM_Contact_Force>(world, from, to), OT_sos, {1e-1});
+  addObjective({startTime, endTime}, make_shared<F_LinearForce>(world, from, to), OT_sos, {1e-1});
   addObjective({startTime, endTime}, make_shared<TM_Contact_POAzeroRelVel>(world, from, to), OT_sos, {1e-1}, NoArr, 1, +1, +0);
   //  addObjective({startTime, endTime}, make_shared<TM_Contact_POAzeroRelVel>(world, from, to), OT_eq, {1e1}, NoArr, 1, +1, +0);
 //  addObjective({time}, make_shared<F_pushed>(world, to), OT_eq, {1e1}, NoArr, 1, +1, +0);
@@ -475,7 +475,7 @@ void KOMO::addContact_noFriction(double startTime, double endTime, const char* f
   addObjective({startTime, endTime}, make_shared<TM_Contact_ForceIsPositive>(world, from, to), OT_ineq, {1e1});
   addObjective({startTime, endTime}, make_shared<TM_Contact_POAisInIntersection_InEq>(world, from, to), OT_ineq, {1e1});
   addObjective({startTime, endTime}, make_shared<TM_Contact_POAmovesContinuously>(world, from, to), OT_sos, {1e0}, NoArr, 1, +1, +0);
-  addObjective({startTime, endTime}, make_shared<TM_Contact_Force>(world, from, to), OT_sos, {1e-4});
+  addObjective({startTime, endTime}, make_shared<F_LinearForce>(world, from, to), OT_sos, {1e-4});
   addObjective({startTime, endTime}, make_shared<TM_PairCollision>(world, from, to, TM_PairCollision::_negScalar, false), OT_eq, {1e1});
 }
 
@@ -486,7 +486,7 @@ void KOMO::addContact_elasticBounce(double time, const char* from, const char* t
   if(stickiness<=0.) addObjective({time}, make_shared<TM_Contact_ForceIsNormal>(world, from, to), OT_eq, {1e2});
   addObjective({time}, make_shared<TM_Contact_ForceIsPositive>(world, from, to), OT_ineq, {1e1});
   addObjective({time}, make_shared<TM_Contact_POAisInIntersection_InEq>(world, from, to), OT_ineq, {1e1});
-  addObjective({time}, make_shared<TM_Contact_Force>(world, from, to), OT_sos, {1e-4});
+  addObjective({time}, make_shared<F_LinearForce>(world, from, to), OT_sos, {1e-4});
   addObjective({time}, make_shared<TM_PairCollision>(world, from, to, TM_PairCollision::_negScalar, false), OT_eq, {1e1});
 
   if(!elasticity && stickiness>=1.) {
@@ -2856,38 +2856,44 @@ void KOMO::Conv_KOMO_MathematicalProgram::createIndices(){
   CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet");
 
   //count variables
-  uint V=0;
-  uint N=0;
+  uint numVars=0;
+  uint xDim=0;
   for(uint t=0; t<komo.T; t++){
     int s = t+komo.k_order;
     komo.configurations(s)->ensure_indexedJoints();
-    V += komo.configurations(s)->activeJoints.N;
-    V += komo.configurations(s)->forces.N;
-    N += komo.configurations(s)->getJointStateDimension();
+    numVars += komo.configurations(s)->activeJoints.N;
+    numVars += komo.configurations(s)->forces.N;
+    xDim += komo.configurations(s)->getJointStateDimension();
   }
 
   //create variable index
-  xIndex2VarId.resize(N);
-  variableIndex.resize(V);
-  uint v=0;
-  uint n=0;
+  xIndex2VarId.resize(xDim);
+  variableIndex.resize(numVars);
+  uint var=0;
+  uint idx=0;
   for(uint t=0; t<komo.T; t++){
     int s = t+komo.k_order;
     for(rai::Joint *j:komo.configurations(s)->activeJoints){
-      variableIndex(v).joint = j;
-      variableIndex(v).dim = j->qDim();
-      for(uint i=0;i<j->qDim();i++) xIndex2VarId(n++) = v;
-      v++;
+      CHECK_EQ(idx, j->qIndex + j->frame->C.xIndex, "mismatch index counting");
+      VariableIndexEntry& V = variableIndex(var);
+      V.joint = j;
+      V.dim = j->qDim();
+      V.xIndex = idx;
+      for(uint i=0;i<j->qDim();i++) xIndex2VarId(idx++) = var;
+      var++;
     }
     for(rai::ForceExchange *c:komo.configurations(s)->forces){
-      variableIndex(v).con = c;
-      variableIndex(v).dim = c->qDim();
-      for(uint i=0;i<c->qDim();i++) xIndex2VarId(n++) = v;
-      v++;
+      CHECK_EQ(idx, c->qIndex + c->a.C.xIndex, "mismatch index counting");
+      VariableIndexEntry& V = variableIndex(var);
+      V.con = c;
+      V.dim = c->qDim();
+      V.xIndex = idx;
+      for(uint i=0;i<c->qDim();i++) xIndex2VarId(idx++) = var;
+      var++;
     }
   }
-  CHECK_EQ(v, V, "");
-  CHECK_EQ(n, N, "");
+  CHECK_EQ(var, numVars, "");
+  CHECK_EQ(idx, xDim, "");
 
   //count features
   uint F=0;
@@ -2902,9 +2908,10 @@ void KOMO::Conv_KOMO_MathematicalProgram::createIndices(){
   uint f=0;
   for(ptr<Objective>& ob:komo.objectives) {
     for(uint l=0; l<ob->configs.d0; l++) {
-      featureIndex(f).ob = ob;
-      featureIndex(f).Ctuple = komo.configurations.sub(convert<uint, int>(ob->configs[l]+(int)komo.k_order));
-      featureIndex(f).dim = ob->map->__dim_phi(featureIndex(f).Ctuple); //dimensionality of this task
+      FeatureIndexEntry& F = featureIndex(f);
+      F.ob = ob;
+      F.Ctuple = komo.configurations.sub(convert<uint, int>(ob->configs[l]+(int)komo.k_order));
+      F.dim = ob->map->__dim_phi(F.Ctuple); //dimensionality of this task
       f++;
     }
   }
@@ -2946,7 +2953,7 @@ void KOMO::Conv_KOMO_MathematicalProgram::getFeatureTypes(ObjectiveTypeA& featur
 }
 
 bool KOMO::Conv_KOMO_MathematicalProgram::isStructured(){
-  return false;
+  return true;
 }
 
 void KOMO::Conv_KOMO_MathematicalProgram::getStructure(uintA& variableDimensions, uintA& featureDimensions, intAA& featureVariables){
@@ -2959,19 +2966,22 @@ void KOMO::Conv_KOMO_MathematicalProgram::getStructure(uintA& variableDimensions
 
   featureDimensions.resize(featureIndex.N);
   featureVariables.resize(featureIndex.N);
-  arr J;
+  arr y,J;
   for(uint f=0;f<featureIndex.N;f++){
-    featureDimensions(f) = featureIndex(f).dim;
+    FeatureIndexEntry& F = featureIndex(f);
+    featureDimensions(f) = F.dim;
+    if(!F.dim) continue;
 
-    featureIndex(f).ob->map->__phi(NoArr, J, featureIndex(f).Ctuple);
+    F.ob->map->__phi(y, J, F.Ctuple);
+
     CHECK(isSparseMatrix(J), "");
+    F.varIds.clear();
     intA& elems = J.sparse().elems;
     for(uint i=0;i<elems.d0;i++){
-      uint columnIndex = elems(i,1);
-      int varId = xIndex2VarId(columnIndex);
-      //find variable
-      featureVariables(f).setAppendInSorted(varId);
+      uint idx = elems(i,1);
+      F.varIds.setAppendInSorted(xIndex2VarId(idx));
     }
+    featureVariables(f) = F.varIds;
   }
 }
 
@@ -2982,6 +2992,7 @@ void KOMO::Conv_KOMO_MathematicalProgram::evaluate(arr& phi, arr& J, arr& H, con
 
 void KOMO::Conv_KOMO_MathematicalProgram::getSparseStructure(uintAA sparseness){
   CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet: use komo.reset()");
+  NIY;
 
   if(!featureIndex.N) createIndices();
 
@@ -2992,7 +3003,8 @@ void KOMO::Conv_KOMO_MathematicalProgram::getSparseStructure(uintAA sparseness){
 
   arr J;
   for(uint f=0;f<featureIndex.N;f++){
-    featureIndex(f).ob->map->__phi(NoArr, J, featureIndex(f).Ctuple);
+    FeatureIndexEntry& F = featureIndex(f);
+    F.ob->map->__phi(NoArr, J, F.Ctuple);
     CHECK(isSparseMatrix(J), "");
     intA& elems = J.sparse().elems;
     for(uint i=0;i<elems.d0;i++){
@@ -3003,19 +3015,67 @@ void KOMO::Conv_KOMO_MathematicalProgram::getSparseStructure(uintAA sparseness){
 }
 
 void KOMO::Conv_KOMO_MathematicalProgram::setSingleVariable(uint var_id, const arr& x){
-  VariableIndexEntry& v = variableIndex(var_id);
-  CHECK_EQ(v.dim, x.N, "");
-  if(v.joint){
-    v.joint->calc_Q_from_q(x, 0);
+  VariableIndexEntry& V = variableIndex(var_id);
+  CHECK_EQ(V.dim, x.N, "");
+  if(V.joint){
+    V.joint->calc_Q_from_q(x, 0);
   }
-  if(v.con){
-    v.con->calc_F_from_q(x, 0);
+  if(V.con){
+    V.con->calc_F_from_q(x, 0);
   }
 }
 
 void KOMO::Conv_KOMO_MathematicalProgram::evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H){
-  featureIndex(feat_id).ob->map->__phi(phi, J, featureIndex(feat_id).Ctuple);
-  HALT("TODO: shift the indices!!");
+  FeatureIndexEntry& F = featureIndex(feat_id);
+
+  if(!J){
+    F.ob->map->__phi(phi, NoArr, F.Ctuple);
+    return;
+  }
+
+  arr Jsparse;
+  F.ob->map->__phi(phi, Jsparse, F.Ctuple);
+  auto S = Jsparse.sparse();
+
+  uint n=0;
+  for(uint v:F.varIds) n += variableIndex(v).dim;
+  J.resize(phi.N, n).setZero();
+
+  for(uint k=0; k<Jsparse.N; k++){
+    uint i = S.elems(k,0);
+    uint j = S.elems(k,1);
+    double x = Jsparse.elem(k);
+    uint var = xIndex2VarId(j);
+    VariableIndexEntry& V = variableIndex(var);
+    uint var_j = j - V.xIndex;
+    CHECK(var_j < V.dim, "");
+    if(V.dim == J.d1){
+      J(i, var_j) += x;
+    }else{
+      bool good=false;
+      uint offset=0;
+      for(uint v:F.varIds){
+        if(v==var){
+          J(i, offset+var_j) += x;
+          good=true;
+          break;
+        }
+        offset += variableIndex(v).dim;
+      }
+      CHECK(good, "Jacobian is non-zero on variable " <<var <<", but indices say that feature depends on " <<F.varIds);
+    }
+  }
+}
+
+void KOMO::Conv_KOMO_MathematicalProgram::reportFeatures(){
+  arr y,J;
+  for(uint f=0;f<featureIndex.N;f++){
+    FeatureIndexEntry& F = featureIndex(f);
+    cout <<f <<' ' <<F.dim <<' ' <<F.ob->map->shortTag(*F.Ctuple.last()) <<endl;
+    evaluateSingleFeature(f, y, J, NoArr);
+    cout <<"y:" <<y <<endl;
+    cout <<"J:" <<J <<endl;
+  }
 }
 
 void KOMO::TimeSliceProblem::getDimPhi() {

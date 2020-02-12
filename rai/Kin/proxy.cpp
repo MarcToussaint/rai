@@ -37,8 +37,8 @@ void rai::Proxy::copy(const rai::Configuration& K, const rai::Proxy& p) {
 }
 
 void rai::Proxy::calc_coll(const Configuration& K) {
-  CHECK_EQ(&a->K, &K, "");
-  CHECK_EQ(&b->K, &K, "");
+  CHECK_EQ(&a->C, &K, "");
+  CHECK_EQ(&b->C, &K, "");
   rai::Shape* s1 = a->shape;
   rai::Shape* s2 = b->shape;
   CHECK(s1 && s2, "");
