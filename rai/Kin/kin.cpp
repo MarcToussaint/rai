@@ -953,13 +953,13 @@ void rai::Configuration::evalFeature(arr& y, arr& J, FeatureSymbol fs, const Str
 //
 
 #if 1
-void rai::Configuration::jacobian_pos(arr& J, Frame* a, const rai::Vector& pos_world, bool sparse) const {
+void rai::Configuration::jacobian_pos(arr& J, Frame* a, const rai::Vector& pos_world) const {
   CHECK_EQ(&a->C, this, "");
 
   a->ensure_X();
 
   uint N=getJointStateDimension();
-  if(!sparse) {
+  if(!useSparseJacobians) {
     J.resize(3, N).setZero();
   } else {
     J.sparse().resize(3, N, 0);
@@ -1037,7 +1037,7 @@ void rai::Configuration::jacobian_pos(arr& J, Frame* a, const rai::Vector& pos_w
     a = a->parent;
   }
 
-  if(sparse && xIndex){
+  if(useSparseJacobians && xIndex){
     J.sparse().reshape(J.d0, J.d1+xIndex);
     J.sparse().rowShift(xIndex);
   }
@@ -1066,11 +1066,11 @@ void rai::Configuration::jacobianPos(arr& J, Frame* a, const rai::Vector& pos_wo
 #endif
 
 //* This Jacobian directly gives the implied rotation vector: multiplied with \dot q it gives the angular velocity of body b */
-void rai::Configuration::jacobian_angular(arr& J, Frame* a, bool sparse) const {
+void rai::Configuration::jacobian_angular(arr& J, Frame* a) const {
   a->ensure_X();
 
   uint N = getJointStateDimension();
-  if(!sparse) {
+  if(!useSparseJacobians) {
     J.resize(3, N).setZero();
   } else {
     J.sparse().resize(3, N, 0);
@@ -1105,10 +1105,10 @@ void rai::Configuration::jacobian_angular(arr& J, Frame* a, bool sparse) const {
   }
 }
 
-void rai::Configuration::jacobian_tau(arr& J, rai::Frame* a, bool sparse) const {
+void rai::Configuration::jacobian_tau(arr& J, rai::Frame* a) const {
   CHECK_EQ(&a->C, this, "");
 
-  if(sparse) NIY;
+  if(useSparseJacobians) NIY;
 
   //get Jacobian
   uint N=getJointStateDimension();
@@ -1138,7 +1138,7 @@ void rai::Configuration::kinematicsPos(arr& y, arr& J, Frame* a, const rai::Vect
   rai::Vector pos_world = a->ensure_X().pos;
   if(!!rel && !rel.isZero) pos_world += a->ensure_X().rot*rel;
   if(!!y) y = conv_vec2arr(pos_world);
-  if(!!J) jacobian_pos(J, a, pos_world, useSparseJacobians);
+  if(!!J) jacobian_pos(J, a, pos_world);
 }
 
 /* takes the joint state x and returns the jacobian dz of
@@ -1153,7 +1153,7 @@ void rai::Configuration::kinematicsVec(arr& y, arr& J, Frame* a, const rai::Vect
   if(!!y) y = conv_vec2arr(vec_world);
   if(!!J) {
     arr A;
-    jacobian_angular(A, a, useSparseJacobians);
+    jacobian_angular(A, a);
     J = crossProduct(A, conv_vec2arr(vec_world));
   }
 }
@@ -1325,7 +1325,7 @@ void rai::Configuration::kinematicsRelPos(arr& y, arr& J, Frame* a, const rai::V
   y = Rinv * (y1 - y2);
   if(!!J) {
     arr A;
-    jacobian_angular(A, b, useSparseJacobians);
+    jacobian_angular(A, b);
     J = Rinv * (J1 - J2 - crossProduct(A, y1 - y2));
   }
 }
@@ -1341,7 +1341,7 @@ void rai::Configuration::kinematicsRelVec(arr& y, arr& J, Frame* a, const rai::V
   y = Rinv * y1;
   if(!!J) {
     arr A;
-    jacobian_angular(A, b, useSparseJacobians);
+    jacobian_angular(A, b);
     J = Rinv * (J1 - crossProduct(A, y1));
   }
 }

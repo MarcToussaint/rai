@@ -70,6 +70,7 @@ Conv_MatematicalProgram_CeresProblem::Conv_MatematicalProgram_CeresProblem(const
   for(arr& xi: x){
     if(xi.N){
       cs.AddParameterBlock(xi.p, xi.N);
+#if 0 //bounds
       for(uint i=0;i<xi.N;i++){
         uint i_all = i + xi.p-x_base.p;
         if(bounds_lo(i_all)<bounds_up(i_all)){
@@ -80,6 +81,7 @@ Conv_MatematicalProgram_CeresProblem::Conv_MatematicalProgram_CeresProblem(const
           cs.SetParameterUpperBound(xi.p, i, 10.);
         }
       }
+#endif
     }
   }
 

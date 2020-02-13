@@ -375,9 +375,10 @@ struct KOMO : NonCopyable {
   struct Conv_KOMO_MathematicalProgram : MathematicalProgram {
     KOMO& komo;
     uintA xIndex2VarId;
-    struct VariableIndexEntry{ rai::Joint *joint=0; rai::ForceExchange *con=0; uint dim; uint xIndex; };
+    struct VariableIndexEntry{ rai::Joint *joint=0; rai::ForceExchange *force=0; uint dim; uint xIndex; };
     rai::Array<VariableIndexEntry> variableIndex;
 
+    uint featuresDim;
     struct FeatureIndexEntry{ ptr<Objective> ob; ConfigurationL Ctuple; uint t; uint dim; intA varIds; };
     rai::Array<FeatureIndexEntry> featureIndex;
 
@@ -391,7 +392,6 @@ struct KOMO : NonCopyable {
     virtual uint getDimension();
     virtual void getBounds(arr& bounds_lo, arr& bounds_up);
     virtual void getFeatureTypes(ObjectiveTypeA& featureTypes);
-    virtual void getSparseStructure(uintAA sparseness);
     virtual bool isStructured();
     virtual void getStructure(uintA& variableDimensions, //the size of each variable block
                               uintA& featureDimensions,  //the size of each feature block

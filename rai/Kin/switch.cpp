@@ -76,13 +76,15 @@ rai::Frame* rai::KinematicSwitch::apply(Configuration& K) {
   if(fromId!=-1) from=K.frames(fromId);
   if(toId!=-1) to=K.frames(toId);
 
+  CHECK(from!=to, "not allowed to link '" <<from->name <<"' to itself");
+
   if(symbol==SW_joint || symbol==SW_joint) {
     rai::Transformation orgX = to->ensure_X();
 
     //first find link frame above 'to', and make it a root
 #if 0 //THIS is the standard version that worked with pnp LGP tests - but is a problem for the crawler
-    rai::Frame* link = to->getUpwardLink(NoTransformation, false);
-    if(link->parent) link->unLink();
+    to = to->getUpwardLink(NoTransformation, false);
+    if(to->parent) to->unLink();
 #elif 0 //THIS is the version that works for the crawler; I guess the major difference is 'upward until part break' and 'flip frames'
     K.reconfigureRoot(to, true);
 #else

@@ -119,7 +119,7 @@ pybind11::arg("object"))
   Skeleton S = list2skeleton(L);
   cout <<"SKELETON: " <<S <<endl;
 //    self.komo->setSkeleton(S);
-  skeleton2Bound(*self.komo, boundType, S, self.komo->world, self.komo->world, collisions);
+  skeleton2Bound(self.komo, boundType, S, self.komo->world, self.komo->world, collisions);
 })
 
 //-- run

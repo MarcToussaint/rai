@@ -3965,6 +3965,12 @@ template<class T> void listCopy(rai::Array<T*>& L, const rai::Array<T*>& M) {
   for(uint i=0; i<L.N; i++) L.elem(i)=new T(*M.elem(i));
 }
 
+template<class T> void listCopy(rai::Array<ptr<T>>& L, const rai::Array<ptr<T>>& M) {
+  L.clear();
+  L.resizeAs(M);
+  for(uint i=0; i<L.N; i++) L.elem(i) = make_shared<T>(*M.elem(i));
+}
+
 template<class T> void listDelete(rai::Array<T*>& L) {
   for(uint i=L.N; i--;) delete L.elem(i);
   L.clear();

@@ -13,8 +13,6 @@ struct MathematicalProgram{
                             intAA& featureVariables    //which variables the j-th feature block depends on
                             );
 
-  virtual void getSparseStructure(uintAA sparseness){ NIY }
-
   /// optional - for more semantic reports
   virtual void getSemantics(StringA& variableNames, StringA& featureNames){} //the names of each variable/feature block (or element if unstructured)
 
@@ -47,6 +45,6 @@ struct Conv_MathematicalProgram_ConstrainedProblem : ConstrainedProblem {
   }
   void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& _ot, const arr& x) {
     MP->evaluate(phi, J, H, x);
-    _ot = ot;
+    if(!!_ot) _ot = ot;
   }
 };

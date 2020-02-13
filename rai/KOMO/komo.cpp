@@ -1870,6 +1870,7 @@ void KOMO::setupConfigurations(const arr& q_init, const StringA& q_initJoints) {
   //Therefore configurations(0) is for time=-k and configurations(k+t) is for time=t
   CHECK(configurations.N != k_order+T, "why setup again?");
 
+  int xIndexCount;
   if(!configurations.N){ //add the initial configuration (with index -k_order )
     computeMeshNormals(world.frames, true);
     computeMeshGraphs(world.frames, true);
@@ -1891,6 +1892,10 @@ void KOMO::setupConfigurations(const arr& q_init, const StringA& q_initJoints) {
     }
     C->ensure_q();
     C->checkConsistency();
+
+    xIndexCount = -k_order*C->getJointStateDimension();
+    C->xIndex = xIndexCount;
+    xIndexCount += C->getJointStateDimension();
   }
 
   while(configurations.N<k_order+T) { //add further configurations
@@ -1914,6 +1919,9 @@ void KOMO::setupConfigurations(const arr& q_init, const StringA& q_initJoints) {
     }
     C->ensure_q();
     C->checkConsistency();
+
+    C->xIndex = xIndexCount;
+    xIndexCount += C->getJointStateDimension();
   }
 }
 
@@ -2885,7 +2893,7 @@ void KOMO::Conv_KOMO_MathematicalProgram::createIndices(){
     for(rai::ForceExchange *c:komo.configurations(s)->forces){
       CHECK_EQ(idx, c->qIndex + c->a.C.xIndex, "mismatch index counting");
       VariableIndexEntry& V = variableIndex(var);
-      V.con = c;
+      V.force = c;
       V.dim = c->qDim();
       V.xIndex = idx;
       for(uint i=0;i<c->qDim();i++) xIndex2VarId(idx++) = var;
@@ -2906,15 +2914,19 @@ void KOMO::Conv_KOMO_MathematicalProgram::createIndices(){
 
   //create feature index
   uint f=0;
+  uint fDim = 0;
   for(ptr<Objective>& ob:komo.objectives) {
     for(uint l=0; l<ob->configs.d0; l++) {
       FeatureIndexEntry& F = featureIndex(f);
       F.ob = ob;
       F.Ctuple = komo.configurations.sub(convert<uint, int>(ob->configs[l]+(int)komo.k_order));
       F.dim = ob->map->__dim_phi(F.Ctuple); //dimensionality of this task
+      fDim += F.dim;
       f++;
     }
   }
+
+  featuresDim = fDim;
 }
 
 uint KOMO::Conv_KOMO_MathematicalProgram::getDimension(){
@@ -2948,8 +2960,10 @@ void KOMO::Conv_KOMO_MathematicalProgram::getBounds(arr& bounds_lo, arr& bounds_
 void KOMO::Conv_KOMO_MathematicalProgram::getFeatureTypes(ObjectiveTypeA& featureTypes){
   if(!featureIndex.N) createIndices();
 
-  featureTypes.resize(featureIndex.N);
-  for(uint f=0;f<featureIndex.N;f++) featureTypes(f) = featureIndex(f).ob->type;
+  featureTypes.clear();
+  for(uint f=0;f<featureIndex.N;f++){
+    featureTypes.append( consts<ObjectiveType>(featureIndex(f).ob->type, featureIndex(f).dim) );
+  }
 }
 
 bool KOMO::Conv_KOMO_MathematicalProgram::isStructured(){
@@ -2985,33 +2999,89 @@ void KOMO::Conv_KOMO_MathematicalProgram::getStructure(uintA& variableDimensions
   }
 }
 
-void KOMO::Conv_KOMO_MathematicalProgram::evaluate(arr& phi, arr& J, arr& H, const arr& x)
-{
-  NIY;
-}
+void KOMO::Conv_KOMO_MathematicalProgram::evaluate(arr& phi, arr& J, arr& H, const arr& x){
+  //-- set the decision variable
+#if 0 //the following should be equivalent, althought they work quite differently
+  komo.set_x(x);
+#else
+  for(uint i=0;i<variableIndex.N;i++){
+    VariableIndexEntry& V = variableIndex(i);
+    if(!V.dim) continue;
+    setSingleVariable(i, x({V.xIndex, V.xIndex+V.dim-1}));
+  }
+#endif
 
-void KOMO::Conv_KOMO_MathematicalProgram::getSparseStructure(uintAA sparseness){
-  CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet: use komo.reset()");
-  NIY;
-
-  if(!featureIndex.N) createIndices();
-
-  sparseness.resize(featureIndex.N);
-
-  uintA x_index = getKtupleDim(komo.configurations({komo.k_order, -1}));
-  x_index.prepend(0);
-
-  arr J;
-  for(uint f=0;f<featureIndex.N;f++){
-    FeatureIndexEntry& F = featureIndex(f);
-    F.ob->map->__phi(NoArr, J, F.Ctuple);
-    CHECK(isSparseMatrix(J), "");
-    intA& elems = J.sparse().elems;
-    for(uint i=0;i<elems.d0;i++){
-      uint columnIndex = elems(i,1);
-      sparseness(f+elems(i,0)).append(elems(i,1));
+  //-- query the features
+  phi.resize(featuresDim);
+  if(!!J){
+    if(!komo.world.useSparseJacobians) {
+      J.resize(featuresDim, x.N).setZero();
+    } else {
+      J.sparse().resize(featuresDim, x.N, 0);
     }
   }
+
+  arr y, Jy;
+  uint M=0;
+  for(uint f=0;f<featureIndex.N;f++){
+    FeatureIndexEntry& F = featureIndex(f);
+    if(!F.dim) continue;
+
+#if 1 //simpler and more direct
+    F.ob->map->__phi(y, (!!J?Jy:NoArr), F.Ctuple);
+    CHECK_EQ(y.N, F.dim, "");
+    if(!!J) CHECK_EQ(y.N, Jy.d0, "");
+    if(!!J) CHECK_EQ(Jy.nd, 2, "");
+    if(absMax(y)>1e10) RAI_MSG("WARNING y=" <<y);
+
+    //write into phi and J
+    phi.setVectorBlock(y, M);
+
+    if(!!J) {
+      if(!isSpecial(Jy)){
+        uintA kdim = getKtupleDim(F.Ctuple);
+        kdim.prepend(0);
+        for(uint j=0;j<F.Ctuple.N;j++){
+          if(F.Ctuple(j)->xIndex>=0){
+            J.setMatrixBlock(Jy.sub(0, -1, kdim(j), kdim(j+1)-1), M, F.Ctuple(j)->xIndex);
+          }
+        }
+      }else{
+        //          uint j=0;
+        Jy.sparse().reshape(J.d0, J.d1);
+        Jy.sparse().colShift(M);
+        //          Jy.sparse().rowShift(F.Ctuple(j)->xIndex);   //sparse matrix should be properly shifted already!
+        J += Jy;
+      }
+    }
+#else //calling the single features, then converting back to sparse... just for checking..
+    evaluateSingleFeature(f, y, (!!J?Jy:NoArr), NoArr);
+    phi.setVectorBlock(y, M);
+    if(!!J) {
+      CHECK(!isSpecial(Jy), "");
+      uint xCount = 0;
+      for(uint v=0;v<F.varIds.N;v++){
+        VariableIndexEntry& V = variableIndex(F.varIds(v));
+        if(!V.dim) continue;
+        if(V.xIndex<0) continue;
+        for(uint j=0;j<V.dim;j++){
+          for(uint i=0;i<Jy.d0;i++){
+            J.elem(M+i, V.xIndex+j) += Jy(i, xCount+j);
+          }
+        }
+        xCount += V.dim;
+      }
+      CHECK_EQ(xCount, Jy.d1, "");
+    }
+#endif
+
+    //counter for features phi
+    M += F.dim;
+  }
+
+  CHECK_EQ(M, featuresDim, "");
+  komo.featureValues = phi;
+  if(!!J) komo.featureJacobians.resize(1).scalar() = J;
 }
 
 void KOMO::Conv_KOMO_MathematicalProgram::setSingleVariable(uint var_id, const arr& x){
@@ -3020,8 +3090,8 @@ void KOMO::Conv_KOMO_MathematicalProgram::setSingleVariable(uint var_id, const a
   if(V.joint){
     V.joint->calc_Q_from_q(x, 0);
   }
-  if(V.con){
-    V.con->calc_F_from_q(x, 0);
+  if(V.force){
+    V.force->calc_F_from_q(x, 0);
   }
 }
 
@@ -3035,6 +3105,11 @@ void KOMO::Conv_KOMO_MathematicalProgram::evaluateSingleFeature(uint feat_id, ar
 
   arr Jsparse;
   F.ob->map->__phi(phi, Jsparse, F.Ctuple);
+  CHECK_EQ(phi.N, F.dim, "");
+  CHECK_EQ(phi.N, Jsparse.d0, "");
+  CHECK_EQ(Jsparse.nd, 2, "");
+  if(absMax(phi)>1e10) RAI_MSG("WARNING phi=" <<phi);
+
   auto S = Jsparse.sparse();
 
   uint n=0;

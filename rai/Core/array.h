@@ -1014,6 +1014,7 @@ template<class T> void listWriteNames(const rai::Array<T*>& L, std::ostream& os)
 template<class T> rai::String listString(const rai::Array<T*>& L);
 template<class T> void listRead(rai::Array<T*>& L, std::istream& is, const char* delim=nullptr);
 template<class T> void listCopy(rai::Array<T*>& L, const rai::Array<T*>& M);  //copy a list by calling the copy constructor for each element
+template<class T> void listCopy(rai::Array<std::shared_ptr<T>>& L, const rai::Array<std::shared_ptr<T>>& M);  //copy a list by calling the copy constructor for each element
 template<class T> void listClone(rai::Array<T*>& L, const rai::Array<T*>& M); //copy a list by calling the 'newClone' method of each element (works for virtual types)
 template<class T> void listDelete(rai::Array<T*>& L);
 template<class T> void listReindex(rai::Array<T*>& L);

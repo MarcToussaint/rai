@@ -61,19 +61,19 @@ struct Configuration : GLDrawer {
   FrameL frames;     ///< list of coordinate frames, with shapes, joints, inertias attached
   ForceExchangeL forces; ///< list of force exchanges between frames
   ProxyA proxies;    ///< list of current collision proximities between frames
-  arr q;             ///< the current joint configuration vector and velocities
+  arr q;             ///< the current configuration state (DOF) vector
 
   //-- derived: computed with ensure_activeSets(); reset with reset_q()
   JointL activeJoints;
 
   //-- data structure state (lazy evaluation leave the state structure out of sync)
-  bool _state_indexedJoints_areGood=false; // the active sets, esp. their topological sorting, are up to date
+  bool _state_indexedJoints_areGood=false; // the active sets, incl. their topological sorting, are up to date
   bool _state_q_isGood=false; // the q-vector represents the current relative transforms (and force dofs)
   bool _state_proxies_isGood=false; // the proxies have been created for the current state
   //TODO: need a _state for all the plugin engines (SWIFT, PhysX)? To auto-reinitialize them when the config changed structurally?
 
   bool useSparseJacobians=false;
-  uint xIndex=0;   // the start-index of this configuration in a larger decision variable x (e.g. if x is a path of configurations) (analogous to qIndex of a joint)
+  int xIndex=0;   // the start-index of this configuration in a larger decision variable x (e.g. if x is a path of configurations) (analogous to qIndex of a joint)
 
   static uint setJointStateCount;
 
@@ -117,7 +117,6 @@ struct Configuration : GLDrawer {
   StringA getFrameNames() const;
   uintA getNormalJointFramesAndScale(arr& scale=NoArr) const;
 
-
   bool checkUniqueNames() const;
   void prefixNames(bool clear=false);
 
@@ -143,7 +142,7 @@ struct Configuration : GLDrawer {
   FrameL getParts() const;
   uintA getCollisionExcludePairIDs(bool verbose=false);
 
-  /// @name computations on the graph
+  /// @name computations on the tree
   void calc_indexedActiveJoints(); ///< sort of private: count the joint dimensionalities and assign j->q_index
   void calc_Q_from_q();  ///< from q compute the joint's Q transformations
   void calc_q_from_Q();  ///< updates q based on the joint's Q transformations
@@ -192,13 +191,13 @@ struct Configuration : GLDrawer {
 
   /// @name Jacobians and kinematics (low level)
   /// what is the linear velocity of a world point (pos_world) attached to frame a for a given joint velocity?
-  void jacobian_pos(arr& J, Frame* a, const rai::Vector& pos_world, bool sparse=false) const; //usually called internally with kinematicsPos
+  void jacobian_pos(arr& J, Frame* a, const rai::Vector& pos_world) const; //usually called internally with kinematicsPos
   /// what is the angular velocity of frame a for a given joint velocity?
-  void jacobian_angular(arr& J, Frame* a, bool sparse=false) const; //usually called internally with kinematicsVec or Quat
+  void jacobian_angular(arr& J, Frame* a) const; //usually called internally with kinematicsVec or Quat
   /// how does the time coordinate of frame a change with q-change?
-  void jacobian_tau(arr& J, Frame* a, bool sparse=false) const;
+  void jacobian_tau(arr& J, Frame* a) const;
 
-  void kinematicsPos(arr& y, arr& J, Frame* a, const Vector& rel=NoVector) const;  //TODO: make vector& not vector*
+  void kinematicsPos(arr& y, arr& J, Frame* a, const Vector& rel=NoVector) const;
   void kinematicsVec(arr& y, arr& J, Frame* a, const Vector& vec=NoVector) const;
   void kinematicsQuat(arr& y, arr& J, Frame* a) const;
   void kinematicsPos_wrtFrame(arr& y, arr& J, Frame* b, const rai::Vector& rel, Frame* s) const;
@@ -219,7 +218,7 @@ struct Configuration : GLDrawer {
   ptr<Feature> feature(FeatureSymbol fs, const StringA& frames= {}) const;
   void evalFeature(arr& y, arr& J, FeatureSymbol fs, const StringA& frames= {}) const;
 
-  /// @name High level (inverse) kinematics
+  /// @name high level inverse kinematics
   void inverseKinematicsPos(Frame& frame, const arr& ytarget, const rai::Vector& rel_offset=NoVector, int max_iter=3);
 
   /// @name get infos

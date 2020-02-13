@@ -811,8 +811,8 @@ rai::LogToken::~LogToken() {
 //       ROS_INFO("RAI-MSG: %s",rai::errString.p);
 // #endif
       if(log_level==-1) { cout <<"** WARNING:" <<rai::errString <<endl; }
-      //INSERT BREAKPOINT HERE
       if(log_level==-2) { cerr <<"** ERROR:" <<rai::errString <<endl; /*throw does not WORK!!! Because this is a destructor. The THROW macro does it inline*/ }
+      //INSERT BREAKPOINT HERE
       if(log_level==-3) { cerr <<"** HARD EXIT! " <<rai::errString <<endl;  exit(1); }
       if(log_level<=-3) raise(SIGUSR2);
     }
