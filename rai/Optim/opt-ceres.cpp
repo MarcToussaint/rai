@@ -1,5 +1,37 @@
 #include "opt-ceres.h"
 
+#ifdef RAI_CERES
+
+#undef LOG
+#undef CHECK
+#undef CHECK_EQ
+#undef CHECK_LE
+#undef CHECK_GE
+#include <ceres/problem.h>
+#include <ceres/cost_function.h>
+#include <ceres/solver.h>
+#include <ceres/loss_function.h>
+
+class Conv_CostFunction : public ceres::CostFunction {
+  std::shared_ptr<MathematicalProgram> MP;
+  uint feature_id;
+  uint featureDim;
+  intA varIds;
+  uintA varDims;
+  uint varTotalDim;
+
+public:
+  Conv_CostFunction(const ptr<MathematicalProgram>& _MP,
+                    uint _feature_id,
+                    const uintA& variableDimensions,
+                    const uintA& featureDimensions,
+                    const intAA& featureVariables);
+
+  virtual bool Evaluate(double const* const* parameters,
+                        double* residuals,
+                        double** jacobians) const;
+};
+
 Conv_CostFunction::Conv_CostFunction(const ptr<MathematicalProgram>& _MP, uint _feature_id, const uintA& variableDimensions, const uintA& featureDimensions, const intAA& featureVariables)
   : MP(_MP),
     feature_id(_feature_id) {
@@ -67,18 +99,20 @@ Conv_MatematicalProgram_CeresProblem::Conv_MatematicalProgram_CeresProblem(const
     J(i).resize(n);
   }
 
+  ceresProblem = make_shared<ceres::Problem>();
+  
   for(arr& xi: x){
     if(xi.N){
-      cs.AddParameterBlock(xi.p, xi.N);
+      ceresProblem->AddParameterBlock(xi.p, xi.N);
 #if 0 //bounds
       for(uint i=0;i<xi.N;i++){
         uint i_all = i + xi.p-x_base.p;
         if(bounds_lo(i_all)<bounds_up(i_all)){
-          cs.SetParameterLowerBound(xi.p, i, bounds_lo(i_all));
-          cs.SetParameterUpperBound(xi.p, i, bounds_up(i_all));
+          ceresProblem->SetParameterLowerBound(xi.p, i, bounds_lo(i_all));
+          ceresProblem->SetParameterUpperBound(xi.p, i, bounds_up(i_all));
         }else{
-          cs.SetParameterLowerBound(xi.p, i, -10.);
-          cs.SetParameterUpperBound(xi.p, i, 10.);
+          ceresProblem->SetParameterLowerBound(xi.p, i, -10.);
+          ceresProblem->SetParameterUpperBound(xi.p, i, 10.);
         }
       }
 #endif
@@ -92,7 +126,15 @@ Conv_MatematicalProgram_CeresProblem::Conv_MatematicalProgram_CeresProblem(const
         parameter_blocks(k) = x(featureVariables(i)(k)).p;
       }
       auto fct = new Conv_CostFunction(MP, i, variableDimensions, featureDimensions, featureVariables);
-      cs.AddResidualBlock(fct, nullptr, parameter_blocks);
+      ceresProblem->AddResidualBlock(fct, nullptr, parameter_blocks);
     }
   }
 }
+
+#else //RAI_CERES
+
+Conv_MatematicalProgram_CeresProblem::Conv_MatematicalProgram_CeresProblem(const ptr<MathematicalProgram>& _MP) {
+  NICO
+}
+
+#endif

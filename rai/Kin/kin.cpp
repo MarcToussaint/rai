@@ -1108,7 +1108,7 @@ void rai::Configuration::jacobian_angular(arr& J, Frame* a) const {
 void rai::Configuration::jacobian_tau(arr& J, rai::Frame* a) const {
   CHECK_EQ(&a->C, this, "");
 
-  if(useSparseJacobians) NIY;
+//  if(useSparseJacobians) NIY;
 
   //get Jacobian
   uint N=getJointStateDimension();
