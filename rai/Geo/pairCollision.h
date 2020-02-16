@@ -10,7 +10,7 @@
 
 #include "mesh.h"
 
-struct PairCollision : GLDrawer {
+struct PairCollision : GLDrawer, NonCopyable {
   //INPUTS
   const rai::Mesh* mesh1=0;
   const rai::Mesh* mesh2=0;

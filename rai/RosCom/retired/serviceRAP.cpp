@@ -24,13 +24,12 @@ struct sServiceRAP {
 ServiceRAP::ServiceRAP() : s(nullptr) {
   if(rai::getParameter<bool>("useRos")) {
     cout <<"*** Starting ROS Service RAP" <<endl;
-    s = new sServiceRAP;
-    s->service = s->nh.advertiseService("/RAP/service", &sServiceRAP::cb_service, s);
+    self = make_unique<sServiceRAP>();
+    self->service = self->nh.advertiseService("/RAP/service", &sServiceRAP::cb_service, s);
   }
 }
 
 ServiceRAP::~ServiceRAP() {
-  if(s) delete s;
 }
 
 bool sServiceRAP::cb_service(rai_msgs::StringString::Request& _request, rai_msgs::StringString::Response& response) {

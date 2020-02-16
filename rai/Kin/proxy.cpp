@@ -49,7 +49,7 @@ void rai::Proxy::calc_coll(const Configuration& K) {
   rai::Mesh* m2 = &s2->sscCore();  if(!m2->V.N) { m2 = &s2->mesh(); r2=0.; }
 
   if(coll) coll.reset();
-  coll = std::make_shared<PairCollision>(*m1, *m2, s1->frame.ensure_X(), s2->frame.ensure_X(), r1, r2);
+  coll = make_shared<PairCollision>(*m1, *m2, s1->frame.ensure_X(), s2->frame.ensure_X(), r1, r2);
 
   d = coll->distance-coll->rad1-coll->rad2;
   posA = coll->p1;

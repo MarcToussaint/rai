@@ -7,7 +7,7 @@
 #include "../Geo/geo.h"
 
 struct SubscribeRosKinect2PCL{
-  struct sSubscribeRosKinect2PCL *s;
+  unique_ptr<struct sSubscribeRosKinect> self;
   Var<Pcl> cloud;
   Var<rai::Transformation> kinect_frame;
 

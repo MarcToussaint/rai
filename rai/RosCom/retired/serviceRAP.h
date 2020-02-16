@@ -10,7 +10,7 @@
 #include "../Core/thread.h"
 
 struct ServiceRAP {
-  struct sServiceRAP* s;
+  unique_ptr<struct sServiceRAP> self;
 
   ServiceRAP();
   ~ServiceRAP();

@@ -16,7 +16,7 @@
 //
 
 struct ANN {
-  struct sANN* s;
+  unique_ptr<struct sANN> self;
 
   arr X;       //the data set for which a ANN tree is build
   uint bufferSize; //a tree is only rebuild if there are more than 'buffer' new points appended [default: 20]

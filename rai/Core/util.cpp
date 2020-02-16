@@ -1154,7 +1154,7 @@ std::ofstream& rai::FileToken::getOs(bool change_dir) {
   CHECK(!is, "don't use a FileToken both as input and output");
   if(!os) {
     if(change_dir) cd_file();
-    os = std::make_shared<std::ofstream>();
+    os = std::make_unique<std::ofstream>();
     os->open(name);
     LOG(3) <<"opening output file '" <<name <<"'" <<std::endl;
     if(!os->good()) RAI_MSG("could not open file '" <<name <<"' for output from '" <<cwd <<"./" <<path <<"'");
@@ -1166,7 +1166,7 @@ std::ifstream& rai::FileToken::getIs(bool change_dir) {
   CHECK(!os, "don't use a FileToken both as input and output");
   if(!is) {
     if(change_dir) cd_file();
-    is = std::make_shared<std::ifstream>();
+    is = std::make_unique<std::ifstream>();
     is->open(name);
     LOG(3) <<"opening input file '" <<name <<"'" <<std::endl;
     if(!is->good()) THROW("could not open file '" <<name <<"' for input from '" <<cwd <<"./" <<path <<"'");

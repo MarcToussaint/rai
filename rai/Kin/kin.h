@@ -55,7 +55,7 @@ namespace rai {
 
 /// data structure to store a whole physical situation (lists of bodies, joints, shapes, proxies)
 struct Configuration : GLDrawer {
-  struct sConfiguration* s;
+  unique_ptr<struct sConfiguration> self;
 
   //-- fundamental structure
   FrameL frames;     ///< list of coordinate frames, with shapes, joints, inertias attached
@@ -200,7 +200,7 @@ struct Configuration : GLDrawer {
   void kinematicsPos(arr& y, arr& J, Frame* a, const Vector& rel=NoVector) const;
   void kinematicsVec(arr& y, arr& J, Frame* a, const Vector& vec=NoVector) const;
   void kinematicsQuat(arr& y, arr& J, Frame* a) const;
-  void kinematicsPos_wrtFrame(arr& y, arr& J, Frame* b, const rai::Vector& rel, Frame* s) const;
+  void kinematicsPos_wrtFrame(arr& y, arr& J, Frame* b, const rai::Vector& rel, Frame* self) const;
   void hessianPos(arr& H, Frame* a, Vector* rel=0) const;
   void kinematicsTau(double& tau, arr& J) const;
   void kinematicsRelPos(arr& y, arr& J, Frame* a, const Vector& vec1, Frame* b, const Vector& vec2) const;
@@ -320,10 +320,6 @@ stdPipes(rai::Configuration)
 //
 // OpenGL static draw functions
 //
-
-namespace rai {
-void glDrawGraph(void*, OpenGL& gl);
-}
 
 uintA stringListToShapeIndices(const rai::Array<const char*>& names, const FrameL& shapes);
 uintA shapesToShapeIndices(const FrameL& shapes);

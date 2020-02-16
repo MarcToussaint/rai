@@ -155,8 +155,8 @@ SendPositionCommandsToBaxter::SendPositionCommandsToBaxter(const rai::Configurat
     ctrl_ref(nullptr, true),
     s(0) {
 
-  s = new sBaxterInterface(true);
-  s->baxterModel = kw;
+  self = make_unique<sBaxterInterface>(true);
+  self->baxterModel = kw;
 }
 
 void SendPositionCommandsToBaxter::open() {
@@ -169,20 +169,20 @@ void SendPositionCommandsToBaxter::step() {
     if(!q_ref.N) return;
 
     if(totalTorqueModeL)
-      s->pubLg.publish(std_msgs::Empty());
+      self->pubLg.publish(std_msgs::Empty());
 
     if(totalTorqueModeR)
-      s->pubRg.publish(std_msgs::Empty());
+      self->pubRg.publish(std_msgs::Empty());
 
     if(enablePositionControlL && !totalTorqueModeL)
-      s->pubL.publish(conv_qRef2baxterMessage(q_ref, s->baxterModel, "left_"));
+      self->pubL.publish(conv_qRef2baxterMessage(q_ref, self->baxterModel, "left_"));
 
     if(enablePositionControlR && !totalTorqueModeR)
-      s->pubR.publish(conv_qRef2baxterMessage(q_ref, s->baxterModel, "right_"));
+      self->pubR.publish(conv_qRef2baxterMessage(q_ref, self->baxterModel, "right_"));
 
-    s->pubHead.publish(getHeadMsg(q_ref, s->baxterModel));
-    s->pubGripperR.publish(getElectricGripperMsg(q_ref, s->baxterModel));
-    s->pubGripperL.publish(getVacuumGripperMsg(q_ref, s->baxterModel));
+    self->pubHead.publish(getHeadMsg(q_ref, self->baxterModel));
+    self->pubGripperR.publish(getElectricGripperMsg(q_ref, self->baxterModel));
+    self->pubGripperL.publish(getVacuumGripperMsg(q_ref, self->baxterModel));
 
   } else {
     close();
@@ -190,32 +190,31 @@ void SendPositionCommandsToBaxter::step() {
 }
 
 void SendPositionCommandsToBaxter::close() {
-  if(s) delete s;
+  if(s) s.rewset()
 }
 
 BaxterInterface::BaxterInterface(bool useRosDefault) : s(0) {
-  s = new sBaxterInterface(useRosDefault);
+  self = make_unique<sBaxterInterface>(useRosDefault);
 }
 
 BaxterInterface::~BaxterInterface() {
-  delete s;
 }
 
 arr BaxterInterface::get_q() {
   arr q;
-  baxter_get_q_qdot_u(q, NoArr, NoArr, s->state.get(), s->baxterModel);
+  baxter_get_q_qdot_u(q, NoArr, NoArr, self->state.get(), self->baxterModel);
   return q;
 }
 
 arr BaxterInterface::get_qdot() {
   arr qdot;
-  baxter_get_q_qdot_u(NoArr, qdot, NoArr, s->state.get(), s->baxterModel);
+  baxter_get_q_qdot_u(NoArr, qdot, NoArr, self->state.get(), self->baxterModel);
   return qdot;
 }
 
 arr BaxterInterface::get_u() {
   arr u;
-  baxter_get_q_qdot_u(NoArr, NoArr, u, s->state.get(), s->baxterModel);
+  baxter_get_q_qdot_u(NoArr, NoArr, u, self->state.get(), self->baxterModel);
   return u;
 }
 
@@ -224,9 +223,9 @@ bool BaxterInterface::get_grabbed(const std::string& whichArm) {
   baxter_core_msgs::EndEffectorState msgs;
 
   if(whichArm=="left") {
-    msgs = s->gripL.get();
+    msgs = self->gripL.get();
   } else {
-    msgs = s->gripR.get();
+    msgs = self->gripR.get();
   }
   grabbed=bool(int(msgs.gripping));
 
@@ -238,9 +237,9 @@ bool BaxterInterface::get_opened(const std::string& whichArm) {
   baxter_core_msgs::EndEffectorState msgs;
 
   if(whichArm=="left") {
-    msgs = s->gripL.get();
+    msgs = self->gripL.get();
   } else {
-    msgs = s->gripR.get();
+    msgs = self->gripR.get();
   }
   grabbed=get_grabbed(whichArm);
 
@@ -255,14 +254,14 @@ bool BaxterInterface::get_opened(const std::string& whichArm) {
 
 void BaxterInterface::send_q(const arr& q_ref, bool enableL, bool enableR) {
   if(enableL)
-    s->pubL.publish(conv_qRef2baxterMessage(q_ref, s->baxterModel, "left_"));
+    self->pubL.publish(conv_qRef2baxterMessage(q_ref, self->baxterModel, "left_"));
 
   if(enableR)
-    s->pubR.publish(conv_qRef2baxterMessage(q_ref, s->baxterModel, "right_"));
+    self->pubR.publish(conv_qRef2baxterMessage(q_ref, self->baxterModel, "right_"));
 
-  s->pubHead.publish(getHeadMsg(q_ref, s->baxterModel));
-  s->pubGripperR.publish(getElectricGripperMsg(q_ref, s->baxterModel));
-  s->pubGripperL.publish(getVacuumGripperMsg(q_ref, s->baxterModel));
+  self->pubHead.publish(getHeadMsg(q_ref, self->baxterModel));
+  self->pubGripperR.publish(getElectricGripperMsg(q_ref, self->baxterModel));
+  self->pubGripperL.publish(getVacuumGripperMsg(q_ref, self->baxterModel));
 }
 
 #else
@@ -285,6 +284,8 @@ void SendPositionCommandsToBaxter::close() { NICO }
 
 #endif
 #else
+
+struct sBaxterInterface {};
 
 BaxterInterface::BaxterInterface(bool useRosDefault) { NICO }
 BaxterInterface::~BaxterInterface() { NICO }

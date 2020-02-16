@@ -20,14 +20,14 @@ typedef std::function<void(const byteA&, double)> video_cb;
 
 class PointCloudReader {
  private:
-  struct sPointCloudReader* s;
+  unique_ptr<struct sPointCloudReader> self;
  public:
   PointCloudReader(depth_cb depth_cb, video_cb video_cb, const std::string& filename);
 };
 
 class PointCloudSubscriber {
  private:
-  struct sPointCloudSubscriber* s;
+  unique_ptr<struct sPointCloudSubscriber> self;
  public:
   PointCloudSubscriber(depth_cb depth_cb, video_cb video_cb, const std::string& base_topic);
 };

@@ -111,7 +111,7 @@ void read_png(byteA& img, const char* file_name, bool swap_rows);
     Minimal use: call \ref add to add routines or objects to be drawn
     and \ref update or \ref watch to start the display. */
 struct OpenGL {
-  struct sOpenGL* s;
+  unique_ptr<struct sOpenGL> self;
 
   /// @name little structs to store objects and callbacks
   struct GLInitCall { virtual bool glInit(OpenGL&) = 0; };

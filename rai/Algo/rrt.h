@@ -12,7 +12,7 @@
 
 struct RRT {
  private:
-  struct sRRT* s;
+  unique_ptr<struct sRRT> self;
 
  public:
   RRT(const arr& q0, double _stepsize);

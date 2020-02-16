@@ -16,7 +16,7 @@ struct TM_PairCollision : Feature {
   int i, j;               ///< which shapes does it refer to?
   Type type;
   bool neglectRadii=false;
-  struct PairCollision* coll=0;
+  unique_ptr<struct PairCollision> coll;
 
   TM_PairCollision(int _i, int _j, Type _type, bool _neglectRadii=false);
   TM_PairCollision(const rai::Configuration& K, const char* s1, const char* s2, Type _type, bool neglectRadii=false);

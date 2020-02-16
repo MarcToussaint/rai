@@ -22,7 +22,6 @@ TM_PairCollision::TM_PairCollision(const rai::Configuration& K, const char* s1, 
 }
 
 TM_PairCollision::~TM_PairCollision() {
-  if(coll) delete coll;
 }
 
 void TM_PairCollision::phi(arr& y, arr& J, const rai::Configuration& K) {
@@ -36,8 +35,8 @@ void TM_PairCollision::phi(arr& y, arr& J, const rai::Configuration& K) {
   if(!m1->V.N) m1->V = zeros(1, 3);
   if(!m2->V.N) m2->V = zeros(1, 3);
 
-  if(coll) delete coll;
-  coll = new PairCollision(*m1, *m2, s1->frame.ensure_X(), s2->frame.ensure_X(), r1, r2);
+  coll.reset();
+  coll = make_unique<PairCollision>(*m1, *m2, s1->frame.ensure_X(), s2->frame.ensure_X(), r1, r2);
 
   if(neglectRadii) coll->rad1=coll->rad2=0.;
 

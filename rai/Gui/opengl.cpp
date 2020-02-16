@@ -124,24 +124,24 @@ struct sOpenGL : NonCopyable {
 //
 
 void OpenGL::openWindow() {
-  if(s->windowID==-1) {
+  if(self->windowID==-1) {
     {
       auto fg = singletonGlSpinner();
       glutInitWindowSize(width, height);
       //  glutInitWindowPosition(posx,posy);
       glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
 
-      s->windowID = glutCreateWindow(title);
-      fg->addGL(s->windowID, this);
+      self->windowID = glutCreateWindow(title);
+      fg->addGL(self->windowID, this);
 
-      glutDisplayFunc(s->_Draw);
-      glutKeyboardFunc(s->_Key);
-      glutMouseFunc(s->_Mouse) ;
-      glutMotionFunc(s->_Motion) ;
-      glutPassiveMotionFunc(s->_PassiveMotion) ;
-      glutReshapeFunc(s->_Reshape);
-      glutMouseWheelFunc(s->_MouseWheel) ;
-      glutWindowStatusFunc(s->_WindowStatus);
+      glutDisplayFunc(self->_Draw);
+      glutKeyboardFunc(self->_Key);
+      glutMouseFunc(self->_Mouse) ;
+      glutMotionFunc(self->_Motion) ;
+      glutPassiveMotionFunc(self->_PassiveMotion) ;
+      glutReshapeFunc(self->_Reshape);
+      glutMouseWheelFunc(self->_MouseWheel) ;
+      glutWindowStatusFunc(self->_WindowStatus);
 
       glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION);
     }
@@ -149,28 +149,28 @@ void OpenGL::openWindow() {
 }
 
 void OpenGL::closeWindow() {
-  if(s->windowID!=-1) {
+  if(self->windowID!=-1) {
     auto fg=singletonGlSpinner();
-    glutDestroyWindow(s->windowID);
-    fg->delGL(s->windowID, this);
+    glutDestroyWindow(self->windowID);
+    fg->delGL(self->windowID, this);
   }
-  s->windowID=-1;
+  self->windowID=-1;
 }
 
 void OpenGL::postRedrawEvent(bool fromWithinCallback) {
   auto fg=singletonGlSpinner();
   openWindow();
-  glutSetWindow(s->windowID);
+  glutSetWindow(self->windowID);
   glutPostRedisplay();
 //  glXMakeCurrent(fgDisplay.Display, None, nullptr);
 }
 
 void OpenGL::resize(int w, int h) {
-  if(s->windowID==-1) {
+  if(self->windowID==-1) {
     Reshape(w, h);
   } else {
     auto fg=singletonGlSpinner();
-    glutSetWindow(s->windowID);
+    glutSetWindow(self->windowID);
     glutReshapeWindow(w, h);
 //    glXMakeCurrent(fgDisplay.Display, None, nullptr);
   }
@@ -181,13 +181,13 @@ void OpenGL::beginNonThreadedDraw() {
   NIY;
 //  auto fg = singletonGlSpinner();
 //  fg->mutex.lock(RAI_HERE);
-//  glutSetWindow(s->windowID);
-//  glfwMakeContextCurrent(s->window);
+//  glutSetWindow(self->windowID);
+//  glfwMakeContextCurrent(self->window);
 }
 
 void OpenGL::endNonThreadedDraw() {
 //  auto fg = singletonGlSpinner();
-//  glfwSwapBuffers(s->window);
+//  glfwSwapBuffers(self->window);
 //  fg->mutex.unlock();
 }
 
@@ -277,15 +277,15 @@ struct GlfwSpinner : Thread {
 //    cout <<"HERE" <<count++;
     mutex.lock(RAI_HERE);
     glfwPollEvents();
-    for(OpenGL* gl: glwins) if(gl->s && gl->s->window && gl->s->needsRedraw) {
+    for(OpenGL* gl: glwins) if(gl->self && gl->self->window && gl->self->needsRedraw) {
         gl->isUpdating.setStatus(1);
 
-        glfwMakeContextCurrent(gl->s->window);
+        glfwMakeContextCurrent(gl->self->window);
         gl->Draw(gl->width, gl->height);
-        glfwSwapBuffers(gl->s->window);
+        glfwSwapBuffers(gl->self->window);
         glfwMakeContextCurrent(nullptr);
 
-        gl->s->needsRedraw--;
+        gl->self->needsRedraw--;
         gl->isUpdating.setStatus(0);
       }
     mutex.unlock();
@@ -298,11 +298,11 @@ struct GlfwSpinner : Thread {
     mutex.lock(RAI_HERE);
     glwins.append(gl);
 #if 0
-    gl->s->needsRedraw = 10;
+    gl->self->needsRedraw = 10;
 #else
-    glfwMakeContextCurrent(gl->s->window);
+    glfwMakeContextCurrent(gl->self->window);
     gl->Draw(gl->width, gl->height);
-    glfwSwapBuffers(gl->s->window);
+    glfwSwapBuffers(gl->self->window);
     glfwMakeContextCurrent(nullptr);
 #endif
     if(glwins.N==1) start=true; //start looping
@@ -374,7 +374,7 @@ static GlfwSpinner* singletonGlSpinner() {
 }
 
 void OpenGL::openWindow() {
-  if(!s->window) {
+  if(!self->window) {
     auto fg = singletonGlSpinner();
     fg->mutex.lock(RAI_HERE);
 
@@ -384,15 +384,15 @@ void OpenGL::openWindow() {
       glfwWindowHint(GLFW_VISIBLE, GL_TRUE);
     }
     if(!title.N) title="GLFW window";
-    s->window = glfwCreateWindow(width, height, title.p, nullptr, nullptr);
-    glfwMakeContextCurrent(s->window);
-    glfwSetWindowUserPointer(s->window, this);
-    glfwSetMouseButtonCallback(s->window, GlfwSpinner::_MouseButton);
-    glfwSetCursorPosCallback(s->window, GlfwSpinner::_MouseMotion);
-    glfwSetKeyCallback(s->window, GlfwSpinner::_Key);
-    glfwSetScrollCallback(s->window, GlfwSpinner::_Scroll);
-    glfwSetWindowSizeCallback(s->window, GlfwSpinner::_Resize);
-    glfwSetWindowCloseCallback(s->window, GlfwSpinner::_Close);
+    self->window = glfwCreateWindow(width, height, title.p, nullptr, nullptr);
+    glfwMakeContextCurrent(self->window);
+    glfwSetWindowUserPointer(self->window, this);
+    glfwSetMouseButtonCallback(self->window, GlfwSpinner::_MouseButton);
+    glfwSetCursorPosCallback(self->window, GlfwSpinner::_MouseMotion);
+    glfwSetKeyCallback(self->window, GlfwSpinner::_Key);
+    glfwSetScrollCallback(self->window, GlfwSpinner::_Scroll);
+    glfwSetWindowSizeCallback(self->window, GlfwSpinner::_Resize);
+    glfwSetWindowCloseCallback(self->window, GlfwSpinner::_Close);
 
     glfwSwapInterval(1);
     glfwMakeContextCurrent(nullptr);
@@ -403,12 +403,12 @@ void OpenGL::openWindow() {
 }
 
 void OpenGL::closeWindow() {
-  s->needsRedraw=0;
-  if(s->window) {
+  self->needsRedraw=0;
+  if(self->window) {
     {
       auto fg = singletonGlSpinner();
       fg->mutex.lock(RAI_HERE);
-      glfwDestroyWindow(s->window);
+      glfwDestroyWindow(self->window);
       fg->mutex.unlock();
       isUpdating.setStatus(0);
       watching.setStatus(0);
@@ -419,8 +419,8 @@ void OpenGL::closeWindow() {
 
 void OpenGL::setTitle(const char* _title) {
   if(_title) title = _title;
-  if(s->window) {
-    glfwSetWindowTitle(s->window, title.p);
+  if(self->window) {
+    glfwSetWindowTitle(self->window, title.p);
   }
 }
 
@@ -428,12 +428,12 @@ void OpenGL::beginNonThreadedDraw() {
   openWindow();
   auto fg = singletonGlSpinner();
   fg->mutex.lock(RAI_HERE);
-  glfwMakeContextCurrent(s->window);
+  glfwMakeContextCurrent(self->window);
 }
 
 void OpenGL::endNonThreadedDraw() {
   auto fg = singletonGlSpinner();
-  glfwSwapBuffers(s->window);
+  glfwSwapBuffers(self->window);
   glfwMakeContextCurrent(nullptr);
   fg->mutex.unlock();
 }
@@ -441,14 +441,14 @@ void OpenGL::endNonThreadedDraw() {
 void OpenGL::postRedrawEvent(bool fromWithinCallback) {
   auto fg = singletonGlSpinner();
   if(!fromWithinCallback) fg->mutex.lock(RAI_HERE);
-  if(!s->needsRedraw) s->needsRedraw=1;
+  if(!self->needsRedraw) self->needsRedraw=1;
   if(!fromWithinCallback) fg->mutex.unlock();
 }
 
 void OpenGL::resize(int w, int h) {
   openWindow();
   Reshape(w, h);
-  glfwSetWindowSize(s->window, width, height);
+  glfwSetWindowSize(self->window, width, height);
 }
 
 #endif
@@ -1450,7 +1450,7 @@ bool glUI::clickCallback(OpenGL& gl) {
 #ifdef RAI_FREEGLUT
 void glSelectWin(uint win) {
   if(!staticgl[win]) staticgl[win]=new OpenGL;
-  glutSetWindow(staticgl[win]->s->windowID);
+  glutSetWindow(staticgl[win]->self->windowID);
 }
 #endif
 
@@ -1499,23 +1499,21 @@ bool glUI::clickCallback(OpenGL& gl) { NICO }
 //
 
 OpenGL::OpenGL(const char* _title, int w, int h, bool _offscreen)
-  : s(nullptr), title(_title), width(w), height(h), offscreen(_offscreen), reportEvents(false), topSelection(nullptr), fboId(0), rboColor(0), rboDepth(0) {
+  : title(_title), width(w), height(h), offscreen(_offscreen), reportEvents(false), topSelection(nullptr), fboId(0), rboColor(0), rboDepth(0) {
   //RAI_MSG("creating OpenGL=" <<this);
-  s=new sOpenGL(this); //this might call some callbacks (Reshape/Draw) already!
+  self = make_unique<sOpenGL>(this); //this might call some callbacks (Reshape/Draw) already!
   init();
 }
 
 OpenGL::OpenGL(void* container)
-  : s(nullptr), width(0), height(0), reportEvents(false), topSelection(nullptr), fboId(0), rboColor(0), rboDepth(0) {
-  s=new sOpenGL(this); //this might call some callbacks (Reshape/Draw) already!
+  : width(0), height(0), reportEvents(false), topSelection(nullptr), fboId(0), rboColor(0), rboDepth(0) {
+  self = make_unique<sOpenGL>(this); //this might call some callbacks (Reshape/Draw) already!
   init();
 }
 
 OpenGL::~OpenGL() {
   clear();
   closeWindow();
-  delete s;
-  s=nullptr;
 }
 
 OpenGL* OpenGL::newClone() const {

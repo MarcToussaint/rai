@@ -119,7 +119,7 @@ rai::Mesh AssimpLoader::loadMesh(const aiMesh* mesh, const aiScene* scene) {
     //        cout <<  m->mKey.C_Str() <<endl;
     if(!strcmp(m->mKey.C_Str(), "$clr.diffuse")) {
       float* col = (float*)m->mData;
-      if(col[3]){ //not completely transparent
+      if(m->mDataLength>=4 && col[3]){ //not completely transparent
         M.C = ARR(col[0], col[1], col[2], col[3]);
       }
     }

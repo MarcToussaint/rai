@@ -25,30 +25,29 @@ SubscribeRosKinect2PCL::SubscribeRosKinect2PCL(const char* cloud_name, const cha
     kinect_frame(nullptr, "kinect_frame"){
   s = new sSubscribeRosKinect2PCL;
   if(rai::getParameter<bool>("useRos")){
-    s->nh = new ros::NodeHandle;
-    s->listener = new tf::TransformListener;
+    self->nh = new ros::NodeHandle;
+    self->listener = new tf::TransformListener;
     //      registry()->newNode<SubscriberType*>({"Subscriber", topic_name}, {access.registryNode}, this);
     LOG(0) <<"subscribing to topic '" <<topic_name <<"' <" <<typeid(Pcl).name() <<"> into access '" <<cloud.name <<'\'';
-    s->sub = s->nh->subscribe(topic_name, 1, &SubscribeRosKinect2PCL::callback, this);
+    self->sub = self->nh->subscribe(topic_name, 1, &SubscribeRosKinect2PCL::callback, this);
   }
 }
 
 SubscribeRosKinect2PCL::~SubscribeRosKinect2PCL(){
-  delete s->listener;
-  delete s->nh;
-  delete s;
+  delete self->listener;
+  delete self->nh;
 }
 
 void SubscribeRosKinect2PCL::callback(const sensor_msgs::PointCloud2::ConstPtr& msg) {
   double time=conv_time2double(msg->header.stamp);
   tf::Transform trans;
-  rai::Transformation t = ros_getTransform("/base_link", msg->header, *s->listener, &trans);
+  rai::Transformation t = ros_getTransform("/base_link", msg->header, *self->listener, &trans);
 
-  pcl_conversions::toPCL(*msg, s->pcl_pc2);
-  pcl::fromPCLPointCloud2(s->pcl_pc2, s->pcl);
-  pcl_ros::transformPointCloud(s->pcl, s->pcl_trans, trans);
+  pcl_conversions::toPCL(*msg, self->pcl_pc2);
+  pcl::fromPCLPointCloud2(self->pcl_pc2, self->pcl);
+  pcl_ros::transformPointCloud(self->pcl, self->pcl_trans, trans);
 
-  cloud.set( time ) = s->pcl_trans;
+  cloud.set( time ) = self->pcl_trans;
   kinect_frame.set( time ) = t;
 }
 #endif

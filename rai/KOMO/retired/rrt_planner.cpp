@@ -109,36 +109,36 @@ void drawRRT(RRT rrt) {
 arr rai::RRTPlanner::getTrajectoryTo(const arr& target, int max_iter) {
   arr q;
 
-  if(!s->isFeasible(target))
+  if(!self->isFeasible(target))
     return arr(0);
 
-  RRT target_rrt(target, s->rrt.getStepsize());
+  RRT target_rrt(target, self->rrt.getStepsize());
 
   bool found = false;
   uint node0 = 0, node1 = 0;
 
   int iter = 0;
   while(!found) {
-    found = s->growTowards(s->rrt, target_rrt);
+    found = self->growTowards(self->rrt, target_rrt);
     if(found) {
-      node0 = s->success_growing;
-      node1 = s->success_passive;
+      node0 = self->success_growing;
+      node1 = self->success_passive;
       break;
     }
 
-    found = s->growTowards(target_rrt, s->rrt);
+    found = self->growTowards(target_rrt, self->rrt);
     if(found) {
-      node0 = s->success_passive;
-      node1 = s->success_growing;
+      node0 = self->success_passive;
+      node1 = self->success_growing;
       break;
     }
-    if(s->verbose && iter % 20 == 0) std::cout << "." << std::flush;
+    if(self->verbose && iter % 20 == 0) std::cout << "." << std::flush;
     if(max_iter && iter >= max_iter) return arr(0);
     iter++;
   }
-  if(s->verbose) std::cout << std::endl;
+  if(self->verbose) std::cout << std::endl;
 
-  arr q0 = buildTrajectory(s->rrt, node0, true);
+  arr q0 = buildTrajectory(self->rrt, node0, true);
   arr q1 = buildTrajectory(target_rrt, node1, false);
 
   // add trajectories

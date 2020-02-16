@@ -18,7 +18,7 @@ namespace rai {
 struct Configuration;
 struct RRTPlanner {
  private:
-  struct sRRTPlanner* s;
+  unique_ptr<struct sRRTPlanner> self;
  public:
   Configuration* G;                 ///< the graph to plan in
   KOMO& problem;   ///< the KOMO gives the feasibility test for new states

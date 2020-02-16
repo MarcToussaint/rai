@@ -320,19 +320,19 @@ struct RosCom {
   RosCom(const char* node_name="rai_module");
   ~RosCom();
   template<class T, class P> void publish(std::shared_ptr<P>& pub, Var<T>& v, bool wait=true) {
-    pub = std::make_shared<P>(v);
+    pub = make_shared<P>(v);
     if(wait) {
       while(!pub->pub.getNumSubscribers()) rai::wait(.05);
     }
   }
   template<class T, class S> void subscribe(std::shared_ptr<S>& sub, Var<T>& v, bool wait=true) {
-    sub = std::make_shared<S>(v);
+    sub = make_shared<S>(v);
     if(wait) {
       while(!sub->sub.getNumPublishers()) rai::wait(.05);
     }
   }
-  template<class T> std::shared_ptr<Subscriber<T>> subscribe(Var<T>& v) { return std::make_shared<Subscriber<T>>(v); }
-  template<class T> std::shared_ptr<Publisher<T>> publish(Var<T>& v) { return std::make_shared<Publisher<T>>(v); }
+  template<class T> std::shared_ptr<Subscriber<T>> subscribe(Var<T>& v) { return make_shared<Subscriber<T>>(v); }
+  template<class T> std::shared_ptr<Publisher<T>> publish(Var<T>& v) { return make_shared<Publisher<T>>(v); }
 };
 
 #else
