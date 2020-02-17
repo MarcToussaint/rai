@@ -66,27 +66,56 @@ PairCollision* rai::ForceExchange::coll() {
   return __coll;
 }
 
+arr gnuplot(const double x){
+  double r = std::sqrt(x);
+  double g = x * x * x;
+  double b = std::sin(x * 2 * RAI_PI);
+
+  return ARR(r, g, b);
+}
+
 void rai::ForceExchange::glDraw(OpenGL& gl) {
 #ifdef RAI_GL
+  const arr pt = (.5*(a.ensure_X().pos + b.ensure_X().pos)).getArr();
+
   glLoadIdentity();
   glColor(1., 0., 1., 1.);
   glLineWidth(3.f);
-  glDrawDiamond(position(0), position(1), position(2), .02, .02, .02);
+  glDrawDiamond(pt(0), pt(1), pt(2), .02, .02, .02);
   glBegin(GL_LINES);
-  glVertex3dv(position.p);
-  glVertex3dv((position+force).p);
+  glVertex3dv(pt.p);
+  glVertex3dv((pt+force).p);
   glEnd();
   glLineWidth(1.f);
 
-  glBegin(GL_LINES);
+  /*glBegin(GL_LINES);
   glVertex3dv(&a.ensure_X().pos.x);
   glVertex3dv(position.p);
   glColor(.8, .5, .8, 1.);
   glVertex3dv(position.p);
   glVertex3dv(&b.ensure_X().pos.x);
+  glEnd();*/
+
+  const arr dist =  position - pt;
+  const arr moment = crossProduct(dist, force);
+
+  glLineWidth(3.f);
+  glBegin(GL_LINES);
+  glColor(0, 0, 0, 1.);
+  glVertex3dv(pt.p);
+  arr tmp = pt + moment*3.;
+  glVertex3dv(tmp.p);
   glEnd();
+  glLineWidth(1.f);
 
   glLoadIdentity();
+
+  arr col = gnuplot(1-length(moment));
+  a.setColor({col(0), col(1), col(2), 1.});
+  b.setColor({col(0), col(1), col(2), 1.});
+  // std::cout << length(moment) << std::endl;
+
+  std::cout << force<<position << moment<< std::endl;
 
 //    f.pos=.5*(posA+posB);
 //    f.getAffineMatrixGL(GLmatrix);
