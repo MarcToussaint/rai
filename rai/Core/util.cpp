@@ -1326,7 +1326,7 @@ bool Inotify::poll(bool block, bool verbose) {
     }
     if(event->len
         && (event->mask & (IN_MODIFY|IN_CREATE|IN_DELETE))
-//        && !strncmp(event->name, fil->name.p, fil->name.N)
+        && strncmp(event->name, "z.log",5) //NOT z.log...
       ) return true; //report modification on specific file
     i += sizeof(struct inotify_event) + event->len;
   }

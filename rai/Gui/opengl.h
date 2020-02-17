@@ -248,9 +248,6 @@ struct OpenGL {
 //===========================================================================
 
 struct SingleGLAccess {
-//  Mutex openglMutex;
-//  void lock(){ openglMutex.lock(); }
-//  void unlock(){ openglMutex.unlock(); }
 };
 
 extern Singleton<SingleGLAccess> singleGLAccess;

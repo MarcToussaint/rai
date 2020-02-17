@@ -1212,7 +1212,7 @@ void rai::Shape::createMeshes() {
       mesh().scale(size(0), size(1), size(2));
       break;
     case rai::ST_sphere: {
-      sscCore().V = arr(1, 3, {0., 0., 0.});
+      sscCore().V = arr({1,3}, {0., 0., 0.});
       double rad=1;
       if(size.N) rad=size(-1);
       mesh().setSSCvx(sscCore().V, rad);
@@ -1223,7 +1223,7 @@ void rai::Shape::createMeshes() {
       break;
     case rai::ST_capsule:
       CHECK(size(-1)>1e-10, "");
-      sscCore().V = arr(2, 3, {0., 0., -.5*size(-2), 0., 0., .5*size(-2)});
+      sscCore().V = arr({2,3}, {0., 0., -.5*size(-2), 0., 0., .5*size(-2)});
       mesh().setSSCvx(sscCore().V, size(-1));
       break;
     case rai::ST_retired_SSBox:

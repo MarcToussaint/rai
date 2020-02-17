@@ -140,6 +140,8 @@ void ANN::getkNN(arr& xx, const arr& x, uint k, double eps, bool verbose) {
 
 #else //RAI_ANN
 
+struct sANN {};
+
 ANN::ANN() { NICO }
 ANN::~ANN() { NICO }
 

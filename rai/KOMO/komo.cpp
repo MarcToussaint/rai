@@ -182,8 +182,8 @@ ptr<Objective> KOMO::addObjective(const arr& times,
 }
 
 ptr<Objective> KOMO::addObjective(const arr& times, const FeatureSymbol& feat, const StringA& frames,
-                              ObjectiveType type, const arr& scale, const arr& target, int order,
-                              int deltaFromStep, int deltaToStep) {
+                                  ObjectiveType type, const arr& scale, const arr& target, int order,
+                                  int deltaFromStep, int deltaToStep) {
   return addObjective(times, symbols2feature(feat, frames, world), type, scale, target, order, deltaFromStep, deltaToStep);
 }
 
@@ -296,14 +296,14 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
 #else
     //eq for 3DOFs only
     ptr<Objective> o = addObjective({time, endTime}, make_shared<F_NewtonEuler_DampedVelocities>(world, to, 0., false), OT_eq, {1e2}, NoArr, 1, +0, -1);
-    o->map->scale=1e2 * arr(3, 6, {
+    o->map->scale=1e2 * arr({3,6}, {
       1, 0, 0, 0, 0, 0,
       0, 1, 0, 0, 0, 0,
       0, 0, 0, 0, 0, 1
     });
     //sos penalty of other forces
     o = addObjective({time, endTime}, make_shared<F_NewtonEuler_DampedVelocities>(world, to, 0., false), OT_sos, {1e2}, NoArr, 1, +0, -1);
-    o->map->scale=1e1 * arr(3, 6, {
+    o->map->scale=1e1 * arr({3,6}, {
       0, 0, 1, 0, 0, 0,
       0, 0, 0, 1, 0, 0,
       0, 0, 0, 0, 1, 0
@@ -1870,7 +1870,7 @@ void KOMO::setupConfigurations(const arr& q_init, const StringA& q_initJoints) {
   //Therefore configurations(0) is for time=-k and configurations(k+t) is for time=t
   CHECK(configurations.N != k_order+T, "why setup again?");
 
-  int xIndexCount;
+  int xIndexCount=0;
   if(!configurations.N){ //add the initial configuration (with index -k_order )
     computeMeshNormals(world.frames, true);
     computeMeshGraphs(world.frames, true);
@@ -1945,7 +1945,11 @@ void KOMO::retrospectAddSwitches(rai::Array<KinematicSwitch*>& _switches){
 //===========================================================================
 
 void KOMO::setupRepresentations() {
+  NIY;
+
+#if 0
   setupConfigurations();
+
 
   CHECK(!objs.N,"why setup again?");
 
@@ -1975,6 +1979,7 @@ void KOMO::setupRepresentations() {
       objs.append(o);
     }
   }
+#endif
 }
 
 void KOMO::setBounds(){

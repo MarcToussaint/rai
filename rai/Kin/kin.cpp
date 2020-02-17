@@ -3814,23 +3814,26 @@ void editConfiguration(const char* filename, rai::Configuration& C) {
   Inotify ino(filename);
   for(; !exit;) {
     cout <<"reloading `" <<filename <<"' ... " <<std::endl;
-    rai::Configuration W;
+    rai::Configuration C_tmp;
+    rai::FileToken file(filename, true);
     try {
       rai::lineCount=1;
-      W.init(filename);
-//      K.gl().dataLock.lock(RAI_HERE);
-      C = W;
-//      K.gl().dataLock.unlock();
+      Graph G(file);
+      G.checkConsistency();
+      C_tmp.init(G);
+      C = C_tmp;
       C.report();
     } catch(std::runtime_error& err) {
       cout <<"line " <<rai::lineCount <<": " <<err.what() <<" -- please check the file and re-save" <<endl;
       //      continue;
     }
+    file.cd_start(); //important: also on crash - cd back to original
     cout <<"watching..." <<endl;
     int key = -1;
+    C.gl().recopyMeshes(C);
     C.gl().resetPressedKey();
     for(;;) {
-      key = C.watch(false);
+      key = C.gl().setConfiguration(C, "waiting for file change", false);
       if(key==13 || key==32 || key==27 || key=='q') break;
       if(ino.poll(false, true)) break;
       rai::wait(.02);
