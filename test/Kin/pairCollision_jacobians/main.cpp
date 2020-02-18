@@ -15,22 +15,17 @@ extern bool orsDrawWires;
 //===========================================================================
 
 void TEST(GJK_Jacobians) {
-  rai::Configuration K;
-  rai::Frame base(K), b1(K), B1(K), b2(K), B2(K);
+  rai::Configuration C;
+  rai::Frame base(C), b1(C), B1(C), b2(C), B2(C);
   rai::Joint j1(base, b1), J1(b1, B1), j2(B1, b2), J2(b2, B2);
   rai::Shape s1(B1), s2(B2);
   j1.type = j2.type = rai::JT_free; //trans3;
   j1.frame->insertPreLink(rai::Transformation(0))->set_Q()->addRelativeTranslation(1,1,1);
   j2.frame->insertPreLink(rai::Transformation(0))->set_Q()->addRelativeTranslation(-1,-1,1);
   J1.type = J2.type = rai::JT_free;
-  s1.type() = s2.type() = rai::ST_ssCvx; //ST_mesh;
-  s1.size() = s2.size() = ARR(.2);
-  s1.sscCore().setRandom();     s2.sscCore().setRandom();
-  s1.mesh().C = {.5,.8,.5,.4};  s2.mesh().C = {.5,.5,.8,.4};
-  s1.frame.name="s1";           s2.frame.name="s2";
 
-  K.calc_q_from_Q();
-  arr q = K.getJointState();
+  C.calc_q_from_Q();
+  arr q = C.getJointState();
 
   orsDrawWires=true;
   OpenGL gl;
@@ -38,57 +33,74 @@ void TEST(GJK_Jacobians) {
 //  gl.add(draw);
 //  gl.add(K);
 
-  TM_PairCollision dist(K, "s1", "s2", TM_PairCollision::_negScalar);
-  TM_PairCollision distVec(K, "s1", "s2", TM_PairCollision::_vector);
-  TM_PairCollision distNorm(K, "s1", "s2", TM_PairCollision::_normal);
-  TM_PairCollision distCenter(K, "s1", "s2", TM_PairCollision::_center);
+  TM_PairCollision dist(B1.ID, B2.ID, TM_PairCollision::_negScalar);
+  TM_PairCollision distVec(B1.ID, B2.ID, TM_PairCollision::_vector);
+  TM_PairCollision distNorm(B1.ID, B2.ID, TM_PairCollision::_normal);
+  TM_PairCollision distCenter(B1.ID, B2.ID, TM_PairCollision::_center);
 
   for(uint k=0;k<100;k++){
-    //randomize shapes
+//    //randomize shapes
     s1.mesh().clear();             s2.mesh().clear();
     s1.sscCore().setRandom();      s2.sscCore().setRandom();
+    s1.sscCore().scale(2.);       s2.sscCore().scale(2.);
     s1.mesh().C = {.5,.8,.5,.4};   s2.mesh().C = {.5,.5,.8,.4};
+    s1.type() = s2.type() = rai::ST_ssCvx; //ST_mesh;
     s1.size() = ARR(rnd.uni(.01, .3)); s2.size() = ARR(rnd.uni(.01, .3));
-    if(rnd.uni()<.4) s1.sscCore().setDot();
-    if(rnd.uni()<.4) s2.sscCore().setDot();
+    if(rnd.uni()<.2) s1.sscCore().setDot();
+    if(rnd.uni()<.2) s2.sscCore().setDot();
+    s1.createMeshes();
+    s2.createMeshes();
+
 
     //randomize poses
     rndGauss(q, .7);
-    K.setJointState(q);
+    C.setJointState(q);
 
     bool succ = true;
 
+//    if(rnd.uni()<.1){
+//      B1.setPosition({-.4,0.,1.});
+//      B1.setQuaternion({1,0,0,0});
+//      B2.setPosition({.4,0.,1.});
+//      B2.setQuaternion({1,0,0,0});
+//      B1.setShape(rai::ST_ssBox, {1., .5, .5, .1});
+//      B2.setShape(rai::ST_ssBox, {1., .5, .5, .1});
+//      B1.setColor({.5,.5,.8,.4});
+//      B2.setColor({.5,.8,.5,.4});
+//      succ=false;
+//      q = C.getJointState();
+//    }
+    succ=false;
+
     arr y,y2,y3;
-    dist.phi(y, NoArr, K);
+    dist.phi(y, NoArr, C);
     cout <<k <<" dist ";
-    succ &= checkJacobian(dist.vf(K), q, 1e-5);
+    succ &= checkJacobian(dist.vf(C), q, 1e-5);
 
-    distVec.phi(y2, NoArr, K);
+    distVec.phi(y2, NoArr, C);
     cout <<k <<" vec  ";
-    succ &= checkJacobian(distVec.vf(K), q, 1e-5);
+    succ &= checkJacobian(distVec.vf(C), q, 1e-5);
 
-    distNorm.phi(y3, NoArr, K);
+    distNorm.phi(y3, NoArr, C);
     cout <<k <<" norm  ";
-    succ &= checkJacobian(distNorm.vf(K), q, 1e-5);
+    succ &= checkJacobian(distNorm.vf(C), q, 1e-5);
 
-    distCenter.phi(y3, NoArr, K);
+    distCenter.phi(y3, NoArr, C);
     cout <<k <<" center  ";
-    succ &= checkJacobian(distCenter.vf(K), q, 1e-5);
+    succ &= checkJacobian(distCenter.vf(C), q, 1e-5);
 
     PairCollision collInfo(s1.sscCore(), s2.sscCore(), s1.frame.ensure_X(), s2.frame.ensure_X(), s1.size(-1), s2.size(-1));
 
     //    cout <<"distance: " <<y <<" vec=" <<y2 <<" error=" <<length(y2)-fabs(y(0)) <<endl;
     if(!succ) cout <<collInfo;
 
-    s1.createMeshes();
-    s2.createMeshes();
     gl.add(collInfo);
-    gl.add(K);
+    gl.add(C);
     gl.update();
     if(!succ) gl.watch();
 
     gl.remove(collInfo);
-    gl.remove(K);
+    gl.remove(C);
 
     if(succ){
       CHECK_ZERO(length(y2)-fabs(y(0)), 1e-3, "");
@@ -237,8 +249,8 @@ int MAIN(int argc, char** argv){
   rnd.clockSeed();
 
   testGJK_Jacobians();
-  testGJK_Jacobians2();
-  testGJK_Jacobians3();
+//  testGJK_Jacobians2();
+//  testGJK_Jacobians3();
 
   return 0;
 }

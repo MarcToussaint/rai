@@ -30,7 +30,6 @@ struct PairCollision : GLDrawer, NonCopyable {
 
   arr poly, polyNorm;
 
-  PairCollision() {}
   PairCollision(const rai::Mesh& mesh1, const rai::Mesh& mesh2,
                 const rai::Transformation& t1, const rai::Transformation& t2,
                 double rad1=0., double rad2=0.);

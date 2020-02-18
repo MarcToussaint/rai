@@ -24,9 +24,9 @@ TM_PairCollision::TM_PairCollision(const rai::Configuration& K, const char* s1, 
 TM_PairCollision::~TM_PairCollision() {
 }
 
-void TM_PairCollision::phi(arr& y, arr& J, const rai::Configuration& K) {
-  rai::Shape* s1 = i<0?nullptr: K.frames(i)->shape;
-  rai::Shape* s2 = j<0?nullptr: K.frames(j)->shape;
+void TM_PairCollision::phi(arr& y, arr& J, const rai::Configuration& C) {
+  rai::Shape* s1 = i<0?nullptr: C.frames(i)->shape;
+  rai::Shape* s2 = j<0?nullptr: C.frames(j)->shape;
   CHECK(s1 && s2, "");
   double r1=s1->radius();
   double r2=s2->radius();
@@ -42,8 +42,8 @@ void TM_PairCollision::phi(arr& y, arr& J, const rai::Configuration& K) {
 
   if(type==_negScalar) {
     arr Jp1, Jp2;
-    K.jacobian_pos(Jp1, &s1->frame, coll->p1);
-    K.jacobian_pos(Jp2, &s2->frame, coll->p2);
+    C.jacobian_pos(Jp1, &s1->frame, coll->p1);
+    C.jacobian_pos(Jp2, &s2->frame, coll->p2);
     coll->kinDistance(y, J, Jp1, Jp2);
     y *= -1.;
     if(!!J) J *= -1.;
@@ -51,10 +51,10 @@ void TM_PairCollision::phi(arr& y, arr& J, const rai::Configuration& K) {
   } else {
     arr Jp1, Jp2, Jx1, Jx2;
     if(!!J) {
-      K.jacobian_pos(Jp1, &s1->frame, coll->p1);
-      K.jacobian_pos(Jp2, &s2->frame, coll->p2);
-      K.jacobian_angular(Jx1, &s1->frame);
-      K.jacobian_angular(Jx2, &s2->frame);
+      C.jacobian_pos(Jp1, &s1->frame, coll->p1);
+      C.jacobian_pos(Jp2, &s2->frame, coll->p2);
+      C.jacobian_angular(Jx1, &s1->frame);
+      C.jacobian_angular(Jx2, &s2->frame);
     }
     if(type==_vector) coll->kinVector(y, J, Jp1, Jp2, Jx1, Jx2);
     if(type==_normal) coll->kinNormal(y, J, Jp1, Jp2, Jx1, Jx2);

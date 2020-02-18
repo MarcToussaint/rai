@@ -134,8 +134,10 @@ const rai::Transformation& rai::Frame::get_X() const {
 void rai::Frame::_state_updateAfterTouchingX() {
   _state_setXBadinBranch();
   _state_X_isGood = true;
-  if(parent) Q.setDifference(parent->ensure_X(), X); //calc_Q_from_parent(true);
-//  else Q = X;
+  if(parent){
+    Q.setDifference(parent->ensure_X(), X);
+    _state_updateAfterTouchingQ();
+  }
 }
 
 void rai::Frame::_state_updateAfterTouchingQ() {

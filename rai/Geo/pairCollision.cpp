@@ -46,7 +46,7 @@ PairCollision::PairCollision(const rai::Mesh& _mesh1, const rai::Mesh& _mesh2, c
 //  if(distance<1e-10) libccd(M1, M2, _ccdGJKIntersect);
 //  if(distance<1e-10) GJK_sqrDistance();
 
-  if(distance<1e-10) {
+  if(distance<-1e-10 || !p1.N || !p2.N) {
 #ifndef FCLmode
     //THIS IS COSTLY! DO WITHIN THE SUPPORT FUNCTION?
     rai::Mesh M1(*mesh1); if(!t1->isZero()) t1->applyOnPointArray(M1.V);
@@ -54,6 +54,9 @@ PairCollision::PairCollision(const rai::Mesh& _mesh1, const rai::Mesh& _mesh2, c
 #endif
     libccd(M1, M2, _ccdMPRPenetration);
   }
+
+  CHECK_EQ(p1.N, 3, "PairCollision failed")
+  CHECK_EQ(p2.N, 3, "PairCollision failed")
 
   if(fabs(distance)<1e-10) { //exact touch: the GJK computed things, let's make them consisten
     p1 = p2 = .5*(p1+p2);
@@ -163,7 +166,14 @@ void PairCollision::libccd(rai::Mesh& m1, rai::Mesh& m2, CCDmethod method) {
 
     penetration=true;
 
+    p1.setCarray(_pos.v, 3);
+    p2.setCarray(_pos.v, 3);
     normal.setCarray(_dir.v, 3);
+    distance = -_depth;
+    p1 += (.5*distance)*normal;
+    p2 -= (.5*distance)*normal;
+
+    if(distance>-1e-10) return; //minimal penetration -> simplices below are not robust
 
     //grab simplex points
     if(m1.V.d0==1) simplex1 = m1.V; //m1 is a point/sphere
@@ -180,10 +190,18 @@ void PairCollision::libccd(rai::Mesh& m1, rai::Mesh& m2, CCDmethod method) {
 
     penetration = false;
 
+    p1.setCarray(_v1.v, 3);
+    p2.setCarray(_v2.v, 3);
+    normal = p1-p2;
+    distance = length(normal);
+    if(distance>1e-10) normal/=distance;
+
     //grab simplex points
     arr mean = zeros(3);
     _getSimplex(simplex1, simplex, mean);
     _getSimplex(simplex2, simplex+4, mean);
+    if(simplex1.d0>3) simplex1.resizeCopy(3,3);
+    if(simplex2.d0>3) simplex2.resizeCopy(3,3);
   }else{
     NIY;
   }
@@ -198,36 +216,39 @@ void PairCollision::libccd(rai::Mesh& m1, rai::Mesh& m2, CCDmethod method) {
     if(distance>1e-10) normal/=distance;
     d = distance;
   }
-  if(simplexType(1, 2)) {
+  else if(simplexType(1, 2)) {
     double s;
     p1 = simplex1[0];
     d=coll_1on2(p2, normal, s, simplex1, simplex2);
   }
-  if(simplexType(2, 1)) {
+  else if(simplexType(2, 1)) {
     double s;
     p2 = simplex2[0];
     d=coll_1on2(p1, normal, s, simplex2, simplex1);
   }
-  if(simplexType(1, 3)) {
+  else if(simplexType(1, 3)) {
     p1 = simplex1[0];
     d=coll_1on3(p2, normal, simplex1, simplex2);
   }
-  if(simplexType(3, 1)) {
+  else if(simplexType(3, 1)) {
     p2 = simplex2[0];
     d=coll_1on3(p1, normal, simplex2, simplex1);
   }
-  if(simplexType(2, 2)) {
+  else if(simplexType(2, 2)) {
     d=coll_2on2(p1, p2, normal, simplex1, simplex2);
   }
-  if(simplexType(2, 3)) {
+  else if(simplexType(2, 3)) {
     d=coll_2on3(p1, p2, normal, simplex1, simplex2, arr(_pos.v, 3));
   }
-  if(simplexType(3, 2)) {
+  else if(simplexType(3, 2)) {
     d=coll_2on3(p2, p1, normal, simplex2, simplex1, arr(_pos.v, 3));
   }
-  if(simplexType(3, 3)) {
+  else if(simplexType(3, 3)) {
     d=coll_3on3(p2, p1, normal, simplex2, simplex1, arr(_pos.v, 3));
   }
+  else HALT("simplex types " <<simplex1.d0 <<' ' <<simplex2.d0 <<" not handled");
+  CHECK_EQ(p1.N, 3, "PairCollision failed")
+  CHECK_EQ(p2.N, 3, "PairCollision failed")
 
   //  CHECK_ZERO(_depth - fabs(d), 1e-4, ""); //compare depth by ccd with ours
   if(fabs(d) < 1e-10) {

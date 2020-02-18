@@ -40,10 +40,14 @@ rai::Mesh::Mesh()
     parsing_pos_end(std::numeric_limits<long>::max())*/{}
 
 void rai::Mesh::clear() {
-  V.clear(); Vn.clear(); T.clear(); Tn.clear(); C.clear(); //strips.clear();
+  V.clear(); Vn.clear();
+  if(C.nd==2) C.clear();
+  T.clear(); Tn.clear();
+  graph.clear();
 }
 
 void rai::Mesh::setBox() {
+  clear();
   double verts[24] = {
     -.5, -.5, -.5,
       +.5, -.5, -.5,
@@ -67,23 +71,24 @@ void rai::Mesh::setBox() {
   V.reshape(8, 3);
   T.reshape(12, 3);
   Vn.clear(); Tn.clear();
+  graph.clear();
   //cout <<V <<endl;  for(uint i=0;i<4;i++) cout <<length(V[i]) <<endl;
 }
 
 void rai::Mesh::setDot() {
-  V.resize(1, 3).setZero(); Vn.clear();
-  T.clear(); Tn.clear();
+  clear();
+  V.resize(1, 3).setZero();
 }
 
 void rai::Mesh::setLine(double l) {
+  clear();
   V.resize(2, 3).setZero();
   V(0, 2) = -.5*l;
   V(1, 2) = +.5*l;
-  Vn.clear();
-  T.clear(); Tn.clear();
 }
 
 void rai::Mesh::setTetrahedron() {
+  clear();
   double s2=RAI_SQRT2/3., s6=sqrt(6.)/3.;
   double verts[12] = { 0., 0., 1., 2.*s2, 0., -1./3., -s2, s6, -1./3., -s2, -s6, -1./3. };
   uint   tris [12] = { 0, 1, 2, 0, 2, 3, 0, 3, 1, 1, 3, 2 };
@@ -91,11 +96,10 @@ void rai::Mesh::setTetrahedron() {
   T.setCarray(tris, 12);
   V.reshape(4, 3);
   T.reshape(4, 3);
-  Vn.clear(); Tn.clear();
-  //cout <<V <<endl;  for(uint i=0;i<4;i++) cout <<length(V[i]) <<endl;
 }
 
 void rai::Mesh::setOctahedron() {
+  clear();
   double verts[18] = {
     1, 0, 0,
     -1, 0, 0,
@@ -112,11 +116,10 @@ void rai::Mesh::setOctahedron() {
   T.setCarray(tris, 24);
   V.reshape(6, 3);
   T.reshape(8, 3);
-  Vn.clear(); Tn.clear();
-  //cout <<V <<endl;  for(uint i=0;i<4;i++) cout <<length(V[i]) <<endl;
 }
 
 void rai::Mesh::setDodecahedron() {
+  clear();
   double a = 1/sqrt(3.), b = sqrt((3.-sqrt(5.))/6.), c=sqrt((3.+sqrt(5.))/6.);
   double verts[60] = {
     a, a, a,
@@ -152,7 +155,6 @@ void rai::Mesh::setDodecahedron() {
   T.setCarray(tris, 108);
   V.reshape(20, 3);
   T.reshape(36, 3);
-  Vn.clear(); Tn.clear();
 }
 
 void rai::Mesh::setSphere(uint fineness) {
@@ -178,6 +180,7 @@ void rai::Mesh::setHalfSphere(uint fineness) {
 }
 
 void rai::Mesh::setCylinder(double r, double l, uint fineness) {
+  clear();
   uint div = 4 * (1 <<fineness);
   V.resize(2*div+2, 3);
   T.resize(4*div, 3);
@@ -212,7 +215,6 @@ void rai::Mesh::setCylinder(double r, double l, uint fineness) {
     T(4*i+3, 1)=i+div;
     T(4*i+3, 2)=2*div+1;
   }
-  Vn.clear(); Tn.clear();
 }
 
 void rai::Mesh::setSSBox(double x_width, double y_width, double z_height, double r, uint fineness) {
@@ -254,6 +256,7 @@ void rai::Mesh::setGrid(uint X, uint Y) {
 }
 
 rai::Mesh& rai::Mesh::setRandom(uint vertices) {
+  clear();
   V.resize(vertices, 3);
   rndUniform(V, -1., 1.);
 //  rndGauss(V);

@@ -219,9 +219,9 @@ def qdump__rai__Frame(d, value):
             d.putSubItem("joint", value["joint"])
             d.putSubItem("shape", value["shape"])
             d.putSubItem("inertia", value["inertia"])
-            d.putSubItem("contacts", value["contacts"])
+            d.putSubItem("forces", value["forces"])
             d.putSubItem("ats", value["ats"])
             d.putSubItem("_state_X_isGood", value["_state_X_isGood"])
-            d.putSubItem("K", value["K"])
+            d.putSubItem("C", value["C"])
 
 #end
