@@ -56,7 +56,7 @@ struct BayesOpt {
 
 /// Wrapper for CMA stochastic optimization
 struct SearchCMA {
-  struct sSearchCMA* s;
+  unique_ptr<struct sSearchCMA> self;
 
   SearchCMA();
   ~SearchCMA();

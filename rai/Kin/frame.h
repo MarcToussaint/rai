@@ -18,7 +18,6 @@
  * replace the types by more fundamental:
  *  shapes: ssbox or ssmesh -- nothing else
  *  joint: 7bits
- *
  */
 
 namespace rai {

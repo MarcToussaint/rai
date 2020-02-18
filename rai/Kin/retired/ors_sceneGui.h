@@ -10,7 +10,7 @@
 #include "../Gui/opengl.h"
 
 struct OrsSceneGui {
-  struct sOrsSceneGui* s;
+  unique_ptr<struct sOrsSceneGui> self;
 
   OrsSceneGui(rai::Configuration& ors, OpenGL* gl=nullptr);
 

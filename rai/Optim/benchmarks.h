@@ -9,7 +9,7 @@
 #pragma once
 
 #include "optimization.h"
-//#include "newOptim.h"
+#include "newOptim.h"
 #include "KOMO_Problem.h"
 
 extern ScalarFunction RosenbrockFunction();
@@ -21,7 +21,6 @@ extern ScalarFunction ChoiceFunction();
 
 //===========================================================================
 
-#if 0
 struct MP_TrivialSquareFunction : MathematicalProgram {
   uint dim;
   double lo, hi;
@@ -42,7 +41,7 @@ struct MP_TrivialSquareFunction : MathematicalProgram {
     if(!!J) J.setId(x.N);
   }
 };
-#endif
+
 
 //===========================================================================
 

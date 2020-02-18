@@ -59,17 +59,17 @@ VideoEncoder_x264_simple::VideoEncoder_x264_simple(const char* filename, double 
 
 void VideoEncoder_x264_simple::addFrame(const byteA& image) {
   if(!image.N) return;
-  if(!s->isOpen) s->open(image.d1, image.d0);
-  s->addFrame(image);
+  if(!self->isOpen) self->open(image.d1, image.d0);
+  self->addFrame(image);
 }
 const rai::String& VideoEncoder_x264_simple::name() const {
-  return s->filename;
+  return self->filename;
 }
 
 void VideoEncoder_x264_simple::close() {
   std::clog << "Closing VideoEncoder264" << endl;
-  if(s->isOpen)
-    s->close();
+  if(self->isOpen)
+    self->close();
 }
 
 //==============================================================================

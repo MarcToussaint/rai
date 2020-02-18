@@ -10,7 +10,7 @@
 
 #include "mesh.h"
 
-struct PairCollision : GLDrawer {
+struct PairCollision : GLDrawer, NonCopyable {
   //INPUTS
   const rai::Mesh* mesh1=0;
   const rai::Mesh* mesh2=0;
@@ -30,7 +30,6 @@ struct PairCollision : GLDrawer {
 
   arr poly, polyNorm;
 
-  PairCollision() {}
   PairCollision(const rai::Mesh& mesh1, const rai::Mesh& mesh2,
                 const rai::Transformation& t1, const rai::Transformation& t2,
                 double rad1=0., double rad2=0.);

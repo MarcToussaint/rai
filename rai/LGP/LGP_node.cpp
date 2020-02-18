@@ -119,7 +119,7 @@ void LGP_Node::computeEndKinematics() {
 
 void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
   if(komoProblem(bound)) komoProblem(bound).reset();
-  komoProblem(bound) = std::make_shared<KOMO>();
+  komoProblem(bound) = make_shared<KOMO>();
   ptr<KOMO>& komo = komoProblem(bound);
 
   komo->verbose = rai::MAX(verbose, 0);
@@ -257,7 +257,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
 }
 
 ptr<KOMO> LGP_Node::optSubCG(const SubCG& scg, bool collisions, int verbose) {
-  ptr<KOMO> komo = std::make_shared<KOMO>();
+  ptr<KOMO> komo = make_shared<KOMO>();
 
   komo->verbose = rai::MAX(verbose, 0);
 

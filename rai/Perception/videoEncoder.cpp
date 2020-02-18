@@ -65,11 +65,11 @@ VideoEncoder_libav_simple::VideoEncoder_libav_simple(const char* filename, doubl
 
 void VideoEncoder_libav_simple::addFrame(const byteA& rgb) {
   if(!rgb.N) return;
-  if(!s->isOpen) s->open(rgb.d1, rgb.d0);
-  s->addFrame(rgb);
+  if(!self->isOpen) self->open(rgb.d1, rgb.d0);
+  self->addFrame(rgb);
 }
 
-void VideoEncoder_libav_simple::close() { if(s->isOpen) s->close(); }
+void VideoEncoder_libav_simple::close() { if(self->isOpen) self->close(); }
 
 //==============================================================================
 
@@ -233,8 +233,9 @@ void sVideoEncoder_libav_simple::close() {
 
 // dummy implementation does nothing
 
-struct sVideoEncoder_libav_simple {
-};
+struct sVideoEncoder_libav_simple {};
+struct sVideoEncoder {};
+
 VideoEncoder_libav_simple::VideoEncoder_libav_simple(const char*, double, uint, bool) {
   NICO
 }

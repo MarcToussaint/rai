@@ -84,13 +84,13 @@ void PerceptionObjects2Ors::step() {
 
 //void RosCom_ControllerSync::open(){
 //  rosCheckInit();
-//  s = new sRosCom_ControllerSync;
-//  s->base=this;
-//  s->sub_jointState = s->nh.subscribe("/marc_rt_controller/jointState", 1, &sRosCom_ControllerSync::joinstState_callback, s);
-////  s->sub_odom = s->nh.subscribe("/robot_pose_ekf/odom_combined", 1, &sRosCom_ControllerSync::joinstState_callback, s);
-//  s->pub_jointReference = s->nh.advertise<marc_controller_pkg::JointState>("/marc_rt_controller/jointReference", 1);
-//  //  s->sub_jointState = s->nh.subscribe("/marc_rt_controller/jointState", 1, &sRosCom::joinstState_callback, s);
-//  //  s->pub_jointReference = s->nh.advertise<marc_controller_pkg::JointState>("/marc_rt_controller/jointReference", 1);
+//  self = make_unique<sRosCom_ControllerSync>();
+//  self->base=this;
+//  self->sub_jointState = self->nh.subscribe("/marc_rt_controller/jointState", 1, &sRosCom_ControllerSync::joinstState_callback, s);
+////  self->sub_odom = self->nh.subscribe("/robot_pose_ekf/odom_combined", 1, &sRosCom_ControllerSync::joinstState_callback, s);
+//  self->pub_jointReference = self->nh.advertise<marc_controller_pkg::JointState>("/marc_rt_controller/jointReference", 1);
+//  //  self->sub_jointState = self->nh.subscribe("/marc_rt_controller/jointState", 1, &sRosCom::joinstState_callback, s);
+//  //  self->pub_jointReference = self->nh.advertise<marc_controller_pkg::JointState>("/marc_rt_controller/jointReference", 1);
 //}
 
 //void RosCom_ControllerSync::step(){
@@ -110,12 +110,12 @@ void PerceptionObjects2Ors::step() {
 //  jointRef.effLimitRatio = m.effLimitRatio;
 //  jointRef.intLimitRatio = m.intLimitRatio;
 //  jointRef.gamma = m.gamma;
-//  s->pub_jointReference.publish(jointRef);
+//  self->pub_jointReference.publish(jointRef);
 //}
 
 //void RosCom_ControllerSync::close(){
-//  s->nh.shutdown();
-//  delete s;
+//  self->nh.shutdown();
+//  self.reset();
 //}
 
 //===========================================================================
@@ -200,13 +200,13 @@ struct sRosCom_ControllerSync {
 
 void RosCom_ControllerSync::open() {
   rosCheckInit();
-  s = new sRosCom_ControllerSync;
-  s->base=this;
-  s->sub_jointState = s->nh.subscribe("/marc_rt_controller/jointState", 1, &sRosCom_ControllerSync::joinstState_callback, s);
-//  s->sub_odom = s->nh.subscribe("/robot_pose_ekf/odom_combined", 1, &sRosCom_ControllerSync::joinstState_callback, s);
-  s->pub_jointReference = s->nh.advertise<marc_controller_pkg::JointState>("/marc_rt_controller/jointReference", 1);
-  //  s->sub_jointState = s->nh.subscribe("/marc_rt_controller/jointState", 1, &sRosCom::joinstState_callback, s);
-  //  s->pub_jointReference = s->nh.advertise<marc_controller_pkg::JointState>("/marc_rt_controller/jointReference", 1);
+  self = make_unique<sRosCom_ControllerSync>();
+  self->base=this;
+  self->sub_jointState = self->nh.subscribe("/marc_rt_controller/jointState", 1, &sRosCom_ControllerSync::joinstState_callback, s);
+//  self->sub_odom = self->nh.subscribe("/robot_pose_ekf/odom_combined", 1, &sRosCom_ControllerSync::joinstState_callback, s);
+  self->pub_jointReference = self->nh.advertise<marc_controller_pkg::JointState>("/marc_rt_controller/jointReference", 1);
+  //  self->sub_jointState = self->nh.subscribe("/marc_rt_controller/jointState", 1, &sRosCom::joinstState_callback, s);
+  //  self->pub_jointReference = self->nh.advertise<marc_controller_pkg::JointState>("/marc_rt_controller/jointReference", 1);
 }
 
 void RosCom_ControllerSync::step() {
@@ -226,12 +226,12 @@ void RosCom_ControllerSync::step() {
   jointRef.effLimitRatio = m.effLimitRatio;
   jointRef.intLimitRatio = m.intLimitRatio;
   jointRef.gamma = m.gamma;
-  s->pub_jointReference.publish(jointRef);
+  self->pub_jointReference.publish(jointRef);
 }
 
 void RosCom_ControllerSync::close() {
-  s->nh.shutdown();
-  delete s;
+  self->nh.shutdown();
+  self.reset();
 }
 
 //===========================================================================
@@ -304,17 +304,17 @@ struct sRosCom_KinectSync {
 
 void RosCom_KinectSync::open() {
   rosCheckInit();
-  s = new sRosCom_KinectSync;
-  s->base = this;
-  s->sub_rgb = s->nh.subscribe("/kinect_head/rgb/image_color", 1, &sRosCom_KinectSync::cb_rgb, s);
-  s->sub_depth = s->nh.subscribe("/kinect_head/depth/image_raw", 1, &sRosCom_KinectSync::cb_depth, s);
+  self = make_unique<sRosCom_KinectSync>();
+  self->base = this;
+  self->sub_rgb = self->nh.subscribe("/kinect_head/rgb/image_color", 1, &sRosCom_KinectSync::cb_rgb, s);
+  self->sub_depth = self->nh.subscribe("/kinect_head/depth/image_raw", 1, &sRosCom_KinectSync::cb_depth, s);
 }
 
 void RosCom_KinectSync::step() {
 }
 
 void RosCom_KinectSync::close() {
-  s->nh.shutdown();
+  self->nh.shutdown();
 }
 
 //===========================================================================
@@ -334,17 +334,17 @@ struct sRosCom_CamsSync {
 
 void RosCom_CamsSync::open() {
   rosCheckInit();
-  s = new sRosCom_CamsSync;
-  s->base = this;
-  s->sub_left  = s->nh.subscribe("/wide_stereo/left/image_rect_color", 1, &sRosCom_CamsSync::cb_left, s);
-  s->sub_right = s->nh.subscribe("/wide_stereo/right/image_rect_color", 1, &sRosCom_CamsSync::cb_right, s);
+  self = make_unique<sRosCom_CamsSync>();
+  self->base = this;
+  self->sub_left  = self->nh.subscribe("/wide_stereo/left/image_rect_color", 1, &sRosCom_CamsSync::cb_left, s);
+  self->sub_right = self->nh.subscribe("/wide_stereo/right/image_rect_color", 1, &sRosCom_CamsSync::cb_right, s);
 }
 
 void RosCom_CamsSync::step() {
 }
 
 void RosCom_CamsSync::close() {
-  s->nh.shutdown();
+  self->nh.shutdown();
 }
 
 //===========================================================================
@@ -364,17 +364,17 @@ struct sRosCom_ArmCamsSync {
 
 void RosCom_ArmCamsSync::open() {
   rosCheckInit();
-  s = new sRosCom_ArmCamsSync;
-  s->base = this;
-  s->sub_left  = s->nh.subscribe("/l_forearm_cam/image_rect_color", 1, &sRosCom_ArmCamsSync::cb_left, s);
-  s->sub_right = s->nh.subscribe("/r_forearm_cam/image_rect_color", 1, &sRosCom_ArmCamsSync::cb_right, s);
+  self = make_unique<sRosCom_ArmCamsSync>();
+  self->base = this;
+  self->sub_left  = self->nh.subscribe("/l_forearm_cam/image_rect_color", 1, &sRosCom_ArmCamsSync::cb_left, s);
+  self->sub_right = self->nh.subscribe("/r_forearm_cam/image_rect_color", 1, &sRosCom_ArmCamsSync::cb_right, s);
 }
 
 void RosCom_ArmCamsSync::step() {
 }
 
 void RosCom_ArmCamsSync::close() {
-  s->nh.shutdown();
+  self->nh.shutdown();
 }
 
 //===========================================================================
@@ -399,17 +399,17 @@ struct sRosCom_ForceSensorSync {
 
 void RosCom_ForceSensorSync::open() {
   rosCheckInit();
-  s = new sRosCom_ForceSensorSync;
-  s->base = this;
-  s->sub_left  = s->nh.subscribe("/ft_sensor/ft_compensated", 1, &sRosCom_ForceSensorSync::cb_left, s);  // /ft/l_gripper_motor
-//  s->sub_right = s->nh.subscribe("/ft_sensor/r_ft_compensated", 1, &sRosCom_ForceSensorSync::cb_right, s); // /ft/r_gripper_motor
+  self = make_unique<sRosCom_ForceSensorSync>();
+  self->base = this;
+  self->sub_left  = self->nh.subscribe("/ft_sensor/ft_compensated", 1, &sRosCom_ForceSensorSync::cb_left, s);  // /ft/l_gripper_motor
+//  self->sub_right = self->nh.subscribe("/ft_sensor/r_ft_compensated", 1, &sRosCom_ForceSensorSync::cb_right, s); // /ft/r_gripper_motor
 }
 
 void RosCom_ForceSensorSync::step() {
 }
 
 void RosCom_ForceSensorSync::close() {
-  s->nh.shutdown();
+  self->nh.shutdown();
 }
 
 //===========================================================================
@@ -422,21 +422,21 @@ struct sRosCom_SoftHandSync {
 
 void RosCom_SoftHandSync::open() {
   rosCheckInit();
-  s = new sRosCom_SoftHandSync;
-  s->base=this;
-  s->pub_shReference = s->nh.advertise<std_msgs::String>("/softhand/grasp_ref", 1);
+  self = make_unique<sRosCom_SoftHandSync>();
+  self->base=this;
+  self->pub_shReference = self->nh.advertise<std_msgs::String>("/softhand/grasp_ref", 1);
 }
 
 void RosCom_SoftHandSync::step() {
   SoftHandMsg shm = sh_ref.get();
   std_msgs::String refs;
   refs.data = shm.soft_hand_cmd.p;
-  s->pub_shReference.publish(refs);
+  self->pub_shReference.publish(refs);
 }
 
 void RosCom_SoftHandSync::close() {
-  s->nh.shutdown();
-  delete s;
+  self->nh.shutdown();
+  self.reset();
 }
 
 //===========================================================================

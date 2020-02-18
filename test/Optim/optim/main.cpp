@@ -43,7 +43,6 @@ int MAIN(int argc,char** argv){
 
   testSqrProblem();
   testLambdaFunction();
-  testMathematicalProgram();
 
   return 0;
 }

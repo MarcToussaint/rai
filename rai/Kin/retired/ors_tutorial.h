@@ -13,7 +13,7 @@
 //(``private'') space used by the implementation but hidden from this header
 class OrsTutorial {
  public:
-  struct sOrsTutorial* s;
+  unique_ptr<struct sOrsTutorial> self;
 
   OrsTutorial();
   ~OrsTutorial();

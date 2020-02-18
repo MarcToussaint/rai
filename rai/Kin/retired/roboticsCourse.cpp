@@ -30,174 +30,173 @@ struct sSimulator {
 };
 
 void Simulator::anchorKinematicChainIn(const char* bodyName) {
-  s->G.reconfigureRootOfSubtree(s->G.getFrameByName(bodyName));
-//  s->G.calc_fwdPropagateFrames();
+  self->G.reconfigureRootOfSubtree(self->G.getFrameByName(bodyName));
+//  self->G.calc_fwdPropagateFrames();
 
   NIY;
-//  if(s->G.swift().isOpen){
-//    s->G.swift().close();
-//    s->G.swift().init(s->G);
-//    s->G.swift().setCutoff(.5);
+//  if(self->G.swift().isOpen){
+//    self->G.swift().close();
+//    self->G.swift().init(self->G);
+//    self->G.swift().setCutoff(.5);
 //  }
 
 //#ifdef RAI_ODE
-//  if(s->ode.isOpen){
-//    s->ode.clear();
-//    s->ode.createOde(s->G);
+//  if(self->ode.isOpen){
+//    self->ode.clear();
+//    self->ode.createOde(self->G);
 //  }
 //#endif
 }
 
 Simulator::Simulator(const char* orsFile) {
-  s = new sSimulator;
+  self = make_unique<sSimulator>();
 
   //RAI
-  s->G.init(orsFile);
-  /*  if(s->G.getBodyByName("rfoot")){
-    s->G.reconfigureRoot(s->G.getBodyByName("rfoot"));
-    s->G.calcBodyFramesFromJoints();
+  self->G.init(orsFile);
+  /*  if(self->G.getBodyByName("rfoot")){
+    self->G.reconfigureRoot(self->G.getBodyByName("rfoot"));
+    self->G.calcBodyFramesFromJoints();
     }*/
 
   //G.makeLinkTree();
-  makeConvexHulls(s->G.frames);
+  makeConvexHulls(self->G.frames);
 
   //OPENGL
-  s->G.glAdd(glDrawPlot, &plotModule);
+  self->G.glAdd(glDrawPlot, &plotModule);
 
   //SWIFT
-  s->G.swift().setCutoff(.5);
+  self->G.swift().setCutoff(.5);
 }
 
 Simulator::~Simulator() {
-  delete s;
 }
 
 void Simulator::watch(bool pause, const char* txt) {
-  s->G.watch(pause, txt);
+  self->G.watch(pause, txt);
 }
 
 void Simulator::getJointAngles(arr& q) {
-  q = s->G.q;
+  q = self->G.q;
 }
 
 void Simulator::getJointAnglesAndVels(arr& q, arr& qdot) {
-  q = s->G.q;
-  qdot = s->G.qdot;
+  q = self->G.q;
+  qdot = self->G.qdot;
 }
 
 uint Simulator::getJointDimension() {
-  return s->G.getJointStateDimension();
+  return self->G.getJointStateDimension();
 }
 
 void Simulator::setJointAngles(const arr& q, bool updateDisplay) {
-  s->G.setJointState(q);
-  s->G.stepSwift();
-  if(updateDisplay) s->G.watch(false);
+  self->G.setJointState(q);
+  self->G.stepSwift();
+  if(updateDisplay) self->G.watch(false);
 }
 
 void Simulator::setJointAnglesAndVels(const arr& q, const arr& qdot, bool updateDisplay) {
-  s->G.setJointState(q, qdot);
-  s->G.stepSwift();
-  if(updateDisplay) s->G.watch(false);
+  self->G.setJointState(q, qdot);
+  self->G.stepSwift();
+  if(updateDisplay) self->G.watch(false);
 }
 
 void Simulator::kinematicsPos(arr& y, const char* shapeName, const arr* rel) {
   if(rel) {
     rai::Vector v;  v.set(rel->p);
-    s->G.kinematicsPos(y, NoArr, s->G.getFrameByName(shapeName), v);
+    self->G.kinematicsPos(y, NoArr, self->G.getFrameByName(shapeName), v);
   } else {
-    s->G.kinematicsPos(y, NoArr, s->G.getFrameByName(shapeName));
+    self->G.kinematicsPos(y, NoArr, self->G.getFrameByName(shapeName));
   }
 }
 
 void Simulator::kinematicsVec(arr& y, const char* shapeName, const arr* vec) {
   if(vec) {
     rai::Vector v;  v.set(vec->p);
-    s->G.kinematicsVec(y, NoArr, s->G.getFrameByName(shapeName), v);
+    self->G.kinematicsVec(y, NoArr, self->G.getFrameByName(shapeName), v);
   } else {
-    s->G.kinematicsVec(y, NoArr, s->G.getFrameByName(shapeName));
+    self->G.kinematicsVec(y, NoArr, self->G.getFrameByName(shapeName));
   }
 }
 
 void Simulator::jacobianPos(arr& J, const char* shapeName, const arr* rel) {
   if(rel) {
     rai::Vector v;  v.set(rel->p);
-    s->G.kinematicsPos(NoArr, J, s->G.getFrameByName(shapeName), v);
+    self->G.kinematicsPos(NoArr, J, self->G.getFrameByName(shapeName), v);
   } else {
-    s->G.kinematicsPos(NoArr, J, s->G.getFrameByName(shapeName));
+    self->G.kinematicsPos(NoArr, J, self->G.getFrameByName(shapeName));
   }
 }
 
 void Simulator::jacobianVec(arr& J, const char* shapeName, const arr* vec) {
   if(vec) {
     rai::Vector v;  v.set(vec->p);
-    s->G.kinematicsVec(NoArr, J, s->G.getFrameByName(shapeName), v);
+    self->G.kinematicsVec(NoArr, J, self->G.getFrameByName(shapeName), v);
   } else {
-    s->G.kinematicsVec(NoArr, J, s->G.getFrameByName(shapeName));
+    self->G.kinematicsVec(NoArr, J, self->G.getFrameByName(shapeName));
   }
 }
 
 void Simulator::kinematicsCOM(arr& y) {
-  s->G.getCenterOfMass(y);
+  self->G.getCenterOfMass(y);
   y.resizeCopy(2);
 }
 
 void Simulator::jacobianCOM(arr& J) {
-  s->G.getComGradient(J);
+  self->G.getComGradient(J);
   J.resizeCopy(2, J.d1);
 }
 
 void Simulator::reportProxies() {
-  s->G.reportProxies();
+  self->G.reportProxies();
 }
 
 void Simulator::setContactMargin(double margin) {
-  s->margin = margin;
+  self->margin = margin;
 }
 
 void Simulator::kinematicsContacts(arr& y) {
-  s->G.kinematicsProxyCost(y, NoArr, s->margin);
+  self->G.kinematicsProxyCost(y, NoArr, self->margin);
 }
 
 void Simulator::jacobianContacts(arr& J) {
   arr y;
-  s->G.kinematicsProxyCost(y, J, s->margin);
+  self->G.kinematicsProxyCost(y, J, self->margin);
 }
 
 double Simulator::getEnergy() {
-  return s->G.getEnergy();
+  return self->G.getEnergy();
 }
 
 void Simulator::setDynamicSimulationNoise(double noise) {
-  s->dynamicNoise = noise;
+  self->dynamicNoise = noise;
 }
 
 void Simulator::setDynamicGravity(bool gravity) {
-  s->gravity = gravity;
+  self->gravity = gravity;
 }
 
 void Simulator::getDynamics(arr& M, arr& F) {
-  s->G.equationOfMotion(M, F);
+  self->G.equationOfMotion(M, F);
 }
 
 void Simulator::stepDynamics(const arr& Bu, double tau) {
-  s->G.stepDynamics(Bu, tau, s->dynamicNoise);
+  self->G.stepDynamics(Bu, tau, self->dynamicNoise);
 }
 
 void Simulator::stepOde(const arr& qdot, double tau) {
 #ifdef RAI_ODE
-  s->G.ode().setMotorVel(qdot, 100.);
-  s->G.ode().step(tau);
-  s->G.ode().importStateFromOde();
+  self->G.ode().setMotorVel(qdot, 100.);
+  self->G.ode().step(tau);
+  self->G.ode().importStateFromOde();
 #endif
 }
 
 void Simulator::stepPhysx(const arr& qdot, double tau) {
-  s->G.physx().step(tau);
+  self->G.physx().step(tau);
 }
 
 rai::Configuration& Simulator::getOrsGraph() {
-  return s->G;
+  return self->G;
 }
 
 struct sVisionSimulator {
@@ -207,28 +206,27 @@ struct sVisionSimulator {
 };
 
 VisionSimulator::VisionSimulator() {
-  s = new sVisionSimulator;
+  self = make_unique<sVisionSimulator>();
 
-  s->P.resize(3, 4);
+  self->P.resize(3, 4);
 
   //OPENGL
-  s->gl.add(drawEnv, 0);
-  s->gl.add(drawBase, 0);
-  s->gl.setClearColors(1., 1., 1., 1.);
-  s->gl.camera.setPosition(10., -15., 8.);
-  s->gl.camera.focus(0, 0, 0);
-  s->gl.camera.upright();
-  s->gl.update();
-  s->gl.add(glDrawPlot, &plotModule);
+  self->gl.add(drawEnv, 0);
+  self->gl.add(drawBase, 0);
+  self->gl.setClearColors(1., 1., 1., 1.);
+  self->gl.camera.setPosition(10., -15., 8.);
+  self->gl.camera.focus(0, 0, 0);
+  self->gl.camera.upright();
+  self->gl.update();
+  self->gl.add(glDrawPlot, &plotModule);
 
 }
 
 VisionSimulator::~VisionSimulator() {
-  delete s;
 }
 
 void VisionSimulator::watch() {
-  s->gl.watch();
+  self->gl.watch();
 }
 
 void VisionSimulator::getRandomWorldPoints(arr& X, uint N) {
@@ -241,7 +239,7 @@ void VisionSimulator::getRandomWorldPoints(arr& X, uint N) {
 }
 
 arr VisionSimulator::getCameraTranslation() {
-  return conv_vec2arr(s->gl.camera.X.pos);
+  return conv_vec2arr(self->gl.camera.X.pos);
 }
 
 void VisionSimulator::projectWorldPointsToImagePoints(arr& x, const arr& X, double noiseInPixel) {
@@ -257,21 +255,21 @@ void VisionSimulator::projectWorldPointsToImagePoints(arr& x, const arr& X, doub
   glGetIntegerv(GL_VIEWPORT, Mview.p);
   //cout <<Mview <<endl;
   //cout <<Mmodel <<endl;
-  //cout <<Mproj <<s->P <<endl;
+  //cout <<Mproj <<self->P <<endl;
   //*/
   intA view(4);
   glGetIntegerv(GL_VIEWPORT, view.p);
 
   //project the points using the OpenGL matrix
-  s->P = s->gl.P;
-  s->P /= s->P(0, 0);
+  self->P = self->gl.P;
+  self->P /= self->P(0, 0);
   cout <<"VisionSimulator:"
-       <<"\n  projection matrix used: " <<s->P
-       <<"\n  camera position and quaternion: " <<s->gl.camera.X.pos <<"  " <<s->gl.camera.X.rot
+       <<"\n  projection matrix used: " <<self->P
+       <<"\n  camera position and quaternion: " <<self->gl.camera.X.pos <<"  " <<self->gl.camera.X.rot
        <<"\n  camera f=" <<.5*view(2) <<" x0=" <<view(0)+.5*view(2) <<" y0=" <<view(1)+.5*view(2)
        <<endl;
   for(uint i=0; i<N; i++) {
-    x[i] = s->P*X[i];
+    x[i] = self->P*X[i];
     x[i]() /= x(i, 2);
     //gluProject(X(i, 0), X(i, 1), X(i, 2), Mmodel.p, Mproj.p, Mview.p, &y(0), &y(1), &y(2));
     //cout <<"y=" <<y <<" x=" <<x[i] <<endl;
@@ -280,7 +278,7 @@ void VisionSimulator::projectWorldPointsToImagePoints(arr& x, const arr& X, doub
   for(uint i=0; i<N; i++) x(i, 2)=1.;
 
   plotPoints(X);
-  //s->gl.watch();
+  //self->gl.watch();
 #endif
 }
 
@@ -378,8 +376,8 @@ void glDrawCarSimulator(void* classP, OpenGL&) {
   CarSimulator* s=(CarSimulator*)classP;
   rai::Transformation f;
   f.setZero();
-  f.addRelativeTranslation(s->x, s->y, .3);
-  f.addRelativeRotationRad(s->theta, 0., 0., 1.);
+  f.addRelativeTranslation(self->x, self->y, .3);
+  f.addRelativeRotationRad(self->theta, 0., 0., 1.);
   f.addRelativeTranslation(1., 0., 0.);
 
   double GLmatrix[16];
@@ -388,9 +386,9 @@ void glDrawCarSimulator(void* classP, OpenGL&) {
   glColor(.8, .2, .2);
   glDrawBox(3., 1.5, .5);
 
-  for(uint l=0; l<s->landmarks.d0; l++) {
+  for(uint l=0; l<self->landmarks.d0; l++) {
     f.setZero();
-    f.addRelativeTranslation(s->landmarks(l, 0), s->landmarks(l, 1), .5);
+    f.addRelativeTranslation(self->landmarks(l, 0), self->landmarks(l, 1), .5);
     f.getAffineMatrixGL(GLmatrix);
     glLoadMatrixd(GLmatrix);
     glColor(.2, .8, .2);
@@ -399,14 +397,14 @@ void glDrawCarSimulator(void* classP, OpenGL&) {
 
   glLoadIdentity();
   glColor(.2, .2, .8);
-  for(uint l=0; l<s->particlesToDraw.d0; l++) {
+  for(uint l=0; l<self->particlesToDraw.d0; l++) {
     glPushMatrix();
-    glTranslatef(s->particlesToDraw(l, 0), s->particlesToDraw(l, 1), .6);
+    glTranslatef(self->particlesToDraw(l, 0), self->particlesToDraw(l, 1), .6);
     glDrawDiamond(.1, .1, .1);
     glPopMatrix();
   }
 
-  for(uint l=0; l<s->particlesToDraw.d0; l++) {
+  for(uint l=0; l<self->particlesToDraw.d0; l++) {
   }
 #endif
 }

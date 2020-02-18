@@ -90,13 +90,7 @@ template<class T> rai::Array<T>::Array(const std::vector<T>& a, bool byReference
 template<class T> rai::Array<T>::Array(std::initializer_list<T> values):Array() { operator=(values); }
 
 /// initialization via {1., 2., 3., ...} lists, with certain dimensionality
-template<class T> rai::Array<T>::Array(uint D0, std::initializer_list<T> values):Array() { operator=(values); reshape(D0); }
-
-/// initialization via {1., 2., 3., ...} lists, with certain dimensionality
-template<class T> rai::Array<T>::Array(uint D0, uint D1, std::initializer_list<T> values):Array() { operator=(values); reshape(D0, D1); }
-
-/// initialization via {1., 2., 3., ...} lists, with certain dimensionality
-template<class T> rai::Array<T>::Array(uint D0, uint D1, uint D2, std::initializer_list<T> values):Array() { operator=(values); reshape(D0, D1, D2); }
+template<class T> rai::Array<T>::Array(std::initializer_list<uint> dim, std::initializer_list<T> values):Array() { operator=(values); reshape(dim); }
 
 template<class T> rai::Array<T>::Array(SpecialArray* _special) : Array() { special=_special; }
 
@@ -199,6 +193,8 @@ template<class T> rai::Array<T>& rai::Array<T>::resizeCopy(const Array<uint>& ne
 
 /// resize to multi-dimensional tensor
 template<class T> rai::Array<T>& rai::Array<T>::reshape(const Array<uint>& newD) { reshape(newD.N, newD.p); return *this; }
+
+template<class T> rai::Array<T>& rai::Array<T>::reshape(std::initializer_list<uint> dim){ reshape(dim.size(), (uint*)dim.begin()); return *this; }
 
 template<class T> rai::Array<T>& rai::Array<T>::resizeAs(const rai::Array<T>& a) {
   CHECK(this!=&a, "never do this!!!");

@@ -51,17 +51,17 @@ void Feature::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
 #endif
 }
 
-void Feature::signature(intA& S, const ConfigurationL& Ctuple){
-  uintA cdim = getKtupleDim(Ctuple);
-  cdim.prepend(0);
-  S.clear();
-  for(uint k=0;k<Ctuple.N;k++){
-    intA Sk;
-    signature(Sk, *Ctuple(k));
-    Sk += (int)cdim(k);
-    S.setAppend(Sk);
-  }
-}
+//void Feature::signature(intA& S, const ConfigurationL& Ctuple){
+//  uintA cdim = getKtupleDim(Ctuple);
+//  cdim.prepend(0);
+//  S.clear();
+//  for(uint k=0;k<Ctuple.N;k++){
+//    intA Sk;
+//    signature(Sk, *Ctuple(k));
+//    Sk += (int)cdim(k);
+//    S.setAppend(Sk);
+//  }
+//}
 
 VectorFunction Feature::vf(rai::Configuration& C) { ///< direct conversion to vector function: use to check gradient or evaluate
   return [this, &C](arr& y, arr& J, const arr& x) -> void {

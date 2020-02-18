@@ -136,12 +136,12 @@ void SimulationThread::execGripper(const rai::String& gripper, double position, 
     //  komo->addObjective(0.,0., FS_qItself, {"r_gripper_l_finger_joint"}, OT_sos, 1e1, {.8} );
 
     SIM.setUsedRobotJoints({"r_gripper_joint", "r_gripper_l_finger_joint"});
-    SIM.exec({1, 2, {position, position*10.}}, {1.}, true);
+    SIM.exec({{1,2}, {position, position*10.}}, {1.}, true);
     return;
   }
   if(gripper=="pandaL") {
     SIM.setUsedRobotJoints({"L_panda_finger_joint1"});
-    SIM.exec(arr(1, 1, {position}), {1.}, true);
+    SIM.exec(arr({1, 1}, {position}), {1.}, true);
     return;
   }
   NIY

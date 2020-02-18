@@ -14,7 +14,7 @@ namespace rai { struct Mesh; }
 typedef rai::Array<rai::Mesh> MeshA;
 
 struct ImageViewer : Thread {
-  struct sImageViewer* s;
+  unique_ptr<struct sImageViewer> self;
   Var<byteA> img;
   bool flipImage = false;
   ImageViewer(const Var<byteA>& _img, double beatIntervalSec=-1.);
@@ -44,7 +44,7 @@ struct ImageViewerCallback {
 };
 
 struct PointCloudViewer : Thread {
-  struct sPointCloudViewer* s;
+  unique_ptr<struct sPointCloudViewer> self;
   Var<arr> pts;
   Var<byteA> rgb;
   PointCloudViewer(const char* pts_name="kinect_points", const char* rgb_name="kinect_rgb");
@@ -56,7 +56,7 @@ struct PointCloudViewer : Thread {
 };
 
 struct PointCloudViewerCallback {
-  struct sPointCloudViewer* s=0;
+  unique_ptr<struct sPointCloudViewer> self;
   Var<arr> pts;
   Var<byteA> rgb;
   PointCloudViewerCallback(const Var<arr>& _pts, const Var<byteA>& _rgb);

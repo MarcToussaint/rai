@@ -39,28 +39,27 @@ struct sOpenGL:public Fl_Gl_Window {
 //
 
 OpenGL::OpenGL(const char* title, int w, int h, int posx, int posy) {
-  s = new sOpenGL(this, title, w, h, posx, posy);
-  s->w_old=w; s->h_old=h;
+  self = make_unique<sOpenGL>(this, title, w, h, posx, posy);
+  self->w_old=w; self->h_old=h;
   init();
-  s->size_range(100, 50);
-  s->show();
+  self->size_range(100, 50);
+  self->show();
 }
 
 OpenGL::~OpenGL() {
-  delete s;
 }
 
-void OpenGL::postRedrawEvent() { s->redraw(); }
+void OpenGL::postRedrawEvent() { self->redraw(); }
 void OpenGL::processEvents() {  Fl::check(); }
 void OpenGL::sleepForEvents()() { loopExit=false; while(!loopExit) Fl::wait(); }
 
 /// resize the window
 void OpenGL::resize(int w, int h) {
-  s->size(w, h);
+  self->size(w, h);
 }
 
-int OpenGL::width() {  return s->w(); }
-int OpenGL::height() { return s->h(); }
+int OpenGL::width() {  return self->w(); }
+int OpenGL::height() { return self->h(); }
 
 void sOpenGL::draw() {
   Fl::lock();

@@ -13,7 +13,7 @@ void testGraphProblem() {
   uint T=P.get_T();
   uint k=P.get_k();
   uintA d, times;
-  P.getStructure(d, times, NoTermTypeA);
+  P.getStructure(d, times, NoObjectiveTypeA);
   cout <<"P parameters:"
        <<"\n T=" <<T
        <<"\n k=" <<k

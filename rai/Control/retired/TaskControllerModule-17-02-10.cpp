@@ -36,7 +36,7 @@ TaskControlThread::TaskControlThread(const char* _robot, const rai::Configuratio
   , compensateGravity(false)
   , compensateFTSensors(false) {
 
-  s = new sTaskControlThread();
+  self = make_unique<sTaskControlThread>();
   useRos = rai::getParameter<bool>("useRos", false);
   oldfashioned = rai::getParameter<bool>("oldfashinedTaskControl", true);
   useDynSim = !oldfashioned && !useRos; //rai::getParameter<bool>("useDynSim", true);
@@ -158,9 +158,9 @@ void TaskControlThread::step() {
     }
     if(robot=="baxter" && useRos) {
 #ifdef RAI_ROS
-      s->jointState.waitForRevisionGreaterThan(20);
+      self->jointState.waitForRevisionGreaterThan(20);
       q_real = realWorld.q;
-      succ = baxter_update_qReal(q_real, s->jointState.get(), realWorld);
+      succ = baxter_update_qReal(q_real, self->jointState.get(), realWorld);
 #endif
       qdot_real = zeros(q_real.N);
     }

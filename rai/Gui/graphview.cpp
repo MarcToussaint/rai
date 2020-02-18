@@ -60,23 +60,22 @@ GraphView::GraphView(Graph& G, const char* title, void* container)
   : verbose(false) {
   gtkCheckInitialized();
 
-  s = new sGraphView;
-  s->p=this;
-  s->title=title;
-  s->container=GTK_WIDGET(container);
-  s->G = &G;
-  s->init();
+  self = make_unique<sGraphView>();
+  self->p=this;
+  self->title=title;
+  self->container=GTK_WIDGET(container);
+  self->G = &G;
+  self->init();
 }
 
 GraphView::~GraphView() {
-  delete s;
 }
 
 void GraphView::update() {
   gtkLock();
-  s->updateGraphvizGraph();
-  gvLayoutJobs(s->gv_context, s->gvGraph);
-  gvRenderJobs(s->gv_context, s->gvGraph);
+  self->updateGraphvizGraph();
+  gvLayoutJobs(self->gv_context, self->gvGraph);
+  gvRenderJobs(self->gv_context, self->gvGraph);
   gtkUnlock();
   gtkProcessEvents();
 }
@@ -89,7 +88,7 @@ void GraphView::watch() {
 }
 
 void GraphView::writeFile(const char* filename) {
-  s->writeFile(filename);
+  self->writeFile(filename);
 }
 
 #define STR(s) (char*)s
@@ -387,6 +386,8 @@ void GraphView::update() { NICO }
 
 #else //defined RAI_GTK and defined RAI_GRAPHVIZ
 #include "graphview.h"
+struct sGraphView {};
+
 GraphView::GraphView(Graph& G, const char* title, void* container) { NICO }
 GraphView::~GraphView() { NICO }
 void GraphView::watch() { NICO }

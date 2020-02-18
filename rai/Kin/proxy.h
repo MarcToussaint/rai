@@ -31,7 +31,7 @@ struct Proxy : GLDrawer {
   Vector normal;   ///< contact normal, pointing from B to A (proportional to posA-posB)
   double d;        ///< distance (positive) or penetration (negative) between A and B
   uint colorCode = 0;
-  std::shared_ptr<PairCollision> coll;
+  shared_ptr<PairCollision> coll;
 
   Proxy();
   ~Proxy();

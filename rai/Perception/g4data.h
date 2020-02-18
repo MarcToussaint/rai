@@ -26,8 +26,7 @@ typedef rai::Array<G4FeatSeq*> G4FeatSeqL;
 //
 
 struct G4ID {
-  struct sG4ID;
-  sG4ID* s;
+  unique_ptr<struct sG4ID> self;
 
   G4ID();
   ~G4ID();

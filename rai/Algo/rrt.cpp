@@ -16,34 +16,35 @@ struct sRRT {
   uint nearest;
 };
 
-RRT::RRT(const arr& q0, double _stepsize) : s(new sRRT()) {
-  s->ann   .append(q0); //append q as the root of the tree
-  s->parent.append(0);    //q has itself as parent
-  s->stepsize = _stepsize;
+RRT::RRT(const arr& q0, double _stepsize) {
+  self = make_unique<sRRT>();
+  self->ann   .append(q0); //append q as the root of the tree
+  self->parent.append(0);    //q has itself as parent
+  self->stepsize = _stepsize;
 }
 double RRT::getProposalTowards(arr& proposal, const arr& q) {
   //find NN
-  s->nearest=s->ann.getNN(q);
+  self->nearest=self->ann.getNN(q);
 
   //compute little step
-  arr d = q - s->ann.X[s->nearest]; //difference vector between q and nearest neighbor
+  arr d = q - self->ann.X[self->nearest]; //difference vector between q and nearest neighbor
   double dist = length(d);
-  if(dist > s->stepsize)
-    proposal = s->ann.X[s->nearest] + s->stepsize/dist * d;
+  if(dist > self->stepsize)
+    proposal = self->ann.X[self->nearest] + self->stepsize/dist * d;
   else
     proposal = q;
   return dist;
 }
 void RRT::add(const arr& q) {
-  s->ann.append(q);
-  s->parent.append(s->nearest);
+  self->ann.append(q);
+  self->parent.append(self->nearest);
 }
 
 //some access routines
-double RRT::getStepsize() { return s->stepsize; }
-uint RRT::getNearest() { return s->nearest; }
-uint RRT::getParent(uint i) { return s->parent(i); }
-uint RRT::getNumberNodes() { return s->ann.X.d0; }
-arr RRT::getNode(uint i) { return s->ann.X[i]; }
-void RRT::getRandomNode(arr& q) { q = s->ann.X[rnd(s->ann.X.d0)]; }
-arr RRT::getRandomNode() { return s->ann.X[rnd(s->ann.X.d0)]; }
+double RRT::getStepsize() { return self->stepsize; }
+uint RRT::getNearest() { return self->nearest; }
+uint RRT::getParent(uint i) { return self->parent(i); }
+uint RRT::getNumberNodes() { return self->ann.X.d0; }
+arr RRT::getNode(uint i) { return self->ann.X[i]; }
+void RRT::getRandomNode(arr& q) { q = self->ann.X[rnd(self->ann.X.d0)]; }
+arr RRT::getRandomNode() { return self->ann.X[rnd(self->ann.X.d0)]; }

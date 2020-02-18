@@ -17,6 +17,7 @@
 #include "kin_feather.h"
 #include "featureSymbols.h"
 #include "viewer.h"
+#include "../Core/graph.h"
 #include "../Geo/fclInterface.h"
 #include "../Geo/qhull.h"
 #include "../Geo/mesh_readAssimp.h"
@@ -33,28 +34,11 @@
 #  include <assimp/scene.h>
 #endif
 
-#ifndef RAI_ORS_ONLY_BASICS
-#  include <Core/graph.h>
-//#  include <Plot/plot.h>
-#endif
-
 #ifdef RAI_GL
 #  include <GL/gl.h>
 #  include <GL/glu.h>
 #endif
 
-#define RAI_NO_DYNAMICS_IN_FRAMES
-
-#define SL_DEBUG_LEVEL 1
-#define SL_DEBUG(l, x) if(l<=SL_DEBUG_LEVEL) x;
-
-#define Qstate
-
-void lib_ors() { cout <<"force loading lib/ors" <<endl; }
-
-#define LEN .2
-
-#ifndef RAI_ORS_ONLY_BASICS
 
 uint rai::Configuration::setJointStateCount = 0;
 
@@ -125,8 +109,6 @@ void computeMeshGraphs(FrameL& frames, bool force) {
     }
 }
 
-bool always_unlocked(void*) { return false; }
-
 //===========================================================================
 //
 // Configuration
@@ -134,24 +116,19 @@ bool always_unlocked(void*) { return false; }
 
 namespace rai {
 struct sConfiguration {
-  ptr<ConfigurationViewer> viewer;
-  std::shared_ptr<SwiftInterface> swift;
-  ptr<FclInterface> fcl;
-  PhysXInterface* physx;
-  OdeInterface* ode;
-  FeatherstoneInterface* fs = nullptr;
-  sConfiguration() : physx(nullptr), ode(nullptr) {}
-  ~sConfiguration() {
-    if(physx) delete physx;
-    if(ode) delete ode;
-  }
+  unique_ptr<ConfigurationViewer> viewer;
+  shared_ptr<SwiftInterface> swift;
+  shared_ptr<FclInterface> fcl;
+  unique_ptr<PhysXInterface> physx;
+  unique_ptr<OdeInterface> ode;
+  unique_ptr<FeatherstoneInterface> fs;
 };
 
 }
 
-rai::Configuration::Configuration() : s(nullptr) {
+rai::Configuration::Configuration() {
   frames.memMove=proxies.memMove=true;
-  s=new sConfiguration;
+  self = make_unique<sConfiguration>();
 }
 
 rai::Configuration::Configuration(const rai::Configuration& other, bool referenceSwiftOnCopy) : Configuration() {
@@ -164,8 +141,7 @@ rai::Configuration::Configuration(const char* filename) : Configuration() {
 
 rai::Configuration::~Configuration() {
   //delete OpenGL and the extensions first!
-  delete s;
-  s=nullptr;
+  self.reset();
   clear();
 }
 
@@ -363,8 +339,8 @@ void rai::Configuration::copy(const rai::Configuration& C, bool referenceSwiftOn
 
   //copy swift reference
   if(referenceSwiftOnCopy){
-    s->swift = C.s->swift;
-    s->fcl = C.s->fcl;
+    self->swift = C.self->swift;
+    self->fcl = C.self->fcl;
   }
 
   //copy vector state
@@ -1108,7 +1084,7 @@ void rai::Configuration::jacobian_angular(arr& J, Frame* a) const {
 void rai::Configuration::jacobian_tau(arr& J, rai::Frame* a) const {
   CHECK_EQ(&a->C, this, "");
 
-  if(useSparseJacobians) NIY;
+//  if(useSparseJacobians) NIY;
 
   //get Jacobian
   uint N=getJointStateDimension();
@@ -1610,21 +1586,21 @@ rai::ConfigurationViewer& rai::Configuration::gl(const char* window_title, bool 
     s->gl->camera.setDefault();
   }
 #endif
-  if(!s->viewer){
-    s->viewer = make_shared<rai::ConfigurationViewer>(); //-1.=broadphase only -> many proxies
+  if(!self->viewer){
+    self->viewer = make_unique<rai::ConfigurationViewer>(); //-1.=broadphase only -> many proxies
   }
-  return *s->viewer;
+  return *self->viewer;
 }
 
 /// return a Swift extension
 SwiftInterface& rai::Configuration::swift() {
-  if(s->swift && s->swift->INDEXshape2swift.N != frames.N) s->swift.reset();
-  if(!s->swift) s->swift = make_shared<SwiftInterface>(*this, .1, 0);
-  return *s->swift;
+  if(self->swift && self->swift->INDEXshape2swift.N != frames.N) self->swift.reset();
+  if(!self->swift) self->swift = make_shared<SwiftInterface>(*this, .1, 0);
+  return *self->swift;
 }
 
 rai::FclInterface& rai::Configuration::fcl() {
-  if(!s->fcl) {
+  if(!self->fcl) {
     Array<ptr<Mesh>> geometries(frames.N);
     for(Frame* f:frames) {
       if(f->shape && f->shape->cont) {
@@ -1632,34 +1608,34 @@ rai::FclInterface& rai::Configuration::fcl() {
         geometries(f->ID) = f->shape->_mesh;
       }
     }
-    s->fcl = make_shared<rai::FclInterface>(geometries, .0); //-1.=broadphase only -> many proxies
-    s->fcl->excludePairs = getCollisionExcludePairIDs();
+    self->fcl = make_shared<rai::FclInterface>(geometries, .0); //-1.=broadphase only -> many proxies
+    self->fcl->excludePairs = getCollisionExcludePairIDs();
   }
-  return *s->fcl;
+  return *self->fcl;
 }
 
 void rai::Configuration::swiftDelete() {
-  if(s) s->swift.reset();
+  if(self) self->swift.reset();
 }
 
 /// return a PhysX extension
 PhysXInterface& rai::Configuration::physx() {
-  if(!s->physx) {
-    s->physx = new PhysXInterface(*this);
+  if(!self->physx) {
+    self->physx = make_unique<PhysXInterface>(*this);
     //    s->physx->setArticulatedBodiesKinematic();
   }
-  return *s->physx;
+  return *self->physx;
 }
 
 /// return a ODE extension
 OdeInterface& rai::Configuration::ode() {
-  if(!s->ode) s->ode = new OdeInterface(*this);
-  return *s->ode;
+  if(!self->ode) self->ode = make_unique<OdeInterface>(*this);
+  return *self->ode;
 }
 
 FeatherstoneInterface& rai::Configuration::fs() {
-  if(!s->fs) s->fs = new FeatherstoneInterface(*this);
-  return *s->fs;
+  if(!self->fs) self->fs = make_unique<FeatherstoneInterface>(*this);
+  return *self->fs;
 }
 
 int rai::Configuration::watch(bool pause, const char* txt) {
@@ -1675,7 +1651,7 @@ int rai::Configuration::watch(bool pause, const char* txt) {
 }
 
 void rai::Configuration::glClose() {
-  if(s && s->viewer) s->viewer.reset();
+  if(self && self->viewer) self->viewer.reset();
 }
 
 #if 0
@@ -2468,7 +2444,7 @@ void rai::Configuration_ext::contactsToForces(double hook, double damp) {
       force.setZero();
       force += (hook) * trans; //*(1.+ hook*hook*d*d)
       //force += damp * transvel;
-      SL_DEBUG(1, cout <<"applying force: [" <<*p.a <<':' <<*p.b <<"] " <<force <<endl);
+//      SL_DEBUG(1, cout <<"applying force: [" <<*p.a <<':' <<*p.b <<"] " <<force <<endl);
 
       NIY;
 //    addForce(force, p.a, p.posA);
@@ -3241,8 +3217,6 @@ void kinVelocity(arr& y, arr& J, uint frameId, const ConfigurationL& Ktuple, dou
 // helper routines -- in a classical C interface
 //
 
-#endif
-
 #undef LEN
 
 double forceClosureFromProxies(rai::Configuration& K, uint frameIndex, double distanceThreshold, double mu, double torqueWeights) {
@@ -3463,48 +3437,6 @@ void transferKI_ft_BetweenTwoWorlds(arr& KI_ft_To, const arr& KI_ft_From, const 
 //===========================================================================
 //===========================================================================
 
-#ifndef RAI_ORS_ONLY_BASICS
-
-/**
- * @brief Bind ors to OpenGL.
- * Afterwards OpenGL can show the ors graph.
- *
- * @param graph the ors graph.
- * @param gl OpenGL which shows the ors graph.
- */
-void bindOrsToOpenGL(rai::Configuration& graph, OpenGL& gl) {
-  gl.add(glStandardScene, 0);
-  gl.add(rai::glDrawGraph, &graph);
-  //  gl.setClearColors(1., 1., 1., 1.);
-
-  rai::Frame* glCamera = graph.getFrameByName("glCamera");
-  if(glCamera) {
-    gl.camera.X = glCamera->ensure_X();
-    gl.resize(500, 500);
-  } else {
-    gl.camera.setPosition(10., -15., 8.);
-    gl.camera.focus(0, 0, 1.);
-    gl.camera.upright();
-  }
-  gl.update();
-}
-#endif
-
-#ifndef RAI_ORS_ONLY_BASICS
-
-/// static GL routine to draw a rai::Configuration
-void rai::glDrawGraph(void* classP, OpenGL& gl) {
-  ((rai::Configuration*)classP)->glDraw(gl);
-}
-
-void rai::glDrawProxies(void* P) {
-#ifdef RAI_GL
-  ProxyL& proxies = *((ProxyL*)P);
-  glPushMatrix();
-  for(rai::Proxy* p:proxies) p->glDraw(NoOpenGL);
-  glPopMatrix();
-#endif
-}
 
 void displayState(const arr& x, rai::Configuration& G, const char* tag) {
   G.setJointState(x);
@@ -3890,23 +3822,26 @@ void editConfiguration(const char* filename, rai::Configuration& C) {
   Inotify ino(filename);
   for(; !exit;) {
     cout <<"reloading `" <<filename <<"' ... " <<std::endl;
-    rai::Configuration W;
+    rai::Configuration C_tmp;
+    rai::FileToken file(filename, true);
     try {
       rai::lineCount=1;
-      W.init(filename);
-//      K.gl().dataLock.lock(RAI_HERE);
-      C = W;
-//      K.gl().dataLock.unlock();
+      Graph G(file);
+      G.checkConsistency();
+      C_tmp.init(G);
+      C = C_tmp;
       C.report();
     } catch(std::runtime_error& err) {
       cout <<"line " <<rai::lineCount <<": " <<err.what() <<" -- please check the file and re-save" <<endl;
       //      continue;
     }
+    file.cd_start(); //important: also on crash - cd back to original
     cout <<"watching..." <<endl;
     int key = -1;
+    C.gl().recopyMeshes(C);
     C.gl().resetPressedKey();
     for(;;) {
-      key = C.watch(false);
+      key = C.gl().setConfiguration(C, "waiting for file change", false);
       if(key==13 || key==32 || key==27 || key=='q') break;
       if(ino.poll(false, true)) break;
       rai::wait(.02);
@@ -3926,20 +3861,6 @@ void editConfiguration(const char* filename, rai::Configuration& C) {
   }
 }
 
-//#endif
-
-#else ///RAI_GL
-#ifndef RAI_ORS_ONLY_BASICS
-void bindOrsToOpenGL(rai::Configuration&, OpenGL&) { NICO };
-void rai::Configuration::glDraw(OpenGL&) { NICO }
-void rai::glDrawGraph(void* classP) { NICO }
-void editConfiguration(const char* orsfile, rai::Configuration& C) { NICO }
-void animateConfiguration(rai::Configuration& C, OpenGL&, Inotify*) { NICO }
-void glTransform(const rai::Transformation&) { NICO }
-void displayTrajectory(const arr&, int, rai::Configuration&, const char*, double) { NICO }
-void displayState(const arr&, rai::Configuration&, const char*) { NICO }
-#endif
-#endif
 
 //===========================================================================
 //
@@ -3947,11 +3868,8 @@ void displayState(const arr&, rai::Configuration&, const char*) { NICO }
 //
 
 #include "../Core/util.tpp"
-
-#ifndef  RAI_ORS_ONLY_BASICS
 template rai::Array<rai::Shape*>::Array(uint);
 //template rai::Shape* listFindByName(const rai::Array<rai::Shape*>&,const char*);
 
 #include "../Core/array.tpp"
 template rai::Array<rai::Joint*>::Array();
-#endif

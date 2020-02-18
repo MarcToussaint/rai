@@ -113,11 +113,10 @@ ImagePublisher::ImagePublisher(const std::string& topic, const std::string& came
 }
 
 ImagePublisher::~ImagePublisher() {
-  delete s;
 }
 
 void ImagePublisher::publish(const rai::Array<unsigned char>& image, double timestamp) {
-  s->publish(image, timestamp);
+  self->publish(image, timestamp);
 }
 
 void init_image_publishers(int argc, char* argv[], const char* name, bool install_sigint_handler) {

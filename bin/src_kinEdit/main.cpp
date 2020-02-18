@@ -47,7 +47,7 @@ int main(int argc,char **argv){
 
   //-- some optional manipulations
   if(rai::checkParameter<bool>("prune")){
-    C.optimizeTree(true, true, true);
+    C.optimizeTree(true, true, false);
   }else{
     C.optimizeTree(false, false, false);
   }
