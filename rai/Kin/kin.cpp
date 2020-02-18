@@ -2076,16 +2076,24 @@ void rai::Configuration::writeCollada(const char* filename) const {
   aiScene scene;
   scene.mRootNode = new aiNode("root");
   // create a dummy material
-  scene.mMaterials = new aiMaterial *[1];
+  scene.mMaterials = new aiMaterial *[2];
   scene.mMaterials[0] = new aiMaterial();
-  scene.mNumMaterials = 1;
+  scene.mMaterials[1] = new aiMaterial();
+  scene.mNumMaterials = 2;
+  float op = 0.1;
+  scene.mMaterials[1]->AddProperty(&op, 1, AI_MATKEY_OPACITY);
   // create meshes
   scene.mMeshes = new aiMesh *[F.N];
   scene.mNumMeshes = F.N;
   for(uint i=0;i<F.N;i++) {
     auto mesh = scene.mMeshes[i] = new aiMesh();
-    scene.mMeshes[i]->mMaterialIndex = 0;
-    buildAiMesh(F(i)->shape->mesh(), mesh);
+    rai::Mesh& M = F(i)->shape->mesh();
+    buildAiMesh(M, mesh);
+    double alpha = F(i)->shape->alpha();
+    if(alpha==1.)
+      scene.mMeshes[i]->mMaterialIndex = 0;
+    else
+      scene.mMeshes[i]->mMaterialIndex = 1;
   }
   // create nodes for all frames
   scene.mRootNode->mChildren = new aiNode* [F.N];
