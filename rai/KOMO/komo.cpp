@@ -1384,12 +1384,14 @@ void KOMO::reset(double initNoise) {
 }
 
 void KOMO::setInitialConfigurations(const arr& q){
+  if(!configurations.N) setupConfigurations();
   for(uint s=0; s<k_order; s++){
     configurations(s)->setJointState(q);
   }
 }
 
 void KOMO::setConfiguration(int t, const arr& q){
+  if(!configurations.N) setupConfigurations();
   if(t<0) CHECK_LE(-t, (int)k_order,"");
   configurations(t+k_order)->setJointState(q);
 }
@@ -2274,6 +2276,7 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
   arr taskC=zeros(objectives.N);
   arr taskG=zeros(objectives.N);
   arr taskH=zeros(objectives.N);
+  arr taskF=zeros(objectives.N);
   uint M=0;
   if(!denseOptimization && !sparseOptimization) {
     for(uint t=0; t<T; t++) {
@@ -2299,6 +2302,11 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
                 for(uint j=0; j<d; j++) err(t, i) += fabs(featureValues(M+j));
                 if(dual.N) dualSolution(t, i) = dual(M);
                 taskH(i) += err(t, i);
+              }
+              if(task->type==OT_f) {
+                for(uint j=0; j<d; j++) err(t, i) += featureValues(M+j);
+                if(dual.N) dualSolution(t, i) = dual(M);
+                taskF(i) += err(t, i);
               }
               M += d;
             }
@@ -2336,6 +2344,10 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
               for(uint j=0; j<d; j++) err(time, i) += fabs(featureValues(M+j));
               taskH(i) += err(time, i);
             }
+            if(ob->type==OT_eq) {
+              for(uint j=0; j<d; j++) err(time, i) += featureValues(M+j);
+              taskF(i) += err(time, i);
+            }
             M += d;
           }
         }
@@ -2353,22 +2365,25 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
 
   //-- generate a report graph
   Graph report;
-  double totalC=0., totalG=0., totalH=0.;
+  double totalC=0., totalG=0., totalH=0., totalF=0.;
   for(uint i=0; i<objectives.N; i++) {
     ptr<Objective> c = objectives(i);
     Graph& g = report.newSubgraph({c->name}, {});
     g.newNode<double>({"order"}, {}, c->map->order);
     g.newNode<String>({"type"}, {}, STRING(c->type.name()));
-    g.newNode<double>({"sos_sumOfSqr"}, {}, taskC(i));
-    g.newNode<double>({"ineq_sumOfPos"}, {}, taskG(i));
-    g.newNode<double>({"eq_sumOfAbs"}, {}, taskH(i));
+    if(taskC(i)) g.newNode<double>({"sos"}, {}, taskC(i));
+    if(taskG(i)) g.newNode<double>({"ineq"}, {}, taskG(i));
+    if(taskH(i)) g.newNode<double>({"eq"}, {}, taskH(i));
+    if(taskF(i)) g.newNode<double>({"f"}, {}, taskF(i));
     totalC += taskC(i);
     totalG += taskG(i);
     totalH += taskH(i);
+    totalF += taskF(i);
   }
   report.newNode<double>({"total", "sos_sumOfSqr"}, {}, totalC);
   report.newNode<double>({"total", "ineq_sumOfPos"}, {}, totalG);
   report.newNode<double>({"total", "eq_sumOfAbs"}, {}, totalH);
+  report.newNode<double>({"total", "f_sum"}, {}, totalF);
 
   if(gnuplt) {
     //-- write a nice gnuplot file

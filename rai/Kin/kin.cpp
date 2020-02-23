@@ -752,7 +752,9 @@ void rai::Configuration::setJointState(const arr& _q) {
   _state_q_isGood=true;
   _state_proxies_isGood=false;
   for(Joint* j:activeJoints){
-    j->frame->_state_setXBadinBranch();
+    if(j->type!=JT_tau){
+      j->frame->_state_setXBadinBranch();
+    }
   }
   calc_Q_from_q();
 }

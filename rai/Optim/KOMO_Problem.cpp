@@ -106,7 +106,9 @@ void Conv_KOMO_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA&
     Jaux->computeColPatches(true);
   }
 
-  if(!!H) {
+  if(!!H) H.clear();
+  /*
+   if(!!H) {
     bool hasFterm = false;
     if(!!featureTypes) hasFterm = (featureTypes.findValue(OT_f) != -1);
     if(hasFterm) {
@@ -116,4 +118,5 @@ void Conv_KOMO_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA&
       H.clear();
     }
   }
+  */
 }
