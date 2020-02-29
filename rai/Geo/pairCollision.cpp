@@ -55,8 +55,8 @@ PairCollision::PairCollision(const rai::Mesh& _mesh1, const rai::Mesh& _mesh2, c
     libccd(M1, M2, _ccdMPRPenetration);
   }
 
-  CHECK_EQ(p1.N, 3, "PairCollision failed")
-  CHECK_EQ(p2.N, 3, "PairCollision failed")
+  CHECK_EQ(p1.N, 3, "PairCollision failed");
+  CHECK_EQ(p2.N, 3, "PairCollision failed");
 
   if(fabs(distance)<1e-10) { //exact touch: the GJK computed things, let's make them consisten
     p1 = p2 = .5*(p1+p2);
@@ -130,6 +130,13 @@ void _getSimplex(arr& S, ccd_vec3_t* simplex, const arr& mean){
   for(uint i=0;i<n;i++){
     memmove(&S(i,0), simplex[select[i]].v, 3*S.sizeT);
   }
+
+  /* SAFETY CHECK (slow!):
+  for(uint i=0;i<n;i++) for(uint j=i+1;j<n;j++){
+    CHECK_GE(maxDiff(S[i], S[j]), 1e-10, "they are equal??");
+  }
+  */
+
 }
 
 void PairCollision::libccd(rai::Mesh& m1, rai::Mesh& m2, CCDmethod method) {
@@ -244,7 +251,7 @@ void PairCollision::libccd(rai::Mesh& m1, rai::Mesh& m2, CCDmethod method) {
     d=coll_2on3(p2, p1, normal, simplex2, simplex1, arr(_pos.v, 3));
   }
   else if(simplexType(3, 3)) {
-    d=coll_3on3(p2, p1, normal, simplex2, simplex1, arr(_pos.v, 3));
+    d=coll_3on3(p2, p1, normal, simplex2, simplex1, mean(simplex1)); //arr(_pos.v, 3));
   }
   else HALT("simplex types " <<simplex1.d0 <<' ' <<simplex2.d0 <<" not handled");
   CHECK_EQ(p1.N, 3, "PairCollision failed")
@@ -673,6 +680,8 @@ double coll_1on3(arr& p2, arr& normal, const arr& pts1, const arr& pts2) {
   double d = scalarProduct(normal, tri[0]);
 
   p2 = d*normal + pts1[0];
+  checkNan(p2);
+
   return d;
 }
 
@@ -717,6 +726,7 @@ double coll_2on2(arr& p1, arr& p2, arr& normal, const arr& pts1, const arr& pts2
 
 double coll_2on3(arr& p1, arr& p2, arr& normal, const arr& pts1, const arr& pts2, const arr& center) {
   CHECK(pts1.nd==2 && pts1.d0==2 && pts1.d1==3, "I need a set of 2 pts1");
+  CHECK(pts2.nd==2 && pts2.d0==3 && pts2.d1==3, "I need a set of 3 pts2");
   //collide center on line to get p1:
   arr cen = center;
   cen.reshape(1, 3);
@@ -730,7 +740,8 @@ double coll_2on3(arr& p1, arr& p2, arr& normal, const arr& pts1, const arr& pts2
 }
 
 double coll_3on3(arr& p1, arr& p2, arr& normal, const arr& pts1, const arr& pts2, const arr& center) {
-  CHECK(pts1.nd==2 && pts1.d0==3 && pts1.d1==3, "I need a set of 2 pts1");
+  CHECK(pts1.nd==2 && pts1.d0==3 && pts1.d1==3, "I need a set of 3 pts1");
+  CHECK(pts2.nd==2 && pts2.d0==3 && pts2.d1==3, "I need a set of 3 pts2");
   //collide center on tri1 to get p1:
   arr cen = center;
   cen.reshape(1, 3);

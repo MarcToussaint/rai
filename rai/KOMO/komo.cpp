@@ -1453,7 +1453,7 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, 
 
 void KOMO::run(const OptOptions options) {
   Configuration::setJointStateCount=0;
-  double timeZero = timerStart();
+  double timeZero = rai::realTime();
   CHECK(T, "");
   if(logFile)(*logFile) <<"KOMO_run_log: [" <<endl;
   if(opt) delete opt;
@@ -1507,7 +1507,7 @@ void KOMO::run(const OptOptions options) {
     opt->logFile = logFile;
     opt->run();
   }
-  runTime = timerRead(true, timeZero);
+  runTime = rai::realTime() - timeZero;
   if(logFile)(*logFile) <<"\n] #end of KOMO_run_log" <<endl;
   if(verbose>0) {
     cout <<"** optimization time=" <<runTime
