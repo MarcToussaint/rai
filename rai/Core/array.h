@@ -96,6 +96,7 @@ template<class T> struct Array : std::vector<T>, Serializable {
   /// @name constructors
   Array();
   Array(const Array<T>& a);                 //copy constructor
+  Array(Array<T>&& a);                      //move constructor
   explicit Array(uint D0);
   explicit Array(uint D0, uint D1);
   explicit Array(uint D0, uint D1, uint D2);
