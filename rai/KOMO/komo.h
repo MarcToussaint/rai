@@ -136,7 +136,7 @@ struct KOMO : NonCopyable {
 
   //-- setup the problem
   void setModel(const rai::Configuration& C, bool _useSwift=true);
-  void setTiming(double _phases=1., uint _stepsPerPhase=10, double durationPerPhase=5., uint _k_order=2);
+  void setTiming(double _phases=1., uint _stepsPerPhase=30, double durationPerPhase=5., uint _k_order=2);
   void setPairedTimes();
   void activateCollisions(const char* s1, const char* s2);
   void deactivateCollisions(const char* s1, const char* s2);
@@ -182,6 +182,7 @@ struct KOMO : NonCopyable {
 
   //-- tasks mid-level
 //  void setSquaredQAccelerations(double startTime=0., double endTime=-1., double prec=1.);
+  void add_qAccelerations(const arr& times, double scale=1., int deltaFromStep=0, int deltaToStep=0);
   void setSquaredQAccVelHoming(double startTime=0., double endTime=-1., double accPrec=1., double velPrec=0., double homingPrec=1e-2, int deltaFromStep=0, int deltaToStep=0);
 //  void setSquaredQVelocities(double startTime=0., double endTime=-1., double prec=1.);
 //  void setFixEffectiveJoints(double startTime=0., double endTime=-1., double prec=3e1);

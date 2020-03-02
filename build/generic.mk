@@ -88,11 +88,11 @@ UIC = uic
 YACC = bison -d
 
 LINK	= $(CXX)
-CPATHS	+= $(BASE)/rai
+CPATHS	+= $(BASE)/rai $(HOME)/opt/include
 ifdef BASE2
 CPATHS	+= $(BASE2)
 endif
-LPATHS	+= $(BASE)/lib /usr/local/lib
+LPATHS	+= $(BASE)/lib $(HOME)/opt/lib /usr/local/lib
 LIBS += -lrt
 SHAREFLAG = -shared #-Wl,--warn-unresolved-symbols #-Wl,--no-allow-shlib-undefined
 

@@ -463,7 +463,7 @@ void KOMO::addContact_staticPush(double startTime, double endTime, const char* f
   addObjective({startTime, endTime}, make_shared<F_LinearForce>(world, from, to), OT_sos, {1e-1});
   addObjective({startTime, endTime}, make_shared<TM_Contact_POAzeroRelVel>(world, from, to), OT_sos, {1e-1}, NoArr, 1, +1, +0);
   //  addObjective({startTime, endTime}, make_shared<TM_Contact_POAzeroRelVel>(world, from, to), OT_eq, {1e1}, NoArr, 1, +1, +0);
-//  addObjective({time}, make_shared<F_pushed>(world, to), OT_eq, {1e1}, NoArr, 1, +1, +0);
+  //  addObjective({time}, make_shared<F_pushed>(world, to), OT_eq, {1e1}, NoArr, 1, +1, +0);
 }
 
 void KOMO::addContact_noFriction(double startTime, double endTime, const char* from, const char* to) {
@@ -537,34 +537,40 @@ void KOMO::setHoming(double startTime, double endTime, double prec, const char* 
 //  addObjective({startTime, endTime}, make_shared<TM_Transition>(world), OT_sos, {}, NoArrprec);
 //}
 
-void KOMO::setSquaredQAccVelHoming(double startTime, double endTime, double accPrec, double velPrec, double homingPrec, int deltaFromStep, int deltaToStep) {
-
-  uintA selectedBodies;
-  arr scale;
-  for(rai::Frame* f:world.frames) if(f->joint && f->joint->dim>0 && f->joint->H>0. && f->joint->type!=JT_tau && f->joint->active) {
-      CHECK(!f->joint->mimic, "")
-      selectedBodies.append(TUP(f->ID, f->parent->ID));
-      scale.append(f->joint->H, f->joint->dim);
+auto getQFramesAndScale(const rai::Configuration& C){
+  struct Return{ uintA frames; arr scale; } R;
+  for(rai::Frame* f : C.frames){
+    if(f->joint && f->joint->active && f->joint->dim>0 && f->joint->H>0. && f->joint->type!=JT_tau) {
+      CHECK(!f->joint->mimic, "");
+      R.frames.append(TUP(f->ID, f->parent->ID));
+      R.scale.append(f->joint->H, f->joint->dim);
     }
-  selectedBodies.reshape(selectedBodies.N/2, 2);
-//  cout <<scale <<endl <<world.getHmetric() <<endl;
-  scale *= sqrt(tau);
+  }
+  R.frames.reshape(-1, 2);
+  //  cout <<scale <<endl <<world.getHmetric() <<endl;
+  return R;
+}
+
+void KOMO::add_qAccelerations(const arr& times, double scale, int deltaFromStep, int deltaToStep){
+  auto F = getQFramesAndScale(world);
+  F.scale *= sqrt(tau);
+
+  CHECK_GE(k_order, 2, "");
+  ptr<Objective> o = addObjective(times, make_shared<F_qItself>(F.frames), OT_sos, scale*F.scale, NoArr, 2, deltaFromStep, deltaToStep);
+}
+
+void KOMO::setSquaredQAccVelHoming(double startTime, double endTime, double accPrec, double velPrec, double homingPrec, int deltaFromStep, int deltaToStep) {
+  auto F = getQFramesAndScale(world);
+  F.scale *= sqrt(tau);
+
   if(accPrec) {
-    //sqr accel
-    CHECK_GE(k_order, 2, "");
-    ptr<Objective> o = addObjective({startTime, endTime}, make_shared<F_qItself>(selectedBodies), OT_sos, {accPrec}, NoArr, 2, deltaFromStep, deltaToStep);
-    o->map->scale = accPrec*scale;
+    addObjective({startTime, endTime}, make_shared<F_qItself>(F.frames), OT_sos, accPrec*F.scale, NoArr, 2, deltaFromStep, deltaToStep);
   }
   if(velPrec) {
-    //sqr vel
-    CHECK_GE(k_order, 1, "");
-    ptr<Objective> o = addObjective({startTime, endTime}, make_shared<F_qItself>(selectedBodies), OT_sos, {velPrec}, NoArr, 1, deltaFromStep, deltaToStep);
-    o->map->scale = velPrec*scale;
+    addObjective({startTime, endTime}, make_shared<F_qItself>(F.frames), OT_sos, velPrec*F.scale, NoArr, 1, deltaFromStep, deltaToStep);
   }
   if(homingPrec) {
-    //sqr homing
-    homingPrec *= sqrt(tau);
-    addObjective({startTime, endTime}, make_shared<F_qItself>(selectedBodies, true), OT_sos, {homingPrec}, NoArr, 0, deltaFromStep, deltaToStep);
+    addObjective({startTime, endTime}, make_shared<F_qItself>(F.frames, true), OT_sos, {homingPrec*sqrt(tau)}, NoArr, 0, deltaFromStep, deltaToStep);
   }
 }
 

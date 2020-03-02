@@ -16,7 +16,7 @@ struct sOpencvCamera {  cv::VideoCapture capture;  };
 OpencvCamera::OpencvCamera(const Var<byteA>& _rgb)
   : Thread(STRING("OpencvCamera_"<<_rgb.name()), 0.)
   , rgb(this, _rgb) {
-  s = make_unique<sOpencvCamera>();
+  self = make_unique<sOpencvCamera>();
   threadLoop();
 }
 
@@ -49,7 +49,7 @@ void OpencvCamera::step() {
 }
 
 bool OpencvCamera::set(int propId, double value) {
-  if(s)
+  if(self)
     return self->capture.set(propId, value);
   else {
     properties[propId] = value;

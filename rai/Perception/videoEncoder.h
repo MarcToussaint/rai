@@ -18,7 +18,7 @@
 /// Video encoder which creates a correct container, with metadata, of one
 /// video stream in H264 format.
 struct VideoEncoder_libav_simple {
-  unique_ptr<struct sVideoEncoder> self;
+  unique_ptr<struct sVideoEncoder_libav_simple> self;
 
   VideoEncoder_libav_simple(const char* filename="z.avi", double fps=30, uint qp=0, bool is_rgb=false);
   void addFrame(const byteA& rgb);
@@ -44,7 +44,7 @@ struct VideoEncoder_x264_simple {
 #endif
 
 struct VideoEncoder_OpenCV {
-  unique_ptr<struct sVideoEncoder> self;
+  unique_ptr<struct sVideoEncoder_OpenCV> self;
 
   VideoEncoder_OpenCV(const char* filename="z.avi", uint fps=30);
   void addFrame(const byteA& rgb);
