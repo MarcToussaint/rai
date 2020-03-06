@@ -206,9 +206,9 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
 
   Graph result = komo->getReport((komo->verbose>0 && bound>=2));
   DEBUG(FILE("z.problem.cost") <<result;);
-  double cost_here = result.get<double>({"total", "sos_sumOfSqr"});
-  double constraints_here = result.get<double>({"total", "eq_sumOfAbs"});
-  constraints_here += result.get<double>({"total", "ineq_sumOfPos"});
+  double cost_here = result.get<double>("sos");
+  double constraints_here = result.get<double>("eq");
+  constraints_here += result.get<double>("ineq");
   if(bound == BD_poseFromSeq) {
     cost_here = komo->sos;
     constraints_here = komo->ineq + komo->eq;
@@ -346,9 +346,9 @@ void LGP_Node::labelInfeasible() {
   while(branchNode->parent) {
     bool stop=false;
     for(Node* fact:branchNode->folState->list()) {
-      if(fact->keys.N && fact->keys.last()=="block") {
+      if(fact->key=="block") {
         if(tuplesAreEqual(fact->parents, symbols)) {
-          CHECK(fact->isOfType<bool>() && fact->keys.first()=="block", "");
+          CHECK(fact->isOfType<bool>() && fact->key=="block", "");
           stop=true;
           break;
         }
@@ -417,9 +417,9 @@ Skeleton LGP_Node::getSkeleton(bool finalStateOnly) const {
     for(uint i=0; i<G.N; i++) {
       if(!done(k, i)) {
         Node* n = G(i);
-        if(n->keys.N && n->keys.first()=="decision") continue; //don't pickup decision literals
+        if(n->isGraph() && n->graph().findNode("%decision")) continue; //don't pickup decision literals
         StringA symbols;
-        for(Node* p:n->parents) symbols.append(p->keys.last());
+        for(Node* p:n->parents) symbols.append(p->key);
 
         //check if there is a predicate
         if(!symbols.N) continue;
@@ -578,11 +578,11 @@ void LGP_Node::getGraph(Graph& G, Node* n, bool brief) {
   }
 
   if(!brief) {
-    n->keys.append(STRING("s:" <<step <<" t:" <<time <<" bound:" <<highestBound <<" feas:" <<!isInfeasible <<" term:" <<isTerminal <<' ' <<folState->isNodeOfGraph->keys.scalar()));
+    n->key <<(STRING("s:" <<step <<" t:" <<time <<" bound:" <<highestBound <<" feas:" <<!isInfeasible <<" term:" <<isTerminal <<' ' <<folState->isNodeOfGraph->key));
     for(uint l=0; l<L; l++)
-      n->keys.append(STRING(rai::Enum<BoundType>::name(l) <<" #:" <<count(l) <<" c:" <<cost(l) <<"|" <<constraints(l) <<" " <<(feasible(l)?'1':'0') <<" time:" <<computeTime(l)));
-    if(folAddToState) n->keys.append(STRING("symAdd:" <<*folAddToState));
-    if(note.N) n->keys.append(note);
+      n->key <<(STRING(rai::Enum<BoundType>::name(l) <<" #:" <<count(l) <<" c:" <<cost(l) <<"|" <<constraints(l) <<" " <<(feasible(l)?'1':'0') <<" time:" <<computeTime(l)));
+    if(folAddToState) n->key <<(STRING("symAdd:" <<*folAddToState));
+    if(note.N) n->key <<(note);
   }
 
   G.getRenderingInfo(n).dotstyle="shape=box";

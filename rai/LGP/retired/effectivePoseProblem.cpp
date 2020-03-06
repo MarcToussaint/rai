@@ -34,13 +34,13 @@ EffectivePoseProblem::EffectivePoseProblem(rai::Configuration& effKinematics_bef
   // } );
 
 //  Node *glueSymbol  = KB["glued"];
-//  for(Node *s:glueSymbol->parentOf) if(&s->container==&symbolicState_before){
+//  for(Node *s:glueSymbol->children) if(&s->container==&symbolicState_before){
 //    //-- create a joint between the object and the target
 //    rai::Shape *ref1 = effKinematics.getShapeByName(s->parents(1)->keys.last());
 //    rai::Shape *ref2 = effKinematics.getShapeByName(s->parents(2)->keys.last());
 
   Node* glueSymbol  = KB["glued"];
-  for(Node* s:glueSymbol->parentOf) if(&s->container==&symbolicState_before) {
+  for(Node* s:glueSymbol->children) if(&s->container==&symbolicState_before) {
       //-- create a joint between the object and the target
       rai::Shape* ref1 = effKinematics.getShapeByName(s->parents(1)->keys.last());
       rai::Shape* ref2 = effKinematics.getShapeByName(s->parents(2)->keys.last());
@@ -52,7 +52,7 @@ EffectivePoseProblem::EffectivePoseProblem(rai::Configuration& effKinematics_bef
     }
 
   Node* supportSymbol  = KB["Gsupport"];
-  for(Node* s:supportSymbol->parentOf) if(&s->container==&symbolicState_after) {
+  for(Node* s:supportSymbol->children) if(&s->container==&symbolicState_after) {
       //-- create a joint between the object and the target
       rai::Shape* ref2 = effKinematics.getShapeByName(s->parents(1)->keys.last());
       rai::Shape* ref1 = effKinematics.getShapeByName(s->parents(2)->keys.last());
@@ -93,7 +93,7 @@ void EffectivePoseProblem::phi(arr& phi, arr& phiJ, arr& H, ObjectiveTypeA& tt, 
   //-- touch symbols -> constraints of being inside!
   //LATER: This is not yet transferred to the new LGP!
   Node* touch=symbolicState_after["touch"];
-  for(Node* constraint:touch->parentOf) if(&constraint->container==&symbolicState_after) {
+  for(Node* constraint:touch->children) if(&constraint->container==&symbolicState_after) {
       rai::Shape* s1=effKinematics.getShapeByName(constraint->parents(1)->keys(0));
       rai::Shape* s2=effKinematics.getShapeByName(constraint->parents(2)->keys(0));
 
@@ -108,7 +108,7 @@ void EffectivePoseProblem::phi(arr& phi, arr& phiJ, arr& H, ObjectiveTypeA& tt, 
   //-- support symbols -> constraints of being inside!
   //LATER: This is is now done by the TM_AboveBox (as used in place)
   Node* support=symbolicState_after["Gsupport"];
-  for(Node* constraint:support->parentOf) if(&constraint->container==&symbolicState_after) {
+  for(Node* constraint:support->children) if(&constraint->container==&symbolicState_after) {
       rai::Body* b1=effKinematics.getBodyByName(constraint->parents(1)->keys.last());
       rai::Body* b2=effKinematics.getBodyByName(constraint->parents(2)->keys.last());
       if(b2->shapes(0)->type==rai::ST_cylinder) {
@@ -151,7 +151,7 @@ void EffectivePoseProblem::phi(arr& phi, arr& phiJ, arr& H, ObjectiveTypeA& tt, 
   NodeL objs=symbolicState_after.getNodes("Object");
   for(Node* obj:objs) {
     NodeL supporters;
-    for(Node* constraint:obj->parentOf) {
+    for(Node* constraint:obj->children) {
       if(constraint->parents.N==3 && constraint->parents(0)==support && constraint->parents(2)==obj) {
         supporters.append(constraint->parents(1));
       }
@@ -214,7 +214,7 @@ void EffectivePoseProblem::phi(arr& phi, arr& phiJ, arr& H, ObjectiveTypeA& tt, 
   //-- supporters above object
   for(Node* obj:objs) {
     NodeL supporters;
-    for(Node* constraint:obj->parentOf) {
+    for(Node* constraint:obj->children) {
       if(constraint->parents.N==3 && constraint->parents(0)==support && constraint->parents(1)==obj) {
         supporters.append(constraint->parents(2));
       }

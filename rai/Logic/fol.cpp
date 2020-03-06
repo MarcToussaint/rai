@@ -14,6 +14,11 @@
 //  return a < b;
 //}
 
+/// any node that has a key, no parents, and is bool, is a symbol declaration
+bool isSymbol(rai::Node* n){
+  return n->key.N>0 && n->parents.N==0 && n->isOfType<bool>();
+}
+
 /// given a scope (a subGraph, e.g. the full KB, or a rule or so), return all literals (defined by degree>0, keys.N=0)
 NodeL getLiteralsOfScope(Graph& KB) {
   NodeL state;
@@ -26,12 +31,12 @@ NodeL getLiteralsOfScope(Graph& KB) {
 NodeL getSymbolsOfScope(const Graph& KB) {
   NodeL vars;
   vars.reserveMEM(KB.N);
-  for(Node* i:KB) if(i->keys.N>0 && i->parents.N==0 && i->isOfType<bool>()) vars.append(i);
+  for(Node* i:KB) if(isSymbol(i)) vars.append(i);
   return vars;
 }
 
 Node* getFirstNonSymbolOfScope(Graph& KB) {
-  for(Node* i:KB) if(!(i->keys.N>0 && i->parents.N==0 && i->isOfType<bool>())) return i;
+  for(Node* i:KB) if(!isSymbol(i)) return i;
   return nullptr;
 }
 
@@ -39,7 +44,7 @@ Node* getFirstNonSymbolOfScope(Graph& KB) {
 NodeL getVariables(Node* literal, Graph* varScope) {
   NodeL vars;
   for(Node* i:literal->parents) if(&i->container==varScope) {
-      CHECK(i->keys.N>0 && i->parents.N==0 && i->isOfType<bool>(), "");
+      CHECK(isSymbol(i), "");
       vars.append(i);
     }
   return vars;
@@ -48,7 +53,7 @@ NodeL getVariables(Node* literal, Graph* varScope) {
 uint getNumOfVariables(Node* literal, Graph* varScope) {
   uint v=0;
   for(Node* i:literal->parents) if(&i->container==varScope) {
-      CHECK(i->keys.N>0 && i->parents.N==0 && i->isOfType<bool>(), "");
+      CHECK(isSymbol(i), "");
       v++;
     }
   return v;
@@ -56,7 +61,7 @@ uint getNumOfVariables(Node* literal, Graph* varScope) {
 
 Node* getFirstVariable(Node* literal, Graph* varScope) {
   for(Node* i:literal->parents) if(&i->container==varScope) {
-      CHECK(i->keys.N>0 && i->parents.N==0 && i->isOfType<bool>(), "");
+      CHECK(isSymbol(i), "");
       return i;
     }
   return nullptr;
@@ -66,7 +71,7 @@ Node* getFirstVariable(Node* literal, Graph* varScope) {
 bool tuplesAreEqual(NodeL& tuple0, NodeL& tuple1) {
   if(tuple0.N!=tuple1.N) return false;
   for(uint i=0; i<tuple0.N; i++) {
-    if(tuple0.elem(i)->keys.last()=="ANY") continue;
+    if(tuple0.elem(i)->key=="ANY") continue;
     if(tuple0.elem(i) != tuple1.elem(i)) return false;
   }
   return true;
@@ -85,7 +90,7 @@ bool valuesAreEqual(Node* fact0, Node* fact1, bool booleanMeansExistance) {
 /// two facts are exactly equal (tuplesAreEqual (vars or consts), keys are equal, valuesAreEqual)
 bool factsAreEqual(Node* fact0, Node* fact1, bool checkAlsoValue) {
   if(!tuplesAreEqual(fact0->parents, fact1->parents)) return false;
-  if(fact0->keys!=fact1->keys) return false;
+  if(fact0->key!=fact1->key) return false;
   if(checkAlsoValue) return valuesAreEqual(fact0, fact1, true);
   return true;
 }
@@ -93,11 +98,11 @@ bool factsAreEqual(Node* fact0, Node* fact1, bool checkAlsoValue) {
 /// after substituting subst in literal it becomes equal to fact [ignoreSubst ignores all variables in literal]
 bool factsAreEqual(Node* fact, Node* literal, const NodeL& subst, const Graph* subst_scope, bool checkAlsoValue, bool ignoreSubst) {
   if(fact->parents.N!=literal->parents.N) return false;
-  if(fact->keys!=literal->keys) return false;
+  if(fact->key!=literal->key) return false;
   for(uint i=0; i<fact->parents.N; i++) {
     Node* fact_arg = fact->parents.elem(i);
     Node* lit_arg = literal->parents.elem(i);
-    if(lit_arg->keys.N==1 && lit_arg->keys.last()=="ANY") {
+    if(lit_arg->key=="ANY") {
     } else if(&lit_arg->container==subst_scope) { //lit_arg is a variable -> check match of substitution
       if(!ignoreSubst && subst(lit_arg->index)!=fact_arg) return false;
     } else if(lit_arg!=fact_arg) return false;
@@ -112,19 +117,19 @@ bool getEqualFactInKB(Graph& KB, Node* fact, bool checkAlsoValue) {
     CHECK(fact->isGraph(), "special literals need Graph type");
     Graph& graph=fact->graph();
     //assume this is a special parent!
-    if(fact->keys.last()=="aggregate") {
+    if(fact->key=="aggregate") {
       NodeL subs = getRuleSubstitutions2(KB, fact, 0);
-      if(graph.last()->keys.last()=="count") {
+      if(graph.last()->key=="count") {
         if(subs.d0 == graph.last()->get<double>()) return true;
         else return false;
-      } else HALT("unknown aggregate mode '" <<graph.last()->keys.last() <<"'");
-    } else HALT("unknown special literal key'" <<fact->keys.last() <<"'");
+      } else HALT("unknown aggregate mode '" <<graph.last()->key <<"'");
+    } else HALT("unknown special literal key'" <<fact->key <<"'");
   }
 #if 0
   //first find the section of all facts that derive from the same symbols
-  NodeL candidates=fact->parents(0)->parentOf;
+  NodeL candidates=fact->parents(0)->children;
   for(uint p=1; p<fact->parents.N; p++)
-    candidates = setSection(candidates, fact->parents(p)->parentOf);
+    candidates = setSection(candidates, fact->parents(p)->children);
 #else
   NodeL& candidates = KB;
 #endif
@@ -138,7 +143,7 @@ bool getEqualFactInKB(Graph& KB, Node* fact, bool checkAlsoValue) {
 /// return the subset of 'literals' that matches with a fact (calling match(lit0, lit1))
 Node* getEqualFactInList(Node* fact, NodeL& facts, bool checkAlsoValue) {
 //  NodeL candidates=facts;
-//  for(Node *p:fact->parents) candidates = setSection(candidates, p->parentOf);
+//  for(Node *p:fact->parents) candidates = setSection(candidates, p->children);
   for(Node* fact1:facts) if(factsAreEqual(fact, fact1, checkAlsoValue)) return fact1; //matches.append(fact1);
   return nullptr;
 }
@@ -146,9 +151,9 @@ Node* getEqualFactInList(Node* fact, NodeL& facts, bool checkAlsoValue) {
 ///// try to find a fact within 'facts' that is exactly equal to 'literal'
 //bool getEqualFactInKB(Graph& facts, NodeL& fact, bool checkAlsoValue){
 //  //first find the section of all facts that derive from the same symbols
-//  NodeL candidates=fact(0)->parentOf;
+//  NodeL candidates=fact(0)->children;
 ////  for(uint p=1;p<fact.N;p++)
-////    candidates = setSection(candidates, fact->parents(p)->parentOf);
+////    candidates = setSection(candidates, fact->parents(p)->children);
 //  //now check only these candidates
 //  for(Node *fact1:candidates) if(&fact1->container==&facts){
 //    if(factsAreEqual(fact1, fact, checkAlsoValue)) return true;
@@ -160,7 +165,7 @@ Node* getEqualFactInList(Node* fact, NodeL& facts, bool checkAlsoValue) {
 bool getEqualFactInKB(Graph& KB, Node* literal, const NodeL& subst, const Graph* subst_scope, bool checkAlsoValue) {
 #if 0
   //TODO: this should construct the tuple, call the above method, then additionally checkForValue -> write a method that checks value only
-  NodeL candidates = literal->parents(0)->parentOf;
+  NodeL candidates = literal->parents(0)->children;
   NodeL candidates = getLiteralsOfScope(KB);
 #else
   NodeL& candidates = KB;
@@ -177,12 +182,12 @@ NodeL getPotentiallyEqualFactsInKB(Graph& KB, Node* tuple, const Graph& varScope
   Node* rarestSymbol=nullptr;
   uint rarestSymbolN=0;
   for(Node* sym:tuple->parents) if(&sym->container!=&varScope) { //loop through all grounded symbols, not variables
-      if(!rarestSymbol || sym->parentOf.N<rarestSymbolN) {
+      if(!rarestSymbol || sym->children.N<rarestSymbolN) {
         rarestSymbol = sym;
-        rarestSymbolN = sym->parentOf.N;
+        rarestSymbolN = sym->children.N;
       }
     }
-  const NodeL& candidates = rarestSymbol->parentOf;//that totally doesn't scale!!!
+  const NodeL& candidates = rarestSymbol->children;//that totally doesn't scale!!!
 #else
   const NodeL& candidates = KB;
 #endif
@@ -227,7 +232,7 @@ void removeInfeasibleSymbolsFromDomain(Graph& facts, NodeL& domain, Node* litera
 
   NodeL dom;
   dom.reserveMEM(domain.N);
-  for(Node* fact:facts) { //for(Node *fact:predicate->parentOf) if(&fact->container==&facts){
+  for(Node* fact:facts) { //for(Node *fact:predicate->children) if(&fact->container==&facts){
     //-- check that all arguments are the same, except for var!
     bool match=true;
     Node* value=nullptr;
@@ -272,8 +277,8 @@ Node* createNewSubstitutedLiteral(Graph& facts, Node* literal, const NodeL& subs
       CHECK(subst(arg->index)!=nullptr, "a variable (=argument in local scope) requires a substitution, no?");
       //CHECK_EQ(arg->container.N, subst.N, "somehow the substitution does not fit the container of literal arguments");
 //      fact->parents(i) = subst(arg->index);
-//arg->numChildren--;//      arg->parentOf.removeValue(fact);
-//fact->parents(i)->numChildren++;//      fact->parents(i)->parentOf.append(fact);
+//arg->numChildren--;//      arg->children.removeValue(fact);
+//fact->parents(i)->numChildren++;//      fact->parents(i)->children.append(fact);
       fact->swapParent(i, subst(arg->index));
     }
   }
@@ -294,7 +299,7 @@ bool applySubstitutedLiteral(Graph& facts, Node* literal, const NodeL& subst, Gr
 
   //first collect tuple matches
   NodeL matches;
-  for(Node* fact:facts) { //for(Node *fact:literal->parents(0)->parentOf) if(&fact->container==&facts){
+  for(Node* fact:facts) { //for(Node *fact:literal->parents(0)->children) if(&fact->container==&facts){
     if(factsAreEqual(fact, literal, subst, subst_scope, false)) matches.append(fact);
   }
 
@@ -420,7 +425,7 @@ NodeL getSubstitutions2(Graph& KB, NodeL& relations, int verbose) {
         for(uint i=0; i<rel->parents.N; i++) { //add the symbols to the domain
           Node* var = rel->parents(i);
           if(&var->container==&varScope) { //this is a var
-            CHECK(var->index<vars.N, "relation '" <<*rel <<"' has variable '" <<var->keys.last() <<"' that is not in the scope");
+            CHECK(var->index<vars.N, "relation '" <<*rel <<"' has variable '" <<var->key <<"' that is not in the scope");
             for(Node* m:matches) domainsForThisRel(var->index).setAppend(m->parents(i)); //setAppend not necessary
           }
         }
@@ -522,7 +527,7 @@ NodeL getSubstitutions2(Graph& KB, NodeL& relations, int verbose) {
     cout <<"POSSIBLE SUBSTITUTIONS: " <<substitutions.d0 <<endl;
     for(uint s=0; s<substitutions.d0; s++) {
       for(uint i=0; i<substitutions.d1; i++) if(substitutions(s, i)) {
-          cout <<varScope(i)->keys.last() <<" -> " <<substitutions(s, i)->keys.last() <<", ";
+          cout <<varScope(i)->key <<" -> " <<substitutions(s, i)->key <<", ";
         }
       cout <<endl;
     }
@@ -601,7 +606,7 @@ bool forwardChaining_propositional(Graph& KB, Node* q) {
     Node* s = agenda.popFirst();
     if(!inferred(s->index)) {
       inferred(s->index) = true;
-      for(Node* child : s->parentOf) { //all objects that involve 's'
+      for(Node* child : s->children) { //all objects that involve 's'
         const Node* clause = child->container.isNodeOfGraph; //check if child is a literal in a clause
         if(clause) { //yes: 's' is a literal in a clause
           CHECK(count(clause->index)>0, "");
@@ -644,4 +649,5 @@ double evaluateFunction(Graph& func, Graph& state, int verbose) {
   }
   return f;
 }
+
 

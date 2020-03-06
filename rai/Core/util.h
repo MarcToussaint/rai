@@ -457,10 +457,10 @@ template<class T> std::ostream& operator<<(FileToken& fil, const T& x) { fil.get
 inline std::ostream& operator<<(std::ostream& os, const FileToken& fil) { return os <<fil.name; }
 template<class T> FileToken& operator<<(T& x, FileToken& fil) { fil.getIs() >>x; return fil; }
 template<class T> void operator>>(const T& x, FileToken& fil) { fil.getOs() <<x; }
+inline bool operator==(const FileToken&, const FileToken&) { return false; }
 }
 #define FILE(filename) (rai::FileToken(filename, false)()) //it needs to return a REFERENCE to a local scope object
 
-inline bool operator==(const rai::FileToken&, const rai::FileToken&) { return false; }
 
 //===========================================================================
 //
@@ -704,10 +704,15 @@ struct CoutToken {
 // to register a type
 //
 
+namespace rai{
+  struct Node;
+  struct Graph;
+}
+
 struct Type {
   virtual ~Type() {}
   virtual const std::type_info& typeId() const {NIY}
-  virtual struct Node* readIntoNewNode(struct Graph& container, std::istream&) const {NIY}
+  virtual struct rai::Node* readIntoNewNode(struct rai::Graph& container, std::istream&) const {NIY}
   virtual void* newInstance() const {NIY}
   void write(std::ostream& os) const {  os <<"Type '" <<typeId().name() <<"' ";  }
   void read(std::istream& is) const {NIY}

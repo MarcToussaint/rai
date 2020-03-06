@@ -40,9 +40,9 @@ TM_Default::TM_Default(TM_DefaultType _type, const rai::Configuration& K,
   : TM_Default(_type, initIdArg(K, iShapeName), _ivec, initIdArg(K, jShapeName), _jvec) {
 }
 
-TM_Default::TM_Default(const Graph& specs, const rai::Configuration& G)
+TM_Default::TM_Default(const rai::Graph& specs, const rai::Configuration& G)
   :type(TMT_no), i(-1), j(-1) {
-  Node* it=specs["type"];
+  rai::Node* it=specs["type"];
   if(!it) it=specs["map"];
   if(!it) HALT("no type given");
   rai::String Type=it->get<rai::String>();
@@ -62,14 +62,14 @@ TM_Default::TM_Default(const Graph& specs, const rai::Configuration& G)
   if(type==TMT_quat) flipTargetSignOnNegScalarProduct=true;
 }
 
-TM_Default::TM_Default(const Node* specs, const rai::Configuration& G)
+TM_Default::TM_Default(const rai::Node* specs, const rai::Configuration& G)
   :type(TMT_no), i(-1), j(-1) {
   CHECK(specs->parents.N>1, "");
-  //  rai::String& tt=specs->parents(0)->keys.last();
-  rai::String& Type=specs->parents(1)->keys.last();
+  //  rai::String& tt=specs->parents(0)->key;
+  rai::String& Type=specs->parents(1)->key;
   const char* ref1=nullptr, *ref2=nullptr;
-  if(specs->parents.N>2) ref1=specs->parents(2)->keys.last().p;
-  if(specs->parents.N>3) ref2=specs->parents(3)->keys.last().p;
+  if(specs->parents.N>2) ref1=specs->parents(2)->key.p;
+  if(specs->parents.N>3) ref2=specs->parents(3)->key.p;
   if(Type=="pos") type=TMT_pos;
   else if(Type=="vec") type=TMT_vec;
   else if(Type=="quat") type=TMT_quat;
@@ -82,8 +82,8 @@ TM_Default::TM_Default(const Node* specs, const rai::Configuration& G)
   if(ref1) { rai::Frame* s=G.getFrameByName(ref1); CHECK(s, "shape name '" <<ref1 <<"' does not exist"); i=s->ID; }
   if(ref2) { rai::Frame* s=G.getFrameByName(ref2); CHECK(s, "shape name '" <<ref2 <<"' does not exist"); j=s->ID; }
   if(specs->isGraph()) {
-    const Graph& params = specs->graph();
-    Node* it;
+    const rai::Graph& params = specs->graph();
+    rai::Node* it;
     if((it=params.getNode("vec1"))) ivec = rai::Vector(it->get<arr>());  else ivec.setZero();
     if((it=params.getNode("vec2"))) jvec = rai::Vector(it->get<arr>());  else jvec.setZero();
   }
@@ -338,8 +338,8 @@ rai::String TM_Default::shortTag(const rai::Configuration& C) {
   return s;
 }
 
-Graph TM_Default::getSpec(const rai::Configuration& C) {
-  Graph G;
+rai::Graph TM_Default::getSpec(const rai::Configuration& C) {
+  rai::Graph G;
   G.newNode<rai::String>({"feature"}, {}, STRING(type));
   if(i>=0) G.newNode<rai::String>({"o1"}, {}, C.frames(i)->name);
   if(j>=0) G.newNode<rai::String>({"o2"}, {}, C.frames(j)->name);

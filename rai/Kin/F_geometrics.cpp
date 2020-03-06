@@ -74,8 +74,8 @@ rai::String TM_AboveBox::shortTag(const rai::Configuration& G) {
   return STRING("AboveBox:"<<(i<0?"WORLD":G.frames(i)->name) <<':' <<(j<0?"WORLD":G.frames(j)->name));
 }
 
-Graph TM_AboveBox::getSpec(const rai::Configuration& K) {
-  return Graph({ {"feature", "above"}, {"o1", K.frames(i)->name}, {"o2", K.frames(j)->name}});
+rai::Graph TM_AboveBox::getSpec(const rai::Configuration& K) {
+  return rai::Graph({ {"feature", "above"}, {"o1", K.frames(i)->name}, {"o2", K.frames(j)->name}});
 }
 
 //===========================================================================

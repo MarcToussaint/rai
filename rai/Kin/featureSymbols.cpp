@@ -72,7 +72,7 @@ double shapeSize(const rai::Configuration& K, const char* name, uint i=2) {
   rai::Frame* f = K.getFrameByName(name);
   rai::Shape* s = f->shape;
   if(!s) {
-    for(rai::Frame* b:f->parentOf) if(b->name==name && b->shape) { s=b->shape; break; }
+    for(rai::Frame* b:f->children) if(b->name==name && b->shape) { s=b->shape; break; }
   }
   if(!s) return 0;
   return s->size(i);

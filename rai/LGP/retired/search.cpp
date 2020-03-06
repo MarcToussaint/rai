@@ -63,10 +63,10 @@ void runMonteCarlo(Graph& G) {
 
         //hack: apply depth effect:
         Node* depth0=nullptr, *depth1=nullptr;
-        for(Node* fact:d.second(0)->parentOf) if(&fact->container==&state && fact->parents(0)==depthSymbol) {
+        for(Node* fact:d.second(0)->children) if(&fact->container==&state && fact->parents(0)==depthSymbol) {
             depth0=fact; break;
           }
-        for(Node* fact:d.second(1)->parentOf) if(&fact->container==&state && fact->parents(0)==depthSymbol) {
+        for(Node* fact:d.second(1)->children) if(&fact->container==&state && fact->parents(0)==depthSymbol) {
             depth1=fact; break;
           }
         if(depth0 && depth1) {

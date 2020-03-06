@@ -23,7 +23,7 @@ struct TM_AboveBox : Feature {
   virtual void phi(arr& y, arr& J, const rai::Configuration& G);
   virtual uint dim_phi(const rai::Configuration& G) { return 4; }
   virtual rai::String shortTag(const rai::Configuration& G);
-  virtual Graph getSpec(const rai::Configuration& K);
+  virtual rai::Graph getSpec(const rai::Configuration& K);
 };
 
 //===========================================================================

@@ -42,7 +42,7 @@ struct TM_Proxy : Feature {
   virtual void phi(arr& y, arr& J, const rai::Configuration& G);
   virtual uint dim_phi(const rai::Configuration& G);
   virtual rai::String shortTag(const rai::Configuration& G) { return STRING("ProxyCost"); }
-  virtual Graph getSpec(const rai::Configuration& K) { return Graph({{"feature", "ProxyCost"}}); }
+  virtual rai::Graph getSpec(const rai::Configuration& K) { return rai::Graph({{"feature", "ProxyCost"}}); }
 };
 
 //===========================================================================

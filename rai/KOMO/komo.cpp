@@ -54,7 +54,7 @@ Shape* getShape(const Configuration& K, const char* name) {
   Frame* f = K.getFrameByName(name);
   Shape* s = f->shape;
   if(!s) {
-    for(Frame* b:f->parentOf) if(b->name==name && b->shape) { s=b->shape; break; }
+    for(Frame* b:f->children) if(b->name==name && b->shape) { s=b->shape; break; }
   }
   return s;
 }
@@ -2168,8 +2168,8 @@ void KOMO::reportProxies(std::ostream& os, double belowMargin) {
   }
 }
 
-Graph KOMO::getContacts() {
-  Graph G;
+rai::Graph KOMO::getContacts() {
+  rai::Graph G;
   int s=0;
   for(auto& K:configurations) {
     for(rai::ForceExchange* con:K->forces) {
@@ -2232,8 +2232,8 @@ rai::Array<rai::Transformation> KOMO::reportEffectiveJoints(std::ostream& os) {
       info.accum += 1.;
       Node* c=n;
       for(;;) {
-        if(!c->parentOf.N) break;
-        c = c->parentOf.scalar();
+        if(!c->children.N) break;
+        c = c->children.scalar();
         EffJointInfo& cinfo = c->get<EffJointInfo>();
         if(info.t_end<cinfo.t) info.t_end=cinfo.t;
         info.Q.rot.add(cinfo.j->frame->get_Q().rot);
@@ -2272,7 +2272,7 @@ rai::Array<rai::Transformation> KOMO::reportEffectiveJoints(std::ostream& os) {
   return Qs;
 }
 
-Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs) {
+rai::Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs) {
   bool wasRun = featureValues.N!=0;
 
   //-- collect all task costs and constraints
@@ -2370,26 +2370,26 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
   CHECK_EQ(M, featureValues.N, "");
 
   //-- generate a report graph
-  Graph report;
+  rai::Graph report;
   double totalC=0., totalG=0., totalH=0., totalF=0.;
   for(uint i=0; i<objectives.N; i++) {
     ptr<Objective> c = objectives(i);
     Graph& g = report.newSubgraph({c->name}, {});
     g.newNode<double>({"order"}, {}, c->map->order);
     g.newNode<String>({"type"}, {}, STRING(c->type.name()));
-    if(taskC(i)) g.newNode<double>({"sos"}, {}, taskC(i));
-    if(taskG(i)) g.newNode<double>({"ineq"}, {}, taskG(i));
-    if(taskH(i)) g.newNode<double>({"eq"}, {}, taskH(i));
-    if(taskF(i)) g.newNode<double>({"f"}, {}, taskF(i));
+    if(taskC(i)) g.newNode<double>("sos", {}, taskC(i));
+    if(taskG(i)) g.newNode<double>("ineq", {}, taskG(i));
+    if(taskH(i)) g.newNode<double>("eq", {}, taskH(i));
+    if(taskF(i)) g.newNode<double>("f", {}, taskF(i));
     totalC += taskC(i);
     totalG += taskG(i);
     totalH += taskH(i);
     totalF += taskF(i);
   }
-  report.newNode<double>({"total", "sos_sumOfSqr"}, {}, totalC);
-  report.newNode<double>({"total", "ineq_sumOfPos"}, {}, totalG);
-  report.newNode<double>({"total", "eq_sumOfAbs"}, {}, totalH);
-  report.newNode<double>({"total", "f_sum"}, {}, totalF);
+  report.newNode<double>("sos", {}, totalC);
+  report.newNode<double>("ineq", {}, totalG);
+  report.newNode<double>("eq", {}, totalH);
+  report.newNode<double>("f", {}, totalF);
 
   if(gnuplt) {
     //-- write a nice gnuplot file
@@ -2427,8 +2427,8 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs)
 }
 
 /// output the defined problem as a generic graph, that can also be displayed, saved and loaded
-Graph KOMO::getProblemGraph(bool includeValues, bool includeSolution) {
-  Graph K;
+rai::Graph KOMO::getProblemGraph(bool includeValues, bool includeSolution) {
+  rai::Graph K;
   //header
 #if 1
   Graph& g = K.newSubgraph({"KOMO_specs"});

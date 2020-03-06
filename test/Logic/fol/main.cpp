@@ -148,7 +148,7 @@ void testMonteCarlo(){
 
         if(verbose>2) cout <<"*** # possible decisions: " <<decisions.N <<endl;
         if(verbose>3) for(auto d:decisions){
-          cout <<"rule " <<d.first->keys(1) <<" SUBS "; listWrite(d.second, cout); cout <<endl;
+          cout <<"rule " <<d.first->key <<" SUBS "; listWrite(d.second, cout); cout <<endl;
         }
 
         if(!decisions.N){
@@ -157,7 +157,7 @@ void testMonteCarlo(){
           //-- pick a random decision
           uint deci = rnd(decisions.N);
           std::pair<Node*, NodeL>& d = decisions(deci);
-          if(verbose>2){ cout <<"*** decision = " <<deci <<':' <<d.first->keys(1) <<" SUBS "; listWrite(d.second, cout); cout <<endl; }
+          if(verbose>2){ cout <<"*** decision = " <<deci <<':' <<d.first->key <<" SUBS "; listWrite(d.second, cout); cout <<endl; }
 
           Node *effect = d.first->graph().last();
           if(verbose>2){ cout <<"*** applying" <<*effect <<" SUBS"; listWrite(d.second, cout); cout <<endl; }

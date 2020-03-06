@@ -77,7 +77,7 @@ double TowerProblem::reward(const rai::Configuration& world, const Graph& symbol
   Node* depthSymbol=symbols["depth"];
   Graph& state =symbols["STATE"]->graph();
 
-  for(Node* dep:depthSymbol->parentOf) if(&dep->container==&state) {
+  for(Node* dep:depthSymbol->children) if(&dep->container==&state) {
       double d = dep->get<double>();
       if(d>depth) depth=d;
     }
@@ -88,7 +88,7 @@ double TowerProblem::reward(const rai::Configuration& world, const Graph& symbol
   NodeL objs=symbols.getNodes("Object");
   for(Node* obj:objs) {
     NodeL supporters;
-    for(Node* constraint:obj->parentOf) {
+    for(Node* constraint:obj->children) {
       if(constraint->parents.N==3 && constraint->parents(0)==supportSymbol && constraint->parents(2)==obj) {
         supporters.append(constraint->parents(1));
       }

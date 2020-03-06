@@ -16,10 +16,10 @@ struct FOL_World : MCTS_Environment {
 
   struct Decision : SAO {
     bool waitDecision;
-    Node* rule;
-    NodeL substitution;
+    rai::Node* rule;
+    rai::NodeL substitution;
     int id;
-    Decision(bool waitDecision, Node* rule, const NodeL& substitution, int id)
+    Decision(bool waitDecision, rai::Node* rule, const rai::NodeL& substitution, int id)
       : waitDecision(waitDecision), rule(rule), substitution(substitution), id(id) {}
     virtual bool operator==(const SAO& other) const {
       auto decision = dynamic_cast<const Decision*>(&other);
@@ -29,7 +29,7 @@ struct FOL_World : MCTS_Environment {
       if(decision->substitution!=substitution) return false;
       return true;
     }
-    NodeL getTuple() const;
+    rai::NodeL getTuple() const;
     void write(ostream&) const;
     virtual size_t get_hash() const {
       return std::hash<int>()(id);
@@ -51,12 +51,12 @@ struct FOL_World : MCTS_Environment {
   };
 
   struct State:SAO {
-    Graph* state;
+    rai::Graph* state;
     uint T_step;
     double T_real;
     double R_total;
 
-    State(Graph* state, FOL_World& fol_state)
+    State(rai::Graph* state, FOL_World& fol_state)
       : state(state), T_step(fol_state.T_step), T_real(fol_state.T_real), R_total(fol_state.R_total) {}
     virtual bool operator==(const SAO& other) const {
       auto ob = dynamic_cast<const State*>(&other);
@@ -77,15 +77,15 @@ struct FOL_World : MCTS_Environment {
 
   // the logic state is fully described by the KB; all other variables just point into the KB
   bool deadEnd, successEnd;
-  Graph KB;     ///< current knowledge base
-  Graph* start_state=0; ///< the start-state within the KB (is a subgraph item of KB)
-  Graph* state=0; ///< the dynamic/fluent state within the KB (is a subgraph item of KB, created within the constructor)
-  NodeL worldRules;     ///< rules within the KB (each is a subgraph item of the KB)
-  NodeL decisionRules;  ///< rules within the KB (each is a subgraph item of the KB)
-  Node* lastDecisionInState=0; ///< the literal that represents the last decision in the state
-  Graph* rewardFct; ///< the reward function within the KB (is a subgraph item of KB)
-  Node* Terminate_keyword=0, *Wait_keyword=0, *Quit_keyword=0, *Quit_literal=0, *Subgoal_keyword=0, *Subgoal_literal=0;
-  Graph* subgoals=0;
+  rai::Graph KB;     ///< current knowledge base
+  rai::Graph* start_state=0; ///< the start-state within the KB (is a subgraph item of KB)
+  rai::Graph* state=0; ///< the dynamic/fluent state within the KB (is a subgraph item of KB, created within the constructor)
+  rai::NodeL worldRules;     ///< rules within the KB (each is a subgraph item of the KB)
+  rai::NodeL decisionRules;  ///< rules within the KB (each is a subgraph item of the KB)
+  rai::Node* lastDecisionInState=0; ///< the literal that represents the last decision in the state
+  rai::Graph* rewardFct; ///< the reward function within the KB (is a subgraph item of KB)
+  rai::Node* Terminate_keyword=0, *Wait_keyword=0, *Quit_keyword=0, *Quit_literal=0, *Subgoal_keyword=0, *Subgoal_literal=0;
+  rai::Graph* subgoals=0;
 
   int verbose;
   int verbFil;
@@ -100,7 +100,7 @@ struct FOL_World : MCTS_Environment {
   FOL_World();
   FOL_World(const char* filename);
   virtual ~FOL_World();
-  void init(const Graph& _KB);
+  void init(const rai::Graph& _KB);
   void init(const char* filename);
   void copy(const FOL_World& fol) { init(fol.KB); }
 
@@ -120,12 +120,12 @@ struct FOL_World : MCTS_Environment {
   void set_state(rai::String&);
 
   //-- helpers to modify the problem
-  Node* addSymbol(const char* name);
+  rai::Node* addSymbol(const char* name);
   void addFact(const StringA& symbols);
   void addAgent(const char* name);
   void addObject(const char* name);
   template<class T> void addValuedFact(const StringA& symbols, const T& x) {
-    NodeL parents;
+    rai::NodeL parents;
     for(const rai::String& s:symbols) parents.append(KB[s]);
     start_state->newNode<T>({}, parents, x);
   }
@@ -135,9 +135,9 @@ struct FOL_World : MCTS_Environment {
 
 
   //-- internal access
-  Graph* getState();
-  void setState(Graph*, int setT_step=-1);
-  Graph* createStateCopy();
+  rai::Graph* getState();
+  void setState(rai::Graph*, int setT_step=-1);
+  rai::Graph* createStateCopy();
 
   void write(std::ostream& os) const { os <<KB; }
   void writePDDLdomain(std::ostream& os, const char* domainName="raiFolDomain") const;

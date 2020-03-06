@@ -68,6 +68,6 @@ rai::String TM_PairCollision::shortTag(const rai::Configuration& G) {
   return STRING("PairCollision-"<<(i<0?"WORLD":G.frames(i)->name) <<'-' <<(j<0?"WORLD":G.frames(j)->name));
 }
 
-Graph TM_PairCollision::getSpec(const rai::Configuration& K) {
-  return Graph({ {"feature", "dist"}, {"o1", K.frames(i)->name}, {"o2", K.frames(j)->name}});
+rai::Graph TM_PairCollision::getSpec(const rai::Configuration& K) {
+  return rai::Graph({ {"feature", "dist"}, {"o1", K.frames(i)->name}, {"o2", K.frames(j)->name}});
 }

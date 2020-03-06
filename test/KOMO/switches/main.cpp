@@ -35,7 +35,7 @@ void TEST(Grasp){
   komo.run();
   komo.checkGradients();
 
-  Graph result = komo.getReport(true);
+  rai::Graph result = komo.getReport(true);
 
   for(uint i=0;i<2;i++) if(!komo.displayTrajectory(.1, true)) break;
 }

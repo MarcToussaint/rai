@@ -65,7 +65,7 @@ void VideoEncoder_OpenCV::close() {
 #include "../Core/util.h"
 #include "videoEncoder.h"
 
-struct sVideoEncoder {};
+struct sVideoEncoder_OpenCV {};
 
 VideoEncoder_OpenCV::VideoEncoder_OpenCV(const char* filename, uint fps) { RAI_MSG("WARNING - using dummy Revel module"); };
 void VideoEncoder_OpenCV::addFrame(const byteA& img) {};

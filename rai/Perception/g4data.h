@@ -79,7 +79,7 @@ stdOutPipe(G4ID);
 struct G4Rec {
   rai::String dir;
   G4ID g4id;
-  Graph kvg, kvgann, params; // TODO ideally, I'd want to use the param class here..
+  rai::Graph kvg, kvgann, params; // TODO ideally, I'd want to use the param class here..
 
   uint nsensors;
   uint nframes;
@@ -138,7 +138,7 @@ stdOutPipe(G4Rec);
 
 struct G4Data {
   rai::String basedir;
-  Graph kvg;
+  rai::Graph kvg;
 
   G4Data();
   ~G4Data();

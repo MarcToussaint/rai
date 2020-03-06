@@ -298,7 +298,7 @@ FrameL rai::Configuration::calc_topSort() const {
     order.append(a);
     done(a->ID) = true;
 
-    for(Frame* ch : a->parentOf) fringe.append(ch);
+    for(Frame* ch : a->children) fringe.append(ch);
   }
 
   for(uint i=0; i<done.N; i++) if(!done(i)) LOG(-1) <<"not done: " <<frames(i)->name <<endl;
@@ -435,9 +435,9 @@ arr rai::Configuration::naturalQmetric(double power) const {
   arr BM(frames.N);
   BM=1.;
   for(uint i=BM.N; i--;) {
-    for(uint j=0; j<frames(i)->parentOf.N; j++) {
-      BM(i) = rai::MAX(BM(frames(i)->parentOf(j)->ID)+1., BM(i));
-      //      BM(i) += BM(bodies(i)->parentOf(j)->to->index);
+    for(uint j=0; j<frames(i)->children.N; j++) {
+      BM(i) = rai::MAX(BM(frames(i)->children(j)->ID)+1., BM(i));
+      //      BM(i) += BM(bodies(i)->children(j)->to->index);
     }
   }
   if(!q.N) getJointStateDimension();
@@ -2123,7 +2123,7 @@ void rai::Configuration::read(std::istream& is) {
   init(G);
 }
 
-Graph rai::Configuration::getGraph() const {
+rai::Graph rai::Configuration::getGraph() const {
 #if 1
   Graph G;
   //first just create nodes
@@ -2132,16 +2132,16 @@ Graph rai::Configuration::getGraph() const {
     Node* n = G.elem(f->ID);
     if(f->parent) {
       n->addParent(G.elem(f->parent->ID));
-      n->keys.append(STRING("Q= " <<f->get_Q()));
+      n->key = STRING("Q= " <<f->get_Q());
     }
     if(f->joint) {
-      n->keys.append(STRING("joint " <<f->joint->type));
+      n->key = (STRING("joint " <<f->joint->type));
     }
     if(f->shape) {
-      n->keys.append(STRING("shape " <<f->shape->type()));
+      n->key = (STRING("shape " <<f->shape->type()));
     }
     if(f->inertia) {
-      n->keys.append(STRING("inertia m=" <<f->inertia->mass));
+      n->key = (STRING("inertia m=" <<f->inertia->mass));
     }
   }
 #else
@@ -2237,72 +2237,74 @@ void rai::Configuration::init(const Graph& G, bool addInsteadOfClear) {
   FrameL node2frame(G.N);
   node2frame.setZero();
 
-  NodeL bs = G.getNodes("body");
+  //all the special cases with %body %joint %shape is only for backward compatibility. New: just frames
+
+  NodeL bs = G.getNodesWithTag("%body");
   for(Node* n:  bs) {
-    CHECK_EQ(n->keys(0), "body", "");
     CHECK(n->isGraph(), "bodies must have value Graph");
+    CHECK(n->graph().findNode("%body"), "");
 
     Frame* b=new Frame(*this);
     node2frame(n->index) = b;
-    if(n->keys.N>1) b->name=n->keys.last();
+    b->name=n->key;
     b->ats.copy(n->graph(), false, true);
-    if(n->keys.N>2) b->ats.newNode<bool>({n->keys.last()});
     b->read(b->ats);
   }
 
   for(Node* n: G) {
-    if(n->keys.N) {
-      if(n->keys(0)=="body" || n->keys(0)=="shape" || n->keys(0)=="joint") continue;
-    }
-    //    CHECK_EQ(n->keys(0),"frame","");
     CHECK(n->isGraph(), "frame must have value Graph");
+    if(n->graph().findNode("%body") || n->graph().findNode("%shape") || n->graph().findNode("%joint")
+       || n->key=="joint" || n->key=="shape") continue;
+    //    CHECK_EQ(n->keys(0),"frame","");
     CHECK_LE(n->parents.N, 1, "frames must have no or one parent: specs=" <<*n <<' ' <<n->index);
 
     Frame* b = nullptr;
     if(!n->parents.N) b = new Frame(*this);
-    else if(n->parents.N==1) b = new Frame(node2frame(n->parents(0)->index)); //getFrameByName(n->parents(0)->keys.last()));
+    else if(n->parents.N==1) b = new Frame(node2frame(n->parents(0)->index)); //getFrameByName(n->parents(0)->key));
     else HALT("a frame can only have one parent");
     node2frame(n->index) = b;
-    if(n->keys.N && n->keys.last()!="frame") b->name=n->keys.last();
+    b->name=n->key;
     b->ats.copy(n->graph(), false, true);
-    //    if(n->keys.N>2) b->ats.newNode<bool>({n->keys.last()});
+    //    if(n->keys.N>2) b->ats.newNode<bool>(n->key);
     b->read(b->ats);
   }
 
-  NodeL ss = G.getNodes("shape");
+  NodeL ss = G.getNodesWithTag("%shape");
+  ss.append( G.getNodes("shape") );
   for(Node* n: ss) {
-    CHECK_EQ(n->keys(0), "shape", "");
     CHECK_LE(n->parents.N, 1, "shapes must have no or one parent");
     CHECK(n->isGraph(), "shape must have value Graph");
+    CHECK(n->key=="shape" || n->graph().findNode("%shape"), "");
 
     Frame* f = new Frame(*this);
-    if(n->keys.N>1) f->name=n->keys.last();
+    f->name=n->key;
     f->ats.copy(n->graph(), false, true);
     Shape* s = new Shape(*f);
     s->read(f->ats);
 
     if(n->parents.N==1) {
-      Frame* b = listFindByName(frames, n->parents(0)->keys.last());
-      CHECK(b, "could not find frame '" <<n->parents(0)->keys.last() <<"'");
+      Frame* b = listFindByName(frames, n->parents(0)->key);
+      CHECK(b, "could not find frame '" <<n->parents(0)->key <<"'");
       f->linkFrom(b);
       if(f->ats["rel"]) n->graph().get(f->Q, "rel");
     }
   }
 
-  NodeL js = G.getNodes("joint");
+  NodeL js = G.getNodesWithTag("%joint");
+  js.append( G.getNodes("joint") );
   for(Node* n: js) {
-    CHECK_EQ(n->keys(0), "joint", "joints must be declared as joint: specs=" <<*n <<' ' <<n->index);
     CHECK_EQ(n->parents.N, 2, "joints must have two parents: specs=" <<*n <<' ' <<n->index);
     CHECK(n->isGraph(), "joints must have value Graph: specs=" <<*n <<' ' <<n->index);
+    CHECK(n->key=="joint" || n->graph().findNode("%joint"), "");
 
-    Frame* from=listFindByName(frames, n->parents(0)->keys.last());
-    Frame* to=listFindByName(frames, n->parents(1)->keys.last());
-    CHECK(from, "JOINT: from '" <<n->parents(0)->keys.last() <<"' does not exist ["<<*n <<"]");
-    CHECK(to, "JOINT: to '" <<n->parents(1)->keys.last() <<"' does not exist ["<<*n <<"]");
+    Frame* from=listFindByName(frames, n->parents(0)->key);
+    Frame* to=listFindByName(frames, n->parents(1)->key);
+    CHECK(from, "JOINT: from '" <<n->parents(0)->key <<"' does not exist ["<<*n <<"]");
+    CHECK(to, "JOINT: to '" <<n->parents(1)->key <<"' does not exist ["<<*n <<"]");
 
     Frame* f=new Frame(*this);
-    if(n->keys.N>1) {
-      f->name=n->keys.last();
+    if(n->key.N && n->key!="joint") {
+      f->name=n->key;
     } else {
       f->name <<'|' <<to->name; //the joint frame is actually the link frame of all child frames
     }
@@ -2324,14 +2326,14 @@ void rai::Configuration::init(const Graph& G, bool addInsteadOfClear) {
         if(mim->isOfType<rai::String>()) jointName = mim->get<rai::String>();
         else if(mim->isOfType<NodeL>()) {
           NodeL nodes = mim->get<NodeL>();
-          jointName = nodes.scalar()->keys.last();
+          jointName = nodes.scalar()->key;
         } else {
           HALT("could not retrieve minimick frame for joint '" <<f->name <<"' from ats '" <<f->ats <<"'");
         }
         rai::Frame* mimicFrame = getFrameByName(jointName, true, true);
         CHECK(mimicFrame, "");
         j->mimic = mimicFrame->joint;
-        if(!j->mimic) HALT("The joint '" <<*j <<"' is declared coupled to '" <<jointName <<"' -- but that doesn't exist!");
+        if(!j->mimic) HALT("The joint '" <<*j <<"' is declared mimicking '" <<jointName <<"' -- but that doesn't exist!");
         j->type = j->mimic->type;
         j->q0 = j->mimic->q0;
         j->calc_Q_from_q(j->q0, 0);
@@ -2341,13 +2343,14 @@ void rai::Configuration::init(const Graph& G, bool addInsteadOfClear) {
       }
   }
 
-  NodeL ucs = G.getNodes("Uncertainty");
+  NodeL ucs = G.getNodesWithTag("%Uncertainty");
+  ucs.append( G.getNodes("Uncertainty") );
   for(Node* n: ucs) {
-    CHECK_EQ(n->keys(0), "Uncertainty", "");
     CHECK_EQ(n->parents.N, 1, "Uncertainties must have one parent");
     CHECK(n->isGraph(), "Uncertainties must have value Graph");
+    CHECK(n->key=="Uncertainty" || n->graph().findNode("%Uncertainty"), "");
 
-    Frame* f = getFrameByName(n->parents(0)->keys.last());
+    Frame* f = getFrameByName(n->parents(0)->key);
     CHECK(f, "");
     Joint* j = f->joint;
     CHECK(j, "Uncertainty parent must be a joint");
@@ -2761,8 +2764,8 @@ void rai::Configuration::reconnectLinksToClosestJoints() {
       if(f->joint && !Q.rot.isZero) continue; //only when rot is zero you can subsume the Q transformation into the Q of the joint
       if(link!=f) { //there is a link's root
         if(link!=f->parent) { //we can rewire to the link's root
-          f->parent->parentOf.removeValue(f);
-          link->parentOf.append(f);
+          f->parent->children.removeValue(f);
+          link->children.append(f);
           f->parent = link;
           f->set_Q() = Q;
         }
@@ -2773,7 +2776,7 @@ void rai::Configuration::reconnectLinksToClosestJoints() {
 void rai::Configuration::pruneUselessFrames(bool pruneNamed, bool pruneNonContactNonMarker) {
   for(uint i=frames.N; i--;) {
     Frame* f=frames.elem(i);
-    if((pruneNamed || !f->name) && !f->parentOf.N && !f->joint && !f->inertia) {
+    if((pruneNamed || !f->name) && !f->children.N && !f->joint && !f->inertia) {
       if(!f->shape)
         delete f; //that's all there is to do
       else if(pruneNonContactNonMarker && !f->shape->cont && f->shape->type()!=ST_marker)
@@ -2870,7 +2873,7 @@ bool rai::Configuration::checkConsistency() const {
     CHECK(&a->C, "");
     CHECK(&a->C==this, "");
     CHECK_EQ(a, frames(a->ID), "");
-    for(Frame* b: a->parentOf) CHECK_EQ(b->parent, a, "");
+    for(Frame* b: a->children) CHECK_EQ(b->parent, a, "");
     if(a->joint) CHECK_EQ(a->joint->frame, a, "");
     if(a->shape) CHECK_EQ(&a->shape->frame, a, "");
     if(a->inertia) CHECK_EQ(&a->inertia->frame, a, "");
@@ -2898,7 +2901,7 @@ bool rai::Configuration::checkConsistency() const {
   for(Frame* f: frames) if((j=f->joint)) {
       if(j->type.x!=JT_tau) {
         CHECK(j->from(), "");
-        CHECK(j->from()->parentOf.findValue(j->frame)>=0, "");
+        CHECK(j->from()->children.findValue(j->frame)>=0, "");
       }
       CHECK_EQ(j->frame->joint, j, "");
       CHECK_GE(j->type.x, 0, "");
@@ -3051,15 +3054,15 @@ uintA rai::Configuration::getCollisionExcludePairIDs(bool verbose){
 //    }
 //    b->shape = nullptr;
 //    //joints from b-to-c now become joints a-to-c
-//    for(Frame *f: b->parentOf) {
+//    for(Frame *f: b->children) {
 //      Joint *j = f->joint();
 //      if(j){
 //        j->from = a;
 //        j->A = bridge * j->A;
-//        a->parentOf.append(f);
+//        a->children.append(f);
 //      }
 //    }
-//    b->parentOf.clear();
+//    b->children.clear();
 //    //reassociate mass
 //    a->mass += b->mass;
 //    a->inertia += b->inertia;
@@ -3828,7 +3831,7 @@ void editConfiguration(const char* filename, rai::Configuration& C) {
     rai::FileToken file(filename, true);
     try {
       rai::lineCount=1;
-      Graph G(file);
+      rai::Graph G(file);
       G.checkConsistency();
       C_tmp.init(G);
       C = C_tmp;

@@ -46,7 +46,8 @@ Conv_Graph_ConstrainedProblem::Conv_Graph_ConstrainedProblem(GraphProblem& _G,  
     rai::arrayElemsep=", ";
     rai::arrayBrackets="[]";
 
-    Graph data = { {"graphStructureQuery", true},
+    rai::Graph data = {
+      {"graphStructureQuery", true},
       {"numVariables", variableDimensions.N},
       {"variableNames", varNames},
       {"variableDimensions", variableDimensions},
@@ -159,12 +160,13 @@ void Conv_Graph_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA
   if(logFile) {
     arr err = summarizeErrors(phi, featureTypes);
 
-    Graph data = { {"graphQuery", queryCount},
-                   {"errors", err},
-                   {"x", x},
-                   {"phi", phi},
-                   {"J", J}
-                 };
+    rai::Graph data = {
+      {"graphQuery", queryCount},
+      {"errors", err},
+      {"x", x},
+      {"phi", phi},
+      {"J", J}
+    };
 
     data.write(*logFile, ",\n", "{\n\n}");
     (*logFile) <<',' <<endl;

@@ -26,6 +26,11 @@
 
 //### Level 0 routines
 
+using rai::NodeL;
+using rai::Graph;
+using rai::Node;
+
+bool isSymbol(Node* n);
 NodeL getLiteralsOfScope(Graph& KB);
 NodeL getSymbolsOfScope(const Graph& KB);
 NodeL getVariables(Node* literal, Graph* varScope);

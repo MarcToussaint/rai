@@ -386,12 +386,15 @@ void GraphView::update() { NICO }
 
 #else //defined RAI_GTK and defined RAI_GRAPHVIZ
 #include "graphview.h"
+
+namespace rai {
 struct sGraphView {};
 
 GraphView::GraphView(Graph& G, const char* title, void* container) { NICO }
 GraphView::~GraphView() { NICO }
 void GraphView::watch() { NICO }
 void GraphView::update() { NICO }
+}
 #endif
 
 //===========================================================================
