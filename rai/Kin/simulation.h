@@ -16,7 +16,7 @@ struct SimulationState;
 struct Simulation {
   enum SimulatorEngine { _physx, _bullet, _kinematic };
   enum ControlMode { _position, _velocity, _acceleration };
-  std::shared_ptr<struct Simulation_self> self;
+  std::unique_ptr<struct Simulation_self> self;
 
   Configuration& C;
   double time=0.;
@@ -24,6 +24,7 @@ struct Simulation {
   bool display;
 
   Simulation(Configuration& _C, SimulatorEngine _engine, bool _display=true);
+  ~Simulation();
 
   void step(const arr& u_control, double tau=.01, ControlMode u_mode = _velocity);
 

@@ -182,7 +182,7 @@ struct KOMO : NonCopyable {
 
   //-- tasks mid-level
 //  void setSquaredQAccelerations(double startTime=0., double endTime=-1., double prec=1.);
-  void add_qAccelerations(const arr& times, double scale=1., int deltaFromStep=0, int deltaToStep=0);
+  void add_qControlObjective(const arr& times, uint order, double scale=1., const arr& target=NoArr, int deltaFromStep=0, int deltaToStep=0);
   void setSquaredQAccVelHoming(double startTime=0., double endTime=-1., double accPrec=1., double velPrec=0., double homingPrec=1e-2, int deltaFromStep=0, int deltaToStep=0);
 //  void setSquaredQVelocities(double startTime=0., double endTime=-1., double prec=1.);
 //  void setFixEffectiveJoints(double startTime=0., double endTime=-1., double prec=3e1);

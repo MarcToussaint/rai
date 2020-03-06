@@ -12,6 +12,7 @@
 #include "../Gui/opengl.h"
 
 namespace rai {
+
 struct Simulation_self {
   arr qdot;
   std::shared_ptr<struct Simulation_DisplayThread> display;
@@ -30,10 +31,8 @@ struct SimulationState {
   SimulationState(const arr& _frameState, const arr& _frameVels) : frameState(_frameState), frameVels(_frameVels) {}
 };
 
-}
-
-rai::Simulation::Simulation(rai::Configuration& _C, rai::Simulation::SimulatorEngine _engine, bool _display)
-  : self(make_shared<Simulation_self>()),
+Simulation::Simulation(Configuration& _C, Simulation::SimulatorEngine _engine, bool _display)
+  : self(make_unique<Simulation_self>()),
     C(_C),
     engine(_engine),
     display(_display) {
@@ -41,12 +40,26 @@ rai::Simulation::Simulation(rai::Configuration& _C, rai::Simulation::SimulatorEn
     self->physx = make_shared<PhysXInterface>(C, true);
   } else if(engine==_bullet){
     self->bullet = make_shared<BulletInterface>(C, true);
+  } else if(engine==_kinematic){
+    //nothing
   } else NIY;
   if(display) self->display = make_shared<Simulation_DisplayThread>(C);
 }
 
-void rai::Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
+Simulation::~Simulation(){
+}
+
+void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
   time += tau;
+  //perform control using C
+  if(u_mode==_position){
+    C.setJointState(u_control);
+  } else if(u_mode==_velocity){
+    arr q = C.getJointState();
+    q += tau * u_control;
+    C.setJointState(q);
+  } else NIY;
+  //call the physics ending
   if(engine==_physx) {
     self->physx->pushKinematicStates(C.frames);
     self->physx->step(tau);
@@ -55,11 +68,12 @@ void rai::Simulation::step(const arr& u_control, double tau, ControlMode u_mode)
     self->bullet->pushKinematicStates(C.frames);
     self->bullet->step(tau);
     self->bullet->pullDynamicStates(C.frames);
+  } else if(engine==_kinematic){
   } else NIY;
   if(display) self->updateDisplayData(time, C.getFrameState());
 }
 
-ptr<rai::SimulationState> rai::Simulation::getState() {
+ptr<SimulationState> Simulation::getState() {
   arr qdot;
   if(engine==_physx) {
     self->physx->pullDynamicStates(C.frames, qdot);
@@ -69,7 +83,7 @@ ptr<rai::SimulationState> rai::Simulation::getState() {
   return make_shared<SimulationState>(C.getFrameState(), qdot);
 }
 
-void rai::Simulation::setState(const arr& frameState, const arr& frameVelocities){
+void Simulation::setState(const arr& frameState, const arr& frameVelocities){
   C.setFrameState(frameState);
   if(engine==_physx) {
     self->physx->pushFullState(C.frames, frameVelocities);
@@ -78,11 +92,11 @@ void rai::Simulation::setState(const arr& frameState, const arr& frameVelocities
   }else NIY;
 }
 
-void rai::Simulation::resetToPreviousState(const ptr<SimulationState>& state) {
+void Simulation::resetToPreviousState(const ptr<SimulationState>& state) {
   setState(state->frameState, state->frameVels);
 }
 
-void rai::Simulation::pushConfigurationToSimulator(const arr& frameVelocities) {
+void Simulation::pushConfigurationToSimulator(const arr& frameVelocities) {
   if(engine==_physx) {
     self->physx->pushFullState(C.frames, frameVelocities);
   }else if(engine==_bullet){
@@ -90,18 +104,18 @@ void rai::Simulation::pushConfigurationToSimulator(const arr& frameVelocities) {
   }else NIY;
 }
 
-const arr& rai::Simulation::qdot() {
+const arr& Simulation::qdot() {
   return self->qdot;
 }
 
-rai::CameraView& rai::Simulation::cameraview() {
+CameraView& Simulation::cameraview() {
   if(!self->cameraview) {
     self->cameraview = make_shared<CameraView>(C, true, false);
   }
   return *self->cameraview;
 }
 
-void rai::Simulation::getImageAndDepth(byteA& image, floatA& depth) {
+void Simulation::getImageAndDepth(byteA& image, floatA& depth) {
   cameraview().updateConfiguration(C);
   cameraview().computeImageAndDepth(image, depth);
   if(display) self->updateDisplayData(image, depth);
@@ -109,9 +123,8 @@ void rai::Simulation::getImageAndDepth(byteA& image, floatA& depth) {
 
 //===========================================================================
 
-namespace rai {
 struct Simulation_DisplayThread : Thread, GLDrawer {
-  rai::Configuration Ccopy;
+  Configuration Ccopy;
   OpenGL gl;
   //data
   Mutex mux;
@@ -121,7 +134,7 @@ struct Simulation_DisplayThread : Thread, GLDrawer {
   floatA depth;
   byteA segmentation;
 
-  Simulation_DisplayThread(const rai::Configuration& C)
+  Simulation_DisplayThread(const Configuration& C)
     : Thread("Sim_DisplayThread", .05),
       Ccopy(C),
       gl("Simulation Display") {
@@ -190,4 +203,5 @@ void Simulation_self::updateDisplayData(const byteA& _image, const floatA& _dept
   display->depth= _depth;
   display->mux.unlock();
 }
-}
+
+} //namespace rai

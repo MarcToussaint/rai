@@ -551,12 +551,12 @@ auto getQFramesAndScale(const rai::Configuration& C){
   return R;
 }
 
-void KOMO::add_qAccelerations(const arr& times, double scale, int deltaFromStep, int deltaToStep){
+void KOMO::add_qControlObjective(const arr& times, uint order, double scale, const arr& target, int deltaFromStep, int deltaToStep){
   auto F = getQFramesAndScale(world);
-  F.scale *= sqrt(tau);
+  scale *= sqrt(tau);
 
-  CHECK_GE(k_order, 2, "");
-  ptr<Objective> o = addObjective(times, make_shared<F_qItself>(F.frames), OT_sos, scale*F.scale, NoArr, 2, deltaFromStep, deltaToStep);
+  CHECK_GE(k_order, order, "");
+  ptr<Objective> o = addObjective(times, make_shared<F_qItself>(F.frames), OT_sos, scale*F.scale, target, order, deltaFromStep, deltaToStep);
 }
 
 void KOMO::setSquaredQAccVelHoming(double startTime, double endTime, double accPrec, double velPrec, double homingPrec, int deltaFromStep, int deltaToStep) {
@@ -626,7 +626,7 @@ void KOMO_ext::setImpact(double time, const char* a, const char* b) {
 void KOMO_ext::setOverTheEdge(double time, const char* object, const char* from, double margin) {
   double negMargin = margin + .5*shapeSize(world, object, 0); //how much outside the bounding box?
   addObjective({time, time+.5},
-               make_shared<TM_Max>(new TM_AboveBox(world, object, from, -negMargin), true), //this is the max selection -- only one of the four numbers need to be outside the BB
+               make_shared<F_Max>(make_shared<TM_AboveBox>(world, object, from, -negMargin), true), //this is the max selection -- only one of the four numbers need to be outside the BB
                OT_ineq, {3e0}); //NOTE: usually this is an inequality constraint <0; here we say this should be zero for a negative margin (->outside support)
 }
 

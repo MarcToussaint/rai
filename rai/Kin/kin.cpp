@@ -828,7 +828,7 @@ void rai::Configuration::setFrameState(const arr& X, const StringA& frameNames, 
       if(X.d0 > frames.N) LOG(-1) <<"X.d0=" <<X.d0 <<" is larger than frames.N=" <<frames.N;
       if(X.d0 < frames.N) LOG(-1) <<"X.d0=" <<X.d0 <<" is smaller than frames.N=" <<frames.N;
     }
-    for(auto f:frames) f->_state_X_isGood=false;
+    for(auto f:frames) if(f->parent) f->_state_X_isGood=false;
     for(uint i=0; i<frames.N && i<X.d0; i++) {
       frames(i)->X.set(X[i]);
       frames(i)->X.rot.normalize();
