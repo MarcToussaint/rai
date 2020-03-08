@@ -16,7 +16,7 @@
 
 /// any node that has a key, no parents, and is bool, is a symbol declaration
 bool isSymbol(rai::Node* n){
-  return n->key.N>0 && n->parents.N==0 && n->isOfType<bool>();
+  return n->key.N>0 && n->parents.N==0 && n->isOfType<bool>() && n->key(0)!='%';
 }
 
 /// given a scope (a subGraph, e.g. the full KB, or a rule or so), return all literals (defined by degree>0, keys.N=0)
@@ -35,8 +35,19 @@ NodeL getSymbolsOfScope(const Graph& KB) {
   return vars;
 }
 
+//typically: the preconditions of a rule!
 Node* getFirstNonSymbolOfScope(Graph& KB) {
   for(Node* i:KB) if(!isSymbol(i)) return i;
+  return nullptr;
+}
+
+//typically: the preconditions of a rule!
+Node* getSecondNonSymbolOfScope(Graph& KB) {
+  uint count=2;
+  for(Node* i:KB) if(!isSymbol(i)){
+    count--;
+    if(!count) return i;
+  }
   return nullptr;
 }
 
@@ -553,9 +564,11 @@ bool forwardChaining_FOL(Graph& state, NodeL& rules, Node* query, Graph& changes
       if(verbose>1) cout <<"Testing Rule " <<*rule <<endl;
       NodeL subs = getRuleSubstitutions2(state, rule, verbose);
       for(uint s=0; s<subs.d0; s++) {
-        Node* effect = rule->graph().last();
-        if(effect->isOfType<arr>()) { //TODO: THIS IS SAMPLING!!! SOMEHOW MAKE THIS CLEAR/transparent/optional or so
-          arr p = effect->get<arr>();
+        Node* effect = getSecondNonSymbolOfScope(rule->graph());
+        Node* probabilities = rule->graph().last();
+
+        if(probabilities->isOfType<arr>()) { //TODO: THIS IS SAMPLING!!! SOMEHOW MAKE THIS CLEAR/transparent/optional or so
+          arr p = probabilities->get<arr>();
           uint r = sampleMultinomial(p);
           if(samplingObservation) *samplingObservation = (*samplingObservation)*p.N + r; //raise previous samplings to the factor p.N and add current sampling
           //TODO: also return sampleProbability?

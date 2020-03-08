@@ -174,10 +174,12 @@ MCTS_Environment::TransitionReturn FOL_World::transition(const Handle& action) {
     }
   } else { //normal decision
     //first check if probabilistic
-    Node* effect = d->rule->graph().last();
-    if(effect->isOfType<arr>()) {
+    Node* effect = getSecondNonSymbolOfScope(d->rule->graph());
+    Node* probabilities = d->rule->graph().last();
+
+    if(probabilities->isOfType<arr>()) {
       HALT("probs in decision rules not properly implemented (observation id is not...)");
-      arr p = effect->get<arr>();
+      arr p = probabilities->get<arr>();
       uint r = sampleMultinomial(p);
       lastStepProbability = p(r);
       lastStepObservation = lastStepObservation*p.N + r; //raise previous observations to the factor p.N and add current decision
@@ -410,8 +412,8 @@ void FOL_World::writePDDLdomain(std::ostream& os, const char* domainName) const 
   NodeL predicates;
   for(Node* rule:decisionRules) {
     Graph& Rule = rule->graph();
-    Graph& precond = Rule.elem(-2)->graph();
-    Graph& effect = Rule.elem(-1)->graph();
+    Graph& precond = getFirstNonSymbolOfScope(Rule)->graph(); //Rule.elem(-2)->graph();
+    Graph& effect = getSecondNonSymbolOfScope(Rule)->graph(); //Rule.elem(-1)->graph();
     for(Node* n:precond) {
       if(n->key.N) continue; //no temporary facts
       uint ID = n->parents(0)->index;
@@ -435,8 +437,8 @@ void FOL_World::writePDDLdomain(std::ostream& os, const char* domainName) const 
     os <<")\n   (:action " <<rule->key;
 
     Graph& Rule = rule->graph();
-    Graph& precond = Rule.elem(-2)->graph();
-    Graph& effect = Rule.elem(-1)->graph();
+    Graph& precond = getFirstNonSymbolOfScope(Rule)->graph(); //Rule.elem(-2)->graph();
+    Graph& effect = getSecondNonSymbolOfScope(Rule)->graph(); //Rule.elem(-1)->graph();
 
     os <<"\n      :parameters (";
     for(Node* n:Rule) if(isSymbol(n)) os <<" ?" <<n->key;
@@ -501,8 +503,8 @@ void FOL_World::writePDDLproblem(std::ostream& os, const char* domainName, const
   for(Node* rule:worldRules) {
     Graph& Rule = rule->graph();
     if(Rule.elem(-1)->isOfType<arr>()) continue; //this is a probabilistic rule!
-    Graph& precond = Rule.elem(-2)->graph();
-    Graph& effect = Rule.elem(-1)->graph();
+    Graph& precond = getFirstNonSymbolOfScope(Rule)->graph(); //Rule.elem(-2)->graph();
+    Graph& effect = getSecondNonSymbolOfScope(Rule)->graph(); //Rule.elem(-1)->graph();
 
     if(effect.N==1 && effect(0)->parents.N==1 && effect(0)->parents(0)==Quit_keyword) { //this is a termination rule
       os <<" (and";
