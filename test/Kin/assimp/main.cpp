@@ -10,8 +10,8 @@
 void TEST(LoadAssimp){
   rai::Configuration K;
 
-  const char* filename = "/home/mtoussai/CAD/LG14-Modell.dae";
-  if(rai::argc>1) filename = rai::argv[1];
+  const char* filename = "/home/mtoussai/git/bullet3/data/kuka_lwr/meshes_arm/arm_wrist.dae";
+  if(rai::argc>1 && rai::argv[1][0]!='-') filename = rai::argv[1];
   K.addAssimp(filename);
   K.watch(true);
 

@@ -164,7 +164,7 @@ void TEST(Manual){
 int MAIN(int argc, char** argv){
   rai::initCmdLine(argc, argv);
 
-  if(argc>=2) filename=argv[1];
+  if(argc>1 && argv[1][0]!='-') filename=argv[1];
 
   testRandom();
   testRead();

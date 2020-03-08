@@ -641,6 +641,7 @@ bool forwardChaining_propositional(Graph& KB, Node* q) {
 double evaluateFunction(Graph& func, Graph& state, int verbose) {
   double f=0.;
   for(Node* tree:func) { //trees are additive; within a tree, only one leaf contributes
+    if(!tree->isGraph()) continue; //just some annotation
     double ftree=0.;
     Graph& treeG = tree->graph();
     for(Node* leaf:treeG) { //every tree is a list of leafs (terms), each leaf a graph

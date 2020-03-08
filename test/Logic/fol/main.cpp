@@ -108,7 +108,7 @@ void testFolFunction(){
   Graph KB(FILE("functionTest.g"));
 
   Graph& state = KB.get<Graph>("STATE");
-  Graph& func = KB.get<Graph>("func");
+  Graph& func = KB.get<Graph>("Qfunction");
 
   cout <<"f=" <<evaluateFunction(func, state, 3) <<endl;
 }
@@ -225,11 +225,11 @@ void testMonteCarlo(){
 int main(int argc, char** argv){
   rai::initCmdLine(argc, argv);
 
-  if(argc>1){
+  if(argc>1 && argv[1][0]!='-'){
     testLoadAndDot(argv[1]);
     return 0;
   }
-  testFolLoadFile();
+//  testFolLoadFile();
   testPolFwdChaining();
   testFolFwdChaining();
   testFolDisplay();
