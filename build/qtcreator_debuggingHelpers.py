@@ -216,7 +216,7 @@ def qdump__rai__Frame(d, value):
             d.putSubItem("ID", value["ID"])
             d.putSubItem("name", value["name"])
             d.putSubItem("parent", value["parent"])
-            d.putSubItem("parentOf", value["parentOf"])
+            d.putSubItem("children", value["children"])
             d.putSubItem("Q", value["Q"])
             d.putSubItem("X", value["X"])
             d.putSubItem("tau", value["tau"])

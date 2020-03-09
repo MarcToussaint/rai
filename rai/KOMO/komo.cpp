@@ -206,16 +206,9 @@ void KOMO::addSwitch(double time, bool before, rai::JointType type, SwitchInitia
 }
 
 void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, double time, double endTime, const char* prevFrom, const char* from, const char* to) {
+  //-- creating a stable kinematic linking
   if(newMode==SY_stable || newMode==SY_stableOn) {
-//    if(!useSwitches){
-//      if(prevMode==SY_initial){
-//        addSwitch(time, true, JT_free, SWInit_copy, world.frames.first()->name, to);
-//        addObjective({time}, make_shared<TM_NoJumpFromParent>(world, to), OT_eq, {1e2}, NoArr, 1, 0, 0);
-//      }
-////      addObjective({time, endTime}, FS_poseRel, {from, to}, OT_eq, {1e2}, {}, 1);
-//      addObjective({time, endTime}, FS_poseRel, {from, to}, OT_eq, {1e2}, NoArr, 1, +1, 0);
-//      if(k_order>1) addObjective({time}, make_shared<TM_LinAngVel>(world, to), OT_eq, {1e2}, NoArr, 2, +0, +1);
-//    }else{
+    // create the kinematic switch
     if(newMode==SY_stable) {
       addSwitch(time, true, JT_free, SWInit_copy, from, to);
     } else { //SY_stableOn
@@ -224,7 +217,7 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
       addSwitch(time, true, JT_transXYPhi, SWInit_copy, from, to, rel);
     }
 
-    //-- DOF-is-constant constraint
+    // ensure the DOF is constant throughout its existance
     if((endTime<0. && stepsPerPhase*time<T) || stepsPerPhase*endTime>stepsPerPhase*time+1) {
       addObjective({time, endTime}, make_shared<F_qZeroVel>(world, to), OT_eq, {1e1}, NoArr, 1, +1, -1);
       //      addObjective({time, endTime}, FS_poseRel, {from, to}, OT_eq, {1e1}, NoArr, 1, +1, -1);
@@ -319,6 +312,9 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
 }
 
 void KOMO::addSwitch_stable(double time, double endTime, const char* from, const char* to) {
+#if 1
+  addSwitch_mode(SY_none, SY_stable, time, endTime, NULL, from, to);
+#else
   addSwitch(time, true, JT_free, SWInit_zero, from, to);
   //-- DOF-is-constant constraint
   if(endTime<0. || stepsPerPhase*endTime>stepsPerPhase*time+1)
@@ -328,9 +324,13 @@ void KOMO::addSwitch_stable(double time, double endTime, const char* from, const
   //-- no object acceleration at start: +0 include (x-2, x-1, x0), which enforces a SMOOTH pickup
   if(k_order>1) addObjective({time}, make_shared<TM_LinAngVel>(world, to), OT_eq, {1e2}, NoArr, 2, +0, +1);
   else addObjective({time}, make_shared<TM_NoJumpFromParent>(world, to), OT_eq, {1e2}, NoArr, 1, 0, 0);
+#endif
 }
 
 void KOMO::addSwitch_stableOn(double time, double endTime, const char* from, const char* to) {
+#if 1
+  addSwitch_mode(SY_none, SY_stableOn, time, endTime, NULL, from, to);
+#else
   Transformation rel = 0;
   rel.pos.set(0, 0, .5*(shapeSize(world, from) + shapeSize(world, to)));
   addSwitch(time, true, JT_transXYPhi, SWInit_zero, from, to, rel);
@@ -342,6 +342,7 @@ void KOMO::addSwitch_stableOn(double time, double endTime, const char* from, con
   //-- no acceleration at start: +1 EXCLUDES (x-2, x-1, x0), ASSUMPTION: this is a placement that can excert impact
   if(k_order>1) addObjective({time}, make_shared<TM_LinAngVel>(world, to), OT_eq, {1e2}, NoArr, 2, +1, +1);
 //  else addObjective({time}, make_shared<TM_NoJumpFromParent>(world, to), OT_eq, {1e2}, NoArr, 1, 0, 0);
+#endif
 }
 
 void KOMO::addSwitch_dynamic(double time, double endTime, const char* from, const char* to, bool dampedVelocity) {
@@ -642,7 +643,7 @@ void KOMO_ext::setInertialMotion(double startTime, double endTime, const char* o
 }
 
 /// a standard pick up: lower-attached-lift; centered, from top
-void KOMO_ext::setGrasp(double time, const char* endeffRef, const char* object, int verbose, double weightFromTop, double timeToLift) {
+void KOMO_ext::setGrasp(double time, double endTime, const char* endeffRef, const char* object, int verbose, double weightFromTop, double timeToLift) {
   if(verbose>0) cout <<"KOMO_setGrasp t=" <<time <<" endeff=" <<endeffRef <<" obj=" <<object <<endl;
   //  String& endeffRef = world.getFrameByName(graspRef)->body->inLinks.first()->from->shapes.first()->name;
 
@@ -671,7 +672,7 @@ void KOMO_ext::setGrasp(double time, const char* endeffRef, const char* object, 
   setTask(time, time, new TM_InsideBox(world, endeffRef, NoVector, object), OT_ineq, NoArr, 1e1);
 #else
 //  addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_free, endeffRef, object, world));
-  addSwitch_stable(time, -1., endeffRef, object);
+  addSwitch_stable(time, endTime, endeffRef, object);
   addObjective({time}, make_shared<TM_InsideBox>(world, endeffRef, NoVector, object), OT_ineq, {1e1});
 //  setTouch(time, time, endeffRef, object);
 #endif
@@ -764,7 +765,7 @@ void KOMO_ext::setPlaceFixed(double time, const char* endeff, const char* object
 /// switch attachemend (-> ball eDOF)
 void KOMO_ext::setHandover(double time, const char* oldHolder, const char* object, const char* newHolder, int verbose) {
 #if 1
-  setGrasp(time, newHolder, object, verbose, -1., -1.);
+  setGrasp(time, -1., newHolder, object, verbose, -1., -1.);
 #else
   if(verbose>0) cout <<"KOMO_setHandover t=" <<time <<" oldHolder=" <<oldHolder <<" obj=" <<object <<" newHolder=" <<newHolder <<endl;
 

@@ -1,5 +1,5 @@
 Include = '../../../../rai-robotModels/baxter/baxter.g'
-Delete shape visual
+#Delete shape visual
 #Delete shape collision
 
 Include = '../../../../rai-robotModels/human_simple/human_simple.g'

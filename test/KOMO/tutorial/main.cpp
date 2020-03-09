@@ -80,8 +80,8 @@ void tutorialInverseKinematics(){
   KOMO komo;
   komo.setModel(G, false);
 
-  //-- the timing parameters: 1 phase, 1 time slice
-  komo.setTiming(1, 1);
+  //-- the timing parameters: 1 phase, 1 time slice, duration 1, order 1
+  komo.setTiming(1., 1, 1., 1);
 
   //-- default tasks for transition costs
   komo.setSquaredQAccVelHoming(1., -1., 0., 1., 1e-2);

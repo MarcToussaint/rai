@@ -63,7 +63,7 @@ void testProjection(){
     }
   });
 
-  for(uint k=0;k<200;k++){
+  for(uint k=0;k<50;k++){
     rai::wait(.1);
     if(gl2.update()=='q') break;
   }

@@ -25,7 +25,6 @@ extern "C" {
 #ifndef RAI_GJK
 #  define FCLmode
 #endif
-//#define FCLmode
 
 PairCollision::PairCollision(const rai::Mesh& _mesh1, const rai::Mesh& _mesh2, const rai::Transformation& _t1, const rai::Transformation& _t2, double rad1, double rad2)
   : mesh1(&_mesh1), mesh2(&_mesh2), t1(&_t1), t2(&_t2), rad1(rad1), rad2(rad2) {
@@ -46,14 +45,18 @@ PairCollision::PairCollision(const rai::Mesh& _mesh1, const rai::Mesh& _mesh2, c
 //  if(distance<1e-10) libccd(M1, M2, _ccdGJKIntersect);
 //  if(distance<1e-10) GJK_sqrDistance();
 
-  if(distance<-1e-10 || !p1.N || !p2.N) {
 #ifndef FCLmode
+  if(distance<1e-10) { //WARNING: Setting this to zero does not work when using
     //THIS IS COSTLY! DO WITHIN THE SUPPORT FUNCTION?
     rai::Mesh M1(*mesh1); if(!t1->isZero()) t1->applyOnPointArray(M1.V);
     rai::Mesh M2(*mesh2); if(!t2->isZero()) t2->applyOnPointArray(M2.V);
-#endif
     libccd(M1, M2, _ccdMPRPenetration);
   }
+#else
+  if(distance<0.){
+    libccd(M1, M2, _ccdMPRPenetration);
+  }
+#endif
 
   CHECK_EQ(p1.N, 3, "PairCollision failed");
   CHECK_EQ(p2.N, 3, "PairCollision failed");
