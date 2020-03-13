@@ -2031,6 +2031,19 @@ void KOMO::checkBounds(const arr& x){
 
 //===========================================================================
 
+void reportAfterPhiComputation(KOMO& komo){
+  if(komo.verbose>6 || komo.animateOptimization>2){
+//        komo.reportProxies();
+    cout <<komo.getReport(true) <<endl;
+  }
+  if(komo.animateOptimization>0) {
+    komo.displayPath(komo.animateOptimization>1);
+//    komo.plotPhaseTrajectory();
+//    rai::wait();
+    //  reportProxies();
+  }
+}
+
 void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
   if(!configurations.N) setupConfigurations();
   CHECK_EQ(configurations.N, k_order+T, "configurations are not setup yet");
@@ -2065,22 +2078,6 @@ void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
 //    configurations(s)->checkConsistency();
   }
   CHECK_EQ(x_count, x.N, "");
-
-  if(animateOptimization>0) {
-    if(animateOptimization>1){
-      if(animateOptimization>2){
-        reportProxies();
-        cout <<getReport(true) <<endl;
-      }
-      displayPath(true);
-    }else{
-      displayPath(false);
-    }
-//    komo.plotPhaseTrajectory();
-//    rai::wait();
-  }
-
-//  reportProxies();
 }
 
 #if 0
@@ -2351,7 +2348,7 @@ rai::Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featur
               for(uint j=0; j<d; j++) err(time, i) += fabs(featureValues(M+j));
               taskH(i) += err(time, i);
             }
-            if(ob->type==OT_eq) {
+            if(ob->type==OT_f) {
               for(uint j=0; j<d; j++) err(time, i) += featureValues(M+j);
               taskF(i) += err(time, i);
             }
@@ -2607,6 +2604,8 @@ void KOMO::Conv_KOMO_KOMOProblem::phi(arr& phi, arrA& J, arrA& H, uintA& feature
   komo.featureValues = phi;
   if(!!J) komo.featureJacobians = J;
   if(!!tt) komo.featureTypes = tt;
+
+  reportAfterPhiComputation(komo);
 }
 
 void KOMO::Conv_KOMO_DenseProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x) {
@@ -2681,6 +2680,8 @@ void KOMO::Conv_KOMO_DenseProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA&
   komo.featureValues = phi;
   if(!!J) komo.featureJacobians.resize(1).scalar() = J;
   if(!!tt) komo.featureTypes = tt;
+
+  reportAfterPhiComputation(komo);
 
   if(quadraticPotentialLinear.N){
       tt.append(OT_f);
@@ -2822,6 +2823,8 @@ void KOMO::Conv_KOMO_GraphProblem::phi(arr& phi, arrA& J, arrA& H, const arr& x)
 
   CHECK_EQ(M, dimPhi, "");
   komo.featureValues = phi;
+
+  reportAfterPhiComputation(komo);
 }
 
 void KOMO::Conv_KOMO_GraphProblem::setPartialX(const uintA& whichX, const arr& x) {
@@ -2879,6 +2882,8 @@ void KOMO::Conv_KOMO_GraphProblem::getPartialPhi(arr& phi, arrA& J, arrA& H, con
     CHECK_EQ(M, dimPhi, "");
     //  if(!!lambda) CHECK_EQ(prevLambda, lambda, ""); //this ASSERT only holds is none of the tasks is variable dim!
     if(!!phi) komo.featureValues = phi;
+
+    reportAfterPhiComputation(komo);
   }
 
   //now subselect features
@@ -3109,6 +3114,8 @@ void KOMO::Conv_KOMO_MathematicalProgram::evaluate(arr& phi, arr& J, arr& H, con
   CHECK_EQ(M, featuresDim, "");
   komo.featureValues = phi;
   if(!!J) komo.featureJacobians.resize(1).scalar() = J;
+
+  reportAfterPhiComputation(komo);
 }
 
 void KOMO::Conv_KOMO_MathematicalProgram::setSingleVariable(uint var_id, const arr& x){
@@ -3247,6 +3254,8 @@ void KOMO::TimeSliceProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, c
   komo.featureValues = phi;
   if(!!J) komo.featureJacobians.resize(1).scalar() = J;
   if(!!tt) komo.featureTypes = tt;
+
+  reportAfterPhiComputation(komo);
 }
 
 rai::Configuration& KOMO::getConfiguration(double phase) {

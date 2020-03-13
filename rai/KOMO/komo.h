@@ -410,6 +410,5 @@ struct KOMO : NonCopyable {
 
     void reportFeatures();
   };
-
 };
 
