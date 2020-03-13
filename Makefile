@@ -59,8 +59,7 @@ paths: force
 
 runTests: tests
 	@rm -f z.test-report
-	@find test -mindepth 2 -maxdepth 2 -type d \
-		-exec build/run-path.sh {} \;
+	@for p in $(test_paths); do build/run-path.sh $$p; done
 
 ################################################################################
 
