@@ -3,16 +3,16 @@
 #include "types.h"
 #include "../Geo/geoms.h"
 
-pybind11::dict graph2dict(const Graph& G) {
+pybind11::dict graph2dict(const rai::Graph& G) {
   pybind11::dict dict;
-  for(Node* n:G) {
+  for(rai::Node* n:G) {
     rai::String key;
-    if(n->keys.N) key=n->keys.last();
+    if(key.N) key=n->key;
     else key <<n->index;
 
     //-- write value
     if(n->isGraph()) {
-      dict[key.p] = graph2dict(n->get<Graph>());
+      dict[key.p] = graph2dict(n->get<rai::Graph>());
     } else if(n->isOfType<rai::String>()) {
       dict[key.p] = n->get<rai::String>().p;
     } else if(n->isOfType<arr>()) {
@@ -40,12 +40,12 @@ pybind11::dict graph2dict(const Graph& G) {
   return dict;
 }
 
-pybind11::list graph2list(const Graph& G) {
+pybind11::list graph2list(const rai::Graph& G) {
   pybind11::list list;
-  for(Node* n:G) {
+  for(rai::Node* n:G) {
     //-- write value
     if(n->isGraph()) {
-      list.append(graph2dict(n->get<Graph>()));
+      list.append(graph2dict(n->get<rai::Graph>()));
     } else if(n->isOfType<rai::String>()) {
       list.append(n->get<rai::String>().p);
     } else if(n->isOfType<arr>()) {

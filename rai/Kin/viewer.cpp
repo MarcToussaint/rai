@@ -66,6 +66,8 @@ int rai::ConfigurationViewer::setConfiguration(rai::Configuration& _C, const cha
 }
 
 void rai::ConfigurationViewer::setPath(ConfigurationL& Cs, const char* text, bool watch) {
+  CHECK(C.frames.N, "setPath requires that you setConfiguration first");
+
   uintA frames;
   frames.setStraightPerm(Cs.first()->frames.N);
 
@@ -80,6 +82,8 @@ void rai::ConfigurationViewer::setPath(ConfigurationL& Cs, const char* text, boo
 }
 
 void rai::ConfigurationViewer::setPath(rai::Configuration& _C, const arr& jointPath, const char* text, bool watch, bool full){
+  CHECK(C.frames.N, "setPath requires that you setConfiguration first");
+
   arr X(jointPath.d0, _C.frames.N, 7);
   for(uint t=0; t<X.d0; t++) {
     _C.setJointState(jointPath[t]);
@@ -92,6 +96,8 @@ void rai::ConfigurationViewer::setPath(rai::Configuration& _C, const arr& jointP
 }
 
 void rai::ConfigurationViewer::setPath(const arr& _framePath, const char* text, bool watch, bool full) {
+  CHECK(C.frames.N, "setPath requires that you setConfiguration first");
+
   CHECK_EQ(_framePath.nd, 3, "");
   CHECK_EQ(_framePath.d2, 7, "");
 
