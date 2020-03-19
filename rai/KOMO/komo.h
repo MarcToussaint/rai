@@ -315,6 +315,7 @@ struct KOMO : NonCopyable {
   void setBounds();
   void checkBounds(const arr& x);
   void retrospectAddSwitches(rai::Array<rai::KinematicSwitch*>& _switches);
+  void retrospectChangeJointType(int startStep, int endStep, uint frameID, rai::JointType newJointType);
   void set_x(const arr& x, const uintA& selectedConfigurationsOnly=NoUintA);            ///< set the state trajectory of all configurations
 //  void setState(const arr& x, const uintA& selectedVariablesOnly=NoUintA);            ///< set the state trajectory of all configurations
   uint dim_x(uint t) { return configurations(t+k_order)->getJointStateDimension(); }

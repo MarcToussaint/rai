@@ -117,6 +117,16 @@ void rai::Frame::calc_Q_from_parent(bool enforceWithinJoint) {
 }
 
 const rai::Transformation& rai::Frame::ensure_X() {
+#if 0 //for testing loops
+  {
+    rai::Frame *f=parent;
+    while(f){
+      CHECK(f!=this, "");
+      f=f->parent;
+    }
+  }
+#endif
+
   if(!_state_X_isGood) { if(parent) { parent->ensure_X(); calc_X_from_parent(); } }
   CHECK(_state_X_isGood, "");
   return X;

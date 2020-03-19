@@ -15,7 +15,7 @@ struct SimulationState;
 
 struct Simulation {
   enum SimulatorEngine { _physx, _bullet, _kinematic };
-  enum ControlMode { _position, _velocity, _acceleration };
+  enum ControlMode { _none, _position, _velocity, _acceleration };
   std::unique_ptr<struct Simulation_self> self;
 
   Configuration& C;

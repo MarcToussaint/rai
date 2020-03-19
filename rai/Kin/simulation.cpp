@@ -52,7 +52,8 @@ Simulation::~Simulation(){
 void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
   time += tau;
   //perform control using C
-  if(u_mode==_position){
+  if(u_mode==_none){
+  } else if(u_mode==_position){
     C.setJointState(u_control);
   } else if(u_mode==_velocity){
     arr q = C.getJointState();

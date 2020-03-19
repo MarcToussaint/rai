@@ -1951,6 +1951,16 @@ void KOMO::retrospectAddSwitches(rai::Array<KinematicSwitch*>& _switches){
   }
 }
 
+void KOMO::retrospectChangeJointType(int startStep, int endStep, uint frameID, JointType newJointType){
+  uint s = startStep+k_order;
+  //apply the same switch on all following configurations!
+  for(;s<endStep+k_order;s++){
+    rai::Configuration *C = configurations.elem(s);
+    rai::Frame *f = C->frames(frameID);
+    f->setJoint(newJointType);
+  }
+}
+
 //===========================================================================
 
 void KOMO::setupRepresentations() {
