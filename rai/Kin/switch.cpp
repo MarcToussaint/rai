@@ -105,14 +105,18 @@ rai::Frame* rai::KinematicSwitch::apply(Configuration& K) {
     } else if(init==SWInit_copy) { //set Q to the current relative transform, modulo DOFs
       j->frame->Q = orgX / j->frame->parent->ensure_X(); //that's important for the initialization of x during the very first komo.setupConfigurations !!
       //cout <<j->frame->Q <<' ' <<j->frame->Q.rot.normalization() <<endl;
-      arr q = j->calc_q_from_Q(j->frame->Q);
-      j->frame->Q.setZero();
-      j->calc_Q_from_q(q, 0);
+      if(j->dim>0){
+        arr q = j->calc_q_from_Q(j->frame->Q);
+        j->frame->Q.setZero();
+        j->calc_Q_from_q(q, 0);
+      }
     } if(init==SWInit_random) { //random, modulo DOFs
       j->frame->Q.setRandom();
-      arr q = j->calc_q_from_Q(j->frame->Q);
-      j->frame->Q.setZero();
-      j->calc_Q_from_q(q, 0);
+      if(j->dim>0){
+        arr q = j->calc_q_from_Q(j->frame->Q);
+        j->frame->Q.setZero();
+        j->calc_Q_from_q(q, 0);
+      }
     }
     j->frame->_state_updateAfterTouchingQ();
 

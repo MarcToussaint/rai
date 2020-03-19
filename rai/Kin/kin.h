@@ -251,7 +251,7 @@ struct Configuration : GLDrawer {
 
   /// @name collisions & proxies
   double totalCollisionPenetration(); ///< proxies are returns from a collision engine; contacts stable constraints
-  void copyProxies(const Configuration& K);
+  void copyProxies(const ProxyA& _proxies);
 
   /// @name I/O
   void write(std::ostream& os) const;

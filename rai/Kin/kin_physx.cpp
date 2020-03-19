@@ -250,6 +250,22 @@ void PhysXInterface::pullDynamicStates(FrameL& frames, arr& frameVelocities) {
   }
 }
 
+void PhysXInterface::changeObjectType(rai::Frame* f, int _type){
+  rai::Enum<rai::BodyType> type((rai::BodyType)_type);
+  if(self->actorTypes(f->ID) == type){
+    LOG(-1) <<"frame " <<*f <<" is already of type " <<type;
+  }
+  PxRigidActor* a = self->actors(f->ID);
+  if(!a) HALT("frame " <<*f <<"is not an actor");
+  if(type==rai::BT_kinematic){
+    ((PxRigidDynamic*)a)->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
+  }else if(type==rai::BT_dynamic){
+    ((PxRigidDynamic*)a)->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, false);
+  }else NIY;
+  self->actorTypes(f->ID) = type;
+}
+
+
 void PhysXInterface::pushKinematicStates(const FrameL& frames) {
   for(rai::Frame* f: frames) {
     if(self->actors.N <= f->ID) continue;

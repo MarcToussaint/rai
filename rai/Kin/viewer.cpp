@@ -45,7 +45,7 @@ int rai::ConfigurationViewer::setConfiguration(rai::Configuration& _C, const cha
     recopyMeshes(_C);
   }else if(_C.proxies.N){
     auto _dataLock = gl->dataLock(RAI_HERE);
-    C.copyProxies(_C);
+    C.copyProxies(_C.proxies);
   }
 
   {

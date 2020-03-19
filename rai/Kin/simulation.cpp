@@ -7,8 +7,12 @@
     --------------------------------------------------------------  */
 
 #include "simulation.h"
+#include "frame.h"
+#include "proxy.h"
 #include "kin_bullet.h"
 #include "kin_physx.h"
+#include "F_geometrics.h"
+#include "switch.h"
 #include "../Gui/opengl.h"
 
 namespace rai {
@@ -20,7 +24,7 @@ struct Simulation_self {
   std::shared_ptr<BulletInterface> bullet;
   std::shared_ptr<PhysXInterface> physx;
 
-  void updateDisplayData(double _time, const arr& _frameState);
+  void updateDisplayData(double _time, const arr& _frameState, const ProxyA& _proxies);
   void updateDisplayData(const byteA& _image, const floatA& _depth);
 };
 
@@ -71,7 +75,62 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     self->bullet->pullDynamicStates(C.frames);
   } else if(engine==_kinematic){
   } else NIY;
-  if(display) self->updateDisplayData(time, C.getFrameState());
+  if(display) self->updateDisplayData(time, C.getFrameState(), C.proxies);
+}
+
+void Simulation::openGripper(const char* gripperFrameName, double width, double speed){
+  rai::Frame *g = C.getFrameByName(gripperFrameName);
+  if(!g) LOG(-1) <<"you passed me a non-existing gripper name!";
+
+  rai::Frame *obj = g->children(-1);
+  CHECK_EQ(obj->joint->type, rai::JT_rigid, "");
+
+  C.attach(C.frames(0), obj);
+  if(engine==_physx) {
+    self->physx->changeObjectType(obj, rai::BT_dynamic);
+  }else{
+    NIY;
+  }
+}
+
+void Simulation::closeGripper(const char* gripperFrameName, double width, double speed, double force){
+  rai::Frame *g = C.getFrameByName(gripperFrameName);
+  if(!g) LOG(-1) <<"you passed me a non-existing gripper name!";
+
+  //requirement: two of the children of need to be the finger geometries
+  rai::Frame *fing1 = g->children(0);
+  rai::Frame *fing2 = g->children(1);
+  rai::Frame *obj = 0;
+
+  C.stepSwift();
+  rai::Proxy *p1=0, *p2=0;
+  for(rai::Proxy& p:C.proxies){
+    if(p.a == fing1){ p1 = &p; obj = p.b; }
+    if(p.b == fing1){ p1 = &p; obj = p.a; }
+    if(p.a == fing2){ p2 = &p; obj = p.b; }
+    if(p.b == fing2){ p2 = &p; obj = p.a; }
+  }
+  if(!p1 || !p2){
+    LOG(-1) <<"fingers are not close enough";
+  }
+
+  F_GraspOppose oppose(fing1->ID, fing2->ID, obj->ID);
+
+  arr y;
+  oppose.__phi(y, NoArr, C);
+
+  if(sumOfSqr(y) < 0.1){ //good enough...
+//    rai::KinematicSwitch sw(rai::SW_joint, rai::JT_rigid, gripperFrameName, obj->name, C, SWInit_copy);
+//    sw.apply(C);
+    obj = obj->getUpwardLink();
+    C.attach(gripperFrameName, obj->name);
+    if(engine==_physx) {
+      self->physx->changeObjectType(obj, rai::BT_kinematic);
+    }else{
+      NIY;
+    }
+  }
+
 }
 
 ptr<SimulationState> Simulation::getState() {
@@ -130,7 +189,6 @@ struct Simulation_DisplayThread : Thread, GLDrawer {
   //data
   Mutex mux;
   double time;
-  arr frameState;
   byteA image;
   floatA depth;
   byteA segmentation;
@@ -151,7 +209,6 @@ struct Simulation_DisplayThread : Thread, GLDrawer {
   void step() {
     mux.lock(RAI_HERE);
     gl.dataLock.lock(RAI_HERE);
-    Ccopy.setFrameState(frameState);
     double t = time;
     gl.dataLock.unlock();
     mux.unlock();
@@ -189,11 +246,12 @@ struct Simulation_DisplayThread : Thread, GLDrawer {
   }
 };
 
-void Simulation_self::updateDisplayData(double _time, const arr& _frameState) {
+void Simulation_self::updateDisplayData(double _time, const arr& _frameState, const ProxyA& _proxies) {
   CHECK(display, "");
   display->mux.lock(RAI_HERE);
   display->time = _time;
-  display->frameState = _frameState;
+  display->Ccopy.setFrameState(_frameState);
+  display->Ccopy.copyProxies(_proxies);
   display->mux.unlock();
 }
 

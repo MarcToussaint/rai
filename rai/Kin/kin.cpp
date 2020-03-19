@@ -330,7 +330,7 @@ void rai::Configuration::copy(const rai::Configuration& C, bool referenceSwiftOn
   for(Frame* f:C.frames) if(f->parent) frames(f->ID)->linkFrom(frames(f->parent->ID));
 
   //copy proxies; first they point to origin frames; afterwards, let them point to own frames
-  copyProxies(C);
+  copyProxies(C.proxies);
   //  proxies = K.proxies;
   //  for(Proxy& p:proxies) { p.a = frames(p.a->ID); p.b = frames(p.b->ID);  p.coll.reset(); }
 
@@ -1903,10 +1903,10 @@ double rai::Configuration::totalCollisionPenetration() {
   return D;
 }
 
-void rai::Configuration::copyProxies(const rai::Configuration& K) {
+void rai::Configuration::copyProxies(const ProxyA& _proxies) {
   proxies.clear();
-  proxies.resize(K.proxies.N);
-  for(uint i=0; i<proxies.N; i++) proxies(i).copy(*this, K.proxies(i));
+  proxies.resize(proxies.N);
+  for(uint i=0; i<proxies.N; i++) proxies(i).copy(*this, proxies(i));
 }
 
 /** @brief prototype for \c operator<< */
@@ -2372,17 +2372,8 @@ void rai::Configuration::reportProxies(std::ostream& os, double belowMargin, boo
   uint i=0;
   for(const Proxy& p: proxies) {
     if(p.d>belowMargin) continue;
-    os  <<i <<" ("
-        <<p.a->name <<")-("
-        <<p.b->name
-        <<") [" <<p.a->ID <<',' <<p.b->ID <<"] \td=" <<p.d;
-    if(!brief)
-      os <<" |A-B|=" <<(p.posB-p.posA).length()
-         //        <<" d^2=" <<(p.posB-p.posA).lengthSqr()
-         <<" v=" <<(p.posB-p.posA)
-         <<" normal=" <<p.normal
-         <<" posA=" <<p.posA
-         <<" posB=" <<p.posB;
+    os  <<i;
+    p.write(os, brief);
     os <<endl;
     i++;
   }
