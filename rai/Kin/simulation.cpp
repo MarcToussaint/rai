@@ -203,14 +203,13 @@ struct Simulation_DisplayThread : Thread, GLDrawer {
   }
 
   ~Simulation_DisplayThread() {
-    threadClose();
+    gl.clear();
+    threadClose(.5);
   }
 
   void step() {
     mux.lock(RAI_HERE);
-    gl.dataLock.lock(RAI_HERE);
     double t = time;
-    gl.dataLock.unlock();
     mux.unlock();
 
     gl.update(STRING("t:" <<t), true);
@@ -218,6 +217,7 @@ struct Simulation_DisplayThread : Thread, GLDrawer {
 
   void glDraw(OpenGL& gl) {
 #ifdef RAI_GL
+    mux.lock(RAI_HERE);
     glStandardScene(nullptr, gl);
     Ccopy.glDraw(gl);
 
@@ -240,6 +240,7 @@ struct Simulation_DisplayThread : Thread, GLDrawer {
       glRasterImage(.3, .05, image, scale);
       glRasterImage(.65, .05, dep, scale);
     }
+    mux.unlock();
 #else
     NICO
 #endif
