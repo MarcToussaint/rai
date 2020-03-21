@@ -13,6 +13,7 @@
 #include "kin_physx.h"
 #include "F_geometrics.h"
 #include "switch.h"
+#include "F_PairCollision.h"
 #include "../Gui/opengl.h"
 
 namespace rai {
@@ -97,21 +98,61 @@ void Simulation::closeGripper(const char* gripperFrameName, double width, double
   rai::Frame *g = C.getFrameByName(gripperFrameName);
   if(!g) LOG(-1) <<"you passed me a non-existing gripper name!";
 
-  //requirement: two of the children of need to be the finger geometries
-  rai::Frame *fing1 = g->children(0);
-  rai::Frame *fing2 = g->children(1);
-  rai::Frame *obj = 0;
+  //-- first, find the object that is between the fingers
 
+  //requirement: two of the children of need to be the finger geometries
+  rai::Frame *fing1 = g->children(0); while(!fing1->shape && fing1->children.N) fing1 = fing1->children(0);
+  rai::Frame *fing2 = g->children(1); while(!fing2->shape && fing2->children.N) fing2 = fing2->children(0);
+
+  //collect objects close to fing1 and fing2
   C.stepSwift();
-  rai::Proxy *p1=0, *p2=0;
+  FrameL fing1close;
+  FrameL fing2close;
   for(rai::Proxy& p:C.proxies){
-    if(p.a == fing1){ p1 = &p; obj = p.b; }
-    if(p.b == fing1){ p1 = &p; obj = p.a; }
-    if(p.a == fing2){ p2 = &p; obj = p.b; }
-    if(p.b == fing2){ p2 = &p; obj = p.a; }
+    if(p.a == fing1) fing1close.setAppend( p.b );
+    if(p.b == fing1) fing1close.setAppend( p.a );
+    if(p.a == fing2) fing2close.setAppend( p.b );
+    if(p.b == fing2) fing2close.setAppend( p.a );
   }
-  if(!p1 || !p2){
-    LOG(-1) <<"fingers are not close enough";
+
+  //intersect
+  FrameL objs = setSection(fing1close, fing2close);
+  if(!objs.N){
+    LOG(-1) <<"fingers are not close to objects";
+    return;
+  }
+
+  if(objs.N!=1){
+    LOG(-1) <<"fingers are not close to multiple objects";
+    NIY;
+    return;
+  }
+
+  rai::Frame *obj = objs.elem(0);
+
+
+  //-- actually close gripper until both distances are < .001
+  TM_PairCollision coll1(fing1->ID, obj->ID, coll1._negScalar, false);
+  auto d1 = coll1.eval(C);
+
+  TM_PairCollision coll2(fing2->ID, obj->ID, coll1._negScalar, false);
+  auto d2 = coll2.eval(C);
+
+  cout <<"d1: " <<d1.y <<"d2: " <<d2.y <<endl;
+
+  arr q = fing1->joint->calc_q_from_Q(fing1->get_Q());
+
+  for(;;){
+    q(0) -= .0001;
+    fing1->joint->calc_Q_from_q(q, 0);
+    fing2->joint->calc_Q_from_q(q, 0);
+    step({}, .01, _none);
+    auto d1 = coll1.eval(C);
+    auto d2 = coll2.eval(C);
+    cout <<q <<" d1: " <<d1.y <<"d2: " <<d2.y <<endl;
+    if(-d1.y(0)<1e-3 && -d2.y(0)<1e-3) break; //close enough!
+    if(q(0)<-.1) return;
+//    rai::wait(.01);
   }
 
   F_GraspOppose oppose(fing1->ID, fing2->ID, obj->ID);
