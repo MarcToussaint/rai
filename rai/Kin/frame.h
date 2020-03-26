@@ -71,7 +71,7 @@ struct Frame : NonCopyable {
   uint ID;                   ///< unique identifier
   String name;               ///< name
   Frame* parent=nullptr;        ///< parent frame
-  FrameL parentOf;           ///< list of children [TODO: rename]
+  FrameL children;           ///< list of children [TODO: rename]
  protected:
   Transformation Q=0;        ///< relative transform to parent
   Transformation X=0;        ///< frame's absolute pose

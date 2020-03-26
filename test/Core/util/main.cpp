@@ -50,8 +50,6 @@ void TEST(Parameter){
   double d = rai::getParameter<double>("number");
 
   cout <<p1 <<endl <<p2 <<endl <<d <<endl;
-
-  cout <<"registry:" <<registry() <<endl;
 }
 
 void TEST(Timer){

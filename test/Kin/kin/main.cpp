@@ -124,14 +124,14 @@ void TEST(Graph){
 
   K.prefixNames();
   {
-    Graph G = K.getGraph();
+    rai::Graph G = K.getGraph();
     G.displayDot();
     rai::wait(.5);
   }
 
   K.optimizeTree();
   {
-    Graph G = K.getGraph();
+    rai::Graph G = K.getGraph();
     G.displayDot();
     rai::wait(.5);
   }

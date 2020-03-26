@@ -10,8 +10,8 @@
 
 //===========================================================================
 
-void TM_Max::phi(arr& y, arr& J, const rai::Configuration& G) {
-  map->__phi(y, J, G);
+void F_Max::phi(arr& y, arr& J, const rai::Configuration& G) {
+  f->__phi(y, J, G);
   uint i=argmax(y);
   y = ARR(y(i));
   if(!!J) J=~J[i];
@@ -20,13 +20,16 @@ void TM_Max::phi(arr& y, arr& J, const rai::Configuration& G) {
 
 //===========================================================================
 
-void TM_Norm::phi(arr& y, arr& J, const rai::Configuration& G) {
-  map->__phi(y, J, G);
+void F_Norm::phi(arr& y, arr& J, const rai::Configuration& G) {
+  f->__phi(y, J, G);
   double l = sqrt(sumOfSqr(y));
   if(!!J) J = ~(y/l)*J;
   y = ARR(l);
 }
 
-uint TM_Norm::dim_phi(const rai::Configuration& G) {
-  return 1;
+//===========================================================================
+
+void F_Normalized::phi(arr& y, arr& J, const rai::Configuration& G) {
+  f->__phi(y, J, G);
+  normalizeWithJac(y, J);
 }

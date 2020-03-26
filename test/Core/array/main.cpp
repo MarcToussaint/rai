@@ -629,10 +629,10 @@ void TEST(Inverse){
 void TEST(GaussElimintation) {
   cout << "\n*** Gaussian elimination with partial pivoting \n";
   if (rai::lapackSupported) {
-    arr A = arr(3,3, {7., 2., 4., 2., 6., 5., 5., 3., 7.});
+    arr A = arr({3,3}, {7., 2., 4., 2., 6., 5., 5., 3., 7.});
     cout <<"A=\n" <<A << endl;
 
-    arr b = arr(3,2, {9., 5., 2., 1., 2., 3.});
+    arr b = arr({3,2}, {9., 5., 2., 1., 2., 3.});
     cout <<"b=\n" <<b << endl;
 
     arr X;

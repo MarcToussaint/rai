@@ -26,12 +26,19 @@
 
 //### Level 0 routines
 
+using rai::NodeL;
+using rai::Graph;
+using rai::Node;
+
+bool isSymbol(Node* n);
 NodeL getLiteralsOfScope(Graph& KB);
 NodeL getSymbolsOfScope(const Graph& KB);
 NodeL getVariables(Node* literal, Graph* varScope);
 uint getNumOfVariables(Node* literal, Graph* varScope);
 Node* getFirstVariable(Node* literal, Graph* varScope);
 //Node *getFirstSymbol(Node* literal, Graph* varScope);
+Node* getFirstNonSymbolOfScope(Graph& KB);
+Node* getSecondNonSymbolOfScope(Graph& KB);
 
 //---------- checking equality of two single facts, or fact and literal, or find facts in a KB that match a fact or literal
 

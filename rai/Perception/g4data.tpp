@@ -24,7 +24,7 @@ rai::Array<T> G4ID::query(const rai::Array<T>&  data, const StringA& sensors) {
 
 template<class T>
 void G4Rec::set(const char* key, const T& value) {
-  Node* i = params.getNode(key);
+  rai::Node* i = params.getNode(key);
   if(i)
     i->get<T>() = value;
   else

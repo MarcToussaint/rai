@@ -62,8 +62,8 @@ struct AStar_Node {
   void checkConsistency();
 
   void write(ostream& os=cout, bool recursive=false) const;
-  void getGraph(Graph& G, Node* n=nullptr);
-  Graph getGraph() { Graph G; getGraph(G, nullptr); G.checkConsistency(); return G; }
+  void getGraph(rai::Graph& G, rai::Node* n=nullptr);
+  rai::Graph getGraph() { rai::Graph G; getGraph(G, nullptr); G.checkConsistency(); return G; }
 
   void getAll(AStar_NodeL& L);
   AStar_NodeL getAll() { AStar_NodeL L; getAll(L); return L; }

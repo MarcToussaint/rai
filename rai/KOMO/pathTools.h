@@ -18,7 +18,7 @@ arr getAccelerations_centralDifference(const arr& q, double tau);
 
 double getNaturalDuration(const arr& q, double maxVel=1., double maxAcc=1.);
 
-rai::Spline getSpline(const arr& q, uint degree=2);
+rai::Spline getSpline(const arr& q, double duration=1., uint degree=2);
 
 //test max velocities, collision avoidance, consistence with q_now
 rai::String validatePath(const rai::Configuration& _C, const arr& q_now, const StringA& joints, const arr& q, const arr& times);

@@ -100,3 +100,17 @@ void rai::Proxy::glDraw(OpenGL& gl) {
 #endif
 }
 
+void rai::Proxy::write(std::ostream& os, bool brief) const{
+  os <<" ("
+    <<a->name <<")-("
+    <<b->name
+    <<") [" <<a->ID <<',' <<b->ID <<"] \td=" <<d;
+  if(!brief)
+    os <<" |A-B|=" <<(posB-posA).length()
+         //        <<" d^2=" <<(posB-posA).lengthSqr()
+       <<" v=" <<(posB-posA)
+       <<" normal=" <<normal
+       <<" posA=" <<posA
+       <<" posB=" <<posB;
+}
+

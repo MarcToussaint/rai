@@ -10,6 +10,7 @@
 
 #include "../Core/graph.h"
 
+namespace rai {
 struct GraphView {
   unique_ptr<struct sGraphView> self;
   bool verbose;
@@ -21,3 +22,4 @@ struct GraphView {
   void update();
   void watch();
 };
+}

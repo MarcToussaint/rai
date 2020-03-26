@@ -218,7 +218,7 @@ void sort2Dpoints(arr& A);
 void testConvConvIntersect(){
   //box cases
 //  uint N=20,D=2;
-  arr X = {4,2, {-1.,-1.,1.,-1.,-1.,1.,1.,1.}};
+  arr X = {{4,2}, {-1.,-1.,1.,-1.,-1.,1.,1.,1.}};
 
   arr C1 = .5*X;
   arr C2 = .25*X;

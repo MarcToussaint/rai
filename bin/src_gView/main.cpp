@@ -1,7 +1,7 @@
 #include <Core/graph.h>
 
 void read(const char* filename){
-  Graph G;
+  rai::Graph G;
   G.read(FILE(filename), true); //including parse info
   cout <<G <<endl;
   G.checkConsistency();

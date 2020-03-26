@@ -10,7 +10,7 @@ using namespace std;
 
 void TEST(Grasp){
   rai::Configuration K("model.g");
-  K.optimizeTree();
+//  K.optimizeTree();
   K.checkConsistency();
 
   KOMO komo;
@@ -22,7 +22,7 @@ void TEST(Grasp){
   komo.setGrasp(1., "endeff", "stick");
 #else
   komo.add_touch(1., 1., "endeff", "stickTip");
-  komo.addSwitch_stable(1., -1., "endeff", "stick");
+  komo.addSwitch_stable(1., -1., "endeff", "stickTip");
 #endif
 
   komo.add_collision(true);
@@ -31,11 +31,12 @@ void TEST(Grasp){
 
   komo.setSlow(2., -1.,1e0);
 
-  komo.reset();
-  komo.run();
+//  komo.animateOptimization = 2;
+//  komo.verbose = 8;
+  komo.optimize();
   komo.checkGradients();
 
-  Graph result = komo.getReport(true);
+  rai::Graph result = komo.getReport(true);
 
   for(uint i=0;i<2;i++) if(!komo.displayTrajectory(.1, true)) break;
 }

@@ -182,7 +182,7 @@ struct KOMO : NonCopyable {
 
   //-- tasks mid-level
 //  void setSquaredQAccelerations(double startTime=0., double endTime=-1., double prec=1.);
-  void add_qAccelerations(const arr& times, double scale=1., int deltaFromStep=0, int deltaToStep=0);
+  void add_qControlObjective(const arr& times, uint order, double scale=1., const arr& target=NoArr, int deltaFromStep=0, int deltaToStep=0);
   void setSquaredQAccVelHoming(double startTime=0., double endTime=-1., double accPrec=1., double velPrec=0., double homingPrec=1e-2, int deltaFromStep=0, int deltaToStep=0);
 //  void setSquaredQVelocities(double startTime=0., double endTime=-1., double prec=1.);
 //  void setFixEffectiveJoints(double startTime=0., double endTime=-1., double prec=3e1);
@@ -287,12 +287,12 @@ struct KOMO : NonCopyable {
   arr getActiveConstraintJacobian();
 
   void reportProblem(ostream& os=std::cout);
-  Graph getReport(bool gnuplt=false, int reportFeatures=0, ostream& featuresOs=std::cout); ///< return a 'dictionary' summarizing the optimization results (optional: gnuplot task costs; output detailed cost features per time slice)
-  Graph getProblemGraph(bool includeValues, bool includeSolution=true);
+  rai::Graph getReport(bool gnuplt=false, int reportFeatures=0, ostream& featuresOs=std::cout); ///< return a 'dictionary' summarizing the optimization results (optional: gnuplot task costs; output detailed cost features per time slice)
+  rai::Graph getProblemGraph(bool includeValues, bool includeSolution=true);
   double getConstraintViolations();
   double getCosts();
   void reportProxies(ostream& os=std::cout, double belowMargin=.1); ///< report the proxies (collisions) for each time slice
-  Graph getContacts(); ///< report the contacts
+  rai::Graph getContacts(); ///< report the contacts
   rai::Array<rai::Transformation> reportEffectiveJoints(ostream& os=std::cout);
 
   void checkGradients();          ///< checks all gradients numerically
@@ -315,6 +315,7 @@ struct KOMO : NonCopyable {
   void setBounds();
   void checkBounds(const arr& x);
   void retrospectAddSwitches(rai::Array<rai::KinematicSwitch*>& _switches);
+  void retrospectChangeJointType(int startStep, int endStep, uint frameID, rai::JointType newJointType);
   void set_x(const arr& x, const uintA& selectedConfigurationsOnly=NoUintA);            ///< set the state trajectory of all configurations
 //  void setState(const arr& x, const uintA& selectedVariablesOnly=NoUintA);            ///< set the state trajectory of all configurations
   uint dim_x(uint t) { return configurations(t+k_order)->getJointStateDimension(); }
@@ -410,6 +411,5 @@ struct KOMO : NonCopyable {
 
     void reportFeatures();
   };
-
 };
 

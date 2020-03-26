@@ -40,7 +40,9 @@ struct Proxy : GLDrawer {
   void calc_coll(const Configuration& K);
   void del_coll() { coll.reset(); }
   void glDraw(OpenGL&);
+  void write(ostream& os, bool brief=true) const;
 };
+stdOutPipe(Proxy)
 
 void glDrawProxies(void*);
 

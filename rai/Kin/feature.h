@@ -37,7 +37,7 @@ public:
   Feature() : order(0), flipTargetSignOnNegScalarProduct(false) {}
   virtual ~Feature() {}
   virtual rai::String shortTag(const rai::Configuration& C) { return "without-description"; }
-  virtual Graph getSpec(const rai::Configuration& C) { return Graph({{"description", shortTag(C)}}); }
+  virtual rai::Graph getSpec(const rai::Configuration& C) { return rai::Graph({{"description", shortTag(C)}}); }
   
   //-- helpers
   arr phi(const rai::Configuration& C) { arr y; phi(y,NoArr,C); return y; } ///< evaluate without computing Jacobian
