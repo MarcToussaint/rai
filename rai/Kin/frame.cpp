@@ -397,6 +397,7 @@ void rai::Frame::setConvexMesh(const std::vector<double>& points, const std::vec
   } else {
     getShape().type() = ST_ssCvx;
     getShape().sscCore().V.clear().operator=(points).reshape(-1, 3);
+    getShape().sscCore().makeConvexHull();
     getShape().mesh().setSSCvx(getShape().sscCore().V, radius);
   }
   if(colors.size()) {
