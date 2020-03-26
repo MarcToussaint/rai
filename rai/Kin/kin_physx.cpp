@@ -717,6 +717,7 @@ void PhysXInterface::pushKinematicStates(const FrameL& frames) { NICO }
 void PhysXInterface::pushFullState(const FrameL& frames, const arr& vels, bool onlyKinematic) { NICO }
 void PhysXInterface::pullDynamicStates(FrameL& frames, arr& vels) { NICO }
 
+void PhysXInterface::changeObjectType(rai::Frame* f, int _type){ NICO }
 void PhysXInterface::setArticulatedBodiesKinematic(const rai::Configuration& C) { NICO }
 void PhysXInterface::ShutdownPhysX() { NICO }
 void PhysXInterface::watch(bool pause, const char* txt) { NICO }
