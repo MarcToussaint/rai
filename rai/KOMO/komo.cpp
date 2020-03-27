@@ -1934,7 +1934,7 @@ void KOMO::setupConfigurations(const arr& q_init, const StringA& q_initJoints) {
   }
 }
 
-void KOMO::retrospectAddSwitches(rai::Array<KinematicSwitch*>& _switches){
+void KOMO::retrospectApplySwitches(rai::Array<KinematicSwitch*>& _switches){
   for(KinematicSwitch* sw:_switches) {
     uint s = sw->timeOfApplication+k_order;
     rai::Configuration *C = configurations.elem(s);

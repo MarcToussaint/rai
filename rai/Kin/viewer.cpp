@@ -104,7 +104,7 @@ void rai::ConfigurationViewer::setPath(const arr& _framePath, const char* text, 
   {
     auto _dataLock = gl->dataLock(RAI_HERE);
     framePath = _framePath;
-    drawFullPath=full;
+    drawFullPath = full;
     drawTimeSlice=-1;
     if(text) drawText = text;
   }
@@ -181,6 +181,22 @@ void rai::ConfigurationViewer::glDraw(OpenGL& gl) {
   glPushMatrix();
 
   rai::Transformation T;
+
+  //draw frame paths
+  if(drawFrameLines){
+    glColor(0., 0., 0.,.2);
+    glLoadIdentity();
+    for(uint i=0; i<framePath.d1; i++) {
+      glBegin(GL_LINE_STRIP);
+      for(uint t=0; t<framePath.d0; t++) {
+        T.set(&framePath(t, i, 0));
+        //          glTransform(pose);
+        glVertex3d(T.pos.x, T.pos.y, T.pos.z);
+      }
+      glEnd();
+    }
+  }
+
   if(drawTimeSlice>=0){
     uint t=drawTimeSlice;
     CHECK_LE(t+1, framePath.d0, "");
@@ -189,20 +205,6 @@ void rai::ConfigurationViewer::glDraw(OpenGL& gl) {
 
     C.setFrameState(framePath[t]);
     C.glDraw_sub(gl, 0);
-
-    //draw frame paths
-    glColor(0., 0., 0.);
-    glLoadIdentity();
-    for(uint i=0; i<framePath.d1; i++) {
-      glBegin(GL_LINES);
-      for(uint t=0; t<framePath.d0; t++) {
-        T.set(&framePath(t, i, 0));
-//          glTransform(pose);
-        glVertex3d(T.pos.x, T.pos.y, T.pos.z);
-      }
-      glEnd();
-    }
-
   }else{
     if(drawFullPath){
       CHECK_EQ(framePath.d1, C.frames.N, "");

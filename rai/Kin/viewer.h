@@ -35,7 +35,7 @@ private://draw data
   arr framePath;
   String drawText;
   int drawTimeSlice;
-  bool drawFullPath;
+  bool drawFullPath, drawFrameLines=true;
   int tprefix;
   bool writeToFiles;
   String text;
