@@ -111,10 +111,8 @@ void KOMO::setTiming(double _phases, uint _stepsPerPhase, double durationPerPhas
   stepsPerPhase = _stepsPerPhase;
   if(stepsPerPhase>=0) {
     T = ceil(stepsPerPhase*maxPhase);
-    CHECK(T, "using T=0 to indicate inverse kinematics is deprecated.");
     tau = durationPerPhase/double(stepsPerPhase);
   }
-//    setTiming(stepsPerPhase*maxPhase, durationPerPhase*maxPhase);
   k_order = _k_order;
 }
 
@@ -1469,6 +1467,10 @@ void KOMO::run(const OptOptions options) {
     OptConstrained _opt(x, dual, dense_problem, rai::MAX(verbose-2, 0), options);
 //    OptPrimalDual _opt(x, dual, dense_problem, rai::MAX(verbose-2, 0));
     _opt.logFile = logFile;
+    if(bound_up.N && bound_lo.N){
+      _opt.newton.bound_lo = bound_lo;
+      _opt.newton.bound_up = bound_up;
+    }
     _opt.run();
     timeNewton += _opt.newton.timeNewton;
   } else if(sparseOptimization) {

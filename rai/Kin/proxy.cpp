@@ -16,18 +16,11 @@
 // Proxy
 //
 
-rai::Proxy::Proxy() {
-}
-
-rai::Proxy::~Proxy() {
-  del_coll();
-}
-
-void rai::Proxy::copy(const rai::Configuration& K, const rai::Proxy& p) {
-  del_coll();
-  if(!!K) {
-    a = K.frames(p.a->ID); CHECK(a, "");
-    b = K.frames(p.b->ID); CHECK(b, "");
+void rai::Proxy::copy(const rai::Configuration& C, const rai::Proxy& p) {
+  collision.reset();
+  if(!!C) {
+    a = C.frames(p.a->ID); CHECK(a, "");
+    b = C.frames(p.b->ID); CHECK(b, "");
   } else a=b=0;
   posA = p.posA;
   posB = p.posB;
@@ -36,9 +29,9 @@ void rai::Proxy::copy(const rai::Configuration& K, const rai::Proxy& p) {
   colorCode = p.colorCode;
 }
 
-void rai::Proxy::calc_coll(const Configuration& K) {
-  CHECK_EQ(&a->C, &K, "");
-  CHECK_EQ(&b->C, &K, "");
+void rai::Proxy::calc_coll(const Configuration& C) {
+  CHECK_EQ(&a->C, &C, "");
+  CHECK_EQ(&b->C, &C, "");
   rai::Shape* s1 = a->shape;
   rai::Shape* s2 = b->shape;
   CHECK(s1 && s2, "");
@@ -48,22 +41,22 @@ void rai::Proxy::calc_coll(const Configuration& K) {
   rai::Mesh* m1 = &s1->sscCore();  if(!m1->V.N) { m1 = &s1->mesh(); r1=0.; }
   rai::Mesh* m2 = &s2->sscCore();  if(!m2->V.N) { m2 = &s2->mesh(); r2=0.; }
 
-  if(coll) coll.reset();
-  coll = make_shared<PairCollision>(*m1, *m2, s1->frame.ensure_X(), s2->frame.ensure_X(), r1, r2);
+  if(collision) collision.reset();
+  collision = make_shared<PairCollision>(*m1, *m2, s1->frame.ensure_X(), s2->frame.ensure_X(), r1, r2);
 
-  d = coll->distance-coll->rad1-coll->rad2;
-  posA = coll->p1;
-  posB = coll->p2;
-  normal = coll->normal;
+  d = collision->distance-collision->rad1-collision->rad2;
+  posA = collision->p1;
+  posB = collision->p2;
+  normal = collision->normal;
 }
 
 typedef rai::Array<rai::Proxy*> ProxyL;
 
 void rai::Proxy::glDraw(OpenGL& gl) {
 #ifdef RAI_GL
-  if(coll) {
+  if(collision) {
     glLoadIdentity();
-    coll->glDraw(gl);
+    collision->glDraw(gl);
   } else {
     glLoadIdentity();
     if(!colorCode) {

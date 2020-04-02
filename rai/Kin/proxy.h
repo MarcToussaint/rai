@@ -31,14 +31,11 @@ struct Proxy : GLDrawer {
   Vector normal;   ///< contact normal, pointing from B to A (proportional to posA-posB)
   double d;        ///< distance (positive) or penetration (negative) between A and B
   uint colorCode = 0;
-  shared_ptr<PairCollision> coll;
+  shared_ptr<PairCollision> collision;
 
-  Proxy();
-  ~Proxy();
-
-  void copy(const Configuration& K, const Proxy& p);
-  void calc_coll(const Configuration& K);
-  void del_coll() { coll.reset(); }
+  void copy(const Configuration& C, const Proxy& p);
+  void ensure_coll(const Configuration& C){ if(!collision) calc_coll(C); }
+  void calc_coll(const Configuration& C);
   void glDraw(OpenGL&);
   void write(ostream& os, bool brief=true) const;
 };

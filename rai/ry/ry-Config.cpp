@@ -272,7 +272,7 @@ between all frame shapes that have the collision tag set non-zero"
   pybind11::list ret;
   auto Kget = self.get();
   for(const rai::Proxy& p: Kget->proxies) {
-    if(!p.coll)((rai::Proxy*)&p)->calc_coll(Kget);
+    if(!p.collision)((rai::Proxy*)&p)->calc_coll(Kget);
     if(p.d>belowMargin) continue;
     pybind11::tuple tuple(3);
     tuple[0] = p.a->name.p;

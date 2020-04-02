@@ -270,7 +270,6 @@ void SwiftInterface::pullFromSwift(rai::Configuration& world, bool dumpReport) {
     }
   }
 
-  for(rai::Proxy& p:world.proxies) p.del_coll();
   world.proxies.clear();
   world.proxies.resize(np);
 

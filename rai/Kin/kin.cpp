@@ -1796,7 +1796,7 @@ void rai::Configuration::stepDynamics(arr& qdot, const arr& Bu_control, double t
 
 void __merge(rai::ForceExchange* c, rai::Proxy* p) {
   CHECK(&c->a==p->a && &c->b==p->b, "");
-  if(!p->coll) p->calc_coll(c->a.C);
+  if(!p->collision) p->calc_coll(c->a.C);
   //  c->a_rel = c->a.X / rai::Vector(p->coll->p1);
   //  c->b_rel = c->b.X / rai::Vector(p->coll->p2);
   //  c->a_norm = c->a.X.rot / rai::Vector(-p->coll->normal);
@@ -1858,7 +1858,7 @@ void rai::Configuration_ext::proxiesToContacts(double margin) {
   for(Frame* f:frames) while(f->forces.N) delete f->forces.last();
 
   for(Proxy& p:proxies) {
-    if(!p.coll) p.calc_coll(*this);
+    if(!p.collision) p.calc_coll(*this);
     ForceExchange* candidate=nullptr;
     for(ForceExchange* c:p.a->forces) {
       if((&c->a==p.a && &c->b==p.b) || (&c->a==p.b && &c->b==p.a)) {
@@ -1868,7 +1868,7 @@ void rai::Configuration_ext::proxiesToContacts(double margin) {
     }
     if(candidate) __merge(candidate, &p);
     else {
-      if(p.coll->distance-(p.coll->rad1+p.coll->rad2)<margin) {
+      if(p.collision->distance-(p.collision->rad1+p.collision->rad2)<margin) {
         rai::ForceExchange* c = new rai::ForceExchange(*p.a, *p.b);
         __merge(c, &p);
       }
@@ -1893,8 +1893,8 @@ double rai::Configuration::totalCollisionPenetration() {
     //early check: if swift is way out of collision, don't bother computing it precise
     if(p.d > p.a->shape->radius()+p.b->shape->radius()+.01) continue;
     //exact computation
-    if(!p.coll)((Proxy*)&p)->calc_coll(*this);
-    double d = p.coll->getDistance();
+    if(!p.collision)((Proxy*)&p)->calc_coll(*this);
+    double d = p.collision->getDistance();
     if(d<0.) D -= d;
   }
   //  for(Frame *f:frames) for(ForceExchange *c:f->forces) if(&c->a==f) {
@@ -2455,16 +2455,16 @@ void rai::Configuration_ext::kinematicsPenetrations(arr& y, arr& J, bool penetra
   if(!!J) J.resize(y.N, getJointStateDimension()).setZero();
   uint i=0;
   for(const Proxy& p:proxies) {
-    if(!p.coll)((Proxy*)&p)->calc_coll(*this);
+    if(!p.collision)((Proxy*)&p)->calc_coll(*this);
 
     arr Jp1, Jp2;
     if(!!J) {
-      jacobian_pos(Jp1, p.a, p.coll->p1);
-      jacobian_pos(Jp2, p.b, p.coll->p2);
+      jacobian_pos(Jp1, p.a, p.collision->p1);
+      jacobian_pos(Jp2, p.b, p.collision->p2);
     }
 
     arr y_dist, J_dist;
-    p.coll->kinDistance(y_dist, (!!J?J_dist:NoArr), Jp1, Jp2);
+    p.collision->kinDistance(y_dist, (!!J?J_dist:NoArr), Jp1, Jp2);
 
     if(!penetrationsOnly || y_dist.scalar()<activeMargin) {
       y(i) = -y_dist.scalar();
@@ -2504,18 +2504,18 @@ void rai::Configuration::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, dou
   //early check: if swift is way out of collision, don't bother computing it precise
   if(p.d > p.a->shape->radius() + p.b->shape->radius() + .01 + margin) return;
 
-  if(!p.coll)((Proxy*)&p)->calc_coll(*this);
+  if(!p.collision)((Proxy*)&p)->calc_coll(*this);
 
-  if(p.coll->getDistance()>margin) return;
+  if(p.collision->getDistance()>margin) return;
 
   arr Jp1, Jp2;
   if(!!J) {
-    jacobian_pos(Jp1, p.a, p.coll->p1);
-    jacobian_pos(Jp2, p.b, p.coll->p2);
+    jacobian_pos(Jp1, p.a, p.collision->p1);
+    jacobian_pos(Jp2, p.b, p.collision->p2);
   }
 
   arr y_dist, J_dist;
-  p.coll->kinDistance(y_dist, (!!J?J_dist:NoArr), Jp1, Jp2);
+  p.collision->kinDistance(y_dist, (!!J?J_dist:NoArr), Jp1, Jp2);
 
   if(y_dist.scalar()>margin) return;
   y += margin-y_dist.scalar();

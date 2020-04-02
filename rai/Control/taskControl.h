@@ -18,7 +18,6 @@ typedef rai::Array<CtrlTask*> CtrlTaskL;
 //===========================================================================
 
 /// a motion profile is a non-feedback(!) way to generate a task space reference path
-/// [perhaps an adaptive phase, or Peter's adaptation to object motions, could be a modest way to incorporate feedback in the future]
 struct MotionProfile {
   virtual ~MotionProfile() {}
   virtual ActStatus update(arr& yRef, arr& ydotRef, double tau, const arr& y, const arr& ydot) = 0;
