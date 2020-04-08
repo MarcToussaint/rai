@@ -90,11 +90,12 @@ struct Configuration : GLDrawer {
   Configuration(const char* filename);
   virtual ~Configuration();
 
+  /// @name copy
   void operator=(const rai::Configuration& K) { copy(K); }
   void copy(const rai::Configuration& K, bool referenceSwiftOnCopy=false);
   bool operator!() const;
 
-  /// @name initializations
+  /// @name initializations, building configurations
   void init(const char* filename);
   void init(const Graph& G, bool addInsteadOfClear=false);
   Frame* addFile(const char* filename);
@@ -171,7 +172,9 @@ struct Configuration : GLDrawer {
   void setJointState(const arr& _q);
   void setJointState(const arr& _q, const StringA&);
   void setJointState(const arr& _q, const uintA&);
+  void setJointState(const arr& _q, const FrameL&);
   void setFrameState(const arr& X, const StringA& frameNames= {}, bool warnOnDifferentDim=true);
+  void setDofsForTree(const arr& q, rai::Frame* root);
   void setTimes(double t);
   void operator=(const arr& X) {
     if(X.d0==frames.N) setFrameState(X);

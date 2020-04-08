@@ -801,12 +801,16 @@ void rai::Configuration::setJointState(const arr& _q, const StringA& joints) {
 }
 
 void rai::Configuration::setJointState(const arr& _q, const uintA& joints) {
+  setJointState(_q, frames.sub(joints));
+}
+
+void rai::Configuration::setJointState(const arr& _q, const FrameL& joints) {
   setJointStateCount++; //global counter
   getJointState();
 
   uint nd=0;
-  for(uint i=0; i<joints.N; i++) {
-    rai::Joint* j = frames(joints(i))->joint;
+  for(Frame *f:joints) {
+    Joint* j = f->joint;
     if(!j || !j->active) continue;
     for(uint ii=0; ii<j->dim; ii++) q(j->qIndex+ii) = _q(nd+ii);
     nd += j->dim;
@@ -817,8 +821,11 @@ void rai::Configuration::setJointState(const arr& _q, const uintA& joints) {
 
   _state_q_isGood=true;
   _state_proxies_isGood=false;
-  for(Frame* f:frames) if(f->parent) f->_state_X_isGood=false;
-
+  for(Joint* j:activeJoints){
+    if(j->type!=JT_tau){
+      j->frame->_state_setXBadinBranch();
+    }
+  }
   calc_Q_from_q();
 }
 
@@ -860,7 +867,13 @@ void rai::Configuration::setFrameState(const arr& X, const StringA& frameNames, 
 
   checkConsistency();
 //  calc_Q_from_Frames();
-//  if(calc_q_from_X) ensure_q();
+  //  if(calc_q_from_X) ensure_q();
+}
+
+void rai::Configuration::setDofsForTree(const arr& q, rai::Frame* root){
+  FrameL F = {root};
+  root->getSubtree(F);
+  setJointState(q, F);
 }
 
 void rai::Configuration::setTimes(double t) {

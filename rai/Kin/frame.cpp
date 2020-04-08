@@ -102,6 +102,7 @@ void rai::Frame::calc_X_from_parent() {
   }
 
   _state_X_isGood=true;
+  C._state_proxies_isGood = false;
 }
 
 void rai::Frame::calc_Q_from_parent(bool enforceWithinJoint) {
