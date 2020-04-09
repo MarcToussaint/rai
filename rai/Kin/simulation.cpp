@@ -132,10 +132,10 @@ void Simulation::closeGripper(const char* gripperFrameName, double width, double
 
 
   //-- actually close gripper until both distances are < .001
-  TM_PairCollision coll1(fing1->ID, obj->ID, coll1._negScalar, false);
+  F_PairCollision coll1(fing1->ID, obj->ID, coll1._negScalar, false);
   auto d1 = coll1.eval(C);
 
-  TM_PairCollision coll2(fing2->ID, obj->ID, coll1._negScalar, false);
+  F_PairCollision coll2(fing2->ID, obj->ID, coll1._negScalar, false);
   auto d2 = coll2.eval(C);
 
   cout <<"d1: " <<d1.y <<"d2: " <<d2.y <<endl;

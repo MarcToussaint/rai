@@ -25,7 +25,7 @@ void plan(){
   komo.setSquaredQAccelerations();
   
   //permanent tasks: no collision, gravity
-  komo.addObjective({}, make_shared<TM_PairCollision>(K, "ball1", "ball2", TM_PairCollision::_negScalar, false), OT_ineq, {1e2});
+  komo.addObjective({}, make_shared<F_PairCollision>(K, "ball1", "ball2", F_PairCollision::_negScalar, false), OT_ineq, {1e2});
 
   //-- action 1
 //  komo.setImpact(1., "ball1", "ball2");

@@ -33,10 +33,10 @@ void TEST(GJK_Jacobians) {
 //  gl.add(draw);
 //  gl.add(K);
 
-  TM_PairCollision dist(B1.ID, B2.ID, TM_PairCollision::_negScalar);
-  TM_PairCollision distVec(B1.ID, B2.ID, TM_PairCollision::_vector);
-  TM_PairCollision distNorm(B1.ID, B2.ID, TM_PairCollision::_normal);
-  TM_PairCollision distCenter(B1.ID, B2.ID, TM_PairCollision::_center);
+  F_PairCollision dist(B1.ID, B2.ID, F_PairCollision::_negScalar);
+  F_PairCollision distVec(B1.ID, B2.ID, F_PairCollision::_vector);
+  F_PairCollision distNorm(B1.ID, B2.ID, F_PairCollision::_normal);
+  F_PairCollision distCenter(B1.ID, B2.ID, F_PairCollision::_center);
 
   for(uint k=0;k<100;k++){
 //    //randomize shapes
@@ -222,7 +222,7 @@ void TEST(GJK_Jacobians3) {
 
 //    PairCollision collInfo(s1.sscCore(), s2.sscCore(), s1.frame.X, s2.frame.X, s1.size(-1), s2.size(-1));
 
-    TM_PairCollision gjk(1, 2, TM_PairCollision::_negScalar);
+    F_PairCollision gjk(1, 2, F_PairCollision::_negScalar);
     checkJacobian(gjk.vf(K), q, 1e-4);
 
     arr y,J;

@@ -46,6 +46,11 @@ public:
   Value eval(const rai::Configuration& C){ arr y,J; phi(y, J, C); return Value(y,J); }
   Value eval(const ConfigurationL& Ctuple){ arr y,J; phi(y, J, Ctuple); return Value(y,J); }
 
+  //-- setters
+  Feature& setOrder(uint _order){ order=_order; return *this; }
+  Feature& setScale(const arr& _scale){ scale=_scale; return *this; }
+  Feature& setTarget(const arr& _target){ target=_target; return *this; }
+
   VectorFunction vf(rai::Configuration& C);
   VectorFunction vf(ConfigurationL& Ctuple);
 private:

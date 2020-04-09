@@ -14,8 +14,6 @@ void tutorialBasics(){
    * 2) the timing parameters (duration/phases, number os time slices per phase)
    * 3) the tasks */
 
-  komo.sparseOptimization = true;
-
   //-- setting the model; false -> NOT calling collision detection (SWIFT) -> faster
   komo.setModel(C, false);
 
@@ -23,7 +21,7 @@ void tutorialBasics(){
   komo.setTiming(2, 20, 5., 2);
 
   //-- default tasks for transition costs
-  komo.setSquaredQAccVelHoming();
+  komo.add_qControlObjective({}, 2, 1.);
   komo.setSquaredQuaternionNorms(-1., -1., 1e1); //when the kinematics includes quaternion joints, keep them roughly regularized
 
   //-- simple tasks, called low-level
@@ -84,7 +82,7 @@ void tutorialInverseKinematics(){
   komo.setTiming(1., 1, 1., 1);
 
   //-- default tasks for transition costs
-  komo.setSquaredQAccVelHoming(1., -1., 0., 1., 1e-2);
+  komo.add_qControlObjective({}, 1, 1.);
   komo.setSquaredQuaternionNorms(-1., -1., 1e3); //when the kinematics includes quaternion joints, keep them roughly regularized
 
   //-- simple tasks, called low-level

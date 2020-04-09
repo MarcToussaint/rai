@@ -407,7 +407,7 @@ void KOMO::addContact_slide(double startTime, double endTime, const char* from, 
   addObjective({startTime, endTime}, make_shared<TM_Contact_ForceIsNormal>(world, from, to), OT_eq, {1e2});
   addObjective({startTime, endTime}, make_shared<TM_Contact_ForceIsPositive>(world, from, to), OT_ineq, {1e2});
   addObjective({startTime, endTime}, make_shared<TM_Contact_POAisInIntersection_InEq>(world, from, to), OT_ineq, {1e1});
-  addObjective({startTime, endTime}, make_shared<TM_PairCollision>(world, from, to, TM_PairCollision::_negScalar, false), OT_eq, {1e1});
+  addObjective({startTime, endTime}, make_shared<F_PairCollision>(world, from, to, F_PairCollision::_negScalar, false), OT_eq, {1e1});
 
   //regularization
   addObjective({startTime, endTime}, make_shared<F_LinearForce>(world, from, to), OT_sos, {1e-2}, NoArr, 2, +2, 0);
@@ -423,7 +423,7 @@ void KOMO::addContact_stick(double startTime, double endTime, const char* from, 
   //constraints
   addObjective({startTime, endTime}, make_shared<TM_Contact_ForceIsPositive>(world, from, to), OT_ineq, {1e1});
   addObjective({startTime, endTime}, make_shared<TM_Contact_POAisInIntersection_InEq>(world, from, to), OT_ineq, {1e1});
-  addObjective({startTime, endTime}, make_shared<TM_PairCollision>(world, from, to, TM_PairCollision::_negScalar, false), OT_eq, {1e1});
+  addObjective({startTime, endTime}, make_shared<F_PairCollision>(world, from, to, F_PairCollision::_negScalar, false), OT_eq, {1e1});
   addObjective({startTime, endTime}, make_shared<TM_Contact_POAzeroRelVel>(world, from, to), OT_eq, {1e0}, NoArr, 1, +1, +1);
 
   //regularization
@@ -441,7 +441,7 @@ void KOMO::addContact_ComplementarySlide(double startTime, double endTime, const
   addObjective({startTime, endTime}, make_shared<TM_Contact_ForceIsNormal>(world, from, to), OT_eq, {1e2});
   addObjective({startTime, endTime}, make_shared<TM_Contact_ForceIsComplementary>(world, from, to), OT_eq, {1e2});
   addObjective({startTime, endTime}, make_shared<TM_Contact_NormalVelIsComplementary>(world, from, to, 0., 0.), OT_eq, {1e2}, NoArr, 1, +1);
-  addObjective({startTime, endTime}, make_shared<TM_PairCollision>(world, from, to, TM_PairCollision::_negScalar, false), OT_ineq, {1e1});
+  addObjective({startTime, endTime}, make_shared<F_PairCollision>(world, from, to, F_PairCollision::_negScalar, false), OT_ineq, {1e1});
 
   //regularization
   addObjective({startTime, endTime}, make_shared<F_LinearForce>(world, from, to), OT_sos, {1e-4});
@@ -475,7 +475,7 @@ void KOMO::addContact_noFriction(double startTime, double endTime, const char* f
   addObjective({startTime, endTime}, make_shared<TM_Contact_POAisInIntersection_InEq>(world, from, to), OT_ineq, {1e1});
   addObjective({startTime, endTime}, make_shared<TM_Contact_POAmovesContinuously>(world, from, to), OT_sos, {1e0}, NoArr, 1, +1, +0);
   addObjective({startTime, endTime}, make_shared<F_LinearForce>(world, from, to), OT_sos, {1e-4});
-  addObjective({startTime, endTime}, make_shared<TM_PairCollision>(world, from, to, TM_PairCollision::_negScalar, false), OT_eq, {1e1});
+  addObjective({startTime, endTime}, make_shared<F_PairCollision>(world, from, to, F_PairCollision::_negScalar, false), OT_eq, {1e1});
 }
 
 void KOMO::addContact_elasticBounce(double time, const char* from, const char* to, double elasticity, double stickiness) {
@@ -486,7 +486,7 @@ void KOMO::addContact_elasticBounce(double time, const char* from, const char* t
   addObjective({time}, make_shared<TM_Contact_ForceIsPositive>(world, from, to), OT_ineq, {1e1});
   addObjective({time}, make_shared<TM_Contact_POAisInIntersection_InEq>(world, from, to), OT_ineq, {1e1});
   addObjective({time}, make_shared<F_LinearForce>(world, from, to), OT_sos, {1e-4});
-  addObjective({time}, make_shared<TM_PairCollision>(world, from, to, TM_PairCollision::_negScalar, false), OT_eq, {1e1});
+  addObjective({time}, make_shared<F_PairCollision>(world, from, to, F_PairCollision::_negScalar, false), OT_eq, {1e1});
 
   if(!elasticity && stickiness>=1.) {
     addObjective({time}, make_shared<TM_Contact_POAzeroRelVel>(world, from, to), OT_eq, {1e1}, NoArr, 2, +1, +1);
@@ -1175,7 +1175,7 @@ void KOMO_ext::setAlign(double startTime, double endTime, const char* shape, con
 }
 
 void KOMO::add_touch(double startTime, double endTime, const char* shape1, const char* shape2, ObjectiveType type, const arr& target, double prec) {
-  addObjective({startTime, endTime}, make_shared<TM_PairCollision>(world, shape1, shape2, TM_PairCollision::_negScalar, false), type, {prec}, target);
+  addObjective({startTime, endTime}, make_shared<F_PairCollision>(world, shape1, shape2, F_PairCollision::_negScalar, false), type, {prec}, target);
 }
 
 void KOMO::add_aboveBox(double startTime, double endTime, const char* shape1, const char* shape2, double prec) {

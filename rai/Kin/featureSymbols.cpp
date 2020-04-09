@@ -80,7 +80,7 @@ double shapeSize(const rai::Configuration& K, const char* name, uint i=2) {
 
 ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const rai::Configuration& world, const arr& scale, const arr& target, int order) {
   ptr<Feature> f;
-  if(feat==FS_distance) {  f=make_shared<TM_PairCollision>(world, frames(0), frames(1), TM_PairCollision::_negScalar, false); }
+  if(feat==FS_distance) {  f=make_shared<F_PairCollision>(world, frames(0), frames(1), F_PairCollision::_negScalar, false); }
   else if(feat==FS_oppose) {  f=make_shared<F_GraspOppose>(world, frames(0), frames(1), frames(2)); }
   else if(feat==FS_aboveBox) {  f=make_shared<TM_AboveBox>(world, frames(1), frames(0), .05); }
   else if(feat==FS_standingAbove) {

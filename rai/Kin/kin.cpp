@@ -933,11 +933,6 @@ ptr<Feature> rai::Configuration::feature(FeatureSymbol fs, const StringA& frames
   return symbols2feature(fs, frames, *this);
 }
 
-void rai::Configuration::evalFeature(arr& y, arr& J, FeatureSymbol fs, const StringA& frames) const {
-  ptr<Feature> f = symbols2feature(fs, frames, *this);
-  f->__phi(y, J, *this);
-}
-
 //===========================================================================
 //
 // core: kinematics and dynamics
@@ -3853,7 +3848,7 @@ void editConfiguration(const char* filename, rai::Configuration& C) {
       key = C.gl().setConfiguration(C, "waiting for file change", false);
       if(key==13 || key==32 || key==27 || key=='q') break;
       if(ino.poll(false, true)) break;
-      rai::wait(.02);
+      rai::wait(.2);
     }
     if(exit) break;
     if(key==13 || key==32) {
