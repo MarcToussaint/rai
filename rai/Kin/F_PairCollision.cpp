@@ -35,32 +35,31 @@ void F_PairCollision::phi(arr& y, arr& J, const rai::Configuration& C) {
   if(!m1->V.N) m1->V = zeros(1, 3);
   if(!m2->V.N) m2->V = zeros(1, 3);
 
-  coll.reset();
-  coll = make_unique<PairCollision>(*m1, *m2, s1->frame.ensure_X(), s2->frame.ensure_X(), r1, r2);
+  PairCollision coll(*m1, *m2, s1->frame.ensure_X(), s2->frame.ensure_X(), r1, r2);
 
-  if(neglectRadii) coll->rad1=coll->rad2=0.;
+  if(neglectRadii) coll.rad1=coll.rad2=0.;
 
   if(type==_negScalar) {
     arr Jp1, Jp2;
-    C.jacobian_pos(Jp1, &s1->frame, coll->p1);
-    C.jacobian_pos(Jp2, &s2->frame, coll->p2);
-    coll->kinDistance(y, J, Jp1, Jp2);
+    C.jacobian_pos(Jp1, &s1->frame, coll.p1);
+    C.jacobian_pos(Jp2, &s2->frame, coll.p2);
+    coll.kinDistance(y, J, Jp1, Jp2);
     y *= -1.;
     if(!!J) J *= -1.;
     if(!!J) checkNan(J);
   } else {
     arr Jp1, Jp2, Jx1, Jx2;
     if(!!J) {
-      C.jacobian_pos(Jp1, &s1->frame, coll->p1);
-      C.jacobian_pos(Jp2, &s2->frame, coll->p2);
+      C.jacobian_pos(Jp1, &s1->frame, coll.p1);
+      C.jacobian_pos(Jp2, &s2->frame, coll.p2);
       C.jacobian_angular(Jx1, &s1->frame);
       C.jacobian_angular(Jx2, &s2->frame);
     }
-    if(type==_vector) coll->kinVector(y, J, Jp1, Jp2, Jx1, Jx2);
-    if(type==_normal) coll->kinNormal(y, J, Jp1, Jp2, Jx1, Jx2);
-    if(type==_center) coll->kinCenter(y, J, Jp1, Jp2, Jx1, Jx2);
-    if(type==_p1) coll->kinPointP1(y, J, Jp1, Jp2, Jx1, Jx2);
-    if(type==_p2) coll->kinPointP2(y, J, Jp1, Jp2, Jx1, Jx2);
+    if(type==_vector) coll.kinVector(y, J, Jp1, Jp2, Jx1, Jx2);
+    if(type==_normal) coll.kinNormal(y, J, Jp1, Jp2, Jx1, Jx2);
+    if(type==_center) coll.kinCenter(y, J, Jp1, Jp2, Jx1, Jx2);
+    if(type==_p1) coll.kinPointP1(y, J, Jp1, Jp2, Jx1, Jx2);
+    if(type==_p2) coll.kinPointP2(y, J, Jp1, Jp2, Jx1, Jx2);
   }
 }
 

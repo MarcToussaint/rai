@@ -933,6 +933,10 @@ ptr<Feature> rai::Configuration::feature(FeatureSymbol fs, const StringA& frames
   return symbols2feature(fs, frames, *this);
 }
 
+void rai::Configuration::evalFeature(arr& y, arr& J, FeatureSymbol fs, const StringA& frames) const {
+  feature(fs,frames)->__phi(y, J, *this);
+}
+
 //===========================================================================
 //
 // core: kinematics and dynamics
