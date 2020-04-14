@@ -37,7 +37,7 @@ struct sPlotModule {
 }
 
 rai::PlotModule::PlotModule() {
-  s = new sPlotModule;
+  self = make_unique<sPlotModule>();
   mode=gnupl;
   gl=0;
   light=false;
@@ -53,7 +53,6 @@ rai::PlotModule::~PlotModule() {
 #ifdef RAI_GL
   if(gl) { delete gl; gl=nullptr; }
 #endif
-  delete s;
 }
 
 //===========================================================================
@@ -67,7 +66,7 @@ void rai::PlotModule::update(bool wait, const char* txt) {
   }
   switch(mode) {
     case gnupl:
-      drawGnuplot(*s);
+      drawGnuplot(*self);
       if(wait) rai::wait();
       break;
 #ifdef RAI_GL
@@ -97,11 +96,11 @@ void rai::PlotModule::Close() {
 }
 
 void rai::PlotModule::Clear() {
-  s->array.clear();
-  s->points.clear();
-  s->lines.clear();
+  self->array.clear();
+  self->points.clear();
+  self->lines.clear();
 #ifdef RAI_GL
-  s->planes.clear();
+  self->planes.clear();
 #endif
 }
 
@@ -126,7 +125,7 @@ void rai::PlotModule::Opengl(bool perspective, double xl, double xh, double yl, 
   gl->update();
 }
 
-void rai::PlotModule::Image(const byteA& x) { s->images.append(x); }
+void rai::PlotModule::Image(const byteA& x) { self->images.append(x); }
 
 void rai::PlotModule::Function(const arr& f, double x0, double x1) {
   arr X;
@@ -148,7 +147,7 @@ void rai::PlotModule::Function(const arr& f, double x0, double x1) {
       X.reshape(X.N, 1);
     }
   }
-  s->lines.append(X);
+  self->lines.append(X);
 }
 
 void rai::PlotModule::Functions(const arr& F, double x0, double x1) {
@@ -166,7 +165,7 @@ void rai::PlotModule::FunctionPoints(const arr& x, const arr& f) {
     for(j=0; j<x.d1; j++) X(i, j)=x(i, j);
     X(i, j)=f(i);
   }
-  s->points.append(X);
+  self->points.append(X);
 }
 
 void rai::PlotModule::Function(const arr& x, const arr& f) {
@@ -179,7 +178,7 @@ void rai::PlotModule::Function(const arr& x, const arr& f) {
     for(j=0; j<x.d1; j++) X(i, j)=x(i, j);
     X(i, j)=f(i);
   }
-  s->lines.append(X);
+  self->lines.append(X);
 }
 
 void rai::PlotModule::FunctionPrecision(const arr& x, const arr& f, const arr& h, const arr& l) {
@@ -194,40 +193,40 @@ void rai::PlotModule::FunctionPrecision(const arr& x, const arr& f, const arr& h
     X(i, j+1)=l(i);
     X(i, j+2)=h(i);
   }
-  s->lines.append(X);
+  self->lines.append(X);
 }
 
 void rai::PlotModule::Surface(const arr& X) {
-  s->array.append(X);
+  self->array.append(X);
 #ifdef RAI_GL
-  s->mesh.clear();
-  s->mesh.V.resize(X.N, 3);
-  s->mesh.C.resize(X.N, 3);
-  s->mesh.setGrid(X.d1, X.d0);
-  //s->mesh.gridToStrips(X.d1, X.d0);
+  self->mesh.clear();
+  self->mesh.V.resize(X.N, 3);
+  self->mesh.C.resize(X.N, 3);
+  self->mesh.setGrid(X.d1, X.d0);
+  //self->mesh.gridToStrips(X.d1, X.d0);
 #endif
 }
 
 void rai::PlotModule::Point(double x, double y, double z) {
   arr p(1, 3); p(0, 0)=x; p(0, 1)=y; p(0, 2)=z;
-  s->points.append(p);
+  self->points.append(p);
 }
 
 void rai::PlotModule::Point(const arr& x) {
   arr p; p.referTo(x); p.reshape(1, p.N);
-  s->points.append(p);
+  self->points.append(p);
 }
 
 void rai::PlotModule::Points(const arr& X) {
-  s->points.append(X);
+  self->points.append(X);
 }
 
 void rai::PlotModule::ClearPoints() {
-  s->points.clear();
+  self->points.clear();
 }
 
 void rai::PlotModule::Line(const arr& X, bool closed) {
-  arr& app = s->lines.append(X);
+  arr& app = self->lines.append(X);
   if(closed && app.d0) {
     arr x;
     x = app[0];
@@ -248,7 +247,7 @@ void rai::PlotModule::Points(const arr& X, const arr& Y) {
     P.resize(X.d0, 2);
     for(i=0; i<P.d0; i++) { P(i, 0)=X(i); P(i, 1)=Y(i); }
   }
-  s->points.append(P);
+  self->points.append(P);
 }
 
 void rai::PlotModule::Covariance(const arr& mean, const arr& cov) {
@@ -283,7 +282,7 @@ void rai::PlotModule::Covariance(const arr& mean, const arr& cov) {
     for(i=0; i<w.N; i++) w(i)=sqrt(w(i)); //trace of eig^2 becomes N!
     for(i=0; i<d.d0; i++) { d[i]()*=w; d[i]=V*d[i]; d(i, 0)+=mean(0); d(i, 1)+=mean(1); }
     
-    s->lines.append(d);
+    self->lines.append(d);
   }
   if(d==3) {
 #if 1
@@ -308,9 +307,9 @@ void rai::PlotModule::Covariance(const arr& mean, const arr& cov) {
     for(i=0; i<w.N; i++) w(i)=sqrt(w(i)); //trace of eig^2 becomes N!
     for(i=0; i<d.d0; i++) { d[i]()*=w; d[i]=V*d[i]; d[i]()+=mean; }
     d.reshape(3, 101, 3);
-    s->lines.append(d[0]);
-    s->lines.append(d[1]);
-    s->lines.append(d[2]);
+    self->lines.append(d[0]);
+    self->lines.append(d[1]);
+    self->lines.append(d[2]);
 #else
     arr d(101, 2), dd(101, 3), Cov, U, V, w;
     double phi;
@@ -325,7 +324,7 @@ void rai::PlotModule::Covariance(const arr& mean, const arr& cov) {
     for(i=0; i<w.N; i++) w(i)=sqrt(w(i)); //trace of eig^2 becomes N!
     for(i=0; i<d.d0; i++) { mult(d[i](), d[i], w); d[i]=V*d[i]; d(i, 0)+=mean(0); d(i, 1)+=mean(1); }
     for(i=0; i<d.d0; i++) { dd(i, 0)=d(i, 0); dd(i, 1)=d(i, 1); dd(i, 2)=mean(2); }
-    s->lines.append(dd);
+    self->lines.append(dd);
     //y-z
     Cov=cov.sub(1, 2, 1, 2);
     for(i=0; i<d.d0; i++) { //standard circle
@@ -336,7 +335,7 @@ void rai::PlotModule::Covariance(const arr& mean, const arr& cov) {
     for(i=0; i<w.N; i++) w(i)=sqrt(w(i)); //trace of eig^2 becomes N!
     for(i=0; i<d.d0; i++) { mult(d[i](), d[i], w); d[i]=V*d[i]; d(i, 0)+=mean(1); d(i, 1)+=mean(2); }
     for(i=0; i<d.d0; i++) { dd(i, 0)=mean(0); dd(i, 1)=d(i, 0); dd(i, 2)=d(i, 1); }
-    s->lines.append(dd);
+    self->lines.append(dd);
     //x-z
     Cov(0, 0)=cov(0, 0); Cov(1, 0)=cov(2, 0); Cov(0, 1)=cov(0, 2); Cov(1, 1)=cov(2, 2);
     for(i=0; i<d.d0; i++) { //standard circle
@@ -347,7 +346,7 @@ void rai::PlotModule::Covariance(const arr& mean, const arr& cov) {
     for(i=0; i<w.N; i++) w(i)=sqrt(w(i)); //trace of eig^2 becomes N!
     for(i=0; i<d.d0; i++) { mult(d[i](), d[i], w); d[i]=V*d[i]; d(i, 0)+=mean(0); d(i, 1)+=mean(2); }
     for(i=0; i<d.d0; i++) { dd(i, 0)=d(i, 0); dd(i, 1)=mean(1); dd(i, 2)=d(i, 1); }
-    s->lines.append(dd);
+    self->lines.append(dd);
 #endif
   }
 }
@@ -359,7 +358,7 @@ void rai::PlotModule::VectorField(const arr& X, const arr& dX) {
   for(i=0; i<X.d0; i++) {
     l[0]() = X[i];
     l[1]() = X[i]+dX[i];
-    s->lines.append(l);
+    self->lines.append(l);
   }
 }
 
@@ -399,7 +398,7 @@ void rai::PlotModule::Gaussians(const GaussianL& G) {
 
 void rai::PlotModule::glDraw(OpenGL& gl) {
 #ifdef RAI_GL
-  sPlotModule& data=*s;
+  sPlotModule& data=*self;
 //  uint a, i, j;
 
   uint idx = 0;

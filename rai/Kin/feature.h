@@ -24,22 +24,20 @@ struct Feature {
   bool flipTargetSignOnNegScalarProduct; ///< for order==1 (vel mode), when taking temporal difference, flip sign when scalar product it negative [specific to quats -> move to special TM for quats only]
   FeatureSymbol fs = FS_none;
 protected:
-  virtual void phi(arr& y, arr& J, const rai::Configuration& C) = 0; ///< this needs to be overloaded
+  virtual void phi(arr& y, arr& J, const rai::Configuration& C){ HALT("one of the 'phi' need to be implemented!"); }; ///< this needs to be overloaded
   virtual void phi(arr& y, arr& J, const ConfigurationL& Ctuple); ///< if not overloaded this computes the generic pos/vel/acc depending on order
-  virtual uint dim_phi(const rai::Configuration& C) = 0; ///< the dimensionality of $y$
+  virtual uint dim_phi(const rai::Configuration& C){ HALT("one of the 'dim_phi' need to be implemented!"); }; ///< the dimensionality of $y$
   virtual uint dim_phi(const ConfigurationL& Ctuple) { return dim_phi(*Ctuple.last()); } ///< if not overloaded, returns dim_phi for last configuration
 public:
   void __phi(arr& y, arr& J, const rai::Configuration& C){ phi(y, J, C); applyLinearTrans(y,J); }
   void __phi(arr& y, arr& J, const ConfigurationL& Ctuple){ phi(y,J,Ctuple); applyLinearTrans(y,J); }
   uint __dim_phi(const rai::Configuration& C){ uint d=dim_phi(C); return applyLinearTrans_dim(d); }
   uint __dim_phi(const ConfigurationL& Ctuple){ uint d=dim_phi(Ctuple); return applyLinearTrans_dim(d); }
-  virtual void signature(intA& S, const rai::Configuration& C){ NIY; } ///< this needs to be overloaded
-  virtual void signature(intA& S, const ConfigurationL& Ctuple); ///< if not overloaded this computes the generic pos/vel/acc depending on order
 
   Feature() : order(0), flipTargetSignOnNegScalarProduct(false) {}
   virtual ~Feature() {}
-  virtual rai::String shortTag(const rai::Configuration& C) { NIY; }
-  virtual Graph getSpec(const rai::Configuration& C) { return Graph({{"description", shortTag(C)}}); }
+  virtual rai::String shortTag(const rai::Configuration& C) { return "without-description"; }
+  virtual rai::Graph getSpec(const rai::Configuration& C) { return rai::Graph({{"description", shortTag(C)}}); }
   
   //-- helpers
   arr phi(const rai::Configuration& C) { arr y; phi(y,NoArr,C); return y; } ///< evaluate without computing Jacobian

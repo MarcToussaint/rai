@@ -502,18 +502,18 @@ struct sConvert {
 };
 
 Convert::operator VectorChainFunction& () {
-  if(!s->vcf) {
+  if(!self->vcf) {
   }
-  if(!s->vcf) HALT("");
-  return *s->vcf;
+  if(!self->vcf) HALT("");
+  return *self->vcf;
 }
 
 //Convert::operator QuadraticChainFunction&() {
-//  if(!s->qcf) {
-//    if(s->vcf) s->qcf = new sConvert::VectorChainFunction_QuadraticChainFunction(*s->vcf);
+//  if(!self->qcf) {
+//    if(self->vcf) self->qcf = new sConvert::VectorChainFunction_QuadraticChainFunction(*self->vcf);
 //  }
-//  if(!s->qcf) HALT("");
-//  return *s->qcf;
+//  if(!self->qcf) HALT("");
+//  return *self->qcf;
 //}
 
 double sConvert::VectorChainFunction_ScalarFunction::fs(arr& grad, arr& H, const arr& x) {

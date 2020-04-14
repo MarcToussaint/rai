@@ -12,7 +12,7 @@
 #include "../Core/array.h"
 
 struct OpencvCamera : Thread {
-  ptr<struct sOpencvCamera> s;
+  unique_ptr<struct sOpencvCamera> self;
   Var<byteA> rgb;
   std::map<int, double> properties; bool set(int prop, double status);
   OpencvCamera(const Var<byteA>& _rgb);

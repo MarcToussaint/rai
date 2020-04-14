@@ -46,6 +46,8 @@ struct Spline {
   arr eval() const;
   arr smooth(double lambda) const;
 
+  double duration(){ return times.last(); }
+
   /// gradient w.r.t. the points (trivial: mapping is linear)
   void partial(arr& grad_points, const arr& grad_path) const;
   /// gradient w.r.t. the timings of the point

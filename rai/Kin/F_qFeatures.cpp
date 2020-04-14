@@ -276,43 +276,48 @@ rai::String F_qItself::shortTag(const rai::Configuration& G) {
 
 extern bool isSwitched(rai::Frame* f0, rai::Frame* f1);
 
-void F_qZeroVel::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
-  if(!Ktuple(-1)->frames(i)->joint) {
-    HALT("shouldn't be here  " <<*Ktuple(-1)->frames(i));
+void F_qZeroVel::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
+  rai::Frame *f = Ctuple(-1)->frames(i);
+  if(useChildFrame){
+    CHECK_EQ(f->children.N, 1, "this works only for a single child!");
+    f = f->children.scalar();
+  }
+  if(!f->joint) {
+    HALT("shouldn't be here  " <<*Ctuple(-1)->frames(i));
     y.resize(0).setZero();
-    if(!!J) J.resize(0, getKtupleDim(Ktuple).last()).setZero();
+    if(!!J) J.resize(0, getKtupleDim(Ctuple).last()).setZero();
     return;
   }
-  if(order==1 && isSwitched(Ktuple(-1)->frames(i), Ktuple(-2)->frames(i))) {
+  if(order==1 && isSwitched(Ctuple(-1)->frames(f->ID), Ctuple(-2)->frames(f->ID))) {
     HALT("shouldn't be here");
-    y.resize(Ktuple(-1)->frames(i)->joint->dim).setZero();
-    if(!!J) J.resize(y.N, getKtupleDim(Ktuple).last()).setZero();
+    y.resize(Ctuple(-1)->frames(i)->joint->dim).setZero();
+    if(!!J) J.resize(y.N, getKtupleDim(Ctuple).last()).setZero();
     return;
   }
-  F_qItself q({(uint)i}, false);
+  F_qItself q({f->ID}, false);
   q.order=order;
-  q.Feature::__phi(y, J, Ktuple);
-  if(Ktuple(-1)->frames(i)->joint->type==rai::JT_transXYPhi) {
+  q.Feature::__phi(y, J, Ctuple);
+  if(f->joint->type==rai::JT_transXYPhi) {
     arr s = ARR(10., 10., 1.);
     y = s%y;
     if(!!J) J = s%J;
   }
-  if(Ktuple(-1)->frames(i)->joint->type==rai::JT_free) {
+  if(f->joint->type==rai::JT_free) {
     arr s = ARR(10., 10., 10., 1., 1., 1., 1.);
     y = s%y;
     if(!!J) J = s%J;
   }
 }
 
-uint F_qZeroVel::dim_phi(const rai::Configuration& K) {
-  rai::Frame* a = K.frames(i);
-  if(!a->joint) {
-    return 0;
-//    LOG(-1) <<"reconfiguring to become link";
-//    a = a->getUpwardLink();
-//    i = a->ID;
+uint F_qZeroVel::dim_phi(const rai::Configuration& C) {
+  rai::Frame *f = C.frames(i);
+  if(useChildFrame){
+    CHECK_EQ(f->children.N, 1, "this works only for a single child!");
+    f = f->children.scalar();
   }
-  return a->joint->dim;
+
+  if(!f->joint) return 0;
+  return f->joint->dim;
 }
 
 //===========================================================================

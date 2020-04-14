@@ -10,8 +10,9 @@
 
 #include "../Core/graph.h"
 
+namespace rai {
 struct GraphView {
-  struct sGraphView* s;
+  unique_ptr<struct sGraphView> self;
   bool verbose;
 
   GraphView(Graph& G, const char* title="rai::GraphvizGtk", void* container=nullptr);
@@ -21,3 +22,4 @@ struct GraphView {
   void update();
   void watch();
 };
+}

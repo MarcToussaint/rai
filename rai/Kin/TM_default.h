@@ -41,13 +41,13 @@ struct TM_Default : Feature {
              const char* iShapeName=nullptr, const rai::Vector& ivec=NoVector,
              const char* jShapeName=nullptr, const rai::Vector& jvec=NoVector);
              
-  TM_Default(const Graph& parameters, const rai::Configuration& G);
-  TM_Default(const Node* parameters, const rai::Configuration& G);
+  TM_Default(const rai::Graph& parameters, const rai::Configuration& G);
+  TM_Default(const rai::Node* parameters, const rai::Configuration& G);
   
   virtual void phi(arr& y, arr& J, const rai::Configuration& C);
   virtual uint dim_phi(const rai::Configuration& C);
   virtual void signature(intA& S, const rai::Configuration& C);
   virtual rai::String shortTag(const rai::Configuration& C);
-  virtual Graph getSpec(const rai::Configuration& C);
+  virtual rai::Graph getSpec(const rai::Configuration& C);
 };
 

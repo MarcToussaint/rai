@@ -16,7 +16,7 @@ struct sOpencvCamera {  cv::VideoCapture capture;  };
 OpencvCamera::OpencvCamera(const Var<byteA>& _rgb)
   : Thread(STRING("OpencvCamera_"<<_rgb.name()), 0.)
   , rgb(this, _rgb) {
-  s = make_shared<sOpencvCamera>();
+  self = make_unique<sOpencvCamera>();
   threadLoop();
 }
 
@@ -25,9 +25,9 @@ OpencvCamera::~OpencvCamera() {
 }
 
 void OpencvCamera::open() {
-  s->capture.open(0);
+  self->capture.open(0);
   for(std::map<int, double>::const_iterator i = properties.begin(); i != properties.end(); ++i) {
-    if(!s->capture.set(i->first, i->second)) {
+    if(!self->capture.set(i->first, i->second)) {
       cerr << "could not set property " << i->first << " to value " << i->second << endl;
     }
   }
@@ -36,12 +36,12 @@ void OpencvCamera::open() {
 }
 
 void OpencvCamera::close() {
-  s->capture.release();
+  self->capture.release();
 }
 
 void OpencvCamera::step() {
   cv::Mat img; //,imgRGB;
-  s->capture.read(img);
+  self->capture.read(img);
   if(!img.empty()) {
 //    cv::cvtColor(img, imgRGB, CV_BGR2RGB);
     rgb.set() = conv_cvMat2byteA(img);
@@ -49,8 +49,8 @@ void OpencvCamera::step() {
 }
 
 bool OpencvCamera::set(int propId, double value) {
-  if(s)
-    return s->capture.set(propId, value);
+  if(self)
+    return self->capture.set(propId, value);
   else {
     properties[propId] = value;
     return true; // well, can't really do anything else here...

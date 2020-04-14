@@ -17,38 +17,38 @@
 //
 #define HSI(hid, sid) (3 * (hid) + (sid))
 
-struct G4ID::sG4ID {
-  Graph kvg, kvg_sensors, kvg_sublimbs, kvg_suplimbs, kvg_digitsof, kvg_sensorsof;
+struct sG4ID {
+  rai::Graph kvg, kvg_sensors, kvg_sublimbs, kvg_suplimbs, kvg_digitsof, kvg_sensorsof;
   StringA sensors, struct_sensors, unstruct_sensors,
           subjects, objects,
           agents, limbs, digits;
   uintA hsitoi, itohsi;
 };
 
-G4ID::G4ID(): s(new sG4ID()) { }
-G4ID::~G4ID() { delete s; }
+G4ID::G4ID() : self(new sG4ID()) { }
+G4ID::~G4ID() {}
 
 void G4ID::clear() {
-  s->kvg.clear();
-  s->kvg_sensors.clear();
-  s->kvg_sublimbs.clear();
-  s->kvg_suplimbs.clear();
-  s->kvg_digitsof.clear();
-  s->kvg_sensorsof.clear();
+  self->kvg.clear();
+  self->kvg_sensors.clear();
+  self->kvg_sublimbs.clear();
+  self->kvg_suplimbs.clear();
+  self->kvg_digitsof.clear();
+  self->kvg_sensorsof.clear();
 
-  s->sensors.clear();
-  s->struct_sensors.clear();
-  s->unstruct_sensors.clear();
+  self->sensors.clear();
+  self->struct_sensors.clear();
+  self->unstruct_sensors.clear();
 
-  s->subjects.clear();
-  s->objects.clear();
+  self->subjects.clear();
+  self->objects.clear();
 
-  s->agents.clear();
-  s->limbs.clear();
-  s->digits.clear();
+  self->agents.clear();
+  self->limbs.clear();
+  self->digits.clear();
 }
 
-void readNode(Graph* i, uintA& hsitoi, uintA& itohsi, int ind) {
+void readNode(rai::Graph* i, uintA& hsitoi, uintA& itohsi, int ind) {
   uint hid, sid, hsi, hsitoiN;
 
   hid = (uint)i->get<double>("hid");
@@ -68,127 +68,127 @@ void readNode(Graph* i, uintA& hsitoi, uintA& itohsi, int ind) {
 
 void G4ID::load(const char* meta) {
   rai::String name_agent, name_limb, name_digit, name_object, name_part;
-  rai::Array<Graph*> kvg_agents, kvg_limbs, kvg_digits, kvg_objects, kvg_parts;
+  rai::Array<rai::Graph*> kvg_agents, kvg_limbs, kvg_digits, kvg_objects, kvg_parts;
   uint i = 0;
 
   bool structured;
 
-  FILE(meta) >> s->kvg;
+  FILE(meta) >> self->kvg;
 
-  kvg_agents = s->kvg.getValuesOfType<Graph>("agent");
-  for(Graph* a: kvg_agents) {
+  kvg_agents = self->kvg.getValuesOfType<rai::Graph>("agent");
+  for(rai::Graph* a: kvg_agents) {
     a->get(name_agent, "name");
-    s->agents.append(name_agent);
-    s->subjects.append(name_agent);
+    self->agents.append(name_agent);
+    self->subjects.append(name_agent);
 
-    s->kvg_suplimbs.newNode<rai::String>({name_agent}, {}, rai::String(""));
-    s->kvg_sublimbs.newNode<StringA>({name_agent}, {}, StringA());
+    self->kvg_suplimbs.newNode<rai::String>({name_agent}, {}, rai::String(""));
+    self->kvg_sublimbs.newNode<StringA>({name_agent}, {}, StringA());
 
-    s->kvg_digitsof.newNode<StringA>({name_agent}, {}, StringA());
-    s->kvg_sensorsof.newNode<StringA>({name_agent}, {}, StringA());
+    self->kvg_digitsof.newNode<StringA>({name_agent}, {}, StringA());
+    self->kvg_sensorsof.newNode<StringA>({name_agent}, {}, StringA());
 
-    kvg_limbs = a->getValuesOfType<Graph>("limb");
-    for(Graph* l: kvg_limbs) {
+    kvg_limbs = a->getValuesOfType<rai::Graph>("limb");
+    for(rai::Graph* l: kvg_limbs) {
       l->get(name_limb, "name");
-      s->limbs.append(name_limb);
-      s->subjects.append(name_limb);
+      self->limbs.append(name_limb);
+      self->subjects.append(name_limb);
 
-      s->kvg_suplimbs.newNode<rai::String>({name_limb}, {}, rai::String(name_agent));
-      s->kvg_sublimbs.newNode<StringA>({name_limb}, {}, StringA());
-      s->kvg_sublimbs.get<StringA>(name_agent).append(name_limb);
+      self->kvg_suplimbs.newNode<rai::String>({name_limb}, {}, rai::String(name_agent));
+      self->kvg_sublimbs.newNode<StringA>({name_limb}, {}, StringA());
+      self->kvg_sublimbs.get<StringA>(name_agent).append(name_limb);
 
-      s->kvg_digitsof.newNode({name_limb}, {}, StringA());
-      s->kvg_sensorsof.newNode({name_limb}, {}, StringA());
+      self->kvg_digitsof.newNode({name_limb}, {}, StringA());
+      self->kvg_sensorsof.newNode({name_limb}, {}, StringA());
 
-      kvg_digits = l->getValuesOfType<Graph>("digit");
-      for(Graph* d: kvg_digits) {
+      kvg_digits = l->getValuesOfType<rai::Graph>("digit");
+      for(rai::Graph* d: kvg_digits) {
         d->get(name_digit, "name");
-        s->digits.append(name_digit);
-        s->subjects.append(name_digit);
-        s->sensors.append(name_digit);
-        s->unstruct_sensors.append(name_digit);
+        self->digits.append(name_digit);
+        self->subjects.append(name_digit);
+        self->sensors.append(name_digit);
+        self->unstruct_sensors.append(name_digit);
 
-        s->kvg_suplimbs.newNode({name_digit}, {}, rai::String(name_limb));
-        s->kvg_sublimbs.newNode({name_digit}, {}, StringA());
-        s->kvg_sublimbs.get<StringA>(name_limb).append(name_digit);
+        self->kvg_suplimbs.newNode({name_digit}, {}, rai::String(name_limb));
+        self->kvg_sublimbs.newNode({name_digit}, {}, StringA());
+        self->kvg_sublimbs.get<StringA>(name_limb).append(name_digit);
 
-        s->kvg_digitsof.newNode({name_digit}, {}, StringA());
-        s->kvg_digitsof.get<StringA>(name_digit).append(name_digit);
-        s->kvg_digitsof.get<StringA>(name_limb).append(name_digit);
-        s->kvg_digitsof.get<StringA>(name_agent).append(name_digit);
+        self->kvg_digitsof.newNode({name_digit}, {}, StringA());
+        self->kvg_digitsof.get<StringA>(name_digit).append(name_digit);
+        self->kvg_digitsof.get<StringA>(name_limb).append(name_digit);
+        self->kvg_digitsof.get<StringA>(name_agent).append(name_digit);
 
-        s->kvg_sensorsof.newNode({name_digit}, {}, StringA());
-        s->kvg_sensorsof.get<StringA>(name_digit).append(name_digit);
-        s->kvg_sensorsof.get<StringA>(name_limb).append(name_digit);
-        s->kvg_sensorsof.get<StringA>(name_agent).append(name_digit);
+        self->kvg_sensorsof.newNode({name_digit}, {}, StringA());
+        self->kvg_sensorsof.get<StringA>(name_digit).append(name_digit);
+        self->kvg_sensorsof.get<StringA>(name_limb).append(name_digit);
+        self->kvg_sensorsof.get<StringA>(name_agent).append(name_digit);
 
-        s->kvg_sensors.newNode<Graph*>({name_digit}, {}, d);
+        self->kvg_sensors.newNode<rai::Graph*>({name_digit}, {}, d);
 
-        readNode(d, s->hsitoi, s->itohsi, i++);
+        readNode(d, self->hsitoi, self->itohsi, i++);
       }
     }
   }
 
-  kvg_objects = s->kvg.getValuesOfType<Graph>("object");
-  for(Graph* o: kvg_objects) {
+  kvg_objects = self->kvg.getValuesOfType<rai::Graph>("object");
+  for(rai::Graph* o: kvg_objects) {
     o->get(name_object, "name");
-    s->objects.append(name_object);
+    self->objects.append(name_object);
     if(o->get(structured, "structured") && structured) {
-      kvg_parts = o->getValuesOfType<Graph>("part");
-      s->kvg_sensorsof.newNode({name_object}, {}, StringA());
-      for(Graph* p: kvg_parts) {
+      kvg_parts = o->getValuesOfType<rai::Graph>("part");
+      self->kvg_sensorsof.newNode({name_object}, {}, StringA());
+      for(rai::Graph* p: kvg_parts) {
         p->get(name_part, "name");
-        s->struct_sensors.append(name_part);
-        s->sensors.append(name_part);
+        self->struct_sensors.append(name_part);
+        self->sensors.append(name_part);
 
-        s->kvg_sensorsof.get<StringA>(name_object).append(name_part);
-        s->kvg_sensors.newNode<Graph*>({name_part}, {}, p);
+        self->kvg_sensorsof.get<StringA>(name_object).append(name_part);
+        self->kvg_sensors.newNode<rai::Graph*>({name_part}, {}, p);
 
-        readNode(p, s->hsitoi, s->itohsi, i++);
+        readNode(p, self->hsitoi, self->itohsi, i++);
       }
     } else {
-      s->unstruct_sensors.append(name_object);
-      s->sensors.append(name_object);
+      self->unstruct_sensors.append(name_object);
+      self->sensors.append(name_object);
 
-      s->kvg_sensors.newNode<Graph*>({name_object}, {}, o);
-      s->kvg_sensorsof.newNode({name_object}, {}, StringA());
-      s->kvg_sensorsof.get<StringA>(name_object).append(name_object);
+      self->kvg_sensors.newNode<rai::Graph*>({name_object}, {}, o);
+      self->kvg_sensorsof.newNode({name_object}, {}, StringA());
+      self->kvg_sensorsof.get<StringA>(name_object).append(name_object);
 
-      readNode(o, s->hsitoi, s->itohsi, i++);
+      readNode(o, self->hsitoi, self->itohsi, i++);
     }
   }
 }
 
-const StringA& G4ID::sensors() { return s->sensors; }
-const StringA& G4ID::struct_sensors() { return s->struct_sensors; }
-const StringA& G4ID::unstruct_sensors() { return s->unstruct_sensors; }
-const StringA& G4ID::sensorsof(const char* obj) { return s->kvg_sensorsof.get<StringA>(STRING(obj)); }
+const StringA& G4ID::sensors() { return self->sensors; }
+const StringA& G4ID::struct_sensors() { return self->struct_sensors; }
+const StringA& G4ID::unstruct_sensors() { return self->unstruct_sensors; }
+const StringA& G4ID::sensorsof(const char* obj) { return self->kvg_sensorsof.get<StringA>(STRING(obj)); }
 
-const StringA& G4ID::subjects() { return s->subjects; }
-const StringA& G4ID::objects() { return s->objects; }
+const StringA& G4ID::subjects() { return self->subjects; }
+const StringA& G4ID::objects() { return self->objects; }
 
-const StringA& G4ID::agents() { return s->agents; }
-const StringA& G4ID::limbs() { return s->limbs; }
-const StringA& G4ID::digits() { return s->digits; }
+const StringA& G4ID::agents() { return self->agents; }
+const StringA& G4ID::limbs() { return self->limbs; }
+const StringA& G4ID::digits() { return self->digits; }
 
-const StringA& G4ID::digitsof(const rai::String& limb) { return s->kvg_digitsof.get<StringA>(limb); }
-const StringA& G4ID::sublimbs(const rai::String& limb) { return s->kvg_sublimbs.get<StringA>(limb); }
-const rai::String& G4ID::suplimb(const rai::String& limb) { return s->kvg_suplimbs.get<rai::String>(limb); }
+const StringA& G4ID::digitsof(const rai::String& limb) { return self->kvg_digitsof.get<StringA>(limb); }
+const StringA& G4ID::sublimbs(const rai::String& limb) { return self->kvg_sublimbs.get<StringA>(limb); }
+const rai::String& G4ID::suplimb(const rai::String& limb) { return self->kvg_suplimbs.get<rai::String>(limb); }
 
 uint G4ID::hsitoi(uint hsi) {
-  return s->hsitoi(hsi);
+  return self->hsitoi(hsi);
 }
 
 uint G4ID::itohsi(uint i) {
-  return s->itohsi(i);
+  return self->itohsi(i);
 }
 
 int G4ID::i(const char* sensor) {
-  return s->hsitoi(hsi(sensor));
+  return self->hsitoi(hsi(sensor));
 }
 
 int G4ID::hsi(const char* sensor) {
-  Graph* skvg = &s->kvg_sensors.get<Graph>(sensor);
+  rai::Graph* skvg = &self->kvg_sensors.get<rai::Graph>(sensor);
 
   uint hid = skvg->get<double>("hid");
   uint sid = skvg->get<double>("sid");
@@ -197,7 +197,7 @@ int G4ID::hsi(const char* sensor) {
 }
 
 const char* G4ID::sensor(uint hsi) {
-  return s->sensors(s->hsitoi(hsi));
+  return self->sensors(self->hsitoi(hsi));
 }
 
 void G4ID::write(std::ostream& os) const {
@@ -325,10 +325,10 @@ void G4Rec::load(const char* recdir, bool interpolate) {
     uint from, to;
 
     arr* ann;
-    for(Node* pair: kvgann) {
+    for(rai::Node* pair: kvgann) {
       ann = new arr(nframes);
       ann->setZero();
-      for(Node* lock: pair->graph()) {
+      for(rai::Node* lock: pair->graph()) {
         from = (uint)lock->graph().get<double>("from");
         to = (uint)lock->graph().get<double>("to");
         ann->operator()({from, to}) = 1;
@@ -344,57 +344,59 @@ void G4Rec::load(const char* recdir, bool interpolate) {
 G4ID& G4Rec::id() { return g4id; }
 
 bool G4Rec::hasAnn(const char* sensor1, const char* sensor2) {
-  for(Node* pair: kvgann)
-    if(g4id.sensorsof(pair->keys(0)).contains(STRING(sensor1))
-        && g4id.sensorsof(pair->keys(1)).contains(STRING(sensor2)))
-      return true;
+//  for(rai::Node* pair: kvgann)
+//    if(g4id.sensorsof(pair->keys(0)).contains(STRING(sensor1))
+//        && g4id.sensorsof(pair->keys(1)).contains(STRING(sensor2)))
+//      return true;
+  NIY; //the keys(0) (1) above is broken...
   return false;
 }
 
 arr G4Rec::ann(const char* sensor1, const char* sensor2) {
-  for(Node* pair: kvgann)
-    if(g4id.sensorsof(pair->keys(0)).contains(STRING(sensor1))
-        && g4id.sensorsof(pair->keys(1)).contains(STRING(sensor2)))
-      return pair->graph().get<arr>("ann");
+//  for(rai::Node* pair: kvgann)
+//    if(g4id.sensorsof(pair->keys(0)).contains(STRING(sensor1))
+//        && g4id.sensorsof(pair->keys(1)).contains(STRING(sensor2)))
+//      return pair->graph().get<arr>("ann");
+  NIY; //the keys(0) (1) above is broken...
   return arr();
 }
 
 uint G4Rec::numSensors() const { return nsensors; }
 uint G4Rec::numFrames() const { return nframes; }
-uint G4Rec::numDim(const char* bam) { return kvg.get<arr>({"bam", bam}).d2; }
+uint G4Rec::numDim(const char* bam) { return kvg.get<arr>(bam).d2; }
 
 void G4Rec::appendBam(const char* bam, const arr& data) {
-  Node* i = kvg.getNode({"bam", bam});
+  rai::Node* i = kvg.getNode(bam);
 
   if(!i)
-    kvg.newNode({"bam", bam}, {}, arr(data));
+    kvg.newNode(bam, {}, arr(data));
   else
     i->get<arr>() = data; // replacing
 }
 
 bool G4Rec::hasBam(const char* bam) {
-  return kvg.getNode({"bam", bam}) != nullptr;
+  return kvg.getNode(bam) != nullptr;
 }
 
 arr G4Rec::query(const char* bam) {
-  Node* i = kvg.getNode({"bam", bam});
+  rai::Node* i = kvg.getNode(bam);
   CHECK(i != nullptr, STRING("BAM '" << bam << "' does not exist."));
 
   if(0 == strcmp(bam, "pose")) {
     arr data, dataPos, dataQuat;
 
-    dataPos.referTo(kvg.get<arr>({"bam", "pos"}));
-    dataQuat.referTo(kvg.get<arr>({"bam", "quat"}));
+    dataPos.referTo(kvg.get<arr>("pos"));
+    dataQuat.referTo(kvg.get<arr>("quat"));
     data.append(dataPos);
     data.append(dataQuat);
     data.reshape(nsensors, nframes, 7);
     return data;
   }
-  return kvg.get<arr>({"bam", bam});
+  return kvg.get<arr>(bam);
 }
 
 arr G4Rec::query(const char* type, const char* sensor) {
-  Node* i = kvg.getNode({"bam", type});
+  rai::Node* i = kvg.getNode(type);
   CHECK(i != nullptr, STRING("BAM '" << type << "' does not exist."));
 
   int is = g4id.i(sensor);
@@ -410,7 +412,7 @@ arr G4Rec::query(const char* type, const char* sensor) {
     arr x;
     /* x.append(xPos); */
     /* x.append(xQuat); */
-    /* x.reshape(s->g4id.sensors().N, s->nframes, 7); */
+    /* x.reshape(self->g4id.sensors().N, self->nframes, 7); */
     /* return x[i]; */
     x.append(xPos[is]);
     x.append(xQuat[is]);
@@ -421,7 +423,7 @@ arr G4Rec::query(const char* type, const char* sensor) {
 }
 
 arr G4Rec::query(const char* type, const char* sensor, uint f) {
-  Node* i = kvg.getNode({"bam", type});
+  rai::Node* i = kvg.getNode(type);
   CHECK(i != nullptr, STRING("BAM '" << type << "' does not exist."));
 
   int is = g4id.i(sensor);
@@ -440,9 +442,9 @@ arr G4Rec::query(const char* type, const char* sensor, uint f) {
 /*   // TODO check that the type works for 2 sensors.... */
 /*   // e.g. check that it is not "poses" */
 
-/*   Graph *skvg1 = &s->kvg_sensors.get<Graph>(sensor1); */
-/*   Graph *skvg2 = &s->kvg_sensors.get<Graph>(sensor2); */
-/*   CHECK(s->kvg.getNode(type) != nullptr, STRING("BAM '" << type << "' does not exist.")); */
+/*   Graph *skvg1 = &self->kvg_sensors.get<Graph>(sensor1); */
+/*   Graph *skvg2 = &self->kvg_sensors.get<Graph>(sensor2); */
+/*   CHECK(self->kvg.getNode(type) != nullptr, STRING("BAM '" << type << "' does not exist.")); */
 /*   CHECK(skvg1, STRING("Sensor '" << sensor1 << "' does not exist.")); */
 /*   CHECK(skvg2, STRING("Sensor '" << sensor2 << "' does not exist.")); */
 
@@ -451,19 +453,19 @@ arr G4Rec::query(const char* type, const char* sensor, uint f) {
 
 /*   hid1 = skvg1->get<double>("hid"); */
 /*   sid1 = skvg1->get<double>("sid"); */
-/*   i1 = s->kvg.getValue<arr>("hsitoi")->elem(HSI(hid1, sid1)); */
+/*   i1 = self->kvg.getValue<arr>("hsitoi")->elem(HSI(hid1, sid1)); */
 
 /*   hid2 = skvg2->get<double>("hid"); */
 /*   sid2 = skvg2->get<double>("sid"); */
-/*   i2 = s->kvg.getValue<arr>("hsitoi")->elem(HSI(hid2, sid2)); */
+/*   i2 = self->kvg.getValue<arr>("hsitoi")->elem(HSI(hid2, sid2)); */
 
-/*   return s->kvg.getValue<arr>(type)->operator()(i1, i2, {}); */
+/*   return self->kvg.getValue<arr>(type)->operator()(i1, i2, {}); */
 /* } */
 
 /* arr G4Data::query(const char *type, const char *sensor1, const char *sensor2, uint f) { */
-/*   Graph *skvg1 = &s->kvg_sensors.get<Graph>(sensor1); */
-/*   Graph *skvg2 = &s->kvg_sensors.get<Graph>(sensor2); */
-/*   CHECK(s->kvg.getNode(type) != nullptr, STRING("BAM '" << type << "' does not exist.")); */
+/*   Graph *skvg1 = &self->kvg_sensors.get<Graph>(sensor1); */
+/*   Graph *skvg2 = &self->kvg_sensors.get<Graph>(sensor2); */
+/*   CHECK(self->kvg.getNode(type) != nullptr, STRING("BAM '" << type << "' does not exist.")); */
 /*   CHECK(skvg1, STRING("Sensor '" << sensor1 << "' does not exist.")); */
 /*   CHECK(skvg2, STRING("Sensor '" << sensor2 << "' does not exist.")); */
 
@@ -472,13 +474,13 @@ arr G4Rec::query(const char* type, const char* sensor, uint f) {
 
 /*   hid1 = skvg1->get<double>("hid"); */
 /*   sid1 = skvg1->get<double>("sid"); */
-/*   i1 = s->kvg.getValue<arr>("hsitoi")->elem(HSI(hid1, sid1)); */
+/*   i1 = self->kvg.getValue<arr>("hsitoi")->elem(HSI(hid1, sid1)); */
 
 /*   hid2 = skvg2->get<double>("hid"); */
 /*   sid2 = skvg2->get<double>("sid"); */
-/*   i2 = s->kvg.getValue<arr>("hsitoi")->elem(HSI(hid2, sid2)); */
+/*   i2 = self->kvg.getValue<arr>("hsitoi")->elem(HSI(hid2, sid2)); */
 
-/*   return s->kvg.getValue<arr>("bam", type)->operator()(i1, i2,  f, {}); */
+/*   return self->kvg.getValue<arr>("bam", type)->operator()(i1, i2,  f, {}); */
 /* } */
 
 void G4Rec::computeDPos(const char* sensor) {
@@ -682,7 +684,7 @@ void G4Data::load(const char* recdir, bool interpolate) {
 }
 
 G4Rec& G4Data::rec(const char* recdir) {
-  Node* i = kvg.getNode(recdir);
+  rai::Node* i = kvg.getNode(recdir);
   CHECK(i, STRING("No recording named '" << recdir << "'."));
   return i->get<G4Rec>();
 }
@@ -690,16 +692,16 @@ G4Rec& G4Data::rec(const char* recdir) {
 #if 0
 
 void G4Data::clear() {
-  for(G4ID* g4id: s->kvg.getValuesOfType<G4ID>("g4id"))
+  for(G4ID* g4id: self->kvg.getValuesOfType<G4ID>("g4id"))
     delete g4id;
-  for(arr* bam: s->kvg.getValuesOfType<arr>("bam"))
+  for(arr* bam: self->kvg.getValuesOfType<arr>("bam"))
     delete bam;
-  s->kvg.clear();
+  self->kvg.clear();
 }
 
 void G4Data::save(const char* data_fname) {
   /* cout << " * Saving.." << flush; */
-  /* s->kvg >> FILE(data_fname); */
+  /* self->kvg >> FILE(data_fname); */
   /* cout << " DONE!" << endl; */
 }
 
@@ -707,8 +709,8 @@ void G4Data::save(const char* data_fname) {
 
 void G4Data::write(std::ostream& os) const {
   os << "G4Data" << endl;
-  for(Node* i: kvg) {
-    os << " * " << i->keys << endl;
+  for(rai::Node* i: kvg) {
+    os << " * " << i->key << endl;
   }
 }
 

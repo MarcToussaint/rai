@@ -26,8 +26,7 @@ typedef rai::Array<G4FeatSeq*> G4FeatSeqL;
 //
 
 struct G4ID {
-  struct sG4ID;
-  sG4ID* s;
+  unique_ptr<struct sG4ID> self;
 
   G4ID();
   ~G4ID();
@@ -80,7 +79,7 @@ stdOutPipe(G4ID);
 struct G4Rec {
   rai::String dir;
   G4ID g4id;
-  Graph kvg, kvgann, params; // TODO ideally, I'd want to use the param class here..
+  rai::Graph kvg, kvgann, params; // TODO ideally, I'd want to use the param class here..
 
   uint nsensors;
   uint nframes;
@@ -139,7 +138,7 @@ stdOutPipe(G4Rec);
 
 struct G4Data {
   rai::String basedir;
-  Graph kvg;
+  rai::Graph kvg;
 
   G4Data();
   ~G4Data();

@@ -26,11 +26,11 @@ void FOL_World::Decision::write(ostream& os) const {
     os <<"RULE '" <<rule->keys(1) <<"' SUB ";
     Graph& r=rule->graph();
     for(uint i=0; i<substitution.N; i++) {
-      os <<r.elem(i)->keys.last() <<'/' <<substitution.elem(i)->keys.last() <<' ';
+      os <<r.elem(i)->key <<'/' <<substitution.elem(i)->key <<' ';
     }
 #else
-    os <<'(' <<rule->keys.last();
-    for(uint i=0; i<substitution.N; i++) { os <<' ' <<substitution.elem(i)->keys.last(); }
+    os <<'(' <<rule->key;
+    for(uint i=0; i<substitution.N; i++) { os <<' ' <<substitution.elem(i)->key; }
     os <<')' <<flush;
 #endif
   }
@@ -59,8 +59,8 @@ void FOL_World::init(const Graph& _KB) {
 
   start_state = &KB.get<Graph>("START_STATE");
   rewardFct = &KB.get<Graph>("REWARD");
-  worldRules = KB.getNodes("Rule");
-  decisionRules = KB.getNodes("DecisionRule");
+  worldRules = KB.getNodesWithTag("%Rule");
+  decisionRules = KB.getNodesWithTag("%DecisionRule");
   Terminate_keyword = KB["Terminate"];  CHECK(Terminate_keyword, "You need to declare the Terminate keyword");
   Quit_keyword = KB["QUIT"];            CHECK(Quit_keyword, "You need to declare the QUIT keyword");
   Wait_keyword = KB["WAIT"];            //CHECK(Wait_keyword, "You need to declare the WAIT keyword");
@@ -120,7 +120,7 @@ MCTS_Environment::TransitionReturn FOL_World::transition(const Handle& action) {
   //-- remove state annotations from state, if exists
   for(uint i=state->N; i--;) {
     Node* n=state->elem(i);
-    if(n->keys.N) delete n;
+    if(n->key.N) delete n;
   }
 
   //-- add the decision as a fact
@@ -128,10 +128,10 @@ MCTS_Environment::TransitionReturn FOL_World::transition(const Handle& action) {
     NodeL decisionTuple = {d->rule};
     decisionTuple.append(d->substitution);
     lastDecisionInState = createNewFact(*state, decisionTuple);
-    lastDecisionInState->keys.append("decision");
+    lastDecisionInState->key = ("decision");
   } else {
     lastDecisionInState = createNewFact(*state, {Wait_keyword});
-    lastDecisionInState->keys.append("decision");
+    lastDecisionInState->key = ("decision");
   }
 
   //-- apply effects of decision
@@ -174,10 +174,12 @@ MCTS_Environment::TransitionReturn FOL_World::transition(const Handle& action) {
     }
   } else { //normal decision
     //first check if probabilistic
-    Node* effect = d->rule->graph().last();
-    if(effect->isOfType<arr>()) {
+    Node* effect = getSecondNonSymbolOfScope(d->rule->graph());
+    Node* probabilities = d->rule->graph().last();
+
+    if(probabilities->isOfType<arr>()) {
       HALT("probs in decision rules not properly implemented (observation id is not...)");
-      arr p = effect->get<arr>();
+      arr p = probabilities->get<arr>();
       uint r = sampleMultinomial(p);
       lastStepProbability = p(r);
       lastStepObservation = lastStepObservation*p.N + r; //raise previous observations to the factor p.N and add current decision
@@ -287,7 +289,7 @@ void FOL_World::make_current_state_new_start() {
   if(!start_state) start_state = &KB.newSubgraph({"START_STATE"}, state->isNodeOfGraph->parents);
   state->index();
   start_state->copy(*state);
-  start_state->isNodeOfGraph->keys(0)="START_STATE";
+  start_state->isNodeOfGraph->key="START_STATE";
   start_T_step = T_step;
   start_T_real = T_real;
   DEBUG(KB.checkConsistency();)
@@ -410,15 +412,15 @@ void FOL_World::writePDDLdomain(std::ostream& os, const char* domainName) const 
   NodeL predicates;
   for(Node* rule:decisionRules) {
     Graph& Rule = rule->graph();
-    Graph& precond = Rule.elem(-2)->graph();
-    Graph& effect = Rule.elem(-1)->graph();
+    Graph& precond = getFirstNonSymbolOfScope(Rule)->graph(); //Rule.elem(-2)->graph();
+    Graph& effect = getSecondNonSymbolOfScope(Rule)->graph(); //Rule.elem(-1)->graph();
     for(Node* n:precond) {
-      if(n->keys.N) continue; //no temporary facts
+      if(n->key.N) continue; //no temporary facts
       uint ID = n->parents(0)->index;
       if(!used(ID)) { predicates.setAppend(n); used(ID)=true; }
     }
     for(Node* n:effect) {
-      if(n->keys.N) continue; //no temporary facts
+      if(n->key.N) continue; //no temporary facts
       uint ID = n->parents(0)->index;
       if(!used(ID)) { predicates.setAppend(n); used(ID)=true; }
     }
@@ -426,39 +428,39 @@ void FOL_World::writePDDLdomain(std::ostream& os, const char* domainName) const 
   //output them
   os <<")\n   (:predicates";
   for(Node* n:predicates) {
-    os <<" (" <<n->parents(0)->keys.last();
-    for(uint i=1; i<n->parents.N; i++) os <<" ?" <<n->parents(i)->keys.last();
+    os <<" (" <<n->parents(0)->key;
+    for(uint i=1; i<n->parents.N; i++) os <<" ?" <<n->parents(i)->key;
     os <<')';
   }
 
   for(Node* rule:decisionRules) {
-    os <<")\n   (:action " <<rule->keys.last();
+    os <<")\n   (:action " <<rule->key;
 
     Graph& Rule = rule->graph();
-    Graph& precond = Rule.elem(-2)->graph();
-    Graph& effect = Rule.elem(-1)->graph();
+    Graph& precond = getFirstNonSymbolOfScope(Rule)->graph(); //Rule.elem(-2)->graph();
+    Graph& effect = getSecondNonSymbolOfScope(Rule)->graph(); //Rule.elem(-1)->graph();
 
     os <<"\n      :parameters (";
-    for(Node* n:Rule) if(n->keys.N>0 && n->parents.N==0 && n->isOfType<bool>()) os <<" ?" <<n->keys.last();
+    for(Node* n:Rule) if(isSymbol(n)) os <<" ?" <<n->key;
 
     os <<")\n      :precondition (and";
     for(Node* n:precond) {
-      if(n->keys.N) continue; //no temporary facts
+      if(n->key.N) continue; //no temporary facts
       bool neg = n->isOfType<bool>() && !n->get<bool>();
       if(neg) os <<" (not";
-      os <<" (" <<n->parents(0)->keys.last();
-      for(uint i=1; i<n->parents.N; i++) os <<" ?" <<n->parents(i)->keys.last();
+      os <<" (" <<n->parents(0)->key;
+      for(uint i=1; i<n->parents.N; i++) os <<" ?" <<n->parents(i)->key;
       os <<')';
       if(neg) os <<')';
     }
 
     os <<")\n      :effect (and";
     for(Node* n:effect) {
-      if(n->keys.N) continue; //no temporary facts
+      if(n->key.N) continue; //no temporary facts
       bool neg = n->isOfType<bool>() && !n->get<bool>();
       if(neg) os <<" (not";
-      os <<" (" <<n->parents(0)->keys.last();
-      for(uint i=1; i<n->parents.N; i++) os <<" ?" <<n->parents(i)->keys.last();
+      os <<" (" <<n->parents(0)->key;
+      for(uint i=1; i<n->parents.N; i++) os <<" ?" <<n->parents(i)->key;
       os <<')';
       if(neg) os <<')';
     }
@@ -480,7 +482,7 @@ void FOL_World::writePDDLproblem(std::ostream& os, const char* domainName, const
   NodeL constants;
   {
     for(Node* n:*start_state) {
-      if(n->keys.N) continue; //no temporary facts
+      if(n->key.N) continue; //no temporary facts
       for(uint i=1; i<n->parents.N; i++) {
         uint ID = n->parents(i)->index;
         if(!used(ID)) { constants.setAppend(n->parents(i)); used(ID)=true; }
@@ -489,7 +491,7 @@ void FOL_World::writePDDLproblem(std::ostream& os, const char* domainName, const
   }
   //output them
   os <<")\n   (:objects";
-  for(Node* n:constants) os <<' ' <<n->keys.last();
+  for(Node* n:constants) os <<' ' <<n->key;
 
   //-- start state
   os <<")\n   (:init";
@@ -501,8 +503,8 @@ void FOL_World::writePDDLproblem(std::ostream& os, const char* domainName, const
   for(Node* rule:worldRules) {
     Graph& Rule = rule->graph();
     if(Rule.elem(-1)->isOfType<arr>()) continue; //this is a probabilistic rule!
-    Graph& precond = Rule.elem(-2)->graph();
-    Graph& effect = Rule.elem(-1)->graph();
+    Graph& precond = getFirstNonSymbolOfScope(Rule)->graph(); //Rule.elem(-2)->graph();
+    Graph& effect = getSecondNonSymbolOfScope(Rule)->graph(); //Rule.elem(-1)->graph();
 
     if(effect.N==1 && effect(0)->parents.N==1 && effect(0)->parents(0)==Quit_keyword) { //this is a termination rule
       os <<" (and";
@@ -513,7 +515,7 @@ void FOL_World::writePDDLproblem(std::ostream& os, const char* domainName, const
         if(neg) os <<" (not";
         os <<' ' <<*n;
 //        os <<" (";
-//        for(uint i=0;i<n->parents.N;i++) os <<n->parents(i)->keys.last();
+//        for(uint i=0;i<n->parents.N;i++) os <<n->parents(i)->key;
 //        os <<')';
         if(neg) os <<')';
       }

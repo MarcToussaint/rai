@@ -131,7 +131,7 @@ void TEST(BSpline){
 
 void TEST(BSpline2){
 
-  arr X(5, 1, {0., 2., 1.9, 1.8, 2.});
+  arr X({5, 1}, {0., 2., 1.9, 1.8, 2.});
   arr T = {0., 10.9, 11., 11.1, 12.};
 
   rai::Spline S;

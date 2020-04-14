@@ -299,7 +299,7 @@ int MAIN(int argc, char** argv){
   testMeshes3();
   testVolume();
   testDistanceFunctions();
-  testDistanceFunctions2();
+//  testDistanceFunctions2();
   testSimpleImplicitSurfaces();
 
   return 0;

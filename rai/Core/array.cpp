@@ -6,15 +6,18 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "array.h"
-#include "util.h"
-
+/* Because of some stupid thing in old Eigen libs (that come with
+   Ubuntu 16.04), the following includes have to be BEFORE others
+   (which is against usual convention) */
 #ifdef RAI_EIGEN
 #include <Eigen/Sparse>
 #include <Eigen/SparseCholesky>
 #include <Eigen/SparseLU>
 #include <Eigen/SparseQR>
 #endif
+
+#include "array.h"
+#include "util.h"
 
 #ifdef RAI_LAPACK
 extern "C" {

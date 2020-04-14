@@ -136,25 +136,24 @@ struct sRprop {
 };
 
 Rprop::Rprop() {
-  s = new sRprop;
-  s->incr   = 1.2;
-  s->decr   = .33;
-  s->dMax = 50.;
-  s->dMin = 1e-6;
-  s->rMax = 0.;
-  s->delta0 = 1.;
+  self = make_unique<sRprop>();
+  self->incr   = 1.2;
+  self->decr   = .33;
+  self->dMax = 50.;
+  self->dMin = 1e-6;
+  self->rMax = 0.;
+  self->delta0 = 1.;
 }
 
 Rprop::~Rprop() {
-  delete s;
 }
 
 void Rprop::init(double initialStepSize, double minStepSize, double maxStepSize) {
-  s->stepSize.resize(0);
-  s->lastGrad.resize(0);
-  s->delta0 = initialStepSize;
-  s->dMin = minStepSize;
-  s->dMax = maxStepSize;
+  self->stepSize.resize(0);
+  self->lastGrad.resize(0);
+  self->delta0 = initialStepSize;
+  self->dMin = minStepSize;
+  self->dMax = maxStepSize;
 }
 
 bool sRprop::step(arr& w, const arr& grad, uint* singleI) {
@@ -191,7 +190,7 @@ bool sRprop::step(arr& w, const arr& grad, uint* singleI) {
 bool Rprop::step(arr& x, const ScalarFunction& f) {
   arr grad;
   f(grad, NoArr, x);
-  return s->step(x, grad, nullptr);
+  return self->step(x, grad, nullptr);
 }
 
 //----- the rprop wrapped with stopping criteria
@@ -203,7 +202,7 @@ uint Rprop::loop(arr& _x,
                  uint maxEvals,
                  int verbose) {
 
-  if(!s->stepSize.N) init(initialStepSize);
+  if(!self->stepSize.N) init(initialStepSize);
   arr x, J(_x.N), x_min, J_min;
   double fx, fx_min=0;
   uint rejects=0, small_steps=0;
@@ -226,8 +225,8 @@ uint Rprop::loop(arr& _x,
     //infeasible point! undo the previous step
     if(fx!=fx) { //is NAN
       if(!evals) HALT("can't start Rprop with unfeasible point");
-      s->stepSize*=(double).1;
-      s->lastGrad=(double)0.;
+      self->stepSize*=(double).1;
+      self->lastGrad=(double)0.;
       x=x_min;
       fx=fx_min;
       J=J_min;
@@ -244,8 +243,8 @@ uint Rprop::loop(arr& _x,
     } else {
       rejects++;
       if(rejects>10) {
-        s->stepSize*=(double).1;
-        s->lastGrad=(double)0.;
+        self->stepSize*=(double).1;
+        self->lastGrad=(double)0.;
         x=x_min;
         fx=fx_min;
         J=J_min;
@@ -254,7 +253,7 @@ uint Rprop::loop(arr& _x,
     }
 
     //update x
-    s->step(x, J, nullptr);
+    self->step(x, J, nullptr);
 
     //check stopping criterion based on step-length in x
     diff=maxDiff(x, x_min);

@@ -19,16 +19,15 @@ void TEST(KomoSequence){
 
   komo.setSquaredQAccVelHoming();
 
-  komo.setGrasp(1., "humanR", "Long1");
+  komo.setGrasp(1., 1.8, "humanR", "Long1");
   komo.setPlace(1.8, "humanR", "Long1", "tableL");
 
-  komo.setGrasp(1., "humanL", "Long2");
+  komo.setGrasp(1., 1.8, "humanL", "Long2");
   komo.setPlace(1.8, "humanL", "Long2", "tableR");
 
-  komo.reset();
-  komo.run();
+  komo.optimize();
 
-  Graph result = komo.getReport(true);
+  rai::Graph result = komo.getReport(true);
 
   for(uint i=0;i<2;i++) if(!komo.displayTrajectory(.1, true)) break;
 }

@@ -41,7 +41,12 @@ int rai::ConfigurationViewer::update(bool watch) {
 }
 
 int rai::ConfigurationViewer::setConfiguration(rai::Configuration& _C, const char* text, bool watch){
-  if(_C.frames.N!=C.frames.N) recopyMeshes(_C);
+  if(_C.frames.N!=C.frames.N){
+    recopyMeshes(_C);
+  }else if(_C.proxies.N){
+    auto _dataLock = gl->dataLock(RAI_HERE);
+    C.copyProxies(_C.proxies);
+  }
 
   {
     auto _dataLock = gl->dataLock(RAI_HERE);
@@ -61,6 +66,8 @@ int rai::ConfigurationViewer::setConfiguration(rai::Configuration& _C, const cha
 }
 
 void rai::ConfigurationViewer::setPath(ConfigurationL& Cs, const char* text, bool watch) {
+  CHECK(C.frames.N, "setPath requires that you setConfiguration first");
+
   uintA frames;
   frames.setStraightPerm(Cs.first()->frames.N);
 
@@ -75,6 +82,8 @@ void rai::ConfigurationViewer::setPath(ConfigurationL& Cs, const char* text, boo
 }
 
 void rai::ConfigurationViewer::setPath(rai::Configuration& _C, const arr& jointPath, const char* text, bool watch, bool full){
+  CHECK(C.frames.N, "setPath requires that you setConfiguration first");
+
   arr X(jointPath.d0, _C.frames.N, 7);
   for(uint t=0; t<X.d0; t++) {
     _C.setJointState(jointPath[t]);
@@ -87,13 +96,15 @@ void rai::ConfigurationViewer::setPath(rai::Configuration& _C, const arr& jointP
 }
 
 void rai::ConfigurationViewer::setPath(const arr& _framePath, const char* text, bool watch, bool full) {
+  CHECK(C.frames.N, "setPath requires that you setConfiguration first");
+
   CHECK_EQ(_framePath.nd, 3, "");
   CHECK_EQ(_framePath.d2, 7, "");
 
   {
     auto _dataLock = gl->dataLock(RAI_HERE);
     framePath = _framePath;
-    drawFullPath=full;
+    drawFullPath = full;
     drawTimeSlice=-1;
     if(text) drawText = text;
   }
@@ -170,6 +181,22 @@ void rai::ConfigurationViewer::glDraw(OpenGL& gl) {
   glPushMatrix();
 
   rai::Transformation T;
+
+  //draw frame paths
+  if(drawFrameLines){
+    glColor(0., 0., 0.,.2);
+    glLoadIdentity();
+    for(uint i=0; i<framePath.d1; i++) {
+      glBegin(GL_LINE_STRIP);
+      for(uint t=0; t<framePath.d0; t++) {
+        T.set(&framePath(t, i, 0));
+        //          glTransform(pose);
+        glVertex3d(T.pos.x, T.pos.y, T.pos.z);
+      }
+      glEnd();
+    }
+  }
+
   if(drawTimeSlice>=0){
     uint t=drawTimeSlice;
     CHECK_LE(t+1, framePath.d0, "");
@@ -178,20 +205,6 @@ void rai::ConfigurationViewer::glDraw(OpenGL& gl) {
 
     C.setFrameState(framePath[t]);
     C.glDraw_sub(gl, 0);
-
-    //draw frame paths
-    glColor(0., 0., 0.);
-    glLoadIdentity();
-    for(uint i=0; i<framePath.d1; i++) {
-      glBegin(GL_LINES);
-      for(uint t=0; t<framePath.d0; t++) {
-        T.set(&framePath(t, i, 0));
-//          glTransform(pose);
-        glVertex3d(T.pos.x, T.pos.y, T.pos.z);
-      }
-      glEnd();
-    }
-
   }else{
     if(drawFullPath){
       CHECK_EQ(framePath.d1, C.frames.N, "");

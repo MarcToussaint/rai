@@ -101,7 +101,7 @@ int gtkPopupMenuChoice(StringL& choices) {
   GtkWidget* menu = gtk_menu_new();
   gtk_menu_popup(GTK_MENU(menu), nullptr, nullptr, nullptr, nullptr, 0, gtk_get_current_event_time());
   for_list(rai::String,  s,  choices) {
-    GtkWidget* item = gtk_menu_item_new_with_label(s->p);
+    GtkWidget* item = gtk_menu_item_new_with_label(self->p);
     gtk_container_add(GTK_CONTAINER(menu), item);
     gtk_signal_connect_object(GTK_OBJECT(item), "activate",
                               GTK_SIGNAL_FUNC(menuitem_response), (gpointer)(ulong)s_COUNT);

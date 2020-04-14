@@ -105,8 +105,6 @@ endif
 ifeq ($(GLFW),1)
 DEPEND_UBUNTU += libglfw3-dev
 CXXFLAGS  += -DRAI_GLFW
-#CPATH := $(HOME)/opt/include:$(CPATH)
-#LPATH := $(HOME)/opt/lib:$(LPATH)
 LIBS      += -lglfw
 GL := 1
 endif
@@ -268,7 +266,6 @@ endif
 ifeq ($(OPENCV4),1)
 CXXFLAGS  += -DRAI_OPENCV
 CPATH := $(HOME)/opt/include/opencv4/:$(CPATH)
-LPATHS += $(HOME)/opt/lib
 LIBS += -lopencv_core -lopencv_highgui
 endif
 
@@ -443,7 +440,6 @@ ifeq ($(BULLET),1)
 #BULLET_PATH=$(HOME)/git/bullet3
 CXXFLAGS  += -DRAI_BULLET -DBT_USE_DOUBLE_PRECISION
 CPATH := $(HOME)/opt/include/bullet/:$(CPATH)
-LPATHS += $(HOME)/opt/lib
 #LPATH := $(BULLET_PATH)/bin:$(LPATH)
 #CPATH := $(CPATH):$(BULLET_PATH)/src
 #btLIB = _gmake_x64_release

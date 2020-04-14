@@ -6,7 +6,7 @@ const char *filename=nullptr;
 //===========================================================================
 
 void TEST(Read){
-  Graph G;
+  rai::Graph G;
 
   G.checkConsistency();
   cout <<"\n** reading graph..." <<flush;
@@ -20,6 +20,8 @@ void TEST(Read){
 //  Node *m = G["modify"];
 //  G.merge(m);
 //  cout <<"'k modify' merged with 'k':" <<*G["k"] <<endl;
+
+  rai::Node *n = G.first();
 
   G.checkConsistency();
   if(filename) return; //below only for "example.g"
@@ -36,20 +38,20 @@ void TEST(Read){
 //===========================================================================
 
 void TEST(Init){
-  Graph G = {"x", "b", {"a", 3.}, {"b", {"x"}, 5.}, {"c", rai::String("BLA")} };
+  rai::Graph G = {"x", "b", {"a", 3.}, {"b", {"x"}, 5.}, {"c", rai::String("BLA")} };
   cout <<G <<endl;
   G.checkConsistency();
 
-  Graph B;
+  rai::Graph B;
 
-  B <<"x" <<"b" <<NodeInitializer("a", 3.) <<NodeInitializer("b", {"x"}, ARR(1.,2.,3.));
+  B <<"x" <<"b" <<rai::NodeInitializer("a", 3.) <<rai::NodeInitializer("b", {"x"}, ARR(1.,2.,3.));
   cout <<B <<endl;
 }
 
 //===========================================================================
 
-const Graph& rndContainer(const Graph& G){
-  const Graph *g=&G;
+const rai::Graph& rndContainer(const rai::Graph& G){
+  const rai::Graph *g=&G;
   while(rnd.uni()<.8){
     if(!g->isNodeOfGraph) break;
     g = &g->isNodeOfGraph->container;
@@ -57,34 +59,34 @@ const Graph& rndContainer(const Graph& G){
   return *g;
 }
 
-Graph& rndSubgraph(Graph& G){
-  Graph *g=&G;
+rai::Graph& rndSubgraph(rai::Graph& G){
+  rai::Graph *g=&G;
   while(rnd.uni()<.8){
-    NodeL subgraphs = g->getNodesOfType<Graph>(nullptr);
+    rai::NodeL subgraphs = g->getNodesOfType<rai::Graph>(nullptr);
     if(!subgraphs.N) break;
-    Node *subgraph=subgraphs.rndElem();
+    rai::Node *subgraph=subgraphs.rndElem();
     g = &subgraph->graph();
   }
   return *g;
 }
 
-NodeL rndParents(const Graph& G){
+rai::NodeL rndParents(const rai::Graph& G){
   if(!G.N) return {};
   uint nparents=rnd(0,10);
-  NodeL par;
+  rai::NodeL par;
   for(uint i=0;i<nparents;i++){
     par.append(rndContainer(G).rndElem());
   }
   return par;
 }
 
-void rndModify(Graph& G){
+void rndModify(rai::Graph& G){
   switch(rnd(4)){
     case 0://add bool item
-      G.newNode<bool>({rai::String().setRandom(), rai::String().setRandom()}, rndParents(G), true);
+      G.newNode<bool>(rai::String().setRandom(), rndParents(G), true);
       break;
     case 1://add Subgraph item
-      G.newSubgraph({rai::String().setRandom(), rai::String().setRandom()}, rndParents(G));
+      G.newSubgraph(rai::String().setRandom(), rndParents(G));
       break;
     case 2://delete item
       if(G.N) delete G.rndElem();
@@ -99,15 +101,15 @@ void rndModify(Graph& G){
 //===========================================================================
 
 void TEST(Random){
-  Graph A,B;
+  rai::Graph A,B;
 
-  ArrayG<int> Ax(A);
+  rai::ArrayG<int> Ax(A);
 
   for(uint k=0;k<10;k++){
     rndModify(rndSubgraph(A));
-    Graph& C = rndSubgraph(A).newSubgraph({}, {});
+    rai::Graph& C = rndSubgraph(A).newSubgraph({}, {});
 
-    Graph& D = rndSubgraph(A);
+    rai::Graph& D = rndSubgraph(A);
     if(D.N){
       D.getRenderingInfo(D.rndElem()).dotstyle.setRandom();
     }
@@ -131,7 +133,7 @@ void TEST(Random){
 //===========================================================================
 
 void TEST(Dot){
-  Graph G;
+  rai::Graph G;
   G <<FILE(filename?filename:"coffee_shop.fg");
   G.checkConsistency();
 //  G.sortByDotOrder();
@@ -152,7 +154,7 @@ void operator>>(istream& is, Something& s){ is >>s.x; }
 bool operator==(const Something&, const Something&){ return false; }
 
 void TEST(Manual){
-  Graph G;
+  rai::Graph G;
   G.newNode<Something>({"hallo"}, {}, Something(3));
   cout <<G <<endl;
 }
@@ -162,9 +164,7 @@ void TEST(Manual){
 int MAIN(int argc, char** argv){
   rai::initCmdLine(argc, argv);
 
-  cout <<"GLOBAL LATENT REGISTRY:\n" <<registry() <<endl;
-
-  if(argc>=2) filename=argv[1];
+  if(argc>1 && argv[1][0]!='-') filename=argv[1];
 
   testRandom();
   testRead();

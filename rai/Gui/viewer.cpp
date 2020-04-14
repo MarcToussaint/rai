@@ -37,43 +37,43 @@ ImageViewer::~ImageViewer() {
 }
 
 void ImageViewer::open() {
-  s = new sImageViewer(STRING("ImageViewer: "<<img.data->name));
-  s->gl.openWindow();
-  s->gl.update();
+  self = make_unique<sImageViewer>(STRING("ImageViewer: "<<img.data->name));
+  self->gl.openWindow();
+  self->gl.update();
 }
 
-void ImageViewer::close() { delete s; }
+void ImageViewer::close() { self.reset(); }
 
 void ImageViewer::step() {
   {
-    auto _dataLock = s->gl.dataLock(RAI_HERE);
-    s->gl.background = img.get();
-    if(flipImage) flip_image(s->gl.background);
+    auto _dataLock = self->gl.dataLock(RAI_HERE);
+    self->gl.background = img.get();
+    if(flipImage) flip_image(self->gl.background);
 #if 0 //draw a center
-    uint ci = s->gl.background.d0/2;
-    uint cj = s->gl.background.d1/2;
-    uint skip = s->gl.background.d1*s->gl.background.d2;
+    uint ci = self->gl.background.d0/2;
+    uint cj = self->gl.background.d1/2;
+    uint skip = self->gl.background.d1*self->gl.background.d2;
     byte* p, *pstop;
-    p=&s->gl.background(ci-5, cj-5, 0);
-    pstop=&s->gl.background(ci-5, cj+5, 0);
+    p=&self->gl.background(ci-5, cj-5, 0);
+    pstop=&self->gl.background(ci-5, cj+5, 0);
     for(; p<=pstop; p++) *p = 0;
-    p=&s->gl.background(ci+5, cj-5, 0);
-    pstop=&s->gl.background(ci+5, cj+5, 0);
+    p=&self->gl.background(ci+5, cj-5, 0);
+    pstop=&self->gl.background(ci+5, cj+5, 0);
     for(; p<=pstop; p++) *p = 0;
-    p=&s->gl.background(ci-5, cj-5, 0);
-    pstop=&s->gl.background(ci+5, cj-5, 0);
+    p=&self->gl.background(ci-5, cj-5, 0);
+    pstop=&self->gl.background(ci+5, cj-5, 0);
     for(; p<=pstop; p+=skip) p[0]=p[1]=p[2]=0;
-    p=&s->gl.background(ci-5, cj+5, 0);
-    pstop=&s->gl.background(ci+5, cj+5, 0);
+    p=&self->gl.background(ci-5, cj+5, 0);
+    pstop=&self->gl.background(ci+5, cj+5, 0);
     for(; p<=pstop; p+=skip) p[0]=p[1]=p[2]=0;
 #endif
 
-    if(!s->gl.background.N) return;
-    if(s->gl.height!= s->gl.background.d0 || s->gl.width!= s->gl.background.d1)
-      s->gl.resize(s->gl.background.d1, s->gl.background.d0);
+    if(!self->gl.background.N) return;
+    if(self->gl.height!= self->gl.background.d0 || self->gl.width!= self->gl.background.d1)
+      self->gl.resize(self->gl.background.d1, self->gl.background.d0);
   }
 
-  s->gl.update(name, false); //, false, false, true);
+  self->gl.update(name, false); //, false, false, true);
 }
 
 //===========================================================================
@@ -174,46 +174,46 @@ PointCloudViewer::~PointCloudViewer() {
 }
 
 void PointCloudViewer::open() {
-  s = new sPointCloudViewer(STRING("PointCloudViewer: "<<pts.name() <<' ' <<rgb.name()));
+  self = make_unique<sPointCloudViewer>(STRING("PointCloudViewer: "<<pts.name() <<' ' <<rgb.name()));
 #if 1
-  s->gl.add(glStandardOriginAxes);
-  s->gl.add(glStandardLight);
-  s->gl.add(s->pc);
-  //  s->gl.reportSelects = true;
+  self->gl.add(glStandardOriginAxes);
+  self->gl.add(glStandardLight);
+  self->gl.add(self->pc);
+  //  self->gl.reportSelects = true;
 #else
-  s->gl.add(glStandardScene);
-  s->gl.add(s->pc);
-//  s->gl.camera.setDefault();
+  self->gl.add(glStandardScene);
+  self->gl.add(self->pc);
+//  self->gl.camera.setDefault();
 #endif
 }
 
 void PointCloudViewer::close() {
-  s->gl.clear();
-  delete s;
+  self->gl.clear();
+  self.reset();
 }
 
 void PointCloudViewer::step() {
   uint W, H;
 
   {
-    auto _dataLock = s->gl.dataLock(RAI_HERE);
-    s->pc.V=pts.get();
-    copy(s->pc.C, rgb.get()());
-    H=s->pc.C.d0;
-    W=s->pc.C.d1;
-    uint n=s->pc.V.N/3;
-    if(n!=s->pc.C.N/3) {
+    auto _dataLock = self->gl.dataLock(RAI_HERE);
+    self->pc.V=pts.get();
+    copy(self->pc.C, rgb.get()());
+    H=self->pc.C.d0;
+    W=self->pc.C.d1;
+    uint n=self->pc.V.N/3;
+    if(n!=self->pc.C.N/3) {
 
       return;
     }
-    s->pc.C /= 255.;
-    s->pc.V.reshape(n, 3);
-    s->pc.C.reshape(n, 3);
+    self->pc.C /= 255.;
+    self->pc.V.reshape(n, 3);
+    self->pc.C.reshape(n, 3);
 
-    if(W!=s->gl.width || H!=s->gl.height) s->gl.resize(W, H);
+    if(W!=self->gl.width || H!=self->gl.height) self->gl.resize(W, H);
   }
 
-  s->gl.update(); //nullptr, false, false, true);
+  self->gl.update(); //nullptr, false, false, true);
 }
 
 //===========================================================================
@@ -226,38 +226,37 @@ PointCloudViewerCallback::PointCloudViewerCallback(const Var<arr>& _pts, const V
 
 PointCloudViewerCallback::~PointCloudViewerCallback() {
   pts.data->callbacks.removeCallback(this);
-  if(s) delete s;
 }
 
 void PointCloudViewerCallback::call(Var_base* v) {
-  if(!s) {
-    s = new sPointCloudViewer(STRING("PointCloudViewer: "<<pts.name() <<' ' <<rgb.name()));
-    s->gl.add(glStandardScene);
-    s->gl.add(s->pc);
+  if(!self) {
+    self = make_unique<sPointCloudViewer>(STRING("PointCloudViewer: "<<pts.name() <<' ' <<rgb.name()));
+    self->gl.add(glStandardScene);
+    self->gl.add(self->pc);
   }
 
   uint W, H;
 
   {
-    auto _dataLock = s->gl.dataLock(RAI_HERE);
+    auto _dataLock = self->gl.dataLock(RAI_HERE);
     pts.checkLocked();
-    s->pc.V=pts();
-    copy(s->pc.C, rgb.get()());
-    H=s->pc.C.d0;
-    W=s->pc.C.d1;
-    uint n=s->pc.V.N/3;
-    if(n!=s->pc.C.N/3) {
+    self->pc.V=pts();
+    copy(self->pc.C, rgb.get()());
+    H=self->pc.C.d0;
+    W=self->pc.C.d1;
+    uint n=self->pc.V.N/3;
+    if(n!=self->pc.C.N/3) {
 
       return;
     }
-    s->pc.C /= 255.;
-    s->pc.V.reshape(n, 3);
-    s->pc.C.reshape(n, 3);
+    self->pc.C /= 255.;
+    self->pc.V.reshape(n, 3);
+    self->pc.C.reshape(n, 3);
 
-    if(W!=s->gl.width || H!=s->gl.height) s->gl.resize(W, H);
+    if(W!=self->gl.width || H!=self->gl.height) self->gl.resize(W, H);
   }
 
-  s->gl.update(); //nullptr, false, false, true);
+  self->gl.update(); //nullptr, false, false, true);
 }
 
 //===========================================================================

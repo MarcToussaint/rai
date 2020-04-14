@@ -250,6 +250,22 @@ void PhysXInterface::pullDynamicStates(FrameL& frames, arr& frameVelocities) {
   }
 }
 
+void PhysXInterface::changeObjectType(rai::Frame* f, int _type){
+  rai::Enum<rai::BodyType> type((rai::BodyType)_type);
+  if(self->actorTypes(f->ID) == type){
+    LOG(-1) <<"frame " <<*f <<" is already of type " <<type;
+  }
+  PxRigidActor* a = self->actors(f->ID);
+  if(!a) HALT("frame " <<*f <<"is not an actor");
+  if(type==rai::BT_kinematic){
+    ((PxRigidDynamic*)a)->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
+  }else if(type==rai::BT_dynamic){
+    ((PxRigidDynamic*)a)->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, false);
+  }else NIY;
+  self->actorTypes(f->ID) = type;
+}
+
+
 void PhysXInterface::pushKinematicStates(const FrameL& frames) {
   for(rai::Frame* f: frames) {
     if(self->actors.N <= f->ID) continue;
@@ -605,7 +621,7 @@ void DrawActor(PxRigidActor* actor, rai::Frame* frame) {
 
     // use the color of the first shape of the body for the entire body
     rai::Shape* s = frame->shape;
-    if(!s) s = frame->parentOf.elem(0)->shape;
+    if(!s) s = frame->children.elem(0)->shape;
     if(s) glColor(s->mesh().C);
 
     rai::Transformation f;
@@ -701,6 +717,7 @@ void PhysXInterface::pushKinematicStates(const FrameL& frames) { NICO }
 void PhysXInterface::pushFullState(const FrameL& frames, const arr& vels, bool onlyKinematic) { NICO }
 void PhysXInterface::pullDynamicStates(FrameL& frames, arr& vels) { NICO }
 
+void PhysXInterface::changeObjectType(rai::Frame* f, int _type){ NICO }
 void PhysXInterface::setArticulatedBodiesKinematic(const rai::Configuration& C) { NICO }
 void PhysXInterface::ShutdownPhysX() { NICO }
 void PhysXInterface::watch(bool pause, const char* txt) { NICO }

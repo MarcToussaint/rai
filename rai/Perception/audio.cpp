@@ -50,16 +50,16 @@ class sAudioWriter_libav {
     if(!s) {
       HALT("Could not allocate stream structure");
     }
-    s->codec->sample_fmt = AV_SAMPLE_FMT_S16;
-    s->codec->sample_rate = 48000;
-    s->codec->channels = 2;
+    self->codec->sample_fmt = AV_SAMPLE_FMT_S16;
+    self->codec->sample_rate = 48000;
+    self->codec->channels = 2;
 
     // some formats want stream headers to be separate
     if(oc->oformat->flags & AVFMT_GLOBALHEADER)
       oc->flags |= CODEC_FLAG_GLOBAL_HEADER;
 
     /* open it */
-    if(avcodec_open2(s->codec, codec, nullptr) < 0)
+    if(avcodec_open2(self->codec, codec, nullptr) < 0)
       HALT("Encoder failed to open");
 
     if(avio_open(&(oc->pb), filename, AVIO_FLAG_WRITE) < 0) {
@@ -68,7 +68,7 @@ class sAudioWriter_libav {
     avformat_write_header(oc, nullptr);
   }
   ~sAudioWriter_libav() {
-    avcodec_close(s->codec);
+    avcodec_close(self->codec);
     avformat_free_context(oc);
   }
 
@@ -86,7 +86,7 @@ class sAudioWriter_libav {
     // note: allocates data, so not most efficient, but should do
     int got_packet, ret;
 
-    if((ret = avcodec_encode_audio2(s->codec, &pkt, &frame, &got_packet)) != 0) {
+    if((ret = avcodec_encode_audio2(self->codec, &pkt, &frame, &got_packet)) != 0) {
       HALT("Could not encode audio frame: " << ret);
       return;
     }
@@ -116,7 +116,7 @@ AudioWriter_libav::~AudioWriter_libav() {
 
 void AudioWriter_libav::writeSamples_R48000_2C_S16_NE(const byteA& samples) {
 #ifdef HAVE_LIBAV
-  s->write(samples);
+  self->write(samples);
 #else
   RAI_MSG("writeSamples not available, because LIBAV is missing");
 #endif
@@ -166,14 +166,11 @@ AudioPoller_PA::AudioPoller_PA(const char* appname, const char* dev)
 }
 
 AudioPoller_PA::~AudioPoller_PA() {
-#ifdef HAVE_PULSEAUDIO
-  delete s;
-#endif
 }
 
 bool AudioPoller_PA::read(byteA& buf) {
 #ifdef HAVE_PULSEAUDIO
-  return(s->read(buf) >= 0);
+  return(self->read(buf) >= 0);
 #else
   RAI_MSG("AudioPoller_PA::read not available, libpulse missing");
   return false;

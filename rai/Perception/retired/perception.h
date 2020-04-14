@@ -56,7 +56,7 @@ struct GenericDisplayViewer : Thread {
 };
 
 struct VideoEncoder : Thread {
-  struct sVideoEncoder* s;
+  unique_ptr<struct sVideoEncoder> self;
   bool is_rgb;
   double fps;
   Var<byteA> img;
@@ -74,7 +74,7 @@ struct VideoEncoder : Thread {
 };
 
 struct VideoEncoderX264 : Thread {
-  struct sVideoEncoderX264* s;
+  unique_ptr<struct sVideoEncoderX> self;
   bool is_rgb;
   double fps;
   Var<byteA> img;
@@ -185,7 +185,7 @@ BEGIN_MODULE(AudioWriter)    AudioWriter_libav* writer; VAR(byteA, pcms16ne2c) E
 #else
 
 struct OpencvCamera : Thread {
-  struct sOpencvCamera* s;
+  unique_ptr<struct sOpencvCamera> self;
   Var<byteA> rgb;
   std::map<int, double> properties; bool set(int prop, double status);
   OpencvCamera(const Var<byteA>& _rgb) : Thread(STRING("OpencvCamera_"<<_rgb.name()), 0.), rgb(this, _rgb) {}
@@ -195,7 +195,7 @@ struct OpencvCamera : Thread {
 };
 
 struct CvtGray : Thread {
-  struct sCvtGray* s;
+  unique_ptr<struct sCvtGray> self;
   Var<byteA> rgb;
   Var<byteA> gray;
   std::map<int, double> properties; bool set(int prop, double status);
@@ -207,7 +207,7 @@ struct CvtGray : Thread {
 };
 
 struct MotionFilter : Thread {
-  struct sMotionFilter* s;
+  unique_ptr<struct sMotionFilter> self;
   Var<byteA> rgb;
   Var<byteA> motion;
   MotionFilter(const Var<byteA>& _rgb, const Var<byteA>& _motion)
@@ -218,7 +218,7 @@ struct MotionFilter : Thread {
 };
 
 struct DifferenceFilter : Thread {
-  struct sDifferenceFilter* s;
+  unique_ptr<struct sDifferenceFilter> self;
   Var<byteA> i1;
   Var<byteA> i2;
   Var<byteA> diffImage;
@@ -230,7 +230,7 @@ struct DifferenceFilter : Thread {
 };
 
 struct CannyFilter : Thread {
-  struct sCannyFilter* s;
+  unique_ptr<struct sCannyFilter> self;
   Var<byteA> grayImage;
   Var<byteA> cannyImage;
   CannyFilter(const Var<byteA>& _grayImage, const Var<byteA>& _cannyImage)
@@ -243,7 +243,7 @@ struct CannyFilter : Thread {
 };
 
 struct Patcher : Thread {
-  struct sPatcher* s;
+  unique_ptr<struct sPatcher> self;
   Var<byteA> rgbImage;
   Var<Patching> patchImage;
   Patcher(const Var<byteA>& _rgbImage, const Var<Patching>& _patchImage)

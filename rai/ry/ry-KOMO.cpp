@@ -161,23 +161,23 @@ pybind11::arg("initNoise")=0.01)
 })
 
 .def("getForceInteractions", [](ry::RyKOMO& self) {
-  Graph G = self.komo->getContacts();
+  rai::Graph G = self.komo->getContacts();
   return graph2list(G);
 })
 
 .def("getReport", [](ry::RyKOMO& self) {
-  Graph G = self.komo->getProblemGraph(true, false);
+  rai::Graph G = self.komo->getProblemGraph(true, false);
   return graph2list(G);
 })
 
 .def("getConstraintViolations", [](ry::RyKOMO& self) {
-  Graph R = self.komo->getReport(false);
-  return R.get<double>("constraints");
+  rai::Graph R = self.komo->getReport(false);
+  return R.get<double>("ineq") + R.get<double>("eq");
 })
 
 .def("getCosts", [](ry::RyKOMO& self) {
-  Graph R = self.komo->getReport(false);
-  return R.get<double>("sqrCosts");
+  rai::Graph R = self.komo->getReport(false);
+  return R.get<double>("sos");
 })
 
 //-- display

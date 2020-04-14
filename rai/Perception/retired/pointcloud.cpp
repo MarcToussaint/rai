@@ -296,7 +296,7 @@ void ObjectFitter::step() {
     for(uint i=0; i<plist.N; ++i) {
       FittingResult result;
       FittingJob anotherJob;
-      bool put = s->doWork(result, anotherJob, plist(i));
+      bool put = self->doWork(result, anotherJob, plist(i));
       #pragma omp critical
       {
         if(put) next.append(anotherJob);
@@ -384,7 +384,7 @@ struct sObjectFilter {
 };
 
 ObjectFilter::ObjectFilter(const char* name) : Thread(name) {
-  s = new sObjectFilter;
+  self = make_unique<sObjectFilter>();
   //biros().getVariable(in_objects, "Objects", this, true);
   //biros().getVariable(out_objects, "filteredObjects", this, true);
   NIY//listenTo(in_objects);
@@ -400,8 +400,8 @@ void ObjectFilter::step() {
   FittingResultL pcl_cyls, pcl_sph;
   in_objects.readAccess();
   FittingResult o;
-  s->filterCylinders(cyl_pos, pcl_cyls, in_objects(), this);
-  s->filterSpheres(sph_pos, pcl_sph, in_objects(), this);
+  self->filterCylinders(cyl_pos, pcl_cyls, in_objects(), this);
+  self->filterSpheres(sph_pos, pcl_sph, in_objects(), this);
   in_objects.deAccess();
   out_objects.writeAccess();
   out_objects->clear();

@@ -78,7 +78,8 @@ NodeL RelationalMachine::fwdChainRules() {
 }
 
 Node* RelationalMachine::declareNewSymbol(rai::String symbolStr) {
-  Node* it = KB.readNode(symbolStr);
+  StringA tags;
+  Node* it = KB.readNode(symbolStr, tags, 0, false, false);
   return it;
 }
 

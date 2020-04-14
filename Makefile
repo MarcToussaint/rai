@@ -52,6 +52,22 @@ paths: force
 
 ################################################################################
 
+INSTALL_PATH?=z.LOCAL
+
+install: src bin
+	mkdir -p $(INSTALL_PATH)/bin $(INSTALL_PATH)/lib/rai $(INSTALL_PATH)/include/rai
+	cp bin/src_kinEdit/x.exe $(INSTALL_PATH)/bin/kinEdit
+	cp lib/lib*.so $(INSTALL_PATH)/lib/rai
+	@echo "copying headers into $(INSTALL_PATH)/include/rai"
+	@eval $(shell cd rai; find . -maxdepth 1 -type d -printf "mkdir -p $(INSTALL_PATH)/include/rai/%f\; ")
+	@eval $(shell cd rai; find . -maxdepth 2 -type f -name '*.h' -or -name '*.tpp' -printf "cp rai/%p $(INSTALL_PATH)/include/rai/%h/\; ")
+	@find $(INSTALL_PATH)/include/rai
+	@find $(INSTALL_PATH)/lib/rai
+
+
+################################################################################
+
+
 # test: setConfigFlag $(exa_paths:%=inPath_clean/%) cleanLocks $(exa_paths:%=inPath_make/%)
 
 # setConfigFlag: force
@@ -59,8 +75,7 @@ paths: force
 
 runTests: tests
 	@rm -f z.test-report
-	@find test -mindepth 2 -maxdepth 2 -type d \
-		-exec build/run-path.sh {} \;
+	@for p in $(test_paths); do build/run-path.sh $$p; done
 
 ################################################################################
 

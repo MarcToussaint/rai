@@ -33,22 +33,21 @@ struct sSearchCMA {
 };
 
 SearchCMA::SearchCMA() {
-  s = new sSearchCMA;
+  self = make_unique<sSearchCMA>();
 }
 
 SearchCMA::~SearchCMA() {
-  delete s;
 }
 
 void SearchCMA::init(uint D, int mu, int lambda, const arr& startPoint, const arr& startDev) {
-  cmaes_init(&s->evo, nullptr, D, startPoint.p, startDev.p, 1, lambda, mu, nullptr);
+  cmaes_init(&self->evo, nullptr, D, startPoint.p, startDev.p, 1, lambda, mu, nullptr);
 }
 
 void SearchCMA::init(uint D, int mu, int lambda, const arr& startPoint, double _startDev) {
   CHECK_EQ(startPoint.N, D, "");
   arr startDev(D);
   startDev=_startDev;
-  cmaes_init(&s->evo, nullptr, D, startPoint.p, startDev.p, 1, lambda, mu, nullptr);
+  cmaes_init(&self->evo, nullptr, D, startPoint.p, startDev.p, 1, lambda, mu, nullptr);
 }
 
 void SearchCMA::init(uint D, int mu, int lambda, double lo, double hi) {
@@ -59,24 +58,24 @@ void SearchCMA::init(uint D, int mu, int lambda, double lo, double hi) {
 
 void SearchCMA::step(arr& samples, arr& costs) {
   if(costs.N) {
-    cmaes_ReestimateDistribution(&s->evo, costs.p);
+    cmaes_ReestimateDistribution(&self->evo, costs.p);
   } else { //first iteration: initialize arrays:
-    samples.resize(s->evo.sp.lambda, s->evo.sp.N);
-    costs.resize(s->evo.sp.lambda).setZero();
+    samples.resize(self->evo.sp.lambda, self->evo.sp.N);
+    costs.resize(self->evo.sp.lambda).setZero();
   }
 
   //generate samples
-  double* const* rgx = cmaes_SampleDistribution(&s->evo, nullptr);
+  double* const* rgx = cmaes_SampleDistribution(&self->evo, nullptr);
   for(uint i=0; i<samples.d0; i++) samples[i].setCarray(rgx[i], samples.d1);
 }
 
 void SearchCMA::getBestSample(arr& sample) {
-  sample.resize(s->evo.sp.N);
-  sample.setCarray(s->evo.rgxbestever, sample.N);
+  sample.resize(self->evo.sp.N);
+  sample.setCarray(self->evo.rgxbestever, sample.N);
 }
 
 void SearchCMA::getMean(arr& mean) {
-  mean.resize(s->evo.sp.N);
-  mean.setCarray(s->evo.rgxmean, mean.N);
+  mean.resize(self->evo.sp.N);
+  mean.setCarray(self->evo.rgxmean, mean.N);
 }
 

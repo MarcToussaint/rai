@@ -811,9 +811,9 @@ rai::LogToken::~LogToken() {
 //       ROS_INFO("RAI-MSG: %s",rai::errString.p);
 // #endif
       if(log_level==-1) { cout <<"** WARNING:" <<rai::errString <<endl; }
-      if(log_level==-2) { cerr <<"** ERROR:" <<rai::errString <<endl; /*throw does not WORK!!! Because this is a destructor. The THROW macro does it inline*/ }
+      else if(log_level==-2) { cerr <<"** ERROR:" <<rai::errString <<endl; /*throw does not WORK!!! Because this is a destructor. The THROW macro does it inline*/ }
+      else if(log_level==-3) { cerr <<"** HARD EXIT! " <<rai::errString <<endl;  exit(1); }
       //INSERT BREAKPOINT HERE
-      if(log_level==-3) { cerr <<"** HARD EXIT! " <<rai::errString <<endl;  exit(1); }
       if(log_level<=-3) raise(SIGUSR2);
     }
   }
@@ -1006,7 +1006,7 @@ rai::String& rai::String::printf(const char* format, ...) {
 /// shorthand for the !strcmp command
 bool rai::String::operator==(const char* s) const { return p && !strcmp(p, s); }
 /// shorthand for the !strcmp command
-bool rai::String::operator==(const String& s) const { return p && s.p && !strcmp(p, s.p); }
+bool rai::String::operator==(const String& s) const { if(!p && !s.p) return true;  return p && s.p && (!strcmp(p, s.p)); }
 bool rai::String::operator!=(const char* s) const { return !operator==(s); }
 bool rai::String::operator!=(const String& s) const { return !(operator==(s)); }
 bool rai::String::operator<=(const String& s) const { return p && s.p && strcmp(p, s.p)<=0; }
@@ -1154,7 +1154,7 @@ std::ofstream& rai::FileToken::getOs(bool change_dir) {
   CHECK(!is, "don't use a FileToken both as input and output");
   if(!os) {
     if(change_dir) cd_file();
-    os = std::make_shared<std::ofstream>();
+    os = std::make_unique<std::ofstream>();
     os->open(name);
     LOG(3) <<"opening output file '" <<name <<"'" <<std::endl;
     if(!os->good()) RAI_MSG("could not open file '" <<name <<"' for output from '" <<cwd <<"./" <<path <<"'");
@@ -1166,7 +1166,7 @@ std::ifstream& rai::FileToken::getIs(bool change_dir) {
   CHECK(!os, "don't use a FileToken both as input and output");
   if(!is) {
     if(change_dir) cd_file();
-    is = std::make_shared<std::ifstream>();
+    is = std::make_unique<std::ifstream>();
     is->open(name);
     LOG(3) <<"opening input file '" <<name <<"'" <<std::endl;
     if(!is->good()) THROW("could not open file '" <<name <<"' for input from '" <<cwd <<"./" <<path <<"'");
@@ -1326,7 +1326,7 @@ bool Inotify::poll(bool block, bool verbose) {
     }
     if(event->len
         && (event->mask & (IN_MODIFY|IN_CREATE|IN_DELETE))
-//        && !strncmp(event->name, fil->name.p, fil->name.N)
+        && strncmp(event->name, "z.log",5) //NOT z.log...
       ) return true; //report modification on specific file
     i += sizeof(struct inotify_event) + event->len;
   }

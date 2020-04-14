@@ -72,7 +72,7 @@ double shapeSize(const rai::Configuration& K, const char* name, uint i=2) {
   rai::Frame* f = K.getFrameByName(name);
   rai::Shape* s = f->shape;
   if(!s) {
-    for(rai::Frame* b:f->parentOf) if(b->name==name && b->shape) { s=b->shape; break; }
+    for(rai::Frame* b:f->children) if(b->name==name && b->shape) { s=b->shape; break; }
   }
   if(!s) return 0;
   return s->size(i);
@@ -86,7 +86,7 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
   else if(feat==FS_standingAbove) {
     double h = .5*(shapeSize(world, frames(0)) + shapeSize(world, frames(1)));
     f = make_shared<TM_Default>(TMT_posDiff, world, frames(0), rai::Vector(0., 0., h), frames(1), NoVector);
-    f->scale = arr(1, 3, {0., 0., 1.});
+    f->scale = arr({1,3}, {0., 0., 1.});
   }
 
   else if(feat==FS_position) {  f=make_shared<TM_Default>(TMT_pos, world, frames(0)); }

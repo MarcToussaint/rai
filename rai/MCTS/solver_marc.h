@@ -55,8 +55,8 @@ struct MCTS {
   void reportDecisions(ostream& os, MCTS_Node* n=nullptr);
 
   //only to display
-  void writeToGraph(Graph& G, MCTS_Node* n=nullptr);
-  Graph getGraph() { Graph G; writeToGraph(G); return G; }
+  void writeToGraph(rai::Graph& G, MCTS_Node* n=nullptr);
+  rai::Graph getGraph() { rai::Graph G; writeToGraph(G); return G; }
 };
 
 //===========================================================================

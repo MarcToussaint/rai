@@ -26,6 +26,7 @@ struct PhysXInterface : GLDrawer {
   void pushFullState(const FrameL& frames, const arr& frameVelocities=NoArr, bool onlyKinematic=false);
   void pullDynamicStates(FrameL& frames, arr& frameVelocities=NoArr);
 
+  void changeObjectType(rai::Frame* f, int type);
   void setArticulatedBodiesKinematic(const rai::Configuration& C);
   void ShutdownPhysX();
 

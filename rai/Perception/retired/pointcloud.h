@@ -72,7 +72,7 @@ struct ObjectClusterer : public Module {
 };
 
 struct ObjectFitter : public Module {
-  struct sObjectFitter* s;
+  unique_ptr<struct sObjectFitter> self;
 
   ObjectFitter();
 
@@ -85,7 +85,7 @@ struct ObjectFitter : public Module {
 };
 
 struct ObjectFilter : public Module {
-  struct sObjectFilter* s;
+  unique_ptr<struct sObjectFilter> self;
   ObjectFilter(const char* name) ;
   void open();
   void step();

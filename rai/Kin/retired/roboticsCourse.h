@@ -12,7 +12,7 @@
 #include "../Core/array.h"
 
 struct Simulator {
-  struct sSimulator* s; //hidden (private) space
+  unique_ptr<struct sSimulator> self; //hidden (private) space
 
   Simulator(const char* orsFile);
   ~Simulator();
@@ -60,7 +60,7 @@ struct Simulator {
 };
 
 struct VisionSimulator {
-  struct sVisionSimulator* s;
+  unique_ptr<struct sVisionSimulator> self;
 
   VisionSimulator();
   ~VisionSimulator();

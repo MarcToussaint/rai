@@ -76,7 +76,7 @@ rai::Frame::~Frame() {
   if(inertia) delete inertia;
   if(parent) unLink();
   while(forces.N) delete forces.last();
-  while(parentOf.N) parentOf.last()->unLink();
+  while(children.N) children.last()->unLink();
   CHECK_EQ(this, C.frames(ID), "")
   C.frames.remove(ID);
   listReindex(C.frames);
@@ -102,6 +102,7 @@ void rai::Frame::calc_X_from_parent() {
   }
 
   _state_X_isGood=true;
+  C._state_proxies_isGood = false;
 }
 
 void rai::Frame::calc_Q_from_parent(bool enforceWithinJoint) {
@@ -117,6 +118,16 @@ void rai::Frame::calc_Q_from_parent(bool enforceWithinJoint) {
 }
 
 const rai::Transformation& rai::Frame::ensure_X() {
+#if 0 //for testing loops
+  {
+    rai::Frame *f=parent;
+    while(f){
+      CHECK(f!=this, "");
+      f=f->parent;
+    }
+  }
+#endif
+
   if(!_state_X_isGood) { if(parent) { parent->ensure_X(); calc_X_from_parent(); } }
   CHECK(_state_X_isGood, "");
   return X;
@@ -134,8 +145,10 @@ const rai::Transformation& rai::Frame::get_X() const {
 void rai::Frame::_state_updateAfterTouchingX() {
   _state_setXBadinBranch();
   _state_X_isGood = true;
-  if(parent) Q.setDifference(parent->ensure_X(), X); //calc_Q_from_parent(true);
-//  else Q = X;
+  if(parent){
+    Q.setDifference(parent->ensure_X(), X);
+    _state_updateAfterTouchingQ();
+  }
 }
 
 void rai::Frame::_state_updateAfterTouchingQ() {
@@ -144,17 +157,17 @@ void rai::Frame::_state_updateAfterTouchingQ() {
 }
 
 void rai::Frame::getRigidSubFrames(FrameL& F) {
-  for(Frame* child:parentOf)
+  for(Frame* child:children)
     if(!child->joint) { F.append(child); child->getRigidSubFrames(F); }
 }
 
 void rai::Frame::getPartSubFrames(FrameL& F) {
-  for(Frame* child:parentOf)
+  for(Frame* child:children)
     if(!child->joint || !child->joint->isPartBreak()) { F.append(child); child->getRigidSubFrames(F); }
 }
 
 void rai::Frame::getSubtree(FrameL& F) {
-  for(Frame* child:parentOf) { F.append(child); child->getSubtree(F); }
+  for(Frame* child:children) { F.append(child); child->getSubtree(F); }
 }
 
 FrameL rai::Frame::getPathToRoot() {
@@ -223,7 +236,7 @@ void rai::Frame::prefixSubtree(const char* prefix){
 void rai::Frame::_state_setXBadinBranch() {
   if(_state_X_isGood) { //no need to propagate to children if already bad
     _state_X_isGood=false;
-    for(Frame* child:parentOf) child->_state_setXBadinBranch();
+    for(Frame* child:children) child->_state_setXBadinBranch();
   }
 }
 
@@ -233,7 +246,7 @@ void rai::Frame::read(const Graph& ats) {
   if(ats["pose"]) set_X()->setText(ats.get<String>("pose"));
   if(ats["Q"])    set_Q()->setText(ats.get<String>("Q"));
 
-  if(ats["type"]) ats["type"]->keys.last() = "shape"; //compatibility with old convention: 'body { type... }' generates shape
+  if(ats["type"]) ats["type"]->key = "shape"; //compatibility with old convention: 'body { type... }' generates shape
 
   if(ats["joint"]) {
     if(ats["B"]) { //there is an extra transform from the joint into this frame -> create an own joint frame
@@ -287,7 +300,7 @@ void rai::Frame::write(Graph& G) {
 
   for(Node* n : ats) {
     StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H", "axis", "A", "B", "mimic"};
-    if(!avoid.contains(n->keys.last())) {
+    if(!avoid.contains(n->key)) {
       n->newClone(G);
     }
   }
@@ -324,7 +337,7 @@ void rai::Frame::write(std::ostream& os) const {
 
   for(Node* n : ats) {
     StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H", "axis", "A", "B", "mimic"};
-    if(!avoid.contains(n->keys.last())) os <<", " <<*n;
+    if(!avoid.contains(n->key)) os <<", " <<*n;
   }
 
   os <<" }\n";
@@ -395,6 +408,7 @@ void rai::Frame::setConvexMesh(const std::vector<double>& points, const std::vec
   } else {
     getShape().type() = ST_ssCvx;
     getShape().sscCore().V.clear().operator=(points).reshape(-1, 3);
+    getShape().sscCore().makeConvexHull();
     getShape().mesh().setSSCvx(getShape().sscCore().V, radius);
   }
   if(colors.size()) {
@@ -441,14 +455,14 @@ rai::Frame* rai::Frame::insertPreLink(const rai::Transformation& A) {
 
   if(parent) {
     f = new Frame(parent);
-    parent->parentOf.removeValue(this);
+    parent->children.removeValue(this);
     f->name <<parent->name <<'>' <<name;
   } else {
     f = new Frame(C);
     f->name <<"NIL>" <<name;
   }
   parent=f;
-  parent->parentOf.append(this);
+  parent->children.append(this);
 
   if(!!A) f->Q=A; else f->Q.setZero();
   f->_state_updateAfterTouchingQ();
@@ -462,9 +476,9 @@ rai::Frame* rai::Frame::insertPostLink(const rai::Transformation& B) {
   if(name) f->name <<'<' <<name;
 
   //reconnect all outlinks from -> to
-  f->parentOf = parentOf;
-  for(Frame* b:parentOf) b->parent = f;
-  parentOf.clear();
+  f->children = children;
+  for(Frame* b:children) b->parent = f;
+  children.clear();
 
   if(!!B) f->Q=B; else f->Q.setZero();
   f->_state_updateAfterTouchingQ();
@@ -477,7 +491,7 @@ rai::Frame* rai::Frame::insertPostLink(const rai::Transformation& B) {
 void rai::Frame::unLink() {
   CHECK(parent, "");
   ensure_X();
-  parent->parentOf.removeValue(this);
+  parent->children.removeValue(this);
   parent=nullptr;
   Q.setZero();
   _state_updateAfterTouchingQ();
@@ -493,7 +507,7 @@ void rai::Frame::linkFrom(rai::Frame* _parent, bool adoptRelTransform) {
   if(adoptRelTransform) ensure_X();
 
   parent=_parent;
-  parent->parentOf.append(this);
+  parent->children.append(this);
 
   if(adoptRelTransform) calc_Q_from_parent();
   _state_updateAfterTouchingQ();
@@ -511,7 +525,7 @@ bool rai::Frame::isChildOf(const rai::Frame* par, int order) const {
 }
 
 rai::Joint::Joint(rai::Frame& f, rai::JointType _type) : Joint(f, (Joint*)nullptr) {
-  CHECK(frame->parent, "a frame without parent cannot be a joint");
+  CHECK(frame->parent || _type==JT_tau, "a frame without parent cannot be a joint");
   setType(_type);
 }
 
@@ -946,8 +960,8 @@ void rai::Joint::read(const Graph& G) {
 
   if(!B.isZero()) {
     //new frame between: from -> f -> to
-    CHECK_EQ(frame->parentOf.N, 1, "");
-    Frame* follow = frame->parentOf.scalar();
+    CHECK_EQ(frame->children.N, 1, "");
+    Frame* follow = frame->children.scalar();
 
     CHECK(follow->parent, "");
     CHECK(!follow->joint, "");
@@ -1212,7 +1226,7 @@ void rai::Shape::createMeshes() {
       mesh().scale(size(0), size(1), size(2));
       break;
     case rai::ST_sphere: {
-      sscCore().V = arr(1, 3, {0., 0., 0.});
+      sscCore().V = arr({1,3}, {0., 0., 0.});
       double rad=1;
       if(size.N) rad=size(-1);
       mesh().setSSCvx(sscCore().V, rad);
@@ -1223,7 +1237,7 @@ void rai::Shape::createMeshes() {
       break;
     case rai::ST_capsule:
       CHECK(size(-1)>1e-10, "");
-      sscCore().V = arr(2, 3, {0., 0., -.5*size(-2), 0., 0., .5*size(-2)});
+      sscCore().V = arr({2,3}, {0., 0., -.5*size(-2), 0., 0., .5*size(-2)});
       mesh().setSSCvx(sscCore().V, size(-1));
       break;
     case rai::ST_retired_SSBox:

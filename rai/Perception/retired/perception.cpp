@@ -37,29 +37,29 @@ struct sVideoEncoder {
 };
 
 void VideoEncoder::open() {
-  s = new sVideoEncoder(STRING("z." <<img.data->name <<'.' <<rai::getNowString() <<".avi"), fps, is_rgb);
+  self = make_unique<sVideoEncoder>(STRING("z." <<img.data->name <<'.' <<rai::getNowString() <<".avi"), fps, is_rgb);
 }
 
 void VideoEncoder::close() {
-  s->video.close();
-  delete s;
+  self->video.close();
+  self.reset();
 }
 
 void VideoEncoder::step() {
   //-- grab from shared memory (necessary?)
   uint rev = img.readAccess();
   double time = img.data->write_time;
-  s->buffer = img();
+  self->buffer = img();
   img.deAccess();
 
   //save image
-  s->video.addFrame(s->buffer);
+  self->video.addFrame(self->buffer);
 
   //save time tag
   rai::String tag;
   tag.resize(30, false);
   sprintf(tag.p, "%6i %13.6f", rev, time);
-  s->timeTagFile <<tag <<endl;
+  self->timeTagFile <<tag <<endl;
 }
 
 //===========================================================================
@@ -85,8 +85,8 @@ void VideoEncoderX264::open() {
 
 void VideoEncoderX264::close() {
   std::clog << "Closing VideoEncoderX264...";
-  s->video.close();
-  delete s;
+  self->video.close();
+  self.reset();
   std::clog << "done" << endl;
 }
 
@@ -94,18 +94,18 @@ void VideoEncoderX264::step() {
   //-- grab from shared memory (necessary?)
   int nextRevision = img.readAccess();
   double time = img.data->write_time;
-  s->buffer = img();
+  self->buffer = img();
   img.deAccess();
 
   //save image
-  s->video.addFrame(s->buffer);
+  self->video.addFrame(self->buffer);
 
   //save time tag
   rai::String tag;
   tag.resize(30, false);
-  sprintf(tag.p, "%6i %13.6f", s->revision, time);
-  s->timeTagFile <<tag <<endl;
-  s->revision = nextRevision;
+  sprintf(tag.p, "%6i %13.6f", self->revision, time);
+  self->timeTagFile <<tag <<endl;
+  self->revision = nextRevision;
 }
 #endif
 
@@ -193,10 +193,10 @@ void AudioWriter::step() {
 struct sOpencvCamera {  cv::VideoCapture capture;  };
 
 void OpencvCamera::open() {
-  s = new sOpencvCamera;
-  s->capture.open(0);
+  self = make_unique<sOpencvCamera>();
+  self->capture.open(0);
   for(std::map<int, double>::const_iterator i = properties.begin(); i != properties.end(); ++i) {
-    if(!s->capture.set(i->first, i->second)) {
+    if(!self->capture.set(i->first, i->second)) {
       cerr << "could not set property " << i->first << " to value " << i->second << endl;
     }
   }
@@ -205,13 +205,13 @@ void OpencvCamera::open() {
 }
 
 void OpencvCamera::close() {
-  s->capture.release();
-  delete s;
+  self->capture.release();
+  self.reset();
 }
 
 void OpencvCamera::step() {
   cv::Mat img, imgRGB;
-  s->capture.read(img);
+  self->capture.read(img);
   if(!img.empty()) {
     cv::cvtColor(img, imgRGB, CV_BGR2RGB);
     rgb.set()=conv_cvMat2byteA(imgRGB);
@@ -220,7 +220,7 @@ void OpencvCamera::step() {
 
 bool OpencvCamera::set(int propId, double value) {
   if(s)
-    return s->capture.set(propId, value);
+    return self->capture.set(propId, value);
   else {
     properties[propId] = value;
     return true; // well, can't really do anything else here...
@@ -293,18 +293,18 @@ struct sHsvFilter {
 };
 
 void HsvFilter::open() {
-  s = new sHsvFilter;
-  s->hsvMean      = rai::getParameter<floatA>("hsvMean");
-  s->hsvDeviation = rai::getParameter<floatA>("hsvDeviation");
+  self = make_unique<sHsvFilter>();
+  self->hsvMean      = rai::getParameter<floatA>("hsvMean");
+  self->hsvDeviation = rai::getParameter<floatA>("hsvDeviation");
 }
 
 void HsvFilter::close() {
-  delete s;
+  self.reset();
 }
 
 void HsvFilter::step() {
-  s->hsvMean      = rai::getParameter<floatA>("hsvMean");
-  s->hsvDeviation = rai::getParameter<floatA>("hsvDeviation");
+  self->hsvMean      = rai::getParameter<floatA>("hsvMean");
+  self->hsvDeviation = rai::getParameter<floatA>("hsvDeviation");
 
   byteA hsvA;
   hsvA = hsv.get();
@@ -317,7 +317,7 @@ void HsvFilter::step() {
 
   for(uint i = 0; i < evidence.N; ++i) {
     if(hsvA(i, 0) > 0 || hsvA(i, 1) > 0 || hsvA(i, 2) > 0) {
-      evidence(i) = exp(-.5 * s->hsvDifference(hsvA[i]));
+      evidence(i) = exp(-.5 * self->hsvDifference(hsvA[i]));
     }
   }
 
@@ -335,11 +335,11 @@ struct sMotionFilter {
 };
 
 void MotionFilter::open() {
-  s = new sMotionFilter;
+  self = make_unique<sMotionFilter>();
 }
 
 void MotionFilter::close() {
-  delete s;
+  self.reset();
 }
 
 void MotionFilter::step() {
@@ -347,24 +347,24 @@ void MotionFilter::step() {
   rgbA = rgb.get();
   uint H=rgbA.d0, W=rgbA.d1;
 
-  if(s->old_rgb.N!=rgbA.N) {
-    s->old_rgb=rgbA;
+  if(self->old_rgb.N!=rgbA.N) {
+    self->old_rgb=rgbA;
     return;
   }
 
   grayA.resize(rgbA.d0*rgbA.d1);
   rgbA.reshape(grayA.N, 3);
-  s->old_rgb.reshape(grayA.N, 3);
+  self->old_rgb.reshape(grayA.N, 3);
   for(uint i=0; i<grayA.N; i++) {
     uint diff
-      = abs((int)rgbA(i, 0)-(int)s->old_rgb(i, 0))
-        + abs((int)rgbA(i, 1)-(int)s->old_rgb(i, 1))
-        + abs((int)rgbA(i, 2)-(int)s->old_rgb(i, 2));
+      = abs((int)rgbA(i, 0)-(int)self->old_rgb(i, 0))
+        + abs((int)rgbA(i, 1)-(int)self->old_rgb(i, 1))
+        + abs((int)rgbA(i, 2)-(int)self->old_rgb(i, 2));
     grayA(i) = diff/3;
   }
 
   grayA.reshape(H, W);
-  s->old_rgb=rgbA;
+  self->old_rgb=rgbA;
 
   motion.set() = grayA;
 }
@@ -461,14 +461,14 @@ struct sSURFer {
 };
 
 void SURFer::open() {
-  s = new sSURFer;
-//  s->surf = new cv::SURF(500);
+  self = make_unique<sSURFer>();
+//  self->surf = new cv::SURF(500);
   HALT("something in opencv changed... please upate the code")
 }
 
 void SURFer::close() {
-  //  delete s->surf;
-  delete s;
+  //  delete self->surf;
+  self.reset();
 }
 
 void SURFer::step() {
@@ -526,7 +526,7 @@ void HoughLineFilter::step() {
 //
 
 //struct ShapeFitter: Thread{
-//  struct sShapeFitter *s;
+//  unique_ptr<struct sShapeFitter> self;
 
 //  FloatImage *eviL, *eviR;
 //  PerceptionOutput *percOut;
@@ -606,3 +606,5 @@ void draw1(void*) {
 //}
 
 #endif
+
+struct sOpencvCamera {  };

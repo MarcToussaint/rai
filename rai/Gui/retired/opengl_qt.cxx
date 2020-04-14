@@ -69,24 +69,24 @@ sOpenGL::~sOpenGL() {
 // OpenGL implementations
 //
 
-void OpenGL::postRedrawEvent(bool fromWithinCallback) { s->QGLWidget::update(); }
+void OpenGL::postRedrawEvent(bool fromWithinCallback) { self->QGLWidget::update(); }
 void OpenGL::processEvents() {  qtApp->processEvents(); }
 void OpenGL::sleepForEvents()() { qtApp->exec(); }
 void OpenGL::exitEventLoop() {  qtApp->exit(); }
 
-//int OpenGL::width(){  return s->QGLWidget::width(); }
+//int OpenGL::width(){  return self->QGLWidget::width(); }
 
-//int OpenGL::height(){ return s->QGLWidget::height(); }
+//int OpenGL::height(){ return self->QGLWidget::height(); }
 
 /// resize the window
 void OpenGL::resize(int w, int h) {
-  s->QGLWidget::resize(w, h);
+  self->QGLWidget::resize(w, h);
   processEvents();
 }
 
 void OpenGL::about(std::ostream& os) {
   os <<"Widget's OpenGL capabilities:\n";
-  QGLFormat f=s->format();
+  QGLFormat f=self->format();
   os <<"direct rendering: " <<f.directRendering() <<"\n"
      <<"double buffering: " <<f.doubleBuffer()  <<"\n"
      <<"depth:            " <<f.depth() <<"\n"
@@ -99,11 +99,11 @@ void OpenGL::about(std::ostream& os) {
      <<"plane:            " <<f.plane() <<std::endl;
 
 #if 0
-  if(!s->osContext) {
+  if(!self->osContext) {
     os <<"no off-screen context created yet" <<std::endl;
   } else {
     os <<"Off-screen pixmaps's OpenGL capabilities:\n";
-    f=s->osContext->format();
+    f=self->osContext->format();
     os <<"direct rendering: " <<f.directRendering() <<"\n"
        <<"double buffering: " <<f.doubleBuffer()  <<"\n"
        <<"depth:            " <<f.depth() <<"\n"
@@ -123,16 +123,16 @@ void OpenGL::about(std::ostream& os) {
     rendering routines -- the off-screen context cannot be
     resized... */
 void OpenGL::createOffscreen(int width, int height) {
-  if(s->osContext && (width>s->osPixmap->width() || height>s->osPixmap->height())) {
-    delete s->osContext;
-    delete s->osPixmap;
-    s->osContext=nullptr;
+  if(self->osContext && (width>self->osPixmap->width() || height>self->osPixmap->height())) {
+    delete self->osContext;
+    delete self->osPixmap;
+    self->osContext=nullptr;
   }
-  if(!s->osContext) {
-    s->osPixmap=new QPixmap(width, height);
-    if(!s->osPixmap) RAI_MSG("can't create off-screen Pixmap");
-    s->osContext=new QGLContext(QGLFormat(GLosformat), s->osPixmap);
-    if(!s->osContext->create()) RAI_MSG("can't create off-screen OpenGL context");
+  if(!self->osContext) {
+    self->osPixmap=new QPixmap(width, height);
+    if(!self->osPixmap) RAI_MSG("can't create off-screen Pixmap");
+    self->osContext=new QGLContext(QGLFormat(GLosformat), self->osPixmap);
+    if(!self->osContext->create()) RAI_MSG("can't create off-screen OpenGL context");
   }
 }
 
@@ -176,10 +176,10 @@ void OpenGL::offscreenGrabDepth(floatA& depth) {
 
 void OpenGL::setOffscreen(int width, int height) {
   createOffscreen(width, height);
-  CHECK(width<=s->osPixmap->width() && height<=s->osPixmap->height(),
+  CHECK(width<=self->osPixmap->width() && height<=self->osPixmap->height(),
         "width (" <<width <<") or height (" <<height
         <<") too large for the created pixmap - create and set size earlier!");
-  s->osContext->makeCurrent();
+  self->osContext->makeCurrent();
   //if(initRoutine) (*initRoutine)();
 }
 #endif

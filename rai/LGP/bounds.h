@@ -90,22 +90,22 @@ ptr<ComputeObject> skeleton2Bound(ptr<KOMO>& komo,
                    );
 
 struct SubCG {
-  NodeL frames;
-  NodeL constraints;
+  rai::NodeL frames;
+  rai::NodeL constraints;
   uint maxT;
   int merged=-1;
   void write(ostream& os) const {
     cout <<"*** subproblem (merged:" <<merged <<")" <<endl;
     cout <<"  frames:";
-    for(Node* f:frames) cout <<' ' <<*f;
+    for(rai::Node* f:frames) cout <<' ' <<*f;
     cout <<"\n  constraints:";
-    for(Node* c:constraints) cout <<"\n    " <<*c;
+    for(rai::Node* c:constraints) cout <<"\n    " <<*c;
     cout <<endl;
   }
 };
 stdOutPipe(SubCG)
 struct CG {
-  Graph G;
+  rai::Graph G;
   rai::Array<std::shared_ptr<SubCG>> subproblems;
 };
 

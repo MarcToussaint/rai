@@ -8,8 +8,8 @@
 
 #include "F_geometrics.h"
 #include "F_PairCollision.h"
+#include "TM_default.h"
 #include "frame.h"
-
 //===========================================================================
 
 TM_AboveBox::TM_AboveBox(int iShape, int jShape, double _margin)
@@ -74,8 +74,8 @@ rai::String TM_AboveBox::shortTag(const rai::Configuration& G) {
   return STRING("AboveBox:"<<(i<0?"WORLD":G.frames(i)->name) <<':' <<(j<0?"WORLD":G.frames(j)->name));
 }
 
-Graph TM_AboveBox::getSpec(const rai::Configuration& K) {
-  return Graph({ {"feature", "above"}, {"o1", K.frames(i)->name}, {"o2", K.frames(j)->name}});
+rai::Graph TM_AboveBox::getSpec(const rai::Configuration& K) {
+  return rai::Graph({ {"feature", "above"}, {"o1", K.frames(i)->name}, {"o2", K.frames(j)->name}});
 }
 
 //===========================================================================
@@ -155,5 +155,24 @@ void F_GraspOppose::phi(arr& y, arr& J, const rai::Configuration& K) {
 
   y = D1.y + D2.y;
   if(!!J) J = D1.J + D2.J;
+
+  if(centering){
+    normalizeWithJac(D1.y, D1.J);
+    normalizeWithJac(D2.y, D2.J);
+
+    Value P1 = TM_Default(TMT_pos, i)(K);
+    Value P2 = TM_Default(TMT_pos, j)(K);
+
+
+    arr P = 2.*eye(3) - (D1.y*~D1.y) - (D2.y*~D2.y);
+    arr p = P2.y - P1.y;
+    double scale = 1e-1;
+    y.append( scale * (P * p) );
+    if(!!J){
+      arr Jc = P * (P2.J-P1.J) - (D1.J*scalarProduct(D1.y,p) + D1.y*(~p*D1.J)) - (D2.J*scalarProduct(D2.y,p) + D2.y*(~p*D2.J));
+      J.append( scale * Jc );
+    }
+
+  }
 }
 

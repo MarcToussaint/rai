@@ -22,12 +22,11 @@ TM_PairCollision::TM_PairCollision(const rai::Configuration& K, const char* s1, 
 }
 
 TM_PairCollision::~TM_PairCollision() {
-  if(coll) delete coll;
 }
 
-void TM_PairCollision::phi(arr& y, arr& J, const rai::Configuration& K) {
-  rai::Shape* s1 = i<0?nullptr: K.frames(i)->shape;
-  rai::Shape* s2 = j<0?nullptr: K.frames(j)->shape;
+void TM_PairCollision::phi(arr& y, arr& J, const rai::Configuration& C) {
+  rai::Shape* s1 = i<0?nullptr: C.frames(i)->shape;
+  rai::Shape* s2 = j<0?nullptr: C.frames(j)->shape;
   CHECK(s1 && s2, "");
   double r1=s1->radius();
   double r2=s2->radius();
@@ -36,15 +35,15 @@ void TM_PairCollision::phi(arr& y, arr& J, const rai::Configuration& K) {
   if(!m1->V.N) m1->V = zeros(1, 3);
   if(!m2->V.N) m2->V = zeros(1, 3);
 
-  if(coll) delete coll;
-  coll = new PairCollision(*m1, *m2, s1->frame.ensure_X(), s2->frame.ensure_X(), r1, r2);
+  coll.reset();
+  coll = make_unique<PairCollision>(*m1, *m2, s1->frame.ensure_X(), s2->frame.ensure_X(), r1, r2);
 
   if(neglectRadii) coll->rad1=coll->rad2=0.;
 
   if(type==_negScalar) {
     arr Jp1, Jp2;
-    K.jacobian_pos(Jp1, &s1->frame, coll->p1);
-    K.jacobian_pos(Jp2, &s2->frame, coll->p2);
+    C.jacobian_pos(Jp1, &s1->frame, coll->p1);
+    C.jacobian_pos(Jp2, &s2->frame, coll->p2);
     coll->kinDistance(y, J, Jp1, Jp2);
     y *= -1.;
     if(!!J) J *= -1.;
@@ -52,10 +51,10 @@ void TM_PairCollision::phi(arr& y, arr& J, const rai::Configuration& K) {
   } else {
     arr Jp1, Jp2, Jx1, Jx2;
     if(!!J) {
-      K.jacobian_pos(Jp1, &s1->frame, coll->p1);
-      K.jacobian_pos(Jp2, &s2->frame, coll->p2);
-      K.jacobian_angular(Jx1, &s1->frame);
-      K.jacobian_angular(Jx2, &s2->frame);
+      C.jacobian_pos(Jp1, &s1->frame, coll->p1);
+      C.jacobian_pos(Jp2, &s2->frame, coll->p2);
+      C.jacobian_angular(Jx1, &s1->frame);
+      C.jacobian_angular(Jx2, &s2->frame);
     }
     if(type==_vector) coll->kinVector(y, J, Jp1, Jp2, Jx1, Jx2);
     if(type==_normal) coll->kinNormal(y, J, Jp1, Jp2, Jx1, Jx2);
@@ -69,6 +68,6 @@ rai::String TM_PairCollision::shortTag(const rai::Configuration& G) {
   return STRING("PairCollision-"<<(i<0?"WORLD":G.frames(i)->name) <<'-' <<(j<0?"WORLD":G.frames(j)->name));
 }
 
-Graph TM_PairCollision::getSpec(const rai::Configuration& K) {
-  return Graph({ {"feature", "dist"}, {"o1", K.frames(i)->name}, {"o2", K.frames(j)->name}});
+rai::Graph TM_PairCollision::getSpec(const rai::Configuration& K) {
+  return rai::Graph({ {"feature", "dist"}, {"o1", K.frames(i)->name}, {"o2", K.frames(j)->name}});
 }

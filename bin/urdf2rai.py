@@ -70,13 +70,13 @@ for link in links:
 
     # visual shape
     for visual in link.findall("visual"):
-        print('shape visual %s_1 (%s) {\n  ' % (name, name))
+        print('shape visual %s_1 (%s) {  ' % (name, name))
         writeShape(visual)
         print(' visual }\n') # end of shape
 
     # collision shape
     for collision in link.findall("collision"):
-        print('shape collision %s_0 (%s) {\n  ' % (name, name))
+        print('shape collision %s_0 (%s) {  ' % (name, name))
         print(' color:[.8 .2 .2 .5],')
         writeShape(collision)
         print(' contact:-2 }\n') # end of shape
@@ -86,7 +86,7 @@ joints = xmlData.findall("/joint")
 for joint in joints:
     name = joint.attrib['name']
     if joint.find("child") is not None:
-        print('joint %s (%s %s) {\n  ' % (name,
+        print('joint %s (%s %s) {  ' % (name,
                                       joint.find("parent").attrib['link'],
                                       joint.find("child").attrib['link'])),
 

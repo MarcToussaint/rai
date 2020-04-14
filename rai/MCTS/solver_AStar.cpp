@@ -55,14 +55,14 @@ AStar_NodeL AStar_Node::getTreePath() {
   return path;
 }
 
-void AStar_Node::getGraph(Graph& G, Node* n) {
+void AStar_Node::getGraph(rai::Graph& G, rai::Node* n) {
   if(!n) {
-    n = G.newNode<bool>({"a:<ROOT>"}, NodeL(), true);
+    n = G.newNode<bool>({"a:<ROOT>"}, {}, true);
   } else {
     n = G.newNode<bool>({STRING("a:"<<*action)}, {n}, true);
   }
-  n->keys.append(STRING("d:" <<d <<" t:" <<time <<' '));
-  n->keys.append(STRING("f:" <<g+h <<" g:" <<g <<" h:" <<h));
+  n->key <<STRING("d:" <<d <<" t:" <<time <<' ');
+  n->key <<STRING("f:" <<g+h <<" g:" <<g <<" h:" <<h);
 //  if(mcStats && mcStats->n) n->keys.append(STRING("MC best:" <<mcStats->X.first() <<" n:" <<mcStats->n));
 //  n->keys.append(STRING("sym  #" <<mcCount <<" f:" <<symCost <<" terminal:" <<isTerminal));
 //  n->keys.append(STRING("pose #" <<poseCount <<" f:" <<poseCost <<" g:" <<poseConstraints <<" feasible:" <<poseFeasible));

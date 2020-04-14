@@ -46,8 +46,15 @@ template<class T> int rai::Array<T>::sizeT=-1;
 //***** constructors
 
 /// standard constructor -- this becomes an empty array
-template<class T> rai::Array<T>::Array() : std::vector<T>(), d(&d0) {
-  isReference=false;
+template<class T> rai::Array<T>::Array()
+    : std::vector<T>(),
+      p(0),
+      N(0),
+      nd(0),
+      d0(0), d1(0), d2(0),
+      d(&d0),
+      isReference(false),
+      special(0) {
   if(sizeT==-1) sizeT=sizeof(T);
   if(memMove==(char)-1) {
     memMove=0;
@@ -63,40 +70,47 @@ template<class T> rai::Array<T>::Array() : std::vector<T>(), d(&d0) {
         typeid(T)==typeid(float) ||
         typeid(T)==typeid(double)) memMove=1;
   }
-  p=NULL;
-  N=nd=d0=d1=d2=0;
-//  d=&d0;
-  special=NULL;
 }
 
 /// copy constructor
-template<class T> rai::Array<T>::Array(const rai::Array<T>& a):Array() { operator=(a); }
+template<class T> rai::Array<T>::Array(const rai::Array<T>& a) : Array() { operator=(a); }
+
+/// copy constructor
+template<class T> rai::Array<T>::Array(rai::Array<T>&& a)
+    : std::vector<T>(std::move(a)),
+      p(a.p),
+      N(a.N),
+      nd(a.nd),
+      d0(a.d0), d1(a.d1), d2(a.d2),
+      d(&d0),
+      isReference(a.isReference),
+      special(a.special) {
+    CHECK_EQ(a.d, &a.d0, "");
+    a.p=NULL;
+    a.N=a.nd=a.d0=a.d1=a.d2=0;
+    a.isReference=false;
+    a.special=NULL;
+}
 
 /// constructor with resize
-template<class T> rai::Array<T>::Array(uint i):Array() { resize(i); }
+template<class T> rai::Array<T>::Array(uint i) : Array() { resize(i); }
 
 /// constructor with resize
-template<class T> rai::Array<T>::Array(uint i, uint j):Array() { resize(i, j); }
+template<class T> rai::Array<T>::Array(uint i, uint j) : Array() { resize(i, j); }
 
 /// constructor with resize
-template<class T> rai::Array<T>::Array(uint i, uint j, uint k):Array() { resize(i, j, k); }
+template<class T> rai::Array<T>::Array(uint i, uint j, uint k) : Array() { resize(i, j, k); }
 
 /// this becomes a reference on the C-array \c p
-template<class T> rai::Array<T>::Array(const T* p, uint size, bool byReference):Array() { if(byReference) referTo(p, size); else setCarray(p, size); }
+template<class T> rai::Array<T>::Array(const T* p, uint size, bool byReference) : Array() { if(byReference) referTo(p, size); else setCarray(p, size); }
 
-template<class T> rai::Array<T>::Array(const std::vector<T>& a, bool byReference):Array() { if(byReference) referTo(&a.front(), a.size()); else setCarray(&a.front(), a.size()); }
+template<class T> rai::Array<T>::Array(const std::vector<T>& a, bool byReference) : Array() { if(byReference) referTo(&a.front(), a.size()); else setCarray(&a.front(), a.size()); }
 
 /// initialization via {1., 2., 3., ...} lists..
-template<class T> rai::Array<T>::Array(std::initializer_list<T> values):Array() { operator=(values); }
+template<class T> rai::Array<T>::Array(std::initializer_list<T> values) : Array() { operator=(values); }
 
 /// initialization via {1., 2., 3., ...} lists, with certain dimensionality
-template<class T> rai::Array<T>::Array(uint D0, std::initializer_list<T> values):Array() { operator=(values); reshape(D0); }
-
-/// initialization via {1., 2., 3., ...} lists, with certain dimensionality
-template<class T> rai::Array<T>::Array(uint D0, uint D1, std::initializer_list<T> values):Array() { operator=(values); reshape(D0, D1); }
-
-/// initialization via {1., 2., 3., ...} lists, with certain dimensionality
-template<class T> rai::Array<T>::Array(uint D0, uint D1, uint D2, std::initializer_list<T> values):Array() { operator=(values); reshape(D0, D1, D2); }
+template<class T> rai::Array<T>::Array(std::initializer_list<uint> dim, std::initializer_list<T> values) : Array() { operator=(values); reshape(dim); }
 
 template<class T> rai::Array<T>::Array(SpecialArray* _special) : Array() { special=_special; }
 
@@ -199,6 +213,8 @@ template<class T> rai::Array<T>& rai::Array<T>::resizeCopy(const Array<uint>& ne
 
 /// resize to multi-dimensional tensor
 template<class T> rai::Array<T>& rai::Array<T>::reshape(const Array<uint>& newD) { reshape(newD.N, newD.p); return *this; }
+
+template<class T> rai::Array<T>& rai::Array<T>::reshape(std::initializer_list<uint> dim){ reshape(dim.size(), (uint*)dim.begin()); return *this; }
 
 template<class T> rai::Array<T>& rai::Array<T>::resizeAs(const rai::Array<T>& a) {
   CHECK(this!=&a, "never do this!!!");
@@ -1090,7 +1106,7 @@ template<class T> rai::Array<T> rai::Array<T>::sub(Array<uint> elems) const {
   rai::Array<T> x;
   if(nd==1) {
     x.resize(elems.N);
-    for(int l=0; l<(int)elems.N; l++) x(l)=operator()(elems(l));
+    for(int l=0; l<(int)elems.N; l++) x.elem(l)=operator()(elems.elem(l));
   } else if(nd==2) {
     x.resize(elems.N, d1);
     for(int l=0; l<(int)elems.N; l++) for(uint j=0; j<d1; j++) x(l, j)=operator()(elems(l), j);

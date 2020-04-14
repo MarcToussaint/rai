@@ -316,12 +316,12 @@ ptr<CG> skeleton2CGO(const Skeleton& S, const rai::Configuration& startKinematic
     int s_end=s.phase1;
     if(s_end<0) s_end = maxPhase;
     for(int t=s.phase0; t<=s_end; t++) {
-      NodeL parents;
+      rai::NodeL parents;
       for(const rai::String& f:s.frames) parents.append(cg->G.getNode(STRING(f <<'_' <<t)));
       cg->G.newNode<rai::Enum<SkeletonSymbol>>({}, parents, s.symbol);
       if(s.symbol==SY_stable || s.symbol==SY_stableOn) {
         for(int t2=t+1; t2<=s_end+1 && t2<=maxPhase; t2++) {
-          NodeL parents2=parents;
+          rai::NodeL parents2=parents;
           for(const rai::String& f:s.frames) parents2.append(cg->G.getNode(STRING(f <<'_' <<t2)));
           cg->G.newNode<rai::Enum<SkeletonSymbol>>({}, parents2, s.symbol);
         }
@@ -334,8 +334,8 @@ ptr<CG> skeleton2CGO(const Skeleton& S, const rai::Configuration& startKinematic
   for(rai::String& f:frames) {
     for(uint t=0; t<=maxPhase; t++) {
       bool stop=false;
-      Node* n = cg->G.getNode(STRING(f <<'_' <<t));
-      for(Node* c:n->parentOf) {
+      rai::Node* n = cg->G.getNode(STRING(f <<'_' <<t));
+      for(rai::Node* c:n->children) {
         SkeletonSymbol s = c->getValue<rai::Enum<SkeletonSymbol>>()->x;
         if(s==SY_stable
             || s==SY_stableOn
@@ -362,23 +362,23 @@ ptr<CG> skeleton2CGO(const Skeleton& S, const rai::Configuration& startKinematic
 //  cout <<"CGO with identicals:" <<cg->G <<endl;
 
   //-- collapse identicals
-  NodeL ids;
-  for(Node* c:cg->G) {
+  rai::NodeL ids;
+  for(rai::Node* c:cg->G) {
     if(c->isOfType<rai::Enum<SkeletonSymbol>>()
         && c->getValue<rai::Enum<SkeletonSymbol>>()->x == SY_identical) ids.append(c);
   }
-  for(Node* c:ids) {
-    Node* a=c->parents(0), *b=c->parents(1);
+  for(rai::Node* c:ids) {
+    rai::Node* a=c->parents(0), *b=c->parents(1);
     cg->G.collapse(a, b);
 #if 1
     //delete duplicate children
-    NodeL dels;
-    for(uint i=0; i<a->parentOf.N; i++) for(uint j=i+1; j<a->parentOf.N; j++) {
-        Node* ch1 = a->parentOf.elem(i);
-        Node* ch2 = a->parentOf.elem(j);
+    rai::NodeL dels;
+    for(uint i=0; i<a->children.N; i++) for(uint j=i+1; j<a->children.N; j++) {
+        rai::Node* ch1 = a->children.elem(i);
+        rai::Node* ch2 = a->children.elem(j);
         if(ch1!=ch2 && ch1->parents==ch2->parents && ch1->hasEqualValue(ch2)) dels.append(ch2);
       }
-    for(Node* d:dels) delete d;
+    for(rai::Node* d:dels) delete d;
 #endif
   }
 
@@ -391,7 +391,7 @@ ptr<CG> skeleton2CGO(const Skeleton& S, const rai::Configuration& startKinematic
   //size 1
 #if 1
   StringA noSeeds = {"initial", "stable", "stableOn", "noCollision"};
-  for(Node* c:cg->G) {
+  for(rai::Node* c:cg->G) {
     if(c->isOfType<rai::Enum<SkeletonSymbol>>()
         && !noSeeds.contains(c->getValue<rai::Enum<SkeletonSymbol>>()->name())) {
 
@@ -400,10 +400,10 @@ ptr<CG> skeleton2CGO(const Skeleton& S, const rai::Configuration& startKinematic
 
       sp->maxT = (uint)maxPhase;
       //frames
-      for(Node* p:c->parents) sp->frames.append(p);
+      for(rai::Node* p:c->parents) sp->frames.append(p);
       sp->frames.sort();
       //constraints
-      for(Node* c2:cg->G) {
+      for(rai::Node* c2:cg->G) {
         if(c2->isOfType<rai::Enum<SkeletonSymbol>>()
             && sp->frames.contains(c2->parents)) {
           sp->constraints.append(c2);
@@ -442,7 +442,7 @@ ptr<CG> skeleton2CGO(const Skeleton& S, const rai::Configuration& startKinematic
     double mind=-1;
     int mini=-1, minj=-1;
     for(uint i=0; i<D.d0; i++) for(uint j=i+1; j<D.d1; j++) {
-        NodeL join = cat(cg->subproblems(i)->frames, cg->subproblems(j)->frames).sort().removeDoublesInSorted();
+        rai::NodeL join = cat(cg->subproblems(i)->frames, cg->subproblems(j)->frames).sort().removeDoublesInSorted();
         bool exists=false;
         for(auto& sp:cg->subproblems) if(join==sp->frames) { exists=true; break; }
         if(exists) continue;
@@ -462,7 +462,7 @@ ptr<CG> skeleton2CGO(const Skeleton& S, const rai::Configuration& startKinematic
     sp->frames = cat(cg->subproblems(mini)->frames, cg->subproblems(minj)->frames);
     sp->frames.sort();
     sp->frames.removeDoublesInSorted();
-    for(Node* c:cg->G) {
+    for(rai::Node* c:cg->G) {
       if(c->isOfType<rai::Enum<SkeletonSymbol>>()
           && sp->frames.contains(c->parents)) {
         sp->constraints.append(c);
@@ -480,8 +480,8 @@ void CG2komo(KOMO& komo, const SubCG& scg, const rai::Configuration& C, bool col
   //C is the template; pick only the relevant frames
   rai::Configuration* c = komo.configurations.append(new rai::Configuration);
   rai::Array<FrameL> framesPerT(scg.maxT+1);
-  for(Node* f:scg.frames) {
-    rai::String obj=f->keys.last();
+  for(rai::Node* f:scg.frames) {
+    rai::String obj=f->key;
     uint t=0;
     obj.getLastN(1) >>t;
     obj = obj.getFirstN(obj.N-2);

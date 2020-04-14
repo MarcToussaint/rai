@@ -55,7 +55,7 @@ namespace rai {
 
 /// data structure to store a whole physical situation (lists of bodies, joints, shapes, proxies)
 struct Configuration : GLDrawer {
-  struct sConfiguration* s;
+  unique_ptr<struct sConfiguration> self;
 
   //-- fundamental structure
   FrameL frames;     ///< list of coordinate frames, with shapes, joints, inertias attached
@@ -90,11 +90,12 @@ struct Configuration : GLDrawer {
   Configuration(const char* filename);
   virtual ~Configuration();
 
+  /// @name copy
   void operator=(const rai::Configuration& K) { copy(K); }
   void copy(const rai::Configuration& K, bool referenceSwiftOnCopy=false);
   bool operator!() const;
 
-  /// @name initializations
+  /// @name initializations, building configurations
   void init(const char* filename);
   void init(const Graph& G, bool addInsteadOfClear=false);
   Frame* addFile(const char* filename);
@@ -171,7 +172,9 @@ struct Configuration : GLDrawer {
   void setJointState(const arr& _q);
   void setJointState(const arr& _q, const StringA&);
   void setJointState(const arr& _q, const uintA&);
+  void setJointState(const arr& _q, const FrameL&);
   void setFrameState(const arr& X, const StringA& frameNames= {}, bool warnOnDifferentDim=true);
+  void setDofsForTree(const arr& q, rai::Frame* root);
   void setTimes(double t);
   void operator=(const arr& X) {
     if(X.d0==frames.N) setFrameState(X);
@@ -200,7 +203,7 @@ struct Configuration : GLDrawer {
   void kinematicsPos(arr& y, arr& J, Frame* a, const Vector& rel=NoVector) const;
   void kinematicsVec(arr& y, arr& J, Frame* a, const Vector& vec=NoVector) const;
   void kinematicsQuat(arr& y, arr& J, Frame* a) const;
-  void kinematicsPos_wrtFrame(arr& y, arr& J, Frame* b, const rai::Vector& rel, Frame* s) const;
+  void kinematicsPos_wrtFrame(arr& y, arr& J, Frame* b, const rai::Vector& rel, Frame* self) const;
   void hessianPos(arr& H, Frame* a, Vector* rel=0) const;
   void kinematicsTau(double& tau, arr& J) const;
   void kinematicsRelPos(arr& y, arr& J, Frame* a, const Vector& vec1, Frame* b, const Vector& vec2) const;
@@ -251,7 +254,7 @@ struct Configuration : GLDrawer {
 
   /// @name collisions & proxies
   double totalCollisionPenetration(); ///< proxies are returns from a collision engine; contacts stable constraints
-  void copyProxies(const Configuration& K);
+  void copyProxies(const ProxyA& _proxies);
 
   /// @name I/O
   void write(std::ostream& os) const;
@@ -320,10 +323,6 @@ stdPipes(rai::Configuration)
 //
 // OpenGL static draw functions
 //
-
-namespace rai {
-void glDrawGraph(void*, OpenGL& gl);
-}
 
 uintA stringListToShapeIndices(const rai::Array<const char*>& names, const FrameL& shapes);
 uintA shapesToShapeIndices(const FrameL& shapes);

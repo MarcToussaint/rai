@@ -96,15 +96,14 @@ template<class T> struct Array : std::vector<T>, Serializable {
   /// @name constructors
   Array();
   Array(const Array<T>& a);                 //copy constructor
+  Array(Array<T>&& a);                      //move constructor
   explicit Array(uint D0);
   explicit Array(uint D0, uint D1);
   explicit Array(uint D0, uint D1, uint D2);
   explicit Array(const T* p, uint size, bool byReference=true);      //reference!
   explicit Array(const std::vector<T>& a, bool byReference=false);   //reference?
   Array(std::initializer_list<T> values);
-  Array(uint D0, std::initializer_list<T> values);
-  Array(uint D0, uint D1, std::initializer_list<T> values);
-  Array(uint D0, uint D1, uint D2, std::initializer_list<T> values);
+  Array(std::initializer_list<uint> dim, std::initializer_list<T> values);
   explicit Array(SpecialArray* _special); //only used to define NoArrays
   virtual ~Array();
   bool operator!() const; ///< check if NoArr
@@ -129,6 +128,7 @@ template<class T> struct Array : std::vector<T>, Serializable {
   Array<T>& reshape(uint D0, uint D1, uint D2);
   Array<T>& reshape(uint ND, uint* dim);
   Array<T>& reshape(const Array<uint>& dim);
+  Array<T>& reshape(std::initializer_list<uint> dim);
   Array<T>& resizeCopy(uint D0);
   Array<T>& resizeCopy(uint D0, uint D1);
   Array<T>& resizeCopy(uint D0, uint D1, uint D2);

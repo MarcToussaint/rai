@@ -90,7 +90,7 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
     arr coeff=zeros(phi_x.N);
     int fterm=-1;
     for(uint i=0; i<phi_x.N; i++) {
-      if(tt_x.p[i]==OT_f) { if(fterm!=-1) HALT("There must only be 1 f-term (in the current implementation)");  fterm=i; }
+      //if(tt_x.p[i]==OT_f) { if(fterm!=-1) HALT("There must only be 1 f-term (in the current implementation)");  fterm=i; }
       if(tt_x.p[i]==OT_sos) coeff.p[i] += 2.;                                 // sumOfSqr terms
       if(muLB     && tt_x.p[i]==OT_ineq) coeff.p[i] += (muLB/rai::sqr(phi_x.p[i]));                     //log barrier, check feasibility
       if(mu       && tt_x.p[i]==OT_ineq && I_lambda_x.p[i]) coeff.p[i] += gpenalty_dd(phi_x.p[i]);   //g-penalty

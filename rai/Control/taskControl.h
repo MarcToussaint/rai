@@ -18,7 +18,6 @@ typedef rai::Array<CtrlTask*> CtrlTaskL;
 //===========================================================================
 
 /// a motion profile is a non-feedback(!) way to generate a task space reference path
-/// [perhaps an adaptive phase, or Peter's adaptation to object motions, could be a modest way to incorporate feedback in the future]
 struct MotionProfile {
   virtual ~MotionProfile() {}
   virtual ActStatus update(arr& yRef, arr& ydotRef, double tau, const arr& y, const arr& ydot) = 0;
@@ -94,7 +93,7 @@ struct MotionProfile_PD : MotionProfile {
   double tolerance;
   MotionProfile_PD();
   MotionProfile_PD(const arr& _y_target, double decayTime, double dampingRatio, double maxVel=-1., double maxAcc=-1.);
-  MotionProfile_PD(const Graph& params);
+  MotionProfile_PD(const rai::Graph& params);
 
   virtual void setTarget(const arr& ytarget, const arr& vtarget=NoArr);
   virtual void setTimeScale(double d) { setGainsAsNatural(d, .9); }
@@ -163,7 +162,7 @@ struct CtrlTask {
   CtrlTask(const char* name, const ptr<Feature>& _map, const ptr<MotionProfile>& _ref);
   CtrlTask(const char* name, const ptr<Feature>& _map, double maxVel);
   CtrlTask(const char* name, const ptr<Feature>& _map, double decayTime, double dampingRatio, double maxVel=-1., double maxAcc=-1.);
-  CtrlTask(const char* name, const ptr<Feature>& _map, const Graph& params);
+  CtrlTask(const char* name, const ptr<Feature>& _map, const rai::Graph& params);
   ~CtrlTask();
 
   ActStatus update(double tau, const rai::Configuration& world);

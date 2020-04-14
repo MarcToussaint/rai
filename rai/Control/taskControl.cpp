@@ -173,9 +173,9 @@ MotionProfile_PD::MotionProfile_PD(const arr& _y_target, double decayTime, doubl
   setGainsAsNatural(decayTime, dampingRatio);
 }
 
-MotionProfile_PD::MotionProfile_PD(const Graph& params)
+MotionProfile_PD::MotionProfile_PD(const rai::Graph& params)
   : MotionProfile_PD() {
-  Node* it;
+  rai::Node* it;
   if((it=params["PD"])) {
     arr pd=it->get<arr>();
     setGainsAsNatural(pd(0), pd(1));
@@ -333,10 +333,10 @@ CtrlTask::CtrlTask(const char* name, const ptr<Feature>& _map, double decayTime,
   }
 }
 
-CtrlTask::CtrlTask(const char* name, const ptr<Feature>& _map, const Graph& params)
+CtrlTask::CtrlTask(const char* name, const ptr<Feature>& _map, const rai::Graph& params)
   : CtrlTask(name, _map) {
   ref = make_shared<MotionProfile_PD>(params);
-  Node* n;
+  rai::Node* n;
   if((n=params["scale"])) scale = n->get<double>();
 }
 

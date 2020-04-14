@@ -29,7 +29,7 @@ void TEST(FOL_World){
 void TEST(PlayFOL_World){
   rai::String file = "pnp.g";
   if(rai::checkParameter<rai::String>("file")) file = rai::getParameter<rai::String>("file");
-  if(rai::argc>1) file = rai::argv[1];
+  if(rai::argc>1 && rai::argv[1][0]!='-') file = rai::argv[1];
 
   FOL_World world(file);
   world.verbose = rai::getParameter<int>("verbose", 2);
