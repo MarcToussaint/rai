@@ -7,7 +7,7 @@ pybind11::dict graph2dict(const rai::Graph& G) {
   pybind11::dict dict;
   for(rai::Node* n:G) {
     rai::String key;
-    if(key.N) key=n->key;
+    if(n->key.N) key=n->key;
     else key <<n->index;
 
     //-- write value

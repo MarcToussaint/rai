@@ -1374,6 +1374,8 @@ void KOMO::setSpline(uint splineT) {
 
 void KOMO::reset(double initNoise) {
   if(!configurations.N) setupConfigurations();
+  CHECK_EQ(configurations.N, k_order+T, "");
+  for(uint s=0;s<k_order;s++) configurations(s)->ensure_q();
   x = getPath_decisionVariable();
   dual.clear();
   featureValues.clear();
