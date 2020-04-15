@@ -19,7 +19,7 @@ struct Simulation {
   std::unique_ptr<struct Simulation_self> self;
 
   Configuration& C;
-  double time=0.;
+  double time;
   SimulatorEngine engine;
   bool display;
 
@@ -60,8 +60,8 @@ struct Simulation {
 
   //-- store and reset the state of the simulation
   ptr<SimulationState> getState();
+  void restoreState(const ptr<SimulationState>& state);
   void setState(const arr& frameState, const arr& frameVelocities=NoArr);
-  void resetToPreviousState(const ptr<SimulationState>& state);
   void pushConfigurationToSimulator(const arr& frameVelocities=NoArr);
 
 };

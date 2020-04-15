@@ -222,14 +222,15 @@ pybind11::arg("frameNames"))
 }, "TODO remove -> use feature directly"
     )
 
-.def("selectJoints", [](ry::Config& self, const ry::I_StringA& jointNames) {
+.def("selectJoints", [](ry::Config& self, const ry::I_StringA& jointNames, bool notThose) {
   // TODO: this is joint groups
   // TODO: maybe call joint groups just joints and joints DOFs
-  self.set()->selectJointsByName(I_conv(jointNames));
+  self.set()->selectJointsByName(I_conv(jointNames), notThose);
 },
-"redefine what are considered the DOFs of this configuration: only joint listed in jointNames are considered\
+"redefine what are considered the DOFs of this configuration: only joints listed in jointNames are considered\
 part of the joint state and define the number of DOFs",
-pybind11::arg("jointNames")
+pybind11::arg("jointNames"),
+pybind11::arg("notThose") = false
     )
 
 .def("selectJointsByTag", [](ry::Config& self, const ry::I_StringA& jointGroups) {
@@ -605,6 +606,7 @@ pybind11::arg("globalCoordinates") = true)
       .export_values();
 
   pybind11::enum_<rai::Simulation::ControlMode>(m, "ControlMode")
+      ENUMVAL(none)
       ENUMVAL(position)
       ENUMVAL(velocity)
       ENUMVAL(acceleration)

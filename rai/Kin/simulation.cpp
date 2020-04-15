@@ -39,6 +39,7 @@ struct SimulationState {
 Simulation::Simulation(Configuration& _C, Simulation::SimulatorEngine _engine, bool _display)
   : self(make_unique<Simulation_self>()),
     C(_C),
+    time(0.),
     engine(_engine),
     display(_display) {
   if(engine==_physx){
@@ -193,7 +194,7 @@ void Simulation::setState(const arr& frameState, const arr& frameVelocities){
   }else NIY;
 }
 
-void Simulation::resetToPreviousState(const ptr<SimulationState>& state) {
+void Simulation::restoreState(const ptr<SimulationState>& state) {
   setState(state->frameState, state->frameVels);
 }
 
@@ -207,6 +208,14 @@ void Simulation::pushConfigurationToSimulator(const arr& frameVelocities) {
 
 const arr& Simulation::qdot() {
   return self->qdot;
+}
+
+double Simulation::getGripperWidth(const char* gripperFrameName){
+  NIY
+}
+
+bool Simulation::getGripperIsGrasped(const char* gripperFrameName){
+  NIY
 }
 
 CameraView& Simulation::cameraview() {

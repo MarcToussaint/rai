@@ -23,10 +23,69 @@ void init_Simulation(pybind11::module &m) {
     self.sim->step(u, tau, u_mode);
   },
   "",
-  pybind11::arg("u_control"),
-      pybind11::arg("tau") = .01,
-      pybind11::arg("u_mode") = rai::Simulation::_velocity
-                                )
+    pybind11::arg("u_control"),
+    pybind11::arg("tau") = .01,
+    pybind11::arg("u_mode") = rai::Simulation::_velocity
+  )
+
+  .def("openGripper", [](ry::RySimulation& self, const char* gripperFrameName, double width, double speed) {
+     auto lock = self.config->set();
+     self.sim->openGripper(gripperFrameName, width, speed);
+  }, "",
+    pybind11::arg("gripperFrameName"),
+    pybind11::arg("width") = .075,
+    pybind11::arg("speed") = .2
+  )
+
+  .def("closeGripper", [](ry::RySimulation& self, const char* gripperFrameName, double width, double speed, double force) {
+    auto lock = self.config->set();
+    self.sim->closeGripper(gripperFrameName, width, speed, force);
+  }, "",
+    pybind11::arg("gripperFrameName"),
+    pybind11::arg("width") = .05,
+    pybind11::arg("speed") = 1.,
+    pybind11::arg("force") = 20.
+  )
+
+
+
+  .def("get_qDot", [](ry::RySimulation& self) {
+    arr qdot = self.sim->qdot();
+    return pybind11::array(qdot.dim(), qdot.p);
+  })
+
+  .def("getGripperWidth", [](ry::RySimulation& self, const char* gripperFrameName) {
+    return self.sim->getGripperWidth(gripperFrameName);
+  }, "",
+    pybind11::arg("gripperFrameName")
+  )
+
+  .def("getGripperIsGrasped", [](ry::RySimulation& self, const char* gripperFrameName) {
+    return self.sim->getGripperIsGrasped(gripperFrameName);
+  }, "",
+    pybind11::arg("gripperFrameName")
+  )
+
+  .def("getImageAndDepth", [](ry::RySimulation& self) {
+    byteA rgb;
+    floatA depth;
+    self.sim->getImageAndDepth(rgb, depth);
+    return pybind11::make_tuple(pybind11::array_t<byte>(rgb.dim(), rgb.p),
+                                pybind11::array_t<float>(depth.dim(), depth.p));
+  })
+
+
+
+  .def("getState", [](ry::RySimulation& self) {
+    auto lock = self.config->set();
+    return self.sim->getState();
+   })
+
+  .def("getState", [](ry::RySimulation& self, const ptr<rai::SimulationState>& state) {
+    auto lock = self.config->set();
+    return self.sim->restoreState(state);
+   })
+
   .def("setState", [](ry::RySimulation& self, const pybind11::array& frameState, const pybind11::array& frameVelocities) {
     arr X = numpy2arr(frameState);
     X.reshape(X.N/7, 7);
@@ -46,24 +105,8 @@ void init_Simulation(pybind11::module &m) {
     pybind11::arg("frameVelocities") = std::vector<double>()
   )
 
-  .def("getState", [](ry::RySimulation& self) {
-    auto lock = self.config->set();
-    return self.sim->getState();
-  })
 
 
-  .def("get_qDot", [](ry::RySimulation& self) {
-    arr qdot = self.sim->qdot();
-    return pybind11::array(qdot.dim(), qdot.p);
-  })
-
-  .def("getImageAndDepth", [](ry::RySimulation& self) {
-    byteA rgb;
-    floatA depth;
-    self.sim->getImageAndDepth(rgb, depth);
-    return pybind11::make_tuple(pybind11::array_t<byte>(rgb.dim(), rgb.p),
-                                pybind11::array_t<float>(depth.dim(), depth.p));
-  })
 
 //  .def("getSegmentation", [](ry::RySimulation& self) {
 //    byteA seg;

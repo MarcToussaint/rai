@@ -7,6 +7,11 @@
 
 ARCH = $(shell uname -m)
 
+ifeq ($(RAI_CMAKE),1)
+LPATHS += $(BASE)/../build
+LIBS += -lrai
+endif
+
 ifeq ($(JSON),1)
 DEPEND_UBUNTU += libjsoncpp-dev
 LIBS += -ljsoncpp
