@@ -2339,7 +2339,7 @@ void rai::Configuration::init(const Graph& G, bool addInsteadOfClear) {
           HALT("could not retrieve minimick frame for joint '" <<f->name <<"' from ats '" <<f->ats <<"'");
         }
         rai::Frame* mimicFrame = getFrameByName(jointName, true, true);
-        CHECK(mimicFrame, "");
+        CHECK(mimicFrame, "the argument to 'mimic', '" <<jointName <<"' is not a frame name");
         j->mimic = mimicFrame->joint;
         if(!j->mimic) HALT("The joint '" <<*j <<"' is declared mimicking '" <<jointName <<"' -- but that doesn't exist!");
         j->type = j->mimic->type;

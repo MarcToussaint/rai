@@ -612,7 +612,11 @@ void Graph::read(std::istream& is, bool parseInfo) {
       n->get<FileToken>().cd_start();
       delete n; n=nullptr;
     } else if(n->key=="Prefix") {
-      namePrefix = n->get<String>();
+      if(n->isOfType<String>()){
+        namePrefix = n->get<String>();
+      }else if(n->isOfType<bool>() && !n->get<bool>()){
+        namePrefix.clear();
+      }else LOG(-1) <<*n <<" is not a proper name prefix";
       delete n; n=nullptr;
     } else if(n->key=="ChDir") {
       n->get<FileToken>().cd_file();
