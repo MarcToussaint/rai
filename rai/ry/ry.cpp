@@ -11,6 +11,7 @@
 #include <pybind11/pybind11.h>
 
 void init_Config(pybind11::module &m);
+void init_Feature(pybind11::module &m);
 void init_Frame(pybind11::module &m);
 void init_KOMO(pybind11::module &m);
 void init_LGP_Tree(pybind11::module &m);
@@ -24,6 +25,7 @@ PYBIND11_MODULE(libry, m) {
   m.doc() = "rai bindings";
 
   init_Config(m);
+  init_Feature(m);
   init_Frame(m);
   init_KOMO(m);
   init_LGP_Tree(m);
