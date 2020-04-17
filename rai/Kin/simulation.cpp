@@ -276,7 +276,7 @@ struct Simulation_DisplayThread : Thread, GLDrawer {
       resizeAs(dep, depth);
       float x;
       for(uint i=0; i<dep.N; i++) {
-        x = 10.f * depth.elem(i);
+        x = 100.f * depth.elem(i); //this means that the RGB values are cm distance (up to 255cm distance)
         dep.elem(i) = (x<0.)?0:((x>255.)?255:x);
       }
       float scale = .3*float(gl.width)/image.d1;

@@ -36,7 +36,8 @@ int rai::ConfigurationViewer::update(bool watch) {
     gl->watch();
     gl->text = drawText();
   }
-  gl->update(nullptr, true);
+
+  gl->update(nullptr, false);
   return gl->pressedkey;
 }
 
@@ -99,6 +100,7 @@ void rai::ConfigurationViewer::setPath(const arr& _framePath, const char* text, 
   CHECK(C.frames.N, "setPath requires that you setConfiguration first");
 
   CHECK_EQ(_framePath.nd, 3, "");
+  CHECK_EQ(_framePath.d1, C.frames.N, "");
   CHECK_EQ(_framePath.d2, 7, "");
 
   {

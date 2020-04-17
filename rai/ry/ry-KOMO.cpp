@@ -3,8 +3,8 @@
 #include "ry-KOMO.h"
 #include "types.h"
 
-#include "../LGP/bounds.h"
-#include "../Kin/kinViewer.h"
+//#include "../LGP/bounds.h"
+#include "../Kin/viewer.h"
 
 Skeleton list2skeleton(const pybind11::list& L) {
   Skeleton S;
@@ -115,12 +115,12 @@ pybind11::arg("object"))
 //    skeleton2Bound(*self.komo, BD_path, S, self.komo->world, self.komo->world, false);
 })
 
-.def("addSkeletonBound", [](ry::RyKOMO& self, const pybind11::list& L, BoundType boundType, bool collisions) {
-  Skeleton S = list2skeleton(L);
-  cout <<"SKELETON: " <<S <<endl;
-//    self.komo->setSkeleton(S);
-  skeleton2Bound(self.komo, boundType, S, self.komo->world, self.komo->world, collisions);
-})
+//.def("addSkeletonBound", [](ry::RyKOMO& self, const pybind11::list& L, BoundType boundType, bool collisions) {
+//  Skeleton S = list2skeleton(L);
+//  cout <<"SKELETON: " <<S <<endl;
+////    self.komo->setSkeleton(S);
+//  skeleton2Bound(self.komo, boundType, S, self.komo->world, self.komo->world, collisions);
+//})
 
 //-- run
 
@@ -183,18 +183,11 @@ pybind11::arg("initNoise")=0.01)
 //-- display
 
 .def("view", [](ry::RyKOMO& self) {
-  ry::PathViewer view;
-  view.view = make_shared<KinPoseViewer>(self.config, self.path, .1);
+  ry::ConfigurationViewer view;
+  view.view = make_shared<rai::ConfigurationViewer>();
+  view.view->setConfiguration(self.komo->world);
+  view.view->setPath(self.komo->getPath_frames(), "KOMO state");
   return view;
-})
-
-.def("display", [](ry::RyKOMO& self) {
-  self.komo->displayPath(false, true);
-})
-
-.def("displayTrajectory", [](ry::RyKOMO& self) {
-  rai::system("mkdir -p z.vid");
-  self.komo->displayTrajectory(1., false, false, "z.vid/");
 })
 ;
 
@@ -208,15 +201,15 @@ ENUMVAL(OT, ineq)
 ENUMVAL(OT, eq)
 .export_values();
 
-pybind11::enum_<BoundType>(m, "BT")
-ENUMVAL(BD, all)
-ENUMVAL(BD, symbolic)
-ENUMVAL(BD, pose)
-ENUMVAL(BD, seq)
-ENUMVAL(BD, path)
-ENUMVAL(BD, seqPath)
-ENUMVAL(BD, max)
-.export_values();
+//pybind11::enum_<BoundType>(m, "BT")
+//ENUMVAL(BD, all)
+//ENUMVAL(BD, symbolic)
+//ENUMVAL(BD, pose)
+//ENUMVAL(BD, seq)
+//ENUMVAL(BD, path)
+//ENUMVAL(BD, seqPath)
+//ENUMVAL(BD, max)
+//.export_values();
 
 pybind11::enum_<SkeletonSymbol>(m, "SY")
 ENUMVAL(SY, touch)

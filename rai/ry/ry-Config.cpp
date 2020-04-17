@@ -17,6 +17,7 @@
 #include "../Kin/kin_physx.h"
 #include "../Operate/robotOperation.h"
 #include "../Kin/proxy.h"
+#include "../Kin/viewer.h"
 #include "../Kin/kinViewer.h"
 #include "../Kin/cameraview.h"
 #include "../Kin/simulation.h"
@@ -374,27 +375,27 @@ pybind11::arg("timePerPhase")=5.,
 pybind11::arg("useSwift")
     )
 
-.def("lgp", [](ry::Config& self, const std::string& folFileName) {
-  ry::RyLGP_Tree lgp;
-  lgp.lgp = make_shared<LGP_Tree_Thread>(self.get(), folFileName.c_str());
-  return lgp;
-},
-"create an LGP solver"
-    )
+//.def("lgp", [](ry::Config& self, const std::string& folFileName) {
+//  ry::RyLGP_Tree lgp;
+//  lgp.lgp = make_shared<LGP_Tree_Thread>(self.get(), folFileName.c_str());
+//  return lgp;
+//},
+//"create an LGP solver"
+//    )
 
-.def("bullet", [](ry::Config& self) {
-  return make_shared<BulletInterface>(self.set());
-},
-"create a Bullet engine for physical simulation from the configuration: The configuration\
-is being exported into a bullet instance, which can be stepped forward, and the result syced back to this configuration"
-    )
+//.def("bullet", [](ry::Config& self) {
+//  return make_shared<BulletInterface>(self.set());
+//},
+//"create a Bullet engine for physical simulation from the configuration: The configuration\
+//is being exported into a bullet instance, which can be stepped forward, and the result syced back to this configuration"
+//    )
 
-.def("physx", [](ry::Config& self) {
-  return make_shared<PhysXInterface>(self.set());
-},
-"create a PhysX engine for physical simulation from the configuration: The configuration\
-is being exported into a bullet instance, which can be stepped forward, and the result syced back to this configuration"
-    )
+//.def("physx", [](ry::Config& self) {
+//  return make_shared<PhysXInterface>(self.set());
+//},
+//"create a PhysX engine for physical simulation from the configuration: The configuration\
+//is being exported into a bullet instance, which can be stepped forward, and the result syced back to this configuration"
+//    )
 
 .def("simulation", [](ry::Config& self, rai::Simulation::SimulatorEngine engine, bool display) {
   ry::RySimulation sim;
@@ -409,14 +410,14 @@ allows you to control robot motors by position, velocity, or accelerations,\
     pybind11::arg("display")
     )
 
-.def("operate", [](ry::Config& self, const char* rosNodeName) {
-  ry::RyOperate op;
-  op.R = make_shared<RobotOperation>(self.get(), .01, rosNodeName);
-  return op;
-},
-"create a module (including ROS node) to sync this configuration both ways (reading state, and controlling) to a real robot",
-pybind11::arg("rosNodeName")
-    )
+//.def("operate", [](ry::Config& self, const char* rosNodeName) {
+//  ry::RyOperate op;
+//  op.R = make_shared<RobotOperation>(self.get(), .01, rosNodeName);
+//  return op;
+//},
+//"create a module (including ROS node) to sync this configuration both ways (reading state, and controlling) to a real robot",
+//pybind11::arg("rosNodeName")
+//    )
 
 .def("sortFrames", [](ry::Config& self) {
   self.set()->sortFrames();
@@ -448,9 +449,23 @@ pybind11::arg("gravity"))
 //===========================================================================
 
 pybind11::class_<ry::ConfigViewer>(m, "ConfigViewer");
-pybind11::class_<ry::PathViewer>(m, "PathViewer");
 pybind11::class_<ry::PointCloudViewer>(m, "PointCloudViewer");
 pybind11::class_<ry::ImageViewer>(m, "ImageViewer");
+
+//===========================================================================
+
+pybind11::class_<ry::ConfigurationViewer>(m, "ConfigurationViewer")
+.def("setConfiguration", [](ry::ConfigurationViewer& self, ry::Config& config) {
+  self.view->setConfiguration(config.set());
+})
+.def("setPathFrames", [](ry::ConfigurationViewer& self, const pybind11::array& X) {
+  arr _X = numpy2arr(X);
+  self.view->setPath(_X);
+})
+.def("playVideo", [](ry::ConfigurationViewer& self) {
+  self.view->playVideo();
+})
+;
 
 //===========================================================================
 

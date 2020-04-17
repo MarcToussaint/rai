@@ -432,7 +432,7 @@ void rai::Frame::setContact(int cont) {
 }
 
 void rai::Frame::setMass(double mass) {
-  if(mass<1.){
+  if(mass<0.){
     if(inertia) delete inertia;
   }else{
     getInertia().mass = mass;
