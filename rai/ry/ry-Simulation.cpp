@@ -49,6 +49,11 @@ void init_Simulation(pybind11::module &m) {
 
 
 
+  .def("get_q", [](ry::RySimulation& self) {
+     arr q = self.sim->get_q();
+     return pybind11::array(q.dim(), q.p);
+  })
+
   .def("get_qDot", [](ry::RySimulation& self) {
     arr qdot = self.sim->qdot();
     return pybind11::array(qdot.dim(), qdot.p);
@@ -64,6 +69,13 @@ void init_Simulation(pybind11::module &m) {
     return self.sim->getGripperIsGrasped(gripperFrameName);
   }, "",
     pybind11::arg("gripperFrameName")
+  )
+
+
+  .def("addSensor", [](ry::RySimulation& self, const char* cameraFrameName) {
+    self.sim->cameraview().addSensor("camera");
+  }, "",
+    pybind11::arg("cameraFrameName")
   )
 
   .def("getImageAndDepth", [](ry::RySimulation& self) {

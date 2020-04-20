@@ -22,7 +22,7 @@ CXXFLAGS += -fopenmp -DOPENMP
 endif
 
 ifeq ($(PYBIND),1)
-DEPEND_UBUNTU += pybind11-dev python3-dev python3 python3-numpy python3-pip
+DEPEND_UBUNTU += pybind11-dev python3-dev python3 python3-numpy python3-pip python3-distutils
 CXXFLAGS += -DRAI_PYBIND `python3-config --cflags`
 LIBS += `python3-config --ldflags`
 CPATH   := $(CPATH):$(BASE)/../pybind11/include::$(BASE)/../../pybind11/include
