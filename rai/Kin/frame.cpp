@@ -298,9 +298,9 @@ void rai::Frame::write(Graph& G) {
     if(!X.isZero()) G.newNode<arr>({"X"}, {}, X.getArr7d());
   }
 
+  StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H", "axis", "A", "B", "mimic"};
   for(Node* n : ats) {
-    StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H", "axis", "A", "B", "mimic"};
-    if(!avoid.contains(n->key)) {
+    if(!n->key.startsWith("%") && !avoid.contains(n->key)) {
       n->newClone(G);
     }
   }
@@ -335,9 +335,9 @@ void rai::Frame::write(std::ostream& os) const {
 //    }
 //  }
 
+  StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H", "axis", "A", "B", "mimic"};
   for(Node* n : ats) {
-    StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H", "axis", "A", "B", "mimic"};
-    if(!avoid.contains(n->key)) os <<", " <<*n;
+    if(!n->key.startsWith("%") && !avoid.contains(n->key)) os <<", " <<*n;
   }
 
   os <<" }\n";

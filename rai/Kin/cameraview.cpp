@@ -36,6 +36,10 @@ rai::CameraView::Sensor& rai::CameraView::addSensor(const char* name, const char
 
   if(sen.frame>=0) cam.X = C.frames(sen.frame)->ensure_X();
 
+  //also select sensor
+  gl.resize(sen.width, sen.height);
+  currentSensor=&sen;
+
   done(__func__);
   return sen;
 }
@@ -63,10 +67,7 @@ rai::CameraView::Sensor& rai::CameraView::selectSensor(const char* sensorName) {
   CHECK(sensorName, "you need to specify a sensor name, nullptr not allowed");
   Sensor* sen=0;
   for(Sensor& s:sensors) if(s.name==sensorName) { sen=&s; break; }
-  if(!sen){
-    sen = &addSensor(sensorName);
-    //LOG(-2) <<"can't find that sensor: " <<sensorName;
-  }
+  if(!sen) LOG(-2) <<"can't find that sensor: " <<sensorName;
 
   gl.resize(sen->width, sen->height);
   currentSensor=sen;

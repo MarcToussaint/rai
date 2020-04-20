@@ -41,7 +41,7 @@ LIBS += -lpng
 endif
 
 ifeq ($(FCL),1)
-DEPEND_UBUNTU += libfcl-0.5-dev
+DEPEND_UBUNTU += libfcl-dev
 CXXFLAGS  += -DRAI_FCL
 LIBS      += -lfcl
 endif

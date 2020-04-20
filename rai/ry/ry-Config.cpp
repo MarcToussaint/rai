@@ -375,27 +375,29 @@ pybind11::arg("timePerPhase")=5.,
 pybind11::arg("useSwift")
     )
 
-//.def("lgp", [](ry::Config& self, const std::string& folFileName) {
-//  ry::RyLGP_Tree lgp;
-//  lgp.lgp = make_shared<LGP_Tree_Thread>(self.get(), folFileName.c_str());
-//  return lgp;
-//},
-//"create an LGP solver"
-//    )
+/*
+.def("lgp", [](ry::Config& self, const std::string& folFileName) {
+  ry::RyLGP_Tree lgp;
+  lgp.lgp = make_shared<LGP_Tree_Thread>(self.get(), folFileName.c_str());
+  return lgp;
+},
+"create an LGP solver"
+    )
 
-//.def("bullet", [](ry::Config& self) {
-//  return make_shared<BulletInterface>(self.set());
-//},
-//"create a Bullet engine for physical simulation from the configuration: The configuration\
-//is being exported into a bullet instance, which can be stepped forward, and the result syced back to this configuration"
-//    )
+.def("bullet", [](ry::Config& self) {
+  return make_shared<BulletInterface>(self.set());
+},
+"create a Bullet engine for physical simulation from the configuration: The configuration\
+is being exported into a bullet instance, which can be stepped forward, and the result syced back to this configuration"
+    )
 
-//.def("physx", [](ry::Config& self) {
-//  return make_shared<PhysXInterface>(self.set());
-//},
-//"create a PhysX engine for physical simulation from the configuration: The configuration\
-//is being exported into a bullet instance, which can be stepped forward, and the result syced back to this configuration"
-//    )
+.def("physx", [](ry::Config& self) {
+  return make_shared<PhysXInterface>(self.set());
+},
+"create a PhysX engine for physical simulation from the configuration: The configuration\
+is being exported into a bullet instance, which can be stepped forward, and the result syced back to this configuration"
+    )
+*/
 
 .def("simulation", [](ry::Config& self, rai::Simulation::SimulatorEngine engine, bool display) {
   ry::RySimulation sim;
@@ -455,14 +457,18 @@ pybind11::class_<ry::ImageViewer>(m, "ImageViewer");
 //===========================================================================
 
 pybind11::class_<ry::ConfigurationViewer>(m, "ConfigurationViewer")
+.def(pybind11::init<>())
 .def("setConfiguration", [](ry::ConfigurationViewer& self, ry::Config& config) {
+  if(!self.view) self.view = make_shared<rai::ConfigurationViewer>();
   self.view->setConfiguration(config.set());
 })
 .def("setPathFrames", [](ry::ConfigurationViewer& self, const pybind11::array& X) {
+  if(!self.view) self.view = make_shared<rai::ConfigurationViewer>();
   arr _X = numpy2arr(X);
   self.view->setPath(_X);
 })
 .def("playVideo", [](ry::ConfigurationViewer& self) {
+  if(!self.view) self.view = make_shared<rai::ConfigurationViewer>();
   self.view->playVideo();
 })
 ;
