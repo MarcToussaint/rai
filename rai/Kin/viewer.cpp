@@ -42,6 +42,7 @@ int rai::ConfigurationViewer::update(bool watch) {
 }
 
 int rai::ConfigurationViewer::setConfiguration(rai::Configuration& _C, const char* text, bool watch){
+  ensure_gl();
   if(_C.frames.N!=C.frames.N){
     recopyMeshes(_C);
   }else if(_C.proxies.N){

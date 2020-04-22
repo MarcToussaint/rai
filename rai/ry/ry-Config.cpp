@@ -462,6 +462,10 @@ pybind11::class_<ry::ConfigurationViewer>(m, "ConfigurationViewer")
   if(!self.view) self.view = make_shared<rai::ConfigurationViewer>();
   self.view->setConfiguration(config.set());
 })
+.def("recopyMeshes", [](ry::ConfigurationViewer& self, ry::Config& config) {
+  if(!self.view) self.view = make_shared<rai::ConfigurationViewer>();
+  self.view->recopyMeshes(config.set());
+})
 .def("setPathFrames", [](ry::ConfigurationViewer& self, const pybind11::array& X) {
   if(!self.view) self.view = make_shared<rai::ConfigurationViewer>();
   arr _X = numpy2arr(X);
