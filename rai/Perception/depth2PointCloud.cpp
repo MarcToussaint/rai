@@ -53,11 +53,11 @@ void depthData2pointCloud(arr& pts, const floatA& depth, float fx, float fy, flo
       if(d>=0.) {
         float x=j, y=i;
 #if 0 //slow
-        pts(k, 0) = d * (x - px) / fx;
+        pts(k, 0) =  d * (x - px) / fx;
         pts(k, 1) = -d * (y - py) / fy;
         pts(k, 2) = -d;
 #else //fast
-        *(pt++) = d * (x - px) / fx;
+        *(pt++) =  d * (x - px) / fx;
         *(pt++) = -d * (y - py) / fy;
         *(pt++) = -d;
 #endif
@@ -68,6 +68,10 @@ void depthData2pointCloud(arr& pts, const floatA& depth, float fx, float fy, flo
 
   pts.reshape(H, W, 3);
 
+}
+
+void depthData2pointCloud(arr& pts, const floatA& depth, const arr& Fxypxy){
+  depthData2pointCloud(pts, depth, Fxypxy.elem(0), Fxypxy.elem(1), Fxypxy.elem(2), Fxypxy.elem(3));
 }
 
 void depthData2point(double* pt, double* fxypxy) {
@@ -81,3 +85,4 @@ void depthData2point(arr& pt, const arr& Fxypxy) {
   CHECK_EQ(Fxypxy.N, 4, "need 4 intrinsic parameters");
   depthData2point(pt.p, Fxypxy.p);
 }
+
