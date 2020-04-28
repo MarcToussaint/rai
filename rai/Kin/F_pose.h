@@ -18,7 +18,6 @@ struct F_Pose : Feature {
   F_Pose(const rai::Configuration& C, const char* aShapeName=nullptr)
     : F_Pose(initIdArg(C, aShapeName)) {}
 
-  virtual void phi(arr& y, arr& J, const rai::Configuration& C);
   virtual void phi(arr& y, arr& J, const ConfigurationL& Ctuple);
   virtual uint dim_phi(const rai::Configuration& G) { return 7; }
   virtual rai::String shortTag(const rai::Configuration& C) { return STRING("F_Pose-" <<C.frames(a)->name); }
@@ -32,7 +31,6 @@ struct F_PoseDiff : Feature {
   F_PoseDiff(const rai::Configuration& C, const char* aShapeName=nullptr, const char* bShapeName=nullptr)
     : F_PoseDiff(initIdArg(C, aShapeName), initIdArg(C, bShapeName)) {}
 
-  virtual void phi(arr& y, arr& J, const rai::Configuration& C);
   virtual void phi(arr& y, arr& J, const ConfigurationL& Ctuple);
   virtual uint dim_phi(const rai::Configuration& G) { return 7; }
   virtual rai::String shortTag(const rai::Configuration& C) { return STRING("F_PoseDiff-" <<C.frames(a)->name <<'-' <<C.frames(b)->name); }
@@ -46,7 +44,6 @@ struct F_PoseRel : Feature {
   F_PoseRel(const rai::Configuration& C, const char* aShapeName=nullptr, const char* bShapeName=nullptr)
     : F_PoseRel(initIdArg(C, aShapeName), initIdArg(C, bShapeName)) {}
 
-  virtual void phi(arr& y, arr& J, const rai::Configuration& C);
   virtual void phi(arr& y, arr& J, const ConfigurationL& Ctuple);
   virtual uint dim_phi(const rai::Configuration& G) { return 7; }
   virtual rai::String shortTag(const rai::Configuration& C) { return STRING("F_PoseRel-" <<C.frames(a)->name <<'-' <<C.frames(b)->name); }
