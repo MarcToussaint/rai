@@ -301,7 +301,7 @@ void TaskControlMethods::getTaskCoeffs(arr& yddot_des, arr& J) {
   if(!!J) J.clear();
   arr J_y, a_des;
   for(CtrlTask* t: tasks) {
-    t->map.phi(t->y, J_y, world);
+    t->feat.phi(t->y, J_y, world);
     t->v = J_y*world.qdot;
     if(t->active && !t->f_ref.N) {
       a_des = t->getDesiredAcceleration();
@@ -326,7 +326,7 @@ void TaskControlMethods::updateConstraintControllers() {
   arr y;
   for(ConstraintForceTask* t: forceTasks) {
     if(t->active) {
-      t->map.phi(y, NoArr, world);
+      t->feat.phi(y, NoArr, world);
       t->updateConstraintControl(y, t->desiredForce);
     }
   }
@@ -338,7 +338,7 @@ arr TaskControlMethods::getDesiredConstraintForces() {
   arr y, J_y;
   for(ConstraintForceTask* t: forceTasks) {
     if(t->active) {
-      t->map.phi(y, J_y, world);
+      t->feat.phi(y, J_y, world);
       CHECK_EQ(y.N, 1, " can only handle 1D constraints for now");
       Jl += ~J_y * t->desiredForce;
     }
@@ -389,7 +389,7 @@ arr TaskControlMethods::getDesiredLinAccLaw(arr& Kp, arr& Kd, arr& k) {
 
   for(CtrlTask* task : tasks) if(task->active) {
       arr J_y;
-      task->map.phi(task->y, J_y, world);
+      task->feat.phi(task->y, J_y, world);
       task->v = J_y*world.qdot;
       task->getDesiredLinAccLaw(Kp_y, Kd_y, k_y);
       C_y = task->getC();
@@ -442,7 +442,7 @@ arr TaskControlMethods::calcOptimalControlProjected(arr& Kp, arr& Kd, arr& u0, c
 //    a += H_rate_diag % qitselfPD.getDesiredAcceleration(world.q, world.qdot);
 //  }
   for(CtrlTask* law : tasks) if(law->active) {
-      law->map.phi(law->y, J_y, world);
+      law->feat.phi(law->y, J_y, world);
       law->v = J_y*world.qdot;
       tempJPrec = ~J_y*law->getC();
       A += tempJPrec*J_y;
@@ -487,12 +487,12 @@ void TaskControlMethods::calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, d
   uint nForceTasks=0;
   for(CtrlTask* law : this->tasks) if(law->active && law->f_ref.N) {
       nForceTasks++;
-      TM_Default& map = dynamic_cast<TM_Default&>(law->map);
+      TM_Default& map = dynamic_cast<TM_Default&>(law->feat);
       rai::Body* body = world.shapes(map.i)->body;
       rai::Vector vec = world.shapes(map.i)->rel.pos;
       rai::Shape* lFtSensor = world.getShapeByName("r_ft_sensor");
       arr y, J, J_ft;
-      law->map.phi(y, J, world);
+      law->feat.phi(y, J, world);
       world.kinematicsPos_wrtFrame(NoArr, J_ft, body, vec, lFtSensor);
       J_ft_inv = -~conv_vec2arr(map.ivec)*inverse_SymPosDef(J_ft*~J_ft)*J_ft;
       K_ft = -~J*law->f_alpha;

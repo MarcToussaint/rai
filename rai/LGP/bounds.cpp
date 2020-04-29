@@ -121,16 +121,16 @@ PoseBound::PoseBound(ptr<KOMO>& komo,
 
   //-- deactivate all velocity objectives except for transition
   //      for(Objective *o:komo->objectives){
-  //        if((std::dynamic_pointer_cast<TM_ZeroQVel>(o->map)
-  //           || std::dynamic_pointer_cast<TM_Default>(o->map))
-  //           && o->map->order==1){
+  //        if((std::dynamic_pointer_cast<TM_ZeroQVel>(o->feat)
+  //           || std::dynamic_pointer_cast<TM_Default>(o->feat))
+  //           && o->feat->order==1){
   //          o->vars.clear();
   //        }
   //      }
   for(ptr<Objective>& o:komo->objectives) {
-    if(!std::dynamic_pointer_cast<F_qItself>(o->map)
-       && !std::dynamic_pointer_cast<TM_NoJumpFromParent>(o->map)
-       && o->map->order>0) {
+    if(!std::dynamic_pointer_cast<F_qItself>(o->feat)
+       && !std::dynamic_pointer_cast<TM_NoJumpFromParent>(o->feat)
+       && o->feat->order>0) {
       o->configs.clear();
     }
   }

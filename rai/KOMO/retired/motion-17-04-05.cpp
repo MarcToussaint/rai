@@ -66,7 +66,7 @@ Task* Task::newTask(const Node* specs, const rai::Configuration& world, int step
   else {
     task->name = map->shortTag(world);
 //    for(Node *p:specs->parents) task->name <<'_' <<p->keys.last();
-    task ->name<<"_o" <<task->map->order;
+    task ->name<<"_o" <<task->feat->order;
   }
 
   //-- check for additional continuous parameters
@@ -164,7 +164,7 @@ uint KOMO::dim_phi(uint t) {
   for(Task* c: tasks) {
 //        CHECK_LE(c->prec.N, T,"");
     if(c->prec.N>t && c->prec(t))
-      m += c->map->dim_phi(configurations({t, t+k_order}), t); //counts also constraints
+      m += c->feat->dim_phi(configurations({t, t+k_order}), t); //counts also constraints
   }
   return m;
 }
@@ -173,7 +173,7 @@ uint KOMO::dim_g(uint t) {
   uint m=0;
   for(Task* c: tasks) {
     if(c->type==OT_ineq && c->prec.N>t && c->prec(t))
-      m += c->map->dim_phi(configurations({t, t+k_order}), t);
+      m += c->feat->dim_phi(configurations({t, t+k_order}), t);
   }
   return m;
 }
@@ -182,7 +182,7 @@ uint KOMO::dim_h(uint t) {
   uint m=0;
   for(Task* c: tasks) {
     if(c->type==OT_eq && c->prec.N>t && c->prec(t))
-      m += c->map->dim_phi(configurations({t, t+k_order}), t);
+      m += c->feat->dim_phi(configurations({t, t+k_order}), t);
   }
   return m;
 }
@@ -283,7 +283,7 @@ void KOMO::phi_t(arr& phi, arr& J, ObjectiveTypeA& tt, uint t) {
   arr y, Jy, Jtmp;
   uint dimPhi_t=0;
   for(Task* task: tasks) if(task->prec.N>t && task->prec(t)) {
-      task->map->phi(y, (!!J?Jy:NoArr), configurations({t, t+k_order}), tau, t);
+      task->feat->phi(y, (!!J?Jy:NoArr), configurations({t, t+k_order}), tau, t);
       if(!y.N) continue;
       dimPhi_t += y.N;
       if(absMax(y)>1e10) RAI_MSG("WARNING y=" <<y);
@@ -324,7 +324,7 @@ StringA KOMO::getPhiNames(uint t) {
   uint m=0;
   for(Task* c: tasks) if(c->prec.N>t && c->prec(t)) {
       if(c->type==OT_sos) {
-        uint d = c->map->dim_phi(configurations({t, t+k_order}), t); //counts also constraints
+        uint d = c->feat->dim_phi(configurations({t, t+k_order}), t); //counts also constraints
         for(uint i=0; i<d; i++) {
           names(m+i)=c->name;
           names(m+i) <<"_f" <<i;
@@ -334,7 +334,7 @@ StringA KOMO::getPhiNames(uint t) {
     }
   for(Task* c: tasks) if(c->prec.N>t && c->prec(t)) {
       if(c->type==OT_ineq) {
-        uint d = c->map->dim_phi(configurations({t, t+k_order}), t); //counts also constraints
+        uint d = c->feat->dim_phi(configurations({t, t+k_order}), t); //counts also constraints
         for(uint i=0; i<d; i++) {
           names(m+i)=c->name;
           names(m+i) <<"_g" <<i;
@@ -377,12 +377,12 @@ void KOMO::reportFeatures(bool brief, ostream& os) {
     for(uint i=0; i<tasks.N; i++) {
       Task* task = tasks(i);
       if(!task->isActive(t)) continue;
-      uint d=task->map->dim_phi(configurations({t, t+k_order}), t);
+      uint d=task->feat->dim_phi(configurations({t, t+k_order}), t);
       if(brief) {
         if(d) {
           os <<"  " <<t <<' ' <<i <<' ' <<d
              <<' ' <<std::setw(10) <<task->name
-             <<' ' <<task->map->order <<' ' <<task->type <<' ';
+             <<' ' <<task->feat->order <<' ' <<task->type <<' ';
           if(task->target.N<5) os <<'[' <<task->target <<']'; else os<<"[..]";
           os <<' ' <<task->prec(t);
           if(featureTypes.N) {
@@ -395,7 +395,7 @@ void KOMO::reportFeatures(bool brief, ostream& os) {
         for(uint i=0; i<d; i++) {
           os <<"  " <<t <<' ' <<i
              <<' ' <<std::setw(10) <<task->name
-             <<' ' <<task->map->order <<' ' <<task->type <<' ';
+             <<' ' <<task->feat->order <<' ' <<task->type <<' ';
           if(task->target.N==1) os <<task->target.elem(0);
           else if(task->target.nd==1) os <<task->target(i);
           else if(task->target.nd==2) os <<task->target(t, i);
@@ -448,7 +448,7 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures) {
     for(uint i=0; i<tasks.N; i++) {
       Task* task = tasks(i);
       if(task->prec.N>t && task->prec(t)) {
-        uint d=task->map->dim_phi(configurations({t, t+k_order}), t);
+        uint d=task->feat->dim_phi(configurations({t, t+k_order}), t);
         for(uint j=0; j<d; j++) CHECK_EQ(tt(M+j), task->type, "");
         if(d) {
           if(task->type==OT_sos) {
@@ -468,7 +468,7 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures) {
         if(reportFeatures==1) {
           cout <<std::setw(4) <<t <<' ' <<std::setw(2) <<i <<' ' <<std::setw(2) <<d
                <<' ' <<std::setw(40) <<task->name
-               <<" k=" <<task->map->order <<" ot=" <<task->type <<" prec=" <<std::setw(4) <<task->prec(t);
+               <<" k=" <<task->feat->order <<" ot=" <<task->type <<" prec=" <<std::setw(4) <<task->prec(t);
           if(task->target.N<5) cout <<" y*=[" <<task->target <<']'; else cout<<"y*=[..]";
           cout <<" y^2=" <<err(t, i) <<endl;
         }
@@ -483,7 +483,7 @@ Graph KOMO::getReport(bool gnuplt, int reportFeatures) {
   for(uint i=0; i<tasks.N; i++) {
     Task* c = tasks(i);
     Graph* g = &report.newSubgraph({c->name}, {})->value;
-    g->newNode<double>({"order"}, {}, c->map->order);
+    g->newNode<double>({"order"}, {}, c->feat->order);
     g->newNode<rai::String>({"type"}, {}, STRING(ObjectiveTypeString[c->type]));
     g->newNode<double>({"sqrCosts"}, {}, taskC(i));
     g->newNode<double>({"constraints"}, {}, taskG(i));
@@ -556,7 +556,7 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::getStructure(uintA& variableDimensio
   for(uint t=0; t<MP.T; t++) {
     for(Task* task: MP.tasks) if(task->prec.N>t && task->prec(t)) {
 //      CHECK_LE(task->prec.N, MP.T,"");
-        uint m = task->map->dim_phi(MP.configurations({t, t+MP.k_order}), t); //dimensionality of this task
+        uint m = task->feat->dim_phi(MP.configurations({t, t+MP.k_order}), t); //dimensionality of this task
         featureTimes.append(consts<uint>(t, m));
         featureTypes.append(consts<ObjectiveType>(task->type, m));
       }
@@ -577,7 +577,7 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, Obje
   uint M=0;
   for(uint t=0; t<MP.T; t++) {
     for(Task* task: MP.tasks) if(task->prec.N>t && task->prec(t)) {
-        task->map->phi(y, (!!J?Jy:NoArr), MP.configurations({t, t+MP.k_order}), MP.tau, t);
+        task->feat->phi(y, (!!J?Jy:NoArr), MP.configurations({t, t+MP.k_order}), MP.tau, t);
         if(!y.N) continue;
         if(absMax(y)>1e10) RAI_MSG("WARNING y=" <<y);
 

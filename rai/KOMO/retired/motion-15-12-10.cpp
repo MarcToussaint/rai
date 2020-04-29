@@ -289,10 +289,10 @@ void KOMO::setInterpolatingCosts(
   Task* c,
   TaskCostInterpolationType inType,
   const arr& y_finalTarget, double y_finalPrec, const arr& y_midTarget, double y_midPrec, double earlyFraction) {
-  uint m=c->map.dim_phi(world);
+  uint m=c->feat.dim_phi(world);
   setState(x0, v0);
   arr y0;
-  c->map.phi(y0, NoArr, world);
+  c->feat.phi(y0, NoArr, world);
   arr midTarget=zeros(m), finTarget=zeros(m);
   if(!!y_finalTarget) { if(y_finalTarget.N==1) finTarget = y_finalTarget(0); else finTarget=y_finalTarget; }
   if(!!y_midTarget) {   if(y_midTarget.N==1)   midTarget = y_midTarget(0);   else midTarget=y_midTarget; }
@@ -353,7 +353,7 @@ uint KOMO::dim_phi(const rai::Configuration& G, uint t) {
 uint KOMO::dim_g(const rai::Configuration& G, uint t) {
   uint m=0;
   for(Task* c: tasks) {
-    if(c->map.type==OT_ineq && c->active && c->prec.N>t && c->prec(t))  m += c->map.dim_phi(G);
+    if(c->feat.type==OT_ineq && c->active && c->prec.N>t && c->prec(t))  m += c->feat.dim_phi(G);
   }
   return m;
 }
@@ -361,7 +361,7 @@ uint KOMO::dim_g(const rai::Configuration& G, uint t) {
 uint KOMO::dim_h(const rai::Configuration& G, uint t) {
   uint m=0;
   for(Task* c: tasks) {
-    if(c->map.type==OT_eq && c->active && c->prec.N>t && c->prec(t))  m += c->map.dim_phi(G);
+    if(c->feat.type==OT_eq && c->active && c->prec.N>t && c->prec(t))  m += c->feat.dim_phi(G);
   }
   return m;
 }
@@ -422,7 +422,7 @@ bool KOMO::getPhi(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, const Configurat
   arr y, Jy;
   bool ineqHold=true;
   for(Task* c: tasks) if(c->active && c->prec.N>t && c->prec(t)) {
-      c->map.phi(y, (!!J?Jy:NoArr), G, tau, t);
+      c->feat.phi(y, (!!J?Jy:NoArr), G, tau, t);
       if(absMax(y)>1e10) RAI_MSG("WARNING y=" <<y);
       //linear transform (target shift)
       if(true) {
@@ -433,9 +433,9 @@ bool KOMO::getPhi(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, const Configurat
         if(!!J) Jy *= sqrt(c->prec(t));
       }
       phi.append(y);
-      if(!!tt) for(uint i=0; i<y.N; i++) tt.append(c->map.type);
+      if(!!tt) for(uint i=0; i<y.N; i++) tt.append(c->feat.type);
       if(!!J) J.append(Jy);
-      if(c->map.type==OT_ineq && max(y)>0.) ineqHold=false;
+      if(c->feat.type==OT_ineq && max(y)>0.) ineqHold=false;
     }
   if(!!J) J.reshape(phi.N, G.N*G.last()->getJointStateDimension());
 
@@ -456,7 +456,7 @@ StringA KOMO::getPhiNames(const rai::Configuration& G, uint t) {
   StringA names(dim_phi(G, t));
   uint m=0;
   for(Task* c: tasks) if(c->active && c->prec.N>t && c->prec(t)) {
-      if(c->map.type==OT_sos) {
+      if(c->feat.type==OT_sos) {
         uint d = c->dim_phi(G, t); //counts also constraints
         for(uint i=0; i<d; i++) {
           names(m+i)=c->name;
@@ -466,7 +466,7 @@ StringA KOMO::getPhiNames(const rai::Configuration& G, uint t) {
       }
     }
   for(Task* c: tasks) if(c->active && c->prec.N>t && c->prec(t)) {
-      if(c->map.type==OT_ineq) {
+      if(c->feat.type==OT_ineq) {
         uint d = c->dim_phi(G, t); //counts also constraints
         for(uint i=0; i<d; i++) {
           names(m+i)=c->name;
@@ -505,7 +505,7 @@ void KOMO::reportFeatures(bool brief) {
         if(d) {
           cout <<"  " <<t <<' ' <<d
                <<' ' <<std::setw(10) <<c->name
-               <<' ' <<c->map.order <<' ' <<c->map.type <<' ';
+               <<' ' <<c->feat.order <<' ' <<c->feat.type <<' ';
           cout <<"xx";
           cout <<' ' <<c->prec(t);
           if(ttMatrix.N) {
@@ -518,7 +518,7 @@ void KOMO::reportFeatures(bool brief) {
         for(uint i=0; i<d; i++) {
           cout <<"  " <<t <<' ' <<i
                <<' ' <<std::setw(10) <<c->name
-               <<' ' <<c->map.order <<' ' <<c->map.type <<' ';
+               <<' ' <<c->feat.order <<' ' <<c->feat.type <<' ';
           if(c->target.N==1) cout <<c->target.elem(0);
           else if(c->target.nd==1) cout <<c->target(i);
           else if(c->target.nd==2) cout <<c->target(t, i);
@@ -561,13 +561,13 @@ void KOMO::costReport(bool gnuplt) {
     for(uint i=0; i<tasks.N; i++) {
       Task* c = tasks(i);
       uint d=c->dim_phi(world, t);
-      if(ttMatrix.N) for(uint i=0; i<d; i++) CHECK_EQ(ttMatrix(t)(m+i), c->map.type, "");
+      if(ttMatrix.N) for(uint i=0; i<d; i++) CHECK_EQ(ttMatrix(t)(m+i), c->feat.type, "");
       if(d) {
-        if(c->map.type==OT_sos) {
+        if(c->feat.type==OT_sos) {
           taskC(i) += a = sumOfSqr(phiMatrix(t).sub(m, m+d-1));
           plotData(t, i) = a;
         }
-        if(c->map.type==OT_ineq) {
+        if(c->feat.type==OT_ineq) {
           double gpos=0., gall=0.;
           for(uint j=0; j<d; j++) {
             double g=phiMatrix(t)(m+j);
@@ -577,7 +577,7 @@ void KOMO::costReport(bool gnuplt) {
           taskG(i) += gpos;
           plotData(t, i) = gall;
         }
-        if(c->map.type==OT_eq) {
+        if(c->feat.type==OT_eq) {
           double gpos=0., gall=0.;
           for(uint j=0; j<d; j++) {
             double h=phiMatrix(t)(m+j);
@@ -598,7 +598,7 @@ void KOMO::costReport(bool gnuplt) {
   double totalC=0., totalG=0.;
   for(uint i=0; i<tasks.N; i++) {
     Task* c = tasks(i);
-    cout <<"\t '" <<c->name <<"' order=" <<c->map.order <<" type=" <<c->map.type;
+    cout <<"\t '" <<c->name <<"' order=" <<c->feat.order <<" type=" <<c->feat.type;
     cout <<" \tcosts=" <<taskC(i) <<" \tconstraints=" <<taskG(i) <<endl;
     totalC += taskC(i);
     totalG += taskG(i);
@@ -611,11 +611,11 @@ void KOMO::costReport(bool gnuplt) {
   ofstream fil("z.costReport");
   //first line: legend
   for(auto c:tasks) {
-    uint d=c->map.dim_phi(world);
+    uint d=c->feat.dim_phi(world);
     fil <<c->name <<'[' <<d <<"] ";
   }
   for(auto c:tasks) {
-    if(c->map.type==OT_ineq && dualMatrix.N) {
+    if(c->feat.type==OT_ineq && dualMatrix.N) {
       fil <<c->name <<"_dual";
     }
   }
@@ -655,16 +655,16 @@ Graph KOMO::getReport() {
     for(uint i=0; i<tasks.N; i++) {
       Task* c = tasks(i);
       uint d=c->dim_phi(world, t);
-      for(uint i=0; i<d; i++) CHECK_EQ(ttMatrix(t)(m+i), c->map.type, "");
+      for(uint i=0; i<d; i++) CHECK_EQ(ttMatrix(t)(m+i), c->feat.type, "");
       if(d) {
-        if(c->map.type==OT_sos) taskC(i) += sumOfSqr(phiMatrix(t).sub(m, m+d-1));
-        if(c->map.type==OT_ineq) {
+        if(c->feat.type==OT_sos) taskC(i) += sumOfSqr(phiMatrix(t).sub(m, m+d-1));
+        if(c->feat.type==OT_ineq) {
           for(uint j=0; j<d; j++) {
             double g=phiMatrix(t)(m+j);
             if(g>0.) taskG(i) += g;
           }
         }
-        if(c->map.type==OT_eq) {
+        if(c->feat.type==OT_eq) {
           for(uint j=0; j<d; j++) taskG(i) += fabs(phiMatrix(t)(m+j));
         }
         m += d;
@@ -678,8 +678,8 @@ Graph KOMO::getReport() {
   for(uint i=0; i<tasks.N; i++) {
     Task* c = tasks(i);
     Graph* g = &newSupGraph(report, {c->name}, {})->value;
-    g->newNode<double>({"order"}, {}, c->map.order);
-    g->newNode<rai::String>({"type"}, {}, STRING(ObjectiveTypeString[c->map.type]));
+    g->newNode<double>({"order"}, {}, c->feat.order);
+    g->newNode<rai::String>({"type"}, {}, STRING(ObjectiveTypeString[c->feat.type]));
     g->newNode<double>({"sqrCosts"}, {}, taskC(i));
     g->newNode<double>({"constraints"}, {}, taskG(i));
     totalC += taskC(i);

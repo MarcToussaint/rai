@@ -24,7 +24,7 @@ void KOMO::costReport(bool gnuplt) {
     for(uint i=0; i<tasks.N; i++) {
       Task* c = tasks(i);
       if(!c->isActive(t)) continue;
-      uint d=c->map.dim_phi(configurations({t, t+k_order}), t);
+      uint d=c->feat.dim_phi(configurations({t, t+k_order}), t);
 
       if(tt.N) for(uint i=0; i<d; i++) CHECK_EQ(tt(M+i), c->type, "");
 
@@ -65,7 +65,7 @@ void KOMO::costReport(bool gnuplt) {
   double totalC=0., totalG=0.;
   for(uint i=0; i<tasks.N; i++) {
     Task* c = tasks(i);
-    cout <<"\t '" <<c->name <<"' order=" <<c->map.order <<" type=" <<c->type;
+    cout <<"\t '" <<c->name <<"' order=" <<c->feat.order <<" type=" <<c->type;
     cout <<" \tcosts=" <<taskC(i) <<" \tconstraints=" <<taskG(i) <<endl;
     totalC += taskC(i);
     totalG += taskG(i);
@@ -78,7 +78,7 @@ void KOMO::costReport(bool gnuplt) {
   ofstream fil("z.costReport");
   //first line: legend
   for(auto c:tasks) {
-//    uint d=c->map.dim_phi(world);
+//    uint d=c->feat.dim_phi(world);
     fil <<c->name <<' '; // <<'[' <<d <<"] ";
   }
   for(auto c:tasks) {

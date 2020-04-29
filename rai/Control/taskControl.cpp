@@ -631,7 +631,7 @@ arr TaskControlMethods::getComplianceProjection(CtrlTaskL& tasks) {
       if(!P.N) P = eye(t->J_y.d1);
 
       //special case! qItself feature!
-      if(t->compliance.N==1 && std::dynamic_pointer_cast<F_qItself>(t->map)) {
+      if(t->compliance.N==1 && std::dynamic_pointer_cast<F_qItself>(t->feat)) {
         double compliance = t->compliance.scalar();
         CHECK_GE(compliance, 0., "");
         CHECK_LE(compliance, 1., "");
@@ -681,7 +681,7 @@ void TaskControlMethods::reportCurrentState(CtrlTaskL& tasks) {
 //  arr y;
 //  for(ConstraintForceTask* t: forceTasks){
 //    if(t->active){
-//      t->map->phi(y, NoArr, world);
+//      t->feat->phi(y, NoArr, world);
 //      t->updateConstraintControl(y, t->desiredForce);
 //    }
 //  }
@@ -693,7 +693,7 @@ void TaskControlMethods::reportCurrentState(CtrlTaskL& tasks) {
 //  arr y, J_y;
 //  for(ConstraintForceTask* t: forceTasks){
 //    if(t->active) {
-//      t->map->phi(y, J_y, world);
+//      t->feat->phi(y, J_y, world);
 //      CHECK_EQ(y.N,1," can only handle 1D constraints for now");
 //      Jl += ~J_y * t->desiredForce;
 //    }
@@ -845,11 +845,11 @@ void TaskControlMethods::calcForceControl(CtrlTaskL& tasks, arr& K_ft, arr& J_ft
   uint nForceTasks=0;
   for(CtrlTask* task : tasks) if(task->active && task->f_ref.N) {
       nForceTasks++;
-      ptr<TM_Default> map = std::dynamic_pointer_cast<TM_Default>(task->map);
+      ptr<TM_Default> map = std::dynamic_pointer_cast<TM_Default>(task->feat);
       rai::Frame* body = world.frames(map->i);
       rai::Frame* lFtSensor = world.getFrameByName("r_ft_sensor");
       arr y, J, J_ft;
-      task->map->__phi(y, J, world);
+      task->feat->__phi(y, J, world);
       world.kinematicsPos_wrtFrame(NoArr, J_ft, body, map->ivec, lFtSensor);
       J_ft_inv = -~conv_vec2arr(map->ivec)*inverse_SymPosDef(J_ft*~J_ft)*J_ft;
       K_ft = -~J*task->f_alpha;

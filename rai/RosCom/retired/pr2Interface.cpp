@@ -281,7 +281,7 @@ void PR2Interface::goToTasks(rai::Array<LinTaskSpaceAccLaw*> laws, double execut
 
     Task* t;
     t = MP.addTask("transitions", new TM_Transition(MP.world));
-    t->map.order=2; //make this an acceleration task!
+    t->feat.order=2; //make this an acceleration task!
     t->setCostSpecs(0, MP.T, {0.}, 1e0);
 
     t = MP.addTask("collisionConstraints", new CollisionConstraint(.1));
@@ -290,7 +290,7 @@ void PR2Interface::goToTasks(rai::Array<LinTaskSpaceAccLaw*> laws, double execut
     t->setCostSpecs(0., MP.T, {0.}, 1.);
 
     for(LinTaskSpaceAccLaw* law : laws) {
-      t = MP.addTask(law->name, law->map);
+      t = MP.addTask(law->name, law->feat);
       t->setCostSpecs(MP.T-2, MP.T, law->getRef(), 10.0);
     }
 
