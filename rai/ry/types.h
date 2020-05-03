@@ -28,9 +28,25 @@ pybind11::list graph2list(const rai::Graph& G);
 
 pybind11::tuple uintA2tuple(const uintA& tup);
 
-arr numpy2arr(const pybind11::array& X);
-
-byteA numpy2arr(const pybind11::array_t<byte>& X);
+template<class T> rai::Array<T> numpy2arr(const pybind11::array_t<T>& X) {
+  rai::Array<T> Y;
+  uintA dim(X.ndim());
+  for(uint i=0; i<dim.N; i++) dim(i)=X.shape()[i];
+  Y.resize(dim);
+  auto ref = X.unchecked();
+  if(Y.nd==1) {
+    for(uint i=0; i<Y.d0; i++) Y(i) = ref(i);
+    return Y;
+  } else if(Y.nd==2) {
+    for(uint i=0; i<Y.d0; i++) for(uint j=0; j<Y.d1; j++) Y(i, j) = ref(i, j);
+    return Y;
+  } else if(Y.nd==3) {
+    for(uint i=0; i<Y.d0; i++) for(uint j=0; j<Y.d1; j++) for(uint k=0; k<Y.d2; k++) Y(i, j, k) = ref(i, j, k);
+    return Y;
+  }
+  NIY;
+  return Y;
+}
 
 arr vecvec2arr(const std::vector<std::vector<double>>& X);
 
@@ -62,6 +78,33 @@ inline arr I_conv(const ry::I_arr& x) {
   y = conv_stdvec2arr(x.second);
   y.reshape(conv_stdvec2arr(x.first));
   return y;
+}
+
+namespace pybind11 {
+  namespace detail {
+    template <typename T>  struct type_caster<rai::Array<T>> {
+    public:
+      PYBIND11_TYPE_CASTER(rai::Array<T>, _("rai::Array<T>"));
+
+      /// Conversion part 1 (Python->C++): convert numpy array to rai::Array<T>
+      bool load(pybind11::handle src, bool) {
+        auto buf = pybind11::array_t<T>::ensure(src);
+        if ( !buf ){
+          LOG(-1) <<"THIS IS NOT A NUMPY ARRAY!";
+          return false;
+        }
+        value = numpy2arr<T>(buf);
+        /* Ensure return code was OK (to avoid out-of-range errors etc) */
+        return !PyErr_Occurred();
+      }
+
+      /// Conversion part 2 (C++ -> Python): convert rai::Array<T> instance to numpy array
+      static handle cast(rai::Array<T> src, return_value_policy /* policy */, handle /* parent */) {
+        pybind11::array_t<T> ret(src.dim(), src.p);
+        return ret.release();
+      }
+    };
+  }
 }
 
 #endif
