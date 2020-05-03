@@ -140,7 +140,7 @@ struct CtrlTask {
   Var<CtrlTaskL>* ctrlTasks=0; ///< if non-zero, auto-removes itself from this list on destruction
 
   //-- defines the feature map
-  ptr<Feature> map;        ///< this defines the task space
+  ptr<Feature> feat;       ///< this defines the task space
 
   //-- feature values -- these are always kept up-to-date (in update)
   arr y, v, J_y;           ///< update() will evaluate these for a given kinematic configuration

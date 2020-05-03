@@ -63,6 +63,11 @@ void F_PairCollision::phi(arr& y, arr& J, const rai::Configuration& C) {
   }
 }
 
+uint F_PairCollision::dim_phi(const rai::Configuration& G) {
+  if(type==_negScalar) return 1;
+  return 3;
+}
+
 rai::String F_PairCollision::shortTag(const rai::Configuration& G) {
   return STRING("PairCollision-"<<(i<0?"WORLD":G.frames(i)->name) <<'-' <<(j<0?"WORLD":G.frames(j)->name));
 }

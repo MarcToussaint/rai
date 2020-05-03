@@ -63,13 +63,6 @@ KOMO::KOMO() : useSwift(true), verbose(1), komo_problem(*this), dense_problem(*t
   verbose = getParameter<int>("KOMO/verbose", 1);
 }
 
-KOMO::KOMO(const Configuration& C, bool _useSwift)
-  : KOMO() {
-  setModel(C, _useSwift);
-  world.optimizeTree();
-  world.ensure_q();
-}
-
 KOMO::~KOMO() {
   gl.reset();
   if(opt) delete opt;
@@ -107,12 +100,9 @@ void KOMO_ext::useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThes
 }
 
 void KOMO::setTiming(double _phases, uint _stepsPerPhase, double durationPerPhase, uint _k_order) {
-  double maxPhase = _phases;
   stepsPerPhase = _stepsPerPhase;
-  if(stepsPerPhase>=0) {
-    T = ceil(stepsPerPhase*maxPhase);
-    tau = durationPerPhase/double(stepsPerPhase);
-  }
+  T = ceil(stepsPerPhase*_phases);
+  tau = durationPerPhase/double(stepsPerPhase);
   k_order = _k_order;
 }
 
@@ -139,7 +129,7 @@ void KOMO::deactivateCollisions(const char* s1, const char* s2) {
   else LOG(-1) <<"not found:" <<s1 <<' ' <<s2;
 }
 
-void KOMO::setTimeOptimization() {
+void KOMO::addTimeOptimization() {
   world.addTauJoint();
   ptr<Objective> o = addObjective({}, make_shared<TM_Time>(), OT_sos, {1e2}, {}, 1); //smooth time evolution
 #if 1 //break the constraint at phase switches:
@@ -495,7 +485,7 @@ void KOMO::addContact_elasticBounce(double time, const char* from, const char* t
   }
 }
 
-void KOMO::setKS_slider(double time, double endTime, bool before, const char* obj, const char* slider, const char* table) {
+void KOMO_ext::setKS_slider(double time, double endTime, bool before, const char* obj, const char* slider, const char* table) {
   //disconnect object from grasp ref
 //  setKinematicSwitch(time, before, "delete", nullptr, obj);
 
@@ -523,7 +513,7 @@ void KOMO::setKS_slider(double time, double endTime, bool before, const char* ob
   //    setKinematicSwitch(time, before, "transXActuated", slider, obj, rel );
 }
 
-void KOMO::setHoming(double startTime, double endTime, double prec, const char* keyword) {
+void KOMO_ext::setHoming(double startTime, double endTime, double prec, const char* keyword) {
   uintA bodies;
   Joint* j;
   for(Frame* f:world.frames) if((j=f->joint) && j->qDim()>0 && (!keyword || f->ats[keyword])) bodies.append(f->ID);
@@ -531,7 +521,7 @@ void KOMO::setHoming(double startTime, double endTime, double prec, const char* 
   addObjective({startTime, endTime}, make_shared<F_qItself>(bodies, true), OT_sos, {prec}, NoArr); //world.q, prec);
 }
 
-//void KOMO::setSquaredQAccelerations(double startTime, double endTime, double prec) {
+//void KOMO_ext::setSquaredQAccelerations(double startTime, double endTime, double prec) {
 //  CHECK_GE(k_order, 2,"");
 //  addObjective({startTime, endTime}, make_shared<TM_Transition>(world), OT_sos, {}, NoArrprec);
 //}
@@ -558,7 +548,7 @@ void KOMO::add_qControlObjective(const arr& times, uint order, double scale, con
   ptr<Objective> o = addObjective(times, make_shared<F_qItself>(F.frames), OT_sos, scale*F.scale, target, order, deltaFromStep, deltaToStep);
 }
 
-void KOMO::setSquaredQAccVelHoming(double startTime, double endTime, double accPrec, double velPrec, double homingPrec, int deltaFromStep, int deltaToStep) {
+void KOMO_ext::setSquaredQAccVelHoming(double startTime, double endTime, double accPrec, double velPrec, double homingPrec, int deltaFromStep, int deltaToStep) {
   auto F = getQFramesAndScale(world);
   F.scale *= sqrt(tau);
 
@@ -590,11 +580,11 @@ void KOMO::setSquaredQAccVelHoming(double startTime, double endTime, double accP
 //  addObjective({startTime, endTime}, make_shared<TM_FixSwichedObjects>(), OT_eq, {}, NoArrprec, k_order);
 //}
 
-void KOMO::setSquaredQuaternionNorms(double startTime, double endTime, double prec) {
+void KOMO::addSquaredQuaternionNorms(double startTime, double endTime, double prec) {
   addObjective({startTime, endTime}, make_shared<F_qQuaternionNorms>(), OT_eq, {prec}, NoArr);
 }
 
-void KOMO::setHoldStill(double startTime, double endTime, const char* shape, double prec) {
+void KOMO_ext::setHoldStill(double startTime, double endTime, const char* shape, double prec) {
   Frame* s = world.getFrameByName(shape);
   addObjective({startTime, endTime}, make_shared<F_qItself>(TUP(s->ID)), OT_sos, {prec}, NoArr, 1);
 }
@@ -785,7 +775,7 @@ void KOMO_ext::setHandover(double time, const char* oldHolder, const char* objec
 #endif
 }
 
-void KOMO::setPush(double startTime, double endTime, const char* stick, const char* object, const char* table, int verbose) {
+void KOMO_ext::setPush(double startTime, double endTime, const char* stick, const char* object, const char* table, int verbose) {
   if(verbose>0) cout <<"KOMO_setPush t=" <<startTime <<" stick=" <<stick <<" object=" <<object <<" table=" <<table <<endl;
 
 #if 1
@@ -823,7 +813,7 @@ void KOMO::setPush(double startTime, double endTime, const char* stick, const ch
   }
 }
 
-void KOMO::setGraspSlide(double time, const char* endeff, const char* object, const char* placeRef, int verbose) {
+void KOMO_ext::setGraspSlide(double time, const char* endeff, const char* object, const char* placeRef, int verbose) {
 
   double startTime = time;
   double endTime = time+1.;
@@ -1104,9 +1094,9 @@ void KOMO::setSkeleton(const Skeleton& S, bool ignoreSwitches) {
     switch(s.symbol) {
       case SY_none:       HALT("should not be here");  break;
       case SY_initial: case SY_identical: case SY_noCollision:    break;
-      case SY_touch:      add_touch(s.phase0, s.phase1, s.frames(0), s.frames(1));  break;
-      case SY_above:      add_aboveBox(s.phase0, s.phase1, s.frames(0), s.frames(1));  break;
-      case SY_inside:     add_insideBox(s.phase0, s.phase1, s.frames(0), s.frames(1));  break;
+      case SY_touch:      addObjective({s.phase0, s.phase1}, FS_distance, {s.frames(0), s.frames(1)}, OT_eq, {1e2});  break;
+      case SY_above:      addObjective({s.phase0, s.phase1}, FS_aboveBox, {s.frames(0), s.frames(1)}, OT_ineq, {1e1});  break;
+      case SY_inside:     addObjective({s.phase0, s.phase1}, FS_insideBox, {s.frames(0), s.frames(1)}, OT_ineq, {1e1});  break;
 //      case SY_inside:     addObjective({s.phase0, s.phase1}, make_shared<TM_InsideLine>(world, s.frames(0), s.frames(1)), OT_ineq, {1e1});  break;
       case SY_oppose:     addObjective({s.phase0, s.phase1}, FS_oppose, s.frames, OT_eq, {1e1});  break;
       case SY_impulse:    HALT("obsolete"); /*add_impulse(s.phase0, s.frames(0), s.frames(1));*/  break;
@@ -1139,8 +1129,8 @@ void KOMO::setSkeleton(const Skeleton& S, bool ignoreSwitches) {
         cout <<"THE INTEGER IS: " <<s.frames(2) <<endl;
       } break;
 
-      case SY_push:       setPush(s.phase0, s.phase1+1., s.frames(0), s.frames(1), s.frames(2), verbose);  break;//TODO: the +1. assumes pushes always have duration 1
-      case SY_graspSlide: setGraspSlide(s.phase0, s.frames(0), s.frames(1), s.frames(2), verbose);  break;
+      case SY_push:       HALT("retired"); //setPush(s.phase0, s.phase1+1., s.frames(0), s.frames(1), s.frames(2), verbose);  break;//TODO: the +1. assumes pushes always have duration 1
+      case SY_graspSlide: HALT("retired"); //setGraspSlide(s.phase0, s.frames(0), s.frames(1), s.frames(2), verbose);  break;
       //    else case SY_handover)              setHandover(s.phase0, s.frames(0), s.frames(1), s.frames(2), verbose);
       //    else LOG(-2) <<"UNKNOWN PREDICATE!: " <<s;
 
@@ -1174,15 +1164,15 @@ void KOMO_ext::setAlign(double startTime, double endTime, const char* shape, con
 
 }
 
-void KOMO::add_touch(double startTime, double endTime, const char* shape1, const char* shape2, ObjectiveType type, const arr& target, double prec) {
+void KOMO_ext::add_touch(double startTime, double endTime, const char* shape1, const char* shape2, ObjectiveType type, const arr& target, double prec) {
   addObjective({startTime, endTime}, make_shared<F_PairCollision>(world, shape1, shape2, F_PairCollision::_negScalar, false), type, {prec}, target);
 }
 
-void KOMO::add_aboveBox(double startTime, double endTime, const char* shape1, const char* shape2, double prec) {
+void KOMO_ext::add_aboveBox(double startTime, double endTime, const char* shape1, const char* shape2, double prec) {
   addObjective({startTime, endTime}, make_shared<TM_AboveBox>(world, shape1, shape2), OT_ineq, {prec}, NoArr);
 }
 
-void KOMO::add_insideBox(double startTime, double endTime, const char* shape1, const char* shape2, double prec) {
+void KOMO_ext::add_insideBox(double startTime, double endTime, const char* shape1, const char* shape2, double prec) {
   addObjective({startTime, endTime}, make_shared<TM_InsideBox>(world, shape1, NoVector, shape2), OT_ineq, {prec}, NoArr);
 }
 
@@ -1195,7 +1185,7 @@ void KOMO::add_insideBox(double startTime, double endTime, const char* shape1, c
 //  }
 //}
 
-void KOMO::add_stable(double time, const char* shape1, const char* shape2, ObjectiveType type, double prec) {
+void KOMO_ext::add_stable(double time, const char* shape1, const char* shape2, ObjectiveType type, double prec) {
   addObjective({time}, make_shared<TM_Default>(TMT_pose, world, shape1, NoVector, shape2), type, {prec}, NoArr, 1, 0);
 }
 
@@ -1251,38 +1241,25 @@ void KOMO_ext::setConfigFromFile() {
 
 void KOMO::setIKOpt() {
   denseOptimization=true;
-  stepsPerPhase = 1;
-  T = 1;
-  tau = 1.;
-  k_order = 1;
+//  stepsPerPhase = 1;
+//  T = 1;
+//  tau = 1.;
+//  k_order = 1;
+  setTiming(1., 1, 1., 1);
 //  setSquaredQVelocities(0.,-1.,1e-1);
-  setSquaredQAccVelHoming(0., -1., 0., 1e-1, 1e-2);
-  setSquaredQuaternionNorms();
+  add_qControlObjective({}, 1, 1e-1);
+//  setSquaredQAccVelHoming(0., -1., 0., 1e-1, 1e-2);
+  addSquaredQuaternionNorms();
 }
 
 void KOMO::setDiscreteOpt(uint k) {
   denseOptimization=true;
-  stepsPerPhase = 1;
-  T = k;
-  tau = 1.;
-  k_order = 1;
-  setSquaredQuaternionNorms();
-}
-
-void KOMO::setPoseOpt() {
-  denseOptimization=true;
-  setTiming(1., 2, 5., 1);
-  setSquaredQuaternionNorms();
-}
-
-void KOMO::setSequenceOpt(double _phases) {
-  setTiming(_phases, 2, 5., 1);
-  setSquaredQuaternionNorms();
-}
-
-void KOMO::setPathOpt(double _phases, uint stepsPerPhase, double timePerPhase) {
-  setTiming(_phases, stepsPerPhase, timePerPhase, 2);
-  setSquaredQuaternionNorms();
+//  stepsPerPhase = 1;
+//  T = k;
+//  tau = 1.;
+//  k_order = 1;
+  setTiming(k, 1, 1., 1);
+  addSquaredQuaternionNorms();
 }
 
 void setTasks(KOMO_ext& MP,
@@ -1373,24 +1350,28 @@ void KOMO::setSpline(uint splineT) {
 }
 
 void KOMO::reset(double initNoise) {
+  //always!:
   if(!configurations.N) setupConfigurations();
   CHECK_EQ(configurations.N, k_order+T, "");
   for(uint s=0;s<k_order;s++) configurations(s)->ensure_q();
   x = getPath_decisionVariable();
+  //reset:
   dual.clear();
   featureValues.clear();
   featureJacobians.clear();
   featureTypes.clear();
   komo_problem.clear();
   dense_problem.clear();
+  //add noise
   if(initNoise>0.)
     rndGauss(x, initNoise, true); //don't initialize at a singular config
+  //always:
   if(splineB.N) {
     z = pseudoInverse(splineB) * x;
   }
 }
 
-void KOMO::setInitialConfigurations(const arr& q){
+void KOMO::setStartConfigurations(const arr& q){
   if(!configurations.N) setupConfigurations();
   for(uint s=0; s<k_order; s++){
     configurations(s)->setJointState(q);
@@ -1557,13 +1538,22 @@ void KOMO::run_sub(const uintA& X, const uintA& Y) {
   if(verbose>0) cout <<getReport(verbose>1) <<endl;
 }
 
-void KOMO::optimize(bool initialize, double initNoise) {
-  if(initialize) reset(initNoise);
+void KOMO::optimize(bool _reset, double initNoise) {
+  if(_reset) reset(initNoise);
   CHECK_EQ(configurations.N, T+k_order, "");
 
   if(verbose>0) reportProblem();
 
   run();
+
+  /* recap all steps for run:
+   *
+   * setup configurations?
+   * add noise?
+   * reset dual solution?
+   * always: get the decision variable
+   * iterate
+   */
 }
 
 void KOMO_ext::getPhysicsReference(uint subSteps, int display) {
@@ -3280,16 +3270,6 @@ rai::Configuration& KOMO::getConfiguration(double phase) {
 Configuration& KOMO::getConfiguration_t(int t){
   if(t<0) CHECK_LE(-t, (int)k_order,"");
   return *configurations(t+k_order);
-}
-
-arr KOMO::getJointState(double phase) {
-  uint s = k_order + conv_time2step(phase, stepsPerPhase);
-  return configurations(s)->getJointState();
-}
-
-arr KOMO::getFrameState(double phase) {
-  uint s = k_order + conv_time2step(phase, stepsPerPhase);
-  return configurations(s)->getFrameState();
 }
 
 arr KOMO::getPath_decisionVariable() {
