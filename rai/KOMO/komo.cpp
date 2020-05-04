@@ -1349,28 +1349,6 @@ void KOMO::setSpline(uint splineT) {
   z = pseudoInverse(splineB) * x;
 }
 
-void KOMO::reset(double initNoise) {
-  //always!:
-  if(!configurations.N) setupConfigurations();
-  CHECK_EQ(configurations.N, k_order+T, "");
-  for(uint s=0;s<k_order;s++) configurations(s)->ensure_q();
-  x = getPath_decisionVariable();
-  //reset:
-  dual.clear();
-  featureValues.clear();
-  featureJacobians.clear();
-  featureTypes.clear();
-  komo_problem.clear();
-  dense_problem.clear();
-  //add noise
-  if(initNoise>0.)
-    rndGauss(x, initNoise, true); //don't initialize at a singular config
-  //always:
-  if(splineB.N) {
-    z = pseudoInverse(splineB) * x;
-  }
-}
-
 void KOMO::setStartConfigurations(const arr& q){
   if(!configurations.N) setupConfigurations();
   for(uint s=0; s<k_order; s++){
@@ -1389,7 +1367,7 @@ void KOMO::initWithConstant(const arr& q) {
     configurations(k_order+t)->setJointState(q);
   }
 
-  reset(0.);
+  run_prepare(0.);
 }
 
 void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, bool sineProfile) {
@@ -1436,7 +1414,43 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, 
   }
 #endif
 
-  reset(0.);
+  run_prepare(0.);
+}
+
+void KOMO::reset() {
+  dual.clear();
+  featureValues.clear();
+  featureJacobians.clear();
+  featureTypes.clear();
+  komo_problem.clear();
+  dense_problem.clear();
+}
+
+void KOMO::optimize(double addInitializationNoise) {
+  run_prepare(addInitializationNoise);
+
+  if(verbose>0) reportProblem();
+
+  run();
+}
+
+void KOMO::run_prepare(double addInitializationNoise) {
+  //ensure the configurations are setup
+  if(!configurations.N) setupConfigurations();
+  CHECK_EQ(configurations.N, k_order+T, "");
+  for(uint s=0;s<k_order;s++) configurations(s)->ensure_q(); //also the prefix!
+
+  //ensure the decision variable is in sync from the configurations
+  x = getPath_decisionVariable();
+
+  //add noise
+  if(addInitializationNoise>0.){
+    rndGauss(x, addInitializationNoise, true); //don't initialize at a singular config
+  }
+
+  if(splineB.N) {
+    z = pseudoInverse(splineB) * x;
+  }
 }
 
 void KOMO::run(const OptOptions options) {
@@ -1536,24 +1550,6 @@ void KOMO::run_sub(const uintA& X, const uintA& Y) {
          <<" setJointStateCount=" <<Configuration::setJointStateCount <<endl;
   }
   if(verbose>0) cout <<getReport(verbose>1) <<endl;
-}
-
-void KOMO::optimize(bool _reset, double initNoise) {
-  if(_reset) reset(initNoise);
-  CHECK_EQ(configurations.N, T+k_order, "");
-
-  if(verbose>0) reportProblem();
-
-  run();
-
-  /* recap all steps for run:
-   *
-   * setup configurations?
-   * add noise?
-   * reset dual solution?
-   * always: get the decision variable
-   * iterate
-   */
 }
 
 void KOMO_ext::getPhysicsReference(uint subSteps, int display) {

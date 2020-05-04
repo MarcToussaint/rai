@@ -23,9 +23,8 @@ void TEST(Easy){
 
   komo.reportProblem();
 
-  komo.reset();
 //  komo.setSpline(5);
-  komo.run();
+  komo.optimize();
   cout <<"TIME OPTIM: total=" <<sum(komo.getPath_times()) <<komo.getPath_times() <<endl;
   komo.plotTrajectory();
 //  komo.reportProxies();
@@ -48,8 +47,7 @@ void TEST(Align){
   komo.addObjective({.98,1.}, FS_qItself, {}, OT_sos, {1e1}, {}, 1);
   komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1.});
 
-  komo.reset();
-  komo.run();
+  komo.optimize();
   komo.plotTrajectory();
   for(uint i=0;i<2;i++) komo.displayTrajectory();
 }
@@ -155,9 +153,8 @@ void TEST(Thin){
   komo.reportProblem();
 
   komo.animateOptimization=1;
-  komo.reset(1e-2);
-//  komo.setSpline(5);
-  komo.run();
+  //  komo.setSpline(5);
+  komo.optimize(1e-2);
   komo.plotTrajectory();
 //  komo.reportProxies();
   komo.checkGradients();
@@ -189,9 +186,8 @@ void TEST(PR2){
   komo.addObjective({.98,1.}, FS_qItself, {}, OT_sos, {1e1}, {}, 1);
   komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1.});
 
-  komo.reset();
 //  komo.setSpline(10);
-  komo.run();
+  komo.optimize();
   komo.plotTrajectory();
 //  komo.checkGradients();
   for(uint i=0;i<2;i++) komo.displayTrajectory();

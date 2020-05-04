@@ -248,11 +248,12 @@ struct KOMO : NonCopyable {
   void initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase=1, bool sineProfile=true); ///< set all configurations (EXCEPT prefix) to interpolate given waypoints
 
   //-- optimization
-  void reset(double initNoise=.01);  ///< reset the optimizer (clears dual variables, syncs x with the current configurations, potentially adds noise)
-  void run(const OptOptions options=NOOPT);                        ///< run the solver
-  void optimize(bool reset=true, double initNoise=.01);
+  void optimize(double addInitializationNoise=.01);  ///< run the solver (same as run_prepare(); run(); )
+  void reset();                                      ///< reset the dual variables and feature value buffers (always needed when adding/changing objectives before continuing an optimization)
 
   //advanced
+  void run_prepare(double addInitializationNoise);   ///< ensure the configurations are setup, decision variable is initialized, and noise added (if >0)
+  void run(const OptOptions options=NOOPT);          ///< run the solver iterations (configurations and decision variable needs to be setup before)
   void run_sub(const uintA& X, const uintA& Y);
   void setSpline(uint splineT);      ///< optimize B-spline nodes instead of the path; splineT specifies the time steps per node
 

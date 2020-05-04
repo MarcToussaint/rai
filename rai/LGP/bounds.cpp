@@ -138,7 +138,7 @@ PoseBound::PoseBound(ptr<KOMO>& komo,
 
   if(collisions) komo->add_collision(false);
 
-  komo->reset();
+  komo->run_prepare(.01);
   //      komo->setPairedTimes();
 }
 
@@ -167,7 +167,7 @@ SeqBound::SeqBound(ptr<KOMO>& komo,
 
   if(collisions) komo->add_collision(true);
 
-  komo->reset();
+  komo->run_prepare(.01);
 //      komo->setPairedTimes();
   //      cout <<komo->getPath_times() <<endl;
 
@@ -201,7 +201,7 @@ PathBound::PathBound(ptr<KOMO>& komo,
 
   if(collisions) komo->add_collision(true, 0., 1e1);
 
-  komo->reset();
+  komo->run_prepare(.01);
   //      cout <<komo->getPath_times() <<endl;
 
 }
@@ -245,7 +245,7 @@ SeqPathBound::SeqPathBound(ptr<KOMO>& komo,
 
   if(collisions) komo->add_collision(true, 0., 1e1);
 
-  komo->reset();
+  komo->run_prepare(.01);
   komo->initWithWaypoints(waypoints, waypointsStepsPerPhase);
   //      cout <<komo->getPath_times() <<endl;
 
@@ -281,7 +281,7 @@ SeqVelPathBound::SeqVelPathBound(ptr<KOMO>& komo,
 
   if(collisions) komo->add_collision(true, 0, 1e1);
 
-  komo->reset();
+  komo->run_prepare(.01);
   komo->initWithWaypoints(waypoints, false);
   //      cout <<komo->getPath_times() <<endl;
 

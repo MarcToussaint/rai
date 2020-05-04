@@ -46,10 +46,9 @@ void plan(){
   // final target for ball2
   komo.addObjective({3., 3.}, make_shared<TM_Default>(TMT_posDiff, K, "ball2"), OT_sos, {+2.,-0.,.3}, 1e1);
 
-  komo.reset();
   komo.reportProblem();
   komo.verbose=2;
-  komo.run();
+  komo.optimize();
   komo.getReport(true);
   komo.checkGradients();
 

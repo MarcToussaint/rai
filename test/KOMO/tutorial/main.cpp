@@ -37,8 +37,7 @@ void tutorialBasics(){
   komo.setSlow(1., -1., 1e1);
 
   //-- call the optimizer
-  komo.reset();
-  komo.run();
+  komo.optimize();
   //  komo.checkGradients(); //this checks all gradients of the problem by finite difference
   komo.getReport(true); //true -> plot the cost curves
   for(uint i=0;i<2;i++) komo.displayTrajectory(.1, true); //play the trajectory
@@ -90,8 +89,7 @@ void tutorialInverseKinematics(){
   komo.addObjective({}, FS_quaternionDiff, {"endeff", "target"}, OT_eq, {1e1});
 
   //-- call the optimizer
-  komo.reset();
-  komo.run();
+  komo.optimize();
   //  komo.checkGradients(); //this checks all gradients of the problem by finite difference
   komo.getReport(); //true -> plot the cost curves
   for(uint i=0;i<2;i++) komo.displayTrajectory(.1, true); //play the trajectory

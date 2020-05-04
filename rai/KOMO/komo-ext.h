@@ -25,7 +25,7 @@ void addMotionTo(KOMO& komo, const arr& target_q, const StringA& target_joints, 
 struct KOMO_ext : KOMO {
 
   void setConfigFromFile();
-  void setPathOpt(double _phases, uint stepsPerPhase=20, double timePerPhase=5.); //setTiming(_phases, stepsPerPhase, timePerPhase, 2);
+//  void setPathOpt(double _phases, uint stepsPerPhase=20, double timePerPhase=5.){ setTiming(_phases, stepsPerPhase, timePerPhase, 2); }
   void setSquaredQAccVelHoming(double startTime=0., double endTime=-1., double accPrec=1., double velPrec=0., double homingPrec=1e-2, int deltaFromStep=0, int deltaToStep=0);
 //  void setSquaredQAccelerations(double startTime=0., double endTime=-1., double prec=1.);
 

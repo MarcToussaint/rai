@@ -119,15 +119,13 @@ pybind11::arg("object"))
 //-- run
 
 .def("optimize", &KOMO::optimize, "",
-     pybind11::arg("reinitialize")=true,
-     pybind11::arg("initNoise")=0.01)
+     pybind11::arg("addInitializationNoise")=0.01)
 
 //-- reinitialize with configuration
 .def("setConfigurations", [](std::shared_ptr<KOMO>& self, ry::Config& C) {
   for(rai::Configuration* c:self->configurations) {
     c->setFrameState(C.get()->getFrameState());
   }
-  self->reset(0.);
 })
 
 //-- read out
