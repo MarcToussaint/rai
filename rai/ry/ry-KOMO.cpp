@@ -67,6 +67,14 @@ pybind11::arg("scaleTrans")=std::vector<std::vector<double>>(),
 pybind11::arg("target")=std::vector<double>(),
 pybind11::arg("order")=-1)
 
+.def("add_qControlObjective", [](std::shared_ptr<KOMO>& self, const std::vector<double>& time, uint order, double scale, const std::vector<double>& target) {
+      self->add_qControlObjective(arr(time), order, scale, arr(target));
+    }, "", pybind11::arg("time")=std::vector<double>(),
+    pybind11::arg("order"),
+    pybind11::arg("scale")=double(1.),
+    pybind11::arg("target")=std::vector<double>())
+
+
 .def("add_StableRelativePose", [](std::shared_ptr<KOMO>& self, const std::vector<int>& confs, const char* gripper, const char* object) {
   for(uint i=1; i<confs.size(); i++)
     self->addObjective(ARR(confs[0], confs[i]), FS_poseDiff, {gripper, object}, OT_eq);

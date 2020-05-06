@@ -469,10 +469,13 @@ pybind11::class_<ry::ConfigurationViewer>(m, "ConfigurationViewer")
   arr _X = numpy2arr<double>(X);
   self.view->setPath(_X);
 })
-.def("playVideo", [](ry::ConfigurationViewer& self) {
+.def("playVideo", [](ry::ConfigurationViewer& self, double delay, const char* saveVideoPath) {
   if(!self.view) self.view = make_shared<rai::ConfigurationViewer>();
-  self.view->playVideo();
-})
+  self.view->playVideo(false, delay, saveVideoPath);
+}, "",
+pybind11::arg("delay")=double(1.),
+pybind11::arg("saveVideoPath")=nullptr
+)
 ;
 
 //===========================================================================
