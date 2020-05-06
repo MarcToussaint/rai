@@ -4,6 +4,7 @@
 #include "types.h"
 
 #include "../Kin/simulation.h"
+#include "../Perception/depth2PointCloud.h"
 
 namespace rai{
   struct SimulationState {
@@ -111,7 +112,12 @@ void init_Simulation(pybind11::module &m) {
     pybind11::arg("frameVelocities") = std::vector<double>()
   )
 
-
+  .def("depthData2pointCloud", [](std::shared_ptr<rai::Simulation>& self, const pybind11::array_t<float>& depth, const std::vector<double>& Fxypxy) {
+      arr points;
+      floatA _depth = numpy2arr<float>(depth);
+      depthData2pointCloud(points, _depth, arr(Fxypxy));
+      return pybind11::array(points.dim(), points.p);
+    })
 
 
 //  .def("getSegmentation", [](std::shared_ptr<rai::Simulation>& self) {
