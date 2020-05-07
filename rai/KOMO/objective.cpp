@@ -22,10 +22,10 @@ void Objective::setCostSpecs(int fromStep, int toStep, bool sparse) {
     for(int t=fromStep; t<=toStep; t++) configs(t) = 1;
   } else {
     if(toStep>=fromStep)
-      configs.resize(1+toStep-fromStep, map->order+1);
-    else configs.resize(0, map->order+1);
+      configs.resize(1+toStep-fromStep, feat->order+1);
+    else configs.resize(0, feat->order+1);
     for(int t=fromStep; t<=toStep; t++)
-      for(uint j=0; j<configs.d1; j++) configs(t-fromStep, j) = t+j-int(map->order);
+      for(uint j=0; j<configs.d1; j++) configs(t-fromStep, j) = t+j-int(feat->order);
   }
 }
 
@@ -76,9 +76,9 @@ void Objective::write(std::ostream& os) const {
     } else os <<" (" <<configs.first() <<".." <<configs.last() <<')';
   } else os <<" ()";
   os <<"  type:" <<type
-     <<"  order:" <<map->order
-     <<"  target:" <<map->target
-     <<"  scale:" <<map->scale;
+     <<"  order:" <<feat->order
+     <<"  target:" <<feat->target
+     <<"  scale:" <<feat->scale;
 }
 
 //===========================================================================

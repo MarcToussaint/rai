@@ -109,35 +109,36 @@ PoseBound::PoseBound(ptr<KOMO>& komo,
   komo->setModel(startKinematics, collisions);
   komo->setTiming(optHorizon, 1, 10., 1);
 
-  komo->setSquaredQuaternionNorms();
+  komo->addSquaredQuaternionNorms();
 #if 0
   komo->setHoming(0., -1., 1e-2);
   komo->setSquaredQVelocities(1., -1., 1e-1); //IMPORTANT: do not penalize transitions of from prefix to x_{0} -> x_{0} is 'loose'
 #else
-  komo->setSquaredQAccVelHoming(0, -1., 0., 1e-2, 1e-2);
+  komo->add_qControlObjective({}, 1, 1e-2);
+  komo->add_qControlObjective({}, 0, 1e-2);
 #endif
 
   komo->setSkeleton(finalS, false);
 
   //-- deactivate all velocity objectives except for transition
   //      for(Objective *o:komo->objectives){
-  //        if((std::dynamic_pointer_cast<TM_ZeroQVel>(o->map)
-  //           || std::dynamic_pointer_cast<TM_Default>(o->map))
-  //           && o->map->order==1){
+  //        if((std::dynamic_pointer_cast<TM_ZeroQVel>(o->feat)
+  //           || std::dynamic_pointer_cast<TM_Default>(o->feat))
+  //           && o->feat->order==1){
   //          o->vars.clear();
   //        }
   //      }
   for(ptr<Objective>& o:komo->objectives) {
-    if(!std::dynamic_pointer_cast<F_qItself>(o->map)
-       && !std::dynamic_pointer_cast<TM_NoJumpFromParent>(o->map)
-       && o->map->order>0) {
+    if(!std::dynamic_pointer_cast<F_qItself>(o->feat)
+       && !std::dynamic_pointer_cast<TM_NoJumpFromParent>(o->feat)
+       && o->feat->order>0) {
       o->configs.clear();
     }
   }
 
   if(collisions) komo->add_collision(false);
 
-  komo->reset();
+  komo->run_prepare(.01);
   //      komo->setPairedTimes();
 }
 
@@ -154,18 +155,19 @@ SeqBound::SeqBound(ptr<KOMO>& komo,
   komo->sparseOptimization = true;
   komo->animateOptimization = 0;
 
-  komo->setSquaredQuaternionNorms();
+  komo->addSquaredQuaternionNorms();
 #if 0
   komo->setHoming(0., -1., 1e-2);
   komo->setSquaredQVelocities(0., -1., 1e-2);
 #else
-  komo->setSquaredQAccVelHoming(0, -1., 0., 1e-2, 1e-2);
+  komo->add_qControlObjective({}, 1, 1e-2);
+  komo->add_qControlObjective({}, 0, 1e-2);
 #endif
   komo->setSkeleton(S);
 
   if(collisions) komo->add_collision(true);
 
-  komo->reset();
+  komo->run_prepare(.01);
 //      komo->setPairedTimes();
   //      cout <<komo->getPath_times() <<endl;
 
@@ -185,20 +187,21 @@ PathBound::PathBound(ptr<KOMO>& komo,
   komo->setTiming(maxPhase+.5, stepsPerPhase, 10., pathOrder);
   komo->animateOptimization = 0;
 
-  komo->setSquaredQuaternionNorms();
+  komo->addSquaredQuaternionNorms();
 #if 0
   komo->setHoming(0., -1., 1e-2);
   if(pathOrder==1) komo->setSquaredQVelocities();
   else komo->setSquaredQAccelerations();
 #else
-  komo->setSquaredQAccVelHoming(0, -1., 1., 0., 1e-2);
+  komo->add_qControlObjective({}, 2, 1.);
+  komo->add_qControlObjective({}, 0, 1e-2);
 #endif
 
   komo->setSkeleton(S);
 
   if(collisions) komo->add_collision(true, 0., 1e1);
 
-  komo->reset();
+  komo->run_prepare(.01);
   //      cout <<komo->getPath_times() <<endl;
 
 }
@@ -217,13 +220,14 @@ SeqPathBound::SeqPathBound(ptr<KOMO>& komo,
   komo->setTiming(maxPhase+.5, stepsPerPhase, 10., pathOrder);
   komo->animateOptimization = 0;
 
-  komo->setSquaredQuaternionNorms();
+  komo->addSquaredQuaternionNorms();
 #if 0
   komo->setHoming(0., -1., 1e-2);
   if(pathOrder==1) komo->setSquaredQVelocities();
   else komo->setSquaredQAccelerations();
 #else
-  komo->setSquaredQAccVelHoming(0, -1., 1., 0., 1e-2);
+  komo->add_qControlObjective({}, 2, 1.);
+  komo->add_qControlObjective({}, 0, 1e-2);
 #endif
 
   uint T = floor(maxPhase+.5);
@@ -241,7 +245,7 @@ SeqPathBound::SeqPathBound(ptr<KOMO>& komo,
 
   if(collisions) komo->add_collision(true, 0., 1e1);
 
-  komo->reset();
+  komo->run_prepare(.01);
   komo->initWithWaypoints(waypoints, waypointsStepsPerPhase);
   //      cout <<komo->getPath_times() <<endl;
 
@@ -259,9 +263,9 @@ SeqVelPathBound::SeqVelPathBound(ptr<KOMO>& komo,
   uint stepsPerPhase = rai::getParameter<uint>("LGP/stepsPerPhase", 10);
   komo->setTiming(maxPhase+.5, stepsPerPhase, 10., 1);
 
-  komo->setHoming(0., -1., 1e-2);
-  komo->setSquaredQAccVelHoming(0, -1., 0., 1., 1e-2);
-  komo->setSquaredQuaternionNorms();
+  komo->add_qControlObjective({}, 1, 1.);
+  komo->add_qControlObjective({}, 0, 1e-2);
+  komo->addSquaredQuaternionNorms();
 
   CHECK_EQ(waypoints.N-1, floor(maxPhase+.5), "");
   for(uint i=0; i<waypoints.N-1; i++) {
@@ -277,7 +281,7 @@ SeqVelPathBound::SeqVelPathBound(ptr<KOMO>& komo,
 
   if(collisions) komo->add_collision(true, 0, 1e1);
 
-  komo->reset();
+  komo->run_prepare(.01);
   komo->initWithWaypoints(waypoints, false);
   //      cout <<komo->getPath_times() <<endl;
 

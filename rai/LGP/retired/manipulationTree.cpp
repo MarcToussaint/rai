@@ -125,7 +125,7 @@ void MNode::solvePoseProblem() {
   cout <<"  ** PoseProblem for state" <<*folState <<endl;
   komo.setAbstractTask(0, *folState);
 
-  komo.reset();
+  komo.run_prepare();
   komo.MP->reportFeatures(true, FILE("z.problem"));
   komo.run();
 

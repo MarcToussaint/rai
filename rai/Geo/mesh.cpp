@@ -2340,8 +2340,6 @@ inline double __scalarProduct(const double *p1, const double* p2){
 }
 
 uint rai::Mesh::support(const double *dir) {
-  if(!graph.N) buildGraph();
-
 #if 1
 
   arr _dir(dir,3);
@@ -2361,6 +2359,7 @@ uint rai::Mesh::support(const double *dir) {
   return _support_vertex;
 
 #else
+  if(!graph.N) buildGraph();
 
   uint mi = _support_vertex;
   double s = __scalarProduct(dir, V.p+3*mi);

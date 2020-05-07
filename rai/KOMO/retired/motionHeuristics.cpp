@@ -122,8 +122,8 @@ void setGraspGoals_Schunk(KOMO& MP, uint T, uint shapeId, uint side, uint phase)
   MP.setInterpolatingCosts(c, KOMO::early_restConst,
                            target, alignmentPrec, NoArr, -1., .8);
   //test current state: flip if necessary
-  c->map.phi(initial, NoArr, MP.world);
-  if(initial(0)<0.)((TM_Default*)&c->map)->ivec.set(0., -1., 0.);   //flip vector to become positive
+  c->feat.phi(initial, NoArr, MP.world);
+  if(initial(0)<0.)((TM_Default*)&c->feat)->ivec.set(0., -1., 0.);   //flip vector to become positive
 
   if(phase==0) return;
 
@@ -148,7 +148,7 @@ void setGraspGoals_Schunk(KOMO& MP, uint T, uint shapeId, uint side, uint phase)
   c = MP.addTask("otherCollisions", new TM_Proxy(TMT_allExceptListedP, shapes, .04, true));
   target = ARR(0.);
   MP.setInterpolatingCosts(c, KOMO::final_restConst, target, colPrec, target, colPrec);
-  c->map.phi(initial, NoArr, MP.world);
+  c->feat.phi(initial, NoArr, MP.world);
   if(initial(0)>0.) {  //we are in collision/proximity -> depart slowly
     double a=initial(0);
     for(uint t=0; t<=T/5; t++)
@@ -246,8 +246,8 @@ void setGraspGoals_PR2(KOMO& MP, uint T, uint shapeId, uint side, uint phase) {
   MP.setInterpolatingCosts(c, KOMO::early_restConst,
                            target, alignmentPrec, NoArr, -1., .8);
   //test current state: flip if necessary
-  c->map.phi(initial, NoArr, MP.world);
-  if(initial(0)<0.)((TM_Default*)&c->map)->ivec.set(0, -1, 0); //flip vector to become positive
+  c->feat.phi(initial, NoArr, MP.world);
+  if(initial(0)<0.)((TM_Default*)&c->feat)->ivec.set(0, -1, 0); //flip vector to become positive
 
   if(phase==0) return;
 
@@ -275,7 +275,7 @@ void setGraspGoals_PR2(KOMO& MP, uint T, uint shapeId, uint side, uint phase) {
   target = ARR(0.);
   c->setCostSpecs(0, MP.T, NoArr, colPrec);
 //  arr initial;
-  c->map.phi(initial, NoArr, MP.world);
+  c->feat.phi(initial, NoArr, MP.world);
   if(initial(0)>0.) { //we are in collision/proximity -> depart slowly
     for(uint t=0; t<=T/5; t++) {
       double a = double(T-5*t)/T;

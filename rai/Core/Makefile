@@ -4,7 +4,7 @@ OUTPUT = lib$(NAME).so
 
 OPTIM = fast_debug
 
-DEPEND_UBUNTU += g++ gnuplot
+DEPEND_UBUNTU += g++ make gnupg gdb cmake gnuplot 
 
 X11 = 1
 LAPACK = 1

@@ -163,7 +163,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
 
   for(ptr<Objective>& o:tree->finalGeometryObjectives.objectives) {
     cout <<"FINAL objective: " <<*o <<endl;
-    ptr<Objective> co = komo->addObjective({0.}, o->map, o->type);
+    ptr<Objective> co = komo->addObjective({0.}, o->feat, o->type);
     co->setCostSpecs(komo->T-1, komo->T-1, komo->sparseOptimization);
     cout <<"FINAL objective: " <<*co <<endl;
   }

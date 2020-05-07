@@ -307,25 +307,25 @@ ActStatus MotionProfile_Path::update(arr& yRef, arr& ydotRef, double tau, const 
 
 //===========================================================================
 
-CtrlTask::CtrlTask(const char* name, const ptr<Feature>& _map)
-  : name(name), active(true), map(_map), scale(1.), hierarchy(1) {
+CtrlTask::CtrlTask(const char* name, const ptr<Feature>& _feat)
+  : name(name), active(true), feat(_feat), scale(1.), hierarchy(1) {
   status.set() = AS_init;
   //  ref = new MotionProfile_PD();
 }
 
-CtrlTask::CtrlTask(const char* name, const ptr<Feature>& _map, const ptr<MotionProfile>& _ref)
-  : CtrlTask(name, _map) {
+CtrlTask::CtrlTask(const char* name, const ptr<Feature>& _feat, const ptr<MotionProfile>& _ref)
+  : CtrlTask(name, _feat) {
   ref = _ref;
   status.set() = AS_init;
 }
 
-CtrlTask::CtrlTask(const char* name, const ptr<Feature>& _map, double maxVel)
-  : CtrlTask(name, _map) {
+CtrlTask::CtrlTask(const char* name, const ptr<Feature>& _feat, double maxVel)
+  : CtrlTask(name, _feat) {
   ref = make_shared<MotionProfile_Bang>(arr(), maxVel);
 }
 
-CtrlTask::CtrlTask(const char* name, const ptr<Feature>& _map, double decayTime, double dampingRatio, double maxVel, double maxAcc)
-  : CtrlTask(name, _map) {
+CtrlTask::CtrlTask(const char* name, const ptr<Feature>& _feat, double decayTime, double dampingRatio, double maxVel, double maxAcc)
+  : CtrlTask(name, _feat) {
   if(dampingRatio<0.) {
     ref = make_shared<MotionProfile_Sine>(arr(), decayTime);
   } else {
@@ -333,8 +333,8 @@ CtrlTask::CtrlTask(const char* name, const ptr<Feature>& _map, double decayTime,
   }
 }
 
-CtrlTask::CtrlTask(const char* name, const ptr<Feature>& _map, const rai::Graph& params)
-  : CtrlTask(name, _map) {
+CtrlTask::CtrlTask(const char* name, const ptr<Feature>& _feat, const rai::Graph& params)
+  : CtrlTask(name, _feat) {
   ref = make_shared<MotionProfile_PD>(params);
   rai::Node* n;
   if((n=params["scale"])) scale = n->get<double>();
@@ -348,7 +348,7 @@ CtrlTask::~CtrlTask() {
 }
 
 ActStatus CtrlTask::update(double tau, const rai::Configuration& world) {
-  map->__phi(y, J_y, world);
+  feat->__phi(y, J_y, world);
   //if(world.qdot.N) v = J_y*world.qdot; else v.resize(y.N).setZero();
   ActStatus s_old = status.get();
   ActStatus s_new = s_old;
@@ -381,10 +381,10 @@ void CtrlTask::setTarget(const arr& y_target) {
 
 void CtrlTask::getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const rai::Configuration& world) {
   //-- get necessary Jacobians
-  ptr<TM_Default> m = std::dynamic_pointer_cast<TM_Default>(map);
-  CHECK(m, "this only works for the default position task map");
-  CHECK_EQ(m->type, TMT_pos, "this only works for the default positioni task map");
-  CHECK_GE(m->i, 0, "this only works for the default position task map");
+  ptr<TM_Default> m = std::dynamic_pointer_cast<TM_Default>(feat);
+  CHECK(m, "this only works for the default position task feat");
+  CHECK_EQ(m->type, TMT_pos, "this only works for the default positioni task feat");
+  CHECK_GE(m->i, 0, "this only works for the default position task feat");
   rai::Frame* body = world.frames(m->i);
   rai::Frame* l_ft_sensor = world.getFrameByName("l_ft_sensor");
   arr J_ft, J;
@@ -417,8 +417,8 @@ TaskControlMethods::TaskControlMethods(const arr& _Hmetric)
   : Hmetric(_Hmetric) { //rai::getParameter<double>("Hrate", .1)*world.getHmetric()) {
 }
 
-CtrlTask* TaskControlMethods::addPDTask(CtrlTaskL& tasks, const char* name, double decayTime, double dampingRatio, ptr<Feature> map) {
-  return tasks.append(new CtrlTask(name, map, decayTime, dampingRatio, 1., 1.));
+CtrlTask* TaskControlMethods::addPDTask(CtrlTaskL& tasks, const char* name, double decayTime, double dampingRatio, ptr<Feature> feat) {
+  return tasks.append(new CtrlTask(name, feat, decayTime, dampingRatio, 1., 1.));
 }
 
 //ptr<CtrlTask> TaskControlMethods::addPDTask(const char* name,
@@ -430,8 +430,8 @@ CtrlTask* TaskControlMethods::addPDTask(CtrlTaskL& tasks, const char* name, doub
 //                                   decayTime, dampingRatio, 1., 1.));
 //}
 
-//ConstraintForceTask* TaskControlMethods::addConstraintForceTask(const char* name, Feature *map){
-//  ConstraintForceTask *t = new ConstraintForceTask(map);
+//ConstraintForceTask* TaskControlMethods::addConstraintForceTask(const char* name, Feature *feat){
+//  ConstraintForceTask *t = new ConstraintForceTask(feat);
 //  t->name=name;
 //  t->desiredApproach.name=STRING(name <<"_PD");
 //  t->desiredApproach.active=false;
@@ -631,7 +631,7 @@ arr TaskControlMethods::getComplianceProjection(CtrlTaskL& tasks) {
       if(!P.N) P = eye(t->J_y.d1);
 
       //special case! qItself feature!
-      if(t->compliance.N==1 && std::dynamic_pointer_cast<F_qItself>(t->map)) {
+      if(t->compliance.N==1 && std::dynamic_pointer_cast<F_qItself>(t->feat)) {
         double compliance = t->compliance.scalar();
         CHECK_GE(compliance, 0., "");
         CHECK_LE(compliance, 1., "");
@@ -681,7 +681,7 @@ void TaskControlMethods::reportCurrentState(CtrlTaskL& tasks) {
 //  arr y;
 //  for(ConstraintForceTask* t: forceTasks){
 //    if(t->active){
-//      t->map->phi(y, NoArr, world);
+//      t->feat->phi(y, NoArr, world);
 //      t->updateConstraintControl(y, t->desiredForce);
 //    }
 //  }
@@ -693,7 +693,7 @@ void TaskControlMethods::reportCurrentState(CtrlTaskL& tasks) {
 //  arr y, J_y;
 //  for(ConstraintForceTask* t: forceTasks){
 //    if(t->active) {
-//      t->map->phi(y, J_y, world);
+//      t->feat->phi(y, J_y, world);
 //      CHECK_EQ(y.N,1," can only handle 1D constraints for now");
 //      Jl += ~J_y * t->desiredForce;
 //    }
@@ -845,13 +845,13 @@ void TaskControlMethods::calcForceControl(CtrlTaskL& tasks, arr& K_ft, arr& J_ft
   uint nForceTasks=0;
   for(CtrlTask* task : tasks) if(task->active && task->f_ref.N) {
       nForceTasks++;
-      ptr<TM_Default> map = std::dynamic_pointer_cast<TM_Default>(task->map);
-      rai::Frame* body = world.frames(map->i);
+      ptr<TM_Default> feat = std::dynamic_pointer_cast<TM_Default>(task->feat);
+      rai::Frame* body = world.frames(feat->i);
       rai::Frame* lFtSensor = world.getFrameByName("r_ft_sensor");
       arr y, J, J_ft;
-      task->map->__phi(y, J, world);
-      world.kinematicsPos_wrtFrame(NoArr, J_ft, body, map->ivec, lFtSensor);
-      J_ft_inv = -~conv_vec2arr(map->ivec)*inverse_SymPosDef(J_ft*~J_ft)*J_ft;
+      task->feat->__phi(y, J, world);
+      world.kinematicsPos_wrtFrame(NoArr, J_ft, body, feat->ivec, lFtSensor);
+      J_ft_inv = -~conv_vec2arr(feat->ivec)*inverse_SymPosDef(J_ft*~J_ft)*J_ft;
       K_ft = -~J*task->f_alpha;
       fRef = task->f_ref;
       gamma = task->f_gamma;

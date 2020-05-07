@@ -4,6 +4,7 @@
 
 namespace rai{
   struct Configuration;
+  struct ConfigurationViewer;
   struct CameraView;
 }
 
@@ -17,7 +18,7 @@ namespace ry{
 typedef Var<rai::Configuration> Config;
 
 struct ConfigViewer { ptr<KinViewer> view; };
-struct PathViewer { ptr<KinPoseViewer> view; };
+struct ConfigurationViewer { ptr<rai::ConfigurationViewer> view; };
 struct ImageViewer { ptr<::ImageViewer> view; };
 struct PointCloudViewer { ptr<::PointCloudViewer> view; };
 

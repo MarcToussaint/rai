@@ -17,6 +17,7 @@
 #include "../Kin/kin_physx.h"
 #include "../Operate/robotOperation.h"
 #include "../Kin/proxy.h"
+#include "../Kin/viewer.h"
 #include "../Kin/kinViewer.h"
 #include "../Kin/cameraview.h"
 #include "../Kin/simulation.h"
@@ -24,7 +25,7 @@
 #include "../LGP/LGP_tree.h"
 
 void init_Config(pybind11::module &m) {
-    pybind11::class_<ry::Config>(m, "Config", "This is a class docstring")
+    pybind11::class_<ry::Config>(m, "Config", "Core data structure to represent a kinematic configuration.")
 .def(pybind11::init<>())
 
 .def("clear", [](ry::Config& self) {
@@ -192,7 +193,7 @@ pybind11::arg("frames") = ry::I_StringA()
     )
 
 .def("setFrameState", [](ry::Config& self, const pybind11::array& X, const ry::I_StringA& frames, bool calc_q_from_X) {
-  arr _X = numpy2arr(X);
+  arr _X = numpy2arr<double>(X);
   _X.reshape(_X.N/7, 7);
   self.set()->setFrameState(_X, I_conv(frames), calc_q_from_X);
 },
@@ -328,10 +329,10 @@ reloads, displays and animates the configuration whenever the file is changed"
     )
 
 .def("komo_IK", [](ry::Config& self, bool useSwift) {
-  ry::RyKOMO komo;
-  komo.komo = make_shared<KOMO>(self.get(), useSwift);
-  komo.config.set() = komo.komo->world;
-  komo.komo->setIKOpt();
+//  ry::RyKOMO komo;
+  auto komo = make_shared<KOMO>();
+  komo->setModel(self.get(), useSwift);
+  komo->setIKOpt();
   return komo;
 },
 "create KOMO solver configured to IK, useSwift determine whether for each\
@@ -343,10 +344,9 @@ pybind11::arg("useSwift")
 
 .def("komo_CGO", [](ry::Config& self, uint numConfigs, bool useSwift) {
   CHECK_GE(numConfigs, 1, "");
-  ry::RyKOMO komo;
-  komo.komo = make_shared<KOMO>(self.get(), useSwift);
-  komo.config.set() = komo.komo->world;
-  komo.komo->setDiscreteOpt(numConfigs);
+  auto komo = make_shared<KOMO>();
+  komo->setModel(self.get(), useSwift);
+  komo->setDiscreteOpt(numConfigs);
   return komo;
 },
 "create KOMO solver configured for dense graph optimization,\
@@ -360,11 +360,10 @@ pybind11::arg("useSwift")
     )
 
 .def("komo_path",  [](ry::Config& self, double phases, uint stepsPerPhase, double timePerPhase, bool useSwift) {
-  ry::RyKOMO komo;
-  komo.komo = make_shared<KOMO>(self.get(), useSwift);
-  komo.config.set() = komo.komo->world;
-  komo.komo->setPathOpt(phases, stepsPerPhase, timePerPhase);
-  komo.komo->setSquaredQAccVelHoming();
+  auto komo = make_shared<KOMO>();
+  komo->setModel(self.get(), useSwift);
+  komo->setTiming(phases, stepsPerPhase, timePerPhase);
+  komo->add_qControlObjective({}, 2, 1.);
   return komo;
 },
 "create KOMO solver configured for sparse path optimization",
@@ -374,6 +373,7 @@ pybind11::arg("timePerPhase")=5.,
 pybind11::arg("useSwift")
     )
 
+/*
 .def("lgp", [](ry::Config& self, const std::string& folFileName) {
   ry::RyLGP_Tree lgp;
   lgp.lgp = make_shared<LGP_Tree_Thread>(self.get(), folFileName.c_str());
@@ -395,11 +395,12 @@ is being exported into a bullet instance, which can be stepped forward, and the 
 "create a PhysX engine for physical simulation from the configuration: The configuration\
 is being exported into a bullet instance, which can be stepped forward, and the result syced back to this configuration"
     )
+*/
 
 .def("simulation", [](ry::Config& self, rai::Simulation::SimulatorEngine engine, bool display) {
-  ry::RySimulation sim;
-  sim.sim = make_shared<rai::Simulation>(self.set(), engine, display);
-  sim.config = make_shared<Var<rai::Configuration>>(self);
+//  ry::RySimulation sim;
+  auto sim = make_shared<rai::Simulation>(self.set(), engine, display);
+//  sim.config = make_shared<Var<rai::Configuration>>(self);
   return sim;
 },
 "create a generic Simulation engine, which can internally call PhysX, Bullet, or just kinematics to forward simulate,\
@@ -409,14 +410,14 @@ allows you to control robot motors by position, velocity, or accelerations,\
     pybind11::arg("display")
     )
 
-.def("operate", [](ry::Config& self, const char* rosNodeName) {
-  ry::RyOperate op;
-  op.R = make_shared<RobotOperation>(self.get(), .01, rosNodeName);
-  return op;
-},
-"create a module (including ROS node) to sync this configuration both ways (reading state, and controlling) to a real robot",
-pybind11::arg("rosNodeName")
-    )
+//.def("operate", [](ry::Config& self, const char* rosNodeName) {
+//  ry::RyOperate op;
+//  op.R = make_shared<RobotOperation>(self.get(), .01, rosNodeName);
+//  return op;
+//},
+//"create a module (including ROS node) to sync this configuration both ways (reading state, and controlling) to a real robot",
+//pybind11::arg("rosNodeName")
+//    )
 
 .def("sortFrames", [](ry::Config& self) {
   self.set()->sortFrames();
@@ -448,9 +449,34 @@ pybind11::arg("gravity"))
 //===========================================================================
 
 pybind11::class_<ry::ConfigViewer>(m, "ConfigViewer");
-pybind11::class_<ry::PathViewer>(m, "PathViewer");
 pybind11::class_<ry::PointCloudViewer>(m, "PointCloudViewer");
 pybind11::class_<ry::ImageViewer>(m, "ImageViewer");
+
+//===========================================================================
+
+pybind11::class_<ry::ConfigurationViewer>(m, "ConfigurationViewer")
+.def(pybind11::init<>())
+.def("setConfiguration", [](ry::ConfigurationViewer& self, ry::Config& config) {
+  if(!self.view) self.view = make_shared<rai::ConfigurationViewer>();
+  self.view->setConfiguration(config.set());
+})
+.def("recopyMeshes", [](ry::ConfigurationViewer& self, ry::Config& config) {
+  if(!self.view) self.view = make_shared<rai::ConfigurationViewer>();
+  self.view->recopyMeshes(config.set());
+})
+.def("setPathFrames", [](ry::ConfigurationViewer& self, const pybind11::array& X) {
+  if(!self.view) self.view = make_shared<rai::ConfigurationViewer>();
+  arr _X = numpy2arr<double>(X);
+  self.view->setPath(_X);
+})
+.def("playVideo", [](ry::ConfigurationViewer& self, double delay, const char* saveVideoPath) {
+  if(!self.view) self.view = make_shared<rai::ConfigurationViewer>();
+  self.view->playVideo(false, delay, saveVideoPath);
+}, "",
+pybind11::arg("delay")=double(1.),
+pybind11::arg("saveVideoPath")=nullptr
+)
+;
 
 //===========================================================================
 
@@ -496,7 +522,7 @@ pybind11::arg("visualsOnly")=true
     )
 
 .def("computePointCloud", [](ry::RyCameraView& self, const pybind11::array& depth, bool globalCoordinates) {
-  arr _depth = numpy2arr(depth);
+  arr _depth = numpy2arr<double>(depth);
   floatA __depth; copy(__depth, _depth);
   auto ptsSet = self.pts.set();
   self.cam->computePointCloud(ptsSet, __depth, globalCoordinates);

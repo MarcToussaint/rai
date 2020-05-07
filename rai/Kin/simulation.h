@@ -37,6 +37,7 @@ struct Simulation {
   void closeGripper(const char* gripperFrameName, double width=.05, double speed=.1, double force=20.);
 
   //-- get state information
+  const arr& get_q(){ return C.getJointState(); }
   const arr& qdot();
   double getGripperWidth(const char* gripperFrameName);
   bool getGripperIsGrasped(const char* gripperFrameName);

@@ -15,7 +15,7 @@ void TEST(KomoSequence){
 
   KOMO_ext komo;
   komo.setModel(K);
-  komo.setPathOpt(2., 20, 10.);
+  komo.setTiming(2., 20, 10.);
 
   komo.setSquaredQAccVelHoming();
 

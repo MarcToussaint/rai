@@ -15,19 +15,19 @@ void TEST(Grasp){
 
   KOMO komo;
   komo.setModel(K);
-  komo.setPathOpt(2.5, 10., 5.);
-  komo.setSquaredQAccVelHoming();
+  komo.setTiming(2.5, 10., 5.);
+  komo.add_qControlObjective({}, 2, 1.);
 
 #if 0
   komo.setGrasp(1., "endeff", "stick");
 #else
-  komo.add_touch(1., 1., "endeff", "stickTip");
+  komo.addObjective({1.}, FS_distance, {"endeff", "stickTip"}, OT_eq, {1e2});
   komo.addSwitch_stable(1., -1., "endeff", "stickTip");
 #endif
 
   komo.add_collision(true);
 
-  komo.add_touch(2., -1., "stick", "redBall");
+  komo.addObjective({2.}, FS_distance, {"stick", "redBall"}, OT_eq, {1e2});
 
   komo.setSlow(2., -1.,1e0);
 
