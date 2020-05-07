@@ -589,6 +589,7 @@ void Graph::copy(const Graph& G, bool appendInsteadOfClear, bool enforceCopySubg
 }
 
 void Graph::read(std::istream& is, bool parseInfo) {
+  uint Nbefore = N;
   if(parseInfo) getParseInfo(nullptr).beg=is.tellg();
   String namePrefix;
   StringA tags;
@@ -631,7 +632,11 @@ void Graph::read(std::istream& is, bool parseInfo) {
   DEBUG(checkConsistency());
 
   //-- merge all Mege keys
-  NodeL edits = getNodesWithTag("%Edit");
+  NodeL edits;// = getNodesWithTag("%Edit");
+  for(uint i=Nbefore; i<N; i++) {
+    Node* n=elem(i);
+    if(n->isGraph() && n->graph().findNode("%Edit")) edits.append(n);
+  }
   for(Node* ed:edits) {
 //    CHECK_EQ(ed->key.first(), "Edit", "an edit node needs Edit as first key");
     ed->graph().delNode(ed->graph().findNode("%Edit"));
