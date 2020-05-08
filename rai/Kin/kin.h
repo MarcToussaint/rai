@@ -157,8 +157,9 @@ struct Configuration : GLDrawer {
   /// @name get state
   uint getJointStateDimension() const;
   const arr& getJointState() const;
-  arr getJointState(const StringA&) const;
+  arr getJointState(const FrameL&) const;
   arr getJointState(const uintA&) const;
+  arr getJointState(const StringA&) const;
   arr getFrameState() const;
   arr naturalQmetric(double power=.5) const;               ///< returns diagonal of a natural metric in q-space, depending on tree depth
   arr getLimits() const;

@@ -548,6 +548,31 @@ const arr& rai::Configuration::getJointState() const {
   return q;
 }
 
+arr rai::Configuration::getJointState(const FrameL& joints) const {
+  if(!q.nd)((Configuration*)this)->ensure_q();
+  uint nd=0;
+  for(rai::Frame *f:joints) {
+    rai::Joint* j = f->joint;
+    if(!j || !j->active) continue;
+    nd += j->dim;
+  }
+
+  arr x(nd);
+  nd=0;
+  for(rai::Frame *f:joints) {
+    rai::Joint* j = f->joint;
+    if(!j || !j->active) continue;
+    for(uint ii=0; ii<j->dim; ii++) x(nd+ii) = q(j->qIndex+ii);
+    nd += j->dim;
+  }
+  CHECK_EQ(nd, x.N, "");
+  return x;
+}
+
+arr rai::Configuration::getJointState(const uintA& joints) const {
+  return getJointState(frames.sub(joints));
+}
+
 arr rai::Configuration::getJointState(const StringA& joints) const {
   if(!q.nd)((Configuration*)this)->ensure_q();
   arr x(joints.N);
@@ -561,27 +586,6 @@ arr rai::Configuration::getJointState(const StringA& joints) const {
     CHECK(j->dim==1 || subdim, "the joint '" <<s <<"' is multi-dimensional - you need to select a subdim");
     x(i) = q(j->qIndex+d);
   }
-  return x;
-}
-
-arr rai::Configuration::getJointState(const uintA& joints) const {
-  if(!q.nd)((Configuration*)this)->ensure_q();
-  uint nd=0;
-  for(uint i=0; i<joints.N; i++) {
-    rai::Joint* j = frames(joints(i))->joint;
-    if(!j || !j->active) continue;
-    nd += j->dim;
-  }
-
-  arr x(nd);
-  nd=0;
-  for(uint i=0; i<joints.N; i++) {
-    rai::Joint* j = frames(joints(i))->joint;
-    if(!j || !j->active) continue;
-    for(uint ii=0; ii<j->dim; ii++) x(nd+ii) = q(j->qIndex+ii);
-    nd += j->dim;
-  }
-  CHECK_EQ(nd, x.N, "");
   return x;
 }
 
