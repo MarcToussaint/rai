@@ -102,7 +102,7 @@ struct Frame : NonCopyable {
   Inertia& getInertia();
 
   const Transformation& ensure_X();
-  const Transformation& get_Q();
+  const Transformation& get_Q() const;
   const Transformation& get_X() const;
   Transformation_Xtoken set_X() { return Transformation_Xtoken(*this); }
   Transformation_Qtoken set_Q() { return Transformation_Qtoken(*this); }

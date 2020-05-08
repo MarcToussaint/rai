@@ -18,6 +18,8 @@
 
 namespace rai {
 
+//===========================================================================
+
 struct Simulation_self {
   arr qdot;
   std::shared_ptr<struct Simulation_DisplayThread> display;
@@ -29,6 +31,8 @@ struct Simulation_self {
   void updateDisplayData(const byteA& _image, const floatA& _depth);
 };
 
+//===========================================================================
+
 struct SimulationState {
   arr frameState;
   arr frameVels;
@@ -36,12 +40,51 @@ struct SimulationState {
   SimulationState(const arr& _frameState, const arr& _frameVels) : frameState(_frameState), frameVels(_frameVels) {}
 };
 
-Simulation::Simulation(Configuration& _C, Simulation::SimulatorEngine _engine, bool _display)
+//===========================================================================
+
+struct SimulationImp {
+  enum When { _undefined, _beforeControl, _beforePhysics, _afterPhysics, _afterImages };
+
+  Simulation::ImpType type;
+  When when = _undefined;
+  bool killMe = false;
+
+  //-- imps overload these methods to modify/perturb something
+  virtual void modControl(Simulation& S, arr& u_control, double& tau, Simulation::ControlMode u_mode) {}
+  virtual void modConfiguration(Simulation& S) {}
+  virtual void modImages(Simulation& S, byteA& image, floatA& depth) {}
+};
+
+//===========================================================================
+
+struct Imp_CloseGripper : SimulationImp {
+  Frame *gripper, *fing1, *fing2, *obj;
+  F_PairCollision coll1;
+  F_PairCollision coll2;
+  arr q;
+
+  Imp_CloseGripper(Frame* _gripper, Frame* _fing1, Frame* _fing2, Frame* _obj);
+  virtual void modConfiguration(Simulation& S);
+};
+
+//===========================================================================
+
+struct Imp_OpenGripper : SimulationImp {
+  Frame *gripper, *fing1, *fing2;
+  arr q;
+
+  Imp_OpenGripper(Frame* _gripper, Frame* _fing1, Frame* _fing2);
+  virtual void modConfiguration(Simulation& S);
+};
+
+//===========================================================================
+
+Simulation::Simulation(Configuration& _C, Simulation::SimulatorEngine _engine, int _verbose)
   : self(make_unique<Simulation_self>()),
     C(_C),
     time(0.),
     engine(_engine),
-    display(_display) {
+    verbose(_verbose) {
   if(engine==_physx){
     self->physx = make_shared<PhysXInterface>(C, true);
   } else if(engine==_bullet){
@@ -49,24 +92,42 @@ Simulation::Simulation(Configuration& _C, Simulation::SimulatorEngine _engine, b
   } else if(engine==_kinematic){
     //nothing
   } else NIY;
-  if(display) self->display = make_shared<Simulation_DisplayThread>(C);
+  if(verbose>0) self->display = make_shared<Simulation_DisplayThread>(C);
 }
 
 Simulation::~Simulation(){
 }
 
 void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
+  //-- kill done imps
+  for(uint i=imps.N;i--;){
+    if(imps.elem(i)->killMe) imps.remove(i);
+  }
+
+  arr ucontrol = u_control; //a copy to allow for perturbations
+
+  //-- imps before control
+  for(ptr<SimulationImp>& imp : imps) if(imp->when==SimulationImp::_beforeControl){
+    imp->modControl(*this, ucontrol, tau, u_mode);
+  }
+
+  //-- perform control using C
   time += tau;
-  //perform control using C
   if(u_mode==_none){
   } else if(u_mode==_position){
-    C.setJointState(u_control);
+    C.setJointState(ucontrol);
   } else if(u_mode==_velocity){
     arr q = C.getJointState();
-    q += tau * u_control;
+    q += tau * ucontrol;
     C.setJointState(q);
   } else NIY;
-  //call the physics ending
+
+  //-- imps before physics
+  for(ptr<SimulationImp>& imp : imps) if(imp->when==SimulationImp::_beforePhysics){
+    imp->modConfiguration(*this);
+  }
+
+  //-- call the physics ending
   if(engine==_physx) {
     self->physx->pushKinematicStates(C.frames);
     self->physx->step(tau);
@@ -77,33 +138,59 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     self->bullet->pullDynamicStates(C.frames);
   } else if(engine==_kinematic){
   } else NIY;
-  if(display) self->updateDisplayData(time, C.getFrameState(), C.proxies);
+
+  //-- imps after physics
+  for(ptr<SimulationImp>& imp : imps) if(imp->when==SimulationImp::_afterPhysics){
+    imp->modConfiguration(*this);
+  }
+
+  if(verbose>0) self->updateDisplayData(time, C.getFrameState(), C.proxies);
 }
 
 void Simulation::openGripper(const char* gripperFrameName, double width, double speed){
-  rai::Frame *g = C.getFrameByName(gripperFrameName);
-  if(!g) LOG(-1) <<"you passed me a non-existing gripper name!";
-
-  rai::Frame *obj = g->children(-1);
-  CHECK_EQ(obj->joint->type, rai::JT_rigid, "");
-
-  C.attach(C.frames(0), obj);
-  if(engine==_physx) {
-    self->physx->changeObjectType(obj, rai::BT_dynamic);
-  }else{
-    NIY;
+  rai::Frame *gripper = C.getFrameByName(gripperFrameName);
+  if(!gripper){
+    LOG(-1) <<"you passed me a non-existing gripper name!";
+    return;
   }
+
+  //remove gripper from grasps list
+  for(uint i=grasps.N;i--;){
+    if(grasps.elem(i)==gripper) grasps.remove(i);
+  }
+
+  //check if an object is attached
+  rai::Frame *obj = gripper->children(-1);
+  if(obj->joint->type != rai::JT_rigid){
+    LOG(-1) <<"gripper '" <<gripper->name <<"' does not hold an object";
+  }
+
+  //reattach object to world frame, and make it physical
+  if(obj){
+    C.attach(C.frames(0), obj);
+    if(engine==_physx) {
+      self->physx->changeObjectType(obj, rai::BT_dynamic);
+    }else{
+      NIY;
+    }
+  }
+
+  //requirement: two of the children of need to be the finger geometries
+  rai::Frame *fing1 = gripper->children(0); while(!fing1->shape && fing1->children.N) fing1 = fing1->children(0);
+  rai::Frame *fing2 = gripper->children(1); while(!fing2->shape && fing2->children.N) fing2 = fing2->children(0);
+
+  imps.append(make_shared<Imp_OpenGripper>(gripper, fing1, fing2));
 }
 
 void Simulation::closeGripper(const char* gripperFrameName, double width, double speed, double force){
-  rai::Frame *g = C.getFrameByName(gripperFrameName);
-  if(!g) LOG(-1) <<"you passed me a non-existing gripper name!";
+  rai::Frame *gripper = C.getFrameByName(gripperFrameName);
+  if(!gripper) LOG(-1) <<"you passed me a non-existing gripper name!";
 
   //-- first, find the object that is between the fingers
 
   //requirement: two of the children of need to be the finger geometries
-  rai::Frame *fing1 = g->children(0); while(!fing1->shape && fing1->children.N) fing1 = fing1->children(0);
-  rai::Frame *fing2 = g->children(1); while(!fing2->shape && fing2->children.N) fing2 = fing2->children(0);
+  rai::Frame *fing1 = gripper->children(0); while(!fing1->shape && fing1->children.N) fing1 = fing1->children(0);
+  rai::Frame *fing2 = gripper->children(1); while(!fing2->shape && fing2->children.N) fing2 = fing2->children(0);
 
   //collect objects close to fing1 and fing2
   C.stepSwift();
@@ -124,13 +211,16 @@ void Simulation::closeGripper(const char* gripperFrameName, double width, double
   }
 
   if(objs.N!=1){
-    LOG(-1) <<"fingers are not close to multiple objects";
+    LOG(-1) <<"fingers are close to multiple objects";
     NIY;
     return;
   }
 
   rai::Frame *obj = objs.elem(0);
 
+#if 1
+  imps.append(make_shared<Imp_CloseGripper>(gripper, fing1, fing2, obj));
+#else
 
   //-- actually close gripper until both distances are < .001
   F_PairCollision coll1(fing1->ID, obj->ID, coll1._negScalar, false);
@@ -172,6 +262,7 @@ void Simulation::closeGripper(const char* gripperFrameName, double width, double
       NIY;
     }
   }
+#endif
 
 }
 
@@ -211,11 +302,22 @@ const arr& Simulation::qdot() {
 }
 
 double Simulation::getGripperWidth(const char* gripperFrameName){
-  NIY
+  rai::Frame *gripper = C.getFrameByName(gripperFrameName);
+  if(!gripper){
+    LOG(-1) <<"you passed me a non-existing gripper name!";
+    return -1.;
+  }
+
+  //requirement: two of the children of need to be the finger geometries
+  rai::Frame *fing1 = gripper->children(0); while(!fing1->shape && fing1->children.N) fing1 = fing1->children(0);
+  rai::Frame *fing2 = gripper->children(1); while(!fing2->shape && fing2->children.N) fing2 = fing2->children(0);
+
+  return fing1->joint->calc_q_from_Q(fing1->get_Q()).scalar();
 }
 
-bool Simulation::getGripperIsGrasped(const char* gripperFrameName){
-  NIY
+bool Simulation::getGripperIsGrasping(const char* gripperFrameName){
+  for(Frame *g:grasps) if(g->name==gripperFrameName) return true;
+  return false;
 }
 
 CameraView& Simulation::cameraview() {
@@ -228,7 +330,13 @@ CameraView& Simulation::cameraview() {
 void Simulation::getImageAndDepth(byteA& image, floatA& depth) {
   cameraview().updateConfiguration(C);
   cameraview().computeImageAndDepth(image, depth);
-  if(display) self->updateDisplayData(image, depth);
+
+  //-- imps after images
+  for(ptr<SimulationImp>& imp : imps) if(imp->when==SimulationImp::_afterImages){
+    imp->modImages(*this, image, depth);
+  }
+
+  if(verbose>0) self->updateDisplayData(image, depth);
 }
 
 //===========================================================================
@@ -312,6 +420,96 @@ void Simulation_self::updateDisplayData(const byteA& _image, const floatA& _dept
   display->image = _image;
   display->depth= _depth;
   display->mux.unlock();
+}
+
+//===========================================================================
+
+Imp_CloseGripper::Imp_CloseGripper(Frame* _gripper, Frame* _fing1, Frame* _fing2, Frame* _obj)
+  : gripper(_gripper), fing1(_fing1), fing2(_fing2), obj(_obj),
+    coll1(fing1->ID, obj->ID, coll1._negScalar, false),
+    coll2(fing2->ID, obj->ID, coll1._negScalar, false) {
+  when = _beforePhysics;
+  type = Simulation::_closeGripper;
+
+
+  //    auto d1 = coll1.eval(C);
+
+  //    auto d2 = coll2.eval(C);
+
+  //    cout <<"d1: " <<d1.y <<"d2: " <<d2.y <<endl;
+
+  q = fing1->joint->calc_q_from_Q(fing1->get_Q());
+
+}
+
+void Imp_CloseGripper::modConfiguration(Simulation& S) {
+  if(killMe) return;
+
+  CHECK_EQ(&S.C, &fing1->C, "");
+  CHECK_EQ(&S.C, &fing2->C, "");
+  CHECK_EQ(&S.C, &obj->C, "");
+
+  //-- actually close gripper until both distances are < .001
+  q.scalar() -= .0001;
+  fing1->joint->calc_Q_from_q(q, 0);
+  fing2->joint->calc_Q_from_q(q, 0);
+  //      step({}, .01, _none);
+  auto d1 = coll1.eval(S.C);
+  auto d2 = coll2.eval(S.C);
+  cout <<q <<" d1: " <<d1.y <<"d2: " <<d2.y <<endl;
+  if(q(0)<-.1){ //stop grasp by joint limits -> unsuccessful
+    killMe = true;
+  }
+  if(-d1.y(0)<1e-3 && -d2.y(0)<1e-3){ //stop grasp by contact
+    //evaluate stability
+    F_GraspOppose oppose(fing1->ID, fing2->ID, obj->ID);
+    arr y;
+    oppose.__phi(y, NoArr, S.C);
+
+    if(sumOfSqr(y) < 0.1){ //good enough -> success!
+      // kinematically attach object to gripper
+      obj = obj->getUpwardLink();
+      S.C.attach(gripper, obj);
+
+      // tell engine that object is now kinematic, not dynamic
+      if(S.engine==S._physx) {
+        S.self->physx->changeObjectType(obj, BT_kinematic);
+      }else{
+        NIY;
+      }
+
+      //allows the user to know that gripper grasps something
+      S.grasps.append(gripper);
+    }else{ //unsuccessful
+    }
+    killMe = true;
+  }
+}
+
+//===========================================================================
+
+Imp_OpenGripper::Imp_OpenGripper(Frame* _gripper, Frame* _fing1, Frame* _fing2)
+  : gripper(_gripper), fing1(_fing1), fing2(_fing2) {
+  when = _beforePhysics;
+  type = Simulation::_openGripper;
+
+  q = fing1->joint->calc_q_from_Q(fing1->get_Q());
+}
+
+void Imp_OpenGripper::modConfiguration(Simulation& S) {
+  if(killMe) return;
+
+  CHECK_EQ(&S.C, &gripper->C, "");
+  CHECK_EQ(&S.C, &fing1->C, "");
+  CHECK_EQ(&S.C, &fing2->C, "");
+
+  //-- actually open gripper until limit
+  q.scalar() += .0001;
+  fing1->joint->calc_Q_from_q(q, 0);
+  fing2->joint->calc_Q_from_q(q, 0);
+  if(q.scalar() > fing1->joint->limits(1)){ //stop opening
+    killMe = true;
+  }
 }
 
 } //namespace rai

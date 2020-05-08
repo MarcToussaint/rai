@@ -64,15 +64,15 @@ void init_Simulation(pybind11::module &m) {
     pybind11::arg("gripperFrameName")
   )
 
-  .def("getGripperIsGrasped", [](std::shared_ptr<rai::Simulation>& self, const char* gripperFrameName) {
-    return self->getGripperIsGrasped(gripperFrameName);
+  .def("getGripperIsGrasping", [](std::shared_ptr<rai::Simulation>& self, const char* gripperFrameName) {
+    return self->getGripperIsGrasping(gripperFrameName);
   }, "",
     pybind11::arg("gripperFrameName")
   )
 
 
   .def("addSensor", [](std::shared_ptr<rai::Simulation>& self, const char* cameraFrameName) {
-    self->cameraview().addSensor("camera");
+    self->cameraview().addSensor(cameraFrameName);
   }, "",
     pybind11::arg("cameraFrameName")
   )

@@ -12,18 +12,23 @@
 namespace rai {
 
 struct SimulationState;
+struct SimulationImp;
 
 struct Simulation {
   enum SimulatorEngine { _physx, _bullet, _kinematic };
   enum ControlMode { _none, _position, _velocity, _acceleration };
+  enum ImpType { _closeGripper, _openGripper, _depthNoise, _rgbNoise, _adversarialDropper };
+
   std::unique_ptr<struct Simulation_self> self;
 
   Configuration& C;
   double time;
   SimulatorEngine engine;
-  bool display;
+  Array<ptr<SimulationImp>> imps; ///< list of (adversarial) imps doing things/perturbations/noise in addition to clean physics engine
+  int verbose;
+  FrameL grasps;
 
-  Simulation(Configuration& _C, SimulatorEngine _engine, bool _display=true);
+  Simulation(Configuration& _C, SimulatorEngine _engine, int _verbose=1);
   ~Simulation();
 
 
@@ -40,7 +45,7 @@ struct Simulation {
   const arr& get_q(){ return C.getJointState(); }
   const arr& qdot();
   double getGripperWidth(const char* gripperFrameName);
-  bool getGripperIsGrasped(const char* gripperFrameName);
+  bool getGripperIsGrasping(const char* gripperFrameName);
 
   //-- get sensor information
   CameraView& cameraview(); ///< use this if you want to initialize the sensor, etc
@@ -52,6 +57,7 @@ struct Simulation {
   //== perturbation/adversarial interface
 
   //what are really the fundamental perturbations? Their (reactive?) management should be realized by 'agents'. We need a method to add purturbation agents.
+  void addImp(ImpType type, const arr& parameters);
 
   //displace object
 

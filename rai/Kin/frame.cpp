@@ -133,7 +133,7 @@ const rai::Transformation& rai::Frame::ensure_X() {
   return X;
 }
 
-const rai::Transformation& rai::Frame::get_Q() {
+const rai::Transformation& rai::Frame::get_Q() const {
   return Q;
 }
 
