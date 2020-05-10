@@ -289,15 +289,7 @@ void Simulation::restoreState(const ptr<SimulationState>& state) {
   setState(state->frameState, state->frameVels);
 }
 
-void Simulation::pushConfigurationToSimulator(const arr& frameVelocities) {
-  if(engine==_physx) {
-    self->physx->pushFullState(C.frames, frameVelocities);
-  }else if(engine==_bullet){
-    self->bullet->pushFullState(C.frames, frameVelocities);
-  }else NIY;
-}
-
-const arr& Simulation::qdot() {
+const arr& Simulation::get_qDot() {
   return self->qdot;
 }
 
@@ -338,6 +330,7 @@ void Simulation::getImageAndDepth(byteA& image, floatA& depth) {
 
   if(verbose>0) self->updateDisplayData(image, depth);
 }
+
 
 //===========================================================================
 

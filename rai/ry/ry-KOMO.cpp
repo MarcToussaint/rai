@@ -19,7 +19,7 @@ Skeleton list2skeleton(const pybind11::list& L) {
 }
 
 void init_KOMO(pybind11::module &m) {
-pybind11::class_<KOMO, std::shared_ptr<KOMO>>(m, "KOMOpy", "Constrained solver to optimize configurations or paths. (KOMO = k-order Markov Optimization)")
+pybind11::class_<KOMO, std::shared_ptr<KOMO>>(m, "KOMO", "Constrained solver to optimize configurations or paths. (KOMO = k-order Markov Optimization)")
 
 .def(pybind11::init<>())
 

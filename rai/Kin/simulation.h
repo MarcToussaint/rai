@@ -43,15 +43,15 @@ struct Simulation {
 
   //-- get state information
   const arr& get_q(){ return C.getJointState(); }
-  const arr& qdot();
+  const arr& get_qDot();
   double getGripperWidth(const char* gripperFrameName);
   bool getGripperIsGrasping(const char* gripperFrameName);
 
   //-- get sensor information
-  CameraView& cameraview(); ///< use this if you want to initialize the sensor, etc
   void getImageAndDepth(byteA& image, floatA& depth); ///< use this during stepping
   void getSegmentation(byteA& segmentation);
-  //use C.evalFeature to retrieve any geometric feature
+  CameraView& cameraview(); ///< use this if you want to initialize the sensor, etc
+  rai::CameraView::Sensor& addSensor(const char* frameAttached){ return cameraview().addSensor(frameAttached); }
 
 
   //== perturbation/adversarial interface
