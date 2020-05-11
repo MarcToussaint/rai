@@ -70,6 +70,16 @@ pybind11::arg("args") = std::string()
 pybind11::arg("frameName")
     )
 
+.def("frame", [](ry::Config& self, const std::string& frameName) {
+  ry::RyFrame f;
+  f.config = self.data;
+  f.frame = self.get()->getFrameByName(frameName.c_str(), true);
+  return f;
+},
+"get access to a frame by name; use the Frame methods to set/get frame properties",
+pybind11::arg("frameName")
+    )
+      
 .def("delFrame", [](ry::Config& self, const std::string& frameName) {
   auto Kset = self.set();
   rai::Frame* p = Kset->getFrameByName(frameName.c_str(), true);
