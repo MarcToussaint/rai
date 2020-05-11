@@ -589,6 +589,12 @@ pybind11::arg("globalCoordinates") = true)
   ENUMVAL(FS, aboveBox)
   ENUMVAL(FS, insideBox)
 
+  ENUMVAL(FS, pairCollision_negScalar)
+  ENUMVAL(FS, pairCollision_vector)
+  ENUMVAL(FS, pairCollision_normal)
+  ENUMVAL(FS, pairCollision_p1)
+  ENUMVAL(FS, pairCollision_p2)
+
   ENUMVAL(FS, standingAbove)
 
   ENUMVAL(FS, physics)

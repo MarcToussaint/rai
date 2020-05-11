@@ -51,6 +51,12 @@ enum FeatureSymbol {
   FS_aboveBox,
   FS_insideBox,
 
+  FS_pairCollision_negScalar,
+  FS_pairCollision_vector,
+  FS_pairCollision_normal,
+  FS_pairCollision_p1,
+  FS_pairCollision_p2,
+
   FS_standingAbove,
 
   FS_physics,

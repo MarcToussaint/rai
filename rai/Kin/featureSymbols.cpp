@@ -57,6 +57,12 @@ template<> const char* rai::Enum<FeatureSymbol>::names []= {
   "aboveBox",
   "insideBox",
 
+  "pairCollision_negScalar",
+  "pairCollision_vector",
+  "pairCollision_normal",
+  "pairCollision_p1",
+  "pairCollision_p2",
+
   "standingAbove",
 
   "physics",
@@ -123,6 +129,12 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
   else if(feat==FS_scalarProductYY) {  f=make_shared<TM_Default>(TMT_vecAlign, world, frames(0), Vector_y, frames(1), Vector_y); }
   else if(feat==FS_scalarProductYZ) {  f=make_shared<TM_Default>(TMT_vecAlign, world, frames(0), Vector_y, frames(1), Vector_z); }
   else if(feat==FS_scalarProductZZ) {  f=make_shared<TM_Default>(TMT_vecAlign, world, frames(0), Vector_z, frames(1), Vector_z); }
+
+  else if(feat==FS_pairCollision_negScalar) {  f=make_shared<F_PairCollision>(world, frames(0), frames(1), F_PairCollision::_negScalar, false); }
+  else if(feat==FS_pairCollision_vector) {     f=make_shared<F_PairCollision>(world, frames(0), frames(1), F_PairCollision::_vector, false); }
+  else if(feat==FS_pairCollision_normal) {     f=make_shared<F_PairCollision>(world, frames(0), frames(1), F_PairCollision::_normal, true); }
+  else if(feat==FS_pairCollision_p1) {         f=make_shared<F_PairCollision>(world, frames(0), frames(1), F_PairCollision::_p1, false); }
+  else if(feat==FS_pairCollision_p2) {         f=make_shared<F_PairCollision>(world, frames(0), frames(1), F_PairCollision::_p2, false); }
 
   else if(feat==FS_gazeAt) { f=make_shared<TM_Default>(TMT_gazeAt, world, frames(0), NoVector, frames(1)); }
 
