@@ -96,10 +96,10 @@ void init_Simulation(pybind11::module &m) {
     depthData2pointCloud(points, _depth, arr(Fxypxy));
     return pybind11::array(points.dim(), points.p);
   })
-
-
-
   ;
+
+  pybind11::class_<rai::CameraView::Sensor, std::shared_ptr<rai::CameraView::Sensor>>(m, "CameraViewSensor");
+
 }
 
 #endif

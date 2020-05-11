@@ -60,6 +60,28 @@ pybind11::arg("parent") = std::string(),
 pybind11::arg("args") = std::string()
     )
 
+
+.def("addObject", [](ry::Config& self, const std::string& name, const std::string& parent,
+                     rai::ShapeType shape,
+                     const std::vector<double>& size,
+                     const std::vector<double>& color,
+                     const std::vector<double>& pos,
+const std::vector<double>& quat) {
+  auto Kset = self.set();
+  ry::RyFrame f;
+  f.config = self.data;
+  f.frame = Kset->addObject(name.c_str(), parent.c_str(), shape, conv_stdvec2arr(size), conv_stdvec2arr(color), conv_stdvec2arr(pos), conv_stdvec2arr(quat));
+  return f;
+}, "TODO remove! use addFrame only",
+pybind11::arg("name"),
+pybind11::arg("parent") = std::string(),
+pybind11::arg("shape"),
+pybind11::arg("size") = std::vector<double>(),
+pybind11::arg("color") = std::vector<double>(),
+pybind11::arg("pos") = std::vector<double>(),
+pybind11::arg("quat") = std::vector<double>()
+    )
+
 .def("getFrame", [](ry::Config& self, const std::string& frameName) {
   ry::RyFrame f;
   f.config = self.data;
