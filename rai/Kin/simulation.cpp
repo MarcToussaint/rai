@@ -22,6 +22,7 @@ namespace rai {
 
 struct Simulation_self {
   arr qdot;
+  arr frameVelocities;
   std::shared_ptr<struct Simulation_DisplayThread> display;
   std::shared_ptr<CameraView> cameraview;
   std::shared_ptr<BulletInterface> bullet;
@@ -79,6 +80,16 @@ struct Imp_OpenGripper : SimulationImp {
 
 //===========================================================================
 
+struct Imp_ObjectImpulses : SimulationImp {
+  Frame *obj;
+  uint count=0;
+
+  Imp_ObjectImpulses(Frame* _obj) : obj(_obj) { when = _beforePhysics; }
+  virtual void modConfiguration(Simulation& S);
+};
+
+//===========================================================================
+
 Simulation::Simulation(Configuration& _C, Simulation::SimulatorEngine _engine, int _verbose)
   : self(make_unique<Simulation_self>()),
     C(_C),
@@ -131,11 +142,11 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
   if(engine==_physx) {
     self->physx->pushKinematicStates(C.frames);
     self->physx->step(tau);
-    self->physx->pullDynamicStates(C.frames);
+    self->physx->pullDynamicStates(C.frames, self->frameVelocities);
   }else if(engine==_bullet){
     self->bullet->pushKinematicStates(C.frames);
     self->bullet->step(tau);
-    self->bullet->pullDynamicStates(C.frames);
+    self->bullet->pullDynamicStates(C.frames, self->frameVelocities);
   } else if(engine==_kinematic){
   } else NIY;
 
@@ -317,6 +328,15 @@ CameraView& Simulation::cameraview() {
     self->cameraview = make_shared<CameraView>(C, true, false);
   }
   return *self->cameraview;
+}
+
+void Simulation::addImp(Simulation::ImpType type, const StringA& frames, const arr& parameters){
+  if(type==_objectImpulses){
+    CHECK_EQ(frames.N, 1, "");
+    rai::Frame *obj = C.getFrameByName(frames(0));
+    CHECK(obj, "");
+    imps.append(make_shared<Imp_ObjectImpulses>(obj));
+  } else NIY;
 }
 
 void Simulation::getImageAndDepth(byteA& image, floatA& depth) {
@@ -504,6 +524,28 @@ void Imp_OpenGripper::modConfiguration(Simulation& S) {
   if(q.scalar() > fing1->joint->limits(1)){ //stop opening
     killMe = true;
   }
+}
+
+//===========================================================================
+
+void Imp_ObjectImpulses::modConfiguration(Simulation& S){
+  count ++;
+  if(count<100) return;
+
+  cout <<"HERE!" <<endl;
+
+  count=0;
+
+  arr vel = randn(3);
+  if(vel(2)<0.) vel(2)=0.;
+  vel(0) *= .2;
+  vel(1) *= .2;
+
+  std::shared_ptr<SimulationState> state = S.getState();
+
+  state->frameVels(obj->ID, 0, {}) = vel;
+
+  S.restoreState(state);
 }
 
 } //namespace rai

@@ -17,7 +17,7 @@ struct SimulationImp;
 struct Simulation {
   enum SimulatorEngine { _physx, _bullet, _kinematic };
   enum ControlMode { _none, _position, _velocity, _acceleration };
-  enum ImpType { _closeGripper, _openGripper, _depthNoise, _rgbNoise, _adversarialDropper };
+  enum ImpType { _closeGripper, _openGripper, _depthNoise, _rgbNoise, _adversarialDropper, _objectImpulses };
 
   std::unique_ptr<struct Simulation_self> self;
 
@@ -57,7 +57,7 @@ struct Simulation {
   //== perturbation/adversarial interface
 
   //what are really the fundamental perturbations? Their (reactive?) management should be realized by 'agents'. We need a method to add purturbation agents.
-  void addImp(ImpType type, const arr& parameters);
+  void addImp(ImpType type, const StringA& frames, const arr& parameters);
 
   //displace object
 
