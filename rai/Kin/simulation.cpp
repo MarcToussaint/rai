@@ -381,6 +381,7 @@ struct Simulation_DisplayThread : Thread, GLDrawer {
         dep.elem(i) = (x<0.)?0:((x>255.)?255:x);
       }
       float scale = .3*float(gl.width)/image.d1;
+      float top = 1. - scale*float(image.d0)/gl.height;
 
       glMatrixMode(GL_PROJECTION);
       glLoadIdentity();
@@ -388,8 +389,8 @@ struct Simulation_DisplayThread : Thread, GLDrawer {
       glLoadIdentity();
       glOrtho(0, 1., 1., 0., -1., 1.); //only affects the offset - the rest is done with raster zooms
       glDisable(GL_DEPTH_TEST);
-      glRasterImage(.3, .05, image, scale);
-      glRasterImage(.65, .05, dep, scale);
+      glRasterImage(.0, top, image, scale);
+      glRasterImage(.7, top, dep, scale);
     }
     mux.unlock();
 #else
