@@ -621,6 +621,15 @@ pybind11::arg("globalCoordinates") = true)
       ENUMVAL(acceleration)
       .export_values();
 
+  pybind11::enum_<rai::Simulation::ImpType>(m, "ImpType")
+      ENUMVAL(closeGripper)
+      ENUMVAL(openGripper)
+      ENUMVAL(depthNoise)
+      ENUMVAL(rgbNoise)
+      ENUMVAL(adversarialDropper)
+      ENUMVAL(objectImpulses)
+      .export_values();
+
 }
 
 #endif
