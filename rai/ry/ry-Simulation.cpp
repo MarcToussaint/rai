@@ -80,7 +80,7 @@ void init_Simulation(pybind11::module &m) {
        )
 
 
-      .def("addImp", &rai::Simulation::getState)
+      .def("addImp", &rai::Simulation::addImp)
 
       .def("getState", &rai::Simulation::getState)
 

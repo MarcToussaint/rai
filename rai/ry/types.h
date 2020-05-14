@@ -82,6 +82,28 @@ inline arr I_conv(const ry::I_arr& x) {
 
 namespace pybind11 {
   namespace detail {
+
+    //** StringA <--> vector<std::string>
+    template <>  struct type_caster<StringA> {
+    public:
+      PYBIND11_TYPE_CASTER(StringA, _("StringA"));
+
+      /// Conversion part 1 (Python->C++): convert numpy array to rai::Array<T>
+      bool load(pybind11::handle src, bool) {
+        std::vector<std::string> strings = src.cast<std::vector<std::string>>();
+        value = I_conv(strings);
+        /* Ensure return code was OK (to avoid out-of-range errors etc) */
+        return !PyErr_Occurred();
+      }
+
+      /// Conversion part 2 (C++ -> Python): convert rai::Array<T> instance to numpy array
+      static handle cast(StringA src, return_value_policy /* policy */, handle /* parent */) {
+        std::vector<std::string> strings = I_conv(src);
+        return pybind11::cast(strings);
+      }
+    };
+
+    //** rai::Array <--> numpy
     template <typename T>  struct type_caster<rai::Array<T>> {
     public:
       PYBIND11_TYPE_CASTER(rai::Array<T>, _("rai::Array<T>"));
