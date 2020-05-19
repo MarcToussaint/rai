@@ -5,7 +5,7 @@ KOMO_Control::KOMO_Control(const rai::Configuration& C, bool avoidCollisions) {
   setModel(C, true);
   setTiming(1., 1, .1, 2);
   add_qControlObjective({}, 2, 1.);
-  //    add_qControlObjective({}, 1, 1e1);
+  add_qControlObjective({}, 1, 1e1);
   if(avoidCollisions){
     add_collision(true);
   }

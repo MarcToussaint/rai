@@ -12,7 +12,7 @@
 #include "../Kin/feature.h"
 
 struct Objective {
-  ptr<Feature> feat;
+  std::shared_ptr<Feature> feat;
   const rai::Enum<ObjectiveType> type;  ///< element of {sumOfSqr, inequality, equality}
   rai::String name;
   intA configs; //either a (0,1)-indicator per time slice, or a list of variable tuples

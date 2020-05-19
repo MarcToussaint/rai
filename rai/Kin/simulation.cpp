@@ -84,7 +84,17 @@ struct Imp_ObjectImpulses : SimulationImp {
   Frame *obj;
   uint count=0;
 
-  Imp_ObjectImpulses(Frame* _obj) : obj(_obj) { when = _beforePhysics; }
+  Imp_ObjectImpulses(Frame* _obj) : obj(_obj) { CHECK(obj, "");  when = _beforePhysics;  }
+  virtual void modConfiguration(Simulation& S);
+};
+
+//===========================================================================
+
+struct Imp_BlockJoints : SimulationImp {
+  FrameL joints;
+  arr qBlocked;
+
+  Imp_BlockJoints(const FrameL& _joints, Simulation& S);
   virtual void modConfiguration(Simulation& S);
 };
 
@@ -334,9 +344,14 @@ void Simulation::addImp(Simulation::ImpType type, const StringA& frames, const a
   if(type==_objectImpulses){
     CHECK_EQ(frames.N, 1, "");
     rai::Frame *obj = C.getFrameByName(frames(0));
-    CHECK(obj, "");
     imps.append(make_shared<Imp_ObjectImpulses>(obj));
-  } else NIY;
+  } else if(type==_blockJoints){
+    FrameL F = C.getFramesByNames(frames);
+    auto block = make_shared<Imp_BlockJoints>(F, *this);
+    imps.append(block);
+  } else {
+    NIY;
+  }
 }
 
 void Simulation::getImageAndDepth(byteA& image, floatA& depth) {
@@ -532,8 +547,6 @@ void Imp_ObjectImpulses::modConfiguration(Simulation& S){
   count ++;
   if(count<100) return;
 
-  cout <<"HERE!" <<endl;
-
   count=0;
 
   arr vel = randn(3);
@@ -546,6 +559,31 @@ void Imp_ObjectImpulses::modConfiguration(Simulation& S){
   state->frameVels(obj->ID, 0, {}) = vel;
 
   S.restoreState(state);
+}
+
+//===========================================================================
+
+Imp_BlockJoints::Imp_BlockJoints(const FrameL& _joints, Simulation& S)
+  : joints(_joints) {
+  when = _beforePhysics;
+  qBlocked.resize(joints.N);
+  arr q = S.C.getJointState();
+  for(uint i=0;i<joints.N;i++){
+    rai::Joint *j = joints(i)->joint;
+    CHECK(j, "");
+    qBlocked(i) = q(j->qIndex);
+  }
+}
+
+void Imp_BlockJoints::modConfiguration(Simulation& S){
+  CHECK_EQ(joints.N, qBlocked.N, "");
+  arr q = S.C.getJointState();
+  for(uint i=0;i<joints.N;i++){
+    rai::Joint *j = joints(i)->joint;
+    CHECK(j, "");
+    q(j->qIndex) = qBlocked(i);
+  }
+  S.C.setJointState(q);
 }
 
 } //namespace rai

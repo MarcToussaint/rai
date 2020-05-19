@@ -17,7 +17,7 @@ struct SimulationImp;
 struct Simulation {
   enum SimulatorEngine { _physx, _bullet, _kinematic };
   enum ControlMode { _none, _position, _velocity, _acceleration };
-  enum ImpType { _closeGripper, _openGripper, _depthNoise, _rgbNoise, _adversarialDropper, _objectImpulses };
+  enum ImpType { _closeGripper, _openGripper, _depthNoise, _rgbNoise, _adversarialDropper, _objectImpulses, _blockJoints };
 
   std::unique_ptr<struct Simulation_self> self;
 

@@ -933,7 +933,7 @@ void rai::Configuration::vars_deactivate(uint i){
 // features
 //
 
-ptr<Feature> rai::Configuration::feature(FeatureSymbol fs, const StringA& frames) const {
+std::shared_ptr<Feature> rai::Configuration::feature(FeatureSymbol fs, const StringA& frames) const {
   return symbols2feature(fs, frames, *this);
 }
 

@@ -150,6 +150,7 @@ void KOMO::addTimeOptimization() {
 void KOMO::clearObjectives() {
   objectives.clear(); //listDelete(objectives);
   listDelete(switches);
+  reset();
 }
 
 ptr<Objective> KOMO::addObjective(const arr& times,
@@ -3259,11 +3260,13 @@ void KOMO::TimeSliceProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, c
 }
 
 rai::Configuration& KOMO::getConfiguration(double phase) {
+  if(!configurations.N) setupConfigurations();
   uint s = k_order + conv_time2step(phase, stepsPerPhase);
   return *configurations(s);
 }
 
 Configuration& KOMO::getConfiguration_t(int t){
+  if(!configurations.N) setupConfigurations();
   if(t<0) CHECK_LE(-t, (int)k_order,"");
   return *configurations(t+k_order);
 }

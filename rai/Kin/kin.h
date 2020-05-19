@@ -219,7 +219,7 @@ struct Configuration : GLDrawer {
   void kinematicsLimitsCost(arr& y, arr& J, const arr& limits, double margin=.1) const;
 
   /// @name features
-  ptr<Feature> feature(FeatureSymbol fs, const StringA& frames= {}) const;
+  std::shared_ptr<Feature> feature(FeatureSymbol fs, const StringA& frames= {}) const;
   void evalFeature(arr& y, arr& J, FeatureSymbol fs, const StringA& frames= {}) const;
 
   /// @name high level inverse kinematics
