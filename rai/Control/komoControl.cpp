@@ -6,9 +6,7 @@ KOMO_Control::KOMO_Control(const rai::Configuration& C, bool avoidCollisions) {
   setTiming(1., 1, .1, 2);
   add_qControlObjective({}, 2, 1.);
   add_qControlObjective({}, 1, 1e1);
-  if(avoidCollisions){
-    add_collision(true);
-  }
+  if(avoidCollisions) add_collision(true);
   q = C.getJointState();
   setupConfigurations(q);
   verbose=0;
@@ -20,7 +18,9 @@ void KOMO_Control::step(){
   setConfiguration(-1, q);
   setConfiguration(0, q + (q - q_1));
 
-  optimize(0.);
+  OptOptions opt;
+  opt.stopTolerance=1e-4;
+  optimize(0., opt);
 
   {
     rai::Graph R = getReport(false);

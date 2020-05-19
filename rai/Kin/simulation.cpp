@@ -182,8 +182,9 @@ void Simulation::openGripper(const char* gripperFrameName, double width, double 
 
   //check if an object is attached
   rai::Frame *obj = gripper->children(-1);
-  if(obj->joint->type != rai::JT_rigid){
+  if(!obj || !obj->joint || obj->joint->type != rai::JT_rigid){
     LOG(-1) <<"gripper '" <<gripper->name <<"' does not hold an object";
+    obj=0;
   }
 
   //reattach object to world frame, and make it physical
@@ -226,18 +227,27 @@ void Simulation::closeGripper(const char* gripperFrameName, double width, double
 
   //intersect
   FrameL objs = setSection(fing1close, fing2close);
+//  cout <<"initiating ";
+//  listWrite(objs);
+//  cout <<endl;
   if(!objs.N){
     LOG(-1) <<"fingers are not close to objects";
     return;
   }
 
-  if(objs.N!=1){
-    LOG(-1) <<"fingers are close to multiple objects";
-    NIY;
-    return;
+  rai::Frame *obj = objs.elem(0);
+
+  if(objs.N>1){
+    arr center = .5*(fing1->getPosition()+fing2->getPosition());
+    double d = length(center - obj->getPosition());
+    for(uint i=1;i<objs.N;i++){
+      double d2 = length(center - objs(i)->getPosition());
+      if(d2<d){ obj = objs(i); d = d2; }
+    }
   }
 
-  rai::Frame *obj = objs.elem(0);
+  LOG(1) <<"initiating grasp of object " <<obj->name;
+
 
 #if 1
   imps.append(make_shared<Imp_CloseGripper>(gripper, fing1, fing2, obj));

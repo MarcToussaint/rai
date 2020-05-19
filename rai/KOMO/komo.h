@@ -248,7 +248,7 @@ struct KOMO : NonCopyable {
   void initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase=1, bool sineProfile=true); ///< set all configurations (EXCEPT prefix) to interpolate given waypoints
 
   //-- optimization
-  void optimize(double addInitializationNoise=.01);  ///< run the solver (same as run_prepare(); run(); )
+  void optimize(double addInitializationNoise=.01, const OptOptions options=NOOPT);  ///< run the solver (same as run_prepare(); run(); )
   void reset();                                      ///< reset the dual variables and feature value buffers (always needed when adding/changing objectives before continuing an optimization)
 
   //advanced

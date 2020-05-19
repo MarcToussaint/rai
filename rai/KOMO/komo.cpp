@@ -1427,12 +1427,12 @@ void KOMO::reset() {
   dense_problem.clear();
 }
 
-void KOMO::optimize(double addInitializationNoise) {
+void KOMO::optimize(double addInitializationNoise, const OptOptions options) {
   run_prepare(addInitializationNoise);
 
   if(verbose>0) reportProblem();
 
-  run();
+  run(options);
 }
 
 void KOMO::run_prepare(double addInitializationNoise) {
