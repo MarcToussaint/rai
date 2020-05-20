@@ -14,6 +14,10 @@ void KOMO_Control::setup(const rai::Configuration& C, double tau, double accCost
   verbose=0;
 }
 
+void KOMO_Control::updateConfiguration(const rai::Configuration& C){
+  getConfiguration_t(0).setFrameState(C.getFrameState());
+}
+
 void KOMO_Control::step(const arr& real_q){
   if(!!real_q.N && real_q.N) q = real_q;
 
