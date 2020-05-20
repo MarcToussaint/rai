@@ -126,9 +126,10 @@ pybind11::arg("object"))
 
 //-- run
 
-.def("optimize", &KOMO::optimize, "",
-     pybind11::arg("addInitializationNoise")=0.01,
-     pybind11::arg("OptOptions")=NOOPT)
+.def("optimize", [](std::shared_ptr<KOMO>& self, double addInitializationNoise){
+  self->optimize(addInitializationNoise);
+      }, "",
+     pybind11::arg("addInitializationNoise")=0.01)
 
 //-- reinitialize with configuration
 .def("setConfigurations", [](std::shared_ptr<KOMO>& self, ry::Config& C) {
