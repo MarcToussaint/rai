@@ -4,9 +4,11 @@ struct KOMO_Control : KOMO {
   arr q;
   double sos, eq, ineq;
 
-  KOMO_Control(const rai::Configuration& C, bool avoidCollisions);
+  KOMO_Control(){}
 
-  void step();
+  void setup(const rai::Configuration& C, double tau=.01, double accCosts=1. , double velCosts=1, bool avoidCollisions=true);
+
+  void step(const arr& real_q);
 
   arr getStep(){
     return q - getConfiguration_t(-1).getJointState();

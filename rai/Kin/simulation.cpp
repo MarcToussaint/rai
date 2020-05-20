@@ -561,8 +561,8 @@ void Imp_ObjectImpulses::modConfiguration(Simulation& S){
 
   arr vel = randn(3);
   if(vel(2)<0.) vel(2)=0.;
-  vel(0) *= .2;
-  vel(1) *= .2;
+  vel(0) *= .1;
+  vel(1) *= .1;
 
   std::shared_ptr<SimulationState> state = S.getState();
 
