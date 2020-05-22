@@ -350,6 +350,7 @@ CtrlTask::~CtrlTask() {
 ActStatus CtrlTask::update(double tau, const rai::Configuration& world) {
   feat->__phi(y, J_y, world);
   //if(world.qdot.N) v = J_y*world.qdot; else v.resize(y.N).setZero();
+  v.resize(y.N).setZero();
   ActStatus s_old = status.get();
   ActStatus s_new = s_old;
   if(ref) s_new = ref->update(y_ref, v_ref, tau, y, v);
