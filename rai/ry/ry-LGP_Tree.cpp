@@ -1,7 +1,6 @@
 #ifdef RAI_PYBIND
 
 #include "ry-LGP_Tree.h"
-#include "ry-KOMO.h"
 #include "types.h"
 
 #include "../LGP/LGP_tree.h"
@@ -57,7 +56,7 @@ pybind11::class_<ry::RyLGP_Tree>(m, "LGP_Tree")
 })
 
 .def("getKOMOforBound", [](ry::RyLGP_Tree& self, BoundType bound) {
-  return ry::RyKOMO(self.lgp->focusNode->komoProblem(bound));
+  return self.lgp->focusNode->komoProblem(bound);
 })
 
 .def("addTerminalRule", [](ry::RyLGP_Tree& self, const char* precondition) {
@@ -85,7 +84,7 @@ pybind11::class_<ry::RyLGP_Tree>(m, "LGP_Tree")
 
 .def("getKOMO", [](ry::RyLGP_Tree& self, uint solution, BoundType bound) {
   const auto& komo = self.lgp->getKOMO(solution, bound);
-  return ry::RyKOMO(komo);
+  return komo;
 })
 ;
 }

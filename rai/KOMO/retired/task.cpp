@@ -30,7 +30,7 @@ Task* Task::newTask(const Node* specs, const rai::Configuration& world, int step
   else {
     task->name = map->shortTag(world);
 //    for(Node *p:specs->parents) task->name <<'_' <<p->keys.last();
-    task ->name<<"_o" <<task->map->order;
+    task ->name<<"_o" <<task->feat->order;
   }
 
   //-- check for additional continuous parameters

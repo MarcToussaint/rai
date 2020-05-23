@@ -10,8 +10,7 @@ RETVAL=$?
 if [ $RETVAL = 124 ]; then
     echo "     ***** TIMEOUT " $1
     echo "  ****TIMEOUT****" $1 $RETVAL >> $THISPATH/z.test-report
-fi
-if [ $RETVAL != 0 ]; then
+elif [ $RETVAL != 0 ]; then
     echo "     ***** FAILED  " $1 " with return code " $RETVAL
     echo "  ****FAILED****" $1 $RETVAL >> $THISPATH/z.test-report
 fi

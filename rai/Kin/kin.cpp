@@ -330,7 +330,7 @@ void rai::Configuration::copy(const rai::Configuration& C, bool referenceSwiftOn
   for(Frame* f:C.frames) if(f->parent) frames(f->ID)->linkFrom(frames(f->parent->ID));
 
   //copy proxies; first they point to origin frames; afterwards, let them point to own frames
-  copyProxies(C);
+  copyProxies(C.proxies);
   //  proxies = K.proxies;
   //  for(Proxy& p:proxies) { p.a = frames(p.a->ID); p.b = frames(p.b->ID);  p.coll.reset(); }
 
@@ -548,6 +548,31 @@ const arr& rai::Configuration::getJointState() const {
   return q;
 }
 
+arr rai::Configuration::getJointState(const FrameL& joints) const {
+  if(!q.nd)((Configuration*)this)->ensure_q();
+  uint nd=0;
+  for(rai::Frame *f:joints) {
+    rai::Joint* j = f->joint;
+    if(!j || !j->active) continue;
+    nd += j->dim;
+  }
+
+  arr x(nd);
+  nd=0;
+  for(rai::Frame *f:joints) {
+    rai::Joint* j = f->joint;
+    if(!j || !j->active) continue;
+    for(uint ii=0; ii<j->dim; ii++) x(nd+ii) = q(j->qIndex+ii);
+    nd += j->dim;
+  }
+  CHECK_EQ(nd, x.N, "");
+  return x;
+}
+
+arr rai::Configuration::getJointState(const uintA& joints) const {
+  return getJointState(frames.sub(joints));
+}
+
 arr rai::Configuration::getJointState(const StringA& joints) const {
   if(!q.nd)((Configuration*)this)->ensure_q();
   arr x(joints.N);
@@ -561,27 +586,6 @@ arr rai::Configuration::getJointState(const StringA& joints) const {
     CHECK(j->dim==1 || subdim, "the joint '" <<s <<"' is multi-dimensional - you need to select a subdim");
     x(i) = q(j->qIndex+d);
   }
-  return x;
-}
-
-arr rai::Configuration::getJointState(const uintA& joints) const {
-  if(!q.nd)((Configuration*)this)->ensure_q();
-  uint nd=0;
-  for(uint i=0; i<joints.N; i++) {
-    rai::Joint* j = frames(joints(i))->joint;
-    if(!j || !j->active) continue;
-    nd += j->dim;
-  }
-
-  arr x(nd);
-  nd=0;
-  for(uint i=0; i<joints.N; i++) {
-    rai::Joint* j = frames(joints(i))->joint;
-    if(!j || !j->active) continue;
-    for(uint ii=0; ii<j->dim; ii++) x(nd+ii) = q(j->qIndex+ii);
-    nd += j->dim;
-  }
-  CHECK_EQ(nd, x.N, "");
   return x;
 }
 
@@ -801,12 +805,16 @@ void rai::Configuration::setJointState(const arr& _q, const StringA& joints) {
 }
 
 void rai::Configuration::setJointState(const arr& _q, const uintA& joints) {
+  setJointState(_q, frames.sub(joints));
+}
+
+void rai::Configuration::setJointState(const arr& _q, const FrameL& joints) {
   setJointStateCount++; //global counter
   getJointState();
 
   uint nd=0;
-  for(uint i=0; i<joints.N; i++) {
-    rai::Joint* j = frames(joints(i))->joint;
+  for(Frame *f:joints) {
+    Joint* j = f->joint;
     if(!j || !j->active) continue;
     for(uint ii=0; ii<j->dim; ii++) q(j->qIndex+ii) = _q(nd+ii);
     nd += j->dim;
@@ -817,8 +825,11 @@ void rai::Configuration::setJointState(const arr& _q, const uintA& joints) {
 
   _state_q_isGood=true;
   _state_proxies_isGood=false;
-  for(Frame* f:frames) if(f->parent) f->_state_X_isGood=false;
-
+  for(Joint* j:activeJoints){
+    if(j->type!=JT_tau){
+      j->frame->_state_setXBadinBranch();
+    }
+  }
   calc_Q_from_q();
 }
 
@@ -860,7 +871,13 @@ void rai::Configuration::setFrameState(const arr& X, const StringA& frameNames, 
 
   checkConsistency();
 //  calc_Q_from_Frames();
-//  if(calc_q_from_X) ensure_q();
+  //  if(calc_q_from_X) ensure_q();
+}
+
+void rai::Configuration::setDofsForTree(const arr& q, rai::Frame* root){
+  FrameL F = {root};
+  root->getSubtree(F);
+  setJointState(q, F);
 }
 
 void rai::Configuration::setTimes(double t) {
@@ -916,13 +933,12 @@ void rai::Configuration::vars_deactivate(uint i){
 // features
 //
 
-ptr<Feature> rai::Configuration::feature(FeatureSymbol fs, const StringA& frames) const {
+std::shared_ptr<Feature> rai::Configuration::feature(FeatureSymbol fs, const StringA& frames) const {
   return symbols2feature(fs, frames, *this);
 }
 
 void rai::Configuration::evalFeature(arr& y, arr& J, FeatureSymbol fs, const StringA& frames) const {
-  ptr<Feature> f = symbols2feature(fs, frames, *this);
-  f->__phi(y, J, *this);
+  feature(fs,frames)->__phi(y, J, *this);
 }
 
 //===========================================================================
@@ -948,7 +964,7 @@ void rai::Configuration::jacobian_pos(arr& J, Frame* a, const rai::Vector& pos_w
     Joint* j=a->joint;
     if(j && j->active) {
       uint j_idx=j->qIndex;
-      if(j_idx>=N) CHECK_EQ(j->type, JT_rigid, "");
+      if(j_idx>=N) if(j->active) CHECK_EQ(j->type, JT_rigid, "");
       if(j_idx<N) {
         if(j->type==JT_hingeX || j->type==JT_hingeY || j->type==JT_hingeZ) {
           rai::Vector tmp = j->axis ^ (pos_world-j->X()*j->Q().pos);
@@ -1796,7 +1812,7 @@ void rai::Configuration::stepDynamics(arr& qdot, const arr& Bu_control, double t
 
 void __merge(rai::ForceExchange* c, rai::Proxy* p) {
   CHECK(&c->a==p->a && &c->b==p->b, "");
-  if(!p->coll) p->calc_coll(c->a.C);
+  if(!p->collision) p->calc_coll(c->a.C);
   //  c->a_rel = c->a.X / rai::Vector(p->coll->p1);
   //  c->b_rel = c->b.X / rai::Vector(p->coll->p2);
   //  c->a_norm = c->a.X.rot / rai::Vector(-p->coll->normal);
@@ -1858,7 +1874,7 @@ void rai::Configuration_ext::proxiesToContacts(double margin) {
   for(Frame* f:frames) while(f->forces.N) delete f->forces.last();
 
   for(Proxy& p:proxies) {
-    if(!p.coll) p.calc_coll(*this);
+    if(!p.collision) p.calc_coll(*this);
     ForceExchange* candidate=nullptr;
     for(ForceExchange* c:p.a->forces) {
       if((&c->a==p.a && &c->b==p.b) || (&c->a==p.b && &c->b==p.a)) {
@@ -1868,7 +1884,7 @@ void rai::Configuration_ext::proxiesToContacts(double margin) {
     }
     if(candidate) __merge(candidate, &p);
     else {
-      if(p.coll->distance-(p.coll->rad1+p.coll->rad2)<margin) {
+      if(p.collision->distance-(p.collision->rad1+p.collision->rad2)<margin) {
         rai::ForceExchange* c = new rai::ForceExchange(*p.a, *p.b);
         __merge(c, &p);
       }
@@ -1893,8 +1909,8 @@ double rai::Configuration::totalCollisionPenetration() {
     //early check: if swift is way out of collision, don't bother computing it precise
     if(p.d > p.a->shape->radius()+p.b->shape->radius()+.01) continue;
     //exact computation
-    if(!p.coll)((Proxy*)&p)->calc_coll(*this);
-    double d = p.coll->getDistance();
+    if(!p.collision)((Proxy*)&p)->calc_coll(*this);
+    double d = p.collision->getDistance();
     if(d<0.) D -= d;
   }
   //  for(Frame *f:frames) for(ForceExchange *c:f->forces) if(&c->a==f) {
@@ -1903,10 +1919,10 @@ double rai::Configuration::totalCollisionPenetration() {
   return D;
 }
 
-void rai::Configuration::copyProxies(const rai::Configuration& K) {
+void rai::Configuration::copyProxies(const ProxyA& _proxies) {
   proxies.clear();
-  proxies.resize(K.proxies.N);
-  for(uint i=0; i<proxies.N; i++) proxies(i).copy(*this, K.proxies(i));
+  proxies.resize(proxies.N);
+  for(uint i=0; i<proxies.N; i++) proxies(i).copy(*this, proxies(i));
 }
 
 /** @brief prototype for \c operator<< */
@@ -2331,7 +2347,7 @@ void rai::Configuration::init(const Graph& G, bool addInsteadOfClear) {
           HALT("could not retrieve minimick frame for joint '" <<f->name <<"' from ats '" <<f->ats <<"'");
         }
         rai::Frame* mimicFrame = getFrameByName(jointName, true, true);
-        CHECK(mimicFrame, "");
+        CHECK(mimicFrame, "the argument to 'mimic', '" <<jointName <<"' is not a frame name");
         j->mimic = mimicFrame->joint;
         if(!j->mimic) HALT("The joint '" <<*j <<"' is declared mimicking '" <<jointName <<"' -- but that doesn't exist!");
         j->type = j->mimic->type;
@@ -2372,17 +2388,8 @@ void rai::Configuration::reportProxies(std::ostream& os, double belowMargin, boo
   uint i=0;
   for(const Proxy& p: proxies) {
     if(p.d>belowMargin) continue;
-    os  <<i <<" ("
-        <<p.a->name <<")-("
-        <<p.b->name
-        <<") [" <<p.a->ID <<',' <<p.b->ID <<"] \td=" <<p.d;
-    if(!brief)
-      os <<" |A-B|=" <<(p.posB-p.posA).length()
-         //        <<" d^2=" <<(p.posB-p.posA).lengthSqr()
-         <<" v=" <<(p.posB-p.posA)
-         <<" normal=" <<p.normal
-         <<" posA=" <<p.posA
-         <<" posB=" <<p.posB;
+    os  <<i;
+    p.write(os, brief);
     os <<endl;
     i++;
   }
@@ -2464,16 +2471,16 @@ void rai::Configuration_ext::kinematicsPenetrations(arr& y, arr& J, bool penetra
   if(!!J) J.resize(y.N, getJointStateDimension()).setZero();
   uint i=0;
   for(const Proxy& p:proxies) {
-    if(!p.coll)((Proxy*)&p)->calc_coll(*this);
+    if(!p.collision)((Proxy*)&p)->calc_coll(*this);
 
     arr Jp1, Jp2;
     if(!!J) {
-      jacobian_pos(Jp1, p.a, p.coll->p1);
-      jacobian_pos(Jp2, p.b, p.coll->p2);
+      jacobian_pos(Jp1, p.a, p.collision->p1);
+      jacobian_pos(Jp2, p.b, p.collision->p2);
     }
 
     arr y_dist, J_dist;
-    p.coll->kinDistance(y_dist, (!!J?J_dist:NoArr), Jp1, Jp2);
+    p.collision->kinDistance(y_dist, (!!J?J_dist:NoArr), Jp1, Jp2);
 
     if(!penetrationsOnly || y_dist.scalar()<activeMargin) {
       y(i) = -y_dist.scalar();
@@ -2513,18 +2520,18 @@ void rai::Configuration::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, dou
   //early check: if swift is way out of collision, don't bother computing it precise
   if(p.d > p.a->shape->radius() + p.b->shape->radius() + .01 + margin) return;
 
-  if(!p.coll)((Proxy*)&p)->calc_coll(*this);
+  if(!p.collision)((Proxy*)&p)->calc_coll(*this);
 
-  if(p.coll->getDistance()>margin) return;
+  if(p.collision->getDistance()>margin) return;
 
   arr Jp1, Jp2;
   if(!!J) {
-    jacobian_pos(Jp1, p.a, p.coll->p1);
-    jacobian_pos(Jp2, p.b, p.coll->p2);
+    jacobian_pos(Jp1, p.a, p.collision->p1);
+    jacobian_pos(Jp2, p.b, p.collision->p2);
   }
 
   arr y_dist, J_dist;
-  p.coll->kinDistance(y_dist, (!!J?J_dist:NoArr), Jp1, Jp2);
+  p.collision->kinDistance(y_dist, (!!J?J_dist:NoArr), Jp1, Jp2);
 
   if(y_dist.scalar()>margin) return;
   y += margin-y_dist.scalar();
@@ -3849,7 +3856,7 @@ void editConfiguration(const char* filename, rai::Configuration& C) {
       key = C.gl().setConfiguration(C, "waiting for file change", false);
       if(key==13 || key==32 || key==27 || key=='q') break;
       if(ino.poll(false, true)) break;
-      rai::wait(.02);
+      rai::wait(.2);
     }
     if(exit) break;
     if(key==13 || key==32) {

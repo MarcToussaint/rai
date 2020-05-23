@@ -42,9 +42,9 @@ void testFeature() {
   uint n=3*C.getJointStateDimension();
 
   rai::Array<ptr<Feature>> F;
-  F.append(make_shared<TM_PairCollision>(C, "obj1", "obj2", TM_PairCollision::_negScalar));
-  F.append(make_shared<TM_PairCollision>(C, "obj1", "obj2", TM_PairCollision::_vector));
-  F.append(make_shared<TM_PairCollision>(C, "obj1", "obj2", TM_PairCollision::_center));
+  F.append(make_shared<F_PairCollision>(C, "obj1", "obj2", F_PairCollision::_negScalar));
+  F.append(make_shared<F_PairCollision>(C, "obj1", "obj2", F_PairCollision::_vector));
+  F.append(make_shared<F_PairCollision>(C, "obj1", "obj2", F_PairCollision::_center));
   F.append(make_shared<TM_LinAngVel>(C, "obj1"));
   F.append(make_shared<TM_LinAngVel>(C, "obj2")) -> order=2;
   F.append(make_shared<F_Pose>(C, "obj1"));

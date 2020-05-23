@@ -3,16 +3,16 @@
 #include "types.h"
 #include "../Geo/geoms.h"
 
-pybind11::dict graph2dict(const Graph& G) {
+pybind11::dict graph2dict(const rai::Graph& G) {
   pybind11::dict dict;
-  for(Node* n:G) {
+  for(rai::Node* n:G) {
     rai::String key;
-    if(n->keys.N) key=n->keys.last();
+    if(n->key.N) key=n->key;
     else key <<n->index;
 
     //-- write value
     if(n->isGraph()) {
-      dict[key.p] = graph2dict(n->get<Graph>());
+      dict[key.p] = graph2dict(n->get<rai::Graph>());
     } else if(n->isOfType<rai::String>()) {
       dict[key.p] = n->get<rai::String>().p;
     } else if(n->isOfType<arr>()) {
@@ -40,12 +40,12 @@ pybind11::dict graph2dict(const Graph& G) {
   return dict;
 }
 
-pybind11::list graph2list(const Graph& G) {
+pybind11::list graph2list(const rai::Graph& G) {
   pybind11::list list;
-  for(Node* n:G) {
+  for(rai::Node* n:G) {
     //-- write value
     if(n->isGraph()) {
-      list.append(graph2dict(n->get<Graph>()));
+      list.append(graph2dict(n->get<rai::Graph>()));
     } else if(n->isOfType<rai::String>()) {
       list.append(n->get<rai::String>().p);
     } else if(n->isOfType<arr>()) {
@@ -118,29 +118,5 @@ arr vecvec2arr(const std::vector<std::vector<double> >& X) {
   return Y;
 }
 
-namespace pybind11 {
-  namespace detail {
-    template <typename T> struct type_caster<rai::Array<T>> {
-    public:
-      PYBIND11_TYPE_CASTER(rai::Array<T>, _("rai::Array<T>"));
 
-      /// Conversion part 1 (Python->C++): convert numpy array to rai::Array<T>
-      bool load(handle src, bool) {
-        auto buf = pybind11::array_t<T>::ensure(src);
-        if ( !buf )
-          return false;
-        rai::Array<T> a = numpy2arr(buf);
-        value = a;
-        /* Ensure return code was OK (to avoid out-of-range errors etc) */
-        return !PyErr_Occurred();
-      }
-
-      /// Conversion part 2 (C++ -> Python): convert rai::Array<T> instance to numpy array
-      static handle cast(rai::Array<T> src, return_value_policy /* policy */, handle /* parent */) {
-        pybind11::array ret(src.dim(), src.p);
-        return ret.release();
-      }
-    };
-  }
-}
 #endif

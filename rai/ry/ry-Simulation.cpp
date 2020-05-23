@@ -1,9 +1,11 @@
 #ifdef RAI_PYBIND
 
+#include "ry-Config.h"
 #include "ry-Simulation.h"
 #include "types.h"
 
 #include "../Kin/simulation.h"
+#include "../Perception/depth2PointCloud.h"
 
 namespace rai{
   struct SimulationState {
@@ -15,63 +17,91 @@ namespace rai{
 }
 
 void init_Simulation(pybind11::module &m) {
-  pybind11::class_<ry::RySimulation>(m, "RySimulation")
+  pybind11::class_<rai::Simulation, std::shared_ptr<rai::Simulation>>(m, "Simulation")
 
-  .def("step", [](ry::RySimulation& self, const std::vector<double>& u_control, double tau=.01, rai::Simulation::ControlMode u_mode) {
-    arr u = conv_stdvec2arr(u_control);
-    auto lock = self.config->set();
-    self.sim->step(u, tau, u_mode);
-  },
-  "",
-  pybind11::arg("u_control"),
-      pybind11::arg("tau") = .01,
-      pybind11::arg("u_mode") = rai::Simulation::_velocity
-                                )
-  .def("setState", [](ry::RySimulation& self, const pybind11::array& frameState, const pybind11::array& frameVelocities) {
-    arr X = numpy2arr(frameState);
-    X.reshape(X.N/7, 7);
-    arr V = numpy2arr(frameVelocities);
-    V.reshape(V.N/6, 2, 3);
-    auto lock = self.config->set();
-    return self.sim->setState(X, V);
-   }, "",
-     pybind11::arg("frameState"),
-     pybind11::arg("frameVelocities") = std::vector<double>()
-   )
+      .def(pybind11::init([](ry::Config& C, rai::Simulation::SimulatorEngine engine, int verbose) {
+             return make_shared<rai::Simulation>(C.set(), engine, verbose);
+           }))
 
-  .def("pushConfigurationToSimulator", [](ry::RySimulation& self, const std::vector<double>& frameVelocities) {
-    auto lock = self.config->set();
-    return self.sim->pushConfigurationToSimulator(conv_stdvec2arr(frameVelocities));
-  }, "after you modified the configuration (from which you derived the RySimulation), use this to push the modified configuration back into the simulation engine.\n Optionally: with frameVelocities",
-    pybind11::arg("frameVelocities") = std::vector<double>()
-  )
+      .def("step", &rai::Simulation::step,
+           "",
+           pybind11::arg("u_control"),
+           pybind11::arg("tau") = .01,
+           pybind11::arg("u_mode") = rai::Simulation::_velocity
+                                     )
 
-  .def("getState", [](ry::RySimulation& self) {
-    auto lock = self.config->set();
-    return self.sim->getState();
-  })
+      .def("get_q", &rai::Simulation::get_q)
+
+      .def("get_qDot", &rai::Simulation::get_qDot)
+
+      .def("openGripper", &rai::Simulation::openGripper,
+           "",
+           pybind11::arg("gripperFrameName"),
+           pybind11::arg("width") = .075,
+           pybind11::arg("speed") = .2
+                                    )
+
+      .def("closeGripper", &rai::Simulation::closeGripper,
+           "",
+           pybind11::arg("gripperFrameName"),
+           pybind11::arg("width") = .05,
+           pybind11::arg("speed") = 1.,
+           pybind11::arg("force") = 20.
+                                    )
+
+      .def("getGripperWidth", &rai::Simulation::getGripperWidth,
+           "",
+           pybind11::arg("gripperFrameName")
+           )
+
+      .def("getGripperIsGrasping", &rai::Simulation::getGripperIsGrasping,
+           "",
+           pybind11::arg("gripperFrameName")
+           )
 
 
-  .def("get_qDot", [](ry::RySimulation& self) {
-    arr qdot = self.sim->qdot();
-    return pybind11::array(qdot.dim(), qdot.p);
-  })
-
-  .def("getImageAndDepth", [](ry::RySimulation& self) {
+      .def("getImageAndDepth", [](std::shared_ptr<rai::Simulation>& self) {
     byteA rgb;
     floatA depth;
-    self.sim->getImageAndDepth(rgb, depth);
+    self->getImageAndDepth(rgb, depth);
     return pybind11::make_tuple(pybind11::array_t<byte>(rgb.dim(), rgb.p),
                                 pybind11::array_t<float>(depth.dim(), depth.p));
   })
 
-//  .def("getSegmentation", [](ry::RySimulation& self) {
+//  .def("getSegmentation", [](std::shared_ptr<rai::Simulation>& self) {
 //    byteA seg;
-//    self.sim->getSegmentation(seg);
+//    self->getSegmentation(seg);
 //    return pybind11::array_t<byte>(seg.dim(), seg.p);
 //  })
 
+  .def("addSensor",  &rai::Simulation::addSensor,
+       "",
+       pybind11::arg("cameraFrameName")
+       )
+
+
+      .def("addImp", &rai::Simulation::addImp)
+
+      .def("getState", &rai::Simulation::getState)
+
+      .def("restoreState", &rai::Simulation::restoreState)
+
+      .def("setState", &rai::Simulation::setState,
+           "",
+           pybind11::arg("frameState"),
+           pybind11::arg("frameVelocities") = std::vector<double>()
+                                              )
+
+      .def("depthData2pointCloud", [](std::shared_ptr<rai::Simulation>& self, const pybind11::array_t<float>& depth, const std::vector<double>& Fxypxy) {
+    arr points;
+    floatA _depth = numpy2arr<float>(depth);
+    depthData2pointCloud(points, _depth, arr(Fxypxy));
+    return pybind11::array(points.dim(), points.p);
+  })
   ;
+
+  pybind11::class_<rai::CameraView::Sensor, std::shared_ptr<rai::CameraView::Sensor>>(m, "CameraViewSensor");
+
 }
 
 #endif

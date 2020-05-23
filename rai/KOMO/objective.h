@@ -12,12 +12,12 @@
 #include "../Kin/feature.h"
 
 struct Objective {
-  ptr<Feature> map;
+  std::shared_ptr<Feature> feat;
   const rai::Enum<ObjectiveType> type;  ///< element of {sumOfSqr, inequality, equality}
   rai::String name;
   intA configs; //either a (0,1)-indicator per time slice, or a list of variable tuples
 
-  Objective(const ptr<Feature>& _map, const ObjectiveType& _type, const rai::String& _name=rai::String()) : map(_map), type(_type), name(_name) {}
+  Objective(const ptr<Feature>& _feat, const ObjectiveType& _type, const rai::String& _name=rai::String()) : feat(_feat), type(_type), name(_name) {}
   ~Objective() {}
 
   void setCostSpecs(int fromStep, int toStep, bool sparse=false);

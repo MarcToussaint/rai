@@ -146,8 +146,8 @@ void tutorialBasics(){
   komo.sparseOptimization=true;
   komo.setModel(C, false);
   komo.setTiming(2, 20, 5., 2);
-  komo.setSquaredQAccVelHoming();
-  komo.setSquaredQuaternionNorms(-1., -1., 1e1); //when the kinematics includes quaternion joints, keep them roughly regularized
+  komo.add_qControlObjective({}, 2, 1.);
+  komo.addSquaredQuaternionNorms(-1., -1., 1e1); //when the kinematics includes quaternion joints, keep them roughly regularized
 
   komo.addObjective({1.,-1.}, FS_positionDiff, {"endeff", "target"}, OT_eq, {1e0});
 
@@ -158,8 +158,7 @@ void tutorialBasics(){
   komo.setupRepresentations();
 
   //-- call the optimizer
-  komo.reset();
-  komo.run();
+  komo.optimize();
   komo.getReport(true); //true -> plot the cost curves
   for(uint i=0;i<2;i++) komo.displayTrajectory(.1, true); //play the trajectory
 }

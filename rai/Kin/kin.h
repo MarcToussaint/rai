@@ -90,11 +90,12 @@ struct Configuration : GLDrawer {
   Configuration(const char* filename);
   virtual ~Configuration();
 
+  /// @name copy
   void operator=(const rai::Configuration& K) { copy(K); }
   void copy(const rai::Configuration& K, bool referenceSwiftOnCopy=false);
   bool operator!() const;
 
-  /// @name initializations
+  /// @name initializations, building configurations
   void init(const char* filename);
   void init(const Graph& G, bool addInsteadOfClear=false);
   Frame* addFile(const char* filename);
@@ -156,8 +157,9 @@ struct Configuration : GLDrawer {
   /// @name get state
   uint getJointStateDimension() const;
   const arr& getJointState() const;
-  arr getJointState(const StringA&) const;
+  arr getJointState(const FrameL&) const;
   arr getJointState(const uintA&) const;
+  arr getJointState(const StringA&) const;
   arr getFrameState() const;
   arr naturalQmetric(double power=.5) const;               ///< returns diagonal of a natural metric in q-space, depending on tree depth
   arr getLimits() const;
@@ -171,7 +173,9 @@ struct Configuration : GLDrawer {
   void setJointState(const arr& _q);
   void setJointState(const arr& _q, const StringA&);
   void setJointState(const arr& _q, const uintA&);
+  void setJointState(const arr& _q, const FrameL&);
   void setFrameState(const arr& X, const StringA& frameNames= {}, bool warnOnDifferentDim=true);
+  void setDofsForTree(const arr& q, rai::Frame* root);
   void setTimes(double t);
   void operator=(const arr& X) {
     if(X.d0==frames.N) setFrameState(X);
@@ -215,7 +219,7 @@ struct Configuration : GLDrawer {
   void kinematicsLimitsCost(arr& y, arr& J, const arr& limits, double margin=.1) const;
 
   /// @name features
-  ptr<Feature> feature(FeatureSymbol fs, const StringA& frames= {}) const;
+  std::shared_ptr<Feature> feature(FeatureSymbol fs, const StringA& frames= {}) const;
   void evalFeature(arr& y, arr& J, FeatureSymbol fs, const StringA& frames= {}) const;
 
   /// @name high level inverse kinematics
@@ -251,7 +255,7 @@ struct Configuration : GLDrawer {
 
   /// @name collisions & proxies
   double totalCollisionPenetration(); ///< proxies are returns from a collision engine; contacts stable constraints
-  void copyProxies(const Configuration& K);
+  void copyProxies(const ProxyA& _proxies);
 
   /// @name I/O
   void write(std::ostream& os) const;

@@ -10,8 +10,8 @@
 void init_Frame(pybind11::module &m) {
 pybind11::class_<ry::RyFrame>(m, "Frame")
 .def("setPointCloud", [](ry::RyFrame& self, const pybind11::array& points, const pybind11::array_t<byte>& colors) {
-  arr _points = numpy2arr(points);
-  byteA _colors = numpy2arr(colors);
+  arr _points = numpy2arr<double>(points);
+  byteA _colors = numpy2arr<byte>(colors);
   WToken<rai::Configuration> token(*self.config, &self.config->data);
   self.frame->setPointCloud(_points, _colors);
 })
@@ -111,12 +111,12 @@ pybind11::arg("size")
 })
 
 .def("info", [](ry::RyFrame& self) {
-  Graph G;
+  rai::Graph G;
   WToken<rai::Configuration> token(*self.config, &self.config->data);
-  G.newNode<rai::String>({"name"}, {}, self.frame->name);
-  G.newNode<int>({"ID"}, {}, self.frame->ID);
+  G.newNode<rai::String>("name", {}, self.frame->name);
+  G.newNode<int>("ID", {}, self.frame->ID);
   self.frame->write(G);
-  if(!G["X"]) G.newNode<arr>({"X"}, {}, self.frame->ensure_X().getArr7d());
+  if(!G["X"]) G.newNode<arr>("X", {}, self.frame->ensure_X().getArr7d());
   return graph2dict(G);
 })
 

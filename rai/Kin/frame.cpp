@@ -102,6 +102,7 @@ void rai::Frame::calc_X_from_parent() {
   }
 
   _state_X_isGood=true;
+  C._state_proxies_isGood = false;
 }
 
 void rai::Frame::calc_Q_from_parent(bool enforceWithinJoint) {
@@ -117,12 +118,22 @@ void rai::Frame::calc_Q_from_parent(bool enforceWithinJoint) {
 }
 
 const rai::Transformation& rai::Frame::ensure_X() {
+#if 0 //for testing loops
+  {
+    rai::Frame *f=parent;
+    while(f){
+      CHECK(f!=this, "");
+      f=f->parent;
+    }
+  }
+#endif
+
   if(!_state_X_isGood) { if(parent) { parent->ensure_X(); calc_X_from_parent(); } }
   CHECK(_state_X_isGood, "");
   return X;
 }
 
-const rai::Transformation& rai::Frame::get_Q() {
+const rai::Transformation& rai::Frame::get_Q() const {
   return Q;
 }
 
@@ -289,9 +300,9 @@ void rai::Frame::write(Graph& G) {
     if(!X.isZero()) G.newNode<arr>({"X"}, {}, X.getArr7d());
   }
 
+  StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H", "axis", "A", "B", "mimic"};
   for(Node* n : ats) {
-    StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H", "axis", "A", "B", "mimic"};
-    if(!avoid.contains(n->key)) {
+    if(!n->key.startsWith("%") && !avoid.contains(n->key)) {
       n->newClone(G);
     }
   }
@@ -326,9 +337,9 @@ void rai::Frame::write(std::ostream& os) const {
 //    }
 //  }
 
+  StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H", "axis", "A", "B", "mimic"};
   for(Node* n : ats) {
-    StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H", "axis", "A", "B", "mimic"};
-    if(!avoid.contains(n->key)) os <<", " <<*n;
+    if(!n->key.startsWith("%") && !avoid.contains(n->key)) os <<", " <<*n;
   }
 
   os <<" }\n";
@@ -399,6 +410,7 @@ void rai::Frame::setConvexMesh(const std::vector<double>& points, const std::vec
   } else {
     getShape().type() = ST_ssCvx;
     getShape().sscCore().V.clear().operator=(points).reshape(-1, 3);
+    getShape().sscCore().makeConvexHull();
     getShape().mesh().setSSCvx(getShape().sscCore().V, radius);
   }
   if(colors.size()) {
@@ -422,7 +434,7 @@ void rai::Frame::setContact(int cont) {
 }
 
 void rai::Frame::setMass(double mass) {
-  if(mass<1.){
+  if(mass<0.){
     if(inertia) delete inertia;
   }else{
     getInertia().mass = mass;

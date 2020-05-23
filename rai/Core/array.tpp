@@ -1106,7 +1106,7 @@ template<class T> rai::Array<T> rai::Array<T>::sub(Array<uint> elems) const {
   rai::Array<T> x;
   if(nd==1) {
     x.resize(elems.N);
-    for(int l=0; l<(int)elems.N; l++) x(l)=operator()(elems(l));
+    for(int l=0; l<(int)elems.N; l++) x.elem(l)=operator()(elems.elem(l));
   } else if(nd==2) {
     x.resize(elems.N, d1);
     for(int l=0; l<(int)elems.N; l++) for(uint j=0; j<d1; j++) x(l, j)=operator()(elems(l), j);

@@ -102,7 +102,7 @@ struct Frame : NonCopyable {
   Inertia& getInertia();
 
   const Transformation& ensure_X();
-  const Transformation& get_Q();
+  const Transformation& get_Q() const;
   const Transformation& get_X() const;
   Transformation_Xtoken set_X() { return Transformation_Xtoken(*this); }
   Transformation_Qtoken set_Q() { return Transformation_Qtoken(*this); }
@@ -139,6 +139,7 @@ struct Frame : NonCopyable {
   void setRelativeQuaternion(const std::vector<double>& quat);
   void setPointCloud(const std::vector<double>& points, const std::vector<byte>& colors= {});
   void setConvexMesh(const std::vector<double>& points, const std::vector<byte>& colors= {}, double radius=0.);
+  void setMesh(const std::vector<double>& points, const std::vector<byte>& colors= {}, double radius=0.);
   void setColor(const std::vector<double>& color);
   void setJoint(rai::JointType jointType);
   void setContact(int cont);

@@ -12,7 +12,7 @@
 
 #include "F_qFeatures.h"
 #include "TM_GJK.h"
-#include "TM_PairCollision.h"
+#include "F_PairCollision.h"
 #include "TM_default.h"
 #include "TM_pushConsistent.h"
 #include "TM_FixSwitchedObjects.h"

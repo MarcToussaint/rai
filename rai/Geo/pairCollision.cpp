@@ -109,6 +109,10 @@ bool _equal(double* a, double* b){
   return a[0]==b[0] && a[1]==b[1] && a[2]==b[2];
 }
 
+bool _approxEqual(double* a, double* b){
+  return fabs(a[0]-b[0])<1e-10 && fabs(a[1]-b[1])<1e-10 && fabs(a[2]-b[2])<1e-10;
+}
+
 bool _zero(double* a){
   return !a[0] && !a[1] && !a[2];
 //  double eps=1e-10;
@@ -125,7 +129,7 @@ void _getSimplex(arr& S, ccd_vec3_t* simplex, const arr& mean){
     if(!_equal(s,s)) continue; //don't append nan!
     if(_equal(s, mean.p)) continue;
     sel=true;
-    for(uint j=0; j<i; j++) if(_equal(s, simplex[j].v)) { sel=false; break; }
+    for(uint j=0; j<i; j++) if(_approxEqual(s, simplex[j].v)) { sel=false; break; }
     if(sel) select[n++] = i;
   }
   //then copy the selected
@@ -135,6 +139,12 @@ void _getSimplex(arr& S, ccd_vec3_t* simplex, const arr& mean){
   }
 
   /* SAFETY CHECK (slow!):
+  if(S.d0>3){
+    cout <<"select: " <<select[0] <<' ' <<select[1] <<' ' <<select[2] <<' ' <<select[3] <<endl;
+    for(uint i=0;i<n;i++) cout <<simplex[i].v[0] <<' ' <<simplex[i].v[1] <<' ' <<simplex[i].v[2] <<endl;
+    LOG(-2) <<"4-simplex does not work!:\n" <<S;
+  }
+
   for(uint i=0;i<n;i++) for(uint j=i+1;j<n;j++){
     CHECK_GE(maxDiff(S[i], S[j]), 1e-10, "they are equal??");
   }
@@ -190,6 +200,8 @@ void PairCollision::libccd(rai::Mesh& m1, rai::Mesh& m2, CCDmethod method) {
     else _getSimplex(simplex1, simplex, m1.getMean());
     if(m2.V.d0==1) simplex2 = m2.V; //m2 is a point/sphere
     else _getSimplex(simplex2, simplex+4, m2.getMean());
+    if(simplex1.d0>3) simplex1.resizeCopy(3,3);
+    if(simplex2.d0>3) simplex2.resizeCopy(3,3);
 
   }else if(method==_ccdGJKIntersect){
     int ret = ccdGJKIntersect(&m1, &m2, &ccd, &_v1, &_v2, simplex);

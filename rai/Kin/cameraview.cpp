@@ -36,6 +36,10 @@ rai::CameraView::Sensor& rai::CameraView::addSensor(const char* name, const char
 
   if(sen.frame>=0) cam.X = C.frames(sen.frame)->ensure_X();
 
+  //also select sensor
+  gl.resize(sen.width, sen.height);
+  currentSensor=&sen;
+
   done(__func__);
   return sen;
 }

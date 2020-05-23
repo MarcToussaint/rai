@@ -439,8 +439,8 @@ void rai::PlotModule::glDraw(OpenGL& gl) {
   }
 
   //draw images
-  for(byteA& i:data.images) {
-  }
+  //for(byteA& i:data.images) {
+  //}
 
   //draw arrays
   for(arr& a:data.array) {

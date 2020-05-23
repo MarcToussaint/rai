@@ -140,6 +140,7 @@ struct OpenGL {
   bool reportEvents, reportSelects;    ///< flags for verbosity
   int pressedkey;         ///< stores the key pressed
   const char* exitkeys;   ///< additional keys to exit watch mode
+  int modifiers;          ///< stores modifier keys
   int mouse_button;       ///< stores which button was pressed
   int mouseposx, mouseposy;  ///< current x- and y-position of mouse
   int mouseView;
@@ -233,8 +234,8 @@ struct OpenGL {
  protected:
   rai::Vector downVec, downPos, downFoc;
   rai::Quaternion downRot;
-  void Key(unsigned char key);
-  void MouseButton(int button, int updown, int x, int y);
+  void Key(unsigned char key, int mods);
+  void MouseButton(int button, int updown, int x, int y, int mods);
   void MouseMotion(int x, int y);
   void Reshape(int w, int h);
   void Scroll(int wheel, int direction);

@@ -8,8 +8,8 @@
 
 #include "F_geometrics.h"
 #include "F_PairCollision.h"
+#include "TM_default.h"
 #include "frame.h"
-
 //===========================================================================
 
 TM_AboveBox::TM_AboveBox(int iShape, int jShape, double _margin)
@@ -150,10 +150,29 @@ void TM_InsideLine::phi(arr& y, arr& J, const rai::Configuration& G) {
 //===========================================================================
 
 void F_GraspOppose::phi(arr& y, arr& J, const rai::Configuration& K) {
-  Value D1 = TM_PairCollision(i, k, TM_PairCollision::_vector, true)(K);
-  Value D2 = TM_PairCollision(j, k, TM_PairCollision::_vector, true)(K);
+  Value D1 = F_PairCollision(i, k, F_PairCollision::_vector, true)(K);
+  Value D2 = F_PairCollision(j, k, F_PairCollision::_vector, true)(K);
 
   y = D1.y + D2.y;
   if(!!J) J = D1.J + D2.J;
+
+  if(centering){
+    normalizeWithJac(D1.y, D1.J);
+    normalizeWithJac(D2.y, D2.J);
+
+    Value P1 = TM_Default(TMT_pos, i)(K);
+    Value P2 = TM_Default(TMT_pos, j)(K);
+
+
+    arr P = 2.*eye(3) - (D1.y*~D1.y) - (D2.y*~D2.y);
+    arr p = P2.y - P1.y;
+    double scale = 1e-1;
+    y.append( scale * (P * p) );
+    if(!!J){
+      arr Jc = P * (P2.J-P1.J) - (D1.J*scalarProduct(D1.y,p) + D1.y*(~p*D1.J)) - (D2.J*scalarProduct(D2.y,p) + D2.y*(~p*D2.J));
+      J.append( scale * Jc );
+    }
+
+  }
 }
 
