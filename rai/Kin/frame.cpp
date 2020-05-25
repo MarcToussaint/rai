@@ -439,6 +439,10 @@ void rai::Frame::setMass(double mass) {
   }
 }
 
+arr rai::Frame::getSize(){
+  return getShape().size;
+}
+
 arr rai::Frame::getMeshPoints() {
   return getShape().mesh().V;
 }

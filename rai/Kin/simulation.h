@@ -53,6 +53,8 @@ struct Simulation {
   CameraView& cameraview(); ///< use this if you want to initialize the sensor, etc
   rai::CameraView::Sensor& addSensor(const char* frameAttached){ return cameraview().addSensor(frameAttached); }
 
+  //== ground truth interface
+  rai::Frame* getGroundTruthFrame(const char* frame){ return C.getFrameByName("frame"); }
 
   //== perturbation/adversarial interface
 

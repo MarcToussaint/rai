@@ -246,7 +246,7 @@ void Simulation::closeGripper(const char* gripperFrameName, double width, double
     }
   }
 
-  LOG(1) <<"initiating grasp of object " <<obj->name;
+  LOG(1) <<"initiating grasp of object " <<obj->name <<" (if this is not what you expect, did you setContact(1) for the object you want to grasp?)";
 
 
 #if 1
@@ -495,7 +495,7 @@ void Imp_CloseGripper::modConfiguration(Simulation& S) {
   //      step({}, .01, _none);
   auto d1 = coll1.eval(S.C);
   auto d2 = coll2.eval(S.C);
-  cout <<q <<" d1: " <<d1.y <<"d2: " <<d2.y <<endl;
+//  cout <<q <<" d1: " <<d1.y <<"d2: " <<d2.y <<endl;
   if(q(0)<-.1){ //stop grasp by joint limits -> unsuccessful
     killMe = true;
   }

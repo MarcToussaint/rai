@@ -151,6 +151,7 @@ struct Frame : NonCopyable {
   arr getRotationMatrix() { return ensure_X().rot.getArr(); }
   arr getRelativePosition() { return get_Q().pos.getArr(); }
   arr getRelativeQuaternion() { return get_Q().rot.getArr(); }
+  arr getSize();
   arr getMeshPoints();
   arr getMeshCorePoints();
 

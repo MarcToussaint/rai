@@ -104,6 +104,12 @@ pybind11::arg("size")
   return pybind11::array_t<double>(x.dim(), x.p);
 })
 
+.def("getSize", [](ry::RyFrame& self) {
+  RToken<rai::Configuration> token(*self.config, &self.config->data);
+  arr x = self.frame->getSize();
+  return pybind11::array_t<double>(x.dim(), x.p);
+})
+
 .def("getMeshPoints", [](ry::RyFrame& self) {
   RToken<rai::Configuration> token(*self.config, &self.config->data);
   arr x = self.frame->getMeshPoints();
