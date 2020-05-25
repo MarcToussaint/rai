@@ -74,6 +74,7 @@ pybind11::arg("order")=-1)
     pybind11::arg("scale")=double(1.),
     pybind11::arg("target")=std::vector<double>())
 
+.def("addSquaredQuaternionNorms", &KOMO::addSquaredQuaternionNorms)
 
 .def("add_StableRelativePose", [](std::shared_ptr<KOMO>& self, const std::vector<int>& confs, const char* gripper, const char* object) {
   for(uint i=1; i<confs.size(); i++)
