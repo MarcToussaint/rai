@@ -132,9 +132,11 @@ void TaskControlThread::step() {
       q_model += dq;
     }
 
+    q_real = q_model;
+
 #if 0
     //set/test the new configuration
-    K->setJointState(q_model, qdot_model); //DONT! the configuration should stay on real; use a separate one for safty checks
+    K->setJointState(q_model); //DONT! the configuration should stay on real; use a separate one for safty checks
     if(useSwift) K->stepSwift();
     for(CtrlTask* t: ctrl_tasks()) t->update(.0, K); //update without time increment
     double cost = taskController.getIKCosts(ctrl_tasks());
@@ -144,7 +146,7 @@ void TaskControlThread::step() {
     if(cost>1000.) { //reject!
       LOG(-1) <<"HIGH COST IK! " <<cost;
       q_model -= .9*dq;
-      K->setJointState(q_model, qdot_model);
+      K->setJointState(q_model);
       if(useSwift) K->stepSwift();
       for(CtrlTask* t: ctrl_tasks()) t->update(.0, K); //update without time increment
     }
@@ -190,7 +192,7 @@ void TaskControlThread::step() {
   //-- output: set variables
   if(true) {
     CtrlMsg refs;
-    refs.q =  q_model;
+    refs.q = q_model;
     refs.qdot = qdot_model;
     refs.P_compliance = P_compliance;
     refs.fL_gamma = 1.;
