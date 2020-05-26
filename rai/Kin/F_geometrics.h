@@ -63,7 +63,7 @@ struct TM_InsideLine : Feature {
 
 struct F_GraspOppose : Feature {
   int i, j, k;               ///< which shapes does it refer to?
-  bool centering=true;
+  bool centering=false;
 
   F_GraspOppose(int iShape=-1, int jShape=-1, int kShape=-1) : i(iShape), j(jShape), k(kShape) {}
   F_GraspOppose(const rai::Configuration& K,
