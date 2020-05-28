@@ -75,10 +75,20 @@ void init_Simulation(pybind11::module &m) {
 //    return pybind11::array_t<byte>(seg.dim(), seg.p);
 //  })
 
-  .def("addSensor",  &rai::Simulation::addSensor,
-       "",
-       pybind11::arg("cameraFrameName")
-       )
+      .def("addSensor",  &rai::Simulation::addSensor,
+           "",
+           pybind11::arg("sensorName"),
+           pybind11::arg("frameAttached") = 0,
+           pybind11::arg("width") = 640,
+           pybind11::arg("height") = 360,
+           pybind11::arg("focalLength") = -1.,
+           pybind11::arg("orthoAbsHeight") = -1.,
+           pybind11::arg("zRange") = arr()
+                                     )
+      .def("selectSensor",  &rai::Simulation::selectSensor,
+           "",
+           pybind11::arg("sensorName")
+           )
 
   .def("getGroundTruthPosition", [](std::shared_ptr<rai::Simulation>& self, const char* frame) {
     rai::Frame *f = self->C.getFrameByName(frame);
