@@ -10,14 +10,14 @@
 
 #include "../Kin/taskMaps.h"
 
-struct CtrlTask;
-typedef rai::Array<CtrlTask*> CtrlTaskL;
+struct CtrlObjective;
+typedef rai::Array<CtrlObjective*> CtrlObjectiveL;
 
 //===========================================================================
 /**
- * A CtrlTask defines a motion in operational space.
+ * A CtrlObjective defines a motion in operational space.
  */
-struct CtrlTask { //TODO: rename/refactor to become LinearAccelerationLaw (LAW) in task spaces
+struct CtrlObjective { //TODO: rename/refactor to become LinearAccelerationLaw (LAW) in task spaces
   Feature& map;
   rai::String name;
   bool active;
@@ -43,9 +43,9 @@ struct CtrlTask { //TODO: rename/refactor to become LinearAccelerationLaw (LAW) 
   arr y, v;
   /// @}
 
-  CtrlTask(const char* name, Feature* map);
-  CtrlTask(const char* name, Feature* map, double decayTime, double dampingRatio, double maxVel, double maxAcc);
-  CtrlTask(const char* name, Feature* map, const Graph& params);
+  CtrlObjective(const char* name, Feature* map);
+  CtrlObjective(const char* name, Feature* map, double decayTime, double dampingRatio, double maxVel, double maxAcc);
+  CtrlObjective(const char* name, Feature* map, const Graph& params);
 
   void set(const Graph& params);
   void setTarget(const arr& yref, const arr& vref=NoArr);
@@ -76,7 +76,7 @@ struct ConstraintForceTask {
   bool active;
 
   double desiredForce;
-  CtrlTask desiredApproach;
+  CtrlObjective desiredApproach;
 
   ConstraintForceTask(Feature* m):map(*m), active(true), desiredForce(0.), desiredApproach("desiredApproach", m) {}
 
@@ -86,21 +86,21 @@ struct ConstraintForceTask {
 //===========================================================================
 
 /**
- * TaskControlMethods contains all individual motions/CtrlTasks.
+ * TaskControlMethods contains all individual motions/CtrlObjectives.
  */
 struct TaskControlMethods {
   rai::Configuration& world;
-  rai::Array<CtrlTask*> tasks;
+  rai::Array<CtrlObjective*> tasks;
   rai::Array<ConstraintForceTask*> forceTasks;
-  CtrlTask qNullCostRef;
+  CtrlObjective qNullCostRef;
   boolA lockJoints;
   bool useSwift;
 
   TaskControlMethods(rai::Configuration& _world, bool _useSwift=true);
 
   /// @{ @name adding tasks
-  CtrlTask* addPDTask(const char* name, double decayTime, double dampingRatio, Feature* map);
-  CtrlTask* addPDTask(const char* name,
+  CtrlObjective* addPDTask(const char* name, double decayTime, double dampingRatio, Feature* map);
+  CtrlObjective* addPDTask(const char* name,
                       double decayTime, double dampingRatio,
                       TM_DefaultType type,
                       const char* iShapeName=nullptr, const rai::Vector& ivec=NoVector,

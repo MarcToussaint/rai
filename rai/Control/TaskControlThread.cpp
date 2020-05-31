@@ -7,13 +7,15 @@
     --------------------------------------------------------------  */
 
 #include "TaskControlThread.h"
+#include "CtrlMethods.h"
+#include "CtrlReference.h"
 #include "../RosCom/baxter.h"
 #include "../Kin/frame.h"
 
 TaskControlThread::TaskControlThread(const Var<rai::Configuration>& _ctrl_config,
                                      const Var<CtrlMsg>& _ctrl_ref,
                                      const Var<CtrlMsg>& _ctrl_state,
-                                     const Var<CtrlTaskL>& _ctrl_tasks)
+                                     const Var<CtrlObjectiveL>& _ctrl_tasks)
   : Thread("TaskControlThread", .01),
     ctrl_config(this, _ctrl_config),
     ctrl_ref(this, _ctrl_ref),
@@ -58,7 +60,7 @@ TaskControlThread::~TaskControlThread() {
   threadClose();
 }
 
-arr TaskControlThread::whatsTheForce(const ptr<CtrlTask>& t) {
+arr TaskControlThread::whatsTheForce(const ptr<CtrlObjective>& t) {
 // arr tau = ctrl_state.get()->u_bias;
   return pseudoInverse(~t->J_y)*torques_real;
 }
@@ -110,12 +112,12 @@ void TaskControlThread::step() {
     if(!(step_count%20)) {
       rai::String txt;
       txt <<"TaskControlThread ctrl_config " <<step_count;
-      for(CtrlTask* t:ctrl_tasks.get()()) { txt <<'\n'; t->reportState(txt); }
+      for(const ptr<CtrlObjective>& t:ctrl_tasks.get()()) { txt <<'\n'; t->reportState(txt); }
       K->watch(false, txt); //only for debugging
     }
 
     ctrl_tasks.writeAccess();
-    for(CtrlTask* t: ctrl_tasks()) t->update(.01, K);
+    for(ptr<CtrlObjective>& t: ctrl_tasks()) NIY; // t->update(.01, K);
 
     TaskControlMethods taskController(Hmetric);
 
@@ -138,7 +140,7 @@ void TaskControlThread::step() {
     //set/test the new configuration
     K->setJointState(q_model); //DONT! the configuration should stay on real; use a separate one for safty checks
     if(useSwift) K->stepSwift();
-    for(CtrlTask* t: ctrl_tasks()) t->update(.0, K); //update without time increment
+    for(ptr<CtrlObjective>& t: ctrl_tasks()) t->update(.0, K); //update without time increment
     double cost = taskController.getIKCosts(ctrl_tasks());
 //    IK_cost.set() = cost;
 
@@ -148,7 +150,7 @@ void TaskControlThread::step() {
       q_model -= .9*dq;
       K->setJointState(q_model);
       if(useSwift) K->stepSwift();
-      for(CtrlTask* t: ctrl_tasks()) t->update(.0, K); //update without time increment
+      for(ptr<CtrlObjective>& t: ctrl_tasks()) t->update(.0, K); //update without time increment
     }
 #endif
 
@@ -179,7 +181,7 @@ void TaskControlThread::step() {
   //    uint count=0;
   //    ctrl_tasks.readAccess();
   //    taskController.tasks = ctrl_tasks();
-  //    for(CtrlTask *t : taskController.tasks) {
+  //    for(CtrlObjective *t : taskController.tasks) {
   //      if(t->active && t->f_ref.N){
   //        count++;
   //        if(count!=1) HALT("you have multiple active force control tasks - NIY");
@@ -212,46 +214,52 @@ void TaskControlThread::step() {
   }
 }
 
-ptr<CtrlTask> addCtrlTask(Var<CtrlTaskL>& ctrl_tasks,
+ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrl_tasks,
                           Var<rai::Configuration>& ctrl_config,
                           const char* name, const ptr<Feature>& map,
-                          const ptr<MotionProfile>& ref) {
-  ptr<CtrlTask> t = make_shared<CtrlTask>(name, map, ref);
+                          const ptr<CtrlReference>& ref) {
+  NIY
+#if 0
+  ptr<CtrlObjective> t = make_shared<CtrlObjective>(name, map, ref);
   t->update(0., ctrl_config.get());
-  t->ctrlTasks = &ctrl_tasks;
   ctrl_tasks.set()->append(t.get());
   return t;
+#endif
 }
 
-ptr<CtrlTask> addCtrlTask(Var<CtrlTaskL>& ctrl_tasks,
+ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrl_tasks,
                           Var<rai::Configuration>& ctrl_config,
                           const char* name, FeatureSymbol fs, const StringA& frames,
-                          const ptr<MotionProfile>& ref) {
-  return addCtrlTask(ctrl_tasks, ctrl_config, name,
+                          const ptr<CtrlReference>& ref) {
+  return addCtrlObjective(ctrl_tasks, ctrl_config, name,
                      symbols2feature(fs, frames, ctrl_config.get()),
                      ref);
 }
 
-ptr<CtrlTask> addCtrlTask(Var<CtrlTaskL>& ctrl_tasks,
+ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrl_tasks,
                           Var<rai::Configuration>& ctrl_config,
                           const char* name, FeatureSymbol fs, const StringA& frames,
                           double duration) {
-  return addCtrlTask(ctrl_tasks, ctrl_config, name,
+  return addCtrlObjective(ctrl_tasks, ctrl_config, name,
                      symbols2feature(fs, frames, ctrl_config.get()),
-                     make_shared<MotionProfile_Sine>(arr(), duration));
+                     make_shared<CtrlReference_Sine>(arr(), duration));
 }
 
-ptr<CtrlTask> addCompliance(Var<CtrlTaskL>& ctrl_tasks,
+ptr<CtrlObjective> addCompliance(Var<CtrlObjectiveL>& ctrl_tasks,
                             Var<rai::Configuration>& ctrl_config,
                             const char* name, FeatureSymbol fs, const StringA& frames,
                             const arr& compliance) {
-  ptr<CtrlTask> t = make_shared<CtrlTask>(name, symbols2feature(fs, frames, ctrl_config.get()));
+#if 0
+  ptr<CtrlObjective> t = make_shared<CtrlObjective>(name, symbols2feature(fs, frames, ctrl_config.get()));
   t->compliance = compliance;
   t->ctrlTasks = &ctrl_tasks;
   ctrl_tasks.set()->append(t.get());
   return t;
+#else
+  NIY //have explicit compliance objectives, separate to CtrlObjective
+#endif
 }
 
-void removeCtrlTask(Var<CtrlTaskL>& ctrl_tasks, const ptr<CtrlTask>& t) {
-  ctrl_tasks.set()->removeValue(t.get());
+void removeCtrlObjective(Var<CtrlObjectiveL>& ctrl_tasks, const ptr<CtrlObjective>& t) {
+  ctrl_tasks.set()->removeValue(t);
 }
