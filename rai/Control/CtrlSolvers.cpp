@@ -1,4 +1,6 @@
-#include "CtrlMethods.h"
+#include "CtrlSolvers.h"
+#include "../Kin/feature.h"
+#include "../Optim/constrained.h"
 
 #if 0
 
@@ -548,3 +550,131 @@ void TaskControlMethods::calcForceControl(CtrlObjectiveL& tasks, arr& K_ft, arr&
 NIY}
 
 #endif
+
+CtrlProblem_MathematicalProgram::CtrlProblem_MathematicalProgram(CtrlProblem& _CP)
+  : CP(_CP) {
+  for(uint k=0;k<2;k++){
+    rai::Configuration *C = Ctuple.append(new rai::Configuration());
+    C->copy(CP.C, true);
+    C->setTimes(CP.tau);
+    C->ensure_q();
+    C->checkConsistency();
+  }
+}
+
+uint CtrlProblem_MathematicalProgram::getDimension(){
+  return CP.C.getJointStateDimension();
+}
+
+void CtrlProblem_MathematicalProgram::getBounds(arr& bounds_lo, arr& bounds_up) {
+  arr limits = ~CP.C.getLimits();
+  bounds_lo = limits[0];
+  bounds_up = limits[1];
+
+
+  //velocity bounds
+  arr q_1 = Ctuple(-2)->getJointState();
+  bounds_lo = elemWiseMax(bounds_lo, q_1 - CP.maxVel*CP.tau);
+  bounds_up = elemWiseMin(bounds_up, q_1 + CP.maxVel*CP.tau);
+
+  //acceleration bounds
+  if(Ctuple.N>=3){
+    arr q_2 = Ctuple(-3)->getJointState();
+    bounds_lo = elemWiseMax(bounds_lo, 2.*q_1 - q_2 - (CP.maxAcc*CP.tau*CP.tau));
+    bounds_up = elemWiseMin(bounds_up, 2.*q_1 - q_2 + (CP.maxAcc*CP.tau*CP.tau));
+  }
+}
+
+void CtrlProblem_MathematicalProgram::getFeatureTypes(ObjectiveTypeA& featureTypes) {
+  for(auto &o: CP.objectives) {
+    uint d = o->feat->__dim_phi(CP.C);
+    featureTypes.append(consts<ObjectiveType>(o->type, d));
+  }
+  dimPhi = featureTypes.N;
+}
+
+void CtrlProblem_MathematicalProgram::getNames(StringA& variableNames, StringA& featureNames){
+  variableNames = CP.C.getJointNames();
+  for(auto &o: CP.objectives) {
+    uint d = o->feat->__dim_phi(CP.C);
+    featureNames.append(consts<rai::String>(o->name, d));
+  }
+}
+
+arr CtrlProblem_MathematicalProgram::getInitializationSample(const arrL& previousOptima){
+  NIY;
+}
+
+void CtrlProblem_MathematicalProgram::evaluate(arr& phi, arr& J, arr& H, const arr& x){
+  Ctuple(-1)->setJointState(x);
+  Ctuple(-1)->stepSwift();
+
+  if(!dimPhi){
+    ObjectiveTypeA featureTypes;
+    getFeatureTypes(featureTypes);
+  }
+  phi.resize(dimPhi);
+  if(!!J){
+    bool SPARSE_JACOBIANS = false;
+    if(!SPARSE_JACOBIANS) {
+      J.resize(dimPhi, x.N).setZero();
+    } else {
+      J.sparse().resize(dimPhi, x.N, 0);
+    }
+  }
+
+  arr y, Jy;
+  uint M=0;
+  for(uint i=0; i<CP.objectives.N; i++) {
+    std::shared_ptr<CtrlObjective> ob = CP.objectives.elem(i);
+    uintA kdim = getKtupleDim(Ctuple);
+    kdim.prepend(0);
+
+    //query the task map and check dimensionalities of returns
+    ob->feat->__phi(y, (!!J?Jy:NoArr), Ctuple);
+    if(!!J) CHECK_EQ(y.N, Jy.d0, "");
+    if(!!J) CHECK_EQ(Jy.nd, 2, "");
+    if(!!J) CHECK_EQ(Jy.d1, kdim.last(), "");
+    if(!y.N) continue;
+    if(absMax(y)>1e10) RAI_MSG("WARNING y=" <<y);
+
+    //write into phi and J
+    phi.setVectorBlock(y, M);
+
+    if(!!J) {
+      if(!isSpecial(Jy)){
+        J.setMatrixBlock(Jy.sub(0, -1, kdim(-2), kdim(-1)-1), M, 0);
+      }else{
+        Jy.sparse().reshape(J.d0, J.d1);
+        Jy.sparse().colShift(M);
+        Jy.sparse().rowShift(-kdim(-2));
+        J += Jy;
+      }
+    }
+
+    //counter for features phi
+    M += y.N;
+  }
+
+  CHECK_EQ(M, dimPhi, "");
+  store_phi = phi;
+  if(!!J) store_J = J;
+
+//  reportAfterPhiComputation(komo);
+}
+
+arr solve_optim(CtrlProblem& CP) {
+  auto MP = make_shared<CtrlProblem_MathematicalProgram>(CP);
+  Conv_MathematicalProgram_ConstrainedProblem cp(MP);
+
+  arr x = CP.C.getJointState();
+  OptOptions opt;
+  opt.stopTolerance = 1e-4;
+  opt.stopGTolerance = 1e-4;
+  opt.stopIters = 10;
+//  opt.nonStrictSteps=-1;
+  OptConstrained O(x, NoArr, cp, -1, opt);
+  MP->getBounds(O.newton.bound_lo, O.newton.bound_up);
+  O.run();
+  return x;
+}

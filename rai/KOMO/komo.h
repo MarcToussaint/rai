@@ -13,7 +13,7 @@
 #include "../Optim/optimization.h"
 #include "../Optim/constrained.h"
 #include "../Optim/KOMO_Problem.h"
-#include "../Optim/newOptim.h"
+#include "../Optim/MathematicalProgram.h"
 #include "../Kin/switch.h"
 #include "../Kin/featureSymbols.h"
 

@@ -1,38 +1,33 @@
-#include "CtrlReference.h"
+#include "CtrlReferences.h"
 
 //===========================================================================
 
 ActStatus CtrlReference_Const::step(double tau, const arr& y_real, const arr& v_real) {
-  if(y_target.N!=y_real.N) y_target = y_real;
-  if(flipTargetSignOnNegScalarProduct && scalarProduct(y_target, y_real) < 0) {
-    y_target = -y_target;
-  }
-  y_ref = y_target;
-  v_ref = zeros(y_real.N);
+  y_ref = zeros(y_real.N);
+  v_ref.clear();
   return AS_running;
 }
 
 //===========================================================================
 
 ActStatus CtrlReference_ConstVel::step(double tau, const arr& y_real, const arr& v_real) {
-  if(v_target.N!=y_real.N) v_target = zeros(y_real.N);
   y_ref.clear();
-  v_ref = v_target;
+  v_ref = zeros(y_real.N);
   return AS_running;
 }
 
 //===========================================================================
 
 ActStatus CtrlReference_MaxCarrot::step(double tau, const arr &y_real, const arr& v_real) {
-  if(y_target.N!=y_real.N) y_target = y_real;
-  double d = euclideanDistance(y_target, y_real);
+  double d = length(y_real);
   if(d > maxDistance) {
-    y_ref = y_real + maxDistance/d*(y_target-y_real);
+    y_ref = y_real - (maxDistance/d)*y_real;
     //cout << "maxD" << endl;
   } else {
-    y_ref = y_target;
+    y_ref = zeros(y_real.N);
   }
-  v_ref = zeros(y_real.N);
+  v_ref.clear();
+  if(d<1e-2*maxDistance && length(v_real)*tau<1e-2*maxDistance) return AS_converged;
   return AS_running;
 }
 
@@ -47,28 +42,14 @@ ActStatus CtrlReference_Sine:: step(double tau, const arr& y_real, const arr& v_
   v_ref = zeros(y_real.N);
   y_err = y_ref - y_real;
   if(t>=T-1e-6/* && length(y_err)<1e-3*/) return AS_done;
+//  return t>=T && length(y_err)<1e-3;
   return AS_running;
-}
-
-void CtrlReference_Sine::setTarget(const arr& ytarget, const arr& vtarget) {
-  y_target = ytarget;
-  resetState();
-}
-
-bool CtrlReference_Sine::isDone() {
-  NIY;
-  return t>=T && length(y_err)<1e-3;
 }
 
 //===========================================================================
 
 CtrlReference_Bang::CtrlReference_Bang(const arr& _y_target, double _maxVel)
   : y_target(_y_target), maxVel(_maxVel), tolerance(1e-3) {
-}
-
-void CtrlReference_Bang::setTarget(const arr& ytarget, const arr& vtarget) {
-  y_target = ytarget;
-  resetState(); //resets the current reference
 }
 
 void getAcc_bang(double& x, double& v, double maxVel, double tau) {
@@ -173,12 +154,6 @@ CtrlReference_PD::CtrlReference_PD(const rai::Graph& params)
     maxAcc = pd(3);
   }
   if((it=params["target"])) y_ref = it->get<arr>();
-}
-
-void CtrlReference_PD::setTarget(const arr& ytarget, const arr& vtarget) {
-  y_target = ytarget;
-  if(!!vtarget) v_target=vtarget; else v_target.resizeAs(y_target).setZero();
-  resetState(); //resets the current reference
 }
 
 void CtrlReference_PD::setGains(double _kp, double _kd) {

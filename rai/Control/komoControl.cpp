@@ -51,7 +51,7 @@ void KOMO_Control::step(const arr& real_q){
   opt.stopTolerance=1e-4;
   opt.nonStrictSteps=-1;
   opt.maxStep = tau; //maxVel*tau;
-//  verbose=6;
+  verbose=6;
 //  animateOptimization=2;
   optimize(0., opt);
 

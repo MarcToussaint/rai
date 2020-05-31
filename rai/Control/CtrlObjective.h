@@ -25,10 +25,8 @@ struct CtrlReference {
 
   virtual ~CtrlReference() {}
   virtual ActStatus step(double tau, const arr& y_real, const arr& v_real) = 0; //step forward, updating the reference based on y_real
-  virtual void setTarget(const arr& ytarget, const arr& vtarget=NoArr) = 0;
   virtual void setTimeScale(double d) = 0;
   virtual void resetState() = 0;
-  virtual bool isDone() = 0;
 };
 
 //===========================================================================
@@ -73,22 +71,23 @@ struct CtrlObjective {
 
 struct CtrlProblem : NonCopyable {
   rai::Configuration& C;   ///< original world; which is the blueprint for all time-slice worlds (almost const: only makeConvexHulls modifies it)
+  double tau;
+  double maxVel=1.;
+  double maxAcc=1.;
 
   rai::Array<ptr<CtrlObjective>> objectives;    ///< list of objectives
 
-  CtrlProblem(rai::Configuration& _C) : C(_C) {}
+  CtrlProblem(rai::Configuration& _C, double _tau) : C(_C), tau(_tau) {}
   CtrlObjective* addPDTask(CtrlObjectiveL& tasks, const char* name, double decayTime, double dampingRatio, ptr<Feature> map);
   ptr<CtrlObjective> addObjective(const ptr<Feature>& f, ObjectiveType type, const ptr<CtrlReference>& _ref);
   ptr<CtrlObjective> addObjective(const FeatureSymbol& feat, const StringA& frames,
                                   ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr, int order=-1);
 
-  void update(rai::Configuration& C, double tau);
+  void update(rai::Configuration& C);
+  void report(ostream& os=std::cout);
   arr solve();
 
 };
-
-
-
 
 //===========================================================================
 

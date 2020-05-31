@@ -1,4 +1,5 @@
 #include "CtrlObjective.h"
+#include <Optim/MathematicalProgram.h>
 
 //===========================================================================
 
@@ -32,3 +33,29 @@ struct TaskControlMethods {
   void calcForceControl(CtrlObjectiveL& tasks, arr& K_ft, arr& J_ft_inv, arr& fRef, double& gamma, const rai::Configuration& world); ///< returns the force controller coefficients
   void reportCurrentState(CtrlObjectiveL& tasks);
 };
+
+//===========================================================================
+
+struct CtrlProblem_MathematicalProgram : MathematicalProgram {
+  CtrlProblem& CP;
+  ConfigurationL Ctuple;
+  uint dimPhi=0;
+  arr store_phi;
+  arr store_J;
+
+  CtrlProblem_MathematicalProgram(CtrlProblem& _CP);
+
+  virtual uint getDimension();
+  virtual void getBounds(arr& bounds_lo, arr& bounds_up);
+  virtual void getFeatureTypes(ObjectiveTypeA& featureTypes);
+
+  virtual void getNames(StringA& variableNames, StringA& featureNames);
+
+  virtual arr getInitializationSample(const arrL& previousOptima={});
+
+  virtual void evaluate(arr& phi, arr& J, arr& H, const arr& x);
+};
+
+//===========================================================================
+
+arr solve_optim(CtrlProblem& CP);

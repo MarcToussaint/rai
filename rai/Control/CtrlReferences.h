@@ -5,39 +5,29 @@
 //===========================================================================
 
 struct CtrlReference_Const : CtrlReference {
-  arr y_target;
-  bool flipTargetSignOnNegScalarProduct;
-  CtrlReference_Const(const arr& y_target, bool flip=false) : y_target(y_target), flipTargetSignOnNegScalarProduct(flip) {}
+  CtrlReference_Const() {}
   virtual ActStatus step(double tau, const arr& y_real, const arr& v_real);
-  virtual void setTarget(const arr& ytarget, const arr& vtarget=NoArr) { y_target = ytarget; }
   virtual void setTimeScale(double d) {}
   virtual void resetState() {}
-  virtual bool isDone() { return false; }
 };
 
 //===========================================================================
 
 struct CtrlReference_MaxCarrot : CtrlReference {
-  arr y_target;
   double maxDistance;
-  CtrlReference_MaxCarrot(const arr& y_target, double maxDistance) : y_target(y_target), maxDistance(maxDistance) {}
+  CtrlReference_MaxCarrot(double maxDistance) : maxDistance(maxDistance) {}
   virtual ActStatus step(double tau, const arr& y_real, const arr& v_real);
-  virtual void setTarget(const arr& ytarget, const arr& vtarget=NoArr){ y_target = ytarget; }
   virtual void setTimeScale(double d) {}
   virtual void resetState() {}
-  virtual bool isDone() { return false; }
 };
 
 //===========================================================================
 
 struct CtrlReference_ConstVel : CtrlReference {
-  arr v_target;
-  CtrlReference_ConstVel(const arr& _v_target) : v_target(_v_target) {}
+  CtrlReference_ConstVel() {}
   virtual ActStatus step(double tau, const arr& y_real, const arr& v_real);
-  virtual void setTarget(const arr& ytarget, const arr& vtarget=NoArr) { CHECK(!!vtarget, ""); v_target = vtarget; }
   virtual void setTimeScale(double d) {}
   virtual void resetState() {}
-  virtual bool isDone() { return false; }
 };
 
 //===========================================================================
@@ -47,10 +37,8 @@ struct CtrlReference_Sine : CtrlReference {
   double t, T;
   CtrlReference_Sine(const arr& y_target, double duration) : y_target(y_target), t(0.), T(duration) {}
   virtual ActStatus step(double tau, const arr& y_real, const arr& v_real);
-  virtual void setTarget(const arr& ytarget, const arr& vtarget=NoArr);
   virtual void setTimeScale(double d) { T=d; }
   virtual void resetState() { y_start.clear(); y_err.clear(); t=0.; }
-  virtual bool isDone();
 };
 
 //===========================================================================
@@ -62,11 +50,9 @@ struct CtrlReference_Bang : CtrlReference {
   CtrlReference_Bang();
   CtrlReference_Bang(const arr& _y_target, double _maxVel);
 
-  virtual void setTarget(const arr& ytarget, const arr& vtarget=NoArr);
   virtual void setTimeScale(double d) { HALT("doesn't make sense"); }
   virtual ActStatus step(double tau, const arr& y_real, const arr& v_real);
   virtual void resetState() {}
-  virtual bool isDone() { return false; }
 };
 
 //===========================================================================
@@ -83,7 +69,6 @@ struct CtrlReference_PD : CtrlReference {
   CtrlReference_PD(const arr& _y_target, double decayTime, double dampingRatio, double maxVel=-1., double maxAcc=-1.);
   CtrlReference_PD(const rai::Graph& params);
 
-  virtual void setTarget(const arr& ytarget, const arr& vtarget=NoArr);
   virtual void setTimeScale(double d) { setGainsAsNatural(d, .9); }
   virtual ActStatus step(double tau, const arr& y_real, const arr& v_real);
   virtual void resetState() { y_ref.clear(); v_ref.clear(); }
@@ -97,7 +82,6 @@ struct CtrlReference_PD : CtrlReference {
 
   double error();
   bool isConverged(double tolerance);
-  virtual bool isDone() { return isConverged(tolerance); }
 };
 
 //===========================================================================
@@ -109,8 +93,6 @@ struct CtrlReference_Path: CtrlReference {
   CtrlReference_Path(const arr& path, double endTime);
   CtrlReference_Path(const arr& path, const arr& times);
   virtual ActStatus step(double tau, const arr& y_real, const arr& v_real);
-  virtual void setTarget(const arr& ytarget, const arr& vtarget=NoArr) { HALT("can't directly set target of a path"); }
   virtual void setTimeScale(double d) { endTime = d; }
   virtual void resetState() { NIY }
-  virtual bool isDone() { return time>=endTime; }
 };

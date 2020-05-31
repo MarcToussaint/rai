@@ -7,8 +7,8 @@
     --------------------------------------------------------------  */
 
 #include "TaskControlThread.h"
-#include "CtrlMethods.h"
-#include "CtrlReference.h"
+#include "CtrlSolvers.h"
+#include "CtrlReferences.h"
 #include "../RosCom/baxter.h"
 #include "../Kin/frame.h"
 
