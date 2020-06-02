@@ -210,7 +210,7 @@ void Simulation::closeGripper(const char* gripperFrameName, double width, double
 
   //-- first, find the object that is between the fingers
 
-  //requirement: two of the children of need to be the finger geometries
+  //requirement: two of the children need to be the finger geometries
   rai::Frame *fing1 = gripper->children(0); while(!fing1->shape && fing1->children.N) fing1 = fing1->children(0);
   rai::Frame *fing2 = gripper->children(1); while(!fing2->shape && fing2->children.N) fing2 = fing2->children(0);
 
@@ -493,6 +493,7 @@ void Imp_CloseGripper::modConfiguration(Simulation& S) {
   q.scalar() -= .0001;
   fing1->joint->calc_Q_from_q(q, 0);
   fing2->joint->calc_Q_from_q(q, 0);
+  S.C._state_q_isGood = false;
   //      step({}, .01, _none);
   auto d1 = coll1.eval(S.C);
   auto d2 = coll2.eval(S.C);
@@ -547,6 +548,7 @@ void Imp_OpenGripper::modConfiguration(Simulation& S) {
   q.scalar() += .0001;
   fing1->joint->calc_Q_from_q(q, 0);
   fing2->joint->calc_Q_from_q(q, 0);
+  S.C._state_q_isGood = false;
   if(q.scalar() > fing1->joint->limits(1)){ //stop opening
     killMe = true;
   }
