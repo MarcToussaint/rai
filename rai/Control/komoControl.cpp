@@ -5,9 +5,10 @@ void KOMO_Control::setup(const rai::Configuration& C, double tau, double accCost
 
   setModel(C, true);
   setTiming(1., 1, tau, 2);
-  add_qControlObjective({}, 2, accCosts);
-  add_qControlObjective({}, 1, velCosts);
-  if(avoidCollisions) add_collision(true);
+
+  if(accCosts>0.) add_qControlObjective({}, 2, accCosts);
+  if(velCosts>0.) add_qControlObjective({}, 1, velCosts);
+  if(avoidCollisions) add_collision(true, 0., 1e0);
 
   q = C.getJointState();
   setupConfigurations(q);
@@ -44,10 +45,14 @@ void KOMO_Control::step(const arr& real_q){
   setConfiguration(0, q + (q - q_1));
 
   //update bounds
-  setBounds(1., 1.);
+  setBounds(1., 100.);
 
   OptOptions opt;
   opt.stopTolerance=1e-4;
+  opt.nonStrictSteps=-1;
+  opt.maxStep = tau; //maxVel*tau;
+  verbose=6;
+//  animateOptimization=2;
   optimize(0., opt);
 
   {

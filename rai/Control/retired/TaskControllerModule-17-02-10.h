@@ -15,7 +15,7 @@
 #include "../Core/thread.h"
 
 /// The task controller generates the message send to the RT_Controller
-/// the problem is defined by the list of CtrlTasks
+/// the problem is defined by the list of CtrlObjectives
 struct TaskControlThread : Thread {
   unique_ptr<struct sTaskControlThread> self;
 
@@ -25,7 +25,7 @@ struct TaskControlThread : Thread {
 
   VAR(CtrlMsg, ctrl_ref) //< the message send to the RTController
   VAR(CtrlMsg, ctrl_obs) //< the message received from the RTController
-  VAR(rai::Array<CtrlTask*>, ctrlTasks)
+  VAR(rai::Array<CtrlObjective*>, ctrlTasks)
   VAR(rai::String, effects)
   VAR(rai::Configuration, modelWorld)
   VAR(bool, fixBase)

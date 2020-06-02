@@ -163,7 +163,7 @@ void Filter::step() {
   modelWorld->selectJointsByName({"S1"});
 
   TaskControlMethods taskController(rai::getParameter<double>("Hrate", .1)*modelWorld->getHmetric());
-  CtrlTaskL tasks;
+  CtrlObjectiveL tasks;
   arr q=modelWorld().q;
 
   // create task costs on the modelWorld for each percept
@@ -179,20 +179,20 @@ void Filter::step() {
           s->mesh().C=ARR(0., 0., 0.);
       }
 
-      CtrlTask* t;
+      CtrlObjective* t;
 
-      t = new CtrlTask(STRING("syncPos_" <<b->name), make_shared<TM_Default>(TMT_pos, b->ID));
-      t->ref = make_shared<MotionProfile_Const>(p->pose.pos.getArr());
+      t = new CtrlObjective(STRING("syncPos_" <<b->name), make_shared<TM_Default>(TMT_pos, b->ID));
+      t->ref = make_shared<CtrlTargetFeed_Const>(p->pose.pos.getArr());
       tasks.append(t);
 
-      t = new CtrlTask(STRING("syncQuat_" <<b->name), make_shared<TM_Default>(TMT_quat, b->ID));
-      t->ref = make_shared<MotionProfile_Const>(p->pose.rot.getArr4d(), true);
+      t = new CtrlObjective(STRING("syncQuat_" <<b->name), make_shared<TM_Default>(TMT_quat, b->ID));
+      t->ref = make_shared<CtrlTargetFeed_Const>(p->pose.rot.getArr4d(), true);
       tasks.append(t);
     }
   }
 
   double cost=0.;
-  for(CtrlTask* t: tasks) t->update(.0, modelWorld()); //computes their values and Jacobians
+  for(CtrlObjective* t: tasks) t->update(.0, modelWorld()); //computes their values and Jacobians
   arr dq = taskController.inverseKinematics(tasks, NoArr, NoArr, NoArr, &cost);
   q += dq;
 

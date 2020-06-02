@@ -6,16 +6,16 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "taskControl.h"
+#include "control.h"
 
 struct Gamepad2Tasks {
   TaskControlMethods& TC;
   const arr q0;
   rai::String robot;
-  CtrlTask* homing, *endeffR, *endeffL, *base, *torso, *head, *headAxes, *limits, *coll,  *gripperL, *gripperR;
+  CtrlObjective* homing, *endeffR, *endeffL, *base, *torso, *head, *headAxes, *limits, *coll,  *gripperL, *gripperR;
 
   Gamepad2Tasks(TaskControlMethods& _TC, const rai::Configuration& K, const arr& q0);
-  rai::Array<CtrlTask*> getTasks();
+  rai::Array<CtrlObjective*> getTasks();
   bool updateTasks(arr& gamepadState, const rai::Configuration& K);
 };
 

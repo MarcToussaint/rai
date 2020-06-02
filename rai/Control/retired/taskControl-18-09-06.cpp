@@ -15,7 +15,7 @@
 
 //===========================================================================
 
-CT_Status MotionProfile_Const::update(arr& yRef, arr& ydotRef, double tau, const arr& y, const arr& ydot) {
+CT_Status CtrlReference_Const::update(arr& yRef, arr& ydotRef, double tau, const arr& y, const arr& ydot) {
   if(flipTargetSignOnNegScalarProduct && scalarProduct(y_target, y) < 0) {
     y_target = -y_target;
   }
@@ -26,7 +26,7 @@ CT_Status MotionProfile_Const::update(arr& yRef, arr& ydotRef, double tau, const
 
 //===========================================================================
 
-CT_Status MotionProfile_Sine::update(arr& yRef, arr& ydotRef, double tau, const arr& y, const arr& ydot) {
+CT_Status CtrlReference_Sine::update(arr& yRef, arr& ydotRef, double tau, const arr& y, const arr& ydot) {
   t+=tau;
   if(t>T) t=T;
   if(y_start.N!=y.N) y_start=y; //initialization
@@ -38,18 +38,18 @@ CT_Status MotionProfile_Sine::update(arr& yRef, arr& ydotRef, double tau, const 
   return CT_running;
 }
 
-bool MotionProfile_Sine::isDone() {
+bool CtrlReference_Sine::isDone() {
   NIY;
   return t>=T && length(y_err)<1e-3;
 }
 
 //===========================================================================
 
-MotionProfile_PD::MotionProfile_PD()
+CtrlReference_PD::CtrlReference_PD()
   : kp(0.), kd(0.), maxVel(0.), maxAcc(0.), flipTargetSignOnNegScalarProduct(false), makeTargetModulo2PI(false), tolerance(1e-3) {}
 
-MotionProfile_PD::MotionProfile_PD(const arr& _y_target, double decayTime, double dampingRatio, double maxVel, double maxAcc)
-  : MotionProfile_PD() {
+CtrlReference_PD::CtrlReference_PD(const arr& _y_target, double decayTime, double dampingRatio, double maxVel, double maxAcc)
+  : CtrlReference_PD() {
   y_target = _y_target;
   //    CHECK(decayTime>0. && dampingRatio>0., "this does not define proper gains!");
   //    double lambda = -decayTime*dampingRatio/log(.1);
@@ -58,8 +58,8 @@ MotionProfile_PD::MotionProfile_PD(const arr& _y_target, double decayTime, doubl
   setGainsAsNatural(decayTime, dampingRatio);
 }
 
-MotionProfile_PD::MotionProfile_PD(const Graph& params)
-  : MotionProfile_PD() {
+CtrlReference_PD::CtrlReference_PD(const Graph& params)
+  : CtrlReference_PD() {
   Node* it;
   if((it=params["PD"])) {
     arr pd=it->get<arr>();
@@ -70,24 +70,24 @@ MotionProfile_PD::MotionProfile_PD(const Graph& params)
   if((it=params["target"])) y_ref = it->get<arr>();
 }
 
-void MotionProfile_PD::setTarget(const arr& ytarget, const arr& vtarget) {
+void CtrlReference_PD::setTarget(const arr& ytarget, const arr& vtarget) {
   y_target = ytarget;
   if(!!vtarget) v_target=vtarget; else v_target.resizeAs(y_target).setZero();
   y_ref.clear(); v_ref.clear(); //resets the current reference
 }
 
-void MotionProfile_PD::setGains(double _kp, double _kd) {
+void CtrlReference_PD::setGains(double _kp, double _kd) {
   kp = _kp;
   kd = _kd;
 }
 
-void MotionProfile_PD::setGainsAsNatural(double decayTime, double dampingRatio) {
+void CtrlReference_PD::setGainsAsNatural(double decayTime, double dampingRatio) {
   CHECK(decayTime>0. && dampingRatio>0., "this does not define proper gains!");
   double lambda = -decayTime*dampingRatio/log(.1);
   setGains(rai::sqr(1./lambda), 2.*dampingRatio/lambda);
 }
 
-CT_Status MotionProfile_PD::update(arr& yRef, arr& vRef, double tau, const arr& y, const arr& ydot) {
+CT_Status CtrlReference_PD::update(arr& yRef, arr& vRef, double tau, const arr& y, const arr& ydot) {
   //only on initialization the true state is used; otherwise ignored!
   if(y_ref.N!=y.N) { y_ref=y; v_ref=ydot; }
   if(y_target.N!=y_ref.N) { y_target=y_ref; v_target=v_ref; }
@@ -112,7 +112,7 @@ CT_Status MotionProfile_PD::update(arr& yRef, arr& vRef, double tau, const arr& 
   return CT_running;
 }
 
-arr MotionProfile_PD::getDesiredAcceleration() {
+arr CtrlReference_PD::getDesiredAcceleration() {
   arr a = kp*(y_target-y_ref) + kd*(v_target-v_ref);
 
   //check vel/acc limits
@@ -128,7 +128,7 @@ arr MotionProfile_PD::getDesiredAcceleration() {
   return a;
 }
 
-//arr MotionProfile_PD::getDesiredAcceleration(){
+//arr CtrlReference_PD::getDesiredAcceleration(){
 //  arr Kp_y = Kp;
 //  arr Kd_y = Kd;
 //  makeGainsMatrices(Kp_y, Kd_y, y.N);
@@ -145,7 +145,7 @@ arr MotionProfile_PD::getDesiredAcceleration() {
 //  return a;
 //}
 
-void MotionProfile_PD::getDesiredLinAccLaw(arr& Kp_y, arr& Kd_y, arr& a0_y) {
+void CtrlReference_PD::getDesiredLinAccLaw(arr& Kp_y, arr& Kd_y, arr& a0_y) {
   //this one doesn't depend on the current state...
   Kp_y = diag(kp, y_ref.N);
   Kd_y = diag(kd, y_ref.N);
@@ -153,12 +153,12 @@ void MotionProfile_PD::getDesiredLinAccLaw(arr& Kp_y, arr& Kd_y, arr& a0_y) {
 //  arr a = a0_y - Kp_y*y - Kd_y*v; //linear law
 }
 
-double MotionProfile_PD::error() {
+double CtrlReference_PD::error() {
   if(!(y_ref.N && y_ref.N==y_target.N && v_ref.N==v_target.N)) return -1.;
   return maxDiff(y_ref, y_target) + maxDiff(v_ref, v_target);
 }
 
-bool MotionProfile_PD::isConverged(double _tolerance) {
+bool CtrlReference_PD::isConverged(double _tolerance) {
   if(_tolerance<0.) _tolerance=tolerance;
   return (y_ref.N && y_ref.N==y_target.N && v_ref.N==v_target.N
           && maxDiff(y_ref, y_target)<_tolerance
@@ -167,13 +167,13 @@ bool MotionProfile_PD::isConverged(double _tolerance) {
 
 //===========================================================================
 
-MotionProfile_Path::MotionProfile_Path(const arr& path, double executionTime) : executionTime(executionTime), phase(0.) {
+CtrlReference_Path::CtrlReference_Path(const arr& path, double executionTime) : executionTime(executionTime), phase(0.) {
   CHECK_EQ(path.nd, 2, "need a properly shaped path!");
   spline.points = path;
   spline.setUniformNonperiodicBasis();
 }
 
-CT_Status MotionProfile_Path::update(arr& yRef, arr& ydotRef, double tau, const arr& y, const arr& ydot) {
+CT_Status CtrlReference_Path::update(arr& yRef, arr& ydotRef, double tau, const arr& y, const arr& ydot) {
   phase += tau/executionTime;
   if(phase > 1.) phase=1.;
   yRef    = spline.eval(phase);
@@ -184,29 +184,29 @@ CT_Status MotionProfile_Path::update(arr& yRef, arr& ydotRef, double tau, const 
 
 //===========================================================================
 
-CtrlTask::CtrlTask(const char* name, Feature* map)
+CtrlObjective::CtrlObjective(const char* name, Feature* map)
   : map(map), name(name), active(true), status(CT_init), ref(nullptr), prec(ARR(1.)), hierarchy(1) {
-  //  ref = new MotionProfile_PD();
+  //  ref = new CtrlReference_PD();
 }
 
-CtrlTask::CtrlTask(const char* name, Feature* map, double decayTime, double dampingRatio, double maxVel, double maxAcc)
-  : CtrlTask(name, map) {
-  ref = new MotionProfile_PD({}, decayTime, dampingRatio, maxVel, maxAcc);
+CtrlObjective::CtrlObjective(const char* name, Feature* map, double decayTime, double dampingRatio, double maxVel, double maxAcc)
+  : CtrlObjective(name, map) {
+  ref = new CtrlReference_PD({}, decayTime, dampingRatio, maxVel, maxAcc);
 }
 
-CtrlTask::CtrlTask(const char* name, Feature* map, const Graph& params)
-  : CtrlTask(name, map) {
-  ref = new MotionProfile_PD(params);
+CtrlObjective::CtrlObjective(const char* name, Feature* map, const Graph& params)
+  : CtrlObjective(name, map) {
+  ref = new CtrlReference_PD(params);
   Node* n;
   if((n=params["prec"])) prec = n->get<arr>();
 }
 
-CtrlTask::~CtrlTask() {
+CtrlObjective::~CtrlObjective() {
   if(map) delete map; map=nullptr;
   if(ref) delete ref; ref=nullptr;
 }
 
-CT_Status CtrlTask::update(double tau, const rai::Configuration& world) {
+CT_Status CtrlObjective::update(double tau, const rai::Configuration& world) {
   map->phi(y, J_y, world);
   if(world.qdot.N) v = J_y*world.qdot; else v.resize(y.N).setZero();
   CT_Status s=status;
@@ -218,37 +218,37 @@ CT_Status CtrlTask::update(double tau, const rai::Configuration& world) {
   return status;
 }
 
-MotionProfile_PD& CtrlTask::PD() {
-  if(!ref) ref = new MotionProfile_PD();
-  MotionProfile_PD* pd = dynamic_cast<MotionProfile_PD*>(ref);
+CtrlReference_PD& CtrlObjective::PD() {
+  if(!ref) ref = new CtrlReference_PD();
+  CtrlReference_PD* pd = dynamic_cast<CtrlReference_PD*>(ref);
   if(!pd) {
     LOG(-1) <<"you've created a non-PD ref for this before, of type " <<typeid(*ref).name();
     delete ref;
-    ref = new MotionProfile_PD();
-    pd = dynamic_cast<MotionProfile_PD*>(ref);
+    ref = new CtrlReference_PD();
+    pd = dynamic_cast<CtrlReference_PD*>(ref);
   }
   return *pd;
 }
 
-void CtrlTask::setRef(MotionProfile* _ref) {
+void CtrlObjective::setRef(CtrlReference* _ref) {
   CHECK(!ref, "ref is already set");
   ref = _ref;
 }
 
-void CtrlTask::setTarget(const arr& y_target) {
+void CtrlObjective::setTarget(const arr& y_target) {
   CHECK(ref, "need a ref to set target");
   ref->setTarget(y_target);
   ref->resetState();
 }
 
-arr CtrlTask::getPrec() {
+arr CtrlObjective::getPrec() {
   uint n=y_ref.N;
   if(prec.N==1) return diag(rai::sqr(prec.scalar()), n);
   if(prec.nd==1) return diag(prec%prec);
   return comp_At_A(prec);
 }
 
-void CtrlTask::getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const rai::Configuration& world) {
+void CtrlObjective::getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const rai::Configuration& world) {
   //-- get necessary Jacobians
   TM_Default* m = dynamic_cast<TM_Default*>(map);
   CHECK(m, "this only works for the default position task map");
@@ -267,8 +267,8 @@ void CtrlTask::getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_f
   K_I = f_alpha*~J;
 }
 
-void CtrlTask::reportState(ostream& os) {
-  os <<"  CtrlTask " <<name;
+void CtrlObjective::reportState(ostream& os) {
+  os <<"  CtrlObjective " <<name;
   if(!active) cout <<" INACTIVE";
   if(y_ref.N==y.N && v_ref.N==v.N) {
     os <<": "/*y_target=" <<PD().y_target */<<" \ty_ref=" <<y_ref <<" \ty=" <<y
@@ -289,26 +289,26 @@ TaskControlMethods::TaskControlMethods(const rai::Configuration& world)
 //  qNullCostRef.PD().setTarget(world.q);
 }
 
-void TaskControlMethods::updateCtrlTasks(double tau, const rai::Configuration& world) {
+void TaskControlMethods::updateCtrlObjectives(double tau, const rai::Configuration& world) {
   qNullCostRef.update(tau, world);
-  for(CtrlTask* t: tasks) t->update(tau, world);
+  for(CtrlObjective* t: tasks) t->update(tau, world);
 }
 
-void TaskControlMethods::resetCtrlTasksState() {
+void TaskControlMethods::resetCtrlObjectivesState() {
   qNullCostRef.resetState();
-  for(CtrlTask* t: tasks) t->resetState();
+  for(CtrlObjective* t: tasks) t->resetState();
 }
 
-CtrlTask* TaskControlMethods::addPDTask(const char* name, double decayTime, double dampingRatio, Feature* map) {
-  return tasks.append(new CtrlTask(name, map, decayTime, dampingRatio, 1., 1.));
+CtrlObjective* TaskControlMethods::addPDTask(const char* name, double decayTime, double dampingRatio, Feature* map) {
+  return tasks.append(new CtrlObjective(name, map, decayTime, dampingRatio, 1., 1.));
 }
 
-//CtrlTask* TaskControlMethods::addPDTask(const char* name,
+//CtrlObjective* TaskControlMethods::addPDTask(const char* name,
 //                                         double decayTime, double dampingRatio,
 //                                         TM_DefaultType type,
 //                                         const char* iShapeName, const rai::Vector& ivec,
 //                                         const char* jShapeName, const rai::Vector& jvec){
-//  return tasks.append(new CtrlTask(name, new TM_Default(type, world, iShapeName, ivec, jShapeName, jvec),
+//  return tasks.append(new CtrlObjective(name, new TM_Default(type, world, iShapeName, ivec, jShapeName, jvec),
 //                                   decayTime, dampingRatio, 1., 1.));
 //}
 
@@ -347,7 +347,7 @@ double TaskControlMethods::getIKCosts(const arr& q, const arr& q0, arr& g, arr& 
   arr y, J;
   if(!!g) { CHECK(&q, ""); g = zeros(q.N); }
   if(!!H) { CHECK(&q, ""); H = zeros(q.N, q.N); }
-  for(CtrlTask* t: tasks) {
+  for(CtrlObjective* t: tasks) {
     if(t->active && t->ref) {
       y = t->prec%(t->y_ref - t->y);
       J = t->prec%(t->J_y);
@@ -375,7 +375,7 @@ for(uint k=0; k<10; k++) {
   q_model += dq;
   modelWorld().setJointState(q_model, qdot_model);
   modelWorld().stepSwift();
-  taskController->updateCtrlTasks(.0, modelWorld());
+  taskController->updateCtrlObjectives(.0, modelWorld());
   arr dq2 = alpha*taskController->inverseKinematics(qdot_model, q_now-q_model, &cost2);
   if(cost2<cost) { //accept
     cost=cost2;
@@ -399,7 +399,7 @@ if(true || cost>10.) { //calling an optimizer!
   auto f = [this, &q_base](arr& g, arr& H, const arr& x)->double{
     this->modelWorld().setJointState(x);
     this->modelWorld().stepSwift();
-    this->taskController->updateCtrlTasks(0., this->modelWorld());
+    this->taskController->updateCtrlObjectives(0., this->modelWorld());
     double c = this->taskController->getIKCosts(x, q_base, g, H);
     return c;
   };
@@ -408,7 +408,7 @@ if(true || cost>10.) { //calling an optimizer!
 //    checkGradient(f, q_base, 1e-4);
   modelWorld().setJointState(q_model, qdot_model);
   modelWorld().stepSwift();
-  taskController->updateCtrlTasks(0., modelWorld());
+  taskController->updateCtrlObjectives(0., modelWorld());
   cost = taskController->getIKCosts(q_model, q_base);
   cout <<" cost=" <<cost <<endl;
 }
@@ -416,7 +416,7 @@ if(true || cost>10.) { //calling an optimizer!
 
 arr TaskControlMethods::inverseKinematics(arr& qdot, const arr& nullRef, double* cost) {
   arr y, v, J;
-  for(CtrlTask* t: tasks) {
+  for(CtrlObjective* t: tasks) {
     if(t->active && t->ref) {
       y.append(t->prec%(t->y_ref - t->y));
       J.append(t->prec%(t->J_y));
@@ -451,7 +451,7 @@ arr TaskControlMethods::inverseKinematics(arr& qdot, const arr& nullRef, double*
 arr TaskControlMethods::inverseKinematics_hierarchical() {
   uint maxHierarchy=0;
   uint n=0;
-  for(CtrlTask* t: tasks) if(t->active && t->ref) {
+  for(CtrlObjective* t: tasks) if(t->active && t->ref) {
       if(t->hierarchy>maxHierarchy) maxHierarchy=t->hierarchy;
       if(!n) n=t->J_y.d1; else CHECK_EQ(n, t->J_y.d1, "");
     }
@@ -465,7 +465,7 @@ arr TaskControlMethods::inverseKinematics_hierarchical() {
   arr dq = zeros(n);
   for(uint h=0; h<=maxHierarchy; h++) { //start with lowest priorities; end with highest
     arr y, J;
-    for(CtrlTask* t: tasks) if(t->active && t->ref && t->hierarchy==h) {
+    for(CtrlObjective* t: tasks) if(t->active && t->ref && t->hierarchy==h) {
         y.append(t->prec%(t->y_ref - t->y));
         J.append(t->prec%(t->J_y));
       }
@@ -482,7 +482,7 @@ arr TaskControlMethods::inverseKinematics_hierarchical() {
 arr TaskControlMethods::getComplianceProjection() {
   arr P;
   uint count=0;
-  for(CtrlTask* t: tasks) {
+  for(CtrlObjective* t: tasks) {
     if(t->active && t->complianceDirection.N) {
       if(!P.N) P = eye(t->J_y.d1);
 
@@ -521,7 +521,7 @@ arr TaskControlMethods::getComplianceProjection() {
 
 void TaskControlMethods::reportCurrentState() {
   cout <<"** TaskControlMethods" <<endl;
-  for(CtrlTask* t: tasks) t->reportState(cout);
+  for(CtrlObjective* t: tasks) t->reportState(cout);
 }
 
 //void TaskControlMethods::updateConstraintControllers(){
@@ -552,7 +552,7 @@ void TaskControlMethods::reportCurrentState() {
 arr TaskControlMethods::operationalSpaceControl() {
   //-- get the stacked task coefficient ($J_\phi$ and $c$ in the reference (they include C^{1/2}))
   arr yddot_des, J;
-  for(CtrlTask* t: tasks) {
+  for(CtrlObjective* t: tasks) {
     if(t->active && !t->f_ref.N) {
       arr a_des = t->PD().getDesiredAcceleration();
       yddot_des.append(t->prec%(a_des /*-Jdot*qdot*/));
@@ -596,7 +596,7 @@ arr TaskControlMethods::getDesiredLinAccLaw(arr& Kp, arr& Kd, arr& k, const arr&
 
   arr JCJ = zeros(q.N, q.N);
 
-  for(CtrlTask* task : tasks) if(task->active) {
+  for(CtrlObjective* task : tasks) if(task->active) {
       arr J_y;
       task->PD().getDesiredLinAccLaw(Kp_y, Kd_y, k_y);
       C_y = task->getPrec();
@@ -648,7 +648,7 @@ arr TaskControlMethods::calcOptimalControlProjected(arr& Kp, arr& Kd, arr& u0, c
 //  if(qitselfPD.active){
 //    a += H_rate_diag % qitselfPD.getDesiredAcceleration(world.q, world.qdot);
 //  }
-  for(CtrlTask* law : tasks) if(law->active) {
+  for(CtrlObjective* law : tasks) if(law->active) {
       tempJPrec = ~J_y*law->getPrec();
       A += tempJPrec*J_y;
 
@@ -690,7 +690,7 @@ void fwdSimulateControlLaw(arr& Kp, arr& Kd, arr& u0, rai::Configuration& world)
 
 void TaskControlMethods::calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, double& gamma, const rai::Configuration& world) {
   uint nForceTasks=0;
-  for(CtrlTask* task : this->tasks) if(task->active && task->f_ref.N) {
+  for(CtrlObjective* task : this->tasks) if(task->active && task->f_ref.N) {
       nForceTasks++;
       TM_Default* map = dynamic_cast<TM_Default*>(task->feat);
       rai::Frame* body = world.frames(map->i);
@@ -714,6 +714,6 @@ void TaskControlMethods::calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, d
 
 }
 
-RUN_ON_INIT_BEGIN(CtrlTask)
-rai::Array<CtrlTask*>::memMove=true;
-RUN_ON_INIT_END(CtrlTask)
+RUN_ON_INIT_BEGIN(CtrlObjective)
+rai::Array<CtrlObjective*>::memMove=true;
+RUN_ON_INIT_END(CtrlObjective)
