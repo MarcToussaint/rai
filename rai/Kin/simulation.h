@@ -38,8 +38,8 @@ struct Simulation {
   void step(const arr& u_control, double tau=.01, ControlMode u_mode = _velocity);
 
   //-- send a gripper command
-  void openGripper(const char* gripperFrameName, double width=.075, double speed=.2);
-  void closeGripper(const char* gripperFrameName, double width=.05, double speed=.1, double force=20.);
+  void openGripper(const char* gripperFrameName, double width=.075, double speed=.3);
+  void closeGripper(const char* gripperFrameName, double width=.05, double speed=.3, double force=20.);
 
   //-- get state information
   const arr& get_q(){ return C.getJointState(); }

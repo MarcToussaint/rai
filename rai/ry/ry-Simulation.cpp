@@ -39,14 +39,14 @@ void init_Simulation(pybind11::module &m) {
            "",
            pybind11::arg("gripperFrameName"),
            pybind11::arg("width") = .075,
-           pybind11::arg("speed") = .2
+           pybind11::arg("speed") = .3
                                     )
 
       .def("closeGripper", &rai::Simulation::closeGripper,
            "",
            pybind11::arg("gripperFrameName"),
            pybind11::arg("width") = .05,
-           pybind11::arg("speed") = 1.,
+           pybind11::arg("speed") = .3,
            pybind11::arg("force") = 20.
                                     )
 

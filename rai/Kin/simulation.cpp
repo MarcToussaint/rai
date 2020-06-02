@@ -63,8 +63,9 @@ struct Imp_CloseGripper : SimulationImp {
   F_PairCollision coll1;
   F_PairCollision coll2;
   arr q;
+  double speed;
 
-  Imp_CloseGripper(Frame* _gripper, Frame* _fing1, Frame* _fing2, Frame* _obj);
+  Imp_CloseGripper(Frame* _gripper, Frame* _fing1, Frame* _fing2, Frame* _obj, double _speed);
   virtual void modConfiguration(Simulation& S);
 };
 
@@ -73,8 +74,9 @@ struct Imp_CloseGripper : SimulationImp {
 struct Imp_OpenGripper : SimulationImp {
   Frame *gripper, *fing1, *fing2;
   arr q;
+  double speed;
 
-  Imp_OpenGripper(Frame* _gripper, Frame* _fing1, Frame* _fing2);
+  Imp_OpenGripper(Frame* _gripper, Frame* _fing1, Frame* _fing2, double _speed);
   virtual void modConfiguration(Simulation& S);
 };
 
@@ -201,7 +203,7 @@ void Simulation::openGripper(const char* gripperFrameName, double width, double 
   rai::Frame *fing1 = gripper->children(0); while(!fing1->shape && fing1->children.N) fing1 = fing1->children(0);
   rai::Frame *fing2 = gripper->children(1); while(!fing2->shape && fing2->children.N) fing2 = fing2->children(0);
 
-  imps.append(make_shared<Imp_OpenGripper>(gripper, fing1, fing2));
+  imps.append(make_shared<Imp_OpenGripper>(gripper, fing1, fing2, speed));
 }
 
 void Simulation::closeGripper(const char* gripperFrameName, double width, double speed, double force){
@@ -246,11 +248,8 @@ void Simulation::closeGripper(const char* gripperFrameName, double width, double
     }
   }
 
-  LOG(1) <<"initiating grasp of object " <<obj->name <<" (if this is not what you expect, did you setContact(1) for the object you want to grasp?)";
-
-
 #if 1
-  imps.append(make_shared<Imp_CloseGripper>(gripper, fing1, fing2, obj));
+  imps.append(make_shared<Imp_CloseGripper>(gripper, fing1, fing2, obj, speed));
 #else
 
   //-- actually close gripper until both distances are < .001
@@ -464,10 +463,11 @@ void Simulation_self::updateDisplayData(const byteA& _image, const floatA& _dept
 
 //===========================================================================
 
-Imp_CloseGripper::Imp_CloseGripper(Frame* _gripper, Frame* _fing1, Frame* _fing2, Frame* _obj)
+Imp_CloseGripper::Imp_CloseGripper(Frame* _gripper, Frame* _fing1, Frame* _fing2, Frame* _obj, double _speed)
   : gripper(_gripper), fing1(_fing1), fing2(_fing2), obj(_obj),
     coll1(fing1->ID, obj->ID, coll1._negScalar, false),
-    coll2(fing2->ID, obj->ID, coll1._negScalar, false) {
+    coll2(fing2->ID, obj->ID, coll1._negScalar, false),
+    speed(_speed){
   when = _beforePhysics;
   type = Simulation::_closeGripper;
 
@@ -480,6 +480,7 @@ Imp_CloseGripper::Imp_CloseGripper(Frame* _gripper, Frame* _fing1, Frame* _fing2
 
   q = fing1->joint->calc_q_from_Q(fing1->get_Q());
 
+  LOG(1) <<"initiating grasp of object " <<obj->name <<" (if this is not what you expect, did you setContact(1) for the object you want to grasp?)";
 }
 
 void Imp_CloseGripper::modConfiguration(Simulation& S) {
@@ -490,7 +491,7 @@ void Imp_CloseGripper::modConfiguration(Simulation& S) {
   CHECK_EQ(&S.C, &obj->C, "");
 
   //-- actually close gripper until both distances are < .001
-  q.scalar() -= .0001;
+  q.scalar() -= 1e-3*speed;
   fing1->joint->calc_Q_from_q(q, 0);
   fing2->joint->calc_Q_from_q(q, 0);
   S.C._state_q_isGood = false;
@@ -521,7 +522,10 @@ void Imp_CloseGripper::modConfiguration(Simulation& S) {
 
       //allows the user to know that gripper grasps something
       S.grasps.append(gripper);
+
+      LOG(1) <<"terminating grasp of object " <<obj->name <<" - SUCCESS";
     }else{ //unsuccessful
+      LOG(1) <<"terminating grasp of object " <<obj->name <<" - FAILURE";
     }
     killMe = true;
   }
@@ -529,12 +533,14 @@ void Imp_CloseGripper::modConfiguration(Simulation& S) {
 
 //===========================================================================
 
-Imp_OpenGripper::Imp_OpenGripper(Frame* _gripper, Frame* _fing1, Frame* _fing2)
-  : gripper(_gripper), fing1(_fing1), fing2(_fing2) {
+Imp_OpenGripper::Imp_OpenGripper(Frame* _gripper, Frame* _fing1, Frame* _fing2, double _speed)
+  : gripper(_gripper), fing1(_fing1), fing2(_fing2), speed(_speed) {
   when = _beforePhysics;
   type = Simulation::_openGripper;
 
   q = fing1->joint->calc_q_from_Q(fing1->get_Q());
+
+  LOG(1) <<"initiating opening gripper " <<gripper->name;
 }
 
 void Imp_OpenGripper::modConfiguration(Simulation& S) {
@@ -545,11 +551,12 @@ void Imp_OpenGripper::modConfiguration(Simulation& S) {
   CHECK_EQ(&S.C, &fing2->C, "");
 
   //-- actually open gripper until limit
-  q.scalar() += .0001;
+  q.scalar() += 1e-3*speed;
   fing1->joint->calc_Q_from_q(q, 0);
   fing2->joint->calc_Q_from_q(q, 0);
   S.C._state_q_isGood = false;
   if(q.scalar() > fing1->joint->limits(1)){ //stop opening
+    LOG(1) <<"terminating opening gripper " <<gripper->name;
     killMe = true;
   }
 }
