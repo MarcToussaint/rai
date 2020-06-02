@@ -1,16 +1,24 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2019 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "F_pushed.h"
 #include "F_static.h"
-#include <Kin/kin.h>
 #include "TM_angVel.h"
-#include <Kin/contact.h>
+#include "kin.h"
+#include "forceExchange.h"
 
-void POA_vel(arr& y, arr& J, const WorldL& Ktuple, rai::Contact* con, bool b_or_a);
+void POA_vel(arr& y, arr& J, const ConfigurationL& Ktuple, rai::ForceExchange* con, bool b_or_a);
 
-F_pushed::F_pushed(int iShape) : i(iShape){
+F_pushed::F_pushed(int iShape) : i(iShape) {
   order=1;
 }
 
-void F_pushed::phi(arr& y, arr& J, const WorldL& Ktuple){
+void F_pushed::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   CHECK_EQ(order, 1, "");
 
   //get linear and angular velocities
@@ -20,14 +28,14 @@ void F_pushed::phi(arr& y, arr& J, const WorldL& Ktuple){
 
   double mass=1.;
   arr Imatrix = diag(.03, 3);
-  rai::Frame *a = Ktuple(-2)->frames(i);
-  if(a->inertia){
+  rai::Frame* a = Ktuple(-2)->frames(i);
+  if(a->inertia) {
     mass = a->inertia->mass;
     Imatrix = 2.*conv_mat2arr(a->inertia->matrix);
   }
   arr one_over_mass(6);
-  for(uint i=0;i<3;i++) one_over_mass(i) = 1./mass;
-  for(uint i=0;i<3;i++) one_over_mass(i+3) = 1./Imatrix(i,i);
+  for(uint i=0; i<3; i++) one_over_mass(i) = 1./mass;
+  for(uint i=0; i<3; i++) one_over_mass(i+3) = 1./Imatrix(i, i);
   double forceScaling = 1e1;
   one_over_mass *= forceScaling;
 

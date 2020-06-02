@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -8,11 +8,11 @@
 
 #pragma once
 
-#include <Core/thread.h>
-#include <Control/ctrlMsg.h>
-#include <Control/taskControl.h>
-#include <Control/RTControllerSimulation.h>
-#include <Control/gravityCompensation.h>
+#include "ctrlMsg.h"
+#include "taskControl.h"
+#include "RTControllerSimulation.h"
+#include "gravityCompensation.h"
+#include "../Core/thread.h"
 
 /// The task controller generates the message send to the RT_Controller
 /// the problem is defined by the list of CtrlTasks
@@ -22,7 +22,7 @@ struct TaskControlThread : Thread {
   Var<CtrlMsg> ctrl_ref;
   Var<CtrlMsg> ctrl_state;
   Var<CtrlTaskL> ctrl_tasks;
-  
+
   arr q_real, qdot_real, torques_real; //< real state
   arr q_model, qdot_model; //< model state
   arr q0; //< homing pose
@@ -33,7 +33,7 @@ struct TaskControlThread : Thread {
   bool useSwift;
   bool requiresInitialSync; //< whether the step() should reinit the state from the ros message
   int verbose;
-  
+
   TaskControlThread(const Var<rai::Configuration>& _ctrl_config,
                     const Var<CtrlMsg>& _ctrl_ref,
                     const Var<CtrlMsg>& _ctrl_state,
@@ -41,7 +41,7 @@ struct TaskControlThread : Thread {
   ~TaskControlThread();
 
   arr whatsTheForce(const ptr<CtrlTask>& t);
-  
+
   void step();
 };
 

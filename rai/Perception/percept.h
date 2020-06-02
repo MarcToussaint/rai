@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include <Core/array.h>
-#include <Kin/kin.h>
-#include <Geo/mesh.h>
-#include <bits/shared_ptr.h>
+#include "../Core/array.h"
+#include "../Kin/kin.h"
+#include "../Geo/mesh.h"
+#include <memory>
 
 struct Percept;
 typedef std::shared_ptr<Percept> PerceptPtr;
@@ -19,7 +19,7 @@ typedef rai::Array<PerceptPtr> PerceptL;
 
 struct Percept : GLDrawer {
   enum Type { PT_cluster, PT_plane, PT_box, PT_mesh, PT_alvar, PT_optitrackmarker, PT_optitrackbody, PT_end };
-  
+
   uint id = 0;
   int bodyId = -1;
   rai::Enum<Type> type;
@@ -30,14 +30,14 @@ struct Percept : GLDrawer {
   Percept(Type type);
   Percept(Type type, const rai::Transformation& _pose);
   virtual ~Percept() {}
-  
+
   virtual void syncWith(rai::Configuration& K) = 0;
   virtual double idMatchingCost(const Percept& other);
   virtual double fuse(PerceptPtr& other);
   virtual void write(ostream& os) const;
   virtual void glDraw(OpenGL&) { NIY }
   virtual Percept* newClone() const = 0;
-  
+
 //private:
 //  std::map<Type, std::string> m = {
 //    std::make_pair(Type::cluster, "cluster"),
@@ -52,9 +52,9 @@ stdOutPipe(Percept)
 struct PercCluster : Percept {
   arr mean;
   arr points;
-  
+
   PercCluster(arr mean, arr points, std::string frame_id);
-  
+
   virtual void syncWith(rai::Configuration& K);
   virtual double idMatchingCost(const Percept& other);
   virtual void write(ostream& os) const;
@@ -63,10 +63,10 @@ struct PercCluster : Percept {
 
 struct PercMesh : Percept {
   rai::Mesh mesh;
-  
+
   PercMesh() : Percept(PT_mesh) {}
   PercMesh(const rai::Mesh& mesh) : Percept(PT_mesh), mesh(mesh) {}
-  
+
   virtual void syncWith(rai::Configuration& K);
 //  virtual double idMatchingCost(const Percept& other){ return 0.; }
   virtual double fuse(PerceptPtr& other);
@@ -77,9 +77,9 @@ struct PercMesh : Percept {
 
 struct PercPlane : Percept {
   rai::Mesh hull;
-  
+
   PercPlane(const rai::Transformation& t, const rai::Mesh& hull);
-  
+
   virtual void syncWith(rai::Configuration& K);
   virtual double idMatchingCost(const Percept& other);
   virtual double fuse(PerceptPtr& other);
@@ -91,9 +91,9 @@ struct PercPlane : Percept {
 struct PercBox : Percept {
   arr size;
   arr color;
-  
+
   PercBox(const rai::Transformation& t, const arr& size, const arr& color);
-  
+
   virtual void syncWith(rai::Configuration& K);
 //  virtual double idMatchingCost(const Percept& other) { return 0.; }
   virtual double fuse(PerceptPtr& other);
@@ -104,9 +104,9 @@ struct PercBox : Percept {
 
 struct PercAlvar : Percept {
   uint alvarId;
-  
+
   PercAlvar(uint alvarId, std::string _frame_id);
-  
+
   virtual void syncWith(rai::Configuration& K);
   virtual double idMatchingCost(const Percept& other);
   virtual void write(ostream& os) const;
@@ -118,8 +118,8 @@ struct OptitrackMarker : Percept {
     : Percept(PT_optitrackmarker) {
     frame_id = _frame_id;
   }
-  
-  OptitrackMarker(const OptitrackMarker &obj)
+
+  OptitrackMarker(const OptitrackMarker& obj)
     : Percept(PT_optitrackmarker) {
     this->frame_id = obj.frame_id;
     this->type = obj.type;
@@ -127,8 +127,8 @@ struct OptitrackMarker : Percept {
     this->id = obj.id;
     this->pose = obj.pose;
   }
-  
-  virtual void syncWith(rai::Configuration &K);
+
+  virtual void syncWith(rai::Configuration& K);
 //  virtual double idMatchingCost(const Percept& other){
 //    if(other.type!=PT_optitrackmarker) return -1.;
 //    rai::Vector dist = (this->frame * this->transform.pos) - (dynamic_cast<const OptitrackMarker*>(&other)->frame * dynamic_cast<const OptitrackMarker*>(&other)->transform.pos);
@@ -142,15 +142,15 @@ struct OptitrackBody : Percept {
     : Percept(Type::PT_optitrackbody) {
     frame_id = _frame_id;
   }
-  
-  OptitrackBody(const OptitrackBody &obj)
+
+  OptitrackBody(const OptitrackBody& obj)
     : Percept(Type::PT_optitrackbody) {
     this->frame_id = obj.frame_id;
     this->precision = obj.precision;
     this->id = obj.id;
     this->pose = obj.pose;
   }
-  
+
   virtual void syncWith(rai::Configuration& K);
 //  virtual double idMatchingCost(const Percept& other){
 //    if(other.type!=PT_optitrackbody) return -1.;

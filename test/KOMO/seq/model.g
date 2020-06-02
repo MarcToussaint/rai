@@ -1,8 +1,8 @@
-Include = '../../../../data/baxter_model/baxter.ors'
-Delete shape visual
+Include = '../../../../rai-robotModels/baxter/baxter.g'
+#Delete shape visual
 #Delete shape collision
 
-Include = '../../../../data/man_model.ors'
+Include = '../../../../rai-robotModels/human_simple/human_simple.g'
 
 
 Edit  waist { X=<T t(1.5 0. 1.) d(-90 0 0 1)> }
@@ -26,7 +26,7 @@ joint (tableC Long1) { from=<T t(.2 .2 0) t(0 0 .1)> joint:rigid }
 body Long2 { shape:ssBox size=[.05 .3 .1 .02] contact }
 joint (tableC Long2) { from=<T t(.2 -.2 0) t(0 0 .1)> joint:rigid }
 
-Include = '../../../../data/toolbox/toolbox.ors'
+Include = '../../../../rai-robotModels/objects/toolbox/toolbox.ors'
 
 joint (tableL /toolbox/handle) { from=<T t(0 0 .04) t(.0 .0 .12)> joint:rigid }
 joint (tableL /toolbox/side_front) { from=<T t(0 0 .04) d(-90 0 0 1) t(0 -.212 .12)> joint:rigid }
@@ -36,7 +36,8 @@ joint (tableL /toolbox/side_right) { from=<T t(0 0 .04) d(180 0 0 1) t(.0 -.147 
 joint (tableL /toolbox/floor_left) { from=<T t(0 0 .04) t(.0 .069 .004) d(90 1 0 0)> joint:rigid }
 joint (tableL /toolbox/floor_right) { from=<T t(0 0 .04) d(180 0 0 1) t(.0 .069 .004) d(90 1 0 0)> joint:rigid }
 
-Include = '../../../../data/screwdriver/screwdriver.ors'
+Include = '../../../../rai-robotModels/objects/screwdriver/screwdriver.ors'
+
 joint (tableR screwdriver) { from=<T t(0 0 .06) t(-.5 .0 .0) > joint:rigid }
 #joint (tableR screwdriver) { from=<T t(0 0 .06) t(.5 .0 .0) > joint:rigid }
 shape screwdriverHandle(screwdriver) { shape:marker rel=<T d(90 0 0 1)> size=[.15 0 0 0] color=[1 1 0] }

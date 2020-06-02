@@ -1,16 +1,21 @@
-#include <RosCom/roscom.h>
-#include <RosCom/baxter.h>
+/*  ------------------------------------------------------------------
+    Copyright (c) 2019 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
 
-#include <Gui/opengl.h>
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
 
 #include "robotOperation.h"
 #include "splineRunner.h"
-
+#include "../RosCom/roscom.h"
+#include "../RosCom/baxter.h"
+#include "../Gui/opengl.h"
 
 //#include "SimulationThread_self.h"
 extern bool Geo_mesh_drawColors;
 
-struct sRobotOperation : Thread, GLDrawer{
+struct sRobotOperation : Thread, GLDrawer {
   BaxterInterface baxter;
   arr q0, q_ref;
   StringA jointNames;
@@ -26,7 +31,7 @@ struct sRobotOperation : Thread, GLDrawer{
     : Thread("RobotInterface", _dt),
       baxter(useRosDefault),
       K_ref(_K),
-      dt(_dt){
+      dt(_dt) {
 
     useBaxter = rai::getParameter<bool>("useRos", useRosDefault);
     sendToBaxter = useBaxter;
@@ -40,11 +45,11 @@ struct sRobotOperation : Thread, GLDrawer{
     threadLoop();
   }
 
-  ~sRobotOperation(){
+  ~sRobotOperation() {
     threadClose();
   }
 
-  void step(){
+  void step() {
     {
       auto lock = stepMutex(RAI_HERE);
 
@@ -54,7 +59,7 @@ struct sRobotOperation : Thread, GLDrawer{
       if(q_spline.N) q_ref = q_spline;
       //otherwise q_ref is just the last spline point..
 
-      if(q_ref.N){
+      if(q_ref.N) {
         if(useBaxter && sendToBaxter) baxter.send_q(q_ref);
         {
           auto lock = gl.dataLock(RAI_HERE);
@@ -63,19 +68,19 @@ struct sRobotOperation : Thread, GLDrawer{
       }
     }
 
-    if(!(step_count%10)){
+    if(!(step_count%10)) {
       gl.update(STRING("step=" <<step_count <<" phase=" <<spline.phase <<" timeToGo=" <<spline.timeToGo() <<" #ref=" <<spline.refSpline.points.d0));
     }
   }
 
-  void glDraw(OpenGL& gl){
+  void glDraw(OpenGL& gl) {
     //        auto lock = stepMutex(RAI_HERE);
-    glStandardScene(NULL, gl);
+    glStandardScene(nullptr, gl);
     K_ref.glDraw(gl);
 //    auto lock = gl.dataLock(RAI_HERE);
-    if(useBaxter){
+    if(useBaxter) {
       arr q_real = baxter.get_q();
-      if(q_real.N == K_baxter.getJointStateDimension()){
+      if(q_real.N == K_baxter.getJointStateDimension()) {
         K_baxter.setJointState(q_real);
       }
       Geo_mesh_drawColors=false;
@@ -87,27 +92,24 @@ struct sRobotOperation : Thread, GLDrawer{
     }
   }
 
-
 };
 
-
 RobotOperation::RobotOperation(const rai::Configuration& _K, double dt, const char* rosNodeName) {
-  if(rosNodeName && strlen(rosNodeName)>3){
-      rosCheckInit(rosNodeName);
-      s = make_shared<sRobotOperation>(_K, dt, true);
-  }else{
-      s = make_shared<sRobotOperation>(_K, dt, false);
+  if(rosNodeName && strlen(rosNodeName)>3) {
+    rosCheckInit(rosNodeName);
+    self = make_unique<sRobotOperation>(_K, dt, true);
+  } else {
+    self = make_unique<sRobotOperation>(_K, dt, false);
   }
 
 }
 
-RobotOperation::~RobotOperation(){
+RobotOperation::~RobotOperation() {
 }
 
-void RobotOperation::sendToReal(bool activate){
-  s->sendToBaxter = activate;
+void RobotOperation::sendToReal(bool activate) {
+  self->sendToBaxter = activate;
 }
-
 
 /** This is the core method to send motion to the robot. It
     constructs a spline from the given path and times (could
@@ -123,41 +125,39 @@ void RobotOperation::sendToReal(bool activate){
 
     To interrupt a running motion, send and empty path with
     append=false. */
-void RobotOperation::move(const arr& path, const arr& times, bool append){
+void RobotOperation::move(const arr& path, const arr& times, bool append) {
   cout <<"SENDING MOTION: " <<path <<endl <<times <<endl;
-  auto lock = s->stepMutex(RAI_HERE);
+  auto lock = self->stepMutex(RAI_HERE);
   arr _path = path.ref();
-  if(_path.nd==1) _path.reshape(1,_path.N);
-  s->spline.set(_path, times, getJointPositions(), append);
+  if(_path.nd==1) _path.reshape(1, _path.N);
+  self->spline.set(_path, times, getJointPositions(), append);
 }
 
-void RobotOperation::move(const arrA& poses, const arr& times, bool append){
+void RobotOperation::move(const arrA& poses, const arr& times, bool append) {
   arr path(poses.N, poses(0).N);
-  for(uint i=0;i<path.d0;i++) path[i] = poses(i);
+  for(uint i=0; i<path.d0; i++) path[i] = poses(i);
   move(path, times, append);
 }
 
-void RobotOperation::moveHard(const arr& pose){
-    arr path;
-    path.referTo(pose);
-    path.reshape(1,pose.N);
-    move(path, {0.}, false);
+void RobotOperation::moveHard(const arr& pose) {
+  arr path;
+  path.referTo(pose);
+  path.reshape(1, pose.N);
+  move(path, {0.}, false);
 }
 
-
-
-double RobotOperation::timeToGo(){
-  auto lock = s->stepMutex(RAI_HERE);
-  return s->spline.timeToGo();
+double RobotOperation::timeToGo() {
+  auto lock = self->stepMutex(RAI_HERE);
+  return self->spline.timeToGo();
 }
 
 //void RobotInterface::execGripper(const rai::String& gripper, double position, double force){
 //  auto lock = stepMutex(RAI_HERE);
 //  if(gripper=="pr2R"){
-//    //  komo->addObjective(0., 0., OT_eq, FS_accumulatedCollisions, {}, 1e0);
+//    //  komo->addObjective(0., 0., FS_accumulatedCollisions, {}, OT_eq, 1e0);
 //    //open gripper
-//    //  komo->addObjective(0.,0., OT_sos, FS_qItself, {"r_gripper_joint"}, 1e1, {.08} );
-//    //  komo->addObjective(0.,0., OT_sos, FS_qItself, {"r_gripper_l_finger_joint"}, 1e1, {.8} );
+//    //  komo->addObjective(0.,0., FS_qItself, {"r_gripper_joint"}, OT_sos, 1e1, {.08} );
+//    //  komo->addObjective(0.,0., FS_qItself, {"r_gripper_l_finger_joint"}, OT_sos, 1e1, {.8} );
 
 //    SIM.setUsedRobotJoints({"r_gripper_joint", "r_gripper_l_finger_joint"});
 //    SIM.exec({1,2, {position, position*10.}}, {1.}, true);
@@ -171,30 +171,30 @@ double RobotOperation::timeToGo(){
 //  NIY
 //}
 
-arr RobotOperation::getHomePose(){ return s->q0; }
+arr RobotOperation::getHomePose() { return self->q0; }
 
-const StringA& RobotOperation::getJointNames(){
-  return s->jointNames;
+const StringA& RobotOperation::getJointNames() {
+  return self->jointNames;
 }
 
-arr RobotOperation::getJointPositions(const StringA& joints){
-  auto lock = s->stepMutex(RAI_HERE);
-  if(s->useBaxter) return s->baxter.get_q();
-  return s->K_ref.getJointState();
+arr RobotOperation::getJointPositions(const StringA& joints) {
+  auto lock = self->stepMutex(RAI_HERE);
+  if(self->useBaxter) return self->baxter.get_q();
+  return self->K_ref.getJointState();
 }
 
-bool RobotOperation::getGripperGrabbed(const std::string& whichArm){
-  // if(s->useBaxter) 
-  return s->baxter.get_grabbed(whichArm);
+bool RobotOperation::getGripperGrabbed(const std::string& whichArm) {
+  // if(self->useBaxter)
+  return self->baxter.get_grabbed(whichArm);
 }
 
-bool RobotOperation::getGripperOpened(const std::string& whichArm){
-  // if(s->useBaxter) 
-  return s->baxter.get_opened(whichArm);
+bool RobotOperation::getGripperOpened(const std::string& whichArm) {
+  // if(self->useBaxter)
+  return self->baxter.get_opened(whichArm);
 }
 
-void RobotOperation::sync(rai::Configuration& K){
-  auto lock = s->stepMutex(RAI_HERE);
-  K.setJointState(getJointPositions(), s->jointNames);
+void RobotOperation::sync(rai::Configuration& K) {
+  auto lock = self->stepMutex(RAI_HERE);
+  K.setJointState(getJointPositions(), self->jointNames);
 }
 

@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -8,20 +8,20 @@
 
 #include "F_dynamics.h"
 #include "frame.h"
-#include "contact.h"
+#include "forceExchange.h"
 #include "TM_default.h"
 #include "TM_angVel.h"
 #include "F_PairCollision.h"
 #include "F_static.h"
 
-void shapeFunction(double &x, double &dx);
+void shapeFunction(double& x, double& dx);
 
 //===========================================================================
 
-void F_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
+void F_NewtonEuler::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   CHECK_EQ(order, 2, "");
 
-  rai::Frame *a = Ktuple(-2)->frames(i);
+  rai::Frame* a = Ktuple(-2)->frames(i);
 //  if((a->flags & (1<<FL_impulseExchange))){
 //    y.resize(3).setZero();
 //    if(!!J) J.resize(3, getKtupleDim(Ktuple).last()).setZero();
@@ -35,30 +35,30 @@ void F_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
   pos.phi(y, J, Ktuple);
 
   //add gravity
-  if(Ktuple(-1)->hasTimeJoint()){
+  if(Ktuple(-1)->hasTauJoint()) {
     double tau; arr Jtau;
     Ktuple(-1)->kinematicsTau(tau, Jtau);
     y(2) += gravity*tau;
-    if(!!J){
+    if(!!J) {
       expandJacobian(Jtau, Ktuple, -1);
       J[2] += gravity*Jtau;
     }
-  }else{
+  } else {
     y(2) += gravity * Ktuple(-1)->frames.first()->tau;
   }
 
   //collect mass info (assume diagonal inertia matrix!!)
   double mass=1.;
   arr Imatrix = diag(.1, 3);
-  if(a->inertia){
+  if(a->inertia) {
     mass = a->inertia->mass;
     Imatrix = 2.*conv_mat2arr(a->inertia->matrix);
     //      rai::Quaternion &rot = f->X.rot;
     //      I=(rot).getMatrix() * f->inertia->matrix * (-rot).getMatrix();
   }
   arr one_over_mass(6);
-  for(uint i=0;i<3;i++) one_over_mass(i) = 1./mass;
-  for(uint i=0;i<3;i++) one_over_mass(i+3) = 1./Imatrix(i,i);
+  for(uint i=0; i<3; i++) one_over_mass(i) = 1./mass;
+  for(uint i=0; i<3; i++) one_over_mass(i+3) = 1./Imatrix(i, i);
   double forceScaling = 1e1;
   one_over_mass *= forceScaling;
 
@@ -72,7 +72,7 @@ void F_NewtonEuler::phi(arr &y, arr &J, const WorldL &Ktuple) {
 
 //===========================================================================
 
-void F_NewtonEuler_DampedVelocities::phi(arr &y, arr &J, const WorldL &Ktuple) {
+void F_NewtonEuler_DampedVelocities::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   CHECK_EQ(order, 1, "");
 
   //get linear and angular velocities
@@ -85,16 +85,16 @@ void F_NewtonEuler_DampedVelocities::phi(arr &y, arr &J, const WorldL &Ktuple) {
   if(!!J) J *= friction;
 
   //add gravity
-  if(gravity){
-    if(Ktuple(-1)->hasTimeJoint()){
+  if(gravity) {
+    if(Ktuple(-1)->hasTauJoint()) {
       double tau; arr Jtau;
       Ktuple(-1)->kinematicsTau(tau, Jtau);
       y(2) += gravity*tau;
-      if(!!J){
+      if(!!J) {
         expandJacobian(Jtau, Ktuple, -1);
         J[2] += gravity*Jtau;
       }
-    }else{
+    } else {
       y(2) += gravity * Ktuple(-1)->frames.first()->tau;
     }
   }
@@ -102,14 +102,14 @@ void F_NewtonEuler_DampedVelocities::phi(arr &y, arr &J, const WorldL &Ktuple) {
   //collect mass info (assume diagonal inertia matrix!!)
   double mass=1.;
   arr Imatrix = diag(.03, 3);
-  rai::Frame *a = Ktuple(-2)->frames(i);
-  if(a->inertia){
+  rai::Frame* a = Ktuple(-2)->frames(i);
+  if(a->inertia) {
     mass = a->inertia->mass;
     Imatrix = 2.*conv_mat2arr(a->inertia->matrix);
   }
   arr one_over_mass(6);
-  for(uint i=0;i<3;i++) one_over_mass(i) = 1./mass;
-  for(uint i=0;i<3;i++) one_over_mass(i+3) = 1./Imatrix(i,i);
+  for(uint i=0; i<3; i++) one_over_mass(i) = 1./mass;
+  for(uint i=0; i<3; i++) one_over_mass(i+3) = 1./Imatrix(i, i);
   double forceScaling = 1e1;
   one_over_mass *= forceScaling;
 
@@ -119,21 +119,20 @@ void F_NewtonEuler_DampedVelocities::phi(arr &y, arr &J, const WorldL &Ktuple) {
   y += one_over_mass % F.y;
   if(!!J) J += one_over_mass % F.J;
 
-  if(onlyXYPhi){
-    y({2,4}).setZero();
-    if(!!J) J({2,4}).setZero();
+  if(onlyXYPhi) {
+    y({2, 4}).setZero();
+    if(!!J) J({2, 4}).setZero();
   }
 }
 
 //===========================================================================
-
 
 F_Wrench::F_Wrench(int iShape, const arr& _vec, bool _torqueOnly) : i(iShape), vec(_vec), torqueOnly(_torqueOnly) {
   order=2;
   gravity = rai::getParameter<double>("TM_Wrench/gravity", 9.81);
 }
 
-void F_Wrench::phi(arr &y, arr &J, const WorldL &Ktuple) {
+void F_Wrench::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   CHECK_EQ(order, 2, "");
 
   rai::Configuration& K = *Ktuple(-2); // ! THIS IS THE MID TIME SLICE !
@@ -164,19 +163,18 @@ void F_Wrench::phi(arr &y, arr &J, const WorldL &Ktuple) {
   if(!!J) Jtorque = skew(v) * Jacc - skew(acc) * Jv;
 
   //compose
-  if(torqueOnly){
+  if(torqueOnly) {
     y = torque;
     if(!!J) J = Jtorque;
-  }else{
+  } else {
     NIY
   }
 }
 
-uint F_Wrench::dim_phi(const WorldL& Ktuple){
+uint F_Wrench::dim_phi(const ConfigurationL& Ktuple) {
   if(torqueOnly) return 3;
   return 6;
 }
-
 
 //===========================================================================
 
@@ -185,23 +183,23 @@ F_Energy::F_Energy() {
   gravity = rai::getParameter<double>("TM_Physics/gravity", 9.81);
 }
 
-void F_Energy::phi(arr &y, arr &J, const WorldL &Ktuple) {
-  if(order==2){
+void F_Energy::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
+  if(order==2) {
     arr y0, y1, J0, J1;
     order=1;
-    phi(y0, J0, Ktuple({-3,-2}));
-    phi(y1, J1, Ktuple({-2,-1}));
+    phi(y0, J0, Ktuple({-3, -2}));
+    phi(y1, J1, Ktuple({-2, -1}));
     order=2;
 
     y = y1 - y0;
-    if(!!J){
+    if(!!J) {
       uintA qdim = getKtupleDim(Ktuple);
       J.resize(y.N, qdim.last()).setZero();
       CHECK_EQ(J0.d1, qdim(1), "");
       CHECK_EQ(J1.d1, qdim(2)-qdim(0), "");
-      for(uint i=0;i<y.N;i++){
-        for(uint j=0;j<J0.d1;j++) J(i,j) -= J0(i,j);
-        for(uint j=0;j<J1.d1;j++) J(i,qdim(0)+j) += J1(i,j);
+      for(uint i=0; i<y.N; i++) {
+        for(uint j=0; j<J0.d1; j++) J(i, j) -= J0(i, j);
+        for(uint j=0; j<J1.d1; j++) J(i, qdim(0)+j) += J1(i, j);
       }
     }
     return;
@@ -217,10 +215,10 @@ void F_Energy::phi(arr &y, arr &J, const WorldL &Ktuple) {
   uintA qdim = getKtupleDim(Ktuple);
   if(!!J) J = zeros(1, qdim.last());
 
-  for(rai::Frame *a:K.frames) {
+  for(rai::Frame* a:K.frames) {
     double mass=1.;
     arr Imatrix = diag(.1, 3);
-    if(a->inertia){
+    if(a->inertia) {
       mass = a->inertia->mass;
       Imatrix = 2.*conv_mat2arr(a->inertia->matrix);
       //      rai::Quaternion &rot = f->X.rot;
@@ -242,7 +240,7 @@ void F_Energy::phi(arr &y, arr &J, const WorldL &Ktuple) {
     E += gravity * mass * p(2); //p(2)=height //(a->X*a->inertia->com).z;
 //      E += .5*m*sumOfSqr(w); //(w*(I*w));
 
-    if(!!J){
+    if(!!J) {
       J += (mass*~v) * Jv;
       J += (gravity*mass) * Jp[2];
     }
@@ -251,7 +249,7 @@ void F_Energy::phi(arr &y, arr &J, const WorldL &Ktuple) {
   y = ARR(E);
 }
 
-uint F_Energy::dim_phi(const WorldL &Ktuple) {
+uint F_Energy::dim_phi(const ConfigurationL& Ktuple) {
   return 1;
 }
 
@@ -263,32 +261,32 @@ F_StaticStability::F_StaticStability(int iShape, double _margin)
 
 F_StaticStability::F_StaticStability(const rai::Configuration& G, const char* iShapeName, double _margin)
   :i(-1), margin(_margin) {
-  rai::Frame *a = iShapeName ? G.getFrameByName(iShapeName):NULL;
+  rai::Frame* a = iShapeName ? G.getFrameByName(iShapeName):nullptr;
   if(a) i=a->ID;
 }
 
-FrameL getShapesAbove(rai::Frame *a) {
+FrameL getShapesAbove(rai::Frame* a) {
   FrameL aboves;
   if(a->shape) aboves.append(a);
-  for(rai::Frame *b:a->parentOf) aboves.append(getShapesAbove(b));
+  for(rai::Frame* b:a->children) aboves.append(getShapesAbove(b));
   return aboves;
 }
 
 void F_StaticStability::phi(arr& y, arr& J, const rai::Configuration& K) {
   //get shapes above
-  rai::Frame *a = K.frames(i);
+  rai::Frame* a = K.frames(i);
   FrameL aboves = getShapesAbove(a);
 //  cout <<"ABOVES="<<endl; listWrite(aboves);
 
   //get average center of all shapes
-  arr cog(3) ,J_cog(3, K.getJointStateDimension());
+  arr cog(3), J_cog(3, K.getJointStateDimension());
   cog.setZero(); J_cog.setZero();
   double M=0.;
-  for(rai::Frame *b:aboves) if(b!=a) {
+  for(rai::Frame* b:aboves) if(b!=a) {
       double mass=0.;
       if(b->shape) mass=1.;
       if(b->inertia) mass=b->inertia->mass;
-      arr y,J;
+      arr y, J;
       K.kinematicsPos(y, J, b);
       cog += mass*y;
       J_cog += mass*J;
@@ -300,8 +298,8 @@ void F_StaticStability::phi(arr& y, arr& J, const rai::Configuration& K) {
 
   //align avg with object center
   K.kinematicsPos(y, J, a);
-  y = (y-cog)({0,1});
-  if(!!J) J=(J-J_cog)({0,1});
+  y = (y-cog)({0, 1});
+  if(!!J) J=(J-J_cog)({0, 1});
 
 #if 1
   CHECK(a->shape, "");
@@ -324,6 +322,6 @@ void F_StaticStability::phi(arr& y, arr& J, const rai::Configuration& K) {
 #endif
 }
 
-rai::String F_StaticStability::shortTag(const rai::Configuration &K) {
+rai::String F_StaticStability::shortTag(const rai::Configuration& K) {
   return STRING("StaticStability:"<<(i<0?"WORLD":K.frames(i)->name));
 }

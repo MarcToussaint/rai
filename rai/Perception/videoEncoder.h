@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -11,15 +11,15 @@
 
 #pragma once
 
-#include <Core/array.h>
 #include "pixel_format.h"
+#include "../Core/array.h"
 #include <memory>
 
 /// Video encoder which creates a correct container, with metadata, of one
 /// video stream in H264 format.
 struct VideoEncoder_libav_simple {
-  struct sVideoEncoder_libav_simple *s;
-  
+  unique_ptr<struct sVideoEncoder_libav_simple> self;
+
   VideoEncoder_libav_simple(const char* filename="z.avi", double fps=30, uint qp=0, bool is_rgb=false);
   void addFrame(const byteA& rgb);
   void close();
@@ -33,7 +33,7 @@ struct VideoEncoder_libav_simple {
 struct sVideoEncoder_x264_simple;
 struct VideoEncoder_x264_simple {
   std::shared_ptr<sVideoEncoder_x264_simple> s;
-  
+
   VideoEncoder_x264_simple(const char* filename="z.264", double fps=30, uint qp=0, rai::PixelFormat in_format=rai::PIXEL_FORMAT_BGR8);
   /** @deprecated Use constructor with explicit input format. Using this one allows only a choice between RGB and BGR. */
   explicit VideoEncoder_x264_simple(const char* filename, double fps, uint qp, bool is_rgb);
@@ -44,8 +44,8 @@ struct VideoEncoder_x264_simple {
 #endif
 
 struct VideoEncoder_OpenCV {
-  struct sVideoEncoder_OpenCV *s;
-  
+  unique_ptr<struct sVideoEncoder_OpenCV> self;
+
   VideoEncoder_OpenCV(const char* filename="z.avi", uint fps=30);
   void addFrame(const byteA& rgb);
   void close();

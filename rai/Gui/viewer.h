@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -8,13 +8,13 @@
 
 #pragma once
 
-#include <Core/thread.h>
+#include "../Core/thread.h"
 
 namespace rai { struct Mesh; }
 typedef rai::Array<rai::Mesh> MeshA;
 
 struct ImageViewer : Thread {
-  struct sImageViewer *s;
+  unique_ptr<struct sImageViewer> self;
   Var<byteA> img;
   bool flipImage = false;
   ImageViewer(const Var<byteA>& _img, double beatIntervalSec=-1.);
@@ -35,16 +35,16 @@ struct ImageViewerFloat : Thread {
 };
 
 struct ImageViewerCallback {
-  struct OpenGL *gl=0;
+  struct OpenGL* gl=0;
   Var<byteA> img;
   bool flipImage = false;
   ImageViewerCallback(const Var<byteA>& _img);
   ~ImageViewerCallback();
-  void call(Var_base *v);
+  void call(Var_base* v);
 };
 
 struct PointCloudViewer : Thread {
-  struct sPointCloudViewer *s;
+  unique_ptr<struct sPointCloudViewer> self;
   Var<arr> pts;
   Var<byteA> rgb;
   PointCloudViewer(const char* pts_name="kinect_points", const char* rgb_name="kinect_rgb");
@@ -56,18 +56,18 @@ struct PointCloudViewer : Thread {
 };
 
 struct PointCloudViewerCallback {
-  struct sPointCloudViewer *s=0;
+  unique_ptr<struct sPointCloudViewer> self;
   Var<arr> pts;
   Var<byteA> rgb;
   PointCloudViewerCallback(const Var<arr>& _pts, const Var<byteA>& _rgb);
   ~PointCloudViewerCallback();
-  void call(Var_base *v);
+  void call(Var_base* v);
 };
 
 struct MeshAViewer : Thread {
   Var<MeshA> meshes;
   MeshA copy;
-  struct OpenGL *gl;
+  struct OpenGL* gl;
   MeshAViewer(const Var<MeshA>& _meshes);
   ~MeshAViewer();
   void open();
@@ -79,7 +79,7 @@ struct PlotViewer : Thread, GLDrawer {
   Var<arr> data;
   arr plot, x0;
   uint T=100;
-  struct OpenGL *gl;
+  struct OpenGL* gl;
   PlotViewer(const Var<arr>& _data, double beatIntervalSec=-1.);
   ~PlotViewer();
   void open();

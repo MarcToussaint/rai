@@ -75,22 +75,22 @@ class SWIFT_Pair {
   public:
     SWIFT_Pair( )
     {
-      s = NULL;
+      s = nullptr;
       /* (mt) Creating an own workspace for each pair would be too much.
          We create a single PairWorkspace on creation of a SWIFT_Scene
          and take care that the s pointer is being set to this space. */
          //new SWIFT_PairWorkspace;
 #ifdef SWIFT_PIECE_CACHING
-        cache_bv0 = cache_bv1 = NULL;
+        cache_bv0 = cache_bv1 = nullptr;
 #endif
 #ifdef SWIFT_FRONT_TRACKING
         // Set up front
         front.Root().Set_Uninitialized( );
 #else
-        feat0 = NULL; feat1 = NULL;
+        feat0 = nullptr; feat1 = nullptr;
 #endif
         bit_field = 0x7;   // No overlap, not initialized or active
-        next = NULL; prev = NULL;
+        next = nullptr; prev = nullptr;
         Set_Active();
     }
     ~SWIFT_Pair( ) { }
@@ -131,10 +131,10 @@ class SWIFT_Pair {
     bool Initialized( ) { return (bool)(bit_field & 0x80); }
     bool Uninitialized( ) { return !Initialized(); }
 #else
-    bool Active( ) const { return (feat0 != NULL); }
-    bool Inactive( ) const { return (feat0 == NULL); }
-    bool Initialized( ) const { return (feat1 != NULL); }
-    bool Uninitialized( ) const { return (feat1 == NULL); }
+    bool Active( ) const { return (feat0 != nullptr); }
+    bool Inactive( ) const { return (feat0 == nullptr); }
+    bool Initialized( ) const { return (feat1 != nullptr); }
+    bool Uninitialized( ) const { return (feat1 == nullptr); }
 #endif
 
     bool Deleted( ) { return id1 == -1; }
@@ -158,9 +158,9 @@ class SWIFT_Pair {
             { front.Root().Set_BV0( r0 ); front.Root().Set_BV1( r1 ); }
 #else
     void Set_Active( )
-                { if( feat0 == NULL ) { feat0 = (void*) 0x1; feat1 = NULL; } }
-    void Set_Inactive( ) { feat0 = NULL; }
-    void Set_Uninitialized( ) { feat1 = NULL; }
+                { if( feat0 == nullptr ) { feat0 = (void*) 0x1; feat1 = nullptr; } }
+    void Set_Inactive( ) { feat0 = nullptr; }
+    void Set_Uninitialized( ) { feat1 = nullptr; }
     void Set_Features( SWIFT_Tri_Vertex* vert1, SWIFT_Tri_Vertex* vert2 )
     {
         feat0 = (void*)vert1; feat1 = (void*)vert2;
@@ -243,9 +243,9 @@ class SWIFT_Pair {
 #ifdef SWIFT_FRONT_TRACKING
     SWIFT_Front front;
 #else
-    // if feat0 == NULL then the pair is not active
+    // if feat0 == nullptr then the pair is not active
     void* feat0;
-    // if feat1 == NULL then the pair is not initialized
+    // if feat1 == nullptr then the pair is not initialized
     void* feat1;
 #endif
 

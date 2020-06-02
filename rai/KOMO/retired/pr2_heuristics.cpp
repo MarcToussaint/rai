@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -7,7 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "pr2_heuristics.h"
-#include <Kin/kin.h>
+#include "../Kin/kin.h"
 
 arr pr2_zero_pose() {
   arr q = { 0.1, 0.999998, 0.500003, 0.999998, 1.5, -2, 0, 0.500003, 0, 0 };
@@ -18,14 +18,14 @@ arr pr2_zero_pose() {
 arr pr2_reasonable_W(const rai::Configuration& world) {
 #if 0
   arr W = world.naturalQmetric(5.);
-  rai::Joint *j = world.getJointByName("torso_lift_joint");
+  rai::Joint* j = world.getJointByName("torso_lift_joint");
   if(j) {
-    CHECK_EQ(j->type , rai::JT_transX, "");
+    CHECK_EQ(j->type, rai::JT_transX, "");
     W(j->qIndex) *= 10;
   }
   j = world.getJointByName("worldTranslationRotation");
   if(j) {
-    CHECK_EQ(j->type , rai::JT_transXYPhi, "");
+    CHECK_EQ(j->type, rai::JT_transXYPhi, "");
     W(j->qIndex+0) *= 3;
     W(j->qIndex+1) *= 3;
 //    W(j->qIndex+2) *= 10;
@@ -38,7 +38,7 @@ arr pr2_reasonable_W(const rai::Configuration& world) {
 
 uintA _get_shape_indices(rai::Body* b) {
   uintA idx;
-  for(rai::Shape *s : b->shapes) {
+  for(rai::Shape* s : b->shapes) {
     idx.append(s->index);
   }
   return idx;
@@ -104,7 +104,7 @@ rai::Array<const char*> pr2_full_get_bodynames() {
     "l_gripper_l_finger_tip_link",
     "l_gripper_r_finger_tip_link"
   };
-  
+
 }
 
 rai::Array<const char*> pr2_get_joints() {
@@ -140,7 +140,7 @@ rai::Array<const char*> pr2_get_joints() {
     "l_gripper_joint"};
 }
 
-uintA pr2_get_shapes(const rai::Configuration &G) {
+uintA pr2_get_shapes(const rai::Configuration& G) {
   rai::Array<const char*> bodynames = pr2_left_get_bodynames();
   uintA shape_idx;
   for(const char* bodyname: bodynames) {

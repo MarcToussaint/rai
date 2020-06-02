@@ -18,7 +18,7 @@
 #ifndef __CCD_H__
 #define __CCD_H__
 
-#include <Geo/ccd/vec3.h>
+#include "vec3.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -77,10 +77,10 @@ _ccd_export void ccdFirstDirDefault(const void *o1, const void *o2,
 #define CCD_INIT(ccd) \
     do { \
         (ccd)->first_dir = ccdFirstDirDefault; \
-        (ccd)->support1 = NULL; \
-        (ccd)->support2 = NULL; \
-        (ccd)->center1  = NULL; \
-        (ccd)->center2  = NULL; \
+        (ccd)->support1 = nullptr; \
+        (ccd)->support2 = nullptr; \
+        (ccd)->center1  = nullptr; \
+        (ccd)->center2  = nullptr; \
         \
         (ccd)->max_iterations = (unsigned long)-1; \
         (ccd)->epa_tolerance = CCD_REAL(0.0001); \
@@ -92,7 +92,8 @@ _ccd_export void ccdFirstDirDefault(const void *o1, const void *o2,
  * Returns true if two given objects interest.
  */
 _ccd_export int ccdGJKIntersect(const void *obj1, const void *obj2,
-                                const ccd_t *ccd, ccd_vec3_t *v1, ccd_vec3_t *v2);
+                                const ccd_t *ccd, ccd_vec3_t *v1, ccd_vec3_t *v2,
+                                ccd_vec3_t simplex[8]);
 
 /**
  * This function computes separation vector of two objects. Separation
@@ -115,7 +116,7 @@ _ccd_export int ccdGJKSeparate(const void *obj1, const void *obj2,
  * CCD+EPA algorithm is used.
  *
  * Returns 0 if obj1 and obj2 intersect and depth, dir and pos are filled
- * if given non-NULL pointers.
+ * if given non-nullptr pointers.
  * If obj1 and obj2 don't intersect -1 is returned.
  * If memory allocation fails -2 is returned.
  */

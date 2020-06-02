@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -7,7 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "spline.h"
-#include <Plot/plot.h>
+#include "../Plot/plot.h"
 
 //==============================================================================
 //
@@ -19,11 +19,11 @@ namespace rai {
 Spline::Spline(uint degree) : degree(degree) {}
 
 Spline::Spline(uint T, const arr& X, uint degree) : points(X) {
-  CHECK_EQ(points.nd, 2,"");
+  CHECK_EQ(points.nd, 2, "");
   setUniformNonperiodicBasis(T, points.d0, degree);
 }
 
-void Spline::clear(){
+void Spline::clear() {
   points.clear();
   times.clear();
   basis.clear();
@@ -31,21 +31,21 @@ void Spline::clear(){
   basis_timeGradient.clear();
 }
 
-void Spline::plotBasis() {
-  plotClear();
+void Spline::plotBasis(PlotModule& plt) {
+  plt.Clear();
   arr b_sum(basis.d0);
   tensorMarginal(b_sum, basis_trans, TUP(1u));
-  plotFunction(b_sum, -1, 1);
-  for(uint i=0; i<points.d0; i++) plotFunction(basis_trans[i], -1, 1);
-  plot();
+  plt.Function(b_sum, -1, 1);
+  for(uint i=0; i<points.d0; i++) plt.Function(basis_trans[i], -1, 1);
+  plt.update();
 }
 
 arr Spline::getCoeffs(double t, uint K, uint derivative) const {
   arr b(K+1), b_0(K+1), db(K+1), db_0(K+1), ddb(K+1), ddb_0(K+1);
   for(uint p=0; p<=degree; p++) {
     b_0=b; b.setZero();
-    db_0=db; db.setZero();
-    ddb_0=ddb; ddb.setZero();
+    if(derivative>0){ db_0=db; db.setZero(); }
+    if(derivative>1){ ddb_0=ddb; ddb.setZero(); }
     for(uint k=0; k<=K; k++) {
       if(!p) {
         if(!k && t<times(0)) b(k)=1.;
@@ -57,16 +57,16 @@ arr Spline::getCoeffs(double t, uint K, uint derivative) const {
           double xden = times(k+p) - times(k);
           double x = DIV(xnom, xden, true);
           b(k) = x * b_0(k);
-          db(k) = DIV(1., xden, true) * b_0(k) + x * db_0(k);
-          ddb(k) = DIV(2., xden, true) * db_0(k) + x * ddb_0(k);
+          if(derivative>0) db(k) = DIV(1., xden, true) * b_0(k) + x * db_0(k);
+          if(derivative>1) ddb(k) = DIV(2., xden, true) * db_0(k) + x * ddb_0(k);
         }
         if(k<K && k+p+1<times.N) {
           double ynom = times(k+p+1) - t;
           double yden = times(k+p+1) - times(k+1);
           double y = DIV(ynom, yden, true);
           b(k) += y * b_0(k+1);
-          db(k) += DIV(-1., yden, true) * b_0(k+1) + y * db_0(k+1);
-          ddb(k) += DIV(-2., yden, true) * db_0(k+1) + y * ddb_0(k+1);
+          if(derivative>0) db(k) += DIV(-1., yden, true) * b_0(k+1) + y * db_0(k+1);
+          if(derivative>1) ddb(k) += DIV(-2., yden, true) * db_0(k+1) + y * ddb_0(k+1);
         }
       }
     }
@@ -120,8 +120,8 @@ void Spline::setBasisAndTimeGradient(uint T, uint K) {
             dbt(j, i, t) = x * dbt_0(j, i, t);
             if(i<K) dbt(j, i, t) += y * dbt_0(j, i+1, t);
             if(j==i)            dbt(j, i, t) += DIV((x-1), xx, true) * b_0(i, t);
-            if(j==i+p)          dbt(j, i, t) -= DIV(x , xx, true) * b_0(i, t);
-            if(i<K && j==i+1)   dbt(j, i, t) += DIV(y , yy, true) * b_0(i+1, t);
+            if(j==i+p)          dbt(j, i, t) -= DIV(x, xx, true) * b_0(i, t);
+            if(i<K && j==i+1)   dbt(j, i, t) += DIV(y, yy, true) * b_0(i+1, t);
             if(i<K && j==i+p+1) dbt(j, i, t) -= DIV((y-1), yy, true) * b_0(i+1, t);
           }
         }
@@ -136,16 +136,16 @@ void Spline::setUniformNonperiodicBasis() {
   setUniformNonperiodicBasis(0, points.d0, degree);
 }
 
-void Spline::set(uint _degree, const arr &x, const arr& t) {
+void Spline::set(uint _degree, const arr& x, const arr& t) {
   CHECK_EQ(x.d0, t.N, "");
   degree = _degree;
-  
+
   points = x;
   for(uint i=0; i<degree/2; i++) {
     points.prepend(x[0]);
     points.append(x[x.d0-1]);
   }
-  
+
   uint m=t.N+2*degree;
   times.resize(m+1);
   for(uint i=0; i<=m; i++) {
@@ -180,7 +180,12 @@ void Spline::setUniformNonperiodicBasis(uint T, uint nPoints, uint _degree) {
 
 arr Spline::eval(double t, uint derivative) const {
   uint K = points.d0-1;
-  return (~getCoeffs(t, K, derivative) * points).reshape(points.d1);
+  arr coeffs = getCoeffs(t, K, derivative);
+//  if(!derivative){
+//      cout <<"t: " <<t <<" dot: " <<derivative <<" a: " <<coeffs <<endl;
+//      cout <<"t: " <<t <<" dot: " <<derivative <<" a: " <<rai::getCoeffs(t, times({2,4}), 0) <<endl;
+//  }
+  return (~coeffs * points).reshape(points.d1);
 }
 
 arr Spline::eval(uint t) const { return (~basis[t]*points).reshape(points.d1); }
@@ -188,13 +193,13 @@ arr Spline::eval(uint t) const { return (~basis[t]*points).reshape(points.d1); }
 arr Spline::eval() const { return basis*points; }
 
 arr Spline::smooth(double lambda) const {
-  CHECK_GE(lambda ,  0, "Lambda must be non-negative");
+  CHECK_GE(lambda,  0, "Lambda must be non-negative");
   uint T = basis.d0 - 1;
   uint K = basis.d1 - 1;
   arr ddbasis(T+1, K+1);
   for(uint t=0; t<=T; t++)
     ddbasis[t] = getCoeffs((double)t/K, K, 2);
-    
+
   arr A = ~ddbasis * ddbasis / (double)T;
   return basis*inverse(eye(K+1) + lambda*A)*points;
 }
@@ -232,7 +237,7 @@ arr Path::getPosition(double t) const {
 }
 
 arr Path::getVelocity(double t) const {
-  return Spline::eval(t, true);
+  return Spline::eval(t, 1);
 }
 
 void Path::transform_CurrentBecomes_EndFixed(const arr& current, double t) {

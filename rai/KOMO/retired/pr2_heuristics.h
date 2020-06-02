@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <Core/array.h>
+#include "../Core/array.h"
 
 namespace rai {
 struct Configuration;

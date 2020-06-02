@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -9,29 +9,29 @@
 #include "feature.h"
 
 struct TM_ImpulsExchange : Feature {
-  int i,j;
-  
-  TM_ImpulsExchange(const rai::Configuration &K, const char* i_name, const char* j_name)
+  int i, j;
+
+  TM_ImpulsExchange(const rai::Configuration& K, const char* i_name, const char* j_name)
     : i(initIdArg(K, i_name)), j(initIdArg(K, j_name)) {}
-    
-  void phi(arr& y, arr& J, const WorldL& Ktuple);
+
+  void phi(arr& y, arr& J, const ConfigurationL& Ktuple);
   uint dim_phi(const rai::Configuration& K) { return 6; }
-  
+
   void phi(arr& y, arr& J, const rai::Configuration& K) { HALT(""); }
-  
+
   rai::String shortTag(const rai::Configuration& K) { return STRING("ImpulseExchange"); }
 };
 
 struct TM_ImpulsExchange_weak : Feature {
-  int i,j;
-  
-  TM_ImpulsExchange_weak(const rai::Configuration &K, const char* i_name, const char* j_name)
+  int i, j;
+
+  TM_ImpulsExchange_weak(const rai::Configuration& K, const char* i_name, const char* j_name)
     : i(initIdArg(K, i_name)), j(initIdArg(K, j_name)) {}
-    
-  void phi(arr& y, arr& J, const WorldL& Ktuple);
+
+  void phi(arr& y, arr& J, const ConfigurationL& Ktuple);
   uint dim_phi(const rai::Configuration& K) { return 3; }
-  
+
   void phi(arr& y, arr& J, const rai::Configuration& K) { HALT(""); }
-  
+
   rai::String shortTag(const rai::Configuration& K) { return STRING("ImpulseExchange"); }
 };

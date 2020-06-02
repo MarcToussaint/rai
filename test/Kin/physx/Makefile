@@ -1,6 +1,6 @@
 BASE = ../../..
 
-DEPEND = KOMO Core Geo Kin Gui Optim LGP
+DEPEND = Core Geo Kin Gui
 
 PHYSX = 1
 

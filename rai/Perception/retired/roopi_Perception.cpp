@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -8,9 +8,9 @@
 
 #include "roopi_Perception.h"
 
-#include <Perception/filter.h>
-#include <Perception/syncFiltered.h>
-#include <Perception/percViewer.h>
+#include "filter.h"
+#include "syncFiltered.h"
+#include "percViewer.h"
 
 ThreadL newPerceptionFilter(bool view) {
   ThreadL threads;

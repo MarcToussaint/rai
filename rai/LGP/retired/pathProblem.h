@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include <Optim/optimization.h>
-#include <KOMO/komo.h>
+#include "../Optim/optimization.h"
+#include "../KOMO/komo.h"
 
 //===========================================================================
 
@@ -18,14 +18,14 @@ struct PathProblem {
   const Graph& symbolicState;
   uint microSteps;
   int verbose;
-  
+
   KOMO MP;
-  
+
   PathProblem(const rai::Configuration& world_initial,
               const rai::Configuration& world_final,
               const Graph& symbolicState,
               uint microSteps,
               int verbose);
-              
+
   double optimize(arr& x);
 };

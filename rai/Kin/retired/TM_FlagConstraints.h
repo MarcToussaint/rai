@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -15,10 +15,10 @@
 struct TM_FlagConstraints : Feature {
   double g=1.; //gravity constant, usually 9.81
   TM_FlagConstraints() { g = rai::getParameter<double>("FlagConstraints/gravity", 1.); }
-  virtual void phi(arr& y, arr& J, const WorldL& G);
+  virtual void phi(arr& y, arr& J, const ConfigurationL& G);
   virtual void phi(arr& y, arr& J, const rai::Configuration& G) { HALT("can only be of order 1"); }
   virtual uint dim_phi(const rai::Configuration& K) { HALT("can only be of order 1"); }
-  virtual uint dim_phi(const WorldL& Ktuple);
+  virtual uint dim_phi(const ConfigurationL& Ktuple);
   virtual rai::String shortTag(const rai::Configuration& G) { return STRING("FlagConstraints"); }
 };
 
@@ -26,9 +26,9 @@ struct TM_FlagConstraints : Feature {
 
 struct TM_FlagCosts : Feature {
   TM_FlagCosts() {}
-  virtual void phi(arr& y, arr& J, const WorldL& G);
+  virtual void phi(arr& y, arr& J, const ConfigurationL& G);
   virtual void phi(arr& y, arr& J, const rai::Configuration& G) { HALT("can only be of order 1"); }
   virtual uint dim_phi(const rai::Configuration& K) { HALT("can only be of order 1"); }
-  virtual uint dim_phi(const WorldL& Ktuple);
+  virtual uint dim_phi(const ConfigurationL& Ktuple);
   virtual rai::String shortTag(const rai::Configuration& G) { return STRING("TM_FlagCosts"); }
 };

@@ -101,7 +101,7 @@ class SWIFT_Object {
                      SWIFT_Real box_enl_rel, SWIFT_Real box_enl_abs,
                      bool copy );
 
-    // Multiple piece version.  If box_enl_rel or box_enl_abs are NULL then the
+    // Multiple piece version.  If box_enl_rel or box_enl_abs are nullptr then the
     // default of zero enlargement is done (for rel or abs).
     void Initialize( SWIFT_Tri_Mesh** ms, bool is_fixed, const bool* use_cube,
                      const SWIFT_Real* box_enl_rel,

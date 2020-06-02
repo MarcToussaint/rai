@@ -1,23 +1,15 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-/**
- * @file
- * @ingroup group_ors
- */
-/**
- * @ingroup group_ors
- * @{
- */
-
 #include "kin.h"
-#include <Geo/mesh.h>
-#include <Gui/opengl.h>
+#include "../Geo/mesh.h"
+#include "../Gui/opengl.h"
+
 #include <iomanip>
 
 //global options
@@ -55,7 +47,7 @@ void bindOrsToOpenGL(rai::Configuration& graph, OpenGL& gl) {
   rai::Body* glCamera = graph.getBodyByName("glCamera");
   if(glCamera) {
     gl.camera.X = glCamera->X;
-    gl.resize(500,500);
+    gl.resize(500, 500);
   } else {
     gl.camera.setPosition(10., -15., 8.);
     gl.camera.focus(0, 0, 1.);
@@ -68,7 +60,7 @@ void bindOrsToOpenGL(rai::Configuration& graph, OpenGL& gl) {
 #ifndef RAI_ORS_ONLY_BASICS
 
 /// static GL routine to draw a rai::Configuration
-void rai::glDrawGraph(void *classP) {
+void rai::glDrawGraph(void* classP) {
   ((rai::Configuration*)classP)->glDraw(NoOpenGL);
 }
 
@@ -77,11 +69,11 @@ void rai::Shape::glDraw(OpenGL& gl) {
   glPushName((index <<2) | 1);
   if(orsDrawColors && !orsDrawIndexColors) glColor(color[0], color[1], color[2], orsDrawAlpha);
   if(orsDrawIndexColors) glColor3b((index>>16)&0xff, (index>>8)&0xff, index&0xff);
-  
+
   double GLmatrix[16];
   X.getAffineMatrixGL(GLmatrix);
   glLoadMatrixd(GLmatrix);
-  
+
   if(!orsDrawShapes) {
     double scale=.33*(size(0)+size(1)+size(2) + 2.*size(3)); //some scale
     if(!scale) scale=1.;
@@ -151,7 +143,7 @@ void rai::Shape::glDraw(OpenGL& gl) {
         if(orsDrawCores && sscCore.V.N) sscCore.glDraw(gl);
         else mesh.glDraw(gl);
         break;
-        
+
       default: HALT("can't draw that geom yet");
     }
   }
@@ -162,12 +154,12 @@ void rai::Shape::glDraw(OpenGL& gl) {
     glVertex3d(0., 0., -X.pos.z);
     glEnd();
   }
-  
+
   if(orsDrawBodyNames && body) {
-    glColor(1,1,1);
+    glColor(1, 1, 1);
     glDrawText(body->name, 0, 0, 0);
   }
-  
+
   glPopName();
 }
 
@@ -176,24 +168,24 @@ void rai::Configuration::glDraw(OpenGL& gl) {
   uint i=0;
   rai::Transformation f;
   double GLmatrix[16];
-  
+
   glPushMatrix();
-  
+
   //bodies
-  if(orsDrawBodies) for(Shape *s: shapes) {
+  if(orsDrawBodies) for(Shape* s: shapes) {
       s->glDraw(gl);
       i++;
       if(orsDrawLimit && i>=orsDrawLimit) break;
     }
-    
+
   //joints
-  if(orsDrawJoints) for(Joint *e: joints) {
+  if(orsDrawJoints) for(Joint* e: joints) {
       //set name (for OpenGL selection)
       glPushName((e->index <<2) | 2);
-      
+
       double s=e->A.pos.length()+e->B.pos.length(); //some scale
       s*=.25;
-      
+
       //from body to joint
       f=e->from->X;
       f.getAffineMatrixGL(GLmatrix);
@@ -204,7 +196,7 @@ void rai::Configuration::glDraw(OpenGL& gl) {
       glVertex3f(0, 0, 0);
       glVertex3f(e->A.pos.x, e->A.pos.y, e->A.pos.z);
       glEnd();
-      
+
       //joint frame A
       f.appendTransformation(e->A);
       f.getAffineMatrixGL(GLmatrix);
@@ -212,13 +204,13 @@ void rai::Configuration::glDraw(OpenGL& gl) {
       glDrawAxes(s);
       glColor(1, 0, 0);
       glRotatef(90, 0, 1, 0);  glDrawCylinder(.05*s, .3*s);  glRotatef(-90, 0, 1, 0);
-      
+
       //joint frame B
       f.appendTransformation(e->Q);
       f.getAffineMatrixGL(GLmatrix);
       glLoadMatrixd(GLmatrix);
       glDrawAxes(s);
-      
+
       //from joint to body
       glColor(1, 0, 1);
       glBegin(GL_LINES);
@@ -227,18 +219,18 @@ void rai::Configuration::glDraw(OpenGL& gl) {
       glEnd();
       glTranslatef(e->B.pos.x, e->B.pos.y, e->B.pos.z);
       //glDrawSphere(.1*s);
-      
+
       glPopName();
       i++;
       if(orsDrawLimit && i>=orsDrawLimit) break;
     }
-    
+
   //proxies
-  if(orsDrawProxies) for(Proxy *proxy: proxies) {
+  if(orsDrawProxies) for(Proxy* proxy: proxies) {
       glLoadIdentity();
       if(!proxy->colorCode) {
-        if(proxy->d>0.) glColor(.75,.75,.75);
-        else glColor(.75,.5,.5);
+        if(proxy->d>0.) glColor(.75, .75, .75);
+        else glColor(.75, .5, .5);
       } else glColor(proxy->colorCode);
       glBegin(GL_LINES);
       glVertex3dv(proxy->posA.p());
@@ -252,48 +244,48 @@ void rai::Configuration::glDraw(OpenGL& gl) {
       glDisable(GL_CULL_FACE);
       glDrawDisk(.02);
       glEnable(GL_CULL_FACE);
-      
+
       f.pos=proxy->posB;
       f.getAffineMatrixGL(GLmatrix);
       glLoadMatrixd(GLmatrix);
       glDrawDisk(.02);
     }
-    
+
   glPopMatrix();
 }
 
-void displayState(const arr& x, rai::Configuration& G, const char *tag) {
+void displayState(const arr& x, rai::Configuration& G, const char* tag) {
   G.setJointState(x);
-  G.gl().watch(tag);
+  G.watch(true, tag);
 }
 
-void displayTrajectory(const arr& _x, int steps, rai::Configuration& G, const KinematicSwitchL& switches, const char *tag, double delay, uint dim_z, bool copyG) {
+void displayTrajectory(const arr& _x, int steps, rai::Configuration& G, const KinematicSwitchL& switches, const char* tag, double delay, uint dim_z, bool copyG) {
   if(!steps) return;
-  for(rai::Shape *s : G.shapes) if(s->mesh.V.d0!=s->mesh.Vn.d0 || s->mesh.T.d0!=s->mesh.Tn.d0) {
+  for(rai::Shape* s : G.shapes) if(s->mesh.V.d0!=s->mesh.Vn.d0 || s->mesh.T.d0!=s->mesh.Tn.d0) {
       s->mesh.computeNormals();
     }
-  rai::Configuration *Gcopy;
+  rai::Configuration* Gcopy;
   if(switches.N) copyG=true;
   if(!copyG) Gcopy=&G;
   else {
     Gcopy = new rai::Configuration;
-    Gcopy->copy(G,true);
+    Gcopy->copy(G, true);
   }
-  arr x,z;
+  arr x, z;
   if(dim_z) {
-    x.referToRange(_x,0,-dim_z-1);
-    z.referToRange(_x,-dim_z,-1);
+    x.referToRange(_x, 0, -dim_z-1);
+    z.referToRange(_x, -dim_z, -1);
   } else {
     x.referTo(_x);
   }
   uint n=Gcopy->getJointStateDimension()-dim_z;
-  x.reshape(x.N/n,n);
+  x.reshape(x.N/n, n);
   uint num, T=x.d0-1;
   if(steps==1 || steps==-1) num=T; else num=steps;
   for(uint k=0; k<=(uint)num; k++) {
     uint t = (T?(k*T/num):0);
     if(switches.N) {
-      for(rai::KinematicSwitch *sw: switches)
+      for(rai::KinematicSwitch* sw: switches)
         if(sw->timeOfApplication==t)
           sw->apply(*Gcopy);
     }
@@ -301,14 +293,14 @@ void displayTrajectory(const arr& _x, int steps, rai::Configuration& G, const Ki
     else Gcopy->setJointState(x[t]);
     if(delay<0.) {
       if(delay<-10.) FILE("z.graph") <<*Gcopy;
-      Gcopy->gl().watch(STRING(tag <<" (time " <<std::setw(3) <<t <<'/' <<T <<')').p);
+      Gcopy->watch(true, STRING(tag <<" (time " <<std::setw(3) <<t <<'/' <<T <<')').p);
     } else {
-      Gcopy->gl().update(STRING(tag <<" (time " <<std::setw(3) <<t <<'/' <<T <<')').p);
+      Gcopy->watch(false, STRING(tag <<" (time " <<std::setw(3) <<t <<'/' <<T <<')').p);
       if(delay) rai::wait(delay);
     }
   }
   if(steps==1)
-    Gcopy->gl().watch(STRING(tag <<" (time " <<std::setw(3) <<T <<'/' <<T <<')').p);
+    Gcopy->watch(true, STRING(tag <<" (time " <<std::setw(3) <<T <<'/' <<T <<')').p);
   if(copyG) delete Gcopy;
 }
 
@@ -447,7 +439,7 @@ void _glDrawOdeWorld(dWorldID world)
 }
 */
 
-void animateConfiguration(rai::Configuration& C, Inotify *ino) {
+void animateConfiguration(rai::Configuration& C, Inotify* ino) {
   arr x, x0;
   uint t, i;
   C.getJointState(x0);
@@ -456,50 +448,50 @@ void animateConfiguration(rai::Configuration& C, Inotify *ino) {
   const int steps = 50;
   for(i=x0.N; i--;) {
     x=x0;
-    const double upper_lim = lim(i,1);
-    const double lower_lim = lim(i,0);
+    const double upper_lim = lim(i, 1);
+    const double lower_lim = lim(i, 0);
     const double delta = upper_lim - lower_lim;
     const double center = lower_lim + delta / 2.;
     const double offset = acos(2. * (x0(i) - center) / delta);
-    
+
     for(t=0; t<steps; t++) {
       if(C.gl().pressedkey==13 || C.gl().pressedkey==27) return;
       if(ino && ino->pollForModification()) return;
-      if(lim(i,0)==lim(i,1))
+      if(lim(i, 0)==lim(i, 1))
         break;
-        
+
       x(i) = center + (delta*(0.5*cos(RAI_2PI*t/steps + offset)));
       // Joint limits
       C.setJointState(x);
-      C.gl().update(STRING("DOF = " <<i), false, false, true);
+      C.watch(false, STRING("DOF = " <<i), false, false, true);
       rai::wait(0.01);
     }
   }
   C.setJointState(x0);
-  C.gl().update("", false, false, true);
+  C.watch(false, "", false, false, true);
 }
 
-rai::Body *movingBody=NULL;
+rai::Body* movingBody=nullptr;
 rai::Vector selpos;
 double seld, selx, sely, selz;
 
 struct EditConfigurationClickCall:OpenGL::GLClickCall {
-  rai::Configuration *ors;
+  rai::Configuration* ors;
   EditConfigurationClickCall(rai::Configuration& _ors) { ors=&_ors; }
   bool clickCallback(OpenGL& gl) {
-    OpenGL::GLSelect *top=gl.topSelection;
+    OpenGL::GLSelect* top=gl.topSelection;
     if(!top) return false;
     uint i=top->name;
     cout <<"CLICK call: id = 0x" <<std::hex <<gl.topSelection->name <<" : ";
     gl.text.clear();
     if((i&3)==1) {
-      rai::Shape *s=ors->shapes(i>>2);
+      rai::Shape* s=ors->shapes(i>>2);
       gl.text <<"shape selection: shape=" <<s->name <<" body=" <<s->body->name <<" X=" <<s->X <<endl;
 //      listWrite(s->ats, gl.text, "\n");
       cout <<gl.text;
     }
     if((i&3)==2) {
-      rai::Joint *j=ors->joints(i>>2);
+      rai::Joint* j=ors->joints(i>>2);
       gl.text
           <<"edge selection: " <<j->from->name <<' ' <<j->to->name
           <<"\nA=" <<j->A <<"\nQ=" <<j->Q <<"\nB=" <<j->B <<endl;
@@ -512,16 +504,16 @@ struct EditConfigurationClickCall:OpenGL::GLClickCall {
 };
 
 struct EditConfigurationHoverCall:OpenGL::GLHoverCall {
-  rai::Configuration *ors;
+  rai::Configuration* ors;
   EditConfigurationHoverCall(rai::Configuration& _ors);// { ors=&_ors; }
   bool hoverCallback(OpenGL& gl) {
 //    if(!movingBody) return false;
     if(!movingBody) {
-      rai::Joint *j=NULL;
-      rai::Shape *s=NULL;
+      rai::Joint* j=nullptr;
+      rai::Shape* s=nullptr;
       rai::timerStart(true);
       gl.Select(true);
-      OpenGL::GLSelect *top=gl.topSelection;
+      OpenGL::GLSelect* top=gl.topSelection;
       if(!top) return false;
       uint i=top->name;
       cout <<rai::timerRead() <<"HOVER call: id = 0x" <<std::hex <<gl.topSelection->name <<endl;
@@ -556,16 +548,16 @@ EditConfigurationHoverCall::EditConfigurationHoverCall(rai::Configuration& _ors)
 }
 
 struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
-  rai::Configuration &ors;
-  bool &exit;
+  rai::Configuration& ors;
+  bool& exit;
   EditConfigurationKeyCall(rai::Configuration& _ors, bool& _exit): ors(_ors), exit(_exit) {}
   bool keyCallback(OpenGL& gl) {
     if(gl.pressedkey==' ') { //grab a body
-      if(movingBody) { movingBody=NULL; return true; }
-      rai::Joint *j=NULL;
-      rai::Shape *s=NULL;
+      if(movingBody) { movingBody=nullptr; return true; }
+      rai::Joint* j=nullptr;
+      rai::Shape* s=nullptr;
       gl.Select();
-      OpenGL::GLSelect *top=gl.topSelection;
+      OpenGL::GLSelect* top=gl.topSelection;
       if(!top) { cout <<"No object below mouse!" <<endl;  return false; }
       uint i=top->name;
       //cout <<"HOVER call: id = 0x" <<std::hex <<gl.topSelection->name <<endl;
@@ -624,7 +616,7 @@ void editConfiguration(const char* filename, rai::Configuration& C) {
 //  gl.exitkeys="1234567890qhjklias, "; //TODO: move the key handling to the keyCall!
   bool exit=false;
 //  C.gl().addHoverCall(new EditConfigurationHoverCall(C));
-  C.gl().addKeyCall(new EditConfigurationKeyCall(C,exit));
+  C.gl().addKeyCall(new EditConfigurationKeyCall(C, exit));
   C.gl().addClickCall(new EditConfigurationClickCall(C));
   Inotify ino(filename);
   for(; !exit;) {
@@ -638,10 +630,10 @@ void editConfiguration(const char* filename, rai::Configuration& C) {
       C.gl().lock.unlock();
     } catch(const char* msg) {
       cout <<"line " <<rai::lineCount <<": " <<msg <<" -- please check the file and press ENTER" <<endl;
-      C.gl().watch();
+      C.watch(true, );
       continue;
     }
-    C.gl().update();
+    C.watch(false, );
     cout <<"animating.." <<endl;
     //while(ino.pollForModification());
     animateConfiguration(C, &ino);
@@ -649,7 +641,7 @@ void editConfiguration(const char* filename, rai::Configuration& C) {
 #if 0
     ino.waitForModification();
 #else
-    C.gl().watch();
+    C.watch(true, );
 #endif
     if(!rai::getInteractivity()) {
       exit=true;
@@ -658,20 +650,20 @@ void editConfiguration(const char* filename, rai::Configuration& C) {
 }
 
 #if 0 //RAI_ODE
-void testSim(const char* filename, rai::Configuration *C, Ode *ode) {
-  C.gl().watch();
+void testSim(const char* filename, rai::Configuration* C, Ode* ode) {
+  C.watch(true, );
   uint t, T=200;
   arr x, v;
   createOde(*C, *ode);
   ors->getJointState(x, v);
   for(t=0; t<T; t++) {
     ode->step();
-    
+
     importStateFromOde(*C, *ode);
     ors->setJointState(x, v);
     ors->calcBodyFramesFromJoints();
     exportStateToOde(*C, *ode);
-    
+
     C.gl().text.clear() <<"time " <<t;
     C.gl().timedupdate(10);
   }
@@ -683,7 +675,7 @@ void testSim(const char* filename, rai::Configuration *C, Ode *ode) {
 #ifndef RAI_ORS_ONLY_BASICS
 void bindOrsToOpenGL(rai::Configuration&, OpenGL&) { NICO };
 void rai::Configuration::glDraw(OpenGL&) { NICO }
-void rai::glDrawGraph(void *classP) { NICO }
+void rai::glDrawGraph(void* classP) { NICO }
 void editConfiguration(const char* orsfile, rai::Configuration& C) { NICO }
 void animateConfiguration(rai::Configuration& C, Inotify*) { NICO }
 void glTransform(const rai::Transformation&) { NICO }
@@ -691,4 +683,3 @@ void displayTrajectory(const arr&, int, rai::Configuration&, const char*, double
 void displayState(const arr&, rai::Configuration&, const char*) { NICO }
 #endif
 #endif
-/** @} */

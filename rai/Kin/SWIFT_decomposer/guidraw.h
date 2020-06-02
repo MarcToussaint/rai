@@ -52,8 +52,8 @@
 #ifndef _GUIDRAW_H_
 #define _GUIDRAW_H_
 
-#include <Kin/SWIFT/SWIFT_array.h>
-#include <Kin/SWIFT/SWIFT_mesh.h>
+#include "../SWIFT/SWIFT_array.h"
+#include "../SWIFT/SWIFT_mesh.h"
 
 void Draw_Triangle_Mesh( SWIFT_Tri_Mesh* m, bool color
                          , SWIFT_Array<int>& piece_ids );

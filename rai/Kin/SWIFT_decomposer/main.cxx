@@ -57,9 +57,9 @@ using std::setprecision;
 #ifdef DECOMP_GRAPHICS
 #include <togl.h>
 #endif
-#include <Kin/SWIFT/SWIFT.h>
-#include <Kin/SWIFT/SWIFT_mesh.h>
-#include <Kin/SWIFT/SWIFT_fileio.h>
+#include "../SWIFT/SWIFT.h"
+#include "../SWIFT/SWIFT_mesh.h"
+#include "../SWIFT/SWIFT_fileio.h"
 
 #include "gui.h"
 
@@ -76,17 +76,17 @@ bool jitter = false;
 SWIFT_Real jampl = 0.0;
 
 bool ef = false;
-char* ef_filename = NULL;
+char* ef_filename = nullptr;
 SWIFT_Real edge_flip_tol = 0.0; 
 
 bool dfs = false;
 bool bfs = false;
 bool w = false;
 bool one_piece = false;
-char* decomp_filename = NULL;
+char* decomp_filename = nullptr;
 
 extern bool hierarchy;
-char* hier_filename = NULL;
+char* hier_filename = nullptr;
 SPLIT_TYPE split = MIDPOINT;
 
 

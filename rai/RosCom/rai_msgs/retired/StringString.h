@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -25,10 +25,10 @@ struct StringString {
   typedef StringStringResponse Response;
   Request request;
   Response response;
-  
+
   typedef Request RequestType;
   typedef Response ResponseType;
-  
+
 }; // struct StringString
 } // namespace rai_srv
 
@@ -40,7 +40,7 @@ struct MD5Sum< ::rai_srv::StringString > {
   static const char* value() {
     return "671f8e4998eaec79f1c47e339dfd527b";
   }
-  
+
   static const char* value(const ::rai_srv::StringString&) { return value(); }
 };
 
@@ -49,7 +49,7 @@ struct DataType< ::rai_srv::StringString > {
   static const char* value() {
     return "rai_srv/StringString";
   }
-  
+
   static const char* value(const ::rai_srv::StringString&) { return value(); }
 };
 

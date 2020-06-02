@@ -1,6 +1,6 @@
 #pragma once
-#include "roscom.h"
 
+#include "roscom.h"
 #include <pr2_msgs/PressureState.h>
 
 arr conv_pressureState2arr(const pr2_msgs::PressureState& msg);

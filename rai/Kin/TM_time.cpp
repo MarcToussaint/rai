@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -8,15 +8,15 @@
 
 #include "TM_time.h"
 
-void TM_Time::phi(arr &y, arr &J, const rai::Configuration &K) {
+void TM_Time::phi(arr& y, arr& J, const rai::Configuration& K) {
   y = ARR(K.frames(0)->tau);
-  
+
   if(!!J) {
-    K.jacobian_time(J, K.frames(0));
+    K.jacobian_tau(J, K.frames(0));
   }
 }
 
-void TM_Time::phi(arr &y, arr &J, const WorldL &Ktuple) {
+void TM_Time::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   if(order==0) {
     phi(y, J, *Ktuple(-1));
     if(!!J) expandJacobian(J, Ktuple, -1);

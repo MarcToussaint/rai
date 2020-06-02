@@ -1,15 +1,16 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
+#include "algos.h"
+#include "array.tpp"
+
 #include <cmath>
 #include <cstdlib>
-#include "array.tpp"
-#include "algos.h"
 
 #ifdef RAI_SHARK
 #  define Array rai::Array
@@ -25,15 +26,15 @@
 //
 
 void rai::normalizeData(arr& X) {
-  CHECK_EQ(X.nd,2, "data has to be a 2D batch");
+  CHECK_EQ(X.nd, 2, "data has to be a 2D batch");
   uint n, N=X.d0, k, K=X.d1;
   arr mean, var, x, sd;
   arr ones(N); ones=1.;
-  
+
   innerProduct(mean, ones, X);
   mean/=(double)N;
   for(n=0; n<N; n++) X[n]()-=mean;
-  
+
   innerProduct(var, ~X, X);
   var/=(double)N;
   sd.resize(K);
@@ -42,11 +43,11 @@ void rai::normalizeData(arr& X) {
 }
 
 void rai::makeSpline(arr& X, arr& P, uint intersteps) {
-  CHECK_EQ(P.nd,2, "makeSpline: set of points is 2D array");
+  CHECK_EQ(P.nd, 2, "makeSpline: set of points is 2D array");
   XSpline S;
   S.referTo(P);
   S.type(false, 1.); //is default
-  
+
   X.resize(1+(P.d0-1)*intersteps, P.d1);
   double tau;
   for(uint t=0; t<X.d0; t++) {
@@ -59,7 +60,7 @@ void rai::makeSpline(arr& X, arr& dX, arr& P, uint intersteps) {
   XSpline S;
   S.referTo(P);
   S.type(false, 1.); //is default
-  
+
   X.resize(1+(P.d0-1)*intersteps, P.d1);
   dX.resizeAs(X);
   double tau;
@@ -88,18 +89,18 @@ void rai::randomSpline(arr& X, arr& dX, uint dim, uint points, uint intersteps, 
 }
 
 bool rai::checkGradient(void (*f)(arr&, arr*, const arr&, void*),
-                        void *data,
+                        void* data,
                         const arr& x, double tolerance) {
   arr y, J, dx, dy, JJ;
   f(y, &J, x, data);
-  
+
   JJ.resize(y.N, x.N);
   double eps=CHECK_EPS;
   uint i, k;
   for(i=0; i<x.N; i++) {
     dx=x;
     dx.elem(i) += eps;
-    f(dy, NULL, dx, data);
+    f(dy, nullptr, dx, data);
     dy = (dy-y)/eps;
     for(k=0; k<y.N; k++) JJ(k, i)=dy.elem(k);
   }
@@ -119,19 +120,19 @@ bool rai::checkGradient(void (*f)(arr&, arr*, const arr&, void*),
 }
 
 bool rai::checkGradient(double(*f)(arr*, const arr&, void*),
-                        void *data,
+                        void* data,
                         const arr& x, double tolerance) {
   arr J, dx, JJ;
   double y, dy;
   y=f(&J, x, data);
-  
+
   JJ.resize(x.N);
   double eps=CHECK_EPS;
   uint i;
   for(i=0; i<x.N; i++) {
     dx=x;
     dx.elem(i) += eps;
-    dy = f(NULL, dx, data);
+    dy = f(nullptr, dx, data);
     dy = (dy-y)/eps;
     JJ(i)=dy;
   }
@@ -150,7 +151,7 @@ bool rai::checkGradient(double(*f)(arr*, const arr&, void*),
   return true;
 }
 
-void rai::convolution(arr &y, const arr &x, double(*h)(double), double scale) {
+void rai::convolution(arr& y, const arr& x, double(*h)(double), double scale) {
   CHECK(x.nd==1 || x.nd==2, "");
   uint T=x.d0, i, j;
   y.resizeAs(x); y.setZero();
@@ -162,14 +163,14 @@ void rai::convolution(arr &y, const arr &x, double(*h)(double), double scale) {
     }
 }
 
-void rai::bandpassFilter(arr &y, const arr &x, double loWavelength, double hiWavelength) {
+void rai::bandpassFilter(arr& y, const arr& x, double loWavelength, double hiWavelength) {
   arr y_hi, y_lo;
   convolution(y_lo, x, rai::cosc, hiWavelength);
   convolution(y_hi, x, rai::cosc, loWavelength);
   y=y_hi-y_lo;
 }
 
-void rai::bandpassEnergy(arr &y, const arr &x, double loWavelength, double hiWavelength) {
+void rai::bandpassEnergy(arr& y, const arr& x, double loWavelength, double hiWavelength) {
   arr y_his, y_hic, y_los, y_loc, ys, yc;
   convolution(y_los, x, rai::sinc, hiWavelength);
   convolution(y_loc, x, rai::cosc, hiWavelength);
@@ -190,7 +191,7 @@ match in size and \c sub=1, then only the upper left submatrices
 are compared; if \c sub=0, the missing entries of the smaller
 matrix are counted as wrong symbols */
 double rai::matdistance(intA& fix, intA& fox, uintA& p, bool sub) {
-  CHECK_EQ(fox.d0,p.N, "matrix and its permutation don't agree in size");
+  CHECK_EQ(fox.d0, p.N, "matrix and its permutation don't agree in size");
   uint i, j, Nmin, Nmax, n=0;
   if(fix.d0<=fox.d0) { Nmin=fix.d0; Nmax=fox.d0; } else { Nmin=fox.d0; Nmax=fix.d0; }
   for(i=0; i<Nmin; i++) for(j=0; j<Nmin; j++) if(fix(i, j)!=fox(p(i), p(j))) n++;
@@ -210,16 +211,16 @@ double rai::matdistance(intA& A, intA& B, bool sub) {
 \c matdistance(fix, fox, p, sub) becomes minimal */
 double rai::matannealing(intA& fix, intA& fox, uintA& p, bool sub, double annealingRepetitions, double annealingCooling) {
   CHECK(fix.nd==2 && fox.nd==2, "");
-  
+
   uint N=fox.d0;
   p.setStraightPerm(N);
   uintA pStore=p;
   if(fox.N<=1 && fix.N<1) return matdistance(fix, fox, p, sub);
-  
+
   uint i, j, k;
   unsigned long t;
   double newdist, dist, bestdist=1, temp;
-  
+
   for(k=0; k<annealingRepetitions; k++) {
     t=N*N/10;
     p.setRandomPerm();
@@ -265,7 +266,7 @@ void MonSolver::init(double& par, double wide) {
 }
 void MonSolver::solve(double& par, const double& err) {
   if(phase==0) {
-    CHECK_EQ(par,min, "not phase 0!");
+    CHECK_EQ(par, min, "not phase 0!");
     if(err>0.) {
       min-=max-min;
       par=min;
@@ -277,7 +278,7 @@ void MonSolver::solve(double& par, const double& err) {
     }
   }
   if(phase==1) {
-    CHECK_EQ(par,max, "not phase 1!");
+    CHECK_EQ(par, max, "not phase 1!");
     if(err<0.) {
       max+=max-min;
       par=max;
@@ -355,10 +356,10 @@ void LinearStatistics::learn(const arr& X, const arr& Y, double weight) {
     }
   }
   if(X.nd==2 && Y.nd==2) {
-    CHECK_EQ(X.d0,Y.d0, "need same number of in/out samples");
+    CHECK_EQ(X.d0, Y.d0, "need same number of in/out samples");
     arr ones(X.d0); ones=1.;
     computed=false;
-    
+
     if(!accum) {
       accum=X.d0;
       meanX=ones*X;
@@ -496,7 +497,7 @@ void TupleIndex::init(uint k, uint n) {
         tri(i, j)=tri(i-1, j-1) + tri(i-1, j);
       }
     }
-    
+
   uint N=tri(n, k);
   resize(N, k);
   for(j=0; j<k; j++) operator()(0, j)=j;
@@ -521,7 +522,7 @@ uint TupleIndex::index(uintA i) {
 
 void TupleIndex::checkValid() {
   uint i;
-  for(i=0; i<d0; i++) CHECK_EQ(i,index(operator[](i)), "wrong index association");
+  for(i=0; i<d0; i++) CHECK_EQ(i, index(operator[](i)), "wrong index association");
 }
 
 //===========================================================================
@@ -534,8 +535,8 @@ arr _blockMatrix(const arr& A, const arr& B, const arr& C, const arr& D) {
   CHECK(A.d0==B.d0 && A.d1==C.d1 && B.d1==D.d1 && C.d0==D.d0, "");
   uint i, j, a=A.d0, b=A.d1;
   arr X(A.d0+C.d0, A.d1+B.d1);
-  for(i=0; i<A.d0; i++) for(j=0; j<A.d1; j++) X(i  , j)=A(i, j);
-  for(i=0; i<B.d0; i++) for(j=0; j<B.d1; j++) X(i  , j+b)=B(i, j);
+  for(i=0; i<A.d0; i++) for(j=0; j<A.d1; j++) X(i, j)=A(i, j);
+  for(i=0; i<B.d0; i++) for(j=0; j<B.d1; j++) X(i, j+b)=B(i, j);
   for(i=0; i<C.d0; i++) for(j=0; j<C.d1; j++) X(i+a, j)=C(i, j);
   for(i=0; i<D.d0; i++) for(j=0; j<D.d1; j++) X(i+a, j+b)=D(i, j);
   return X;
@@ -549,21 +550,21 @@ void Kalman::setTransitions(uint d, double varT, double varO) {
 }
 
 //notation follows Kevin Murphey's PhD thesis sec 3.6.1 (also in his DBN tutorial)
-void Kalman::filter(arr& Y, arr& X, arr& V, arr *Rt) {
-  CHECK_EQ(Y.nd,2, "");
+void Kalman::filter(arr& Y, arr& X, arr& V, arr* Rt) {
+  CHECK_EQ(Y.nd, 2, "");
   uint d=Y.d1, n=Y.d0, t;
-  CHECK(!Rt || (Rt->nd==3 && Rt->d0==n && Rt->d1==d && Rt->d2==d) , "");
-  
+  CHECK(!Rt || (Rt->nd==3 && Rt->d0==n && Rt->d1==d && Rt->d2==d), "");
+
   arr e, S, K, L, Id;
   X.resize(n, d);
   V.resize(n, d, d);
   Id.setId(d);
-  
+
   //initialization:
   X[0] = inverse(C) * Y[0];
   if(Rt) R=(*Rt)[0];
   V[0] = ~C * R * C + Q;
-  
+
   for(t=1; t<n; t++) {
     X[t] = A * X[t-1]; //mean: forward predicted
     V[t] = A * V[t-1] * ~A + Q; //variance: forward predicted
@@ -578,21 +579,21 @@ void Kalman::filter(arr& Y, arr& X, arr& V, arr *Rt) {
 }
 
 //notation follows Kevin Murphey's PhD thesis sec 3.6.1 (also in his DBN tutorial)
-void Kalman::smooth(arr& Y, arr& X, arr& V, arr *Vxx, arr *Rt) {
-  CHECK_EQ(Y.nd,2, "");
+void Kalman::smooth(arr& Y, arr& X, arr& V, arr* Vxx, arr* Rt) {
+  CHECK_EQ(Y.nd, 2, "");
   uint d=Y.d1, n=Y.d0, t;
-  CHECK(!Rt || (Rt->nd==3 && Rt->d0==n && Rt->d1==d && Rt->d2==d) , "");
-  
+  CHECK(!Rt || (Rt->nd==3 && Rt->d0==n && Rt->d1==d && Rt->d2==d), "");
+
   arr e, S, K, L, Id;
   X.resize(n, d);
   V.resize(n, d, d);
   Id.setId(d);
-  
+
   //initialization:
   X[0] = inverse(C) * Y[0];
   if(Rt) R=(*Rt)[0];
   V[0] = ~C * R * C + Q;
-  
+
   for(t=1; t<n; t++) {
     X[t] = A * X[t-1] + a; //mean: forward predicted
     V[t] = A * V[t-1] * ~A + Q; //variance: forward predicted
@@ -604,7 +605,7 @@ void Kalman::smooth(arr& Y, arr& X, arr& V, arr *Vxx, arr *Rt) {
     X[t] = X[t] + K * e;
     V[t] = (Id - K*C) * V[t]; //= V[t] - K * S * ~K;
   }
-  
+
   arr xp, Vp, J;
   if(Vxx) Vxx->resize(n-1, d, d);
   for(t=n-1; t--;) {
@@ -617,12 +618,12 @@ void Kalman::smooth(arr& Y, arr& X, arr& V, arr *Vxx, arr *Rt) {
   }
 }
 
-void Kalman::EMupdate(arr& Y, arr *Rt) {
+void Kalman::EMupdate(arr& Y, arr* Rt) {
   uint n=Y.d0, t; // d=Y.d1;
   arr X, V, Vxx;
-  
+
   smooth(Y, X, V, &Vxx, Rt);
-  
+
 #if 0
   arr xx(d, d), vv(d, d), corr(d, d), sd(d); xx.setZero(); vv.setZero();
   for(t=0; t<n-1; t++) {
@@ -631,37 +632,37 @@ void Kalman::EMupdate(arr& Y, arr *Rt) {
   }
   //xx/=n-1.;
   //vv/=n-1.;
-  
-  std::cout <<"EM-xx=" <<xx <<vv <<xx * inverse(vv);
+
+  std::cout <<"EM-xx=" <<xx <<vv <<xx* inverse(vv);
 #endif
-  
+
   LinearStatistics S;
   for(t=0; t<n-1; t++) S.learn(X[t], X[t+1]);
   //S.regressor(A);
   S.regressor(A, a);
-  
+
   //S.forget();
   //for(t=0;t<n-1;t++) S.learn(X[t], Y[t]);
   //S.regressor(C);
-  
+
   std::cout <<"EM-update: A, a=" <<A <<a <<std::endl; //S.CovXY <<S.VarX <<std::endl;
 }
 
-void Kalman::fb(arr& y, arr& f, arr& F, arr& g, arr& G, arr& p, arr& P, arr *Rt) {
-  CHECK_EQ(y.nd,2, "");
+void Kalman::fb(arr& y, arr& f, arr& F, arr& g, arr& G, arr& p, arr& P, arr* Rt) {
+  CHECK_EQ(y.nd, 2, "");
   uint d=y.d1, n=y.d0, t, T=y.d0;
-  CHECK(!Rt || (Rt->nd==3 && Rt->d0==n && Rt->d1==d && Rt->d2==d) , "");
-  
+  CHECK(!Rt || (Rt->nd==3 && Rt->d0==n && Rt->d1==d && Rt->d2==d), "");
+
   f.resize(n, d);
   f.resize(n, d, d);
-  
+
   // Some constant matrices :
-  arr &CovH=Q, &CovV=R, &B=C; //rename my matricies
+  arr& CovH=Q, &CovV=R, &B=C; //rename my matricies
   arr Hinv, HinvA, AHinvA, BVinv, BVinvB, Kinv, Linv, Lconst, J;
   Hinv=inverse(CovH); HinvA=Hinv*A; AHinvA=~A*HinvA;
   BVinv=~B*inverse(CovV); BVinvB=BVinv*B;
   if(Rt) { BVinv=~B*inverse((*Rt)[0]); BVinvB=BVinv*B; }
-  
+
   // Forward Pass
   F.resize(n, d, d);
   f.resize(n, d);
@@ -673,7 +674,7 @@ void Kalman::fb(arr& y, arr& f, arr& F, arr& g, arr& G, arr& p, arr& P, arr *Rt)
     F[t] = Hinv - HinvA*Kinv*~HinvA + BVinvB;
     f[t] = HinvA*Kinv*f[t-1] + BVinv*y[t];
   }
-  
+
   // Backward Pass
   G.resize(n, d, d);
   g.resize(n, d);
@@ -686,7 +687,7 @@ void Kalman::fb(arr& y, arr& f, arr& F, arr& g, arr& G, arr& p, arr& P, arr *Rt)
     G[t] = AHinvA - ~HinvA*Linv*HinvA;
     g[t] = ~HinvA*Linv*(BVinv*y[t+1]+g[t+1]);
   }
-  
+
   // single marginals:
   P.resize(n, d, d);
   p.resize(n, d);
@@ -694,13 +695,13 @@ void Kalman::fb(arr& y, arr& f, arr& F, arr& g, arr& G, arr& p, arr& P, arr *Rt)
     P[t] = inverse(F[t]+G[t]);
     p[t] = P[t] * (f[t]+g[t]);
   }
-  
+
   // pair marginals: the means are as above
   arr PP(n-1, 2*d, 2*d), hh(n, d, d), h1h(n-1, d, d), hh1(n-1, d, d);
   for(t=0; t<T-1; t++) {
     if(Rt) { BVinv=~B*inverse((*Rt)[t+1]); BVinvB=BVinv*B; }
-    J = _blockMatrix(F[t]+AHinvA , -~HinvA,
-                     -HinvA      , G[t+1]+Hinv+BVinvB);
+    J = _blockMatrix(F[t]+AHinvA, -~HinvA,
+                     -HinvA, G[t+1]+Hinv+BVinvB);
     //jtmp(1:H, 1) = f{t}+BVinv*v{t};
     //jtmp(H+1:2*H, 1) = g{t};
     PP[t] = inverse(J);
@@ -710,31 +711,31 @@ void Kalman::fb(arr& y, arr& f, arr& F, arr& g, arr& G, arr& p, arr& P, arr *Rt)
   for(t=0; t<T; t++) {
     hh[t] = P[t] + p[t]*~p[t];
   }
-  
+
   // transform fwd & bwd passes to moment representation
   for(t=0; t<T; t++) {
     F[t] = inverse(F[t]);  f[t] = F[t]*f[t];
     G[t] = inverse(G[t]);  g[t] = G[t]*g[t];
   }
-  
+
   // EM-update:
   arr up(d, d), dn(d, d);
   std::cout <<"EM-update: before:\nA=" <<A <<" B=" <<B <<" covH=" <<CovH <<" covV=" <<CovV <<std::endl;
-  
+
   for(t=0, up=0., dn=0.; t<T-1; t++) { up += h1h[t]; dn += hh[t]; }
   A = up * inverse(dn);
-  
+
   for(t=0, up=0., dn=0.; t<T; t++) { up += y[t]*~p[t]; dn += hh[t]; }
   //B = up * inv(dn);
-  
+
   for(t=0, up=0., dn=0.; t<T; t++) { up += y[t]*~y[t] - B*hh[t]*~B; }
   //CovV = up/(double)T;
-  
+
   for(t=0, up=0., dn=0.; t<T-1; t++) { up += hh[t+1] - (double)2.*A*hh1[t] + A*hh[t]*~A; }
   CovH = up/(T-(double)1.);
-  
+
   std::cout <<"after:\nA=" <<A <<" B=" <<B <<" covH=" <<CovH <<" covV=" <<CovV <<std::endl;
-  
+
   // log-likelihood:
   double LL=0., l;
   arr z, Z;
@@ -818,20 +819,20 @@ void XSpline::eval(double t, arr& x, arr& v) { eval(t, x, &v); }
 //---------------------------------------------------------------------------
 void XSpline::eval(double t, arr& x, arr* v) {
   CHECK(t>=0 && t<=V.d0-1, "out of range");
-  
+
   //standard interpolation type (weighting of vertices)
   if(!W.N) type(true, 1.);
-  
+
   // query t is between two vertices V_{k+1} and V_{k+2}
   // the four vertices V_{k, .., k+3} will be used to calculate the output
   double kf = floor(t) - 1.0;
   int k = int(kf);
-  
+
   // the weights associated to the four vertices are
   double W1, W2;
   W1=W(k+1);
   W2=k+2<(int)W.N?W(k+2):0.;
-  
+
   // Find the big T values
   //
   // T0p is the point where fk decreases to 0
@@ -848,7 +849,7 @@ void XSpline::eval(double t, arr& x, arr* v) {
   double T1p = kf+2 + (W2>0?W2:0) * DELTA;
   double T2m = kf+1 - (W1>0?W1:0) * DELTA;
   double T3m = kf+2 - (W2>0?W2:0) * DELTA;
-  
+
   // Find the pk values
   // The pm values are derived directly from the Ts above
   double tmp_factor = 2/(DELTA*DELTA);
@@ -856,14 +857,14 @@ void XSpline::eval(double t, arr& x, arr* v) {
   double pm0 = _intpow(kf+1 - T1p, 2) * tmp_factor;
   double pp1 = _intpow(kf+2 - T2m, 2) * tmp_factor;
   double pp2 = _intpow(kf+3 - T3m, 2) * tmp_factor;
-  
+
   // The sv indices are determined like for the Ts
   double qp0 = W1<0?-W1/2.0:0;
   double qp1 = W2<0?-W2/2.0:0;
   double qp2 = W1<0?-W1/2.0:0;
   double qp3 = W2<0?-W2/2.0:0;
-  
-  
+
+
   // The code below resembles the part of (17) in the article,
   // where A0 ... A3 are calculated, but there are differences
   //
@@ -891,22 +892,22 @@ void XSpline::eval(double t, arr& x, arr* v) {
   A2 = _g((t-T2m)/(kf+2-T2m), qp2, pp1);
   if(t>=T3m) A3 = _g((t-T3m)/(kf+3-T3m), qp3, pp2);
   else       A3 = qp3>0 ? _h((t-T3m)/(kf+3-T3m), qp3) : 0;
-  
+
   CHECK(k>=0 || A0==0., "non-zero weight for out-of-range!");
   CHECK(k+3<(int)V.d0 || A3==0., "non-zero weight for out-of-range!");
-  
+
   double SUM = A0+A1+A2+A3;
   A0/=SUM;
   A1/=SUM;
   A2/=SUM;
   A3/=SUM;
-  
+
   x.resize(V.d1); x.setZero();
   if(A0) x+=A0*V[k];
   if(A1) x+=A1*V[k+1];
   if(A2) x+=A2*V[k+2];
   if(A3) x+=A3*V[k+3];
-  
+
   if(v) {
     double dA0, dA1, dA2, dA3;
     if(t<=T0p) dA0 = _dgdu((t-T0p)/(kf-T0p), qp0, pm1)/(kf-T0p);
@@ -915,16 +916,16 @@ void XSpline::eval(double t, arr& x, arr* v) {
     dA2 = _dgdu((t-T2m)/(kf+2-T2m), qp2, pp1)/(kf+2-T2m);
     if(t>=T3m) dA3 = _dgdu((t-T3m)/(kf+3-T3m), qp3, pp2)/(kf+3-T3m);
     else       dA3 = qp3>0 ? _dhdu((t-T3m)/(kf+3-T3m), qp3)/(kf+3-T3m) : 0;
-    
+
     CHECK(k>=0 || dA0==0., "non-zero weight for out-of-range!");
     CHECK(k+3<(int)V.d0 || dA3==0., "non-zero weight for out-of-range!");
-    
+
     double dSUM = dA0+dA1+dA2+dA3;
     dA0 = dA0/SUM - A0/SUM*dSUM;
     dA1 = dA1/SUM - A1/SUM*dSUM;
     dA2 = dA2/SUM - A2/SUM*dSUM;
     dA3 = dA3/SUM - A3/SUM*dSUM;
-    
+
     v->resize(V.d1); v->setZero();
     if(dA0) *v+=dA0*V[k];
     if(dA1) *v+=dA1*V[k+1];
@@ -957,7 +958,7 @@ void PartialLeastSquares::SIMPLS() {
   uint I=S.meanX.N, O=S.meanY.N, K=I, i;
   if(maxProj) K=maxProj;
   arr A, M, C;
-  
+
   S.compute();
   double scale=trace(S.VarX);
   if(scale<1e-10) {
@@ -968,7 +969,7 @@ void PartialLeastSquares::SIMPLS() {
   M=S.VarX/scale;
   A=S.CovXY/scale;
   C.resize(I, I); C=0.; for(i=0; i<I; i++) C(i, i)=1.;
-  
+
   arr AA, eigU, eigw, eigV;
   double c;
   arr w, q, p, P, v;
@@ -1049,24 +1050,24 @@ typedef long int longinteger;
 
 //----- a workspace with static functions suited to pass to the subroutines
 namespace minimizeStatic {
-arr *startx;     //to look up the dimensionality
+arr* startx;     //to look up the dimensionality
 arr xref;
 uint n;
 uint fc=0, dfc=0; //evaluation counters
 double y;
 
-double(*f)(arr *grad, const arr &x, void *data);
+double(*f)(arr* grad, const arr& x, void* data);
 
 //conjugate gradient minimizer and wrappers
-double CG_f(double x[], void *data) {
+double CG_f(double x[], void* data) {
   //printf("[CGf]");
   fc++;
   xref.referTo(x, n); xref.reshapeAs(*startx);
-  y=f(NULL, xref, data);
+  y=f(nullptr, xref, data);
   //printf("minimization (#f=%3i #df=%3i): current f-value = %g  \n", fc, dfc, y);
   return y;
 }
-void CG_df(double x[], double dx[], void *data) {
+void CG_df(double x[], double dx[], void* data) {
   //printf("[CGd]");
   dfc++;
   xref.referTo(x, n); xref.reshapeAs(*startx);
@@ -1074,16 +1075,16 @@ void CG_df(double x[], double dx[], void *data) {
 }
 
 //LM optimizer and wrappers
-void LM_f(double *p, double *hx, longinteger m, longinteger n, void *adata) {
+void LM_f(double* p, double* hx, longinteger m, longinteger n, void* adata) {
   //printf("%li %li", n, m);
   fc++;
   xref.referTo(p, n); xref.reshapeAs(*startx);
-  y = f(NULL, xref, adata);
+  y = f(nullptr, xref, adata);
   //printf("minimization (#f=%3i #df=%3i): current f-value = %g  \n", fc, dfc, y);
   int i;
   for(i=0; i<n; i++) hx[i]=y;
 }
-void LM_df(double *p, double *J, longinteger m, longinteger n, void *adata) {
+void LM_df(double* p, double* J, longinteger m, longinteger n, void* adata) {
   //printf("%li %li", n, m);
   dfc++;
   xref.referTo(p, n); xref.reshapeAs(*startx);
@@ -1093,14 +1094,14 @@ void LM_df(double *p, double *J, longinteger m, longinteger n, void *adata) {
 }
 
 //Rprop and wrappers
-double RP_f(const arr& x, void *data) {
+double RP_f(const arr& x, void* data) {
   //printf("[RPf]");
   fc++;
-  y=f(NULL, x, data);
+  y=f(nullptr, x, data);
   //printf("minimization (#f=%3i #df=%3i): current f-value = %g  \n", fc, dfc, y);
   return y;
 }
-void RP_df(arr& dx, const arr& x, void *data) {
+void RP_df(arr& dx, const arr& x, void* data) {
   //printf("[RPd]");
   dfc++;
   f(&dx, x, data);
@@ -1111,15 +1112,15 @@ void RP_df(arr& dx, const arr& x, void *data) {
 #ifdef RAI_algos_extern
 extern "C" {
   longinteger dlevmar_der(
-    void (*func)(double *p, double *hx, longinteger m, longinteger n, void *adata),
-    void (*jacf)(double *p, double *j, longinteger m, longinteger n, void *adata),
-    double *p, double *x, longinteger m, longinteger n, longinteger itmax, double *opts,
-    double *info, double *work, double *covar, void *adata);
+    void (*func)(double* p, double* hx, longinteger m, longinteger n, void* adata),
+    void (*jacf)(double* p, double* j, longinteger m, longinteger n, void* adata),
+    double* p, double* x, longinteger m, longinteger n, longinteger itmax, double* opts,
+    double* info, double* work, double* covar, void* adata);
 }
 
-void frprmn(double p[], int n, double ftol, int *iter, int maxIterations, double *fret,
+void frprmn(double p[], int n, double ftol, int* iter, int maxIterations, double* fret,
             double(*func)(double [], void*), void (*dfunc)(double [], double [], void*),
-            void *data);
+            void* data);
 #endif
 
 /*int rpropMinimize(double (*f)(const arr&, void*),
@@ -1132,28 +1133,28 @@ void frprmn(double p[], int n, double ftol, int *iter, int maxIterations, double
 
 //--- the minimize routine itself
 int rai::minimize(double(*f)(arr*, const arr&, void*),
-                  void *data,
+                  void* data,
                   arr& x,
-                  double *fmin_return,
+                  double* fmin_return,
                   int method,
                   uint maxIterations,
                   double stoppingTolerance,
                   bool testGrad) {
-                  
+
   minimizeStatic::f=f;
   minimizeStatic::n=x.N;
   minimizeStatic::fc=0;
   minimizeStatic::dfc=0;
   minimizeStatic::startx=&x;
-  
+
   int i;
   double fmin, *fminp;
   if(!fmin_return) fminp=&fmin; else fminp=fmin_return;
-  
+
   arr LM_target(x.N); LM_target.setZero();
-  
+
   if(testGrad) checkGradient(f, data, x, stoppingTolerance);
-  
+
   switch(method) {
     case 2: //Rprop
       NIY;
@@ -1175,7 +1176,7 @@ int rai::minimize(double(*f)(arr*, const arr&, void*),
       /*i=dlevmar_der(minimizeStatic::LM_f,
         minimizeStatic::LM_df,
         x.p, LM_target.p, x.N, x.N, 1000,
-        NULL, NULL, NULL, NULL, data);*/
+        nullptr, nullptr, nullptr, nullptr, data);*/
       break;
     case 3: //Rprop + conj Grad
       int j;
@@ -1194,7 +1195,7 @@ int rai::minimize(double(*f)(arr*, const arr&, void*),
          \n  f(x_min)=%g\n", method, i, minimizeStatic::fc, minimizeStatic::dfc, *fminp);
 
   if(testGrad) checkGradient(f, data, x, stoppingTolerance);
-  
+
   return i;
 }
 

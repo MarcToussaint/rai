@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -9,7 +9,7 @@
 #ifdef RAI_EXPRESSIONS
 void assign(arr& x) {
   CHECK(x.ex, "self-assignment only if it is an expression");
-  rai::Ex *e=x.ex;
+  rai::Ex* e=x.ex;
   x.init();
   x.ex=e;
   assign(x, x);
@@ -19,9 +19,9 @@ void assign(arr& x) {
 
 void assign(arr& x, const arr& a) {
   if(!a.ex) { x=a; return; }
-  rai::Ex &e=*a.ex;
+  rai::Ex& e=*a.ex;
   if(e.op==rai::UNI) {
-    arr *A=(arr*)e.A;
+    arr* A=(arr*)e.A;
     if(A->ex) assign(*A);
     if(!e.trans && e.mul==1 && e.add==0) { x=*A; return; }
     if(!e.trans && e.mul==1) { scalarPlus(x, *A, *((double*)&e.add)); return; }
@@ -29,7 +29,7 @@ void assign(arr& x, const arr& a) {
     if(e.mul==1 && e.add==0) { transpose(x, *A); return; }
     HALT("");
   } else {
-    arr *A=(arr*)e.A, *B=(arr*)e.B;
+    arr* A=(arr*)e.A, *B=(arr*)e.B;
     if(A->ex) assign(*A);
     if(B->ex) assign(*B);
     //bool at, bt;

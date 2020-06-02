@@ -2,8 +2,9 @@
 #include <Kin/F_PairCollision.h>
 #include <Kin/TM_angVel.h>
 #include <Kin/F_dynamics.h>
+#include <Kin/F_pose.h>
 #include <Kin/F_contacts.h>
-#include <Kin/contact.h>
+#include <Kin/forceExchange.h>
 #include <iomanip>
 
 extern bool orsDrawWires;
@@ -12,45 +13,50 @@ extern bool rai_Kin_frame_ignoreQuatNormalizationWarning;
 //===========================================================================
 
 void testFeature() {
-  rai::Configuration K;
-  rai::Frame world(K), obj1(&world), obj2(&world);
+  rai::Configuration C;
+  rai::Frame world(C), obj1(&world), obj2(&world);
   world.name = "world";
   obj1.name = "obj1";
   obj2.name = "obj2";
-  obj1.set_Q()->setText("t(1 1 1)");
-  obj2.set_Q()->setText("t(-1 -1 1)");
-
-  rai::Joint j1(obj1), j2(obj2);
-  j1.type = j2.type = rai::JT_free;
-
+  obj1.setRelativePosition({1.,1.,1.});
+  obj2.setRelativePosition({-1.,-1.,1.});
   obj1.setShape(rai::ST_ssBox, ARR(1.,1.,1.,rnd.uni(.01, .3)));
   obj2.setShape(rai::ST_ssBox, ARR(1.,1.,1.,rnd.uni(.01, .3)));
   obj1.setColor({.5,.8,.5,.4});
   obj2.setColor({.5,.5,.8,.4});
 
+  rai::Joint j1(obj1, rai::JT_free);
+  rai::Joint j2(obj2, rai::JT_transXYPhi);
+
   rai::Inertia m1(obj1), m2(obj2);
   m1.defaultInertiaByShape();
   m2.defaultInertiaByShape();
 
-  rai::Contact con(obj1, obj2);
+  rai::ForceExchange con(obj1, obj2);
 
+  C.setTimes(.1);
 
-  K.setTimes(.1);
-  rai::Configuration K1(K), K2(K);
-  WorldL Ktuple = {&K, &K1, &K2};
-  uint n=3*K.getJointStateDimension();
+  rai::Configuration C1(C), C2(C);
+  ConfigurationL Ktuple = {&C, &C1, &C2};
 
-  rai::Array<Feature*> F;
-  F.append(new TM_PairCollision (K, "obj1", "obj2", TM_PairCollision::_negScalar));
-  F.append(new TM_PairCollision (K, "obj1", "obj2", TM_PairCollision::_vector));
-  F.append(new TM_PairCollision (K, "obj1", "obj2", TM_PairCollision::_normal));
-  F.append(new TM_PairCollision (K, "obj1", "obj2", TM_PairCollision::_center));
-  F.append(new TM_LinAngVel (K, "obj1"));
-  F.append(new TM_LinAngVel (K, "obj1")) -> order=2;
-  //  F.append(new TM_ZeroAcc (K, "obj1"));
-//  F.append(new TM_Energy );
-//  F.append(new TM_ContactConstraints (K, "obj1", "obj2"));
-  F.append(new F_NewtonEuler (K, "obj1"));
+  uint n=3*C.getJointStateDimension();
+
+  rai::Array<ptr<Feature>> F;
+  F.append(make_shared<F_PairCollision>(C, "obj1", "obj2", F_PairCollision::_negScalar));
+  F.append(make_shared<F_PairCollision>(C, "obj1", "obj2", F_PairCollision::_vector));
+  F.append(make_shared<F_PairCollision>(C, "obj1", "obj2", F_PairCollision::_center));
+  F.append(make_shared<TM_LinAngVel>(C, "obj1"));
+  F.append(make_shared<TM_LinAngVel>(C, "obj2")) -> order=2;
+  F.append(make_shared<F_Pose>(C, "obj1"));
+  F.append(make_shared<F_Pose>(C, "obj2")) -> order=1;
+  F.append(make_shared<F_Pose>(C, "obj1")) -> order=2;
+  F.append(symbols2feature(FS_poseRel, {"obj1", "obj2"}, C)) -> order=0;
+  F.append(symbols2feature(FS_poseRel, {"obj1", "obj2"}, C)) -> order=1;
+  F.append(symbols2feature(FS_poseRel, {"obj1", "obj2"}, C)) -> order=2;
+  F.append(symbols2feature(FS_poseDiff, {"obj1", "obj2"}, C)) -> order=0;
+  F.append(symbols2feature(FS_poseDiff, {"obj1", "obj2"}, C)) -> order=1;
+  F.append(symbols2feature(FS_poseDiff, {"obj1", "obj2"}, C)) -> order=2;
+  F.append(make_shared<F_NewtonEuler>(C, "obj1"));
 
   rai_Kin_frame_ignoreQuatNormalizationWarning=true;
 
@@ -59,8 +65,8 @@ void testFeature() {
 
     bool succ=true;
 
-    for(Feature* f: F){
-      cout <<k <<std::setw(30) <<f->shortTag(K) <<' ';
+    for(ptr<Feature>& f: F){
+      cout <<k <<std::setw(30) <<f->shortTag(C) <<' ';
       succ &= checkJacobian(f->vf(Ktuple), x, 1e-5);
     }
 
@@ -68,7 +74,7 @@ void testFeature() {
     F.first()->__phi(y, NoArr, Ktuple);
 
     if(!succ)
-      K2.watch(true);
+      C2.watch(true);
   }
 }
 

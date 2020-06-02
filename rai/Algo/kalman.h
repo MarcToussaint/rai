@@ -1,12 +1,12 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include <Core/array.h>
+#include "../Core/array.h"
 
 struct Kalman {
   arr b_mean, b_var;

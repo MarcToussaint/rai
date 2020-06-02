@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -9,7 +9,7 @@
 #pragma once
 
 #include "environment.h"
-#include <Core/array.h>
+#include "../Core/array.h"
 
 struct BlindBranch:MCTS_Environment {
   struct Action:SAO {
@@ -17,7 +17,7 @@ struct BlindBranch:MCTS_Environment {
     int d;
     bool operator==(const SAO& other) const { return d==dynamic_cast<const Action&>(other).d; }
   };
-  
+
   struct State:SAO {
     State(int sum, uint T):sum(sum), T(T) {}
     int sum;
@@ -27,12 +27,12 @@ struct BlindBranch:MCTS_Environment {
       return sum==s.sum && T==s.T;
     }
   };
-  
+
   int state; //the state = sum of so-far actions
   int T; //current time (part of the state, actually!)
   int H; //horizon (parameter of the world)
   rai::Array<Handle> actions; //will contain handles on the -1 and +1 action
-  
+
   BlindBranch(uint H);
   void reset_state();
   TransitionReturn transition(const Handle& action);
@@ -41,7 +41,7 @@ struct BlindBranch:MCTS_Environment {
   const Handle get_state();
   void set_state(const Handle& _state);
   bool is_terminal_state() const;
-  
+
   bool get_info(InfoTag tag) const;
   double get_info_value(InfoTag tag) const;
 };

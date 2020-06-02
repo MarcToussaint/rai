@@ -2,33 +2,30 @@
 #include <Gui/opengl.h>
 #include <Core/graph.h>
 
-const char *USAGE=
-"\n\
-Usage:  kinEdit <g-filename>\n\
-\n\
-Iterate between editing the file (with an external editor) and\n\
-viewing the model in the OpenGL window (after pressing ENTER).\n\
-\n\
-Use the number keys 1 2 3 4 5 to toggle display options.\n\
-";
+const char *USAGE =
+    "\nUsage:  kinEdit <g-filename>"
+    "\n"
+    "\nIterate between editing the file (with an external editor) and"
+    "\nviewing the model in the OpenGL window (after pressing ENTER)."
+    "\nUse the number keys 1 2 3 4 5 to toggle display options.";
 
-
-int MAIN(int argc,char **argv){
+int main(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
-    cout <<USAGE <<endl;
+  cout <<USAGE <<endl;
 
-    rai::String file=rai::getParameter<rai::String>("file",STRING("test.g"));
-    if(rai::argc>=2 && rai::argv[1][0]!='-') file=rai::argv[1];
-    cout <<"opening file `" <<file <<"'" <<endl;
+  rai::String file=rai::getParameter<rai::String>("file",STRING("test.g"));
+  if(rai::argc>=2 && rai::argv[1][0]!='-') file=rai::argv[1];
+  LOG(0) <<"opening file `" <<file <<"'" <<endl;
 
-    rai::Configuration K;
-    for(;;){
+  //-- load configuration
+  rai::Configuration C;
+  for(;;){
     Inotify ino(file);
     try {
       rai::lineCount=1;
-      K.init(file);
-      K.report();
+      C.init(file);
+      C.report();
       break;
     } catch(std::runtime_error& err) {
       cout <<"line " <<rai::lineCount <<": " <<err.what() <<" -- please check the file and press ENTER" <<endl;
@@ -37,31 +34,40 @@ int MAIN(int argc,char **argv){
         rai::wait(.02);
       }
     }
-    }
+  }
 
-    K.checkConsistency();
-    K >>FILE("z.g");
-    //some optional manipulations
-    if(rai::checkParameter<bool>("prune")){
-      K.optimizeTree(true, true, true);
-    }else{
-      K.optimizeTree(false, false, false);
-    }
-    K.calc_q();
-    K.checkConsistency();
-    K.sortFrames();
+  C.checkConsistency();
+  C >>FILE("z.g");
 
-//    makeConvexHulls(G.frames);
-//    computeOptimalSSBoxes(G.shapes);
+  //-- report collisions
+//  C.stepSwift();
+//  LOG(0) <<"total penetration: " <<C.totalCollisionPenetration();
+//  LOG(0) <<"collision report: ";
+//  C.reportProxies(cout, 0.);
 
-    K >>FILE("z.g");
+  //-- some optional manipulations
+  if(rai::checkParameter<bool>("prune")){
+    C.optimizeTree(true, true, false);
+  }else{
+    C.optimizeTree(false, false, false);
+  }
+  C.ensure_q();
+  C.checkConsistency();
+  C.sortFrames();
 
-    if(rai::checkParameter<bool>("dot")) K.displayDot();
-    K.writeURDF(FILE("z.urdf"));
+  //    makeConvexHulls(G.frames);
+  //    computeOptimalSSBoxes(G.shapes);
 
-    if(rai::checkParameter<bool>("cleanOnly")) return 0;
+  //-- save file in different formats
+  FILE("z.g") <<C;
+  C.writeURDF(FILE("z.urdf"));
+  C.writeCollada("z.dae");
+  if(rai::checkParameter<bool>("dot")) C.displayDot();
 
-    editConfiguration(file, K);
+  if(rai::checkParameter<bool>("cleanOnly")) return 0;
+
+  //-- continuously animate
+  editConfiguration(file, C);
 
   return 0;
 }

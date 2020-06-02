@@ -1,15 +1,16 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include <Core/util.tpp>
-#include <Core/array.tpp>
-#include <Core/thread.h>
 #include "gtk.h"
+#include "../Core/util.tpp"
+#include "../Core/array.tpp"
+#include "../Core/thread.h"
+
 #include <sys/syscall.h>
 
 #ifdef RAI_GTK
@@ -22,16 +23,16 @@
 struct GtkThread:Thread {
   GtkThread():Thread("GTK thread", .0) {
     int argc=1;
-    char **argv = new char*[1];
+    char** argv = new char* [1];
     argv[0] = (char*)"x.exe";
-    
+
     XInitThreads();
-//      g_thread_init(NULL);
+//      g_thread_init(nullptr);
     gdk_threads_init();
     gdk_threads_enter();
     gtk_init(&argc, &argv);
     gtk_gl_init(&argc, &argv);
-    
+
     threadLoop();
   }
   ~GtkThread() {
@@ -41,7 +42,7 @@ struct GtkThread:Thread {
 //    g_main_context_unref(g_main_context_default ());
     cout <<"STOPPING GTK" <<endl;
   }
-  
+
   virtual void open() {}
   virtual void step() { gtk_main(); }
   virtual void close() {  }
@@ -70,11 +71,11 @@ void gtkCheckInitialized() {
   if(!isInitialized) {
     isInitialized=true;
     int argc=1;
-    char **argv = new char*[1];
+    char** argv = new char* [1];
     argv[0] = (char*)"x.exe";
-    
+
     XInitThreads();
-    g_thread_init(NULL); 1
+    g_thread_init(nullptr); 1
     gdk_threads_init();
 //    gdk_threads_enter();
     gtk_init(&argc, &argv);
@@ -97,10 +98,10 @@ static void menuitem_response(int choice) { menuChoice.setStatus(choice); }
 
 int gtkPopupMenuChoice(StringL& choices) {
   //create menu
-  GtkWidget *menu = gtk_menu_new();
-  gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL, 0, gtk_get_current_event_time());
+  GtkWidget* menu = gtk_menu_new();
+  gtk_menu_popup(GTK_MENU(menu), nullptr, nullptr, nullptr, nullptr, 0, gtk_get_current_event_time());
   for_list(rai::String,  s,  choices) {
-    GtkWidget *item = gtk_menu_item_new_with_label(s->p);
+    GtkWidget* item = gtk_menu_item_new_with_label(self->p);
     gtk_container_add(GTK_CONTAINER(menu), item);
     gtk_signal_connect_object(GTK_OBJECT(item), "activate",
                               GTK_SIGNAL_FUNC(menuitem_response), (gpointer)(ulong)s_COUNT);
@@ -114,10 +115,10 @@ int gtkPopupMenuChoice(StringL& choices) {
   return choice>=0?choice:0;
 }
 
-GtkWidget *gtkTopWindow(const char* name) {
+GtkWidget* gtkTopWindow(const char* name) {
   gtkCheckInitialized();
   gtkLock();
-  GtkWidget *win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  GtkWidget* win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   gtk_window_set_title(GTK_WINDOW(win), name);
   gtk_window_set_default_size(GTK_WINDOW(win), 300, 300);
   //gtk_container_set_reallocate_redraws(GTK_CONTAINER(container), TRUE);

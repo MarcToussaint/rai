@@ -1,15 +1,15 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifndef RAI_linearRegression_h
-#define RAI_linearRegression_h
+#pragma once
 
-#include <Core/array.h>
+#include "../Core/array.h"
+
 
 //===========================================================================
 //
@@ -27,10 +27,10 @@ struct RidgeRegression {
   arr XtX_I; ///< (X^T X + lambda I)
   double sigmaSqr; ///< mean squared error on training data; estimate of noise
   arr betaSigmaMatrix; ///< variance (matrix) of estimated beta
-  
+
   RidgeRegression(const arr& X, const arr& y, double lambda=-1, const arr& weighted=NoArr, int verbose=1);
   arr evaluate(const arr& X, arr& bayesSigma2=NoArr);
-  
+
   arr getBetaSigmaMatrix();
   arr getBetaZscores();
   arr getMultiOutputSquaredErrors(const arr& X, const arr& y);
@@ -38,7 +38,7 @@ struct RidgeRegression {
 
 struct DefaultKernelFunction : KernelFunction {
   enum KernelType { readFromCfg=0, Gauss=1 } type;
-  arr hyperParam1,hyperParam2;
+  arr hyperParam1, hyperParam2;
   DefaultKernelFunction(KernelType _type=readFromCfg):type(_type) {}
   virtual double k(const arr& x1, const arr& x2, arr& gx1, arr& Hx1);
 };
@@ -54,7 +54,7 @@ struct KernelRidgeRegression {
   KernelFunction& kernel;
   KernelRidgeRegression(const arr& X, const arr& y, KernelFunction& kernel=defaultKernelFunction, double lambda=-1, double mu=0.);
   arr evaluate(const arr& X, arr& bayesSigma2=NoArr); ///< returns f(x) and \s^2(x) for a set of points X
-  
+
   double evaluate(const arr& x, arr& df_x, arr& H, double plusSigma, bool onlySigma); ///< returns f(x) + coeff*\sigma(x) and its gradient and Hessian
   ScalarFunction getF(double plusSigma);
 };
@@ -68,12 +68,9 @@ struct KernelLogisticRegression {
   double mu; ///< fixed global bias (default=0)
   KernelFunction& kernel;
   KernelLogisticRegression(const arr& X, const arr& y, KernelFunction& kernel=defaultKernelFunction, double lambda=-1, double mu=0.);
-  arr evaluate(const arr& X, arr &p_bayes=NoArr, arr& p_hi=NoArr, arr& p_lo=NoArr);
+  arr evaluate(const arr& X, arr& p_bayes=NoArr, arr& p_hi=NoArr, arr& p_lo=NoArr);
   arr evaluateF(const arr& X, arr& bayesSigma2=NoArr);
 };
 
 struct KernelCRF {
 };
-
-
-#endif

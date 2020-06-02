@@ -62,7 +62,7 @@
 
 SWIFT_Object::SWIFT_Object( )
 {
-    mesh = NULL;
+    mesh = nullptr;
     min_bns[0].Set_Is_Max( false ), max_bns[0].Set_Is_Max( true ),
     min_bns[1].Set_Is_Max( false ), max_bns[1].Set_Is_Max( true ),
     min_bns[2].Set_Is_Max( false ), max_bns[2].Set_Is_Max( true );

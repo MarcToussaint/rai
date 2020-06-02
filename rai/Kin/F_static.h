@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -17,12 +17,11 @@ struct F_netForce : Feature {
 
   F_netForce(int iShape, bool _transOnly=false, bool _zeroGravity=false);
   F_netForce(const rai::Configuration& K, const char* iShapeName, bool _transOnly=false, bool _zeroGravity=false)
-    : F_netForce(initIdArg(K,iShapeName), _transOnly, _zeroGravity){}
-  
-  virtual void phi(arr& y, arr& J, const rai::Configuration& K);
-  virtual uint dim_phi(const rai::Configuration& K);
-  
-  virtual rai::String shortTag(const rai::Configuration& K) { return STRING("static-" <<K.frames(i)->name); }
-};
+    : F_netForce(initIdArg(K, iShapeName), _transOnly, _zeroGravity) {}
 
+  virtual void phi(arr& y, arr& J, const rai::Configuration& C);
+  virtual uint dim_phi(const rai::Configuration& C);
+
+  virtual rai::String shortTag(const rai::Configuration& K) { return STRING("F_netForce-" <<K.frames(i)->name); }
+};
 

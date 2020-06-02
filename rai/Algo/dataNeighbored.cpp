@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -11,7 +11,7 @@
 void DataNeighbored::setData(const arr& pts) {
   X = pts;
   valid.resize(X.d0);
-    for(uint i=0; i<X.d0; i++) if(pts(i,2)>=0) valid(i)=true; else valid(i)=false;
+    for(uint i=0; i<X.d0; i++) if(pts(i, 2)>=0) valid(i)=true; else valid(i)=false;
   if(isModelledWeights.N!=X.d0) {
     isModelledWeights.resize(X.d0);
     isModelledWeights.setZero();
@@ -63,14 +63,14 @@ void DataNeighbored::removeNonValid() {
       }
       idx2pixel(index(i)) = i;
     }
-  X.resizeCopy(s,X.d1);
+  X.resizeCopy(s, X.d1);
   N.resizeCopy(s);
   isModelledWeights.resizeCopy(s);
   costs.resizeCopy(s);
 }
 
 void DataNeighbored::initFringe(uintA& fringe, uintA& pts, boolA& included, uint i) {
-  CHECK(valid(i),"");
+  CHECK(valid(i), "");
   fringe.clear();
   fringe.append(i);
   pts = fringe;
@@ -92,12 +92,12 @@ void DataNeighbored::expandFringe(uintA& fringe, uintA& pts, boolA& included) {
 }
 
 uintA DataNeighbored::getKneighborhood(uint i, uint k) {
-  CHECK(valid(i),"");
+  CHECK(valid(i), "");
   uintA fringe, pts;
   boolA included;
   initFringe(fringe, pts, included, i);
   uintA Nk;
-  
+
   for(; fringe.N;) {
     if(Nk.N+fringe.N<=k) {
       Nk.append(fringe);
@@ -106,7 +106,7 @@ uintA DataNeighbored::getKneighborhood(uint i, uint k) {
         Nk.append(j);
         if(Nk.N==k) return Nk;
       }
-      
+
     expandFringe(fringe, pts, included);
   }
   return Nk;

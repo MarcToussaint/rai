@@ -1,14 +1,13 @@
 #pragma once
-//#include "roscom.h"
 
 #ifdef RAI_PCL
 
 #include <sensor_msgs/PointCloud2.h>
 #include <PCL/conv.h>
-#include <Geo/geo.h>
+#include "../Geo/geo.h"
 
 struct SubscribeRosKinect2PCL{
-  struct sSubscribeRosKinect2PCL *s;
+  unique_ptr<struct sSubscribeRosKinect> self;
   Var<Pcl> cloud;
   Var<rai::Transformation> kinect_frame;
 

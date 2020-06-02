@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -11,21 +11,19 @@
 //#include "manipulationTree.h"
 #include "pathProblem.h"
 #include "effectivePoseProblem.h"
-
 #include "towerProblem.h"
-
-#include <KOMO/komo.h>
-#include <Logic/fol_mcts_world.h>
+#include "../KOMO/komo.h"
+#include "../Logic/fol_mcts_world.h"
 
 //===========================================================================
 
 struct LogicGeometricProgram {
   rai::Configuration world_root;
   FOL_World fol_root;
-  
+
   LogicGeometricProgram() {}
   ~LogicGeometricProgram() {}
-  
+
   virtual bool isFeasible(const rai::Configuration& world, const Graph& symbols) = 0;
   virtual double psi(const rai::Configuration& world, const Graph& symbols) = 0;
   virtual KOMO& getPathProblem(const rai::Configuration& world, const Graph& symbols) = 0;
@@ -36,7 +34,7 @@ struct LogicGeometricProgram {
 
 struct TowerProblem_new:LogicGeometricProgram {
   uint nObjects;
-  
+
   TowerProblem_new() {
     world_root.init("LGP-world.g");
     fol_root.init(FILE("LGP-symbols.g"));
@@ -46,7 +44,7 @@ struct TowerProblem_new:LogicGeometricProgram {
   }
   ~TowerProblem_new() {}
   void setRandom();
-  
+
   bool isFeasible(const rai::Configuration& world, const Graph& symbols) { NIY }
   double psi(const rai::Configuration& world, const Graph& symbols) { NIY }
   KOMO& getPathProblem(const rai::Configuration& world, const Graph& symbols) { NIY }
@@ -61,7 +59,7 @@ struct SticksProblem:LogicGeometricProgram {
     fol_root.init(FILE("LGP-sticks-symbols.g"));
   }
   ~SticksProblem() {}
-  
+
   bool isFeasible(const rai::Configuration& world, const Graph& symbols) { NIY }
   double psi(const rai::Configuration& world, const Graph& symbols) { NIY }
   KOMO& getPathProblem(const rai::Configuration& world, const Graph& symbols) { NIY }

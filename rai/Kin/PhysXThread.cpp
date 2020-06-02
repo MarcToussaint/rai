@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -7,31 +7,31 @@
     --------------------------------------------------------------  */
 
 #include "PhysXThread.h"
-#include <Kin/kin_physx.h>
-#include <Kin/kinViewer.h>
+#include "kin_physx.h"
+#include "kinViewer.h"
 
 struct PhysXThread : Thread {
   Var<rai::Configuration> modelWorld;
   Var<rai::Configuration> physxWorld;
   Var<arr> ctrl_q_ref;
-  PhysXInterface *px;
-  KinViewer *view;
-  OpenGL *gl;
-  
-  PhysXThread() : Thread("PhysX", .03), px(NULL), view(NULL), gl(NULL) {
+  PhysXInterface* px;
+  KinViewer* view;
+  OpenGL* gl;
+
+  PhysXThread() : Thread("PhysX", .03), px(nullptr), view(nullptr), gl(nullptr) {
     threadLoop(true);
   }
-  
+
   ~PhysXThread() {
     threadClose();
   }
-  
+
   void open() {
 #if 0
     physxWorld.writeAccess();
     physxWorld() = modelWorld.get();
     for(uint i=physxWorld().joints.N; i--;) {
-      rai::Joint *j = physxWorld().joints.elem(i);
+      rai::Joint* j = physxWorld().joints.elem(i);
       if(j->type==rai::JT_rigid) {
         LOG(0) <<"removing fixed joint '" <<j->type <<':' <<j->from->name <<'-' <<j->to->name <<"' (assuming it is not articulated)";
         delete j;
@@ -44,21 +44,21 @@ struct PhysXThread : Thread {
     view = new KinViewer(Var<rai::Configuration>()); NIY //("physxWorld", .1);
     view->threadLoop();
   }
-  
+
   void step() {
     physxWorld.writeAccess();
     physxWorld().setJointState(ctrl_q_ref.get());
     px->step();
     physxWorld.deAccess();
-    if(gl) if(!(step_count%10)) gl->update(NULL, true);
+    if(gl) if(!(step_count%10)) gl->update(nullptr, true);
   }
-  
+
   void close() {
     if(gl) delete gl;
     if(view) delete view;
     delete px;
   }
-  
+
   void showInternalOpengl() {
     if(!gl) {
       stepMutex.lock(RAI_HERE);

@@ -2,7 +2,7 @@
 #include "publishDatabase.h"
 #include <geometry_msgs/PoseArray.h>
 #include <object_recognition_msgs/TableArray.h>
-#include <Kin/frame.h>
+#include "../Kin/frame.h"
 
 #ifdef RAI_ROS_GROOVY
   #include <ar_track_alvar/AlvarMarkers.h>
@@ -15,7 +15,7 @@
 PublishDatabase::PublishDatabase()
   : Thread("PublishDatabase", -1),
     percepts_filtered(this, "percepts_filtered", true),
-    nh(NULL)
+    nh(nullptr)
 {}
 
 void PublishDatabase::open(){

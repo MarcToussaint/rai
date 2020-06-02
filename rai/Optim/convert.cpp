@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -10,23 +10,23 @@
 #include "KOMO_Problem.h"
 
 //the Convert is essentially only a ``garbage collector'', creating all the necessary conversion objects and then deleting them on destruction
-Convert::Convert(const ScalarFunction& p) : cstyle_fs(NULL), cstyle_fv(NULL), data(NULL), cpm(NULL) { sf=p; }
-Convert::Convert(const VectorFunction& p) : cstyle_fs(NULL), cstyle_fv(NULL), data(NULL), cpm(NULL) { vf=p; }
-//Convert::Convert(KOrderMarkovFunction& p):kom(&p), cstyle_fs(NULL), cstyle_fv(NULL), data(NULL) { }
-Convert::Convert(double(*fs)(arr*, const arr&, void*),void *data) : cstyle_fs(fs), cstyle_fv(NULL), data(data), cpm(NULL) {  }
-Convert::Convert(void (*fv)(arr&, arr*, const arr&, void*),void *data) : cstyle_fs(NULL), cstyle_fv(fv), data(data), cpm(NULL) {  }
+Convert::Convert(const ScalarFunction& p) : cstyle_fs(nullptr), cstyle_fv(nullptr), data(nullptr), cpm(nullptr) { sf=p; }
+Convert::Convert(const VectorFunction& p) : cstyle_fs(nullptr), cstyle_fv(nullptr), data(nullptr), cpm(nullptr) { vf=p; }
+//Convert::Convert(KOrderMarkovFunction& p):kom(&p), cstyle_fs(nullptr), cstyle_fv(nullptr), data(nullptr) { }
+Convert::Convert(double(*fs)(arr*, const arr&, void*), void* data) : cstyle_fs(fs), cstyle_fv(nullptr), data(data), cpm(nullptr) {  }
+Convert::Convert(void (*fv)(arr&, arr*, const arr&, void*), void* data) : cstyle_fs(nullptr), cstyle_fv(fv), data(data), cpm(nullptr) {  }
 
 #ifndef libRoboticsCourse
 //Convert::Convert(ControlledSystem& p) { cs=&p; }
 #endif
 
 Convert::~Convert() {
-  if(cpm) { delete cpm; cpm=NULL; }
+  if(cpm) { delete cpm; cpm=nullptr; }
 }
 
 //void conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction& f, arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x);
 double conv_VectorFunction_ScalarFunction(VectorFunction f, arr& g, arr& H, const arr& x) {
-  arr y,J;
+  arr y, J;
   f(y, (!!g?J:NoArr), x);
   //  if(J.special==arr::RowShiftedST) J = unpack(J);
   if(!!g) { g = comp_At_x(J, y); g *= 2.; }
@@ -78,22 +78,22 @@ Convert::operator VectorFunction() {
 // actual convertion routines
 //
 
-ScalarFunction conv_cstylefs2ScalarFunction(double(*fs)(arr*, const arr&, void*),void *data) {
-  return [&fs,data](arr& g, arr& H, const arr& x) -> double {
+ScalarFunction conv_cstylefs2ScalarFunction(double(*fs)(arr*, const arr&, void*), void* data) {
+  return [&fs, data](arr& g, arr& H, const arr& x) -> double {
     if(!!H) NIY;
     return fs(&g, x, data);
   };
 }
 
-VectorFunction conv_cstylefv2VectorFunction(void (*fv)(arr&, arr*, const arr&, void*),void *data) {
-  return [&fv,data](arr& y, arr& J, const arr& x) -> void {
+VectorFunction conv_cstylefv2VectorFunction(void (*fv)(arr&, arr*, const arr&, void*), void* data) {
+  return [&fv, data](arr& y, arr& J, const arr& x) -> void {
     fv(y, &J, x, data);
   };
 }
 
 ScalarFunction conv_VectorFunction2ScalarFunction(const VectorFunction& f) {
   return [&f](arr& g, arr& H, const arr& x) -> double {
-    arr y,J;
+    arr y, J;
     f(y, (!!g?J:NoArr), x);
     //  if(J.special==arr::RowShiftedST) J = unpack(J);
     if(!!g) { g = comp_At_x(J, y); g *= 2.; }
@@ -105,17 +105,17 @@ ScalarFunction conv_VectorFunction2ScalarFunction(const VectorFunction& f) {
 void Conv_linearlyReparameterize_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& z) {
   arr x = B*z;
   P.phi(phi, J, H, tt, x);
-  if(!!J) J = comp_A_x(J,B);
+  if(!!J) J = comp_A_x(J, B);
   if(!!H && H.N) NIY;
 }
 
 //===========================================================================
 
-Convert::Convert(KOMO_Problem& p) : cstyle_fs(NULL), cstyle_fv(NULL), data(NULL), cpm(NULL) {
+Convert::Convert(KOMO_Problem& p) : cstyle_fs(nullptr), cstyle_fv(nullptr), data(nullptr), cpm(nullptr) {
   cpm = new Conv_KOMO_ConstrainedProblem(p);
 }
 
-Convert::operator ConstrainedProblem&() {
+Convert::operator ConstrainedProblem& () {
   if(!cpm) HALT("");
   return *cpm;
 }

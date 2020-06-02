@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -31,7 +31,7 @@ template rai::Array<T>& rai::operator-=(Array<T>& y, const Array<T>& z);
 template rai::Array<T>& rai::operator*=(Array<T>& y, T);
 template rai::Array<T>& rai::operator/=(Array<T>& y, T);
 template bool rai::operator==(const Array<T>& v, const Array<T>& w);
-template bool rai::operator==(const Array<T>& v, const T *w);
+template bool rai::operator==(const Array<T>& v, const T* w);
 template std::istream& rai::operator>>(std::istream& is, Array<T>& x);
 template std::ostream& rai::operator<<(std::ostream& os, const Array<T>& x);
 
@@ -51,7 +51,7 @@ template void eliminatePartial(rai::Array<T>& x, const rai::Array<T>& y, uint d)
 template void checkNan(rai::Array<T> const&);
 
 template T sqrDistance(const rai::Array<T>& v, const rai::Array<T>& w);
-template T maxDiff(const rai::Array<T>& v, const rai::Array<T>& w, uint *im);
+template T maxDiff(const rai::Array<T>& v, const rai::Array<T>& w, uint* im);
 template T maxRelDiff(const rai::Array<T>& v, const rai::Array<T>& w, T tol);
 //template T sqrDistance(const rai::Array<T>& v, const rai::Array<T>& w, const rai::Array<bool>& mask);
 template T sqrDistance(const rai::Array<T>& g, const rai::Array<T>& v, const rai::Array<T>& w);
@@ -71,7 +71,7 @@ template T trace(const rai::Array<T>& v);
 template rai::Array<T> log(const rai::Array<T>& v);
 template rai::Array<T> exp(const rai::Array<T>& v);
 template rai::Array<T> atan(const rai::Array<T>& v);
-template rai::Array<T> pow(const rai::Array<T>& v,T);
+template rai::Array<T> pow(const rai::Array<T>& v, T);
 
 template T minDiag(const rai::Array<T>& v);
 
@@ -85,13 +85,13 @@ template T scalarProduct(const rai::Array<T>& g, const rai::Array<T>& v, const r
 
 template rai::Array<T> catCol(const rai::Array<rai::Array<T>* >& X);
 
-template void tensorEquation(rai::Array<T> &X, const rai::Array<T> &A, const uintA &pickA, const rai::Array<T> &B, const uintA &pickB, uint sum);
-template void tensorPermutation(rai::Array<T> &Y, const rai::Array<T> &X, const uintA &Yid);
-template void tensorMarginal(rai::Array<T> &Y, const rai::Array<T> &X, const rai::Array<uint> &Yid);
-template void tensorMaxMarginal(rai::Array<T> &Y, const rai::Array<T> &X, const rai::Array<uint> &Yid);
-template void tensorMarginal_old(rai::Array<T> &y, const rai::Array<T> &x, const rai::Array<uint> &xd, const rai::Array<uint> &ids);
-template void tensorMultiply(rai::Array<T> &X, const rai::Array<T> &Y, const rai::Array<uint> &Yid);
-template void tensorMultiply_old(rai::Array<T> &x, const rai::Array<T> &y, const rai::Array<uint> &d, const rai::Array<uint> &ids);
+template void tensorEquation(rai::Array<T>& X, const rai::Array<T>& A, const uintA& pickA, const rai::Array<T>& B, const uintA& pickB, uint sum);
+template void tensorPermutation(rai::Array<T>& Y, const rai::Array<T>& X, const uintA& Yid);
+template void tensorMarginal(rai::Array<T>& Y, const rai::Array<T>& X, const rai::Array<uint>& Yid);
+template void tensorMaxMarginal(rai::Array<T>& Y, const rai::Array<T>& X, const rai::Array<uint>& Yid);
+template void tensorMarginal_old(rai::Array<T>& y, const rai::Array<T>& x, const rai::Array<uint>& xd, const rai::Array<uint>& ids);
+template void tensorMultiply(rai::Array<T>& X, const rai::Array<T>& Y, const rai::Array<uint>& Yid);
+template void tensorMultiply_old(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<uint>& d, const rai::Array<uint>& ids);
 
 template void rndInteger(rai::Array<T>& a, int low, int high, bool add);
 template void rndUniform(rai::Array<T>& a, double low, double high, bool add);

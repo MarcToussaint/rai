@@ -1,20 +1,14 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-/// @file
-/// @ingroup group_Core
-/// @addtogroup group_Core
-/// @{
+#pragma once
 
-#ifndef RAI_algos_h
-#define RAI_algos_h
-
-#include <Core/array.h>
+#include "../Core/array.h"
 
 namespace rai {
 
@@ -43,10 +37,6 @@ bool rk4dd_switch(arr& x1, arr& v1, arr& s1, const arr& x0, const arr& v0, const
                   void (*ddf)(arr& xdd, const arr& x, const arr& v),
                   void (*sf)(arr& s, const arr& x, const arr& v),
                   double& dt, double tol);
-                  
-                  
+
+
 } //end namespace rai
-
-#endif
-
-/// @} //end group

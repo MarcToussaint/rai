@@ -74,9 +74,9 @@ using std::cerr;
 template< class Type >
 class SWIFT_Array {
   public:
-    SWIFT_Array( ) { length = 0; max_length = 0; array = NULL; }
+    SWIFT_Array( ) { length = 0; max_length = 0; array = nullptr; }
     SWIFT_Array( int l )
-                    { length = 0; max_length = 0; array = NULL; Create( l ); }
+                    { length = 0; max_length = 0; array = nullptr; Create( l ); }
     SWIFT_Array( const SWIFT_Array<Type>& l )
     {
         *this = l;
@@ -84,7 +84,7 @@ class SWIFT_Array {
             array = new Type[max_length];
             memcpy( (void*)array, (void*)l.Data(), max_length*sizeof(Type) );
         } else {
-            array = NULL;
+            array = nullptr;
         }
     }
 
@@ -94,7 +94,7 @@ class SWIFT_Array {
  // Copy functions
     void Copy( const SWIFT_Array<Type>& l )
     {
-        if( array != NULL ) {
+        if( array != nullptr ) {
             Destroy();
         }
         length = l.Length();
@@ -103,12 +103,12 @@ class SWIFT_Array {
             array = new Type[max_length];
             memcpy( (void*)array, (void*)l.Data(), max_length*sizeof(Type) );
         } else {
-            array = NULL;
+            array = nullptr;
         }
     }
     void Copy_Length( const SWIFT_Array<Type>& l )
     {
-        if( array != NULL ) {
+        if( array != nullptr ) {
             Destroy();
         }
         length = l.Length();
@@ -117,7 +117,7 @@ class SWIFT_Array {
             array = new Type[max_length];
             memcpy( (void*)array, (void*)l.Data(), max_length*sizeof(Type) );
         } else {
-            array = NULL;
+            array = nullptr;
         }
     }
 
@@ -158,7 +158,7 @@ class SWIFT_Array {
     Type* Data( ) const { return array; }
     int Position( const Type* addr ) const { return (int)(addr-array); }
     bool Empty( ) const { return length == 0; }
-    bool Exists( ) const { return array != NULL; }
+    bool Exists( ) const { return array != nullptr; }
 
   // Content modification
     void Set_Last( const Type t ) { array[length-1] = t; }
@@ -185,7 +185,7 @@ class SWIFT_Array {
     void Set_Max_Length( int len ) { max_length = len; }
     void Increment_Length( ) { length++; }
     void Decrement_Length( ) { length--; }
-    void Nullify( ) { array = NULL; length = 0; max_length = 0; }
+    void Nullify( ) { array = nullptr; length = 0; max_length = 0; }
 
   // Creation/allocation and destroy
     void Create( int n )
@@ -213,7 +213,7 @@ class SWIFT_Array {
     void Destroy( )
     {
         delete [] array;
-        array = NULL; length = 0; max_length = 0;
+        array = nullptr; length = 0; max_length = 0;
     }
     void Set_Data( Type* tp ) { array = tp; }
 

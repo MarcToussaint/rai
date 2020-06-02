@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -11,7 +11,7 @@
 
 uint TM_BeliefTransition::dim_phi(const rai::Configuration& G) {
   uint n=0;
-  for(rai::Joint *j : G.activeJoints) if(j->uncertainty) {
+  for(rai::Joint* j : G.activeJoints) if(j->uncertainty) {
       n += j->dim;
     }
   return n;
@@ -35,13 +35,13 @@ double Forsyth(arr& J, const arr& x, double a) {
   return f;
 };
 
-void TM_BeliefTransition::phi(arr &y, arr &J, const WorldL &Ktuple) {
+void TM_BeliefTransition::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   uint i=0;
   y.resize(dim_phi(*Ktuple.last())).setZero();
   if(!!J) J.resize(y.N, Ktuple.N, Ktuple.elem(-1)->q.N).setZero();
-  
+
   double tau = Ktuple(-1)->frames(0)->tau; // - Ktuple(-2)->frames(0)->time;
-  
+
   //parameters of the belief transition
   double xi = 0.;
   double b0 = .01;
@@ -57,9 +57,9 @@ void TM_BeliefTransition::phi(arr &y, arr &J, const WorldL &Ktuple) {
     xi *= 2.;
     J_xi *= 2.;
   }
-  
-  for(rai::Joint *j1 : Ktuple.elem(-1)->activeJoints) if(j1->uncertainty) {
-      rai::Joint *j0 = Ktuple.elem(-2)->frames(j1->frame->ID)->joint;
+
+  for(rai::Joint* j1 : Ktuple.elem(-1)->activeJoints) if(j1->uncertainty) {
+      rai::Joint* j0 = Ktuple.elem(-2)->frames(j1->frame->ID)->joint;
       CHECK(j0, "");
       CHECK(j0->uncertainty, "");
       CHECK_EQ(j0->dim, j1->dim, "");
@@ -69,13 +69,13 @@ void TM_BeliefTransition::phi(arr &y, arr &J, const WorldL &Ktuple) {
         if(!!J) {
           J(i, Ktuple.N-1, j1->qIndex+d) = 1.;
           J(i, Ktuple.N-2, j0->qIndex+d) = -(1.-tau*xi);
-          
+
           J[i] += (tau*Ktuple.elem(-2)->q(j0->qIndex+d)) * J_xi;
         }
         i++;
       }
     }
-    
+
   if(!!J) J.reshape(y.N, Ktuple.N*Ktuple.elem(-1)->q.N);
   CHECK_EQ(i, y.N, "");
 }

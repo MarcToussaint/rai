@@ -7,6 +7,11 @@
 
 ARCH = $(shell uname -m)
 
+ifeq ($(RAI_CMAKE),1)
+LPATHS += $(BASE)/../build
+LIBS += -lrai
+endif
+
 ifeq ($(JSON),1)
 DEPEND_UBUNTU += libjsoncpp-dev
 LIBS += -ljsoncpp
@@ -17,7 +22,7 @@ CXXFLAGS += -fopenmp -DOPENMP
 endif
 
 ifeq ($(PYBIND),1)
-DEPEND_UBUNTU += python3 python3-numpy python3-pip
+DEPEND_UBUNTU += pybind11-dev python3-dev python3 python3-numpy python3-pip python3-distutils
 CXXFLAGS += -DRAI_PYBIND `python3-config --cflags`
 LIBS += `python3-config --ldflags`
 CPATH   := $(CPATH):$(BASE)/../pybind11/include::$(BASE)/../../pybind11/include
@@ -35,10 +40,45 @@ CXXFLAGS += -DRAI_PNG
 LIBS += -lpng
 endif
 
+ifeq ($(FCL),1)
+DEPEND_UBUNTU += libfcl-dev
+CXXFLAGS  += -DRAI_FCL
+LIBS      += -lfcl
+endif
+
+ifeq ($(CCD),1)
+DEPEND += extern_ccd
+CXXFLAGS += -DRAI_CCD
+endif
+
+ifeq ($(PLY),1)
+DEPEND += extern_ply
+CXXFLAGS += -DRAI_PLY
+endif
+
+ifeq ($(GJK),1)
+DEPEND += extern_GJK
+CXXFLAGS += -DRAI_GJK
+endif
+
+ifeq ($(Lewiner),1)
+DEPEND += extern_Lewiner
+CXXFLAGS += -DRAI_Lewiner
+endif
+
 ifeq ($(ASSIMP),1)
 DEPEND_UBUNTU += libassimp-dev
 CXXFLAGS += -DRAI_ASSIMP
 LIBS += -lassimp
+endif
+
+ifeq ($(CERES),1)
+CXXFLAGS += -DRAI_CERES
+CPATHS += $(HOME)/git/ceres-solver/include
+CPATHS += $(HOME)/git/ceres-solver/build/config
+CPATHS += $(HOME)/git/ceres-solver/internal/ceres/miniglog
+LPATHS += $(HOME)/git/ceres-solver/build/lib
+LIBS += -lceres -lglog -lcholmod -llapack -lblas -lpthread  /usr/lib/x86_64-linux-gnu/libspqr.so /usr/lib/x86_64-linux-gnu/libtbbmalloc.so /usr/lib/x86_64-linux-gnu/libtbb.so /usr/lib/x86_64-linux-gnu/libcholmod.so /usr/lib/x86_64-linux-gnu/libccolamd.so /usr/lib/x86_64-linux-gnu/libcamd.so /usr/lib/x86_64-linux-gnu/libcolamd.so /usr/lib/x86_64-linux-gnu/libamd.so /usr/lib/x86_64-linux-gnu/liblapack.so /usr/lib/x86_64-linux-gnu/libf77blas.so /usr/lib/x86_64-linux-gnu/libatlas.so /usr/lib/x86_64-linux-gnu/libsuitesparseconfig.so /usr/lib/x86_64-linux-gnu/librt.so /usr/lib/x86_64-linux-gnu/libcxsparse.so /usr/lib/x86_64-linux-gnu/liblapack.so /usr/lib/x86_64-linux-gnu/libf77blas.so /usr/lib/x86_64-linux-gnu/libatlas.so /usr/lib/x86_64-linux-gnu/libsuitesparseconfig.so /usr/lib/x86_64-linux-gnu/librt.so /usr/lib/x86_64-linux-gnu/libcxsparse.so /usr/lib/x86_64-linux-gnu/libgflags.so.2.2.1 -lpthread /usr/lib/x86_64-linux-gnu/libglog.so
 endif
 
 ifeq ($(CUDA),1)
@@ -70,8 +110,6 @@ endif
 ifeq ($(GLFW),1)
 DEPEND_UBUNTU += libglfw3-dev
 CXXFLAGS  += -DRAI_GLFW
-#CPATH := $(HOME)/opt/include:$(CPATH)
-#LPATH := $(HOME)/opt/lib:$(LPATH)
 LIBS      += -lglfw
 GL := 1
 endif
@@ -136,30 +174,6 @@ ifeq ($(WX),1)
 CXXFLAGS  += -DRAI_WX -D_FILE_OFFSET_BITS=64 -D_LARGE_FILES -D__WXGTK__ -pthread
 CPATH := $(CPATH):/usr/lib/wx/include/gtk2-unicode-release-2.8:/usr/include/wx-2.8
 LIBS += -pthread -Wl,-Bsymbolic-functions  -lwx_gtk2u_richtext-2.8 -lwx_gtk2u_aui-2.8 -lwx_gtk2u_xrc-2.8 -lwx_gtk2u_qa-2.8 -lwx_gtk2u_html-2.8 -lwx_gtk2u_adv-2.8 -lwx_gtk2u_core-2.8 -lwx_baseu_xml-2.8 -lwx_baseu_net-2.8 -lwx_baseu-2.8
-endif
-
-ifeq ($(ODE),1)
-CXXFLAGS  += -DRAI_ODE -DdDOUBLE
-LIBS += -lode
-endif
-
-ifeq ($(FCL),1)
-DEPEND_UBUNTU += libfcl-0.5-dev
-CXXFLAGS  += -DRAI_FCL
-LIBS      += -lfcl
-endif
-
-ifeq ($(SWIFT),1)
-CXXFLAGS  += -DRAI_SWIFT
-CPATH	  := $(CPATH):$(LIBPATH)/SWIFT++_1.2/include
-LIBS += -lSWIFT++
-QHULL := 1
-endif
-
-ifeq ($(SOLID),1)
-CXXFLAGS  += -DRAI_SOLID
-CPATH     := $(CPATH):$(LIBPATH)/FreeSOLID-2.1.1/include
-LIBS += -lFreeSOLID
 endif
 
 ifeq ($(ANN),1)
@@ -257,7 +271,6 @@ endif
 ifeq ($(OPENCV4),1)
 CXXFLAGS  += -DRAI_OPENCV
 CPATH := $(HOME)/opt/include/opencv4/:$(CPATH)
-LPATHS += $(HOME)/opt/lib
 LIBS += -lopencv_core -lopencv_highgui
 endif
 
@@ -380,6 +393,22 @@ CXXFLAGS  += -DRAI_PTHREAD
 LIBS += -lpthread
 endif
 
+ifeq ($(SWIFT),1)
+DEPEND += extern_SWIFT extern_SWIFT_decomposer
+CXXFLAGS += -DRAI_SWIFT
+endif
+
+ifeq ($(ODE),1)
+CXXFLAGS  += -DRAI_ODE -DdDOUBLE
+LIBS += -lode
+endif
+
+ifeq ($(SOLID),1)
+CXXFLAGS  += -DRAI_SOLID
+CPATH     := $(CPATH):$(LIBPATH)/FreeSOLID-2.1.1/include
+LIBS += -lFreeSOLID
+endif
+
 ifeq ($(DART),1)
 CXXFLAGS += -DRAI_DART -std=c++14
 CPATH := $(CPATH):$(HOME)/git/dart/build:$(HOME)/git/dart
@@ -416,7 +445,6 @@ ifeq ($(BULLET),1)
 #BULLET_PATH=$(HOME)/git/bullet3
 CXXFLAGS  += -DRAI_BULLET -DBT_USE_DOUBLE_PRECISION
 CPATH := $(HOME)/opt/include/bullet/:$(CPATH)
-LPATHS += $(HOME)/opt/lib
 #LPATH := $(BULLET_PATH)/bin:$(LPATH)
 #CPATH := $(CPATH):$(BULLET_PATH)/src
 #btLIB = _gmake_x64_release

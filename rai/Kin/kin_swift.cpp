@@ -1,27 +1,17 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-/**
- * @file
- * @ingroup group_ors
- */
-/**
- * @ingroup group_ors
- * @{
- */
-
 #include "kin_swift.h"
 #include "proxy.h"
 #include "frame.h"
-#include <Algo/ann.h>
+#include "../Algo/ann.h"
 
-#define RAI_extern_SWIFT
-#ifdef RAI_extern_SWIFT
+#ifdef RAI_SWIFT
 
 #ifdef RAI_SINGLE
 #  define SWIFT_USE_FLOAT
@@ -31,38 +21,38 @@
 #undef min
 #undef max
 
-ANN *global_ANN=NULL;
-rai::Shape *global_ANN_shape;
+ANN* global_ANN=nullptr;
+rai::Shape* global_ANN_shape;
 
 SwiftInterface::~SwiftInterface() {
   if(scene) delete scene;
   if(global_ANN) delete global_ANN;
-  scene=NULL;
+  scene=nullptr;
   //cout <<" -- SwiftInterface closed" <<endl;
 }
 
-SwiftInterface::SwiftInterface(const rai::Configuration& world, double _cutoff)
-  : scene(NULL), cutoff(_cutoff) {
+SwiftInterface::SwiftInterface(const rai::Configuration& world, double _cutoff, int verbose)
+  : scene(nullptr), cutoff(_cutoff) {
   bool r, add;
 
   if(scene) delete scene;
-  
-  scene = new SWIFT_Scene(false, false);
-  
+
+  scene = new SWIFT_Scene(false, true); //false, false);
+
   INDEXswift2frame.resize(world.frames.N);  INDEXswift2frame=-1;
   INDEXshape2swift.resize(world.frames.N);  INDEXshape2swift=-1;
-  
-//  cout <<" -- SwiftInterface init";
-  rai::Shape *s;
-  for(rai::Frame *f: world.frames) if((s=f->shape) && s->cont) {
-    //cout <<'.' <<flush;
-    //cout <<'.' <<f->name <<flush;
+
+  if(verbose>0) cout <<" -- SwiftInterface init";
+  rai::Shape* s;
+  for(rai::Frame* f: world.frames) if((s=f->shape) && s->cont) {
+      if(verbose>0) cout <<'.' <<flush;
+      if(verbose>1) cout <<f->name <<flush;
       add=true;
       switch(s->type()) {
         case rai::ST_none: HALT("shapes should have a type - somehow wrong initialization..."); break;
         case rai::ST_mesh: {
           //check if there is a specific swiftfile!
-          rai::FileToken *file = s->frame.ats.find<rai::FileToken>("swiftfile");
+          rai::FileToken* file = s->frame.ats.find<rai::FileToken>("swiftfile");
           if(false && file) {
             r=scene->Add_General_Object(file->name, INDEXshape2swift(f->ID), false);
             CHECK_GE(INDEXshape2swift(f->ID), 0, "no object generated from swiftfile");
@@ -91,44 +81,44 @@ SwiftInterface::SwiftInterface(const rai::Configuration& world, double _cutoff)
           s->createMeshes();
           CHECK(s->mesh().V.d0, "the mesh must have been created earlier -- has size zero!");
         }
-        rai::Mesh *mesh = &s->mesh();
+        rai::Mesh* mesh = &s->mesh();
 //      if(s->sscCore().V.d0) mesh = &s->sscCore();
 
-        CHECK(mesh->V.d0,"no mesh to add to SWIFT, something was wrongly initialized");
+        CHECK(mesh->V.d0, "no mesh to add to SWIFT, something was wrongly initialized");
         r=scene->Add_Convex_Object(
             mesh->V.p, (int*)mesh->T.p,
             mesh->V.d0, mesh->T.d0, INDEXshape2swift(f->ID), false,
             DEFAULT_ORIENTATION, DEFAULT_TRANSLATION, DEFAULT_SCALE,
             DEFAULT_BOX_SETTING, DEFAULT_BOX_ENLARGE_REL, 2.);
         if(!r) HALT("--failed!");
-        
+
         INDEXswift2frame(INDEXshape2swift(f->ID)) = f->ID;
       }
     }
-    
+
   initActivations(world);
-  
+
   pushToSwift(world);
-//  cout <<"...done" <<endl;
+  if(verbose>0) cout <<"...done" <<endl;
 }
 
-void SwiftInterface::reinitShape(const rai::Frame *f) {
+void SwiftInterface::reinitShape(const rai::Frame* f) {
   HALT("why?");
   int sw = INDEXshape2swift(f->ID);
   scene->Delete_Object(sw);
   INDEXswift2frame(sw) = -1;
-  
-  rai::Shape *s = f->shape;
-  CHECK(s,"");
+
+  rai::Shape* s = f->shape;
+  CHECK(s, "");
   bool r=scene->Add_Convex_Object(s->mesh().V.p, (int*)s->mesh().T.p,
                                   s->mesh().V.d0, s->mesh().T.d0, sw, false,
                                   DEFAULT_ORIENTATION, DEFAULT_TRANSLATION, DEFAULT_SCALE,
                                   DEFAULT_BOX_SETTING, DEFAULT_BOX_ENLARGE_REL, cutoff);
   if(!r) HALT("--failed!");
-  
+
   INDEXshape2swift(f->ID) = sw;
   INDEXswift2frame(sw) = f->ID;
-  
+
   if(s->cont) scene->Activate(sw);
 }
 
@@ -139,11 +129,11 @@ void SwiftInterface::initActivations(const rai::Configuration& world) {
     -- no collisions between linked bodies
     -- no collisions between bodies liked via the tree via 3 links
   */
-  
+
 //  cout <<"collision active shapes: ";
 //  for(auto* f:world.frames) if(f->shape && f->shape->cont) cout <<f->name <<' ';
-  
-  for(rai::Frame *f: world.frames) if(f->shape) {
+
+  for(rai::Frame* f: world.frames) if(f->shape) {
       if(!f->shape->cont) {
         if(INDEXshape2swift(f->ID)!=-1) scene->Deactivate(INDEXshape2swift(f->ID));
       } else {
@@ -153,34 +143,34 @@ void SwiftInterface::initActivations(const rai::Configuration& world) {
     }
   //shapes within a link
   FrameL links = world.getLinks();
-  for(rai::Frame *f: links){
+  for(rai::Frame* f: links) {
     FrameL F = {f};
     f->getRigidSubFrames(F);
-    for(uint i=F.N;i--;) if(!F(i)->shape || !F(i)->shape->cont) F.remove(i);
+    for(uint i=F.N; i--;) if(!F(i)->shape || !F(i)->shape->cont) F.remove(i);
     deactivate(F);
   }
   //deactivate upward, depending on cont parameter (-1 indicates deactivate with parent)
-  for(rai::Frame *f: world.frames) if(f->shape && f->shape->cont<0){
-    FrameL F,P;
-    rai::Frame* p = f->getUpwardLink();
-    F = {p};
-    p->getRigidSubFrames(F);
-    for(uint i=F.N;i--;) if(!F(i)->shape || !F(i)->shape->cont) F.remove(i);
+  for(rai::Frame* f: world.frames) if(f->shape && f->shape->cont<0) {
+      FrameL F, P;
+      rai::Frame* p = f->getUpwardLink();
+      F = {p};
+      p->getRigidSubFrames(F);
+      for(uint i=F.N; i--;) if(!F(i)->shape || !F(i)->shape->cont) F.remove(i);
 
-    for(char i=0;i<-f->shape->cont;i++){
-      p = p->parent;
-      if(!p) break;
-      p = p->getUpwardLink();
-      P = {p};
-      p->getRigidSubFrames(P);
-      for(uint i=P.N;i--;) if(!P(i)->shape || !P(i)->shape->cont) P.remove(i);
+      for(char i=0; i<-f->shape->cont; i++) {
+        p = p->parent;
+        if(!p) break;
+        p = p->getUpwardLink();
+        P = {p};
+        p->getRigidSubFrames(P);
+        for(uint i=P.N; i--;) if(!P(i)->shape || !P(i)->shape->cont) P.remove(i);
 
-      if(F.N && P.N) deactivate(F,P);
+        if(F.N && P.N) deactivate(F, P);
+      }
     }
-  }
 }
 
-void SwiftInterface::deactivate(rai::Frame *s1, rai::Frame *s2) {
+void SwiftInterface::deactivate(rai::Frame* s1, rai::Frame* s2) {
   if(INDEXshape2swift(s1->ID)==-1 || INDEXshape2swift(s2->ID)==-1) return;
   //cout <<"deactivating shape pair " <<s1->name <<'-' <<s2->name <<endl;
   scene->Deactivate(INDEXshape2swift(s1->ID), INDEXshape2swift(s2->ID));
@@ -189,8 +179,8 @@ void SwiftInterface::deactivate(rai::Frame *s1, rai::Frame *s2) {
 void SwiftInterface::deactivate(const FrameL& shapes1, const FrameL& shapes2) {
 //  cout <<"deactivating shapes {"; listWriteNames(shapes1, cout);
 //  cout <<"} versus {"; listWriteNames(shapes2, cout); cout <<"}" <<endl;
-  for(rai::Frame *s1: shapes1) {
-    for(rai::Frame *s2: shapes2) {
+  for(rai::Frame* s1: shapes1) {
+    for(rai::Frame* s2: shapes2) {
       deactivate(s1, s2);
     }
   }
@@ -200,33 +190,36 @@ void SwiftInterface::deactivate(const FrameL& shapes) {
   deactivate(shapes, shapes);
 }
 
-void SwiftInterface::activate(rai::Frame *s1, rai::Frame *s2) {
+void SwiftInterface::activate(rai::Frame* s1, rai::Frame* s2) {
   if(INDEXshape2swift(s1->ID)==-1 || INDEXshape2swift(s2->ID)==-1) return;
   //cout <<"deactivating shape pair " <<s1->name <<'-' <<s2->name <<endl;
   scene->Activate(INDEXshape2swift(s1->ID), INDEXshape2swift(s2->ID));
 }
 
-void SwiftInterface::activate(rai::Frame *s) {
+void SwiftInterface::activate(rai::Frame* s) {
   if(INDEXshape2swift(s->ID)==-1) return;
   scene->Activate(INDEXshape2swift(s->ID));
 }
 
-void SwiftInterface::deactivate(rai::Frame *s) {
+void SwiftInterface::deactivate(rai::Frame* s) {
   if(INDEXshape2swift(s->ID)==-1) return;
   scene->Deactivate(INDEXshape2swift(s->ID));
 }
 
 void SwiftInterface::pushToSwift(const rai::Configuration& world) {
   //CHECK_EQ(INDEXshape2swift.N,world.shapes.N,"the number of shapes has changed");
-  CHECK_LE(INDEXshape2swift.N ,  world.frames.N, "the number of shapes has changed");
+  CHECK_LE(INDEXshape2swift.N,  world.frames.N, "the number of shapes has changed");
   rai::Matrix rot;
-  for(rai::Frame *f: world.frames) {
+  for(rai::Frame* f: world.frames) {
     if(f->shape) {
-      if(f->ID<INDEXshape2swift.N && INDEXshape2swift(f->ID)!=-1) {
-        rot = f->ensure_X().rot.getMatrix();
-        scene->Set_Object_Transformation(INDEXshape2swift(f->ID), rot.p(), f->getPosition().p);
-        if(!f->shape->cont) scene->Deactivate(INDEXshape2swift(f->ID));
-        //else         scene->Activate( INDEXshape2swift(f->ID) );
+      if(f->ID<INDEXshape2swift.N) {
+        int swiftID = INDEXshape2swift(f->ID);
+        if(swiftID!=-1) {
+          rot = f->ensure_X().rot.getMatrix();
+          scene->Set_Object_Transformation(swiftID, rot.p(), &f->get_X().pos.x);
+          if(!f->shape->cont) scene->Deactivate(swiftID);
+          //else         scene->Activate( INDEXshape2swift(f->ID) );
+        }
       }
     }
   }
@@ -234,9 +227,9 @@ void SwiftInterface::pushToSwift(const rai::Configuration& world) {
 
 void SwiftInterface::pullFromSwift(rai::Configuration& world, bool dumpReport) {
   int i, j, k, np;
-  int *oids=0, *num_contacts=0;
-  SWIFT_Real *dists=0, *nearest_pts=0, *normals=0;
-  
+  int* oids=0, *num_contacts=0;
+  SWIFT_Real* dists=0, *nearest_pts=0, *normals=0;
+
   try {
 //    scene->Query_Contact_Determination(
 //      false, cutoff, np,
@@ -246,16 +239,22 @@ void SwiftInterface::pullFromSwift(rai::Configuration& world, bool dumpReport) {
 //      &normals);
     scene->Query_Tolerance_Verification(false, cutoff, np, &oids);
 //    scene->Query_Intersection(false, np, &oids);
-  } catch(const char *msg) {
+  } catch(const char* msg) {
     world.proxies.clear();
     std::cerr <<"... catching error '" <<msg <<"' -- SWIFT failed! .. no proxies for this posture!!..." <<endl;
     return;
-  } catch (std::exception& e) {
+  } catch(std::exception& e) {
     world.proxies.clear();
     cout <<"... catching error '" <<e.what() <<"' -- SWIFT failed! .. no proxies for this posture!!..." <<endl;
     return;
+  } catch(std::pair<int,int>& e) {
+    world.proxies.clear();
+    cout <<"... catching error at pair ("
+        <<e.first <<'(' <<world.frames(INDEXswift2frame(e.first))->name <<") "
+        <<e.second <<'(' <<world.frames(INDEXswift2frame(e.second))->name <<") -- SWIFT failed! .. no proxies for this posture!!..." <<endl;
+    return;
   }
-  
+
   if(dumpReport) {
     cout <<"contacts: np=" <<np <<endl;
     for(k=0, i=0; i<np; i++) {
@@ -270,15 +269,14 @@ void SwiftInterface::pullFromSwift(rai::Configuration& world, bool dumpReport) {
       if(num_contacts[i]==-1) k++;
     }
   }
-  
-  for(rai::Proxy& p:world.proxies) p.del_coll();
+
   world.proxies.clear();
   world.proxies.resize(np);
-  
+
   //add contacts to list
-  
+
   for(k=0, i=0; i<np; i++) {
-    rai::Proxy &proxy = world.proxies.elem(i);
+    rai::Proxy& proxy = world.proxies.elem(i);
     //CHECK(ids(a)==a && ids(b)==b, "shape index does not coincide with swift index");
     proxy.a = world.frames(INDEXswift2frame(oids[i <<1]));
     proxy.b = world.frames(INDEXswift2frame(oids[(i <<1)+1]));
@@ -289,7 +287,7 @@ void SwiftInterface::pullFromSwift(rai::Configuration& world, bool dumpReport) {
 #if 0
     //non-penetrating pair of objects
     if(num_contacts[i]>0) { //only add one proxy!for(j=0; j<num_contacts[i]; j++, k++) {
-      CHECK_EQ(num_contacts[i], 1,"");
+      CHECK_EQ(num_contacts[i], 1, "");
       if(proxy.d < 1e-10) {
         proxy.posA = proxy.a->X.pos;
         proxy.posB = proxy.b->X.pos;
@@ -314,9 +312,9 @@ void SwiftInterface::pullFromSwift(rai::Configuration& world, bool dumpReport) {
       RAI_MSG("what is this?");
     }
 #endif
-    
+
   }
-  
+
   //add pointClound stuff to list
   if(global_ANN) {
     HALT("deprecated");
@@ -324,16 +322,16 @@ void SwiftInterface::pullFromSwift(rai::Configuration& world, bool dumpReport) {
     arr R(3, 3), t(3);
     arr v, dists, _dists;
     intA idx, _idx;
-    rai::Shape *s;
-    for(rai::Frame *f: world.frames) if((s=f->shape)) {
+    rai::Shape* s;
+    for(rai::Frame* f: world.frames) if((s=f->shape)) {
         if(!s->cont || s==global_ANN_shape) continue;
-        
+
         //relative rotation and translation of shapes
         rai::Transformation rel;
         rel.setDifference(global_ANN_shape->frame.ensure_X(), s->frame.ensure_X());
         rel.rot.getMatrix(R.p);
         t = conv_vec2arr(rel.pos);
-        
+
         //check for each vertex
         for(i=0; i<s->mesh().V.d0; i++) {
           v = s->mesh().V[i];
@@ -344,8 +342,8 @@ void SwiftInterface::pullFromSwift(rai::Configuration& world, bool dumpReport) {
           }
         }
         if(_dists(0)>cutoff) continue;
-        
-        rai::Proxy *proxy = new rai::Proxy();
+
+        rai::Proxy* proxy = new rai::Proxy();
         proxy->a = &global_ANN_shape->frame;
         proxy->b = &s->frame;
         proxy->d = _dists(0);
@@ -364,11 +362,11 @@ void SwiftInterface::step(rai::Configuration& world, bool dumpReport) {
 
 void SwiftInterface::swiftQueryExactDistance() {
   int i, np;
-  int *oids;
-  SWIFT_Real *dists;
-  
+  int* oids;
+  SWIFT_Real* dists;
+
   scene->Query_Exact_Distance(false, SWIFT_INFINITY, np, &oids, &dists);
-  
+
   cout <<"exact distances: np=" <<np <<endl;
   for(i=0; i<np; i++) {
     cout <<"    Object " <<oids[i <<1] <<" vs. Object "
@@ -382,18 +380,28 @@ uint SwiftInterface::countObjects() {
   return n;
 }
 
-#else
-#include <Core/util.h>
-void SwiftInterface::step(rai::Configuration &world, bool dumpReport=false) {}
-void SwiftInterface::pushToSwift() {}
-void SwiftInterface::pullFromSwift(const Configuration &world, bool dumpReport) {}
+#else //RAI_SWIFT
 
-void SwiftInterface::reinitShape(const rai::Shape *s) {}
-//  void close();
-void SwiftInterface::deactivate(rai::Shape *s1, rai::Shape *s2) {}
-void SwiftInterface::deactivate(const rai::Array<rai::Shape*>& shapes) {}
-void SwiftInterface::deactivate(const rai::Array<rai::Frame*>& frames) {}
-void SwiftInterface::initActivations(const Configuration &world) {}
-void SwiftInterface::swiftQueryExactDistance() {}
+#include "../Core/util.h"
+
+SwiftInterface::~SwiftInterface() { NICO }
+SwiftInterface::SwiftInterface(const rai::Configuration& world, double _cutoff, int verbose){ NICO }
+
+void SwiftInterface::step(rai::Configuration& world, bool dumpReport) { NICO }
+void SwiftInterface::pushToSwift(const rai::Configuration& world) { NICO }
+void SwiftInterface::pullFromSwift(rai::Configuration& world, bool dumpReport) { NICO }
+
+void SwiftInterface::reinitShape(const rai::Frame *s){ NICO }
+//  void close(){ NICO }
+void SwiftInterface::activate(rai::Frame *s){ NICO }
+void SwiftInterface::deactivate(rai::Frame *s){ NICO }
+void SwiftInterface::activate(rai::Frame *s1, rai::Frame *s2){ NICO }
+void SwiftInterface::deactivate(rai::Frame *s1, rai::Frame *s2){ NICO }
+void SwiftInterface::deactivate(const FrameL& shapes1, const FrameL& shapes2){ NICO }
+void SwiftInterface::deactivate(const FrameL& shapes){ NICO }
+
+void SwiftInterface::initActivations(const rai::Configuration &world) { NICO }
+void SwiftInterface::swiftQueryExactDistance() { NICO }
+uint SwiftInterface::countObjects(){ NICO }
+
 #endif
-/** @} */

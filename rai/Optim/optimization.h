@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <Core/array.h>
+#include "../Core/array.h"
 
 //===========================================================================
 //
@@ -26,7 +26,7 @@ typedef std::function<void(arr& y, arr& Jy, const arr& x)> VectorFunction;
 /// symbols to declare of which type an objective feature is
 enum ObjectiveType { OT_none=0, OT_f, OT_sos, OT_ineq, OT_eq };
 typedef rai::Array<ObjectiveType> ObjectiveTypeA;
-extern ObjectiveTypeA& NoTermTypeA;
+extern ObjectiveTypeA& NoObjectiveTypeA;
 
 /** A ConstrainedProblem returns a feature vector $phi$ and optionally its Jacobian $J$. For each entry of
  *  this feature vector $tt(i)$ determins whether this is an inequality constraint, an equality constraint,
@@ -62,8 +62,8 @@ struct Conv_Lambda_ConstrainedProblem : ConstrainedProblem {
 
 bool checkJacobianCP(ConstrainedProblem& P, const arr& x, double tolerance);
 bool checkHessianCP(ConstrainedProblem& P, const arr& x, double tolerance);
-bool checkDirectionalGradient(const ScalarFunction &f, const arr& x, const arr& delta, double tolerance);
-bool checkDirectionalJacobian(const VectorFunction &f, const arr& x, const arr& delta, double tolerance);
+bool checkDirectionalGradient(const ScalarFunction& f, const arr& x, const arr& delta, double tolerance);
+bool checkDirectionalJacobian(const VectorFunction& f, const arr& x, const arr& delta, double tolerance);
 
 inline arr summarizeErrors(const arr& phi, const ObjectiveTypeA& tt) {
   arr err = zeros(3);
@@ -76,6 +76,22 @@ inline arr summarizeErrors(const arr& phi, const ObjectiveTypeA& tt) {
   return err;
 }
 
+//===========================================================================
+//
+// accumulative constraints
+//
+
+inline void accumulateInequalities(arr& y, arr& J, const arr& yAll, const arr& JAll){
+  y.resize(1).setZero();
+  if(!!J) J.resize(1,JAll.d1).setZero();
+
+  for(uint i=0;i<yAll.N;i++){
+    if(yAll.elem(i)>0.){
+      y.scalar() += yAll.elem(i);
+      if(!!J && !!JAll) J[0] += JAll[i];
+    }
+  }
+}
 
 //===========================================================================
 //
@@ -86,7 +102,7 @@ enum ConstrainedMethodType { noMethod=0, squaredPenalty, augmentedLag, logBarrie
 
 struct OptOptions {
   int verbose;
-  double *fmin_return;
+  double* fmin_return;
   double stopTolerance;
   double stopFTolerance;
   double stopGTolerance;
@@ -128,7 +144,7 @@ extern Singleton<OptOptions> globalOptOptions;
 // helpers
 //
 
-void displayFunction(const ScalarFunction &f, bool wait=false, double lo=-1.2, double hi=1.2);
+void displayFunction(const ScalarFunction& f, bool wait=false, double lo=-1.2, double hi=1.2);
 
 // function evaluation counter (used only for performance meassurements, global for simplicity)
 extern uint eval_count;

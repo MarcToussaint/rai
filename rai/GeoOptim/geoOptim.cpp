@@ -1,20 +1,17 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include <Optim/constrained.h>
-
 #include "geoOptim.h"
-#include <Geo/qhull.h>
-#include <Gui/opengl.h>
-#include <Algo/ann.h>
-
-//#include <mpi_kmeans.h>
-#include <Geo/pairCollision.h>
+#include "../Optim/constrained.h"
+#include "../Geo/qhull.h"
+#include "../Gui/opengl.h"
+#include "../Algo/ann.h"
+#include "../Geo/pairCollision.h"
 
 void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
   struct fitSSBoxProblem : ConstrainedProblem {
@@ -23,32 +20,32 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
     void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x) {
       phi.resize(5+X.d0);
       if(!!tt) { tt.resize(5+X.d0); tt=OT_ineq; }
-      if(!!J) {  J.resize(5+X.d0,11); J.setZero(); }
-      if(!!H) {  H.resize(11,11); H.setZero(); }
-      
+      if(!!J) {  J.resize(5+X.d0, 11); J.setZero(); }
+      if(!!H) {  H.resize(11, 11); H.setZero(); }
+
       //-- the scalar objective
       double a=x(0), b=x(1), c=x(2), r=x(3); //these are box-wall-coordinates --- not WIDTH!
       phi(0) = a*b*c + 2.*r*(a*b + a*c +b*c) + 4./3.*r*r*r;
       if(!!tt) tt(0) = OT_f;
       if(!!J) {
-        J(0,0) = b*c + 2.*r*(b+c);
-        J(0,1) = a*c + 2.*r*(a+c);
-        J(0,2) = a*b + 2.*r*(a+b);
-        J(0,3) = 2.*(a*b + a*c +b*c) + 4.*r*r;
+        J(0, 0) = b*c + 2.*r*(b+c);
+        J(0, 1) = a*c + 2.*r*(a+c);
+        J(0, 2) = a*b + 2.*r*(a+b);
+        J(0, 3) = 2.*(a*b + a*c +b*c) + 4.*r*r;
       }
       if(!!H) {
-        H(0,1) = H(1,0) = c + 2.*r;
-        H(0,2) = H(2,0) = b + 2.*r;
-        H(0,3) = H(3,0) = 2.*(b+c);
-        
-        H(1,2) = H(2,1) = a + 2.*r;
-        H(1,3) = H(3,1) = 2.*(a+c);
-        
-        H(2,3) = H(3,2) = 2.*(a+b);
-        
-        H(3,3) = 8.*r;
+        H(0, 1) = H(1, 0) = c + 2.*r;
+        H(0, 2) = H(2, 0) = b + 2.*r;
+        H(0, 3) = H(3, 0) = 2.*(b+c);
+
+        H(1, 2) = H(2, 1) = a + 2.*r;
+        H(1, 3) = H(3, 1) = 2.*(a+c);
+
+        H(2, 3) = H(3, 2) = 2.*(a+b);
+
+        H(3, 3) = 8.*r;
       }
-      
+
       //-- positive
       double w=100.;
       phi(1) = -w*(a-.001);
@@ -56,12 +53,12 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
       phi(3) = -w*(c-.001);
       phi(4) = -w*(r-.001);
       if(!!J) {
-        J(1,0) = -w;
-        J(2,1) = -w;
-        J(3,2) = -w;
-        J(4,3) = -w;
+        J(1, 0) = -w;
+        J(2, 1) = -w;
+        J(3, 2) = -w;
+        J(4, 3) = -w;
       }
-      
+
       //-- all constraints
       for(uint i=0; i<X.d0; i++) {
         arr y, Jy;
@@ -69,29 +66,29 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
         y.append(x);
         phi(i+5) = DistanceFunction_SSBox(Jy, NoArr, y);
         //      Jy({3,5})() *= -1.;
-        if(!!J) J[i+5] = Jy({3,-1});
+        if(!!J) J[i+5] = Jy({3, -1});
       }
     }
   } F(X);
-  
+
   //initialization
   x.resize(11);
   rai::Quaternion rot;
   rot.setRandom();
   arr tX = X * rot.getArr(); //rotate points (with rot^{-1})
-  arr ma = max(tX,0), mi = min(tX,0);  //get coordinate-wise min and max
-  x({0,2})() = (ma-mi)/2.;   //sizes
+  arr ma = max(tX, 0), mi = min(tX, 0); //get coordinate-wise min and max
+  x({0, 2})() = (ma-mi)/2.;  //sizes
   x(3) = 1.; //sum(ma-mi)/6.;  //radius
-  x({4,6})() = rot.getArr() * (mi+.5*(ma-mi)); //center (rotated back)
-  x({7,10})() = conv_quat2arr(rot);
-  rndGauss(x({7,10})(), .1, true);
-  x({7,10})() /= length(x({7,10})());
-  
+  x({4, 6})() = rot.getArr() * (mi+.5*(ma-mi)); //center (rotated back)
+  x({7, 10})() = conv_quat2arr(rot);
+  rndGauss(x({7, 10})(), .1, true);
+  x({7, 10})() /= length(x({7, 10})());
+
   if(verbose>1) {
     checkJacobianCP(F, x, 1e-4);
     checkHessianCP(F, x, 1e-4);
   }
-  
+
   OptConstrained opt(x, NoArr, F, -1, OPT(
                        stopTolerance = 1e-4,
                        stopFTolerance = 1e-3,
@@ -99,37 +96,37 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
                        maxStep=-1,
                        constrainedMethod = augmentedLag,
                        aulaMuInc = 1.1
-                                   ));
+                     ));
   opt.run();
-  
+
   if(verbose>1) {
     checkJacobianCP(F, x, 1e-4);
     checkHessianCP(F, x, 1e-4);
   }
-  
+
   f = opt.L.get_costs();
   g = opt.L.get_sumOfGviolations();
 }
 
 void computeOptimalSSBox(rai::Mesh& mesh, arr& x_ret, rai::Transformation& t_ret, const arr& X, uint trials, int verbose) {
   if(!X.N) { mesh.clear(); return; }
-  
-  arr x,x_best;
-  double f,g, f_best, g_best;
+
+  arr x, x_best;
+  double f, g, f_best, g_best;
   fitSSBox(x_best, f_best, g_best, X, verbose);
   for(uint k=1; k<trials; k++) {
     fitSSBox(x, f, g, X, verbose);
     if(g<g_best-1e-4 ||
-       (g<1e-4 && f<f_best)) { x_best=x; f_best=f; g_best=g; }
+        (g<1e-4 && f<f_best)) { x_best=x; f_best=f; g_best=g; }
   }
-  
+
   x = x_best;
-  
+
   //convert box wall coordinates to box width (incl radius)
   x(0) = 2.*(x(0)+x(3));
   x(1) = 2.*(x(1)+x(3));
   x(2) = 2.*(x(2)+x(3));
-  
+
   if(x_ret!=NoArr)
     x_ret=x;
 
@@ -137,20 +134,20 @@ void computeOptimalSSBox(rai::Mesh& mesh, arr& x_ret, rai::Transformation& t_ret
     cout <<"x=" <<x;
     cout <<"\nf = " <<f_best <<"\ng-violations = " <<g_best <<endl;
   }
-  
+
   rai::Transformation t;
   t.setZero();
-  t.pos.set(x({4,6}));
-  t.rot.set(x({7,-1}));
+  t.pos.set(x({4, 6}));
+  t.rot.set(x({7, -1}));
   t.rot.normalize();
   mesh.setSSBox(x(0), x(1), x(2), x(3));
   t.applyOnPointArray(mesh.V);
-  
+
   if(t_ret!=NoTransformation)
     t_ret = t;
 }
 
-void minimalConvexCore(arr& core, const arr& points, double radius, int verbose){
+void minimalConvexCore(arr& core, const arr& points, double radius, int verbose) {
   struct convexCoreProblem : ConstrainedProblem {
     const arr& X;
     const uintA& T;
@@ -169,7 +166,7 @@ void minimalConvexCore(arr& core, const arr& points, double radius, int verbose)
     }
     void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x) {
       uint n = X.d0;
-      arr _x = x.ref().reshape(-1,3);
+      arr _x = x.ref().reshape(-1, 3);
       //n inequalities on distances
       //single accumulated cost
 
@@ -181,15 +178,15 @@ void minimalConvexCore(arr& core, const arr& points, double radius, int verbose)
       //-- accumulated cost
       double cost = 0.;
       arr Jcost = zeros(x.N);
-      for(uint i=0;i<T.d0;i++){
-        int a=T(i,0), b=T(i,1), c=T(i,2);
+      for(uint i=0; i<T.d0; i++) {
+        int a=T(i, 0), b=T(i, 1), c=T(i, 2);
         {
           arr d = x[a]-x[b];
           double l = length(d);
           cost += l;
-          if(l>1e-6){
-            Jcost({3*a,3*a+2}) += d/l;
-            Jcost({3*b,3*b+2}) += -d/l;
+          if(l>1e-6) {
+            Jcost({3*a, 3*a+2}) += d/l;
+            Jcost({3*b, 3*b+2}) += -d/l;
             //            if(!!H){
             //              for(uint k=0;k<3;k++) for(uint l=0;l<3;l++){
             //                H(3*a+k,3*a+l) += d(k)*d(l)/(l*l);
@@ -201,18 +198,18 @@ void minimalConvexCore(arr& core, const arr& points, double radius, int verbose)
           arr d = x[c]-x[b];
           double l = length(d);
           cost += l;
-          if(l>1e-6){
-            Jcost({3*c,3*c+2}) += d/l;
-            Jcost({3*b,3*b+2}) += -d/l;
+          if(l>1e-6) {
+            Jcost({3*c, 3*c+2}) += d/l;
+            Jcost({3*b, 3*b+2}) += -d/l;
           }
         }
         {
           arr d = x[a]-x[c];
           double l = length(d);
           cost += l;
-          if(l>1e-6){
-            Jcost({3*a,3*a+2}) += d/l;
-            Jcost({3*c,3*c+2}) += -d/l;
+          if(l>1e-6) {
+            Jcost({3*a, 3*a+2}) += d/l;
+            Jcost({3*c, 3*c+2}) += -d/l;
           }
         }
       }
@@ -223,12 +220,12 @@ void minimalConvexCore(arr& core, const arr& points, double radius, int verbose)
       if(!!tt) tt(0) = OT_f;
 
       //-- radius inequalities
-      for(uint i=0;i<n;i++){
+      for(uint i=0; i<n; i++) {
         arr d = X[i] - _x[i];
         double l = length(d);
         phi(i+1) = l - radius;
-        if(l>1e-6){
-          if(!!J) J(i+1, {3*i,3*i+2}) += -d/l;
+        if(l>1e-6) {
+          if(!!J) J(i+1, {3*i, 3*i+2}) += -d/l;
         }
       }
 
@@ -243,9 +240,9 @@ void minimalConvexCore(arr& core, const arr& points, double radius, int verbose)
   uintA T;
   arr pts_hull = getHull(points, T);
 
-  if(!core){
+  if(!core) {
     core = pts_hull;
-  }else{
+  } else {
     core = getHull(core, T);
   }
 
@@ -266,7 +263,7 @@ void minimalConvexCore(arr& core, const arr& points, double radius, int verbose)
                        constrainedMethod = augmentedLag,
                        aulaMuInc = 1.1,
                        verbose = 3
-                                 ));
+                     ));
   opt.run();
 
   if(verbose>0) {
@@ -281,24 +278,24 @@ void minimalConvexCore(arr& core, const arr& points, double radius, int verbose)
   }
 }
 
-struct MeshEdge{
-  uint i,j;
+struct MeshEdge {
+  uint i, j;
   double d;
-  void write(ostream& os) const{ os <<i <<'-' <<j <<": " <<d; }
+  void write(ostream& os) const { os <<i <<'-' <<j <<": " <<d; }
 };
 stdOutPipe(MeshEdge)
 
-bool shorter(const MeshEdge& a, const MeshEdge& b){
+bool shorter(const MeshEdge& a, const MeshEdge& b) {
   return a.d<b.d;
 }
 
-struct MeshCluster{
+struct MeshCluster {
   arr center;
   double radius;
   uintA points;
 };
 
-void RitterAlgorithm(arr& center, double& radius, const arr& pts){
+void RitterAlgorithm(arr& center, double& radius, const arr& pts) {
   arr Pts = ~pts;
   int minx=Pts[0].argmin(), maxx=Pts[0].argmax(),
       miny=Pts[1].argmin(), maxy=Pts[1].argmax(),
@@ -309,11 +306,10 @@ void RitterAlgorithm(arr& center, double& radius, const arr& pts){
 
   int min = minx;
   int max = maxx;
-  if (dist2y > dist2x && dist2y > dist2z) {
+  if(dist2y > dist2x && dist2y > dist2z) {
     min = miny;
     max = maxy;
-  }
-  else if (dist2z > dist2x && dist2z > dist2y) {
+  } else if(dist2z > dist2x && dist2z > dist2y) {
     min = minz;
     max = maxz;
   }
@@ -321,20 +317,20 @@ void RitterAlgorithm(arr& center, double& radius, const arr& pts){
   center = .5 * (pts[min] + pts[max]);
   radius = 0.;
 
-  for(uint i=0; i<pts.d0; i++){
+  for(uint i=0; i<pts.d0; i++) {
     double r = length(pts[i]-center);
     if(r>radius) radius = r;
   }
 }
 
-void minimalConvexCore2(arr& core, const arr& org_pts, double max_radius, int verbose){
+void minimalConvexCore2(arr& core, const arr& org_pts, double max_radius, int verbose) {
   arr pts = getHull(org_pts);
 
   rai::Array<MeshCluster> clusters;
 
   //-- initialize
   clusters.resize(pts.d0);
-  for(uint i=0;i<clusters.N;i++){
+  for(uint i=0; i<clusters.N; i++) {
     clusters(i).center = pts[i];
     clusters(i).radius = 0.;
     clusters(i).points = {i};
@@ -342,8 +338,8 @@ void minimalConvexCore2(arr& core, const arr& org_pts, double max_radius, int ve
 
   bool changes=false;
   //-- merge
-  for(uint i=0;;i++){
-    if(i>=clusters.N){
+  for(uint i=0;; i++) {
+    if(i>=clusters.N) {
       if(!changes) break;
       i = 0;
       changes=false;
@@ -353,23 +349,23 @@ void minimalConvexCore2(arr& core, const arr& org_pts, double max_radius, int ve
 
     double min_d=0.;
     int min_j=-1;
-    for(uint j=0;j<clusters.N;j++){
-      if(j!=i){
+    for(uint j=0; j<clusters.N; j++) {
+      if(j!=i) {
         double d=length(clusters(j).center-c.center);
-        if(min_j<0 || d<min_d){ min_d=d; min_j=j; }
+        if(min_j<0 || d<min_d) { min_d=d; min_j=j; }
       }
     }
 
     //union
     uintA merge_points = c.points;
     merge_points.setAppend(clusters(min_j).points);
-    arr merge_pts(merge_points.N,3);
-    for(uint j=0;j<merge_points.N;j++) merge_pts[j] = pts[merge_points(j)];
+    arr merge_pts(merge_points.N, 3);
+    for(uint j=0; j<merge_points.N; j++) merge_pts[j] = pts[merge_points(j)];
 
     arr merge_center;
     double merge_radius;
     RitterAlgorithm(merge_center, merge_radius, merge_pts);
-    if(merge_radius<max_radius){ //do it! merge!
+    if(merge_radius<max_radius) { //do it! merge!
       LOG(1) <<"merging clusters! #clusters: " <<clusters.N;
       c.center = merge_center;
       c.radius = merge_radius;
@@ -381,23 +377,21 @@ void minimalConvexCore2(arr& core, const arr& org_pts, double max_radius, int ve
   }
 
   core.resize(clusters.N, 3);
-  for(uint i=0;i<core.d0;i++) core[i] = clusters(i).center;
+  for(uint i=0; i<core.d0; i++) core[i] = clusters(i).center;
 }
 
-
-void minimalConvexCore3(arr& core, const arr& org_pts, double max_radius, int verbose){
+void minimalConvexCore3(arr& core, const arr& org_pts, double max_radius, int verbose) {
   arr pts = getHull(org_pts);
 
   uint k=20;
-  arr centers(k,3);
+  arr centers(k, 3);
   uintA labels(pts.d0);
   HALT("obsolete");
   //kmeans(centers.p, pts.p, labels.p, 3, pts.d0, k, 100, 3);
-  
+
 
   core = centers;
 }
-
 
 struct LinearProgram : ConstrainedProblem {
   arr c;
@@ -426,22 +420,22 @@ struct LinearProgram : ConstrainedProblem {
   }
 };
 
-double sphereReduceConvex(rai::Mesh& M, double radius, int verbose){
+double sphereReduceConvex(rai::Mesh& M, double radius, int verbose) {
   //-- construct H-polytope (normals and offsets)
   M.makeConvexHull();
   arr V_orig = M.V;
   M.computeNormals();
   uint nIneq = M.Tn.d0;
   arr G(nIneq, 3), g(nIneq);
-  for(uint i=0;i<nIneq;i++){
+  for(uint i=0; i<nIneq; i++) {
     arr n = M.Tn[i];
-    arr p = M.V[M.T(i,0)];
+    arr p = M.V[M.T(i, 0)];
     G[i] = n;
-    g(i) = -scalarProduct(n,p)+radius;
+    g(i) = -scalarProduct(n, p)+radius;
   }
 
   //-- Define LP
-  for(uint i=0;i<M.V.d0;i++){
+  for(uint i=0; i<M.V.d0; i++) {
     arr x = M.V[i];
     arr c = -M.Vn[i];
     LinearProgram LP(c, G, g);
@@ -450,7 +444,7 @@ double sphereReduceConvex(rai::Mesh& M, double radius, int verbose){
   }
 
   double r = radius;
-  for(uint i=0;i<M.V.d0;i++){
+  for(uint i=0; i<M.V.d0; i++) {
     double l = length(M.V[i] - V_orig[i]);
     if(l>r) r=l;
   }
@@ -469,25 +463,25 @@ struct FitSphereProblem : ConstrainedProblem {
     CHECK_EQ(x.N, 4, "");  //x,y,z,radius
     phi.resize(1+X.d0);
     if(!!tt) { tt.resize(1+X.d0); tt=OT_ineq; }
-    if(!!J) {  J.resize(1+X.d0,4); J.setZero(); }
-    if(!!H) {  H.resize(4,4); H.setZero(); }
+    if(!!J) {  J.resize(1+X.d0, 4); J.setZero(); }
+    if(!!H) {  H.resize(4, 4); H.setZero(); }
 
     //-- the radius objective
     phi(0) = x(3);
     if(!!tt) tt(0) = OT_f;
-    if(!!J)  J(0,3) = 1.;
+    if(!!J)  J(0, 3) = 1.;
     if(!!H)  {}//zero
 
     //-- all constraints
-    arr c = x({0,2});
+    arr c = x({0, 2});
     double r = x(3);
     for(uint i=0; i<X.d0; i++) {
       arr d = c - X[i];
       double dlen = length(d);
       phi(1+i) = dlen - r;
-      if(!!J){
-        J(1+i,{0,2}) = d / dlen;
-        J(1+i,3) = -1.;
+      if(!!J) {
+        J(1+i, {0, 2}) = d / dlen;
+        J(1+i, 3) = -1.;
       }
     }
   }
@@ -500,26 +494,26 @@ struct FitCapsuleProblem : ConstrainedProblem {
     CHECK_EQ(x.N, 7, "");  //x,y,z, x,y,z, radius
     phi.resize(2+X.d0);
     if(!!tt) { tt.resize(2+X.d0); tt=OT_ineq; }
-    if(!!J) {  J.resize(2+X.d0,7); J.setZero(); }
-    if(!!H) {  H.resize(7,7); H.setZero(); }
+    if(!!J) {  J.resize(2+X.d0, 7); J.setZero(); }
+    if(!!H) {  H.resize(7, 7); H.setZero(); }
 
     //-- the radius objective
     phi(0) = 4.*x(6);
     if(!!tt) tt(0) = OT_f;
-    if(!!J)  J(0,6) = 4.;
+    if(!!J)  J(0, 6) = 4.;
     if(!!H)  {}//zero
 
     //-- the capsule length objective
-    arr a = x({0,2});
-    arr b = x({3,5});
+    arr a = x({0, 2});
+    arr b = x({3, 5});
     double l = length(a-b);
     phi(0) += l;
-    if(!!J){
-      J(0, {0,2}) += (a-b)/l;
-      J(0, {3,5}) += (b-a)/l;
+    if(!!J) {
+      J(0, {0, 2}) += (a-b)/l;
+      J(0, {3, 5}) += (b-a)/l;
     }
     if(!!H) {
-      arr B(3,3);
+      arr B(3, 3);
       B.setId();
       B *= 1./l;
       B -= ((a-b)^(a-b)) / (l*l*l);
@@ -530,25 +524,25 @@ struct FitCapsuleProblem : ConstrainedProblem {
 
     //-- all constraints
     double scale = 1e1;
-    arr pts2 = x({0,5});
-    pts2.reshape(2,3);
+    arr pts2 = x({0, 5});
+    pts2.reshape(2, 3);
     double r = x(6);
     for(uint i=0; i<X.d0; i++) {
       double d, s;
       arr p2, normal;
-      d = coll_1on2(p2, normal, s, X[i].reshape(1,3), pts2);
-      if(d>1e-8){
+      d = coll_1on2(p2, normal, s, X[i].reshape(1, 3), pts2);
+      if(d>1e-8) {
         normal *= -scale;
         checkNan(normal);
         phi(2+i) = scale*(d - r);
-        if(!!J){
-          if(s<=0.){
-            J(2+i, {0,2}) = normal;
-          } else if(s>=1.){
-            J(2+i, {3,5}) = normal;
-          } else{
-            J(2+i, {0,2}) = (1.-s)*normal;
-            J(2+i, {3,5}) = s*normal;
+        if(!!J) {
+          if(s<=0.) {
+            J(2+i, {0, 2}) = normal;
+          } else if(s>=1.) {
+            J(2+i, {3, 5}) = normal;
+          } else {
+            J(2+i, {0, 2}) = (1.-s)*normal;
+            J(2+i, {3, 5}) = s*normal;
           }
           J(2+i, 6) = -scale;
         }
@@ -559,17 +553,17 @@ struct FitCapsuleProblem : ConstrainedProblem {
   }
 };
 
-void optimalSphere(arr& core, uint num, const arr& org_pts, double& radius, int verbose){
+void optimalSphere(arr& core, uint num, const arr& org_pts, double& radius, int verbose) {
   arr pts = getHull(org_pts);
 
   LOG(1) <<"merging with radius " <<radius;
 
   //initialization
   arr x;
-  if(num==1){
+  if(num==1) {
     RitterAlgorithm(x, radius, pts);
-  }else if(num==2){
-    x.resize(2,3);
+  } else if(num==2) {
+    x.resize(2, 3);
     x[0] = pts[rnd(pts.d0)];
     x[1] = pts[rnd(pts.d0)];
     radius = .1;
@@ -594,7 +588,7 @@ void optimalSphere(arr& core, uint num, const arr& org_pts, double& radius, int 
                        maxStep=-1,
                        constrainedMethod = augmentedLag,
                        aulaMuInc = 1.1
-                                   ));
+                     ));
 #else
   OptPrimalDual opt(x, NoArr, *F, 3, OPT(
                       stopTolerance = 1e-5,
@@ -611,8 +605,8 @@ void optimalSphere(arr& core, uint num, const arr& org_pts, double& radius, int 
     checkHessianCP(*F, x, 1e-4);
   }
 
-  core = x({0,x.N-2});
-  core.reshape(-1,3);
+  core = x({0, x.N-2});
+  core.reshape(-1, 3);
   radius = x.last();
 
   double f = opt.L.get_costs();

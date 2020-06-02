@@ -1,13 +1,12 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifndef RAI_switch_h
-#define RAI_switch_h
+#pragma once
 
 #include "frame.h"
 
@@ -35,7 +34,7 @@ struct KinematicSwitch {
   Enum<SwitchInitializationType> init;
   int timeOfApplication;
   int fromId, toId;
-  rai::Transformation jA,jB;
+  rai::Transformation jA, jB;
   KinematicSwitch();
   KinematicSwitch(SwitchType op, JointType type,
                   int aFrame, int bFrame,
@@ -49,16 +48,14 @@ struct KinematicSwitch {
                   int _timeOfApplication=0,
                   const rai::Transformation& jFrom=NoTransformation, const rai::Transformation& jTo=NoTransformation);
   void setTimeOfApplication(double time, bool before, int stepsPerPhase, uint T);
-  void apply(Configuration& K);
+  Frame* apply(Configuration& K);
   rai::String shortTag(const Configuration* G) const;
-  void write(std::ostream& os, rai::Configuration *K=NULL) const;
+  void write(std::ostream& os, rai::Configuration* K=nullptr) const;
 };
 
 } // namespace rai
 
 stdOutPipe(rai::KinematicSwitch)
-
-#endif
 
 int conv_time2step(double time, uint stepsPerPhase);
 double conv_step2time(int step, uint stepsPerPhase);

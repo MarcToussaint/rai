@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -26,19 +26,19 @@ template<> const char* rai::Enum<FrameFlagType>::names []= {
   "FL_xPosVelCosts",
   "FL_kinematic",
   "FL_something",
-  NULL
+  nullptr
 };
 
 //===========================================================================
 
-void rai::Flag::apply(rai::Configuration &K) {
-  rai::Frame &a = *K.frames(frameId);
+void rai::Flag::apply(rai::Configuration& K) {
+  rai::Frame& a = *K.frames(frameId);
   if(flag.x==FL_clear) { a.flags=0; return; }
   if(setTrue) a.flags |= (1<<flag.x);
   else a.flags &= ~(1<<flag.x);
 }
 
-void rai::Flag::write(std::ostream &os, rai::Configuration *K) const {
+void rai::Flag::write(std::ostream& os, rai::Configuration* K) const {
   os <<"FLAG '" <<flag<<"'"
      <<"  frame=" <<frameId;
   if(K) os <<"'" <<K->frames(frameId)->name <<"'";

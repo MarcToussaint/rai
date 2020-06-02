@@ -8,7 +8,8 @@
 
 .PRECIOUS: %.o
 
-BASE_REAL = $(shell realpath $(BASE))
+BASE_ORIGINAL := $(BASE)
+BASE := $(shell realpath $(BASE))
 
 
 ################################################################################
@@ -49,7 +50,12 @@ all: $(OUTPUT) #this is for qtcreator, which by default uses the 'all' target
 #
 ################################################################################
 
-ifneq ("$(wildcard $(BASE)/../config.mk)","")
+ifneq ("$(wildcard localConfig.mk)","")
+
+$(BASE)/config.mk:: localConfig.mk
+	cp $< $@
+
+else ifneq ("$(wildcard $(BASE)/../config.mk)","")
 
 $(BASE)/config.mk:: $(BASE)/../config.mk
 	cp $< $@
@@ -82,11 +88,11 @@ UIC = uic
 YACC = bison -d
 
 LINK	= $(CXX)
-CPATHS	+= $(BASE)/rai
+CPATHS	+= $(BASE)/rai $(HOME)/opt/include
 ifdef BASE2
 CPATHS	+= $(BASE2)
 endif
-LPATHS	+= $(BASE_REAL)/lib /usr/local/lib
+LPATHS	+= $(BASE)/lib $(HOME)/opt/lib /usr/local/lib
 LIBS += -lrt
 SHAREFLAG = -shared #-Wl,--warn-unresolved-symbols #-Wl,--no-allow-shlib-undefined
 
@@ -103,10 +109,10 @@ OPTIM = debug
 endif
 
 ifeq ($(OPTIM),debug)
-CXXFLAGS := -g -march=native -Wall $(CXXFLAGS)#-Wno-int-to-pointer-cast#-Wno-invalid-offsetof
+CXXFLAGS := -g -Wall $(CXXFLAGS)#-Wno-int-to-pointer-cast#-Wno-invalid-offsetof
 endif
 ifeq ($(OPTIM),fast_debug)
-CXXFLAGS := -g -O3 -march=native -Wall $(CXXFLAGS)
+CXXFLAGS := -g -O3 -Wall $(CXXFLAGS)
 endif
 ifeq ($(OPTIM),penibel)
 CXXFLAGS := -g -Wall -Wextra $(CXXFLAGS)
@@ -192,7 +198,7 @@ cleanLocks: force
 
 cleanLibs: force
 	@echo "   *** cleanLibs  " $(PWD)
-	@find $(BASE)/rai $(BASE2) \( -type f -or -type l \) \( -name 'lib*.so' -or -name 'lib*.a' \)  -delete -print
+	@find $(BASE)/rai $(BASE)/lib $(BASE2) \( -type f -or -type l \) \( -name 'lib*.so' -or -name 'lib*.a' \)  -delete -print
 
 cleanAll: cleanLocks cleanDepends force
 	@echo "   *** cleanAll   " $(PWD)
@@ -222,9 +228,9 @@ info: force
 	@echo "     " "environment configuration (see make-generic file)";
 	@echo ----------------------------------------; echo
 	@echo "  PWD =" "$(PWD)"
+	@echo "  BASE_ORIGINAL =" "$(BASE_ORIGINAL)"
 	@echo "  BASE =" "$(BASE)"
 	@echo "  BASE2 =" "$(BASE2)"
-	@echo "  BASE_REAL =" "$(BASE_REAL)"
 	@echo "  NAME =" "$(NAME)"
 	@echo "  LIBPATH =" "$(LIBPATH)"
 	@echo "  EXTERNALS =" "$(EXTERNALS)"
@@ -370,6 +376,9 @@ inPath_makeLib/Hardware_%: $(BASE2)/Hardware/% $(PREOBJS)
 	+@-$(BASE)/build/make-path.sh $< libHardware_$*.so
 
 inPath_makeLib/%: $(BASE)/rai/% $(PREOBJS)
+	+@-$(BASE)/build/make-path.sh $< lib$*.so
+
+inPath_makeLib/%: $(BASE)/rai/contrib/% $(PREOBJS)
 	+@-$(BASE)/build/make-path.sh $< lib$*.so
 
 ifdef BASE2

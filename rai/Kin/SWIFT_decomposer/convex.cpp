@@ -52,10 +52,10 @@ using std::cerr;
 
 
 
-#include <Kin/SWIFT/SWIFT.h>
-#include <Kin/SWIFT/SWIFT_common.h>
-#include <Kin/SWIFT/SWIFT_mesh.h>
-#include <Kin/SWIFT/SWIFT_mesh_utils.h>
+#include "../SWIFT/SWIFT.h"
+#include "../SWIFT/SWIFT_common.h"
+#include "../SWIFT/SWIFT_mesh.h"
+#include "../SWIFT/SWIFT_mesh_utils.h"
 
 #include "cvxutils.h"
 #include "convex.h"
@@ -124,7 +124,7 @@ int Decompose_DFS( SWIFT_Tri_Mesh* m, SWIFT_Array<int>& piece_ids,
     // The current convex hull
     SWIFT_Array<SWIFT_Tri_Face> chull;
     // Pointers to faces indicating whether the face on the convex hull is a
-    // model face or a virtual face (entry is NULL)
+    // model face or a virtual face (entry is nullptr)
     SWIFT_Array<SWIFT_Tri_Face*> cfs;
     // Which faces on the original model are allowed to be added
     SWIFT_Array<bool> fallowed;
@@ -309,7 +309,7 @@ int Decompose_DFS( SWIFT_Tri_Mesh* m, SWIFT_Array<int>& piece_ids,
 
         // Copy the virtual faces for this piece
         for( j = 0, k = 0; j < chull.Length(); j++ ) {
-            if( chull[j].Unmarked() && cfs[j] == NULL ) {
+            if( chull[j].Unmarked() && cfs[j] == nullptr ) {
                 k++;
             }
         }
@@ -317,7 +317,7 @@ int Decompose_DFS( SWIFT_Tri_Mesh* m, SWIFT_Array<int>& piece_ids,
 
         vfs[id].Create( k );
         for( j = 0, k = 0; j < chull.Length(); j++ ) {
-            if( chull[j].Unmarked() && cfs[j] == NULL ) {
+            if( chull[j].Unmarked() && cfs[j] == nullptr ) {
                 vfs[id][k].Set_Normal_N( chull[j].Normal() );
                 vfs[id][k].Set_Distance( chull[j].Distance() );
                 vfs[id][k].Edge1().Set_Direction_N(
@@ -527,12 +527,12 @@ int Decompose_BFS( SWIFT_Tri_Mesh* m, SWIFT_Array<int>& piece_ids,
         while( front < qfs.Length() ) {
 
             if( qmap[ m->Face_Id( qfs[front] ) ] >= 0 ) {
-                if( qfs[front]->Edge1().Twin() != NULL &&
+                if( qfs[front]->Edge1().Twin() != nullptr &&
                     qfs_parents[front] == qfs[front]->Edge1().Twin()->Adj_Face()
                 ) {
                     e = qfs[front]->Edge1().Twin();
                     v = qfs[front]->Edge3().Origin();
-                } else if( qfs[front]->Edge2().Twin() != NULL &&
+                } else if( qfs[front]->Edge2().Twin() != nullptr &&
                     qfs_parents[front] == qfs[front]->Edge2().Twin()->Adj_Face()
                 ) {
                     e = qfs[front]->Edge2().Twin();
@@ -626,7 +626,7 @@ int Decompose_BFS( SWIFT_Tri_Mesh* m, SWIFT_Array<int>& piece_ids,
 
         // Copy the virtual faces for this piece
         for( j = 0, k = 0; j < chull.Length(); j++ ) {
-            if( chull[j].Unmarked() && cfs[j] == NULL ) {
+            if( chull[j].Unmarked() && cfs[j] == nullptr ) {
                 k++;
             }
         }
@@ -634,7 +634,7 @@ int Decompose_BFS( SWIFT_Tri_Mesh* m, SWIFT_Array<int>& piece_ids,
 
         vfs[id].Create( k );
         for( j = 0, k = 0; j < chull.Length(); j++ ) {
-            if( chull[j].Unmarked() && cfs[j] == NULL ) {
+            if( chull[j].Unmarked() && cfs[j] == nullptr ) {
                 vfs[id][k].Set_Normal_N( chull[j].Normal() );
                 vfs[id][k].Set_Distance( chull[j].Distance() );
                 vfs[id][k].Edge1().Set_Direction_N(
@@ -772,7 +772,7 @@ int Decompose_Cresting_BFS( SWIFT_Tri_Mesh* m, SWIFT_Array<int>& piece_ids,
     if( !qmap_idx.Empty() ) {
         // This is a convex object
         for( i = 0; i < qmap_idx.Max_Length(); i++ ) {
-            if( m->Faces()[qmap_idx[i]].Edge1().Twin() != NULL ) {
+            if( m->Faces()[qmap_idx[i]].Edge1().Twin() != nullptr ) {
                 k = m->Face_Id(
                         m->Faces()[qmap_idx[i]].Edge1().Twin()->Adj_Face() );
                 if( lengths[k] == -1 ) {
@@ -780,7 +780,7 @@ int Decompose_Cresting_BFS( SWIFT_Tri_Mesh* m, SWIFT_Array<int>& piece_ids,
                     qmap_idx.Add( k );
                 }
             }
-            if( m->Faces()[qmap_idx[i]].Edge2().Twin() != NULL ) {
+            if( m->Faces()[qmap_idx[i]].Edge2().Twin() != nullptr ) {
                 k = m->Face_Id(
                         m->Faces()[qmap_idx[i]].Edge2().Twin()->Adj_Face() );
                 if( lengths[k] == -1 ) {
@@ -788,7 +788,7 @@ int Decompose_Cresting_BFS( SWIFT_Tri_Mesh* m, SWIFT_Array<int>& piece_ids,
                     qmap_idx.Add( k );
                 }
             }
-            if( m->Faces()[qmap_idx[i]].Edge3().Twin() != NULL ) {
+            if( m->Faces()[qmap_idx[i]].Edge3().Twin() != nullptr ) {
                 k = m->Face_Id(
                         m->Faces()[qmap_idx[i]].Edge3().Twin()->Adj_Face() );
                 if( lengths[k] == -1 ) {
@@ -882,12 +882,12 @@ int Decompose_Cresting_BFS( SWIFT_Tri_Mesh* m, SWIFT_Array<int>& piece_ids,
         while( front < qfs.Length() ) {
 
             if( qmap[ m->Face_Id( qfs[front] ) ] >= 0 ) {
-                if( qfs[front]->Edge1().Twin() != NULL &&
+                if( qfs[front]->Edge1().Twin() != nullptr &&
                     qfs_parents[front] == qfs[front]->Edge1().Twin()->Adj_Face()
                 ) {
                     e = qfs[front]->Edge1().Twin();
                     v = qfs[front]->Edge3().Origin();
-                } else if( qfs[front]->Edge2().Twin() != NULL &&
+                } else if( qfs[front]->Edge2().Twin() != nullptr &&
                     qfs_parents[front] == qfs[front]->Edge2().Twin()->Adj_Face()
                 ) {
                     e = qfs[front]->Edge2().Twin();
@@ -980,7 +980,7 @@ int Decompose_Cresting_BFS( SWIFT_Tri_Mesh* m, SWIFT_Array<int>& piece_ids,
 
         // Copy the virtual faces for this piece
         for( j = 0, k = 0; j < chull.Length(); j++ ) {
-            if( chull[j].Unmarked() && cfs[j] == NULL ) {
+            if( chull[j].Unmarked() && cfs[j] == nullptr ) {
                 k++;
             }
         }
@@ -988,7 +988,7 @@ int Decompose_Cresting_BFS( SWIFT_Tri_Mesh* m, SWIFT_Array<int>& piece_ids,
 
         vfs[id].Create( k );
         for( j = 0, k = 0; j < chull.Length(); j++ ) {
-            if( chull[j].Unmarked() && cfs[j] == NULL ) {
+            if( chull[j].Unmarked() && cfs[j] == nullptr ) {
                 vfs[id][k].Set_Normal_N( chull[j].Normal() );
                 vfs[id][k].Set_Distance( chull[j].Distance() );
                 vfs[id][k].Edge1().Set_Direction_N(

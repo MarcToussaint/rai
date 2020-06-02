@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -8,8 +8,8 @@
 
 #include "F_geometrics.h"
 #include "F_PairCollision.h"
+#include "TM_default.h"
 #include "frame.h"
-
 //===========================================================================
 
 TM_AboveBox::TM_AboveBox(int iShape, int jShape, double _margin)
@@ -18,22 +18,22 @@ TM_AboveBox::TM_AboveBox(int iShape, int jShape, double _margin)
 
 TM_AboveBox::TM_AboveBox(const rai::Configuration& K, const char* iShapeName, const char* jShapeName, double _margin)
   :i(-1), j(-1), margin(_margin) {
-  rai::Frame *a = iShapeName ? K.getFrameByName(iShapeName):NULL;
-  rai::Frame *b = jShapeName ? K.getFrameByName(jShapeName):NULL;
+  rai::Frame* a = iShapeName ? K.getFrameByName(iShapeName):nullptr;
+  rai::Frame* b = jShapeName ? K.getFrameByName(jShapeName):nullptr;
   if(a) i=a->ID;
   if(b) j=b->ID;
 }
 
 void TM_AboveBox::phi(arr& y, arr& J, const rai::Configuration& K) {
-  rai::Shape *pnt=K.frames(i)->shape;
-  rai::Shape *box=K.frames(j)->shape;
-  CHECK(pnt && box,"I need shapes!");
+  rai::Shape* pnt=K.frames(i)->shape;
+  rai::Shape* box=K.frames(j)->shape;
+  CHECK(pnt && box, "I need shapes!");
 //  if(box->type!=rai::ST_ssBox){ //switch roles
 //    rai::Shape *z=pnt;
 //    pnt=box; box=z;
 //  }
-  CHECK_EQ(box->type(), rai::ST_ssBox,"the 2nd shape needs to be a box"); //s1 should be the board
-  arr pos,posJ;
+  CHECK_EQ(box->type(), rai::ST_ssBox, "the 2nd shape needs to be a box"); //s1 should be the board
+  arr pos, posJ;
   K.kinematicsRelPos(pos, posJ, &pnt->frame, NoVector, &box->frame, NoVector);
 #if 0
   arr range(3);
@@ -70,12 +70,12 @@ void TM_AboveBox::phi(arr& y, arr& J, const rai::Configuration& K) {
   }
 }
 
-rai::String TM_AboveBox::shortTag(const rai::Configuration &G) {
-    return STRING("AboveBox:"<<(i<0?"WORLD":G.frames(i)->name) <<':' <<(j<0?"WORLD":G.frames(j)->name));
+rai::String TM_AboveBox::shortTag(const rai::Configuration& G) {
+  return STRING("AboveBox:"<<(i<0?"WORLD":G.frames(i)->name) <<':' <<(j<0?"WORLD":G.frames(j)->name));
 }
 
-Graph TM_AboveBox::getSpec(const rai::Configuration& K){
-    return Graph({ {"feature", "above"}, {"o1", K.frames(i)->name}, {"o2", K.frames(j)->name}});
+rai::Graph TM_AboveBox::getSpec(const rai::Configuration& K) {
+  return rai::Graph({ {"feature", "above"}, {"o1", K.frames(i)->name}, {"o2", K.frames(j)->name}});
 }
 
 //===========================================================================
@@ -84,21 +84,21 @@ TM_InsideBox::TM_InsideBox(int iShape, int jShape)
   : i(iShape), j(jShape), margin(.01) {
 }
 
-TM_InsideBox::TM_InsideBox(const rai::Configuration& G, const char* iShapeName, const rai::Vector &_ivec, const char* jShapeName, double _margin)
+TM_InsideBox::TM_InsideBox(const rai::Configuration& G, const char* iShapeName, const rai::Vector& _ivec, const char* jShapeName, double _margin)
   :i(-1), j(-1), margin(_margin) {
-  rai::Frame *a = iShapeName ? G.getFrameByName(iShapeName):NULL;
-  rai::Frame *b = jShapeName ? G.getFrameByName(jShapeName):NULL;
+  rai::Frame* a = iShapeName ? G.getFrameByName(iShapeName):nullptr;
+  rai::Frame* b = jShapeName ? G.getFrameByName(jShapeName):nullptr;
   if(a) i=a->ID;
   if(b) j=b->ID;
   if(!!_ivec) ivec=_ivec; else ivec.setZero();
 }
 
 void TM_InsideBox::phi(arr& y, arr& J, const rai::Configuration& G) {
-  rai::Shape *pnt=G.frames(i)->shape;
-  rai::Shape *box=G.frames(j)->shape;
-  CHECK(pnt && box,"I need shapes!");
-  CHECK(box->type()==rai::ST_ssBox || box->type()==rai::ST_box,"the 2nd shape needs to be a box"); //s1 should be the board
-  arr pos,posJ;
+  rai::Shape* pnt=G.frames(i)->shape;
+  rai::Shape* box=G.frames(j)->shape;
+  CHECK(pnt && box, "I need shapes!");
+  CHECK(box->type()==rai::ST_ssBox || box->type()==rai::ST_box, "the 2nd shape needs to be a box"); //s1 should be the board
+  arr pos, posJ;
   G.kinematicsRelPos(pos, posJ, &pnt->frame, ivec, &box->frame, NoVector);
   arr range = box->size();
   range *= .5;
@@ -126,11 +126,11 @@ void TM_InsideBox::phi(arr& y, arr& J, const rai::Configuration& G) {
 //===========================================================================
 
 void TM_InsideLine::phi(arr& y, arr& J, const rai::Configuration& G) {
-  rai::Shape *pnt=G.frames(i)->shape;
-  rai::Shape *box=G.frames(j)->shape;
-  CHECK(pnt && box,"I need shapes!");
-  CHECK(box->type()==rai::ST_capsule,"the 2nd shape needs to be a capsule"); //s1 should be the board
-  arr pos,posJ;
+  rai::Shape* pnt=G.frames(i)->shape;
+  rai::Shape* box=G.frames(j)->shape;
+  CHECK(pnt && box, "I need shapes!");
+  CHECK(box->type()==rai::ST_capsule, "the 2nd shape needs to be a capsule"); //s1 should be the board
+  arr pos, posJ;
   G.kinematicsRelPos(pos, posJ, &pnt->frame, NoVector, &box->frame, NoVector);
   double range = box->size(-2);
   range *= .5;
@@ -149,11 +149,30 @@ void TM_InsideLine::phi(arr& y, arr& J, const rai::Configuration& G) {
 
 //===========================================================================
 
-void F_GraspOppose::phi(arr& y, arr& J, const rai::Configuration& K){
-    Value D1 = TM_PairCollision(i, k, TM_PairCollision::_vector, true)(K);
-    Value D2 = TM_PairCollision(j, k, TM_PairCollision::_vector, true)(K);
+void F_GraspOppose::phi(arr& y, arr& J, const rai::Configuration& K) {
+  Value D1 = F_PairCollision(i, k, F_PairCollision::_vector, true)(K);
+  Value D2 = F_PairCollision(j, k, F_PairCollision::_vector, true)(K);
 
-    y = D1.y + D2.y;
-    if(!!J) J = D1.J + D2.J;
+  y = D1.y + D2.y;
+  if(!!J) J = D1.J + D2.J;
+
+  if(centering){
+    normalizeWithJac(D1.y, D1.J);
+    normalizeWithJac(D2.y, D2.J);
+
+    Value P1 = TM_Default(TMT_pos, i)(K);
+    Value P2 = TM_Default(TMT_pos, j)(K);
+
+
+    arr P = 2.*eye(3) - (D1.y*~D1.y) - (D2.y*~D2.y);
+    arr p = P2.y - P1.y;
+    double scale = 1e-1;
+    y.append( scale * (P * p) );
+    if(!!J){
+      arr Jc = P * (P2.J-P1.J) - (D1.J*scalarProduct(D1.y,p) + D1.y*(~p*D1.J)) - (D2.J*scalarProduct(D2.y,p) + D2.y*(~p*D2.J));
+      J.append( scale * Jc );
+    }
+
+  }
 }
 

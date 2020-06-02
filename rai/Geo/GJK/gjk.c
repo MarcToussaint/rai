@@ -208,13 +208,13 @@ static void add_simplex_vertex( struct simplex_point * s, int pos,
  * of the) distance between the witness points.
  *
  * The 7th parameter is a pointer to a simplex_point structure.  If
- * this is non-NULL then a special form of the witness points is
+ * this is non-nullptr then a special form of the witness points is
  * stored in the structure by the routine, suitable for passing to
  * this routine as seed points for any further calls involving these
  * two objects. The 8th parameter is a flag, which when set tells the
  * routine to use the given simplex_point structure instance as as
  * seed, otherwise it just uses any seed.  (If the 7th parameter is
- * NULL then no harm is done.)
+ * nullptr then no harm is done.)
  *
  * Note that with this version one field of the simplex_point structure
  * can be used to pass back the confidence region for the routine: when
@@ -596,7 +596,7 @@ static void compute_subterms( struct simplex_point * simp) {
  
 static int default_distance( struct simplex_point * simplex) {
 
-   int s, j, k, ok, size;
+   int s, j, k, ok=0, size;
 
    size = simplex->npts;
 

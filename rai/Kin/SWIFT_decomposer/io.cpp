@@ -14,9 +14,9 @@ using std::cerr;
 using std::ios;
 using std::setprecision;
 
-#include <Kin/SWIFT/SWIFT.h>
-#include <Kin/SWIFT/SWIFT_mesh.h>
-#include <Kin/SWIFT/SWIFT_fileio.h>
+#include "../SWIFT/SWIFT.h"
+#include "../SWIFT/SWIFT_mesh.h"
+#include "../SWIFT/SWIFT_fileio.h"
 
 typedef long int intptr_t;
 
@@ -32,7 +32,7 @@ bool Load_File( const char* filename, SWIFT_Tri_Mesh*& mesh,
     SWIFT_FILE_TYPE ft;
 
     // Create the mesh
-    if( mesh != NULL ) {
+    if( mesh != nullptr ) {
         delete mesh;
     }
 
@@ -56,10 +56,10 @@ bool Load_File( const char* filename, SWIFT_Tri_Mesh*& mesh,
                         DEFAULT_ORIENTATION, DEFAULT_TRANSLATION, 1.0, split );
         break;
     case FT_OTHER:
-      { SWIFT_Real* vs = NULL;
-        int* fs = NULL;
+      { SWIFT_Real* vs = nullptr;
+        int* fs = nullptr;
         int vn, fn;
-        int* fv = NULL;
+        int* fv = nullptr;
 
         if( !global_scene->get_File_Read_Dispatcher()->Read( filename, vs, fs, vn, fn, fv ) ) {
             // Delete everything
@@ -102,7 +102,7 @@ bool Save_Model_File( const char* filename, SWIFT_Tri_Mesh* m )
     ofstream fout;
 
     // Try to open the file
-    if( filename == NULL ) {
+    if( filename == nullptr ) {
         cerr << "Error: Invalid filename given to write model" << endl;
         return false;
     }
@@ -153,7 +153,7 @@ bool Save_Decomposition_File( const char* filename, SWIFT_Tri_Mesh* m,
     int* fs;
 
     // Try to open the file
-    if( filename == NULL ) {
+    if( filename == nullptr ) {
         cerr << "Error: Invalid filename given to write decomp" << endl;
         return false;
     }
@@ -294,7 +294,7 @@ bool Save_Hierarchy_File( const char* filename, SWIFT_Tri_Mesh* m,
     ofstream fout;
 
     // Try to open the file
-    if( filename == NULL ) {
+    if( filename == nullptr ) {
         cerr << "Error: Invalid filename given to write model" << endl;
         return false;
     }
@@ -472,17 +472,17 @@ bool Save_Hierarchy_File( const char* filename, SWIFT_Tri_Mesh* m,
     fs = new int[3*m->Num_Faces()];
     for( i = 0, l = 0; i < m->Num_Faces(); i++, l += 3 ) {
         e = m->Faces()[i].Edge1().Twin();
-        fs[l] = (e == NULL ? -1 :
+        fs[l] = (e == nullptr ? -1 :
                             (( intptr_t)(e->Adj_Face()->Edge1().Next())<<2) +
                              e->Adj_Face()->Edge_Id( e ));
 
         e = m->Faces()[i].Edge2().Twin();
-        fs[l+1] = (e == NULL ? -1 :
+        fs[l+1] = (e == nullptr ? -1 :
                             (( intptr_t)(e->Adj_Face()->Edge1().Next())<<2) +
                              e->Adj_Face()->Edge_Id( e ));
 
         e = m->Faces()[i].Edge3().Twin();
-        fs[l+2] = (e == NULL ? -1 :
+        fs[l+2] = (e == nullptr ? -1 :
                             (( intptr_t)(e->Adj_Face()->Edge1().Next())<<2) +
                              e->Adj_Face()->Edge_Id( e ));
     }

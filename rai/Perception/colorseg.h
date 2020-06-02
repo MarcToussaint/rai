@@ -1,18 +1,17 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#ifndef RAI_libcolorseg_h
-#define RAI_libcolorseg_h
+#pragma once
 
-#include <Core/array.h>
+#include "../Core/array.h"
 
 //----- patch analysis
-void pch2img(byteA &img, const uintA &pch, floatA &pch_colormap);
+void pch2img(byteA& img, const uintA& pch, floatA& pch_colormap);
 void random_colorMap(floatA& pch_colormap, uint np);
 uint incremental_patch_ids(uintA& pch);
 void get_patch_colors(floatA& pch_col, byteA& img, uintA& pch, uint np);
@@ -43,6 +42,3 @@ void get_multiple_color_segmentations(MultiSegmentations& segmentations,  // sca
                                       const arr& k,
                                       const intA& min
                                      );
-
-#endif
-

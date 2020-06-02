@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -13,51 +13,51 @@
 
 class InterfaceMarc: public AbstractEnvironment {
   //----typedefs/classes----//
-public:
+ public:
   struct InterfaceMarcAction: public Action {
     InterfaceMarcAction(MCTS_Environment::Handle action): action(action) {}
-    virtual bool operator==(const Action & other) const {
-      auto interface_action = dynamic_cast<const InterfaceMarcAction *>(&other);
+    virtual bool operator==(const Action& other) const {
+      auto interface_action = dynamic_cast<const InterfaceMarcAction*>(&other);
       return interface_action!=nullptr && *(interface_action->action)==*action;
     }
     virtual size_t get_hash() const {
       return action->get_hash();
     }
-    virtual void write(std::ostream & out) const {
+    virtual void write(std::ostream& out) const {
       action->write(out);
     }
     MCTS_Environment::Handle action;
   };
   struct InterfaceMarcObservation: public Observation {
     InterfaceMarcObservation(MCTS_Environment::Handle observation): observation(observation) {}
-    virtual bool operator==(const Observation & other) const {
-      auto interface_observation = dynamic_cast<const InterfaceMarcObservation *>(&other);
+    virtual bool operator==(const Observation& other) const {
+      auto interface_observation = dynamic_cast<const InterfaceMarcObservation*>(&other);
       return interface_observation!=nullptr && *(interface_observation->observation)==*(observation);
     }
     virtual size_t get_hash() const {
       return observation->get_hash();
     }
-    virtual void write(std::ostream & out) const {
+    virtual void write(std::ostream& out) const {
       observation->write(out);
     }
     MCTS_Environment::Handle observation;
   };
-  
+
   //----members----//
-public:
+ public:
   std::shared_ptr<MCTS_Environment> env_marc;
-  
+
   //----methods----//
-public:
+ public:
   InterfaceMarc(std::shared_ptr<MCTS_Environment> env_marc): env_marc(env_marc) {}
-  virtual observation_reward_pair_t transition(const action_handle_t & action_handle) {
+  virtual observation_reward_pair_t transition(const action_handle_t& action_handle) {
     auto interface_action = std::dynamic_pointer_cast<const InterfaceMarcAction>(action_handle);
     assert(interface_action!=nullptr);
     auto return_value = env_marc->transition(interface_action->action);
-    return observation_reward_pair_t(observation_handle_t(new InterfaceMarcObservation(return_value.first)),return_value.second);
+    return observation_reward_pair_t(observation_handle_t(new InterfaceMarcObservation(return_value.first)), return_value.second);
   }
   template<class C>
-  static std::shared_ptr<AbstractEnvironment> makeAbstractEnvironment(C * env) {
+  static std::shared_ptr<AbstractEnvironment> makeAbstractEnvironment(C* env) {
     auto mcts = dynamic_cast<MCTS_Environment*>(env);
     assert(mcts!=nullptr);
     return std::shared_ptr<AbstractEnvironment>(
@@ -77,7 +77,7 @@ public:
   virtual void reset_state() {
     env_marc->reset_state();
   }
-  
+
   virtual bool has_terminal_state() const {
     return env_marc->get_info(MCTS_Environment::InfoTag::hasTerminal);
   }

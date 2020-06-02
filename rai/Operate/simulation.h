@@ -1,32 +1,40 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2019 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #pragma once
 
-#include <Gui/opengl.h>
-#include <Geo/mesh.h>
-#include <Kin/kin.h>
-#include <Kin/frame.h>
+#include "../Gui/opengl.h"
+#include "../Geo/mesh.h"
+#include "../Kin/kin.h"
+#include "../Kin/frame.h"
 #include <iomanip>
 
 //=============================================================================
 
-struct ContactEntry{
+struct ContactEntry {
   rai::String objA, objB;
   double d;
-  void write(ostream& os) const{ os <<"Contact " <<objA <<"--" <<objB <<" distance=" <<d; }
+  void write(ostream& os) const { os <<"Contact " <<objA <<"--" <<objB <<" distance=" <<d; }
 };
 
 typedef rai::Array<ContactEntry> ContactA;
 
-struct PlanSkeletonEntry{
+struct PlanSkeletonEntry {
   StringA symbols;
   double timeStart=-1.;
   double timeTo=-1.;
-  PlanSkeletonEntry(){}
-  PlanSkeletonEntry(StringA symbols,double _timeFrom,double _timeTo):symbols(symbols), timeStart(_timeFrom), timeTo(_timeTo){}
-  void write(ostream& os) const{ symbols.write(os," ",NULL,"()"); os <<" from " <<timeStart <<" to " <<timeTo; }
+  PlanSkeletonEntry() {}
+  PlanSkeletonEntry(StringA symbols, double _timeFrom, double _timeTo):symbols(symbols), timeStart(_timeFrom), timeTo(_timeTo) {}
+  void write(ostream& os) const { symbols.write(os, " ", nullptr, "()"); os <<" from " <<timeStart <<" to " <<timeTo; }
 };
 stdOutPipe(PlanSkeletonEntry)
 
-struct Plan{
+struct Plan {
   arr robot_joint_path;
   arr tau;
   rai::Array<PlanSkeletonEntry> skeleton;
@@ -34,8 +42,8 @@ struct Plan{
 
 //=============================================================================
 
-struct Simulation : GLDrawer{
-  struct Simulation_self *self=0;
+struct Simulation : GLDrawer {
+  struct Simulation_self* self=0;
   rai::Configuration K;
 
   Simulation(const rai::Configuration& _K, double dt=.01);
@@ -65,11 +73,11 @@ struct Simulation : GLDrawer{
   arr getFrameState();
 
   //TO BE REMOVED -> perceptual
-  arr getObjectPoses(const StringA& objects={});
+  arr getObjectPoses(const StringA& objects= {});
   StringA getJointNames();
   StringA getObjectNames();
   ContactA getContactInfo(double margin=.1);
 
-  void glDraw(OpenGL &);
+  void glDraw(OpenGL&);
 };
 

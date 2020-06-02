@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -8,8 +8,8 @@
 
 #include "colorseg.h"
 
-//#define RAI_extern_libcolorseg
-#ifdef RAI_extern_libcolorseg
+//#define RAI_libcolorseg
+#ifdef RAI_libcolorseg
 
 // Felzenszwalb's files
 #include "libcolorseg/image.h"
@@ -44,12 +44,12 @@ uint get_single_color_segmentation(uintA& segmentation,  // segmented image
   image_pff->access = new felzenszwalb::rgb*[image.d0]; // allocate row pointers
   for(uint i = 0; i < image.d0; i++)
     image_pff->access[i] = image_pff->data + (i * image.d1);
-    
+
   // apply segmentation
   int num_segments = 0;
   felzenszwalb::image<unsigned int>* seg_pff = segment_image(image_pff, sigma, k, min, &num_segments);
   uint* data = seg_pff->data;
-  
+
   //extract segmentation with consecutive indices
   segmentation.resize(image.d0, image.d1);
   intA lut(image.d0 * image.d1);                     // look-up table for consecutive segment enumeration
@@ -60,16 +60,16 @@ uint get_single_color_segmentation(uintA& segmentation,  // segmented image
     if(lut(idx) == -1) lut(idx) = seg_counter++;
     segmentation.p[i] = (uint) lut(idx);
   }
-  
+
   CHECK_EQ(seg_counter, num_segments, "LUT assignment: seg_counter != (num_segments+1)");
-  
+
   // unwrap data and clean up
-  image_pff->data = NULL;
+  image_pff->data = nullptr;
   delete image_pff->access;
-  image_pff->access = NULL;
+  image_pff->access = nullptr;
   delete image_pff;
   delete seg_pff;
-  
+
   return num_segments;
 }
 
@@ -82,32 +82,32 @@ uint get_single_color_segmentation_rgb(uintA& segmentation,  // segmented image
                                       ) {
   // get the normal segmentation of the image
   int num_segments = get_single_color_segmentation(segmentation, image, sigma, k, min);
-  
+
   // determine average RGB values for each segment/patch
   intA rgb_avg(num_segments, 3);
   rgb_avg = 0;
   intA segment_sizes(num_segments);
   segment_sizes = 0;
-  
+
   int img_idx = 0, seg_idx = 0;
   for(uint i = 0; i < segmentation.N; i++) {
     seg_idx = segmentation.p[i];
     segment_sizes(seg_idx) += 1;
-    rgb_avg(seg_idx,0) += image.p[img_idx++];
-    rgb_avg(seg_idx,1) += image.p[img_idx++];
-    rgb_avg(seg_idx,2) += image.p[img_idx++];
+    rgb_avg(seg_idx, 0) += image.p[img_idx++];
+    rgb_avg(seg_idx, 1) += image.p[img_idx++];
+    rgb_avg(seg_idx, 2) += image.p[img_idx++];
   }
-  
-  std::cout << rgb_avg(seg_idx,0) << std::endl;
+
+  std::cout << rgb_avg(seg_idx, 0) << std::endl;
   for(int i = 0; i < num_segments; i++) {
     if(segment_sizes(i) <= 0)
       HALT("segment_sizes(i) <= 0");
-      
-    rgb_avg(i,0) /= segment_sizes(i);
-    rgb_avg(i,1) /= segment_sizes(i);
-    rgb_avg(i,2) /= segment_sizes(i);
+
+    rgb_avg(i, 0) /= segment_sizes(i);
+    rgb_avg(i, 1) /= segment_sizes(i);
+    rgb_avg(i, 2) /= segment_sizes(i);
   }
-  
+
   // assign average colors
   img_idx = 0; seg_idx = 0;
   rgb.resize(image.d0, image.d1, 3);
@@ -117,7 +117,7 @@ uint get_single_color_segmentation_rgb(uintA& segmentation,  // segmented image
     rgb.p[img_idx++] = rgb_avg(seg_idx, 1);
     rgb.p[img_idx++] = rgb_avg(seg_idx, 2);
   }
-  
+
   return (uint) num_segments;
 }
 
@@ -146,10 +146,10 @@ void patch_color_statistics(doubleA& stats, const uintA& patches, const byteA& i
   uint num_pixels = image.d0*image.d1;
   if(image.d2 != 3)
     NIY;
-    
+
   stats.resize(num_patches, 6);                          // Avg. R, G, B, and std dev
   stats = 0;
-  
+
   // sum RGB values
   intA sum_rgb(num_patches, 3), patch_sizes(num_patches);
   sum_rgb = 0;
@@ -162,20 +162,20 @@ void patch_color_statistics(doubleA& stats, const uintA& patches, const byteA& i
       sum_rgb(patch_id, j) += image.p[counter+j];
     counter+=3;
   }
-  
+
   // mean RGB-values for each patch
   for(uint i = 0; i < num_patches; i++)
     if(patch_sizes(i) > 0)
       for(int j = 0; j < 3; j++)
-        stats(i, j) = (double) sum_rgb(i,j) / (double) patch_sizes(i);
-        
+        stats(i, j) = (double) sum_rgb(i, j) / (double) patch_sizes(i);
+
   // RGB standard deviation
   double d;
   counter = 0;
   for(uint i = 0; i < num_pixels; i++) {
     patch_id = patches.p[i];
     for(int j = 0; j < 3; j++) {
-      d = image.p[counter+j] - stats(patch_id,j);
+      d = image.p[counter+j] - stats(patch_id, j);
       stats(patch_id, 3+j) += (d*d);
     }
     counter += 3;
@@ -212,7 +212,7 @@ void get_patch_colors(floatA& pch_col, byteA& img, uintA& pch, uint np) {
 //
 void colorize_patches(byteA& coloration, const uintA& patches, const doubleA& stats) {
   int x = patches.d1, y = patches.d0;
-  coloration.resize(y,x,3);
+  coloration.resize(y, x, 3);
   int counter = 0;
   for(uint i = 0; i < patches.N; i++)
     for(int j = 2; j >= 0; j--)
@@ -248,7 +248,7 @@ void get_multiple_color_segmentations(
   // TODO phtread to speed up segmentation (one thread per level)
   if((sigma.d0 != k.d0) || (sigma.d0 != min.d0))
     HALT("size of sigma, k, and min has to be equal");
-    
+
   uint num_levels = sigma.d0;
   segmentations.resize(num_levels);
   for(uint i = 0; i < num_levels; i++)
@@ -271,7 +271,7 @@ uint incremental_patch_ids(uintA& pch) {
   return old_ids.N;
 }
 
-void pch2img(byteA &img, const uintA &pch, floatA &pch_col) {
+void pch2img(byteA& img, const uintA& pch, floatA& pch_col) {
   uint i, N=pch.d0*pch.d1;
   if(pch_col.nd==2) {
     img.resize(N, 3);
@@ -297,8 +297,8 @@ void random_colorMap(floatA& pch_col, uint np) {
 
 #else
 
-#include <Core/util.h>
-void pch2img(byteA &img, const uintA &pch, floatA &pch_colormap) {NICO}
+#include "../Core/util.h"
+void pch2img(byteA& img, const uintA& pch, floatA& pch_colormap) {NICO}
 void random_colorMap(floatA& pch_colormap, uint np) {NICO}
 uint incremental_patch_ids(uintA& pch) {NICO}
 void get_patch_colors(floatA& pch_col, byteA& img, uintA& pch, uint np) {NICO}

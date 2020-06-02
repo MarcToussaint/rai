@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -14,79 +14,78 @@
 #include <ANN/ANN.h>
 
 struct sANN {
-  ANNkd_tree *tree=0;
+  ANNkd_tree* tree=0;
   //PartialLeastSquares pls;
   rai::Array<double*> cpointers;
   uint treeSize;   //for how many entries in X have we build the tree?
-  void clear() { if(tree) delete tree;   tree=NULL;  cpointers.clear();  treeSize=0; }
+  void clear() { if(tree) delete tree;   tree=nullptr;  cpointers.clear();  treeSize=0; }
 };
 
 ANN::ANN() {
   bufferSize = 1 <<10;
-  s = new sANN;
-  s->tree = 0;
-  s->treeSize = 0;
+  self = make_unique<sANN>();
+  self->tree = 0;
+  self->treeSize = 0;
 }
 
 ANN::ANN(const ANN& ann) {
   bufferSize = 1 <<10;
-  s = new sANN;
-  s->tree = 0;
-  s->treeSize = 0;
+  self = make_unique<sANN>();
+  self->tree = 0;
+  self->treeSize = 0;
   setX(ann.X);
 }
 
 ANN::~ANN() {
-  s->clear();
-  delete s;
+  self->clear();
   //annClose(); //mt09-07-29 this would close down the ANN lib completely
 }
 
 void ANN::clear() {
-  s->clear();
+  self->clear();
   X.clear();
 }
 
 void ANN::setX(const arr& _XX) {
-  s->clear();
+  self->clear();
   X=_XX;
 }
 
 void ANN::append(const arr& x) {
-  double *p=X.p;
+  double* p=X.p;
   X.append(x);
   if(X.N==x.d0) X.reshape(1, x.d0);
-  if(X.p!=p) s->clear(); //when the memory location changed clear the tree! (implies recomputation)
+  if(X.p!=p) self->clear(); //when the memory location changed clear the tree! (implies recomputation)
 }
 
 void ANN::calculate() {
-  if(s->treeSize == X.d0) return;
-  s->clear();
-  X.getCarray(s->cpointers);
-  s->tree = new ANNkd_tree(s->cpointers.p, X.d0, X.d1);
-  s->treeSize = X.d0;
+  if(self->treeSize == X.d0) return;
+  self->clear();
+  X.getCarray(self->cpointers);
+  self->tree = new ANNkd_tree(self->cpointers.p, X.d0, X.d1);
+  self->treeSize = X.d0;
 }
 
 void ANN::getkNN(arr& dists, intA& idx, const arr& x, uint k, double eps, bool verbose) {
   CHECK_GE(X.d0, k, "data has less (" <<X.d0 <<") than k=" <<k <<" points");
-  CHECK_EQ(x.N,X.d1, "query point has wrong dimension. x.N=" << x.N << ", X.d1=" << X.d1);
-  
-  if(X.d0-s->treeSize>bufferSize) {
-    if(verbose) std::cout <<"ANN recomputing: X.d0=" <<X.d0 <<" treeSize=" <<s->treeSize <<std::endl;
+  CHECK_EQ(x.N, X.d1, "query point has wrong dimension. x.N=" << x.N << ", X.d1=" << X.d1);
+
+  if(X.d0-self->treeSize>bufferSize) {
+    if(verbose) std::cout <<"ANN recomputing: X.d0=" <<X.d0 <<" treeSize=" <<self->treeSize <<std::endl;
     calculate();
   }
   uint restStartsAt;
-  if(s->treeSize>=k) {
+  if(self->treeSize>=k) {
     dists.resize(k);
     idx.resize(k);
-    s->tree->annkSearch(x.p, k, idx.p, dists.p, eps);
-    restStartsAt=s->treeSize;
+    self->tree->annkSearch(x.p, k, idx.p, dists.p, eps);
+    restStartsAt=self->treeSize;
   } else {
     dists.clear();
     idx.clear();
     restStartsAt=0;
   }
-  
+
   //now check if in the rest of X there are even nearer points
   for(uint i=restStartsAt; i<X.d0; i++) {
     for(uint j=0; j<=idx.N && j<k; j++) {
@@ -102,11 +101,11 @@ void ANN::getkNN(arr& dists, intA& idx, const arr& x, uint k, double eps, bool v
     idx.resizeCopy(k);
     dists.resizeCopy(k);
   }
-  
+
   if(verbose) {
     std::cout
         <<"ANN query:"
-        <<"\n data size = " <<X.d0 <<"  data dim = " <<X.d1 <<"  treeSize = " <<s->treeSize
+        <<"\n data size = " <<X.d0 <<"  data dim = " <<X.d1 <<"  treeSize = " <<self->treeSize
         <<"\n query point " <<x
         <<"\n found neighbors:\n";
     for(uint i=0; i<idx.N; i++) {
@@ -131,7 +130,7 @@ void ANN::getkNN(intA& idx, const arr& x, uint k, double eps, bool verbose) {
   getkNN(dists, idx, x, k, eps, verbose);
 }
 
-void ANN::getkNN(arr& xx             , const arr& x, uint k, double eps, bool verbose) {
+void ANN::getkNN(arr& xx, const arr& x, uint k, double eps, bool verbose) {
   intA idx;
   arr dists;
   getkNN(dists, idx, x, k, eps, verbose);
@@ -140,6 +139,8 @@ void ANN::getkNN(arr& xx             , const arr& x, uint k, double eps, bool ve
 }
 
 #else //RAI_ANN
+
+struct sANN {};
 
 ANN::ANN() { NICO }
 ANN::~ANN() { NICO }

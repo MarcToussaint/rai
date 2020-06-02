@@ -6,7 +6,6 @@
 #include <LGP/LGP_tree.h>
 #include <KOMO/komo.h>
 
-
 void generateProblem(rai::Configuration& K){
   uint numObj = 4;
   for(;;){
@@ -45,7 +44,6 @@ void generateProblem(rai::Configuration& K){
 
 }
 
-
 void solve(){
   rai::Configuration K;
   generateProblem(K);
@@ -56,16 +54,17 @@ void solve(){
   LGP_Tree lgp(K, "fol-pnp-switch.g");
   lgp.fol.addTerminalRule("(on tray obj0) (on tray obj1) (on tray obj2)");
   lgp.displayBound = BD_seqPath;
-  lgp.verbose=2;
+  //lgp.verbose=2;
 
   lgp.fol.writePDDLfiles("z");
 
   lgp.run();
 
-  rai::wait();
-  lgp.renderToVideo();
+  if(lgp.verbose>1){
+    rai::wait();
+    lgp.renderToVideo();
+  }
 }
-
 
 void testBounds(){
   rai::Configuration K;

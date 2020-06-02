@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -14,10 +14,10 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/ModelCoefficients.h>
-#include <Core/thread.h>
+#include "../Core/thread.h"
 //#include <devTools/logging.h>
 //#include <Hardware/kinect.h>
-#include <KOMO/komo.h>
+#include "../KOMO/komo.h"
 
 //SET_LOG(pointcloud, INFO)
 
@@ -38,17 +38,17 @@ struct ObjectBelief {
   // TODO: make pointers
   rai::Vector position;
   rai::Quaternion rotation;
-  
+
   arr poseCov;
-  
+
   // primitive shapes
   rai::ShapeType shapeType;
   arr shapeParams;
-  
+
   // TODO: make pointer, such that the using app does not need to implicitly
   // include half of the PCL?
   //pcl::ModelCoefficients::Ptr pcl_object;
-  
+
   //pcl::PointCloud<PointT>* pointCloud;
   arr vertices;
   uintA triangles;
@@ -65,42 +65,42 @@ struct ObjectClusterer : public Module {
   ObjectClusterer();
   VAR(PointCloudVar, data_3d)
   VAR(PointCloudSet, point_clouds)
-  
+
   void open();
   void step();
   void close();
 };
 
 struct ObjectFitter : public Module {
-  struct sObjectFitter* s;
-  
+  unique_ptr<struct sObjectFitter> self;
+
   ObjectFitter();
-  
+
   void open();
   void step();
   void close();
-  
+
   VAR(PointCloudSet, objectClusters)
   VAR(ObjectSet, objects)
 };
 
 struct ObjectFilter : public Module {
-  struct sObjectFilter *s;
-  ObjectFilter(const char *name) ;
+  unique_ptr<struct sObjectFilter> self;
+  ObjectFilter(const char* name) ;
   void open();
   void step();
   void close() {}
-  
+
   VAR(ObjectSet, in_objects)
   VAR(ObjectBeliefSet, out_objects)
 };
 
 struct ObjectTransformator : public Module {
-  ObjectTransformator(const char *name);
+  ObjectTransformator(const char* name);
   void open();
   void step();
   void close() {}
-  
+
   VAR(ObjectBeliefSet, kinect_objects)
   VAR(rai::Configuration, geoState)
   rai::Configuration geo;

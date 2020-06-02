@@ -1,15 +1,15 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include <algorithm>
-#include <Core/array.h>
 #include "geo.h"
+#include "../Core/array.h"
 
+#include <algorithm>
 #ifdef RAI_GL
 #  include <GL/glu.h>
 #endif
@@ -29,10 +29,10 @@ rai::Transformation& NoTransformation = __NoTransformation;
 
 namespace rai {
 
-  bool Vector::operator!() const { return this==&NoVector; }
+bool Vector::operator!() const { return this==&NoVector; }
 
-  double& Vector::operator()(uint i) {
-  CHECK(i<3,"out of range");
+double& Vector::operator()(uint i) {
+  CHECK(i<3, "out of range");
   isZero=false;
   return (&x)[i];
 }
@@ -155,7 +155,7 @@ Vector Vector::getNormalVectorNormalToThis() const {
     yv = 1.0;
     zv = -(x+y)/z;
   }
-  Vector v(xv,yv,zv);
+  Vector v(xv, yv, zv);
   v.normalize();
   return v;
 }
@@ -322,7 +322,7 @@ bool operator!=(const Vector& lhs, const Vector& rhs) {
   return !(lhs == rhs);
 }
 
-double sqrDistance(const Vector &a, const Vector &b) {
+double sqrDistance(const Vector& a, const Vector& b) {
   return (a-b).lengthSqr();
 }
 
@@ -420,11 +420,11 @@ Matrix operator*(const Matrix& b, const Matrix& c) {
   a.m00=b.m00*c.m00+b.m01*c.m10+b.m02*c.m20;
   a.m01=b.m00*c.m01+b.m01*c.m11+b.m02*c.m21;
   a.m02=b.m00*c.m02+b.m01*c.m12+b.m02*c.m22;
-  
+
   a.m10=b.m10*c.m00+b.m11*c.m10+b.m12*c.m20;
   a.m11=b.m10*c.m01+b.m11*c.m11+b.m12*c.m21;
   a.m12=b.m10*c.m02+b.m11*c.m12+b.m12*c.m22;
-  
+
   a.m20=b.m20*c.m00+b.m21*c.m10+b.m22*c.m20;
   a.m21=b.m20*c.m01+b.m21*c.m11+b.m22*c.m21;
   a.m22=b.m20*c.m02+b.m21*c.m12+b.m22*c.m22;
@@ -520,13 +520,13 @@ void Quaternion::addX(double angle) {
   angle/=2.;
   double cw=cos(angle);
   double cx=sin(angle);
-  
+
   Quaternion a;
   a.w = w*cw - x*cx;
   a.x = w*cx + x*cw;
   a.y = y*cw + z*cx;
   a.z = z*cw - y*cx;
-  
+
   set(a.w, a.x, a.y, a.z);
 }
 
@@ -535,13 +535,13 @@ void Quaternion::addY(double angle) {
   angle/=2.;
   double cw=cos(angle);
   double cy=sin(angle);
-  
+
   Quaternion a;
   a.w = w*cw - y*cy;
   a.x = x*cw - z*cy;
   a.y = w*cy + y*cw;
   a.z = z*cw + x*cy;
-  
+
   set(a.w, a.x, a.y, a.z);
 }
 
@@ -550,13 +550,13 @@ Quaternion& Quaternion::addZ(double radians) {
   radians/=2.;
   double cw=cos(radians);
   double cz=sin(radians);
-  
+
   Quaternion a;
   a.w = w*cw - z*cz;
   a.x = x*cw + y*cz;
   a.y = y*cw - x*cz;
   a.z = w*cz + z*cw;
-  
+
   set(a.w, a.x, a.y, a.z);
   return *this;
 }
@@ -577,7 +577,7 @@ void Quaternion::append(const Quaternion& q) {
 void Quaternion::set(const double* p) { w=p[0]; x=p[1]; y=p[2]; z=p[3]; isZero=((w==1. || w==-1.) && x==0. && y==0. && z==0.); }
 
 /// set the quad
-void Quaternion::set(const arr& q) { CHECK_EQ(q.N,4, "");  set(q.p); }
+void Quaternion::set(const arr& q) { CHECK_EQ(q.N, 4, "");  set(q.p); }
 
 /// set the quad
 void Quaternion::set(double _w, double _x, double _y, double _z) { w=_w; x=_x; y=_y; z=_z; isZero=((w==1. || w==-1.) && x==0. && y==0. && z==0.); }
@@ -586,7 +586,7 @@ void Quaternion::set(double _w, double _x, double _y, double _z) { w=_w; x=_x; y
 void Quaternion::setZero() { memset(this, 0, sizeof(Quaternion));  w=1.; isZero=true; }
 
 /// samples the rotation uniformly from the whole SO(3)
-void Quaternion::setRandom() {
+rai::Quaternion& Quaternion::setRandom() {
   double s, s1, s2, t1, t2;
   s=rnd.uni();
   s1=sqrt(1-s);
@@ -598,6 +598,7 @@ void Quaternion::setRandom() {
   y=cos(t1)*s1;
   z=sin(t2)*s2;
   isZero=false;
+  return *this;
 }
 
 /// sets this to a smooth interpolation between two rotations
@@ -648,7 +649,7 @@ void Quaternion::setRad(double angle, double _x, double _y, double _z) {
 }
 
 /// ..
-void Quaternion::setRad(double angle, const Vector &axis) {
+void Quaternion::setRad(double angle, const Vector& axis) {
   setRad(angle, axis.x, axis.y, axis.z);
 }
 
@@ -714,7 +715,7 @@ Quaternion& Quaternion::setRpy(double r, double p, double y) {
   z = cr*cp*sy - sr*sp*cy;
 #endif
   isZero=(w==1. || w==-1.);
-  CHECK(isNormalized(),"bad luck");
+  CHECK(isNormalized(), "bad luck");
   return *this;
 }
 
@@ -754,7 +755,7 @@ void Quaternion::checkZero() const {
 double Quaternion::sqrDiff(const Quaternion& _q2) const {
   arr q1(&w, 4, true);
   arr q2(&_q2.w, 4, true);
-  if(scalarProduct(q1,q2)>=0) return sumOfSqr(q1-q2);
+  if(scalarProduct(q1, q2)>=0) return sumOfSqr(q1-q2);
   return sumOfSqr(q1+q2);
 }
 
@@ -793,11 +794,11 @@ void Quaternion::getRad(double& angle, Vector& vec) const {
 Vector Quaternion::getVec() const {
   Vector vec;
   if(w>=1. || w<=-1. || (x==0. && y==0. && z==0.)) { vec.setZero(); return vec; }
-  double phi,s;
-  if(w>=0.){
+  double phi, s;
+  if(w>=0.) {
     phi=acos(w);
     s=2.*phi/sin(phi);
-  }else{ //flip quaternion sign to get rotation vector of length < PI
+  } else { //flip quaternion sign to get rotation vector of length < PI
     phi=acos(-w);
     s=-2.*phi/sin(phi);
   }
@@ -851,7 +852,7 @@ Matrix Quaternion::getMatrix() const {
 }
 
 arr Quaternion::getArr() const {
-  arr R(3,3);
+  arr R(3, 3);
   getMatrix(R.p);
   return R;
 }
@@ -935,15 +936,20 @@ arr Quaternion::getEulerRPY() const {
   return {roll, pitch, yaw};
 }
 
+void Quaternion::applyOnPointArray(arr& pts){
+  arr R = ~getArr(); //transposed, to make it applicable to an n-times-3 array
+  pts = pts * R;
+}
+
 /// this is a 3-by-4 matrix $J$, giving the angular velocity vector $w = J \dot q$  induced by a $\dot q$
 arr Quaternion::getJacobian() const {
-  arr J(3,4);
+  arr J(3, 4);
   rai::Quaternion e;
   for(uint i=0; i<4; i++) {
-    if(i==0) e.set(1.,0.,0.,0.);
-    if(i==1) e.set(0.,1.,0.,0.);
-    if(i==2) e.set(0.,0.,1.,0.);
-    if(i==3) e.set(0.,0.,0.,1.);//TODO: the following could be simplified/compressed/made more efficient
+    if(i==0) e.set(1., 0., 0., 0.);
+    if(i==1) e.set(0., 1., 0., 0.);
+    if(i==2) e.set(0., 0., 1., 0.);
+    if(i==3) e.set(0., 0., 0., 1.); //TODO: the following could be simplified/compressed/made more efficient
     e = e / *this;
     J(0, i) = -2.*e.x;
     J(1, i) = -2.*e.y;
@@ -954,7 +960,7 @@ arr Quaternion::getJacobian() const {
 
 /// this is a 4x(3x3) matrix, such that ~(J*x) is the jacobian of (R*x), and ~qdelta*J is (del R/del q)(qdelta)
 arr Quaternion::getMatrixJacobian() const {
-  arr J(4,9); //transpose!
+  arr J(4, 9); //transpose!
   double r0=w, r1=x, r2=y, r3=z;
   J[0] = {      0,    -r3,     r2,
                 r3,      0,    -r1,
@@ -973,7 +979,7 @@ arr Quaternion::getMatrixJacobian() const {
            r1,     r2,      0
          };
   J *= 2.;
-  J.reshape(4,3,3);
+  J.reshape(4, 3, 3);
   return J;
 }
 
@@ -1036,7 +1042,7 @@ Quaternion operator-(const Quaternion& b, const Quaternion& c) {
   return a;
 }
 
-void mult(Vector& a, const Quaternion& b, const Vector& c,bool add) {
+void mult(Vector& a, const Quaternion& b, const Vector& c, bool add) {
   if(c.isZero) {
     if(!add) a.setZero();
     return;
@@ -1062,7 +1068,7 @@ void mult(Vector& a, const Quaternion& b, const Vector& c,bool add) {
 Vector operator*(const Quaternion& b, const Vector& c) {
   if(c.isZero) return Vector(0);
   Vector a;
-  mult(a,b,c,false);
+  mult(a, b, c, false);
   return a;
 }
 
@@ -1091,7 +1097,7 @@ Transformation operator*(const Transformation& X, const Transformation& c) {
 
 Transformation operator/(const Transformation& X, const Transformation& c) {
   Transformation f;
-  f.setDifference(c,X);
+  f.setDifference(c, X);
   return f;
 }
 
@@ -1116,97 +1122,97 @@ double quat_scalarProduct(const Quaternion& a, const Quaternion& b) {
   return a.w*b.w+a.x*b.x+a.y*b.y+a.z*b.z;
 }
 
-void quat_concat(arr& y, arr& Ja, arr& Jb, const arr& A, const arr& B){
+void quat_concat(arr& y, arr& Ja, arr& Jb, const arr& A, const arr& B) {
   rai::Quaternion a(A);
   rai::Quaternion b(B);
   a.isZero=b.isZero=false;
   y = (a * b).getArr4d();
-  if(!!Ja){
-    Ja.resize(4,4);
-    Ja(0,0) =  b.w;
-    Ja(0,1) = -b.x; Ja(0,2) = -b.y; Ja(0,3) = -b.z;
-    Ja(1,0) =  b.x; Ja(2,0) =  b.y; Ja(3,0) =  b.z;
+  if(!!Ja) {
+    Ja.resize(4, 4);
+    Ja(0, 0) =  b.w;
+    Ja(0, 1) = -b.x; Ja(0, 2) = -b.y; Ja(0, 3) = -b.z;
+    Ja(1, 0) =  b.x; Ja(2, 0) =  b.y; Ja(3, 0) =  b.z;
     //skew
-    Ja(1,1) = b.w; Ja(1,2) = b.z; Ja(1,3) =-b.y;
-    Ja(2,1) =-b.z; Ja(2,2) = b.w; Ja(2,3) = b.x;
-    Ja(3,1) = b.y; Ja(3,2) =-b.x; Ja(3,3) = b.w;
+    Ja(1, 1) = b.w; Ja(1, 2) = b.z; Ja(1, 3) =-b.y;
+    Ja(2, 1) =-b.z; Ja(2, 2) = b.w; Ja(2, 3) = b.x;
+    Ja(3, 1) = b.y; Ja(3, 2) =-b.x; Ja(3, 3) = b.w;
   }
-  if(!!Jb){
-    Jb.resize(4,4);
-    Jb(0,0) =  a.w;
-    Jb(0,1) = -a.x; Jb(0,2) = -a.y; Jb(0,3) = -a.z;
-    Jb(1,0) =  a.x; Jb(2,0) =  a.y; Jb(3,0) =  a.z;
+  if(!!Jb) {
+    Jb.resize(4, 4);
+    Jb(0, 0) =  a.w;
+    Jb(0, 1) = -a.x; Jb(0, 2) = -a.y; Jb(0, 3) = -a.z;
+    Jb(1, 0) =  a.x; Jb(2, 0) =  a.y; Jb(3, 0) =  a.z;
     //skew
-    Jb(1,1) = a.w; Jb(1,2) =-a.z; Jb(1,3) = a.y;
-    Jb(2,1) = a.z; Jb(2,2) = a.w; Jb(2,3) =-a.x;
-    Jb(3,1) =-a.y; Jb(3,2) = a.x; Jb(3,3) = a.w;
+    Jb(1, 1) = a.w; Jb(1, 2) =-a.z; Jb(1, 3) = a.y;
+    Jb(2, 1) = a.z; Jb(2, 2) = a.w; Jb(2, 3) =-a.x;
+    Jb(3, 1) =-a.y; Jb(3, 2) = a.x; Jb(3, 3) = a.w;
   }
 }
 
-void quat_normalize(arr& y, arr& J, const arr& a){
+void quat_normalize(arr& y, arr& J, const arr& a) {
   y = a;
   double l2 = sumOfSqr(y);
   double l = sqrt(l2);
   y /= l;
-  if(!!J){
+  if(!!J) {
     J = eye(4);
     J -= y^y;
     J /= l;
   }
 }
 
-void quat_getVec(arr& y, arr& J, const arr& A){
+void quat_getVec(arr& y, arr& J, const arr& A) {
   rai::Quaternion a(A);
   y.resize(3);
-  double phi,sinphi,s;
+  double phi, sinphi, s;
   double dphi, dsinphi, ds=0.;
   if(a.w>=1. || a.w<=-1. || (a.x==0. && a.y==0. && a.z==0.)) {
     y.setZero();
-    if(!!J){
-      J.resize(3,4).setZero();
-      J(0,1) = J(1,2) = J(2,3) = 2.;
+    if(!!J) {
+      J.resize(3, 4).setZero();
+      J(0, 1) = J(1, 2) = J(2, 3) = 2.;
     }
     return;
   }
 
-  if(false && a.w>=0.){
+  if(false && a.w>=0.) {
     phi=acos(a.w);
     sinphi = sin(phi);
     s=2.*phi/sinphi;
-    if(!!J){
+    if(!!J) {
       dphi = -1./sqrt(1.-a.w*a.w);
       dsinphi = cos(phi) * dphi;
-      ds = 2.*( dphi/sinphi - phi/(sinphi*sinphi)*dsinphi );
+      ds = 2.*(dphi/sinphi - phi/(sinphi*sinphi)*dsinphi);
     }
-  }else{ //flip quaternion sign to get rotation vector of length < PI
+  } else { //flip quaternion sign to get rotation vector of length < PI
     phi=acos(-a.w);
     sinphi = sin(phi);
     s=-2.*phi/sinphi;
-    if(!!J){
+    if(!!J) {
       dphi = 1./sqrt(1.-a.w*a.w);
       dsinphi = cos(phi) * dphi;
-      ds = -2.*( dphi/sinphi - phi/(sinphi*sinphi)*dsinphi );
+      ds = -2.*(dphi/sinphi - phi/(sinphi*sinphi)*dsinphi);
     }
   }
-  if(fabs(phi)<1e-8){ s=2.; ds=0.; }
+  if(fabs(phi)<1e-8) { s=2.; ds=0.; }
   y(0) = s*a.x;
   y(1) = s*a.y;
   y(2) = s*a.z;
-  if(!!J){
-    J.resize(3,4).setZero();
-    J(0,1) = J(1,2) = J(2,3) = s;
-    J(0,0) = a.x*ds;
-    J(1,0) = a.y*ds;
-    J(2,0) = a.z*ds;
+  if(!!J) {
+    J.resize(3, 4).setZero();
+    J(0, 1) = J(1, 2) = J(2, 3) = s;
+    J(0, 0) = a.x*ds;
+    J(1, 0) = a.y*ds;
+    J(2, 0) = a.z*ds;
   }
 }
 
-void quat_diffVector(arr& y, arr& Ja, arr& Jb, const arr& a, const arr& b){
+void quat_diffVector(arr& y, arr& Ja, arr& Jb, const arr& a, const arr& b) {
   arr ab, Jca, Jcb;
   arr binv = b;
   binv(0) *= -1.;
   quat_concat(ab, Jca, Jcb, a, binv);
-  for(uint i=0;i<Jcb.d0;i++) Jcb(i,0) *= -1.;
+  for(uint i=0; i<Jcb.d0; i++) Jcb(i, 0) *= -1.;
 
   arr Jvec;
   quat_getVec(y, Jvec, ab);
@@ -1229,14 +1235,15 @@ Transformation& Transformation::setZero() {
   return *this;
 }
 
-void Transformation::set(const double *p) { pos.set(p); rot.set(p+3); }
+void Transformation::set(const double* p) { pos.set(p); rot.set(p+3); }
 
-void Transformation::set(const arr &t) { CHECK_EQ(t.N,7, "");  set(t.p); }
+void Transformation::set(const arr& t) { CHECK_EQ(t.N, 7, "");  set(t.p); }
 
 /// randomize the frame
-void Transformation::setRandom() {
+Transformation& Transformation::setRandom() {
   rot.setRandom();
   pos.setRandom();
+  return *this;
 }
 
 /// move the turtle by the vector (x, z, y) WITH RESPECT TO the current orientation/scale
@@ -1302,7 +1309,7 @@ void Transformation::setInverse(const Transformation& f) {
 }
 
 /// set double[4*4] to Transformation. Matrix needs to be orthogonal
-void Transformation::setAffineMatrix(const double *m) {
+void Transformation::setAffineMatrix(const double* m) {
   double M[9];
   uint i, j;
   for(i=0; i<3; ++i)
@@ -1322,7 +1329,7 @@ void Transformation::setDifference(const Transformation& from, const Transformat
 }
 
 /// get the current position/orientation/scale in an OpenGL format matrix (of type double[16])
-double* Transformation::getAffineMatrix(double *m) const {
+double* Transformation::getAffineMatrix(double* m) const {
   Matrix M = rot.getMatrix();
   m[0] = M.m00; m[1] = M.m01; m[2] = M.m02; m[3] =pos.x;
   m[4] = M.m10; m[5] = M.m11; m[6] = M.m12; m[7] =pos.y;
@@ -1332,13 +1339,13 @@ double* Transformation::getAffineMatrix(double *m) const {
 }
 
 arr Transformation::getAffineMatrix() const {
-  arr T(4,4);
+  arr T(4, 4);
   getAffineMatrix(T.p);
   return T;
 }
 
 /// get inverse OpenGL matrix for this frame (of type double[16])
-double* Transformation::getInverseAffineMatrix(double *m) const {
+double* Transformation::getInverseAffineMatrix(double* m) const {
   Matrix M = rot.getMatrix();
   Vector pinv; pinv=rot/pos;
   m[0] =M.m00; m[1] =M.m10; m[2] =M.m20; m[3] =-pinv.x;
@@ -1349,13 +1356,13 @@ double* Transformation::getInverseAffineMatrix(double *m) const {
 }
 
 arr Transformation::getInverseAffineMatrix() const {
-  arr T(4,4);
+  arr T(4, 4);
   getInverseAffineMatrix(T.p);
   return T;
 }
 
 /// get the current position/orientation/scale in an OpenGL format matrix (of type double[16])
-double* Transformation::getAffineMatrixGL(double *m) const {
+double* Transformation::getAffineMatrixGL(double* m) const {
   Matrix M = rot.getMatrix();
   m[0]=M.m00; m[4]=M.m01; m[8] =M.m02; m[12]=pos.x;
   m[1]=M.m10; m[5]=M.m11; m[9] =M.m12; m[13]=pos.y;
@@ -1365,7 +1372,7 @@ double* Transformation::getAffineMatrixGL(double *m) const {
 }
 
 /// get inverse OpenGL matrix for this frame (of type double[16]) */
-double* Transformation::getInverseAffineMatrixGL(double *m) const {
+double* Transformation::getInverseAffineMatrixGL(double* m) const {
   Matrix M = rot.getMatrix();
   Vector pinv; pinv=rot/pos;
   m[0]=M.m00; m[4]=M.m10; m[8] =M.m20; m[12]=-pinv.x;
@@ -1408,12 +1415,12 @@ void Transformation::applyOnPointArray(arr& pts) const {
     LOG(-1) <<"wrong pts dimensions for transformation:" <<pts.dim();
     return;
   }
-  if(!rot.isZero){
+  if(!rot.isZero) {
     arr R = ~rot.getArr(); //transposed, only to make it applicable to an n-times-3 array
     pts = pts * R;
   }
-  if(!pos.isZero){
-    for(double *p=pts.p, *pstop=pts.p+pts.N; p<pstop; p+=3) {
+  if(!pos.isZero) {
+    for(double* p=pts.p, *pstop=pts.p+pts.N; p<pstop; p+=3) {
       p[0] += pos.x;
       p[1] += pos.y;
       p[2] += pos.z;
@@ -1430,7 +1437,7 @@ double Transformation::diffZero() const {
   return pos.diffZero() + rot.diffZero();
 }
 
-void Transformation::checkNan() const{
+void Transformation::checkNan() const {
   CHECK_EQ(pos.x, pos.x, "inconsistent: " <<pos.x);
   CHECK_EQ(pos.y, pos.y, "inconsistent: " <<pos.y);
   CHECK_EQ(pos.z, pos.z, "inconsistent: " <<pos.z);
@@ -1444,7 +1451,7 @@ void Transformation::checkNan() const{
 /// operator<<
 void Transformation::write(std::ostream& os) const {
   os <<'[' <<pos.x <<", " <<pos.y <<", " <<pos.z <<", "
-    <<rot.w <<", " <<rot.x <<", " <<rot.y <<", " <<rot.z <<']';
+     <<rot.w <<", " <<rot.x <<", " <<rot.y <<", " <<rot.z <<']';
 }
 
 /// operator>>
@@ -1456,10 +1463,10 @@ void Transformation::read(std::istream& is) {
   for(;;) {
     is >>c;
     if(is.fail()) return;  //EOF I guess
-    if((c>='0' && c<='9') || c=='.' || c=='-' || c=='['){  //read a 7-vector (pos+quat) for the transformation
-      if(c=='['){
+    if((c>='0' && c<='9') || c=='.' || c=='-' || c=='[') { //read a 7-vector (pos+quat) for the transformation
+      if(c=='[') {
         is>>x[0]>>PARSE(",") >>x[1]>>PARSE(",") >>x[2]>>PARSE(",") >>x[3]>>PARSE(",") >>x[4]>>PARSE(",") >>x[5]>>PARSE(",") >>x[6] >>PARSE("]");
-      }else{
+      } else {
         is.putback(c);
         is>>x[0]>>x[1]>>x[2]>>x[3]>>x[4]>>x[5]>>x[6];
       }
@@ -1473,15 +1480,15 @@ void Transformation::read(std::istream& is) {
         case 'r': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>x[3]>>PARSE(")"); addRelativeRotationRad(x[0], x[1], x[2], x[3]); break;
         case 'd': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>x[3]>>PARSE(")"); addRelativeRotationDeg(x[0], x[1], x[2], x[3]); break;
         case 'E': is>>PARSE("(")>>x[0]>>x[1]>>x[2]>>PARSE(")"); addRelativeRotation(Quaternion().setRpy(x[0], x[1], x[2])); break;
-        case 'p':{
-	  is>>PARSE("(")>>x[0]>>x[1]>>x[2];       addRelativeTranslation(x[0], x[1], x[2]);
-	  is>>x[0]>>x[1]>>x[2]>>x[3]>>PARSE(")"); addRelativeRotationQuat(x[0], x[1], x[2], x[3]);
-	} break;
+        case 'p': {
+          is>>PARSE("(")>>x[0]>>x[1]>>x[2];       addRelativeTranslation(x[0], x[1], x[2]);
+          is>>x[0]>>x[1]>>x[2]>>x[3]>>PARSE(")"); addRelativeRotationQuat(x[0], x[1], x[2], x[3]);
+        } break;
         //case 's': is>>PARSE("(")>>x[0]>>PARSE(")");                   scale(x[0]); break;
         case 'T': break; //old convention
         case '|':
         case '>': is.putback(c); return; //those symbols finish the reading without error
-        default:{
+        default: {
           RAI_MSG("unknown Transformation read tag: " <<c <<"abort reading this frame"); is.putback(c); return;
         }
       }
@@ -1622,7 +1629,7 @@ void DynamicTransformation::setInverse(const DynamicTransformation& f) {
 }
 
 /// set double[4*4] to Transformation. Matrix needs to be orthogonal
-void DynamicTransformation::setAffineMatrix(const double *m) {
+void DynamicTransformation::setAffineMatrix(const double* m) {
   double M[9];
   uint i, j;
   for(i=0; i<3; ++i)
@@ -1714,7 +1721,7 @@ void DynamicTransformation::read(std::istream& is) {
       frame */
 Camera::Camera() {
   setZero();
-  
+
   setPosition(0., 0., 10.);
   focus(0, 0, 0);
   setHeightAngle(45.);
@@ -1796,7 +1803,7 @@ void Camera::setCameraProjectionMatrix(const arr& P) {
   //fixedProjectionMatrix = glP;
 }
 
-void Camera::report(std::ostream& os){
+void Camera::report(std::ostream& os) {
   os <<"camera pose X=" <<X <<endl;
   os <<"camera focal length=" <<focalLength <<endl;
   os <<"intrinsic matrix=\n" <<getIntrinsicMatrix(640, 480) <<endl;
@@ -1812,13 +1819,13 @@ void Camera::glSetProjectionMatrix() const {
   if(focalLength > 0.) { //focal lengh mode
 #if 1
     CHECK(!heightAbs, "");
-    arr P(4,4);
+    arr P(4, 4);
     P.setZero();
-    P(0,0) = 2.*focalLength/whRatio;
-    P(1,1) = 2.*focalLength;
-    P(2,2) = (zFar + zNear)/(zNear-zFar);
-    P(2,3) = -1.;
-    P(3,2) = 2. * zFar * zNear / (zNear-zFar);
+    P(0, 0) = 2.*focalLength/whRatio;
+    P(1, 1) = 2.*focalLength;
+    P(2, 2) = (zFar + zNear)/(zNear-zFar);
+    P(2, 3) = -1.;
+    P(3, 2) = 2. * zFar * zNear / (zNear-zFar);
     glLoadMatrixd(P.p);
 #else
     double heightAngle = atan(1./focalLength)/RAI_PI*180.;
@@ -1840,17 +1847,17 @@ void Camera::glSetProjectionMatrix() const {
 #endif
 }
 
-arr Camera::getProjectionMatrix() const{
+arr Camera::getProjectionMatrix() const {
   arr Tinv = X.getInverseAffineMatrix();
 
   if(focalLength>0.) { //normal perspective mode
     CHECK(!heightAbs, "");
-    arr P(4,4);
+    arr P(4, 4);
     P.setZero();
-    P(0,0) = 2.*focalLength/whRatio;
-    P(1,1) = 2.*focalLength;
-    P(2,2) = -1.; //depth is flipped to become positive for 'in front of camera'
-    P(3,3) = 1.;  //homogeneous 3D is kept
+    P(0, 0) = 2.*focalLength/whRatio;
+    P(1, 1) = 2.*focalLength;
+    P(2, 2) = -1.; //depth is flipped to become positive for 'in front of camera'
+    P(3, 3) = 1.; //homogeneous 3D is kept
     return P * Tinv;
   }
   if(heightAbs > 0.) { //ortho mode
@@ -1860,20 +1867,21 @@ arr Camera::getProjectionMatrix() const{
   return arr();
 }
 
-arr Camera::getGLProjectionMatrix() const{
+arr Camera::getGLProjectionMatrix() const {
   arr Tinv = X.getInverseAffineMatrix();
 
   if(focalLength > 0.) { //focal lengh mode
     CHECK(!heightAbs, "");
-    arr P(4,4);
+    arr P(4, 4);
     P.setZero();
-    P(0,0) = 2.*focalLength/whRatio;
-    P(1,1) = 2.*focalLength;
-    P(2,2) = (zFar + zNear)/(zNear-zFar);
-    P(2,3) = -1.;
-    P(3,2) = 2. * zFar * zNear / (zNear-zFar);
+    P(0, 0) = 2.*focalLength/whRatio;
+    P(1, 1) = 2.*focalLength;
+    P(2, 2) = (zFar + zNear)/(zNear-zFar);
+    P(2, 3) = -1.;
+    P(3, 2) = 2. * zFar * zNear / (zNear-zFar);
     return ~Tinv * P; //(P is already transposed!)
   }
+#ifdef RAI_GL
   if(heightAbs > 0.) { //ortho mode
     CHECK(!focalLength, "");
     glOrtho(-whRatio*heightAbs/2., whRatio*heightAbs/2.,
@@ -1881,20 +1889,21 @@ arr Camera::getGLProjectionMatrix() const{
     NIY;
 //    return T * Pinv;
   }
+#endif
   NIY;
   return arr();
 }
 
-arr Camera::getInverseProjectionMatrix() const{
+arr Camera::getInverseProjectionMatrix() const {
   arr T = X.getAffineMatrix();
 
   if(focalLength>0.) { //normal perspective mode
-    arr Pinv(4,4);
+    arr Pinv(4, 4);
     Pinv.setZero();
-    Pinv(0,0) = 1./(2.*focalLength/whRatio);
-    Pinv(1,1) = 1./(2.*focalLength);
-    Pinv(2,2) = -1.; //flips 'positive depth' back to Right-Handed frame
-    Pinv(3,3) = 1.;  //homogeneous 3D is kept
+    Pinv(0, 0) = 1./(2.*focalLength/whRatio);
+    Pinv(1, 1) = 1./(2.*focalLength);
+    Pinv(2, 2) = -1.; //flips 'positive depth' back to Right-Handed frame
+    Pinv(3, 3) = 1.; //homogeneous 3D is kept
     return T * Pinv;
   }
   if(heightAbs > 0.) { //ortho mode
@@ -1916,7 +1925,7 @@ double Camera::glConvertToLinearDepth(double d) const {
   return d/((zFar-zNear)/zNear*(1.-d)+1.);
 }
 
-void Camera::project2PixelsAndTrueDepth(arr& x, double width, double height) const{
+void Camera::project2PixelsAndTrueDepth(arr& x, double width, double height) const {
   CHECK_LE(fabs(width/height - whRatio), 1e-6, "given width and height don't match whRatio");
   if(x.N==3) x.append(1.);
   CHECK_EQ(x.N, 4, "");
@@ -1929,7 +1938,7 @@ void Camera::project2PixelsAndTrueDepth(arr& x, double width, double height) con
   x(0) = (x(0)+1.)*.5*(double)width;
 }
 
-void Camera::unproject_fromPixelsAndTrueDepth(arr& x, double width, double height) const{
+void Camera::unproject_fromPixelsAndTrueDepth(arr& x, double width, double height) const {
   CHECK_LE(fabs(width/height - whRatio), 1e-2, "given width and height don't match whRatio");
   if(x.N==3) x.append(1.);
   CHECK_EQ(x.N, 4, "");
@@ -1944,7 +1953,7 @@ void Camera::unproject_fromPixelsAndTrueDepth(arr& x, double width, double heigh
   x.resizeCopy(3);
 }
 
-void Camera::unproject_fromPixelsAndGLDepth(arr& x, uint width, uint height) const{
+void Camera::unproject_fromPixelsAndGLDepth(arr& x, uint width, uint height) const {
 #if 0
   CHECK_LE(fabs(double(width)/height - whRatio), 1e-6, "given width and height don't match whRatio");
   arr I = eye(4);
@@ -1963,16 +1972,16 @@ void Camera::unproject_fromPixelsAndGLDepth(arr& x, uint width, uint height) con
 #endif
 }
 
-arr Camera::getIntrinsicMatrix(double W, double H) const{
+arr Camera::getIntrinsicMatrix(double W, double H) const {
   if(focalLength>0.) { //normal perspective mode
     CHECK(!heightAbs, "");
-    arr K(3,3);
+    arr K(3, 3);
     K.setZero();
-    K(0,0) = focalLength*H;
-    K(1,1) = -focalLength*H;
-    K(2,2) = -1.; //depth is flipped to become positive for 'in front of camera'
-    K(0,2) = -0.5*W;
-    K(1,2) = -0.5*H;
+    K(0, 0) = focalLength*H;
+    K(1, 1) = -focalLength*H;
+    K(2, 2) = -1.; //depth is flipped to become positive for 'in front of camera'
+    K(0, 2) = -0.5*W;
+    K(1, 2) = -0.5*H;
     return K;
   }
   NIY;

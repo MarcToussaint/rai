@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Kin/kin.h>
-#include <Core/thread.h>
+#include "../Kin/kin.h"
+#include "../Core/thread.h"
 
 #ifdef RAI_ROS
 #  include "roscom.h"
@@ -58,7 +58,7 @@ struct SubscribeAlvar{
   Subscriber<ar::AlvarMarkers> sub;
 
   SubscribeAlvar()
-    : ar_pose_markers(NULL, "ar_pose_markers"),
+    : ar_pose_markers(nullptr, "ar_pose_markers"),
       sub("/ar_pose_marker", ar_pose_markers) {
   }
   ~SubscribeAlvar(){

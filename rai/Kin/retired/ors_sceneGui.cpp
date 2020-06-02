@@ -1,46 +1,37 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-/**
- * @file
- * @ingroup group_ors
- */
-/**
- * @ingroup group_ors
- * @{
- */
-
 #include "kin_ode.h"
 #include "kin_sceneGui.h"
 
 enum EditMode { emNone, emMove, emOde };
 
-struct sOrsSceneGui:OpenGL::GLKeyCall,OpenGL::GLHoverCall,OpenGL::GLClickCall {
-  OpenGL *gl;
-  rai::Configuration *ors;
+struct sOrsSceneGui:OpenGL::GLKeyCall, OpenGL::GLHoverCall, OpenGL::GLClickCall {
+  OpenGL* gl;
+  rai::Configuration* ors;
   EditMode mode;
-  rai::Body *movingBody;
+  rai::Body* movingBody;
   rai::Vector selpos;
   double seld, selx, sely, selz;
   sOrsSceneGui() {
     mode = emNone;
   }
-  
+
   static void drawBase(void*) {
-    glStandardLight(NULL);
-    glDrawFloor(10,.8,.8,.8);
-    glColor(1.,.5,0.);
+    glStandardLight(nullptr);
+    glDrawFloor(10, .8, .8, .8);
+    glColor(1., .5, 0.);
   }
-  
+
   bool keyCallback(OpenGL&);
   bool hoverCallback(OpenGL&);
   bool clickCallback(OpenGL&);
-  
+
 };
 
 bool sOrsSceneGui::clickCallback(OpenGL&) {
@@ -60,10 +51,10 @@ bool sOrsSceneGui::clickCallback(OpenGL&) {
 bool sOrsSceneGui::hoverCallback(OpenGL&) {
   switch(mode) {
     case emNone: {
-      rai::Joint *j=NULL;
-      rai::Shape *s=NULL;
+      rai::Joint* j=nullptr;
+      rai::Shape* s=nullptr;
       gl->Select(true);
-      OpenGL::GLSelect *top=gl->topSelection;
+      OpenGL::GLSelect* top=gl->topSelection;
       if(!top) { gl->text.clear();  return false; }
       uint i=top->name;
       //cout <<"HOVER call: id = 0x" <<std::hex <<gl->topSelection->name <<endl;
@@ -107,18 +98,18 @@ bool sOrsSceneGui::hoverCallback(OpenGL&) {
 bool sOrsSceneGui::keyCallback(OpenGL&) {
   switch(gl->pressedkey) {
     case ' ': { //move x-y the object
-      if(mode==emMove) { mode=emNone; movingBody=NULL; cout <<"move off" <<endl; return true; }
+      if(mode==emMove) { mode=emNone; movingBody=nullptr; cout <<"move off" <<endl; return true; }
       cout <<"move mode" <<endl;
       mode=emMove;
       gl->Select();
-      OpenGL::GLSelect *top=gl->topSelection;
+      OpenGL::GLSelect* top=gl->topSelection;
       if(!top) {
         cout <<"No object below mouse!" <<endl;
-        return NULL;
+        return nullptr;
       }
       uint i=top->name;
       //cout <<"HOVER call: id = 0x" <<std::hex <<gl->topSelection->name <<endl;
-      rai::Body *b=NULL;
+      rai::Body* b=nullptr;
       if((i&3)==1) b=ors->shapes(i>>2)->body;
       if(b) {
         cout <<"selected body " <<b->name <<endl;
@@ -153,7 +144,7 @@ bool sOrsSceneGui::keyCallback(OpenGL&) {
 }
 
 struct EditConfigurationHoverCall:OpenGL::GLHoverCall {
-  rai::Configuration *ors;
+  rai::Configuration* ors;
   EditConfigurationHoverCall(rai::Configuration& _ors);
   bool hoverCallback(OpenGL& gl);
 };
@@ -164,8 +155,8 @@ OrsSceneGui::OrsSceneGui(rai::Configuration& ors, OpenGL* gl) {
   orsDrawZlines=true;
   if(!gl) {
     gl = new OpenGL();
-    gl->add(sOrsSceneGui::drawBase,0);
-    gl->add(rai::glDrawGraph,&ors);
+    gl->add(sOrsSceneGui::drawBase, 0);
+    gl->add(rai::glDrawGraph, &ors);
   }
   s->gl = gl;
 //  gl->addHoverCall(s);
@@ -209,4 +200,3 @@ void OrsSceneGui::edit() {
       gl.watch();
     }
 */
-/** @} */

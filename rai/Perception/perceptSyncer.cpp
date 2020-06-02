@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -7,7 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "perceptSyncer.h"
-#include <Kin/frame.h>
+#include "../Kin/frame.h"
 
 SyncFiltered::SyncFiltered(Var<PerceptL>& _percepts, Var<rai::Configuration>& _kin)
   : Thread("SyncFiltered", -1.),
@@ -22,29 +22,29 @@ SyncFiltered::~SyncFiltered() {
 
 void SyncFiltered::step() {
   uintA existingIDs;
-  
+
   percepts.writeAccess();
   for(PerceptPtr& p:percepts()) {
     p->syncWith(kin.set());
     existingIDs.append(p->id);
   }
   percepts.deAccess();
-  
+
   // delete non-existing bodies
   kin.writeAccess();
-  for(uint i=kin().frames.N;i--;){
-    rai::Frame *b = kin().frames.elem(i);
+  for(uint i=kin().frames.N; i--;) {
+    rai::Frame* b = kin().frames.elem(i);
     if(b->name.startsWith("perc_")) {
       uint id;
       b->name.resetIstream();
       b->name >>PARSE("perc_") >>id;
       if(!existingIDs.contains(id)) {
-          LOG(-1) <<"DELETING" <<*b;
+        LOG(-1) <<"DELETING" <<*b;
         delete b;
       }
     }
   }
   kin.deAccess();
-  
+
 }
 

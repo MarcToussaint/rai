@@ -24,35 +24,75 @@ void TEST(Swift) {
   }
 }
 
+void TEST(FCL) {
+  rai::Configuration C("../../../../rai-robotModels/pr2/pr2.g");
+  C.watch(true);
+
+  C.getCollisionExcludePairIDs(true);
+
+  cout <<"** SWIFT: " <<endl;
+  C.stepSwift();
+  C.totalCollisionPenetration();
+  C.reportProxies();
+
+  cout <<"** FCL: " <<endl;
+  C.stepFcl();
+  C.totalCollisionPenetration();
+  C.reportProxies();
+}
+
 void TEST(CollisionTiming){
-  rai::Configuration K("../../../../rai-robotModels/pr2/pr2.g");
+  rai::Configuration C;
+  uint n=1000;
+  for(uint i=0;i<n;i++){
+    rai::Frame *a = C.addFrame(STRING("obj_i"<<i));
 
-  K.swift().setCutoff(1.);
+    a->setPose(rai::Transformation().setRandom());
+    a->set_X()->pos.z += 1.;
+    a->set_X()->pos *= 5.;
 
-  cout <<"# objects:" <<K.swift().countObjects() <<endl;
+    a->setConvexMesh(.2*rai::Mesh().setRandom().V, {}, .02 + .1*rnd.uni());
+    a->setColor({.5,.5,.8,.6});
+    a->setContact(1);
+  }
+  C.watch();
+
+
+  rai::timerStart();
+  C.swift().setCutoff(1.);
+  cout <<" SWIFT initialization time: " <<rai::timerRead(true) <<endl;
+
+  //  rai::timerStart();
+  //  C.fcl();
+  //  cout <<" FCL initialization time: " <<rai::timerRead(true) <<endl;
 
   arr q0,q;
-  q0 = K.getJointState();
+  q0 = C.getJointState();
   rai::timerStart();
-  uint t;
-  for(t=0;t<1000;t++){
-    if(!(t%1)){ q = q0;  rndGauss(q,.1,true); }
-    K.setJointState(q);
-    K.stepSwift();
-//    G.reportProxies();
-//    G.watch(false);
-//    G.watch(true);
+  for(uint t=0;t<3;t++){
+    for(rai::Frame *a:C.frames){
+      a->setPose(rai::Transformation().setRandom());
+      a->set_X()->pos.z += 1.;
+      a->set_X()->pos *= 5.;
+    }
+
+    C.stepSwift();
+//    C.stepFcl();
+    cout <<"#proxies: " <<C.proxies.N <<endl; //this also calls pair collisions!!
+    cout <<"time: " <<rai::timerRead() <<endl;
+    cout <<"total penetration: " <<C.totalCollisionPenetration() <<endl; //this also calls pair collisions!!
+    cout <<"time: " <<rai::timerRead() <<endl;
+     C.reportProxies(FILE("z.col"), 0.);
   }
-  double time = rai::timerRead();
-  cout <<t <<" collision queries: sec=" <<time <<endl;
-  CHECK(time>0.01 && time<1.,"strange time for collision checking!");
+  cout <<" query time: " <<rai::timerRead(true) <<"sec" <<endl;
 }
 
 int MAIN(int argc, char** argv){
   rai::initCmdLine(argc, argv);
 
-  testSwift();
-//  testCollisionTiming();
+//  testSwift();
+//  testFCL();
+  testCollisionTiming();
 
   return 0;
 }

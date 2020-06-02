@@ -1,5 +1,6 @@
 #include <Kin/kin.h>
 #include <Kin/frame.h>
+#include <Kin/viewer.h>
 #include <Kin/kin_swift.h>
 #include <Kin/kin_ode.h>
 #include <Algo/spline.h>
@@ -103,7 +104,7 @@ void TEST(Kinematics){
     cout <<"kinematicsQuat:  "; checkJacobian(MyFct(MyFct::Quat  , G, b, vec, b2, vec2)(), x, 1e-5);
 //    cout <<"kinematicsRelRot:"; checkJacobian(MyFct(MyFct::RelRot, G, b, vec, b2, vec2)(), x, 1e-5);
 
-    //checkJacobian(Convert(T1::f_hess, NULL), x, 1e-5);
+    //checkJacobian(Convert(T1::f_hess, nullptr), x, 1e-5);
   }
 }
 
@@ -123,14 +124,14 @@ void TEST(Graph){
 
   K.prefixNames();
   {
-    Graph G = K.getGraph();
+    rai::Graph G = K.getGraph();
     G.displayDot();
     rai::wait(.5);
   }
 
   K.optimizeTree();
   {
-    Graph G = K.getGraph();
+    rai::Graph G = K.getGraph();
     G.displayDot();
     rai::wait(.5);
   }
@@ -253,7 +254,7 @@ void TEST(Contacts){
     G.kinematicsProxyCost(y, (!!J?J:NoArr), .2);
   };
 
-  x = G.q;
+  x = G.getJointState();
   for(t=0;t<100;t++){
     G.setJointState(x);
     G.stepSwift();
@@ -316,14 +317,14 @@ void generateSequence(arr &X, uint T, uint n){
 }
 
 void TEST(PlayStateSequence){
-  rai::Configuration G("arm7.g");
-  uint n=G.getJointStateDimension();
+  rai::Configuration C("arm7.g");
+  uint n=C.getJointStateDimension();
   arr X;
   generateSequence(X, 200, n);
   arr v(X.d1); v=0.;
   for(uint t=0;t<X.d0;t++){
-    G.setJointState(X[t]());
-    G.watch(false, STRING("replay of a state sequence -- time " <<t));
+    C.setJointState(X[t]());
+    C.watch(false, STRING("replay of a state sequence -- time " <<t));
   }
 }
 
@@ -385,8 +386,8 @@ void TEST(FollowRedundantSequence){
   rai::Frame *endeff = G.getFrameByName("arm7");
   G.kinematicsPos(y, NoArr, endeff, rel);
   for(t=0;t<T;t++) Z[t]() += y; //adjust coordinates to be inside the arm range
-  plotLine(Z);
-  G.glAdd(glDrawPlot,&plotModule()());
+  plot->Line(Z);
+  G.gl().add(plot()());
   G.watch(false);
   //-- follow the trajectory kinematically
   for(t=0;t<T;t++){
@@ -448,6 +449,7 @@ void TEST(Dynamics){
   double dt=.01;
 
   ofstream z("z.dyn");
+  rai::String text;
   G.watch();
 //  for(rai::Body *b:G.bodies){ b->mass=1.; b->inertia.setZero(); }
 
@@ -467,7 +469,7 @@ void TEST(Dynamics){
       q  += .5*dt*qd;
       G.setJointState(q);
       //cout <<q <<qd <<qdd <<endl;
-      G.gl().text.clear() <<"t=" <<t <<"  torque controlled damping (acc = - vel)\n(checking consistency of forward and inverse dynamics),  energy=" <<G.getEnergy(qd);
+      text.clear() <<"t=" <<t <<"  torque controlled damping (acc = - vel)\n(checking consistency of forward and inverse dynamics),  energy=" <<G.getEnergy(qd);
     }else{
       //cout <<q <<qd <<qdd <<' ' <<G.getEnergy() <<endl;
       arr x=cat(q, qd).reshape(2, q.N);
@@ -475,13 +477,13 @@ void TEST(Dynamics){
       q=x[0]; qd=x[1];
       if(t>300){
         friction=true;
-        G.gl().text.clear() <<"t=" <<t <<"  friction swing using RK4,  energy=" <<G.getEnergy(qd);
+        text.clear() <<"t=" <<t <<"  friction swing using RK4,  energy=" <<G.getEnergy(qd);
       }else{
         friction=false;
-        G.gl().text.clear() <<"t=" <<t <<"  free swing using RK4,  energy=" <<G.getEnergy(qd);
+        text.clear() <<"t=" <<t <<"  free swing using RK4,  energy=" <<G.getEnergy(qd);
       }
     }
-    G.watch(false);
+    G.watch(false, text);
   }
 }
 
@@ -570,7 +572,7 @@ void TEST(BlenderImport){
   readBlender("blender-export",mesh,bl);
   cout <<"loading time =" <<rai::timerRead() <<"sec" <<endl;
   OpenGL gl;
-  G.glAdd(glStandardScene, NULL);
+  G.glAdd(glStandardScene, nullptr);
   G.glAdd(drawTrimesh,&mesh);
   G.watch(true, "mesh only");
   G.glAdd(rai::glDrawGraph,&bl);

@@ -1,9 +1,17 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2019 Marc Toussaint
+    email: marc.toussaint@informatik.uni-stuttgart.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "optimization.h"
 #include "Graph_Problem.h"
 #include "convert.h"
 #include "constrained.h"
 
-struct VariableNode{
+struct VariableNode {
   uint x_index;
   uint x_dim;
   uintA objs;
@@ -11,7 +19,7 @@ struct VariableNode{
   arr value;
 };
 
-struct ObjectiveNode{
+struct ObjectiveNode {
   ObjectiveType type;
   uint phi_index;
   intA vars;
@@ -19,7 +27,7 @@ struct ObjectiveNode{
   double value;
 };
 
-struct GraphProblem_Structure{
+struct GraphProblem_Structure {
   GraphProblem& G;
   rai::Array<VariableNode> V;
   rai::Array<ObjectiveNode> O;
@@ -30,7 +38,7 @@ struct GraphProblem_Structure{
 //typedef rai::Array<VariableNode*> VarL;
 //typedef rai::Array<ObjectiveNode*> ObjL;
 
-struct SubGraphProblem : GraphProblem{
+struct SubGraphProblem : GraphProblem {
   GraphProblem_Structure& G;
 
   //subselection of indices
@@ -50,15 +58,13 @@ struct SubGraphProblem : GraphProblem{
 
   void optim(int verbose=1);
 
-
   //-- graph problem of the subgraph
   virtual void getStructure(uintA& variableDimensions, intAA& featureVariables, ObjectiveTypeA& featureTypes);
   virtual void phi(arr& phi, arrA& J, arrA& H, const arr& x);
   virtual void getSemantics(StringA& varNames, StringA& phiNames);
 };
 
-
-struct BacktrackingGraphOptimization{
+struct BacktrackingGraphOptimization {
   GraphProblem_Structure G;
 
   //return values

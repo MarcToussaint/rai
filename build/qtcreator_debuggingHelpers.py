@@ -20,7 +20,7 @@ def qdump__rai__String(d, value):
         p += 1
     s += "' [%i]" % N
     d.putValue(s)
-    d.putNumChild(2)
+    d.putNumChild(1)
     if d.isExpanded():
         with Children(d):
             d.putSubItem("N", value["N"])
@@ -37,7 +37,7 @@ def qdump__LIST(d, value):
     m=N
     if m>10:
         m=10
-    d.putNumChild(m+1)
+    d.putNumChild(1)
     if d.isExpanded():
         with Children(d):
             for i in xrange(0, m):
@@ -45,8 +45,6 @@ def qdump__LIST(d, value):
                 d.putSubItem(s, p.dereference())
                 p += 1
                 i += 1
-#            d.putSubItem("p", p)
-
 
 def qdump__rai__Array(d, value):
     p = value["p"]
@@ -67,7 +65,7 @@ def qdump__rai__Array(d, value):
     m=N
     if m>10:
         m=10
-    d.putNumChild(m+4)
+    d.putNumChild(1)
     if d.isExpanded():
         with Children(d):
             d.putSubItem("N", value["N"])
@@ -82,33 +80,28 @@ def qdump__rai__Array(d, value):
                 p += 1
                 i += 1
             d.putSubItem("p", value["p"])
-            d.putSubItem("reference", value["reference"])
+            d.putSubItem("isReference", value["isReference"])
             d.putSubItem("special", value["special"])
             
-def qdump__Node_typed(d, value):
-    keys_N = int(value["keys"]["N"])
-    keys_p = value["keys"]["p"]
+def qdump__rai__Node_typed(d, value):
     pars_N = int(value["parents"]["N"])
     pars_p = value["parents"]["p"]
     s = ""
-    for i in xrange(0, keys_N):
-        string = keys_p.dereference()
-        string_N = int(string["N"])
+    string = value["key"]
+    string_N = int(string["N"])
+    if string_N>0:
         string_p = string["p"]
         for j in xrange(0, string_N):
             s += "%c" % int(string_p.dereference())
             string_p += 1
-        keys_p += 1
-        if(i<keys_N):
-            s += " "
+    else:
+        s += "(%i)" % int(value["index"]);
     s += "("
     for i in xrange(0, pars_N):
         par = pars_p.dereference()
-        parkeys_N = int(par["keys"]["N"])
-        parkeys_p = par["keys"]["p"]
-        if(parkeys_N>0):
-            string = (parkeys_p+(parkeys_N-1)).dereference()
-            string_N = int(string["N"])
+        string = par["key"]
+        string_N = int(string["N"])
+        if string_N>0:
             string_p = string["p"]
             for j in xrange(0, string_N):
                 s += "%c" % int(string_p.dereference())
@@ -120,21 +113,21 @@ def qdump__Node_typed(d, value):
             s += " "
     s += ")"
     d.putValue(s)
-    d.putNumChild(4)
+    d.putNumChild(1)
     if d.isExpanded():
         with Children(d):
             d.putSubItem("value", value["value"])
-            d.putSubItem("keys", value["keys"])
+            d.putSubItem("key", value["key"])
             d.putSubItem("parents", value["parents"])
             d.putSubItem("numChildren", value["numChildren"])
-            d.putSubItem("parentOf", value["parentOf"])
+            d.putSubItem("children", value["children"])
             d.putSubItem("index", value["index"])
             d.putSubItem("container", value["container"])
 
-def qdump__NodeL(d, value):
+def qdump__rai__NodeL(d, value):
     qdump__LIST(d, value)
 
-def qdump__Graph(d, value):
+def qdump__rai__Graph(d, value):
     p = value["p"]
     N = int(value["N"])
     s = "<%i>" % N
@@ -142,7 +135,7 @@ def qdump__Graph(d, value):
     m=N
     if m>10:
         m=10
-    d.putNumChild(m+1)
+    d.putNumChild(1)
     if d.isExpanded():
         with Children(d):
             for i in xrange(0, m):
@@ -151,50 +144,61 @@ def qdump__Graph(d, value):
                 p += 1
             d.putSubItem("isNodeOfGraph", value["isNodeOfGraph"])
             d.putSubItem("isIndexed", value["isIndexed"])
-#            d.putSubItem("p", value["p"])
+            d.putSubItem("isDoubleLinked", value["isDoubleLinked"])
 
-def qdump__BodyL(d, value):
-    qdump__LIST(d,value)
+def qdump__rai__Vector(d, value):
+    x = value["x"].to('d')
+    y = value["y"].to('d')
+    z = value["z"].to('d')
+    s = "[%.3g %.3g %.3g]" % (x,y,z)
+    d.putValue(s)
+    d.putNumChild(1)
+    if d.isExpanded():
+        with Children(d):
+            d.putSubItem("x", value["x"])
+            d.putSubItem("y", value["y"])
+            d.putSubItem("z", value["z"])
+            d.putSubItem("isZero", value["isZero"])
+            with SubItem(d, "length"):
+                d.putValue(math.sqrt(x*x+y*y+z*z))
+                d.putType("float")
+                d.putNumChild(0)
 
-def qdump__ShapeL(d, value):
-    qdump__LIST(d,value)
+def qdump__rai__Quaternion(d, value):
+    w = value["w"].to('d')
+    x = value["x"].to('d')
+    y = value["y"].to('d')
+    z = value["z"].to('d')
+    s = "[%.3f %.3f %.3f %.3f]" % (w,x,y,z)
+    d.putValue(s)
+    d.putNumChild(1)
+    if d.isExpanded():
+        with Children(d):
+            d.putSubItem("w", value["w"])
+            d.putSubItem("x", value["x"])
+            d.putSubItem("y", value["y"])
+            d.putSubItem("z", value["z"])
+            d.putSubItem("isZero", value["isZero"])
+            with SubItem(d, "degrees"):
+                d.putValue(180.0/math.pi*math.acos(w))
+                d.putType("float")
+                d.putNumChild(0)
 
-def qdump__JointL(d, value):
-    qdump__LIST(d,value)
-
-def qdump__ProxyL(d, value):
-    qdump__LIST(d,value)
-
-#def qdump__rai__Vector(d, value):
-#    x=value["x"]
-#    y=value["y"]
-#    z=value["z"]
-#    s = "[%g %g %g]" % (x,y,z)
-#    d.putValue(s)
-#    d.putNumChild(1)
-#    if d.isExpanded():
-#        with Children(d):
-#            d.putSubItem("isZero", value["isZero"])
-#            with SubItem(d, "length"):
-#                d.putValue(math.sqrt(x*x+y*y+z*z))
-#                d.putType("float")
-#                d.putNumChild(0)
-
-#def qdump__rai__Quaternion(d, value):
-#    w=value["w"]
-#    x=value["x"]
-#    y=value["y"]
-#    z=value["z"]
-#    s = "[%d %d %d %d]" % (w,x,y,z)
-#    d.putValue(s)
-#    d.putNumChild(1)
-#    if d.isExpanded():
-#        with Children(d):
-#            d.putSubItem("isZero", value["isZero"])
-#            with SubItem(d, "degrees"):
-#                d.putValue(360.0/math.pi*math.acos(w))
-#                d.putType("float")
-#                d.putNumChild(0)
+def qdump__rai__Transformation(d, value):
+    px = value["pos"]["x"].to('d')
+    py = value["pos"]["y"].to('d')
+    pz = value["pos"]["z"].to('d')
+    qw = value["rot"]["w"].to('d')
+    qx = value["rot"]["x"].to('d')
+    qy = value["rot"]["y"].to('d')
+    qz = value["rot"]["z"].to('d')
+    s = "[%.1f %.1f %.1f %.1f %.1f %.1f %.1f]" % (px,py,pz,qw,qx,qy,qz)
+    d.putValue(s)
+    d.putNumChild(1)
+    if d.isExpanded():
+        with Children(d):
+            d.putSubItem("pos", value["pos"])
+            d.putSubItem("rot", value["rot"])
 
 def qdump__rai__Frame(d, value):
     ID = int(value["ID"])
@@ -212,14 +216,16 @@ def qdump__rai__Frame(d, value):
             d.putSubItem("ID", value["ID"])
             d.putSubItem("name", value["name"])
             d.putSubItem("parent", value["parent"])
-            d.putSubItem("parentOf", value["parentOf"])
+            d.putSubItem("children", value["children"])
+            d.putSubItem("Q", value["Q"])
+            d.putSubItem("X", value["X"])
+            d.putSubItem("tau", value["tau"])
             d.putSubItem("joint", value["joint"])
             d.putSubItem("shape", value["shape"])
             d.putSubItem("inertia", value["inertia"])
-            d.putSubItem("Q", value["Q"])
-            d.putSubItem("X", value["X"])
+            d.putSubItem("forces", value["forces"])
             d.putSubItem("ats", value["ats"])
             d.putSubItem("_state_X_isGood", value["_state_X_isGood"])
-            d.putSubItem("K", value["K"])
+            d.putSubItem("C", value["C"])
 
 #end

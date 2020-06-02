@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -8,23 +8,23 @@
 
 #pragma once
 
-#include <Core/thread.h>
-#include <Control/taskControl.h>
+#include "taskControl.h"
+#include "../Core/thread.h"
 
 struct GamepadControlThread : Thread {
-  struct Gamepad2Tasks *g2t;
+  struct Gamepad2Tasks* g2t;
   VAR(arr, gamepadState)
   VAR(CtrlTaskL, ctrlTasks)
   VAR(rai::Configuration, modelWorld)
-  
-  struct GamepadInterface *gamepadPoller;
-  TaskControlMethods *tc;
-  
+
+  struct GamepadInterface* gamepadPoller;
+  TaskControlMethods* tc;
+
   GamepadControlThread();
   ~GamepadControlThread();
-  
+
   virtual void open();
   virtual void step();
   virtual void close();
-  
+
 };

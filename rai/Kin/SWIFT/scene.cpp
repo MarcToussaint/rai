@@ -62,7 +62,7 @@ using std::cerr;
 #include "SWIFT_pair.h"
 #include "SWIFT_fileio.h"
 
-SWIFT_Scene *global_scene=NULL;
+SWIFT_Scene *global_scene=nullptr;
 
 ///////////////////////////////////////////////////////////////////////////////
 // File Reading Objects
@@ -116,10 +116,10 @@ static bool Is_Identity( const SWIFT_Orientation& orient,
                          const SWIFT_Translation& trans, SWIFT_Real scale )
 {
     if( scale == 1.0 ) {
-        if( trans == NULL ||
+        if( trans == nullptr ||
             (trans[0] == 0.0 && trans[1] == 0.0 && trans[2] == 0.0)
         ) {
-            return orient == NULL ||
+            return orient == nullptr ||
                    (orient[0] == 1.0 && orient[1] == 0.0 && orient[2] == 0.0 &&
                     orient[3] == 0.0 && orient[4] == 1.0 && orient[5] == 0.0 &&
                     orient[6] == 0.0 && orient[7] == 0.0 && orient[8] == 1.0);
@@ -149,7 +149,7 @@ SWIFT_Scene::SWIFT_Scene( bool broad_phase, bool global_sort )
     user_object_ids.Set_Length( 0 );
 
     total_pairs = 0;
-    overlapping_pairs = NULL;
+    overlapping_pairs = nullptr;
 
     // Register the file readers
     s->basic_file_reader.Register_Yourself( s->file_dispatcher );
@@ -285,10 +285,10 @@ bool SWIFT_Scene::Add_General_Object(
 #endif
         break;
     case FT_OTHER:
-      { SWIFT_Real* vs = NULL;
-        int* fs = NULL;
+      { SWIFT_Real* vs = nullptr;
+        int* fs = nullptr;
         int vn, fn;
-        int* fv = NULL;
+        int* fv = nullptr;
 
         if( !s->file_dispatcher.Read( f, vs, fs, vn, fn, fv ) ) {
             // Delete everything
@@ -621,8 +621,8 @@ void SWIFT_Scene::Activate( int id1, int id2 )
                 ) {
                     // Add it to the overlapping list.
                     objects[id1]->Pairs()[j].Set_Next( overlapping_pairs );
-                    objects[id1]->Pairs()[j].Set_Prev( NULL );
-                    if( overlapping_pairs != NULL ) {
+                    objects[id1]->Pairs()[j].Set_Prev( nullptr );
+                    if( overlapping_pairs != nullptr ) {
                         overlapping_pairs->Set_Prev( objects[id1]->Pairs()(j) );
                     }
                     overlapping_pairs = objects[id1]->Pairs()(j);
@@ -642,8 +642,8 @@ void SWIFT_Scene::Activate( int id1, int id2 )
                 ) {
                     // Add it to the overlapping list.
                     objects[id2]->Pairs()[j].Set_Next( overlapping_pairs );
-                    objects[id2]->Pairs()[j].Set_Prev( NULL );
-                    if( overlapping_pairs != NULL ) {
+                    objects[id2]->Pairs()[j].Set_Prev( nullptr );
+                    if( overlapping_pairs != nullptr ) {
                         overlapping_pairs->Set_Prev( objects[id2]->Pairs()(j) );
                     }
                     overlapping_pairs = objects[id2]->Pairs()(j);
@@ -680,8 +680,8 @@ void SWIFT_Scene::Activate( int id )
         ) {
             // Add it to the overlapping list.
             objects[id]->Pairs()[j].Set_Next( overlapping_pairs );
-            objects[id]->Pairs()[j].Set_Prev( NULL );
-            if( overlapping_pairs != NULL ) {
+            objects[id]->Pairs()[j].Set_Prev( nullptr );
+            if( overlapping_pairs != nullptr ) {
                 overlapping_pairs->Set_Prev( objects[id]->Pairs()(j) );
             }
             overlapping_pairs = objects[id]->Pairs()(j);
@@ -704,8 +704,8 @@ void SWIFT_Scene::Activate( int id )
                 ) {
                     // Add it to the overlapping list.
                     objects[k]->Pairs()[j].Set_Next( overlapping_pairs );
-                    objects[k]->Pairs()[j].Set_Prev( NULL );
-                    if( overlapping_pairs != NULL ) {
+                    objects[k]->Pairs()[j].Set_Prev( nullptr );
+                    if( overlapping_pairs != nullptr ) {
                         overlapping_pairs->Set_Prev( objects[k]->Pairs()(j) );
                     }
                     overlapping_pairs = objects[k]->Pairs()(j);
@@ -721,7 +721,7 @@ void SWIFT_Scene::Activate( )
     int i, j;
 
     // Start off with an empty overlap list
-    overlapping_pairs = NULL;
+    overlapping_pairs = nullptr;
 
     for( i = 0; i < objects.Length(); i++ ) {
         for( j = 0; j < objects[i]->Num_Pairs(); j++ ) {
@@ -730,8 +730,8 @@ void SWIFT_Scene::Activate( )
                 if( objects[i]->Pairs()[j].Overlapping() ) {
                     // Add it to the overlapping list.
                     objects[i]->Pairs()[j].Set_Next( overlapping_pairs );
-                    objects[i]->Pairs()[j].Set_Prev( NULL );
-                    if( overlapping_pairs != NULL ) {
+                    objects[i]->Pairs()[j].Set_Prev( nullptr );
+                    if( overlapping_pairs != nullptr ) {
                         overlapping_pairs->Set_Prev( objects[i]->Pairs()(j) );
                     }
                     overlapping_pairs = objects[i]->Pairs()(j);
@@ -797,7 +797,7 @@ void SWIFT_Scene::Deactivate( int id1, int id2 )
     }
 
     // Remove pairs from the overlapping list
-    while( overlapping_pairs != NULL &&
+    while( overlapping_pairs != nullptr &&
            ( (overlapping_pairs->Id0() == id1 &&
               overlapping_pairs->Id1() == id2) ||
              (overlapping_pairs->Id0() == id2 &&
@@ -806,15 +806,15 @@ void SWIFT_Scene::Deactivate( int id1, int id2 )
         overlapping_pairs = overlapping_pairs->Next();
     }
 
-    if( overlapping_pairs != NULL ) {
+    if( overlapping_pairs != nullptr ) {
         SWIFT_Pair* pair = overlapping_pairs->Next();
-        overlapping_pairs->Set_Prev( NULL );
-        while( pair != NULL ) {
+        overlapping_pairs->Set_Prev( nullptr );
+        while( pair != nullptr ) {
             if( (pair->Id0() == id1 && pair->Id1() == id2) ||
                 (pair->Id0() == id2 && pair->Id1() == id1)
             ) {
                 pair->Prev()->Set_Next( pair->Next() );
-                if( pair->Next() != NULL ) {
+                if( pair->Next() != nullptr ) {
                     pair->Next()->Set_Prev( pair->Prev() );
                 }
             }
@@ -861,19 +861,19 @@ void SWIFT_Scene::Deactivate( int id )
     }
 
     // Remove pairs from the overlapping list
-    while( overlapping_pairs != NULL &&
+    while( overlapping_pairs != nullptr &&
            (overlapping_pairs->Id0() == id || overlapping_pairs->Id1() == id)
     ) {
         overlapping_pairs = overlapping_pairs->Next();
     }
 
-    if( overlapping_pairs != NULL ) {
+    if( overlapping_pairs != nullptr ) {
         SWIFT_Pair* pair = overlapping_pairs->Next();
-        overlapping_pairs->Set_Prev( NULL );
-        while( pair != NULL ) {
+        overlapping_pairs->Set_Prev( nullptr );
+        while( pair != nullptr ) {
             if( pair->Id0() == id || pair->Id1() == id ) {
                 pair->Prev()->Set_Next( pair->Next() );
-                if( pair->Next() != NULL ) {
+                if( pair->Next() != nullptr ) {
                     pair->Next()->Set_Prev( pair->Prev() );
                 }
             }
@@ -893,7 +893,7 @@ void SWIFT_Scene::Deactivate( )
     }
 
     // No pairs are overlapping
-    overlapping_pairs = NULL;
+    overlapping_pairs = nullptr;
 }
 
 
@@ -939,12 +939,13 @@ bool SWIFT_Scene::Query_Intersection(
         SWIFT_Pair* pair = overlapping_pairs;
 
         k = 0;
-        while( pair != NULL ) {
+        while( pair != nullptr ) {
             o1 = pair->Id0();
             o2 = pair->Id1();
-            if( pair->Tolerance( objects[o1], objects[o2],
-                                 0.0 )
-            ) {
+            try {
+              if( pair->Tolerance( objects[o1], objects[o2],
+                                   0.0 )
+                  ) {
                 if( early_exit ) {
                     num_pairs = 0;
                     return true;
@@ -952,6 +953,10 @@ bool SWIFT_Scene::Query_Intersection(
                 ois[k] = user_object_ids[o1];
                 ois[k+1] = user_object_ids[o2];
                 k += 2;
+              }
+            } catch(const char* msg) {
+              std::cerr <<"... catching error '" <<msg <<"' -- in pair " <<o1 <<' ' <<o2 <<endl;
+              throw std::pair<int,int>(o1,o2);
             }
             pair = pair->Next();
         }
@@ -1008,9 +1013,10 @@ bool SWIFT_Scene::Query_Tolerance_Verification( bool early_exit,
         SWIFT_Pair* pair = overlapping_pairs;
 
         k = 0;
-        while( pair != NULL ) {
+        while( pair != nullptr ) {
             o1 = pair->Id0();
             o2 = pair->Id1();
+            try {
             if( pair->Tolerance( objects[o1], objects[o2], tolerance ) ) {
                 if( early_exit ) {
                     num_pairs = 0;
@@ -1019,6 +1025,10 @@ bool SWIFT_Scene::Query_Tolerance_Verification( bool early_exit,
                 ois[k] = user_object_ids[o1];
                 ois[k+1] = user_object_ids[o2];
                 k += 2;
+            }
+            } catch(const char* msg) {
+              std::cerr <<"... catching error '" <<msg <<"' -- in pair->Tolerance (" <<o1 <<' ' <<o2 <<") -- continuing!" <<endl;
+//              throw std::pair<int,int>(o1,o2);
             }
             pair = pair->Next();
         }
@@ -1034,6 +1044,7 @@ bool SWIFT_Scene::Query_Tolerance_Verification( bool early_exit,
                 }
                 o1 = objects[i]->Pairs()[j].Id0();
                 o2 = objects[i]->Pairs()[j].Id1();
+                try {
                 if( objects[i]->Pairs()[j].Tolerance( objects[o1], objects[o2],
                                                       tolerance )
                 ) {
@@ -1044,6 +1055,10 @@ bool SWIFT_Scene::Query_Tolerance_Verification( bool early_exit,
                     ois[k] = user_object_ids[o1];
                     ois[k+1] = user_object_ids[o2];
                     k += 2;
+                }
+                } catch(const char* msg) {
+//                  std::cerr <<"... catching error '" <<msg <<"' -- in pair->Tolerance (" <<o1 <<' ' <<o2 <<") -- continuing!" <<endl;
+//                  throw std::pair<int,int>(o1,o2);
                 }
             }
         }
@@ -1082,7 +1097,7 @@ bool SWIFT_Scene::Query_Approximate_Distance(
         SWIFT_Pair* pair = overlapping_pairs;
 
         j = 0; k = 0;
-        while( pair != NULL ) {
+        while( pair != nullptr ) {
             o1 = pair->Id0();
             o2 = pair->Id1();
             if( pair->Distance( objects[o1], objects[o2],
@@ -1180,7 +1195,7 @@ bool SWIFT_Scene::Query_Exact_Distance(
         SWIFT_Pair* pair = overlapping_pairs;
 
         j = 0; k = 0;
-        while( pair != NULL ) {
+        while( pair != nullptr ) {
             o1 = pair->Id0();
             o2 = pair->Id1();
             if( pair->Distance( objects[o1], objects[o2],
@@ -1288,7 +1303,7 @@ bool SWIFT_Scene::Query_Contact_Determination(
         SWIFT_Pair* pair = overlapping_pairs;
 
         k = 0;
-        while( pair != NULL ) {
+        while( pair != nullptr ) {
             this_intersection = false;
             o1 = pair->Id0();
             o2 = pair->Id1();
@@ -1313,19 +1328,19 @@ bool SWIFT_Scene::Query_Contact_Determination(
 
                 if( this_intersection ) {
                     ncs[k>>1] = -1;
-                    if( distances != NULL ) {
+                    if( distances != nullptr ) {
                         ds.Fit_Grow( 1, REPORTING_LIST_GROW_SIZE );
                         ds.Add( dist );
                     }
-                    if( nearest_pts != NULL ) {
+                    if( nearest_pts != nullptr ) {
                         nps.Fit_Grow( 6, REPORTING_LIST_GROW_SIZE*6 );
                         nps.Set_Length( nps.Length()+6 );
                     }
-                    if( normals != NULL ) {
+                    if( normals != nullptr ) {
                         cns.Fit_Grow( 3, REPORTING_LIST_GROW_SIZE*3 );
                         cns.Set_Length( cns.Length()+3 );
                     }
-                    if( feature_types != NULL && feature_ids != NULL ) {
+                    if( feature_types != nullptr && feature_ids != nullptr ) {
                         fts.Fit_Grow( 2, REPORTING_LIST_GROW_SIZE<<1 );
                         fts.Set_Length( fts.Length()+2 );
                         fis.Fit_Grow( 4, REPORTING_LIST_GROW_SIZE<<2 );
@@ -1333,19 +1348,19 @@ bool SWIFT_Scene::Query_Contact_Determination(
                     }
                 } else {
                     ncs[k>>1] = num_cs;
-                    if( distances != NULL ) {
+                    if( distances != nullptr ) {
                         ds.Fit_Grow( num_cs, REPORTING_LIST_GROW_SIZE );
                         pair->Distances( ds );
                     }
-                    if( nearest_pts != NULL ) {
+                    if( nearest_pts != nullptr ) {
                         nps.Fit_Grow( num_cs*6, REPORTING_LIST_GROW_SIZE*6 );
                         pair->Contact_Points( nps );
                     }
-                    if( normals != NULL ) {
+                    if( normals != nullptr ) {
                         cns.Fit_Grow( num_cs*3, REPORTING_LIST_GROW_SIZE*3 );
                         pair->Contact_Normals( cns );
                     }
-                    if( feature_types != NULL && feature_ids != NULL ) {
+                    if( feature_types != nullptr && feature_ids != nullptr ) {
                         fts.Fit_Grow( num_cs<<1, REPORTING_LIST_GROW_SIZE<<1 );
                         fis.Fit_Grow( num_cs<<2, REPORTING_LIST_GROW_SIZE<<2 );
                         pair->Contact_Features( fts, fis );
@@ -1390,19 +1405,19 @@ bool SWIFT_Scene::Query_Contact_Determination(
 
                     if( this_intersection ) {
                         ncs[k>>1] = -1;
-                        if( distances != NULL ) {
+                        if( distances != nullptr ) {
                             ds.Fit_Grow( 1, REPORTING_LIST_GROW_SIZE );
                             ds.Add( dist );
                         }
-                        if( nearest_pts != NULL ) {
+                        if( nearest_pts != nullptr ) {
                             nps.Fit_Grow( 6, REPORTING_LIST_GROW_SIZE*6 );
                             nps.Set_Length( nps.Length()+6 );
                         }
-                        if( normals != NULL ) {
+                        if( normals != nullptr ) {
                             cns.Fit_Grow( 3, REPORTING_LIST_GROW_SIZE*3 );
                             cns.Set_Length( cns.Length()+3 );
                         }
-                        if( feature_types != NULL && feature_ids != NULL ) {
+                        if( feature_types != nullptr && feature_ids != nullptr ) {
                             fts.Fit_Grow( 2, REPORTING_LIST_GROW_SIZE<<1 );
                             fts.Set_Length( fts.Length()+2 );
                             fis.Fit_Grow( 4, REPORTING_LIST_GROW_SIZE<<2 );
@@ -1410,21 +1425,21 @@ bool SWIFT_Scene::Query_Contact_Determination(
                         }
                     } else {
                         ncs[k>>1] = num_cs;
-                        if( distances != NULL ) {
+                        if( distances != nullptr ) {
                             ds.Fit_Grow( num_cs, REPORTING_LIST_GROW_SIZE );
                             objects[i]->Pairs()[j].Distances( ds );
                         }
-                        if( nearest_pts != NULL ) {
+                        if( nearest_pts != nullptr ) {
                             nps.Fit_Grow( num_cs*6,
                                           REPORTING_LIST_GROW_SIZE*6 );
                             objects[i]->Pairs()[j].Contact_Points( nps );
                         }
-                        if( normals != NULL ) {
+                        if( normals != nullptr ) {
                             cns.Fit_Grow( num_cs*3,
                                           REPORTING_LIST_GROW_SIZE*3 );
                             objects[i]->Pairs()[j].Contact_Normals( cns );
                         }
-                        if( feature_types != NULL && feature_ids != NULL ) {
+                        if( feature_types != nullptr && feature_ids != nullptr ) {
                             fts.Fit_Grow( num_cs<<1,
                                           REPORTING_LIST_GROW_SIZE<<1 );
                             fis.Fit_Grow( num_cs<<2,
@@ -1441,19 +1456,19 @@ bool SWIFT_Scene::Query_Contact_Determination(
         }
     }
 
-    if( distances != NULL ) {
+    if( distances != nullptr ) {
         *distances = ds.Data();
         ds.Set_Length( 0 );
     }
-    if( nearest_pts != NULL ) {
+    if( nearest_pts != nullptr ) {
         *nearest_pts = nps.Data();
         nps.Set_Length( 0 );
     }
-    if( normals != NULL ) {
+    if( normals != nullptr ) {
         *normals = cns.Data();
         cns.Set_Length( 0 );
     }
-    if( feature_types != NULL && feature_ids != NULL ) {
+    if( feature_types != nullptr && feature_ids != nullptr ) {
         *feature_types = fts.Data();
         *feature_ids = fis.Data();
         fts.Set_Length( 0 );
@@ -1589,10 +1604,10 @@ inline void SWIFT_Scene::Update_Overlap( int axis, int id1, int id2 )
 
     if( poverlapping ) {
         // Pair is done overlapping. Remove it from the overlapping pairs list.
-        if( pair->Next() != NULL ) {
+        if( pair->Next() != nullptr ) {
             pair->Next()->Set_Prev( pair->Prev() );
         }
-        if( pair->Prev() != NULL ) {
+        if( pair->Prev() != nullptr ) {
             pair->Prev()->Set_Next( pair->Next() );
         } else {
             overlapping_pairs = pair->Next();
@@ -1602,8 +1617,8 @@ inline void SWIFT_Scene::Update_Overlap( int axis, int id1, int id2 )
     } else if( pair->Active() && pair->Overlapping() ) {
         // The pair is starting to overlap.  Add it to the overlapping list.
         pair->Set_Next( overlapping_pairs );
-        pair->Set_Prev( NULL );
-        if( overlapping_pairs != NULL ) {
+        pair->Set_Prev( nullptr );
+        if( overlapping_pairs != nullptr ) {
             overlapping_pairs->Set_Prev( pair );
         }
         overlapping_pairs = pair;

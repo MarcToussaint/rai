@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include <Core/array.h>
-#include <Geo/geo.h>
+#include "../Core/array.h"
+#include "../Geo/geo.h"
 
 struct Plane {
   arr mean, normal;
@@ -29,15 +29,15 @@ struct CostFct_PlanePoints {
   const arr& transform;
   arr y;
   rai::Quaternion r;
-  
+
   CostFct_PlanePoints(const arr& n, const arr& m, const arr& X, const arr& transform);
-  
+
   double f();
   arr df_transform();
-  
+
   ScalarFunction f_transform();
 };
 
 void glDrawPlanes(const PlaneA& planes);
 
-void glDrawPlanes(void *p);
+void glDrawPlanes(void* p);

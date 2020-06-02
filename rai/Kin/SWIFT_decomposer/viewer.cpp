@@ -56,8 +56,8 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 
-#include <Kin/SWIFT/SWIFT_common.h>
-#include <Kin/SWIFT/SWIFT_linalg.h>
+#include "../SWIFT/SWIFT_common.h"
+#include "../SWIFT/SWIFT_linalg.h"
 #include <viewer.h>
 
 // Types

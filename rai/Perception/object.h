@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -36,10 +36,10 @@
 
 //typedef pcl::PointXYZRGB PointT;
 
-void voxelFilter(pcl::PointCloud<PointT>::Ptr inCloud,pcl::PointCloud<PointT>::Ptr outCloud, double leafSize);
+void voxelFilter(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointCloud<PointT>::Ptr outCloud, double leafSize);
 
 void clusterObject(pcl::PointCloud<PointT>::Ptr cloud, int numCluster, std::vector<pcl::PointCloud<PointT>::Ptr>& list_extracted_cloud, int minPoints = 200, int maxPoints = 25000);
 
-void extractPrimitives(std::vector<pcl::PointCloud<PointT>::Ptr> list_extracted_cloud, std::vector<std::pair<pcl::ModelCoefficients::Ptr,int>>& list_primitives);
+void extractPrimitives(std::vector<pcl::PointCloud<PointT>::Ptr> list_extracted_cloud, std::vector<std::pair<pcl::ModelCoefficients::Ptr, int>>& list_primitives);
 
 #endif

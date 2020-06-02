@@ -1,16 +1,16 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include <Gui/opengl.h>
-#include <GL/gl.h>
-#include <Geo/geo.h>
-#include <Geo/qhull.h>
 #include "minEigModel.h"
+#include "../Gui/opengl.h"
+#include "../Geo/geo.h"
+#include "../Geo/qhull.h"
+#include <GL/gl.h>
 
 void MinEigModel::setPoints(const uintA& points) {
   pts = points;
@@ -109,7 +109,7 @@ void MinEigModel::reweightWithError(uintA& pts) {
 arr MinEigModel::getInliers() {
   arr X;
   for(uint i:pts) if(weights(i)>.5) X.append(data.X[i]);
-  X.reshape(X.N/3,3);
+  X.reshape(X.N/3, 3);
   return X;
 }
 
@@ -123,27 +123,27 @@ void MinEigModel::computeConvexHull2() {
   convexHull.T.clear();
   if(!eig.x_lo.N) return;
   arr b0, b1;
-  if(eig.x_lo.argmax()==0) b0 = ARR(0,1,0) - eig.x_lo*eig.x_lo(1);
-  else                       b0 = ARR(1,0,0) - eig.x_lo*eig.x_lo(0);
+  if(eig.x_lo.argmax()==0) b0 = ARR(0, 1, 0) - eig.x_lo*eig.x_lo(1);
+  else                       b0 = ARR(1, 0, 0) - eig.x_lo*eig.x_lo(0);
   b0 /= length(b0);
   b1 = crossProduct(eig.x_lo, b0);
   b1 /= length(b1);
-  
+
   arr Xi, hull;
   for(uint i:pts) if(weights(i)>.5) {
       Xi = data.X[i];
       Xi -= mean;
-      hull.append(scalarProduct(b0,Xi));
-      hull.append(scalarProduct(b1,Xi));
+      hull.append(scalarProduct(b0, Xi));
+      hull.append(scalarProduct(b1, Xi));
     }
   if(hull.N<5) return;
-  hull.reshape(hull.N/2,2);
+  hull.reshape(hull.N/2, 2);
   try {
     hull = getHull(hull, convexHull.T);
   } catch(...) { return; }
-  convexHull.V.resize(hull.d0,3);
+  convexHull.V.resize(hull.d0, 3);
   for(uint i=0; i<hull.d0; i++) {
-    convexHull.V[i] = mean + b0*hull(i,0) + b1*hull(i,1);
+    convexHull.V[i] = mean + b0*hull(i, 0) + b1*hull(i, 1);
   }
 }
 
@@ -174,7 +174,7 @@ void MinEigModel::glDraw(OpenGL& gl) {
     glRotate(rot);
     glDrawBox(.5, .5, .01);
     glBegin(GL_LINES);
-    glVertex3d(0.,0.,0.);
+    glVertex3d(0., 0., 0.);
     glVertex3d(0., 0., .1);
     glEnd();
     glPopMatrix();

@@ -1,12 +1,15 @@
+
 BASE = .
 
 target: src
 
-DEPEND = $(shell find rai -mindepth 1 -maxdepth 1 -printf "%f ")
+DEPEND = $(shell find rai -mindepth 1 -maxdepth 1 -not -name 'contrib' -printf "%f ")
 
 ################################################################################
 
 src_paths =  $(shell find rai -mindepth 1 -maxdepth 1 -type d -not -name 'retired' -printf "%f ")
+
+#contrib_paths =  $(shell find -L rai/contrib -mindepth 1 -maxdepth 1 -type d -not -name 'retired' -not -name '.git' -printf "%f ")
 
 test_paths = $(shell find test -mindepth 3 -maxdepth 3 -name 'Makefile' -printf "%h ")
 
@@ -37,7 +40,33 @@ cleanStart: force
 	git clean -f -d -x
 	cp build/config.mk.default build/config.mk
 
+paths: force
+	@echo; echo ----------------------------------------
+	@echo "  paths ";
+	@echo ----------------------------------------; echo
+	@echo "  src_paths =" "$(src_paths)"
+	@echo "  contrib_paths =" "$(contrib_paths)"
+	@echo "  test_paths =" "$(test_paths)"
+	@echo "  bin_paths =" "$(bin_paths)"
+
+
 ################################################################################
+
+INSTALL_PATH?=z.LOCAL
+
+install: src bin
+	mkdir -p $(INSTALL_PATH)/bin $(INSTALL_PATH)/lib/rai $(INSTALL_PATH)/include/rai
+	cp bin/src_kinEdit/x.exe $(INSTALL_PATH)/bin/kinEdit
+	cp lib/lib*.so $(INSTALL_PATH)/lib/rai
+	@echo "copying headers into $(INSTALL_PATH)/include/rai"
+	@eval $(shell cd rai; find . -maxdepth 1 -type d -printf "mkdir -p $(INSTALL_PATH)/include/rai/%f\; ")
+	@eval $(shell cd rai; find . -maxdepth 2 -type f -name '*.h' -or -name '*.tpp' -printf "cp rai/%p $(INSTALL_PATH)/include/rai/%h/\; ")
+	@find $(INSTALL_PATH)/include/rai
+	@find $(INSTALL_PATH)/lib/rai
+
+
+################################################################################
+
 
 # test: setConfigFlag $(exa_paths:%=inPath_clean/%) cleanLocks $(exa_paths:%=inPath_make/%)
 
@@ -46,8 +75,12 @@ cleanStart: force
 
 runTests: tests
 	@rm -f z.test-report
-	@find test -mindepth 2 -maxdepth 2 -type d \
-		-exec build/run-path.sh {} \;
+	@for p in $(test_paths); do build/run-path.sh $$p; done
+
+################################################################################
+
+deletePotentiallyNonfreeCode: force
+	@rm -Rf rai/Kin/SWIFT rai/Kin/SWIFT_decomposer rai/Geo/Lewiner rai/Geo/ply rai/Geo/GJK
 
 ################################################################################
 

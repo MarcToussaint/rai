@@ -1,0 +1,33 @@
+#pragma once
+
+#include "../Core/thread.h"
+
+namespace rai{
+  struct Configuration;
+  struct ConfigurationViewer;
+  struct CameraView;
+}
+
+struct KinViewer;
+struct KinPoseViewer;
+struct ImageViewer;
+struct PointCloudViewer;
+
+namespace ry{
+
+typedef Var<rai::Configuration> Config;
+
+struct ConfigViewer { ptr<KinViewer> view; };
+struct ConfigurationViewer { ptr<rai::ConfigurationViewer> view; };
+struct ImageViewer { ptr<::ImageViewer> view; };
+struct PointCloudViewer { ptr<::PointCloudViewer> view; };
+
+struct RyCameraView {
+  ptr<rai::CameraView> cam;
+  Var<byteA> image;
+  Var<floatA> depth;
+  Var<byteA> segmentation;
+  Var<arr> pts;
+};
+
+}

@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -7,29 +7,21 @@
     --------------------------------------------------------------  */
 
 #include "proxy.h"
-
-#include <Gui/opengl.h>
 #include "kin.h"
 #include "frame.h"
+#include "../Gui/opengl.h"
 
 //===========================================================================
 //
 // Proxy
 //
 
-rai::Proxy::Proxy() {
-}
-
-rai::Proxy::~Proxy() {
-  del_coll();
-}
-
-void rai::Proxy::copy(const rai::Configuration& K, const rai::Proxy& p){
-  del_coll();
-  if(!!K){
-    a = K.frames(p.a->ID); CHECK(a, "");
-    b = K.frames(p.b->ID); CHECK(b, "");
-  }else a=b=0;
+void rai::Proxy::copy(const rai::Configuration& C, const rai::Proxy& p) {
+  collision.reset();
+  if(!!C) {
+    a = C.frames(p.a->ID); CHECK(a, "");
+    b = C.frames(p.b->ID); CHECK(b, "");
+  } else a=b=0;
   posA = p.posA;
   posB = p.posB;
   normal = p.normal;
@@ -37,39 +29,39 @@ void rai::Proxy::copy(const rai::Configuration& K, const rai::Proxy& p){
   colorCode = p.colorCode;
 }
 
-void rai::Proxy::calc_coll(const Configuration& K) {
-  CHECK_EQ(&a->K, &K, "");
-  CHECK_EQ(&b->K, &K, "");
-  rai::Shape *s1 = a->shape;
-  rai::Shape *s2 = b->shape;
+void rai::Proxy::calc_coll(const Configuration& C) {
+  CHECK_EQ(&a->C, &C, "");
+  CHECK_EQ(&b->C, &C, "");
+  rai::Shape* s1 = a->shape;
+  rai::Shape* s2 = b->shape;
   CHECK(s1 && s2, "");
-  
+
   double r1=0.; if(s1->size().N) r1=s1->size().last();
   double r2=0.; if(s2->size().N) r2=s2->size().last();
-  rai::Mesh *m1 = &s1->sscCore();  if(!m1->V.N) { m1 = &s1->mesh(); r1=0.; }
-  rai::Mesh *m2 = &s2->sscCore();  if(!m2->V.N) { m2 = &s2->mesh(); r2=0.; }
+  rai::Mesh* m1 = &s1->sscCore();  if(!m1->V.N) { m1 = &s1->mesh(); r1=0.; }
+  rai::Mesh* m2 = &s2->sscCore();  if(!m2->V.N) { m2 = &s2->mesh(); r2=0.; }
 
-  if(coll) coll.reset();
-  coll = std::make_shared<PairCollision>(*m1, *m2, s1->frame.ensure_X(), s2->frame.ensure_X(), r1, r2);
-  
-  d = coll->distance-coll->rad1-coll->rad2;
-  posA = coll->p1;
-  posB = coll->p2;
-  normal = coll->normal;
+  if(collision) collision.reset();
+  collision = make_shared<PairCollision>(*m1, *m2, s1->frame.ensure_X(), s2->frame.ensure_X(), r1, r2);
+
+  d = collision->distance-collision->rad1-collision->rad2;
+  posA = collision->p1;
+  posB = collision->p2;
+  normal = collision->normal;
 }
 
 typedef rai::Array<rai::Proxy*> ProxyL;
 
 void rai::Proxy::glDraw(OpenGL& gl) {
 #ifdef RAI_GL
-  if(coll) {
+  if(collision) {
     glLoadIdentity();
-    coll->glDraw(gl);
+    collision->glDraw(gl);
   } else {
     glLoadIdentity();
     if(!colorCode) {
-      if(d>0.) glColor(.8,.2,.2);
-      else glColor(1,0,0);
+      if(d>0.) glColor(.8, .2, .2);
+      else glColor(1, 0, 0);
     } else glColor(colorCode);
     glBegin(GL_LINES);
     glVertex3dv(posA.p());
@@ -83,21 +75,35 @@ void rai::Proxy::glDraw(OpenGL& gl) {
     f.getAffineMatrixGL(GLmatrix);
     glLoadMatrixd(GLmatrix);
     glDrawDisk(.02);
-    
+
     f.pos=posB;
     f.getAffineMatrixGL(GLmatrix);
     glLoadMatrixd(GLmatrix);
     glDrawDisk(.02);
-    
+
 #if 0 //write text
     f.pos=.5*(posA+posB);
     f.getAffineMatrixGL(GLmatrix);
     glLoadMatrixd(GLmatrix);
-    glDrawText(STRING(a->name <<'-' <<b->name <<':' <<d), 0.,0.,0.);
+    glDrawText(STRING(a->name <<'-' <<b->name <<':' <<d), 0., 0., 0.);
 #endif
-    
+
     glEnable(GL_CULL_FACE);
   }
 #endif
+}
+
+void rai::Proxy::write(std::ostream& os, bool brief) const{
+  os <<" ("
+    <<a->name <<")-("
+    <<b->name
+    <<") [" <<a->ID <<',' <<b->ID <<"] \td=" <<d;
+  if(!brief)
+    os <<" |A-B|=" <<(posB-posA).length()
+         //        <<" d^2=" <<(posB-posA).lengthSqr()
+       <<" v=" <<(posB-posA)
+       <<" normal=" <<normal
+       <<" posA=" <<posA
+       <<" posB=" <<posB;
 }
 

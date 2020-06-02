@@ -1,5 +1,5 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2017 Marc Toussaint
+    Copyright (c) 2019 Marc Toussaint
     email: marc.toussaint@informatik.uni-stuttgart.de
 
     This code is distributed under the MIT License.
@@ -7,10 +7,10 @@
     --------------------------------------------------------------  */
 
 #include "gamepad2tasks.h"
-#include <Kin/frame.h>
-#include <Kin/F_qFeatures.h>
-#include <Kin/TM_default.h>
-#include <Kin/TM_proxy.h>
+#include "../Kin/frame.h"
+#include "../Kin/F_qFeatures.h"
+#include "../Kin/TM_default.h"
+#include "../Kin/TM_proxy.h"
 
 enum BUTTON {
   BTN_NONE = 0,
@@ -28,7 +28,7 @@ enum BUTTON {
   BTN_RSTICK = 2048,
 };
 
-inline bool stopButtons(const arr& gamepadState){
+inline bool stopButtons(const arr& gamepadState) {
   if(!gamepadState.N) return false;
   uint mode = uint(gamepadState(0));
   if(mode&BTN_LB || mode&BTN_RB || mode&BTN_LT || mode&BTN_RT) return true;
@@ -37,10 +37,10 @@ inline bool stopButtons(const arr& gamepadState){
 
 Gamepad2Tasks::Gamepad2Tasks(TaskControlMethods& _TC, const rai::Configuration& K, const arr& _q0)
   : TC(_TC), q0(_q0),
-    endeffR(NULL), endeffL(NULL), base(NULL), torso(NULL), head(NULL), headAxes(NULL), limits(NULL), coll(NULL), gripperL(NULL), gripperR(NULL) {
-    
+    endeffR(nullptr), endeffL(nullptr), base(nullptr), torso(nullptr), head(nullptr), headAxes(nullptr), limits(nullptr), coll(nullptr), gripperL(nullptr), gripperR(nullptr) {
+
   robot = rai::getParameter<rai::String>("robot", "pr2");
-  
+
   if(true || rai::getParameter<bool>("oldfashinedTaskControl", true)) {
     homing = new CtrlTask("qHoming", make_shared<F_qItself>(), .5, 1., .2, 10.);
     homing->PD().setTarget(q0);
@@ -77,14 +77,14 @@ Gamepad2Tasks::Gamepad2Tasks(TaskControlMethods& _TC, const rai::Configuration& 
     coll = new CtrlTask("collisions", make_shared<TM_Proxy>(TMT_allP, uintA({0u}), .1), .2, .8, 1., 1.);
     gripperL = new CtrlTask("gripperL", make_shared<F_qItself>(F_qItself::byJointNames, StringA({"l_gripper_joint"}), K), 2., .8, 1., 1.);
     gripperR = new CtrlTask("gripperR", make_shared<F_qItself>(F_qItself::byJointNames, StringA({"r_gripper_joint"}), K), 2., .8, 1., 1.);
-    
-    endeffR->PD().setGains(40.,2.);
-    endeffL->PD().setGains(10.,1.); //endeffL->maxAcc=.5;
-    headAxes->PD().setGains(10.,5.);
+
+    endeffR->PD().setGains(40., 2.);
+    endeffL->PD().setGains(10., 1.); //endeffL->maxAcc=.5;
+    headAxes->PD().setGains(10., 5.);
   }
   for(CtrlTask* task: { homing, endeffR, endeffL, head, headAxes, limits, coll, gripperL, gripperR })
     task->active=false;
-    
+
   if(robot=="pr2") {
     base->active=false;
     torso->active=false;
@@ -103,14 +103,14 @@ double gamepadSignalMap(double x) {
 
 bool Gamepad2Tasks::updateTasks(arr& gamepadState, const rai::Configuration& K) {
   if(stopButtons(gamepadState)) return true;
-  
+
   //for(ptr<CtrlTask>& pdt:TC.tasks) pdt->active=false;
 
-HALT("change code: add a qNull here explicitly");
+  HALT("change code: add a qNull here explicitly");
 //  TC.qNullCostRef.PD().setGains(0., 10.); //nullspace qitself is not used for homing by default
 //  TC.qNullCostRef.active=true;
 //  TC.qNullCostRef.PD().setTarget(K.q);
-  
+
 //  homing->PD().setGains(0., 10.); //nullspace qitself is not used for homing by default
 //  homing->active=true;
 //  homing->PD().setTarget(MP.world.q);
@@ -118,16 +118,16 @@ HALT("change code: add a qNull here explicitly");
 //  coll->active=true;
 
   if(gamepadState.N<6) return false;
-  
-  double gamepadRate=rai::getParameter<double>("gamepadRate",.2);
+
+  double gamepadRate=rai::getParameter<double>("gamepadRate", .2);
   for(uint i=1; i<gamepadState.N; i++) if(fabs(gamepadState(i))<0.05) gamepadState(i)=0.;
   double gamepadLeftRight   = -gamepadRate*gamepadSignalMap(gamepadState(4));
   double gamepadForwardBack = -gamepadRate*gamepadSignalMap(gamepadState(3));
   double gamepadUpDown      = -gamepadRate*gamepadSignalMap(gamepadState(2));
   double gamepadRotate      = -gamepadRate*gamepadSignalMap(gamepadState(1));
-  
+
   uint mode = uint(gamepadState(0));
-  
+
   enum {none, up, down, downRot, left, right} sel=none;
   if(fabs(gamepadState(5))>.5 || fabs(gamepadState(6))>.5) {
     if(fabs(gamepadState(5))>fabs(gamepadState(6))) {
@@ -136,23 +136,23 @@ HALT("change code: add a qNull here explicitly");
       if(gamepadState(6)>0.) sel=down; else sel=up;
     }
   }
-  
+
   switch(mode) {
     case 0: { //(NIL) motion rate control
-      CtrlTask *pdt=NULL;
+      CtrlTask* pdt=nullptr;
       switch(sel) {
         case right:  pdt=endeffR;  cout <<"effR control" <<endl;  break;
         case left:   pdt=endeffL;  cout <<"effL control" <<endl;  break;
 //        case up:     pdt=torso;  cout <<"torso control" <<endl;  break;
         case up:     pdt=headAxes; cout <<"head control" <<endl;  break;
         case down:   pdt=base;  cout <<"base control" <<endl;  break;
-        case none:   pdt=NULL;  break;
+        case none:   pdt=nullptr;  break;
         case downRot: break;
       }
       if(!pdt) break;
       pdt->active=true;
       if(!pdt->y.N || !pdt->v.N) {
-        pdt->map->__phi(pdt->y, NoArr, K);
+        pdt->feat->__phi(pdt->y, NoArr, K);
       }
       rai::Vector vel(gamepadLeftRight, gamepadForwardBack, gamepadUpDown);
       if(sel==down) {
@@ -173,17 +173,17 @@ HALT("change code: add a qNull here explicitly");
       //-- left right: gaze control
 //      if(head && (sel==left || sel==right)){
 //        head->active=true;
-//        dynamic_cast<TM_Default*>(&head->map)->jvec = pdt->y;
+//        dynamic_cast<TM_Default*>(&head->feat)->jvec = pdt->y;
 //      }
       break;
     }
     case 1: { //homing
       cout <<"homing" <<endl;
       homing->PD().setTarget(q0);
-      rai::Joint *j = K.getFrameByName("worldTranslationRotation")->joint;
+      rai::Joint* j = K.getFrameByName("worldTranslationRotation")->joint;
       if(j) {
         arr b;
-        base->map->__phi(b, NoArr, K);
+        base->feat->__phi(b, NoArr, K);
         if(b.N && j && j->qDim()) {
           for(uint i=0; i<j->qDim(); i++)
             homing->PD().y_target(j->qIndex+i) = b(i);
@@ -195,11 +195,11 @@ HALT("change code: add a qNull here explicitly");
     case 4:
     case 8: { //open/close hand
       cout <<"open/close hand" <<endl;
-      CtrlTask *pdt=NULL;
+      CtrlTask* pdt=nullptr;
       switch(sel) {
         case right:  pdt=gripperR;  break;
         case left:   pdt=gripperL;  break;
-        default:     pdt=NULL;  break;
+        default:     pdt=nullptr;  break;
       }
       if(!pdt) break;
       if(robot=="pr2") {
