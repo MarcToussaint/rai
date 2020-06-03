@@ -19,8 +19,8 @@ enum CT_Status { CT_init=-1, CT_running, CT_conv, CT_done, CT_stalled };
 
 /// a motion profile is a non-feedback(!) way to generate a task space reference path
 /// [perhaps an adaptive phase, or Peter's adaptation to object motions, could be a modest way to incorporate feedback in the future]
-struct CtrlReference {
-  virtual ~CtrlReference() {}
+struct CtrlTarget {
+  virtual ~CtrlTarget() {}
   virtual CT_Status update(arr& yRef, arr& ydotRef, double tau, const arr& y, const arr& ydot) = 0;
   virtual void setTarget(const arr& ytarget, const arr& vtarget=NoArr) = 0;
   virtual void setTimeScale(double d) = 0;
@@ -30,7 +30,7 @@ struct CtrlReference {
 
 //===========================================================================
 
-struct CtrlReference_Const : CtrlReference {
+struct CtrlReference_Const : CtrlTarget {
   arr y_target;
   bool flipTargetSignOnNegScalarProduct;
   CtrlReference_Const(const arr& y_target, bool flip=false) : y_target(y_target), flipTargetSignOnNegScalarProduct(flip) {}
@@ -43,7 +43,7 @@ struct CtrlReference_Const : CtrlReference {
 
 //===========================================================================
 
-struct CtrlReference_Sine : CtrlReference {
+struct CtrlReference_Sine : CtrlTarget {
   arr y_start, y_target, y_err;
   double t, T;
   CtrlReference_Sine(const arr& y_target, double duration) : y_target(y_target), t(0.), T(duration) {}
@@ -56,7 +56,7 @@ struct CtrlReference_Sine : CtrlReference {
 
 //===========================================================================
 
-struct CtrlReference_PD: CtrlReference {
+struct CtrlReference_PD: CtrlTarget {
   arr y_ref, v_ref;
   arr y_target, v_target;
   double kp, kd;
@@ -87,7 +87,7 @@ struct CtrlReference_PD: CtrlReference {
 
 //===========================================================================
 
-struct CtrlReference_Path: CtrlReference {
+struct CtrlReference_Path: CtrlTarget {
   rai::Spline spline;
   double executionTime;
   double phase;
@@ -112,7 +112,7 @@ struct CtrlObjective {
   arr y, v, J_y;     ///< update() will evaluate these for a given kinematic configuration
 
   //-- pos/vel ctrl task
-  CtrlReference* ref;  ///< non-nullptr iff this is a pos/vel task
+  CtrlTarget* ref;  ///< non-nullptr iff this is a pos/vel task
   arr y_ref, v_ref;    ///< update() will define compute these references (reference=NOW, target=FUTURE)
   arr prec;            ///< Cholesky(!) of C, not C itself: sumOfSqr(prec*(y-y_ref)) is the error, and prec*J the Jacobian
   uint hierarchy;      ///< hierarchy level in hiearchycal inverse kinematics: higher = higher priority
@@ -136,7 +136,7 @@ struct CtrlObjective {
   void getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const rai::Configuration& world);
 
   CtrlReference_PD& PD();
-  void setRef(CtrlReference* _ref);
+  void setRef(CtrlTarget* _ref);
   void setTarget(const arr& y_target);
   void setTimeScale(double d) { CHECK(ref, ""); ref->setTimeScale(d); ref->resetState(); }
 

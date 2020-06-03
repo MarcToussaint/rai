@@ -60,12 +60,12 @@ struct TaskControlUserInterface {
 ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrlTasks,
                           Var<rai::Configuration>& ctrl_config,
                           const char* name, const ptr<Feature>& map,
-                          const ptr<CtrlReference>& ref);
+                          const ptr<CtrlTarget>& ref);
 
 ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrlTasks,
                           Var<rai::Configuration>& ctrl_config,
                           const char* name, FeatureSymbol fs, const StringA& frames,
-                          const ptr<CtrlReference>& ref);
+                          const ptr<CtrlTarget>& ref);
 
 ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrlTasks,
                           Var<rai::Configuration>& ctrl_config,

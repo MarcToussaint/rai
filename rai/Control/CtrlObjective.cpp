@@ -43,7 +43,7 @@ arr CtrlObjective::update_y(const rai::Configuration& C) {
   return zeros(y.N);
 }
 
-void CtrlObjective::setRef(const ptr<CtrlReference>& _ref) {
+void CtrlObjective::setRef(const ptr<CtrlTarget>& _ref) {
   CHECK(!ref, "ref is already set");
   ref = _ref;
 }
@@ -60,12 +60,12 @@ void CtrlObjective::reportState(ostream& os) {
   os <<"  CtrlObjective " <<name <<':';
   if(!active) cout <<" INACTIVE";
   if(ref){
-    if(ref->y_ref.N==y.N){
-      os <<" \ty_ref=" <<ref->y_ref <<" \ty=" <<y <<" \ty-err=" <<length(ref->y_ref-y);
+    if(feat->target.N==y.N){
+      os <<" \ty_ref=" <<feat->target <<" \ty=" <<y <<" \ty-err=" <<length(feat->target-y);
     }
-    if(ref->v_ref.N==y.N){
-      os <<" \tv_ref=" <<ref->v_ref;
-    }
+//    if(ref->v_ref.N==y.N){
+//      os <<" \tv_ref=" <<ref->v_ref;
+//    }
     os <<endl;
   } else {
     os <<" -- no reference defined " <<endl;
@@ -76,29 +76,39 @@ void CtrlObjective::reportState(ostream& os) {
 ptr<CtrlObjective> CtrlProblem::addObjective(const FeatureSymbol& feat, const StringA& frames, ObjectiveType type, const arr& scale, const arr& target, int order) {
   ptr<CtrlObjective> t = make_shared<CtrlObjective>();
   t->feat = symbols2feature(feat, frames, C, scale, target, order);
-  if(t->feat->order==0){
-    t->ref = make_shared<CtrlReference_MaxCarrot>(.1);
-  }else if(t->feat->order==1){
-    t->ref = make_shared<CtrlReference_ConstVel>();
-  }else{
-    NIY
-  }
   t->update_y(C);
+//  if(t->feat->order==0){
+//    t->ref = make_shared<CtrlReference_MaxCarrot>(.1, target);
+//  }else if(t->feat->order==1){
+//    t->ref = make_shared<CtrlReference_ConstVel>();
+//  }else{
+//    NIY
+//  }
   objectives.append(t);
   return t;
 }
 
 void CtrlProblem::update(rai::Configuration& C) {
-  for(ptr<CtrlObjective>& o: objectives){
+  for(std::shared_ptr<CtrlObjective>& o: objectives){
     if(!o->name.N) o->name = o->feat->shortTag(C);
 
     arr dy = o->update_y(C);
 
+    arr y = o->y;
+    if(o->feat->scale.N){
+      y *= (1./o->feat->scale.scalar());
+      dy *= (1./o->feat->scale.scalar());
+    }
+    if(o->feat->target.N){
+      y += o->feat->target;
+    }
+
     if(o->ref){
-      ActStatus s_old = o->status;
-      ActStatus s_new = s_old;
-      s_new = o->ref->step(tau, o->y, dy/tau);
-      if(s_new!=s_old) o->status=s_new;
+      ActStatus s_new = o->ref->step(o->feat->target, tau, y, dy/tau);
+      if(s_new != o->status){
+        o->status = s_new;
+        //callbacks
+      }
     }
   }
 }

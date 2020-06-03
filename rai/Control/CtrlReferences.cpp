@@ -2,45 +2,47 @@
 
 //===========================================================================
 
-ActStatus CtrlReference_Const::step(double tau, const arr& y_real, const arr& v_real) {
-  y_ref = zeros(y_real.N);
-  v_ref.clear();
+ActStatus CtrlReference_Const::step(arr& target, double tau, const arr& y_real, const arr& v_real) {
+  target = zeros(y_real.N);
   return AS_running;
 }
 
 //===========================================================================
 
-ActStatus CtrlReference_ConstVel::step(double tau, const arr& y_real, const arr& v_real) {
-  y_ref.clear();
-  v_ref = zeros(y_real.N);
+ActStatus CtrlReference_ConstVel::step(arr& target, double tau, const arr& y_real, const arr& v_real) {
+  target = zeros(y_real.N);
   return AS_running;
 }
 
 //===========================================================================
 
-ActStatus CtrlReference_MaxCarrot::step(double tau, const arr &y_real, const arr& v_real) {
-  double d = length(y_real);
+ActStatus CtrlReference_MaxCarrot::step(arr& target, double tau, const arr &y_real, const arr& v_real) {
+  //initialize goal
+  if(goal.N!=y_real.N){
+    if(target.N==y_real.N) goal = target;
+    else goal = zeros(y_real.N);
+  }
+
+  double d = length(y_real-goal);
   if(d > maxDistance) {
-    y_ref = y_real - (maxDistance/d)*y_real;
+    target = y_real - (maxDistance/d)*(y_real-goal);
     //cout << "maxD" << endl;
   } else {
-    y_ref = zeros(y_real.N);
+    target = goal;
   }
-  v_ref.clear();
   if(d<1e-2*maxDistance && length(v_real)*tau<1e-2*maxDistance) return AS_converged;
   return AS_running;
 }
 
 //===========================================================================
 
-ActStatus CtrlReference_Sine:: step(double tau, const arr& y_real, const arr& v_real) {
+ActStatus CtrlReference_Sine:: step(arr& target, double tau, const arr& y_real, const arr& v_real) {
   t+=tau;
   if(t>T) t=T;
   if(y_start.N!=y_real.N) y_start=y_real; //initialization
   if(y_target.N!=y_real.N) y_target = y_start;
-  y_ref = y_start + (.5*(1.-cos(RAI_PI*t/T))) * (y_target - y_start);
-  v_ref = zeros(y_real.N);
-  y_err = y_ref - y_real;
+  target = y_start + (.5*(1.-cos(RAI_PI*t/T))) * (y_target - y_start);
+  y_err = target - y_real;
   if(t>=T-1e-6/* && length(y_err)<1e-3*/) return AS_done;
 //  return t>=T && length(y_err)<1e-3;
   return AS_running;
@@ -101,25 +103,25 @@ void getVel_bang(double& x, double& v, double maxVel, double tau) {
   }
 }
 
-ActStatus CtrlReference_Bang::step(double tau, const arr& y_real, const arr& v_real) {
+ActStatus CtrlReference_Bang::step(arr& target, double tau, const arr& y_real, const arr& v_real) {
   //only on initialization the true state is used; otherwise ignored!
   if(y_target.N!=y_real.N) { y_target=y_real; }
 
 #if 1
-  y_ref = y_real - y_target;
-  v_ref = v_real;
+  target = y_real - y_target;
+  arr v_ref = v_real;
   for(uint i=0; i<y_real.N; i++) {
-    getAcc_bang(y_ref(i), v_ref(i), maxVel, tau);
+    getAcc_bang(target(i), v_ref(i), maxVel, tau);
     if(i==2) {
       cout <<y_real(i) <<' ' <<v_real(i) <<' ' <<v_ref(i) <<endl;
     }
   }
-  y_ref += y_target;
+  target += y_target;
 #else
   arr yDelta = y - y_target;
   v_ref.resizeAs(y).setZero();
   for(uint i=0; i<y.N; i++) getVel_bang(yDelta(i), v_ref(i), maxVel, tau);
-  y_ref = y_target + yDelta;
+  target = y_target + yDelta;
 #endif
 
   if(maxDiff(y_real, y_target)<tolerance
@@ -153,7 +155,7 @@ CtrlReference_PD::CtrlReference_PD(const rai::Graph& params)
     maxVel = pd(2);
     maxAcc = pd(3);
   }
-  if((it=params["target"])) y_ref = it->get<arr>();
+  if((it=params["target"])) y_target = it->get<arr>();
 }
 
 void CtrlReference_PD::setGains(double _kp, double _kd) {
@@ -168,7 +170,7 @@ void CtrlReference_PD::setGainsAsNatural(double decayTime, double dampingRatio) 
 //  setGains(rai::sqr(1./lambda), 2.*dampingRatio/lambda);
 }
 
-ActStatus CtrlReference_PD::step(double tau, const arr& y_real, const arr& v_real) {
+ActStatus CtrlReference_PD::step(arr& target, double tau, const arr& y_real, const arr& v_real) {
   //only on initialization the true state is used; otherwise ignored!
   if(y_ref.N!=y_real.N) { y_ref=y_real; v_ref=v_real; }
   if(y_target.N!=y_ref.N) { y_target=y_ref; v_target=v_ref; }
@@ -185,6 +187,8 @@ ActStatus CtrlReference_PD::step(double tau, const arr& y_real, const arr& v_rea
 
   y_ref += tau*v_ref + (.5*tau*tau)*a;
   v_ref += tau*a;
+
+  target = y_ref;
 
   if(isConverged(-1.)) return AS_converged;
   return AS_running;
@@ -258,11 +262,11 @@ CtrlReference_Path::CtrlReference_Path(const arr& path, const arr& times)
   spline.set(2, path, times);
 }
 
-ActStatus CtrlReference_Path::step(double tau, const arr& y_real, const arr& v_real) {
+ActStatus CtrlReference_Path::step(arr& target, double tau, const arr& y_real, const arr& v_real) {
   time += tau;
   if(time > endTime) time=endTime;
-  y_ref    = spline.eval(time);
-  v_ref = spline.eval(time, 1);
+  target = spline.eval(time);
+//  v_ref = spline.eval(time, 1);
   if(time>=endTime) return AS_done;
   return AS_running;
 }

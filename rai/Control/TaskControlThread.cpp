@@ -217,7 +217,7 @@ void TaskControlThread::step() {
 ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrl_tasks,
                           Var<rai::Configuration>& ctrl_config,
                           const char* name, const ptr<Feature>& map,
-                          const ptr<CtrlReference>& ref) {
+                          const ptr<CtrlTarget>& ref) {
   NIY
 #if 0
   ptr<CtrlObjective> t = make_shared<CtrlObjective>(name, map, ref);
@@ -230,7 +230,7 @@ ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrl_tasks,
 ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrl_tasks,
                           Var<rai::Configuration>& ctrl_config,
                           const char* name, FeatureSymbol fs, const StringA& frames,
-                          const ptr<CtrlReference>& ref) {
+                          const ptr<CtrlTarget>& ref) {
   return addCtrlObjective(ctrl_tasks, ctrl_config, name,
                      symbols2feature(fs, frames, ctrl_config.get()),
                      ref);

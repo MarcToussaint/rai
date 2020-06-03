@@ -14,17 +14,15 @@
 #include "../Kin/kin.h"
 
 struct CtrlObjective;
-struct CtrlReference;
+struct CtrlTarget;
 typedef rai::Array<std::shared_ptr<CtrlObjective>> CtrlObjectiveL;
 
 //===========================================================================
 
-/// a CtrlReference continuously updates the refence (zero-point) of a CtrlObjective (e.g. MotionProfile, reference path)
-struct CtrlReference {
-  arr y_ref, v_ref;
-
-  virtual ~CtrlReference() {}
-  virtual ActStatus step(double tau, const arr& y_real, const arr& v_real) = 0; //step forward, updating the reference based on y_real
+/// a CtrlTarget continuously updates the 'target' (zero-point) of the Feature of a CtrlObjective -- this allows to realize MotionProfile or following a reference path or moving target
+struct CtrlTarget {
+  virtual ~CtrlTarget() {}
+  virtual ActStatus step(arr& target, double tau, const arr& y_real, const arr& v_real) = 0; //step forward, updating the target based on y_real
   virtual void setTimeScale(double d) = 0;
   virtual void resetState() = 0;
 };
@@ -39,7 +37,7 @@ struct CtrlObjective {
   rai::String name;  ///< just for easier reporting
 
   //-- the reference (zero point in feature space (target in KOMO)) can be continuously changed by motion primitives or other means
-  std::shared_ptr<CtrlReference> ref;  ///< non-nullptr iff this is a pos/vel task
+  std::shared_ptr<CtrlTarget> ref;  ///< non-nullptr iff this is a pos/vel task
 
   //-- parameters that influence how CtrlMethods treat this objective
   bool active;       ///< also non-active tasks are updated (states evaluated), but don't enter the TaskControlMethods
@@ -60,7 +58,7 @@ struct CtrlObjective {
   arr update_y(const rai::Configuration& C); //returns the CHANGE in y (to estimate velocity)
   void resetState();
 
-  void setRef(const ptr<CtrlReference>& _ref);
+  void setRef(const ptr<CtrlTarget>& _ref);
   void setTarget(const arr& y_target);
   void setTimeScale(double d);
 
@@ -79,7 +77,7 @@ struct CtrlProblem : NonCopyable {
 
   CtrlProblem(rai::Configuration& _C, double _tau) : C(_C), tau(_tau) {}
   CtrlObjective* addPDTask(CtrlObjectiveL& tasks, const char* name, double decayTime, double dampingRatio, ptr<Feature> map);
-  ptr<CtrlObjective> addObjective(const ptr<Feature>& f, ObjectiveType type, const ptr<CtrlReference>& _ref);
+  ptr<CtrlObjective> addObjective(const ptr<Feature>& f, ObjectiveType type, const ptr<CtrlTarget>& _ref);
   ptr<CtrlObjective> addObjective(const FeatureSymbol& feat, const StringA& frames,
                                   ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr, int order=-1);
 
