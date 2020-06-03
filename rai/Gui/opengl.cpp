@@ -20,6 +20,7 @@
 
 #ifdef RAI_PNG
 #  include <png.h>
+#  include <unistd.h>
 #endif
 
 OpenGL& NoOpenGL = *((OpenGL*)(nullptr));
