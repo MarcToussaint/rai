@@ -7,7 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "CtrlObjective.h"
-#include "CtrlReferences.h"
+#include "CtrlTargets.h"
 #include "CtrlSolvers.h"
 #include "komoControl.h"
 #include "../KOMO/komo.h"
@@ -92,24 +92,19 @@ void CtrlProblem::update(rai::Configuration& C) {
   for(std::shared_ptr<CtrlObjective>& o: objectives){
     if(!o->name.N) o->name = o->feat->shortTag(C);
 
-    arr dy = o->update_y(C);
-
     arr y = o->y;
-    if(o->feat->scale.N){
-      y *= (1./o->feat->scale.scalar());
-      dy *= (1./o->feat->scale.scalar());
-    }
-    if(o->feat->target.N){
-      y += o->feat->target;
-    }
+    if(o->feat->scale.N)   y *= (1./o->feat->scale.scalar());
+    if(o->feat->target.N)  y += o->feat->target;
 
     if(o->ref){
-      ActStatus s_new = o->ref->step(o->feat->target, tau, y, dy/tau);
+      ActStatus s_new = o->ref->step(o->feat->target, tau, y);
       if(s_new != o->status){
         o->status = s_new;
         //callbacks
       }
     }
+
+    o->update_y(C);
   }
 }
 
@@ -125,14 +120,18 @@ arr CtrlProblem::solve() {
   arr q = C.getJointState();
   q += M.inverseKinematics(objectives, NoArr, {});
   return q;
-#elif 0
+#elif 1
   KOMO komo;
-  komo.setModel(C, false);
+  komo.setModel(C, true);
   komo.setTiming(1., 1, tau, 1);
   for(std::shared_ptr<CtrlObjective>& o: objectives){
     komo.addObjective({}, o->feat, o->type);
   }
-  komo.optimize();
+  OptOptions opt;
+  opt.stopTolerance = 1e-4;
+  opt.stopGTolerance = 1e-4;
+  opt.stopIters = 10;
+  komo.optimize(0., opt);
   return komo.getPath();
 #else
   return solve_optim(*this);

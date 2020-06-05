@@ -8,7 +8,7 @@
 
 #include "TaskControlThread.h"
 #include "CtrlSolvers.h"
-#include "CtrlReferences.h"
+#include "CtrlTargets.h"
 #include "../RosCom/baxter.h"
 #include "../Kin/frame.h"
 
@@ -242,7 +242,7 @@ ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrl_tasks,
                           double duration) {
   return addCtrlObjective(ctrl_tasks, ctrl_config, name,
                      symbols2feature(fs, frames, ctrl_config.get()),
-                     make_shared<CtrlReference_Sine>(arr(), duration));
+                     make_shared<CtrlTarget_Sine>(arr(), duration));
 }
 
 ptr<CtrlObjective> addCompliance(Var<CtrlObjectiveL>& ctrl_tasks,

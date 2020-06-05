@@ -442,15 +442,15 @@ NIY}
 arr TaskControlMethods::inverseKinematics(CtrlObjectiveL& tasks, arr& qdot, const arr& P_compliance, const arr& nullRef, double* cost) {
   arr y, v, J, J_vel; //separate J only for velocity tasks
   for(auto &t: tasks) {
-    if(t->active && t->ref) {
-      if(t->ref->y_ref.N) {
-        y.append(t->scale*(t->ref->y_ref - t->y));
-        J.append(t->scale*(t->J_y));
-      }
-      if((!!qdot) && t->ref->v_ref.N) {
-        v.append(t->scale*(t->ref->v_ref));
-        J_vel.append(t->scale*(t->J_y));
-      }
+    if(t->active) {
+//      if(t->ref->y_ref.N) {
+        y.append(-t->y);
+        J.append(t->J_y);
+//      }
+//      if((!!qdot) && t->ref->v_ref.N) {
+//        v.append(t->scale*(t->ref->v_ref));
+//        J_vel.append(t->scale*(t->J_y));
+//      }
     }
   }
 

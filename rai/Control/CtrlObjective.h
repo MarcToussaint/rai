@@ -22,7 +22,7 @@ typedef rai::Array<std::shared_ptr<CtrlObjective>> CtrlObjectiveL;
 /// a CtrlTarget continuously updates the 'target' (zero-point) of the Feature of a CtrlObjective -- this allows to realize MotionProfile or following a reference path or moving target
 struct CtrlTarget {
   virtual ~CtrlTarget() {}
-  virtual ActStatus step(arr& target, double tau, const arr& y_real, const arr& v_real) = 0; //step forward, updating the target based on y_real
+  virtual ActStatus step(arr& target, double tau, const arr& y_real) = 0; //step forward, updating the target based on y_real
   virtual void setTimeScale(double d) = 0;
   virtual void resetState() = 0;
 };
@@ -41,7 +41,6 @@ struct CtrlObjective {
 
   //-- parameters that influence how CtrlMethods treat this objective
   bool active;       ///< also non-active tasks are updated (states evaluated), but don't enter the TaskControlMethods
-  double scale;
   double kp, kd;     ///< gains
   arr C;             ///< feature space compliance matrix (TODO: needed?)
 
@@ -51,7 +50,7 @@ struct CtrlObjective {
   arr f;                ///< measured generalized force in this task space
 
 
-  CtrlObjective() : type(OT_sos), active(true), scale(1.), kp(1.), kd(1.), status(AS_init) {}
+  CtrlObjective() : type(OT_sos), active(true), kp(1.), kd(1.), status(AS_init) {}
 //  CtrlObjective(char* _name, const ptr<Feature>& _feat, const ptr<CtrlReference>& _ref, double _kp, double _kd, const arr& _C);
   ~CtrlObjective() {}
 
