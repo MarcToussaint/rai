@@ -24,7 +24,7 @@ Convert::~Convert() {
   if(cpm) { delete cpm; cpm=nullptr; }
 }
 
-//void conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction& f, arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x);
+//void conv_KOrderMarkovFunction_MathematicalProgram(KOrderMarkovFunction& f, arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x);
 double conv_VectorFunction_ScalarFunction(VectorFunction f, arr& g, arr& H, const arr& x) {
   arr y, J;
   f(y, (!!g?J:NoArr), x);
@@ -102,9 +102,9 @@ ScalarFunction conv_VectorFunction2ScalarFunction(const VectorFunction& f) {
   };
 }
 
-void Conv_linearlyReparameterize_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& z) {
+void Conv_linearlyReparameterize_MathematicalProgram::evaluate(arr& phi, arr& J, arr& H, const arr& z) {
   arr x = B*z;
-  P.phi(phi, J, H, tt, x);
+  P.evaluate(phi, J, H, x);
   if(!!J) J = comp_A_x(J, B);
   if(!!H && H.N) NIY;
 }
@@ -112,10 +112,10 @@ void Conv_linearlyReparameterize_ConstrainedProblem::phi(arr& phi, arr& J, arr& 
 //===========================================================================
 
 Convert::Convert(KOMO_Problem& p) : cstyle_fs(nullptr), cstyle_fv(nullptr), data(nullptr), cpm(nullptr) {
-  cpm = new Conv_KOMO_ConstrainedProblem(p);
+  cpm = new Conv_KOMOProblem_MathematicalProgram(p);
 }
 
-Convert::operator ConstrainedProblem& () {
+Convert::operator MathematicalProgram& () {
   if(!cpm) HALT("");
   return *cpm;
 }

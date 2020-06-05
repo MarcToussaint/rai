@@ -35,7 +35,7 @@ bool GraphProblem::checkStructure(const arr& x) {
   return true;
 }
 
-Conv_Graph_ConstrainedProblem::Conv_Graph_ConstrainedProblem(GraphProblem& _G,  ostream* _log) : G(_G), logFile(_log) {
+Conv_Graph_MathematicalProgram::Conv_Graph_MathematicalProgram(GraphProblem& _G,  ostream* _log) : G(_G), logFile(_log) {
   G.getStructure(variableDimensions, featureVariables, featureTypes);
   varDimIntegral = integral(variableDimensions);
 
@@ -65,7 +65,7 @@ Conv_Graph_ConstrainedProblem::Conv_Graph_ConstrainedProblem(GraphProblem& _G,  
 #if 0
 
 //dense
-void Conv_Graph_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda) {
+void Conv_Graph_MathematicalProgram::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x, arr& lambda) {
   G.phi(phi, J_G, H_G, x, lambda);
 
   if(!!tt) tt = featureTypes;
@@ -97,10 +97,17 @@ void Conv_Graph_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA
 #else
 
 //sparse
-void Conv_Graph_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x) {
+uint Conv_Graph_MathematicalProgram::getDimension(){
+  return varDimIntegral.elem(-1);
+}
+
+void Conv_Graph_MathematicalProgram::getFeatureTypes(ObjectiveTypeA& ft){
+  if(!!ft) ft = featureTypes;
+}
+
+void Conv_Graph_MathematicalProgram::evaluate(arr& phi, arr& J, arr& H, const arr& x) {
   G.phi(phi, J_G, H_G, x);
 
-  if(!!tt) tt = featureTypes;
 
   //-- construct a sparse J from the array of feature Js
   if(!!J) {
@@ -175,7 +182,7 @@ void Conv_Graph_ConstrainedProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA
   queryCount++;
 }
 
-void Conv_Graph_ConstrainedProblem::reportProblem(std::ostream& os) {
+void Conv_Graph_MathematicalProgram::reportProblem(std::ostream& os) {
   uint nG=0, nH=0;
     for(ObjectiveType t:featureTypes) if(t==OT_ineq) nG++; else if(t==OT_eq) nH++;
   os <<"\n# GraphProblem";
@@ -212,3 +219,4 @@ void ModGraphProblem::phi(arr& phi, arrA& J, arrA& H, const arr& x) {
   phi = phi.sub(subselectFeatures);
   J = J.sub(subselectFeatures);
 }
+

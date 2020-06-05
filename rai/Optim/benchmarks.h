@@ -9,7 +9,7 @@
 #pragma once
 
 #include "optimization.h"
-#include "newOptim.h"
+#include "MathematicalProgram.h"
 #include "KOMO_Problem.h"
 
 extern ScalarFunction RosenbrockFunction();

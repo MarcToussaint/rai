@@ -1,6 +1,6 @@
 #pragma once
 
-#include "newOptim.h"
+#include "MathematicalProgram.h"
 
 namespace ceres{
   class Problem;

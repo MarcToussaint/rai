@@ -665,7 +665,6 @@ void CtrlProblem_MathematicalProgram::evaluate(arr& phi, arr& J, arr& H, const a
 
 arr solve_optim(CtrlProblem& CP) {
   auto MP = make_shared<CtrlProblem_MathematicalProgram>(CP);
-  Conv_MathematicalProgram_ConstrainedProblem cp(MP);
 
   arr x = CP.C.getJointState();
   OptOptions opt;
@@ -673,7 +672,7 @@ arr solve_optim(CtrlProblem& CP) {
   opt.stopGTolerance = 1e-4;
   opt.stopIters = 10;
 //  opt.nonStrictSteps=-1;
-  OptConstrained O(x, NoArr, cp, -1, opt);
+  OptConstrained O(x, NoArr, *MP, -1, opt);
   MP->getBounds(O.newton.bound_lo, O.newton.bound_up);
   O.run();
   return x;

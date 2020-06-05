@@ -28,6 +28,8 @@ enum ObjectiveType { OT_none=0, OT_f, OT_sos, OT_ineq, OT_eq };
 typedef rai::Array<ObjectiveType> ObjectiveTypeA;
 extern ObjectiveTypeA& NoObjectiveTypeA;
 
+struct MathematicalProgram;
+
 /** A ConstrainedProblem returns a feature vector $phi$ and optionally its Jacobian $J$. For each entry of
  *  this feature vector $tt(i)$ determins whether this is an inequality constraint, an equality constraint,
  *  a sumOfSqr or "direct-f" cost feature. The latter two define the objective function as
@@ -60,8 +62,8 @@ struct Conv_Lambda_ConstrainedProblem : ConstrainedProblem {
 // checks, evaluation
 //
 
-bool checkJacobianCP(ConstrainedProblem& P, const arr& x, double tolerance);
-bool checkHessianCP(ConstrainedProblem& P, const arr& x, double tolerance);
+bool checkJacobianCP(MathematicalProgram& P, const arr& x, double tolerance);
+bool checkHessianCP(MathematicalProgram& P, const arr& x, double tolerance);
 bool checkDirectionalGradient(const ScalarFunction& f, const arr& x, const arr& delta, double tolerance);
 bool checkDirectionalJacobian(const VectorFunction& f, const arr& x, const arr& delta, double tolerance);
 
@@ -136,7 +138,7 @@ extern Singleton<OptOptions> globalOptOptions;
 #include "newton.h"
 #include "gradient.h"
 //#include "lagrangian.h"
-#include "convert.h"
+//#include "convert.h"
 //uint optGradDescent(arr& x, const ScalarFunction& f, OptOptions opt);
 
 //===========================================================================

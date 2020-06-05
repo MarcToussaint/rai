@@ -16,7 +16,8 @@
 void PhaseOneProblem::initialize(arr& x) {
   arr phi;
   ObjectiveTypeA ot;
-  f_orig.phi(phi, NoArr, NoArr, ot, x);
+  f_orig.getFeatureTypes(ot);
+  f_orig.evaluate(phi, NoArr, NoArr, x);
   dim_x=x.N;
   dim_eq=dim_ineq=0;
   double gmax=0.;
@@ -39,7 +40,8 @@ void PhaseOneProblem::phi(arr& meta_phi, arr& meta_J, arr& meta_H, ObjectiveType
 
   arr phi, J;
   ObjectiveTypeA ot;
-  f_orig.phi(phi, J, NoArr, ot, x);
+  f_orig.getFeatureTypes(ot);
+  f_orig.evaluate(phi, J, NoArr, x);
 
   meta_phi.resize(1+dim_ineq+dim_eq);
   meta_ot.resize(1+dim_ineq+dim_eq);
@@ -83,7 +85,7 @@ const char* MethodName[]= { "NoMethod", "SquaredPenalty", "AugmentedLagrangian",
 
 //==============================================================================
 
-OptConstrained::OptConstrained(arr& _x, arr& _dual, ConstrainedProblem& P, int verbose, OptOptions _opt, std::ostream* _logFile)
+OptConstrained::OptConstrained(arr& _x, arr& _dual, MathematicalProgram& P, int verbose, OptOptions _opt, std::ostream* _logFile)
   : L(P, _opt, _dual), newton(_x, L, _opt, _logFile), dual(_dual), opt(_opt), logFile(_logFile) {
 
   if(verbose>=0) opt.verbose=verbose;

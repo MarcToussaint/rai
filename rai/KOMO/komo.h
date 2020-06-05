@@ -262,6 +262,7 @@ struct KOMO : NonCopyable {
   rai::Configuration& getConfiguration_t(int t);      ///< get any configuration (also prefix configurations) by its index
   arr getJointState(double phase){ return getConfiguration(phase).getJointState();}
   arr getFrameState(double phase){ return getConfiguration(phase).getFrameState(); }
+  uint getPath_totalDofs();                    ///< get the number of all DOFs of the path (the overall dimensionality of the problem)
   arr getPath_decisionVariable();              ///< get all DOFs of all configurations in a single flat vector (the decision variable of optimization)
   arr getPath(const StringA& joints={});       ///< get joint path, optionally for selected joints
   arr getPath(const uintA& joints);            ///< get joint path for selected joints
@@ -320,7 +321,7 @@ struct KOMO : NonCopyable {
     virtual void phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, ObjectiveTypeA& tt, const arr& x);
   } komo_problem;
 
-  struct Conv_KOMO_DenseProblem : ConstrainedProblem {
+  struct Conv_KOMO_DenseProblem : MathematicalProgram {
     KOMO& komo;
     uint dimPhi=0;
 
@@ -331,7 +332,9 @@ struct KOMO : NonCopyable {
 
     void getDimPhi();
 
-    virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x);
+    virtual uint getDimension(){ return komo.getPath_totalDofs(); }
+    virtual void getFeatureTypes(ObjectiveTypeA& ft);
+    virtual void evaluate(arr& phi, arr& J, arr& H, const arr& x);
   } dense_problem;
 
   struct Conv_KOMO_GraphProblem : GraphProblem {
@@ -349,7 +352,7 @@ struct KOMO : NonCopyable {
     virtual void getSemantics(StringA& varNames, StringA& phiNames);
   } graph_problem;
 
-  struct TimeSliceProblem : ConstrainedProblem {
+  struct TimeSliceProblem : MathematicalProgram {
     KOMO& komo;
     int slice;
     uint dimPhi=0;
@@ -357,7 +360,10 @@ struct KOMO : NonCopyable {
     TimeSliceProblem(KOMO& _komo, int _slice) : komo(_komo), slice(_slice) {}
 
     void getDimPhi();
-    virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x);
+
+    virtual uint getDimension(){ return komo.getPath_totalDofs(); }
+    virtual void getFeatureTypes(ObjectiveTypeA& ft);
+    virtual void evaluate(arr& phi, arr& J, arr& H, const arr& x);
   };
 
   struct Conv_KOMO_MathematicalProgram : MathematicalProgram {
