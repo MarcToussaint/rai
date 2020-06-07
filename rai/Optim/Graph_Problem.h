@@ -47,7 +47,7 @@ struct Conv_Graph_MathematicalProgram : MathematicalProgram {
 
   uint getDimension();
   void getFeatureTypes(ObjectiveTypeA& ft);
-  void evaluate(arr& phi, arr& J, arr& H, const arr& x);
+  void evaluate(arr& phi, arr& J, const arr& x);
 
   void reportProblem(ostream& os);
 };

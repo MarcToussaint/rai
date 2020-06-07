@@ -102,11 +102,10 @@ ScalarFunction conv_VectorFunction2ScalarFunction(const VectorFunction& f) {
   };
 }
 
-void Conv_linearlyReparameterize_MathematicalProgram::evaluate(arr& phi, arr& J, arr& H, const arr& z) {
+void Conv_linearlyReparameterize_MathematicalProgram::evaluate(arr& phi, arr& J, const arr& z) {
   arr x = B*z;
-  P.evaluate(phi, J, H, x);
+  P.evaluate(phi, J, x);
   if(!!J) J = comp_A_x(J, B);
-  if(!!H && H.N) NIY;
 }
 
 //===========================================================================

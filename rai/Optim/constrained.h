@@ -48,7 +48,7 @@ inline void evaluateMathematicalProgram(const arr& x, MathematicalProgram& P, st
   arr phi_x;
   ObjectiveTypeA tt_x;
   P.getFeatureTypes(tt_x);
-  P.evaluate(phi_x, NoArr, NoArr, x);
+  P.evaluate(phi_x, NoArr, x);
   double Ef=0., Eh=0., Eg=0.;
   for(uint i=0; i<phi_x.N; i++) {
     if(tt_x(i)==OT_f) Ef += phi_x(i);

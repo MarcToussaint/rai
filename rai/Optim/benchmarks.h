@@ -45,7 +45,7 @@ struct MP_TrivialSquareFunction : MathematicalProgram {
 
 //===========================================================================
 
-struct RandomLPFunction : ConstrainedProblem {
+struct RandomLPFunction : MathematicalProgram {
   arr randomG;
 
   RandomLPFunction() {}
@@ -83,7 +83,7 @@ struct RandomLPFunction : ConstrainedProblem {
 
 //===========================================================================
 
-struct ChoiceConstraintFunction : ConstrainedProblem {
+struct ChoiceConstraintFunction : MathematicalProgram {
   enum WhichConstraint { wedge2D=1, halfcircle2D, randomLinear, circleLine2D } which;
   uint n;
   arr randomG;
@@ -145,15 +145,14 @@ struct ChoiceConstraintFunction : ConstrainedProblem {
 
 //===========================================================================
 
-struct SimpleConstraintFunction : ConstrainedProblem {
+struct SimpleConstraintFunction : MathematicalProgram {
   SimpleConstraintFunction() {
   }
-  virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& _x) {
+  virtual void getFeatureTypes(ObjectiveTypeA &tt){ tt = { OT_sos, OT_sos, OT_ineq, OT_ineq }; }
+  virtual void evaluate(arr& phi, arr& J, const arr& _x) {
     CHECK_EQ(_x.N, 2, "");
-    if(!!tt) tt = { OT_sos, OT_sos, OT_ineq, OT_ineq };
     phi.resize(4);
     if(!!J) { J.resize(4, 2); J.setZero(); }
-    if(!!H) { H=zeros(4, 4); }
 
     //simple squared potential, displaced by 1
     arr x(_x);

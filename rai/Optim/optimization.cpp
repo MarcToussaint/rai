@@ -24,7 +24,7 @@ template<> const char* rai::Enum<ObjectiveType>::names []= {
 
 bool checkJacobianCP(MathematicalProgram& P, const arr& x, double tolerance) {
   VectorFunction F = [&P](arr& phi, arr& J, const arr& x) {
-    return P.evaluate(phi, J, NoArr, x);
+    return P.evaluate(phi, J, x);
   };
   return checkJacobian(F, x, tolerance);
 }
@@ -34,14 +34,15 @@ bool checkHessianCP(MathematicalProgram& P, const arr& x, double tolerance) {
   arr phi, J;
   ObjectiveTypeA tt;
   P.getFeatureTypes(tt);
-  P.evaluate(phi, NoArr, NoArr, x); //TODO: only call getStructure
+  P.evaluate(phi, NoArr, x); //TODO: only call getStructure
   for(i=0; i<tt.N; i++) if(tt(i)==OT_f) break;
   if(i==tt.N) {
     RAI_MSG("no f-term in this KOM problem");
     return true;
   }
   ScalarFunction F = [&P, &phi, &J, i](arr& g, arr& H, const arr& x) -> double{
-    P.evaluate(phi, J, H, x);
+    P.evaluate(phi, J, x);
+    P.getFHessian(H, x);
     g = J[i];
     return phi(i);
   };

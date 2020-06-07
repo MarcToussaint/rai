@@ -605,7 +605,7 @@ arr CtrlProblem_MathematicalProgram::getInitializationSample(const arrL& previou
   NIY;
 }
 
-void CtrlProblem_MathematicalProgram::evaluate(arr& phi, arr& J, arr& H, const arr& x){
+void CtrlProblem_MathematicalProgram::evaluate(arr& phi, arr& J, const arr& x){
   Ctuple(-1)->setJointState(x);
   Ctuple(-1)->stepSwift();
 

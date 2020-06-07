@@ -81,8 +81,8 @@ Conv_KOMOProblem_MathematicalProgram::Conv_KOMOProblem_MathematicalProgram(KOMO_
   varDimIntegral = integral(variableDimensions);
 }
 
-void Conv_KOMOProblem_MathematicalProgram::evaluate(arr& phi, arr& J, arr& H, const arr& x) {
-  KOMO.phi(phi, (!!J?J_KOMO:NoArrA), (!!H?H_KOMO:NoArrA), featureTimes, featureTypes, x);
+void Conv_KOMOProblem_MathematicalProgram::evaluate(arr& phi, arr& J, const arr& x) {
+  KOMO.phi(phi, (!!J?J_KOMO:NoArrA), NoArrA, featureTimes, featureTypes, x);
 
   //-- construct a row-shifed J from the array of featureJs
   if(!!J) {
@@ -105,18 +105,4 @@ void Conv_KOMOProblem_MathematicalProgram::evaluate(arr& phi, arr& J, arr& H, co
     Jaux->reshift();
     Jaux->computeColPatches(true);
   }
-
-  if(!!H) H.clear();
-  /*
-   if(!!H) {
-    bool hasFterm = false;
-    if(!!featureTypes) hasFterm = (featureTypes.findValue(OT_f) != -1);
-    if(hasFterm) {
-      CHECK(H_KOMO.N, "this problem has f-terms -- I need a Hessian!");
-      NIY
-    } else {
-      H.clear();
-    }
-  }
-  */
 }

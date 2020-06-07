@@ -27,7 +27,7 @@ struct Conv_linearlyReparameterize_MathematicalProgram : MathematicalProgram {
 
   virtual uint getDimension(){ return P.getDimension(); }
   virtual void getFeatureTypes(ObjectiveTypeA& ft){ P.getFeatureTypes(ft); }
-  virtual void evaluate(arr& phi, arr& J, arr& H, const arr& z);
+  virtual void evaluate(arr& phi, arr& J, const arr& z);
 };
 
 /// A struct that allows to convert one function type into another, even when given as argument

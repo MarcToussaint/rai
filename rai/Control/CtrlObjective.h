@@ -76,7 +76,7 @@ struct CtrlProblem : NonCopyable {
 
   CtrlProblem(rai::Configuration& _C, double _tau) : C(_C), tau(_tau) {}
   CtrlObjective* addPDTask(CtrlObjectiveL& tasks, const char* name, double decayTime, double dampingRatio, ptr<Feature> map);
-  ptr<CtrlObjective> addObjective(const ptr<Feature>& f, ObjectiveType type, const ptr<CtrlTarget>& _ref);
+  ptr<CtrlObjective> addObjective(const ptr<Feature>& f, ObjectiveType type);
   ptr<CtrlObjective> addObjective(const FeatureSymbol& feat, const StringA& frames,
                                   ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr, int order=-1);
 

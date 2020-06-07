@@ -45,7 +45,8 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
   //-- evaluate constrained problem and buffer
   if(_x!=x) {
     x=_x;
-    P.evaluate(phi_x, J_x, H_x, x);
+    P.evaluate(phi_x, J_x, x);
+    P.getFHessian(H_x, x);
   } else { //we evaluated this before - use buffered values; the meta F is still recomputed as (dual) parameters might have changed
   }
   if(tt_x.N!=phi_x.N){ //need to get feature types

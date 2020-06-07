@@ -334,7 +334,8 @@ struct KOMO : NonCopyable {
 
     virtual uint getDimension(){ return komo.getPath_totalDofs(); }
     virtual void getFeatureTypes(ObjectiveTypeA& ft);
-    virtual void evaluate(arr& phi, arr& J, arr& H, const arr& x);
+    virtual void evaluate(arr& phi, arr& J, const arr& x);
+    virtual void getFHessian(arr& H, const arr& x);
   } dense_problem;
 
   struct Conv_KOMO_GraphProblem : GraphProblem {
@@ -363,7 +364,7 @@ struct KOMO : NonCopyable {
 
     virtual uint getDimension(){ return komo.getPath_totalDofs(); }
     virtual void getFeatureTypes(ObjectiveTypeA& ft);
-    virtual void evaluate(arr& phi, arr& J, arr& H, const arr& x);
+    virtual void evaluate(arr& phi, arr& J, const arr& x);
   };
 
   struct Conv_KOMO_MathematicalProgram : MathematicalProgram {
@@ -395,7 +396,7 @@ struct KOMO : NonCopyable {
     ///--- evaluation
 
     //unstructured (batch) interface (where J may/should be sparse! and H optional
-    virtual void evaluate(arr& phi, arr& J, arr& H, const arr& x); //default implementation: if isStructured, gets everything from there
+    virtual void evaluate(arr& phi, arr& J, const arr& x); //default implementation: if isStructured, gets everything from there
 
     //structured (local) interface
     virtual void setSingleVariable(uint var_id, const arr& x); //set a single variable block

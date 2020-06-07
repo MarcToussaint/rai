@@ -32,7 +32,7 @@ struct Conv_KOMOProblem_MathematicalProgram : MathematicalProgram {
 
   virtual uint getDimension(){ return varDimIntegral.elem(-1); }
   virtual void getFeatureTypes(ObjectiveTypeA& ft){ ft = featureTypes; }
-  virtual void evaluate(arr& phi, arr& J, arr& H, const arr& z);
+  virtual void evaluate(arr& phi, arr& J, const arr& z);
 };
 
 struct KOMO_GraphProblem : GraphProblem {

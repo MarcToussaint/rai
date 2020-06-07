@@ -17,7 +17,7 @@ void PhaseOneProblem::initialize(arr& x) {
   arr phi;
   ObjectiveTypeA ot;
   f_orig.getFeatureTypes(ot);
-  f_orig.evaluate(phi, NoArr, NoArr, x);
+  f_orig.evaluate(phi, NoArr, x);
   dim_x=x.N;
   dim_eq=dim_ineq=0;
   double gmax=0.;
@@ -41,7 +41,7 @@ void PhaseOneProblem::phi(arr& meta_phi, arr& meta_J, arr& meta_H, ObjectiveType
   arr phi, J;
   ObjectiveTypeA ot;
   f_orig.getFeatureTypes(ot);
-  f_orig.evaluate(phi, J, NoArr, x);
+  f_orig.evaluate(phi, J, x);
 
   meta_phi.resize(1+dim_ineq+dim_eq);
   meta_ot.resize(1+dim_ineq+dim_eq);

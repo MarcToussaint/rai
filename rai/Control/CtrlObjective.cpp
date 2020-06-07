@@ -73,9 +73,9 @@ void CtrlObjective::reportState(ostream& os) {
 }
 
 
-ptr<CtrlObjective> CtrlProblem::addObjective(const FeatureSymbol& feat, const StringA& frames, ObjectiveType type, const arr& scale, const arr& target, int order) {
+ptr<CtrlObjective> CtrlProblem::addObjective(const ptr<Feature>& f, ObjectiveType type) {
   ptr<CtrlObjective> t = make_shared<CtrlObjective>();
-  t->feat = symbols2feature(feat, frames, C, scale, target, order);
+  t->feat = f;
   t->update_y(C);
 //  if(t->feat->order==0){
 //    t->ref = make_shared<CtrlReference_MaxCarrot>(.1, target);
@@ -86,6 +86,10 @@ ptr<CtrlObjective> CtrlProblem::addObjective(const FeatureSymbol& feat, const St
 //  }
   objectives.append(t);
   return t;
+}
+
+ptr<CtrlObjective> CtrlProblem::addObjective(const FeatureSymbol& feat, const StringA& frames, ObjectiveType type, const arr& scale, const arr& target, int order) {
+  return addObjective(symbols2feature(feat, frames, C, scale, target, order), type);
 }
 
 void CtrlProblem::update(rai::Configuration& C) {

@@ -105,7 +105,7 @@ void Conv_Graph_MathematicalProgram::getFeatureTypes(ObjectiveTypeA& ft){
   if(!!ft) ft = featureTypes;
 }
 
-void Conv_Graph_MathematicalProgram::evaluate(arr& phi, arr& J, arr& H, const arr& x) {
+void Conv_Graph_MathematicalProgram::evaluate(arr& phi, arr& J, const arr& x) {
   G.phi(phi, J_G, H_G, x);
 
 

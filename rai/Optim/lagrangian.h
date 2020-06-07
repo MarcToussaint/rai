@@ -8,8 +8,8 @@
 
 #pragma once
 
-//#include "optimization.h"
 #include "MathematicalProgram.h"
+#include "optimization.h"
 
 //==============================================================================
 //

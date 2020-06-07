@@ -1656,7 +1656,7 @@ void KOMO::checkGradients() {
 
 
     VectorFunction F = [CP](arr& phi, arr& J, const arr& x) {
-      return CP->evaluate(phi, J, NoArr, x);
+      return CP->evaluate(phi, J, x);
     };
 //    checkJacobian(F, x, tolerance);
     arr J;
@@ -2615,7 +2615,7 @@ void KOMO::Conv_KOMO_KOMOProblem::phi(arr& phi, arrA& J, arrA& H, uintA& feature
   reportAfterPhiComputation(komo);
 }
 
-void KOMO::Conv_KOMO_DenseProblem::evaluate(arr& phi, arr& J, arr& H, const arr& x) {
+void KOMO::Conv_KOMO_DenseProblem::evaluate(arr& phi, arr& J, const arr& x) {
   //-- set the trajectory
   komo.set_x(x);
 
@@ -2687,7 +2687,14 @@ void KOMO::Conv_KOMO_DenseProblem::evaluate(arr& phi, arr& J, arr& H, const arr&
   if(quadraticPotentialLinear.N){
       phi.append( (~x * quadraticPotentialHessian * x).scalar() + scalarProduct(quadraticPotentialLinear, x));
       J.append(quadraticPotentialLinear);
-      H = quadraticPotentialHessian;
+  }
+}
+
+void KOMO::Conv_KOMO_DenseProblem::getFHessian(arr &H, const arr &x){
+  if(quadraticPotentialLinear.N){
+    H = quadraticPotentialHessian;
+  }else{
+    H.clear();
   }
 }
 
@@ -3051,7 +3058,7 @@ void KOMO::Conv_KOMO_MathematicalProgram::getStructure(uintA& variableDimensions
   }
 }
 
-void KOMO::Conv_KOMO_MathematicalProgram::evaluate(arr& phi, arr& J, arr& H, const arr& x){
+void KOMO::Conv_KOMO_MathematicalProgram::evaluate(arr& phi, arr& J, const arr& x){
   //-- set the decision variable
 #if 0 //the following should be equivalent, althought they work quite differently
   komo.set_x(x);
@@ -3243,7 +3250,7 @@ void KOMO::TimeSliceProblem::getFeatureTypes(ObjectiveTypeA& ft){
   komo.featureTypes = ft;
 }
 
-void KOMO::TimeSliceProblem::evaluate(arr& phi, arr& J, arr& H, const arr& x){
+void KOMO::TimeSliceProblem::evaluate(arr& phi, arr& J, const arr& x){
   komo.set_x(x, TUP(slice));
 
   if(!dimPhi) getDimPhi();

@@ -45,13 +45,13 @@ void KOMO_Control::step(const arr& real_q){
   setConfiguration(0, q + (q - q_1));
 
   //update bounds
-  setBounds(1., 100.);
+//  setBounds(1., 100.);
 
   OptOptions opt;
   opt.stopTolerance=1e-4;
   opt.nonStrictSteps=-1;
   opt.maxStep = tau; //maxVel*tau;
-  verbose=6;
+//  verbose=6;
 //  animateOptimization=2;
   optimize(0., opt);
 
