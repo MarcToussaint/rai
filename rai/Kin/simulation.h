@@ -28,7 +28,7 @@ struct Simulation {
   int verbose;
   FrameL grasps;
 
-  Simulation(Configuration& _C, SimulatorEngine _engine, int _verbose=1);
+  Simulation(Configuration& _C, SimulatorEngine _engine, int _verbose=2);
   ~Simulation();
 
 
