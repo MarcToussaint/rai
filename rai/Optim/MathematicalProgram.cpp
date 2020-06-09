@@ -13,16 +13,15 @@ arr MathematicalProgram::getInitializationSample(const arrL& previousOptima){
   return blo + rand(n) % (bup - blo);
 }
 
-void MathematicalProgram_Structured::getStructure(uintA& variableDimensions, uintA& featureDimensions, intAA& featureVariables){
-  variableDimensions = { getDimension() };
-  ObjectiveTypeA featureTypes;
-  getFeatureTypes(featureTypes);
-  featureDimensions = { featureTypes.N };
-  featureVariables = { intA({0}) };
-}
+//void MathematicalProgram_Structured::getStructure(uintA& variableDimensions, uintA& featureDimensions, intAA& featureVariables){
+//  variableDimensions = { getDimension() };
+//  ObjectiveTypeA featureTypes;
+//  getFeatureTypes(featureTypes);
+//  featureDimensions = { featureTypes.N };
+//  featureVariables = { intA({0}) };
+//}
 
-void MathematicalProgram_Structured::evaluate(arr& phi, arr& J, arr& H, const arr& x)
-{
+void MathematicalProgram_Structured::evaluate(arr& phi, arr& J, const arr& x){
   uintA variableDimensions; //the size of each variable block
   uintA featureDimensions;  //the size of each feature block
   intAA featureVariables;
@@ -58,11 +57,3 @@ void MathematicalProgram_Structured::evaluate(arr& phi, arr& J, arr& H, const ar
   }
   CHECK_EQ(n, phi.N, "");
 }
-
-//void MathematicalProgram_Structured::setSingleVariable(uint var_id, const arr& x){
-//  x_buffer = x;
-//}
-
-//void MathematicalProgram::evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H){
-//  evaluate(phi, J, H, x_buffer);
-//}

@@ -20,7 +20,7 @@ double I_lambda_x(uint i, arr& lambda, arr& g) {
 
 //==============================================================================
 
-LagrangianProblem::LagrangianProblem(ConstrainedProblem& P, OptOptions opt, arr& lambdaInit)
+LagrangianProblem::LagrangianProblem(MathematicalProgram& P, OptOptions opt, arr& lambdaInit)
   : P(P), muLB(0.), mu(0.), nu(0.) {
 
   ScalarFunction::operator=([this](arr& dL, arr& HL, const arr& x) -> double {
@@ -45,9 +45,14 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
   //-- evaluate constrained problem and buffer
   if(_x!=x) {
     x=_x;
-    P.phi(phi_x, J_x, H_x, tt_x, x);
+    P.evaluate(phi_x, J_x, x);
+    P.getFHessian(H_x, x);
   } else { //we evaluated this before - use buffered values; the meta F is still recomputed as (dual) parameters might have changed
   }
+  if(tt_x.N!=phi_x.N){ //need to get feature types
+    P.getFeatureTypes(tt_x);
+  }
+
   CHECK(x.N, "zero-dim optimization variables!");
   if(!isSparseMatrix(J_x)) {
     CHECK_EQ(phi_x.N, J_x.d0, "Jacobian size inconsistent");

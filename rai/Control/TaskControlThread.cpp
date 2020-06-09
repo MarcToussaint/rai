@@ -8,7 +8,7 @@
 
 #include "TaskControlThread.h"
 #include "CtrlSolvers.h"
-#include "CtrlReferences.h"
+#include "CtrlTargets.h"
 #include "../RosCom/baxter.h"
 #include "../Kin/frame.h"
 
@@ -217,7 +217,7 @@ void TaskControlThread::step() {
 ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrl_tasks,
                           Var<rai::Configuration>& ctrl_config,
                           const char* name, const ptr<Feature>& map,
-                          const ptr<CtrlReference>& ref) {
+                          const ptr<CtrlTarget>& ref) {
   NIY
 #if 0
   ptr<CtrlObjective> t = make_shared<CtrlObjective>(name, map, ref);
@@ -230,7 +230,7 @@ ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrl_tasks,
 ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrl_tasks,
                           Var<rai::Configuration>& ctrl_config,
                           const char* name, FeatureSymbol fs, const StringA& frames,
-                          const ptr<CtrlReference>& ref) {
+                          const ptr<CtrlTarget>& ref) {
   return addCtrlObjective(ctrl_tasks, ctrl_config, name,
                      symbols2feature(fs, frames, ctrl_config.get()),
                      ref);
@@ -242,7 +242,7 @@ ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrl_tasks,
                           double duration) {
   return addCtrlObjective(ctrl_tasks, ctrl_config, name,
                      symbols2feature(fs, frames, ctrl_config.get()),
-                     make_shared<CtrlReference_Sine>(arr(), duration));
+                     make_shared<CtrlTarget_Sine>(arr(), duration));
 }
 
 ptr<CtrlObjective> addCompliance(Var<CtrlObjectiveL>& ctrl_tasks,

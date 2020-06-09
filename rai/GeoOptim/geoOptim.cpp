@@ -14,36 +14,22 @@
 #include "../Geo/pairCollision.h"
 
 void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
-  struct fitSSBoxProblem : ConstrainedProblem {
+  struct fitSSBoxProblem : MathematicalProgram {
     const arr& X;
     fitSSBoxProblem(const arr& X):X(X) {}
-    void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x) {
+    virtual void getFeatureTypes(ObjectiveTypeA &tt){ tt.resize(5+X.d0); tt=OT_ineq; tt(0) = OT_f; }
+    void evaluate(arr& phi, arr& J, const arr& x) {
       phi.resize(5+X.d0);
-      if(!!tt) { tt.resize(5+X.d0); tt=OT_ineq; }
       if(!!J) {  J.resize(5+X.d0, 11); J.setZero(); }
-      if(!!H) {  H.resize(11, 11); H.setZero(); }
 
       //-- the scalar objective
       double a=x(0), b=x(1), c=x(2), r=x(3); //these are box-wall-coordinates --- not WIDTH!
       phi(0) = a*b*c + 2.*r*(a*b + a*c +b*c) + 4./3.*r*r*r;
-      if(!!tt) tt(0) = OT_f;
       if(!!J) {
         J(0, 0) = b*c + 2.*r*(b+c);
         J(0, 1) = a*c + 2.*r*(a+c);
         J(0, 2) = a*b + 2.*r*(a+b);
         J(0, 3) = 2.*(a*b + a*c +b*c) + 4.*r*r;
-      }
-      if(!!H) {
-        H(0, 1) = H(1, 0) = c + 2.*r;
-        H(0, 2) = H(2, 0) = b + 2.*r;
-        H(0, 3) = H(3, 0) = 2.*(b+c);
-
-        H(1, 2) = H(2, 1) = a + 2.*r;
-        H(1, 3) = H(3, 1) = 2.*(a+c);
-
-        H(2, 3) = H(3, 2) = 2.*(a+b);
-
-        H(3, 3) = 8.*r;
       }
 
       //-- positive
@@ -69,6 +55,21 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
         if(!!J) J[i+5] = Jy({3, -1});
       }
     }
+    virtual void getFHessian(arr &H, const arr& x){
+      double a=x(0), b=x(1), c=x(2), r=x(3); //these are box-wall-coordinates --- not WIDTH!
+      H.resize(4,4);
+      H(0, 1) = H(1, 0) = c + 2.*r;
+      H(0, 2) = H(2, 0) = b + 2.*r;
+      H(0, 3) = H(3, 0) = 2.*(b+c);
+
+      H(1, 2) = H(2, 1) = a + 2.*r;
+      H(1, 3) = H(3, 1) = 2.*(a+c);
+
+      H(2, 3) = H(3, 2) = 2.*(a+b);
+
+      H(3, 3) = 8.*r;
+    }
+
   } F(X);
 
   //initialization
@@ -148,7 +149,7 @@ void computeOptimalSSBox(rai::Mesh& mesh, arr& x_ret, rai::Transformation& t_ret
 }
 
 void minimalConvexCore(arr& core, const arr& points, double radius, int verbose) {
-  struct convexCoreProblem : ConstrainedProblem {
+  struct convexCoreProblem : MathematicalProgram {
     const arr& X;
     const uintA& T;
     double radius;
@@ -164,16 +165,15 @@ void minimalConvexCore(arr& core, const arr& points, double radius, int verbose)
       gl.add(m0);
       gl.add(m1);
     }
-    void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x) {
+    virtual void getFeatureTypes(ObjectiveTypeA &tt){ tt = consts<ObjectiveType>(OT_ineq, X.d0+1); tt(0) = OT_f; }
+    void evaluate(arr& phi, arr& J, const arr& x) {
       uint n = X.d0;
       arr _x = x.ref().reshape(-1, 3);
       //n inequalities on distances
       //single accumulated cost
 
       phi.resize(n+1).setZero();
-      if(!!tt) tt = consts<ObjectiveType>(OT_ineq, n+1);
       if(!!J) J.resize(n+1, x.N).setZero();
-      if(!!H) H.resize(x.N, x.N).setZero();
 
       //-- accumulated cost
       double cost = 0.;
@@ -217,7 +217,6 @@ void minimalConvexCore(arr& core, const arr& points, double radius, int verbose)
       double alpha = 1e-2;
       phi(0) = alpha*cost;
       if(!!J) J[0] = alpha*Jcost;
-      if(!!tt) tt(0) = OT_f;
 
       //-- radius inequalities
       for(uint i=0; i<n; i++) {
@@ -393,7 +392,7 @@ void minimalConvexCore3(arr& core, const arr& org_pts, double max_radius, int ve
   core = centers;
 }
 
-struct LinearProgram : ConstrainedProblem {
+struct LinearProgram : MathematicalProgram {
   arr c;
   arr G, g;
 
@@ -404,18 +403,15 @@ struct LinearProgram : ConstrainedProblem {
 
   uint dim_x() { return c.N; }
 
-  virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& ot, const arr& x) {
+  virtual void getFeatureTypes(ObjectiveTypeA &ot){ ot.resize(1+G.d0); ot = OT_ineq; ot(0) = OT_f; }
+  virtual void evaluate(arr& phi, arr& J, const arr& x) {
     phi.resize(1+G.d0);
-    if(!!ot) ot.resize(phi.N);
     if(!!J) J.resize(phi.N, x.N).setZero();
 
     phi(0) = scalarProduct(c, x);
-    if(!!ot) ot(0) = OT_f;
     if(!!J) J[0] = c;
-    if(!!H) H.clear();
 
     phi.setVectorBlock(G*x+g, 1);
-    if(!!ot) ot.setVectorBlock(consts(OT_ineq, G.d0), 1);
     if(!!J) J.setMatrixBlock(G, 1, 0);
   }
 };
@@ -456,21 +452,18 @@ double sphereReduceConvex(rai::Mesh& M, double radius, int verbose) {
   return r;
 }
 
-struct FitSphereProblem : ConstrainedProblem {
+struct FitSphereProblem : MathematicalProgram {
   const arr& X;
   FitSphereProblem(const arr& X):X(X) {}
-  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x) {
+  virtual void getFeatureTypes(ObjectiveTypeA &tt) { tt.resize(1+X.d0); tt=OT_ineq;   tt(0) = OT_f; }
+  void evaluate(arr& phi, arr& J, const arr& x) {
     CHECK_EQ(x.N, 4, "");  //x,y,z,radius
     phi.resize(1+X.d0);
-    if(!!tt) { tt.resize(1+X.d0); tt=OT_ineq; }
     if(!!J) {  J.resize(1+X.d0, 4); J.setZero(); }
-    if(!!H) {  H.resize(4, 4); H.setZero(); }
 
     //-- the radius objective
     phi(0) = x(3);
-    if(!!tt) tt(0) = OT_f;
     if(!!J)  J(0, 3) = 1.;
-    if(!!H)  {}//zero
 
     //-- all constraints
     arr c = x({0, 2});
@@ -487,21 +480,18 @@ struct FitSphereProblem : ConstrainedProblem {
   }
 };
 
-struct FitCapsuleProblem : ConstrainedProblem {
+struct FitCapsuleProblem : MathematicalProgram {
   const arr& X;
   FitCapsuleProblem(const arr& X):X(X) {}
-  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x) {
+  virtual void getFeatureTypes(ObjectiveTypeA &tt){ tt.resize(2+X.d0); tt=OT_ineq; tt(0) = OT_f; }
+  void evaluate(arr& phi, arr& J, const arr& x) {
     CHECK_EQ(x.N, 7, "");  //x,y,z, x,y,z, radius
     phi.resize(2+X.d0);
-    if(!!tt) { tt.resize(2+X.d0); tt=OT_ineq; }
     if(!!J) {  J.resize(2+X.d0, 7); J.setZero(); }
-    if(!!H) {  H.resize(7, 7); H.setZero(); }
 
     //-- the radius objective
     phi(0) = 4.*x(6);
-    if(!!tt) tt(0) = OT_f;
     if(!!J)  J(0, 6) = 4.;
-    if(!!H)  {}//zero
 
     //-- the capsule length objective
     arr a = x({0, 2});
@@ -512,15 +502,6 @@ struct FitCapsuleProblem : ConstrainedProblem {
       J(0, {0, 2}) += (a-b)/l;
       J(0, {3, 5}) += (b-a)/l;
     }
-    if(!!H) {
-      arr B(3, 3);
-      B.setId();
-      B *= 1./l;
-      B -= ((a-b)^(a-b)) / (l*l*l);
-      arr A;
-      A.setBlockMatrix(B, -B, -B, B);
-      H.setMatrixBlock(A, 0, 0);
-    }//zero
 
     //-- all constraints
     double scale = 1e1;
@@ -549,8 +530,22 @@ struct FitCapsuleProblem : ConstrainedProblem {
       }
     }
     checkNan(J);
-    checkNan(H);
   }
+  virtual void getFHessian(arr &H, const arr &x) {
+    arr a = x({0, 2});
+    arr b = x({3, 5});
+    double l = length(a-b);
+
+    arr B(3, 3);
+    B.setId();
+    B *= 1./l;
+    B -= ((a-b)^(a-b)) / (l*l*l);
+    arr A;
+    A.setBlockMatrix(B, -B, -B, B);
+    H.setMatrixBlock(A, 0, 0);
+    checkNan(H);
+  }//zero
+
 };
 
 void optimalSphere(arr& core, uint num, const arr& org_pts, double& radius, int verbose) {
@@ -571,7 +566,7 @@ void optimalSphere(arr& core, uint num, const arr& org_pts, double& radius, int 
   x.append(radius);
 
   //problem
-  ptr<ConstrainedProblem> F;
+  ptr<MathematicalProgram> F;
   if(num==1) F = make_shared<FitSphereProblem>(pts);
   else if(num==2)  F = make_shared<FitCapsuleProblem>(pts);
 

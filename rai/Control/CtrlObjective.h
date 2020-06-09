@@ -12,19 +12,18 @@
 #include "../Optim/optimization.h"
 #include "../Core/thread.h"
 #include "../Kin/kin.h"
+#include "../KOMO/komo.h"
 
 struct CtrlObjective;
-struct CtrlReference;
+struct CtrlTarget;
 typedef rai::Array<std::shared_ptr<CtrlObjective>> CtrlObjectiveL;
 
 //===========================================================================
 
-/// a CtrlReference continuously updates the refence (zero-point) of a CtrlObjective (e.g. MotionProfile, reference path)
-struct CtrlReference {
-  arr y_ref, v_ref;
-
-  virtual ~CtrlReference() {}
-  virtual ActStatus step(double tau, const arr& y_real, const arr& v_real) = 0; //step forward, updating the reference based on y_real
+/// a CtrlTarget continuously updates the 'target' (zero-point) of the Feature of a CtrlObjective -- this allows to realize MotionProfile or following a reference path or moving target
+struct CtrlTarget {
+  virtual ~CtrlTarget() {}
+  virtual ActStatus step(arr& target, double tau, const arr& y_real) = 0; //step forward, updating the target based on y_real
   virtual void setTimeScale(double d) = 0;
   virtual void resetState() = 0;
 };
@@ -39,11 +38,10 @@ struct CtrlObjective {
   rai::String name;  ///< just for easier reporting
 
   //-- the reference (zero point in feature space (target in KOMO)) can be continuously changed by motion primitives or other means
-  std::shared_ptr<CtrlReference> ref;  ///< non-nullptr iff this is a pos/vel task
+  std::shared_ptr<CtrlTarget> ref;  ///< non-nullptr iff this is a pos/vel task
 
   //-- parameters that influence how CtrlMethods treat this objective
   bool active;       ///< also non-active tasks are updated (states evaluated), but don't enter the TaskControlMethods
-  double scale;
   double kp, kd;     ///< gains
   arr C;             ///< feature space compliance matrix (TODO: needed?)
 
@@ -53,14 +51,14 @@ struct CtrlObjective {
   arr f;                ///< measured generalized force in this task space
 
 
-  CtrlObjective() : type(OT_sos), active(true), scale(1.), kp(1.), kd(1.), status(AS_init) {}
+  CtrlObjective() : type(OT_sos), active(true), kp(1.), kd(1.), status(AS_init) {}
 //  CtrlObjective(char* _name, const ptr<Feature>& _feat, const ptr<CtrlReference>& _ref, double _kp, double _kd, const arr& _C);
   ~CtrlObjective() {}
 
-  arr update_y(const rai::Configuration& C); //returns the CHANGE in y (to estimate velocity)
+  arr update_y(const ConfigurationL& Ctuple); //returns the CHANGE in y (to estimate velocity)
   void resetState();
 
-  void setRef(const ptr<CtrlReference>& _ref);
+  void setRef(const ptr<CtrlTarget>& _ref);
   void setTarget(const arr& y_target);
   void setTimeScale(double d);
 
@@ -70,16 +68,16 @@ struct CtrlObjective {
 //===========================================================================
 
 struct CtrlProblem : NonCopyable {
-  rai::Configuration& C;   ///< original world; which is the blueprint for all time-slice worlds (almost const: only makeConvexHulls modifies it)
+  KOMO komo;
   double tau;
   double maxVel=1.;
   double maxAcc=1.;
 
   rai::Array<ptr<CtrlObjective>> objectives;    ///< list of objectives
 
-  CtrlProblem(rai::Configuration& _C, double _tau) : C(_C), tau(_tau) {}
+  CtrlProblem(rai::Configuration& _C, double _tau, uint k_order=1);
   CtrlObjective* addPDTask(CtrlObjectiveL& tasks, const char* name, double decayTime, double dampingRatio, ptr<Feature> map);
-  ptr<CtrlObjective> addObjective(const ptr<Feature>& f, ObjectiveType type, const ptr<CtrlReference>& _ref);
+  ptr<CtrlObjective> addObjective(const ptr<Feature>& f, ObjectiveType type);
   ptr<CtrlObjective> addObjective(const FeatureSymbol& feat, const StringA& frames,
                                   ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr, int order=-1);
 

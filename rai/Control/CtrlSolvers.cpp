@@ -442,15 +442,15 @@ NIY}
 arr TaskControlMethods::inverseKinematics(CtrlObjectiveL& tasks, arr& qdot, const arr& P_compliance, const arr& nullRef, double* cost) {
   arr y, v, J, J_vel; //separate J only for velocity tasks
   for(auto &t: tasks) {
-    if(t->active && t->ref) {
-      if(t->ref->y_ref.N) {
-        y.append(t->scale*(t->ref->y_ref - t->y));
-        J.append(t->scale*(t->J_y));
-      }
-      if((!!qdot) && t->ref->v_ref.N) {
-        v.append(t->scale*(t->ref->v_ref));
-        J_vel.append(t->scale*(t->J_y));
-      }
+    if(t->active) {
+//      if(t->ref->y_ref.N) {
+        y.append(-t->y);
+        J.append(t->J_y);
+//      }
+//      if((!!qdot) && t->ref->v_ref.N) {
+//        v.append(t->scale*(t->ref->v_ref));
+//        J_vel.append(t->scale*(t->J_y));
+//      }
     }
   }
 
@@ -605,7 +605,7 @@ arr CtrlProblem_MathematicalProgram::getInitializationSample(const arrL& previou
   NIY;
 }
 
-void CtrlProblem_MathematicalProgram::evaluate(arr& phi, arr& J, arr& H, const arr& x){
+void CtrlProblem_MathematicalProgram::evaluate(arr& phi, arr& J, const arr& x){
   Ctuple(-1)->setJointState(x);
   Ctuple(-1)->stepSwift();
 
@@ -665,7 +665,6 @@ void CtrlProblem_MathematicalProgram::evaluate(arr& phi, arr& J, arr& H, const a
 
 arr solve_optim(CtrlProblem& CP) {
   auto MP = make_shared<CtrlProblem_MathematicalProgram>(CP);
-  Conv_MathematicalProgram_ConstrainedProblem cp(MP);
 
   arr x = CP.C.getJointState();
   OptOptions opt;
@@ -673,7 +672,7 @@ arr solve_optim(CtrlProblem& CP) {
   opt.stopGTolerance = 1e-4;
   opt.stopIters = 10;
 //  opt.nonStrictSteps=-1;
-  OptConstrained O(x, NoArr, cp, -1, opt);
+  OptConstrained O(x, NoArr, *MP, -1, opt);
   MP->getBounds(O.newton.bound_lo, O.newton.bound_up);
   O.run();
   return x;

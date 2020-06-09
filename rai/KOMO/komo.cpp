@@ -1481,8 +1481,8 @@ void KOMO::run(const OptOptions options) {
     CHECK(!splineB.N, "NIY");
 #if 1
 //    ModGraphProblem selG(graph_problem);
-//    Conv_Graph_ConstrainedProblem C(selG);
-    Conv_Graph_ConstrainedProblem C(graph_problem, logFile);
+//    Conv_Graph_MathematicalProgram C(selG);
+    Conv_Graph_MathematicalProgram C(graph_problem, logFile);
     OptConstrained _opt(x, dual, C, rai::MAX(verbose-2, 0), options, logFile);
     if(bound_up.N && bound_lo.N){
       _opt.newton.bound_lo = bound_lo;
@@ -1514,8 +1514,8 @@ void KOMO::run(const OptOptions options) {
     opt->run();
   } else {
     arr a, b, c, d, e;
-    Conv_KOMO_ConstrainedProblem P0(komo_problem);
-    Conv_linearlyReparameterize_ConstrainedProblem P(P0, splineB);
+    Conv_KOMOProblem_MathematicalProgram P0(komo_problem);
+    Conv_linearlyReparameterize_MathematicalProgram P(P0, splineB);
     opt = new OptConstrained(z, dual, P, rai::MAX(verbose-2, 0));
     opt->logFile = logFile;
     opt->run();
@@ -1644,19 +1644,19 @@ void KOMO::checkGradients() {
 #else
     double tolerance=1e-4;
 
-    ptr<ConstrainedProblem> CP;
+    ptr<MathematicalProgram> CP;
 
     if(denseOptimization) {
       CP = make_shared<Conv_KOMO_DenseProblem>(*this);
     } else if(sparseOptimization) {
-      CP = make_shared<Conv_Graph_ConstrainedProblem>(graph_problem);
+      CP = make_shared<Conv_Graph_MathematicalProgram>(graph_problem);
     } else { //DEFAULT CASE
-      CP = make_shared<Conv_KOMO_ConstrainedProblem>(komo_problem);
+      CP = make_shared<Conv_KOMOProblem_MathematicalProgram>(komo_problem);
     }
 
 
     VectorFunction F = [CP](arr& phi, arr& J, const arr& x) {
-      return CP->phi(phi, J, NoArr, NoObjectiveTypeA, x);
+      return CP->evaluate(phi, J, x);
     };
 //    checkJacobian(F, x, tolerance);
     arr J;
@@ -1685,8 +1685,8 @@ void KOMO::checkGradients() {
     if(succ) cout <<"jacobianCheck -- SUCCESS (max diff error=" <<mmd <<")" <<endl;
 #endif
   } else {
-    Conv_KOMO_ConstrainedProblem P0(komo_problem);
-    Conv_linearlyReparameterize_ConstrainedProblem P1(P0, splineB);
+    Conv_KOMOProblem_MathematicalProgram P0(komo_problem);
+    Conv_linearlyReparameterize_MathematicalProgram P1(P0, splineB);
     checkJacobianCP(P1, z, 1e-4);
   }
 }
@@ -2615,16 +2615,13 @@ void KOMO::Conv_KOMO_KOMOProblem::phi(arr& phi, arrA& J, arrA& H, uintA& feature
   reportAfterPhiComputation(komo);
 }
 
-void KOMO::Conv_KOMO_DenseProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x) {
+void KOMO::Conv_KOMO_DenseProblem::evaluate(arr& phi, arr& J, const arr& x) {
   //-- set the trajectory
   komo.set_x(x);
 
   if(!dimPhi) getDimPhi();
-//  CHECK(dimPhi,"getStructure must be called first");
-//  getStructure(NoUintA, featureTimes, tt);
-//  if(WARN_FIRST_TIME){ LOG(-1)<<"calling inefficient getStructure"; WARN_FIRST_TIME=false; }
+
   phi.resize(dimPhi);
-  if(!!tt) tt.resize(dimPhi);
   if(!!J){
     bool SPARSE_JACOBIANS = true;
     if(!SPARSE_JACOBIANS) {
@@ -2676,8 +2673,6 @@ void KOMO::Conv_KOMO_DenseProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA&
         }
       }
 
-      if(!!tt) for(uint i=0; i<y.N; i++) tt(M+i) = ob->type;
-
       //counter for features phi
       M += y.N;
     }
@@ -2686,15 +2681,20 @@ void KOMO::Conv_KOMO_DenseProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA&
   CHECK_EQ(M, dimPhi, "");
   komo.featureValues = phi;
   if(!!J) komo.featureJacobians.resize(1).scalar() = J;
-  if(!!tt) komo.featureTypes = tt;
 
   reportAfterPhiComputation(komo);
 
   if(quadraticPotentialLinear.N){
-      tt.append(OT_f);
       phi.append( (~x * quadraticPotentialHessian * x).scalar() + scalarProduct(quadraticPotentialLinear, x));
       J.append(quadraticPotentialLinear);
-      H = quadraticPotentialHessian;
+  }
+}
+
+void KOMO::Conv_KOMO_DenseProblem::getFHessian(arr &H, const arr &x){
+  if(quadraticPotentialLinear.N){
+    H = quadraticPotentialHessian;
+  }else{
+    H.clear();
   }
 }
 
@@ -2710,6 +2710,26 @@ void KOMO::Conv_KOMO_DenseProblem::getDimPhi() {
   }
   dimPhi = M;
 }
+
+void KOMO::Conv_KOMO_DenseProblem::getFeatureTypes(ObjectiveTypeA& ft){
+  if(!dimPhi) getDimPhi();
+  ft.resize(dimPhi);
+  uint M=0;
+  for(uint i=0; i<komo.objectives.N; i++) {
+    ptr<Objective> ob = komo.objectives.elem(i);
+    for(uint l=0; l<ob->configs.d0; l++) {
+      ConfigurationL Ktuple = komo.configurations.sub(convert<uint, int>(ob->configs[l]+(int)komo.k_order));
+      uint m = ob->feat->__dim_phi(Ktuple);
+      for(uint i=0; i<m; i++) ft(M+i) = ob->type;
+      M += m;
+    }
+  }
+  if(quadraticPotentialLinear.N){
+    ft.append(OT_f);
+  }
+  komo.featureTypes = ft;
+}
+
 
 void KOMO::Conv_KOMO_GraphProblem::getStructure(uintA& variableDimensions, intAA& featureVariables, ObjectiveTypeA& featureTypes) {
   CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet: use komo.reset()");
@@ -3038,7 +3058,7 @@ void KOMO::Conv_KOMO_MathematicalProgram::getStructure(uintA& variableDimensions
   }
 }
 
-void KOMO::Conv_KOMO_MathematicalProgram::evaluate(arr& phi, arr& J, arr& H, const arr& x){
+void KOMO::Conv_KOMO_MathematicalProgram::evaluate(arr& phi, arr& J, const arr& x){
   //-- set the decision variable
 #if 0 //the following should be equivalent, althought they work quite differently
   komo.set_x(x);
@@ -3210,13 +3230,32 @@ void KOMO::TimeSliceProblem::getDimPhi() {
   dimPhi = M;
 }
 
-void KOMO::TimeSliceProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x){
+void KOMO::TimeSliceProblem::getFeatureTypes(ObjectiveTypeA& ft){
+  if(!dimPhi) getDimPhi();
+  ft.resize(dimPhi);
+
+  uint M=0;
+  for(uint i=0; i<komo.objectives.N; i++) {
+    ptr<Objective> ob = komo.objectives.elem(i);
+    CHECK_EQ(ob->configs.nd, 2, "only in sparse mode!");
+    if(ob->configs.d1!=1) continue; //ONLY USE order 0 objectives!!!!!
+    for(uint l=0; l<ob->configs.d0; l++) {
+      if(ob->configs(l,0)!=slice) continue; //ONLY USE objectives for this slice
+      ConfigurationL Ktuple = komo.configurations.sub(convert<uint, int>(ob->configs[l]+(int)komo.k_order));
+      uint m = ob->feat->__dim_phi(Ktuple);
+      if(!!ft) for(uint i=0; i<m; i++) ft(M+i) = ob->type;
+      M += m;
+    }
+  }
+  komo.featureTypes = ft;
+}
+
+void KOMO::TimeSliceProblem::evaluate(arr& phi, arr& J, const arr& x){
   komo.set_x(x, TUP(slice));
 
   if(!dimPhi) getDimPhi();
 
   phi.resize(dimPhi);
-  if(!!tt) tt.resize(dimPhi);
   if(!!J) J.resize(dimPhi, x.N).setZero();
 
   uintA x_index = getKtupleDim(komo.configurations({komo.k_order, -1}));
@@ -3250,8 +3289,6 @@ void KOMO::TimeSliceProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, c
         J.setMatrixBlock(Jy, M, 0);
       }
 
-      if(!!tt) for(uint i=0; i<y.N; i++) tt(M+i) = ob->type;
-
       //counter for features phi
       M += y.N;
     }
@@ -3260,7 +3297,6 @@ void KOMO::TimeSliceProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, c
   CHECK_EQ(M, dimPhi, "");
   komo.featureValues = phi;
   if(!!J) komo.featureJacobians.resize(1).scalar() = J;
-  if(!!tt) komo.featureTypes = tt;
 
   reportAfterPhiComputation(komo);
 }
@@ -3275,6 +3311,13 @@ Configuration& KOMO::getConfiguration_t(int t){
   if(!configurations.N) setupConfigurations();
   if(t<0) CHECK_LE(-t, (int)k_order,"");
   return *configurations(t+k_order);
+}
+
+uint KOMO::getPath_totalDofs(){
+  CHECK_EQ(configurations.N, k_order+T, "configurations are not setup yet");
+uint n=0;
+for(uint t=0; t<T; t++) n +=configurations(t+k_order)->getJointStateDimension();
+return n;
 }
 
 arr KOMO::getPath_decisionVariable() {

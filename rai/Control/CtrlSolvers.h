@@ -53,7 +53,7 @@ struct CtrlProblem_MathematicalProgram : MathematicalProgram {
 
   virtual arr getInitializationSample(const arrL& previousOptima={});
 
-  virtual void evaluate(arr& phi, arr& J, arr& H, const arr& x);
+  virtual void evaluate(arr& phi, arr& J, const arr& x);
 };
 
 //===========================================================================

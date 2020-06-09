@@ -7,7 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "CtrlObjective.h"
-#include "CtrlReferences.h"
+#include "CtrlTargets.h"
 #include "CtrlSolvers.h"
 #include "komoControl.h"
 #include "../KOMO/komo.h"
@@ -36,14 +36,14 @@ void naturalGains(double& Kp, double& Kd, double decayTime, double dampingRatio)
 
 void CtrlObjective::resetState() { if(ref) ref->resetState(); status=AS_init; }
 
-arr CtrlObjective::update_y(const rai::Configuration& C) {
+arr CtrlObjective::update_y(const ConfigurationL& Ctuple) {
   arr y_old = y;
-  feat->__phi(y, J_y, C);
+  feat->__phi(y, J_y, Ctuple);
   if(y_old.N==y.N) return y-y_old;
   return zeros(y.N);
 }
 
-void CtrlObjective::setRef(const ptr<CtrlReference>& _ref) {
+void CtrlObjective::setRef(const ptr<CtrlTarget>& _ref) {
   CHECK(!ref, "ref is already set");
   ref = _ref;
 }
@@ -60,12 +60,12 @@ void CtrlObjective::reportState(ostream& os) {
   os <<"  CtrlObjective " <<name <<':';
   if(!active) cout <<" INACTIVE";
   if(ref){
-    if(ref->y_ref.N==y.N){
-      os <<" \ty_ref=" <<ref->y_ref <<" \ty=" <<y <<" \ty-err=" <<length(ref->y_ref-y);
+    if(feat->target.N==y.N){
+      os <<" \ty_ref=" <<feat->target <<" \ty=" <<y <<" \ty-err=" <<length(feat->target-y);
     }
-    if(ref->v_ref.N==y.N){
-      os <<" \tv_ref=" <<ref->v_ref;
-    }
+//    if(ref->v_ref.N==y.N){
+//      os <<" \tv_ref=" <<ref->v_ref;
+//    }
     os <<endl;
   } else {
     os <<" -- no reference defined " <<endl;
@@ -73,33 +73,58 @@ void CtrlObjective::reportState(ostream& os) {
 }
 
 
-ptr<CtrlObjective> CtrlProblem::addObjective(const FeatureSymbol& feat, const StringA& frames, ObjectiveType type, const arr& scale, const arr& target, int order) {
+CtrlProblem::CtrlProblem(rai::Configuration& _C, double _tau, uint k_order)
+  : tau(_tau) {
+  komo.setModel(_C, true);
+  komo.setTiming(1., 1, _tau, k_order);
+  komo.setupConfigurations( _C.getJointState() );
+  komo.verbose=0;
+}
+
+ptr<CtrlObjective> CtrlProblem::addObjective(const ptr<Feature>& f, ObjectiveType type) {
   ptr<CtrlObjective> t = make_shared<CtrlObjective>();
-  t->feat = symbols2feature(feat, frames, C, scale, target, order);
-  if(t->feat->order==0){
-    t->ref = make_shared<CtrlReference_MaxCarrot>(.1);
-  }else if(t->feat->order==1){
-    t->ref = make_shared<CtrlReference_ConstVel>();
-  }else{
-    NIY
-  }
-  t->update_y(C);
+  t->feat = f;
+  t->update_y(komo.configurations);
+//  if(t->feat->order==0){
+//    t->ref = make_shared<CtrlReference_MaxCarrot>(.1, target);
+//  }else if(t->feat->order==1){
+//    t->ref = make_shared<CtrlReference_ConstVel>();
+//  }else{
+//    NIY
+//  }
   objectives.append(t);
   return t;
 }
 
+ptr<CtrlObjective> CtrlProblem::addObjective(const FeatureSymbol& feat, const StringA& frames, ObjectiveType type, const arr& scale, const arr& target, int order) {
+  return addObjective(symbols2feature(feat, frames, komo.getConfiguration(0), scale, target, order), type);
+}
+
 void CtrlProblem::update(rai::Configuration& C) {
-  for(ptr<CtrlObjective>& o: objectives){
+  //push configurations
+  for(uint s=1;s<komo.configurations.N;s++){
+    komo.configurations(s-1)->setJointState( komo.configurations(s)->getJointState() );
+  }
+  arr q = C.getJointState();
+  komo.setConfiguration(-1, q);
+  komo.setConfiguration(0, q);
+
+  for(std::shared_ptr<CtrlObjective>& o: objectives){
     if(!o->name.N) o->name = o->feat->shortTag(C);
 
-    arr dy = o->update_y(C);
+    arr y = o->y;
+    if(o->feat->scale.N)   y *= (1./o->feat->scale.scalar());
+    if(o->feat->target.N)  y += o->feat->target;
 
     if(o->ref){
-      ActStatus s_old = o->status;
-      ActStatus s_new = s_old;
-      s_new = o->ref->step(tau, o->y, dy/tau);
-      if(s_new!=s_old) o->status=s_new;
+      ActStatus s_new = o->ref->step(o->feat->target, tau, y);
+      if(s_new != o->status){
+        o->status = s_new;
+        //callbacks
+      }
     }
+
+    o->update_y(komo.configurations);
   }
 }
 
@@ -111,19 +136,24 @@ void CtrlProblem::report(std::ostream& os){
 
 arr CtrlProblem::solve() {
 #if 0
-  TaskControlMethods M(C.getHmetric());
-  arr q = C.getJointState();
+  TaskControlMethods M(komo.getConfiguration_t(0).getHmetric());
+  arr q = komo.getConfiguration_t(0).getJointState();
   q += M.inverseKinematics(objectives, NoArr, {});
   return q;
-#elif 0
-  KOMO komo;
-  komo.setModel(C, false);
-  komo.setTiming(1., 1, tau, 1);
+#elif 1
+  komo.clearObjectives();
   for(std::shared_ptr<CtrlObjective>& o: objectives){
     komo.addObjective({}, o->feat, o->type);
   }
-  komo.optimize();
-  return komo.getPath();
+  OptOptions opt;
+  opt.stopTolerance = 1e-4;
+  opt.stopGTolerance = 1e-4;
+  opt.stopIters = 10;
+//  opt.nonStrictSteps=-1;
+//  opt.maxStep = .1*tau; //maxVel*tau;
+  opt.maxStep = 1.;
+  komo.optimize(0., opt);
+  return komo.getPath().reshape(-1);
 #else
   return solve_optim(*this);
 #endif

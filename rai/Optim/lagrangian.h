@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "MathematicalProgram.h"
 #include "optimization.h"
 
 //==============================================================================
@@ -19,7 +20,7 @@
 //
 
 struct LagrangianProblem : ScalarFunction { //TODO: rename: UnconstrainedLagrangianProblem
-  ConstrainedProblem& P;
+  MathematicalProgram& P;
 
   //-- parameters of the unconstrained (Lagrangian) scalar function
   double muLB;       ///< log barrier weight
@@ -34,7 +35,7 @@ struct LagrangianProblem : ScalarFunction { //TODO: rename: UnconstrainedLagrang
 
   ostream* logFile=nullptr;  ///< file for logging
 
-  LagrangianProblem(ConstrainedProblem& P, OptOptions opt=NOOPT, arr& lambdaInit=NoArr);
+  LagrangianProblem(MathematicalProgram& P, OptOptions opt=NOOPT, arr& lambdaInit=NoArr);
 
   double lagrangian(arr& dL, arr& HL, const arr& x); ///< CORE METHOD: the unconstrained scalar function F
 
