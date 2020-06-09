@@ -12,6 +12,7 @@
 #include "../Optim/optimization.h"
 #include "../Core/thread.h"
 #include "../Kin/kin.h"
+#include "../KOMO/komo.h"
 
 struct CtrlObjective;
 struct CtrlTarget;
@@ -54,7 +55,7 @@ struct CtrlObjective {
 //  CtrlObjective(char* _name, const ptr<Feature>& _feat, const ptr<CtrlReference>& _ref, double _kp, double _kd, const arr& _C);
   ~CtrlObjective() {}
 
-  arr update_y(const rai::Configuration& C); //returns the CHANGE in y (to estimate velocity)
+  arr update_y(const ConfigurationL& Ctuple); //returns the CHANGE in y (to estimate velocity)
   void resetState();
 
   void setRef(const ptr<CtrlTarget>& _ref);
@@ -67,14 +68,14 @@ struct CtrlObjective {
 //===========================================================================
 
 struct CtrlProblem : NonCopyable {
-  rai::Configuration& C;   ///< original world; which is the blueprint for all time-slice worlds (almost const: only makeConvexHulls modifies it)
+  KOMO komo;
   double tau;
   double maxVel=1.;
   double maxAcc=1.;
 
   rai::Array<ptr<CtrlObjective>> objectives;    ///< list of objectives
 
-  CtrlProblem(rai::Configuration& _C, double _tau) : C(_C), tau(_tau) {}
+  CtrlProblem(rai::Configuration& _C, double _tau, uint k_order=1);
   CtrlObjective* addPDTask(CtrlObjectiveL& tasks, const char* name, double decayTime, double dampingRatio, ptr<Feature> map);
   ptr<CtrlObjective> addObjective(const ptr<Feature>& f, ObjectiveType type);
   ptr<CtrlObjective> addObjective(const FeatureSymbol& feat, const StringA& frames,
