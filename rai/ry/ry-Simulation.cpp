@@ -39,14 +39,14 @@ void init_Simulation(pybind11::module &m) {
            "",
            pybind11::arg("gripperFrameName"),
            pybind11::arg("width") = .075,
-           pybind11::arg("speed") = .2
+           pybind11::arg("speed") = .3
                                     )
 
       .def("closeGripper", &rai::Simulation::closeGripper,
            "",
            pybind11::arg("gripperFrameName"),
            pybind11::arg("width") = .05,
-           pybind11::arg("speed") = 1.,
+           pybind11::arg("speed") = .3,
            pybind11::arg("force") = 20.
                                     )
 
@@ -78,12 +78,12 @@ void init_Simulation(pybind11::module &m) {
       .def("addSensor",  &rai::Simulation::addSensor,
            "",
            pybind11::arg("sensorName"),
-           pybind11::arg("frameAttached") = 0,
+           pybind11::arg("frameAttached") = std::string(),
            pybind11::arg("width") = 640,
            pybind11::arg("height") = 360,
            pybind11::arg("focalLength") = -1.,
            pybind11::arg("orthoAbsHeight") = -1.,
-           pybind11::arg("zRange") = arr()
+           pybind11::arg("zRange") = std::vector<double>()
                                      )
       .def("selectSensor",  &rai::Simulation::selectSensor,
            "",
