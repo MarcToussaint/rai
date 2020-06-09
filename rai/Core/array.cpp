@@ -260,11 +260,14 @@ extern bool useLapack;
 
 void normalizeWithJac(arr& y, arr& J) {
   double l = length(y);
-  CHECK(l>1e-10, "can't normalize");
-  y /= l;
-  if(!!J && J.N) {
-    J -= y*(~y*J); //same as (y^y)*J;
-    J /= l;
+  if(l<1e-10){
+    LOG(-1) <<"can't normalize vector of length " <<l;
+  }else{
+    y /= l;
+    if(!!J && J.N) {
+      J -= y*(~y*J); //same as (y^y)*J;
+      J /= l;
+    }
   }
 }
 
