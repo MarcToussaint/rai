@@ -28,7 +28,7 @@ struct Simulation_self {
   std::shared_ptr<BulletInterface> bullet;
   std::shared_ptr<PhysXInterface> physx;
 
-  void updateDisplayData(double _time, const arr& _frameState, const ProxyA& _proxies);
+  void updateDisplayData(double _time, const Configuration& _C);
   void updateDisplayData(const byteA& _image, const floatA& _depth);
 };
 
@@ -167,7 +167,7 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     imp->modConfiguration(*this);
   }
 
-  if(verbose>0) self->updateDisplayData(time, C.getFrameState(), C.proxies);
+  if(verbose>0) self->updateDisplayData(time, C);
 }
 
 void Simulation::openGripper(const char* gripperFrameName, double width, double speed){
@@ -279,6 +279,15 @@ void Simulation::setState(const arr& frameState, const arr& frameVelocities){
   }else NIY;
 }
 
+void Simulation::registerNewObjectWithEngine(Frame* f){
+  CHECK_EQ(&f->C, &C, "can't register frame that is not part of the simulated configuration");
+if(engine==_physx) {
+  self->physx->postAddObject(f);
+}else if(engine==_bullet){
+  NIY;
+}else NIY;
+}
+
 void Simulation::restoreState(const ptr<SimulationState>& state) {
   setState(state->frameState, state->frameVels);
 }
@@ -368,11 +377,7 @@ struct Simulation_DisplayThread : Thread, GLDrawer {
   }
 
   void step() {
-    mux.lock(RAI_HERE);
-    double t = time;
-    mux.unlock();
-
-    gl.update(STRING("t:" <<t), true);
+    gl.update(STRING("t:" <<time), true);
   }
 
   void glDraw(OpenGL& gl) {
@@ -408,12 +413,20 @@ struct Simulation_DisplayThread : Thread, GLDrawer {
   }
 };
 
-void Simulation_self::updateDisplayData(double _time, const arr& _frameState, const ProxyA& _proxies) {
+void Simulation_self::updateDisplayData(double _time, const rai::Configuration& _C) {
   CHECK(display, "");
   display->mux.lock(RAI_HERE);
   display->time = _time;
-  display->Ccopy.setFrameState(_frameState);
-  display->Ccopy.copyProxies(_proxies);
+  if(_C.frames.N!=display->Ccopy.frames.N){
+    display->Ccopy.copy(_C, false);
+    //deep copy meshes!
+    for(rai::Frame* f:display->Ccopy.frames) if(f->shape) {
+      ptr<Mesh> org = f->shape->_mesh;
+      f->shape->_mesh = make_shared<Mesh> (*org.get());
+    }
+  }
+  display->Ccopy.setFrameState(_C.getFrameState());
+  display->Ccopy.copyProxies(_C.proxies);
   display->mux.unlock();
 }
 

@@ -175,7 +175,7 @@ struct KOMO : NonCopyable {
   // mid-level ways to define objectives: typically adding one specific objective
   //
 
-  void add_qControlObjective(const arr& times, uint order, double scale=1., const arr& target=NoArr, int deltaFromStep=0, int deltaToStep=0);
+  ptr<struct Objective> add_qControlObjective(const arr& times, uint order, double scale=1., const arr& target=NoArr, int deltaFromStep=0, int deltaToStep=0);
   void addSquaredQuaternionNorms(double startTime=0., double endTime=-1., double prec=3e0);
 
   void add_collision(bool hardConstraint, double margin=.0, double prec=1e1);

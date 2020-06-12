@@ -10,6 +10,11 @@ CtrlProblem::CtrlProblem(rai::Configuration& _C, double _tau, uint k_order)
   komo.verbose=0;
 }
 
+std::shared_ptr<CtrlObjective> CtrlProblem::add_qControlObjective(uint order, double scale, const arr& target){
+  ptr<Objective> o = komo.add_qControlObjective({}, order, scale, target);
+  return addObjective(o->feat, o->type);
+}
+
 ptr<CtrlObjective> CtrlProblem::addObjective(const ptr<Feature>& f, ObjectiveType type) {
   ptr<CtrlObjective> t = make_shared<CtrlObjective>();
   t->feat = f;

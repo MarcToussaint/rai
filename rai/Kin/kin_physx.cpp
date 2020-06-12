@@ -265,6 +265,17 @@ void PhysXInterface::changeObjectType(rai::Frame* f, int _type){
   self->actorTypes(f->ID) = type;
 }
 
+void PhysXInterface::postAddObject(rai::Frame* f){
+  while(self->actors.N<=f->ID) self->actors.append(0);
+  while(self->actorTypes.N<=f->ID) self->actorTypes.append(rai::BT_none);
+  CHECK(!f->joint, "");
+  f->ensure_X();
+  if(!self->actors(f->ID)){
+    self->addLink(f, true);
+  }else{
+    HALT("NO!");
+  }
+}
 
 void PhysXInterface::pushKinematicStates(const FrameL& frames) {
   for(rai::Frame* f: frames) {
