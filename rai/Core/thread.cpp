@@ -25,6 +25,13 @@
 
 #ifndef RAI_MSVC
 
+
+//===========================================================================
+
+template<> const char* rai::Enum<ActStatus>::names []= {
+  "init", "running", "done", "converged", "stalled", "true", "false", "kill", nullptr
+};
+
 //===========================================================================
 //
 // Access RWLock

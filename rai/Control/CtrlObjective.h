@@ -8,86 +8,58 @@
 
 #pragma once
 
-#include "../Algo/spline.h"
 #include "../Optim/optimization.h"
 #include "../Core/thread.h"
 #include "../Kin/kin.h"
-#include "../KOMO/komo.h"
 
 struct CtrlObjective;
-struct CtrlTarget;
-typedef rai::Array<std::shared_ptr<CtrlObjective>> CtrlObjectiveL;
-
-//===========================================================================
-
-/// a CtrlTarget continuously updates the 'target' (zero-point) of the Feature of a CtrlObjective -- this allows to realize MotionProfile or following a reference path or moving target
-struct CtrlTarget {
-  virtual ~CtrlTarget() {}
-  virtual ActStatus step(arr& target, double tau, const arr& y_real) = 0; //step forward, updating the target based on y_real
-  virtual void setTimeScale(double d) = 0;
-  virtual void resetState() = 0;
-};
+struct CtrlMovingTarget;
+struct CtrlProblem;
+typedef rai::Array<CtrlObjective*> CtrlObjectiveL;
+typedef rai::Array<std::shared_ptr<CtrlObjective>> CtrlSet;
 
 //===========================================================================
 
 /** In the given task space, a task can represent: 1) a pos/vel ctrl task
  *  and/or 2) a compliance and/or 3) a force limit control */
 struct CtrlObjective {
-  std::shared_ptr<Feature> feat;       ///< this defines the task space
-  const rai::Enum<ObjectiveType> type;  ///< element of {sumOfSqr, inequality, equality}
-  rai::String name;  ///< just for easier reporting
+  std::shared_ptr<Feature> feat;    ///< this defines the task space
+  ObjectiveType type;               ///< element of {sumOfSqr, inequality, equality}
+  rai::String name;                 ///< just for easier reporting
+  CtrlObjectiveL* selfRemove = 0;
 
   //-- the reference (zero point in feature space (target in KOMO)) can be continuously changed by motion primitives or other means
-  std::shared_ptr<CtrlTarget> ref;  ///< non-nullptr iff this is a pos/vel task
+  std::shared_ptr<CtrlMovingTarget> movingTarget;  ///< non-nullptr iff this is a pos/vel task
 
   //-- parameters that influence how CtrlMethods treat this objective
   bool active;       ///< also non-active tasks are updated (states evaluated), but don't enter the TaskControlMethods
-  double kp, kd;     ///< gains
-  arr C;             ///< feature space compliance matrix (TODO: needed?)
+//  double kp, kd;     ///< gains
+//  arr C;             ///< feature space compliance matrix (TODO: needed?)
 
   //-- buffers that store the last evaluation of the feature, andfeature values -- these are always kept up-to-date (in update)
-  ActStatus status;
-  arr y, J_y;           ///< update() will evaluate these for a given kinematic configuration
-  arr f;                ///< measured generalized force in this task space
+  ActStatus status;  ///< discrete status based on the reference
+  arr y_buffer;
+//  arr y, J_y;        ///< update() will evaluate these for a given kinematic configuration
+//  arr f;             ///< measured generalized force in this task space
 
 
-  CtrlObjective() : type(OT_sos), active(true), kp(1.), kd(1.), status(AS_init) {}
+  CtrlObjective() : type(OT_sos), active(true), /*kp(1.), kd(1.),*/ status(AS_init) {}
 //  CtrlObjective(char* _name, const ptr<Feature>& _feat, const ptr<CtrlReference>& _ref, double _kp, double _kd, const arr& _C);
-  ~CtrlObjective() {}
+  ~CtrlObjective() {
+      if(selfRemove){
+          selfRemove->removeValue(this);
+      }
+  }
 
-  arr update_y(const ConfigurationL& Ctuple); //returns the CHANGE in y (to estimate velocity)
+  arr getResidual(CtrlProblem& cp);
+  arr getValue(CtrlProblem& cp);
+
+//  arr update_y(const ConfigurationL& Ctuple); //returns the CHANGE in y (to estimate velocity)
   void resetState();
 
-  void setRef(const ptr<CtrlTarget>& _ref);
+  void setRef(const std::shared_ptr<CtrlMovingTarget>& _ref);
   void setTarget(const arr& y_target);
   void setTimeScale(double d);
 
-  void reportState(ostream& os);
+  void reportState(ostream& os) const;
 };
-
-//===========================================================================
-
-struct CtrlProblem : NonCopyable {
-  KOMO komo;
-  double tau;
-  double maxVel=1.;
-  double maxAcc=1.;
-
-  rai::Array<ptr<CtrlObjective>> objectives;    ///< list of objectives
-
-  CtrlProblem(rai::Configuration& _C, double _tau, uint k_order=1);
-  CtrlObjective* addPDTask(CtrlObjectiveL& tasks, const char* name, double decayTime, double dampingRatio, ptr<Feature> map);
-  ptr<CtrlObjective> addObjective(const ptr<Feature>& f, ObjectiveType type);
-  ptr<CtrlObjective> addObjective(const FeatureSymbol& feat, const StringA& frames,
-                                  ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr, int order=-1);
-
-  void update(rai::Configuration& C);
-  void report(ostream& os=std::cout);
-  arr solve();
-
-};
-
-//===========================================================================
-
-void naturalGains(double& Kp, double& Kd, double decayTime, double dampingRatio);
-void getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const arr& f_ref, double f_alpha, const CtrlObjective& co, const rai::Configuration& world);

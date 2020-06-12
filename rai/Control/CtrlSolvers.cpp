@@ -1,29 +1,10 @@
 #include "CtrlSolvers.h"
+#include "CtrlProblem.h"
+
 #include "../Kin/feature.h"
 #include "../Optim/constrained.h"
 
 #if 0
-
-void getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const arr& f_ref, double f_alpha, const CtrlObjective& co, const rai::Configuration& world) {
-  //-- get necessary Jacobians
-  ptr<TM_Default> m = std::dynamic_pointer_cast<TM_Default>(co.feat);
-  CHECK(m, "this only works for the default position task feat");
-  CHECK_EQ(m->type, TMT_pos, "this only works for the default positioni task feat");
-  CHECK_GE(m->i, 0, "this only works for the default position task feat");
-  rai::Frame* body = world.frames(m->i);
-  rai::Frame* l_ft_sensor = world.getFrameByName("l_ft_sensor");
-  arr J_ft, J;
-  world.kinematicsPos(NoArr, J,   body, m->ivec);
-  world.kinematicsPos_wrtFrame(NoArr, J_ft, body, m->ivec, l_ft_sensor);
-
-  //-- compute the control coefficients
-  u_bias = ~J*f_ref;
-  f_des = f_ref;
-  J_ft_inv = inverse_SymPosDef(J_ft*~J_ft)*J_ft;
-  K_I = f_alpha*~J;
-}
-
-//===========================================================================
 
 TaskControlMethods::TaskControlMethods(const arr& _Hmetric)
   : Hmetric(_Hmetric) { //rai::getParameter<double>("Hrate", .1)*world.getHmetric()) {
@@ -420,9 +401,6 @@ void TaskControlMethods::calcForceControl(CtrlObjectiveL& tasks, arr& K_ft, arr&
 
 #else
 
-void getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const arr& f_ref, double f_alpha, const CtrlObjective& co, const rai::Configuration& world) {
-NIY}
-
 //===========================================================================
 
 TaskControlMethods::TaskControlMethods(const arr& _Hmetric)
@@ -439,13 +417,15 @@ double TaskControlMethods::getIKCosts(CtrlObjectiveL& tasks, const arr& q, const
 NIY}
 
 
-arr TaskControlMethods::inverseKinematics(CtrlObjectiveL& tasks, arr& qdot, const arr& P_compliance, const arr& nullRef, double* cost) {
+arr TaskControlMethods::inverseKinematics(const ConfigurationL& Ctuple, CtrlObjectiveL& tasks, arr& qdot, const arr& P_compliance, const arr& nullRef, double* cost) {
   arr y, v, J, J_vel; //separate J only for velocity tasks
+  arr t_y, t_J;
   for(auto &t: tasks) {
     if(t->active) {
 //      if(t->ref->y_ref.N) {
-        y.append(-t->y);
-        J.append(t->J_y);
+        t->feat->__phi(t_y, t_J, Ctuple);
+        y.append(-t_y);
+        J.append(t_J);
 //      }
 //      if((!!qdot) && t->ref->v_ref.N) {
 //        v.append(t->scale*(t->ref->v_ref));
@@ -555,7 +535,7 @@ CtrlProblem_MathematicalProgram::CtrlProblem_MathematicalProgram(CtrlProblem& _C
   : CP(_CP) {
   for(uint k=0;k<2;k++){
     rai::Configuration *C = Ctuple.append(new rai::Configuration());
-    C->copy(CP.C, true);
+    C->copy(CP.komo.world, true);
     C->setTimes(CP.tau);
     C->ensure_q();
     C->checkConsistency();
@@ -563,11 +543,11 @@ CtrlProblem_MathematicalProgram::CtrlProblem_MathematicalProgram(CtrlProblem& _C
 }
 
 uint CtrlProblem_MathematicalProgram::getDimension(){
-  return CP.C.getJointStateDimension();
+  return CP.komo.world.getJointStateDimension();
 }
 
 void CtrlProblem_MathematicalProgram::getBounds(arr& bounds_lo, arr& bounds_up) {
-  arr limits = ~CP.C.getLimits();
+  arr limits = ~CP.komo.world.getLimits();
   bounds_lo = limits[0];
   bounds_up = limits[1];
 
@@ -587,16 +567,16 @@ void CtrlProblem_MathematicalProgram::getBounds(arr& bounds_lo, arr& bounds_up) 
 
 void CtrlProblem_MathematicalProgram::getFeatureTypes(ObjectiveTypeA& featureTypes) {
   for(auto &o: CP.objectives) {
-    uint d = o->feat->__dim_phi(CP.C);
+    uint d = o->feat->__dim_phi(CP.komo.world);
     featureTypes.append(consts<ObjectiveType>(o->type, d));
   }
   dimPhi = featureTypes.N;
 }
 
 void CtrlProblem_MathematicalProgram::getNames(StringA& variableNames, StringA& featureNames){
-  variableNames = CP.C.getJointNames();
+  variableNames = CP.komo.world.getJointNames();
   for(auto &o: CP.objectives) {
-    uint d = o->feat->__dim_phi(CP.C);
+    uint d = o->feat->__dim_phi(CP.komo.world);
     featureNames.append(consts<rai::String>(o->name, d));
   }
 }
@@ -626,7 +606,7 @@ void CtrlProblem_MathematicalProgram::evaluate(arr& phi, arr& J, const arr& x){
   arr y, Jy;
   uint M=0;
   for(uint i=0; i<CP.objectives.N; i++) {
-    std::shared_ptr<CtrlObjective> ob = CP.objectives.elem(i);
+    CtrlObjective* ob = CP.objectives.elem(i);
     uintA kdim = getKtupleDim(Ctuple);
     kdim.prepend(0);
 
@@ -666,7 +646,7 @@ void CtrlProblem_MathematicalProgram::evaluate(arr& phi, arr& J, const arr& x){
 arr solve_optim(CtrlProblem& CP) {
   auto MP = make_shared<CtrlProblem_MathematicalProgram>(CP);
 
-  arr x = CP.C.getJointState();
+  arr x = CP.komo.world.getJointState();
   OptOptions opt;
   opt.stopTolerance = 1e-4;
   opt.stopGTolerance = 1e-4;
