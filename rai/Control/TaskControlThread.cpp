@@ -62,7 +62,8 @@ TaskControlThread::~TaskControlThread() {
 
 arr TaskControlThread::whatsTheForce(const ptr<CtrlObjective>& t) {
 // arr tau = ctrl_state.get()->u_bias;
-  return pseudoInverse(~t->J_y)*torques_real;
+  NIY;
+//  return pseudoInverse(~t->J_y)*torques_real;
 }
 
 void TaskControlThread::step() {
@@ -112,12 +113,12 @@ void TaskControlThread::step() {
     if(!(step_count%20)) {
       rai::String txt;
       txt <<"TaskControlThread ctrl_config " <<step_count;
-      for(const ptr<CtrlObjective>& t:ctrl_tasks.get()()) { txt <<'\n'; t->reportState(txt); }
+      for(const CtrlObjective* t:ctrl_tasks.get()()) { txt <<'\n'; t->reportState(txt); }
       K->watch(false, txt); //only for debugging
     }
 
     ctrl_tasks.writeAccess();
-    for(ptr<CtrlObjective>& t: ctrl_tasks()) NIY; // t->update(.01, K);
+    for(CtrlObjective* t: ctrl_tasks()) NIY; // t->update(.01, K);
 
     TaskControlMethods taskController(Hmetric);
 
@@ -127,7 +128,7 @@ void TaskControlThread::step() {
     //-- compute IK step
     double maxQStep = 2e-1;
     arr dq;
-    dq = taskController.inverseKinematics(ctrl_tasks(), qdot_model, P_compliance); //don't include a null step
+    dq = taskController.inverseKinematics({K.data}, ctrl_tasks(), qdot_model, P_compliance); //don't include a null step
     if(dq.N) {
       double l = length(dq);
       if(l>maxQStep) dq *= maxQStep/l;
@@ -217,7 +218,7 @@ void TaskControlThread::step() {
 ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrl_tasks,
                           Var<rai::Configuration>& ctrl_config,
                           const char* name, const ptr<Feature>& map,
-                          const ptr<CtrlTarget>& ref) {
+                          const ptr<CtrlMovingTarget>& ref) {
   NIY
 #if 0
   ptr<CtrlObjective> t = make_shared<CtrlObjective>(name, map, ref);
@@ -230,7 +231,7 @@ ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrl_tasks,
 ptr<CtrlObjective> addCtrlObjective(Var<CtrlObjectiveL>& ctrl_tasks,
                           Var<rai::Configuration>& ctrl_config,
                           const char* name, FeatureSymbol fs, const StringA& frames,
-                          const ptr<CtrlTarget>& ref) {
+                          const ptr<CtrlMovingTarget>& ref) {
   return addCtrlObjective(ctrl_tasks, ctrl_config, name,
                      symbols2feature(fs, frames, ctrl_config.get()),
                      ref);
@@ -260,6 +261,6 @@ ptr<CtrlObjective> addCompliance(Var<CtrlObjectiveL>& ctrl_tasks,
 #endif
 }
 
-void removeCtrlObjective(Var<CtrlObjectiveL>& ctrl_tasks, const ptr<CtrlObjective>& t) {
+void removeCtrlObjective(Var<CtrlObjectiveL>& ctrl_tasks, CtrlObjective* t) {
   ctrl_tasks.set()->removeValue(t);
 }

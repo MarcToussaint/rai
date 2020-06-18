@@ -270,7 +270,7 @@ template<class T> VarL operator+(ptr<T>& p) { return ARRAY<Var_base*>(p->status.
 template<class T> VarL operator+(VarL A, ptr<T>& p) { A.append(p->status.data.get()); return A; }
 
 int _allPositive(const VarL& signalers, int whoChanged);
-enum ActStatus { AS_init=-1, AS_running, AS_done, AS_converged, AS_stalled, AS_true, AS_false, AS_kill };
+enum ActStatus { AS_none=-1, AS_init, AS_running, AS_done, AS_converged, AS_stalled, AS_true, AS_false, AS_kill };
 
 inline bool wait(const VarL& acts, double timeout=-1.) {
   return Event(acts, _allPositive).waitForStatusEq(AS_true, false, timeout);

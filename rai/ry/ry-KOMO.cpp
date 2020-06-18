@@ -166,7 +166,7 @@ pybind11::arg("object"))
 })
 
 .def("getReport", [](std::shared_ptr<KOMO>& self) {
-  rai::Graph G = self->getProblemGraph(true, false);
+  rai::Graph G = self->getProblemGraph(true);
   return graph2list(G);
 })
 

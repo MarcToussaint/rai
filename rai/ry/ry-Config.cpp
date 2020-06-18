@@ -350,6 +350,20 @@ pybind11::arg("timePerPhase")=5.,
 pybind11::arg("useSwift")
     )
 
+.def("komo",  [](ry::Config& self, double phases, uint stepsPerPhase, double timePerPhase, uint k_order, bool useSwift) {
+  auto komo = make_shared<KOMO>();
+  komo->setModel(self.get(), useSwift);
+  komo->setTiming(phases, stepsPerPhase, timePerPhase, k_order);
+  return komo;
+},
+"create KOMO solver configured for sparse path optimization without control objective",
+pybind11::arg("phases"),
+pybind11::arg("stepsPerPhase")=20,
+pybind11::arg("timePerPhase")=5.,
+pybind11::arg("k_order")=2,
+pybind11::arg("useSwift")
+    )
+
 /*
 .def("lgp", [](ry::Config& self, const std::string& folFileName) {
   ry::RyLGP_Tree lgp;

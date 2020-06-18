@@ -17,7 +17,7 @@ class PxMaterial;
 struct PhysXInterface : GLDrawer {
   struct PhysXInterface_self* self=0;
 
-  PhysXInterface(const rai::Configuration& C, bool verbose=false);
+  PhysXInterface(const rai::Configuration& C, int verbose=1);
   ~PhysXInterface();
 
   void step(double tau=.01);

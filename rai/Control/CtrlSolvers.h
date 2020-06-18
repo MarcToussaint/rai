@@ -1,3 +1,5 @@
+#pragma once
+
 #include "CtrlObjective.h"
 #include <Optim/MathematicalProgram.h>
 
@@ -23,7 +25,7 @@ struct TaskControlMethods {
   void lockJointGroup(const char* groupname, rai::Configuration& world, bool lockThem=true);
 
   double getIKCosts(CtrlObjectiveL& tasks, const arr& q=NoArr, const arr& q0=NoArr, arr& g=NoArr, arr& H=NoArr);
-  arr inverseKinematics(CtrlObjectiveL& tasks, arr& qdot, const arr& P_compliance, const arr& nullRef=NoArr, double* cost=nullptr);
+  arr inverseKinematics(const ConfigurationL& Ctuple, CtrlObjectiveL& tasks, arr& qdot, const arr& P_compliance, const arr& nullRef=NoArr, double* cost=nullptr);
   arr inverseKinematics_hierarchical(CtrlObjectiveL& tasks);
   arr getComplianceProjection(CtrlObjectiveL& tasks);
   arr operationalSpaceControl(CtrlObjectiveL& tasks);

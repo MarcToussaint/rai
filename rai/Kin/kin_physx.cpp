@@ -137,7 +137,7 @@ struct PhysXInterface_self {
 
 //  debugger::comm::PvdConnection* connection = nullptr;
 
-  void addLink(rai::Frame* b, bool verbose);
+  void addLink(rai::Frame* b, int verbose);
   void addJoint(rai::Joint* jj);
 
   void lockJoint(PxD6Joint* joint, rai::Joint* rai_joint);
@@ -146,10 +146,10 @@ struct PhysXInterface_self {
 
 // ============================================================================
 
-PhysXInterface::PhysXInterface(const rai::Configuration& C, bool verbose): self(nullptr) {
+PhysXInterface::PhysXInterface(const rai::Configuration& C, int verbose): self(nullptr) {
   self = new PhysXInterface_self;
 
-  if(verbose) LOG(0) <<"starting PhysX engine ...";
+  if(verbose>0) LOG(0) <<"starting PhysX engine ...";
 
   if(!physxSingleton().mFoundation) physxSingleton().create();
 
@@ -191,8 +191,8 @@ PhysXInterface::PhysXInterface(const rai::Configuration& C, bool verbose): self(
   CHECK(planeShape, "create shape failed!");
   self->gScene->addActor(*plane);
 
-  if(verbose) LOG(0) <<"... done starting PhysX engine";
-  if(verbose) LOG(0) <<"creating Configuration within PhysX ...";
+  if(verbose>0) LOG(0) <<"... done starting PhysX engine";
+  if(verbose>0) LOG(0) <<"creating Configuration within PhysX ...";
 
   //-- create Configuration equivalent in PhysX
   // loop through Configuration
@@ -203,7 +203,7 @@ PhysXInterface::PhysXInterface(const rai::Configuration& C, bool verbose): self(
   for(rai::Frame* a : links) self->addLink(a, verbose);
   //  for(rai::Joint *j : C.activeJoints) self->addJoint(j); //DONT ADD JOINTS!!!!
 
-  if(verbose) LOG(0) <<"... done creating Configuration within PhysX";
+  if(verbose>0) LOG(0) <<"... done creating Configuration within PhysX";
 
   /// save data for the PVD
   //  if(rai::getParameter<bool>("physx_debugger", false)) {
@@ -462,7 +462,7 @@ void PhysXInterface_self::unlockJoint(PxD6Joint* joint, rai::Joint* rai_joint) {
   }
 }
 
-void PhysXInterface_self::addLink(rai::Frame* f, bool verbose) {
+void PhysXInterface_self::addLink(rai::Frame* f, int verbose) {
   //-- collect all shapes of that link
   FrameL parts = {f};
   f->getRigidSubFrames(parts);
@@ -476,7 +476,7 @@ void PhysXInterface_self::addLink(rai::Frame* f, bool verbose) {
     if(f->inertia) type = f->inertia->type;
   }
   actorTypes(f->ID) = type;
-  if(verbose) LOG(0) <<"adding link anchored at '" <<f->name <<"' as " <<rai::Enum<rai::BodyType>(type);
+  if(verbose>0) LOG(0) <<"adding link anchored at '" <<f->name <<"' as " <<rai::Enum<rai::BodyType>(type);
 
   //-- create a PhysX actor
   PxRigidDynamic* actor=nullptr;

@@ -1,5 +1,7 @@
 #include "CtrlTargets.h"
 
+#include "control.h"
+
 //===========================================================================
 
 ActStatus CtrlTarget_Const::step(arr& target, double tau, const arr& y_real) {
@@ -30,8 +32,8 @@ ActStatus CtrlTarget_MaxCarrot::step(arr& target, double tau, const arr& y_real)
   } else {
     target = goal;
   }
-  if(d<1e-2*maxDistance) countInRange++; else countInRange=0;
-  if(countInRange>3) return AS_converged;
+  if(d<maxDistance) countInRange++; else countInRange=0;
+  if(countInRange>10) return AS_converged;
   return AS_running;
 }
 

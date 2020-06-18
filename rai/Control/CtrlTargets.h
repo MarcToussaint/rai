@@ -2,9 +2,24 @@
 
 #include "CtrlObjective.h"
 
+#include "../Algo/spline.h"
+
 //===========================================================================
 
-struct CtrlTarget_Const : CtrlTarget {
+/// a CtrlMovingTarget continuously updates the 'target' (zero-point) of the Feature of a CtrlObjective -- this allows to realize a MotionProfile or following a reference path or perception based moving target
+struct CtrlMovingTarget {
+  virtual ~CtrlMovingTarget() {}
+  virtual ActStatus step(arr& target, double tau, const arr& y_real) = 0; //step forward, updating the target based on y_real
+  virtual void resetGoal(const arr& goal) {}
+  virtual void setTimeScale(double d) = 0;
+  virtual void resetState() = 0;
+
+  virtual arr getResidual(const arr& y_real) { return arr{}; }
+};
+
+//===========================================================================
+
+struct CtrlTarget_Const : CtrlMovingTarget {
   CtrlTarget_Const() {}
   virtual ActStatus step(arr& target, double tau, const arr& y_real);
   virtual void setTimeScale(double d) {}
@@ -13,19 +28,21 @@ struct CtrlTarget_Const : CtrlTarget {
 
 //===========================================================================
 
-struct CtrlTarget_MaxCarrot : CtrlTarget {
+struct CtrlTarget_MaxCarrot : CtrlMovingTarget {
   double maxDistance;
   arr goal;
   uint countInRange=0;
   CtrlTarget_MaxCarrot(CtrlObjective& co, double maxDistance, const arr& _goal=NoArr) : maxDistance(maxDistance){ if(!!_goal) goal=_goal; }
   virtual ActStatus step(arr& target, double tau, const arr& y_real);
+  virtual void resetGoal(const arr& _goal) { goal=_goal; }
   virtual void setTimeScale(double d) {}
   virtual void resetState() {}
+  virtual arr getResidual(const arr& y_real){ if(goal.N) return y_real-goal; return y_real; }
 };
 
 //===========================================================================
 
-struct CtrlTarget_ConstVel : CtrlTarget {
+struct CtrlTarget_ConstVel : CtrlMovingTarget {
   CtrlTarget_ConstVel() {}
   virtual ActStatus step(arr& target, double tau, const arr& y_real);
   virtual void setTimeScale(double d) {}
@@ -34,7 +51,7 @@ struct CtrlTarget_ConstVel : CtrlTarget {
 
 //===========================================================================
 
-struct CtrlTarget_Sine : CtrlTarget {
+struct CtrlTarget_Sine : CtrlMovingTarget {
   arr y_start, y_target, y_err;
   double t, T;
   CtrlTarget_Sine(const arr& y_target, double duration) : y_target(y_target), t(0.), T(duration) {}
@@ -45,7 +62,7 @@ struct CtrlTarget_Sine : CtrlTarget {
 
 //===========================================================================
 
-struct CtrlTarget_Bang : CtrlTarget {
+struct CtrlTarget_Bang : CtrlMovingTarget {
   arr y_target;           ///< position target of this motion generator
   double maxVel;          ///< parameters
   double tolerance;
@@ -59,7 +76,7 @@ struct CtrlTarget_Bang : CtrlTarget {
 
 //===========================================================================
 
-struct CtrlTarget_PD : CtrlTarget {
+struct CtrlTarget_PD : CtrlMovingTarget {
   arr y_ref, v_ref;
   arr y_target, v_target;
   double kp, kd;
@@ -89,7 +106,7 @@ struct CtrlTarget_PD : CtrlTarget {
 
 //===========================================================================
 
-struct CtrlTarget_Path: CtrlTarget {
+struct CtrlTarget_Path: CtrlMovingTarget {
   rai::Spline spline;
   double endTime;
   double time;

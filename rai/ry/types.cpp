@@ -17,6 +17,8 @@ pybind11::dict graph2dict(const rai::Graph& G) {
       dict[key.p] = n->get<rai::String>().p;
     } else if(n->isOfType<arr>()) {
       dict[key.p] = conv_arr2stdvec(n->get<arr>());
+    } else if(n->isOfType<arrA>()) {
+        dict[key.p] = conv_arr2stdvec(n->get<arrA>());
     } else if(n->isOfType<intA>()) {
       dict[key.p] = conv_arr2stdvec(n->get<intA>());
     } else if(n->isOfType<uintA>()) {
