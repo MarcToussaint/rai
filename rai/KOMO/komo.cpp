@@ -2558,7 +2558,9 @@ void KOMO::Conv_KOMO_KOMOProblem::phi(arr& phi, arrA& J, arrA& H, uintA& feature
   //-- set the trajectory
   komo.set_x(x);
 
-  CHECK(dimPhi, "getStructure must be called first");
+  if(!dimPhi){
+    LOG(-1) <<"no objectives! did you call getStructure first?";
+  }
   //  getStructure(NoUintA, featureTimes, tt);
   //  if(WARN_FIRST_TIME){ LOG(-1)<<"calling inefficient getStructure"; WARN_FIRST_TIME=false; }
   phi.resize(dimPhi);
