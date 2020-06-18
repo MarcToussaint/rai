@@ -80,6 +80,9 @@ struct Simulation {
   void setState(const arr& frameState, const arr& frameVelocities=NoArr);
   void pushConfigurationToSimulator(const arr& frameVelocities=NoArr);
 
+  //-- post-hoc world manipulations
+  void registerNewObjectWithEngine(rai::Frame *f);
+
 };
 
 }
