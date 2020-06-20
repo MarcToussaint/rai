@@ -60,8 +60,8 @@ struct SimulationImp {
 
 struct Imp_CloseGripper : SimulationImp {
   Frame *gripper, *fing1, *fing2, *obj;
-  F_PairCollision coll1;
-  F_PairCollision coll2;
+  std::unique_ptr<F_PairCollision> coll1;
+  std::unique_ptr<F_PairCollision> coll2;
   arr q;
   double speed;
 
@@ -170,12 +170,25 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
   if(verbose>0) self->updateDisplayData(time, C.getFrameState(), C.proxies);
 }
 
-void Simulation::openGripper(const char* gripperFrameName, double width, double speed){
-  rai::Frame *gripper = C.getFrameByName(gripperFrameName);
+bool getFingersForGripper(rai::Frame*& gripper, rai::Frame*& fing1, rai::Frame*& fing2, rai::Configuration& C, const char* gripperFrameName){
+  gripper = C.getFrameByName(gripperFrameName);
   if(!gripper){
     LOG(-1) <<"you passed me a non-existing gripper name!";
-    return;
+    gripper=fing1=fing2=0;
+    return false;
   }
+
+  //requirement: two of the children of need to be the finger geometries
+  fing1 = gripper->children(0); while(!fing1->shape && fing1->children.N) fing1 = fing1->children(0);
+  fing2 = gripper->children(1); while(!fing2->shape && fing2->children.N) fing2 = fing2->children(0);
+  return true;
+}
+
+
+void Simulation::openGripper(const char* gripperFrameName, double width, double speed){
+  rai::Frame *gripper, *fing1, *fing2;
+  getFingersForGripper(gripper, fing1, fing2, C, gripperFrameName);
+  if(!gripper) return;
 
   //remove gripper from grasps list
   for(uint i=grasps.N;i--;){
@@ -201,10 +214,6 @@ void Simulation::openGripper(const char* gripperFrameName, double width, double 
     }
   }
 
-  //requirement: two of the children of need to be the finger geometries
-  rai::Frame *fing1 = gripper->children(0); while(!fing1->shape && fing1->children.N) fing1 = fing1->children(0);
-  rai::Frame *fing2 = gripper->children(1); while(!fing2->shape && fing2->children.N) fing2 = fing2->children(0);
-
   if(verbose>1){
     LOG(1) <<"initiating opening gripper " <<gripper->name;
   }
@@ -212,14 +221,9 @@ void Simulation::openGripper(const char* gripperFrameName, double width, double 
 }
 
 void Simulation::closeGripper(const char* gripperFrameName, double width, double speed, double force){
-  rai::Frame *gripper = C.getFrameByName(gripperFrameName);
-  if(!gripper) LOG(-1) <<"you passed me a non-existing gripper name!";
-
-  //-- first, find the object that is between the fingers
-
-  //requirement: two of the children need to be the finger geometries
-  rai::Frame *fing1 = gripper->children(0); while(!fing1->shape && fing1->children.N) fing1 = fing1->children(0);
-  rai::Frame *fing2 = gripper->children(1); while(!fing2->shape && fing2->children.N) fing2 = fing2->children(0);
+  rai::Frame *gripper, *fing1, *fing2;
+  getFingersForGripper(gripper, fing1, fing2, C, gripperFrameName);
+  if(!gripper) return;
 
   //collect objects close to fing1 and fing2
   C.stepSwift();
@@ -237,13 +241,11 @@ void Simulation::closeGripper(const char* gripperFrameName, double width, double
 //  cout <<"initiating ";
 //  listWrite(objs);
 //  cout <<endl;
-  if(!objs.N){
-    LOG(-1) <<"fingers are not close to objects";
-    return;
-  }
 
-  rai::Frame *obj = objs.elem(0);
+  rai::Frame *obj = 0;
+  if(objs.N) obj = objs.elem(0);
 
+  //choose from multiple object candidates
   if(objs.N>1){
     arr center = .5*(fing1->getPosition()+fing2->getPosition());
     double d = length(center - obj->getPosition());
@@ -254,7 +256,11 @@ void Simulation::closeGripper(const char* gripperFrameName, double width, double
   }
 
   if(verbose>1){
-    LOG(1) <<"initiating grasp of object " <<obj->name <<" (if this is not what you expect, did you setContact(1) for the object you want to grasp?)";
+    if(obj){
+      LOG(1) <<"initiating grasp of object " <<obj->name <<" (if this is not what you expect, did you setContact(1) for the object you want to grasp?)";
+    }else{
+      LOG(1) <<"closing gripper without near object (if this is not what you expect, did you setContact(1) for the object you want to grasp?)";
+    }
   }
 
   imps.append(make_shared<Imp_CloseGripper>(gripper, fing1, fing2, obj, speed));
@@ -288,21 +294,32 @@ const arr& Simulation::get_qDot() {
 }
 
 double Simulation::getGripperWidth(const char* gripperFrameName){
-  rai::Frame *gripper = C.getFrameByName(gripperFrameName);
-  if(!gripper){
-    LOG(-1) <<"you passed me a non-existing gripper name!";
-    return -1.;
-  }
-
-  //requirement: two of the children of need to be the finger geometries
-  rai::Frame *fing1 = gripper->children(0); while(!fing1->shape && fing1->children.N) fing1 = fing1->children(0);
-  rai::Frame *fing2 = gripper->children(1); while(!fing2->shape && fing2->children.N) fing2 = fing2->children(0);
-
+  rai::Frame *gripper, *fing1, *fing2;
+  getFingersForGripper(gripper, fing1, fing2, C, gripperFrameName);
+  if(!gripper) return -1.;
   return fing1->joint->calc_q_from_Q(fing1->get_Q()).scalar();
 }
 
 bool Simulation::getGripperIsGrasping(const char* gripperFrameName){
   for(Frame *g:grasps) if(g->name==gripperFrameName) return true;
+  return false;
+}
+
+bool Simulation::getGripperIsClose(const char* gripperFrameName){
+  rai::Frame *gripper, *fing1, *fing2;
+  getFingersForGripper(gripper, fing1, fing2, C, gripperFrameName);
+  if(!gripper) return -1.;
+  double q = fing1->joint->calc_q_from_Q(fing1->get_Q()).scalar();
+  if(q<=fing1->joint->limits(0)) return true;
+  return false;
+}
+
+bool Simulation::getGripperIsOpen(const char* gripperFrameName){
+  rai::Frame *gripper, *fing1, *fing2;
+  getFingersForGripper(gripper, fing1, fing2, C, gripperFrameName);
+  if(!gripper) return -1.;
+  double q = fing1->joint->calc_q_from_Q(fing1->get_Q()).scalar();
+  if(q>=fing1->joint->limits(1)) return true;
   return false;
 }
 
@@ -428,19 +445,14 @@ void Simulation_self::updateDisplayData(const byteA& _image, const floatA& _dept
 //===========================================================================
 
 Imp_CloseGripper::Imp_CloseGripper(Frame* _gripper, Frame* _fing1, Frame* _fing2, Frame* _obj, double _speed)
-  : gripper(_gripper), fing1(_fing1), fing2(_fing2), obj(_obj),
-    coll1(fing1->ID, obj->ID, coll1._negScalar, false),
-    coll2(fing2->ID, obj->ID, coll1._negScalar, false),
-    speed(_speed){
+  : gripper(_gripper), fing1(_fing1), fing2(_fing2), obj(_obj), speed(_speed){
   when = _beforePhysics;
   type = Simulation::_closeGripper;
 
-
-  //    auto d1 = coll1.eval(C);
-
-  //    auto d2 = coll2.eval(C);
-
-  //    cout <<"d1: " <<d1.y <<"d2: " <<d2.y <<endl;
+  if(obj){
+    coll1 = make_unique<F_PairCollision>(fing1->ID, obj->ID, F_PairCollision::_negScalar, false);
+    coll2 = make_unique<F_PairCollision>(fing2->ID, obj->ID, F_PairCollision::_negScalar, false);
+  }
 
   q = fing1->joint->calc_q_from_Q(fing1->get_Q());
 }
@@ -450,50 +462,57 @@ void Imp_CloseGripper::modConfiguration(Simulation& S) {
 
   CHECK_EQ(&S.C, &fing1->C, "");
   CHECK_EQ(&S.C, &fing2->C, "");
-  CHECK_EQ(&S.C, &obj->C, "");
+  if(obj){
+    CHECK_EQ(&S.C, &obj->C, "");
+  }
 
   //-- actually close gripper until both distances are < .001
   q.scalar() -= 1e-3*speed;
   fing1->joint->calc_Q_from_q(q, 0);
   fing2->joint->calc_Q_from_q(q, 0);
   S.C._state_q_isGood = false;
-  //      step({}, .01, _none);
-  auto d1 = coll1.eval(S.C);
-  auto d2 = coll2.eval(S.C);
-//  cout <<q <<" d1: " <<d1.y <<"d2: " <<d2.y <<endl;
-  if(q(0)<-.1){ //stop grasp by joint limits -> unsuccessful
-    killMe = true;
-  }
-  if(-d1.y(0)<1e-3 && -d2.y(0)<1e-3){ //stop grasp by contact
-    //evaluate stability
-    F_GraspOppose oppose(fing1->ID, fing2->ID, obj->ID);
-    arr y;
-    oppose.__phi(y, NoArr, S.C);
 
-    if(sumOfSqr(y) < 0.1){ //good enough -> success!
-      // kinematically attach object to gripper
-      obj = obj->getUpwardLink();
-      S.C.attach(gripper, obj);
-
-      // tell engine that object is now kinematic, not dynamic
-      if(S.engine==S._physx) {
-        S.self->physx->changeObjectType(obj, BT_kinematic);
-      }else{
-        NIY;
-      }
-
-      //allows the user to know that gripper grasps something
-      S.grasps.append(gripper);
-
-      if(S.verbose>1){
-        LOG(1) <<"terminating grasp of object " <<obj->name <<" - SUCCESS";
-      }
-    }else{ //unsuccessful
-      if(S.verbose>1){
-        LOG(1) <<"terminating grasp of object " <<obj->name <<" - FAILURE";
-      }
+  if(q.scalar()<fing1->joint->limits(0)){ //stop grasp by joint limits -> unsuccessful
+    if(S.verbose>1){
+      LOG(1) <<"terminating closing gripper (limit) - nothing grasped";
     }
     killMe = true;
+  }else if(obj){
+    //      step({}, .01, _none);
+    auto d1 = coll1->eval(S.C);
+    auto d2 = coll2->eval(S.C);
+    //  cout <<q <<" d1: " <<d1.y <<"d2: " <<d2.y <<endl;
+    if(-d1.y(0)<1e-3 && -d2.y(0)<1e-3){ //stop grasp by contact
+      //evaluate stability
+      F_GraspOppose oppose(fing1->ID, fing2->ID, obj->ID);
+      arr y;
+      oppose.__phi(y, NoArr, S.C);
+
+      if(sumOfSqr(y) < 0.1){ //good enough -> success!
+        // kinematically attach object to gripper
+        obj = obj->getUpwardLink();
+        S.C.attach(gripper, obj);
+
+        // tell engine that object is now kinematic, not dynamic
+        if(S.engine==S._physx) {
+          S.self->physx->changeObjectType(obj, BT_kinematic);
+        }else{
+          NIY;
+        }
+
+        //allows the user to know that gripper grasps something
+        S.grasps.append(gripper);
+
+        if(S.verbose>1){
+          LOG(1) <<"terminating grasp of object " <<obj->name <<" - SUCCESS";
+        }
+      }else{ //unsuccessful
+        if(S.verbose>1){
+          LOG(1) <<"terminating grasp of object " <<obj->name <<" - FAILURE";
+        }
+      }
+      killMe = true;
+    }
   }
 }
 
