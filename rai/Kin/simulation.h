@@ -46,6 +46,8 @@ struct Simulation {
   const arr& get_qDot();
   double getGripperWidth(const char* gripperFrameName);
   bool getGripperIsGrasping(const char* gripperFrameName);
+  bool getGripperIsClose(const char* gripperFrameName);
+  bool getGripperIsOpen(const char* gripperFrameName);
 
   //-- get sensor information
   void getImageAndDepth(byteA& image, floatA& depth); ///< use this during stepping

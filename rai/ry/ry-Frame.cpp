@@ -74,6 +74,11 @@ pybind11::arg("size")
   self.frame->setMass(mass);
 })
 
+.def("addAttribute", [](ry::RyFrame& self, const char* key, double value) {
+  WToken<rai::Configuration> token(*self.config, &self.config->data);
+  self.frame->addAttribute(key, value);
+})
+
 .def("getPosition", [](ry::RyFrame& self) {
   RToken<rai::Configuration> token(*self.config, &self.config->data);
   arr x = self.frame->getPosition();

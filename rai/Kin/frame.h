@@ -144,6 +144,7 @@ struct Frame : NonCopyable {
   void setJoint(rai::JointType jointType);
   void setContact(int cont);
   void setMass(double mass);
+  void addAttribute(const char* key, double value);
 
   arr getPose() { return ensure_X().getArr7d(); }
   arr getPosition() { return ensure_X().pos.getArr(); }
