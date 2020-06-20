@@ -441,6 +441,10 @@ void rai::Frame::setMass(double mass) {
   }
 }
 
+void rai::Frame::addAttribute(const char* key, double value){
+  ats.newNode<double>(key, {}, value);
+}
+
 arr rai::Frame::getSize(){
   return getShape().size;
 }
