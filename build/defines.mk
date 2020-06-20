@@ -451,6 +451,11 @@ CPATH := $(HOME)/opt/include/bullet/:$(CPATH)
 LIBS += -lBulletSoftBody -lBulletDynamics -lBulletCollision  -lLinearMath
 endif
 
+ifeq ($(BULLET_UBUNTU),1)
+CXXFLAGS += -DRAI_BULLET `pkg-config --cflags bullet`
+LIBS     += `pkg-config --libs bullet`
+endif
+
 ifeq ($(PORTAUDIO),1)
 CXXFLAGS  += -DRAI_PORTAUDIO
 LPATHS += $(HOME)/opt/portaudio/lib/.libs

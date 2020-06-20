@@ -216,8 +216,6 @@ btRigidBody* BulletInterface_self::addLink(rai::Frame* f, int verbose) {
   }
   collisionShapes.push_back(colShape);
 
-  if(verbose>0) LOG(0) <<"adding link anchored at '" <<f->name <<"' as " <<rai::Enum<rai::BodyType>(type);
-
   //-- create a bullet body
   btTransform pose = conv_raiTrans2btTrans(f->ensure_X());
   btScalar mass(1.0f);
@@ -252,7 +250,7 @@ void BulletInterface::saveBulletFile(const char* filename) {
   if(f) {
     btDefaultSerializer* ser = new btDefaultSerializer();
     int currentFlags = ser->getSerializationFlags();
-    ser->setSerializationFlags(currentFlags | BT_SERIALIZE_CONTACT_MANIFOLDS);
+    ser->setSerializationFlags(currentFlags); // | BT_SERIALIZE_CONTACT_MANIFOLDS);
 
     self->dynamicsWorld->serialize(ser);
     fwrite(ser->getBufferPointer(), ser->getCurrentBufferSize(), 1, f);
@@ -277,16 +275,9 @@ btCollisionShape* BulletInterface_self::createCollisionShape(rai::Shape *s){
 //      colShape = new btCapsuleShape(btScalar(s->radius()), btScalar(size(0)));
 //    } break;
     case rai::ST_capsule:
+    case rai::ST_cylinder:
     case rai::ST_ssBox:
-    case rai::ST_ssCvx: {
-#ifdef BT_USE_DOUBLE_PRECISION
-      arr& V = s->sscCore().V;
-#else
-      floatA V = convert<float>(s->sscCore().V);
-#endif
-      colShape = new btConvexHullShape(V.p, V.d0, V.sizeT*V.d1);
-      colShape->setMargin(s->radius());
-    } break;
+    case rai::ST_ssCvx:
     case rai::ST_mesh: {
 #ifdef BT_USE_DOUBLE_PRECISION
       arr& V = s->mesh().V;

@@ -6,7 +6,7 @@ OPTIM = fast_debug
 
 GL = 1
 PHYSX = 1
-BULLET = 1
+BULLET_UBUNTU = 1
 ODE = 0
 SWIFT = 1
 ASSIMP = 1
