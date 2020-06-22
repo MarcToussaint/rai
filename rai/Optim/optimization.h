@@ -41,7 +41,23 @@ struct Conv_Lambda_ConstrainedProblem : MathematicalProgram {
   ConstrainedProblemLambda f;
   Conv_Lambda_ConstrainedProblem(const ConstrainedProblemLambda& f): f(f) {}
   void getFeatureTypes(ObjectiveTypeA& ot) { f(NoArr, NoArr, NoArr, ot, NoArr); }
-  void phi(arr& phi, arr& J, ObjectiveTypeA& ot, const arr& x) { f(phi, J, NoArr, NoObjectiveTypeA, x); }
+  void evaluate(arr& phi, arr& J, const arr& x) { f(phi, J, NoArr, NoObjectiveTypeA, x); }
+};
+
+struct Conv_ScalarProblem_MathematicalProgram : MathematicalProgram {
+  ScalarFunction f;
+  uint xDim;
+  Conv_ScalarProblem_MathematicalProgram(const ScalarFunction& f, uint xDim): f(f), xDim(xDim) {}
+  uint getDimension(){ return xDim; }
+  void getFeatureTypes(ObjectiveTypeA& ot) { ot = {OT_f}; }
+  void evaluate(arr& phi, arr& J, const arr& x) {
+    double y = f(J, NoArr, x);
+    phi = {y};
+    J.reshape(1, x.N);
+  }
+  void getFHessian(arr &H, const arr &x) {
+    f(NoArr, H, x);
+  }
 };
 
 //===========================================================================
