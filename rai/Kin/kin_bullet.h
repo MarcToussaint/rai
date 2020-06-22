@@ -22,5 +22,7 @@ struct BulletInterface {
   void pushFullState(const FrameL& frames, const arr& frameVelocities=NoArr);
   void pullDynamicStates(FrameL& frames, arr& frameVelocities=NoArr);
 
+  void changeObjectType(rai::Frame* f, int _type);
+
   void saveBulletFile(const char* filename);
 };

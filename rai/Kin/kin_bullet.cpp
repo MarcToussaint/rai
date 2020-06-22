@@ -17,7 +17,7 @@
 
 constexpr float gravity = -10.0f;
 constexpr float groundRestitution = 0.1f;
-constexpr float objectRestitution = 0.1f;
+constexpr float objectRestitution = 0.001f;
 
 // ============================================================================
 
@@ -140,6 +140,25 @@ void BulletInterface::pullDynamicStates(FrameL& frames, arr& frameVelocities) {
   }
 }
 
+void BulletInterface::changeObjectType(rai::Frame* f, int _type){
+  rai::Enum<rai::BodyType> type((rai::BodyType)_type);
+  if(self->actorTypes(f->ID) == type){
+    LOG(-1) <<"frame " <<*f <<" is already of type " <<type;
+  }
+
+  btRigidBody* a = self->actors(f->ID);
+  if(!a) HALT("frame " <<*f <<"is not an actor");
+
+  if(type==rai::BT_kinematic){
+    a->setCollisionFlags(a->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT);
+    a->setActivationState(DISABLE_DEACTIVATION);
+  }else if(type==rai::BT_dynamic){
+    a->setCollisionFlags(a->getCollisionFlags() & ~btCollisionObject::CF_KINEMATIC_OBJECT);
+    a->setActivationState(DISABLE_DEACTIVATION);
+  }else NIY;
+  self->actorTypes(f->ID) = type;
+}
+
 void BulletInterface::pushKinematicStates(const FrameL& frames) {
 
   for(rai::Frame* f: frames) {
@@ -229,7 +248,17 @@ btRigidBody* BulletInterface_self::addLink(rai::Frame* f, int verbose) {
 
   btDefaultMotionState* motionState = new btDefaultMotionState(pose);
   btRigidBody* body = new btRigidBody(btRigidBody::btRigidBodyConstructionInfo(mass, motionState, colShape, localInertia));
-  body->setRestitution(objectRestitution);
+
+  double fric=1.;
+  if(shapes.N==1 && f == &shapes.scalar()->frame){
+    //try to read friction from attributes
+    shapes.scalar()->frame.ats.get<double>(fric, "friction");
+  }
+  body->setFriction(fric);
+  body->setRollingFriction(.01);
+//  body->setSpinningFriction(.01);
+//  body->setContactStiffnessAndDamping(btScalar stiffness, btScalar damping)
+//  body->setRestitution(objectRestitution);
   dynamicsWorld->addRigidBody(body);
 
   if(type==rai::BT_kinematic) {
@@ -278,6 +307,15 @@ btCollisionShape* BulletInterface_self::createCollisionShape(rai::Shape *s){
     case rai::ST_cylinder:
     case rai::ST_ssBox:
     case rai::ST_ssCvx:
+//    {
+//#ifdef BT_USE_DOUBLE_PRECISION
+//      arr& V = s->sscCore().V;
+//#else
+//      floatA V = convert<float>(s->sscCore().V);
+//#endif
+//      colShape = new btConvexHullShape(V.p, V.d0, V.sizeT*V.d1);
+//      colShape->setMargin(s->radius());
+//    } break;
     case rai::ST_mesh: {
 #ifdef BT_USE_DOUBLE_PRECISION
       arr& V = s->mesh().V;
@@ -285,6 +323,7 @@ btCollisionShape* BulletInterface_self::createCollisionShape(rai::Shape *s){
       floatA V = convert<float>(s->mesh().V);
 #endif
       colShape = new btConvexHullShape(V.p, V.d0, V.sizeT*V.d1);
+      colShape->setMargin(0.);
     } break;
     default: HALT("NIY" <<s->type());
   }

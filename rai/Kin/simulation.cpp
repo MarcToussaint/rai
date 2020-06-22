@@ -210,7 +210,7 @@ void Simulation::openGripper(const char* gripperFrameName, double width, double 
     if(engine==_physx) {
       self->physx->changeObjectType(obj, rai::BT_dynamic);
     }else{
-      NIY;
+      self->bullet->changeObjectType(obj, rai::BT_dynamic);
     }
   }
 
@@ -510,7 +510,7 @@ void Imp_CloseGripper::modConfiguration(Simulation& S) {
         if(S.engine==S._physx) {
           S.self->physx->changeObjectType(obj, BT_kinematic);
         }else{
-          NIY;
+          S.self->bullet->changeObjectType(obj, BT_kinematic);
         }
 
         //allows the user to know that gripper grasps something
