@@ -347,6 +347,7 @@ void BulletInterface::pushFullState(const FrameL& frames, const arr& vel) { NICO
 void BulletInterface::pushKinematicStates(const FrameL& frames) { NICO }
 void BulletInterface::pullDynamicStates(FrameL& frames, arr& vel) { NICO }
 void BulletInterface::saveBulletFile(const char* filename) { NICO }
+void BulletInterface::changeObjectType(rai::Frame* f, int _type){ NICO }
 
 #endif
 

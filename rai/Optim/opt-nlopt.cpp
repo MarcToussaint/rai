@@ -1,5 +1,7 @@
 #include "opt-nlopt.h"
 
+#ifdef RAI_NLOPT
+
 struct FuncCallData{
   NLOptInterface* I=0;
   uint feature=0;
@@ -78,3 +80,9 @@ double NLOptInterface::_h(const std::vector<double>& x, std::vector<double>& gra
   FuncCallData *d = (FuncCallData*)f_data;
   return d->I->h(x, grad, d->feature);
 }
+
+#else
+
+void NLOptInterface::solve(){ NICO }
+
+#endif

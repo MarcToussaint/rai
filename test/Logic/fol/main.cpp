@@ -91,7 +91,7 @@ void testFolSubstitution(){
   for(Node* rule:rules){
     cout <<"*** RULE: " <<*rule <<endl;
     cout <<  "Substitutions:" <<endl;
-    NodeL subs = getRuleSubstitutions2(state, rule, 2);
+    NodeL subs = getRuleSubstitutions2(state, rule->graph(), 2);
     cout <<"BEFORE state="; state.write(cout, " "); cout <<endl;
     for(uint s=0;s<subs.d0;s++){
       Node *effect = rule->graph().last();
@@ -139,7 +139,7 @@ void testMonteCarlo(){
         //-- get all possible decisions
         rai::Array<std::pair<Node*, NodeL> > decisions; //tuples of rule and substitution
         for(Node* rule:rules){
-          NodeL subs = getRuleSubstitutions2(state, rule, verbose-2 );
+          NodeL subs = getRuleSubstitutions2(state, rule->graph(), verbose-2 );
 //          NodeL subs = getRuleSubstitutions2(state, rule, verbose-2 );
           for(uint s=0;s<subs.d0;s++){
             decisions.append(std::pair<Node*, NodeL>(rule, subs[s]));
