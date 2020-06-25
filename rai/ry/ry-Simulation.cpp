@@ -110,7 +110,11 @@ void init_Simulation(pybind11::module &m) {
 
       .def("addImp", &rai::Simulation::addImp)
 
-      .def("getState", &rai::Simulation::getState)
+      .def("getState", [](std::shared_ptr<rai::Simulation>& self) {
+    ptr<rai::SimulationState> state = self->getState();
+    return pybind11::make_tuple(pybind11::array_t<double>(state->frameState.dim(), state->frameState.p),
+                                pybind11::array_t<double>(state->frameVels.dim(), state->frameVels.p));
+  })
 
       .def("restoreState", &rai::Simulation::restoreState)
 
