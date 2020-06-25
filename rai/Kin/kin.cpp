@@ -2872,7 +2872,7 @@ bool rai::Configuration::checkConsistency() const {
       } else {
         CHECK_EQ(0, j->dim, "");
       }
-      for(uint i=0; i<jq.N; i++) CHECK_ZERO(jq.elem(i) - q.elem(j->qIndex+i), 1e-6, "");
+      for(uint i=0; i<jq.N; i++) CHECK_ZERO(jq.elem(i) - q.elem(j->qIndex+i), 1e-6, "joint vector q and relative transform Q do not match for joint '" <<j->frame->name <<"', index " <<i);
     }
   }
 

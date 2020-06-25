@@ -93,10 +93,12 @@ Node::~Node() {
   }
 }
 
-void Node::addParent(Node* p) {
+void Node::addParent(Node* p, bool prepend) {
   CHECK(p, "you gave me a nullptr parent");
-//  if(parents.contains(p)) return; //allow the same parent twice!
-  parents.append(p);
+  if(!prepend)
+    parents.append(p);
+  else
+    parents.prepend(p);
   p->numChildren++;
   if(container.isDoubleLinked) p->children.append(this);
 }

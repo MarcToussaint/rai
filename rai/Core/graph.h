@@ -44,7 +44,7 @@ struct Node {
   Node(const std::type_info& _type, Graph& _container, const char* _key, const NodeL& _parents);
   virtual ~Node();
 
-  void addParent(Node* p);
+  void addParent(Node* p, bool prepend=false);
   void removeParent(Node* p);
   void swapParent(uint i, Node* p);
 
