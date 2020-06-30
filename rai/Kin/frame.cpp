@@ -447,7 +447,14 @@ void rai::Frame::addAttribute(const char* key, double value){
   ats.newNode<double>(key, {}, value);
 }
 
-arr rai::Frame::getSize(){
+void rai::Frame::setJointState(const std::vector<double>& q){
+  CHECK(joint, "cannot setJointState for a non-joint");
+  CHECK_EQ(q.size(), joint->dim, "given q has wrong dimension");
+  joint->calc_Q_from_q(arr{q}, 0);
+  C._state_q_isGood = false;
+}
+
+arr rai::Frame::getSize() {
   return getShape().size;
 }
 
@@ -457,6 +464,11 @@ arr rai::Frame::getMeshPoints() {
 
 arr rai::Frame::getMeshCorePoints() {
   return getShape().sscCore().V;
+}
+
+arr rai::Frame::getJointState() const {
+  CHECK(joint, "cannot setJointState for a non-joint");
+  return joint->calc_q_from_Q(Q);
 }
 
 /***********************************************************/

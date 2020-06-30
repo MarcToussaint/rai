@@ -64,6 +64,11 @@ pybind11::arg("size")
   self.frame->setJoint(jointType);
 })
 
+.def("setJointState", [](ry::RyFrame& self, const std::vector<double>& q) {
+  WToken<rai::Configuration> token(*self.config, &self.config->data);
+  self.frame->setJointState(q);
+})
+
 .def("setContact", [](ry::RyFrame& self, int cont) {
   WToken<rai::Configuration> token(*self.config, &self.config->data);
   self.frame->setContact(cont);
@@ -106,6 +111,12 @@ pybind11::arg("size")
 .def("getRelativeQuaternion", [](ry::RyFrame& self) {
   RToken<rai::Configuration> token(*self.config, &self.config->data);
   arr x = self.frame->getRelativeQuaternion();
+  return pybind11::array_t<double>(x.dim(), x.p);
+})
+
+.def("getJointState", [](ry::RyFrame& self) {
+  RToken<rai::Configuration> token(*self.config, &self.config->data);
+  arr x = self.frame->getJointState();
   return pybind11::array_t<double>(x.dim(), x.p);
 })
 
