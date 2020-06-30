@@ -244,9 +244,22 @@ void rai::Frame::_state_setXBadinBranch() {
 
 void rai::Frame::read(const Graph& ats) {
   //interpret some of the attributes
-  if(ats["X"])    set_X()->setText(ats.get<String>("X"));
-  if(ats["pose"]) set_X()->setText(ats.get<String>("pose"));
-  if(ats["Q"])    set_Q()->setText(ats.get<String>("Q"));
+  Node *n;
+  if((n=ats["X"])){
+    if(n->isOfType<String>()) set_X()->read(n->get<String>());
+    else if(n->isOfType<arr>()) set_X()->set(n->get<arr>());
+    else NIY;
+  }
+  if((n=ats["pose"])){
+    if(n->isOfType<String>()) set_X()->read(n->get<String>());
+    else if(n->isOfType<arr>()) set_X()->set(n->get<arr>());
+    else NIY;
+  }
+  if((n=ats["Q"])){
+    if(n->isOfType<String>()) set_Q()->read(n->get<String>());
+    else if(n->isOfType<arr>()) set_Q()->set(n->get<arr>());
+    else NIY;
+  }
 
   if(ats["type"]) ats["type"]->key = "shape"; //compatibility with old convention: 'body { type... }' generates shape
 
@@ -290,15 +303,17 @@ void rai::Frame::read(const Graph& ats) {
 
 void rai::Frame::write(Graph& G) {
   if(parent) G.newNode<rai::String>({"parent"}, {}, parent->name);
-  if(joint) joint->write(G);
-  if(shape) shape->write(G);
-  if(inertia) inertia->write(G);
 
   if(parent) {
     if(!Q.isZero()) G.newNode<arr>({"Q"}, {}, Q.getArr7d());
   } else {
     if(!X.isZero()) G.newNode<arr>({"X"}, {}, X.getArr7d());
   }
+
+  if(joint) joint->write(G);
+  if(shape) shape->write(G);
+  if(inertia) inertia->write(G);
+
 
   StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H", "axis", "A", "B", "mimic"};
   for(Node* n : ats) {
@@ -315,27 +330,16 @@ void rai::Frame::write(std::ostream& os) const {
 
   os <<" \t{ ";
 
+  if(parent) {
+    if(!Q.isZero()) os <<" Q:" <<Q;
+  } else {
+    if(!X.isZero()) os <<" X:" <<X;
+  }
 //  if(parent) os <<"parent:" <<parent->name;
 
   if(joint) joint->write(os);
   if(shape) shape->write(os);
   if(inertia) inertia->write(os);
-
-  if(parent) {
-    if(!Q.isZero()) os <<" Q:<" <<Q <<'>';
-  } else {
-    if(!X.isZero()) os <<" X:<" <<X <<'>';
-  }
-
-//  if(flags) {
-//    Enum<FrameFlagType> fl;
-//    os <<" FLAGS:";
-//    for(int i=0;; i++) {
-//      fl.x = FrameFlagType(i);
-//      if(!fl.name()) break;
-//      if(flags & (1<<fl.x)) os <<' ' <<fl.name();
-//    }
-//  }
 
   StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H", "axis", "A", "B", "mimic"};
   for(Node* n : ats) {
@@ -996,7 +1000,12 @@ void rai::Joint::read(const Graph& G) {
     frame->insertPreLink(A);
   }
 
-  if(G["Q"]) frame->set_Q()->setText(G.get<rai::String>("Q"));
+  Node *n;
+  if((n=G["Q"])){
+    if(n->isOfType<String>()) frame->set_Q()->read(n->get<String>());
+    else if(n->isOfType<arr>()) frame->set_Q()->set(n->get<arr>());
+    else NIY;
+  }
   G.get(H, "ctrl_H");
   G.get(scale, "joint_scale");
   if(G.get(d, "joint"))        type=(JointType)d;
@@ -1053,14 +1062,13 @@ void rai::Joint::write(Graph& g) {
 }
 
 void rai::Joint::write(std::ostream& os) const {
-  os <<" joint:" <<type;
+  os <<", joint:" <<type;
   if(H!=1.) os <<", ctrl_H:" <<H;
   if(scale!=1.) os <<", joint_scale:" <<scale;
   if(limits.N) os <<", limits:" <<limits;
   if(mimic) {
     os <<", mimic:(" <<mimic->frame->name <<')';
   }
-  os <<' ';
 }
 
 //===========================================================================
@@ -1168,7 +1176,7 @@ void rai::Shape::read(const Graph& ats) {
 }
 
 void rai::Shape::write(std::ostream& os) const {
-  os <<" shape:" <<_type;
+  os <<", shape:" <<_type;
   if(_type!=ST_mesh) os <<", size:" <<size;
 
   Node* n;
@@ -1176,7 +1184,6 @@ void rai::Shape::write(std::ostream& os) const {
   if((n=frame.ats["mesh"])) os <<", " <<*n;
   if((n=frame.ats["meshscale"])) os <<", " <<*n;
   if(cont) os <<", contact:" <<(int)cont;
-  os <<',';
 }
 
 void rai::Shape::write(Graph& g) {

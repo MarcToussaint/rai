@@ -50,6 +50,9 @@ using namespace rai;
 
 double shapeSize(const Configuration& K, const char* name, uint i=2);
 
+struct getQFramesAndScale_Return{ uintA frames; arr scale; };
+getQFramesAndScale_Return getQFramesAndScale(const rai::Configuration& C);
+
 Shape* getShape(const Configuration& K, const char* name) {
   Frame* f = K.getFrameByName(name);
   Shape* s = f->shape;
@@ -532,20 +535,6 @@ void KOMO_ext::setHoming(double startTime, double endTime, double prec, const ch
 //  CHECK_GE(k_order, 2,"");
 //  addObjective({startTime, endTime}, make_shared<TM_Transition>(world), OT_sos, {}, NoArrprec);
 //}
-
-auto getQFramesAndScale(const rai::Configuration& C){
-  struct Return{ uintA frames; arr scale; } R;
-  for(rai::Frame* f : C.frames){
-    if(f->joint && f->joint->active && f->joint->dim>0 && f->joint->H>0. && f->joint->type!=JT_tau) {
-      CHECK(!f->joint->mimic, "");
-      R.frames.append(TUP(f->ID, f->parent->ID));
-      R.scale.append(f->joint->H, f->joint->dim);
-    }
-  }
-  R.frames.reshape(-1, 2);
-  //  cout <<scale <<endl <<world.getHmetric() <<endl;
-  return R;
-}
 
 ptr<Objective> KOMO::add_qControlObjective(const arr& times, uint order, double scale, const arr& target, int deltaFromStep, int deltaToStep){
   auto F = getQFramesAndScale(world);

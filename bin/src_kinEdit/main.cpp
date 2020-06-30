@@ -47,6 +47,7 @@ int main(int argc,char **argv){
 
   //-- some optional manipulations
   if(rai::checkParameter<bool>("prune")){
+    cout <<"PRUNING STRUCTURE" <<endl;
     C.optimizeTree(true, true, false);
   }else{
     C.optimizeTree(false, false, false);

@@ -76,8 +76,19 @@ template<> const char* rai::Enum<FeatureSymbol>::names []= {
 };
 
 //fwd declarations
-struct getQFramesAndScale_Return{ uintA frames; arr scale; };
-getQFramesAndScale_Return getQFramesAndScale(const rai::Configuration& C);
+auto getQFramesAndScale(const rai::Configuration& C){
+  struct Return{ uintA frames; arr scale; } R;
+  for(rai::Frame* f : C.frames){
+    if(f->joint && f->joint->active && f->joint->dim>0 && f->joint->H>0. && f->joint->type!=rai::JT_tau) {
+      CHECK(!f->joint->mimic, "");
+      R.frames.append(TUP(f->ID, f->parent->ID));
+      R.scale.append(f->joint->H, f->joint->dim);
+    }
+  }
+  R.frames.reshape(-1, 2);
+  //  cout <<scale <<endl <<world.getHmetric() <<endl;
+  return R;
+}
 
 double shapeSize(const rai::Configuration& K, const char* name, uint i=2) {
   rai::Frame* f = K.getFrameByName(name);
