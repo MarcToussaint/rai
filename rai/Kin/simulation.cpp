@@ -52,7 +52,7 @@ struct SimulationImp {
 
   //-- imps overload these methods to modify/perturb something
   virtual void modControl(Simulation& S, arr& u_control, double& tau, Simulation::ControlMode u_mode) {}
-  virtual void modConfiguration(Simulation& S) {}
+  virtual void modConfiguration(Simulation& S, double tau) {}
   virtual void modImages(Simulation& S, byteA& image, floatA& depth) {}
 };
 
@@ -66,7 +66,7 @@ struct Imp_CloseGripper : SimulationImp {
   double speed;
 
   Imp_CloseGripper(Frame* _gripper, Frame* _fing1, Frame* _fing2, Frame* _obj, double _speed);
-  virtual void modConfiguration(Simulation& S);
+  virtual void modConfiguration(Simulation& S, double tau);
 };
 
 //===========================================================================
@@ -77,7 +77,7 @@ struct Imp_OpenGripper : SimulationImp {
   double speed;
 
   Imp_OpenGripper(Frame* _gripper, Frame* _fing1, Frame* _fing2, double _speed);
-  virtual void modConfiguration(Simulation& S);
+  virtual void modConfiguration(Simulation& S, double tau);
 };
 
 //===========================================================================
@@ -87,7 +87,7 @@ struct Imp_ObjectImpulses : SimulationImp {
   uint count=0;
 
   Imp_ObjectImpulses(Frame* _obj) : obj(_obj) { CHECK(obj, "");  when = _beforePhysics;  }
-  virtual void modConfiguration(Simulation& S);
+  virtual void modConfiguration(Simulation& S, double tau);
 };
 
 //===========================================================================
@@ -97,7 +97,7 @@ struct Imp_BlockJoints : SimulationImp {
   arr qBlocked;
 
   Imp_BlockJoints(const FrameL& _joints, Simulation& S);
-  virtual void modConfiguration(Simulation& S);
+  virtual void modConfiguration(Simulation& S, double tau);
 };
 
 //===========================================================================
@@ -147,7 +147,7 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
 
   //-- imps before physics
   for(ptr<SimulationImp>& imp : imps) if(imp->when==SimulationImp::_beforePhysics){
-    imp->modConfiguration(*this);
+    imp->modConfiguration(*this, tau);
   }
 
   //-- call the physics ending
@@ -164,7 +164,7 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
 
   //-- imps after physics
   for(ptr<SimulationImp>& imp : imps) if(imp->when==SimulationImp::_afterPhysics){
-    imp->modConfiguration(*this);
+    imp->modConfiguration(*this, tau);
   }
 
   if(verbose>0) self->updateDisplayData(time, C);
@@ -470,7 +470,7 @@ Imp_CloseGripper::Imp_CloseGripper(Frame* _gripper, Frame* _fing1, Frame* _fing2
   q = fing1->joint->calc_q_from_Q(fing1->get_Q());
 }
 
-void Imp_CloseGripper::modConfiguration(Simulation& S) {
+void Imp_CloseGripper::modConfiguration(Simulation& S, double tau) {
   if(killMe) return;
 
   CHECK_EQ(&S.C, &fing1->C, "");
@@ -480,7 +480,7 @@ void Imp_CloseGripper::modConfiguration(Simulation& S) {
   }
 
   //-- actually close gripper until both distances are < .001
-  q.scalar() -= 1e-3*speed;
+  q.scalar() -= 1e-1*speed*tau;
   fing1->joint->calc_Q_from_q(q, 0);
   fing2->joint->calc_Q_from_q(q, 0);
   S.C._state_q_isGood = false;
@@ -539,7 +539,7 @@ Imp_OpenGripper::Imp_OpenGripper(Frame* _gripper, Frame* _fing1, Frame* _fing2, 
   q = fing1->joint->calc_q_from_Q(fing1->get_Q());
 }
 
-void Imp_OpenGripper::modConfiguration(Simulation& S) {
+void Imp_OpenGripper::modConfiguration(Simulation& S, double tau) {
   if(killMe) return;
 
   CHECK_EQ(&S.C, &gripper->C, "");
@@ -547,7 +547,7 @@ void Imp_OpenGripper::modConfiguration(Simulation& S) {
   CHECK_EQ(&S.C, &fing2->C, "");
 
   //-- actually open gripper until limit
-  q.scalar() += 1e-3*speed;
+  q.scalar() += 1e-1*speed*tau;
   fing1->joint->calc_Q_from_q(q, 0);
   fing2->joint->calc_Q_from_q(q, 0);
   S.C._state_q_isGood = false;
@@ -561,7 +561,7 @@ void Imp_OpenGripper::modConfiguration(Simulation& S) {
 
 //===========================================================================
 
-void Imp_ObjectImpulses::modConfiguration(Simulation& S){
+void Imp_ObjectImpulses::modConfiguration(Simulation& S, double tau){
   count ++;
   if(count<100) return;
 
@@ -593,7 +593,7 @@ Imp_BlockJoints::Imp_BlockJoints(const FrameL& _joints, Simulation& S)
   }
 }
 
-void Imp_BlockJoints::modConfiguration(Simulation& S){
+void Imp_BlockJoints::modConfiguration(Simulation& S, double tau){
   CHECK_EQ(joints.N, qBlocked.N, "");
   arr q = S.C.getJointState();
   for(uint i=0;i<joints.N;i++){

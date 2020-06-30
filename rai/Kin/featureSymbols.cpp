@@ -53,6 +53,7 @@ template<> const char* rai::Enum<FeatureSymbol>::names []= {
   "oppose",
 
   "qItself",
+  "qControl",
 
   "aboveBox",
   "insideBox",
@@ -74,6 +75,10 @@ template<> const char* rai::Enum<FeatureSymbol>::names []= {
   nullptr
 };
 
+//fwd declarations
+struct getQFramesAndScale_Return{ uintA frames; arr scale; };
+getQFramesAndScale_Return getQFramesAndScale(const rai::Configuration& C);
+
 double shapeSize(const rai::Configuration& K, const char* name, uint i=2) {
   rai::Frame* f = K.getFrameByName(name);
   rai::Shape* s = f->shape;
@@ -84,72 +89,79 @@ double shapeSize(const rai::Configuration& K, const char* name, uint i=2) {
   return s->size(i);
 }
 
-ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const rai::Configuration& world, const arr& scale, const arr& target, int order) {
+ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const rai::Configuration& C, const arr& scale, const arr& target, int order) {
   ptr<Feature> f;
-  if(feat==FS_distance) {  f=make_shared<F_PairCollision>(world, frames(0), frames(1), F_PairCollision::_negScalar, false); }
-  else if(feat==FS_oppose) {  f=make_shared<F_GraspOppose>(world, frames(0), frames(1), frames(2)); }
-  else if(feat==FS_aboveBox) {  f=make_shared<TM_AboveBox>(world, frames(1), frames(0), .05); }
+  if(feat==FS_distance) {  f=make_shared<F_PairCollision>(C, frames(0), frames(1), F_PairCollision::_negScalar, false); }
+  else if(feat==FS_oppose) {  f=make_shared<F_GraspOppose>(C, frames(0), frames(1), frames(2)); }
+  else if(feat==FS_aboveBox) {  f=make_shared<TM_AboveBox>(C, frames(1), frames(0), .05); }
   else if(feat==FS_standingAbove) {
-    double h = .5*(shapeSize(world, frames(0)) + shapeSize(world, frames(1)));
-    f = make_shared<TM_Default>(TMT_posDiff, world, frames(0), rai::Vector(0., 0., h), frames(1), NoVector);
+    double h = .5*(shapeSize(C, frames(0)) + shapeSize(C, frames(1)));
+    f = make_shared<TM_Default>(TMT_posDiff, C, frames(0), rai::Vector(0., 0., h), frames(1), NoVector);
     f->scale = arr({1,3}, {0., 0., 1.});
   }
 
-  else if(feat==FS_position) {  f=make_shared<TM_Default>(TMT_pos, world, frames(0)); }
-  else if(feat==FS_positionDiff) {  f=make_shared<TM_Default>(TMT_posDiff, world, frames(0), NoVector, frames(1)); }
-  else if(feat==FS_positionRel) {  f=make_shared<TM_Default>(TMT_pos, world, frames(0), NoVector, frames(1)); }
+  else if(feat==FS_position) {  f=make_shared<TM_Default>(TMT_pos, C, frames(0)); }
+  else if(feat==FS_positionDiff) {  f=make_shared<TM_Default>(TMT_posDiff, C, frames(0), NoVector, frames(1)); }
+  else if(feat==FS_positionRel) {  f=make_shared<TM_Default>(TMT_pos, C, frames(0), NoVector, frames(1)); }
 
-  else if(feat==FS_vectorX) {  f=make_shared<TM_Default>(TMT_vec, world, frames(0), Vector_x); }
-  else if(feat==FS_vectorXDiff) {  f=make_shared<TM_Default>(TMT_vecDiff, world, frames(0), Vector_x, frames(1), Vector_x); }
-  else if(feat==FS_vectorXRel) {  f=make_shared<TM_Default>(TMT_vec, world, frames(0), Vector_x, frames(1), Vector_x); }
+  else if(feat==FS_vectorX) {  f=make_shared<TM_Default>(TMT_vec, C, frames(0), Vector_x); }
+  else if(feat==FS_vectorXDiff) {  f=make_shared<TM_Default>(TMT_vecDiff, C, frames(0), Vector_x, frames(1), Vector_x); }
+  else if(feat==FS_vectorXRel) {  f=make_shared<TM_Default>(TMT_vec, C, frames(0), Vector_x, frames(1), Vector_x); }
 
-  else if(feat==FS_vectorY) {  f=make_shared<TM_Default>(TMT_vec, world, frames(0), Vector_y); }
-  else if(feat==FS_vectorYDiff) {  f=make_shared<TM_Default>(TMT_vecDiff, world, frames(0), Vector_y, frames(1), Vector_y); }
-  else if(feat==FS_vectorYRel) {  f=make_shared<TM_Default>(TMT_vec, world, frames(0), Vector_y, frames(1), Vector_y); }
+  else if(feat==FS_vectorY) {  f=make_shared<TM_Default>(TMT_vec, C, frames(0), Vector_y); }
+  else if(feat==FS_vectorYDiff) {  f=make_shared<TM_Default>(TMT_vecDiff, C, frames(0), Vector_y, frames(1), Vector_y); }
+  else if(feat==FS_vectorYRel) {  f=make_shared<TM_Default>(TMT_vec, C, frames(0), Vector_y, frames(1), Vector_y); }
 
-  else if(feat==FS_vectorZ) {  f=make_shared<TM_Default>(TMT_vec, world, frames(0), Vector_z); }
-  else if(feat==FS_vectorZDiff) {  f=make_shared<TM_Default>(TMT_vecDiff, world, frames(0), Vector_z, frames(1), Vector_z); }
-  else if(feat==FS_vectorZRel) {  f=make_shared<TM_Default>(TMT_vec, world, frames(0), Vector_z, frames(1), Vector_z); }
+  else if(feat==FS_vectorZ) {  f=make_shared<TM_Default>(TMT_vec, C, frames(0), Vector_z); }
+  else if(feat==FS_vectorZDiff) {  f=make_shared<TM_Default>(TMT_vecDiff, C, frames(0), Vector_z, frames(1), Vector_z); }
+  else if(feat==FS_vectorZRel) {  f=make_shared<TM_Default>(TMT_vec, C, frames(0), Vector_z, frames(1), Vector_z); }
 
-  else if(feat==FS_quaternion) {  f=make_shared<TM_Default>(TMT_quat, world, frames(0)); }
-  else if(feat==FS_quaternionDiff) {  f=make_shared<TM_Default>(TMT_quatDiff, world, frames(0), NoVector, frames(1), NoVector); }
-  else if(feat==FS_quaternionRel) {  f=make_shared<TM_Default>(TMT_quat, world, frames(0), NoVector, frames(1), NoVector); }
+  else if(feat==FS_quaternion) {  f=make_shared<TM_Default>(TMT_quat, C, frames(0)); }
+  else if(feat==FS_quaternionDiff) {  f=make_shared<TM_Default>(TMT_quatDiff, C, frames(0), NoVector, frames(1), NoVector); }
+  else if(feat==FS_quaternionRel) {  f=make_shared<TM_Default>(TMT_quat, C, frames(0), NoVector, frames(1), NoVector); }
 
 //  else if(feat==FS_pose) {  f=make_shared<TM_Default>(TMT_pose, world, frames(0)); }
 //  else if(feat==FS_poseDiff) {  f=make_shared<TM_Default>(TMT_poseDiff, world, frames(0), NoVector, frames(1), NoVector); }
 //  else if(feat==FS_poseRel)  {  f=make_shared<TM_Default>(TMT_pose, world, frames(0), NoVector, frames(1), NoVector); }
-  else if(feat==FS_pose) {  f=make_shared<F_Pose>(world, frames(0)); }
-  else if(feat==FS_poseDiff) {  f=make_shared<F_PoseDiff>(world, frames(0), frames(1)); }
-  else if(feat==FS_poseRel)  {  f=make_shared<F_PoseRel>(world, frames(0), frames(1)); }
+  else if(feat==FS_pose) {  f=make_shared<F_Pose>(C, frames(0)); }
+  else if(feat==FS_poseDiff) {  f=make_shared<F_PoseDiff>(C, frames(0), frames(1)); }
+  else if(feat==FS_poseRel)  {  f=make_shared<F_PoseRel>(C, frames(0), frames(1)); }
 
-  else if(feat==FS_scalarProductXX) {  f=make_shared<TM_Default>(TMT_vecAlign, world, frames(0), Vector_x, frames(1), Vector_x); }
-  else if(feat==FS_scalarProductXY) {  f=make_shared<TM_Default>(TMT_vecAlign, world, frames(0), Vector_x, frames(1), Vector_y); }
-  else if(feat==FS_scalarProductXZ) {  f=make_shared<TM_Default>(TMT_vecAlign, world, frames(0), Vector_x, frames(1), Vector_z); }
-  else if(feat==FS_scalarProductYX) {  f=make_shared<TM_Default>(TMT_vecAlign, world, frames(0), Vector_y, frames(1), Vector_x); }
-  else if(feat==FS_scalarProductYY) {  f=make_shared<TM_Default>(TMT_vecAlign, world, frames(0), Vector_y, frames(1), Vector_y); }
-  else if(feat==FS_scalarProductYZ) {  f=make_shared<TM_Default>(TMT_vecAlign, world, frames(0), Vector_y, frames(1), Vector_z); }
-  else if(feat==FS_scalarProductZZ) {  f=make_shared<TM_Default>(TMT_vecAlign, world, frames(0), Vector_z, frames(1), Vector_z); }
+  else if(feat==FS_scalarProductXX) {  f=make_shared<TM_Default>(TMT_vecAlign, C, frames(0), Vector_x, frames(1), Vector_x); }
+  else if(feat==FS_scalarProductXY) {  f=make_shared<TM_Default>(TMT_vecAlign, C, frames(0), Vector_x, frames(1), Vector_y); }
+  else if(feat==FS_scalarProductXZ) {  f=make_shared<TM_Default>(TMT_vecAlign, C, frames(0), Vector_x, frames(1), Vector_z); }
+  else if(feat==FS_scalarProductYX) {  f=make_shared<TM_Default>(TMT_vecAlign, C, frames(0), Vector_y, frames(1), Vector_x); }
+  else if(feat==FS_scalarProductYY) {  f=make_shared<TM_Default>(TMT_vecAlign, C, frames(0), Vector_y, frames(1), Vector_y); }
+  else if(feat==FS_scalarProductYZ) {  f=make_shared<TM_Default>(TMT_vecAlign, C, frames(0), Vector_y, frames(1), Vector_z); }
+  else if(feat==FS_scalarProductZZ) {  f=make_shared<TM_Default>(TMT_vecAlign, C, frames(0), Vector_z, frames(1), Vector_z); }
 
-  else if(feat==FS_pairCollision_negScalar) {  f=make_shared<F_PairCollision>(world, frames(0), frames(1), F_PairCollision::_negScalar, false); }
-  else if(feat==FS_pairCollision_vector) {     f=make_shared<F_PairCollision>(world, frames(0), frames(1), F_PairCollision::_vector, false); }
-  else if(feat==FS_pairCollision_normal) {     f=make_shared<F_PairCollision>(world, frames(0), frames(1), F_PairCollision::_normal, true); }
-  else if(feat==FS_pairCollision_p1) {         f=make_shared<F_PairCollision>(world, frames(0), frames(1), F_PairCollision::_p1, false); }
-  else if(feat==FS_pairCollision_p2) {         f=make_shared<F_PairCollision>(world, frames(0), frames(1), F_PairCollision::_p2, false); }
+  else if(feat==FS_pairCollision_negScalar) {  f=make_shared<F_PairCollision>(C, frames(0), frames(1), F_PairCollision::_negScalar, false); }
+  else if(feat==FS_pairCollision_vector) {     f=make_shared<F_PairCollision>(C, frames(0), frames(1), F_PairCollision::_vector, false); }
+  else if(feat==FS_pairCollision_normal) {     f=make_shared<F_PairCollision>(C, frames(0), frames(1), F_PairCollision::_normal, true); }
+  else if(feat==FS_pairCollision_p1) {         f=make_shared<F_PairCollision>(C, frames(0), frames(1), F_PairCollision::_p1, false); }
+  else if(feat==FS_pairCollision_p2) {         f=make_shared<F_PairCollision>(C, frames(0), frames(1), F_PairCollision::_p2, false); }
 
-  else if(feat==FS_gazeAt) { f=make_shared<TM_Default>(TMT_gazeAt, world, frames(0), NoVector, frames(1)); }
+  else if(feat==FS_gazeAt) { f=make_shared<TM_Default>(TMT_gazeAt, C, frames(0), NoVector, frames(1)); }
 
-  else if(feat==FS_angularVel) { f=make_shared<TM_AngVel>(world, frames(0)); }
+  else if(feat==FS_angularVel) { f=make_shared<TM_AngVel>(C, frames(0)); }
 
   else if(feat==FS_accumulatedCollisions) {  f=make_shared<TM_Proxy>(TMT_allP, uintA()); }
   else if(feat==FS_jointLimits) {  f=make_shared<F_qLimits>(); }
 
   else if(feat==FS_qItself) {
     if(!frames.N) f=make_shared<F_qItself>();
-    else f=make_shared<F_qItself>(F_qItself::byJointNames, frames, world);
+    else f=make_shared<F_qItself>(F_qItself::byJointNames, frames, C);
   }
 
-  else if(feat==FS_physics) { f=make_shared<F_NewtonEuler>(world, frames(0)); }
-  else if(feat==FS_contactConstraints) { f=make_shared<TM_Contact_ForceIsNormal>(world, frames(0), frames(1)); }
+  else if(feat==FS_qControl) {
+    CHECK(!frames.N, "NIY");
+    auto F = getQFramesAndScale(C);
+    f = make_shared<F_qItself>(F.frames);
+    f->scale = F.scale;
+  }
+
+  else if(feat==FS_physics) { f=make_shared<F_NewtonEuler>(C, frames(0)); }
+  else if(feat==FS_contactConstraints) { f=make_shared<TM_Contact_ForceIsNormal>(C, frames(0), frames(1)); }
   else if(feat==FS_energy) { f=make_shared<F_Energy>(); }
 
   else if(feat==FS_transAccelerations) { HALT("obsolete"); /*f=make_shared<TM_Transition>(world);*/ }
@@ -161,7 +173,12 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
 //    f = map;
   } else HALT("can't interpret feature symbols: " <<feat);
 
-  if(!!scale) f->scale = scale;
+  if(!!scale){
+    if(!f->scale.N) f->scale = scale;
+    else if(scale.N==1) f->scale *= scale.scalar();
+    else if(scale.N==f->scale.N) f->scale *= scale.scalar();
+    else NIY;
+  }
   if(!!target) f->target = target;
   if(order>=0) f->order = order;
 
