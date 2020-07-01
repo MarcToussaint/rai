@@ -378,6 +378,7 @@ struct Simulation_DisplayThread : Thread, GLDrawer {
   byteA image;
   floatA depth;
   byteA segmentation;
+  byteA screenshot;
 
   Simulation_DisplayThread(const Configuration& C)
     : Thread("Sim_DisplayThread", .05),
@@ -423,6 +424,10 @@ struct Simulation_DisplayThread : Thread, GLDrawer {
       glRasterImage(.0, top, image, scale);
       glRasterImage(.7, top, dep, scale);
     }
+
+    screenshot.resize(gl.height, gl.width, 3);
+    glReadPixels(0, 0, gl.width, gl.height, GL_RGB, GL_UNSIGNED_BYTE, screenshot.p);
+
     mux.unlock();
 #else
     NICO
@@ -453,6 +458,15 @@ void Simulation_self::updateDisplayData(const byteA& _image, const floatA& _dept
   display->image = _image;
   display->depth= _depth;
   display->mux.unlock();
+}
+
+byteA Simulation::getScreenshot(){
+  if(!self->display) return byteA();
+  byteA ret;
+  self->display->mux.lock(RAI_HERE);
+  ret = self->display->screenshot;
+  self->display->mux.unlock();
+  return ret;
 }
 
 //===========================================================================

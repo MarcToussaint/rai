@@ -467,6 +467,13 @@ pybind11::class_<ry::ConfigurationViewer>(m, "ConfigurationViewer")
 pybind11::arg("delay")=double(1.),
 pybind11::arg("saveVideoPath")=nullptr
 )
+.def("getScreenshot", [](ry::ConfigurationViewer& self) {
+  if(!self.view) self.view = make_shared<rai::ConfigurationViewer>();
+  byteA rgb = self.view->getScreenshot();
+  return pybind11::array_t<byte>(rgb.dim(), rgb.p);
+
+})
+
 ;
 
 //===========================================================================

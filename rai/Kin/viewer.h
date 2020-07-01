@@ -15,6 +15,7 @@ struct ConfigurationViewer : GLDrawer {
   int setPath(const arr& _framePath, const char* text=0, bool watch=false, bool full=true);
   bool playVideo(bool watch=false, double delay=1., const char* saveVideoPath=nullptr); ///< display the trajectory; use "z.vid/" as vid prefix
   rai::Camera& displayCamera();   ///< access to the display camera to change the view
+  byteA getScreenshot();
   void savePng(const char* saveVideoPath="z.vid/");
   void recopyMeshes(rai::Configuration& _C);
 

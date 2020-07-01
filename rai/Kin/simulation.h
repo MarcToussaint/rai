@@ -63,6 +63,7 @@ struct Simulation {
     }
   }
   rai::CameraView::Sensor&  selectSensor(const char* name) { return cameraview().selectSensor(name); }
+  byteA getScreenshot();
 
   //== ground truth interface
   rai::Frame* getGroundTruthFrame(const char* frame){ return C.getFrameByName("frame"); }
