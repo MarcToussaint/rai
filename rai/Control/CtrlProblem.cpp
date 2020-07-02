@@ -15,11 +15,25 @@ std::shared_ptr<CtrlObjective> CtrlProblem::add_qControlObjective(uint order, do
   return addObjective(o->feat, o->type);
 }
 
+void CtrlProblem::addObjectives(const rai::Array<ptr<CtrlObjective>>& O) {
+  for(auto &o:O){
+      objectives.append(o.get());
+      o->selfRemove = &objectives;
+  }
+}
+
+void CtrlProblem::delObjectives(const rai::Array<ptr<CtrlObjective>>& O){
+  for(auto &o:O){
+      objectives.removeValue(o.get());
+      o->selfRemove = 0;
+  }
+}
+
+
 ptr<CtrlObjective> CtrlProblem::addObjective(const ptr<Feature>& f, ObjectiveType type) {
   ptr<CtrlObjective> t = make_shared<CtrlObjective>();
   t->feat = f;
-  objectives.append(t.get());
-  t->selfRemove = &objectives;
+  addObjectives({t});
   return t;
 }
 
@@ -43,7 +57,7 @@ void CtrlProblem::update(rai::Configuration& C) {
 
     if(o->movingTarget){
       o->y_buffer = o->getValue(*this);
-      ActStatus s_new = o->movingTarget->step(o->feat->target, tau, o->y_buffer);
+      ActStatus s_new = o->movingTarget->step(o->feat->target, tau, o->y_buffer, o->feat->scale);
       if(o->status != s_new){
         o->status = s_new;
         //callbacks

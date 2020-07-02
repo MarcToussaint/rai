@@ -29,11 +29,7 @@ arr CtrlObjective::getResidual(CtrlProblem& cp){
 }
 
 arr CtrlObjective::getValue(CtrlProblem& cp){
-  arr y;
-  feat->__phi(y, NoArr, cp.komo.configurations);
-  if(feat->scale.N)   y *= (1./feat->scale.scalar());
-  if(feat->target.N)  y += feat->target;
-  return y;
+  return feat->phi(cp.komo.configurations);
 }
 
 void CtrlObjective::resetState() { if(movingTarget) movingTarget->resetState(); status=AS_init; }
@@ -67,9 +63,7 @@ void CtrlObjective::reportState(ostream& os) const {
   if(!active) cout <<" INACTIVE";
   cout <<rai::Enum<ActStatus>(status) <<' ';
   if(movingTarget){
-    if(feat->target.N==y_buffer.N){
-      os <<" \ty_ref=" <<feat->target <<" \ty-residual=" <<y_buffer-feat->target <<" \ty-err=" <<length(y_buffer-feat->target);
-    }
+    os <<" \ty_ref=" <<feat->target <<" \ty-residual=" <<y_buffer;
 //    if(ref->v_ref.N==y.N){
 //      os <<" \tv_ref=" <<ref->v_ref;
 //    }

@@ -48,7 +48,8 @@ public:
   virtual rai::Graph getSpec(const rai::Configuration& C) { return rai::Graph({{"description", shortTag(C)}}); }
   
   //-- evaluation helpers
-  arr phi(const rai::Configuration& C) { arr y; __phi(y,NoArr,C); return y; } ///< evaluate without computing Jacobian
+  arr phi(const ConfigurationL& Ctuple) { arr y; __phi(y,NoArr,Ctuple); return y; } ///< evaluate without computing Jacobian
+  arr phiRaw(const ConfigurationL& Ctuple) { arr y; phi(y,NoArr,Ctuple); return y; } ///< evaluate without computing Jacobian
   Value operator()(const ConfigurationL& Ctuple){ arr y,J; __phi(y, J, Ctuple); return Value(y,J); }
   Value operator()(const rai::Configuration& C){ arr y,J; __phi(y, J, C); return Value(y,J); }
   Value eval(const rai::Configuration& C){ arr y,J; __phi(y, J, C); return Value(y,J); }

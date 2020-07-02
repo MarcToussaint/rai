@@ -24,7 +24,7 @@ typedef rai::Array<CtrlObjective*> CtrlObjectiveL;
 struct CtrlObjective {
   std::shared_ptr<Feature> feat;    ///< this defines the task space
   ObjectiveType type;               ///< element of {sumOfSqr, inequality, equality}
-  bool transient=false;
+  double transientStep;
   rai::String name;                 ///< just for easier reporting
   CtrlObjectiveL* selfRemove = 0;
 
@@ -43,7 +43,7 @@ struct CtrlObjective {
 //  arr f;             ///< measured generalized force in this task space
 
 
-  CtrlObjective() : type(OT_sos), transient(false), active(true), /*kp(1.), kd(1.),*/ status(AS_init) {}
+  CtrlObjective() : type(OT_sos), transientStep(-1.), active(true), /*kp(1.), kd(1.),*/ status(AS_init) {}
 //  CtrlObjective(char* _name, const ptr<Feature>& _feat, const ptr<CtrlReference>& _ref, double _kp, double _kd, const arr& _C);
   ~CtrlObjective() {
       if(selfRemove){

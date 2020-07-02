@@ -4,33 +4,46 @@
 
 //===========================================================================
 
-ActStatus CtrlTarget_Const::step(arr& target, double tau, const arr& y_real) {
+ActStatus CtrlTarget_Const::step(arr& target, double tau, const arr& y_real, const arr& scale) {
   target = zeros(y_real.N);
   return AS_running;
 }
 
 //===========================================================================
 
-ActStatus CtrlTarget_ConstVel::step(arr& target, double tau, const arr& y_real) {
+ActStatus CtrlTarget_ConstVel::step(arr& target, double tau, const arr& y_real, const arr& scale) {
   target = zeros(y_real.N);
   return AS_running;
 }
 
 //===========================================================================
 
-ActStatus CtrlTarget_MaxCarrot::step(arr& target, double tau, const arr& y_real) {
+ActStatus CtrlTarget_MaxCarrot::step(arr& target, double tau, const arr& y_real, const arr& scale) {
+  //what's the raw y-dimension?
+  uint dy = y_real.N;
+  if(scale.nd==2) dy = scale.d1;
+
   //initialize goal
-  if(goal.N!=y_real.N){
-    if(target.N==y_real.N) goal = target;
-    else goal = zeros(y_real.N);
+  if(goal.N!=dy){
+    if(target.N==dy) goal = target;
+    else goal = zeros(dy);
   }
 
-  double d = length(y_real-goal);
+  //get the raw y-value (before scaling; also projected in scale's input space)
+  arr y_raw = y_real;
+  if(scale.N==1) y_raw /= scale.scalar();
+  else if(scale.nd==1) y_raw /= scale;
+  else if(scale.nd==2) y_raw = pseudoInverse(scale)*y_real;
+  if(target.N) y_raw += target;
+
+  double d = length(y_raw-goal);
   if(d > maxDistance) {
-    target = y_real - (maxDistance/d)*(y_real-goal);
+    target = y_raw - (maxDistance/d)*(y_raw-goal);
     //cout << "maxD" << endl;
+    isTransient=true;
   } else {
     target = goal;
+    isTransient=false;
   }
   if(d<maxDistance) countInRange++; else countInRange=0;
   if(countInRange>10) return AS_converged;
@@ -39,7 +52,7 @@ ActStatus CtrlTarget_MaxCarrot::step(arr& target, double tau, const arr& y_real)
 
 //===========================================================================
 
-ActStatus CtrlTarget_Sine:: step(arr& target, double tau, const arr& y_real) {
+ActStatus CtrlTarget_Sine:: step(arr& target, double tau, const arr& y_real, const arr& scale) {
   t+=tau;
   if(t>T) t=T;
   if(y_start.N!=y_real.N) y_start=y_real; //initialization
@@ -106,7 +119,7 @@ void getVel_bang(double& x, double& v, double maxVel, double tau) {
   }
 }
 
-ActStatus CtrlTarget_Bang::step(arr& target, double tau, const arr& y_real) {
+ActStatus CtrlTarget_Bang::step(arr& target, double tau, const arr& y_real, const arr& scale) {
   //only on initialization the true state is used; otherwise ignored!
   if(y_target.N!=y_real.N) { y_target=y_real; }
 
@@ -177,7 +190,7 @@ void CtrlTarget_PD::setGainsAsNatural(double decayTime, double dampingRatio) {
 //  setGains(rai::sqr(1./lambda), 2.*dampingRatio/lambda);
 }
 
-ActStatus CtrlTarget_PD::step(arr& target, double tau, const arr& y_real) {
+ActStatus CtrlTarget_PD::step(arr& target, double tau, const arr& y_real, const arr& scale) {
   //only on initialization the true state is used; otherwise ignored!
   if(y_ref.N!=y_real.N) { y_ref=y_real; v_ref=zeros(y_real.N); }
   if(y_target.N!=y_ref.N) { y_target=y_ref; v_target=v_ref; }
@@ -269,7 +282,7 @@ CtrlTarget_Path::CtrlTarget_Path(const arr& path, const arr& times)
   spline.set(2, path, times);
 }
 
-ActStatus CtrlTarget_Path::step(arr& target, double tau, const arr& y_real) {
+ActStatus CtrlTarget_Path::step(arr& target, double tau, const arr& y_real, const arr& scale) {
   time += tau;
   if(time > endTime) time=endTime;
   target = spline.eval(time);
