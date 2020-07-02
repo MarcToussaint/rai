@@ -720,13 +720,14 @@ void PhysXInterface::addForce(rai::Vector& force, rai::Frame* b, rai::Vector& po
 #else //RAI_PHYSX
 
 #include "kin_physx.h"
-PhysXInterface::PhysXInterface(const rai::Configuration& C, bool verbose) : self(nullptr) { NICO }
+PhysXInterface::PhysXInterface(const rai::Configuration& C, int verbose) : self(nullptr) { NICO }
 PhysXInterface::~PhysXInterface() { NICO }
 
 void PhysXInterface::step(double tau) { NICO }
 void PhysXInterface::pushKinematicStates(const FrameL& frames) { NICO }
 void PhysXInterface::pushFullState(const FrameL& frames, const arr& vels, bool onlyKinematic) { NICO }
 void PhysXInterface::pullDynamicStates(FrameL& frames, arr& vels) { NICO }
+void PhysXInterface::postAddObject(rai::Frame* f){ NICO }
 
 void PhysXInterface::changeObjectType(rai::Frame* f, int _type){ NICO }
 void PhysXInterface::setArticulatedBodiesKinematic(const rai::Configuration& C) { NICO }

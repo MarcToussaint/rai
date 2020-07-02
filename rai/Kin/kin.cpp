@@ -2272,17 +2272,54 @@ void rai::Configuration::init(const Graph& G, bool addInsteadOfClear) {
     if(n->graph().findNode("%body") || n->graph().findNode("%shape") || n->graph().findNode("%joint")
        || n->key=="joint" || n->key=="shape") continue;
     //    CHECK_EQ(n->keys(0),"frame","");
-    CHECK_LE(n->parents.N, 1, "frames must have no or one parent: specs=" <<*n <<' ' <<n->index);
+    CHECK_LE(n->parents.N, 2, "frames must have no or one parent: specs=" <<*n <<' ' <<n->index);
 
-    Frame* b = nullptr;
-    if(!n->parents.N) b = new Frame(*this);
-    else if(n->parents.N==1) b = new Frame(node2frame(n->parents(0)->index)); //getFrameByName(n->parents(0)->key));
-    else HALT("a frame can only have one parent");
-    node2frame(n->index) = b;
-    b->name=n->key;
-    b->ats.copy(n->graph(), false, true);
-    //    if(n->keys.N>2) b->ats.newNode<bool>(n->key);
-    b->read(b->ats);
+    if(n->parents.N<=1){ //normal frame
+
+      Frame* b = nullptr;
+      if(!n->parents.N) b = new Frame(*this);
+      else if(n->parents.N==1) b = new Frame(node2frame(n->parents(0)->index)); //getFrameByName(n->parents(0)->key));
+      else HALT("a frame can only have one parent");
+      node2frame(n->index) = b;
+      b->name=n->key;
+      b->ats.copy(n->graph(), false, true);
+      b->read(b->ats);
+
+    }else{ //this is an inserted joint -> 2 frames (pre-joint and joint)
+
+      Frame* from = node2frame(n->parents(0)->index);
+      Frame* to   = node2frame(n->parents(1)->index);
+      CHECK(from, "JOINT: from '" <<n->parents(0)->key <<"' does not exist ["<<*n <<"]");
+      CHECK(to, "JOINT: to '" <<n->parents(1)->key <<"' does not exist ["<<*n <<"]");
+
+      //generate a pre node
+      Frame* pre = from;
+      if(n->graph().findNode("A")){
+        pre = new Frame(from);
+        pre->name = n->key;
+        pre->name <<"_pre";
+        pre->set_Q()->read(n->graph().get<rai::String>("A"));
+        n->graph().delNode(n->graph().findNode("A"));
+        n->graph().index();
+      }
+
+      //generate a frame, as below
+      Frame* b = new Frame(pre);
+      node2frame(n->index) = b;
+      b->name=n->key;
+
+      //connect the post node and impose the post node relative transform
+      to->linkFrom(b, false);
+      if(n->graph().findNode("B")){
+        to->set_Q()->read(n->graph().get<rai::String>("B"));
+        n->graph().delNode(n->graph().findNode("B"));
+        n->graph().index();
+      }
+
+      b->ats.copy(n->graph(), false, true);
+      b->read(b->ats);
+
+    }
   }
 
   NodeL ss = G.getNodesWithTag("%shape");
