@@ -39,9 +39,10 @@ struct PhysXSingleton{
 
   void create(){
     mFoundation = PxCreateFoundation(PX_FOUNDATION_VERSION, gDefaultAllocatorCallback, gDefaultErrorCallback);
-    mPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *mFoundation, PxTolerancesScale());
+    PxTolerancesScale scale;
+    mPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *mFoundation, scale);
     PxCookingParams cookParams(mPhysics->getTolerancesScale());
-    cookParams.skinWidth = .001f;
+//    cookParams.skinWidth = .001f;
     mCooking = PxCreateCooking(PX_PHYSICS_VERSION, *mFoundation, cookParams);
     if(!mCooking) HALT("PxCreateCooking failed!");
     if(!mPhysics) HALT("Error creating PhysX3 device.");
@@ -91,7 +92,7 @@ PxConvexMesh* createConvexMesh(PxPhysics& physics, PxCooking& cooking, const PxV
   convexDesc.points.count     = vertCount;
   convexDesc.points.stride    = sizeof(PxVec3);
   convexDesc.points.data      = verts;
-  convexDesc.flags        = flags;
+  convexDesc.flags            = flags;
 
   PxDefaultMemoryOutputStream buf;
   if(!cooking.cookConvexMesh(convexDesc, buf))
@@ -158,6 +159,7 @@ PhysXInterface::PhysXInterface(const rai::Configuration& C, int verbose): self(n
   //-- Create the scene
   PxSceneDesc sceneDesc(physxSingleton().mPhysics->getTolerancesScale());
   sceneDesc.gravity = PxVec3(0.f, 0.f, -9.8f);
+  sceneDesc.bounceThresholdVelocity = 10.;
 
   if(!sceneDesc.cpuDispatcher) {
     PxDefaultCpuDispatcher* mCpuDispatcher = PxDefaultCpuDispatcherCreate(1);
@@ -563,7 +565,8 @@ void PhysXInterface_self::addLink(rai::Frame* f, int verbose) {
       PxMaterial* mMaterial = defaultMaterial;
       double fric=-1.;
       if(s->frame.ats.get<double>(fric, "friction")) {
-        mMaterial = physxSingleton().mPhysics->createMaterial(fric, fric, .1f);
+        double rest=s->frame.ats.get<double>("restitution", 0.1);
+        mMaterial = physxSingleton().mPhysics->createMaterial(fric, fric, rest);
       }
 
       PxShape* shape = actor->createShape(*geometry, *mMaterial);
@@ -581,7 +584,7 @@ void PhysXInterface_self::addLink(rai::Frame* f, int verbose) {
 
   if(type != rai::BT_static) {
     if(f->inertia && f->inertia->mass>0.) {
-      PxRigidBodyExt::setMassAndUpdateInertia(*actor, f->inertia->mass);
+      PxRigidBodyExt::updateMassAndInertia(*actor, f->inertia->mass);
     } else {
       PxRigidBodyExt::updateMassAndInertia(*actor, 1.f);
     }
