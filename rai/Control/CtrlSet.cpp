@@ -23,15 +23,17 @@ void CtrlSet::report(std::ostream& os){
 bool isFeasible(const CtrlSet& CS, const ConfigurationL& Ctuple, bool initOnly, double eqPrecision){
   bool isFeasible=true;
   for(const auto& o: CS.objectives){
-    if(o->transientStep>0. && o->movingTarget->isTransient){ isFeasible=false; break; }
-    if( (!initOnly || o->transientStep<=0.) && (o->type==OT_ineq || o->type==OT_eq)){
-      arr y;
-      o->feat->__phi(y, NoArr, Ctuple);
-      if(o->type==OT_ineq){
-        for(double& yi : y) if(yi>0.){ isFeasible=false; break; }
-      }
-      if(o->type==OT_eq){
-        for(double& yi : y) if(fabs(yi)>eqPrecision){ isFeasible=false; break; }
+    if(o->type==OT_ineq || o->type==OT_eq){
+      if(o->transientStep>0. && o->movingTarget->isTransient){ isFeasible=false; break; }
+      if(!initOnly || o->transientStep<=0.){
+        arr y;
+        o->feat->__phi(y, NoArr, Ctuple);
+        if(o->type==OT_ineq){
+          for(double& yi : y) if(yi>0.){ isFeasible=false; break; }
+        }
+        if(o->type==OT_eq){
+          for(double& yi : y) if(fabs(yi)>eqPrecision){ isFeasible=false; break; }
+        }
       }
     }
     if(!isFeasible) break;

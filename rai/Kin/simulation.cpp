@@ -387,6 +387,7 @@ struct Simulation_DisplayThread : Thread, GLDrawer {
     gl.add(*this);
     gl.camera.setDefault();
     threadLoop();
+    while(step_count<2) rai::wait(.05);
   }
 
   ~Simulation_DisplayThread() {

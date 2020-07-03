@@ -57,7 +57,7 @@ void CtrlProblem::update(rai::Configuration& C) {
 
     if(o->movingTarget){
       o->y_buffer = o->getValue(*this);
-      ActStatus s_new = o->movingTarget->step(o->feat->target, tau, o->y_buffer, o->feat->scale);
+      ActStatus s_new = o->movingTarget->step(tau, o, komo.configurations);
       if(o->status != s_new){
         o->status = s_new;
         //callbacks
@@ -93,7 +93,7 @@ arr CtrlProblem::solve() {
   opt.stopGTolerance = 1e-4;
 //  opt.stopIters = 2;
 //  opt.nonStrictSteps=-1;
-//  opt.maxStep = .1*tau; //maxVel*tau;
+  opt.maxStep = .1; //*tau; //maxVel*tau;
 //  opt.maxStep = 1.;
 //  komo.verbose=4;
   komo.optimize(0., opt);

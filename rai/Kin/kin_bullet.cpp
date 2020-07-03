@@ -15,9 +15,9 @@
 
 // ============================================================================
 
-constexpr float gravity = -10.0f;
-constexpr float groundRestitution = 0.1f;
-constexpr float objectRestitution = 0.001f;
+constexpr float gravity = -9.8f;
+constexpr float groundRestitution = .1f;
+constexpr float objectRestitution = .1f;
 
 // ============================================================================
 
@@ -256,9 +256,12 @@ btRigidBody* BulletInterface_self::addLink(rai::Frame* f, int verbose) {
   }
   body->setFriction(fric);
   body->setRollingFriction(.01);
-//  body->setSpinningFriction(.01);
-//  body->setContactStiffnessAndDamping(btScalar stiffness, btScalar damping)
-//  body->setRestitution(objectRestitution);
+  body->setSpinningFriction(.01);
+//  cout <<body->getContactStiffness() <<endl;
+//  cout <<body->getContactDamping() <<endl;
+//  body->setContactStiffnessAndDamping(1e4, 1e-1);
+//  body->setContactStiffnessAndDamping(1e7, 3e4);
+  body->setRestitution(objectRestitution);
   dynamicsWorld->addRigidBody(body);
 
   if(type==rai::BT_kinematic) {
