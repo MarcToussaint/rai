@@ -84,7 +84,7 @@ struct Imp_OpenGripper : SimulationImp {
 
 struct Imp_ObjectImpulses : SimulationImp {
   Frame *obj;
-  uint count=0;
+  double timeToImpulse=0.;
 
   Imp_ObjectImpulses(Frame* _obj) : obj(_obj) { CHECK(obj, "");  when = _beforePhysics;  }
   virtual void modConfiguration(Simulation& S, double tau);
@@ -577,10 +577,10 @@ void Imp_OpenGripper::modConfiguration(Simulation& S, double tau) {
 //===========================================================================
 
 void Imp_ObjectImpulses::modConfiguration(Simulation& S, double tau){
-  count ++;
-  if(count<100) return;
+  timeToImpulse -= tau;
+  if(timeToImpulse>0.) return;
 
-  count=0;
+  timeToImpulse = 1.;
 
   arr vel = randn(3);
   if(vel(2)<0.) vel(2)=0.;

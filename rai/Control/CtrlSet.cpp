@@ -29,7 +29,7 @@ bool isFeasible(const CtrlSet& CS, const ConfigurationL& Ctuple, bool initOnly, 
         arr y;
         o->feat->__phi(y, NoArr, Ctuple);
         if(o->type==OT_ineq){
-          for(double& yi : y) if(yi>0.){ isFeasible=false; break; }
+          for(double& yi : y) if(yi>eqPrecision){ isFeasible=false; break; }
         }
         if(o->type==OT_eq){
           for(double& yi : y) if(fabs(yi)>eqPrecision){ isFeasible=false; break; }
