@@ -328,7 +328,7 @@ struct KOMO : NonCopyable {
     virtual void phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, ObjectiveTypeA& tt, const arr& x);
   } komo_problem;
 
-  //this treats EACH time slice as its own variable... tricky
+  //this treats each time slice as its own variable - default
   struct Conv_KOMO_StructuredProblem : MathematicalProgram_Structured {
     KOMO& komo;
 

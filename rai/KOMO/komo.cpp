@@ -1642,6 +1642,7 @@ void KOMO::checkGradients() {
 #else
     double tolerance=1e-4;
 
+    ptr<MathematicalProgram_Structured> SP;
     ptr<MathematicalProgram> CP;
 
     if(solver==rai::KS_none) {
@@ -1649,7 +1650,13 @@ void KOMO::checkGradients() {
     }else if(solver==rai::KS_dense || solver==rai::KS_sparse) {
       CP = make_shared<Conv_KOMO_SparseUnstructured>(*this, solver==rai::KS_sparse);
     }else if(solver==rai::KS_banded) {
-      CP = make_shared<Conv_KOMOProblem_MathematicalProgram>(komo_problem);
+      SP = make_shared<Conv_KOMO_StructuredProblem>(*this);
+      auto BP = make_shared<Conv_Structured_BandedProgram>(*SP, 0);
+      BP->maxBandSize = (k_order+1)*max(BP->variableDimensions);
+      CP = BP;
+    }else if(solver==rai::KS_sparseStructured) {
+      SP = make_shared<Conv_KOMO_StructuredProblem>(*this);
+      CP = make_shared<Conv_Structured_BandedProgram>(*SP, 0, true);
     }
 
     VectorFunction F = [CP](arr& phi, arr& J, const arr& x) {
@@ -1665,11 +1672,11 @@ void KOMO::checkGradients() {
       double md=maxDiff(J[i], JJ[i], &j);
       if(md>mmd) mmd=md;
       if(md>tolerance && md>fabs(J(i, j))*tolerance) {
-//        if(!denseOptimization) {
-          LOG(-1) <<"FAILURE in line " <<i <<" t=" <</*CP_komo.featureTimes(i) <<*/' ' <<komo_problem.featureNames(i) <<" -- max diff=" <<md <<" |"<<J(i, j)<<'-'<<JJ(i, j)<<"| (stored in files z.J_*)";
-//        } else {
-//          LOG(-1) <<"FAILURE in line " <<i <<" t=" <</*CP_komo.featureTimes(i) <<' ' <<komo_problem.featureNames(i) <<*/" -- max diff=" <<md <<" |"<<J(i, j)<<'-'<<JJ(i, j)<<"| (stored in files z.J_*)";
-//        }
+      if(komo_problem.featureNames.N) {
+        LOG(-1) <<"FAILURE in line " <<i <<" t=" <</*CP_komo.featureTimes(i) <<*/' ' <<komo_problem.featureNames(i) <<" -- max diff=" <<md <<" |"<<J(i, j)<<'-'<<JJ(i, j)<<"| (stored in files z.J_*)";
+      } else {
+        LOG(-1) <<"FAILURE in line " <<i <<" t=" <</*CP_komo.featureTimes(i) <<' ' <<komo_problem.featureNames(i) <<*/" -- max diff=" <<md <<" |"<<J(i, j)<<'-'<<JJ(i, j)<<"| (stored in files z.J_*)";
+      }
         J[i] >>FILE("z.J_analytical");
         JJ[i] >>FILE("z.J_empirical");
         //cout <<"\nmeasured grad=" <<JJ <<"\ncomputed grad=" <<J <<endl;

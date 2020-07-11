@@ -39,6 +39,7 @@ void TEST(Align){
   rai::Configuration C("arm.g");
   cout <<"configuration space dim=" <<C.getJointStateDimension() <<endl;
   KOMO komo;
+  komo.solver = rai::KS_sparseStructured;
   komo.verbose=1;
   komo.setModel(C);
   komo.setTiming(1., 100, 5., 2);
@@ -50,6 +51,8 @@ void TEST(Align){
   komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1.});
 
   komo.optimize();
+//  komo.checkGradients();
+
   komo.plotTrajectory();
   rai::ConfigurationViewer V;
   V.setPath(C, komo.x, "result", true);

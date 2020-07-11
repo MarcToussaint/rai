@@ -116,6 +116,8 @@ void Conv_Structured_BandedProgram::evaluate(arr& phi, arr& J, const arr& x){
     if(!!J) CHECK_EQ(J_i.elem(i).d0, d, "");
   }
 
+  if(!J) return;
+
   if(sparseNotBanded){
     //count non-zeros!
     uint k=0;
@@ -135,24 +137,24 @@ void Conv_Structured_BandedProgram::evaluate(arr& phi, arr& J, const arr& x){
     k=0;
     for(uint i=0; i<J_i.N; i++) { //loop over features
       arr& Ji = J_i(i);
+      uint f_dim = featureDimensions(i);
+      intA& vars = featureVariables(i);
       if(!isSparseVector(Ji)) {
         CHECK(!isSpecial(Ji), "");
         uint c=0;
-        for(int& j:featureVariables(i)) if(j>=0) { //loop over variables of this features
-            uint xj_dim = variableDimensions(j);
-            for(uint xi=0; xi<xj_dim; xi++) { //loop over variable dimension
-              uint f_dim = featureDimensions(i);
-              for(uint fi=0; fi<f_dim; fi++) { //loop over feature dimension
-                double J_value = Ji.elem(c);
-                if(J_value) {
-                  uint jj = varDimIntegral(j) + xi;
-                  J.sparse().entry(featDimIntegral(i)+fi, jj, k) = J_value;
-                  k++;
-                }
-                c++;
+        for(uint fi=0; fi<f_dim; fi++) { //loop over feature dimension
+          for(int& j:vars) if(j>=0) { //loop over variables of this features
+            uint x_dim = variableDimensions.elem(j);
+            for(uint xi=0; xi<x_dim; xi++) { //loop over variable dimension
+              double J_value = Ji.elem(c);
+              if(J_value) {
+                J.sparse().entry(featDimIntegral.elem(i)+fi, varDimIntegral.elem(j)+xi, k) = J_value;
+                k++;
               }
+              c++;
             }
           }
+        }
         CHECK_EQ(c, Ji.N, "you didn't count through all indexes");
       } else { //sparse vector
         for(uint l=0; l<Ji.N; l++) {
@@ -195,8 +197,8 @@ void Conv_Structured_BandedProgram::evaluate(arr& phi, arr& J, const arr& x){
           else Jaux->rowShift(j) = varDimIntegral(t);
         }
       }
+      Jaux->reshift();
+      Jaux->computeColPatches(true);
     }
-    Jaux->reshift();
-    Jaux->computeColPatches(true);
   }
 }
