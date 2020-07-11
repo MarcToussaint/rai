@@ -84,6 +84,7 @@ int rai::ConfigurationViewer::setPath(ConfigurationL& Cs, const char* text, bool
 }
 
 int rai::ConfigurationViewer::setPath(rai::Configuration& _C, const arr& jointPath, const char* text, bool watch, bool full){
+  setConfiguration(_C, 0, false);
   CHECK(C.frames.N, "setPath requires that you setConfiguration first");
 
   arr X(jointPath.d0, _C.frames.N, 7);

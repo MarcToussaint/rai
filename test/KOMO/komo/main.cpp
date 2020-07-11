@@ -1,6 +1,7 @@
 #include <KOMO/komo.h>
 #include <Kin/TM_default.h>
 #include <Kin/F_PairCollision.h>
+#include <Kin/viewer.h>
 
 //===========================================================================
 
@@ -38,6 +39,7 @@ void TEST(Align){
   rai::Configuration C("arm.g");
   cout <<"configuration space dim=" <<C.getJointStateDimension() <<endl;
   KOMO komo;
+  komo.verbose=1;
   komo.setModel(C);
   komo.setTiming(1., 100, 5., 2);
   komo.add_qControlObjective({}, 2, 1.);
@@ -49,7 +51,9 @@ void TEST(Align){
 
   komo.optimize();
   komo.plotTrajectory();
-  for(uint i=0;i<2;i++) komo.displayTrajectory();
+  rai::ConfigurationViewer V;
+  V.setPath(C, komo.x, "result", true);
+//  for(uint i=0;i<2;i++) komo.displayTrajectory();
 }
 
 //===========================================================================
@@ -211,11 +215,11 @@ void TEST(PR2){
 int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
-  rnd.clockSeed();
+//  rnd.clockSeed();
 
 //  testEasy();
-//  testAlign();
-  testThin();
+  testAlign();
+//  testThin();
 //  testPR2();
 
   return 0;

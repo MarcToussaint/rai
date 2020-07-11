@@ -90,6 +90,12 @@ void writeSkeleton(std::ostream& os, const Skeleton& S, const intA& switches= {}
 
 //===========================================================================
 
+namespace rai {
+  enum KOMOsolver { KS_none=-1, KS_dense=0, KS_sparse, KS_banded, KS_sparseStructured };
+}
+
+//===========================================================================
+
 struct KOMO : NonCopyable {
 
   //-- the problem definition
@@ -110,8 +116,9 @@ struct KOMO : NonCopyable {
   rai::Array<ptr<GroundedObjective>> objs;
 
   //-- optimizer
-  bool denseOptimization=false;///< calls optimization with a dense (instead of banded) representation
-  bool sparseOptimization=false;///< calls optimization with a sparse (instead of banded) representation
+  rai::KOMOsolver solver=rai::KS_banded;
+//  bool denseOptimization=false;///< calls optimization with a dense (instead of banded) representation
+//  bool sparseOptimization=false;///< calls optimization with a sparse (instead of banded) representation
   OptConstrained *opt=0;       ///< optimizer; created in run()
   arr x, dual;                 ///< the primal and dual solution
   arr z, splineB;              ///< when a spline representation is used: z are the nodes; splineB the B-spline matrix; x = splineB * z
@@ -307,13 +314,13 @@ struct KOMO : NonCopyable {
 //  void setState(const arr& x, const uintA& selectedVariablesOnly=NoUintA);            ///< set the state trajectory of all configurations
   uint dim_x(uint t) { return configurations(t+k_order)->getJointStateDimension(); }
 
-  struct Conv_KOMO_KOMOProblem : KOMO_Problem {
+  struct Conv_KOMO_KOMOProblem_toBeRetired : KOMO_Problem {
     KOMO& komo;
     uint dimPhi;
     uintA phiIndex, phiDim;
     StringA featureNames;
     
-    Conv_KOMO_KOMOProblem(KOMO& _komo) : komo(_komo) {}
+    Conv_KOMO_KOMOProblem_toBeRetired(KOMO& _komo) : komo(_komo) {}
     void clear(){ dimPhi=0; phiIndex.clear(); phiDim.clear(); featureNames.clear(); }
 
     virtual uint get_k() { return komo.k_order; }
@@ -321,28 +328,88 @@ struct KOMO : NonCopyable {
     virtual void phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, ObjectiveTypeA& tt, const arr& x);
   } komo_problem;
 
-  struct Conv_KOMO_DenseProblem : MathematicalProgram {
+  //this treats EACH time slice as its own variable... tricky
+  struct Conv_KOMO_StructuredProblem : MathematicalProgram_Structured {
     KOMO& komo;
+
+    struct VariableIndexEntry{ uint t; uint dim; uint xIndex; };
+    rai::Array<VariableIndexEntry> variableIndex;
+
+    struct FeatureIndexEntry{ ptr<Objective> ob; ConfigurationL Ctuple; uint t; intA varIds; uint dim; uint phiIndex; };
+    rai::Array<FeatureIndexEntry> featureIndex;
+
+    uintA xIndex2VarId;
+    uint featuresDim;
+
+    Conv_KOMO_StructuredProblem(KOMO& _komo);
+
+    virtual uint getDimension();
+    virtual void getFeatureTypes(ObjectiveTypeA& featureTypes);
+    virtual void getBounds(arr& bounds_lo, arr& bounds_up);
+    virtual arr getInitializationSample();
+    virtual void getStructure(uintA& variableDimensions, uintA& featureDimensions, intAA& featureVariables);
+
+    virtual void setSingleVariable(uint var_id, const arr& x); //set a single variable block
+    virtual void evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H); //get a single feature block
+  };
+
+  //this treats EACH JOINT and dof as its own variable... tricky
+  struct Conv_KOMO_FineStructuredProblem : MathematicalProgram_Structured {
+    KOMO& komo;
+    uintA xIndex2VarId;
+    struct VariableIndexEntry{ rai::Joint *joint=0; rai::ForceExchange *force=0; uint dim; uint xIndex; };
+    rai::Array<VariableIndexEntry> variableIndex;
+
+    uint featuresDim;
+    struct FeatureIndexEntry{ ptr<Objective> ob; ConfigurationL Ctuple; uint t; uint dim; intA varIds; };
+    rai::Array<FeatureIndexEntry> featureIndex;
+
+    Conv_KOMO_FineStructuredProblem(KOMO& _komo);
+
+    ///-- signature/structure of the mathematical problem
+    virtual uint getDimension();
+    virtual void getFeatureTypes(ObjectiveTypeA& featureTypes);
+    virtual void getBounds(arr& bounds_lo, arr& bounds_up);
+//    virtual arr getInitializationSample();
+    virtual void getStructure(uintA& variableDimensions, uintA& featureDimensions, intAA& featureVariables);
+
+    ///--- evaluation
+
+    //unstructured (batch) interface (where J may/should be sparse! and H optional
+//    virtual void evaluate(arr& phi, arr& J, const arr& x); //default implementation: if isStructured, gets everything from there
+
+    //structured (local) interface
+    virtual void setSingleVariable(uint var_id, const arr& x); //set a single variable block
+    virtual void evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H); //get a single feature block
+
+    void reportFeatures();
+  };
+
+  struct Conv_KOMO_SparseUnstructured : MathematicalProgram {
+    KOMO& komo;
+    bool sparse;
     uint dimPhi=0;
 
     arr quadraticPotentialLinear, quadraticPotentialHessian;
 
-    Conv_KOMO_DenseProblem(KOMO& _komo) : komo(_komo) {}
+    Conv_KOMO_SparseUnstructured(KOMO& _komo, bool sparse=true) : komo(_komo), sparse(sparse) {}
     void clear(){ dimPhi=0; }
 
     void getDimPhi();
 
     virtual uint getDimension(){ return komo.getPath_totalDofs(); }
     virtual void getFeatureTypes(ObjectiveTypeA& ft);
+    virtual void getBounds(arr& bounds_lo, arr& bounds_up);
+    virtual arr getInitializationSample();
     virtual void evaluate(arr& phi, arr& J, const arr& x);
     virtual void getFHessian(arr& H, const arr& x);
-  } dense_problem;
+  };
 
-  struct Conv_KOMO_GraphProblem : GraphProblem {
+  struct Conv_KOMO_GraphProblem_toBeRetired : GraphProblem {
     KOMO& komo;
     uint dimPhi=0;
 
-    Conv_KOMO_GraphProblem(KOMO& _komo) : komo(_komo) {}
+    Conv_KOMO_GraphProblem_toBeRetired(KOMO& _komo) : komo(_komo) {}
     void clear(){ dimPhi=0; }
 
     virtual void getStructure(uintA& variableDimensions, intAA& featureVariables, ObjectiveTypeA& featureTypes);
@@ -351,7 +418,7 @@ struct KOMO : NonCopyable {
     virtual void setPartialX(const uintA& whichX, const arr& x);
     virtual void getPartialPhi(arr& phi, arrA& J, arrA& H, const uintA& whichPhi);
     virtual void getSemantics(StringA& varNames, StringA& phiNames);
-  } graph_problem;
+  };
 
   struct TimeSliceProblem : MathematicalProgram {
     KOMO& komo;
@@ -367,42 +434,5 @@ struct KOMO : NonCopyable {
     virtual void evaluate(arr& phi, arr& J, const arr& x);
   };
 
-  struct Conv_KOMO_MathematicalProgram : MathematicalProgram {
-    KOMO& komo;
-    uintA xIndex2VarId;
-    struct VariableIndexEntry{ rai::Joint *joint=0; rai::ForceExchange *force=0; uint dim; uint xIndex; };
-    rai::Array<VariableIndexEntry> variableIndex;
-
-    uint featuresDim;
-    struct FeatureIndexEntry{ ptr<Objective> ob; ConfigurationL Ctuple; uint t; uint dim; intA varIds; };
-    rai::Array<FeatureIndexEntry> featureIndex;
-
-    Conv_KOMO_MathematicalProgram(KOMO& _komo) : komo(_komo) {}
-
-  private:
-    void createIndices();
-
-  public:
-    ///-- signature/structure of the mathematical problem
-    virtual uint getDimension();
-    virtual void getBounds(arr& bounds_lo, arr& bounds_up);
-    virtual void getFeatureTypes(ObjectiveTypeA& featureTypes);
-    virtual bool isStructured();
-    virtual void getStructure(uintA& variableDimensions, //the size of each variable block
-                              uintA& featureDimensions,  //the size of each feature block
-                              intAA& featureVariables     //which variables the j-th feature block depends on
-                              );
-
-    ///--- evaluation
-
-    //unstructured (batch) interface (where J may/should be sparse! and H optional
-    virtual void evaluate(arr& phi, arr& J, const arr& x); //default implementation: if isStructured, gets everything from there
-
-    //structured (local) interface
-    virtual void setSingleVariable(uint var_id, const arr& x); //set a single variable block
-    virtual void evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H); //get a single feature block
-
-    void reportFeatures();
-  };
 };
 

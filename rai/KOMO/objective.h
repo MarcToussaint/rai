@@ -20,9 +20,9 @@ struct Objective {
   Objective(const ptr<Feature>& _feat, const ObjectiveType& _type, const rai::String& _name=rai::String()) : feat(_feat), type(_type), name(_name) {}
   ~Objective() {}
 
-  void setCostSpecs(int fromStep, int toStep, bool sparse=false);
+  void setCostSpecs(int fromStep, int toStep, bool tuples=false);
   void setCostSpecs(const arr& times, int stepsPerPhase, uint T,
-                    int deltaFromStep=0, int deltaToStep=0, bool sparse=false);
+                    int deltaFromStep=0, int deltaToStep=0, bool tuples=false);
   bool isActive(uint t);
   void write(std::ostream& os) const;
 };

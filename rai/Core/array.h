@@ -236,7 +236,7 @@ template<class T> struct Array : std::vector<T>, Serializable {
   void append(const T& x, uint multiple);
   void append(const Array<T>& x);
   void append(const T* p, uint n);
-  void prepend(const T& x) { insert(0, x); }
+  Array<T>& prepend(const T& x) { insert(0, x); return *this; }
   void prepend(const Array<T>& x) { insert(0, x); }
   void replicate(uint copies);
   void insert(uint i, const T& x);
