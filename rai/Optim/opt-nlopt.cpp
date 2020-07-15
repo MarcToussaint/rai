@@ -7,11 +7,16 @@ struct FuncCallData{
   uint feature=0;
 };
 
-void NLOptInterface::solve(){
+arr NLOptInterface::solve(){
   arr x = P.getInitializationSample();
   arr blo,bup;
   P.getBounds(blo, bup);
+  for(uint i=0;i<blo.N;i++){
+    if(blo.elem(i)>=bup.elem(i)){ blo.elem(i) = -100.;  bup.elem(i) = 100.; }
+  }
 
+//  nlopt::opt opt(nlopt::LD_SLSQP, x.N);
+//  nlopt::opt opt(nlopt::LD_MMA, x.N);
   nlopt::opt opt(nlopt::LD_AUGLAG, x.N);
 
 //  nlopt::opt subopt(nlopt::LD_MMA, x.N);
@@ -20,21 +25,23 @@ void NLOptInterface::solve(){
 
   opt.set_min_objective(_f, this);
   opt.set_xtol_abs(1e-3);
+//  opt.set_ftol_abs(1e-3);
   if(blo.N==x.N) opt.set_lower_bounds(blo);
   if(bup.N==x.N) opt.set_upper_bounds(bup);
 
   rai::Array<FuncCallData> funcCallData(featureTypes.N);
   for(uint i=0;i<featureTypes.N;i++){
-    FuncCallData *d = &funcCallData.elem(i);
-    d->I = this;
-    d->feature = i;
-    if(featureTypes.elem(i) == OT_ineq) opt.add_inequality_constraint(_g, d);
-    if(featureTypes.elem(i) == OT_eq  ) opt.add_equality_constraint(_h, d);
+    FuncCallData& d = funcCallData.elem(i);
+    d.I = this;
+    d.feature = i;
+    if(featureTypes.elem(i) == OT_ineq) opt.add_inequality_constraint(_g, &d);
+    if(featureTypes.elem(i) == OT_eq  ) opt.add_equality_constraint(_h, &d);
   }
 
   double fval;
   nlopt::result R = opt.optimize(x, fval);
   cout <<"f:" <<opt.last_optimum_value() <<endl;
+  return x;
 }
 
 
@@ -48,7 +55,7 @@ double NLOptInterface::f(const std::vector<double>& _x, std::vector<double>& _gr
     if(featureTypes.elem(i)==OT_sos){ double y = phi_x.elem(i);  fval += y*y;  if(grad.N) grad += (2.*y) * J_x[i]; }
   }
   for(uint i=0;i<grad.N;i++) _grad[i] = grad.elem(i);
-  cout <<fval <<endl;
+//  cout <<fval <<endl;
   return fval;
 }
 

@@ -91,7 +91,7 @@ void writeSkeleton(std::ostream& os, const Skeleton& S, const intA& switches= {}
 //===========================================================================
 
 namespace rai {
-  enum KOMOsolver { KS_none=-1, KS_dense=0, KS_sparse, KS_banded, KS_sparseStructured };
+  enum KOMOsolver { KS_none=-1, KS_dense=0, KS_sparse, KS_banded, KS_sparseStructured, KS_NLopt };
 }
 
 //===========================================================================

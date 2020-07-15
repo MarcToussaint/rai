@@ -10,7 +10,7 @@ struct NLOptInterface {
     P.getFeatureTypes(featureTypes);
   }
 
-  void solve();
+  arr solve();
 
 private:
   double f(const std::vector<double> &_x, std::vector<double> &_grad);

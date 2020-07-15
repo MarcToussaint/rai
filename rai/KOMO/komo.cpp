@@ -32,6 +32,7 @@
 #include "../Optim/optimization.h"
 #include "../Optim/primalDual.h"
 #include "../Optim/GraphOptim.h"
+#include "../Optim/opt-nlopt.h"
 
 #include <iomanip>
 
@@ -1516,7 +1517,12 @@ void KOMO::run(const OptOptions options) {
       opt->logFile = logFile;
       opt->run();
     }
-  }
+  }else if(solver==rai::KS_NLopt){
+    Conv_KOMO_SparseUnstructured P(*this, false);
+    NLOptInterface nlopt(P);
+    x = nlopt.solve();
+    set_x(x);
+  }else NIY;
   runTime = rai::realTime() - timeZero;
   if(logFile)(*logFile) <<"\n] #end of KOMO_run_log" <<endl;
   if(verbose>0) {
