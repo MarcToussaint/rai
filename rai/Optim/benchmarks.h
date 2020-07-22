@@ -9,7 +9,7 @@
 #pragma once
 
 #include "optimization.h"
-#include "newOptim.h"
+#include "MathematicalProgram.h"
 #include "KOMO_Problem.h"
 
 extern ScalarFunction RosenbrockFunction();
@@ -36,7 +36,7 @@ struct MP_TrivialSquareFunction : MathematicalProgram {
     featureTypes = consts<ObjectiveType>(OT_sos, dim);
   }
 
-  void evaluate(arr& phi, arr& J, arr& H, const arr& x) {
+  void evaluate(arr& phi, arr& J, const arr& x) {
     phi = x;
     if(!!J) J.setId(x.N);
   }
@@ -45,7 +45,7 @@ struct MP_TrivialSquareFunction : MathematicalProgram {
 
 //===========================================================================
 
-struct RandomLPFunction : ConstrainedProblem {
+struct RandomLPFunction : MathematicalProgram {
   arr randomG;
 
   RandomLPFunction() {}
@@ -83,7 +83,7 @@ struct RandomLPFunction : ConstrainedProblem {
 
 //===========================================================================
 
-struct ChoiceConstraintFunction : ConstrainedProblem {
+struct ChoiceConstraintFunction : MathematicalProgram {
   enum WhichConstraint { wedge2D=1, halfcircle2D, randomLinear, circleLine2D } which;
   uint n;
   arr randomG;
@@ -91,24 +91,45 @@ struct ChoiceConstraintFunction : ConstrainedProblem {
     which = (WhichConstraint) rai::getParameter<int>("constraintChoice");
     n = rai::getParameter<uint>("dim", 2);
   }
-  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x) {
-    CHECK_EQ(x.N, n, "");
-    phi.clear();  if(!!tt) tt.clear();  if(!!J) J.clear();
+  void getFeatureTypes(ObjectiveTypeA& tt){
+    tt.clear();
+    tt.append(OT_f);
+    switch(which) {
+      case wedge2D:
+        tt.append(consts(OT_ineq, n));
+        break;
+      case halfcircle2D:
+        tt.append(OT_ineq);
+        tt.append(OT_ineq);
+        break;
+      case circleLine2D:
+        tt.append(OT_ineq);
+        tt.append(OT_eq);
+        break;
+      case randomLinear:
+        tt.append(consts(OT_ineq, randomG.d0));
+        break;
+    }
+  }
 
-    phi.append(ChoiceFunction()(J, H, x)); if(!!tt) tt.append(OT_f);
+  void evaluate(arr& phi, arr& J, const arr& x) {
+    CHECK_EQ(x.N, n, "");
+    phi.clear();  if(!!J) J.clear();
+
+    phi.append(ChoiceFunction()(J, NoArr, x));
 
     switch(which) {
       case wedge2D:
-        for(uint i=0; i<x.N; i++) { phi.append(-sum(x)+1.5*x(i)-.2); if(!!tt) tt.append(OT_ineq); }
+        for(uint i=0; i<x.N; i++) { phi.append(-sum(x)+1.5*x(i)-.2); }
         if(!!J) { arr Jg(x.N, x.N); Jg=-1.; for(uint i=0; i<x.N; i++) Jg(i, i) = +.5; J.append(Jg); }
         break;
       case halfcircle2D:
-        phi.append(sumOfSqr(x)-.25);  if(!!tt) tt.append(OT_ineq);  if(!!J) J.append(2.*x);       //feasible=IN circle of radius .5
-        phi.append(-x(0)-.2);         if(!!tt) tt.append(OT_ineq);  if(!!J) { J.append(zeros(x.N)); J.elem(-x.N) = -1.; }      //feasible=right of -.2
+        phi.append(sumOfSqr(x)-.25);  if(!!J) J.append(2.*x);       //feasible=IN circle of radius .5
+        phi.append(-x(0)-.2);         if(!!J) { J.append(zeros(x.N)); J.elem(-x.N) = -1.; }      //feasible=right of -.2
         break;
       case circleLine2D:
-        phi.append(sumOfSqr(x)-.25);  if(!!tt) tt.append(OT_ineq);  if(!!J) J.append(2.*x);       //feasible=IN circle of radius .5
-        phi.append(x(0));             if(!!tt) tt.append(OT_eq);    if(!!J) { J.append(zeros(x.N)); J.elem(-x.N) = 1.; }
+        phi.append(sumOfSqr(x)-.25);  if(!!J) J.append(2.*x);       //feasible=IN circle of radius .5
+        phi.append(x(0));             if(!!J) { J.append(zeros(x.N)); J.elem(-x.N) = 1.; }
         break;
       case randomLinear: {
         if(!randomG.N) {
@@ -121,14 +142,16 @@ struct ChoiceConstraintFunction : ConstrainedProblem {
         }
         CHECK_EQ(randomG.d1, x.N+1, "you changed dimensionality");
         phi.append(randomG * cat({1.}, x));
-        if(!!tt) tt.append(consts(OT_ineq, randomG.d0));
         if(!!J) J.append(randomG.sub(0, -1, 1, -1));
       } break;
     }
 
     if(!!J) J.reshape(J.N/x.N, x.N);
   }
-  virtual uint dim_x() {
+  void getFHessian(arr& H, const arr& x){
+    ChoiceFunction()(NoArr, H, x);
+  }
+  virtual uint getDimension() {
     return n;
   }
 //  virtual uint dim_g(){
@@ -145,15 +168,14 @@ struct ChoiceConstraintFunction : ConstrainedProblem {
 
 //===========================================================================
 
-struct SimpleConstraintFunction : ConstrainedProblem {
+struct SimpleConstraintFunction : MathematicalProgram {
   SimpleConstraintFunction() {
   }
-  virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& _x) {
+  virtual void getFeatureTypes(ObjectiveTypeA &tt){ tt = { OT_sos, OT_sos, OT_ineq, OT_ineq }; }
+  virtual void evaluate(arr& phi, arr& J, const arr& _x) {
     CHECK_EQ(_x.N, 2, "");
-    if(!!tt) tt = { OT_sos, OT_sos, OT_ineq, OT_ineq };
     phi.resize(4);
     if(!!J) { J.resize(4, 2); J.setZero(); }
-    if(!!H) { H=zeros(4, 4); }
 
     //simple squared potential, displaced by 1
     arr x(_x);

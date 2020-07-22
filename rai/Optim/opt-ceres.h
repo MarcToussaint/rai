@@ -1,6 +1,6 @@
 #pragma once
 
-#include "newOptim.h"
+#include "MathematicalProgram.h"
 
 namespace ceres{
   class Problem;
@@ -9,13 +9,13 @@ namespace ceres{
 //===========================================================================
 
 struct Conv_MatematicalProgram_CeresProblem {
-  std::shared_ptr<MathematicalProgram> MP;
+  std::shared_ptr<MathematicalProgram_Structured> MP;
 
-  uintA variableDimensions, featureDimensions, variableDimIntegral;
+  uintA variableDimensions, featureDimensions, variableDimIntegral, featureDimIntegral;
   intAA featureVariables;
   ObjectiveTypeA featureTypes;
 
-  arr x_base;
+  arr x_full, phi_full;
   arr bounds_lo, bounds_up;
   arrA x;
   arrA phi;
@@ -23,5 +23,5 @@ struct Conv_MatematicalProgram_CeresProblem {
 
   ptr<ceres::Problem> ceresProblem;
 
-  Conv_MatematicalProgram_CeresProblem(const ptr<MathematicalProgram>& _MP);
+  Conv_MatematicalProgram_CeresProblem(const ptr<MathematicalProgram_Structured>& _MP);
 };

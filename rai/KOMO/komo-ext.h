@@ -25,17 +25,35 @@ void addMotionTo(KOMO& komo, const arr& target_q, const StringA& target_joints, 
 struct KOMO_ext : KOMO {
 
   void setConfigFromFile();
+//  void setPathOpt(double _phases, uint stepsPerPhase=20, double timePerPhase=5.){ setTiming(_phases, stepsPerPhase, timePerPhase, 2); }
+  void setSquaredQAccVelHoming(double startTime=0., double endTime=-1., double accPrec=1., double velPrec=0., double homingPrec=1e-2, int deltaFromStep=0, int deltaToStep=0);
+//  void setSquaredQAccelerations(double startTime=0., double endTime=-1., double prec=1.);
 
   //should be done by set model
   void useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThese=true);
 
   //-- tasks mid-level
+  void setHoming(double startTime=0., double endTime=-1., double prec=1e-1, const char* keyword="robot");
+  void setHoldStill(double startTime, double endTime, const char* shape, double prec=1e1);
   void setPosition(double startTime, double endTime, const char* shape, const char* shapeRel=nullptr, ObjectiveType type=OT_sos, const arr& target=NoArr, double prec=1e2);
   void setOrientation(double startTime, double endTime, const char* shape, const char* shapeRel, ObjectiveType type=OT_sos, const arr& target=NoArr, double prec=1e2);
   void setVelocity(double startTime, double endTime, const char* shape, const char* shapeRel=nullptr, ObjectiveType type=OT_sos, const arr& target=NoArr, double prec=1e2);
   void setAlign(double startTime, double endTime, const char* shape,  const arr& whichAxis=ARR(1., 0., 0.), const char* shapeRel=nullptr, const arr& whichAxisRel=ARR(1., 0., 0.), ObjectiveType type=OT_sos, const arr& target=ARR(1.), double prec=1e2);
   void setAlignedStacking(double time, const char* object, ObjectiveType type=OT_sos, double prec=1e2);
   void setLastTaskToBeVelocity();
+
+
+  //-- core objective symbols of skeletons
+  void add_touch(double startTime, double endTime, const char* shape1, const char* shape2, ObjectiveType type=OT_eq, const arr& target=NoArr, double prec=1e2);
+  void add_aboveBox(double startTime, double endTime, const char* shape1, const char* shape2, double prec=1e1);
+  void add_insideBox(double startTime, double endTime, const char* shape1, const char* shape2, double prec=1e1);
+//  void add_impulse(double time, const char* shape1, const char* shape2, ObjectiveType type=OT_eq, double prec=1e1);
+  void add_stable(double time,  const char* shape1, const char* shape2, ObjectiveType type=OT_eq, double prec=1e1);
+
+  //dinos... can't get rid of them yet
+  void setGraspSlide(double time, const char* stick, const char* object, const char* placeRef, int verbose=0);
+  void setPush(double startTime, double endTime, const char* stick, const char* object, const char* table, int verbose=0);
+  void setKS_slider(double time, double endTime, bool before, const char* obj, const char* slider, const char* table);
 
   //===========================================================================
   //

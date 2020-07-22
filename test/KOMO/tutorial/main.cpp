@@ -14,8 +14,6 @@ void tutorialBasics(){
    * 2) the timing parameters (duration/phases, number os time slices per phase)
    * 3) the tasks */
 
-  komo.sparseOptimization = true;
-
   //-- setting the model; false -> NOT calling collision detection (SWIFT) -> faster
   komo.setModel(C, false);
 
@@ -23,8 +21,8 @@ void tutorialBasics(){
   komo.setTiming(2, 20, 5., 2);
 
   //-- default tasks for transition costs
-  komo.setSquaredQAccVelHoming();
-  komo.setSquaredQuaternionNorms(-1., -1., 1e1); //when the kinematics includes quaternion joints, keep them roughly regularized
+  komo.add_qControlObjective({}, 2, 1.);
+  komo.addSquaredQuaternionNorms(-1., -1., 1e1); //when the kinematics includes quaternion joints, keep them roughly regularized
 
   //-- simple tasks, called low-level
 
@@ -39,8 +37,7 @@ void tutorialBasics(){
   komo.setSlow(1., -1., 1e1);
 
   //-- call the optimizer
-  komo.reset();
-  komo.run();
+  komo.optimize();
   //  komo.checkGradients(); //this checks all gradients of the problem by finite difference
   komo.getReport(true); //true -> plot the cost curves
   for(uint i=0;i<2;i++) komo.displayTrajectory(.1, true); //play the trajectory
@@ -84,16 +81,15 @@ void tutorialInverseKinematics(){
   komo.setTiming(1., 1, 1., 1);
 
   //-- default tasks for transition costs
-  komo.setSquaredQAccVelHoming(1., -1., 0., 1., 1e-2);
-  komo.setSquaredQuaternionNorms(-1., -1., 1e3); //when the kinematics includes quaternion joints, keep them roughly regularized
+  komo.add_qControlObjective({}, 1, 1.);
+  komo.addSquaredQuaternionNorms(-1., -1., 1e3); //when the kinematics includes quaternion joints, keep them roughly regularized
 
   //-- simple tasks, called low-level
   komo.addObjective({}, FS_positionDiff, {"endeff", "target"}, OT_eq, {1e0});
   komo.addObjective({}, FS_quaternionDiff, {"endeff", "target"}, OT_eq, {1e1});
 
   //-- call the optimizer
-  komo.reset();
-  komo.run();
+  komo.optimize();
   //  komo.checkGradients(); //this checks all gradients of the problem by finite difference
   komo.getReport(); //true -> plot the cost curves
   for(uint i=0;i<2;i++) komo.displayTrajectory(.1, true); //play the trajectory

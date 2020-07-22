@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "../Core/array.h"
+#include "MathematicalProgram.h"
 
 //===========================================================================
 //
@@ -23,24 +23,12 @@ typedef std::function<double(arr& df, arr& Hf, const arr& x)> ScalarFunction;
 /// Gauss-Newton type where the Hessian is approximated by J^T J
 typedef std::function<void(arr& y, arr& Jy, const arr& x)> VectorFunction;
 
-/// symbols to declare of which type an objective feature is
-enum ObjectiveType { OT_none=0, OT_f, OT_sos, OT_ineq, OT_eq };
-typedef rai::Array<ObjectiveType> ObjectiveTypeA;
-extern ObjectiveTypeA& NoObjectiveTypeA;
 
-/** A ConstrainedProblem returns a feature vector $phi$ and optionally its Jacobian $J$. For each entry of
- *  this feature vector $tt(i)$ determins whether this is an inequality constraint, an equality constraint,
- *  a sumOfSqr or "direct-f" cost feature. The latter two define the objective function as
- *  $f(x) = f_j(x) + \sum_i \phi_i(x)^2$, where the sum only goes over sumOfSqr features, and f_j is a
- *  direct-f feature (tt(i)==OT_f). The direct-f feature is special: there may only exist a single such
- *  feature; and if there exists this feature the returned Hessian $H$ needs to be its hessian.
- *  For the sumOfSqr features no Hessian is returned: we assume the Gauss-Newton approximation.
- */
-struct ConstrainedProblem {
-  //TODO: add getStructure -> dim_x, tt
-  virtual ~ConstrainedProblem() = default;
-  virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& ot, const arr& x) = 0;
-};
+//struct ConstrainedProblem {
+//  //TODO: add getStructure -> dim_x, tt
+//  virtual ~ConstrainedProblem() = default;
+//  virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& ot, const arr& x) = 0;
+//};
 
 //===========================================================================
 //
@@ -49,10 +37,27 @@ struct ConstrainedProblem {
 
 typedef std::function<void(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x)> ConstrainedProblemLambda;
 
-struct Conv_Lambda_ConstrainedProblem : ConstrainedProblem {
+struct Conv_Lambda_ConstrainedProblem : MathematicalProgram {
   ConstrainedProblemLambda f;
   Conv_Lambda_ConstrainedProblem(const ConstrainedProblemLambda& f): f(f) {}
-  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& ot, const arr& x) { f(phi, J, H, ot, x); }
+  void getFeatureTypes(ObjectiveTypeA& ot) { f(NoArr, NoArr, NoArr, ot, NoArr); }
+  void evaluate(arr& phi, arr& J, const arr& x) { f(phi, J, NoArr, NoObjectiveTypeA, x); }
+};
+
+struct Conv_ScalarProblem_MathematicalProgram : MathematicalProgram {
+  ScalarFunction f;
+  uint xDim;
+  Conv_ScalarProblem_MathematicalProgram(const ScalarFunction& f, uint xDim): f(f), xDim(xDim) {}
+  uint getDimension(){ return xDim; }
+  void getFeatureTypes(ObjectiveTypeA& ot) { ot = {OT_f}; }
+  void evaluate(arr& phi, arr& J, const arr& x) {
+    double y = f(J, NoArr, x);
+    phi = {y};
+    J.reshape(1, x.N);
+  }
+  void getFHessian(arr &H, const arr &x) {
+    f(NoArr, H, x);
+  }
 };
 
 //===========================================================================
@@ -60,8 +65,8 @@ struct Conv_Lambda_ConstrainedProblem : ConstrainedProblem {
 // checks, evaluation
 //
 
-bool checkJacobianCP(ConstrainedProblem& P, const arr& x, double tolerance);
-bool checkHessianCP(ConstrainedProblem& P, const arr& x, double tolerance);
+bool checkJacobianCP(MathematicalProgram& P, const arr& x, double tolerance);
+bool checkHessianCP(MathematicalProgram& P, const arr& x, double tolerance);
 bool checkDirectionalGradient(const ScalarFunction& f, const arr& x, const arr& delta, double tolerance);
 bool checkDirectionalJacobian(const VectorFunction& f, const arr& x, const arr& delta, double tolerance);
 
@@ -136,7 +141,7 @@ extern Singleton<OptOptions> globalOptOptions;
 #include "newton.h"
 #include "gradient.h"
 //#include "lagrangian.h"
-#include "convert.h"
+//#include "convert.h"
 //uint optGradDescent(arr& x, const ScalarFunction& f, OptOptions opt);
 
 //===========================================================================

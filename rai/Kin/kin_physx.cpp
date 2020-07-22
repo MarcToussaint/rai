@@ -39,9 +39,10 @@ struct PhysXSingleton{
 
   void create(){
     mFoundation = PxCreateFoundation(PX_FOUNDATION_VERSION, gDefaultAllocatorCallback, gDefaultErrorCallback);
-    mPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *mFoundation, PxTolerancesScale());
+    PxTolerancesScale scale;
+    mPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *mFoundation, scale);
     PxCookingParams cookParams(mPhysics->getTolerancesScale());
-    cookParams.skinWidth = .001f;
+//    cookParams.skinWidth = .001f;
     mCooking = PxCreateCooking(PX_PHYSICS_VERSION, *mFoundation, cookParams);
     if(!mCooking) HALT("PxCreateCooking failed!");
     if(!mPhysics) HALT("Error creating PhysX3 device.");
@@ -91,7 +92,7 @@ PxConvexMesh* createConvexMesh(PxPhysics& physics, PxCooking& cooking, const PxV
   convexDesc.points.count     = vertCount;
   convexDesc.points.stride    = sizeof(PxVec3);
   convexDesc.points.data      = verts;
-  convexDesc.flags        = flags;
+  convexDesc.flags            = flags;
 
   PxDefaultMemoryOutputStream buf;
   if(!cooking.cookConvexMesh(convexDesc, buf))
@@ -137,7 +138,7 @@ struct PhysXInterface_self {
 
 //  debugger::comm::PvdConnection* connection = nullptr;
 
-  void addLink(rai::Frame* b, bool verbose);
+  void addLink(rai::Frame* b, int verbose);
   void addJoint(rai::Joint* jj);
 
   void lockJoint(PxD6Joint* joint, rai::Joint* rai_joint);
@@ -146,10 +147,10 @@ struct PhysXInterface_self {
 
 // ============================================================================
 
-PhysXInterface::PhysXInterface(const rai::Configuration& C, bool verbose): self(nullptr) {
+PhysXInterface::PhysXInterface(const rai::Configuration& C, int verbose): self(nullptr) {
   self = new PhysXInterface_self;
 
-  if(verbose) LOG(0) <<"starting PhysX engine ...";
+  if(verbose>0) LOG(0) <<"starting PhysX engine ...";
 
   if(!physxSingleton().mFoundation) physxSingleton().create();
 
@@ -158,6 +159,7 @@ PhysXInterface::PhysXInterface(const rai::Configuration& C, bool verbose): self(
   //-- Create the scene
   PxSceneDesc sceneDesc(physxSingleton().mPhysics->getTolerancesScale());
   sceneDesc.gravity = PxVec3(0.f, 0.f, -9.8f);
+  sceneDesc.bounceThresholdVelocity = 10.;
 
   if(!sceneDesc.cpuDispatcher) {
     PxDefaultCpuDispatcher* mCpuDispatcher = PxDefaultCpuDispatcherCreate(1);
@@ -191,8 +193,8 @@ PhysXInterface::PhysXInterface(const rai::Configuration& C, bool verbose): self(
   CHECK(planeShape, "create shape failed!");
   self->gScene->addActor(*plane);
 
-  if(verbose) LOG(0) <<"... done starting PhysX engine";
-  if(verbose) LOG(0) <<"creating Configuration within PhysX ...";
+  if(verbose>0) LOG(0) <<"... done starting PhysX engine";
+  if(verbose>0) LOG(0) <<"creating Configuration within PhysX ...";
 
   //-- create Configuration equivalent in PhysX
   // loop through Configuration
@@ -203,7 +205,7 @@ PhysXInterface::PhysXInterface(const rai::Configuration& C, bool verbose): self(
   for(rai::Frame* a : links) self->addLink(a, verbose);
   //  for(rai::Joint *j : C.activeJoints) self->addJoint(j); //DONT ADD JOINTS!!!!
 
-  if(verbose) LOG(0) <<"... done creating Configuration within PhysX";
+  if(verbose>0) LOG(0) <<"... done creating Configuration within PhysX";
 
   /// save data for the PVD
   //  if(rai::getParameter<bool>("physx_debugger", false)) {
@@ -265,6 +267,17 @@ void PhysXInterface::changeObjectType(rai::Frame* f, int _type){
   self->actorTypes(f->ID) = type;
 }
 
+void PhysXInterface::postAddObject(rai::Frame* f){
+  while(self->actors.N<=f->ID) self->actors.append(0);
+  while(self->actorTypes.N<=f->ID) self->actorTypes.append(rai::BT_none);
+  CHECK(!f->joint, "");
+  f->ensure_X();
+  if(!self->actors(f->ID)){
+    self->addLink(f, true);
+  }else{
+    HALT("NO!");
+  }
+}
 
 void PhysXInterface::pushKinematicStates(const FrameL& frames) {
   for(rai::Frame* f: frames) {
@@ -462,7 +475,7 @@ void PhysXInterface_self::unlockJoint(PxD6Joint* joint, rai::Joint* rai_joint) {
   }
 }
 
-void PhysXInterface_self::addLink(rai::Frame* f, bool verbose) {
+void PhysXInterface_self::addLink(rai::Frame* f, int verbose) {
   //-- collect all shapes of that link
   FrameL parts = {f};
   f->getRigidSubFrames(parts);
@@ -476,7 +489,7 @@ void PhysXInterface_self::addLink(rai::Frame* f, bool verbose) {
     if(f->inertia) type = f->inertia->type;
   }
   actorTypes(f->ID) = type;
-  if(verbose) LOG(0) <<"adding link anchored at '" <<f->name <<"' as " <<rai::Enum<rai::BodyType>(type);
+  if(verbose>0) LOG(0) <<"adding link anchored at '" <<f->name <<"' as " <<rai::Enum<rai::BodyType>(type);
 
   //-- create a PhysX actor
   PxRigidDynamic* actor=nullptr;
@@ -552,7 +565,8 @@ void PhysXInterface_self::addLink(rai::Frame* f, bool verbose) {
       PxMaterial* mMaterial = defaultMaterial;
       double fric=-1.;
       if(s->frame.ats.get<double>(fric, "friction")) {
-        mMaterial = physxSingleton().mPhysics->createMaterial(fric, fric, .1f);
+        double rest=s->frame.ats.get<double>("restitution", 0.1);
+        mMaterial = physxSingleton().mPhysics->createMaterial(fric, fric, rest);
       }
 
       PxShape* shape = actor->createShape(*geometry, *mMaterial);
@@ -570,7 +584,7 @@ void PhysXInterface_self::addLink(rai::Frame* f, bool verbose) {
 
   if(type != rai::BT_static) {
     if(f->inertia && f->inertia->mass>0.) {
-      PxRigidBodyExt::setMassAndUpdateInertia(*actor, f->inertia->mass);
+      PxRigidBodyExt::updateMassAndInertia(*actor, f->inertia->mass);
     } else {
       PxRigidBodyExt::updateMassAndInertia(*actor, 1.f);
     }
@@ -709,13 +723,14 @@ void PhysXInterface::addForce(rai::Vector& force, rai::Frame* b, rai::Vector& po
 #else //RAI_PHYSX
 
 #include "kin_physx.h"
-PhysXInterface::PhysXInterface(const rai::Configuration& C, bool verbose) : self(nullptr) { NICO }
+PhysXInterface::PhysXInterface(const rai::Configuration& C, int verbose) : self(nullptr) { NICO }
 PhysXInterface::~PhysXInterface() { NICO }
 
 void PhysXInterface::step(double tau) { NICO }
 void PhysXInterface::pushKinematicStates(const FrameL& frames) { NICO }
 void PhysXInterface::pushFullState(const FrameL& frames, const arr& vels, bool onlyKinematic) { NICO }
 void PhysXInterface::pullDynamicStates(FrameL& frames, arr& vels) { NICO }
+void PhysXInterface::postAddObject(rai::Frame* f){ NICO }
 
 void PhysXInterface::changeObjectType(rai::Frame* f, int _type){ NICO }
 void PhysXInterface::setArticulatedBodiesKinematic(const rai::Configuration& C) { NICO }

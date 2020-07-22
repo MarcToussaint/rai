@@ -235,7 +235,7 @@ const std::vector<FOL_World::Handle> FOL_World::get_actions() {
     decisions.append(Handle(new Decision(true, nullptr, {}, decisions.N))); //the wait decision (true as first argument, no rule, no substitution)
   }
   for(Node* rule:decisionRules) {
-    NodeL subs = getRuleSubstitutions2(*state, rule, verbose-3);
+    NodeL subs = getRuleSubstitutions2(*state, rule->graph(), verbose-3);
     for(uint s=0; s<subs.d0; s++) {
       decisions.append(Handle(new Decision(false, rule, subs[s], decisions.N))); //a grounded rule decision (abstract rule with substution)
     }

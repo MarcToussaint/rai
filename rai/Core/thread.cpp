@@ -25,6 +25,13 @@
 
 #ifndef RAI_MSVC
 
+
+//===========================================================================
+
+template<> const char* rai::Enum<ActStatus>::names []= {
+  "init", "running", "done", "converged", "stalled", "true", "false", "kill", nullptr
+};
+
 //===========================================================================
 //
 // Access RWLock
@@ -249,7 +256,7 @@ int Signaler::waitForStatusSmallerThan(int i, bool userHasLocked, double timeout
 // VariableBase
 //
 
-Var_base::Var_base(const std::type_info& _type, const char* _name) : name(_name) {
+Var_base::Var_base(const char* _name) : name(_name) {
 }
 
 Var_base::~Var_base() {

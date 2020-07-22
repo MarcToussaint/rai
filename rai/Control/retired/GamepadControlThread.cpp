@@ -41,7 +41,7 @@ void GamepadControlThread::step() {
 
     ctrlTasks.writeAccess();
 //    taskController->taskController->qNullCostRef.active = false;
-    for(CtrlTask* t:ctrlTasks()) t->active = false;
+    for(CtrlObjective* t:ctrlTasks()) t->active = false;
     ctrlTasks().append(g2t->getTasks());
     ctrlTasks.deAccess();
   }

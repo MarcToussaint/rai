@@ -17,7 +17,7 @@ class PxMaterial;
 struct PhysXInterface : GLDrawer {
   struct PhysXInterface_self* self=0;
 
-  PhysXInterface(const rai::Configuration& C, bool verbose=false);
+  PhysXInterface(const rai::Configuration& C, int verbose=1);
   ~PhysXInterface();
 
   void step(double tau=.01);
@@ -27,6 +27,7 @@ struct PhysXInterface : GLDrawer {
   void pullDynamicStates(FrameL& frames, arr& frameVelocities=NoArr);
 
   void changeObjectType(rai::Frame* f, int type);
+  void postAddObject(rai::Frame* f);
   void setArticulatedBodiesKinematic(const rai::Configuration& C);
   void ShutdownPhysX();
 

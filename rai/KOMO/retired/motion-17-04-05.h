@@ -118,11 +118,11 @@ struct KOMO {
   } invKin_problem;
   void inverseKinematics(arr& y, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x);
   
-  struct Conv_KOMO_KOMOProblem : KOMO_Problem {
+  struct Conv_KOMO_KOMOProblem_toBeRetired : KOMO_Problem {
     KOMO& MP;
     uint dimPhi;
     
-    Conv_KOMO_KOMOProblem(KOMO& P) : MP(P) {}
+    Conv_KOMO_KOMOProblem_toBeRetired(KOMO& P) : MP(P) {}
     
     virtual uint get_k() { return MP.k_order; }
     virtual void getStructure(uintA& variableDimensions, uintA& featureTimes, ObjectiveTypeA& featureTypes);

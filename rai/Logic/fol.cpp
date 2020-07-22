@@ -122,14 +122,14 @@ bool factsAreEqual(Node* fact, Node* literal, const NodeL& subst, const Graph* s
   return true;
 }
 
-/// try to find a fact within 'facts' that is exactly equal to 'literal'
+/// try to find a fact within 'KB' that is exactly equal to 'fact'
 bool getEqualFactInKB(Graph& KB, Node* fact, bool checkAlsoValue) {
   if(!fact->parents.N) {
     CHECK(fact->isGraph(), "special literals need Graph type");
     Graph& graph=fact->graph();
     //assume this is a special parent!
     if(fact->key=="aggregate") {
-      NodeL subs = getRuleSubstitutions2(KB, fact, 0);
+      NodeL subs = getRuleSubstitutions2(KB, fact->graph(), 0);
       if(graph.last()->key=="count") {
         if(subs.d0 == graph.last()->get<double>()) return true;
         else return false;
@@ -146,8 +146,8 @@ bool getEqualFactInKB(Graph& KB, Node* fact, bool checkAlsoValue) {
 #endif
   //now check only these candidates
   for(Node* fact1:candidates) if(&fact1->container==&KB && fact1!=fact) {
-      if(factsAreEqual(fact, fact1, checkAlsoValue)) return true;
-    }
+    if(factsAreEqual(fact, fact1, checkAlsoValue)) return true;
+  }
   return false;
 }
 
@@ -247,11 +247,16 @@ void removeInfeasibleSymbolsFromDomain(Graph& facts, NodeL& domain, Node* litera
     //-- check that all arguments are the same, except for var!
     bool match=true;
     Node* value=nullptr;
-    for(uint i=0; i<literal->parents.N; i++) {
-      Node* lit_arg = literal->parents(i);
-      Node* fact_arg = fact->parents(i);
-      if(lit_arg==var) value = fact_arg;
-      else if(lit_arg!=fact_arg) { match=false; break; }
+    if(literal->parents.N != fact->parents.N) {
+      match = false;
+    }
+    if(match){
+      for(uint i=0; i<literal->parents.N; i++) {
+        Node* lit_arg = literal->parents(i);
+        Node* fact_arg = fact->parents(i);
+        if(lit_arg==var) value = fact_arg;
+        else if(lit_arg!=fact_arg) { match=false; break; }
+      }
     }
     if(match && !literal->isOfType<bool>()) { //if the literal is boolean, we don't YET check the value (see below)
       if(fact->type!=literal->type) match=false;
@@ -357,10 +362,10 @@ bool applyEffectLiterals(Graph& facts, NodeL& effects, const NodeL& subst, Graph
 }
 
 /// extracts the preconditions of the rule, then returns substitutions
-NodeL getRuleSubstitutions2(Graph& KB, Node* rule, int verbose) {
+NodeL getRuleSubstitutions2(Graph& KB, Graph& rule, int verbose) {
   //-- extract precondition
-  if(verbose>1) { cout <<"Substitutions for rule " <<*rule <<endl; }
-  Graph& preconditions = getFirstNonSymbolOfScope(rule->graph())->graph();
+  if(verbose>1) { cout <<"Substitutions for rule " <<rule <<endl; }
+  Graph& preconditions = getFirstNonSymbolOfScope(rule)->graph();
   if(!preconditions.N) return {};
   return getSubstitutions2(KB, preconditions, verbose);
 }
@@ -562,7 +567,7 @@ bool forwardChaining_FOL(Graph& state, NodeL& rules, Node* query, Graph& changes
     bool newFacts=false;
     for(Node* rule:rules) {
       if(verbose>1) cout <<"Testing Rule " <<*rule <<endl;
-      NodeL subs = getRuleSubstitutions2(state, rule, verbose);
+      NodeL subs = getRuleSubstitutions2(state, rule->graph(), verbose);
       for(uint s=0; s<subs.d0; s++) {
         Node* effect = getSecondNonSymbolOfScope(rule->graph());
         Node* probabilities = rule->graph().last();
@@ -648,7 +653,7 @@ double evaluateFunction(Graph& func, Graph& state, int verbose) {
       if(leaf==treeG.last()) break;
       Graph& leafG = leaf->graph();
       if(verbose>2) LOG(0) <<"testing tree leaf " <<leafG <<endl;
-      NodeL subs = getRuleSubstitutions2(state, leaf, 0); //a leaf is like a rule -> can be tested for substitutions
+      NodeL subs = getRuleSubstitutions2(state, leafG, 0); //a leaf is like a rule -> can be tested for substitutions
       if(subs.d0) {
 //        cout <<"STATE=" <<state <<endl;
         CHECK(leafG.last()->isOfType<double>(), "");

@@ -83,16 +83,16 @@ void LinTaskSpaceAccLaw::setTrajectoryActive(bool active) {
 
 arr LinTaskSpaceAccLaw::getPhi() {
   arr y;
-  this->map->phi(y, NoArr, *this->world);
+  this->feat->phi(y, NoArr, *this->world);
   return y;
 }
 
 void LinTaskSpaceAccLaw::getPhi(arr& y, arr& J) {
-  this->map->phi(y, J, *this->world);
+  this->feat->phi(y, J, *this->world);
 }
 
 uint LinTaskSpaceAccLaw::getPhiDim() {
-  return this->map->dim_phi(*this->world);
+  return this->feat->dim_phi(*this->world);
 }
 
 arr LinTaskSpaceAccLaw::getC() {
@@ -125,7 +125,7 @@ bool LinTaskSpaceAccLaw::getTrajectoryActive() {
 
 double LinTaskSpaceAccLaw::getCosts() {
   arr yAct;
-  this->map->phi(yAct, NoArr, *this->world);
+  this->feat->phi(yAct, NoArr, *this->world);
   NIY;
   return ~yAct*this->C*yAct; //this is murks!!!!!!!!!!!!!! TODO
 }
@@ -206,7 +206,7 @@ void TaskSpaceController::calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, 
   if(this->constrainedTaskLaws.N > 0) {
     CHECK_EQ(this->constrainedTaskLaws.N,  1, "Multiple force laws not allowed at the moment");
     for(ConstrainedTaskLaw* law : this->constrainedTaskLaws) {
-      TM_Default* m = dynamic_cast<TM_Default*>(law->map);
+      TM_Default* m = dynamic_cast<TM_Default*>(law->feat);
       rai::Body* body = this->world->shapes(m->i)->body;
       rai::Vector vec = this->world->shapes(m->i)->rel.pos;
       rai::Shape* lFtSensor = this->world->getShapeByName("l_ft_sensor");

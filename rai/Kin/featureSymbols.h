@@ -47,9 +47,16 @@ enum FeatureSymbol {
   FS_oppose,
 
   FS_qItself,
+  FS_qControl,
 
   FS_aboveBox,
   FS_insideBox,
+
+  FS_pairCollision_negScalar,
+  FS_pairCollision_vector,
+  FS_pairCollision_normal,
+  FS_pairCollision_p1,
+  FS_pairCollision_p2,
 
   FS_standingAbove,
 
@@ -68,4 +75,4 @@ struct Configuration;
 }
 struct Feature;
 
-ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const rai::Configuration& world, const arr& scale=NoArr, const arr& target=NoArr, int order=-1);
+ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const rai::Configuration& C, const arr& scale=NoArr, const arr& target=NoArr, int order=-1);

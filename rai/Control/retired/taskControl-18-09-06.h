@@ -11,16 +11,16 @@
 #include "../Kin/taskMaps.h"
 #include "../Algo/spline.h"
 
-struct CtrlTask;
-typedef rai::Array<CtrlTask*> CtrlTaskL;
+struct CtrlObjective;
+typedef rai::Array<CtrlObjective*> CtrlObjectiveL;
 enum CT_Status { CT_init=-1, CT_running, CT_conv, CT_done, CT_stalled };
 
 //===========================================================================
 
 /// a motion profile is a non-feedback(!) way to generate a task space reference path
 /// [perhaps an adaptive phase, or Peter's adaptation to object motions, could be a modest way to incorporate feedback in the future]
-struct MotionProfile {
-  virtual ~MotionProfile() {}
+struct CtrlMovingTarget {
+  virtual ~CtrlMovingTarget() {}
   virtual CT_Status update(arr& yRef, arr& ydotRef, double tau, const arr& y, const arr& ydot) = 0;
   virtual void setTarget(const arr& ytarget, const arr& vtarget=NoArr) = 0;
   virtual void setTimeScale(double d) = 0;
@@ -30,10 +30,10 @@ struct MotionProfile {
 
 //===========================================================================
 
-struct MotionProfile_Const : MotionProfile {
+struct CtrlReference_Const : CtrlMovingTarget {
   arr y_target;
   bool flipTargetSignOnNegScalarProduct;
-  MotionProfile_Const(const arr& y_target, bool flip=false) : y_target(y_target), flipTargetSignOnNegScalarProduct(flip) {}
+  CtrlReference_Const(const arr& y_target, bool flip=false) : y_target(y_target), flipTargetSignOnNegScalarProduct(flip) {}
   virtual CT_Status update(arr& yRef, arr& ydotRef, double tau, const arr& y, const arr& ydot);
   virtual void setTarget(const arr& ytarget, const arr& vtarget=NoArr) { y_target = ytarget; }
   virtual void setTimeScale(double d) {}
@@ -43,10 +43,10 @@ struct MotionProfile_Const : MotionProfile {
 
 //===========================================================================
 
-struct MotionProfile_Sine : MotionProfile {
+struct CtrlReference_Sine : CtrlMovingTarget {
   arr y_start, y_target, y_err;
   double t, T;
-  MotionProfile_Sine(const arr& y_target, double duration) : y_target(y_target), t(0.), T(duration) {}
+  CtrlReference_Sine(const arr& y_target, double duration) : y_target(y_target), t(0.), T(duration) {}
   virtual CT_Status update(arr& yRef, arr& ydotRef, double tau, const arr& y, const arr& ydot);
   virtual void setTarget(const arr& ytarget, const arr& vtarget=NoArr) { y_target = ytarget; }
   virtual void setTimeScale(double d) { T=d; }
@@ -56,7 +56,7 @@ struct MotionProfile_Sine : MotionProfile {
 
 //===========================================================================
 
-struct MotionProfile_PD: MotionProfile {
+struct CtrlReference_PD: CtrlMovingTarget {
   arr y_ref, v_ref;
   arr y_target, v_target;
   double kp, kd;
@@ -64,9 +64,9 @@ struct MotionProfile_PD: MotionProfile {
   bool flipTargetSignOnNegScalarProduct;
   bool makeTargetModulo2PI;
   double tolerance;
-  MotionProfile_PD();
-  MotionProfile_PD(const arr& _y_target, double decayTime, double dampingRatio, double maxVel=0., double maxAcc=0.);
-  MotionProfile_PD(const Graph& params);
+  CtrlReference_PD();
+  CtrlReference_PD(const arr& _y_target, double decayTime, double dampingRatio, double maxVel=0., double maxAcc=0.);
+  CtrlReference_PD(const Graph& params);
 
   virtual void setTarget(const arr& ytarget, const arr& vtarget=NoArr);
   virtual void setTimeScale(double d) { setGainsAsNatural(d, .9); }
@@ -87,11 +87,11 @@ struct MotionProfile_PD: MotionProfile {
 
 //===========================================================================
 
-struct MotionProfile_Path: MotionProfile {
+struct CtrlReference_Path: CtrlMovingTarget {
   rai::Spline spline;
   double executionTime;
   double phase;
-  MotionProfile_Path(const arr& path, double executionTime);
+  CtrlReference_Path(const arr& path, double executionTime);
   virtual CT_Status update(arr& yRef, arr& ydotRef, double tau, const arr& y, const arr& ydot);
   virtual void resetState() { NIY }
   virtual bool isDone() { return phase>=1.; }
@@ -101,18 +101,18 @@ struct MotionProfile_Path: MotionProfile {
 
 /** In the given task space, a task can represent: 1) a pos/vel ctrl task
  *  and/or 2) a compliance and/or 3) a force limit control */
-struct CtrlTask {
+struct CtrlObjective {
   Feature* map;      ///< this defines the task space
   rai::String name;  ///< just for easier reporting
   bool active;       ///< also non-active tasks are updates (states evaluated), but don't enter the TaskControlMethods
   CT_Status status;
-  rai::Array<std::function<void(CtrlTask*, int)>> callbacks;
+  rai::Array<std::function<void(CtrlObjective*, int)>> callbacks;
 
   //-- this is always kept up-to-date (in update)
   arr y, v, J_y;     ///< update() will evaluate these for a given kinematic configuration
 
   //-- pos/vel ctrl task
-  MotionProfile* ref;  ///< non-nullptr iff this is a pos/vel task
+  CtrlMovingTarget* ref;  ///< non-nullptr iff this is a pos/vel task
   arr y_ref, v_ref;    ///< update() will define compute these references (reference=NOW, target=FUTURE)
   arr prec;            ///< Cholesky(!) of C, not C itself: sumOfSqr(prec*(y-y_ref)) is the error, and prec*J the Jacobian
   uint hierarchy;      ///< hierarchy level in hiearchycal inverse kinematics: higher = higher priority
@@ -124,10 +124,10 @@ struct CtrlTask {
   arr f_ref;           ///< non-empty iff this is a force limit control task; defines the box limits (abs value in all dimensions)
   double f_alpha, f_gamma; ///< TODO
 
-  CtrlTask(const char* name, Feature* map);
-  CtrlTask(const char* name, Feature* map, double decayTime, double dampingRatio, double maxVel, double maxAcc);
-  CtrlTask(const char* name, Feature* map, const Graph& params);
-  ~CtrlTask();
+  CtrlObjective(const char* name, Feature* map);
+  CtrlObjective(const char* name, Feature* map, double decayTime, double dampingRatio, double maxVel, double maxAcc);
+  CtrlObjective(const char* name, Feature* map, const Graph& params);
+  ~CtrlObjective();
 
   CT_Status update(double tau, const rai::Configuration& world);
   void resetState() { if(ref) ref->resetState(); status=CT_init; }
@@ -135,8 +135,8 @@ struct CtrlTask {
   arr getPrec();
   void getForceControlCoeffs(arr& f_des, arr& u_bias, arr& K_I, arr& J_ft_inv, const rai::Configuration& world);
 
-  MotionProfile_PD& PD();
-  void setRef(MotionProfile* _ref);
+  CtrlReference_PD& PD();
+  void setRef(CtrlMovingTarget* _ref);
   void setTarget(const arr& y_target);
   void setTimeScale(double d) { CHECK(ref, ""); ref->setTimeScale(d); ref->resetState(); }
 
@@ -152,17 +152,17 @@ void fwdSimulateControlLaw(arr& Kp, arr& Kd, arr& u0, rai::Configuration& world)
 
 /// implements a number of basic equations given a set of control tasks
 struct TaskControlMethods {
-  rai::Array<CtrlTask*> tasks;
+  rai::Array<CtrlObjective*> tasks;
   arr Hmetric;           ///< defines the metric in q-space (or qddot-space)
-  CtrlTask qNullCostRef; ///< defines the 'desired behavior' in qddot-space (regularization of operational space control)
+  CtrlObjective qNullCostRef; ///< defines the 'desired behavior' in qddot-space (regularization of operational space control)
   boolA lockJoints;
 
   TaskControlMethods(const rai::Configuration& world);
 
-  CtrlTask* addPDTask(const char* name, double decayTime, double dampingRatio, Feature* map);
+  CtrlObjective* addPDTask(const char* name, double decayTime, double dampingRatio, Feature* map);
 
-  void updateCtrlTasks(double tau, const rai::Configuration& world);
-  void resetCtrlTasksState();
+  void updateCtrlObjectives(double tau, const rai::Configuration& world);
+  void resetCtrlObjectivesState();
 
   void lockJointGroup(const char* groupname, rai::Configuration& world, bool lockThem=true);
 

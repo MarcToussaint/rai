@@ -133,7 +133,7 @@ const rai::Transformation& rai::Frame::ensure_X() {
   return X;
 }
 
-const rai::Transformation& rai::Frame::get_Q() {
+const rai::Transformation& rai::Frame::get_Q() const {
   return Q;
 }
 
@@ -203,7 +203,9 @@ FrameL rai::Frame::getPathToUpwardLink(bool untilPartBreak) {
     if(!untilPartBreak) {
       if(f->joint) break;
     } else {
-      if(f->joint && f->joint->getDimFromType()!=1 && !f->joint->mimic) break;
+      if(f->joint
+              && !(f->joint->type>=JT_hingeX && f->joint->type<=JT_hingeZ)
+              && !f->joint->mimic) break;
     }
     f = f->parent;
   }
@@ -242,9 +244,22 @@ void rai::Frame::_state_setXBadinBranch() {
 
 void rai::Frame::read(const Graph& ats) {
   //interpret some of the attributes
-  if(ats["X"])    set_X()->setText(ats.get<String>("X"));
-  if(ats["pose"]) set_X()->setText(ats.get<String>("pose"));
-  if(ats["Q"])    set_Q()->setText(ats.get<String>("Q"));
+  Node *n;
+  if((n=ats["X"])){
+    if(n->isOfType<String>()) set_X()->read(n->get<String>());
+    else if(n->isOfType<arr>()) set_X()->set(n->get<arr>());
+    else NIY;
+  }
+  if((n=ats["pose"])){
+    if(n->isOfType<String>()) set_X()->read(n->get<String>());
+    else if(n->isOfType<arr>()) set_X()->set(n->get<arr>());
+    else NIY;
+  }
+  if((n=ats["Q"])){
+    if(n->isOfType<String>()) set_Q()->read(n->get<String>());
+    else if(n->isOfType<arr>()) set_Q()->set(n->get<arr>());
+    else NIY;
+  }
 
   if(ats["type"]) ats["type"]->key = "shape"; //compatibility with old convention: 'body { type... }' generates shape
 
@@ -288,9 +303,6 @@ void rai::Frame::read(const Graph& ats) {
 
 void rai::Frame::write(Graph& G) {
   if(parent) G.newNode<rai::String>({"parent"}, {}, parent->name);
-  if(joint) joint->write(G);
-  if(shape) shape->write(G);
-  if(inertia) inertia->write(G);
 
   if(parent) {
     if(!Q.isZero()) G.newNode<arr>({"Q"}, {}, Q.getArr7d());
@@ -298,9 +310,14 @@ void rai::Frame::write(Graph& G) {
     if(!X.isZero()) G.newNode<arr>({"X"}, {}, X.getArr7d());
   }
 
+  if(joint) joint->write(G);
+  if(shape) shape->write(G);
+  if(inertia) inertia->write(G);
+
+
+  StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H", "axis", "A", "B", "mimic"};
   for(Node* n : ats) {
-    StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H", "axis", "A", "B", "mimic"};
-    if(!avoid.contains(n->key)) {
+    if(!n->key.startsWith("%") && !avoid.contains(n->key)) {
       n->newClone(G);
     }
   }
@@ -313,31 +330,20 @@ void rai::Frame::write(std::ostream& os) const {
 
   os <<" \t{ ";
 
+  if(parent) {
+    if(!Q.isZero()) os <<" Q:" <<Q;
+  } else {
+    if(!X.isZero()) os <<" X:" <<X;
+  }
 //  if(parent) os <<"parent:" <<parent->name;
 
   if(joint) joint->write(os);
   if(shape) shape->write(os);
   if(inertia) inertia->write(os);
 
-  if(parent) {
-    if(!Q.isZero()) os <<" Q:<" <<Q <<'>';
-  } else {
-    if(!X.isZero()) os <<" X:<" <<X <<'>';
-  }
-
-//  if(flags) {
-//    Enum<FrameFlagType> fl;
-//    os <<" FLAGS:";
-//    for(int i=0;; i++) {
-//      fl.x = FrameFlagType(i);
-//      if(!fl.name()) break;
-//      if(flags & (1<<fl.x)) os <<' ' <<fl.name();
-//    }
-//  }
-
+  StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H", "axis", "A", "B", "mimic"};
   for(Node* n : ats) {
-    StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H", "axis", "A", "B", "mimic"};
-    if(!avoid.contains(n->key)) os <<", " <<*n;
+    if(!n->key.startsWith("%") && !avoid.contains(n->key)) os <<", " <<*n;
   }
 
   os <<" }\n";
@@ -405,11 +411,13 @@ void rai::Frame::setConvexMesh(const std::vector<double>& points, const std::vec
     getShape().type() = ST_mesh;
     getShape().mesh().V.clear().operator=(points).reshape(-1, 3);
     getShape().mesh().makeConvexHull();
+    getShape().size.clear();
   } else {
     getShape().type() = ST_ssCvx;
     getShape().sscCore().V.clear().operator=(points).reshape(-1, 3);
     getShape().sscCore().makeConvexHull();
     getShape().mesh().setSSCvx(getShape().sscCore().V, radius);
+    getShape().size = ARR(radius);
   }
   if(colors.size()) {
     getShape().mesh().C.clear().operator=(convert<double>(byteA(colors))/255.).reshape(-1, 3);
@@ -432,11 +440,26 @@ void rai::Frame::setContact(int cont) {
 }
 
 void rai::Frame::setMass(double mass) {
-  if(mass<1.){
+  if(mass<0.){
     if(inertia) delete inertia;
   }else{
     getInertia().mass = mass;
   }
+}
+
+void rai::Frame::addAttribute(const char* key, double value){
+  ats.newNode<double>(key, {}, value);
+}
+
+void rai::Frame::setJointState(const std::vector<double>& q){
+  CHECK(joint, "cannot setJointState for a non-joint");
+  CHECK_EQ(q.size(), joint->dim, "given q has wrong dimension");
+  joint->calc_Q_from_q(arr{q}, 0);
+  C._state_q_isGood = false;
+}
+
+arr rai::Frame::getSize() {
+  return getShape().size;
 }
 
 arr rai::Frame::getMeshPoints() {
@@ -445,6 +468,11 @@ arr rai::Frame::getMeshPoints() {
 
 arr rai::Frame::getMeshCorePoints() {
   return getShape().sscCore().V;
+}
+
+arr rai::Frame::getJointState() const {
+  CHECK(joint, "cannot setJointState for a non-joint");
+  return joint->calc_q_from_Q(Q);
 }
 
 /***********************************************************/
@@ -972,7 +1000,12 @@ void rai::Joint::read(const Graph& G) {
     frame->insertPreLink(A);
   }
 
-  if(G["Q"]) frame->set_Q()->setText(G.get<rai::String>("Q"));
+  Node *n;
+  if((n=G["Q"])){
+    if(n->isOfType<String>()) frame->set_Q()->read(n->get<String>());
+    else if(n->isOfType<arr>()) frame->set_Q()->set(n->get<arr>());
+    else NIY;
+  }
   G.get(H, "ctrl_H");
   G.get(scale, "joint_scale");
   if(G.get(d, "joint"))        type=(JointType)d;
@@ -1029,14 +1062,13 @@ void rai::Joint::write(Graph& g) {
 }
 
 void rai::Joint::write(std::ostream& os) const {
-  os <<" joint:" <<type;
+  os <<", joint:" <<type;
   if(H!=1.) os <<", ctrl_H:" <<H;
   if(scale!=1.) os <<", joint_scale:" <<scale;
   if(limits.N) os <<", limits:" <<limits;
   if(mimic) {
     os <<", mimic:(" <<mimic->frame->name <<')';
   }
-  os <<' ';
 }
 
 //===========================================================================
@@ -1089,6 +1121,12 @@ void rai::Shape::read(const Graph& ats) {
     else if(ats.get(fil, "mesh"))     {
       fil.cd_file();
       mesh().read(fil.getIs(), fil.name.getLastN(3).p, fil.name);
+//      cout <<"MESH: " <<mesh().V.dim() <<endl;
+    }
+    if(ats.get(fil, "texture"))     {
+      fil.cd_file();
+      read_png(mesh().texImg, fil.name, true);
+//      cout <<"TEXTURE: " <<mesh().texImg.dim() <<endl;
     }
     if(ats.get(d, "meshscale"))  { mesh().scale(d); }
     if(ats.get(x, "meshscale"))  { mesh().scale(x(0), x(1), x(2)); }
@@ -1138,7 +1176,7 @@ void rai::Shape::read(const Graph& ats) {
 }
 
 void rai::Shape::write(std::ostream& os) const {
-  os <<" shape:" <<_type;
+  os <<", shape:" <<_type;
   if(_type!=ST_mesh) os <<", size:" <<size;
 
   Node* n;
@@ -1146,7 +1184,6 @@ void rai::Shape::write(std::ostream& os) const {
   if((n=frame.ats["mesh"])) os <<", " <<*n;
   if((n=frame.ats["meshscale"])) os <<", " <<*n;
   if(cont) os <<", contact:" <<(int)cont;
-  os <<',';
 }
 
 void rai::Shape::write(Graph& g) {

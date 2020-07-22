@@ -10,8 +10,8 @@
 void init_Frame(pybind11::module &m) {
 pybind11::class_<ry::RyFrame>(m, "Frame")
 .def("setPointCloud", [](ry::RyFrame& self, const pybind11::array& points, const pybind11::array_t<byte>& colors) {
-  arr _points = numpy2arr(points);
-  byteA _colors = numpy2arr(colors);
+  arr _points = numpy2arr<double>(points);
+  byteA _colors = numpy2arr<byte>(colors);
   WToken<rai::Configuration> token(*self.config, &self.config->data);
   self.frame->setPointCloud(_points, _colors);
 })
@@ -64,6 +64,11 @@ pybind11::arg("size")
   self.frame->setJoint(jointType);
 })
 
+.def("setJointState", [](ry::RyFrame& self, const std::vector<double>& q) {
+  WToken<rai::Configuration> token(*self.config, &self.config->data);
+  self.frame->setJointState(q);
+})
+
 .def("setContact", [](ry::RyFrame& self, int cont) {
   WToken<rai::Configuration> token(*self.config, &self.config->data);
   self.frame->setContact(cont);
@@ -72,6 +77,11 @@ pybind11::arg("size")
 .def("setMass", [](ry::RyFrame& self, double mass) {
   WToken<rai::Configuration> token(*self.config, &self.config->data);
   self.frame->setMass(mass);
+})
+
+.def("addAttribute", [](ry::RyFrame& self, const char* key, double value) {
+  WToken<rai::Configuration> token(*self.config, &self.config->data);
+  self.frame->addAttribute(key, value);
 })
 
 .def("getPosition", [](ry::RyFrame& self) {
@@ -101,6 +111,18 @@ pybind11::arg("size")
 .def("getRelativeQuaternion", [](ry::RyFrame& self) {
   RToken<rai::Configuration> token(*self.config, &self.config->data);
   arr x = self.frame->getRelativeQuaternion();
+  return pybind11::array_t<double>(x.dim(), x.p);
+})
+
+.def("getJointState", [](ry::RyFrame& self) {
+  RToken<rai::Configuration> token(*self.config, &self.config->data);
+  arr x = self.frame->getJointState();
+  return pybind11::array_t<double>(x.dim(), x.p);
+})
+
+.def("getSize", [](ry::RyFrame& self) {
+  RToken<rai::Configuration> token(*self.config, &self.config->data);
+  arr x = self.frame->getSize();
   return pybind11::array_t<double>(x.dim(), x.p);
 })
 

@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "MathematicalProgram.h"
 #include "optimization.h"
 
 //==============================================================================
@@ -18,8 +19,8 @@
 // that can include lagrange terms, penalties, log barriers, and augmented lagrangian terms
 //
 
-struct LagrangianProblem : ScalarFunction { //TODO: rename: UnconstrainedLagrangianProblem
-  ConstrainedProblem& P;
+struct LagrangianProblem : ScalarFunction, MathematicalProgram { //TODO: rename: UnconstrainedLagrangianProblem
+  MathematicalProgram& P;
 
   //-- parameters of the unconstrained (Lagrangian) scalar function
   double muLB;       ///< log barrier weight
@@ -34,7 +35,11 @@ struct LagrangianProblem : ScalarFunction { //TODO: rename: UnconstrainedLagrang
 
   ostream* logFile=nullptr;  ///< file for logging
 
-  LagrangianProblem(ConstrainedProblem& P, OptOptions opt=NOOPT, arr& lambdaInit=NoArr);
+  LagrangianProblem(MathematicalProgram& P, OptOptions opt=NOOPT, arr& lambdaInit=NoArr);
+
+  virtual void getFeatureTypes(ObjectiveTypeA& featureTypes);  //the number and type of all features (sos, ineq, eq, or f)
+  virtual void evaluate(arr& phi, arr& J, const arr& x);       //evaluate all features and (optionally) their Jacobians for state x
+  virtual void getFHessian(arr& H, const arr& x);              //the Hessian of the sum of all f-features (or Hessian in addition to the Gauss-Newton Hessian of all other features)
 
   double lagrangian(arr& dL, arr& HL, const arr& x); ///< CORE METHOD: the unconstrained scalar function F
 

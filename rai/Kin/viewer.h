@@ -10,11 +10,13 @@ struct ConfigurationViewer : GLDrawer {
   ~ConfigurationViewer();
 
   int setConfiguration(rai::Configuration& _C, const char* text=0, bool watch=false);
-  void setPath(ConfigurationL& Cs, const char* text=0, bool watch=false);
-  void setPath(rai::Configuration& _C, const arr& jointPath, const char* text=0, bool watch=false, bool full=true);
-  void setPath(const arr& _framePath, const char* text=0, bool watch=false, bool full=true);
-  bool playVideo(bool watch=false, double delay=1., const char* saveVideoPath=nullptr); ///< display the trajectory; use "vid/z." as vid prefix
+  int setPath(ConfigurationL& Cs, const char* text=0, bool watch=false);
+  int setPath(rai::Configuration& _C, const arr& jointPath, const char* text=0, bool watch=false, bool full=true);
+  int setPath(const arr& _framePath, const char* text=0, bool watch=false, bool full=true);
+  bool playVideo(bool watch=false, double delay=1., const char* saveVideoPath=nullptr); ///< display the trajectory; use "z.vid/" as vid prefix
   rai::Camera& displayCamera();   ///< access to the display camera to change the view
+  byteA getScreenshot();
+  void savePng(const char* saveVideoPath="z.vid/");
   void recopyMeshes(rai::Configuration& _C);
 
   int update(bool watch=false);
@@ -39,6 +41,7 @@ private://draw data
   int tprefix;
   bool writeToFiles;
   String text;
+  uint pngCount=0;
 };
 
 }

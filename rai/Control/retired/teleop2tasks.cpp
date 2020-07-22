@@ -69,7 +69,7 @@ Teleop2Tasks::Teleop2Tasks(TaskControlMethods& _MP, const rai::Configuration& K)
   base->active =false;
 }
 
-CtrlTaskL Teleop2Tasks::getTasks() {
+CtrlObjectiveL Teleop2Tasks::getTasks() {
   return { effPosR, gripperR, effOrientationR, effPosL, gripperL, effOrientationL, base }; //, fc
 }
 
@@ -85,7 +85,7 @@ void Teleop2Tasks::deactivateTasks() {
 
 }
 
-void Teleop2Tasks::updateMovement(floatA& cal_pose, arr& old_pos, arr& old_effpos, CtrlTask* effPos) {
+void Teleop2Tasks::updateMovement(floatA& cal_pose, arr& old_pos, arr& old_effpos, CtrlObjective* effPos) {
   arr pos, pos_div;
 
   //get positiondata

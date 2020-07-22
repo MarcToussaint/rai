@@ -157,8 +157,9 @@ struct Configuration : GLDrawer {
   /// @name get state
   uint getJointStateDimension() const;
   const arr& getJointState() const;
-  arr getJointState(const StringA&) const;
+  arr getJointState(const FrameL&) const;
   arr getJointState(const uintA&) const;
+  arr getJointState(const StringA&) const;
   arr getFrameState() const;
   arr naturalQmetric(double power=.5) const;               ///< returns diagonal of a natural metric in q-space, depending on tree depth
   arr getLimits() const;
@@ -218,7 +219,7 @@ struct Configuration : GLDrawer {
   void kinematicsLimitsCost(arr& y, arr& J, const arr& limits, double margin=.1) const;
 
   /// @name features
-  ptr<Feature> feature(FeatureSymbol fs, const StringA& frames= {}) const;
+  std::shared_ptr<Feature> feature(FeatureSymbol fs, const StringA& frames= {}) const;
   void evalFeature(arr& y, arr& J, FeatureSymbol fs, const StringA& frames= {}) const;
 
   /// @name high level inverse kinematics

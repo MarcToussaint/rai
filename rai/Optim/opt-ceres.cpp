@@ -12,8 +12,21 @@
 #include <ceres/solver.h>
 #include <ceres/loss_function.h>
 
+//#undef CHECK
+//#undef CHECK_EQ
+//#undef CHECK_LE
+//#undef CHECK_GE
+//#define CHECK(cond, msg) \
+//  if(!(cond)){ LOG(-2) <<"CHECK failed: '" <<#cond <<"' -- " <<msg;  throw std::runtime_error(rai::errString.p); }
+//#define CHECK_EQ(A, B, msg) \
+//  if(!(A==B)){ LOG(-2) <<"CHECK_EQ failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; throw std::runtime_error(rai::errString.p); }
+//#define CHECK_GE(A, B, msg) \
+//  if(!(A>=B)){ LOG(-2) <<"CHECK_GE failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; throw std::runtime_error(rai::errString.p); }
+//#define CHECK_LE(A, B, msg) \
+//  if(!(A<=B)){ LOG(-2) <<"CHECK_LE failed: '" <<#A<<"'=" <<A <<" '" <<#B <<"'=" <<B <<" -- " <<msg; throw std::runtime_error(rai::errString.p); }
+
 class Conv_CostFunction : public ceres::CostFunction {
-  std::shared_ptr<MathematicalProgram> MP;
+  std::shared_ptr<MathematicalProgram_Structured> MP;
   uint feature_id;
   uint featureDim;
   intA varIds;
@@ -21,7 +34,7 @@ class Conv_CostFunction : public ceres::CostFunction {
   uint varTotalDim;
 
 public:
-  Conv_CostFunction(const ptr<MathematicalProgram>& _MP,
+  Conv_CostFunction(const ptr<MathematicalProgram_Structured>& _MP,
                     uint _feature_id,
                     const uintA& variableDimensions,
                     const uintA& featureDimensions,
@@ -32,9 +45,8 @@ public:
                         double** jacobians) const;
 };
 
-Conv_CostFunction::Conv_CostFunction(const ptr<MathematicalProgram>& _MP, uint _feature_id, const uintA& variableDimensions, const uintA& featureDimensions, const intAA& featureVariables)
-  : MP(_MP),
-    feature_id(_feature_id) {
+Conv_CostFunction::Conv_CostFunction(const ptr<MathematicalProgram_Structured>& _MP, uint _feature_id, const uintA& variableDimensions, const uintA& featureDimensions, const intAA& featureVariables)
+  : MP(_MP), feature_id(_feature_id) {
   featureDim = featureDimensions(feature_id);
   varIds = featureVariables(feature_id);
   varDims.resize(varIds.N);
@@ -71,32 +83,37 @@ bool Conv_CostFunction::Evaluate(const double* const * parameters, double* resid
   return true;
 }
 
-Conv_MatematicalProgram_CeresProblem::Conv_MatematicalProgram_CeresProblem(const ptr<MathematicalProgram>& _MP) : MP(_MP) {
+Conv_MatematicalProgram_CeresProblem::Conv_MatematicalProgram_CeresProblem(const ptr<MathematicalProgram_Structured>& _MP) : MP(_MP) {
 
   //you must never ever resize these arrays, as ceres takes pointers directly into these fixed memory buffers!
-  x_base.resize(MP->getDimension());
+  uint n = MP->getDimension();
   MP->getBounds(bounds_lo, bounds_up);
   MP->getFeatureTypes(featureTypes);
   MP->getStructure(variableDimensions, featureDimensions, featureVariables);
-  variableDimIntegral = integral(variableDimensions);
+  variableDimIntegral = integral(variableDimensions).prepend(0);
+  featureDimIntegral = integral(featureDimensions).prepend(0);
 
+  if(n!=variableDimIntegral.last()) throw("");
+  if(featureTypes.N!=featureDimIntegral.last()) throw("");
+
+  x_full.resize(variableDimIntegral.last());
   x.resize(variableDimensions.N);
-  uint n=0;
   for(uint i=0;i<x.N;i++){
-    uint d = variableDimensions(i);
-    x(i).referTo(x_base.p+n, d);
-    n += d;
+    x(i).referTo(x_full.p+variableDimIntegral(i), variableDimensions(i));
   }
-  //CHECK_EQ(n, x_base.N, "");
 
+  phi_full.resize(featureDimIntegral.last());
   phi.resize(featureDimensions.N);
-  for(uint i=0;i<phi.N;i++) phi(i).resize(featureDimensions(i));
+  for(uint i=0;i<phi.N;i++){
+    phi(i).referTo(phi_full.p+featureDimIntegral(i), featureDimensions(i));
+  }
 
+  //we don't have a full Jacobian, as it wouldn't be dense
   J.resize(phi.N);
-  for(uint i=0;i<J.N;i++){
+  for(uint i=0;i<phi.N;i++){
     uint n=0;
     for(uint j : featureVariables(i)) n += variableDimensions(j);
-    J(i).resize(n);
+    J(i).resize(featureDimensions(i), n);
   }
 
   ceresProblem = make_shared<ceres::Problem>();
@@ -104,9 +121,9 @@ Conv_MatematicalProgram_CeresProblem::Conv_MatematicalProgram_CeresProblem(const
   for(arr& xi: x){
     if(xi.N){
       ceresProblem->AddParameterBlock(xi.p, xi.N);
-#if 0 //bounds
+#if 1 //bounds
       for(uint i=0;i<xi.N;i++){
-        uint i_all = i + xi.p-x_base.p;
+        uint i_all = i + xi.p-x_full.p;
         if(bounds_lo(i_all)<bounds_up(i_all)){
           ceresProblem->SetParameterLowerBound(xi.p, i, bounds_lo(i_all));
           ceresProblem->SetParameterUpperBound(xi.p, i, bounds_up(i_all));

@@ -21,13 +21,14 @@
  */
 
 namespace rai {
-struct Frame;
-struct Joint;
-struct Shape;
-struct Inertia;
-struct ForceExchange;
-enum JointType { JT_none=-1, JT_hingeX=0, JT_hingeY=1, JT_hingeZ=2, JT_transX=3, JT_transY=4, JT_transZ=5, JT_transXY=6, JT_trans3=7, JT_transXYPhi=8, JT_universal=9, JT_rigid=10, JT_quatBall=11, JT_phiTransXY=12, JT_XBall, JT_free, JT_tau };
-enum BodyType  { BT_none=-1, BT_dynamic=0, BT_kinematic, BT_static };
+  struct Configuration;
+  struct Frame;
+  struct Joint;
+  struct Shape;
+  struct Inertia;
+  struct ForceExchange;
+  enum JointType { JT_none=-1, JT_hingeX=0, JT_hingeY=1, JT_hingeZ=2, JT_transX=3, JT_transY=4, JT_transZ=5, JT_transXY=6, JT_trans3=7, JT_transXYPhi=8, JT_universal=9, JT_rigid=10, JT_quatBall=11, JT_phiTransXY=12, JT_XBall, JT_free, JT_tau };
+  enum BodyType  { BT_none=-1, BT_dynamic=0, BT_kinematic, BT_static };
 }
 
 typedef rai::Array<rai::Frame*> FrameL;
@@ -67,12 +68,13 @@ struct Transformation_Qtoken {
 
 /// a Frame can have a link (also joint), shape (visual or coll), and/or intertia (mass) attached to it
 struct Frame : NonCopyable {
-  struct Configuration& C;  ///< a Frame is uniquely associated with a KinematicConfiguration
-  uint ID;                   ///< unique identifier
-  String name;               ///< name
-  Frame* parent=nullptr;        ///< parent frame
-  FrameL children;           ///< list of children [TODO: rename]
- protected:
+  Configuration& C;        ///< a Frame is uniquely associated with a Configuration
+  uint ID;                 ///< unique identifier (index in Configuration.frames)
+  String name;             ///< name
+  Frame* parent=nullptr;   ///< parent frame
+  FrameL children;         ///< list of children
+
+protected:
   Transformation Q=0;        ///< relative transform to parent
   Transformation X=0;        ///< frame's absolute pose
   //data structure state (lazy evaluation leave the state structure out of sync)
@@ -83,15 +85,16 @@ struct Frame : NonCopyable {
   //low-level fwd kinematics computation
   void calc_X_from_parent();
   void calc_Q_from_parent(bool enforceWithinJoint = true);
- public:
+
+public:
   double tau=0.;             ///< frame's absolute time (could be thought as part of the transformation X in space-time)
   Graph ats;                 ///< list of any-type attributes
 
   //attachments to the frame
-  Joint* joint=nullptr;         ///< this frame is an articulated joint
-  Shape* shape=nullptr;         ///< this frame has a (collision or visual) geometry
-  Inertia* inertia=nullptr;     ///< this frame has inertia (is a mass)
-  Array<ForceExchange*> forces;  ///< this frame is in (near-) contact with other frames
+  Joint* joint=nullptr;          ///< this frame is an articulated joint
+  Shape* shape=nullptr;          ///< this frame has a (collision or visual) geometry
+  Inertia* inertia=nullptr;      ///< this frame has inertia (is a mass)
+  Array<ForceExchange*> forces;  ///< this frame exchanges forces with other frames
 
   Frame(Configuration& _K, const Frame* copyFrame=nullptr);
   Frame(Frame* _parent);
@@ -101,8 +104,9 @@ struct Frame : NonCopyable {
   Shape& getShape();
   Inertia& getInertia();
 
+  //accessors to transformations
   const Transformation& ensure_X();
-  const Transformation& get_Q();
+  const Transformation& get_Q() const;
   const Transformation& get_X() const;
   Transformation_Xtoken set_X() { return Transformation_Xtoken(*this); }
   Transformation_Qtoken set_Q() { return Transformation_Qtoken(*this); }
@@ -139,19 +143,24 @@ struct Frame : NonCopyable {
   void setRelativeQuaternion(const std::vector<double>& quat);
   void setPointCloud(const std::vector<double>& points, const std::vector<byte>& colors= {});
   void setConvexMesh(const std::vector<double>& points, const std::vector<byte>& colors= {}, double radius=0.);
+  void setMesh(const std::vector<double>& points, const std::vector<byte>& colors= {}, double radius=0.);
   void setColor(const std::vector<double>& color);
   void setJoint(rai::JointType jointType);
   void setContact(int cont);
   void setMass(double mass);
+  void addAttribute(const char* key, double value);
+  void setJointState(const std::vector<double>& q); ///< throws error if this frame is not also a joint, and if q.size() != joint->dim
 
   arr getPose() { return ensure_X().getArr7d(); }
   arr getPosition() { return ensure_X().pos.getArr(); }
   arr getQuaternion() { return ensure_X().rot.getArr4d(); }
   arr getRotationMatrix() { return ensure_X().rot.getArr(); }
-  arr getRelativePosition() { return get_Q().pos.getArr(); }
-  arr getRelativeQuaternion() { return get_Q().rot.getArr(); }
+  arr getRelativePosition() const { return get_Q().pos.getArr(); }
+  arr getRelativeQuaternion() const { return get_Q().rot.getArr(); }
+  arr getSize() ;
   arr getMeshPoints();
   arr getMeshCorePoints();
+  arr getJointState() const; ///< throws error if this frame is not also a joint
 
   friend struct Configuration;
   friend struct Configuration_ext;

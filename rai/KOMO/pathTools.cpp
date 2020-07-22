@@ -110,8 +110,8 @@ rai::String validatePath(const rai::Configuration& _C, const arr& q_now, const S
 std::pair<arr, arr> getStartGoalPath(const rai::Configuration& K, const arr& target_q, const StringA& target_joints, const char* endeff, double up, double down) {
   KOMO komo;
   komo.setModel(K, true);
-  komo.setPathOpt(1., 20, 3.);
-  komo.setSquaredQAccVelHoming();
+  komo.setTiming(1., 20, 3.);
+  komo.add_qControlObjective({}, 2, 1.);
 
   if(endeff) {
     if(up>0.) {

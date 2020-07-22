@@ -548,6 +548,31 @@ const arr& rai::Configuration::getJointState() const {
   return q;
 }
 
+arr rai::Configuration::getJointState(const FrameL& joints) const {
+  if(!q.nd)((Configuration*)this)->ensure_q();
+  uint nd=0;
+  for(rai::Frame *f:joints) {
+    rai::Joint* j = f->joint;
+    if(!j || !j->active) continue;
+    nd += j->dim;
+  }
+
+  arr x(nd);
+  nd=0;
+  for(rai::Frame *f:joints) {
+    rai::Joint* j = f->joint;
+    if(!j || !j->active) continue;
+    for(uint ii=0; ii<j->dim; ii++) x(nd+ii) = q(j->qIndex+ii);
+    nd += j->dim;
+  }
+  CHECK_EQ(nd, x.N, "");
+  return x;
+}
+
+arr rai::Configuration::getJointState(const uintA& joints) const {
+  return getJointState(frames.sub(joints));
+}
+
 arr rai::Configuration::getJointState(const StringA& joints) const {
   if(!q.nd)((Configuration*)this)->ensure_q();
   arr x(joints.N);
@@ -561,27 +586,6 @@ arr rai::Configuration::getJointState(const StringA& joints) const {
     CHECK(j->dim==1 || subdim, "the joint '" <<s <<"' is multi-dimensional - you need to select a subdim");
     x(i) = q(j->qIndex+d);
   }
-  return x;
-}
-
-arr rai::Configuration::getJointState(const uintA& joints) const {
-  if(!q.nd)((Configuration*)this)->ensure_q();
-  uint nd=0;
-  for(uint i=0; i<joints.N; i++) {
-    rai::Joint* j = frames(joints(i))->joint;
-    if(!j || !j->active) continue;
-    nd += j->dim;
-  }
-
-  arr x(nd);
-  nd=0;
-  for(uint i=0; i<joints.N; i++) {
-    rai::Joint* j = frames(joints(i))->joint;
-    if(!j || !j->active) continue;
-    for(uint ii=0; ii<j->dim; ii++) x(nd+ii) = q(j->qIndex+ii);
-    nd += j->dim;
-  }
-  CHECK_EQ(nd, x.N, "");
   return x;
 }
 
@@ -929,13 +933,12 @@ void rai::Configuration::vars_deactivate(uint i){
 // features
 //
 
-ptr<Feature> rai::Configuration::feature(FeatureSymbol fs, const StringA& frames) const {
+std::shared_ptr<Feature> rai::Configuration::feature(FeatureSymbol fs, const StringA& frames) const {
   return symbols2feature(fs, frames, *this);
 }
 
 void rai::Configuration::evalFeature(arr& y, arr& J, FeatureSymbol fs, const StringA& frames) const {
-  ptr<Feature> f = symbols2feature(fs, frames, *this);
-  f->__phi(y, J, *this);
+  feature(fs,frames)->__phi(y, J, *this);
 }
 
 //===========================================================================
@@ -2269,17 +2272,54 @@ void rai::Configuration::init(const Graph& G, bool addInsteadOfClear) {
     if(n->graph().findNode("%body") || n->graph().findNode("%shape") || n->graph().findNode("%joint")
        || n->key=="joint" || n->key=="shape") continue;
     //    CHECK_EQ(n->keys(0),"frame","");
-    CHECK_LE(n->parents.N, 1, "frames must have no or one parent: specs=" <<*n <<' ' <<n->index);
+    CHECK_LE(n->parents.N, 2, "frames must have no or one parent: specs=" <<*n <<' ' <<n->index);
 
-    Frame* b = nullptr;
-    if(!n->parents.N) b = new Frame(*this);
-    else if(n->parents.N==1) b = new Frame(node2frame(n->parents(0)->index)); //getFrameByName(n->parents(0)->key));
-    else HALT("a frame can only have one parent");
-    node2frame(n->index) = b;
-    b->name=n->key;
-    b->ats.copy(n->graph(), false, true);
-    //    if(n->keys.N>2) b->ats.newNode<bool>(n->key);
-    b->read(b->ats);
+    if(n->parents.N<=1){ //normal frame
+
+      Frame* b = nullptr;
+      if(!n->parents.N) b = new Frame(*this);
+      else if(n->parents.N==1) b = new Frame(node2frame(n->parents(0)->index)); //getFrameByName(n->parents(0)->key));
+      else HALT("a frame can only have one parent");
+      node2frame(n->index) = b;
+      b->name=n->key;
+      b->ats.copy(n->graph(), false, true);
+      b->read(b->ats);
+
+    }else{ //this is an inserted joint -> 2 frames (pre-joint and joint)
+
+      Frame* from = node2frame(n->parents(0)->index);
+      Frame* to   = node2frame(n->parents(1)->index);
+      CHECK(from, "JOINT: from '" <<n->parents(0)->key <<"' does not exist ["<<*n <<"]");
+      CHECK(to, "JOINT: to '" <<n->parents(1)->key <<"' does not exist ["<<*n <<"]");
+
+      //generate a pre node
+      Frame* pre = from;
+      if(n->graph().findNode("A")){
+        pre = new Frame(from);
+        pre->name = n->key;
+        pre->name <<"_pre";
+        pre->set_Q()->read(n->graph().get<rai::String>("A"));
+        n->graph().delNode(n->graph().findNode("A"));
+        n->graph().index();
+      }
+
+      //generate a frame, as below
+      Frame* b = new Frame(pre);
+      node2frame(n->index) = b;
+      b->name=n->key;
+
+      //connect the post node and impose the post node relative transform
+      to->linkFrom(b, false);
+      if(n->graph().findNode("B")){
+        to->set_Q()->read(n->graph().get<rai::String>("B"));
+        n->graph().delNode(n->graph().findNode("B"));
+        n->graph().index();
+      }
+
+      b->ats.copy(n->graph(), false, true);
+      b->read(b->ats);
+
+    }
   }
 
   NodeL ss = G.getNodesWithTag("%shape");
@@ -2344,7 +2384,7 @@ void rai::Configuration::init(const Graph& G, bool addInsteadOfClear) {
           HALT("could not retrieve minimick frame for joint '" <<f->name <<"' from ats '" <<f->ats <<"'");
         }
         rai::Frame* mimicFrame = getFrameByName(jointName, true, true);
-        CHECK(mimicFrame, "");
+        CHECK(mimicFrame, "the argument to 'mimic', '" <<jointName <<"' is not a frame name");
         j->mimic = mimicFrame->joint;
         if(!j->mimic) HALT("The joint '" <<*j <<"' is declared mimicking '" <<jointName <<"' -- but that doesn't exist!");
         j->type = j->mimic->type;
@@ -2869,7 +2909,7 @@ bool rai::Configuration::checkConsistency() const {
       } else {
         CHECK_EQ(0, j->dim, "");
       }
-      for(uint i=0; i<jq.N; i++) CHECK_ZERO(jq.elem(i) - q.elem(j->qIndex+i), 1e-6, "");
+      for(uint i=0; i<jq.N; i++) CHECK_ZERO(jq.elem(i) - q.elem(j->qIndex+i), 1e-6, "joint vector q and relative transform Q do not match for joint '" <<j->frame->name <<"', index " <<i);
     }
   }
 
@@ -3853,7 +3893,7 @@ void editConfiguration(const char* filename, rai::Configuration& C) {
       key = C.gl().setConfiguration(C, "waiting for file change", false);
       if(key==13 || key==32 || key==27 || key=='q') break;
       if(ino.poll(false, true)) break;
-      rai::wait(.02);
+      rai::wait(.2);
     }
     if(exit) break;
     if(key==13 || key==32) {

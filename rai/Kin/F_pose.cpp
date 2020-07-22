@@ -11,10 +11,6 @@
 
 //===========================================================================
 
-void F_Pose::phi(arr& y, arr& J, const rai::Configuration& C) {
-  NIY;
-}
-
 void F_Pose::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
 #if 1
   TM_Default tmp(TMT_pos, a);
@@ -90,10 +86,6 @@ void F_Pose::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
 
 //===========================================================================
 
-void F_PoseDiff::phi(arr& y, arr& J, const rai::Configuration& C) {
-  NIY;
-}
-
 void F_PoseDiff::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
   arr yq, Jq;
   TM_Default tmp(TMT_posDiff, a, NoVector, b, NoVector);
@@ -108,10 +100,6 @@ void F_PoseDiff::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
 }
 
 //===========================================================================
-
-void F_PoseRel::phi(arr& y, arr& J, const rai::Configuration& C) {
-  NIY;
-}
 
 void F_PoseRel::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
   arr yq, Jq;

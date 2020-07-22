@@ -60,7 +60,7 @@ bool matchingFactsAreEqual(Graph& facts, Node* it1, Node* it2, const NodeL& subs
 
 void removeInfeasibleSymbolsFromDomain(Graph& facts, NodeL& domain, Node* literal, Graph* varScope);
 NodeL getSubstitutions2(Graph& KB, NodeL& relations, int verbose=0);
-NodeL getRuleSubstitutions2(Graph& KB, Node* rule, int verbose=0);
+NodeL getRuleSubstitutions2(Graph& KB, rai::Graph& rule, int verbose=0);
 bool substitutedRulePreconditionHolds(Graph& KB, Node* rule, const NodeL& subst, int verbose=0);
 
 //----------- adding facts

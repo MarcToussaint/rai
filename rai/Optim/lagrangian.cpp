@@ -20,7 +20,7 @@ double I_lambda_x(uint i, arr& lambda, arr& g) {
 
 //==============================================================================
 
-LagrangianProblem::LagrangianProblem(ConstrainedProblem& P, OptOptions opt, arr& lambdaInit)
+LagrangianProblem::LagrangianProblem(MathematicalProgram& P, OptOptions opt, arr& lambdaInit)
   : P(P), muLB(0.), mu(0.), nu(0.) {
 
   ScalarFunction::operator=([this](arr& dL, arr& HL, const arr& x) -> double {
@@ -41,13 +41,90 @@ LagrangianProblem::LagrangianProblem(ConstrainedProblem& P, OptOptions opt, arr&
   if(!!lambdaInit) lambda = lambdaInit;
 }
 
+void LagrangianProblem::getFeatureTypes(ObjectiveTypeA& featureTypes){
+  P.getFeatureTypes(tt_x);
+
+  featureTypes.clear();
+  for(ObjectiveType& t:tt_x){
+    if(t==OT_f) featureTypes.append(OT_f);                    // direct cost term
+    if(t==OT_sos) featureTypes.append(OT_sos);                // sumOfSqr term
+    if(muLB     && t==OT_ineq) featureTypes.append(OT_f);     // log barrier
+    if(mu       && t==OT_ineq) featureTypes.append(OT_sos);   // square g-penalty
+    if(lambda.N && t==OT_ineq) featureTypes.append(OT_f);     // g-lagrange terms
+    if(nu       && t==OT_eq) featureTypes.append(OT_sos);     // square h-penalty
+    if(lambda.N && t==OT_eq) featureTypes.append(OT_f);       // h-lagrange terms
+  }
+}
+
+void LagrangianProblem::evaluate(arr& phi, arr& J, const arr& _x){
+  //-- evaluate constrained problem and buffer
+  if(_x!=x) {
+    x=_x;
+    P.evaluate(phi_x, J_x, x);
+    P.getFHessian(H_x, x);
+  } else { //we evaluated this before - use buffered values; the meta F is still recomputed as (dual) parameters might have changed
+  }
+  if(tt_x.N!=phi_x.N){ //need to get feature types
+    P.getFeatureTypes(tt_x);
+  }
+
+  CHECK(x.N, "zero-dim optimization variables!");
+  if(!isSparseMatrix(J_x)) {
+    CHECK_EQ(phi_x.N, J_x.d0, "Jacobian size inconsistent");
+  }
+  CHECK_EQ(phi_x.N, tt_x.N, "termType array size inconsistent");
+
+  //-- construct unconstrained problem
+  //precompute I_lambda_x
+  boolA I_lambda_x(phi_x.N);
+  if(phi_x.N) I_lambda_x = false;
+  if(mu)      for(uint i=0; i<phi_x.N; i++) if(tt_x.p[i]==OT_ineq) I_lambda_x.p[i] = (phi_x.p[i]>0. || (lambda.N && lambda.p[i]>0.));
+
+  phi.clear();
+  for(uint i=0; i<phi_x.N; i++) {
+    if(tt_x.p[i]==OT_f)   phi.append(phi_x.p[i]);                                                  // direct cost term
+    if(tt_x.p[i]==OT_sos) phi.append(phi_x.p[i]);                                      // sumOfSqr term
+    if(muLB     && tt_x.p[i]==OT_ineq) { if(phi_x.p[i]>0.) phi.append(NAN); else phi.append( -muLB * ::log(-phi_x.p[i])); }                   //log barrier, check feasibility
+    if(mu       && tt_x.p[i]==OT_ineq) { if(I_lambda_x.p[i]) phi.append(sqrt(mu)*phi_x.p[i]); else phi.append(0.); }      //g-penalty
+    if(lambda.N && tt_x.p[i]==OT_ineq) { if(lambda.p[i]>0.) phi.append(lambda.p[i] * phi_x.p[i]); else phi.append(0.); }   //g-lagrange terms
+    if(nu       && tt_x.p[i]==OT_eq) phi.append( sqrt(nu) * phi_x.p[i] );                           //h-penalty
+    if(lambda.N && tt_x.p[i]==OT_eq) phi.append( lambda.p[i] * phi_x.p[i] );                       //h-lagrange terms
+  }
+
+  if(!!J) { //term Jacobians
+    J.clear();
+    for(uint i=0; i<phi_x.N; i++) {
+      if(tt_x.p[i]==OT_f)  J.append(J_x[i]);                                                 // direct cost term
+      if(tt_x.p[i]==OT_sos) J.append(J_x[i]);                               // sumOfSqr terms
+      if(muLB     && tt_x.p[i]==OT_ineq) J.append( - (muLB/phi_x.p[i])*J_x[i] );                    //log barrier, check feasibility
+      if(mu       && tt_x.p[i]==OT_ineq){ if(I_lambda_x.p[i]) J.append( sqrt(mu)*J_x[i] ); else J.append(zeros(J_x.d1)); }  //g-penalty
+      if(lambda.N && tt_x.p[i]==OT_ineq){ if(lambda.p[i]>0.) J.append( lambda.p[i] * J_x[i]); else J.append(zeros(J_x.d1)); }              //g-lagrange terms
+      if(nu       && tt_x.p[i]==OT_eq) J.append( sqrt(nu) * J_x[i] );                      //h-penalty
+      if(lambda.N && tt_x.p[i]==OT_eq) J.append( lambda.p[i] * J_x[i] );                                  //h-lagrange terms
+    }
+  }
+}
+
+void LagrangianProblem::getFHessian(arr& H, const arr& x){
+  P.getFHessian(H, x);
+
+  for(uint i=0; i<phi_x.N; i++) {
+    if(muLB     && tt_x.p[i]==OT_ineq) NIY; //add something to the Hessian
+  }
+}
+
 double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
   //-- evaluate constrained problem and buffer
   if(_x!=x) {
     x=_x;
-    P.phi(phi_x, J_x, H_x, tt_x, x);
+    P.evaluate(phi_x, J_x, x);
+    P.getFHessian(H_x, x);
   } else { //we evaluated this before - use buffered values; the meta F is still recomputed as (dual) parameters might have changed
   }
+  if(tt_x.N!=phi_x.N){ //need to get feature types
+    P.getFeatureTypes(tt_x);
+  }
+
   CHECK(x.N, "zero-dim optimization variables!");
   if(!isSparseMatrix(J_x)) {
     CHECK_EQ(phi_x.N, J_x.d0, "Jacobian size inconsistent");

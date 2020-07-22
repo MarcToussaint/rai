@@ -191,7 +191,7 @@ void TM_Contact_ForceIsNormal::phi(arr& y, arr& J, const rai::Configuration& K) 
   Value force = F_LinearForce(a, b)(K);
 
   //-- from the geometry we need normal
-  Value normal = TM_PairCollision(a, b, TM_PairCollision::_normal, true)(K);
+  Value normal = F_PairCollision(a, b, F_PairCollision::_normal, true)(K);
 
   //-- force needs to align with normal -> project force along normal
   y = force.y - normal.y*scalarProduct(normal.y, force.y);
@@ -232,7 +232,7 @@ void TM_Contact_ForceIsPositive::phi(arr& y, arr& J, const rai::Configuration& K
   Value force = F_LinearForce(a, b)(K);
 
   //-- from the geometry we need normal
-  Value normal = TM_PairCollision(a, b, TM_PairCollision::_normal, true)(K);
+  Value normal = F_PairCollision(a, b, F_PairCollision::_normal, true)(K);
 
   //-- force needs to align with normal -> project force along normal
   y.resize(1);
@@ -286,7 +286,7 @@ void TM_Contact_POA_isAtWitnesspoint::phi(arr& y, arr& J, const rai::Configurati
   arr poa, Jpoa;
   C.kinematicsContactPOA(poa, Jpoa, con);
 
-  TM_PairCollision coll(a, b, (!use2ndObject ? TM_PairCollision::_p1 : TM_PairCollision::_p2) , false);
+  F_PairCollision coll(a, b, (!use2ndObject ? F_PairCollision::_p1 : F_PairCollision::_p2) , false);
   arr wit, Jwit;
   coll.phi(wit, Jwit, C);
 
@@ -365,7 +365,7 @@ void TM_Contact_NormalForceEqualsNormalPOAmotion::phi(arr& y, arr& J, const Conf
 
   Value force = F_LinearForce(a,b) (*Ktuple(-1));
 
-  Value normal = TM_PairCollision(a, b, TM_PairCollision::_normal, true) (*Ktuple(-1));
+  Value normal = F_PairCollision(a, b, F_PairCollision::_normal, true) (*Ktuple(-1));
 
   double forceScaling = 1e1;
   force.y *= forceScaling;
@@ -392,7 +392,7 @@ void TM_Contact_POAzeroRelVel::phi(arr& y, arr& J, const ConfigurationL& Ktuple)
   y = v1 - v2;
   if(!!J) J = Jv1 - Jv2;
   if(normalOnly){
-    Value normal = TM_PairCollision(a, b, TM_PairCollision::_normal, true) (*Ktuple(-1));
+    Value normal = F_PairCollision(a, b, F_PairCollision::_normal, true) (*Ktuple(-1));
     expandJacobian(normal.J, Ktuple, -1);
     if(!!J) J = ~normal.y*J + ~y*normal.J;
     y = ARR(scalarProduct(normal.y, y));
@@ -408,7 +408,7 @@ void TM_Contact_ElasticVel::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
 
   //-- from the geometry we need normal
   arr normal, Jnormal;
-  TM_PairCollision coll(con->a.ID, con->b.ID, TM_PairCollision::_normal, false);
+  F_PairCollision coll(con->a.ID, con->b.ID, F_PairCollision::_normal, false);
   coll.phi(normal, (!!J?Jnormal:NoArr), *Ktuple(-2));
   if(!!J) expandJacobian(Jnormal, Ktuple, -2);
 

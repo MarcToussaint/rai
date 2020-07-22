@@ -12,25 +12,25 @@
 
 //===========================================================================
 
-void Objective::setCostSpecs(int fromStep, int toStep, bool sparse) {
+void Objective::setCostSpecs(int fromStep, int toStep, bool tuples) {
   CHECK_GE(fromStep, 0, "");
 //  CHECK_GE(toStep, fromStep, "");
-  if(!sparse) {
+  if(!tuples) {
     if(toStep>=fromStep)
       configs.resize(toStep+1).setZero();
     else configs.clear();
     for(int t=fromStep; t<=toStep; t++) configs(t) = 1;
   } else {
     if(toStep>=fromStep)
-      configs.resize(1+toStep-fromStep, map->order+1);
-    else configs.resize(0, map->order+1);
+      configs.resize(1+toStep-fromStep, feat->order+1);
+    else configs.resize(0, feat->order+1);
     for(int t=fromStep; t<=toStep; t++)
-      for(uint j=0; j<configs.d1; j++) configs(t-fromStep, j) = t+j-int(map->order);
+      for(uint j=0; j<configs.d1; j++) configs(t-fromStep, j) = t+j-int(feat->order);
   }
 }
 
 void Objective::setCostSpecs(const arr& times, int stepsPerPhase, uint T,
-                             int deltaFromStep, int deltaToStep, bool sparse) {
+                             int deltaFromStep, int deltaToStep, bool tuples) {
 
   double fromTime=0, toTime=-1.;
   if(!times.N) {
@@ -58,7 +58,7 @@ void Objective::setCostSpecs(const arr& times, int stepsPerPhase, uint T,
 //  if(toStep<0) toStep=0;
   if(toStep>=(int)T && T>0) toStep=T-1;
 
-  setCostSpecs(fromStep, toStep, sparse);
+  setCostSpecs(fromStep, toStep, tuples);
 }
 
 bool Objective::isActive(uint t) {
@@ -76,9 +76,9 @@ void Objective::write(std::ostream& os) const {
     } else os <<" (" <<configs.first() <<".." <<configs.last() <<')';
   } else os <<" ()";
   os <<"  type:" <<type
-     <<"  order:" <<map->order
-     <<"  target:" <<map->target
-     <<"  scale:" <<map->scale;
+     <<"  order:" <<feat->order
+     <<"  target:" <<feat->target
+     <<"  scale:" <<feat->scale;
 }
 
 //===========================================================================

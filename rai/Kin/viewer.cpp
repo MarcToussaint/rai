@@ -36,11 +36,13 @@ int rai::ConfigurationViewer::update(bool watch) {
     gl->watch();
     gl->text = drawText();
   }
-  gl->update(nullptr, true);
+
+  gl->update(nullptr, false);
   return gl->pressedkey;
 }
 
 int rai::ConfigurationViewer::setConfiguration(rai::Configuration& _C, const char* text, bool watch){
+  ensure_gl();
   if(_C.frames.N!=C.frames.N){
     recopyMeshes(_C);
   }else if(_C.proxies.N){
@@ -65,7 +67,7 @@ int rai::ConfigurationViewer::setConfiguration(rai::Configuration& _C, const cha
   return update(watch);
 }
 
-void rai::ConfigurationViewer::setPath(ConfigurationL& Cs, const char* text, bool watch) {
+int rai::ConfigurationViewer::setPath(ConfigurationL& Cs, const char* text, bool watch) {
   CHECK(C.frames.N, "setPath requires that you setConfiguration first");
 
   uintA frames;
@@ -78,10 +80,11 @@ void rai::ConfigurationViewer::setPath(ConfigurationL& Cs, const char* text, boo
     }
   }
 
-  setPath(X, text, watch);
+  return setPath(X, text, watch);
 }
 
-void rai::ConfigurationViewer::setPath(rai::Configuration& _C, const arr& jointPath, const char* text, bool watch, bool full){
+int rai::ConfigurationViewer::setPath(rai::Configuration& _C, const arr& jointPath, const char* text, bool watch, bool full){
+  setConfiguration(_C, 0, false);
   CHECK(C.frames.N, "setPath requires that you setConfiguration first");
 
   arr X(jointPath.d0, _C.frames.N, 7);
@@ -92,13 +95,14 @@ void rai::ConfigurationViewer::setPath(rai::Configuration& _C, const arr& jointP
     }
   }
 
-  setPath(X, text, watch);
+  return setPath(X, text, watch);
 }
 
-void rai::ConfigurationViewer::setPath(const arr& _framePath, const char* text, bool watch, bool full) {
+int rai::ConfigurationViewer::setPath(const arr& _framePath, const char* text, bool watch, bool full) {
   CHECK(C.frames.N, "setPath requires that you setConfiguration first");
 
   CHECK_EQ(_framePath.nd, 3, "");
+  CHECK_EQ(_framePath.d1, C.frames.N, "");
   CHECK_EQ(_framePath.d2, 7, "");
 
   {
@@ -109,7 +113,7 @@ void rai::ConfigurationViewer::setPath(const arr& _framePath, const char* text, 
     if(text) drawText = text;
   }
 
-  update(watch);
+  return update(watch);
 }
 
 bool rai::ConfigurationViewer::playVideo(bool watch, double delay, const char* saveVideoPath) {
@@ -150,9 +154,18 @@ bool rai::ConfigurationViewer::playVideo(bool watch, double delay, const char* s
   return false;
 }
 
+void rai::ConfigurationViewer::savePng(const char* saveVideoPath){
+  write_ppm(gl->captureImage, STRING(saveVideoPath<<std::setw(4)<<std::setfill('0')<<(pngCount++)<<".ppm"));
+}
+
 rai::Camera& rai::ConfigurationViewer::displayCamera() {
   ensure_gl();
   return gl->camera;
+}
+
+byteA rai::ConfigurationViewer::getScreenshot(){
+  ensure_gl();
+  return gl->captureImage;
 }
 
 void rai::ConfigurationViewer::recopyMeshes(rai::Configuration& _C){

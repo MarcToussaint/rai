@@ -30,9 +30,9 @@
 #include "../Kin/TM_angVel.h"
 
 #include "../Optim/optimization.h"
-#include "../Optim/convert.h"
 #include "../Optim/primalDual.h"
 #include "../Optim/GraphOptim.h"
+#include "../Optim/opt-nlopt.h"
 
 #include <iomanip>
 
@@ -50,6 +50,9 @@ using namespace rai;
 
 double shapeSize(const Configuration& K, const char* name, uint i=2);
 
+struct getQFramesAndScale_Return{ uintA frames; arr scale; };
+getQFramesAndScale_Return getQFramesAndScale(const rai::Configuration& C);
+
 Shape* getShape(const Configuration& K, const char* name) {
   Frame* f = K.getFrameByName(name);
   Shape* s = f->shape;
@@ -59,15 +62,8 @@ Shape* getShape(const Configuration& K, const char* name) {
   return s;
 }
 
-KOMO::KOMO() : useSwift(true), verbose(1), komo_problem(*this), dense_problem(*this), graph_problem(*this) {
+KOMO::KOMO() : useSwift(true), verbose(1), komo_problem(*this){
   verbose = getParameter<int>("KOMO/verbose", 1);
-}
-
-KOMO::KOMO(const Configuration& C, bool _useSwift)
-  : KOMO() {
-  setModel(C, _useSwift);
-  world.optimizeTree();
-  world.ensure_q();
 }
 
 KOMO::~KOMO() {
@@ -107,12 +103,9 @@ void KOMO_ext::useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThes
 }
 
 void KOMO::setTiming(double _phases, uint _stepsPerPhase, double durationPerPhase, uint _k_order) {
-  double maxPhase = _phases;
   stepsPerPhase = _stepsPerPhase;
-  if(stepsPerPhase>=0) {
-    T = ceil(stepsPerPhase*maxPhase);
-    tau = durationPerPhase/double(stepsPerPhase);
-  }
+  T = ceil(stepsPerPhase*_phases);
+  tau = durationPerPhase/double(stepsPerPhase);
   k_order = _k_order;
 }
 
@@ -139,13 +132,19 @@ void KOMO::deactivateCollisions(const char* s1, const char* s2) {
   else LOG(-1) <<"not found:" <<s1 <<' ' <<s2;
 }
 
-void KOMO::setTimeOptimization() {
+void KOMO::addTimeOptimization() {
   world.addTauJoint();
   ptr<Objective> o = addObjective({}, make_shared<TM_Time>(), OT_sos, {1e2}, {}, 1); //smooth time evolution
 #if 1 //break the constraint at phase switches:
-  CHECK(o->configs.nd==1 && o->configs.N==T, "");
-  CHECK_GE(stepsPerPhase, 10, "NIY")
-  for(uint t=2; t<o->configs.N; t+=stepsPerPhase) o->configs(t)=0;
+  if(o->configs.nd==1){ //for KOMO optimization
+      CHECK(o->configs.nd==1 && o->configs.N==T, "");
+      CHECK_GE(stepsPerPhase, 10, "NIY");
+      for(uint t=2; t<o->configs.N; t+=stepsPerPhase) o->configs(t)=0;
+  }else{ //for sparse optimization
+      CHECK(o->configs.nd==2 && o->configs.N==2*T, "");
+      CHECK_GE(stepsPerPhase, 10, "NIY");
+      for(uint t=o->configs.d0;t--;) if(o->configs(t,0)%stepsPerPhase==0) o->configs.delRows(t);
+  }
 #endif
 
   addObjective({}, make_shared<TM_Time>(), OT_sos, {1e-1}, {tau}); //prior on timing
@@ -160,6 +159,7 @@ void KOMO::setTimeOptimization() {
 void KOMO::clearObjectives() {
   objectives.clear(); //listDelete(objectives);
   listDelete(switches);
+  reset();
 }
 
 ptr<Objective> KOMO::addObjective(const arr& times,
@@ -174,8 +174,9 @@ ptr<Objective> KOMO::addObjective(const arr& times,
   ptr<Objective> task = make_shared<Objective>(f, type);
   task->name = f->shortTag(world);
   objectives.append(task);
-  task->setCostSpecs(times, stepsPerPhase, T, deltaFromStep, deltaToStep, denseOptimization || sparseOptimization);
-  if(denseOptimization || sparseOptimization) CHECK_EQ(task->configs.nd, 2, "");
+  task->setCostSpecs(times, stepsPerPhase, T, deltaFromStep, deltaToStep, true); //solver!=rai::KS_banded);
+//  if(solver!=rai::KS_banded)
+    CHECK_EQ(task->configs.nd, 2, "");
   return task;
 }
 
@@ -287,14 +288,14 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
 #else
     //eq for 3DOFs only
     ptr<Objective> o = addObjective({time, endTime}, make_shared<F_NewtonEuler_DampedVelocities>(world, to, 0., false), OT_eq, {1e2}, NoArr, 1, +0, -1);
-    o->map->scale=1e2 * arr({3,6}, {
+    o->feat->scale=1e2 * arr({3,6}, {
       1, 0, 0, 0, 0, 0,
       0, 1, 0, 0, 0, 0,
       0, 0, 0, 0, 0, 1
     });
     //sos penalty of other forces
     o = addObjective({time, endTime}, make_shared<F_NewtonEuler_DampedVelocities>(world, to, 0., false), OT_sos, {1e2}, NoArr, 1, +0, -1);
-    o->map->scale=1e1 * arr({3,6}, {
+    o->feat->scale=1e1 * arr({3,6}, {
       0, 0, 1, 0, 0, 0,
       0, 0, 0, 1, 0, 0,
       0, 0, 0, 0, 1, 0
@@ -404,10 +405,10 @@ void KOMO::addContact_slide(double startTime, double endTime, const char* from, 
   if(endTime>0.) addSwitch(endTime, false, new rai::KinematicSwitch(rai::SW_delContact, rai::JT_none, from, to, world));
 
   //constraints
-  addObjective({startTime, endTime}, make_shared<TM_Contact_ForceIsNormal>(world, from, to), OT_eq, {1e2});
+  addObjective({startTime, endTime}, make_shared<TM_Contact_ForceIsNormal>(world, from, to), OT_sos, {1e2});
   addObjective({startTime, endTime}, make_shared<TM_Contact_ForceIsPositive>(world, from, to), OT_ineq, {1e2});
   addObjective({startTime, endTime}, make_shared<TM_Contact_POAisInIntersection_InEq>(world, from, to), OT_ineq, {1e1});
-  addObjective({startTime, endTime}, make_shared<TM_PairCollision>(world, from, to, TM_PairCollision::_negScalar, false), OT_eq, {1e1});
+  addObjective({startTime, endTime}, make_shared<F_PairCollision>(world, from, to, F_PairCollision::_negScalar, false), OT_eq, {1e1});
 
   //regularization
   addObjective({startTime, endTime}, make_shared<F_LinearForce>(world, from, to), OT_sos, {1e-2}, NoArr, 2, +2, 0);
@@ -423,7 +424,7 @@ void KOMO::addContact_stick(double startTime, double endTime, const char* from, 
   //constraints
   addObjective({startTime, endTime}, make_shared<TM_Contact_ForceIsPositive>(world, from, to), OT_ineq, {1e1});
   addObjective({startTime, endTime}, make_shared<TM_Contact_POAisInIntersection_InEq>(world, from, to), OT_ineq, {1e1});
-  addObjective({startTime, endTime}, make_shared<TM_PairCollision>(world, from, to, TM_PairCollision::_negScalar, false), OT_eq, {1e1});
+  addObjective({startTime, endTime}, make_shared<F_PairCollision>(world, from, to, F_PairCollision::_negScalar, false), OT_eq, {1e1});
   addObjective({startTime, endTime}, make_shared<TM_Contact_POAzeroRelVel>(world, from, to), OT_eq, {1e0}, NoArr, 1, +1, +1);
 
   //regularization
@@ -441,7 +442,7 @@ void KOMO::addContact_ComplementarySlide(double startTime, double endTime, const
   addObjective({startTime, endTime}, make_shared<TM_Contact_ForceIsNormal>(world, from, to), OT_eq, {1e2});
   addObjective({startTime, endTime}, make_shared<TM_Contact_ForceIsComplementary>(world, from, to), OT_eq, {1e2});
   addObjective({startTime, endTime}, make_shared<TM_Contact_NormalVelIsComplementary>(world, from, to, 0., 0.), OT_eq, {1e2}, NoArr, 1, +1);
-  addObjective({startTime, endTime}, make_shared<TM_PairCollision>(world, from, to, TM_PairCollision::_negScalar, false), OT_ineq, {1e1});
+  addObjective({startTime, endTime}, make_shared<F_PairCollision>(world, from, to, F_PairCollision::_negScalar, false), OT_ineq, {1e1});
 
   //regularization
   addObjective({startTime, endTime}, make_shared<F_LinearForce>(world, from, to), OT_sos, {1e-4});
@@ -475,7 +476,7 @@ void KOMO::addContact_noFriction(double startTime, double endTime, const char* f
   addObjective({startTime, endTime}, make_shared<TM_Contact_POAisInIntersection_InEq>(world, from, to), OT_ineq, {1e1});
   addObjective({startTime, endTime}, make_shared<TM_Contact_POAmovesContinuously>(world, from, to), OT_sos, {1e0}, NoArr, 1, +1, +0);
   addObjective({startTime, endTime}, make_shared<F_LinearForce>(world, from, to), OT_sos, {1e-4});
-  addObjective({startTime, endTime}, make_shared<TM_PairCollision>(world, from, to, TM_PairCollision::_negScalar, false), OT_eq, {1e1});
+  addObjective({startTime, endTime}, make_shared<F_PairCollision>(world, from, to, F_PairCollision::_negScalar, false), OT_eq, {1e1});
 }
 
 void KOMO::addContact_elasticBounce(double time, const char* from, const char* to, double elasticity, double stickiness) {
@@ -486,7 +487,7 @@ void KOMO::addContact_elasticBounce(double time, const char* from, const char* t
   addObjective({time}, make_shared<TM_Contact_ForceIsPositive>(world, from, to), OT_ineq, {1e1});
   addObjective({time}, make_shared<TM_Contact_POAisInIntersection_InEq>(world, from, to), OT_ineq, {1e1});
   addObjective({time}, make_shared<F_LinearForce>(world, from, to), OT_sos, {1e-4});
-  addObjective({time}, make_shared<TM_PairCollision>(world, from, to, TM_PairCollision::_negScalar, false), OT_eq, {1e1});
+  addObjective({time}, make_shared<F_PairCollision>(world, from, to, F_PairCollision::_negScalar, false), OT_eq, {1e1});
 
   if(!elasticity && stickiness>=1.) {
     addObjective({time}, make_shared<TM_Contact_POAzeroRelVel>(world, from, to), OT_eq, {1e1}, NoArr, 2, +1, +1);
@@ -495,7 +496,7 @@ void KOMO::addContact_elasticBounce(double time, const char* from, const char* t
   }
 }
 
-void KOMO::setKS_slider(double time, double endTime, bool before, const char* obj, const char* slider, const char* table) {
+void KOMO_ext::setKS_slider(double time, double endTime, bool before, const char* obj, const char* slider, const char* table) {
   //disconnect object from grasp ref
 //  setKinematicSwitch(time, before, "delete", nullptr, obj);
 
@@ -523,7 +524,7 @@ void KOMO::setKS_slider(double time, double endTime, bool before, const char* ob
   //    setKinematicSwitch(time, before, "transXActuated", slider, obj, rel );
 }
 
-void KOMO::setHoming(double startTime, double endTime, double prec, const char* keyword) {
+void KOMO_ext::setHoming(double startTime, double endTime, double prec, const char* keyword) {
   uintA bodies;
   Joint* j;
   for(Frame* f:world.frames) if((j=f->joint) && j->qDim()>0 && (!keyword || f->ats[keyword])) bodies.append(f->ID);
@@ -531,34 +532,21 @@ void KOMO::setHoming(double startTime, double endTime, double prec, const char* 
   addObjective({startTime, endTime}, make_shared<F_qItself>(bodies, true), OT_sos, {prec}, NoArr); //world.q, prec);
 }
 
-//void KOMO::setSquaredQAccelerations(double startTime, double endTime, double prec) {
+//void KOMO_ext::setSquaredQAccelerations(double startTime, double endTime, double prec) {
 //  CHECK_GE(k_order, 2,"");
 //  addObjective({startTime, endTime}, make_shared<TM_Transition>(world), OT_sos, {}, NoArrprec);
 //}
 
-auto getQFramesAndScale(const rai::Configuration& C){
-  struct Return{ uintA frames; arr scale; } R;
-  for(rai::Frame* f : C.frames){
-    if(f->joint && f->joint->active && f->joint->dim>0 && f->joint->H>0. && f->joint->type!=JT_tau) {
-      CHECK(!f->joint->mimic, "");
-      R.frames.append(TUP(f->ID, f->parent->ID));
-      R.scale.append(f->joint->H, f->joint->dim);
-    }
-  }
-  R.frames.reshape(-1, 2);
-  //  cout <<scale <<endl <<world.getHmetric() <<endl;
-  return R;
-}
-
-void KOMO::add_qControlObjective(const arr& times, uint order, double scale, const arr& target, int deltaFromStep, int deltaToStep){
+ptr<Objective> KOMO::add_qControlObjective(const arr& times, uint order, double scale, const arr& target, int deltaFromStep, int deltaToStep){
   auto F = getQFramesAndScale(world);
   scale *= sqrt(tau);
 
   CHECK_GE(k_order, order, "");
   ptr<Objective> o = addObjective(times, make_shared<F_qItself>(F.frames), OT_sos, scale*F.scale, target, order, deltaFromStep, deltaToStep);
+  return o;
 }
 
-void KOMO::setSquaredQAccVelHoming(double startTime, double endTime, double accPrec, double velPrec, double homingPrec, int deltaFromStep, int deltaToStep) {
+void KOMO_ext::setSquaredQAccVelHoming(double startTime, double endTime, double accPrec, double velPrec, double homingPrec, int deltaFromStep, int deltaToStep) {
   auto F = getQFramesAndScale(world);
   F.scale *= sqrt(tau);
 
@@ -590,11 +578,11 @@ void KOMO::setSquaredQAccVelHoming(double startTime, double endTime, double accP
 //  addObjective({startTime, endTime}, make_shared<TM_FixSwichedObjects>(), OT_eq, {}, NoArrprec, k_order);
 //}
 
-void KOMO::setSquaredQuaternionNorms(double startTime, double endTime, double prec) {
+void KOMO::addSquaredQuaternionNorms(double startTime, double endTime, double prec) {
   addObjective({startTime, endTime}, make_shared<F_qQuaternionNorms>(), OT_eq, {prec}, NoArr);
 }
 
-void KOMO::setHoldStill(double startTime, double endTime, const char* shape, double prec) {
+void KOMO_ext::setHoldStill(double startTime, double endTime, const char* shape, double prec) {
   Frame* s = world.getFrameByName(shape);
   addObjective({startTime, endTime}, make_shared<F_qItself>(TUP(s->ID)), OT_sos, {prec}, NoArr, 1);
 }
@@ -613,7 +601,7 @@ void KOMO_ext::setVelocity(double startTime, double endTime, const char* shape, 
 }
 
 void KOMO_ext::setLastTaskToBeVelocity() {
-  objectives.last()->map->order = 1; //set to be velocity!
+  objectives.last()->feat->order = 1; //set to be velocity!
 }
 
 void KOMO_ext::setImpact(double time, const char* a, const char* b) {
@@ -785,7 +773,7 @@ void KOMO_ext::setHandover(double time, const char* oldHolder, const char* objec
 #endif
 }
 
-void KOMO::setPush(double startTime, double endTime, const char* stick, const char* object, const char* table, int verbose) {
+void KOMO_ext::setPush(double startTime, double endTime, const char* stick, const char* object, const char* table, int verbose) {
   if(verbose>0) cout <<"KOMO_setPush t=" <<startTime <<" stick=" <<stick <<" object=" <<object <<" table=" <<table <<endl;
 
 #if 1
@@ -823,7 +811,7 @@ void KOMO::setPush(double startTime, double endTime, const char* stick, const ch
   }
 }
 
-void KOMO::setGraspSlide(double time, const char* endeff, const char* object, const char* placeRef, int verbose) {
+void KOMO_ext::setGraspSlide(double time, const char* endeff, const char* object, const char* placeRef, int verbose) {
 
   double startTime = time;
   double endTime = time+1.;
@@ -1104,9 +1092,9 @@ void KOMO::setSkeleton(const Skeleton& S, bool ignoreSwitches) {
     switch(s.symbol) {
       case SY_none:       HALT("should not be here");  break;
       case SY_initial: case SY_identical: case SY_noCollision:    break;
-      case SY_touch:      add_touch(s.phase0, s.phase1, s.frames(0), s.frames(1));  break;
-      case SY_above:      add_aboveBox(s.phase0, s.phase1, s.frames(0), s.frames(1));  break;
-      case SY_inside:     add_insideBox(s.phase0, s.phase1, s.frames(0), s.frames(1));  break;
+      case SY_touch:      addObjective({s.phase0, s.phase1}, FS_distance, {s.frames(0), s.frames(1)}, OT_eq, {1e2});  break;
+      case SY_above:      addObjective({s.phase0, s.phase1}, FS_aboveBox, {s.frames(0), s.frames(1)}, OT_ineq, {1e1});  break;
+      case SY_inside:     addObjective({s.phase0, s.phase1}, FS_insideBox, {s.frames(0), s.frames(1)}, OT_ineq, {1e1});  break;
 //      case SY_inside:     addObjective({s.phase0, s.phase1}, make_shared<TM_InsideLine>(world, s.frames(0), s.frames(1)), OT_ineq, {1e1});  break;
       case SY_oppose:     addObjective({s.phase0, s.phase1}, FS_oppose, s.frames, OT_eq, {1e1});  break;
       case SY_impulse:    HALT("obsolete"); /*add_impulse(s.phase0, s.frames(0), s.frames(1));*/  break;
@@ -1139,8 +1127,8 @@ void KOMO::setSkeleton(const Skeleton& S, bool ignoreSwitches) {
         cout <<"THE INTEGER IS: " <<s.frames(2) <<endl;
       } break;
 
-      case SY_push:       setPush(s.phase0, s.phase1+1., s.frames(0), s.frames(1), s.frames(2), verbose);  break;//TODO: the +1. assumes pushes always have duration 1
-      case SY_graspSlide: setGraspSlide(s.phase0, s.frames(0), s.frames(1), s.frames(2), verbose);  break;
+      case SY_push:       HALT("retired"); //setPush(s.phase0, s.phase1+1., s.frames(0), s.frames(1), s.frames(2), verbose);  break;//TODO: the +1. assumes pushes always have duration 1
+      case SY_graspSlide: HALT("retired"); //setGraspSlide(s.phase0, s.frames(0), s.frames(1), s.frames(2), verbose);  break;
       //    else case SY_handover)              setHandover(s.phase0, s.frames(0), s.frames(1), s.frames(2), verbose);
       //    else LOG(-2) <<"UNKNOWN PREDICATE!: " <<s;
 
@@ -1174,15 +1162,15 @@ void KOMO_ext::setAlign(double startTime, double endTime, const char* shape, con
 
 }
 
-void KOMO::add_touch(double startTime, double endTime, const char* shape1, const char* shape2, ObjectiveType type, const arr& target, double prec) {
-  addObjective({startTime, endTime}, make_shared<TM_PairCollision>(world, shape1, shape2, TM_PairCollision::_negScalar, false), type, {prec}, target);
+void KOMO_ext::add_touch(double startTime, double endTime, const char* shape1, const char* shape2, ObjectiveType type, const arr& target, double prec) {
+  addObjective({startTime, endTime}, make_shared<F_PairCollision>(world, shape1, shape2, F_PairCollision::_negScalar, false), type, {prec}, target);
 }
 
-void KOMO::add_aboveBox(double startTime, double endTime, const char* shape1, const char* shape2, double prec) {
+void KOMO_ext::add_aboveBox(double startTime, double endTime, const char* shape1, const char* shape2, double prec) {
   addObjective({startTime, endTime}, make_shared<TM_AboveBox>(world, shape1, shape2), OT_ineq, {prec}, NoArr);
 }
 
-void KOMO::add_insideBox(double startTime, double endTime, const char* shape1, const char* shape2, double prec) {
+void KOMO_ext::add_insideBox(double startTime, double endTime, const char* shape1, const char* shape2, double prec) {
   addObjective({startTime, endTime}, make_shared<TM_InsideBox>(world, shape1, NoVector, shape2), OT_ineq, {prec}, NoArr);
 }
 
@@ -1195,7 +1183,7 @@ void KOMO::add_insideBox(double startTime, double endTime, const char* shape1, c
 //  }
 //}
 
-void KOMO::add_stable(double time, const char* shape1, const char* shape2, ObjectiveType type, double prec) {
+void KOMO_ext::add_stable(double time, const char* shape1, const char* shape2, ObjectiveType type, double prec) {
   addObjective({time}, make_shared<TM_Default>(TMT_pose, world, shape1, NoVector, shape2), type, {prec}, NoArr, 1, 0);
 }
 
@@ -1250,39 +1238,26 @@ void KOMO_ext::setConfigFromFile() {
 }
 
 void KOMO::setIKOpt() {
-  denseOptimization=true;
-  stepsPerPhase = 1;
-  T = 1;
-  tau = 1.;
-  k_order = 1;
+  solver = rai::KS_dense;
+//  stepsPerPhase = 1;
+//  T = 1;
+//  tau = 1.;
+//  k_order = 1;
+  setTiming(1., 1, 1., 1);
 //  setSquaredQVelocities(0.,-1.,1e-1);
-  setSquaredQAccVelHoming(0., -1., 0., 1e-1, 1e-2);
-  setSquaredQuaternionNorms();
+  add_qControlObjective({}, 1, 1e-1);
+//  setSquaredQAccVelHoming(0., -1., 0., 1e-1, 1e-2);
+  addSquaredQuaternionNorms();
 }
 
 void KOMO::setDiscreteOpt(uint k) {
-  denseOptimization=true;
-  stepsPerPhase = 1;
-  T = k;
-  tau = 1.;
-  k_order = 1;
-  setSquaredQuaternionNorms();
-}
-
-void KOMO::setPoseOpt() {
-  denseOptimization=true;
-  setTiming(1., 2, 5., 1);
-  setSquaredQuaternionNorms();
-}
-
-void KOMO::setSequenceOpt(double _phases) {
-  setTiming(_phases, 2, 5., 1);
-  setSquaredQuaternionNorms();
-}
-
-void KOMO::setPathOpt(double _phases, uint stepsPerPhase, double timePerPhase) {
-  setTiming(_phases, stepsPerPhase, timePerPhase, 2);
-  setSquaredQuaternionNorms();
+  solver = rai::KS_sparse;
+//  stepsPerPhase = 1;
+//  T = k;
+//  tau = 1.;
+//  k_order = 1;
+  setTiming(k, 1, 1., 1);
+  addSquaredQuaternionNorms();
 }
 
 void setTasks(KOMO_ext& MP,
@@ -1317,15 +1292,15 @@ void setTasks(KOMO_ext& MP,
 
   t = MP.addTask("transitions", new TM_Transition(MP.world), OT_sos);
   if(timeSteps!=0) {
-    t->map->order=2; //make this an acceleration task!
+    t->feat->order=2; //make this an acceleration task!
   } else {
-    t->map->order=1; //make this a velocity task!
+    t->feat->order=1; //make this a velocity task!
   }
   t->setCostSpecs(0, MP.T-1, {0.}, 1e0);
 
   if(timeSteps!=0) {
     t = MP.addTask("final_vel", new TM_qItself(), OT_sos);
-    t->map->order=1; //make this a velocity task!
+    t->feat->order=1; //make this a velocity task!
     t->setCostSpecs(MP.T-4, MP.T-1, {0.}, zeroVelPrec);
   }
 
@@ -1372,23 +1347,7 @@ void KOMO::setSpline(uint splineT) {
   z = pseudoInverse(splineB) * x;
 }
 
-void KOMO::reset(double initNoise) {
-  if(!configurations.N) setupConfigurations();
-  x = getPath_decisionVariable();
-  dual.clear();
-  featureValues.clear();
-  featureJacobians.clear();
-  featureTypes.clear();
-  komo_problem.clear();
-  dense_problem.clear();
-  if(initNoise>0.)
-    rndGauss(x, initNoise, true); //don't initialize at a singular config
-  if(splineB.N) {
-    z = pseudoInverse(splineB) * x;
-  }
-}
-
-void KOMO::setInitialConfigurations(const arr& q){
+void KOMO::setStartConfigurations(const arr& q){
   if(!configurations.N) setupConfigurations();
   for(uint s=0; s<k_order; s++){
     configurations(s)->setJointState(q);
@@ -1406,7 +1365,7 @@ void KOMO::initWithConstant(const arr& q) {
     configurations(k_order+t)->setJointState(q);
   }
 
-  reset(0.);
+  run_prepare(0.);
 }
 
 void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, bool sineProfile) {
@@ -1453,7 +1412,42 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, 
   }
 #endif
 
-  reset(0.);
+  run_prepare(0.);
+}
+
+void KOMO::reset() {
+  dual.clear();
+  featureValues.clear();
+  featureJacobians.clear();
+  featureTypes.clear();
+  komo_problem.clear();
+}
+
+void KOMO::optimize(double addInitializationNoise, const OptOptions options) {
+  run_prepare(addInitializationNoise);
+
+  if(verbose>0) reportProblem();
+
+  run(options);
+}
+
+void KOMO::run_prepare(double addInitializationNoise) {
+  //ensure the configurations are setup
+  if(!configurations.N) setupConfigurations();
+  CHECK_EQ(configurations.N, k_order+T, "");
+  for(uint s=0;s<k_order;s++) configurations(s)->ensure_q(); //also the prefix!
+
+  //ensure the decision variable is in sync from the configurations
+  x = getPath_decisionVariable();
+
+  //add noise
+  if(addInitializationNoise>0.){
+    rndGauss(x, addInitializationNoise, true); //don't initialize at a singular config
+  }
+
+  if(splineB.N) {
+    z = pseudoInverse(splineB) * x;
+  }
 }
 
 void KOMO::run(const OptOptions options) {
@@ -1462,23 +1456,26 @@ void KOMO::run(const OptOptions options) {
   CHECK(T, "");
   if(logFile)(*logFile) <<"KOMO_run_log: [" <<endl;
   if(opt) delete opt;
-  if(denseOptimization) {
+  if(solver==rai::KS_none){
+    HALT("you need to choose a KOMO solver");
+  }else if(solver==rai::KS_dense || solver==rai::KS_sparse) {
     CHECK(!splineB.N, "NIY");
-    OptConstrained _opt(x, dual, dense_problem, rai::MAX(verbose-2, 0), options);
-//    OptPrimalDual _opt(x, dual, dense_problem, rai::MAX(verbose-2, 0));
+    Conv_KOMO_SparseUnstructured P(*this, solver==rai::KS_sparse);
+    OptConstrained _opt(x, dual, P, rai::MAX(verbose-2, 0), options);
     _opt.logFile = logFile;
-    if(bound_up.N && bound_lo.N){
-      _opt.newton.bound_lo = bound_lo;
-      _opt.newton.bound_up = bound_up;
-    }
     _opt.run();
     timeNewton += _opt.newton.timeNewton;
-  } else if(sparseOptimization) {
+  }else if(solver==rai::KS_sparseStructured) {
     CHECK(!splineB.N, "NIY");
 #if 1
 //    ModGraphProblem selG(graph_problem);
-//    Conv_Graph_ConstrainedProblem C(selG);
-    Conv_Graph_ConstrainedProblem C(graph_problem, logFile);
+//    Conv_Graph_MathematicalProgram C(selG);
+//    Conv_KOMO_GraphProblem_toBeRetired graph_problem(*this);
+//    Conv_Graph_MathematicalProgram C(graph_problem, logFile);
+
+    Conv_KOMO_StructuredProblem P(*this);
+    Conv_Structured_BandedProgram C(P, 0, true);
+
     OptConstrained _opt(x, dual, C, rai::MAX(verbose-2, 0), options, logFile);
     if(bound_up.N && bound_lo.N){
       _opt.newton.bound_lo = bound_lo;
@@ -1499,23 +1496,33 @@ void KOMO::run(const OptOptions options) {
     BGO.evaluate(x);
     BGO.run();
 #endif
-  } else if(!splineB.N) { //DEFAULT CASE
-    Convert C(komo_problem);
-    opt = new OptConstrained(x, dual, C, rai::MAX(verbose-2, 0), options);
-    if(bound_up.N && bound_lo.N){
-      opt->newton.bound_lo = bound_lo;
-      opt->newton.bound_up = bound_up;
+  }else if(solver==rai::KS_banded) {
+    if(!splineB.N) { //DEFAULT CASE
+//      Conv_KOMOProblem_MathematicalProgram C(komo_problem);
+      Conv_KOMO_StructuredProblem P(*this);
+      Conv_Structured_BandedProgram C(P, 0);
+      C.maxBandSize = (k_order+1)*max(C.variableDimensions);
+      opt = new OptConstrained(x, dual, C, rai::MAX(verbose-2, 0), options);
+      if(bound_up.N && bound_lo.N){
+        opt->newton.bound_lo = bound_lo;
+        opt->newton.bound_up = bound_up;
+      }
+      opt->logFile = logFile;
+      opt->run();
+    } else {
+      arr a, b, c, d, e;
+      Conv_KOMOProblem_MathematicalProgram P0(komo_problem);
+      Conv_linearlyReparameterize_MathematicalProgram P(P0, splineB);
+      opt = new OptConstrained(z, dual, P, rai::MAX(verbose-2, 0));
+      opt->logFile = logFile;
+      opt->run();
     }
-    opt->logFile = logFile;
-    opt->run();
-  } else {
-    arr a, b, c, d, e;
-    Conv_KOMO_ConstrainedProblem P0(komo_problem);
-    Conv_linearlyReparameterize_ConstrainedProblem P(P0, splineB);
-    opt = new OptConstrained(z, dual, P, rai::MAX(verbose-2, 0));
-    opt->logFile = logFile;
-    opt->run();
-  }
+  }else if(solver==rai::KS_NLopt){
+    Conv_KOMO_SparseUnstructured P(*this, false);
+    NLOptInterface nlopt(P);
+    x = nlopt.solve();
+    set_x(x);
+  }else NIY;
   runTime = rai::realTime() - timeZero;
   if(logFile)(*logFile) <<"\n] #end of KOMO_run_log" <<endl;
   if(verbose>0) {
@@ -1532,6 +1539,7 @@ void KOMO::run_sub(const uintA& X, const uintA& Y) {
   if(opt) delete opt;
 
   {
+    Conv_KOMO_GraphProblem_toBeRetired graph_problem(*this);
     GraphProblem_Structure Gstruct(graph_problem);
     //evaluate once with full parameters to adopt initialization
     {
@@ -1553,15 +1561,6 @@ void KOMO::run_sub(const uintA& X, const uintA& Y) {
          <<" setJointStateCount=" <<Configuration::setJointStateCount <<endl;
   }
   if(verbose>0) cout <<getReport(verbose>1) <<endl;
-}
-
-void KOMO::optimize(bool initialize, double initNoise) {
-  if(initialize) reset(initNoise);
-  CHECK_EQ(configurations.N, T+k_order, "");
-
-  if(verbose>0) reportProblem();
-
-  run();
 }
 
 void KOMO_ext::getPhysicsReference(uint subSteps, int display) {
@@ -1649,19 +1648,25 @@ void KOMO::checkGradients() {
 #else
     double tolerance=1e-4;
 
-    ptr<ConstrainedProblem> CP;
+    ptr<MathematicalProgram_Structured> SP;
+    ptr<MathematicalProgram> CP;
 
-    if(denseOptimization) {
-      CP = make_shared<Conv_KOMO_DenseProblem>(*this);
-    } else if(sparseOptimization) {
-      CP = make_shared<Conv_Graph_ConstrainedProblem>(graph_problem);
-    } else { //DEFAULT CASE
-      CP = make_shared<Conv_KOMO_ConstrainedProblem>(komo_problem);
+    if(solver==rai::KS_none) {
+      NIY;
+    }else if(solver==rai::KS_dense || solver==rai::KS_sparse) {
+      CP = make_shared<Conv_KOMO_SparseUnstructured>(*this, solver==rai::KS_sparse);
+    }else if(solver==rai::KS_banded) {
+      SP = make_shared<Conv_KOMO_StructuredProblem>(*this);
+      auto BP = make_shared<Conv_Structured_BandedProgram>(*SP, 0);
+      BP->maxBandSize = (k_order+1)*max(BP->variableDimensions);
+      CP = BP;
+    }else if(solver==rai::KS_sparseStructured) {
+      SP = make_shared<Conv_KOMO_StructuredProblem>(*this);
+      CP = make_shared<Conv_Structured_BandedProgram>(*SP, 0, true);
     }
 
-
     VectorFunction F = [CP](arr& phi, arr& J, const arr& x) {
-      return CP->phi(phi, J, NoArr, NoObjectiveTypeA, x);
+      return CP->evaluate(phi, J, x);
     };
 //    checkJacobian(F, x, tolerance);
     arr J;
@@ -1673,11 +1678,11 @@ void KOMO::checkGradients() {
       double md=maxDiff(J[i], JJ[i], &j);
       if(md>mmd) mmd=md;
       if(md>tolerance && md>fabs(J(i, j))*tolerance) {
-        if(!denseOptimization) {
-          LOG(-1) <<"FAILURE in line " <<i <<" t=" <</*CP_komo.featureTimes(i) <<*/' ' <<komo_problem.featureNames(i) <<" -- max diff=" <<md <<" |"<<J(i, j)<<'-'<<JJ(i, j)<<"| (stored in files z.J_*)";
-        } else {
-          LOG(-1) <<"FAILURE in line " <<i <<" t=" <</*CP_komo.featureTimes(i) <<' ' <<komo_problem.featureNames(i) <<*/" -- max diff=" <<md <<" |"<<J(i, j)<<'-'<<JJ(i, j)<<"| (stored in files z.J_*)";
-        }
+      if(komo_problem.featureNames.N) {
+        LOG(-1) <<"FAILURE in line " <<i <<" t=" <</*CP_komo.featureTimes(i) <<*/' ' <<komo_problem.featureNames(i) <<" -- max diff=" <<md <<" |"<<J(i, j)<<'-'<<JJ(i, j)<<"| (stored in files z.J_*)";
+      } else {
+        LOG(-1) <<"FAILURE in line " <<i <<" t=" <</*CP_komo.featureTimes(i) <<' ' <<komo_problem.featureNames(i) <<*/" -- max diff=" <<md <<" |"<<J(i, j)<<'-'<<JJ(i, j)<<"| (stored in files z.J_*)";
+      }
         J[i] >>FILE("z.J_analytical");
         JJ[i] >>FILE("z.J_empirical");
         //cout <<"\nmeasured grad=" <<JJ <<"\ncomputed grad=" <<J <<endl;
@@ -1690,8 +1695,8 @@ void KOMO::checkGradients() {
     if(succ) cout <<"jacobianCheck -- SUCCESS (max diff error=" <<mmd <<")" <<endl;
 #endif
   } else {
-    Conv_KOMO_ConstrainedProblem P0(komo_problem);
-    Conv_linearlyReparameterize_ConstrainedProblem P1(P0, splineB);
+    Conv_KOMOProblem_MathematicalProgram P0(komo_problem);
+    Conv_linearlyReparameterize_MathematicalProgram P1(P0, splineB);
     checkJacobianCP(P1, z, 1e-4);
   }
 }
@@ -1794,7 +1799,7 @@ bool KOMO::displayTrajectory(double delay, bool watch, bool overlayPaths, const 
       if(delay<-10.) FILE("z.graph") <<K;
       gl->watch(timetag.p);
     } else {
-      gl->update(timetag.p);
+      gl->update(timetag.p, true);
       if(delay) rai::wait(delay * K.frames.first()->tau);
     }
     if(saveVideoPath) write_ppm(gl->captureImage, STRING(saveVideoPath<<std::setw(4)<<std::setfill('0')<<t<<".ppm"));
@@ -1987,7 +1992,7 @@ void KOMO::setupRepresentations() {
 
       intA S;
       //query the task map and check dimensionalities of returns
-      ob->map->signature(S, Ctuple);
+      ob->feat->signature(S, Ctuple);
       for(int k:ob->configs[l]) if(k>=0){
         for(int& i:S){
           if(i>=(int)cdim(k) && i<(int)cdim(k+1)) i = i - cdim(k) + Cdims(ob->configs(l,k));
@@ -1996,7 +2001,7 @@ void KOMO::setupRepresentations() {
       ptr<GroundedObjective> o = make_shared<GroundedObjective>();
       o->Ctuple = Ctuple;
       o->signature = S;
-      o->dim = ob->map->__dim_phi(Ctuple);
+      o->dim = ob->feat->__dim_phi(Ctuple);
       objs.append(o);
     }
   }
@@ -2294,14 +2299,14 @@ rai::Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featur
   arr taskH=zeros(objectives.N);
   arr taskF=zeros(objectives.N);
   uint M=0;
-  if(!denseOptimization && !sparseOptimization) {
+  if(objectives.first()->configs.nd==1) { //solver==rai::KS_banded
     for(uint t=0; t<T; t++) {
       for(uint i=0; i<objectives.N; i++) {
         ptr<Objective> task = objectives(i);
         if(task->isActive(t)) {
           uint d=0;
           if(wasRun) {
-            d=task->map->__dim_phi(configurations({t, t+k_order}));
+            d=task->feat->__dim_phi(configurations({t, t+k_order}));
             for(uint j=0; j<d; j++) CHECK_EQ(featureTypes(M+j), task->type, "");
             if(d) {
               if(task->type==OT_sos) {
@@ -2330,8 +2335,8 @@ rai::Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featur
           if(reportFeatures==1) {
             featuresOs <<std::setw(4) <<t <<' ' <<std::setw(2) <<i <<' ' <<std::setw(2) <<d
                        <<' ' <<std::setw(40) <<task->name
-                       <<" k=" <<task->map->order <<" ot=" <<task->type <<" prec=" <<std::setw(4) <<task->map->scale;
-            if(task->map->target.N<5) featuresOs <<" y*=[" <<task->map->target <<']'; else featuresOs<<"y*=[..]";
+                       <<" k=" <<task->feat->order <<" ot=" <<task->type <<" prec=" <<std::setw(4) <<task->feat->scale;
+            if(task->feat->target.N<5) featuresOs <<" y*=[" <<task->feat->target <<']'; else featuresOs<<"y*=[..]";
             featuresOs <<" y^2=" <<err(t, i) <<endl;
           }
         }
@@ -2345,7 +2350,7 @@ rai::Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featur
         uint d=0;
         uint time=ob->configs(l, -1);
         if(wasRun) {
-          d=ob->map->__dim_phi(Ktuple);
+          d=ob->feat->__dim_phi(Ktuple);
           for(uint j=0; j<d; j++) CHECK_EQ(featureTypes(M+j), ob->type, "");
           if(d) {
             if(ob->type==OT_sos) {
@@ -2370,8 +2375,8 @@ rai::Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featur
         if(reportFeatures==1) {
           featuresOs <<std::setw(4) <<time <<' ' <<std::setw(2) <<i <<' ' <<std::setw(2) <<d <<ob->configs[l]
                      <<' ' <<std::setw(40) <<ob->name
-                     <<" k=" <<ob->map->order <<" ot=" <<ob->type <<" prec=" <<std::setw(4) <<ob->map->scale;
-          if(ob->map->target.N<5) featuresOs <<" y*=[" <<ob->map->target <<']'; else featuresOs<<"y*=[..]";
+                     <<" k=" <<ob->feat->order <<" ot=" <<ob->type <<" prec=" <<std::setw(4) <<ob->feat->scale;
+          if(ob->feat->target.N<5) featuresOs <<" y*=[" <<ob->feat->target <<']'; else featuresOs<<"y*=[..]";
           featuresOs <<" y^2=" <<err(time, i) <<endl;
         }
       }
@@ -2385,7 +2390,7 @@ rai::Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featur
   for(uint i=0; i<objectives.N; i++) {
     ptr<Objective> c = objectives(i);
     Graph& g = report.newSubgraph({c->name}, {});
-    g.newNode<double>({"order"}, {}, c->map->order);
+    g.newNode<double>({"order"}, {}, c->feat->order);
     g.newNode<String>({"type"}, {}, STRING(c->type.name()));
     if(taskC(i)) g.newNode<double>("sos", {}, taskC(i));
     if(taskG(i)) g.newNode<double>("ineq", {}, taskG(i));
@@ -2465,17 +2470,17 @@ rai::Graph KOMO::getProblemGraph(bool includeValues, bool includeSolution) {
   //objectives
   for(ptr<Objective>& ob : objectives) {
     Graph& g = K.newSubgraph({ob->name});
-    g.newNode<double>({"order"}, {}, ob->map->order);
+    g.newNode<double>({"order"}, {}, ob->feat->order);
     g.newNode<String>({"type"}, {}, STRING(ob->type));
     g.newNode<String>({"feature"}, {}, STRING(ob->name));
     if(ob->configs.N) g.newNode<intA>({"vars"}, {}, ob->configs);
-//    g.copy(task->map->getSpec(world), true);
+//    g.copy(task->feat->getSpec(world), true);
     if(includeValues) {
       arr y, Jy;
       arrA V, J;
-      if(!denseOptimization && !sparseOptimization) {
+      if(ob->configs.nd==1) {
         for(uint t=0; t<ob->configs.N && t<T; t++) if(ob->isActive(t)) {
-            ob->map->__phi(y, Jy, configurations({t, t+k_order}));
+            ob->feat->__phi(y, Jy, configurations({t, t+k_order}));
             if(isSpecial(Jy)) Jy = unpack(Jy);
 
             V.append(y);
@@ -2484,7 +2489,7 @@ rai::Graph KOMO::getProblemGraph(bool includeValues, bool includeSolution) {
       } else {
         for(uint l=0; l<ob->configs.d0; l++) {
           ConfigurationL Ktuple = configurations.sub(convert<uint, int>(ob->configs[l]+(int)k_order));
-          ob->map->__phi(y, Jy, Ktuple);
+          ob->feat->__phi(y, Jy, Ktuple);
           if(isSpecial(Jy)) Jy = unpack(Jy);
 
           V.append(y);
@@ -2521,8 +2526,9 @@ double KOMO::getCosts() {
   return R.get<double>("sos_sumOfSqr");
 }
 
-void KOMO::Conv_KOMO_KOMOProblem::getStructure(uintA& variableDimensions, uintA& featureTimes, ObjectiveTypeA& featureTypes) {
+void KOMO::Conv_KOMO_KOMOProblem_toBeRetired::getStructure(uintA& variableDimensions, uintA& featureTimes, ObjectiveTypeA& featureTypes) {
   CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet: use komo.reset()");
+
   if(!!variableDimensions) {
     variableDimensions.resize(komo.T);
     for(uint t=0; t<komo.T; t++) variableDimensions(t) = komo.configurations(t+komo.k_order)->getJointStateDimension();
@@ -2538,7 +2544,7 @@ void KOMO::Conv_KOMO_KOMOProblem::getStructure(uintA& variableDimensions, uintA&
     for(uint i=0; i<komo.objectives.N; i++) {
       ptr<Objective> task = komo.objectives.elem(i);
       if(task->isActive(t)) {
-        uint m = task->map->__dim_phi(komo.configurations({t, t+komo.k_order})); //dimensionality of this task
+        uint m = task->feat->__dim_phi(komo.configurations({t, t+komo.k_order})); //dimensionality of this task
 
         if(!!featureTimes) featureTimes.append(t, m); //consts<uint>(t, m));
         if(!!featureTypes) featureTypes.append(task->type, m); //consts<ObjectiveType>(task->type, m));
@@ -2557,13 +2563,15 @@ void KOMO::Conv_KOMO_KOMOProblem::getStructure(uintA& variableDimensions, uintA&
 
 bool WARN_FIRST_TIME=true;
 
-void KOMO::Conv_KOMO_KOMOProblem::phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, ObjectiveTypeA& tt, const arr& x) {
+void KOMO::Conv_KOMO_KOMOProblem_toBeRetired::phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, ObjectiveTypeA& tt, const arr& x) {
   const uintA prevPhiIndex=phiIndex, prevPhiDim=phiDim;
 
   //-- set the trajectory
   komo.set_x(x);
 
-  CHECK(dimPhi, "getStructure must be called first");
+  if(!dimPhi){
+    LOG(-1) <<"no objectives! did you call getStructure first?";
+  }
   //  getStructure(NoUintA, featureTimes, tt);
   //  if(WARN_FIRST_TIME){ LOG(-1)<<"calling inefficient getStructure"; WARN_FIRST_TIME=false; }
   phi.resize(dimPhi);
@@ -2581,8 +2589,8 @@ void KOMO::Conv_KOMO_KOMOProblem::phi(arr& phi, arrA& J, arrA& H, uintA& feature
       ptr<Objective> task = komo.objectives.elem(i);
       if(task->isActive(t)) {
         //query the task map and check dimensionalities of returns
-        task->map->__phi(y, (!!J?Jy:NoArr), Ktuple);
-//        uint m = task->map->__dim_phi(Ktuple);
+        task->feat->__phi(y, (!!J?Jy:NoArr), Ktuple);
+//        uint m = task->feat->__dim_phi(Ktuple);
 //        CHECK_EQ(m,y.N,"");
         if(!!J) CHECK_EQ(y.N, Jy.d0, "");
         if(!!J) CHECK_EQ(Jy.nd, 2, "");
@@ -2620,18 +2628,15 @@ void KOMO::Conv_KOMO_KOMOProblem::phi(arr& phi, arrA& J, arrA& H, uintA& feature
   reportAfterPhiComputation(komo);
 }
 
-void KOMO::Conv_KOMO_DenseProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x) {
+void KOMO::Conv_KOMO_SparseUnstructured::evaluate(arr& phi, arr& J, const arr& x) {
   //-- set the trajectory
   komo.set_x(x);
 
   if(!dimPhi) getDimPhi();
-//  CHECK(dimPhi,"getStructure must be called first");
-//  getStructure(NoUintA, featureTimes, tt);
-//  if(WARN_FIRST_TIME){ LOG(-1)<<"calling inefficient getStructure"; WARN_FIRST_TIME=false; }
+
   phi.resize(dimPhi);
-  if(!!tt) tt.resize(dimPhi);
   if(!!J){
-    bool SPARSE_JACOBIANS = true;
+    bool SPARSE_JACOBIANS = sparse;
     if(!SPARSE_JACOBIANS) {
       J.resize(dimPhi, x.N).setZero();
     } else {
@@ -2652,7 +2657,7 @@ void KOMO::Conv_KOMO_DenseProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA&
       kdim.prepend(0);
 
       //query the task map and check dimensionalities of returns
-      ob->map->__phi(y, (!!J?Jy:NoArr), Ktuple);
+      ob->feat->__phi(y, (!!J?Jy:NoArr), Ktuple);
       if(!!J) CHECK_EQ(y.N, Jy.d0, "");
       if(!!J) CHECK_EQ(Jy.nd, 2, "");
       if(!!J) CHECK_EQ(Jy.d1, kdim.last(), "");
@@ -2681,8 +2686,6 @@ void KOMO::Conv_KOMO_DenseProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA&
         }
       }
 
-      if(!!tt) for(uint i=0; i<y.N; i++) tt(M+i) = ob->type;
-
       //counter for features phi
       M += y.N;
     }
@@ -2691,32 +2694,68 @@ void KOMO::Conv_KOMO_DenseProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA&
   CHECK_EQ(M, dimPhi, "");
   komo.featureValues = phi;
   if(!!J) komo.featureJacobians.resize(1).scalar() = J;
-  if(!!tt) komo.featureTypes = tt;
 
   reportAfterPhiComputation(komo);
 
   if(quadraticPotentialLinear.N){
-      tt.append(OT_f);
       phi.append( (~x * quadraticPotentialHessian * x).scalar() + scalarProduct(quadraticPotentialLinear, x));
       J.append(quadraticPotentialLinear);
-      H = quadraticPotentialHessian;
   }
 }
 
-void KOMO::Conv_KOMO_DenseProblem::getDimPhi() {
+void KOMO::Conv_KOMO_SparseUnstructured::getFHessian(arr &H, const arr &x){
+  if(quadraticPotentialLinear.N){
+    H = quadraticPotentialHessian;
+  }else{
+    H.clear();
+  }
+}
+
+void KOMO::Conv_KOMO_SparseUnstructured::getDimPhi() {
   CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet: use komo.reset()");
   uint M=0;
   for(uint i=0; i<komo.objectives.N; i++) {
     ptr<Objective> ob = komo.objectives.elem(i);
     for(uint l=0; l<ob->configs.d0; l++) {
       ConfigurationL Ktuple = komo.configurations.sub(convert<uint, int>(ob->configs[l]+(int)komo.k_order));
-      M += ob->map->__dim_phi(Ktuple); //dimensionality of this task
+      M += ob->feat->__dim_phi(Ktuple); //dimensionality of this task
     }
   }
   dimPhi = M;
 }
 
-void KOMO::Conv_KOMO_GraphProblem::getStructure(uintA& variableDimensions, intAA& featureVariables, ObjectiveTypeA& featureTypes) {
+void KOMO::Conv_KOMO_SparseUnstructured::getFeatureTypes(ObjectiveTypeA& ft){
+  if(!dimPhi) getDimPhi();
+  ft.resize(dimPhi);
+  uint M=0;
+  for(uint i=0; i<komo.objectives.N; i++) {
+    ptr<Objective> ob = komo.objectives.elem(i);
+    for(uint l=0; l<ob->configs.d0; l++) {
+      ConfigurationL Ktuple = komo.configurations.sub(convert<uint, int>(ob->configs[l]+(int)komo.k_order));
+      uint m = ob->feat->__dim_phi(Ktuple);
+      for(uint i=0; i<m; i++) ft(M+i) = ob->type;
+      M += m;
+    }
+  }
+  if(quadraticPotentialLinear.N){
+    ft.append(OT_f);
+  }
+  komo.featureTypes = ft;
+}
+
+void KOMO::Conv_KOMO_SparseUnstructured::getBounds(arr& bounds_lo, arr& bounds_up){
+  if(!komo.bound_lo.N) komo.setBounds();
+  bounds_lo = komo.bound_lo;
+  bounds_up = komo.bound_up;
+}
+
+arr KOMO::Conv_KOMO_SparseUnstructured::getInitializationSample(){
+  komo.run_prepare(.01);
+  return komo.x;
+}
+
+
+void KOMO::Conv_KOMO_GraphProblem_toBeRetired::getStructure(uintA& variableDimensions, intAA& featureVariables, ObjectiveTypeA& featureTypes) {
   CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet: use komo.reset()");
   if(!!variableDimensions) {
 #if 1
@@ -2740,7 +2779,7 @@ void KOMO::Conv_KOMO_GraphProblem::getStructure(uintA& variableDimensions, intAA
     CHECK_EQ(ob->configs.nd, 2, "in sparse mode, vars need to be tuples of variables");
     for(uint l=0; l<ob->configs.d0; l++) {
       ConfigurationL Ktuple = komo.configurations.sub(convert<uint, int>(ob->configs[l]+(int)komo.k_order));
-      uint m = ob->map->__dim_phi(Ktuple); //dimensionality of this task
+      uint m = ob->feat->__dim_phi(Ktuple); //dimensionality of this task
       if(!!featureVariables) featureVariables.append(ob->configs[l], m);
       if(!!featureTypes) featureTypes.append(ob->type, m);
       M += m;
@@ -2752,7 +2791,130 @@ void KOMO::Conv_KOMO_GraphProblem::getStructure(uintA& variableDimensions, intAA
   dimPhi = M;
 }
 
-void KOMO::Conv_KOMO_GraphProblem::getSemantics(StringA& varNames, StringA& phiNames) {
+KOMO::Conv_KOMO_StructuredProblem::Conv_KOMO_StructuredProblem(KOMO& _komo) : komo(_komo) {
+  if(!komo.configurations.N) komo.setupConfigurations();
+  CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet");
+
+  //count variables
+  uint xDim=0;
+  for(uint t=0; t<komo.T; t++){
+    xDim += komo.configurations(t+komo.k_order)->getJointStateDimension();
+  }
+
+  //create variable index
+  xIndex2VarId.resize(xDim);
+  variableIndex.resize(komo.T);
+  uint count=0;
+  for(uint t=0; t<komo.T; t++){
+    VariableIndexEntry& V = variableIndex(t);
+    int s = t+komo.k_order;
+    V.t = t;
+    V.dim = komo.configurations(s)->getJointStateDimension();
+    V.xIndex = count;
+    for(uint i=0;i<V.dim;i++) xIndex2VarId(count++) = t;
+  }
+
+  //count features
+  uint F=0;
+  for(ptr<Objective>& ob:komo.objectives) {
+    CHECK_EQ(ob->configs.nd, 2, "in sparse mode, vars need to be tuples of variables");
+    F += ob->configs.d0;
+  }
+  featureIndex.resize(F);
+
+  //create feature index
+  uint f=0;
+  uint fDim = 0;
+  for(ptr<Objective>& ob:komo.objectives) {
+    for(uint l=0; l<ob->configs.d0; l++) {
+      FeatureIndexEntry& F = featureIndex(f);
+      F.ob = ob;
+      F.Ctuple = komo.configurations.sub(convert<uint, int>(ob->configs[l]+(int)komo.k_order));
+      F.t = l;
+      F.varIds = ob->configs[l];
+      F.dim = ob->feat->__dim_phi(F.Ctuple); //dimensionality of this task
+      F.phiIndex = fDim;
+      fDim += F.dim;
+      f++;
+    }
+  }
+
+  featuresDim = fDim;
+}
+
+uint KOMO::Conv_KOMO_StructuredProblem::getDimension(){ return komo.getPath_totalDofs(); }
+
+void KOMO::Conv_KOMO_StructuredProblem::getFeatureTypes(ObjectiveTypeA& featureTypes){
+  CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet: use komo.reset()");
+  if(!!featureTypes) featureTypes.clear();
+  for(ptr<Objective>& ob:komo.objectives) {
+    CHECK_EQ(ob->configs.nd, 2, "in sparse mode, vars need to be tuples of variables");
+    for(uint l=0; l<ob->configs.d0; l++) {
+      ConfigurationL Ktuple = komo.configurations.sub(convert<uint, int>(ob->configs[l]+(int)komo.k_order));
+      uint m = ob->feat->__dim_phi(Ktuple); //dimensionality of this task
+      if(!!featureTypes) featureTypes.append(ob->type, m);
+    }
+  }
+
+  if(!!featureTypes) komo.featureTypes = featureTypes;
+}
+
+void KOMO::Conv_KOMO_StructuredProblem::getBounds(arr& bounds_lo, arr& bounds_up){
+  if(!komo.bound_lo.N) komo.setBounds();
+  bounds_lo = komo.bound_lo;
+  bounds_up = komo.bound_up;
+}
+
+arr KOMO::Conv_KOMO_StructuredProblem::getInitializationSample(){
+  komo.run_prepare(.01);
+  return komo.x;
+}
+
+void KOMO::Conv_KOMO_StructuredProblem::getStructure(uintA& variableDimensions, uintA& featureDimensions, intAA& featureVariables){
+  CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet: use komo.reset()");
+
+#if 1
+  variableDimensions.resize(variableIndex.N);
+  variableDimensions.resize(variableIndex.N);
+  for(uint i=0;i<variableIndex.N;i++) variableDimensions(i) = variableIndex(i).dim;
+
+  featureDimensions.resize(featureIndex.N);
+  featureVariables.resize(featureIndex.N);
+  for(uint f=0;f<featureIndex.N;f++){
+    FeatureIndexEntry& F = featureIndex(f);
+    featureDimensions(f) = F.dim;
+    featureVariables(f) = F.varIds;
+  }
+#else
+  if(!!variableDimensions) {
+    variableDimensions.resize(komo.T);
+    for(uint t=0; t<komo.T; t++) variableDimensions(t) = komo.configurations(t+komo.k_order)->getJointStateDimension();
+  }
+
+  if(!!featureDimensions){ featureDimensions.clear(); }
+  if(!!featureVariables) featureVariables.clear();
+
+  for(ptr<Objective>& ob:komo.objectives) {
+    CHECK_EQ(ob->configs.nd, 2, "in sparse mode, vars need to be tuples of variables");
+    for(uint l=0; l<ob->configs.d0; l++) {
+      ConfigurationL Ktuple = komo.configurations.sub(convert<uint, int>(ob->configs[l]+(int)komo.k_order));
+      uint m = ob->feat->__dim_phi(Ktuple); //dimensionality of this task
+      if(!!featureDimensions) featureDimensions.append(m);
+      if(!!featureVariables){
+        intA vars = ob->configs[l].copy();
+        for(uint j=vars.N; j--;) if(vars.elem(j)<0) vars.remove(j);
+        featureVariables.append(vars);
+      }
+    }
+  }
+
+  if(!!featureDimensions){
+    featDimIntegral = integral(featureDimensions).prepend(0);
+  }
+#endif
+}
+
+void KOMO::Conv_KOMO_GraphProblem_toBeRetired::getSemantics(StringA& varNames, StringA& phiNames) {
 #if 1
   varNames.resize(komo.T);
   for(uint t=0; t<komo.T; t++) varNames(t) <<"config_" <<t;
@@ -2772,14 +2934,14 @@ void KOMO::Conv_KOMO_GraphProblem::getSemantics(StringA& varNames, StringA& phiN
     CHECK_EQ(ob->configs.nd, 2, "in sparse mode, vars need to be tuples of variables");
     for(uint l=0; l<ob->configs.d0; l++) {
       ConfigurationL Ktuple = komo.configurations.sub(convert<uint, int>(ob->configs[l]+(int)komo.k_order));
-      uint m = ob->map->__dim_phi(Ktuple); //dimensionality of this task
+      uint m = ob->feat->__dim_phi(Ktuple); //dimensionality of this task
       phiNames.append(ob->name, m);
       M += m;
     }
   }
 }
 
-void KOMO::Conv_KOMO_GraphProblem::phi(arr& phi, arrA& J, arrA& H, const arr& x) {
+void KOMO::Conv_KOMO_GraphProblem_toBeRetired::phi(arr& phi, arrA& J, arrA& H, const arr& x) {
   //-- set the trajectory
   komo.set_x(x);
 
@@ -2800,7 +2962,7 @@ void KOMO::Conv_KOMO_GraphProblem::phi(arr& phi, arrA& J, arrA& H, const arr& x)
       kdim.prepend(0);
 
       //query the task map and check dimensionalities of returns
-      ob->map->__phi(y, (!!J?Jy:NoArr), Ktuple);
+      ob->feat->__phi(y, (!!J?Jy:NoArr), Ktuple);
       if(!!J) CHECK_EQ(y.N, Jy.d0, "");
       if(!!J) CHECK_EQ(Jy.nd, 2, "");
       if(!!J) CHECK_EQ(Jy.d1, kdim.last(), "");
@@ -2839,11 +3001,15 @@ void KOMO::Conv_KOMO_GraphProblem::phi(arr& phi, arrA& J, arrA& H, const arr& x)
   reportAfterPhiComputation(komo);
 }
 
-void KOMO::Conv_KOMO_GraphProblem::setPartialX(const uintA& whichX, const arr& x) {
+void KOMO::Conv_KOMO_GraphProblem_toBeRetired::setPartialX(const uintA& whichX, const arr& x) {
   komo.set_x(x, whichX);
 }
 
-void KOMO::Conv_KOMO_GraphProblem::getPartialPhi(arr& phi, arrA& J, arrA& H, const uintA& whichPhi) {
+void KOMO::Conv_KOMO_StructuredProblem::setSingleVariable(uint var_id, const arr& x){
+  komo.set_x(x, {var_id});
+}
+
+void KOMO::Conv_KOMO_GraphProblem_toBeRetired::getPartialPhi(arr& phi, arrA& J, arrA& H, const uintA& whichPhi) {
   //NON EFFICIENT
 
   {
@@ -2865,7 +3031,7 @@ void KOMO::Conv_KOMO_GraphProblem::getPartialPhi(arr& phi, arrA& J, arrA& H, con
         kdim.prepend(0);
 
         //query the task map and check dimensionalities of returns
-        ob->map->__phi(y, (!!J?Jy:NoArr), Ktuple);
+        ob->feat->__phi(y, (!!J?Jy:NoArr), Ktuple);
         if(!!J && isSpecial(Jy)) Jy = unpack(Jy);
 
         if(!!J) CHECK_EQ(y.N, Jy.d0, "");
@@ -2903,7 +3069,115 @@ void KOMO::Conv_KOMO_GraphProblem::getPartialPhi(arr& phi, arrA& J, arrA& H, con
   if(!!J) J = J.sub(whichPhi);
 }
 
-void KOMO::Conv_KOMO_MathematicalProgram::createIndices(){
+void KOMO::Conv_KOMO_StructuredProblem::evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H){
+#if 1
+  if(!komo.featureValues.N){
+    FeatureIndexEntry& Flast = featureIndex.last();
+    komo.featureValues.resize(Flast.phiIndex+Flast.dim).setZero();
+  }
+
+  FeatureIndexEntry& F = featureIndex(feat_id);
+
+  arr Jy;
+  F.ob->feat->__phi(phi, (!!J?Jy:NoArr), F.Ctuple);
+  CHECK_EQ(phi.N, F.dim, "");
+
+  komo.featureValues.setVectorBlock(phi, F.phiIndex);
+
+  if(!J) return;
+
+  CHECK_EQ(phi.N, Jy.d0, "");
+  CHECK_EQ(Jy.nd, 2, "");
+  if(absMax(phi)>1e10) RAI_MSG("WARNING phi=" <<phi);
+
+  if(!isSparseMatrix(Jy)){
+    intA vars = F.ob->configs[F.t];
+    uintA kdim = getKtupleDim(F.Ctuple).prepend(0);
+    for(uint j=vars.N; j--;) {
+        if(vars(j)<0) {
+          Jy.delColumns(kdim(j), kdim(j+1)-kdim(j)); //delete the columns that correspond to the prefix!!
+        }
+    }
+    J = Jy;
+  }else{
+    auto S = Jy.sparse();
+
+    uint n=0;
+    for(uint v:F.varIds) n += variableIndex(v).dim;
+    J.resize(phi.N, n).setZero();
+
+    for(uint k=0; k<Jy.N; k++){
+      uint i = S.elems(k,0);
+      uint j = S.elems(k,1);
+      double x = Jy.elem(k);
+      uint var = xIndex2VarId(j);
+      VariableIndexEntry& V = variableIndex(var);
+      uint var_j = j - V.xIndex;
+      CHECK(var_j < V.dim, "");
+      if(V.dim == J.d1){
+        J(i, var_j) += x;
+      }else{
+        bool good=false;
+        uint offset=0;
+        for(uint v:F.varIds){
+          if(v==var){
+            J(i, offset+var_j) += x;
+            good=true;
+            break;
+          }
+          offset += variableIndex(v).dim;
+        }
+        CHECK(good, "Jacobian is non-zero on variable " <<var <<", but indices say that feature depends on " <<F.varIds);
+      }
+    }
+  }
+#else
+  //count to the feat_id;
+
+  uint count=0;
+  for(ptr<Objective>& ob:komo.objectives) {
+    for(uint l=0; l<ob->configs.d0; l++) {
+      if(count==feat_id){ //this is the feature we want!
+        ConfigurationL Ktuple = komo.configurations.sub(convert<uint, int>(ob->configs[l]+(int)komo.k_order));
+        uintA kdim = getKtupleDim(Ktuple);
+        kdim.prepend(0);
+
+        //query the task map and check dimensionalities of returns
+        arr Jy;
+        ob->feat->__phi(phi, (!!J?Jy:NoArr), Ktuple);
+        if(!!J && isSpecial(Jy)) Jy = unpack(Jy);
+
+        if(!!J) CHECK_EQ(phi.N, Jy.d0, "");
+        if(!!J) CHECK_EQ(Jy.nd, 2, "");
+        if(!!J) CHECK_EQ(Jy.d1, kdim.last(), "");
+        if(!phi.N) continue;
+        if(absMax(phi)>1e10) RAI_MSG("WARNING y=" <<phi);
+
+        if(!!J){
+          for(uint j=ob->configs.d1; j--;) {
+            if(ob->configs(l, j)<0) {
+              Jy.delColumns(kdim(j), kdim(j+1)-kdim(j)); //delete the columns that correspond to the prefix!!
+            }
+          }
+          J = Jy;
+        }
+
+        if(!!H) NIY;
+
+        if(komo.featureValues.N!=featDimIntegral.last()){
+          komo.featureValues.resize(featDimIntegral.last());
+        }
+        komo.featureValues.setVectorBlock(phi, featDimIntegral(feat_id));
+
+        return;
+      }
+      count++;
+    }
+  }
+#endif
+}
+
+KOMO::Conv_KOMO_FineStructuredProblem::Conv_KOMO_FineStructuredProblem(KOMO& _komo) : komo(_komo) {
   if(!komo.configurations.N) komo.setupConfigurations();
   CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet");
 
@@ -2964,7 +3238,7 @@ void KOMO::Conv_KOMO_MathematicalProgram::createIndices(){
       FeatureIndexEntry& F = featureIndex(f);
       F.ob = ob;
       F.Ctuple = komo.configurations.sub(convert<uint, int>(ob->configs[l]+(int)komo.k_order));
-      F.dim = ob->map->__dim_phi(F.Ctuple); //dimensionality of this task
+      F.dim = ob->feat->__dim_phi(F.Ctuple); //dimensionality of this task
       fDim += F.dim;
       f++;
     }
@@ -2973,13 +3247,11 @@ void KOMO::Conv_KOMO_MathematicalProgram::createIndices(){
   featuresDim = fDim;
 }
 
-uint KOMO::Conv_KOMO_MathematicalProgram::getDimension(){
-  if(!variableIndex.N) createIndices();
-
+uint KOMO::Conv_KOMO_FineStructuredProblem::getDimension(){
   return xIndex2VarId.N;
 }
 
-void KOMO::Conv_KOMO_MathematicalProgram::getBounds(arr& bounds_lo, arr& bounds_up){
+void KOMO::Conv_KOMO_FineStructuredProblem::getBounds(arr& bounds_lo, arr& bounds_up){
   if(!komo.configurations.N) komo.setupConfigurations();
   CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet");
 
@@ -3001,22 +3273,14 @@ void KOMO::Conv_KOMO_MathematicalProgram::getBounds(arr& bounds_lo, arr& bounds_
   }
 }
 
-void KOMO::Conv_KOMO_MathematicalProgram::getFeatureTypes(ObjectiveTypeA& featureTypes){
-  if(!featureIndex.N) createIndices();
-
+void KOMO::Conv_KOMO_FineStructuredProblem::getFeatureTypes(ObjectiveTypeA& featureTypes){
   featureTypes.clear();
   for(uint f=0;f<featureIndex.N;f++){
     featureTypes.append( consts<ObjectiveType>(featureIndex(f).ob->type, featureIndex(f).dim) );
   }
 }
 
-bool KOMO::Conv_KOMO_MathematicalProgram::isStructured(){
-  return true;
-}
-
-void KOMO::Conv_KOMO_MathematicalProgram::getStructure(uintA& variableDimensions, uintA& featureDimensions, intAA& featureVariables){
-  if(!variableIndex.N) createIndices();
-
+void KOMO::Conv_KOMO_FineStructuredProblem::getStructure(uintA& variableDimensions, uintA& featureDimensions, intAA& featureVariables){
   variableDimensions.resize(variableIndex.N);
   for(uint i=0;i<variableIndex.N;i++){
     variableDimensions(i) = variableIndex(i).dim;
@@ -3030,20 +3294,25 @@ void KOMO::Conv_KOMO_MathematicalProgram::getStructure(uintA& variableDimensions
     featureDimensions(f) = F.dim;
     if(!F.dim) continue;
 
-    F.ob->map->__phi(y, J, F.Ctuple);
+    F.ob->feat->__phi(y, J, F.Ctuple);
 
-    CHECK(isSparseMatrix(J), "");
-    F.varIds.clear();
-    intA& elems = J.sparse().elems;
-    for(uint i=0;i<elems.d0;i++){
-      uint idx = elems(i,1);
-      F.varIds.setAppendInSorted(xIndex2VarId(idx));
+    if(isSparseMatrix(J)){
+      F.varIds.clear();
+      intA& elems = J.sparse().elems;
+      for(uint i=0;i<elems.d0;i++){
+        uint idx = elems(i,1);
+        F.varIds.setAppendInSorted(xIndex2VarId(idx));
+      }
+    }else{
+      intA vars = F.ob->configs[F.t];
+      for(int &i : vars) if(i>=0) F.varIds.append(i);
     }
     featureVariables(f) = F.varIds;
   }
 }
 
-void KOMO::Conv_KOMO_MathematicalProgram::evaluate(arr& phi, arr& J, arr& H, const arr& x){
+/*void KOMO::Conv_KOMO_MathematicalProgram::evaluate(arr& phi, arr& J, const arr& x){
+  HALT("should not be used!");
   //-- set the decision variable
 #if 0 //the following should be equivalent, althought they work quite differently
   komo.set_x(x);
@@ -3072,7 +3341,7 @@ void KOMO::Conv_KOMO_MathematicalProgram::evaluate(arr& phi, arr& J, arr& H, con
     if(!F.dim) continue;
 
 #if 1 //simpler and more direct
-    F.ob->map->__phi(y, (!!J?Jy:NoArr), F.Ctuple);
+    F.ob->feat->__phi(y, (!!J?Jy:NoArr), F.Ctuple);
     CHECK_EQ(y.N, F.dim, "");
     if(!!J) CHECK_EQ(y.N, Jy.d0, "");
     if(!!J) CHECK_EQ(Jy.nd, 2, "");
@@ -3128,9 +3397,9 @@ void KOMO::Conv_KOMO_MathematicalProgram::evaluate(arr& phi, arr& J, arr& H, con
   if(!!J) komo.featureJacobians.resize(1).scalar() = J;
 
   reportAfterPhiComputation(komo);
-}
+}*/
 
-void KOMO::Conv_KOMO_MathematicalProgram::setSingleVariable(uint var_id, const arr& x){
+void KOMO::Conv_KOMO_FineStructuredProblem::setSingleVariable(uint var_id, const arr& x){
   VariableIndexEntry& V = variableIndex(var_id);
   CHECK_EQ(V.dim, x.N, "");
   if(V.joint){
@@ -3141,58 +3410,69 @@ void KOMO::Conv_KOMO_MathematicalProgram::setSingleVariable(uint var_id, const a
   }
 }
 
-void KOMO::Conv_KOMO_MathematicalProgram::evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H){
+void KOMO::Conv_KOMO_FineStructuredProblem::evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H){
   FeatureIndexEntry& F = featureIndex(feat_id);
 
   if(!J){
-    F.ob->map->__phi(phi, NoArr, F.Ctuple);
+    F.ob->feat->__phi(phi, NoArr, F.Ctuple);
     return;
   }
 
-  arr Jsparse;
-  F.ob->map->__phi(phi, Jsparse, F.Ctuple);
+  arr Jy;
+  F.ob->feat->__phi(phi, Jy, F.Ctuple);
   CHECK_EQ(phi.N, F.dim, "");
-  CHECK_EQ(phi.N, Jsparse.d0, "");
-  CHECK_EQ(Jsparse.nd, 2, "");
+  CHECK_EQ(phi.N, Jy.d0, "");
+  CHECK_EQ(Jy.nd, 2, "");
   if(absMax(phi)>1e10) RAI_MSG("WARNING phi=" <<phi);
 
-  auto S = Jsparse.sparse();
-
-  uint n=0;
-  for(uint v:F.varIds) n += variableIndex(v).dim;
-  J.resize(phi.N, n).setZero();
-
-  for(uint k=0; k<Jsparse.N; k++){
-    uint i = S.elems(k,0);
-    uint j = S.elems(k,1);
-    double x = Jsparse.elem(k);
-    uint var = xIndex2VarId(j);
-    VariableIndexEntry& V = variableIndex(var);
-    uint var_j = j - V.xIndex;
-    CHECK(var_j < V.dim, "");
-    if(V.dim == J.d1){
-      J(i, var_j) += x;
-    }else{
-      bool good=false;
-      uint offset=0;
-      for(uint v:F.varIds){
-        if(v==var){
-          J(i, offset+var_j) += x;
-          good=true;
-          break;
+  if(!isSparseMatrix(Jy)){
+    intA vars = F.ob->configs[F.t];
+    uintA kdim = getKtupleDim(F.Ctuple).prepend(0);
+    for(uint j=vars.N; j--;) {
+        if(vars(j)<0) {
+          Jy.delColumns(kdim(j), kdim(j+1)-kdim(j)); //delete the columns that correspond to the prefix!!
         }
-        offset += variableIndex(v).dim;
+    }
+    J = Jy;
+  }else{
+    auto S = Jy.sparse();
+
+    uint n=0;
+    for(uint v:F.varIds) n += variableIndex(v).dim;
+    J.resize(phi.N, n).setZero();
+
+    for(uint k=0; k<Jy.N; k++){
+      uint i = S.elems(k,0);
+      uint j = S.elems(k,1);
+      double x = Jy.elem(k);
+      uint var = xIndex2VarId(j);
+      VariableIndexEntry& V = variableIndex(var);
+      uint var_j = j - V.xIndex;
+      CHECK(var_j < V.dim, "");
+      if(V.dim == J.d1){
+        J(i, var_j) += x;
+      }else{
+        bool good=false;
+        uint offset=0;
+        for(uint v:F.varIds){
+          if(v==var){
+            J(i, offset+var_j) += x;
+            good=true;
+            break;
+          }
+          offset += variableIndex(v).dim;
+        }
+        CHECK(good, "Jacobian is non-zero on variable " <<var <<", but indices say that feature depends on " <<F.varIds);
       }
-      CHECK(good, "Jacobian is non-zero on variable " <<var <<", but indices say that feature depends on " <<F.varIds);
     }
   }
 }
 
-void KOMO::Conv_KOMO_MathematicalProgram::reportFeatures(){
+void KOMO::Conv_KOMO_FineStructuredProblem::reportFeatures(){
   arr y,J;
   for(uint f=0;f<featureIndex.N;f++){
     FeatureIndexEntry& F = featureIndex(f);
-    cout <<f <<' ' <<F.dim <<' ' <<F.ob->map->shortTag(*F.Ctuple.last()) <<endl;
+    cout <<f <<' ' <<F.dim <<' ' <<F.ob->feat->shortTag(*F.Ctuple.last()) <<endl;
     evaluateSingleFeature(f, y, J, NoArr);
     cout <<"y:" <<y <<endl;
     cout <<"J:" <<J <<endl;
@@ -3209,19 +3489,38 @@ void KOMO::TimeSliceProblem::getDimPhi() {
     for(uint l=0; l<ob->configs.d0; l++) {
       if(ob->configs(l,0)!=slice) continue; //ONLY USE objectives for this slice
       ConfigurationL Ktuple = komo.configurations.sub(convert<uint, int>(ob->configs[l]+(int)komo.k_order));
-      M += ob->map->__dim_phi(Ktuple); //dimensionality of this task
+      M += ob->feat->__dim_phi(Ktuple); //dimensionality of this task
     }
   }
   dimPhi = M;
 }
 
-void KOMO::TimeSliceProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x){
+void KOMO::TimeSliceProblem::getFeatureTypes(ObjectiveTypeA& ft){
+  if(!dimPhi) getDimPhi();
+  ft.resize(dimPhi);
+
+  uint M=0;
+  for(uint i=0; i<komo.objectives.N; i++) {
+    ptr<Objective> ob = komo.objectives.elem(i);
+    CHECK_EQ(ob->configs.nd, 2, "only in sparse mode!");
+    if(ob->configs.d1!=1) continue; //ONLY USE order 0 objectives!!!!!
+    for(uint l=0; l<ob->configs.d0; l++) {
+      if(ob->configs(l,0)!=slice) continue; //ONLY USE objectives for this slice
+      ConfigurationL Ktuple = komo.configurations.sub(convert<uint, int>(ob->configs[l]+(int)komo.k_order));
+      uint m = ob->feat->__dim_phi(Ktuple);
+      if(!!ft) for(uint i=0; i<m; i++) ft(M+i) = ob->type;
+      M += m;
+    }
+  }
+  komo.featureTypes = ft;
+}
+
+void KOMO::TimeSliceProblem::evaluate(arr& phi, arr& J, const arr& x){
   komo.set_x(x, TUP(slice));
 
   if(!dimPhi) getDimPhi();
 
   phi.resize(dimPhi);
-  if(!!tt) tt.resize(dimPhi);
   if(!!J) J.resize(dimPhi, x.N).setZero();
 
   uintA x_index = getKtupleDim(komo.configurations({komo.k_order, -1}));
@@ -3240,7 +3539,7 @@ void KOMO::TimeSliceProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, c
       kdim.prepend(0);
 
       //query the task map and check dimensionalities of returns
-      ob->map->__phi(y, (!!J?Jy:NoArr), Ktuple);
+      ob->feat->__phi(y, (!!J?Jy:NoArr), Ktuple);
       if(!!J) CHECK_EQ(y.N, Jy.d0, "");
       if(!!J) CHECK_EQ(Jy.nd, 2, "");
       if(!!J) CHECK_EQ(Jy.d1, kdim.last(), "");
@@ -3255,8 +3554,6 @@ void KOMO::TimeSliceProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, c
         J.setMatrixBlock(Jy, M, 0);
       }
 
-      if(!!tt) for(uint i=0; i<y.N; i++) tt(M+i) = ob->type;
-
       //counter for features phi
       M += y.N;
     }
@@ -3265,29 +3562,27 @@ void KOMO::TimeSliceProblem::phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, c
   CHECK_EQ(M, dimPhi, "");
   komo.featureValues = phi;
   if(!!J) komo.featureJacobians.resize(1).scalar() = J;
-  if(!!tt) komo.featureTypes = tt;
 
   reportAfterPhiComputation(komo);
 }
 
 rai::Configuration& KOMO::getConfiguration(double phase) {
+  if(!configurations.N) setupConfigurations();
   uint s = k_order + conv_time2step(phase, stepsPerPhase);
   return *configurations(s);
 }
 
-Configuration&KOMO::getConfiguration_t(int t){
+Configuration& KOMO::getConfiguration_t(int t){
+  if(!configurations.N) setupConfigurations();
   if(t<0) CHECK_LE(-t, (int)k_order,"");
   return *configurations(t+k_order);
 }
 
-arr KOMO::getJointState(double phase) {
-  uint s = k_order + conv_time2step(phase, stepsPerPhase);
-  return configurations(s)->getJointState();
-}
-
-arr KOMO::getFrameState(double phase) {
-  uint s = k_order + conv_time2step(phase, stepsPerPhase);
-  return configurations(s)->getFrameState();
+uint KOMO::getPath_totalDofs(){
+  CHECK_EQ(configurations.N, k_order+T, "configurations are not setup yet");
+  uint n=0;
+  for(uint t=0; t<T; t++) n +=configurations(t+k_order)->getJointStateDimension();
+  return n;
 }
 
 arr KOMO::getPath_decisionVariable() {
@@ -3478,5 +3773,6 @@ void writeSkeleton(ostream& os, const Skeleton& S, const intA& switches) {
     }
   }
 }
+
 
 

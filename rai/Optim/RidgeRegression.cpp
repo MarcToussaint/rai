@@ -6,8 +6,8 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "../Core/util.h"
 #include "RidgeRegression.h"
+#include "../Core/util.h"
 
 arr beta_true;
 

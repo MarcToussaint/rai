@@ -15,9 +15,9 @@
 
 // ============================================================================
 
-constexpr float gravity = -10.0f;
-constexpr float groundRestitution = 0.1f;
-constexpr float objectRestitution = 0.1f;
+constexpr float gravity = -9.8f;
+constexpr float groundRestitution = .1f;
+constexpr float objectRestitution = .1f;
 
 // ============================================================================
 
@@ -54,7 +54,7 @@ struct BulletInterface_self {
   uint stepCount=0;
 
   btRigidBody* addGround();
-  btRigidBody* addLink(rai::Frame* f, bool verbose);
+  btRigidBody* addLink(rai::Frame* f, int verbose);
 
   btCollisionShape* createCollisionShape(rai::Shape *s);
   btCollisionShape* createCompoundCollisionShape(rai::Frame* link, ShapeL& shapes);
@@ -62,10 +62,10 @@ struct BulletInterface_self {
 
 // ============================================================================
 
-BulletInterface::BulletInterface(rai::Configuration& C, bool verbose) : self(nullptr) {
+BulletInterface::BulletInterface(rai::Configuration& C, int verbose) : self(nullptr) {
   self = new BulletInterface_self;
 
-  if(verbose) LOG(0) <<"starting bullet engine ...";
+  if(verbose>0) LOG(0) <<"starting bullet engine ...";
 
   self->collisionConfiguration = new btDefaultCollisionConfiguration();
   self->dispatcher = new btCollisionDispatcher(self->collisionConfiguration);
@@ -74,18 +74,18 @@ BulletInterface::BulletInterface(rai::Configuration& C, bool verbose) : self(nul
   self->dynamicsWorld = new btDiscreteDynamicsWorld(self->dispatcher, self->overlappingPairCache, self->solver, self->collisionConfiguration);
   self->dynamicsWorld->setGravity(btVector3(0, 0, gravity));
 
-  if(verbose) LOG(0) <<"... done starting bullet engine";
+  if(verbose>0) LOG(0) <<"... done starting bullet engine";
 
   self->addGround();
 
-  if(verbose) LOG(0) <<"creating Configuration within bullet ...";
+  if(verbose>0) LOG(0) <<"creating Configuration within bullet ...";
 
   self->actors.resize(C.frames.N); self->actors.setZero();
   self->actorTypes.resize(C.frames.N); self->actorTypes.setZero();
   FrameL links = C.getLinks();
   for(rai::Frame* a : links) self->addLink(a, verbose);
 
-  if(verbose) LOG(0) <<"... done creating Configuration within bullet";
+  if(verbose>0) LOG(0) <<"... done creating Configuration within bullet";
 }
 
 BulletInterface::~BulletInterface() {
@@ -140,6 +140,25 @@ void BulletInterface::pullDynamicStates(FrameL& frames, arr& frameVelocities) {
   }
 }
 
+void BulletInterface::changeObjectType(rai::Frame* f, int _type){
+  rai::Enum<rai::BodyType> type((rai::BodyType)_type);
+  if(self->actorTypes(f->ID) == type){
+    LOG(-1) <<"frame " <<*f <<" is already of type " <<type;
+  }
+
+  btRigidBody* a = self->actors(f->ID);
+  if(!a) HALT("frame " <<*f <<"is not an actor");
+
+  if(type==rai::BT_kinematic){
+    a->setCollisionFlags(a->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT);
+    a->setActivationState(DISABLE_DEACTIVATION);
+  }else if(type==rai::BT_dynamic){
+    a->setCollisionFlags(a->getCollisionFlags() & ~btCollisionObject::CF_KINEMATIC_OBJECT);
+    a->setActivationState(DISABLE_DEACTIVATION);
+  }else NIY;
+  self->actorTypes(f->ID) = type;
+}
+
 void BulletInterface::pushKinematicStates(const FrameL& frames) {
 
   for(rai::Frame* f: frames) {
@@ -191,7 +210,7 @@ btRigidBody* BulletInterface_self::addGround() {
   return body;
 }
 
-btRigidBody* BulletInterface_self::addLink(rai::Frame* f, bool verbose) {
+btRigidBody* BulletInterface_self::addLink(rai::Frame* f, int verbose) {
   //-- collect all shapes of that link
   FrameL parts = {f};
   f->getRigidSubFrames(parts);
@@ -205,7 +224,7 @@ btRigidBody* BulletInterface_self::addLink(rai::Frame* f, bool verbose) {
     if(f->inertia) type = f->inertia->type;
   }
   actorTypes(f->ID) = type;
-  if(verbose) LOG(0) <<"adding link anchored at '" <<f->name <<"' as " <<rai::Enum<rai::BodyType>(type);
+  if(verbose>0) LOG(0) <<"adding link anchored at '" <<f->name <<"' as " <<rai::Enum<rai::BodyType>(type);
 
   //-- create a bullet collision shape
   btCollisionShape* colShape = 0;
@@ -215,8 +234,6 @@ btRigidBody* BulletInterface_self::addLink(rai::Frame* f, bool verbose) {
     colShape = createCompoundCollisionShape(f, shapes);
   }
   collisionShapes.push_back(colShape);
-
-  if(verbose) LOG(0) <<"adding link anchored at '" <<f->name <<"' as " <<rai::Enum<rai::BodyType>(type);
 
   //-- create a bullet body
   btTransform pose = conv_raiTrans2btTrans(f->ensure_X());
@@ -231,6 +248,19 @@ btRigidBody* BulletInterface_self::addLink(rai::Frame* f, bool verbose) {
 
   btDefaultMotionState* motionState = new btDefaultMotionState(pose);
   btRigidBody* body = new btRigidBody(btRigidBody::btRigidBodyConstructionInfo(mass, motionState, colShape, localInertia));
+
+  double fric=1.;
+  if(shapes.N==1 && f == &shapes.scalar()->frame){
+    //try to read friction from attributes
+    shapes.scalar()->frame.ats.get<double>(fric, "friction");
+  }
+  body->setFriction(fric);
+  body->setRollingFriction(.01);
+  body->setSpinningFriction(.01);
+//  cout <<body->getContactStiffness() <<endl;
+//  cout <<body->getContactDamping() <<endl;
+//  body->setContactStiffnessAndDamping(1e4, 1e-1);
+//  body->setContactStiffnessAndDamping(1e7, 3e4);
   body->setRestitution(objectRestitution);
   dynamicsWorld->addRigidBody(body);
 
@@ -252,7 +282,7 @@ void BulletInterface::saveBulletFile(const char* filename) {
   if(f) {
     btDefaultSerializer* ser = new btDefaultSerializer();
     int currentFlags = ser->getSerializationFlags();
-    ser->setSerializationFlags(currentFlags | BT_SERIALIZE_CONTACT_MANIFOLDS);
+    ser->setSerializationFlags(currentFlags); // | BT_SERIALIZE_CONTACT_MANIFOLDS);
 
     self->dynamicsWorld->serialize(ser);
     fwrite(ser->getBufferPointer(), ser->getCurrentBufferSize(), 1, f);
@@ -277,16 +307,18 @@ btCollisionShape* BulletInterface_self::createCollisionShape(rai::Shape *s){
 //      colShape = new btCapsuleShape(btScalar(s->radius()), btScalar(size(0)));
 //    } break;
     case rai::ST_capsule:
+    case rai::ST_cylinder:
     case rai::ST_ssBox:
-    case rai::ST_ssCvx: {
-#ifdef BT_USE_DOUBLE_PRECISION
-      arr& V = s->sscCore().V;
-#else
-      floatA V = convert<float>(s->sscCore().V);
-#endif
-      colShape = new btConvexHullShape(V.p, V.d0, V.sizeT*V.d1);
-      colShape->setMargin(s->radius());
-    } break;
+    case rai::ST_ssCvx:
+//    {
+//#ifdef BT_USE_DOUBLE_PRECISION
+//      arr& V = s->sscCore().V;
+//#else
+//      floatA V = convert<float>(s->sscCore().V);
+//#endif
+//      colShape = new btConvexHullShape(V.p, V.d0, V.sizeT*V.d1);
+//      colShape->setMargin(s->radius());
+//    } break;
     case rai::ST_mesh: {
 #ifdef BT_USE_DOUBLE_PRECISION
       arr& V = s->mesh().V;
@@ -294,6 +326,7 @@ btCollisionShape* BulletInterface_self::createCollisionShape(rai::Shape *s){
       floatA V = convert<float>(s->mesh().V);
 #endif
       colShape = new btConvexHullShape(V.p, V.d0, V.sizeT*V.d1);
+      colShape->setMargin(0.);
     } break;
     default: HALT("NIY" <<s->type());
   }
@@ -310,13 +343,14 @@ btCollisionShape* BulletInterface_self::createCompoundCollisionShape(rai::Frame*
 
 #else
 
-BulletInterface::BulletInterface(rai::Configuration& K, bool verbose) { NICO }
+BulletInterface::BulletInterface(rai::Configuration& K, int verbose) { NICO }
 BulletInterface::~BulletInterface() { NICO }
 void BulletInterface::step(double tau) { NICO }
 void BulletInterface::pushFullState(const FrameL& frames, const arr& vel) { NICO }
 void BulletInterface::pushKinematicStates(const FrameL& frames) { NICO }
 void BulletInterface::pullDynamicStates(FrameL& frames, arr& vel) { NICO }
 void BulletInterface::saveBulletFile(const char* filename) { NICO }
+void BulletInterface::changeObjectType(rai::Frame* f, int _type){ NICO }
 
 #endif
 

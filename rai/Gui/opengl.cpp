@@ -20,6 +20,7 @@
 
 #ifdef RAI_PNG
 #  include <png.h>
+#  include <unistd.h>
 #endif
 
 OpenGL& NoOpenGL = *((OpenGL*)(nullptr));
@@ -340,7 +341,7 @@ struct GlfwSpinner : Thread {
     glfwGetCursorPos(window, &xpos, &ypos);
     if(button==GLFW_MOUSE_BUTTON_RIGHT) button = 2;
     else if(button==GLFW_MOUSE_BUTTON_MIDDLE) button = 1;
-    gl->MouseButton(button, 1-action, xpos, ypos);
+    gl->MouseButton(button, 1-action, xpos, ypos, mods);
   }
 
   static void _MouseMotion(GLFWwindow* window, double xpos, double ypos) {
@@ -354,7 +355,7 @@ struct GlfwSpinner : Thread {
       if(key==256) key=27;
       if(key==257) key=13;
       if(key>='A' && key<='Z') key += 'a' - 'A';
-      gl->Key(key);
+      gl->Key(key, mods);
     }
   }
 
@@ -2152,10 +2153,11 @@ void OpenGL::Reshape(int _width, int _height) {
   }
 }
 
-void OpenGL::Key(unsigned char key) {
+void OpenGL::Key(unsigned char key, int mods) {
   auto _dataLock = dataLock(RAI_HERE);
   CALLBACK_DEBUG("Keyboard Callback: " <<key <<"('" <<(char)key <<"')");
-  pressedkey=key;
+  pressedkey = key;
+  modifiers = mods;
 
   bool cont=true;
   for(uint i=0; i<keyCalls.N; i++) cont=cont && keyCalls(i)->keyCallback(*this);
@@ -2164,7 +2166,7 @@ void OpenGL::Key(unsigned char key) {
 
 }
 
-void OpenGL::MouseButton(int button, int downPressed, int _x, int _y) {
+void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) {
   auto _dataLock = dataLock(RAI_HERE);
   int w=width, h=height;
   _y = h-_y;
@@ -2172,6 +2174,7 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y) {
   mouse_button=1+button;
   if(downPressed) mouse_button=-1-mouse_button;
   mouseposx=_x; mouseposy=_y;
+  modifiers = mods;
   lastEvent.set(mouse_button, -1, _x, _y, 0., 0.);
 
   GLView* v=0;
@@ -2209,8 +2212,7 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y) {
   downFoc=cam->foc;
 
   //check object clicked on
-  int modifiers = 0; //glutGetModifiers();
-  if(mouse_button==1 && modifiers&GLUT_ACTIVE_SHIFT) {
+  if(mouse_button==1 && (mods&2)) {
     drawFocus = false;
     if(!downPressed) {
       drawMode_idColor = true;
@@ -2284,7 +2286,6 @@ void OpenGL::WindowStatus(int status) {
 }
 
 void OpenGL::MouseMotion(int _x, int _y) {
-#ifdef RAI_GL
   auto _dataLock = dataLock(RAI_HERE);
   int w=width, h=height;
   _y = h-_y;
@@ -2309,7 +2310,7 @@ void OpenGL::MouseMotion(int _x, int _y) {
     if(ud) postRedrawEvent(true);
     return;
   }
-  if(mouse_button==1) {  //rotation
+  if(mouse_button==1 && !modifiers) {  //rotation
     rai::Quaternion rot;
     if(downVec.z<.1) {
       //margin:
@@ -2323,27 +2324,17 @@ void OpenGL::MouseMotion(int _x, int _y) {
     rot = downRot * rot / downRot; //interpret rotation relative to current viewing
     cam->X.pos = downFoc + rot * (downPos - downFoc);   //rotate camera's position
   }
-  if(mouse_button==2) {  //translation || (mouse_button==1 && (modifiers&GLUT_ACTIVE_SHIFT) && !(modifiers&GLUT_ACTIVE_CTRL))){
+  if(mouse_button==1 && (modifiers&1) && !(modifiers&2)) {  //translation mouse_button==2){
     rai::Vector trans = vec - downVec;
     trans.z = 0.;
-    trans *= .2*(downFoc - downPos).length();
+    trans *= .1*(downFoc - downPos).length();
     trans = downRot * trans;
     cam->X.pos = downPos - trans;
   }
-  if(mouse_button==3) {  //zooming || (mouse_button==1 && !(modifiers&GLUT_ACTIVE_SHIFT) && (modifiers&GLUT_ACTIVE_CTRL))){
-#if 0
-    double dy = downVec.y - vec.y;
-    if(dy<-.99) dy = -.99;
-    cam->X.pos = downPos + downRot*Vector_z * dy * downPos.length();
-    postRedrawEvent(true);
-#else
-#endif
+  if(mouse_button==3 && !modifiers) {  //zooming || (mouse_button==1 && !(modifiers&GLUT_ACTIVE_SHIFT) && (modifiers&GLUT_ACTIVE_CTRL))){
   }
 
   postRedrawEvent(true);
-#else
-  NICO
-#endif
 }
 
 //===========================================================================

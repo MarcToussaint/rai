@@ -13,7 +13,7 @@ class btRigidBody;
 struct BulletInterface {
   struct BulletInterface_self* self=0;
 
-  BulletInterface(rai::Configuration& C, bool verbose=false);
+  BulletInterface(rai::Configuration& C, int verbose=1);
   ~BulletInterface();
 
   void step(double tau=.01);
@@ -21,6 +21,8 @@ struct BulletInterface {
   void pushKinematicStates(const FrameL& frames);
   void pushFullState(const FrameL& frames, const arr& frameVelocities=NoArr);
   void pullDynamicStates(FrameL& frames, arr& frameVelocities=NoArr);
+
+  void changeObjectType(rai::Frame* f, int _type);
 
   void saveBulletFile(const char* filename);
 };

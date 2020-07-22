@@ -8,7 +8,7 @@
 
 #include "primalDual.h"
 
-PrimalDualProblem::PrimalDualProblem(const arr& x, ConstrainedProblem& P, OptOptions opt, arr& lambdaInit)
+PrimalDualProblem::PrimalDualProblem(const arr& x, MathematicalProgram& P, OptOptions opt, arr& lambdaInit)
   : L(P, opt, lambdaInit), mu(opt.muLBInit) {
 
   L.mu = L.nu = L.muLB = 0.;
@@ -205,7 +205,7 @@ void PrimalDualProblem::updateMu() {
 
 //==============================================================================
 
-OptPrimalDual::OptPrimalDual(arr& x, arr& dual, ConstrainedProblem& P, int verbose, OptOptions opt)
+OptPrimalDual::OptPrimalDual(arr& x, arr& dual, MathematicalProgram& P, int verbose, OptOptions opt)
   : x(x), PD(x, P, opt, dual), newton(PD.x_lambda, PD, opt), opt(opt) {
 
   if(verbose>=0) opt.verbose=verbose;

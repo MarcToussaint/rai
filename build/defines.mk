@@ -7,6 +7,11 @@
 
 ARCH = $(shell uname -m)
 
+ifeq ($(RAI_CMAKE),1)
+LPATHS += $(BASE)/../build
+LIBS += -lrai
+endif
+
 ifeq ($(JSON),1)
 DEPEND_UBUNTU += libjsoncpp-dev
 LIBS += -ljsoncpp
@@ -17,7 +22,7 @@ CXXFLAGS += -fopenmp -DOPENMP
 endif
 
 ifeq ($(PYBIND),1)
-DEPEND_UBUNTU += pybind11-dev python3-dev python3 python3-numpy python3-pip
+DEPEND_UBUNTU += pybind11-dev python3-dev python3 python3-numpy python3-pip python3-distutils
 CXXFLAGS += -DRAI_PYBIND `python3-config --cflags`
 LIBS += `python3-config --ldflags`
 CPATH   := $(CPATH):$(BASE)/../pybind11/include::$(BASE)/../../pybind11/include
@@ -36,7 +41,7 @@ LIBS += -lpng
 endif
 
 ifeq ($(FCL),1)
-DEPEND_UBUNTU += libfcl-0.5-dev
+DEPEND_UBUNTU += libfcl-dev
 CXXFLAGS  += -DRAI_FCL
 LIBS      += -lfcl
 endif
@@ -74,6 +79,11 @@ CPATHS += $(HOME)/git/ceres-solver/build/config
 CPATHS += $(HOME)/git/ceres-solver/internal/ceres/miniglog
 LPATHS += $(HOME)/git/ceres-solver/build/lib
 LIBS += -lceres -lglog -lcholmod -llapack -lblas -lpthread  /usr/lib/x86_64-linux-gnu/libspqr.so /usr/lib/x86_64-linux-gnu/libtbbmalloc.so /usr/lib/x86_64-linux-gnu/libtbb.so /usr/lib/x86_64-linux-gnu/libcholmod.so /usr/lib/x86_64-linux-gnu/libccolamd.so /usr/lib/x86_64-linux-gnu/libcamd.so /usr/lib/x86_64-linux-gnu/libcolamd.so /usr/lib/x86_64-linux-gnu/libamd.so /usr/lib/x86_64-linux-gnu/liblapack.so /usr/lib/x86_64-linux-gnu/libf77blas.so /usr/lib/x86_64-linux-gnu/libatlas.so /usr/lib/x86_64-linux-gnu/libsuitesparseconfig.so /usr/lib/x86_64-linux-gnu/librt.so /usr/lib/x86_64-linux-gnu/libcxsparse.so /usr/lib/x86_64-linux-gnu/liblapack.so /usr/lib/x86_64-linux-gnu/libf77blas.so /usr/lib/x86_64-linux-gnu/libatlas.so /usr/lib/x86_64-linux-gnu/libsuitesparseconfig.so /usr/lib/x86_64-linux-gnu/librt.so /usr/lib/x86_64-linux-gnu/libcxsparse.so /usr/lib/x86_64-linux-gnu/libgflags.so.2.2.1 -lpthread /usr/lib/x86_64-linux-gnu/libglog.so
+endif
+
+ifeq ($(NLOPT),1)
+CXXFLAGS += -DRAI_NLOPT `pkg-config --cflags nlopt`
+LIBS     += `pkg-config --libs nlopt`
 endif
 
 ifeq ($(CUDA),1)
@@ -444,6 +454,11 @@ CPATH := $(HOME)/opt/include/bullet/:$(CPATH)
 #CPATH := $(CPATH):$(BULLET_PATH)/src
 #btLIB = _gmake_x64_release
 LIBS += -lBulletSoftBody -lBulletDynamics -lBulletCollision  -lLinearMath
+endif
+
+ifeq ($(BULLET_UBUNTU),1)
+CXXFLAGS += -DRAI_BULLET `pkg-config --cflags bullet`
+LIBS     += `pkg-config --libs bullet`
 endif
 
 ifeq ($(PORTAUDIO),1)

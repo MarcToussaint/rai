@@ -1704,12 +1704,13 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
 
     glEnableClientState(GL_VERTEX_ARRAY);
     if(C.N==V.N) glEnableClientState(GL_COLOR_ARRAY); else glDisableClientState(GL_COLOR_ARRAY);
+    glDisableClientState(GL_NORMAL_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 
-    glVertexPointer(3, GL_DOUBLE, V.d1-3, V.p);
-    if(C.N==V.N) glColorPointer(3, GL_DOUBLE, C.d1-3, C.p);
+    glVertexPointer(3, GL_DOUBLE, 0, V.p);
+    if(C.N==V.N) glColorPointer(3, GL_DOUBLE, 0, C.p);
 
     glDrawArrays(GL_POINTS, 0, V.d0);
-    glDisableClientState(GL_VERTEX_ARRAY);
 
     glEnable(GL_LIGHTING);
 //    glPointSize(1.);
@@ -2340,8 +2341,6 @@ inline double __scalarProduct(const double *p1, const double* p2){
 }
 
 uint rai::Mesh::support(const double *dir) {
-  if(!graph.N) buildGraph();
-
 #if 1
 
   arr _dir(dir,3);
@@ -2361,6 +2360,7 @@ uint rai::Mesh::support(const double *dir) {
   return _support_vertex;
 
 #else
+  if(!graph.N) buildGraph();
 
   uint mi = _support_vertex;
   double s = __scalarProduct(dir, V.p+3*mi);

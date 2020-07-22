@@ -6,7 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "taskControl.h"
+#include "control.h"
 
 struct Teleop2Tasks {
   //data of previous loop cycle
@@ -31,13 +31,13 @@ struct Teleop2Tasks {
 
   bool initialised = false;
   TaskControlMethods& fmc;
-  CtrlTask* effPosR, *gripperR, *effOrientationR;
-  CtrlTask* effPosL, *gripperL, *effOrientationL;
-  CtrlTask* base, *fc;
+  CtrlObjective* effPosR, *gripperR, *effOrientationR;
+  CtrlObjective* effPosL, *gripperL, *effOrientationL;
+  CtrlObjective* base, *fc;
   Teleop2Tasks(TaskControlMethods& _MP, const rai::Configuration& K);
-  CtrlTaskL tasks;
-  CtrlTaskL getTasks();
-  void updateMovement(floatA& cal_pose, arr& old_pos, arr& old_effPos, CtrlTask* effPos);
+  CtrlObjectiveL tasks;
+  CtrlObjectiveL getTasks();
+  void updateMovement(floatA& cal_pose, arr& old_pos, arr& old_effPos, CtrlObjective* effPos);
   void deactivateTasks();
   void updateTasks(floatA cal_pose_rh, floatA cal_pose_lh, float calibrated_gripper_lh, float calibrated_gripper_rh, arr drive, int button, const rai::Configuration& K);
 };
