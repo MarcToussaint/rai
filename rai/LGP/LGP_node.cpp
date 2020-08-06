@@ -164,7 +164,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
   for(ptr<Objective>& o:tree->finalGeometryObjectives.objectives) {
     cout <<"FINAL objective: " <<*o <<endl;
     ptr<Objective> co = komo->addObjective({0.}, o->feat, o->type);
-    co->setCostSpecs(komo->T-1, komo->T-1, komo->sparseOptimization);
+    co->setCostSpecs(komo->T-1, komo->T-1);
     cout <<"FINAL objective: " <<*co <<endl;
   }
 
@@ -193,7 +193,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
     komoProblem(bound).reset();
     return;
   }
-  if(!komo->denseOptimization && !komo->sparseOptimization) COUNT_evals += komo->opt->newton.evals;
+  COUNT_evals += komo->opt->newton.evals;
   COUNT_kin += rai::Configuration::setJointStateCount;
   COUNT_opt(bound)++;
   COUNT_time += komo->runTime;
@@ -290,7 +290,7 @@ ptr<KOMO> LGP_Node::optSubCG(const SubCG& scg, bool collisions, int verbose) {
     komo->reset();
     return komo;
   }
-  if(!komo->denseOptimization) COUNT_evals += komo->opt->newton.evals;
+  COUNT_evals += komo->opt->newton.evals;
   COUNT_kin += rai::Configuration::setJointStateCount;
   COUNT_time += komo->runTime;
 

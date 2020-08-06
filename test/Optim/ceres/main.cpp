@@ -147,7 +147,7 @@ void tutorialBasics(){
   rai::Configuration C("model.g");
 
   KOMO komo;
-  komo.sparseOptimization=true;
+  komo.solver = rai::KS_sparse; //sparseOptimization=true;
   komo.setModel(C, false);
   komo.setTiming(1, 1, 5., 1);
   komo.add_qControlObjective({}, 1, 1e0);
@@ -164,12 +164,12 @@ void tutorialBasics(){
 #if 1
 //  auto P = make_shared<KOMO::Conv_KOMO_MathematicalProgram>(komo);
 //  auto P = make_shared<KOMO::Conv_KOMO_StructuredProblem>(komo);
-  auto P = make_shared<Conv_MathematicalProgram_TrivialStructured>(komo.sparse_problem);
+  auto P = make_shared<Conv_MathematicalProgram_TrivialStructured>(true);
 
   checkJacobianCP(*P, komo.x, 1e-4);
 
   Conv_MatematicalProgram_CeresProblem cer(P);
-  cer.x_full = komo.structured_problem.getInitializationSample();
+  cer.x_full = P->getInitializationSample();
 
   // Run the solver!
   ceres::Solver::Options options;
