@@ -162,9 +162,9 @@ void tutorialBasics(){
   komo.run_prepare(.01);
 
 #if 1
-//  auto P = make_shared<KOMO::Conv_KOMO_MathematicalProgram>(komo);
-//  auto P = make_shared<KOMO::Conv_KOMO_StructuredProblem>(komo);
-  auto P = make_shared<Conv_MathematicalProgram_TrivialStructured>(true);
+  auto P = make_shared<KOMO::Conv_KOMO_StructuredProblem>(komo);
+//  auto P1 = make_shared<KOMO::Conv_KOMO_SparseUnstructured>(komo, false);
+//  auto P = make_shared<Conv_MathematicalProgram_TrivialStructured>(*P1);
 
   checkJacobianCP(*P, komo.x, 1e-4);
 

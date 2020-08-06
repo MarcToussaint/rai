@@ -53,10 +53,12 @@ Conv_CostFunction::Conv_CostFunction(const ptr<MathematicalProgram_Structured>& 
   for(uint i=0;i<varIds.N;i++){
     varDims(i) = variableDimensions(varIds(i));
   }
-  varTotalDim = sum(varDims);
-  //ceres internal:
-  mutable_parameter_block_sizes()->resize(varDims.N);
-  for(uint i=0;i<varDims.N;i++) (*mutable_parameter_block_sizes())[i] = varDims(i);
+  varTotalDim = 0;
+  mutable_parameter_block_sizes()->clear();
+  for(uint i=0;i<varDims.N;i++) if(varIds(i)>=0){
+    mutable_parameter_block_sizes()->push_back(varDims(i));
+    varTotalDim += varDims(i);
+  }
   set_num_residuals(featureDim);
 }
 
@@ -64,8 +66,9 @@ bool Conv_CostFunction::Evaluate(const double* const * parameters, double* resid
   //set variables individually
   {
     arr x;
-    for(uint i=0;i<varIds.N;i++){
-      x.referTo(parameters[i], varDims(i));
+    uint parameters_count=0;
+    for(uint i=0;i<varIds.N;i++) if(varIds(i)>=0){
+      x.referTo(parameters[parameters_count++], varDims(i));
       MP->setSingleVariable(varIds(i), x);
     }
   }
@@ -138,9 +141,11 @@ Conv_MatematicalProgram_CeresProblem::Conv_MatematicalProgram_CeresProblem(const
 
   for(uint i=0;i<phi.N;i++){
     if(featureDimensions(i)){
-      rai::Array<double*> parameter_blocks(featureVariables(i).N);
+      rai::Array<double*> parameter_blocks;
       for(uint k=0;k<featureVariables(i).N;k++){
-        parameter_blocks(k) = x(featureVariables(i)(k)).p;
+        int var = featureVariables(i)(k);
+        if(var>=0) parameter_blocks.append(x(var).p);
+//        parameter_blocks(k) = x().p;
       }
       auto fct = new Conv_CostFunction(MP, i, variableDimensions, featureDimensions, featureVariables);
       ceresProblem->AddResidualBlock(fct, nullptr, parameter_blocks);

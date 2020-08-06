@@ -22,7 +22,7 @@
 // test standard constrained optimizers
 //
 
-void testConstraint(ConstrainedProblem& p, uint dim_x, arr& x_start=NoArr, uint iters=20){
+void testConstraint(MathematicalProgram& p, uint dim_x, arr& x_start=NoArr, uint iters=20){
 
   OptOptions options;
   LagrangianProblem UCP(p, options);

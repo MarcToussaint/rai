@@ -1264,9 +1264,8 @@ template<class T> rai::Array<T>& rai::Array<T>::operator=(const rai::Array<T>& a
   CHECK(this!=&a, "never do this!!!");
   //if(a.temp){ takeOver(*((rai::Array<T>*)&a)); return *this; }
   resizeAs(a);
-  uint i;
   if(memMove) memmove(p, a.p, sizeT*N);
-  else for(i=0; i<N; i++) p[i]=a.p[i];
+  else for(uint i=0; i<N; i++) p[i]=a.p[i];
   if(special) { delete special; special=NULL; }
   if(isSpecial(a)) {
     if(isRowShifted(a)) {

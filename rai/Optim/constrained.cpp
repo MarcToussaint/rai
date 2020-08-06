@@ -33,46 +33,32 @@ void PhaseOneProblem::initialize(arr& x) {
   x.append(gmax);
 }
 
-void PhaseOneProblem::phi(arr& meta_phi, arr& meta_J, arr& meta_H, ObjectiveTypeA& meta_ot, const arr& meta_x) {
+void PhaseOneProblem::getFeatureTypes(ObjectiveTypeA& meta_ot) {
+  f_orig.getFeatureTypes(ft);
+  meta_ot = ft;
+  meta_ot.append(OT_ineq);
+}
+
+void PhaseOneProblem::evaluate(arr& meta_phi, arr& meta_J, const arr& meta_x) {
   CHECK_EQ(meta_x.N, dim_x+1, "");
   arr x = meta_x({0, -2});
   double s = meta_x(-1);
 
   arr phi, J;
-  ObjectiveTypeA ot;
-  f_orig.getFeatureTypes(ot);
   f_orig.evaluate(phi, J, x);
 
-  meta_phi.resize(1+dim_ineq+dim_eq);
-  meta_ot.resize(1+dim_ineq+dim_eq);
+  meta_phi = phi;
+  meta_phi.append(-s);
 
   uint m=0;
-  for(uint i=0; i<phi.N; i++) if(ot.elem(i)==OT_ineq) {
-      meta_phi(m) = phi(i) - s; //subtract slack!
-      meta_ot(m) = OT_ineq;
-      m++;
-    }
-  for(uint i=0; i<phi.N; i++) if(ot.elem(i)==OT_eq) {
-      meta_phi(m) = phi(i);
-      meta_ot(m) = OT_eq;
-      m++;
-    }
-  CHECK_EQ(m, dim_ineq+dim_eq, "");
-  meta_phi(m) = s;
+  for(uint i=0; i<phi.N; i++) if(ft.elem(i)==OT_ineq) {
+    meta_phi(i) = phi(i) - s; //subtract slack!
+  }
 
   if(!!meta_J) {
-    meta_J.resize(meta_phi.N, meta_x.N).setZero();
-    m=0;
-    for(uint i=0; i<phi.N; i++) if(ot.elem(i)==OT_ineq) {
-        meta_J[m] = J[i];
-        m++;
-      }
-    for(uint i=0; i<phi.N; i++) if(ot.elem(i)==OT_eq) {
-        meta_J[m] = J[i];
-        m++;
-      }
-    meta_J(-1, -1) = 1.;
-    CHECK_EQ(m, dim_ineq+dim_eq, "");
+    meta_J = J;
+    meta_J.append(zeros(meta_J.d1));
+    meta_J(-1, -1) = -1.;
   }
 }
 

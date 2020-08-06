@@ -14,12 +14,12 @@ pybind11::class_<ry::RyOperate>(m, "RyOperate")
   self.R->move(path, conv_stdvec2arr(times), append);
 })
 
-.def("move", [](ry::RyOperate& self, const pybind11::array& path, const std::vector<double>& times, bool append) {
+.def("move", [](ry::RyOperate& self, const pybind11::array_t<double>& path, const std::vector<double>& times, bool append) {
   arr _path = numpy2arr(path);
   self.R->move(_path, conv_stdvec2arr(times), append);
 })
 
-.def("moveHard", [](ry::RyOperate& self, const pybind11::array& pose) {
+.def("moveHard", [](ry::RyOperate& self, const pybind11::array_t<double>& pose) {
   arr _pose = numpy2arr(pose);
   self.R->moveHard(_pose);
 })

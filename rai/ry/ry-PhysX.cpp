@@ -23,7 +23,7 @@ pybind11::class_<PhysXInterface, std::shared_ptr<PhysXInterface>>(m, "PhysXInter
   return pybind11::array(V.dim(), V.p);
 })
 
-.def("setState", [](PhysXInterface& self, ry::Config& C, const pybind11::array& velocities) {
+.def("setState", [](PhysXInterface& self, ry::Config& C, const pybind11::array_t<double>& velocities) {
   self.pushFullState(C.get()->frames, numpy2arr(velocities));
 })
 ;

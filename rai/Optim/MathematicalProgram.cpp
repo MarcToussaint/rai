@@ -46,10 +46,12 @@ void MathematicalProgram_Structured::evaluate(arr& phi, arr& J, const arr& x){
     if(!!J){
       uint Jii=0;
       for(uint j=0;j<featureVariables(i).N;j++){
-        uint varId = featureVariables(i)(j);
-        uint varDim = variableDimensions(varId);
-        J.setMatrixBlock(J_i.sub(0,-1,Jii,Jii+varDim-1), n, varDimIntegral(varId));
-        Jii += varDim;
+        int varId = featureVariables(i)(j);
+        if(varId>=0){
+          uint varDim = variableDimensions(varId);
+          J.setMatrixBlock(J_i.sub(0,-1,Jii,Jii+varDim-1), n, varDimIntegral(varId));
+          Jii += varDim;
+        }
       }
       CHECK_EQ(Jii, J_i.d1, "");
     }

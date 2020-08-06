@@ -69,10 +69,12 @@ inline void evaluateMathematicalProgram(const arr& x, MathematicalProgram& P, st
 
 struct PhaseOneProblem : MathematicalProgram {
   MathematicalProgram& f_orig;
+  ObjectiveTypeA ft;
   uint dim_x, dim_ineq, dim_eq;
 
   PhaseOneProblem(MathematicalProgram& f_orig):f_orig(f_orig) {}
   void initialize(arr& x);
-  void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& meta_ot, const arr& x);
+  virtual void getFeatureTypes(ObjectiveTypeA& featureTypes);
+  virtual void evaluate(arr& phi, arr& J, const arr& x);
 };
 

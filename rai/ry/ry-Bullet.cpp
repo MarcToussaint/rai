@@ -22,7 +22,7 @@ pybind11::class_<BulletInterface, std::shared_ptr<BulletInterface>>(m, "BulletIn
   return pybind11::array(V.dim(), V.p);
 })
 
-.def("setState", [](BulletInterface& self, ry::Config& C, const pybind11::array& velocities) {
+.def("setState", [](BulletInterface& self, ry::Config& C, const pybind11::array_t<double>& velocities) {
   self.pushFullState(C.get()->frames, numpy2arr(velocities));
 })
 ;
