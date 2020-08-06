@@ -14,7 +14,7 @@ ptr<CtrlObjective> CtrlSet::addObjective(const ptr<Feature>& f, ObjectiveType ty
   return t;
 }
 
-void CtrlSet::report(std::ostream& os){
+void CtrlSet::report(std::ostream& os) const{
   for(auto& o: objectives){
     o->reportState(os);
   }
@@ -24,7 +24,7 @@ bool isFeasible(const CtrlSet& CS, const ConfigurationL& Ctuple, bool initOnly, 
   bool isFeasible=true;
   for(const auto& o: CS.objectives){
     if(o->type==OT_ineq || o->type==OT_eq){
-      if(o->transientStep>0. && o->movingTarget->isTransient){ isFeasible=false; break; }
+      if(!initOnly && o->transientStep>0. && o->movingTarget->isTransient){ isFeasible=false; break; }
       if(!initOnly || o->transientStep<=0.){
         arr y;
         o->feat->__phi(y, NoArr, Ctuple);

@@ -8,7 +8,7 @@
 struct CtrlSet {
   rai::Array<std::shared_ptr<CtrlObjective>> objectives;    ///< list of objectives
   std::shared_ptr<CtrlObjective> addObjective(const ptr<Feature>& f, ObjectiveType type, double transientStep=-1.);
-  void report(ostream& os=std::cout);
+  void report(ostream& os=std::cout) const;
 };
 
 //===========================================================================

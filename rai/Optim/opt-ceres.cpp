@@ -150,7 +150,7 @@ Conv_MatematicalProgram_CeresProblem::Conv_MatematicalProgram_CeresProblem(const
 
 #else //RAI_CERES
 
-Conv_MatematicalProgram_CeresProblem::Conv_MatematicalProgram_CeresProblem(const ptr<MathematicalProgram>& _MP) {
+Conv_MatematicalProgram_CeresProblem::Conv_MatematicalProgram_CeresProblem(const ptr<MathematicalProgram_Structured>& _MP) {
   NICO
 }
 

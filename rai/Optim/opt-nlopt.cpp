@@ -90,6 +90,6 @@ double NLOptInterface::_h(const std::vector<double>& x, std::vector<double>& gra
 
 #else
 
-void NLOptInterface::solve(){ NICO }
+arr NLOptInterface::solve(){ NICO; return arr(); }
 
 #endif
