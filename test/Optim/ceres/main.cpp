@@ -1,3 +1,7 @@
+#ifndef RAI_CERES
+#error *** this only compiles with the ceres dependency ***
+#endif
+
 #include <Optim/opt-ceres.h>
 #include <Optim/benchmarks.h>
 #include <Optim/constrained.h>

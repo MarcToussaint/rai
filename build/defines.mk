@@ -35,7 +35,7 @@ LIBS += -lX11
 endif
 
 ifeq ($(PNG),1)
-DEPEND_UBUNTU += libpng12-dev
+DEPEND_UBUNTU += libpng-dev
 CXXFLAGS += -DRAI_PNG
 LIBS += -lpng
 endif

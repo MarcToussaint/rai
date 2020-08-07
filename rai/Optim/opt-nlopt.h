@@ -1,5 +1,4 @@
 #include <Optim/MathematicalProgram.h>
-#include <nlopt.hpp>
 
 struct NLOptInterface {
   MathematicalProgram& P;
