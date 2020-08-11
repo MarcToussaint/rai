@@ -23,7 +23,8 @@ endif
 
 ifeq ($(PYBIND),1)
 DEPEND_UBUNTU += pybind11-dev python3-dev python3 python3-numpy python3-pip python3-distutils
-CXXFLAGS += -DRAI_PYBIND `python3-config --cflags`
+CXXFLAGS += -DRAI_PYBIND `python3-config --cflags` `python3 -m pybind11 --includes`
+# requires: pip3 install --user pybind11
 LIBS += `python3-config --ldflags`
 CPATH   := $(CPATH):$(BASE)/../pybind11/include::$(BASE)/../../pybind11/include
 endif
@@ -82,6 +83,7 @@ LIBS += -lceres -lglog -lcholmod -llapack -lblas -lpthread  /usr/lib/x86_64-linu
 endif
 
 ifeq ($(NLOPT),1)
+DEPEND_UBUNTU += libnlopt-dev
 CXXFLAGS += -DRAI_NLOPT `pkg-config --cflags nlopt`
 LIBS     += `pkg-config --libs nlopt`
 endif
@@ -457,6 +459,7 @@ LIBS += -lBulletSoftBody -lBulletDynamics -lBulletCollision  -lLinearMath
 endif
 
 ifeq ($(BULLET_UBUNTU),1)
+DEPEND_UBUNTU += libbullet-dev
 CXXFLAGS += -DRAI_BULLET `pkg-config --cflags bullet`
 LIBS     += `pkg-config --libs bullet`
 endif

@@ -2,6 +2,8 @@
 
 #ifdef RAI_NLOPT
 
+#include <nlopt.hpp>
+
 struct FuncCallData{
   NLOptInterface* I=0;
   uint feature=0;
