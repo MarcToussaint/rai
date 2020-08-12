@@ -37,7 +37,7 @@ struct CtrlTarget_MaxCarrot : CtrlMovingTarget {
   virtual ActStatus step(double tau, CtrlObjective *o, const ConfigurationL& Ctuple);
   virtual void resetGoal(const arr& _goal) { goal=_goal; }
   virtual void setTimeScale(double d) {}
-  virtual void resetState() {}
+  virtual void resetState() { countInRange=0; }
   virtual arr getResidual(const arr& y_real){ if(goal.N) return y_real-goal; return y_real; }
 };
 
@@ -47,13 +47,13 @@ struct CtrlTarget_PathCarrot: CtrlMovingTarget {
   double maxStep;
   rai::Spline spline;
   double endTime;
-  double time;
+  double time=0.;
   uint countInRange=0;
   CtrlTarget_PathCarrot(const arr& path, double maxStep, double _endTime=1.);
   CtrlTarget_PathCarrot(const arr& path, double maxStep, const arr& times);
   virtual ActStatus step(double tau, CtrlObjective *o, const ConfigurationL& Ctuple);
   virtual void setTimeScale(double d) { endTime = d; }
-  virtual void resetState() { NIY }
+  virtual void resetState() { time=0.; countInRange=0.; }
 };
 
 //===========================================================================
