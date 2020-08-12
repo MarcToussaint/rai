@@ -43,6 +43,21 @@ struct CtrlTarget_MaxCarrot : CtrlMovingTarget {
 
 //===========================================================================
 
+struct CtrlTarget_PathCarrot: CtrlMovingTarget {
+  double maxStep;
+  rai::Spline spline;
+  double endTime;
+  double time;
+  uint countInRange=0;
+  CtrlTarget_PathCarrot(const arr& path, double maxStep, double _endTime=1.);
+  CtrlTarget_PathCarrot(const arr& path, double maxStep, const arr& times);
+  virtual ActStatus step(double tau, CtrlObjective *o, const ConfigurationL& Ctuple);
+  virtual void setTimeScale(double d) { endTime = d; }
+  virtual void resetState() { NIY }
+};
+
+//===========================================================================
+
 struct CtrlTarget_ConstVel : CtrlMovingTarget {
   CtrlTarget_ConstVel() {}
   virtual ActStatus step(double tau, CtrlObjective *o, const ConfigurationL& Ctuple);
@@ -105,15 +120,3 @@ struct CtrlTarget_PD : CtrlMovingTarget {
   bool isConverged(double tolerance);
 };
 
-//===========================================================================
-
-struct CtrlTarget_Path: CtrlMovingTarget {
-  rai::Spline spline;
-  double endTime;
-  double time;
-  CtrlTarget_Path(const arr& path, double endTime);
-  CtrlTarget_Path(const arr& path, const arr& times);
-  virtual ActStatus step(double tau, CtrlObjective *o, const ConfigurationL& Ctuple);
-  virtual void setTimeScale(double d) { endTime = d; }
-  virtual void resetState() { NIY }
-};
