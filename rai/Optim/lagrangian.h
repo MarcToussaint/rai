@@ -35,7 +35,7 @@ struct LagrangianProblem : ScalarFunction, MathematicalProgram { //TODO: rename:
 
   ostream* logFile=nullptr;  ///< file for logging
 
-  LagrangianProblem(MathematicalProgram& P, OptOptions opt=NOOPT, arr& lambdaInit=NoArr);
+  LagrangianProblem(MathematicalProgram& P, const OptOptions& opt=NOOPT, arr& lambdaInit=NoArr);
 
   virtual void getFeatureTypes(ObjectiveTypeA& featureTypes);  //the number and type of all features (sos, ineq, eq, or f)
   virtual void evaluate(arr& phi, arr& J, const arr& x);       //evaluate all features and (optionally) their Jacobians for state x
@@ -49,6 +49,7 @@ struct LagrangianProblem : ScalarFunction, MathematicalProgram { //TODO: rename:
   uint get_dimOfType(const ObjectiveType& tt); ///< info on the terms from last call
 
   void aulaUpdate(bool anyTimeVariant, double lambdaStepsize=1., double muInc=1., double* L_x=nullptr, arr& dL_x=NoArr, arr& HL_x=NoArr);
+  void autoUpdate(const OptOptions& opt, double* L_x=nullptr, arr& dL_x=NoArr, arr& HL_x=NoArr);
 
   //private: used gpenalty function
   double gpenalty(double g);

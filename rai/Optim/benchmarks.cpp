@@ -14,9 +14,30 @@
 double _RosenbrockFunction(arr& g, arr& H, const arr& x) {
   double f=0.;
   for(uint i=1; i<x.N; i++) f += rai::sqr(x(i)-rai::sqr(x(i-1))) + .01*rai::sqr(1-10.*x(i-1));
-  f = ::log(1.+f);
-  if(!!g) NIY;
-  if(!!H) NIY;
+//  f = ::log(1.+f);
+  if(!!g){
+    g.resize(x.N).setZero();
+    for(uint i=1; i<x.N; i++){
+      g(i) += 2.*(x(i)-rai::sqr(x(i-1)));
+      g(i-1) += 2.*(x(i)-rai::sqr(x(i-1)))*(-2.*x(i-1));
+      g(i-1) += .01*2.*(1-10.*x(i-1))*(-10.);
+    }
+  }
+  if(!!H){
+    H.resize(x.N, x.N).setZero();
+    for(uint i=1; i<x.N; i++){
+      //g(i) += 2.*(x(i)-rai::sqr(x(i-1)));
+      H(i,i) += 2.;
+      H(i,i-1) += -4.*x(i-1);
+
+      //g(i-1) += 2.*(x(i)-rai::sqr(x(i-1)))*(-2.*x(i-1));
+      H(i-1,i) += -4.*x(i-1);
+      H(i-1,i-1) += -4.*x(i-1)*(-2.*x(i-1)) - 4.*(x(i)-rai::sqr(x(i-1)));
+
+      //g(i-1) += .01*2.*(1-10.*x(i-1))*(-10.);
+      H(i-1,i-1) += .01*2.*(-10.)*(-10.);
+    }
+  }
   return f;
 };
 
@@ -32,7 +53,7 @@ double _RastriginFunction(arr& g, arr& H, const arr& x) {
     for(uint i=0; i<x.N; i++) g(i) = 2*x(i) + 10.*A*::sin(10.*x(i));
   }
   if(!!H) {
-    H.resize(x.N, x.N);  H.setZero();
+    H.resize(x.N, x.N).setZero();
     for(uint i=0; i<x.N; i++) H(i, i) = 2 + 100.*A*::cos(10.*x(i));
   }
   return f;

@@ -4,7 +4,7 @@
 void dot(byteA& img, int I, int J){
   I = img.d0 - I; //y-pixel coordinate is flipped
   for(int i=I-3;i<=I+3;i++) for(int j=J-3;j<=J+3;j++){
-    if(i>=0 && i<img.d0 && j>=0 && j<img.d1){
+    if(i>=0 && i<(int)img.d0 && j>=0 && j<(int)img.d1){
       img(i, j, {}) = byteA({3}, {255, 0, 0});
     }
   }

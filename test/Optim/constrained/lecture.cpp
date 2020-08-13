@@ -25,17 +25,7 @@
 void testConstraint(MathematicalProgram& p, uint dim_x, arr& x_start=NoArr, uint iters=20){
 
   OptOptions options;
-  LagrangianProblem UCP(p, options);
-
-  //-- choose constrained method
-  switch(options.constrainedMethod){
-  case squaredPenalty: UCP.mu=10.; UCP.nu=10.;  break;
-  case augmentedLag:   UCP.mu=1.;  UCP.nu=1.;   break;
-  case logBarrier:     UCP.muLB=1.;  UCP.nu=1.;   break;
-  default: NIY;
-  }
-
-  double muInc = rai::getParameter<double>("opt/aulaMuInc", 1.5);
+  LagrangianProblem lag(p, options);
 
   //-- initial x
   arr x(dim_x);
@@ -48,51 +38,59 @@ void testConstraint(MathematicalProgram& p, uint dim_x, arr& x_start=NoArr, uint
   //  cout <<std::setprecision(2);
   cout <<"x0=" <<x <<endl;
 
-  rnd.seed(0);
-
-  system("rm -f z.grad_all");
+  system("rm -f z.opt_all");
 
   uint evals=0;
   for(uint k=0;k<iters;k++){
     checkJacobianCP(p, x, 1e-4);
-    checkGradient(UCP, x, 1e-4);
-    checkHessian (UCP, x, 1e-4); //will throw errors: no Hessians for g!
+    checkGradient(lag, x, 1e-4);
+    checkHessian (lag, x, 1e-4); //will throw errors: no Hessians for g!
 
-    UCP.lagrangian(NoArr, NoArr, x);
+    lag.lagrangian(NoArr, NoArr, x);
 
     if(x.N==2){
-      displayFunction(UCP);
+      displayFunction(lag);
       rai::wait();
       gnuplot("load 'plt'", false, true);
       rai::wait();
     }
 
-    //optRprop(x, F, OPT(verbose=2, stopTolerance=1e-3, initStep=1e-1));
-    //optGradDescent(x, F, OPT(verbose=2, stopTolerance=1e-3, initStep=1e-1));
-    OptNewton newton(x, UCP, OPT(verbose=2, damping=.1, stopTolerance=1e-2));
-    newton.run();
-    evals+=newton.evals;
+//    optRprop(x, UCP, options);
+//    optGrad(x, lag, options);
+//    system("cat z.opt >> z.opt_all");
 
-    //upate unconstraint problem parameters
-    switch(newton.o.constrainedMethod){
-    case squaredPenalty: UCP.mu *= 2.;  UCP.nu *= 2.;  break;
-    case augmentedLag:   UCP.aulaUpdate(false, 1., muInc, &newton.fx, newton.gx, newton.Hx);  break;
-    case anyTimeAula:    UCP.aulaUpdate(true,  1., muInc, &newton.fx, newton.gx, newton.Hx);  break;
-    case logBarrier:     UCP.muLB /= 2.;  UCP.nu *= 10;  break;
-    default: NIY;
+    OptNewton newton(x, lag, options);
+    ofstream fil("z.opt");
+    newton.simpleLog = &fil;
+    newton.run();
+    evals += newton.evals;
+
+    system("cat z.opt >> z.opt_all");
+    if(x.N==2){
+      gnuplot("load 'plt'", false, true);
+      rai::wait();
     }
 
-    system("cat z.grad >>z.grad_all");
-    cout <<k <<' ' <<evals <<" f(x)=" <<UCP.get_costs()
-	 <<" \tg_compl=" <<UCP.get_sumOfGviolations()
-	 <<" \th_compl=" <<UCP.get_sumOfHviolations()
-      <<" \tmu=" <<UCP.mu <<" \tnu=" <<UCP.nu <<" \tmuLB=" <<UCP.muLB;
-    if(x.N<5) cout <<" \tx=" <<x <<" \tlambda=" <<UCP.lambda /*<<" \tg=" <<UCP.g_x <<" \th=" <<UCP.h_x*/;
+    //upate unconstraint problem parameters
+    lag.autoUpdate(options, &newton.fx, newton.gx, newton.Hx);
+//    switch(options.constrainedMethod){
+//    case squaredPenalty: lag.mu *= 2.;  lag.nu *= 2.;  break;
+//    case augmentedLag:   lag.aulaUpdate(false, 1., muInc, &newton.fx, newton.gx, newton.Hx);  break;
+//    case anyTimeAula:    lag.aulaUpdate(true,  1., muInc, &newton.fx, newton.gx, newton.Hx);  break;
+//    case logBarrier:     lag.muLB /= 2.;  lag.nu *= 10;  break;
+//    default: NIY;
+//    }
+
+    cout <<k <<' ' <<evals <<" f(x)=" <<lag.get_costs()
+         <<" \tg_compl=" <<lag.get_sumOfGviolations()
+         <<" \th_compl=" <<lag.get_sumOfHviolations()
+      <<" \tmu=" <<lag.mu <<" \tnu=" <<lag.nu <<" \tmuLB=" <<lag.muLB;
+    if(x.N<5) cout <<" \tx=" <<x <<" \tlambda=" <<lag.lambda /*<<" \tg=" <<UCP.g_x <<" \th=" <<UCP.h_x*/;
     cout <<endl;
   }
-  cout <<std::setprecision(6) <<"\nf(x)=" <<UCP.get_costs() <<"\nx_opt=" <<x <<"\nlambda=" <<UCP.lambda <<endl;
+  cout <<std::setprecision(6) <<"\nf(x)=" <<lag.get_costs() <<"\nx_opt=" <<x <<"\nlambda=" <<lag.lambda <<endl;
 
-  system("mv z.grad_all z.grad");
+  system("mv z.opt_all z.opt");
   if(x.N==2) gnuplot("load 'plt'", false, true);
 
   if(!!x_start) x_start = x;

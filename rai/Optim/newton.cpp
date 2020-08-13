@@ -15,7 +15,10 @@ bool sanityCheck=false; //true;
  * if f has already been evaluated at x (another initial evaluation is then omitted
  * to increase performance) and the evaluation of the returned x is also returned */
 int optNewton(arr& x, const ScalarFunction& f,  OptOptions o) {
-  return OptNewton(x, f, o).run();
+  OptNewton opt(x, f, o);
+  ofstream fil("z.opt");
+  opt.simpleLog = &fil;
+  return opt.run();
 }
 
 //===========================================================================
@@ -38,6 +41,11 @@ void OptNewton::reinit(const arr& _x) {
     (*logFile) <<"{ newton: " <<its <<", evaluations: " <<evals <<", f_x: " <<fx <<", alpha: " <<alpha;
     if(o.verbose>3)(*logFile) <<", x: " <<x;
     (*logFile) <<" }," <<endl;
+  }
+  if(simpleLog){
+    (*simpleLog) <<its <<' ' <<evals <<' ' <<fx <<' ' <<alpha;
+    if(x.N<=5) x.writeRaw(*simpleLog);
+    (*simpleLog) <<endl;
   }
 }
 
@@ -131,9 +139,15 @@ OptNewton::StopCriterion OptNewton::step() {
     timeEval += rai::timerRead(true, timeBefore);
     if(o.verbose>5) cout <<" \tprobing y=" <<y;
     if(o.verbose>1) cout <<" \tevals=" <<std::setw(4) <<evals <<" \talpha=" <<std::setw(11) <<alpha <<" \tf(y)=" <<fy <<flush;
+    if(simpleLog){
+      (*simpleLog) <<its <<' ' <<evals <<' ' <<fy <<' ' <<alpha;
+      if(y.N<=5) y.writeRaw(*simpleLog);
+      (*simpleLog) <<endl;
+    }
+
     bool wolfe = (fy <= fx + o.wolfe*scalarProduct(y-x, gx));
     if(rootFinding) wolfe=true;
-    if(fy==fy && (wolfe || o.nonStrictSteps==-1 || o.nonStrictSteps>(int)its)) { //fy==fy is for NAN
+    if(fy==fy && (wolfe || o.nonStrictSteps==-1 || o.nonStrictSteps>(int)its)) { //fy==fy is for !NAN
       //accept new point
       if(o.verbose>1) cout <<" - ACCEPT" <<endl;
       if(logFile) {

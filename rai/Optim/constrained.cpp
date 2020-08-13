@@ -50,7 +50,6 @@ void PhaseOneProblem::evaluate(arr& meta_phi, arr& meta_J, const arr& meta_x) {
   meta_phi = phi;
   meta_phi.append(-s);
 
-  uint m=0;
   for(uint i=0; i<phi.N; i++) if(ft.elem(i)==OT_ineq) {
     meta_phi(i) = phi(i) - s; //subtract slack!
   }
@@ -185,15 +184,7 @@ bool OptConstrained::step() {
   double L_x_before = newton.fx;
 
   //upate Lagrange parameters
-  switch(opt.constrainedMethod) {
-//  case squaredPenalty: UCP.mu *= opt.aulaMuInc;  break;
-    case squaredPenalty: L.aulaUpdate(false, -1., opt.aulaMuInc, &newton.fx, newton.gx, newton.Hx);  break;
-    case augmentedLag:   L.aulaUpdate(false, 1., opt.aulaMuInc, &newton.fx, newton.gx, newton.Hx);  break;
-    case anyTimeAula:    L.aulaUpdate(true,  1., opt.aulaMuInc, &newton.fx, newton.gx, newton.Hx);  break;
-    case logBarrier:     L.muLB /= 2.;  break;
-    case squaredPenaltyFixed: HALT("you should not be here"); break;
-    case noMethod: HALT("need to set method before");  break;
-  }
+  L.autoUpdate(opt, &newton.fx, newton.gx, newton.Hx);
 
   if(!!dual) dual=L.lambda;
 

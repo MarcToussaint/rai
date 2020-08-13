@@ -89,7 +89,7 @@ ActStatus CtrlTarget_PathCarrot::step(double tau, CtrlObjective *o, const Config
   if(time+tau > endTime) tau = endTime - time;
 
   arr y_real, y_raw;
-  uint d_raw = getRealValue(o, y_raw, y_real, Ctuple);
+  getRealValue(o, y_raw, y_real, Ctuple);
 
   arr ref = spline.eval(time);
   arr goal = spline.eval(time + tau);

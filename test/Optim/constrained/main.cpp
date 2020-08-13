@@ -89,14 +89,16 @@ void TEST(MathematicalProgram){
 int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
+  rnd.clockSeed();
+
   ChoiceConstraintFunction F;
 //  RandomLPFunction F;
 //  SimpleConstraintFunction F;
-//  testConstraint(F, F.dim_x());
-//  testConstraint2(F, F.dim_x());
+  testConstraint(F, F.getDimension());
+//  testConstraint2(F, F.getDimension());
 
 //  testCoveringSphere();
-  testMathematicalProgram();
+//  testMathematicalProgram();
 
 
 

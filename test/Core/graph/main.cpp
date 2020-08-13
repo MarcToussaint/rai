@@ -21,7 +21,7 @@ void TEST(Read){
 //  G.merge(m);
 //  cout <<"'k modify' merged with 'k':" <<*G["k"] <<endl;
 
-  rai::Node *n = G.first();
+//  rai::Node *n = G.first();
 
   G.checkConsistency();
   if(filename) return; //below only for "example.g"

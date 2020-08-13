@@ -20,7 +20,7 @@ double I_lambda_x(uint i, arr& lambda, arr& g) {
 
 //==============================================================================
 
-LagrangianProblem::LagrangianProblem(MathematicalProgram& P, OptOptions opt, arr& lambdaInit)
+LagrangianProblem::LagrangianProblem(MathematicalProgram& P, const OptOptions& opt, arr& lambdaInit)
   : P(P), muLB(0.), mu(0.), nu(0.) {
 
   ScalarFunction::operator=([this](arr& dL, arr& HL, const arr& x) -> double {
@@ -303,6 +303,18 @@ void LagrangianProblem::aulaUpdate(bool anyTimeVariant, double lambdaStepsize, d
   if(L_x || !!dL_x || !!HL_x) {
     double L = lagrangian(dL_x, HL_x, x); //reevaluate gradients and hessian (using buffered info)
     if(L_x) *L_x = L;
+  }
+}
+
+void LagrangianProblem::autoUpdate(const OptOptions& opt, double* L_x, arr& dL_x, arr& HL_x){
+  switch(opt.constrainedMethod) {
+//  case squaredPenalty: UCP.mu *= opt.aulaMuInc;  break;
+    case squaredPenalty: aulaUpdate(false, -1., opt.aulaMuInc, L_x, dL_x, HL_x);  break;
+    case augmentedLag:   aulaUpdate(false, 1., opt.aulaMuInc, L_x, dL_x, HL_x);  break;
+    case anyTimeAula:    aulaUpdate(true,  1., opt.aulaMuInc, L_x, dL_x, HL_x);  break;
+    case logBarrier:     muLB /= 2.;  break;
+    case squaredPenaltyFixed: HALT("you should not be here"); break;
+    case noMethod: HALT("need to set method before");  break;
   }
 }
 
