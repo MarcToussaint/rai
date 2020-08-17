@@ -6,6 +6,6 @@ struct IpoptInterface {
 
   IpoptInterface(MathematicalProgram& P) : P(P){}
 
-  void solve();
+  arr solve();
 };
 

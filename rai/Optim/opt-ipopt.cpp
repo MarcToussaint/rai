@@ -1,4 +1,4 @@
-#include "IpoptConstrainedProblem.h"
+#include "opt-ipopt.h"
 
 #include <coin/IpTNLP.hpp>
 #include <coin/IpIpoptApplication.hpp>
@@ -56,19 +56,31 @@ Conv_MP_Ipopt::Conv_MP_Ipopt(MathematicalProgram& P) : P(P){
 
 Conv_MP_Ipopt::~Conv_MP_Ipopt(){}
 
-void IpoptInterface::solve(){
+arr IpoptInterface::solve(){
   Ipopt::IpoptApplication opt;
 
-  opt.Options()->SetNumericValue("tol", 1e-4);
-  //    opt.Options()->SetStringValue("mu_strategy", "adaptive");
-  //    opt.Options()->SetStringValue("output_file", "ipopt.out");
+  opt.Options()->SetStringValue("output_file", "z.ipopt.out");
+
+  opt.Options()->SetNumericValue("tol", 1e-3);
+  opt.Options()->SetNumericValue("constr_viol_tol", 1e-3);
+  opt.Options()->SetNumericValue("compl_inf_tol", 1e-3);
+
+  //  opt.Options()->SetStringValue("mu_strategy", "adaptive");
+  //  opt.Options()->SetNumericValue("mu_init", 10.);
+  //  opt.Options()->SetStringValue("hessian_approximation", "limited-memory");
+  //  opt.Options()->SetStringValue("linear_solver", "ma27");
+
+  //  opt.Options()->SetStringValue("derivative_test", "first-order");
+  opt.Options()->SetNumericValue("derivative_test_perturbation", 1e-8);
+  opt.Options()->SetNumericValue("derivative_test_tol", 1e-4);
+
 
   Ipopt::ApplicationReturnStatus status;
   status = opt.Initialize();
-  CHECK_EQ(status, Ipopt::Solve_Succeeded, "Error during Ipopt initialization!")
+  CHECK_EQ(status, Ipopt::Solve_Succeeded, "Error during Ipopt initialization!");
 
-      // Ask Ipopt to solve the problem
-      Ipopt::SmartPtr<Ipopt::TNLP> mynlp( new   Conv_MP_Ipopt(P) );
+  Conv_MP_Ipopt* conv = new Conv_MP_Ipopt(P);
+  Ipopt::SmartPtr<Ipopt::TNLP> mynlp( conv );
   status = opt.OptimizeTNLP(mynlp);
 
   if (status == Ipopt::Solve_Succeeded) {
@@ -78,6 +90,7 @@ void IpoptInterface::solve(){
     printf("\n\n*** The problem FAILED!\n");
   }
 
+  return conv->x;
 }
 
 bool Conv_MP_Ipopt::get_nlp_info(Ipopt::Index& n, Ipopt::Index& m, Ipopt::Index& nnz_jac_g, Ipopt::Index& nnz_h_lag, Ipopt::TNLP::IndexStyleEnum& index_style){
@@ -98,8 +111,15 @@ bool Conv_MP_Ipopt::get_nlp_info(Ipopt::Index& n, Ipopt::Index& m, Ipopt::Index&
 bool Conv_MP_Ipopt::get_bounds_info(Ipopt::Index n, Ipopt::Number* x_l, Ipopt::Number* x_u, Ipopt::Index m, Ipopt::Number* g_l, Ipopt::Number* g_u){
   arr bounds_lo, bounds_up;
   P.getBounds(bounds_lo, bounds_up);
-  for(int i=0; i<n; i++)  x_l[i] = bounds_lo.elem(i);
-  for(int i=0; i<n; i++)  x_u[i] = bounds_up.elem(i);
+  for(int i=0; i<n; i++) {
+    double l = bounds_lo.elem(i), u = bounds_up.elem(i);
+    if(l<u){
+      x_l[i] = l;
+      x_u[i] = u;
+    }else{
+      HALT("Ipopt really needs bounds");
+    }
+  }
 
   uint j=0;
   for(auto t:featureTypes){
@@ -124,7 +144,7 @@ bool Conv_MP_Ipopt::get_starting_point(Ipopt::Index n, bool init_x, Ipopt::Numbe
 
 bool Conv_MP_Ipopt::eval_f(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, Ipopt::Number& obj_value){
   if(new_x){
-    x.referTo(_x, n);
+    x.setCarray(_x, n);
     P.evaluate(phi_x, J_x, x);
   }
 
@@ -141,7 +161,7 @@ bool Conv_MP_Ipopt::eval_f(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, 
 
 bool Conv_MP_Ipopt::eval_grad_f(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, Ipopt::Number* grad_f){
   if(new_x){
-    x.referTo(_x, n);
+    x.setCarray(_x, n);
     P.evaluate(phi_x, J_x, x);
   }
 
@@ -164,7 +184,7 @@ bool Conv_MP_Ipopt::eval_grad_f(Ipopt::Index n, const Ipopt::Number* _x, bool ne
 
 bool Conv_MP_Ipopt::eval_g(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, Ipopt::Index m, Ipopt::Number* _g){
   if(new_x){
-    x.referTo(_x, n);
+    x.setCarray(_x, n);
     P.evaluate(phi_x, J_x, x);
   }
 
@@ -185,7 +205,7 @@ bool Conv_MP_Ipopt::eval_jac_g(Ipopt::Index n, const Ipopt::Number* _x, bool new
     P.evaluate(phi_x, J_x, x);
   }
   if(new_x){
-    x.referTo(_x, n);
+    x.setCarray(_x, n);
     P.evaluate(phi_x, J_x, x);
   }
 
@@ -268,5 +288,6 @@ bool Conv_MP_Ipopt::eval_h(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, 
   return true;
 }
 
-void Conv_MP_Ipopt::finalize_solution(Ipopt::SolverReturn status, Ipopt::Index n, const Ipopt::Number* x, const Ipopt::Number* z_L, const Ipopt::Number* z_U, Ipopt::Index m, const Ipopt::Number* g, const Ipopt::Number* lambda, Ipopt::Number obj_value, const Ipopt::IpoptData* ip_data, Ipopt::IpoptCalculatedQuantities* ip_cq){
+void Conv_MP_Ipopt::finalize_solution(Ipopt::SolverReturn status, Ipopt::Index n, const Ipopt::Number* _x, const Ipopt::Number* z_L, const Ipopt::Number* z_U, Ipopt::Index m, const Ipopt::Number* g, const Ipopt::Number* lambda, Ipopt::Number obj_value, const Ipopt::IpoptData* ip_data, Ipopt::IpoptCalculatedQuantities* ip_cq){
+  x.setCarray(_x, n);
 }

@@ -14,10 +14,11 @@ void tutorialBasics(){
    * 1) the kinematic model
    * 2) the timing parameters (duration/phases, number os time slices per phase)
    * 3) the tasks */
-//  komo.solver = rai::KS_sparse;
+  komo.solver = rai::KS_sparse;
 //  komo.solver = rai::KS_banded;
 //  komo.solver = rai::KS_sparseStructured;
-  komo.solver= rai::KS_NLopt;
+//  komo.solver= rai::KS_NLopt;
+//  komo.solver= rai::KS_Ipopt;
 
   //-- setting the model; false -> NOT calling collision detection (SWIFT) -> faster
   komo.setModel(C, false);
@@ -42,6 +43,7 @@ void tutorialBasics(){
   komo.setSlow(1., -1., 1e1);
 
   //-- call the optimizer
+//  komo.animateOptimization = 1;
   komo.optimize();
   //  komo.checkGradients(); //this checks all gradients of the problem by finite difference
   komo.getReport(true); //true -> plot the cost curves
@@ -80,8 +82,10 @@ void tutorialInverseKinematics(){
   rai::Configuration G("model.g");
 
   KOMO komo;
-//  komo.solver = rai::KS_dense;
-  komo.solver = rai::KS_NLopt;
+  komo.solver = rai::KS_dense;
+//  komo.solver = rai::KS_NLopt;
+//  komo.solver = rai::KS_Ipopt;
+
   komo.setModel(G, false);
 
   //-- the timing parameters: 1 phase, 1 time slice, duration 1, order 1
@@ -89,7 +93,7 @@ void tutorialInverseKinematics(){
 
   //-- default tasks for transition costs
   komo.add_qControlObjective({}, 1, 1.);
-//  komo.addSquaredQuaternionNorms(-1., -1., 1e3); //when the kinematics includes quaternion joints, keep them roughly regularized
+  komo.addSquaredQuaternionNorms(-1., -1., 1e3); //when the kinematics includes quaternion joints, keep them roughly regularized
 
   //-- simple tasks, called low-level
   komo.addObjective({}, FS_positionDiff, {"endeff", "target"}, OT_eq, {1e0});

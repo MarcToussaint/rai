@@ -33,6 +33,7 @@
 #include "../Optim/primalDual.h"
 #include "../Optim/GraphOptim.h"
 #include "../Optim/opt-nlopt.h"
+#include "../Optim/opt-ipopt.h"
 
 #include <iomanip>
 
@@ -1523,6 +1524,11 @@ void KOMO::run(const OptOptions options) {
     NLOptInterface nlopt(P);
     x = nlopt.solve();
     set_x(x);
+  }else if(solver==rai::KS_Ipopt){
+    Conv_KOMO_SparseUnstructured P(*this, false);
+    IpoptInterface ipopt(P);
+    x = ipopt.solve();
+    set_x(x);
   }else NIY;
   runTime = rai::realTime() - timeZero;
   if(logFile)(*logFile) <<"\n] #end of KOMO_run_log" <<endl;
@@ -1654,8 +1660,6 @@ void KOMO::checkGradients() {
 
     if(solver==rai::KS_none) {
       NIY;
-    }else if(solver==rai::KS_dense || solver==rai::KS_sparse) {
-      CP = make_shared<Conv_KOMO_SparseUnstructured>(*this, solver==rai::KS_sparse);
     }else if(solver==rai::KS_banded) {
       SP = make_shared<Conv_KOMO_StructuredProblem>(*this);
       auto BP = make_shared<Conv_Structured_BandedProgram>(*SP, 0);
@@ -1664,6 +1668,8 @@ void KOMO::checkGradients() {
     }else if(solver==rai::KS_sparseStructured) {
       SP = make_shared<Conv_KOMO_StructuredProblem>(*this);
       CP = make_shared<Conv_Structured_BandedProgram>(*SP, 0, true);
+    }else{
+      CP = make_shared<Conv_KOMO_SparseUnstructured>(*this, solver==rai::KS_sparse);
     }
 
     VectorFunction F = [CP](arr& phi, arr& J, const arr& x) {
@@ -2750,7 +2756,7 @@ void KOMO::Conv_KOMO_SparseUnstructured::getBounds(arr& bounds_lo, arr& bounds_u
   bounds_up = komo.bound_up;
 }
 
-arr KOMO::Conv_KOMO_SparseUnstructured::getInitializationSample(){
+arr KOMO::Conv_KOMO_SparseUnstructured::getInitializationSample(const arrL& previousOptima){
   komo.run_prepare(.01);
   return komo.x;
 }
@@ -2866,7 +2872,7 @@ void KOMO::Conv_KOMO_StructuredProblem::getBounds(arr& bounds_lo, arr& bounds_up
   bounds_up = komo.bound_up;
 }
 
-arr KOMO::Conv_KOMO_StructuredProblem::getInitializationSample(){
+arr KOMO::Conv_KOMO_StructuredProblem::getInitializationSample(const arrL& previousOptima){
   komo.run_prepare(.01);
   return komo.x;
 }

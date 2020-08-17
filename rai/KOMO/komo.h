@@ -91,7 +91,7 @@ void writeSkeleton(std::ostream& os, const Skeleton& S, const intA& switches= {}
 //===========================================================================
 
 namespace rai {
-  enum KOMOsolver { KS_none=-1, KS_dense=0, KS_sparse, KS_banded, KS_sparseStructured, KS_NLopt };
+  enum KOMOsolver { KS_none=-1, KS_dense=0, KS_sparse, KS_banded, KS_sparseStructured, KS_NLopt, KS_Ipopt };
 }
 
 //===========================================================================
@@ -346,7 +346,7 @@ struct KOMO : NonCopyable {
     virtual uint getDimension();
     virtual void getFeatureTypes(ObjectiveTypeA& featureTypes);
     virtual void getBounds(arr& bounds_lo, arr& bounds_up);
-    virtual arr getInitializationSample();
+    virtual arr getInitializationSample(const arrL& previousOptima={});
     virtual void getStructure(uintA& variableDimensions, uintA& featureDimensions, intAA& featureVariables);
 
     virtual void setSingleVariable(uint var_id, const arr& x); //set a single variable block
@@ -400,7 +400,7 @@ struct KOMO : NonCopyable {
     virtual uint getDimension(){ return komo.getPath_totalDofs(); }
     virtual void getFeatureTypes(ObjectiveTypeA& ft);
     virtual void getBounds(arr& bounds_lo, arr& bounds_up);
-    virtual arr getInitializationSample();
+    virtual arr getInitializationSample(const arrL& previousOptima={});
     virtual void evaluate(arr& phi, arr& J, const arr& x);
     virtual void getFHessian(arr& H, const arr& x);
   };
