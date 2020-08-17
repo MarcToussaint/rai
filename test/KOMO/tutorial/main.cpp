@@ -2,6 +2,7 @@
 #include <Gui/opengl.h>
 #include <KOMO/komo.h>
 #include <Kin/TM_default.h>
+#include <Optim/opt-nlopt.h>
 
 //===========================================================================
 
@@ -13,6 +14,10 @@ void tutorialBasics(){
    * 1) the kinematic model
    * 2) the timing parameters (duration/phases, number os time slices per phase)
    * 3) the tasks */
+//  komo.solver = rai::KS_sparse;
+//  komo.solver = rai::KS_banded;
+//  komo.solver = rai::KS_sparseStructured;
+  komo.solver= rai::KS_NLopt;
 
   //-- setting the model; false -> NOT calling collision detection (SWIFT) -> faster
   komo.setModel(C, false);
@@ -75,6 +80,8 @@ void tutorialInverseKinematics(){
   rai::Configuration G("model.g");
 
   KOMO komo;
+//  komo.solver = rai::KS_dense;
+  komo.solver = rai::KS_NLopt;
   komo.setModel(G, false);
 
   //-- the timing parameters: 1 phase, 1 time slice, duration 1, order 1
@@ -82,7 +89,7 @@ void tutorialInverseKinematics(){
 
   //-- default tasks for transition costs
   komo.add_qControlObjective({}, 1, 1.);
-  komo.addSquaredQuaternionNorms(-1., -1., 1e3); //when the kinematics includes quaternion joints, keep them roughly regularized
+//  komo.addSquaredQuaternionNorms(-1., -1., 1e3); //when the kinematics includes quaternion joints, keep them roughly regularized
 
   //-- simple tasks, called low-level
   komo.addObjective({}, FS_positionDiff, {"endeff", "target"}, OT_eq, {1e0});
@@ -102,7 +109,7 @@ int main(int argc,char** argv){
 
   tutorialBasics();
 
-  tutorialInverseKinematics();
+//  tutorialInverseKinematics();
 
   return 0;
 }

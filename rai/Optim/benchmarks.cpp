@@ -285,3 +285,80 @@ void ParticleAroundWalls2::phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, 
   }
   CHECK_EQ(m, M, "");
 }
+
+ChoiceConstraintFunction::ChoiceConstraintFunction() {
+  which = (WhichConstraint) rai::getParameter<int>("constraintChoice");
+  n = rai::getParameter<uint>("dim", 2);
+}
+
+uint ChoiceConstraintFunction::getDimension() {
+  return n;
+}
+
+void ChoiceConstraintFunction::getFeatureTypes(ObjectiveTypeA& tt){
+  tt.clear();
+  tt.append(OT_f);
+  switch(which) {
+    case wedge2D:
+      tt.append(consts(OT_ineq, n));
+      break;
+    case halfcircle2D:
+      tt.append(OT_ineq);
+      tt.append(OT_ineq);
+      break;
+    case circleLine2D:
+      tt.append(OT_ineq);
+      tt.append(OT_eq);
+      break;
+    case randomLinear:
+      tt.append(consts(OT_ineq, 5*n+5));
+      break;
+  }
+}
+
+void ChoiceConstraintFunction::getBounds(arr& bounds_lo, arr& bounds_hi){
+  bounds_lo.resize(n) = -2.;
+  bounds_hi.resize(n) = +2.;
+}
+
+void ChoiceConstraintFunction::evaluate(arr& phi, arr& J, const arr& x) {
+  CHECK_EQ(x.N, n, "");
+  phi.clear();  if(!!J) J.clear();
+
+  phi.append(ChoiceFunction()(J, NoArr, x));
+
+  switch(which) {
+    case wedge2D:
+      for(uint i=0; i<x.N; i++) { phi.append(-sum(x)+1.5*x(i)-.2); }
+      if(!!J) { arr Jg(x.N, x.N); Jg=-1.; for(uint i=0; i<x.N; i++) Jg(i, i) = +.5; J.append(Jg); }
+      break;
+    case halfcircle2D:
+      phi.append(sumOfSqr(x)-.25);  if(!!J) J.append(2.*x);       //feasible=IN circle of radius .5
+      phi.append(-x(0)-.2);         if(!!J) { J.append(zeros(x.N)); J.elem(-x.N) = -1.; }      //feasible=right of -.2
+      break;
+    case circleLine2D:
+      phi.append(sumOfSqr(x)-.25);  if(!!J) J.append(2.*x);       //feasible=IN circle of radius .5
+      phi.append(x(0));             if(!!J) { J.append(zeros(x.N)); J.elem(-x.N) = 1.; }
+      break;
+    case randomLinear: {
+      if(!randomG.N) {
+        randomG.resize(5*x.N+5, x.N+1);
+        rndGauss(randomG, 1.);
+        for(uint i=0; i<randomG.d0; i++) {
+          if(randomG(i, 0)>0.) randomG(i, 0)*=-1.; //ensure (0,0) is feasible
+          randomG(i, 0) -= .2;
+        }
+      }
+      CHECK_EQ(randomG.d1, x.N+1, "you changed dimensionality");
+      phi.append(randomG * cat({1.}, x));
+      if(!!J) J.append(randomG.sub(0, -1, 1, -1));
+    } break;
+  }
+
+  if(!!J) J.reshape(J.N/x.N, x.N);
+}
+
+void ChoiceConstraintFunction::getFHessian(arr& H, const arr& x){
+  ChoiceFunction()(NoArr, H, x);
+}
+

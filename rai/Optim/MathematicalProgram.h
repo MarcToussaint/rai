@@ -43,6 +43,30 @@ struct MathematicalProgram : NonCopyable{
 
 //===========================================================================
 
+struct MathematicalProgram_Logged : MathematicalProgram {
+  MathematicalProgram& P;
+  arr phiLog, JLog, xLog;
+
+  MathematicalProgram_Logged(MathematicalProgram& P) : P(P) {}
+
+  virtual void evaluate(arr& phi, arr& J, const arr& x){
+    P.evaluate(phi, J, x);
+    xLog.append(x); xLog.reshape(-1, x.N);
+    if(!!phi){ phiLog.append(phi); phiLog.reshape(-1, phi.N); }
+    if(!!J){   JLog.append(J);     JLog.reshape(-1, phi.N, x.N); }
+  }
+
+  //trivial
+  virtual void getFeatureTypes(ObjectiveTypeA& featureTypes){ P.getFeatureTypes(featureTypes); }
+  virtual uint getDimension(){ return P.getDimension(); }
+  virtual void getBounds(arr& bounds_lo, arr& bounds_up){ P.getBounds(bounds_lo, bounds_up); }
+  virtual void getNames(StringA& variableNames, StringA& featureNames){ P.getNames(variableNames, featureNames); }
+  virtual arr  getInitializationSample(const arrL& previousOptima={}){ return P.getInitializationSample(previousOptima); }
+  virtual void getFHessian(arr& H, const arr& x){ P.getFHessian(H, x); }
+};
+
+//===========================================================================
+
 struct MathematicalProgram_Structured : MathematicalProgram {
   //-- structure of the mathematical problem
   virtual void getStructure(uintA& variableDimensions, //the size of each variable block

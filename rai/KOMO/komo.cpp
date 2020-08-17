@@ -1473,10 +1473,11 @@ void KOMO::run(const OptOptions options) {
 //    Conv_KOMO_GraphProblem_toBeRetired graph_problem(*this);
 //    Conv_Graph_MathematicalProgram C(graph_problem, logFile);
 
-    Conv_KOMO_StructuredProblem P(*this);
-    Conv_Structured_BandedProgram C(P, 0, true);
+    Conv_KOMO_SparseUnstructured P(*this, false);
+//    Conv_KOMO_StructuredProblem P(*this);
+//    Conv_Structured_BandedProgram C(P, 0, true);
 
-    OptConstrained _opt(x, dual, C, rai::MAX(verbose-2, 0), options, logFile);
+    OptConstrained _opt(x, dual, P, rai::MAX(verbose-2, 0), options, logFile);
     if(bound_up.N && bound_lo.N){
       _opt.newton.bound_lo = bound_lo;
       _opt.newton.bound_up = bound_up;

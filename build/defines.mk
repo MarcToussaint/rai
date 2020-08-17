@@ -83,9 +83,15 @@ LIBS += -lceres -lglog -lcholmod -llapack -lblas -lpthread  /usr/lib/x86_64-linu
 endif
 
 ifeq ($(NLOPT),1)
-DEPEND_UBUNTU += libnlopt-dev
+DEPEND_UBUNTU += libnlopt-dev gfortran
 CXXFLAGS += -DRAI_NLOPT `pkg-config --cflags nlopt`
 LIBS     += `pkg-config --libs nlopt`
+endif
+
+ifeq ($(IPOPT),1)
+DEPEND_UBUNTU += coinor-libipopt-dev
+CXXFLAGS += -DRAI_NLOPT `pkg-config --cflags ipopt`
+LIBS     += `pkg-config --libs ipopt`
 endif
 
 ifeq ($(CUDA),1)

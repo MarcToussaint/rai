@@ -166,7 +166,13 @@ template<class T> rai::Array<T>& rai::Array<T>::resize(uint D0, uint D1, uint D2
 template<class T> rai::Array<T>& rai::Array<T>::resizeCopy(uint D0, uint D1, uint D2) { nd=3; d0=D0; d1=D1; d2=D2; resetD(); resizeMEM(d0*d1*d2, true); return *this; }
 
 /// ...
-template<class T> rai::Array<T>& rai::Array<T>::reshape(uint D0, uint D1, uint D2) { CHECK_EQ(N, D0*D1*D2, "reshape must preserve total memory size"); nd=3; d0=D0; d1=D1; d2=D2; resetD(); return *this; }
+template<class T> rai::Array<T>& rai::Array<T>::reshape(int D0, int D1, int D2) {
+  if(D0<0) D0=N/(D1*D2); else if(D1<0) D1=N/(D0*D2); else if(D2<0) D2=N/(D0*D1);
+  CHECK_EQ((int)N, D0*D1*D2, "reshape must preserve total memory size");
+  nd=3; d0=D0; d1=D1; d2=D2;
+  resetD();
+  return *this;
+}
 
 /// resize to multi-dimensional tensor
 template<class T> rai::Array<T>& rai::Array<T>::resize(uint ND, uint* dim) {
@@ -1496,7 +1502,7 @@ template<class T> void rai::Array<T>::referToRange(const rai::Array<T>& a, int i
   CHECK_LE(a.nd, 3, "not implemented yet");
   if(i_lo<0) i_lo+=a.d0;
   if(i_up<0) i_up+=a.d0;
-  if(i_lo>i_up) return;
+  if(i_lo>i_up){ clear(); return; }
   CHECK((uint)i_lo<a.d0 && (uint)i_up<a.d0, "SubRange range error (" <<i_lo <<"<" <<a.d0 <<", " <<i_up <<"<" <<a.d0 <<")");
 
   if(a.nd==1) {

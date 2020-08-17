@@ -17,16 +17,24 @@ arr NLOptInterface::solve(){
     if(blo.elem(i)>=bup.elem(i)){ blo.elem(i) = -100.;  bup.elem(i) = 100.; }
   }
 
-//  nlopt::opt opt(nlopt::LD_SLSQP, x.N);
+//  nlopt::opt opt(nlopt::LD_SLSQP, x.N); //works well for toys
 //  nlopt::opt opt(nlopt::LD_MMA, x.N);
+//  nlopt::opt opt(nlopt::LN_COBYLA, x.N); //works for KOMO
+
+#if 1
   nlopt::opt opt(nlopt::LD_AUGLAG, x.N);
 
 //  nlopt::opt subopt(nlopt::LD_MMA, x.N);
-//  subopt.set_xtol_abs(1e-3);
-//  opt.set_local_optimizer(subopt);
+//  nlopt::opt subopt(nlopt::LN_NELDERMEAD, x.N);
+  nlopt::opt subopt(nlopt::LD_LBFGS, x.N);
+//  nloqpt::opt subopt(nlopt::LD_SLSQP, x.N); //works well for toys
+//  nlopt::opt subopt(nlopt::LD_TNEWTON_PRECOND_RESTART, x.N);
+  subopt.set_xtol_abs(1e-4);
+  opt.set_local_optimizer(subopt);
+#endif
 
   opt.set_min_objective(_f, this);
-  opt.set_xtol_abs(1e-3);
+  opt.set_xtol_abs(1e-4);
 //  opt.set_ftol_abs(1e-3);
   if(blo.N==x.N) opt.set_lower_bounds(blo);
   if(bup.N==x.N) opt.set_upper_bounds(bup);
@@ -41,8 +49,12 @@ arr NLOptInterface::solve(){
   }
 
   double fval;
-  nlopt::result R = opt.optimize(x, fval);
-  cout <<"f:" <<opt.last_optimum_value() <<endl;
+  try{
+      nlopt::result R = opt.optimize(x, fval);
+  }catch(const std::runtime_error& err){
+      cout <<"NLOPT terminated with " <<err.what() <<endl;
+  }
+  cout <<"NLOPT final costs:" <<opt.last_optimum_value() <<endl;
   return x;
 }
 
