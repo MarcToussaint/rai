@@ -1501,10 +1501,13 @@ void KOMO::run(const OptOptions options) {
 #endif
   }else if(solver==rai::KS_banded) {
     if(!splineB.N) { //DEFAULT CASE
-//      Conv_KOMOProblem_MathematicalProgram C(komo_problem);
+#if 0 //old version - need to change the 'tuples' option for setCostSpects (line 179)
+      Conv_KOMOProblem_MathematicalProgram C(komo_problem);
+#else //new
       Conv_KOMO_FactoredNLP P(*this);
-      Conv_Structured_BandedProgram C(P, 0);
+      Conv_FactoredNLP_BandedNLP C(P, 0);
       C.maxBandSize = (k_order+1)*max(C.variableDimensions);
+#endif
       opt = new OptConstrained(x, dual, C, rai::MAX(verbose-2, 0), options);
       if(bound_up.N && bound_lo.N){
         opt->newton.bound_lo = bound_lo;
@@ -1671,12 +1674,12 @@ void KOMO::checkGradients() {
       NIY;
     }else if(solver==rai::KS_banded) {
       SP = make_shared<Conv_KOMO_FactoredNLP>(*this);
-      auto BP = make_shared<Conv_Structured_BandedProgram>(*SP, 0);
+      auto BP = make_shared<Conv_FactoredNLP_BandedNLP>(*SP, 0);
       BP->maxBandSize = (k_order+1)*max(BP->variableDimensions);
       CP = BP;
     }else if(solver==rai::KS_sparseFactored) {
       SP = make_shared<Conv_KOMO_FactoredNLP>(*this);
-      CP = make_shared<Conv_Structured_BandedProgram>(*SP, 0, true);
+      CP = make_shared<Conv_FactoredNLP_BandedNLP>(*SP, 0, true);
     }else{
       CP = make_shared<Conv_KOMO_SparseNonfactored>(*this, solver==rai::KS_sparse);
     }
@@ -2832,7 +2835,7 @@ KOMO::Conv_KOMO_FactoredNLP::Conv_KOMO_FactoredNLP(KOMO& _komo) : komo(_komo) {
 
   //count features
   uint F=0;
-  for(ptr<Objective>& ob:komo.objectives) {
+  for(ptr<Objective>& ob:komo.objectives) if(ob->configs.N) {
     CHECK_EQ(ob->configs.nd, 2, "in sparse mode, vars need to be tuples of variables");
     F += ob->configs.d0;
   }
@@ -2863,7 +2866,7 @@ uint KOMO::Conv_KOMO_FactoredNLP::getDimension(){ return komo.getPath_totalDofs(
 void KOMO::Conv_KOMO_FactoredNLP::getFeatureTypes(ObjectiveTypeA& featureTypes){
   CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet: use komo.reset()");
   if(!!featureTypes) featureTypes.clear();
-  for(ptr<Objective>& ob:komo.objectives) {
+  for(ptr<Objective>& ob:komo.objectives) if(ob->configs.N) {
     CHECK_EQ(ob->configs.nd, 2, "in sparse mode, vars need to be tuples of variables");
     for(uint l=0; l<ob->configs.d0; l++) {
       ConfigurationL Ktuple = komo.configurations.sub(convert<uint, int>(ob->configs[l]+(int)komo.k_order));

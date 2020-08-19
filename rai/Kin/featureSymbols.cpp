@@ -104,7 +104,7 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
   ptr<Feature> f;
   if(feat==FS_distance) {  f=make_shared<F_PairCollision>(C, frames(0), frames(1), F_PairCollision::_negScalar, false); }
   else if(feat==FS_oppose) {  f=make_shared<F_GraspOppose>(C, frames(0), frames(1), frames(2)); }
-  else if(feat==FS_aboveBox) {  f=make_shared<TM_AboveBox>(C, frames(1), frames(0), .05); }
+  else if(feat==FS_aboveBox) {  f=make_shared<TM_AboveBox>(C, frames(1), frames(0), .0); }
   else if(feat==FS_standingAbove) {
     double h = .5*(shapeSize(C, frames(0)) + shapeSize(C, frames(1)));
     f = make_shared<TM_Default>(TMT_posDiff, C, frames(0), rai::Vector(0., 0., h), frames(1), NoVector);

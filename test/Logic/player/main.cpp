@@ -54,7 +54,9 @@ void TEST(PlayFOL_World){
     if(!terminal) for(auto& a:actions){ cout <<"(" <<c++ <<") DECISION: " <<*a <<endl; }
 
     char cmd='1';
-    std::cin >>cmd;
+    if(rai::getInteractivity()) {
+      std::cin >>cmd;
+    }
     cout <<"COMMAND: '" <<cmd <<"'" <<endl;
 
     if(!terminal && cmd>='0' && cmd<='9'){
@@ -66,7 +68,10 @@ void TEST(PlayFOL_World){
       case 'q': go=false; break;
       case 'r': world.reset_state(); break;
       case 'm': world.make_current_state_new_start(); break;
-      default: LOG(-1) <<"command '" <<c <<"' not known";
+      default:{
+	LOG(-1) <<"command '" <<c <<"' not known";
+	if(!rai::getInteractivity()) return;
+      }
     }
   }
 }
@@ -77,7 +82,7 @@ int main(int argn, char** argv){
   rai::initCmdLine(argn, argv);
   rnd.clockSeed();
 
-//  testFOL_World();
+  testFOL_World();
 
   testPlayFOL_World();
 }

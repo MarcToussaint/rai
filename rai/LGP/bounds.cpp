@@ -152,7 +152,7 @@ SeqBound::SeqBound(ptr<KOMO>& komo,
 
   komo->setModel(startKinematics, collisions);
   komo->setTiming(maxPhase+1., 1, 5., 1);
-  komo->solver=rai::KS_sparse; //sparseOptimization = true;
+//  komo->solver=rai::KS_sparse; //sparseOptimization = true;
   komo->animateOptimization = 0;
 
   komo->addSquaredQuaternionNorms();

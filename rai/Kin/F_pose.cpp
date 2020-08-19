@@ -13,18 +13,22 @@
 
 void F_Pose::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
 #if 1
+  arr yq, Jq, yp, Jp;
   TM_Default tmp(TMT_pos, a);
   tmp.order = order;
   tmp.type = TMT_pos;
-  tmp.Feature::__phi(y, J, Ctuple);
-
-  arr yq, Jq;
+  tmp.Feature::__phi(yp, (!!J?Jp:NoArr), Ctuple);
   tmp.type = TMT_quat;
   tmp.flipTargetSignOnNegScalarProduct=true;
   tmp.Feature::__phi(yq, (!!J?Jq:NoArr), Ctuple);
-
-  y.append(yq);
-  if(!!J) J.append(Jq);
+  y.resize(yp.N+yq.N);
+  y.setVectorBlock(yp,0);
+  y.setVectorBlock(yq,3);
+  if(!!J){
+    J.resize(y.N, Jp.d1);
+    J.setMatrixBlock(Jp,0,0);
+    J.setMatrixBlock(Jq,3,0);
+  }
 #else //should be identical
   if(order==2) {
     arr p0, p1, p2, J0, J1, J2;
@@ -87,31 +91,43 @@ void F_Pose::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
 //===========================================================================
 
 void F_PoseDiff::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
-  arr yq, Jq;
+  arr yq, Jq, yp, Jp;
   TM_Default tmp(TMT_posDiff, a, NoVector, b, NoVector);
   tmp.order = order;
   tmp.type = TMT_posDiff;
-  tmp.Feature::__phi(y, J, Ctuple);
+  tmp.Feature::__phi(yp, (!!J?Jp:NoArr), Ctuple);
   tmp.type = TMT_quatDiff;
   tmp.flipTargetSignOnNegScalarProduct=true;
   tmp.Feature::__phi(yq, (!!J?Jq:NoArr), Ctuple);
-  y.append(yq);
-  if(!!J) J.append(Jq);
+  y.resize(yp.N+yq.N);
+  y.setVectorBlock(yp,0);
+  y.setVectorBlock(yq,3);
+  if(!!J){
+    J.resize(y.N, Jp.d1);
+    J.setMatrixBlock(Jp,0,0);
+    J.setMatrixBlock(Jq,3,0);
+  }
 }
 
 //===========================================================================
 
 void F_PoseRel::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
-  arr yq, Jq;
+  arr yq, Jq, yp, Jp;
   TM_Default tmp(TMT_pos, a, NoVector, b, NoVector);
   tmp.order = order;
   tmp.type = TMT_pos;
-  tmp.Feature::__phi(y, J, Ctuple);
+  tmp.Feature::__phi(yp, (!!J?Jp:NoArr), Ctuple);
   tmp.type = TMT_quat;
   tmp.flipTargetSignOnNegScalarProduct=true;
   tmp.Feature::__phi(yq, (!!J?Jq:NoArr), Ctuple);
-  y.append(yq);
-  if(!!J) J.append(Jq);
+  y.resize(yp.N+yq.N);
+  y.setVectorBlock(yp,0);
+  y.setVectorBlock(yq,3);
+  if(!!J){
+    J.resize(y.N, Jp.d1);
+    J.setMatrixBlock(Jp,0,0);
+    J.setMatrixBlock(Jq,3,0);
+  }
 }
 
 //===========================================================================

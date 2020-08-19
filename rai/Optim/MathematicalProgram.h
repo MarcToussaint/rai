@@ -111,7 +111,7 @@ struct Conv_MathematicalProgram_TrivialFactoreded : MathematicalProgram_Factored
 
 //===========================================================================
 
-struct Conv_Structured_BandedProgram : MathematicalProgram {
+struct Conv_FactoredNLP_BandedNLP : MathematicalProgram {
   MathematicalProgram_Factored& P;
   uint maxBandSize;
   bool sparseNotBanded;
@@ -120,7 +120,7 @@ struct Conv_Structured_BandedProgram : MathematicalProgram {
   //buffers
   arrA J_i;
 
-  Conv_Structured_BandedProgram(MathematicalProgram_Factored& P, uint _maxBandSize, bool _sparseNotBanded=false);
+  Conv_FactoredNLP_BandedNLP(MathematicalProgram_Factored& P, uint _maxBandSize, bool _sparseNotBanded=false);
 
   // trivial
   virtual uint getDimension(){ return P.getDimension(); }

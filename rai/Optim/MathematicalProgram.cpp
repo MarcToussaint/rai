@@ -74,7 +74,7 @@ void MathematicalProgram_Factored::evaluate(arr& phi, arr& J, const arr& x){
 
 
 
-Conv_Structured_BandedProgram::Conv_Structured_BandedProgram(MathematicalProgram_Factored& P, uint _maxBandSize, bool _sparseNotBanded)
+Conv_FactoredNLP_BandedNLP::Conv_FactoredNLP_BandedNLP(MathematicalProgram_Factored& P, uint _maxBandSize, bool _sparseNotBanded)
   : P(P), maxBandSize(_maxBandSize), sparseNotBanded(_sparseNotBanded) {
   P.getFactorization(variableDimensions, //the size of each variable block
                featureDimensions,  //the size of each feature block
@@ -84,7 +84,7 @@ Conv_Structured_BandedProgram::Conv_Structured_BandedProgram(MathematicalProgram
   featDimIntegral = integral(featureDimensions).prepend(0);
 }
 
-void Conv_Structured_BandedProgram::evaluate(arr& phi, arr& J, const arr& x){
+void Conv_FactoredNLP_BandedNLP::evaluate(arr& phi, arr& J, const arr& x){
   CHECK_EQ(x.N, varDimIntegral.last(), "");
 
   //set all variables
@@ -103,10 +103,12 @@ void Conv_Structured_BandedProgram::evaluate(arr& phi, arr& J, const arr& x){
   J_i.resize(featureDimensions.N);
   for(uint i=0;i<featureDimensions.N;i++){
     uint d = featureDimensions(i);
-    phi_i.referToRange(phi, featDimIntegral(i), featDimIntegral(i)+d-1);
-    P.evaluateSingleFeature(i, phi_i, (!!J?J_i(i):NoArr), NoArr);
-    CHECK_EQ(phi_i.N, d, "");
-    if(!!J) CHECK_EQ(J_i.elem(i).d0, d, "");
+    if(d){
+      phi_i.referToRange(phi, featDimIntegral(i), featDimIntegral(i)+d-1);
+      P.evaluateSingleFeature(i, phi_i, (!!J?J_i(i):NoArr), NoArr);
+      CHECK_EQ(phi_i.N, d, "");
+      if(!!J) CHECK_EQ(J_i.elem(i).d0, d, "");
+    }
   }
 
   if(!J) return;
@@ -177,17 +179,19 @@ void Conv_Structured_BandedProgram::evaluate(arr& phi, arr& J, const arr& x){
       for(uint i=0;i<featureDimensions.N;i++){
         uint n = featDimIntegral(i);
         uint d = featureDimensions(i);
-        J.setMatrixBlock(J_i(i), n, 0);
-        //      memmove(&J(i, 0), J_i.p, J_i.sizeT*J_i.N);
-        intA& vars = featureVariables(i);
-        int t=vars.first();
-        //      uint xdim=variableDimensions(t);
-        //      for(int s=1;s<vars.N;s++){ xdim+=variableDimensions(t+s); CHECK_EQ(vars(s), t+s, ""); }
-        //      CHECK_EQ(xdim, J_i.d1, "");
+        if(d){
+          J.setMatrixBlock(J_i(i), n, 0);
+          //      memmove(&J(i, 0), J_i.p, J_i.sizeT*J_i.N);
+          intA& vars = featureVariables(i);
+          int t=vars.first();
+          //      uint xdim=variableDimensions(t);
+          //      for(int s=1;s<vars.N;s++){ xdim+=variableDimensions(t+s); CHECK_EQ(vars(s), t+s, ""); }
+          //      CHECK_EQ(xdim, J_i.d1, "");
 
-        for(uint j=n;j<n+d;j++){
-          if(t<=0) Jaux->rowShift(j) = 0;
-          else Jaux->rowShift(j) = varDimIntegral(t);
+          for(uint j=n;j<n+d;j++){
+            if(t<=0) Jaux->rowShift(j) = 0;
+            else Jaux->rowShift(j) = varDimIntegral(t);
+          }
         }
       }
       Jaux->reshift();
