@@ -13,11 +13,11 @@ arr MathematicalProgram::getInitializationSample(const arrL& previousOptima){
   return blo + rand(n) % (bup - blo);
 }
 
-void MathematicalProgram_Structured::evaluate(arr& phi, arr& J, const arr& x){
+void MathematicalProgram_Factored::evaluate(arr& phi, arr& J, const arr& x){
   uintA variableDimensions; //the size of each variable block
   uintA featureDimensions;  //the size of each feature block
   intAA featureVariables;
-  getStructure(variableDimensions, //the size of each variable block
+  getFactorization(variableDimensions, //the size of each variable block
                featureDimensions,  //the size of each feature block
                featureVariables    //which variables the j-th feature block depends on
                );
@@ -60,32 +60,23 @@ void MathematicalProgram_Structured::evaluate(arr& phi, arr& J, const arr& x){
   CHECK_EQ(n, phi.N, "");
 }
 
-void Conv_MathematicalProgram_TrivialStructured::getFeatureTypes(ObjectiveTypeA& featureTypes){ P.getFeatureTypes(featureTypes); }
 
-uint Conv_MathematicalProgram_TrivialStructured::getDimension(){ return P.getDimension(); }
 
-void Conv_MathematicalProgram_TrivialStructured::getBounds(arr& bounds_lo, arr& bounds_up){ P.getBounds(bounds_lo, bounds_up); }
 
-void Conv_MathematicalProgram_TrivialStructured::getStructure(uintA& variableDimensions, uintA& featureDimensions, intAA& featureVariables) {
-  variableDimensions = { getDimension() };
-  ObjectiveTypeA featureTypes;
-  getFeatureTypes(featureTypes);
-  featureDimensions = { featureTypes.N };
-  featureVariables = { intA({0}) };
-}
 
-void Conv_MathematicalProgram_TrivialStructured::setSingleVariable(uint var_id, const arr& x) {
-  x_buffer = x;
-}
 
-void Conv_MathematicalProgram_TrivialStructured::evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H) {
-  P.evaluate(phi, J, x_buffer);
-  if(!!H) NIY;
-}
 
-Conv_Structured_BandedProgram::Conv_Structured_BandedProgram(MathematicalProgram_Structured& P, uint _maxBandSize, bool _sparseNotBanded)
+
+
+
+
+
+
+
+
+Conv_Structured_BandedProgram::Conv_Structured_BandedProgram(MathematicalProgram_Factored& P, uint _maxBandSize, bool _sparseNotBanded)
   : P(P), maxBandSize(_maxBandSize), sparseNotBanded(_sparseNotBanded) {
-  P.getStructure(variableDimensions, //the size of each variable block
+  P.getFactorization(variableDimensions, //the size of each variable block
                featureDimensions,  //the size of each feature block
                featureVariables    //which variables the j-th feature block depends on
                );

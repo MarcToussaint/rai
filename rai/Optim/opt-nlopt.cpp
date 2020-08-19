@@ -11,23 +11,27 @@ struct FuncCallData{
 
 arr NLOptInterface::solve(){
   arr x = P.getInitializationSample();
-  arr blo,bup;
-  P.getBounds(blo, bup);
-  for(uint i=0;i<blo.N;i++){
-    if(blo.elem(i)>=bup.elem(i)){ blo.elem(i) = -100.;  bup.elem(i) = 100.; }
+  arr bounds_lo,bounds_up;
+  P.getBounds(bounds_lo, bounds_up);
+  for(uint i=0;i<bounds_lo.N;i++){
+    if(bounds_lo.elem(i)>=bounds_up.elem(i)){ bounds_lo.elem(i) = -10.;  bounds_up.elem(i) = 10.; }
   }
 
-//  nlopt::opt opt(nlopt::LD_SLSQP, x.N); //works well for toys
-//  nlopt::opt opt(nlopt::LD_MMA, x.N);
-//  nlopt::opt opt(nlopt::LN_COBYLA, x.N); //works for KOMO
+  CHECK_LE(max(x-bounds_up), 0., "initialization is above upper bound");
+  CHECK_GE(min(x-bounds_lo), 0., "initialization is above upper bound");
 
-#if 1
+#if 0
+  //  nlopt::opt opt(nlopt::LD_SLSQP, x.N); //works well for toys
+  //  nlopt::opt opt(nlopt::LD_MMA, x.N);
+  nlopt::opt opt(nlopt::LN_COBYLA, x.N); //works for KOMO
+#else
   nlopt::opt opt(nlopt::LD_AUGLAG, x.N);
+//  nlopt::opt opt(nlopt::LD_AUGLAG_EQ, x.N);
 
 //  nlopt::opt subopt(nlopt::LD_MMA, x.N);
 //  nlopt::opt subopt(nlopt::LN_NELDERMEAD, x.N);
   nlopt::opt subopt(nlopt::LD_LBFGS, x.N);
-//  nloqpt::opt subopt(nlopt::LD_SLSQP, x.N); //works well for toys
+//  nlopt::opt subopt(nlopt::LD_SLSQP, x.N); //works well for toys
 //  nlopt::opt subopt(nlopt::LD_TNEWTON_PRECOND_RESTART, x.N);
   subopt.set_xtol_abs(1e-4);
   opt.set_local_optimizer(subopt);
@@ -36,8 +40,8 @@ arr NLOptInterface::solve(){
   opt.set_min_objective(_f, this);
   opt.set_xtol_abs(1e-4);
 //  opt.set_ftol_abs(1e-3);
-  if(blo.N==x.N) opt.set_lower_bounds(blo);
-  if(bup.N==x.N) opt.set_upper_bounds(bup);
+  if(bounds_lo.N==x.N) opt.set_lower_bounds(bounds_lo);
+  if(bounds_up.N==x.N) opt.set_upper_bounds(bounds_up);
 
   rai::Array<FuncCallData> funcCallData(featureTypes.N);
   for(uint i=0;i<featureTypes.N;i++){

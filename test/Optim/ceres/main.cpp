@@ -62,7 +62,7 @@
 //      arr x;
 //      for(uint i=0;i<varIds.N;i++){
 //        x.referTo(parameters[i], varDims(i));
-//        MP->setSingleVariable(varIds(i), x);
+//        MP.setSingleVariable(varIds(i), x);
 //      }
 //    }
 //    {
@@ -70,9 +70,9 @@
 //      phi.referTo(residuals, featureDim);
 //      if(jacobians){
 //        J.referTo(jacobians[0], featureDim*varTotalDim);
-//        MP->evaluateSingleFeature(feature_id, phi, J, NoArr);
+//        MP.evaluateSingleFeature(feature_id, phi, J, NoArr);
 //      }else{
-//        MP->evaluateSingleFeature(feature_id, phi, NoArr, NoArr);
+//        MP.evaluateSingleFeature(feature_id, phi, NoArr, NoArr);
 //      }
 //    }
 //    return true;
@@ -100,10 +100,10 @@
 //  Conv_MatematicalProgram_CeresProblem(const ptr<MathematicalProgram>& _MP) : MP(_MP) {
 
 //    //you must never ever resize these arrays, as ceres takes pointers directly into these fixed memory buffers!
-//    x_base.resize(MP->getDimension());
-//    MP->getBounds(bounds_lo, bounds_up);
-//    MP->getFeatureTypes(featureTypes);
-//    MP->getStructure(variableDimensions, featureDimensions, featureVariables);
+//    x_base.resize(MP.getDimension());
+//    MP.getBounds(bounds_lo, bounds_up);
+//    MP.getFeatureTypes(featureTypes);
+//    MP.getStructure(variableDimensions, featureDimensions, featureVariables);
 //    variableDimIntegral = integral(variableDimensions);
 
 //    x.resize(variableDimensions.N);
@@ -166,14 +166,14 @@ void tutorialBasics(){
   komo.run_prepare(.01);
 
 #if 1
-  auto P = make_shared<KOMO::Conv_KOMO_StructuredProblem>(komo);
+  KOMO::Conv_KOMO_FactoredNLP P(komo);
 //  auto P1 = make_shared<KOMO::Conv_KOMO_SparseUnstructured>(komo, false);
 //  auto P = make_shared<Conv_MathematicalProgram_TrivialStructured>(*P1);
 
-  checkJacobianCP(*P, komo.x, 1e-4);
+  checkJacobianCP(P, komo.x, 1e-4);
 
-  Conv_MatematicalProgram_CeresProblem cer(P);
-  cer.x_full = P->getInitializationSample();
+  Conv_MathematicalProgram_CeresProblem cer(P);
+  cer.x_full = P.getInitializationSample();
 
   // Run the solver!
   ceres::Solver::Options options;
@@ -211,14 +211,14 @@ void tutorialBasics(){
 
 //===========================================================================
 
-void testCeres(){
-  auto P = make_shared<MP_TrivialSquareFunction>(20, 1., 2.);
+void testCeres2(){
+  MP_TrivialSquareFunction P(20, 1., 2.);
 //  auto P = make_shared<ChoiceConstraintFunction>();
 
-  auto P2 = make_shared<Conv_MathematicalProgram_TrivialStructured>(*P);
-  Conv_MatematicalProgram_CeresProblem cer(P2);
+  Conv_MathematicalProgram_TrivialFactoreded P2(P);
+  Conv_MathematicalProgram_CeresProblem cer(P2);
 
-  cer.x_full = P->getInitializationSample();
+  cer.x_full = P.getInitializationSample();
 
   // Run the solver!
   ceres::Solver::Options options;
@@ -233,58 +233,51 @@ void testCeres(){
 
 //===========================================================================
 
+void TEST(Ceres){
+//  MP_TrivialSquareFunction P(2, 1., 2.);
+  ChoiceConstraintFunction P;
+
+  {
+    MathematicalProgram_Logged P2(P);
+    LagrangianProblem L(P2);
+    Conv_MathematicalProgram_TrivialFactoreded P3(L);
+
+    CeresInterface opt(P3);
+    opt.solve();
+    ofstream fil2("z.opt2");
+    P2.xLog.writeRaw(fil2);
+  }
+
+  arr x, phi;
+  x = P.getInitializationSample();
+
+  checkJacobianCP(P, x, 1e-4);
+
+  OptConstrained opt(x, NoArr, P, 6);
+  {
+    P.getBounds(opt.newton.bound_lo, opt.newton.bound_up);
+    ofstream fil("z.opt");
+    opt.newton.simpleLog = &fil;
+    opt.run();
+  }
+
+  if(x.N==2){
+    displayFunction(opt.L);
+    rai::wait();
+    gnuplot("load 'plt'");
+    rai::wait();
+  }
+
+  cout <<"optimum: " <<x <<endl;
+}
+//===========================================================================
+
 int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
-  tutorialBasics();
-//  testCeres();
+//  tutorialBasics();
+  testCeres();
 
 
   return 0;
 }
-
-//===========================================================================
-//OLD:
-
-struct Conv_GraphProblem_CeresProblem {
-  GraphProblem& G;
-  uintA variableDimensions, varDimIntegral;
-  intAA featureVariables;
-  ObjectiveTypeA featureTypes;
-
-  arr x;
-  arr phi;
-  arrA J;
-
-  ceres::Problem cs;
-
-  Conv_GraphProblem_CeresProblem(GraphProblem& _G) : G(_G) {
-    G.getStructure(variableDimensions, featureVariables, featureTypes);
-    varDimIntegral = integral(variableDimensions);
-
-    //you must never ever resize these arrays, as ceres takes pointers directly into these fixed memory buffers!
-    x.resize(sum(variableDimensions));
-    phi.resize(featureTypes.N);
-    J.resize(phi.N);
-    for(uint i=0;i<phi.N;i++){
-      uint n_Ji=0;
-      for(int v:featureVariables(i)) n_Ji += variableDimensions(v);
-      J(i).resize(n_Ji);
-    }
-
-    for(uint v=0;v<variableDimensions.N;v++){
-      cs.AddParameterBlock(&x(varDimIntegral(v)), variableDimensions(v));
-    }
-
-    for(uint i=0;i<phi.N;i++){
-      rai::Array<double*> parameter_blocks(featureVariables(i).N);
-      for(uint k=0;k<featureVariables(i).N;k++){
-        int v = featureVariables(i)(k);
-        parameter_blocks(k) = &x(varDimIntegral(v));
-      }
-//      cs.AddResidualBlock(&phi(i), nullptr, parameter_blocks);
-    }
-  }
-
-  Conv_GraphProblem_CeresProblem(GraphProblem& _G, ostream *_log=0);
-};

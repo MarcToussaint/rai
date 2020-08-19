@@ -43,6 +43,25 @@ struct MathematicalProgram : NonCopyable{
 
 //===========================================================================
 
+struct MathematicalProgram_Factored : MathematicalProgram {
+  //-- structure of the mathematical problem
+  virtual void getFactorization(uintA& variableDimensions, //the size of each variable block
+                                uintA& featureDimensions,  //the size of each feature block
+                                intAA& featureVariables    //which variables the j-th feature block depends on
+                                ) = 0;
+
+  //-- structured (local) setting variable and evaluate feature
+  virtual void setSingleVariable(uint var_id, const arr& x) = 0; //set a single variable block
+  virtual void evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H) = 0; //get a single feature block
+
+  //-- unstructured (batch) evaluation
+  virtual void evaluate(arr& phi, arr& J, const arr& x); //default implementation: use setSingleVariable and evaluateSingleFeature
+
+};
+
+//===========================================================================
+// TRIVIAL only header
+
 struct MathematicalProgram_Logged : MathematicalProgram {
   MathematicalProgram& P;
   arr phiLog, JLog, xLog;
@@ -66,46 +85,34 @@ struct MathematicalProgram_Logged : MathematicalProgram {
 };
 
 //===========================================================================
+// TRIVIAL only header
 
-struct MathematicalProgram_Structured : MathematicalProgram {
-  //-- structure of the mathematical problem
-  virtual void getStructure(uintA& variableDimensions, //the size of each variable block
-                            uintA& featureDimensions,  //the size of each feature block
-                            intAA& featureVariables    //which variables the j-th feature block depends on
-                            ) = 0;
-
-  //-- structured (local) setting variable and evaluate feature
-  virtual void setSingleVariable(uint var_id, const arr& x) = 0; //set a single variable block
-  virtual void evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H) = 0; //get a single feature block
-
-  //-- unstructured (batch) evaluation
-  virtual void evaluate(arr& phi, arr& J, const arr& x); //default implementation: use setSingleVariable and evaluateSingleFeature
-
-};
-
-//===========================================================================
-
-struct Conv_MathematicalProgram_TrivialStructured : MathematicalProgram_Structured {
+struct Conv_MathematicalProgram_TrivialFactoreded : MathematicalProgram_Factored {
   MathematicalProgram& P;
   arr x_buffer;
 
-  Conv_MathematicalProgram_TrivialStructured(MathematicalProgram& P) : P(P) {}
+  Conv_MathematicalProgram_TrivialFactoreded(MathematicalProgram& P) : P(P) {}
 
-  virtual void getFeatureTypes(ObjectiveTypeA& featureTypes);
-  virtual uint getDimension();
-  virtual void getBounds(arr& bounds_lo, arr& bounds_up);
-//  virtual void getNames(StringA& variableNames, StringA& featureNames){ variableNames.clear(); featureNames.clear(); } //the names of each variable/feature block (or element if unstructured)
-//  virtual arr  getInitializationSample(const arrL& previousOptima={}); //get an initialization (for MC sampling/restarts) [default: initialize random within bounds]
+  virtual void getFeatureTypes(ObjectiveTypeA& featureTypes){ P.getFeatureTypes(featureTypes); }
+  virtual uint getDimension(){ return P.getDimension(); }
+  virtual void getBounds(arr& bounds_lo, arr& bounds_up){ P.getBounds(bounds_lo, bounds_up); }
+  virtual arr  getInitializationSample(const arrL& previousOptima={}){ return P.getInitializationSample(previousOptima); }
 
-  virtual void getStructure(uintA& variableDimensions, uintA& featureDimensions, intAA& featureVariables);
-  virtual void setSingleVariable(uint var_id, const arr& x);
-  virtual void evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H);
+  virtual void getFactorization(uintA& variableDimensions, uintA& featureDimensions, intAA& featureVariables) {
+    variableDimensions = { getDimension() };
+    ObjectiveTypeA featureTypes;
+    getFeatureTypes(featureTypes);
+    featureDimensions = { featureTypes.N };
+    featureVariables = { intA({0}) };
+  }
+  virtual void setSingleVariable(uint var_id, const arr& x) { x_buffer = x; }
+  virtual void evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H) {  P.evaluate(phi, J, x_buffer);   if(!!H) NIY;  }
 };
 
 //===========================================================================
 
 struct Conv_Structured_BandedProgram : MathematicalProgram {
-  MathematicalProgram_Structured& P;
+  MathematicalProgram_Factored& P;
   uint maxBandSize;
   bool sparseNotBanded;
   uintA variableDimensions, varDimIntegral, featureDimensions, featDimIntegral;
@@ -113,7 +120,7 @@ struct Conv_Structured_BandedProgram : MathematicalProgram {
   //buffers
   arrA J_i;
 
-  Conv_Structured_BandedProgram(MathematicalProgram_Structured& P, uint _maxBandSize, bool _sparseNotBanded=false);
+  Conv_Structured_BandedProgram(MathematicalProgram_Factored& P, uint _maxBandSize, bool _sparseNotBanded=false);
 
   // trivial
   virtual uint getDimension(){ return P.getDimension(); }

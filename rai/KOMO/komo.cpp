@@ -34,6 +34,7 @@
 #include "../Optim/GraphOptim.h"
 #include "../Optim/opt-nlopt.h"
 #include "../Optim/opt-ipopt.h"
+#include "../Optim/opt-ceres.h"
 
 #include <iomanip>
 
@@ -1461,12 +1462,12 @@ void KOMO::run(const OptOptions options) {
     HALT("you need to choose a KOMO solver");
   }else if(solver==rai::KS_dense || solver==rai::KS_sparse) {
     CHECK(!splineB.N, "NIY");
-    Conv_KOMO_SparseUnstructured P(*this, solver==rai::KS_sparse);
+    Conv_KOMO_SparseNonfactored P(*this, solver==rai::KS_sparse);
     OptConstrained _opt(x, dual, P, rai::MAX(verbose-2, 0), options);
     _opt.logFile = logFile;
     _opt.run();
     timeNewton += _opt.newton.timeNewton;
-  }else if(solver==rai::KS_sparseStructured) {
+  }else if(solver==rai::KS_sparseFactored) {
     CHECK(!splineB.N, "NIY");
 #if 1
 //    ModGraphProblem selG(graph_problem);
@@ -1474,7 +1475,7 @@ void KOMO::run(const OptOptions options) {
 //    Conv_KOMO_GraphProblem_toBeRetired graph_problem(*this);
 //    Conv_Graph_MathematicalProgram C(graph_problem, logFile);
 
-    Conv_KOMO_SparseUnstructured P(*this, false);
+    Conv_KOMO_SparseNonfactored P(*this, false);
 //    Conv_KOMO_StructuredProblem P(*this);
 //    Conv_Structured_BandedProgram C(P, 0, true);
 
@@ -1501,7 +1502,7 @@ void KOMO::run(const OptOptions options) {
   }else if(solver==rai::KS_banded) {
     if(!splineB.N) { //DEFAULT CASE
 //      Conv_KOMOProblem_MathematicalProgram C(komo_problem);
-      Conv_KOMO_StructuredProblem P(*this);
+      Conv_KOMO_FactoredNLP P(*this);
       Conv_Structured_BandedProgram C(P, 0);
       C.maxBandSize = (k_order+1)*max(C.variableDimensions);
       opt = new OptConstrained(x, dual, C, rai::MAX(verbose-2, 0), options);
@@ -1520,14 +1521,22 @@ void KOMO::run(const OptOptions options) {
       opt->run();
     }
   }else if(solver==rai::KS_NLopt){
-    Conv_KOMO_SparseUnstructured P(*this, false);
+    Conv_KOMO_SparseNonfactored P(*this, false);
     NLOptInterface nlopt(P);
     x = nlopt.solve();
     set_x(x);
   }else if(solver==rai::KS_Ipopt){
-    Conv_KOMO_SparseUnstructured P(*this, false);
+    Conv_KOMO_SparseNonfactored P(*this, false);
     IpoptInterface ipopt(P);
     x = ipopt.solve();
+    set_x(x);
+  }else if(solver==rai::KS_Ceres){
+    Conv_KOMO_SparseNonfactored P(*this, false);
+//    Conv_KOMO_FactoredNLP P(*this);
+    LagrangianProblem L(P);
+    Conv_MathematicalProgram_TrivialFactoreded P2(L);
+    CeresInterface ceres(P2);
+    x = ceres.solve();
     set_x(x);
   }else NIY;
   runTime = rai::realTime() - timeZero;
@@ -1655,21 +1664,21 @@ void KOMO::checkGradients() {
 #else
     double tolerance=1e-4;
 
-    ptr<MathematicalProgram_Structured> SP;
+    ptr<MathematicalProgram_Factored> SP;
     ptr<MathematicalProgram> CP;
 
     if(solver==rai::KS_none) {
       NIY;
     }else if(solver==rai::KS_banded) {
-      SP = make_shared<Conv_KOMO_StructuredProblem>(*this);
+      SP = make_shared<Conv_KOMO_FactoredNLP>(*this);
       auto BP = make_shared<Conv_Structured_BandedProgram>(*SP, 0);
       BP->maxBandSize = (k_order+1)*max(BP->variableDimensions);
       CP = BP;
-    }else if(solver==rai::KS_sparseStructured) {
-      SP = make_shared<Conv_KOMO_StructuredProblem>(*this);
+    }else if(solver==rai::KS_sparseFactored) {
+      SP = make_shared<Conv_KOMO_FactoredNLP>(*this);
       CP = make_shared<Conv_Structured_BandedProgram>(*SP, 0, true);
     }else{
-      CP = make_shared<Conv_KOMO_SparseUnstructured>(*this, solver==rai::KS_sparse);
+      CP = make_shared<Conv_KOMO_SparseNonfactored>(*this, solver==rai::KS_sparse);
     }
 
     VectorFunction F = [CP](arr& phi, arr& J, const arr& x) {
@@ -2635,7 +2644,7 @@ void KOMO::Conv_KOMO_KOMOProblem_toBeRetired::phi(arr& phi, arrA& J, arrA& H, ui
   reportAfterPhiComputation(komo);
 }
 
-void KOMO::Conv_KOMO_SparseUnstructured::evaluate(arr& phi, arr& J, const arr& x) {
+void KOMO::Conv_KOMO_SparseNonfactored::evaluate(arr& phi, arr& J, const arr& x) {
   //-- set the trajectory
   komo.set_x(x);
 
@@ -2710,7 +2719,7 @@ void KOMO::Conv_KOMO_SparseUnstructured::evaluate(arr& phi, arr& J, const arr& x
   }
 }
 
-void KOMO::Conv_KOMO_SparseUnstructured::getFHessian(arr &H, const arr &x){
+void KOMO::Conv_KOMO_SparseNonfactored::getFHessian(arr &H, const arr &x){
   if(quadraticPotentialLinear.N){
     H = quadraticPotentialHessian;
   }else{
@@ -2718,7 +2727,7 @@ void KOMO::Conv_KOMO_SparseUnstructured::getFHessian(arr &H, const arr &x){
   }
 }
 
-void KOMO::Conv_KOMO_SparseUnstructured::getDimPhi() {
+void KOMO::Conv_KOMO_SparseNonfactored::getDimPhi() {
   CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet: use komo.reset()");
   uint M=0;
   for(uint i=0; i<komo.objectives.N; i++) {
@@ -2731,7 +2740,7 @@ void KOMO::Conv_KOMO_SparseUnstructured::getDimPhi() {
   dimPhi = M;
 }
 
-void KOMO::Conv_KOMO_SparseUnstructured::getFeatureTypes(ObjectiveTypeA& ft){
+void KOMO::Conv_KOMO_SparseNonfactored::getFeatureTypes(ObjectiveTypeA& ft){
   if(!dimPhi) getDimPhi();
   ft.resize(dimPhi);
   uint M=0;
@@ -2750,13 +2759,13 @@ void KOMO::Conv_KOMO_SparseUnstructured::getFeatureTypes(ObjectiveTypeA& ft){
   komo.featureTypes = ft;
 }
 
-void KOMO::Conv_KOMO_SparseUnstructured::getBounds(arr& bounds_lo, arr& bounds_up){
+void KOMO::Conv_KOMO_SparseNonfactored::getBounds(arr& bounds_lo, arr& bounds_up){
   if(!komo.bound_lo.N) komo.setBounds();
   bounds_lo = komo.bound_lo;
   bounds_up = komo.bound_up;
 }
 
-arr KOMO::Conv_KOMO_SparseUnstructured::getInitializationSample(const arrL& previousOptima){
+arr KOMO::Conv_KOMO_SparseNonfactored::getInitializationSample(const arrL& previousOptima){
   komo.run_prepare(.01);
   return komo.x;
 }
@@ -2798,7 +2807,7 @@ void KOMO::Conv_KOMO_GraphProblem_toBeRetired::getStructure(uintA& variableDimen
   dimPhi = M;
 }
 
-KOMO::Conv_KOMO_StructuredProblem::Conv_KOMO_StructuredProblem(KOMO& _komo) : komo(_komo) {
+KOMO::Conv_KOMO_FactoredNLP::Conv_KOMO_FactoredNLP(KOMO& _komo) : komo(_komo) {
   if(!komo.configurations.N) komo.setupConfigurations();
   CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet");
 
@@ -2849,9 +2858,9 @@ KOMO::Conv_KOMO_StructuredProblem::Conv_KOMO_StructuredProblem(KOMO& _komo) : ko
   featuresDim = fDim;
 }
 
-uint KOMO::Conv_KOMO_StructuredProblem::getDimension(){ return komo.getPath_totalDofs(); }
+uint KOMO::Conv_KOMO_FactoredNLP::getDimension(){ return komo.getPath_totalDofs(); }
 
-void KOMO::Conv_KOMO_StructuredProblem::getFeatureTypes(ObjectiveTypeA& featureTypes){
+void KOMO::Conv_KOMO_FactoredNLP::getFeatureTypes(ObjectiveTypeA& featureTypes){
   CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet: use komo.reset()");
   if(!!featureTypes) featureTypes.clear();
   for(ptr<Objective>& ob:komo.objectives) {
@@ -2866,18 +2875,18 @@ void KOMO::Conv_KOMO_StructuredProblem::getFeatureTypes(ObjectiveTypeA& featureT
   if(!!featureTypes) komo.featureTypes = featureTypes;
 }
 
-void KOMO::Conv_KOMO_StructuredProblem::getBounds(arr& bounds_lo, arr& bounds_up){
+void KOMO::Conv_KOMO_FactoredNLP::getBounds(arr& bounds_lo, arr& bounds_up){
   if(!komo.bound_lo.N) komo.setBounds();
   bounds_lo = komo.bound_lo;
   bounds_up = komo.bound_up;
 }
 
-arr KOMO::Conv_KOMO_StructuredProblem::getInitializationSample(const arrL& previousOptima){
+arr KOMO::Conv_KOMO_FactoredNLP::getInitializationSample(const arrL& previousOptima){
   komo.run_prepare(.01);
   return komo.x;
 }
 
-void KOMO::Conv_KOMO_StructuredProblem::getStructure(uintA& variableDimensions, uintA& featureDimensions, intAA& featureVariables){
+void KOMO::Conv_KOMO_FactoredNLP::getFactorization(uintA& variableDimensions, uintA& featureDimensions, intAA& featureVariables){
   CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet: use komo.reset()");
 
 #if 1
@@ -3012,7 +3021,7 @@ void KOMO::Conv_KOMO_GraphProblem_toBeRetired::setPartialX(const uintA& whichX, 
   komo.set_x(x, whichX);
 }
 
-void KOMO::Conv_KOMO_StructuredProblem::setSingleVariable(uint var_id, const arr& x){
+void KOMO::Conv_KOMO_FactoredNLP::setSingleVariable(uint var_id, const arr& x){
   komo.set_x(x, {var_id});
 }
 
@@ -3076,7 +3085,7 @@ void KOMO::Conv_KOMO_GraphProblem_toBeRetired::getPartialPhi(arr& phi, arrA& J, 
   if(!!J) J = J.sub(whichPhi);
 }
 
-void KOMO::Conv_KOMO_StructuredProblem::evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H){
+void KOMO::Conv_KOMO_FactoredNLP::evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H){
 #if 1
   if(!komo.featureValues.N){
     FeatureIndexEntry& Flast = featureIndex.last();
@@ -3287,7 +3296,7 @@ void KOMO::Conv_KOMO_FineStructuredProblem::getFeatureTypes(ObjectiveTypeA& feat
   }
 }
 
-void KOMO::Conv_KOMO_FineStructuredProblem::getStructure(uintA& variableDimensions, uintA& featureDimensions, intAA& featureVariables){
+void KOMO::Conv_KOMO_FineStructuredProblem::getFactorization(uintA& variableDimensions, uintA& featureDimensions, intAA& featureVariables){
   variableDimensions.resize(variableIndex.N);
   for(uint i=0;i<variableIndex.N;i++){
     variableDimensions(i) = variableIndex(i).dim;

@@ -91,7 +91,7 @@ void writeSkeleton(std::ostream& os, const Skeleton& S, const intA& switches= {}
 //===========================================================================
 
 namespace rai {
-  enum KOMOsolver { KS_none=-1, KS_dense=0, KS_sparse, KS_banded, KS_sparseStructured, KS_NLopt, KS_Ipopt };
+  enum KOMOsolver { KS_none=-1, KS_dense=0, KS_sparse, KS_banded, KS_sparseFactored, KS_NLopt, KS_Ipopt, KS_Ceres };
 }
 
 //===========================================================================
@@ -329,7 +329,7 @@ struct KOMO : NonCopyable {
   } komo_problem;
 
   //this treats each time slice as its own variable - default
-  struct Conv_KOMO_StructuredProblem : MathematicalProgram_Structured {
+  struct Conv_KOMO_FactoredNLP : MathematicalProgram_Factored {
     KOMO& komo;
 
     struct VariableIndexEntry{ uint t; uint dim; uint xIndex; };
@@ -341,20 +341,20 @@ struct KOMO : NonCopyable {
     uintA xIndex2VarId;
     uint featuresDim;
 
-    Conv_KOMO_StructuredProblem(KOMO& _komo);
+    Conv_KOMO_FactoredNLP(KOMO& _komo);
 
     virtual uint getDimension();
     virtual void getFeatureTypes(ObjectiveTypeA& featureTypes);
     virtual void getBounds(arr& bounds_lo, arr& bounds_up);
     virtual arr getInitializationSample(const arrL& previousOptima={});
-    virtual void getStructure(uintA& variableDimensions, uintA& featureDimensions, intAA& featureVariables);
+    virtual void getFactorization(uintA& variableDimensions, uintA& featureDimensions, intAA& featureVariables);
 
     virtual void setSingleVariable(uint var_id, const arr& x); //set a single variable block
     virtual void evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H); //get a single feature block
   };
 
   //this treats EACH JOINT and dof as its own variable... tricky
-  struct Conv_KOMO_FineStructuredProblem : MathematicalProgram_Structured {
+  struct Conv_KOMO_FineStructuredProblem : MathematicalProgram_Factored {
     KOMO& komo;
     uintA xIndex2VarId;
     struct VariableIndexEntry{ rai::Joint *joint=0; rai::ForceExchange *force=0; uint dim; uint xIndex; };
@@ -371,7 +371,7 @@ struct KOMO : NonCopyable {
     virtual void getFeatureTypes(ObjectiveTypeA& featureTypes);
     virtual void getBounds(arr& bounds_lo, arr& bounds_up);
 //    virtual arr getInitializationSample();
-    virtual void getStructure(uintA& variableDimensions, uintA& featureDimensions, intAA& featureVariables);
+    virtual void getFactorization(uintA& variableDimensions, uintA& featureDimensions, intAA& featureVariables);
 
     ///--- evaluation
 
@@ -385,14 +385,14 @@ struct KOMO : NonCopyable {
     void reportFeatures();
   };
 
-  struct Conv_KOMO_SparseUnstructured : MathematicalProgram {
+  struct Conv_KOMO_SparseNonfactored : MathematicalProgram {
     KOMO& komo;
     bool sparse;
     uint dimPhi=0;
 
     arr quadraticPotentialLinear, quadraticPotentialHessian;
 
-    Conv_KOMO_SparseUnstructured(KOMO& _komo, bool sparse=true) : komo(_komo), sparse(sparse) {}
+    Conv_KOMO_SparseNonfactored(KOMO& _komo, bool sparse=true) : komo(_komo), sparse(sparse) {}
     void clear(){ dimPhi=0; }
 
     void getDimPhi();

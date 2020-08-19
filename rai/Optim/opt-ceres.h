@@ -8,20 +8,23 @@ namespace ceres{
 
 //===========================================================================
 
-struct Conv_MatematicalProgram_CeresProblem {
-  std::shared_ptr<MathematicalProgram_Structured> MP;
+struct CeresInterface {
+  MathematicalProgram_Factored& P;
+//  MathematicalProgram& P;
 
-  uintA variableDimensions, featureDimensions, variableDimIntegral, featureDimIntegral;
-  intAA featureVariables;
-  ObjectiveTypeA featureTypes;
+  CeresInterface(MathematicalProgram_Factored& P) : P(P){}
 
-  arr x_full, phi_full;
-  arr bounds_lo, bounds_up;
-  arrA x;
-  arrA phi;
-  arrA J;
+  arr solve();
+};
+
+//===========================================================================
+
+struct Conv_MathematicalProgram_CeresProblem {
+  MathematicalProgram_Factored& MP;
+
+  arr x_full, phi_full; //the full linear memory for all decision variables and all features
 
   ptr<ceres::Problem> ceresProblem;
 
-  Conv_MatematicalProgram_CeresProblem(const ptr<MathematicalProgram_Structured>& _MP);
+  Conv_MathematicalProgram_CeresProblem(MathematicalProgram_Factored& _MP);
 };
