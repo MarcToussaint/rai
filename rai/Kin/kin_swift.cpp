@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -247,11 +247,11 @@ void SwiftInterface::pullFromSwift(rai::Configuration& world, bool dumpReport) {
     world.proxies.clear();
     cout <<"... catching error '" <<e.what() <<"' -- SWIFT failed! .. no proxies for this posture!!..." <<endl;
     return;
-  } catch(std::pair<int,int>& e) {
+  } catch(std::pair<int, int>& e) {
     world.proxies.clear();
     cout <<"... catching error at pair ("
-        <<e.first <<'(' <<world.frames(INDEXswift2frame(e.first))->name <<") "
-        <<e.second <<'(' <<world.frames(INDEXswift2frame(e.second))->name <<") -- SWIFT failed! .. no proxies for this posture!!..." <<endl;
+         <<e.first <<'(' <<world.frames(INDEXswift2frame(e.first))->name <<") "
+         <<e.second <<'(' <<world.frames(INDEXswift2frame(e.second))->name <<") -- SWIFT failed! .. no proxies for this posture!!..." <<endl;
     return;
   }
 
@@ -385,23 +385,23 @@ uint SwiftInterface::countObjects() {
 #include "../Core/util.h"
 
 SwiftInterface::~SwiftInterface() { NICO }
-SwiftInterface::SwiftInterface(const rai::Configuration& world, double _cutoff, int verbose){ NICO }
+SwiftInterface::SwiftInterface(const rai::Configuration& world, double _cutoff, int verbose) { NICO }
 
 void SwiftInterface::step(rai::Configuration& world, bool dumpReport) { NICO }
 void SwiftInterface::pushToSwift(const rai::Configuration& world) { NICO }
 void SwiftInterface::pullFromSwift(rai::Configuration& world, bool dumpReport) { NICO }
 
-void SwiftInterface::reinitShape(const rai::Frame *s){ NICO }
+void SwiftInterface::reinitShape(const rai::Frame* s) { NICO }
 //  void close(){ NICO }
-void SwiftInterface::activate(rai::Frame *s){ NICO }
-void SwiftInterface::deactivate(rai::Frame *s){ NICO }
-void SwiftInterface::activate(rai::Frame *s1, rai::Frame *s2){ NICO }
-void SwiftInterface::deactivate(rai::Frame *s1, rai::Frame *s2){ NICO }
-void SwiftInterface::deactivate(const FrameL& shapes1, const FrameL& shapes2){ NICO }
-void SwiftInterface::deactivate(const FrameL& shapes){ NICO }
+void SwiftInterface::activate(rai::Frame* s) { NICO }
+void SwiftInterface::deactivate(rai::Frame* s) { NICO }
+void SwiftInterface::activate(rai::Frame* s1, rai::Frame* s2) { NICO }
+void SwiftInterface::deactivate(rai::Frame* s1, rai::Frame* s2) { NICO }
+void SwiftInterface::deactivate(const FrameL& shapes1, const FrameL& shapes2) { NICO }
+void SwiftInterface::deactivate(const FrameL& shapes) { NICO }
 
-void SwiftInterface::initActivations(const rai::Configuration &world) { NICO }
+void SwiftInterface::initActivations(const rai::Configuration& world) { NICO }
 void SwiftInterface::swiftQueryExactDistance() { NICO }
-uint SwiftInterface::countObjects(){ NICO }
+uint SwiftInterface::countObjects() { NICO }
 
 #endif

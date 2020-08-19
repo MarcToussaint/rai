@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -28,7 +28,7 @@ void btTrans2raiTrans(rai::Transformation& f, const btTransform& pose) {
   f.rot.set(q.w(), q.x(), q.y(), q.z());
 }
 
-btTransform conv_raiTrans2btTrans(const rai::Transformation& fX){
+btTransform conv_raiTrans2btTrans(const rai::Transformation& fX) {
   btTransform pose(btQuaternion(fX.rot.x, fX.rot.y, fX.rot.z, fX.rot.w),
                    btVector3(fX.pos.x, fX.pos.y, fX.pos.z));
   return pose;
@@ -56,7 +56,7 @@ struct BulletInterface_self {
   btRigidBody* addGround();
   btRigidBody* addLink(rai::Frame* f, int verbose);
 
-  btCollisionShape* createCollisionShape(rai::Shape *s);
+  btCollisionShape* createCollisionShape(rai::Shape* s);
   btCollisionShape* createCompoundCollisionShape(rai::Frame* link, ShapeL& shapes);
 };
 
@@ -140,22 +140,22 @@ void BulletInterface::pullDynamicStates(FrameL& frames, arr& frameVelocities) {
   }
 }
 
-void BulletInterface::changeObjectType(rai::Frame* f, int _type){
+void BulletInterface::changeObjectType(rai::Frame* f, int _type) {
   rai::Enum<rai::BodyType> type((rai::BodyType)_type);
-  if(self->actorTypes(f->ID) == type){
+  if(self->actorTypes(f->ID) == type) {
     LOG(-1) <<"frame " <<*f <<" is already of type " <<type;
   }
 
   btRigidBody* a = self->actors(f->ID);
   if(!a) HALT("frame " <<*f <<"is not an actor");
 
-  if(type==rai::BT_kinematic){
+  if(type==rai::BT_kinematic) {
     a->setCollisionFlags(a->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT);
     a->setActivationState(DISABLE_DEACTIVATION);
-  }else if(type==rai::BT_dynamic){
+  } else if(type==rai::BT_dynamic) {
     a->setCollisionFlags(a->getCollisionFlags() & ~btCollisionObject::CF_KINEMATIC_OBJECT);
     a->setActivationState(DISABLE_DEACTIVATION);
-  }else NIY;
+  } else NIY;
   self->actorTypes(f->ID) = type;
 }
 
@@ -181,14 +181,14 @@ void BulletInterface::pushFullState(const FrameL& frames, const arr& frameVeloci
 
     b->setWorldTransform(conv_raiTrans2btTrans(f->ensure_X()));
     b->setActivationState(ACTIVE_TAG);
-    if(self->actorTypes(f->ID)==rai::BT_dynamic){
+    if(self->actorTypes(f->ID)==rai::BT_dynamic) {
       b->clearForces();
       if(!!frameVelocities && frameVelocities.N) {
         b->setLinearVelocity(btVector3(frameVelocities(f->ID, 0, 0), frameVelocities(f->ID, 0, 1), frameVelocities(f->ID, 0, 2)));
         b->setAngularVelocity(btVector3(frameVelocities(f->ID, 1, 0), frameVelocities(f->ID, 1, 1), frameVelocities(f->ID, 1, 2)));
-      }else{
-        b->setLinearVelocity(btVector3(0.,0.,0.));
-        b->setAngularVelocity(btVector3(0.,0.,0.));
+      } else {
+        b->setLinearVelocity(btVector3(0., 0., 0.));
+        b->setAngularVelocity(btVector3(0., 0., 0.));
       }
     }
   }
@@ -228,9 +228,9 @@ btRigidBody* BulletInterface_self::addLink(rai::Frame* f, int verbose) {
 
   //-- create a bullet collision shape
   btCollisionShape* colShape = 0;
-  if(shapes.N==1 && f == &shapes.scalar()->frame){
+  if(shapes.N==1 && f == &shapes.scalar()->frame) {
     colShape = createCollisionShape(shapes.scalar());
-  }else{
+  } else {
     colShape = createCompoundCollisionShape(f, shapes);
   }
   collisionShapes.push_back(colShape);
@@ -250,7 +250,7 @@ btRigidBody* BulletInterface_self::addLink(rai::Frame* f, int verbose) {
   btRigidBody* body = new btRigidBody(btRigidBody::btRigidBodyConstructionInfo(mass, motionState, colShape, localInertia));
 
   double fric=1.;
-  if(shapes.N==1 && f == &shapes.scalar()->frame){
+  if(shapes.N==1 && f == &shapes.scalar()->frame) {
     //try to read friction from attributes
     shapes.scalar()->frame.ats.get<double>(fric, "friction");
   }
@@ -293,7 +293,7 @@ void BulletInterface::saveBulletFile(const char* filename) {
   }
 }
 
-btCollisionShape* BulletInterface_self::createCollisionShape(rai::Shape *s){
+btCollisionShape* BulletInterface_self::createCollisionShape(rai::Shape* s) {
   btCollisionShape* colShape=0;
   arr& size = s->size;
   switch(s->type()) {
@@ -333,9 +333,9 @@ btCollisionShape* BulletInterface_self::createCollisionShape(rai::Shape *s){
   return colShape;
 }
 
-btCollisionShape* BulletInterface_self::createCompoundCollisionShape(rai::Frame* link, ShapeL& shapes){
+btCollisionShape* BulletInterface_self::createCompoundCollisionShape(rai::Frame* link, ShapeL& shapes) {
   btCompoundShape* colShape = new btCompoundShape;
-  for(rai::Shape* s:shapes){
+  for(rai::Shape* s:shapes) {
     colShape->addChildShape(conv_raiTrans2btTrans(s->frame.ensure_X()/link->ensure_X()), createCollisionShape(s));
   }
   return colShape;
@@ -350,7 +350,7 @@ void BulletInterface::pushFullState(const FrameL& frames, const arr& vel) { NICO
 void BulletInterface::pushKinematicStates(const FrameL& frames) { NICO }
 void BulletInterface::pullDynamicStates(FrameL& frames, arr& vel) { NICO }
 void BulletInterface::saveBulletFile(const char* filename) { NICO }
-void BulletInterface::changeObjectType(rai::Frame* f, int _type){ NICO }
+void BulletInterface::changeObjectType(rai::Frame* f, int _type) { NICO }
 
 #endif
 

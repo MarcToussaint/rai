@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -27,12 +27,12 @@ struct MP_TrivialSquareFunction : MathematicalProgram {
 
   MP_TrivialSquareFunction(uint dim=10, double lo=-1., double hi=1.) : dim(dim), lo(lo), hi(hi) {}
 
-  virtual uint getDimension(){ return dim; }
-  virtual void getBounds(arr& bounds_lo, arr& bounds_up){ //lower/upper bounds for the decision variable (may be {})
+  virtual uint getDimension() { return dim; }
+  virtual void getBounds(arr& bounds_lo, arr& bounds_up) { //lower/upper bounds for the decision variable (may be {})
     bounds_lo = consts<double>(lo, dim);
     bounds_up = consts<double>(hi, dim);
   }
-  virtual void getFeatureTypes(ObjectiveTypeA& featureTypes){
+  virtual void getFeatureTypes(ObjectiveTypeA& featureTypes) {
     featureTypes = consts<ObjectiveType>(OT_sos, dim);
   }
 
@@ -41,7 +41,6 @@ struct MP_TrivialSquareFunction : MathematicalProgram {
     if(!!J) J.setId(x.N);
   }
 };
-
 
 //===========================================================================
 
@@ -114,7 +113,7 @@ struct ChoiceConstraintFunction : MathematicalProgram {
 struct SimpleConstraintFunction : MathematicalProgram {
   SimpleConstraintFunction() {
   }
-  virtual void getFeatureTypes(ObjectiveTypeA &tt){ tt = { OT_sos, OT_sos, OT_ineq, OT_ineq }; }
+  virtual void getFeatureTypes(ObjectiveTypeA& tt) { tt = { OT_sos, OT_sos, OT_ineq, OT_ineq }; }
   virtual void evaluate(arr& phi, arr& J, const arr& _x) {
     CHECK_EQ(_x.N, 2, "");
     phi.resize(4);

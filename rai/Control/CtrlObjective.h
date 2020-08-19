@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -42,13 +42,12 @@ struct CtrlObjective {
 //  arr y, J_y;        ///< update() will evaluate these for a given kinematic configuration
 //  arr f;             ///< measured generalized force in this task space
 
-
   CtrlObjective() : type(OT_sos), transientStep(-1.), active(true), /*kp(1.), kd(1.),*/ status(AS_init) {}
 //  CtrlObjective(char* _name, const ptr<Feature>& _feat, const ptr<CtrlReference>& _ref, double _kp, double _kd, const arr& _C);
   ~CtrlObjective() {
-      if(selfRemove){
-          selfRemove->removeValue(this);
-      }
+    if(selfRemove) {
+      selfRemove->removeValue(this);
+    }
   }
 
   arr getResidual(CtrlProblem& cp);

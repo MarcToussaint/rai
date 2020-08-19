@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -33,7 +33,6 @@ struct Simulation {
   Simulation(Configuration& _C, SimulatorEngine _engine, int _verbose=2);
   ~Simulation();
 
-
   //== controller interface
 
   //-- send a low-level control and step the simulation
@@ -44,7 +43,7 @@ struct Simulation {
   void closeGripper(const char* gripperFrameName, double width=.05, double speed=.3, double force=20.);
 
   //-- get state information
-  const arr& get_q(){ return C.getJointState(); }
+  const arr& get_q() { return C.getJointState(); }
   const arr& get_qDot();
   double getGripperWidth(const char* gripperFrameName);
   bool getGripperIsGrasping(const char* gripperFrameName);
@@ -55,10 +54,10 @@ struct Simulation {
   void getImageAndDepth(byteA& image, floatA& depth); ///< use this during stepping
   void getSegmentation(byteA& segmentation);
   CameraView& cameraview(); ///< use this if you want to initialize the sensor, etc
-  rai::CameraView::Sensor& addSensor(const char* sensorName, const char* frameAttached=nullptr, uint width=640, uint height=360, double focalLength=-1., double orthoAbsHeight=-1., const arr& zRange= {}){
-    if(frameAttached && frameAttached[0]){
+  rai::CameraView::Sensor& addSensor(const char* sensorName, const char* frameAttached=nullptr, uint width=640, uint height=360, double focalLength=-1., double orthoAbsHeight=-1., const arr& zRange= {}) {
+    if(frameAttached && frameAttached[0]) {
       return cameraview().addSensor(sensorName, frameAttached, width, height, focalLength, orthoAbsHeight, zRange);
-    }else{
+    } else {
       return cameraview().addSensor(sensorName);
     }
   }
@@ -66,7 +65,7 @@ struct Simulation {
   byteA getScreenshot();
 
   //== ground truth interface
-  rai::Frame* getGroundTruthFrame(const char* frame){ return C.getFrameByName("frame"); }
+  rai::Frame* getGroundTruthFrame(const char* frame) { return C.getFrameByName("frame"); }
 
   //== perturbation/adversarial interface
 
@@ -74,8 +73,6 @@ struct Simulation {
   void addImp(ImpType type, const StringA& frames, const arr& parameters);
 
   //displace object
-
-
 
   //== management interface
 
@@ -86,7 +83,7 @@ struct Simulation {
   void pushConfigurationToSimulator(const arr& frameVelocities=NoArr);
 
   //-- post-hoc world manipulations
-  void registerNewObjectWithEngine(rai::Frame *f);
+  void registerNewObjectWithEngine(rai::Frame* f);
 
 };
 

@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -136,7 +136,7 @@ void SimulationThread::execGripper(const rai::String& gripper, double position, 
     //  komo->addObjective(0.,0., FS_qItself, {"r_gripper_l_finger_joint"}, OT_sos, 1e1, {.8} );
 
     SIM.setUsedRobotJoints({"r_gripper_joint", "r_gripper_l_finger_joint"});
-    SIM.exec({{1,2}, {position, position*10.}}, {1.}, true);
+    SIM.exec({{1, 2}, {position, position*10.}}, {1.}, true);
     return;
   }
   if(gripper=="pandaL") {

@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -29,7 +29,7 @@ arr getAccelerations_centralDifference(const arr& q, double tau) {
   return a;
 }
 
-double getNaturalDuration(const arr& q, double maxVel, double maxAcc){
+double getNaturalDuration(const arr& q, double maxVel, double maxAcc) {
   arr v = getVelocities_centralDifference(q, 1.);
   arr a = getVelocities_centralDifference(q, 1.);
 
@@ -159,23 +159,23 @@ void mirrorDuplicate(std::pair<arr, arr>& path) {
   }
 }
 
-arr path_resample(const arr& q, double durationScale){
+arr path_resample(const arr& q, double durationScale) {
   rai::Spline S = getSpline(q);
 
   uint T = durationScale * q.d0;
   durationScale = double(T)/double(q.d0);
 
   arr r(T, q.d1);
-  for(uint t=0;t<T;t++){
+  for(uint t=0; t<T; t++) {
     r[t] = S.eval(double(t)/double(T-1));
   }
 
   return r;
 }
 
-rai::Spline getSpline(const arr& q, double duration, uint degree){
+rai::Spline getSpline(const arr& q, double duration, uint degree) {
   rai::Spline S = rai::Spline(0, q, degree);
-  if(duration!=1.){
+  if(duration!=1.) {
     S.times *= duration;
   }
   return S;

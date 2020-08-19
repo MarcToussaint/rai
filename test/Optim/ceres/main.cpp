@@ -79,7 +79,6 @@
 //  }
 //};
 
-
 ////===========================================================================
 
 //struct Conv_MatematicalProgram_CeresProblem {
@@ -202,7 +201,6 @@ void tutorialBasics(){
   return;
 #endif
 
-
   //-- call the optimizer
   komo.optimize();
   komo.getReport(true); //true -> plot the cost curves
@@ -277,7 +275,6 @@ int main(int argc,char** argv){
 
 //  tutorialBasics();
   testCeres();
-
 
   return 0;
 }

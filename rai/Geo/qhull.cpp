@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -632,7 +632,7 @@ arr convconv_intersect(const arr& A, const arr& B) {
   arr C;
   C.setCarray((double*)res->v, 2*res->len);
   C.reshape(C.N/2, 2);
-  
+
 //  plot->Clear();
 //  plot->Line(C+.002, true); cout <<"#C=" <<C.d0 <<endl;
 //  plot->Line(C-.002, true);

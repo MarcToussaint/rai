@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -28,7 +28,7 @@ AssimpLoader::AssimpLoader(const std::string& path, bool flipYZ) {
   directory = path.substr(0, path.find_last_of('/'));
 
   arr T = eye(4);
-  if(flipYZ){
+  if(flipYZ) {
     T(1, 1) = T(2, 2) = 0.;
     T(1, 2) = -1;
     T(2, 1) = +1.;
@@ -119,7 +119,7 @@ rai::Mesh AssimpLoader::loadMesh(const aiMesh* mesh, const aiScene* scene) {
     //        cout <<  m->mKey.C_Str() <<endl;
     if(!strcmp(m->mKey.C_Str(), "$clr.diffuse")) {
       float* col = (float*)m->mData;
-      if(m->mDataLength>=4*sizeof(float) && col[3]){ //not completely transparent
+      if(m->mDataLength>=4*sizeof(float) && col[3]) { //not completely transparent
         M.C = ARR(col[0], col[1], col[2], col[3]);
       }
     }

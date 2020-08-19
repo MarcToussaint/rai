@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -30,8 +30,8 @@ struct Conv_KOMOProblem_MathematicalProgram : MathematicalProgram {
 
   Conv_KOMOProblem_MathematicalProgram(KOMO_Problem& P);
 
-  virtual uint getDimension(){ return varDimIntegral.elem(-1); }
-  virtual void getFeatureTypes(ObjectiveTypeA& ft){ ft = featureTypes; }
+  virtual uint getDimension() { return varDimIntegral.elem(-1); }
+  virtual void getFeatureTypes(ObjectiveTypeA& ft) { ft = featureTypes; }
   virtual void evaluate(arr& phi, arr& J, const arr& z);
 };
 

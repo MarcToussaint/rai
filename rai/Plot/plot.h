@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -44,8 +44,6 @@ struct PlotModule : GLDrawer {
   void Close();
   void writeGnuplotFiles();
 
-
-
   void Clear();
   void Function(const arr& f, double x0=0., double x1=0.);
   void FunctionPoints(const arr& x, const arr& f);
@@ -68,7 +66,7 @@ struct PlotModule : GLDrawer {
   void Gaussians(const GaussianL& G);
   void Image(const byteA& x);
 
-  void glDraw(OpenGL &gl);
+  void glDraw(OpenGL& gl);
 };
 
 }

@@ -1,9 +1,17 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #pragma once
 
 #include "MathematicalProgram.h"
 
-namespace ceres{
-  class Problem;
+namespace ceres {
+class Problem;
 }
 
 //===========================================================================
@@ -12,7 +20,7 @@ struct CeresInterface {
   MathematicalProgram_Factored& P;
 //  MathematicalProgram& P;
 
-  CeresInterface(MathematicalProgram_Factored& P) : P(P){}
+  CeresInterface(MathematicalProgram_Factored& P) : P(P) {}
 
   arr solve();
 };

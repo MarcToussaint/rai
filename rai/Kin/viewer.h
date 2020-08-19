@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #pragma once
 
 #include "kin.h"
@@ -20,7 +28,7 @@ struct ConfigurationViewer : GLDrawer {
   void recopyMeshes(rai::Configuration& _C);
 
   int update(bool watch=false);
-  void glDraw(OpenGL &);
+  void glDraw(OpenGL&);
   void ensure_gl();
 
   //mimic a OpenGL, directly calling the same methods in its gl
@@ -29,7 +37,7 @@ struct ConfigurationViewer : GLDrawer {
   void add(GLDrawer& c);
   void resetPressedKey();
 
-private://draw data
+ private://draw data
   Configuration C;
   ProxyA proxies;
 

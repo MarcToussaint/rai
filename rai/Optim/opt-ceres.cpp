@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "opt-ceres.h"
 
 #ifdef RAI_CERES
@@ -16,7 +24,7 @@
 
 //===========================================================================
 
-arr CeresInterface::solve(){
+arr CeresInterface::solve() {
   Conv_MathematicalProgram_CeresProblem cer(P);
   cer.x_full = P.getInitializationSample();
 
@@ -46,7 +54,7 @@ class Conv_Feature_CostFunction : public ceres::CostFunction {
   uintA varDims;
   uint varTotalDim;
 
-public:
+ public:
   Conv_Feature_CostFunction(Conv_MathematicalProgram_CeresProblem& _P,
                             uint _feature_id,
                             const uintA& variableDimensions,
@@ -63,36 +71,36 @@ Conv_Feature_CostFunction::Conv_Feature_CostFunction(Conv_MathematicalProgram_Ce
   featureDim = featureDimensions(feature_id);
   varIds = featureVariables(feature_id);
   varDims.resize(varIds.N);
-  for(uint i=0;i<varIds.N;i++){
+  for(uint i=0; i<varIds.N; i++) {
     varDims(i) = variableDimensions(varIds(i));
   }
   varTotalDim = 0;
   mutable_parameter_block_sizes()->clear();
-  for(uint i=0;i<varDims.N;i++) if(varIds(i)>=0){
-    mutable_parameter_block_sizes()->push_back(varDims(i));
-    varTotalDim += varDims(i);
-  }
+  for(uint i=0; i<varDims.N; i++) if(varIds(i)>=0) {
+      mutable_parameter_block_sizes()->push_back(varDims(i));
+      varTotalDim += varDims(i);
+    }
   set_num_residuals(featureDim);
 }
 
-bool Conv_Feature_CostFunction::Evaluate(const double* const * parameters, double* residuals, double** jacobians) const{
+bool Conv_Feature_CostFunction::Evaluate(const double* const* parameters, double* residuals, double** jacobians) const {
   //set variables individually
   {
     arr x;
     uint parameters_count=0;
-    for(uint i=0;i<varIds.N;i++) if(varIds(i)>=0){
-      x.referTo(parameters[parameters_count++], varDims(i));
-      P.MP.setSingleVariable(varIds(i), x);
-    }
+    for(uint i=0; i<varIds.N; i++) if(varIds(i)>=0) {
+        x.referTo(parameters[parameters_count++], varDims(i));
+        P.MP.setSingleVariable(varIds(i), x);
+      }
   }
   {
     arr phi, J;
     phi.referTo(residuals, featureDim);
-    if(jacobians){
+    if(jacobians) {
       J.referTo(jacobians[0], featureDim*varTotalDim);
       J.reshape(featureDim, varTotalDim);
       P.MP.evaluateSingleFeature(feature_id, phi, J, NoArr);
-    }else{
+    } else {
       P.MP.evaluateSingleFeature(feature_id, phi, NoArr, NoArr);
     }
   }
@@ -106,8 +114,8 @@ Conv_MathematicalProgram_CeresProblem::Conv_MathematicalProgram_CeresProblem(Mat
   intAA featureVariables;
   uint n = MP.getDimension();
   MP.getBounds(bounds_lo, bounds_up);
-  for(uint i=0;i<bounds_lo.N;i++){
-    if(bounds_lo.elem(i)>=bounds_up.elem(i)){ bounds_lo.elem(i) = -10.;  bounds_up.elem(i) = 10.; }
+  for(uint i=0; i<bounds_lo.N; i++) {
+    if(bounds_lo.elem(i)>=bounds_up.elem(i)) { bounds_lo.elem(i) = -10.;  bounds_up.elem(i) = 10.; }
   }
   MP.getFeatureTypes(featureTypes);
   MP.getFactorization(variableDimensions, featureDimensions, featureVariables);
@@ -120,7 +128,7 @@ Conv_MathematicalProgram_CeresProblem::Conv_MathematicalProgram_CeresProblem(Mat
   //you must never ever resize these arrays, as ceres takes pointers directly into these fixed memory buffers!
   x_full.resize(variableDimIntegral.last());
   arrA x(variableDimensions.N);
-  for(uint i=0;i<x.N;i++){
+  for(uint i=0; i<x.N; i++) {
     x(i).referTo(x_full.p+variableDimIntegral(i), variableDimensions(i));
   }
 
@@ -139,13 +147,13 @@ Conv_MathematicalProgram_CeresProblem::Conv_MathematicalProgram_CeresProblem(Mat
 //  }
 
   ceresProblem = make_shared<ceres::Problem>();
-  
-  for(arr& xi: x){
-    if(xi.N){
+
+  for(arr& xi: x) {
+    if(xi.N) {
       ceresProblem->AddParameterBlock(xi.p, xi.N);
       assert(bounds_lo.N == x_full.N);
       assert(bounds_up.N == x_full.N);
-      for(uint i=0;i<xi.N;i++){
+      for(uint i=0; i<xi.N; i++) {
         uint i_all = i + xi.p-x_full.p;
         ceresProblem->SetParameterLowerBound(xi.p, i, bounds_lo(i_all));
         ceresProblem->SetParameterUpperBound(xi.p, i, bounds_up(i_all));
@@ -153,11 +161,11 @@ Conv_MathematicalProgram_CeresProblem::Conv_MathematicalProgram_CeresProblem(Mat
     }
   }
 
-  for(uint i=0;i<featureDimensions.N;i++){
-    if(featureDimensions(i)){
+  for(uint i=0; i<featureDimensions.N; i++) {
+    if(featureDimensions(i)) {
       assert(featureTypes(i) == OT_sos);
       rai::Array<double*> parameter_blocks;
-      for(uint k=0;k<featureVariables(i).N;k++){
+      for(uint k=0; k<featureVariables(i).N; k++) {
         int var = featureVariables(i)(k);
         if(var>=0) parameter_blocks.append(x(var).p);
 //        parameter_blocks(k) = x().p;

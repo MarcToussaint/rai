@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -120,8 +120,8 @@ void rai::Frame::calc_Q_from_parent(bool enforceWithinJoint) {
 const rai::Transformation& rai::Frame::ensure_X() {
 #if 0 //for testing loops
   {
-    rai::Frame *f=parent;
-    while(f){
+    rai::Frame* f=parent;
+    while(f) {
       CHECK(f!=this, "");
       f=f->parent;
     }
@@ -145,7 +145,7 @@ const rai::Transformation& rai::Frame::get_X() const {
 void rai::Frame::_state_updateAfterTouchingX() {
   _state_setXBadinBranch();
   _state_X_isGood = true;
-  if(parent){
+  if(parent) {
     Q.setDifference(parent->ensure_X(), X);
     _state_updateAfterTouchingQ();
   }
@@ -204,8 +204,8 @@ FrameL rai::Frame::getPathToUpwardLink(bool untilPartBreak) {
       if(f->joint) break;
     } else {
       if(f->joint
-              && !(f->joint->type>=JT_hingeX && f->joint->type<=JT_hingeZ)
-              && !f->joint->mimic) break;
+          && !(f->joint->type>=JT_hingeX && f->joint->type<=JT_hingeZ)
+          && !f->joint->mimic) break;
     }
     f = f->parent;
   }
@@ -228,10 +228,10 @@ const char* rai::Frame::isPart() {
   return 0;
 }
 
-void rai::Frame::prefixSubtree(const char* prefix){
+void rai::Frame::prefixSubtree(const char* prefix) {
   FrameL F = {this};
   getSubtree(F);
-  for(auto *f:F) f->name.prepend(prefix);
+  for(auto* f:F) f->name.prepend(prefix);
 
 }
 
@@ -244,18 +244,18 @@ void rai::Frame::_state_setXBadinBranch() {
 
 void rai::Frame::read(const Graph& ats) {
   //interpret some of the attributes
-  Node *n;
-  if((n=ats["X"])){
+  Node* n;
+  if((n=ats["X"])) {
     if(n->isOfType<String>()) set_X()->read(n->get<String>().resetIstream());
     else if(n->isOfType<arr>()) set_X()->set(n->get<arr>());
     else NIY;
   }
-  if((n=ats["pose"])){
+  if((n=ats["pose"])) {
     if(n->isOfType<String>()) set_X()->read(n->get<String>().resetIstream());
     else if(n->isOfType<arr>()) set_X()->set(n->get<arr>());
     else NIY;
   }
-  if((n=ats["Q"])){
+  if((n=ats["Q"])) {
     if(n->isOfType<String>()) set_Q()->read(n->get<String>().resetIstream());
     else if(n->isOfType<arr>()) set_Q()->set(n->get<arr>());
     else NIY;
@@ -313,7 +313,6 @@ void rai::Frame::write(Graph& G) {
   if(joint) joint->write(G);
   if(shape) shape->write(G);
   if(inertia) inertia->write(G);
-
 
   StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H", "axis", "A", "B", "mimic"};
   for(Node* n : ats) {
@@ -430,7 +429,7 @@ void rai::Frame::setColor(const std::vector<double>& color) {
 
 void rai::Frame::setJoint(rai::JointType jointType) {
   if(joint) { delete joint; joint=nullptr; }
-  if(jointType != JT_none){
+  if(jointType != JT_none) {
     new Joint(*this, jointType);
   }
 }
@@ -440,18 +439,18 @@ void rai::Frame::setContact(int cont) {
 }
 
 void rai::Frame::setMass(double mass) {
-  if(mass<0.){
+  if(mass<0.) {
     if(inertia) delete inertia;
-  }else{
+  } else {
     getInertia().mass = mass;
   }
 }
 
-void rai::Frame::addAttribute(const char* key, double value){
+void rai::Frame::addAttribute(const char* key, double value) {
   ats.newNode<double>(key, {}, value);
 }
 
-void rai::Frame::setJointState(const std::vector<double>& q){
+void rai::Frame::setJointState(const std::vector<double>& q) {
   CHECK(joint, "cannot setJointState for a non-joint");
   CHECK_EQ(q.size(), joint->dim, "given q has wrong dimension");
   joint->calc_Q_from_q(arr{q}, 0);
@@ -1000,8 +999,8 @@ void rai::Joint::read(const Graph& G) {
     frame->insertPreLink(A);
   }
 
-  Node *n;
-  if((n=G["Q"])){
+  Node* n;
+  if((n=G["Q"])) {
     if(n->isOfType<String>()) frame->set_Q()->read(n->get<String>().resetIstream());
     else if(n->isOfType<arr>()) frame->set_Q()->set(n->get<arr>());
     else NIY;
@@ -1263,7 +1262,7 @@ void rai::Shape::createMeshes() {
       mesh().scale(size(0), size(1), size(2));
       break;
     case rai::ST_sphere: {
-      sscCore().V = arr({1,3}, {0., 0., 0.});
+      sscCore().V = arr({1, 3}, {0., 0., 0.});
       double rad=1;
       if(size.N) rad=size(-1);
       mesh().setSSCvx(sscCore().V, rad);
@@ -1274,7 +1273,7 @@ void rai::Shape::createMeshes() {
       break;
     case rai::ST_capsule:
       CHECK(size(-1)>1e-10, "");
-      sscCore().V = arr({2,3}, {0., 0., -.5*size(-2), 0., 0., .5*size(-2)});
+      sscCore().V = arr({2, 3}, {0., 0., -.5*size(-2), 0., 0., .5*size(-2)});
       mesh().setSSCvx(sscCore().V, size(-1));
       break;
     case rai::ST_retired_SSBox:

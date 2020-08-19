@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -42,7 +42,7 @@ void OptNewton::reinit(const arr& _x) {
     if(o.verbose>3)(*logFile) <<", x: " <<x;
     (*logFile) <<" }," <<endl;
   }
-  if(simpleLog){
+  if(simpleLog) {
     (*simpleLog) <<its <<' ' <<evals <<' ' <<fx <<' ' <<alpha;
     if(x.N<=5) x.writeRaw(*simpleLog);
     (*simpleLog) <<endl;
@@ -51,12 +51,12 @@ void OptNewton::reinit(const arr& _x) {
 
 //===========================================================================
 
-void boundClip(arr& y, const arr& bound_lo, const arr& bound_up){
+void boundClip(arr& y, const arr& bound_lo, const arr& bound_up) {
   if(bound_lo.N && bound_up.N) {
     for(uint i=0; i<y.N; i++) if(bound_up(i)>bound_lo(i)) {
-      if(y(i)>bound_up(i)) y(i) = bound_up(i);
-      if(y(i)<bound_lo(i)) y(i) = bound_lo(i);
-    }
+        if(y(i)>bound_up(i)) y(i) = bound_up(i);
+        if(y(i)<bound_lo(i)) y(i) = bound_lo(i);
+      }
   }
 }
 
@@ -139,7 +139,7 @@ OptNewton::StopCriterion OptNewton::step() {
     timeEval += rai::timerRead(true, timeBefore);
     if(o.verbose>5) cout <<" \tprobing y=" <<y;
     if(o.verbose>1) cout <<" \tevals=" <<std::setw(4) <<evals <<" \talpha=" <<std::setw(11) <<alpha <<" \tf(y)=" <<fy <<flush;
-    if(simpleLog){
+    if(simpleLog) {
       (*simpleLog) <<its <<' ' <<evals <<' ' <<fy <<' ' <<alpha;
       if(y.N<=5) y.writeRaw(*simpleLog);
       (*simpleLog) <<endl;

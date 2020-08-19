@@ -108,7 +108,6 @@ struct MyFeature : Feature {
       return;
     }
 
-
     double scale = 3.;
     double weight = ::exp(scale * D.y.scalar());
     weight = 1.; scale=0.;

@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "CtrlProblem.h"
 
 #include "CtrlTargets.h"
@@ -6,29 +14,28 @@ CtrlProblem::CtrlProblem(rai::Configuration& _C, double _tau, uint k_order)
   : tau(_tau) {
   komo.setModel(_C, true);
   komo.setTiming(1., 1, _tau, k_order);
-  komo.setupConfigurations( _C.getJointState() );
+  komo.setupConfigurations(_C.getJointState());
   komo.verbose=0;
 }
 
-std::shared_ptr<CtrlObjective> CtrlProblem::add_qControlObjective(uint order, double scale, const arr& target){
+std::shared_ptr<CtrlObjective> CtrlProblem::add_qControlObjective(uint order, double scale, const arr& target) {
   ptr<Objective> o = komo.add_qControlObjective({}, order, scale, target);
   return addObjective(o->feat, o->type);
 }
 
 void CtrlProblem::addObjectives(const rai::Array<ptr<CtrlObjective>>& O) {
-  for(auto &o:O){
-      objectives.append(o.get());
-      o->selfRemove = &objectives;
+  for(auto& o:O) {
+    objectives.append(o.get());
+    o->selfRemove = &objectives;
   }
 }
 
-void CtrlProblem::delObjectives(const rai::Array<ptr<CtrlObjective>>& O){
-  for(auto &o:O){
-      objectives.removeValue(o.get());
-      o->selfRemove = 0;
+void CtrlProblem::delObjectives(const rai::Array<ptr<CtrlObjective>>& O) {
+  for(auto& o:O) {
+    objectives.removeValue(o.get());
+    o->selfRemove = 0;
   }
 }
-
 
 ptr<CtrlObjective> CtrlProblem::addObjective(const ptr<Feature>& f, ObjectiveType type) {
   ptr<CtrlObjective> t = make_shared<CtrlObjective>();
@@ -43,8 +50,8 @@ ptr<CtrlObjective> CtrlProblem::addObjective(const FeatureSymbol& feat, const St
 
 void CtrlProblem::update(rai::Configuration& C) {
   //-- update the KOMO configurations (push one step back, and update current configuration)
-  for(uint s=1;s<komo.configurations.N;s++){
-    komo.configurations(s-1)->setJointState( komo.configurations(s)->getJointState() );
+  for(uint s=1; s<komo.configurations.N; s++) {
+    komo.configurations(s-1)->setJointState(komo.configurations(s)->getJointState());
   }
   arr X = C.getFrameState();
   komo.getConfiguration_t(-1).setFrameState(X);
@@ -52,18 +59,18 @@ void CtrlProblem::update(rai::Configuration& C) {
   for(auto* c:komo.configurations) c->ensure_q();
 
   //-- step the targets forward, if they have a target
-  for(CtrlObjective* o: objectives){
+  for(CtrlObjective* o: objectives) {
     if(!o->name.N) o->name = o->feat->shortTag(C);
 
-    if(o->movingTarget){
+    if(o->movingTarget) {
       o->y_buffer = o->getValue(*this);
       ActStatus s_new = o->movingTarget->step(tau, o, komo.configurations);
-      if(o->status != s_new){
+      if(o->status != s_new) {
         o->status = s_new;
         //callbacks
       }
-    }else{
-      if(o->status != AS_running){
+    } else {
+      if(o->status != AS_running) {
         o->status = AS_running;
         //callbacks
       }
@@ -71,8 +78,8 @@ void CtrlProblem::update(rai::Configuration& C) {
   }
 }
 
-void CtrlProblem::report(std::ostream& os){
-  for(CtrlObjective* o: objectives){
+void CtrlProblem::report(std::ostream& os) {
+  for(CtrlObjective* o: objectives) {
     o->reportState(os);
   }
 }
@@ -85,7 +92,7 @@ arr CtrlProblem::solve() {
   return q;
 #elif 1
   komo.clearObjectives();
-  for(CtrlObjective* o: objectives){
+  for(CtrlObjective* o: objectives) {
     komo.addObjective({}, o->feat, o->type);
   }
   OptOptions opt;

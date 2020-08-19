@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -196,7 +196,6 @@ template<class T> struct Array : std::vector<T>, Serializable {
   Array<T>& operator()() { return *this; } //TODO: make this the scalar reference!
   T** getCarray(Array<T*>& Cpointers) const;
   Array<T*> getCarray() const;
-
 
   /// @name access by copy
   Array<T> copy() const;
@@ -998,7 +997,6 @@ UpdateOperator(*=)
 UpdateOperator(/=)
 UpdateOperator(%=)
 #undef UpdateOperator
-
 
 //===========================================================================
 /// @}

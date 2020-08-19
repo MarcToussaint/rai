@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -47,14 +47,14 @@ template<class T> int rai::Array<T>::sizeT=-1;
 
 /// standard constructor -- this becomes an empty array
 template<class T> rai::Array<T>::Array()
-    : std::vector<T>(),
-      p(0),
-      N(0),
-      nd(0),
-      d0(0), d1(0), d2(0),
-      d(&d0),
-      isReference(false),
-      special(0) {
+  : std::vector<T>(),
+    p(0),
+    N(0),
+    nd(0),
+    d0(0), d1(0), d2(0),
+    d(&d0),
+    isReference(false),
+    special(0) {
   if(sizeT==-1) sizeT=sizeof(T);
   if(memMove==(char)-1) {
     memMove=0;
@@ -77,19 +77,19 @@ template<class T> rai::Array<T>::Array(const rai::Array<T>& a) : Array() { opera
 
 /// copy constructor
 template<class T> rai::Array<T>::Array(rai::Array<T>&& a)
-    : std::vector<T>(std::move(a)),
-      p(a.p),
-      N(a.N),
-      nd(a.nd),
-      d0(a.d0), d1(a.d1), d2(a.d2),
-      d(&d0),
-      isReference(a.isReference),
-      special(a.special) {
-    CHECK_EQ(a.d, &a.d0, "");
-    a.p=NULL;
-    a.N=a.nd=a.d0=a.d1=a.d2=0;
-    a.isReference=false;
-    a.special=NULL;
+  : std::vector<T>(std::move(a)),
+    p(a.p),
+    N(a.N),
+    nd(a.nd),
+    d0(a.d0), d1(a.d1), d2(a.d2),
+    d(&d0),
+    isReference(a.isReference),
+    special(a.special) {
+  CHECK_EQ(a.d, &a.d0, "");
+  a.p=NULL;
+  a.N=a.nd=a.d0=a.d1=a.d2=0;
+  a.isReference=false;
+  a.special=NULL;
 }
 
 /// constructor with resize
@@ -220,7 +220,7 @@ template<class T> rai::Array<T>& rai::Array<T>::resizeCopy(const Array<uint>& ne
 /// resize to multi-dimensional tensor
 template<class T> rai::Array<T>& rai::Array<T>::reshape(const Array<uint>& newD) { reshape(newD.N, newD.p); return *this; }
 
-template<class T> rai::Array<T>& rai::Array<T>::reshape(std::initializer_list<uint> dim){ reshape(dim.size(), (uint*)dim.begin()); return *this; }
+template<class T> rai::Array<T>& rai::Array<T>::reshape(std::initializer_list<uint> dim) { reshape(dim.size(), (uint*)dim.begin()); return *this; }
 
 template<class T> rai::Array<T>& rai::Array<T>::resizeAs(const rai::Array<T>& a) {
   CHECK(this!=&a, "never do this!!!");
@@ -367,7 +367,7 @@ template<class T> void rai::Array<T>::freeMEM() {
 template<typename T>
 class ArrayAllocator { //      allocate(allocator_type& __a, size_type __n)
 
-public:
+ public:
   Array<T>& base;
   std::allocator<T> defaultAlloc;
   typedef std::size_t     size_type;
@@ -387,7 +387,7 @@ public:
   ~ArrayAllocator() {}
 
   T* allocate(size_t n, const void* hint = 0) {
-    if(!base.reference){
+    if(!base.reference) {
       base.p = defaultAlloc.allocate(n, hint);
       base.N = base.size();
       base.M = base.capacity();
@@ -1502,7 +1502,7 @@ template<class T> void rai::Array<T>::referToRange(const rai::Array<T>& a, int i
   CHECK_LE(a.nd, 3, "not implemented yet");
   if(i_lo<0) i_lo+=a.d0;
   if(i_up<0) i_up+=a.d0;
-  if(i_lo>i_up){ clear(); return; }
+  if(i_lo>i_up) { clear(); return; }
   CHECK((uint)i_lo<a.d0 && (uint)i_up<a.d0, "SubRange range error (" <<i_lo <<"<" <<a.d0 <<", " <<i_up <<"<" <<a.d0 <<")");
 
   if(a.nd==1) {
@@ -1599,11 +1599,11 @@ template<class T> void rai::Array<T>::referToDim(const rai::Array<T>& a, uint i,
     referTo(&a(i, j, k), a.d[3]);
   }
   if(a.nd==5) {
-      NIY;
+    NIY;
 //    nd=2; d0=a.d[3]; d1=a.d[4]; d2=0; N=d0*d1;
   }
   if(a.nd>5) {
-      NIY;
+    NIY;
 //    nd=a.nd-3; d0=a.d[3]; d1=a.d[4]; d2=a.d[5]; N=a.N/(a.d0*a.d1*a.d2);
 //    resetD();
 //    if(nd>3) { d=new uint[nd];  memmove(d, a.d+3, nd*sizeof(uint)); }
@@ -1839,7 +1839,7 @@ template<class T> void rai::Array<T>::shift(int offset, bool wrapAround) {
   }
 }
 
-template<class T> void rai::Array<T>::setNoArr(){
+template<class T> void rai::Array<T>::setNoArr() {
   clear();
   special = new SpecialArray(SpecialArray::ST_NoArr);
 }
@@ -1870,7 +1870,6 @@ template<class T> void rai::Array<T>::write(std::ostream& os, const char* ELEMSE
   if(!ELEMSEP) ELEMSEP=rai::arrayElemsep;
   if(!LINESEP) LINESEP=rai::arrayLinesep;
   if(!BRACKETS) BRACKETS=rai::arrayBrackets;
-
 
   if(binary) {
     writeDim(os);

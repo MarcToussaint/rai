@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -10,16 +10,16 @@
 
 #include <pybind11/pybind11.h>
 
-void init_Config(pybind11::module &m);
-void init_Feature(pybind11::module &m);
-void init_Frame(pybind11::module &m);
-void init_KOMO(pybind11::module &m);
+void init_Config(pybind11::module& m);
+void init_Feature(pybind11::module& m);
+void init_Frame(pybind11::module& m);
+void init_KOMO(pybind11::module& m);
 //void init_LGP_Tree(pybind11::module &m);
 //void init_Bullet(pybind11::module &m);
 //void init_PhysX(pybind11::module &m);
 //void init_Operate(pybind11::module &m);
 //void init_Camera(pybind11::module &m);
-void init_Simulation(pybind11::module &m);
+void init_Simulation(pybind11::module& m);
 
 PYBIND11_MODULE(libry, m) {
   m.doc() = "rai bindings";

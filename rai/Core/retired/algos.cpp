@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -863,7 +863,6 @@ void XSpline::eval(double t, arr& x, arr* v) {
   double qp1 = W2<0?-W2/2.0:0;
   double qp2 = W1<0?-W1/2.0:0;
   double qp3 = W2<0?-W2/2.0:0;
-
 
   // The code below resembles the part of (17) in the article,
   // where A0 ... A3 are calculated, but there are differences

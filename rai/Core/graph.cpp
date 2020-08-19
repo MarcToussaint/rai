@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -470,7 +470,7 @@ Node* Graph::edit(Node* ed) {
   uint edited=0;
   for(Node* n : KVG) if(n!=ed) {
       CHECK(ed->type == n->type, "can't edit/merge nodes of different types!");
-      if(ed->parents.N){ //replace parents
+      if(ed->parents.N) { //replace parents
         while(n->parents.N) n->removeParent(n->parents.last());
         for(Node* p:ed->parents) n->addParent(p);
       }
@@ -615,11 +615,11 @@ void Graph::read(std::istream& is, bool parseInfo) {
       n->get<FileToken>().cd_start();
       delete n; n=nullptr;
     } else if(n->key=="Prefix") {
-      if(n->isOfType<String>()){
+      if(n->isOfType<String>()) {
         namePrefix = n->get<String>();
-      }else if(n->isOfType<bool>() && !n->get<bool>()){
+      } else if(n->isOfType<bool>() && !n->get<bool>()) {
         namePrefix.clear();
-      }else LOG(-1) <<*n <<" is not a proper name prefix";
+      } else LOG(-1) <<*n <<" is not a proper name prefix";
       delete n; n=nullptr;
     } else if(n->key=="ChDir") {
       n->get<FileToken>().cd_file();
@@ -793,22 +793,22 @@ Node* Graph::readNode(std::istream& is, StringA& tags, const char* predetermined
             String::readStopSymbols = "\n\r";
             String::readEatStopSymbol = 1;
             node = newNode<StringA>(key, parents, strings);
-          } else if(c2=='['){ //arrA
-              is.putback(c2);
-              is.putback(c);
-              arrA reals;
-              is >>reals;
-              node = newNode<arrA>(key, parents, reals);
-          } else if((c2>='a' && c2<='z') || (c2>='A' && c2<='Z')){ //StringA}
-              is.putback(c2);
-              is.putback(c);
-              StringA strings;
-              String::readStopSymbols=" \n\t]";
-              String::readEatStopSymbol = 0;
-              is >>strings;
-              String::readStopSymbols = "\n\r";
-              String::readEatStopSymbol = 1;
-              node = newNode<StringA>(key, parents, strings);
+          } else if(c2=='[') { //arrA
+            is.putback(c2);
+            is.putback(c);
+            arrA reals;
+            is >>reals;
+            node = newNode<arrA>(key, parents, reals);
+          } else if((c2>='a' && c2<='z') || (c2>='A' && c2<='Z')) { //StringA}
+            is.putback(c2);
+            is.putback(c);
+            StringA strings;
+            String::readStopSymbols=" \n\t]";
+            String::readEatStopSymbol = 0;
+            is >>strings;
+            String::readStopSymbols = "\n\r";
+            String::readEatStopSymbol = 1;
+            node = newNode<StringA>(key, parents, strings);
           } else {
             is.putback(c2);
             is.putback(c);
@@ -849,8 +849,8 @@ Node* Graph::readNode(std::istream& is, StringA& tags, const char* predetermined
           subgraph.read(is);
           parse(is, "}");
           node = subgraph.isNodeOfGraph;
-          if(tags.N>1){
-            for(uint i=0;i<tags.N-1;i++) subgraph.newNode<bool>(STRING('%' <<tags.elem(i)));
+          if(tags.N>1) {
+            for(uint i=0; i<tags.N-1; i++) subgraph.newNode<bool>(STRING('%' <<tags.elem(i)));
           }
         } break;
         default: { //error
@@ -882,10 +882,10 @@ Node* Graph::readNode(std::istream& is, StringA& tags, const char* predetermined
     cerr <<endl;
   }
 
-  if(tags.N>1){
-    if(node->isOfType<bool>() && tags.N==2 && tags(0)=="Delete"){
+  if(tags.N>1) {
+    if(node->isOfType<bool>() && tags.N==2 && tags(0)=="Delete") {
       node->get<bool>() = false;
-    }else if(!node->isGraph()){
+    } else if(!node->isGraph()) {
       LOG(-1) <<"you specified tags " <<tags <<" for node '" <<*node <<"', which is of non-graph type -- ignored";
     }
   }
@@ -1311,7 +1311,6 @@ int distance(NodeL A, NodeL B) {
 //
 
 Singleton<rai::Graph> registry;
-
 
 struct RegistryInitializer {
   Mutex lock;

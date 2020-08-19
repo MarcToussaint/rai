@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -76,9 +76,9 @@ template<> const char* rai::Enum<FeatureSymbol>::names []= {
 };
 
 //fwd declarations
-auto getQFramesAndScale(const rai::Configuration& C){
-  struct Return{ uintA frames; arr scale; } R;
-  for(rai::Frame* f : C.frames){
+auto getQFramesAndScale(const rai::Configuration& C) {
+  struct Return { uintA frames; arr scale; } R;
+  for(rai::Frame* f : C.frames) {
     if(f->joint && f->joint->active && f->joint->dim>0 && f->joint->H>0. && f->joint->type!=rai::JT_tau) {
       CHECK(!f->joint->mimic, "");
       R.frames.append(TUP(f->ID, f->parent->ID));
@@ -108,7 +108,7 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
   else if(feat==FS_standingAbove) {
     double h = .5*(shapeSize(C, frames(0)) + shapeSize(C, frames(1)));
     f = make_shared<TM_Default>(TMT_posDiff, C, frames(0), rai::Vector(0., 0., h), frames(1), NoVector);
-    f->scale = arr({1,3}, {0., 0., 1.});
+    f->scale = arr({1, 3}, {0., 0., 1.});
   }
 
   else if(feat==FS_position) {  f=make_shared<TM_Default>(TMT_pos, C, frames(0)); }
@@ -184,7 +184,7 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
 //    f = map;
   } else HALT("can't interpret feature symbols: " <<feat);
 
-  if(!!scale){
+  if(!!scale) {
     if(!f->scale.N) f->scale = scale;
     else if(scale.N==1) f->scale *= scale.scalar();
     else if(scale.N==f->scale.N) f->scale *= scale.scalar();

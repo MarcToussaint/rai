@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -15,27 +15,27 @@ double _RosenbrockFunction(arr& g, arr& H, const arr& x) {
   double f=0.;
   for(uint i=1; i<x.N; i++) f += rai::sqr(x(i)-rai::sqr(x(i-1))) + .01*rai::sqr(1-10.*x(i-1));
 //  f = ::log(1.+f);
-  if(!!g){
+  if(!!g) {
     g.resize(x.N).setZero();
-    for(uint i=1; i<x.N; i++){
+    for(uint i=1; i<x.N; i++) {
       g(i) += 2.*(x(i)-rai::sqr(x(i-1)));
       g(i-1) += 2.*(x(i)-rai::sqr(x(i-1)))*(-2.*x(i-1));
       g(i-1) += .01*2.*(1-10.*x(i-1))*(-10.);
     }
   }
-  if(!!H){
+  if(!!H) {
     H.resize(x.N, x.N).setZero();
-    for(uint i=1; i<x.N; i++){
+    for(uint i=1; i<x.N; i++) {
       //g(i) += 2.*(x(i)-rai::sqr(x(i-1)));
-      H(i,i) += 2.;
-      H(i,i-1) += -4.*x(i-1);
+      H(i, i) += 2.;
+      H(i, i-1) += -4.*x(i-1);
 
       //g(i-1) += 2.*(x(i)-rai::sqr(x(i-1)))*(-2.*x(i-1));
-      H(i-1,i) += -4.*x(i-1);
-      H(i-1,i-1) += -4.*x(i-1)*(-2.*x(i-1)) - 4.*(x(i)-rai::sqr(x(i-1)));
+      H(i-1, i) += -4.*x(i-1);
+      H(i-1, i-1) += -4.*x(i-1)*(-2.*x(i-1)) - 4.*(x(i)-rai::sqr(x(i-1)));
 
       //g(i-1) += .01*2.*(1-10.*x(i-1))*(-10.);
-      H(i-1,i-1) += .01*2.*(-10.)*(-10.);
+      H(i-1, i-1) += .01*2.*(-10.)*(-10.);
     }
   }
   return f;
@@ -295,7 +295,7 @@ uint ChoiceConstraintFunction::getDimension() {
   return n;
 }
 
-void ChoiceConstraintFunction::getFeatureTypes(ObjectiveTypeA& tt){
+void ChoiceConstraintFunction::getFeatureTypes(ObjectiveTypeA& tt) {
   tt.clear();
   tt.append(OT_f);
   switch(which) {
@@ -316,7 +316,7 @@ void ChoiceConstraintFunction::getFeatureTypes(ObjectiveTypeA& tt){
   }
 }
 
-void ChoiceConstraintFunction::getBounds(arr& bounds_lo, arr& bounds_hi){
+void ChoiceConstraintFunction::getBounds(arr& bounds_lo, arr& bounds_hi) {
   bounds_lo.resize(n) = -2.;
   bounds_hi.resize(n) = +2.;
 }
@@ -358,7 +358,7 @@ void ChoiceConstraintFunction::evaluate(arr& phi, arr& J, const arr& x) {
   if(!!J) J.reshape(J.N/x.N, x.N);
 }
 
-void ChoiceConstraintFunction::getFHessian(arr& H, const arr& x){
+void ChoiceConstraintFunction::getFHessian(arr& H, const arr& x) {
   ChoiceFunction()(NoArr, H, x);
 }
 

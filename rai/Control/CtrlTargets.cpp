@@ -1,29 +1,37 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "CtrlTargets.h"
 
 #include "control.h"
 
 //===========================================================================
 
-ActStatus CtrlTarget_Const::step(double tau, CtrlObjective *o, const ConfigurationL& Ctuple) {
+ActStatus CtrlTarget_Const::step(double tau, CtrlObjective* o, const ConfigurationL& Ctuple) {
   o->feat->target.clear();
   return AS_running;
 }
 
 //===========================================================================
 
-ActStatus CtrlTarget_ConstVel::step(double tau, CtrlObjective *o, const ConfigurationL& Ctuple) {
+ActStatus CtrlTarget_ConstVel::step(double tau, CtrlObjective* o, const ConfigurationL& Ctuple) {
   o->feat->target.clear();
   return AS_running;
 }
 
 //===========================================================================
 
-CtrlTarget_MaxCarrot::CtrlTarget_MaxCarrot(CtrlObjective& co, double maxDistance, const arr& _goal) : maxDistance(maxDistance){
+CtrlTarget_MaxCarrot::CtrlTarget_MaxCarrot(CtrlObjective& co, double maxDistance, const arr& _goal) : maxDistance(maxDistance) {
   if(!!_goal) goal=_goal;
 //  isTransient = true;
 }
 
-uint getRealValue(CtrlObjective *o, arr& y_raw, arr& y_real, const ConfigurationL& Ctuple){
+uint getRealValue(CtrlObjective* o, arr& y_raw, arr& y_real, const ConfigurationL& Ctuple) {
   //get the current (scaled) feature value
   y_real =  o->feat->phi(Ctuple);
   if(o->type==OT_ineq) for(double& d:y_real) if(d<0.) d=0.;
@@ -44,17 +52,16 @@ uint getRealValue(CtrlObjective *o, arr& y_raw, arr& y_real, const Configuration
   return d_raw;
 }
 
-ActStatus CtrlTarget_MaxCarrot::step(double tau, CtrlObjective *o, const ConfigurationL& Ctuple) {
+ActStatus CtrlTarget_MaxCarrot::step(double tau, CtrlObjective* o, const ConfigurationL& Ctuple) {
   arr y_real, y_raw;
 
   uint d_raw = getRealValue(o, y_raw, y_real, Ctuple);
 
   //initialize goal
-  if(goal.N!=d_raw){
+  if(goal.N!=d_raw) {
     if(o->feat->target.N==d_raw) goal = o->feat->target;
     else goal = zeros(d_raw);
   }
-
 
   double d = length(y_raw-goal);
   if(d > maxDistance) {
@@ -73,7 +80,7 @@ ActStatus CtrlTarget_MaxCarrot::step(double tau, CtrlObjective *o, const Configu
 //===========================================================================
 
 CtrlTarget_PathCarrot::CtrlTarget_PathCarrot(const arr& path, double maxDistance, double _endTime)
-   : maxStep(maxDistance), endTime(_endTime), time(0.) {
+  : maxStep(maxDistance), endTime(_endTime), time(0.) {
   CHECK_EQ(path.nd, 2, "need a properly shaped path!");
   arr times(path.d0);
   for(uint i=0; i<path.d0; i++) times.elem(i) = endTime*double(i)/double(times.N-1);
@@ -81,11 +88,11 @@ CtrlTarget_PathCarrot::CtrlTarget_PathCarrot(const arr& path, double maxDistance
 }
 
 CtrlTarget_PathCarrot::CtrlTarget_PathCarrot(const arr& path, double maxDistance, const arr& times)
-   : maxStep(maxDistance), endTime(times.last()), time(0.) {
+  : maxStep(maxDistance), endTime(times.last()), time(0.) {
   spline.set(2, path, times);
 }
 
-ActStatus CtrlTarget_PathCarrot::step(double tau, CtrlObjective *o, const ConfigurationL& Ctuple) {
+ActStatus CtrlTarget_PathCarrot::step(double tau, CtrlObjective* o, const ConfigurationL& Ctuple) {
   if(time+tau > endTime) tau = endTime - time;
 
   arr y_real, y_raw;
@@ -102,7 +109,7 @@ ActStatus CtrlTarget_PathCarrot::step(double tau, CtrlObjective *o, const Config
     tau = 0.;
     isTransient=true;
     countInRange=0;
-  }else if(d1+d2 > maxStep) {
+  } else if(d1+d2 > maxStep) {
     tau *= (maxStep-d1)/d2;
     goal = spline.eval(time + tau);
     isTransient=true;
@@ -121,7 +128,7 @@ ActStatus CtrlTarget_PathCarrot::step(double tau, CtrlObjective *o, const Config
 
 //===========================================================================
 
-ActStatus CtrlTarget_Sine:: step(double tau, CtrlObjective *o, const ConfigurationL& Ctuple) {
+ActStatus CtrlTarget_Sine:: step(double tau, CtrlObjective* o, const ConfigurationL& Ctuple) {
   t+=tau;
   if(t>T) t=T;
   arr y_real =  o->feat->phi(Ctuple);
@@ -189,7 +196,7 @@ void getVel_bang(double& x, double& v, double maxVel, double tau) {
   }
 }
 
-ActStatus CtrlTarget_Bang::step(double tau, CtrlObjective *o, const ConfigurationL& Ctuple) {
+ActStatus CtrlTarget_Bang::step(double tau, CtrlObjective* o, const ConfigurationL& Ctuple) {
   //only on initialization the true state is used; otherwise ignored!
 //  if(y_target.N!=y_real.N) { y_target=y_real; }
 
@@ -260,7 +267,7 @@ void CtrlTarget_PD::setGainsAsNatural(double decayTime, double dampingRatio) {
 //  setGains(rai::sqr(1./lambda), 2.*dampingRatio/lambda);
 }
 
-ActStatus CtrlTarget_PD::step(double tau, CtrlObjective *o, const ConfigurationL& Ctuple) {
+ActStatus CtrlTarget_PD::step(double tau, CtrlObjective* o, const ConfigurationL& Ctuple) {
   //only on initialization the true state is used; otherwise ignored!
   arr y_real =  o->feat->phi(Ctuple);
   if(y_ref.N!=y_real.N) { y_ref=y_real; v_ref=zeros(y_real.N); }

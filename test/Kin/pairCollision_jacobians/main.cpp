@@ -51,7 +51,6 @@ void TEST(GJK_Jacobians) {
     s1.createMeshes();
     s2.createMeshes();
 
-
     //randomize poses
     rndGauss(q, .7);
     C.setJointState(q);

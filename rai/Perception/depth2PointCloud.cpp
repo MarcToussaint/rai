@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -70,7 +70,7 @@ void depthData2pointCloud(arr& pts, const floatA& depth, float fx, float fy, flo
 
 }
 
-void depthData2pointCloud(arr& pts, const floatA& depth, const arr& Fxypxy){
+void depthData2pointCloud(arr& pts, const floatA& depth, const arr& Fxypxy) {
   depthData2pointCloud(pts, depth, Fxypxy.elem(0), Fxypxy.elem(1), Fxypxy.elem(2), Fxypxy.elem(3));
 }
 

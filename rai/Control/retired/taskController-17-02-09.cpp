@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -259,12 +259,12 @@ CtrlObjective* TaskControlMethods::addPDTask(const char* name, double decayTime,
 }
 
 CtrlObjective* TaskControlMethods::addPDTask(const char* name,
-                                        double decayTime, double dampingRatio,
-                                        TM_DefaultType type,
-                                        const char* iShapeName, const rai::Vector& ivec,
-                                        const char* jShapeName, const rai::Vector& jvec) {
+    double decayTime, double dampingRatio,
+    TM_DefaultType type,
+    const char* iShapeName, const rai::Vector& ivec,
+    const char* jShapeName, const rai::Vector& jvec) {
   return tasks.append(new CtrlObjective(name, new TM_Default(type, world, iShapeName, ivec, jShapeName, jvec),
-                                   decayTime, dampingRatio, 1., 1.));
+                                        decayTime, dampingRatio, 1., 1.));
 }
 
 ConstraintForceTask* TaskControlMethods::addConstraintForceTask(const char* name, Feature* map) {

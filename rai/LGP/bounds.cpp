@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -30,9 +30,9 @@ template<> const char* rai::Enum<BoundType>::names []= {
 rai::Array<SkeletonSymbol> modes = { SY_stable, SY_stableOn, SY_dynamic, SY_dynamicOn, SY_dynamicTrans, };
 
 ptr<ComputeObject> skeleton2Bound(ptr<KOMO>& komo, BoundType boundType, const Skeleton& S,
-                    const rai::Configuration& startKinematics,
-                    const rai::Configuration& effKinematics,
-                    bool collisions, const arrA& waypoints) {
+                                  const rai::Configuration& startKinematics,
+                                  const rai::Configuration& effKinematics,
+                                  bool collisions, const arrA& waypoints) {
 
   if(boundType==BD_pose)
     return make_shared<PoseBound>(komo, S, startKinematics, collisions);
@@ -56,8 +56,7 @@ ptr<ComputeObject> skeleton2Bound(ptr<KOMO>& komo, BoundType boundType, const Sk
 
 //===========================================================================
 
-
-double getMaxPhase(const Skeleton& S){
+double getMaxPhase(const Skeleton& S) {
   double maxPhase=0;
   for(const SkeletonEntry& s:S) {
     if(s.phase0>maxPhase) maxPhase=s.phase0;
@@ -83,7 +82,7 @@ PoseBound::PoseBound(ptr<KOMO>& komo,
   Skeleton finalS;
   for(const SkeletonEntry& s:S) {
     if(modes.contains(s.symbol)
-       || s.phase0>=maxPhase) {
+        || s.phase0>=maxPhase) {
       SkeletonEntry& fs = finalS.append(s);
       fs.phase0 -= maxPhase-optHorizon;
       fs.phase1 -= maxPhase-optHorizon;
@@ -95,10 +94,10 @@ PoseBound::PoseBound(ptr<KOMO>& komo,
   //-- grep only the latest entries in the skeleton
   Skeleton finalS;
   for(const SkeletonEntry& s:S) if(s.phase0>=maxPhase) {
-    finalS.append(s);
-    finalS.last().phase0 -= maxPhase-1.;
-    finalS.last().phase1 -= maxPhase-1.;
-  }
+      finalS.append(s);
+      finalS.last().phase0 -= maxPhase-1.;
+      finalS.last().phase1 -= maxPhase-1.;
+    }
 #endif
 
   if(komo->verbose>1) {
@@ -130,8 +129,8 @@ PoseBound::PoseBound(ptr<KOMO>& komo,
   //      }
   for(ptr<Objective>& o:komo->objectives) {
     if(!std::dynamic_pointer_cast<F_qItself>(o->feat)
-       && !std::dynamic_pointer_cast<TM_NoJumpFromParent>(o->feat)
-       && o->feat->order>0) {
+        && !std::dynamic_pointer_cast<TM_NoJumpFromParent>(o->feat)
+        && o->feat->order>0) {
       o->configs.clear();
     }
   }
@@ -176,7 +175,7 @@ SeqBound::SeqBound(ptr<KOMO>& komo,
 PathBound::PathBound(ptr<KOMO>& komo,
                      const Skeleton& S, const rai::Configuration& startKinematics,
                      bool collisions)
-  : KOMO_based_bound(komo){
+  : KOMO_based_bound(komo) {
 
   double maxPhase = getMaxPhase(S);
   komo->clearObjectives();

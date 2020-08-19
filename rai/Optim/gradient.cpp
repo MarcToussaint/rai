@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -25,7 +25,7 @@ void OptGrad::reinit(const arr& _x) {
   if(o.verbose>1) cout <<"*** optGrad: starting point f(x)=" <<fx <<" alpha=" <<alpha <<endl;
   if(o.verbose>2) cout <<"             x=" <<x <<endl;
   if(o.verbose>0) fil.open("z.opt");
-  if(o.verbose>0){ fil <<0 <<' ' <<eval_count <<' ' <<fx <<' ' <<alpha;  if(x.N<=5) x.writeRaw(fil);  fil <<endl; }
+  if(o.verbose>0) { fil <<0 <<' ' <<eval_count <<' ' <<fx <<' ' <<alpha;  if(x.N<=5) x.writeRaw(fil);  fil <<endl; }
 }
 
 OptGrad::StopCriterion OptGrad::step() {
@@ -73,7 +73,7 @@ OptGrad::StopCriterion OptGrad::step() {
     }
   }
 
-  if(o.verbose>0){ fil <<evals <<' ' <<eval_count <<' ' <<fx <<' ' <<alpha;  if(x.N<=5) x.writeRaw(fil);  fil <<endl; }
+  if(o.verbose>0) { fil <<evals <<' ' <<eval_count <<' ' <<fx <<' ' <<alpha;  if(x.N<=5) x.writeRaw(fil);  fil <<endl; }
 
   //stopping criteria
 #define STOPIF(expr, code, ret) if(expr){ if(o.verbose>1) cout <<"\t\t\t\t\t\t--- stopping criterion='" <<#expr <<"'" <<endl; code; return stopCriterion=ret; }
@@ -215,7 +215,7 @@ uint Rprop::loop(arr& _x,
     //compute value and gradient at x
     fx = f(J, NoArr, x);  evals++;
 
-    if(verbose>0){ fil <<evals <<' ' <<eval_count <<' ' << fx <<' ' <<diff <<' '; x.writeRaw(fil); fil <<endl; }
+    if(verbose>0) { fil <<evals <<' ' <<eval_count <<' ' << fx <<' ' <<diff <<' '; x.writeRaw(fil); fil <<endl; }
     if(verbose>1) cout <<"optRprop " <<evals <<' ' <<eval_count <<" \tf(x)=" <<fx <<" \tdiff=" <<diff <<" \tx=" <<(x.N<20?x:arr()) <<endl;
 
     //infeasible point! undo the previous step

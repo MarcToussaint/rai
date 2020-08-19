@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -101,10 +101,10 @@ struct TaskControlMethods {
   /// @{ @name adding tasks
   CtrlObjective* addPDTask(const char* name, double decayTime, double dampingRatio, Feature* map);
   CtrlObjective* addPDTask(const char* name,
-                      double decayTime, double dampingRatio,
-                      TM_DefaultType type,
-                      const char* iShapeName=nullptr, const rai::Vector& ivec=NoVector,
-                      const char* jShapeName=nullptr, const rai::Vector& jvec=NoVector);
+                           double decayTime, double dampingRatio,
+                           TM_DefaultType type,
+                           const char* iShapeName=nullptr, const rai::Vector& ivec=NoVector,
+                           const char* jShapeName=nullptr, const rai::Vector& jvec=NoVector);
   ConstraintForceTask* addConstraintForceTask(const char* name, Feature* map);
   /// @}
 

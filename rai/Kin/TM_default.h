@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -40,10 +40,10 @@ struct TM_Default : Feature {
   TM_Default(TM_DefaultType type, const rai::Configuration& K,
              const char* iShapeName=nullptr, const rai::Vector& ivec=NoVector,
              const char* jShapeName=nullptr, const rai::Vector& jvec=NoVector);
-             
+
   TM_Default(const rai::Graph& parameters, const rai::Configuration& G);
   TM_Default(const rai::Node* parameters, const rai::Configuration& G);
-  
+
   virtual void phi(arr& y, arr& J, const rai::Configuration& C);
   virtual uint dim_phi(const rai::Configuration& C);
   virtual void signature(intA& S, const rai::Configuration& C);

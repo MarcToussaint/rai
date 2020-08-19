@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -462,7 +462,7 @@ void rai::Mesh::computeNormals() {
   for(uint i=0; i<Vn.d0; i++) { d.set(&Vn(i, 0)); Vn[i]()/=d.length(); }
 }
 
-arr rai::Mesh::computeTriDistances(){
+arr rai::Mesh::computeTriDistances() {
   if(!Tn.N) computeNormals();
   arr d(T.d0);
   Vector n, a, b, c;
@@ -1063,12 +1063,11 @@ void rai::Mesh::readFile(const char* filename) {
 
 void rai::Mesh::read(std::istream& is, const char* fileExtension, const char* filename) {
   if(!strcmp(fileExtension, "ply")
-     || !strcmp(fileExtension, "PLY")
-     || !strcmp(fileExtension, "dae")
-     || !strcmp(fileExtension, "DAE")) {
+      || !strcmp(fileExtension, "PLY")
+      || !strcmp(fileExtension, "dae")
+      || !strcmp(fileExtension, "DAE")) {
     *this = AssimpLoader(filename, false).getSingleMesh();
-  }
-  else if(!strcmp(fileExtension, "obj")) { readObjFile(is); }
+  } else if(!strcmp(fileExtension, "obj")) { readObjFile(is); }
   else if(!strcmp(fileExtension, "off")) { readOffFile(is); }
   else if(!strcmp(fileExtension, "ply")) { readPLY(filename); }
   else if(!strcmp(fileExtension, "tri")) { readTriFile(is); }
@@ -2336,14 +2335,14 @@ void rai::Mesh::buildGraph() {
   }
 }
 
-inline double __scalarProduct(const double *p1, const double* p2){
+inline double __scalarProduct(const double* p1, const double* p2) {
   return p1[0]*p2[0]+p1[1]*p2[1]+p1[2]*p2[2];
 }
 
-uint rai::Mesh::support(const double *dir) {
+uint rai::Mesh::support(const double* dir) {
 #if 1
 
-  arr _dir(dir,3);
+  arr _dir(dir, 3);
   arr q = V*_dir;
   return argmax(q);
 
@@ -2352,9 +2351,9 @@ uint rai::Mesh::support(const double *dir) {
   double s = __scalarProduct(dir, V.p);
   double ms=s;
   uint mi=0;
-  for(uint i=0;i<V.d0;i++){
+  for(uint i=0; i<V.d0; i++) {
     s = __scalarProduct(dir, V.p+3*i);
-    if(s>ms){ ms = s;  mi = i; }
+    if(s>ms) { ms = s;  mi = i; }
   }
   _support_vertex = mi;
   return _support_vertex;
@@ -2370,16 +2369,16 @@ uint rai::Mesh::support(const double *dir) {
     uintA& neigh=graph.p[mi];
 
     bool stop=true;
-    for(uint i:neigh){
+    for(uint i:neigh) {
       s = __scalarProduct(dir, V.p+3*i);
-      if(s>ms){
+      if(s>ms) {
         mi = i;
         ms = s;
         stop = false;
         break;
       }
     }
-    if(stop){
+    if(stop) {
       _support_vertex = mi;
       return _support_vertex;
     }

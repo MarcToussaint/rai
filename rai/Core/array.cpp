@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -260,9 +260,9 @@ extern bool useLapack;
 
 void normalizeWithJac(arr& y, arr& J) {
   double l = length(y);
-  if(l<1e-10){
+  if(l<1e-10) {
     LOG(-1) <<"can't normalize vector of length " <<l;
-  }else{
+  } else {
     y /= l;
     if(!!J && J.N) {
       J -= y*(~y*J); //same as (y^y)*J;
@@ -2486,9 +2486,9 @@ void SparseMatrix::add(const SparseMatrix& a, double coeff) {
   uint Nold=Z.N;
   resizeCopy(Z.d0, Z.d1, Z.N + a.Z.N);
   for(uint j=0; j<a.Z.N; j++) {
-    if(coeff==1.){
+    if(coeff==1.) {
       entry(a.elems(j, 0), a.elems(j, 1), Nold+j) = a.Z.elem(j);
-    }else{
+    } else {
       entry(a.elems(j, 0), a.elems(j, 1), Nold+j) = coeff * a.Z.elem(j);
     }
   }
@@ -2780,5 +2780,4 @@ void linkArray() { cout <<"*** libArray.so dynamically loaded ***" <<endl; }
 //  for(const char* t : list) append(rai::String(t));
 //}
 //}
-
 

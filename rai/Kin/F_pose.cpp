@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -22,12 +22,12 @@ void F_Pose::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
   tmp.flipTargetSignOnNegScalarProduct=true;
   tmp.Feature::__phi(yq, (!!J?Jq:NoArr), Ctuple);
   y.resize(yp.N+yq.N);
-  y.setVectorBlock(yp,0);
-  y.setVectorBlock(yq,3);
-  if(!!J){
+  y.setVectorBlock(yp, 0);
+  y.setVectorBlock(yq, 3);
+  if(!!J) {
     J.resize(y.N, Jp.d1);
-    J.setMatrixBlock(Jp,0,0);
-    J.setMatrixBlock(Jq,3,0);
+    J.setMatrixBlock(Jp, 0, 0);
+    J.setMatrixBlock(Jq, 3, 0);
   }
 #else //should be identical
   if(order==2) {
@@ -100,12 +100,12 @@ void F_PoseDiff::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
   tmp.flipTargetSignOnNegScalarProduct=true;
   tmp.Feature::__phi(yq, (!!J?Jq:NoArr), Ctuple);
   y.resize(yp.N+yq.N);
-  y.setVectorBlock(yp,0);
-  y.setVectorBlock(yq,3);
-  if(!!J){
+  y.setVectorBlock(yp, 0);
+  y.setVectorBlock(yq, 3);
+  if(!!J) {
     J.resize(y.N, Jp.d1);
-    J.setMatrixBlock(Jp,0,0);
-    J.setMatrixBlock(Jq,3,0);
+    J.setMatrixBlock(Jp, 0, 0);
+    J.setMatrixBlock(Jq, 3, 0);
   }
 }
 
@@ -121,12 +121,12 @@ void F_PoseRel::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
   tmp.flipTargetSignOnNegScalarProduct=true;
   tmp.Feature::__phi(yq, (!!J?Jq:NoArr), Ctuple);
   y.resize(yp.N+yq.N);
-  y.setVectorBlock(yp,0);
-  y.setVectorBlock(yq,3);
-  if(!!J){
+  y.setVectorBlock(yp, 0);
+  y.setVectorBlock(yq, 3);
+  if(!!J) {
     J.resize(y.N, Jp.d1);
-    J.setMatrixBlock(Jp,0,0);
-    J.setMatrixBlock(Jq,3,0);
+    J.setMatrixBlock(Jp, 0, 0);
+    J.setMatrixBlock(Jq, 3, 0);
   }
 }
 

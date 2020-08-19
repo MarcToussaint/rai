@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -16,15 +16,15 @@
 //===========================================================================
 
 namespace rai {
-  struct Node;
-  template<class T> struct Node_typed;
-  template<class T> struct ArrayG;
-  struct Graph;
-  struct ParseInfo;
-  struct RenderingInfo;
-  struct GraphEditCallback;
-  typedef Array<Node*> NodeL;
-  typedef Array<GraphEditCallback*> GraphEditCallbackL;
+struct Node;
+template<class T> struct Node_typed;
+template<class T> struct ArrayG;
+struct Graph;
+struct ParseInfo;
+struct RenderingInfo;
+struct GraphEditCallback;
+typedef Array<Node*> NodeL;
+typedef Array<GraphEditCallback*> GraphEditCallbackL;
 }
 extern rai::NodeL& NoNodeL; //this is a reference to nullptr! (for optional arguments)
 extern rai::Graph& NoGraph; //this is a reference to nullptr! (for optional arguments)

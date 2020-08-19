@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -17,7 +17,7 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
   struct fitSSBoxProblem : MathematicalProgram {
     const arr& X;
     fitSSBoxProblem(const arr& X):X(X) {}
-    virtual void getFeatureTypes(ObjectiveTypeA &tt){ tt.resize(5+X.d0); tt=OT_ineq; tt(0) = OT_f; }
+    virtual void getFeatureTypes(ObjectiveTypeA& tt) { tt.resize(5+X.d0); tt=OT_ineq; tt(0) = OT_f; }
     void evaluate(arr& phi, arr& J, const arr& x) {
       phi.resize(5+X.d0);
       if(!!J) {  J.resize(5+X.d0, 11); J.setZero(); }
@@ -55,9 +55,9 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
         if(!!J) J[i+5] = Jy({3, -1});
       }
     }
-    virtual void getFHessian(arr &H, const arr& x){
+    virtual void getFHessian(arr& H, const arr& x) {
       double a=x(0), b=x(1), c=x(2), r=x(3); //these are box-wall-coordinates --- not WIDTH!
-      H.resize(4,4);
+      H.resize(4, 4);
       H(0, 1) = H(1, 0) = c + 2.*r;
       H(0, 2) = H(2, 0) = b + 2.*r;
       H(0, 3) = H(3, 0) = 2.*(b+c);
@@ -165,7 +165,7 @@ void minimalConvexCore(arr& core, const arr& points, double radius, int verbose)
       gl.add(m0);
       gl.add(m1);
     }
-    virtual void getFeatureTypes(ObjectiveTypeA &tt){ tt = consts<ObjectiveType>(OT_ineq, X.d0+1); tt(0) = OT_f; }
+    virtual void getFeatureTypes(ObjectiveTypeA& tt) { tt = consts<ObjectiveType>(OT_ineq, X.d0+1); tt(0) = OT_f; }
     void evaluate(arr& phi, arr& J, const arr& x) {
       uint n = X.d0;
       arr _x = x.ref().reshape(-1, 3);
@@ -388,7 +388,6 @@ void minimalConvexCore3(arr& core, const arr& org_pts, double max_radius, int ve
   HALT("obsolete");
   //kmeans(centers.p, pts.p, labels.p, 3, pts.d0, k, 100, 3);
 
-
   core = centers;
 }
 
@@ -403,7 +402,7 @@ struct LinearProgram : MathematicalProgram {
 
   uint dim_x() { return c.N; }
 
-  virtual void getFeatureTypes(ObjectiveTypeA &ot){ ot.resize(1+G.d0); ot = OT_ineq; ot(0) = OT_f; }
+  virtual void getFeatureTypes(ObjectiveTypeA& ot) { ot.resize(1+G.d0); ot = OT_ineq; ot(0) = OT_f; }
   virtual void evaluate(arr& phi, arr& J, const arr& x) {
     phi.resize(1+G.d0);
     if(!!J) J.resize(phi.N, x.N).setZero();
@@ -455,7 +454,7 @@ double sphereReduceConvex(rai::Mesh& M, double radius, int verbose) {
 struct FitSphereProblem : MathematicalProgram {
   const arr& X;
   FitSphereProblem(const arr& X):X(X) {}
-  virtual void getFeatureTypes(ObjectiveTypeA &tt) { tt.resize(1+X.d0); tt=OT_ineq;   tt(0) = OT_f; }
+  virtual void getFeatureTypes(ObjectiveTypeA& tt) { tt.resize(1+X.d0); tt=OT_ineq;   tt(0) = OT_f; }
   void evaluate(arr& phi, arr& J, const arr& x) {
     CHECK_EQ(x.N, 4, "");  //x,y,z,radius
     phi.resize(1+X.d0);
@@ -483,7 +482,7 @@ struct FitSphereProblem : MathematicalProgram {
 struct FitCapsuleProblem : MathematicalProgram {
   const arr& X;
   FitCapsuleProblem(const arr& X):X(X) {}
-  virtual void getFeatureTypes(ObjectiveTypeA &tt){ tt.resize(2+X.d0); tt=OT_ineq; tt(0) = OT_f; }
+  virtual void getFeatureTypes(ObjectiveTypeA& tt) { tt.resize(2+X.d0); tt=OT_ineq; tt(0) = OT_f; }
   void evaluate(arr& phi, arr& J, const arr& x) {
     CHECK_EQ(x.N, 7, "");  //x,y,z, x,y,z, radius
     phi.resize(2+X.d0);
@@ -531,7 +530,7 @@ struct FitCapsuleProblem : MathematicalProgram {
     }
     checkNan(J);
   }
-  virtual void getFHessian(arr &H, const arr &x) {
+  virtual void getFHessian(arr& H, const arr& x) {
     arr a = x({0, 2});
     arr b = x({3, 5});
     double l = length(a-b);

@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -21,14 +21,14 @@
  */
 
 namespace rai {
-  struct Configuration;
-  struct Frame;
-  struct Joint;
-  struct Shape;
-  struct Inertia;
-  struct ForceExchange;
-  enum JointType { JT_none=-1, JT_hingeX=0, JT_hingeY=1, JT_hingeZ=2, JT_transX=3, JT_transY=4, JT_transZ=5, JT_transXY=6, JT_trans3=7, JT_transXYPhi=8, JT_universal=9, JT_rigid=10, JT_quatBall=11, JT_phiTransXY=12, JT_XBall, JT_free, JT_tau };
-  enum BodyType  { BT_none=-1, BT_dynamic=0, BT_kinematic, BT_static };
+struct Configuration;
+struct Frame;
+struct Joint;
+struct Shape;
+struct Inertia;
+struct ForceExchange;
+enum JointType { JT_none=-1, JT_hingeX=0, JT_hingeY=1, JT_hingeZ=2, JT_transX=3, JT_transY=4, JT_transZ=5, JT_transXY=6, JT_trans3=7, JT_transXYPhi=8, JT_universal=9, JT_rigid=10, JT_quatBall=11, JT_phiTransXY=12, JT_XBall, JT_free, JT_tau };
+enum BodyType  { BT_none=-1, BT_dynamic=0, BT_kinematic, BT_static };
 }
 
 typedef rai::Array<rai::Frame*> FrameL;
@@ -74,7 +74,7 @@ struct Frame : NonCopyable {
   Frame* parent=nullptr;   ///< parent frame
   FrameL children;         ///< list of children
 
-protected:
+ protected:
   Transformation Q=0;        ///< relative transform to parent
   Transformation X=0;        ///< frame's absolute pose
   //data structure state (lazy evaluation leave the state structure out of sync)
@@ -86,7 +86,7 @@ protected:
   void calc_X_from_parent();
   void calc_Q_from_parent(bool enforceWithinJoint = true);
 
-public:
+ public:
   double tau=0.;             ///< frame's absolute time (could be thought as part of the transformation X in space-time)
   Graph ats;                 ///< list of any-type attributes
 

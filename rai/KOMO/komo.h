@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -91,7 +91,7 @@ void writeSkeleton(std::ostream& os, const Skeleton& S, const intA& switches= {}
 //===========================================================================
 
 namespace rai {
-  enum KOMOsolver { KS_none=-1, KS_dense=0, KS_sparse, KS_banded, KS_sparseFactored, KS_NLopt, KS_Ipopt, KS_Ceres };
+enum KOMOsolver { KS_none=-1, KS_dense=0, KS_sparse, KS_banded, KS_sparseFactored, KS_NLopt, KS_Ipopt, KS_Ceres };
 }
 
 //===========================================================================
@@ -119,7 +119,7 @@ struct KOMO : NonCopyable {
   rai::KOMOsolver solver=rai::KS_banded;
 //  bool denseOptimization=false;///< calls optimization with a dense (instead of banded) representation
 //  bool sparseOptimization=false;///< calls optimization with a sparse (instead of banded) representation
-  OptConstrained *opt=0;       ///< optimizer; created in run()
+  OptConstrained* opt=0;       ///< optimizer; created in run()
   arr x, dual;                 ///< the primal and dual solution
   arr z, splineB;              ///< when a spline representation is used: z are the nodes; splineB the B-spline matrix; x = splineB * z
   arr bound_lo, bound_up;      ///< bounds for clipping within Newton
@@ -191,7 +191,6 @@ struct KOMO : NonCopyable {
   void setSlow(double startTime, double endTime, double prec=1e1, bool hardConstrained=false);
   void setSlowAround(double time, double delta, double prec=1e1, bool hardConstrained=false);
 
-
   //-- core kinematic switch symbols of skeletons
   void addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode,
                       double time, double endTime,
@@ -206,10 +205,8 @@ struct KOMO : NonCopyable {
   void addSwitch_magicTrans(double time, double endTime, const char* from, const char* to, double sqrAccCost);
   void addSwitch_on(double time, const char* from, const char* to, bool copyInitialization=false);
 
-
   //-- objectives - logic level (used within LGP)
   void setSkeleton(const Skeleton& S, bool ignoreSwitches=false);
-
 
   //macros for pick-and-place in CGO -- should perhaps not be here.. KOMOext?
   void add_StableRelativePose(const std::vector<int>& confs, const char* gripper, const char* object) {
@@ -267,13 +264,13 @@ struct KOMO : NonCopyable {
   //-- reading results
   rai::Configuration& getConfiguration(double phase); ///< get any configuration by its phase time
   rai::Configuration& getConfiguration_t(int t);      ///< get any configuration (also prefix configurations) by its index
-  arr getJointState(double phase){ return getConfiguration(phase).getJointState();}
-  arr getFrameState(double phase){ return getConfiguration(phase).getFrameState(); }
+  arr getJointState(double phase) { return getConfiguration(phase).getJointState();}
+  arr getFrameState(double phase) { return getConfiguration(phase).getFrameState(); }
   uint getPath_totalDofs();                    ///< get the number of all DOFs of the path (the overall dimensionality of the problem)
   arr getPath_decisionVariable();              ///< get all DOFs of all configurations in a single flat vector (the decision variable of optimization)
-  arr getPath(const StringA& joints={});       ///< get joint path, optionally for selected joints
+  arr getPath(const StringA& joints= {});      ///< get joint path, optionally for selected joints
   arr getPath(const uintA& joints);            ///< get joint path for selected joints
-  arr getPath_frames(const StringA& frame={}); ///< get frame path, optionally for selected frames
+  arr getPath_frames(const StringA& frame= {}); ///< get frame path, optionally for selected frames
   arr getPath_frames(const uintA& frames);     ///< get frame path for selected frames
   arrA getPath_q();                            ///< get the DOFs (of potentially varying dimensionality) for each configuration
   arr getPath_tau();
@@ -304,7 +301,7 @@ struct KOMO : NonCopyable {
   // internal (kind of private)
   //
 
-  void selectJointsBySubtrees(const StringA& roots, const arr& times={}, bool notThose=false);
+  void selectJointsBySubtrees(const StringA& roots, const arr& times= {}, bool notThose=false);
   void setupConfigurations(const arr& q_init=NoArr, const StringA& q_initJoints=NoStringA);   ///< this creates the @configurations@, that is, copies the original world T times (after setTiming!) perhaps modified by KINEMATIC SWITCHES and FLAGS
   void setupRepresentations();
   void checkBounds(const arr& x);
@@ -319,9 +316,9 @@ struct KOMO : NonCopyable {
     uint dimPhi;
     uintA phiIndex, phiDim;
     StringA featureNames;
-    
+
     Conv_KOMO_KOMOProblem_toBeRetired(KOMO& _komo) : komo(_komo) {}
-    void clear(){ dimPhi=0; phiIndex.clear(); phiDim.clear(); featureNames.clear(); }
+    void clear() { dimPhi=0; phiIndex.clear(); phiDim.clear(); featureNames.clear(); }
 
     virtual uint get_k() { return komo.k_order; }
     virtual void getStructure(uintA& variableDimensions, uintA& featureTimes, ObjectiveTypeA& featureTypes);
@@ -332,10 +329,10 @@ struct KOMO : NonCopyable {
   struct Conv_KOMO_FactoredNLP : MathematicalProgram_Factored {
     KOMO& komo;
 
-    struct VariableIndexEntry{ uint t; uint dim; uint xIndex; };
+    struct VariableIndexEntry { uint t; uint dim; uint xIndex; };
     rai::Array<VariableIndexEntry> variableIndex;
 
-    struct FeatureIndexEntry{ ptr<Objective> ob; ConfigurationL Ctuple; uint t; intA varIds; uint dim; uint phiIndex; };
+    struct FeatureIndexEntry { ptr<Objective> ob; ConfigurationL Ctuple; uint t; intA varIds; uint dim; uint phiIndex; };
     rai::Array<FeatureIndexEntry> featureIndex;
 
     uintA xIndex2VarId;
@@ -346,7 +343,7 @@ struct KOMO : NonCopyable {
     virtual uint getDimension();
     virtual void getFeatureTypes(ObjectiveTypeA& featureTypes);
     virtual void getBounds(arr& bounds_lo, arr& bounds_up);
-    virtual arr getInitializationSample(const arrL& previousOptima={});
+    virtual arr getInitializationSample(const arrL& previousOptima= {});
     virtual void getFactorization(uintA& variableDimensions, uintA& featureDimensions, intAA& featureVariables);
 
     virtual void setSingleVariable(uint var_id, const arr& x); //set a single variable block
@@ -357,11 +354,11 @@ struct KOMO : NonCopyable {
   struct Conv_KOMO_FineStructuredProblem : MathematicalProgram_Factored {
     KOMO& komo;
     uintA xIndex2VarId;
-    struct VariableIndexEntry{ rai::Joint *joint=0; rai::ForceExchange *force=0; uint dim; uint xIndex; };
+    struct VariableIndexEntry { rai::Joint* joint=0; rai::ForceExchange* force=0; uint dim; uint xIndex; };
     rai::Array<VariableIndexEntry> variableIndex;
 
     uint featuresDim;
-    struct FeatureIndexEntry{ ptr<Objective> ob; ConfigurationL Ctuple; uint t; uint dim; intA varIds; };
+    struct FeatureIndexEntry { ptr<Objective> ob; ConfigurationL Ctuple; uint t; uint dim; intA varIds; };
     rai::Array<FeatureIndexEntry> featureIndex;
 
     Conv_KOMO_FineStructuredProblem(KOMO& _komo);
@@ -393,14 +390,14 @@ struct KOMO : NonCopyable {
     arr quadraticPotentialLinear, quadraticPotentialHessian;
 
     Conv_KOMO_SparseNonfactored(KOMO& _komo, bool sparse=true) : komo(_komo), sparse(sparse) {}
-    void clear(){ dimPhi=0; }
+    void clear() { dimPhi=0; }
 
     void getDimPhi();
 
-    virtual uint getDimension(){ return komo.getPath_totalDofs(); }
+    virtual uint getDimension() { return komo.getPath_totalDofs(); }
     virtual void getFeatureTypes(ObjectiveTypeA& ft);
     virtual void getBounds(arr& bounds_lo, arr& bounds_up);
-    virtual arr getInitializationSample(const arrL& previousOptima={});
+    virtual arr getInitializationSample(const arrL& previousOptima= {});
     virtual void evaluate(arr& phi, arr& J, const arr& x);
     virtual void getFHessian(arr& H, const arr& x);
   };
@@ -410,7 +407,7 @@ struct KOMO : NonCopyable {
     uint dimPhi=0;
 
     Conv_KOMO_GraphProblem_toBeRetired(KOMO& _komo) : komo(_komo) {}
-    void clear(){ dimPhi=0; }
+    void clear() { dimPhi=0; }
 
     virtual void getStructure(uintA& variableDimensions, intAA& featureVariables, ObjectiveTypeA& featureTypes);
     virtual void phi(arr& phi, arrA& J, arrA& H, const arr& x);
@@ -429,7 +426,7 @@ struct KOMO : NonCopyable {
 
     void getDimPhi();
 
-    virtual uint getDimension(){ return komo.getPath_totalDofs(); }
+    virtual uint getDimension() { return komo.getPath_totalDofs(); }
     virtual void getFeatureTypes(ObjectiveTypeA& ft);
     virtual void evaluate(arr& phi, arr& J, const arr& x);
   };

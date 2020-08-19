@@ -81,7 +81,6 @@ void TEST(MathematicalProgram){
 
   cout <<"optimum: " <<x <<endl;
 
-
 }
 
 //==============================================================================
@@ -99,8 +98,6 @@ int main(int argc,char** argv){
 
 //  testCoveringSphere();
 //  testMathematicalProgram();
-
-
 
   return 0;
 }

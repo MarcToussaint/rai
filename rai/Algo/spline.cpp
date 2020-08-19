@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -44,8 +44,8 @@ arr Spline::getCoeffs(double t, uint K, uint derivative) const {
   arr b(K+1), b_0(K+1), db(K+1), db_0(K+1), ddb(K+1), ddb_0(K+1);
   for(uint p=0; p<=degree; p++) {
     b_0=b; b.setZero();
-    if(derivative>0){ db_0=db; db.setZero(); }
-    if(derivative>1){ ddb_0=ddb; ddb.setZero(); }
+    if(derivative>0) { db_0=db; db.setZero(); }
+    if(derivative>1) { ddb_0=ddb; ddb.setZero(); }
     for(uint k=0; k<=K; k++) {
       if(!p) {
         if(!k && t<times(0)) b(k)=1.;

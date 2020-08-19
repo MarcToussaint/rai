@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -41,7 +41,6 @@ struct KOMO_ext : KOMO {
   void setAlign(double startTime, double endTime, const char* shape,  const arr& whichAxis=ARR(1., 0., 0.), const char* shapeRel=nullptr, const arr& whichAxisRel=ARR(1., 0., 0.), ObjectiveType type=OT_sos, const arr& target=ARR(1.), double prec=1e2);
   void setAlignedStacking(double time, const char* object, ObjectiveType type=OT_sos, double prec=1e2);
   void setLastTaskToBeVelocity();
-
 
   //-- core objective symbols of skeletons
   void add_touch(double startTime, double endTime, const char* shape1, const char* shape2, ObjectiveType type=OT_eq, const arr& target=NoArr, double prec=1e2);

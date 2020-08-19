@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "CtrlSolvers.h"
 #include "CtrlProblem.h"
 
@@ -123,7 +131,6 @@ if(true || cost>10.) { //calling an optimizer!
   cout <<" cost=" <<cost <<endl;
 }
 #endif
-
 
 arr TaskControlMethods::inverseKinematics_hierarchical(CtrlObjectiveL& tasks) {
   uint maxHierarchy=0;
@@ -408,24 +415,26 @@ TaskControlMethods::TaskControlMethods(const arr& _Hmetric)
 }
 
 CtrlObjective* TaskControlMethods::addPDTask(CtrlObjectiveL& tasks, const char* name, double decayTime, double dampingRatio, ptr<Feature> feat) {
-NIY}
+  NIY
+}
 
 void TaskControlMethods::lockJointGroup(const char* groupname, rai::Configuration& world, bool lockThem) {
-NIY}
+  NIY
+}
 
 double TaskControlMethods::getIKCosts(CtrlObjectiveL& tasks, const arr& q, const arr& q0, arr& g, arr& H) {
-NIY}
-
+  NIY
+}
 
 arr TaskControlMethods::inverseKinematics(const ConfigurationL& Ctuple, CtrlObjectiveL& tasks, arr& qdot, const arr& P_compliance, const arr& nullRef, double* cost) {
   arr y, v, J, J_vel; //separate J only for velocity tasks
   arr t_y, t_J;
-  for(auto &t: tasks) {
+  for(auto& t: tasks) {
     if(t->active) {
 //      if(t->ref->y_ref.N) {
-        t->feat->__phi(t_y, t_J, Ctuple);
-        y.append(-t_y);
-        J.append(t_J);
+      t->feat->__phi(t_y, t_J, Ctuple);
+      y.append(-t_y);
+      J.append(t_J);
 //      }
 //      if((!!qdot) && t->ref->v_ref.N) {
 //        v.append(t->scale*(t->ref->v_ref));
@@ -481,13 +490,16 @@ arr TaskControlMethods::inverseKinematics(const ConfigurationL& Ctuple, CtrlObje
 }
 
 arr TaskControlMethods::inverseKinematics_hierarchical(CtrlObjectiveL& tasks) {
-NIY}
+  NIY
+}
 
 arr TaskControlMethods::getComplianceProjection(CtrlObjectiveL& tasks) {
-NIY}
+  NIY
+}
 
 void TaskControlMethods::reportCurrentState(CtrlObjectiveL& tasks) {
-NIY}
+  NIY
+}
 
 //void TaskControlMethods::updateConstraintControllers(){
 //  arr y;
@@ -515,26 +527,31 @@ NIY}
 //}
 
 arr TaskControlMethods::operationalSpaceControl(CtrlObjectiveL& tasks) {
-NIY}
+  NIY
+}
 
 arr TaskControlMethods::getDesiredLinAccLaw(CtrlObjectiveL& tasks, arr& Kp, arr& Kd, arr& k, const arr& q, const arr& qdot) {
-NIY}
+  NIY
+}
 
 arr TaskControlMethods::calcOptimalControlProjected(CtrlObjectiveL& tasks, arr& Kp, arr& Kd, arr& u0, const arr& q, const arr& qdot, const arr& M, const arr& F) {
-NIY}
+  NIY
+}
 
 void fwdSimulateControlLaw(arr& Kp, arr& Kd, arr& u0, rai::Configuration& world) {
-NIY}
+  NIY
+}
 
 void TaskControlMethods::calcForceControl(CtrlObjectiveL& tasks, arr& K_ft, arr& J_ft_inv, arr& fRef, double& gamma, const rai::Configuration& world) {
-NIY}
+  NIY
+}
 
 #endif
 
 CtrlProblem_MathematicalProgram::CtrlProblem_MathematicalProgram(CtrlProblem& _CP)
   : CP(_CP) {
-  for(uint k=0;k<2;k++){
-    rai::Configuration *C = Ctuple.append(new rai::Configuration());
+  for(uint k=0; k<2; k++) {
+    rai::Configuration* C = Ctuple.append(new rai::Configuration());
     C->copy(CP.komo.world, true);
     C->setTimes(CP.tau);
     C->ensure_q();
@@ -542,7 +559,7 @@ CtrlProblem_MathematicalProgram::CtrlProblem_MathematicalProgram(CtrlProblem& _C
   }
 }
 
-uint CtrlProblem_MathematicalProgram::getDimension(){
+uint CtrlProblem_MathematicalProgram::getDimension() {
   return CP.komo.world.getJointStateDimension();
 }
 
@@ -551,14 +568,13 @@ void CtrlProblem_MathematicalProgram::getBounds(arr& bounds_lo, arr& bounds_up) 
   bounds_lo = limits[0];
   bounds_up = limits[1];
 
-
   //velocity bounds
   arr q_1 = Ctuple(-2)->getJointState();
   bounds_lo = elemWiseMax(bounds_lo, q_1 - CP.maxVel*CP.tau);
   bounds_up = elemWiseMin(bounds_up, q_1 + CP.maxVel*CP.tau);
 
   //acceleration bounds
-  if(Ctuple.N>=3){
+  if(Ctuple.N>=3) {
     arr q_2 = Ctuple(-3)->getJointState();
     bounds_lo = elemWiseMax(bounds_lo, 2.*q_1 - q_2 - (CP.maxAcc*CP.tau*CP.tau));
     bounds_up = elemWiseMin(bounds_up, 2.*q_1 - q_2 + (CP.maxAcc*CP.tau*CP.tau));
@@ -566,35 +582,35 @@ void CtrlProblem_MathematicalProgram::getBounds(arr& bounds_lo, arr& bounds_up) 
 }
 
 void CtrlProblem_MathematicalProgram::getFeatureTypes(ObjectiveTypeA& featureTypes) {
-  for(auto &o: CP.objectives) {
+  for(auto& o: CP.objectives) {
     uint d = o->feat->__dim_phi(CP.komo.world);
     featureTypes.append(consts<ObjectiveType>(o->type, d));
   }
   dimPhi = featureTypes.N;
 }
 
-void CtrlProblem_MathematicalProgram::getNames(StringA& variableNames, StringA& featureNames){
+void CtrlProblem_MathematicalProgram::getNames(StringA& variableNames, StringA& featureNames) {
   variableNames = CP.komo.world.getJointNames();
-  for(auto &o: CP.objectives) {
+  for(auto& o: CP.objectives) {
     uint d = o->feat->__dim_phi(CP.komo.world);
     featureNames.append(consts<rai::String>(o->name, d));
   }
 }
 
-arr CtrlProblem_MathematicalProgram::getInitializationSample(const arrL& previousOptima){
+arr CtrlProblem_MathematicalProgram::getInitializationSample(const arrL& previousOptima) {
   NIY;
 }
 
-void CtrlProblem_MathematicalProgram::evaluate(arr& phi, arr& J, const arr& x){
+void CtrlProblem_MathematicalProgram::evaluate(arr& phi, arr& J, const arr& x) {
   Ctuple(-1)->setJointState(x);
   Ctuple(-1)->stepSwift();
 
-  if(!dimPhi){
+  if(!dimPhi) {
     ObjectiveTypeA featureTypes;
     getFeatureTypes(featureTypes);
   }
   phi.resize(dimPhi);
-  if(!!J){
+  if(!!J) {
     bool SPARSE_JACOBIANS = false;
     if(!SPARSE_JACOBIANS) {
       J.resize(dimPhi, x.N).setZero();
@@ -622,9 +638,9 @@ void CtrlProblem_MathematicalProgram::evaluate(arr& phi, arr& J, const arr& x){
     phi.setVectorBlock(y, M);
 
     if(!!J) {
-      if(!isSpecial(Jy)){
+      if(!isSpecial(Jy)) {
         J.setMatrixBlock(Jy.sub(0, -1, kdim(-2), kdim(-1)-1), M, 0);
-      }else{
+      } else {
         Jy.sparse().reshape(J.d0, J.d1);
         Jy.sparse().colShift(M);
         Jy.sparse().rowShift(-kdim(-2));

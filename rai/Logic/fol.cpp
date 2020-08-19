@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -15,7 +15,7 @@
 //}
 
 /// any node that has a key, no parents, and is bool, is a symbol declaration
-bool isSymbol(rai::Node* n){
+bool isSymbol(rai::Node* n) {
   return n->key.N>0 && n->parents.N==0 && n->isOfType<bool>() && n->key(0)!='%';
 }
 
@@ -44,10 +44,10 @@ Node* getFirstNonSymbolOfScope(Graph& KB) {
 //typically: the preconditions of a rule!
 Node* getSecondNonSymbolOfScope(Graph& KB) {
   uint count=2;
-  for(Node* i:KB) if(!isSymbol(i)){
-    count--;
-    if(!count) return i;
-  }
+  for(Node* i:KB) if(!isSymbol(i)) {
+      count--;
+      if(!count) return i;
+    }
   return nullptr;
 }
 
@@ -146,8 +146,8 @@ bool getEqualFactInKB(Graph& KB, Node* fact, bool checkAlsoValue) {
 #endif
   //now check only these candidates
   for(Node* fact1:candidates) if(&fact1->container==&KB && fact1!=fact) {
-    if(factsAreEqual(fact, fact1, checkAlsoValue)) return true;
-  }
+      if(factsAreEqual(fact, fact1, checkAlsoValue)) return true;
+    }
   return false;
 }
 
@@ -250,7 +250,7 @@ void removeInfeasibleSymbolsFromDomain(Graph& facts, NodeL& domain, Node* litera
     if(literal->parents.N != fact->parents.N) {
       match = false;
     }
-    if(match){
+    if(match) {
       for(uint i=0; i<literal->parents.N; i++) {
         Node* lit_arg = literal->parents(i);
         Node* fact_arg = fact->parents(i);
@@ -668,5 +668,4 @@ double evaluateFunction(Graph& func, Graph& state, int verbose) {
   }
   return f;
 }
-
 

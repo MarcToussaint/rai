@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -97,17 +97,16 @@ void Conv_Graph_MathematicalProgram::phi(arr& phi, arr& J, arr& H, ObjectiveType
 #else
 
 //sparse
-uint Conv_Graph_MathematicalProgram::getDimension(){
+uint Conv_Graph_MathematicalProgram::getDimension() {
   return varDimIntegral.elem(-1);
 }
 
-void Conv_Graph_MathematicalProgram::getFeatureTypes(ObjectiveTypeA& ft){
+void Conv_Graph_MathematicalProgram::getFeatureTypes(ObjectiveTypeA& ft) {
   if(!!ft) ft = featureTypes;
 }
 
 void Conv_Graph_MathematicalProgram::evaluate(arr& phi, arr& J, const arr& x) {
   G.phi(phi, J_G, H_G, x);
-
 
   //-- construct a sparse J from the array of feature Js
   if(!!J) {

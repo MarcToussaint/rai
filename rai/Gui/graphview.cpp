@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -291,7 +291,6 @@ bool sGraphView::on_drawingarea_configure_event(GtkWidget*       widget,        
   /*      plugin/gtk/callbacks.c */
   /*      plugin/xlib/gvdevice_xlib.c */
   /*      lib/gvc/gvevent.c */
-
 
   GVJ_t* job = gv->gvJob();
   if(!job) return false;
