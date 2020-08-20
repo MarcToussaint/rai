@@ -63,7 +63,7 @@ void CtrlObjective::reportState(ostream& os) const {
   if(!active) cout <<" INACTIVE";
   cout <<rai::Enum<ActStatus>(status) <<' ';
   if(movingTarget) {
-    os <<" \ty_ref=" <<feat->target <<" \ty-residual=" <<y_buffer;
+    movingTarget->reportState(os);
 //    if(ref->v_ref.N==y.N){
 //      os <<" \tv_ref=" <<ref->v_ref;
 //    }

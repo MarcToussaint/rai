@@ -37,9 +37,10 @@ void CtrlProblem::delObjectives(const rai::Array<ptr<CtrlObjective>>& O) {
   }
 }
 
-ptr<CtrlObjective> CtrlProblem::addObjective(const ptr<Feature>& f, ObjectiveType type) {
-  ptr<CtrlObjective> t = make_shared<CtrlObjective>();
-  t->feat = f;
+ptr<CtrlObjective> CtrlProblem::addObjective(const ptr<Feature>& _feat, ObjectiveType _type) {
+  std::shared_ptr<CtrlObjective> t = make_shared<CtrlObjective>();
+  t->feat = _feat;
+  t->type = _type;
   addObjectives({t});
   return t;
 }
@@ -59,7 +60,7 @@ void CtrlProblem::update(rai::Configuration& C) {
   for(auto* c:komo.configurations) c->ensure_q();
 
   //-- step the targets forward, if they have a target
-  for(CtrlObjective* o: objectives) {
+  for(CtrlObjective* o: objectives) if(o->active){
     if(!o->name.N) o->name = o->feat->shortTag(C);
 
     if(o->movingTarget) {
@@ -79,9 +80,10 @@ void CtrlProblem::update(rai::Configuration& C) {
 }
 
 void CtrlProblem::report(std::ostream& os) {
-  for(CtrlObjective* o: objectives) {
-    o->reportState(os);
-  }
+  os <<"    control objectives:" <<endl;
+  for(CtrlObjective* o: objectives) o->reportState(os);
+  os <<"    optimization result:" <<endl;
+  os <<optReport <<endl;
 }
 
 arr CtrlProblem::solve() {
@@ -92,7 +94,7 @@ arr CtrlProblem::solve() {
   return q;
 #elif 1
   komo.clearObjectives();
-  for(CtrlObjective* o: objectives) {
+  for(CtrlObjective* o: objectives) if(o->active){
     komo.addObjective({}, o->feat, o->type);
   }
   OptOptions opt;
@@ -104,6 +106,7 @@ arr CtrlProblem::solve() {
 //  opt.maxStep = 1.;
 //  komo.verbose=4;
   komo.optimize(0., opt);
+  optReport = komo.getReport(false);
   return komo.getPath().reshape(-1);
 #else
   return solve_optim(*this);

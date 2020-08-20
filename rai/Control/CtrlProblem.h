@@ -19,6 +19,7 @@ struct CtrlProblem : NonCopyable {
   double tau;
   double maxVel=1.;
   double maxAcc=1.;
+  rai::Graph optReport;
 
   CtrlObjectiveL objectives;    ///< list of objectives
 

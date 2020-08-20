@@ -582,7 +582,7 @@ void CtrlProblem_MathematicalProgram::getBounds(arr& bounds_lo, arr& bounds_up) 
 }
 
 void CtrlProblem_MathematicalProgram::getFeatureTypes(ObjectiveTypeA& featureTypes) {
-  for(auto& o: CP.objectives) {
+  for(auto& o: CP.objectives) if(o->active) {
     uint d = o->feat->__dim_phi(CP.komo.world);
     featureTypes.append(consts<ObjectiveType>(o->type, d));
   }
@@ -591,7 +591,7 @@ void CtrlProblem_MathematicalProgram::getFeatureTypes(ObjectiveTypeA& featureTyp
 
 void CtrlProblem_MathematicalProgram::getNames(StringA& variableNames, StringA& featureNames) {
   variableNames = CP.komo.world.getJointNames();
-  for(auto& o: CP.objectives) {
+  for(auto& o: CP.objectives) if(o->active) {
     uint d = o->feat->__dim_phi(CP.komo.world);
     featureNames.append(consts<rai::String>(o->name, d));
   }
@@ -621,8 +621,7 @@ void CtrlProblem_MathematicalProgram::evaluate(arr& phi, arr& J, const arr& x) {
 
   arr y, Jy;
   uint M=0;
-  for(uint i=0; i<CP.objectives.N; i++) {
-    CtrlObjective* ob = CP.objectives.elem(i);
+  for(auto& ob: CP.objectives) if(ob->active) {
     uintA kdim = getKtupleDim(Ctuple);
     kdim.prepend(0);
 

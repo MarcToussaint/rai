@@ -109,14 +109,19 @@ ActStatus CtrlTarget_PathCarrot::step(double tau, CtrlObjective* o, const Config
     tau = 0.;
     isTransient=true;
     countInRange=0;
+    countBlocked++;
   } else if(d1+d2 > maxStep) {
-    tau *= (maxStep-d1)/d2;
+    double factor = (maxStep-d1)/d2;
+    tau *= factor;
     goal = spline.eval(time + tau);
     isTransient=true;
     countInRange=0;
+    if(factor<.01) countBlocked++;
+    else countBlocked=0;
   } else {
     isTransient=false;
     countInRange++;
+    countBlocked=0;
   }
 //  cout <<"  tau:" <<tau <<endl;
   time += tau;

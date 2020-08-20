@@ -22,6 +22,9 @@ struct CtrlMovingTarget {
   virtual void resetGoal(const arr& goal) {}
   virtual void setTimeScale(double d) = 0;
   virtual void resetState() = 0;
+  virtual void reportState(ostream& os) const {
+    os <<" (nil)"; //\ty_ref=" <<feat->target <<" \ty-residual=" <<y_buffer;
+  }
 
   virtual arr getResidual(const arr& y_real) { return arr{}; }
 };
@@ -47,6 +50,9 @@ struct CtrlTarget_MaxCarrot : CtrlMovingTarget {
   virtual void setTimeScale(double d) {}
   virtual void resetState() { countInRange=0; }
   virtual arr getResidual(const arr& y_real) { if(goal.N) return y_real-goal; return y_real; }
+  virtual void reportState(ostream& os) const {
+    os <<" [MaxCarrot: #" <<countInRange <<"]";
+  }
 };
 
 //===========================================================================
@@ -57,11 +63,15 @@ struct CtrlTarget_PathCarrot: CtrlMovingTarget {
   double endTime;
   double time=0.;
   uint countInRange=0;
+  uint countBlocked=0;
   CtrlTarget_PathCarrot(const arr& path, double maxStep, double _endTime=1.);
   CtrlTarget_PathCarrot(const arr& path, double maxStep, const arr& times);
   virtual ActStatus step(double tau, CtrlObjective* o, const ConfigurationL& Ctuple);
   virtual void setTimeScale(double d) { endTime = d; }
   virtual void resetState() { time=0.; countInRange=0.; }
+  virtual void reportState(ostream& os) const {
+    os <<" [PathCarrot time: " <<time <<'/' <<endTime <<" #conv:" <<countInRange <<" #lag:" <<countBlocked <<"]";
+  }
 };
 
 //===========================================================================
