@@ -8,6 +8,8 @@
 
 #include "opt-ipopt.h"
 
+#ifdef RAI_IPOPT
+
 #include <coin/IpTNLP.hpp>
 #include <coin/IpIpoptApplication.hpp>
 
@@ -295,3 +297,11 @@ bool Conv_MP_Ipopt::eval_h(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, 
 void Conv_MP_Ipopt::finalize_solution(Ipopt::SolverReturn status, Ipopt::Index n, const Ipopt::Number* _x, const Ipopt::Number* z_L, const Ipopt::Number* z_U, Ipopt::Index m, const Ipopt::Number* g, const Ipopt::Number* lambda, Ipopt::Number obj_value, const Ipopt::IpoptData* ip_data, Ipopt::IpoptCalculatedQuantities* ip_cq) {
   x.setCarray(_x, n);
 }
+
+#else
+
+arr IpoptInterface::solve() {
+  NICO
+}
+
+#endif

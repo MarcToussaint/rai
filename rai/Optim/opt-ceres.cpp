@@ -178,7 +178,11 @@ Conv_MathematicalProgram_CeresProblem::Conv_MathematicalProgram_CeresProblem(Mat
 
 #else //RAI_CERES
 
-Conv_MatematicalProgram_CeresProblem::Conv_MatematicalProgram_CeresProblem(const ptr<MathematicalProgram_Structured>& _MP) {
+arr CeresInterface::solve() {
+  NICO
+}
+
+Conv_MathematicalProgram_CeresProblem::Conv_MathematicalProgram_CeresProblem(MathematicalProgram_Factored& _MP) : MP(_MP) {
   NICO
 }
 
