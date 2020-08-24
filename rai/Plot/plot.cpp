@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -89,7 +89,7 @@ void rai::PlotModule::update(bool wait, const char* txt) {
 
 void rai::PlotModule::Close() {
 #ifdef RAI_GL
-  if(mode==opengl){
+  if(mode==opengl) {
     if(gl) { delete gl; gl=NULL; }
   }
 #endif
@@ -109,7 +109,7 @@ void rai::PlotModule::Gnuplot() { mode=gnupl; }
 void rai::PlotModule::Opengl(bool perspective, double xl, double xh, double yl, double yh, double zl, double zh) {
   mode=opengl;
   perspective=perspective;
-  if(!gl){
+  if(!gl) {
     gl=new OpenGL("PlotModule", 400, 400);
     gl->add(*this);
     gl->setClearColors(1., 1., 1., 1.);
@@ -281,7 +281,7 @@ void rai::PlotModule::Covariance(const arr& mean, const arr& cov) {
     svd(U, w, V, Cov);
     for(i=0; i<w.N; i++) w(i)=sqrt(w(i)); //trace of eig^2 becomes N!
     for(i=0; i<d.d0; i++) { d[i]()*=w; d[i]=V*d[i]; d(i, 0)+=mean(0); d(i, 1)+=mean(1); }
-    
+
     self->lines.append(d);
   }
   if(d==3) {
@@ -363,7 +363,7 @@ void rai::PlotModule::VectorField(const arr& X, const arr& dX) {
 }
 
 void rai::PlotModule::MatrixFlow(uintA& M, double len) {
-  CHECK_EQ(M.nd,2, "");
+  CHECK_EQ(M.nd, 2, "");
   uint i, j;
   arr X, dX;
   X.resize(M.d0, M.d1, 3);
@@ -402,14 +402,14 @@ void rai::PlotModule::glDraw(OpenGL& gl) {
 //  uint a, i, j;
 
   uint idx = 0;
-  
+
   rai::Color c;
 
   double x=0., y=0., z=0.;
 
   //light?
   if(light) glStandardLight(nullptr, gl);
-  
+
   if(drawBox) {
     glColor3f(.7, .7, .7);
     glBegin(GL_LINE_LOOP);
@@ -449,7 +449,7 @@ void rai::PlotModule::glDraw(OpenGL& gl) {
     if(a.nd==1 || (a.nd==2 && a.d1==1)) {
       c.setIndex(idx);
       glColor(c.r, c.g, c.b);
-      
+
       for(uint i=1; i<a.N; i++) {
         glBegin(GL_LINES);
         glVertex3f(2.*(i-1)/(a.N-1)-1., a.elem(i-1), 0);
@@ -566,7 +566,7 @@ void rai::PlotModule::glDraw(OpenGL& gl) {
   for(arr& l:data.lines) {
     if(colors) c.setIndex(idx); else c.setIndex(0);
     glColor(c.r, c.g, c.b);
-    
+
     if(thickLines) {
       glLineWidth(thickLines);
     }

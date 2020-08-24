@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -29,7 +29,7 @@
 
 using namespace physx;
 
-struct PhysXSingleton{
+struct PhysXSingleton {
   PxFoundation* mFoundation = nullptr;
   PxPhysics* mPhysics = nullptr;
   PxCooking* mCooking = nullptr;
@@ -37,7 +37,7 @@ struct PhysXSingleton{
   PxDefaultAllocator gDefaultAllocatorCallback;
   PxSimulationFilterShader gDefaultFilterShader=PxDefaultSimulationFilterShader;
 
-  void create(){
+  void create() {
     mFoundation = PxCreateFoundation(PX_FOUNDATION_VERSION, gDefaultAllocatorCallback, gDefaultErrorCallback);
     PxTolerancesScale scale;
     mPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *mFoundation, scale);
@@ -49,20 +49,19 @@ struct PhysXSingleton{
     //if(!PxInitExtensions(*mPhysics)) HALT("PxInitExtensions failed!");
   }
 
-  ~PhysXSingleton(){
-    if(mPhysics){
+  ~PhysXSingleton() {
+    if(mPhysics) {
       mCooking->release();
       mPhysics->release();
     }
-     //  mFoundation->release();
+    //  mFoundation->release();
   }
 };
 
-static PhysXSingleton& physxSingleton(){
+static PhysXSingleton& physxSingleton() {
   static PhysXSingleton singleton;
   return singleton;
 }
-
 
 // ============================================================================
 
@@ -252,29 +251,29 @@ void PhysXInterface::pullDynamicStates(FrameL& frames, arr& frameVelocities) {
   }
 }
 
-void PhysXInterface::changeObjectType(rai::Frame* f, int _type){
+void PhysXInterface::changeObjectType(rai::Frame* f, int _type) {
   rai::Enum<rai::BodyType> type((rai::BodyType)_type);
-  if(self->actorTypes(f->ID) == type){
+  if(self->actorTypes(f->ID) == type) {
     LOG(-1) <<"frame " <<*f <<" is already of type " <<type;
   }
   PxRigidActor* a = self->actors(f->ID);
   if(!a) HALT("frame " <<*f <<"is not an actor");
-  if(type==rai::BT_kinematic){
+  if(type==rai::BT_kinematic) {
     ((PxRigidDynamic*)a)->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
-  }else if(type==rai::BT_dynamic){
+  } else if(type==rai::BT_dynamic) {
     ((PxRigidDynamic*)a)->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, false);
-  }else NIY;
+  } else NIY;
   self->actorTypes(f->ID) = type;
 }
 
-void PhysXInterface::postAddObject(rai::Frame* f){
+void PhysXInterface::postAddObject(rai::Frame* f) {
   while(self->actors.N<=f->ID) self->actors.append(0);
   while(self->actorTypes.N<=f->ID) self->actorTypes.append(rai::BT_none);
   CHECK(!f->joint, "");
   f->ensure_X();
-  if(!self->actors(f->ID)){
+  if(!self->actors(f->ID)) {
     self->addLink(f, true);
-  }else{
+  } else {
     HALT("NO!");
   }
 }
@@ -310,10 +309,10 @@ void PhysXInterface::pushFullState(const FrameL& frames, const arr& frameVelocit
         PxRigidBody* px_body = (PxRigidBody*) a;
         px_body->setLinearVelocity(PxVec3(frameVelocities(f->ID, 0, 0), frameVelocities(f->ID, 0, 1), frameVelocities(f->ID, 0, 2)));
         px_body->setAngularVelocity(PxVec3(frameVelocities(f->ID, 1, 0), frameVelocities(f->ID, 1, 1), frameVelocities(f->ID, 1, 2)));
-      }else{
+      } else {
         PxRigidBody* px_body = (PxRigidBody*) a;
-        px_body->setLinearVelocity(PxVec3(0.,0.,0.));
-        px_body->setAngularVelocity(PxVec3(0.,0.,0.));
+        px_body->setLinearVelocity(PxVec3(0., 0., 0.));
+        px_body->setAngularVelocity(PxVec3(0., 0., 0.));
       }
     }
   }
@@ -730,9 +729,9 @@ void PhysXInterface::step(double tau) { NICO }
 void PhysXInterface::pushKinematicStates(const FrameL& frames) { NICO }
 void PhysXInterface::pushFullState(const FrameL& frames, const arr& vels, bool onlyKinematic) { NICO }
 void PhysXInterface::pullDynamicStates(FrameL& frames, arr& vels) { NICO }
-void PhysXInterface::postAddObject(rai::Frame* f){ NICO }
+void PhysXInterface::postAddObject(rai::Frame* f) { NICO }
 
-void PhysXInterface::changeObjectType(rai::Frame* f, int _type){ NICO }
+void PhysXInterface::changeObjectType(rai::Frame* f, int _type) { NICO }
 void PhysXInterface::setArticulatedBodiesKinematic(const rai::Configuration& C) { NICO }
 void PhysXInterface::ShutdownPhysX() { NICO }
 void PhysXInterface::watch(bool pause, const char* txt) { NICO }

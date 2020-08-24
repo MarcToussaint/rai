@@ -57,7 +57,6 @@ void TEST(CollisionTiming){
   }
   C.watch();
 
-
   rai::timerStart();
   C.swift().setCutoff(1.);
   cout <<" SWIFT initialization time: " <<rai::timerRead(true) <<endl;

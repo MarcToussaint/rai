@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #pragma once
 
 #ifdef RAI_PYBIND
@@ -10,16 +18,16 @@
 #include <pybind11/numpy.h>
 
 namespace ry {
-  typedef std::pair<std::vector<unsigned int>, std::vector<double>> I_arr;
-  typedef std::vector<std::string> I_StringA;
-  typedef std::map<std::string, std::string> I_dict;
-  typedef std::map<std::string, std::vector<double>> I_args;
+typedef std::pair<std::vector<unsigned int>, std::vector<double>> I_arr;
+typedef std::vector<std::string> I_StringA;
+typedef std::map<std::string, std::string> I_dict;
+typedef std::map<std::string, std::vector<double>> I_args;
 
-  typedef std::tuple<std::vector<double>, int, int, I_StringA, I_args> I_feature;
-  typedef std::vector<I_feature> I_features;
+typedef std::tuple<std::vector<double>, int, int, I_StringA, I_args> I_feature;
+typedef std::vector<I_feature> I_features;
 
-  typedef std::tuple<std::vector<double>, std::string, I_StringA, I_args> I_objective;
-  typedef std::vector<I_objective> I_objectives;
+typedef std::tuple<std::vector<double>, std::string, I_StringA, I_args> I_objective;
+typedef std::vector<I_objective> I_objectives;
 };
 
 pybind11::dict graph2dict(const rai::Graph& G);
@@ -81,52 +89,52 @@ inline arr I_conv(const ry::I_arr& x) {
 }
 
 namespace pybind11 {
-  namespace detail {
+namespace detail {
 
-    //** StringA <--> vector<std::string>
-    template <>  struct type_caster<StringA> {
-    public:
-      PYBIND11_TYPE_CASTER(StringA, _("StringA"));
+//** StringA <--> vector<std::string>
+template <>  struct type_caster<StringA> {
+ public:
+  PYBIND11_TYPE_CASTER(StringA, _("StringA"));
 
-      /// Conversion part 1 (Python->C++): convert numpy array to rai::Array<T>
-      bool load(pybind11::handle src, bool) {
-        std::vector<std::string> strings = src.cast<std::vector<std::string>>();
-        value = I_conv(strings);
-        /* Ensure return code was OK (to avoid out-of-range errors etc) */
-        return !PyErr_Occurred();
-      }
-
-      /// Conversion part 2 (C++ -> Python): convert rai::Array<T> instance to numpy array
-      static handle cast(StringA src, return_value_policy /* policy */, handle /* parent */) {
-        std::vector<std::string> strings = I_conv(src);
-        return pybind11::cast(strings);
-      }
-    };
-
-    //** rai::Array <--> numpy
-    template <typename T>  struct type_caster<rai::Array<T>> {
-    public:
-      PYBIND11_TYPE_CASTER(rai::Array<T>, _("rai::Array<T>"));
-
-      /// Conversion part 1 (Python->C++): convert numpy array to rai::Array<T>
-      bool load(pybind11::handle src, bool) {
-        auto buf = pybind11::array_t<T>::ensure(src);
-        if ( !buf ){
-          LOG(-1) <<"THIS IS NOT A NUMPY ARRAY!";
-          return false;
-        }
-        value = numpy2arr<T>(buf);
-        /* Ensure return code was OK (to avoid out-of-range errors etc) */
-        return !PyErr_Occurred();
-      }
-
-      /// Conversion part 2 (C++ -> Python): convert rai::Array<T> instance to numpy array
-      static handle cast(rai::Array<T> src, return_value_policy /* policy */, handle /* parent */) {
-        pybind11::array_t<T> ret(src.dim(), src.p);
-        return ret.release();
-      }
-    };
+  /// Conversion part 1 (Python->C++): convert numpy array to rai::Array<T>
+  bool load(pybind11::handle src, bool) {
+    std::vector<std::string> strings = src.cast<std::vector<std::string>>();
+    value = I_conv(strings);
+    /* Ensure return code was OK (to avoid out-of-range errors etc) */
+    return !PyErr_Occurred();
   }
+
+  /// Conversion part 2 (C++ -> Python): convert rai::Array<T> instance to numpy array
+  static handle cast(StringA src, return_value_policy /* policy */, handle /* parent */) {
+    std::vector<std::string> strings = I_conv(src);
+    return pybind11::cast(strings);
+  }
+};
+
+//** rai::Array <--> numpy
+template <typename T>  struct type_caster<rai::Array<T>> {
+ public:
+  PYBIND11_TYPE_CASTER(rai::Array<T>, _("rai::Array<T>"));
+
+  /// Conversion part 1 (Python->C++): convert numpy array to rai::Array<T>
+  bool load(pybind11::handle src, bool) {
+    auto buf = pybind11::array_t<T>::ensure(src);
+    if(!buf) {
+      LOG(-1) <<"THIS IS NOT A NUMPY ARRAY!";
+      return false;
+    }
+    value = numpy2arr<T>(buf);
+    /* Ensure return code was OK (to avoid out-of-range errors etc) */
+    return !PyErr_Occurred();
+  }
+
+  /// Conversion part 2 (C++ -> Python): convert rai::Array<T> instance to numpy array
+  static handle cast(rai::Array<T> src, return_value_policy /* policy */, handle /* parent */) {
+    pybind11::array_t<T> ret(src.dim(), src.p);
+    return ret.release();
+  }
+};
+}
 }
 
 #endif

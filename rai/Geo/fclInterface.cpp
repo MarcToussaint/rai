@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -18,8 +18,8 @@
 
 bool FclInterfaceBroadphaseCallback(fcl::CollisionObject* o1, fcl::CollisionObject* o2, void* cdata_);
 
-namespace rai{
-  struct ConvexGeometryData{
+namespace rai {
+struct ConvexGeometryData {
   arr plane_dis;
   intA polygons;
 };
@@ -43,7 +43,7 @@ rai::FclInterface::FclInterface(const rai::Array<ptr<Mesh>>& _geometries, double
       dat->plane_dis = mesh.computeTriDistances();
       copy<int>(dat->polygons, mesh.T);
       dat->polygons.insColumns(0);
-      for(uint i=0;i<dat->polygons.d0;i++) dat->polygons(i,0) = 3;
+      for(uint i=0; i<dat->polygons.d0; i++) dat->polygons(i, 0) = 3;
       auto model = make_shared<fcl::Convex>((fcl::Vec3f*)mesh.Tn.p, dat->plane_dis.p, mesh.T.d0, (fcl::Vec3f*)mesh.V.p, mesh.V.d0, (int*)dat->polygons.p);
       convexGeometryData(i) = dat;
 #else
@@ -76,7 +76,7 @@ void rai::FclInterface::step(const arr& X) {
 
   for(auto* obj:objects) {
     uint i = (long int)obj->getUserData();
-    if(i<X_lastQuery.d0 && maxDiff(X_lastQuery[i],X[i])<1e-8) continue;
+    if(i<X_lastQuery.d0 && maxDiff(X_lastQuery[i], X[i])<1e-8) continue;
     obj->setTranslation(fcl::Vec3f(X(i, 0), X(i, 1), X(i, 2)));
     obj->setQuatRotation(fcl::Quaternion3f(X(i, 3), X(i, 4), X(i, 5), X(i, 6)));
     obj->computeAABB();
@@ -90,7 +90,7 @@ void rai::FclInterface::step(const arr& X) {
   X_lastQuery = X;
 }
 
-void rai::FclInterface::addCollision(void* userData1, void* userData2){
+void rai::FclInterface::addCollision(void* userData1, void* userData2) {
   uint a = (long int)userData1;
   uint b = (long int)userData2;
   collisions.resizeCopy(collisions.N+2);

@@ -5,6 +5,7 @@
 #include <qhull/qhull_a.h>
 #include <Optim/optimization.h>
 #include <Geo/qhull.h>
+#include <Optim/convert.h>
 
 //===========================================================================
 

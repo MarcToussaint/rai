@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -105,14 +105,14 @@ rai::Frame* rai::KinematicSwitch::apply(Configuration& K) {
     } else if(init==SWInit_copy) { //set Q to the current relative transform, modulo DOFs
       j->frame->Q = orgX / j->frame->parent->ensure_X(); //that's important for the initialization of x during the very first komo.setupConfigurations !!
       //cout <<j->frame->Q <<' ' <<j->frame->Q.rot.normalization() <<endl;
-      if(j->dim>0){
+      if(j->dim>0) {
         arr q = j->calc_q_from_Q(j->frame->Q);
         j->frame->Q.setZero();
         j->calc_Q_from_q(q, 0);
       }
     } if(init==SWInit_random) { //random, modulo DOFs
       j->frame->Q.setRandom();
-      if(j->dim>0){
+      if(j->dim>0) {
         arr q = j->calc_q_from_Q(j->frame->Q);
         j->frame->Q.setZero();
         j->calc_Q_from_q(q, 0);

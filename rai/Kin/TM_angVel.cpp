@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -194,7 +194,7 @@ void TM_NoJumpFromParent::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
 
   {
 //  if(link->joint && link->joint->type==rai::JT_rigid){
-    arr yq, Jq;
+    arr yp, Jp, yq, Jq;
     ptr<TM_Default> tmp;
     if(parent)
       tmp = make_shared<TM_Default>(TMT_pos, link->ID, NoVector, parent->ID, NoVector);
@@ -202,12 +202,18 @@ void TM_NoJumpFromParent::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
       tmp = make_shared<TM_Default>(TMT_pos, link->ID);
     tmp->order = 1;
     tmp->type = TMT_pos;
-    tmp->Feature::__phi(y, J, Ktuple);
+    tmp->Feature::__phi(yp, (!!J?Jp:NoArr), Ktuple);
     tmp->type = TMT_quat;
     tmp->flipTargetSignOnNegScalarProduct=true;
     tmp->Feature::__phi(yq, (!!J?Jq:NoArr), Ktuple);
-    y.append(yq);
-    if(!!J) J.append(Jq);
+    y.resize(yp.N+yq.N);
+    y.setVectorBlock(yp, 0);
+    y.setVectorBlock(yq, 3);
+    if(!!J) {
+      J.resize(y.N, Jp.d1);
+      J.setMatrixBlock(Jp, 0, 0);
+      J.setMatrixBlock(Jq, 3, 0);
+    }
   }
 //  else{
 //    y.resize(7).setZero();

@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -186,7 +186,7 @@ struct Configuration : GLDrawer {
   /// @name variable (groups of DOFs, e.g. agents, joints, contacts) interface
   FrameL vars_frames;
   void vars_ensureFrames();
-  uint vars_getNum(){ vars_ensureFrames();  return vars_frames.N; }
+  uint vars_getNum() { vars_ensureFrames();  return vars_frames.N; }
   const String& vars_getName(uint i);
   uint vars_getDim(uint i);
   void vars_activate(uint i);
@@ -273,7 +273,7 @@ struct Configuration : GLDrawer {
   //some info
   void report(std::ostream& os=std::cout) const;
   void reportProxies(std::ostream& os=std::cout, double belowMargin=1., bool brief=true) const;
-  
+
   friend struct KinematicSwitch;
 };
 

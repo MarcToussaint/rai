@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -20,7 +20,7 @@ double I_lambda_x(uint i, arr& lambda, arr& g) {
 
 //==============================================================================
 
-LagrangianProblem::LagrangianProblem(MathematicalProgram& P, OptOptions opt, arr& lambdaInit)
+LagrangianProblem::LagrangianProblem(MathematicalProgram& P, const OptOptions& opt, arr& lambdaInit)
   : P(P), muLB(0.), mu(0.), nu(0.) {
 
   ScalarFunction::operator=([this](arr& dL, arr& HL, const arr& x) -> double {
@@ -41,11 +41,28 @@ LagrangianProblem::LagrangianProblem(MathematicalProgram& P, OptOptions opt, arr
   if(!!lambdaInit) lambda = lambdaInit;
 }
 
-void LagrangianProblem::getFeatureTypes(ObjectiveTypeA& featureTypes){
+uint LagrangianProblem::getFeatureDim() {
+  if(!tt_x.N) { //need to get feature types
+    P.getFeatureTypes(tt_x);
+  }
+  uint nphi=0;
+  for(ObjectiveType& t:tt_x) {
+    if(t==OT_f) nphi++;
+    if(t==OT_sos) nphi++;
+    if(muLB     && t==OT_ineq) nphi++;
+    if(mu       && t==OT_ineq) nphi++;
+    if(lambda.N && t==OT_ineq) nphi++;
+    if(nu       && t==OT_eq) nphi++;
+    if(lambda.N && t==OT_eq) nphi++;
+  }
+  return nphi;
+}
+
+void LagrangianProblem::getFeatureTypes(ObjectiveTypeA& featureTypes) {
   P.getFeatureTypes(tt_x);
 
   featureTypes.clear();
-  for(ObjectiveType& t:tt_x){
+  for(ObjectiveType& t:tt_x) {
     if(t==OT_f) featureTypes.append(OT_f);                    // direct cost term
     if(t==OT_sos) featureTypes.append(OT_sos);                // sumOfSqr term
     if(muLB     && t==OT_ineq) featureTypes.append(OT_f);     // log barrier
@@ -56,7 +73,7 @@ void LagrangianProblem::getFeatureTypes(ObjectiveTypeA& featureTypes){
   }
 }
 
-void LagrangianProblem::evaluate(arr& phi, arr& J, const arr& _x){
+void LagrangianProblem::evaluate(arr& phi, arr& J, const arr& _x) {
   //-- evaluate constrained problem and buffer
   if(_x!=x) {
     x=_x;
@@ -64,7 +81,7 @@ void LagrangianProblem::evaluate(arr& phi, arr& J, const arr& _x){
     P.getFHessian(H_x, x);
   } else { //we evaluated this before - use buffered values; the meta F is still recomputed as (dual) parameters might have changed
   }
-  if(tt_x.N!=phi_x.N){ //need to get feature types
+  if(tt_x.N!=phi_x.N) { //need to get feature types
     P.getFeatureTypes(tt_x);
   }
 
@@ -80,32 +97,36 @@ void LagrangianProblem::evaluate(arr& phi, arr& J, const arr& _x){
   if(phi_x.N) I_lambda_x = false;
   if(mu)      for(uint i=0; i<phi_x.N; i++) if(tt_x.p[i]==OT_ineq) I_lambda_x.p[i] = (phi_x.p[i]>0. || (lambda.N && lambda.p[i]>0.));
 
-  phi.clear();
+  phi.resize(getFeatureDim()).setZero();
+  uint nphi=0;
   for(uint i=0; i<phi_x.N; i++) {
-    if(tt_x.p[i]==OT_f)   phi.append(phi_x.p[i]);                                                  // direct cost term
-    if(tt_x.p[i]==OT_sos) phi.append(phi_x.p[i]);                                      // sumOfSqr term
-    if(muLB     && tt_x.p[i]==OT_ineq) { if(phi_x.p[i]>0.) phi.append(NAN); else phi.append( -muLB * ::log(-phi_x.p[i])); }                   //log barrier, check feasibility
-    if(mu       && tt_x.p[i]==OT_ineq) { if(I_lambda_x.p[i]) phi.append(sqrt(mu)*phi_x.p[i]); else phi.append(0.); }      //g-penalty
-    if(lambda.N && tt_x.p[i]==OT_ineq) { if(lambda.p[i]>0.) phi.append(lambda.p[i] * phi_x.p[i]); else phi.append(0.); }   //g-lagrange terms
-    if(nu       && tt_x.p[i]==OT_eq) phi.append( sqrt(nu) * phi_x.p[i] );                           //h-penalty
-    if(lambda.N && tt_x.p[i]==OT_eq) phi.append( lambda.p[i] * phi_x.p[i] );                       //h-lagrange terms
+    if(tt_x.p[i]==OT_f)   phi.p[nphi++] =  phi_x.p[i];                                                  // direct cost term
+    if(tt_x.p[i]==OT_sos) phi.p[nphi++] = phi_x.p[i];                                      // sumOfSqr term
+    if(muLB     && tt_x.p[i]==OT_ineq) { if(phi_x.p[i]>0.) phi.p[nphi++] = NAN; else phi.p[nphi++] =  -muLB * ::log(-phi_x.p[i]); }                   //log barrier, check feasibility
+    if(mu       && tt_x.p[i]==OT_ineq) { if(I_lambda_x.p[i]) phi.p[nphi++] = sqrt(mu)*phi_x.p[i]; else phi.p[nphi++] = 0.; }      //g-penalty
+    if(lambda.N && tt_x.p[i]==OT_ineq) { if(lambda.p[i]>0.) phi.p[nphi++] = lambda.p[i] * phi_x.p[i]; else phi.p[nphi++] = 0.; }   //g-lagrange terms
+    if(nu       && tt_x.p[i]==OT_eq) phi.p[nphi++] =  sqrt(nu) * phi_x.p[i];                           //h-penalty
+    if(lambda.N && tt_x.p[i]==OT_eq) phi.p[nphi++] =  lambda.p[i] * phi_x.p[i];                       //h-lagrange terms
   }
+  CHECK_EQ(nphi, phi.N, "");
 
   if(!!J) { //term Jacobians
-    J.clear();
+    J.resize(phi.N, J_x.d1).setZero();
+    uint nphi=0;
     for(uint i=0; i<phi_x.N; i++) {
-      if(tt_x.p[i]==OT_f)  J.append(J_x[i]);                                                 // direct cost term
-      if(tt_x.p[i]==OT_sos) J.append(J_x[i]);                               // sumOfSqr terms
-      if(muLB     && tt_x.p[i]==OT_ineq) J.append( - (muLB/phi_x.p[i])*J_x[i] );                    //log barrier, check feasibility
-      if(mu       && tt_x.p[i]==OT_ineq){ if(I_lambda_x.p[i]) J.append( sqrt(mu)*J_x[i] ); else J.append(zeros(J_x.d1)); }  //g-penalty
-      if(lambda.N && tt_x.p[i]==OT_ineq){ if(lambda.p[i]>0.) J.append( lambda.p[i] * J_x[i]); else J.append(zeros(J_x.d1)); }              //g-lagrange terms
-      if(nu       && tt_x.p[i]==OT_eq) J.append( sqrt(nu) * J_x[i] );                      //h-penalty
-      if(lambda.N && tt_x.p[i]==OT_eq) J.append( lambda.p[i] * J_x[i] );                                  //h-lagrange terms
+      if(tt_x.p[i]==OT_f)  J[nphi++] = J_x[i];                                                 // direct cost term
+      if(tt_x.p[i]==OT_sos) J[nphi++] = J_x[i];                               // sumOfSqr terms
+      if(muLB     && tt_x.p[i]==OT_ineq) J[nphi++] = - (muLB/phi_x.p[i])*J_x[i];                    //log barrier, check feasibility
+      if(mu       && tt_x.p[i]==OT_ineq) { if(I_lambda_x.p[i]) J[nphi++] = sqrt(mu)*J_x[i]; else nphi++; } //g-penalty
+      if(lambda.N && tt_x.p[i]==OT_ineq) { if(lambda.p[i]>0.) J[nphi++] = lambda.p[i] * J_x[i]; else nphi++; }             //g-lagrange terms
+      if(nu       && tt_x.p[i]==OT_eq) J[nphi++] = sqrt(nu) * J_x[i];                      //h-penalty
+      if(lambda.N && tt_x.p[i]==OT_eq) J[nphi++] = lambda.p[i] * J_x[i];                                  //h-lagrange terms
     }
+    CHECK_EQ(nphi, phi.N, "");
   }
 }
 
-void LagrangianProblem::getFHessian(arr& H, const arr& x){
+void LagrangianProblem::getFHessian(arr& H, const arr& x) {
   P.getFHessian(H, x);
 
   for(uint i=0; i<phi_x.N; i++) {
@@ -121,7 +142,7 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
     P.getFHessian(H_x, x);
   } else { //we evaluated this before - use buffered values; the meta F is still recomputed as (dual) parameters might have changed
   }
-  if(tt_x.N!=phi_x.N){ //need to get feature types
+  if(tt_x.N!=phi_x.N) { //need to get feature types
     P.getFeatureTypes(tt_x);
   }
 
@@ -303,6 +324,18 @@ void LagrangianProblem::aulaUpdate(bool anyTimeVariant, double lambdaStepsize, d
   if(L_x || !!dL_x || !!HL_x) {
     double L = lagrangian(dL_x, HL_x, x); //reevaluate gradients and hessian (using buffered info)
     if(L_x) *L_x = L;
+  }
+}
+
+void LagrangianProblem::autoUpdate(const OptOptions& opt, double* L_x, arr& dL_x, arr& HL_x) {
+  switch(opt.constrainedMethod) {
+//  case squaredPenalty: UCP.mu *= opt.aulaMuInc;  break;
+    case squaredPenalty: aulaUpdate(false, -1., opt.aulaMuInc, L_x, dL_x, HL_x);  break;
+    case augmentedLag:   aulaUpdate(false, 1., opt.aulaMuInc, L_x, dL_x, HL_x);  break;
+    case anyTimeAula:    aulaUpdate(true,  1., opt.aulaMuInc, L_x, dL_x, HL_x);  break;
+    case logBarrier:     muLB /= 2.;  break;
+    case squaredPenaltyFixed: HALT("you should not be here"); break;
+    case noMethod: HALT("need to set method before");  break;
   }
 }
 

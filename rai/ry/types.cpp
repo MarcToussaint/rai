@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #ifdef RAI_PYBIND
 
 #include "types.h"
@@ -18,7 +26,7 @@ pybind11::dict graph2dict(const rai::Graph& G) {
     } else if(n->isOfType<arr>()) {
       dict[key.p] = conv_arr2stdvec(n->get<arr>());
     } else if(n->isOfType<arrA>()) {
-        dict[key.p] = conv_arr2stdvec(n->get<arrA>());
+      dict[key.p] = conv_arr2stdvec(n->get<arrA>());
     } else if(n->isOfType<intA>()) {
       dict[key.p] = conv_arr2stdvec(n->get<intA>());
     } else if(n->isOfType<uintA>()) {
@@ -113,12 +121,11 @@ byteA numpy2arr(const pybind11::array_t<byte>& X) {
   return Y;
 }
 
-arr vecvec2arr(const std::vector<std::vector<double> >& X) {
+arr vecvec2arr(const std::vector<std::vector<double>>& X) {
   CHECK(X.size()>0, "");
   arr Y(X.size(), X[0].size());
   for(uint i=0; i<Y.d0; i++) for(uint j=0; j<Y.d1; j++) Y(i, j) = X[i][j];
   return Y;
 }
-
 
 #endif

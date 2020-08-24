@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -34,7 +34,7 @@ struct Proxy : GLDrawer {
   shared_ptr<PairCollision> collision;
 
   void copy(const Configuration& C, const Proxy& p);
-  void ensure_coll(const Configuration& C){ if(!collision) calc_coll(C); }
+  void ensure_coll(const Configuration& C) { if(!collision) calc_coll(C); }
   void calc_coll(const Configuration& C);
   void glDraw(OpenGL&);
   void write(ostream& os, bool brief=true) const;

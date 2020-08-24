@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -60,7 +60,7 @@ void F_qItself::phi(arr& q, arr& J, const rai::Configuration& G) {
   } else {
     uint n=dim_phi(G);
     q.resize(n);
-    if(!!J){
+    if(!!J) {
       if(!isSparseMatrix(J)) {
         J.resize(n, G.q.N).setZero();
       } else {
@@ -179,12 +179,12 @@ void F_qItself::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
     uintA qidx(Ktuple.N);
     qidx(0)=0;
     for(uint i=1; i<Ktuple.N; i++) qidx(i) = qidx(i-1)+Ktuple(i-1)->q.N;
-    if(!isSparseMatrix(J)){
+    if(!isSparseMatrix(J)) {
       J = zeros(y.N, qidx.last()+Ktuple.last()->q.N);
       if(k==1) { J.setMatrixBlock(J_bar(1), 0, qidx(offset+1));  J.setMatrixBlock(-J_bar(0), 0, qidx(offset+0));  J/=tau; }
       if(k==2) { J.setMatrixBlock(J_bar(2), 0, qidx(offset+2));  J.setMatrixBlock(-2.*J_bar(1), 0, qidx(offset+1));  J.setMatrixBlock(J_bar(0), 0, qidx(offset+0));  J/=tau2; }
       if(k==3) { J.setMatrixBlock(J_bar(3), 0, qidx(offset+3));  J.setMatrixBlock(-3.*J_bar(2), 0, qidx(offset+2));  J.setMatrixBlock(3.*J_bar(1), 0, qidx(offset+1));  J.setMatrixBlock(-J_bar(0), 0, qidx(offset+0));  J/=tau3; }
-    }else{
+    } else {
       J.sparse().resize(y.N, qidx.last()+Ktuple.last()->q.N, 0);
       if(k==1) { J_bar(0) *= -1.;  J+=J_bar(0);  J+=J_bar(1);  J/=tau; }
       if(k==1) { J_bar(1) *= -2.;  J+=J_bar(0);  J+=J_bar(1);  J+=J_bar(2);  J/=tau2; }
@@ -237,24 +237,24 @@ uint F_qItself::dim_phi(const ConfigurationL& Ktuple) {
   return 0;
 }
 
-void F_qItself::signature(intA& S, const rai::Configuration& C){
+void F_qItself::signature(intA& S, const rai::Configuration& C) {
   CHECK(selectedFrames.N, "");
   S.clear();
-  for(uint i=0;i<selectedFrames.d0;i++) {
-    rai::Joint *j=0;
-    if(selectedFrames.nd==1){
-      rai::Frame *f = C.frames.elem(selectedFrames.elem(i));
+  for(uint i=0; i<selectedFrames.d0; i++) {
+    rai::Joint* j=0;
+    if(selectedFrames.nd==1) {
+      rai::Frame* f = C.frames.elem(selectedFrames.elem(i));
       j = f->joint;
       CHECK(j, "selected frame " <<selectedFrames.elem(i) <<" ('" <<f->name <<"') is not a joint");
-    }else{
-      rai::Frame *a = C.frames.elem(selectedFrames(i,0));
-      rai::Frame *b = C.frames.elem(selectedFrames(i,1));
+    } else {
+      rai::Frame* a = C.frames.elem(selectedFrames(i, 0));
+      rai::Frame* b = C.frames.elem(selectedFrames(i, 1));
       if(a->parent==b) j=a->joint;
       else if(b->parent==a) j=b->joint;
       else HALT("a and b are not linked");
       CHECK(j, "");
     }
-    for(uint k=0;k<j->qDim();k++) S.append(j->qIndex+k);
+    for(uint k=0; k<j->qDim(); k++) S.append(j->qIndex+k);
   }
 }
 
@@ -277,8 +277,8 @@ rai::String F_qItself::shortTag(const rai::Configuration& G) {
 extern bool isSwitched(rai::Frame* f0, rai::Frame* f1);
 
 void F_qZeroVel::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
-  rai::Frame *f = Ctuple(-1)->frames(i);
-  if(useChildFrame){
+  rai::Frame* f = Ctuple(-1)->frames(i);
+  if(useChildFrame) {
     CHECK_EQ(f->children.N, 1, "this works only for a single child!");
     f = f->children.scalar();
   }
@@ -310,8 +310,8 @@ void F_qZeroVel::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
 }
 
 uint F_qZeroVel::dim_phi(const rai::Configuration& C) {
-  rai::Frame *f = C.frames(i);
-  if(useChildFrame){
+  rai::Frame* f = C.frames(i);
+  if(useChildFrame) {
     CHECK_EQ(f->children.N, 1, "this works only for a single child!");
     f = f->children.scalar();
   }
@@ -395,12 +395,12 @@ uint F_qQuaternionNorms::dim_phi(const rai::Configuration& G) {
   return i;
 }
 
-void F_qQuaternionNorms::signature(intA& S, const rai::Configuration& C){
+void F_qQuaternionNorms::signature(intA& S, const rai::Configuration& C) {
   S.clear();
   for(const rai::Joint* j:C.activeJoints) {
-    if(j->type==rai::JT_quatBall) S.append((int)j->qIndex + intA({0,1,2,3}));
-    if(j->type==rai::JT_free) S.append((int)j->qIndex + intA({3,4,5,6}));
-    if(j->type==rai::JT_XBall) S.append((int)j->qIndex + intA({1,2,3,4}));
+    if(j->type==rai::JT_quatBall) S.append((int)j->qIndex + intA({0, 1, 2, 3}));
+    if(j->type==rai::JT_free) S.append((int)j->qIndex + intA({3, 4, 5, 6}));
+    if(j->type==rai::JT_XBall) S.append((int)j->qIndex + intA({1, 2, 3, 4}));
   }
 }
 

@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -119,7 +119,7 @@ double MIN(double a, double b);
 double MAX(double a, double b);
 uint MAX(uint a, uint b);
 int MAX(int a, int b);
-inline void maxEq(double& x, double a){ if(a>x) x=a; }
+inline void maxEq(double& x, double a) { if(a>x) x=a; }
 double indicate(bool expr);
 double modMetric(double x, double y, double mod);
 double sign(double x);
@@ -358,7 +358,6 @@ namespace rai {
 extern String errString;
 }
 
-
 #ifndef HALT
 #  define RAI_MSG(msg){ LOG(-1) <<msg; }
 #  define THROW(msg){ LOG(-1) <<msg; throw std::runtime_error(rai::errString.p); }
@@ -461,7 +460,6 @@ inline bool operator==(const FileToken&, const FileToken&) { return false; }
 }
 #define FILE(filename) (rai::FileToken(filename, false)()) //it needs to return a REFERENCE to a local scope object
 
-
 //===========================================================================
 //
 // give names to Enum (for pipe << >> )
@@ -534,11 +532,9 @@ class Rnd {
   int32_t rpoint;     /* Feldindex    */
   int32_t rfield[256];   /* Schieberegisterfeld  */
 
-
  public:
   /// ...
   Rnd() { ready=false; }
-
 
  public:/// @name initialization
   /// initialize with a specific seed
@@ -658,14 +654,14 @@ struct Singleton {
   }
 
   T* operator->() const { return &getSingleton(); }
-  
+
   Singleton() {}
   Singleton(Singleton const&) = delete;
   void operator=(Singleton const&) = delete;
 
   ~Singleton() {}
 
-  Mutex::TypedToken<T> operator()(){ return getMutex()(&getSingleton(), RAI_HERE); }
+  Mutex::TypedToken<T> operator()() { return getMutex()(&getSingleton(), RAI_HERE); }
 };
 
 //===========================================================================
@@ -704,9 +700,9 @@ struct CoutToken {
 // to register a type
 //
 
-namespace rai{
-  struct Node;
-  struct Graph;
+namespace rai {
+struct Node;
+struct Graph;
 }
 
 struct Type {

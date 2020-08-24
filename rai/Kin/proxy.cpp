@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -93,14 +93,14 @@ void rai::Proxy::glDraw(OpenGL& gl) {
 #endif
 }
 
-void rai::Proxy::write(std::ostream& os, bool brief) const{
+void rai::Proxy::write(std::ostream& os, bool brief) const {
   os <<" ("
-    <<a->name <<")-("
-    <<b->name
-    <<") [" <<a->ID <<',' <<b->ID <<"] \td=" <<d;
+     <<a->name <<")-("
+     <<b->name
+     <<") [" <<a->ID <<',' <<b->ID <<"] \td=" <<d;
   if(!brief)
     os <<" |A-B|=" <<(posB-posA).length()
-         //        <<" d^2=" <<(posB-posA).lengthSqr()
+       //        <<" d^2=" <<(posB-posA).lengthSqr()
        <<" v=" <<(posB-posA)
        <<" normal=" <<normal
        <<" posA=" <<posA

@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -786,20 +786,20 @@ rai::LogToken::~LogToken() {
           char* beg = symbols[i];
           while(*beg!='(') beg++;
           beg++;
-          char *end=beg;
+          char* end=beg;
           while(*end!='+') end++;
-          if(beg!=end){
+          if(beg!=end) {
             *end=0;
-            char *demangled = NULL;
+            char* demangled = NULL;
             int status;
             demangled = abi::__cxa_demangle(beg, NULL, 0, &status);
-            if(demangled){
+            if(demangled) {
               std::cout <<"STACK" <<i <<' ' <<demangled <<'\n';
               free(demangled);
-            }else{
+            } else {
               std::cout <<"STACK" <<i <<' ' <<symbols[i] <<'\n';
             }
-          }else{
+          } else {
             std::cout <<"STACK" <<i <<' ' <<symbols[i] <<'\n';
           }
         }
@@ -1326,7 +1326,7 @@ bool Inotify::poll(bool block, bool verbose) {
     }
     if(event->len
         && (event->mask & (IN_MODIFY|IN_CREATE|IN_DELETE))
-        && strncmp(event->name, "z.log",5) //NOT z.log...
+        && strncmp(event->name, "z.log", 5) //NOT z.log...
       ) return true; //report modification on specific file
     i += sizeof(struct inotify_event) + event->len;
   }

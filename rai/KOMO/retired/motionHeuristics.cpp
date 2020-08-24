@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -127,7 +127,6 @@ void setGraspGoals_Schunk(KOMO& MP, uint T, uint shapeId, uint side, uint phase)
 
   if(phase==0) return;
 
-
   //-- finger tips close to surface : using ProxyTaskVariable
   uintA shapes = stringListToShapeIndices(
   {"tip1Shape", "tip2Shape", "tip3Shape"}, MP.world.shapes);
@@ -167,7 +166,6 @@ void setGraspGoals_Schunk(KOMO& MP, uint T, uint shapeId, uint side, uint phase)
                  new TM_Default(TMT_vecAlign, MP.world, "tipNormal1", NoVector, "tipNormal3", NoVector));
   target = ARR(-1.);
   MP.setInterpolatingCosts(c, KOMO::final_restConst, target, oppositionPrec);
-
 
   //RAI_MSG("TODO: fingers should be in relaxed position, or aligned with surface (otherwise they remain ``hooked'' as in previous posture)");
 
@@ -325,7 +323,6 @@ void setPlaceGoals(KOMO& MP, uint T, uint shapeId, int belowToShapeId, const arr
   double upDownVelocity   = rai::getParameter<double>("placeUpDownVelocity");
   double upDownVelocityPrec = rai::getParameter<double>("placeUpDownVelocityPrec");
 
-
   //set the time horizon
   CHECK_EQ(T, MP.T, "");
 
@@ -434,7 +431,6 @@ void setHomingGoals(KOMO& M, uint T) {
   rai::getParameter(endPrec, "homingPlanEndPrec");
   rai::getParameter(limPrec, "homingPlanLimPrec");
   rai::getParameter(colPrec, "homingPlanColPrec");
-
 
   //-- limits
   arr limits;

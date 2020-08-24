@@ -8,20 +8,32 @@ void TEST(NLOpt){
 //  MP_TrivialSquareFunction P(2, 1., 2.);
   ChoiceConstraintFunction P;
 
-  NLOptInterface nlo(P);
-  nlo.solve();
+  {
+    NLOptInterface nlo(P);
+    nlo.solve();
+    ofstream fil2("z.opt2");
+    nlo.P.xLog.writeRaw(fil2);
+  }
 
   arr x, phi;
   x = P.getInitializationSample();
 
-  P.evaluate(phi, NoArr, x);
-  cout <<x <<endl <<phi;
-
   checkJacobianCP(P, x, 1e-4);
 
   OptConstrained opt(x, NoArr, P, 6);
-  P.getBounds(opt.newton.bound_lo, opt.newton.bound_up);
-  opt.run();
+  {
+    P.getBounds(opt.newton.bound_lo, opt.newton.bound_up);
+    ofstream fil("z.opt");
+    opt.newton.simpleLog = &fil;
+    opt.run();
+  }
+
+  if(x.N==2){
+    displayFunction(opt.L);
+    rai::wait();
+    gnuplot("load 'plt'");
+    rai::wait();
+  }
 
   cout <<"optimum: " <<x <<endl;
 }
@@ -31,9 +43,8 @@ void TEST(NLOpt){
 int MAIN(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
-//  testSqrProblem();
+  rnd.clockSeed();
 
-//  ChoiceConstraintFunction F;
   testNLOpt();
 
   return 0;

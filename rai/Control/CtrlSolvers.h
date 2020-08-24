@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #pragma once
 
 #include "CtrlObjective.h"
@@ -53,7 +61,7 @@ struct CtrlProblem_MathematicalProgram : MathematicalProgram {
 
   virtual void getNames(StringA& variableNames, StringA& featureNames);
 
-  virtual arr getInitializationSample(const arrL& previousOptima={});
+  virtual arr getInitializationSample(const arrL& previousOptima= {});
 
   virtual void evaluate(arr& phi, arr& J, const arr& x);
 };

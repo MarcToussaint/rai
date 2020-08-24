@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -144,7 +144,6 @@ struct DefaultTaskVariable:public TaskVariable {
 
   /// @name virtual user update
   virtual void userUpdate(const rai::Configuration& ors) { NIY; } //updates both, state and Jacobian
-
 
   /// @name I/O
   void write(ostream& os, const rai::Configuration& ors) const;

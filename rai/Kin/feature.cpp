@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -20,7 +20,7 @@ void Feature::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
 
   arr y0, y1, Jy0, Jy1;
   order--;
-  phi(y0, (!!J?Jy0:NoArr), Ctuple({0,-2}));  if(!!J) padJacobian(Jy0, Ctuple);
+  phi(y0, (!!J?Jy0:NoArr), Ctuple({0, -2}));  if(!!J) padJacobian(Jy0, Ctuple);
   phi(y1, (!!J?Jy1:NoArr), Ctuple);
   order++;
 
@@ -30,7 +30,7 @@ void Feature::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
   if(!!J) J = Jy1 - Jy0;
 
 #if 1 //feature itself does not care for tau!!! use specialized features, e.g. linVel, angVel
-  if(Ctuple(-1)->hasTauJoint()){
+  if(Ctuple(-1)->hasTauJoint()) {
     double tau; arr Jtau;
     Ctuple(-1)->kinematicsTau(tau, (!!J?Jtau:NoArr));
     CHECK_GE(tau, 1e-10, "");
@@ -69,7 +69,6 @@ VectorFunction Feature::vf(rai::Configuration& C) { ///< direct conversion to ve
     phi(y, J, C);
   };
 }
-
 
 VectorFunction Feature::vf(ConfigurationL& Ctuple) { ///< direct conversion to vector function: use to check gradient or evaluate
   return [this, &Ctuple](arr& y, arr& J, const arr& x) -> void {

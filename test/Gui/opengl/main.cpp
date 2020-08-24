@@ -188,7 +188,7 @@ void TEST(Menu){
 /************ 5th test ************/
 
 byteA texImg;
-static GLuint texName;
+//static GLuint texName;
 void draw5(void*, OpenGL& gl){
   glStandardScene(nullptr, gl);
 

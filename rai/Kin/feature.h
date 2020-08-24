@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -28,38 +28,37 @@ struct Feature {
   virtual ~Feature() {}
 
   //-- construction helpers
-  Feature& setOrder(uint _order){ order=_order; return *this; }
-  Feature& setScale(const arr& _scale){ scale=_scale; return *this; }
-  Feature& setTarget(const arr& _target){ target=_target; return *this; }
+  Feature& setOrder(uint _order) { order=_order; return *this; }
+  Feature& setScale(const arr& _scale) { scale=_scale; return *this; }
+  Feature& setTarget(const arr& _target) { target=_target; return *this; }
 
-protected:
-  virtual void phi(arr& y, arr& J, const rai::Configuration& C){ HALT("one of the 'phi' needs to be implemented!"); } ///< this needs to be overloaded
+ protected:
+  virtual void phi(arr& y, arr& J, const rai::Configuration& C) { HALT("one of the 'phi' needs to be implemented!"); } ///< this needs to be overloaded
   virtual void phi(arr& y, arr& J, const ConfigurationL& Ctuple); ///< if not overloaded this computes the generic pos/vel/acc depending on order
-  virtual uint dim_phi(const rai::Configuration& C){ HALT("one of the 'dim_phi' needs to be implemented!"); } ///< the dimensionality of $y$
+  virtual uint dim_phi(const rai::Configuration& C) { HALT("one of the 'dim_phi' needs to be implemented!"); } ///< the dimensionality of $y$
   virtual uint dim_phi(const ConfigurationL& Ctuple) { return dim_phi(*Ctuple.last()); } ///< if not overloaded, returns dim_phi for last configuration
 
-public:
-  void __phi(arr& y, arr& J, const rai::Configuration& C){ phi(y, J, C); applyLinearTrans(y, J); }
-  void __phi(arr& y, arr& J, const ConfigurationL& Ctuple){ phi(y, J, Ctuple); applyLinearTrans(y, J); }
-  uint __dim_phi(const rai::Configuration& C){ uint d=dim_phi(C); return applyLinearTrans_dim(d); }
-  uint __dim_phi(const ConfigurationL& Ctuple){ uint d=dim_phi(Ctuple); return applyLinearTrans_dim(d); }
+ public:
+  void __phi(arr& y, arr& J, const rai::Configuration& C) { phi(y, J, C); applyLinearTrans(y, J); }
+  void __phi(arr& y, arr& J, const ConfigurationL& Ctuple) { phi(y, J, Ctuple); applyLinearTrans(y, J); }
+  uint __dim_phi(const rai::Configuration& C) { uint d=dim_phi(C); return applyLinearTrans_dim(d); }
+  uint __dim_phi(const ConfigurationL& Ctuple) { uint d=dim_phi(Ctuple); return applyLinearTrans_dim(d); }
 
   virtual rai::String shortTag(const rai::Configuration& C) { return "without-description"; }
   virtual rai::Graph getSpec(const rai::Configuration& C) { return rai::Graph({{"description", shortTag(C)}}); }
-  
-  //-- evaluation helpers
-  arr phi(const ConfigurationL& Ctuple) { arr y; __phi(y,NoArr,Ctuple); return y; } ///< evaluate without computing Jacobian
-  arr phiRaw(const ConfigurationL& Ctuple) { arr y; phi(y,NoArr,Ctuple); return y; } ///< evaluate without computing Jacobian
-  Value operator()(const ConfigurationL& Ctuple){ arr y,J; __phi(y, J, Ctuple); return Value(y,J); }
-  Value operator()(const rai::Configuration& C){ arr y,J; __phi(y, J, C); return Value(y,J); }
-  Value eval(const rai::Configuration& C){ arr y,J; __phi(y, J, C); return Value(y,J); }
-  Value eval(const ConfigurationL& Ctuple){ arr y,J; __phi(y, J, Ctuple); return Value(y,J); }
 
+  //-- evaluation helpers
+  arr phi(const ConfigurationL& Ctuple) { arr y; __phi(y, NoArr, Ctuple); return y; } ///< evaluate without computing Jacobian
+  arr phiRaw(const ConfigurationL& Ctuple) { arr y; phi(y, NoArr, Ctuple); return y; } ///< evaluate without computing Jacobian
+  Value operator()(const ConfigurationL& Ctuple) { arr y, J; __phi(y, J, Ctuple); return Value(y, J); }
+  Value operator()(const rai::Configuration& C) { arr y, J; __phi(y, J, C); return Value(y, J); }
+  Value eval(const rai::Configuration& C) { arr y, J; __phi(y, J, C); return Value(y, J); }
+  Value eval(const ConfigurationL& Ctuple) { arr y, J; __phi(y, J, Ctuple); return Value(y, J); }
 
   //-- for direct gradient checking (move outside)
   VectorFunction vf(rai::Configuration& C);
   VectorFunction vf(ConfigurationL& Ctuple);
-private:
+ private:
   void applyLinearTrans(arr& y, arr& J);
   uint applyLinearTrans_dim(uint d);
 };

@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -630,10 +630,10 @@ void editConfiguration(const char* filename, rai::Configuration& C) {
       C.gl().lock.unlock();
     } catch(const char* msg) {
       cout <<"line " <<rai::lineCount <<": " <<msg <<" -- please check the file and press ENTER" <<endl;
-      C.watch(true, );
+      C.watch(true,);
       continue;
     }
-    C.watch(false, );
+    C.watch(false,);
     cout <<"animating.." <<endl;
     //while(ino.pollForModification());
     animateConfiguration(C, &ino);
@@ -641,7 +641,7 @@ void editConfiguration(const char* filename, rai::Configuration& C) {
 #if 0
     ino.waitForModification();
 #else
-    C.watch(true, );
+    C.watch(true,);
 #endif
     if(!rai::getInteractivity()) {
       exit=true;
@@ -651,7 +651,7 @@ void editConfiguration(const char* filename, rai::Configuration& C) {
 
 #if 0 //RAI_ODE
 void testSim(const char* filename, rai::Configuration* C, Ode* ode) {
-  C.watch(true, );
+  C.watch(true,);
   uint t, T=200;
   arr x, v;
   createOde(*C, *ode);

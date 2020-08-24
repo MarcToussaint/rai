@@ -2,6 +2,7 @@
 #include <Gui/opengl.h>
 #include <KOMO/komo.h>
 #include <Kin/TM_default.h>
+#include <Optim/opt-nlopt.h>
 
 //===========================================================================
 
@@ -13,6 +14,12 @@ void tutorialBasics(){
    * 1) the kinematic model
    * 2) the timing parameters (duration/phases, number os time slices per phase)
    * 3) the tasks */
+  komo.solver = rai::KS_sparse;
+//  komo.solver = rai::KS_banded;
+//  komo.solver = rai::KS_sparseStructured;
+//  komo.solver= rai::KS_NLopt;
+//  komo.solver= rai::KS_Ipopt;
+//  komo.solver= rai::KS_Ceres;
 
   //-- setting the model; false -> NOT calling collision detection (SWIFT) -> faster
   komo.setModel(C, false);
@@ -37,6 +44,7 @@ void tutorialBasics(){
   komo.setSlow(1., -1., 1e1);
 
   //-- call the optimizer
+//  komo.animateOptimization = 1;
   komo.optimize();
   //  komo.checkGradients(); //this checks all gradients of the problem by finite difference
   komo.getReport(true); //true -> plot the cost curves
@@ -75,6 +83,11 @@ void tutorialInverseKinematics(){
   rai::Configuration G("model.g");
 
   KOMO komo;
+  komo.solver = rai::KS_dense;
+//  komo.solver = rai::KS_NLopt;
+//  komo.solver = rai::KS_Ipopt;
+//  komo.solver = rai::KS_Ceres;
+
   komo.setModel(G, false);
 
   //-- the timing parameters: 1 phase, 1 time slice, duration 1, order 1
@@ -89,6 +102,7 @@ void tutorialInverseKinematics(){
   komo.addObjective({}, FS_quaternionDiff, {"endeff", "target"}, OT_eq, {1e1});
 
   //-- call the optimizer
+//  komo.animateOptimization = 1;
   komo.optimize();
   //  komo.checkGradients(); //this checks all gradients of the problem by finite difference
   komo.getReport(); //true -> plot the cost curves

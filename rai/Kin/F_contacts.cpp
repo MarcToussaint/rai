@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -280,22 +280,21 @@ void TM_Contact_POAisInIntersection_InEq::phi(arr& y, arr& J, const rai::Configu
   if(!!J) checkNan(J);
 }
 
-void TM_Contact_POA_isAtWitnesspoint::phi(arr& y, arr& J, const rai::Configuration& C){
-  rai::ForceExchange *con = getContact(C,a,b);
+void TM_Contact_POA_isAtWitnesspoint::phi(arr& y, arr& J, const rai::Configuration& C) {
+  rai::ForceExchange* con = getContact(C, a, b);
 
   arr poa, Jpoa;
   C.kinematicsContactPOA(poa, Jpoa, con);
 
-  F_PairCollision coll(a, b, (!use2ndObject ? F_PairCollision::_p1 : F_PairCollision::_p2) , false);
+  F_PairCollision coll(a, b, (!use2ndObject ? F_PairCollision::_p1 : F_PairCollision::_p2), false);
   arr wit, Jwit;
   coll.phi(wit, Jwit, C);
 
   y = poa - wit;
-  if(!!J){ J = Jpoa - Jwit; }
+  if(!!J) { J = Jpoa - Jwit; }
 }
 
-
-void TM_ContactConstraints_Vel::phi(arr& y, arr& J, const ConfigurationL& Ktuple){
+void TM_ContactConstraints_Vel::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   CHECK_EQ(order, 1, "");
 
   rai::Configuration& K = *Ktuple(-2); //!!! use LAST contact, and velocities AFTER contact
@@ -356,16 +355,15 @@ void TM_Contact_POAmovesContinuously::phi(arr& y, arr& J, const ConfigurationL& 
   }
 }
 
+void TM_Contact_NormalForceEqualsNormalPOAmotion::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
 
-void TM_Contact_NormalForceEqualsNormalPOAmotion::phi(arr& y, arr& J, const ConfigurationL& Ktuple){
-
-  TM_Contact_POA poa(a,b);
+  TM_Contact_POA poa(a, b);
   poa.order=1;
   Value poavel = poa.eval(Ktuple);
 
-  Value force = F_LinearForce(a,b) (*Ktuple(-1));
+  Value force = F_LinearForce(a, b)(*Ktuple(-1));
 
-  Value normal = F_PairCollision(a, b, F_PairCollision::_normal, true) (*Ktuple(-1));
+  Value normal = F_PairCollision(a, b, F_PairCollision::_normal, true)(*Ktuple(-1));
 
   double forceScaling = 1e1;
   force.y *= forceScaling;
@@ -380,8 +378,7 @@ void TM_Contact_NormalForceEqualsNormalPOAmotion::phi(arr& y, arr& J, const Conf
   if(!!J) J = ~normal.y*(force.J - poavel.J) + ~(force.y - poavel.y) * normal.J;
 }
 
-
-void TM_Contact_POAzeroRelVel::phi(arr& y, arr& J, const ConfigurationL& Ktuple){
+void TM_Contact_POAzeroRelVel::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   rai::ForceExchange* con = getContact(*Ktuple(-2), a, b);
 #if 0
   POA_rel_vel(y, J, Ktuple, con, true);
@@ -391,8 +388,8 @@ void TM_Contact_POAzeroRelVel::phi(arr& y, arr& J, const ConfigurationL& Ktuple)
   POA_vel(v2, Jv2, Ktuple, con, true);
   y = v1 - v2;
   if(!!J) J = Jv1 - Jv2;
-  if(normalOnly){
-    Value normal = F_PairCollision(a, b, F_PairCollision::_normal, true) (*Ktuple(-1));
+  if(normalOnly) {
+    Value normal = F_PairCollision(a, b, F_PairCollision::_normal, true)(*Ktuple(-1));
     expandJacobian(normal.J, Ktuple, -1);
     if(!!J) J = ~normal.y*J + ~y*normal.J;
     y = ARR(scalarProduct(normal.y, y));

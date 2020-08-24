@@ -14,6 +14,10 @@ void TEST(Grasp){
   K.checkConsistency();
 
   KOMO komo;
+  //komo.solver = rai::KS_sparse;
+  //komo.solver = rai::KS_banded;
+  komo.solver = rai::KS_sparseFactored;
+
   komo.setModel(K);
   komo.setTiming(2.5, 10., 5.);
   komo.add_qControlObjective({}, 2, 1.);

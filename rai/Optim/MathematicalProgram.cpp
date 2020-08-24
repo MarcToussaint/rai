@@ -1,10 +1,18 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "MathematicalProgram.h"
 
-arr MathematicalProgram::getInitializationSample(const arrL& previousOptima){
+arr MathematicalProgram::getInitializationSample(const arrL& previousOptima) {
   arr blo, bup;
   uint n = getDimension();
   getBounds(blo, bup);
-  if(!blo.N){
+  if(!blo.N) {
     return 2.*rand(n)-1.;
   }
 
@@ -13,20 +21,20 @@ arr MathematicalProgram::getInitializationSample(const arrL& previousOptima){
   return blo + rand(n) % (bup - blo);
 }
 
-void MathematicalProgram_Structured::evaluate(arr& phi, arr& J, const arr& x){
+void MathematicalProgram_Factored::evaluate(arr& phi, arr& J, const arr& x) {
   uintA variableDimensions; //the size of each variable block
   uintA featureDimensions;  //the size of each feature block
   intAA featureVariables;
-  getStructure(variableDimensions, //the size of each variable block
-               featureDimensions,  //the size of each feature block
-               featureVariables    //which variables the j-th feature block depends on
-               );
+  getFactorization(variableDimensions, //the size of each variable block
+                   featureDimensions,  //the size of each feature block
+                   featureVariables    //which variables the j-th feature block depends on
+                  );
   uintA varDimIntegral = integral(variableDimensions).prepend(0);
 
   uint n=0;
-  for(uint i=0;i<variableDimensions.N;i++){
+  for(uint i=0; i<variableDimensions.N; i++) {
     uint d = variableDimensions(i);
-    arr xi = x({n,n+d-1});
+    arr xi = x({n, n+d-1});
     setSingleVariable(i, xi);
     n += d;
   }
@@ -37,19 +45,21 @@ void MathematicalProgram_Structured::evaluate(arr& phi, arr& J, const arr& x){
 
   n=0;
   arr phi_i, J_i;
-  for(uint i=0;i<featureDimensions.N;i++){
+  for(uint i=0; i<featureDimensions.N; i++) {
     uint d = featureDimensions(i);
     evaluateSingleFeature(i, phi_i, J_i, NoArr);
     CHECK_EQ(phi_i.N, d, "");
     CHECK_EQ(J_i.d0, d, "");
-    phi({n,n+d-1}) = phi_i;
-    if(!!J){
+    phi({n, n+d-1}) = phi_i;
+    if(!!J) {
       uint Jii=0;
-      for(uint j=0;j<featureVariables(i).N;j++){
-        uint varId = featureVariables(i)(j);
-        uint varDim = variableDimensions(varId);
-        J.setMatrixBlock(J_i.sub(0,-1,Jii,Jii+varDim-1), n, varDimIntegral(varId));
-        Jii += varDim;
+      for(uint j=0; j<featureVariables(i).N; j++) {
+        int varId = featureVariables(i)(j);
+        if(varId>=0) {
+          uint varDim = variableDimensions(varId);
+          J.setMatrixBlock(J_i.sub(0, -1, Jii, Jii+varDim-1), n, varDimIntegral(varId));
+          Jii += varDim;
+        }
       }
       CHECK_EQ(Jii, J_i.d1, "");
     }
@@ -58,48 +68,25 @@ void MathematicalProgram_Structured::evaluate(arr& phi, arr& J, const arr& x){
   CHECK_EQ(n, phi.N, "");
 }
 
-void Conv_MathematicalProgram_TrivialStructured::getFeatureTypes(ObjectiveTypeA& featureTypes){ P.getFeatureTypes(featureTypes); }
-
-uint Conv_MathematicalProgram_TrivialStructured::getDimension(){ return P.getDimension(); }
-
-void Conv_MathematicalProgram_TrivialStructured::getBounds(arr& bounds_lo, arr& bounds_up){ P.getBounds(bounds_lo, bounds_up); }
-
-void Conv_MathematicalProgram_TrivialStructured::getStructure(uintA& variableDimensions, uintA& featureDimensions, intAA& featureVariables) {
-  variableDimensions = { getDimension() };
-  ObjectiveTypeA featureTypes;
-  getFeatureTypes(featureTypes);
-  featureDimensions = { featureTypes.N };
-  featureVariables = { intA({0}) };
-}
-
-void Conv_MathematicalProgram_TrivialStructured::setSingleVariable(uint var_id, const arr& x) {
-  x_buffer = x;
-}
-
-void Conv_MathematicalProgram_TrivialStructured::evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H) {
-  P.evaluate(phi, J, x_buffer);
-  if(!!H) NIY;
-}
-
-Conv_Structured_BandedProgram::Conv_Structured_BandedProgram(MathematicalProgram_Structured& P, uint _maxBandSize, bool _sparseNotBanded)
+Conv_FactoredNLP_BandedNLP::Conv_FactoredNLP_BandedNLP(MathematicalProgram_Factored& P, uint _maxBandSize, bool _sparseNotBanded)
   : P(P), maxBandSize(_maxBandSize), sparseNotBanded(_sparseNotBanded) {
-  P.getStructure(variableDimensions, //the size of each variable block
-               featureDimensions,  //the size of each feature block
-               featureVariables    //which variables the j-th feature block depends on
-               );
+  P.getFactorization(variableDimensions, //the size of each variable block
+                     featureDimensions,  //the size of each feature block
+                     featureVariables    //which variables the j-th feature block depends on
+                    );
   varDimIntegral = integral(variableDimensions).prepend(0);
   featDimIntegral = integral(featureDimensions).prepend(0);
 }
 
-void Conv_Structured_BandedProgram::evaluate(arr& phi, arr& J, const arr& x){
+void Conv_FactoredNLP_BandedNLP::evaluate(arr& phi, arr& J, const arr& x) {
   CHECK_EQ(x.N, varDimIntegral.last(), "");
 
   //set all variables
   uint n=0;
-  for(uint i=0;i<variableDimensions.N;i++){
+  for(uint i=0; i<variableDimensions.N; i++) {
     uint d = variableDimensions(i);
     CHECK_EQ(n, varDimIntegral(i), "");
-    arr xi = x({n,n+d-1});
+    arr xi = x({n, n+d-1});
     P.setSingleVariable(i, xi);
     n += d;
   }
@@ -108,17 +95,19 @@ void Conv_Structured_BandedProgram::evaluate(arr& phi, arr& J, const arr& x){
   phi.resize(featDimIntegral.last()).setZero();
   arr phi_i;
   J_i.resize(featureDimensions.N);
-  for(uint i=0;i<featureDimensions.N;i++){
+  for(uint i=0; i<featureDimensions.N; i++) {
     uint d = featureDimensions(i);
-    phi_i.referToRange(phi, featDimIntegral(i), featDimIntegral(i)+d-1);
-    P.evaluateSingleFeature(i, phi_i, (!!J?J_i(i):NoArr), NoArr);
-    CHECK_EQ(phi_i.N, d, "");
-    if(!!J) CHECK_EQ(J_i.elem(i).d0, d, "");
+    if(d) {
+      phi_i.referToRange(phi, featDimIntegral(i), featDimIntegral(i)+d-1);
+      P.evaluateSingleFeature(i, phi_i, (!!J?J_i(i):NoArr), NoArr);
+      CHECK_EQ(phi_i.N, d, "");
+      if(!!J) CHECK_EQ(J_i.elem(i).d0, d, "");
+    }
   }
 
   if(!J) return;
 
-  if(sparseNotBanded){
+  if(sparseNotBanded) {
     //count non-zeros!
     uint k=0;
     for(uint i=0; i<J_i.N; i++) {
@@ -144,16 +133,16 @@ void Conv_Structured_BandedProgram::evaluate(arr& phi, arr& J, const arr& x){
         uint c=0;
         for(uint fi=0; fi<f_dim; fi++) { //loop over feature dimension
           for(int& j:vars) if(j>=0) { //loop over variables of this features
-            uint x_dim = variableDimensions.elem(j);
-            for(uint xi=0; xi<x_dim; xi++) { //loop over variable dimension
-              double J_value = Ji.elem(c);
-              if(J_value) {
-                J.sparse().entry(featDimIntegral.elem(i)+fi, varDimIntegral.elem(j)+xi, k) = J_value;
-                k++;
+              uint x_dim = variableDimensions.elem(j);
+              for(uint xi=0; xi<x_dim; xi++) { //loop over variable dimension
+                double J_value = Ji.elem(c);
+                if(J_value) {
+                  J.sparse().entry(featDimIntegral.elem(i)+fi, varDimIntegral.elem(j)+xi, k) = J_value;
+                  k++;
+                }
+                c++;
               }
-              c++;
             }
-          }
         }
         CHECK_EQ(c, Ji.N, "you didn't count through all indexes");
       } else { //sparse vector
@@ -174,27 +163,29 @@ void Conv_Structured_BandedProgram::evaluate(arr& phi, arr& J, const arr& x){
     }
     CHECK_EQ(k, J.N, ""); //one entry for each non-zero
 
-  }else{
+  } else {
 
     rai::RowShifted* Jaux = 0;
-    if(!!J){
+    if(!!J) {
       Jaux = makeRowShifted(J, phi.N, maxBandSize, x.N); //(k+1)*dim_xmax
       J.setZero();
 
-      for(uint i=0;i<featureDimensions.N;i++){
+      for(uint i=0; i<featureDimensions.N; i++) {
         uint n = featDimIntegral(i);
         uint d = featureDimensions(i);
-        J.setMatrixBlock(J_i(i), n, 0);
-        //      memmove(&J(i, 0), J_i.p, J_i.sizeT*J_i.N);
-        intA& vars = featureVariables(i);
-        int t=vars.first();
-        //      uint xdim=variableDimensions(t);
-        //      for(int s=1;s<vars.N;s++){ xdim+=variableDimensions(t+s); CHECK_EQ(vars(s), t+s, ""); }
-        //      CHECK_EQ(xdim, J_i.d1, "");
+        if(d) {
+          J.setMatrixBlock(J_i(i), n, 0);
+          //      memmove(&J(i, 0), J_i.p, J_i.sizeT*J_i.N);
+          intA& vars = featureVariables(i);
+          int t=vars.first();
+          //      uint xdim=variableDimensions(t);
+          //      for(int s=1;s<vars.N;s++){ xdim+=variableDimensions(t+s); CHECK_EQ(vars(s), t+s, ""); }
+          //      CHECK_EQ(xdim, J_i.d1, "");
 
-        for(uint j=n;j<n+d;j++){
-          if(t<=0) Jaux->rowShift(j) = 0;
-          else Jaux->rowShift(j) = varDimIntegral(t);
+          for(uint j=n; j<n+d; j++) {
+            if(t<=0) Jaux->rowShift(j) = 0;
+            else Jaux->rowShift(j) = varDimIntegral(t);
+          }
         }
       }
       Jaux->reshift();

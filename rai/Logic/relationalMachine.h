@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -37,7 +37,7 @@ struct RelationalMachine {
   bool applyEffect(rai::String effect, bool fwdChain=false);   ///< return indicates change of state
 //  bool applyEffects(rai::String effects, const NodeL& substitutions, bool fwdChain=false);
   bool applyEffect(Node* literal, bool fwdChain=false);
-  void delFact(rai::Node *fact);
+  void delFact(rai::Node* fact);
   NodeL fwdChainRules();                 ///< progresses the state by applying all rules until convergence
 
   Node* declareNewSymbol(rai::String symbolStr);

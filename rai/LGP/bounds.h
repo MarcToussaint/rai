@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -18,7 +18,7 @@ struct KOMO_based_bound : ComputeObject {
 
   KOMO_based_bound(ptr<KOMO>& komo) : komo(komo) {}
 
-  virtual ptr<ComputeReport> run(double timeBudget=-1.){NIY}
+  virtual ptr<ComputeReport> run(double timeBudget=-1.) {NIY}
 };
 
 //===========================================================================
@@ -35,9 +35,9 @@ struct PoseBound : KOMO_based_bound {
 
 struct SeqBound : KOMO_based_bound {
   SeqBound(ptr<KOMO>& komo, //TODO: eventually remove this!
-            const Skeleton& S,
-            const rai::Configuration& startKinematics,
-            bool collisions);
+           const Skeleton& S,
+           const rai::Configuration& startKinematics,
+           bool collisions);
 };
 
 //===========================================================================
@@ -81,13 +81,13 @@ enum BoundType { BD_all=-1,
                };
 
 ptr<ComputeObject> skeleton2Bound(ptr<KOMO>& komo,
-                    BoundType boundType,
-                    const Skeleton& S,
-                    const rai::Configuration& startKinematics,
-                    const rai::Configuration& parentEffKinematics,
-                    bool collisions,
-                    const arrA& waypoints= {}
-                   );
+                                  BoundType boundType,
+                                  const Skeleton& S,
+                                  const rai::Configuration& startKinematics,
+                                  const rai::Configuration& parentEffKinematics,
+                                  bool collisions,
+                                  const arrA& waypoints= {}
+                                 );
 
 struct SubCG {
   rai::NodeL frames;

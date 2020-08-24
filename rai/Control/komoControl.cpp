@@ -1,5 +1,12 @@
-#include "komoControl.h"
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
+#include "komoControl.h"
 
 void KOMO_Control::setup(const rai::Configuration& C, double tau, double accCosts, double velCosts, bool avoidCollisions) {
 
@@ -15,7 +22,7 @@ void KOMO_Control::setup(const rai::Configuration& C, double tau, double accCost
   verbose=0;
 }
 
-void KOMO_Control::setBounds(double maxVel, double maxAcc){
+void KOMO_Control::setBounds(double maxVel, double maxAcc) {
   arr q_2 = getConfiguration_t(-2).getJointState();
   arr q_1 = getConfiguration_t(-1).getJointState();
 
@@ -31,11 +38,11 @@ void KOMO_Control::setBounds(double maxVel, double maxAcc){
   bound_up = elemWiseMin(bound_up, 2.*q_1 - q_2 + (maxAcc*tau*tau));
 }
 
-void KOMO_Control::updateConfiguration(const rai::Configuration& C){
+void KOMO_Control::updateConfiguration(const rai::Configuration& C) {
   getConfiguration_t(0).setFrameState(C.getFrameState());
 }
 
-void KOMO_Control::step(const arr& real_q){
+void KOMO_Control::step(const arr& real_q) {
   if(!!real_q.N && real_q.N) q = real_q;
 
   //push configurations

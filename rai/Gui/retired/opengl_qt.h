@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -72,7 +72,6 @@ struct sOpenGL: QGLWidget {
     if(e->button()==Qt::MidButton)  { gl->MouseButton(1, 1, e->x(), e->y()); }
     if(e->button()==Qt::RightButton) { gl->MouseButton(2, 1, e->x(), e->y()); }
   }
-
 
 #if 0
   /* OLD offscrean code*/

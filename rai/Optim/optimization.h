@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -22,7 +22,6 @@ typedef std::function<double(arr& df, arr& Hf, const arr& x)> ScalarFunction;
 /// This also implies an optimization problem $\hat f(y) = y^T(x) y(x)$ of (iterated)
 /// Gauss-Newton type where the Hessian is approximated by J^T J
 typedef std::function<void(arr& y, arr& Jy, const arr& x)> VectorFunction;
-
 
 //struct ConstrainedProblem {
 //  //TODO: add getStructure -> dim_x, tt
@@ -48,14 +47,14 @@ struct Conv_ScalarProblem_MathematicalProgram : MathematicalProgram {
   ScalarFunction f;
   uint xDim;
   Conv_ScalarProblem_MathematicalProgram(const ScalarFunction& f, uint xDim): f(f), xDim(xDim) {}
-  uint getDimension(){ return xDim; }
+  uint getDimension() { return xDim; }
   void getFeatureTypes(ObjectiveTypeA& ot) { ot = {OT_f}; }
   void evaluate(arr& phi, arr& J, const arr& x) {
     double y = f(J, NoArr, x);
     phi = {y};
     J.reshape(1, x.N);
   }
-  void getFHessian(arr &H, const arr &x) {
+  void getFHessian(arr& H, const arr& x) {
     f(NoArr, H, x);
   }
 };
@@ -86,12 +85,12 @@ inline arr summarizeErrors(const arr& phi, const ObjectiveTypeA& tt) {
 // accumulative constraints
 //
 
-inline void accumulateInequalities(arr& y, arr& J, const arr& yAll, const arr& JAll){
+inline void accumulateInequalities(arr& y, arr& J, const arr& yAll, const arr& JAll) {
   y.resize(1).setZero();
-  if(!!J) J.resize(1,JAll.d1).setZero();
+  if(!!J) J.resize(1, JAll.d1).setZero();
 
-  for(uint i=0;i<yAll.N;i++){
-    if(yAll.elem(i)>0.){
+  for(uint i=0; i<yAll.N; i++) {
+    if(yAll.elem(i)>0.) {
       y.scalar() += yAll.elem(i);
       if(!!J && !!JAll) J[0] += JAll[i];
     }

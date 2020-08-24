@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -117,13 +117,13 @@ struct KOMO {
     };
   } invKin_problem;
   void inverseKinematics(arr& y, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x);
-  
+
   struct Conv_KOMO_KOMOProblem_toBeRetired : KOMO_Problem {
     KOMO& MP;
     uint dimPhi;
-    
+
     Conv_KOMO_KOMOProblem_toBeRetired(KOMO& P) : MP(P) {}
-    
+
     virtual uint get_k() { return MP.k_order; }
     virtual void getStructure(uintA& variableDimensions, uintA& featureTimes, ObjectiveTypeA& featureTypes);
     virtual void phi(arr& phi, arrA& J, arrA& H, ObjectiveTypeA& tt, const arr& x);

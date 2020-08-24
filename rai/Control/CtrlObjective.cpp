@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -24,11 +24,11 @@
 //  : feat(_feat), name(name), ref(_ref), active(true), kp(_kp), kd(_kd), C(_C), status(AS_init){
 //}
 
-arr CtrlObjective::getResidual(CtrlProblem& cp){
+arr CtrlObjective::getResidual(CtrlProblem& cp) {
   return movingTarget->getResidual(getValue(cp));
 }
 
-arr CtrlObjective::getValue(CtrlProblem& cp){
+arr CtrlObjective::getValue(CtrlProblem& cp) {
   return feat->phi(cp.komo.configurations);
 }
 
@@ -49,7 +49,7 @@ void CtrlObjective::setRef(const ptr<CtrlMovingTarget>& _ref) {
 void CtrlObjective::setTarget(const arr& y_target) {
   CHECK(movingTarget, "need a ref to set target");
   feat->setTarget(y_target);
-  if(movingTarget){
+  if(movingTarget) {
     movingTarget->resetGoal(y_target);
     movingTarget->resetState();
   }
@@ -62,8 +62,8 @@ void CtrlObjective::reportState(ostream& os) const {
   os <<"  CtrlObjective " <<name <<':';
   if(!active) cout <<" INACTIVE";
   cout <<rai::Enum<ActStatus>(status) <<' ';
-  if(movingTarget){
-    os <<" \ty_ref=" <<feat->target <<" \ty-residual=" <<y_buffer;
+  if(movingTarget) {
+    movingTarget->reportState(os);
 //    if(ref->v_ref.N==y.N){
 //      os <<" \tv_ref=" <<ref->v_ref;
 //    }

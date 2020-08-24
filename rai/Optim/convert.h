@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -23,10 +23,10 @@ struct Conv_linearlyReparameterize_MathematicalProgram : MathematicalProgram {
   MathematicalProgram& P;
   arr B;
   Conv_linearlyReparameterize_MathematicalProgram(MathematicalProgram& P, const arr& B):P(P), B(B) {}
-  ~Conv_linearlyReparameterize_MathematicalProgram(){}
+  ~Conv_linearlyReparameterize_MathematicalProgram() {}
 
-  virtual uint getDimension(){ return P.getDimension(); }
-  virtual void getFeatureTypes(ObjectiveTypeA& ft){ P.getFeatureTypes(ft); }
+  virtual uint getDimension() { return P.getDimension(); }
+  virtual void getFeatureTypes(ObjectiveTypeA& ft) { P.getFeatureTypes(ft); }
   virtual void evaluate(arr& phi, arr& J, const arr& z);
 };
 

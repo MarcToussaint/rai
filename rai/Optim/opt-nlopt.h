@@ -1,8 +1,16 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include <Optim/MathematicalProgram.h>
-#include <nlopt.hpp>
 
 struct NLOptInterface {
-  MathematicalProgram& P;
+//  MathematicalProgram& P;
+  MathematicalProgram_Logged P;
   arr x, phi_x, J_x;
   ObjectiveTypeA featureTypes;
 
@@ -12,12 +20,12 @@ struct NLOptInterface {
 
   arr solve();
 
-private:
-  double f(const std::vector<double> &_x, std::vector<double> &_grad);
-  double g(const std::vector<double> &_x, std::vector<double> &_grad, uint feature);
-  double h(const std::vector<double> &_x, std::vector<double> &_grad, uint feature);
+ private:
+  double f(const std::vector<double>& _x, std::vector<double>& _grad);
+  double g(const std::vector<double>& _x, std::vector<double>& _grad, uint feature);
+  double h(const std::vector<double>& _x, std::vector<double>& _grad, uint feature);
 
-  static double _f(const std::vector<double> &x, std::vector<double> &grad, void* f_data);
-  static double _g(const std::vector<double> &x, std::vector<double> &grad, void* f_data);
-  static double _h(const std::vector<double> &x, std::vector<double> &grad, void* f_data);
+  static double _f(const std::vector<double>& x, std::vector<double>& grad, void* f_data);
+  static double _g(const std::vector<double>& x, std::vector<double>& grad, void* f_data);
+  static double _h(const std::vector<double>& x, std::vector<double>& grad, void* f_data);
 };

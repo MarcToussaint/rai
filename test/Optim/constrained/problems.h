@@ -1,6 +1,6 @@
 #include <Optim/optimization.h>
 
-struct CoveringSpheresProblem : ConstrainedProblem {
+struct CoveringSpheresProblem : MathematicalProgram {
   const arr& x;
   double p, alpha;
   uint s;
@@ -22,7 +22,8 @@ struct CoveringSpheresProblem : ConstrainedProblem {
     return cat(c,r);
   }
 
-  virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& ot, const arr& x){ NIY }
+  virtual void getFeatureTypes(ObjectiveTypeA& ft){ NIY }
+  virtual void evaluate(arr& phi, arr& J, const arr& x){ NIY }
 
   virtual double phi(arr& df, arr& Hf, arr& g, arr& Jg, const arr& c_r) {
     uint s=c_r.N/4;

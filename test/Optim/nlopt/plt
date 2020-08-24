@@ -1,0 +1,11 @@
+set contour base
+set cntrparam linear
+set cntrparam levels incremental -10,.1,10
+unset surface
+set table 'z.table'
+splot [-1.2:1.2][-1.2:1.2] \
+ 'z.fct' matrix us (1.2*($1/50-1)):(1.2*($2/50-1)):3
+unset table
+
+plot 'z.table' w l, 'z.opt2' us 2:1 w lp, 'z.opt' us 6:5 w lp
+#plot 'z.opt_all' us 6:5 w lines

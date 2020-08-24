@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -31,7 +31,8 @@ float student(float x, float nu) {
 }
 double p_to_ratio(double p) {
   if(p<.5) {
-    if(p<1e-10) p=1e-10; return .5*log(p/(1.-p));
+    if(p<1e-10) p=1e-10;
+    return .5*log(p/(1.-p));
   } else {
     p=1.-p; if(p<1e-10) p=1e-10; return -.5*log(p/(1.-p));
   }

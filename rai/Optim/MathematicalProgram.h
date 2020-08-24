@@ -1,3 +1,11 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #pragma once
 
 #include "../Core/array.h"
@@ -24,7 +32,7 @@ extern ObjectiveTypeA& NoObjectiveTypeA;
  *
  *  Importantly: the Jacobian may be sparse! This allows to implicitly represent structured NLP (in contrast to explicit structure, see below)
  */
-struct MathematicalProgram : NonCopyable{
+struct MathematicalProgram : NonCopyable {
   virtual ~MathematicalProgram() {}
 
   //-- essential methods that need overload
@@ -32,23 +40,23 @@ struct MathematicalProgram : NonCopyable{
   virtual void evaluate(arr& phi, arr& J, const arr& x) = 0;       //evaluate all features and (optionally) their Jacobians for state x
 
   //-- optional signature and semantics
-  virtual uint getDimension(){ return 0; }                  //the dimensionality of the full decision variable
-  virtual void getBounds(arr& bounds_lo, arr& bounds_up){ bounds_lo.clear(); bounds_up.clear(); } //lower/upper bounds for the decision variable (may be {})
-  virtual void getNames(StringA& variableNames, StringA& featureNames){ variableNames.clear(); featureNames.clear(); } //the names of each variable/feature block (or element if unstructured)
-  virtual arr  getInitializationSample(const arrL& previousOptima={}); //get an initialization (for MC sampling/restarts) [default: initialize random within bounds]
+  virtual uint getDimension() { return 0; }                 //the dimensionality of the full decision variable
+  virtual void getBounds(arr& bounds_lo, arr& bounds_up) { bounds_lo.clear(); bounds_up.clear(); } //lower/upper bounds for the decision variable (may be {})
+  virtual void getNames(StringA& variableNames, StringA& featureNames) { variableNames.clear(); featureNames.clear(); } //the names of each variable/feature block (or element if unstructured)
+  virtual arr  getInitializationSample(const arrL& previousOptima= {}); //get an initialization (for MC sampling/restarts) [default: initialize random within bounds]
 
   //-- optional evaluation of Hessian of all scalar objectives
-  virtual void getFHessian(arr& H, const arr& x){ H.clear(); } //the Hessian of the sum of all f-features (or Hessian in addition to the Gauss-Newton Hessian of all other features)
+  virtual void getFHessian(arr& H, const arr& x) { H.clear(); } //the Hessian of the sum of all f-features (or Hessian in addition to the Gauss-Newton Hessian of all other features)
 };
 
 //===========================================================================
 
-struct MathematicalProgram_Structured : MathematicalProgram {
+struct MathematicalProgram_Factored : MathematicalProgram {
   //-- structure of the mathematical problem
-  virtual void getStructure(uintA& variableDimensions, //the size of each variable block
-                            uintA& featureDimensions,  //the size of each feature block
-                            intAA& featureVariables    //which variables the j-th feature block depends on
-                            ) = 0;
+  virtual void getFactorization(uintA& variableDimensions, //the size of each variable block
+                                uintA& featureDimensions,  //the size of each feature block
+                                intAA& featureVariables    //which variables the j-th feature block depends on
+                               ) = 0;
 
   //-- structured (local) setting variable and evaluate feature
   virtual void setSingleVariable(uint var_id, const arr& x) = 0; //set a single variable block
@@ -60,28 +68,59 @@ struct MathematicalProgram_Structured : MathematicalProgram {
 };
 
 //===========================================================================
+// TRIVIAL only header
 
-struct Conv_MathematicalProgram_TrivialStructured : MathematicalProgram_Structured {
+struct MathematicalProgram_Logged : MathematicalProgram {
+  MathematicalProgram& P;
+  arr phiLog, JLog, xLog;
+
+  MathematicalProgram_Logged(MathematicalProgram& P) : P(P) {}
+
+  virtual void evaluate(arr& phi, arr& J, const arr& x) {
+    P.evaluate(phi, J, x);
+    xLog.append(x); xLog.reshape(-1, x.N);
+    if(!!phi) { phiLog.append(phi); phiLog.reshape(-1, phi.N); }
+    if(!!J) {   JLog.append(J);     JLog.reshape(-1, phi.N, x.N); }
+  }
+
+  //trivial
+  virtual void getFeatureTypes(ObjectiveTypeA& featureTypes) { P.getFeatureTypes(featureTypes); }
+  virtual uint getDimension() { return P.getDimension(); }
+  virtual void getBounds(arr& bounds_lo, arr& bounds_up) { P.getBounds(bounds_lo, bounds_up); }
+  virtual void getNames(StringA& variableNames, StringA& featureNames) { P.getNames(variableNames, featureNames); }
+  virtual arr  getInitializationSample(const arrL& previousOptima= {}) { return P.getInitializationSample(previousOptima); }
+  virtual void getFHessian(arr& H, const arr& x) { P.getFHessian(H, x); }
+};
+
+//===========================================================================
+// TRIVIAL only header
+
+struct Conv_MathematicalProgram_TrivialFactoreded : MathematicalProgram_Factored {
   MathematicalProgram& P;
   arr x_buffer;
 
-  Conv_MathematicalProgram_TrivialStructured(MathematicalProgram& P) : P(P) {}
+  Conv_MathematicalProgram_TrivialFactoreded(MathematicalProgram& P) : P(P) {}
 
-  virtual void getFeatureTypes(ObjectiveTypeA& featureTypes);
-  virtual uint getDimension();
-  virtual void getBounds(arr& bounds_lo, arr& bounds_up);
-//  virtual void getNames(StringA& variableNames, StringA& featureNames){ variableNames.clear(); featureNames.clear(); } //the names of each variable/feature block (or element if unstructured)
-//  virtual arr  getInitializationSample(const arrL& previousOptima={}); //get an initialization (for MC sampling/restarts) [default: initialize random within bounds]
+  virtual void getFeatureTypes(ObjectiveTypeA& featureTypes) { P.getFeatureTypes(featureTypes); }
+  virtual uint getDimension() { return P.getDimension(); }
+  virtual void getBounds(arr& bounds_lo, arr& bounds_up) { P.getBounds(bounds_lo, bounds_up); }
+  virtual arr  getInitializationSample(const arrL& previousOptima= {}) { return P.getInitializationSample(previousOptima); }
 
-  virtual void getStructure(uintA& variableDimensions, uintA& featureDimensions, intAA& featureVariables);
-  virtual void setSingleVariable(uint var_id, const arr& x);
-  virtual void evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H);
+  virtual void getFactorization(uintA& variableDimensions, uintA& featureDimensions, intAA& featureVariables) {
+    variableDimensions = { getDimension() };
+    ObjectiveTypeA featureTypes;
+    getFeatureTypes(featureTypes);
+    featureDimensions = { featureTypes.N };
+    featureVariables = { intA({0}) };
+  }
+  virtual void setSingleVariable(uint var_id, const arr& x) { x_buffer = x; }
+  virtual void evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H) {  P.evaluate(phi, J, x_buffer);   if(!!H) NIY;  }
 };
 
 //===========================================================================
 
-struct Conv_Structured_BandedProgram : MathematicalProgram {
-  MathematicalProgram_Structured& P;
+struct Conv_FactoredNLP_BandedNLP : MathematicalProgram {
+  MathematicalProgram_Factored& P;
   uint maxBandSize;
   bool sparseNotBanded;
   uintA variableDimensions, varDimIntegral, featureDimensions, featDimIntegral;
@@ -89,15 +128,15 @@ struct Conv_Structured_BandedProgram : MathematicalProgram {
   //buffers
   arrA J_i;
 
-  Conv_Structured_BandedProgram(MathematicalProgram_Structured& P, uint _maxBandSize, bool _sparseNotBanded=false);
+  Conv_FactoredNLP_BandedNLP(MathematicalProgram_Factored& P, uint _maxBandSize, bool _sparseNotBanded=false);
 
   // trivial
-  virtual uint getDimension(){ return P.getDimension(); }
-  virtual void getFeatureTypes(ObjectiveTypeA& featureTypes){ P.getFeatureTypes(featureTypes); }
-  virtual void getBounds(arr& bounds_lo, arr& bounds_up){ P.getBounds(bounds_lo, bounds_up); }
-  virtual void getNames(StringA& variableNames, StringA& featureNames){ P.getNames(variableNames, featureNames); }
-  virtual arr  getInitializationSample(const arrL& previousOptima={}) { return P.getInitializationSample(previousOptima); }
-  virtual void getFHessian(arr& H, const arr& x){ P.getFHessian(H, x); }
+  virtual uint getDimension() { return P.getDimension(); }
+  virtual void getFeatureTypes(ObjectiveTypeA& featureTypes) { P.getFeatureTypes(featureTypes); }
+  virtual void getBounds(arr& bounds_lo, arr& bounds_up) { P.getBounds(bounds_lo, bounds_up); }
+  virtual void getNames(StringA& variableNames, StringA& featureNames) { P.getNames(variableNames, featureNames); }
+  virtual arr  getInitializationSample(const arrL& previousOptima= {}) { return P.getInitializationSample(previousOptima); }
+  virtual void getFHessian(arr& H, const arr& x) { P.getFHessian(H, x); }
 
   virtual void evaluate(arr& phi, arr& J, const arr& x);
 };

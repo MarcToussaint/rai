@@ -1,50 +1,67 @@
+/*  ------------------------------------------------------------------
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
+
+    This code is distributed under the MIT License.
+    Please see <root-path>/LICENSE for details.
+    --------------------------------------------------------------  */
+
 #include "CtrlTargets.h"
 
 #include "control.h"
 
 //===========================================================================
 
-ActStatus CtrlTarget_Const::step(double tau, CtrlObjective *o, const ConfigurationL& Ctuple) {
+ActStatus CtrlTarget_Const::step(double tau, CtrlObjective* o, const ConfigurationL& Ctuple) {
   o->feat->target.clear();
   return AS_running;
 }
 
 //===========================================================================
 
-ActStatus CtrlTarget_ConstVel::step(double tau, CtrlObjective *o, const ConfigurationL& Ctuple) {
+ActStatus CtrlTarget_ConstVel::step(double tau, CtrlObjective* o, const ConfigurationL& Ctuple) {
   o->feat->target.clear();
   return AS_running;
 }
 
 //===========================================================================
 
-CtrlTarget_MaxCarrot::CtrlTarget_MaxCarrot(CtrlObjective& co, double maxDistance, const arr& _goal) : maxDistance(maxDistance){
+CtrlTarget_MaxCarrot::CtrlTarget_MaxCarrot(CtrlObjective& co, double maxDistance, const arr& _goal) : maxDistance(maxDistance) {
   if(!!_goal) goal=_goal;
 //  isTransient = true;
 }
 
-ActStatus CtrlTarget_MaxCarrot::step(double tau, CtrlObjective *o, const ConfigurationL& Ctuple) {
-  //what's the raw y-dimension?
-  arr y_real =  o->feat->phi(Ctuple);
+uint getRealValue(CtrlObjective* o, arr& y_raw, arr& y_real, const ConfigurationL& Ctuple) {
+  //get the current (scaled) feature value
+  y_real =  o->feat->phi(Ctuple);
   if(o->type==OT_ineq) for(double& d:y_real) if(d<0.) d=0.;
 
-  uint dy = y_real.N;
-  if(o->feat->scale.nd==2) dy = o->feat->scale.d1;
-
-  //initialize goal
-  if(goal.N!=dy){
-    if(o->feat->target.N==dy) goal = o->feat->target;
-    else goal = zeros(dy);
-  }
-
-//  if(!isTransient){ o->feat->target = goal; return AS_running; }
+  //what's the raw (unscaled) y-dimension?
+  uint d_raw = y_real.N;
+  if(o->feat->scale.nd==2) d_raw = o->feat->scale.d1;
 
   //get the raw y-value (before scaling; also projected in scale's input space)
-  arr y_raw = y_real;
+  y_raw = y_real;
   if(o->feat->scale.N==1) y_raw /= o->feat->scale.scalar();
   else if(o->feat->scale.nd==1) y_raw /= o->feat->scale;
   else if(o->feat->scale.nd==2) y_raw = pseudoInverse(o->feat->scale)*y_real;
   if(o->feat->target.N) y_raw += o->feat->target;
+
+  CHECK_EQ(d_raw, y_raw.N, "");
+
+  return d_raw;
+}
+
+ActStatus CtrlTarget_MaxCarrot::step(double tau, CtrlObjective* o, const ConfigurationL& Ctuple) {
+  arr y_real, y_raw;
+
+  uint d_raw = getRealValue(o, y_raw, y_real, Ctuple);
+
+  //initialize goal
+  if(goal.N!=d_raw) {
+    if(o->feat->target.N==d_raw) goal = o->feat->target;
+    else goal = zeros(d_raw);
+  }
 
   double d = length(y_raw-goal);
   if(d > maxDistance) {
@@ -62,7 +79,61 @@ ActStatus CtrlTarget_MaxCarrot::step(double tau, CtrlObjective *o, const Configu
 
 //===========================================================================
 
-ActStatus CtrlTarget_Sine:: step(double tau, CtrlObjective *o, const ConfigurationL& Ctuple) {
+CtrlTarget_PathCarrot::CtrlTarget_PathCarrot(const arr& path, double maxDistance, double _endTime)
+  : maxStep(maxDistance), endTime(_endTime), time(0.) {
+  CHECK_EQ(path.nd, 2, "need a properly shaped path!");
+  arr times(path.d0);
+  for(uint i=0; i<path.d0; i++) times.elem(i) = endTime*double(i)/double(times.N-1);
+  spline.set(2, path, times);
+}
+
+CtrlTarget_PathCarrot::CtrlTarget_PathCarrot(const arr& path, double maxDistance, const arr& times)
+  : maxStep(maxDistance), endTime(times.last()), time(0.) {
+  spline.set(2, path, times);
+}
+
+ActStatus CtrlTarget_PathCarrot::step(double tau, CtrlObjective* o, const ConfigurationL& Ctuple) {
+  if(time+tau > endTime) tau = endTime - time;
+
+  arr y_real, y_raw;
+  getRealValue(o, y_raw, y_real, Ctuple);
+
+  arr ref = spline.eval(time);
+  arr goal = spline.eval(time + tau);
+  double d1 = length(y_raw-ref);
+  double d2 = length(ref-goal);
+
+  if(d1 > maxStep) {
+    //don't move foreward at all!
+    goal = ref;
+    tau = 0.;
+    isTransient=true;
+    countInRange=0;
+    countBlocked++;
+  } else if(d1+d2 > maxStep) {
+    double factor = (maxStep-d1)/d2;
+    tau *= factor;
+    goal = spline.eval(time + tau);
+    isTransient=true;
+    countInRange=0;
+    if(factor<.01) countBlocked++;
+    else countBlocked=0;
+  } else {
+    isTransient=false;
+    countInRange++;
+    countBlocked=0;
+  }
+//  cout <<"  tau:" <<tau <<endl;
+  time += tau;
+  o->feat->target = goal;
+
+  if(time>=endTime && countInRange>10) return AS_converged;
+  return AS_running;
+}
+
+//===========================================================================
+
+ActStatus CtrlTarget_Sine:: step(double tau, CtrlObjective* o, const ConfigurationL& Ctuple) {
   t+=tau;
   if(t>T) t=T;
   arr y_real =  o->feat->phi(Ctuple);
@@ -130,7 +201,7 @@ void getVel_bang(double& x, double& v, double maxVel, double tau) {
   }
 }
 
-ActStatus CtrlTarget_Bang::step(double tau, CtrlObjective *o, const ConfigurationL& Ctuple) {
+ActStatus CtrlTarget_Bang::step(double tau, CtrlObjective* o, const ConfigurationL& Ctuple) {
   //only on initialization the true state is used; otherwise ignored!
 //  if(y_target.N!=y_real.N) { y_target=y_real; }
 
@@ -201,7 +272,7 @@ void CtrlTarget_PD::setGainsAsNatural(double decayTime, double dampingRatio) {
 //  setGains(rai::sqr(1./lambda), 2.*dampingRatio/lambda);
 }
 
-ActStatus CtrlTarget_PD::step(double tau, CtrlObjective *o, const ConfigurationL& Ctuple) {
+ActStatus CtrlTarget_PD::step(double tau, CtrlObjective* o, const ConfigurationL& Ctuple) {
   //only on initialization the true state is used; otherwise ignored!
   arr y_real =  o->feat->phi(Ctuple);
   if(y_ref.N!=y_real.N) { y_ref=y_real; v_ref=zeros(y_real.N); }
@@ -277,29 +348,5 @@ bool CtrlTarget_PD::isConverged(double _tolerance) {
   return (y_ref.N && y_ref.N==y_target.N && v_ref.N==v_target.N
           && maxDiff(y_ref, y_target)<_tolerance
           && maxDiff(v_ref, v_target)<_tolerance); //TODO what if Kp = 0, then it should not count?!?
-}
-
-//===========================================================================
-
-CtrlTarget_Path::CtrlTarget_Path(const arr& path, double executionTime)
-  : endTime(executionTime), time(0.) {
-  CHECK_EQ(path.nd, 2, "need a properly shaped path!");
-  arr times(path.d0);
-  for(uint i=0; i<path.d0; i++) times.elem(i) = endTime*double(i)/double(times.N-1);
-  spline.set(2, path, times);
-}
-
-CtrlTarget_Path::CtrlTarget_Path(const arr& path, const arr& times)
-  : endTime(times.last()), time(0.) {
-  spline.set(2, path, times);
-}
-
-ActStatus CtrlTarget_Path::step(double tau, CtrlObjective *o, const ConfigurationL& Ctuple) {
-  time += tau;
-  if(time > endTime) time=endTime;
-  o->feat->target = spline.eval(time);
-//  v_ref = spline.eval(time, 1);
-  if(time>=endTime) return AS_done;
-  return AS_running;
 }
 

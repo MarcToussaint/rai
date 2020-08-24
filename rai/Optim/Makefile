@@ -6,6 +6,7 @@ DEPEND = Core
 
 CERES = 1
 NLOPT = 1
+IPOPT = 1
 
 SRCS = $(shell find . -maxdepth 1 -name '*.cpp' )
 OBJS = $(SRCS:%.cpp=%.o)

@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -27,12 +27,12 @@ struct MP_TrivialSquareFunction : MathematicalProgram {
 
   MP_TrivialSquareFunction(uint dim=10, double lo=-1., double hi=1.) : dim(dim), lo(lo), hi(hi) {}
 
-  virtual uint getDimension(){ return dim; }
-  virtual void getBounds(arr& bounds_lo, arr& bounds_up){ //lower/upper bounds for the decision variable (may be {})
+  virtual uint getDimension() { return dim; }
+  virtual void getBounds(arr& bounds_lo, arr& bounds_up) { //lower/upper bounds for the decision variable (may be {})
     bounds_lo = consts<double>(lo, dim);
     bounds_up = consts<double>(hi, dim);
   }
-  virtual void getFeatureTypes(ObjectiveTypeA& featureTypes){
+  virtual void getFeatureTypes(ObjectiveTypeA& featureTypes) {
     featureTypes = consts<ObjectiveType>(OT_sos, dim);
   }
 
@@ -41,7 +41,6 @@ struct MP_TrivialSquareFunction : MathematicalProgram {
     if(!!J) J.setId(x.N);
   }
 };
-
 
 //===========================================================================
 
@@ -87,73 +86,16 @@ struct ChoiceConstraintFunction : MathematicalProgram {
   enum WhichConstraint { wedge2D=1, halfcircle2D, randomLinear, circleLine2D } which;
   uint n;
   arr randomG;
-  ChoiceConstraintFunction() {
-    which = (WhichConstraint) rai::getParameter<int>("constraintChoice");
-    n = rai::getParameter<uint>("dim", 2);
-  }
-  void getFeatureTypes(ObjectiveTypeA& tt){
-    tt.clear();
-    tt.append(OT_f);
-    switch(which) {
-      case wedge2D:
-        tt.append(consts(OT_ineq, n));
-        break;
-      case halfcircle2D:
-        tt.append(OT_ineq);
-        tt.append(OT_ineq);
-        break;
-      case circleLine2D:
-        tt.append(OT_ineq);
-        tt.append(OT_eq);
-        break;
-      case randomLinear:
-        tt.append(consts(OT_ineq, randomG.d0));
-        break;
-    }
-  }
+  ChoiceConstraintFunction();
 
-  void evaluate(arr& phi, arr& J, const arr& x) {
-    CHECK_EQ(x.N, n, "");
-    phi.clear();  if(!!J) J.clear();
+  uint getDimension();
 
-    phi.append(ChoiceFunction()(J, NoArr, x));
+  void getFeatureTypes(ObjectiveTypeA& tt);
 
-    switch(which) {
-      case wedge2D:
-        for(uint i=0; i<x.N; i++) { phi.append(-sum(x)+1.5*x(i)-.2); }
-        if(!!J) { arr Jg(x.N, x.N); Jg=-1.; for(uint i=0; i<x.N; i++) Jg(i, i) = +.5; J.append(Jg); }
-        break;
-      case halfcircle2D:
-        phi.append(sumOfSqr(x)-.25);  if(!!J) J.append(2.*x);       //feasible=IN circle of radius .5
-        phi.append(-x(0)-.2);         if(!!J) { J.append(zeros(x.N)); J.elem(-x.N) = -1.; }      //feasible=right of -.2
-        break;
-      case circleLine2D:
-        phi.append(sumOfSqr(x)-.25);  if(!!J) J.append(2.*x);       //feasible=IN circle of radius .5
-        phi.append(x(0));             if(!!J) { J.append(zeros(x.N)); J.elem(-x.N) = 1.; }
-        break;
-      case randomLinear: {
-        if(!randomG.N) {
-          randomG.resize(5*x.N+5, x.N+1);
-          rndGauss(randomG, 1.);
-          for(uint i=0; i<randomG.d0; i++) {
-            if(randomG(i, 0)>0.) randomG(i, 0)*=-1.; //ensure (0,0) is feasible
-            randomG(i, 0) -= .2;
-          }
-        }
-        CHECK_EQ(randomG.d1, x.N+1, "you changed dimensionality");
-        phi.append(randomG * cat({1.}, x));
-        if(!!J) J.append(randomG.sub(0, -1, 1, -1));
-      } break;
-    }
+  void getBounds(arr& bounds_lo, arr& bounds_hi);
 
-    if(!!J) J.reshape(J.N/x.N, x.N);
-  }
-  void getFHessian(arr& H, const arr& x){
-    ChoiceFunction()(NoArr, H, x);
-  }
-  virtual uint getDimension() {
-    return n;
-  }
+  void evaluate(arr& phi, arr& J, const arr& x);
+  void getFHessian(arr& H, const arr& x);
 //  virtual uint dim_g(){
 //    if(which==randomLinear) return ;
 //    if(which==wedge2D) return n;
@@ -171,7 +113,7 @@ struct ChoiceConstraintFunction : MathematicalProgram {
 struct SimpleConstraintFunction : MathematicalProgram {
   SimpleConstraintFunction() {
   }
-  virtual void getFeatureTypes(ObjectiveTypeA &tt){ tt = { OT_sos, OT_sos, OT_ineq, OT_ineq }; }
+  virtual void getFeatureTypes(ObjectiveTypeA& tt) { tt = { OT_sos, OT_sos, OT_ineq, OT_ineq }; }
   virtual void evaluate(arr& phi, arr& J, const arr& _x) {
     CHECK_EQ(_x.N, 2, "");
     phi.resize(4);

@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -232,7 +232,7 @@ void TM_Default::phi(arr& y, arr& J, const rai::Configuration& C) {
   if(type==TMT_quat) {
     if(b==nullptr) { //simple, no j reference
       C.kinematicsQuat(y, J, a);
-    }else{
+    } else {
       arr qa, qb, Ja, Jb;
       C.kinematicsQuat(qb, Jb, a);
       C.kinematicsQuat(qa, Ja, b);
@@ -314,19 +314,19 @@ uint TM_Default::dim_phi(const rai::Configuration& C) {
   }
 }
 
-void TM_Default::signature(intA& S, const rai::Configuration& C){
-  rai::Frame *a = i<0?nullptr: C.frames(i);
-  rai::Frame *b = j<0?nullptr: C.frames(j);
+void TM_Default::signature(intA& S, const rai::Configuration& C) {
+  rai::Frame* a = i<0?nullptr: C.frames(i);
+  rai::Frame* b = j<0?nullptr: C.frames(j);
 
   S.clear();
   FrameL F;
   if(a) F.append(a->getPathToRoot());
   if(b) F.append(b->getPathToRoot());
 
-  for(rai::Frame *f:F) if(f->joint){
-    rai::Joint *j = f->joint;
-    for(uint i=0;i<j->qDim();i++) S.setAppendInSorted(j->qIndex+i);
-  }
+  for(rai::Frame* f:F) if(f->joint) {
+      rai::Joint* j = f->joint;
+      for(uint i=0; i<j->qDim(); i++) S.setAppendInSorted(j->qIndex+i);
+    }
 }
 
 rai::String TM_Default::shortTag(const rai::Configuration& C) {

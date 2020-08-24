@@ -1,6 +1,6 @@
 /*  ------------------------------------------------------------------
-    Copyright (c) 2019 Marc Toussaint
-    email: marc.toussaint@informatik.uni-stuttgart.de
+    Copyright (c) 2011-2020 Marc Toussaint
+    email: toussaint@tu-berlin.de
 
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
@@ -75,7 +75,6 @@ struct CtrlReference_PD: CtrlMovingTarget {
 
   void setGains(double _kp, double _kd);
   void setGainsAsNatural(double decayTime, double dampingRatio); ///< the decayTime is the to decay to 10% of the initial offset/error
-
 
   arr getDesiredAcceleration();
   void getDesiredLinAccLaw(arr& Kp_y, arr& Kd_y, arr& a0_y);

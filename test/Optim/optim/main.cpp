@@ -8,7 +8,7 @@ void TEST(SqrProblem) {
   displayFunction(f, true);
 
   arr x(10),x0;
-  rndUniform(x,1.,1.,false);
+  rndUniform(x,-1.,1.,false);
   x0=x;
 
   checkGradient(f, x, 1e-3);
@@ -30,19 +30,12 @@ void TEST(SqrProblem) {
 
 //===========================================================================
 
-void TEST(LambdaFunction){
-  std::function<double (double)> f = [](double x)->double{ return 2.*x; };
-
-  cout <<f(3.) <<endl;
-}
-
-//===========================================================================
-
 int MAIN(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
+  rnd.clockSeed();
+
   testSqrProblem();
-  testLambdaFunction();
 
   return 0;
 }
