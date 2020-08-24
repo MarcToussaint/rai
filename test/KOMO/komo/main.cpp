@@ -39,10 +39,8 @@ void TEST(Align){
   rai::Configuration C("arm.g");
   cout <<"configuration space dim=" <<C.getJointStateDimension() <<endl;
   KOMO komo;
-//  komo.solver = rai::KS_sparseStructured;
-//  komo.solver = rai::KS_sparse;
-  komo.solver = rai::KS_banded;
-  komo.verbose=1;
+//  komo.solver = rai::KS_sparseStructured; //set via rai.cfg!!
+//  komo.verbose=1; //set via rai.cfg!!
   komo.setModel(C);
   komo.setTiming(1., 100, 5., 2);
   komo.add_qControlObjective({}, 2, 1.);
@@ -222,9 +220,9 @@ int main(int argc,char** argv){
 //  rnd.clockSeed();
 
 //  testEasy();
-  testAlign();
+//  testAlign();
 //  testThin();
-//  testPR2();
+  testPR2();
 
   return 0;
 }

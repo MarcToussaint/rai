@@ -10,6 +10,8 @@
 #define RAI_util_t_cpp
 
 #include "util.h"
+#include "graph.h"
+
 #include <map>
 #include <string>
 #include <sstream>
@@ -18,8 +20,6 @@
 #ifndef RAI_MSVC
 #  include <unistd.h>
 #endif
-
-bool getParameterFromGraph(const std::type_info& type, void* data, const char* key);
 
 namespace rai {
 /** @brief Search for a command line option \c -tag and, if found, pipe the
@@ -38,7 +38,7 @@ bool getFromCmdLine(T& x, const char* tag) {
 template<class T>
 bool getParameterBase(T& x, const char* tag, bool hasDefault, const T* Default) {
 #if 1
-  if(getParameterFromGraph(typeid(T), &x, tag)) {
+  if(getParameterFromGraph<T>(x, tag)) {
     LOG(3) <<std::setw(20) <<tag <<" = " <<std::setw(5) <<x <<" [" <<typeid(x).name() <<"] (graph!)";
     return true;
   }

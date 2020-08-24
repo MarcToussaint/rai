@@ -315,8 +315,13 @@ stdOutPipe(RenderingInfo)
 
 //===========================================================================
 
-/// global registry of anything using a singleton Graph
-extern Singleton<rai::Graph> registry;
+/// global registry of parameters (taken from cmd line or file) as a singleton traph
+rai::Graph& getRegistry();
+
+template<class T>
+bool getParameterFromGraph(T& x, const char* key) {
+  return getRegistry().get(x, key);
+}
 
 //===========================================================================
 

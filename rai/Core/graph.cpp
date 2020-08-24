@@ -49,7 +49,7 @@ stdOutPipe(ParseInfo)
 
 //-- query existing types
 inline Node* reg_findType(const char* key) {
-  NodeL types = registry()->getNodesOfType<std::shared_ptr<Type>>();
+  NodeL types = getRegistry().getNodesOfType<std::shared_ptr<Type>>();
   for(Node* ti: types) {
     if(String(ti->get<std::shared_ptr<Type>>()->typeId().name())==key) return ti;
     if(ti->matches(key)) return ti;
@@ -1303,19 +1303,14 @@ int distance(NodeL A, NodeL B) {
   return -1;
 }
 
-} //namespace
-
 //===========================================================================
 //
 // global singleton TypeRegistrationSpace
 //
 
-Singleton<rai::Graph> registry;
-
-struct RegistryInitializer {
-  Mutex lock;
-//  Graph cfgParameters;
-  RegistryInitializer() {
+struct Registry {
+  rai::Graph registry;
+  Registry() {
     int n;
     StringA tags;
     for(n=1; n<rai::argc; n++) {
@@ -1324,10 +1319,10 @@ struct RegistryInitializer {
         if(n+1<rai::argc && rai::argv[n+1][0]!='-') {
           rai::String value;
           value <<':' <<rai::argv[n+1];
-          registry()->readNode(value, tags, key, false, false);
+          registry.readNode(value, tags, key, false, false);
           n++;
         } else {
-          registry()->newNode<bool>(key, {}, true);
+          registry.newNode<bool>(key, {}, true);
         }
       } else {
         RAI_MSG("non-parsed cmd line argument:" <<rai::argv[n]);
@@ -1335,43 +1330,45 @@ struct RegistryInitializer {
     }
 
     rai::String cfgFileName="rai.cfg";
-    if(registry()()["cfg"]) cfgFileName = registry()->get<rai::String>("cfg");
+    if(registry["cfg"]) cfgFileName = registry.get<rai::String>("cfg");
     LOG(3) <<"opening config file '" <<cfgFileName <<"'";
     ifstream fil;
     fil.open(cfgFileName);
     if(fil.good()) {
-      fil >>registry();
+      fil >>registry;
     } else {
       LOG(3) <<" - failed";
     }
 
   }
-  ~RegistryInitializer() {
+  ~Registry() {
   }
 };
 
-Singleton<RegistryInitializer> registryInitializer;
+Singleton<Registry> registry;
 
-bool getParameterFromGraph(const std::type_info& type, void* data, const char* key) {
-  registryInitializer()();
-  rai::Node* n = registry()->findNodeOfType(type, {key});
-  if(n) {
-    n->copyValueInto(data);
-    return true;
-  } else {
-    n = registry()->findNode({key});
-    if(n && n->isOfType<double>()) {
-      if(type==typeid(int)) { *((int*)data) = (int)n->get<double>(); return true; }
-      if(type==typeid(uint)) { *((uint*)data) = (uint)n->get<double>(); return true; }
-      if(type==typeid(bool)) { *((bool*)data) = (bool)n->get<double>(); return true; }
-    }
-    if(n && n->isOfType<rai::String>()) {
-      NIY;
-      //      n->get<rai::String>() >>x;
-    }
-  }
-  return false;
-}
+rai::Graph& getRegistry(){ return registry()->registry; }
+
+} //namespace
+
+//  registry()->findNodeOfType(type, {key});
+//  if(n) {
+//    n->copyValueInto(data);
+//    return true;
+//  } else {
+//    n = registry()->findNode({key});
+//    if(n && n->isOfType<double>()) {
+//      if(type==typeid(int)) { *((int*)data) = (int)n->get<double>(); return true; }
+//      if(type==typeid(uint)) { *((uint*)data) = (uint)n->get<double>(); return true; }
+//      if(type==typeid(bool)) { *((bool*)data) = (bool)n->get<double>(); return true; }
+//    }
+//    if(n && n->isOfType<rai::String>()) {
+//      NIY;
+//      //      n->get<rai::String>() >>x;
+//    }
+//  }
+//  return false;
+//}
 
 //===========================================================================
 

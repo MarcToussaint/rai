@@ -36,6 +36,8 @@
 #include "../Optim/opt-ipopt.h"
 #include "../Optim/opt-ceres.h"
 
+#include "../Core/util.tpp"
+
 #include <iomanip>
 
 #ifdef RAI_GL
@@ -47,6 +49,12 @@
 //#endif
 
 using namespace rai;
+
+//===========================================================================
+
+template<> const char* rai::Enum<rai::KOMOsolver>::names []= {
+  "dense", "sparse", "banded", "sparseFactored", "NLopt", "Ipopt", "Ceres", nullptr
+};
 
 //===========================================================================
 
@@ -66,6 +74,7 @@ Shape* getShape(const Configuration& K, const char* name) {
 
 KOMO::KOMO() : useSwift(true), verbose(1), komo_problem(*this) {
   verbose = getParameter<int>("KOMO/verbose", 1);
+  solver = getParameter<rai::Enum<rai::KOMOsolver>>("KOMO/solver", KS_banded);
 }
 
 KOMO::~KOMO() {
@@ -1454,6 +1463,19 @@ void KOMO::run_prepare(double addInitializationNoise) {
 
 void KOMO::run(const OptOptions options) {
   Configuration::setJointStateCount=0;
+  if(verbose>0) {
+    cout <<"** KOMO::run solver:"
+        <<rai::Enum<KOMOsolver>(solver)
+       <<" swift:" <<useSwift
+      <<" x-dim:" <<x.N
+      <<" T:" <<T <<" k:" <<k_order <<" phases:" <<double(T)/stepsPerPhase <<" stepsPerPhase:" <<stepsPerPhase <<" tau:" <<tau
+     <<" #config:" <<configurations.N <<" q-dims: ";
+    uintA dims(configurations.N);
+    for(uint i=0; i<configurations.N; i++) dims(i)=configurations(i)->q.N;
+    writeConsecutiveConstant(cout, dims);
+    cout <<endl;
+  }
+
   double timeZero = rai::realTime();
   CHECK(T, "");
   if(logFile)(*logFile) <<"KOMO_run_log: [" <<endl;
@@ -1475,8 +1497,8 @@ void KOMO::run(const OptOptions options) {
 //    Conv_KOMO_GraphProblem_toBeRetired graph_problem(*this);
 //    Conv_Graph_MathematicalProgram C(graph_problem, logFile);
 
-    Conv_KOMO_SparseNonfactored P(*this, false);
-//    Conv_KOMO_StructuredProblem P(*this);
+    Conv_KOMO_SparseNonfactored P(*this, true);
+//    Conv_KOMO_FactoredNLP P(*this);
 //    Conv_Structured_BandedProgram C(P, 0, true);
 
     OptConstrained _opt(x, dual, P, rai::MAX(verbose-2, 0), options, logFile);

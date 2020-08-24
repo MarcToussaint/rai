@@ -431,6 +431,7 @@ template<class T> void rai::Array<T>::resizeMEM(uint n, bool copy, int Mforce) {
     }
   }
 
+  //if(Mnew!=Mold){ vec_type::resize(Mnew); }
   vec_type::reserve(Mnew);
   vec_type::resize(n);
   p = vec_type::data();
@@ -492,10 +493,15 @@ template<class T> T& rai::Array<T>::append() {
 
 /// append an element to the array -- the array becomes 1D!
 template<class T> T& rai::Array<T>::append(const T& x) {
+#if 0
   reshape(N);
   vec_type::push_back(x);
   p = vec_type::data();
   d0 = N = vec_type::size();
+#else
+  resizeCopy(N+1);
+  p[N-1]=x;
+#endif
   return p[N-1];
 }
 
@@ -1392,7 +1398,10 @@ template<class T> void rai::Array<T>::setMatrixBlock(const rai::Array<T>& B, uin
       }
     } else {
       if(!isSparseMatrix(B)) {
-        for(i=0; i<B.d0; i++) for(j=0; j<B.d1; j++) sparse().addEntry(lo0+i, lo1+j) = B.p[i*B.d1+j];
+        for(i=0; i<B.d0; i++) for(j=0; j<B.d1; j++){
+            double z = B.p[i*B.d1+j];
+            if(z) sparse().addEntry(lo0+i, lo1+j) = z;
+        }
       } else {
         SparseMatrix& S = sparse();
         const SparseMatrix& BS = B.sparse();

@@ -19,7 +19,7 @@
 // that can include lagrange terms, penalties, log barriers, and augmented lagrangian terms
 //
 
-struct LagrangianProblem : ScalarFunction, MathematicalProgram { //TODO: rename: UnconstrainedLagrangianProblem
+struct LagrangianProblem : ScalarFunction, MathematicalProgram {
   MathematicalProgram& P;
 
   //-- parameters of the unconstrained (Lagrangian) scalar function
