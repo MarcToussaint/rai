@@ -44,6 +44,8 @@
 #  include <GL/gl.h>
 #endif
 
+//#define KOMO_PATH_CONFIG
+
 //#ifndef RAI_SWIFT
 //#  define FCLmode
 //#endif
@@ -182,12 +184,27 @@ ptr<Objective> KOMO::addObjective(const arr& times,
   if(order>=0) f->order = order;
 
   CHECK_GE(k_order, f->order, "task requires larger k-order: " <<f->shortTag(world));
-  ptr<Objective> task = make_shared<Objective>(f, type);
+  std::shared_ptr<Objective> task = make_shared<Objective>(f, type);
   task->name = f->shortTag(world);
   objectives.append(task);
-  task->setCostSpecs(times, stepsPerPhase, T, deltaFromStep, deltaToStep, true); //solver!=rai::KS_banded);
+//  task->setCostSpecs(times, stepsPerPhase, T, deltaFromStep, deltaToStep, true); //solver!=rai::KS_banded);
+  task->configs = conv_times2tuples(times, f->order, stepsPerPhase, T, deltaFromStep, deltaToStep);
 //  if(solver!=rai::KS_banded)
   CHECK_EQ(task->configs.nd, 2, "");
+#ifdef KOMO_PATH_CONFIG
+  for(uint c=0;c<task->configs.d0;c++){
+    shared_ptr<GroundedObjective> o = objs.append( make_shared<GroundedObjective>(f, type) );
+    o->configs = task->configs[c];
+    o->frames.resize(task->configs.d1, o->feat->frameIDs.N);
+    for(uint i=0;i<task->configs.d1;i++){
+      int s = task->configs(c,i) + k_order;
+      for(uint j=0;j<o->feat->frameIDs.N;j++){
+        uint fID = o->feat->frameIDs(j);
+        o->frames(i,j) = timeSlices(s, fID);
+      }
+    }
+  }
+#endif
   return task;
 }
 
@@ -2011,41 +2028,35 @@ void KOMO::retrospectChangeJointType(int startStep, int endStep, uint frameID, J
 
 //===========================================================================
 
-void KOMO::setupRepresentations() {
-  NIY;
+void KOMO::setupConfigurations2() {
+  //IMPORTANT: The configurations need to include the k prefix configurations!
+  //Therefore configurations(0) is for time=-k and configurations(k+t) is for time=t
+  CHECK(timeSlices.d0 != k_order+T, "why setup again?");
 
-#if 0
-  setupConfigurations();
+  computeMeshNormals(world.frames, true);
+  computeMeshGraphs(world.frames, true);
 
-  CHECK(!objs.N, "why setup again?");
+  rai::Configuration C;
+  C.copy(world, true);
 
-  uintA Cdims = getKtupleDim(configurations);
-  Cdims.prepend(0);
-
-//  uint M=0;
-  for(ptr<Objective>& ob:objectives) {
-    CHECK_EQ(ob->configs.nd, 2, "in sparse mode, vars need to be tuples of variables");
-    for(uint l=0; l<ob->configs.d0; l++) {
-      ConfigurationL Ctuple = configurations.sub(convert<uint, int>(ob->configs[l]+(int)k_order));
-      uintA cdim = getKtupleDim(Ctuple);
-      cdim.prepend(0);
-
-      intA S;
-      //query the task map and check dimensionalities of returns
-      ob->feat->signature(S, Ctuple);
-      for(int k:ob->configs[l]) if(k>=0) {
-          for(int& i:S) {
-            if(i>=(int)cdim(k) && i<(int)cdim(k+1)) i = i - cdim(k) + Cdims(ob->configs(l, k));
-          }
-        }
-      ptr<GroundedObjective> o = make_shared<GroundedObjective>();
-      o->Ctuple = Ctuple;
-      o->signature = S;
-      o->dim = ob->feat->__dim_phi(Ctuple);
-      objs.append(o);
-    }
+  if(useSwift) {
+    CHECK(!fcl, "");
+    fcl = C.fcl();
   }
-#endif
+
+  timeSlices.resize(k_order+T, C.frames.N);
+  for(uint s=0;s<k_order+T;s++) {
+    for(KinematicSwitch* sw:switches) { //apply potential switches
+      if(sw->timeOfApplication+(int)k_order==(int)s)  sw->apply(C);
+    }
+
+    uint nBefore = pathConfig.frames.N;
+    pathConfig.addFramesCopy(C.frames);
+    timeSlices[s] = pathConfig.frames({nBefore, -1});
+  }
+
+  pathConfig.ensure_q();
+  pathConfig.checkConsistency();
 }
 
 void KOMO::setBounds() {
@@ -2864,6 +2875,19 @@ KOMO::Conv_KOMO_FactoredNLP::Conv_KOMO_FactoredNLP(KOMO& _komo) : komo(_komo) {
   //create feature index
   uint f=0;
   uint fDim = 0;
+#ifdef KOMO_PATH_CONFIG
+  for(ptr<GroundedObjective>& ob:komo.objs) {
+    FeatureIndexEntry& F = featureIndex(f);
+    F.ob = ob;
+//      F.Ctuple = komo.configurations.sub(convert<uint, int>(ob->configs[l]+(int)komo.k_order));
+//    F.t = l;
+    F.varIds = ob->configs[l];
+    F.dim = ob->feat->__dim_phi2(ob->frames); //dimensionality of this task
+    F.phiIndex = fDim;
+    fDim += F.dim;
+    f++;
+  }
+#else
   for(ptr<Objective>& ob:komo.objectives) {
     for(uint l=0; l<ob->configs.d0; l++) {
       FeatureIndexEntry& F = featureIndex(f);
@@ -2877,6 +2901,8 @@ KOMO::Conv_KOMO_FactoredNLP::Conv_KOMO_FactoredNLP(KOMO& _komo) : komo(_komo) {
       f++;
     }
   }
+#endif
+  CHECK_EQ(f, featureIndex.N, "");
 
   featuresDim = fDim;
 }
@@ -3118,7 +3144,11 @@ void KOMO::Conv_KOMO_FactoredNLP::evaluateSingleFeature(uint feat_id, arr& phi, 
   FeatureIndexEntry& F = featureIndex(feat_id);
 
   arr Jy;
+#ifdef KOMO_PATH_CONFIG
+  F.ob->feat->__phi2(phi, (!!J?Jy:NoArr), F.ob->frames);
+#else
   F.ob->feat->__phi(phi, (!!J?Jy:NoArr), F.Ctuple);
+#endif
   CHECK_EQ(phi.N, F.dim, "");
 
   komo.featureValues.setVectorBlock(phi, F.phiIndex);

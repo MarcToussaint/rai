@@ -101,7 +101,7 @@ double shapeSize(const rai::Configuration& K, const char* name, uint i=2) {
 }
 
 ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const rai::Configuration& C, const arr& scale, const arr& target, int order) {
-  ptr<Feature> f;
+  shared_ptr<Feature> f;
   if(feat==FS_distance) {  f=make_shared<F_PairCollision>(C, frames(0), frames(1), F_PairCollision::_negScalar, false); }
   else if(feat==FS_oppose) {  f=make_shared<F_GraspOppose>(C, frames(0), frames(1), frames(2)); }
   else if(feat==FS_aboveBox) {  f=make_shared<TM_AboveBox>(C, frames(1), frames(0), .0); }
@@ -111,9 +111,15 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
     f->scale = arr({1, 3}, {0., 0., 1.});
   }
 
+#ifdef RAI_NEW_FEATURES
+  else if(feat==FS_position) {  f = make_shared<F_Position>();  } //f=make_shared<TM_Default>(TMT_pos, C, frames(0)); }
+  else if(feat==FS_positionDiff) {  f = make_shared<F_PositionDiff>();  } //f=make_shared<TM_Default>(TMT_posDiff, C, frames(0), NoVector, frames(1)); }
+  else if(feat==FS_positionRel) {  f=make_shared<TM_Default>(TMT_pos, C, frames(0), NoVector, frames(1)); }
+#else
   else if(feat==FS_position) {  f=make_shared<TM_Default>(TMT_pos, C, frames(0)); }
   else if(feat==FS_positionDiff) {  f=make_shared<TM_Default>(TMT_posDiff, C, frames(0), NoVector, frames(1)); }
   else if(feat==FS_positionRel) {  f=make_shared<TM_Default>(TMT_pos, C, frames(0), NoVector, frames(1)); }
+#endif
 
   else if(feat==FS_vectorX) {  f=make_shared<TM_Default>(TMT_vec, C, frames(0), Vector_x); }
   else if(feat==FS_vectorXDiff) {  f=make_shared<TM_Default>(TMT_vecDiff, C, frames(0), Vector_x, frames(1), Vector_x); }
@@ -194,6 +200,8 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
   if(order>=0) f->order = order;
 
   f->fs = feat;
+
+  if(!f->frameIDs.N) f->frameIDs = stringListToFrameIndices(frames, C);
 
   return f;
 }

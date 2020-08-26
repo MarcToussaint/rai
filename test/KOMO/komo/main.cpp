@@ -43,6 +43,10 @@ void TEST(Align){
 //  komo.verbose=1; //set via rai.cfg!!
   komo.setModel(C);
   komo.setTiming(1., 100, 5., 2);
+
+  komo.setupConfigurations2();
+  komo.pathConfig.report();
+
   komo.add_qControlObjective({}, 2, 1.);
 
   komo.addObjective({1.}, FS_positionDiff, {"endeff", "target"}, OT_eq, {1e1});
@@ -57,6 +61,12 @@ void TEST(Align){
   rai::ConfigurationViewer V;
   V.setPath(C, komo.x, "result", true);
 //  for(uint i=0;i<2;i++) komo.displayTrajectory();
+
+  arr x=komo.x;
+  x.prepend(komo.getConfiguration_t(-1).getJointState());
+  x.prepend(komo.getConfiguration_t(-2).getJointState());
+  komo.pathConfig.setJointState(x);
+  V.setConfiguration(komo.pathConfig, "path", true);
 }
 
 //===========================================================================
@@ -220,9 +230,9 @@ int main(int argc,char** argv){
 //  rnd.clockSeed();
 
 //  testEasy();
-//  testAlign();
+  testAlign();
 //  testThin();
-  testPR2();
+//  testPR2();
 
   return 0;
 }

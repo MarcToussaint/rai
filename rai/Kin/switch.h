@@ -59,3 +59,6 @@ stdOutPipe(rai::KinematicSwitch)
 
 int conv_time2step(double time, uint stepsPerPhase);
 double conv_step2time(int step, uint stepsPerPhase);
+intA conv_times2tuples(const arr& times, uint order, int stepsPerPhase, uint T,
+                       int deltaFromStep, int deltaToStep);
+

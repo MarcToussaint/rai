@@ -19,6 +19,12 @@
 
 //===========================================================================
 
+namespace rai {
+  struct FclInterface;
+}
+
+//===========================================================================
+
 enum SkeletonSymbol {
   SY_none=-1,
 
@@ -107,12 +113,14 @@ struct KOMO : NonCopyable {
   rai::Array<rai::KinematicSwitch*> switches;  ///< list of kinematic switches along the motion
 
   //-- internals
-  rai::Configuration world;   ///< original world; which is the blueprint for all time-slice worlds (almost const: only makeConvexHulls modifies it)
+  rai::Configuration world;    ///< original configuration; which is the blueprint for all time-slice worlds (almost const: only makeConvexHulls modifies it)
   ConfigurationL configurations;       ///< copies for each time slice; including kinematic switches; only these are optimized
   bool useSwift;               ///< whether swift (collisions/proxies) is evaluated whenever new configurations are set (needed if features read proxy list)
+  shared_ptr<rai::FclInterface> fcl;
 
   //-- experimental!
   rai::Configuration pathConfig;
+  FrameL timeSlices;
   rai::Array<ptr<GroundedObjective>> objs;
 
   //-- optimizer
@@ -303,7 +311,7 @@ struct KOMO : NonCopyable {
 
   void selectJointsBySubtrees(const StringA& roots, const arr& times= {}, bool notThose=false);
   void setupConfigurations(const arr& q_init=NoArr, const StringA& q_initJoints=NoStringA);   ///< this creates the @configurations@, that is, copies the original world T times (after setTiming!) perhaps modified by KINEMATIC SWITCHES and FLAGS
-  void setupRepresentations();
+  void setupConfigurations2();
   void checkBounds(const arr& x);
   void retrospectApplySwitches(rai::Array<rai::KinematicSwitch*>& _switches);
   void retrospectChangeJointType(int startStep, int endStep, uint frameID, rai::JointType newJointType);
@@ -332,7 +340,7 @@ struct KOMO : NonCopyable {
     struct VariableIndexEntry { uint t; uint dim; uint xIndex; };
     rai::Array<VariableIndexEntry> variableIndex;
 
-    struct FeatureIndexEntry { ptr<Objective> ob; ConfigurationL Ctuple; uint t; intA varIds; uint dim; uint phiIndex; };
+    struct FeatureIndexEntry { shared_ptr<Objective> ob; ConfigurationL Ctuple; uint t; intA varIds; uint dim; uint phiIndex; };
     rai::Array<FeatureIndexEntry> featureIndex;
 
     uintA xIndex2VarId;

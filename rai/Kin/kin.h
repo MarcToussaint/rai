@@ -219,7 +219,7 @@ struct Configuration : GLDrawer {
   void kinematicsLimitsCost(arr& y, arr& J, const arr& limits, double margin=.1) const;
 
   /// @name features
-  std::shared_ptr<Feature> feature(FeatureSymbol fs, const StringA& frames= {}) const;
+  shared_ptr<Feature> feature(FeatureSymbol fs, const StringA& frames= {}) const;
   void evalFeature(arr& y, arr& J, FeatureSymbol fs, const StringA& frames= {}) const;
 
   /// @name high level inverse kinematics
@@ -231,7 +231,7 @@ struct Configuration : GLDrawer {
   /// @name extensions on demand
   ConfigurationViewer& gl(const char* window_title=nullptr, bool offscreen=false);
   SwiftInterface& swift();
-  FclInterface& fcl();
+  shared_ptr<FclInterface> fcl();
   void swiftDelete();
   PhysXInterface& physx();
   OdeInterface& ode();
@@ -325,8 +325,8 @@ stdPipes(rai::Configuration)
 // OpenGL static draw functions
 //
 
-uintA stringListToShapeIndices(const rai::Array<const char*>& names, const FrameL& shapes);
-uintA shapesToShapeIndices(const FrameL& shapes);
+uintA stringListToFrameIndices(const StringA& names, const rai::Configuration& C);
+uintA framesToFrameIndices(const FrameL& frames);
 
 //===========================================================================
 //

@@ -52,17 +52,17 @@ rai::Joint& NoJoint = *((rai::Joint*)nullptr);
 rai::Configuration __NoWorld;
 rai::Configuration& NoWorld = *((rai::Configuration*)&__NoWorld);
 
-uintA stringListToShapeIndices(const rai::Array<const char*>& names, const rai::Configuration& K) {
+uintA stringListToFrameIndices(const StringA& names, const rai::Configuration& C) {
   uintA I(names.N);
   for(uint i=0; i<names.N; i++) {
-    rai::Frame* f = K.getFrameByName(names(i));
-    if(!f) HALT("shape name '"<<names(i)<<"' doesn't exist");
-    I(i) = f->ID;
+    rai::Frame* f = C.getFrameByName(names(i));
+    if(!f) HALT("frame name '"<<names(i)<<"' doesn't exist");
+    I.elem(i) = f->ID;
   }
   return I;
 }
 
-uintA shapesToShapeIndices(const FrameL& frames) {
+uintA framesToFrameIndices(const FrameL& frames) {
   uintA I;
   resizeAs(I, frames);
   for(uint i=0; i<frames.N; i++) I.elem(i) = frames.elem(i)->ID;
@@ -251,6 +251,7 @@ rai::Frame* rai::Configuration::addObject(const char* name, const char* parent, 
 
 /// the list F can be from another (not this) Configuration
 void rai::Configuration::addFramesCopy(const FrameL& F) {
+  //prepare an index FId -> thisId
   uint maxId=0;
   for(Frame* f:F) if(f->ID>maxId) maxId=f->ID;
   intA FId2thisId(maxId+1);
@@ -327,6 +328,7 @@ void rai::Configuration::copy(const rai::Configuration& C, bool referenceSwiftOn
   //copy frames; first each Frame/Link/Joint directly, where all links go to the origin K (!!!); then relink to itself
   for(Frame* f:C.frames) new Frame(*this, f);
   for(Frame* f:C.frames) if(f->parent) frames(f->ID)->linkFrom(frames(f->parent->ID));
+//  addFramesCopy(C.frames);
 
   //copy proxies; first they point to origin frames; afterwards, let them point to own frames
   copyProxies(C.proxies);
@@ -1616,7 +1618,7 @@ SwiftInterface& rai::Configuration::swift() {
   return *self->swift;
 }
 
-rai::FclInterface& rai::Configuration::fcl() {
+std::shared_ptr<rai::FclInterface> rai::Configuration::fcl() {
   if(!self->fcl) {
     Array<ptr<Mesh>> geometries(frames.N);
     for(Frame* f:frames) {
@@ -1626,9 +1628,8 @@ rai::FclInterface& rai::Configuration::fcl() {
       }
     }
     self->fcl = make_shared<rai::FclInterface>(geometries, .0); //-1.=broadphase only -> many proxies
-    self->fcl->excludePairs = getCollisionExcludePairIDs();
   }
-  return *self->fcl;
+  return self->fcl;
 }
 
 void rai::Configuration::swiftDelete() {
@@ -1727,9 +1728,9 @@ void rai::Configuration::stepFcl() {
     if(f->shape && f->shape->cont) X[f->ID] = f->ensure_X().getArr7d();
   }
   //-- step fcl
-  fcl().step(X);
+  fcl()->step(X);
   //-- filter the resulting collisions
-  uintA& COL = fcl().collisions;
+  uintA& COL = fcl()->collisions;
   boolA filter(COL.d0);
   uint n=0;
   for(uint i=0; i<COL.d0; i++) {
