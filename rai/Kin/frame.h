@@ -87,7 +87,7 @@ struct Frame : NonCopyable {
   void calc_Q_from_parent(bool enforceWithinJoint = true);
 
  public:
-  double tau=0.;             ///< frame's absolute time (could be thought as part of the transformation X in space-time)
+  double tau=0.;             ///< frame's relative time transformation (could be thought as part of the transformation X in space-time)
   Graph ats;                 ///< list of any-type attributes
 
   //attachments to the frame

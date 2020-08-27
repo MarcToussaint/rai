@@ -21,6 +21,7 @@ void F_PositionDiff::phi2(arr& y, arr& J, const FrameL& F) {
   y = (p1-p2).getArr();
   if(!!J){
     arr J1, J2;
+    if(J.isSparse()){ J1.sparse(); J2.sparse(); }
     f1->C.jacobian_pos(J1, f1, p1);
     f2->C.jacobian_pos(J2, f2, p2);
     J = J1-J2;

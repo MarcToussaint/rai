@@ -17,8 +17,6 @@
 #include "TM_angVel.h"
 #include "F_geometrics.h"
 
-//#define RAI_NEW_FEATURES
-
 template<> const char* rai::Enum<FeatureSymbol>::names []= {
   "position",
   "positionDiff",

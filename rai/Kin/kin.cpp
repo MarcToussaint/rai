@@ -977,7 +977,7 @@ void rai::Configuration::jacobian_pos(arr& J, Frame* a, const rai::Vector& pos_w
   a->ensure_X();
 
   uint N=getJointStateDimension();
-  if(!useSparseJacobians) {
+  if(!useSparseJacobians && !isSparseMatrix(J)) {
     J.resize(3, N).setZero();
   } else {
     J.sparse().resize(3, N, 0);
@@ -1055,7 +1055,7 @@ void rai::Configuration::jacobian_pos(arr& J, Frame* a, const rai::Vector& pos_w
     a = a->parent;
   }
 
-  if(useSparseJacobians && xIndex) {
+  if(isSparseMatrix(J) && xIndex) {
     J.sparse().reshape(J.d0, J.d1+xIndex);
     J.sparse().rowShift(xIndex);
   }

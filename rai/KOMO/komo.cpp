@@ -44,7 +44,9 @@
 #  include <GL/gl.h>
 #endif
 
-//#define KOMO_PATH_CONFIG
+#ifdef RAI_NEW_FEATURES
+#  define KOMO_PATH_CONFIG
+#endif
 
 //#ifndef RAI_SWIFT
 //#  define FCLmode
@@ -178,6 +180,10 @@ ptr<Objective> KOMO::addObjective(const arr& times,
                                   const ptr<Feature>& f, ObjectiveType type,
                                   const arr& scale, const arr& target, int order,
                                   int deltaFromStep, int deltaToStep) {
+#ifdef KOMO_PATH_CONFIG
+  if(!timeSlices.N) setupConfigurations2();
+#endif
+
   if(!!scale) f->scale = scale;
   if(!!target) f->target = target;
   if(order>=0) f->order = order;
@@ -2037,6 +2043,7 @@ void KOMO::setupConfigurations2() {
 
   rai::Configuration C;
   C.copy(world, true);
+  C.setTimes(tau);
 
   if(useSwift) {
     CHECK(!fcl, "");
@@ -2114,6 +2121,11 @@ void reportAfterPhiComputation(KOMO& komo) {
 }
 
 void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
+#ifdef KOMO_PATH_CONFIG
+  set_x2(x, selectedConfigurationsOnly);
+  return;
+#endif
+
   if(!configurations.N) setupConfigurations();
   CHECK_EQ(configurations.N, k_order+T, "configurations are not setup yet");
 
@@ -2147,10 +2159,6 @@ void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
 //    configurations(s)->checkConsistency();
   }
   CHECK_EQ(x_count, x.N, "");
-
-#ifdef KOMO_PATH_CONFIG
-  set_x2(x, selectedConfigurationsOnly);
-#endif
 }
 
 void KOMO::set_x2(const arr& x, const uintA& selectedConfigurationsOnly) {
@@ -2167,7 +2175,7 @@ void KOMO::set_x2(const arr& x, const uintA& selectedConfigurationsOnly) {
 
   timeKinematics += rai::timerRead(true);
   if(useSwift) {
-    pathConfig.stepFcl();
+//    pathConfig.stepFcl();
   }
   timeCollisions += rai::timerRead(true);
 }
@@ -2709,16 +2717,19 @@ void KOMO::Conv_KOMO_SparseNonfactored::evaluate(arr& phi, arr& J, const arr& x)
 
   if(!dimPhi) getDimPhi();
 
+  arr y;
+  arr Jy;
   phi.resize(dimPhi);
   if(!!J) {
     if(sparse) {
       J.sparse().resize(dimPhi, x.N, 0);
+      Jy.sparse();
     } else {
       J.resize(dimPhi, x.N).setZero();
+      Jy.clear();
     }
   }
 
-  arr y, Jy;
   uint M=0;
 #ifdef KOMO_PATH_CONFIG
   for(ptr<GroundedObjective>& ob : komo.objs) {

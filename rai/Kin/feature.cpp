@@ -14,7 +14,7 @@ void Feature::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK(order>0, "phi needs to be implemented at least for order=0");
 
   arr y0, y1, Jy0, Jy1;
-//  if(isSparseMatrix(J)){ Jy0.sparse(); Jy1.sparse(); }
+  if(isSparseMatrix(J)){ Jy0.sparse(); Jy1.sparse(); }
   order--;
   phi2(y0, (!!J?Jy0:NoArr), F({0, -2}));
   phi2(y1, (!!J?Jy1:NoArr), F({1,-1}));

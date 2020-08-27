@@ -44,15 +44,12 @@ void TEST(Align){
   komo.setModel(C);
   komo.setTiming(1., 100, 5., 2);
 
-//  komo.setupConfigurations2();
-//  komo.pathConfig.report();
-
   komo.add_qControlObjective({}, 2, 1.);
 
   komo.addObjective({1.}, FS_positionDiff, {"endeff", "target"}, OT_eq, {1e1});
-  komo.addObjective({1.}, FS_quaternionDiff, {"endeff", "target"}, OT_eq, {1e1});
+//  komo.addObjective({1.}, FS_quaternionDiff, {"endeff", "target"}, OT_eq, {1e1});
   komo.addObjective({.98,1.}, FS_qItself, {}, OT_sos, {1e1}, {}, 1);
-  komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1.});
+//  komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1.});
 
   komo.optimize();
 //  komo.checkGradients();
@@ -60,7 +57,7 @@ void TEST(Align){
   komo.plotTrajectory();
   rai::ConfigurationViewer V;
   V.setPath(C, komo.x, "result", true);
-//  for(uint i=0;i<2;i++) komo.displayTrajectory();
+  while(V.playVideo());
 
 //  komo.pathConfig.setJointState(komo.x);
 //  V.setConfiguration(komo.pathConfig, "path", true);

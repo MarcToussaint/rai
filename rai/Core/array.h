@@ -285,6 +285,7 @@ template<class T> struct Array : std::vector<T>, Serializable {
   const SparseMatrix& sparse() const;
   SparseVector& sparseVec();
   const SparseVector& sparseVec() const;
+  bool isSparse() const;
   void setNoArr();
 
   /// @name I/O
@@ -895,11 +896,12 @@ struct SpecialArray {
 
 namespace rai {
 
-template<class T> bool isSpecial(const rai::Array<T>& X)      { return X.special && X.special->type!=SpecialArray::ST_none; }
-template<class T> bool isNoArr(const rai::Array<T>& X)        { return X.special && X.special->type==SpecialArray::ST_NoArr; }
-template<class T> bool isRowShifted(const rai::Array<T>& X)   { return X.special && X.special->type==SpecialArray::RowShiftedST; }
-template<class T> bool isSparseMatrix(const rai::Array<T>& X) { return X.special && X.special->type==SpecialArray::sparseMatrixST; }
-template<class T> bool isSparseVector(const rai::Array<T>& X) { return X.special && X.special->type==SpecialArray::sparseVectorST; }
+template<class T> bool isSpecial(const Array<T>& X)      { return X.special && X.special->type!=SpecialArray::ST_none; }
+template<class T> bool isNoArr(const Array<T>& X)        { return X.special && X.special->type==SpecialArray::ST_NoArr; }
+template<class T> bool isRowShifted(const Array<T>& X)   { return X.special && X.special->type==SpecialArray::RowShiftedST; }
+template<class T> bool isSparseMatrix(const Array<T>& X) { return X.special && X.special->type==SpecialArray::sparseMatrixST; }
+template<class T> bool isSparseVector(const Array<T>& X) { return X.special && X.special->type==SpecialArray::sparseVectorST; }
+template<class T> bool Array<T>::isSparse() const { return special && (special->type==SpecialArray::sparseMatrixST || special->type==SpecialArray::sparseVectorST); }
 
 struct RowShifted : SpecialArray {
   arr& Z;           ///< references the array itself

@@ -156,7 +156,6 @@ void F_qItself::phi2(arr& q, arr& J, const FrameL& F) {
       }
       m++;
     }
-
   }
   CHECK_EQ(n, m, "");
 }
