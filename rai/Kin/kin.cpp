@@ -62,11 +62,15 @@ uintA stringListToFrameIndices(const StringA& names, const rai::Configuration& C
   return I;
 }
 
-uintA framesToFrameIndices(const FrameL& frames) {
+uintA framesToIndices(const FrameL& frames) {
   uintA I;
   resizeAs(I, frames);
   for(uint i=0; i<frames.N; i++) I.elem(i) = frames.elem(i)->ID;
   return I;
+}
+
+FrameL indicesToFrames(const uintA& ids, const rai::Configuration& C){
+  return C.frames.sub(ids);
 }
 
 void makeConvexHulls(FrameL& frames, bool onlyContactShapes) {
@@ -346,6 +350,7 @@ void rai::Configuration::copy(const rai::Configuration& C, bool referenceSwiftOn
 
   //copy vector state
   q = C.q;
+  qInactive = C.qInactive;
   _state_q_isGood = C._state_q_isGood;
   ensure_indexedJoints();
 }
@@ -685,10 +690,11 @@ void rai::Configuration::calc_q_from_Q() {
 void rai::Configuration::calc_qInactive_from_Q() {
   qInactive.clear();
 
-  for(Frame* f: frames) if(f->joint && !f->joint->active){
+  for(Frame* f: frames) if(f->joint && !f->joint->active && !f->joint->mimic){
     arr joint_q = f->joint->calc_q_from_Q(f->Q);
     CHECK_EQ(joint_q.N, f->joint->dim, "");
     if(!f->joint->dim) continue; //nothing to do
+    CHECK_EQ(f->joint->qIndex, qInactive.N, "");
     qInactive.append(joint_q);
   }
 }
@@ -721,6 +727,7 @@ void rai::Configuration::selectJoints(const FrameL& F, bool notThose) {
   for(Frame* f: frames) if(f->joint) f->joint->active = notThose;
   for(Frame* f: F) if(f && f->joint) f->joint->active = !notThose;
   reset_q();
+  ensure_indexedJoints();
   calc_qInactive_from_Q();
   checkConsistency();
 }

@@ -329,7 +329,8 @@ stdPipes(rai::Configuration)
 //
 
 uintA stringListToFrameIndices(const StringA& names, const rai::Configuration& C);
-uintA framesToFrameIndices(const FrameL& frames);
+uintA framesToIndices(const FrameL& frames);
+FrameL indicesToFrames(const uintA& ids, const rai::Configuration& C);
 
 //===========================================================================
 //

@@ -17,7 +17,7 @@
 #include "TM_angVel.h"
 #include "F_geometrics.h"
 
-#define RAI_NEW_FEATURES
+//#define RAI_NEW_FEATURES
 
 template<> const char* rai::Enum<FeatureSymbol>::names []= {
   "position",
@@ -168,7 +168,11 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
   else if(feat==FS_jointLimits) {  f=make_shared<F_qLimits>(); }
 
   else if(feat==FS_qItself) {
+#ifdef RAI_NEW_FEATURES
     if(!frames.N) f=make_shared<F_qItself>(F_qItself::allActiveJoints, frames, C);
+#else
+    if(!frames.N) f=make_shared<F_qItself>();
+#endif
     else f=make_shared<F_qItself>(F_qItself::byJointNames, frames, C);
   }
 

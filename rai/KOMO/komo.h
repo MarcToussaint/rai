@@ -341,7 +341,7 @@ struct KOMO : NonCopyable {
     struct VariableIndexEntry { uint t; uint dim; uint xIndex; };
     rai::Array<VariableIndexEntry> variableIndex;
 
-    struct FeatureIndexEntry { shared_ptr<GroundedObjective> ob; ConfigurationL Ctuple; uint t; intA varIds; uint dim; uint phiIndex; };
+    struct FeatureIndexEntry { shared_ptr<Objective> ob; ConfigurationL Ctuple; uint t; intA varIds; uint dim; uint phiIndex; };
     rai::Array<FeatureIndexEntry> featureIndex;
 
     uintA xIndex2VarId;

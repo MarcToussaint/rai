@@ -21,7 +21,7 @@ struct F_Position : Feature {
     y = p.getArr();
     if(!!J) f->C.jacobian_pos(J, f, p);
   }
-  virtual uint dim_phi(const rai::Configuration& G) { return 3; }
+  virtual uint dim_phi(const rai::Configuration& C) { return 3; }
   virtual rai::String shortTag(const rai::Configuration& C) { return STRING("F_Position"); }
 };
 
@@ -29,7 +29,8 @@ struct F_Position : Feature {
 
 struct F_PositionDiff : Feature {
   virtual void phi2(arr& y, arr& J, const FrameL& F);
-  virtual uint dim_phi(const rai::Configuration& G) { return 3; }
+  virtual void phi(arr& y, arr& J, const rai::Configuration& C){  phi2(y, J, C.frames.sub(frameIDs));  }
+  virtual uint dim_phi(const rai::Configuration& C) { return 3; }
   virtual rai::String shortTag(const rai::Configuration& C) { return STRING("F_PositionDiff"); }
 };
 

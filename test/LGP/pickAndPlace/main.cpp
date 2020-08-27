@@ -48,7 +48,7 @@ void solve(){
   rai::Configuration K;
   generateProblem(K);
   //  K.addFile("model2.g");
-  K.selectJointsByGroup({"base","armL","armR"}, true, true);
+  K.selectJointsByGroup({"base","armL","armR"});
   K.optimizeTree();
 
   LGP_Tree lgp(K, "fol-pnp-switch.g");
@@ -70,7 +70,7 @@ void testBounds(){
   rai::Configuration K;
   generateProblem(K);
 //  K.addFile("model2.g");
-  K.selectJointsByGroup({"base","armL","armR"}, true, true);
+  K.selectJointsByGroup({"base","armL","armR"});
   K.optimizeTree();
 
   LGP_Tree lgp(K, "fol-pnp-switch.g");

@@ -44,7 +44,7 @@
 #  include <GL/gl.h>
 #endif
 
-#define KOMO_PATH_CONFIG
+//#define KOMO_PATH_CONFIG
 
 //#ifndef RAI_SWIFT
 //#  define FCLmode
@@ -2737,16 +2737,13 @@ void KOMO::Conv_KOMO_SparseNonfactored::evaluate(arr& phi, arr& J, const arr& x)
       //query the task map and check dimensionalities of returns
 #ifdef KOMO_PATH_CONFIG
       ob->feat->__phi2(y, (!!J?Jy:NoArr), ob->frames);
-#else
-      ob->feat->__phi(y, (!!J?Jy:NoArr), Ktuple);
-#endif
-      if(!!J) CHECK_EQ(y.N, Jy.d0, "");
-      if(!!J) CHECK_EQ(Jy.nd, 2, "");
-#ifdef KOMO_PATH_CONFIG
       if(!!J) CHECK_EQ(Jy.d1, komo.pathConfig.getJointStateDimension(), "");
 #else
+      ob->feat->__phi(y, (!!J?Jy:NoArr), Ktuple);
       if(!!J) CHECK_EQ(Jy.d1, kdim.last(), "");
 #endif
+      if(!!J) CHECK_EQ(Jy.nd, 2, "");
+      if(!!J) CHECK_EQ(y.N, Jy.d0, "");
       if(!y.N) continue;
       if(absMax(y)>1e10) RAI_MSG("WARNING y=" <<y);
 
