@@ -44,7 +44,7 @@
 #  include <GL/gl.h>
 #endif
 
-//#define KOMO_PATH_CONFIG
+#define KOMO_PATH_CONFIG
 
 //#ifndef RAI_SWIFT
 //#  define FCLmode
@@ -102,10 +102,9 @@ void KOMO::setModel(const Configuration& C, bool _useSwift) {
   world.ensure_q();
 }
 
-void KOMO_ext::useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThese) {
-  world.selectJointsByGroup(groupNames, OnlyTheseOrNotThese, false);
+void KOMO_ext::useJointGroups(const StringA& groupNames, bool notThese) {
+  world.selectJointsByGroup(groupNames, notThese);
 
-  world.reset_q();
   world.optimizeTree();
   world.getJointState();
 
@@ -199,7 +198,7 @@ ptr<Objective> KOMO::addObjective(const arr& times,
     for(uint i=0;i<task->configs.d1;i++){
       int s = task->configs(c,i) + k_order;
       for(uint j=0;j<o->feat->frameIDs.N;j++){
-        uint fID = o->feat->frameIDs(j);
+        uint fID = o->feat->frameIDs.elem(j);
         o->frames(i,j) = timeSlices(s, fID);
       }
     }
@@ -570,7 +569,7 @@ ptr<Objective> KOMO::add_qControlObjective(const arr& times, uint order, double 
   scale *= sqrt(tau);
 
   CHECK_GE(k_order, order, "");
-  ptr<Objective> o = addObjective(times, make_shared<F_qItself>(F.frames), OT_sos, scale*F.scale, target, order, deltaFromStep, deltaToStep);
+  ptr<Objective> o = addObjective(times, make_shared<F_qItself>(F.frames, (order==0)), OT_sos, scale*F.scale, target, order, deltaFromStep, deltaToStep);
   return o;
 }
 
@@ -2055,6 +2054,8 @@ void KOMO::setupConfigurations2() {
     timeSlices[s] = pathConfig.frames({nBefore, -1});
   }
 
+  pathConfig.selectJoints(timeSlices({k_order,-1})); //select only the non-prefix joints as active!!
+
   pathConfig.ensure_q();
   pathConfig.checkConsistency();
 }
@@ -2146,6 +2147,29 @@ void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
 //    configurations(s)->checkConsistency();
   }
   CHECK_EQ(x_count, x.N, "");
+
+#ifdef KOMO_PATH_CONFIG
+  set_x2(x, selectedConfigurationsOnly);
+#endif
+}
+
+void KOMO::set_x2(const arr& x, const uintA& selectedConfigurationsOnly) {
+  CHECK_EQ(timeSlices.d0, k_order+T, "configurations are not setup yet");
+
+  rai::timerRead(true);
+
+  if(selectedConfigurationsOnly.N){
+    pathConfig.selectJoints(timeSlices.sub(selectedConfigurationsOnly+k_order));
+  }else{
+    pathConfig.selectJoints(timeSlices({k_order,-1}));
+  }
+  pathConfig.setJointState(x);
+
+  timeKinematics += rai::timerRead(true);
+  if(useSwift) {
+    pathConfig.stepFcl();
+  }
+  timeCollisions += rai::timerRead(true);
 }
 
 #if 0
@@ -2687,31 +2711,42 @@ void KOMO::Conv_KOMO_SparseNonfactored::evaluate(arr& phi, arr& J, const arr& x)
 
   phi.resize(dimPhi);
   if(!!J) {
-    bool SPARSE_JACOBIANS = sparse;
-    if(!SPARSE_JACOBIANS) {
-      J.resize(dimPhi, x.N).setZero();
-    } else {
+    if(sparse) {
       J.sparse().resize(dimPhi, x.N, 0);
+    } else {
+      J.resize(dimPhi, x.N).setZero();
     }
   }
 
+  arr y, Jy;
+  uint M=0;
+#ifdef KOMO_PATH_CONFIG
+  for(ptr<GroundedObjective>& ob : komo.objs) {
+#else
   uintA x_index = getKtupleDim(komo.configurations({komo.k_order, -1}));
   x_index.prepend(0);
 
-  arr y, Jy;
-  uint M=0;
-  for(uint i=0; i<komo.objectives.N; i++) {
-    ptr<Objective> ob = komo.objectives.elem(i);
+  for(ptr<Objective>& ob : komo.objectives) {
     for(uint l=0; l<ob->configs.d0; l++) {
-      ConfigurationL Ktuple = komo.configurations.sub(convert<uint, int>(ob->configs[l]+(int)komo.k_order));
+      intA configs = ob->configs[l];
+      ConfigurationL Ktuple = komo.configurations.sub(convert<uint, int>(configs+(int)komo.k_order));
       uintA kdim = getKtupleDim(Ktuple);
       kdim.prepend(0);
+#endif
 
       //query the task map and check dimensionalities of returns
+#ifdef KOMO_PATH_CONFIG
+      ob->feat->__phi2(y, (!!J?Jy:NoArr), ob->frames);
+#else
       ob->feat->__phi(y, (!!J?Jy:NoArr), Ktuple);
+#endif
       if(!!J) CHECK_EQ(y.N, Jy.d0, "");
       if(!!J) CHECK_EQ(Jy.nd, 2, "");
+#ifdef KOMO_PATH_CONFIG
+      if(!!J) CHECK_EQ(Jy.d1, komo.pathConfig.getJointStateDimension(), "");
+#else
       if(!!J) CHECK_EQ(Jy.d1, kdim.last(), "");
+#endif
       if(!y.N) continue;
       if(absMax(y)>1e10) RAI_MSG("WARNING y=" <<y);
 
@@ -2719,27 +2754,39 @@ void KOMO::Conv_KOMO_SparseNonfactored::evaluate(arr& phi, arr& J, const arr& x)
       phi.setVectorBlock(y, M);
 
       if(!!J) {
-        if(isSpecial(Jy) && ob->configs.d1!=1) Jy = unpack(Jy); //
+#ifdef KOMO_PATH_CONFIG
+        if(sparse){
+          Jy.sparse().reshape(J.d0, J.d1);
+          Jy.sparse().colShift(M);
+          J += Jy;
+        }else{
+          J.setMatrixBlock(Jy, M, 0);
+        }
+#else
+        if(isSpecial(Jy) && configs.N!=1) Jy = unpack(Jy); //
         if(!isSpecial(Jy)) {
-          for(uint j=0; j<ob->configs.d1; j++) {
-            if(ob->configs(l, j)>=0) {
-              J.setMatrixBlock(Jy.sub(0, -1, kdim(j), kdim(j+1)-1), M, x_index(ob->configs(l, j)));
+          for(uint j=0; j<configs.N; j++) {
+            if(configs(j)>=0) {
+              J.setMatrixBlock(Jy.sub(0, -1, kdim(j), kdim(j+1)-1), M, x_index(configs(j)));
             }
           }
         } else {
           uint j=0;
-          if(ob->configs(l, j)>=0) {
+          if(configs(j)>=0) {
             Jy.sparse().reshape(J.d0, J.d1);
             Jy.sparse().colShift(M);
-            Jy.sparse().rowShift(x_index(ob->configs(l, j)));
+            Jy.sparse().rowShift(x_index(configs(j)));
             J += Jy;
           }
         }
+#endif
       }
 
       //counter for features phi
       M += y.N;
+#ifndef KOMO_PATH_CONFIG
     }
+#endif
   }
 
   CHECK_EQ(M, dimPhi, "");
@@ -2879,9 +2926,9 @@ KOMO::Conv_KOMO_FactoredNLP::Conv_KOMO_FactoredNLP(KOMO& _komo) : komo(_komo) {
   for(ptr<GroundedObjective>& ob:komo.objs) {
     FeatureIndexEntry& F = featureIndex(f);
     F.ob = ob;
-//      F.Ctuple = komo.configurations.sub(convert<uint, int>(ob->configs[l]+(int)komo.k_order));
+    F.Ctuple = komo.configurations.sub(convert<uint, int>(ob->configs+(int)komo.k_order));
 //    F.t = l;
-    F.varIds = ob->configs[l];
+    F.varIds = ob->configs;
     F.dim = ob->feat->__dim_phi2(ob->frames); //dimensionality of this task
     F.phiIndex = fDim;
     fDim += F.dim;

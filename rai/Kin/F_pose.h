@@ -28,21 +28,7 @@ struct F_Position : Feature {
 //===========================================================================
 
 struct F_PositionDiff : Feature {
-  virtual void phi2(arr& y, arr& J, const FrameL& F) {
-    if(order>0){  Feature::phi2(y, J, F);  return;  }
-    CHECK_EQ(F.N, 2, "")
-    rai::Frame *f1 = F.elem(0);
-    rai::Frame *f2 = F.elem(0);
-    rai::Vector p1 = f1->ensure_X().pos;
-    rai::Vector p2 = f2->ensure_X().pos;
-    y = (p1-p2).getArr();
-    if(!!J){
-      arr J1, J2;
-      f1->C.jacobian_pos(J1, f1, p1);
-      f2->C.jacobian_pos(J2, f1, p1);
-      J = J1-J2;
-    }
-  }
+  virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi(const rai::Configuration& G) { return 3; }
   virtual rai::String shortTag(const rai::Configuration& C) { return STRING("F_PositionDiff"); }
 };

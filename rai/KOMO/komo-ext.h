@@ -30,7 +30,7 @@ struct KOMO_ext : KOMO {
 //  void setSquaredQAccelerations(double startTime=0., double endTime=-1., double prec=1.);
 
   //should be done by set model
-  void useJointGroups(const StringA& groupNames, bool OnlyTheseOrNotThese=true);
+  void useJointGroups(const StringA& groupNames, bool notThese=false);
 
   //-- tasks mid-level
   void setHoming(double startTime=0., double endTime=-1., double prec=1e-1, const char* keyword="robot");

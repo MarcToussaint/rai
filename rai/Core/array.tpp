@@ -2824,6 +2824,10 @@ void indexWiseProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array
   if(y.nd==1 && z.nd==2) {  //vector x matrix -> index-wise
     CHECK_EQ(y.N, z.d0, "wrong dims for indexWiseProduct:" <<y.N <<"!=" <<z.d0);
     x = z;
+    if(isSparseMatrix(x)){
+      x.sparse().rowWiseMult(y);
+      return;
+    }
     for(uint i=0; i<x.d0; i++) {
       T yi=y.p[i];
       T* xp=&x(i, 0), *xstop=xp+x.d1;

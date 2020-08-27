@@ -11,6 +11,24 @@
 
 //===========================================================================
 
+void F_PositionDiff::phi2(arr& y, arr& J, const FrameL& F) {
+  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  CHECK_EQ(F.N, 2, "");
+  rai::Frame *f1 = F.elem(0);
+  rai::Frame *f2 = F.elem(1);
+  rai::Vector p1 = f1->ensure_X().pos;
+  rai::Vector p2 = f2->ensure_X().pos;
+  y = (p1-p2).getArr();
+  if(!!J){
+    arr J1, J2;
+    f1->C.jacobian_pos(J1, f1, p1);
+    f2->C.jacobian_pos(J2, f2, p2);
+    J = J1-J2;
+  }
+}
+
+//===========================================================================
+
 void F_Pose::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
 #if 1
   arr yq, Jq, yp, Jp;
@@ -168,3 +186,4 @@ void TM_Align::phi(arr& y, arr& J, const rai::Configuration& K) {
 rai::String TM_Align::shortTag(const rai::Configuration& G) {
   return STRING("TM_Align:"<<(i<0?"WORLD":G.frames(i)->name) <<':' <<(j<0?"WORLD":G.frames(j)->name));
 }
+

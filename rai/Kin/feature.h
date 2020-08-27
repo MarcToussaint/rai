@@ -34,7 +34,7 @@ struct Feature {
   Feature& setTarget(const arr& _target) { target=_target; return *this; }
 
  protected:
-  virtual void phi2(arr& y, arr& J, const FrameL& F) { HALT("one of the 'phi' needs to be implemented!"); }
+  virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual void phi(arr& y, arr& J, const rai::Configuration& C) { HALT("one of the 'phi' needs to be implemented!"); } ///< this needs to be overloaded
   virtual void phi(arr& y, arr& J, const ConfigurationL& Ctuple); ///< if not overloaded this computes the generic pos/vel/acc depending on order
   virtual uint dim_phi(const rai::Configuration& C) { HALT("one of the 'dim_phi' needs to be implemented!"); } ///< the dimensionality of $y$

@@ -62,6 +62,7 @@ struct Configuration : GLDrawer {
   ForceExchangeL forces; ///< list of force exchanges between frames
   ProxyA proxies;    ///< list of current collision proximities between frames
   arr q;             ///< the current configuration state (DOF) vector
+  arr qInactive;    ///< configuration state of all inactive DOFs
 
   //-- derived: computed with ensure_activeSets(); reset with reset_q()
   JointL activeJoints;
@@ -147,6 +148,7 @@ struct Configuration : GLDrawer {
   void calc_indexedActiveJoints(); ///< sort of private: count the joint dimensionalities and assign j->q_index
   void calc_Q_from_q();  ///< from q compute the joint's Q transformations
   void calc_q_from_Q();  ///< updates q based on the joint's Q transformations
+  void calc_qInactive_from_Q();
   arr calc_fwdPropagateVelocities(const arr& qdot);    ///< elementary forward kinematics
 
   /// @name ensure state consistencies
@@ -165,7 +167,8 @@ struct Configuration : GLDrawer {
   arr getLimits() const;
 
   /// @name active set selection
-  void selectJointsByGroup(const StringA& groupNames, bool OnlyTheseOrNotThese=true, bool deleteInsteadOfLock=true);
+  void selectJoints(const FrameL& F, bool notThose=false);
+  void selectJointsByGroup(const StringA& groupNames, bool notThose=false);
   void selectJointsByName(const StringA&, bool notThose=false);
   void selectJointsBySubtrees(const StringA& roots, bool notThose=false);
 

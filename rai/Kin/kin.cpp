@@ -503,7 +503,7 @@ void rai::Configuration::calc_indexedActiveJoints() {
 
   _state_indexedJoints_areGood=true;
 
-  //-- count
+  //-- count active DOFs
   uint qcount=0;
   for(Joint* j: activeJoints) {
     if(!j->mimic) {
@@ -527,6 +527,24 @@ void rai::Configuration::calc_indexedActiveJoints() {
   //-- resize q
   q.resize(qcount).setZero();
   _state_q_isGood = false;
+
+  //-- count inactive DOFs
+  qcount=0;
+  for(Frame* f:frames) if(f->joint && !f->joint->active){
+    Joint *j = f->joint;
+    if(!j->mimic) {
+      j->dim = j->getDimFromType();
+      j->qIndex = qcount;
+      if(!j->uncertainty)
+        qcount += j->qDim();
+      else
+        qcount += 2*j->qDim();
+    } else {
+      j->dim = 0;
+      j->qIndex = j->mimic->qIndex;
+    }
+  }
+
 }
 
 /** @brief returns the joint (actuator) dimensionality */
@@ -664,6 +682,17 @@ void rai::Configuration::calc_q_from_Q() {
   _state_q_isGood=true;
 }
 
+void rai::Configuration::calc_qInactive_from_Q() {
+  qInactive.clear();
+
+  for(Frame* f: frames) if(f->joint && !f->joint->active){
+    arr joint_q = f->joint->calc_q_from_Q(f->Q);
+    CHECK_EQ(joint_q.N, f->joint->dim, "");
+    if(!f->joint->dim) continue; //nothing to do
+    qInactive.append(joint_q);
+  }
+}
+
 void rai::Configuration::calc_Q_from_q() {
   CHECK(_state_q_isGood, "");
   CHECK(_state_indexedJoints_areGood, "");
@@ -688,56 +717,43 @@ void rai::Configuration::calc_Q_from_q() {
   CHECK_EQ(n, q.N, "");
 }
 
-void rai::Configuration::selectJointsByGroup(const StringA& groupNames, bool OnlyTheseOrNotThese, bool deleteInsteadOfLock) {
-  Joint* j;
-  for(Frame* f:frames) if((j=f->joint)) {
-      bool select;
-      if(OnlyTheseOrNotThese) { //only these
-        select=false;
-        for(const String& s:groupNames) if(f->ats[s]) { select=true; break; }
-      } else {
-        select=true;
-        for(const String& s:groupNames) if(f->ats[s]) { select=false; break; }
-      }
-      if(select) f->joint->active=true;
-      else  f->joint->active=false;
-      //    if(!select) {
-      //      if(deleteInsteadOfLock) delete f->joint;
-      //      else f->joint->makeRigid();
-      //    }
-    }
+void rai::Configuration::selectJoints(const FrameL& F, bool notThose) {
+  for(Frame* f: frames) if(f->joint) f->joint->active = notThose;
+  for(Frame* f: F) if(f && f->joint) f->joint->active = !notThose;
   reset_q();
+  calc_qInactive_from_Q();
   checkConsistency();
-  ensure_q();
-  checkConsistency();
+}
+
+void rai::Configuration::selectJointsByGroup(const StringA& groupNames, bool notThose) {
+  FrameL F;
+  for(Frame* f:frames) if(f->joint) {
+    for(const String& s:groupNames) if(f->ats[s]) { F.append(f); break; }
+  }
+  selectJoints(F, notThose);
 }
 
 /// @name active set selection
 void rai::Configuration::selectJointsByName(const StringA& names, bool notThose) {
-  for(Frame* f: frames) if(f->joint) f->joint->active = notThose;
+  FrameL F;
   for(const String& s:names) {
     Frame* f = getFrameByName(s);
     CHECK(f, "");
     f = f->getUpwardLink();
     CHECK(f->joint, "");
-    f->joint->active = !notThose;
+    F.append(f);
   }
-  reset_q();
-  checkConsistency();
-  ensure_q();
-  checkConsistency();
+  selectJoints(F, notThose);
 }
 
 void rai::Configuration::selectJointsBySubtrees(const StringA& roots, bool notThose) {
-  for(Frame* f: frames) if(f->joint) f->joint->active = notThose;
+  FrameL F;
   for(const String& s: roots) {
     Frame* f = getFrameByName(s);
-    CHECK(f, "");
-    FrameL F = {f};
+    F.append(f);
     f->getSubtree(F);
-    for(Frame* g:F) if(g->joint) g->joint->active = !notThose;
   }
-  reset_q();
+  selectJoints(F, notThose);
 }
 
 /** @brief sets the joint state vectors separated in positions and
@@ -2902,14 +2918,19 @@ bool rai::Configuration::checkConsistency() const {
     CHECK_EQ(myqdim, q.N, "qdim is wrong");
 
     //consistency with Q
-    for(Joint* j: activeJoints) {
-      arr jq = j->calc_q_from_Q(j->frame->Q);
+    for(Frame* f : frames) if(f->joint){
+      Joint *j = f->joint;
+      arr jq = j->calc_q_from_Q(f->Q);
       if(!j->mimic) {
         CHECK_EQ(jq.N, j->dim, "");
       } else {
         CHECK_EQ(0, j->dim, "");
       }
-      for(uint i=0; i<jq.N; i++) CHECK_ZERO(jq.elem(i) - q.elem(j->qIndex+i), 1e-6, "joint vector q and relative transform Q do not match for joint '" <<j->frame->name <<"', index " <<i);
+      if(j->active){
+        for(uint i=0; i<jq.N; i++) CHECK_ZERO(jq.elem(i) - q.elem(j->qIndex+i), 1e-6, "joint vector q and relative transform Q do not match for joint '" <<j->frame->name <<"', index " <<i);
+      }else{
+        for(uint i=0; i<jq.N; i++) CHECK_ZERO(jq.elem(i) - qInactive.elem(j->qIndex+i), 1e-6, "joint vector q and relative transform Q do not match for joint '" <<j->frame->name <<"', index " <<i);
+      }
     }
   }
 

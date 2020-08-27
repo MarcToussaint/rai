@@ -13,20 +13,21 @@
 //===========================================================================
 
 struct F_qItself : Feature {
-  enum PickMode { byJointNames, byFrameNames, byJointGroups, byExcludeJointNames };
+  enum PickMode { byJointNames, byFrameNames, byJointGroups, byExcludeJointNames, allActiveJoints };
 
-  uintA selectedFrames; ///< optionally, select only a subset of joints, indicated by the BODIES! indices (reason: frame indices are stable across kinematic switches)
+//  uintA frameIDs; ///< optionally, select only a subset of joints, indicated by the BODIES! indices (reason: frame indices are stable across kinematic switches)
   bool moduloTwoPi; ///< if false, consider multiple turns of a joint as different q values (Default: true)
   bool relative_q0; ///< if true, absolute values are given relative to Joint::q0
 
   F_qItself(bool relative_q0=false);
-  F_qItself(PickMode pickMode, const StringA& picks, const rai::Configuration& G, bool relative_q0=false);
+  F_qItself(PickMode pickMode, const StringA& picks, const rai::Configuration& C, bool relative_q0=false);
   F_qItself(const uintA& _selectedFrames, bool relative_q0=false);
 
-  virtual void phi(arr& y, arr& J, const rai::Configuration& G);
-  virtual void phi(arr& y, arr& J, const ConfigurationL& Ktuple);
-  virtual uint dim_phi(const rai::Configuration& G);
-  virtual uint dim_phi(const ConfigurationL& Ktuple);
+  virtual void phi(arr& y, arr& J, const rai::Configuration& C);
+  virtual void phi(arr& y, arr& J, const ConfigurationL& Ctuple);
+  virtual void phi2(arr& y, arr& J, const FrameL& F);
+  virtual uint dim_phi(const rai::Configuration& C);
+  virtual uint dim_phi(const ConfigurationL& Ctuple);
   virtual void signature(intA& S, const rai::Configuration& C);
   virtual rai::String shortTag(const rai::Configuration& G);
  private:

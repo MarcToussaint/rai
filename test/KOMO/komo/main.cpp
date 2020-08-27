@@ -42,7 +42,7 @@ void TEST(Align){
 //  komo.solver = rai::KS_sparseStructured; //set via rai.cfg!!
 //  komo.verbose=1; //set via rai.cfg!!
   komo.setModel(C);
-  komo.setTiming(1., 100, 5., 2);
+  komo.setTiming(1., 10, 5., 2);
 
   komo.setupConfigurations2();
   komo.pathConfig.report();
@@ -50,22 +50,19 @@ void TEST(Align){
   komo.add_qControlObjective({}, 2, 1.);
 
   komo.addObjective({1.}, FS_positionDiff, {"endeff", "target"}, OT_eq, {1e1});
-  komo.addObjective({1.}, FS_quaternionDiff, {"endeff", "target"}, OT_eq, {1e1});
+//  komo.addObjective({1.}, FS_quaternionDiff, {"endeff", "target"}, OT_eq, {1e1});
   komo.addObjective({.98,1.}, FS_qItself, {}, OT_sos, {1e1}, {}, 1);
-  komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1.});
+//  komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1.});
 
   komo.optimize();
-//  komo.checkGradients();
+  komo.checkGradients();
 
   komo.plotTrajectory();
   rai::ConfigurationViewer V;
   V.setPath(C, komo.x, "result", true);
-//  for(uint i=0;i<2;i++) komo.displayTrajectory();
+  for(uint i=0;i<2;i++) komo.displayTrajectory();
 
-  arr x=komo.x;
-  x.prepend(komo.getConfiguration_t(-1).getJointState());
-  x.prepend(komo.getConfiguration_t(-2).getJointState());
-  komo.pathConfig.setJointState(x);
+  komo.pathConfig.setJointState(komo.x);
   V.setConfiguration(komo.pathConfig, "path", true);
 }
 

@@ -10,6 +10,50 @@
 
 //===========================================================================
 
+void Feature::phi2(arr& y, arr& J, const FrameL& F) {
+  CHECK(order>0, "phi needs to be implemented at least for order=0");
+
+  arr y0, y1, Jy0, Jy1;
+//  if(isSparseMatrix(J)){ Jy0.sparse(); Jy1.sparse(); }
+  order--;
+  phi2(y0, (!!J?Jy0:NoArr), F({0, -2}));
+  phi2(y1, (!!J?Jy1:NoArr), F({1,-1}));
+  order++;
+
+  if(flipTargetSignOnNegScalarProduct) if(scalarProduct(y0, y1)<-.0) { y0 *= -1.;  if(!!J) Jy0 *= -1.; }
+
+  y = y1-y0;
+  if(!!J) J = Jy1 - Jy0;
+
+#if 0 //feature itself does not care for tau!!! use specialized features, e.g. linVel, angVel
+  if(Ctuple(-1)->hasTauJoint()) {
+    double tau; arr Jtau;
+    Ctuple(-1)->kinematicsTau(tau, (!!J?Jtau:NoArr));
+    CHECK_GE(tau, 1e-10, "");
+    y /= tau;
+    if(!!J) {
+      J /= tau;
+      expandJacobian(Jtau, Ctuple, -1);
+      J += (-1./tau)*y*Jtau;
+    }
+  } else {
+    double tau = Ctuple(-1)->frames(0)->tau;
+    if(tau) {
+      CHECK_GE(tau, 1e-10, "");
+      y /= tau;
+      if(!!J) J /= tau;
+    }
+  }
+#else
+  double tau = F.first()->C.frames(0)->tau;
+  if(tau) {
+    CHECK_GE(tau, 1e-10, "");
+    y /= tau;
+    if(!!J) J /= tau;
+  }
+#endif
+}
+
 void Feature::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
   CHECK_GE(Ctuple.N, order+1, "I need at least " <<order+1 <<" configurations to evaluate");
   if(order==0) {
@@ -94,7 +138,10 @@ void Feature::applyLinearTrans(arr& y, arr& J) {
     } else if(scale.nd==1) { //element-wise
       CHECK_EQ(scale.d0, y.N, "");
       y = scale % y;
-      if(!!J) J = scale % J;
+      if(!!J){
+        if(isSparseMatrix(J)) J.sparse().rowWiseMult(scale);
+        else J = scale % J;
+      }
     } else if(scale.nd==2) { //matrix
       CHECK_EQ(scale.d1, y.N, "");
       y = scale * y;
