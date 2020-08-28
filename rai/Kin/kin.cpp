@@ -613,10 +613,11 @@ arr rai::Configuration::getJointState(const StringA& joints) const {
   return x;
 }
 
-arr rai::Configuration::getFrameState() const {
-  arr X(frames.N, 7);
+arr rai::Configuration::getFrameState(const FrameL& F) const {
+  if(!F.N) return getFrameState(frames);
+  arr X(F.N, 7);
   for(uint i=0; i<X.d0; i++) {
-    X[i] = frames(i)->ensure_X().getArr7d();
+    X[i] = F.elem(i)->ensure_X().getArr7d();
   }
   return X;
 }
@@ -1088,7 +1089,7 @@ void rai::Configuration::jacobian_angular(arr& J, Frame* a) const {
   a->ensure_X();
 
   uint N = getJointStateDimension();
-  if(!useSparseJacobians) {
+  if(!useSparseJacobians && !J.isSparse()) {
     J.resize(3, N).setZero();
   } else {
     J.sparse().resize(3, N, 0);
@@ -1186,15 +1187,34 @@ void rai::Configuration::kinematicsQuat(arr& y, arr& J, Frame* a) const { //TODO
   if(!!y) y = rot_a.getArr4d();
   if(!!J) {
     arr A;
+    if(J.isSparse()) A.sparse();
     jacobian_angular(A, a);
-    J.clear().resize(4, A.d1);
-    for(uint i=0; i<J.d1; i++) {
-      rai::Quaternion tmp(0., 0.5*A(0, i), 0.5*A(1, i), 0.5*A(2, i)); //this is unnormalized!!
-      tmp = tmp * rot_a;
-      J(0, i) = tmp.w;
-      J(1, i) = tmp.x;
-      J(2, i) = tmp.y;
-      J(3, i) = tmp.z;
+    if(J.isSparse()) {
+      J.sparse().resize(4, A.d1, 0);
+      A.sparse().setupRowsCols();
+      uintAA& Acols = A.sparse().cols;
+      for(uint i=0; i<Acols.N; i++){
+        uintA& col = Acols.elem(i);
+        if(!col.N) continue;
+        rai::Quaternion tmp(0., 0., 0., 0.); //this is unnormalized!!
+        for(uint j=0;j<col.d0;j++) tmp.p()[1+col(j,0)] = 0.5*A.p[col(j,1)];
+        tmp = tmp * rot_a;
+        if(tmp.w) J.elem(0, i) += tmp.w;
+        if(tmp.x) J.elem(1, i) += tmp.x;
+        if(tmp.y) J.elem(2, i) += tmp.y;
+        if(tmp.z) J.elem(3, i) += tmp.z;
+      }
+
+    } else {
+      J.resize(4, A.d1).setZero();
+      for(uint i=0; i<J.d1; i++) {
+        rai::Quaternion tmp(0., 0.5*A(0, i), 0.5*A(1, i), 0.5*A(2, i)); //this is unnormalized!!
+        tmp = tmp * rot_a;
+        J.elem(0, i) = tmp.w;
+        J.elem(1, i) = tmp.x;
+        J.elem(2, i) = tmp.y;
+        J.elem(3, i) = tmp.z;
+      }
     }
   }
 }
@@ -1743,6 +1763,31 @@ void rai::Configuration::stepSwift() {
   _state_proxies_isGood=true;
 }
 
+void rai::Configuration::addProxies(const uintA& collisionPairs) {
+  //-- filter the collisions
+  boolA filter(collisionPairs.d0);
+  uint n=0;
+  for(uint i=0; i<collisionPairs.d0; i++) {
+    bool canCollide = frames(collisionPairs(i, 0))->shape->canCollideWith(frames(collisionPairs(i, 1)));
+    filter(i) = canCollide;
+    if(canCollide) n++;
+  }
+  //-- copy them into proxies
+  uint j = proxies.N;
+  proxies.resizeCopy(j+n);
+  for(uint i=0; i<collisionPairs.d0; i++) {
+    if(filter(i)) {
+      Proxy& p = proxies(j);
+      p.a = frames(collisionPairs(i, 0));
+      p.b = frames(collisionPairs(i, 1));
+      p.d = -0.;
+      p.posA = frames(collisionPairs(i, 0))->getPosition();
+      p.posB = frames(collisionPairs(i, 1))->getPosition();
+      j++;
+    }
+  }
+}
+
 void rai::Configuration::stepFcl() {
   //-- get the frame state of collision objects
   arr X(frames.N, 7);
@@ -1752,29 +1797,9 @@ void rai::Configuration::stepFcl() {
   }
   //-- step fcl
   fcl()->step(X);
-  //-- filter the resulting collisions
-  uintA& COL = fcl()->collisions;
-  boolA filter(COL.d0);
-  uint n=0;
-  for(uint i=0; i<COL.d0; i++) {
-    bool canCollide = frames(COL(i, 0))->shape->canCollideWith(frames(COL(i, 1)));
-    filter(i) = canCollide;
-    if(canCollide) n++;
-  }
-  //-- copy them into proxies
+  //-- add as proxies
   proxies.clear();
-  proxies.resize(n);
-  for(uint i=0, j=0; i<COL.d0; i++) {
-    if(filter(i)) {
-      Proxy& p = proxies(j);
-      p.a = frames(COL(i, 0));
-      p.b = frames(COL(i, 1));
-      p.d = -0.;
-      p.posA = frames(COL(i, 0))->getPosition();
-      p.posB = frames(COL(i, 1))->getPosition();
-      j++;
-    }
-  }
+  addProxies(fcl()->collisions);
 
   _state_proxies_isGood=true;
 }
@@ -2573,9 +2598,18 @@ void rai::Configuration::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, dou
   CHECK(p.a->shape, "");
   CHECK(p.b->shape, "");
 
-  y.resize(1);
-  if(!!J) J.resize(1, getJointStateDimension());
-  if(!addValues) { y.setZero();  if(!!J) J.setZero(); }
+  uint qd = getJointStateDimension();
+  if(addValues){
+    CHECK_EQ(y.N, 1, "");
+    CHECK_EQ(J.d0, 1, "");
+    CHECK_EQ(J.d1, qd, "");
+  }else{
+    y.resize(1).setZero();
+    if(!!J){
+      if(J.isSparse()) J.sparse().resize(1,qd,0);
+      else J.resize(1,qd).setZero();
+    }
+  }
 
   //early check: if swift is way out of collision, don't bother computing it precise
   if(p.d > p.a->shape->radius() + p.b->shape->radius() + .01 + margin) return;
@@ -2586,6 +2620,7 @@ void rai::Configuration::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, dou
 
   arr Jp1, Jp2;
   if(!!J) {
+    if(J.isSparse()){ Jp1.sparse(); Jp2.sparse(); }
     jacobian_pos(Jp1, p.a, p.collision->p1);
     jacobian_pos(Jp2, p.b, p.collision->p2);
   }

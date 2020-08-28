@@ -11,11 +11,23 @@
 
 //===========================================================================
 
+void F_Position::phi2(arr& y, arr& J, const FrameL& F) {
+  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  CHECK_EQ(F.N, 1, "")
+      rai::Frame *f = F.elem(0);
+  rai::Vector p = f->ensure_X().pos;
+  y = p.getArr();
+  if(!!J) f->C.jacobian_pos(J, f, p);
+}
+
+//===========================================================================
+
 void F_PositionDiff::phi2(arr& y, arr& J, const FrameL& F) {
   if(order>0){  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
   rai::Frame *f1 = F.elem(0);
   rai::Frame *f2 = F.elem(1);
+
   rai::Vector p1 = f1->ensure_X().pos;
   rai::Vector p2 = f2->ensure_X().pos;
   y = (p1-p2).getArr();
@@ -25,6 +37,34 @@ void F_PositionDiff::phi2(arr& y, arr& J, const FrameL& F) {
     f1->C.jacobian_pos(J1, f1, p1);
     f2->C.jacobian_pos(J2, f2, p2);
     J = J1-J2;
+  }
+}
+
+//===========================================================================
+
+void F_Quaternion::phi2(arr& y, arr& J, const FrameL& F){
+  NIY;
+}
+
+//===========================================================================
+
+void F_QuaternionDiff::phi2(arr& y, arr& J, const FrameL& F) {
+  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  CHECK_EQ(F.N, 2, "");
+  rai::Frame *f1 = F.elem(0);
+  rai::Frame *f2 = F.elem(1);
+
+  f1->C.kinematicsQuat(y, J, f1);
+  arr y2, J2;
+  if(!!J && J.isSparse()) J2.sparse();
+  f2->C.kinematicsQuat(y2, J2, f2);
+
+  if(scalarProduct(y, y2)>=0.) {
+    y -= y2;
+    if(!!J) J -= J2;
+  } else {
+    y += y2;
+    if(!!J) J += J2;
   }
 }
 
@@ -187,4 +227,6 @@ void TM_Align::phi(arr& y, arr& J, const rai::Configuration& K) {
 rai::String TM_Align::shortTag(const rai::Configuration& G) {
   return STRING("TM_Align:"<<(i<0?"WORLD":G.frames(i)->name) <<':' <<(j<0?"WORLD":G.frames(j)->name));
 }
+
+
 

@@ -31,7 +31,7 @@ enum PTMtype {
 struct TM_Proxy : Feature {
   /// @name data fields
   PTMtype type;
-  uintA shapes, shapes2;
+  uintA shapes2;
   double margin;
 
   TM_Proxy(PTMtype _type,
@@ -40,6 +40,7 @@ struct TM_Proxy : Feature {
   virtual ~TM_Proxy() {}
 
   virtual void phi(arr& y, arr& J, const rai::Configuration& G);
+  virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi(const rai::Configuration& G);
   virtual rai::String shortTag(const rai::Configuration& G) { return STRING("ProxyCost"); }
   virtual rai::Graph getSpec(const rai::Configuration& K) { return rai::Graph({{"feature", "ProxyCost"}}); }

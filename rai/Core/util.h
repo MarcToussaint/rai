@@ -669,8 +669,9 @@ struct Singleton {
 // just a hook to make things gl drawable
 //
 
+struct OpenGL;
 struct GLDrawer {
-  virtual void glDraw(struct OpenGL&) = 0;
+  virtual void glDraw(OpenGL&) = 0;
   virtual ~GLDrawer() {}
 };
 

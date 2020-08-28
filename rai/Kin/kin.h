@@ -162,7 +162,7 @@ struct Configuration : GLDrawer {
   arr getJointState(const FrameL&) const;
   arr getJointState(const uintA&) const;
   arr getJointState(const StringA&) const;
-  arr getFrameState() const;
+  arr getFrameState(const FrameL& F=FrameL()) const;
   arr naturalQmetric(double power=.5) const;               ///< returns diagonal of a natural metric in q-space, depending on tree depth
   arr getLimits() const;
 
@@ -259,6 +259,7 @@ struct Configuration : GLDrawer {
   /// @name collisions & proxies
   double totalCollisionPenetration(); ///< proxies are returns from a collision engine; contacts stable constraints
   void copyProxies(const ProxyA& _proxies);
+  void addProxies(const uintA& collisionPairs);
 
   /// @name I/O
   void write(std::ostream& os) const;

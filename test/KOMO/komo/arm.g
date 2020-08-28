@@ -14,7 +14,7 @@ joint (stem arm1) { joint:hingeX A=<T t(0 0 1) d(90 1 0 0)> B=<T t(0 0 .2)>  Q=<
 joint (arm1 arm2) { joint:hingeX A=<T t(0 0 0.2) d(45 0 0 1)> B=<T t(0 0 .2)>  Q=<T d(1 0 0 0)> }
 joint (arm2 arm3) { joint:hingeX A=<T t(0 0 0.2) d(45 0 0 1)> B=<T t(0 0 .2)>  Q=<T d(1 0 0 0)> }
 joint (arm3 arm4) { joint:hingeX A=<T t(0 0 0.2) d(45 0 0 1)> B=<T t(0 0 .2)>  Q=<T d(1 0 0 0)> }
-joint (arm4 arm5) { joint:hingeX A=<T t(0 0 0.2) d(45 0 0 1)> B=<T t(0 0 .2)>  Q=<T d(1 0 0 0)> }
+joint (arm4 arm5) { joint:quatBall A=<T t(0 0 0.2) d(45 0 0 1)> B=<T t(0 0 .2)>  Q=<T d(1 0 0 0)> }
 joint (arm5 arm6) { joint:hingeX A=<T t(0 0 0.2) d(45 0 0 1)> B=<T t(0 0 .2)>  Q=<T d(1 0 0 0)> }
 joint (arm6 arm7) { joint:hingeX A=<T t(0 0 0.2) d(45 0 0 1)> B=<T t(0 0 .2)>  Q=<T d(1 0 0 0)> }
 

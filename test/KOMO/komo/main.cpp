@@ -47,9 +47,9 @@ void TEST(Align){
   komo.add_qControlObjective({}, 2, 1.);
 
   komo.addObjective({1.}, FS_positionDiff, {"endeff", "target"}, OT_eq, {1e1});
-//  komo.addObjective({1.}, FS_quaternionDiff, {"endeff", "target"}, OT_eq, {1e1});
+  komo.addObjective({1.}, FS_quaternionDiff, {"endeff", "target"}, OT_eq, {1e1});
   komo.addObjective({.98,1.}, FS_qItself, {}, OT_sos, {1e1}, {}, 1);
-//  komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1.});
+  komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1.});
 
   komo.optimize();
 //  komo.checkGradients();

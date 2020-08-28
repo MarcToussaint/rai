@@ -11,9 +11,11 @@
 
 #include "../Algo/spline.h"
 #include "../Gui/opengl.h"
+#include "../Geo/fclInterface.h"
 
 #include "../Kin/frame.h"
 #include "../Kin/switch.h"
+#include "../Kin/proxy.h"
 #include "../Kin/forceExchange.h"
 #include "../Kin/kin_swift.h"
 #include "../Kin/kin_physx.h"
@@ -2175,7 +2177,14 @@ void KOMO::set_x2(const arr& x, const uintA& selectedConfigurationsOnly) {
 
   timeKinematics += rai::timerRead(true);
   if(useSwift) {
-//    pathConfig.stepFcl();
+    pathConfig.proxies.clear();
+    arr X;
+    for(uint s=k_order;s<timeSlices.d0;s++){
+      X = pathConfig.getFrameState(timeSlices[s]);
+      fcl->step(X);
+      fcl->collisions += timeSlices.d1 * s; //fcl returns frame IDs related to 'world' -> map them into frameIDs within that time slice
+      pathConfig.addProxies(fcl->collisions);
+    }
   }
   timeCollisions += rai::timerRead(true);
 }
@@ -2748,14 +2757,17 @@ void KOMO::Conv_KOMO_SparseNonfactored::evaluate(arr& phi, arr& J, const arr& x)
       //query the task map and check dimensionalities of returns
 #ifdef KOMO_PATH_CONFIG
       ob->feat->__phi2(y, (!!J?Jy:NoArr), ob->frames);
-      if(!!J) CHECK_EQ(Jy.d1, komo.pathConfig.getJointStateDimension(), "");
 #else
       ob->feat->__phi(y, (!!J?Jy:NoArr), Ktuple);
-      if(!!J) CHECK_EQ(Jy.d1, kdim.last(), "");
 #endif
-      if(!!J) CHECK_EQ(Jy.nd, 2, "");
       if(!!J) CHECK_EQ(y.N, Jy.d0, "");
       if(!y.N) continue;
+      if(!!J) CHECK_EQ(Jy.nd, 2, "");
+#ifdef KOMO_PATH_CONFIG
+      if(!!J) CHECK_EQ(Jy.d1, komo.pathConfig.getJointStateDimension(), "");
+#else
+      if(!!J) CHECK_EQ(Jy.d1, kdim.last(), "");
+#endif
       if(absMax(y)>1e10) RAI_MSG("WARNING y=" <<y);
 
       //write into phi and J
