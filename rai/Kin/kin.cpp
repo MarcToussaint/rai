@@ -53,6 +53,7 @@ rai::Configuration __NoWorld;
 rai::Configuration& NoWorld = *((rai::Configuration*)&__NoWorld);
 
 uintA stringListToFrameIndices(const StringA& names, const rai::Configuration& C) {
+  if(!names.N) return uintA();
   uintA I(names.N);
   for(uint i=0; i<names.N; i++) {
     rai::Frame* f = C.getFrameByName(names(i));

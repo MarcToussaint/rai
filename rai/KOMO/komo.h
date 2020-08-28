@@ -143,6 +143,7 @@ struct KOMO : NonCopyable {
   int animateOptimization=0;   ///< display the current path for each evaluation during optimization
   double runTime=0.;           ///< measured run time
   double timeCollisions=0., timeKinematics=0., timeNewton=0., timeFeatures=0.;
+  uint set_xCount=0;
   ofstream* logFile=0;
 
   KOMO();

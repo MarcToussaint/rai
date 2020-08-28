@@ -1593,7 +1593,7 @@ void KOMO::run(const OptOptions options) {
   if(verbose>0) {
     cout <<"** optimization time=" <<runTime
          <<" (kin:" <<timeKinematics <<" coll:" <<timeCollisions <<" feat:" <<timeFeatures <<" newton: " <<timeNewton <<")"
-         <<" setJointStateCount=" <<Configuration::setJointStateCount <<endl;
+         <<" setPathConfigCount: " <<set_xCount <<" setJointStateCount=" <<Configuration::setJointStateCount <<endl;
   }
   if(verbose>0) cout <<getReport(verbose>1) <<endl;
 }
@@ -2123,6 +2123,7 @@ void reportAfterPhiComputation(KOMO& komo) {
 }
 
 void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
+  set_xCount++;
 #ifdef KOMO_PATH_CONFIG
   set_x2(x, selectedConfigurationsOnly);
   return;
