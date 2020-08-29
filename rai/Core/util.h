@@ -15,6 +15,7 @@
 #include <string.h>
 #include <memory>
 #include <climits>
+#include <mutex>
 
 //----- if no system flag, I assume Linux
 #if !defined RAI_MSVC && !defined RAI_Cygwin && !defined RAI_Linux && !defined RAI_MinGW && !defined RAI_Darwin
@@ -161,7 +162,7 @@ double clockTime(); //(really on the clock)
 double realTime(); //(since process start)
 double cpuTime();
 std::string date(bool forFileName=false);
-void wait(double sec, bool msg_on_fail=true);
+void wait(double sec);
 bool wait(bool useX11=true);
 
 //----- timer functions
@@ -594,7 +595,7 @@ struct Inotify {
 //
 
 struct Mutex {
-  pthread_mutex_t mutex;
+  std::mutex mutex;
   int state; ///< 0=unlocked, otherwise=syscall(SYS_gettid)
   uint recursive; ///< number of times it's been locked
   const char* lockInfo;
@@ -603,18 +604,12 @@ struct Mutex {
   void lock(const char* _lockInfo);
   void unlock();
 
-  struct Token {
-    Mutex& m;
-    Token(Mutex& m, const char* _lockInfo) : m(m) { m.lock(_lockInfo); }
-    ~Token() { m.unlock(); }
-  };
-  struct Token operator()(const char* _lockInfo) { return Token(*this, _lockInfo); }
+  typedef std::unique_lock<std::mutex> Token;
+  Token operator()(const char* _lockInfo) { lockInfo=_lockInfo; return std::unique_lock<std::mutex>(mutex); }
 
-  template<class T> struct TypedToken {
-    Mutex& m;
+  template<class T> struct TypedToken : std::unique_lock<std::mutex> {
     T* data;
-    TypedToken(Mutex& m, T* data, const char* _lockInfo) : m(m), data(data) { m.lock(_lockInfo); }
-    ~TypedToken() { m.unlock(); }
+    TypedToken(Mutex& m, T* data, const char* _lockInfo) : std::unique_lock<std::mutex>(m.mutex), data(data) { m.lockInfo=_lockInfo; }
     T* operator->() { return data; }
     operator T& () { return *data; }
     T& operator()() { return *data; }

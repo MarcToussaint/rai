@@ -459,7 +459,7 @@ std::string date(bool forFileName) {
 }
 
 /// wait double time
-void wait(double sec, bool msg_on_fail) {
+void wait(double sec) {
   std::this_thread::sleep_for(std::chrono::duration<double>(sec));
 }
 
@@ -1225,54 +1225,33 @@ bool Inotify::poll(bool block, bool verbose) { NICO }
 
 #define MUTEX_DUMP(x) //x
 
-#ifndef RAI_MSVC
 Mutex::Mutex() {
-  pthread_mutexattr_t atts;
-  int rc;
-  rc = pthread_mutexattr_init(&atts);  if(rc) HALT("pthread failed with err " <<rc <<strerror(rc));
-  rc = pthread_mutexattr_settype(&atts, PTHREAD_MUTEX_RECURSIVE_NP);  if(rc) HALT("pthread failed with err " <<rc <<strerror(rc));
-  rc = pthread_mutex_init(&mutex, &atts);
-  //mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
   state=0;
   recursive=0;
 }
 
 Mutex::~Mutex() {
-  if(state==-1) { //forced destroy
-    int rc = pthread_mutex_destroy(&mutex);
-    LOG(-1) <<"pthread forced destroy returned " <<rc <<" '" <<strerror(rc) <<"'";
-    return;
-  }
   CHECK(!state, "Mutex destroyed without unlocking first");
-  int rc = pthread_mutex_destroy(&mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
 }
 
 void Mutex::lock(const char* _lockInfo) {
-  int rc = pthread_mutex_lock(&mutex);
-  if(rc) {
-    //don't use HALT here, because log uses mutexing as well -> can lead to recursive HALT...
-    cerr <<STRING("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  mutex.lock();
+  int pid = syscall(SYS_gettid);
+  if(!true) {
+    std::cerr <<"could not lock mutex by process " <<pid <<" -- is blocked with info '" <<lockInfo <<"' by process " <<state <<endl;
     exit(1);
   }
   lockInfo = _lockInfo;
   recursive++;
-  state=syscall(SYS_gettid);
+  state = pid;
   MUTEX_DUMP(cout <<"Mutex-lock: " <<state <<" (rec: " <<recursive << ")" <<endl);
 }
 
 void Mutex::unlock() {
   MUTEX_DUMP(cout <<"Mutex-unlock: " <<state <<" (rec: " <<recursive << ")" <<endl);
   if(--recursive == 0) state=0;
-  int rc = pthread_mutex_unlock(&mutex);
-  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  mutex.unlock();
 }
-
-#else//RAI_MSVC
-Mutex::Mutex() {}
-Mutex::~Mutex() {}
-void Mutex::lock(const char*) {}
-void Mutex::unlock() {}
-#endif
 
 //===========================================================================
 //

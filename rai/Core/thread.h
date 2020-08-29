@@ -12,6 +12,9 @@
 #include "array.h"
 #include "graph.h"
 
+#include <mutex>
+#include <shared_mutex>
+#include <condition_variable>
 #include <thread>
 
 enum ThreadState { tsIsClosed=-6, tsToOpen=-2, tsLOOPING=-3, tsBEATING=-4, tsIDLE=0, tsToStep=1, tsToClose=-1,  tsFAILURE=-5,  }; //positive states indicate steps-to-go
@@ -47,7 +50,7 @@ struct CallbackL : rai::Array<Callback<F>*> {
 
 /// a basic read/write access lock
 struct RWLock {
-  pthread_rwlock_t rwLock;
+  std::shared_timed_mutex rwLock;
   int rwCount=0;     ///< -1==write locked, positive=numer of readers, 0=unlocked
   Mutex rwCountMutex;
   RWLock();
@@ -224,7 +227,7 @@ template<class T> std::ostream& operator<<(std::ostream& os, Var<T>& x) { x.writ
 struct Signaler {
   int status;
   Mutex statusMutex;
-  pthread_cond_t cond;
+  std::condition_variable cond;
 
   Signaler(int initialStatus=0);
   virtual ~Signaler(); //virtual, to enforce polymorphism
@@ -236,13 +239,13 @@ struct Signaler {
   void statusLock();   //the user can manually lock/unlock, if he needs locked state access for longer -> use userHasLocked=true below!
   void statusUnlock();
 
-  int  getStatus(bool userHasLocked=false) const;
-  bool waitForSignal(bool userHasLocked=false, double timeout=-1.);
-  bool waitForEvent(std::function<bool()> f, bool userHasLocked=false);
-  bool waitForStatusEq(int i, bool userHasLocked=false, double timeout=-1.);    ///< return value is the state after the waiting
-  int waitForStatusNotEq(int i, bool userHasLocked=false, double timeout=-1.); ///< return value is the state after the waiting
-  int waitForStatusGreaterThan(int i, bool userHasLocked=false, double timeout=-1.); ///< return value is the state after the waiting
-  int waitForStatusSmallerThan(int i, bool userHasLocked=false, double timeout=-1.); ///< return value is the state after the waiting
+  int  getStatus(Mutex::Token *userHasLocked=0) const;
+  bool waitForSignal(Mutex::Token *userHasLocked=0, double timeout=-1.);
+  bool waitForEvent(std::function<bool()> f, Mutex::Token *userHasLocked=0);
+  bool waitForStatusEq(int i, Mutex::Token *userHasLocked=0, double timeout=-1.);    ///< return value is the state after the waiting
+  int waitForStatusNotEq(int i, Mutex::Token *userHasLocked=0, double timeout=-1.); ///< return value is the state after the waiting
+  int waitForStatusGreaterThan(int i, Mutex::Token *userHasLocked=0, double timeout=-1.); ///< return value is the state after the waiting
+  int waitForStatusSmallerThan(int i, Mutex::Token *userHasLocked=0, double timeout=-1.); ///< return value is the state after the waiting
 };
 
 //===========================================================================
@@ -273,7 +276,7 @@ int _allPositive(const VarL& signalers, int whoChanged);
 enum ActStatus { AS_none=-1, AS_init, AS_running, AS_done, AS_converged, AS_stalled, AS_true, AS_false, AS_kill };
 
 inline bool wait(const VarL& acts, double timeout=-1.) {
-  return Event(acts, _allPositive).waitForStatusEq(AS_true, false, timeout);
+  return Event(acts, _allPositive).waitForStatusEq(AS_true, 0, timeout);
 }
 
 //===========================================================================
