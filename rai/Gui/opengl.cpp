@@ -7,13 +7,24 @@
     --------------------------------------------------------------  */
 
 #ifdef RAI_GL
-#  include <GL/glew.h>
-#  include <GL/glx.h>
+#  ifndef RAI_MSVC
+#    include <GL/glew.h>
+#    include <GL/glx.h>
+#  else
+#    include <windows.h>
+#    undef min
+#    undef max
+#    define WINAPI_PARTITION_DESKTOP 1
+#    include <GL/glew.h>
+#    include <GL/glut.h>
+#  endif
 #  undef Success
 #endif
+
 #include "opengl.h"
 #include "../Core/array.tpp"
 #include "../Geo/geo.h"
+
 #ifdef RAI_GLFW
 #  include <GLFW/glfw3.h>
 #endif
@@ -947,7 +958,7 @@ void glDrawDisk(float radius) {
   gluDeleteQuadric(style);
 }
 
-void glDrawProxy(const arr& p1, const arr& p2, double diskSize, int colorCode, const arr& norm, double rad1, double rad2) {
+void glDrawProxy(const arr& p1, const arr& p2, double diskSize, int colorCode, const arr& norm, double _rad1, double _rad2) {
   glLoadIdentity();
   if(!colorCode) glColor(.8, .2, .2);
   else glColor(colorCode);
@@ -975,13 +986,13 @@ void glDrawProxy(const arr& p1, const arr& p2, double diskSize, int colorCode, c
   glEnable(GL_CULL_FACE);
 
   glLoadIdentity();
-  if(!!norm && rad1>0.) {
-    arr p = p1 - rad1*norm;
+  if(!!norm && _rad1>0.) {
+    arr p = p1 - _rad1*norm;
     glColor(0., 1., 0., 1.);
     glDrawDiamond(p(0), p(1), p(2), .01, .01, .01);
   }
-  if(!!norm && rad1>0.) {
-    arr p = p2 + rad2*norm;
+  if(!!norm && _rad1>0.) {
+    arr p = p2 + _rad2*norm;
     glColor(0., 0., 1., 1.);
     glDrawDiamond(p(0), p(1), p(2), .01, .01, .01);
   }
@@ -2343,7 +2354,7 @@ void OpenGL::MouseMotion(int _x, int _y) {
 //
 
 struct XBackgroundContext {
-#ifdef RAI_GL
+#if defined(RAI_GL) && defined(RAI_X11)
   typedef Bool(*glXMakeContextCurrentARBProc)(Display*, GLXDrawable, GLXDrawable, GLXContext);
   typedef GLXContext(*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
 

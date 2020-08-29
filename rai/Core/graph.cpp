@@ -309,7 +309,7 @@ void Graph::clear() {
 Graph& Graph::newNode(const NodeInitializer& ni) {
   Node* clone = ni.n->newClone(*this); //this appends sequentially clones of all nodes to 'this'
   for(const String& s:ni.parents) {
-    Node* p = findNode({s}, true, false);
+    Node* p = findNode(s, true, false);
     CHECK(p, "parent " <<p <<" of " <<*clone <<" does not exist!");
     clone->addParent(p);
   }
@@ -327,7 +327,7 @@ Graph& Graph::newSubgraph(const char* key, const NodeL& parents, const Graph& x)
 Node_typed<int>* Graph::newNode(const uintA& parentIdxs) {
   NodeL parents(parentIdxs.N);
   for(uint i=0; i<parentIdxs.N; i++) parents(i) = NodeL::elem(parentIdxs(i));
-  return newNode<int>({STRING(NodeL::N)}, parents, 0);
+  return newNode<int>(STRING(NodeL::N), parents, 0);
 }
 
 void Graph::appendDict(const std::map<std::string, std::string>& dict) {
@@ -664,7 +664,7 @@ void writeFromStream(std::ostream& os, std::istream& is, istream::pos_type beg, 
   istream::pos_type here=is.tellg();
   is.seekg(beg);
   char c;
-  for(uint i=end-beg; i--;) {
+  for(int i=int(beg - end); i--;) {
     is.get(c);
     os <<c;
   }
@@ -684,7 +684,7 @@ void readNodeParents(Graph& G, std::istream& is, NodeL& parents, ParseInfo& pinf
   pinfo.parents_beg=is.tellg();
   for(uint j=0;; j++) {
     if(!str.read(is, " \t\n\r,", " \t\n\r,)", false)) break;
-    Node* e = G.findNode({str}, true, false); //important: recurse up
+    Node* e = G.findNode(str, true, false); //important: recurse up
     if(e) { //sucessfully found
       parents.append(e);
       pinfo.parents_end=is.tellg();

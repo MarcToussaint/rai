@@ -23,8 +23,6 @@
 #endif
 #include <errno.h>
 
-#ifndef RAI_MSVC
-
 //===========================================================================
 
 template<> const char* rai::Enum<ActStatus>::names []= {
@@ -307,6 +305,7 @@ void Metronome::reset(double ticIntervalSec) {
 }
 
 void Metronome::waitForTic() {
+#ifndef RAI_MSVC
   //compute target time
   long secs = (long)(floor(ticInterval));
   ticTime.tv_sec  += secs;
@@ -318,7 +317,9 @@ void Metronome::waitForTic() {
   //wait for target time
   int rc = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &ticTime, nullptr);
   if(rc && errno) RAI_MSG("clock_nanosleep() failed " <<rc <<" errno=" <<errno <<' ' <<strerror(errno));
-
+#else
+  ::Sleep(1000.f*ticInterval);
+#endif
   tics++;
 }
 
@@ -732,5 +733,3 @@ rai::Array<ptr<Var_base>*>::memMove=true;
 ThreadL::memMove=true;
 SignalerL::memMove=true;
 RUN_ON_INIT_END(thread)
-
-#endif //RAI_MSVC

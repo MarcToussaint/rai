@@ -21,8 +21,6 @@ typedef rai::Array<Signaler*> SignalerL;
 typedef rai::Array<Var_base*> VarL;
 typedef rai::Array<Thread*> ThreadL;
 
-#ifndef RAI_MSVC
-
 //===========================================================================
 
 template<class F> struct Callback {
@@ -317,7 +315,7 @@ struct CycleTimer {
  */
 struct MiniThread : Signaler {
   rai::String name;
-  pthread_t thread = 0;             ///< the underlying pthread; nullptr iff not opened
+  pthread_t thread;             ///< the underlying pthread; nullptr iff not opened
   pid_t tid = 0;                    ///< system thread id
 
   /// @name c'tor/d'tor
@@ -427,25 +425,6 @@ inline ptr<ScriptThread> run(const std::function<int ()>& script, double beatInt
 //
 // template definitions
 //
-
-#else //RAI_MSVC
-
-struct Signaler {
-  int value;
-  Signaler(int initialState=0) {}
-  ~Signaler() {}
-
-  void setStatus(int i, bool signalOnlyFirstInQueue=false) { value=i; }
-  int  incrementStatus(bool signalOnlyFirstInQueue=false) { value++; }
-  void broadcast(bool signalOnlyFirstInQueue=false) {}
-
-  void lock() {}
-  void unlock() {}
-
-  int  getStatus(bool userHasLocked=false) const { return value; }
-};
-
-#endif //RAI_MSVC
 
 template<class T>
 Var<T>::Var()

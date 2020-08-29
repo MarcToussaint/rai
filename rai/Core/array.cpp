@@ -1809,6 +1809,7 @@ void blas_Mv(arr& y, const arr& A, const arr& x) {       rai::useLapack=false; i
 void blas_A_At(arr& X, const arr& A) { NICO }
 void blas_At_A(arr& X, const arr& A) { NICO }
 void lapack_cholesky(arr& C, const arr& A) { NICO }
+void lapack_choleskySymPosDef(arr& Achol, const arr& A) { NICO }
 uint lapack_SVD(arr& U, arr& d, arr& Vt, const arr& A) { NICO; }
 void lapack_LU(arr& LU, const arr& A) { NICO; }
 void lapack_RQ(arr& R, arr& Q, const arr& A) { NICO; }
@@ -1966,7 +1967,7 @@ void rai::RowShifted::reshift() {
     while(Ztrail>=Zlead && *Ztrail==0.) Ztrail--;
     while(Zlead<=Ztrail && *Zlead==0.) Zlead++;
     if(Ztrail<Zlead) { //all zeros
-      rowLen.p[i]=0.;
+      rowLen.p[i]=0;
     } else {
       uint rs = Zlead-Zp;
       uint len = 1+Ztrail-Zlead;

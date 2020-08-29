@@ -21,6 +21,11 @@
 #  define RAI_Linux
 #endif
 
+#ifdef RAI_MSVC
+#define HAVE_STRUCT_TIMESPEC
+#include <pthread.h>
+#endif
+
 //===========================================================================
 //
 // defines
@@ -154,6 +159,12 @@ double d_eqConstraintCost(double h, double margin, double power);
 //----- time access
 double clockTime(bool today=true); //(really on the clock)
 timespec clockTime2();
+#ifdef RAI_MSVC
+    int clock_gettime(int, timespec* spec);
+#  define CLOCK_REALTIME 0
+#  define CLOCK_MONOTONIC 0
+#endif
+
 double realTime(); //(since process start)
 double cpuTime();
 double sysTime();
@@ -605,9 +616,7 @@ struct Inotify {
 //
 
 struct Mutex {
-#ifndef RAI_MSVC
   pthread_mutex_t mutex;
-#endif
   int state; ///< 0=unlocked, otherwise=syscall(SYS_gettid)
   uint recursive; ///< number of times it's been locked
   const char* lockInfo;

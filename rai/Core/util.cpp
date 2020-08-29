@@ -13,7 +13,6 @@
 #include <signal.h>
 #include <stdexcept>
 #include <stdarg.h>
-#include <cxxabi.h>    // for __cxa_demangle
 #if defined RAI_Linux || defined RAI_Cygwin || defined RAI_Darwin
 #  include <limits.h>
 #  include <sys/time.h>
@@ -23,6 +22,7 @@
 #  include <sys/stat.h>
 #  include <poll.h>
 #  include <execinfo.h>
+#  include <cxxabi.h>    // for __cxa_demangle
 #if defined RAI_X11
 #  include <X11/Xlib.h>
 #  include <X11/Xutil.h>
@@ -36,8 +36,10 @@
 #  include <time.h>
 #  include <sys/timeb.h>
 #  include <windows.h>
+#  include <direct.h>
 #  undef min
 #  undef max
+#  define chdir _chdir
 #  define RAI_TIMEB
 #  ifdef RAI_QT
 #    undef  NOUNICODE
@@ -201,7 +203,8 @@ bool skipUntil(std::istream& is, const char* tag) {
 bool parse(std::istream& is, const char* str, bool silent) {
   if(!is.good()) { if(!silent) RAI_MSG("bad stream tag when scanning for '" <<str <<"'"); return false; }  //is.clear(); }
   uint i, n=strlen(str);
-  char buf[n+1]; buf[n]=0;
+  char *buf = new char[n+1];
+  buf[n]=0;
   rai::skip(is, " \n\r\t");
   is.read(buf, n);
   if(!is.good() || strcmp(str, buf)) {
@@ -209,8 +212,10 @@ bool parse(std::istream& is, const char* str, bool silent) {
     is.setstate(std::ios::failbit);
     if(!silent)  RAI_MSG("(LINE=" <<rai::lineCount <<") parsing of constant string '" <<str
                            <<"' failed! (read instead: '" <<buf <<"')");
+    delete buf;
     return false;
   }
+  delete buf;
   return true;
 }
 
@@ -428,9 +433,26 @@ double clockTime(bool today) {
 #else
   static _timeb t; _ftime(&t);
   return ((double)(t.time%86400) + //modulo TODAY
-          (double)(t.millitm-startTime.millitm)/1000.);
+          (double)(t.millitm)/1000.);
 #endif
 }
+
+#ifdef RAI_MSVC
+#ifdef __cplusplus 	
+extern "C" {	
+#endif		
+int clock_gettime(int, timespec* spec)      //C-file part
+{
+    __int64 wintime; GetSystemTimeAsFileTime((FILETIME*)&wintime);
+    wintime -= 116444736000000000i64;  //1jan1601 to 1jan1970
+    spec->tv_sec = wintime / 10000000i64;           //seconds
+    spec->tv_nsec = wintime % 10000000i64 * 100;      //nano-seconds
+    return 0;
+}
+#ifdef __cplusplus 	
+}
+#endif		
+#endif
 
 timespec clockTime2() {
   timespec ts;
@@ -730,7 +752,7 @@ void handleSIGUSR2(int) {
 
 struct LogServer {
   LogServer() {
-    signal(SIGUSR2, rai::handleSIGUSR2);
+    signal(SIGABRT, rai::handleSIGUSR2);
     timerStartTime=rai::cpuTime();
     startTime = clockTime(false);
   }
@@ -778,6 +800,7 @@ rai::LogToken::~LogToken() {
     if(log_level>=0) std::cout <<code_file <<':' <<code_func <<':' <<code_line <<'(' <<log_level <<") " <<msg <<endl;
     if(log_level<0) {
 
+#ifndef RAI_MSVC
       if(log_level<=-2) {
         void* callstack[10];
         int stack_count = backtrace(callstack, 10);
@@ -805,6 +828,7 @@ rai::LogToken::~LogToken() {
         }
         free(symbols);
       }
+#endif
 
       rai::errString.clear() <<code_file <<':' <<code_func <<':' <<code_line <<'(' <<log_level <<") " <<msg;
 // #ifdef RAI_ROS
@@ -814,7 +838,7 @@ rai::LogToken::~LogToken() {
       else if(log_level==-2) { cerr <<"** ERROR:" <<rai::errString <<endl; /*throw does not WORK!!! Because this is a destructor. The THROW macro does it inline*/ }
       else if(log_level==-3) { cerr <<"** HARD EXIT! " <<rai::errString <<endl;  exit(1); }
       //INSERT BREAKPOINT HERE
-      if(log_level<=-3) raise(SIGUSR2);
+      if(log_level<=-3) raise(SIGABRT);
     }
   }
 //  rai::logServer().mutex.unlock();
@@ -954,7 +978,7 @@ rai::String rai::String::getSubString(int start, int end) const {
  * @param n number of chars to return
  */
 rai::String rai::String::getLastN(uint n) const {
-  return getSubString(-n, -1);
+  return getSubString(-int(n), -1);
 }
 
 /**
@@ -1273,6 +1297,7 @@ void  rai::Rnd::seed250(int32_t seed) {
 // Inotify
 //
 
+#ifndef RAI_MSVC
 Inotify::Inotify(const char* filename): fd(0), wd(0) {
   fd = inotify_init();
   if(fd<0) HALT("Couldn't initialize inotify");
@@ -1333,6 +1358,11 @@ bool Inotify::poll(bool block, bool verbose) {
 
   return false;
 }
+#else //RAI_MSVC
+Inotify::Inotify(const char* filename) : fd(0), wd(0) { NICO }
+Inotify::~Inotify() { NICO }
+bool Inotify::poll(bool block, bool verbose) { NICO }
+#endif
 
 //===========================================================================
 //
@@ -1386,7 +1416,7 @@ void Mutex::unlock() {
 #else//RAI_MSVC
 Mutex::Mutex() {}
 Mutex::~Mutex() {}
-void Mutex::lock() {}
+void Mutex::lock(const char*) {}
 void Mutex::unlock() {}
 #endif
 
@@ -1434,8 +1464,10 @@ void gnuplot(const char* command, bool pauseMouse, bool persist, const char* PDF
   cmd <<"set style data lines\n";
 
   // run standard files
+#ifndef RAI_MSVC
   if(!access("~/gnuplot.cfg", R_OK)) cmd <<"load '~/gnuplot.cfg'\n";
   if(!access("gnuplot.cfg", R_OK)) cmd <<"load 'gnuplot.cfg'\n";
+#endif
 
   cmd <<"set title '(Gui/plot.h -> gnuplot pipe)'\n"
       <<command <<std::endl;
@@ -1499,6 +1531,9 @@ double gaussIntExpectation(double x) {
  * @brief Return the current working dir as std::string.
  */
 std::string getcwd_string() {
+#ifdef RAI_MSVC
+#  define PATH_MAX 120
+#endif
   char buff[PATH_MAX];
   char* succ=getcwd(buff, PATH_MAX);
   if(!succ) HALT("could not call getcwd: errno=" <<errno <<' ' <<strerror(errno));
