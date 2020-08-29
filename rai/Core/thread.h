@@ -321,7 +321,7 @@ struct CycleTimer {
  */
 struct MiniThread : Signaler {
   rai::String name;
-  pthread_t thread;             ///< the underlying pthread; nullptr iff not opened
+  std::unique_ptr<std::thread> thread;  ///< the underlying pthread; nullptr iff not opened
   pid_t tid = 0;                    ///< system thread id
 
   /// @name c'tor/d'tor
@@ -334,7 +334,7 @@ struct MiniThread : Signaler {
 
   virtual void main() { LOG(-1) <<"you're calling the 'pseudo-pure virtual' main(), which should be overloaded (are you in a destructor?)"; }
 
-  void pthreadMain(); //this is the thread main - should be private!
+  void threadMain(); //this is the thread main - should be private!
 };
 
 //===========================================================================
@@ -350,7 +350,7 @@ struct MiniThread : Signaler {
 struct Thread {
   Event event;
   rai::String name;
-  pthread_t thread;             ///< the underlying pthread; nullptr iff not opened
+  std::unique_ptr<std::thread> thread;    ///< the underlying pthread; nullptr iff not opened
   pid_t tid;                    ///< system thread id
   Mutex stepMutex;              ///< This is set whenever the 'main' is in step (or open, or close) --- use this in all service methods callable from outside!!
   uint step_count;              ///< how often the step was called

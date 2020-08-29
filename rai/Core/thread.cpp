@@ -359,22 +359,15 @@ rai::String CycleTimer::report() {
 // MiniThread
 //
 
-void* MiniThread_staticMain(void* _self) {
-  MiniThread* th=(MiniThread*)_self;
-  th->pthreadMain();
-  return nullptr;
-}
-
 MiniThread::MiniThread(const char* _name) : Signaler(tsIsClosed), name(_name) {
   if(name.N>14) name.resize(14, true);
 
   statusLock();
 
-  int rc;
-  pthread_attr_t atts;
-  rc = pthread_attr_init(&atts); if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-  rc = pthread_create(&thread, &atts, MiniThread_staticMain, this);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-  if(name) pthread_setname_np(thread, name);
+  thread = make_unique<std::thread>(&MiniThread::threadMain, this);
+#ifndef RAI_MSVC
+  if(name) pthread_setname_np(thread->native_handle(), name);
+#endif
 
   status=0;
   statusUnlock();
@@ -404,22 +397,22 @@ void MiniThread::threadClose(double timeoutForce) {
 //      }
 //    }
   }
-  int rc;
-  rc = pthread_join(thread, nullptr);     if(rc) HALT("pthread_join failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-  thread=0;
+  thread.reset();
 }
 
 void MiniThread::threadCancel() {
 //  stopListening();
   setStatus(tsToClose);
   if(!thread) { setStatus(tsIsClosed); return; }
+#ifndef RAI_MSVC
   int rc;
-  rc = pthread_cancel(thread);         if(rc) HALT("pthread_cancel failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-  rc = pthread_join(thread, nullptr);     if(rc) HALT("pthread_join failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-  thread=0;
+  rc = pthread_cancel(thread->native_handle());         if(rc) HALT("pthread_cancel failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+#endif
+  thread->join();
+  thread.reset();
 }
 
-void MiniThread::pthreadMain() {
+void MiniThread::threadMain() {
   tid = syscall(SYS_gettid);
 //  if(verbose>0) cout <<"*** Entering Thread '" <<name <<"'" <<endl;
   //http://linux.die.net/man/3/setpriority
@@ -449,12 +442,6 @@ void MiniThread::pthreadMain() {
 // Thread
 //
 
-void* Thread_staticMain(void* _self) {
-  Thread* th=(Thread*)_self;
-  th->main();
-  return nullptr;
-}
-
 #ifdef RAI_QThread
 class sThread:QThread {
   Q_OBJECT
@@ -472,7 +459,6 @@ class sThread:QThread {
 Thread::Thread(const char* _name, double beatIntervalSec)
   : event(tsIsClosed),
     name(_name),
-    thread(0),
     tid(0),
     step_count(0),
     metronome(beatIntervalSec) {
@@ -491,25 +477,9 @@ void Thread::threadOpen(bool wait, int priority) {
   {
     auto lock = event.statusMutex(RAI_HERE);
     if(thread) return; //this is already open -- or has just beend opened (parallel call to threadOpen)
-#ifndef RAI_QThread
-    int rc;
-    pthread_attr_t atts;
-    rc = pthread_attr_init(&atts); if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-    rc = pthread_create(&thread, &atts, Thread_staticMain, this);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-    /*if(priority){ //doesn't work - but setpriority does work!!
-    rc = pthread_attr_setschedpolicy(&atts, SCHED_RR);  if(rc) HALT("pthread failed with err " <<rc <<strerror(rc));
-    sched_param  param;
-    rc = pthread_attr_getschedparam(&atts, &param);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-    std::cout <<"standard priority = " <<param.sched_priority <<std::endl;
-    param.sched_priority += priority;
-    std::cout <<"modified priority = " <<param.sched_priority <<std::endl;
-    rc = pthread_attr_setschedparam(&atts, &param);  if(rc) HALT("pthread failed with err " <<rc <<strerror(rc));
-    }*/
-    //prctl(PR_SET_NAME, proc->name.p);
-    if(name) pthread_setname_np(thread, name);
-#else
-    thread = new sThread(this, "hallo");
-    thread->open();
+    thread = make_unique<std::thread>(&Thread::main, this);
+#ifndef RAI_MSVC
+    if(name) pthread_setname_np(thread->native_handle(), name);
 #endif
     event.status=tsToOpen;
   }
@@ -541,29 +511,20 @@ void Thread::threadClose(double timeoutForce) {
 //      }
 //    }
   }
-#ifndef RAI_QThread
-  int rc;
-  rc = pthread_join(thread, nullptr);     if(rc) HALT("pthread_join failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-  thread=0;
-#else
-  thread->close();
-  delete thread;
-  thread=nullptr;
-#endif
+  thread->join();
+  thread.reset();
 }
 
 void Thread::threadCancel() {
   event.stopListening();
   event.setStatus(tsToClose);
   if(!thread) return;
-#ifndef RAI_QThread
+#ifndef RAI_MSVC
   int rc;
-  rc = pthread_cancel(thread);         if(rc) HALT("pthread_cancel failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-  rc = pthread_join(thread, nullptr);     if(rc) HALT("pthread_join failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-  thread=0;
-#else
-  NIY;
+  rc = pthread_cancel(thread->native_handle());         if(rc) HALT("pthread_cancel failed with err " <<rc <<" '" <<strerror(rc) <<"'");
 #endif
+  thread->join();
+  thread.reset();
   stepMutex.state=-1; //forced destroy in the destructor
 }
 
