@@ -12,6 +12,8 @@
 #include "array.h"
 #include "graph.h"
 
+#include <thread>
+
 enum ThreadState { tsIsClosed=-6, tsToOpen=-2, tsLOOPING=-3, tsBEATING=-4, tsIDLE=0, tsToStep=1, tsToClose=-1,  tsFAILURE=-5,  }; //positive states indicate steps-to-go
 struct Signaler;
 struct Event;
@@ -282,7 +284,7 @@ inline bool wait(const VarL& acts, double timeout=-1.) {
 /// a simple struct to realize a strict tic tac timing (called in thread::main once each step if looping)
 struct Metronome {
   double ticInterval;
-  timespec ticTime;
+  std::chrono::time_point<std::chrono::high_resolution_clock, std::chrono::duration<double>> ticTime;
   uint tics;
 
   Metronome(double ticIntervalSec); ///< set tic tac time in seconds
@@ -296,10 +298,11 @@ struct Metronome {
 
 /// to meassure cycle and busy times
 struct CycleTimer {
+  typedef std::chrono::time_point<std::chrono::high_resolution_clock, std::chrono::duration<double>> timepoint;
   uint steps;
   double busyDt, busyDtMean, busyDtMax;  ///< internal variables to measure step time
   double cyclDt, cyclDtMean, cyclDtMax;  ///< internal variables to measure step time
-  timespec now, lastTime;
+  timepoint now, lastTime;
   const char* name;                      ///< name
   CycleTimer(const char* _name=nullptr);
   ~CycleTimer();

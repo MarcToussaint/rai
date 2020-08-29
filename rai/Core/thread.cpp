@@ -299,34 +299,21 @@ Metronome::Metronome(double ticIntervalSec) {
 }
 
 void Metronome::reset(double ticIntervalSec) {
-  clock_gettime(CLOCK_MONOTONIC, &ticTime);
+  ticTime = std::chrono::high_resolution_clock::now();
   tics=0;
   ticInterval = ticIntervalSec;
 }
 
 void Metronome::waitForTic() {
-#ifndef RAI_MSVC
-  //compute target time
-  long secs = (long)(floor(ticInterval));
-  ticTime.tv_sec  += secs;
-  ticTime.tv_nsec += (long)(floor(1000000000. * (ticInterval-(double)secs)));
-  while(ticTime.tv_nsec>1000000000l) {
-    ticTime.tv_sec  += 1;
-    ticTime.tv_nsec -= 1000000000l;
-  }
-  //wait for target time
-  int rc = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &ticTime, nullptr);
-  if(rc && errno) RAI_MSG("clock_nanosleep() failed " <<rc <<" errno=" <<errno <<' ' <<strerror(errno));
-#else
-  ::Sleep(1000.f*ticInterval);
-#endif
+  auto interval = std::chrono::duration<double>(ticInterval);
+  ticTime += interval;
+  std::this_thread::sleep_until(ticTime);
   tics++;
 }
 
 double Metronome::getTimeSinceTic() {
-  timespec now;
-  clock_gettime(CLOCK_MONOTONIC, &now);
-  return double(now.tv_sec-ticTime.tv_sec) + 1e-9*(now.tv_nsec-ticTime.tv_nsec);
+  auto now = std::chrono::high_resolution_clock::now();
+  return std::chrono::duration<double>(ticTime-now).count();
 }
 
 //===========================================================================
@@ -334,9 +321,8 @@ double Metronome::getTimeSinceTic() {
 // CycleTimer
 //
 
-void updateTimeIndicators(double& dt, double& dtMean, double& dtMax, const timespec& now, const timespec& last, uint step) {
-  dt=double(now.tv_sec-last.tv_sec-1)*1000. +
-     double(1000000000l+now.tv_nsec-last.tv_nsec)/1000000.;
+void updateTimeIndicators(double& dt, double& dtMean, double& dtMax, const CycleTimer::timepoint& now, const CycleTimer::timepoint& last, uint step) {
+  dt = (now-last).count();
   if(dt<0.) dt=0.;
   double rate=.01;  if(step<100) rate=1./(1+step);
   dtMean = (1.-rate)*dtMean    + rate*dt;
@@ -355,17 +341,17 @@ void CycleTimer::reset() {
   steps=0;
   busyDt=busyDtMean=busyDtMax=1.;
   cyclDt=cyclDtMean=cyclDtMax=1.;
-  clock_gettime(CLOCK_MONOTONIC, &lastTime);
+  lastTime = std::chrono::high_resolution_clock::now();
 }
 
 void CycleTimer::cycleStart() {
-  clock_gettime(CLOCK_MONOTONIC, &now);
+  now = std::chrono::high_resolution_clock::now();
   updateTimeIndicators(cyclDt, cyclDtMean, cyclDtMax, now, lastTime, steps);
   lastTime=now;
 }
 
 void CycleTimer::cycleDone() {
-  clock_gettime(CLOCK_MONOTONIC, &now);
+  now = std::chrono::high_resolution_clock::now();
   updateTimeIndicators(busyDt, busyDtMean, busyDtMax, now, lastTime, steps);
   steps++;
 }

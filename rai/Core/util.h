@@ -157,23 +157,10 @@ double eqConstraintCost(double h, double margin, double power);
 double d_eqConstraintCost(double h, double margin, double power);
 
 //----- time access
-double clockTime(bool today=true); //(really on the clock)
-timespec clockTime2();
-#ifdef RAI_MSVC
-    int clock_gettime(int, timespec* spec);
-#  define CLOCK_REALTIME 0
-#  define CLOCK_MONOTONIC 0
-#endif
-
+double clockTime(); //(really on the clock)
 double realTime(); //(since process start)
 double cpuTime();
-double sysTime();
-double totalTime();
-double toTime(const tm& t);
-char* date();
-char* date(double sec);
-char* date2(bool subsec=false);
-char* date2(double sec, bool subsec);
+std::string date(bool forFileName=false);
 void wait(double sec, bool msg_on_fail=true);
 bool wait(bool useX11=true);
 
@@ -302,15 +289,6 @@ stdPipes(String)
 }
 
 inline rai::String operator+(const rai::String& a, const char* b) { rai::String s=a; s <<b; return s; }
-
-//===========================================================================
-//
-// string-filling routines
-//
-
-namespace rai {
-rai::String getNowString();  //TODO:compare with getDate2
-}
 
 //===========================================================================
 //
