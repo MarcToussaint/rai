@@ -20,6 +20,8 @@
 #  include "cygwin_compat.h"
 #endif //__CYGWIN __
 #  include <unistd.h>
+#else
+#  define getpid _getpid
 #endif
 #include <errno.h>
 
@@ -39,7 +41,10 @@ RWLock::RWLock() {
 }
 
 RWLock::~RWLock() {
-  CHECK(!rwCount, "Destroying locked RWLock");
+    if (rwCount) {
+        std::cerr << "Destroying locked RWLock" << endl;
+        exit(1);
+    }
 }
 
 void RWLock::readLock() {
@@ -163,7 +168,7 @@ void Signaler::statusUnlock() {
 
 int Signaler::getStatus(Mutex::Token *userHasLocked) const {
   Mutex* m = (Mutex*)&statusMutex; //sorry: to allow for 'const' access
-  if(!userHasLocked) m->lock(RAI_HERE); else CHECK_EQ(m->state, syscall(SYS_gettid), "user must have locked before calling this!");
+  if(!userHasLocked) m->lock(RAI_HERE); else CHECK_EQ(m->state, getpid(), "user must have locked before calling this!");
   int i=status;
   if(!userHasLocked) m->unlock();
   return i;
@@ -374,11 +379,13 @@ MiniThread::MiniThread(const char* _name) : Signaler(tsIsClosed), name(_name) {
 }
 
 MiniThread::~MiniThread() {
-  if(thread)
-    HALT("Call 'threadClose()' in the destructor of the DERIVED class! \
+    if (thread){
+        std::cerr << "Call 'threadClose()' in the destructor of the DERIVED class! \
            That's because the 'virtual table is destroyed' before calling the destructor ~Thread (google 'call virtual function\
            in destructor') but now the destructor has to call 'threadClose' which triggers a Thread::close(), which is\
-           pure virtual while you're trying to call ~Thread.")
+           pure virtual while you're trying to call ~Thread." << endl;
+    exit(1);
+}
   }
 
 void MiniThread::threadClose(double timeoutForce) {
@@ -413,7 +420,7 @@ void MiniThread::threadCancel() {
 }
 
 void MiniThread::threadMain() {
-  tid = syscall(SYS_gettid);
+  tid = getpid();
 //  if(verbose>0) cout <<"*** Entering Thread '" <<name <<"'" <<endl;
   //http://linux.die.net/man/3/setpriority
   //if(Thread::threadPriority) setRRscheduling(Thread::threadPriority);
@@ -466,11 +473,13 @@ Thread::Thread(const char* _name, double beatIntervalSec)
 }
 
 Thread::~Thread() {
-  if(thread)
-    HALT("Call 'threadClose()' in the destructor of the DERIVED class! \
+    if (thread) {
+        std::cerr << "Call 'threadClose()' in the destructor of the DERIVED class! \
            That's because the 'virtual table is destroyed' before calling the destructor ~Thread (google 'call virtual function\
            in destructor') but now the destructor has to call 'threadClose' which triggers a Thread::close(), which is\
-           pure virtual while you're trying to call ~Thread.")
+           pure virtual while you're trying to call ~Thread.";
+        exit(1);
+    }
   }
 
 void Thread::threadOpen(bool wait, int priority) {
@@ -567,7 +576,7 @@ void Thread::threadStop(bool wait) {
 }
 
 void Thread::main() {
-  tid = syscall(SYS_gettid);
+  tid = getpid();
 //  if(verbose>0) cout <<"*** Entering Thread '" <<name <<"'" <<endl;
   //http://linux.die.net/man/3/setpriority
   //if(Thread::threadPriority) setRRscheduling(Thread::threadPriority);

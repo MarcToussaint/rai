@@ -22,11 +22,6 @@
 #  define RAI_Linux
 #endif
 
-#ifdef RAI_MSVC
-#define HAVE_STRUCT_TIMESPEC
-#include <pthread.h>
-#endif
-
 //===========================================================================
 //
 // defines

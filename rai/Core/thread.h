@@ -140,7 +140,9 @@ struct Var_data : Var_base {
   T data;
 
   Var_data(const char* name=0) : Var_base(name), data() {} // default constructor for value always initializes, also primitive types 'bool' or 'int'
-  ~Var_data() { CHECK(!rwlock.isLocked(), "can't destroy a variable when it is currently accessed!"); }
+  ~Var_data() {
+      if (rwlock.isLocked()) { std::cerr << "can't destroy a variable when it is currently accessed!" << endl; exit(1); }
+  }
 };
 
 template<class T> bool operator==(const Var_data<T>&, const Var_data<T>&) { return false; }
@@ -322,7 +324,7 @@ struct CycleTimer {
 struct MiniThread : Signaler {
   rai::String name;
   std::unique_ptr<std::thread> thread;  ///< the underlying pthread; nullptr iff not opened
-  pid_t tid = 0;                    ///< system thread id
+  int tid = 0;                    ///< system thread id
 
   /// @name c'tor/d'tor
   MiniThread(const char* _name);
@@ -351,7 +353,7 @@ struct Thread {
   Event event;
   rai::String name;
   std::unique_ptr<std::thread> thread;    ///< the underlying pthread; nullptr iff not opened
-  pid_t tid;                    ///< system thread id
+  int tid;                    ///< system thread id
   Mutex stepMutex;              ///< This is set whenever the 'main' is in step (or open, or close) --- use this in all service methods callable from outside!!
   uint step_count;              ///< how often the step was called
   Metronome metronome;          ///< used for beat-looping

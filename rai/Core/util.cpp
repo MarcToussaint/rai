@@ -41,6 +41,7 @@
 #  undef min
 #  undef max
 #  define chdir _chdir
+#  define getpid _getpid
 #  ifdef RAI_QT
 #    undef  NOUNICODE
 #    define NOUNICODE
@@ -538,8 +539,12 @@ int x11_getKey() {
 
 /// the integral shared memory size -- not implemented for Windows!
 long mem() {
+#ifndef RAI_MSVC
   static rusage r; getrusage(RUSAGE_SELF, &r);
   return r.ru_idrss;
+#else
+NICO
+#endif
 }
 
 /// start and reset the timer (user CPU time)
@@ -1231,12 +1236,15 @@ Mutex::Mutex() {
 }
 
 Mutex::~Mutex() {
-  CHECK(!state, "Mutex destroyed without unlocking first");
+    if (state) {
+        std::cerr << "Mutex destroyed without unlocking first" << endl;
+        exit(1);
+    }
 }
 
 void Mutex::lock(const char* _lockInfo) {
   mutex.lock();
-  int pid = syscall(SYS_gettid);
+  int pid = getpid();
   if(!true) {
     std::cerr <<"could not lock mutex by process " <<pid <<" -- is blocked with info '" <<lockInfo <<"' by process " <<state <<endl;
     exit(1);

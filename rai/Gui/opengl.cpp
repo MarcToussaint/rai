@@ -14,7 +14,6 @@
 #    include <windows.h>
 #    undef min
 #    undef max
-#    define WINAPI_PARTITION_DESKTOP 1
 #    include <GL/glew.h>
 #    include <GL/glut.h>
 #  endif
@@ -1951,7 +1950,7 @@ int OpenGL::watch(const char* txt) {
     return 'q';
   }
 #ifdef RAI_GL
-  update(STRING(txt<<" - press ENTER to continue"), true);
+  update(STRING((txt?txt:"") <<" - press ENTER to continue"), true);
   if(rai::getInteractivity()) {
     watching.setStatus(1);
     watching.waitForStatusEq(0);
