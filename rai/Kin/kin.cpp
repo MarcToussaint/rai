@@ -1657,8 +1657,11 @@ rai::ConfigurationViewer& rai::Configuration::gl(const char* window_title, bool 
 
 /// return a Swift extension
 SwiftInterface& rai::Configuration::swift() {
-  if(self->swift && self->swift->INDEXshape2swift.N != frames.N) self->swift.reset();
-  if(!self->swift) self->swift = make_shared<SwiftInterface>(*this, .1, 0);
+  if(self->swift && self->swift->swiftID.N != frames.N) self->swift.reset();
+  if(!self->swift){
+    self->swift = make_shared<SwiftInterface>(frames, .1, 0);
+    self->swift->deactivate(getCollisionExcludePairIDs());
+  }
   return *self->swift;
 }
 
@@ -1755,14 +1758,6 @@ void rai::Configuration::glGetMasks(int w, int h, bool rgbIndices) {
 }
 #endif
 
-void rai::Configuration::stepSwift() {
-  swift().step(*this, false);
-  //  reportProxies();
-  //  watch(true);
-  //  gl().closeWindow();
-
-  _state_proxies_isGood=true;
-}
 
 void rai::Configuration::addProxies(const uintA& collisionPairs) {
   //-- filter the collisions
@@ -1787,6 +1782,18 @@ void rai::Configuration::addProxies(const uintA& collisionPairs) {
       j++;
     }
   }
+}
+
+void rai::Configuration::stepSwift() {
+  arr X = getFrameState();
+  uintA collisionPairs = swift().step(X, false);
+  //  reportProxies();
+  //  watch(true);
+  //  gl().closeWindow();
+  proxies.clear();
+  addProxies(collisionPairs);
+
+  _state_proxies_isGood=true;
 }
 
 void rai::Configuration::stepFcl() {

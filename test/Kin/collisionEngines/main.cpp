@@ -5,22 +5,22 @@
 #include <Kin/viewer.h>
 
 void TEST(Swift) {
-  rai::Configuration K("swift_test.g");
+  rai::Configuration C("swift_test.g");
 
-  K.swift().setCutoff(2.);
-  K.stepSwift();
-  K.orsDrawProxies=true;
+  C.swift().cutoff = 2.;
+  C.stepSwift();
+  C.orsDrawProxies=true;
 
   uint t;
   for(t=0;t<50;t++){
-    K.frames(0)->set_X()->addRelativeTranslation(0,0,-.01);
-    K.frames(0)->set_X()->addRelativeRotationDeg(10,1,0,0);
+    C.frames(0)->set_X()->addRelativeTranslation(0,0,-.01);
+    C.frames(0)->set_X()->addRelativeRotationDeg(10,1,0,0);
 
-    K.stepSwift();
+    C.stepSwift();
 
-    K.reportProxies();
+    C.reportProxies();
 
-    K.watch(true);
+    C.watch(true);
     rai::wait(.1);
   }
 }

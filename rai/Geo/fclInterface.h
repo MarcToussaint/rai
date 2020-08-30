@@ -32,7 +32,7 @@ struct FclInterface {
 
   void step(const arr& X);
 
-//private, called by collision callback
+private: //called by collision callback
   void addCollision(void* userData1, void* userData2);
   static bool BroadphaseCallback(fcl::CollisionObject* o1, fcl::CollisionObject* o2, void* cdata_);
 };
