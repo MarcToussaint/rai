@@ -1791,11 +1791,7 @@ void rai::Configuration::addProxies(const uintA& collisionPairs) {
 
 void rai::Configuration::stepFcl() {
   //-- get the frame state of collision objects
-  arr X(frames.N, 7);
-  X.setZero();
-  for(Frame* f:frames) {
-    if(f->shape && f->shape->cont) X[f->ID] = f->ensure_X().getArr7d();
-  }
+  arr X = getFrameState();
   //-- step fcl
   fcl()->step(X);
   //-- add as proxies
@@ -1970,8 +1966,8 @@ double rai::Configuration::totalCollisionPenetration() {
 
 void rai::Configuration::copyProxies(const ProxyA& _proxies) {
   proxies.clear();
-  proxies.resize(proxies.N);
-  for(uint i=0; i<proxies.N; i++) proxies(i).copy(*this, proxies(i));
+  proxies.resize(_proxies.N);
+  for(uint i=0; i<proxies.N; i++) proxies(i).copy(*this, _proxies(i));
 }
 
 /** @brief prototype for \c operator<< */

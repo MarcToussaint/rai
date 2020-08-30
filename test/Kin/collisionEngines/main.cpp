@@ -2,6 +2,7 @@
 #include <Kin/kin_swift.h>
 #include <Gui/opengl.h>
 #include <Kin/frame.h>
+#include <Kin/viewer.h>
 
 void TEST(Swift) {
   rai::Configuration K("swift_test.g");
@@ -55,15 +56,17 @@ void TEST(CollisionTiming){
     a->setColor({.5,.5,.8,.6});
     a->setContact(1);
   }
-  C.watch();
+
+  rai::ConfigurationViewer V;
+  V.setConfiguration(C);
 
   rai::timerStart();
-  C.swift().setCutoff(1.);
+  C.swift(); //.setCutoff(.);
   cout <<" SWIFT initialization time: " <<rai::timerRead(true) <<endl;
 
-  //  rai::timerStart();
-  //  C.fcl();
-  //  cout <<" FCL initialization time: " <<rai::timerRead(true) <<endl;
+  rai::timerStart();
+  C.fcl();
+  cout <<" FCL initialization time: " <<rai::timerRead(true) <<endl;
 
   arr q0,q;
   q0 = C.getJointState();
@@ -75,13 +78,28 @@ void TEST(CollisionTiming){
       a->set_X()->pos *= 5.;
     }
 
+    rai::timerStart();
+
+    cout <<"-------------------- t=" <<t <<" ---------" <<endl;
     C.stepSwift();
-//    C.stepFcl();
+    cout <<"SWIFT:" <<endl;
     cout <<"#proxies: " <<C.proxies.N <<endl; //this also calls pair collisions!!
-    cout <<"time: " <<rai::timerRead() <<endl;
+    cout <<"time: " <<rai::timerRead(true) <<endl;
     cout <<"total penetration: " <<C.totalCollisionPenetration() <<endl; //this also calls pair collisions!!
-    cout <<"time: " <<rai::timerRead() <<endl;
-     C.reportProxies(FILE("z.col"), 0.);
+    cout <<"time: " <<rai::timerRead(true) <<endl;
+    C.reportProxies(FILE("z.col"), 0.);
+
+    V.setConfiguration(C, "SWIFT result", true);
+
+    C.stepFcl();
+    cout <<"FCL:" <<endl;
+    cout <<"#proxies: " <<C.proxies.N <<endl; //this also calls pair collisions!!
+    cout <<"time: " <<rai::timerRead(true) <<endl;
+    cout <<"total penetration: " <<C.totalCollisionPenetration() <<endl; //this also calls pair collisions!!
+    cout <<"time: " <<rai::timerRead(true) <<endl;
+    C.reportProxies(FILE("z.col"), 0.);
+
+    V.setConfiguration(C, "FCL result", true);
   }
   cout <<" query time: " <<rai::timerRead(true) <<"sec" <<endl;
 }

@@ -39,7 +39,6 @@ struct ConfigurationViewer : GLDrawer {
 
  private://draw data
   Configuration C;
-  ProxyA proxies;
 
   ptr<struct OpenGL> gl;
   arr framePath;

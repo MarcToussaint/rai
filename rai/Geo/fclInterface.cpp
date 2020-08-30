@@ -23,8 +23,8 @@ struct ConvexGeometryData {
 };
 }
 
-rai::FclInterface::FclInterface(const rai::Array<ptr<Mesh>>& _geometries, double _cutoff)
-  : geometries(_geometries), cutoff(_cutoff) {
+rai::FclInterface::FclInterface(const rai::Array<ptr<Mesh>>& geometries, double _cutoff)
+  : cutoff(_cutoff) {
   convexGeometryData.resize(geometries.N);
   for(long int i=0; i<geometries.N; i++) {
     if(geometries(i)) {
@@ -69,7 +69,7 @@ rai::FclInterface::~FclInterface() {
 
 void rai::FclInterface::step(const arr& X) {
   CHECK_EQ(X.nd, 2, "");
-  CHECK_EQ(X.d0, geometries.size(), "");
+  CHECK_EQ(X.d0, convexGeometryData.N, "");
   CHECK_EQ(X.d1, 7, "");
 
   for(auto* obj:objects) {

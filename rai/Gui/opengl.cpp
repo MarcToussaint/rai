@@ -1950,7 +1950,7 @@ int OpenGL::watch(const char* txt) {
     return 'q';
   }
 #ifdef RAI_GL
-  update(STRING((txt?txt:"") <<" - press ENTER to continue"), true);
+  update((txt?STRING(txt <<" - press ENTER to continue"):0), true);
   if(rai::getInteractivity()) {
     watching.setStatus(1);
     watching.waitForStatusEq(0);
