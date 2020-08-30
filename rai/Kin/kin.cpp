@@ -1656,13 +1656,14 @@ rai::ConfigurationViewer& rai::Configuration::gl(const char* window_title, bool 
 }
 
 /// return a Swift extension
-SwiftInterface& rai::Configuration::swift() {
+std::shared_ptr<SwiftInterface> rai::Configuration::swift() {
   if(self->swift && self->swift->swiftID.N != frames.N) self->swift.reset();
   if(!self->swift){
     self->swift = make_shared<SwiftInterface>(frames, .1, 0);
-    self->swift->deactivate(getCollisionExcludePairIDs());
+    self->swift->deactivate(getCollisionExcludeIDs());
+    self->swift->deactivatePairs(getCollisionExcludePairIDs());
   }
-  return *self->swift;
+  return self->swift;
 }
 
 std::shared_ptr<rai::FclInterface> rai::Configuration::fcl() {
@@ -1763,11 +1764,16 @@ void rai::Configuration::addProxies(const uintA& collisionPairs) {
   //-- filter the collisions
   boolA filter(collisionPairs.d0);
   uint n=0;
+#if 1
   for(uint i=0; i<collisionPairs.d0; i++) {
     bool canCollide = frames(collisionPairs(i, 0))->shape->canCollideWith(frames(collisionPairs(i, 1)));
     filter(i) = canCollide;
     if(canCollide) n++;
   }
+#else
+  filter = true;
+  n = collisionPairs.d0;
+#endif
   //-- copy them into proxies
   uint j = proxies.N;
   proxies.resizeCopy(j+n);
@@ -1786,7 +1792,7 @@ void rai::Configuration::addProxies(const uintA& collisionPairs) {
 
 void rai::Configuration::stepSwift() {
   arr X = getFrameState();
-  uintA collisionPairs = swift().step(X, false);
+  uintA collisionPairs = swift()->step(X, false);
   //  reportProxies();
   //  watch(true);
   //  gl().closeWindow();
@@ -3089,6 +3095,14 @@ void exclude(uintA& ex, FrameL& F1, FrameL& F2) {
       }
     }
   }
+}
+
+uintA rai::Configuration::getCollisionExcludeIDs(bool verbose) {
+  uintA ex;
+  for(rai::Frame* f: frames) if(f->shape){
+    if(!f->shape->cont) ex.append(f->ID);
+  }
+  return ex;
 }
 
 uintA rai::Configuration::getCollisionExcludePairIDs(bool verbose) {

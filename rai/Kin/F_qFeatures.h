@@ -28,6 +28,7 @@ struct F_qItself : Feature {
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi(const rai::Configuration& C);
   virtual uint dim_phi(const ConfigurationL& Ctuple);
+  virtual uint dim_phi2(const FrameL& F);
   virtual void signature(intA& S, const rai::Configuration& C);
   virtual rai::String shortTag(const rai::Configuration& G);
  private:

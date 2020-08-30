@@ -142,6 +142,7 @@ struct Configuration : GLDrawer {
   Joint* attach(Frame* a, Frame* b);
   Joint* attach(const char* a, const char* b);
   FrameL getParts() const;
+  uintA getCollisionExcludeIDs(bool verbose=false);
   uintA getCollisionExcludePairIDs(bool verbose=false);
 
   /// @name computations on the tree
@@ -233,7 +234,7 @@ struct Configuration : GLDrawer {
 
   /// @name extensions on demand
   ConfigurationViewer& gl(const char* window_title=nullptr, bool offscreen=false);
-  SwiftInterface& swift();
+  shared_ptr<SwiftInterface> swift();
   shared_ptr<FclInterface> fcl();
   void swiftDelete();
   PhysXInterface& physx();

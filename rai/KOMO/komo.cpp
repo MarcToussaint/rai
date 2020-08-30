@@ -78,7 +78,7 @@ Shape* getShape(const Configuration& K, const char* name) {
   return s;
 }
 
-KOMO::KOMO() : useSwift(true), verbose(1), komo_problem(*this) {
+KOMO::KOMO() : computeCollisions(true), verbose(1), komo_problem(*this) {
   verbose = getParameter<int>("KOMO/verbose", 1);
   solver = getParameter<rai::Enum<rai::KOMOsolver>>("KOMO/solver", KS_banded);
 }
@@ -93,10 +93,10 @@ KOMO::~KOMO() {
   listDelete(configurations);
 }
 
-void KOMO::setModel(const Configuration& C, bool _useSwift) {
-  if(&C!=&world) world.copy(C, _useSwift);
-  useSwift = _useSwift;
-  if(useSwift) {
+void KOMO::setModel(const Configuration& C, bool _computeCollisions) {
+  if(&C!=&world) world.copy(C, _computeCollisions);
+  computeCollisions = _computeCollisions;
+  if(computeCollisions) {
 #ifndef FCLmode
     world.swift();
 #else
@@ -134,17 +134,17 @@ void KOMO::setPairedTimes() {
 }
 
 void KOMO::activateCollisions(const char* s1, const char* s2) {
-  if(!useSwift) return;
+  if(!computeCollisions) return;
   Frame* sh1 = world.getFrameByName(s1);
   Frame* sh2 = world.getFrameByName(s2);
-  if(sh1 && sh2) world.swift().activate(sh1, sh2);
+  if(sh1 && sh2) world.swift()->activate(sh1, sh2);
 }
 
 void KOMO::deactivateCollisions(const char* s1, const char* s2) {
-  if(!useSwift) return;
+  if(!computeCollisions) return;
   Frame* sh1 = world.getFrameByName(s1);
   Frame* sh2 = world.getFrameByName(s2);
-  if(sh1 && sh2) world.swift().deactivate(sh1, sh2);
+  if(sh1 && sh2) world.swift()->deactivate(sh1, sh2);
   else LOG(-1) <<"not found:" <<s1 <<' ' <<s2;
 }
 
@@ -1490,7 +1490,7 @@ void KOMO::run(const OptOptions options) {
   if(verbose>0) {
     cout <<"** KOMO::run solver:"
         <<rai::Enum<KOMOsolver>(solver)
-       <<" swift:" <<useSwift
+       <<" swift:" <<computeCollisions
       <<" x-dim:" <<x.N
       <<" T:" <<T <<" k:" <<k_order <<" phases:" <<double(T)/stepsPerPhase <<" stepsPerPhase:" <<stepsPerPhase <<" tau:" <<tau
      <<" #config:" <<configurations.N <<" q-dims: ";
@@ -1681,7 +1681,7 @@ void KOMO::reportProblem(std::ostream& os) {
     os <<"    times:" <<times <<endl;
   }
 
-  os <<"  usingSwift:" <<useSwift <<endl;
+  os <<"  usingSwift:" <<computeCollisions <<endl;
   for(ptr<Objective>& t:objectives) os <<"    " <<*t <<endl;
   for(KinematicSwitch* sw:switches) {
     os <<"    ";
@@ -1964,7 +1964,7 @@ void KOMO::setupConfigurations(const arr& q_init, const StringA& q_initJoints) {
         sw->apply(*C);
       }
     }
-    if(useSwift) {
+    if(computeCollisions) {
 #ifndef FCLmode
       C->stepSwift();
 #else
@@ -1991,7 +1991,7 @@ void KOMO::setupConfigurations(const arr& q_init, const StringA& q_initJoints) {
         sw->apply(*C);
       }
     }
-    if(useSwift) {
+    if(computeCollisions) {
 #ifndef FCLmode
       C->stepSwift();
 #else
@@ -2047,9 +2047,14 @@ void KOMO::setupConfigurations2() {
   C.copy(world, true);
   C.setTimes(tau);
 
-  if(useSwift) {
+  if(computeCollisions) {
     CHECK(!fcl, "");
+    CHECK(!swift, "");
+#ifndef FCLmode
+    swift = C.swift();
+#else
     fcl = C.fcl();
+#endif
   }
 
   timeSlices.resize(k_order+T, C.frames.N);
@@ -2149,7 +2154,7 @@ void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
       if(x.nd==1)  configurations(s)->setJointState(x({x_count, x_count+x_dim-1}));
       else         configurations(s)->setJointState(x[t]);
       timeKinematics += rai::timerRead(true);
-      if(useSwift) {
+      if(computeCollisions) {
 #ifndef FCLmode
         configurations(s)->stepSwift();
 #else
@@ -2177,14 +2182,20 @@ void KOMO::set_x2(const arr& x, const uintA& selectedConfigurationsOnly) {
   pathConfig.setJointState(x);
 
   timeKinematics += rai::timerRead(true);
-  if(useSwift) {
+  if(computeCollisions) {
     pathConfig.proxies.clear();
     arr X;
+    uintA collisionPairs;
     for(uint s=k_order;s<timeSlices.d0;s++){
       X = pathConfig.getFrameState(timeSlices[s]);
+#ifndef FCLmode
+      collisionPairs = swift->step(X);
+#else
       fcl->step(X);
-      fcl->collisions += timeSlices.d1 * s; //fcl returns frame IDs related to 'world' -> map them into frameIDs within that time slice
-      pathConfig.addProxies(fcl->collisions);
+      collisionPairs = fcl->collisions;
+#endif
+      collisionPairs += timeSlices.d1 * s; //fcl returns frame IDs related to 'world' -> map them into frameIDs within that time slice
+      pathConfig.addProxies(collisionPairs);
     }
   }
   timeCollisions += rai::timerRead(true);
@@ -2550,7 +2561,7 @@ rai::Graph KOMO::getProblemGraph(bool includeValues, bool includeSolution) {
   //  arr times(configurations.N);
   //  for(uint i=0; i<configurations.N; i++) times(i)=configurations(i)->frames.first()->time;
   //  g.newNode<double>({"times"}, {}, times);
-  g.newNode<bool>({"useSwift"}, {}, useSwift);
+  g.newNode<bool>({"useSwift"}, {}, computeCollisions);
 #endif
 
   if(includeSolution) {

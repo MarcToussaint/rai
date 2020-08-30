@@ -363,7 +363,18 @@ uintA SwiftInterface::pullFromSwift(bool dumpReport) {
 #endif
 }
 
-void SwiftInterface::deactivate(const uintA& collisionExcludePairIDs){
+void SwiftInterface::deactivate(const uintA& collisionExcludeIDs){
+  if(!collisionExcludeIDs.N) return;
+  CHECK_EQ(collisionExcludeIDs.nd, 1, "");
+  for(uint i=0;i<collisionExcludeIDs.d0;i++){
+    int a=swiftID(collisionExcludeIDs(i));
+    if(a==-1) continue;
+    //cout <<"deactivating shape pair " <<s1->name <<'-' <<s2->name <<endl;
+    scene->Deactivate(a);
+  }
+}
+
+void SwiftInterface::deactivatePairs(const uintA& collisionExcludePairIDs){
   if(!collisionExcludePairIDs.N) return;
   CHECK_EQ(collisionExcludePairIDs.nd, 2, "");
   for(uint i=0;i<collisionExcludePairIDs.d0;i++){

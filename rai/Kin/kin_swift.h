@@ -27,7 +27,8 @@ struct SwiftInterface {
   void pushToSwift(const arr& X);
   uintA pullFromSwift(bool dumpReport);
 
-  void deactivate(const uintA& collisionExcludePairIDs);
+  void deactivate(const uintA& collisionExcludeIDs);
+  void deactivatePairs(const uintA& collisionExcludePairIDs);
 
   //-- ** will be deprecated! **
   void reinitShape(const rai::Frame* s);

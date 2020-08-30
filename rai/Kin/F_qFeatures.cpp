@@ -295,6 +295,10 @@ uint F_qItself::dim_phi(const ConfigurationL& Ctuple) {
   return 0;
 }
 
+uint F_qItself::dim_phi2(const FrameL& F){
+  return dim_phi(F.last()->C);
+}
+
 void F_qItself::signature(intA& S, const rai::Configuration& C) {
   CHECK(frameIDs.N, "");
   S.clear();

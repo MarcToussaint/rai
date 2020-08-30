@@ -115,8 +115,9 @@ struct KOMO : NonCopyable {
   //-- internals
   rai::Configuration world;    ///< original configuration; which is the blueprint for all time-slice worlds (almost const: only makeConvexHulls modifies it)
   ConfigurationL configurations;       ///< copies for each time slice; including kinematic switches; only these are optimized
-  bool useSwift;               ///< whether swift (collisions/proxies) is evaluated whenever new configurations are set (needed if features read proxy list)
+  bool computeCollisions;               ///< whether swift (collisions/proxies) is evaluated whenever new configurations are set (needed if features read proxy list)
   shared_ptr<rai::FclInterface> fcl;
+  shared_ptr<SwiftInterface> swift;
 
   //-- experimental!
   rai::Configuration pathConfig;
@@ -150,7 +151,7 @@ struct KOMO : NonCopyable {
   ~KOMO();
 
   //-- setup the problem
-  void setModel(const rai::Configuration& C, bool _useSwift=true);
+  void setModel(const rai::Configuration& C, bool _computeCollisions=true);
   void setTiming(double _phases=1., uint _stepsPerPhase=30, double durationPerPhase=5., uint _k_order=2);
 
   //-- higher-level default setups
