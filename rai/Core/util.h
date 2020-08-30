@@ -15,6 +15,7 @@
 #include <string.h>
 #include <memory>
 #include <climits>
+#include <mutex>
 
 //----- if no system flag, I assume Linux
 #if !defined RAI_MSVC && !defined RAI_Cygwin && !defined RAI_Linux && !defined RAI_MinGW && !defined RAI_Darwin
@@ -152,18 +153,11 @@ double eqConstraintCost(double h, double margin, double power);
 double d_eqConstraintCost(double h, double margin, double power);
 
 //----- time access
-double clockTime(bool today=true); //(really on the clock)
-timespec clockTime2();
+double clockTime(); //(really on the clock)
 double realTime(); //(since process start)
 double cpuTime();
-double sysTime();
-double totalTime();
-double toTime(const tm& t);
-char* date();
-char* date(double sec);
-char* date2(bool subsec=false);
-char* date2(double sec, bool subsec);
-void wait(double sec, bool msg_on_fail=true);
+std::string date(bool forFileName=false);
+void wait(double sec);
 bool wait(bool useX11=true);
 
 //----- timer functions
@@ -291,15 +285,6 @@ stdPipes(String)
 }
 
 inline rai::String operator+(const rai::String& a, const char* b) { rai::String s=a; s <<b; return s; }
-
-//===========================================================================
-//
-// string-filling routines
-//
-
-namespace rai {
-rai::String getNowString();  //TODO:compare with getDate2
-}
 
 //===========================================================================
 //
@@ -605,9 +590,7 @@ struct Inotify {
 //
 
 struct Mutex {
-#ifndef RAI_MSVC
-  pthread_mutex_t mutex;
-#endif
+  std::mutex mutex;
   int state; ///< 0=unlocked, otherwise=syscall(SYS_gettid)
   uint recursive; ///< number of times it's been locked
   const char* lockInfo;
@@ -616,18 +599,12 @@ struct Mutex {
   void lock(const char* _lockInfo);
   void unlock();
 
-  struct Token {
-    Mutex& m;
-    Token(Mutex& m, const char* _lockInfo) : m(m) { m.lock(_lockInfo); }
-    ~Token() { m.unlock(); }
-  };
-  struct Token operator()(const char* _lockInfo) { return Token(*this, _lockInfo); }
+  typedef std::unique_lock<std::mutex> Token;
+  Token operator()(const char* _lockInfo) { lockInfo=_lockInfo; return std::unique_lock<std::mutex>(mutex); }
 
-  template<class T> struct TypedToken {
-    Mutex& m;
+  template<class T> struct TypedToken : std::unique_lock<std::mutex> {
     T* data;
-    TypedToken(Mutex& m, T* data, const char* _lockInfo) : m(m), data(data) { m.lock(_lockInfo); }
-    ~TypedToken() { m.unlock(); }
+    TypedToken(Mutex& m, T* data, const char* _lockInfo) : std::unique_lock<std::mutex>(m.mutex), data(data) { m.lockInfo=_lockInfo; }
     T* operator->() { return data; }
     operator T& () { return *data; }
     T& operator()() { return *data; }

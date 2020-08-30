@@ -22,6 +22,9 @@
   needed or (3) at further calls of decreasing memory only free
   the memory if the new size is smaller than a fourth */
 #define ARRAY_flexiMem true
+#ifdef RAI_MSVC
+#  define RAI_NO_VEC_IMPL
+#endif
 
 //===========================================================================
 //
@@ -1853,6 +1856,7 @@ template<class T> void rai::Array<T>::setNoArr() {
   special = new SpecialArray(SpecialArray::ST_NoArr);
 }
 
+#ifndef RAI_MSVC
 template<typename T> struct is_shared_ptr : std::false_type {};
 template<typename T> struct is_shared_ptr<std::shared_ptr<T>> : std::true_type {};
 
@@ -1871,6 +1875,14 @@ typename std::enable_if<!is_shared_ptr<T>::value, std::ostream&>::type
 operator<<(std::ostream& os, const rai::Array<T>& x) {
   x.write(os); return os;
 }
+
+#else //MSVC
+
+template <class T> std::ostream& operator<<(std::ostream& os, const rai::Array<T>& x) {
+  x.write(os); return os;
+}
+
+#endif
 
 /** @brief prototype for operator<<, writes the array by separating elements with ELEMSEP, separating rows with LINESEP, using BRACKETS[0] and BRACKETS[1] to brace the data, optionally writs a dimensionality tag before the data (see below), and optinally in binary format */
 template<class T> void rai::Array<T>::write(std::ostream& os, const char* ELEMSEP, const char* LINESEP, const char* BRACKETS, bool dimTag, bool binary) const {

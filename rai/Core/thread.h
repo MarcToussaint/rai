@@ -12,6 +12,11 @@
 #include "array.h"
 #include "graph.h"
 
+#include <mutex>
+#include <shared_mutex>
+#include <condition_variable>
+#include <thread>
+
 enum ThreadState { tsIsClosed=-6, tsToOpen=-2, tsLOOPING=-3, tsBEATING=-4, tsIDLE=0, tsToStep=1, tsToClose=-1,  tsFAILURE=-5,  }; //positive states indicate steps-to-go
 struct Signaler;
 struct Event;
@@ -20,8 +25,6 @@ struct Thread;
 typedef rai::Array<Signaler*> SignalerL;
 typedef rai::Array<Var_base*> VarL;
 typedef rai::Array<Thread*> ThreadL;
-
-#ifndef RAI_MSVC
 
 //===========================================================================
 
@@ -47,7 +50,7 @@ struct CallbackL : rai::Array<Callback<F>*> {
 
 /// a basic read/write access lock
 struct RWLock {
-  pthread_rwlock_t rwLock;
+  std::shared_timed_mutex rwLock;
   int rwCount=0;     ///< -1==write locked, positive=numer of readers, 0=unlocked
   Mutex rwCountMutex;
   RWLock();
@@ -137,7 +140,9 @@ struct Var_data : Var_base {
   T data;
 
   Var_data(const char* name=0) : Var_base(name), data() {} // default constructor for value always initializes, also primitive types 'bool' or 'int'
-  ~Var_data() { CHECK(!rwlock.isLocked(), "can't destroy a variable when it is currently accessed!"); }
+  ~Var_data() {
+      if (rwlock.isLocked()) { std::cerr << "can't destroy a variable when it is currently accessed!" << endl; exit(1); }
+  }
 };
 
 template<class T> bool operator==(const Var_data<T>&, const Var_data<T>&) { return false; }
@@ -224,7 +229,7 @@ template<class T> std::ostream& operator<<(std::ostream& os, Var<T>& x) { x.writ
 struct Signaler {
   int status;
   Mutex statusMutex;
-  pthread_cond_t cond;
+  std::condition_variable cond;
 
   Signaler(int initialStatus=0);
   virtual ~Signaler(); //virtual, to enforce polymorphism
@@ -236,13 +241,13 @@ struct Signaler {
   void statusLock();   //the user can manually lock/unlock, if he needs locked state access for longer -> use userHasLocked=true below!
   void statusUnlock();
 
-  int  getStatus(bool userHasLocked=false) const;
-  bool waitForSignal(bool userHasLocked=false, double timeout=-1.);
-  bool waitForEvent(std::function<bool()> f, bool userHasLocked=false);
-  bool waitForStatusEq(int i, bool userHasLocked=false, double timeout=-1.);    ///< return value is the state after the waiting
-  int waitForStatusNotEq(int i, bool userHasLocked=false, double timeout=-1.); ///< return value is the state after the waiting
-  int waitForStatusGreaterThan(int i, bool userHasLocked=false, double timeout=-1.); ///< return value is the state after the waiting
-  int waitForStatusSmallerThan(int i, bool userHasLocked=false, double timeout=-1.); ///< return value is the state after the waiting
+  int  getStatus(Mutex::Token *userHasLocked=0) const;
+  bool waitForSignal(Mutex::Token *userHasLocked=0, double timeout=-1.);
+  bool waitForEvent(std::function<bool()> f, Mutex::Token *userHasLocked=0);
+  bool waitForStatusEq(int i, Mutex::Token *userHasLocked=0, double timeout=-1.);    ///< return value is the state after the waiting
+  int waitForStatusNotEq(int i, Mutex::Token *userHasLocked=0, double timeout=-1.); ///< return value is the state after the waiting
+  int waitForStatusGreaterThan(int i, Mutex::Token *userHasLocked=0, double timeout=-1.); ///< return value is the state after the waiting
+  int waitForStatusSmallerThan(int i, Mutex::Token *userHasLocked=0, double timeout=-1.); ///< return value is the state after the waiting
 };
 
 //===========================================================================
@@ -273,7 +278,7 @@ int _allPositive(const VarL& signalers, int whoChanged);
 enum ActStatus { AS_none=-1, AS_init, AS_running, AS_done, AS_converged, AS_stalled, AS_true, AS_false, AS_kill };
 
 inline bool wait(const VarL& acts, double timeout=-1.) {
-  return Event(acts, _allPositive).waitForStatusEq(AS_true, false, timeout);
+  return Event(acts, _allPositive).waitForStatusEq(AS_true, 0, timeout);
 }
 
 //===========================================================================
@@ -284,7 +289,7 @@ inline bool wait(const VarL& acts, double timeout=-1.) {
 /// a simple struct to realize a strict tic tac timing (called in thread::main once each step if looping)
 struct Metronome {
   double ticInterval;
-  timespec ticTime;
+  std::chrono::time_point<std::chrono::high_resolution_clock, std::chrono::duration<double>> ticTime;
   uint tics;
 
   Metronome(double ticIntervalSec); ///< set tic tac time in seconds
@@ -298,10 +303,11 @@ struct Metronome {
 
 /// to meassure cycle and busy times
 struct CycleTimer {
+  typedef std::chrono::time_point<std::chrono::high_resolution_clock, std::chrono::duration<double>> timepoint;
   uint steps;
   double busyDt, busyDtMean, busyDtMax;  ///< internal variables to measure step time
   double cyclDt, cyclDtMean, cyclDtMax;  ///< internal variables to measure step time
-  timespec now, lastTime;
+  timepoint now, lastTime;
   const char* name;                      ///< name
   CycleTimer(const char* _name=nullptr);
   ~CycleTimer();
@@ -317,8 +323,8 @@ struct CycleTimer {
  */
 struct MiniThread : Signaler {
   rai::String name;
-  pthread_t thread = 0;             ///< the underlying pthread; nullptr iff not opened
-  pid_t tid = 0;                    ///< system thread id
+  std::unique_ptr<std::thread> thread;  ///< the underlying pthread; nullptr iff not opened
+  int tid = 0;                    ///< system thread id
 
   /// @name c'tor/d'tor
   MiniThread(const char* _name);
@@ -330,7 +336,7 @@ struct MiniThread : Signaler {
 
   virtual void main() { LOG(-1) <<"you're calling the 'pseudo-pure virtual' main(), which should be overloaded (are you in a destructor?)"; }
 
-  void pthreadMain(); //this is the thread main - should be private!
+  void threadMain(); //this is the thread main - should be private!
 };
 
 //===========================================================================
@@ -346,8 +352,8 @@ struct MiniThread : Signaler {
 struct Thread {
   Event event;
   rai::String name;
-  pthread_t thread;             ///< the underlying pthread; nullptr iff not opened
-  pid_t tid;                    ///< system thread id
+  std::unique_ptr<std::thread> thread;    ///< the underlying pthread; nullptr iff not opened
+  int tid;                    ///< system thread id
   Mutex stepMutex;              ///< This is set whenever the 'main' is in step (or open, or close) --- use this in all service methods callable from outside!!
   uint step_count;              ///< how often the step was called
   Metronome metronome;          ///< used for beat-looping
@@ -427,25 +433,6 @@ inline ptr<ScriptThread> run(const std::function<int ()>& script, double beatInt
 //
 // template definitions
 //
-
-#else //RAI_MSVC
-
-struct Signaler {
-  int value;
-  Signaler(int initialState=0) {}
-  ~Signaler() {}
-
-  void setStatus(int i, bool signalOnlyFirstInQueue=false) { value=i; }
-  int  incrementStatus(bool signalOnlyFirstInQueue=false) { value++; }
-  void broadcast(bool signalOnlyFirstInQueue=false) {}
-
-  void lock() {}
-  void unlock() {}
-
-  int  getStatus(bool userHasLocked=false) const { return value; }
-};
-
-#endif //RAI_MSVC
 
 template<class T>
 Var<T>::Var()

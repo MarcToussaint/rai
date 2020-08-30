@@ -9,20 +9,23 @@
 #include "util.h"
 
 #include <math.h>
-#include <string.h>
+#include <string>
+#include <sstream>
 #include <signal.h>
 #include <stdexcept>
 #include <stdarg.h>
-#include <cxxabi.h>    // for __cxa_demangle
+#include <iomanip>
 #if defined RAI_Linux || defined RAI_Cygwin || defined RAI_Darwin
+#include <chrono>
+#include <ctime>
+#include <thread>
 #  include <limits.h>
-#  include <sys/time.h>
-#  include <sys/times.h>
 #  include <sys/resource.h>
 #  include <sys/inotify.h>
 #  include <sys/stat.h>
 #  include <poll.h>
 #  include <execinfo.h>
+#  include <cxxabi.h>    // for __cxa_demangle
 #if defined RAI_X11
 #  include <X11/Xlib.h>
 #  include <X11/Xutil.h>
@@ -33,12 +36,12 @@
 #include "cygwin_compat.h"
 #endif
 #if defined RAI_MSVC
-#  include <time.h>
-#  include <sys/timeb.h>
 #  include <windows.h>
+#  include <direct.h>
 #  undef min
 #  undef max
-#  define RAI_TIMEB
+#  define chdir _chdir
+#  define getpid _getpid
 #  ifdef RAI_QT
 #    undef  NOUNICODE
 #    define NOUNICODE
@@ -47,9 +50,6 @@
 #endif
 #if defined RAI_MinGW
 #  include <unistd.h>
-#  include <sys/time.h>
-#  include <sys/timeb.h>
-#  define RAI_TIMEB
 #endif
 
 #ifdef RAI_QT
@@ -98,7 +98,7 @@ uint lineCount=1;
 int verboseLevel=-1;
 int interactivity=-1;
 
-double startTime;
+std::chrono::system_clock::time_point startTime;
 double timerStartTime=0.;
 double timerPauseTime=-1.;
 bool timerUseRealTime=false;
@@ -201,7 +201,8 @@ bool skipUntil(std::istream& is, const char* tag) {
 bool parse(std::istream& is, const char* str, bool silent) {
   if(!is.good()) { if(!silent) RAI_MSG("bad stream tag when scanning for '" <<str <<"'"); return false; }  //is.clear(); }
   uint i, n=strlen(str);
-  char buf[n+1]; buf[n]=0;
+  char *buf = new char[n+1];
+  buf[n]=0;
   rai::skip(is, " \n\r\t");
   is.read(buf, n);
   if(!is.good() || strcmp(str, buf)) {
@@ -209,8 +210,10 @@ bool parse(std::istream& is, const char* str, bool silent) {
     is.setstate(std::ios::failbit);
     if(!silent)  RAI_MSG("(LINE=" <<rai::lineCount <<") parsing of constant string '" <<str
                            <<"' failed! (read instead: '" <<buf <<"')");
+    delete buf;
     return false;
   }
+  delete buf;
   return true;
 }
 
@@ -414,144 +417,51 @@ double d_eqConstraintCost(double h, double margin, double power) {
   return power*pow(y, power-1.)*rai::sign(y)/margin;
 }
 
-/** @brief double time on the clock
+/** @brief double time on the wall clock (probably counted from decades back)
   (probably in micro second resolution) -- Windows checked! */
-double clockTime(bool today) {
-#ifndef RAI_TIMEB
-  timespec ts;
-  clock_gettime(CLOCK_REALTIME, &ts);
-  if(today) ts.tv_sec = ts.tv_sec%86400; //modulo TODAY
-  return ((double)(ts.tv_sec) + 1e-9d*(double)(ts.tv_nsec));
-//  static timeval t; gettimeofday(&t, 0);
-//  return ((double)(t.tv_sec%86400) + //modulo TODAY
-//          (double)(t.tv_usec)/1000000.);
-#else
-  static _timeb t; _ftime(&t);
-  return ((double)(t.time%86400) + //modulo TODAY
-          (double)(t.millitm-startTime.millitm)/1000.);
-#endif
-}
-
-timespec clockTime2() {
-  timespec ts;
-  clock_gettime(CLOCK_REALTIME, &ts);
-  return ts;
-}
-
-double toTime(const tm& t) {
-  return (double)(mktime(const_cast<tm*>(&t)) % 86400);
+double clockTime() {
+  std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+  std::chrono::duration<double> duration = now.time_since_epoch();
+  return duration.count();
 }
 
 /** @brief double time since start of the process in floating-point seconds
   (probably in micro second resolution) -- Windows checked! */
 double realTime() {
-  return clockTime(false)-startTime;
+  std::chrono::duration<double> duration = (std::chrono::system_clock::now() - startTime);
+  return duration.count();
 }
 
 /** @brief user CPU time of this process in floating-point seconds (pure
   processor time) -- Windows checked! */
 double cpuTime() {
-#ifndef RAI_TIMEB
-  tms t; times(&t);
-  return ((double)t.tms_utime)/sysconf(_SC_CLK_TCK);
-#else
-  return ((double)clock())/CLOCKS_PER_SEC; //MSVC: CLOCKS_PER_SEC=1000
-#endif
+  return std::clock() / (double)CLOCKS_PER_SEC;
 }
 
-/** @brief system CPU time of this process in floating-point seconds (the
-  time spend for file input/output, x-server stuff, etc.)
-  -- not implemented for Windows! */
-double sysTime() {
-#ifndef RAI_TIMEB
-  tms t; times(&t);
-  return ((double)(t.tms_stime))/sysconf(_SC_CLK_TCK);
-#else
-  HALT("sysTime() is not implemented for Windows!");
-  return 0.;
-#endif
-}
+std::string date(const std::chrono::system_clock::time_point& t, bool forFileName) {
+  auto in_time_t = std::chrono::system_clock::to_time_t(t);
 
-/** @brief total CPU time of this process in floating-point seconds (same
-  as cpuTime + sysTime) -- not implemented for Windows! */
-double totalTime() {
-#ifndef RAI_TIMEB
-  tms t; times(&t);
-  return ((double)(t.tms_utime+t.tms_stime))/sysconf(_SC_CLK_TCK);
-#else
-  HALT("totalTime() is not implemented for Windows!");
-  return 0.;
-#endif
+  auto msec = std::chrono::duration_cast<std::chrono::microseconds>( t.time_since_epoch() );
+  msec = msec % 1000000;
+
+  std::stringstream ss;
+  if(!forFileName){
+    ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %X:");
+    ss <<std::setfill('0') <<std::setw(3) <<msec.count();
+  }else{
+    ss << std::put_time(std::localtime(&in_time_t), "%y-%m-%d--%H-%M-%S");
+  }
+  return ss.str();
 }
 
 /// the absolute double time and date as string
-char* date() {
-  return date(clockTime(false));
-}
-
-char* date(double sec) {
-  time_t nowtime;
-  struct tm* nowtm;
-  static char tmbuf[64], buf[64];
-
-  nowtime = (long)(floor(sec));
-  sec -= (double)nowtime;
-  nowtm = localtime(&nowtime);
-  strftime(tmbuf, sizeof tmbuf, "%Y-%m-%d_%H:%M:%S", nowtm);
-  snprintf(buf, sizeof buf, "%s.%06ld", tmbuf, (long)(floor(1e6*sec)));
-  return buf;
-}
-
-char* date2(bool subsec) {
-  return date2(clockTime(false), subsec);
-}
-
-char* date2(double sec, bool subsec) {
-  time_t nowtime;
-  struct tm* nowtm;
-  static char tmbuf[64], buf[64];
-
-  nowtime = (long)(floor(sec));
-  sec -= (double)nowtime;
-  nowtm = localtime(&nowtime);
-  strftime(tmbuf, sizeof tmbuf, "%y%m%d-%H%M%S", nowtm);
-  if(!subsec) return tmbuf;
-  snprintf(buf, sizeof buf, "%s.%06ld", tmbuf, (long)(floor(1e6*sec)));
-  return buf;
+std::string date(bool forFileName) {
+  return date(std::chrono::system_clock::now(), forFileName);
 }
 
 /// wait double time
-void wait(double sec, bool msg_on_fail) {
-#if defined(RAI_Darwin)
-  sleep((int)sec);
-#elif !defined(RAI_MSVC)
-  timespec ts;
-  ts.tv_sec = (long)(floor(sec));
-  sec -= (double)ts.tv_sec;
-  ts.tv_nsec = long(floor(1e9d*sec));
-  int rc = clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, nullptr);
-  if(rc && msg_on_fail) {
-    RAI_MSG("clock_nanosleep() failed " <<rc <<" '" <<strerror(rc) <<"' trying select instead");
-    timeval tv;
-    tv.tv_sec = ts.tv_sec;
-    tv.tv_usec = ts.tv_nsec/1000l;
-    rc = select(1, nullptr, nullptr, nullptr, &tv);
-    if(rc==-1) RAI_MSG("select() failed " <<rc <<" '" <<strerror(errno) <<"'");
-  }
-#else
-  Sleep((int)(1000.*sec));
-  //MsgWaitForMultipleObjects( 0, nullptr, FALSE, (int)(1000.*sec), QS_ALLEVENTS);
-#endif
-
-#if 0
-#ifndef RAI_TIMEB
-  /* r=0 time is up
-     r!=0 data in nullptr stream available (nonsense)
-     */
-#else
-  double t=realTime(); while(realTime()-t<sec);
-#  endif
-#endif
+void wait(double sec) {
+  std::this_thread::sleep_for(std::chrono::duration<double>(sec));
 }
 
 /// wait for an ENTER at the console
@@ -629,12 +539,11 @@ int x11_getKey() {
 
 /// the integral shared memory size -- not implemented for Windows!
 long mem() {
-#ifndef RAI_TIMEB
+#ifndef RAI_MSVC
   static rusage r; getrusage(RUSAGE_SELF, &r);
   return r.ru_idrss;
 #else
-  HALT("rai::mem() is not implemented for Windows!");
-  return 0;
+NICO
 #endif
 }
 
@@ -730,9 +639,9 @@ void handleSIGUSR2(int) {
 
 struct LogServer {
   LogServer() {
-    signal(SIGUSR2, rai::handleSIGUSR2);
-    timerStartTime=rai::cpuTime();
-    startTime = clockTime(false);
+    signal(SIGABRT, rai::handleSIGUSR2);
+    timerStartTime = rai::cpuTime();
+    startTime = std::chrono::system_clock::now();
   }
 
   ~LogServer() {
@@ -747,7 +656,7 @@ rai::LogObject::LogObject(const char* key, int defaultLogCoutLevel, int defaultL
   if(!strcmp(key, "global")) {
     fil.open("z.log.global");
     fil <<"** compiled at:     " <<__DATE__ <<" " <<__TIME__ <<'\n';
-    fil <<"** execution start: " <<rai::date(rai::startTime) <<std::endl;
+    fil <<"** execution start: " <<rai::date(rai::startTime, false) <<std::endl;
   } else {
     logCoutLevel = rai::getParameter<int>(STRING("logCoutLevel_"<<key), logCoutLevel);
     logFileLevel = rai::getParameter<int>(STRING("logFileLevel_"<<key), logFileLevel);
@@ -758,8 +667,7 @@ rai::LogObject::~LogObject() {
   if(!strcmp(key, "global")) {
     fil <<"** execution stop: " <<rai::date()
         <<"\n** real time: " <<rai::realTime()
-        <<"sec\n** CPU time: " <<rai::cpuTime()
-        <<"sec\n** system (includes I/O) time: " <<rai::sysTime() <<"sec" <<std::endl;
+        <<"sec\n** CPU time: " <<rai::cpuTime() <<std::endl;
   }
   fil.close();
 }
@@ -778,6 +686,7 @@ rai::LogToken::~LogToken() {
     if(log_level>=0) std::cout <<code_file <<':' <<code_func <<':' <<code_line <<'(' <<log_level <<") " <<msg <<endl;
     if(log_level<0) {
 
+#ifndef RAI_MSVC
       if(log_level<=-2) {
         void* callstack[10];
         int stack_count = backtrace(callstack, 10);
@@ -805,6 +714,7 @@ rai::LogToken::~LogToken() {
         }
         free(symbols);
       }
+#endif
 
       rai::errString.clear() <<code_file <<':' <<code_func <<':' <<code_line <<'(' <<log_level <<") " <<msg;
 // #ifdef RAI_ROS
@@ -814,7 +724,7 @@ rai::LogToken::~LogToken() {
       else if(log_level==-2) { cerr <<"** ERROR:" <<rai::errString <<endl; /*throw does not WORK!!! Because this is a destructor. The THROW macro does it inline*/ }
       else if(log_level==-3) { cerr <<"** HARD EXIT! " <<rai::errString <<endl;  exit(1); }
       //INSERT BREAKPOINT HERE
-      if(log_level<=-3) raise(SIGUSR2);
+      if(log_level<=-3) raise(SIGABRT);
     }
   }
 //  rai::logServer().mutex.unlock();
@@ -954,7 +864,7 @@ rai::String rai::String::getSubString(int start, int end) const {
  * @param n number of chars to return
  */
 rai::String rai::String::getLastN(uint n) const {
-  return getSubString(-n, -1);
+  return getSubString(-int(n), -1);
 }
 
 /**
@@ -1071,28 +981,6 @@ uint rai::String::read(std::istream& is, const char* skipSymbols, const char* st
 
 //===========================================================================
 //
-// string-filling routines
-
-/** @brief fills the string with the date and time in the format
- * yy-mm-dd--hh-mm-mm */
-rai::String rai::getNowString() {
-  time_t t = time(0);
-  struct tm* now = localtime(&t);
-
-  rai::String str;
-  str.resize(19, false); //-- just enough
-  sprintf(str.p, "%02d-%02d-%02d-%02d:%02d:%02d",
-          now->tm_year-100,
-          now->tm_mon+1,
-          now->tm_mday,
-          now->tm_hour,
-          now->tm_min,
-          now->tm_sec);
-  return str;
-}
-
-//===========================================================================
-//
 // FileToken
 //
 
@@ -1204,14 +1092,9 @@ uint32_t rai::Rnd::seed() {
 }
 
 uint32_t rai::Rnd::clockSeed() {
-  uint32_t s;
-#ifndef RAI_TIMEB
-  timeval t; gettimeofday(&t, 0); s=1000000L*t.tv_sec+t.tv_usec;
-#else
-  _timeb t; _ftime(&t); s=1000L*t.time+t.millitm;
-#endif
-  LOG(3) <<"random clock seed: " <<s <<std::endl;
-  return seed(s);
+  auto t = std::chrono::system_clock::now();
+  auto d = std::chrono::duration<uint32_t, std::nano>(t.time_since_epoch());
+  return seed(d.count());
 }
 
 double rai::Rnd::gauss() {
@@ -1273,6 +1156,7 @@ void  rai::Rnd::seed250(int32_t seed) {
 // Inotify
 //
 
+#ifndef RAI_MSVC
 Inotify::Inotify(const char* filename): fd(0), wd(0) {
   fd = inotify_init();
   if(fd<0) HALT("Couldn't initialize inotify");
@@ -1333,6 +1217,11 @@ bool Inotify::poll(bool block, bool verbose) {
 
   return false;
 }
+#else //RAI_MSVC
+Inotify::Inotify(const char* filename) : fd(0), wd(0) { NICO }
+Inotify::~Inotify() { NICO }
+bool Inotify::poll(bool block, bool verbose) { NICO }
+#endif
 
 //===========================================================================
 //
@@ -1341,54 +1230,36 @@ bool Inotify::poll(bool block, bool verbose) {
 
 #define MUTEX_DUMP(x) //x
 
-#ifndef RAI_MSVC
 Mutex::Mutex() {
-  pthread_mutexattr_t atts;
-  int rc;
-  rc = pthread_mutexattr_init(&atts);  if(rc) HALT("pthread failed with err " <<rc <<strerror(rc));
-  rc = pthread_mutexattr_settype(&atts, PTHREAD_MUTEX_RECURSIVE_NP);  if(rc) HALT("pthread failed with err " <<rc <<strerror(rc));
-  rc = pthread_mutex_init(&mutex, &atts);
-  //mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
   state=0;
   recursive=0;
 }
 
 Mutex::~Mutex() {
-  if(state==-1) { //forced destroy
-    int rc = pthread_mutex_destroy(&mutex);
-    LOG(-1) <<"pthread forced destroy returned " <<rc <<" '" <<strerror(rc) <<"'";
-    return;
-  }
-  CHECK(!state, "Mutex destroyed without unlocking first");
-  int rc = pthread_mutex_destroy(&mutex);  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+    if (state) {
+        std::cerr << "Mutex destroyed without unlocking first" << endl;
+        exit(1);
+    }
 }
 
 void Mutex::lock(const char* _lockInfo) {
-  int rc = pthread_mutex_lock(&mutex);
-  if(rc) {
-    //don't use HALT here, because log uses mutexing as well -> can lead to recursive HALT...
-    cerr <<STRING("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  mutex.lock();
+  int pid = getpid();
+  if(!true) {
+    std::cerr <<"could not lock mutex by process " <<pid <<" -- is blocked with info '" <<lockInfo <<"' by process " <<state <<endl;
     exit(1);
   }
   lockInfo = _lockInfo;
   recursive++;
-  state=syscall(SYS_gettid);
+  state = pid;
   MUTEX_DUMP(cout <<"Mutex-lock: " <<state <<" (rec: " <<recursive << ")" <<endl);
 }
 
 void Mutex::unlock() {
   MUTEX_DUMP(cout <<"Mutex-unlock: " <<state <<" (rec: " <<recursive << ")" <<endl);
   if(--recursive == 0) state=0;
-  int rc = pthread_mutex_unlock(&mutex);
-  if(rc) HALT("pthread failed with err " <<rc <<" '" <<strerror(rc) <<"'");
+  mutex.unlock();
 }
-
-#else//RAI_MSVC
-Mutex::Mutex() {}
-Mutex::~Mutex() {}
-void Mutex::lock() {}
-void Mutex::unlock() {}
-#endif
 
 //===========================================================================
 //
@@ -1434,8 +1305,10 @@ void gnuplot(const char* command, bool pauseMouse, bool persist, const char* PDF
   cmd <<"set style data lines\n";
 
   // run standard files
+#ifndef RAI_MSVC
   if(!access("~/gnuplot.cfg", R_OK)) cmd <<"load '~/gnuplot.cfg'\n";
   if(!access("gnuplot.cfg", R_OK)) cmd <<"load 'gnuplot.cfg'\n";
+#endif
 
   cmd <<"set title '(Gui/plot.h -> gnuplot pipe)'\n"
       <<command <<std::endl;
@@ -1499,6 +1372,9 @@ double gaussIntExpectation(double x) {
  * @brief Return the current working dir as std::string.
  */
 std::string getcwd_string() {
+#ifdef RAI_MSVC
+#  define PATH_MAX 120
+#endif
   char buff[PATH_MAX];
   char* succ=getcwd(buff, PATH_MAX);
   if(!succ) HALT("could not call getcwd: errno=" <<errno <<' ' <<strerror(errno));

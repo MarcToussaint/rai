@@ -78,7 +78,7 @@ void glDrawDiamond(float dx, float dy, float dz);
 void glDrawDiamond(float x, float y, float z, float dx, float dy, float dz);
 void glDrawSphere(float radius);
 void glDrawDisk(float radius);
-void glDrawProxy(const arr& p1, const arr& p2, double diskSize=.02, int colorCode=0, const arr& norm=NoArr, double rad1=0., double rad2=0.);
+void glDrawProxy(const arr& p1, const arr& p2, double diskSize=.02, int colorCode=0, const arr& norm=NoArr, double _rad1=0., double _rad2=0.);
 void glDrawCylinder(float radius, float length, bool closed=true);
 void glDrawCappedCylinder(float radius, float length);
 void glDrawAxis(double scale=-1.);
