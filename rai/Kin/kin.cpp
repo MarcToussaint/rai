@@ -3158,6 +3158,7 @@ uintA rai::Configuration::getCollisionExcludePairIDs(bool verbose) {
     }
   }
 
+  ex.reshape(-1,2);
   return ex;
 }
 

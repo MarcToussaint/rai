@@ -10,7 +10,7 @@
 
 #include "../Core/array.h"
 
-#define RAI_NEW_FEATURES
+//#define RAI_NEW_FEATURES
 
 enum FeatureSymbol {
   FS_none=-1,

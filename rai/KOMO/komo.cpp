@@ -1490,7 +1490,7 @@ void KOMO::run(const OptOptions options) {
   if(verbose>0) {
     cout <<"** KOMO::run solver:"
         <<rai::Enum<KOMOsolver>(solver)
-       <<" swift:" <<computeCollisions
+       <<" collisions:" <<computeCollisions
       <<" x-dim:" <<x.N
       <<" T:" <<T <<" k:" <<k_order <<" phases:" <<double(T)/stepsPerPhase <<" stepsPerPhase:" <<stepsPerPhase <<" tau:" <<tau
      <<" #config:" <<configurations.N <<" q-dims: ";
@@ -1681,7 +1681,7 @@ void KOMO::reportProblem(std::ostream& os) {
     os <<"    times:" <<times <<endl;
   }
 
-  os <<"  usingSwift:" <<computeCollisions <<endl;
+  os <<"  computeCollisions:" <<computeCollisions <<endl;
   for(ptr<Objective>& t:objectives) os <<"    " <<*t <<endl;
   for(KinematicSwitch* sw:switches) {
     os <<"    ";
@@ -2561,7 +2561,7 @@ rai::Graph KOMO::getProblemGraph(bool includeValues, bool includeSolution) {
   //  arr times(configurations.N);
   //  for(uint i=0; i<configurations.N; i++) times(i)=configurations(i)->frames.first()->time;
   //  g.newNode<double>({"times"}, {}, times);
-  g.newNode<bool>({"useSwift"}, {}, computeCollisions);
+  g.newNode<bool>({"computeCollisions"}, {}, computeCollisions);
 #endif
 
   if(includeSolution) {

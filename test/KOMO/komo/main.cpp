@@ -199,7 +199,9 @@ void TEST(PR2){
   komo.optimize();
   komo.plotTrajectory();
 //  komo.checkGradients();
-  for(uint i=0;i<2;i++) komo.displayTrajectory();
+  rai::ConfigurationViewer V;
+  V.setPath(C, komo.x, "result", true);
+  while(V.playVideo());
 }
 
 //===========================================================================
@@ -223,9 +225,9 @@ int main(int argc,char** argv){
 //  rnd.clockSeed();
 
 //  testEasy();
-  testAlign();
+//  testAlign();
 //  testThin();
-//  testPR2();
+  testPR2();
 
   return 0;
 }
