@@ -19,13 +19,14 @@ struct Value {
 
 /// defines only a map (task space), not yet the costs or constraints in this space
 struct Feature {
-  uint order;          ///< 0=position, 1=vel, etc
+  uint order = 0;          ///< 0=position, 1=vel, etc
   arr  scale, target;  ///< optional linear transformation
-  bool flipTargetSignOnNegScalarProduct; ///< for order==1 (vel mode), when taking temporal difference, flip sign when scalar product it negative [specific to quats -> move to special TM for quats only]
+  bool flipTargetSignOnNegScalarProduct = false; ///< for order==1 (vel mode), when taking temporal difference, flip sign when scalar product it negative [specific to quats -> move to special TM for quats only]
   FeatureSymbol fs = FS_none;
   uintA frameIDs;
 
-  Feature() : order(0), flipTargetSignOnNegScalarProduct(false) {}
+  Feature() {}
+  Feature(const uintA& _frameIDs, uint _order) : order(_order), frameIDs(_frameIDs) {}
   virtual ~Feature() {}
 
   //-- construction helpers

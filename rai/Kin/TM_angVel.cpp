@@ -173,21 +173,8 @@ void TM_LinAngVel::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
   ang.impulseInsteadOfAcceleration = impulseInsteadOfAcceleration;
   Value _ang = ang.eval(Ctuple);
 
-  y.resize(6);
-  y.setVectorBlock(_lin.y, 0);
-  y.setVectorBlock(_ang.y, 3);
-
-  if(!!J){
-    if(_lin.J.isSparse()){
-      J.sparse().resize(6, _lin.J.d1, 0);
-      J.sparse().add(_lin.J.sparse());
-      J.sparse().add(_ang.J.sparse(), 3, 0);
-    }else{
-      J.resize(6, _lin.J.d1);
-      J.setMatrixBlock(_lin.J, 0, 0);
-      J.setMatrixBlock(_ang.J, 3, 0);
-    }
-  }
+  y.setBlockVector(_lin.y, _ang.y);
+  J.setBlockMatrix(_lin.J, _ang.J);
 }
 
 uint TM_LinAngVel::dim_phi(const rai::Configuration& G) { return 6; }
@@ -223,14 +210,9 @@ void TM_NoJumpFromParent::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
     tmp->type = TMT_quat;
     tmp->flipTargetSignOnNegScalarProduct=true;
     tmp->Feature::__phi(yq, Jq, Ktuple);
-    y.resize(yp.N+yq.N);
-    y.setVectorBlock(yp, 0);
-    y.setVectorBlock(yq, 3);
-    if(!!J) {
-      J.resize(y.N, Jp.d1);
-      J.setMatrixBlock(Jp, 0, 0);
-      J.setMatrixBlock(Jq, 3, 0);
-    }
+
+    y.setBlockVector(yp, yq);
+    J.setBlockMatrix(Jp, Jq);
   }
 //  else{
 //    y.resize(7).setZero();

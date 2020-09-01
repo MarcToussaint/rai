@@ -2,6 +2,7 @@
 #include <Gui/opengl.h>
 #include <Core/graph.h>
 #include <Kin/proxy.h>
+#include <Kin/viewer.h>
 
 #include <LGP/LGP_tree.h>
 #include <KOMO/komo.h>
@@ -75,16 +76,26 @@ void testBounds(){
 
   LGP_Tree lgp(K, "fol-pnp-switch.g");
 
-  lgp.inspectSequence("(pick pr2R obj0) (pick pr2L obj3) (place pr2R obj0 tray) (place pr2L obj3 tray)");
+//  lgp.inspectSequence("(pick pr2R obj0) (pick pr2L obj3) (place pr2R obj0 tray) (place pr2L obj3 tray)");
+
+  LGP_Node* node = lgp.walkToNode("(pick pr2R obj0) (pick pr2L obj3) (place pr2R obj0 tray) (place pr2L obj3 tray)");
+  BoundType bound = BD_path;
+  node->optBound(bound, true, 2);
+//  auto gl = make_shared<OpenGL>();
+//  node->displayBound(gl, bound);
+  rai::ConfigurationViewer V;
+  V.setConfiguration(K);
+  V.setPath(node->komoProblem(bound)->getPath_frames(), "", true);
+  while(V.playVideo(true, 3.));
 }
 
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 //  rnd.clockSeed();
 
-  solve();
+//  solve();
 
-//  testBounds();
+  testBounds();
 
   return 0;
 }

@@ -13,8 +13,8 @@
 //===========================================================================
 
 struct F_Position : Feature {
+  F_Position(const uintA& _frameIDs, uint _order) : Feature(_frameIDs, _order) {}
   virtual void phi2(arr& y, arr& J, const FrameL& F);
-  virtual uint dim_phi(const rai::Configuration& C) { return 3; }
   virtual uint dim_phi2(const FrameL& F) { return 3; }
   virtual rai::String shortTag(const rai::Configuration& C) { return STRING("F_Position"); }
 };
@@ -22,9 +22,8 @@ struct F_Position : Feature {
 //===========================================================================
 
 struct F_PositionDiff : Feature {
+  F_PositionDiff(const uintA& _frameIDs, uint _order) : Feature(_frameIDs, _order) {}
   virtual void phi2(arr& y, arr& J, const FrameL& F);
-  virtual void phi(arr& y, arr& J, const rai::Configuration& C){  phi2(y, J, C.frames.sub(frameIDs));  }
-  virtual uint dim_phi(const rai::Configuration& C) { return 3; }
   virtual uint dim_phi2(const FrameL& F) { return 3; }
   virtual rai::String shortTag(const rai::Configuration& C) { return STRING("F_PositionDiff"); }
 };
@@ -32,8 +31,8 @@ struct F_PositionDiff : Feature {
 //===========================================================================
 
 struct F_Quaternion : Feature {
+  F_Quaternion(const uintA& _frameIDs, uint _order) : Feature(_frameIDs, _order) { flipTargetSignOnNegScalarProduct=true; }
   virtual void phi2(arr& y, arr& J, const FrameL& F);
-  virtual uint dim_phi(const rai::Configuration& C) { return 4; }
   virtual uint dim_phi2(const FrameL& F) { return 4; }
   virtual rai::String shortTag(const rai::Configuration& C) { return STRING("F_Quaternion"); }
 };
@@ -41,9 +40,8 @@ struct F_Quaternion : Feature {
 //===========================================================================
 
 struct F_QuaternionDiff : Feature {
+  F_QuaternionDiff(const uintA& _frameIDs, uint _order) : Feature(_frameIDs, _order) { flipTargetSignOnNegScalarProduct=true; }
   virtual void phi2(arr& y, arr& J, const FrameL& F);
-  virtual void phi(arr& y, arr& J, const rai::Configuration& C){  phi2(y, J, C.frames.sub(frameIDs));  }
-  virtual uint dim_phi(const rai::Configuration& C) { return 4; }
   virtual uint dim_phi2(const FrameL& F) { return 4; }
   virtual rai::String shortTag(const rai::Configuration& C) { return STRING("F_QuaternionDiff"); }
 };
@@ -52,8 +50,8 @@ struct F_QuaternionDiff : Feature {
 //===========================================================================
 
 struct F_Pose : Feature {
-  int a;
-  F_Pose(int aShape) : a(aShape) {}
+  uint a;
+  F_Pose(uint aShape) : a(aShape) {}
   F_Pose(const rai::Configuration& C, const char* aShapeName=nullptr)
     : F_Pose(initIdArg(C, aShapeName)) {}
 
@@ -65,7 +63,7 @@ struct F_Pose : Feature {
 //===========================================================================
 
 struct F_PoseDiff : Feature {
-  int a, b;
+  uint a, b;
   F_PoseDiff(int aShape, int bShape) : a(aShape), b(bShape) {}
   F_PoseDiff(const rai::Configuration& C, const char* aShapeName=nullptr, const char* bShapeName=nullptr)
     : F_PoseDiff(initIdArg(C, aShapeName), initIdArg(C, bShapeName)) {}

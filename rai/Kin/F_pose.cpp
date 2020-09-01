@@ -31,19 +31,20 @@ void F_PositionDiff::phi2(arr& y, arr& J, const FrameL& F) {
   rai::Vector p1 = f1->ensure_X().pos;
   rai::Vector p2 = f2->ensure_X().pos;
   y = (p1-p2).getArr();
-  if(!!J){
-    arr J1, J2;
-    if(J.isSparse()){ J1.sparse(); J2.sparse(); }
-    f1->C.jacobian_pos(J1, f1, p1);
-    f2->C.jacobian_pos(J2, f2, p2);
-    J = J1-J2;
-  }
+  arr J2;
+  f1->C.jacobian_pos(J, f1, p1);
+  f2->C.jacobian_pos(J2, f2, p2);
+  J -= J2;
 }
 
 //===========================================================================
 
 void F_Quaternion::phi2(arr& y, arr& J, const FrameL& F){
-  NIY;
+  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  CHECK_EQ(F.N, 1, "");
+  rai::Frame *f = F.elem(0);
+
+  f->C.kinematicsQuat(y, J, f);
 }
 
 //===========================================================================
@@ -54,9 +55,8 @@ void F_QuaternionDiff::phi2(arr& y, arr& J, const FrameL& F) {
   rai::Frame *f1 = F.elem(0);
   rai::Frame *f2 = F.elem(1);
 
-  f1->C.kinematicsQuat(y, J, f1);
   arr y2, J2;
-  if(!!J && J.isSparse()) J2.sparse();
+  f1->C.kinematicsQuat(y, J, f1);
   f2->C.kinematicsQuat(y2, J2, f2);
 
   if(scalarProduct(y, y2)>=0.) {
@@ -71,7 +71,7 @@ void F_QuaternionDiff::phi2(arr& y, arr& J, const FrameL& F) {
 //===========================================================================
 
 void F_Pose::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
-#if 1
+#if 0
   arr yq, Jq, yp, Jp;
   TM_Default tmp(TMT_pos, a);
   tmp.order = order;
@@ -83,68 +83,19 @@ void F_Pose::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
 
   y.setBlockVector(yp, yq);
   J.setBlockMatrix(Jp, Jq);
-#else //should be identical
-  if(order==2) {
-    arr p0, p1, p2, J0, J1, J2;
-    Ctuple(-3)->kinematicsPos(p0, J0, Ctuple(-3)->frames(a));  expandJacobian(J0, Ctuple, -3);
-    Ctuple(-2)->kinematicsPos(p1, J1, Ctuple(-2)->frames(a));  expandJacobian(J1, Ctuple, -2);
-    Ctuple(-1)->kinematicsPos(p2, J2, Ctuple(-1)->frames(a));  expandJacobian(J2, Ctuple, -1);
-
-    y = p0 - 2.*p1 + p2;
-    if(!!J) J = J0 - 2.*J1 + J2;
-
-    arr q0, q1, q2; //, J0, J1, J2;
-    Ctuple(-3)->kinematicsQuat(q0, J0, Ctuple(-3)->frames(a));  expandJacobian(J0, Ctuple, -3);
-    Ctuple(-2)->kinematicsQuat(q1, J1, Ctuple(-2)->frames(a));  expandJacobian(J1, Ctuple, -2);
-    Ctuple(-1)->kinematicsQuat(q2, J2, Ctuple(-1)->frames(a));  expandJacobian(J2, Ctuple, -1);
-
-    if(scalarProduct(q0, q1)<-0.) { q0*=-1.; J0*=-1.; }
-    if(scalarProduct(q2, q1)<-0.) { q2*=-1.; J2*=-1.; }
-
-    arr yq = q0 - 2.*q1 + q2;
-    arr Jq = J0 - 2.*J1 + J2;
-
-    double tau = Ctuple(-2)->frames(0)->tau;
-    tau=1.;
-    if(tau) {
-      CHECK_GE(tau, 1e-10, "");
-      yq /= tau*tau;
-      if(!!J) Jq /= tau*tau;
-    }
-
-  } else if(order==1) {
-    arr p0, p1, J0, J1;
-    Ctuple(-2)->kinematicsPos(p0, J0, Ctuple(-2)->frames(a));  expandJacobian(J0, Ctuple, -2);
-    Ctuple(-1)->kinematicsPos(p1, J1, Ctuple(-1)->frames(a));  expandJacobian(J1, Ctuple, -1);
-
-    y = p1 - p0;
-    if(!!J) J = J1 - J0;
-
-    arr q0, q1; //, J0, J1, J2;
-    Ctuple(-2)->kinematicsQuat(q0, J0, Ctuple(-2)->frames(a));  expandJacobian(J0, Ctuple, -2);
-    Ctuple(-1)->kinematicsQuat(q1, J1, Ctuple(-1)->frames(a));  expandJacobian(J1, Ctuple, -1);
-
-    if(scalarProduct(q0, q1)<-0.) { q0*=-1.; J0*=-1.; }
-
-    arr yq = q1 - q0;
-    arr Jq = J1 - J0;
-
-    y.append(yq);
-    if(!!J) J.append(Jq);
-
-    double tau = Ctuple(-2)->frames(0)->tau;
-    if(tau) {
-      CHECK_GE(tau, 1e-10, "");
-      y /= tau;
-      if(!!J) J /= tau;
-    }
-  }
+#else
+  auto pos = F_Position({a}, order).eval(Ctuple);
+  auto quat = F_Quaternion({a}, order).eval(Ctuple);
+  y.setBlockVector(pos.y, quat.y);
+  J.setBlockMatrix(pos.J, quat.J);
 #endif
+
 }
 
 //===========================================================================
 
 void F_PoseDiff::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
+#if 0
   arr yq, Jq, yp, Jp;
   TM_Default tmp(TMT_posDiff, a, NoVector, b, NoVector);
   tmp.order = order;
@@ -156,6 +107,12 @@ void F_PoseDiff::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
 
   y.setBlockVector(yp, yq);
   J.setBlockMatrix(Jp, Jq);
+#else
+  auto pos = F_PositionDiff({a,b}, order).eval(Ctuple);
+  auto quat = F_QuaternionDiff({a,b}, order).eval(Ctuple);
+  y.setBlockVector(pos.y, quat.y);
+  J.setBlockMatrix(pos.J, quat.J);
+#endif
 }
 
 //===========================================================================
@@ -212,6 +169,3 @@ void TM_Align::phi(arr& y, arr& J, const rai::Configuration& K) {
 rai::String TM_Align::shortTag(const rai::Configuration& G) {
   return STRING("TM_Align:"<<(i<0?"WORLD":G.frames(i)->name) <<':' <<(j<0?"WORLD":G.frames(j)->name));
 }
-
-
-

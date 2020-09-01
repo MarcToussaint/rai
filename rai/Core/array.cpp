@@ -1256,7 +1256,6 @@ arr finiteDifferenceGradient(const ScalarFunction& f, const arr& x, arr& Janalyt
 arr finiteDifferenceJacobian(const VectorFunction& f, const arr& _x, arr& Janalytic) {
   arr x=_x;
   arr y, dx, dy, J;
-  Janalytic.sparse();
   f(y, Janalytic, x);
   if(isRowShifted(Janalytic)
       || isSparseMatrix(Janalytic)) {
