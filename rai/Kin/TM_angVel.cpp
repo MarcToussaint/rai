@@ -39,10 +39,10 @@ void angVel_base(const rai::Configuration& K0, rai::Configuration& K1, uint i, a
 
   checkNan(y);
 
-  if(!!J) {
+  if(!!J && !!Ja) {
     J = catCol((J1-J0)*Ja, J0*Jb);
     checkNan(J);
-  }
+  }else J.setNoArr();
 }
 
 //===========================================================================
@@ -57,16 +57,16 @@ void TM_LinVel::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
     Ktuple(-1)->kinematicsPos(b, Jb, f1);
 
     y = b-a;
-    if(!!J) {
+    if(!!J && !!Ja && !!Jb) {
       expandJacobian(Ja, Ktuple, -2);
       expandJacobian(Jb, Ktuple, -1);
       J = Jb-Ja;
-    }
+    }else J.setNoArr();
 
 #if 1
     if(Ktuple(-1)->hasTauJoint()) {
       double tau; arr Jtau;
-      Ktuple(-1)->kinematicsTau(tau, (!!J?Jtau:NoArr));
+      Ktuple(-1)->kinematicsTau(tau, Jtau);
       CHECK_GE(tau, 1e-10, "");
       y /= tau;
       if(!!J) {
@@ -87,14 +87,15 @@ void TM_LinVel::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   if(order==2) {
     arr y0, y1, Jy0, Jy1;
     order--;
-    phi(y0, (!!J?Jy0:NoArr), Ktuple({0, -2}));  if(!!J) padJacobian(Jy0, Ktuple);
-    phi(y1, (!!J?Jy1:NoArr), Ktuple);
+    phi(y0, Jy0, Ktuple({0, -2}));  if(!!Jy0) padJacobian(Jy0, Ktuple);
+    phi(y1, Jy1, Ktuple);
     order++;
 
     double tau = Ktuple(-2)->frames(0)->tau;
     if(impulseInsteadOfAcceleration) tau=1.;
     y = (y1-y0)/tau; //difference!
-    if(!!J) J = (Jy1-Jy0)/tau;
+    if(!!Jy0) J = (Jy1-Jy0)/tau;
+    else J.setNoArr();
   }
 }
 
@@ -105,15 +106,25 @@ void TM_AngVel::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
     arr J_tmp;
     angVel_base(*Ktuple(-2), *Ktuple(-1), i, y, J_tmp);
 
-    if(!!J) {
-      if(Ktuple.N==3) J = catCol(zeros(y.N, Ktuple(-3)->q.N), J_tmp);
-      else J=J_tmp;
-    }
+    if(!!J_tmp) {
+      if(Ktuple.N==3){
+        uint shift = Ktuple(-3)->q.N;
+        if(!J_tmp.isSparse()) {
+          J = catCol(zeros(y.N, shift), J_tmp);
+        } else {
+          J = J_tmp;
+          J.sparse().reshape(J.d0, J.d1+shift);
+          J.sparse().rowShift(shift);
+        }
+      } else{
+        J=J_tmp;
+      }
+    }else J.setNoArr();
 
 #if 1
     if(Ktuple(-1)->hasTauJoint()) {
       double tau; arr Jtau;
-      Ktuple(-1)->kinematicsTau(tau, (!!J?Jtau:NoArr));
+      Ktuple(-1)->kinematicsTau(tau, Jtau);
       CHECK_GE(tau, 1e-10, "");
 
       y /= tau;
@@ -135,14 +146,15 @@ void TM_AngVel::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   if(order==2) {
     arr y0, y1, Jy0, Jy1;
     order--;
-    phi(y0, (!!J?Jy0:NoArr), Ktuple({0, -2}));  if(!!J) padJacobian(Jy0, Ktuple);
-    phi(y1, (!!J?Jy1:NoArr), Ktuple);
+    phi(y0, Jy0, Ktuple({0, -2}));  if(!!Jy0) padJacobian(Jy0, Ktuple);
+    phi(y1, Jy1, Ktuple);
     order++;
 
     double tau = Ktuple(-2)->frames(0)->tau;
     if(impulseInsteadOfAcceleration) tau=1.;
     y = (y1-y0)/tau; //difference!
-    if(!!J) J = (Jy1 - Jy0)/tau;
+    if(!!J && !!Jy0) J = (Jy1 - Jy0)/tau;
+    else J.setNoArr();
   }
 }
 
@@ -150,27 +162,32 @@ uint TM_AngVel::dim_phi(const rai::Configuration& G) { return 3; }
 
 //===========================================================================
 
-void TM_LinAngVel::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
-  y.resize(6);
-  if(!!J) J.resize(6, getKtupleDim(Ktuple).last()).setZero();
-
-//  if(Ktuple.elem(-2)->frames(i)->flags & (1<<FL_impulseExchange)){
-//    return;
-//  }
-
-//  rai::Frame *b0 = Ktuple.elem(-2)->frames(i);    CHECK(&b0->K==Ktuple.elem(-2),"");
-//  rai::Frame *b1 = Ktuple.elem(-1)->frames(i);    CHECK(&b1->K==Ktuple.elem(-1),"");
-//  cout <<"SWITCH " <<b0->parent->name <<'-' <<b0->name <<" => " <<b1->parent->name <<'-' <<b1->name <<endl;
-
+void TM_LinAngVel::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
   TM_LinVel lin(i);
   lin.order=order;
   lin.impulseInsteadOfAcceleration = impulseInsteadOfAcceleration;
-  lin.phi(y({0, 2})(), (!!J?J({0, 2})():NoArr), Ktuple);
+  Value _lin = lin.eval(Ctuple);
 
   TM_AngVel ang(i);
   ang.order=order;
   ang.impulseInsteadOfAcceleration = impulseInsteadOfAcceleration;
-  ang.phi(y({3, 5})(), (!!J?J({3, 5})():NoArr), Ktuple);
+  Value _ang = ang.eval(Ctuple);
+
+  y.resize(6);
+  y.setVectorBlock(_lin.y, 0);
+  y.setVectorBlock(_ang.y, 3);
+
+  if(!!J){
+    if(_lin.J.isSparse()){
+      J.sparse().resize(6, _lin.J.d1, 0);
+      J.sparse().add(_lin.J.sparse());
+      J.sparse().add(_ang.J.sparse(), 3, 0);
+    }else{
+      J.resize(6, _lin.J.d1);
+      J.setMatrixBlock(_lin.J, 0, 0);
+      J.setMatrixBlock(_ang.J, 3, 0);
+    }
+  }
 }
 
 uint TM_LinAngVel::dim_phi(const rai::Configuration& G) { return 6; }
@@ -202,10 +219,10 @@ void TM_NoJumpFromParent::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
       tmp = make_shared<TM_Default>(TMT_pos, link->ID);
     tmp->order = 1;
     tmp->type = TMT_pos;
-    tmp->Feature::__phi(yp, (!!J?Jp:NoArr), Ktuple);
+    tmp->Feature::__phi(yp, Jp, Ktuple);
     tmp->type = TMT_quat;
     tmp->flipTargetSignOnNegScalarProduct=true;
-    tmp->Feature::__phi(yq, (!!J?Jq:NoArr), Ktuple);
+    tmp->Feature::__phi(yq, Jq, Ktuple);
     y.resize(yp.N+yq.N);
     y.setVectorBlock(yp, 0);
     y.setVectorBlock(yq, 3);

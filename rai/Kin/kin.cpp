@@ -327,7 +327,7 @@ void rai::Configuration::copy(const rai::Configuration& C, bool referenceSwiftOn
 
   clear();
   orsDrawProxies = C.orsDrawProxies;
-  useSparseJacobians = C.useSparseJacobians;
+  jacMode = C.jacMode;
   xIndex = C.xIndex;
 
   //copy frames; first each Frame/Link/Joint directly, where all links go to the origin K (!!!); then relink to itself
@@ -979,10 +979,13 @@ void rai::Configuration::jacobian_pos(arr& J, Frame* a, const rai::Vector& pos_w
   a->ensure_X();
 
   uint N=getJointStateDimension();
-  if(!useSparseJacobians && !isSparseMatrix(J)) {
+  if(jacMode==JM_dense) {
     J.resize(3, N).setZero();
-  } else {
+  } else if(jacMode==JM_sparse){
     J.sparse().resize(3, N, 0);
+  } else if(jacMode==JM_noArr){
+    J.setNoArr();
+    return;
   }
 
   while(a) { //loop backward down the kinematic tree
@@ -1090,10 +1093,13 @@ void rai::Configuration::jacobian_angular(arr& J, Frame* a) const {
   a->ensure_X();
 
   uint N = getJointStateDimension();
-  if(!useSparseJacobians && !J.isSparse()) {
+  if(jacMode==JM_dense) {
     J.resize(3, N).setZero();
-  } else {
+  } else if(jacMode==JM_sparse){
     J.sparse().resize(3, N, 0);
+  } else if(jacMode==JM_noArr){
+    J.setNoArr();
+    return;
   }
 
   while(a) { //loop backward down the kinematic tree
@@ -1186,36 +1192,38 @@ void rai::Configuration::kinematicsQuat(arr& y, arr& J, Frame* a) const { //TODO
 
   const rai::Quaternion& rot_a = a->ensure_X().rot;
   if(!!y) y = rot_a.getArr4d();
-  if(!!J) {
-    arr A;
-    if(J.isSparse()) A.sparse();
-    jacobian_angular(A, a);
-    if(J.isSparse()) {
-      J.sparse().resize(4, A.d1, 0);
-      A.sparse().setupRowsCols();
-      uintAA& Acols = A.sparse().cols;
-      for(uint i=0; i<Acols.N; i++){
-        uintA& col = Acols.elem(i);
-        if(!col.N) continue;
-        rai::Quaternion tmp(0., 0., 0., 0.); //this is unnormalized!!
-        for(uint j=0;j<col.d0;j++) tmp.p()[1+col(j,0)] = 0.5*A.p[col(j,1)];
-        tmp = tmp * rot_a;
-        if(tmp.w) J.elem(0, i) += tmp.w;
-        if(tmp.x) J.elem(1, i) += tmp.x;
-        if(tmp.y) J.elem(2, i) += tmp.y;
-        if(tmp.z) J.elem(3, i) += tmp.z;
-      }
 
-    } else {
-      J.resize(4, A.d1).setZero();
-      for(uint i=0; i<J.d1; i++) {
-        rai::Quaternion tmp(0., 0.5*A(0, i), 0.5*A(1, i), 0.5*A(2, i)); //this is unnormalized!!
-        tmp = tmp * rot_a;
-        J.elem(0, i) = tmp.w;
-        J.elem(1, i) = tmp.x;
-        J.elem(2, i) = tmp.y;
-        J.elem(3, i) = tmp.z;
-      }
+  arr A;
+  jacobian_angular(A, a);
+  if(!A){
+    J.setNoArr();
+    return;
+  }
+  if(A.isSparse()) {
+    J.sparse().resize(4, A.d1, 0);
+    A.sparse().setupRowsCols();
+    uintAA& Acols = A.sparse().cols;
+    for(uint i=0; i<Acols.N; i++){
+      uintA& col = Acols.elem(i);
+      if(!col.N) continue;
+      rai::Quaternion tmp(0., 0., 0., 0.); //this is unnormalized!!
+      for(uint j=0;j<col.d0;j++) tmp.p()[1+col(j,0)] = 0.5*A.p[col(j,1)];
+      tmp = tmp * rot_a;
+      if(tmp.w) J.elem(0, i) += tmp.w;
+      if(tmp.x) J.elem(1, i) += tmp.x;
+      if(tmp.y) J.elem(2, i) += tmp.y;
+      if(tmp.z) J.elem(3, i) += tmp.z;
+    }
+
+  } else {
+    J.resize(4, A.d1).setZero();
+    for(uint i=0; i<J.d1; i++) {
+      rai::Quaternion tmp(0., 0.5*A(0, i), 0.5*A(1, i), 0.5*A(2, i)); //this is unnormalized!!
+      tmp = tmp * rot_a;
+      J.elem(0, i) = tmp.w;
+      J.elem(1, i) = tmp.x;
+      J.elem(2, i) = tmp.y;
+      J.elem(3, i) = tmp.z;
     }
   }
 }
@@ -1406,10 +1414,13 @@ void rai::Configuration::kinematicsContactPOA(arr& y, arr& J, rai::ForceExchange
   y = c->position;
 
   if(!!J) {
-    if(!useSparseJacobians) {
+    if(jacMode==JM_dense) {
       J.resize(3, q.N).setZero();
-    } else {
+    } else if(jacMode==JM_sparse){
       J.sparse().resize(3, q.N, 0);
+    } else if(jacMode==JM_noArr){
+      J.setNoArr();
+      return;
     }
 
     for(uint i=0; i<3; i++) J.elem(i, c->qIndex+i) = 1.;
@@ -1420,10 +1431,13 @@ void rai::Configuration::kinematicsContactForce(arr& y, arr& J, rai::ForceExchan
   y = c->force;
 
   if(!!J) {
-    if(!useSparseJacobians) {
+    if(jacMode==JM_dense) {
       J.resize(3, q.N).setZero();
-    } else {
+    } else if(jacMode==JM_sparse){
       J.sparse().resize(3, q.N, 0);
+    } else if(jacMode==JM_noArr){
+      J.setNoArr();
+      return;
     }
 
     for(uint i=0; i<3; i++) J.elem(i, c->qIndex+3+i) = 1.;
@@ -2575,7 +2589,7 @@ void rai::Configuration_ext::kinematicsPenetrations(arr& y, arr& J, bool penetra
     }
 
     arr y_dist, J_dist;
-    p.collision->kinDistance(y_dist, (!!J?J_dist:NoArr), Jp1, Jp2);
+    p.collision->kinDistance(y_dist, J_dist, Jp1, Jp2);
 
     if(!penetrationsOnly || y_dist.scalar()<activeMargin) {
       y(i) = -y_dist.scalar();
@@ -2636,7 +2650,7 @@ void rai::Configuration::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, dou
   }
 
   arr y_dist, J_dist;
-  p.collision->kinDistance(y_dist, (!!J?J_dist:NoArr), Jp1, Jp2);
+  p.collision->kinDistance(y_dist, J_dist, Jp1, Jp2);
 
   if(y_dist.scalar()>margin) return;
   y += margin-y_dist.scalar();
@@ -2658,7 +2672,7 @@ void rai::Configuration_ext::kinematicsContactCost(arr& y, arr& J, const ForceEx
   NIY;
   //  Feature *map = c->getTM_ContactNegDistance();
   //  arr y_dist, J_dist;
-  //  map->phi(y_dist, (!!J?J_dist:NoArr), *this);
+  //  map->phi(y_dist, J_dist, *this);
   //  y_dist *= -1.;
   //  if(!!J) J_dist *= -1.;
 
@@ -2743,7 +2757,15 @@ void rai::Configuration::kinematicsLimitsCost(arr& y, arr& J, const arr& limits,
       if(d>0.) {  y(0) += d/m;  if(!!J) J(0, i)-=1./m;  }
       d = q(i) - limits(i, 1) + m; //up
       if(d>0.) {  y(0) += d/m;  if(!!J) J(0, i)+=1./m;  }
-    }
+  }
+}
+
+void rai::Configuration::setJacModeAs(const arr& J){
+  if(!isSpecial(J)) jacMode = JM_dense;
+  else if(J.isSparse()) jacMode = JM_sparse;
+  else if(isNoArr(J)) jacMode = JM_noArr;
+  else if(isEmptyShape(J)) jacMode = JM_emptyShape;
+  else NIY;
 }
 
 /// Compute the new configuration q such that body is located at ytarget (with deplacement rel).

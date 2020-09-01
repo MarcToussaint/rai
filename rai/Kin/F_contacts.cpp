@@ -269,8 +269,8 @@ void TM_Contact_POAisInIntersection_InEq::phi(arr& y, arr& J, const rai::Configu
   K.jacobian_pos(Jp1, &s1->frame, coll1.p1);
   K.jacobian_pos(Jp2, &s2->frame, coll2.p2);
 
-  coll1.kinDistance(y({0, 0})(), (!!J?J[0]():NoArr), Jpos, Jp1);
-  coll2.kinDistance(y({1, 1})(), (!!J?J[1]():NoArr), Jpos, Jp2);
+  coll1.kinDistance(y({0, 0})(), J[0](), Jpos, Jp1);
+  coll2.kinDistance(y({1, 1})(), J[1](), Jpos, Jp2);
 
   if(margin) {
     y(0) -= margin;
@@ -406,7 +406,7 @@ void TM_Contact_ElasticVel::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   //-- from the geometry we need normal
   arr normal, Jnormal;
   F_PairCollision coll(con->a.ID, con->b.ID, F_PairCollision::_normal, false);
-  coll.phi(normal, (!!J?Jnormal:NoArr), *Ktuple(-2));
+  coll.phi(normal, Jnormal, *Ktuple(-2));
   if(!!J) expandJacobian(Jnormal, Ktuple, -2);
 
   y.resize(4).setZero();

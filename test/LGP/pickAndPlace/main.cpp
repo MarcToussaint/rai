@@ -21,8 +21,8 @@ void generateProblem(rai::Configuration& K){
       f->setRelativeQuaternion(rai::Quaternion(0).addZ(rnd.uni(-RAI_PI,RAI_PI)).getArr4d());
     }
     K.stepSwift();
-    arr y;
-    K.kinematicsProxyCost(y, NoArr);
+    arr y, J;
+    K.kinematicsProxyCost(y, J);
 //    cout <<"collision costs of config: " <<y.scalar() <<endl;
 //    K.reportProxies(cout, .1, true);
 //    K.watch();

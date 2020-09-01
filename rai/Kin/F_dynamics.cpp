@@ -148,7 +148,7 @@ void F_Wrench::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   TM_LinVel pos(i);
   pos.order=2;
   pos.impulseInsteadOfAcceleration=false;
-  pos.phi(acc, (!!J?Jacc:NoArr), Ktuple);
+  pos.phi(acc, Jacc, Ktuple);
 
   acc(2) += gravity;
 
@@ -227,14 +227,14 @@ void F_Energy::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
 
     TM_Default pos(TMT_pos, a->ID);
     pos.order=0;
-    pos.Feature::__phi(p, (!!J?Jp:NoArr), Ktuple);
+    pos.Feature::__phi(p, Jp, Ktuple);
 
     pos.order=1;
-    pos.Feature::__phi(v, (!!J?Jv:NoArr), Ktuple);
+    pos.Feature::__phi(v, Jv, Ktuple);
 
 //      TM_AngVel rot(a->ID);
 //      rot.order=1;
-//      rot.phi(w, (!!J?Jw:NoArr), Ktuple);
+//      rot.phi(w, Jw, Ktuple);
 
     E += .5*mass*sumOfSqr(v);
     E += gravity * mass * p(2); //p(2)=height //(a->X*a->inertia->com).z;

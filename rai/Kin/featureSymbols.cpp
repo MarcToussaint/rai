@@ -120,8 +120,10 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
   else if(feat==FS_quaternionDiff) {  f=make_shared<F_QuaternionDiff>(); }
   else if(feat==FS_quaternionRel) {  f=make_shared<TM_Default>(TMT_quat, C, frames(0), NoVector, frames(1), NoVector); }
 #else
-  else if(feat==FS_position) {  f=make_shared<TM_Default>(TMT_pos, C, frames(0)); }
-  else if(feat==FS_positionDiff) {  f=make_shared<TM_Default>(TMT_posDiff, C, frames(0), NoVector, frames(1)); }
+  else if(feat==FS_position) {  f = make_shared<F_Position>();  } //f=make_shared<TM_Default>(TMT_pos, C, frames(0)); }
+  else if(feat==FS_positionDiff) {  f = make_shared<F_PositionDiff>();  } //f=make_shared<TM_Default>(TMT_posDiff, C, frames(0), NoVector, frames(1)); }
+//  else if(feat==FS_position) {  f=make_shared<TM_Default>(TMT_pos, C, frames(0)); }
+//  else if(feat==FS_positionDiff) {  f=make_shared<TM_Default>(TMT_posDiff, C, frames(0), NoVector, frames(1)); }
   else if(feat==FS_positionRel) {  f=make_shared<TM_Default>(TMT_pos, C, frames(0), NoVector, frames(1)); }
 
   else if(feat==FS_quaternion) {  f=make_shared<TM_Default>(TMT_quat, C, frames(0)); }

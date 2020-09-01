@@ -6,6 +6,7 @@
 #include <Kin/F_contacts.h>
 #include <Kin/forceExchange.h>
 #include <iomanip>
+#include <Kin/featureSymbols.h>
 
 extern bool orsDrawWires;
 extern bool rai_Kin_frame_ignoreQuatNormalizationWarning;
@@ -14,27 +15,26 @@ extern bool rai_Kin_frame_ignoreQuatNormalizationWarning;
 
 void testFeature() {
   rai::Configuration C;
-  rai::Frame world(C), obj1(&world), obj2(&world);
-  world.name = "world";
-  obj1.name = "obj1";
-  obj2.name = "obj2";
-  obj1.setRelativePosition({1.,1.,1.});
-  obj2.setRelativePosition({-1.,-1.,1.});
-  obj1.setShape(rai::ST_ssBox, ARR(1.,1.,1.,rnd.uni(.01, .3)));
-  obj2.setShape(rai::ST_ssBox, ARR(1.,1.,1.,rnd.uni(.01, .3)));
-  obj1.setColor({.5,.8,.5,.4});
-  obj2.setColor({.5,.5,.8,.4});
+  rai::Frame *world = C.addFrame("world");
+  rai::Frame *obj1 = C.addFrame("obj1", "world");
+  rai::Frame *obj2 = C.addFrame("obj2", "world");
+  obj1->setRelativePosition({1.,1.,1.});
+  obj2->setRelativePosition({-1.,-1.,1.});
+  obj1->setShape(rai::ST_ssBox, ARR(1.,1.,1.,rnd.uni(.01, .3)));
+  obj2->setShape(rai::ST_ssBox, ARR(1.,1.,1.,rnd.uni(.01, .3)));
+  obj1->setColor({.5,.8,.5,.4});
+  obj2->setColor({.5,.5,.8,.4});
 
-  rai::Joint j1(obj1, rai::JT_free);
-  rai::Joint j2(obj2, rai::JT_transXYPhi);
+  obj1->setJoint(rai::JT_free);
+  obj2->setJoint(rai::JT_transXYPhi);
 
-  rai::Inertia m1(obj1), m2(obj2);
-  m1.defaultInertiaByShape();
-  m2.defaultInertiaByShape();
+  obj1->setMass(1.);
+  obj2->setMass(1.);
 
-  rai::ForceExchange con(obj1, obj2);
+  rai::ForceExchange con(*obj1, *obj2);
 
   C.setTimes(.1);
+  C.jacMode = C.JM_sparse;
 
   rai::Configuration C1(C), C2(C);
   ConfigurationL Ktuple = {&C, &C1, &C2};
@@ -47,6 +47,8 @@ void testFeature() {
   F.append(make_shared<F_PairCollision>(C, "obj1", "obj2", F_PairCollision::_center));
   F.append(make_shared<TM_LinAngVel>(C, "obj1"));
   F.append(make_shared<TM_LinAngVel>(C, "obj2")) -> order=2;
+  F.append(symbols2feature(FS_position, {"obj1"}, C));
+  F.append(symbols2feature(FS_positionDiff, {"obj1", "obj2"}, C));
   F.append(make_shared<F_Pose>(C, "obj1"));
   F.append(make_shared<F_Pose>(C, "obj2")) -> order=1;
   F.append(make_shared<F_Pose>(C, "obj1")) -> order=2;

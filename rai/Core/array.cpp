@@ -1256,6 +1256,7 @@ arr finiteDifferenceGradient(const ScalarFunction& f, const arr& x, arr& Janalyt
 arr finiteDifferenceJacobian(const VectorFunction& f, const arr& _x, arr& Janalytic) {
   arr x=_x;
   arr y, dx, dy, J;
+  Janalytic.sparse();
   f(y, Janalytic, x);
   if(isRowShifted(Janalytic)
       || isSparseMatrix(Janalytic)) {
@@ -2481,16 +2482,30 @@ void SparseMatrix::rowWiseMult(const arr& a) {
   for(uint k=0; k<Z.N; k++) Z.elem(k) *= a.elem(elems.p[2*k]);
 }
 
-void SparseMatrix::add(const SparseMatrix& a, double coeff) {
-  CHECK_EQ(a.Z.d0, Z.d0, "");
-  CHECK_EQ(a.Z.d1, Z.d1, "");
+//void SparseMatrix::add(const SparseMatrix& a, double coeff) {
+//  CHECK_EQ(a.Z.d0, Z.d0, "");
+//  CHECK_EQ(a.Z.d1, Z.d1, "");
+//  uint Nold=Z.N;
+//  resizeCopy(Z.d0, Z.d1, Z.N + a.Z.N);
+//  for(uint j=0; j<a.Z.N; j++) {
+//    if(coeff==1.) {
+//      entry(a.elems(j, 0), a.elems(j, 1), Nold+j) = a.Z.elem(j);
+//    } else {
+//      entry(a.elems(j, 0), a.elems(j, 1), Nold+j) = coeff * a.Z.elem(j);
+//    }
+//  }
+//}
+
+void SparseMatrix::add(const SparseMatrix& a, uint lo0, uint lo1, double coeff){
+  CHECK_LE(lo0+a.Z.d0, Z.d0, "");
+  CHECK_LE(lo1+a.Z.d1, Z.d1, "");
   uint Nold=Z.N;
   resizeCopy(Z.d0, Z.d1, Z.N + a.Z.N);
   for(uint j=0; j<a.Z.N; j++) {
     if(coeff==1.) {
-      entry(a.elems(j, 0), a.elems(j, 1), Nold+j) = a.Z.elem(j);
+      entry(lo0+a.elems(j, 0), lo1+a.elems(j, 1), Nold+j) = a.Z.elem(j);
     } else {
-      entry(a.elems(j, 0), a.elems(j, 1), Nold+j) = coeff * a.Z.elem(j);
+      entry(lo0+a.elems(j, 0), lo1+a.elems(j, 1), Nold+j) = coeff * a.Z.elem(j);
     }
   }
 }
@@ -2511,7 +2526,7 @@ arr SparseMatrix::unsparse() {
 
 } //namespace rai
 
-void operator -= (rai::SparseMatrix& x, const rai::SparseMatrix& y) { x.add(y, -1.); }
+void operator -= (rai::SparseMatrix& x, const rai::SparseMatrix& y) { x.add(y, 0, 0, -1.); }
 void operator -= (rai::SparseMatrix& x, double y) { arr& X=x.Z; x.unsparse(); X -= y; }
 
 void operator += (rai::SparseMatrix& x, const rai::SparseMatrix& y) { x.add(y); }

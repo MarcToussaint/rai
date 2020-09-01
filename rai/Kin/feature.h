@@ -35,7 +35,7 @@ struct Feature {
 
  protected:
   virtual void phi2(arr& y, arr& J, const FrameL& F);
-  virtual void phi(arr& y, arr& J, const rai::Configuration& C) { HALT("one of the 'phi' needs to be implemented!"); } ///< this needs to be overloaded
+  virtual void phi(arr& y, arr& J, const rai::Configuration& C) { phi2(y, J, C.frames.sub(frameIDs)); }
   virtual void phi(arr& y, arr& J, const ConfigurationL& Ctuple); ///< if not overloaded this computes the generic pos/vel/acc depending on order
   virtual uint dim_phi(const rai::Configuration& C) { HALT("one of the 'dim_phi' needs to be implemented!"); } ///< the dimensionality of $y$
   virtual uint dim_phi(const ConfigurationL& Ctuple) { return dim_phi(*Ctuple.last()); } ///< if not overloaded, returns dim_phi for last configuration
@@ -104,7 +104,15 @@ inline void expandJacobian(arr& J, const ConfigurationL& Ctuple, int i=-1) {
 
 inline void padJacobian(arr& J, const ConfigurationL& Ctuple) {
   uintA qdim = getKtupleDim(Ctuple);
-  arr tmp = zeros(J.d0, qdim.last());
-  tmp.setMatrixBlock(J, 0, 0);
-  J = tmp;
+  if(!isSpecial(J)){
+    arr tmp = zeros(J.d0, qdim.last());
+    tmp.setMatrixBlock(J, 0, 0);
+    J = tmp;
+  }else{
+    if(J.isSparse()){
+      J.sparse().reshape(J.d0, qdim.last());
+    } else if(!J){
+      return;
+    } else NIY;
+  }
 }

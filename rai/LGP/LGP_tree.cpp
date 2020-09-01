@@ -103,7 +103,7 @@ void initFolStateFromKin(FOL_World& L, const rai::Configuration& K) {
 
 LGP_Tree::LGP_Tree()
   : verbose(2), numSteps(0) {
-  dataPath <<"z." <<rai::date2() <<"/";
+  dataPath <<"z." <<rai::date(true) <<"/";
   dataPath = rai::getParameter<rai::String>("LGP_dataPath", dataPath);
   rai::system(STRING("mkdir -p " <<dataPath));
   rai::system(STRING("rm -Rf " <<dataPath <<"vid  &&  rm -f " <<dataPath <<"*"));

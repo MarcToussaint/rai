@@ -16,8 +16,8 @@ void Feature::phi2(arr& y, arr& J, const FrameL& F) {
   arr y0, y1, Jy0, Jy1;
   if(isSparseMatrix(J)){ Jy0.sparse(); Jy1.sparse(); }
   order--;
-  phi2(y0, (!!J?Jy0:NoArr), F({0, -2}));
-  phi2(y1, (!!J?Jy1:NoArr), F({1,-1}));
+  phi2(y0, Jy0, F({0, -2}));
+  phi2(y1, Jy1, F({1,-1}));
   order++;
 
   if(flipTargetSignOnNegScalarProduct) if(scalarProduct(y0, y1)<-.0) { y0 *= -1.;  if(!!J) Jy0 *= -1.; }
@@ -28,7 +28,7 @@ void Feature::phi2(arr& y, arr& J, const FrameL& F) {
 #if 0 //feature itself does not care for tau!!! use specialized features, e.g. linVel, angVel
   if(Ctuple(-1)->hasTauJoint()) {
     double tau; arr Jtau;
-    Ctuple(-1)->kinematicsTau(tau, (!!J?Jtau:NoArr));
+    Ctuple(-1)->kinematicsTau(tau, Jtau);
     CHECK_GE(tau, 1e-10, "");
     y /= tau;
     if(!!J) {
@@ -64,8 +64,8 @@ void Feature::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
 
   arr y0, y1, Jy0, Jy1;
   order--;
-  phi(y0, (!!J?Jy0:NoArr), Ctuple({0, -2}));  if(!!J) padJacobian(Jy0, Ctuple);
-  phi(y1, (!!J?Jy1:NoArr), Ctuple);
+  phi(y0, Jy0, Ctuple({0, -2}));  if(!!J) padJacobian(Jy0, Ctuple);
+  phi(y1, Jy1, Ctuple);
   order++;
 
   if(flipTargetSignOnNegScalarProduct) if(scalarProduct(y0, y1)<-.0) { y0 *= -1.;  if(!!J) Jy0 *= -1.; }
@@ -76,7 +76,7 @@ void Feature::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
 #if 1 //feature itself does not care for tau!!! use specialized features, e.g. linVel, angVel
   if(Ctuple(-1)->hasTauJoint()) {
     double tau; arr Jtau;
-    Ctuple(-1)->kinematicsTau(tau, (!!J?Jtau:NoArr));
+    Ctuple(-1)->kinematicsTau(tau, Jtau);
     CHECK_GE(tau, 1e-10, "");
     y /= tau;
     if(!!J) {
@@ -109,6 +109,7 @@ void Feature::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
 
 VectorFunction Feature::vf(rai::Configuration& C) { ///< direct conversion to vector function: use to check gradient or evaluate
   return [this, &C](arr& y, arr& J, const arr& x) -> void {
+    C.setJacModeAs(J);
     C.setJointState(x);
     phi(y, J, C);
   };
@@ -118,8 +119,10 @@ VectorFunction Feature::vf(ConfigurationL& Ctuple) { ///< direct conversion to v
   return [this, &Ctuple](arr& y, arr& J, const arr& x) -> void {
     uintA qdim = getKtupleDim(Ctuple);
     qdim.prepend(0);
-    for(uint i=0; i<Ctuple.N; i++)
+    for(uint i=0; i<Ctuple.N; i++){
+      Ctuple(i)->setJacModeAs(J);
       Ctuple(i)->setJointState(x({qdim(i), qdim(i+1)-1}));
+    }
     phi(y, J, Ctuple);
   };
 }

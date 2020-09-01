@@ -182,7 +182,7 @@ void F_qItself::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
   }
   for(uint i=0; i<=k; i++) {
     if(!!J && isSparseMatrix(J)) J_bar(i).sparse();
-    phi(q_bar(i), (!!J?J_bar(i):NoArr), *Ctuple(offset+i));
+    phi(q_bar(i), J_bar(i), *Ctuple(offset+i));
   }
   frameIDs = selectedBodies_org;
 

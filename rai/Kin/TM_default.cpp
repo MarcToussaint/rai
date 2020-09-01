@@ -118,7 +118,7 @@ void TM_Default::phi(arr& y, arr& J, const rai::Configuration& C) {
       y -= conv_vec2arr(vec_j);
     } else {
       arr y2, J2;
-      C.kinematicsPos(y2, (!!J?J2:NoArr), b, vec_j);
+      C.kinematicsPos(y2, J2, b, vec_j);
       y -= y2;
       if(!!J) J -= J2;
     }
@@ -243,10 +243,8 @@ void TM_Default::phi(arr& y, arr& J, const rai::Configuration& C) {
       quat_concat(y, Jya, Jyb, ainv, qb);
       if(qa(0)!=1.) for(uint i=0; i<Jya.d0; i++) Jya(i, 0) *= -1.;
 
-      if(!!J) {
-        J = Jya * Ja + Jyb * Jb;
-        checkNan(J);
-      }
+      J = Jya * Ja + Jyb * Jb;
+      checkNan(J);
     }
     return;
   }
@@ -261,10 +259,10 @@ void TM_Default::phi(arr& y, arr& J, const rai::Configuration& C) {
       C.kinematicsQuat(y2, J2, b);
       if(scalarProduct(y, y2)>=0.) {
         y -= y2;
-        if(!!J) J -= J2;
+        J -= J2;
       } else {
         y += y2;
-        if(!!J) J += J2;
+        J += J2;
       }
     }
     return;
@@ -276,7 +274,7 @@ void TM_Default::phi(arr& y, arr& J, const rai::Configuration& C) {
     tmp.type = TMT_pos;
     tmp.phi(y, J, C);
     tmp.type = TMT_quat;
-    tmp.phi(yq, (!!J?Jq:NoArr), C);
+    tmp.phi(yq, Jq, C);
     y.append(yq);
     if(!!J) J.append(Jq);
     return;
@@ -288,7 +286,7 @@ void TM_Default::phi(arr& y, arr& J, const rai::Configuration& C) {
     tmp.type = TMT_posDiff;
     tmp.phi(y, J, C);
     tmp.type = TMT_quatDiff;
-    tmp.phi(yq, (!!J?Jq:NoArr), C);
+    tmp.phi(yq, Jq, C);
     y.append(yq);
     if(!!J) J.append(Jq);
     return;

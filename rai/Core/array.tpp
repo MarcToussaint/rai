@@ -1292,7 +1292,10 @@ template<class T> rai::Array<T>& rai::Array<T>::operator=(const rai::Array<T>& a
     } else if(isSparseMatrix(a)) {
       CHECK(typeid(T) == typeid(double), "");
       special = new SparseMatrix(*((arr*)this), *dynamic_cast<SparseMatrix*>(a.special));
+    } else if(isNoArr(a)){
+      setNoArr();
     } else NIY;
+
   }
   return *this;
 }
@@ -1314,9 +1317,21 @@ template<class T> void rai::Array<T>::setZero(byte zero) {
 template<class T> rai::Array<T> catCol(const rai::Array<rai::Array<T>*>& X) {
   uint d0=X(0)->d0, d1=0;
   for(rai::Array<T>* x:X) { CHECK((x->nd==2 || x->nd==1) && x->d0==d0, ""); d1+=x->nd==2?x->d1:1; }
-  rai::Array<T> z(d0, d1);
-  d1=0;
-  for(rai::Array<T>* x:  X) { z.setMatrixBlock(*x, 0, d1); d1+=x->nd==2?x->d1:1; }
+  rai::Array<T> z;
+  if(X.first()->isSparse()){
+      z.sparse().resize(d0, d1, 0);
+      d1=0;
+      for(rai::Array<T>* x:  X) {
+          CHECK(x->isSparse(), "");
+          CHECK(x->nd==2,"");
+          z.sparse().add(x->sparse(), 0, d1);
+          d1+=x->d1;
+      }
+  }else{
+      z.resize(d0, d1);
+      d1=0;
+      for(rai::Array<T>* x:  X) { z.setMatrixBlock(*x, 0, d1); d1+=x->nd==2?x->d1:1; }
+  }
   return z;
 }
 
@@ -1371,6 +1386,33 @@ template<class T> void rai::Array<T>::setBlockMatrix(const rai::Array<T>& A, con
   setMatrixBlock(B,  0, A.d1);
   setMatrixBlock(C, A.d0, 0);
   setMatrixBlock(D, A.d0, A.d1);
+  /*
+  for(i=0;i<A.d0;i++) for(j=0;j<A.d1;j++) operator()(i  , j  )=A(i, j);
+  for(i=0;i<B.d0;i++) for(j=0;j<B.d1;j++) operator()(i  , j+b)=B(i, j);
+  for(i=0;i<C.d0;i++) for(j=0;j<C.d1;j++) operator()(i+a, j  )=C(i, j);
+  for(i=0;i<D.d0;i++) for(j=0;j<D.d1;j++) operator()(i+a, j+b)=D(i, j);*/
+}
+
+/// constructs the block matrix X=[A; B]
+template<class T> void rai::Array<T>::setBlockMatrix(const rai::Array<T>& A, const rai::Array<T>& B) {
+  if(!isSpecial(A)){
+    CHECK(A.nd==2 && B.nd==2, "");
+    CHECK(A.d1==B.d1, "");
+    resize(A.d0+B.d0, A.d1);
+    setMatrixBlock(A,  0, 0);
+    setMatrixBlock(B, A.d0, 0);
+  }else{
+    if(A.isSparse()){
+      CHECK(B.isSparse(), "");
+      CHECK(A.d1==B.d1, "");
+      sparse().resize(A.d0+B.d0, A.d1, 0);
+      sparse().add(A.sparse(), 0, 0);
+      sparse().add(B.sparse(), A.d0, 0);
+    } else if(isNoArr(A)){
+      CHECK(isNoArr(B), "");
+      setNoArr();
+    } else NIY;
+  }
   /*
   for(i=0;i<A.d0;i++) for(j=0;j<A.d1;j++) operator()(i  , j  )=A(i, j);
   for(i=0;i<B.d0;i++) for(j=0;j<B.d1;j++) operator()(i  , j+b)=B(i, j);
@@ -2661,6 +2703,7 @@ template<class T> T product(const rai::Array<T>& v) {
   \f$\forall_{i}:~ x_{i} = \sum_j v_{ij}\, w_{j}\f$*/
 template<class T>
 void innerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>& z) {
+  if(!y || !z){ x.setNoArr(); return; }
   /*
     if(y.nd==2 && z.nd==2 && y.N==z.N && y.d1==1 && z.d1==1){  //elem-wise
     HALT("make element-wise multiplication explicite!");
@@ -2699,11 +2742,10 @@ void innerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>&
       return;
     }
 #endif
-    if(rai::useLapack && typeid(T)==typeid(double)) {
-      if(isSparseMatrix(y)) { x = dynamic_cast<const rai::SparseMatrix*>(y.special)->A_B(z); return; }
-      if(isSparseMatrix(z)) { x = dynamic_cast<const rai::SparseMatrix*>(z.special)->B_A(y); return; }
-      blas_MM(x, y, z);
-      return;
+    if(typeid(T)==typeid(double)) {
+      if(isSparseMatrix(y)) { x = y.sparse().A_B(z); return; }
+      if(isSparseMatrix(z)) { x = z.sparse().B_A(y); return; }
+      if(rai::useLapack){ blas_MM(x, y, z); return; }
     }
     T* a, *astop, *b, *c;
     x.resize(d0, d1); x.setZero();
@@ -2724,6 +2766,12 @@ void innerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>&
     return;
   }
   if(y.nd==1 && z.nd==2 && z.d0==1) {  //vector x vector^T -> matrix (outer product)
+    if(typeid(T)==typeid(double)) {
+      arr _y;
+      _y.referTo(y);
+      _y.reshape(y.N, 1);
+      if(z.isSparse()) { x = z.sparse().B_A(_y); return; }
+    }
     uint i, j, d0=y.d0, d1=z.d1;
     x.resize(d0, d1);
     for(i=0; i<d0; i++) for(j=0; j<d1; j++) x(i, j)=y(i)*z(0, j);
@@ -2867,6 +2915,7 @@ void indexWiseProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array
   x_{ijk} = v_{ij}\, w_{k}\f$ */
 template<class T>
 rai::Array<T> crossProduct(const rai::Array<T>& y, const rai::Array<T>& z) {
+  if(isNoArr(y)) return NoArr;
   if(y.nd==1 && z.nd==1) {
     CHECK(y.N==3 && z.N==3, "cross product only works for 3D vectors!");
     rai::Array<T> x(3);
@@ -2877,28 +2926,7 @@ rai::Array<T> crossProduct(const rai::Array<T>& y, const rai::Array<T>& z) {
   }
   if(y.nd==2 && z.nd==1) { //every COLUMN of y is cross-product'd with z!
     CHECK(y.d0==3 && z.N==3, "cross product only works for 3D vectors!");
-#if 1
     return skew(-z) * y;
-#elif 0
-    rai::Array<T> x(3, y.d1);
-    for(uint i=0; i<y.d1; i++) {
-      x(0, i)=y(1, i)*z(2)-y(2, i)*z(1);
-      x(1, i)=y(2, i)*z(0)-y(0, i)*z(2);
-      x(2, i)=y(0, i)*z(1)-y(1, i)*z(0);
-    }
-    return x;
-#else
-    rai::Array<T> x(y.d1, 3);
-    rai::Array<T> yt = ~y;
-    double* xp, *yp, *zp=z.p;
-    for(uint i=0; i<y.d1; i++) {
-      xp = &x(i, 0); yp = &yt(i, 0);
-      xp[0]=yp[1]*zp[2]-yp[2]*zp[1];
-      xp[1]=yp[2]*zp[0]-yp[0]*zp[2];
-      xp[2]=yp[0]*zp[1]-yp[1]*zp[0];
-    }
-    return ~x;
-#endif
   }
   HALT("cross product - not yet implemented for these dimensions");
 }
@@ -3686,6 +3714,7 @@ template<class T> Array<T> operator%(const Array<T>& y, const Array<T>& z) { Arr
 
 #define UpdateOperator( op )        \
   template<class T> Array<T>& operator op (Array<T>& x, const Array<T>& y){ \
+    if(isNoArr(x)){ return x; } \
     if(isSparseMatrix(x) && isSparseMatrix(y)){ x.sparse() op y.sparse(); return x; }  \
     CHECK(!isSpecial(x), "");  \
     CHECK_EQ(x.N, y.N, "binary operator on different array dimensions (" <<x.N <<", " <<y.N <<")"); \
@@ -3696,6 +3725,7 @@ template<class T> Array<T> operator%(const Array<T>& y, const Array<T>& z) { Arr
   }                 \
   \
   template<class T> Array<T>& operator op (Array<T>& x, T y ){ \
+    if(isNoArr(x)){ return x; } \
     if(isSparseMatrix(x)){ x.sparse() op y; return x; }  \
     CHECK(!isSpecial(x), "");  \
     T *xp=x.p, *xstop=xp+x.N;              \
@@ -3704,6 +3734,7 @@ template<class T> Array<T> operator%(const Array<T>& y, const Array<T>& z) { Arr
   } \
   \
   template<class T> void operator op (Array<T>&& x, const Array<T>& y){ \
+    if(isNoArr(x)){ return; } \
     if(isSparseMatrix(x) && isSparseMatrix(y)){ x.sparse() op y.sparse(); return; }  \
     CHECK(!isSpecial(x), "");  \
     CHECK_EQ(x.N, y.N, "binary operator on different array dimensions (" <<x.N <<", " <<y.N <<")"); \
@@ -3713,6 +3744,7 @@ template<class T> Array<T> operator%(const Array<T>& y, const Array<T>& z) { Arr
   }                 \
   \
   template<class T> void operator op (Array<T>&& x, T y ){ \
+    if(isNoArr(x)){ return; } \
     if(isSparseMatrix(x)){ x.sparse() op y; return; }  \
     CHECK(!isSpecial(x), "");  \
     T *xp=x.p, *xstop=xp+x.N;              \

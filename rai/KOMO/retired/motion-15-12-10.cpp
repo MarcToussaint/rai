@@ -20,7 +20,7 @@ void Feature::phi(arr& y, arr& J, const ConfigurationL& G, double tau, int t) {
   uint k=order;
   if(k==0) { // basic case: order=0
     arr J_bar;
-    phi(y, (!!J?J_bar:NoArr), *G.last(), t);
+    phi(y, J_bar, *G.last(), t);
     if(!!J) {
       J = zeros(G.N, y.N, J_bar.d1);
       J[G.N-1]() = J_bar;
@@ -36,7 +36,7 @@ void Feature::phi(arr& y, arr& J, const ConfigurationL& G, double tau, int t) {
   J_bar.resize(k+1);
   //-- read out the task variable from the k+1 configurations
   for(uint i=0; i<=k; i++)
-    phi(y_bar(i), (!!J?J_bar(i):NoArr), *G(G.N-1-i), t-i);
+    phi(y_bar(i), J_bar(i), *G(G.N-1-i), t-i);
   if(k==1)  y = (y_bar(0)-y_bar(1))/tau; //penalize velocity
   if(k==2)  y = (y_bar(0)-2.*y_bar(1)+y_bar(2))/tau2; //penalize acceleration
   if(k==3)  y = (y_bar(0)-3.*y_bar(1)+3.*y_bar(2)-y_bar(3))/tau3; //penalize jerk
@@ -422,7 +422,7 @@ bool KOMO::getPhi(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, const Configurat
   arr y, Jy;
   bool ineqHold=true;
   for(Task* c: tasks) if(c->active && c->prec.N>t && c->prec(t)) {
-      c->feat.phi(y, (!!J?Jy:NoArr), G, tau, t);
+      c->feat.phi(y, Jy, G, tau, t);
       if(absMax(y)>1e10) RAI_MSG("WARNING y=" <<y);
       //linear transform (target shift)
       if(true) {
@@ -796,9 +796,9 @@ void MotionProblemFunction::phi_t(arr& phi, arr& J, ObjectiveTypeA& tt, uint t, 
   arr _phi, _J;
   ObjectiveTypeA _tt;
 #ifdef NEWCODE
-  MP.getPhi(_phi, (!!J?_J:NoArr), (!!tt?_tt:NoTermTypeA), t, MP.configurations({t, t+k}), MP.tau);
+  MP.getPhi(_phi, _J, (!!tt?_tt:NoTermTypeA), t, MP.configurations({t, t+k}), MP.tau);
 #else
-  MP.getPhi(_phi, (!!J?_J:NoArr), (!!tt?_tt:NoTermTypeA), t, MP.configurations, MP.tau);
+  MP.getPhi(_phi, _J, (!!tt?_tt:NoTermTypeA), t, MP.configurations, MP.tau);
 #endif
   phi.append(_phi);
   if(!!tt) tt.append(_tt);

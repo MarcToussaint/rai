@@ -99,7 +99,7 @@ void Conv_FactoredNLP_BandedNLP::evaluate(arr& phi, arr& J, const arr& x) {
     uint d = featureDimensions(i);
     if(d) {
       phi_i.referToRange(phi, featDimIntegral(i), featDimIntegral(i)+d-1);
-      P.evaluateSingleFeature(i, phi_i, (!!J?J_i(i):NoArr), NoArr);
+      P.evaluateSingleFeature(i, phi_i, J_i(i), NoArr);
       CHECK_EQ(phi_i.N, d, "");
       if(!!J) CHECK_EQ(J_i.elem(i).d0, d, "");
     }

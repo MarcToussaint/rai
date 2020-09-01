@@ -73,7 +73,9 @@ struct Configuration : GLDrawer {
   bool _state_proxies_isGood=false; // the proxies have been created for the current state
   //TODO: need a _state for all the plugin engines (SWIFT, PhysX)? To auto-reinitialize them when the config changed structurally?
 
-  bool useSparseJacobians=false;
+  enum JacobianMode { JM_dense, JM_sparse, JM_noArr, JM_emptyShape };
+  JacobianMode jacMode = JM_dense;
+
   int xIndex=0;   // the start-index of this configuration in a larger decision variable x (e.g. if x is a path of configurations) (analogous to qIndex of a joint)
 
   static uint setJointStateCount;
@@ -221,6 +223,8 @@ struct Configuration : GLDrawer {
   void kinematicsProxyCost(arr& y, arr& J, double margin=.0) const;
 
   void kinematicsLimitsCost(arr& y, arr& J, const arr& limits, double margin=.1) const;
+
+  void setJacModeAs(const arr& J);
 
   /// @name features
   shared_ptr<Feature> feature(FeatureSymbol fs, const StringA& frames= {}) const;

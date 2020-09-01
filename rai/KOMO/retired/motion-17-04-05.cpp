@@ -283,7 +283,7 @@ void KOMO::phi_t(arr& phi, arr& J, ObjectiveTypeA& tt, uint t) {
   arr y, Jy, Jtmp;
   uint dimPhi_t=0;
   for(Task* task: tasks) if(task->prec.N>t && task->prec(t)) {
-      task->feat->phi(y, (!!J?Jy:NoArr), configurations({t, t+k_order}), tau, t);
+      task->feat->phi(y, Jy, configurations({t, t+k_order}), tau, t);
       if(!y.N) continue;
       dimPhi_t += y.N;
       if(absMax(y)>1e10) RAI_MSG("WARNING y=" <<y);
@@ -577,7 +577,7 @@ void KOMO::Conv_MotionProblem_KOMO_Problem::phi(arr& phi, arrA& J, arrA& H, Obje
   uint M=0;
   for(uint t=0; t<MP.T; t++) {
     for(Task* task: MP.tasks) if(task->prec.N>t && task->prec(t)) {
-        task->feat->phi(y, (!!J?Jy:NoArr), MP.configurations({t, t+MP.k_order}), MP.tau, t);
+        task->feat->phi(y, Jy, MP.configurations({t, t+MP.k_order}), MP.tau, t);
         if(!y.N) continue;
         if(absMax(y)>1e10) RAI_MSG("WARNING y=" <<y);
 

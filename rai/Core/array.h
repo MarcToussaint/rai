@@ -155,6 +155,7 @@ template<class T> struct Array : std::vector<T>, Serializable {
   void setMatrixBlock(const Array<T>& B, uint lo0, uint lo1);
   //TODO setTensorBlock(const Array<T>& B, const Array<uint>& lo);
   void setBlockMatrix(const Array<T>& A, const Array<T>& B, const Array<T>& C, const Array<T>& D);
+  void setBlockMatrix(const Array<T>& A, const Array<T>& B);
   void setBlockVector(const Array<T>& a, const Array<T>& b);
   void setStraightPerm(int n=-1);
   void setReversePerm(int n=-1);
@@ -888,7 +889,7 @@ arr eigen_Ainv_b(const arr& A, const arr& b);
 /// @{
 
 struct SpecialArray {
-  enum Type { ST_none, ST_NoArr, hasCarrayST, sparseVectorST, sparseMatrixST, diagST, RowShiftedST, CpointerST };
+  enum Type { ST_none, ST_NoArr, ST_EmptyShape, hasCarrayST, sparseVectorST, sparseMatrixST, diagST, RowShiftedST, CpointerST };
   Type type;
   SpecialArray(Type _type=ST_none) : type(_type) {}
   virtual ~SpecialArray() {}
@@ -898,6 +899,7 @@ namespace rai {
 
 template<class T> bool isSpecial(const Array<T>& X)      { return X.special && X.special->type!=SpecialArray::ST_none; }
 template<class T> bool isNoArr(const Array<T>& X)        { return X.special && X.special->type==SpecialArray::ST_NoArr; }
+template<class T> bool isEmptyShape(const Array<T>& X)   { return X.special && X.special->type==SpecialArray::ST_EmptyShape; }
 template<class T> bool isRowShifted(const Array<T>& X)   { return X.special && X.special->type==SpecialArray::RowShiftedST; }
 template<class T> bool isSparseMatrix(const Array<T>& X) { return X.special && X.special->type==SpecialArray::sparseMatrixST; }
 template<class T> bool isSparseVector(const Array<T>& X) { return X.special && X.special->type==SpecialArray::sparseVectorST; }
@@ -971,7 +973,7 @@ struct SparseMatrix : SpecialArray {
   arr B_A(const arr& B) const;
   void transpose();
   void rowWiseMult(const arr& a);
-  void add(const SparseMatrix& a, double coeff=1.);
+  void add(const SparseMatrix& a, uint lo0=0, uint lo1=0, double coeff=1.);
   arr unsparse();
 };
 

@@ -24,16 +24,6 @@ void F_netForce::phi(arr& y, arr& J, const rai::Configuration& C) {
   arr force = zeros(3);
   arr torque = zeros(3);
   arr Jforce, Jtorque;
-  if(!!J) {
-    uint n = C.getJointStateDimension();
-    if(!C.useSparseJacobians) {
-      Jforce.resize(3, n).setZero();
-      Jtorque.resize(3, n).setZero();
-    } else {
-      Jforce.sparse().resize(3, n, 0);
-      Jtorque.sparse().resize(3, n, 0);
-    }
-  }
 
   if(gravity) {
     double mass=.1;
@@ -81,30 +71,22 @@ void F_netForce::phi(arr& y, arr& J, const rai::Configuration& C) {
     force -= sign * con->force;
     if(!transOnly) torque += sign * crossProduct(poa-p, con->force);
 
-    if(!!J) {
-      Jforce -= sign * Jf;
-      if(!transOnly) Jtorque += sign * (skew(poa-p) * Jf - skew(con->force) * (Jpoa-Jp));
+    if(!Jforce.nd){ Jforce = -sign * Jf; }
+    else{ Jforce -= sign * Jf; }
+
+    if(!transOnly){
+      arr tmp = sign * (skew(poa-p) * Jf - skew(con->force) * (Jpoa-Jp));
+      if(!Jtorque.nd) Jtorque = tmp;
+      else Jtorque += tmp;
     }
   }
 
-  if(!transOnly) y.resize(6).setZero();
-  else y.resize(3).setZero();
-  y.setVectorBlock(force, 0);
-  if(!transOnly) y.setVectorBlock(torque, 3);
-
-  if(!!J) {
-    if(!C.useSparseJacobians) {
-      J.resize(y.N, Jforce.d1).setZero();
-      J.setMatrixBlock(Jforce, 0, 0);
-      if(!transOnly) J.setMatrixBlock(Jtorque, 3, 0);
-    } else {
-      J.sparse().resize(y.N, Jforce.d1, 0);
-      Jforce.sparse().reshape(6, Jtorque.d1);
-      J += Jforce;
-      Jtorque.sparse().reshape(6, Jtorque.d1);
-      Jtorque.sparse().colShift(3);
-      J += Jtorque;
-    }
+  if(!transOnly){
+    y.setBlockVector(force, torque);
+    J.setBlockMatrix(Jforce, Jtorque);
+  }else{
+    y=force;
+    J=Jforce;
   }
 }
 

@@ -2693,7 +2693,7 @@ void KOMO::Conv_KOMO_KOMOProblem_toBeRetired::phi(arr& phi, arrA& J, arrA& H, ui
       ptr<Objective> task = komo.objectives.elem(i);
       if(task->isActive(t)) {
         //query the task map and check dimensionalities of returns
-        task->feat->__phi(y, (!!J?Jy:NoArr), Ktuple);
+        task->feat->__phi(y, Jy, Ktuple);
 //        uint m = task->feat->__dim_phi(Ktuple);
 //        CHECK_EQ(m,y.N,"");
         if(!!J) CHECK_EQ(y.N, Jy.d0, "");
@@ -2768,9 +2768,9 @@ void KOMO::Conv_KOMO_SparseNonfactored::evaluate(arr& phi, arr& J, const arr& x)
 
       //query the task map and check dimensionalities of returns
 #ifdef KOMO_PATH_CONFIG
-      ob->feat->__phi2(y, (!!J?Jy:NoArr), ob->frames);
+      ob->feat->__phi2(y, Jy, ob->frames);
 #else
-      ob->feat->__phi(y, (!!J?Jy:NoArr), Ktuple);
+      ob->feat->__phi(y, Jy, Ktuple);
 #endif
       if(!!J) CHECK_EQ(y.N, Jy.d0, "");
       if(!y.N) continue;
@@ -3106,7 +3106,7 @@ void KOMO::Conv_KOMO_GraphProblem_toBeRetired::phi(arr& phi, arrA& J, arrA& H, c
       kdim.prepend(0);
 
       //query the task map and check dimensionalities of returns
-      ob->feat->__phi(y, (!!J?Jy:NoArr), Ktuple);
+      ob->feat->__phi(y, Jy, Ktuple);
       if(!!J) CHECK_EQ(y.N, Jy.d0, "");
       if(!!J) CHECK_EQ(Jy.nd, 2, "");
       if(!!J) CHECK_EQ(Jy.d1, kdim.last(), "");
@@ -3175,7 +3175,7 @@ void KOMO::Conv_KOMO_GraphProblem_toBeRetired::getPartialPhi(arr& phi, arrA& J, 
         kdim.prepend(0);
 
         //query the task map and check dimensionalities of returns
-        ob->feat->__phi(y, (!!J?Jy:NoArr), Ktuple);
+        ob->feat->__phi(y, Jy, Ktuple);
         if(!!J && isSpecial(Jy)) Jy = unpack(Jy);
 
         if(!!J) CHECK_EQ(y.N, Jy.d0, "");
@@ -3224,9 +3224,9 @@ void KOMO::Conv_KOMO_FactoredNLP::evaluateSingleFeature(uint feat_id, arr& phi, 
 
   arr Jy;
 #ifdef KOMO_PATH_CONFIG
-  F.ob->feat->__phi2(phi, (!!J?Jy:NoArr), F.ob->frames);
+  F.ob->feat->__phi2(phi, Jy, F.ob->frames);
 #else
-  F.ob->feat->__phi(phi, (!!J?Jy:NoArr), F.Ctuple);
+  F.ob->feat->__phi(phi, Jy, F.Ctuple);
 #endif
   CHECK_EQ(phi.N, F.dim, "");
 
@@ -3292,7 +3292,7 @@ void KOMO::Conv_KOMO_FactoredNLP::evaluateSingleFeature(uint feat_id, arr& phi, 
 
         //query the task map and check dimensionalities of returns
         arr Jy;
-        ob->feat->__phi(phi, (!!J?Jy:NoArr), Ktuple);
+        ob->feat->__phi(phi, Jy, Ktuple);
         if(!!J && isSpecial(Jy)) Jy = unpack(Jy);
 
         if(!!J) CHECK_EQ(phi.N, Jy.d0, "");
@@ -3489,7 +3489,7 @@ void KOMO::Conv_KOMO_FineStructuredProblem::getFactorization(uintA& variableDime
     if(!F.dim) continue;
 
 #if 1 //simpler and more direct
-    F.ob->feat->__phi(y, (!!J?Jy:NoArr), F.Ctuple);
+    F.ob->feat->__phi(y, Jy, F.Ctuple);
     CHECK_EQ(y.N, F.dim, "");
     if(!!J) CHECK_EQ(y.N, Jy.d0, "");
     if(!!J) CHECK_EQ(Jy.nd, 2, "");
@@ -3516,7 +3516,7 @@ void KOMO::Conv_KOMO_FineStructuredProblem::getFactorization(uintA& variableDime
       }
     }
 #else //calling the single features, then converting back to sparse... just for checking..
-    evaluateSingleFeature(f, y, (!!J?Jy:NoArr), NoArr);
+    evaluateSingleFeature(f, y, Jy, NoArr);
     phi.setVectorBlock(y, M);
     if(!!J) {
       CHECK(!isSpecial(Jy), "");
@@ -3687,7 +3687,7 @@ void KOMO::TimeSliceProblem::evaluate(arr& phi, arr& J, const arr& x) {
       kdim.prepend(0);
 
       //query the task map and check dimensionalities of returns
-      ob->feat->__phi(y, (!!J?Jy:NoArr), Ktuple);
+      ob->feat->__phi(y, Jy, Ktuple);
       if(!!J) CHECK_EQ(y.N, Jy.d0, "");
       if(!!J) CHECK_EQ(Jy.nd, 2, "");
       if(!!J) CHECK_EQ(Jy.d1, kdim.last(), "");

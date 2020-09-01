@@ -13,11 +13,11 @@
 
 void F_Position::phi2(arr& y, arr& J, const FrameL& F) {
   if(order>0){  Feature::phi2(y, J, F);  return;  }
-  CHECK_EQ(F.N, 1, "")
-      rai::Frame *f = F.elem(0);
+  CHECK_EQ(F.N, 1, "");
+  rai::Frame *f = F.elem(0);
   rai::Vector p = f->ensure_X().pos;
   y = p.getArr();
-  if(!!J) f->C.jacobian_pos(J, f, p);
+  f->C.jacobian_pos(J, f, p);
 }
 
 //===========================================================================
@@ -76,18 +76,13 @@ void F_Pose::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
   TM_Default tmp(TMT_pos, a);
   tmp.order = order;
   tmp.type = TMT_pos;
-  tmp.Feature::__phi(yp, (!!J?Jp:NoArr), Ctuple);
+  tmp.Feature::__phi(yp, Jp, Ctuple);
   tmp.type = TMT_quat;
   tmp.flipTargetSignOnNegScalarProduct=true;
-  tmp.Feature::__phi(yq, (!!J?Jq:NoArr), Ctuple);
-  y.resize(yp.N+yq.N);
-  y.setVectorBlock(yp, 0);
-  y.setVectorBlock(yq, 3);
-  if(!!J) {
-    J.resize(y.N, Jp.d1);
-    J.setMatrixBlock(Jp, 0, 0);
-    J.setMatrixBlock(Jq, 3, 0);
-  }
+  tmp.Feature::__phi(yq, Jq, Ctuple);
+
+  y.setBlockVector(yp, yq);
+  J.setBlockMatrix(Jp, Jq);
 #else //should be identical
   if(order==2) {
     arr p0, p1, p2, J0, J1, J2;
@@ -154,18 +149,13 @@ void F_PoseDiff::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
   TM_Default tmp(TMT_posDiff, a, NoVector, b, NoVector);
   tmp.order = order;
   tmp.type = TMT_posDiff;
-  tmp.Feature::__phi(yp, (!!J?Jp:NoArr), Ctuple);
+  tmp.Feature::__phi(yp, Jp, Ctuple);
   tmp.type = TMT_quatDiff;
   tmp.flipTargetSignOnNegScalarProduct=true;
-  tmp.Feature::__phi(yq, (!!J?Jq:NoArr), Ctuple);
-  y.resize(yp.N+yq.N);
-  y.setVectorBlock(yp, 0);
-  y.setVectorBlock(yq, 3);
-  if(!!J) {
-    J.resize(y.N, Jp.d1);
-    J.setMatrixBlock(Jp, 0, 0);
-    J.setMatrixBlock(Jq, 3, 0);
-  }
+  tmp.Feature::__phi(yq, Jq, Ctuple);
+
+  y.setBlockVector(yp, yq);
+  J.setBlockMatrix(Jp, Jq);
 }
 
 //===========================================================================
@@ -175,18 +165,13 @@ void F_PoseRel::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
   TM_Default tmp(TMT_pos, a, NoVector, b, NoVector);
   tmp.order = order;
   tmp.type = TMT_pos;
-  tmp.Feature::__phi(yp, (!!J?Jp:NoArr), Ctuple);
+  tmp.Feature::__phi(yp, Jp, Ctuple);
   tmp.type = TMT_quat;
   tmp.flipTargetSignOnNegScalarProduct=true;
-  tmp.Feature::__phi(yq, (!!J?Jq:NoArr), Ctuple);
-  y.resize(yp.N+yq.N);
-  y.setVectorBlock(yp, 0);
-  y.setVectorBlock(yq, 3);
-  if(!!J) {
-    J.resize(y.N, Jp.d1);
-    J.setMatrixBlock(Jp, 0, 0);
-    J.setMatrixBlock(Jq, 3, 0);
-  }
+  tmp.Feature::__phi(yq, Jq, Ctuple);
+
+  y.setBlockVector(yp, yq);
+  J.setBlockMatrix(Jp, Jq);
 }
 
 //===========================================================================

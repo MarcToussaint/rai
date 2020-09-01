@@ -103,7 +103,7 @@ void TM_Proxy::phi(arr& y, arr& J, const rai::Configuration& G) {
             break;
         }
         if(j<frameIDs.d0) {
-          G.kinematicsProxyCost(y[j](), (!!J?J[j]():NoArr), p, margin, true);
+          G.kinematicsProxyCost(y[j](), J[j](), p, margin, true);
 //          p.colorCode = 5;
         }
       }

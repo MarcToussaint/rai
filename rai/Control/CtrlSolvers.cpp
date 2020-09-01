@@ -626,7 +626,7 @@ void CtrlProblem_MathematicalProgram::evaluate(arr& phi, arr& J, const arr& x) {
     kdim.prepend(0);
 
     //query the task map and check dimensionalities of returns
-    ob->feat->__phi(y, (!!J?Jy:NoArr), Ctuple);
+    ob->feat->__phi(y, Jy, Ctuple);
     if(!!J) CHECK_EQ(y.N, Jy.d0, "");
     if(!!J) CHECK_EQ(Jy.nd, 2, "");
     if(!!J) CHECK_EQ(Jy.d1, kdim.last(), "");
