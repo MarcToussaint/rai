@@ -10,13 +10,11 @@
 #include "TM_default.h"
 #include "../Geo/geo.h"
 
-void angVel_base(const rai::Configuration& K0, rai::Configuration& K1, uint i, arr& y, arr& J) {
-  rai::Frame* f0 = K0.frames(i);
-  rai::Frame* f1 = K1.frames(i);
+void angVel_base(rai::Frame* f0, rai::Frame* f1, arr& y, arr& J) {
 
   arr a, b, y_tmp, Ja, Jb;
-  K0.kinematicsQuat(a, Ja, f0);
-  K1.kinematicsQuat(b, Jb, f1);
+  f0->C.kinematicsQuat(a, Ja, f0);
+  f1->C.kinematicsQuat(b, Jb, f1);
   arr J0, J1;
 //  quat_diffVector(y, J0, J1, a, b);
   if(scalarProduct(a, b)<0.) {
@@ -40,12 +38,37 @@ void angVel_base(const rai::Configuration& K0, rai::Configuration& K1, uint i, a
   checkNan(y);
 
   if(!!J && !!Ja) {
-    J = catCol((J1-J0)*Ja, J0*Jb);
+    if(&f0->C!=&f1->C){ //different configurations -> assume consecutive
+      J = catCol((J1-J0)*Ja, J0*Jb);
+    }else{//same configuration
+      J = (J1-J0)*Ja;
+      J += J0*Jb;
+    }
     checkNan(J);
   }else J.setNoArr();
 }
 
 //===========================================================================
+
+void TM_LinVel::phi2(arr& y, arr& J, const FrameL& F){
+  if(order>1){  Feature::phi2(y, J, F);  return;  }
+  CHECK_EQ(order, 1, "");
+  CHECK_EQ(F.d0, 2, "");
+  CHECK_EQ(F.d1, 1, "");
+  rai::Frame *f0 = F(0,0), *f1 = F(1,0);
+
+  CHECK_EQ(&f0->C, &f1->C, "");
+  arr a, b, Ja, Jb;
+  f0->C.kinematicsPos(a, Ja, f0);
+  f1->C.kinematicsPos(b, Jb, f1);
+  y = a-b;
+  J = Ja-Jb;
+
+  double tau = f0->C.frames(0)->tau;
+  CHECK_GE(tau, 1e-10, "");
+  y /= tau;
+  J /= tau;
+}
 
 void TM_LinVel::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   if(order==1) {
@@ -101,10 +124,26 @@ void TM_LinVel::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
 
 //===========================================================================
 
+void TM_AngVel::phi2(arr& y, arr& J, const FrameL& F){
+  if(order>1){  Feature::phi2(y, J, F);  return;  }
+  CHECK_EQ(order, 1, "");
+  CHECK_EQ(F.d0, 2, "");
+  CHECK_EQ(F.d1, 1, "");
+  rai::Frame *f0 = F(0,0), *f1 = F(1,0);
+
+  CHECK_EQ(&f0->C, &f1->C, "");
+  angVel_base(f0, f1, y, J);
+
+  double tau = f0->C.frames(0)->tau;
+  CHECK_GE(tau, 1e-10, "");
+  y /= tau;
+  J /= tau;
+}
+
 void TM_AngVel::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   if(order==1) {
     arr J_tmp;
-    angVel_base(*Ktuple(-2), *Ktuple(-1), i, y, J_tmp);
+    angVel_base(Ktuple(-2)->frames(i), Ktuple(-1)->frames(i), y, J_tmp);
 
     if(!!J_tmp) {
       if(Ktuple.N==3){
@@ -163,18 +202,37 @@ uint TM_AngVel::dim_phi(const rai::Configuration& G) { return 3; }
 //===========================================================================
 
 void TM_LinAngVel::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
-  TM_LinVel lin(i);
+  TM_LinVel lin(frameIDs.scalar());
   lin.order=order;
   lin.impulseInsteadOfAcceleration = impulseInsteadOfAcceleration;
   Value _lin = lin.eval(Ctuple);
 
-  TM_AngVel ang(i);
+  TM_AngVel ang(frameIDs.scalar());
   ang.order=order;
   ang.impulseInsteadOfAcceleration = impulseInsteadOfAcceleration;
   Value _ang = ang.eval(Ctuple);
 
   y.setBlockVector(_lin.y, _ang.y);
   J.setBlockMatrix(_lin.J, _ang.J);
+}
+
+
+void TM_LinAngVel::phi2(arr& y, arr& J, const FrameL& F) {
+
+  TM_LinVel lin(-1);
+  lin.order=order;
+  lin.impulseInsteadOfAcceleration = impulseInsteadOfAcceleration;
+  arr  yl, Jl;
+  lin.__phi2(yl, Jl, F);
+
+  TM_AngVel ang(-1);
+  ang.order=order;
+  ang.impulseInsteadOfAcceleration = impulseInsteadOfAcceleration;
+  arr ya, Ja;
+  ang.__phi2(ya, Ja, F);
+
+  y.setBlockVector(yl, ya);
+  J.setBlockMatrix(Jl, Ja);
 }
 
 uint TM_LinAngVel::dim_phi(const rai::Configuration& G) { return 6; }

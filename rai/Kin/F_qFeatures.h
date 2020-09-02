@@ -38,16 +38,16 @@ struct F_qItself : Feature {
 //===========================================================================
 
 struct F_qZeroVel : Feature {
-  int i;               ///< which frame/joint does it refer to?
   bool useChildFrame;
 
-  F_qZeroVel(int iShape=-1, bool _useChildFrame=false) : i(iShape), useChildFrame(_useChildFrame) { order=1; }
+  F_qZeroVel(int iShape, bool _useChildFrame=false) : useChildFrame(_useChildFrame) { frameIDs = TUP(iShape); order=1; }
   F_qZeroVel(const rai::Configuration& K, const char* iShapeName=nullptr, bool _useChildFrame=false) : F_qZeroVel(initIdArg(K, iShapeName), _useChildFrame) {}
 
   virtual void phi(arr& y, arr& J, const rai::Configuration& G) { NIY; }
   virtual void phi(arr& y, arr& J, const ConfigurationL& Ctuple);
+  virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi(const rai::Configuration& G);
-  virtual rai::String shortTag(const rai::Configuration& G) { return STRING("qZeroVel-" <<G.frames(i)->name); }
+  virtual rai::String shortTag(const rai::Configuration& G) { return STRING("qZeroVel"); }
 };
 
 //===========================================================================

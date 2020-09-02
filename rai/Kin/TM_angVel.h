@@ -19,6 +19,7 @@ struct TM_LinVel : Feature {
   TM_LinVel(int iShape=-1) : i(iShape) { order=1; }
   TM_LinVel(const rai::Configuration& K, const char* iShapeName=nullptr) : i(initIdArg(K, iShapeName)) { order=1; }
 
+  virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual void phi(arr& y, arr& J, const rai::Configuration& G) { NIY; }
   virtual void phi(arr& y, arr& J, const ConfigurationL& Ktuple);
   virtual uint dim_phi(const rai::Configuration& G) { return 3; }
@@ -34,6 +35,7 @@ struct TM_AngVel : Feature {
   TM_AngVel(int iShape=-1) : i(iShape) { order=1; }
   TM_AngVel(const rai::Configuration& K, const char* iShapeName=nullptr) : i(initIdArg(K, iShapeName)) { order=1; }
 
+  virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual void phi(arr& y, arr& J, const rai::Configuration& G) { NIY; }
   virtual void phi(arr& y, arr& J, const ConfigurationL& Ktuple);
   virtual uint dim_phi(const rai::Configuration& G);
@@ -43,16 +45,16 @@ struct TM_AngVel : Feature {
 //===========================================================================
 
 struct TM_LinAngVel : Feature {
-  int i;               ///< which shapes does it refer to?
   bool impulseInsteadOfAcceleration=false;
 
-  TM_LinAngVel(int iShape=-1) : i(iShape) { order=1; }
-  TM_LinAngVel(const rai::Configuration& K, const char* iShapeName=nullptr) : i(initIdArg(K, iShapeName)) { order=1; }
+  TM_LinAngVel(int iShape) { frameIDs=TUP(iShape); order=1; }
+  TM_LinAngVel(const rai::Configuration& K, const char* iShapeName) : TM_LinAngVel(initIdArg(K, iShapeName)) {}
 
   virtual void phi(arr& y, arr& J, const rai::Configuration& G) { NIY; }
-  virtual void phi(arr& y, arr& J, const ConfigurationL& Ktuple);
+  virtual void phi(arr& y, arr& J, const ConfigurationL& Ctuple);
+  virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi(const rai::Configuration& G);
-  virtual rai::String shortTag(const rai::Configuration& G) { return STRING("LinAngVel-" <<order <<'-' <<G.frames(i)->name); }
+  virtual rai::String shortTag(const rai::Configuration& G) { return STRING("LinAngVel"); }
 };
 
 //===========================================================================

@@ -139,6 +139,7 @@ struct KOMO : NonCopyable {
   arr featureValues;           ///< storage of all features in all time slices
   arrA featureJacobians;           ///< storage of all features in all time slices
   ObjectiveTypeA featureTypes; ///< storage of all feature-types in all time slices
+  StringA featureNames;
   ptr<struct OpenGL> gl;              ///< internal only: used in 'displayTrajectory'
   int verbose;                 ///< verbosity level
   int animateOptimization=0;   ///< display the current path for each evaluation during optimization
@@ -146,6 +147,7 @@ struct KOMO : NonCopyable {
   double timeCollisions=0., timeKinematics=0., timeNewton=0., timeFeatures=0.;
   uint set_xCount=0;
   ofstream* logFile=0;
+  bool usePathConfig=false;
 
   KOMO();
   ~KOMO();
@@ -316,6 +318,7 @@ struct KOMO : NonCopyable {
   void setupConfigurations2();
   void checkBounds(const arr& x);
   void retrospectApplySwitches(rai::Array<rai::KinematicSwitch*>& _switches);
+  void retrospectApplySwitches2();
   void retrospectChangeJointType(int startStep, int endStep, uint frameID, rai::JointType newJointType);
   void set_x(const arr& x, const uintA& selectedConfigurationsOnly=NoUintA);            ///< set the state trajectory of all configurations
   void set_x2(const arr& x, const uintA& selectedConfigurationsOnly=NoUintA);            ///< set the state trajectory of all configurations
@@ -343,11 +346,7 @@ struct KOMO : NonCopyable {
     struct VariableIndexEntry { uint t; uint dim; uint xIndex; };
     rai::Array<VariableIndexEntry> variableIndex;
 
-#ifdef RAI_NEW_FEATURES
-    struct FeatureIndexEntry { shared_ptr<GroundedObjective> ob; ConfigurationL Ctuple; uint t; intA varIds; uint dim; uint phiIndex; };
-#else
-    struct FeatureIndexEntry { shared_ptr<Objective> ob; ConfigurationL Ctuple; uint t; intA varIds; uint dim; uint phiIndex; };
-#endif
+    struct FeatureIndexEntry { shared_ptr<Objective> ob; shared_ptr<GroundedObjective> ob2; ConfigurationL Ctuple; uint t; intA varIds; uint dim; uint phiIndex; };
     rai::Array<FeatureIndexEntry> featureIndex;
 
     uintA xIndex2VarId;

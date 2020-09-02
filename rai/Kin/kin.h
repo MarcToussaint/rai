@@ -117,6 +117,7 @@ struct Configuration : GLDrawer {
   Joint* getJointByFrameNames(const char* from, const char* to) const;
   Joint* getJointByFrameIndices(uint ifrom, uint ito) const;
   uintA getQindicesByNames(const StringA& jointNames) const;
+  uintA getJointIDs() const;
   StringA getJointNames() const;
   StringA getFrameNames() const;
   uintA getNormalJointFramesAndScale(arr& scale=NoArr) const;

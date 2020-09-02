@@ -11,7 +11,11 @@
 //===========================================================================
 
 void Feature::phi2(arr& y, arr& J, const FrameL& F) {
-  CHECK(order>0, "phi needs to be implemented at least for order=0");
+  if(order==0){
+    phi(y, J, F.last()->C);
+    return;
+//    CHECK(order>0, "phi needs to be implemented at least for order=0");
+  }
 
   arr y0, y1, Jy0, Jy1;
   if(isSparseMatrix(J)){ Jy0.sparse(); Jy1.sparse(); }
@@ -49,7 +53,7 @@ void Feature::phi2(arr& y, arr& J, const FrameL& F) {
   if(tau) {
     CHECK_GE(tau, 1e-10, "");
     y /= tau;
-    if(!!J) J /= tau;
+    J /= tau;
   }
 #endif
 }

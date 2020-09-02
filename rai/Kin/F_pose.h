@@ -13,6 +13,7 @@
 //===========================================================================
 
 struct F_Position : Feature {
+  F_Position() {}
   F_Position(const uintA& _frameIDs, uint _order) : Feature(_frameIDs, _order) {}
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F) { return 3; }
@@ -22,6 +23,7 @@ struct F_Position : Feature {
 //===========================================================================
 
 struct F_PositionDiff : Feature {
+  F_PositionDiff() {}
   F_PositionDiff(const uintA& _frameIDs, uint _order) : Feature(_frameIDs, _order) {}
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F) { return 3; }
@@ -30,7 +32,41 @@ struct F_PositionDiff : Feature {
 
 //===========================================================================
 
+struct F_Vector : Feature {
+  rai::Vector vec;
+  F_Vector(const rai::Vector& _vec) : vec(_vec) {}
+//  F_Vector(const uintA& _frameIDs, uint _order) : Feature(_frameIDs, _order) {}
+  virtual void phi2(arr& y, arr& J, const FrameL& F);
+  virtual uint dim_phi2(const FrameL& F) { return 3; }
+  virtual rai::String shortTag(const rai::Configuration& C) { return STRING("F_Vector"); }
+};
+
+//===========================================================================
+
+struct F_VectorDiff : Feature {
+  rai::Vector vec1, vec2;
+  F_VectorDiff(const rai::Vector& _vec1, const rai::Vector& _vec2)  : vec1(_vec1), vec2(_vec2) {}
+//  F_VectorDiff(const uintA& _frameIDs, uint _order) : Feature(_frameIDs, _order) {}
+  virtual void phi2(arr& y, arr& J, const FrameL& F){ NIY }
+  virtual uint dim_phi2(const FrameL& F) { return 3; }
+  virtual rai::String shortTag(const rai::Configuration& C) { return STRING("F_VectorDiff"); }
+};
+
+//===========================================================================
+
+struct F_ScalarProduct : Feature {
+  rai::Vector vec1, vec2;
+  F_ScalarProduct(const rai::Vector& _vec1, const rai::Vector& _vec2)  : vec1(_vec1), vec2(_vec2) {}
+//  F_Vector(const uintA& _frameIDs, uint _order) : Feature(_frameIDs, _order) {}
+  virtual void phi2(arr& y, arr& J, const FrameL& F);
+  virtual uint dim_phi2(const FrameL& F) { return 1; }
+  virtual rai::String shortTag(const rai::Configuration& C) { return STRING("F_ScalarProduct"); }
+};
+
+//===========================================================================
+
 struct F_Quaternion : Feature {
+  F_Quaternion() {}
   F_Quaternion(const uintA& _frameIDs, uint _order) : Feature(_frameIDs, _order) { flipTargetSignOnNegScalarProduct=true; }
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F) { return 4; }
@@ -40,6 +76,7 @@ struct F_Quaternion : Feature {
 //===========================================================================
 
 struct F_QuaternionDiff : Feature {
+  F_QuaternionDiff() {}
   F_QuaternionDiff(const uintA& _frameIDs, uint _order) : Feature(_frameIDs, _order) { flipTargetSignOnNegScalarProduct=true; }
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F) { return 4; }

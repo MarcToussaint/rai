@@ -36,11 +36,12 @@ struct Feature {
 
  protected:
   virtual void phi2(arr& y, arr& J, const FrameL& F);
+  virtual uint dim_phi2(const FrameL& F) {  return dim_phi(F.last()->C); }
+
   virtual void phi(arr& y, arr& J, const rai::Configuration& C) { phi2(y, J, C.frames.sub(frameIDs)); }
   virtual void phi(arr& y, arr& J, const ConfigurationL& Ctuple); ///< if not overloaded this computes the generic pos/vel/acc depending on order
-  virtual uint dim_phi(const rai::Configuration& C) { HALT("one of the 'dim_phi' needs to be implemented!"); } ///< the dimensionality of $y$
+  virtual uint dim_phi(const rai::Configuration& C) { return dim_phi2(C.frames.sub(frameIDs)); }
   virtual uint dim_phi(const ConfigurationL& Ctuple) { return dim_phi(*Ctuple.last()); } ///< if not overloaded, returns dim_phi for last configuration
-  virtual uint dim_phi2(const FrameL& F) {  HALT("one of the 'dim_phi' needs to be implemented!"); }
 
  public:
   void __phi2(arr& y, arr& J, const FrameL& F) { phi2(y, J, F); applyLinearTrans(y, J); }

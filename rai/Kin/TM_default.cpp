@@ -179,7 +179,7 @@ void TM_Default::phi(arr& y, arr& J, const rai::Configuration& C) {
     y(0) = scalarProduct(zi, zj);
     if(!!J) {
       J = ~zj * Ji + ~zi * Jj;
-      J.reshape(1, C.getJointStateDimension());
+//      J.reshape(1, C.getJointStateDimension());
     }
     return;
   }

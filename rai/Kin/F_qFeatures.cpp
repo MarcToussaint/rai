@@ -17,7 +17,7 @@ F_qItself::F_qItself(bool relative_q0) : moduloTwoPi(true), relative_q0(relative
 F_qItself::F_qItself(PickMode pickMode, const StringA& picks, const rai::Configuration& C, bool relative_q0)
   : moduloTwoPi(true), relative_q0(relative_q0) {
   if(pickMode==allActiveJoints) {
-    for(rai::Frame* f: C.frames) if(f->joint && f->joint->active){
+    for(rai::Frame* f: C.frames) if(f->joint && f->joint->active && f->joint->dim!=0){
       frameIDs.append(f->ID);
       frameIDs.append(f->parent->ID);
     }
@@ -112,9 +112,9 @@ void F_qItself::phi2(arr& q, arr& J, const FrameL& F) {
     Feature::phi2(q, J, F);
     return;
   }
-  rai::Configuration& C = F.first()->C;
+  rai::Configuration& C = F.last()->C;
   CHECK(C._state_q_isGood, "");
-  uint n=dim_phi(C);
+  uint n=dim_phi2(F);
   q.resize(n);
   if(!!J) {
     if(!isSparseMatrix(J)) {
@@ -124,9 +124,9 @@ void F_qItself::phi2(arr& q, arr& J, const FrameL& F) {
     }
   }
   uint m=0;
-  FrameL FF;
-  FF.referTo(F);
-  FF.reshape(-1,2);
+  CHECK(F.d0==1, "");
+  FrameL FF = F[0];
+//  FF.reshape(-1,2);
   for(uint i=0; i<FF.d0; i++) {
     rai::Joint* j=0;
     bool flipSign=false;
@@ -220,14 +220,14 @@ void F_qItself::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
           qdim = jointMatchLists(s, i)->qDim();
           if(qdim) {
             q_bar_mapped(s).append(q_bar(s)({qidx, qidx+qdim-1}));
-            J_bar_mapped(s).append(J_bar(s)({qidx, qidx+qdim-1}));
+            if(!!J) J_bar_mapped(s).append(J_bar(s)({qidx, qidx+qdim-1}));
           }
         }
       }
     }
 
     q_bar = q_bar_mapped;
-    J_bar = J_bar_mapped;
+    if(!!J) J_bar = J_bar_mapped;
   }
 
   if(k==1)  y = (q_bar(1)-q_bar(0))/tau; //penalize velocity
@@ -270,7 +270,7 @@ uint F_qItself::dim_phi(const rai::Configuration& C) {
         rai::Frame* b = C.frames.elem(frameIDs(i, 1));
         if(a->parent==b) j=a->joint;
         else if(b->parent==a) j=b->joint;
-        else HALT("a and b are not linked");
+        else HALT("a (" <<a->name <<") and b (" <<b->name <<") are not linked");
         CHECK(j, "");
       }
       n += j->qDim();
@@ -296,7 +296,24 @@ uint F_qItself::dim_phi(const ConfigurationL& Ctuple) {
 }
 
 uint F_qItself::dim_phi2(const FrameL& F){
-  return dim_phi(F.last()->C);
+  uint m=0;
+  FrameL FF = F[0];
+  for(uint i=0; i<FF.d0; i++) {
+    rai::Joint* j=0;
+    if(FF.nd==1) {
+      rai::Frame* f = FF.elem(i);
+      j = f->joint;
+      CHECK(j, "selected frame " <<FF.elem(i) <<" ('" <<f->name <<"') is not a joint");
+    } else {
+      rai::Frame* a = FF(i, 0);
+      rai::Frame* b = FF(i, 1);
+      if(a->parent==b) j=a->joint;
+      else if(b->parent==a) j=b->joint;
+      CHECK(j, "a (" <<a->name <<") and b (" <<b->name <<") are not linked");
+    }
+    m += j->dim;
+  }
+  return m;
 }
 
 void F_qItself::signature(intA& S, const rai::Configuration& C) {
@@ -339,20 +356,20 @@ rai::String F_qItself::shortTag(const rai::Configuration& G) {
 extern bool isSwitched(rai::Frame* f0, rai::Frame* f1);
 
 void F_qZeroVel::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
-  rai::Frame* f = Ctuple(-1)->frames(i);
+  rai::Frame* f = Ctuple(-1)->frames(frameIDs.scalar());
   if(useChildFrame) {
     CHECK_EQ(f->children.N, 1, "this works only for a single child!");
     f = f->children.scalar();
   }
   if(!f->joint) {
-    HALT("shouldn't be here  " <<*Ctuple(-1)->frames(i));
+    HALT("shouldn't be here  " <<*f);
     y.resize(0).setZero();
     if(!!J) J.resize(0, getKtupleDim(Ctuple).last()).setZero();
     return;
   }
   if(order==1 && isSwitched(Ctuple(-1)->frames(f->ID), Ctuple(-2)->frames(f->ID))) {
     HALT("shouldn't be here");
-    y.resize(Ctuple(-1)->frames(i)->joint->dim).setZero();
+    y.resize(f->joint->dim).setZero();
     if(!!J) J.resize(y.N, getKtupleDim(Ctuple).last()).setZero();
     return;
   }
@@ -371,8 +388,25 @@ void F_qZeroVel::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
   }
 }
 
+void F_qZeroVel::phi2(arr& y, arr& J, const FrameL& F){
+  rai::Frame *f = F.last();
+  F_qItself q({}, false);
+  q.order=order;
+  q.Feature::__phi2(y, J, F);
+  if(f->joint->type==rai::JT_transXYPhi) {
+    arr s = ARR(10., 10., 1.);
+    y = s%y;
+    if(!!J) J = s%J;
+  }
+  if(f->joint->type==rai::JT_free) {
+    arr s = ARR(10., 10., 10., 1., 1., 1., 1.);
+    y = s%y;
+    if(!!J) J = s%J;
+  }
+}
+
 uint F_qZeroVel::dim_phi(const rai::Configuration& C) {
-  rai::Frame* f = C.frames(i);
+  rai::Frame* f = C.frames(frameIDs.scalar());
   if(useChildFrame) {
     CHECK_EQ(f->children.N, 1, "this works only for a single child!");
     f = f->children.scalar();

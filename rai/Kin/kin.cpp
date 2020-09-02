@@ -1608,6 +1608,14 @@ uintA rai::Configuration::getQindicesByNames(const StringA& jointNames) const {
   return Qidx;
 }
 
+uintA rai::Configuration::getJointIDs() const {
+  ((Configuration*)this)->ensure_indexedJoints();
+  uintA joints(getJointStateDimension());
+  uint i=0;
+  for(Joint* j:activeJoints) joints(i++) = j->frame->ID;
+  return joints;
+}
+
 StringA rai::Configuration::getJointNames() const {
   if(!q.nd)((Configuration*)this)->ensure_q();
   StringA names(getJointStateDimension());
@@ -2625,8 +2633,8 @@ void rai::Configuration::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, dou
   uint qd = getJointStateDimension();
   if(addValues){
     CHECK_EQ(y.N, 1, "");
-    CHECK_EQ(J.d0, 1, "");
-    CHECK_EQ(J.d1, qd, "");
+    if(!!J) CHECK_EQ(J.d0, 1, "");
+    if(!!J) CHECK_EQ(J.d1, qd, "");
   }else{
     y.resize(1).setZero();
     if(!!J){

@@ -31,10 +31,20 @@ void F_PositionDiff::phi2(arr& y, arr& J, const FrameL& F) {
   rai::Vector p1 = f1->ensure_X().pos;
   rai::Vector p2 = f2->ensure_X().pos;
   y = (p1-p2).getArr();
-  arr J2;
-  f1->C.jacobian_pos(J, f1, p1);
+  arr J1, J2;
+  f1->C.jacobian_pos(J1, f1, p1);
   f2->C.jacobian_pos(J2, f2, p2);
+  J = J1;
   J -= J2;
+}
+
+//===========================================================================
+
+void F_Vector::phi2(arr& y, arr& J, const FrameL& F){
+  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  CHECK_EQ(F.N, 1, "");
+  rai::Frame *f = F.elem(0);
+  f->C.kinematicsVec(y, J, f, vec);
 }
 
 //===========================================================================
@@ -45,6 +55,26 @@ void F_Quaternion::phi2(arr& y, arr& J, const FrameL& F){
   rai::Frame *f = F.elem(0);
 
   f->C.kinematicsQuat(y, J, f);
+}
+
+//===========================================================================
+
+void F_ScalarProduct::phi2(arr& y, arr& J, const FrameL& F){
+  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  CHECK_EQ(F.N, 2, "");
+  rai::Frame *f1 = F.elem(0);
+  rai::Frame *f2 = F.elem(1);
+
+  CHECK(fabs(vec1.length()-1.)<1e-4, "vector references must be normalized");
+  CHECK(fabs(vec2.length()-1.)<1e-4, "vector references must be normalized");
+
+  arr zi, Ji, zj, Jj;
+  f1->C.kinematicsVec(zi, Ji, f1, vec1);
+  f2->C.kinematicsVec(zj, Jj, f2, vec2);
+
+  y.resize(1);
+  y(0) = scalarProduct(zi, zj);
+  J = ~zj * Ji + ~zi * Jj;
 }
 
 //===========================================================================
@@ -169,3 +199,5 @@ void TM_Align::phi(arr& y, arr& J, const rai::Configuration& K) {
 rai::String TM_Align::shortTag(const rai::Configuration& G) {
   return STRING("TM_Align:"<<(i<0?"WORLD":G.frames(i)->name) <<':' <<(j<0?"WORLD":G.frames(j)->name));
 }
+
+

@@ -115,10 +115,10 @@ void rai::KinematicSwitch::setTimeOfApplication(double time, bool before, int st
   timeOfApplication = (time<0.?0:conv_time2step(time, stepsPerPhase))+(before?0:1);
 }
 
-rai::Frame* rai::KinematicSwitch::apply(Configuration& K) {
+rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) {
   Frame* from=nullptr, *to=nullptr;
-  if(fromId!=-1) from=K.frames(fromId);
-  if(toId!=-1) to=K.frames(toId);
+  if(fromId!=-1) from=frames(fromId);
+  if(toId!=-1) to=frames(toId);
 
   CHECK(from!=to, "not allowed to link '" <<from->name <<"' to itself");
 
@@ -130,7 +130,7 @@ rai::Frame* rai::KinematicSwitch::apply(Configuration& K) {
     to = to->getUpwardLink(NoTransformation, false);
     if(to->parent) to->unLink();
 #elif 1 //THIS is the new STANDARD! (was the version that works for the crawler; works also for pnp LGP test - but not when picking link-shapes only!)
-    K.reconfigureRoot(to, true);
+    to->C.reconfigureRoot(to, true);
 #else
     if(to->parent) to->unLink();
 #endif
@@ -178,8 +178,6 @@ rai::Frame* rai::KinematicSwitch::apply(Configuration& K) {
 
     if(to->parent) to->unLink();
     to->linkFrom(from, true);
-
-    K.reset_q();
     return to;
   }
 
