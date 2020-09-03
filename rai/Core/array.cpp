@@ -2247,7 +2247,8 @@ void SparseMatrix::resizeCopy(uint d0, uint d1, uint n) {
   Z.resizeMEM(n, true);
   if(n>Nold) memset(Z.p+Nold, 0, Z.sizeT*(n-Nold));
   elems.resizeCopy(n, 2);
-  for(uint i=Nold; i<n; i++) elems(i, 0) = elems(i, 1) =-1;
+//  for(uint i=Nold; i<n; i++) elems(i, 0) = elems(i, 1) =-1;
+  for(int *p=elems.p+2*Nold, *pstop=elems.p+2*n; p<pstop; p++) *p = -1;
 }
 
 void SparseMatrix::reshape(uint d0, uint d1) {
@@ -2270,8 +2271,7 @@ double& SparseMatrix::entry(uint i, uint j, uint k) {
   if(*elemsk==-1) { //new element
     *elemsk=i;
     elemsk[1]=j;
-    rows.clear();
-    cols.clear();
+    if(rows.nd){ rows.clear(); cols.clear(); }
   } else {
     CHECK_EQ(*elemsk, (int)i, "");
     CHECK_EQ(elemsk[1], (int)j, "");
@@ -2318,8 +2318,7 @@ double& SparseMatrix::addEntry(int i, int j) {
   elems.resizeCopy(k+1, 2);
   elems(k, 0)=i;
   elems(k, 1)=j;
-  rows.clear();
-  cols.clear();
+  if(rows.nd){ rows.clear(); cols.clear(); }
   Z.resizeMEM(k+1, true);
   Z.last()=0.;
   return Z.last();
@@ -2393,8 +2392,7 @@ void SparseMatrix::setupRowsCols() {
 }
 
 void SparseMatrix::rowShift(int shift) {
-  rows.clear();
-  cols.clear();
+  if(rows.nd){ rows.clear(); cols.clear(); }
   for(uint i=0; i<elems.d0; i++) {
     int& j = elems(i, 1);
     CHECK_GE(j+shift, 0, "");
@@ -2404,8 +2402,7 @@ void SparseMatrix::rowShift(int shift) {
 }
 
 void SparseMatrix::colShift(int shift) {
-  rows.clear();
-  cols.clear();
+  if(rows.nd){ rows.clear(); cols.clear(); }
   for(uint i=0; i<elems.d0; i++) {
     int& j = elems(i, 0);
     CHECK_GE(j+shift, 0, "");
@@ -2472,8 +2469,7 @@ void SparseMatrix::transpose() {
     elems(i, 0) = elems(i, 1);
     elems(i, 1) = k;
   }
-  cols.clear();
-  rows.clear();
+  if(rows.nd){ cols.clear(); rows.clear(); }
 }
 
 void SparseMatrix::rowWiseMult(const arr& a) {

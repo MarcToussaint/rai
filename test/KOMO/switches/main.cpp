@@ -58,7 +58,7 @@ int TEST(Pnp){
   KOMO komo;
 
   komo.setModel(C, false);
-  komo.setTiming(2.5, 20, 5., 2);
+  komo.setTiming(2.5, 30, 5., 2);
   komo.add_qControlObjective({}, 2);
 
   //grasp
@@ -67,7 +67,7 @@ int TEST(Pnp){
   komo.addObjective({1.}, FS_scalarProductXX, {"gripper", "box"}, OT_eq, {1e2}, {0.});
   komo.addObjective({1.}, FS_vectorZ, {"gripper"}, OT_eq, {1e2}, {0., 0., 1.});
 
-//  //slow - down - up
+  //slow - down - up
   komo.addObjective({1.}, FS_qItself, {}, OT_eq, {}, {}, 1);
   komo.addObjective({.9,1.1}, FS_position, {"gripper"}, OT_eq, {}, {0.,0.,.1}, 2);
 
