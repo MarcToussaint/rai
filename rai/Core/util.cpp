@@ -679,7 +679,7 @@ rai::LogToken rai::LogObject::getToken(int log_level, const char* code_file, con
 rai::LogToken::~LogToken() {
   auto mut = rai::logServer(); //keep the mutex
   if(log.logFileLevel>=log_level) {
-    if(!log.fil.is_open()) rai::open(log.fil, STRING("z.log."<<log.key));
+    if(!log.fil.is_open()) log.fil.open(STRING("z.log."<<log.key));
     log.fil <<code_file <<':' <<code_func <<':' <<code_line <<'(' <<log_level <<") " <<msg <<endl;
   }
   if(log.logCoutLevel>=log_level) {
@@ -720,7 +720,7 @@ rai::LogToken::~LogToken() {
 // #ifdef RAI_ROS
 //       ROS_INFO("RAI-MSG: %s",rai::errString.p);
 // #endif
-      if(log_level==-1) { cout <<"** WARNING:" <<rai::errString <<endl; }
+      if(log_level==-1) { cout <<"** WARNING:" <<rai::errString <<endl; return; }
       else if(log_level==-2) { cerr <<"** ERROR:" <<rai::errString <<endl; /*throw does not WORK!!! Because this is a destructor. The THROW macro does it inline*/ }
       else if(log_level==-3) { cerr <<"** HARD EXIT! " <<rai::errString <<endl;  exit(1); }
       //INSERT BREAKPOINT HERE

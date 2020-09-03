@@ -144,7 +144,7 @@ LGP_Tree::LGP_Tree(const rai::Configuration& _kin, const FOL_World& _fol) : LGP_
 
 LGP_Tree::~LGP_Tree() {
   views.clear();
-  if(dth) delete dth;
+  if(dth) dth.reset();
   delete root;
   root=nullptr;
   if(filNodes) { delete filNodes; filNodes=nullptr; }
@@ -161,7 +161,7 @@ void LGP_Tree::initDisplay() {
     views(3) = make_shared<KinPathViewer>(Var<ConfigurationL>(), .05, -2);
     for(auto& v:views) if(v) v->copy.orsDrawJoints=v->copy.orsDrawMarkers=v->copy.orsDrawProxies=false;
   }
-  if(!dth) dth = new DisplayThread(this);
+  if(!dth) dth = make_shared<DisplayThread>(this);
 }
 
 void LGP_Tree::renderToVideo(int specificBound, const char* filePrefix) {
@@ -629,10 +629,10 @@ void LGP_Tree::getSymbolicSolutions(uint depth) {
 void LGP_Tree::init() {
   fringe_expand.append(root);
   fringe_pose.append(root);
-  if(verbose>1) {
-    initDisplay();
-    updateDisplay();
-  }
+//  if(verbose>1) {
+//    initDisplay();
+//    updateDisplay();
+//  }
 }
 
 void LGP_Tree::run(uint steps) {

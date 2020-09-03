@@ -22,9 +22,9 @@
   needed or (3) at further calls of decreasing memory only free
   the memory if the new size is smaller than a fourth */
 #define ARRAY_flexiMem true
-#ifdef RAI_MSVC
+//#ifdef RAI_MSVC
 #  define RAI_NO_VEC_IMPL
-#endif
+//#endif
 
 //===========================================================================
 //
@@ -81,7 +81,7 @@ template<class T> rai::Array<T>::Array(const rai::Array<T>& a) : Array() { opera
 /// copy constructor
 template<class T> rai::Array<T>::Array(rai::Array<T>&& a)
   : std::vector<T>(std::move(a)),
-    p(a.p),
+    p(vec_type::data()),
     N(a.N),
     nd(a.nd),
     d0(a.d0), d1(a.d1), d2(a.d2),
@@ -416,7 +416,7 @@ template<class T> void rai::Array<T>::resizeMEM(uint n, bool copy, int Mforce) {
   CHECK(!isNoArr(*this), "resize of NO-ARRAY is not allowed!");
 
   //determine a new M (number of allocated items)
-  uint Mold=vec_type::capacity(), Mnew;
+  uint Mold=vec_type::size(), Mnew;
   if(Mforce>=0) { //forced size
     Mnew = Mforce;
     CHECK_LE(n, Mnew, "Mforce is smaller than required!");
@@ -434,9 +434,9 @@ template<class T> void rai::Array<T>::resizeMEM(uint n, bool copy, int Mforce) {
     }
   }
 
-  //if(Mnew!=Mold){ vec_type::resize(Mnew); }
-  vec_type::reserve(Mnew);
-  vec_type::resize(n);
+  if(Mnew!=Mold){ vec_type::resize(Mnew); }
+//  vec_type::reserve(Mnew);
+//  vec_type::resize(Mnew);
   p = vec_type::data();
   N = n;
 }
@@ -3717,6 +3717,7 @@ template<class T> Array<T> operator%(const Array<T>& y, const Array<T>& z) { Arr
     if(isNoArr(x)){ return x; } \
     if(isSparseMatrix(x) && isSparseMatrix(y)){ x.sparse() op y.sparse(); return x; }  \
     CHECK(!isSpecial(x), "");  \
+    CHECK(!isSpecial(y), "");  \
     CHECK_EQ(x.N, y.N, "binary operator on different array dimensions (" <<x.N <<", " <<y.N <<")"); \
     T *xp=x.p, *xstop=xp+x.N;              \
     const T *yp=y.p;              \

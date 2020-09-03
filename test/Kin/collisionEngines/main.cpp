@@ -7,7 +7,7 @@
 void TEST(Swift) {
   rai::Configuration C("swift_test.g");
 
-  C.swift().cutoff = 2.;
+  C.swift()->cutoff = 2.;
   C.stepSwift();
   C.orsDrawProxies=true;
 

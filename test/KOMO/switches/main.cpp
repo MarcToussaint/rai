@@ -15,9 +15,6 @@ void TEST(Grasp){
   K.checkConsistency();
 
   KOMO komo;
-  //komo.solver = rai::KS_sparse;
-  //komo.solver = rai::KS_banded;
-  komo.solver = rai::KS_sparseFactored;
 
   komo.setModel(K);
   komo.setTiming(2.5, 10., 5.);
@@ -87,7 +84,7 @@ int TEST(Pnp){
 
 //  rai::ConfigurationViewer V;
   V.setPath(komo.getPath_frames(), "optimized motion", true);
-  while(V.playVideo(true));
+  for(uint i=0;i<2;i++) V.playVideo(true);
 
   return 0;
 }
@@ -97,7 +94,7 @@ int TEST(Pnp){
 int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
-//  testGrasp();
+  testGrasp();
   testPnp();
 
   return 0;

@@ -114,6 +114,10 @@ template<class T> struct Array : std::vector<T>, Serializable {
   Array<T>& operator=(const std::vector<T>& values);
 
   /// @name iterators
+  typename vec_type::iterator begin() { return typename vec_type::iterator(p); }
+  typename vec_type::const_iterator begin() const { return typename vec_type::const_iterator(p); }
+  typename vec_type::iterator end() { return typename vec_type::iterator(p+N); }
+  typename vec_type::const_iterator end() const { return typename vec_type::const_iterator(p+N); }
   ArrayIterationEnumerated<T> enumerated() { return ArrayIterationEnumerated<T>(*this); }
   //TODO: more: rows iterator, reverse iterator
 

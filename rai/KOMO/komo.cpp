@@ -2753,19 +2753,22 @@ void KOMO::Conv_KOMO_KOMOProblem_toBeRetired::phi(arr& phi, arrA& J, arrA& H, ui
 void KOMO::Conv_KOMO_SparseNonfactored::evaluate(arr& phi, arr& J, const arr& x) {
   //-- set the trajectory
   komo.set_x(x);
-  komo.pathConfig.jacMode = rai::Configuration::JM_sparse;
+  if(sparse){
+    komo.pathConfig.jacMode = rai::Configuration::JM_sparse;
+    for(rai::Configuration* C:komo.configurations) C->jacMode = rai::Configuration::JM_sparse;
+  }else {
+    komo.pathConfig.jacMode = rai::Configuration::JM_dense;
+    for(rai::Configuration* C:komo.configurations) C->jacMode = rai::Configuration::JM_dense;
+  }
 
   if(!dimPhi) getDimPhi();
 
-  arr y, Jy;
   phi.resize(dimPhi);
   if(!!J) {
     if(sparse) {
       J.sparse().resize(dimPhi, x.N, 0);
-      Jy.sparse();
     } else {
       J.resize(dimPhi, x.N).setZero();
-      Jy.clear();
     }
   }
 
@@ -2784,6 +2787,7 @@ void KOMO::Conv_KOMO_SparseNonfactored::evaluate(arr& phi, arr& J, const arr& x)
       kdim.prepend(0);
 #endif
 
+      arr y, Jy;
       //query the task map and check dimensionalities of returns
 #ifdef KOMO_PATH_CONFIG
       ob->feat->__phi2(y, Jy, ob->frames);
@@ -2861,6 +2865,8 @@ void KOMO::Conv_KOMO_SparseNonfactored::getFHessian(arr& H, const arr& x) {
 
 void KOMO::Conv_KOMO_SparseNonfactored::getDimPhi() {
   CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet: use komo.reset()");
+//  komo.pathConfig.jacMode = rai::Configuration::JM_noArr;
+//  for(rai::Configuration* C:komo.configurations) C->jacMode = rai::Configuration::JM_noArr;
   uint M=0;
   for(uint i=0; i<komo.objectives.N; i++) {
     ptr<Objective> ob = komo.objectives.elem(i);

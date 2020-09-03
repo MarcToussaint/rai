@@ -55,6 +55,7 @@ bool checkHessianCP(MathematicalProgram& P, const arr& x, double tolerance) {
 //
 
 OptOptions::OptOptions() {
+  __globalOptOptions = this;
   verbose    = rai::getParameter<int> ("opt/verbose", 1);
   fmin_return=nullptr;
   stopTolerance= rai::getParameter<double>("opt/stopTolerance", 1e-2);

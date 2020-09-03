@@ -74,6 +74,9 @@ void testBounds(){
   K.selectJointsByGroup({"base","armL","armR"});
   K.optimizeTree();
 
+  rai::ConfigurationViewer V;
+  V.setConfiguration(K);
+
   LGP_Tree lgp(K, "fol-pnp-switch.g");
 
 //  lgp.inspectSequence("(pick pr2R obj0) (pick pr2L obj3) (place pr2R obj0 tray) (place pr2L obj3 tray)");
@@ -83,10 +86,8 @@ void testBounds(){
   node->optBound(bound, true, 2);
 //  auto gl = make_shared<OpenGL>();
 //  node->displayBound(gl, bound);
-  rai::ConfigurationViewer V;
-  V.setConfiguration(K);
   V.setPath(node->komoProblem(bound)->getPath_frames(), "", true);
-  while(V.playVideo(true, 3.));
+  for(uint i=0;i<2;i++) V.playVideo(true, 3.);
 }
 
 int MAIN(int argc,char **argv){

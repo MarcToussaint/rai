@@ -18,45 +18,45 @@ TM_Proxy::TM_Proxy(PTMtype _type,
 //  cout <<"creating TM_Proxy with shape list" <<shapes <<endl;
 }
 
-void TM_Proxy::phi(arr& y, arr& J, const rai::Configuration& G) {
+void TM_Proxy::phi(arr& y, arr& J, const rai::Configuration& C) {
   y.resize(1).setZero();
-  if(!!J) J.resize(1, G.getJointStateDimension()).setZero();
+  C.jacobian_zero(J, 1);
 
   switch(type) {
     case TMT_allP:
-      for(const rai::Proxy& p: G.proxies) {
-        G.kinematicsProxyCost(y, J, p, margin, true);
+      for(const rai::Proxy& p: C.proxies) {
+        C.kinematicsProxyCost(y, J, p, margin, true);
       }
       break;
     case TMT_listedVsListedP:
-      for(const rai::Proxy& p: G.proxies) {
+      for(const rai::Proxy& p: C.proxies) {
         if(frameIDs.contains(p.a->ID) && frameIDs.contains(p.b->ID)) {
-          G.kinematicsProxyCost(y, J, p, margin, true);
+          C.kinematicsProxyCost(y, J, p, margin, true);
 //          p.colorCode = 2;
         }
       }
       break;
     case TMT_allVsListedP: {
-      for(const rai::Proxy& p: G.proxies) {
+      for(const rai::Proxy& p: C.proxies) {
         if(frameIDs.contains(p.a->ID) || frameIDs.contains(p.b->ID)) {
-          G.kinematicsProxyCost(y, J, p, margin, true);
+          C.kinematicsProxyCost(y, J, p, margin, true);
 //          p.colorCode = 2;
         }
       }
     } break;
     case TMT_allExceptListedP:
-      for(const rai::Proxy& p: G.proxies) {
+      for(const rai::Proxy& p: C.proxies) {
         if(!(frameIDs.contains(p.a->ID) && frameIDs.contains(p.b->ID))) {
-          G.kinematicsProxyCost(y, J, p, margin, true);
+          C.kinematicsProxyCost(y, J, p, margin, true);
 //          p.colorCode = 3;
         }
       }
       break;
     case TMT_bipartiteP:
-      for(const rai::Proxy& p: G.proxies) {
+      for(const rai::Proxy& p: C.proxies) {
         if((frameIDs.contains(p.a->ID) && shapes2.contains(p.b->ID)) ||
             (frameIDs.contains(p.b->ID) && shapes2.contains(p.a->ID))) {
-          G.kinematicsProxyCost(y, J, p, margin, true);
+          C.kinematicsProxyCost(y, J, p, margin, true);
 //          p.colorCode = 4;
         }
       }
@@ -65,13 +65,13 @@ void TM_Proxy::phi(arr& y, arr& J, const rai::Configuration& G) {
       frameIDs.reshape(frameIDs.N/2, 2);
       // only explicit paris in 2D array shapes
       uint j;
-      for(const rai::Proxy& p: G.proxies) {
+      for(const rai::Proxy& p: C.proxies) {
         for(j=0; j<frameIDs.d0; j++) {
           if((frameIDs(j, 0)==p.a->ID && frameIDs(j, 1)==p.b->ID) || (frameIDs(j, 0)==p.b->ID && frameIDs(j, 1)==p.a->ID))
             break;
         }
         if(j<frameIDs.d0) { //if a pair was found
-          G.kinematicsProxyCost(y, J, p, margin, true);
+          C.kinematicsProxyCost(y, J, p, margin, true);
 //          p.colorCode = 5;
         }
       }
@@ -80,13 +80,13 @@ void TM_Proxy::phi(arr& y, arr& J, const rai::Configuration& G) {
       frameIDs.reshape(frameIDs.N/2, 2);
       // only explicit paris in 2D array shapes
       uint j;
-      for(const rai::Proxy& p: G.proxies) {
+      for(const rai::Proxy& p: C.proxies) {
         for(j=0; j<frameIDs.d0; j++) {
           if((frameIDs(j, 0)==p.a->ID && frameIDs(j, 1)==p.b->ID) || (frameIDs(j, 0)==p.b->ID && frameIDs(j, 1)==p.a->ID))
             break;
         }
         if(j==frameIDs.d0) { //if a pair was not found
-          G.kinematicsProxyCost(y, J, p, margin, true);
+          C.kinematicsProxyCost(y, J, p, margin, true);
 //          p.colorCode = 5;
         }
       }
@@ -97,13 +97,13 @@ void TM_Proxy::phi(arr& y, arr& J, const rai::Configuration& G) {
       y.resize(frameIDs.d0, 1);  y.setZero();
       if(!!J) { J.resize(frameIDs.d0, J.d1);  J.setZero(); }
       uint j;
-      for(const rai::Proxy& p: G.proxies) {
+      for(const rai::Proxy& p: C.proxies) {
         for(j=0; j<frameIDs.d0; j++) {
           if((frameIDs(j, 0)==p.a->ID && frameIDs(j, 1)==p.b->ID) || (frameIDs(j, 0)==p.b->ID && frameIDs(j, 1)==p.a->ID))
             break;
         }
         if(j<frameIDs.d0) {
-          G.kinematicsProxyCost(y[j](), J[j](), p, margin, true);
+          C.kinematicsProxyCost(y[j](), J[j](), p, margin, true);
 //          p.colorCode = 5;
         }
       }

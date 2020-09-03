@@ -63,6 +63,8 @@ void F_qItself::phi(arr& q, arr& J, const rai::Configuration& C) {
   } else {
     uint n=dim_phi(C);
     q.resize(n);
+//    C.jacobian_zero(J, n);
+
     if(!!J) {
       if(!isSparseMatrix(J)) {
         J.resize(n, C.q.N).setZero();
@@ -234,18 +236,17 @@ void F_qItself::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
   if(k==2)  y = (q_bar(2)-2.*q_bar(1)+q_bar(0))/tau2; //penalize acceleration
   if(k==3)  y = (q_bar(3)-3.*q_bar(2)+3.*q_bar(1)-q_bar(0))/tau3; //penalize jerk
   if(!!J) {
-    uintA qidx(Ctuple.N);
-    qidx(0)=0;
-    for(uint i=1; i<Ctuple.N; i++) qidx(i) = qidx(i-1)+Ctuple(i-1)->q.N;
+    uintA qidx = getKtupleDim(Ctuple);
+    qidx.prepend(0);
     if(!isSparseMatrix(J)) {
-      J = zeros(y.N, qidx.last()+Ctuple.last()->q.N);
+      J = zeros(y.N, qidx.last());
       if(k==1) { J.setMatrixBlock(J_bar(1), 0, qidx(offset+1));  J.setMatrixBlock(-J_bar(0), 0, qidx(offset+0));  J/=tau; }
       if(k==2) { J.setMatrixBlock(J_bar(2), 0, qidx(offset+2));  J.setMatrixBlock(-2.*J_bar(1), 0, qidx(offset+1));  J.setMatrixBlock(J_bar(0), 0, qidx(offset+0));  J/=tau2; }
       if(k==3) { J.setMatrixBlock(J_bar(3), 0, qidx(offset+3));  J.setMatrixBlock(-3.*J_bar(2), 0, qidx(offset+2));  J.setMatrixBlock(3.*J_bar(1), 0, qidx(offset+1));  J.setMatrixBlock(-J_bar(0), 0, qidx(offset+0));  J/=tau3; }
     } else {
-      J.sparse().resize(y.N, qidx.last()+Ctuple.last()->q.N, 0);
+      J.sparse().resize(y.N, qidx.last(), 0);
       if(k==1) { J_bar(0) *= -1.;  J+=J_bar(0);  J+=J_bar(1);  J/=tau; }
-      if(k==1) { J_bar(1) *= -2.;  J+=J_bar(0);  J+=J_bar(1);  J+=J_bar(2);  J/=tau2; }
+      if(k==2) { J_bar(1) *= -2.;  J+=J_bar(0);  J+=J_bar(1);  J+=J_bar(2);  J/=tau2; }
       if(k==3) { NIY }
     }
 

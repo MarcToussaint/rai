@@ -199,6 +199,7 @@ struct OptOptions {
 stdOutPipe(OptOptions)
 
 extern Singleton<OptOptions> globalOptOptions;
+OptOptions *__globalOptOptions = 0;
 
 #define NOOPT (globalOptOptions())
 
@@ -240,5 +241,5 @@ extern uint eval_count;
 #define _OPT_9(obj, assign, ...) obj->assign, _OPT_8(obj,__VA_ARGS__)
 #define _OPT_N2(obj, N, ...) _OPT_ ## N(obj, __VA_ARGS__)
 #define _OPT_N1(obj, N, ...) _OPT_N2(obj, N, __VA_ARGS__) //this forces that _NUM_ARGS(...) is expanded to a number N
-#define OPT(...)     (_OPT_N1(globalOptOptions(), _NUM_ARGS(__VA_ARGS__), __VA_ARGS__) , globalOptOptions())
+#define OPT(...)     (globalOptOptions(), _OPT_N1(__globalOptOptions, _NUM_ARGS(__VA_ARGS__), __VA_ARGS__) , *__globalOptOptions)
 

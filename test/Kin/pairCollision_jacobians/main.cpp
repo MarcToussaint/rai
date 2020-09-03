@@ -201,7 +201,6 @@ void TEST(GJK_Jacobians3) {
   rai::ConfigurationViewer V;
   V.setConfiguration(C, 0, true);
 
-  C.swift().initActivations(C);
   C.stepSwift();
   C.reportProxies();
   C.orsDrawProxies=true;
@@ -242,9 +241,9 @@ int MAIN(int argc, char** argv){
 
   rnd.clockSeed();
 
-//  testGJK_Jacobians();
-//  testGJK_Jacobians2();
-  testGJK_Jacobians3();
+  testGJK_Jacobians();
+  testGJK_Jacobians2();
+//  testGJK_Jacobians3();
 
   return 0;
 }

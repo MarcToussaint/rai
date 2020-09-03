@@ -972,6 +972,17 @@ void rai::Configuration::evalFeature(arr& y, arr& J, FeatureSymbol fs, const Str
 // core: kinematics and dynamics
 //
 
+void rai::Configuration::jacobian_zero(arr& J, uint n) const {
+  uint N=getJointStateDimension();
+  if(jacMode==JM_dense) {
+    J.resize(n, N).setZero();
+  } else if(jacMode==JM_sparse){
+    J.sparse().resize(n, N, 0);
+  } else if(jacMode==JM_noArr){
+    J.setNoArr();
+  }
+}
+
 #if 1
 void rai::Configuration::jacobian_pos(arr& J, Frame* a, const rai::Vector& pos_world) const {
   CHECK_EQ(&a->C, this, "");
@@ -979,14 +990,8 @@ void rai::Configuration::jacobian_pos(arr& J, Frame* a, const rai::Vector& pos_w
   a->ensure_X();
 
   uint N=getJointStateDimension();
-  if(jacMode==JM_dense) {
-    J.resize(3, N).setZero();
-  } else if(jacMode==JM_sparse){
-    J.sparse().resize(3, N, 0);
-  } else if(jacMode==JM_noArr){
-    J.setNoArr();
-    return;
-  }
+  jacobian_zero(J, 3);
+  if(!J) return;
 
   while(a) { //loop backward down the kinematic tree
     if(!a->parent) break; //frame has no inlink -> done
@@ -1060,10 +1065,10 @@ void rai::Configuration::jacobian_pos(arr& J, Frame* a, const rai::Vector& pos_w
     a = a->parent;
   }
 
-  if(isSparseMatrix(J) && xIndex) {
-    J.sparse().reshape(J.d0, J.d1+xIndex);
-    J.sparse().rowShift(xIndex);
-  }
+//  if(isSparseMatrix(J) && xIndex) {
+//    J.sparse().reshape(J.d0, J.d1+xIndex);
+//    J.sparse().rowShift(xIndex);
+//  }
 }
 
 #else
@@ -1093,14 +1098,8 @@ void rai::Configuration::jacobian_angular(arr& J, Frame* a) const {
   a->ensure_X();
 
   uint N = getJointStateDimension();
-  if(jacMode==JM_dense) {
-    J.resize(3, N).setZero();
-  } else if(jacMode==JM_sparse){
-    J.sparse().resize(3, N, 0);
-  } else if(jacMode==JM_noArr){
-    J.setNoArr();
-    return;
-  }
+  jacobian_zero(J, 3);
+  if(!J) return;
 
   while(a) { //loop backward down the kinematic tree
     Joint* j=a->joint;
@@ -1138,7 +1137,8 @@ void rai::Configuration::jacobian_tau(arr& J, rai::Frame* a) const {
 
   //get Jacobian
   uint N=getJointStateDimension();
-  J.resize(1, N).setZero();
+  jacobian_zero(J, 1);
+  if(!J) return;
 
   while(a) { //loop backward down the kinematic tree
     Joint* j=a->joint;
@@ -2630,19 +2630,6 @@ void rai::Configuration::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, dou
   CHECK(p.a->shape, "");
   CHECK(p.b->shape, "");
 
-  uint qd = getJointStateDimension();
-  if(addValues){
-    CHECK_EQ(y.N, 1, "");
-    if(!!J) CHECK_EQ(J.d0, 1, "");
-    if(!!J) CHECK_EQ(J.d1, qd, "");
-  }else{
-    y.resize(1).setZero();
-    if(!!J){
-      if(J.isSparse()) J.sparse().resize(1,qd,0);
-      else J.resize(1,qd).setZero();
-    }
-  }
-
   //early check: if swift is way out of collision, don't bother computing it precise
   if(p.d > p.a->shape->radius() + p.b->shape->radius() + .01 + margin) return;
 
@@ -2651,18 +2638,20 @@ void rai::Configuration::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, dou
   if(p.collision->getDistance()>margin) return;
 
   arr Jp1, Jp2;
-  if(!!J) {
-    if(J.isSparse()){ Jp1.sparse(); Jp2.sparse(); }
-    jacobian_pos(Jp1, p.a, p.collision->p1);
-    jacobian_pos(Jp2, p.b, p.collision->p2);
-  }
+  jacobian_pos(Jp1, p.a, p.collision->p1);
+  jacobian_pos(Jp2, p.b, p.collision->p2);
 
   arr y_dist, J_dist;
   p.collision->kinDistance(y_dist, J_dist, Jp1, Jp2);
 
   if(y_dist.scalar()>margin) return;
-  y += margin-y_dist.scalar();
-  if(!!J)  J -= J_dist;
+  if(addValues){
+    y += margin-y_dist.scalar();
+    J -= J_dist;
+  }else{
+    y = margin-y_dist.scalar();
+    J = J_dist;
+  }
 }
 
 /// measure (=scalar kinematics) for the contact cost summed over all bodies
@@ -2670,7 +2659,7 @@ void rai::Configuration::kinematicsProxyCost(arr& y, arr& J, double margin) cons
   CHECK(_state_proxies_isGood, "");
 
   y.resize(1).setZero();
-  if(!!J) J.resize(1, getJointStateDimension()).setZero();
+  jacobian_zero(J, 1);
   for(const Proxy& p:proxies) { /*if(p.d<margin)*/
     kinematicsProxyCost(y, J, p, margin, true);
   }
@@ -2695,7 +2684,7 @@ void rai::Configuration_ext::kinematicsContactCost(arr& y, arr& J, const ForceEx
 
 void rai::Configuration_ext::kinematicsContactCost(arr& y, arr& J, double margin) const {
   y.resize(1).setZero();
-  if(!!J) J.resize(1, getJointStateDimension()).setZero();
+  jacobian_zero(J, 1);
   for(Frame* f:frames) for(ForceExchange* c:f->forces) if(&c->a==f) {
         kinematicsContactCost(y, J, c, margin, true);
       }

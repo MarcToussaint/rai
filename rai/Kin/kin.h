@@ -207,6 +207,7 @@ struct Configuration : GLDrawer {
   void jacobian_angular(arr& J, Frame* a) const; //usually called internally with kinematicsVec or Quat
   /// how does the time coordinate of frame a change with q-change?
   void jacobian_tau(arr& J, Frame* a) const;
+  void jacobian_zero(arr& J, uint n) const; //returns the 'Jacobian' of a zero n-vector (initializes Jacobian to proper sparse/dense/noArr)
 
   void kinematicsPos(arr& y, arr& J, Frame* a, const Vector& rel=NoVector) const;
   void kinematicsVec(arr& y, arr& J, Frame* a, const Vector& vec=NoVector) const;

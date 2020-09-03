@@ -114,7 +114,7 @@ void LGP_Node::computeEndKinematics() {
   tmp.setTiming(maxPhase+1., 1, 10., 1);
   tmp.setSkeleton(S);
 //  tmp.reportProblem();
-  for(rai::KinematicSwitch* s : tmp.switches) s->apply(effKinematics);
+  for(rai::KinematicSwitch* s : tmp.switches) s->apply(effKinematics.frames);
 }
 
 void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
@@ -228,7 +228,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
 
     for(rai::KinematicSwitch* sw: komo->switches) {
       //    CHECK_EQ(sw->timeOfApplication, 1, "need to do this before the optimization..");
-      if(sw->timeOfApplication>=2) sw->apply(effKinematics);
+      if(sw->timeOfApplication>=2) sw->apply(effKinematics.frames);
     }
 
     effKinematics.reset_q();

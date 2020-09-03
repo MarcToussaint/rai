@@ -107,7 +107,7 @@ struct _ChoiceFunction : ScalarFunction {
   double fs(arr& g, arr& H, const arr& x) {
     //initialize on first call
     if(which==none) {
-      which = (Which) rai::getParameter<int>("fctChoice");
+      which = (Which) rai::getParameter<double>("fctChoice");
     }
     if(condition.N!=x.N) {
       condition.resize(x.N);
@@ -287,7 +287,7 @@ void ParticleAroundWalls2::phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, 
 }
 
 ChoiceConstraintFunction::ChoiceConstraintFunction() {
-  which = (WhichConstraint) rai::getParameter<int>("constraintChoice");
+  which = (WhichConstraint) rai::getParameter<double>("constraintChoice");
   n = rai::getParameter<uint>("dim", 2);
 }
 

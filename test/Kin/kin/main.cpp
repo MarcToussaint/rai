@@ -68,6 +68,7 @@ void TEST(Kinematics){
       : mode(_mode), K(_K), b(_b), b2(_b2), vec(_vec), vec2(_vec2){
       VectorFunction::operator= ( [this](arr& y, arr& J, const arr& x) -> void{
         K.setJointState(x);
+        K.setJacModeAs(J);
         switch(mode){
           case Pos:    K.kinematicsPos(y,J,b,vec); break;
           case Vec:    K.kinematicsVec(y,J,b,vec); break;
@@ -246,12 +247,13 @@ void TEST(Contacts){
   arr x,con,grad;
   uint t;
 
-  G.swift().setCutoff(.5);
+  G.swift()->cutoff =.5;
 
   VectorFunction f = [&G](arr& y, arr& J, const arr& x) -> void {
     G.setJointState(x);
+    G.setJacModeAs(J);
     G.stepSwift();
-    G.kinematicsProxyCost(y, (!!J?J:NoArr), .2);
+    G.kinematicsProxyCost(y, J, .2);
   };
 
   x = G.getJointState();
@@ -261,6 +263,7 @@ void TEST(Contacts){
 
     G.reportProxies();
 
+    G.jacMode = G.JM_dense;
     G.kinematicsProxyCost(con, grad, .2);
     cout <<"contact meassure = " <<con(0) <<endl;
     //G.watch(true);
