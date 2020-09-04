@@ -899,7 +899,6 @@ arr rai::Joint::getScrewMatrix() {
 }
 
 uint rai::Joint::getDimFromType() const {
-  if(mimic) return 0;
   if(type>=JT_hingeX && type<=JT_transZ) return 1;
   if(type==JT_transXY) return 2;
   if(type==JT_transXYPhi) return 3;
@@ -1048,7 +1047,6 @@ void rai::Joint::read(const Graph& G) {
   //coupled to another joint requires post-processing by the Graph::read!!
   if(G["mimic"]) {
     mimic=(Joint*)1;
-    dim=0;
   }
 }
 

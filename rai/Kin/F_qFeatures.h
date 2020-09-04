@@ -47,6 +47,8 @@ struct F_qZeroVel : Feature {
   virtual void phi(arr& y, arr& J, const ConfigurationL& Ctuple);
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi(const rai::Configuration& G);
+  virtual uint dim_phi2(const FrameL& F);
+
   virtual rai::String shortTag(const rai::Configuration& G) { return STRING("qZeroVel"); }
 };
 

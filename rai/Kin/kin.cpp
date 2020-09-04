@@ -262,12 +262,26 @@ void rai::Configuration::addFramesCopy(const FrameL& F) {
   intA FId2thisId(maxId+1);
   FId2thisId = -1;
   for(Frame* f:F) {
-    Frame* a = new Frame(*this, f);
-    FId2thisId(f->ID)=a->ID;
+    Frame* f_new = new Frame(*this, f);
+    FId2thisId(f->ID) = f_new->ID;
   }
   for(Frame* f:F) if(f->parent && f->parent->ID<=maxId && FId2thisId(f->parent->ID)!=-1) {
-      frames(FId2thisId(f->ID))->linkFrom(frames(FId2thisId(f->parent->ID)));
+    rai::Frame* f_new = frames(FId2thisId(f->ID));
+    f_new->linkFrom(frames(FId2thisId(f->parent->ID)));
+    //take care of within-F mimic joints:
+    if(f->joint && f->joint->mimic){
+      CHECK(f->joint && f->joint->mimic, "");
+      f_new->joint->mimic = frames(FId2thisId(f->joint->mimic->frame->ID))->joint;
     }
+    //convert constant joints to mimic joints
+    if(f->joint && f->ats["constant"]){
+      rai::Frame *f_orig = getFrameByName(f_new->name); //identify by name!!!
+      if(f_orig!=f_new){
+        CHECK(f_orig->joint, "");
+        f_new->joint->mimic = f_orig->joint;
+      }
+    }
+  }
 }
 
 void rai::Configuration::clear() {
@@ -512,15 +526,15 @@ void rai::Configuration::calc_indexedActiveJoints() {
   //-- count active DOFs
   uint qcount=0;
   for(Joint* j: activeJoints) {
+    j->dim = j->getDimFromType();
     if(!j->mimic) {
-      j->dim = j->getDimFromType();
       j->qIndex = qcount;
       if(!j->uncertainty)
         qcount += j->qDim();
       else
         qcount += 2*j->qDim();
     } else {
-      j->dim = 0;
+      CHECK(j->mimic->active, "active joint '" << j->frame->name <<"' mimics inactive joint '" <<j->mimic->frame->name <<"'");
       j->qIndex = j->mimic->qIndex;
     }
   }
@@ -536,19 +550,14 @@ void rai::Configuration::calc_indexedActiveJoints() {
 
   //-- count inactive DOFs
   qcount=0;
-  for(Frame* f:frames) if(f->joint && !f->joint->active){
+  for(Frame* f:frames) if(f->joint && !f->joint->active){ //include counting mimic'ing!
     Joint *j = f->joint;
-    if(!j->mimic) {
-      j->dim = j->getDimFromType();
-      j->qIndex = qcount;
-      if(!j->uncertainty)
-        qcount += j->qDim();
-      else
-        qcount += 2*j->qDim();
-    } else {
-      j->dim = 0;
-      j->qIndex = j->mimic->qIndex;
-    }
+    j->dim = j->getDimFromType();
+    j->qIndex = qcount;
+    if(!j->uncertainty)
+      qcount += j->qDim();
+    else
+      qcount += 2*j->qDim();
   }
 
 }
@@ -692,7 +701,7 @@ void rai::Configuration::calc_q_from_Q() {
 void rai::Configuration::calc_qInactive_from_Q() {
   qInactive.clear();
 
-  for(Frame* f: frames) if(f->joint && !f->joint->active && !f->joint->mimic){
+  for(Frame* f: frames) if(f->joint && !f->joint->active){ //this includes mimic'ing joints!
     arr joint_q = f->joint->calc_q_from_Q(f->Q);
     CHECK_EQ(joint_q.N, f->joint->dim, "");
     if(!f->joint->dim) continue; //nothing to do
@@ -727,7 +736,13 @@ void rai::Configuration::calc_Q_from_q() {
 
 void rai::Configuration::selectJoints(const FrameL& F, bool notThose) {
   for(Frame* f: frames) if(f->joint) f->joint->active = notThose;
-  for(Frame* f: F) if(f && f->joint) f->joint->active = !notThose;
+  for(Frame* f: F) if(f && f->joint){
+    f->joint->active = !notThose;
+    if(f->joint->mimic) f->joint->mimic->active = f->joint->active; //activate also the joint mimic'ed
+  }
+  for(Frame* f: frames) if(f && f->joint && f->joint->mimic){ //mimic's of active joints are active as well
+    if(f->joint->mimic->active) f->joint->active = true;
+  }
   reset_q();
   ensure_indexedJoints();
   calc_qInactive_from_Q();
@@ -1011,7 +1026,6 @@ void rai::Configuration::jacobian_pos(arr& J, Frame* a, const rai::Vector& pos_w
           J.elem(1, j_idx) += j->scale * j->axis.y;
           J.elem(2, j_idx) += j->scale * j->axis.z;
         } else if(j->type==JT_transXY) {
-          if(j->mimic) NIY;
           arr R = j->X().rot.getArr();
           R *= j->scale;
           J.setMatrixBlock(R.sub(0, -1, 0, 1), 0, j_idx);
@@ -2992,11 +3006,7 @@ bool rai::Configuration::checkConsistency() const {
     for(Frame* f : frames) if(f->joint){
       Joint *j = f->joint;
       arr jq = j->calc_q_from_Q(f->Q);
-      if(!j->mimic) {
-        CHECK_EQ(jq.N, j->dim, "");
-      } else {
-        CHECK_EQ(0, j->dim, "");
-      }
+      CHECK_EQ(jq.N, j->dim, "");
       if(j->active){
         for(uint i=0; i<jq.N; i++) CHECK_ZERO(jq.elem(i) - q.elem(j->qIndex+i), 1e-6, "joint vector q and relative transform Q do not match for joint '" <<j->frame->name <<"', index " <<i);
       }else{
@@ -3042,13 +3052,12 @@ bool rai::Configuration::checkConsistency() const {
       CHECK_EQ(j->frame->joint, j, "");
       CHECK_GE(j->type.x, 0, "");
       CHECK_LE(j->type.x, JT_tau, "");
+      CHECK_EQ(j->dim, j->getDimFromType(), "");
 
       if(j->mimic) {
-        CHECK_EQ(j->dim, 0, "");
         CHECK(j->mimic>(void*)1, "mimic was not parsed correctly");
         CHECK(frames.contains(j->mimic->frame), "mimic points to a frame outside this kinematic configuration");
       } else {
-        CHECK_EQ(j->dim, j->getDimFromType(), "");
       }
     }
 

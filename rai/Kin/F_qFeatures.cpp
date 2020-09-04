@@ -406,6 +406,12 @@ void F_qZeroVel::phi2(arr& y, arr& J, const FrameL& F){
   }
 }
 
+uint F_qZeroVel::dim_phi2(const FrameL& F){
+  F_qItself q({}, false);
+  q.order=order;
+  return q.Feature::__dim_phi2(F);
+}
+
 uint F_qZeroVel::dim_phi(const rai::Configuration& C) {
   rai::Frame* f = C.frames(frameIDs.scalar());
   if(useChildFrame) {

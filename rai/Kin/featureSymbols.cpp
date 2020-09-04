@@ -79,10 +79,11 @@ template<> const char* rai::Enum<FeatureSymbol>::names []= {
 auto getQFramesAndScale(const rai::Configuration& C) {
   struct Return { uintA frames; arr scale; } R;
   for(rai::Frame* f : C.frames) {
-    if(f->joint && f->joint->active && f->joint->dim>0 && f->joint->H>0. && f->joint->type!=rai::JT_tau) {
-      CHECK(!f->joint->mimic, "");
+    rai::Joint *j = f->joint;
+    if(j && j->active && j->dim>0 && (!j->mimic) && j->H>0. && j->type!=rai::JT_tau) {
+      CHECK(!j->mimic, "");
       R.frames.append(TUP(f->ID, f->parent->ID));
-      R.scale.append(f->joint->H, f->joint->dim);
+      R.scale.append(j->H, j->dim);
     }
   }
   R.frames.reshape(-1, 2);

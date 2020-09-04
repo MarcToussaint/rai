@@ -199,7 +199,7 @@ struct OptOptions {
 stdOutPipe(OptOptions)
 
 extern Singleton<OptOptions> globalOptOptions;
-OptOptions *__globalOptOptions = 0;
+extern OptOptions *__globalOptOptions;
 
 #define NOOPT (globalOptOptions())
 

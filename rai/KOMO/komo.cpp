@@ -50,7 +50,7 @@
 //#  define FCLmode
 //#endif
 
-//#define KOMO_PATH_CONFIG
+#define KOMO_PATH_CONFIG
 
 using namespace rai;
 
@@ -1469,9 +1469,13 @@ void KOMO::optimize(double addInitializationNoise, const OptOptions options) {
 
 void KOMO::run_prepare(double addInitializationNoise) {
   //ensure the configurations are setup
+#ifndef KOMO_PATH_CONFIG
   if(!configurations.N) setupConfigurations();
   CHECK_EQ(configurations.N, k_order+T, "");
   for(uint s=0; s<k_order; s++) configurations(s)->ensure_q(); //also the prefix!
+#else
+  if(!timeSlices.nd) setupConfigurations2();
+#endif
 
   //ensure the decision variable is in sync from the configurations
   x = getPath_decisionVariable();
@@ -1596,7 +1600,7 @@ void KOMO::run(const OptOptions options) {
          <<" (kin:" <<timeKinematics <<" coll:" <<timeCollisions <<" feat:" <<timeFeatures <<" newton: " <<timeNewton <<")"
          <<" setPathConfigCount: " <<set_xCount <<" setJointStateCount=" <<Configuration::setJointStateCount <<endl;
   }
-  if(verbose>0) cout <<getReport(verbose>1) <<endl;
+//  if(verbose>0) cout <<getReport(verbose>1) <<endl;
 }
 
 void KOMO::run_sub(const uintA& X, const uintA& Y) {
@@ -2077,9 +2081,9 @@ void KOMO::setupConfigurations2() {
 
   timeSlices.resize(k_order+T, C.frames.N);
   for(uint s=0;s<k_order+T;s++) {
-    for(KinematicSwitch* sw:switches) { //apply potential switches
-      if(sw->timeOfApplication+(int)k_order==(int)s)  sw->apply(C.frames);
-    }
+//    for(KinematicSwitch* sw:switches) { //apply potential switches
+//      if(sw->timeOfApplication+(int)k_order==(int)s)  sw->apply(C.frames);
+//    }
 
     uint nBefore = pathConfig.frames.N;
     pathConfig.addFramesCopy(C.frames);
@@ -2799,6 +2803,12 @@ void KOMO::Conv_KOMO_SparseNonfactored::evaluate(arr& phi, arr& J, const arr& x)
       if(!!J) CHECK_EQ(Jy.nd, 2, "");
 #ifdef KOMO_PATH_CONFIG
       if(!!J) CHECK_EQ(Jy.d1, komo.pathConfig.getJointStateDimension(), "");
+//      uint d = ob->feat->__dim_phi2(ob->frames);
+//      if(d!=y.N){
+//        d  = ob->feat->__dim_phi2(ob->frames);
+//        ob->feat->__phi2(y, Jy, ob->frames);
+//      }
+//      CHECK_EQ(d, y.N, "");
 #else
       if(!!J) CHECK_EQ(Jy.d1, kdim.last(), "");
 #endif
@@ -2864,6 +2874,7 @@ void KOMO::Conv_KOMO_SparseNonfactored::getFHessian(arr& H, const arr& x) {
 }
 
 void KOMO::Conv_KOMO_SparseNonfactored::getDimPhi() {
+#ifndef KOMO_PATH_CONFIG
   CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet: use komo.reset()");
 //  komo.pathConfig.jacMode = rai::Configuration::JM_noArr;
 //  for(rai::Configuration* C:komo.configurations) C->jacMode = rai::Configuration::JM_noArr;
@@ -2875,6 +2886,12 @@ void KOMO::Conv_KOMO_SparseNonfactored::getDimPhi() {
       M += ob->feat->__dim_phi(Ktuple); //dimensionality of this task
     }
   }
+#else
+  uint M=0;
+  for(ptr<GroundedObjective>& ob : komo.objs) {
+    M += ob->feat->__dim_phi2(ob->frames);
+  }
+#endif
   dimPhi = M;
 }
 
@@ -2883,6 +2900,7 @@ void KOMO::Conv_KOMO_SparseNonfactored::getFeatureTypes(ObjectiveTypeA& ft) {
   ft.resize(dimPhi);
   komo.featureNames.clear();
   uint M=0;
+#ifndef KOMO_PATH_CONFIG
   for(uint i=0; i<komo.objectives.N; i++) {
     ptr<Objective> ob = komo.objectives.elem(i);
     for(uint l=0; l<ob->configs.d0; l++) {
@@ -2893,6 +2911,14 @@ void KOMO::Conv_KOMO_SparseNonfactored::getFeatureTypes(ObjectiveTypeA& ft) {
       M += m;
     }
   }
+#else
+  for(ptr<GroundedObjective>& ob : komo.objs) {
+    uint m = ob->feat->__dim_phi2(ob->frames);
+    for(uint i=0; i<m; i++) ft(M+i) = ob->type;
+    for(uint j=0; j<m; j++) komo.featureNames.append("TODO");
+    M += m;
+  }
+#endif
   if(quadraticPotentialLinear.N) {
     ft.append(OT_f);
   }
@@ -3766,10 +3792,14 @@ uint KOMO::getPath_totalDofs() {
 }
 
 arr KOMO::getPath_decisionVariable() {
+#ifndef KOMO_PATH_CONFIG
   CHECK_EQ(configurations.N, k_order+T, "configurations are not setup yet");
   arr x;
   for(uint t=0; t<T; t++) x.append(configurations(t+k_order)->getJointState());
   return x;
+#else
+  return pathConfig.getJointState();
+#endif
 }
 
 arr KOMO::getPath(const StringA& joints) {
