@@ -31,7 +31,6 @@ stdOutPipe(Objective)
 struct GroundedObjective {
   std::shared_ptr<Feature> feat;
   const rai::Enum<ObjectiveType> type;  ///< element of {f, sumOfSqr, inequality, equality}
-  FrameL frames;
   intA configs;
 
   GroundedObjective(const ptr<Feature>& _feat, const ObjectiveType& _type) : feat(_feat), type(_type) {}
