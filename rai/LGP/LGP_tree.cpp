@@ -199,6 +199,8 @@ void LGP_Tree::displayTreeUsingDot() {
 void LGP_Tree::updateDisplay() {
   if(fringe_solved.N) focusNode = fringe_solved.last();
 
+  if(!dth) initDisplay();
+
   //individual windows to display focusNode
   if(verbose>2) {
     rai::String decisions = focusNode->getTreePathString('\n');

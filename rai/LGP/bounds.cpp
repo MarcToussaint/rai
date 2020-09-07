@@ -232,9 +232,11 @@ SeqPathBound::SeqPathBound(ptr<KOMO>& komo,
   uint T = floor(maxPhase+.5);
   uint waypointsStepsPerPhase = waypoints.N/(T+1);
   CHECK_EQ(waypoints.N, waypointsStepsPerPhase * (T+1), "waypoint steps not clear");
+#if 0 //impose waypoint costs?
   for(uint i=0; i<waypoints.N-1; i++) {
     komo->addObjective(ARR(conv_step2time(i, waypointsStepsPerPhase)), FS_qItself, {}, OT_sos, {1e-1}, waypoints(i));
   }
+#endif
 
   komo->setSkeleton(S);
   //delete all added objectives! -> only keep switches

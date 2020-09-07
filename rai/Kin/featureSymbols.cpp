@@ -195,6 +195,7 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
   else if(feat==FS_qItself) {
 #ifdef RAI_NEW_FEATURES
     if(!frames.N) f=make_shared<F_qItself>(F_qItself::allActiveJoints, frames, C);
+//    if(!frames.N) f=make_shared<F_qItself>();
 #else
     if(!frames.N) f=make_shared<F_qItself>();
 #endif

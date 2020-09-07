@@ -50,7 +50,7 @@
 //#  define FCLmode
 //#endif
 
-#define KOMO_PATH_CONFIG
+//#define KOMO_PATH_CONFIG
 
 using namespace rai;
 
@@ -77,7 +77,7 @@ Shape* getShape(const Configuration& K, const char* name) {
 }
 
 KOMO::KOMO() : computeCollisions(true), verbose(1), komo_problem(*this) {
-  verbose = getParameter<int>("KOMO/verbose", 1);
+  verbose = getParameter<double>("KOMO/verbose", 1);
   solver = getParameter<rai::Enum<rai::KOMOsolver>>("KOMO/solver", KS_banded);
 }
 
@@ -191,7 +191,6 @@ ptr<Objective> KOMO::addObjective(const arr& times,
   CHECK_GE(k_order, f->order, "task requires larger k-order: " <<f->shortTag(world));
   std::shared_ptr<Objective> task = make_shared<Objective>(f, type);
   task->name = f->shortTag(world);
-  task->dim = f->__dim_phi(world);
   objectives.append(task);
 //  task->setCostSpecs(times, stepsPerPhase, T, deltaFromStep, deltaToStep, true); //solver!=rai::KS_banded);
   task->configs = conv_times2tuples(times, f->order, stepsPerPhase, T, deltaFromStep, deltaToStep);
@@ -2479,16 +2478,16 @@ rai::Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featur
     for(uint i=0; i<objectives.N; i++) {
       ptr<Objective> ob = objectives.elem(i);
       for(uint l=0; l<ob->configs.d0; l++) {
-//        ConfigurationL Ktuple = configurations.sub(convert<uint, int>(ob->configs[l]+(int)k_order));
-        uint d=ob->dim;
+        ConfigurationL Ktuple = configurations.sub(convert<uint, int>(ob->configs[l]+(int)k_order));
+        uint d=ob->feat->__dim_phi(Ktuple);
         uint time=ob->configs(l, -1);
-        if(wasRun) {
-//          d=ob->feat->__dim_phi(Ktuple);
-#endif
+//        if(wasRun) {
+#else
     for(ptr<GroundedObjective>& ob:objs) {
       uint d = ob->feat->__dim_phi2(ob->frames);
       int i = ob->objId;
       uint time = ob->configs.last();
+#endif
           for(uint j=0; j<d; j++) CHECK_EQ(featureTypes(M+j), ob->type, "");
           if(d) {
             if(ob->type==OT_sos) {

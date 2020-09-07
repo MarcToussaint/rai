@@ -16,7 +16,6 @@ struct Objective {
   const rai::Enum<ObjectiveType> type;  ///< element of {f, sumOfSqr, inequality, equality}
   rai::String name;
   intA configs; //either a (0,1)-indicator per time slice, or a list of variable tuples
-  uint dim;
 
   Objective(const ptr<Feature>& _feat, const ObjectiveType& _type, const rai::String& _name=rai::String()) : feat(_feat), type(_type), name(_name) {}
   ~Objective() {}
