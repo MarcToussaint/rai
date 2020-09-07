@@ -2491,16 +2491,16 @@ void rai::Configuration::kinematicsProxyCost(arr& y, arr& J, double margin) cons
   }
 }
 
-void rai::Configuration::kinematicsLimitsCost(arr& y, arr& J, const arr& limits, double margin) const {
-  y.resize(1).setZero();
-  if(!!J) J.resize(1, getJointStateDimension()).setZero();
+void rai::Configuration::kinematicsLimits(arr& y, arr& J, const arr& limits) const {
+  kinematicsZero(y, J, 1);
+//  y.resize(1).setZero();
+//  if(!!J) J.resize(1, getJointStateDimension()).setZero();
   double d;
   for(uint i=0; i<limits.d0; i++) if(limits(i, 1)>limits(i, 0)) { //only consider proper limits (non-zero interval)
-      double m = margin*(limits(i, 1)-limits(i, 0));
-      d = limits(i, 0) + m - q(i); //lo
-      if(d>0.) {  y(0) += d/m;  if(!!J) J(0, i)-=1./m;  }
-      d = q(i) - limits(i, 1) + m; //up
-      if(d>0.) {  y(0) += d/m;  if(!!J) J(0, i)+=1./m;  }
+      d = limits(i, 0) - q(i); //lo
+      if(d>0.) {  y.elem(0) += d;  if(!!J) J.elem(0, i)-=1.;  }
+      d = q(i) - limits(i, 1); //up
+      if(d>0.) {  y.elem(0) += d;  if(!!J) J.elem(0, i)+=1.;  }
   }
 }
 

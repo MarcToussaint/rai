@@ -191,6 +191,7 @@ ptr<Objective> KOMO::addObjective(const arr& times,
   CHECK_GE(k_order, f->order, "task requires larger k-order: " <<f->shortTag(world));
   std::shared_ptr<Objective> task = make_shared<Objective>(f, type);
   task->name = f->shortTag(world);
+  task->dim = f->__dim_phi(world);
   objectives.append(task);
 //  task->setCostSpecs(times, stepsPerPhase, T, deltaFromStep, deltaToStep, true); //solver!=rai::KS_banded);
   task->configs = conv_times2tuples(times, f->order, stepsPerPhase, T, deltaFromStep, deltaToStep);
@@ -200,6 +201,7 @@ ptr<Objective> KOMO::addObjective(const arr& times,
   for(uint c=0;c<task->configs.d0;c++){
     shared_ptr<GroundedObjective> o = objs.append( make_shared<GroundedObjective>(f, type) );
     o->configs = task->configs[c];
+    o->objId = objectives.N-1;
     o->frames.resize(task->configs.d1, o->feat->frameIDs.N);
     for(uint i=0;i<task->configs.d1;i++){
       int s = task->configs(c,i) + k_order;
@@ -1600,7 +1602,7 @@ void KOMO::run(const OptOptions options) {
          <<" (kin:" <<timeKinematics <<" coll:" <<timeCollisions <<" feat:" <<timeFeatures <<" newton: " <<timeNewton <<")"
          <<" setPathConfigCount: " <<set_xCount <<" setJointStateCount=" <<Configuration::setJointStateCount <<endl;
   }
-//  if(verbose>0) cout <<getReport(verbose>1) <<endl;
+  if(verbose>0) cout <<getReport(verbose>1) <<endl;
 }
 
 void KOMO::run_sub(const uintA& X, const uintA& Y) {
@@ -1980,7 +1982,6 @@ void KOMO::setupConfigurations(const arr& q_init, const StringA& q_initJoints) {
     C->checkConsistency();
 
     xIndexCount = -k_order*C->getJointStateDimension();
-    C->xIndex = xIndexCount;
     xIndexCount += C->getJointStateDimension();
   }
 
@@ -2006,7 +2007,6 @@ void KOMO::setupConfigurations(const arr& q_init, const StringA& q_initJoints) {
     C->ensure_q();
     C->checkConsistency();
 
-    C->xIndex = xIndexCount;
     xIndexCount += C->getJointStateDimension();
   }
 }
@@ -2097,6 +2097,7 @@ void KOMO::setupConfigurations2() {
 }
 
 void KOMO::setBounds() {
+#ifndef KOMO_PATH_CONFIG
   if(!configurations.N) setupConfigurations();
   CHECK_EQ(configurations.N, k_order+T, "configurations are not setup yet");
 
@@ -2121,6 +2122,11 @@ void KOMO::setBounds() {
     }
   }
   CHECK_EQ(x_count, x.N, "");
+#else
+  arr limits = ~pathConfig.getLimits();
+  bound_lo = limits[0];
+  bound_up = limits[1];
+#endif
 }
 
 void KOMO::checkBounds(const arr& x) {
@@ -2469,14 +2475,20 @@ rai::Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featur
       }
     }
   } else { //featureDense=true
+#ifndef KOMO_PATH_CONFIG
     for(uint i=0; i<objectives.N; i++) {
       ptr<Objective> ob = objectives.elem(i);
       for(uint l=0; l<ob->configs.d0; l++) {
-        ConfigurationL Ktuple = configurations.sub(convert<uint, int>(ob->configs[l]+(int)k_order));
-        uint d=0;
+//        ConfigurationL Ktuple = configurations.sub(convert<uint, int>(ob->configs[l]+(int)k_order));
+        uint d=ob->dim;
         uint time=ob->configs(l, -1);
         if(wasRun) {
-          d=ob->feat->__dim_phi(Ktuple);
+//          d=ob->feat->__dim_phi(Ktuple);
+#endif
+    for(ptr<GroundedObjective>& ob:objs) {
+      uint d = ob->feat->__dim_phi2(ob->frames);
+      int i = ob->objId;
+      uint time = ob->configs.last();
           for(uint j=0; j<d; j++) CHECK_EQ(featureTypes(M+j), ob->type, "");
           if(d) {
             if(ob->type==OT_sos) {
@@ -2497,16 +2509,18 @@ rai::Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featur
             }
             M += d;
           }
-        }
+//        }
         if(reportFeatures==1) {
-          featuresOs <<std::setw(4) <<time <<' ' <<std::setw(2) <<i <<' ' <<std::setw(2) <<d <<ob->configs[l]
-                     <<' ' <<std::setw(40) <<ob->name
+          featuresOs <<std::setw(4) <<time <<' ' <<std::setw(2) <<i <<' ' <<std::setw(2) <<d <<ob->configs
+                     <<' ' <<std::setw(40) <<typeid(*ob->feat).name()
                      <<" k=" <<ob->feat->order <<" ot=" <<ob->type <<" prec=" <<std::setw(4) <<ob->feat->scale;
           if(ob->feat->target.N<5) featuresOs <<" y*=[" <<ob->feat->target <<']'; else featuresOs<<"y*=[..]";
           featuresOs <<" y^2=" <<err(time, i) <<endl;
         }
       }
+#ifndef KOMO_PATH_CONFIG
     }
+#endif
   }
   CHECK_EQ(M, featureValues.N, "");
 
@@ -3406,7 +3420,7 @@ KOMO::Conv_KOMO_FineStructuredProblem::Conv_KOMO_FineStructuredProblem(KOMO& _ko
   for(uint t=0; t<komo.T; t++) {
     int s = t+komo.k_order;
     for(rai::Joint* j:komo.configurations(s)->activeJoints) {
-      CHECK_EQ(idx, j->qIndex + j->frame->C.xIndex, "mismatch index counting");
+//      CHECK_EQ(idx, j->qIndex + j->frame->C.xIndex, "mismatch index counting");
       VariableIndexEntry& V = variableIndex(var);
       V.joint = j;
       V.dim = j->qDim();
@@ -3415,7 +3429,7 @@ KOMO::Conv_KOMO_FineStructuredProblem::Conv_KOMO_FineStructuredProblem(KOMO& _ko
       var++;
     }
     for(rai::ForceExchange* c:komo.configurations(s)->forces) {
-      CHECK_EQ(idx, c->qIndex + c->a.C.xIndex, "mismatch index counting");
+//      CHECK_EQ(idx, c->qIndex + c->a.C.xIndex, "mismatch index counting");
       VariableIndexEntry& V = variableIndex(var);
       V.force = c;
       V.dim = c->qDim();

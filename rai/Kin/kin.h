@@ -224,7 +224,7 @@ struct Configuration : GLDrawer {
   void kinematicsProxyCost(arr& y, arr& J, const Proxy& p, double margin=.0, bool addValues=false) const;
   void kinematicsProxyCost(arr& y, arr& J, double margin=.0) const;
 
-  void kinematicsLimitsCost(arr& y, arr& J, const arr& limits, double margin=.1) const;
+  void kinematicsLimits(arr& y, arr& J, const arr& limits) const;
 
   void setJacModeAs(const arr& J);
 

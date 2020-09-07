@@ -283,7 +283,7 @@ void TEST(Limits){
   arr limits = G.getLimits();
   VectorFunction F = [&G, &limits](arr& y, arr& J, const arr& x){
     G.setJointState(x);
-    G.kinematicsLimitsCost(y,J,limits);
+    G.kinematicsLimits(y,J,limits);
   };
 
   uint n=G.getJointStateDimension();

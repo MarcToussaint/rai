@@ -460,10 +460,46 @@ rai::Array<rai::Joint*> getMatchingJoints(const ConfigurationL& Ktuple, bool zer
 
 //===========================================================================
 
+void F_qLimits2::phi2(arr& y, arr& J, const FrameL& F){
+  uint M = dim_phi2(F);
+  F.last()->C.kinematicsZero(y, J, M);
+  uint m=0;
+  for(rai::Frame *f: F){
+    rai::Joint *j = f->joint;
+    if(!j) continue;
+    if(!j->limits.N) continue;
+    uint d=j->qDim();
+    for(uint k=0; k<d; k++) { //in case joint has multiple dimensions
+      double lo = j->limits(2*k+0);
+      double up = j->limits(2*k+1);
+      uint i = j->qIndex+k;
+      y.elem(m) = lo - f->C.q(i);
+      J.elem(m, i) -= 1.;
+      m++;
+      y.elem(m) = f->C.q(i) - up;
+      J.elem(m, i) += 1.;
+      m++;
+    }
+  }
+}
+
+uint F_qLimits2::dim_phi2(const FrameL& F) {
+  uint m=0;
+  for(rai::Frame *f: F){
+    rai::Joint *j = f->joint;
+    if(!j) continue;
+    if(!j->limits.N) continue;
+    m += 2*j->qDim();
+  }
+  return m;
+}
+
+//===========================================================================
+
 void F_qLimits::phi(arr& y, arr& J, const rai::Configuration& G) {
 //  if(!limits.N)
   limits=G.getLimits(); //G might change joint ordering (kinematic switches), need to query limits every time
-  G.kinematicsLimitsCost(y, J, limits);
+  G.kinematicsLimits(y, J, limits);
 }
 
 //===========================================================================
@@ -608,3 +644,4 @@ uintA getNonSwitchedFrames(const ConfigurationL& Ktuple) {
   }
   return nonSwitchedFrames;
 }
+
