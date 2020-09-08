@@ -2142,48 +2142,73 @@ void buildAiMesh(const rai::Mesh& M, aiMesh* pMesh) {
 
 void rai::Configuration::writeCollada(const char* filename) const {
   // get mesh frames
-  FrameL F;
-  for(rai::Frame* f:frames) {
-    if(f->shape && f->shape->type()!=rai::ST_marker) F.append(f);
-  }
   // create a new scene
   aiScene scene;
   scene.mRootNode = new aiNode("root");
   // create a dummy material
   scene.mMaterials = new aiMaterial *[2];
+  scene.mNumMaterials = 2;
   scene.mMaterials[0] = new aiMaterial();
   scene.mMaterials[1] = new aiMaterial();
-  scene.mNumMaterials = 2;
-  float op = 0.1;
+  float op = 0.5;
   scene.mMaterials[1]->AddProperty(&op, 1, AI_MATKEY_OPACITY);
   // create meshes
-  scene.mMeshes = new aiMesh *[F.N];
-  scene.mNumMeshes = F.N;
-  for(uint i=0; i<F.N; i++) {
-    auto mesh = scene.mMeshes[i] = new aiMesh();
-    rai::Mesh& M = F(i)->shape->mesh();
-    buildAiMesh(M, mesh);
-    double alpha = F(i)->shape->alpha();
-    if(alpha==1.)
-      scene.mMeshes[i]->mMaterialIndex = 0;
-    else
-      scene.mMeshes[i]->mMaterialIndex = 1;
-  }
-  // create nodes for all frames
-  scene.mRootNode->mChildren = new aiNode* [F.N];
-  scene.mRootNode->mNumChildren = F.N;
+  //count meshes
+  uint n_meshes=0;
+  for(rai::Frame* f:frames) if(f->shape && f->shape->type()!=rai::ST_marker) n_meshes++;
+  scene.mMeshes = new aiMesh *[n_meshes];
+  scene.mNumMeshes = n_meshes;
+  // create all nodes
+  n_meshes=0;
   arr T = eye(4);
-  for(uint i=0; i<F.N; i++) {
-    aiNode* node = new aiNode(STRING("mesh_" <<i).p);
-    scene.mRootNode->mChildren[i] = node;
-    node->mParent = scene.mRootNode;
-    node->mMeshes = new unsigned[1];
-    node->mNumMeshes = 1;
-    node->mMeshes[0] = i;
-    F(i)->ensure_X().getAffineMatrix(T.p);
+  rai::Array<aiNode*> nodes(frames.N);
+  for(rai::Frame *f:frames) {
+    aiNode* node = new aiNode(f->name.p);
+    nodes(f->ID) = node;
+    // create a mesh?
+    if(f->shape && f->shape->type()!=rai::ST_marker){
+      aiMesh* mesh = scene.mMeshes[n_meshes] = new aiMesh();
+      rai::Mesh& M = f->shape->mesh();
+      buildAiMesh(M, mesh);
+      double alpha = f->shape->alpha();
+      if(alpha==1.)
+        mesh->mMaterialIndex = 0;
+      else
+        mesh->mMaterialIndex = 1;
+      //associate with node
+      node->mMeshes = new unsigned[1];
+      node->mNumMeshes = 1;
+      node->mMeshes[0] = n_meshes;
+      n_meshes++;
+    }else{
+      node->mMeshes = 0;
+      node->mNumMeshes = 0;
+    }
+    f->get_Q().getAffineMatrix(T.p);
     for(uint j=0; j<4; j++) for(uint k=0; k<4; k++) {
-        node->mTransformation[j][k] = T(j, k);
-      }
+      node->mTransformation[j][k] = T(j, k);
+    }
+  }
+  //connect parent/children
+  //count roots
+  uint n_roots=0;
+  for(rai::Frame *f:frames) if(!f->parent) n_roots++;
+  scene.mRootNode->mChildren = new aiNode* [n_roots];
+  scene.mRootNode->mNumChildren = n_roots;
+  n_roots=0;
+  for(rai::Frame *f:frames) {
+    aiNode* node = nodes(f->ID);
+    if(f->parent){
+      node->mParent = nodes(f->parent->ID);
+    }else{
+      node->mParent = scene.mRootNode;
+      scene.mRootNode->mChildren[n_roots++] = node;
+    }
+    node->mChildren = new aiNode* [f->children.N];
+    node->mNumChildren = f->children.N;
+    for(uint i=0;i<f->children.N;i++){
+      node->mChildren[i] = nodes(f->children(i)->ID);
+    }
   }
   // export
   Assimp::Exporter exporter;
