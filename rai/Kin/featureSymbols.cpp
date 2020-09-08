@@ -72,6 +72,8 @@ template<> const char* rai::Enum<FeatureSymbol>::names []= {
 
   "transAccelerations",
   "transVelocities",
+
+  "qQuaternionNorms",
   nullptr
 };
 
@@ -79,10 +81,11 @@ template<> const char* rai::Enum<FeatureSymbol>::names []= {
 auto getQFramesAndScale(const rai::Configuration& C) {
   struct Return { uintA frames; arr scale; } R;
   for(rai::Frame* f : C.frames) {
-    if(f->joint && f->joint->active && f->joint->dim>0 && f->joint->H>0. && f->joint->type!=rai::JT_tau) {
-      CHECK(!f->joint->mimic, "");
+    rai::Joint *j = f->joint;
+    if(j && j->active && j->dim>0 && (!j->mimic) && j->H>0. && j->type!=rai::JT_tau && (!f->ats["constant"])) {
+      CHECK(!j->mimic, "");
       R.frames.append(TUP(f->ID, f->parent->ID));
-      R.scale.append(f->joint->H, f->joint->dim);
+      R.scale.append(j->H, j->dim);
     }
   }
   R.frames.reshape(-1, 2);
@@ -183,11 +186,16 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
     if(frames.N) f=make_shared<TM_Proxy>(TMT_allP, stringListToFrameIndices(frames, C));
     else f=make_shared<TM_Proxy>(TMT_allP, framesToIndices(C.frames));
   }
-  else if(feat==FS_jointLimits) {  f=make_shared<F_qLimits>(); }
+  else if(feat==FS_jointLimits) {
+    f=make_shared<F_qLimits2>(stringListToFrameIndices(frames, C));
+//    f=make_shared<F_qLimits>();
+//    for(auto *j:C.activeJoints) f->frameIDs.append(j->frame->ID);
+  }
 
   else if(feat==FS_qItself) {
 #ifdef RAI_NEW_FEATURES
     if(!frames.N) f=make_shared<F_qItself>(F_qItself::allActiveJoints, frames, C);
+//    if(!frames.N) f=make_shared<F_qItself>();
 #else
     if(!frames.N) f=make_shared<F_qItself>();
 #endif
@@ -212,7 +220,13 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
 //    map->velCoeff = 1.;
 //    map->accCoeff = 0.;
 //    f = map;
-  } else HALT("can't interpret feature symbols: " <<feat);
+  }
+  else if(feat==FS_qQuaternionNorms) {
+    f = make_shared<F_qQuaternionNorms>();
+    for(auto *j:C.activeJoints) if(j->type==rai::JT_quatBall || j->type==rai::JT_free) f->frameIDs.append(j->frame->ID);
+  }
+
+  else HALT("can't interpret feature symbols: " <<feat);
 
   if(!!scale) {
     if(!f->scale.N) f->scale = scale;

@@ -10,13 +10,16 @@ using namespace std;
 //===========================================================================
 
 void TEST(Grasp){
-  rai::Configuration K("model.g");
+  rai::Configuration C("model.g");
 //  K.optimizeTree();
-  K.checkConsistency();
+  C.checkConsistency();
+
+  rai::ConfigurationViewer V;
+  V.setConfiguration(C, "initial model", false);
 
   KOMO komo;
 
-  komo.setModel(K);
+  komo.setModel(C);
   komo.setTiming(2.5, 10., 5.);
   komo.add_qControlObjective({}, 2, 1.);
 
@@ -28,7 +31,7 @@ void TEST(Grasp){
   komo.addSwitch_stable(1., -1., "endeff", "stickTip");
 #endif
 
-  komo.add_collision(true);
+//  komo.add_collision(true);
 
   komo.addObjective({2.}, FS_distance, {"stick", "redBall"}, OT_eq, {1e2});
 
@@ -36,12 +39,15 @@ void TEST(Grasp){
 
 //  komo.animateOptimization = 2;
 //  komo.verbose = 8;
+  komo.retrospectApplySwitches2();
   komo.optimize();
   komo.checkGradients();
 
   rai::Graph result = komo.getReport(true);
 
-  for(uint i=0;i<2;i++) if(!komo.displayTrajectory(.1, true)) break;
+//  for(uint i=0;i<2;i++) if(!komo.displayTrajectory(.1, true)) break;
+  V.setPath(komo.getPath_frames(), "optimized motion", true);
+  for(uint i=0;i<2;i++) V.playVideo(true);
 }
 
 //===========================================================================
@@ -82,7 +88,6 @@ int TEST(Pnp){
   komo.optimize();
 //  komo.checkGradients();
 
-//  rai::ConfigurationViewer V;
   V.setPath(komo.getPath_frames(), "optimized motion", true);
   for(uint i=0;i<2;i++) V.playVideo(true);
 
@@ -94,7 +99,7 @@ int TEST(Pnp){
 int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
-  testGrasp();
+//  testGrasp();
   testPnp();
 
   return 0;

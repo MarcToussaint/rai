@@ -10,6 +10,7 @@
 
 uint eval_count=0;
 Singleton<OptOptions> globalOptOptions;
+OptOptions *__globalOptOptions=0;
 ObjectiveTypeA __NoTermTypeA(new SpecialArray(SpecialArray::ST_NoArr));
 ObjectiveTypeA& NoObjectiveTypeA = __NoTermTypeA;
 

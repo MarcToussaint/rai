@@ -76,11 +76,9 @@ struct Configuration : GLDrawer {
   enum JacobianMode { JM_dense, JM_sparse, JM_noArr, JM_emptyShape };
   JacobianMode jacMode = JM_dense;
 
-  int xIndex=0;   // the start-index of this configuration in a larger decision variable x (e.g. if x is a path of configurations) (analogous to qIndex of a joint)
-
   static uint setJointStateCount;
 
-  //global options -> TODO: refactor away from here
+  // options -> TODO: refactor away from here
   bool orsDrawJoints=false, orsDrawShapes=true, orsDrawBodies=true, orsDrawProxies=true, orsDrawMarkers=true, orsDrawColors=true, orsDrawIndexColors=false;
   bool orsDrawVisualsOnly=false, orsDrawMeshes=true, orsDrawCores=false, orsDrawZlines=false;
   bool orsDrawFrameNames=false;
@@ -209,6 +207,8 @@ struct Configuration : GLDrawer {
   void jacobian_tau(arr& J, Frame* a) const;
   void jacobian_zero(arr& J, uint n) const; //returns the 'Jacobian' of a zero n-vector (initializes Jacobian to proper sparse/dense/noArr)
 
+  void kinematicsZero(arr& y, arr& J, uint n) const;
+  uint kinematicsJoints(arr& y, arr& J, const FrameL& F, bool relative_q0=false) const;
   void kinematicsPos(arr& y, arr& J, Frame* a, const Vector& rel=NoVector) const;
   void kinematicsVec(arr& y, arr& J, Frame* a, const Vector& vec=NoVector) const;
   void kinematicsQuat(arr& y, arr& J, Frame* a) const;
@@ -224,7 +224,7 @@ struct Configuration : GLDrawer {
   void kinematicsProxyCost(arr& y, arr& J, const Proxy& p, double margin=.0, bool addValues=false) const;
   void kinematicsProxyCost(arr& y, arr& J, double margin=.0) const;
 
-  void kinematicsLimitsCost(arr& y, arr& J, const arr& limits, double margin=.1) const;
+  void kinematicsLimits(arr& y, arr& J, const arr& limits) const;
 
   void setJacModeAs(const arr& J);
 
@@ -286,45 +286,6 @@ struct Configuration : GLDrawer {
   void reportProxies(std::ostream& os=std::cout, double belowMargin=1., bool brief=true) const;
 
   friend struct KinematicSwitch;
-};
-
-/// extension: containing deprecated functionalities
-struct Configuration_ext : Configuration {
-  arr qdot;
-
-  void calc_fwdPropagateFrames();    ///< elementary forward kinematics; also computes all Shape frames
-  void calc_Q_from_Frames();    ///< fill in the joint transformations assuming that frame poses are known (makes sense when reading files)
-
-  void getJointState(arr& _q, arr& _qdot=NoArr) const;
-  void setJointState(const arr& _q, const arr& _qdot=NoArr);
-
-  /// @name Jacobians and kinematics (low level)
-  void kinematicsPenetrations(arr& y, arr& J=NoArr, bool penetrationsOnly=true, double activeMargin=0.) const; ///< true: if proxy(i).distance>0. => y(i)=0; else y(i)=-proxy(i).distance
-  void kinematicsProxyDist(arr& y, arr& J, const Proxy& p, double margin=.02, bool useCenterDist=true, bool addValues=false) const;
-  void kinematicsContactCost(arr& y, arr& J, const ForceExchange* p, double margin=.0, bool addValues=false) const;
-  void kinematicsContactCost(arr& y, arr& J, double margin=.0) const;
-  void kinematicsProxyConstraint(arr& g, arr& J, const Proxy& p, double margin=.02) const;
-  void kinematicsContactConstraints(arr& y, arr& J) const; //TODO: deprecated?
-  void getLimitsMeasure(arr& x, const arr& limits, double margin=.1) const;
-
-  /// @name active set selection
-  void setAgent(uint) { NIY }
-
-  /// @name High level (inverse) kinematics
-  void inverseKinematicsPos(Frame& frame, const arr& ytarget, const rai::Vector& rel_offset=NoVector, int max_iter=3);
-
-  /// @name dynamics
-  void inertia(arr& M);
-
-  /// @name forces and gravity
-  void contactsToForces(double hook=.01, double damp=.0003);
-  void gravityToForces(double g=-9.81);
-  void frictionToForces(double coeff);
-  void NewtonEuler_backward();
-
-  /// @name collisions & proxies
-  void filterProxiesToContacts(double margin=.01); ///< proxies are returns from a collision engine; contacts stable constraints
-  void proxiesToContacts(double margin=.01); ///< proxies are returns from a collision engine; contacts stable constraints
 };
 
 } //namespace rai

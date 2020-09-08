@@ -77,7 +77,7 @@ Shape* getShape(const Configuration& K, const char* name) {
 }
 
 KOMO::KOMO() : computeCollisions(true), verbose(1), komo_problem(*this) {
-  verbose = getParameter<int>("KOMO/verbose", 1);
+  verbose = getParameter<double>("KOMO/verbose", 1);
   solver = getParameter<rai::Enum<rai::KOMOsolver>>("KOMO/solver", KS_banded);
 }
 
@@ -200,6 +200,7 @@ ptr<Objective> KOMO::addObjective(const arr& times,
   for(uint c=0;c<task->configs.d0;c++){
     shared_ptr<GroundedObjective> o = objs.append( make_shared<GroundedObjective>(f, type) );
     o->configs = task->configs[c];
+    o->objId = objectives.N-1;
     o->frames.resize(task->configs.d1, o->feat->frameIDs.N);
     for(uint i=0;i<task->configs.d1;i++){
       int s = task->configs(c,i) + k_order;
@@ -1469,9 +1470,13 @@ void KOMO::optimize(double addInitializationNoise, const OptOptions options) {
 
 void KOMO::run_prepare(double addInitializationNoise) {
   //ensure the configurations are setup
+#ifndef KOMO_PATH_CONFIG
   if(!configurations.N) setupConfigurations();
   CHECK_EQ(configurations.N, k_order+T, "");
   for(uint s=0; s<k_order; s++) configurations(s)->ensure_q(); //also the prefix!
+#else
+  if(!timeSlices.nd) setupConfigurations2();
+#endif
 
   //ensure the decision variable is in sync from the configurations
   x = getPath_decisionVariable();
@@ -1976,7 +1981,6 @@ void KOMO::setupConfigurations(const arr& q_init, const StringA& q_initJoints) {
     C->checkConsistency();
 
     xIndexCount = -k_order*C->getJointStateDimension();
-    C->xIndex = xIndexCount;
     xIndexCount += C->getJointStateDimension();
   }
 
@@ -2002,7 +2006,6 @@ void KOMO::setupConfigurations(const arr& q_init, const StringA& q_initJoints) {
     C->ensure_q();
     C->checkConsistency();
 
-    C->xIndex = xIndexCount;
     xIndexCount += C->getJointStateDimension();
   }
 }
@@ -2077,9 +2080,9 @@ void KOMO::setupConfigurations2() {
 
   timeSlices.resize(k_order+T, C.frames.N);
   for(uint s=0;s<k_order+T;s++) {
-    for(KinematicSwitch* sw:switches) { //apply potential switches
-      if(sw->timeOfApplication+(int)k_order==(int)s)  sw->apply(C.frames);
-    }
+//    for(KinematicSwitch* sw:switches) { //apply potential switches
+//      if(sw->timeOfApplication+(int)k_order==(int)s)  sw->apply(C.frames);
+//    }
 
     uint nBefore = pathConfig.frames.N;
     pathConfig.addFramesCopy(C.frames);
@@ -2093,6 +2096,7 @@ void KOMO::setupConfigurations2() {
 }
 
 void KOMO::setBounds() {
+#ifndef KOMO_PATH_CONFIG
   if(!configurations.N) setupConfigurations();
   CHECK_EQ(configurations.N, k_order+T, "configurations are not setup yet");
 
@@ -2117,6 +2121,11 @@ void KOMO::setBounds() {
     }
   }
   CHECK_EQ(x_count, x.N, "");
+#else
+  arr limits = ~pathConfig.getLimits();
+  bound_lo = limits[0];
+  bound_up = limits[1];
+#endif
 }
 
 void KOMO::checkBounds(const arr& x) {
@@ -2465,14 +2474,20 @@ rai::Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featur
       }
     }
   } else { //featureDense=true
+#ifndef KOMO_PATH_CONFIG
     for(uint i=0; i<objectives.N; i++) {
       ptr<Objective> ob = objectives.elem(i);
       for(uint l=0; l<ob->configs.d0; l++) {
         ConfigurationL Ktuple = configurations.sub(convert<uint, int>(ob->configs[l]+(int)k_order));
-        uint d=0;
+        uint d=ob->feat->__dim_phi(Ktuple);
         uint time=ob->configs(l, -1);
-        if(wasRun) {
-          d=ob->feat->__dim_phi(Ktuple);
+//        if(wasRun) {
+#else
+    for(ptr<GroundedObjective>& ob:objs) {
+      uint d = ob->feat->__dim_phi2(ob->frames);
+      int i = ob->objId;
+      uint time = ob->configs.last();
+#endif
           for(uint j=0; j<d; j++) CHECK_EQ(featureTypes(M+j), ob->type, "");
           if(d) {
             if(ob->type==OT_sos) {
@@ -2493,16 +2508,18 @@ rai::Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featur
             }
             M += d;
           }
-        }
+//        }
         if(reportFeatures==1) {
-          featuresOs <<std::setw(4) <<time <<' ' <<std::setw(2) <<i <<' ' <<std::setw(2) <<d <<ob->configs[l]
-                     <<' ' <<std::setw(40) <<ob->name
+          featuresOs <<std::setw(4) <<time <<' ' <<std::setw(2) <<i <<' ' <<std::setw(2) <<d <<ob->configs
+                     <<' ' <<std::setw(40) <<typeid(*ob->feat).name()
                      <<" k=" <<ob->feat->order <<" ot=" <<ob->type <<" prec=" <<std::setw(4) <<ob->feat->scale;
           if(ob->feat->target.N<5) featuresOs <<" y*=[" <<ob->feat->target <<']'; else featuresOs<<"y*=[..]";
           featuresOs <<" y^2=" <<err(time, i) <<endl;
         }
       }
+#ifndef KOMO_PATH_CONFIG
     }
+#endif
   }
   CHECK_EQ(M, featureValues.N, "");
 
@@ -2799,6 +2816,12 @@ void KOMO::Conv_KOMO_SparseNonfactored::evaluate(arr& phi, arr& J, const arr& x)
       if(!!J) CHECK_EQ(Jy.nd, 2, "");
 #ifdef KOMO_PATH_CONFIG
       if(!!J) CHECK_EQ(Jy.d1, komo.pathConfig.getJointStateDimension(), "");
+//      uint d = ob->feat->__dim_phi2(ob->frames);
+//      if(d!=y.N){
+//        d  = ob->feat->__dim_phi2(ob->frames);
+//        ob->feat->__phi2(y, Jy, ob->frames);
+//      }
+//      CHECK_EQ(d, y.N, "");
 #else
       if(!!J) CHECK_EQ(Jy.d1, kdim.last(), "");
 #endif
@@ -2864,6 +2887,7 @@ void KOMO::Conv_KOMO_SparseNonfactored::getFHessian(arr& H, const arr& x) {
 }
 
 void KOMO::Conv_KOMO_SparseNonfactored::getDimPhi() {
+#ifndef KOMO_PATH_CONFIG
   CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet: use komo.reset()");
 //  komo.pathConfig.jacMode = rai::Configuration::JM_noArr;
 //  for(rai::Configuration* C:komo.configurations) C->jacMode = rai::Configuration::JM_noArr;
@@ -2875,6 +2899,12 @@ void KOMO::Conv_KOMO_SparseNonfactored::getDimPhi() {
       M += ob->feat->__dim_phi(Ktuple); //dimensionality of this task
     }
   }
+#else
+  uint M=0;
+  for(ptr<GroundedObjective>& ob : komo.objs) {
+    M += ob->feat->__dim_phi2(ob->frames);
+  }
+#endif
   dimPhi = M;
 }
 
@@ -2883,6 +2913,7 @@ void KOMO::Conv_KOMO_SparseNonfactored::getFeatureTypes(ObjectiveTypeA& ft) {
   ft.resize(dimPhi);
   komo.featureNames.clear();
   uint M=0;
+#ifndef KOMO_PATH_CONFIG
   for(uint i=0; i<komo.objectives.N; i++) {
     ptr<Objective> ob = komo.objectives.elem(i);
     for(uint l=0; l<ob->configs.d0; l++) {
@@ -2893,6 +2924,14 @@ void KOMO::Conv_KOMO_SparseNonfactored::getFeatureTypes(ObjectiveTypeA& ft) {
       M += m;
     }
   }
+#else
+  for(ptr<GroundedObjective>& ob : komo.objs) {
+    uint m = ob->feat->__dim_phi2(ob->frames);
+    for(uint i=0; i<m; i++) ft(M+i) = ob->type;
+    for(uint j=0; j<m; j++) komo.featureNames.append("TODO");
+    M += m;
+  }
+#endif
   if(quadraticPotentialLinear.N) {
     ft.append(OT_f);
   }
@@ -3380,7 +3419,7 @@ KOMO::Conv_KOMO_FineStructuredProblem::Conv_KOMO_FineStructuredProblem(KOMO& _ko
   for(uint t=0; t<komo.T; t++) {
     int s = t+komo.k_order;
     for(rai::Joint* j:komo.configurations(s)->activeJoints) {
-      CHECK_EQ(idx, j->qIndex + j->frame->C.xIndex, "mismatch index counting");
+//      CHECK_EQ(idx, j->qIndex + j->frame->C.xIndex, "mismatch index counting");
       VariableIndexEntry& V = variableIndex(var);
       V.joint = j;
       V.dim = j->qDim();
@@ -3389,7 +3428,7 @@ KOMO::Conv_KOMO_FineStructuredProblem::Conv_KOMO_FineStructuredProblem(KOMO& _ko
       var++;
     }
     for(rai::ForceExchange* c:komo.configurations(s)->forces) {
-      CHECK_EQ(idx, c->qIndex + c->a.C.xIndex, "mismatch index counting");
+//      CHECK_EQ(idx, c->qIndex + c->a.C.xIndex, "mismatch index counting");
       VariableIndexEntry& V = variableIndex(var);
       V.force = c;
       V.dim = c->qDim();
@@ -3766,10 +3805,14 @@ uint KOMO::getPath_totalDofs() {
 }
 
 arr KOMO::getPath_decisionVariable() {
+#ifndef KOMO_PATH_CONFIG
   CHECK_EQ(configurations.N, k_order+T, "configurations are not setup yet");
   arr x;
   for(uint t=0; t<T; t++) x.append(configurations(t+k_order)->getJointState());
   return x;
+#else
+  return pathConfig.getJointState();
+#endif
 }
 
 arr KOMO::getPath(const StringA& joints) {

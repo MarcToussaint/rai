@@ -262,12 +262,26 @@ void rai::Configuration::addFramesCopy(const FrameL& F) {
   intA FId2thisId(maxId+1);
   FId2thisId = -1;
   for(Frame* f:F) {
-    Frame* a = new Frame(*this, f);
-    FId2thisId(f->ID)=a->ID;
+    Frame* f_new = new Frame(*this, f);
+    FId2thisId(f->ID) = f_new->ID;
   }
   for(Frame* f:F) if(f->parent && f->parent->ID<=maxId && FId2thisId(f->parent->ID)!=-1) {
-      frames(FId2thisId(f->ID))->linkFrom(frames(FId2thisId(f->parent->ID)));
+    rai::Frame* f_new = frames(FId2thisId(f->ID));
+    f_new->linkFrom(frames(FId2thisId(f->parent->ID)));
+    //take care of within-F mimic joints:
+    if(f->joint && f->joint->mimic){
+      CHECK(f->joint && f->joint->mimic, "");
+      f_new->joint->mimic = frames(FId2thisId(f->joint->mimic->frame->ID))->joint;
     }
+    //convert constant joints to mimic joints
+    if(f->joint && f->ats["constant"]){
+      rai::Frame *f_orig = getFrameByName(f_new->name); //identify by name!!!
+      if(f_orig!=f_new){
+        CHECK(f_orig->joint, "");
+        f_new->joint->mimic = f_orig->joint;
+      }
+    }
+  }
 }
 
 void rai::Configuration::clear() {
@@ -328,7 +342,6 @@ void rai::Configuration::copy(const rai::Configuration& C, bool referenceSwiftOn
   clear();
   orsDrawProxies = C.orsDrawProxies;
   jacMode = C.jacMode;
-  xIndex = C.xIndex;
 
   //copy frames; first each Frame/Link/Joint directly, where all links go to the origin K (!!!); then relink to itself
   for(Frame* f:C.frames) new Frame(*this, f);
@@ -358,14 +371,6 @@ void rai::Configuration::copy(const rai::Configuration& C, bool referenceSwiftOn
 
 bool rai::Configuration::operator!() const { return this==&NoWorld; }
 
-/** @brief KINEMATICS: given the (absolute) frames of root nodes and the relative frames
-    on the edges, this calculates the absolute frames of all other nodes (propagating forward
-    through trees and testing consistency of loops). */
-void rai::Configuration_ext::calc_fwdPropagateFrames() {
-  HALT("don't use this anymore");
-//  if(fwdActiveSet.N!=frames.N) calc_activeSets();
-//  for(Frame *f:fwdActiveSet) if(f->parent) f->calc_X_from_parent();
-}
 
 arr rai::Configuration::calc_fwdPropagateVelocities(const arr& qdot) {
   CHECK(check_topSort(), "this needs a top sorted configuration")
@@ -420,15 +425,6 @@ arr rai::Configuration::calc_fwdPropagateVelocities(const arr& qdot) {
   return vel;
 }
 
-/** @brief given the absolute frames of all nodes and the two rigid (relative)
-    frames A & B of each edge, this calculates the dynamic (relative) joint
-    frame X for each edge (which includes joint transformation and errors) */
-void rai::Configuration_ext::calc_Q_from_Frames() {
-  HALT("should never be called (anymore)");
-  for(Frame* f:frames) if(f->parent) {
-      f->calc_Q_from_parent();
-    }
-}
 
 arr rai::Configuration::naturalQmetric(double power) const {
   HALT("don't use this anymore. use getHmetric instead");
@@ -512,15 +508,15 @@ void rai::Configuration::calc_indexedActiveJoints() {
   //-- count active DOFs
   uint qcount=0;
   for(Joint* j: activeJoints) {
+    j->dim = j->getDimFromType();
     if(!j->mimic) {
-      j->dim = j->getDimFromType();
       j->qIndex = qcount;
       if(!j->uncertainty)
         qcount += j->qDim();
       else
         qcount += 2*j->qDim();
     } else {
-      j->dim = 0;
+      CHECK(j->mimic->active, "active joint '" << j->frame->name <<"' mimics inactive joint '" <<j->mimic->frame->name <<"'");
       j->qIndex = j->mimic->qIndex;
     }
   }
@@ -536,19 +532,14 @@ void rai::Configuration::calc_indexedActiveJoints() {
 
   //-- count inactive DOFs
   qcount=0;
-  for(Frame* f:frames) if(f->joint && !f->joint->active){
+  for(Frame* f:frames) if(f->joint && !f->joint->active){ //include counting mimic'ing!
     Joint *j = f->joint;
-    if(!j->mimic) {
-      j->dim = j->getDimFromType();
-      j->qIndex = qcount;
-      if(!j->uncertainty)
-        qcount += j->qDim();
-      else
-        qcount += 2*j->qDim();
-    } else {
-      j->dim = 0;
-      j->qIndex = j->mimic->qIndex;
-    }
+    j->dim = j->getDimFromType();
+    j->qIndex = qcount;
+    if(!j->uncertainty)
+      qcount += j->qDim();
+    else
+      qcount += 2*j->qDim();
   }
 
 }
@@ -557,15 +548,6 @@ void rai::Configuration::calc_indexedActiveJoints() {
 uint rai::Configuration::getJointStateDimension() const {
   if(!q.nd)((Configuration*)this)->ensure_q();
   return q.N;
-}
-
-void rai::Configuration_ext::getJointState(arr& _q, arr& _qdot) const {
-  if(!q.nd)((Configuration*)this)->ensure_q();
-  _q=q;
-  if(!!_qdot) {
-    _qdot=qdot;
-    if(!_qdot.N) _qdot.resizeAs(q).setZero();
-  }
 }
 
 const arr& rai::Configuration::getJointState() const {
@@ -692,7 +674,7 @@ void rai::Configuration::calc_q_from_Q() {
 void rai::Configuration::calc_qInactive_from_Q() {
   qInactive.clear();
 
-  for(Frame* f: frames) if(f->joint && !f->joint->active && !f->joint->mimic){
+  for(Frame* f: frames) if(f->joint && !f->joint->active){ //this includes mimic'ing joints!
     arr joint_q = f->joint->calc_q_from_Q(f->Q);
     CHECK_EQ(joint_q.N, f->joint->dim, "");
     if(!f->joint->dim) continue; //nothing to do
@@ -727,7 +709,13 @@ void rai::Configuration::calc_Q_from_q() {
 
 void rai::Configuration::selectJoints(const FrameL& F, bool notThose) {
   for(Frame* f: frames) if(f->joint) f->joint->active = notThose;
-  for(Frame* f: F) if(f && f->joint) f->joint->active = !notThose;
+  for(Frame* f: F) if(f && f->joint){
+    f->joint->active = !notThose;
+    if(f->joint->mimic) f->joint->mimic->active = f->joint->active; //activate also the joint mimic'ed
+  }
+  for(Frame* f: frames) if(f && f->joint && f->joint->mimic){ //mimic's of active joints are active as well
+    if(f->joint->mimic->active) f->joint->active = true;
+  }
   reset_q();
   ensure_indexedJoints();
   calc_qInactive_from_Q();
@@ -787,18 +775,6 @@ void rai::Configuration::setJointState(const arr& _q) {
     }
   }
   calc_Q_from_q();
-}
-
-/** @brief sets the joint state vectors separated in positions and
-  velocities */
-void rai::Configuration_ext::setJointState(const arr& _q, const arr& _qdot) {
-  Configuration::setJointState(q);
-  if(!!_qdot) {
-    CHECK_EQ(_qdot.N, q.N, "wrong joint velocity dimensionalities");
-    qdot=_qdot;
-  } else {
-    qdot.clear();
-  }
 }
 
 void rai::Configuration::setJointState(const arr& _q, const StringA& joints) {
@@ -983,6 +959,46 @@ void rai::Configuration::jacobian_zero(arr& J, uint n) const {
   }
 }
 
+void rai::Configuration::kinematicsZero(arr& y, arr& J, uint n) const {
+  y.resize(n).setZero();
+  jacobian_zero(J, n);
+}
+
+uint rai::Configuration::kinematicsJoints(arr& y, arr& J, const FrameL& F, bool relative_q0) const {
+  CHECK_EQ(F.nd, 1, "");
+  uint m=0;
+  for(rai::Frame *f: F){
+    rai::Joint *j = f->joint;
+    CHECK(j, "selected frame " <<*f <<" ('" <<f->name <<"') is not a joint");
+    m += j->qDim();
+  }
+  if(!y) return m;
+
+  kinematicsZero(y, J, m);
+
+  m=0;
+  for(rai::Frame *f: F){
+    rai::Joint *j = f->joint;
+    for(uint k=0; k<j->dim; k++) {
+      if(j->active){
+        y.elem(m) = q.elem(j->qIndex+k);
+      }else{
+        y.elem(m) = qInactive.elem(j->qIndex+k);
+      }
+//      if(flipSign) q.elem(m) *= -1.;
+      if(relative_q0 && j->q0.N) y.elem(m) -= j->q0(k);
+      if(j->active) {
+//        if(flipSign) J.elem(m, j->qIndex+k) = -1.; else
+        J.elem(m, j->qIndex+k) = 1.;
+      }
+      m++;
+    }
+  }
+
+  CHECK_EQ(y.N, m, "");
+  return m;
+}
+
 #if 1
 void rai::Configuration::jacobian_pos(arr& J, Frame* a, const rai::Vector& pos_world) const {
   CHECK_EQ(&a->C, this, "");
@@ -1011,7 +1027,6 @@ void rai::Configuration::jacobian_pos(arr& J, Frame* a, const rai::Vector& pos_w
           J.elem(1, j_idx) += j->scale * j->axis.y;
           J.elem(2, j_idx) += j->scale * j->axis.z;
         } else if(j->type==JT_transXY) {
-          if(j->mimic) NIY;
           arr R = j->X().rot.getArr();
           R *= j->scale;
           J.setMatrixBlock(R.sub(0, -1, 0, 1), 0, j_idx);
@@ -1442,60 +1457,6 @@ void rai::Configuration::kinematicsContactForce(arr& y, arr& J, rai::ForceExchan
 
     for(uint i=0; i<3; i++) J.elem(i, c->qIndex+3+i) = 1.;
   }
-}
-
-/** @brief return the configuration's inertia tensor $M$ (n x n tensor)*/
-void rai::Configuration_ext::inertia(arr& M) {
-  uint j1_idx, j2_idx;
-  rai::Transformation Xa, Xi, Xj;
-  Joint* j1, *j2;
-  rai::Vector vi, vj, ti, tj;
-  double tmp;
-
-  uint N=getJointStateDimension();
-
-  //initialize Jacobian
-  M.resize(N, N);
-  M.setZero();
-
-  for(Frame* a: frames) {
-    //get reference frame
-    Xa = a->ensure_X();
-
-    j1=a->joint;
-    while(j1) {
-      j1_idx=j1->qIndex;
-
-      Xi = j1->from()->ensure_X();
-      //      Xi.appendTransformation(j1->A);
-      ti = Xi.rot.getX();
-
-      vi = ti ^(Xa.pos-Xi.pos);
-
-      j2=j1;
-      while(j2) {
-        j2_idx=j2->qIndex;
-
-        Xj = j2->from()->ensure_X();
-        //        Xj.appendTransformation(j2->A);
-        tj = Xj.rot.getX();
-
-        vj = tj ^(Xa.pos-Xj.pos);
-
-        tmp = a->inertia->mass * (vi*vj);
-        //tmp += scalarProduct(a->a.inertia, ti, tj);
-
-        M(j1_idx, j2_idx) += tmp;
-
-        j2=j2->from()->joint;
-        if(!j2) break;
-      }
-      j1=j1->from()->joint;
-      if(!j1) break;
-    }
-  }
-  //symmetric: fill in other half
-  for(j1_idx=0; j1_idx<N; j1_idx++) for(j2_idx=0; j2_idx<j1_idx; j2_idx++) M(j2_idx, j1_idx) = M(j1_idx, j2_idx);
 }
 
 void rai::Configuration::equationOfMotion(arr& M, arr& F, const arr& qdot, bool gravity) {
@@ -1949,37 +1910,6 @@ void rai::Configuration::filterProxiesToContacts(double margin) {
   for(ForceExchange* c:old) delete c;
 }
 #endif
-
-void rai::Configuration_ext::proxiesToContacts(double margin) {
-  for(Frame* f:frames) while(f->forces.N) delete f->forces.last();
-
-  for(Proxy& p:proxies) {
-    if(!p.collision) p.calc_coll(*this);
-    ForceExchange* candidate=nullptr;
-    for(ForceExchange* c:p.a->forces) {
-      if((&c->a==p.a && &c->b==p.b) || (&c->a==p.b && &c->b==p.a)) {
-        candidate = c;
-        break;
-      }
-    }
-    if(candidate) __merge(candidate, &p);
-    else {
-      if(p.collision->distance-(p.collision->rad1+p.collision->rad2)<margin) {
-        rai::ForceExchange* c = new rai::ForceExchange(*p.a, *p.b);
-        __merge(c, &p);
-      }
-    }
-  }
-  //phase 2: cleanup old and distant contacts
-  NIY;
-  //  rai::Array<ForceExchange*> old;
-  //  for(Frame *f:frames) for(ForceExchange *c:f->forces) if(&c->a==f) {
-  //    if(c->getDistance()>2.*margin) {
-  //      old.append(c);
-  //    }
-  //  }
-  //  for(ForceExchange *c:old) delete c;
-}
 
 double rai::Configuration::totalCollisionPenetration() {
   CHECK(_state_proxies_isGood, "");
@@ -2547,110 +2477,6 @@ bool ProxySortComp(const rai::Proxy* a, const rai::Proxy* b) {
   return (a->a < b->a) || (a->a==b->a && a->b<b->b) || (a->a==b->a && a->b==b->b && a->d < b->d);
 }
 
-/** similar to invDynamics using NewtonEuler; but only computing the backward pass */
-void rai::Configuration_ext::NewtonEuler_backward() {
-  CHECK(check_topSort(), "this needs a topology sorted configuration");
-  uint N=frames.N;
-  rai::Array<arr> h(N);
-  arr Q(N, 6, 6);
-  arr force(frames.N, 6);
-  force.setZero();
-
-  for(uint i=0; i<N; i++) {
-    h(i).resize(6).setZero();
-    Frame* f = frames.elem(i);
-    if(f->joint) {
-      h(i) = f->joint->get_h();
-    }
-    if(f->parent) {
-      Q[i] = f->get_Q().getWrenchTransform();
-    } else {
-      Q[i].setId();
-    }
-    if(f->inertia) {
-      force[f->ID] = f->inertia->getFrameRelativeWrench();
-    }
-  }
-
-  for(uint i=N; i--;) {
-    Frame* f = frames.elem(i);
-    if(f->parent) force[f->parent->ID] += ~Q[i] * force[f->ID];
-  }
-
-  for(Frame* f:frames) {
-    rai::Transformation R = f->ensure_X(); //rotate to world, but no translate to origin
-    R.pos.setZero();
-    force[f->ID] = ~R.getWrenchTransform() * force[f->ID];
-    cout <<f->name <<":\t " <<force[f->ID] <<endl;
-  }
-}
-
-/// compute forces from the current contacts
-void rai::Configuration_ext::contactsToForces(double hook, double damp) {
-  rai::Vector trans, transvel, force;
-  for(const Proxy& p:proxies) if(p.d<0.) {
-      //if(!i || proxies(i-1).a!=a || proxies(i-1).b!=b) continue; //no old reference sticking-frame
-      //trans = p.rel.p - proxies(i-1).rel.p; //translation relative to sticking-frame
-      trans    = p.posB-p.posA;
-      //transvel = p.velB-p.velA;
-      //d=trans.length();
-
-      force.setZero();
-      force += (hook) * trans; //*(1.+ hook*hook*d*d)
-      //force += damp * transvel;
-//      SL_DEBUG(1, cout <<"applying force: [" <<*p.a <<':' <<*p.b <<"] " <<force <<endl);
-
-      NIY;
-//    addForce(force, p.a, p.posA);
-//    addForce(-force, p.b, p.posB);
-    }
-}
-
-void rai::Configuration_ext::kinematicsPenetrations(arr& y, arr& J, bool penetrationsOnly, double activeMargin) const {
-  CHECK(_state_proxies_isGood, "");
-
-  y.resize(proxies.N).setZero();
-  if(!!J) J.resize(y.N, getJointStateDimension()).setZero();
-  uint i=0;
-  for(const Proxy& p:proxies) {
-    if(!p.collision)((Proxy*)&p)->calc_coll(*this);
-
-    arr Jp1, Jp2;
-    if(!!J) {
-      jacobian_pos(Jp1, p.a, p.collision->p1);
-      jacobian_pos(Jp2, p.b, p.collision->p2);
-    }
-
-    arr y_dist, J_dist;
-    p.collision->kinDistance(y_dist, J_dist, Jp1, Jp2);
-
-    if(!penetrationsOnly || y_dist.scalar()<activeMargin) {
-      y(i) = -y_dist.scalar();
-      if(!!J) J[i] = -J_dist;
-    }
-  }
-}
-
-void rai::Configuration_ext::kinematicsProxyDist(arr& y, arr& J, const Proxy& p, double margin, bool useCenterDist, bool addValues) const {
-  y.resize(1);
-  if(!!J) J.resize(1, getJointStateDimension());
-  if(!addValues) { y.setZero();  if(!!J) J.setZero(); }
-
-  y(0) = p.d;
-  if(!!J) {
-    arr Jpos;
-    rai::Vector arel, brel;
-    if(p.d>0.) { //we have a gradient on pos only when outside
-      arel=p.a->X.rot/(p.posA-p.a->X.pos);
-      brel=p.b->X.rot/(p.posB-p.b->X.pos);
-      CHECK(p.normal.isNormalized(), "proxy normal is not normalized");
-      arr normal; normal.referTo(&p.normal.x, 3); normal.reshape(1, 3);
-      kinematicsPos(NoArr, Jpos, p.a, arel);  J += (normal*Jpos);
-      kinematicsPos(NoArr, Jpos, p.b, brel);  J -= (normal*Jpos);
-    }
-  }
-}
-
 void rai::Configuration::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, double margin, bool addValues) const {
   CHECK(p.a->shape, "");
   CHECK(p.b->shape, "");
@@ -2690,95 +2516,16 @@ void rai::Configuration::kinematicsProxyCost(arr& y, arr& J, double margin) cons
   }
 }
 
-void rai::Configuration_ext::kinematicsContactCost(arr& y, arr& J, const ForceExchange* c, double margin, bool addValues) const {
-  NIY;
-  //  Feature *map = c->getTM_ContactNegDistance();
-  //  arr y_dist, J_dist;
-  //  map->phi(y_dist, J_dist, *this);
-  //  y_dist *= -1.;
-  //  if(!!J) J_dist *= -1.;
-
-  //  y.resize(1);
-  //  if(!!J) J.resize(1, getJointStateDimension());
-  //  if(!addValues) { y.setZero();  if(!!J) J.setZero(); }
-
-  //  if(y_dist.scalar()>margin) return;
-  //  y += margin-y_dist.scalar();
-  //  if(!!J)  J -= J_dist;
-}
-
-void rai::Configuration_ext::kinematicsContactCost(arr& y, arr& J, double margin) const {
-  y.resize(1).setZero();
-  jacobian_zero(J, 1);
-  for(Frame* f:frames) for(ForceExchange* c:f->forces) if(&c->a==f) {
-        kinematicsContactCost(y, J, c, margin, true);
-      }
-}
-
-void rai::Configuration_ext::kinematicsProxyConstraint(arr& g, arr& J, const Proxy& p, double margin) const {
-  if(!!J) J.resize(1, getJointStateDimension()).setZero();
-
-  g.resize(1) = margin - p.d;
-
-  //Jacobian
-  if(!!J) {
-    arr Jpos, normal;
-    rai::Vector arel, brel;
-    if(p.d>0.) { //we have a gradient on pos only when outside
-      arel=p.a->X.rot/(p.posA-p.a->X.pos);
-      brel=p.b->X.rot/(p.posB-p.b->X.pos);
-      CHECK(p.normal.isNormalized(), "proxy normal is not normalized");
-      normal.referTo(&p.normal.x, 3);
-    } else { //otherwise take gradient w.r.t. centers...
-      arel.setZero(); //a->X.rot/(p.cenA-a->X.pos);
-      brel.setZero(); //b->X.rot/(p.cenB-b->X.pos);
-      CHECK(p.normal.isNormalized(), "proxy normal is not normalized");
-      normal.referTo(&p.normal.x, 3);
-    }
-    normal.reshape(1, 3);
-
-    kinematicsPos(NoArr, Jpos, p.a, arel);  J -= (normal*Jpos);
-    kinematicsPos(NoArr, Jpos, p.b, brel);  J += (normal*Jpos);
-  }
-}
-
-void rai::Configuration_ext::kinematicsContactConstraints(arr& y, arr& J) const {
-  J.clear();
-  rai::Vector normal;
-  uint con=0;
-  arr Jpos, dnormal, grad(1, q.N);
-
-  y.clear();
-  for(const rai::Proxy& p: proxies) y.append(p.d);
-
-  if(!J) return; //do not return the Jacobian
-
-  rai::Vector arel, brel;
-  for(const rai::Proxy& p: proxies) {
-    arel.setZero();  arel=p.a->X.rot/(p.posA-p.a->X.pos);
-    brel.setZero();  brel=p.b->X.rot/(p.posB-p.b->X.pos);
-
-    CHECK(p.normal.isNormalized(), "proxy normal is not normalized");
-    dnormal = p.normal.getArr(); dnormal.reshape(1, 3);
-    grad.setZero();
-    kinematicsPos(NoArr, Jpos, p.a, arel); grad += dnormal*Jpos; //moving a long normal b->a increases distance
-    kinematicsPos(NoArr, Jpos, p.b, brel); grad -= dnormal*Jpos; //moving b long normal b->a decreases distance
-    J.append(grad);
-    con++;
-  }
-  J.reshape(con, q.N);
-}
-
-void rai::Configuration::kinematicsLimitsCost(arr& y, arr& J, const arr& limits, double margin) const {
-  y.resize(1).setZero();
-  if(!!J) J.resize(1, getJointStateDimension()).setZero();
+void rai::Configuration::kinematicsLimits(arr& y, arr& J, const arr& limits) const {
+  kinematicsZero(y, J, 1);
+//  y.resize(1).setZero();
+//  if(!!J) J.resize(1, getJointStateDimension()).setZero();
   double d;
   for(uint i=0; i<limits.d0; i++) if(limits(i, 1)>limits(i, 0)) { //only consider proper limits (non-zero interval)
-      double m = margin*(limits(i, 1)-limits(i, 0));
-      d = limits(i, 0) + m - q(i); //lo
-      if(d>0.) {  y(0) += d/m;  if(!!J) J(0, i)-=1./m;  }
-      d = q(i) - limits(i, 1) + m; //up
-      if(d>0.) {  y(0) += d/m;  if(!!J) J(0, i)+=1./m;  }
+      d = limits(i, 0) - q(i); //lo
+      if(d>0.) {  y.elem(0) += d;  if(!!J) J.elem(0, i)-=1.;  }
+      d = q(i) - limits(i, 1); //up
+      if(d>0.) {  y.elem(0) += d;  if(!!J) J.elem(0, i)+=1.;  }
   }
 }
 
@@ -3017,11 +2764,7 @@ bool rai::Configuration::checkConsistency() const {
     for(Frame* f : frames) if(f->joint){
       Joint *j = f->joint;
       arr jq = j->calc_q_from_Q(f->Q);
-      if(!j->mimic) {
-        CHECK_EQ(jq.N, j->dim, "");
-      } else {
-        CHECK_EQ(0, j->dim, "");
-      }
+      CHECK_EQ(jq.N, j->dim, "");
       if(j->active){
         for(uint i=0; i<jq.N; i++) CHECK_ZERO(jq.elem(i) - q.elem(j->qIndex+i), 1e-6, "joint vector q and relative transform Q do not match for joint '" <<j->frame->name <<"', index " <<i);
       }else{
@@ -3067,13 +2810,12 @@ bool rai::Configuration::checkConsistency() const {
       CHECK_EQ(j->frame->joint, j, "");
       CHECK_GE(j->type.x, 0, "");
       CHECK_LE(j->type.x, JT_tau, "");
+      CHECK_EQ(j->dim, j->getDimFromType(), "");
 
       if(j->mimic) {
-        CHECK_EQ(j->dim, 0, "");
         CHECK(j->mimic>(void*)1, "mimic was not parsed correctly");
         CHECK(frames.contains(j->mimic->frame), "mimic points to a frame outside this kinematic configuration");
       } else {
-        CHECK_EQ(j->dim, j->getDimFromType(), "");
       }
     }
 
