@@ -8,8 +8,10 @@
 
 #include "F_geometrics.h"
 #include "F_PairCollision.h"
+#include "F_pose.h"
 #include "TM_default.h"
 #include "frame.h"
+
 //===========================================================================
 
 TM_AboveBox::TM_AboveBox(int iShape, int jShape, double _margin)
@@ -33,8 +35,9 @@ void TM_AboveBox::phi(arr& y, arr& J, const rai::Configuration& K) {
 //    pnt=box; box=z;
 //  }
   CHECK_EQ(box->type(), rai::ST_ssBox, "the 2nd shape needs to be a box"); //s1 should be the board
-  arr pos, posJ;
-  K.kinematicsRelPos(pos, posJ, &pnt->frame, NoVector, &box->frame, NoVector);
+//  arr pos, posJ;
+//  K.kinematicsRelPos(pos, posJ, &pnt->frame, NoVector, &box->frame, NoVector);
+  Value pos = evalFeature<F_PositionRel>({&pnt->frame, &box->frame});
 #if 0
   arr range(3);
   double d1 = .5*pnt->size(0) + pnt->size(3);
@@ -57,16 +60,16 @@ void TM_AboveBox::phi(arr& y, arr& J, const rai::Configuration& K) {
 //                <<" 21=" <<s2->size(1)
 //               <<endl;
   y.resize(4);
-  y(0) =  pos(0) - range(0);
-  y(1) = -pos(0) - range(0);
-  y(2) =  pos(1) - range(1);
-  y(3) = -pos(1) - range(1);
+  y(0) =  pos.y(0) - range(0);
+  y(1) = -pos.y(0) - range(0);
+  y(2) =  pos.y(1) - range(1);
+  y(3) = -pos.y(1) - range(1);
   if(!!J) {
-    J.resize(4, posJ.d1);
-    J[0] =  posJ[0];
-    J[1] = -posJ[0];
-    J[2] =  posJ[1];
-    J[3] = -posJ[1];
+    J.resize(4, pos.J.d1);
+    J[0] =  pos.J[0];
+    J[1] = -pos.J[0];
+    J[2] =  pos.J[1];
+    J[3] = -pos.J[1];
   }
 }
 
@@ -98,28 +101,29 @@ void TM_InsideBox::phi(arr& y, arr& J, const rai::Configuration& G) {
   rai::Shape* box=G.frames(j)->shape;
   CHECK(pnt && box, "I need shapes!");
   CHECK(box->type()==rai::ST_ssBox || box->type()==rai::ST_box, "the 2nd shape needs to be a box"); //s1 should be the board
-  arr pos, posJ;
-  G.kinematicsRelPos(pos, posJ, &pnt->frame, ivec, &box->frame, NoVector);
+//  arr pos, posJ;
+//  G.kinematicsRelPos(pos, posJ, &pnt->frame, ivec, &box->frame, NoVector);
+  Value pos = evalFeature<F_PositionRel>({&pnt->frame, &box->frame});
   arr range = box->size();
   range *= .5;
   range -= margin;
   for(double& r:range) if(r<.01) r=.01;
 
   y.resize(6);
-  y(0) =  pos(0) - range(0);
-  y(1) = -pos(0) - range(0);
-  y(2) =  pos(1) - range(1);
-  y(3) = -pos(1) - range(1);
-  y(4) =  pos(2) - range(2);
-  y(5) = -pos(2) - range(2);
+  y(0) =  pos.y(0) - range(0);
+  y(1) = -pos.y(0) - range(0);
+  y(2) =  pos.y(1) - range(1);
+  y(3) = -pos.y(1) - range(1);
+  y(4) =  pos.y(2) - range(2);
+  y(5) = -pos.y(2) - range(2);
   if(!!J) {
-    J.resize(6, posJ.d1);
-    J[0] =  posJ[0];
-    J[1] = -posJ[0];
-    J[2] =  posJ[1];
-    J[3] = -posJ[1];
-    J[4] =  posJ[2];
-    J[5] = -posJ[2];
+    J.resize(6, pos.J.d1);
+    J[0] =  pos.J[0];
+    J[1] = -pos.J[0];
+    J[2] =  pos.J[1];
+    J[3] = -pos.J[1];
+    J[4] =  pos.J[2];
+    J[5] = -pos.J[2];
   }
 }
 
@@ -130,20 +134,21 @@ void TM_InsideLine::phi(arr& y, arr& J, const rai::Configuration& G) {
   rai::Shape* box=G.frames(j)->shape;
   CHECK(pnt && box, "I need shapes!");
   CHECK(box->type()==rai::ST_capsule, "the 2nd shape needs to be a capsule"); //s1 should be the board
-  arr pos, posJ;
-  G.kinematicsRelPos(pos, posJ, &pnt->frame, NoVector, &box->frame, NoVector);
+//  arr pos, posJ;
+//  G.kinematicsRelPos(pos, posJ, &pnt->frame, NoVector, &box->frame, NoVector);
+  Value pos = evalFeature<F_PositionDiff>({&pnt->frame, &box->frame});
   double range = box->size(-2);
   range *= .5;
   range -= margin;
   if(range<.01) range=.01;
 
   y.resize(2);
-  y(0) =  pos(2) - range;
-  y(1) = -pos(2) - range;
+  y(0) =  pos.y(2) - range;
+  y(1) = -pos.y(2) - range;
   if(!!J) {
-    J.resize(2, posJ.d1);
-    J[0] =  posJ[2];
-    J[1] = -posJ[2];
+    J.resize(2, pos.J.d1);
+    J[0] =  pos.J[2];
+    J[1] = -pos.J[2];
   }
 }
 

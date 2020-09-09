@@ -57,16 +57,16 @@ bool checkHessianCP(MathematicalProgram& P, const arr& x, double tolerance) {
 
 OptOptions::OptOptions() {
   __globalOptOptions = this;
-  verbose    = rai::getParameter<int> ("opt/verbose", 1);
+  verbose    = rai::getParameter<double> ("opt/verbose", 1);
   fmin_return=nullptr;
   stopTolerance= rai::getParameter<double>("opt/stopTolerance", 1e-2);
   stopFTolerance= rai::getParameter<double>("opt/stopFTolerance", 1e-1);
   stopGTolerance= rai::getParameter<double>("opt/stopGTolerance", -1.);
-  stopEvals = rai::getParameter<uint> ("opt/stopEvals", 1000);
-  stopIters = rai::getParameter<uint> ("opt/stopIters", 1000);
-  stopOuters = rai::getParameter<uint> ("opt/stopOuters", 1000);
-  stopLineSteps = rai::getParameter<uint> ("opt/stopLineSteps", 10);
-  stopTinySteps = rai::getParameter<uint> ("opt/stopTinySteps", 10);
+  stopEvals = rai::getParameter<double> ("opt/stopEvals", 1000);
+  stopIters = rai::getParameter<double> ("opt/stopIters", 1000);
+  stopOuters = rai::getParameter<double> ("opt/stopOuters", 1000);
+  stopLineSteps = rai::getParameter<double> ("opt/stopLineSteps", 10);
+  stopTinySteps = rai::getParameter<double> ("opt/stopTinySteps", 10);
   initStep  = rai::getParameter<double>("opt/initStep", 1.);
   minStep   = rai::getParameter<double>("opt/minStep", -1.);
   maxStep   = rai::getParameter<double>("opt/maxStep", .2);
@@ -76,9 +76,9 @@ OptOptions::OptOptions() {
   dampingInc= rai::getParameter<double>("opt/dampingInc", 1.);
   dampingDec= rai::getParameter<double>("opt/dampingDec", 1.);
   wolfe     = rai::getParameter<double>("opt/wolfe", .01);
-  nonStrictSteps= rai::getParameter<uint> ("opt/nonStrictSteps", 0);
+  nonStrictSteps= rai::getParameter<double> ("opt/nonStrictSteps", 0);
   allowOverstep= rai::getParameter<bool> ("opt/allowOverstep", false);
-  constrainedMethod = (ConstrainedMethodType)rai::getParameter<int>("opt/constrainedMethod", augmentedLag);
+  constrainedMethod = (ConstrainedMethodType)rai::getParameter<double>("opt/constrainedMethod", augmentedLag);
   muInit = rai::getParameter<double>("opt/muInit", 1.);
   muLBInit = rai::getParameter<double>("opt/muLBInit", 1.);
   aulaMuInc = rai::getParameter<double>("opt/aulaMuInc", 5.);

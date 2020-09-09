@@ -729,4 +729,4 @@ template <typename T> T clip(T& x, const T& lower, const T& upper) {
 }
 
 std::string getcwd_string();
-const char* NAME(const std::type_info& type);
+const char* niceTypeidName(const std::type_info& type);

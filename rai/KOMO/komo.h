@@ -284,6 +284,7 @@ struct KOMO : NonCopyable {
   arr getPath(const uintA& joints);            ///< get joint path for selected joints
   arr getPath_frames(const StringA& frame= {}); ///< get frame path, optionally for selected frames
   arr getPath_frames(const uintA& frames);     ///< get frame path for selected frames
+  arr getPath_frames(uint t);     ///< get frame path for selected frames
   arrA getPath_q();                            ///< get the DOFs (of potentially varying dimensionality) for each configuration
   arr getPath_tau();
   arr getPath_times();

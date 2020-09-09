@@ -51,7 +51,7 @@ struct Feature {
   uint __dim_phi(const ConfigurationL& Ctuple) { uint d=dim_phi(Ctuple); return applyLinearTrans_dim(d); }
   uint __dim_phi2(const FrameL& F) { uint d=dim_phi2(F); return applyLinearTrans_dim(d); }
 
-  virtual rai::String shortTag(const rai::Configuration& C) { return "without-description"; }
+  virtual rai::String shortTag(const rai::Configuration& C);
   virtual rai::Graph getSpec(const rai::Configuration& C) { return rai::Graph({{"description", shortTag(C)}}); }
 
   //-- evaluation helpers
@@ -69,6 +69,8 @@ struct Feature {
   void applyLinearTrans(arr& y, arr& J);
   uint applyLinearTrans_dim(uint d);
 };
+
+template<class T> Value evalFeature(const FrameL& F, uint order=0){ arr y,J; T().setOrder(order).__phi2(y, J, F); return Value{y,J}; }
 
 //these are frequently used by implementations of task maps
 

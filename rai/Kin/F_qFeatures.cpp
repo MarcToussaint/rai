@@ -208,21 +208,6 @@ uint F_qItself::dim_phi2(const FrameL& F){
   return m;
 }
 
-
-rai::String F_qItself::shortTag(const rai::Configuration& G) {
-  rai::String s="qItself";
-  if(frameIDs.nd) {
-    if(frameIDs.N<=3) {
-      for(uint b:frameIDs) s <<'-' <<G.frames(b)->name;
-    } else {
-      s <<'#' <<frameIDs.N;
-    }
-  } else {
-    s <<"-ALL";
-  }
-  return s;
-}
-
 //===========================================================================
 
 extern bool isSwitched(rai::Frame* f0, rai::Frame* f1);

@@ -1378,20 +1378,6 @@ void rai::Configuration::hessianPos(arr& H, Frame* a, rai::Vector* rel) const {
 //  }
 //}
 
-/// The position vec1, attached to b1, relative to the frame of b2 (plus vec2)
-void rai::Configuration::kinematicsRelPos(arr& y, arr& J, Frame* a, const rai::Vector& vec1, Frame* b, const rai::Vector& vec2) const {
-  arr y1, y2, J1, J2;
-  kinematicsPos(y1, J1, a, vec1);
-  kinematicsPos(y2, J2, b, vec2);
-  arr Rinv = ~(b->ensure_X().rot.getArr());
-  y = Rinv * (y1 - y2);
-  if(!!J) {
-    arr A;
-    jacobian_angular(A, b);
-    J = Rinv * (J1 - J2 - crossProduct(A, y1 - y2));
-  }
-}
-
 /// The vector vec1, attached to b1, relative to the frame of b2
 void rai::Configuration::kinematicsRelVec(arr& y, arr& J, Frame* a, const rai::Vector& vec1, Frame* b) const {
   arr y1, J1;

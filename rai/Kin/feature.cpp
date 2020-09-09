@@ -99,6 +99,17 @@ void Feature::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
 #endif
 }
 
+rai::String Feature::shortTag(const rai::Configuration& C) {
+  rai::String s;
+  s <<niceTypeidName(typeid(*this));
+  if(frameIDs.N<=3){
+    for(uint i:frameIDs) s <<'-' <<C.frames(i)->name;
+  }else{
+    s <<"-#" <<frameIDs.N;
+  }
+  return s;
+}
+
 //void Feature::signature(intA& S, const ConfigurationL& Ctuple){
 //  uintA cdim = getKtupleDim(Ctuple);
 //  cdim.prepend(0);

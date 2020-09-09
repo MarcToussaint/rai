@@ -105,7 +105,8 @@ void TM_Default::phi(arr& y, arr& J, const rai::Configuration& C) {
       C.kinematicsPos(y, J, a, vec_i);
       y -= conv_vec2arr(vec_j);
     } else {
-      C.kinematicsRelPos(y, J, a, vec_i, b, vec_j);
+      HALT("use F_PositionRel!")
+//      C.kinematicsRelPos(y, J, a, vec_i, b, vec_j);
     }
     return;
   }

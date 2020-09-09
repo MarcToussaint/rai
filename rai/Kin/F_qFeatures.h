@@ -25,7 +25,6 @@ struct F_qItself : Feature {
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi(const rai::Configuration& C);
   virtual uint dim_phi2(const FrameL& F);
-  virtual rai::String shortTag(const rai::Configuration& G);
  private:
   std::map<rai::Configuration*, uint> dimPhi;
 };
@@ -43,17 +42,13 @@ struct F_qZeroVel : Feature {
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi(const rai::Configuration& G);
   virtual uint dim_phi2(const FrameL& F);
-
-  virtual rai::String shortTag(const rai::Configuration& G) { return STRING("qZeroVel"); }
 };
 
 //===========================================================================
 
 struct F_qLimits2 : Feature {
-  F_qLimits2(const uintA& frames) { frameIDs = frames; } ///< if no limits are provided, they are taken from G's joints' attributes on the first call of phi
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F);
-  virtual rai::String shortTag(const rai::Configuration& G) { return STRING("qLimits2"); }
 };
 
 //===========================================================================
@@ -65,7 +60,6 @@ struct F_qLimits : Feature {
   F_qLimits(const arr& _limits=NoArr) { if(!!_limits) limits=_limits; } ///< if no limits are provided, they are taken from G's joints' attributes on the first call of phi
   virtual void phi(arr& y, arr& J, const rai::Configuration& G);
   virtual uint dim_phi(const rai::Configuration& G) { return 1; }
-  virtual rai::String shortTag(const rai::Configuration& G) { return STRING("qLimits"); }
 };
 
 //===========================================================================
@@ -75,7 +69,6 @@ struct F_qQuaternionNorms : Feature {
   virtual void phi(arr& y, arr& J, const rai::Configuration& G);
   virtual uint dim_phi(const rai::Configuration& G);
   virtual void signature(intA& S, const rai::Configuration& C);
-  virtual rai::String shortTag(const rai::Configuration& G) { return STRING("QuaternionNorms"); }
 };
 
 //===========================================================================

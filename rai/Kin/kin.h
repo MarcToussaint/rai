@@ -215,7 +215,6 @@ struct Configuration : GLDrawer {
   void kinematicsPos_wrtFrame(arr& y, arr& J, Frame* b, const rai::Vector& rel, Frame* self) const;
   void hessianPos(arr& H, Frame* a, Vector* rel=0) const;
   void kinematicsTau(double& tau, arr& J) const;
-  void kinematicsRelPos(arr& y, arr& J, Frame* a, const Vector& vec1, Frame* b, const Vector& vec2) const;
   void kinematicsRelVec(arr& y, arr& J, Frame* a, const Vector& vec1, Frame* b) const;
 
   void kinematicsContactPOA(arr& y, arr& J, ForceExchange* c) const;

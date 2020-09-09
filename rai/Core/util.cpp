@@ -1381,7 +1381,7 @@ std::string getcwd_string() {
   return std::string(buff);
 }
 
-const char* NAME(const std::type_info& type) {
+const char* niceTypeidName(const std::type_info& type) {
   const char* name = type.name();
   while(*name>='0' && *name<='9') name++;
   return name;

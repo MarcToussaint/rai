@@ -50,7 +50,7 @@
 //#  define FCLmode
 //#endif
 
-//#define KOMO_PATH_CONFIG
+#define KOMO_PATH_CONFIG
 
 using namespace rai;
 
@@ -307,7 +307,7 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
     Transformation rel = 0;
     rel.pos.set(0, 0, .5*(shapeSize(world, from) + shapeSize(world, to)));
     addSwitch(time, true, JT_transXYPhi, SWInit_copy, from, to, rel);
-    if(k_order>=2) addObjective({time, endTime}, make_shared<F_Pose>(world, to), OT_eq, {3e1}, NoArr, k_order, +0, -1);
+    if(k_order>=2) addObjective({time, endTime}, FS_pose, {to}, OT_eq, {3e1}, NoArr, k_order, +0, -1);
     //  else addObjective({time}, make_shared<TM_NoJumpFromParent>(world, to), OT_eq, {1e2}, NoArr, 1, 0, 0);
   }
 
@@ -403,7 +403,7 @@ void KOMO::addSwitch_dynamicOn(double time, double endTime, const char* from, co
   Transformation rel = 0;
   rel.pos.set(0, 0, .5*(shapeSize(world, from) + shapeSize(world, to)));
   addSwitch(time, true, JT_transXYPhi, SWInit_zero, from, to, rel);
-  if(k_order>=2) addObjective({time, endTime}, make_shared<F_Pose>(world, to), OT_eq, {3e1}, NoArr, k_order, +0, -1);
+  if(k_order>=2) addObjective({time, endTime}, FS_pose, {to}, OT_eq, {3e1}, NoArr, k_order, +0, -1);
 //  else addObjective({time}, make_shared<TM_NoJumpFromParent>(world, to), OT_eq, {1e2}, NoArr, 1, 0, 0);
 }
 
@@ -3862,6 +3862,14 @@ arr KOMO::getPath_frames(const uintA& frames) {
   }
 #endif
   return X;
+}
+
+arr KOMO::getPath_frames(uint t) {
+#ifdef KOMO_PATH_CONFIG
+  return pathConfig.getFrameState(timeSlices[k_order+t]);
+#else
+  NIY;
+#endif
 }
 
 arrA KOMO::getPath_q() {
