@@ -48,7 +48,6 @@ struct LGP_Node {
 
   //-- kinematics: the kinematic structure of the world after the decision path
   const rai::Configuration& startKinematics; ///< initial start state kinematics
-  rai::Configuration effKinematics; ///< TODO: REMOVE the effective kinematics (computed from kinematics and symbolic state)
 
   bool isExpanded=false;
   bool isInfeasible=false;
@@ -83,7 +82,6 @@ struct LGP_Node {
   ptr<KOMO> optSubCG(const SubCG& scg, bool collisions, int verbose);
   ptr<CG> getCGO(bool collisions=false, int verbose=-1);
   void resetData();
-  void computeEndKinematics();
 
   //-- helpers to get other nodes
   LGP_NodeL getTreePath() const; ///< return the decision path in terms of a list of nodes (just walking to the root)

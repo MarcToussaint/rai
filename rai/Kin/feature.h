@@ -22,6 +22,7 @@ struct Feature {
   uint order = 0;          ///< 0=position, 1=vel, etc
   arr  scale, target;  ///< optional linear transformation
   bool flipTargetSignOnNegScalarProduct = false; ///< for order==1 (vel mode), when taking temporal difference, flip sign when scalar product it negative [specific to quats -> move to special TM for quats only]
+  bool diffInsteadOfVel = false;
   FeatureSymbol fs = FS_none;
   uintA frameIDs;
 
@@ -33,10 +34,12 @@ struct Feature {
   Feature& setOrder(uint _order) { order=_order; return *this; }
   Feature& setScale(const arr& _scale) { scale=_scale; return *this; }
   Feature& setTarget(const arr& _target) { target=_target; return *this; }
+  Feature& setFrameIDs(const uintA& _frameIDs) { frameIDs=_frameIDs; return *this; }
+  Feature& setDiffInsteadOfVel(){ diffInsteadOfVel=true; return *this; }
 
  protected:
   virtual void phi2(arr& y, arr& J, const FrameL& F);
-  virtual uint dim_phi2(const FrameL& F) {  return dim_phi(F.last()->C); }
+  virtual uint dim_phi2(const FrameL& F) {  NIY; }
 
   virtual void phi(arr& y, arr& J, const rai::Configuration& C) { phi2(y, J, C.frames.sub(frameIDs)); }
   virtual void phi(arr& y, arr& J, const ConfigurationL& Ctuple); ///< if not overloaded this computes the generic pos/vel/acc depending on order
@@ -61,6 +64,7 @@ struct Feature {
   Value operator()(const rai::Configuration& C) { arr y, J; __phi(y, J, C); return Value(y, J); }
   Value eval(const rai::Configuration& C) { arr y, J; __phi(y, J, C); return Value(y, J); }
   Value eval(const ConfigurationL& Ctuple) { arr y, J; __phi(y, J, Ctuple); return Value(y, J); }
+  Value eval(const FrameL& F) { arr y, J; __phi2(y, J, F); return Value(y, J); }
 
   //-- for direct gradient checking (move outside)
   VectorFunction vf(rai::Configuration& C);

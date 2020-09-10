@@ -13,17 +13,9 @@
 //===========================================================================
 
 struct TM_AboveBox : Feature {
-  int i, j;               ///< which shapes does it refer to?
-  double margin;
-
-  TM_AboveBox(int iShape=-1, int jShape=-1, double _margin=.01);
-  TM_AboveBox(const rai::Configuration& G,
-              const char* iShapeName=nullptr, const char* jShapeName=nullptr, double _margin=.01);
-
-  virtual void phi(arr& y, arr& J, const rai::Configuration& G);
-  virtual uint dim_phi(const rai::Configuration& G) { return 4; }
-  virtual rai::String shortTag(const rai::Configuration& G);
-  virtual rai::Graph getSpec(const rai::Configuration& K);
+  double margin=.0;
+  virtual void phi2(arr& y, arr& J, const FrameL& F);
+  virtual uint dim_phi2(const FrameL& F) { return 4; }
 };
 
 //===========================================================================
@@ -62,7 +54,7 @@ struct TM_InsideLine : Feature {
 //===========================================================================
 
 struct F_GraspOppose : Feature {
-  int i, j, k;               ///< which shapes does it refer to?
+  uint i, j, k;               ///< which shapes does it refer to?
   bool centering=false;
 
   F_GraspOppose(int iShape=-1, int jShape=-1, int kShape=-1) : i(iShape), j(jShape), k(kShape) {}

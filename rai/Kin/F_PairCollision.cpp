@@ -10,39 +10,30 @@
 #include "frame.h"
 #include "../Geo/pairCollision.h"
 
-F_PairCollision::F_PairCollision(int _i, int _j, Type _type, bool _neglectRadii)
-  : i(_i), j(_j), type(_type), neglectRadii(_neglectRadii) {
+F_PairCollision::F_PairCollision(Type _type, bool _neglectRadii)
+  : type(_type), neglectRadii(_neglectRadii) {
 }
 
-F_PairCollision::F_PairCollision(const rai::Configuration& K, const char* s1, const char* s2, Type _type, bool neglectRadii)
-  : i(initIdArg(K, s1)), j(initIdArg(K, s2)),
-    type(_type), neglectRadii(neglectRadii) {
-  CHECK_GE(i, 0, "shape name '" <<s1 <<"' does not exist");
-  CHECK_GE(j, 0, "shape name '" <<s2 <<"' does not exist");
-}
-
-F_PairCollision::~F_PairCollision() {
-}
-
-void F_PairCollision::phi(arr& y, arr& J, const rai::Configuration& C) {
-  rai::Shape* s1 = i<0?nullptr: C.frames(i)->shape;
-  rai::Shape* s2 = j<0?nullptr: C.frames(j)->shape;
-  CHECK(s1 && s2, "");
-  double r1=s1->radius();
-  double r2=s2->radius();
-  rai::Mesh* m1 = &s1->sscCore();  if(!m1->V.N) { m1 = &s1->mesh(); r1=0.; }
-  rai::Mesh* m2 = &s2->sscCore();  if(!m2->V.N) { m2 = &s2->mesh(); r2=0.; }
+void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
+  CHECK_EQ(F.N, 2, "");
+  rai::Frame* f1 = F.elem(0);
+  rai::Frame* f2 = F.elem(1);
+  CHECK(f1->shape && f2->shape, "");
+  double r1=f1->shape->radius();
+  double r2=f2->shape->radius();
+  rai::Mesh* m1 = &f1->shape->sscCore();  if(!m1->V.N) { m1 = &f1->shape->mesh(); r1=0.; }
+  rai::Mesh* m2 = &f2->shape->sscCore();  if(!m2->V.N) { m2 = &f2->shape->mesh(); r2=0.; }
   if(!m1->V.N) m1->V = zeros(1, 3);
   if(!m2->V.N) m2->V = zeros(1, 3);
 
-  PairCollision coll(*m1, *m2, s1->frame.ensure_X(), s2->frame.ensure_X(), r1, r2);
+  PairCollision coll(*m1, *m2, f1->ensure_X(), f2->ensure_X(), r1, r2);
 
   if(neglectRadii) coll.rad1=coll.rad2=0.;
 
   if(type==_negScalar) {
     arr Jp1, Jp2;
-    C.jacobian_pos(Jp1, &s1->frame, coll.p1);
-    C.jacobian_pos(Jp2, &s2->frame, coll.p2);
+    f1->C.jacobian_pos(Jp1, f1, coll.p1);
+    f2->C.jacobian_pos(Jp2, f2, coll.p2);
     coll.kinDistance(y, J, Jp1, Jp2);
     y *= -1.;
     if(!!J) J *= -1.;
@@ -50,10 +41,10 @@ void F_PairCollision::phi(arr& y, arr& J, const rai::Configuration& C) {
   } else {
     arr Jp1, Jp2, Jx1, Jx2;
     if(!!J) {
-      C.jacobian_pos(Jp1, &s1->frame, coll.p1);
-      C.jacobian_pos(Jp2, &s2->frame, coll.p2);
-      C.jacobian_angular(Jx1, &s1->frame);
-      C.jacobian_angular(Jx2, &s2->frame);
+      f1->C.jacobian_pos(Jp1, f1, coll.p1);
+      f2->C.jacobian_pos(Jp2, f2, coll.p2);
+      f1->C.jacobian_angular(Jx1, f1);
+      f2->C.jacobian_angular(Jx2, f2);
     }
     if(type==_vector) coll.kinVector(y, J, Jp1, Jp2, Jx1, Jx2);
     if(type==_normal) coll.kinNormal(y, J, Jp1, Jp2, Jx1, Jx2);
@@ -61,17 +52,4 @@ void F_PairCollision::phi(arr& y, arr& J, const rai::Configuration& C) {
     if(type==_p1) coll.kinPointP1(y, J, Jp1, Jp2, Jx1, Jx2);
     if(type==_p2) coll.kinPointP2(y, J, Jp1, Jp2, Jx1, Jx2);
   }
-}
-
-uint F_PairCollision::dim_phi(const rai::Configuration& G) {
-  if(type==_negScalar) return 1;
-  return 3;
-}
-
-rai::String F_PairCollision::shortTag(const rai::Configuration& G) {
-  return STRING("PairCollision-"<<(i<0?"WORLD":G.frames(i)->name) <<'-' <<(j<0?"WORLD":G.frames(j)->name));
-}
-
-rai::Graph F_PairCollision::getSpec(const rai::Configuration& K) {
-  return rai::Graph({ {"feature", "dist"}, {"o1", K.frames(i)->name}, {"o2", K.frames(j)->name}});
 }

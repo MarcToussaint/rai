@@ -13,15 +13,10 @@
 struct F_PairCollision : Feature {
   enum Type { _none=-1, _negScalar, _vector, _normal, _center, _p1, _p2 };
 
-  int i, j;               ///< which shapes does it refer to?
   Type type;
   bool neglectRadii=false;
 
-  F_PairCollision(int _i, int _j, Type _type, bool _neglectRadii=false);
-  F_PairCollision(const rai::Configuration& K, const char* s1, const char* s2, Type _type, bool neglectRadii=false);
-  ~F_PairCollision();
-  virtual void phi(arr& y, arr& J, const rai::Configuration& K);
-  virtual uint dim_phi(const rai::Configuration& G);
-  virtual rai::String shortTag(const rai::Configuration& G);
-  virtual rai::Graph getSpec(const rai::Configuration& K);
+  F_PairCollision(Type _type, bool _neglectRadii=false);
+  virtual void phi2(arr& y, arr& J, const FrameL& F);
+  virtual uint dim_phi2(const FrameL& F){  if(type==_negScalar) return 1; return 3;  }
 };

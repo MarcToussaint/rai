@@ -104,9 +104,9 @@ double shapeSize(const rai::Configuration& K, const char* name, uint i=2) {
 
 ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const rai::Configuration& C, const arr& scale, const arr& target, int order) {
   shared_ptr<Feature> f;
-  if(feat==FS_distance) {  f=make_shared<F_PairCollision>(C, frames(0), frames(1), F_PairCollision::_negScalar, false); }
+  if(feat==FS_distance) {  f=make_shared<F_PairCollision>(F_PairCollision::_negScalar, false); }
   else if(feat==FS_oppose) {  f=make_shared<F_GraspOppose>(C, frames(0), frames(1), frames(2)); }
-  else if(feat==FS_aboveBox) {  f=make_shared<TM_AboveBox>(C, frames(1), frames(0), .0); }
+  else if(feat==FS_aboveBox) {  f=make_shared<TM_AboveBox>(); }
   else if(feat==FS_standingAbove) {
 //    double h = .5*(shapeSize(C, frames(0)) + shapeSize(C, frames(1)));
 //    f = make_shared<TM_Default>(TMT_posDiff, C, frames(0), rai::Vector(0., 0., h), frames(1), NoVector);
@@ -172,11 +172,11 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
   else if(feat==FS_vectorZRel) {  f=make_shared<F_VectorRel>(Vector_z); }
 
 
-  else if(feat==FS_pairCollision_negScalar) {  f=make_shared<F_PairCollision>(C, frames(0), frames(1), F_PairCollision::_negScalar, false); }
-  else if(feat==FS_pairCollision_vector) {     f=make_shared<F_PairCollision>(C, frames(0), frames(1), F_PairCollision::_vector, false); }
-  else if(feat==FS_pairCollision_normal) {     f=make_shared<F_PairCollision>(C, frames(0), frames(1), F_PairCollision::_normal, true); }
-  else if(feat==FS_pairCollision_p1) {         f=make_shared<F_PairCollision>(C, frames(0), frames(1), F_PairCollision::_p1, false); }
-  else if(feat==FS_pairCollision_p2) {         f=make_shared<F_PairCollision>(C, frames(0), frames(1), F_PairCollision::_p2, false); }
+  else if(feat==FS_pairCollision_negScalar) {  f=make_shared<F_PairCollision>(F_PairCollision::_negScalar, false); }
+  else if(feat==FS_pairCollision_vector) {     f=make_shared<F_PairCollision>(F_PairCollision::_vector, false); }
+  else if(feat==FS_pairCollision_normal) {     f=make_shared<F_PairCollision>(F_PairCollision::_normal, true); }
+  else if(feat==FS_pairCollision_p1) {         f=make_shared<F_PairCollision>(F_PairCollision::_p1, false); }
+  else if(feat==FS_pairCollision_p2) {         f=make_shared<F_PairCollision>(F_PairCollision::_p2, false); }
 
   else if(feat==FS_gazeAt) {
     f=make_shared<F_PositionRel>();

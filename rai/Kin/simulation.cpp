@@ -476,8 +476,10 @@ Imp_CloseGripper::Imp_CloseGripper(Frame* _gripper, Frame* _fing1, Frame* _fing2
   type = Simulation::_closeGripper;
 
   if(obj) {
-    coll1 = make_unique<F_PairCollision>(fing1->ID, obj->ID, F_PairCollision::_negScalar, false);
-    coll2 = make_unique<F_PairCollision>(fing2->ID, obj->ID, F_PairCollision::_negScalar, false);
+    coll1 = make_unique<F_PairCollision>(F_PairCollision::_negScalar, false);
+    coll1->setFrameIDs({fing1->ID, obj->ID});
+    coll2 = make_unique<F_PairCollision>(F_PairCollision::_negScalar, false);
+    coll2->setFrameIDs({fing2->ID, obj->ID});
   }
 
   q = fing1->joint->calc_q_from_Q(fing1->get_Q());

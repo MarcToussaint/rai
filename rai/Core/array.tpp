@@ -3845,10 +3845,9 @@ template<class T> bool operator<(const Array<T>& v, const Array<T>& w) {
 //
 
 template<class T> void negative(rai::Array<T>& x, const rai::Array<T>& y) {
-  if(&x!=&y) x.resizeAs(y);
+  x=y;
   T* xp=x.p, *xstop=xp+x.N;
-  const T* yp=y.p;
-  for(; xp!=xstop; xp++, yp++) *xp = - (*yp);
+  for(; xp!=xstop; xp++) *xp = - (*xp);
 }
 
 //---------- unary functions

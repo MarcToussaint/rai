@@ -68,16 +68,16 @@ void solve(){
 }
 
 void testBounds(){
-  rai::Configuration K;
-  generateProblem(K);
+  rai::Configuration C;
+  generateProblem(C);
 //  K.addFile("model2.g");
-  K.selectJointsByGroup({"base","armL","armR"});
-  K.optimizeTree();
+  C.selectJointsByGroup({"base","armL","armR"});
+  C.optimizeTree();
 
   rai::ConfigurationViewer V;
-  V.setConfiguration(K);
+  V.setConfiguration(C);
 
-  LGP_Tree lgp(K, "fol-pnp-switch.g");
+  LGP_Tree lgp(C, "fol-pnp-switch.g");
 
 //  lgp.inspectSequence("(pick pr2R obj0) (pick pr2L obj3) (place pr2R obj0 tray) (place pr2L obj3 tray)");
 

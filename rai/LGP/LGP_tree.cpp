@@ -306,11 +306,11 @@ void LGP_Tree::inspectSequence(const rai::String& seq) {
     n->displayBound(gl, bound);
   }
 
-  bound = BD_poseFromSeq;
-  for(LGP_Node* n:path) {
-    n->optBound(bound, true, 2);
-    n->displayBound(gl, bound);
-  }
+//  bound = BD_poseFromSeq;
+//  for(LGP_Node* n:path) {
+//    n->optBound(bound, true, 2);
+//    n->displayBound(gl, bound);
+//  }
 
   //-- sequence bound
   bound = BD_seq;

@@ -33,7 +33,7 @@ struct F_LinearForce : Feature {
 };
 
 struct TM_Contact_ForceIsNormal : Feature {
-  int a, b;
+  uint a, b;
   TM_Contact_ForceIsNormal(int aShape, int bShape) : a(aShape), b(bShape) {}
   TM_Contact_ForceIsNormal(const rai::Configuration& K, const char* aShapeName=nullptr, const char* bShapeName=nullptr)
     : TM_Contact_ForceIsNormal(initIdArg(K, aShapeName), initIdArg(K, bShapeName)) {}
@@ -55,7 +55,7 @@ struct TM_Contact_ForceIsComplementary : Feature {
 };
 
 struct TM_Contact_ForceIsPositive : Feature {
-  int a, b;
+  uint a, b;
   TM_Contact_ForceIsPositive(int aShape, int bShape) : a(aShape), b(bShape) {}
   TM_Contact_ForceIsPositive(const rai::Configuration& K, const char* aShapeName=nullptr, const char* bShapeName=nullptr)
     : TM_Contact_ForceIsPositive(initIdArg(K, aShapeName), initIdArg(K, bShapeName)) {}
@@ -78,7 +78,7 @@ struct TM_Contact_POAmovesContinuously : Feature {
 };
 
 struct TM_Contact_NormalForceEqualsNormalPOAmotion: Feature {
-  int a, b;
+  uint a, b;
   TM_Contact_NormalForceEqualsNormalPOAmotion(int aShape, int bShape) : a(aShape), b(bShape) { order = 1; }
   TM_Contact_NormalForceEqualsNormalPOAmotion(const rai::Configuration& K, const char* aShapeName=NULL, const char* bShapeName=NULL)
     : TM_Contact_NormalForceEqualsNormalPOAmotion(initIdArg(K, aShapeName), initIdArg(K, bShapeName)) {}
@@ -102,7 +102,7 @@ struct TM_ContactConstraints_Vel : Feature {
 };
 
 struct TM_Contact_POAzeroRelVel : Feature {
-  int a, b;
+  uint a, b;
   bool normalOnly=false;
   TM_Contact_POAzeroRelVel(int aShape, int bShape, bool _normalOnly=false) : a(aShape), b(bShape), normalOnly(_normalOnly) { order=1; }
   TM_Contact_POAzeroRelVel(const rai::Configuration& K, const char* aShapeName=nullptr, const char* bShapeName=nullptr, bool _normalOnly=false)
@@ -153,7 +153,7 @@ struct TM_Contact_POAisInIntersection_InEq : Feature {
 };
 
 struct TM_Contact_POA_isAtWitnesspoint : Feature {
-  int a, b;
+  uint a, b;
   bool use2ndObject=false;
   TM_Contact_POA_isAtWitnesspoint(int aShape, int bShape, bool _use2ndObject=false) : a(aShape), b(bShape), use2ndObject(_use2ndObject) {}
   TM_Contact_POA_isAtWitnesspoint(const rai::Configuration& K, const char* aShapeName=NULL, const char* bShapeName=NULL, bool _use2ndObject=false)

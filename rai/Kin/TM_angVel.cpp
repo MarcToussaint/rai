@@ -7,7 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "TM_angVel.h"
-#include "TM_default.h"
+#include "F_pose.h"
 #include "../Geo/geo.h"
 
 void angVel_base(rai::Frame* f0, rai::Frame* f1, arr& y, arr& J) {
@@ -235,49 +235,21 @@ void TM_LinAngVel::phi2(arr& y, arr& J, const FrameL& F) {
   J.setBlockMatrix(Jl, Ja);
 }
 
-uint TM_LinAngVel::dim_phi(const rai::Configuration& G) { return 6; }
-
 //===========================================================================
 
-void TM_NoJumpFromParent::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
-  rai::Frame* obj = Ktuple.elem(-2)->frames(i);
-  rai::Frame* link = obj->getUpwardLink();
-  rai::Frame* parent = link->parent;
+void TM_NoJumpFromParent::phi2(arr& y, arr& J, const FrameL& F) {
+  CHECK_EQ(order, 1, "");
+  CHECK_EQ(F.d1, 2, "");
 
-  if(parent && parent->ID == Ktuple.elem(-1)->frames(i)->getUpwardLink()->parent->ID) {
-#if 0
-    LOG(-1) <<"this frame isn't switching - are you sure you want to do this?";
-#else
-    y.resize(7).setZero();
-    if(!!J) J.resize(7, getKtupleDim(Ktuple).last()).setZero();
-    return;
-#endif
-  }
+  auto pos = F_PositionRel()
+             .setOrder(1)
+             .setDiffInsteadOfVel()
+             .eval(F);
+  auto quat = F_QuaternionRel()
+              .setOrder(1)
+              .setDiffInsteadOfVel()
+              .eval(F);
 
-  {
-//  if(link->joint && link->joint->type==rai::JT_rigid){
-    arr yp, Jp, yq, Jq;
-    ptr<TM_Default> tmp;
-    if(parent)
-      tmp = make_shared<TM_Default>(TMT_pos, link->ID, NoVector, parent->ID, NoVector);
-    else
-      tmp = make_shared<TM_Default>(TMT_pos, link->ID);
-    tmp->order = 1;
-    tmp->type = TMT_pos;
-    tmp->Feature::__phi(yp, Jp, Ktuple);
-    tmp->type = TMT_quat;
-    tmp->flipTargetSignOnNegScalarProduct=true;
-    tmp->Feature::__phi(yq, Jq, Ktuple);
-
-    y.setBlockVector(yp, yq);
-    J.setBlockMatrix(Jp, Jq);
-  }
-//  else{
-//    y.resize(7).setZero();
-//    if(!!J) J.resize(7,getKtupleDim(Ktuple).last()).setZero();
-//  }
-}
-
-uint TM_NoJumpFromParent::dim_phi(const rai::Configuration& G) {
-  return 7;
+  y.setBlockVector(pos.y, quat.y);
+  J.setBlockMatrix(pos.J, quat.J);
 }

@@ -172,6 +172,7 @@ void KOMO::addTimeOptimization() {
 
 void KOMO::clearObjectives() {
   objectives.clear(); //listDelete(objectives);
+  objs.clear();
   listDelete(switches);
   reset();
 }
@@ -187,6 +188,7 @@ ptr<Objective> KOMO::addObjective(const arr& times,
   if(!!scale) f->scale = scale;
   if(!!target) f->target = target;
   if(order>=0) f->order = order;
+  if(!f->frameIDs.N) f->frameIDs = framesToIndices(world.frames); //important! this means that, if no explicit selection of frames was made, all frames (of a time slice) are referred to
 
   CHECK_GE(k_order, f->order, "task requires larger k-order: " <<f->shortTag(world));
   std::shared_ptr<Objective> task = make_shared<Objective>(f, type);
@@ -277,12 +279,19 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
         else addObjective({time}, make_shared<TM_LinAngVel>(world, to), OT_eq, {1e1}, NoArr, 1, +0, +1);
 #endif
       } else {
-        addObjective({time}, make_shared<TM_NoJumpFromParent>(world, to), OT_eq, {1e2}, NoArr, 1, 0, 0);
+//        addObjective({time}, make_shared<TM_NoJumpFromParent>(world, to), OT_eq, {1e2}, NoArr, 1, 0, 0);
+        if(prevFrom) addObjective({time}, FS_poseRel, {to, prevFrom}, OT_eq, {1e2}, NoArr, 1, 0, 0);
+        else addObjective({time}, FS_pose, {to}, OT_eq, {1e2}, NoArr, 1, 0, 0);
       }
     } else {
       //-- no acceleration at start: +1 EXCLUDES (x-2, x-1, x0), ASSUMPTION: this is a placement that can excert impact
       if(k_order>1) addObjective({time}, make_shared<TM_LinAngVel>(world, to), OT_eq, {1e2}, NoArr, 2, +1, +1);
-      else addObjective({time}, make_shared<TM_NoJumpFromParent>(world, to), OT_eq, {1e2}, NoArr, 1, 0, 0);
+//      else addObjective({time}, make_shared<TM_NoJumpFromParent>(world, to), OT_eq, {1e2}, NoArr, 1, 0, 0);
+      else{
+        if(prevFrom) addObjective({time}, FS_poseRel, {to, prevFrom}, OT_eq, {1e2}, NoArr, 1, 0, 0);
+        else addObjective({time}, FS_pose, {to}, OT_eq, {1e2}, NoArr, 1, 0, 0);
+//        addObjective({time}, FS_pose, {to}, OT_eq, {1e2}, NoArr, 1, 0, 0);
+      }
     }
   }
 
@@ -342,7 +351,8 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
 
     //-- no acceleration at start: +1 EXCLUDES (x-2, x-1, x0), ASSUMPTION: this is a placement that can excert impact
     if(k_order>1) addObjective({time}, make_shared<TM_LinAngVel>(world, to), OT_eq, {1e2}, NoArr, 2, +0, +1);
-    else addObjective({time}, make_shared<TM_NoJumpFromParent>(world, to), OT_eq, {1e2}, NoArr, 1, 0, 0);
+//    else addObjective({time}, make_shared<TM_NoJumpFromParent>(world, to), OT_eq, {1e2}, NoArr, 1, 0, 0);
+    else addObjective({time}, FS_pose, {to}, OT_eq, {1e2}, NoArr, 1, 0, 0);
 
   }
 }
@@ -445,7 +455,7 @@ void KOMO::addContact_slide(double startTime, double endTime, const char* from, 
   addObjective({startTime, endTime}, make_shared<TM_Contact_ForceIsNormal>(world, from, to), OT_sos, {1e2});
   addObjective({startTime, endTime}, make_shared<TM_Contact_ForceIsPositive>(world, from, to), OT_ineq, {1e2});
   addObjective({startTime, endTime}, make_shared<TM_Contact_POAisInIntersection_InEq>(world, from, to), OT_ineq, {1e1});
-  addObjective({startTime, endTime}, make_shared<F_PairCollision>(world, from, to, F_PairCollision::_negScalar, false), OT_eq, {1e1});
+  addObjective({startTime, endTime}, FS_pairCollision_negScalar, {from, to}, OT_eq, {1e1});
 
   //regularization
   addObjective({startTime, endTime}, make_shared<F_LinearForce>(world, from, to), OT_sos, {1e-2}, NoArr, 2, +2, 0);
@@ -461,7 +471,7 @@ void KOMO::addContact_stick(double startTime, double endTime, const char* from, 
   //constraints
   addObjective({startTime, endTime}, make_shared<TM_Contact_ForceIsPositive>(world, from, to), OT_ineq, {1e1});
   addObjective({startTime, endTime}, make_shared<TM_Contact_POAisInIntersection_InEq>(world, from, to), OT_ineq, {1e1});
-  addObjective({startTime, endTime}, make_shared<F_PairCollision>(world, from, to, F_PairCollision::_negScalar, false), OT_eq, {1e1});
+  addObjective({startTime, endTime}, FS_pairCollision_negScalar, {from, to}, OT_eq, {1e1});
   addObjective({startTime, endTime}, make_shared<TM_Contact_POAzeroRelVel>(world, from, to), OT_eq, {1e0}, NoArr, 1, +1, +1);
 
   //regularization
@@ -479,7 +489,7 @@ void KOMO::addContact_ComplementarySlide(double startTime, double endTime, const
   addObjective({startTime, endTime}, make_shared<TM_Contact_ForceIsNormal>(world, from, to), OT_eq, {1e2});
   addObjective({startTime, endTime}, make_shared<TM_Contact_ForceIsComplementary>(world, from, to), OT_eq, {1e2});
   addObjective({startTime, endTime}, make_shared<TM_Contact_NormalVelIsComplementary>(world, from, to, 0., 0.), OT_eq, {1e2}, NoArr, 1, +1);
-  addObjective({startTime, endTime}, make_shared<F_PairCollision>(world, from, to, F_PairCollision::_negScalar, false), OT_ineq, {1e1});
+  addObjective({startTime, endTime}, FS_pairCollision_negScalar, {from, to}, OT_ineq, {1e1});
 
   //regularization
   addObjective({startTime, endTime}, make_shared<F_LinearForce>(world, from, to), OT_sos, {1e-4});
@@ -513,7 +523,7 @@ void KOMO::addContact_noFriction(double startTime, double endTime, const char* f
   addObjective({startTime, endTime}, make_shared<TM_Contact_POAisInIntersection_InEq>(world, from, to), OT_ineq, {1e1});
   addObjective({startTime, endTime}, make_shared<TM_Contact_POAmovesContinuously>(world, from, to), OT_sos, {1e0}, NoArr, 1, +1, +0);
   addObjective({startTime, endTime}, make_shared<F_LinearForce>(world, from, to), OT_sos, {1e-4});
-  addObjective({startTime, endTime}, make_shared<F_PairCollision>(world, from, to, F_PairCollision::_negScalar, false), OT_eq, {1e1});
+  addObjective({startTime, endTime}, FS_pairCollision_negScalar, {from, to}, OT_eq, {1e1});
 }
 
 void KOMO::addContact_elasticBounce(double time, const char* from, const char* to, double elasticity, double stickiness) {
@@ -524,7 +534,7 @@ void KOMO::addContact_elasticBounce(double time, const char* from, const char* t
   addObjective({time}, make_shared<TM_Contact_ForceIsPositive>(world, from, to), OT_ineq, {1e1});
   addObjective({time}, make_shared<TM_Contact_POAisInIntersection_InEq>(world, from, to), OT_ineq, {1e1});
   addObjective({time}, make_shared<F_LinearForce>(world, from, to), OT_sos, {1e-4});
-  addObjective({time}, make_shared<F_PairCollision>(world, from, to, F_PairCollision::_negScalar, false), OT_eq, {1e1});
+  addObjective({time}, FS_pairCollision_negScalar, {from, to}, OT_eq, {1e1});
 
   if(!elasticity && stickiness>=1.) {
     addObjective({time}, make_shared<TM_Contact_POAzeroRelVel>(world, from, to), OT_eq, {1e1}, NoArr, 2, +1, +1);
@@ -649,9 +659,10 @@ void KOMO_ext::setImpact(double time, const char* a, const char* b) {
 
 void KOMO_ext::setOverTheEdge(double time, const char* object, const char* from, double margin) {
   double negMargin = margin + .5*shapeSize(world, object, 0); //how much outside the bounding box?
-  addObjective({time, time+.5},
-               make_shared<F_Max>(make_shared<TM_AboveBox>(world, object, from, -negMargin), true), //this is the max selection -- only one of the four numbers need to be outside the BB
-               OT_ineq, {3e0}); //NOTE: usually this is an inequality constraint <0; here we say this should be zero for a negative margin (->outside support)
+  NIY;
+//  addObjective({time, time+.5},
+//               make_shared<F_Max>(make_shared<TM_AboveBox>(world, object, from, -negMargin), true), //this is the max selection -- only one of the four numbers need to be outside the BB
+//               OT_ineq, {3e0}); //NOTE: usually this is an inequality constraint <0; here we say this should be zero for a negative margin (->outside support)
 }
 
 void KOMO_ext::setInertialMotion(double startTime, double endTime, const char* object, const char* base, double g, double c) {
@@ -753,7 +764,7 @@ void KOMO_ext::setPlace(double time, const char* endeff, const char* object, con
 
   //place inside box support
 //  setTask(time, time, new TM_StaticStability(world, placeRef, .01), OT_ineq);
-  addObjective({time}, make_shared<TM_AboveBox>(world, object, placeRef), OT_ineq, {1e1});
+  addObjective({time}, FS_aboveBox, {object, placeRef}, OT_ineq, {1e1});
 
   //connect object to placeRef
 #if 0
@@ -829,7 +840,7 @@ void KOMO_ext::setPush(double startTime, double endTime, const char* stick, cons
 
   setKS_slider(startTime, endTime, true, object, "slider1", table);
 
-  addObjective({startTime, endTime-.1}, make_shared<TM_AboveBox>(world, object, table), OT_ineq, {1e1});
+  addObjective({startTime, endTime-.1}, FS_aboveBox, {object, table}, OT_ineq, {1e1});
 
 #if 0
   //connect object to placeRef
@@ -1200,11 +1211,11 @@ void KOMO_ext::setAlign(double startTime, double endTime, const char* shape, con
 }
 
 void KOMO_ext::add_touch(double startTime, double endTime, const char* shape1, const char* shape2, ObjectiveType type, const arr& target, double prec) {
-  addObjective({startTime, endTime}, make_shared<F_PairCollision>(world, shape1, shape2, F_PairCollision::_negScalar, false), type, {prec}, target);
+  addObjective({startTime, endTime}, FS_pairCollision_negScalar, {shape1, shape2}, type, {prec}, target);
 }
 
 void KOMO_ext::add_aboveBox(double startTime, double endTime, const char* shape1, const char* shape2, double prec) {
-  addObjective({startTime, endTime}, make_shared<TM_AboveBox>(world, shape1, shape2), OT_ineq, {prec}, NoArr);
+  addObjective({startTime, endTime}, FS_aboveBox, {shape1, shape2}, OT_ineq, {prec}, NoArr);
 }
 
 void KOMO_ext::add_insideBox(double startTime, double endTime, const char* shape1, const char* shape2, double prec) {
@@ -1392,9 +1403,23 @@ void KOMO::setStartConfigurations(const arr& q) {
 }
 
 void KOMO::setConfiguration(int t, const arr& q) {
+#ifdef KOMO_PATH_CONFIG
+  pathConfig.setJointState(q, timeSlices[k_order+t]);
+#else
   if(!configurations.N) setupConfigurations();
   if(t<0) CHECK_LE(-t, (int)k_order, "");
   configurations(t+k_order)->setJointState(q);
+#endif
+}
+
+arr KOMO::getConfiguration_q(int t) {
+#ifdef KOMO_PATH_CONFIG
+  return pathConfig.getJointState(timeSlices[k_order+t]);
+#else
+  if(!configurations.N) setupConfigurations();
+  if(t<0) CHECK_LE(-t, (int)k_order, "");
+  return configurations(t+k_order)->getJointState();
+#endif
 }
 
 void KOMO::initWithConstant(const arr& q) {
@@ -1417,7 +1442,7 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, 
     uint Tstop=T;
     if(i+1<steps.N && steps(i+1)<T) Tstop=steps(i+1);
     for(uint t=steps(i); t<Tstop; t++) {
-      configurations(k_order+t)->setJointState(waypoints(i));
+      setConfiguration(t, waypoints(i));
     }
   }
 
@@ -1429,9 +1454,15 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, 
     //motion profile
     if(i1<T) {
       for(uint j=i0+1; j<=i1; j++) {
+#ifdef KOMO_PATH_CONFIG
+        uintA nonSwitched = getNonSwitchedFrames(timeSlices[k_order+j], timeSlices[k_order+i1]);
+        arr q0 = pathConfig.getJointState(timeSlices[k_order+j].sub(nonSwitched));
+        arr q1 = pathConfig.getJointState(timeSlices[k_order+i1].sub(nonSwitched));
+#else
         uintA nonSwitched = getNonSwitchedFrames({configurations(k_order+j), configurations(k_order+i1)});
         arr q0 = configurations(k_order+j)->getJointState(nonSwitched);
         arr q1 = configurations(k_order+i1)->getJointState(nonSwitched);
+#endif
         arr q;
         double phase = double(j-i0)/double(i1-i0);
         if(sineProfile) {
@@ -1439,7 +1470,11 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, 
         } else {
           q = q0 + phase * (q1-q0);
         }
+#ifdef KOMO_PATH_CONFIG
+        pathConfig.setJointState(q, timeSlices[k_order+j].sub(nonSwitched));
+#else
         configurations(k_order+j)->setJointState(q, nonSwitched);
+#endif
       }
     }/*else{
       for(uint j=i0+1;j<T;j++){
@@ -1476,6 +1511,7 @@ void KOMO::run_prepare(double addInitializationNoise) {
   for(uint s=0; s<k_order; s++) configurations(s)->ensure_q(); //also the prefix!
 #else
   if(!timeSlices.nd) setupConfigurations2();
+  if(!switchesWereApplied) retrospectApplySwitches2();
 #endif
 
   //ensure the decision variable is in sync from the configurations
@@ -2030,7 +2066,8 @@ void KOMO::retrospectApplySwitches(rai::Array<KinematicSwitch*>& _switches) {
 void KOMO::retrospectApplySwitches2() {
 #ifdef KOMO_PATH_CONFIG
   for(KinematicSwitch* sw:switches) {
-    uint s = sw->timeOfApplication+k_order;
+    int s = sw->timeOfApplication+(int)k_order;
+    if(s<0) s=0;
     rai::Frame *f0=0;
     for(; s<k_order+T; s++) { //apply switch on all configurations!
       rai::Frame* f = sw->apply(timeSlices[s]());
@@ -2041,6 +2078,8 @@ void KOMO::retrospectApplySwitches2() {
       }
     }
   }
+  switchesWereApplied=true;
+  pathConfig.selectJoints(timeSlices({k_order,-1})); //select only the non-prefix joints as active!!
 #endif
 }
 
@@ -3873,10 +3912,14 @@ arr KOMO::getPath_frames(uint t) {
 }
 
 arrA KOMO::getPath_q() {
-  CHECK_EQ(configurations.N, k_order+T, "configurations are not setup yet");
   arrA q(T);
   for(uint t=0; t<T; t++) {
+#ifdef KOMO_PATH_CONFIG
+    q(t) = pathConfig.getJointState(timeSlices[k_order+t]);
+#else
+    CHECK_EQ(configurations.N, k_order+T, "configurations are not setup yet");
     q(t) = configurations(t+k_order)->getJointState();
+#endif
   }
   return q;
 }

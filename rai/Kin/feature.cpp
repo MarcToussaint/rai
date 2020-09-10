@@ -18,7 +18,6 @@ void Feature::phi2(arr& y, arr& J, const FrameL& F) {
   }
 
   arr y0, y1, Jy0, Jy1;
-  if(isSparseMatrix(J)){ Jy0.sparse(); Jy1.sparse(); }
   order--;
   phi2(y0, Jy0, F({0, -2}));
   phi2(y1, Jy1, F({1,-1}));
@@ -29,6 +28,7 @@ void Feature::phi2(arr& y, arr& J, const FrameL& F) {
   y = y1-y0;
   if(!!J) J = Jy1 - Jy0;
 
+  if(!diffInsteadOfVel){
 #if 0 //feature itself does not care for tau!!! use specialized features, e.g. linVel, angVel
   if(Ctuple(-1)->hasTauJoint()) {
     double tau; arr Jtau;
@@ -56,6 +56,7 @@ void Feature::phi2(arr& y, arr& J, const FrameL& F) {
     J /= tau;
   }
 #endif
+  }
 }
 
 void Feature::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
@@ -102,6 +103,7 @@ void Feature::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
 rai::String Feature::shortTag(const rai::Configuration& C) {
   rai::String s;
   s <<niceTypeidName(typeid(*this));
+  s <<'/' <<order;
   if(frameIDs.N<=3){
     for(uint i:frameIDs) s <<'-' <<C.frames(i)->name;
   }else{

@@ -15,6 +15,7 @@
 #include "../Kin/switch.h"
 #include "../Optim/GraphOptim.h"
 #include "../Gui/opengl.h"
+#include "../Kin/viewer.h"
 
 #define DEBUG(x) //x
 #define DEL_INFEASIBLE(x) //x
@@ -100,23 +101,6 @@ void LGP_Node::expand(int verbose) {
   isExpanded=true;
 }
 
-void LGP_Node::computeEndKinematics() {
-  Skeleton S = getSkeleton();
-
-  effKinematics.copy(startKinematics, true);
-  KOMO tmp;
-  tmp.setModel(startKinematics, false);
-  double maxPhase=0;
-  for(const SkeletonEntry& s:S) {
-    if(s.phase0>maxPhase) maxPhase=s.phase0;
-    if(s.phase1>maxPhase) maxPhase=s.phase1;
-  }
-  tmp.setTiming(maxPhase+1., 1, 10., 1);
-  tmp.setSkeleton(S);
-//  tmp.reportProblem();
-  for(rai::KinematicSwitch* s : tmp.switches) s->apply(effKinematics.frames);
-}
-
 void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
   if(komoProblem(bound)) komoProblem(bound).reset();
   komoProblem(bound) = make_shared<KOMO>();
@@ -138,14 +122,6 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
     writeSkeleton(cout, S, getSwitchesFromSkeleton(S));
   }
 
-  //ensure the effective kinematics are computed when BD_pose
-//  if(bound==BD_pose && step>1){
-//    if(!parent->effKinematics.q.N) parent->optBound(BD_pose, collisions);
-//    CHECK(parent->effKinematics.q.N, "I can't compute a pose when no pose was comp. for parent (I need the effKin)");
-//  }
-  if(bound==BD_pose && parent) {
-    if(!parent->effKinematics.q.N) parent->computeEndKinematics();
-  }
   arrA waypoints;
   if(bound==BD_seqPath || bound==BD_seqVelPath) {
     CHECK(komoProblem(BD_seq), "BD_seq needs to be computed before");
@@ -153,7 +129,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
   }
 
   auto comp = skeleton2Bound(komo, bound, S,
-                             startKinematics, (parent?parent->effKinematics:startKinematics),
+                             startKinematics,
                              collisions,
                              waypoints);
 
@@ -223,17 +199,6 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
   if(bound==BD_pose) {
     cost_here -= 0.1*ret.reward; //account for the symbolic costs
     if(parent) cost_here += parent->cost(bound); //this is sequentially additive cost
-
-    effKinematics.copy(*komo->configurations.last(), true);
-
-    for(rai::KinematicSwitch* sw: komo->switches) {
-      //    CHECK_EQ(sw->timeOfApplication, 1, "need to do this before the optimization..");
-      if(sw->timeOfApplication>=2) sw->apply(effKinematics.frames);
-    }
-
-    effKinematics.reset_q();
-    effKinematics.ensure_q();
-    DEBUG(effKinematics.checkConsistency();)
   } else {
     cost_here += cost(BD_symbolic); //account for the symbolic costs
   }
@@ -604,19 +569,27 @@ void LGP_Node::getGraph(Graph& G, Node* n, bool brief) {
 }
 
 void LGP_Node::displayBound(ptr<OpenGL>& gl, BoundType bound) {
+  rai::ConfigurationViewer V;
+//  V.gl = gl;
+
   if(!komoProblem(bound)) {
     LOG(-1) <<"bound was not computed - cannot display";
   } else {
-    CHECK(!komoProblem(bound)->gl, "");
+//    CHECK(!komoProblem(bound)->gl, "");
     rai::Enum<BoundType> _bound(bound);
-    gl->title.clear() <<"BOUND " <<_bound <<" at step " <<step;
-    gl->setTitle();
-    komoProblem(bound)->gl = gl;
-    if(bound>=BD_path && bound<=BD_seqVelPath)
-      while(komoProblem(bound)->displayTrajectory(.1, true, false));
-    else
-      while(komoProblem(bound)->displayTrajectory(-1., true, false));
-    komoProblem(bound)->gl.reset();
+    rai::String s;
+    s <<"BOUND " <<_bound <<" at step " <<step;
+//    komoProblem(bound)->gl = gl;
+    V.setConfiguration(komoProblem(bound)->world, s);
+    V.setPath(komoProblem(bound)->getPath_frames(), s, true);
+    if(bound>=BD_path && bound<=BD_seqVelPath){
+//      while(komoProblem(bound)->displayTrajectory(.1, true, false));
+      while(V.playVideo(true, 1.*komoProblem(bound)->T/komoProblem(bound)->stepsPerPhase));
+    }else{
+//      while(komoProblem(bound)->displayTrajectory(-1., true, false));
+      while(V.playVideo(true, 1.*komoProblem(bound)->T));
+    }
+//    komoProblem(bound)->gl.reset();
   }
 }
 

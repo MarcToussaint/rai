@@ -14,71 +14,22 @@
 
 //===========================================================================
 
-TM_AboveBox::TM_AboveBox(int iShape, int jShape, double _margin)
-  : i(iShape), j(jShape), margin(_margin) {
-}
+void TM_AboveBox::phi2(arr& y, arr& J, const FrameL& F) {
+  CHECK_EQ(order, 0, "");
+  CHECK_EQ(F.N, 2, "");
 
-TM_AboveBox::TM_AboveBox(const rai::Configuration& K, const char* iShapeName, const char* jShapeName, double _margin)
-  :i(-1), j(-1), margin(_margin) {
-  rai::Frame* a = iShapeName ? K.getFrameByName(iShapeName):nullptr;
-  rai::Frame* b = jShapeName ? K.getFrameByName(jShapeName):nullptr;
-  if(a) i=a->ID;
-  if(b) j=b->ID;
-}
-
-void TM_AboveBox::phi(arr& y, arr& J, const rai::Configuration& K) {
-  rai::Shape* pnt=K.frames(i)->shape;
-  rai::Shape* box=K.frames(j)->shape;
-  CHECK(pnt && box, "I need shapes!");
-//  if(box->type!=rai::ST_ssBox){ //switch roles
-//    rai::Shape *z=pnt;
-//    pnt=box; box=z;
-//  }
+  rai::Shape* box=F.elem(1)->shape;
+  CHECK(box, "I need a shape as second frame!");
   CHECK_EQ(box->type(), rai::ST_ssBox, "the 2nd shape needs to be a box"); //s1 should be the board
-//  arr pos, posJ;
-//  K.kinematicsRelPos(pos, posJ, &pnt->frame, NoVector, &box->frame, NoVector);
-  Value pos = evalFeature<F_PositionRel>({&pnt->frame, &box->frame});
-#if 0
-  arr range(3);
-  double d1 = .5*pnt->size(0) + pnt->size(3);
-  d1 =.05; //TODO: fixed! support size/radius of object on top
-  double d2 = .5*box->size(0) + box->size(3);
-  range(0) = fabs(d1 - d2);
-  d1 = .5*pnt->size(1) + pnt->size(3);
-  d1 =.05; //TODO: fixed! support size/radius of object on top
-  d2 = .5*box->size(1) + box->size(3);
-  range(1) = fabs(d1 - d2);
-  range(2)=0.;
-#else
+  Value pos = F_PositionRel()
+              .eval(F);
+  arr proj({2,3}, {1,0,0,0,1,0});
+  pos.y = proj * pos.y;
+  pos.J = proj * pos.J;
   arr range = { .5*box->size(0)-margin, .5*box->size(1)-margin };
-#endif
-//  if(verbose>2) cout <<pos <<range
-//                    <<pos-range <<-pos-range
-//                   <<"\n 10=" <<s1->size(0)
-//                  <<" 20=" <<s2->size(0)
-//                 <<" 11=" <<s1->size(1)
-//                <<" 21=" <<s2->size(1)
-//               <<endl;
-  y.resize(4);
-  y(0) =  pos.y(0) - range(0);
-  y(1) = -pos.y(0) - range(0);
-  y(2) =  pos.y(1) - range(1);
-  y(3) = -pos.y(1) - range(1);
-  if(!!J) {
-    J.resize(4, pos.J.d1);
-    J[0] =  pos.J[0];
-    J[1] = -pos.J[0];
-    J[2] =  pos.J[1];
-    J[3] = -pos.J[1];
-  }
-}
 
-rai::String TM_AboveBox::shortTag(const rai::Configuration& G) {
-  return STRING("AboveBox:"<<(i<0?"WORLD":G.frames(i)->name) <<':' <<(j<0?"WORLD":G.frames(j)->name));
-}
-
-rai::Graph TM_AboveBox::getSpec(const rai::Configuration& K) {
-  return rai::Graph({ {"feature", "above"}, {"o1", K.frames(i)->name}, {"o2", K.frames(j)->name}});
+  y.setBlockVector(pos.y - range, -pos.y - range);
+  J.setBlockMatrix(pos.J, -pos.J);
 }
 
 //===========================================================================
@@ -155,8 +106,12 @@ void TM_InsideLine::phi(arr& y, arr& J, const rai::Configuration& G) {
 //===========================================================================
 
 void F_GraspOppose::phi(arr& y, arr& J, const rai::Configuration& K) {
-  Value D1 = F_PairCollision(i, k, F_PairCollision::_vector, true)(K);
-  Value D2 = F_PairCollision(j, k, F_PairCollision::_vector, true)(K);
+  Value D1 = F_PairCollision(F_PairCollision::_vector, true)
+             .setFrameIDs({i, k})
+             .eval(K);
+  Value D2 = F_PairCollision(F_PairCollision::_vector, true)
+             .setFrameIDs({j, k})
+             .eval(K);
 
   y = D1.y + D2.y;
   if(!!J) J = D1.J + D2.J;

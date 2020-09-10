@@ -123,9 +123,10 @@ struct KOMO : NonCopyable {
   rai::Configuration pathConfig;
   FrameL timeSlices;
   rai::Array<ptr<GroundedObjective>> objs;
+  bool switchesWereApplied = false;
 
   //-- optimizer
-  rai::KOMOsolver solver=rai::KS_banded;
+  rai::KOMOsolver solver=rai::KS_sparse;
 //  bool denseOptimization=false;///< calls optimization with a dense (instead of banded) representation
 //  bool sparseOptimization=false;///< calls optimization with a sparse (instead of banded) representation
   OptConstrained* opt=0;       ///< optimizer; created in run()
@@ -276,6 +277,7 @@ struct KOMO : NonCopyable {
   //-- reading results
   rai::Configuration& getConfiguration(double phase); ///< get any configuration by its phase time
   rai::Configuration& getConfiguration_t(int t);      ///< get any configuration (also prefix configurations) by its index
+  arr getConfiguration_q(int t);
   arr getJointState(double phase) { return getConfiguration(phase).getJointState();}
   arr getFrameState(double phase) { return getConfiguration(phase).getFrameState(); }
   uint getPath_totalDofs();                    ///< get the number of all DOFs of the path (the overall dimensionality of the problem)

@@ -19,8 +19,7 @@ TM_Proxy::TM_Proxy(PTMtype _type,
 }
 
 void TM_Proxy::phi(arr& y, arr& J, const rai::Configuration& C) {
-  y.resize(1).setZero();
-  C.jacobian_zero(J, 1);
+  C.kinematicsZero(y, J, 1);
 
   switch(type) {
     case TMT_allP:
@@ -114,13 +113,8 @@ void TM_Proxy::phi(arr& y, arr& J, const rai::Configuration& C) {
 }
 
 void TM_Proxy::phi2(arr& y, arr& J, const FrameL& F) {
-  y.resize(1).setZero();
-  if(!!J){
-    if(J.isSparse()) J.sparse().resize(1,J.d1,0);
-    else J.resize(1,J.d1).setZero();
-  }
-  if(!F.N) return;
   rai::Configuration& C = F.first()->C;
+  C.kinematicsZero(y, J, 1);
   for(const rai::Proxy& p: C.proxies) {
     if(F.contains(p.a) && F.contains(p.b)) {
       C.kinematicsProxyCost(y, J, p, margin, true);

@@ -212,44 +212,13 @@ uint F_qItself::dim_phi2(const FrameL& F){
 
 extern bool isSwitched(rai::Frame* f0, rai::Frame* f1);
 
-void F_qZeroVel::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
-  rai::Frame* f = Ctuple(-1)->frames(frameIDs.scalar());
-  if(useChildFrame) {
-    CHECK_EQ(f->children.N, 1, "this works only for a single child!");
-    f = f->children.scalar();
-  }
-  if(!f->joint) {
-    HALT("shouldn't be here  " <<*f);
-    y.resize(0).setZero();
-    if(!!J) J.resize(0, getKtupleDim(Ctuple).last()).setZero();
-    return;
-  }
-  if(order==1 && isSwitched(Ctuple(-1)->frames(f->ID), Ctuple(-2)->frames(f->ID))) {
-    HALT("shouldn't be here");
-    y.resize(f->joint->dim).setZero();
-    if(!!J) J.resize(y.N, getKtupleDim(Ctuple).last()).setZero();
-    return;
-  }
-  F_qItself q({f->ID}, false);
-  q.order=order;
-  q.Feature::__phi(y, J, Ctuple);
-  if(f->joint->type==rai::JT_transXYPhi) {
-    arr s = ARR(10., 10., 1.);
-    y = s%y;
-    if(!!J) J = s%J;
-  }
-  if(f->joint->type==rai::JT_free) {
-    arr s = ARR(10., 10., 10., 1., 1., 1., 1.);
-    y = s%y;
-    if(!!J) J = s%J;
-  }
-}
-
 void F_qZeroVel::phi2(arr& y, arr& J, const FrameL& F){
+  CHECK_EQ(order, 1, "");
+  F_qItself()
+      .setOrder(order)
+      .__phi2(y, J, F);
+#if 1
   rai::Frame *f = F.last();
-  F_qItself q({}, false);
-  q.order=order;
-  q.Feature::__phi2(y, J, F);
   if(f->joint->type==rai::JT_transXYPhi) {
     arr s = ARR(10., 10., 1.);
     y = s%y;
@@ -260,23 +229,13 @@ void F_qZeroVel::phi2(arr& y, arr& J, const FrameL& F){
     y = s%y;
     if(!!J) J = s%J;
   }
+#endif
 }
 
 uint F_qZeroVel::dim_phi2(const FrameL& F){
-  F_qItself q({}, false);
-  q.order=order;
-  return q.Feature::__dim_phi2(F);
-}
-
-uint F_qZeroVel::dim_phi(const rai::Configuration& C) {
-  rai::Frame* f = C.frames(frameIDs.scalar());
-  if(useChildFrame) {
-    CHECK_EQ(f->children.N, 1, "this works only for a single child!");
-    f = f->children.scalar();
-  }
-
-  if(!f->joint) return 0;
-  return f->joint->dim;
+  return F_qItself()
+      .setOrder(order)
+      .__dim_phi2(F);
 }
 
 //===========================================================================
@@ -360,44 +319,49 @@ void F_qLimits::phi(arr& y, arr& J, const rai::Configuration& G) {
 
 //===========================================================================
 
-void F_qQuaternionNorms::phi(arr& y, arr& J, const rai::Configuration& G) {
-  uint n=dim_phi(G);
-  y.resize(n);
-  if(!!J) J.resize(n, G.q.N).setZero();
+void F_qQuaternionNorms::phi2(arr& y, arr& J, const FrameL& F) {
+  uint n=dim_phi2(F);
+  rai::Configuration& C=F.first()->C;
+  C.kinematicsZero(y, J, n);
   uint i=0;
-  for(const rai::Joint* j: G.activeJoints) if(j->type==rai::JT_quatBall || j->type==rai::JT_free || j->type==rai::JT_XBall) {
+  for(const rai::Frame* f:F) {
+    rai::Joint *j = f->joint;
+    if(!j) continue;
+    if(j->type==rai::JT_quatBall || j->type==rai::JT_free || j->type==rai::JT_XBall) {
       arr q;
-      if(j->type==rai::JT_quatBall) q.referToRange(G.q, j->qIndex+0, j->qIndex+3);
-      if(j->type==rai::JT_XBall)    q.referToRange(G.q, j->qIndex+1, j->qIndex+4);
-      if(j->type==rai::JT_free)     q.referToRange(G.q, j->qIndex+3, j->qIndex+6);
+      if(j->type==rai::JT_quatBall) q.referToRange(C.q, j->qIndex+0, j->qIndex+3);
+      if(j->type==rai::JT_XBall)    q.referToRange(C.q, j->qIndex+1, j->qIndex+4);
+      if(j->type==rai::JT_free)     q.referToRange(C.q, j->qIndex+3, j->qIndex+6);
       double norm = sumOfSqr(q);
       y(i) = norm - 1.;
 
       if(!!J) {
-        if(j->type==rai::JT_quatBall) J(i, {j->qIndex+0, j->qIndex+3}) = 2.*q;
-        if(j->type==rai::JT_XBall)    J(i, {j->qIndex+1, j->qIndex+4}) = 2.*q;
-        if(j->type==rai::JT_free)     J(i, {j->qIndex+3, j->qIndex+6}) = 2.*q;
+        if(j->type==rai::JT_quatBall) for(uint k=0;k<4;k++) J.elem(i,j->qIndex+0+k) = 2.*q.elem(k);
+        if(j->type==rai::JT_XBall)    for(uint k=0;k<4;k++) J.elem(i,j->qIndex+1+k) = 2.*q.elem(k);
+        if(j->type==rai::JT_free)     for(uint k=0;k<4;k++) J.elem(i,j->qIndex+3+k) = 2.*q.elem(k);
       }
       i++;
     }
-}
-
-uint F_qQuaternionNorms::dim_phi(const rai::Configuration& G) {
-  uint i=0;
-  for(const rai::Joint* j:G.activeJoints) {
-    if(j->type==rai::JT_quatBall || j->type==rai::JT_free || j->type==rai::JT_XBall) i++;
   }
-  return i;
 }
 
-void F_qQuaternionNorms::signature(intA& S, const rai::Configuration& C) {
-  S.clear();
+uint F_qQuaternionNorms::dim_phi2(const FrameL& F) {
+  uint n=0;
+  for(const rai::Frame* f:F) {
+    rai::Joint *j = f->joint;
+    if(!j) continue;
+    if(j->type==rai::JT_quatBall || j->type==rai::JT_free || j->type==rai::JT_XBall) n++;
+  }
+  return n;
+}
+
+void F_qQuaternionNorms::setAllActiveQuats(const rai::Configuration& C){
+  frameIDs.clear();
   for(const rai::Joint* j:C.activeJoints) {
-    if(j->type==rai::JT_quatBall) S.append((int)j->qIndex + intA({0, 1, 2, 3}));
-    if(j->type==rai::JT_free) S.append((int)j->qIndex + intA({3, 4, 5, 6}));
-    if(j->type==rai::JT_XBall) S.append((int)j->qIndex + intA({1, 2, 3, 4}));
+    if(j->type==rai::JT_quatBall || j->type==rai::JT_free || j->type==rai::JT_XBall) frameIDs.append(j->frame->ID);
   }
 }
+
 
 //===========================================================================
 
@@ -484,20 +448,19 @@ uintA getSwitchedBodies(const rai::Configuration& G0, const rai::Configuration& 
 
 //===========================================================================
 
-uintA getNonSwitchedFrames(const ConfigurationL& Ktuple) {
+uintA getNonSwitchedFrames(const FrameL& A, const FrameL& B) {
   uintA nonSwitchedFrames;
 
-  rai::Configuration& K0 = *Ktuple(0);
-  for(rai::Frame* f0:K0.frames) {
+  for(rai::Frame* f0:A) {
     bool succ = true;
     uint id = f0->ID;
-    for(uint i=1; i<Ktuple.N; i++) {
-      rai::Configuration& K1 = *Ktuple(i);
-      if(id>=K1.frames.N) { succ=false; break; }
-      if(isSwitched(f0, K1.frames(id))) { succ=false; break; }
-    }
+    if(id>=B.N) { succ=false; break; }
+    if(isSwitched(f0, B.elem(id))) { succ=false; break; }
     if(succ) nonSwitchedFrames.append(id);
   }
   return nonSwitchedFrames;
 }
 
+uintA getNonSwitchedFrames(const ConfigurationL& Ctuple) {
+  NIY
+}
