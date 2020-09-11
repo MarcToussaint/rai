@@ -62,7 +62,7 @@ uintA stringListToShapeIndices(const rai::Array<const char*>& names, const rai::
   return I;
 }
 
-uintA shapesToShapeIndices(const FrameL& frames) {
+uintA framesToIndices(const FrameL& frames) {
   uintA I;
   resizeAs(I, frames);
   for(uint i=0; i<frames.N; i++) I.elem(i) = frames.elem(i)->ID;
@@ -589,9 +589,13 @@ arr rai::Configuration::getJointState(const StringA& joints) const {
 }
 
 arr rai::Configuration::getFrameState() const {
-  arr X(frames.N, 7);
+  return getFrameState(frames);
+}
+
+arr rai::Configuration::getFrameState(const FrameL& F) const {
+  arr X(F.N, 7);
   for(uint i=0; i<X.d0; i++) {
-    X[i] = frames(i)->ensure_X().getArr7d();
+    X[i] = F.elem(i)->ensure_X().getArr7d();
   }
   return X;
 }
@@ -871,6 +875,15 @@ void rai::Configuration::setFrameState(const arr& X, const StringA& frameNames, 
   checkConsistency();
 //  calc_Q_from_Frames();
   //  if(calc_q_from_X) ensure_q();
+}
+
+void rai::Configuration::setFrameState(const arr& X, const uintA& frameIDs){
+  for(uint i=0;i<frameIDs.N;i++){
+    rai::Frame* f = frames.elem(frameIDs(i));
+    f->X.set(X[i]);
+    f->X.rot.normalize();
+    f->_state_updateAfterTouchingX();
+  }
 }
 
 void rai::Configuration::setDofsForTree(const arr& q, rai::Frame* root) {
