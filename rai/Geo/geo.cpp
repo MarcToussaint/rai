@@ -479,8 +479,9 @@ void Quaternion::flipSign() { w=-w; x=-x; y=-y; z=-z; }
 
 /// multiplies the rotation by a factor f (i.e., makes f-times the rotation)
 void Quaternion::multiply(double f) {
+  normalize();
   if(w<0.) flipSign();
-  if(w==1. || f==1.) return;
+  if(1.-w<1e-10 || f==1.) return;
   double phi=acos(w);
   phi*=f;
   w=cos(phi);

@@ -1059,7 +1059,6 @@ void rai::Configuration::jacobian_pos(arr& J, Frame* a, const rai::Vector& pos_w
           J.setMatrixBlock(R, 0, j_idx);
         }
         if(j->type==JT_trans3 || j->type==JT_free) {
-          if(j->mimic) NIY;
           arr R = j->X().rot.getArr();
           R *= j->scale;
           J.setMatrixBlock(R, 0, j_idx);
