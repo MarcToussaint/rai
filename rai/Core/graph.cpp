@@ -663,10 +663,12 @@ void Graph::read(std::istream& is, bool parseInfo) {
 void writeFromStream(std::ostream& os, std::istream& is, istream::pos_type beg, istream::pos_type end) {
   istream::pos_type here=is.tellg();
   is.seekg(beg);
-  char c;
-  for(int i=int(beg - end); i--;) {
-    is.get(c);
-    os <<c;
+  if(beg>end){
+    char c;
+    for(int i=int(beg - end); i--;) {
+      is.get(c);
+      os <<c;
+    }
   }
   is.seekg(here);
 }

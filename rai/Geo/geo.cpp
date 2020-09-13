@@ -479,6 +479,7 @@ void Quaternion::flipSign() { w=-w; x=-x; y=-y; z=-z; }
 
 /// multiplies the rotation by a factor f (i.e., makes f-times the rotation)
 void Quaternion::multiply(double f) {
+  if(w<0.) flipSign();
   if(w==1. || f==1.) return;
   double phi=acos(w);
   phi*=f;
@@ -1039,6 +1040,11 @@ Quaternion operator-(const Quaternion& b, const Quaternion& c) {
   a.y = b.y-c.y;
   a.z = b.z-c.z;
   a.isZero = false;
+  return a;
+}
+
+Quaternion operator*=(Quaternion& a, double s){
+  a.multiply(s);
   return a;
 }
 

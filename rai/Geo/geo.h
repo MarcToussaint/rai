@@ -350,6 +350,7 @@ bool    operator!=(const Matrix&, const Matrix&);
 Quaternion operator-(const Quaternion&);
 Quaternion operator*(const Quaternion& b, const Quaternion& c);
 Quaternion operator/(const Quaternion& b, const Quaternion& c);
+Quaternion operator*=(Quaternion&, double);
 bool       operator==(const Quaternion&, const Quaternion&);
 bool       operator!=(const Quaternion&, const Quaternion&);
 Quaternion operator-(const Quaternion&, const Quaternion&);

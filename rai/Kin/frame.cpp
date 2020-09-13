@@ -1221,6 +1221,7 @@ void rai::Shape::glDraw(OpenGL& gl) {
 
     if(_type==rai::ST_marker) {
       if(frame.C.orsDrawMarkers) {
+        CHECK_GE(size.N, 1, "need a marker size");
         glDrawDiamond(size(0)/5., size(0)/5., size(0)/5.);
         glDrawAxes(size(0), !gl.drawMode_idColor);
       }
