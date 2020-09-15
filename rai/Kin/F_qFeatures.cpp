@@ -62,16 +62,7 @@ void F_qItself::phi(arr& q, arr& J, const rai::Configuration& C) {
     if(!!J) J.setId(q.N);
   } else {
     uint n=dim_phi(C);
-    q.resize(n);
-//    C.jacobian_zero(J, n);
-
-    if(!!J) {
-      if(!isSparseMatrix(J)) {
-        J.resize(n, C.q.N).setZero();
-      } else {
-        J.sparse().resize(n, C.q.N, 0);
-      }
-    }
+    C.kinematicsZero(q, J, n);
     uint m=0;
     if(frameIDs.nd) {
       for(uint i=0; i<frameIDs.d0; i++) {
@@ -117,14 +108,7 @@ void F_qItself::phi2(arr& q, arr& J, const FrameL& F) {
   rai::Configuration& C = F.last()->C;
   CHECK(C._state_q_isGood, "");
   uint n=dim_phi2(F);
-  q.resize(n);
-  if(!!J) {
-    if(!isSparseMatrix(J)) {
-      J.resize(n, C.q.N).setZero();
-    } else {
-      J.sparse().resize(n, C.q.N, 0);
-    }
-  }
+  C.kinematicsZero(q, J, n);
   uint m=0;
   CHECK(F.d0==1, "");
   FrameL FF = F[0];

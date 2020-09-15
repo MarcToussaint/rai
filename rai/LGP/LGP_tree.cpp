@@ -205,7 +205,7 @@ void LGP_Tree::updateDisplay() {
   if(verbose>2) {
     rai::String decisions = focusNode->getTreePathString('\n');
     for(uint i=1; i<views.N; i++) {
-      if(focusNode->komoProblem(i) && focusNode->komoProblem(i)->configurations.N) {
+      if(focusNode->komoProblem(i) && focusNode->komoProblem(i)->timeSlices.N) {
         views(i)->setConfigurations(focusNode->komoProblem(i)->configurations);
         views(i)->text.clear() <<focusNode->cost <<"|  " <<focusNode->constraints.last() <<'\n' <<decisions;
       } else views(i)->clear();
@@ -689,10 +689,10 @@ LGP_Tree_SolutionData::LGP_Tree_SolutionData(LGP_Tree& _tree, LGP_Node* _node) :
   paths.resize(L);
   for(uint l=0; l<L; l++) {
     std::shared_ptr<KOMO> komo = node->komoProblem(l);
-    if(komo && komo->configurations.N) {
-      paths(l).resize(komo->configurations.N, frameIDs.N);
-      for(uint s=0; s<komo->configurations.N; s++) for(uint i=0; i<frameIDs.N; i++) {
-          paths(l)(s, i) = komo->configurations(s)->frames(frameIDs(i))->ensure_X();
+    if(komo && komo->timeSlices.N) {
+      paths(l).resize(komo->timeSlices.d0, frameIDs.N);
+      for(uint s=0; s<komo->timeSlices.d0; s++) for(uint i=0; i<frameIDs.N; i++) {
+          paths(l)(s, i) = komo->timeSlices(s, frameIDs(i))->ensure_X();
         }
     }
   }

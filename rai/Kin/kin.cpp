@@ -719,7 +719,7 @@ void rai::Configuration::selectJoints(const FrameL& F, bool notThose) {
   reset_q();
   ensure_indexedJoints();
   calc_qInactive_from_Q();
-  checkConsistency();
+//  checkConsistency();
 }
 
 void rai::Configuration::selectJointsByGroup(const StringA& groupNames, bool notThose) {

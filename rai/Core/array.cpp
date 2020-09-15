@@ -2436,6 +2436,7 @@ arr SparseMatrix::At_A() {
 arr SparseMatrix::A_B(const arr& B) const {
   Eigen::SparseMatrix<double> A_eig = conv_sparseArr2sparseEigen(*this);
   Eigen::SparseMatrix<double> B_eig = conv_sparseArr2sparseEigen(B.copy().sparse());
+//  Eigen::MatrixXd B_eig = conv_arr2eigen(B);
 
   Eigen::SparseMatrix<double> W = A_eig * B_eig;
 
