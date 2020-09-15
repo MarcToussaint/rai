@@ -362,6 +362,7 @@ struct KOMO : NonCopyable {
 
     virtual void setSingleVariable(uint var_id, const arr& x); //set a single variable block
     virtual void evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H); //get a single feature block
+    virtual void report();
   };
 
   //this treats EACH JOINT and dof as its own variable... tricky

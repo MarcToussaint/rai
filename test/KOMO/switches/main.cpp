@@ -22,6 +22,7 @@ void TEST(Grasp){
   komo.setModel(C);
   komo.setTiming(2.5, 10., 5.);
   komo.add_qControlObjective({}, 2, 1.);
+  komo.addSquaredQuaternionNorms();
 
 #if 0
   komo.setGrasp(1., "endeff", "stick");
@@ -31,15 +32,14 @@ void TEST(Grasp){
   komo.addSwitch_stable(1., -1., "endeff", "stickTip");
 #endif
 
-//  komo.add_collision(true);
+  komo.add_collision(true);
 
   komo.addObjective({2.}, FS_distance, {"stick", "redBall"}, OT_eq, {1e2});
 
-  komo.setSlow(2., -1.,1e0);
+  komo.addObjective({2.,-1.}, FS_qItself, {}, OT_eq, {1e1}, {}, 1);
 
 //  komo.animateOptimization = 2;
 //  komo.verbose = 8;
-  komo.retrospectApplySwitches2();
   komo.optimize();
   komo.checkGradients();
 
@@ -63,6 +63,7 @@ int TEST(Pnp){
   komo.setModel(C, false);
   komo.setTiming(2.5, 30, 5., 2);
   komo.add_qControlObjective({}, 2);
+  komo.addSquaredQuaternionNorms();
 
   //grasp
   komo.addSwitch_stable(1., 2., "gripper", "box");
@@ -84,7 +85,6 @@ int TEST(Pnp){
   komo.addObjective({1.9,2.2}, FS_position, {"gripper"}, OT_eq, {}, {0.,0.,.1}, 2);
 
   komo.verbose = 4;
-  komo.retrospectApplySwitches2();
   komo.optimize();
 //  komo.checkGradients();
 
@@ -99,7 +99,7 @@ int TEST(Pnp){
 int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
-//  testGrasp();
+  //  testGrasp();
   testPnp();
 
   return 0;

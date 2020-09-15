@@ -21,19 +21,19 @@ def writeShape(link):
 
     elem = link.find("geometry/box")
     if elem is not None:
-        print('type:box size:[%s 0]' % elem.attrib['size'])
+        print('type:box\nsize:[%s 0]' % elem.attrib['size'])
 
     elem = link.find("geometry/sphere")
     if elem is not None:
-        print('type:sphere size:[0 0 0 %s]' % elem.attrib['radius'])
+        print('type:sphere\nsize:[0 0 0 %s]' % elem.attrib['radius'])
 
     elem = link.find("geometry/cylinder")
     if elem is not None:
-        print('type:cylinder size:[0 0 %s %s]' % (elem.attrib['length'], elem.attrib['radius']))
+        print('type:cylinder\nsize:[0 0 %s %s]' % (elem.attrib['length'], elem.attrib['radius']))
 
     elem = link.find("geometry/mesh")
     if elem is not None:
-        print('type:mesh mesh:\'%s\'' % elem.attrib['filename'])
+        print('type:mesh\nmesh:\'%s\'' % elem.attrib['filename'])
         if elem.find("scale") is not None:
             print('meshscale:[%s]' % elem.attrib['scale'])
 
@@ -72,14 +72,14 @@ for link in links:
     for visual in link.findall("visual"):
         print('shape visual %s_1 (%s) {  ' % (name, name))
         writeShape(visual)
-        print(' visual }\n') # end of shape
+        print('visual\n}\n') # end of shape
 
     # collision shape
     for collision in link.findall("collision"):
         print('shape collision %s_0 (%s) {  ' % (name, name))
-        print(' color:[.8 .2 .2 .5],')
+        print('color:[.8 .2 .2 .5]')
         writeShape(collision)
-        print(' contact:-2 }\n') # end of shape
+        print('contact:-2\n}\n') # end of shape
 
 
 joints = xmlData.findall("/joint")

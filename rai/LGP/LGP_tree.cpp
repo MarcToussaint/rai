@@ -114,7 +114,7 @@ LGP_Tree::LGP_Tree()
   collisions = rai::getParameter<bool>("LGP/collisions", true);
   displayTree = rai::getParameter<bool>("LGP/displayTree", false);
 
-  verbose = rai::getParameter<int>("LGP/verbose", 2);
+  verbose = rai::getParameter<double>("LGP/verbose", 2);
   if(verbose>0) fil.open(dataPath + "optLGP.dat"); //STRING("z.optLGP." <<rai::date() <<".dat"));
 
   cameraFocus = rai::getParameter<arr>("LGP/cameraFocus", {});
@@ -302,28 +302,28 @@ void LGP_Tree::inspectSequence(const rai::String& seq) {
   //-- first test pose bounds along the path
   BoundType bound = BD_pose;
   for(LGP_Node* n:path) {
-    n->optBound(bound, true, 2);
+    n->optBound(bound, true, verbose-2);
     n->displayBound(gl, bound);
   }
 
-  bound = BD_poseFromSeq;
-  for(LGP_Node* n:path) {
-    n->optBound(bound, true, 2);
-    n->displayBound(gl, bound);
-  }
+  // bound = BD_poseFromSeq;
+  // for(LGP_Node* n:path) {
+  //   n->optBound(bound, true, verbose-2);
+  //   n->displayBound(gl, bound);
+  // }
 
   //-- sequence bound
   bound = BD_seq;
-  node->optBound(bound, true, 2);
+  node->optBound(bound, true, verbose-2);
   node->displayBound(gl, bound);
 
   //-- path bounds
   bound = BD_seqPath;
-  node->optBound(bound, true, 2);
+  node->optBound(bound, true, verbose-2);
   node->displayBound(gl, bound);
 
   bound = BD_path;
-  node->optBound(bound, true, 2);
+  node->optBound(bound, true, verbose-2);
   node->displayBound(gl, bound);
 }
 

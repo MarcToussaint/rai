@@ -179,7 +179,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
   DEBUG(FILE("z.fol") <<fol;);
   DEBUG(komo->getReport(false, 1, FILE("z.problem")););
   if(komo->verbose>1) komo->reportProblem();
-  if(komo->verbose>5) komo->animateOptimization = komo->verbose-5;
+//  if(komo->verbose>5) komo->animateOptimization = komo->verbose-5;
 
   try {
     if(bound != BD_poseFromSeq) {
@@ -281,7 +281,7 @@ ptr<KOMO> LGP_Node::optSubCG(const SubCG& scg, bool collisions, int verbose) {
   DEBUG(FILE("z.fol") <<fol;);
   DEBUG(komo->getReport(false, 1, FILE("z.problem")););
   if(komo->verbose>1) komo->reportProblem();
-  if(komo->verbose>5) komo->animateOptimization = komo->verbose-5;
+//  if(komo->verbose>5) komo->animateOptimization = komo->verbose-5;
 
   try {
     komo->run();

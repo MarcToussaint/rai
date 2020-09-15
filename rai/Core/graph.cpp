@@ -202,7 +202,8 @@ void Node::write(std::ostream& os, bool yamlMode) const {
       else os <<'"' <<str <<'"';
     }
   } else if(isOfType<FileToken>()) {
-    os <<'\'' <<getValue<FileToken>()->absolutePathName() <<'\'';
+    //os <<'\'' <<getValue<FileToken>()->absolutePathName() <<'\'';
+    os <<'\'' <<getValue<FileToken>()->name <<'\'';
   } else if(isOfType<arr>()) {
     getValue<arr>()->write(os, ", ", nullptr, "[]");
   } else if(isOfType<intA>()) {

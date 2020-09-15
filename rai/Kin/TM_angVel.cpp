@@ -245,7 +245,7 @@ void TM_NoJumpFromParent::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   rai::Frame* parent = link->parent;
 
   if(parent && parent->ID == Ktuple.elem(-1)->frames(i)->getUpwardLink()->parent->ID) {
-#if 0
+#if 1
     LOG(-1) <<"this frame isn't switching - are you sure you want to do this?";
 #else
     y.resize(7).setZero();
@@ -254,14 +254,18 @@ void TM_NoJumpFromParent::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
 #endif
   }
 
+//  LOG(0) <<"link:" <<link->name <<" parent:" <<parent->name;
+  
   {
 //  if(link->joint && link->joint->type==rai::JT_rigid){
     arr yp, Jp, yq, Jq;
     ptr<TM_Default> tmp;
     if(parent)
       tmp = make_shared<TM_Default>(TMT_pos, link->ID, NoVector, parent->ID, NoVector);
-    else
+    else{
+      LOG(-1) <<"this frame has no parent?";
       tmp = make_shared<TM_Default>(TMT_pos, link->ID);
+    }
     tmp->order = 1;
     tmp->type = TMT_pos;
     tmp->Feature::__phi(yp, Jp, Ktuple);

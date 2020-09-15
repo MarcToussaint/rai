@@ -38,6 +38,7 @@ void TEST(Easy){
 void TEST(Align){
   rai::Configuration C("arm.g");
   cout <<"configuration space dim=" <<C.getJointStateDimension() <<endl;
+  
   KOMO komo;
 //  komo.solver = rai::KS_sparseStructured; //set via rai.cfg!!
 //  komo.verbose=1; //set via rai.cfg!!
