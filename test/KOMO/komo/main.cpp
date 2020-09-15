@@ -38,6 +38,7 @@ void TEST(Easy){
 void TEST(Align){
   rai::Configuration C("arm.g");
   cout <<"configuration space dim=" <<C.getJointStateDimension() <<endl;
+
   KOMO komo;
 //  komo.solver = rai::KS_sparseStructured; //set via rai.cfg!!
 //  komo.verbose=1; //set via rai.cfg!!
@@ -67,9 +68,9 @@ void TEST(Align){
 //===========================================================================
 
 struct MyFeature : Feature {
-  int i, j;               ///< which shapes does it refer to?
+  uint i, j;               ///< which shapes does it refer to?
 
-  MyFeature(int _i, int _j)
+  MyFeature(uint _i, uint _j)
     : i(_i), j(_j) {}
   MyFeature(const rai::Configuration& K, const char* s1, const char* s2)
     :  i(initIdArg(K, s1)), j(initIdArg(K, s2)) {}
@@ -79,9 +80,13 @@ struct MyFeature : Feature {
 
     auto V = TM_Default(TMT_posDiff, i, NoVector, j).setOrder(1).eval(Ctuple);
 
-    auto C = F_PairCollision(i, j, F_PairCollision::_normal, false).eval(Ctuple);
+    auto C = F_PairCollision(F_PairCollision::_normal, false)
+             .setFrameIDs({i, j})
+             .eval(Ctuple);
 
-    auto D = F_PairCollision(i, j, F_PairCollision::_negScalar, false).eval(Ctuple);
+    auto D = F_PairCollision(F_PairCollision::_negScalar, false)
+             .setFrameIDs({i, j})
+             .eval(Ctuple);
 
     //penalizing velocity whenever close
     double range=.2;

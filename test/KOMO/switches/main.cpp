@@ -20,7 +20,7 @@ void TEST(Grasp){
   KOMO komo;
 
   komo.setModel(C);
-  komo.setTiming(2.5, 10, 5.);
+  komo.setTiming(2.5, 10., 5.);
   komo.add_qControlObjective({}, 2, 1.);
   komo.addSquaredQuaternionNorms();
 
@@ -41,7 +41,7 @@ void TEST(Grasp){
 //  komo.animateOptimization = 2;
 //  komo.verbose = 8;
   komo.optimize();
-//  komo.checkGradients();
+  komo.checkGradients();
 
   rai::Graph result = komo.getReport(true);
 
@@ -62,7 +62,7 @@ int TEST(Pnp){
 
   komo.setModel(C, false);
   komo.setTiming(2.5, 30, 5., 2);
-  komo.add_qControlObjective({}, 2, 1.);
+  komo.add_qControlObjective({}, 2);
   komo.addSquaredQuaternionNorms();
 
   //grasp
@@ -99,7 +99,7 @@ int TEST(Pnp){
 int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
-//  testGrasp();
+  //  testGrasp();
   testPnp();
 
   return 0;

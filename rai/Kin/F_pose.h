@@ -70,6 +70,7 @@ struct F_ScalarProduct : Feature {
 //===========================================================================
 
 struct F_Quaternion : Feature {
+  F_Quaternion(){ flipTargetSignOnNegScalarProduct = true; }
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F) { return 4; }
 };
@@ -84,6 +85,7 @@ struct F_QuaternionDiff : Feature {
 //===========================================================================
 
 struct F_QuaternionRel: Feature {
+  F_QuaternionRel(){ flipTargetSignOnNegScalarProduct = true; }
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F) { return 4; }
 };

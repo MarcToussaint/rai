@@ -1534,11 +1534,15 @@ void KOMO::run(const OptOptions options) {
         <<rai::Enum<KOMOsolver>(solver)
        <<" collisions:" <<computeCollisions
       <<" x-dim:" <<x.N
-      <<" T:" <<T <<" k:" <<k_order <<" phases:" <<double(T)/stepsPerPhase <<" stepsPerPhase:" <<stepsPerPhase <<" tau:" <<tau
-     <<" #config:" <<configurations.N <<" q-dims: ";
+      <<" T:" <<T <<" k:" <<k_order <<" phases:" <<double(T)/stepsPerPhase <<" stepsPerPhase:" <<stepsPerPhase <<" tau:" <<tau;
+    #ifdef KOMO_PATH_CONFIG
+    cout <<"  #timeSlices:" <<timeSlices.d0 <<" #totalDOFs:" <<pathConfig.getJointStateDimension() <<" #frames:" <<pathConfig.frames.N;
+    #else
+    cout <<" #config:" <<configurations.N <<" q-dims: ";
     uintA dims(configurations.N);
     for(uint i=0; i<configurations.N; i++) dims(i)=configurations(i)->q.N;
     writeConsecutiveConstant(cout, dims);
+    #endif
     cout <<endl;
   }
 
@@ -1711,10 +1715,14 @@ void KOMO::reportProblem(std::ostream& os) {
   os <<"KOMO Problem:" <<endl;
   os <<"  x-dim:" <<x.N <<"  dual-dim:" <<dual.N <<endl;
   os <<"  T:" <<T <<" k:" <<k_order <<" phases:" <<double(T)/stepsPerPhase <<" stepsPerPhase:" <<stepsPerPhase <<" tau:" <<tau <<endl;
+#ifdef KOMO_PATH_CONFIG
+  os <<"  #timeSlices:" <<timeSlices.d0 <<" #totalDOFs:" <<pathConfig.getJointStateDimension() <<" #frames:" <<pathConfig.frames.N;
+#else
   os <<"  #configurations:" <<configurations.N <<" q-dims: ";
   uintA dims(configurations.N);
   for(uint i=0; i<configurations.N; i++) dims(i)=configurations(i)->q.N;
   writeConsecutiveConstant(os, dims);
+#endif
   os <<endl;
 
   if(configurations.N) {
@@ -2069,7 +2077,7 @@ void KOMO::retrospectApplySwitches2() {
     int s = sw->timeOfApplication+(int)k_order;
     if(s<0) s=0;
     rai::Frame *f0=0;
-    for(; s<k_order+T; s++) { //apply switch on all configurations!
+    for(; s<int(k_order+T); s++) { //apply switch on all configurations!
       rai::Frame* f = sw->apply(timeSlices[s]());
       if(!f0){
         f0=f;
@@ -2527,7 +2535,7 @@ rai::Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featur
       int i = ob->objId;
       uint time = ob->configs.last();
 #endif
-          for(uint j=0; j<d; j++) CHECK_EQ(featureTypes(M+j), ob->type, "");
+//          for(uint j=0; j<d; j++) CHECK_EQ(featureTypes(M+j), ob->type, "");
           if(d) {
             if(ob->type==OT_sos) {
               for(uint j=0; j<d; j++) err(time, i) += sqr(featureValues(M+j));

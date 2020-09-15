@@ -83,6 +83,7 @@ void F_VectorRel::phi2(arr& y, arr& J, const FrameL& F){
 //===========================================================================
 
 void F_Quaternion::phi2(arr& y, arr& J, const FrameL& F){
+  flipTargetSignOnNegScalarProduct = true;
   if(order>0){  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 1, "");
   rai::Frame *f = F.elem(0);
@@ -112,6 +113,7 @@ void F_QuaternionDiff::phi2(arr& y, arr& J, const FrameL& F){
 //===========================================================================
 
 void F_QuaternionRel::phi2(arr& y, arr& J, const FrameL& F){
+  flipTargetSignOnNegScalarProduct = true;
   if(order>0){  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
   rai::Frame *f1 = F.elem(0);

@@ -131,7 +131,8 @@ struct Configuration : GLDrawer {
 
   void reconfigureRoot(Frame* newRoot, bool ofLinkOnly);  ///< n becomes the root of the kinematic tree; joints accordingly reversed; lists resorted
   void flipFrames(rai::Frame* a, rai::Frame* b);
-  void pruneRigidJoints(int verbose=0);        ///< delete rigid joints -> they become just links
+  void pruneRigidJoints();        ///< delete rigid joints -> they become just links
+  void pruneInactiveJoints();        ///< delete rigid joints -> they become just links
   void reconnectLinksToClosestJoints();        ///< re-connect all links to closest joint
   void pruneUselessFrames(bool pruneNamed=false, bool pruneNonContactNonMarker=false);  ///< delete frames that have no name, joint, and shape
   void optimizeTree(bool _pruneRigidJoints=false, bool pruneNamed=false, bool pruneNonContactNonMarker=false);        ///< call the three above methods in this order
