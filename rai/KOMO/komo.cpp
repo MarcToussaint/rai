@@ -2485,7 +2485,7 @@ rai::Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featur
           uint d=0;
           if(wasRun) {
             d=task->feat->__dim_phi(configurations({t, t+k_order}));
-            for(uint j=0; j<d; j++) CHECK_EQ(featureTypes(M+j), task->type, "");
+	    //            for(uint j=0; j<d; j++) CHECK_EQ(featureTypes(M+j), task->type, "");
             if(d) {
               if(task->type==OT_sos) {
                 for(uint j=0; j<d; j++) err(t, i) += sqr(featureValues(M+j)); //sumOfSqr(phi.sub(M,M+d-1));
@@ -3326,6 +3326,10 @@ void KOMO::Conv_KOMO_GraphProblem_toBeRetired::getPartialPhi(arr& phi, arrA& J, 
   if(!!phi) phi = phi.sub(whichPhi);
   if(!!J) J = J.sub(whichPhi);
 }
+
+void KOMO::Conv_KOMO_FactoredNLP::report(){
+  reportAfterPhiComputation(komo);
+}   
 
 void KOMO::Conv_KOMO_FactoredNLP::evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H) {
 #if 1
