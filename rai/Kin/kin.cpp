@@ -255,16 +255,20 @@ rai::Frame* rai::Configuration::addObject(const char* name, const char* parent, 
 }
 
 /// the list F can be from another (not this) Configuration
-void rai::Configuration::addFramesCopy(const FrameL& F) {
+void rai::Configuration::addFramesCopy(const FrameL& F, const ForceExchangeL& _forces) {
   //prepare an index FId -> thisId
   uint maxId=0;
   for(Frame* f:F) if(f->ID>maxId) maxId=f->ID;
   intA FId2thisId(maxId+1);
   FId2thisId = -1;
+
+  //create new copied frames
   for(Frame* f:F) {
     Frame* f_new = new Frame(*this, f);
     FId2thisId(f->ID) = f_new->ID;
   }
+
+  //relink frames - special attention to mimic'ing
   for(Frame* f:F) if(f->parent && f->parent->ID<=maxId && FId2thisId(f->parent->ID)!=-1) {
     rai::Frame* f_new = frames(FId2thisId(f->ID));
     f_new->linkFrom(frames(FId2thisId(f->parent->ID)));
@@ -281,6 +285,11 @@ void rai::Configuration::addFramesCopy(const FrameL& F) {
         f_new->joint->mimic = f_orig->joint;
       }
     }
+  }
+
+  //copy force exchanges
+  for(ForceExchange* ex:_forces){
+    new ForceExchange(*frames(FId2thisId(ex->a.ID)), *frames(FId2thisId(ex->b.ID)), ex);
   }
 }
 
@@ -354,7 +363,9 @@ void rai::Configuration::copy(const rai::Configuration& C, bool referenceSwiftOn
   //  for(Proxy& p:proxies) { p.a = frames(p.a->ID); p.b = frames(p.b->ID);  p.coll.reset(); }
 
   //copy contacts
-  for(ForceExchange* c:C.forces) new ForceExchange(*frames(c->a.ID), *frames(c->b.ID), c);
+  for(ForceExchange* ex:C.forces){
+    new ForceExchange(*frames(ex->a.ID), *frames(ex->b.ID), ex);
+  }
 
   //copy swift reference
   if(referenceSwiftOnCopy) {
@@ -1410,24 +1421,16 @@ void rai::Configuration::kinematicsRelRot(arr& y, arr& J, Frame* a, Frame* b) co
 }
 #endif
 
-void rai::Configuration::kinematicsContactPOA(arr& y, arr& J, rai::ForceExchange* c) const {
-  y = c->position;
+void rai::Configuration::kinematicsContactPOA(arr& y, arr& J, const rai::ForceExchange* c) const {
+  kinematicsZero(y, J, 3);
 
+  y = c->poa;
   if(!!J) {
-    if(jacMode==JM_dense) {
-      J.resize(3, q.N).setZero();
-    } else if(jacMode==JM_sparse){
-      J.sparse().resize(3, q.N, 0);
-    } else if(jacMode==JM_noArr){
-      J.setNoArr();
-      return;
-    }
-
     for(uint i=0; i<3; i++) J.elem(i, c->qIndex+i) = 1.;
   }
 }
 
-void rai::Configuration::kinematicsContactForce(arr& y, arr& J, rai::ForceExchange* c) const {
+void rai::Configuration::kinematicsContactForce(arr& y, arr& J, const ForceExchange* c) const {
   y = c->force;
 
   if(!!J) {
@@ -1494,7 +1497,7 @@ rai::Frame* rai::Configuration::getFrameByName(const char* name, bool warnIfNotE
     for(uint i=frames.N; i--;) if(frames(i)->name==name) return frames(i);
   }
   if(strcmp("glCamera", name)!=0)
-    if(warnIfNotExist) RAI_MSG("cannot find Body named '" <<name <<"' in Graph");
+    if(warnIfNotExist) RAI_MSG("cannot find frame named '" <<name);
   return 0;
 }
 
@@ -2258,7 +2261,7 @@ void rai::Configuration::report(std::ostream& os) const {
      <<" #shapes=" <<nShapes
      <<" #ucertainties=" <<nUc
      <<" #proxies=" <<proxies.N
-     <<" #contacts=" <<forces.N
+     <<" #forces=" <<forces.N
      <<" #evals=" <<setJointStateCount
      <<endl;
 
@@ -2451,11 +2454,12 @@ void rai::Configuration::reportProxies(std::ostream& os, double belowMargin, boo
     i++;
   }
   os <<"ForceExchange report:" <<endl;
-  for(Frame* a:frames) for(ForceExchange* c:a->forces) if(&c->a==a) {
-        c->coll();
-        os <<*c <<endl;
-      }
-
+  for(Frame* a:frames) for(ForceExchange* c:a->forces){
+    if(&c->a==a) {
+      c->coll();
+      os <<*c <<endl;
+    }
+  }
 }
 
 bool ProxySortComp(const rai::Proxy* a, const rai::Proxy* b) {
@@ -3028,9 +3032,9 @@ void rai::Configuration::glDraw_sub(OpenGL& gl, int drawOpaqueOrTransparanet) {
 
     //contacts
     //  if(orsDrawProxies)
-    for(const Frame* fr: frames) for(rai::ForceExchange* c:fr->forces) if(&c->a==fr) {
-          c->glDraw(gl);
-        }
+    for(ForceExchange* f:forces) {
+      f->glDraw(gl);
+    }
 
     //joints
     Joint* e;

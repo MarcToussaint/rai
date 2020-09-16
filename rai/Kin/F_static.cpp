@@ -9,7 +9,7 @@
 #include "F_static.h"
 #include "forceExchange.h"
 
-F_netForce::F_netForce(int iShape, bool _transOnly, bool _zeroGravity) : i(iShape), transOnly(_transOnly) {
+F_netForce::F_netForce(bool _transOnly, bool _zeroGravity) : transOnly(_transOnly) {
   order=0;
   if(_zeroGravity) {
     gravity = 0.;
@@ -18,12 +18,14 @@ F_netForce::F_netForce(int iShape, bool _transOnly, bool _zeroGravity) : i(iShap
   }
 }
 
-void F_netForce::phi(arr& y, arr& J, const rai::Configuration& C) {
-  rai::Frame* a = C.frames(i);
+void F_netForce::phi2(arr& y, arr& J, const FrameL& F) {
+  CHECK_EQ(order, 0, "");
 
-  arr force = zeros(3);
-  arr torque = zeros(3);
-  arr Jforce, Jtorque;
+  rai::Frame* a = F.scalar();
+
+  arr force, torque, Jforce, Jtorque;
+  a->C.kinematicsZero(force, Jforce, 3);
+  a->C.kinematicsZero(torque, Jtorque, 3);
 
   if(gravity) {
     double mass=.1;
@@ -34,14 +36,25 @@ void F_netForce::phi(arr& y, arr& J, const rai::Configuration& C) {
   //-- collect contacts and signs FOR ALL shapes attached to this link
   rai::Array<rai::ForceExchange*> contacts;
   arr signs;
-  FrameL F;
-  F.append(a);
-  a->getRigidSubFrames(F);
-  for(rai::Frame* f:F) {
-    for(rai::ForceExchange* con:f->forces) {
-      CHECK(&con->a==f || &con->b==f, "");
-      contacts.append(con);
-      signs.append((&con->a==f ? +1. : -1.));
+  FrameL linkF;
+  linkF.append(a);
+  a->getRigidSubFrames(linkF);
+  for(rai::Frame* f:linkF) {
+    for(rai::ForceExchange* ex:f->forces) {
+      contacts.append(ex);
+      signs.append(ex->sign(f));
+//      auto con = dynamic_cast<rai::ForceExchange_Wrench*>(ex);
+//      if(con){
+//        CHECK(&con->a==f || &con->b==f, "");
+//        contacts.append(con);
+//        signs.append((&con->a==f ? +1. : -1.));
+//      }else{
+//        auto tor = dynamic_cast<rai::ForceExchange_JointTorque*>(ex);
+//        if(tor){
+//          contacts.append(tor);
+//          signs.append((tor->j.frame==f) ? +1. : -1.);
+//        }else NIY;
+//      }
     }
   }
 
@@ -58,26 +71,31 @@ void F_netForce::phi(arr& y, arr& J, const rai::Configuration& C) {
 
     //get the force
     arr f, Jf;
-    C.kinematicsContactForce(f, Jf, con);
+    con->kinForce(f, Jf);
+//    a->C.kinematicsContactForce(f, Jf, con);
+
+    //get the torque
+    arr w, Jw;
+    con->kinTorque(w, Jw);
 
     //get the POA
     arr poa, Jpoa;
-    C.kinematicsContactPOA(poa, Jpoa, con);
+    con->kinPOA(poa, Jpoa);
+//    a->C.kinematicsContactPOA(poa, Jpoa, con);
 
     //get object center
     arr p, Jp;
-    C.kinematicsPos(p, Jp, a);
+    a->C.kinematicsPos(p, Jp, a);
 
-    force -= sign * con->force;
-    if(!transOnly) torque += sign * crossProduct(poa-p, con->force);
-
-    if(!Jforce.nd){ Jforce = -sign * Jf; }
-    else{ Jforce -= sign * Jf; }
+    force -= sign * f;
+    Jforce -= sign * Jf;
 
     if(!transOnly){
-      arr tmp = sign * (skew(poa-p) * Jf - skew(con->force) * (Jpoa-Jp));
-      if(!Jtorque.nd) Jtorque = tmp;
-      else Jtorque += tmp;
+      torque += sign * w;
+      torque += sign * crossProduct(poa-p, f);
+
+      Jtorque += sign * Jw;
+      Jtorque += sign * (skew(poa-p) * Jf - skew(f) * (Jpoa-Jp));
     }
   }
 
@@ -88,10 +106,5 @@ void F_netForce::phi(arr& y, arr& J, const rai::Configuration& C) {
     y=force;
     J=Jforce;
   }
-}
-
-uint F_netForce::dim_phi(const rai::Configuration& K) {
-  if(transOnly) return 3;
-  return 6;
 }
 

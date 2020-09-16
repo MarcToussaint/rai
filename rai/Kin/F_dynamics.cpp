@@ -63,7 +63,9 @@ void F_NewtonEuler::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   one_over_mass *= forceScaling;
 
   //collect total contact forces
-  Value F = F_netForce(a->ID, false, true)(*Ktuple(-2)); // ! THIS IS THE MID TIME SLICE !
+  Value F = F_netForce(false, true)
+            .setFrameIDs({a->ID})
+            .eval(*Ktuple(-2)); // ! THIS IS THE MID TIME SLICE !
   if(!!J) expandJacobian(F.J, Ktuple, -2);
 
   y += one_over_mass % F.y;
@@ -114,7 +116,9 @@ void F_NewtonEuler_DampedVelocities::phi(arr& y, arr& J, const ConfigurationL& K
   one_over_mass *= forceScaling;
 
   //collect total contact forces
-  Value F = F_netForce(a->ID, false, true)(Ktuple);
+  Value F = F_netForce(false, true)
+            .setFrameIDs({a->ID})
+            .eval(Ktuple);
 
   y += one_over_mass % F.y;
   if(!!J) J += one_over_mass % F.J;

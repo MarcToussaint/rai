@@ -71,11 +71,11 @@ rai::Frame::Frame(Frame* _parent)
 }
 
 rai::Frame::~Frame() {
+  while(forces.N) delete forces.last();
   if(joint) delete joint;
   if(shape) delete shape;
   if(inertia) delete inertia;
   if(parent) unLink();
-  while(forces.N) delete forces.last();
   while(children.N) children.last()->unLink();
   CHECK_EQ(this, C.frames(ID), "")
   C.frames.remove(ID);

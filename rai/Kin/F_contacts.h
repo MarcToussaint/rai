@@ -32,6 +32,11 @@ struct F_LinearForce : Feature {
   rai::String shortTag(const rai::Configuration& K) { return STRING("F_LinearForce-" <<K.frames(a)->name <<'-' <<K.frames(b)->name); }
 };
 
+struct F_Wrench2 : Feature {
+  void phi2(arr& y, arr& J, const FrameL& F);
+  uint dim_phi2(const FrameL& F){ return 6; }
+};
+
 struct TM_Contact_ForceIsNormal : Feature {
   uint a, b;
   TM_Contact_ForceIsNormal(int aShape, int bShape) : a(aShape), b(bShape) {}

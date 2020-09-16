@@ -270,7 +270,7 @@ struct KOMO : NonCopyable {
 
   //advanced
   void run_prepare(double addInitializationNoise);   ///< ensure the configurations are setup, decision variable is initialized, and noise added (if >0)
-  void run(const OptOptions options=NOOPT);          ///< run the solver iterations (configurations and decision variable needs to be setup before)
+  void run(OptOptions options=NOOPT);          ///< run the solver iterations (configurations and decision variable needs to be setup before)
   void run_sub(const uintA& X, const uintA& Y);
   void setSpline(uint splineT);      ///< optimize B-spline nodes instead of the path; splineT specifies the time steps per node
 

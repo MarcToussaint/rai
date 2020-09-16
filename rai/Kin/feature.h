@@ -15,7 +15,9 @@
 struct Value {
   arr y, J;
   Value(const arr& y, const arr& J) : y(y), J(J) {}
+  void write(ostream& os) const { os <<"y:" <<y <<" J:" <<J; }
 };
+stdOutPipe(Value)
 
 /// defines only a map (task space), not yet the costs or constraints in this space
 struct Feature {
@@ -69,6 +71,7 @@ struct Feature {
   //-- for direct gradient checking (move outside)
   VectorFunction vf(rai::Configuration& C);
   VectorFunction vf(ConfigurationL& Ctuple);
+  VectorFunction vf2(const FrameL& F);
  private:
   void applyLinearTrans(arr& y, arr& J);
   uint applyLinearTrans_dim(uint d);
@@ -123,4 +126,22 @@ inline void padJacobian(arr& J, const ConfigurationL& Ctuple) {
       return;
     } else NIY;
   }
+}
+
+template<class T>
+std::shared_ptr<Feature> make_feature(const StringA& frames, const rai::Configuration& C, const arr& scale=NoArr, const arr& target=NoArr, int order=-1){
+  std::shared_ptr<Feature> f = make_shared<T>();
+
+  if(!!scale) {
+    if(!f->scale.N) f->scale = scale;
+    else if(scale.N==1) f->scale *= scale.scalar();
+    else if(scale.N==f->scale.N) f->scale *= scale.scalar();
+    else NIY;
+  }
+  if(!!target) f->target = target;
+  if(order>=0) f->order = order;
+
+  if(!f->frameIDs.N) f->frameIDs = stringListToFrameIndices(frames, C);
+
+  return f;
 }

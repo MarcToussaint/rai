@@ -28,6 +28,7 @@ struct Shape;
 struct Frame;
 struct Proxy;
 struct ForceExchange;
+struct ForceExchange;
 struct Configuration;
 struct KinematicSwitch;
 
@@ -104,7 +105,7 @@ struct Configuration : GLDrawer {
   void addAssimp(const char* filename);
   Frame* addFrame(const char* name, const char* parent=nullptr, const char* args=nullptr);
   Frame* addObject(const char* name, const char* parent, rai::ShapeType shape, const arr& size= {}, const arr& col= {}, const arr& pos= {}, const arr& rot= {}, bool isSubFrame=false);
-  void addFramesCopy(const FrameL& F);
+  void addFramesCopy(const FrameL& F, const ForceExchangeL& _forces={});
 
   /// @name access
   Frame* operator[](const char* name) { return getFrameByName(name, true); }
@@ -218,8 +219,8 @@ struct Configuration : GLDrawer {
   void kinematicsTau(double& tau, arr& J) const;
   void kinematicsRelVec(arr& y, arr& J, Frame* a, const Vector& vec1, Frame* b) const;
 
-  void kinematicsContactPOA(arr& y, arr& J, ForceExchange* c) const;
-  void kinematicsContactForce(arr& y, arr& J, ForceExchange* c) const;
+  void kinematicsContactPOA(arr& y, arr& J, const ForceExchange* c) const;
+  void kinematicsContactForce(arr& y, arr& J, const ForceExchange* c) const;
 
   void kinematicsProxyCost(arr& y, arr& J, const Proxy& p, double margin=.0, bool addValues=false) const;
   void kinematicsProxyCost(arr& y, arr& J, double margin=.0) const;

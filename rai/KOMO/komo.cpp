@@ -1527,7 +1527,7 @@ void KOMO::run_prepare(double addInitializationNoise) {
   }
 }
 
-void KOMO::run(const OptOptions options) {
+void KOMO::run(OptOptions options) {
   Configuration::setJointStateCount=0;
   if(verbose>0) {
     cout <<"** KOMO::run solver:"
@@ -1546,6 +1546,7 @@ void KOMO::run(const OptOptions options) {
     cout <<endl;
   }
 
+  options.verbose = rai::MAX(verbose-2, 0);
   double timeZero = rai::realTime();
   CHECK(T, "");
   if(logFile)(*logFile) <<"KOMO_run_log: [" <<endl;
@@ -1555,7 +1556,7 @@ void KOMO::run(const OptOptions options) {
   } else if(solver==rai::KS_dense || solver==rai::KS_sparse) {
     CHECK(!splineB.N, "NIY");
     Conv_KOMO_SparseNonfactored P(*this, solver==rai::KS_sparse);
-    OptConstrained _opt(x, dual, P, rai::MAX(verbose-2, 0), options);
+    OptConstrained _opt(x, dual, P, options);
     _opt.logFile = logFile;
     _opt.run();
     timeNewton += _opt.newton.timeNewton;
@@ -1571,12 +1572,12 @@ void KOMO::run(const OptOptions options) {
 //    Conv_KOMO_FactoredNLP P(*this);
 //    Conv_Structured_BandedProgram C(P, 0, true);
 
-    OptConstrained _opt(x, dual, P, rai::MAX(verbose-2, 0), options, logFile);
+    OptConstrained _opt(x, dual, P, options, logFile);
     if(bound_up.N && bound_lo.N) {
       _opt.newton.bound_lo = bound_lo;
       _opt.newton.bound_up = bound_up;
     }
-//    OptPrimalDual _opt(x, dual, C, rai::MAX(verbose-2, 0), options);
+//    OptPrimalDual _opt(x, dual, C, options);
     _opt.run();
     {
 //      testing primal dual:
@@ -1600,7 +1601,7 @@ void KOMO::run(const OptOptions options) {
       Conv_FactoredNLP_BandedNLP C(P, 0);
       C.maxBandSize = (k_order+1)*max(C.variableDimensions);
 #endif
-      opt = new OptConstrained(x, dual, C, rai::MAX(verbose-2, 0), options);
+      opt = new OptConstrained(x, dual, C, options);
       if(bound_up.N && bound_lo.N) {
         opt->newton.bound_lo = bound_lo;
         opt->newton.bound_up = bound_up;
@@ -1611,7 +1612,7 @@ void KOMO::run(const OptOptions options) {
       arr a, b, c, d, e;
       Conv_KOMOProblem_MathematicalProgram P0(komo_problem);
       Conv_linearlyReparameterize_MathematicalProgram P(P0, splineB);
-      opt = new OptConstrained(z, dual, P, rai::MAX(verbose-2, 0));
+      opt = new OptConstrained(z, dual, P, options);
       opt->logFile = logFile;
       opt->run();
     }
@@ -2132,7 +2133,7 @@ void KOMO::setupConfigurations2() {
 //    }
 
     uint nBefore = pathConfig.frames.N;
-    pathConfig.addFramesCopy(C.frames);
+    pathConfig.addFramesCopy(C.frames, C.forces);
     timeSlices[s] = pathConfig.frames({nBefore, -1});
   }
 
@@ -2371,7 +2372,7 @@ rai::Graph KOMO::getContacts() {
       g.newNode<rai::String>({"from"}, {}, con->a.name);
       g.newNode<rai::String>({"to"}, {}, con->b.name);
       g.newNode<arr>({"force"}, {}, con->force);
-      g.newNode<arr>({"poa"}, {}, con->position);
+      g.newNode<arr>({"poa"}, {}, con->poa);
     }
     s++;
   }

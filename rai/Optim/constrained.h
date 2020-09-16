@@ -27,17 +27,12 @@ struct OptConstrained {
   bool earlyPhase=false;
   ostream* logFile=nullptr;
 
-  OptConstrained(arr& x, arr& dual, MathematicalProgram& P, int verbose=-1, OptOptions opt=NOOPT, ostream* _logFile=0);
+  OptConstrained(arr& x, arr& dual, MathematicalProgram& P, OptOptions opt=NOOPT, ostream* _logFile=0);
   ~OptConstrained();
   bool step();
   uint run();
 //  void reinit();
 };
-
-//TODO: remove:
-inline uint optConstrained(arr& x, arr& dual, MathematicalProgram& P, int verbose=-1, OptOptions opt=NOOPT) {
-  return OptConstrained(x, dual, P, verbose, opt).run();
-}
 
 //==============================================================================
 //

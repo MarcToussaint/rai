@@ -12,6 +12,7 @@
 #include "forceExchange.h"
 #include "TM_angVel.h"
 #include "TM_default.h"
+#include "F_contacts.h"
 #include "../Geo/pairCollision.h"
 
 void POA_distance(arr& y, arr& J, rai::ForceExchange* con, bool b_or_a) {
@@ -184,6 +185,15 @@ void TM_Contact_POA::phi(arr& y, arr& J, const rai::Configuration& C) {
 
 void F_LinearForce::phi(arr& y, arr& J, const rai::Configuration& C) {
   C.kinematicsContactForce(y, J, getContact(C, a, b));
+}
+
+void F_Wrench2::phi2(arr& y, arr& J, const FrameL& F){
+  rai::ForceExchange* ex = getContact(F.elem(0)->C, F.elem(0)->ID, F.elem(1)->ID);
+  arr y1, y2, J1, J2;
+  ex->kinForce(y1, J1);
+  ex->kinTorque(y2, J2);
+  y.setBlockVector(y1, y2);
+  J.setBlockMatrix(J1, J2);
 }
 
 void TM_Contact_ForceIsNormal::phi(arr& y, arr& J, const rai::Configuration& K) {

@@ -120,7 +120,7 @@ void SubGraphProblem::optim(int verbose) {
 #endif
   C.reportProblem(logFile);
   arr dual;
-  OptConstrained opt(x, dual, C, 0); //rai::MAX(verbose-2, 0));
+  OptConstrained opt(x, dual, C); //rai::MAX(verbose-2, 0));
   opt.L.logFile = &logFile;
   opt.run();
   //    opt.newton.evals;

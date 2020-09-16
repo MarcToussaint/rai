@@ -132,6 +132,14 @@ VectorFunction Feature::vf(rai::Configuration& C) { ///< direct conversion to ve
   };
 }
 
+VectorFunction Feature::vf2(const FrameL& F) { ///< direct conversion to vector function: use to check gradient or evaluate
+  return [this, &F](arr& y, arr& J, const arr& x) -> void {
+    F.first()->C.setJacModeAs(J);
+    F.first()->C.setJointState(x);
+    phi2(y, J, F);
+  };
+}
+
 VectorFunction Feature::vf(ConfigurationL& Ctuple) { ///< direct conversion to vector function: use to check gradient or evaluate
   return [this, &Ctuple](arr& y, arr& J, const arr& x) -> void {
     uintA qdim = getKtupleDim(Ctuple);

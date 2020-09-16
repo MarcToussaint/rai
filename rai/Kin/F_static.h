@@ -11,17 +11,12 @@
 #include "feature.h"
 
 struct F_netForce : Feature {
-  int i;               ///< which shapes does it refer to?
   double gravity=9.81;
   bool transOnly=false;
 
-  F_netForce(int iShape, bool _transOnly=false, bool _zeroGravity=false);
-  F_netForce(const rai::Configuration& K, const char* iShapeName, bool _transOnly=false, bool _zeroGravity=false)
-    : F_netForce(initIdArg(K, iShapeName), _transOnly, _zeroGravity) {}
+  F_netForce(bool _transOnly=false, bool _zeroGravity=false);
 
-  virtual void phi(arr& y, arr& J, const rai::Configuration& C);
-  virtual uint dim_phi(const rai::Configuration& C);
-
-  virtual rai::String shortTag(const rai::Configuration& K) { return STRING("F_netForce-" <<K.frames(i)->name); }
+  virtual void phi2(arr& y, arr& J, const FrameL& F);
+  virtual uint dim_phi2(const FrameL& C){ if(transOnly) return 3;  return 6; }
 };
 
