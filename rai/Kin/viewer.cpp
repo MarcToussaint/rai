@@ -124,6 +124,46 @@ int rai::ConfigurationViewer::setPath(const arr& _framePath, const char* text, b
   return update(watch);
 }
 
+bool rai::ConfigurationViewer::playVideo(uint nFrames, bool watch, double delay, const char* saveVideoPath){
+  const rai::String tag = drawText;
+
+  if(saveVideoPath) {
+    rai::system(STRING("mkdir -p " <<saveVideoPath));
+    rai::system(STRING("rm -f " <<saveVideoPath <<"*.ppm"));
+  }
+
+  FrameL F = C.frames;
+
+  F.reshape(-1, nFrames);
+
+  for(uint t=0; t<F.d0; t++) {
+    {
+      auto _dataLock = gl->dataLock(RAI_HERE);
+      drawSubFrames = F[t];
+      drawText.clear() <<tag <<" (config:" <<t <<'/' <<F.d0 <<")";
+    }
+
+    if(delay<0.) {
+      update(true);
+    } else {
+      update(false);
+      if(delay) rai::wait(delay / F.d0);
+    }
+
+    {
+      auto _dataLock = gl->dataLock(RAI_HERE);
+      if(saveVideoPath) write_ppm(gl->captureImage, STRING(saveVideoPath<<std::setw(4)<<std::setfill('0')<<t<<".ppm"));
+    }
+  }
+  drawText = tag;
+  if(watch) {
+    int key = update(true);
+    return !(key==27 || key=='q');
+  }
+  return false;
+
+}
+
 bool rai::ConfigurationViewer::playVideo(bool watch, double delay, const char* saveVideoPath) {
 #ifndef RAI_GL
   return false;
@@ -218,25 +258,28 @@ void rai::ConfigurationViewer::glDraw(OpenGL& gl) {
     }
   }
 
-  if(drawTimeSlice>=0) {
+  if(drawSubFrames.N){
+//    C.setFrameState(framePath[t]);
+    C.glDraw_sub(gl, drawSubFrames, 0);
+  } else if(drawTimeSlice>=0) {
     uint t=drawTimeSlice;
     CHECK_LE(t+1, framePath.d0, "");
     CHECK_EQ(framePath.d1, C.frames.N, "");
     CHECK_EQ(framePath.d2, 7, "");
 
     C.setFrameState(framePath[t]);
-    C.glDraw_sub(gl, 0);
+    C.glDraw_sub(gl, C.frames, 0);
   } else {
     if(drawFullPath) {
       CHECK_EQ(framePath.d1, C.frames.N, "");
       CHECK_EQ(framePath.d2, 7, "");
       for(uint t=0; t<framePath.d0; t++) {
         C.setFrameState(framePath[t]);
-        C.glDraw_sub(gl, 1); //opaque
+        C.glDraw_sub(gl, C.frames, 1); //opaque
       }
       for(uint t=0; t<framePath.d0; t++) {
         C.setFrameState(framePath[t]);
-        C.glDraw_sub(gl, 2); //transparent
+        C.glDraw_sub(gl, C.frames, 2); //transparent
       }
     } else {
       NIY;

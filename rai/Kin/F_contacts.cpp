@@ -6,6 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
+#include "F_pose.h"
 #include "F_contacts.h"
 #include "F_PairCollision.h"
 #include "frame.h"
@@ -194,6 +195,22 @@ void F_Wrench2::phi2(arr& y, arr& J, const FrameL& F){
   ex->kinTorque(y2, J2);
   y.setBlockVector(y1, y2);
   J.setBlockMatrix(J1, J2);
+}
+
+void F_HingeXTorque::phi2(arr& y, arr& J, const FrameL& F){
+  rai::Frame *f1 = F.elem(0);
+  rai::Frame *f2 = F.elem(1);
+  CHECK(f2->joint, "second frame needs to be a joint");
+  CHECK_EQ(f2->joint->type, rai::JT_hingeX, "second frame needs to be a joint")
+  rai::ForceExchange* ex = getContact(f1->C, f1->ID, f2->ID);
+  arr y2, J2;
+  ex->kinTorque(y2, J2);
+
+  auto axis = F_Vector(Vector_x)
+              .eval({f2});
+
+  y.resize(1) = scalarProduct(y2, axis.y);
+  if(!!J) J = ~y2 * axis.J + ~axis.y * J2;
 }
 
 void TM_Contact_ForceIsNormal::phi(arr& y, arr& J, const rai::Configuration& K) {
@@ -473,4 +490,5 @@ void TM_Contact_NormalVelIsComplementary::phi(arr& y, arr& J, const Configuratio
     J = ~force * Jv1 + ~v1 * Jforce;
   }
 }
+
 

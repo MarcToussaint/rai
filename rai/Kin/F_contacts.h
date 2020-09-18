@@ -37,6 +37,11 @@ struct F_Wrench2 : Feature {
   uint dim_phi2(const FrameL& F){ return 6; }
 };
 
+struct F_HingeXTorque : Feature {
+  void phi2(arr& y, arr& J, const FrameL& F);
+  uint dim_phi2(const FrameL& F){ return 1; }
+};
+
 struct TM_Contact_ForceIsNormal : Feature {
   uint a, b;
   TM_Contact_ForceIsNormal(int aShape, int bShape) : a(aShape), b(bShape) {}

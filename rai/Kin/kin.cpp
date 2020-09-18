@@ -2058,7 +2058,7 @@ void buildAiMesh(const rai::Mesh& M, aiMesh* pMesh) {
   }
 }
 
-void rai::Configuration::writeCollada(const char* filename) const {
+void rai::Configuration::writeCollada(const char* filename, const char* format) const {
   // get mesh frames
   // create a new scene
   aiScene scene;
@@ -2130,10 +2130,10 @@ void rai::Configuration::writeCollada(const char* filename) const {
   }
   // export
   Assimp::Exporter exporter;
-  exporter.Export(&scene, "collada", filename);
+  exporter.Export(&scene, format, filename);
 }
 #else
-void rai::Configuration::writeCollada(const char* filename) const {
+void rai::Configuration::writeCollada(const char* filename, const char* format) const {
   NICO
 }
 #endif //ASSIMP
@@ -2942,50 +2942,9 @@ uintA rai::Configuration::getCollisionExcludePairIDs(bool verbose) {
   return ex;
 }
 
-//void rai::Configuration::meldFixedJoints(int verbose) {
-//  NIY
-//#if 0
-//  checkConsistency();
-//  for(Joint *j: joints) if(j->type==JT_rigid) {
-//    if(verbose>0) LOG(0) <<" -- melding fixed joint (" <<j->from->name <<' ' <<j->to->name <<" )" <<endl;
-//    Frame *a = j->from;
-//    Frame *b = j->to;
-//    Transformation bridge = j->A * j->Q * j->B;
-//    //reassociate shapes with a
-//    if(b->shape){
-//      b->shape->frame=a;
-//      CHECK_EQ(a->shape, nullptr,"");
-//      a->shape = b->shape;
-//    }
-//    b->shape = nullptr;
-//    //joints from b-to-c now become joints a-to-c
-//    for(Frame *f: b->children) {
-//      Joint *j = f->joint();
-//      if(j){
-//        j->from = a;
-//        j->A = bridge * j->A;
-//        a->children.append(f);
-//      }
-//    }
-//    b->children.clear();
-//    //reassociate mass
-//    a->mass += b->mass;
-//    a->inertia += b->inertia;
-//    b->mass = 0.;
-//  }
-//  jointSort();
-//  calc_q_from_Q();
-//  checkConsistency();
-//  //-- remove fixed joints and reindex
-//  for_list_rev(Joint, jj, joints) if(jj->type==JT_rigid) delete jj;
-//  listReindex(joints);
-//  //for(Joint * j: joints) { j->ID=j_COUNT;  j->ifrom = j->from->index;  j->ito = j->to->index;  }
-//  checkConsistency();
-//#endif
-//}
 
 void rai::Configuration::glDraw(OpenGL& gl) {
-  glDraw_sub(gl);
+  glDraw_sub(gl, frames);
 
   bool displayUncertainties = false;
   for(Joint* j:activeJoints) if(j->uncertainty) {
@@ -2999,11 +2958,11 @@ void rai::Configuration::glDraw(OpenGL& gl) {
           arr q=q_org;
           q(j->qIndex+i) -= j->uncertainty->sigma(i);
           setJointState(q);
-          glDraw_sub(gl);
+          glDraw_sub(gl, frames);
           q=q_org;
           q(j->qIndex+i) += j->uncertainty->sigma(i);
           setJointState(q);
-          glDraw_sub(gl);
+          glDraw_sub(gl, frames);
         }
       }
     setJointState(q_org);
@@ -3011,7 +2970,7 @@ void rai::Configuration::glDraw(OpenGL& gl) {
 }
 
 /// GL routine to draw a rai::Configuration
-void rai::Configuration::glDraw_sub(OpenGL& gl, int drawOpaqueOrTransparanet) {
+void rai::Configuration::glDraw_sub(OpenGL& gl, const FrameL& F, int drawOpaqueOrTransparanet) {
 #ifdef RAI_GL
   rai::Transformation f;
   double GLmatrix[16];
@@ -3026,19 +2985,19 @@ void rai::Configuration::glDraw_sub(OpenGL& gl, int drawOpaqueOrTransparanet) {
     }
 
     //proxies
-    if(orsDrawProxies) for(const Proxy& p: proxies) {
-        ((Proxy*)&p)->glDraw(gl);
-      }
+//    if(orsDrawProxies) for(const Proxy& p: proxies) {
+//        ((Proxy*)&p)->glDraw(gl);
+//      }
 
     //contacts
     //  if(orsDrawProxies)
-    for(ForceExchange* f:forces) {
-      f->glDraw(gl);
+    for(Frame* fr: F) for(ForceExchange* f:fr->forces) {
+      if(f->sign(fr)>0.) f->glDraw(gl);
     }
 
     //joints
     Joint* e;
-    if(orsDrawJoints) for(Frame* fr: frames) if((e=fr->joint)) {
+    if(orsDrawJoints) for(Frame* fr: F) if((e=fr->joint)) {
           //set name (for OpenGL selection)
           glPushName((fr->ID <<2) | 2);
 
@@ -3087,13 +3046,13 @@ void rai::Configuration::glDraw_sub(OpenGL& gl, int drawOpaqueOrTransparanet) {
   if(orsDrawBodies) {
     if(drawOpaqueOrTransparanet==0 || drawOpaqueOrTransparanet==1) {
       //first non-transparent
-      for(Frame* f: frames) if(f->shape && f->shape->alpha()==1. && (f->shape->visual||!orsDrawVisualsOnly)) {
+      for(Frame* f: F) if(f->shape && f->shape->alpha()==1. && (f->shape->visual||!orsDrawVisualsOnly)) {
           gl.drawId(f->ID);
           f->shape->glDraw(gl);
         }
     }
     if(drawOpaqueOrTransparanet==0 || drawOpaqueOrTransparanet==2) {
-      for(Frame* f: frames) if(f->shape && f->shape->alpha()<1. && (f->shape->visual||!orsDrawVisualsOnly)) {
+      for(Frame* f: F) if(f->shape && f->shape->alpha()<1. && (f->shape->visual||!orsDrawVisualsOnly)) {
           gl.drawId(f->ID);
           f->shape->glDraw(gl);
         }

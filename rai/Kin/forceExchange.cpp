@@ -37,7 +37,11 @@ void rai::ForceExchange::setZero() {
 //  a_rel.setZero(); b_rel.setZero(); a_norm.setZero(); b_norm.setZero(); a_rad=b_rad=0.; a_type=b_type=1;
   force.resize(3).setZero();
   torque.resize(3).setZero();
-  poa = (.5*(a.ensure_X().pos + b.ensure_X().pos)).getArr();
+  if(type==FXT_poa){
+    poa = .5*a.getPosition() + .5*b.getPosition();
+  }else{
+    poa = b.getPosition();
+  }
   if(__coll) { delete __coll; __coll=0; }
 }
 
@@ -116,6 +120,12 @@ PairCollision* rai::ForceExchange::coll() {
 }
 
 void rai::ForceExchange::glDraw(OpenGL& gl) {
+  if(type==FXT_poa){
+  }else if(type==FXT_torque){
+    poa = b.getPosition();
+  }
+  double scale = 1.;
+
 #ifdef RAI_GL
   glLoadIdentity();
   glLineWidth(3.f);
@@ -123,10 +133,10 @@ void rai::ForceExchange::glDraw(OpenGL& gl) {
   glBegin(GL_LINES);
   glColor(1., 0., 1., 1.);
   glVertex3dv(poa.p);
-  glVertex3dv((poa+torque).p);
+  glVertex3dv((poa+scale*torque).p);
   glColor(1., 1., 1., 1.);
   glVertex3dv(poa.p);
-  glVertex3dv((poa+force).p);
+  glVertex3dv((poa+scale*force).p);
   glEnd();
   glLineWidth(1.f);
 
@@ -153,7 +163,7 @@ void rai::ForceExchange::write(std::ostream& os) const {
   if(__coll) {
     d = -(__coll->distance-__coll->rad1-__coll->rad2);
   }
-  os <<" f=" <<force <<" d=" <<d <<"   compl=" <<sumOfSqr(d * force);
+  os <<" force:" <<force <<" torque:" <<torque <<" poa:" <<poa <<" d=" <<d <<"   compl=" <<sumOfSqr(d * force);
 //  <<" type=" <<a_type <<'-' <<b_type <<" dist=" <<getDistance() /*<<" pDist=" <<get_pDistance()*/ <<" y=" <<y <<" l=" <<lagrangeParameter;
 }
 
