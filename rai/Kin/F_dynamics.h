@@ -50,7 +50,7 @@ struct F_NewtonEuler_DampedVelocities : Feature {
   virtual uint dim_phi(const rai::Configuration& K) { HALT("can only be of higher order"); }
 
   virtual void phi(arr& y, arr& J, const ConfigurationL& Ktuple);
-  virtual uint dim_phi(const ConfigurationL& Ktuple) { return 6; }
+  virtual uint dim_phi(const ConfigurationL& Ktuple);
 
   virtual rai::String shortTag(const rai::Configuration& K) { return STRING("NewtonEuler_DampedVelocities-" <<K.frames(i)->name); }
 };

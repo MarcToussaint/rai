@@ -91,7 +91,11 @@ void POA_rel_vel2(arr& y, arr& J, const ConfigurationL& Ktuple, rai::ForceExchan
 
 //3-dim feature: the difference in POA velocities (V)
 void POA_rel_vel(arr& y, arr& J, const ConfigurationL& Ktuple, rai::ForceExchange* con, bool after_or_before) {
-  CHECK_EQ(Ktuple.N, 3, "");
+    if(!after_or_before){
+        CHECK_EQ(Ktuple.N, 3, "");
+    }else{
+        CHECK_GE(Ktuple.N, 2, "");
+    }
 
   rai::Configuration* Kc = Ktuple(-2);
 

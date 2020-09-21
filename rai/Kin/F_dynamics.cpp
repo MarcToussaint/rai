@@ -125,6 +125,10 @@ void F_NewtonEuler_DampedVelocities::phi(arr& y, arr& J, const ConfigurationL& K
   }
 }
 
+uint F_NewtonEuler_DampedVelocities::dim_phi(const ConfigurationL& Ktuple) {
+    return 6;
+}
+
 //===========================================================================
 
 F_Wrench::F_Wrench(int iShape, const arr& _vec, bool _torqueOnly) : i(iShape), vec(_vec), torqueOnly(_torqueOnly) {

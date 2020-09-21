@@ -65,6 +65,7 @@ struct MathematicalProgram_Factored : MathematicalProgram {
   //-- unstructured (batch) evaluation
   virtual void evaluate(arr& phi, arr& J, const arr& x); //default implementation: use setSingleVariable and evaluateSingleFeature
 
+  virtual void report(){}
 };
 
 //===========================================================================
