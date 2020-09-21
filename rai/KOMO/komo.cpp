@@ -148,7 +148,7 @@ void KOMO::deactivateCollisions(const char* s1, const char* s2) {
 
 void KOMO::addTimeOptimization() {
   world.addTauJoint();
-  ptr<Objective> o = addObjective({}, make_shared<TM_Time>(), OT_sos, {1e2}, {}, 1); //smooth time evolution
+  ptr<Objective> o = addObjective({}, make_shared<TM_Time>(), {}, OT_sos, {1e2}, {}, 1); //smooth time evolution
 #if 1 //break the constraint at phase switches:
   if(o->configs.nd==1) { //for KOMO optimization
     CHECK(o->configs.nd==1 && o->configs.N==T, "");
@@ -161,8 +161,8 @@ void KOMO::addTimeOptimization() {
   }
 #endif
 
-  addObjective({}, make_shared<TM_Time>(), OT_sos, {1e-1}, {tau}); //prior on timing
-  addObjective({}, make_shared<TM_Time>(), OT_ineq, {-1e1}, {.9*tau}); //lower bound on timing
+  addObjective({}, make_shared<TM_Time>(), {}, OT_sos, {1e-1}, {tau}); //prior on timing
+  addObjective({}, make_shared<TM_Time>(), {}, OT_ineq, {-1e1}, {.9*tau}); //lower bound on timing
 }
 
 //===========================================================================
@@ -178,13 +178,14 @@ void KOMO::clearObjectives() {
 }
 
 ptr<Objective> KOMO::addObjective(const arr& times,
-                                  const ptr<Feature>& f, ObjectiveType type,
-                                  const arr& scale, const arr& target, int order,
+                                  const ptr<Feature>& f, const StringA& frames,
+                                  ObjectiveType type, const arr& scale, const arr& target, int order,
                                   int deltaFromStep, int deltaToStep) {
 #ifdef KOMO_PATH_CONFIG
   if(!timeSlices.N) setupConfigurations2();
 #endif
 
+  if(!!frames && frames.N) f->frameIDs = stringListToFrameIndices(frames, world);
   if(!!scale) f->scale = scale;
   if(!!target) f->target = target;
   if(order>=0) f->order = order;
@@ -222,7 +223,7 @@ ptr<Objective> KOMO::addObjective(const arr& times,
 ptr<Objective> KOMO::addObjective(const arr& times, const FeatureSymbol& feat, const StringA& frames,
                                   ObjectiveType type, const arr& scale, const arr& target, int order,
                                   int deltaFromStep, int deltaToStep) {
-  return addObjective(times, symbols2feature(feat, frames, world), type, scale, target, order, deltaFromStep, deltaToStep);
+  return addObjective(times, symbols2feature(feat, frames, world), NoStringA, type, scale, target, order, deltaFromStep, deltaToStep);
 }
 
 //void KOMO::addFlag(double time, Flag *fl, int deltaStep) {
@@ -257,7 +258,7 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
 
     // ensure the DOF is constant throughout its existance
     if((endTime<0. && stepsPerPhase*time<T) || stepsPerPhase*endTime>stepsPerPhase*time+1) {
-      addObjective({time, endTime}, make_shared<F_qZeroVel>(world, to), OT_eq, {1e1}, NoArr, 1, +1, -1);
+      addObjective({time, endTime}, make_shared<F_qZeroVel>(world, to), {}, OT_eq, {1e1}, NoArr, 1, +1, -1);
       //      addObjective({time, endTime}, FS_poseRel, {from, to}, OT_eq, {1e1}, NoArr, 1, +1, -1);
     }
 
@@ -285,7 +286,7 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
       }
     } else {
       //-- no acceleration at start: +1 EXCLUDES (x-2, x-1, x0), ASSUMPTION: this is a placement that can excert impact
-      if(k_order>1) addObjective({time}, make_shared<TM_LinAngVel>(world, to), OT_eq, {1e2}, NoArr, 2, +1, +1);
+      if(k_order>1) addObjective({time}, make_shared<TM_LinAngVel>(world, to), {}, OT_eq, {1e2}, NoArr, 2, +1, +1);
 //      else addObjective({time}, make_shared<TM_NoJumpFromParent>(world, to), OT_eq, {1e2}, NoArr, 1, 0, 0);
       else{
         if(prevFrom) addObjective({time}, FS_poseRel, {to, prevFrom}, OT_eq, {1e2}, NoArr, 1, 0, 0);
@@ -300,7 +301,7 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
     //new contacts don't exist in step [-1], so we rather impose only zero acceleration at [-2,-1,0]
     addObjective({time}, FS_pose, {to}, OT_eq, {1e0}, NoArr, k_order, +0, +0);
     //... and physics starting from [-1,0,+1], ... until [-3,-2,-1]
-    addObjective({time, endTime}, make_shared<F_NewtonEuler>(world, to), OT_eq, {1e0}, NoArr, k_order, +1, -1);
+    addObjective({time, endTime}, make_feature<F_NewtonEuler>({to}, world), {}, OT_eq, {1e0}, NoArr, k_order, +1, -1);
   }
 
   if(newMode==SY_dynamicTrans) {
@@ -308,7 +309,7 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
 #if 0
     addObjective(time, endTime, new TM_Gravity2(world, to), OT_eq, NoArr, 3e1, k_order, +1, -1);
 #else
-    addObjective({time, endTime}, make_shared<F_NewtonEuler>(world, to, true), OT_eq, {3e1}, NoArr, k_order, +0, -1);
+    addObjective({time, endTime}, setFrameIDs(make_shared<F_NewtonEuler>(true), {to}, world), {}, OT_eq, {3e1}, NoArr, k_order, +0, -1);
 #endif
   }
 
@@ -322,7 +323,7 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
 
   if(newMode==SY_quasiStatic) {
     addSwitch(time, true, JT_free, SWInit_copy, from, to);
-    addObjective({time, endTime}, make_shared<F_NewtonEuler_DampedVelocities>(world, to), OT_eq, {1e1}, NoArr, 1, +0, -1);
+    addObjective({time, endTime}, make_shared<F_NewtonEuler_DampedVelocities>(), {to}, OT_eq, {1e1}, NoArr, 1, +0, -1);
   }
 
   if(newMode==SY_quasiStaticOn) {
@@ -333,14 +334,14 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
     addObjective({time, endTime}, make_shared<F_NewtonEuler_DampedVelocities>(world, to, 0., false), OT_eq, {1e2}, NoArr, 1, +0, -1);
 #else
     //eq for 3DOFs only
-    ptr<Objective> o = addObjective({time, endTime}, make_shared<F_NewtonEuler_DampedVelocities>(world, to, 0., false), OT_eq, {1e2}, NoArr, 1, +0, -1);
+    ptr<Objective> o = addObjective({time, endTime}, make_shared<F_NewtonEuler_DampedVelocities>(0., false), {to}, OT_eq, {1e2}, NoArr, 1, +0, -1);
     o->feat->scale=1e2 * arr({3, 6}, {
       1, 0, 0, 0, 0, 0,
       0, 1, 0, 0, 0, 0,
       0, 0, 0, 0, 0, 1
     });
     //sos penalty of other forces
-    o = addObjective({time, endTime}, make_shared<F_NewtonEuler_DampedVelocities>(world, to, 0., false), OT_sos, {1e2}, NoArr, 1, +0, -1);
+    o = addObjective({time, endTime}, make_shared<F_NewtonEuler_DampedVelocities>(0., false), {to}, OT_sos, {1e2}, NoArr, 1, +0, -1);
     o->feat->scale=1e1 * arr({3, 6}, {
       0, 0, 1, 0, 0, 0,
       0, 0, 0, 1, 0, 0,
@@ -350,7 +351,7 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
 //    addObjective({time, endTime}, make_shared<F_pushed>(world, to), OT_eq, {1e0}, NoArr, 1, +0, -1);
 
     //-- no acceleration at start: +1 EXCLUDES (x-2, x-1, x0), ASSUMPTION: this is a placement that can excert impact
-    if(k_order>1) addObjective({time}, make_shared<TM_LinAngVel>(world, to), OT_eq, {1e2}, NoArr, 2, +0, +1);
+    if(k_order>1) addObjective({time}, make_shared<TM_LinAngVel>(world, to), {}, OT_eq, {1e2}, NoArr, 2, +0, +1);
 //    else addObjective({time}, make_shared<TM_NoJumpFromParent>(world, to), OT_eq, {1e2}, NoArr, 1, 0, 0);
     else addObjective({time}, FS_pose, {to}, OT_eq, {1e2}, NoArr, 1, 0, 0);
 
@@ -394,9 +395,9 @@ void KOMO::addSwitch_stableOn(double time, double endTime, const char* from, con
 void KOMO::addSwitch_dynamic(double time, double endTime, const char* from, const char* to, bool dampedVelocity) {
   addSwitch(time, true, JT_free, SWInit_copy, from, to);
   if(!dampedVelocity)
-    addObjective({time, endTime}, make_shared<F_NewtonEuler>(world, to), OT_eq, {1e0}, NoArr, 2, +0, -1);
+    addObjective({time, endTime}, make_feature<F_NewtonEuler>({to}, world), {}, OT_eq, {1e0}, NoArr, 2, +0, -1);
   else
-    addObjective({time, endTime}, make_shared<F_NewtonEuler_DampedVelocities>(world, to), OT_eq, {1e2}, NoArr, 1, +0, -1);
+    addObjective({time, endTime}, make_shared<F_NewtonEuler_DampedVelocities>(), {to}, OT_eq, {1e2}, NoArr, 1, +0, -1);
 //  addObjective({time}, make_shared<TM_LinAngVel>(world, to), OT_eq, {1e2}, NoArr, 2); //this should be implicit in the NE equations!
 }
 
@@ -405,7 +406,7 @@ void KOMO::addSwitch_dynamicTrans(double time, double endTime, const char* from,
 #if 0
   addObjective(time, endTime, new TM_Gravity2(world, to), OT_eq, NoArr, 3e1, k_order, +1, -1);
 #else
-  addObjective({time, endTime}, make_shared<F_NewtonEuler>(world, to, true), OT_eq, {3e1}, NoArr, k_order, +0, -1);
+  addObjective({time, endTime}, setFrameIDs(make_shared<F_NewtonEuler>(true), {to}, world), {}, OT_eq, {3e1}, NoArr, k_order, +0, -1);
 #endif
 }
 
@@ -421,23 +422,23 @@ void KOMO::addSwitch_dynamicOnNewton(double time, double endTime, const char* fr
   Transformation rel = 0;
   rel.pos.set(0, 0, .5*(shapeSize(world, from) + shapeSize(world, to)));
   addSwitch(time, true, JT_transXYPhi, SWInit_zero, from, to, rel);
-  if(k_order>=2) addObjective({time, endTime}, make_shared<F_NewtonEuler>(world, to), OT_eq, {1e0}, NoArr, k_order, +0, -1);
+  if(k_order>=2) addObjective({time, endTime}, make_feature<F_NewtonEuler>({to}, world), {}, OT_eq, {1e0}, NoArr, k_order, +0, -1);
 }
 
 void KOMO::addSwitch_magic(double time, double endTime, const char* from, const char* to, double sqrAccCost, double sqrVelCost) {
   addSwitch(time, true, JT_free, SWInit_copy, from, to);
   if(sqrVelCost>0. && k_order>=1) {
-    addObjective({time, endTime}, make_shared<TM_LinAngVel>(world, to), OT_sos, {sqrVelCost}, NoArr, 1);
+    addObjective({time, endTime}, make_shared<TM_LinAngVel>(world, to), {}, OT_sos, {sqrVelCost}, NoArr, 1);
   }
   if(sqrAccCost>0. && k_order>=2) {
-    addObjective({time, endTime}, make_shared<TM_LinAngVel>(world, to), OT_sos, {sqrAccCost}, NoArr, 2);
+    addObjective({time, endTime}, make_shared<TM_LinAngVel>(world, to), {}, OT_sos, {sqrAccCost}, NoArr, 2);
   }
 }
 
 void KOMO::addSwitch_magicTrans(double time, double endTime, const char* from, const char* to, double sqrAccCost) {
   addSwitch(time, true, JT_transZ, SWInit_copy, from, to);
   if(sqrAccCost>0.) {
-    addObjective({time, endTime}, make_shared<TM_LinAngVel>(world, to), OT_eq, {sqrAccCost}, NoArr, 2);
+    addObjective({time, endTime}, make_shared<TM_LinAngVel>(world, to), {}, OT_eq, {sqrAccCost}, NoArr, 2);
   }
 }
 
@@ -452,16 +453,16 @@ void KOMO::addContact_slide(double startTime, double endTime, const char* from, 
   if(endTime>0.) addSwitch(endTime, false, new rai::KinematicSwitch(rai::SW_delContact, rai::JT_none, from, to, world));
 
   //constraints
-  addObjective({startTime, endTime}, make_shared<TM_Contact_ForceIsNormal>(world, from, to), OT_sos, {1e2});
-  addObjective({startTime, endTime}, make_shared<TM_Contact_ForceIsPositive>(world, from, to), OT_ineq, {1e2});
-  addObjective({startTime, endTime}, make_shared<TM_Contact_POAisInIntersection_InEq>(world, from, to), OT_ineq, {1e1});
+  addObjective({startTime, endTime}, make_shared<TM_Contact_ForceIsNormal>(), {from, to}, OT_sos, {1e2});
+  addObjective({startTime, endTime}, make_shared<TM_Contact_ForceIsPositive>(), {from, to}, OT_ineq, {1e2});
+  addObjective({startTime, endTime}, make_shared<TM_Contact_POAisInIntersection_InEq>(), {from, to}, OT_ineq, {1e1});
   addObjective({startTime, endTime}, FS_pairCollision_negScalar, {from, to}, OT_eq, {1e1});
 
   //regularization
-  addObjective({startTime, endTime}, make_shared<F_LinearForce>(world, from, to), OT_sos, {1e-2}, NoArr, 2, +2, 0);
-  addObjective({startTime, endTime}, make_shared<F_LinearForce>(world, from, to), OT_sos, {1e-2});
-  addObjective({startTime, endTime}, make_shared<TM_Contact_POA>(world, from, to), OT_sos, {1e-2}, NoArr, 2, +2, +0);
-  addObjective({startTime, endTime}, make_shared<TM_Contact_POAzeroRelVel>(world, from, to), OT_sos, {1e-1}, NoArr, 1, +1, +0);
+  addObjective({startTime, endTime}, make_shared<F_LinearForce>(), {from, to}, OT_sos, {1e-2}, NoArr, 2, +2, 0);
+  addObjective({startTime, endTime}, make_shared<F_LinearForce>(), {from, to}, OT_sos, {1e-2});
+  addObjective({startTime, endTime}, make_shared<TM_Contact_POA>(), {from, to}, OT_sos, {1e-2}, NoArr, 2, +2, +0);
+  addObjective({startTime, endTime}, make_shared<TM_Contact_POAzeroRelVel>(), {from, to}, OT_sos, {1e-1}, NoArr, 1, +1, +0);
 }
 
 void KOMO::addContact_stick(double startTime, double endTime, const char* from, const char* to) {
@@ -469,16 +470,16 @@ void KOMO::addContact_stick(double startTime, double endTime, const char* from, 
   if(endTime>0.) addSwitch(endTime, false, new rai::KinematicSwitch(rai::SW_delContact, rai::JT_none, from, to, world));
 
   //constraints
-  addObjective({startTime, endTime}, make_shared<TM_Contact_ForceIsPositive>(world, from, to), OT_ineq, {1e1});
-  addObjective({startTime, endTime}, make_shared<TM_Contact_POAisInIntersection_InEq>(world, from, to), OT_ineq, {1e1});
+  addObjective({startTime, endTime}, make_shared<TM_Contact_ForceIsPositive>(), {from, to}, OT_ineq, {1e1});
+  addObjective({startTime, endTime}, make_shared<TM_Contact_POAisInIntersection_InEq>(), {from, to}, OT_ineq, {1e1});
   addObjective({startTime, endTime}, FS_pairCollision_negScalar, {from, to}, OT_eq, {1e1});
-  addObjective({startTime, endTime}, make_shared<TM_Contact_POAzeroRelVel>(world, from, to), OT_eq, {1e0}, NoArr, 1, +1, +1);
+  addObjective({startTime, endTime}, make_shared<TM_Contact_POAzeroRelVel>(), {from, to}, OT_eq, {1e0}, NoArr, 1, +1, +1);
 
   //regularization
 //  addObjective({startTime, endTime}, make_shared<TM_Contact_Force>(world, from, to), OT_sos, {1e-2}, NoArr, 2, +2, 0);
-  addObjective({startTime, endTime}, make_shared<F_LinearForce>(world, from, to), OT_sos, {1e-4});
-  addObjective({startTime, endTime}, make_shared<TM_Contact_POA>(world, from, to), OT_sos, {1e-2}, NoArr, 2, +2, +0);
-  addObjective({startTime, endTime}, make_shared<TM_Contact_POA>(world, from, to), OT_sos, {1e-2}, NoArr, 1, +1, +0);
+  addObjective({startTime, endTime}, make_shared<F_LinearForce>(), {from, to}, OT_sos, {1e-4});
+  addObjective({startTime, endTime}, make_shared<TM_Contact_POA>(), {from, to}, OT_sos, {1e-2}, NoArr, 2, +2, +0);
+  addObjective({startTime, endTime}, make_shared<TM_Contact_POA>(), {from, to}, OT_sos, {1e-2}, NoArr, 1, +1, +0);
 }
 
 void KOMO::addContact_ComplementarySlide(double startTime, double endTime, const char* from, const char* to) {
@@ -486,15 +487,15 @@ void KOMO::addContact_ComplementarySlide(double startTime, double endTime, const
   if(endTime>0.) addSwitch(endTime, false, new rai::KinematicSwitch(rai::SW_delContact, rai::JT_none, from, to, world));
 
   //constraints
-  addObjective({startTime, endTime}, make_shared<TM_Contact_ForceIsNormal>(world, from, to), OT_eq, {1e2});
-  addObjective({startTime, endTime}, make_shared<TM_Contact_ForceIsComplementary>(world, from, to), OT_eq, {1e2});
-  addObjective({startTime, endTime}, make_shared<TM_Contact_NormalVelIsComplementary>(world, from, to, 0., 0.), OT_eq, {1e2}, NoArr, 1, +1);
+  addObjective({startTime, endTime}, make_shared<TM_Contact_ForceIsNormal>(), {from, to}, OT_eq, {1e2});
+  addObjective({startTime, endTime}, make_shared<TM_Contact_ForceIsComplementary>(), {from, to}, OT_eq, {1e2});
+  addObjective({startTime, endTime}, make_shared<TM_Contact_NormalVelIsComplementary>(0., 0.), {from, to}, OT_eq, {1e2}, NoArr, 1, +1);
   addObjective({startTime, endTime}, FS_pairCollision_negScalar, {from, to}, OT_ineq, {1e1});
 
   //regularization
-  addObjective({startTime, endTime}, make_shared<F_LinearForce>(world, from, to), OT_sos, {1e-4});
-  addObjective({startTime, endTime}, make_shared<TM_Contact_POA>(world, from, to), OT_sos, {1e-2}, NoArr, 2, +3, +0);
-  addObjective({startTime, endTime}, make_shared<TM_Contact_POA>(world, from, to), OT_sos, {1e-2}, NoArr, 1, +1, +0);
+  addObjective({startTime, endTime}, make_shared<F_LinearForce>(), {from, to}, OT_sos, {1e-4});
+  addObjective({startTime, endTime}, make_shared<TM_Contact_POA>(), {from, to}, OT_sos, {1e-2}, NoArr, 2, +3, +0);
+  addObjective({startTime, endTime}, make_shared<TM_Contact_POA>(), {from, to}, OT_sos, {1e-2}, NoArr, 1, +1, +0);
 //  addObjective({startTime, endTime}, make_shared<TM_Contact_POAzeroRelVel>(world, from, to), OT_sos, {1e-1}, NoArr, 1, +1, +0);
 }
 
@@ -503,12 +504,12 @@ void KOMO::addContact_staticPush(double startTime, double endTime, const char* f
   addSwitch(startTime, true, new rai::KinematicSwitch(rai::SW_addContact, rai::JT_none, from, to, world));
   if(endTime>0.) addSwitch(endTime, false, new rai::KinematicSwitch(rai::SW_delContact, rai::JT_none, from, to, world));
 
-  addObjective({startTime, endTime}, make_shared<TM_Contact_ForceIsNormal>(world, from, to), OT_sos, {1e1});
-  addObjective({startTime, endTime}, make_shared<TM_Contact_ForceIsPositive>(world, from, to), OT_ineq, {1e2});
-  addObjective({startTime, endTime}, make_shared<TM_Contact_POAisInIntersection_InEq>(world, from, to), OT_ineq, {1e1});
-  addObjective({startTime, endTime}, make_shared<TM_Contact_POAmovesContinuously>(world, from, to), OT_sos, {1e0}, NoArr, 1, +1, +0);
-  addObjective({startTime, endTime}, make_shared<F_LinearForce>(world, from, to), OT_sos, {1e-1});
-  addObjective({startTime, endTime}, make_shared<TM_Contact_POAzeroRelVel>(world, from, to), OT_sos, {1e-1}, NoArr, 1, +1, +0);
+  addObjective({startTime, endTime}, make_shared<TM_Contact_ForceIsNormal>(), {from, to}, OT_sos, {1e1});
+  addObjective({startTime, endTime}, make_shared<TM_Contact_ForceIsPositive>(), {from, to}, OT_ineq, {1e2});
+  addObjective({startTime, endTime}, make_shared<TM_Contact_POAisInIntersection_InEq>(), {from, to}, OT_ineq, {1e1});
+  addObjective({startTime, endTime}, make_shared<TM_Contact_POAmovesContinuously>(), {from, to}, OT_sos, {1e0}, NoArr, 1, +1, +0);
+  addObjective({startTime, endTime}, make_shared<F_LinearForce>(), {from, to}, OT_sos, {1e-1});
+  addObjective({startTime, endTime}, make_shared<TM_Contact_POAzeroRelVel>(), {from, to}, OT_sos, {1e-1}, NoArr, 1, +1, +0);
   //  addObjective({startTime, endTime}, make_shared<TM_Contact_POAzeroRelVel>(world, from, to), OT_eq, {1e1}, NoArr, 1, +1, +0);
   //  addObjective({time}, make_shared<F_pushed>(world, to), OT_eq, {1e1}, NoArr, 1, +1, +0);
 }
@@ -518,11 +519,11 @@ void KOMO::addContact_noFriction(double startTime, double endTime, const char* f
   addSwitch(startTime, true, new rai::KinematicSwitch(rai::SW_addContact, rai::JT_none, from, to, world));
   if(endTime>0.) addSwitch(endTime, false, new rai::KinematicSwitch(rai::SW_delContact, rai::JT_none, from, to, world));
 
-  addObjective({startTime, endTime}, make_shared<TM_Contact_ForceIsNormal>(world, from, to), OT_eq, {3e1});
-  addObjective({startTime, endTime}, make_shared<TM_Contact_ForceIsPositive>(world, from, to), OT_ineq, {1e1});
-  addObjective({startTime, endTime}, make_shared<TM_Contact_POAisInIntersection_InEq>(world, from, to), OT_ineq, {1e1});
-  addObjective({startTime, endTime}, make_shared<TM_Contact_POAmovesContinuously>(world, from, to), OT_sos, {1e0}, NoArr, 1, +1, +0);
-  addObjective({startTime, endTime}, make_shared<F_LinearForce>(world, from, to), OT_sos, {1e-4});
+  addObjective({startTime, endTime}, make_shared<TM_Contact_ForceIsNormal>(), {from, to}, OT_eq, {3e1});
+  addObjective({startTime, endTime}, make_shared<TM_Contact_ForceIsPositive>(), {from, to}, OT_ineq, {1e1});
+  addObjective({startTime, endTime}, make_shared<TM_Contact_POAisInIntersection_InEq>(), {from, to}, OT_ineq, {1e1});
+  addObjective({startTime, endTime}, make_shared<TM_Contact_POAmovesContinuously>(), {from, to}, OT_sos, {1e0}, NoArr, 1, +1, +0);
+  addObjective({startTime, endTime}, make_shared<F_LinearForce>(), {from, to}, OT_sos, {1e-4});
   addObjective({startTime, endTime}, FS_pairCollision_negScalar, {from, to}, OT_eq, {1e1});
 }
 
@@ -530,16 +531,16 @@ void KOMO::addContact_elasticBounce(double time, const char* from, const char* t
   addSwitch(time, true,  new rai::KinematicSwitch(rai::SW_addContact, rai::JT_none, from, to, world));
   addSwitch(time, false, new rai::KinematicSwitch(rai::SW_delContact, rai::JT_none, from, to, world));
 
-  if(stickiness<=0.) addObjective({time}, make_shared<TM_Contact_ForceIsNormal>(world, from, to), OT_eq, {1e2});
-  addObjective({time}, make_shared<TM_Contact_ForceIsPositive>(world, from, to), OT_ineq, {1e1});
-  addObjective({time}, make_shared<TM_Contact_POAisInIntersection_InEq>(world, from, to), OT_ineq, {1e1});
-  addObjective({time}, make_shared<F_LinearForce>(world, from, to), OT_sos, {1e-4});
+  if(stickiness<=0.) addObjective({time}, make_shared<TM_Contact_ForceIsNormal>(), {from, to}, OT_eq, {1e2});
+  addObjective({time}, make_shared<TM_Contact_ForceIsPositive>(), {from, to}, OT_ineq, {1e1});
+  addObjective({time}, make_shared<TM_Contact_POAisInIntersection_InEq>(), {from, to}, OT_ineq, {1e1});
+  addObjective({time}, make_shared<F_LinearForce>(), {from, to}, OT_sos, {1e-4});
   addObjective({time}, FS_pairCollision_negScalar, {from, to}, OT_eq, {1e1});
 
   if(!elasticity && stickiness>=1.) {
-    addObjective({time}, make_shared<TM_Contact_POAzeroRelVel>(world, from, to), OT_eq, {1e1}, NoArr, 2, +1, +1);
+    addObjective({time}, make_shared<TM_Contact_POAzeroRelVel>(), {from, to}, OT_eq, {1e1}, NoArr, 2, +1, +1);
   } else {
-    addObjective({time}, make_shared<TM_Contact_ElasticVel>(world, from, to, elasticity, stickiness), OT_eq, {1e1}, NoArr, 2, +1, +1);
+    addObjective({time}, make_shared<TM_Contact_ElasticVel>(elasticity, stickiness), {from, to}, OT_eq, {1e1}, NoArr, 2, +1, +1);
   }
 }
 
@@ -559,9 +560,9 @@ void KOMO_ext::setKS_slider(double time, double endTime, bool before, const char
   addSwitch(time, true, JT_transXYPhi, SWInit_zero, table, slidera, rel);
   addSwitch(time, true, JT_hingeZ, SWInit_zero, sliderb, obj);
 
-  addObjective({time, endTime}, make_shared<F_qZeroVel>(world, slidera), OT_eq, {3e1}, NoArr, 1, +1, +0);
-  addObjective({time, endTime}, make_shared<F_qZeroVel>(world, obj), OT_eq, {3e1}, NoArr, 1, +1, -1);
-  addObjective({time}, make_shared<TM_LinAngVel>(world, obj), OT_eq, {1e2}, NoArr, 1);
+  addObjective({time, endTime}, make_shared<F_qZeroVel>(world, slidera), {}, OT_eq, {3e1}, NoArr, 1, +1, +0);
+  addObjective({time, endTime}, make_shared<F_qZeroVel>(world, obj), {}, OT_eq, {3e1}, NoArr, 1, +1, -1);
+  addObjective({time}, make_shared<TM_LinAngVel>(world, obj), {}, OT_eq, {1e2}, NoArr, 1);
 
 //  setKinematicSwitch(time, before, "sliderMechanism", table, obj, rel );
 
@@ -576,7 +577,7 @@ void KOMO_ext::setHoming(double startTime, double endTime, double prec, const ch
   Joint* j;
   for(Frame* f:world.frames) if((j=f->joint) && j->qDim()>0 && (!keyword || f->ats[keyword])) bodies.append(f->ID);
 //  cout <<"HOMING: "; for(uint i:bodies) cout <<' ' <<world.frames(i)->name;  cout <<endl;
-  addObjective({startTime, endTime}, make_shared<F_qItself>(bodies, true), OT_sos, {prec}, NoArr); //world.q, prec);
+  addObjective({startTime, endTime}, make_shared<F_qItself>(bodies, true), {}, OT_sos, {prec}, NoArr); //world.q, prec);
 }
 
 //void KOMO_ext::setSquaredQAccelerations(double startTime, double endTime, double prec) {
@@ -589,7 +590,7 @@ ptr<Objective> KOMO::add_qControlObjective(const arr& times, uint order, double 
   scale *= sqrt(tau);
 
   CHECK_GE(k_order, order, "");
-  ptr<Objective> o = addObjective(times, make_shared<F_qItself>(F.frames, (order==0)), OT_sos, scale*F.scale, target, order, deltaFromStep, deltaToStep);
+  ptr<Objective> o = addObjective(times, make_shared<F_qItself>(F.frames, (order==0)), {}, OT_sos, scale*F.scale, target, order, deltaFromStep, deltaToStep);
   return o;
 }
 
@@ -598,13 +599,13 @@ void KOMO_ext::setSquaredQAccVelHoming(double startTime, double endTime, double 
   F.scale *= sqrt(tau);
 
   if(accPrec) {
-    addObjective({startTime, endTime}, make_shared<F_qItself>(F.frames), OT_sos, accPrec*F.scale, NoArr, 2, deltaFromStep, deltaToStep);
+    addObjective({startTime, endTime}, make_shared<F_qItself>(F.frames), {}, OT_sos, accPrec*F.scale, NoArr, 2, deltaFromStep, deltaToStep);
   }
   if(velPrec) {
-    addObjective({startTime, endTime}, make_shared<F_qItself>(F.frames), OT_sos, velPrec*F.scale, NoArr, 1, deltaFromStep, deltaToStep);
+    addObjective({startTime, endTime}, make_shared<F_qItself>(F.frames), {}, OT_sos, velPrec*F.scale, NoArr, 1, deltaFromStep, deltaToStep);
   }
   if(homingPrec) {
-    addObjective({startTime, endTime}, make_shared<F_qItself>(F.frames, true), OT_sos, {homingPrec*sqrt(tau)}, NoArr, 0, deltaFromStep, deltaToStep);
+    addObjective({startTime, endTime}, make_shared<F_qItself>(F.frames, true), {}, OT_sos, {homingPrec*sqrt(tau)}, NoArr, 0, deltaFromStep, deltaToStep);
   }
 }
 
@@ -626,25 +627,25 @@ void KOMO_ext::setSquaredQAccVelHoming(double startTime, double endTime, double 
 //}
 
 void KOMO::addSquaredQuaternionNorms(double startTime, double endTime, double prec) {
-  addObjective({startTime, endTime}, make_shared<F_qQuaternionNorms>(), OT_eq, {prec}, NoArr);
+  addObjective({startTime, endTime}, make_shared<F_qQuaternionNorms>(), {}, OT_eq, {prec}, NoArr);
 }
 
 void KOMO_ext::setHoldStill(double startTime, double endTime, const char* shape, double prec) {
   Frame* s = world.getFrameByName(shape);
-  addObjective({startTime, endTime}, make_shared<F_qItself>(TUP(s->ID)), OT_sos, {prec}, NoArr, 1);
+  addObjective({startTime, endTime}, make_shared<F_qItself>(TUP(s->ID)), {}, OT_sos, {prec}, NoArr, 1);
 }
 
 void KOMO_ext::setPosition(double startTime, double endTime, const char* shape, const char* shapeRel, ObjectiveType type, const arr& target, double prec) {
-  addObjective({startTime, endTime}, make_shared<TM_Default>(TMT_posDiff, world, shape, NoVector, shapeRel, NoVector), type, {prec}, target);
+  addObjective({startTime, endTime}, make_shared<TM_Default>(TMT_posDiff, world, shape, NoVector, shapeRel, NoVector), {}, type, {prec}, target);
 }
 
 void KOMO_ext::setOrientation(double startTime, double endTime, const char* shape, const char* shapeRel, ObjectiveType type, const arr& target, double prec) {
 //  setTask(startTime, endTime, new TM_Align(world, shape, shapeRel), type, target, prec);
-  addObjective({startTime, endTime}, make_shared<TM_Default>(TMT_quatDiff, world, shape, NoVector, shapeRel, NoVector), type, {prec}, target);
+  addObjective({startTime, endTime}, make_shared<TM_Default>(TMT_quatDiff, world, shape, NoVector, shapeRel, NoVector), {}, type, {prec}, target);
 }
 
 void KOMO_ext::setVelocity(double startTime, double endTime, const char* shape, const char* shapeRel, ObjectiveType type, const arr& target, double prec) {
-  addObjective({startTime, endTime}, make_shared<TM_Default>(TMT_posDiff, world, shape, NoVector, shapeRel, NoVector), type, {prec}, target, 1);
+  addObjective({startTime, endTime}, make_shared<TM_Default>(TMT_posDiff, world, shape, NoVector, shapeRel, NoVector), {}, type, {prec}, target, 1);
 }
 
 void KOMO_ext::setLastTaskToBeVelocity() {
@@ -707,7 +708,7 @@ void KOMO_ext::setGrasp(double time, double endTime, const char* endeffRef, cons
 #else
 //  addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_free, endeffRef, object, world));
   addSwitch_stable(time, endTime, endeffRef, object);
-  addObjective({time}, make_shared<TM_InsideBox>(world, endeffRef, NoVector, object), OT_ineq, {1e1});
+  addObjective({time}, make_shared<TM_InsideBox>(world, endeffRef, NoVector, object), {}, OT_ineq, {1e1});
 //  setTouch(time, time, endeffRef, object);
 #endif
 
@@ -737,11 +738,11 @@ void KOMO_ext::setGraspStick(double time, const char* endeffRef, const char* obj
 //              new TM_Default(TMT_posDiff, world, endeffRef, NoVector, object, NoVector),
 //              arr(2,3,{0,1,0,0,0,1}), {}),
 //          OT_eq, NoArr, 3e1);
-  addObjective({time}, make_shared<TM_InsideBox>(world, endeffRef, NoVector, object), OT_ineq, {1e1});
+  addObjective({time}, make_shared<TM_InsideBox>(world, endeffRef, NoVector, object), {}, OT_ineq, {1e1});
 
   if(stepsPerPhase>2) { //velocities down and up
-    addObjective({time-timeToLift, time}, make_shared<TM_Default>(TMT_pos, world, endeffRef), OT_sos, {3e0}, {0., 0., -.1}, 1); //move down
-    addObjective({time, time+timeToLift}, make_shared<TM_Default>(TMT_pos, world, object), OT_sos, {3e0}, {0., 0., .1}, 1); // move up
+    addObjective({time-timeToLift, time}, make_shared<TM_Default>(TMT_pos, world, endeffRef), {}, OT_sos, {3e0}, {0., 0., -.1}, 1); //move down
+    addObjective({time, time+timeToLift}, make_shared<TM_Default>(TMT_pos, world, object), {}, OT_sos, {3e0}, {0., 0., .1}, 1); // move up
   }
 }
 
@@ -789,9 +790,9 @@ void KOMO_ext::setPlaceFixed(double time, const char* endeff, const char* object
 
   if(stepsPerPhase>2) { //velocities down and up
     if(endeff) {
-      addObjective({time-.15, time-.10}, make_shared<TM_Default>(TMT_pos, world, endeff), OT_sos, {3e0}, {0., 0., -.1}, 1); //move down
-      addObjective({time-.05, time+.05}, make_shared<TM_Default>(TMT_pos, world, endeff), OT_sos, {1e1}, {0., 0., 0.}, 1); //hold still
-      addObjective({time+.10, time+.15}, make_shared<TM_Default>(TMT_pos, world, endeff), OT_sos, {3e0}, {0., 0., +.1}, 1); //move up
+      addObjective({time-.15, time-.10}, make_shared<TM_Default>(TMT_pos, world, endeff), {}, OT_sos, {3e0}, {0., 0., -.1}, 1); //move down
+      addObjective({time-.05, time+.05}, make_shared<TM_Default>(TMT_pos, world, endeff), {}, OT_sos, {1e1}, {0., 0., 0.}, 1); //hold still
+      addObjective({time+.10, time+.15}, make_shared<TM_Default>(TMT_pos, world, endeff), {}, OT_sos, {3e0}, {0., 0., +.1}, 1); //move up
     }
   }
 }
@@ -826,13 +827,13 @@ void KOMO_ext::setPush(double startTime, double endTime, const char* stick, cons
 
 #if 1
   //stick normal alignes with slider direction
-  addObjective({startTime, endTime}, make_shared<TM_Default>(TMT_vecAlign, world, stick, -Vector_y, "slider1b", Vector_x), OT_sos, {1e1}, {1.});
+  addObjective({startTime, endTime}, make_shared<TM_Default>(TMT_vecAlign, world, stick, -Vector_y, "slider1b", Vector_x), {}, OT_sos, {1e1}, {1.});
   //stick horizontal is orthogonal to world vertical
 //  setTask(startTime, endTime, new TM_Default(TMT_vecAlign, world, stick, Vector_x, nullptr, Vector_z), OT_sos, {0.}, 1e1);
   add_touch(startTime, endTime, stick, table);
 
   double dist = .05; //.5*shapeSize(world, object, 0)+.01;
-  addObjective({startTime, endTime}, make_shared<TM_InsideBox>(world, "slider1b", Vector(dist, .0, .0), stick), OT_ineq);
+  addObjective({startTime, endTime}, make_shared<TM_InsideBox>(world, "slider1b", Vector(dist, .0, .0), stick), {}, OT_ineq);
 //  setTask(startTime, endTime, new TM_Default(TMT_posDiff, world, stick, NoVector, "slider1b", {dist, .0, .0}), OT_sos, {}, 1e1);
 #else
   setTouch(startTime, endTime, stick, object);
@@ -852,10 +853,10 @@ void KOMO_ext::setPush(double startTime, double endTime, const char* stick, cons
 #endif
 
   if(stepsPerPhase>2) { //velocities down and up
-    addObjective({startTime-.3, startTime-.1}, make_shared<TM_Default>(TMT_pos, world, stick), OT_sos, {3e0}, {0., 0., -.1}, 1); //move down
-    addObjective({startTime-.05, startTime-.0}, make_shared<TM_Default>(TMT_pos, world, stick), OT_sos, {3e0}, {0., 0., 0}, 1); //hold still
-    addObjective({endTime+.0, endTime+.05}, make_shared<TM_Default>(TMT_pos, world, stick), OT_sos, {3e0}, {0., 0., 0}, 1); //hold still
-    addObjective({endTime+.1, endTime+.3}, make_shared<TM_Default>(TMT_pos, world, stick), OT_sos, {3e0}, {0., 0., .1}, 1); // move up
+    addObjective({startTime-.3, startTime-.1}, make_shared<TM_Default>(TMT_pos, world, stick), {}, OT_sos, {3e0}, {0., 0., -.1}, 1); //move down
+    addObjective({startTime-.05, startTime-.0}, make_shared<TM_Default>(TMT_pos, world, stick), {}, OT_sos, {3e0}, {0., 0., 0}, 1); //hold still
+    addObjective({endTime+.0, endTime+.05}, make_shared<TM_Default>(TMT_pos, world, stick), {}, OT_sos, {3e0}, {0., 0., 0}, 1); //hold still
+    addObjective({endTime+.1, endTime+.3}, make_shared<TM_Default>(TMT_pos, world, stick), {}, OT_sos, {3e0}, {0., 0., .1}, 1); // move up
   }
 }
 
@@ -879,9 +880,9 @@ void KOMO_ext::setGraspSlide(double time, const char* endeff, const char* object
 
 //  addSwitch_stable(startTime, endTime+1., endeff, object);
   addSwitch(startTime, true, JT_free, SWInit_zero, endeff, object);
-  addObjective({time, endTime}, make_shared<F_qZeroVel>(world, object), OT_eq, {3e1}, NoArr, 1, +1, -1);
-  if(k_order>1) addObjective({time}, make_shared<TM_LinAngVel>(world, object), OT_eq, {1e2}, NoArr, 2, 0);
-  else addObjective({time}, make_shared<TM_NoJumpFromParent>(world, object), OT_eq, {1e2}, NoArr, 1, 0, 0);
+  addObjective({time, endTime}, make_shared<F_qZeroVel>(world, object), {}, OT_eq, {3e1}, NoArr, 1, +1, -1);
+  if(k_order>1) addObjective({time}, make_shared<TM_LinAngVel>(world, object), {}, OT_eq, {1e2}, NoArr, 2, 0);
+  else addObjective({time}, make_shared<TM_NoJumpFromParent>(world, object), {}, OT_eq, {1e2}, NoArr, 1, 0, 0);
 
   add_touch(startTime, startTime, endeff, object);
 
@@ -907,7 +908,7 @@ void KOMO_ext::setGraspSlide(double time, const char* endeff, const char* object
 //          OT_sos, ARR(h), ~ARR(0,0,1e1));
   //keep object vertial
   addObjective({startTime, endTime},
-               make_shared<TM_Default>(TMT_vecDiff, world, object, Vector_z, placeRef, Vector_z), OT_sos, {1e1});
+               make_shared<TM_Default>(TMT_vecDiff, world, object, Vector_z, placeRef, Vector_z), {}, OT_sos, {1e1});
 
 //  if(stepsPerPhase>2){ //velocities down and up
 //    setTask(startTime-.15, startTime, new TM_Default(TMT_pos, world, endeff), OT_sos, {0.,0.,-.1}, 3e0, 1); //move down
@@ -921,12 +922,12 @@ void KOMO_ext::setSlideAlong(double time, const char* stick, const char* object,
   double endTime = time+1.;
 
   //stick normal alignes with slider direction
-  addObjective({time, time+1.}, make_shared<TM_Default>(TMT_vecAlign, world, stick, -Vector_y, object, Vector_x), OT_sos, {1e0}, {1.});
+  addObjective({time, time+1.}, make_shared<TM_Default>(TMT_vecAlign, world, stick, -Vector_y, object, Vector_x), {}, OT_sos, {1e0}, {1.});
   //stick horizontal is orthogonal to world vertical
-  addObjective({time, time+1.}, make_shared<TM_Default>(TMT_vecAlign, world, stick, Vector_x, nullptr, Vector_z), OT_sos, {1e1}, {0.});
+  addObjective({time, time+1.}, make_shared<TM_Default>(TMT_vecAlign, world, stick, Vector_x, nullptr, Vector_z), {}, OT_sos, {1e1}, {0.});
 
   double dist = .5*shapeSize(world, object, 0)+.01;
-  addObjective({time, time+1.}, make_shared<TM_InsideBox>(world, object, Vector(dist, .0, .0), stick), OT_ineq);
+  addObjective({time, time+1.}, make_shared<TM_InsideBox>(world, object, Vector(dist, .0, .0), stick), {}, OT_ineq);
 
   add_touch(time, time+1., stick, wall);
 
@@ -944,8 +945,8 @@ void KOMO_ext::setSlideAlong(double time, const char* stick, const char* object,
   //    setTask(time, time, new TM_InsideBox(world, endeff, NoVector, object), OT_ineq, NoArr, 1e1);
 
   if(stepsPerPhase>2) { //velocities down and up
-    addObjective({endTime+.0, endTime+.05}, make_shared<TM_Default>(TMT_pos, world, stick), OT_sos, {3e0}, {0., 0., 0}, 1); //hold still
-    addObjective({endTime+.1, endTime+.3}, make_shared<TM_Default>(TMT_pos, world, stick), OT_sos, {3e0}, {0., 0., .05}, 1); // move up
+    addObjective({endTime+.0, endTime+.05}, make_shared<TM_Default>(TMT_pos, world, stick), {}, OT_sos, {3e0}, {0., 0., 0}, 1); //hold still
+    addObjective({endTime+.1, endTime+.3}, make_shared<TM_Default>(TMT_pos, world, stick), {}, OT_sos, {3e0}, {0., 0., .05}, 1); // move up
   }
 }
 
@@ -996,8 +997,8 @@ void KOMO::setSlow(double startTime, double endTime, double prec, bool hardConst
 #else
     Feature* map = new TM_qItself;
 #endif
-    if(!hardConstrained) addObjective({startTime, endTime}, feat, OT_sos, {prec}, NoArr, 1);
-    else addObjective({startTime, endTime}, feat, OT_eq, {prec}, NoArr, 1);
+    if(!hardConstrained) addObjective({startTime, endTime}, feat, {}, OT_sos, {prec}, NoArr, 1);
+    else addObjective({startTime, endTime}, feat, {}, OT_eq, {prec}, NoArr, 1);
   }
   //#    _MinSumOfSqr_qItself_vel(MinSumOfSqr qItself){ order=1 time=[0.98 1] scale=3e0 } #slow down
 }
@@ -1012,18 +1013,18 @@ void KOMO_ext::setFine_grasp(double time, const char* endeff, const char* object
   double t3=-.05; //time when gripper is closed
 
   //position above
-  addObjective({time+t1, 1.}, make_shared<TM_Default>(TMT_vec, world, endeff, Vector_z), OT_sos, {1e0}, {0., 0., 1.});
-  addObjective({time+t1, t1}, make_shared<TM_Default>(TMT_posDiff, world, endeff, NoVector, object, NoVector), OT_sos, {3e1}, {0., 0., above+.1});
-  addObjective({time+t1, 1.}, make_shared<TM_Default>(TMT_vecAlign, world, endeff, Vector_x, object, Vector_y), OT_sos, {3e0});
-  addObjective({time+t1, 1.}, make_shared<TM_Default>(TMT_vecAlign, world, endeff, Vector_x, object, Vector_z), OT_sos, {3e0});
+  addObjective({time+t1, 1.}, make_shared<TM_Default>(TMT_vec, world, endeff, Vector_z), {}, OT_sos, {1e0}, {0., 0., 1.});
+  addObjective({time+t1, t1}, make_shared<TM_Default>(TMT_posDiff, world, endeff, NoVector, object, NoVector), {}, OT_sos, {3e1}, {0., 0., above+.1});
+  addObjective({time+t1, 1.}, make_shared<TM_Default>(TMT_vecAlign, world, endeff, Vector_x, object, Vector_y), {}, OT_sos, {3e0});
+  addObjective({time+t1, 1.}, make_shared<TM_Default>(TMT_vecAlign, world, endeff, Vector_x, object, Vector_z), {}, OT_sos, {3e0});
   //open gripper
-  if(gripper)  addObjective({time+t1, .85}, make_shared<F_qItself>(F_qItself::byJointNames, StringA({gripper}), world), OT_sos, {gripSize + .05});
-  if(gripper2) addObjective({time+t1, .85}, make_shared<F_qItself>(F_qItself::byJointNames, StringA({gripper2}), world), OT_sos, {::asin((gripSize + .05)/(2.*.10))});
+  if(gripper)  addObjective({time+t1, .85}, make_shared<F_qItself>(F_qItself::byJointNames, StringA({gripper}), world), {}, OT_sos, {gripSize + .05});
+  if(gripper2) addObjective({time+t1, .85}, make_shared<F_qItself>(F_qItself::byJointNames, StringA({gripper2}), world), {}, OT_sos, {::asin((gripSize + .05)/(2.*.10))});
   //lower
-  addObjective({time+t2, 1.}, make_shared<TM_Default>(TMT_posDiff, world, endeff, NoVector, object, NoVector), OT_sos, {3e1}, {0., 0., above});
+  addObjective({time+t2, 1.}, make_shared<TM_Default>(TMT_posDiff, world, endeff, NoVector, object, NoVector), {}, OT_sos, {3e1}, {0., 0., above});
   //close gripper
-  if(gripper)  addObjective({time+t3, 1.}, make_shared<F_qItself>(F_qItself::byJointNames, StringA({gripper}), world), OT_sos, {gripSize});
-  if(gripper2) addObjective({time+t3, 1.}, make_shared<F_qItself>(F_qItself::byJointNames, StringA({gripper2}), world), OT_sos, {::asin((gripSize)/(2.*.10))});
+  if(gripper)  addObjective({time+t3, 1.}, make_shared<F_qItself>(F_qItself::byJointNames, StringA({gripper}), world), {}, OT_sos, {gripSize});
+  if(gripper2) addObjective({time+t3, 1.}, make_shared<F_qItself>(F_qItself::byJointNames, StringA({gripper2}), world), {}, OT_sos, {::asin((gripSize)/(2.*.10))});
   setSlowAround(time, .05, 3e1);
 }
 
@@ -1153,7 +1154,7 @@ void KOMO::setSkeleton(const Skeleton& S, bool ignoreSwitches) {
       case SY_poseEq: addObjective({s.phase0, s.phase1}, FS_poseDiff, s.frames, OT_eq, {1e2});  break;
 
       case SY_liftDownUp: setLiftDownUp(s.phase0, s.frames(0), .4);  break;
-      case SY_break:      addObjective({s.phase0, s.phase1}, make_shared<TM_NoJumpFromParent>(world, s.frames(0)), OT_eq, {1e2}, NoArr, 1, 0, 0);  break;
+      case SY_break:      addObjective({s.phase0, s.phase1}, make_shared<TM_NoJumpFromParent>(world, s.frames(0)), {}, OT_eq, {1e2}, NoArr, 1, 0, 0);  break;
 
       case SY_contact:    addContact_slide(s.phase0, s.phase1, s.frames(0), s.frames(1));  break;
       case SY_contactStick:    addContact_stick(s.phase0, s.phase1, s.frames(0), s.frames(1));  break;
@@ -1164,10 +1165,10 @@ void KOMO::setSkeleton(const Skeleton& S, bool ignoreSwitches) {
       case SY_dampMotion: {
         double sqrAccCost=1e-2, sqrVelCost=1e-2;
         if(sqrVelCost>0. && k_order>=1) {
-          addObjective({s.phase0, s.phase1}, make_shared<TM_LinAngVel>(world, s.frames(0)), OT_sos, {sqrVelCost}, NoArr, 1);
+          addObjective({s.phase0, s.phase1}, make_shared<TM_LinAngVel>(world, s.frames(0)), {}, OT_sos, {sqrVelCost}, NoArr, 1);
         }
         if(sqrAccCost>0. && k_order>=2) {
-          addObjective({s.phase0, s.phase1}, make_shared<TM_LinAngVel>(world, s.frames(0)), OT_sos, {sqrAccCost}, NoArr, 2);
+          addObjective({s.phase0, s.phase1}, make_shared<TM_LinAngVel>(world, s.frames(0)), {}, OT_sos, {sqrAccCost}, NoArr, 2);
         }
       } break;
       case SY_alignByInt: {
@@ -1205,7 +1206,7 @@ void KOMO_ext::setAlign(double startTime, double endTime, const char* shape, con
   if(whichAxisRel) map <<" vec2=[" <<whichAxisRel <<']';
   setTask(startTime, endTime, map, type, target, prec);
 #else
-  addObjective({startTime, endTime}, make_shared<TM_Default>(TMT_vecAlign, world, shape, Vector(whichAxis), shapeRel, Vector(whichAxisRel)), type, {prec}, target);
+  addObjective({startTime, endTime}, make_shared<TM_Default>(TMT_vecAlign, world, shape, Vector(whichAxis), shapeRel, Vector(whichAxisRel)), {}, type, {prec}, target);
 #endif
 
 }
@@ -1219,7 +1220,7 @@ void KOMO_ext::add_aboveBox(double startTime, double endTime, const char* shape1
 }
 
 void KOMO_ext::add_insideBox(double startTime, double endTime, const char* shape1, const char* shape2, double prec) {
-  addObjective({startTime, endTime}, make_shared<TM_InsideBox>(world, shape1, NoVector, shape2), OT_ineq, {prec}, NoArr);
+  addObjective({startTime, endTime}, make_shared<TM_InsideBox>(world, shape1, NoVector, shape2), {}, OT_ineq, {prec}, NoArr);
 }
 
 //void KOMO::add_impulse(double time, const char* shape1, const char* shape2, ObjectiveType type, double prec) {
@@ -1232,7 +1233,7 @@ void KOMO_ext::add_insideBox(double startTime, double endTime, const char* shape
 //}
 
 void KOMO_ext::add_stable(double time, const char* shape1, const char* shape2, ObjectiveType type, double prec) {
-  addObjective({time}, make_shared<TM_Default>(TMT_pose, world, shape1, NoVector, shape2), type, {prec}, NoArr, 1, 0);
+  addObjective({time}, make_shared<TM_Default>(TMT_pose, world, shape1, NoVector, shape2), {}, type, {prec}, NoArr, 1, 0);
 }
 
 void KOMO_ext::setAlignedStacking(double time, const char* object, ObjectiveType type, double prec) {
@@ -1242,15 +1243,15 @@ void KOMO_ext::setAlignedStacking(double time, const char* object, ObjectiveType
 
 void KOMO::add_collision(bool hardConstraint, double margin, double prec) {
   if(hardConstraint) { //interpreted as hard constraint (default)
-    addObjective({}, make_shared<TM_Proxy>(TMT_allP, uintA(), margin), OT_eq, {prec}, NoArr);
+    addObjective({}, make_shared<TM_Proxy>(TMT_allP, uintA(), margin), {}, OT_eq, {prec}, NoArr);
   } else { //cost term
-    addObjective({}, make_shared<TM_Proxy>(TMT_allP, uintA(), margin), OT_sos, {prec}, NoArr);
+    addObjective({}, make_shared<TM_Proxy>(TMT_allP, uintA(), margin), {}, OT_sos, {prec}, NoArr);
   }
 }
 
 void KOMO::add_jointLimits(bool hardConstraint, double margin, double prec) {
   if(hardConstraint) { //interpreted as hard constraint (default)
-    addObjective({}, make_shared<F_qLimits>(), OT_ineq, {-prec}, NoArr);
+    addObjective({}, make_shared<F_qLimits>(), {}, OT_ineq, {-prec}, NoArr);
   } else { //cost term
     NIY;
 //    setTask(0., -1., new TM_Proxy(TMT_allP, {}, margin), OT_sos, NoArr, prec);
@@ -1259,9 +1260,9 @@ void KOMO::add_jointLimits(bool hardConstraint, double margin, double prec) {
 
 void KOMO::setLiftDownUp(double time, const char* endeff, double timeToLift) {
   if(stepsPerPhase>2 && timeToLift>0.) { //velocities down and up
-    addObjective({time-timeToLift, time-.5*timeToLift}, make_shared<TM_Default>(TMT_pos, world, endeff), OT_sos, {1e0}, {0., 0., -.2}, 1); //move down
+    addObjective({time-timeToLift, time-.5*timeToLift}, make_shared<TM_Default>(TMT_pos, world, endeff), {}, OT_sos, {1e0}, {0., 0., -.2}, 1); //move down
 //    addObjective({time-timeToLift/3,  time+timeToLift/3}, make_shared<TM_Default>(TMT_pos, world, endeff), OT_sos, {3e0}, {0.,0.,0.}, 1); //move down
-    addObjective({time+.5*timeToLift, time+timeToLift}, make_shared<TM_Default>(TMT_pos, world, endeff), OT_sos, {1e0}, {0., 0., .2}, 1); // move up
+    addObjective({time+.5*timeToLift, time+timeToLift}, make_shared<TM_Default>(TMT_pos, world, endeff), {}, OT_sos, {1e0}, {0., 0., .2}, 1); // move up
   }
 }
 
@@ -3963,7 +3964,7 @@ arr KOMO::getPath_energies() {
   E.order=1;
   arr X(T), y;
   for(uint t=0; t<T; t++) {
-    E.phi(y, NoArr, {configurations(t+k_order-1), configurations(t+k_order)});
+    E.phi2(y, NoArr, cat(configurations(t+k_order-1)->frames, configurations(t+k_order)->frames).reshape(2,-1));
     X(t) = y.scalar();
   }
   return X;

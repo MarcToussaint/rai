@@ -140,7 +140,7 @@ struct Configuration : GLDrawer {
   void sortFrames();
   void makeObjectsFree(const StringA& objects, double H_cost=0.);
   void addTauJoint();
-  bool hasTauJoint();
+  bool hasTauJoint(Frame* a=0);
   bool checkConsistency() const;
   Joint* attach(Frame* a, Frame* b);
   Joint* attach(const char* a, const char* b);
@@ -216,7 +216,7 @@ struct Configuration : GLDrawer {
   void kinematicsQuat(arr& y, arr& J, Frame* a) const;
   void kinematicsPos_wrtFrame(arr& y, arr& J, Frame* b, const rai::Vector& rel, Frame* self) const;
   void hessianPos(arr& H, Frame* a, Vector* rel=0) const;
-  void kinematicsTau(double& tau, arr& J) const;
+  void kinematicsTau(double& tau, arr& J, Frame* a=0) const;
   void kinematicsRelVec(arr& y, arr& J, Frame* a, const Vector& vec1, Frame* b) const;
 
   void kinematicsContactPOA(arr& y, arr& J, const ForceExchange* c) const;

@@ -512,9 +512,9 @@ void Imp_CloseGripper::modConfiguration(Simulation& S, double tau) {
     //  cout <<q <<" d1: " <<d1.y <<"d2: " <<d2.y <<endl;
     if(-d1.y(0)<1e-3 && -d2.y(0)<1e-3) { //stop grasp by contact
       //evaluate stability
-      F_GraspOppose oppose(fing1->ID, fing2->ID, obj->ID);
+      F_GraspOppose oppose;
       arr y;
-      oppose.__phi(y, NoArr, S.C);
+      oppose.__phi2(y, NoArr, {fing1, fing2, obj});
 
       if(sumOfSqr(y) < 0.1) { //good enough -> success!
         // kinematically attach object to gripper

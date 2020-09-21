@@ -11,7 +11,7 @@
 #include "../Geo/pairCollision.h"
 
 rai::ForceExchange::ForceExchange(rai::Frame& a, rai::Frame& b, rai::ForceExchange* copyContact)
-  : a(a), b(b), type(FXT_torque) {
+  : a(a), b(b), type(FXT_poa) {
   CHECK(&a != &b, "");
   CHECK_EQ(&a.C, &b.C, "contact between frames of different configuration!");
   a.C.reset_q();

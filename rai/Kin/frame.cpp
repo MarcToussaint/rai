@@ -170,6 +170,12 @@ void rai::Frame::getSubtree(FrameL& F) {
   for(Frame* child:children) { F.append(child); child->getSubtree(F); }
 }
 
+rai::Frame*rai::Frame::getRoot(){
+  rai::Frame* f = this;
+  while(f->parent) f = f->parent;
+  return f;
+}
+
 FrameL rai::Frame::getPathToRoot() {
   FrameL pathToRoot;
   rai::Frame* f = this;

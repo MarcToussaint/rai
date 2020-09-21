@@ -67,18 +67,18 @@ void addMotionTo(KOMO& komo, const arr& target_q, const StringA& target_joints, 
 //    profile.setZero();
 
     if(up>0.) {
-      komo.addObjective({0., up}, make_shared<TM_Default>(TMT_posDiff, komo.world, endeff), OT_sos, {1e2}, {0., 0., .05}, 2);
+      komo.addObjective({0., up}, make_shared<TM_Default>(TMT_posDiff, komo.world, endeff), {}, OT_sos, {1e2}, {0., 0., .05}, 2);
     }
 
     if(down>0.) {
-      komo.addObjective({down, 1.}, make_shared<TM_Default>(TMT_posDiff, komo.world, endeff), OT_sos, {1e2}, {0., 0., -.05}, 2);
+      komo.addObjective({down, 1.}, make_shared<TM_Default>(TMT_posDiff, komo.world, endeff), {}, OT_sos, {1e2}, {0., 0., -.05}, 2);
     }
   }
 
   if(!target_joints.N) {
-    komo.addObjective({1., 1.}, make_shared<F_qItself>(), OT_eq, {1e1}, target_q);
+    komo.addObjective({1., 1.}, make_shared<F_qItself>(), {}, OT_eq, {1e1}, target_q);
   } else {
-    komo.addObjective({1., 1.}, make_shared<F_qItself>(F_qItself::byJointNames, target_joints, komo.world), OT_eq, {1e1}, target_q);
+    komo.addObjective({1., 1.}, make_shared<F_qItself>(F_qItself::byJointNames, target_joints, komo.world), {}, OT_eq, {1e1}, target_q);
   }
 
   komo.setSlow(0., 0., 1e2, true);
@@ -127,7 +127,7 @@ void findOpposingGrasp(rai::Configuration& K, const char* fingerL, const char* f
   komo.setModel(K, true);
   komo.setIKOpt();
 
-  komo.addObjective({1., 1.}, make_shared<F_GraspOppose>(K, fingerL, fingerR, object), OT_eq, {1e2});
+  komo.addObjective({1., 1.}, make_shared<F_GraspOppose>(), {fingerL, fingerR, object}, OT_eq, {1e2});
 
 //    //anti-podal
 //    switch(axis){

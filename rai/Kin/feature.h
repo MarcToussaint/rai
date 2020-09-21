@@ -14,6 +14,7 @@
 
 struct Value {
   arr y, J;
+  Value(){}
   Value(const arr& y, const arr& J) : y(y), J(J) {}
   void write(ostream& os) const { os <<"y:" <<y <<" J:" <<J; }
 };
@@ -126,6 +127,12 @@ inline void padJacobian(arr& J, const ConfigurationL& Ctuple) {
       return;
     } else NIY;
   }
+}
+
+template<class T>
+std::shared_ptr<T> setFrameIDs(std::shared_ptr<T> f, const StringA& frames, const rai::Configuration& C){
+  f->frameIDs = stringListToFrameIndices(frames, C);
+  return f;
 }
 
 template<class T>

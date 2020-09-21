@@ -105,33 +105,37 @@ void TM_InsideLine::phi(arr& y, arr& J, const rai::Configuration& G) {
 
 //===========================================================================
 
-void F_GraspOppose::phi(arr& y, arr& J, const rai::Configuration& K) {
+void F_GraspOppose::phi2(arr& y, arr& J, const FrameL& F) {
+  CHECK_EQ(order, 0, "");
+  CHECK_EQ(F.N, 3, "");
   Value D1 = F_PairCollision(F_PairCollision::_vector, true)
-             .setFrameIDs({i, k})
-             .eval(K);
+             .eval({F.elem(0), F.elem(2)});
   Value D2 = F_PairCollision(F_PairCollision::_vector, true)
-             .setFrameIDs({j, k})
-             .eval(K);
+             .eval({F.elem(1), F.elem(2)});
 
-  y = D1.y + D2.y;
-  if(!!J) J = D1.J + D2.J;
 
-  if(centering) {
+  if(!centering) {
+    y = D1.y + D2.y;
+    if(!!J) J = D1.J + D2.J;
+  }else{
     normalizeWithJac(D1.y, D1.J);
     normalizeWithJac(D2.y, D2.J);
 
-    Value P1 = TM_Default(TMT_pos, i)(K);
-    Value P2 = TM_Default(TMT_pos, j)(K);
+    Value P1 = F_Position() .eval({F.elem(0)});
+    Value P2 = F_Position() .eval({F.elem(1)});
 
     arr P = 2.*eye(3) - (D1.y*~D1.y) - (D2.y*~D2.y);
     arr p = P2.y - P1.y;
     double scale = 1e-1;
-    y.append(scale * (P * p));
-    if(!!J) {
-      arr Jc = P * (P2.J-P1.J) - (D1.J*scalarProduct(D1.y, p) + D1.y*(~p*D1.J)) - (D2.J*scalarProduct(D2.y, p) + D2.y*(~p*D2.J));
-      J.append(scale * Jc);
-    }
 
+    arr cen, cenJ;
+    cen = scale * (P * p);
+    if(!!J) cenJ = P * (P2.J-P1.J) - (D1.J*scalarProduct(D1.y, p) + D1.y*(~p*D1.J)) - (D2.J*scalarProduct(D2.y, p) + D2.y*(~p*D2.J));
+
+    y.setBlockVector(D1.y + D2.y, cen);
+    J.setBlockMatrix(D1.J + D2.J, cenJ);
   }
 }
+
+
 

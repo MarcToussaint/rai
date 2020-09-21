@@ -16,21 +16,21 @@
 #include "F_contacts.h"
 #include "../Geo/pairCollision.h"
 
-void POA_distance(arr& y, arr& J, rai::ForceExchange* con, bool b_or_a) {
-  rai::Shape* s = con->a.shape;
-  if(b_or_a) s = con->b.shape;
+void POA_distance(arr& y, arr& J, rai::ForceExchange* ex, bool b_or_a) {
+  rai::Shape* s = ex->a.shape;
+  if(b_or_a) s = ex->b.shape;
   CHECK(s, "contact object does not have a shape!");
   double r=s->radius();
   rai::Mesh* m = &s->sscCore();  if(!m->V.N) { m = &s->mesh(); r=0.; }
 
-  CHECK_EQ(&con->a.C, &con->b.C, "");
-  rai::Configuration& K = con->a.C;
+  CHECK_EQ(&ex->a.C, &ex->b.C, "");
+  rai::Configuration& K = ex->a.C;
 
   rai::Mesh M0;
   M0.setDot();
   rai::Transformation X0=0;
   arr pos, Jpos;
-  K.kinematicsContactPOA(pos, Jpos, con);
+  K.kinematicsContactPOA(pos, Jpos, ex);
   X0.pos = pos;
 
   PairCollision coll(M0, *m, X0, s->frame.ensure_X(), 0., r);
@@ -41,155 +41,134 @@ void POA_distance(arr& y, arr& J, rai::ForceExchange* con, bool b_or_a) {
   coll.kinDistance(y, J, Jpos, Jp);
 }
 
-void POA_rel_vel2(arr& y, arr& J, const ConfigurationL& Ktuple, rai::ForceExchange* con, bool after_or_before) {
-  rai::Configuration* Kc = Ktuple(-2);
+void POA_rel_vel2(arr& y, arr& J, const FrameL& F, rai::ForceExchange* ex, bool after_or_before) {
+  CHECK_EQ(F.d0, 3, "");
+  CHECK_EQ(F.d1, 2, "");
+  CHECK_EQ(F(1,0), &ex->a, "");
+  CHECK_EQ(F(1,1), &ex->b, "");
 
   // p1, p2 are the CENTERS! of the frame a and b
   // v1, v2 are the CENTER velocities of the frame a and b
-  arr cp, Jcp;
-  Kc->kinematicsContactPOA(cp, Jcp, con);
-  if(!!J) expandJacobian(Jcp, Ktuple, -2);
 
-  arr Ra = con->a.ensure_X().rot.getArr();
-  arr Rb = con->b.ensure_X().rot.getArr();
+  arr cp, Jcp;
+  ex->kinPOA(cp, Jcp);
+
+  arr Ra = ex->a.ensure_X().rot.getArr();
+  arr Rb = ex->b.ensure_X().rot.getArr();
 
   arr p0a, p0b, Jp0a, Jp0b;
-  Kc->kinematicsPos(p0a, Jp0a, &con->a);
-  Kc->kinematicsPos(p0b, Jp0b, &con->b);
-  if(!!J) {
-    expandJacobian(Jp0a, Ktuple, -2);
-    expandJacobian(Jp0b, Ktuple, -2);
-  }
+  ex->a.C.kinematicsPos(p0a, Jp0a, &ex->a);
+  ex->a.C.kinematicsPos(p0b, Jp0b, &ex->b);
 
   arr rela = ~Ra * (cp - p0a);
   arr relb = ~Rb * (cp - p0b);
   arr Jrela = ~Ra * (Jcp - Jp0a);
   arr Jrelb = ~Rb * (Jcp - Jp0b);
 
-  rai::Configuration* K;
-  if(after_or_before) K = Ktuple(-1);
-  else K = Ktuple(-3);
-  rai::Frame* fa = K->frames(con->a.ID);
-  rai::Frame* fb = K->frames(con->b.ID);
+  FrameL K;
+  if(after_or_before) K = F[-1];
+  else K = F[-3];
   arr pa, pb, Jpa, Jpb;
-  K->kinematicsPos(pa, Jpa, fa, rela);
-  K->kinematicsPos(pb, Jpb, fb, relb);
+  K(0)->C.kinematicsPos(pa, Jpa, K(0), rela);
+  K(2)->C.kinematicsPos(pb, Jpb, K(1), relb);
   if(!!J) {
-    if(after_or_before) {
-      expandJacobian(Jpa, Ktuple, -1);
-      expandJacobian(Jpb, Ktuple, -1);
-    } else {
-      expandJacobian(Jpa, Ktuple, -3);
-      expandJacobian(Jpb, Ktuple, -3);
-    }
-    Jpa += fa->ensure_X().rot.getArr() * Jrela;
-    Jpb += fb->ensure_X().rot.getArr() * Jrelb;
+    Jpa += F(0)->ensure_X().rot.getArr() * Jrela;
+    Jpb += F(1)->ensure_X().rot.getArr() * Jrelb;
   }
   y = pa - pb;
-  if(!!J) {
-    J = Jpa - Jpb;
-  }
+  if(!!J) J = Jpa - Jpb;
 }
 
 //3-dim feature: the difference in POA velocities (V)
-void POA_rel_vel(arr& y, arr& J, const ConfigurationL& Ktuple, rai::ForceExchange* con, bool after_or_before) {
-  CHECK_EQ(Ktuple.N, 3, "");
+void POA_rel_vel(arr& y, arr& J, const FrameL& F, rai::ForceExchange* ex, bool after_or_before) {
+  CHECK_EQ(F.d0, 3, "");
+  CHECK_EQ(F.d1, 2, "");
+  CHECK_EQ(F(1,0), &ex->a, "");
+  CHECK_EQ(F(1,1), &ex->b, "");
 
-  rai::Configuration* Kc = Ktuple(-2);
-
-  arr cp, Jcp;
-  Kc->kinematicsContactPOA(cp, Jcp, con);
-  expandJacobian(Jcp, Ktuple, -2);
+  arr cp, cpJ;
+  ex->kinPOA(cp, cpJ);
 
   // p1, p2 are the CENTERS! of the frame a and b
   // v1, v2 are the CENTER velocities of the frame a and b
-  arr p1, p2, Jp1, Jp2;
-  arr v1, v2, Jv1, Jv2;
-  TM_Default lin(TMT_pos, con->a.ID);
-  lin.order=0;  lin.i=con->a.ID;  lin.Feature::__phi(p1, Jp1, Ktuple({0, 1}));
-  lin.order=0;  lin.i=con->b.ID;  lin.Feature::__phi(p2, Jp2, Ktuple({0, 1}));
-  padJacobian(Jp1, Ktuple);
-  padJacobian(Jp2, Ktuple);
+  Value p1 = F_Position().eval({&ex->a});
+  Value p2 = F_Position().eval({&ex->b});
+  Value v1, v2;
   if(after_or_before) {
-    lin.order=1;  lin.i=con->a.ID;  lin.Feature::__phi(v1, Jv1, Ktuple);
-    lin.order=1;  lin.i=con->b.ID;  lin.Feature::__phi(v2, Jv2, Ktuple);
-  } else {
-    lin.order=1;  lin.i=con->a.ID;  lin.Feature::__phi(v1, Jv1, Ktuple({0, 1}));
-    lin.order=1;  lin.i=con->b.ID;  lin.Feature::__phi(v2, Jv2, Ktuple({0, 1}));
-    padJacobian(Jv1, Ktuple);
-    padJacobian(Jv2, Ktuple);
+    v1 = F_Position().setOrder(1).eval({F(1,0), F(2,0)});
+    v2 = F_Position().setOrder(1).eval({F(1,1), F(2,1)});
+  }else{
+    v1 = F_Position().setOrder(1).eval({F(0,0), F(1,0)});
+    v2 = F_Position().setOrder(1).eval({F(0,1), F(1,1)});
+  }
+  Value w1, w2;
+  if(after_or_before) {
+    w1 = TM_AngVel().eval({{2,1}, {F(1,0), F(2,0)}});
+    w2 = TM_AngVel().eval({{2,1}, {F(1,1), F(2,1)}});
+  }else{
+    w1 = TM_AngVel().eval({{2,1}, {F(0,0), F(1,0)}});
+    w2 = TM_AngVel().eval({{2,1}, {F(0,1), F(1,1)}});
   }
 
-  arr w1, w2, Jw1, Jw2;
-  TM_AngVel ang(con->a.ID);
-  if(after_or_before) {
-    ang.order=1;  ang.i=con->a.ID;  ang.__phi(w1, Jw1, Ktuple);
-    ang.order=1;  ang.i=con->b.ID;  ang.__phi(w2, Jw2, Ktuple);
-  } else {
-    ang.order=1;  ang.i=con->a.ID;  ang.__phi(w1, Jw1, Ktuple({0, 1}));
-    ang.order=1;  ang.i=con->b.ID;  ang.__phi(w2, Jw2, Ktuple({0, 1}));
-    padJacobian(Jw1, Ktuple);
-    padJacobian(Jw2, Ktuple);
-  }
-
-  arr vc1 = v1 - crossProduct(w1, cp - p1);
-  arr Jvc1 = Jv1 - skew(w1) * (Jcp - Jp1) + skew(cp-p1) * Jw1;
-  arr vc2 = v2 - crossProduct(w2, cp - p2);
-  arr Jvc2 = Jv2 - skew(w2) * (Jcp - Jp2) + skew(cp-p2) * Jw2;
+  arr vc1 = v1.y - crossProduct(w1.y, cp - p1.y);
+  arr Jvc1 = v1.J - skew(w1.y) * (cpJ - p1.J) + skew(cp-p1.y) * w1.J;
+  arr vc2 = v2.y - crossProduct(w2.y, cp - p2.y);
+  arr Jvc2 = v2.J - skew(w2.y) * (cpJ - p2.J) + skew(cp-p2.y) * w2.J;
 
   y = vc1 - vc2;
   if(!!J) J = Jvc1 - Jvc2;
 }
 
 //3-dim feature: the POA velocities (V)
-void POA_vel(arr& y, arr& J, const ConfigurationL& Ktuple, rai::ForceExchange* con, bool b_or_a) {
-  CHECK_GE(Ktuple.N, 2, "");
+void POA_vel(arr& y, arr& J, const FrameL& F, rai::ForceExchange* ex, bool b_or_a) {
+  CHECK_GE(F.d0, 2, "");
+  CHECK_GE(F.d1, 2, "");
+  CHECK_EQ(F(-2,0), &ex->a, "");
+  CHECK_EQ(F(-2,1), &ex->b, "");
 
-  rai::Frame* f = &con->a;
-  if(b_or_a) f = &con->b;
+  FrameL ff = {F(0,0), F(1,0)};
+  if(b_or_a) ff = {F(0,1), F(1,1)};
 
   //POA
   arr cp, Jcp;
-  Ktuple(-2)->kinematicsContactPOA(cp, Jcp, con);
-  expandJacobian(Jcp, Ktuple, -2);
+  ex->kinPOA(cp, Jcp);
 
-  //object center
-  arr p, Jp;
-  TM_Default pos(TMT_pos, f->ID);
-  pos.Feature::__phi(p, Jp, Ktuple);
+  Value p = F_Position() .eval({ff(1)});
+  Value v = TM_LinVel() .eval(ff);
+  Value w = TM_AngVel() .eval(ff);
 
-  //object vel
-  arr v, Jv;
-  TM_LinVel vel(f->ID);
-  vel.phi(v, Jv, Ktuple);
-
-  //object ang vel
-  arr w, Jw;
-  TM_AngVel ang(f->ID);
-  ang.phi(w, Jw, Ktuple);
-
-  y = v - crossProduct(w, cp - p);
-  if(!!J) J = Jv - skew(w) * (Jcp - Jp) + skew(cp-p) * Jw;
+  y = v.y - crossProduct(w.y, cp - p.y);
+  if(!!J) J = v.J - skew(w.y) * (Jcp - p.J) + skew(cp-p.y) * w.J;
 }
 
-rai::ForceExchange* getContact(const rai::Configuration& K, int aId, int bId) {
-  rai::Frame* a = K.frames(aId);
-  rai::Frame* b = K.frames(bId);
+rai::ForceExchange* getContact(rai::Frame* a, rai::Frame* b){
   for(rai::ForceExchange* c : a->forces) if(&c->a==a && &c->b==b) return c;
   HALT("can't retrieve contact " <<a->name <<"--" <<b->name);
   return nullptr;
 }
 
-void TM_Contact_POA::phi(arr& y, arr& J, const rai::Configuration& C) {
-  C.kinematicsContactPOA(y, J, getContact(C, a, b));
+rai::ForceExchange* getContact(const rai::Configuration& K, int aId, int bId) {
+  return getContact(K.frames(aId), K.frames(bId));
 }
 
-void F_LinearForce::phi(arr& y, arr& J, const rai::Configuration& C) {
-  C.kinematicsContactForce(y, J, getContact(C, a, b));
+void TM_Contact_POA::phi2(arr& y, arr& J, const FrameL& F) {
+  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  CHECK_EQ(F.N, 2, "");
+  rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1));
+  ex->kinPOA(y, J);
+}
+
+void F_LinearForce::phi2(arr& y, arr& J, const FrameL& F) {
+  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  CHECK_EQ(F.N, 2, "");
+  rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1));
+  ex->kinForce(y, J);
 }
 
 void F_Wrench2::phi2(arr& y, arr& J, const FrameL& F){
-  rai::ForceExchange* ex = getContact(F.elem(0)->C, F.elem(0)->ID, F.elem(1)->ID);
+  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  CHECK_EQ(F.N, 2, "");
+  rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1));
   arr y1, y2, J1, J2;
   ex->kinForce(y1, J1);
   ex->kinTorque(y2, J2);
@@ -198,11 +177,13 @@ void F_Wrench2::phi2(arr& y, arr& J, const FrameL& F){
 }
 
 void F_HingeXTorque::phi2(arr& y, arr& J, const FrameL& F){
+  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  CHECK_EQ(F.N, 2, "");
   rai::Frame *f1 = F.elem(0);
   rai::Frame *f2 = F.elem(1);
   CHECK(f2->joint, "second frame needs to be a joint");
   CHECK_EQ(f2->joint->type, rai::JT_hingeX, "second frame needs to be a joint")
-  rai::ForceExchange* ex = getContact(f1->C, f1->ID, f2->ID);
+  rai::ForceExchange* ex = getContact(f1, f2);
   arr y2, J2;
   ex->kinTorque(y2, J2);
 
@@ -213,57 +194,57 @@ void F_HingeXTorque::phi2(arr& y, arr& J, const FrameL& F){
   if(!!J) J = ~y2 * axis.J + ~axis.y * J2;
 }
 
-void TM_Contact_ForceIsNormal::phi(arr& y, arr& J, const rai::Configuration& K) {
+void TM_Contact_ForceIsNormal::phi2(arr& y, arr& J, const FrameL& F) {
   //-- from the contact we need force
-  Value force = F_LinearForce(a, b)(K);
+  Value force = F_LinearForce()
+                .eval(F);
 
   //-- from the geometry we need normal
   Value normal = F_PairCollision(F_PairCollision::_normal, true)
-                 .setFrameIDs({a, b})
-                 .eval(K);
+                 .eval(F);
 
   //-- force needs to align with normal -> project force along normal
   y = force.y - normal.y*scalarProduct(normal.y, force.y);
   if(!!J) J = force.J - (normal.y*~normal.y*force.J + normal.y*~force.y*normal.J + scalarProduct(normal.y, force.y)*normal.J);
 }
 
-void TM_Contact_ForceIsComplementary::phi(arr& y, arr& J, const rai::Configuration& K) {
-  rai::ForceExchange* con = getContact(K, a, b);
+void TM_Contact_ForceIsComplementary::phi2(arr& y, arr& J, const FrameL& F) {
+  CHECK_EQ(F.N, 2, "");
+  rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1));
 
   //-- from the contact we need force
   arr force, Jforce;
-  K.kinematicsContactForce(force, Jforce, con);
+  ex->kinForce(force, Jforce);
 
   //-- from the geometry we need distance
   arr d0, Jd0;
   arr d1, Jd1;
-  POA_distance(d0, Jd0, con, false);
-  POA_distance(d1, Jd1, con, true);
+  POA_distance(d0, Jd0, ex, false);
+  POA_distance(d1, Jd1, ex, true);
 
   //-- enforce complementarity
   y.resize(2, 3);
   if(!!J) J.resize(2, 3, Jd0.d1);
 
-  y[0] = d0.scalar() * force;
-  y[1] = d1.scalar() * force;
-  y.reshape(6);
-  if(!!J) {
-    J[0] = d0.scalar()*Jforce + force * Jd0;
-    J[1] = d1.scalar()*Jforce + force * Jd1;
-    J.reshape(6, J.d2);
-  }
+  arr y1 = d0.scalar() * force;
+  arr y2 = d1.scalar() * force;
+  arr J1 = d0.scalar()*Jforce + force * Jd0;
+  arr J2 = d1.scalar()*Jforce + force * Jd1;
+
+  y.setBlockVector(y1, y2);
+  J.setBlockMatrix(J1, J2);
 }
 
-uint TM_Contact_ForceIsComplementary::dim_phi(const rai::Configuration& K) { return 6; }
+uint TM_Contact_ForceIsComplementary::dim_phi2(const FrameL& F) { return 6; }
 
-void TM_Contact_ForceIsPositive::phi(arr& y, arr& J, const rai::Configuration& K) {
+void TM_Contact_ForceIsPositive::phi2(arr& y, arr& J, const FrameL& F) {
   //-- from the contact we need force
-  Value force = F_LinearForce(a, b)(K);
+  Value force = F_LinearForce()
+                .eval(F);
 
   //-- from the geometry we need normal
   Value normal = F_PairCollision(F_PairCollision::_normal, true)
-                 .setFrameIDs({a, b})
-                 .eval(K);
+                 .eval(F);
 
   //-- force needs to align with normal -> project force along normal
   y.resize(1);
@@ -271,15 +252,17 @@ void TM_Contact_ForceIsPositive::phi(arr& y, arr& J, const rai::Configuration& K
   if(!!J) J = - (~normal.y*force.J + ~force.y*normal.J);
 }
 
-void TM_Contact_POAisInIntersection_InEq::phi(arr& y, arr& J, const rai::Configuration& K) {
-  rai::ForceExchange* con = getContact(K, a, b);
+void TM_Contact_POAisInIntersection_InEq::phi2(arr& y, arr& J, const FrameL& F) {
+  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  CHECK_EQ(F.N, 2, "");
+  rai::Frame *f1 = F.elem(0);
+  rai::Frame *f2 = F.elem(1);
 
-  y.resize(2).setZero();
-  if(!!J) { J.resize(2, K.getJointStateDimension()).setZero(); }
+  rai::ForceExchange* ex = getContact(f1, f2);
 
   //-- POA inside objects (eventually on surface!)
-  rai::Shape* s1 = K.frames(a)->shape;
-  rai::Shape* s2 = K.frames(b)->shape;
+  rai::Shape* s1 = f1->shape;
+  rai::Shape* s2 = f2->shape;
   CHECK(s1 && s2, "");
   double r1=s1->radius();
   double r2=s2->radius();
@@ -290,120 +273,96 @@ void TM_Contact_POAisInIntersection_InEq::phi(arr& y, arr& J, const rai::Configu
   M0.setDot();
   rai::Transformation X0=0;
   arr pos, Jpos;
-  K.kinematicsContactPOA(pos, Jpos, con);
+  ex->kinPOA(pos, Jpos);
   X0.pos = pos;
 
   PairCollision coll1(M0, *m1, X0, s1->frame.ensure_X(), 0., r1);
   PairCollision coll2(M0, *m2, X0, s2->frame.ensure_X(), 0., r2);
 
   arr Jp1, Jp2;
-  K.jacobian_pos(Jp1, &s1->frame, coll1.p1);
-  K.jacobian_pos(Jp2, &s2->frame, coll2.p2);
+  f1->C.jacobian_pos(Jp1, f1, coll1.p1);
+  f1->C.jacobian_pos(Jp2, f2, coll2.p2);
 
-  coll1.kinDistance(y({0, 0})(), J[0](), Jpos, Jp1);
-  coll2.kinDistance(y({1, 1})(), J[1](), Jpos, Jp2);
+  arr y1, y2, J1, J2;
+  coll1.kinDistance(y1, J1, Jpos, Jp1);
+  coll2.kinDistance(y2, J2, Jpos, Jp2);
 
-  if(margin) {
-    y(0) -= margin;
-    y(1) -= margin;
-  }
+  y.setBlockVector(y1, y2);
+  J.setBlockMatrix(J1, J2);
 
+  if(margin) y -= margin;
   if(!!J) checkNan(J);
 }
 
-void TM_Contact_POA_isAtWitnesspoint::phi(arr& y, arr& J, const rai::Configuration& C) {
-  rai::ForceExchange* con = getContact(C, a, b);
+void TM_Contact_POA_isAtWitnesspoint::phi2(arr& y, arr& J, const FrameL& F) {
+  CHECK_EQ(F.N, 2, "");
+  rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1));
 
   arr poa, Jpoa;
-  C.kinematicsContactPOA(poa, Jpoa, con);
+  ex->kinPOA(poa, Jpoa);
 
   Value wit = F_PairCollision((!use2ndObject ? F_PairCollision::_p1 : F_PairCollision::_p2), false)
-              .setFrameIDs({a, b})
-              .eval(C);
+              .eval(F);
 
   y = poa - wit.y;
   if(!!J) { J = Jpoa - wit.J; }
 }
 
-void TM_ContactConstraints_Vel::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
+void TM_ContactConstraints_Vel::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_EQ(order, 1, "");
 
-  rai::Configuration& K = *Ktuple(-2); //!!! use LAST contact, and velocities AFTER contact
+  rai::ForceExchange* ex = getContact(F(0,0), F(1,0));
 
-  rai::ForceExchange* con = getContact(K, a, b);
+  arr poa, poaJ;
+  ex->kinPOA(poa, poaJ);
 
-  arr cp, Jcp;
-  K.kinematicsContactPOA(cp, Jcp, con);
-  expandJacobian(Jcp, Ktuple, -2);
+  Value p1 = F_Position().eval({&ex->a});
+  Value p2 = F_Position().eval({&ex->b});
+  Value v1 = F_Position().setOrder(1).eval({F(0,0), F(1,0)});
+  Value v2 = F_Position().setOrder(1).eval({F(0,1), F(1,1)});
+  Value w1 = TM_AngVel().eval({{2,1}, {F(0,0), F(1,0)}});
+  Value w2 = TM_AngVel().eval({{2,1}, {F(0,1), F(1,1)}});
 
-  //  HALT("should be velocity in the NEXT time slice...?");
-
-  // p1, p2 are the CENTERS! of the frame a and b
-  // v1, v2 are the CENTER velocities of the frame a and b
-  arr p1, p2, Jp1, Jp2;
-  arr v1, v2, Jv1, Jv2;
-  TM_Default lin(TMT_pos, a);
-  lin.order=0; lin.i=a;
-  lin.Feature::__phi(p1, Jp1, Ktuple);
-  lin.order=0; lin.i=b;
-  lin.Feature::__phi(p2, Jp2, Ktuple);
-  lin.order=1; lin.i=a;
-  lin.Feature::__phi(v1, Jv1, Ktuple);
-  lin.order=1; lin.i=b;
-  lin.Feature::__phi(v2, Jv2, Ktuple);
-
-  arr w1, w2, Jw1, Jw2;
-  TM_AngVel ang(a);
-  ang.order=1; ang.i=a;
-  ang.phi(w1, Jw1, Ktuple);
-  ang.order=1; ang.i=b;
-  ang.phi(w2, Jw2, Ktuple);
-
-  arr vc1 = v1 - crossProduct(w1, cp - p1);
-  arr Jvc1 = Jv1 - skew(w1) * (Jcp - Jp1) + skew(cp-p1) * Jw1;
-  arr vc2 = v2 - crossProduct(w2, cp - p2);
-  arr Jvc2 = Jv2 - skew(w2) * (Jcp - Jp2) + skew(cp-p2) * Jw2;
+  arr vc1 = v1.y - crossProduct(w1.y, poa - p1.y);
+  arr Jvc1 = v1.J - skew(w1.y) * (poaJ - p1.J) + skew(poa-p1.y) * w1.J;
+  arr vc2 = v2.y - crossProduct(w2.y, poa - p2.y);
+  arr Jvc2 = v2.J - skew(w2.y) * (poaJ - p2.J) + skew(poa-p2.y) * w2.J;
 
   y = vc1 - vc2;
   if(!!J) J = Jvc1 - Jvc2;
 }
 
-uint TM_ContactConstraints_Vel::dim_phi(const rai::Configuration& K) {
+uint TM_ContactConstraints_Vel::dim_phi2(const FrameL& F) {
   return 3;
 }
 
-void TM_Contact_POAmovesContinuously::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
+void TM_Contact_POAmovesContinuously::phi2(arr& y, arr& J, const FrameL& F) {
+  CHECK_EQ(order, 1, "");
   arr cp1, Jcp1;
   arr cp2, Jcp2;
-  Ktuple(-2)->kinematicsContactPOA(cp1, Jcp1, getContact(*Ktuple(-2), a, b));
-  Ktuple(-1)->kinematicsContactPOA(cp2, Jcp2, getContact(*Ktuple(-1), a, b));
+  getContact(F(0,0), F(0,1))->kinPOA(cp1, Jcp1);
+  getContact(F(1,0), F(1,1))->kinPOA(cp2, Jcp2);
 
   y = cp1 - cp2;
-  if(!!J) {
-    expandJacobian(Jcp1, Ktuple, -2);
-    expandJacobian(Jcp2, Ktuple, -1);
-    J = Jcp1 - Jcp2;
-  }
+  if(!!J) J = Jcp1 - Jcp2;
 }
 
-void TM_Contact_NormalForceEqualsNormalPOAmotion::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
+void TM_Contact_NormalForceEqualsNormalPOAmotion::phi2(arr& y, arr& J, const FrameL& F) {
+  CHECK_EQ(order, 1, "");
 
-  TM_Contact_POA poa(a, b);
-  poa.order=1;
-  Value poavel = poa.eval(Ktuple);
+  Value poavel = TM_Contact_POA()
+                 .setOrder(1)
+                 .eval(F);
 
-  Value force = F_LinearForce(a, b)(*Ktuple(-1));
+  Value force = F_LinearForce()
+                .eval(F[-1]);
 
   Value normal = F_PairCollision(F_PairCollision::_normal, true)
-                 .setFrameIDs({a, b})
-                 .eval(*Ktuple(-1));
+                 .eval(F[-1]);
 
   double forceScaling = 1e1;
   force.y *= forceScaling;
   force.J *= forceScaling;
-
-  expandJacobian(force.J, Ktuple, -1);
-  expandJacobian(normal.J, Ktuple, -1);
 
   //-- force needs to align with normal -> project force along normal
   y.resize(1);
@@ -411,84 +370,84 @@ void TM_Contact_NormalForceEqualsNormalPOAmotion::phi(arr& y, arr& J, const Conf
   if(!!J) J = ~normal.y*(force.J - poavel.J) + ~(force.y - poavel.y) * normal.J;
 }
 
-void TM_Contact_POAzeroRelVel::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
-  rai::ForceExchange* con = getContact(*Ktuple(-2), a, b);
+void TM_Contact_POAzeroRelVel::phi2(arr& y, arr& J, const FrameL& F) {
+  CHECK_EQ(order, 1, "");
+  rai::ForceExchange* ex = getContact(F(0,0), F(0,1));
 #if 0
   POA_rel_vel(y, J, Ktuple, con, true);
 #else
   arr v1, Jv1, v2, Jv2;
-  POA_vel(v1, Jv1, Ktuple, con, false);
-  POA_vel(v2, Jv2, Ktuple, con, true);
+  POA_vel(v1, Jv1, F, ex, false);
+  POA_vel(v2, Jv2, F, ex, true);
   y = v1 - v2;
   if(!!J) J = Jv1 - Jv2;
   if(normalOnly) {
     Value normal = F_PairCollision(F_PairCollision::_normal, true)
-                   .setFrameIDs({a, b})
-                   .eval(*Ktuple(-1));
-    expandJacobian(normal.J, Ktuple, -1);
+                   .eval(F[-1]);
     if(!!J) J = ~normal.y*J + ~y*normal.J;
     y = ARR(scalarProduct(normal.y, y));
   }
 #endif
 }
 
-void TM_Contact_ElasticVel::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
-  rai::ForceExchange* con = getContact(*Ktuple(-2), a, b);
+void TM_Contact_ElasticVel::phi2(arr& y, arr& J, const FrameL& F) {
+  CHECK_EQ(order, 2, "");
+  CHECK_EQ(F.d0, 3, "");
+  CHECK_EQ(F.d1, 2, "");
+  rai::Frame *f1 = F(1,0);
+  rai::Frame *f2 = F(1,1);
+
+  rai::ForceExchange* ex = getContact(f1, f2);
   arr v0, Jv0, v1, Jv1;
-  POA_rel_vel(v0, Jv0, Ktuple, con, false);
-  POA_rel_vel(v1, Jv1, Ktuple, con, true);
+  POA_rel_vel(v0, Jv0, F, ex, false);
+  POA_rel_vel(v1, Jv1, F, ex, true);
 
   //-- from the geometry we need normal
   Value normal = F_PairCollision (F_PairCollision::_normal, false)
-                 .setFrameIDs({con->a.ID, con->b.ID})
-                 .eval(*Ktuple(-2));
-  if(!!J) expandJacobian(normal.J, Ktuple, -2);
+                 .eval(F[-2]);
 
-  y.resize(4).setZero();
-  if(!!J) J.resize(4, Jv1.d1).setZero();
-
+  arr y1, y2, J1, J2;
+  f1->C.kinematicsZero(y1, J1, 3);
   //tangential vel
   if(stickiness==1.) {
-    y({0, 2}) = v1 - normal.y*scalarProduct(normal.y, v1);
-    if(!!J) J({0, 2}) = Jv1 - (normal.y*~normal.y*Jv1 + normal.y*~v1*normal.J + scalarProduct(normal.y, v1)*normal.J);
+    y1 = v1 - normal.y*scalarProduct(normal.y, v1);
+    if(!!J) J1 = Jv1 - (normal.y*~normal.y*Jv1 + normal.y*~v1*normal.J + scalarProduct(normal.y, v1)*normal.J);
   } else if(stickiness>0.) {
     CHECK_LE(stickiness, 1., "");
     double alpha=1.-stickiness;
-    y({0, 2}) = (v1-alpha*v0) - normal.y*scalarProduct(normal.y, v1-alpha*v0);
-    if(!!J) J({0, 2}) = (Jv1-alpha*Jv0) - (normal.y*~normal.y*(Jv1-alpha*Jv0) + normal.y*~(v1-alpha*v0)*normal.J + scalarProduct(normal.y, (v1-alpha*v0))*normal.J);
+    y1 = (v1-alpha*v0) - normal.y*scalarProduct(normal.y, v1-alpha*v0);
+    if(!!J) J1 = (Jv1-alpha*Jv0) - (normal.y*~normal.y*(Jv1-alpha*Jv0) + normal.y*~(v1-alpha*v0)*normal.J + scalarProduct(normal.y, (v1-alpha*v0))*normal.J);
   }
 
   //normal vel
   if(elasticity>0.) {
-    y(3) = scalarProduct(normal.y, v1 + elasticity*v0);
-    if(!!J) J[3] = ~normal.y*(Jv1+elasticity*Jv0) + ~(v1+elasticity*v0)*normal.J;
+    y2.resize(1) = scalarProduct(normal.y, v1 + elasticity*v0);
+    if(!!J) J2 = ~normal.y*(Jv1+elasticity*Jv0) + ~(v1+elasticity*v0)*normal.J;
   } else if(elasticity==0.) {
-    y(3) = scalarProduct(normal.y, v1);
-    if(!!J) J[3] = ~normal.y*(Jv1) + ~(v1)*normal.J;
+    y2.resize(1) = scalarProduct(normal.y, v1);
+    if(!!J) J2 = ~normal.y*(Jv1) + ~(v1)*normal.J;
   }
+
+  y.setBlockVector(y1, y2);
+  J.setBlockMatrix(J1, J2);
 }
 
-void TM_Contact_NormalVelIsComplementary::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
-  rai::Configuration& K = *Ktuple(-2);
-  rai::ForceExchange* con = getContact(K, a, b);
+void TM_Contact_NormalVelIsComplementary::phi2(arr& y, arr& J, const FrameL& F) {
+  CHECK_EQ(F.d0, 3, "");
+  rai::ForceExchange* ex = getContact(F(1,0), F(1,1));
 
   //-- get the pre and post V:
   arr /*v0, Jv0, */v1, Jv1;
 //  POA_rel_vel(v0, Jv0, Ktuple, con, false);
-  POA_rel_vel(v1, Jv1, Ktuple, con, true);
+  POA_rel_vel(v1, Jv1, F, ex, true);
 
   //-- get the force
   arr force, Jforce;
-  K.kinematicsContactForce(force, Jforce, con);
-  if(!!J) expandJacobian(Jforce, Ktuple, -2);
+  ex->kinForce(force, Jforce);
 
   y.resize(1);
   y(0) = scalarProduct(force, v1);
-
-  if(!!J) {
-    J.resize(y.N, Jforce.d1);
-    J = ~force * Jv1 + ~v1 * Jforce;
-  }
+  if(!!J) J = ~force * Jv1 + ~v1 * Jforce;
 }
 
 

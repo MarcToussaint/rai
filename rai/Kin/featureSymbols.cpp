@@ -105,7 +105,7 @@ double shapeSize(const rai::Configuration& K, const char* name, uint i=2) {
 ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const rai::Configuration& C, const arr& scale, const arr& target, int order) {
   shared_ptr<Feature> f;
   if(feat==FS_distance) {  f=make_shared<F_PairCollision>(F_PairCollision::_negScalar, false); }
-  else if(feat==FS_oppose) {  f=make_shared<F_GraspOppose>(C, frames(0), frames(1), frames(2)); }
+  else if(feat==FS_oppose) {  f=make_shared<F_GraspOppose>(); }
   else if(feat==FS_aboveBox) {  f=make_shared<TM_AboveBox>(); }
   else if(feat==FS_standingAbove) {
 //    double h = .5*(shapeSize(C, frames(0)) + shapeSize(C, frames(1)));
@@ -183,7 +183,7 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
     f->scale = arr({2,3}, {1., 0., 0., 0., 1., 0.}); //pick the xy- coordinated
   }
 
-  else if(feat==FS_angularVel) { f=make_shared<TM_AngVel>(C, frames(0)); }
+  else if(feat==FS_angularVel) { f=make_shared<TM_AngVel>(); }
 
   else if(feat==FS_accumulatedCollisions) {
     if(frames.N) f=make_shared<TM_Proxy>(TMT_allP, stringListToFrameIndices(frames, C));
@@ -213,8 +213,8 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
     f->scale = F.scale;
   }
 
-  else if(feat==FS_physics) { f=make_shared<F_NewtonEuler>(C, frames(0)); }
-  else if(feat==FS_contactConstraints) { f=make_shared<TM_Contact_ForceIsNormal>(C, frames(0), frames(1)); }
+  else if(feat==FS_physics) { f=make_shared<F_NewtonEuler>(); }
+  else if(feat==FS_contactConstraints) { f=make_shared<TM_Contact_ForceIsNormal>(); }
   else if(feat==FS_energy) { f=make_shared<F_Energy>(); }
 
   else if(feat==FS_transAccelerations) { HALT("obsolete"); /*f=make_shared<TM_Transition>(world);*/ }

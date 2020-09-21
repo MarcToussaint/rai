@@ -170,7 +170,7 @@ struct KOMO : NonCopyable {
    * they allow the user to add an objective, or a kinematic switch in the problem definition
    * Typically, the user does not call them directly, but uses the many methods below
    * Think of all of the below as examples for how to set arbirary objectives/switches yourself */
-  ptr<struct Objective> addObjective(const arr& times, const ptr<Feature>& f,
+  ptr<struct Objective> addObjective(const arr& times, const ptr<Feature>& f, const StringA& frames,
                                      ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr, int order=-1, int deltaFromStep=0, int deltaToStep=0);
   ptr<struct Objective> addObjective(const arr& times, const FeatureSymbol& feat, const StringA& frames,
                                      ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr, int order=-1, int deltaFromStep=0, int deltaToStep=0);

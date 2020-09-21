@@ -1253,8 +1253,9 @@ void rai::Configuration::kinematicsQuat(arr& y, arr& J, Frame* a) const { //TODO
   }
 }
 
-void rai::Configuration::kinematicsTau(double& tau, arr& J) const {
-  Frame* a = frames.first();
+void rai::Configuration::kinematicsTau(double& tau, arr& J, Frame* a) const {
+  if(!a) a=frames.first();
+  else a = a->getRoot();
   CHECK(a && a->joint && a->joint->type==JT_tau, "this configuration does not have a tau DOF");
 
   Joint* j = a->joint;
@@ -2712,8 +2713,9 @@ void rai::Configuration::addTauJoint() {
   jt->H = 0.;
 }
 
-bool rai::Configuration::hasTauJoint() {
-  Frame* f = frames.first();
+bool rai::Configuration::hasTauJoint(rai::Frame *f) {
+  if(!f) f = frames.first();
+  else f = f->getRoot();
   return f && f->joint && (f->joint->type==JT_tau);
 }
 

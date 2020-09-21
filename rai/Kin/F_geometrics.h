@@ -54,16 +54,9 @@ struct TM_InsideLine : Feature {
 //===========================================================================
 
 struct F_GraspOppose : Feature {
-  uint i, j, k;               ///< which shapes does it refer to?
   bool centering=false;
 
-  F_GraspOppose(int iShape=-1, int jShape=-1, int kShape=-1) : i(iShape), j(jShape), k(kShape) {}
-  F_GraspOppose(const rai::Configuration& K,
-                const char* iShapeName=nullptr, const char* jShapeName=nullptr, const char* kShapeName=nullptr)
-    : F_GraspOppose(initIdArg(K, iShapeName), initIdArg(K, jShapeName), initIdArg(K, kShapeName)) {}
-
-  virtual void phi(arr& y, arr& J, const rai::Configuration& K);
-  virtual uint dim_phi(const rai::Configuration& G) { if(centering) return 6; return 3; }
-  virtual rai::String shortTag(const rai::Configuration& G) { return STRING("GraspOppose-" <<G.frames(i)->name <<'-' <<G.frames(j)->name <<'-' <<G.frames(k)->name); }
+  virtual void phi2(arr& y, arr& J, const FrameL& F);
+  virtual uint dim_phi2(const FrameL& F) { if(centering) return 6; return 3; }
 };
 

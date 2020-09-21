@@ -13,15 +13,18 @@
 #include "TM_angVel.h"
 #include "F_PairCollision.h"
 #include "F_static.h"
+#include "F_pose.h"
 
 void shapeFunction(double& x, double& dx);
 
 //===========================================================================
 
-void F_NewtonEuler::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
+void F_NewtonEuler::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_EQ(order, 2, "");
+  CHECK_EQ(F.d0, 3, "");
+  CHECK_EQ(F.d1, 1, "");
 
-  rai::Frame* a = Ktuple(-2)->frames(i);
+  rai::Frame* a = F.elem(-2);
 //  if((a->flags & (1<<FL_impulseExchange))){
 //    y.resize(3).setZero();
 //    if(!!J) J.resize(3, getKtupleDim(Ktuple).last()).setZero();
@@ -29,22 +32,23 @@ void F_NewtonEuler::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
 //  }
 
   //get linear and angular accelerations
-  TM_LinAngVel pos(i);
+  TM_LinAngVel pos;
   pos.order=2;
   pos.impulseInsteadOfAcceleration=true;
-  pos.phi(y, J, Ktuple);
+  pos.phi2(y, J, F);
 
   //add gravity
-  if(Ktuple(-1)->hasTauJoint()) {
+  rai::Frame *r = F.elem(-1)->getRoot();
+  if(r->C.hasTauJoint(r)) {
     double tau; arr Jtau;
-    Ktuple(-1)->kinematicsTau(tau, Jtau);
+    r->C.kinematicsTau(tau, Jtau, r);
     y(2) += gravity*tau;
-    if(!!J) {
-      expandJacobian(Jtau, Ktuple, -1);
-      J[2] += gravity*Jtau;
+    if(!!J){
+      if(!J.isSparse()) J[2] += gravity*Jtau;
+      else J.setMatrixBlock(gravity*Jtau, 2, 0);
     }
   } else {
-    y(2) += gravity * Ktuple(-1)->frames.first()->tau;
+    y(2) += gravity * r->C.frames.first()->tau;
   }
 
   //collect mass info (assume diagonal inertia matrix!!)
@@ -63,24 +67,22 @@ void F_NewtonEuler::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   one_over_mass *= forceScaling;
 
   //collect total contact forces
-  Value F = F_netForce(false, true)
-            .setFrameIDs({a->ID})
-            .eval(*Ktuple(-2)); // ! THIS IS THE MID TIME SLICE !
-  if(!!J) expandJacobian(F.J, Ktuple, -2);
+  Value fo = F_netForce(false, true)
+            .eval({a}); // ! THIS IS THE MID TIME SLICE !
 
-  y += one_over_mass % F.y;
-  if(!!J) J += one_over_mass % F.J;
+  y += one_over_mass % fo.y;
+  if(!!J) J += one_over_mass % fo.J;
 }
 
 //===========================================================================
 
-void F_NewtonEuler_DampedVelocities::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
+void F_NewtonEuler_DampedVelocities::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_EQ(order, 1, "");
 
   //get linear and angular velocities
-  TM_LinAngVel pos(i);
+  TM_LinAngVel pos;
   pos.order=1;
-  pos.phi(y, J, Ktuple);
+  pos.phi2(y, J, F);
 
   double friction=1.;
   y *= friction;
@@ -88,23 +90,24 @@ void F_NewtonEuler_DampedVelocities::phi(arr& y, arr& J, const ConfigurationL& K
 
   //add gravity
   if(gravity) {
-    if(Ktuple(-1)->hasTauJoint()) {
+    rai::Frame *r = F.elem(-1)->getRoot();
+    if(r->C.hasTauJoint(r)) {
       double tau; arr Jtau;
-      Ktuple(-1)->kinematicsTau(tau, Jtau);
+      r->C.kinematicsTau(tau, Jtau, r);
       y(2) += gravity*tau;
-      if(!!J) {
-        expandJacobian(Jtau, Ktuple, -1);
-        J[2] += gravity*Jtau;
+      if(!!J){
+        if(!J.isSparse()) J[2] += gravity*Jtau;
+        else J.setMatrixBlock(gravity*Jtau, 2, 0);
       }
     } else {
-      y(2) += gravity * Ktuple(-1)->frames.first()->tau;
+      y(2) += gravity * F(-1)->C.frames.first()->tau;
     }
   }
 
   //collect mass info (assume diagonal inertia matrix!!)
   double mass=1.;
   arr Imatrix = diag(.03, 3);
-  rai::Frame* a = Ktuple(-2)->frames(i);
+  rai::Frame* a = F.elem(-2);
   if(a->inertia) {
     mass = a->inertia->mass;
     Imatrix = 2.*conv_mat2arr(a->inertia->matrix);
@@ -116,12 +119,11 @@ void F_NewtonEuler_DampedVelocities::phi(arr& y, arr& J, const ConfigurationL& K
   one_over_mass *= forceScaling;
 
   //collect total contact forces
-  Value F = F_netForce(false, true)
-            .setFrameIDs({a->ID})
-            .eval(Ktuple);
+  Value fo = F_netForce(false, true)
+            .eval({a});
 
-  y += one_over_mass % F.y;
-  if(!!J) J += one_over_mass % F.J;
+  y += one_over_mass % fo.y;
+  if(!!J) J += one_over_mass % fo.J;
 
   if(onlyXYPhi) {
     y({2, 4}).setZero();
@@ -131,35 +133,26 @@ void F_NewtonEuler_DampedVelocities::phi(arr& y, arr& J, const ConfigurationL& K
 
 //===========================================================================
 
-F_Wrench::F_Wrench(int iShape, const arr& _vec, bool _torqueOnly) : i(iShape), vec(_vec), torqueOnly(_torqueOnly) {
+F_Wrench::F_Wrench(const arr& _vec, bool _torqueOnly) : vec(_vec), torqueOnly(_torqueOnly) {
   order=2;
   gravity = rai::getParameter<double>("TM_Wrench/gravity", 9.81);
 }
 
-void F_Wrench::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
+void F_Wrench::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_EQ(order, 2, "");
-
-  rai::Configuration& K = *Ktuple(-2); // ! THIS IS THE MID TIME SLICE !
-//  rai::Frame *a = K.frames(i);
-//  if((a->flags & (1<<FL_impulseExchange))){
-//    y.resize(3).setZero();
-//    if(!!J) J.resize(3, getKtupleDim(Ktuple).last()).setZero();
-//    return;
-//  }
 
   //get linear acceleration
   arr acc, Jacc;
-  TM_LinVel pos(i);
+  TM_LinVel pos;
   pos.order=2;
   pos.impulseInsteadOfAcceleration=false;
-  pos.phi(acc, Jacc, Ktuple);
+  pos.phi2(acc, Jacc, F);
 
   acc(2) += gravity;
 
   //get relative vector
   arr v, Jv;
-  K.kinematicsVec(v, Jv, K.frames(i), vec);
-  if(!!J) expandJacobian(Jv, Ktuple, -2);
+  F(-2)->C.kinematicsVec(v, Jv, F(-2), vec);
 
   //torque
   arr torque = crossProduct(v, acc);
@@ -175,11 +168,6 @@ void F_Wrench::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   }
 }
 
-uint F_Wrench::dim_phi(const ConfigurationL& Ktuple) {
-  if(torqueOnly) return 3;
-  return 6;
-}
-
 //===========================================================================
 
 F_Energy::F_Energy() {
@@ -187,41 +175,27 @@ F_Energy::F_Energy() {
   gravity = rai::getParameter<double>("TM_Physics/gravity", 9.81);
 }
 
-void F_Energy::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
-  if(order==2) {
-    arr y0, y1, J0, J1;
-    order=1;
-    phi(y0, J0, Ktuple({-3, -2}));
-    phi(y1, J1, Ktuple({-2, -1}));
-    order=2;
-
-    y = y1 - y0;
-    if(!!J) {
-      uintA qdim = getKtupleDim(Ktuple);
-      J.resize(y.N, qdim.last()).setZero();
-      CHECK_EQ(J0.d1, qdim(1), "");
-      CHECK_EQ(J1.d1, qdim(2)-qdim(0), "");
-      for(uint i=0; i<y.N; i++) {
-        for(uint j=0; j<J0.d1; j++) J(i, j) -= J0(i, j);
-        for(uint j=0; j<J1.d1; j++) J(i, qdim(0)+j) += J1(i, j);
-      }
-    }
+void F_Energy::phi2(arr& y, arr& J, const FrameL& F) {
+  if(order==2){
+    diffInsteadOfVel=true;
+    Feature::phi2(y, J, F);
+    diffInsteadOfVel=false;
     return;
   }
 
   CHECK_EQ(order, 1, "");
 
-  rai::Configuration& K = *Ktuple(-1);
-
   double E=0.;
-  arr p, Jp, v, Jv, w, Jw;
+  Value p, v, w;
 
-  uintA qdim = getKtupleDim(Ktuple);
-  if(!!J) J = zeros(1, qdim.last());
+  F.elem(-1)->C.kinematicsZero(y, J, 1);
 
-  for(rai::Frame* a:K.frames) {
+  arr grav = {0.,0.,gravity};
+
+  for(uint i=0;i<F.d1;i++) {
     double mass=1.;
     arr Imatrix = diag(.1, 3);
+    rai::Frame *a = F(1,i);
     if(a->inertia) {
       mass = a->inertia->mass;
       Imatrix = 2.*conv_mat2arr(a->inertia->matrix);
@@ -229,45 +203,30 @@ void F_Energy::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
       //      I=(rot).getMatrix() * f->inertia->matrix * (-rot).getMatrix();
     }
 
-    TM_Default pos(TMT_pos, a->ID);
-    pos.order=0;
-    pos.Feature::__phi(p, Jp, Ktuple);
+    p = F_Position()
+        .eval({F(1,i)});
 
-    pos.order=1;
-    pos.Feature::__phi(v, Jv, Ktuple);
+    v = F_Position()
+        .setOrder(1)
+        .eval({F(0,i), F(1,i)});
 
-//      TM_AngVel rot(a->ID);
-//      rot.order=1;
-//      rot.phi(w, Jw, Ktuple);
+//    w = TM_AngVel()
+//        .eval({F(0,i), F(1,i)});
 
-    E += .5*mass*sumOfSqr(v);
-    E += gravity * mass * p(2); //p(2)=height //(a->X*a->inertia->com).z;
+    E += .5*mass*sumOfSqr(v.y);
+    E += mass * scalarProduct(grav,p.y); //p(2)=height //(a->X*a->inertia->com).z;
 //      E += .5*m*sumOfSqr(w); //(w*(I*w));
 
     if(!!J) {
-      J += (mass*~v) * Jv;
-      J += (gravity*mass) * Jp[2];
+      J += (mass*~v.y) * v.J;
+      J += (mass*~grav) * p.J;
     }
   }
 
   y = ARR(E);
 }
 
-uint F_Energy::dim_phi(const ConfigurationL& Ktuple) {
-  return 1;
-}
-
 //===========================================================================
-
-F_StaticStability::F_StaticStability(int iShape, double _margin)
-  : i(iShape), margin(_margin) {
-}
-
-F_StaticStability::F_StaticStability(const rai::Configuration& G, const char* iShapeName, double _margin)
-  :i(-1), margin(_margin) {
-  rai::Frame* a = iShapeName ? G.getFrameByName(iShapeName):nullptr;
-  if(a) i=a->ID;
-}
 
 FrameL getShapesAbove(rai::Frame* a) {
   FrameL aboves;
@@ -276,7 +235,9 @@ FrameL getShapesAbove(rai::Frame* a) {
   return aboves;
 }
 
-void F_StaticStability::phi(arr& y, arr& J, const rai::Configuration& K) {
+void F_StaticStability::phi2(arr& y, arr& J, const FrameL& F) {
+  NIY;
+#if 0
   //get shapes above
   rai::Frame* a = K.frames(i);
   FrameL aboves = getShapesAbove(a);
@@ -324,8 +285,5 @@ void F_StaticStability::phi(arr& y, arr& J, const rai::Configuration& K) {
     J[3] = -posJ[1];
   }
 #endif
-}
-
-rai::String F_StaticStability::shortTag(const rai::Configuration& K) {
-  return STRING("StaticStability:"<<(i<0?"WORLD":K.frames(i)->name));
+#endif
 }
