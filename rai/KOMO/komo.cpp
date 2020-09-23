@@ -148,8 +148,9 @@ void KOMO::deactivateCollisions(const char* s1, const char* s2) {
 
 void KOMO::addTimeOptimization() {
   world.addTauJoint();
-  ptr<Objective> o = addObjective({}, make_shared<TM_Time>(), {}, OT_sos, {1e2}, {}, 1); //smooth time evolution
-#if 1 //break the constraint at phase switches:
+  rai::Frame *timeF = world.frames.first();
+#if 0 //break the constraint at phase switches:
+  ptr<Objective> o = addObjective({}, make_shared<TM_Time>(), {timeF->name}, OT_sos, {1e2}, {}, 1); //smooth time evolution
   if(o->configs.nd==1) { //for KOMO optimization
     CHECK(o->configs.nd==1 && o->configs.N==T, "");
     CHECK_GE(stepsPerPhase, 10, "NIY");
@@ -159,10 +160,14 @@ void KOMO::addTimeOptimization() {
     CHECK_GE(stepsPerPhase, 10, "NIY");
     for(uint t=o->configs.d0; t--;) if(o->configs(t, 0)%stepsPerPhase==0) o->configs.delRows(t);
   }
+#else
+  for(uint t=0; t<T/stepsPerPhase; t++){
+    addObjective({double(t), double(t+1)}, make_shared<TM_Time>(), {timeF->name}, OT_sos, {1e2}, {}, 1, +2, 0); //smooth time evolution
+  }
 #endif
 
-  addObjective({}, make_shared<TM_Time>(), {}, OT_sos, {1e-1}, {tau}); //prior on timing
-  addObjective({}, make_shared<TM_Time>(), {}, OT_ineq, {-1e1}, {.9*tau}); //lower bound on timing
+  addObjective({}, make_shared<TM_Time>(), {timeF->name}, OT_sos, {1e-1}, {tau}); //prior on timing
+  addObjective({}, make_shared<TM_Time>(), {timeF->name}, OT_ineq, {-1e1}, {.9*tau}); //lower bound on timing
 }
 
 //===========================================================================
@@ -185,11 +190,13 @@ ptr<Objective> KOMO::addObjective(const arr& times,
   if(!timeSlices.N) setupConfigurations2();
 #endif
 
-  if(!!frames && frames.N) f->frameIDs = stringListToFrameIndices(frames, world);
+  if(!!frames && frames.N){
+    if(frames.N==1 && frames.scalar()=="ALL") f->frameIDs = framesToIndices(world.frames); //important! this means that, if no explicit selection of frames was made, all frames (of a time slice) are referred to
+    else f->frameIDs = stringListToFrameIndices(frames, world);
+  }
   if(!!scale) f->scale = scale;
   if(!!target) f->target = target;
   if(order>=0) f->order = order;
-  if(!f->frameIDs.N) f->frameIDs = framesToIndices(world.frames); //important! this means that, if no explicit selection of frames was made, all frames (of a time slice) are referred to
 
   CHECK_GE(k_order, f->order, "task requires larger k-order: " <<f->shortTag(world));
   std::shared_ptr<Objective> task = make_shared<Objective>(f, type);
@@ -286,7 +293,7 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
       }
     } else {
       //-- no acceleration at start: +1 EXCLUDES (x-2, x-1, x0), ASSUMPTION: this is a placement that can excert impact
-      if(k_order>1) addObjective({time}, make_shared<TM_LinAngVel>(world, to), {}, OT_eq, {1e2}, NoArr, 2, +1, +1);
+      if(k_order>1) addObjective({time}, make_shared<TM_LinAngVel>(), {to}, OT_eq, {1e2}, NoArr, 2, +1, +1);
 //      else addObjective({time}, make_shared<TM_NoJumpFromParent>(world, to), OT_eq, {1e2}, NoArr, 1, 0, 0);
       else{
         if(prevFrom) addObjective({time}, FS_poseRel, {to, prevFrom}, OT_eq, {1e2}, NoArr, 1, 0, 0);
@@ -351,7 +358,7 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
 //    addObjective({time, endTime}, make_shared<F_pushed>(world, to), OT_eq, {1e0}, NoArr, 1, +0, -1);
 
     //-- no acceleration at start: +1 EXCLUDES (x-2, x-1, x0), ASSUMPTION: this is a placement that can excert impact
-    if(k_order>1) addObjective({time}, make_shared<TM_LinAngVel>(world, to), {}, OT_eq, {1e2}, NoArr, 2, +0, +1);
+    if(k_order>1) addObjective({time}, make_shared<TM_LinAngVel>(), {to}, OT_eq, {1e2}, NoArr, 2, +0, +1);
 //    else addObjective({time}, make_shared<TM_NoJumpFromParent>(world, to), OT_eq, {1e2}, NoArr, 1, 0, 0);
     else addObjective({time}, FS_pose, {to}, OT_eq, {1e2}, NoArr, 1, 0, 0);
 
@@ -428,17 +435,17 @@ void KOMO::addSwitch_dynamicOnNewton(double time, double endTime, const char* fr
 void KOMO::addSwitch_magic(double time, double endTime, const char* from, const char* to, double sqrAccCost, double sqrVelCost) {
   addSwitch(time, true, JT_free, SWInit_copy, from, to);
   if(sqrVelCost>0. && k_order>=1) {
-    addObjective({time, endTime}, make_shared<TM_LinAngVel>(world, to), {}, OT_sos, {sqrVelCost}, NoArr, 1);
+    addObjective({time, endTime}, make_shared<TM_LinAngVel>(), {to}, OT_sos, {sqrVelCost}, NoArr, 1);
   }
   if(sqrAccCost>0. && k_order>=2) {
-    addObjective({time, endTime}, make_shared<TM_LinAngVel>(world, to), {}, OT_sos, {sqrAccCost}, NoArr, 2);
+    addObjective({time, endTime}, make_shared<TM_LinAngVel>(), {to}, OT_sos, {sqrAccCost}, NoArr, 2);
   }
 }
 
 void KOMO::addSwitch_magicTrans(double time, double endTime, const char* from, const char* to, double sqrAccCost) {
   addSwitch(time, true, JT_transZ, SWInit_copy, from, to);
   if(sqrAccCost>0.) {
-    addObjective({time, endTime}, make_shared<TM_LinAngVel>(world, to), {}, OT_eq, {sqrAccCost}, NoArr, 2);
+    addObjective({time, endTime}, make_shared<TM_LinAngVel>(), {to}, OT_eq, {sqrAccCost}, NoArr, 2);
   }
 }
 
@@ -562,7 +569,7 @@ void KOMO_ext::setKS_slider(double time, double endTime, bool before, const char
 
   addObjective({time, endTime}, make_shared<F_qZeroVel>(world, slidera), {}, OT_eq, {3e1}, NoArr, 1, +1, +0);
   addObjective({time, endTime}, make_shared<F_qZeroVel>(world, obj), {}, OT_eq, {3e1}, NoArr, 1, +1, -1);
-  addObjective({time}, make_shared<TM_LinAngVel>(world, obj), {}, OT_eq, {1e2}, NoArr, 1);
+  addObjective({time}, make_shared<TM_LinAngVel>(), {obj}, OT_eq, {1e2}, NoArr, 1);
 
 //  setKinematicSwitch(time, before, "sliderMechanism", table, obj, rel );
 
@@ -627,7 +634,7 @@ void KOMO_ext::setSquaredQAccVelHoming(double startTime, double endTime, double 
 //}
 
 void KOMO::addSquaredQuaternionNorms(double startTime, double endTime, double prec) {
-  addObjective({startTime, endTime}, make_shared<F_qQuaternionNorms>(), {}, OT_eq, {prec}, NoArr);
+  addObjective({startTime, endTime}, make_shared<F_qQuaternionNorms>(), {"ALL"}, OT_eq, {prec}, NoArr);
 }
 
 void KOMO_ext::setHoldStill(double startTime, double endTime, const char* shape, double prec) {
@@ -881,7 +888,7 @@ void KOMO_ext::setGraspSlide(double time, const char* endeff, const char* object
 //  addSwitch_stable(startTime, endTime+1., endeff, object);
   addSwitch(startTime, true, JT_free, SWInit_zero, endeff, object);
   addObjective({time, endTime}, make_shared<F_qZeroVel>(world, object), {}, OT_eq, {3e1}, NoArr, 1, +1, -1);
-  if(k_order>1) addObjective({time}, make_shared<TM_LinAngVel>(world, object), {}, OT_eq, {1e2}, NoArr, 2, 0);
+  if(k_order>1) addObjective({time}, make_shared<TM_LinAngVel>(), {object}, OT_eq, {1e2}, NoArr, 2, 0);
   else addObjective({time}, make_shared<TM_NoJumpFromParent>(world, object), {}, OT_eq, {1e2}, NoArr, 1, 0, 0);
 
   add_touch(startTime, startTime, endeff, object);
@@ -1165,10 +1172,10 @@ void KOMO::setSkeleton(const Skeleton& S, bool ignoreSwitches) {
       case SY_dampMotion: {
         double sqrAccCost=1e-2, sqrVelCost=1e-2;
         if(sqrVelCost>0. && k_order>=1) {
-          addObjective({s.phase0, s.phase1}, make_shared<TM_LinAngVel>(world, s.frames(0)), {}, OT_sos, {sqrVelCost}, NoArr, 1);
+          addObjective({s.phase0, s.phase1}, make_shared<TM_LinAngVel>(), {s.frames(0)}, OT_sos, {sqrVelCost}, NoArr, 1);
         }
         if(sqrAccCost>0. && k_order>=2) {
-          addObjective({s.phase0, s.phase1}, make_shared<TM_LinAngVel>(world, s.frames(0)), {}, OT_sos, {sqrAccCost}, NoArr, 2);
+          addObjective({s.phase0, s.phase1}, make_shared<TM_LinAngVel>(), {s.frames(0)}, OT_sos, {sqrAccCost}, NoArr, 2);
         }
       } break;
       case SY_alignByInt: {
@@ -1243,9 +1250,9 @@ void KOMO_ext::setAlignedStacking(double time, const char* object, ObjectiveType
 
 void KOMO::add_collision(bool hardConstraint, double margin, double prec) {
   if(hardConstraint) { //interpreted as hard constraint (default)
-    addObjective({}, make_shared<TM_Proxy>(TMT_allP, uintA(), margin), {}, OT_eq, {prec}, NoArr);
+    addObjective({}, make_shared<TM_Proxy>(TMT_allP, uintA(), margin), {"ALL"}, OT_eq, {prec}, NoArr);
   } else { //cost term
-    addObjective({}, make_shared<TM_Proxy>(TMT_allP, uintA(), margin), {}, OT_sos, {prec}, NoArr);
+    addObjective({}, make_shared<TM_Proxy>(TMT_allP, uintA(), margin), {"ALL"}, OT_sos, {prec}, NoArr);
   }
 }
 
@@ -1930,6 +1937,8 @@ bool KOMO::displayTrajectory(double delay, bool watch, bool overlayPaths, const 
 }
 
 bool KOMO::displayPath(bool watch, bool full) {
+#ifdef KOMO_PATH_CONFIG
+#else
   uintA allFrames;
   allFrames.setStraightPerm(configurations.first()->frames.N);
   arr X = getPath_frames(allFrames);
@@ -1937,6 +1946,7 @@ bool KOMO::displayPath(bool watch, bool full) {
   CHECK_EQ(X.d2, 7, "");
 
   DrawPaths drawX(X);
+#endif
 
   if(!gl) {
     gl = make_shared<OpenGL>("KOMO display");
@@ -1944,12 +1954,16 @@ bool KOMO::displayPath(bool watch, bool full) {
   }
   gl->clear();
   gl->add(glStandardScene, 0);
+#ifdef KOMO_PATH_CONFIG
+  gl->add(pathConfig);
+#else
   if(!full) {
     gl->addDrawer(configurations.last());
     gl->add(drawX);
   } else {
     for(uint t=0; t<T; t++) gl->addDrawer(configurations(k_order+t));
   }
+#endif
   if(watch) {
     int key = gl->watch();
 //    gl.reset();

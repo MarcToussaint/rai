@@ -28,6 +28,8 @@ void Feature::phi2(arr& y, arr& J, const FrameL& F) {
   y = y1-y0;
   if(!!J) J = Jy1 - Jy0;
 
+  if(!y.N) return;
+
   if(!diffInsteadOfVel){
 #if 0 //feature itself does not care for tau!!! use specialized features, e.g. linVel, angVel
   if(Ctuple(-1)->hasTauJoint()) {

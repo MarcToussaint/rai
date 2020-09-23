@@ -9,12 +9,6 @@
 #include "feature.h"
 
 struct TM_Time : Feature {
-  TM_Time() {}
-
-  virtual void phi(arr& y, arr& J, const rai::Configuration& K);
+  virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F) { return 1; }
-
-  virtual void phi(arr& y, arr& J, const ConfigurationL& Ktuple);
-
-  virtual rai::String shortTag(const rai::Configuration& G) { return STRING("Time"); }
 };

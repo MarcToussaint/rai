@@ -105,9 +105,10 @@ void F_qItself::phi2(arr& q, arr& J, const FrameL& F) {
     Feature::phi2(q, J, F);
     return;
   }
+  uint n=dim_phi2(F);
+  if(!n){ q.clear(); J.clear(); return; }
   rai::Configuration& C = F.last()->C;
   CHECK(C._state_q_isGood, "");
-  uint n=dim_phi2(F);
   C.kinematicsZero(q, J, n);
   uint m=0;
   CHECK(F.d0==1, "");

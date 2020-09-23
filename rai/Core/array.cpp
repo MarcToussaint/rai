@@ -2269,11 +2269,11 @@ double& SparseMatrix::entry(uint i, uint j, uint k) {
   CHECK_LE(k, Z.N-1, "");
   int* elemsk = elems.p+2*k;
   if(*elemsk==-1) { //new element
-    *elemsk=i;
+    elemsk[0]=i;
     elemsk[1]=j;
     if(rows.nd){ rows.clear(); cols.clear(); }
   } else {
-    CHECK_EQ(*elemsk, (int)i, "");
+    CHECK_EQ(elemsk[0], (int)i, "");
     CHECK_EQ(elemsk[1], (int)j, "");
   }
   return Z.p[k];
@@ -2434,6 +2434,20 @@ arr SparseMatrix::At_A() {
 }
 
 arr SparseMatrix::A_B(const arr& B) const {
+  if(!B.isSparse() && B.N<25){
+    arr C;
+    SparseMatrix &S = C.sparse();
+    S.resize(B.d0, Z.d1, B.d1*Z.N); //resize to maximal possible
+    uint l=0;
+    for(uint k=0;k<Z.N;k++){
+      uint a=elems(k,0);
+      uint b=elems(k,1);
+      double x = Z.elem(k);
+      for(uint j=0;j<B.d1;j++) S.entry(a, j, l++) = B(b,j) * x;
+    }
+    CHECK_EQ(l, C.N, "");
+    return C;
+  }
   Eigen::SparseMatrix<double> A_eig = conv_sparseArr2sparseEigen(*this);
   Eigen::SparseMatrix<double> B_eig = conv_sparseArr2sparseEigen(B.copy().sparse());
 //  Eigen::MatrixXd B_eig = conv_arr2eigen(B);
@@ -2444,6 +2458,21 @@ arr SparseMatrix::A_B(const arr& B) const {
 }
 
 arr SparseMatrix::B_A(const arr& B) const {
+  if(!B.isSparse() && B.N<25){
+    arr C;
+    SparseMatrix &S = C.sparse();
+    S.resize(B.d0, Z.d1, B.d0*Z.N); //resize to maximal possible
+    uint l=0;
+    for(uint k=0;k<Z.N;k++){
+      uint a=elems(k,0);
+      uint b=elems(k,1);
+      double x = Z.elem(k);
+      for(uint i=0;i<B.d0;i++) S.entry(i, b, l++) = B(i,a) * x;
+    }
+    CHECK_EQ(l, C.N, "");
+//    S.resizeCopy(B.d0, Z.d1, l);
+    return C;
+  }
   Eigen::SparseMatrix<double> A_eig = conv_sparseArr2sparseEigen(*this);
   Eigen::SparseMatrix<double> B_eig = conv_sparseArr2sparseEigen(B.copy().sparse());
 
@@ -2495,7 +2524,22 @@ void SparseMatrix::rowWiseMult(const arr& a) {
 void SparseMatrix::add(const SparseMatrix& a, uint lo0, uint lo1, double coeff){
   CHECK_LE(lo0+a.Z.d0, Z.d0, "");
   CHECK_LE(lo1+a.Z.d1, Z.d1, "");
+  if(!a.Z.N) return; //nothing to add
   uint Nold=Z.N;
+#if 1
+  Z.resizeMEM(Nold+a.Z.N, true);
+  memmove(Z.p+Nold, a.Z.p, Z.sizeT*a.Z.N);
+  elems.append(a.elems);
+  if(coeff){
+    for(double* x=&Z.elem(Nold); x!=Z.p+Z.N; x++) (*x) *= coeff;
+  }
+  if(lo0){
+    for(int* i=&elems(Nold,0); i!=elems.p+elems.N; i+=2) (*i) += lo0;
+  }
+  if(lo1){
+    for(int* i=&elems(Nold,1); i!=elems.p+elems.N+1; i+=2) (*i) += lo1;
+  }
+#else
   resizeCopy(Z.d0, Z.d1, Z.N + a.Z.N);
   for(uint j=0; j<a.Z.N; j++) {
     if(coeff==1.) {
@@ -2504,6 +2548,7 @@ void SparseMatrix::add(const SparseMatrix& a, uint lo0, uint lo1, double coeff){
       entry(lo0+a.elems(j, 0), lo1+a.elems(j, 1), Nold+j) = coeff * a.Z.elem(j);
     }
   }
+#endif
 }
 
 arr SparseVector::unsparse() {

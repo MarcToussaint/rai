@@ -132,9 +132,10 @@ bool rai::ConfigurationViewer::playVideo(uint nFrames, bool watch, double delay,
     rai::system(STRING("rm -f " <<saveVideoPath <<"*.ppm"));
   }
 
-  FrameL F = C.frames;
+  uint T = C.frames.N/nFrames;
 
-  F.reshape(-1, nFrames);
+  FrameL F = C.frames;
+  F.resizeCopy(T, nFrames);
 
   for(uint t=0; t<F.d0; t++) {
     {

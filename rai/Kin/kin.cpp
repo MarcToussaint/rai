@@ -1156,9 +1156,8 @@ void rai::Configuration::jacobian_angular(arr& J, Frame* a) const {
 }
 
 void rai::Configuration::jacobian_tau(arr& J, rai::Frame* a) const {
+  HALT("use kinematicsTau?");
   CHECK_EQ(&a->C, this, "");
-
-//  if(useSparseJacobians) NIY;
 
   //get Jacobian
   uint N=getJointStateDimension();
@@ -1172,7 +1171,7 @@ void rai::Configuration::jacobian_tau(arr& J, rai::Frame* a) const {
       if(j_idx>=N) CHECK_EQ(j->type, JT_rigid, "");
       if(j_idx<N) {
         if(j->type==JT_tau) {
-          J(0, j_idx) += 1e-1;
+          J.elem(0, j_idx) += 1e-1;
         }
       }
     }
@@ -1217,6 +1216,7 @@ void rai::Configuration::kinematicsQuat(arr& y, arr& J, Frame* a) const { //TODO
 
   const rai::Quaternion& rot_a = a->ensure_X().rot;
   if(!!y) y = rot_a.getArr4d();
+  arr ROT_A = rot_a.getQuaternionMultiplicationMatrix();
 
   arr A;
   jacobian_angular(A, a);
@@ -1225,6 +1225,13 @@ void rai::Configuration::kinematicsQuat(arr& y, arr& J, Frame* a) const { //TODO
     return;
   }
   if(A.isSparse()) {
+#if 1
+    J = A;
+    J.sparse().reshape(4, A.d1);
+    J.sparse().colShift(1);
+    J *= .5;
+    J = ROT_A * J;
+#else
     J.sparse().resize(4, A.d1, 0);
     A.sparse().setupRowsCols();
     uintAA& Acols = A.sparse().cols;
@@ -1239,8 +1246,14 @@ void rai::Configuration::kinematicsQuat(arr& y, arr& J, Frame* a) const { //TODO
       if(tmp.y) J.elem(2, i) += tmp.y;
       if(tmp.z) J.elem(3, i) += tmp.z;
     }
-
+#endif
   } else {
+#if 1
+    J.resize(4, A.d1).setZero();
+    J.setMatrixBlock(A, 1, 0);
+    J *= .5;
+    J = ROT_A * J;
+#else
     J.resize(4, A.d1).setZero();
     for(uint i=0; i<J.d1; i++) {
       rai::Quaternion tmp(0., 0.5*A(0, i), 0.5*A(1, i), 0.5*A(2, i)); //this is unnormalized!!
@@ -1250,6 +1263,7 @@ void rai::Configuration::kinematicsQuat(arr& y, arr& J, Frame* a) const { //TODO
       J.elem(2, i) = tmp.y;
       J.elem(3, i) = tmp.z;
     }
+#endif
   }
 }
 
@@ -1262,8 +1276,8 @@ void rai::Configuration::kinematicsTau(double& tau, arr& J, Frame* a) const {
   tau = a->tau;
   if(!!J) {
     uint N=getJointStateDimension();
-    J.resize(1, N).setZero();
-    J(0, j->qIndex) += 1e-1;
+    jacobian_zero(J, 1);
+    J.elem(0, j->qIndex) += 1e-1;
   }
 }
 

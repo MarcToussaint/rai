@@ -159,6 +159,8 @@ struct Quaternion {
   arr getJacobian() const;
   arr getMatrixJacobian() const;
 
+  arr getQuaternionMultiplicationMatrix() const; //turns a RHS(!) quat multiplication into a LHS(!) matrix multiplication
+
   void writeNice(std::ostream& os) const;
   void write(std::ostream& os) const;
   void read(std::istream& is);

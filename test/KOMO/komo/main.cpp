@@ -2,6 +2,7 @@
 #include <Kin/TM_default.h>
 #include <Kin/F_PairCollision.h>
 #include <Kin/viewer.h>
+#include <Kin/F_pose.h>
 
 //===========================================================================
 
@@ -68,25 +69,16 @@ void TEST(Align){
 //===========================================================================
 
 struct MyFeature : Feature {
-  uint i, j;               ///< which shapes does it refer to?
-
-  MyFeature(uint _i, uint _j)
-    : i(_i), j(_j) {}
-  MyFeature(const rai::Configuration& K, const char* s1, const char* s2)
-    :  i(initIdArg(K, s1)), j(initIdArg(K, s2)) {}
-
-  virtual void phi(arr& y, arr& J, const ConfigurationL& Ctuple){
+  virtual void phi2(arr& y, arr& J, const FrameL& F){
     CHECK_EQ(order, 1, "");
 
-    auto V = TM_Default(TMT_posDiff, i, NoVector, j).setOrder(1).eval(Ctuple);
+    auto V = F_PositionDiff().setOrder(1).eval(F);
 
     auto C = F_PairCollision(F_PairCollision::_normal, false)
-             .setFrameIDs({i, j})
-             .eval(Ctuple);
+             .eval(F[1]);
 
     auto D = F_PairCollision(F_PairCollision::_negScalar, false)
-             .setFrameIDs({i, j})
-             .eval(Ctuple);
+             .eval(F[1]);
 
     //penalizing velocity whenever close
     double range=.2;
@@ -141,9 +133,7 @@ struct MyFeature : Feature {
 
   }
 
-  virtual uint dim_phi(const ConfigurationL& Ctuple) {
-    return 3;
-  }
+  virtual uint dim_phi2(const FrameL& F) {  return 3;  }
 };
 
 void TEST(Thin){
@@ -163,7 +153,7 @@ void TEST(Thin){
   komo.addObjective({1.}, FS_qItself, {}, OT_eq, {1e1}, {}, 1);
   komo.addObjective({}, FS_distance, {"wall", "ball"}, OT_ineq, {1.});
 
-  komo.addObjective({}, make_shared<MyFeature>(komo.world, "ball", "wall"), OT_sos, {1e1}, {}, 1);
+  komo.addObjective({}, make_shared<MyFeature>(), {"ball", "wall"}, OT_sos, {1e1}, {}, 1);
 
   komo.reportProblem();
 
@@ -174,7 +164,10 @@ void TEST(Thin){
 //  komo.reportProxies();
 //  komo.checkGradients();
 
-  while(komo.displayTrajectory());
+//  while(komo.displayTrajectory());
+  rai::ConfigurationViewer V;
+  V.setConfiguration(komo.pathConfig, "result", true);
+  while(V.playVideo(C.frames.N));
 }
 
 //===========================================================================
@@ -231,9 +224,9 @@ int main(int argc,char** argv){
 //  rnd.clockSeed();
 
 //  testEasy();
-//  testAlign();
+  testAlign();
 //  testThin();
-  testPR2();
+//  testPR2();
 
   return 0;
 }

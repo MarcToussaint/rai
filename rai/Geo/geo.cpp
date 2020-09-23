@@ -985,6 +985,19 @@ arr Quaternion::getMatrixJacobian() const {
   return J;
 }
 
+arr Quaternion::getQuaternionMultiplicationMatrix() const{
+//  a.w = b.w*c.w - b.x*c.x - b.y*c.y - b.z*c.z;
+//  a.x = b.w*c.x + b.x*c.w + b.y*c.z - b.z*c.y;
+//  a.y = b.w*c.y - b.x*c.z + b.y*c.w + b.z*c.x;
+//  a.z = b.w*c.z + b.x*c.y - b.y*c.x + b.z*c.w;
+  return arr(
+  {4,4},
+  {+w, -x, -y, -z,
+   +x, +w, +z, -y,
+   +y, -z, +w, +x,
+   +z, +y, -x, +w});
+}
+
 void Quaternion::writeNice(std::ostream& os) const { os <<"Quaternion: " <<getDeg() <<" around " <<getVec() <<"\n"; }
 void Quaternion::write(std::ostream& os) const {
   if(!rai::IOraw) os <<'[' <<w <<", " <<x <<", " <<y <<", " <<z <<']';

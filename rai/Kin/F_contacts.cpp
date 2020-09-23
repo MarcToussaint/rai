@@ -81,10 +81,15 @@ void POA_rel_vel2(arr& y, arr& J, const FrameL& F, rai::ForceExchange* ex, bool 
 
 //3-dim feature: the difference in POA velocities (V)
 void POA_rel_vel(arr& y, arr& J, const FrameL& F, rai::ForceExchange* ex, bool after_or_before) {
-  CHECK_EQ(F.d0, 3, "");
+  CHECK_EQ(F.d0, 2, "");
   CHECK_EQ(F.d1, 2, "");
-  CHECK_EQ(F(1,0), &ex->a, "");
-  CHECK_EQ(F(1,1), &ex->b, "");
+  if(after_or_before){
+    CHECK_EQ(F(0,0), &ex->a, "");
+    CHECK_EQ(F(0,1), &ex->b, "");
+  }else{
+    CHECK_EQ(F(1,0), &ex->a, "");
+    CHECK_EQ(F(1,1), &ex->b, "");
+  }
 
   arr cp, cpJ;
   ex->kinPOA(cp, cpJ);
@@ -94,21 +99,11 @@ void POA_rel_vel(arr& y, arr& J, const FrameL& F, rai::ForceExchange* ex, bool a
   Value p1 = F_Position().eval({&ex->a});
   Value p2 = F_Position().eval({&ex->b});
   Value v1, v2;
-  if(after_or_before) {
-    v1 = F_Position().setOrder(1).eval({F(1,0), F(2,0)});
-    v2 = F_Position().setOrder(1).eval({F(1,1), F(2,1)});
-  }else{
-    v1 = F_Position().setOrder(1).eval({F(0,0), F(1,0)});
-    v2 = F_Position().setOrder(1).eval({F(0,1), F(1,1)});
-  }
+  v1 = F_Position().setOrder(1).eval({F(0,0), F(1,0)});
+  v2 = F_Position().setOrder(1).eval({F(0,1), F(1,1)});
   Value w1, w2;
-  if(after_or_before) {
-    w1 = TM_AngVel().eval({{2,1}, {F(1,0), F(2,0)}});
-    w2 = TM_AngVel().eval({{2,1}, {F(1,1), F(2,1)}});
-  }else{
-    w1 = TM_AngVel().eval({{2,1}, {F(0,0), F(1,0)}});
-    w2 = TM_AngVel().eval({{2,1}, {F(0,1), F(1,1)}});
-  }
+  w1 = TM_AngVel().eval({{2,1}, {F(0,0), F(1,0)}});
+  w2 = TM_AngVel().eval({{2,1}, {F(0,1), F(1,1)}});
 
   arr vc1 = v1.y - crossProduct(w1.y, cp - p1.y);
   arr Jvc1 = v1.J - skew(w1.y) * (cpJ - p1.J) + skew(cp-p1.y) * w1.J;
@@ -205,7 +200,12 @@ void TM_Contact_ForceIsNormal::phi2(arr& y, arr& J, const FrameL& F) {
 
   //-- force needs to align with normal -> project force along normal
   y = force.y - normal.y*scalarProduct(normal.y, force.y);
-  if(!!J) J = force.J - (normal.y*~normal.y*force.J + normal.y*~force.y*normal.J + scalarProduct(normal.y, force.y)*normal.J);
+  if(!!J){
+    J = force.J;
+    J -= (normal.y^normal.y)*force.J;
+    J -= (normal.y^force.y)*normal.J;
+    J -= scalarProduct(normal.y, force.y)*normal.J;
+  }
 }
 
 void TM_Contact_ForceIsComplementary::phi2(arr& y, arr& J, const FrameL& F) {
@@ -223,8 +223,8 @@ void TM_Contact_ForceIsComplementary::phi2(arr& y, arr& J, const FrameL& F) {
   POA_distance(d1, Jd1, ex, true);
 
   //-- enforce complementarity
-  y.resize(2, 3);
-  if(!!J) J.resize(2, 3, Jd0.d1);
+//  y.resize(2, 3);
+//  if(!!J) J.resize(2, 3, Jd0.d1);
 
   arr y1 = d0.scalar() * force;
   arr y2 = d1.scalar() * force;
@@ -399,8 +399,8 @@ void TM_Contact_ElasticVel::phi2(arr& y, arr& J, const FrameL& F) {
 
   rai::ForceExchange* ex = getContact(f1, f2);
   arr v0, Jv0, v1, Jv1;
-  POA_rel_vel(v0, Jv0, F, ex, false);
-  POA_rel_vel(v1, Jv1, F, ex, true);
+  POA_rel_vel(v0, Jv0, F({0,1}), ex, false);
+  POA_rel_vel(v1, Jv1, F({1,2}), ex, true);
 
   //-- from the geometry we need normal
   Value normal = F_PairCollision (F_PairCollision::_normal, false)
@@ -433,8 +433,8 @@ void TM_Contact_ElasticVel::phi2(arr& y, arr& J, const FrameL& F) {
 }
 
 void TM_Contact_NormalVelIsComplementary::phi2(arr& y, arr& J, const FrameL& F) {
-  CHECK_EQ(F.d0, 3, "");
-  rai::ForceExchange* ex = getContact(F(1,0), F(1,1));
+  CHECK_EQ(F.d0, 2, "");
+  rai::ForceExchange* ex = getContact(F(0,0), F(0,1));
 
   //-- get the pre and post V:
   arr /*v0, Jv0, */v1, Jv1;
