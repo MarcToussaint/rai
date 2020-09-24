@@ -17,14 +17,10 @@ struct F_Position : Feature {
   virtual uint dim_phi2(const FrameL& F) { return 3; }
 };
 
-//===========================================================================
-
 struct F_PositionDiff : Feature {
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F) { return 3; }
 };
-
-//===========================================================================
 
 struct F_PositionRel : Feature {
   virtual void phi2(arr& y, arr& J, const FrameL& F);
@@ -40,16 +36,12 @@ struct F_Vector : Feature {
   virtual uint dim_phi2(const FrameL& F) { return 3; }
 };
 
-//===========================================================================
-
 struct F_VectorDiff : Feature {
   rai::Vector vec1, vec2;
   F_VectorDiff(const rai::Vector& _vec1, const rai::Vector& _vec2)  : vec1(_vec1), vec2(_vec2) {}
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F) { return 3; }
 };
-
-//===========================================================================
 
 struct F_VectorRel: Feature {
   rai::Vector vec;
@@ -75,14 +67,10 @@ struct F_Quaternion : Feature {
   virtual uint dim_phi2(const FrameL& F) { return 4; }
 };
 
-//===========================================================================
-
 struct F_QuaternionDiff : Feature {
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F) { return 4; }
 };
-
-//===========================================================================
 
 struct F_QuaternionRel: Feature {
   F_QuaternionRel(){ flipTargetSignOnNegScalarProduct = true; }
@@ -97,14 +85,10 @@ struct F_Pose : Feature {
   virtual uint dim_phi2(const FrameL& F) { return 7; }
 };
 
-//===========================================================================
-
 struct F_PoseDiff : Feature {
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F) { return 7; }
 };
-
-//===========================================================================
 
 struct F_PoseRel : Feature {
   virtual void phi2(arr& y, arr& J, const FrameL& F);
@@ -113,12 +97,32 @@ struct F_PoseRel : Feature {
 
 //===========================================================================
 
-struct TM_Align : Feature {
-  int i, j;               ///< which shapes does it refer to?
-
-  TM_Align(const rai::Configuration& G, const char* iName=nullptr, const char* jName=nullptr);
-
-  virtual void phi(arr& y, arr& J, const rai::Configuration& G);
-  virtual uint dim_phi(const rai::Configuration& G) { return 3; }
+struct F_LinVel : Feature {
+  bool impulseInsteadOfAcceleration=false;
+  F_LinVel() { order=1; }
+  virtual void phi2(arr& y, arr& J, const FrameL& F);
+  virtual uint dim_phi2(const FrameL& F) { return 3; }
 };
+
+struct F_AngVel : Feature {
+  bool impulseInsteadOfAcceleration=false;
+  F_AngVel() { order=1; }
+  virtual void phi2(arr& y, arr& J, const FrameL& F);
+  virtual uint dim_phi2(const FrameL& G) { return 3; }
+};
+
+struct F_LinAngVel : Feature {
+  bool impulseInsteadOfAcceleration=false;
+  F_LinAngVel() { order=1; }
+  virtual void phi2(arr& y, arr& J, const FrameL& F);
+  virtual uint dim_phi2(const FrameL& F){ return 6; }
+};
+
+//===========================================================================
+
+struct F_NoJumpFromParent_OBSOLETE : Feature {
+  virtual void phi2(arr& y, arr& J, const FrameL& F);
+  virtual uint dim_phi2(const FrameL& F){ return 7; }
+};
+
 

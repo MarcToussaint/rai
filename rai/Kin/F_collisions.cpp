@@ -6,13 +6,12 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "F_PairCollision.h"
-#include "frame.h"
-#include "../Geo/pairCollision.h"
+#include "F_collisions.h"
+#include "proxy.h"
 
-F_PairCollision::F_PairCollision(Type _type, bool _neglectRadii)
-  : type(_type), neglectRadii(_neglectRadii) {
-}
+//===========================================================================
+
+
 
 void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_EQ(F.N, 2, "");
@@ -53,3 +52,16 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
     if(type==_p2) coll.kinPointP2(y, J, Jp1, Jp2, Jx1, Jx2);
   }
 }
+
+//===========================================================================
+
+void F_AccumulatedCollisions::phi2(arr& y, arr& J, const FrameL& F) {
+  rai::Configuration& C = F.first()->C;
+  C.kinematicsZero(y, J, 1);
+  for(const rai::Proxy& p: C.proxies) {
+    if(F.contains(p.a) && F.contains(p.b)) {
+      C.kinematicsProxyCost(y, J, p, margin, true);
+    }
+  }
+}
+

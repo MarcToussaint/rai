@@ -95,7 +95,7 @@ arr CtrlProblem::solve() {
 #elif 1
   komo.clearObjectives();
   for(CtrlObjective* o: objectives) if(o->active){
-    komo.addObjective({}, o->feat, o->type);
+    komo.addObjective({}, o->feat, {}, o->type);
   }
   OptOptions opt;
   opt.stopTolerance = 1e-4;

@@ -182,40 +182,160 @@ void F_PoseRel::phi2(arr& y, arr& J, const FrameL& F) {
 
 //===========================================================================
 
-TM_Align::TM_Align(const rai::Configuration& K, const char* iName, const char* jName)
-  : i(-1), j(-1) {
-  rai::Frame* a = iName ? K.getFrameByName(iName):nullptr;
-  rai::Frame* b = jName ? K.getFrameByName(jName):nullptr;
-  if(a) i=a->ID;
-  if(b) j=b->ID;
+void angVel_base(rai::Frame* f0, rai::Frame* f1, arr& y, arr& J) {
+
+  arr a, b, y_tmp, Ja, Jb;
+  f0->C.kinematicsQuat(a, Ja, f0);
+  f1->C.kinematicsQuat(b, Jb, f1);
+  arr J0, J1;
+//  quat_diffVector(y, J0, J1, a, b);
+  if(scalarProduct(a, b)<0.) {
+    b*=-1.;
+    Jb*=-1.;
+  }
+  arr dq = b-a;
+  a(0) *=-1.;
+  quat_concat(y_tmp, J0, J1, dq, a); //y_tmp = (b-a)*a^{-1}
+  for(uint i=0; i<J1.d0; i++) J1(i, 0) *= -1.;
+  y_tmp.remove(0);
+  J0.delRows(0);
+  J1.delRows(0);
+
+  y_tmp *= 2.;
+  J0 *= 2.;
+  J1 *= 2.;
+
+  y = y_tmp;
+
+  checkNan(y);
+
+  if(!!J && !!Ja) {
+    if(&f0->C!=&f1->C){ //different configurations -> assume consecutive
+      J = catCol((J1-J0)*Ja, J0*Jb);
+    }else{//same configuration
+      J = (J1-J0)*Ja;
+      J += J0*Jb;
+    }
+    checkNan(J);
+  }else J.setNoArr();
 }
 
-void TM_Align::phi(arr& y, arr& J, const rai::Configuration& K) {
-  y.resize(3);
-  if(!!J) J.resize(3, K.q.N);
+//===========================================================================
 
-  rai::Frame* body_i = K.frames(i);
-  rai::Frame* body_j = K.frames(j);
+void F_LinVel::phi2(arr& y, arr& J, const FrameL& F) {
+  CHECK_GE(order, 1, "");
+  if(order==1) {
+    rai::Frame* f0 = F.elem(0);
+    rai::Frame* f1 = F.elem(1);
 
-  arr zi, Ji, zj, Jj;
+    arr a, b, Ja, Jb;
+    f0->C.kinematicsPos(a, Ja, f0);
+    f1->C.kinematicsPos(b, Jb, f1);
 
-  K.kinematicsVec(zi, Ji, body_i, Vector_z);
-  K.kinematicsVec(zj, Jj, body_j, Vector_x);
-  y(0) = scalarProduct(zi, zj);
-  if(!!J) J[0] = ~zj * Ji + ~zi * Jj;
+    y = b-a;
+    if(!!J) J = Jb-Ja;
 
-  K.kinematicsVec(zi, Ji, body_i, Vector_z);
-  K.kinematicsVec(zj, Jj, body_j, Vector_y);
-  y(1) = scalarProduct(zi, zj);
-  if(!!J) J[1] = ~zj * Ji + ~zi * Jj;
+#if 1
+    rai::Frame *r = f1->getRoot();
+    if(r->C.hasTauJoint(r)) {
+      double tau; arr Jtau;
+      r->C.kinematicsTau(tau, Jtau, r);
+      CHECK_GE(tau, 1e-10, "");
+      y /= tau;
+      if(!!J) {
+        J /= tau;
+        J += (-1./tau)*y*Jtau;
+      }
+    } else {
+      double tau = r->C.frames.first()->tau;
+      CHECK_GE(tau, 1e-10, "");
+      y /= tau;
+      if(!!J) J /= tau;
+    }
+#endif
+    return;
+  }
 
-  K.kinematicsVec(zi, Ji, body_i, Vector_y);
-  K.kinematicsVec(zj, Jj, body_j, Vector_x);
-  y(2) = scalarProduct(zi, zj);
-  if(!!J) J[2] = ~zj * Ji + ~zi * Jj;
+  if(order==2) {
+    if(impulseInsteadOfAcceleration) diffInsteadOfVel=true;
+    Feature::phi2(y, J, F);
+    if(impulseInsteadOfAcceleration) diffInsteadOfVel=false;
+  }
 }
 
+//===========================================================================
 
+void F_AngVel::phi2(arr& y, arr& J, const FrameL& F){
+  CHECK_GE(order, 1, "");
+  if(order==1) {
+    rai::Frame* f0 = F.elem(0);
+    rai::Frame* f1 = F.elem(1);
 
+    angVel_base(f0, f1, y, J);
 
+#if 1
+    rai::Frame *r = f1->getRoot();
+    if(r->C.hasTauJoint(r)) {
+      double tau; arr Jtau;
+      r->C.kinematicsTau(tau, Jtau, r);
+      CHECK_GE(tau, 1e-10, "");
+      y /= tau;
+      if(!!J) {
+        J /= tau;
+        J += (-1./tau)*y*Jtau;
+      }
+    } else {
+      double tau = r->C.frames.first()->tau;
+      CHECK_GE(tau, 1e-10, "");
+      y /= tau;
+      if(!!J) J /= tau;
+    }
+#endif
+    return;
+  }
 
+  if(order==2) {
+    if(impulseInsteadOfAcceleration) diffInsteadOfVel=true;
+    Feature::phi2(y, J, F);
+    if(impulseInsteadOfAcceleration) diffInsteadOfVel=false;
+  }
+}
+
+//===========================================================================
+
+void F_LinAngVel::phi2(arr& y, arr& J, const FrameL& F) {
+
+  F_LinVel lin;
+  lin.order=order;
+  lin.impulseInsteadOfAcceleration = impulseInsteadOfAcceleration;
+  arr  yl, Jl;
+  lin.__phi2(yl, Jl, F);
+
+  F_AngVel ang;
+  ang.order=order;
+  ang.impulseInsteadOfAcceleration = impulseInsteadOfAcceleration;
+  arr ya, Ja;
+  ang.__phi2(ya, Ja, F);
+
+  y.setBlockVector(yl, ya);
+  J.setBlockMatrix(Jl, Ja);
+}
+
+//===========================================================================
+
+void F_NoJumpFromParent_OBSOLETE::phi2(arr& y, arr& J, const FrameL& F) {
+  CHECK_EQ(order, 1, "");
+  CHECK_EQ(F.d1, 2, "");
+
+  auto pos = F_PositionRel()
+             .setOrder(1)
+             .setDiffInsteadOfVel()
+             .eval(F);
+  auto quat = F_QuaternionRel()
+              .setOrder(1)
+              .setDiffInsteadOfVel()
+              .eval(F);
+
+  y.setBlockVector(pos.y, quat.y);
+  J.setBlockMatrix(pos.J, quat.J);
+}

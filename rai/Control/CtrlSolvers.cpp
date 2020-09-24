@@ -667,7 +667,7 @@ arr solve_optim(CtrlProblem& CP) {
   opt.stopGTolerance = 1e-4;
   opt.stopIters = 10;
 //  opt.nonStrictSteps=-1;
-  OptConstrained O(x, NoArr, *MP, -1, opt);
+  OptConstrained O(x, NoArr, *MP, opt);
   MP->getBounds(O.newton.bound_lo, O.newton.bound_up);
   O.run();
   return x;

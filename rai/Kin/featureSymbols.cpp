@@ -8,12 +8,9 @@
 
 #include "featureSymbols.h"
 #include "F_pose.h"
-#include "TM_proxy.h"
+#include "F_collisions.h"
 #include "F_qFeatures.h"
-#include "F_PairCollision.h"
-#include "F_dynamics.h"
-#include "F_contacts.h"
-#include "TM_angVel.h"
+#include "F_forces.h"
 #include "F_geometrics.h"
 
 template<> const char* rai::Enum<FeatureSymbol>::names []= {
@@ -114,7 +111,6 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
     f->scale = arr({1, 3}, {0., 0., 1.});
   }
 
-#ifdef RAI_NEW_FEATURES
   else if(feat==FS_position) {  f = make_shared<F_Position>();  } //f=make_shared<TM_Default>(TMT_pos, C, frames(0)); }
   else if(feat==FS_positionDiff) {  f = make_shared<F_PositionDiff>();  } //f=make_shared<TM_Default>(TMT_posDiff, C, frames(0), NoVector, frames(1)); }
   else if(feat==FS_positionRel) {  f=make_shared<F_PositionRel>(); }
@@ -134,29 +130,6 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
   else if(feat==FS_quaternion) {  f=make_shared<F_Quaternion>(); }
   else if(feat==FS_quaternionDiff) {  f=make_shared<F_QuaternionDiff>(); }
   else if(feat==FS_quaternionRel) {  f=make_shared<F_QuaternionRel>(); }
-#else
-  else if(feat==FS_position) {  f = make_shared<F_Position>();  } //f=make_shared<TM_Default>(TMT_pos, C, frames(0)); }
-  else if(feat==FS_positionDiff) {  f = make_shared<F_PositionDiff>();  } //f=make_shared<TM_Default>(TMT_posDiff, C, frames(0), NoVector, frames(1)); }
-//  else if(feat==FS_position) {  f=make_shared<TM_Default>(TMT_pos, C, frames(0)); }
-//  else if(feat==FS_positionDiff) {  f=make_shared<TM_Default>(TMT_posDiff, C, frames(0), NoVector, frames(1)); }
-  else if(feat==FS_positionRel) {  f=make_shared<TM_Default>(TMT_pos, C, frames(0), NoVector, frames(1)); }
-
-  else if(feat==FS_vectorX) {  f=make_shared<TM_Default>(TMT_vec, C, frames(0), Vector_x); }
-  else if(feat==FS_vectorY) {  f=make_shared<TM_Default>(TMT_vec, C, frames(0), Vector_y); }
-  else if(feat==FS_vectorZ) {  f=make_shared<TM_Default>(TMT_vec, C, frames(0), Vector_z); }
-
-  else if(feat==FS_scalarProductXX) {  f=make_shared<TM_Default>(TMT_vecAlign, C, frames(0), Vector_x, frames(1), Vector_x); }
-  else if(feat==FS_scalarProductXY) {  f=make_shared<TM_Default>(TMT_vecAlign, C, frames(0), Vector_x, frames(1), Vector_y); }
-  else if(feat==FS_scalarProductXZ) {  f=make_shared<TM_Default>(TMT_vecAlign, C, frames(0), Vector_x, frames(1), Vector_z); }
-  else if(feat==FS_scalarProductYX) {  f=make_shared<TM_Default>(TMT_vecAlign, C, frames(0), Vector_y, frames(1), Vector_x); }
-  else if(feat==FS_scalarProductYY) {  f=make_shared<TM_Default>(TMT_vecAlign, C, frames(0), Vector_y, frames(1), Vector_y); }
-  else if(feat==FS_scalarProductYZ) {  f=make_shared<TM_Default>(TMT_vecAlign, C, frames(0), Vector_y, frames(1), Vector_z); }
-  else if(feat==FS_scalarProductZZ) {  f=make_shared<TM_Default>(TMT_vecAlign, C, frames(0), Vector_z, frames(1), Vector_z); }
-
-  else if(feat==FS_quaternion) {  f=make_shared<TM_Default>(TMT_quat, C, frames(0)); }
-  else if(feat==FS_quaternionDiff) {  f=make_shared<TM_Default>(TMT_quatDiff, C, frames(0), NoVector, frames(1), NoVector); }
-  else if(feat==FS_quaternionRel) {  f=make_shared<TM_Default>(TMT_quat, C, frames(0), NoVector, frames(1), NoVector); }
-#endif
 
   else if(feat==FS_pose) {  f=make_shared<F_Pose>(); }
   else if(feat==FS_poseDiff) {  f=make_shared<F_PoseDiff>(); }
@@ -183,11 +156,11 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
     f->scale = arr({2,3}, {1., 0., 0., 0., 1., 0.}); //pick the xy- coordinated
   }
 
-  else if(feat==FS_angularVel) { f=make_shared<TM_AngVel>(); }
+  else if(feat==FS_angularVel) { f=make_shared<F_AngVel>(); }
 
   else if(feat==FS_accumulatedCollisions) {
-    if(frames.N) f=make_shared<TM_Proxy>(TMT_allP, stringListToFrameIndices(frames, C));
-    else f=make_shared<TM_Proxy>(TMT_allP, framesToIndices(C.frames));
+    if(frames.N) f=make_shared<F_AccumulatedCollisions>(TMT_allP, stringListToFrameIndices(frames, C));
+    else f=make_shared<F_AccumulatedCollisions>(TMT_allP, framesToIndices(C.frames));
   }
   else if(feat==FS_jointLimits) {
     f=make_shared<F_qLimits2>();
@@ -197,12 +170,7 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
   }
 
   else if(feat==FS_qItself) {
-#ifdef RAI_NEW_FEATURES
     if(!frames.N) f=make_shared<F_qItself>(F_qItself::allActiveJoints, frames, C);
-//    if(!frames.N) f=make_shared<F_qItself>();
-#else
-    if(!frames.N) f=make_shared<F_qItself>();
-#endif
     else f=make_shared<F_qItself>(F_qItself::byJointNames, frames, C);
   }
 
@@ -214,7 +182,7 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
   }
 
   else if(feat==FS_physics) { f=make_shared<F_NewtonEuler>(); }
-  else if(feat==FS_contactConstraints) { f=make_shared<TM_Contact_ForceIsNormal>(); }
+  else if(feat==FS_contactConstraints) { f=make_shared<F_fex_ForceIsNormal>(); }
   else if(feat==FS_energy) { f=make_shared<F_Energy>(); }
 
   else if(feat==FS_transAccelerations) { HALT("obsolete"); /*f=make_shared<TM_Transition>(world);*/ }

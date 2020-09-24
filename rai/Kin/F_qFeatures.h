@@ -66,6 +66,13 @@ struct F_qQuaternionNorms : Feature {
 
 //===========================================================================
 
+struct F_qTime : Feature {
+  virtual void phi2(arr& y, arr& J, const FrameL& F);
+  virtual uint dim_phi2(const FrameL& F) { return 1; }
+};
+
+//===========================================================================
+
 rai::Array<rai::Joint*> getMatchingJoints(const ConfigurationL& Ktuple, bool zeroVelJointsOnly);
 rai::Array<rai::Joint*> getSwitchedJoints(const rai::Configuration& G0, const rai::Configuration& G1, int verbose=0);
 uintA getSwitchedBodies(const rai::Configuration& G0, const rai::Configuration& G1, int verbose=0);

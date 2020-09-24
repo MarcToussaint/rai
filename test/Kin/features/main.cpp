@@ -3,7 +3,7 @@
 #include <Kin/TM_angVel.h>
 #include <Kin/F_dynamics.h>
 #include <Kin/F_pose.h>
-#include <Kin/F_contacts.h>
+#include <Kin/F_forces.h>
 #include <Kin/forceExchange.h>
 #include <iomanip>
 #include <Kin/featureSymbols.h>
@@ -45,8 +45,8 @@ void testFeature() {
   F.append(make_shared<F_PairCollision>(C, "obj1", "obj2", F_PairCollision::_negScalar));
   F.append(make_shared<F_PairCollision>(C, "obj1", "obj2", F_PairCollision::_vector));
   F.append(make_shared<F_PairCollision>(C, "obj1", "obj2", F_PairCollision::_center));
-  F.append(make_shared<TM_LinAngVel>(C, "obj1"));
-  F.append(make_shared<TM_LinAngVel>(C, "obj2")) -> order=2;
+  F.append(make_shared<F_LinAngVel>(C, "obj1"));
+  F.append(make_shared<F_LinAngVel>(C, "obj2")) -> order=2;
   F.append(symbols2feature(FS_position, {"obj1"}, C));
   F.append(symbols2feature(FS_positionDiff, {"obj1", "obj2"}, C));
   F.append(make_shared<F_Pose>(C, "obj1"));

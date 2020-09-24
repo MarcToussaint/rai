@@ -7,7 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "F_geometrics.h"
-#include "F_PairCollision.h"
+#include "F_collisions.h"
 #include "F_pose.h"
 #include "TM_default.h"
 #include "frame.h"

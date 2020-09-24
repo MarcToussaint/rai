@@ -1,24 +1,31 @@
-/*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
-    email: toussaint@tu-berlin.de
+//===========================================================================
 
-    This code is distributed under the MIT License.
-    Please see <root-path>/LICENSE for details.
-    --------------------------------------------------------------  */
+struct TM_ProxyConstraint : Feature {
+  TM_Proxy proxyCosts;
+  TM_ProxyConstraint(PTMtype _type,
+                     uintA _shapes,
+                     double _margin=.02);
+  virtual void phi(arr& y, arr& J, const rai::Configuration& G);
+  virtual uint dim_phi(const rai::Configuration& G) { return 1; }
+  virtual rai::String shortTag(const rai::Configuration& G) { return "ProxyConstraint"; }
+};
 
-#include "TM_proxy.h"
-#include "proxy.h"
+//===========================================================================
 
-TM_Proxy::TM_Proxy(PTMtype _type,
-                   uintA _shapes,
-                   double _margin) {
-  type=_type;
-  frameIDs=_shapes;
-  margin=_margin;
-//  cout <<"creating TM_Proxy with shape list" <<shapes <<endl;
+TM_ProxyConstraint::TM_ProxyConstraint(PTMtype _type,
+                                       uintA _shapes,
+                                       double _margin)
+  : proxyCosts(_type, _shapes, _margin) {
 }
 
-void TM_Proxy::phi(arr& y, arr& J, const rai::Configuration& C) {
+void TM_ProxyConstraint::phi(arr& y, arr& J, const rai::Configuration& G) {
+  proxyCosts.phi(y, J, G);
+  y -= .5;
+}
+
+//===========================================================================
+
+void TM_proxy::phi(arr& y, arr& J, const rai::Configuration& C) {
   C.kinematicsZero(y, J, 1);
 
   switch(type) {
@@ -112,17 +119,7 @@ void TM_Proxy::phi(arr& y, arr& J, const rai::Configuration& C) {
   }
 }
 
-void TM_Proxy::phi2(arr& y, arr& J, const FrameL& F) {
-  rai::Configuration& C = F.first()->C;
-  C.kinematicsZero(y, J, 1);
-  for(const rai::Proxy& p: C.proxies) {
-    if(F.contains(p.a) && F.contains(p.b)) {
-      C.kinematicsProxyCost(y, J, p, margin, true);
-    }
-  }
-}
-
-uint TM_Proxy::dim_phi(const rai::Configuration& G) {
+uint TM_proxy::dim_phi(const rai::Configuration& G) {
   switch(type) {
     case TMT_allP:
     case TMT_listedVsListedP:
@@ -139,15 +136,3 @@ uint TM_Proxy::dim_phi(const rai::Configuration& G) {
 }
 
 //===========================================================================
-
-TM_ProxyConstraint::TM_ProxyConstraint(PTMtype _type,
-                                       uintA _shapes,
-                                       double _margin)
-  : proxyCosts(_type, _shapes, _margin) {
-}
-
-void TM_ProxyConstraint::phi(arr& y, arr& J, const rai::Configuration& G) {
-  proxyCosts.phi(y, J, G);
-  y -= .5;
-}
-

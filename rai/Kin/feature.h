@@ -130,12 +130,6 @@ inline void padJacobian(arr& J, const ConfigurationL& Ctuple) {
 }
 
 template<class T>
-std::shared_ptr<T> setFrameIDs(std::shared_ptr<T> f, const StringA& frames, const rai::Configuration& C){
-  f->frameIDs = stringListToFrameIndices(frames, C);
-  return f;
-}
-
-template<class T>
 std::shared_ptr<Feature> make_feature(const StringA& frames, const rai::Configuration& C, const arr& scale=NoArr, const arr& target=NoArr, int order=-1){
   std::shared_ptr<Feature> f = make_shared<T>();
 

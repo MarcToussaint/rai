@@ -8,12 +8,13 @@
 
 #include "komo-ext.h"
 
-#include "../Kin/F_contacts.h"
+#include "../Kin/F_forces.h"
 //#include <KOMOcsail/komo-CSAIL.h>
 #include "../Kin/TM_default.h"
 #include "../Kin/F_qFeatures.h"
 #include "../Kin/F_geometrics.h"
-#include "../Kin/F_PairCollision.h"
+#include "../Kin/F_collisions.h"
+#include "../Kin/F_pose.h"
 
 double shapeSize(const rai::Configuration& K, const char* name, uint i);
 
@@ -67,11 +68,11 @@ void addMotionTo(KOMO& komo, const arr& target_q, const StringA& target_joints, 
 //    profile.setZero();
 
     if(up>0.) {
-      komo.addObjective({0., up}, make_shared<TM_Default>(TMT_posDiff, komo.world, endeff), {}, OT_sos, {1e2}, {0., 0., .05}, 2);
+      komo.addObjective({0., up}, make_shared<F_Position>(), {endeff}, OT_sos, {1e2}, {0., 0., .05}, 2);
     }
 
     if(down>0.) {
-      komo.addObjective({down, 1.}, make_shared<TM_Default>(TMT_posDiff, komo.world, endeff), {}, OT_sos, {1e2}, {0., 0., -.05}, 2);
+      komo.addObjective({down, 1.}, make_shared<F_Position>(), {endeff}, OT_sos, {1e2}, {0., 0., -.05}, 2);
     }
   }
 

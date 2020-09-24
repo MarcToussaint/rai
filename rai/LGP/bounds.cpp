@@ -9,7 +9,6 @@
 #include "bounds.h"
 //#include "../Kin/switch.h"
 #include "../Kin/F_qFeatures.h"
-#include "../Kin/TM_angVel.h"
 #include "../Kin/F_dynamics.h"
 #include "../Kin/F_pose.h"
 
