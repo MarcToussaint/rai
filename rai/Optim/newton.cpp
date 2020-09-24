@@ -36,7 +36,7 @@ void OptNewton::reinit(const arr& _x) {
 
   //startup verbose
   if(o.verbose>1) cout <<"*** optNewton: starting point f(x)=" <<fx <<" alpha=" <<alpha <<" beta=" <<beta <<endl;
-  if(o.verbose>3) cout <<"x=" <<x <<endl;
+  if(o.verbose>3){ if(x.N<5) cout <<"x=" <<x <<endl; }
   if(logFile) {
     (*logFile) <<"{ newton: " <<its <<", evaluations: " <<evals <<", f_x: " <<fx <<", alpha: " <<alpha;
     if(o.verbose>3)(*logFile) <<", x: " <<x;

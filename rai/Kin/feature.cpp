@@ -31,32 +31,34 @@ void Feature::phi2(arr& y, arr& J, const FrameL& F) {
   if(!y.N) return;
 
   if(!diffInsteadOfVel){
-#if 0 //feature itself does not care for tau!!! use specialized features, e.g. linVel, angVel
-  if(Ctuple(-1)->hasTauJoint()) {
-    double tau; arr Jtau;
-    Ctuple(-1)->kinematicsTau(tau, Jtau);
-    CHECK_GE(tau, 1e-10, "");
-    y /= tau;
-    if(!!J) {
-      J /= tau;
-      expandJacobian(Jtau, Ctuple, -1);
-      J += (-1./tau)*y*Jtau;
+#if 1 //feature itself does not care for tau!!! use specialized features, e.g. linVel, angVel
+    rai::Frame *r = F.elem(-1)->getRoot();
+    if(r->C.hasTauJoint(r)) {
+      double tau; arr Jtau;
+      r->C.kinematicsTau(tau, Jtau, r);
+      CHECK_GE(tau, 1e-10, "");
+      y /= tau;
+      if(!!J) {
+        J /= tau;
+        J += (-1./tau)*y*Jtau;
+      }
+    } else {
+      r = r->C.frames.first();
+      if(r->C.hasTauJoint(r)) HALT("global has tau joint, but slice not!?");
+      double tau = r->tau;
+      if(tau) {
+        CHECK_GE(tau, 1e-10, "");
+        y /= tau;
+        if(!!J) J /= tau;
+      }
     }
-  } else {
-    double tau = Ctuple(-1)->frames(0)->tau;
+#else
+    double tau = F.elem(-1)->C.frames.first()->tau;
     if(tau) {
       CHECK_GE(tau, 1e-10, "");
       y /= tau;
-      if(!!J) J /= tau;
+      J /= tau;
     }
-  }
-#else
-  double tau = F.first()->C.frames(0)->tau;
-  if(tau) {
-    CHECK_GE(tau, 1e-10, "");
-    y /= tau;
-    J /= tau;
-  }
 #endif
   }
 }

@@ -209,7 +209,7 @@ rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) {
   if(symbol==SW_addContact) {
     CHECK_EQ(jointType, JT_none, "");
     new rai::ForceExchange(*from, *to);
-    return 0;
+    return from;
   }
 
   if(symbol==SW_delContact) {

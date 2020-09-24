@@ -34,7 +34,6 @@ rai::ForceExchange::~ForceExchange() {
 }
 
 void rai::ForceExchange::setZero() {
-//  a_rel.setZero(); b_rel.setZero(); a_norm.setZero(); b_norm.setZero(); a_rad=b_rad=0.; a_type=b_type=1;
   force.resize(3).setZero();
   torque.resize(3).setZero();
   if(type==FXT_poa){

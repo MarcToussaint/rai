@@ -161,8 +161,9 @@ void KOMO::addTimeOptimization() {
     for(uint t=o->configs.d0; t--;) if(o->configs(t, 0)%stepsPerPhase==0) o->configs.delRows(t);
   }
 #else
+  addObjective({0.,0.}, make_shared<TM_Time>(), {timeF->name}, OT_sos, {1e2}, {}, 1, 0, +1); //smooth time evolution
   for(uint t=0; t<T/stepsPerPhase; t++){
-    addObjective({double(t), double(t+1)}, make_shared<TM_Time>(), {timeF->name}, OT_sos, {1e2}, {}, 1, +2, 0); //smooth time evolution
+    addObjective({double(t), double(t+1)}, make_shared<TM_Time>(), {timeF->name}, OT_sos, {1e2}, {}, 1, +3, +1); //smooth time evolution
   }
 #endif
 
@@ -362,6 +363,14 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
 //    else addObjective({time}, make_shared<TM_NoJumpFromParent>(world, to), OT_eq, {1e2}, NoArr, 1, 0, 0);
     else addObjective({time}, FS_pose, {to}, OT_eq, {1e2}, NoArr, 1, 0, 0);
 
+  }
+
+  if(newMode==SY_magicTrans){
+    addSwitch(time, true, JT_transZ, SWInit_copy, from, to);
+    double sqrAccCost=0.;
+    if(sqrAccCost>0.) {
+      addObjective({time, endTime}, make_shared<TM_LinAngVel>(), {to}, OT_sos, {sqrAccCost}, NoArr, 2);
+    }
   }
 }
 
@@ -1196,10 +1205,10 @@ void KOMO::setSkeleton(const Skeleton& S, bool ignoreSwitches) {
       case SY_dynamicTrans:   //if(!ignoreSwitches) addSwitch_dynamicTrans(s.phase0, s.phase1+1., "base", s.frames(0));  break;
       case SY_quasiStatic:
       case SY_quasiStaticOn:
+      case SY_magicTrans: //addSwitch_magicTrans(s.phase0, s.phase1, world.frames.first()->name, s.frames(0), 0.);  break;
       case SY_free:
         break;
       case SY_magic:      addSwitch_magic(s.phase0, s.phase1, world.frames.first()->name, s.frames(0), 0., 0.);  break;
-      case SY_magicTrans: addSwitch_magicTrans(s.phase0, s.phase1, world.frames.first()->name, s.frames(0), 0.);  break;
     }
   }
 }
@@ -1752,16 +1761,18 @@ void KOMO::reportProblem(std::ostream& os) {
     }
     os <<endl;
   }
-//  for(Flag* fl:flags) {
-//    os <<"    ";
-//    if(fl->stepOfApplication+k_order >= configurations.N) {
-//      LOG(-1) <<"flag time " <<fl->stepOfApplication <<" is beyond time horizon " <<T;
-//      fl->write(os, nullptr);
-//    } else {
-//      fl->write(os, configurations(fl->stepOfApplication+k_order));
-//    }
-//    os <<endl;
-//  }
+
+  if(verbose>6){
+    os <<"  INITIAL STATE" <<endl;
+#ifdef KOMO_PATH_CONFIG
+    for(rai::Frame* f:pathConfig.frames){
+#else
+    for(auto *C:configurations) for(rai::Frame* f:C->frames){
+#endif
+      if(f->joint && f->joint->dim) os <<"    " <<f->name <<" [" <<f->joint->type <<"] : " <<f->joint->calc_q_from_Q(f->get_Q()) /*<<" - " <<pathConfig.q.elem(f->joint->qIndex)*/ <<endl;
+      for(auto *ex:f->forces) os <<"    " <<f->name <<" [force " <<ex->a.name <<'-' <<ex->b.name <<"] : " <<ex->force /*<<' ' <<ex->torque*/ <<' ' <<ex->poa <<endl;
+    }
+  }
 }
 
 void KOMO::checkGradients() {
@@ -2098,7 +2109,13 @@ void KOMO::retrospectApplySwitches2() {
       if(!f0){
         f0=f;
       } else {
-        f->set_Q() = f0->get_Q(); //copy the relative pose (switch joint initialization) from the first application
+        if(sw->symbol==SW_addContact){
+          rai::ForceExchange* ex0 = f0->forces.last();
+          rai::ForceExchange* ex1 = f->forces.last();
+          ex1->poa = ex0->poa;
+        }else{
+          f->set_Q() = f0->get_Q(); //copy the relative pose (switch joint initialization) from the first application
+        }
       }
     }
   }
@@ -4049,7 +4066,7 @@ template<> const char* rai::Enum<SkeletonSymbol>::names []= {
 };
 
 intA getSwitchesFromSkeleton(const Skeleton& S) {
-  rai::Array<SkeletonSymbol> modes = { SY_free, SY_stable, SY_stableOn, SY_dynamic, SY_dynamicOn, SY_dynamicTrans, SY_quasiStatic, SY_quasiStaticOn };
+  rai::Array<SkeletonSymbol> modes = { SY_free, SY_stable, SY_stableOn, SY_dynamic, SY_dynamicOn, SY_dynamicTrans, SY_quasiStatic, SY_quasiStaticOn, SY_magicTrans };
 
   intA ret;
   for(int i=0; i<(int)S.N; i++) {
