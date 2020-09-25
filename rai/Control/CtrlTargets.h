@@ -18,7 +18,7 @@
 struct CtrlMovingTarget {
   bool isTransient=false;
   virtual ~CtrlMovingTarget() {}
-  virtual ActStatus step(double tau, CtrlObjective* o, const ConfigurationL& Ctuple) = 0; //step forward, updating the target based on y_real
+  virtual ActStatus step(double tau, CtrlObjective* o, const arr& y_real) = 0; //step forward, updating the target based on y_real
   virtual void resetGoal(const arr& goal) {}
   virtual void setTimeScale(double d) = 0;
   virtual void resetState() = 0;
@@ -33,7 +33,7 @@ struct CtrlMovingTarget {
 
 struct CtrlTarget_Const : CtrlMovingTarget {
   CtrlTarget_Const() {}
-  virtual ActStatus step(double tau, CtrlObjective* o, const ConfigurationL& Ctuple);
+  virtual ActStatus step(double tau, CtrlObjective* o, const arr& y_real);
   virtual void setTimeScale(double d) {}
   virtual void resetState() {}
 };
@@ -45,7 +45,7 @@ struct CtrlTarget_MaxCarrot : CtrlMovingTarget {
   arr goal;
   uint countInRange=0;
   CtrlTarget_MaxCarrot(CtrlObjective& co, double maxDistance, const arr& _goal=NoArr);
-  virtual ActStatus step(double tau, CtrlObjective* o, const ConfigurationL& Ctuple);
+  virtual ActStatus step(double tau, CtrlObjective* o, const arr& y_real);
   virtual void resetGoal(const arr& _goal) { goal=_goal; }
   virtual void setTimeScale(double d) {}
   virtual void resetState() { countInRange=0; }
@@ -66,7 +66,7 @@ struct CtrlTarget_PathCarrot: CtrlMovingTarget {
   uint countBlocked=0;
   CtrlTarget_PathCarrot(const arr& path, double maxStep, double _endTime=1.);
   CtrlTarget_PathCarrot(const arr& path, double maxStep, const arr& times);
-  virtual ActStatus step(double tau, CtrlObjective* o, const ConfigurationL& Ctuple);
+  virtual ActStatus step(double tau, CtrlObjective* o, const arr& y_real);
   virtual void setTimeScale(double d) { endTime = d; }
   virtual void resetState() { time=0.; countInRange=0.; }
   virtual void reportState(ostream& os) const {
@@ -78,7 +78,7 @@ struct CtrlTarget_PathCarrot: CtrlMovingTarget {
 
 struct CtrlTarget_ConstVel : CtrlMovingTarget {
   CtrlTarget_ConstVel() {}
-  virtual ActStatus step(double tau, CtrlObjective* o, const ConfigurationL& Ctuple);
+  virtual ActStatus step(double tau, CtrlObjective* o, const arr& y_real);
   virtual void setTimeScale(double d) {}
   virtual void resetState() {}
 };
@@ -89,7 +89,7 @@ struct CtrlTarget_Sine : CtrlMovingTarget {
   arr y_start, y_target, y_err;
   double t, T;
   CtrlTarget_Sine(const arr& y_target, double duration) : y_target(y_target), t(0.), T(duration) {}
-  virtual ActStatus step(double tau, CtrlObjective* o, const ConfigurationL& Ctuple);
+  virtual ActStatus step(double tau, CtrlObjective* o, const arr& y_real);
   virtual void setTimeScale(double d) { T=d; }
   virtual void resetState() { y_start.clear(); y_err.clear(); t=0.; }
 };
@@ -104,7 +104,7 @@ struct CtrlTarget_Bang : CtrlMovingTarget {
   CtrlTarget_Bang(const arr& _y_target, double _maxVel);
 
   virtual void setTimeScale(double d) { HALT("doesn't make sense"); }
-  virtual ActStatus step(double tau, CtrlObjective* o, const ConfigurationL& Ctuple);
+  virtual ActStatus step(double tau, CtrlObjective* o, const arr& y_real);
   virtual void resetState() {}
 };
 
@@ -123,7 +123,7 @@ struct CtrlTarget_PD : CtrlMovingTarget {
   CtrlTarget_PD(const rai::Graph& params);
 
   virtual void setTimeScale(double d) { setGainsAsNatural(d, .9); }
-  virtual ActStatus step(double tau, CtrlObjective* o, const ConfigurationL& Ctuple);
+  virtual ActStatus step(double tau, CtrlObjective* o, const arr& y_real);
   virtual void resetState() { y_ref.clear(); v_ref.clear(); }
 
   void setTarget(const arr&, const arr& _v=NoArr) { NIY; }

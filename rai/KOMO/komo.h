@@ -260,6 +260,7 @@ struct KOMO : NonCopyable {
 
   //-- initialization
   void setConfiguration(int t, const arr& q); ///< t<0 allows to set the prefix configurations; while 0 <= t < T allows to set all other initial configurations
+  void setConfiguration_X(int t, const arr& X); ///< t<0 allows to set the prefix configurations; while 0 <= t < T allows to set all other initial configurations
   void setStartConfigurations(const arr& q); ///< set all prefix configurations to a particular state
   void initWithConstant(const arr& q); ///< set all configurations EXCEPT the prefix to a particular state
   void initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase=1, bool sineProfile=true); ///< set all configurations (EXCEPT prefix) to interpolate given waypoints
@@ -284,9 +285,10 @@ struct KOMO : NonCopyable {
   arr getPath_decisionVariable();              ///< get all DOFs of all configurations in a single flat vector (the decision variable of optimization)
   arr getPath(const StringA& joints= {});      ///< get joint path, optionally for selected joints
   arr getPath(const uintA& joints);            ///< get joint path for selected joints
-  arr getPath_frames(const StringA& frame= {}); ///< get frame path, optionally for selected frames
-  arr getPath_frames(const uintA& frames);     ///< get frame path for selected frames
-  arr getPath_frames(uint t);     ///< get frame path for selected frames
+  arr getPath_frames(const StringA& frame); ///< get frame path, optionally for selected frames
+  arr getPath_frames(const uintA& frames={});     ///< get frame path for selected frames
+  arr getPath_frames(int t);     ///< get frame path for selected frames
+  arr getPath_q(int t);     ///< get frame path for selected frames
   arrA getPath_q();                            ///< get the DOFs (of potentially varying dimensionality) for each configuration
   arr getPath_tau();
   arr getPath_times();

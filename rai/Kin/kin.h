@@ -181,6 +181,7 @@ struct Configuration : GLDrawer {
   void setJointState(const arr& _q, const StringA&);
   void setJointState(const arr& _q, const uintA&);
   void setJointState(const arr& _q, const FrameL&);
+  void setFrameState(const arr& X, const FrameL& F, bool warnOnDifferentDim=true);
   void setFrameState(const arr& X, const StringA& frameNames= {}, bool warnOnDifferentDim=true);
   void setDofsForTree(const arr& q, rai::Frame* root);
   void setTimes(double t);
@@ -301,6 +302,7 @@ stdPipes(rai::Configuration)
 uintA stringListToFrameIndices(const StringA& names, const rai::Configuration& C);
 uintA framesToIndices(const FrameL& frames);
 FrameL indicesToFrames(const uintA& ids, const rai::Configuration& C);
+uintA jointsToIndices(const JointL& joints);
 
 //===========================================================================
 //

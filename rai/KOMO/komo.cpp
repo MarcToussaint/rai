@@ -74,7 +74,7 @@ Shape* getShape(const Configuration& K, const char* name) {
 
 KOMO::KOMO() : computeCollisions(true), verbose(1), komo_problem(*this) {
   verbose = getParameter<double>("KOMO/verbose", 1);
-  solver = getParameter<rai::Enum<rai::KOMOsolver>>("KOMO/solver", KS_banded);
+  solver = getParameter<rai::Enum<rai::KOMOsolver>>("KOMO/solver", KS_sparse);
 }
 
 KOMO::~KOMO() {
@@ -1417,12 +1417,18 @@ void KOMO::setStartConfigurations(const arr& q) {
 
 void KOMO::setConfiguration(int t, const arr& q) {
 #ifdef KOMO_PATH_CONFIG
-  pathConfig.setJointState(q, timeSlices[k_order+t]);
+  uintA F = jointsToIndices(world.activeJoints);
+  F += timeSlices(k_order+t,0)->ID;
+  pathConfig.setJointState(q, F);
 #else
   if(!configurations.N) setupConfigurations();
   if(t<0) CHECK_LE(-t, (int)k_order, "");
   configurations(t+k_order)->setJointState(q);
 #endif
+}
+
+void KOMO::setConfiguration_X(int t, const arr& X) {
+  pathConfig.setFrameState(X, timeSlices[k_order+t]);
 }
 
 arr KOMO::getConfiguration_q(int t) {
@@ -3866,18 +3872,27 @@ void KOMO::TimeSliceProblem::evaluate(arr& phi, arr& J, const arr& x) {
 }
 
 rai::Configuration& KOMO::getConfiguration(double phase) {
+#ifdef KOMO_PATH_CONFIG
+  HALT("can't use this anymore")
+#endif
   if(!configurations.N) setupConfigurations();
   uint s = k_order + conv_time2step(phase, stepsPerPhase);
   return *configurations(s);
 }
 
 Configuration& KOMO::getConfiguration_t(int t) {
+#ifdef KOMO_PATH_CONFIG
+  HALT("can't use this anymore")
+#endif
   if(!configurations.N) setupConfigurations();
   if(t<0) CHECK_LE(-t, (int)k_order, "");
   return *configurations(t+k_order);
 }
 
 uint KOMO::getPath_totalDofs() {
+#ifdef KOMO_PATH_CONFIG
+  HALT("can't use this anymore")
+#endif
   CHECK_EQ(configurations.N, k_order+T, "configurations are not setup yet");
   uint n=0;
   for(uint t=0; t<T; t++) n +=configurations(t+k_order)->getJointStateDimension();
@@ -3896,6 +3911,9 @@ arr KOMO::getPath_decisionVariable() {
 }
 
 arr KOMO::getPath(const StringA& joints) {
+#ifdef KOMO_PATH_CONFIG
+  HALT("can't use this anymore")
+#endif
   CHECK_EQ(configurations.N, k_order+T, "configurations are not setup yet");
   uint n = joints.N;
   if(!n) n = world.getJointStateDimension();
@@ -3910,6 +3928,9 @@ arr KOMO::getPath(const StringA& joints) {
 }
 
 arr KOMO::getPath(const uintA& joints) {
+#ifdef KOMO_PATH_CONFIG
+  HALT("can't use this anymore")
+#endif
   CHECK_EQ(configurations.N, k_order+T, "configurations are not setup yet");
   arr X = configurations(k_order)->getJointState(joints);
   X.resizeCopy(T, X.N);
@@ -3928,6 +3949,7 @@ arr KOMO::getPath_frames(const StringA& frame) {
 
 arr KOMO::getPath_frames(const uintA& frames) {
 #ifdef KOMO_PATH_CONFIG
+  CHECK(!frames.N, "NIY");
   arr X(T, timeSlices.d1, 7);
   for(uint t=0; t<T; t++) {
     X[t] = pathConfig.getFrameState(timeSlices[k_order+t]);
@@ -3944,9 +3966,20 @@ arr KOMO::getPath_frames(const uintA& frames) {
   return X;
 }
 
-arr KOMO::getPath_frames(uint t) {
+arr KOMO::getPath_frames(int t) {
 #ifdef KOMO_PATH_CONFIG
   return pathConfig.getFrameState(timeSlices[k_order+t]);
+#else
+  NIY;
+#endif
+}
+
+arr KOMO::getPath_q(int t) {
+#ifdef KOMO_PATH_CONFIG
+  uintA F = jointsToIndices(world.activeJoints);
+  F += timeSlices(k_order+t,0)->ID;
+  return pathConfig.getJointState(F);
+//  return pathConfig.getJointState(timeSlices[k_order+t]);
 #else
   NIY;
 #endif

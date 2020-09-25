@@ -14,7 +14,7 @@ CtrlProblem::CtrlProblem(rai::Configuration& _C, double _tau, uint k_order)
   : tau(_tau) {
   komo.setModel(_C, true);
   komo.setTiming(1., 1, _tau, k_order);
-  komo.setupConfigurations(_C.getJointState());
+  komo.setupConfigurations2();
   komo.verbose=0;
 }
 
@@ -46,18 +46,19 @@ ptr<CtrlObjective> CtrlProblem::addObjective(const ptr<Feature>& _feat, Objectiv
 }
 
 ptr<CtrlObjective> CtrlProblem::addObjective(const FeatureSymbol& feat, const StringA& frames, ObjectiveType type, const arr& scale, const arr& target, int order) {
-  return addObjective(symbols2feature(feat, frames, komo.getConfiguration(0), scale, target, order), type);
+  return addObjective(symbols2feature(feat, frames, komo.world, scale, target, order), type);
 }
 
 void CtrlProblem::update(rai::Configuration& C) {
   //-- update the KOMO configurations (push one step back, and update current configuration)
-  for(uint s=1; s<komo.configurations.N; s++) {
-    komo.configurations(s-1)->setJointState(komo.configurations(s)->getJointState());
+  for(int t=-komo.k_order; t<0; t++) {
+    komo.setConfiguration_X(t, komo.getPath_frames(t+1));
+//    komo.pathConfigconfigurations(s-1)->setJointState(komo.configurations(s)->getJointState());
   }
   arr X = C.getFrameState();
-  komo.getConfiguration_t(-1).setFrameState(X);
-  komo.getConfiguration_t(0).setFrameState(X);
-  for(auto* c:komo.configurations) c->ensure_q();
+  komo.setConfiguration_X(-1, X);
+  komo.setConfiguration_X(0, X);
+  komo.pathConfig.ensure_q();
 
   //-- step the targets forward, if they have a target
   for(CtrlObjective* o: objectives) if(o->active){
@@ -65,7 +66,7 @@ void CtrlProblem::update(rai::Configuration& C) {
 
     if(o->movingTarget) {
       o->y_buffer = o->getValue(*this);
-      ActStatus s_new = o->movingTarget->step(tau, o, komo.configurations);
+      ActStatus s_new = o->movingTarget->step(tau, o, o->y_buffer);
       if(o->status != s_new) {
         o->status = s_new;
         //callbacks
@@ -107,7 +108,7 @@ arr CtrlProblem::solve() {
 //  komo.verbose=4;
   komo.optimize(0., opt);
   optReport = komo.getReport(false);
-  return komo.getPath().reshape(-1);
+  return komo.getPath_q(0);
 #else
   return solve_optim(*this);
 #endif

@@ -70,6 +70,13 @@ uintA framesToIndices(const FrameL& frames) {
   return I;
 }
 
+uintA jointsToIndices(const JointL& joints) {
+  uintA I;
+  resizeAs(I, joints);
+  for(uint i=0; i<joints.N; i++) I.elem(i) = joints.elem(i)->frame->ID;
+  return I;
+}
+
 FrameL indicesToFrames(const uintA& ids, const rai::Configuration& C){
   return C.frames.sub(ids);
 }
@@ -308,6 +315,7 @@ void rai::Configuration::clear() {
 void rai::Configuration::reset_q() {
   q.clear();
   activeJoints.clear();
+  qInactive.clear();
 
   _state_indexedJoints_areGood=false;
   _state_q_isGood=false;
@@ -553,6 +561,8 @@ void rai::Configuration::calc_indexedActiveJoints() {
       qcount += 2*j->qDim();
   }
 
+  //-- resize qInactive
+  qInactive.resize(qcount).setZero();
 }
 
 /** @brief returns the joint (actuator) dimensionality */
@@ -653,8 +663,7 @@ arr rai::Configuration::getLimits() const {
 void rai::Configuration::calc_q_from_Q() {
   ensure_indexedJoints();
 
-  uint N=q.N;
-  q.resize(N).setZero();
+  q.setZero();
 
   uint n=0;
   for(Joint* j: activeJoints) {
@@ -677,21 +686,27 @@ void rai::Configuration::calc_q_from_Q() {
     q.setVectorBlock(contact_q, c->qIndex);
     n += c->qDim();
   }
-  CHECK_EQ(n, N, "");
+  CHECK_EQ(n, q.N, "");
 
   _state_q_isGood=true;
 }
 
 void rai::Configuration::calc_qInactive_from_Q() {
-  qInactive.clear();
+  ensure_indexedJoints();
 
+  qInactive.setZero();
+
+  uint n=0;
   for(Frame* f: frames) if(f->joint && !f->joint->active){ //this includes mimic'ing joints!
-    arr joint_q = f->joint->calc_q_from_Q(f->Q);
-    CHECK_EQ(joint_q.N, f->joint->dim, "");
+    rai::Joint *j = f->joint;
+    CHECK_EQ(j->qIndex, n, "joint indexing is inconsistent");
+    arr joint_q = j->calc_q_from_Q(f->Q);
+    CHECK_EQ(joint_q.N, j->dim, "");
     if(!f->joint->dim) continue; //nothing to do
-    CHECK_EQ(f->joint->qIndex, qInactive.N, "");
-    qInactive.append(joint_q);
+    qInactive.setVectorBlock(joint_q, j->qIndex);
+    n += j->dim;
   }
+  CHECK_EQ(n, qInactive.N, "");
 }
 
 void rai::Configuration::calc_Q_from_q() {
@@ -828,8 +843,14 @@ void rai::Configuration::setJointState(const arr& _q, const FrameL& joints) {
   uint nd=0;
   for(Frame* f:joints) {
     Joint* j = f->joint;
-    if(!j || !j->active) continue;
-    for(uint ii=0; ii<j->dim; ii++) q(j->qIndex+ii) = _q(nd+ii);
+    CHECK(j, "you gave a non-joint to setJointState"); //    if(!j || !j->active) continue;
+    if(j->active){
+      for(uint ii=0; ii<j->dim; ii++) q.elem(j->qIndex+ii) = _q(nd+ii);
+      j->calc_Q_from_q(q, j->qIndex);
+    }else{
+      for(uint ii=0; ii<j->dim; ii++) qInactive.elem(j->qIndex+ii) = _q(nd+ii);
+      j->calc_Q_from_q(qInactive, j->qIndex);
+    }
     nd += j->dim;
   }
   CHECK_EQ(_q.N, nd, "");
@@ -838,12 +859,22 @@ void rai::Configuration::setJointState(const arr& _q, const FrameL& joints) {
 
   _state_q_isGood=true;
   _state_proxies_isGood=false;
-  for(Joint* j:activeJoints) {
-    if(j->type!=JT_tau) {
-      j->frame->_state_setXBadinBranch();
-    }
+}
+
+void rai::Configuration::setFrameState(const arr& X, const FrameL& F, bool warnOnDifferentDim) {
+  if(warnOnDifferentDim) {
+    if(X.d0 > F.N) LOG(-1) <<"X.d0=" <<X.d0 <<" is larger than frames.N=" <<F.N;
+    if(X.d0 < F.N) LOG(-1) <<"X.d0=" <<X.d0 <<" is smaller than frames.N=" <<F.N;
   }
-  calc_Q_from_q();
+  for(Frame* f:F) if(f->parent) f->_state_X_isGood=false;
+  for(uint i=0; i<F.N && i<X.d0; i++) {
+    F(i)->X.set(X[i]);
+    F(i)->X.rot.normalize();
+    F(i)->_state_X_isGood = true;
+  }
+  for(uint i=0; i<F.N && i<X.d0; i++) {
+    if(F(i)->parent) F(i)->Q.setDifference(F(i)->parent->X, F(i)->X);
+  }
 }
 
 void rai::Configuration::setFrameState(const arr& X, const StringA& frameNames, bool warnOnDifferentDim) {
@@ -1275,7 +1306,6 @@ void rai::Configuration::kinematicsTau(double& tau, arr& J, Frame* a) const {
   Joint* j = a->joint;
   tau = a->tau;
   if(!!J) {
-    uint N=getJointStateDimension();
     jacobian_zero(J, 1);
     J.elem(0, j->qIndex) += 1e-1;
   }

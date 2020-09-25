@@ -29,7 +29,14 @@ arr CtrlObjective::getResidual(CtrlProblem& cp) {
 }
 
 arr CtrlObjective::getValue(CtrlProblem& cp) {
-  return feat->phi(cp.komo.configurations);
+//  return feat->phi(cp.komo.configurations);
+  CHECK(feat->order==0,"")
+  FrameL F = indicesToFrames(feat->frameIDs + cp.komo.timeSlices(cp.komo.k_order,0)->ID, cp.komo.pathConfig );
+  if(feat->frameIDs.nd==2) F.reshape(1, feat->frameIDs.d0, feat->frameIDs.d1);
+  else  F.reshape(1, F.N);
+  arr y, J;
+  feat->__phi2(y, J, F);
+  return y;
 }
 
 void CtrlObjective::resetState() { if(movingTarget) movingTarget->resetState(); status=AS_init; }
