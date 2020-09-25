@@ -13,7 +13,7 @@
 #include "kin_physx.h"
 #include "F_geometrics.h"
 #include "switch.h"
-#include "F_collisions.h".h"
+#include "F_collisions.h"
 #include "../Gui/opengl.h"
 
 namespace rai {
