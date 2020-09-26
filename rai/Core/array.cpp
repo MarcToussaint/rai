@@ -96,7 +96,7 @@ I've put the clapack.h directly into the rai directory - one only has to link to
 namespace rai {
 
 /// make sparse: create the \ref sparse index
-template<> rai::SparseVector& rai::Array<double>::sparseVec() {
+template<> SparseVector& Array<double>::sparseVec() {
   SparseVector* s;
   if(!special) {
     s = new SparseVector(*this);
@@ -115,7 +115,7 @@ template<> rai::SparseVector& rai::Array<double>::sparseVec() {
   return *s;
 }
 
-template<> const rai::SparseVector& rai::Array<double>::sparseVec() const {
+template<> const SparseVector& Array<double>::sparseVec() const {
   CHECK(isSparseVector(*this), "");
   SparseVector* s = dynamic_cast<SparseVector*>(special);
   CHECK(s, "");
@@ -123,7 +123,7 @@ template<> const rai::SparseVector& rai::Array<double>::sparseVec() const {
 }
 
 /// make sparse: create the \ref sparse index
-template<> rai::SparseMatrix& rai::Array<double>::sparse() {
+template<> SparseMatrix& Array<double>::sparse() {
   SparseMatrix* s;
   if(!special) {
     s = new SparseMatrix(*this);
@@ -143,16 +143,36 @@ template<> rai::SparseMatrix& rai::Array<double>::sparse() {
 }
 
 /// make sparse: create the \ref sparse index
-template<> const rai::SparseMatrix& rai::Array<double>::sparse() const {
+template<> const SparseMatrix& Array<double>::sparse() const {
   CHECK(isSparseMatrix(*this), "");
   SparseMatrix* s = dynamic_cast<SparseMatrix*>(special);
   CHECK(s, "");
   return *s;
 }
 
+/// make sparse: create the \ref sparse index
+template<> RowShifted& Array<double>::rowShifted() {
+  rai::RowShifted* Zaux;
+    if(!special) {
+      Zaux = new rai::RowShifted(*this);
+      if(N) {
+        CHECK_EQ(nd, 2, "");
+        Zaux->rowSize = d1;
+        Zaux->rowShift.resize(d0).setZero();
+        Zaux->rowLen.resize(d0) = d1;
+      } else {
+        nd=2;
+      }
+    } else {
+      Zaux = dynamic_cast<RowShifted*>(special);
+      CHECK(Zaux, "");
+    }
+    return *Zaux;
+  }
+
 #define NONSENSE( type ) \
-  template<> rai::SparseMatrix& rai::Array<type>::sparse() { NIY; return *(new SparseMatrix(NoArr)); } \
-  template<> const rai::SparseMatrix& rai::Array<type>::sparse() const{ NIY; return *(new SparseMatrix(NoArr)); }
+  template<> SparseMatrix& Array<type>::sparse() { NIY; return *(new SparseMatrix(NoArr)); } \
+  template<> const SparseMatrix& Array<type>::sparse() const{ NIY; return *(new SparseMatrix(NoArr)); }
 NONSENSE(float)
 NONSENSE(uint)
 NONSENSE(int)
@@ -1912,49 +1932,48 @@ arr eigen_Ainv_b(const arr& A, const arr& b) { NICO }
 // RowShifted
 //
 
-rai::RowShifted::RowShifted(arr& X):Z(X), real_d1(0), symmetric(false) {
+rai::RowShifted::RowShifted(arr& X) : Z(X), rowSize(0), symmetric(false) {
   type = SpecialArray::RowShiftedST;
   Z.special = this;
 }
 
-rai::RowShifted::RowShifted(arr& X, rai::RowShifted& aux):
-  Z(X),
-  real_d1(aux.real_d1),
-  rowShift(aux.rowShift),
-  rowLen(aux.rowLen),
-  colPatches(aux.colPatches),
-  symmetric(aux.symmetric) {
+rai::RowShifted::RowShifted(arr& X, rai::RowShifted& aux)
+  : Z(X),
+    rowSize(aux.rowSize),
+    rowShift(aux.rowShift),
+    rowLen(aux.rowLen),
+    colPatches(aux.colPatches),
+    symmetric(aux.symmetric) {
   type = SpecialArray::RowShiftedST;
   Z.special=this;
 }
 
-rai::RowShifted* rai::makeRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d1) {
-  rai::RowShifted* Zaux;
-  if(!Z.special) {
-    Zaux = new rai::RowShifted(Z);
-  } else {
-    CHECK_EQ(Z.special->type, SpecialArray::RowShiftedST, "");
-    Zaux = dynamic_cast<rai::RowShifted*>(Z.special);
-  }
-  Z.resize(d0, pack_d1);
-  Z.setZero();
-  Zaux->real_d1=real_d1;
-  Zaux->rowShift.resize(d0);
-  Zaux->rowShift.setZero();
-  Zaux->rowLen.resize(d0);
-  if(d0) Zaux->rowLen = pack_d1;
-  return Zaux;
-}
-
-rai::RowShifted::~RowShifted() {
-  Z.special = nullptr;
-}
-
-double rai::RowShifted::elem(uint i, uint j) {
+double rai::RowShifted::elem(uint i, uint j) const {
+  CHECK(Z.nd==2 && i<Z.d0 && j<Z.d1,
+        "2D range error (" <<Z.nd <<"=2, " <<i <<"<" <<Z.d0 <<", " <<j <<"<" <<Z.d1 <<")");
   uint rs=rowShift(i);
-  if(j<rs || j>=rs+Z.d1) return 0.;
-  return Z(i, j-rs);
+  if(j<rs || j>=rs+rowSize) return 0.;
+  return Z.p[i*rowSize+j-rs];
 }
+
+double& rai::RowShifted::entry(uint i, uint j) const {
+  CHECK(Z.nd==2 && i<Z.d0 && j<rowSize,
+        "2D range error (" <<Z.nd <<"=2, " <<i <<"<" <<Z.d0 <<", " <<j <<"<" <<rowSize <<")");
+  return Z.p[i*rowSize+j];
+}
+
+void rai::RowShifted::resize(uint d0, uint d1, uint _rowSize){
+  Z.nd=2; Z.d0=d0; Z.d1=d1;
+  Z.resizeMEM(d0*_rowSize, false);
+  Z.setZero();
+  rowSize = _rowSize;
+  rowShift.resize(d0).setZero();
+  rowLen.resize(d0) = rowSize;
+}
+
+void rai::RowShifted::resizeCopy(uint d0, uint d1, uint n){ NIY; }
+
+void rai::RowShifted::reshape(uint d0, uint d1){ NIY; }
 
 void rai::RowShifted::reshift() {
   rowLen.resize(Z.d0);
@@ -1997,57 +2016,25 @@ void rai::RowShifted::reshift() {
   }
 }
 
-arr rai::packRowShifted(const arr& X) {
-#if 1
-  arr Z;
-  rai::RowShifted* Zaux = makeRowShifted(Z, X.d0, X.d1, X.d1);
-  memmove(Z.p, X.p, Z.N*Z.sizeT);
-  Zaux->reshift();
-  return Z;
-#else
-  arr Z;
-  rai::RowShifted* Zaux = makeRowShifted(Z, X.d0, 0, X.d1);
-  Z.setZero();
-  //-- compute rowShifts and pack_d1:
-  uint pack_d1=0;
-  for(uint i=0; i<X.d0; i++) {
-    uint j=0, rs;
-    while(j<X.d1 && X(i, j)==0.) j++;
-    Zaux->rowShift(i)=rs=j;
-    j=X.d1;
-    while(j>rs && X(i, j-1)==0.) j--;
-    if(j-rs>pack_d1) pack_d1=j-rs;
-  }
-
-  Z.resize(X.d0, pack_d1);
-  Z.setZero();
-  for(uint i=0; i<Z.d0; i++) for(uint j=0; j<Z.d1 && Zaux->rowShift(i)+j<X.d1; j++)
-      Z(i, j) = X(i, Zaux->rowShift(i)+j);
-  return Z;
-#endif
-}
-
-arr unpackRowShifted(const arr& Y) {
-  CHECK(isRowShifted(Y), "");
-  rai::RowShifted* Yaux = (rai::RowShifted*)Y.special;
-  arr X(Y.d0, Yaux->real_d1);
-  CHECK(!Yaux->symmetric || Y.d0==Yaux->real_d1, "cannot be symmetric!");
+arr rai::RowShifted::unpack() const {
+  arr X(Z.d0, Z.d1);
+  CHECK(!symmetric || Z.d0==Z.d1, "cannot be symmetric!");
   X.setZero();
-  for(uint i=0; i<Y.d0; i++) {
-    uint rs=Yaux->rowShift(i);
-    for(uint j=0; j<Y.d1 && rs+j<X.d1; j++) {
-      X(i, j+rs) = Y(i, j);
-      if(Yaux->symmetric) X(j+rs, i) = Y(i, j);
+  for(uint i=0; i<Z.d0; i++) {
+    uint rs=rowShift(i);
+    for(uint j=0; j<rowLen(i) && j+rs<X.d1; j++) {
+      X(i, j+rs) = entry(i, j);
+      if(symmetric) X(j+rs, i) = entry(i, j);
     }
   }
   return X;
 }
 
 void rai::RowShifted::computeColPatches(bool assumeMonotonic) {
-  colPatches.resize(real_d1, 2);
+  colPatches.resize(Z.d1, 2);
   uint a=0, b=Z.d0;
   if(!assumeMonotonic) {
-    for(uint j=0; j<real_d1; j++) {
+    for(uint j=0; j<Z.d1; j++) {
       a=0;
       while(a<Z.d0 && elem(a, j)==0) a++;
       b=Z.d0;
@@ -2056,11 +2043,11 @@ void rai::RowShifted::computeColPatches(bool assumeMonotonic) {
       colPatches.p[2*j+1]=b;
     }
   } else {
-    for(uint j=0; j<real_d1; j++) {
+    for(uint j=0; j<Z.d1; j++) {
       while(a<Z.d0 && j>=rowShift.p[a]+Z.d1) a++;
       colPatches.p[2*j]=a;
     }
-    for(uint j=real_d1; j--;) {
+    for(uint j=Z.d1; j--;) {
       while(b>0 && j<rowShift.p[b-1]) b--;
       colPatches.p[2*j+1]=b;
     }
@@ -2071,23 +2058,24 @@ arr rai::RowShifted::At_A() {
   //TODO use blas DSYRK instead?
   CHECK_EQ(rowLen.N, rowShift.N, "");
   arr R;
-  rai::RowShifted* Raux = makeRowShifted(R, real_d1, Z.d1, real_d1);
+  rai::RowShifted& R_ = R.rowShifted();
+  R_.resize(Z.d1, Z.d1, rowSize);
   R.setZero();
-  for(uint i=0; i<R.d0; i++) Raux->rowShift(i) = i;
-  Raux->symmetric=true;
-  if(!Z.d1) return R; //Z is identically zero, all rows fully packed -> return zero R
+  for(uint i=0; i<R.d0; i++) R_.rowShift(i) = i;
+  R_.symmetric=true;
+  if(!rowSize) return R; //Z is identically zero, all rows fully packed -> return zero R
   for(uint i=0; i<Z.d0; i++) {
     uint rs=rowShift.p[i];
     uint rlen=rowLen.p[i];
-    double* Zi = Z.p+i*Z.d1;
-    for(uint j=0; j<rlen/*Z.d1*/; j++) {
+    double* Zi = Z.p+i*rowSize;
+    for(uint j=0; j<rlen/*rowSize*/; j++) {
       uint real_j=j+rs;
-      if(real_j>=real_d1) break;
+      if(real_j>=Z.d1) break;
       double Zij=Zi[j];
       if(Zij!=0.) {
         double* Rp=R.p + real_j*R.d1;
         double* Jp=Zi+j;
-        double* Jpstop=Zi+rlen; //Z.d1;
+        double* Jpstop=Zi+rlen; //rowSize;
         for(; Jp!=Jpstop; Rp++, Jp++) if(*Jp!=0.) *Rp += Zij * *Jp;
       }
     }
@@ -2103,29 +2091,29 @@ arr rai::RowShifted::A_At() {
     for(uint j=Z.d0-1; j>=i+pack_d1; j--) {
       uint rs_j=rowShift.p[j];
       uint a, b;
-      if(rs_i<rs_j) { a=rs_j; b=rs_i+Z.d1; } else { a=rs_i; b=rs_j+Z.d1; }
-      if(real_d1<b) b=real_d1;
+      if(rs_i<rs_j) { a=rs_j; b=rs_i+rowSize; } else { a=rs_i; b=rs_j+rowSize; }
+      if(b>Z.d1) b=Z.d1;
       if(a<b) if(pack_d1<j-i+1) pack_d1=j-i+1;
     }
   }
 
   arr R;
-  rai::RowShifted* Raux = makeRowShifted(R, Z.d0, pack_d1, Z.d0);
-  R.setZero();
-  for(uint i=0; i<R.d0; i++) Raux->rowShift(i) = i;
-  Raux->symmetric=true;
-  if(!Z.d1) return R; //Z is identically zero, all rows fully packed -> return zero R
+  rai::RowShifted& R_ = R.rowShifted();
+  R_.resize(Z.d0, Z.d0, pack_d1);
+  for(uint i=0; i<R.d0; i++) R_.rowShift(i) = i;
+  R_.symmetric=true;
+  if(!rowSize) return R; //Z is identically zero, all rows fully packed -> return zero R
   for(uint i=0; i<Z.d0; i++) {
     uint rs_i=rowShift.p[i];
-    double* Zi=&Z(i, 0);
+    double* Zi=&entry(i, 0);
     for(uint j=i; j<Z.d0 && j<i+pack_d1; j++) {
       uint rs_j=rowShift.p[j];
-      double* Zj=&Z(j, 0);
-      double* Rij=&R(i, j-i);
+      double* Zj=&entry(j, 0);
+      double* Rij=&R_.entry(i, j-i);
 
       uint a, b;
-      if(rs_i<rs_j) { a=rs_j; b=rs_i+Z.d1; } else { a=rs_i; b=rs_j+Z.d1; }
-      if(real_d1<b) b=real_d1;
+      if(rs_i<rs_j) { a=rs_j; b=rs_i+rowSize; } else { a=rs_i; b=rs_j+rowSize; }
+      if(b>Z.d1) b=Z.d1;
       for(uint k=a; k<b; k++) *Rij += Zi[k-rs_i]*Zj[k-rs_j];
     }
   }
@@ -2135,7 +2123,7 @@ arr rai::RowShifted::A_At() {
 arr rai::RowShifted::At_x(const arr& x) {
   CHECK_EQ(rowLen.N, rowShift.N, "");
   CHECK_EQ(x.N, Z.d0, "");
-  arr y(real_d1);
+  arr y(Z.d1);
   y.setZero();
 //  cout <<"SPARSITY = " <<Z.sparsity() <<endl;
   if(!Z.d1) return y; //Z is identically zero, all rows fully packed -> return zero y
@@ -2143,11 +2131,11 @@ arr rai::RowShifted::At_x(const arr& x) {
     double xi = x.p[i];
     uint rs=rowShift.p[i];
 #if 0
-    for(uint j=0; j<Z.d1; j++) y.p[rs+j] += xi * Z.p[i*Z.d1+j]; // sum += acc(i,j)*x(i);
+    for(uint j=0; j<Z.d1; j++) y.p[rs+j] += xi * entry(i,j); // sum += acc(i,j)*x(i);
 #else //PROFILED
-    double* Zp = Z.p + i*Z.d1;
+    double* Zp = Z.p + i*rowSize;
     double* yp = y.p + rs;
-    double* ypstop = yp + rowLen.p[i]; //+ Z.d1;
+    double* ypstop = yp + rowLen.p[i]; //+ rowSize;
     for(; yp!=ypstop;) { *yp += xi * *Zp;  Zp++;  yp++; }
 #endif
   }
@@ -2161,14 +2149,14 @@ arr rai::RowShifted::A_x(const arr& x) {
     for(uint j=0; j<x.d1; j++) Y[j]() = A_x(X[j]);
     return ~Y;
   }
-  CHECK_EQ(x.N, real_d1, "");
+  CHECK_EQ(x.N, Z.d1, "");
   arr y = zeros(Z.d0);
   if(!Z.d1) return y; //Z is identically zero, all rows fully packed -> return zero y
   for(uint i=0; i<Z.d0; i++) {
     double sum=0.;
     uint rs=rowShift.p[i];
-    for(uint j=0; j<Z.d1 && j+rs<x.N; j++) {
-      sum += Z(i, j)*x(j+rs);
+    for(uint j=0; j<rowSize && j+rs<x.N; j++) {
+      sum += entry(i, j)*x(j+rs);
     }
     y(i) = sum;
   }
@@ -2181,14 +2169,28 @@ arr rai::RowShifted::At() {
   for(uint i=0; i<colPatches.d0; i++) { uint a=colPatches(i, 1)-colPatches(i, 0); if(a>width) width=a; }
 
   arr At;
-  rai::RowShifted* At_ = makeRowShifted(At, real_d1, width, Z.d0);
-  for(uint i=0; i<real_d1; i++) {
+  rai::RowShifted& At_ = At.rowShifted();
+  At_.resize(Z.d1, Z.d0, width);
+  At.setZero();
+  for(uint i=0; i<Z.d1; i++) {
     uint rs = colPatches(i, 0);
-    At_->rowShift(i) = rs;
     uint rlen = colPatches(i, 1)-rs;
-    for(uint j=0; j<rlen; j++) At_->Z(i, j) = elem(rs+j, i);
+    At_.rowLen(i) = rlen;
+    if(rlen){
+      At_.rowShift(i) = rs;
+      for(uint j=0; j<rlen; j++) At_.entry(i,j) = elem(rs+j, i);
+    }
   }
   return At;
+}
+
+void rai::RowShifted::write(ostream& os) const{
+  os <<"RowShifted: real:" <<Z.d0 <<'x' <<Z.d1 <<"  packed:" <<Z.d0 <<'x' <<rowSize <<endl;
+  os <<"packed numbers =\n" <<Z
+      <<"\nrowShifts=" <<rowShift
+     <<"\nrowLens=" <<rowLen;
+  if(colPatches.N) os <<"\ncolPaches=\n" <<~colPatches;
+  os  <<"\nunpacked =\n" <<unpack() <<endl;
 }
 
 //===========================================================================
@@ -2588,7 +2590,7 @@ void operator /= (rai::SparseMatrix& x, double y) { x.Z.ref() /= y; }
 
 arr rai::unpack(const arr& X) {
   if(!isSpecial(X)) HALT("this is not special");
-  if(isRowShifted(X)) return unpackRowShifted(X);
+  if(isRowShifted(X)) return dynamic_cast<rai::RowShifted*>(X.special)->unpack();
   if(isSparseMatrix(X)) return dynamic_cast<rai::SparseMatrix*>(X.special)->unsparse();
   HALT("should not be here");
   return arr();
@@ -2596,14 +2598,14 @@ arr rai::unpack(const arr& X) {
 
 arr rai::comp_At_A(const arr& A) {
   if(!isSpecial(A)) { arr X; blas_At_A(X, A); return X; }
-  if(isRowShifted(A)) return ((rai::RowShifted*)A.special)->At_A();
-  if(isSparseMatrix(A)) return ((rai::SparseMatrix*)A.special)->At_A();
+  if(isRowShifted(A)) return dynamic_cast<rai::RowShifted*>(A.special)->At_A();
+  if(isSparseMatrix(A)) return dynamic_cast<rai::SparseMatrix*>(A.special)->At_A();
   return NoArr;
 }
 
 arr rai::comp_A_At(const arr& A) {
   if(!isSpecial(A)) { arr X; blas_A_At(X, A); return X; }
-  if(isRowShifted(A)) return ((rai::RowShifted*)A.special)->A_At();
+  if(isRowShifted(A)) return dynamic_cast<rai::RowShifted*>(A.special)->A_At();
   return NoArr;
 }
 

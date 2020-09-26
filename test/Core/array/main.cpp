@@ -684,58 +684,71 @@ void TEST(Tensor){
 
 //===========================================================================
 
-void write(rai::RowShifted& PM){
-  cout <<"RowShifted: real:" <<PM.Z.d0 <<'x' <<PM.real_d1 <<"  packed:" <<PM.Z.d0 <<'x' <<PM.Z.d1 <<endl;
-  cout <<"packed numbers =\n" <<PM.Z
-      <<"\nrowShifts=" <<PM.rowShift
-//     <<"\ncolPaches=\n" <<~PM.colPatches
-    <<"\nunpacked =\n" <<unpack(PM.Z) <<endl;
-}
-
 void TEST(RowShifted){
   cout <<"\n*** RowShifted\n";
+
+//  rnd.clockSeed();
   
   arr J;
-  rai::RowShifted *Jaux = makeRowShifted(J,10,4,12);
-  rndInteger(J,0,9);
-  for(uint i=0;i<J.d0;i++) Jaux->rowShift(i) = i/3;
-  Jaux->computeColPatches(false);
-  write(*castRowShifted(J));
+  STRING("[0, 0,\
+         1, 0,\
+         1, 1,\
+         0, 1,\
+         0, 0]") >>J;
+         J.reshape(5,2);
 
-  cout <<Jaux->At() <<endl;
+  rai::RowShifted& J_ = J.rowShifted();
+//  J_.resize(10,12,4);
+//  rndInteger(J,0,9);
+//  for(uint i=0;i<J.d0;i++) J_.rowShift(i) = i/3;
+  J_.computeColPatches(false);
+  cout <<J.rowShifted();
+
+  cout <<J_.At().rowShifted() <<endl;
 
   //constructor compressing an array
-  arr K =  packRowShifted(unpack(J));
-  write(*castRowShifted(K));
+  arr K = unpack(J);
+  K.rowShifted().reshift();
+  cout <<K.rowShifted();
   
   cout <<"-----------------------" <<endl;
 
   //-- randomized checks
   for(uint k=0;k<100;k++){
     arr X(1+rnd(5),1+rnd(5));
-    rndInteger(X,0,1);
-    arr Y = packRowShifted(X);
+    rndGauss(X,0,1);
+    arr Y = X;
+    Y.rowShifted().reshift();
     arr Yt = comp_At(Y);
+//    Yt.rowShifted().computeColPatches(false);
+//    cout <<"-----------------------" <<endl;
+//    cout <<X <<endl;
+//    cout <<Y.rowShifted() <<endl <<Yt.rowShifted() <<endl;
 
 //    RowShifted& Yaux = castRowShifted(Y);
 //    write(*castRowShifted(Y));
-    arr x(X.d0);   rndInteger(x,0,9);
-    arr x2(X.d1);  rndInteger(x2,0,9);
+    arr x(X.d0);   rndGauss(x,0,9);
+    arr x2(X.d1);  rndGauss(x2,0,9);
     cout <<"errors = " <<maxDiff(X,unpack(Y))
+        <<' ' <<maxDiff(~X,unpack(Yt))
         <<' ' <<maxDiff(~X*X, unpack(comp_At_A(Y)))
        <<' ' <<maxDiff(X*~X, unpack(comp_A_At(Y)))
+      <<' ' <<maxDiff(X*x2, comp_A_x(Y,x2))
       <<' ' <<maxDiff(~X*x, comp_At_x(Y,x))
       <<' ' <<maxDiff(~X*x, comp_A_x(Yt,x))
      <<' ' <<maxDiff(~X*X, unpack(comp_A_At(Yt)))
     <<endl;
     CHECK_ZERO(maxDiff(X, unpack(Y)), 1e-10, "");
+    CHECK_ZERO(maxDiff(~X, unpack(Yt)), 1e-10, "");
     CHECK_ZERO(maxDiff(~X*X, unpack(comp_At_A(Y))), 1e-10, "");
 //    arr tmp =comp_A_At(Y);
 //    //write(*castRowShifted(tmp));
 //    cout <<X*~X <<endl <<unpack(comp_A_At(Y)) <<endl;
     CHECK_ZERO(maxDiff(X*~X, unpack(comp_A_At(Y))), 1e-10, "");
-    CHECK_ZERO(maxDiff(~X*x, comp_At_x(Y,x)), 1e-10, "");
     CHECK_ZERO(maxDiff(X*x2, comp_A_x(Y,x2)), 1e-10, "");
+    CHECK_ZERO(maxDiff(~X*x, comp_At_x(Y,x)), 1e-10, "");
+    CHECK_ZERO(maxDiff(~X*x, comp_A_x(Yt,x)), 1e-10, "");
+    CHECK_ZERO(maxDiff(~X*X, unpack(comp_A_At(Yt))), 1e-10, "");
 
     //cholesky:
     arr H = comp_A_At(Y);

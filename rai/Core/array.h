@@ -39,6 +39,7 @@ namespace rai {
 struct FileToken;
 struct SparseVector;
 struct SparseMatrix;
+struct RowShifted;
 
 // OLD, TODO: hide -> array.cpp
 extern bool useLapack;
@@ -290,6 +291,7 @@ template<class T> struct Array : std::vector<T>, Serializable {
   const SparseMatrix& sparse() const;
   SparseVector& sparseVec();
   const SparseVector& sparseVec() const;
+  RowShifted& rowShifted();
   bool isSparse() const;
   void setNoArr();
 
@@ -911,7 +913,7 @@ template<class T> bool Array<T>::isSparse() const { return special && (special->
 
 struct RowShifted : SpecialArray {
   arr& Z;           ///< references the array itself
-  uint real_d1;     ///< the real width (the packed width is Z.d1; the height is Z.d0)
+  uint rowSize;     ///< the real width (the packed width is Z.d1; the height is Z.d0)
   uintA rowShift;   ///< amount of shift of each row (rowShift.N==Z.d0)
   uintA rowLen;     ///< number of non-zeros in the row
   uintA colPatches; ///< column-patch: (nd=2,d0=real_d1,d1=2) range of non-zeros in a COLUMN; starts with 'a', ends with 'b'-1
@@ -919,22 +921,28 @@ struct RowShifted : SpecialArray {
 
   RowShifted(arr& X);
   RowShifted(arr& X, RowShifted& aux);
-  ~RowShifted();
-  double elem(uint i, uint j); //TODO rename to 'elem'
+  //access
+  double elem(uint i, uint j) const; //access with natural coordinates
+  double& entry(uint i, uint j) const; //access with memory coordinates
+  //manipulations
+  void resize(uint d0, uint d1, uint _rowSize);
+  void resizeCopy(uint d0, uint d1, uint n);
+  void reshape(uint d0, uint d1);
   void reshift(); //shift all cols to start with non-zeros
   void computeColPatches(bool assumeMonotonic);
+
+  //computations
   arr At_A();
   arr A_At();
   arr At_x(const arr& x);
   arr A_x(const arr& x);
   arr At();
-};
 
-inline RowShifted* castRowShifted(arr& X) {
-  ///CHECK_EQ(X.special,X.RowShiftedST,"can't cast like this!");
-  if(!X.special || X.special->type!=SpecialArray::RowShiftedST) throw("can't cast like this!");
-  return dynamic_cast<RowShifted*>(X.special); //((RowShifted*)X.aux);
-}
+  void write(std::ostream& os) const;
+
+  arr unpack() const;
+};
+inline std::ostream& operator<<(std::ostream& os, const RowShifted& x){ x.write(os); return os; }
 
 struct SparseVector: SpecialArray {
   arr& Z;      ///< references the array itself
@@ -987,8 +995,6 @@ arr comp_A_At(const arr& A);
 arr comp_At_x(const arr& A, const arr& x);
 arr comp_At(const arr& A);
 arr comp_A_x(const arr& A, const arr& x);
-arr packRowShifted(const arr& X);
-RowShifted* makeRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d1);
 arr makeRowSparse(const arr& X);
 
 }//namespace rai

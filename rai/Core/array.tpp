@@ -1961,9 +1961,11 @@ template<class T> void rai::Array<T>::write(std::ostream& os, const char* ELEMSE
         if(j) os <<LINESEP;
         if(isRowShifted(*this)) {
           RowShifted* rs = dynamic_cast<RowShifted*>(special);
-          cout <<"[row-shift=" <<rs->rowShift(j) <<"] ";
+          cout <<"[row-shift:" <<rs->rowShift(j) <<" row-len:" <<rs->rowLen(j) <<"] ";
+          for(i=0; i<rs->rowSize; i++) os <<(i?ELEMSEP:"") <<rs->entry(j,i);
+        }else{
+          for(i=0; i<d1; i++) os <<(i?ELEMSEP:"") <<operator()(j, i);
         }
-        for(i=0; i<d1; i++) os <<(i?ELEMSEP:"") <<operator()(j, i);
       }
     if(nd==3) for(k=0; k<d0; k++) {
         if(k) os <<'\n';
