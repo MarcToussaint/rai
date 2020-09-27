@@ -77,7 +77,7 @@ rai::Frame::~Frame() {
   if(inertia) delete inertia;
   if(parent) unLink();
   while(children.N) children.last()->unLink();
-  CHECK_EQ(this, C.frames(ID), "")
+  CHECK_EQ(this, C.frames.elem(ID), "")
   C.frames.remove(ID);
   listReindex(C.frames);
   C.reset_q();
@@ -574,7 +574,7 @@ rai::Joint::Joint(Frame& f, Joint* copyJoint)
     active=copyJoint->active;
 
     if(copyJoint->mimic) {
-      mimic = frame->C.frames(copyJoint->mimic->frame->ID)->joint;
+      mimic = frame->C.frames.elem(copyJoint->mimic->frame->ID)->joint;
     }
 
     if(copyJoint->uncertainty) {

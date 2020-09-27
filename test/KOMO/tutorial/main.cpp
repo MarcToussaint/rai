@@ -3,6 +3,7 @@
 #include <KOMO/komo.h>
 #include <Kin/TM_default.h>
 #include <Optim/opt-nlopt.h>
+#include <Kin/viewer.h>
 
 //===========================================================================
 
@@ -41,9 +42,11 @@ void tutorialBasics(){
   //-- call the optimizer
 //  komo.animateOptimization = 1;
   komo.optimize();
-  //  komo.checkGradients(); //this checks all gradients of the problem by finite difference
+    komo.checkGradients(); //this checks all gradients of the problem by finite difference
   komo.getReport(true); //true -> plot the cost curves
-  for(uint i=0;i<2;i++) komo.displayTrajectory(.1, true); //play the trajectory
+//  for(uint i=0;i<2;i++) komo.displayTrajectory(.1, true); //play the trajectory
+  rai::ConfigurationViewer V;
+  V.setConfiguration(komo.pathConfig, "optimized motion", true);
 
   /* next step:
    *
@@ -101,7 +104,9 @@ void tutorialInverseKinematics(){
   komo.optimize();
   //  komo.checkGradients(); //this checks all gradients of the problem by finite difference
   komo.getReport(); //true -> plot the cost curves
-  for(uint i=0;i<2;i++) komo.displayTrajectory(.1, true); //play the trajectory
+//  for(uint i=0;i<2;i++) komo.displayTrajectory(.1, true); //play the trajectory
+  rai::ConfigurationViewer V;
+  V.setConfiguration(komo.pathConfig, "optimized motion", true);
 }
 
 //===========================================================================

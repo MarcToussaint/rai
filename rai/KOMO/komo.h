@@ -344,7 +344,7 @@ struct KOMO : NonCopyable {
     virtual void phi(arr& phi, arrA& J, arrA& H, uintA& featureTimes, ObjectiveTypeA& tt, const arr& x);
   } komo_problem;
 
-  //this treats each time slice as its own variable - default
+  //this treats each time slice as its own variable
   struct Conv_KOMO_FactoredNLP : MathematicalProgram_Factored {
     KOMO& komo;
 
@@ -365,6 +365,7 @@ struct KOMO : NonCopyable {
     virtual arr getInitializationSample(const arrL& previousOptima= {});
     virtual void getFactorization(uintA& variableDimensions, uintA& featureDimensions, intAA& featureVariables);
 
+    virtual void setAllVariables(const arr& x);
     virtual void setSingleVariable(uint var_id, const arr& x); //set a single variable block
     virtual void evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H); //get a single feature block
     virtual void report();

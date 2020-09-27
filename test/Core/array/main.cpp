@@ -716,7 +716,8 @@ void TEST(RowShifted){
   //-- randomized checks
   for(uint k=0;k<100;k++){
     arr X(1+rnd(5),1+rnd(5));
-    rndGauss(X,0,1);
+    rndInteger(X,0,1);
+    X *= rand(X.d0, X.d1);
     arr Y = X;
     Y.rowShifted().reshift();
     arr Yt = comp_At(Y);
@@ -724,11 +725,14 @@ void TEST(RowShifted){
 //    cout <<"-----------------------" <<endl;
 //    cout <<X <<endl;
 //    cout <<Y.rowShifted() <<endl <<Yt.rowShifted() <<endl;
+//    cout <<"***\n" <<~X*X <<endl <<comp_At_A(Y).rowShifted() <<endl;
 
 //    RowShifted& Yaux = castRowShifted(Y);
 //    write(*castRowShifted(Y));
-    arr x(X.d0);   rndGauss(x,0,9);
-    arr x2(X.d1);  rndGauss(x2,0,9);
+    arr x(X.d0);   rndGauss(x, 1.); //Integer(x,0,9);
+    arr x2(X.d1);  rndGauss(x2, 1.); //Integer(x2,0,9);
+    arr Z(1+rnd(5), X.d0);
+    arr Z2(X.d1, 1+rnd(5));
     cout <<"errors = " <<maxDiff(X,unpack(Y))
         <<' ' <<maxDiff(~X,unpack(Yt))
         <<' ' <<maxDiff(~X*X, unpack(comp_At_A(Y)))
@@ -737,6 +741,8 @@ void TEST(RowShifted){
       <<' ' <<maxDiff(~X*x, comp_At_x(Y,x))
       <<' ' <<maxDiff(~X*x, comp_A_x(Yt,x))
      <<' ' <<maxDiff(~X*X, unpack(comp_A_At(Yt)))
+    <<' ' <<maxDiff(Z*X, unpack(Z*Y))
+    <<' ' <<maxDiff(X*Z2, unpack(Y*Z2))
     <<endl;
     CHECK_ZERO(maxDiff(X, unpack(Y)), 1e-10, "");
     CHECK_ZERO(maxDiff(~X, unpack(Yt)), 1e-10, "");
@@ -749,6 +755,8 @@ void TEST(RowShifted){
     CHECK_ZERO(maxDiff(~X*x, comp_At_x(Y,x)), 1e-10, "");
     CHECK_ZERO(maxDiff(~X*x, comp_A_x(Yt,x)), 1e-10, "");
     CHECK_ZERO(maxDiff(~X*X, unpack(comp_A_At(Yt))), 1e-10, "");
+    CHECK_ZERO(maxDiff(Z*X, unpack(Z*Y)), 1e-10, "");
+    CHECK_ZERO(maxDiff(X*Z2, unpack(Y*Z2)), 1e-10, "");
 
     //cholesky:
     arr H = comp_A_At(Y);

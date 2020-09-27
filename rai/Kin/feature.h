@@ -38,13 +38,14 @@ struct Feature {
   Feature& setScale(const arr& _scale) { scale=_scale; return *this; }
   Feature& setTarget(const arr& _target) { target=_target; return *this; }
   Feature& setFrameIDs(const uintA& _frameIDs) { frameIDs=_frameIDs; return *this; }
+  Feature& setFrameIDs(const StringA& frames, const rai::Configuration& C) { setFrameIDs( stringListToFrameIndices(frames, C) ); return *this; }
   Feature& setDiffInsteadOfVel(){ diffInsteadOfVel=true; return *this; }
 
  protected:
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F) {  NIY; }
 
-  virtual void phi(arr& y, arr& J, const rai::Configuration& C) { phi2(y, J, C.frames.sub(frameIDs)); }
+  virtual void phi(arr& y, arr& J, const rai::Configuration& C);
   virtual void phi(arr& y, arr& J, const ConfigurationL& Ctuple); ///< if not overloaded this computes the generic pos/vel/acc depending on order
   virtual uint dim_phi(const rai::Configuration& C) { return dim_phi2(C.frames.sub(frameIDs)); }
   virtual uint dim_phi(const ConfigurationL& Ctuple) { return dim_phi(*Ctuple.last()); } ///< if not overloaded, returns dim_phi for last configuration

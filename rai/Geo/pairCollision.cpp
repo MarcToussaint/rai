@@ -491,7 +491,7 @@ void PairCollision::kinVector(arr& y, arr& J,
     double fac = (distance-rad)/(distance+eps);
     if(!!J) {
       arr d_fac = ((1.-fac)/(distance+eps)) *((~normal)*J);
-      J = J*fac + y*d_fac;
+      J = J*fac + y.reshape(3,1)*d_fac;
       checkNan(J);
     }
     y *= fac;

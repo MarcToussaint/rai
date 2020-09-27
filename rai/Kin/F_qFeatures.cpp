@@ -238,7 +238,7 @@ rai::Array<rai::Joint*> getMatchingJoints(const ConfigurationL& Ktuple, bool zer
 
       for(uint k=0; k<Ktuple.N-1; k++) { //go through other configs
         if(Ktuple(k)->frames.N<=j->frame->ID) { matchIsGood=false; break; }
-        rai::Frame* fmatch = Ktuple(k)->frames(j->frame->ID);
+        rai::Frame* fmatch = Ktuple(k)->frames.elem(j->frame->ID);
         if(!fmatch) { matchIsGood=false; break; }
         rai::Joint* jmatch = fmatch->joint; //getJointByBodyIndices(j->from()->ID, j->frame->ID);
         if(!jmatch || j->type!=jmatch->type) {
@@ -395,8 +395,8 @@ rai::Array<rai::Joint*> getSwitchedJoints(const rai::Configuration& G0, const ra
       }
       rai::Joint* j0 = G0.getJointByFrameIndices(j1->from()->ID, j1->frame->ID);
       if(!j0 || j0->type!=j1->type) {
-        if(G0.frames(j1->frame->ID)->joint) { //out-body had (in G0) one inlink...
-          j0 = G0.frames(j1->frame->ID)->joint;
+        if(G0.frames.elem(j1->frame->ID)->joint) { //out-body had (in G0) one inlink...
+          j0 = G0.frames.elem(j1->frame->ID)->joint;
         }
         switchedJoints.append({j0, j1});
 //      }
@@ -438,7 +438,7 @@ uintA getSwitchedBodies(const rai::Configuration& G0, const rai::Configuration& 
   for(rai::Frame* b1:G1.frames) {
     uint id = b1->ID;
     if(id>=G0.frames.N) continue; //b1 does not exist in G0 -> not a switched body
-    rai::Frame* b0 = G0.frames(id);
+    rai::Frame* b0 = G0.frames.elem(id);
     rai::Joint* j0 = b0->joint;
     rai::Joint* j1 = b1->joint;
     if(!j1) continue; //don't report if j1 did not become an effective DOF
@@ -454,8 +454,8 @@ uintA getSwitchedBodies(const rai::Configuration& G0, const rai::Configuration& 
   if(verbose) {
     for(uint id : switchedBodies) {
       cout <<"Switch: "
-           <<G0.frames(id)->name /*<<'-' <<switchedBodies(i,0)->name*/
-           <<" -> " <<G1.frames(id)->name /*<<'-' <<switchedJoints(i,1)->to->name*/ <<endl;
+           <<G0.frames.elem(id)->name /*<<'-' <<switchedBodies(i,0)->name*/
+           <<" -> " <<G1.frames.elem(id)->name /*<<'-' <<switchedJoints(i,1)->to->name*/ <<endl;
     }
   }
 

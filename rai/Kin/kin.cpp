@@ -171,7 +171,7 @@ rai::Frame* rai::Configuration::addFile(const char* filename) {
   init(G, true);
   file.cd_start();
   if(frames.N==n) return 0;
-  return frames(n); //returns 1st frame of added file
+  return frames.elem(n); //returns 1st frame of added file
 }
 
 rai::Frame* rai::Configuration::addFile(const char* filename, const char* parentOfRoot, const rai::Transformation& relOfRoot) {
@@ -277,12 +277,12 @@ void rai::Configuration::addFramesCopy(const FrameL& F, const ForceExchangeL& _f
 
   //relink frames - special attention to mimic'ing
   for(Frame* f:F) if(f->parent && f->parent->ID<=maxId && FId2thisId(f->parent->ID)!=-1) {
-    rai::Frame* f_new = frames(FId2thisId(f->ID));
-    f_new->linkFrom(frames(FId2thisId(f->parent->ID)));
+    rai::Frame* f_new = frames.elem(FId2thisId(f->ID));
+    f_new->linkFrom(frames.elem(FId2thisId(f->parent->ID)));
     //take care of within-F mimic joints:
     if(f->joint && f->joint->mimic){
       CHECK(f->joint && f->joint->mimic, "");
-      f_new->joint->mimic = frames(FId2thisId(f->joint->mimic->frame->ID))->joint;
+      f_new->joint->mimic = frames.elem(FId2thisId(f->joint->mimic->frame->ID))->joint;
     }
     //convert constant joints to mimic joints
     if(f->joint && f->ats["constant"]){
@@ -296,8 +296,10 @@ void rai::Configuration::addFramesCopy(const FrameL& F, const ForceExchangeL& _f
 
   //copy force exchanges
   for(ForceExchange* ex:_forces){
-    new ForceExchange(*frames(FId2thisId(ex->a.ID)), *frames(FId2thisId(ex->b.ID)), ex);
+    new ForceExchange(*frames.elem(FId2thisId(ex->a.ID)), *frames.elem(FId2thisId(ex->b.ID)), ex);
   }
+
+  if(!(frames.N%F.N)) frames.reshape(-1, F.N);
 }
 
 void rai::Configuration::clear() {
@@ -337,7 +339,7 @@ FrameL rai::Configuration::calc_topSort() const {
     for(Frame* ch : a->children) fringe.append(ch);
   }
 
-  for(uint i=0; i<done.N; i++) if(!done(i)) LOG(-1) <<"not done: " <<frames(i)->name <<endl;
+  for(uint i=0; i<done.N; i++) if(!done(i)) LOG(-1) <<"not done: " <<frames.elem(i)->name <<endl;
   CHECK_EQ(order.N, frames.N, "can't top sort");
 
   return order;
@@ -362,17 +364,17 @@ void rai::Configuration::copy(const rai::Configuration& C, bool referenceSwiftOn
 
   //copy frames; first each Frame/Link/Joint directly, where all links go to the origin K (!!!); then relink to itself
   for(Frame* f:C.frames) new Frame(*this, f);
-  for(Frame* f:C.frames) if(f->parent) frames(f->ID)->linkFrom(frames(f->parent->ID));
+  for(Frame* f:C.frames) if(f->parent) frames.elem(f->ID)->linkFrom(frames.elem(f->parent->ID));
 //  addFramesCopy(C.frames);
 
   //copy proxies; first they point to origin frames; afterwards, let them point to own frames
   copyProxies(C.proxies);
   //  proxies = K.proxies;
-  //  for(Proxy& p:proxies) { p.a = frames(p.a->ID); p.b = frames(p.b->ID);  p.coll.reset(); }
+  //  for(Proxy& p:proxies) { p.a = frames.elem(p.a->ID); p.b = frames.elem(p.b->ID);  p.coll.reset(); }
 
   //copy contacts
   for(ForceExchange* ex:C.forces){
-    new ForceExchange(*frames(ex->a.ID), *frames(ex->b.ID), ex);
+    new ForceExchange(*frames.elem(ex->a.ID), *frames.elem(ex->b.ID), ex);
   }
 
   //copy swift reference
@@ -457,8 +459,8 @@ arr rai::Configuration::naturalQmetric(double power) const {
   arr BM(frames.N);
   BM=1.;
   for(uint i=BM.N; i--;) {
-    for(uint j=0; j<frames(i)->children.N; j++) {
-      BM(i) = rai::MAX(BM(frames(i)->children(j)->ID)+1., BM(i));
+    for(uint j=0; j<frames.elem(i)->children.N; j++) {
+      BM(i) = rai::MAX(BM(frames.elem(i)->children(j)->ID)+1., BM(i));
       //      BM(i) += BM(bodies(i)->children(j)->to->index);
     }
   }
@@ -885,12 +887,12 @@ void rai::Configuration::setFrameState(const arr& X, const StringA& frameNames, 
     }
     for(auto f:frames) if(f->parent) f->_state_X_isGood=false;
     for(uint i=0; i<frames.N && i<X.d0; i++) {
-      frames(i)->X.set(X[i]);
-      frames(i)->X.rot.normalize();
-      frames(i)->_state_X_isGood = true;
+      frames.elem(i)->X.set(X[i]);
+      frames.elem(i)->X.rot.normalize();
+      frames.elem(i)->_state_X_isGood = true;
     }
     for(uint i=0; i<frames.N && i<X.d0; i++) {
-      if(frames(i)->parent) frames(i)->Q.setDifference(frames(i)->parent->X, frames(i)->X);
+      if(frames.elem(i)->parent) frames.elem(i)->Q.setDifference(frames.elem(i)->parent->X, frames.elem(i)->X);
     }
   } else {
     if(X.nd==1) {
@@ -996,9 +998,14 @@ void rai::Configuration::jacobian_zero(arr& J, uint n) const {
     J.resize(n, N).setZero();
   } else if(jacMode==JM_sparse){
     J.sparse().resize(n, N, 0);
+  } else if(jacMode==JM_rowShifted){
+    //estimate! the width
+    uint width = N;
+    if(frames.nd==2 && frames.d0>3){ width /= (frames.d0/4); width += 10; }
+    J.rowShifted().resize(n, N, width);
   } else if(jacMode==JM_noArr){
     J.setNoArr();
-  }
+  } else NIY;
 }
 
 void rai::Configuration::kinematicsZero(arr& y, arr& J, uint n) const {
@@ -1278,7 +1285,12 @@ void rai::Configuration::kinematicsQuat(arr& y, arr& J, Frame* a) const { //TODO
       if(tmp.z) J.elem(3, i) += tmp.z;
     }
 #endif
-  } else {
+  } else if(isRowShifted(A)) {
+    J = A;
+    J *= .5;
+    J.rowShifted().insRow(0);
+    J = ROT_A * J;
+  } else if(!isSpecial(A)) {
 #if 1
     J.resize(4, A.d1).setZero();
     J.setMatrixBlock(A, 1, 0);
@@ -1295,7 +1307,7 @@ void rai::Configuration::kinematicsQuat(arr& y, arr& J, Frame* a) const { //TODO
       J.elem(3, i) = tmp.z;
     }
 #endif
-  }
+  } else NIY;
 }
 
 void rai::Configuration::kinematicsTau(double& tau, arr& J, Frame* a) const {
@@ -1539,7 +1551,7 @@ rai::Frame* rai::Configuration::getFrameByName(const char* name, bool warnIfNotE
   if(!reverse) {
     for(Frame* b: frames) if(b->name==name) return b;
   } else {
-    for(uint i=frames.N; i--;) if(frames(i)->name==name) return frames(i);
+    for(uint i=frames.N; i--;) if(frames.elem(i)->name==name) return frames.elem(i);
   }
   if(strcmp("glCamera", name)!=0)
     if(warnIfNotExist) RAI_MSG("cannot find frame named '" <<name);
@@ -1587,8 +1599,8 @@ rai::Joint* rai::Configuration::getJointByFrameNames(const char* from, const cha
 /// find joint connecting two bodies with specific names
 rai::Joint* rai::Configuration::getJointByFrameIndices(uint ifrom, uint ito) const {
   if(ifrom>=frames.N || ito>=frames.N) return nullptr;
-  Frame* f = frames(ifrom);
-  Frame* t = frames(ito);
+  Frame* f = frames.elem(ifrom);
+  Frame* t = frames.elem(ito);
   return getJointByFrames(f, t);
 }
 
@@ -1633,7 +1645,7 @@ StringA rai::Configuration::getJointNames() const {
 StringA rai::Configuration::getFrameNames() const {
   StringA names(frames.N);
   for(uint i=0; i<frames.N; i++) {
-    names(i) = frames(i)->name;
+    names(i) = frames.elem(i)->name;
   }
   return names;
 }
@@ -1782,7 +1794,7 @@ void rai::Configuration::addProxies(const uintA& collisionPairs) {
   uint n=0;
 #if 1
   for(uint i=0; i<collisionPairs.d0; i++) {
-    bool canCollide = frames(collisionPairs(i, 0))->shape->canCollideWith(frames(collisionPairs(i, 1)));
+    bool canCollide = frames.elem(collisionPairs(i, 0))->shape->canCollideWith(frames.elem(collisionPairs(i, 1)));
     filter(i) = canCollide;
     if(canCollide) n++;
   }
@@ -1796,11 +1808,11 @@ void rai::Configuration::addProxies(const uintA& collisionPairs) {
   for(uint i=0; i<collisionPairs.d0; i++) {
     if(filter(i)) {
       Proxy& p = proxies(j);
-      p.a = frames(collisionPairs(i, 0));
-      p.b = frames(collisionPairs(i, 1));
+      p.a = frames.elem(collisionPairs(i, 0));
+      p.b = frames.elem(collisionPairs(i, 1));
       p.d = -0.;
-      p.posA = frames(collisionPairs(i, 0))->getPosition();
-      p.posB = frames(collisionPairs(i, 1))->getPosition();
+      p.posA = frames.elem(collisionPairs(i, 0))->getPosition();
+      p.posB = frames.elem(collisionPairs(i, 1))->getPosition();
       j++;
     }
   }
@@ -2816,7 +2828,7 @@ bool rai::Configuration::checkConsistency() const {
   for(Frame* a: frames) {
     CHECK(&a->C, "");
     CHECK(&a->C==this, "");
-    CHECK_EQ(a, frames(a->ID), "");
+    CHECK_EQ(a, frames.elem(a->ID), "");
     for(Frame* b: a->children) CHECK_EQ(b->parent, a, "");
     if(a->joint) CHECK_EQ(a->joint->frame, a, "");
     if(a->shape) CHECK_EQ(&a->shape->frame, a, "");
@@ -3115,8 +3127,8 @@ void kinVelocity(arr& y, arr& J, uint frameId, const ConfigurationL& Ktuple, dou
   CHECK_GE(Ktuple.N, 1, "");
   rai::Configuration& K0 = *Ktuple(-2);
   rai::Configuration& K1 = *Ktuple(-1);
-  rai::Frame* f0 = K0.frames(frameId);
-  rai::Frame* f1 = K1.frames(frameId);
+  rai::Frame* f0 = K0.frames.elem(frameId);
+  rai::Frame* f1 = K1.frames.elem(frameId);
 
   arr y0, J0;
   K0.kinematicsPos(y0, J0, f0);
@@ -3154,7 +3166,7 @@ double forceClosureFromProxies(rai::Configuration& K, uint frameIndex, double di
   }
   C .reshape(C.N/3, 3);
   Cn.reshape(C.N/3, 3);
-  double fc=forceClosure(C, Cn, K.frames(frameIndex)->ensure_X().pos, mu, torqueWeights, nullptr);
+  double fc=forceClosure(C, Cn, K.frames.elem(frameIndex)->ensure_X().pos, mu, torqueWeights, nullptr);
   return fc;
 }
 
@@ -3598,13 +3610,13 @@ struct EditConfigurationClickCall:OpenGL::GLClickCall {
     cout <<"CLICK call: id = 0x" <<std::hex <<gl.topSelection->name <<" : ";
     gl.text.clear();
     if((i&3)==1) {
-      rai::Frame* s=ors->frames(i>>2);
+      rai::Frame* s=ors->frames.elem(i>>2);
       gl.text <<"shape selection: shape=" <<s->name <<" X=" <<s->ensure_X() <<endl;
       //      listWrite(s->ats, gl.text, "\n");
       cout <<gl.text;
     }
     if((i&3)==2) {
-      rai::Joint* j = ors->frames(i>>2)->joint;
+      rai::Joint* j = ors->frames.elem(i>>2)->joint;
       gl.text
           <<"edge selection: " <<j->from()->name <<' ' <<j->frame->name
           //         <<"\nA=" <<j->A <<"\nQ=" <<j->Q <<"\nB=" <<j->B
@@ -3631,8 +3643,8 @@ struct EditConfigurationHoverCall:OpenGL::GLHoverCall {
       if(!top) return false;
       uint i=top->name;
       cout <<rai::timerRead() <<"HOVER call: id = 0x" <<std::hex <<gl.topSelection->name <<endl;
-      if((i&3)==1) s=ors->frames(i>>2);
-      if((i&3)==2) j=ors->frames(i>>2)->joint;
+      if((i&3)==1) s=ors->frames.elem(i>>2);
+      if((i&3)==2) j=ors->frames.elem(i>>2)->joint;
       gl.text.clear();
       if(s) {
         gl.text <<"shape selection: body=" <<s->name <<" X=" <<s->ensure_X();
@@ -3675,8 +3687,8 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
       if(!top) { cout <<"No object below mouse!" <<endl;  return false; }
       uint i=top->name;
       //cout <<"HOVER call: id = 0x" <<std::hex <<gl.topSelection->name <<endl;
-      if((i&3)==1) s=K.frames(i>>2);
-      if((i&3)==2) j=K.frames(i>>2)->joint;
+      if((i&3)==1) s=K.frames.elem(i>>2);
+      if((i&3)==2) j=K.frames.elem(i>>2)->joint;
       if(s) {
         cout <<"selected shape " <<s->name <<" of body " <<s->name <<endl;
         selx=top->x;

@@ -88,7 +88,8 @@ void Conv_KOMOProblem_MathematicalProgram::evaluate(arr& phi, arr& J, const arr&
   if(!!J) {
     uint k=KOMO.get_k();
     uint dim_xmax = max(variableDimensions);
-    rai::RowShifted* Jaux = makeRowShifted(J, phi.N, (k+1)*dim_xmax, x.N);
+    rai::RowShifted& Jaux = J.rowShifted();
+    Jaux.resize(phi.N, x.N, (k+1)*dim_xmax);
     J.setZero();
 
     //loop over features
@@ -98,11 +99,11 @@ void Conv_KOMOProblem_MathematicalProgram::evaluate(arr& phi, arr& J, const arr&
       //        J({i, 0, J_KOMO(i}).N-1) = J_KOMO(i);
       memmove(&J(i, 0), Ji.p, Ji.sizeT*Ji.N);
       uint t=featureTimes(i);
-      if(t<=k) Jaux->rowShift(i) = 0;
-      else Jaux->rowShift(i) =  varDimIntegral(t-k-1);
+      if(t<=k) Jaux.rowShift(i) = 0;
+      else Jaux.rowShift(i) =  varDimIntegral(t-k-1);
     }
 
-    Jaux->reshift();
-    Jaux->computeColPatches(true);
+    Jaux.reshift();
+    Jaux.computeColPatches(true);
   }
 }

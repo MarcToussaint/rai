@@ -34,7 +34,7 @@ rai::CameraView::Sensor& rai::CameraView::addSensor(const char* name, const char
 
   cam.setWHRatio((double)width/height);
 
-  if(sen.frame>=0) cam.X = C.frames(sen.frame)->ensure_X();
+  if(sen.frame>=0) cam.X = C.frames.elem(sen.frame)->ensure_X();
 
   //also select sensor
   gl.resize(sen.width, sen.height);
@@ -182,7 +182,7 @@ void rai::CameraView::watch_PCL(const arr& pts, const byteA& rgb) {
 
 void rai::CameraView::updateCamera() {
   for(Sensor& sen:sensors) {
-    if(sen.frame>=0) sen.cam.X = C.frames(sen.frame)->ensure_X();
+    if(sen.frame>=0) sen.cam.X = C.frames.elem(sen.frame)->ensure_X();
   }
 
   if(currentSensor) {

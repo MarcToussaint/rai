@@ -794,6 +794,9 @@ template<class T> T& rai::Array<T>::elem(int i, int j) {
   if(isSparseMatrix(*this)) {
     return sparse().addEntry(i, j);
   }
+  if(isRowShifted(*this)) {
+    return rowShifted().elemNew(i, j);
+  }
   return p[i*d1+j];
 
 }
@@ -1395,6 +1398,7 @@ template<class T> void rai::Array<T>::setBlockMatrix(const rai::Array<T>& A, con
 
 /// constructs the block matrix X=[A; B]
 template<class T> void rai::Array<T>::setBlockMatrix(const rai::Array<T>& A, const rai::Array<T>& B) {
+  if(isNoArr(*this)) return;
   if(!isSpecial(A)){
     CHECK(A.nd==2 && B.nd==2, "");
     CHECK(A.d1==B.d1, "");
@@ -1408,6 +1412,12 @@ template<class T> void rai::Array<T>::setBlockMatrix(const rai::Array<T>& A, con
       sparse().resize(A.d0+B.d0, A.d1, 0);
       sparse().add(A.sparse(), 0, 0);
       sparse().add(B.sparse(), A.d0, 0);
+    } else if(isRowShifted(A)){
+      CHECK(isRowShifted(B), "");
+      CHECK(A.d1==B.d1, "");
+      rowShifted().resize(A.d0+B.d0, A.d1, rai::MAX(A.rowShifted().rowSize, B.rowShifted().rowSize));
+      rowShifted().add(A, 0, 0);
+      rowShifted().add(B, A.d0, 0);
     } else if(isNoArr(A)){
       CHECK(isNoArr(B), "");
       setNoArr();
@@ -1434,14 +1444,14 @@ template<class T> void rai::Array<T>::setMatrixBlock(const rai::Array<T>& B, uin
   if(B.nd==2) {
     CHECK(nd==2 && lo0+B.d0<=d0 && lo1+B.d1<=d1, "");
     uint i, j;
-    if(!isSparseMatrix(*this)) {
+    if(!isSpecial(*this)) {
       CHECK(!isSparseMatrix(B), "");
       if(memMove) {
         for(i=0; i<B.d0; i++) memmove(p+(lo0+i)*d1+lo1, B.p+i*B.d1, B.d1*sizeT);
       } else {
         for(i=0; i<B.d0; i++) for(j=0; j<B.d1; j++) p[(lo0+i)*d1+lo1+j] = B.p[i*B.d1+j];   // operator()(lo0+i, lo1+j)=B(i, j);
       }
-    } else {
+    } else if(isSparseMatrix(*this)) {
       if(!isSparseMatrix(B)) {
         for(i=0; i<B.d0; i++) for(j=0; j<B.d1; j++){
             double z = B.p[i*B.d1+j];
@@ -1454,6 +1464,8 @@ template<class T> void rai::Array<T>::setMatrixBlock(const rai::Array<T>& B, uin
           S.addEntry(lo0 + BS.elems(i, 0), lo1 + BS.elems(i, 1)) = B.elem(i);
         }
       }
+    } else if(isRowShifted(*this)) {
+      rowShifted().add(B, lo0, lo1);
     }
   } else {
     CHECK(nd==2 && lo0+B.d0<=d0 && lo1+1<=d1, "");
@@ -2747,6 +2759,8 @@ void innerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>&
     if(typeid(T)==typeid(double)) {
       if(isSparseMatrix(y)) { x = y.sparse().A_B(z); return; }
       if(isSparseMatrix(z)) { x = z.sparse().B_A(y); return; }
+      if(isRowShifted(y)) { x = y.rowShifted().A_B(z); return; }
+      if(isRowShifted(z)) { x = z.rowShifted().B_A(y); return; }
       if(rai::useLapack){ blas_MM(x, y, z); return; }
     }
     T* a, *astop, *b, *c;
@@ -2886,8 +2900,17 @@ void indexWiseProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array
   if(y.nd==1 && z.nd==2) {  //vector x matrix -> index-wise
     CHECK_EQ(y.N, z.d0, "wrong dims for indexWiseProduct:" <<y.N <<"!=" <<z.d0);
     x = z;
-    if(isSparseMatrix(x)){
+    if(isSparseMatrix(z)){
       x.sparse().rowWiseMult(y);
+      return;
+    }
+    if(isRowShifted(z)){
+      uint rowSize = x.rowShifted().rowSize;
+      for(uint i=0; i<x.d0; i++) {
+        T yi=y.p[i];
+        T* xp=&x.rowShifted().entry(i,0), *xstop=xp+rowSize;
+        for(; xp!=xstop; xp++) *xp *= yi;
+      }
       return;
     }
     for(uint i=0; i<x.d0; i++) {
@@ -3718,6 +3741,7 @@ template<class T> Array<T> operator%(const Array<T>& y, const Array<T>& z) { Arr
   template<class T> Array<T>& operator op (Array<T>& x, const Array<T>& y){ \
     if(isNoArr(x)){ return x; } \
     if(isSparseMatrix(x) && isSparseMatrix(y)){ x.sparse() op y.sparse(); return x; }  \
+    if(isRowShifted(x) && isRowShifted(y)){ x.rowShifted() op y.rowShifted(); return x; }  \
     CHECK(!isSpecial(x), "");  \
     CHECK(!isSpecial(y), "");  \
     CHECK_EQ(x.N, y.N, "binary operator on different array dimensions (" <<x.N <<", " <<y.N <<")"); \
@@ -3730,6 +3754,7 @@ template<class T> Array<T> operator%(const Array<T>& y, const Array<T>& z) { Arr
   template<class T> Array<T>& operator op (Array<T>& x, T y ){ \
     if(isNoArr(x)){ return x; } \
     if(isSparseMatrix(x)){ x.sparse() op y; return x; }  \
+    if(isRowShifted(x)){ x.rowShifted() op y; return x; }  \
     CHECK(!isSpecial(x), "");  \
     T *xp=x.p, *xstop=xp+x.N;              \
     for(; xp!=xstop; xp++) *xp op y;        \
@@ -3739,6 +3764,7 @@ template<class T> Array<T> operator%(const Array<T>& y, const Array<T>& z) { Arr
   template<class T> void operator op (Array<T>&& x, const Array<T>& y){ \
     if(isNoArr(x)){ return; } \
     if(isSparseMatrix(x) && isSparseMatrix(y)){ x.sparse() op y.sparse(); return; }  \
+    if(isRowShifted(x) && isRowShifted(y)){ x.rowShifted() op y.rowShifted(); return; }  \
     CHECK(!isSpecial(x), "");  \
     CHECK_EQ(x.N, y.N, "binary operator on different array dimensions (" <<x.N <<", " <<y.N <<")"); \
     T *xp=x.p, *xstop=xp+x.N;              \
@@ -3749,6 +3775,7 @@ template<class T> Array<T> operator%(const Array<T>& y, const Array<T>& z) { Arr
   template<class T> void operator op (Array<T>&& x, T y ){ \
     if(isNoArr(x)){ return; } \
     if(isSparseMatrix(x)){ x.sparse() op y; return; }  \
+    if(isRowShifted(x)){ x.rowShifted() op y; return; }  \
     CHECK(!isSpecial(x), "");  \
     T *xp=x.p, *xstop=xp+x.N;              \
     for(; xp!=xstop; xp++) *xp op y;        \
@@ -3768,8 +3795,8 @@ UpdateOperator(%=)
   template<class T> Array<T> operator op(T y, const Array<T>& z){               Array<T> x; x.resizeAs(z); x=y; x updateOp z; return x; } \
   template<class T> Array<T> operator op(const Array<T>& y, T z){               Array<T> x(y); x updateOp z; return x; }
 
-BinaryOperator(+, +=);
-BinaryOperator(-, -=);
+BinaryOperator(+, +=)
+BinaryOperator(-, -=)
 //BinaryOperator(% , *=);
 //BinaryOperator(/ , /=);
 #undef BinaryOperator

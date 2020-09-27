@@ -152,27 +152,37 @@ template<> const SparseMatrix& Array<double>::sparse() const {
 
 /// make sparse: create the \ref sparse index
 template<> RowShifted& Array<double>::rowShifted() {
-  rai::RowShifted* Zaux;
-    if(!special) {
-      Zaux = new rai::RowShifted(*this);
-      if(N) {
-        CHECK_EQ(nd, 2, "");
-        Zaux->rowSize = d1;
-        Zaux->rowShift.resize(d0).setZero();
-        Zaux->rowLen.resize(d0) = d1;
-      } else {
-        nd=2;
-      }
+  rai::RowShifted* r;
+  if(!special) {
+    r = new rai::RowShifted(*this);
+    if(N) {
+      CHECK_EQ(nd, 2, "");
+      r->rowSize = d1;
+      r->rowShift.resize(d0).setZero();
+      r->rowLen.resize(d0) = d1;
     } else {
-      Zaux = dynamic_cast<RowShifted*>(special);
-      CHECK(Zaux, "");
+      nd=2;
     }
-    return *Zaux;
+  } else {
+    r = dynamic_cast<RowShifted*>(special);
+    CHECK(r, "");
   }
+  return *r;
+}
+
+  /// make sparse: create the \ref sparse index
+template<> const RowShifted& Array<double>::rowShifted() const{
+  CHECK(isRowShifted(*this), "");
+  rai::RowShifted* r = dynamic_cast<RowShifted*>(special);
+  CHECK(r, "");
+  return *r;
+}
 
 #define NONSENSE( type ) \
   template<> SparseMatrix& Array<type>::sparse() { NIY; return *(new SparseMatrix(NoArr)); } \
-  template<> const SparseMatrix& Array<type>::sparse() const{ NIY; return *(new SparseMatrix(NoArr)); }
+  template<> const SparseMatrix& Array<type>::sparse() const{ NIY; return *(new SparseMatrix(NoArr)); } \
+  template<> RowShifted& Array<type>::rowShifted() { NIY; return *(new RowShifted(NoArr)); } \
+  template<> const RowShifted& Array<type>::rowShifted() const{ NIY; return *(new RowShifted(NoArr)); }
 NONSENSE(float)
 NONSENSE(uint)
 NONSENSE(int)
@@ -285,7 +295,7 @@ void normalizeWithJac(arr& y, arr& J) {
   } else {
     y /= l;
     if(!!J && J.N) {
-      J -= y*(~y*J); //same as (y^y)*J;
+      J -= (y^y)*J;
       J /= l;
     }
   }
@@ -1559,14 +1569,16 @@ arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
     x=~x;
     return x;
   }
+  integer N=A.d0, KD=0, NRHS=1, LDAB=0, INFO;
   if(isRowShifted(A)) {
     rai::RowShifted* Aaux = (rai::RowShifted*) A.special;
     if(!Aaux->symmetric) HALT("this is not a symmetric matrix");
     for(uint i=0; i<A.d0; i++) if(Aaux->rowShift(i)!=i) HALT("this is not shifted as an upper triangle");
+    KD=Aaux->rowSize-1;
+    LDAB=Aaux->rowSize;
   }
   x=b;
   arr Acol=A;
-  integer N=A.d0, KD=A.d1-1, NRHS=1, LDAB=A.d1, INFO;
   try {
     if(!isRowShifted(A)) {
       dposv_((char*)"L", &N, &NRHS, Acol.p, &N, x.p, &N, &INFO);
@@ -1956,6 +1968,31 @@ double rai::RowShifted::elem(uint i, uint j) const {
   return Z.p[i*rowSize+j-rs];
 }
 
+double& rai::RowShifted::elemNew(uint i, uint j){
+  CHECK(Z.nd==2 && i<Z.d0 && j<Z.d1,
+        "2D range error (" <<Z.nd <<"=2, " <<i <<"<" <<Z.d0 <<", " <<j <<"<" <<Z.d1 <<")");
+  uint rs=rowShift(i);
+  uint rl=rowLen(i);
+  if(!rl){ //first element in this row!
+    rowShift(i) = j;
+    rowLen(i) = 1;
+    return entry(i,0);
+  }
+  if(j<rs){ //need to shift row to the right!
+    CHECK_LE(rl+rs-j, Z.d1, ""); //can't shift! (rs+rl<=Z.d1 always!)
+    memmove(&entry(i,rs-j), &entry(i,0), rl*Z.sizeT);
+    memset(&entry(i,0), 0, (rs-j)*Z.sizeT);
+    rowLen(i) += rs-j;
+    rowShift(i) = j;
+    return entry(i,0);
+  }
+  if(j+1>rs+rl){ //need to extend rowLen
+    rowLen(i) = j+1-rs;
+    CHECK_LE(rowLen(i), rowSize, "rowShifted was created too small");
+  }
+  return entry(i,j-rs);
+}
+
 double& rai::RowShifted::entry(uint i, uint j) const {
   CHECK(Z.nd==2 && i<Z.d0 && j<rowSize,
         "2D range error (" <<Z.nd <<"=2, " <<i <<"<" <<Z.d0 <<", " <<j <<"<" <<rowSize <<")");
@@ -1968,7 +2005,7 @@ void rai::RowShifted::resize(uint d0, uint d1, uint _rowSize){
   Z.setZero();
   rowSize = _rowSize;
   rowShift.resize(d0).setZero();
-  rowLen.resize(d0) = rowSize;
+  rowLen.resize(d0).setZero();
 }
 
 void rai::RowShifted::resizeCopy(uint d0, uint d1, uint n){ NIY; }
@@ -1976,43 +2013,26 @@ void rai::RowShifted::resizeCopy(uint d0, uint d1, uint n){ NIY; }
 void rai::RowShifted::reshape(uint d0, uint d1){ NIY; }
 
 void rai::RowShifted::reshift() {
-  rowLen.resize(Z.d0);
   for(uint i=0; i<Z.d0; i++) {
-#if 1
     //find number of leading and trailing zeros
-    double* Zp = Z.p + i*Z.d1;
-    double* Zlead = Zp;
-    double* Ztrail = Zp + Z.d1-1;
-    while(Ztrail>=Zlead && *Ztrail==0.) Ztrail--;
-    while(Zlead<=Ztrail && *Zlead==0.) Zlead++;
-    if(Ztrail<Zlead) { //all zeros
+    double* Zp = Z.p + i*rowSize;
+    double* Zbeg = Zp;
+    double* Zend = Zp + rowSize-1;
+    while(Zend>=Zbeg && *Zend==0.) Zend--;
+    while(Zbeg<=Zend && *Zbeg==0.) Zbeg++;
+    if(Zend<Zbeg) { //all zeros
+      rowShift.p[0]=0;
       rowLen.p[i]=0;
     } else {
-      uint rs = Zlead-Zp;
-      uint len = 1+Ztrail-Zlead;
+      uint rs = Zbeg-Zp;
+      uint rl = 1+Zend-Zbeg;
       rowShift.p[i] += rs;
-      rowLen.p[i] = len;
-      if(Zlead!=Zp) {
-        memmove(Zp, Zlead, len*Z.sizeT);
-        memset(Zp+len, 0, (Z.d1-len)*Z.sizeT);
+      rowLen.p[i] = rl;
+      if(Zbeg!=Zp) {
+        memmove(Zp, Zbeg, rl*Z.sizeT);
+        memset(Zp+rl, 0, (rowSize-rl)*Z.sizeT);
       }
     }
-#else
-    //find number of leading zeros
-    uint j=0;
-    while(j<Z.d1 && Z(i, j)==0.) j++;
-    //shift or so..
-    if(j==Z.d1) { //all zeros...
-    } else if(j) { //some zeros
-      rowShift(i) += j;
-      memmove(&Z(i, 0), &Z(i, j), (Z.d1-j)*Z.sizeT);
-      memset(&Z(i, Z.d1-j), 0, j*Z.sizeT);
-    }
-    //find number of trailing zeros
-    j=Z.d1;
-    while(j>0 && Z(i, j-1)==0.) j--;
-    rowLen(i)=j;
-#endif
   }
 }
 
@@ -2022,12 +2042,26 @@ arr rai::RowShifted::unpack() const {
   X.setZero();
   for(uint i=0; i<Z.d0; i++) {
     uint rs=rowShift(i);
-    for(uint j=0; j<rowLen(i) && j+rs<X.d1; j++) {
+    uint rl=rowLen(i);
+    for(uint j=0; j<rl && j+rs<X.d1; j++) {
       X(i, j+rs) = entry(i, j);
       if(symmetric) X(j+rs, i) = entry(i, j);
     }
   }
   return X;
+}
+
+void rai::RowShifted::checkConsistency() const {
+  CHECK_EQ(rowShift.N, Z.d0, "");
+  CHECK_EQ(rowLen.N, Z.d0, "");
+  CHECK_EQ(rowSize * Z.d0, Z.N, "");
+  for(uint i=0;i<Z.d0;i++){
+    uint rs=rowShift(i);
+    uint rl=rowLen(i);
+    CHECK_LE(rl, rowSize, "");
+    CHECK_LE(rs+rl, Z.d1, "");
+    for(uint j=rs+rl;j<Z.d1;j++) CHECK_EQ(entry(i,j), 0., "");
+  }
 }
 
 void rai::RowShifted::computeColPatches(bool assumeMonotonic) {
@@ -2062,6 +2096,7 @@ arr rai::RowShifted::At_A() {
   R_.resize(Z.d1, Z.d1, rowSize);
   R.setZero();
   for(uint i=0; i<R.d0; i++) R_.rowShift(i) = i;
+  for(uint i=0; i<R.d0; i++) R_.rowLen(i) = rowSize;
   R_.symmetric=true;
   if(!rowSize) return R; //Z is identically zero, all rows fully packed -> return zero R
   for(uint i=0; i<Z.d0; i++) {
@@ -2073,7 +2108,7 @@ arr rai::RowShifted::At_A() {
       if(real_j>=Z.d1) break;
       double Zij=Zi[j];
       if(Zij!=0.) {
-        double* Rp=R.p + real_j*R.d1;
+        double* Rp=R.p + real_j*R_.rowSize;
         double* Jp=Zi+j;
         double* Jpstop=Zi+rlen; //rowSize;
         for(; Jp!=Jpstop; Rp++, Jp++) if(*Jp!=0.) *Rp += Zij * *Jp;
@@ -2101,6 +2136,7 @@ arr rai::RowShifted::A_At() {
   rai::RowShifted& R_ = R.rowShifted();
   R_.resize(Z.d0, Z.d0, pack_d1);
   for(uint i=0; i<R.d0; i++) R_.rowShift(i) = i;
+  for(uint i=0; i<R.d0; i++) R_.rowLen(i) = pack_d1;
   R_.symmetric=true;
   if(!rowSize) return R; //Z is identically zero, all rows fully packed -> return zero R
   for(uint i=0; i<Z.d0; i++) {
@@ -2182,6 +2218,66 @@ arr rai::RowShifted::At() {
     }
   }
   return At;
+}
+
+arr rai::RowShifted::A_B(const arr& B) const {
+  CHECK(!isSpecial(B), "");
+  arr X;
+  RowShifted& Xr = X.rowShifted();
+  Xr.resize(Z.d0, B.d1, rowSize);
+  for(uint i=0; i<X.d0; i++) for(uint k=0;k<B.d1;k++) {
+    uint rs = rowShift(i);
+    uint rl = rowLen(i);
+    for(uint j=0; j<rl; j++){
+      Xr.elemNew(i,k) += entry(i,j) * B(j+rs,k);
+    }
+  }
+  return X;
+}
+
+arr rai::RowShifted::B_A(const arr& B) const {
+  CHECK(!isSpecial(B), "");
+  arr X;
+  RowShifted& Xr = X.rowShifted();
+  Xr.resize(B.d0, Z.d1, rowSize);
+  for(uint i=0; i<X.d0; i++) for(uint k=0;k<B.d1;k++){
+    uint rs = rowShift(k);
+    uint rl = rowLen(k);
+    for(uint j=0; j<rl; j++){
+      Xr.elemNew(i,j+rs) += B(i,k)*entry(k,j);
+    }
+  }
+  return X;
+}
+
+void rai::RowShifted::rowWiseMult(const arr& a) {
+  CHECK_EQ(a.N, Z.d0, "");
+  for(uint i=0; i<Z.d0; i++){
+    for(uint k=0;k<rowSize;k++) entry(i,k) *= a.p[i];
+  }
+}
+
+void rai::RowShifted::add(const arr& B, uint lo0, uint lo1, double coeff){
+  if(isRowShifted(B)){
+    const RowShifted& Br = B.rowShifted();
+    for(uint i=0;i<B.d0;i++){
+      uint rs = Br.rowShift(i);
+      uint rl = Br.rowLen(i);
+      if(!lo0 && !lo1 && coeff==1.){
+        for(uint j=0;j<rl;j++) elemNew(i, rs+j) += Br.entry(i, j);
+      }else{
+        for(uint j=0;j<rl;j++) elemNew(lo0 + i, lo1 + rs+j) += coeff*Br.entry(i, j);
+      }
+    }
+  }else{
+    for(uint i=0;i<B.d0;i++){
+      if(!lo0 && !lo1 && coeff==1.){
+        for(uint j=0;j<B.d1;j++) elemNew(i, j) += B(i, j);
+      }else{
+        for(uint j=0;j<B.d1;j++) elemNew(lo0 + i, lo1 + j) += coeff*B(i, j);
+      }
+    }
+  }
 }
 
 void rai::RowShifted::write(ostream& os) const{
@@ -2576,12 +2672,23 @@ void operator += (rai::SparseMatrix& x, const rai::SparseMatrix& y) { x.add(y); 
 void operator += (rai::SparseMatrix& x, double y) { arr& X=x.Z; x.unsparse(); X += y; }
 
 void operator *= (rai::SparseMatrix& x, const rai::SparseMatrix& y) { NIY; }
-void operator *= (rai::SparseMatrix& x, double y) { x.Z.ref() *= y; }
+void operator *= (rai::SparseMatrix& x, double y) { x.memRef() *= y; }
 
 void operator /= (rai::SparseMatrix& x, const rai::SparseMatrix& y) { NIY; }
-void operator /= (rai::SparseMatrix& x, double y) { x.Z.ref() /= y; }
+void operator /= (rai::SparseMatrix& x, double y) { x.memRef() /= y; }
 
-//void operator %= (rai::SparseMatrix& x, const rai::SparseMatrix& y){ NIY; }
+void operator -= (rai::RowShifted& x, const rai::RowShifted& y) { x.add(y.Z, 0, 0, -1.); }
+void operator -= (rai::RowShifted& x, double y) { arr X=x.unpack(); X-=y; x.Z=X; }
+
+void operator += (rai::RowShifted& x, const rai::RowShifted& y) { x.add(y.Z); }
+void operator += (rai::RowShifted& x, double y) { arr X=x.unpack(); X+=y; x.Z=X; }
+
+void operator *= (rai::RowShifted& x, const rai::RowShifted& y) { NIY; }
+void operator *= (rai::RowShifted& x, double y) { x.memRef() *= y; }
+
+void operator /= (rai::RowShifted& x, const rai::RowShifted& y) { NIY; }
+void operator /= (rai::RowShifted& x, double y) { x.memRef() /= y; }
+//void operator %= (rai::RowShifted& x, const rai::RowShifted& y){ NIY; }
 
 //===========================================================================
 //

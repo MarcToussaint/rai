@@ -1616,6 +1616,7 @@ void KOMO::run(OptOptions options) {
 #if 0 //old version - need to change the 'tuples' option for setCostSpects (line 179)
       Conv_KOMOProblem_MathematicalProgram C(komo_problem);
 #else //new
+      pathConfig.jacMode = pathConfig.JM_rowShifted;
       Conv_KOMO_FactoredNLP P(*this);
       Conv_FactoredNLP_BandedNLP C(P, 0);
       C.maxBandSize = (k_order+1)*max(C.variableDimensions);
@@ -2142,6 +2143,7 @@ void KOMO::setupConfigurations2() {
   //IMPORTANT: The configurations need to include the k prefix configurations!
   //Therefore configurations(0) is for time=-k and configurations(k+t) is for time=t
   CHECK(timeSlices.d0 != k_order+T, "why setup again?");
+  CHECK(!pathConfig.frames.N, "why setup again?");
 
   computeMeshNormals(world.frames, true);
   computeMeshGraphs(world.frames, true);
@@ -2160,7 +2162,6 @@ void KOMO::setupConfigurations2() {
 #endif
   }
 
-  timeSlices.resize(k_order+T, C.frames.N);
   for(uint s=0;s<k_order+T;s++) {
 //    for(KinematicSwitch* sw:switches) { //apply potential switches
 //      if(sw->timeOfApplication+(int)k_order==(int)s)  sw->apply(C.frames);
@@ -2168,8 +2169,10 @@ void KOMO::setupConfigurations2() {
 
     uint nBefore = pathConfig.frames.N;
     pathConfig.addFramesCopy(C.frames, C.forces);
-    timeSlices[s] = pathConfig.frames({nBefore, -1});
+//    timeSlices[s] = pathConfig.frames({nBefore, -1});
+
   }
+  timeSlices = pathConfig.frames;
 
   pathConfig.selectJoints(timeSlices({k_order,-1})); //select only the non-prefix joints as active!!
 
@@ -3298,6 +3301,10 @@ void KOMO::Conv_KOMO_GraphProblem_toBeRetired::setPartialX(const uintA& whichX, 
   komo.set_x(x, whichX);
 }
 
+void KOMO::Conv_KOMO_FactoredNLP::setAllVariables(const arr& x) {
+  komo.set_x(x);
+}
+
 void KOMO::Conv_KOMO_FactoredNLP::setSingleVariable(uint var_id, const arr& x) {
   komo.set_x(x, {var_id});
 }
@@ -3392,19 +3399,7 @@ void KOMO::Conv_KOMO_FactoredNLP::evaluateSingleFeature(uint feat_id, arr& phi, 
   CHECK_EQ(Jy.nd, 2, "");
   if(absMax(phi)>1e10) RAI_MSG("WARNING phi=" <<phi);
 
-  if(!isSparseMatrix(Jy)) {
-#ifdef KOMO_PATH_CONFIG
-    HALT("??");
-#endif
-    intA vars = F.ob->configs[F.t];
-    uintA kdim = getKtupleDim(F.Ctuple).prepend(0);
-    for(uint j=vars.N; j--;) {
-      if(vars(j)<0) {
-        Jy.delColumns(kdim(j), kdim(j+1)-kdim(j)); //delete the columns that correspond to the prefix!!
-      }
-    }
-    J = Jy;
-  } else {
+  if(isSparseMatrix(Jy)) {
     auto S = Jy.sparse();
 
     uint n=0;
@@ -3435,7 +3430,22 @@ void KOMO::Conv_KOMO_FactoredNLP::evaluateSingleFeature(uint feat_id, arr& phi, 
         CHECK(good, "Jacobian is non-zero on variable " <<var <<", but indices say that feature depends on " <<F.varIds);
       }
     }
+  } else if(isRowShifted(Jy)){
+    J = Jy;
+  } else {
+#ifdef KOMO_PATH_CONFIG
+    HALT("??");
+#endif
+    intA vars = F.ob->configs[F.t];
+    uintA kdim = getKtupleDim(F.Ctuple).prepend(0);
+    for(uint j=vars.N; j--;) {
+      if(vars(j)<0) {
+        Jy.delColumns(kdim(j), kdim(j+1)-kdim(j)); //delete the columns that correspond to the prefix!!
+      }
+    }
+    J = Jy;
   }
+
 #else
   //count to the feat_id;
 

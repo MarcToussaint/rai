@@ -82,6 +82,7 @@ void Conv_FactoredNLP_BandedNLP::evaluate(arr& phi, arr& J, const arr& x) {
   CHECK_EQ(x.N, varDimIntegral.last(), "");
 
   //set all variables
+#if 0
   uint n=0;
   for(uint i=0; i<variableDimensions.N; i++) {
     uint d = variableDimensions(i);
@@ -90,6 +91,9 @@ void Conv_FactoredNLP_BandedNLP::evaluate(arr& phi, arr& J, const arr& x) {
     P.setSingleVariable(i, xi);
     n += d;
   }
+#else
+  P.setAllVariables(x);
+#endif
 
   //evaluate all features individually
   phi.resize(featDimIntegral.last()).setZero();
@@ -165,9 +169,9 @@ void Conv_FactoredNLP_BandedNLP::evaluate(arr& phi, arr& J, const arr& x) {
 
   } else {
 
-    rai::RowShifted* Jaux = 0;
     if(!!J) {
-      Jaux = makeRowShifted(J, phi.N, maxBandSize, x.N); //(k+1)*dim_xmax
+      rai::RowShifted& Jaux = J.rowShifted();
+      Jaux.resize(phi.N, x.N, maxBandSize); //(k+1)*dim_xmax
       J.setZero();
 
       for(uint i=0; i<featureDimensions.N; i++) {
@@ -176,20 +180,23 @@ void Conv_FactoredNLP_BandedNLP::evaluate(arr& phi, arr& J, const arr& x) {
         if(d) {
           J.setMatrixBlock(J_i(i), n, 0);
           //      memmove(&J(i, 0), J_i.p, J_i.sizeT*J_i.N);
-          intA& vars = featureVariables(i);
-          int t=vars.first();
+//          intA& vars = featureVariables(i);
+//          int t=vars.first();
           //      uint xdim=variableDimensions(t);
           //      for(int s=1;s<vars.N;s++){ xdim+=variableDimensions(t+s); CHECK_EQ(vars(s), t+s, ""); }
           //      CHECK_EQ(xdim, J_i.d1, "");
 
-          for(uint j=n; j<n+d; j++) {
-            if(t<=0) Jaux->rowShift(j) = 0;
-            else Jaux->rowShift(j) = varDimIntegral(t);
+          if(!isRowShifted(J_i(i))){
+            HALT("perhaps the below needs to be enabled!");
+            //          for(uint j=n; j<n+d; j++) {
+            //            if(t<=0) Jaux.rowShift(j) += 0;
+            //            else Jaux.rowShift(j) += varDimIntegral(t);
+            //          }
           }
         }
       }
-      Jaux->reshift();
-      Jaux->computeColPatches(true);
+      Jaux.reshift();
+      Jaux.computeColPatches(true);
     }
   }
   P.report();

@@ -48,8 +48,8 @@ TM_InsideBox::TM_InsideBox(const rai::Configuration& G, const char* iShapeName, 
 }
 
 void TM_InsideBox::phi(arr& y, arr& J, const rai::Configuration& G) {
-  rai::Shape* pnt=G.frames(i)->shape;
-  rai::Shape* box=G.frames(j)->shape;
+  rai::Shape* pnt=G.frames.elem(i)->shape;
+  rai::Shape* box=G.frames.elem(j)->shape;
   CHECK(pnt && box, "I need shapes!");
   CHECK(box->type()==rai::ST_ssBox || box->type()==rai::ST_box, "the 2nd shape needs to be a box"); //s1 should be the board
 //  arr pos, posJ;
@@ -81,8 +81,8 @@ void TM_InsideBox::phi(arr& y, arr& J, const rai::Configuration& G) {
 //===========================================================================
 
 void TM_InsideLine::phi(arr& y, arr& J, const rai::Configuration& G) {
-  rai::Shape* pnt=G.frames(i)->shape;
-  rai::Shape* box=G.frames(j)->shape;
+  rai::Shape* pnt=G.frames.elem(i)->shape;
+  rai::Shape* box=G.frames.elem(j)->shape;
   CHECK(pnt && box, "I need shapes!");
   CHECK(box->type()==rai::ST_capsule, "the 2nd shape needs to be a capsule"); //s1 should be the board
 //  arr pos, posJ;

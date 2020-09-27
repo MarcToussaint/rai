@@ -63,45 +63,28 @@ void Feature::phi2(arr& y, arr& J, const FrameL& F) {
   }
 }
 
+void Feature::phi(arr& y, arr& J, const rai::Configuration& C) {
+  FrameL F(order+1, frameIDs.N);
+  if(order==0 && C.frames.nd==1){
+    F[0] = C.frames.sub(frameIDs);
+  }else{
+    CHECK_EQ(C.frames.nd, 2, "");
+    CHECK_GE(C.frames.d0, order+1, "");
+    for(uint k=0;k<F.d0;k++){
+      F[k] = C.frames[C.frames.d0-F.d0+k].sub(frameIDs);
+    }
+  }
+  if(frameIDs.nd==2) F.reshape(F.d0, frameIDs.d0, frameIDs.d1);
+  phi2(y, J, F);
+}
+
 void Feature::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
-  CHECK_GE(Ctuple.N, order+1, "I need at least " <<order+1 <<" configurations to evaluate");
-  if(order==0) {
-    phi(y, J, *Ctuple(-1));
-    if(!!J) expandJacobian(J, Ctuple, -1);
-    return;
+  FrameL F(order+1, frameIDs.N);
+  for(uint k=0;k<F.d0;k++){
+    F[k] = Ctuple(Ctuple.N-F.d0+k)->frames.sub(frameIDs);
   }
-
-  arr y0, y1, Jy0, Jy1;
-  order--;
-  phi(y0, Jy0, Ctuple({0, -2}));  if(!!J) padJacobian(Jy0, Ctuple);
-  phi(y1, Jy1, Ctuple);
-  order++;
-
-  if(flipTargetSignOnNegScalarProduct) if(scalarProduct(y0, y1)<-.0) { y0 *= -1.;  if(!!J) Jy0 *= -1.; }
-
-  y = y1-y0;
-  if(!!J) J = Jy1 - Jy0;
-
-#if 1 //feature itself does not care for tau!!! use specialized features, e.g. linVel, angVel
-  if(Ctuple(-1)->hasTauJoint()) {
-    double tau; arr Jtau;
-    Ctuple(-1)->kinematicsTau(tau, Jtau);
-    CHECK_GE(tau, 1e-10, "");
-    y /= tau;
-    if(!!J) {
-      J /= tau;
-      expandJacobian(Jtau, Ctuple, -1);
-      J += (-1./tau)*y*Jtau;
-    }
-  } else {
-    double tau = Ctuple(-1)->frames(0)->tau;
-    if(tau) {
-      CHECK_GE(tau, 1e-10, "");
-      y /= tau;
-      if(!!J) J /= tau;
-    }
-  }
-#endif
+  if(frameIDs.nd==2) F.reshape(F.d0, frameIDs.d0, frameIDs.d1);
+  phi2(y, J, F);
 }
 
 rai::String Feature::shortTag(const rai::Configuration& C) {
@@ -109,7 +92,7 @@ rai::String Feature::shortTag(const rai::Configuration& C) {
   s <<niceTypeidName(typeid(*this));
   s <<'/' <<order;
   if(frameIDs.N<=3){
-    for(uint i:frameIDs) s <<'-' <<C.frames(i)->name;
+    for(uint i:frameIDs) s <<'-' <<C.frames.elem(i)->name;
   }else{
     s <<"-#" <<frameIDs.N;
   }
@@ -130,7 +113,6 @@ rai::String Feature::shortTag(const rai::Configuration& C) {
 
 VectorFunction Feature::vf(rai::Configuration& C) { ///< direct conversion to vector function: use to check gradient or evaluate
   return [this, &C](arr& y, arr& J, const arr& x) -> void {
-    C.setJacModeAs(J);
     C.setJointState(x);
     phi(y, J, C);
   };
@@ -138,7 +120,6 @@ VectorFunction Feature::vf(rai::Configuration& C) { ///< direct conversion to ve
 
 VectorFunction Feature::vf2(const FrameL& F) { ///< direct conversion to vector function: use to check gradient or evaluate
   return [this, &F](arr& y, arr& J, const arr& x) -> void {
-    F.first()->C.setJacModeAs(J);
     F.first()->C.setJointState(x);
     phi2(y, J, F);
   };
@@ -149,7 +130,6 @@ VectorFunction Feature::vf(ConfigurationL& Ctuple) { ///< direct conversion to v
     uintA qdim = getKtupleDim(Ctuple);
     qdim.prepend(0);
     for(uint i=0; i<Ctuple.N; i++){
-      Ctuple(i)->setJacModeAs(J);
       Ctuple(i)->setJointState(x({qdim(i), qdim(i+1)-1}));
     }
     phi(y, J, Ctuple);

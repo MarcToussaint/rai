@@ -292,6 +292,7 @@ template<class T> struct Array : std::vector<T>, Serializable {
   SparseVector& sparseVec();
   const SparseVector& sparseVec() const;
   RowShifted& rowShifted();
+  const RowShifted& rowShifted() const;
   bool isSparse() const;
   void setNoArr();
 
@@ -923,13 +924,25 @@ struct RowShifted : SpecialArray {
   RowShifted(arr& X, RowShifted& aux);
   //access
   double elem(uint i, uint j) const; //access with natural coordinates
+  double& elemNew(uint i, uint j); //access with natural coordinates
   double& entry(uint i, uint j) const; //access with memory coordinates
+  arr memRef() const{ arr x(Z.p, Z.N, true); x.reshape(Z.d0, rowSize); return x; }
   //manipulations
   void resize(uint d0, uint d1, uint _rowSize);
   void resizeCopy(uint d0, uint d1, uint n);
   void reshape(uint d0, uint d1);
   void reshift(); //shift all cols to start with non-zeros
   void computeColPatches(bool assumeMonotonic);
+  void insRow(uint i){
+    uint real_d1 = Z.d1;
+    Z.d1 = rowSize;
+    Z.insRows(i, 1);
+    Z.d1 = real_d1;
+    rowShift.insert(i, 0);
+    rowLen.insert(i, 0);
+    colPatches.clear();
+    symmetric=false;
+  }
 
   //computations
   arr At_A();
@@ -937,10 +950,17 @@ struct RowShifted : SpecialArray {
   arr At_x(const arr& x);
   arr A_x(const arr& x);
   arr At();
+  arr A_B(const arr& B) const;
+  arr B_A(const arr& B) const;
+  void rowWiseMult(const arr& a);
+
+  void add(const arr& B, uint lo0=0, uint lo1=0, double coeff=1.);
 
   void write(std::ostream& os) const;
 
   arr unpack() const;
+
+  void checkConsistency() const;
 };
 inline std::ostream& operator<<(std::ostream& os, const RowShifted& x){ x.write(os); return os; }
 
@@ -969,6 +989,7 @@ struct SparseMatrix : SpecialArray {
   double& elem(uint i, uint j);
   double& addEntry(int i, int j);
   arr getSparseRow(uint i);
+  arr memRef() const{ return arr(Z.p, Z.N, true); }
   //construction
   void setFromDense(const arr& X);
   void setupRowsCols();
@@ -1001,7 +1022,9 @@ arr makeRowSparse(const arr& X);
 
 #define UpdateOperator( op ) \
   void operator op (rai::SparseMatrix& x, const rai::SparseMatrix& y); \
-  void operator op (rai::SparseMatrix& x, double y );
+  void operator op (rai::SparseMatrix& x, double y ); \
+  void operator op (rai::RowShifted& x, const rai::RowShifted& y); \
+  void operator op (rai::RowShifted& x, double y );
 UpdateOperator(|=)
 UpdateOperator(^=)
 UpdateOperator(&=)

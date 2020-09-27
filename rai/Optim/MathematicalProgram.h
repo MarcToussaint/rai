@@ -59,6 +59,7 @@ struct MathematicalProgram_Factored : MathematicalProgram {
                                ) = 0;
 
   //-- structured (local) setting variable and evaluate feature
+  virtual void setAllVariables(const arr& x){ NIY; } //set all variables at once
   virtual void setSingleVariable(uint var_id, const arr& x) = 0; //set a single variable block
   virtual void evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H) = 0; //get a single feature block
 

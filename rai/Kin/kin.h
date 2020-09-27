@@ -74,7 +74,7 @@ struct Configuration : GLDrawer {
   bool _state_proxies_isGood=false; // the proxies have been created for the current state
   //TODO: need a _state for all the plugin engines (SWIFT, PhysX)? To auto-reinitialize them when the config changed structurally?
 
-  enum JacobianMode { JM_dense, JM_sparse, JM_noArr, JM_emptyShape };
+  enum JacobianMode { JM_dense, JM_sparse, JM_rowShifted, JM_noArr, JM_emptyShape };
   JacobianMode jacMode = JM_dense;
 
   static uint setJointStateCount;

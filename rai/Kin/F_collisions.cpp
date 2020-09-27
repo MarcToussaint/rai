@@ -14,6 +14,7 @@
 
 
 void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
+  if(order>0){  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
   rai::Frame* f1 = F.elem(0);
   rai::Frame* f2 = F.elem(1);
