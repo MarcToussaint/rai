@@ -7,7 +7,7 @@
 #include <Kin/frame.h>
 #include <Geo/pairCollision.h>
 #include <Kin/kin_swift.h>
-#include <Kin/F_PairCollision.h>
+#include <Kin/F_collisions.h>
 #include <Kin/F_qFeatures.h>
 #include <Kin/viewer.h>
 

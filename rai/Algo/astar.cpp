@@ -106,6 +106,7 @@ void AStarOnGraph::reportQueue() {
 
 RUN_ON_INIT_BEGIN(manipulationTree)
 AStar_NodeL::memMove = true;
+rai::Array<NodeType*>::memMove = true;
 RUN_ON_INIT_END(manipulationTree)
 
 #endif

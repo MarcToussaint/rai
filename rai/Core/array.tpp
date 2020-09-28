@@ -22,8 +22,9 @@
   needed or (3) at further calls of decreasing memory only free
   the memory if the new size is smaller than a fourth */
 #define ARRAY_flexiMem true
+
 //#ifdef RAI_MSVC
-#  define RAI_NO_VEC_IMPL
+//#define RAI_NO_VEC_IMPL
 //#endif
 
 //===========================================================================
@@ -50,13 +51,14 @@ template<class T> int rai::Array<T>::sizeT=-1;
 
 /// standard constructor -- this becomes an empty array
 template<class T> rai::Array<T>::Array()
-  : std::vector<T>(),
+  : /*std::vector<T>(),*/
     p(0),
     N(0),
     nd(0),
     d0(0), d1(0), d2(0),
     d(&d0),
     isReference(false),
+    M(0),
     special(0) {
   if(sizeT==-1) sizeT=sizeof(T);
   if(memMove==(char)-1) {
@@ -80,13 +82,14 @@ template<class T> rai::Array<T>::Array(const rai::Array<T>& a) : Array() { opera
 
 /// copy constructor
 template<class T> rai::Array<T>::Array(rai::Array<T>&& a)
-  : std::vector<T>(std::move(a)),
-    p(vec_type::data()),
+  : /*std::vector<T>(std::move(a)),*/
+    p(a.p),
     N(a.N),
     nd(a.nd),
     d0(a.d0), d1(a.d1), d2(a.d2),
     d(&d0),
     isReference(a.isReference),
+    M(a.M),
     special(a.special) {
   CHECK_EQ(a.d, &a.d0, "");
   a.p=NULL;
@@ -258,7 +261,13 @@ template<class T> rai::Array<T>& rai::Array<T>::reshapeFlat() {
 }
 
 /// return the size of memory allocated in bytes
-template<class T> uint rai::Array<T>::getMemsize() const { return vec_type::capacity()*sizeof(T); }
+template<class T> uint rai::Array<T>::getMemsize() const {
+#ifdef RAI_USE_STDVEC
+  return vec_type::capacity()*sizeof(T);
+#else
+  return M*sizeT;
+#endif
+}
 
 /// I becomes the index tuple for the absolute index i
 template<class T> void rai::Array<T>::getIndexTuple(Array<uint>& I, uint i) const {
@@ -416,7 +425,12 @@ template<class T> void rai::Array<T>::resizeMEM(uint n, bool copy, int Mforce) {
   CHECK(!isNoArr(*this), "resize of NO-ARRAY is not allowed!");
 
   //determine a new M (number of allocated items)
-  uint Mold=vec_type::size(), Mnew;
+  uint Mold=0, Mnew=0;
+#ifdef RAI_USE_STDVEC
+  Mold = vec_type::size();
+#else
+  Mold = M;
+#endif
   if(Mforce>=0) { //forced size
     Mnew = Mforce;
     CHECK_LE(n, Mnew, "Mforce is smaller than required!");
@@ -434,25 +448,63 @@ template<class T> void rai::Array<T>::resizeMEM(uint n, bool copy, int Mforce) {
     }
   }
 
+#ifdef RAI_USE_STDVEC
   if(Mnew!=Mold){ vec_type::resize(Mnew); }
 //  vec_type::reserve(Mnew);
 //  vec_type::resize(Mnew);
   p = vec_type::data();
+#else
+  CHECK_GE(Mnew, n, "");
+  CHECK((p && M) || (!p && !M), "");
+  if(Mnew!=Mold) {  //if M changed, allocate the memory
+    if(Mnew) {
+        if(memMove==1){
+            if(p){
+                p=(T*)realloc(p, Mnew*sizeT);
+            } else {
+                p=(T*)malloc(Mnew*sizeT);
+//                memset(p, 0, Mnew*sizeT);
+            }
+            if(!p) { HALT("memory allocation failed! Wanted size = " <<Mnew*sizeT <<"bytes"); }
+        }else{
+            T* pold = p;
+            p=new T [Mnew];
+            if(!p) { HALT("memory allocation failed! Wanted size = " <<Mnew*sizeT <<"bytes"); }
+            if(copy) for(uint i=N<n?N:n; i--;) p[i]=pold[i];
+            if(pold) delete[] pold;
+        }
+        M=Mnew;
+    } else {
+      if(p) {
+          if(memMove==1){
+              free(p);
+          }else{
+              delete[] p;
+          }
+          p=0;
+          M=0;
+      }
+    }
+  }
+#endif
   N = n;
+  if(N) CHECK(p, "");
 }
 
 /// free all memory and reset all pointers and sizes
 template<class T> void rai::Array<T>::freeMEM() {
-#ifndef RAI_NO_VEC_IMPL
-  if(!isReference) {
-    vec_type::clear();
-  } else {
-    vec_type::_M_impl._M_start = 0;
-    vec_type::_M_impl._M_finish = 0;
-    vec_type::_M_impl._M_end_of_storage = 0;
-  }
-#else
+#ifdef RAI_USE_STDVEC
   vec_type::clear();
+#else
+  if(M) {
+      if(memMove==1){
+          free(p);
+      }else{
+          delete[] p;
+      }
+      p=0;
+      M=0;
+  }
 #endif
   if(d && d!=&d0) { delete[] d; d=NULL; }
   p=NULL;
@@ -1221,7 +1273,7 @@ template<class T> void rai::Array<T>::referTo(const T* buffer, uint n) {
   isReference=true;
   nd=1; d0=N=n; d1=d2=0;
   p=(T*)buffer;
-#ifndef RAI_NO_VEC_IMPL
+#if 0
   vec_type::_M_impl._M_start = p;
   vec_type::_M_impl._M_finish = p+N;
   vec_type::_M_impl._M_end_of_storage = p+N;
@@ -1690,32 +1742,33 @@ template<class T> void rai::Array<T>::takeOver(rai::Array<T>& a) {
 }
 
 template<class T> void rai::Array<T>::swap(Array<T>& a) {
-#if 0
-  CHECK(!a.reference, "can't swap with a reference");
-  CHECK_EQ(N, a.N, "swap only works for equal sized memories");
-//  if(N!=a.N) resizeAs(a);
-  T* p_tmp = p;
-  p=a.p;
-  a.p=p_tmp;
-  HALT("vec not done yet");
-#else
   CHECK(!isReference && !a.isReference, "NIY for references");
+//  CHECK(!special&& !a.special, "NIY for specials");
   CHECK(nd<=3 && a.nd<=3, "only for 1D");
+#ifdef RAI_USE_STDVEC
   std::swap((vec_type&)*this, (vec_type&)a);
+#endif
 
-  T* p_tmp = p;
-  p=a.p;
-  a.p=p_tmp;
+#define SWAPx(X, Y){ auto z=X; X=Y; Y=z; }
+  SWAPx(p, a.p);
+//  SWAPx(special, a.special);
+//  SWAPx(isReference, a.isReference);
+//  T* p_tmp = p;
+//  p=a.p;
+//  a.p=p_tmp;
+#undef SWAPx
 
   uint z;
 #define SWAP(X, Y){ z=X; X=Y; Y=z; }
   SWAP(N, a.N);
+  SWAP(M, a.M);
   SWAP(nd, a.nd);
   SWAP(d0, a.d0);
   SWAP(d1, a.d1);
   SWAP(d2, a.d2);
 #undef SWAP
 
+#ifdef RAI_USE_STDVEC
   CHECK_EQ(p, vec_type::data(), "");
 #endif
 }
@@ -2446,7 +2499,7 @@ T sqrDistance(const rai::Array<T>& v, const rai::Array<T>& w) {
 template<class T> T maxDiff(const rai::Array<T>& v, const rai::Array<T>& w, uint* im) {
   CHECK_EQ(v.N, w.N,
            "maxDiff on different array dimensions (" <<v.N <<", " <<w.N <<")");
-  T d, t(0);
+  T d(0), t(0);
   if(!im)
     for(uint i=v.N; i--;) {
       d=(T)::fabs((double)(v.p[i]-w.p[i]));

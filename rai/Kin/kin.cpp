@@ -138,7 +138,6 @@ struct sConfiguration {
 }
 
 rai::Configuration::Configuration() {
-  frames.memMove=proxies.memMove=true;
   self = make_unique<sConfiguration>();
 }
 

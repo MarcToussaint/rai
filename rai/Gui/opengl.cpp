@@ -1551,7 +1551,6 @@ OpenGL* OpenGL::newClone() const {
 void OpenGL::init() {
   drawFocus=false;
   clearR=clearG=clearB=1.; clearA=0.;
-  drawers.memMove=true;
   mouseposx=mouseposy=0;
   mouse_button=0;
   mouseIsDown=false;

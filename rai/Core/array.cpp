@@ -1963,39 +1963,39 @@ rai::RowShifted::RowShifted(arr& X, rai::RowShifted& aux)
 double rai::RowShifted::elem(uint i, uint j) const {
   CHECK(Z.nd==2 && i<Z.d0 && j<Z.d1,
         "2D range error (" <<Z.nd <<"=2, " <<i <<"<" <<Z.d0 <<", " <<j <<"<" <<Z.d1 <<")");
-  uint rs=rowShift(i);
+  uint rs=rowShift.p[i];;
   if(j<rs || j>=rs+rowSize) return 0.;
   return Z.p[i*rowSize+j-rs];
 }
 
 double& rai::RowShifted::elemNew(uint i, uint j){
-  CHECK(Z.nd==2 && i<Z.d0 && j<Z.d1,
+  CHECK(i<Z.d0 && j<Z.d1,
         "2D range error (" <<Z.nd <<"=2, " <<i <<"<" <<Z.d0 <<", " <<j <<"<" <<Z.d1 <<")");
-  uint rs=rowShift(i);
-  uint rl=rowLen(i);
+  uint rs=rowShift.p[i];;
+  uint rl=rowLen.p[i];
   if(!rl){ //first element in this row!
-    rowShift(i) = j;
-    rowLen(i) = 1;
+    rowShift.p[i] = j;
+    rowLen.p[i] = 1;
     return entry(i,0);
   }
   if(j<rs){ //need to shift row to the right!
     CHECK_LE(rl+rs-j, Z.d1, ""); //can't shift! (rs+rl<=Z.d1 always!)
     memmove(&entry(i,rs-j), &entry(i,0), rl*Z.sizeT);
     memset(&entry(i,0), 0, (rs-j)*Z.sizeT);
-    rowLen(i) += rs-j;
-    rowShift(i) = j;
+    rowLen.p[i] += rs-j;
+    rowShift.p[i] = j;
     return entry(i,0);
   }
   if(j+1>rs+rl){ //need to extend rowLen
-    rowLen(i) = j+1-rs;
-    CHECK_LE(rowLen(i), rowSize, "rowShifted was created too small");
+    rowLen.p[i] = j+1-rs;
+    CHECK_LE(rowLen.p[i], rowSize, "rowShifted was created too small");
   }
   return entry(i,j-rs);
 }
 
 double& rai::RowShifted::entry(uint i, uint j) const {
-  CHECK(Z.nd==2 && i<Z.d0 && j<rowSize,
-        "2D range error (" <<Z.nd <<"=2, " <<i <<"<" <<Z.d0 <<", " <<j <<"<" <<rowSize <<")");
+//  CHECK(Z.nd==2 && i<Z.d0 && j<rowSize,
+//        "2D range error (" <<Z.nd <<"=2, " <<i <<"<" <<Z.d0 <<", " <<j <<"<" <<rowSize <<")");
   return Z.p[i*rowSize+j];
 }
 
@@ -2021,7 +2021,7 @@ void rai::RowShifted::reshift() {
     while(Zend>=Zbeg && *Zend==0.) Zend--;
     while(Zbeg<=Zend && *Zbeg==0.) Zbeg++;
     if(Zend<Zbeg) { //all zeros
-      rowShift.p[0]=0;
+      rowShift.p[i]=0;
       rowLen.p[i]=0;
     } else {
       uint rs = Zbeg-Zp;
@@ -2101,16 +2101,16 @@ arr rai::RowShifted::At_A() {
   if(!rowSize) return R; //Z is identically zero, all rows fully packed -> return zero R
   for(uint i=0; i<Z.d0; i++) {
     uint rs=rowShift.p[i];
-    uint rlen=rowLen.p[i];
+    uint rl=rowLen.p[i];
     double* Zi = Z.p+i*rowSize;
-    for(uint j=0; j<rlen/*rowSize*/; j++) {
+    for(uint j=0; j<rl/*rowSize*/; j++) {
       uint real_j=j+rs;
       if(real_j>=Z.d1) break;
       double Zij=Zi[j];
       if(Zij!=0.) {
         double* Rp=R.p + real_j*R_.rowSize;
         double* Jp=Zi+j;
-        double* Jpstop=Zi+rlen; //rowSize;
+        double* Jpstop=Zi+rl; //rowSize;
         for(; Jp!=Jpstop; Rp++, Jp++) if(*Jp!=0.) *Rp += Zij * *Jp;
       }
     }
@@ -2210,11 +2210,11 @@ arr rai::RowShifted::At() {
   At.setZero();
   for(uint i=0; i<Z.d1; i++) {
     uint rs = colPatches(i, 0);
-    uint rlen = colPatches(i, 1)-rs;
-    At_.rowLen(i) = rlen;
-    if(rlen){
+    uint rl = colPatches(i, 1)-rs;
+    At_.rowLen(i) = rl;
+    if(rl){
       At_.rowShift(i) = rs;
-      for(uint j=0; j<rlen; j++) At_.entry(i,j) = elem(rs+j, i);
+      for(uint j=0; j<rl; j++) At_.entry(i,j) = elem(rs+j, i);
     }
   }
   return At;
@@ -2224,12 +2224,12 @@ arr rai::RowShifted::A_B(const arr& B) const {
   CHECK(!isSpecial(B), "");
   arr X;
   RowShifted& Xr = X.rowShifted();
-  Xr.resize(Z.d0, B.d1, rowSize);
+  Xr.resize(Z.d0, B.d1, B.d1);
   for(uint i=0; i<X.d0; i++) for(uint k=0;k<B.d1;k++) {
-    uint rs = rowShift(i);
-    uint rl = rowLen(i);
+    uint rs = rowShift.p[i];
+    uint rl = rowLen.p[i];
     for(uint j=0; j<rl; j++){
-      Xr.elemNew(i,k) += entry(i,j) * B(j+rs,k);
+      Xr.elemNew(i,k) += entry(i,j) * B.p[(j+rs)*B.d1+k]; //B(j+rs,k);
     }
   }
   return X;
@@ -2241,10 +2241,11 @@ arr rai::RowShifted::B_A(const arr& B) const {
   RowShifted& Xr = X.rowShifted();
   Xr.resize(B.d0, Z.d1, rowSize);
   for(uint i=0; i<X.d0; i++) for(uint k=0;k<B.d1;k++){
-    uint rs = rowShift(k);
-    uint rl = rowLen(k);
+    uint rs = rowShift.p[k];
+    uint rl = rowLen.p[k];
+    double Bik = B(i,k);
     for(uint j=0; j<rl; j++){
-      Xr.elemNew(i,j+rs) += B(i,k)*entry(k,j);
+      Xr.elemNew(i,j+rs) += Bik*entry(k,j);
     }
   }
   return X;
@@ -2947,3 +2948,16 @@ void linkArray() { cout <<"*** libArray.so dynamically loaded ***" <<endl; }
 //}
 //}
 
+RUN_ON_INIT_BEGIN(array)
+rai::Array<bool>::memMove=1;
+rai::Array<char>::memMove=1;
+rai::Array<unsigned char>::memMove=1;
+rai::Array<int>::memMove=1;
+rai::Array<unsigned int>::memMove=1;
+rai::Array<short>::memMove=1;
+rai::Array<unsigned short>::memMove=1;
+rai::Array<long>::memMove=1;
+rai::Array<unsigned long>::memMove=1;
+rai::Array<float>::memMove=1;
+rai::Array<double>::memMove=1;
+RUN_ON_INIT_END(array)

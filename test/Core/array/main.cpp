@@ -690,17 +690,10 @@ void TEST(RowShifted){
 //  rnd.clockSeed();
   
   arr J;
-  STRING("[0, 0,\
-         1, 0,\
-         1, 1,\
-         0, 1,\
-         0, 0]") >>J;
-         J.reshape(5,2);
-
   rai::RowShifted& J_ = J.rowShifted();
-//  J_.resize(10,12,4);
-//  rndInteger(J,0,9);
-//  for(uint i=0;i<J.d0;i++) J_.rowShift(i) = i/3;
+  J_.resize(10,12,4);
+  rndInteger(J,0,9);
+  for(uint i=0;i<J.d0;i++) J_.rowShift(i) = i/3;
   J_.computeColPatches(false);
   cout <<J.rowShifted();
 
@@ -727,8 +720,6 @@ void TEST(RowShifted){
 //    cout <<Y.rowShifted() <<endl <<Yt.rowShifted() <<endl;
 //    cout <<"***\n" <<~X*X <<endl <<comp_At_A(Y).rowShifted() <<endl;
 
-//    RowShifted& Yaux = castRowShifted(Y);
-//    write(*castRowShifted(Y));
     arr x(X.d0);   rndGauss(x, 1.); //Integer(x,0,9);
     arr x2(X.d1);  rndGauss(x2, 1.); //Integer(x2,0,9);
     arr Z(1+rnd(5), X.d0);

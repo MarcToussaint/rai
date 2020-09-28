@@ -23,7 +23,6 @@ struct AStarOnGraph {
 
   AStarOnGraph(rai::Graph& _G, NodeType* _start, NodeType* _goal)
     :G(_G), start(_start), goal(_goal) {
-    rai::Array<NodeType*>::memMove = true;
     start->astar_g = 0;
     double f = start->astar_heuristic(goal);
     queue.add(f, start);

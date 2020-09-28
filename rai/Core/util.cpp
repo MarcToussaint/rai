@@ -213,7 +213,7 @@ bool parse(std::istream& is, const char* str, bool silent) {
     delete buf;
     return false;
   }
-  delete buf;
+  delete[] buf;
   return true;
 }
 

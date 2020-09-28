@@ -77,13 +77,14 @@ template<class T> struct ArrayIterationEnumerated;
   Please see also the reference for the \ref array.h
   header, which contains lots of functions that can be applied on
   Arrays. */
-template<class T> struct Array : std::vector<T>, Serializable {
+template<class T> struct Array : /*std::vector<T>,*/ Serializable {
   T* p;     ///< the pointer on the linear memory allocated
   uint N;   ///< number of elements
   uint nd;  ///< number of dimensions
   uint d0, d1, d2; ///< 0th, 1st, 2nd dim
   uint* d;  ///< pointer to dimensions (for nd<=3 points to d0)
   bool isReference; ///< true if this refers to some external memory
+  uint M;   ///< memory allocated (>=N)
 
   static int  sizeT;   ///< constant for each type T: stores the sizeof(T)
   static char memMove; ///< constant for each type T: decides whether memmove can be used instead of individual copies

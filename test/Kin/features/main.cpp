@@ -64,6 +64,7 @@ void testFeature() {
 
   rai_Kin_frame_ignoreQuatNormalizationWarning=true;
 
+  rai::timerStart();
   for(uint k=0;k<100;k++){
     arr x = 5.*(rand(n)-.5);
 
@@ -77,9 +78,9 @@ void testFeature() {
     arr y;
     F.first()->__phi(y, NoArr, Ctuple);
 
-    if(!succ)
-      Ctuple.watch(true);
+    if(!succ) Ctuple.watch(true);
   }
+  cout <<"*** COMPUTE TIME: " <<rai::timerRead() <<"sec" <<endl;
 }
 
 //===========================================================================
