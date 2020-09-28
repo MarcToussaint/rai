@@ -227,7 +227,8 @@ ptr<Objective> KOMO::addObjective(const arr& times,
 ptr<Objective> KOMO::addObjective(const arr& times, const FeatureSymbol& feat, const StringA& frames,
                                   ObjectiveType type, const arr& scale, const arr& target, int order,
                                   int deltaFromStep, int deltaToStep) {
-  return addObjective(times, symbols2feature(feat, frames, world), NoStringA, type, scale, target, order, deltaFromStep, deltaToStep);
+  return addObjective(times, symbols2feature(feat, frames, world),
+                      NoStringA, type, scale, target, order, deltaFromStep, deltaToStep);
 }
 
 //void KOMO::addFlag(double time, Flag *fl, int deltaStep) {
@@ -671,7 +672,7 @@ void KOMO_ext::setImpact(double time, const char* a, const char* b) {
 }
 
 void KOMO_ext::setOverTheEdge(double time, const char* object, const char* from, double margin) {
-  double negMargin = margin + .5*shapeSize(world, object, 0); //how much outside the bounding box?
+//  double negMargin = margin + .5*shapeSize(world, object, 0); //how much outside the bounding box?
   NIY;
 //  addObjective({time, time+.5},
 //               make_shared<F_Max>(make_shared<TM_AboveBox>(world, object, from, -negMargin), true), //this is the max selection -- only one of the four numbers need to be outside the BB
@@ -940,7 +941,7 @@ void KOMO_ext::setSlideAlong(double time, const char* stick, const char* object,
   //stick horizontal is orthogonal to world vertical
   addObjective({time, time+1.}, make_shared<F_ScalarProduct>(Vector_x, Vector_z), {stick}, OT_sos, {1e1}, {0.});
 
-  double dist = .5*shapeSize(world, object, 0)+.01;
+//  double dist = .5*shapeSize(world, object, 0)+.01;
   addObjective({time, time+1.}, make_shared<TM_InsideBox>(), {object, stick}, OT_ineq);
   HALT("ivec = Vector(dist, .0, .0), is missing");
 

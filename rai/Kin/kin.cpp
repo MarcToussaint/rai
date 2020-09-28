@@ -78,7 +78,10 @@ uintA jointsToIndices(const JointL& joints) {
 }
 
 FrameL indicesToFrames(const uintA& ids, const rai::Configuration& C){
-  return C.frames.sub(ids);
+  if(C.frames.nd==1) return C.frames.sub(ids);
+  FrameL F(ids.N);
+  for(uint i=0;i<ids.N;i++) F.elem(i) = C.frames.elem(ids.elem(i));
+  return F;
 }
 
 void makeConvexHulls(FrameL& frames, bool onlyContactShapes) {

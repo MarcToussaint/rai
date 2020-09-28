@@ -170,8 +170,8 @@ inline void accumulateInequalities(arr& y, arr& J, const arr& yAll, const arr& J
 
 enum ConstrainedMethodType { noMethod=0, squaredPenalty, augmentedLag, logBarrier, anyTimeAula, squaredPenaltyFixed };
 
-#define arg(type, name) type name; OptOptions& set_##name(type _##name){ name=_##name; return *this; }
 struct OptOptions {
+#define arg(type, name) type name; OptOptions& set_##name(type _##name){ name=_##name; return *this; }
   arg(int, verbose)
   arg(double*, fmin_return)
   arg(double, stopTolerance)
@@ -197,6 +197,7 @@ struct OptOptions {
   arg(double, muInit)
   arg(double, muLBInit)
   arg(double, aulaMuInc)
+#undef arg
   OptOptions();
   void write(std::ostream& os) const;
 };

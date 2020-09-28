@@ -20,7 +20,7 @@ CtrlProblem::CtrlProblem(rai::Configuration& _C, double _tau, uint k_order)
 
 std::shared_ptr<CtrlObjective> CtrlProblem::add_qControlObjective(uint order, double scale, const arr& target) {
   ptr<Objective> o = komo.add_qControlObjective({}, order, scale, target);
-  return addObjective(o->feat, o->type);
+  return addObjective(o->feat, NoStringA, o->type);
 }
 
 void CtrlProblem::addObjectives(const rai::Array<ptr<CtrlObjective>>& O) {
@@ -37,16 +37,20 @@ void CtrlProblem::delObjectives(const rai::Array<ptr<CtrlObjective>>& O) {
   }
 }
 
-ptr<CtrlObjective> CtrlProblem::addObjective(const ptr<Feature>& _feat, ObjectiveType _type) {
+ptr<CtrlObjective> CtrlProblem::addObjective(const ptr<Feature>& _feat, const StringA& frames, ObjectiveType _type) {
   std::shared_ptr<CtrlObjective> t = make_shared<CtrlObjective>();
   t->feat = _feat;
   t->type = _type;
+  if(!!frames && frames.N){
+    if(frames.N==1 && frames.scalar()=="ALL") t->feat->frameIDs = framesToIndices(komo.world.frames); //important! this means that, if no explicit selection of frames was made, all frames (of a time slice) are referred to
+    else t->feat->frameIDs = stringListToFrameIndices(frames, komo.world);
+  }
   addObjectives({t});
   return t;
 }
 
 ptr<CtrlObjective> CtrlProblem::addObjective(const FeatureSymbol& feat, const StringA& frames, ObjectiveType type, const arr& scale, const arr& target, int order) {
-  return addObjective(symbols2feature(feat, frames, komo.world, scale, target, order), type);
+  return addObjective(symbols2feature(feat, frames, komo.world, scale, target, order), NoStringA, type);
 }
 
 void CtrlProblem::update(rai::Configuration& C) {
@@ -101,7 +105,7 @@ arr CtrlProblem::solve() {
   OptOptions opt;
   opt.stopTolerance = 1e-4;
   opt.stopGTolerance = 1e-4;
-//  opt.stopIters = 2;
+  opt.stopIters = 20;
 //  opt.nonStrictSteps=-1;
   opt.maxStep = .1; //*tau; //maxVel*tau;
 //  opt.maxStep = 1.;

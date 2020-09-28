@@ -235,6 +235,7 @@ template<class T> struct Array : /*std::vector<T>,*/ Serializable {
   bool containsDoubles() const;
   uint getMemsize() const; // -> remove
   void getIndexTuple(Array<uint>& I, uint i) const; // -> remove?
+  std::vector<T> vec(){ return std::vector<T>(begin(), end()); }
 
   /// @name appending etc
   T& append();
