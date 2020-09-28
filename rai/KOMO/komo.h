@@ -283,9 +283,7 @@ struct KOMO : NonCopyable {
   arr getFrameState(double phase) { return getConfiguration(phase).getFrameState(); }
   uint getPath_totalDofs();                    ///< get the number of all DOFs of the path (the overall dimensionality of the problem)
   arr getPath_decisionVariable();              ///< get all DOFs of all configurations in a single flat vector (the decision variable of optimization)
-  arr getPath(const StringA& joints= {});      ///< get joint path, optionally for selected joints
-  arr getPath(const uintA& joints);            ///< get joint path for selected joints
-  arr getPath_frames(const StringA& frame); ///< get frame path, optionally for selected frames
+  arr getPath(const uintA& joints={});      ///< get joint path, optionally for selected joints
   arr getPath_frames(const uintA& frames={});     ///< get frame path for selected frames
   arr getPath_frames(int t);     ///< get frame path for selected frames
   arr getPath_q(int t);     ///< get frame path for selected frames
@@ -319,7 +317,7 @@ struct KOMO : NonCopyable {
   //
 
   void selectJointsBySubtrees(const StringA& roots, const arr& times= {}, bool notThose=false);
-  void setupConfigurations(const arr& q_init=NoArr, const StringA& q_initJoints=NoStringA);   ///< this creates the @configurations@, that is, copies the original world T times (after setTiming!) perhaps modified by KINEMATIC SWITCHES and FLAGS
+  void setupConfigurations(const arr& q_init=NoArr, const uintA& q_initJoints=NoUintA);   ///< this creates the @configurations@, that is, copies the original world T times (after setTiming!) perhaps modified by KINEMATIC SWITCHES and FLAGS
   void setupConfigurations2();
   void checkBounds(const arr& x);
   void retrospectApplySwitches(rai::Array<rai::KinematicSwitch*>& _switches);

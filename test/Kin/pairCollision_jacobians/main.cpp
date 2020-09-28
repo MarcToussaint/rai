@@ -34,10 +34,14 @@ void TEST(GJK_Jacobians) {
 //  gl.add(draw);
 //  gl.add(K);
 
-  F_PairCollision dist(B1.ID, B2.ID, F_PairCollision::_negScalar);
-  F_PairCollision distVec(B1.ID, B2.ID, F_PairCollision::_vector);
-  F_PairCollision distNorm(B1.ID, B2.ID, F_PairCollision::_normal);
-  F_PairCollision distCenter(B1.ID, B2.ID, F_PairCollision::_center);
+  F_PairCollision dist(F_PairCollision::_negScalar);
+  F_PairCollision distVec(F_PairCollision::_vector);
+  F_PairCollision distNorm(F_PairCollision::_normal);
+  F_PairCollision distCenter(F_PairCollision::_center);
+  dist.setFrameIDs({B1.ID, B2.ID});
+  distVec.setFrameIDs({B1.ID, B2.ID});
+  distNorm.setFrameIDs({B1.ID, B2.ID});
+  distCenter.setFrameIDs({B1.ID, B2.ID});
 
   for(uint k=0;k<100;k++){
 //    //randomize shapes
@@ -70,22 +74,22 @@ void TEST(GJK_Jacobians) {
 //      succ=false;
 //      q = C.getJointState();
 //    }
-    succ=false;
+    succ=true;
 
     arr y,y2,y3;
-    dist.phi(y, NoArr, C);
+    dist.__phi(y, NoArr, C);
     cout <<k <<" dist ";
     succ &= checkJacobian(dist.vf(C), q, 1e-5);
 
-    distVec.phi(y2, NoArr, C);
+    distVec.__phi(y2, NoArr, C);
     cout <<k <<" vec  ";
     succ &= checkJacobian(distVec.vf(C), q, 1e-5);
 
-    distNorm.phi(y3, NoArr, C);
+    distNorm.__phi(y3, NoArr, C);
     cout <<k <<" norm  ";
     succ &= checkJacobian(distNorm.vf(C), q, 1e-5);
 
-    distCenter.phi(y3, NoArr, C);
+    distCenter.__phi(y3, NoArr, C);
     cout <<k <<" center  ";
     succ &= checkJacobian(distCenter.vf(C), q, 1e-5);
 
@@ -96,7 +100,7 @@ void TEST(GJK_Jacobians) {
 
     gl.add(collInfo);
     gl.add(C);
-    gl.update();
+    gl.update(STRING(k), true);
     if(!succ) gl.watch();
 
     gl.remove(collInfo);
@@ -106,6 +110,7 @@ void TEST(GJK_Jacobians) {
       CHECK_ZERO(length(y2)-fabs(y(0)), 1e-3, "");
     }
   }
+  gl.clear();
 }
 
 //===========================================================================
@@ -151,13 +156,14 @@ void TEST(GJK_Jacobians2) {
 //    checkJacobian(f, q, 1e-4);
 
     F_qQuaternionNorms qn;
+    qn.setFrameIDs(framesToIndices(C.frames));
 //    C.reportProxies();
 
     arr y,J;
     C.kinematicsProxyCost(y, J, .05);
 
     arr y2, J2;
-    qn.phi(y2, J2, C);
+    qn.__phi(y2, J2, C);
 
     cout <<"contact meassure = " <<y(0) <<" diff=" <<y(0) - y_last <<" quat-non-normalization=" <<y2(0) <<endl;
     y_last = y(0);
@@ -215,15 +221,16 @@ void TEST(GJK_Jacobians3) {
 
 //    PairCollision collInfo(s1.sscCore(), s2.sscCore(), s1.frame.X, s2.frame.X, s1.size(-1), s2.size(-1));
 
-    F_PairCollision gjk(1, 2, F_PairCollision::_negScalar);
+    F_PairCollision gjk(F_PairCollision::_negScalar);
+    gjk.setFrameIDs({1, 2});
     checkJacobian(gjk.vf(C), q, 1e-4);
 
     arr y,J;
-    gjk.phi(y, J, C);
+    gjk.__phi(y, J, C);
 
     F_qQuaternionNorms qn;
     arr y2, J2;
-    qn.phi(y2, J2, C);
+    qn.__phi(y2, J2, C);
 
     cout <<"contact meassure = " <<y(0) <<endl;
     V.setConfiguration(C, STRING("t=" <<t <<"  movement along negative contact gradient"), false);

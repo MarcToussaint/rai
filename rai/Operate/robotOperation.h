@@ -20,7 +20,7 @@ struct RobotOperation {
   void sendToReal(bool activate);
 
   //-- basic info
-  const StringA& getJointNames();
+  const uintA& getJointIDs();
   arr getHomePose();
 
   //-- execution

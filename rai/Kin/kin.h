@@ -163,10 +163,10 @@ struct Configuration : GLDrawer {
   /// @name get state
   uint getJointStateDimension() const;
   const arr& getJointState() const;
-  arr getJointState(const FrameL&) const;
-  arr getJointState(const uintA&) const;
-  arr getJointState(const StringA&) const;
-  arr getFrameState(const FrameL& F=FrameL()) const;
+  arr getJointState(const FrameL& F, bool activesOnly=true) const;
+  arr getJointState(const uintA& F) const; //direct indicesToFrames
+  arr getFrameState() const { return getFrameState(frames); }
+  arr getFrameState(const FrameL& F) const;
   arr naturalQmetric(double power=.5) const;               ///< returns diagonal of a natural metric in q-space, depending on tree depth
   arr getLimits() const;
 
@@ -178,11 +178,10 @@ struct Configuration : GLDrawer {
 
   /// @name set state
   void setJointState(const arr& _q);
-  void setJointState(const arr& _q, const StringA&);
-  void setJointState(const arr& _q, const uintA&);
-  void setJointState(const arr& _q, const FrameL&);
-  void setFrameState(const arr& X, const FrameL& F, bool warnOnDifferentDim=true);
-  void setFrameState(const arr& X, const StringA& frameNames= {}, bool warnOnDifferentDim=true);
+  void setJointState(const arr& _q, const FrameL& F, bool activesOnly=true);
+  void setJointState(const arr& _q, const uintA& F); //direct indicesToFrames
+  void setFrameState(const arr& X){ setFrameState(X, frames); }
+  void setFrameState(const arr& X, const FrameL& F);
   void setDofsForTree(const arr& q, rai::Frame* root);
   void setTimes(double t);
   void operator=(const arr& X) {

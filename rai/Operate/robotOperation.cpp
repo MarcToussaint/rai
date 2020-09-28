@@ -18,7 +18,7 @@ extern bool Geo_mesh_drawColors;
 struct sRobotOperation : Thread, GLDrawer {
   BaxterInterface baxter;
   arr q0, q_ref;
-  StringA jointNames;
+  uintA jointIDs;
   rai::Configuration K_ref, K_baxter;
   OpenGL gl;
   bool useBaxter=false;
@@ -40,7 +40,7 @@ struct sRobotOperation : Thread, GLDrawer {
     gl.camera.setDefault();
 
     q0 = _K.getJointState();
-    jointNames = _K.getJointNames();
+    jointIDs = _K.getJointIDs();
     if(useBaxter) K_baxter = K_ref;
     threadLoop();
   }
@@ -173,8 +173,8 @@ double RobotOperation::timeToGo() {
 
 arr RobotOperation::getHomePose() { return self->q0; }
 
-const StringA& RobotOperation::getJointNames() {
-  return self->jointNames;
+const uintA& RobotOperation::getJointIDs() {
+  return self->jointIDs;
 }
 
 arr RobotOperation::getJointPositions(const StringA& joints) {
@@ -195,6 +195,6 @@ bool RobotOperation::getGripperOpened(const std::string& whichArm) {
 
 void RobotOperation::sync(rai::Configuration& K) {
   auto lock = self->stepMutex(RAI_HERE);
-  K.setJointState(getJointPositions(), self->jointNames);
+  K.setJointState(getJointPositions(), self->jointIDs);
 }
 

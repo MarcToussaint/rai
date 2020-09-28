@@ -179,7 +179,7 @@ struct Var {
 
   //only on construction you can make this Var to refer to the data of another Var -- now it is too late; you can of course call
   //the operator= for the data, using var1.set() = var2.get();
-  Var& operator=(const Var& v) = delete;
+  Var& operator=(const Var& v){ HALT("you can't copy Var!") }
 
   void checkLocked() { if(!data->rwlock.isLocked()) HALT("direct variable access without locking it before"); }
   T& operator()() { CHECK(data->rwlock.isLocked(), "direct variable access without locking it before");  return data->data; }

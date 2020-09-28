@@ -170,29 +170,33 @@ inline void accumulateInequalities(arr& y, arr& J, const arr& yAll, const arr& J
 
 enum ConstrainedMethodType { noMethod=0, squaredPenalty, augmentedLag, logBarrier, anyTimeAula, squaredPenaltyFixed };
 
+#define arg(type, name) type name; OptOptions& set_##name(type _##name){ name=_##name; return *this; }
 struct OptOptions {
-  int verbose;
-  double* fmin_return;
-  double stopTolerance;
-  double stopFTolerance;
-  double stopGTolerance;
-  uint   stopEvals;
-  uint   stopIters;
-  uint   stopOuters;
-  uint   stopLineSteps;
-  uint   stopTinySteps;
-  double initStep;
-  double minStep;
-  double maxStep;
-  double damping;
-  double stepInc, stepDec;
-  double dampingInc, dampingDec;
-  double wolfe;
-  int nonStrictSteps; //# of non-strict iterations
-  bool allowOverstep;
-  ConstrainedMethodType constrainedMethod;
-  double muInit, muLBInit;
-  double aulaMuInc;
+  arg(int, verbose)
+  arg(double*, fmin_return)
+  arg(double, stopTolerance)
+  arg(double, stopFTolerance)
+  arg(double, stopGTolerance)
+  arg(uint,   stopEvals)
+  arg(uint,   stopIters)
+  arg(uint,   stopOuters)
+  arg(uint,   stopLineSteps)
+  arg(uint,   stopTinySteps)
+  arg(double, initStep)
+  arg(double, minStep)
+  arg(double, maxStep)
+  arg(double, damping)
+  arg(double, stepInc)
+  arg(double, stepDec)
+  arg(double, dampingInc)
+  arg(double, dampingDec)
+  arg(double, wolfe)
+  arg(int, nonStrictSteps) //# of non-strict iterations
+  arg(bool, allowOverstep)
+  arg(ConstrainedMethodType, constrainedMethod)
+  arg(double, muInit)
+  arg(double, muLBInit)
+  arg(double, aulaMuInc)
   OptOptions();
   void write(std::ostream& os) const;
 };

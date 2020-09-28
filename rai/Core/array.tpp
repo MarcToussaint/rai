@@ -1736,9 +1736,9 @@ template<class T> void rai::Array<T>::takeOver(rai::Array<T>& a) {
   freeMEM();
   memMove=a.memMove;
   N=a.N; nd=a.nd; d0=a.d0; d1=a.d1; d2=a.d2;
-  p=a.p;
+  p=a.p; M=a.M;
   a.isReference=true;
-  HALT("vec not done yet");
+  a.M=0;
 }
 
 template<class T> void rai::Array<T>::swap(Array<T>& a) {

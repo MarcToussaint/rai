@@ -17,7 +17,8 @@ void TEST(KomoSequence){
   komo.setModel(K);
   komo.setTiming(2., 20, 10.);
 
-  komo.setSquaredQAccVelHoming();
+  komo.add_qControlObjective({}, 2);// setSquaredQAccVelHoming();
+  komo.addSquaredQuaternionNorms();
 
   komo.setGrasp(1., 1.8, "humanR", "Long1");
   komo.setPlace(1.8, "humanR", "Long1", "tableL");

@@ -720,7 +720,7 @@ void KOMO_ext::setGrasp(double time, double endTime, const char* endeffRef, cons
 #else
 //  addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_free, endeffRef, object, world));
   addSwitch_stable(time, endTime, endeffRef, object);
-  addObjective({time}, make_shared<TM_InsideBox>(world, endeffRef, NoVector, object), {}, OT_ineq, {1e1});
+  addObjective({time}, make_shared<TM_InsideBox>(), {endeffRef, object}, OT_ineq, {1e1});
 //  setTouch(time, time, endeffRef, object);
 #endif
 
@@ -750,7 +750,7 @@ void KOMO_ext::setGraspStick(double time, const char* endeffRef, const char* obj
 //              new TM_Default(TMT_posDiff, world, endeffRef, NoVector, object, NoVector),
 //              arr(2,3,{0,1,0,0,0,1}), {}),
 //          OT_eq, NoArr, 3e1);
-  addObjective({time}, make_shared<TM_InsideBox>(world, endeffRef, NoVector, object), {}, OT_ineq, {1e1});
+  addObjective({time}, make_shared<TM_InsideBox>(), {endeffRef, object}, OT_ineq, {1e1});
 
   if(stepsPerPhase>2) { //velocities down and up
     addObjective({time-timeToLift, time}, make_shared<F_Position>(), {endeffRef}, OT_sos, {3e0}, {0., 0., -.1}, 1); //move down
@@ -845,7 +845,9 @@ void KOMO_ext::setPush(double startTime, double endTime, const char* stick, cons
   add_touch(startTime, endTime, stick, table);
 
   double dist = .05; //.5*shapeSize(world, object, 0)+.01;
-  addObjective({startTime, endTime}, make_shared<TM_InsideBox>(world, "slider1b", Vector(dist, .0, .0), stick), {}, OT_ineq);
+  addObjective({startTime, endTime}, make_shared<TM_InsideBox>(), {"slider1b", stick}, OT_ineq);
+  HALT("ivec = Vector(dist, .0, .0) is missing");
+  Vector(dist, .0, .0),
 //  setTask(startTime, endTime, new TM_Default(TMT_posDiff, world, stick, NoVector, "slider1b", {dist, .0, .0}), OT_sos, {}, 1e1);
 #else
   setTouch(startTime, endTime, stick, object);
@@ -939,7 +941,8 @@ void KOMO_ext::setSlideAlong(double time, const char* stick, const char* object,
   addObjective({time, time+1.}, make_shared<F_ScalarProduct>(Vector_x, Vector_z), {stick}, OT_sos, {1e1}, {0.});
 
   double dist = .5*shapeSize(world, object, 0)+.01;
-  addObjective({time, time+1.}, make_shared<TM_InsideBox>(world, object, Vector(dist, .0, .0), stick), {}, OT_ineq);
+  addObjective({time, time+1.}, make_shared<TM_InsideBox>(), {object, stick}, OT_ineq);
+  HALT("ivec = Vector(dist, .0, .0), is missing");
 
   add_touch(time, time+1., stick, wall);
 
@@ -1232,7 +1235,7 @@ void KOMO_ext::add_aboveBox(double startTime, double endTime, const char* shape1
 }
 
 void KOMO_ext::add_insideBox(double startTime, double endTime, const char* shape1, const char* shape2, double prec) {
-  addObjective({startTime, endTime}, make_shared<TM_InsideBox>(world, shape1, NoVector, shape2), {}, OT_ineq, {prec}, NoArr);
+  addObjective({startTime, endTime}, make_shared<TM_InsideBox>(), {shape1, shape2}, OT_ineq, {prec}, NoArr);
 }
 
 //void KOMO::add_impulse(double time, const char* shape1, const char* shape2, ObjectiveType type, double prec) {
@@ -1417,9 +1420,9 @@ void KOMO::setStartConfigurations(const arr& q) {
 
 void KOMO::setConfiguration(int t, const arr& q) {
 #ifdef KOMO_PATH_CONFIG
-  uintA F = jointsToIndices(world.activeJoints);
-  F += timeSlices(k_order+t,0)->ID;
-  pathConfig.setJointState(q, F);
+  FrameL F;
+  for(auto* f:timeSlices[k_order+t]) if(f->joint) F.append(f);
+  pathConfig.setJointState(q, F, false);
 #else
   if(!configurations.N) setupConfigurations();
   if(t<0) CHECK_LE(-t, (int)k_order, "");
@@ -1433,7 +1436,9 @@ void KOMO::setConfiguration_X(int t, const arr& X) {
 
 arr KOMO::getConfiguration_q(int t) {
 #ifdef KOMO_PATH_CONFIG
-  return pathConfig.getJointState(timeSlices[k_order+t]);
+  FrameL F;
+  for(auto* f:timeSlices[k_order+t]) if(f->joint) F.append(f);
+  return pathConfig.getJointState(F, false);
 #else
   if(!configurations.N) setupConfigurations();
   if(t<0) CHECK_LE(-t, (int)k_order, "");
@@ -2025,7 +2030,7 @@ void KOMO::selectJointsBySubtrees(const StringA& roots, const arr& times, bool n
 
 //===========================================================================
 
-void KOMO::setupConfigurations(const arr& q_init, const StringA& q_initJoints) {
+void KOMO::setupConfigurations(const arr& q_init, const uintA& q_initJoints) {
 
   //IMPORTANT: The configurations need to include the k prefix configurations!
   //Therefore configurations(0) is for time=-k and configurations(k+t) is for time=t
@@ -3920,7 +3925,7 @@ arr KOMO::getPath_decisionVariable() {
 #endif
 }
 
-arr KOMO::getPath(const StringA& joints) {
+arr KOMO::getPath(const uintA& joints) {
 #ifdef KOMO_PATH_CONFIG
   HALT("can't use this anymore")
 #endif
@@ -3935,26 +3940,6 @@ arr KOMO::getPath(const StringA& joints) {
       X[t] = configurations(t+k_order)->getJointState();
   }
   return X;
-}
-
-arr KOMO::getPath(const uintA& joints) {
-#ifdef KOMO_PATH_CONFIG
-  HALT("can't use this anymore")
-#endif
-  CHECK_EQ(configurations.N, k_order+T, "configurations are not setup yet");
-  arr X = configurations(k_order)->getJointState(joints);
-  X.resizeCopy(T, X.N);
-  for(uint t=1; t<T; t++) {
-    X[t] = configurations(k_order+t)->getJointState(joints);
-  }
-  return X;
-}
-
-arr KOMO::getPath_frames(const StringA& frame) {
-  uintA _frames;
-  if(frame.N) for(const rai::String& f:frame) _frames.append(world.getFrameByName(f)->ID);
-  else _frames.setStraightPerm(world.frames.N);
-  return getPath_frames(_frames);
 }
 
 arr KOMO::getPath_frames(const uintA& frames) {
@@ -3999,7 +3984,9 @@ arrA KOMO::getPath_q() {
   arrA q(T);
   for(uint t=0; t<T; t++) {
 #ifdef KOMO_PATH_CONFIG
-    q(t) = pathConfig.getJointState(timeSlices[k_order+t]);
+    FrameL F;
+    for(auto* f:timeSlices[k_order+t]) if(f->joint && f->joint->active) F.append(f);
+    q(t) = pathConfig.getJointState(F, true);
 #else
     CHECK_EQ(configurations.N, k_order+T, "configurations are not setup yet");
     q(t) = configurations(t+k_order)->getJointState();

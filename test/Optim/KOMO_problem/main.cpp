@@ -89,7 +89,8 @@ void TEST(KOrderMarkov2) {
   rndUniform(x,-1.,1.);
   arr K;
 //  if(P.hasKernel()) K = buildKernelMatrix(P);
-  optConstrained(x, NoArr, Convert(P) );
+  OptConstrained(x, NoArr, Convert(P) )
+          .run();
 
   write(LIST<arr>(x),"z.output");
   rai::String plt = "plot 'z.output' us 1";

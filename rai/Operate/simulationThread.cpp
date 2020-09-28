@@ -96,7 +96,7 @@ void SimulationThread::step() {
 
   SIM.stepKin();
 
-  K.set()->setFrameState(SIM.getFrameState(), {}, true);
+  K.set()->setFrameState(SIM.getFrameState());
   frameState.set() = SIM.getFrameState();
   jointState.set() = SIM.getJointState();
   timeToGo.set() = SIM.getTimeToGo();

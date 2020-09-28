@@ -34,22 +34,11 @@ void TM_AboveBox::phi2(arr& y, arr& J, const FrameL& F) {
 
 //===========================================================================
 
-TM_InsideBox::TM_InsideBox(int iShape, int jShape)
-  : i(iShape), j(jShape), margin(.01) {
-}
 
-TM_InsideBox::TM_InsideBox(const rai::Configuration& G, const char* iShapeName, const rai::Vector& _ivec, const char* jShapeName, double _margin)
-  :i(-1), j(-1), margin(_margin) {
-  rai::Frame* a = iShapeName ? G.getFrameByName(iShapeName):nullptr;
-  rai::Frame* b = jShapeName ? G.getFrameByName(jShapeName):nullptr;
-  if(a) i=a->ID;
-  if(b) j=b->ID;
-  if(!!_ivec) ivec=_ivec; else ivec.setZero();
-}
-
-void TM_InsideBox::phi(arr& y, arr& J, const rai::Configuration& G) {
-  rai::Shape* pnt=G.frames.elem(i)->shape;
-  rai::Shape* box=G.frames.elem(j)->shape;
+void TM_InsideBox::phi2(arr& y, arr& J, const FrameL& F) {
+  CHECK_EQ(F.N, 2, "");
+  rai::Shape* pnt=F.elem(0)->shape;
+  rai::Shape* box=F.elem(1)->shape;
   CHECK(pnt && box, "I need shapes!");
   CHECK(box->type()==rai::ST_ssBox || box->type()==rai::ST_box, "the 2nd shape needs to be a box"); //s1 should be the board
 //  arr pos, posJ;
@@ -80,9 +69,10 @@ void TM_InsideBox::phi(arr& y, arr& J, const rai::Configuration& G) {
 
 //===========================================================================
 
-void TM_InsideLine::phi(arr& y, arr& J, const rai::Configuration& G) {
-  rai::Shape* pnt=G.frames.elem(i)->shape;
-  rai::Shape* box=G.frames.elem(j)->shape;
+void TM_InsideLine::phi2(arr& y, arr& J, const FrameL& F) {
+  CHECK_EQ(F.N, 2, "");
+  rai::Shape* pnt=F.elem(0)->shape;
+  rai::Shape* box=F.elem(1)->shape;
   CHECK(pnt && box, "I need shapes!");
   CHECK(box->type()==rai::ST_capsule, "the 2nd shape needs to be a capsule"); //s1 should be the board
 //  arr pos, posJ;

@@ -577,12 +577,13 @@ const arr& rai::Configuration::getJointState() const {
   return q;
 }
 
-arr rai::Configuration::getJointState(const FrameL& joints) const {
+arr rai::Configuration::getJointState(const FrameL& joints, bool activesOnly) const {
   if(!q.nd)((Configuration*)this)->ensure_q();
   uint nd=0;
   for(rai::Frame* f:joints) {
     rai::Joint* j = f->joint;
-    if(!j || !j->active) continue;
+    if(!j) HALT("frame '" <<f->name <<"' is not a joint!");
+    if(!j->active && activesOnly) HALT("frame '" <<f->name <<"' is a joint, but INACTIVE!");
     nd += j->dim;
   }
 
@@ -590,36 +591,21 @@ arr rai::Configuration::getJointState(const FrameL& joints) const {
   nd=0;
   for(rai::Frame* f:joints) {
     rai::Joint* j = f->joint;
-    if(!j || !j->active) continue;
-    for(uint ii=0; ii<j->dim; ii++) x(nd+ii) = q(j->qIndex+ii);
+    CHECK(j, "");
+    if(j->active){
+      for(uint ii=0; ii<j->dim; ii++) x(nd+ii) = q(j->qIndex+ii);
+    }else if(!activesOnly){
+      for(uint ii=0; ii<j->dim; ii++) x(nd+ii) = qInactive(j->qIndex+ii);
+    }else HALT("");
     nd += j->dim;
   }
   CHECK_EQ(nd, x.N, "");
   return x;
 }
 
-arr rai::Configuration::getJointState(const uintA& joints) const {
-  return getJointState(frames.sub(joints));
-}
-
-arr rai::Configuration::getJointState(const StringA& joints) const {
-  if(!q.nd)((Configuration*)this)->ensure_q();
-  arr x(joints.N);
-  for(uint i=0; i<joints.N; i++) {
-    String s = joints.elem(i);
-    uint d=0;
-    bool subdim=false;
-    if(s(-2)==':') { d=s(-1)-'0'; s.resize(s.N-2, true); subdim=true; }
-    Joint* j = getFrameByName(s)->joint;
-    CHECK(!j->dim || d<j->dim, "");
-    CHECK(j->dim==1 || subdim, "the joint '" <<s <<"' is multi-dimensional - you need to select a subdim");
-    x(i) = q(j->qIndex+d);
-  }
-  return x;
-}
+arr rai::Configuration::getJointState(const uintA& F) const { return getJointState(indicesToFrames(F, *this)); }
 
 arr rai::Configuration::getFrameState(const FrameL& F) const {
-  if(!F.N) return getFrameState(frames);
   arr X(F.N, 7);
   for(uint i=0; i<X.d0; i++) {
     X[i] = F.elem(i)->ensure_X().getArr7d();
@@ -804,51 +790,19 @@ void rai::Configuration::setJointState(const arr& _q) {
   calc_Q_from_q();
 }
 
-void rai::Configuration::setJointState(const arr& _q, const StringA& joints) {
-  setJointStateCount++; //global counter
-  getJointState();
-
-  CHECK_EQ(_q.N, joints.N, "");
-  for(uint i=0; i<_q.N; i++) {
-    rai::String frameName = joints(i);
-    if(frameName(-2)!=':') { //1-dim joint
-      rai::Joint* j = getFrameByName(frameName)->joint;
-      CHECK(j, "frame '" <<frameName <<"' is not a joint!");
-      q(j->qIndex) = _q(i);
-    } else {
-      frameName.resize(frameName.N-2, true);
-      rai::Joint* j = getFrameByName(frameName)->joint;
-      CHECK(j, "frame '" <<frameName <<"' is not a joint!");
-      for(uint k=0; k<j->dim; k++) q(j->qIndex+k) = _q(i+k);
-      i += j->dim-1;
-    }
-  }
-
-  proxies.clear();
-
-  _state_q_isGood=true;
-  _state_proxies_isGood=false;
-  for(Frame* f:frames) if(f->parent) f->_state_X_isGood=false;
-
-  calc_Q_from_q();
-}
-
-void rai::Configuration::setJointState(const arr& _q, const uintA& joints) {
-  setJointState(_q, frames.sub(joints));
-}
-
-void rai::Configuration::setJointState(const arr& _q, const FrameL& joints) {
+void rai::Configuration::setJointState(const arr& _q, const FrameL& F, bool activesOnly) {
   setJointStateCount++; //global counter
   getJointState();
 
   uint nd=0;
-  for(Frame* f:joints) {
+  for(Frame* f:F) {
     Joint* j = f->joint;
-    CHECK(j, "you gave a non-joint to setJointState"); //    if(!j || !j->active) continue;
+    if(!j) HALT("frame '" <<f->name <<"' is not a joint!");
     if(j->active){
       for(uint ii=0; ii<j->dim; ii++) q.elem(j->qIndex+ii) = _q(nd+ii);
       j->calc_Q_from_q(q, j->qIndex);
     }else{
+      if(activesOnly) HALT("frame '" <<f->name <<"' is a joint, but INACTIVE!");
       for(uint ii=0; ii<j->dim; ii++) qInactive.elem(j->qIndex+ii) = _q(nd+ii);
       j->calc_Q_from_q(qInactive, j->qIndex);
     }
@@ -862,12 +816,11 @@ void rai::Configuration::setJointState(const arr& _q, const FrameL& joints) {
   _state_proxies_isGood=false;
 }
 
-void rai::Configuration::setFrameState(const arr& X, const FrameL& F, bool warnOnDifferentDim) {
-  if(warnOnDifferentDim) {
-    if(X.d0 > F.N) LOG(-1) <<"X.d0=" <<X.d0 <<" is larger than frames.N=" <<F.N;
-    if(X.d0 < F.N) LOG(-1) <<"X.d0=" <<X.d0 <<" is smaller than frames.N=" <<F.N;
-  }
-  for(Frame* f:F) if(f->parent) f->_state_X_isGood=false;
+void rai::Configuration::setJointState(const arr& _q, const uintA& F){ setJointState(_q, indicesToFrames(F, *this), true); }
+
+void rai::Configuration::setFrameState(const arr& X, const FrameL& F) {
+  CHECK_EQ(X.d0, F.N, "X.d0=" <<X.d0 <<" is larger than frames.N=" <<F.N);
+  for(Frame* f:F) f->_state_setXBadinBranch();
   for(uint i=0; i<F.N && i<X.d0; i++) {
     F(i)->X.set(X[i]);
     F(i)->X.rot.normalize();
@@ -876,47 +829,8 @@ void rai::Configuration::setFrameState(const arr& X, const FrameL& F, bool warnO
   for(uint i=0; i<F.N && i<X.d0; i++) {
     if(F(i)->parent) F(i)->Q.setDifference(F(i)->parent->X, F(i)->X);
   }
-}
-
-void rai::Configuration::setFrameState(const arr& X, const StringA& frameNames, bool warnOnDifferentDim) {
-  if(!frameNames.N) {
-    if(warnOnDifferentDim) {
-      if(X.d0 > frames.N) LOG(-1) <<"X.d0=" <<X.d0 <<" is larger than frames.N=" <<frames.N;
-      if(X.d0 < frames.N) LOG(-1) <<"X.d0=" <<X.d0 <<" is smaller than frames.N=" <<frames.N;
-    }
-    for(auto f:frames) if(f->parent) f->_state_X_isGood=false;
-    for(uint i=0; i<frames.N && i<X.d0; i++) {
-      frames.elem(i)->X.set(X[i]);
-      frames.elem(i)->X.rot.normalize();
-      frames.elem(i)->_state_X_isGood = true;
-    }
-    for(uint i=0; i<frames.N && i<X.d0; i++) {
-      if(frames.elem(i)->parent) frames.elem(i)->Q.setDifference(frames.elem(i)->parent->X, frames.elem(i)->X);
-    }
-  } else {
-    if(X.nd==1) {
-      CHECK_EQ(1, frameNames.N, "X.d0 does not equal #frames");
-      rai::Frame* f = getFrameByName(frameNames(0));
-      if(!f) return;
-      f->X.set(X);
-      f->X.rot.normalize();
-      f->_state_updateAfterTouchingX();
-    } else {
-      CHECK_EQ(X.d0, frameNames.N, "X.d0 does not equal #frames");
-      for(uint i=0; i<X.d0; i++) {
-        rai::Frame* f = getFrameByName(frameNames(i));
-        if(!f) return;
-        f->X.set(X[i]);
-        f->X.rot.normalize();
-        f->_state_updateAfterTouchingX();
-      }
-    }
-  }
   _state_q_isGood=false;
-
-  checkConsistency();
-//  calc_Q_from_Frames();
-  //  if(calc_q_from_X) ensure_q();
+//  checkConsistency();
 }
 
 void rai::Configuration::setDofsForTree(const arr& q, rai::Frame* root) {

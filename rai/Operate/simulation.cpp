@@ -30,7 +30,7 @@ struct Simulation_self {
   rai::Configuration K_compute;
   OpenGL gl;
 
-  StringA currentlyUsedJoints; //the joints that the spline refers to
+  uintA currentlyUsedJoints; //the joints that the spline refers to
   SplineRunner spline;
   double dt; // time stepping interval
   uint stepCount=0; // number of simulation steps
@@ -39,7 +39,7 @@ struct Simulation_self {
 Simulation::Simulation(const rai::Configuration& _K, double dt)
   : K(_K) {
   self = new Simulation_self;
-  setUsedRobotJoints(K.getJointNames());
+  setUsedRobotJoints(K.getJointIDs());
   self->dt = dt;
 
   self->gl.title = "Simulation";
@@ -91,7 +91,7 @@ void Simulation::stepKin() {
 
 }
 
-void Simulation::setJointState(const StringA& joints, const arr& q_ref) {
+void Simulation::setJointState(const uintA& joints, const arr& q_ref) {
   auto lock = self->threadLock(RAI_HERE);
 
   K.setJointState(q_ref, joints);
@@ -190,7 +190,7 @@ void Simulation::setJointStateSafe(arr q_ref, StringA& jointsInLimit, StringA& c
   K.setJointState(q, self->currentlyUsedJoints);
 }
 
-void Simulation::setUsedRobotJoints(const StringA& joints) {
+void Simulation::setUsedRobotJoints(const uintA& joints) {
   auto lock = self->threadLock(RAI_HERE);
 
   if(self->currentlyUsedJoints!=joints) {
