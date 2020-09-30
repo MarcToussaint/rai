@@ -571,7 +571,7 @@ void rai::Configuration::calc_indexedActiveJoints() {
 
 /** @brief returns the joint (actuator) dimensionality */
 uint rai::Configuration::getJointStateDimension() const {
-  if(!q.nd)((Configuration*)this)->ensure_q();
+  ((Configuration*)this)->ensure_q();
   return q.N;
 }
 
@@ -581,7 +581,7 @@ const arr& rai::Configuration::getJointState() const {
 }
 
 arr rai::Configuration::getJointState(const FrameL& joints, bool activesOnly) const {
-  if(!q.nd)((Configuration*)this)->ensure_q();
+  ((Configuration*)this)->ensure_q();
   uint nd=0;
   for(rai::Frame* f:joints) {
     rai::Joint* j = f->joint;
@@ -1539,7 +1539,7 @@ uintA rai::Configuration::getJointIDs() const {
 }
 
 StringA rai::Configuration::getJointNames() const {
-  if(!q.nd)((Configuration*)this)->ensure_q();
+  ((Configuration*)this)->ensure_q();
   StringA names(getJointStateDimension());
   for(Joint* j:activeJoints) {
     rai::String name=j->frame->name;
@@ -1814,7 +1814,7 @@ void rai::Configuration::stepDynamics(arr& qdot, const arr& Bu_control, double t
 
 void __merge(rai::ForceExchange* c, rai::Proxy* p) {
   CHECK(&c->a==p->a && &c->b==p->b, "");
-  if(!p->collision) p->calc_coll(c->a.C);
+  if(!p->collision) p->calc_coll();
   //  c->a_rel = c->a.X / rai::Vector(p->coll->p1);
   //  c->b_rel = c->b.X / rai::Vector(p->coll->p2);
   //  c->a_norm = c->a.X.rot / rai::Vector(-p->coll->normal);
@@ -1880,7 +1880,7 @@ double rai::Configuration::totalCollisionPenetration() {
     //early check: if swift is way out of collision, don't bother computing it precise
     if(p.d > p.a->shape->radius()+p.b->shape->radius()+.01) continue;
     //exact computation
-    if(!p.collision)((Proxy*)&p)->calc_coll(*this);
+    if(!p.collision)((Proxy*)&p)->calc_coll();
     double d = p.collision->getDistance();
     if(d<0.) D -= d;
   }
@@ -2446,7 +2446,7 @@ void rai::Configuration::kinematicsProxyCost(arr& y, arr& J, const Proxy& p, dou
   //early check: if swift is way out of collision, don't bother computing it precise
   if(p.d > p.a->shape->radius() + p.b->shape->radius() + .01 + margin) return;
 
-  if(!p.collision)((Proxy*)&p)->calc_coll(*this);
+  if(!p.collision)((Proxy*)&p)->calc_coll();
 
   if(p.collision->getDistance()>margin) return;
 

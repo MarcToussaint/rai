@@ -224,9 +224,9 @@ int main(int argc,char** argv){
 //  rnd.clockSeed();
 
 //  testEasy();
-  testAlign();
+//  testAlign();
 //  testThin();
-//  testPR2();
+  testPR2();
 
   return 0;
 }

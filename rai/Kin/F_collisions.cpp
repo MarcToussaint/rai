@@ -59,9 +59,28 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
 void F_AccumulatedCollisions::phi2(arr& y, arr& J, const FrameL& F) {
   rai::Configuration& C = F.first()->C;
   C.kinematicsZero(y, J, 1);
-  for(const rai::Proxy& p: C.proxies) {
-    if(F.contains(p.a) && F.contains(p.b)) {
-      C.kinematicsProxyCost(y, J, p, margin, true);
+  for(rai::Proxy& p: C.proxies) {
+    if(p.a->ID>=F.first()->ID && p.a->ID<=F.last()->ID) { //F.contains(p.a) && F.contains(p.b)) {
+      CHECK(p.a->shape, "");
+      CHECK(p.b->shape, "");
+
+      //early check: if swift is way out of collision, don't bother computing it precise
+      if(p.d > p.a->shape->radius() + p.b->shape->radius() + .01 + margin) continue;
+
+      if(!p.collision) p.calc_coll();
+
+      if(p.collision->getDistance()>margin) continue;
+
+      arr Jp1, Jp2;
+      p.a->C.jacobian_pos(Jp1, p.a, p.collision->p1);
+      p.b->C.jacobian_pos(Jp2, p.b, p.collision->p2);
+
+      arr y_dist, J_dist;
+      p.collision->kinDistance(y_dist, J_dist, Jp1, Jp2);
+
+      if(y_dist.scalar()>margin) continue;
+      y += margin-y_dist.scalar();
+      J -= J_dist;
     }
   }
 }

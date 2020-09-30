@@ -30,9 +30,7 @@ void rai::Proxy::copy(const rai::Configuration& C, const rai::Proxy& p) {
 //  if(p.collision) collision = p.collision;
 }
 
-void rai::Proxy::calc_coll(const Configuration& C) {
-  CHECK_EQ(&a->C, &C, "");
-  CHECK_EQ(&b->C, &C, "");
+void rai::Proxy::calc_coll() {
   rai::Shape* s1 = a->shape;
   rai::Shape* s2 = b->shape;
   CHECK(s1 && s2, "");

@@ -80,7 +80,8 @@ void testBounds(){
 
   LGP_Tree lgp(C, "fol-pnp-switch.g");
 
-  lgp.inspectSequence("(pick pr2R obj0) (pick pr2L obj3) (place pr2R obj0 tray) (place pr2L obj3 tray)");
+  lgp.inspectSequence("(pick pr2R obj0) (pick pr2L obj1) (place pr2R obj0 tray) (place pr2L obj1 tray) (pick pr2L obj2) (place pr2L obj2 tray)");
+//  lgp.inspectSequence("(pick pr2R obj0) (pick pr2L obj3) (place pr2R obj0 tray) (place pr2L obj3 tray)");
   return;
 
   LGP_Node* node = lgp.walkToNode("(pick pr2R obj0) (pick pr2L obj3) (place pr2R obj0 tray) (place pr2L obj3 tray)");
@@ -98,7 +99,7 @@ int MAIN(int argc,char **argv){
 
   solve();
 
-  //  testBounds();
+//  testBounds();
 
   return 0;
 }

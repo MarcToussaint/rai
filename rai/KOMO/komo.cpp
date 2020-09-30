@@ -1462,6 +1462,8 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, 
     steps(i) = conv_time2step(conv_step2time(i, waypointStepsPerPhase), stepsPerPhase);
   }
 
+//  displayPath(STRING("before"));
+
   //first set the path piece-wise CONSTANT at waypoints and the subsequent steps (each waypoint may have different dimension!...)
   for(uint i=0; i<steps.N; i++) {
     uint Tstop=T;
@@ -1471,23 +1473,25 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, 
     }
   }
 
+//  displayPath(STRING("after"));
+
   //then interpolate w.r.t. non-switching frames within the intervals
 #if 1
   for(uint i=0; i<steps.N; i++) {
     uint i1=steps(i);
     uint i0=0; if(i) i0 = steps(i-1);
     //motion profile
-    if(i1<T) {
-      for(uint j=i0+1; j<=i1; j++) {
+    if(i1-1<T) {
 #ifdef KOMO_PATH_CONFIG
-        uintA nonSwitched = getNonSwitchedFrames(timeSlices[k_order+j], timeSlices[k_order+i1]);
-        arr q0 = pathConfig.getJointState(timeSlices[k_order+j].sub(nonSwitched));
-        arr q1 = pathConfig.getJointState(timeSlices[k_order+i1].sub(nonSwitched));
+      uintA nonSwitched = getNonSwitchedFrames(timeSlices[k_order+i0], timeSlices[k_order+i1]);
+      arr q0 = pathConfig.getJointState(timeSlices[k_order+i0].sub(nonSwitched));
+      arr q1 = pathConfig.getJointState(timeSlices[k_order+i1].sub(nonSwitched));
 #else
-        uintA nonSwitched = getNonSwitchedFrames({configurations(k_order+j), configurations(k_order+i1)});
-        arr q0 = configurations(k_order+j)->getJointState(nonSwitched);
-        arr q1 = configurations(k_order+i1)->getJointState(nonSwitched);
+      uintA nonSwitched = getNonSwitchedFrames({configurations(k_order+j), configurations(k_order+i1)});
+      arr q0 = configurations(k_order+j)->getJointState(nonSwitched);
+      arr q1 = configurations(k_order+i1)->getJointState(nonSwitched);
 #endif
+      for(uint j=i0+1; j<i1; j++) {
         arr q;
         double phase = double(j-i0)/double(i1-i0);
         if(sineProfile) {
@@ -1500,6 +1504,7 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, 
 #else
         configurations(k_order+j)->setJointState(q, nonSwitched);
 #endif
+//        displayPath(STRING("interpolating: step:" <<i <<" t: " <<j));
       }
     }/*else{
       for(uint j=i0+1;j<T;j++){
@@ -1956,7 +1961,7 @@ bool KOMO::displayTrajectory(double delay, bool watch, bool overlayPaths, const 
   return false;
 }
 
-bool KOMO::displayPath(bool watch, bool full) {
+bool KOMO::displayPath(const char* txt, bool watch, bool full) {
 #ifdef KOMO_PATH_CONFIG
 #else
   uintA allFrames;
@@ -1985,12 +1990,12 @@ bool KOMO::displayPath(bool watch, bool full) {
   }
 #endif
   if(watch) {
-    int key = gl->watch();
+    int key = gl->watch(txt);
 //    gl.reset();
     gl->clear();
     return !(key==27 || key=='q');
   }
-  gl->update(nullptr, true);
+  gl->update(txt, true);
 //  gl.reset();
   gl->clear();
   return true;
@@ -2238,7 +2243,7 @@ void reportAfterPhiComputation(KOMO& komo) {
     cout <<komo.getReport(true) <<endl;
   }
   if(komo.animateOptimization>0) {
-    komo.displayPath(komo.animateOptimization>1);
+    komo.displayPath("optAnim", komo.animateOptimization>1);
 //    komo.plotPhaseTrajectory();
 //    rai::wait();
     //  reportProxies();

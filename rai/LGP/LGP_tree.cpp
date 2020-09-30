@@ -301,10 +301,10 @@ void LGP_Tree::inspectSequence(const rai::String& seq) {
 
   //-- first test pose bounds along the path
   BoundType bound = BD_pose;
-  for(LGP_Node* n:path) {
-    n->optBound(bound, true, verbose-2);
-    n->displayBound(gl, bound);
-  }
+//  for(LGP_Node* n:path) {
+//    n->optBound(bound, true, verbose-2);
+//    n->displayBound(gl, bound);
+//  }
 
 //  bound = BD_poseFromSeq;
 //  for(LGP_Node* n:path) {

@@ -195,8 +195,6 @@ uint F_qItself::dim_phi2(const FrameL& F){
 
 //===========================================================================
 
-extern bool isSwitched(rai::Frame* f0, rai::Frame* f1);
-
 void F_qZeroVel::phi2(arr& y, arr& J, const FrameL& F){
   CHECK_EQ(order, 1, "");
   F_qItself()
@@ -381,102 +379,17 @@ void F_qTime::phi2(arr& y, arr& J, const FrameL& F) {
 
 //===========================================================================
 
-rai::Array<rai::Joint*> getSwitchedJoints(const rai::Configuration& G0, const rai::Configuration& G1, int verbose) {
-
-  HALT("retired: we only look at switched objects");
-
-  rai::Array<rai::Joint*> switchedJoints;
-
-  rai::Joint* j1;
-  for(rai::Frame* f: G1.frames) if((j1=f->joint) && j1->active) {
-      if(j1->from()->ID>=G0.frames.N || j1->frame->ID>=G0.frames.N) {
-        switchedJoints.append({nullptr, j1});
-        continue;
-      }
-      rai::Joint* j0 = G0.getJointByFrameIndices(j1->from()->ID, j1->frame->ID);
-      if(!j0 || j0->type!=j1->type) {
-        if(G0.frames.elem(j1->frame->ID)->joint) { //out-body had (in G0) one inlink...
-          j0 = G0.frames.elem(j1->frame->ID)->joint;
-        }
-        switchedJoints.append({j0, j1});
-//      }
-      }
-    }
-  switchedJoints.reshape(switchedJoints.N/2, 2);
-
-  if(verbose) {
-    for(uint i=0; i<switchedJoints.d0; i++) {
-      cout <<"Switch: "
-           <<switchedJoints(i, 0)->from()->name <<'-' <<switchedJoints(i, 0)->frame->name
-           <<" -> " <<switchedJoints(i, 1)->from()->name <<'-' <<switchedJoints(i, 1)->frame->name <<endl;
-    }
-  }
-
-  return switchedJoints;
-}
-
-//===========================================================================
-
-bool isSwitched(rai::Frame* f0, rai::Frame* f1) {
-  rai::Joint* j0 = f0->joint;
-  rai::Joint* j1 = f1->joint;
-  if(!j0 != !j1) return true;
-  if(j0) {
-    if(j0->type!=j1->type
-        || (j0->from() && j0->from()->ID!=j1->from()->ID)) { //different joint type; or attached to different parent
-      return true;
-    }
-  }
-  return false;
-}
-
-//===========================================================================
-
-uintA getSwitchedBodies(const rai::Configuration& G0, const rai::Configuration& G1, int verbose) {
-  uintA switchedBodies;
-
-  for(rai::Frame* b1:G1.frames) {
-    uint id = b1->ID;
-    if(id>=G0.frames.N) continue; //b1 does not exist in G0 -> not a switched body
-    rai::Frame* b0 = G0.frames.elem(id);
-    rai::Joint* j0 = b0->joint;
-    rai::Joint* j1 = b1->joint;
-    if(!j1) continue; //don't report if j1 did not become an effective DOF
-    if(!j0 != !j1) { switchedBodies.append(id); continue; }
-    if(j0) {
-      if(j0->type!=j1->type
-          || (j0->from() && j0->from()->ID!=j1->from()->ID)) { //different joint type; or attached to different parent
-        switchedBodies.append(id);
-      }
-    }
-  }
-
-  if(verbose) {
-    for(uint id : switchedBodies) {
-      cout <<"Switch: "
-           <<G0.frames.elem(id)->name /*<<'-' <<switchedBodies(i,0)->name*/
-           <<" -> " <<G1.frames.elem(id)->name /*<<'-' <<switchedJoints(i,1)->to->name*/ <<endl;
-    }
-  }
-
-  return switchedBodies;
-}
-
-//===========================================================================
-
 uintA getNonSwitchedFrames(const FrameL& A, const FrameL& B) {
   uintA nonSwitchedFrames;
+  CHECK_EQ(A.N, B.N, "");
 
-  for(rai::Frame* f0:A) {
-    bool succ = true;
-    uint id = f0->ID;
-    if(id>=B.N) { succ=false; break; }
-    if(isSwitched(f0, B.elem(id))) { succ=false; break; }
-    if(succ) nonSwitchedFrames.append(id);
+  for(uint i=0;i<A.N;i++) {
+    rai::Frame* f0 = A.elem(i);
+    rai::Frame* f1 = B.elem(i);
+    if(!f0->joint || !f1->joint) continue;
+    if(f0->joint->type!=f1->joint->type) continue;
+    if(f0->ID - f0->parent->ID != f1->ID-f1->parent->ID) continue; //comparing the DIFFERENCE in IDs between parent and joint
+    nonSwitchedFrames.append(i);
   }
   return nonSwitchedFrames;
-}
-
-uintA getNonSwitchedFrames(const ConfigurationL& Ctuple) {
-  NIY
 }
