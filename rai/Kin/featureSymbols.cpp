@@ -159,12 +159,12 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
   else if(feat==FS_angularVel) { f=make_shared<F_AngVel>(); }
 
   else if(feat==FS_accumulatedCollisions) {
-    if(frames.N) f=make_shared<F_AccumulatedCollisions>(TMT_allP, stringListToFrameIndices(frames, C));
+    if(frames.N) f=make_shared<F_AccumulatedCollisions>(TMT_allP, namesToIndices(frames, C));
     else f=make_shared<F_AccumulatedCollisions>(TMT_allP, framesToIndices(C.frames));
   }
   else if(feat==FS_jointLimits) {
     f=make_shared<F_qLimits2>();
-    f->frameIDs = stringListToFrameIndices(frames, C);
+    f->frameIDs = namesToIndices(frames, C);
 //    f=make_shared<F_qLimits>();
 //    for(auto *j:C.activeJoints) f->frameIDs.append(j->frame->ID);
   }
@@ -211,7 +211,7 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
 
   f->fs = feat;
 
-  if(!f->frameIDs.N) f->frameIDs = stringListToFrameIndices(frames, C);
+  if(!f->frameIDs.N) f->frameIDs = namesToIndices(frames, C);
 
   return f;
 }

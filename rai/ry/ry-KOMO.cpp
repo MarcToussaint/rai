@@ -63,9 +63,9 @@ void init_KOMO(pybind11::module& m) {
 
   .def("addObjective", [](std::shared_ptr<KOMO>& self, const std::vector<double>& time, const FeatureSymbol& feature, const ry::I_StringA& frames, const ObjectiveType& type, const std::vector<double> scale, const std::vector<std::vector<double>> scaleTrans, const std::vector<double>& target, int order) {
     arr _scale;
-    if(scale.size()) _scale=conv_stdvec2arr(scale);
-    if(scaleTrans.size()) _scale=vecvec2arr(scaleTrans);
-    self->addObjective(arr(time), feature, I_conv(frames), type, _scale, arr(target), order);
+    if(scale.size()) _scale = scale;
+    if(scaleTrans.size()) _scale = vecvec2arr(scaleTrans);
+    self->addObjective(arr(time, true), feature, I_conv(frames), type, _scale, arr(target, true), order);
   }, "", pybind11::arg("time")=std::vector<double>(),
   pybind11::arg("feature"),
   pybind11::arg("frames")=ry::I_StringA(),
@@ -76,7 +76,7 @@ void init_KOMO(pybind11::module& m) {
   pybind11::arg("order")=-1)
 
   .def("add_qControlObjective", [](std::shared_ptr<KOMO>& self, const std::vector<double>& time, uint order, double scale, const std::vector<double>& target) {
-    self->add_qControlObjective(arr(time), order, scale, arr(target));
+    self->add_qControlObjective(arr(time, true), order, scale, arr(target, true));
   }, "", pybind11::arg("time")=std::vector<double>(),
   pybind11::arg("order"),
   pybind11::arg("scale")=double(1.),
@@ -158,10 +158,11 @@ void init_KOMO(pybind11::module& m) {
     return pybind11::array(X.dim(), X.p);
   })
 
-  .def("getPathFrames", [](std::shared_ptr<KOMO>& self, const ry::I_StringA& frames) {
-    arr X = self->getPath_frames(I_conv(frames));
-    return pybind11::array(X.dim(), X.p);
-  })
+  .def("getPathFrames", &KOMO::getPath_frames)
+//  .def("getPathFrames", [](std::shared_ptr<KOMO>& self, const ry::I_StringA& frames) {
+//    arr X = self->getPath_frames(I_conv(frames));
+//    return pybind11::array(X.dim(), X.p);
+//  })
 
   .def("getPathTau", [](std::shared_ptr<KOMO>& self) {
     arr X = self->getPath_tau();

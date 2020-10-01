@@ -258,7 +258,7 @@ struct KOMO : NonCopyable {
   // optimizing, getting results, and verbosity
   //
 
-  //-- initialization
+  //-- setting individual time slices
   void setConfiguration(int t, const arr& q); ///< t<0 allows to set the prefix configurations; while 0 <= t < T allows to set all other initial configurations
   void setConfiguration_X(int t, const arr& X); ///< t<0 allows to set the prefix configurations; while 0 <= t < T allows to set all other initial configurations
   void setStartConfigurations(const arr& q); ///< set all prefix configurations to a particular state
@@ -285,7 +285,7 @@ struct KOMO : NonCopyable {
   arr getPath_decisionVariable();              ///< get all DOFs of all configurations in a single flat vector (the decision variable of optimization)
   arr getPath(const uintA& joints={});      ///< get joint path, optionally for selected joints
   arr getPath_frames(const uintA& frames={});     ///< get frame path for selected frames
-  arr getPath_frames(int t);     ///< get frame path for selected frames
+  arr getFrameState(int t);     ///< get frame path for selected frames
   arr getPath_q(int t);     ///< get frame path for selected frames
   arrA getPath_q();                            ///< get the DOFs (of potentially varying dimensionality) for each configuration
   arr getPath_tau();

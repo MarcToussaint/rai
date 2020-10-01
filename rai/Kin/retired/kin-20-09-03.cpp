@@ -65,6 +65,63 @@ void rai::Configuration_ext::getJointState(arr& _q, arr& _qdot) const {
   }
 }
 
+/// find joint connecting two bodies with specific names
+rai::Joint* rai::Configuration::getJointByFrameNames(const char* from, const char* to) const {
+  Frame* f = getFrameByName(from);
+  Frame* t = getFrameByName(to);
+  if(!f || !t) return nullptr;
+  return getJointByFrames(f, t);
+}
+
+uintA rai::Configuration::getQindicesByNames(const StringA& jointNames) const {
+  FrameL F = getFramesByNames(jointNames);
+  uintA Qidx;
+  for(rai::Frame* f: F) {
+    CHECK(f->joint, "");
+    Qidx.append(f->joint->qIndex);
+  }
+  return Qidx;
+}
+
+void rai::Configuration::setDofsForTree(const arr& q, rai::Frame* root) {
+  FrameL F = {root};
+  root->getSubtree(F);
+  setJointState(q, F);
+}
+
+
+///// find shape with specific name
+//rai::Shape* rai::Configuration::getShapeByName(const char* name, bool warnIfNotExist) const {
+//  Frame *f = getFrameByName(name, warnIfNotExist);
+//  return f->shape;
+//}
+
+///// find shape with specific name
+//rai::Joint* rai::Configuration::getJointByName(const char* name, bool warnIfNotExist) const {
+//  Frame *f = getFrameByName(name, warnIfNotExist);
+//  return f->joint();
+//}
+
+/// find joint connecting two bodies
+//rai::Link* rai::Configuration::getLinkByBodies(const Frame* from, const Frame* to) const {
+//  if(to->link && to->link->from==from) return to->link;
+//  return nullptr;
+//}
+
+/// find joint connecting two bodies
+rai::Joint* rai::Configuration::getJointByFrames(const Frame* from, const Frame* to) const {
+  if(to->joint && to->parent==from) return to->joint;
+  return nullptr;
+}
+
+
+/// find joint connecting two bodies with specific names
+rai::Joint* rai::Configuration::getJointByFrameIndices(uint ifrom, uint ito) const {
+  if(ifrom>=frames.N || ito>=frames.N) return nullptr;
+  Frame* f = frames.elem(ifrom);
+  Frame* t = frames.elem(ito);
+  return getJointByFrames(f, t);
+}
 /** @brief sets the joint state vectors separated in positions and
   velocities */
 void rai::Configuration_ext::setJointState(const arr& _q, const arr& _qdot) {
@@ -161,6 +218,61 @@ void rai::Configuration_ext::proxiesToContacts(double margin) {
   //  }
   //  for(ForceExchange *c:old) delete c;
 }
+
+void operator=(const arr& X) {
+  if(X.d0==frames.N) setFrameState(X);
+  else if(X.d0==getJointStateDimension()) setJointState(X);
+  else HALT("wrong dimension");
+}
+
+
+//===========================================================================
+
+void rai::Configuration::vars_ensureFrames() {
+  if(!vars_frames.N) {
+    for(Frame* f: frames) if(f->joint && f->joint->type!=JT_rigid) {
+        bool isVar = true;
+        Frame* p=f;
+        while(p->parent) {
+          if(p->parent->joint && p->parent->joint->type!=JT_rigid) { isVar=false; break; }
+          p=p->parent;
+        }
+        if(isVar) vars_frames.append(f);
+      }
+  }
+}
+
+const rai::String& rai::Configuration::vars_getName(uint i) {
+  vars_ensureFrames();
+  return vars_frames(i)->name;
+}
+
+uint rai::Configuration::vars_getDim(uint i) {
+  Frame* f = vars_frames(i);
+  FrameL F = {f};
+  f->getSubtree(F);
+  uint d =0;
+  for(Frame* f:F) if(f->joint) d += f->joint->qDim();
+  return d;
+}
+
+void rai::Configuration::vars_activate(uint i) {
+  Frame* f = vars_frames(i);
+  FrameL F = {f};
+  f->getSubtree(F);
+  for(Frame* f:F) if(f->joint) f->joint->active=true;
+  reset_q();
+}
+
+void rai::Configuration::vars_deactivate(uint i) {
+  Frame* f = vars_frames(i);
+  FrameL F = {f};
+  f->getSubtree(F);
+  for(Frame* f:F) if(f->joint) f->joint->active=false;
+  reset_q();
+}
+
+//===========================================================================
 
 /** similar to invDynamics using NewtonEuler; but only computing the backward pass */
 void rai::Configuration_ext::NewtonEuler_backward() {
@@ -359,3 +471,191 @@ void rai::Configuration::kinematicsRelPos(arr& y, arr& J, Frame* a, const rai::V
   }
 }
 
+
+void transferQbetweenTwoWorlds(arr& qto, const arr& qfrom, const rai::Configuration& to, const rai::Configuration& from) {
+  arr q = to.getJointState();
+  uint T = qfrom.d0;
+  uint Nfrom = qfrom.d1;
+
+  if(qfrom.d1==0) {T = 1; Nfrom = qfrom.d0;}
+
+  qto = repmat(~q, T, 1);
+
+  intA match(Nfrom);
+  match = -1;
+  rai::Joint* jfrom;
+  for(rai::Frame* f: from.frames) if((jfrom=f->joint)) {
+      rai::Joint* jto = to.getJointByFrameNames(jfrom->from()->name, jfrom->frame->name);
+      if(!jto || !jfrom->qDim() || !jto->qDim()) continue;
+      CHECK_EQ(jfrom->qDim(), jto->qDim(), "joints must have same dimensionality");
+      for(uint i=0; i<jfrom->qDim(); i++) {
+        match(jfrom->qIndex+i) = jto->qIndex+i;
+      }
+    }
+
+  for(uint i=0; i<match.N; i++) if(match(i)!=-1) {
+      for(uint t=0; t<T; t++) {
+        if(qfrom.d1==0) {
+          qto(t, match(i)) = qfrom(i);
+        } else {
+          qto(t, match(i)) = qfrom(t, i);
+        }
+      }
+    }
+
+  if(qfrom.d1==0) qto.reshape(qto.N);
+}
+
+#if 0 //nonsensical
+void transferQDotbetweenTwoWorlds(arr& qDotTo, const arr& qDotFrom, const rai::Configuration& to, const rai::Configuration& from) {
+  //TODO: for saveness reasons, the velocities are zeroed.
+  arr qDot;
+  qDot = zeros(to.getJointStateDimension());
+  uint T, dim;
+  if(qDotFrom.d1 > 0) {
+    T = qDotFrom.d0;
+    qDotTo = repmat(~qDot, T, 1);
+    dim = qDotFrom.d1;
+  } else {
+    T = 1;
+    qDotTo = qDot;
+    dim = qDotFrom.d0;
+  }
+
+  intA match(dim);
+  match = -1;
+  for(rai::Joint* jfrom:from.joints) {
+    rai::Joint* jto = to.getJointByName(jfrom->name, false); //OLD: to.getJointByBodyNames(jfrom->from->name, jfrom->to->name); why???
+    if(!jto || !jfrom->qDim() || !jto->qDim()) continue;
+    CHECK_EQ(jfrom->qDim(), jto->qDim(), "joints must have same dimensionality");
+    for(uint i=0; i<jfrom->qDim(); i++) {
+      match(jfrom->qIndex+i) = jto->qIndex+i;
+    }
+  }
+  if(qDotFrom.d1 > 0) {
+    for(uint i=0; i<match.N; i++) if(match(i)!=-1) {
+        for(uint t=0; t<T; t++) {
+          qDotTo(t, match(i)) = qDotFrom(t, i);
+        }
+      }
+  } else {
+    for(uint i=0; i<match.N; i++) if(match(i)!=-1) {
+        qDotTo(match(i)) = qDotFrom(i);
+      }
+  }
+
+}
+
+void transferKpBetweenTwoWorlds(arr& KpTo, const arr& KpFrom, const rai::Configuration& to, const rai::Configuration& from) {
+  KpTo = zeros(to.getJointStateDimension(), to.getJointStateDimension());
+  //use Kp gains from ors file for toWorld, if there are no entries of this joint in fromWorld
+  for_list(rai::Joint, j, to.joints) {
+    if(j->qDim()>0) {
+      arr* info;
+      info = j->ats.find<arr>("gains");
+      if(info) {
+        KpTo(j->qIndex, j->qIndex)=info->elem(0);
+      }
+    }
+  }
+
+  intA match(KpFrom.d0);
+  match = -1;
+  for(rai::Joint* jfrom : from.joints) {
+    rai::Joint* jto = to.getJointByName(jfrom->name, false); // OLD: rai::Joint* jto = to.getJointByBodyNames(jfrom->from->name, jfrom->to->name);
+    if(!jto || !jfrom->qDim() || !jto->qDim()) continue;
+    CHECK_EQ(jfrom->qDim(), jto->qDim(), "joints must have same dimensionality");
+    for(uint i=0; i<jfrom->qDim(); i++) {
+      match(jfrom->qIndex+i) = jto->qIndex+i;
+    }
+  }
+
+  for(uint i=0; i<match.N; i++) {
+    for(uint j=0; j<match.N; j++) {
+      KpTo(match(i), match(j)) = KpFrom(i, j);
+    }
+  }
+}
+
+void transferKdBetweenTwoWorlds(arr& KdTo, const arr& KdFrom, const rai::Configuration& to, const rai::Configuration& from) {
+  KdTo = zeros(to.getJointStateDimension(), to.getJointStateDimension());
+
+  //use Kd gains from ors file for toWorld, if there are no entries of this joint in fromWorld
+  for_list(rai::Joint, j, to.joints) {
+    if(j->qDim()>0) {
+      arr* info;
+      info = j->ats.find<arr>("gains");
+      if(info) {
+        KdTo(j->qIndex, j->qIndex)=info->elem(1);
+      }
+    }
+  }
+
+  intA match(KdFrom.d0);
+  match = -1;
+  for(rai::Joint* jfrom : from.joints) {
+    rai::Joint* jto = to.getJointByName(jfrom->name, false); // OLD: rai::Joint* jto = to.getJointByBodyNames(jfrom->from->name, jfrom->to->name);
+    if(!jto || !jfrom->qDim() || !jto->qDim()) continue;
+    CHECK_EQ(jfrom->qDim(), jto->qDim(), "joints must have same dimensionality");
+    for(uint i=0; i<jfrom->qDim(); i++) {
+      match(jfrom->qIndex+i) = jto->qIndex+i;
+    }
+  }
+
+  for(uint i=0; i<match.N; i++) {
+    for(uint j=0; j<match.N; j++) {
+      KdTo(match(i), match(j)) = KdFrom(i, j);
+    }
+  }
+}
+
+void transferU0BetweenTwoWorlds(arr& u0To, const arr& u0From, const rai::Configuration& to, const rai::Configuration& from) {
+  u0To = zeros(to.getJointStateDimension());
+
+  intA match(u0From.d0);
+  match = -1;
+  for(rai::Joint* jfrom : from.joints) {
+    rai::Joint* jto = to.getJointByName(jfrom->name, false); // OLD: rai::Joint* jto = to.getJointByBodyNames(jfrom->from->name, jfrom->to->name);
+    if(!jto || !jfrom->qDim() || !jto->qDim()) continue;
+    CHECK_EQ(jfrom->qDim(), jto->qDim(), "joints must have same dimensionality");
+    for(uint i=0; i<jfrom->qDim(); i++) {
+      match(jfrom->qIndex+i) = jto->qIndex+i;
+    }
+  }
+
+  for(uint i=0; i<match.N; i++) {
+    u0To(match(i)) = u0From(i);
+  }
+}
+
+void transferKI_ft_BetweenTwoWorlds(arr& KI_ft_To, const arr& KI_ft_From, const rai::Configuration& to, const rai::Configuration& from) {
+  uint numberOfColumns = KI_ft_From.d1;
+  if(KI_ft_From.d1 == 0) {
+    numberOfColumns = 1;
+    KI_ft_To = zeros(to.getJointStateDimension());
+  } else {
+    KI_ft_To = zeros(to.getJointStateDimension(), KI_ft_From.d1);
+  }
+
+  intA match(KI_ft_From.d0);
+  match = -1;
+  for(rai::Joint* jfrom : from.joints) {
+    rai::Joint* jto = to.getJointByName(jfrom->name, false); // OLD: rai::Joint* jto = to.getJointByBodyNames(jfrom->from->name, jfrom->to->name);
+    if(!jto || !jfrom->qDim() || !jto->qDim()) continue;
+    CHECK_EQ(jfrom->qDim(), jto->qDim(), "joints must have same dimensionality");
+    for(uint i=0; i<jfrom->qDim(); i++) {
+      match(jfrom->qIndex+i) = jto->qIndex+i;
+    }
+  }
+
+  for(uint i=0; i<match.N; i++) {
+    for(uint j=0; j < numberOfColumns; j++) {
+      if(numberOfColumns > 1) {
+        KI_ft_To(match(i), j) = KI_ft_From(i, j);
+      } else {
+        KI_ft_To(match(i)) = KI_ft_From(i);
+      }
+    }
+  }
+}
+#endif

@@ -24,15 +24,15 @@ pybind11::dict graph2dict(const rai::Graph& G) {
     } else if(n->isOfType<rai::String>()) {
       dict[key.p] = n->get<rai::String>().p;
     } else if(n->isOfType<arr>()) {
-      dict[key.p] = conv_arr2stdvec(n->get<arr>());
+      dict[key.p] = n->get<arr>().vec();
     } else if(n->isOfType<arrA>()) {
-      dict[key.p] = conv_arr2stdvec(n->get<arrA>());
+      dict[key.p] = n->get<arrA>().vec();
     } else if(n->isOfType<intA>()) {
-      dict[key.p] = conv_arr2stdvec(n->get<intA>());
+      dict[key.p] = n->get<intA>().vec();
     } else if(n->isOfType<uintA>()) {
-      dict[key.p] = conv_arr2stdvec(n->get<uintA>());
+      dict[key.p] = n->get<uintA>().vec();
     } else if(n->isOfType<boolA>()) {
-      dict[key.p] = conv_arr2stdvec(n->get<boolA>());
+      dict[key.p] = n->get<boolA>().vec();
     } else if(n->isOfType<double>()) {
       dict[key.p] = n->get<double>();
     } else if(n->isOfType<int>()) {
@@ -59,7 +59,7 @@ pybind11::list graph2list(const rai::Graph& G) {
     } else if(n->isOfType<rai::String>()) {
       list.append(n->get<rai::String>().p);
     } else if(n->isOfType<arr>()) {
-      list.append(conv_arr2stdvec(n->get<arr>()));
+      list.append(n->get<arr>().vec());
     } else if(n->isOfType<double>()) {
       list.append(n->get<double>());
     } else if(n->isOfType<int>()) {

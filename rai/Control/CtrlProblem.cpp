@@ -43,7 +43,7 @@ ptr<CtrlObjective> CtrlProblem::addObjective(const ptr<Feature>& _feat, const St
   t->type = _type;
   if(!!frames && frames.N){
     if(frames.N==1 && frames.scalar()=="ALL") t->feat->frameIDs = framesToIndices(komo.world.frames); //important! this means that, if no explicit selection of frames was made, all frames (of a time slice) are referred to
-    else t->feat->frameIDs = stringListToFrameIndices(frames, komo.world);
+    else t->feat->frameIDs = namesToIndices(frames, komo.world);
   }
   addObjectives({t});
   return t;
@@ -56,7 +56,7 @@ ptr<CtrlObjective> CtrlProblem::addObjective(const FeatureSymbol& feat, const St
 void CtrlProblem::update(rai::Configuration& C) {
   //-- update the KOMO configurations (push one step back, and update current configuration)
   for(int t=-komo.k_order; t<0; t++) {
-    komo.setConfiguration_X(t, komo.getPath_frames(t+1));
+    komo.setConfiguration_X(t, komo.getFrameState(t+1));
 //    komo.pathConfigconfigurations(s-1)->setJointState(komo.configurations(s)->getJointState());
   }
   arr X = C.getFrameState();

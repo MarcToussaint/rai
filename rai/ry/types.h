@@ -76,15 +76,15 @@ inline rai::Graph I_conv(const ry::I_dict& x) {
 
 inline ry::I_arr I_conv(const arr& x) {
   ry::I_arr y;
-  y.first = x.dim();
-  y.second = x;
+  y.first = x.dim().vec();
+  y.second = x.vec();
   return y;
 }
 
 inline arr I_conv(const ry::I_arr& x) {
   arr y;
-  y = conv_stdvec2arr(x.second);
-  y.reshape(conv_stdvec2arr(x.first));
+  y = x.second;
+  y.reshape( uintA(x.first, true) );
   return y;
 }
 

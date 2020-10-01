@@ -508,7 +508,7 @@ void CG2komo(KOMO& komo, const SubCG& scg, const rai::Configuration& C, bool col
   }
   for(uint t=0; t<=scg.maxT; t++) {
     framesPerT(t).sort().removeDoublesInSorted();
-    c->addFramesCopy(framesPerT(t));
+    c->addConfigurationCopy(framesPerT(t));
 //    if(!t) for(rai::Frame *f:c->frames) if(f->joint) delete f->joint; //kill all DOFs at t=0
   }
   //delete joints without parents

@@ -34,9 +34,9 @@ void testFeature() {
   C.setTimes(.1);
 
   rai::Configuration Ctuple;
-  Ctuple.addFramesCopy(C.frames);
-  Ctuple.addFramesCopy(C.frames);
-  Ctuple.addFramesCopy(C.frames);
+  Ctuple.addConfigurationCopy(C.frames);
+  Ctuple.addConfigurationCopy(C.frames);
+  Ctuple.addConfigurationCopy(C.frames);
   Ctuple.jacMode = rai::Configuration::JM_rowShifted;
 
   uint n=Ctuple.getJointStateDimension();

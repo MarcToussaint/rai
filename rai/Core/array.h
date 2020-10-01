@@ -102,8 +102,8 @@ template<class T> struct Array : /*std::vector<T>,*/ Serializable {
   explicit Array(uint D0);
   explicit Array(uint D0, uint D1);
   explicit Array(uint D0, uint D1, uint D2);
-  explicit Array(const T* p, uint size, bool byReference=true);      //reference!
-  explicit Array(const std::vector<T>& a, bool byReference=false);   //reference?
+  explicit Array(const T* p, uint size, bool byReference);      //reference!
+  explicit Array(const std::vector<T>& a, bool byReference);   //reference?
   Array(std::initializer_list<T> values);
   Array(std::initializer_list<uint> dim, std::initializer_list<T> values);
   explicit Array(SpecialArray* _special); //only used to define NoArrays
@@ -235,7 +235,7 @@ template<class T> struct Array : /*std::vector<T>,*/ Serializable {
   bool containsDoubles() const;
   uint getMemsize() const; // -> remove
   void getIndexTuple(Array<uint>& I, uint i) const; // -> remove?
-  std::vector<T> vec(){ return std::vector<T>(begin(), end()); }
+  std::vector<T> vec() const{ return std::vector<T>(begin(), end()); }
 
   /// @name appending etc
   T& append();
@@ -1094,21 +1094,6 @@ template<class vert, class edge> bool graphTopsort(rai::Array<vert*>& V, rai::Ar
 template<class vert, class edge> void graphDelete(rai::Array<vert*>& V, rai::Array<edge*>& E);
 
 /// @}
-
-//===========================================================================
-//
-// conv with std::vector
-//
-
-#include <vector>
-
-template<class T> rai::Array<T> conv_stdvec2arr(const std::vector<T>& v) {
-  return rai::Array<T>(&v.front(), v.size());
-}
-
-template<class T> std::vector<T> conv_arr2stdvec(const rai::Array<T>& x) {
-  return std::vector<T>(x.begin(), x.end());
-}
 
 //===========================================================================
 //

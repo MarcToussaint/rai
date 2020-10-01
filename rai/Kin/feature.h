@@ -38,7 +38,7 @@ struct Feature {
   Feature& setScale(const arr& _scale) { scale=_scale; return *this; }
   Feature& setTarget(const arr& _target) { target=_target; return *this; }
   Feature& setFrameIDs(const uintA& _frameIDs) { frameIDs=_frameIDs; return *this; }
-  Feature& setFrameIDs(const StringA& frames, const rai::Configuration& C) { setFrameIDs( stringListToFrameIndices(frames, C) ); return *this; }
+  Feature& setFrameIDs(const StringA& frames, const rai::Configuration& C) { setFrameIDs( namesToIndices(frames, C) ); return *this; }
   Feature& setDiffInsteadOfVel(){ diffInsteadOfVel=true; return *this; }
 
  protected:
@@ -143,7 +143,7 @@ std::shared_ptr<Feature> make_feature(const StringA& frames, const rai::Configur
   if(!!target) f->target = target;
   if(order>=0) f->order = order;
 
-  if(!f->frameIDs.N) f->frameIDs = stringListToFrameIndices(frames, C);
+  if(!f->frameIDs.N) f->frameIDs = namesToIndices(frames, C);
 
   return f;
 }

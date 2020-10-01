@@ -189,7 +189,7 @@ ptr<Objective> KOMO::addObjective(const arr& times,
 
   if(!!frames && frames.N){
     if(frames.N==1 && frames.scalar()=="ALL") f->frameIDs = framesToIndices(world.frames); //important! this means that, if no explicit selection of frames was made, all frames (of a time slice) are referred to
-    else f->frameIDs = stringListToFrameIndices(frames, world);
+    else f->frameIDs = namesToIndices(frames, world);
   }
   if(!!scale) f->scale = scale;
   if(!!target) f->target = target;
@@ -2179,7 +2179,7 @@ void KOMO::setupConfigurations2() {
 //    }
 
     uint nBefore = pathConfig.frames.N;
-    pathConfig.addFramesCopy(C.frames, C.forces);
+    pathConfig.addConfigurationCopy(C.frames, C.forces);
 //    timeSlices[s] = pathConfig.frames({nBefore, -1});
 
   }
@@ -3967,7 +3967,7 @@ arr KOMO::getPath_frames(const uintA& frames) {
   return X;
 }
 
-arr KOMO::getPath_frames(int t) {
+arr KOMO::getFrameState(int t) {
 #ifdef KOMO_PATH_CONFIG
   return pathConfig.getFrameState(timeSlices[k_order+t]);
 #else

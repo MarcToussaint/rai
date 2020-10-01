@@ -164,10 +164,10 @@ Conv_MathematicalProgram_CeresProblem::Conv_MathematicalProgram_CeresProblem(Mat
   for(uint i=0; i<featureDimensions.N; i++) {
     if(featureDimensions(i)) {
       assert(featureTypes(i) == OT_sos);
-      rai::Array<double*> parameter_blocks;
+      std::vector<double*> parameter_blocks;
       for(uint k=0; k<featureVariables(i).N; k++) {
         int var = featureVariables(i)(k);
-        if(var>=0) parameter_blocks.append(x(var).p);
+        if(var>=0) parameter_blocks.push_back(x(var).p);
 //        parameter_blocks(k) = x().p;
       }
       auto fct = new Conv_Feature_CostFunction(*this, i, variableDimensions, featureDimensions, featureVariables);

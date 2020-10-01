@@ -24,7 +24,7 @@ int main(int argc,char **argv){
     Inotify ino(file);
     try {
       rai::lineCount=1;
-      C.init(file);
+      C.readFromGraph(file);
       C.report();
       break;
     } catch(std::runtime_error& err) {
