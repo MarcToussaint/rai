@@ -12,6 +12,21 @@
 
 //===========================================================================
 
+struct F_PairCollision : Feature {
+  enum Type { _none=-1, _negScalar, _vector, _normal, _center, _p1, _p2 };
+
+  Type type;
+  bool neglectRadii=false;
+
+  F_PairCollision(Type _type, bool _neglectRadii=false)
+    : type(_type), neglectRadii(_neglectRadii) {
+  }
+  virtual void phi2(arr& y, arr& J, const FrameL& F);
+  virtual uint dim_phi2(const FrameL& F){  if(type==_negScalar) return 1; return 3;  }
+};
+
+//===========================================================================
+
 //TODO: change naming: TMP_...
 
 enum PTMtype {
@@ -27,32 +42,12 @@ enum PTMtype {
 
 //===========================================================================
 
-/// Proxy task variable -> TM_AccumulatedCollision
-struct TM_Proxy : Feature {
-  /// @name data fields
+struct F_AccumulatedCollisions : Feature {
   PTMtype type;
-  uintA shapes, shapes2;
+  uintA shapes2;
   double margin;
-
-  TM_Proxy(PTMtype _type,
-           uintA _shapes,
-           double _margin=.0);
-  virtual ~TM_Proxy() {}
-
-  virtual void phi(arr& y, arr& J, const rai::Configuration& G);
-  virtual uint dim_phi(const rai::Configuration& G);
-  virtual rai::String shortTag(const rai::Configuration& G) { return STRING("ProxyCost"); }
-  virtual rai::Graph getSpec(const rai::Configuration& K) { return rai::Graph({{"feature", "ProxyCost"}}); }
+  F_AccumulatedCollisions(PTMtype _type, uintA _shapes, double _margin=.0) : type(_type), margin(_margin) {  frameIDs=_shapes;  }
+  virtual void phi2(arr& y, arr& J, const FrameL& F);
+  virtual uint dim_phi2(const FrameL& F){ return 1; }
 };
 
-//===========================================================================
-
-struct TM_ProxyConstraint : Feature {
-  TM_Proxy proxyCosts;
-  TM_ProxyConstraint(PTMtype _type,
-                     uintA _shapes,
-                     double _margin=.02);
-  virtual void phi(arr& y, arr& J, const rai::Configuration& G);
-  virtual uint dim_phi(const rai::Configuration& G) { return 1; }
-  virtual rai::String shortTag(const rai::Configuration& G) { return "ProxyConstraint"; }
-};

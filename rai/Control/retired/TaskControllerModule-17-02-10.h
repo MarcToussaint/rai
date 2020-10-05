@@ -60,7 +60,7 @@ struct TaskControlThread : Thread {
   arr fRInitialOffset;
 
  public:
-  TaskControlThread(const char* robot="none", const rai::Configuration& world = NoWorld);
+  TaskControlThread(const char* robot="none", const rai::Configuration& world = NoConfiguration);
   ~TaskControlThread();
 
   void open();

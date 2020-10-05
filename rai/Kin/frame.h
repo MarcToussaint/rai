@@ -87,7 +87,7 @@ struct Frame : NonCopyable {
   void calc_Q_from_parent(bool enforceWithinJoint = true);
 
  public:
-  double tau=0.;             ///< frame's absolute time (could be thought as part of the transformation X in space-time)
+  double tau=0.;             ///< frame's relative time transformation (could be thought as part of the transformation X in space-time)
   Graph ats;                 ///< list of any-type attributes
 
   //attachments to the frame
@@ -122,6 +122,7 @@ struct Frame : NonCopyable {
   void getRigidSubFrames(FrameL& F); ///< recursively collect all rigidly attached sub-frames (e.g., shapes of a link), (THIS is not included)
   void getPartSubFrames(FrameL& F); ///< recursively collect all frames of this part
   void getSubtree(FrameL& F);
+  Frame* getRoot();
   FrameL getPathToRoot();
   Frame* getUpwardLink(rai::Transformation& Qtotal=NoTransformation, bool untilPartBreak=false) const; ///< recurse upward BEFORE the next joint and return relative transform (this->Q is not included!b)
   FrameL getPathToUpwardLink(bool untilPartBreak=false); ///< recurse upward BEFORE the next joint and return relative transform (this->Q is not included!b)
@@ -135,21 +136,21 @@ struct Frame : NonCopyable {
   void write(std::ostream& os) const;
 
   //-- HIGHER LEVEL USER INTERFACE
-  void setShape(rai::ShapeType shape, const std::vector<double>& size);
+  void setShape(rai::ShapeType shape, const arr& size);
   void setPose(const rai::Transformation& _X);
-  void setPosition(const std::vector<double>& pos);
-  void setQuaternion(const std::vector<double>& quat);
-  void setRelativePosition(const std::vector<double>& pos);
-  void setRelativeQuaternion(const std::vector<double>& quat);
-  void setPointCloud(const std::vector<double>& points, const std::vector<byte>& colors= {});
-  void setConvexMesh(const std::vector<double>& points, const std::vector<byte>& colors= {}, double radius=0.);
-  void setMesh(const std::vector<double>& points, const std::vector<byte>& colors= {}, double radius=0.);
-  void setColor(const std::vector<double>& color);
+  void setPosition(const arr& pos);
+  void setQuaternion(const arr& quat);
+  void setRelativePosition(const arr& pos);
+  void setRelativeQuaternion(const arr& quat);
+  void setPointCloud(const arr& points, const byteA& colors= {});
+  void setConvexMesh(const arr& points, const byteA& colors= {}, double radius=0.);
+  void setMesh(const arr& points, const byteA& colors= {}, double radius=0.);
+  void setColor(const arr& color);
   void setJoint(rai::JointType jointType);
   void setContact(int cont);
   void setMass(double mass);
   void addAttribute(const char* key, double value);
-  void setJointState(const std::vector<double>& q); ///< throws error if this frame is not also a joint, and if q.size() != joint->dim
+  void setJointState(const arr& q); ///< throws error if this frame is not also a joint, and if q.size() != joint->dim
 
   arr getPose() { return ensure_X().getArr7d(); }
   arr getPosition() { return ensure_X().pos.getArr(); }

@@ -159,6 +159,8 @@ struct Quaternion {
   arr getJacobian() const;
   arr getMatrixJacobian() const;
 
+  arr getQuaternionMultiplicationMatrix() const; //turns a RHS(!) quat multiplication into a LHS(!) matrix multiplication
+
   void writeNice(std::ostream& os) const;
   void write(std::ostream& os) const;
   void read(std::istream& is);
@@ -350,6 +352,7 @@ bool    operator!=(const Matrix&, const Matrix&);
 Quaternion operator-(const Quaternion&);
 Quaternion operator*(const Quaternion& b, const Quaternion& c);
 Quaternion operator/(const Quaternion& b, const Quaternion& c);
+Quaternion operator*=(Quaternion&, double);
 bool       operator==(const Quaternion&, const Quaternion&);
 bool       operator!=(const Quaternion&, const Quaternion&);
 Quaternion operator-(const Quaternion&, const Quaternion&);

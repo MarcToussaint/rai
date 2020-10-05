@@ -806,7 +806,6 @@ void OdeInterface::getGroundContact(boolA& cts) {
 
 void OdeInterface::importProxiesFromOde() {
   uint i;
-  C.proxies.memMove=true;
   C.proxies.resizeCopy(conts.N);
   for(i=0; i<conts.N; i++) C.proxies(i) = new rai::Proxy;
   dContactGeom* c;

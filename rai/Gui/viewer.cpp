@@ -130,12 +130,12 @@ void ImageViewerCallback::call(Var_base* v) {
     img.checkLocked();
     gl->background = img();
     if(flipImage) flip_image(gl->background);
-
-    if(!gl->background.N) return;
-
-    if(gl->height!= gl->background.d0 || gl->width!= gl->background.d1)
-      gl->resize(gl->background.d1, gl->background.d0);
   }
+
+  if(!gl->background.N) return;
+
+  if(gl->height!= gl->background.d0 || gl->width!= gl->background.d1)
+    gl->resize(gl->background.d1, gl->background.d0);
 
   gl->update(); //0, false, false, true);
 }
@@ -209,9 +209,9 @@ void PointCloudViewer::step() {
     self->pc.C /= 255.;
     self->pc.V.reshape(n, 3);
     self->pc.C.reshape(n, 3);
-
-    if(W!=self->gl.width || H!=self->gl.height) self->gl.resize(W, H);
   }
+
+  if(W!=self->gl.width || H!=self->gl.height) self->gl.resize(W, H);
 
   self->gl.update(); //nullptr, false, false, true);
 }
@@ -252,9 +252,9 @@ void PointCloudViewerCallback::call(Var_base* v) {
     self->pc.C /= 255.;
     self->pc.V.reshape(n, 3);
     self->pc.C.reshape(n, 3);
-
-    if(W!=self->gl.width || H!=self->gl.height) self->gl.resize(W, H);
   }
+
+  if(W!=self->gl.width || H!=self->gl.height) self->gl.resize(W, H);
 
   self->gl.update(); //nullptr, false, false, true);
 }

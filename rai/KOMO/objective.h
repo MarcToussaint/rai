@@ -13,7 +13,7 @@
 
 struct Objective {
   std::shared_ptr<Feature> feat;
-  const rai::Enum<ObjectiveType> type;  ///< element of {sumOfSqr, inequality, equality}
+  const rai::Enum<ObjectiveType> type;  ///< element of {f, sumOfSqr, inequality, equality}
   rai::String name;
   intA configs; //either a (0,1)-indicator per time slice, or a list of variable tuples
 
@@ -29,7 +29,12 @@ struct Objective {
 stdOutPipe(Objective)
 
 struct GroundedObjective {
-  ConfigurationL Ctuple;
-  intA signature;
-  uint dim;
+  std::shared_ptr<Feature> feat;
+  const rai::Enum<ObjectiveType> type;  ///< element of {f, sumOfSqr, inequality, equality}
+  FrameL frames;
+  intA configs;
+  int objId=-1;
+
+  GroundedObjective(const ptr<Feature>& _feat, const ObjectiveType& _type) : feat(_feat), type(_type) {}
+  ~GroundedObjective() {}
 };

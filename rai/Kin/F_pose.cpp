@@ -11,160 +11,331 @@
 
 //===========================================================================
 
-void F_Pose::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
-#if 1
-  arr yq, Jq, yp, Jp;
-  TM_Default tmp(TMT_pos, a);
-  tmp.order = order;
-  tmp.type = TMT_pos;
-  tmp.Feature::__phi(yp, (!!J?Jp:NoArr), Ctuple);
-  tmp.type = TMT_quat;
-  tmp.flipTargetSignOnNegScalarProduct=true;
-  tmp.Feature::__phi(yq, (!!J?Jq:NoArr), Ctuple);
-  y.resize(yp.N+yq.N);
-  y.setVectorBlock(yp, 0);
-  y.setVectorBlock(yq, 3);
+void F_Position::phi2(arr& y, arr& J, const FrameL& F) {
+  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  CHECK_EQ(F.N, 1, "");
+  rai::Frame *f = F.elem(0);
+  f->C.kinematicsPos(y, J, f);
+}
+
+//===========================================================================
+
+void F_PositionDiff::phi2(arr& y, arr& J, const FrameL& F) {
+  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  CHECK_EQ(F.N, 2, "");
+  rai::Frame *f1 = F.elem(0);
+  rai::Frame *f2 = F.elem(1);
+  arr y2, J2;
+  f1->C.kinematicsPos(y, J, f1);
+  f2->C.kinematicsPos(y2, J2, f2);
+  y -= y2;
+  J -= J2;
+}
+
+//===========================================================================
+
+void F_PositionRel::phi2(arr& y, arr& J, const FrameL& F) {
+  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  CHECK_EQ(F.N, 2, "");
+  rai::Frame *f1 = F.elem(0);
+  rai::Frame *f2 = F.elem(1);
+  arr y1, y2, J1, J2;
+  f1->C.kinematicsPos(y1, J1, f1);
+  f2->C.kinematicsPos(y2, J2, f2);
+  arr Rinv = ~(f2->ensure_X().rot.getArr());
+  y = Rinv * (y1 - y2);
   if(!!J) {
-    J.resize(y.N, Jp.d1);
-    J.setMatrixBlock(Jp, 0, 0);
-    J.setMatrixBlock(Jq, 3, 0);
+    arr A;
+    f2->C.jacobian_angular(A, f2);
+    J = Rinv * (J1 - J2 - crossProduct(A, y1 - y2));
   }
-#else //should be identical
-  if(order==2) {
-    arr p0, p1, p2, J0, J1, J2;
-    Ctuple(-3)->kinematicsPos(p0, J0, Ctuple(-3)->frames(a));  expandJacobian(J0, Ctuple, -3);
-    Ctuple(-2)->kinematicsPos(p1, J1, Ctuple(-2)->frames(a));  expandJacobian(J1, Ctuple, -2);
-    Ctuple(-1)->kinematicsPos(p2, J2, Ctuple(-1)->frames(a));  expandJacobian(J2, Ctuple, -1);
+}
 
-    y = p0 - 2.*p1 + p2;
-    if(!!J) J = J0 - 2.*J1 + J2;
+//===========================================================================
 
-    arr q0, q1, q2; //, J0, J1, J2;
-    Ctuple(-3)->kinematicsQuat(q0, J0, Ctuple(-3)->frames(a));  expandJacobian(J0, Ctuple, -3);
-    Ctuple(-2)->kinematicsQuat(q1, J1, Ctuple(-2)->frames(a));  expandJacobian(J1, Ctuple, -2);
-    Ctuple(-1)->kinematicsQuat(q2, J2, Ctuple(-1)->frames(a));  expandJacobian(J2, Ctuple, -1);
+void F_Vector::phi2(arr& y, arr& J, const FrameL& F){
+  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  CHECK_EQ(F.N, 1, "");
+  rai::Frame *f = F.elem(0);
+  f->C.kinematicsVec(y, J, f, vec);
+}
 
-    if(scalarProduct(q0, q1)<-0.) { q0*=-1.; J0*=-1.; }
-    if(scalarProduct(q2, q1)<-0.) { q2*=-1.; J2*=-1.; }
+//===========================================================================
 
-    arr yq = q0 - 2.*q1 + q2;
-    arr Jq = J0 - 2.*J1 + J2;
+void F_VectorDiff::phi2(arr& y, arr& J, const FrameL& F){
+  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  CHECK_EQ(F.N, 2, "");
+  rai::Frame *f1 = F.elem(0);
+  rai::Frame *f2 = F.elem(1);
+  arr y2, J2;
+  f1->C.kinematicsVec(y, J, f1, vec1);
+  f2->C.kinematicsVec(y2, J2, f2, vec2);
+  y -= y2;
+  J -= J2;
+}
 
-    double tau = Ctuple(-2)->frames(0)->tau;
-    tau=1.;
-    if(tau) {
-      CHECK_GE(tau, 1e-10, "");
-      yq /= tau*tau;
-      if(!!J) Jq /= tau*tau;
+//===========================================================================
+
+void F_VectorRel::phi2(arr& y, arr& J, const FrameL& F){
+  NIY;
+}
+
+//===========================================================================
+
+void F_Quaternion::phi2(arr& y, arr& J, const FrameL& F){
+  flipTargetSignOnNegScalarProduct = true;
+  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  CHECK_EQ(F.N, 1, "");
+  rai::Frame *f = F.elem(0);
+
+  f->C.kinematicsQuat(y, J, f);
+}
+
+//===========================================================================
+
+void F_QuaternionDiff::phi2(arr& y, arr& J, const FrameL& F){
+  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  CHECK_EQ(F.N, 2, "");
+  rai::Frame *f1 = F.elem(0);
+  rai::Frame *f2 = F.elem(1);
+  arr y2, J2;
+  f1->C.kinematicsQuat(y, J, f1);
+  f2->C.kinematicsQuat(y2, J2, f2);
+  if(scalarProduct(y, y2)>=0.) {
+    y -= y2;
+    J -= J2;
+  } else {
+    y += y2;
+    J += J2;
+  }
+}
+
+//===========================================================================
+
+void F_QuaternionRel::phi2(arr& y, arr& J, const FrameL& F){
+  flipTargetSignOnNegScalarProduct = true;
+  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  CHECK_EQ(F.N, 2, "");
+  rai::Frame *f1 = F.elem(0);
+  rai::Frame *f2 = F.elem(1);
+
+  arr qa, qb, Ja, Jb;
+  f1->C.kinematicsQuat(qb, Jb, f1);
+  f2->C.kinematicsQuat(qa, Ja, f2);
+
+  arr Jya, Jyb;
+  arr ainv = qa;
+  if(qa(0)!=1.) ainv(0) *= -1.;
+  quat_concat(y, Jya, Jyb, ainv, qb);
+  if(qa(0)!=1.) for(uint i=0; i<Jya.d0; i++) Jya(i, 0) *= -1.;
+
+  J = Jya * Ja + Jyb * Jb;
+  checkNan(J);
+}
+
+//===========================================================================
+
+void F_ScalarProduct::phi2(arr& y, arr& J, const FrameL& F){
+  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  CHECK_EQ(F.N, 2, "");
+  rai::Frame *f1 = F.elem(0);
+  rai::Frame *f2 = F.elem(1);
+
+  CHECK(fabs(vec1.length()-1.)<1e-4, "vector references must be normalized");
+  CHECK(fabs(vec2.length()-1.)<1e-4, "vector references must be normalized");
+
+  arr zi, Ji, zj, Jj;
+  f1->C.kinematicsVec(zi, Ji, f1, vec1);
+  f2->C.kinematicsVec(zj, Jj, f2, vec2);
+
+  y.resize(1);
+  y(0) = scalarProduct(zi, zj);
+  J = ~zj * Ji + ~zi * Jj;
+}
+
+//===========================================================================
+
+void F_Pose::phi2(arr& y, arr& J, const FrameL& F) {
+  auto pos = evalFeature<F_Position>(F, order);
+  auto quat = evalFeature<F_Quaternion>(F, order);
+  y.setBlockVector(pos.y, quat.y);
+  J.setBlockMatrix(pos.J, quat.J);
+}
+
+//===========================================================================
+
+void F_PoseDiff::phi2(arr& y, arr& J, const FrameL& F) {
+  auto pos = evalFeature<F_PositionDiff>(F, order);
+  auto quat = evalFeature<F_QuaternionDiff>(F, order);
+  y.setBlockVector(pos.y, quat.y);
+  J.setBlockMatrix(pos.J, quat.J);
+}
+
+//===========================================================================
+
+void F_PoseRel::phi2(arr& y, arr& J, const FrameL& F) {
+  auto pos = evalFeature<F_PositionRel>(F, order);
+  auto quat = evalFeature<F_QuaternionRel>(F, order);
+  y.setBlockVector(pos.y, quat.y);
+  J.setBlockMatrix(pos.J, quat.J);
+}
+
+//===========================================================================
+
+void angVel_base(rai::Frame* f0, rai::Frame* f1, arr& y, arr& J) {
+
+  arr a, b, y_tmp, Ja, Jb;
+  f0->C.kinematicsQuat(a, Ja, f0);
+  f1->C.kinematicsQuat(b, Jb, f1);
+  arr J0, J1;
+//  quat_diffVector(y, J0, J1, a, b);
+  if(scalarProduct(a, b)<0.) {
+    b*=-1.;
+    Jb*=-1.;
+  }
+  arr dq = b-a;
+  a(0) *=-1.;
+  quat_concat(y_tmp, J0, J1, dq, a); //y_tmp = (b-a)*a^{-1}
+  for(uint i=0; i<J1.d0; i++) J1(i, 0) *= -1.;
+  y_tmp.remove(0);
+  J0.delRows(0);
+  J1.delRows(0);
+
+  y_tmp *= 2.;
+  J0 *= 2.;
+  J1 *= 2.;
+
+  y = y_tmp;
+
+  checkNan(y);
+
+  if(!!J && !!Ja) {
+    if(&f0->C!=&f1->C){ //different configurations -> assume consecutive
+      J = catCol((J1-J0)*Ja, J0*Jb);
+    }else{//same configuration
+      J = (J1-J0)*Ja;
+      J += J0*Jb;
     }
+    checkNan(J);
+  }else J.setNoArr();
+}
 
-  } else if(order==1) {
-    arr p0, p1, J0, J1;
-    Ctuple(-2)->kinematicsPos(p0, J0, Ctuple(-2)->frames(a));  expandJacobian(J0, Ctuple, -2);
-    Ctuple(-1)->kinematicsPos(p1, J1, Ctuple(-1)->frames(a));  expandJacobian(J1, Ctuple, -1);
+//===========================================================================
 
-    y = p1 - p0;
-    if(!!J) J = J1 - J0;
+void F_LinVel::phi2(arr& y, arr& J, const FrameL& F) {
+  CHECK_GE(order, 1, "");
+  if(order==1) {
+    rai::Frame* f0 = F.elem(0);
+    rai::Frame* f1 = F.elem(1);
 
-    arr q0, q1; //, J0, J1, J2;
-    Ctuple(-2)->kinematicsQuat(q0, J0, Ctuple(-2)->frames(a));  expandJacobian(J0, Ctuple, -2);
-    Ctuple(-1)->kinematicsQuat(q1, J1, Ctuple(-1)->frames(a));  expandJacobian(J1, Ctuple, -1);
+    arr a, b, Ja, Jb;
+    f0->C.kinematicsPos(a, Ja, f0);
+    f1->C.kinematicsPos(b, Jb, f1);
 
-    if(scalarProduct(q0, q1)<-0.) { q0*=-1.; J0*=-1.; }
+    y = b-a;
+    if(!!J) J = Jb-Ja;
 
-    arr yq = q1 - q0;
-    arr Jq = J1 - J0;
-
-    y.append(yq);
-    if(!!J) J.append(Jq);
-
-    double tau = Ctuple(-2)->frames(0)->tau;
-    if(tau) {
+#if 1
+    rai::Frame *r = f1->getRoot();
+    if(r->C.hasTauJoint(r)) {
+      double tau; arr Jtau;
+      r->C.kinematicsTau(tau, Jtau, r);
+      CHECK_GE(tau, 1e-10, "");
+      y /= tau;
+      if(!!J) {
+        J /= tau;
+        J += (-1./tau)*y*Jtau;
+      }
+    } else {
+      double tau = r->C.frames.first()->tau;
       CHECK_GE(tau, 1e-10, "");
       y /= tau;
       if(!!J) J /= tau;
     }
-  }
 #endif
-}
+    return;
+  }
 
-//===========================================================================
-
-void F_PoseDiff::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
-  arr yq, Jq, yp, Jp;
-  TM_Default tmp(TMT_posDiff, a, NoVector, b, NoVector);
-  tmp.order = order;
-  tmp.type = TMT_posDiff;
-  tmp.Feature::__phi(yp, (!!J?Jp:NoArr), Ctuple);
-  tmp.type = TMT_quatDiff;
-  tmp.flipTargetSignOnNegScalarProduct=true;
-  tmp.Feature::__phi(yq, (!!J?Jq:NoArr), Ctuple);
-  y.resize(yp.N+yq.N);
-  y.setVectorBlock(yp, 0);
-  y.setVectorBlock(yq, 3);
-  if(!!J) {
-    J.resize(y.N, Jp.d1);
-    J.setMatrixBlock(Jp, 0, 0);
-    J.setMatrixBlock(Jq, 3, 0);
+  if(order==2) {
+    if(impulseInsteadOfAcceleration) diffInsteadOfVel=true;
+    Feature::phi2(y, J, F);
+    if(impulseInsteadOfAcceleration) diffInsteadOfVel=false;
   }
 }
 
 //===========================================================================
 
-void F_PoseRel::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
-  arr yq, Jq, yp, Jp;
-  TM_Default tmp(TMT_pos, a, NoVector, b, NoVector);
-  tmp.order = order;
-  tmp.type = TMT_pos;
-  tmp.Feature::__phi(yp, (!!J?Jp:NoArr), Ctuple);
-  tmp.type = TMT_quat;
-  tmp.flipTargetSignOnNegScalarProduct=true;
-  tmp.Feature::__phi(yq, (!!J?Jq:NoArr), Ctuple);
-  y.resize(yp.N+yq.N);
-  y.setVectorBlock(yp, 0);
-  y.setVectorBlock(yq, 3);
-  if(!!J) {
-    J.resize(y.N, Jp.d1);
-    J.setMatrixBlock(Jp, 0, 0);
-    J.setMatrixBlock(Jq, 3, 0);
+void F_AngVel::phi2(arr& y, arr& J, const FrameL& F){
+  CHECK_GE(order, 1, "");
+  if(order==1) {
+    rai::Frame* f0 = F.elem(0);
+    rai::Frame* f1 = F.elem(1);
+
+    angVel_base(f0, f1, y, J);
+
+#if 1
+    rai::Frame *r = f1->getRoot();
+    if(r->C.hasTauJoint(r)) {
+      double tau; arr Jtau;
+      r->C.kinematicsTau(tau, Jtau, r);
+      CHECK_GE(tau, 1e-10, "");
+      y /= tau;
+      if(!!J) {
+        J /= tau;
+        J += (-1./tau)*y*Jtau;
+      }
+    } else {
+      double tau = r->C.frames.first()->tau;
+      CHECK_GE(tau, 1e-10, "");
+      y /= tau;
+      if(!!J) J /= tau;
+    }
+#endif
+    return;
+  }
+
+  if(order==2) {
+    if(impulseInsteadOfAcceleration) diffInsteadOfVel=true;
+    Feature::phi2(y, J, F);
+    if(impulseInsteadOfAcceleration) diffInsteadOfVel=false;
   }
 }
 
 //===========================================================================
 
-TM_Align::TM_Align(const rai::Configuration& K, const char* iName, const char* jName)
-  : i(-1), j(-1) {
-  rai::Frame* a = iName ? K.getFrameByName(iName):nullptr;
-  rai::Frame* b = jName ? K.getFrameByName(jName):nullptr;
-  if(a) i=a->ID;
-  if(b) j=b->ID;
+void F_LinAngVel::phi2(arr& y, arr& J, const FrameL& F) {
+
+  F_LinVel lin;
+  lin.order=order;
+  lin.impulseInsteadOfAcceleration = impulseInsteadOfAcceleration;
+  arr  yl, Jl;
+  lin.__phi2(yl, Jl, F);
+
+  F_AngVel ang;
+  ang.order=order;
+  ang.impulseInsteadOfAcceleration = impulseInsteadOfAcceleration;
+  arr ya, Ja;
+  ang.__phi2(ya, Ja, F);
+
+  y.setBlockVector(yl, ya);
+  J.setBlockMatrix(Jl, Ja);
 }
 
-void TM_Align::phi(arr& y, arr& J, const rai::Configuration& K) {
-  y.resize(3);
-  if(!!J) J.resize(3, K.q.N);
+//===========================================================================
 
-  rai::Frame* body_i = K.frames(i);
-  rai::Frame* body_j = K.frames(j);
+void F_NoJumpFromParent_OBSOLETE::phi2(arr& y, arr& J, const FrameL& F) {
+  CHECK_EQ(order, 1, "");
+  CHECK_EQ(F.d1, 2, "");
 
-  arr zi, Ji, zj, Jj;
+  auto pos = F_PositionRel()
+             .setOrder(1)
+             .setDiffInsteadOfVel()
+             .eval(F);
+  auto quat = F_QuaternionRel()
+              .setOrder(1)
+              .setDiffInsteadOfVel()
+              .eval(F);
 
-  K.kinematicsVec(zi, Ji, body_i, Vector_z);
-  K.kinematicsVec(zj, Jj, body_j, Vector_x);
-  y(0) = scalarProduct(zi, zj);
-  if(!!J) J[0] = ~zj * Ji + ~zi * Jj;
-
-  K.kinematicsVec(zi, Ji, body_i, Vector_z);
-  K.kinematicsVec(zj, Jj, body_j, Vector_y);
-  y(1) = scalarProduct(zi, zj);
-  if(!!J) J[1] = ~zj * Ji + ~zi * Jj;
-
-  K.kinematicsVec(zi, Ji, body_i, Vector_y);
-  K.kinematicsVec(zj, Jj, body_j, Vector_x);
-  y(2) = scalarProduct(zi, zj);
-  if(!!J) J[2] = ~zj * Ji + ~zi * Jj;
-}
-
-rai::String TM_Align::shortTag(const rai::Configuration& G) {
-  return STRING("TM_Align:"<<(i<0?"WORLD":G.frames(i)->name) <<':' <<(j<0?"WORLD":G.frames(j)->name));
+  y.setBlockVector(pos.y, quat.y);
+  J.setBlockMatrix(pos.J, quat.J);
 }

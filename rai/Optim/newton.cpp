@@ -36,7 +36,7 @@ void OptNewton::reinit(const arr& _x) {
 
   //startup verbose
   if(o.verbose>1) cout <<"*** optNewton: starting point f(x)=" <<fx <<" alpha=" <<alpha <<" beta=" <<beta <<endl;
-  if(o.verbose>3) cout <<"\nx=" <<x <<endl;
+  if(o.verbose>3){ if(x.N<5) cout <<"x=" <<x <<endl; }
   if(logFile) {
     (*logFile) <<"{ newton: " <<its <<", evaluations: " <<evals <<", f_x: " <<fx <<", alpha: " <<alpha;
     if(o.verbose>3)(*logFile) <<", x: " <<x;
@@ -77,7 +77,7 @@ OptNewton::StopCriterion OptNewton::step() {
     if(!isSpecial(R)) {
       for(uint i=0; i<R.d0; i++) R(i, i) += beta;
     } else if(isRowShifted(R)) {
-      for(uint i=0; i<R.d0; i++) R(i, 0) += beta; //(R(i,0) is the diagonal in the packed matrix!!)
+      for(uint i=0; i<R.d0; i++) R.rowShifted().entry(i, 0) += beta; //(R(i,0) is the diagonal in the packed matrix!!)
     } else if(isSparseMatrix(R)) {
       for(uint i=0; i<R.d0; i++) R.sparse().addEntry(i, i) = beta;
     } else NIY;

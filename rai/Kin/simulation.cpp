@@ -13,7 +13,7 @@
 #include "kin_physx.h"
 #include "F_geometrics.h"
 #include "switch.h"
-#include "F_PairCollision.h"
+#include "F_collisions.h"
 #include "../Gui/opengl.h"
 
 namespace rai {
@@ -476,8 +476,10 @@ Imp_CloseGripper::Imp_CloseGripper(Frame* _gripper, Frame* _fing1, Frame* _fing2
   type = Simulation::_closeGripper;
 
   if(obj) {
-    coll1 = make_unique<F_PairCollision>(fing1->ID, obj->ID, F_PairCollision::_negScalar, false);
-    coll2 = make_unique<F_PairCollision>(fing2->ID, obj->ID, F_PairCollision::_negScalar, false);
+    coll1 = make_unique<F_PairCollision>(F_PairCollision::_negScalar, false);
+    coll1->setFrameIDs({fing1->ID, obj->ID});
+    coll2 = make_unique<F_PairCollision>(F_PairCollision::_negScalar, false);
+    coll2->setFrameIDs({fing2->ID, obj->ID});
   }
 
   q = fing1->joint->calc_q_from_Q(fing1->get_Q());
@@ -510,9 +512,9 @@ void Imp_CloseGripper::modConfiguration(Simulation& S, double tau) {
     //  cout <<q <<" d1: " <<d1.y <<"d2: " <<d2.y <<endl;
     if(-d1.y(0)<1e-3 && -d2.y(0)<1e-3) { //stop grasp by contact
       //evaluate stability
-      F_GraspOppose oppose(fing1->ID, fing2->ID, obj->ID);
+      F_GraspOppose oppose;
       arr y;
-      oppose.__phi(y, NoArr, S.C);
+      oppose.__phi2(y, NoArr, {fing1, fing2, obj});
 
       if(sumOfSqr(y) < 0.1) { //good enough -> success!
         // kinematically attach object to gripper

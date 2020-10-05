@@ -34,9 +34,9 @@ struct Proxy : GLDrawer {
   shared_ptr<PairCollision> collision;
 
   void copy(const Configuration& C, const Proxy& p);
-  void ensure_coll(const Configuration& C) { if(!collision) calc_coll(C); }
-  void calc_coll(const Configuration& C);
-  void glDraw(OpenGL&);
+  void ensure_coll() { if(!collision) calc_coll(); }
+  void calc_coll();
+  virtual void glDraw(OpenGL&);
   void write(ostream& os, bool brief=true) const;
 };
 stdOutPipe(Proxy)

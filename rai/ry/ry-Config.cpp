@@ -77,7 +77,19 @@ void init_Config(pybind11::module& m) {
     auto Kset = self.set();
     ry::RyFrame f;
     f.config = self.data;
-    f.frame = Kset->addObject(name.c_str(), parent.c_str(), shape, conv_stdvec2arr(size), conv_stdvec2arr(color), conv_stdvec2arr(pos), conv_stdvec2arr(quat));
+    f.frame = Kset->addFrame(name.c_str(), parent.c_str());
+    if(f.frame->parent) f.frame->setJoint(rai::JT_rigid);
+    f.frame->setShape(shape, arr(size, true));
+    f.frame->setContact(-1);
+    if(color.size()) f.frame->setColor(arr(color, true));
+    if(f.frame->parent) {
+      if(pos.size()) f.frame->setRelativePosition(arr(pos,true));
+      if(quat.size()) f.frame->setRelativeQuaternion(arr(quat, true));
+    } else {
+      if(pos.size()) f.frame->setPosition(arr(pos,true));
+      if(quat.size()) f.frame->setQuaternion(arr(quat, true));
+    }
+
     return f;
   }, "TODO remove! use addFrame only",
   pybind11::arg("name"),
@@ -130,22 +142,22 @@ void init_Config(pybind11::module& m) {
   "get the total number of degrees of freedom"
       )
 
-  .def("getJointState", [](ry::Config& self, const ry::I_StringA& joints) {
+  .def("getJointState", [](ry::Config& self, const uintA& joints) {
     arr q;
-    if(joints.size()) q = self.get()->getJointState(I_conv(joints));
+    if(joints.N) q = self.get()->getJointState(joints);
     else q = self.get()->getJointState();
-    return pybind11::array(q.dim(), q.p);
+    return q;
+//    return pybind11::array(q.dim(), q.p);
   },
   "get the joint state as a numpy vector, optionally only for a subset of joints specified as list of joint names",
   pybind11::arg("joints") = ry::I_StringA()
       )
 
-  .def("setJointState", [](ry::Config& self, const std::vector<double>& q, const ry::I_StringA& joints) {
-    arr _q = conv_stdvec2arr(q);
-    if(joints.size()) {
-      self.set()->setJointState(_q, I_conv(joints));
+  .def("setJointState", [](ry::Config& self, const std::vector<double>& q, const uintA& joints) {
+    if(joints.N) {
+      self.set()->setJointState(arr(q, true), joints);
     } else {
-      self.set()->setJointState(_q);
+      self.set()->setJointState(arr(q, true));
     }
   },
   "set the joint state, optionally only for a subset of joints specified as list of joint names",
@@ -181,9 +193,10 @@ void init_Config(pybind11::module& m) {
   }, "TODO remove -> use individual frame!")
 
   .def("setFrameState", [](ry::Config& self, const std::vector<double>& X, const ry::I_StringA& frames) {
-    arr _X = conv_stdvec2arr(X);
+    arr _X (X, true);
     _X.reshape(_X.N/7, 7);
-    self.set()->setFrameState(_X, I_conv(frames));
+    auto Kset = self.set();
+    Kset->setFrameState(_X, Kset->getFramesByNames(I_conv(frames)));
   },
   "set the frame state, optionally only for a subset of frames specified as list of frame names",
   pybind11::arg("X"),
@@ -193,7 +206,8 @@ void init_Config(pybind11::module& m) {
   .def("setFrameState", [](ry::Config& self, const pybind11::array& X, const ry::I_StringA& frames) {
     arr _X = numpy2arr<double>(X);
     _X.reshape(_X.N/7, 7);
-    self.set()->setFrameState(_X, I_conv(frames));
+    auto Kset = self.set();
+    Kset->setFrameState(_X, Kset->getFramesByNames(I_conv(frames)));
   },
   "set the frame state, optionally only for a subset of frames specified as list of frame names",
   pybind11::arg("X"),
@@ -231,7 +245,7 @@ part of the joint state and define the number of DOFs",
 
   .def("selectJointsByTag", [](ry::Config& self, const ry::I_StringA& jointGroups) {
     auto Kset = self.set();
-    Kset->selectJointsByGroup(I_conv(jointGroups), true, true);
+    Kset->selectJointsByGroup(I_conv(jointGroups));
     Kset->ensure_q();
   },
   "redefine what are considered the DOFs of this configuration: only joint that have a tag listed in jointGroups are considered \
@@ -269,7 +283,7 @@ between all frame shapes that have the collision tag set non-zero"
     pybind11::list ret;
     auto Kget = self.get();
     for(const rai::Proxy& p: Kget->proxies) {
-      if(!p.collision)((rai::Proxy*)&p)->calc_coll(Kget);
+      if(!p.collision)((rai::Proxy*)&p)->calc_coll();
       if(p.d>belowMargin) continue;
       pybind11::tuple tuple(3);
       tuple[0] = p.a->name.p;
@@ -423,17 +437,15 @@ allows you to control robot motors by position, velocity, or accelerations, \
 
   .def("equationOfMotion", [](ry::Config& self, std::vector<double>& qdot, bool gravity) {
     arr M, F;
-    arr _qdot = conv_stdvec2arr(qdot);
-    self.set()->equationOfMotion(M, F, _qdot, gravity);
+    self.set()->equationOfMotion(M, F, arr(qdot, true), gravity);
     return pybind11::make_tuple(pybind11::array(M.dim(), M.p), pybind11::array(F.dim(), F.p));
   }, "",
   pybind11::arg("qdot"),
   pybind11::arg("gravity"))
 
   .def("stepDynamics", [](ry::Config& self, std::vector<double>& qdot, std::vector<double>& u_control, double tau, double dynamicNoise, bool gravity) {
-    arr _qdot = conv_stdvec2arr(qdot);
-    arr _u = conv_stdvec2arr(u_control);
-    self.set()->stepDynamics(_qdot, _u, tau, dynamicNoise, gravity);
+    arr _qdot(qdot, false);
+    self.set()->stepDynamics(_qdot, arr(u_control, true), tau, dynamicNoise, gravity);
     return pybind11::array(_qdot.dim(), _qdot.p);
   }, "",
   pybind11::arg("qdot"),
@@ -496,7 +508,7 @@ allows you to control robot motors by position, velocity, or accelerations, \
   })
 
   .def("addSensor", [](ry::RyCameraView& self, const char* name, const char* frameAttached, uint width, uint height, double focalLength, double orthoAbsHeight, const std::vector<double>& zRange, const std::string& backgroundImageFile) {
-    self.cam->addSensor(name, frameAttached, width, height, focalLength, orthoAbsHeight, arr(zRange), backgroundImageFile.c_str());
+    self.cam->addSensor(name, frameAttached, width, height, focalLength, orthoAbsHeight, arr(zRange, true), backgroundImageFile.c_str());
   }, "",
   pybind11::arg("name"),
   pybind11::arg("frameAttached"),

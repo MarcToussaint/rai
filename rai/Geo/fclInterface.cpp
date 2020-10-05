@@ -16,8 +16,6 @@
 #include <fcl/collision.h>
 #include <fcl/collision_data.h>
 
-bool FclInterfaceBroadphaseCallback(fcl::CollisionObject* o1, fcl::CollisionObject* o2, void* cdata_);
-
 namespace rai {
 struct ConvexGeometryData {
   arr plane_dis;
@@ -25,8 +23,8 @@ struct ConvexGeometryData {
 };
 }
 
-rai::FclInterface::FclInterface(const rai::Array<ptr<Mesh>>& _geometries, double _cutoff)
-  : geometries(_geometries), cutoff(_cutoff) {
+rai::FclInterface::FclInterface(const rai::Array<ptr<Mesh>>& geometries, double _cutoff)
+  : cutoff(_cutoff) {
   convexGeometryData.resize(geometries.N);
   for(long int i=0; i<geometries.N; i++) {
     if(geometries(i)) {
@@ -71,7 +69,7 @@ rai::FclInterface::~FclInterface() {
 
 void rai::FclInterface::step(const arr& X) {
   CHECK_EQ(X.nd, 2, "");
-  CHECK_EQ(X.d0, geometries.size(), "");
+  CHECK_EQ(X.d0, convexGeometryData.N, "");
   CHECK_EQ(X.d1, 7, "");
 
   for(auto* obj:objects) {
@@ -84,7 +82,7 @@ void rai::FclInterface::step(const arr& X) {
   manager->update();
 
   collisions.clear();
-  manager->collide(this, FclInterfaceBroadphaseCallback);
+  manager->collide(this, BroadphaseCallback);
   collisions.reshape(collisions.N/2, 2);
 
   X_lastQuery = X;
@@ -98,20 +96,20 @@ void rai::FclInterface::addCollision(void* userData1, void* userData2) {
   collisions.elem(-1) = b;
 }
 
-bool FclInterfaceBroadphaseCallback(fcl::CollisionObject* o1, fcl::CollisionObject* o2, void* cdata_) {
+bool rai::FclInterface::BroadphaseCallback(fcl::CollisionObject* o1, fcl::CollisionObject* o2, void* cdata_) {
   rai::FclInterface* self = static_cast<rai::FclInterface*>(cdata_);
 
-  if(self->cutoff==0.) {
+  if(self->cutoff==0.) { //fine boolean collision query
     fcl::CollisionRequest request;
     fcl::CollisionResult result;
     fcl::collide(o1, o2, request, result);
     if(result.isCollision()) self->addCollision(o1->getUserData(), o2->getUserData());
-  } else if(self->cutoff>0.) {
+  } else if(self->cutoff>0.) { //fine distance query
     fcl::DistanceRequest request;
     fcl::DistanceResult result;
-    double d = fcl::distance(o1, o2, request, result);
-    if(d<self->cutoff) self->addCollision(o1->getUserData(), o2->getUserData());
-  } else {
+    fcl::distance(o1, o2, request, result);
+    if(result.min_distance<self->cutoff) self->addCollision(o1->getUserData(), o2->getUserData());
+  } else { //just broadphase
     self->addCollision(o1->getUserData(), o2->getUserData());
   }
   return false;

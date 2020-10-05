@@ -663,7 +663,7 @@ void DrawActor(PxRigidActor* actor, rai::Frame* frame) {
 #if 1
         PxConvexMeshGeometry g;
         shape->getConvexMeshGeometry(g);
-        floatA Vfloat((float*)g.convexMesh->getVertices(), 3*g.convexMesh->getNbVertices()); //reference
+        floatA Vfloat((float*)g.convexMesh->getVertices(), 3*g.convexMesh->getNbVertices(), true); //reference!
         rai::Mesh mesh;
         copy(mesh.V, Vfloat);
         mesh.V.reshape(g.convexMesh->getNbVertices(), 3);

@@ -59,7 +59,7 @@ void testJacobianInFile(const char* filename, const char* shape){
 void TEST(Kinematics){
 
   struct MyFct : VectorFunction{
-    enum Mode {Pos, Vec, Quat, RelPos, RelVec} mode;
+    enum Mode {Pos, Vec, Quat} mode;
     rai::Configuration& K;
     rai::Frame *b, *b2;
     rai::Vector &vec, &vec2;
@@ -68,12 +68,11 @@ void TEST(Kinematics){
       : mode(_mode), K(_K), b(_b), b2(_b2), vec(_vec), vec2(_vec2){
       VectorFunction::operator= ( [this](arr& y, arr& J, const arr& x) -> void{
         K.setJointState(x);
+        K.setJacModeAs(J);
         switch(mode){
           case Pos:    K.kinematicsPos(y,J,b,vec); break;
           case Vec:    K.kinematicsVec(y,J,b,vec); break;
           case Quat:   K.kinematicsQuat(y,J,b); break;
-          case RelPos: K.kinematicsRelPos(y,J,b,vec,b2,vec2); break;
-          case RelVec: K.kinematicsRelVec(y,J,b,vec,b2); break;
 //          case RelRot: K.kinematicsRelRot(y,J,b,b2); break;
         }
         //if(!!J) cout <<"\nJ=" <<J <<endl;
@@ -98,11 +97,8 @@ void TEST(Kinematics){
     rndUniform(x,-.5,.5,false);
 
     cout <<"kinematicsPos:   "; checkJacobian(MyFct(MyFct::Pos   , G, b, vec, b2, vec2)(), x, 1e-5);
-    cout <<"kinematicsRelPos:"; checkJacobian(MyFct(MyFct::RelPos, G, b, vec, b2, vec2)(), x, 1e-5);
     cout <<"kinematicsVec:   "; checkJacobian(MyFct(MyFct::Vec   , G, b, vec, b2, vec2)(), x, 1e-5);
-    cout <<"kinematicsRelVec:"; checkJacobian(MyFct(MyFct::RelVec, G, b, vec, b2, vec2)(), x, 1e-5);
     cout <<"kinematicsQuat:  "; checkJacobian(MyFct(MyFct::Quat  , G, b, vec, b2, vec2)(), x, 1e-5);
-//    cout <<"kinematicsRelRot:"; checkJacobian(MyFct(MyFct::RelRot, G, b, vec, b2, vec2)(), x, 1e-5);
 
     //checkJacobian(Convert(T1::f_hess, nullptr), x, 1e-5);
   }
@@ -246,12 +242,13 @@ void TEST(Contacts){
   arr x,con,grad;
   uint t;
 
-  G.swift().setCutoff(.5);
+  G.swift()->cutoff =.5;
 
   VectorFunction f = [&G](arr& y, arr& J, const arr& x) -> void {
     G.setJointState(x);
+    G.setJacModeAs(J);
     G.stepSwift();
-    G.kinematicsProxyCost(y, (!!J?J:NoArr), .2);
+    G.kinematicsProxyCost(y, J, .2);
   };
 
   x = G.getJointState();
@@ -261,6 +258,7 @@ void TEST(Contacts){
 
     G.reportProxies();
 
+    G.jacMode = G.JM_dense;
     G.kinematicsProxyCost(con, grad, .2);
     cout <<"contact meassure = " <<con(0) <<endl;
     //G.watch(true);
@@ -280,7 +278,8 @@ void TEST(Limits){
   arr limits = G.getLimits();
   VectorFunction F = [&G, &limits](arr& y, arr& J, const arr& x){
     G.setJointState(x);
-    G.kinematicsLimitsCost(y,J,limits);
+    G.setJacModeAs(J);
+    G.kinematicsLimits(y,J,limits);
   };
 
   uint n=G.getJointStateDimension();

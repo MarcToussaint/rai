@@ -84,7 +84,6 @@ ptr<ComputeObject> skeleton2Bound(ptr<KOMO>& komo,
                                   BoundType boundType,
                                   const Skeleton& S,
                                   const rai::Configuration& startKinematics,
-                                  const rai::Configuration& parentEffKinematics,
                                   bool collisions,
                                   const arrA& waypoints= {}
                                  );

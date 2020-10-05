@@ -20,7 +20,7 @@ void TEST(NLOpt){
 
   checkJacobianCP(P, x, 1e-4);
 
-  OptConstrained opt(x, NoArr, P, 6);
+  OptConstrained opt(x, NoArr, P, OptOptions().set_verbose(6));
   {
     P.getBounds(opt.newton.bound_lo, opt.newton.bound_up);
     ofstream fil("z.opt");

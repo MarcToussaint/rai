@@ -16,17 +16,22 @@ struct PairCollision;
 
 namespace rai {
 
+//===========================================================================
+
+enum ForceExchangeType { FXT_none=-1, FXT_poa=0, FXT_torque=1 };
+
 ///Description of a ForceExchange
 struct ForceExchange : NonCopyable, GLDrawer {
-  Frame& a, &b;
-
+  Frame &a, &b;
+  uint qIndex=UINT_MAX;
+  ForceExchangeType type;
  private:
   PairCollision* __coll=0;
  public:
 
-  uint qIndex=UINT_MAX;
-  arr position;
+  arr poa;
   arr force;
+  arr torque;
 
   ForceExchange(Frame& a, Frame& b, ForceExchange* copyContact=nullptr);
   ~ForceExchange();
@@ -36,6 +41,11 @@ struct ForceExchange : NonCopyable, GLDrawer {
   void calc_F_from_q(const arr& q, uint n);
   arr calc_q_from_F() const;
 
+  virtual double sign(Frame *f) const { if(&a==f) return 1.; return -1.; }
+  virtual void kinPOA(arr& y, arr& J) const;
+  virtual void kinForce(arr& y, arr& J) const;
+  virtual void kinTorque(arr& y, arr& J) const;
+
   PairCollision* coll();
 
   void glDraw(OpenGL&);
@@ -43,14 +53,6 @@ struct ForceExchange : NonCopyable, GLDrawer {
 };
 stdOutPipe(ForceExchange)
 
-struct TM_ContactNegDistance : Feature {
-  const ForceExchange& C;
-
-  TM_ContactNegDistance(const ForceExchange& contact) : C(contact) {}
-
-  void phi(arr& y, arr& J, const rai::Configuration& K);
-  virtual uint dim_phi(const rai::Configuration& K) { return 1; }
-  virtual rai::String shortTag(const rai::Configuration& K) { return STRING("ContactNegDistance-"<<C.a.name<<'-'<<C.b.name); }
-};
+//===========================================================================
 
 } //rai

@@ -12,7 +12,11 @@
 #include "mesh.h"
 
 extern "C" {
-#include <qhull/qhull_a.h>
+#ifdef RAI_MSVC
+#  include <libqhull/qhull_a.h>
+#else
+#  include <qhull/qhull_a.h>
+#endif
 }
 #undef dX
 #undef dY
@@ -380,7 +384,7 @@ void getDelaunayEdges(uintA& E, const arr& V) {
   uint i, j, k, dim=V.d1;
 
   E.clear();
-  uint face[dim+1];
+  std::vector<uint> face(dim+1);
   FORALLfacets {
     if(!facet->upperdelaunay) {
       i=0;

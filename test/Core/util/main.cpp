@@ -53,8 +53,10 @@ void TEST(Parameter){
 }
 
 void TEST(Timer){
-  for(uint t=0;t<10;t++)
-    cout <<"now=" <<rai::date() <<" clockTime=" <<std::setprecision(14) <<rai::clockTime() <<endl;
+  for(uint t=0;t<10;t++){
+    cout <<"now=" <<rai::date() <<" clockTime=" <<std::setprecision(14) <<rai::clockTime() <<" realTime=" <<std::setprecision(14) <<rai::realTime() <<" cpuTime=" <<std::setprecision(14) <<rai::cpuTime() <<endl;
+    rai::wait(.001);
+  }
 
   rai::timerStart();
   for(uint i=0;i<4;i++){

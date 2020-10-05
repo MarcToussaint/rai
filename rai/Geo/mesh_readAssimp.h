@@ -13,6 +13,7 @@
 struct AssimpLoader {
   std::vector<rai::Mesh> meshes;
   std::string directory;
+  int verbose=0;
 
   AssimpLoader(std::string const& path, bool flipYZ=true);
   AssimpLoader(const struct aiScene* scene);

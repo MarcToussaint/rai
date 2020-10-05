@@ -1,7 +1,8 @@
 #include <KOMO/komo.h>
 #include <Kin/TM_default.h>
-#include <Kin/F_PairCollision.h>
+#include <Kin/F_collisions.h>
 #include <Kin/viewer.h>
+#include <Kin/F_pose.h>
 
 //===========================================================================
 
@@ -38,47 +39,46 @@ void TEST(Easy){
 void TEST(Align){
   rai::Configuration C("arm.g");
   cout <<"configuration space dim=" <<C.getJointStateDimension() <<endl;
+
   KOMO komo;
-//  komo.solver = rai::KS_sparseStructured;
-//  komo.solver = rai::KS_sparse;
-  komo.solver = rai::KS_banded;
-  komo.verbose=1;
+//  komo.solver = rai::KS_sparseStructured; //set via rai.cfg!!
+//  komo.verbose=1; //set via rai.cfg!!
   komo.setModel(C);
   komo.setTiming(1., 100, 5., 2);
+
   komo.add_qControlObjective({}, 2, 1.);
 
   komo.addObjective({1.}, FS_positionDiff, {"endeff", "target"}, OT_eq, {1e1});
   komo.addObjective({1.}, FS_quaternionDiff, {"endeff", "target"}, OT_eq, {1e1});
-  komo.addObjective({.98,1.}, FS_qItself, {}, OT_sos, {1e1}, {}, 1);
+  komo.addObjective({1.}, FS_qItself, {}, OT_eq, {1e1}, {}, 1);
   komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1.});
 
   komo.optimize();
 //  komo.checkGradients();
 
-  komo.plotTrajectory();
+//  komo.plotTrajectory();
   rai::ConfigurationViewer V;
-  V.setPath(C, komo.x, "result", true);
-//  for(uint i=0;i<2;i++) komo.displayTrajectory();
+  V.setConfiguration(C);
+  V.setPath(komo.getPath_frames(), "optimized motion", true);
+  for(uint i=0;i<2;i++) V.playVideo();
+
+//  komo.pathConfig.setJointState(komo.x);
+//  V.setConfiguration(komo.pathConfig, "path", true);
 }
 
 //===========================================================================
 
 struct MyFeature : Feature {
-  int i, j;               ///< which shapes does it refer to?
-
-  MyFeature(int _i, int _j)
-    : i(_i), j(_j) {}
-  MyFeature(const rai::Configuration& K, const char* s1, const char* s2)
-    :  i(initIdArg(K, s1)), j(initIdArg(K, s2)) {}
-
-  virtual void phi(arr& y, arr& J, const ConfigurationL& Ctuple){
+  virtual void phi2(arr& y, arr& J, const FrameL& F){
     CHECK_EQ(order, 1, "");
 
-    auto V = TM_Default(TMT_posDiff, i, NoVector, j).setOrder(1).eval(Ctuple);
+    auto V = F_PositionDiff().setOrder(1).eval(F);
 
-    auto C = F_PairCollision(i, j, F_PairCollision::_normal, false).eval(Ctuple);
+    auto C = F_PairCollision(F_PairCollision::_normal, false)
+             .eval(F[1]);
 
-    auto D = F_PairCollision(i, j, F_PairCollision::_negScalar, false).eval(Ctuple);
+    auto D = F_PairCollision(F_PairCollision::_negScalar, false)
+             .eval(F[1]);
 
     //penalizing velocity whenever close
     double range=.2;
@@ -133,10 +133,7 @@ struct MyFeature : Feature {
 
   }
 
-  virtual uint dim_phi(const ConfigurationL& Ctuple) {
-    return 3;
-  }
-
+  virtual uint dim_phi2(const FrameL& F) {  return 3;  }
 };
 
 void TEST(Thin){
@@ -156,7 +153,7 @@ void TEST(Thin){
   komo.addObjective({1.}, FS_qItself, {}, OT_eq, {1e1}, {}, 1);
   komo.addObjective({}, FS_distance, {"wall", "ball"}, OT_ineq, {1.});
 
-  komo.addObjective({}, make_shared<MyFeature>(komo.world, "ball", "wall"), OT_sos, {1e1}, {}, 1);
+  komo.addObjective({}, make_shared<MyFeature>(), {"ball", "wall"}, OT_sos, {1e1}, {}, 1);
 
   komo.reportProblem();
 
@@ -165,9 +162,12 @@ void TEST(Thin){
   komo.optimize(1e-2);
   komo.plotTrajectory();
 //  komo.reportProxies();
-  komo.checkGradients();
+//  komo.checkGradients();
 
-  while(komo.displayTrajectory());
+//  while(komo.displayTrajectory());
+  rai::ConfigurationViewer V;
+  V.setConfiguration(komo.pathConfig, "result", true);
+  while(V.playVideo(C.frames.N));
 }
 
 //===========================================================================
@@ -198,7 +198,9 @@ void TEST(PR2){
   komo.optimize();
   komo.plotTrajectory();
 //  komo.checkGradients();
-  for(uint i=0;i<2;i++) komo.displayTrajectory();
+  rai::ConfigurationViewer V;
+  V.setPath(C, komo.x, "result", true);
+  while(V.playVideo());
 }
 
 //===========================================================================
@@ -222,9 +224,9 @@ int main(int argc,char** argv){
 //  rnd.clockSeed();
 
 //  testEasy();
-  testAlign();
+//  testAlign();
 //  testThin();
-//  testPR2();
+  testPR2();
 
   return 0;
 }

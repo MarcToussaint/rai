@@ -4,6 +4,8 @@ OUTPUT = lib$(NAME).so
 
 OPTIM = fast_debug
 
+DEPEND = Core
+
 QHULL = 1
 GL = 1
 ASSIMP = 1
@@ -12,8 +14,6 @@ PLY = 1
 GJK = 1
 CCD = 1
 Lewiner = 1
-
-DEPEND = Core
 
 SRCS = $(shell find . -maxdepth 1 -name '*.cpp' )
 OBJS = $(SRCS:%.cpp=%.o)

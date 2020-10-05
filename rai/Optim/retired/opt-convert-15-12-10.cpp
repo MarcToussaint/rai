@@ -172,7 +172,7 @@ void conv_KOrderMarkovFunction_ConstrainedProblem(KOrderMarkovFunction& f, arr& 
     //query
     arr phi_t, J_t, Jz_t;
     ObjectiveTypeA tt_t;
-    f.phi_t(phi_t, (!!J?J_t:NoArr), tt_t, t, x_bar);
+    f.phi_t(phi_t, J_t, tt_t, t, x_bar);
     CHECK_EQ(phi_t.N, dimphi_t, "");
     phi.setVectorBlock(phi_t, M);
     if(!!tt) tt.setVectorBlock(tt_t, M);
@@ -245,7 +245,7 @@ void conv_KOrderMarkovFunction_VectorFunction(KOrderMarkovFunction& f, arr& phi,
   for(uint t=0; t<=T-k; t++) {
     m_t = f->get_m(t);
     arr phi_t, J_t;
-    f->phi_t(phi_t, (!!J?J_t:NoArr), t, x({t, t+k}));
+    f->phi_t(phi_t, J_t, t, x({t, t+k}));
     CHECK_EQ(phi_t.N, m_t, "");
     phi.setVectorBlock(phi_t, M);
     if(!!J) {
@@ -321,7 +321,7 @@ void conv_KOrderMarkovFunction_VectorFunction(KOrderMarkovFunction& f, arr& phi,
 
     //query
     arr f_t, J_t, Jz_t;
-    f.phi_t(f_t, (!!J?J_t:NoArr), NoObjectiveTypeA, t, x_bar);
+    f.phi_t(f_t, J_t, NoObjectiveTypeA, t, x_bar);
     CHECK_EQ(f_t.N, dimf_t, "");
     phi.setVectorBlock(f_t, M);
     if(!!J) {

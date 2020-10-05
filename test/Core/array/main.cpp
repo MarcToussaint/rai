@@ -214,12 +214,12 @@ void TEST(StdVectorCompat) {
   //-- plain conversion
   std::vector<double> x(3);
   x[0]=1.;
-  cout <<"std::vector to arr:" <<conv_stdvec2arr(x) <<endl;
+  cout <<"std::vector to arr:" <<arr(x, true) <<endl;
 
   arr y(10);
   y.setStraightPerm(10);
-  x=conv_arr2stdvec(y);
-  cout <<"arr -> std::vector -> arr = " <<conv_stdvec2arr(x) <<endl;
+  x=y.vec();
+  cout <<"arr -> std::vector -> arr = " <<arr(x, true) <<endl;
 
   //-- real interoperability
 
@@ -684,29 +684,25 @@ void TEST(Tensor){
 
 //===========================================================================
 
-void write(rai::RowShifted& PM){
-  cout <<"RowShifted: real:" <<PM.Z.d0 <<'x' <<PM.real_d1 <<"  packed:" <<PM.Z.d0 <<'x' <<PM.Z.d1 <<endl;
-  cout <<"packed numbers =\n" <<PM.Z
-      <<"\nrowShifts=" <<PM.rowShift
-//     <<"\ncolPaches=\n" <<~PM.colPatches
-    <<"\nunpacked =\n" <<unpack(PM.Z) <<endl;
-}
-
 void TEST(RowShifted){
   cout <<"\n*** RowShifted\n";
+
+//  rnd.clockSeed();
   
   arr J;
-  rai::RowShifted *Jaux = makeRowShifted(J,10,4,12);
+  rai::RowShifted& J_ = J.rowShifted();
+  J_.resize(10,12,4);
   rndInteger(J,0,9);
-  for(uint i=0;i<J.d0;i++) Jaux->rowShift(i) = i/3;
-  Jaux->computeColPatches(false);
-  write(*castRowShifted(J));
+  for(uint i=0;i<J.d0;i++) J_.rowShift(i) = i/3;
+  J_.computeColPatches(false);
+  cout <<J.rowShifted();
 
-  cout <<Jaux->At() <<endl;
+  cout <<J_.At().rowShifted() <<endl;
 
   //constructor compressing an array
-  arr K =  packRowShifted(unpack(J));
-  write(*castRowShifted(K));
+  arr K = unpack(J);
+  K.rowShifted().reshift();
+  cout <<K.rowShifted();
   
   cout <<"-----------------------" <<endl;
 
@@ -714,28 +710,44 @@ void TEST(RowShifted){
   for(uint k=0;k<100;k++){
     arr X(1+rnd(5),1+rnd(5));
     rndInteger(X,0,1);
-    arr Y = packRowShifted(X);
+    X *= rand(X.d0, X.d1);
+    arr Y = X;
+    Y.rowShifted().reshift();
     arr Yt = comp_At(Y);
+//    Yt.rowShifted().computeColPatches(false);
+//    cout <<"-----------------------" <<endl;
+//    cout <<X <<endl;
+//    cout <<Y.rowShifted() <<endl <<Yt.rowShifted() <<endl;
+//    cout <<"***\n" <<~X*X <<endl <<comp_At_A(Y).rowShifted() <<endl;
 
-//    RowShifted& Yaux = castRowShifted(Y);
-//    write(*castRowShifted(Y));
-    arr x(X.d0);   rndInteger(x,0,9);
-    arr x2(X.d1);  rndInteger(x2,0,9);
+    arr x(X.d0);   rndGauss(x, 1.); //Integer(x,0,9);
+    arr x2(X.d1);  rndGauss(x2, 1.); //Integer(x2,0,9);
+    arr Z(1+rnd(5), X.d0);
+    arr Z2(X.d1, 1+rnd(5));
     cout <<"errors = " <<maxDiff(X,unpack(Y))
+        <<' ' <<maxDiff(~X,unpack(Yt))
         <<' ' <<maxDiff(~X*X, unpack(comp_At_A(Y)))
        <<' ' <<maxDiff(X*~X, unpack(comp_A_At(Y)))
+      <<' ' <<maxDiff(X*x2, comp_A_x(Y,x2))
       <<' ' <<maxDiff(~X*x, comp_At_x(Y,x))
       <<' ' <<maxDiff(~X*x, comp_A_x(Yt,x))
      <<' ' <<maxDiff(~X*X, unpack(comp_A_At(Yt)))
+    <<' ' <<maxDiff(Z*X, unpack(Z*Y))
+    <<' ' <<maxDiff(X*Z2, unpack(Y*Z2))
     <<endl;
     CHECK_ZERO(maxDiff(X, unpack(Y)), 1e-10, "");
+    CHECK_ZERO(maxDiff(~X, unpack(Yt)), 1e-10, "");
     CHECK_ZERO(maxDiff(~X*X, unpack(comp_At_A(Y))), 1e-10, "");
 //    arr tmp =comp_A_At(Y);
 //    //write(*castRowShifted(tmp));
 //    cout <<X*~X <<endl <<unpack(comp_A_At(Y)) <<endl;
     CHECK_ZERO(maxDiff(X*~X, unpack(comp_A_At(Y))), 1e-10, "");
-    CHECK_ZERO(maxDiff(~X*x, comp_At_x(Y,x)), 1e-10, "");
     CHECK_ZERO(maxDiff(X*x2, comp_A_x(Y,x2)), 1e-10, "");
+    CHECK_ZERO(maxDiff(~X*x, comp_At_x(Y,x)), 1e-10, "");
+    CHECK_ZERO(maxDiff(~X*x, comp_A_x(Yt,x)), 1e-10, "");
+    CHECK_ZERO(maxDiff(~X*X, unpack(comp_A_At(Yt))), 1e-10, "");
+    CHECK_ZERO(maxDiff(Z*X, unpack(Z*Y)), 1e-10, "");
+    CHECK_ZERO(maxDiff(X*Z2, unpack(Y*Z2)), 1e-10, "");
 
     //cholesky:
     arr H = comp_A_At(Y);

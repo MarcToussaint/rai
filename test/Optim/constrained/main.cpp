@@ -18,7 +18,8 @@ void testConstraint2(MathematicalProgram& p, uint dim_x, arr& x_start=NoArr){
   if(!!x_start) x=x_start;
   rnd.seed(0);
 
-  optConstrained(x, NoArr, p);
+  OptConstrained(x, NoArr, p)
+      .run();
 
   if(!!x_start) x_start = x;
 }
@@ -57,7 +58,8 @@ void TEST(CoveringSphere){
   cout <<"point = " <<x <<endl;
   cout <<"cr_init=" <<cr <<endl;
   checkJacobianCP(F, cr, 1e-4);
-  optConstrained(cr, NoArr, F);
+  OptConstrained(cr, NoArr, F)
+      .run();
   cout <<"cr_opt=" <<cr <<endl;
 }
 
@@ -75,7 +77,7 @@ void TEST(MathematicalProgram){
   //Conv_MathematicalProgram_ConstrainedProblem F(P);
   checkJacobianCP(*P, x, 1e-4);
 
-  OptConstrained opt(x, NoArr, *P, 6);
+  OptConstrained opt(x, NoArr, *P, OptOptions().set_verbose(6));
   P->getBounds(opt.newton.bound_lo, opt.newton.bound_up);
   opt.run();
 

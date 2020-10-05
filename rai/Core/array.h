@@ -39,6 +39,7 @@ namespace rai {
 struct FileToken;
 struct SparseVector;
 struct SparseMatrix;
+struct RowShifted;
 
 // OLD, TODO: hide -> array.cpp
 extern bool useLapack;
@@ -76,13 +77,14 @@ template<class T> struct ArrayIterationEnumerated;
   Please see also the reference for the \ref array.h
   header, which contains lots of functions that can be applied on
   Arrays. */
-template<class T> struct Array : std::vector<T>, Serializable {
+template<class T> struct Array : /*std::vector<T>,*/ Serializable {
   T* p;     ///< the pointer on the linear memory allocated
   uint N;   ///< number of elements
   uint nd;  ///< number of dimensions
   uint d0, d1, d2; ///< 0th, 1st, 2nd dim
   uint* d;  ///< pointer to dimensions (for nd<=3 points to d0)
   bool isReference; ///< true if this refers to some external memory
+  uint M;   ///< memory allocated (>=N)
 
   static int  sizeT;   ///< constant for each type T: stores the sizeof(T)
   static char memMove; ///< constant for each type T: decides whether memmove can be used instead of individual copies
@@ -100,8 +102,8 @@ template<class T> struct Array : std::vector<T>, Serializable {
   explicit Array(uint D0);
   explicit Array(uint D0, uint D1);
   explicit Array(uint D0, uint D1, uint D2);
-  explicit Array(const T* p, uint size, bool byReference=true);      //reference!
-  explicit Array(const std::vector<T>& a, bool byReference=false);   //reference?
+  explicit Array(const T* p, uint size, bool byReference);      //reference!
+  explicit Array(const std::vector<T>& a, bool byReference);   //reference?
   Array(std::initializer_list<T> values);
   Array(std::initializer_list<uint> dim, std::initializer_list<T> values);
   explicit Array(SpecialArray* _special); //only used to define NoArrays
@@ -114,6 +116,10 @@ template<class T> struct Array : std::vector<T>, Serializable {
   Array<T>& operator=(const std::vector<T>& values);
 
   /// @name iterators
+  typename vec_type::iterator begin() { return typename vec_type::iterator(p); }
+  typename vec_type::const_iterator begin() const { return typename vec_type::const_iterator(p); }
+  typename vec_type::iterator end() { return typename vec_type::iterator(p+N); }
+  typename vec_type::const_iterator end() const { return typename vec_type::const_iterator(p+N); }
   ArrayIterationEnumerated<T> enumerated() { return ArrayIterationEnumerated<T>(*this); }
   //TODO: more: rows iterator, reverse iterator
 
@@ -155,6 +161,7 @@ template<class T> struct Array : std::vector<T>, Serializable {
   void setMatrixBlock(const Array<T>& B, uint lo0, uint lo1);
   //TODO setTensorBlock(const Array<T>& B, const Array<uint>& lo);
   void setBlockMatrix(const Array<T>& A, const Array<T>& B, const Array<T>& C, const Array<T>& D);
+  void setBlockMatrix(const Array<T>& A, const Array<T>& B);
   void setBlockVector(const Array<T>& a, const Array<T>& b);
   void setStraightPerm(int n=-1);
   void setReversePerm(int n=-1);
@@ -228,6 +235,7 @@ template<class T> struct Array : std::vector<T>, Serializable {
   bool containsDoubles() const;
   uint getMemsize() const; // -> remove
   void getIndexTuple(Array<uint>& I, uint i) const; // -> remove?
+  std::vector<T> vec() const{ return std::vector<T>(begin(), end()); }
 
   /// @name appending etc
   T& append();
@@ -285,6 +293,9 @@ template<class T> struct Array : std::vector<T>, Serializable {
   const SparseMatrix& sparse() const;
   SparseVector& sparseVec();
   const SparseVector& sparseVec() const;
+  RowShifted& rowShifted();
+  const RowShifted& rowShifted() const;
+  bool isSparse() const;
   void setNoArr();
 
   /// @name I/O
@@ -887,7 +898,7 @@ arr eigen_Ainv_b(const arr& A, const arr& b);
 /// @{
 
 struct SpecialArray {
-  enum Type { ST_none, ST_NoArr, hasCarrayST, sparseVectorST, sparseMatrixST, diagST, RowShiftedST, CpointerST };
+  enum Type { ST_none, ST_NoArr, ST_EmptyShape, hasCarrayST, sparseVectorST, sparseMatrixST, diagST, RowShiftedST, CpointerST };
   Type type;
   SpecialArray(Type _type=ST_none) : type(_type) {}
   virtual ~SpecialArray() {}
@@ -895,15 +906,17 @@ struct SpecialArray {
 
 namespace rai {
 
-template<class T> bool isSpecial(const rai::Array<T>& X)      { return X.special && X.special->type!=SpecialArray::ST_none; }
-template<class T> bool isNoArr(const rai::Array<T>& X)        { return X.special && X.special->type==SpecialArray::ST_NoArr; }
-template<class T> bool isRowShifted(const rai::Array<T>& X)   { return X.special && X.special->type==SpecialArray::RowShiftedST; }
-template<class T> bool isSparseMatrix(const rai::Array<T>& X) { return X.special && X.special->type==SpecialArray::sparseMatrixST; }
-template<class T> bool isSparseVector(const rai::Array<T>& X) { return X.special && X.special->type==SpecialArray::sparseVectorST; }
+template<class T> bool isSpecial(const Array<T>& X)      { return X.special && X.special->type!=SpecialArray::ST_none; }
+template<class T> bool isNoArr(const Array<T>& X)        { return X.special && X.special->type==SpecialArray::ST_NoArr; }
+template<class T> bool isEmptyShape(const Array<T>& X)   { return X.special && X.special->type==SpecialArray::ST_EmptyShape; }
+template<class T> bool isRowShifted(const Array<T>& X)   { return X.special && X.special->type==SpecialArray::RowShiftedST; }
+template<class T> bool isSparseMatrix(const Array<T>& X) { return X.special && X.special->type==SpecialArray::sparseMatrixST; }
+template<class T> bool isSparseVector(const Array<T>& X) { return X.special && X.special->type==SpecialArray::sparseVectorST; }
+template<class T> bool Array<T>::isSparse() const { return special && (special->type==SpecialArray::sparseMatrixST || special->type==SpecialArray::sparseVectorST); }
 
 struct RowShifted : SpecialArray {
   arr& Z;           ///< references the array itself
-  uint real_d1;     ///< the real width (the packed width is Z.d1; the height is Z.d0)
+  uint rowSize;     ///< the real width (the packed width is Z.d1; the height is Z.d0)
   uintA rowShift;   ///< amount of shift of each row (rowShift.N==Z.d0)
   uintA rowLen;     ///< number of non-zeros in the row
   uintA colPatches; ///< column-patch: (nd=2,d0=real_d1,d1=2) range of non-zeros in a COLUMN; starts with 'a', ends with 'b'-1
@@ -911,22 +924,47 @@ struct RowShifted : SpecialArray {
 
   RowShifted(arr& X);
   RowShifted(arr& X, RowShifted& aux);
-  ~RowShifted();
-  double elem(uint i, uint j); //TODO rename to 'elem'
+  //access
+  double elem(uint i, uint j) const; //access with natural coordinates
+  double& elemNew(uint i, uint j); //access with natural coordinates
+  double& entry(uint i, uint j) const; //access with memory coordinates
+  arr memRef() const{ arr x(Z.p, Z.N, true); x.reshape(Z.d0, rowSize); return x; }
+  //manipulations
+  void resize(uint d0, uint d1, uint _rowSize);
+  void resizeCopy(uint d0, uint d1, uint n);
+  void reshape(uint d0, uint d1);
   void reshift(); //shift all cols to start with non-zeros
   void computeColPatches(bool assumeMonotonic);
+  void insRow(uint i){
+    uint real_d1 = Z.d1;
+    Z.d1 = rowSize;
+    Z.insRows(i, 1);
+    Z.d1 = real_d1;
+    rowShift.insert(i, 0);
+    rowLen.insert(i, 0);
+    colPatches.clear();
+    symmetric=false;
+  }
+
+  //computations
   arr At_A();
   arr A_At();
   arr At_x(const arr& x);
   arr A_x(const arr& x);
   arr At();
-};
+  arr A_B(const arr& B) const;
+  arr B_A(const arr& B) const;
+  void rowWiseMult(const arr& a);
 
-inline RowShifted* castRowShifted(arr& X) {
-  ///CHECK_EQ(X.special,X.RowShiftedST,"can't cast like this!");
-  if(!X.special || X.special->type!=SpecialArray::RowShiftedST) throw("can't cast like this!");
-  return dynamic_cast<RowShifted*>(X.special); //((RowShifted*)X.aux);
-}
+  void add(const arr& B, uint lo0=0, uint lo1=0, double coeff=1.);
+
+  void write(std::ostream& os) const;
+
+  arr unpack() const;
+
+  void checkConsistency() const;
+};
+inline std::ostream& operator<<(std::ostream& os, const RowShifted& x){ x.write(os); return os; }
 
 struct SparseVector: SpecialArray {
   arr& Z;      ///< references the array itself
@@ -953,6 +991,7 @@ struct SparseMatrix : SpecialArray {
   double& elem(uint i, uint j);
   double& addEntry(int i, int j);
   arr getSparseRow(uint i);
+  arr memRef() const{ return arr(Z.p, Z.N, true); }
   //construction
   void setFromDense(const arr& X);
   void setupRowsCols();
@@ -969,7 +1008,7 @@ struct SparseMatrix : SpecialArray {
   arr B_A(const arr& B) const;
   void transpose();
   void rowWiseMult(const arr& a);
-  void add(const SparseMatrix& a, double coeff=1.);
+  void add(const SparseMatrix& a, uint lo0=0, uint lo1=0, double coeff=1.);
   arr unsparse();
 };
 
@@ -979,15 +1018,15 @@ arr comp_A_At(const arr& A);
 arr comp_At_x(const arr& A, const arr& x);
 arr comp_At(const arr& A);
 arr comp_A_x(const arr& A, const arr& x);
-arr packRowShifted(const arr& X);
-RowShifted* makeRowShifted(arr& Z, uint d0, uint pack_d1, uint real_d1);
 arr makeRowSparse(const arr& X);
 
 }//namespace rai
 
 #define UpdateOperator( op ) \
   void operator op (rai::SparseMatrix& x, const rai::SparseMatrix& y); \
-  void operator op (rai::SparseMatrix& x, double y );
+  void operator op (rai::SparseMatrix& x, double y ); \
+  void operator op (rai::RowShifted& x, const rai::RowShifted& y); \
+  void operator op (rai::RowShifted& x, double y );
 UpdateOperator(|=)
 UpdateOperator(^=)
 UpdateOperator(&=)
@@ -1055,21 +1094,6 @@ template<class vert, class edge> bool graphTopsort(rai::Array<vert*>& V, rai::Ar
 template<class vert, class edge> void graphDelete(rai::Array<vert*>& V, rai::Array<edge*>& E);
 
 /// @}
-
-//===========================================================================
-//
-// conv with std::vector
-//
-
-#include <vector>
-
-template<class T> rai::Array<T> conv_stdvec2arr(const std::vector<T>& v) {
-  return rai::Array<T>(&v.front(), v.size());
-}
-
-template<class T> std::vector<T> conv_arr2stdvec(const rai::Array<T>& x) {
-  return std::vector<T>(x.begin(), x.end());
-}
 
 //===========================================================================
 //

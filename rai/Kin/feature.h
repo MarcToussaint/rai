@@ -14,37 +14,51 @@
 
 struct Value {
   arr y, J;
+  Value(){}
   Value(const arr& y, const arr& J) : y(y), J(J) {}
+  void write(ostream& os) const { os <<"y:" <<y <<" J:" <<J; }
 };
+stdOutPipe(Value)
 
 /// defines only a map (task space), not yet the costs or constraints in this space
 struct Feature {
-  uint order;          ///< 0=position, 1=vel, etc
+  uint order = 0;          ///< 0=position, 1=vel, etc
   arr  scale, target;  ///< optional linear transformation
-  bool flipTargetSignOnNegScalarProduct; ///< for order==1 (vel mode), when taking temporal difference, flip sign when scalar product it negative [specific to quats -> move to special TM for quats only]
+  bool flipTargetSignOnNegScalarProduct = false; ///< for order==1 (vel mode), when taking temporal difference, flip sign when scalar product it negative [specific to quats -> move to special TM for quats only]
+  bool diffInsteadOfVel = false;
   FeatureSymbol fs = FS_none;
+  uintA frameIDs;
 
-  Feature() : order(0), flipTargetSignOnNegScalarProduct(false) {}
+  Feature() {}
+  Feature(const uintA& _frameIDs, uint _order) : order(_order), frameIDs(_frameIDs) {}
   virtual ~Feature() {}
 
   //-- construction helpers
   Feature& setOrder(uint _order) { order=_order; return *this; }
   Feature& setScale(const arr& _scale) { scale=_scale; return *this; }
   Feature& setTarget(const arr& _target) { target=_target; return *this; }
+  Feature& setFrameIDs(const uintA& _frameIDs) { frameIDs=_frameIDs; return *this; }
+  Feature& setFrameIDs(const StringA& frames, const rai::Configuration& C) { setFrameIDs( namesToIndices(frames, C) ); return *this; }
+  Feature& setDiffInsteadOfVel(){ diffInsteadOfVel=true; return *this; }
 
  protected:
-  virtual void phi(arr& y, arr& J, const rai::Configuration& C) { HALT("one of the 'phi' needs to be implemented!"); } ///< this needs to be overloaded
+  virtual void phi2(arr& y, arr& J, const FrameL& F);
+  virtual uint dim_phi2(const FrameL& F) {  NIY; }
+
+  virtual void phi(arr& y, arr& J, const rai::Configuration& C);
   virtual void phi(arr& y, arr& J, const ConfigurationL& Ctuple); ///< if not overloaded this computes the generic pos/vel/acc depending on order
-  virtual uint dim_phi(const rai::Configuration& C) { HALT("one of the 'dim_phi' needs to be implemented!"); } ///< the dimensionality of $y$
+  virtual uint dim_phi(const rai::Configuration& C) { return dim_phi2(C.frames.sub(frameIDs)); }
   virtual uint dim_phi(const ConfigurationL& Ctuple) { return dim_phi(*Ctuple.last()); } ///< if not overloaded, returns dim_phi for last configuration
 
  public:
+  void __phi2(arr& y, arr& J, const FrameL& F) { phi2(y, J, F); applyLinearTrans(y, J); }
   void __phi(arr& y, arr& J, const rai::Configuration& C) { phi(y, J, C); applyLinearTrans(y, J); }
   void __phi(arr& y, arr& J, const ConfigurationL& Ctuple) { phi(y, J, Ctuple); applyLinearTrans(y, J); }
   uint __dim_phi(const rai::Configuration& C) { uint d=dim_phi(C); return applyLinearTrans_dim(d); }
   uint __dim_phi(const ConfigurationL& Ctuple) { uint d=dim_phi(Ctuple); return applyLinearTrans_dim(d); }
+  uint __dim_phi2(const FrameL& F) { uint d=dim_phi2(F); return applyLinearTrans_dim(d); }
 
-  virtual rai::String shortTag(const rai::Configuration& C) { return "without-description"; }
+  virtual rai::String shortTag(const rai::Configuration& C);
   virtual rai::Graph getSpec(const rai::Configuration& C) { return rai::Graph({{"description", shortTag(C)}}); }
 
   //-- evaluation helpers
@@ -54,14 +68,18 @@ struct Feature {
   Value operator()(const rai::Configuration& C) { arr y, J; __phi(y, J, C); return Value(y, J); }
   Value eval(const rai::Configuration& C) { arr y, J; __phi(y, J, C); return Value(y, J); }
   Value eval(const ConfigurationL& Ctuple) { arr y, J; __phi(y, J, Ctuple); return Value(y, J); }
+  Value eval(const FrameL& F) { arr y, J; __phi2(y, J, F); return Value(y, J); }
 
   //-- for direct gradient checking (move outside)
   VectorFunction vf(rai::Configuration& C);
   VectorFunction vf(ConfigurationL& Ctuple);
+  VectorFunction vf2(const FrameL& F);
  private:
   void applyLinearTrans(arr& y, arr& J);
   uint applyLinearTrans_dim(uint d);
 };
+
+template<class T> Value evalFeature(const FrameL& F, uint order=0){ arr y,J; T().setOrder(order).__phi2(y, J, F); return Value{y,J}; }
 
 //these are frequently used by implementations of task maps
 
@@ -99,7 +117,33 @@ inline void expandJacobian(arr& J, const ConfigurationL& Ctuple, int i=-1) {
 
 inline void padJacobian(arr& J, const ConfigurationL& Ctuple) {
   uintA qdim = getKtupleDim(Ctuple);
-  arr tmp = zeros(J.d0, qdim.last());
-  tmp.setMatrixBlock(J, 0, 0);
-  J = tmp;
+  if(!isSpecial(J)){
+    arr tmp = zeros(J.d0, qdim.last());
+    tmp.setMatrixBlock(J, 0, 0);
+    J = tmp;
+  }else{
+    if(J.isSparse()){
+      J.sparse().reshape(J.d0, qdim.last());
+    } else if(!J){
+      return;
+    } else NIY;
+  }
+}
+
+template<class T>
+std::shared_ptr<Feature> make_feature(const StringA& frames, const rai::Configuration& C, const arr& scale=NoArr, const arr& target=NoArr, int order=-1){
+  std::shared_ptr<Feature> f = make_shared<T>();
+
+  if(!!scale) {
+    if(!f->scale.N) f->scale = scale;
+    else if(scale.N==1) f->scale *= scale.scalar();
+    else if(scale.N==f->scale.N) f->scale *= scale.scalar();
+    else NIY;
+  }
+  if(!!target) f->target = target;
+  if(order>=0) f->order = order;
+
+  if(!f->frameIDs.N) f->frameIDs = namesToIndices(frames, C);
+
+  return f;
 }

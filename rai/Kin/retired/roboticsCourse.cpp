@@ -52,7 +52,7 @@ Simulator::Simulator(const char* orsFile) {
   self = make_unique<sSimulator>();
 
   //RAI
-  self->G.init(orsFile);
+  self->G.readFromGraph(orsFile);
   /*  if(self->G.getBodyByName("rfoot")){
     self->G.reconfigureRoot(self->G.getBodyByName("rfoot"));
     self->G.calcBodyFramesFromJoints();

@@ -18,13 +18,13 @@ void init_Operate(pybind11::module& m) {
   pybind11::class_<ry::RyOperate>(m, "RyOperate")
   .def("move", [](ry::RyOperate& self, const std::vector<std::vector<double>>& poses, const std::vector<double>& times, bool append) {
     arr path(poses.size(), poses[0].size());
-    for(uint i=0; i<path.d0; i++) path[i] = conv_stdvec2arr(poses[i]);
-    self.R->move(path, conv_stdvec2arr(times), append);
+    for(uint i=0; i<path.d0; i++) path[i] = poses[i];
+    self.R->move(path, arr(times, true), append);
   })
 
   .def("move", [](ry::RyOperate& self, const pybind11::array_t<double>& path, const std::vector<double>& times, bool append) {
     arr _path = numpy2arr(path);
-    self.R->move(_path, conv_stdvec2arr(times), append);
+    self.R->move(_path, arr(times, true), append);
   })
 
   .def("moveHard", [](ry::RyOperate& self, const pybind11::array_t<double>& pose) {

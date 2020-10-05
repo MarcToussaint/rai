@@ -141,7 +141,7 @@ void TM_Default::phi(arr& y, arr& J, const rai::Configuration& G) {
         J(0, -i) = 1.;
       }
     } break;
-    case TMT_qLimits:   if(!params.N) params=G.getLimits();  G.kinematicsLimitsCost(y, J, params);  break;
+    case TMT_qLimits:   if(!params.N) params=G.getLimits();  G.kinematicsLimits(y, J, params);  break;
     case TMT_com:       G.getCenterOfMass(y);     y.resizeCopy(2); if(!!J) { G.getComGradient(J);  J.resizeCopy(2, J.d1); }  break;
     case TMT_coll:      G.kinematicsProxyCost(y, J, params(0));  break;
     case TMT_colCon:    G.kinematicsContactConstraints(y, J);  break;

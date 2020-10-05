@@ -9,9 +9,8 @@
 #include "bounds.h"
 //#include "../Kin/switch.h"
 #include "../Kin/F_qFeatures.h"
-#include "../Kin/TM_angVel.h"
-#include "../Kin/F_dynamics.h"
-#include "../Kin/TM_default.h"
+#include "../Kin/F_forces.h"
+#include "../Kin/F_pose.h"
 
 double conv_step2time(int step, uint stepsPerPhase);
 
@@ -31,7 +30,6 @@ rai::Array<SkeletonSymbol> modes = { SY_stable, SY_stableOn, SY_dynamic, SY_dyna
 
 ptr<ComputeObject> skeleton2Bound(ptr<KOMO>& komo, BoundType boundType, const Skeleton& S,
                                   const rai::Configuration& startKinematics,
-                                  const rai::Configuration& effKinematics,
                                   bool collisions, const arrA& waypoints) {
 
   if(boundType==BD_pose)
@@ -129,11 +127,25 @@ PoseBound::PoseBound(ptr<KOMO>& komo,
   //      }
   for(ptr<Objective>& o:komo->objectives) {
     if(!std::dynamic_pointer_cast<F_qItself>(o->feat)
-        && !std::dynamic_pointer_cast<TM_NoJumpFromParent>(o->feat)
-        && o->feat->order>0) {
+//        && !std::dynamic_pointer_cast<TM_NoJumpFromParent>(o->feat)
+       && !std::dynamic_pointer_cast<F_Pose>(o->feat)
+       && !std::dynamic_pointer_cast<F_PoseRel>(o->feat)
+       && o->feat->order>0) {
       o->configs.clear();
     }
   }
+  for(ptr<GroundedObjective>& o:komo->objs) {
+    if(!std::dynamic_pointer_cast<F_qItself>(o->feat)
+       && !std::dynamic_pointer_cast<F_Pose>(o->feat)
+       && !std::dynamic_pointer_cast<F_PoseRel>(o->feat)
+       && o->feat->order>0) {
+      o->feat.reset();
+    }
+  }
+  for(uint i=komo->objs.N;i--;) if(!komo->objs(i)->feat){
+    komo->objs.remove(i);
+  }
+
 
   if(collisions) komo->add_collision(false);
 
@@ -232,9 +244,11 @@ SeqPathBound::SeqPathBound(ptr<KOMO>& komo,
   uint T = floor(maxPhase+.5);
   uint waypointsStepsPerPhase = waypoints.N/(T+1);
   CHECK_EQ(waypoints.N, waypointsStepsPerPhase * (T+1), "waypoint steps not clear");
+#if 0 //impose waypoint costs?
   for(uint i=0; i<waypoints.N-1; i++) {
     komo->addObjective(ARR(conv_step2time(i, waypointsStepsPerPhase)), FS_qItself, {}, OT_sos, {1e-1}, waypoints(i));
   }
+#endif
 
   komo->setSkeleton(S);
   //delete all added objectives! -> only keep switches
@@ -494,7 +508,7 @@ void CG2komo(KOMO& komo, const SubCG& scg, const rai::Configuration& C, bool col
   }
   for(uint t=0; t<=scg.maxT; t++) {
     framesPerT(t).sort().removeDoublesInSorted();
-    c->addFramesCopy(framesPerT(t));
+    c->addConfigurationCopy(framesPerT(t));
 //    if(!t) for(rai::Frame *f:c->frames) if(f->joint) delete f->joint; //kill all DOFs at t=0
   }
   //delete joints without parents

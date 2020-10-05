@@ -46,7 +46,7 @@ void MotionProblemFunction::phi_t(arr& phi, arr& J, uint t, const arr& x_bar, co
   arr _phi, J_x, J_v;
   if(k>0) MP.setState(x_bar[k], (x_bar[k]-x_bar[k-1])/tau);
   else    MP.setState(x_bar[k], NoArr); //don't set velocities
-  MP.getTaskCosts(_phi, (!!J?J_x:NoArr), (!!J?J_v:NoArr), t);
+  MP.getTaskCosts(_phi, J_x:NoArr), (!!J?J_v, t);
   phi.append(_phi);
   if(!!J && _phi.N) {
     arr Japp(_phi.N, (k+1)*n);

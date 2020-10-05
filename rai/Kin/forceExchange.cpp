@@ -11,7 +11,7 @@
 #include "../Geo/pairCollision.h"
 
 rai::ForceExchange::ForceExchange(rai::Frame& a, rai::Frame& b, rai::ForceExchange* copyContact)
-  : a(a), b(b) {
+  : a(a), b(b), type(FXT_poa) {
   CHECK(&a != &b, "");
   CHECK_EQ(&a.C, &b.C, "contact between frames of different configuration!");
   a.C.reset_q();
@@ -20,8 +20,9 @@ rai::ForceExchange::ForceExchange(rai::Frame& a, rai::Frame& b, rai::ForceExchan
   a.C.forces.append(this);
   setZero();
   if(copyContact) {
-    position = copyContact->position;
+    poa = copyContact->poa;
     force = copyContact->force;
+    torque = copyContact->torque;
   }
 }
 
@@ -33,23 +34,74 @@ rai::ForceExchange::~ForceExchange() {
 }
 
 void rai::ForceExchange::setZero() {
-//  a_rel.setZero(); b_rel.setZero(); a_norm.setZero(); b_norm.setZero(); a_rad=b_rad=0.; a_type=b_type=1;
   force.resize(3).setZero();
-  position = (.5*(a.ensure_X().pos + b.ensure_X().pos)).getArr();
+  torque.resize(3).setZero();
+  if(type==FXT_poa){
+    poa = .5*a.getPosition() + .5*b.getPosition();
+  }else{
+    poa = b.getPosition();
+  }
   if(__coll) { delete __coll; __coll=0; }
 }
 
 void rai::ForceExchange::calc_F_from_q(const arr& q, uint n) {
-  position = q({n, n+2});
-  force = q({n+3, n+5});
+  if(type==FXT_poa){
+    poa = q({n, n+2});
+    force = q({n+3, n+5});
+    torque.resize(3).setZero();
+  }else if(type==FXT_torque){
+    poa = b.getPosition();
+    force = q({n, n+2});
+    torque = q({n+3, n+5});
+  }
   if(__coll) { delete __coll; __coll=0; }
 }
 
 arr rai::ForceExchange::calc_q_from_F() const {
   arr q(6);
-  q.setVectorBlock(position, 0);
-  q.setVectorBlock(force, 3);
+  if(type==FXT_poa){
+    q.setVectorBlock(poa, 0);
+    q.setVectorBlock(force, 3);
+  }else if(type==FXT_torque){
+    q.setVectorBlock(force, 0);
+    q.setVectorBlock(torque, 3);
+  }
   return q;
+}
+
+void rai::ForceExchange::kinPOA(arr& y, arr& J) const {
+  a.C.kinematicsZero(y, J, 3);
+
+  if(type==FXT_poa){
+    y = poa;
+    if(!!J) for(uint i=0; i<3; i++) J.elem(i, qIndex+0+i) = 1.;
+  }else if(type==FXT_torque){
+    //use b as the POA!!
+    b.C.kinematicsPos(y, J, &b);
+  }
+}
+
+void rai::ForceExchange::kinForce(arr& y, arr& J) const {
+  a.C.kinematicsZero(y, J, 3);
+
+  if(type==FXT_poa){
+    y = force;
+    if(!!J) for(uint i=0; i<3; i++) J.elem(i, qIndex+3+i) = 1.;
+  }else if(type==FXT_torque){
+    y = force;
+    if(!!J) for(uint i=0; i<3; i++) J.elem(i, qIndex+0+i) = 1.;
+  }
+}
+
+void rai::ForceExchange::kinTorque(arr& y, arr& J) const {
+  a.C.kinematicsZero(y, J, 3);
+
+  if(type==FXT_poa){
+    //zero: POA is zero-momentum point
+  }else if(type==FXT_torque){
+    y = torque;
+    if(!!J) for(uint i=0; i<3; i++) J.elem(i, qIndex+3+i) = 1.;
+  }
 }
 
 PairCollision* rai::ForceExchange::coll() {
@@ -75,11 +127,16 @@ arr gnuplot(const double x){
 }
 
 void rai::ForceExchange::glDraw(OpenGL& gl) {
+  if(type==FXT_poa){
+  }else if(type==FXT_torque){
+    poa = b.getPosition();
+  }
+  double scale = 1.;
+
 #ifdef RAI_GL
   const arr pt = (.5*(a.ensure_X().pos + b.ensure_X().pos)).getArr();
 
   glLoadIdentity();
-  glColor(1., 0., 1., 1.);
   glLineWidth(3.f);
   glDrawDiamond(pt(0), pt(1), pt(2), .02, .02, .02);
   glBegin(GL_LINES);
@@ -90,9 +147,9 @@ void rai::ForceExchange::glDraw(OpenGL& gl) {
 
   /*glBegin(GL_LINES);
   glVertex3dv(&a.ensure_X().pos.x);
-  glVertex3dv(position.p);
+  glVertex3dv(poa.p);
   glColor(.8, .5, .8, 1.);
-  glVertex3dv(position.p);
+  glVertex3dv(poa.p);
   glVertex3dv(&b.ensure_X().pos.x);
   glEnd();*/
 
@@ -130,6 +187,7 @@ void rai::ForceExchange::write(std::ostream& os) const {
   if(__coll) {
     d = -(__coll->distance-__coll->rad1-__coll->rad2);
   }
-  os <<" f=" <<force <<" d=" <<d <<"   compl=" <<sumOfSqr(d * force);
+  os <<" force:" <<force <<" torque:" <<torque <<" poa:" <<poa <<" d=" <<d <<"   compl=" <<sumOfSqr(d * force);
 //  <<" type=" <<a_type <<'-' <<b_type <<" dist=" <<getDistance() /*<<" pDist=" <<get_pDistance()*/ <<" y=" <<y <<" l=" <<lagrangeParameter;
 }
+

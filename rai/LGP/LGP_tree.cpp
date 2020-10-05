@@ -103,7 +103,7 @@ void initFolStateFromKin(FOL_World& L, const rai::Configuration& K) {
 
 LGP_Tree::LGP_Tree()
   : verbose(2), numSteps(0) {
-  dataPath <<"z." <<rai::date2() <<"/";
+  dataPath <<"z." <<rai::date(true) <<"/";
   dataPath = rai::getParameter<rai::String>("LGP_dataPath", dataPath);
   rai::system(STRING("mkdir -p " <<dataPath));
   rai::system(STRING("rm -Rf " <<dataPath <<"vid  &&  rm -f " <<dataPath <<"*"));
@@ -114,7 +114,7 @@ LGP_Tree::LGP_Tree()
   collisions = rai::getParameter<bool>("LGP/collisions", true);
   displayTree = rai::getParameter<bool>("LGP/displayTree", false);
 
-  verbose = rai::getParameter<int>("LGP/verbose", 2);
+  verbose = rai::getParameter<double>("LGP/verbose", 2);
   if(verbose>0) fil.open(dataPath + "optLGP.dat"); //STRING("z.optLGP." <<rai::date() <<".dat"));
 
   cameraFocus = rai::getParameter<arr>("LGP/cameraFocus", {});
@@ -144,7 +144,7 @@ LGP_Tree::LGP_Tree(const rai::Configuration& _kin, const FOL_World& _fol) : LGP_
 
 LGP_Tree::~LGP_Tree() {
   views.clear();
-  if(dth) delete dth;
+  if(dth) dth.reset();
   delete root;
   root=nullptr;
   if(filNodes) { delete filNodes; filNodes=nullptr; }
@@ -161,7 +161,7 @@ void LGP_Tree::initDisplay() {
     views(3) = make_shared<KinPathViewer>(Var<ConfigurationL>(), .05, -2);
     for(auto& v:views) if(v) v->copy.orsDrawJoints=v->copy.orsDrawMarkers=v->copy.orsDrawProxies=false;
   }
-  if(!dth) dth = new DisplayThread(this);
+  if(!dth) dth = make_shared<DisplayThread>(this);
 }
 
 void LGP_Tree::renderToVideo(int specificBound, const char* filePrefix) {
@@ -199,11 +199,13 @@ void LGP_Tree::displayTreeUsingDot() {
 void LGP_Tree::updateDisplay() {
   if(fringe_solved.N) focusNode = fringe_solved.last();
 
+  if(!dth) initDisplay();
+
   //individual windows to display focusNode
   if(verbose>2) {
     rai::String decisions = focusNode->getTreePathString('\n');
     for(uint i=1; i<views.N; i++) {
-      if(focusNode->komoProblem(i) && focusNode->komoProblem(i)->configurations.N) {
+      if(focusNode->komoProblem(i) && focusNode->komoProblem(i)->timeSlices.N) {
         views(i)->setConfigurations(focusNode->komoProblem(i)->configurations);
         views(i)->text.clear() <<focusNode->cost <<"|  " <<focusNode->constraints.last() <<'\n' <<decisions;
       } else views(i)->clear();
@@ -299,29 +301,29 @@ void LGP_Tree::inspectSequence(const rai::String& seq) {
 
   //-- first test pose bounds along the path
   BoundType bound = BD_pose;
-  for(LGP_Node* n:path) {
-    n->optBound(bound, true, 2);
-    n->displayBound(gl, bound);
-  }
+//  for(LGP_Node* n:path) {
+//    n->optBound(bound, true, verbose-2);
+//    n->displayBound(gl, bound);
+//  }
 
-  bound = BD_poseFromSeq;
-  for(LGP_Node* n:path) {
-    n->optBound(bound, true, 2);
-    n->displayBound(gl, bound);
-  }
+//  bound = BD_poseFromSeq;
+//  for(LGP_Node* n:path) {
+//    n->optBound(bound, true, verbose-2);
+//    n->displayBound(gl, bound);
+//  }
 
   //-- sequence bound
   bound = BD_seq;
-  node->optBound(bound, true, 2);
+  node->optBound(bound, true, verbose-2);
   node->displayBound(gl, bound);
 
   //-- path bounds
   bound = BD_seqPath;
-  node->optBound(bound, true, 2);
+  node->optBound(bound, true, verbose-2);
   node->displayBound(gl, bound);
 
   bound = BD_path;
-  node->optBound(bound, true, 2);
+  node->optBound(bound, true, verbose-2);
   node->displayBound(gl, bound);
 }
 
@@ -629,10 +631,10 @@ void LGP_Tree::getSymbolicSolutions(uint depth) {
 void LGP_Tree::init() {
   fringe_expand.append(root);
   fringe_pose.append(root);
-  if(verbose>1) {
-    initDisplay();
-    updateDisplay();
-  }
+//  if(verbose>1) {
+//    initDisplay();
+//    updateDisplay();
+//  }
 }
 
 void LGP_Tree::run(uint steps) {
@@ -687,10 +689,10 @@ LGP_Tree_SolutionData::LGP_Tree_SolutionData(LGP_Tree& _tree, LGP_Node* _node) :
   paths.resize(L);
   for(uint l=0; l<L; l++) {
     std::shared_ptr<KOMO> komo = node->komoProblem(l);
-    if(komo && komo->configurations.N) {
-      paths(l).resize(komo->configurations.N, frameIDs.N);
-      for(uint s=0; s<komo->configurations.N; s++) for(uint i=0; i<frameIDs.N; i++) {
-          paths(l)(s, i) = komo->configurations(s)->frames(frameIDs(i))->ensure_X();
+    if(komo && komo->timeSlices.N) {
+      paths(l).resize(komo->timeSlices.d0, frameIDs.N);
+      for(uint s=0; s<komo->timeSlices.d0; s++) for(uint i=0; i<frameIDs.N; i++) {
+          paths(l)(s, i) = komo->timeSlices(s, frameIDs(i))->ensure_X();
         }
     }
   }

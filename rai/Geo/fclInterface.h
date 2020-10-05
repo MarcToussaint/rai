@@ -19,23 +19,22 @@ class BroadPhaseCollisionManager;
 namespace rai {
 
 struct FclInterface {
-  Array<ptr<Mesh>> geometries;
   Array<ptr<struct ConvexGeometryData>> convexGeometryData;
   std::vector<fcl::CollisionObject*> objects;
-  ptr<fcl::BroadPhaseCollisionManager> manager;
+  shared_ptr<fcl::BroadPhaseCollisionManager> manager;
 
-  double cutoff=0.;
-  uintA collisions;
-  uintA excludePairs;
-  arr X_lastQuery;
+  double cutoff=0.; //0 -> perform fine boolean collision check; >0 -> perform fine distance computations; <0 -> only broadphase
+  uintA collisions; //return values!
+  arr X_lastQuery;  //memory to check whether an object has moved in consecutive queries
 
-  FclInterface(const Array<ptr<Mesh>>& _geometries, double _cutoff=0.);
+  FclInterface(const Array<ptr<Mesh>>& geometries, double _cutoff=0.);
   ~FclInterface();
 
   void step(const arr& X);
 
-//private, called by collision callback
+private: //called by collision callback
   void addCollision(void* userData1, void* userData2);
+  static bool BroadphaseCallback(fcl::CollisionObject* o1, fcl::CollisionObject* o2, void* cdata_);
 };
 
 }

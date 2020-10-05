@@ -59,6 +59,72 @@ struct Conv_ScalarProblem_MathematicalProgram : MathematicalProgram {
   }
 };
 
+struct Conv_MathematicalProgram_ScalarProblem : ScalarFunction {
+  MathematicalProgram &P;
+
+  Conv_MathematicalProgram_ScalarProblem(MathematicalProgram &P) : P(P){
+    ScalarFunction::operator=([this](arr& g, arr& H, const arr& x) -> double {
+      return this->scalar(g, H, x);
+    });
+  }
+
+  double scalar(arr& g, arr& H, const arr& x){
+    ObjectiveTypeA featureTypes;
+    arr phi, J;
+    P.getFeatureTypes(featureTypes);
+    P.evaluate(phi, J, x);
+
+    CHECK_EQ(phi.N, featureTypes.N, "");
+    CHECK_EQ(phi.N, J.d0, "");
+    CHECK_EQ(x.N, J.d1, "");
+
+    double f=0.;
+    for(uint i=0; i<phi.N; i++) {
+      if(featureTypes.p[i]==OT_sos) f += rai::sqr(phi.p[i]);
+      else if(featureTypes.p[i]==OT_f) f += phi.p[i];
+      else HALT("this must be an unconstrained problem!")
+    }
+
+    if(!!g) { //gradient
+      arr coeff=zeros(phi.N);
+      for(uint i=0; i<phi.N; i++) {
+        if(featureTypes.p[i]==OT_sos) coeff.p[i] += 2.* phi.p[i];
+        else if(featureTypes.p[i]==OT_f) coeff.p[i] += 1.;
+      }
+      g = comp_At_x(J, coeff);
+      g.reshape(x.N);
+    }
+
+    if(!!H) { //hessian: Most terms are of the form   "J^T  diag(coeffs)  J"
+      arr coeff=zeros(phi.N);
+      double hasF=false;
+      for(uint i=0; i<phi.N; i++) {
+        if(featureTypes.p[i]==OT_sos) coeff.p[i] += 2.;
+        else if(featureTypes.p[i]==OT_f) hasF=true;
+      }
+      arr tmp = J;
+      if(!isSparseMatrix(tmp)) {
+        for(uint i=0; i<phi.N; i++) tmp[i]() *= sqrt(coeff.p[i]);
+      } else {
+        arr sqrtCoeff = sqrt(coeff);
+        tmp.sparse().rowWiseMult(sqrtCoeff);
+      }
+      H = comp_At_A(tmp); //Gauss-Newton type!
+
+      if(hasF) { //For f-terms, the Hessian must be given explicitly, and is not \propto J^T J
+        arr fH;
+        P.getFHessian(fH, x);
+        H += fH;
+      }
+
+      if(!H.special) H.reshape(x.N, x.N);
+    }
+
+    return f;
+  }
+};
+
+
 //===========================================================================
 //
 // checks, evaluation
@@ -105,34 +171,40 @@ inline void accumulateInequalities(arr& y, arr& J, const arr& yAll, const arr& J
 enum ConstrainedMethodType { noMethod=0, squaredPenalty, augmentedLag, logBarrier, anyTimeAula, squaredPenaltyFixed };
 
 struct OptOptions {
-  int verbose;
-  double* fmin_return;
-  double stopTolerance;
-  double stopFTolerance;
-  double stopGTolerance;
-  uint   stopEvals;
-  uint   stopIters;
-  uint   stopOuters;
-  uint   stopLineSteps;
-  uint   stopTinySteps;
-  double initStep;
-  double minStep;
-  double maxStep;
-  double damping;
-  double stepInc, stepDec;
-  double dampingInc, dampingDec;
-  double wolfe;
-  int nonStrictSteps; //# of non-strict iterations
-  bool allowOverstep;
-  ConstrainedMethodType constrainedMethod;
-  double muInit, muLBInit;
-  double aulaMuInc;
+#define arg(type, name) type name; OptOptions& set_##name(type _##name){ name=_##name; return *this; }
+  arg(int, verbose)
+  arg(double*, fmin_return)
+  arg(double, stopTolerance)
+  arg(double, stopFTolerance)
+  arg(double, stopGTolerance)
+  arg(uint,   stopEvals)
+  arg(uint,   stopIters)
+  arg(uint,   stopOuters)
+  arg(uint,   stopLineSteps)
+  arg(uint,   stopTinySteps)
+  arg(double, initStep)
+  arg(double, minStep)
+  arg(double, maxStep)
+  arg(double, damping)
+  arg(double, stepInc)
+  arg(double, stepDec)
+  arg(double, dampingInc)
+  arg(double, dampingDec)
+  arg(double, wolfe)
+  arg(int, nonStrictSteps) //# of non-strict iterations
+  arg(bool, allowOverstep)
+  arg(ConstrainedMethodType, constrainedMethod)
+  arg(double, muInit)
+  arg(double, muLBInit)
+  arg(double, aulaMuInc)
+#undef arg
   OptOptions();
   void write(std::ostream& os) const;
 };
 stdOutPipe(OptOptions)
 
 extern Singleton<OptOptions> globalOptOptions;
+extern OptOptions *__globalOptOptions;
 
 #define NOOPT (globalOptOptions())
 
@@ -174,5 +246,5 @@ extern uint eval_count;
 #define _OPT_9(obj, assign, ...) obj->assign, _OPT_8(obj,__VA_ARGS__)
 #define _OPT_N2(obj, N, ...) _OPT_ ## N(obj, __VA_ARGS__)
 #define _OPT_N1(obj, N, ...) _OPT_N2(obj, N, __VA_ARGS__) //this forces that _NUM_ARGS(...) is expanded to a number N
-#define OPT(...)     (_OPT_N1(globalOptOptions(), _NUM_ARGS(__VA_ARGS__), __VA_ARGS__) , globalOptOptions())
+#define OPT(...)     (globalOptOptions(), _OPT_N1(__globalOptOptions, _NUM_ARGS(__VA_ARGS__), __VA_ARGS__) , *__globalOptOptions)
 

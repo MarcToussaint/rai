@@ -479,7 +479,9 @@ void Quaternion::flipSign() { w=-w; x=-x; y=-y; z=-z; }
 
 /// multiplies the rotation by a factor f (i.e., makes f-times the rotation)
 void Quaternion::multiply(double f) {
-  if(w==1. || f==1.) return;
+  normalize();
+  if(w<0.) flipSign();
+  if(1.-w<1e-10 || f==1.) return;
   double phi=acos(w);
   phi*=f;
   w=cos(phi);
@@ -924,7 +926,7 @@ arr Quaternion::getEulerRPY() const {
   // pitch (y-axis rotation)
   double sinp = +2.0 * (w * y - z * x);
   if(fabs(sinp) >= 1)
-    pitch = copysign(M_PI / 2, sinp); // use 90 degrees if out of range
+    pitch = copysign(RAI_PI / 2, sinp); // use 90 degrees if out of range
   else
     pitch = asin(sinp);
 
@@ -983,6 +985,19 @@ arr Quaternion::getMatrixJacobian() const {
   return J;
 }
 
+arr Quaternion::getQuaternionMultiplicationMatrix() const{
+//  a.w = b.w*c.w - b.x*c.x - b.y*c.y - b.z*c.z;
+//  a.x = b.w*c.x + b.x*c.w + b.y*c.z - b.z*c.y;
+//  a.y = b.w*c.y - b.x*c.z + b.y*c.w + b.z*c.x;
+//  a.z = b.w*c.z + b.x*c.y - b.y*c.x + b.z*c.w;
+  return arr(
+  {4,4},
+  {+w, -x, -y, -z,
+   +x, +w, +z, -y,
+   +y, -z, +w, +x,
+   +z, +y, -x, +w});
+}
+
 void Quaternion::writeNice(std::ostream& os) const { os <<"Quaternion: " <<getDeg() <<" around " <<getVec() <<"\n"; }
 void Quaternion::write(std::ostream& os) const {
   if(!rai::IOraw) os <<'[' <<w <<", " <<x <<", " <<y <<", " <<z <<']';
@@ -1039,6 +1054,11 @@ Quaternion operator-(const Quaternion& b, const Quaternion& c) {
   a.y = b.y-c.y;
   a.z = b.z-c.z;
   a.isZero = false;
+  return a;
+}
+
+Quaternion operator*=(Quaternion& a, double s){
+  a.multiply(s);
   return a;
 }
 

@@ -71,13 +71,13 @@ rai::Frame::Frame(Frame* _parent)
 }
 
 rai::Frame::~Frame() {
+  while(forces.N) delete forces.last();
   if(joint) delete joint;
   if(shape) delete shape;
   if(inertia) delete inertia;
   if(parent) unLink();
-  while(forces.N) delete forces.last();
   while(children.N) children.last()->unLink();
-  CHECK_EQ(this, C.frames(ID), "")
+  CHECK_EQ(this, C.frames.elem(ID), "")
   C.frames.remove(ID);
   listReindex(C.frames);
   C.reset_q();
@@ -168,6 +168,12 @@ void rai::Frame::getPartSubFrames(FrameL& F) {
 
 void rai::Frame::getSubtree(FrameL& F) {
   for(Frame* child:children) { F.append(child); child->getSubtree(F); }
+}
+
+rai::Frame*rai::Frame::getRoot(){
+  rai::Frame* f = this;
+  while(f->parent) f = f->parent;
+  return f;
 }
 
 FrameL rai::Frame::getPathToRoot() {
@@ -355,7 +361,7 @@ void rai::Frame::write(std::ostream& os) const {
 
 /************* USER INTERFACE **************/
 
-void rai::Frame::setShape(rai::ShapeType shape, const std::vector<double>& size) {
+void rai::Frame::setShape(rai::ShapeType shape, const arr& size) {
   getShape().type() = shape;
   getShape().size() = size;
   getShape().createMeshes();
@@ -367,45 +373,45 @@ void rai::Frame::setPose(const rai::Transformation& _X) {
   _state_updateAfterTouchingX();
 }
 
-void rai::Frame::setPosition(const std::vector<double>& pos) {
+void rai::Frame::setPosition(const arr& pos) {
   ensure_X();
   X.pos.set(pos);
   _state_updateAfterTouchingX();
 }
 
-void rai::Frame::setQuaternion(const std::vector<double>& quat) {
+void rai::Frame::setQuaternion(const arr& quat) {
   ensure_X();
   X.rot.set(quat);
   X.rot.normalize();
   _state_updateAfterTouchingX();
 }
 
-void rai::Frame::setRelativePosition(const std::vector<double>& pos) {
+void rai::Frame::setRelativePosition(const arr& pos) {
   CHECK(parent, "you cannot set relative position for a frame without parent");
   Q.pos.set(pos);
   _state_updateAfterTouchingQ();
 }
 
-void rai::Frame::setRelativeQuaternion(const std::vector<double>& quat) {
+void rai::Frame::setRelativeQuaternion(const arr& quat) {
   CHECK(parent, "you cannot set relative position for a frame without parent");
   Q.rot.set(quat);
   Q.rot.normalize();
   _state_updateAfterTouchingQ();
 }
 
-void rai::Frame::setPointCloud(const std::vector<double>& points, const std::vector<byte>& colors) {
+void rai::Frame::setPointCloud(const arr& points, const byteA& colors) {
   getShape().type() = ST_pointCloud;
-  if(!points.size()) {
+  if(!points.N) {
     cerr <<"given point cloud has zero size" <<endl;
     return;
   }
   getShape().mesh().V.clear().operator=(points).reshape(-1, 3);
-  if(colors.size()) {
+  if(colors.N) {
     getShape().mesh().C.clear().operator=(convert<double>(byteA(colors))/255.).reshape(-1, 3);
   }
 }
 
-void rai::Frame::setConvexMesh(const std::vector<double>& points, const std::vector<byte>& colors, double radius) {
+void rai::Frame::setConvexMesh(const arr& points, const byteA& colors, double radius) {
   if(!radius) {
     getShape().type() = ST_mesh;
     getShape().mesh().V.clear().operator=(points).reshape(-1, 3);
@@ -418,12 +424,12 @@ void rai::Frame::setConvexMesh(const std::vector<double>& points, const std::vec
     getShape().mesh().setSSCvx(getShape().sscCore().V, radius);
     getShape().size = ARR(radius);
   }
-  if(colors.size()) {
+  if(colors.N) {
     getShape().mesh().C.clear().operator=(convert<double>(byteA(colors))/255.).reshape(-1, 3);
   }
 }
 
-void rai::Frame::setColor(const std::vector<double>& color) {
+void rai::Frame::setColor(const arr& color) {
   getShape().mesh().C = color;
 }
 
@@ -450,9 +456,9 @@ void rai::Frame::addAttribute(const char* key, double value) {
   ats.newNode<double>(key, {}, value);
 }
 
-void rai::Frame::setJointState(const std::vector<double>& q) {
+void rai::Frame::setJointState(const arr& q) {
   CHECK(joint, "cannot setJointState for a non-joint");
-  CHECK_EQ(q.size(), joint->dim, "given q has wrong dimension");
+  CHECK_EQ(q.N, joint->dim, "given q has wrong dimension");
   joint->calc_Q_from_q(arr{q}, 0);
   C._state_q_isGood = false;
 }
@@ -568,7 +574,7 @@ rai::Joint::Joint(Frame& f, Joint* copyJoint)
     active=copyJoint->active;
 
     if(copyJoint->mimic) {
-      mimic = frame->C.frames(copyJoint->mimic->frame->ID)->joint;
+      mimic = frame->C.frames.elem(copyJoint->mimic->frame->ID)->joint;
     }
 
     if(copyJoint->uncertainty) {
@@ -899,7 +905,6 @@ arr rai::Joint::getScrewMatrix() {
 }
 
 uint rai::Joint::getDimFromType() const {
-  if(mimic) return 0;
   if(type>=JT_hingeX && type<=JT_transZ) return 1;
   if(type==JT_transXY) return 2;
   if(type==JT_transXYPhi) return 3;
@@ -1048,7 +1053,6 @@ void rai::Joint::read(const Graph& G) {
   //coupled to another joint requires post-processing by the Graph::read!!
   if(G["mimic"]) {
     mimic=(Joint*)1;
-    dim=0;
   }
 }
 
@@ -1223,8 +1227,13 @@ void rai::Shape::glDraw(OpenGL& gl) {
 
     if(_type==rai::ST_marker) {
       if(frame.C.orsDrawMarkers) {
-        glDrawDiamond(size(0)/5., size(0)/5., size(0)/5.);
-        glDrawAxes(size(0), !gl.drawMode_idColor);
+        CHECK_GE(size.N, 1, "need a marker size");
+        if(size(0)>0.){
+          glDrawDiamond(size(0)/5., size(0)/5., size(0)/5.);
+          glDrawAxes(size(0), !gl.drawMode_idColor);
+        }else if(size(0)<0.){
+          glDrawAxis(-size(0));
+        }
       }
     } else {
       if(!mesh().V.N) {
@@ -1378,5 +1387,6 @@ void rai::Inertia::read(const Graph& G) {
 }
 
 RUN_ON_INIT_BEGIN(frame)
+FrameL::memMove=true;
 JointL::memMove=true;
 RUN_ON_INIT_END(frame)

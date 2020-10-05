@@ -53,6 +53,7 @@ def qdump__rai__Array(d, value):
     d0 = int(value["d0"])
     d1 = int(value["d1"])
     d2 = int(value["d2"])
+    M = int(value["M"])
     if nd==0:
         s = "<>"
     if nd==1:
@@ -81,6 +82,7 @@ def qdump__rai__Array(d, value):
                 i += 1
             d.putSubItem("p", value["p"])
             d.putSubItem("isReference", value["isReference"])
+            d.putSubItem("M", value["M"])
             d.putSubItem("special", value["special"])
             
 def qdump__rai__Node_typed(d, value):

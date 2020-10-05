@@ -26,7 +26,7 @@ void init_Frame(pybind11::module& m) {
 
   .def("setShape", [](ry::RyFrame& self, rai::ShapeType shape, const std::vector<double>& size) {
     WToken<rai::Configuration> token(*self.config, &self.config->data);
-    self.frame->setShape(shape, size);
+    self.frame->setShape(shape, arr(size, true));
   },
   pybind11::arg("type"),
   pybind11::arg("size")
@@ -34,7 +34,7 @@ void init_Frame(pybind11::module& m) {
 
   .def("setColor", [](ry::RyFrame& self, const std::vector<double>& color) {
     WToken<rai::Configuration> token(*self.config, &self.config->data);
-    self.frame->setColor(color);
+    self.frame->setColor( arr(color, true) );
   })
 
   .def("setPose", [](ry::RyFrame& self, const std::string& pose) {
@@ -44,12 +44,12 @@ void init_Frame(pybind11::module& m) {
 
   .def("setPosition", [](ry::RyFrame& self, const std::vector<double>& pos) {
     WToken<rai::Configuration> token(*self.config, &self.config->data);
-    self.frame->setPosition(pos);
+    self.frame->setPosition( arr(pos, true) );
   })
 
   .def("setQuaternion", [](ry::RyFrame& self, const std::vector<double>& quat) {
     WToken<rai::Configuration> token(*self.config, &self.config->data);
-    self.frame->setQuaternion(quat);
+    self.frame->setQuaternion( arr(quat, true) );
   })
 
   .def("setRelativePose", [](ry::RyFrame& self, const std::string& pose) {
@@ -59,12 +59,12 @@ void init_Frame(pybind11::module& m) {
 
   .def("setRelativePosition", [](ry::RyFrame& self, const std::vector<double>& pos) {
     WToken<rai::Configuration> token(*self.config, &self.config->data);
-    self.frame->setRelativePosition(pos);
+    self.frame->setRelativePosition( arr(pos, true) );
   })
 
   .def("setRelativeQuaternion", [](ry::RyFrame& self, const std::vector<double>& quat) {
     WToken<rai::Configuration> token(*self.config, &self.config->data);
-    self.frame->setRelativeQuaternion(quat);
+    self.frame->setRelativeQuaternion( arr(quat, true) );
   })
 
   .def("setJoint", [](ry::RyFrame& self, rai::JointType jointType) {
@@ -74,7 +74,7 @@ void init_Frame(pybind11::module& m) {
 
   .def("setJointState", [](ry::RyFrame& self, const std::vector<double>& q) {
     WToken<rai::Configuration> token(*self.config, &self.config->data);
-    self.frame->setJointState(q);
+    self.frame->setJointState( arr(q, true) );
   })
 
   .def("setContact", [](ry::RyFrame& self, int cont) {

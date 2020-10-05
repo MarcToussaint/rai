@@ -626,7 +626,7 @@ void CtrlProblem_MathematicalProgram::evaluate(arr& phi, arr& J, const arr& x) {
     kdim.prepend(0);
 
     //query the task map and check dimensionalities of returns
-    ob->feat->__phi(y, (!!J?Jy:NoArr), Ctuple);
+    ob->feat->__phi(y, Jy, Ctuple);
     if(!!J) CHECK_EQ(y.N, Jy.d0, "");
     if(!!J) CHECK_EQ(Jy.nd, 2, "");
     if(!!J) CHECK_EQ(Jy.d1, kdim.last(), "");
@@ -667,7 +667,7 @@ arr solve_optim(CtrlProblem& CP) {
   opt.stopGTolerance = 1e-4;
   opt.stopIters = 10;
 //  opt.nonStrictSteps=-1;
-  OptConstrained O(x, NoArr, *MP, -1, opt);
+  OptConstrained O(x, NoArr, *MP, opt);
   MP->getBounds(O.newton.bound_lo, O.newton.bound_up);
   O.run();
   return x;

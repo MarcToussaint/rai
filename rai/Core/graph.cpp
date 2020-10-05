@@ -49,7 +49,7 @@ stdOutPipe(ParseInfo)
 
 //-- query existing types
 inline Node* reg_findType(const char* key) {
-  NodeL types = registry()->getNodesOfType<std::shared_ptr<Type>>();
+  NodeL types = getRegistry().getNodesOfType<std::shared_ptr<Type>>();
   for(Node* ti: types) {
     if(String(ti->get<std::shared_ptr<Type>>()->typeId().name())==key) return ti;
     if(ti->matches(key)) return ti;
@@ -203,6 +203,7 @@ void Node::write(std::ostream& os, bool yamlMode) const {
     }
   } else if(isOfType<FileToken>()) {
     os <<'\'' <<getValue<FileToken>()->absolutePathName() <<'\'';
+//    os <<'\'' <<getValue<FileToken>()->name <<'\'';
   } else if(isOfType<arr>()) {
     getValue<arr>()->write(os, ", ", nullptr, "[]");
   } else if(isOfType<intA>()) {
@@ -309,7 +310,7 @@ void Graph::clear() {
 Graph& Graph::newNode(const NodeInitializer& ni) {
   Node* clone = ni.n->newClone(*this); //this appends sequentially clones of all nodes to 'this'
   for(const String& s:ni.parents) {
-    Node* p = findNode({s}, true, false);
+    Node* p = findNode(s, true, false);
     CHECK(p, "parent " <<p <<" of " <<*clone <<" does not exist!");
     clone->addParent(p);
   }
@@ -327,7 +328,7 @@ Graph& Graph::newSubgraph(const char* key, const NodeL& parents, const Graph& x)
 Node_typed<int>* Graph::newNode(const uintA& parentIdxs) {
   NodeL parents(parentIdxs.N);
   for(uint i=0; i<parentIdxs.N; i++) parents(i) = NodeL::elem(parentIdxs(i));
-  return newNode<int>({STRING(NodeL::N)}, parents, 0);
+  return newNode<int>(STRING(NodeL::N), parents, 0);
 }
 
 void Graph::appendDict(const std::map<std::string, std::string>& dict) {
@@ -663,10 +664,12 @@ void Graph::read(std::istream& is, bool parseInfo) {
 void writeFromStream(std::ostream& os, std::istream& is, istream::pos_type beg, istream::pos_type end) {
   istream::pos_type here=is.tellg();
   is.seekg(beg);
-  char c;
-  for(uint i=end-beg; i--;) {
-    is.get(c);
-    os <<c;
+  if(beg>end){
+    char c;
+    for(int i=int(beg - end); i--;) {
+      is.get(c);
+      os <<c;
+    }
   }
   is.seekg(here);
 }
@@ -684,7 +687,7 @@ void readNodeParents(Graph& G, std::istream& is, NodeL& parents, ParseInfo& pinf
   pinfo.parents_beg=is.tellg();
   for(uint j=0;; j++) {
     if(!str.read(is, " \t\n\r,", " \t\n\r,)", false)) break;
-    Node* e = G.findNode({str}, true, false); //important: recurse up
+    Node* e = G.findNode(str, true, false); //important: recurse up
     if(e) { //sucessfully found
       parents.append(e);
       pinfo.parents_end=is.tellg();
@@ -1303,19 +1306,14 @@ int distance(NodeL A, NodeL B) {
   return -1;
 }
 
-} //namespace
-
 //===========================================================================
 //
 // global singleton TypeRegistrationSpace
 //
 
-Singleton<rai::Graph> registry;
-
-struct RegistryInitializer {
-  Mutex lock;
-//  Graph cfgParameters;
-  RegistryInitializer() {
+struct Registry {
+  rai::Graph registry;
+  Registry() {
     int n;
     StringA tags;
     for(n=1; n<rai::argc; n++) {
@@ -1324,10 +1322,10 @@ struct RegistryInitializer {
         if(n+1<rai::argc && rai::argv[n+1][0]!='-') {
           rai::String value;
           value <<':' <<rai::argv[n+1];
-          registry()->readNode(value, tags, key, false, false);
+          registry.readNode(value, tags, key, false, false);
           n++;
         } else {
-          registry()->newNode<bool>(key, {}, true);
+          registry.newNode<bool>(key, {}, true);
         }
       } else {
         RAI_MSG("non-parsed cmd line argument:" <<rai::argv[n]);
@@ -1335,43 +1333,45 @@ struct RegistryInitializer {
     }
 
     rai::String cfgFileName="rai.cfg";
-    if(registry()()["cfg"]) cfgFileName = registry()->get<rai::String>("cfg");
+    if(registry["cfg"]) cfgFileName = registry.get<rai::String>("cfg");
     LOG(3) <<"opening config file '" <<cfgFileName <<"'";
     ifstream fil;
     fil.open(cfgFileName);
     if(fil.good()) {
-      fil >>registry();
+      fil >>registry;
     } else {
       LOG(3) <<" - failed";
     }
 
   }
-  ~RegistryInitializer() {
+  ~Registry() {
   }
 };
 
-Singleton<RegistryInitializer> registryInitializer;
+Singleton<Registry> registry;
 
-bool getParameterFromGraph(const std::type_info& type, void* data, const char* key) {
-  registryInitializer()();
-  rai::Node* n = registry()->findNodeOfType(type, {key});
-  if(n) {
-    n->copyValueInto(data);
-    return true;
-  } else {
-    n = registry()->findNode({key});
-    if(n && n->isOfType<double>()) {
-      if(type==typeid(int)) { *((int*)data) = (int)n->get<double>(); return true; }
-      if(type==typeid(uint)) { *((uint*)data) = (uint)n->get<double>(); return true; }
-      if(type==typeid(bool)) { *((bool*)data) = (bool)n->get<double>(); return true; }
-    }
-    if(n && n->isOfType<rai::String>()) {
-      NIY;
-      //      n->get<rai::String>() >>x;
-    }
-  }
-  return false;
-}
+rai::Graph& getRegistry(){ return registry()->registry; }
+
+} //namespace
+
+//  registry()->findNodeOfType(type, {key});
+//  if(n) {
+//    n->copyValueInto(data);
+//    return true;
+//  } else {
+//    n = registry()->findNode({key});
+//    if(n && n->isOfType<double>()) {
+//      if(type==typeid(int)) { *((int*)data) = (int)n->get<double>(); return true; }
+//      if(type==typeid(uint)) { *((uint*)data) = (uint)n->get<double>(); return true; }
+//      if(type==typeid(bool)) { *((bool*)data) = (bool)n->get<double>(); return true; }
+//    }
+//    if(n && n->isOfType<rai::String>()) {
+//      NIY;
+//      //      n->get<rai::String>() >>x;
+//    }
+//  }
+//  return false;
+//}
 
 //===========================================================================
 

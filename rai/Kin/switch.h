@@ -48,7 +48,7 @@ struct KinematicSwitch {
                   int _timeOfApplication=0,
                   const rai::Transformation& jFrom=NoTransformation, const rai::Transformation& jTo=NoTransformation);
   void setTimeOfApplication(double time, bool before, int stepsPerPhase, uint T);
-  Frame* apply(Configuration& K);
+  Frame* apply(FrameL& frames);
   rai::String shortTag(const Configuration* G) const;
   void write(std::ostream& os, rai::Configuration* K=nullptr) const;
 };
@@ -59,3 +59,6 @@ stdOutPipe(rai::KinematicSwitch)
 
 int conv_time2step(double time, uint stepsPerPhase);
 double conv_step2time(int step, uint stepsPerPhase);
+intA conv_times2tuples(const arr& times, uint order, int stepsPerPhase, uint T,
+                       int deltaFromStep, int deltaToStep);
+

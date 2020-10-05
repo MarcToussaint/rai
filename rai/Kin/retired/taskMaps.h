@@ -19,7 +19,7 @@
 #include "TM_AboveBox.h"
 #include "TM_AlignStacking.h"
 #include "TM_linTrans.h"
-#include "TM_proxy.h"
+#include "F_collisions.h"
 #include "TM_Align.h"
 
 //===========================================================================

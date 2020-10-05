@@ -27,6 +27,10 @@ AssimpLoader::AssimpLoader(const std::string& path, bool flipYZ) {
 
   directory = path.substr(0, path.find_last_of('/'));
 
+  if(verbose>0){
+    LOG(0) <<"loading " <<path <<" from directory " <<directory;
+  }
+
   arr T = eye(4);
   if(flipYZ) {
     T(1, 1) = T(2, 2) = 0.;
@@ -65,8 +69,9 @@ void AssimpLoader::loadNode(const aiNode* node, const aiScene* scene, arr T) {
   arr R = T.sub(0, 2, 0, 2);
   arr p = T.sub(0, 2, 3, 3).reshape(3);
 
-//  for(uint i=0;i<depth;i++) cout <<'+';
-//  cout <<" loading node '" <<node->mName.C_Str() <<"' -- transform: T=\n" <<T <<"\n p=" <<p <<" R=\n" <<R <<endl;
+  if(verbose>0){
+    LOG(0) <<" loading node '" <<node->mName.C_Str() <<" of parent " <<(node->mParent?node->mParent->mName.C_Str():"[nil]") <<" -- transform: T=\n" <<T;
+  }
 
   for(unsigned int i = 0; i < node->mNumMeshes; i++)  {
     aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
@@ -88,7 +93,9 @@ void AssimpLoader::loadNode(const aiNode* node, const aiScene* scene, arr T) {
 }
 
 rai::Mesh AssimpLoader::loadMesh(const aiMesh* mesh, const aiScene* scene) {
-  //      cout <<"loading mesh: #V=" <<mesh->mNumVertices <<endl;
+  if(verbose>0){
+    LOG(0) <<"loading mesh: #V=" <<mesh->mNumVertices;
+  }
   rai::Mesh M;
   M.V.resize(mesh->mNumVertices, 3);
   if(mesh->mNormals) M.Vn.resize(mesh->mNumVertices, 3);
@@ -126,13 +133,17 @@ rai::Mesh AssimpLoader::loadMesh(const aiMesh* mesh, const aiScene* scene) {
   }
 
   uint nTex = material->GetTextureCount(aiTextureType_DIFFUSE);
-  //    cout <<"material: #textures=" <<nTex <<endl;
+  if(verbose>0){
+    cout <<"material: #textures=" <<nTex <<endl;
+  }
   if(loadTextures && nTex) {
     CHECK_EQ(nTex, 1, "");
     aiString str;
     material->GetTexture(aiTextureType_DIFFUSE, 0, &str);
 
-    //      cout <<"texture=" <<str.C_Str() <<endl;
+    if(verbose>0){
+      cout <<"texture=" <<str.C_Str() <<endl;
+    }
 
     std::string filename = this->directory + '/' + std::string(str.C_Str());
 

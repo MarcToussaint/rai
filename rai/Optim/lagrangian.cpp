@@ -195,11 +195,14 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
       if(nu       && tt_x.p[i]==OT_eq) coeff.p[i] += hpenalty_dd(phi_x.p[i]);                        //h-penalty
     }
     arr tmp = J_x;
-    if(!isSparseMatrix(tmp)) {
+    if(!isSpecial(tmp)) {
       for(uint i=0; i<phi_x.N; i++) tmp[i]() *= sqrt(coeff.p[i]);
-    } else {
+    } else if(isSparseMatrix(tmp)){
       arr sqrtCoeff = sqrt(coeff);
       tmp.sparse().rowWiseMult(sqrtCoeff);
+    } else if(isRowShifted(tmp)){
+      arr sqrtCoeff = sqrt(coeff);
+      tmp.rowShifted().rowWiseMult(sqrtCoeff);
     }
     HL = comp_At_A(tmp); //Gauss-Newton type!
 
@@ -266,8 +269,8 @@ void LagrangianProblem::aulaUpdate(bool anyTimeVariant, double lambdaStepsize, d
     arr A;
     rai::RowShifted* Aaux=nullptr, *Jaux=nullptr;
     if(isRowShifted(J_x)) {
-      Aaux = makeRowShifted(A, 0, J_x.d1, x.N);
-      Jaux = castRowShifted(J_x);
+      Aaux = &A.rowShifted(); Aaux->resize(0, x.N, J_x.d1);
+      Jaux = &J_x.rowShifted();
     }
     //append rows of J_x to A if constraint is active
     for(uint i=0; i<lambda.N; i++) {

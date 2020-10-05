@@ -13,6 +13,7 @@
 
 struct KinPathViewer;
 struct LGP_Tree;
+struct DisplayThread;
 typedef rai::Array<rai::Transformation> TransformationA;
 
 void initFolStateFromKin(FOL_World& L, const rai::Configuration& K);
@@ -39,7 +40,7 @@ struct LGP_Tree : GLDrawer {
   bool displayTree=true;
   BoundType displayBound=BD_seqPath;
   bool collisions=false;
-  struct DisplayThread* dth=nullptr;
+  shared_ptr<DisplayThread> dth;
   rai::String dataPath;
   arr cameraFocus;
   bool firstTimeDisplayTree=true;

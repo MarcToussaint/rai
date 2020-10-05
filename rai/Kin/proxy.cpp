@@ -27,11 +27,10 @@ void rai::Proxy::copy(const rai::Configuration& C, const rai::Proxy& p) {
   normal = p.normal;
   d = p.d;
   colorCode = p.colorCode;
+//  if(p.collision) collision = p.collision;
 }
 
-void rai::Proxy::calc_coll(const Configuration& C) {
-  CHECK_EQ(&a->C, &C, "");
-  CHECK_EQ(&b->C, &C, "");
+void rai::Proxy::calc_coll() {
   rai::Shape* s1 = a->shape;
   rai::Shape* s2 = b->shape;
   CHECK(s1 && s2, "");
@@ -45,9 +44,11 @@ void rai::Proxy::calc_coll(const Configuration& C) {
   collision = make_shared<PairCollision>(*m1, *m2, s1->frame.ensure_X(), s2->frame.ensure_X(), r1, r2);
 
   d = collision->distance-collision->rad1-collision->rad2;
+  normal = collision->normal;
   posA = collision->p1;
   posB = collision->p2;
-  normal = collision->normal;
+  if(collision->rad1>0.) posA -= collision->rad1*normal;
+  if(collision->rad2>0.) posB += collision->rad2*normal;
 }
 
 typedef rai::Array<rai::Proxy*> ProxyL;
@@ -60,7 +61,7 @@ void rai::Proxy::glDraw(OpenGL& gl) {
   } else {
     glLoadIdentity();
     if(!colorCode) {
-      if(d>0.) glColor(.8, .2, .2);
+      if(d>0.) glColor(.2, .8, .2);
       else glColor(1, 0, 0);
     } else glColor(colorCode);
     glBegin(GL_LINES);

@@ -397,14 +397,11 @@ void PairCollision::kinNormal(arr& y, arr& J,
                               const arr& Jx1, const arr& Jx2) {
   y = normal;
   if(!!J) {
-    J.resize(3, Jp1.d1).setZero();
     if(simplexType(1, 3)) {
       J = crossProduct(Jx2, y);
-    }
-    if(simplexType(3, 1)) {
+    } else if(simplexType(3, 1)) {
       J = crossProduct(Jx1, y);
-    }
-    if(simplexType(2, 2)) {
+    } else if(simplexType(2, 2)) {
       arr a = simplex1[1]-simplex1[0];  a/=length(a);
       arr b = simplex2[1]-simplex2[0];  b/=length(b);
       double ab=scalarProduct(a, b);
@@ -413,28 +410,36 @@ void PairCollision::kinNormal(arr& y, arr& J,
         double sign = ::sign(scalarProduct(normal, crossProduct(b, a)));
         J = ((sign/nn) * (eye(3, 3) - normal*~normal)) * (skew(b) * crossProduct(Jx1, a) - skew(a) * crossProduct(Jx2, b));
       }
-    }
-    if(simplexType(2, 1)) {
+    } else if(simplexType(2, 1)) {
       y = p1 - p2;
       J = Jp1 - Jp2;
       normalizeWithJac(y, J);
       arr a = simplex1[1]-simplex1[0];  a/=length(a);
-      J -= a*(~a*J);
-      J += a*(~a*crossProduct(Jx1, y));
-    }
-    if(simplexType(1, 2)) {
+      arr aa = a^a;
+      J -= aa*J;
+      J += aa*crossProduct(Jx1, y);
+    } else if(simplexType(1, 2)) {
       y = p1 - p2;
       J = Jp1 - Jp2;
       normalizeWithJac(y, J);
       arr b = simplex2[1]-simplex2[0];  b/=length(b);
-      J -= b*(~b*J);
-      J += b*(~b*crossProduct(Jx2, y));
-    }
-    if(simplexType(1, 1)) {
+      arr bb = b^b;
+      J -= bb*J;
+      J += bb*crossProduct(Jx2, y);
+    } else if(simplexType(1, 1)) {
       y = p1 - p2;
       J = Jp1 - Jp2;
       normalizeWithJac(y, J);
-    }
+    } else if(simplexType(2, 3)) {
+      J = Jp1;
+      J.setZero();
+    } else if(simplexType(3, 2)) {
+      J = Jp1;
+      J.setZero();
+    } else if(simplexType(3, 3)) {
+      J = Jp1;
+      J.setZero();
+    } else NIY;
     checkNan(J);
   }
 }
@@ -446,15 +451,15 @@ void PairCollision::kinVector(arr& y, arr& J,
   if(!!J) {
     J = Jp1 - Jp2;
     if(simplexType(1, 3)) {
-      J = normal*(~normal*J);
+      J = (normal^normal)*J;
       J += crossProduct(Jx2, p1-p2);
     }
     if(simplexType(3, 1)) {
-      J = normal*(~normal*J);
+      J = (normal^normal)*J;
       J += crossProduct(Jx1, p1-p2);
     }
     if(simplexType(2, 2)) {
-      J = normal*(~normal*J);
+      J = (normal^normal)*J;
       arr a = simplex1[1]-simplex1[0];  a/=length(a);
       arr b = simplex2[1]-simplex2[0];  b/=length(b);
       double ab=scalarProduct(a, b);
@@ -466,13 +471,15 @@ void PairCollision::kinVector(arr& y, arr& J,
     }
     if(simplexType(2, 1)) {
       arr a = simplex1[1]-simplex1[0];  a/=length(a);
-      J -= a*(~a*J);
-      J += a*(~a*crossProduct(Jx1, p1-p2));
+      arr aa = a^a;
+      J -= aa*J;
+      J += aa*crossProduct(Jx1, p1-p2);
     }
     if(simplexType(1, 2)) {
       arr b = simplex2[1]-simplex2[0];  b/=length(b);
-      J -= b*(~b*J);
-      J += b*(~b*crossProduct(Jx2, p1-p2));
+      arr bb = b^b;
+      J -= bb*J;
+      J += bb*crossProduct(Jx2, p1-p2);
     }
     checkNan(J);
   }
@@ -484,7 +491,7 @@ void PairCollision::kinVector(arr& y, arr& J,
     double fac = (distance-rad)/(distance+eps);
     if(!!J) {
       arr d_fac = ((1.-fac)/(distance+eps)) *((~normal)*J);
-      J = J*fac + y*d_fac;
+      J = J*fac + y.reshape(3,1)*d_fac;
       checkNan(J);
     }
     y *= fac;
@@ -497,7 +504,7 @@ void PairCollision::kinPointP1(arr& y, arr& J, const arr& Jp1, const arr& Jp2, c
     J = Jp1;
     if(simplexType(3, 1)) {
       J = Jp2;
-      J += normal*(~normal*(Jp1-Jp2));
+      J += (normal^normal)*(Jp1-Jp2);
       J += crossProduct(Jx1, p1-p2);
     }
     if(simplexType(2, 2)) {
@@ -509,7 +516,7 @@ void PairCollision::kinPointP1(arr& y, arr& J, const arr& Jp1, const arr& Jp2, c
       arr c = b*ab-a;
       double ac = scalarProduct(a, c);
       if(fabs(ac)>1e-10) { //otherwise the Jacobian is singular...
-        J += (1./ac) * a*(~c*(Jp2-Jp1));
+        J += ((1./ac) * (a^c))*(Jp2-Jp1);
 
         arr x = p1-p2;
         arr Jc = (b*~b-eye(3, 3))* crossProduct(Jx1, a) + (ab*eye(3, 3) + b*~a - 2.*a*~b)*crossProduct(Jx2, b);
@@ -519,8 +526,9 @@ void PairCollision::kinPointP1(arr& y, arr& J, const arr& Jp1, const arr& Jp2, c
     }
     if(simplexType(2, 1)) {
       arr a = simplex1[1]-simplex1[0];  a/=length(a);
-      J += a*(~a*(Jp2-Jp1));
-      J += a*(~a*crossProduct(Jx1, p1-p2));
+      arr aa = a^a;
+      J += aa*(Jp2-Jp1);
+      J += aa*crossProduct(Jx1, p1-p2);
     }
     checkNan(J);
   }
@@ -541,7 +549,7 @@ void PairCollision::kinPointP2(arr& y, arr& J, const arr& Jp1, const arr& Jp2, c
     J = Jp2;
     if(simplexType(1, 3)) {
       J = Jp1;
-      J += normal*(~normal*(Jp2-Jp1));
+      J += (normal^normal)*(Jp2-Jp1);
       J += crossProduct(Jx2, p2-p1);
     }
     if(simplexType(2, 2)) {
@@ -553,7 +561,7 @@ void PairCollision::kinPointP2(arr& y, arr& J, const arr& Jp1, const arr& Jp2, c
       arr c = b*ab-a;
       double ac = scalarProduct(a, c);
       if(fabs(ac)>1e-10) { //otherwise the Jacobian is singular...
-        J += (1./ac) * a*(~c*(Jp1-Jp2));
+        J += ((1./ac) * (a^c))*(Jp1-Jp2);
 
         arr x = p2-p1;
         arr Jc = (b*~b-eye(3, 3))* crossProduct(Jx2, a) + (ab*eye(3, 3) + b*~a - 2.*a*~b)*crossProduct(Jx1, b);
@@ -563,8 +571,9 @@ void PairCollision::kinPointP2(arr& y, arr& J, const arr& Jp1, const arr& Jp2, c
     }
     if(simplexType(1, 2)) {
       arr b = simplex2[1]-simplex2[0];  b/=length(b);
-      J += b*(~b*(Jp1-Jp2));
-      J += b*(~b*crossProduct(Jx2, p2-p1));
+      arr bb = b^b;
+      J += bb*(Jp1-Jp2);
+      J += bb*crossProduct(Jx2, p2-p1);
     }
     checkNan(J);
   }

@@ -7,7 +7,7 @@
 #
 
 # only UNCOMMENT some of the following lines
-# (they are already set =1 in the components that refer to them)
+# (they are already set =1 in the components that depend on them)
 
 #OPTIM = debug
 #OPTIM = fast_debug
@@ -23,6 +23,7 @@ PNG = 0
 #EIGEN = 0
 CERES = 0
 NLOPT = 0
+IPOPT = 0
 
 FCL = 0
 PCL = 0

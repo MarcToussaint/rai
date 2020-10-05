@@ -48,8 +48,8 @@ arr NLOptInterface::solve() {
   opt.set_min_objective(_f, this);
   opt.set_xtol_abs(1e-4);
 //  opt.set_ftol_abs(1e-3);
-  if(bounds_lo.N==x.N) opt.set_lower_bounds(bounds_lo);
-  if(bounds_up.N==x.N) opt.set_upper_bounds(bounds_up);
+  if(bounds_lo.N==x.N) opt.set_lower_bounds(bounds_lo.vec());
+  if(bounds_up.N==x.N) opt.set_upper_bounds(bounds_up.vec());
 
   rai::Array<FuncCallData> funcCallData(featureTypes.N);
   for(uint i=0; i<featureTypes.N; i++) {
@@ -62,7 +62,9 @@ arr NLOptInterface::solve() {
 
   double fval;
   try {
-    nlopt::result R = opt.optimize(x, fval);
+    std::vector<double> x_vec = x.vec();
+    nlopt::result R = opt.optimize(x_vec, fval);
+    x = x_vec;
   } catch(const std::runtime_error& err) {
     cout <<"NLOPT terminated with " <<err.what() <<endl;
   }
@@ -70,11 +72,11 @@ arr NLOptInterface::solve() {
   return x;
 }
 
-double NLOptInterface::f(const std::vector<double>& _x, std::vector<double>& _grad) {
+double NLOptInterface::f(const arr& _x, arr& _grad) {
   if(x!=_x) { x=_x;  P.evaluate(phi_x, J_x, x); }
   CHECK_EQ(phi_x.N, featureTypes.N, "");
   double fval=0;
-  arr grad=zeros(_grad.size());
+  arr grad=zeros(_grad.N);
   for(uint i=0; i<phi_x.N; i++) {
     if(featureTypes.elem(i)==OT_f) { fval += phi_x.elem(i);  if(grad.N) grad += J_x[i]; }
     if(featureTypes.elem(i)==OT_sos) { double y = phi_x.elem(i);  fval += y*y;  if(grad.N) grad += (2.*y) * J_x[i]; }
@@ -84,31 +86,37 @@ double NLOptInterface::f(const std::vector<double>& _x, std::vector<double>& _gr
   return fval;
 }
 
-double NLOptInterface::g(const std::vector<double>& _x, std::vector<double>& _grad, uint feature) {
+double NLOptInterface::g(const arr& _x, arr& _grad, uint feature) {
   if(x!=_x) { x=_x;  P.evaluate(phi_x, J_x, x); }
   CHECK_EQ(featureTypes(feature), OT_ineq, "");
-  for(uint i=0; i<_grad.size(); i++) _grad[i] = J_x(feature, i);
+  for(uint i=0; i<_grad.N; i++) _grad[i] = J_x(feature, i);
   return phi_x.elem(feature);
 
 }
 
-double NLOptInterface::h(const std::vector<double>& _x, std::vector<double>& _grad, uint feature) {
+double NLOptInterface::h(const arr& _x, arr& _grad, uint feature) {
   if(x!=_x) { x=_x;  P.evaluate(phi_x, J_x, x); }
   CHECK_EQ(featureTypes(feature), OT_eq, "");
-  for(uint i=0; i<_grad.size(); i++) _grad[i] = J_x(feature, i);
+  for(uint i=0; i<_grad.N; i++) _grad[i] = J_x(feature, i);
   return phi_x.elem(feature);
 }
 
-double NLOptInterface::_f(const std::vector<double>& x, std::vector<double>& grad, void* f_data) {
+double NLOptInterface::_f(const std::vector<double>& _x, std::vector<double>& _grad, void* f_data) {
+  arr x(_x, true);
+  arr grad(_grad, true);
   return ((NLOptInterface*)f_data) -> f(x, grad);
 }
 
-double NLOptInterface::_g(const std::vector<double>& x, std::vector<double>& grad, void* f_data) {
+double NLOptInterface::_g(const std::vector<double>& _x, std::vector<double>& _grad, void* f_data) {
+  arr x(_x, true);
+  arr grad(_grad, true);
   FuncCallData* d = (FuncCallData*)f_data;
   return d->I->g(x, grad, d->feature);
 }
 
-double NLOptInterface::_h(const std::vector<double>& x, std::vector<double>& grad, void* f_data) {
+double NLOptInterface::_h(const std::vector<double>& _x, std::vector<double>& _grad, void* f_data) {
+  arr x(_x, true);
+  arr grad(_grad, true);
   FuncCallData* d = (FuncCallData*)f_data;
   return d->I->h(x, grad, d->feature);
 }
