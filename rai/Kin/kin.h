@@ -103,6 +103,7 @@ struct Configuration : GLDrawer {
   Frame* addFile(const char* filename, const char* parentOfRoot, const rai::Transformation& relOfRoot);
   void addAssimp(const char* filename);
   void addConfigurationCopy(const FrameL& F, const ForceExchangeL& _forces={});
+  void addConfigurationCopy(const Configuration& C){ addConfigurationCopy(C.frames, C.forces); }
 
   /// @name access
   Frame* operator[](const char* name) { return getFrameByName(name, true); }
@@ -173,6 +174,7 @@ struct Configuration : GLDrawer {
   void setJointState(const arr& _q);
   void setJointState(const arr& _q, const FrameL& F, bool activesOnly=true);
   void setJointState(const arr& _q, const uintA& F){ setJointState(_q, getFrames(F), true); }
+  void setJointStateSlice(const arr& _q, uint t, bool activesOnly=true);
   void setFrameState(const arr& X){ setFrameState(X, frames); }
   void setFrameState(const arr& X, const FrameL& F);
   void setTimes(double t);
@@ -218,13 +220,14 @@ struct Configuration : GLDrawer {
   arr getHmetric() const;
 
   /// @name extensions on demand
-  ConfigurationViewer& gl(const char* window_title=nullptr, bool offscreen=false);
+  shared_ptr<ConfigurationViewer>& gl(const char* window_title=nullptr, bool offscreen=false);
   shared_ptr<SwiftInterface> swift();
   shared_ptr<FclInterface> fcl();
   void swiftDelete();
   PhysXInterface& physx();
   OdeInterface& ode();
   FeatherstoneInterface& fs();
+  bool hasView();
   int watch(bool pause=false, const char* txt=nullptr);
   void saveVideoPic(uint& t, const char* pathPrefix="vid/");
   void glAdd(void (*call)(void*, OpenGL&), void* classP);

@@ -22,11 +22,12 @@ CXXFLAGS += -fopenmp -DOPENMP
 endif
 
 ifeq ($(PYBIND),1)
-DEPEND_UBUNTU += pybind11-dev python3-dev python3 python3-numpy python3-pip python3-distutils
+DEPEND_UBUNTU += python3-dev python3 python3-numpy python3-pip python3-distutils
+#pybind11-dev NO! don't use the ubuntu package. Instead use:
+#  pip3 install --user pybind11
 CXXFLAGS += -DRAI_PYBIND `python3-config --cflags` `python3 -m pybind11 --includes`
-# requires: pip3 install --user pybind11
 LIBS += `python3-config --ldflags`
-CPATH   := $(CPATH):$(BASE)/../pybind11/include::$(BASE)/../../pybind11/include
+#CPATH := $(CPATH):$(BASE)/../pybind11/include::$(BASE)/../../pybind11/include
 endif
 
 ifeq ($(X11),1)

@@ -40,7 +40,7 @@ void init_Operate(pybind11::module& m) {
     return self.R->wait();
   })
 
-  .def("getJointPositions", [](ry::RyOperate& self, ry::Config& C) {
+  .def("getJointPositions", [](ry::RyOperate& self, shared_ptr<rai::Configuration>& C) {
     arr q = self.R->getJointPositions();
     return pybind11::array(q.dim(), q.p);
   })
@@ -57,8 +57,8 @@ void init_Operate(pybind11::module& m) {
     self.R->sendToReal(activate);
   })
 
-  .def("sync", [](ry::RyOperate& self, ry::Config& C) {
-    self.R->sync(C.set());
+  .def("sync", [](ry::RyOperate& self, shared_ptr<rai::Configuration>& C) {
+    self.R->sync(*C);
   })
   ;
 }

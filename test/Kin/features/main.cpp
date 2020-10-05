@@ -33,15 +33,20 @@ void testFeature() {
 
   C.setTimes(.1);
 
+  arr q1 = C.getJointState();
+
   rai::Configuration Ctuple;
-  Ctuple.addConfigurationCopy(C.frames);
-  Ctuple.addConfigurationCopy(C.frames);
-  Ctuple.addConfigurationCopy(C.frames);
+  Ctuple.addConfigurationCopy(C);
+  Ctuple.addConfigurationCopy(C);
+  Ctuple.addConfigurationCopy(C);
   Ctuple.jacMode = rai::Configuration::JM_rowShifted;
 
   uint n=Ctuple.getJointStateDimension();
   arr q=Ctuple.getJointState();
   Ctuple.setJointState(q);
+
+  arr q0 = C.getJointState();
+  Ctuple.setJointStateSlice(q0, 1);
 
   rai::Array<std::shared_ptr<Feature>> F;
   F.append(make_shared<F_PairCollision>(F_PairCollision::_negScalar)) ->setFrameIDs({"obj1", "obj2"}, C);

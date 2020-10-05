@@ -1,6 +1,7 @@
 BASE   = ../..
 NAME   = $(shell basename `pwd`)
-OUTPUT = lib$(NAME).so
+EXT    = $(shell python3-config --extension-suffix)
+OUTPUT = lib$(NAME)$(EXT)
 
 DEPEND = Core Kin KOMO LGP Operate RosCom Perception
 

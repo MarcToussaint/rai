@@ -52,6 +52,19 @@ void testJacobianInFile(const char* filename, const char* shape){
 }
 
 //===========================================================================
+
+void TEST(ViewerUpdate){
+
+  rai::Configuration C("../../../../rai-robotModels/pr2/pr2.g");
+  C.watch();
+
+  for(uint k=0;k<10;k++){
+    C.setJointState(C.getJointState() + .1);
+    rai::wait();
+  }
+}
+
+//===========================================================================
 //
 // Jacobian test
 //
@@ -347,7 +360,7 @@ void TEST(PlayTorqueSequenceInOde){
     G.ode().step(0.03);
     G.ode().importStateFromOde();
     G.getJointState(Xt[t](),Vt[t]());
-    G.gl().text.clear() <<"play a random torque sequence [using ODE] -- time " <<t;
+    G.gl()->text.clear() <<"play a random torque sequence [using ODE] -- time " <<t;
     G.watch();
   }
 }
@@ -358,7 +371,7 @@ void TEST(MeshShapesInOde){
     //G.clearJointErrors(); exportStateToOde(C,); //try doing this without clearing joint errors...!
     G.ode().step(0.03);
     G.ode().importStateFromOde();
-    G.gl().timedupdate(.01);
+    G.gl()->timedupdate(.01);
   }
 }
 #endif
@@ -386,7 +399,7 @@ void TEST(FollowRedundantSequence){
   G.kinematicsPos(y, NoArr, endeff, rel);
   for(t=0;t<T;t++) Z[t]() += y; //adjust coordinates to be inside the arm range
   plot->Line(Z);
-  G.gl().add(plot()());
+  G.gl()->add(plot()());
   G.watch(false);
   //-- follow the trajectory kinematically
   for(t=0;t<T;t++){
@@ -399,7 +412,7 @@ void TEST(FollowRedundantSequence){
     G.setJointState(x);
 //    cout <<J * invJ <<endl <<x <<endl <<"tracking error = " <<maxDiff(Z[t],y) <<endl;
     G.watch(false, STRING("follow redundant trajectory -- time " <<t));
-    //G.gl().timedupdate(.01);
+    //G.gl()->timedupdate(.01);
   }
 }
 
@@ -543,7 +556,7 @@ void TEST(ContactDynamics){
     cross=rai::rk4dd_switch(q,qd,s,q,qd,s,ddf_joints,switchfunction,dt,1e-4);
     //G.reportProxies();
     cout <<"*** s = " <<s <<endl;
-    G.gl().text.clear() <<"t=" <<t <<"  using RK4_switch,  energy=" <<G.getEnergy();
+    G.gl()->text.clear() <<"t=" <<t <<"  using RK4_switch,  energy=" <<G.getEnergy();
     //if(cross) G.watch(true);
     G.watch(false);
   }
@@ -575,7 +588,7 @@ void TEST(BlenderImport){
   G.glAdd(drawTrimesh,&mesh);
   G.watch(true, "mesh only");
   G.glAdd(rai::glDrawGraph,&bl);
-  G.gl().text="testing blender import";
+  G.gl()->text="testing blender import";
   animateConfiguration(bl,gl);
 }
 #endif
@@ -625,6 +638,7 @@ int MAIN(int argc,char **argv){
   testCopy();
   testGraph();
   testPlayStateSequence();
+  testViewerUpdate();
   testKinematics();
   testQuaternionKinematics();
   testKinematicSpeed();

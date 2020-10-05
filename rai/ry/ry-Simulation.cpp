@@ -28,8 +28,8 @@ struct SimulationState {
 void init_Simulation(pybind11::module& m) {
   pybind11::class_<rai::Simulation, std::shared_ptr<rai::Simulation>>(m, "Simulation")
 
-  .def(pybind11::init([](ry::Config& C, rai::Simulation::SimulatorEngine engine, int verbose) {
-    return make_shared<rai::Simulation>(C.set(), engine, verbose);
+  .def(pybind11::init([](shared_ptr<rai::Configuration>& C, rai::Simulation::SimulatorEngine engine, int verbose) {
+    return make_shared<rai::Simulation>(*C, engine, verbose);
   }))
 
   .def("step", &rai::Simulation::step,

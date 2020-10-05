@@ -19,20 +19,20 @@ void init_PhysX(pybind11::module& m) {
 
       .def("step", &PhysXInterface::step)
 
-  .def("step", [](PhysXInterface& self, ry::Config& C) {
-    self.pushKinematicStates(C.get()->frames);
+  .def("step", [](PhysXInterface& self, shared_ptr<rai::Configuration>& C) {
+    self.pushKinematicStates(C->frames);
     self.step();
-    self.pullDynamicStates(C.set()->frames);
+    self.pullDynamicStates(C->frames);
   })
 
-  .def("getState", [](PhysXInterface& self, ry::Config& C) {
+  .def("getState", [](PhysXInterface& self, shared_ptr<rai::Configuration>& C) {
     arr V;
-    self.pullDynamicStates(C.set()->frames, V);
+    self.pullDynamicStates(C->frames, V);
     return pybind11::array(V.dim(), V.p);
   })
 
-  .def("setState", [](PhysXInterface& self, ry::Config& C, const pybind11::array_t<double>& velocities) {
-    self.pushFullState(C.get()->frames, numpy2arr(velocities));
+  .def("setState", [](PhysXInterface& self, shared_ptr<rai::Configuration>& C, const pybind11::array_t<double>& velocities) {
+    self.pushFullState(C->frames, numpy2arr(velocities));
   })
   ;
 }

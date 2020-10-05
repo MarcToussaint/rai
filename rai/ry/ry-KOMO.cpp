@@ -141,9 +141,9 @@ void init_KOMO(pybind11::module& m) {
   pybind11::arg("addInitializationNoise")=0.01)
 
 //-- reinitialize with configuration
-  .def("setConfigurations", [](std::shared_ptr<KOMO>& self, ry::Config& C) {
+  .def("setConfigurations", [](std::shared_ptr<KOMO>& self, shared_ptr<rai::Configuration>& C) {
     for(rai::Configuration* c:self->configurations) {
-      c->setFrameState(C.get()->getFrameState());
+      c->setFrameState(C->getFrameState());
     }
   })
 
@@ -192,10 +192,9 @@ void init_KOMO(pybind11::module& m) {
 //-- display
 
   .def("view", [](std::shared_ptr<KOMO>& self) {
-    ry::ConfigurationViewer view;
-    view.view = make_shared<rai::ConfigurationViewer>();
-    view.view->setConfiguration(self->world);
-    view.view->setPath(self->getPath_frames(), "KOMO state");
+    auto view = make_shared<rai::ConfigurationViewer>();
+    view->setConfiguration(self->world);
+    view->setPath(self->getPath_frames(), "KOMO state");
     return view;
   })
   ;

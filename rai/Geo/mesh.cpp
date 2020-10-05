@@ -2342,7 +2342,7 @@ inline double __scalarProduct(const double* p1, const double* p2) {
 uint rai::Mesh::support(const double* dir) {
 #if 1
 
-  arr _dir(dir, 3);
+  arr _dir(dir, 3, true);
   arr q = V*_dir;
   return argmax(q);
 

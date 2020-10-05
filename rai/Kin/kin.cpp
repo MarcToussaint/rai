@@ -123,7 +123,7 @@ void computeMeshGraphs(FrameL& frames, bool force) {
 
 namespace rai {
 struct sConfiguration {
-  unique_ptr<ConfigurationViewer> viewer;
+  shared_ptr<ConfigurationViewer> viewer;
   shared_ptr<SwiftInterface> swift;
   shared_ptr<FclInterface> fcl;
   unique_ptr<PhysXInterface> physx;
@@ -774,6 +774,7 @@ void rai::Configuration::setJointState(const arr& _q) {
     }
   }
   calc_Q_from_q();
+  if(self->viewer) self->viewer->setConfiguration(*this);
 }
 
 void rai::Configuration::setJointState(const arr& _q, const FrameL& F, bool activesOnly) {
@@ -783,16 +784,26 @@ void rai::Configuration::setJointState(const arr& _q, const FrameL& F, bool acti
   uint nd=0;
   for(Frame* f:F) {
     Joint* j = f->joint;
-    if(!j) HALT("frame '" <<f->name <<"' is not a joint!");
+    if(!j && !f->forces.N) HALT("frame '" <<f->name <<"' is not a joint and has no forces!");
     if(j->active){
-      for(uint ii=0; ii<j->dim; ii++) q.elem(j->qIndex+ii) = _q(nd+ii);
+      if(!j->mimic){
+        for(uint ii=0; ii<j->dim; ii++) q.elem(j->qIndex+ii) = _q(nd+ii);
+      }
       j->calc_Q_from_q(q, j->qIndex);
     }else{
       if(activesOnly) HALT("frame '" <<f->name <<"' is a joint, but INACTIVE!");
-      for(uint ii=0; ii<j->dim; ii++) qInactive.elem(j->qIndex+ii) = _q(nd+ii);
+      if(!j->mimic){
+        for(uint ii=0; ii<j->dim; ii++) qInactive.elem(j->qIndex+ii) = _q(nd+ii);
+      }
       j->calc_Q_from_q(qInactive, j->qIndex);
     }
-    nd += j->dim;
+    if(!j->mimic) nd += j->dim;
+  }
+  for(Frame* f:F) {
+    for(ForceExchange* c: f->forces) if(&c->a==f){
+      c->calc_F_from_q(q, c->qIndex);
+      nd += c->qDim();
+    }
   }
   CHECK_EQ(_q.N, nd, "");
 
@@ -800,9 +811,14 @@ void rai::Configuration::setJointState(const arr& _q, const FrameL& F, bool acti
 
   _state_q_isGood=true;
   _state_proxies_isGood=false;
+  if(self->viewer) self->viewer->setConfiguration(*this);
 }
 
-
+void rai::Configuration::setJointStateSlice(const arr& _q, uint t, bool activesOnly){
+  FrameL F;
+  for(auto* f:frames[t]) if(f->joint && (!activesOnly || f->joint->active)) F.append(f);
+  setJointState(_q, F, activesOnly);
+}
 
 void rai::Configuration::setFrameState(const arr& X, const FrameL& F) {
   CHECK_EQ(X.d0, F.N, "X.d0=" <<X.d0 <<" is larger than frames.N=" <<F.N);
@@ -816,7 +832,7 @@ void rai::Configuration::setFrameState(const arr& X, const FrameL& F) {
     if(F(i)->parent) F(i)->Q.setDifference(F(i)->parent->X, F(i)->X);
   }
   _state_q_isGood=false;
-//  checkConsistency();
+  if(self->viewer) self->viewer->setConfiguration(*this);
 }
 
 void rai::Configuration::setTimes(double t) {
@@ -1473,19 +1489,11 @@ void rai::Configuration::prefixNames(bool clear) {
 }
 
 /// return a OpenGL extension
-rai::ConfigurationViewer& rai::Configuration::gl(const char* window_title, bool offscreen) {
-#if 0
-  if(!s->gl) {
-    s->gl = new OpenGL(window_title, 400, 400, offscreen);
-    s->gl->add(glStandardScene, 0);
-    s->gl->addDrawer(this);
-    s->gl->camera.setDefault();
-  }
-#endif
+shared_ptr<rai::ConfigurationViewer>& rai::Configuration::gl(const char* window_title, bool offscreen) {
   if(!self->viewer) {
-    self->viewer = make_unique<rai::ConfigurationViewer>(); //-1.=broadphase only -> many proxies
+    self->viewer = make_shared<rai::ConfigurationViewer>();
   }
-  return *self->viewer;
+  return self->viewer;
 }
 
 /// return a Swift extension
@@ -1537,9 +1545,13 @@ FeatherstoneInterface& rai::Configuration::fs() {
   return *self->fs;
 }
 
+bool rai::Configuration::hasView(){
+  return !!self->viewer;
+}
+
 int rai::Configuration::watch(bool pause, const char* txt) {
-//  gl().pressedkey=0;
-  int key = gl().setConfiguration(*this, txt, pause);
+//  gl()->pressedkey=0;
+  int key = gl()->setConfiguration(*this, txt, pause);
 //  if(pause) {
 //    if(!txt) txt="Config::watch";
 //    key = watch(true, txt);
@@ -1555,11 +1567,11 @@ void rai::Configuration::glClose() {
 
 #if 0
 void rai::Configuration::saveVideoPic(uint& t, const char* pathPrefix) {
-  write_ppm(gl().captureImage, STRING(pathPrefix <<std::setw(4)<<std::setfill('0')<<t++<<".ppm"));
+  write_ppm(gl()->captureImage, STRING(pathPrefix <<std::setw(4)<<std::setfill('0')<<t++<<".ppm"));
 }
 
 void rai::Configuration::glAdd(void (*call)(void*, OpenGL&), void* classP) {
-  gl().add(call, classP);
+  gl()->add(call, classP);
 }
 
 int rai::Configuration::glAnimate() {
@@ -1571,22 +1583,22 @@ void rai::Configuration::glGetMasks(int w, int h, bool rgbIndices) {
     LOG(0) <<"can't make this offscreen anymore!";
   } else gl(nullptr, true);
 
-  gl().clear();
-  gl().addDrawer(this);
+  gl()->clear();
+  gl()->addDrawer(this);
   if(rgbIndices) {
-    gl().drawMode_idColor = true;
-    gl().setClearColors(0, 0, 0, 0);
+    gl()->drawMode_idColor = true;
+    gl()->setClearColors(0, 0, 0, 0);
     orsDrawMarkers = orsDrawJoints = orsDrawProxies = false;
   }
 
-  gl().update(nullptr, true);
+  gl()->update(nullptr, true);
 
-  gl().clear();
-  gl().add(glStandardScene, 0);
-  gl().addDrawer(this);
+  gl()->clear();
+  gl()->add(glStandardScene, 0);
+  gl()->addDrawer(this);
   if(rgbIndices) {
-    gl().setClearColors(1, 1, 1, 0);
-    gl().drawMode_idColor = false;
+    gl()->setClearColors(1, 1, 1, 0);
+    gl()->drawMode_idColor = false;
     orsDrawMarkers = orsDrawJoints = orsDrawProxies = true;
   }
 }
@@ -1628,7 +1640,7 @@ void rai::Configuration::stepSwift() {
   uintA collisionPairs = swift()->step(X, false);
   //  reportProxies();
   //  watch(true);
-  //  gl().closeWindow();
+  //  gl()->closeWindow();
   proxies.clear();
   addProxies(collisionPairs);
 
@@ -3183,7 +3195,7 @@ int animateConfiguration(rai::Configuration& C, Inotify* ino) {
 
   //  uint saveCount=0;
 
-  C.gl().resetPressedKey();
+  C.gl()->resetPressedKey();
   for(uint i=x0.N; i--;) {
     x=x0;
     double upper_lim = lim(i, 1);
@@ -3361,8 +3373,8 @@ void editConfiguration(const char* filename, rai::Configuration& C) {
   //  gl.exitkeys="1234567890qhjklias, "; //TODO: move the key handling to the keyCall!
   bool exit=false;
   //  gl.addHoverCall(new EditConfigurationHoverCall(K));
-//  K.gl().addKeyCall(new EditConfigurationKeyCall(K,exit));
-//  K.gl().addClickCall(new EditConfigurationClickCall(K));
+//  K.gl()->addKeyCall(new EditConfigurationKeyCall(K,exit));
+//  K.gl()->addClickCall(new EditConfigurationClickCall(K));
   Inotify ino(filename);
   for(; !exit;) {
     cout <<"reloading `" <<filename <<"' ... " <<std::endl;
@@ -3382,10 +3394,10 @@ void editConfiguration(const char* filename, rai::Configuration& C) {
     file.cd_start(); //important: also on crash - cd back to original
     cout <<"watching..." <<endl;
     int key = -1;
-    C.gl().recopyMeshes(C);
-    C.gl().resetPressedKey();
+    C.gl()->recopyMeshes(C);
+    C.gl()->resetPressedKey();
     for(;;) {
-      key = C.gl().setConfiguration(C, "waiting for file change", false);
+      key = C.gl()->setConfiguration(C, "waiting for file change", false);
       if(key==13 || key==32 || key==27 || key=='q') break;
       if(ino.poll(false, true)) break;
       rai::wait(.2);
