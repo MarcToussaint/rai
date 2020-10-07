@@ -15,7 +15,6 @@ CtrlProblem::CtrlProblem(rai::Configuration& _C, double _tau, uint k_order)
   komo.setModel(_C, true);
   komo.setTiming(1., 1, _tau, k_order);
   komo.setupConfigurations2();
-  komo.verbose=0;
 }
 
 std::shared_ptr<CtrlObjective> CtrlProblem::add_qControlObjective(uint order, double scale, const arr& target) {
@@ -108,10 +107,16 @@ arr CtrlProblem::solve() {
   opt.stopIters = 20;
 //  opt.nonStrictSteps=-1;
   opt.maxStep = .1; //*tau; //maxVel*tau;
+//  opt.damping = 1.;
 //  opt.maxStep = 1.;
 //  komo.verbose=4;
+//  komo.animateOptimization=1;
   komo.optimize(0., opt);
   optReport = komo.getReport(false);
+  if(optReport.get<double>("sos")>.1){
+      cout <<optReport <<endl <<"something's wrong?" <<endl;
+      rai::wait();
+  }
   return komo.getPath_q(0);
 #else
   return solve_optim(*this);

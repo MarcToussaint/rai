@@ -570,7 +570,9 @@ arr rai::Configuration::getJointState(const FrameL& joints, bool activesOnly) co
     rai::Joint* j = f->joint;
     if(!j) HALT("frame '" <<f->name <<"' is not a joint!");
     if(!j->active && activesOnly) HALT("frame '" <<f->name <<"' is a joint, but INACTIVE!");
-    nd += j->dim;
+    if(!j->mimic){
+      nd += j->dim;
+    }
   }
 
   arr x(nd);
@@ -578,12 +580,14 @@ arr rai::Configuration::getJointState(const FrameL& joints, bool activesOnly) co
   for(rai::Frame* f:joints) {
     rai::Joint* j = f->joint;
     CHECK(j, "");
-    if(j->active){
-      for(uint ii=0; ii<j->dim; ii++) x(nd+ii) = q(j->qIndex+ii);
-    }else if(!activesOnly){
-      for(uint ii=0; ii<j->dim; ii++) x(nd+ii) = qInactive(j->qIndex+ii);
-    }else HALT("");
-    nd += j->dim;
+    if(!j->mimic){
+      if(j->active){
+        for(uint ii=0; ii<j->dim; ii++) x(nd+ii) = q(j->qIndex+ii);
+      }else if(!activesOnly){
+        for(uint ii=0; ii<j->dim; ii++) x(nd+ii) = qInactive(j->qIndex+ii);
+      }else HALT("");
+      nd += j->dim;
+    }
   }
   CHECK_EQ(nd, x.N, "");
   return x;

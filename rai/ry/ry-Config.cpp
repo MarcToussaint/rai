@@ -36,7 +36,7 @@ void checkView(shared_ptr<rai::Configuration>& self){ if(self->hasView()) self->
 void null_deleter(rai::Frame*){}
 
 void init_Config(pybind11::module& m) {
-  pybind11::class_<rai::Configuration, std::shared_ptr<rai::Configuration>>(m, "Config", "Core data structure to represent a kinematic configuration.")
+  pybind11::class_<rai::Configuration, shared_ptr<rai::Configuration>>(m, "Config", "Core data structure to represent a kinematic configuration.")
 
   .def(pybind11::init<>(), "initializes to an empty configuration, with no frames")
 
@@ -66,7 +66,7 @@ void init_Config(pybind11::module& m) {
   .def("addFrame", [](shared_ptr<rai::Configuration>& self, const std::string& name, const std::string& parent, const std::string& args) {
     rai::Frame* f = self->addFrame(name.c_str(), parent.c_str(), args.c_str());
     checkView(self);
-    return std::shared_ptr<rai::Frame>(f, &null_deleter ); //giving it a non-sense deleter!
+    return shared_ptr<rai::Frame>(f, &null_deleter ); //giving it a non-sense deleter!
   },
   "add a new frame to C; optionally make this a child to the given parent; use the Frame methods to set properties of the new frame",
   pybind11::arg("name"),
@@ -94,7 +94,7 @@ void init_Config(pybind11::module& m) {
     }
 
     checkView(self);
-    return std::shared_ptr<rai::Frame>(f, &null_deleter ); //giving it a non-sense deleter!
+    return shared_ptr<rai::Frame>(f, &null_deleter ); //giving it a non-sense deleter!
   }, "TODO remove! use addFrame only",
   pybind11::arg("name"),
   pybind11::arg("parent") = std::string(),
@@ -111,7 +111,7 @@ void init_Config(pybind11::module& m) {
 
   .def("getFrame", [](shared_ptr<rai::Configuration>& self, const std::string& frameName) {
     rai::Frame *f = self->getFrameByName(frameName.c_str(), true);
-    return std::shared_ptr<rai::Frame>(f, &null_deleter ); //giving it a non-sense deleter!
+    return shared_ptr<rai::Frame>(f, &null_deleter ); //giving it a non-sense deleter!
   },
   "get access to a frame by name; use the Frame methods to set/get frame properties",
   pybind11::arg("frameName")
@@ -119,7 +119,7 @@ void init_Config(pybind11::module& m) {
 
   .def("frame", [](shared_ptr<rai::Configuration>& self, const std::string& frameName) {
     rai::Frame *f = self->getFrameByName(frameName.c_str(), true);
-    return std::shared_ptr<rai::Frame>(f, &null_deleter ); //giving it a non-sense deleter!
+    return shared_ptr<rai::Frame>(f, &null_deleter ); //giving it a non-sense deleter!
   },
   "get access to a frame by name; use the Frame methods to set/get frame properties",
   pybind11::arg("frameName")
@@ -318,13 +318,27 @@ To get really precise distances and penetrations use the FS.distance feature wit
       )
 
   .def("view", [](shared_ptr<rai::Configuration>& self) {
-    shared_ptr<rai::ConfigurationViewer> viewer = self->gl();
-    viewer->setConfiguration(*self);
-    return viewer;
+    self->gl()->setConfiguration(*self);
   },
   "create a viewer for this configuration. Optionally, specify a frame that is the origin of the viewer camera")
 
-  .def("closeView", [](shared_ptr<rai::Configuration>& self) {
+  .def("view_recopyMeshes", [](shared_ptr<rai::Configuration>& self) {
+    self->gl()->recopyMeshes(*self);
+  })
+
+  .def("view_playVideo", [](shared_ptr<rai::Configuration>& self, double delay, const char* saveVideoPath) {
+    self->gl()->playVideo(false, delay, saveVideoPath);
+  }, "",
+  pybind11::arg("delay")=double(1.),
+  pybind11::arg("saveVideoPath")=nullptr
+  )
+
+  .def("view_getScreenshot", [](shared_ptr<rai::Configuration>& self) {
+    byteA rgb = self->gl()->getScreenshot();
+   return pybind11::array_t<byte>(rgb.dim(), rgb.p);
+  })
+
+  .def("view_close", [](shared_ptr<rai::Configuration>& self) {
     self->gl().reset();
   }, "close the view")
 
@@ -430,10 +444,7 @@ from broadphase collision computation)",
   */
 
   .def("simulation", [](shared_ptr<rai::Configuration>& self, rai::Simulation::SimulatorEngine engine, int verbose) {
-//  ry::RySimulation sim;
-    auto sim = make_shared<rai::Simulation>(*self, engine, verbose);
-//  sim.config = make_shared<Var<rai::Configuration>>(self);
-    return sim;
+    return make_shared<rai::Simulation>(*self, engine, verbose);
   },
   "create a generic Simulation engine, which can internally call PhysX, Bullet, or just kinematics to forward simulate, \
 allows you to control robot motors by position, velocity, or accelerations, \
@@ -481,37 +492,9 @@ allows you to control robot motors by position, velocity, or accelerations, \
 //===========================================================================
 
 //  pybind11::class_<ry::ConfigViewer>(m, "ConfigViewer");
-  pybind11::class_<ImageViewer, std::shared_ptr<ImageViewer>>(m, "ImageViewer");
-  pybind11::class_<PointCloudViewer, std::shared_ptr<PointCloudViewer>>(m, "PointCloudViewer");
+  pybind11::class_<ImageViewer, shared_ptr<ImageViewer>>(m, "ImageViewer");
+  pybind11::class_<PointCloudViewer, shared_ptr<PointCloudViewer>>(m, "PointCloudViewer");
 
-
-//===========================================================================
-
-  pybind11::class_<rai::ConfigurationViewer, std::shared_ptr<rai::ConfigurationViewer>>(m, "ConfigurationViewer")
-  .def(pybind11::init<>())
-  .def("setConfiguration", [](std::shared_ptr<rai::ConfigurationViewer>& self, shared_ptr<rai::Configuration>& config) {
-    self->setConfiguration(*config);
-  })
-  .def("recopyMeshes", [](std::shared_ptr<rai::ConfigurationViewer>& self, shared_ptr<rai::Configuration>& config) {
-    self->recopyMeshes(*config);
-  })
-  .def("setPathFrames", [](std::shared_ptr<rai::ConfigurationViewer>& self, const pybind11::array& X) {
-    arr _X = numpy2arr<double>(X);
-    self->setPath(_X);
-  })
-  .def("playVideo", [](std::shared_ptr<rai::ConfigurationViewer>& self, double delay, const char* saveVideoPath) {
-    self->playVideo(false, delay, saveVideoPath);
-  }, "",
-  pybind11::arg("delay")=double(1.),
-  pybind11::arg("saveVideoPath")=nullptr
-      )
-  .def("getScreenshot", [](std::shared_ptr<rai::ConfigurationViewer>& self) {
-    byteA rgb = self->getScreenshot();
-    return pybind11::array_t<byte>(rgb.dim(), rgb.p);
-
-  })
-
-  ;
 
 //===========================================================================
 

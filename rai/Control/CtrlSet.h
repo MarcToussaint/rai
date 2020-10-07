@@ -14,11 +14,11 @@
 //===========================================================================
 
 struct CtrlSet {
-  rai::Array<std::shared_ptr<CtrlObjective>> objectives;    ///< list of objectives
-  std::shared_ptr<CtrlObjective> addObjective(const ptr<Feature>& f, ObjectiveType type, double transientStep=-1.);
-  void report(ostream& os=std::cout) const;
+  rai::Array<shared_ptr<CtrlObjective>> objectives;    ///< list of objectives
+  shared_ptr<CtrlObjective> addObjective(const ptr<Feature>& f, ObjectiveType type, double transientStep=-1.);
+  void report(ostream& os=cout) const;
 };
 
 //===========================================================================
 
-bool isFeasible(const CtrlSet& CS, const ConfigurationL& Ctuple, bool initOnly=true, double eqPrecision=1e-4);
+bool isFeasible(const CtrlSet& CS, const rai::Configuration& Ctuple, bool initOnly=true, double eqPrecision=1e-4);

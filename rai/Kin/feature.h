@@ -147,3 +147,26 @@ std::shared_ptr<Feature> make_feature(const StringA& frames, const rai::Configur
 
   return f;
 }
+
+inline FrameL groundFeatureFrames(const std::shared_ptr<Feature>& f, const rai::Configuration& C, uint s){
+  FrameL F;
+  if(C.frames.nd==1){
+    CHECK(!s, "C does not have multiple slices");
+    CHECK(!f->order, "can't ground a order>0 feature on configuration without slices");
+    F = indicesToFrames(f->frameIDs, C);
+    F.reshape(1, F.N);
+  }else{
+    F.resize(f->order+1, f->frameIDs.N);
+    for(uint i=0;i<=f->order;i++){
+      for(uint j=0;j<f->frameIDs.N;j++){
+        uint fID = f->frameIDs.elem(j);
+        F(i,j) = C.frames(s+i-f->order, fID);
+      }
+    }
+  }
+  if(f->frameIDs.nd==2){
+    F.reshape(f->order+1, f->frameIDs.d0, f->frameIDs.d1);
+  }
+  return F;
+}
+

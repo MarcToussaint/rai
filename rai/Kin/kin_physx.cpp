@@ -479,7 +479,7 @@ void PhysXInterface_self::addLink(rai::Frame* f, int verbose) {
   FrameL parts = {f};
   f->getRigidSubFrames(parts);
   bool hasShape=false;
-  for(rai::Frame* p:parts) if(p->shape && p->getShape().type()!=rai::ST_marker) { hasShape=true; break; }
+  for(rai::Frame* p:parts) if(p->shape && p->getShape().type()!=rai::ST_marker && p->shape->alpha()==1.) { hasShape=true; break; }
 
   //-- decide on the type
   rai::BodyType type = rai::BT_static;
@@ -518,6 +518,7 @@ void PhysXInterface_self::addLink(rai::Frame* f, int verbose) {
     rai::Shape* s = p->shape;
     if(!s) continue;
     if(s->frame.name.startsWith("coll_")) continue; //these are the 'pink' collision boundary shapes..
+    if(s->alpha()<1.) continue; //no transparent objects!
     PxGeometry* geometry;
     switch(s->type()) {
       case rai::ST_box: {
