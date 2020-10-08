@@ -166,11 +166,11 @@ void LGP_Tree::initDisplay() {
 
 void LGP_Tree::renderToVideo(int specificBound, const char* filePrefix) {
   if(specificBound<0) specificBound=displayBound;
-  CHECK(focusNode->komoProblem(specificBound) && focusNode->komoProblem(specificBound)->configurations.N, "level " <<specificBound <<" has not been computed for the current 'displayFocus'");
+  CHECK(focusNode->komoProblem(specificBound) && focusNode->komoProblem(specificBound)->pathConfig.frames.N, "level " <<specificBound <<" has not been computed for the current 'displayFocus'");
   if(specificBound<(int)views.N && views(specificBound)) {
-    renderConfigurations(focusNode->komoProblem(specificBound)->configurations, filePrefix, -2, 600, 600, &views(specificBound)->copy.gl()->displayCamera());
+    NIY //renderConfigurations(focusNode->komoProblem(specificBound)->configurations, filePrefix, -2, 600, 600, &views(specificBound)->copy.gl()->displayCamera());
   } else {
-    renderConfigurations(focusNode->komoProblem(specificBound)->configurations, filePrefix, -2, 600, 600);
+    NIY //renderConfigurations(focusNode->komoProblem(specificBound)->configurations, filePrefix, -2, 600, 600);
   }
 }
 
@@ -206,7 +206,7 @@ void LGP_Tree::updateDisplay() {
     rai::String decisions = focusNode->getTreePathString('\n');
     for(uint i=1; i<views.N; i++) {
       if(focusNode->komoProblem(i) && focusNode->komoProblem(i)->timeSlices.N) {
-        views(i)->setConfigurations(focusNode->komoProblem(i)->configurations);
+        NIY//views(i)->setConfigurations(focusNode->komoProblem(i)->configurations);
         views(i)->text.clear() <<focusNode->cost <<"|  " <<focusNode->constraints.last() <<'\n' <<decisions;
       } else views(i)->clear();
     }
@@ -560,7 +560,7 @@ void LGP_Tree::reportEffectiveJoints() {
   //  MNode *best = getBest();
   if(!focusNode->komoProblem.last()) return;
   focusNode->komoProblem.last()->reportProblem();
-  focusNode->komoProblem.last()->reportEffectiveJoints();
+  NIY//focusNode->komoProblem.last()->reportEffectiveJoints();
 }
 
 void LGP_Tree::step() {

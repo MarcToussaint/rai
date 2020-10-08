@@ -162,7 +162,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
       komo->run();
     } else {
       CHECK_EQ(step, komo->T-1, "");
-      komo->run_sub({komo->T-2}, {});
+      NIY//komo->run_sub({komo->T-2}, {});
     }
   } catch(std::runtime_error& err) {
     cout <<"KOMO CRASHED: " <<err.what() <<endl;
@@ -221,70 +221,6 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
     labelInfeasible();
 }
 
-ptr<KOMO> LGP_Node::optSubCG(const SubCG& scg, bool collisions, int verbose) {
-  ptr<KOMO> komo = make_shared<KOMO>();
-
-  komo->verbose = rai::MAX(verbose, 0);
-
-  if(komo->verbose>0) {
-    cout <<"########## OPTIM SubCG: " <<scg <<endl;
-  }
-
-//  komo->fil = new ofstream(OptLGPDataPath + STRING("komo-" <<id <<'-' <<step <<'-' <<bound));
-
-  CG2komo(*komo, scg, startKinematics, collisions);
-  return komo;
-
-  if(komo->logFile) {
-    komo->reportProblem(*komo->logFile);
-    (*komo->logFile) <<komo->getProblemGraph(false);
-  }
-
-//  if(level==BD_seq) komo->denseOptimization=true;
-
-  //-- optimize
-  DEBUG(FILE("z.fol") <<fol;);
-  DEBUG(komo->getReport(false, 1, FILE("z.problem")););
-  if(komo->verbose>1) komo->reportProblem();
-//  if(komo->verbose>5) komo->animateOptimization = komo->verbose-5;
-
-  try {
-    komo->run();
-  } catch(std::runtime_error& err) {
-    cout <<"KOMO CRASHED: " <<err.what() <<endl;
-    komo->reset();
-    return komo;
-  }
-  COUNT_evals += komo->opt->newton.evals;
-  COUNT_kin += rai::Configuration::setJointStateCount;
-  COUNT_time += komo->runTime;
-
-  DEBUG(komo->getReport(false, 1, FILE("z.problem")););
-//  cout <<komo->getReport(true) <<endl;
-//  komo->reportProxies(cout, 0.);
-//  komo->checkGradients();
-
-  Graph result = komo->getReport(komo->verbose>0);
-  DEBUG(FILE("z.problem.cost") <<result;);
-
-  //double cost_here = result.get<double>({"total","sqrCosts"});
-  //double constraints_here = result.get<double>({"total","constraints"});
-  //bool feas = (constraints_here<1.);
-
-  return komo;
-}
-
-ptr<CG> LGP_Node::getCGO(bool collisions, int verbose) {
-  Skeleton S = getSkeleton();
-
-  if(verbose>1) {
-    writeSkeleton(cout, S, getSwitchesFromSkeleton(S));
-  }
-
-  return skeleton2CGO(S,
-                      startKinematics,
-                      collisions);
-}
 
 void LGP_Node::setInfeasible() {
   isInfeasible = true;

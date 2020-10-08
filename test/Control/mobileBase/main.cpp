@@ -68,7 +68,7 @@ void controlMobile(){
 //  ctrl.maxVel=1e1;
 
   ofstream fil("z.path");
-  for(uint k=0;k<50;k++){
+  for(uint k=0;k<20;k++){
     arr vstar = randn(3);
     vstar(2) *= 5.;
     co->feat->setTarget(vstar);

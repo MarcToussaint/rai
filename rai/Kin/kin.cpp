@@ -818,11 +818,7 @@ void rai::Configuration::setJointState(const arr& _q, const FrameL& F, bool acti
   if(self->viewer) self->viewer->setConfiguration(*this);
 }
 
-void rai::Configuration::setJointStateSlice(const arr& _q, uint t, bool activesOnly){
-  FrameL F;
-  for(auto* f:frames[t]) if(f->joint && (!activesOnly || f->joint->active)) F.append(f);
-  setJointState(_q, F, activesOnly);
-}
+
 
 void rai::Configuration::setFrameState(const arr& X, const FrameL& F) {
   CHECK_EQ(X.d0, F.N, "X.d0=" <<X.d0 <<" is larger than frames.N=" <<F.N);
@@ -1436,6 +1432,18 @@ FrameL rai::Configuration::getFrames(const uintA& ids) const {
 FrameL rai::Configuration::getFramesByNames(const StringA& frameNames) const {
   FrameL F;
   for(const rai::String& name:frameNames) F.append(getFrameByName(name), true);
+  return F;
+}
+
+FrameL rai::Configuration::getJoints(bool activesOnly){
+  FrameL F;
+  for(auto* f:frames) if(f->joint && (!activesOnly || f->joint->active)) F.append(f);
+  return F;
+}
+
+FrameL rai::Configuration::getJointsSlice(uint t, bool activesOnly){
+  FrameL F;
+  for(auto* f:frames[t]) if(f->joint && (!activesOnly || f->joint->active)) F.append(f);
   return F;
 }
 

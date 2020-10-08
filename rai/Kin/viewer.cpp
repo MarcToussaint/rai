@@ -161,7 +161,7 @@ bool rai::ConfigurationViewer::playVideo(uint nFrames, bool watch, double delay,
     }
   }
   drawText = tag;
-  if(watch) {
+  if(watch && rai::getInteractivity()) {
     int key = update(true);
     return !(key==27 || key=='q');
   }
@@ -200,7 +200,7 @@ bool rai::ConfigurationViewer::playVideo(bool watch, double delay, const char* s
     }
   }
   drawText = tag;
-  if(watch) {
+  if(watch && rai::getInteractivity()) {
     int key = update(true);
     return !(key==27 || key=='q');
   }

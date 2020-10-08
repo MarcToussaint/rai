@@ -142,8 +142,9 @@ void init_KOMO(pybind11::module& m) {
 
 //-- reinitialize with configuration
   .def("setConfigurations", [](std::shared_ptr<KOMO>& self, shared_ptr<rai::Configuration>& C) {
-    for(rai::Configuration* c:self->configurations) {
-      c->setFrameState(C->getFrameState());
+    arr X = C->getFrameState();
+    for(uint t=0;t<self->T;t++){
+      self->pathConfig.setFrameState( X, self->timeSlices[t] );
     }
   })
 
@@ -154,8 +155,7 @@ void init_KOMO(pybind11::module& m) {
   })
 
   .def("getConfiguration", [](std::shared_ptr<KOMO>& self, int t) {
-    arr X = self->configurations(t+self->k_order)->getFrameState();
-    return pybind11::array(X.dim(), X.p);
+      return self->getFrameState(t);
   })
 
   .def("getPathFrames", &KOMO::getPath_frames)

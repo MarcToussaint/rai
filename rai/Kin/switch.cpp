@@ -235,14 +235,14 @@ rai::String rai::KinematicSwitch::shortTag(const rai::Configuration* G) const {
   return str;
 }
 
-void rai::KinematicSwitch::write(std::ostream& os, rai::Configuration* K) const {
+void rai::KinematicSwitch::write(std::ostream& os, const FrameL& frames) const {
   os <<"SWITCH  timeOfApplication=" <<timeOfApplication;
   os <<"  symbol=" <<symbol;
   os <<"  jointType=" <<jointType;
   os <<"  fromId=" <<(int)fromId;
-  if(K && fromId<-1) os <<"'" <<K->frames(fromId)->name <<"'";
+  if(fromId>-1 && fromId<frames.N) os <<"'" <<frames(fromId)->name <<"'";
   os <<"  toId=" <<toId;
-  if(K && toId<-1) os <<"'" <<K->frames(toId)->name <<"'";
+  if(toId>-1 && toId<frames.N) os <<"'" <<frames(toId)->name <<"'";
 }
 
 //===========================================================================

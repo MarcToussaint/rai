@@ -10,7 +10,6 @@
 #include "CtrlProblem.h"
 #include "CtrlTargets.h"
 #include "CtrlSolvers.h"
-#include "komoControl.h"
 #include "../KOMO/komo.h"
 #include "../Core/graph.h"
 #include "../Kin/frame.h"

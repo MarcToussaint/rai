@@ -111,6 +111,8 @@ struct Configuration : GLDrawer {
   Frame* getFrameByName(const char* name, bool warnIfNotExist=true, bool reverse=false) const;
   FrameL getFrames(const uintA& ids) const;
   FrameL getFramesByNames(const StringA& frameNames) const;
+  FrameL getJoints(bool activesOnly=true);
+  FrameL getJointsSlice(uint t, bool activesOnly=true);
   uintA getJointIDs() const;
   StringA getJointNames() const;
   StringA getFrameNames() const;
@@ -161,6 +163,7 @@ struct Configuration : GLDrawer {
   const arr& getJointState() const;
   arr getJointState(const FrameL& F, bool activesOnly=true) const;
   arr getJointState(const uintA& F) const { return getJointState(getFrames(F)); }
+  arr getJointStateSlice(uint t, bool activesOnly=true){  return getJointState(getJointsSlice(t, activesOnly), activesOnly);  }
   arr getFrameState() const { return getFrameState(frames); }
   arr getFrameState(const FrameL& F) const;
 
@@ -174,7 +177,7 @@ struct Configuration : GLDrawer {
   void setJointState(const arr& _q);
   void setJointState(const arr& _q, const FrameL& F, bool activesOnly=true);
   void setJointState(const arr& _q, const uintA& F){ setJointState(_q, getFrames(F), true); }
-  void setJointStateSlice(const arr& _q, uint t, bool activesOnly=true);
+  void setJointStateSlice(const arr& _q, uint t, bool activesOnly=true){  setJointState(_q, getJointsSlice(t, activesOnly), activesOnly);  }
   void setFrameState(const arr& X){ setFrameState(X, frames); }
   void setFrameState(const arr& X, const FrameL& F);
   void setTimes(double t);
