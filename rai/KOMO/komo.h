@@ -288,7 +288,6 @@ struct KOMO : NonCopyable {
   double getConstraintViolations();
   double getCosts();
   void reportProxies(ostream& os=std::cout, double belowMargin=.1); ///< report the proxies (collisions) for each time slice
-  rai::Graph getContacts(); ///< report the contacts
 
   void checkGradients();          ///< checks all gradients numerically
 

@@ -170,7 +170,7 @@ void init_KOMO(pybind11::module& m) {
   })
 
   .def("getForceInteractions", [](std::shared_ptr<KOMO>& self) {
-    rai::Graph G = self->getContacts();
+    rai::Graph G = self->pathConfig.reportForces();
     return graph2list(G);
   })
 

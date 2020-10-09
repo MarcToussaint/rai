@@ -165,10 +165,19 @@ void init_Config(pybind11::module& m) {
     }
     checkView(self);
   },
-  "set the joint state, optionally only for a subset of joints specified as list of joint names",
+  "set the joint state, optionally only for a subset of joints specified as list of frameIDs",
   pybind11::arg("q"),
   pybind11::arg("joints") = ry::I_StringA()
       )
+
+      .def("setJointState", [](shared_ptr<rai::Configuration>& self, const std::vector<double>& q, const ry::I_StringA& joints) {
+        self->setJointState(arr(q, true), self->getFramesByNames(I_conv(joints)));
+        checkView(self);
+      },
+      "set the joint state, optionally only for a subset of joints specified as list of joint names",
+  pybind11::arg("q"),
+  pybind11::arg("joints")
+  )
 
   .def("setJointStateSlice", [](shared_ptr<rai::Configuration>& self, const std::vector<double>& q, uint t) {
     self->setJointStateSlice(arr(q, true), t);
@@ -492,8 +501,8 @@ allows you to control robot motors by position, velocity, or accelerations, \
 //===========================================================================
 
 //  pybind11::class_<ry::ConfigViewer>(m, "ConfigViewer");
-  pybind11::class_<ImageViewer, shared_ptr<ImageViewer>>(m, "ImageViewer");
-  pybind11::class_<PointCloudViewer, shared_ptr<PointCloudViewer>>(m, "PointCloudViewer");
+  pybind11::class_<ImageViewerCallback, shared_ptr<ImageViewerCallback>>(m, "ImageViewer");
+  pybind11::class_<PointCloudViewerCallback, shared_ptr<PointCloudViewerCallback>>(m, "PointCloudViewer");
 
 
 //===========================================================================
@@ -555,15 +564,15 @@ allows you to control robot motors by position, velocity, or accelerations, \
   })
 
   .def("pointCloudViewer", [](ry::RyCameraView& self) {
-    return make_shared<PointCloudViewer>(self.pts, self.image);
+    return make_shared<PointCloudViewerCallback>(self.pts, self.image);
   })
 
   .def("imageViewer", [](ry::RyCameraView& self) {
-    return make_shared<ImageViewer>(self.image);
+    return make_shared<ImageViewerCallback>(self.image);
   })
 
   .def("segmentationViewer", [](ry::RyCameraView& self) {
-    return make_shared<ImageViewer>(self.segmentation);
+    return make_shared<ImageViewerCallback>(self.segmentation);
   })
   ;
 

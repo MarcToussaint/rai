@@ -269,6 +269,7 @@ struct Configuration : GLDrawer {
   //some info
   void report(std::ostream& os=std::cout) const;
   void reportProxies(std::ostream& os=std::cout, double belowMargin=1., bool brief=true) const;
+  Graph reportForces();
 
   friend struct KinematicSwitch;
 };

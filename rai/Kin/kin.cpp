@@ -2348,6 +2348,19 @@ void rai::Configuration::reportProxies(std::ostream& os, double belowMargin, boo
   }
 }
 
+rai::Graph rai::Configuration::reportForces() {
+  Graph G;
+  for(ForceExchange* f:forces) {
+    Graph& g = G.newSubgraph();
+    g.newNode<rai::String>({"from"}, {}, f->a.name);
+    g.newNode<rai::String>({"to"}, {}, f->b.name);
+    g.newNode<arr>({"force"}, {}, f->force);
+    g.newNode<arr>({"torque"}, {}, f->torque);
+    g.newNode<arr>({"poa"}, {}, f->poa);
+  }
+  return G;
+}
+
 bool ProxySortComp(const rai::Proxy* a, const rai::Proxy* b) {
   return (a->a < b->a) || (a->a==b->a && a->b<b->b) || (a->a==b->a && a->b==b->b && a->d < b->d);
 }
