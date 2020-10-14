@@ -281,7 +281,7 @@ void rai::Configuration::addConfigurationCopy(const FrameL& F, const ForceExchan
 
   //copy force exchanges
   for(ForceExchange* ex:_forces){
-    new ForceExchange(*frames.elem(FId2thisId(ex->a.ID)), *frames.elem(FId2thisId(ex->b.ID)), ex);
+    new ForceExchange(*frames.elem(FId2thisId(ex->a.ID)), *frames.elem(FId2thisId(ex->b.ID)), ex->type, ex);
   }
 
   if(!(frames.N%F.N)) frames.reshape(-1, F.N);
@@ -359,7 +359,7 @@ void rai::Configuration::copy(const rai::Configuration& C, bool referenceSwiftOn
 
   //copy contacts
   for(ForceExchange* ex:C.forces){
-    new ForceExchange(*frames.elem(ex->a.ID), *frames.elem(ex->b.ID), ex);
+    new ForceExchange(*frames.elem(ex->a.ID), *frames.elem(ex->b.ID), ex->type, ex);
   }
 
   //copy swift reference
@@ -778,7 +778,6 @@ void rai::Configuration::setJointState(const arr& _q) {
     }
   }
   calc_Q_from_q();
-  if(self->viewer) self->viewer->setConfiguration(*this);
 }
 
 void rai::Configuration::setJointState(const arr& _q, const FrameL& F, bool activesOnly) {
@@ -815,7 +814,6 @@ void rai::Configuration::setJointState(const arr& _q, const FrameL& F, bool acti
 
   _state_q_isGood=true;
   _state_proxies_isGood=false;
-  if(self->viewer) self->viewer->setConfiguration(*this);
 }
 
 
@@ -823,16 +821,14 @@ void rai::Configuration::setJointState(const arr& _q, const FrameL& F, bool acti
 void rai::Configuration::setFrameState(const arr& X, const FrameL& F) {
   CHECK_EQ(X.d0, F.N, "X.d0=" <<X.d0 <<" is larger than frames.N=" <<F.N);
   for(Frame* f:F) f->_state_setXBadinBranch();
-  for(uint i=0; i<F.N && i<X.d0; i++) {
-    F(i)->X.set(X[i]);
-    F(i)->X.rot.normalize();
-    F(i)->_state_X_isGood = true;
+  for(uint i=0; i<F.N; i++) {
+    Frame *f = F.elem(i);
+    f->X.set(X[i]);
+    f->X.rot.normalize();
+    f->_state_X_isGood = true;
   }
-  for(uint i=0; i<F.N && i<X.d0; i++) {
-    if(F(i)->parent) F(i)->Q.setDifference(F(i)->parent->X, F(i)->X);
-  }
+  for(Frame* f:F) if(f->parent) f->Q.setDifference(f->parent->ensure_X(), f->X);
   _state_q_isGood=false;
-  if(self->viewer) self->viewer->setConfiguration(*this);
 }
 
 void rai::Configuration::setTimes(double t) {

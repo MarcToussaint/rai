@@ -123,7 +123,7 @@ rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) {
   CHECK(from!=to, "not allowed to link '" <<from->name <<"' to itself");
 
   if(symbol==SW_joint || symbol==SW_joint) {
-    rai::Transformation orgX = to->ensure_X();
+    Transformation orgX = to->ensure_X();
 
     //first find link frame above 'to', and make it a root
 #if 0 //THIS is the standard version that worked with pnp LGP tests - but is a problem for the crawler
@@ -137,32 +137,32 @@ rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) {
 
     //create a new joint
     to->linkFrom(from, false);
-    Joint* j = new Joint(*to);
-    j->setType(jointType);
+    to->setJoint(jointType);
+    CHECK(jointType!=JT_none, "");
 
-    if(!jA.isZero()) j->frame->insertPreLink(jA);
-    if(!jB.isZero()) { HALT("only to be careful: does the orgX still work?"); j->frame->insertPostLink(jB); }
+    if(!jA.isZero()) to->insertPreLink(jA);
+    if(!jB.isZero()) { HALT("only to be careful: does the orgX still work?"); to->insertPostLink(jB); }
 
     //initialize to zero, copy, or random
     if(init==SWInit_zero) { //initialize the joint with zero transform
-      j->frame->Q.setZero();
+      to->Q.setZero();
     } else if(init==SWInit_copy) { //set Q to the current relative transform, modulo DOFs
-      j->frame->Q = orgX / j->frame->parent->ensure_X(); //that's important for the initialization of x during the very first komo.setupConfigurations !!
-      //cout <<j->frame->Q <<' ' <<j->frame->Q.rot.normalization() <<endl;
-      if(j->dim>0) {
-        arr q = j->calc_q_from_Q(j->frame->Q);
-        j->frame->Q.setZero();
-        j->calc_Q_from_q(q, 0);
+      to->Q = orgX / to->parent->ensure_X(); //that's important for the initialization of x during the very first komo.setupConfigurations !!
+      //cout <<to->Q <<' ' <<to->Q.rot.normalization() <<endl;
+      if(to->joint->dim>0) {
+        arr q = to->joint->calc_q_from_Q(to->Q);
+        to->Q.setZero();
+        to->joint->calc_Q_from_q(q, 0);
       }
     } if(init==SWInit_random) { //random, modulo DOFs
-      j->frame->Q.setRandom();
-      if(j->dim>0) {
-        arr q = j->calc_q_from_Q(j->frame->Q);
-        j->frame->Q.setZero();
-        j->calc_Q_from_q(q, 0);
+      to->Q.setRandom();
+      if(to->joint->dim>0) {
+        arr q = to->joint->calc_q_from_Q(to->Q);
+        to->Q.setZero();
+        to->joint->calc_Q_from_q(q, 0);
       }
     }
-    j->frame->_state_updateAfterTouchingQ();
+    to->_state_updateAfterTouchingQ();
 
     //K.reset_q();
     //K.calc_q(); K.checkConsistency();
@@ -170,7 +170,7 @@ rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) {
 //      static int i=0;
 //      FILE(STRING("z.switch_"<<i++<<".g")) <<K;
 //    }
-    return j->frame;
+    return to;
   }
 
   if(symbol==SW_noJointLink) {
@@ -186,7 +186,7 @@ rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) {
     CHECK_EQ(to, 0, "");
     CHECK(from->inertia, "can only make frames with intertia dynamic");
 
-    from->inertia->type=rai::BT_dynamic;
+    from->inertia->type=BT_dynamic;
     if(from->joint) {
       from->joint->H = 1e-1;
     }
@@ -198,7 +198,7 @@ rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) {
     CHECK_EQ(to, 0, "");
     CHECK(from->inertia, "can only make frames with intertia kinematic");
 
-    from->inertia->type=rai::BT_kinematic;
+    from->inertia->type=BT_kinematic;
 //    if(from->joint){
 //      from->joint->constrainToZeroVel=false;
 //      from->joint->H = 1e-1;
@@ -208,14 +208,14 @@ rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) {
 
   if(symbol==SW_addContact) {
     CHECK_EQ(jointType, JT_none, "");
-    new rai::ForceExchange(*from, *to);
+    new ForceExchange(*from, *to, FXT_poa);
     return from;
   }
 
   if(symbol==SW_delContact) {
     CHECK_EQ(jointType, JT_none, "");
-    rai::ForceExchange* c = nullptr;
-    for(rai::ForceExchange* cc:to->forces) if(&cc->a==from || &cc->b==from) { c=cc; break; }
+    ForceExchange* c = nullptr;
+    for(ForceExchange* cc:to->forces) if(&cc->a==from || &cc->b==from) { c=cc; break; }
     if(!c) HALT("not found");
     delete c;
     return 0;
@@ -226,7 +226,7 @@ rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) {
 }
 
 rai::String rai::KinematicSwitch::shortTag(const rai::Configuration* G) const {
-  rai::String str;
+  String str;
   str <<"  timeOfApplication=" <<timeOfApplication;
   str <<"  symbol=" <<symbol;
   str <<"  jointType=" <<jointType;
@@ -240,9 +240,9 @@ void rai::KinematicSwitch::write(std::ostream& os, const FrameL& frames) const {
   os <<"  symbol=" <<symbol;
   os <<"  jointType=" <<jointType;
   os <<"  fromId=" <<(int)fromId;
-  if(fromId>-1 && fromId<frames.N) os <<"'" <<frames(fromId)->name <<"'";
+  if(fromId>-1 && fromId<(int)frames.N) os <<"'" <<frames(fromId)->name <<"'";
   os <<"  toId=" <<toId;
-  if(toId>-1 && toId<frames.N) os <<"'" <<frames(toId)->name <<"'";
+  if(toId>-1 && toId<(int)frames.N) os <<"'" <<frames(toId)->name <<"'";
 }
 
 //===========================================================================

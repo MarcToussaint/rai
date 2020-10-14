@@ -26,6 +26,8 @@ Skeleton list2skeleton(const pybind11::list& L) {
   return S;
 }
 
+void checkView(shared_ptr<KOMO>& self){ if(self->pathConfig.hasView()) self->pathConfig.watch(); }
+
 void init_KOMO(pybind11::module& m) {
   pybind11::class_<KOMO, std::shared_ptr<KOMO>>(m, "KOMO", "Constrained solver to optimize configurations or paths. (KOMO = k-order Markov Optimization)")
 
@@ -137,6 +139,7 @@ void init_KOMO(pybind11::module& m) {
 
   .def("optimize", [](std::shared_ptr<KOMO>& self, double addInitializationNoise) {
     self->optimize(addInitializationNoise);
+    checkView(self);
   }, "",
   pybind11::arg("addInitializationNoise")=0.01)
 
@@ -146,6 +149,7 @@ void init_KOMO(pybind11::module& m) {
     for(uint t=0;t<self->T;t++){
       self->pathConfig.setFrameState( X, self->timeSlices[t] );
     }
+    checkView(self);
   })
 
 //-- read out
@@ -192,10 +196,7 @@ void init_KOMO(pybind11::module& m) {
 //-- display
 
   .def("view", [](std::shared_ptr<KOMO>& self) {
-    auto view = make_shared<rai::ConfigurationViewer>();
-    view->setConfiguration(self->world);
-    view->setPath(self->getPath_frames(), "KOMO state");
-    return view;
+    self->pathConfig.watch(false, "KOMO path configuration");
   })
   ;
 

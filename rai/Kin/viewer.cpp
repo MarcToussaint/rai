@@ -49,7 +49,7 @@ int rai::ConfigurationViewer::update(bool watch) {
   return gl->pressedkey;
 }
 
-int rai::ConfigurationViewer::setConfiguration(rai::Configuration& _C, const char* text, bool watch) {
+int rai::ConfigurationViewer::setConfiguration(const rai::Configuration& _C, const char* text, bool watch) {
   ensure_gl();
   bool copyMeshes = false;
   if(_C.frames.N!=C.frames.N) copyMeshes = true;
@@ -73,6 +73,7 @@ int rai::ConfigurationViewer::setConfiguration(rai::Configuration& _C, const cha
     framePath = _C.getFrameState();
     framePath.reshape(1, _C.frames.N, 7);
     drawTimeSlice=0;
+    drawSubFrames.clear();
     if(text) drawText = text;
   }
 
@@ -221,17 +222,17 @@ byteA rai::ConfigurationViewer::getScreenshot() {
   return gl->captureImage;
 }
 
-void rai::ConfigurationViewer::recopyMeshes(rai::Configuration& _C) {
+void rai::ConfigurationViewer::recopyMeshes(const rai::Configuration& _C) {
   ensure_gl();
 
   {
     auto _dataLock = gl->dataLock(RAI_HERE);
     C.copy(_C, false);
     //deep copy meshes!
-    for(rai::Frame* f:C.frames) if(f->shape) {
-        ptr<Mesh> org = f->shape->_mesh;
-        f->shape->_mesh = make_shared<Mesh> (*org.get());
-      }
+//    for(rai::Frame* f:C.frames) if(f->shape) {
+//        ptr<Mesh> org = f->shape->_mesh;
+//        f->shape->_mesh = make_shared<Mesh> (*org.get());
+//      }
   }
 }
 

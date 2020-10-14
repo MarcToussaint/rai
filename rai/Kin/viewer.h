@@ -17,7 +17,7 @@ namespace rai {
 struct ConfigurationViewer : GLDrawer {
   ~ConfigurationViewer();
 
-  int setConfiguration(rai::Configuration& _C, const char* text=0, bool watch=false);
+  int setConfiguration(const Configuration& _C, const char* text=0, bool watch=false);
   int setPath(ConfigurationL& Cs, const char* text=0, bool watch=false);
   int setPath(rai::Configuration& _C, const arr& jointPath, const char* text=0, bool watch=false, bool full=true);
   int setPath(const arr& _framePath, const char* text=0, bool watch=false, bool full=true);
@@ -26,7 +26,10 @@ struct ConfigurationViewer : GLDrawer {
   rai::Camera& displayCamera();   ///< access to the display camera to change the view
   byteA getScreenshot();
   void savePng(const char* saveVideoPath="z.vid/");
-  void recopyMeshes(rai::Configuration& _C);
+  void recopyMeshes(const Configuration& _C);
+
+  rai::Configuration& getConfiguration(){ return C; }
+
 
   int update(bool watch=false);
   void glDraw(OpenGL&);
