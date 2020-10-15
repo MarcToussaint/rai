@@ -65,7 +65,7 @@ OptNewton::StopCriterion OptNewton::step() {
   arr y, gy, Hy, Delta;
 
   its++;
-  if(o.verbose>1) cout <<"optNewton it=" <<std::setw(4) <<its << " \tbeta=" <<std::setw(8) <<beta <<flush;
+  if(o.verbose>1) cout <<"optNewton it:" <<std::setw(4) <<its << "  beta:" <<std::setw(4) <<beta <<flush;
 
   if(!(fx==fx)) HALT("you're calling a newton step with initial function value = NAN");
 
@@ -118,7 +118,7 @@ OptNewton::StopCriterion OptNewton::step() {
   double alphaHiLimit = o.maxStep/maxDelta;
   double alphaLoLimit = 1e-1*o.stopTolerance/maxDelta;
 
-  if(o.verbose>1) cout <<" \t|Delta|=" <<std::setw(11) <<maxDelta <<flush;
+  if(o.verbose>1) cout <<"  |Delta|:" <<std::setw(11) <<maxDelta <<flush;
 
   //lazy stopping criterion: stop without any update
   if(absMax(Delta)<1e-1*o.stopTolerance) {
@@ -137,8 +137,8 @@ OptNewton::StopCriterion OptNewton::step() {
     double timeBefore = rai::timerStart();
     fy = f(gy, Hy, y);  evals++;
     timeEval += rai::timerRead(true, timeBefore);
-    if(o.verbose>5) cout <<" \tprobing y=" <<y;
-    if(o.verbose>1) cout <<" \tevals=" <<std::setw(4) <<evals <<" \talpha=" <<std::setw(11) <<alpha <<" \tf(y)=" <<fy <<flush;
+    if(o.verbose>5) cout <<"  probing y:" <<y;
+    if(o.verbose>1) cout <<"  evals:" <<std::setw(4) <<evals <<"  alpha:" <<std::setw(11) <<alpha <<"  f(y):" <<fy <<flush;
     if(simpleLog) {
       (*simpleLog) <<its <<' ' <<evals <<' ' <<fy <<' ' <<alpha;
       if(y.N<=5) y.writeRaw(*simpleLog);
@@ -196,10 +196,10 @@ OptNewton::StopCriterion OptNewton::step() {
         endLineSearch=true;
         if(o.verbose>1) cout <<", stop & betaInc"<<endl;
       } else {
-        if(o.verbose>1) cout <<"\n\t\t\t\t\t(line search)\t" <<flush;
+        if(o.verbose>1) cout <<"\n                                  (line search)  " <<flush;
       }
       alpha *= o.stepDec;
-      if(alpha<alphaLoLimit) endLineSearch=true;
+//      if(alpha<alphaLoLimit) endLineSearch=true;
     }
   }
 

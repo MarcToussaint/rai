@@ -1504,6 +1504,9 @@ template<class T> void rai::Array<T>::setMatrixBlock(const rai::Array<T>& B, uin
         for(i=0; i<B.d0; i++) for(j=0; j<B.d1; j++) p[(lo0+i)*d1+lo1+j] = B.p[i*B.d1+j];   // operator()(lo0+i, lo1+j)=B(i, j);
       }
     } else if(isSparseMatrix(*this)) {
+#if 1
+        sparse().add(B, lo0, lo1);
+#else
       if(!isSparseMatrix(B)) {
         for(i=0; i<B.d0; i++) for(j=0; j<B.d1; j++){
             double z = B.p[i*B.d1+j];
@@ -1516,6 +1519,7 @@ template<class T> void rai::Array<T>::setMatrixBlock(const rai::Array<T>& B, uin
           S.addEntry(lo0 + BS.elems(i, 0), lo1 + BS.elems(i, 1)) = B.elem(i);
         }
       }
+#endif
     } else if(isRowShifted(*this)) {
       rowShifted().add(B, lo0, lo1);
     }

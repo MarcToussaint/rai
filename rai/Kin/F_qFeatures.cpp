@@ -304,6 +304,7 @@ void F_qLimits::phi(arr& y, arr& J, const rai::Configuration& G) {
 
 void F_qQuaternionNorms::phi2(arr& y, arr& J, const FrameL& F) {
   uint n=dim_phi2(F);
+  if(!n){ y.clear(); J.clear(); return; }
   rai::Configuration& C=F.first()->C;
   C.kinematicsZero(y, J, n);
   uint i=0;

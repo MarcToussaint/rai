@@ -498,7 +498,7 @@ void rai::Configuration::reconfigureRoot(Frame* newRoot, bool ofLinkOnly) {
 //    newRoot->setJoint(JT_rigid);
 //  }
 
-  checkConsistency();
+//  checkConsistency();
 }
 
 void rai::Configuration::calc_indexedActiveJoints() {
