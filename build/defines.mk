@@ -337,6 +337,7 @@ endif
 ifeq ($(EIGEN),1)
 DEPEND_UBUNTU += libeigen3-dev
 CXXFLAGS += -DRAI_EIGEN -fopenmp
+LDFLAGS += -fopenmp
 CPATH := $(CPATH):/usr/include/eigen3
 endif
 
