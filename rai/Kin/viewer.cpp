@@ -130,6 +130,8 @@ int rai::ConfigurationViewer::setPath(const arr& _framePath, const char* text, b
 }
 
 bool rai::ConfigurationViewer::playVideo(uint nFrames, bool watch, double delay, const char* saveVideoPath){
+  if(rai::getDisableGui()) return false;
+
   const rai::String tag = drawText;
 
   if(saveVideoPath) {

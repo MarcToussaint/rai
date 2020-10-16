@@ -96,7 +96,6 @@ bool IOraw=false;
 bool noLog=true;
 uint lineCount=1;
 int verboseLevel=-1;
-int interactivity=-1;
 
 std::chrono::system_clock::time_point startTime;
 double timerStartTime=0.;
@@ -621,8 +620,15 @@ uint getVerboseLevel() {
 }
 
 bool getInteractivity() {
+  static int interactivity=-1;
   if(interactivity==-1) interactivity=(checkParameter<bool>("noInteractivity")?0:1);
   return interactivity==1;
+}
+
+bool getDisableGui() {
+  static int _disableGui = -1;
+  if(_disableGui==-1) _disableGui=(checkParameter<bool>("disableGui")?1:0);
+  return _disableGui==1;
 }
 
 }//namespace rai
@@ -1296,6 +1302,7 @@ struct GnuplotServer {
 Singleton<GnuplotServer> gnuplotServer;
 
 void gnuplot(const char* command, bool pauseMouse, bool persist, const char* PDFfile) {
+  if(rai::getDisableGui()) return;
   if(!rai::getInteractivity()) {
     pauseMouse=false;
     persist=false;
