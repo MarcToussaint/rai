@@ -26,6 +26,7 @@
 #include "../Kin/F_geometrics.h"
 #include "../Kin/F_operators.h"
 #include "../Kin/F_forces.h"
+#include "../Kin/viewer.h"
 
 #include "../Optim/optimization.h"
 #include "../Optim/primalDual.h"
@@ -1713,6 +1714,10 @@ void KOMO::checkGradients() {
   if(succ) cout <<"jacobianCheck -- SUCCESS (max diff error=" <<mmd <<")" <<endl;
 #endif
 }
+
+int KOMO::view(bool pause, const char* txt){ pathConfig.gl()->recopyMeshes(pathConfig); return pathConfig.watch(pause, txt); }
+
+int KOMO::view_play(double delay, bool pause, const char* txt){ pathConfig.gl()->recopyMeshes(pathConfig); return pathConfig.gl()->playVideo(timeSlices.d1, pause, delay*tau*T); }
 
 void KOMO::plotTrajectory() {
   ofstream fil("z.trajectories");

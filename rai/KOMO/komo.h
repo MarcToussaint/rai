@@ -291,8 +291,8 @@ struct KOMO : NonCopyable {
 
   void checkGradients();          ///< checks all gradients numerically
 
-  int view(bool pause=false, const char* txt=nullptr){ pathConfig.gl()->recopyMeshes(pathConfig); return pathConfig.watch(pause, txt); }
-  int view_play(double delay=.2, bool pause=false, const char* txt=nullptr){ pathConfig.gl()->recopyMeshes(pathConfig); return pathConfig.gl()->playVideo(timeSlices.d1, pause, delay*tau*T); }
+  int view(bool pause=false, const char* txt=nullptr);
+  int view_play(double delay=.2, bool pause=false, const char* txt=nullptr);
 
   void plotTrajectory();
   void plotPhaseTrajectory();
