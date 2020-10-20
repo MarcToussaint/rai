@@ -289,6 +289,7 @@ void FeatherstoneInterface::update() {
 
     for(F_Link& link:tree) { link.parent=-1; link.qIndex=-1; link.com.setZero(); } //TODO: remove
 
+    uint n=0;
     for(rai::Frame* f : K.frames) {
       F_Link& link=tree(f->ID);
       link.ID = f->ID;
@@ -296,20 +297,24 @@ void FeatherstoneInterface::update() {
       if(f->parent) { //is not a root
         link.parent = f->parent->ID;
         link.Q = f->get_Q();
-        rai::Joint* j;
-        if((j=f->joint)) {
+        rai::Joint* j=f->joint;
+        if(j && !j->mimic) {
           link.type   = j->type;
           link.qIndex = j->qIndex;
         } else {
+          if(j && j->mimic) LOG(0) <<"Featherstone cannot handle mimic joint ('" <<f->name <<"') properly - assuming rigid";
           link.type   = rai::JT_rigid;
         }
+//        if(j) CHECK_EQ(j->dim, link.dof(), "");
       }
       if(f->inertia) {
         link.com = f->inertia->com;
         link.mass=f->inertia->mass; CHECK(link.mass>0. || link.qIndex==-1, "a moving link without mass -> this will diverge");
         link.inertia=f->inertia->matrix;
       }
+      n += link.dof();
     }
+//    CHECK_EQ(n, C.getJointStateDimension(), "");
   } else { //just update an existing structure
     for(rai::Frame* f: K.frames) {
       F_Link& link=tree(f->ID);
@@ -853,7 +858,7 @@ void FeatherstoneInterface::invDynamics(arr& tau,
     }
     Xup[i] = tree(i)._Q; //the transformation from the i-th to the j-th
   }
-  CHECK(n==qd.N && n==qdd.N && n==tau.N, "")
+  //CHECK(n==qd.N && n==qdd.N && n==tau.N, "")
 
   for(i=0; i<N; i++) {
     par = tree(i).parent;

@@ -9,7 +9,7 @@
 #include "perception.h"
 #include "audio.h"
 #include "videoEncoder.h"
-#include "../Core/util.tpp"
+#include "../Core/util.ipp"
 #include "../Gui/opengl.h"
 
 void lib_Perception() { RAI_MSG("loading"); }

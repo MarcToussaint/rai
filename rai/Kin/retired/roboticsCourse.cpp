@@ -409,5 +409,5 @@ void glDrawCarSimulator(void* classP, OpenGL&) {
 #endif
 }
 
-#include "../Core/array.tpp"
+#include "../Core/array.ipp"
 template rai::Array<CarSimulator::Gaussian>& rai::Array<CarSimulator::Gaussian>::resize(uint);

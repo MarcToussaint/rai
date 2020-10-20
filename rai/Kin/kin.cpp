@@ -3275,9 +3275,9 @@ void editConfiguration(const char* filename, Configuration& C) {
 // template instantiations
 //
 
-#include "../Core/util.tpp"
+#include "../Core/util.ipp"
 template rai::Array<rai::Shape*>::Array(uint);
 //template Shape* listFindByName(const Array<Shape*>&,const char*);
 
-#include "../Core/array.tpp"
+#include "../Core/array.ipp"
 template rai::Array<rai::Joint*>::Array();

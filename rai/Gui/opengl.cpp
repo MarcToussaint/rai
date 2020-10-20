@@ -21,7 +21,7 @@
 #endif
 
 #include "opengl.h"
-#include "../Core/array.tpp"
+#include "../Core/array.ipp"
 #include "../Geo/geo.h"
 
 #ifdef RAI_GLFW

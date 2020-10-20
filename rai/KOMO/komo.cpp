@@ -35,7 +35,7 @@
 #include "../Optim/opt-ipopt.h"
 #include "../Optim/opt-ceres.h"
 
-#include "../Core/util.tpp"
+#include "../Core/util.ipp"
 
 #include <iomanip>
 

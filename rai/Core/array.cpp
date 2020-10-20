@@ -2903,10 +2903,10 @@ void graphRandomFixedDegree(uintA& E, uint N, uint d) {
 //===========================================================================
 //
 // explicit instantiations
-// (in old versions, array.tpp was not included by array.h -- one could revive this)
+// (in old versions, array.ipp was not included by array.h -- one could revive this)
 //
 
-//#include "array.tpp"
+//#include "array.ipp"
 //#define T double
 //#  include "array_instantiate.cxx"
 //#undef T
@@ -2958,7 +2958,7 @@ template rai::Array<arr>::Array();
 template rai::Array<arr>::Array(uint);
 template rai::Array<arr>::~Array();
 
-#include "util.tpp"
+#include "util.ipp"
 
 template rai::Array<double> rai::getParameter<arr>(char const*);
 template rai::Array<double> rai::getParameter<arr>(char const*, const arr&);
