@@ -553,7 +553,7 @@ CtrlProblem_MathematicalProgram::CtrlProblem_MathematicalProgram(CtrlProblem& _C
   for(uint k=0; k<2; k++) {
     rai::Configuration* C = Ctuple.append(new rai::Configuration());
     C->copy(CP.komo.world, true);
-    C->setTimes(CP.tau);
+    C->setTaus(CP.tau);
     C->ensure_q();
     C->checkConsistency();
   }

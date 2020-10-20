@@ -97,7 +97,7 @@ void Conv_KOMOProblem_MathematicalProgram::evaluate(arr& phi, arr& J, const arr&
       arr& Ji = J_KOMO(i);
       CHECK_LE(Ji.N, J.d1, "");
       //        J({i, 0, J_KOMO(i}).N-1) = J_KOMO(i);
-      memmove(&J(i, 0), Ji.p, Ji.sizeT*Ji.N);
+      memmove(&J.elem(i, 0), Ji.p, Ji.sizeT*Ji.N);
       uint t=featureTimes(i);
       if(t<=k) Jaux.rowShift(i) = 0;
       else Jaux.rowShift(i) =  varDimIntegral(t-k-1);

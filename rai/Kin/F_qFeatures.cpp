@@ -31,7 +31,7 @@ F_qItself::F_qItself(PickMode pickMode, const StringA& picks, const rai::Configu
   }else if(pickMode==byJointNames) {
     for(rai::String s:picks) {
       if(s(-2)==':') s.resize(s.N-2, true);
-      rai::Frame* f = C.getFrameByName(s);
+      rai::Frame* f = C.getFrame(s);
       if(!f) HALT("pick '" <<s <<"' not found");
       if(!f->joint) HALT("pick '" <<s <<"' is not a joint");
       frameIDs.setAppend(f->ID);
@@ -272,10 +272,10 @@ void F_qLimits2::phi2(arr& y, arr& J, const FrameL& F){
       double up = j->limits(2*k+1);
       uint i = j->qIndex+k;
       y.elem(m) = lo - f->C.q(i);
-      J.elem(m, i) -= 1.;
+      if(!!J) J.elem(m, i) -= 1.;
       m++;
       y.elem(m) = f->C.q(i) - up;
-      J.elem(m, i) += 1.;
+      if(!!J) J.elem(m, i) += 1.;
       m++;
     }
   }
@@ -297,7 +297,7 @@ uint F_qLimits2::dim_phi2(const FrameL& F) {
 void F_qLimits::phi(arr& y, arr& J, const rai::Configuration& G) {
 //  if(!limits.N)
   limits=G.getLimits(); //G might change joint ordering (kinematic switches), need to query limits every time
-  G.kinematicsLimits(y, J, limits);
+  NIY//G.kinematicsLimits(y, J, limits);
 }
 
 //===========================================================================

@@ -9,6 +9,7 @@
 #include <Plot/plot.h>
 #include <GL/gl.h>
 #include <Optim/optimization.h>
+#include <Kin/feature.h>
 
 //===========================================================================
 //
@@ -37,7 +38,7 @@ void TEST(LoadSave){
 void testJacobianInFile(const char* filename, const char* shape){
   rai::Configuration K(filename);
 
-  rai::Frame *a=K.getFrameByName(shape);
+  rai::Frame *a=K.getFrame(shape);
 
   VectorFunction f = ( [&a, &K](arr& y, arr& J, const arr& x) -> void
   {
@@ -159,9 +160,9 @@ void TEST(QuaternionKinematics){
   for(uint k=0;k<3;k++){
     rai::Quaternion target;
     target.setRandom();
-    G.getFrameByName("ref")->set_Q()->rot = target;
-    G.getFrameByName("marker")->set_Q()->rot = target;
-    rai::Frame *endeff = G.getFrameByName("endeff");
+    G.getFrame("ref")->set_Q()->rot = target;
+    G.getFrame("marker")->set_Q()->rot = target;
+    rai::Frame *endeff = G.getFrame("endeff");
     arr x = G.getJointState();
     for(uint t=0;t<100;t++){
       arr y,J;
@@ -261,7 +262,7 @@ void TEST(Contacts){
     G.setJointState(x);
     G.setJacModeAs(J);
     G.stepSwift();
-    G.kinematicsProxyCost(y, J, .2);
+    G.kinematicsPenetration(y, J, .2);
   };
 
   x = G.getJointState();
@@ -272,7 +273,7 @@ void TEST(Contacts){
     G.reportProxies();
 
     G.jacMode = G.JM_dense;
-    G.kinematicsProxyCost(con, grad, .2);
+    G.kinematicsPenetration(con, grad, .2);
     cout <<"contact meassure = " <<con(0) <<endl;
     //G.watch(true);
     G.watch(false, STRING("t=" <<t <<"  movement along negative contact gradient (using SWIFT to get contacts)"));
@@ -289,22 +290,27 @@ void TEST(Limits){
   rai::Configuration G("arm7.g");
 
   arr limits = G.getLimits();
-  VectorFunction F = [&G, &limits](arr& y, arr& J, const arr& x){
-    G.setJointState(x);
-    G.setJacModeAs(J);
-    G.kinematicsLimits(y,J,limits);
-  };
+  cout <<"limits: " <<limits <<endl;
+//  VectorFunction F = [&G, &limits](arr& y, arr& J, const arr& x){
+//    G.setJointState(x);
+//    G.setJacModeAs(J);
+//    G.kinematicsLimits(y,J,limits);
+//  };
+
+  auto F = G.feature(FS_jointLimits);
 
   uint n=G.getJointStateDimension();
-  arr x(n),y,J;
+  arr x(n);
   for(uint k=0;k<10;k++){
     rndUniform(x,-2.,2.,false);
-    checkJacobian(F,x,1e-4);
+    checkJacobian(F->vf(G),x,1e-4);
     for(uint t=0;t<10;t++){
-      F(y,J,x);
-      cout <<"y=" <<y <<"  " <<flush;
-      x -= .1 * J.reshape(n);
-      checkJacobian(F,x,1e-4);
+      auto lim = F->eval(G);
+      cout <<"y=" <<lim.y <<"  " <<flush;
+//      cout <<"J:" <<lim.J <<endl;
+      for(uint i=0;i<lim.y.N;i++) if(lim.y(i)<0.) lim.y(i)=0.; //penalize only positive
+      x -= 1. * pseudoInverse(lim.J) * lim.y;
+      checkJacobian(F->vf(G),x,1e-4);
       G.setJointState(x);
       G.watch();
     }
@@ -387,7 +393,7 @@ void TEST(FollowRedundantSequence){
   uint t,T,n=G.getJointStateDimension();
   arr x(n),y,J,invJ;
   x=.8;     //initialize with intermediate joint positions (non-singular positions)
-  rai::Vector rel = G.getFrameByName("endeff")->get_Q().pos; //this frame describes the relative position of the endeffector wrt. 7th body
+  rai::Vector rel = G.getFrame("endeff")->get_Q().pos; //this frame describes the relative position of the endeffector wrt. 7th body
 
   //-- generate a random endeffector trajectory
   arr Z, Zt; //desired and true endeffector trajectories
@@ -395,7 +401,7 @@ void TEST(FollowRedundantSequence){
   Z *= .5;
   T=Z.d0;
   G.setJointState(x);
-  rai::Frame *endeff = G.getFrameByName("arm7");
+  rai::Frame *endeff = G.getFrame("arm7");
   G.kinematicsPos(y, NoArr, endeff, rel);
   for(t=0;t<T;t++) Z[t]() += y; //adjust coordinates to be inside the arm range
   plot->Line(Z);
@@ -599,8 +605,8 @@ void TEST(InverseKinematics) {
   // reachable to check if the IK handle it
   rai::Configuration world("drawer.g");
 
-  rai::Frame* drawer = world.getFrameByName("cabinet_drawer");
-  rai::Frame* marker = world.getFrameByName("marker");
+  rai::Frame* drawer = world.getFrame("cabinet_drawer");
+  rai::Frame* marker = world.getFrame("marker");
   arr destination = conv_vec2arr(marker->ensure_X().pos);
 
   cout << "destination: " << destination << endl;

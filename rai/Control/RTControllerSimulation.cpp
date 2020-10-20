@@ -205,7 +205,7 @@ void RTControllerSimulation::open() {
   this->ctrl_obs().u_bias = zeros(q.d0);
   this->ctrl_obs.deAccess();
 
-  j_baseTranslationRotation = world->getFrameByName("worldTranslationRotation")->joint;
+  j_baseTranslationRotation = world->getFrame("worldTranslationRotation")->joint;
 }
 
 void RTControllerSimulation::step() {

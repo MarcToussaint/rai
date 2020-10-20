@@ -1,6 +1,6 @@
 #ifndef RAI_CERES
 #error *** this only compiles with the ceres dependency ***
-#endif
+#else
 
 #include <Optim/opt-ceres.h>
 #include <Optim/benchmarks.h>
@@ -278,3 +278,5 @@ int main(int argc,char** argv){
 
   return 0;
 }
+
+#endif

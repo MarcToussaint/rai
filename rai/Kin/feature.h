@@ -38,7 +38,7 @@ struct Feature {
   Feature& setScale(const arr& _scale) { scale=_scale; return *this; }
   Feature& setTarget(const arr& _target) { target=_target; return *this; }
   Feature& setFrameIDs(const uintA& _frameIDs) { frameIDs=_frameIDs; return *this; }
-  Feature& setFrameIDs(const StringA& frames, const rai::Configuration& C) { setFrameIDs( namesToIndices(frames, C) ); return *this; }
+  Feature& setFrameIDs(const StringA& frames, const rai::Configuration& C) { setFrameIDs( C.getFrameIDs(frames) ); return *this; }
   Feature& setDiffInsteadOfVel(){ diffInsteadOfVel=true; return *this; }
 
  protected:
@@ -93,7 +93,7 @@ inline uintA getKtupleDim(const ConfigurationL& Ctuple) {
 
 inline int initIdArg(const rai::Configuration& C, const char* frameName) {
   rai::Frame* a = 0;
-  if(frameName && frameName[0]) a = C.getFrameByName(frameName);
+  if(frameName && frameName[0]) a = C.getFrame(frameName);
   if(a) return a->ID;
 //  HALT("frame '" <<frameName <<"' does not exist");
   return -1;
@@ -143,7 +143,7 @@ std::shared_ptr<Feature> make_feature(const StringA& frames, const rai::Configur
   if(!!target) f->target = target;
   if(order>=0) f->order = order;
 
-  if(!f->frameIDs.N) f->frameIDs = namesToIndices(frames, C);
+  if(!f->frameIDs.N) f->frameIDs = C.getFrameIDs(frames);
 
   return f;
 }
@@ -153,7 +153,7 @@ inline FrameL groundFeatureFrames(const std::shared_ptr<Feature>& f, const rai::
   if(C.frames.nd==1){
     CHECK(!s, "C does not have multiple slices");
     CHECK(!f->order, "can't ground a order>0 feature on configuration without slices");
-    F = indicesToFrames(f->frameIDs, C);
+    F = C.getFrames(f->frameIDs);
     F.reshape(1, F.N);
   }else{
     F.resize(f->order+1, f->frameIDs.N);

@@ -171,7 +171,7 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
 }
 
 bool getFingersForGripper(rai::Frame*& gripper, rai::Frame*& fing1, rai::Frame*& fing2, rai::Configuration& C, const char* gripperFrameName) {
-  gripper = C.getFrameByName(gripperFrameName);
+  gripper = C.getFrame(gripperFrameName);
   if(!gripper) {
     LOG(-1) <<"you passed me a non-existing gripper name!";
     gripper=fing1=fing2=0;
@@ -341,10 +341,10 @@ CameraView& Simulation::cameraview() {
 void Simulation::addImp(Simulation::ImpType type, const StringA& frames, const arr& parameters) {
   if(type==_objectImpulses) {
     CHECK_EQ(frames.N, 1, "");
-    rai::Frame* obj = C.getFrameByName(frames(0));
+    rai::Frame* obj = C.getFrame(frames(0));
     imps.append(make_shared<Imp_ObjectImpulses>(obj));
   } else if(type==_blockJoints) {
-    FrameL F = C.getFramesByNames(frames);
+    FrameL F = C.getFrames(frames);
     auto block = make_shared<Imp_BlockJoints>(F, *this);
     imps.append(block);
   } else {

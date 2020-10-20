@@ -42,7 +42,7 @@ ptr<CtrlObjective> CtrlProblem::addObjective(const ptr<Feature>& _feat, const St
   t->type = _type;
   if(!!frames && frames.N){
     if(frames.N==1 && frames.scalar()=="ALL") t->feat->frameIDs = framesToIndices(komo.world.frames); //important! this means that, if no explicit selection of frames was made, all frames (of a time slice) are referred to
-    else t->feat->frameIDs = namesToIndices(frames, komo.world);
+    else t->feat->frameIDs = komo.world.getFrameIDs(frames);
   }
   addObjectives({t});
   return t;

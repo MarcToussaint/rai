@@ -29,16 +29,16 @@ void testFeature() {
   obj1->setMass(1.);
   obj2->setMass(1.);
 
-  rai::ForceExchange con(*obj1, *obj2);
+  rai::ForceExchange con(*obj1, *obj2, rai::FXT_poa);
 
-  C.setTimes(.1);
+  C.setTaus(.1);
 
   arr q1 = C.getJointState();
 
   rai::Configuration Ctuple;
-  Ctuple.addConfigurationCopy(C);
-  Ctuple.addConfigurationCopy(C);
-  Ctuple.addConfigurationCopy(C);
+  Ctuple.addConfiguration(C);
+  Ctuple.addConfiguration(C);
+  Ctuple.addConfiguration(C);
   Ctuple.jacMode = rai::Configuration::JM_rowShifted;
 
   uint n=Ctuple.getJointStateDimension();

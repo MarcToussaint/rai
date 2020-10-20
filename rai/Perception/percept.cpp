@@ -76,7 +76,7 @@ void PercCluster::write(ostream& os) const {
 //============================================================================
 
 void PercMesh::syncWith(rai::Configuration& K) {
-  rai::Frame* f = K.getFrameByName(STRING("perc_"<<id), false);
+  rai::Frame* f = K.getFrame(STRING("perc_"<<id), false);
   if(!f) {
     f = new rai::Frame(K);
     f->name <<"perc_" <<id;
@@ -129,7 +129,7 @@ void PercPlane::write(ostream& os) const {
 void PercPlane::syncWith(rai::Configuration& K) {
   rai::String plane_name = STRING("perc_" << id);
 
-  rai::Frame* body = K.getFrameByName(plane_name, false);
+  rai::Frame* body = K.getFrame(plane_name, false);
   if(not body) {
     //cout << plane_name << " does not exist yet; adding it..." << endl;
     body = new rai::Frame(K);
@@ -207,7 +207,7 @@ double PercBox::fuse(PerceptPtr& other) {
 void PercBox::syncWith(rai::Configuration& K) {
   rai::String box_name = STRING("perc_" << id);
 
-  rai::Frame* body = K.getFrameByName(box_name, false);
+  rai::Frame* body = K.getFrame(box_name, false);
   if(not body) {
     //cout << plane_name << " does not exist yet; adding it..." << endl;
     body = new rai::Frame(K);
@@ -260,7 +260,7 @@ void PercAlvar::write(ostream& os) const {
 void PercCluster::syncWith(rai::Configuration& K) {
   rai::String cluster_name = STRING("perc_" << id);
 
-  rai::Frame* body = K.getFrameByName(cluster_name, false);
+  rai::Frame* body = K.getFrame(cluster_name, false);
   if(not body) {
     //cout << cluster_name << " does not exist yet; adding it..." << endl;
     body = new rai::Frame(K);
@@ -284,7 +284,7 @@ void PercCluster::syncWith(rai::Configuration& K) {
 void PercAlvar::syncWith(rai::Configuration& K) {
   rai::String alvar_name = STRING("perc_" << id);
 
-  rai::Frame* body = K.getFrameByName(alvar_name, false);
+  rai::Frame* body = K.getFrame(alvar_name, false);
   if(not body) {
 //    cout << alvar_name << " does not exist yet; adding it..." << endl;
     body = new rai::Frame(K);
@@ -301,7 +301,7 @@ void PercAlvar::syncWith(rai::Configuration& K) {
 void OptitrackBody::syncWith(rai::Configuration& K) {
   rai::String optitrackbody_name = STRING("perc_" << id);
 
-  rai::Frame* body = K.getFrameByName(optitrackbody_name, false);
+  rai::Frame* body = K.getFrame(optitrackbody_name, false);
   if(not body) {
     cout << optitrackbody_name << " does not exist yet; adding it..." << endl;
     body = new rai::Frame(K);
@@ -318,7 +318,7 @@ void OptitrackBody::syncWith(rai::Configuration& K) {
 void OptitrackMarker::syncWith(rai::Configuration& K) {
   rai::String optitrackmarker_name = STRING("perc_" << id);
 
-  rai::Frame* body = K.getFrameByName(optitrackmarker_name, false);
+  rai::Frame* body = K.getFrame(optitrackmarker_name, false);
   if(not body) {
     cout << optitrackmarker_name << " does not exist yet; adding it..." << endl;
     body = new rai::Frame(K);

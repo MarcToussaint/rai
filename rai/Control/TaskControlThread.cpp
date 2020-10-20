@@ -51,7 +51,7 @@ TaskControlThread::TaskControlThread(const Var<rai::Configuration>& _ctrl_config
     }
   }
 
-  Hmetric = rai::getParameter<double>("Hrate", .1)*ctrl_config.get()->getHmetric();
+  Hmetric = rai::getParameter<double>("Hrate", .1)*ctrl_config.get()->getCtrlMetric();
 
   threadLoop();
 }

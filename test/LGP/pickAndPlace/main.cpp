@@ -26,7 +26,7 @@ void generateProblem(rai::Configuration& C){
     }
     C.stepSwift();
     arr y, J;
-    C.kinematicsProxyCost(y, J);
+    C.kinematicsPenetration(y, J);
 //    cout <<"collision costs of config: " <<y.scalar() <<endl;
 //    K.reportProxies(cout, .1, true);
 //    K.watch();

@@ -54,7 +54,7 @@ typedef rai::Array<rai::Configuration*> ConfigurationL;
 
 namespace rai {
 
-/// data structure to store a whole physical situation (lists of bodies, joints, shapes, proxies)
+/// data structure to store a kinematic/physical situation (lists of frames (with joints, shapes, inertias), forces & proxies)
 struct Configuration : GLDrawer {
   unique_ptr<struct sConfiguration> self;
 
@@ -87,49 +87,76 @@ struct Configuration : GLDrawer {
 
   /// @name constructors
   Configuration();
-  Configuration(const rai::Configuration& other, bool referenceSwiftOnCopy=false) : Configuration() {  copy(other, referenceSwiftOnCopy);  }
-  Configuration(const char* filename) : Configuration() {  addFile(filename);  }
+  Configuration(const Configuration& other, bool referenceSwiftOnCopy=false) : Configuration() {  copy(other, referenceSwiftOnCopy);  } ///< same as copy()
+  Configuration(const char* filename) : Configuration() {  addFile(filename);  } ///< same as addFile()
   virtual ~Configuration();
 
   /// @name copy
-  void operator=(const rai::Configuration& K) { copy(K); }
-  void copy(const rai::Configuration& K, bool referenceSwiftOnCopy=false);
+  void operator=(const Configuration& K) { copy(K); } ///< same as copy()
+  void copy(const Configuration& K, bool referenceSwiftOnCopy=false);
   bool operator!() const;
 
   /// @name initializations, building configurations
-  void readFromGraph(const Graph& G, bool addInsteadOfClear=false);
   Frame* addFrame(const char* name, const char* parent=nullptr, const char* args=nullptr);
   Frame* addFile(const char* filename);
-  Frame* addFile(const char* filename, const char* parentOfRoot, const rai::Transformation& relOfRoot);
   void addAssimp(const char* filename);
-  void addConfigurationCopy(const FrameL& F, const ForceExchangeL& _forces={});
-  void addConfigurationCopy(const Configuration& C){ addConfigurationCopy(C.frames, C.forces); }
+  void addCopies(const FrameL& F, const ForceExchangeL& _forces);
+  void addConfiguration(const Configuration& C){ addCopies(C.frames, C.forces); } ///< same as addCopies() with C.frames and C.forces
 
-  /// @name access
-  Frame* operator[](const char* name) { return getFrameByName(name, true); }
-  Frame* operator()(int i) const { return frames(i); }
-  Frame* getFrameByName(const char* name, bool warnIfNotExist=true, bool reverse=false) const;
+  /// @name get frames
+  Frame* operator[](const char* name) const { return getFrame(name, true); }  ///< same as getFrame()
+  Frame* operator()(int i) const { return frames(i); } ///< same as 'frames.elem(i)'  (the i-th frame)
+  Frame* getFrame(const char* name, bool warnIfNotExist=true, bool reverse=false) const;
   FrameL getFrames(const uintA& ids) const;
-  FrameL getFramesByNames(const StringA& frameNames) const;
-  FrameL getJoints(bool activesOnly=true);
-  FrameL getJointsSlice(uint t, bool activesOnly=true);
+  FrameL getFrames(const StringA& names) const;
+  uintA getFrameIDs(const StringA& names) const;
+  StringA getFrameNames() const;
+  FrameL getJoints(bool activesOnly=true) const;
+  FrameL getJointsSlice(uint t, bool activesOnly=true) const;
   uintA getJointIDs() const;
   StringA getJointNames() const;
-  StringA getFrameNames() const;
-  uintA getNormalJointFramesAndScale(arr& scale=NoArr) const;
-  arr naturalQmetric(double power=.5) const;               ///< returns diagonal of a natural metric in q-space, depending on tree depth
+  uintA getCtrlFramesAndScale(arr& scale=NoArr) const;
+
+  /// @name get state
+  uint getJointStateDimension() const;
+  const arr& getJointState() const;
+  arr getJointState(const FrameL& F, bool activesOnly=true) const;
+  arr getJointState(const uintA& F) const { return getJointState(getFrames(F)); } ///< same as getJointState() with getFrames()
+  arr getJointStateSlice(uint t, bool activesOnly=true){  return getJointState(getJointsSlice(t, activesOnly), activesOnly);  }
+  arr getFrameState() const { return getFrameState(frames); } ///< same as getFrameState() for all \ref frames
+  arr getFrameState(const FrameL& F) const;
+
+  /// @name set state
+  void setJointState(const arr& _q);
+  void setJointState(const arr& _q, const FrameL& F, bool activesOnly=true);
+  void setJointState(const arr& _q, const uintA& F){ setJointState(_q, getFrames(F), true); } ///< same as setJointState() with getFrames()
+  void setJointStateSlice(const arr& _q, uint t, bool activesOnly=true){  setJointState(_q, getJointsSlice(t, activesOnly), activesOnly);  }
+  void setFrameState(const arr& X){ setFrameState(X, frames); } ///< same as setFrameState() for all \ref frames
+  void setFrameState(const arr& X, const FrameL& F);
+  void setTaus(double tau);
+
+  /// @name active DOFs selection
+  void selectJoints(const FrameL& F, bool notThose=false);
+  void selectJointsByName(const StringA&, bool notThose=false);
+  void selectJointsByGroup(const StringA& groupNames, bool notThose=false);
+  void selectJointsBySubtrees(const StringA& roots, bool notThose=false);
+
+  /// @name get other information
+  arr getCtrlMetric() const;
+  arr getNaturalCtrlMetric(double power=.5) const;               ///< returns diagonal of a natural metric in q-space, depending on tree depth
   arr getLimits() const;
+  double getEnergy(const arr& qdot);
+  double getTotalPenetration(); ///< proxies are returns from a collision engine; contacts stable constraints
+  Graph reportForces();
+  bool checkUniqueNames() const;
+  FrameL calc_topSort() const;
+  bool check_topSort() const;
 
   /// @name structural operations, changes of configuration
   void clear();
   void reset_q();
-  FrameL calc_topSort() const;
-  bool check_topSort() const;
-  bool checkUniqueNames() const;
-  void prefixNames(bool clear=false);
-
   void reconfigureRoot(Frame* newRoot, bool ofLinkOnly);  ///< n becomes the root of the kinematic tree; joints accordingly reversed; lists resorted
-  void flipFrames(rai::Frame* a, rai::Frame* b);
+  void flipFrames(Frame* a, Frame* b);
   void pruneRigidJoints();        ///< delete rigid joints -> they become just links
   void pruneInactiveJoints();        ///< delete rigid joints -> they become just links
   void reconnectLinksToClosestJoints();        ///< re-connect all links to closest joint
@@ -142,9 +169,9 @@ struct Configuration : GLDrawer {
   bool checkConsistency() const;
   Joint* attach(Frame* a, Frame* b);
   Joint* attach(const char* a, const char* b);
-  FrameL getParts() const;
   uintA getCollisionExcludeIDs(bool verbose=false);
   uintA getCollisionExcludePairIDs(bool verbose=false);
+  void prefixNames(bool clear=false);
 
   /// @name computations on the tree
   void calc_indexedActiveJoints(); ///< sort of private: count the joint dimensionalities and assign j->q_index
@@ -158,57 +185,22 @@ struct Configuration : GLDrawer {
   void ensure_q() {  if(!_state_q_isGood) calc_q_from_Q();  }
   void ensure_proxies() {  if(!_state_proxies_isGood) stepSwift();  }
 
-  /// @name get state
-  uint getJointStateDimension() const;
-  const arr& getJointState() const;
-  arr getJointState(const FrameL& F, bool activesOnly=true) const;
-  arr getJointState(const uintA& F) const { return getJointState(getFrames(F)); }
-  arr getJointStateSlice(uint t, bool activesOnly=true){  return getJointState(getJointsSlice(t, activesOnly), activesOnly);  }
-  arr getFrameState() const { return getFrameState(frames); }
-  arr getFrameState(const FrameL& F) const;
-
-  /// @name active set selection
-  void selectJoints(const FrameL& F, bool notThose=false);
-  void selectJointsByGroup(const StringA& groupNames, bool notThose=false);
-  void selectJointsByName(const StringA&, bool notThose=false);
-  void selectJointsBySubtrees(const StringA& roots, bool notThose=false);
-
-  /// @name set state
-  void setJointState(const arr& _q);
-  void setJointState(const arr& _q, const FrameL& F, bool activesOnly=true);
-  void setJointState(const arr& _q, const uintA& F){ setJointState(_q, getFrames(F), true); }
-  void setJointStateSlice(const arr& _q, uint t, bool activesOnly=true){  setJointState(_q, getJointsSlice(t, activesOnly), activesOnly);  }
-  void setFrameState(const arr& X){ setFrameState(X, frames); }
-  void setFrameState(const arr& X, const FrameL& F);
-  void setTimes(double t);
-
   /// @name Jacobians and kinematics (low level)
-  /// returns the 'Jacobian' of a zero n-vector (initializes Jacobian to proper sparse/dense/rowShifted/noArr)
-  void jacobian_zero(arr& J, uint n) const;
-  /// what is the linear velocity of a world point (pos_world) attached to frame a for a given joint velocity?
-  void jacobian_pos(arr& J, Frame* a, const rai::Vector& pos_world) const; //usually called internally with kinematicsPos
-  /// what is the angular velocity of frame a for a given joint velocity?
+  void jacobian_pos(arr& J, Frame* a, const Vector& pos_world) const; //usually called internally with kinematicsPos
   void jacobian_angular(arr& J, Frame* a) const; //usually called internally with kinematicsVec or Quat
-  /// how does the time coordinate of frame a change with q-change?
   void jacobian_tau(arr& J, Frame* a) const;
+  void jacobian_zero(arr& J, uint n) const;
 
   void kinematicsZero(arr& y, arr& J, uint n) const;
-  uint kinematicsJoints(arr& y, arr& J, const FrameL& F, bool relative_q0=false) const;
   void kinematicsPos(arr& y, arr& J, Frame* a, const Vector& rel=NoVector) const;
   void kinematicsVec(arr& y, arr& J, Frame* a, const Vector& vec=NoVector) const;
   void kinematicsQuat(arr& y, arr& J, Frame* a) const;
-  void kinematicsPos_wrtFrame(arr& y, arr& J, Frame* b, const rai::Vector& rel, Frame* self) const;
+  void kinematicsPos_wrtFrame(arr& y, arr& J, Frame* b, const Vector& rel, Frame* self) const;
   void hessianPos(arr& H, Frame* a, Vector* rel=0) const;
   void kinematicsTau(double& tau, arr& J, Frame* a=0) const;
-  void kinematicsRelVec(arr& y, arr& J, Frame* a, const Vector& vec1, Frame* b) const;
 
-  void kinematicsContactPOA(arr& y, arr& J, const ForceExchange* c) const;
-  void kinematicsContactForce(arr& y, arr& J, const ForceExchange* c) const;
-
-  void kinematicsProxyCost(arr& y, arr& J, const Proxy& p, double margin=.0, bool addValues=false) const;
-  void kinematicsProxyCost(arr& y, arr& J, double margin=.0) const;
-
-  void kinematicsLimits(arr& y, arr& J, const arr& limits) const;
+  void kinematicsPenetration(arr& y, arr& J, const Proxy& p, double margin=.0, bool addValues=false) const;
+  void kinematicsPenetration(arr& y, arr& J, double margin=.0) const;
 
   void setJacModeAs(const arr& J);
 
@@ -217,10 +209,16 @@ struct Configuration : GLDrawer {
   void evalFeature(arr& y, arr& J, FeatureSymbol fs, const StringA& frames= {}) const;
 
   /// @name high level inverse kinematics
-  void inverseKinematicsPos(Frame& frame, const arr& ytarget, const rai::Vector& rel_offset=NoVector, int max_iter=3);
+  void inverseKinematicsPos(Frame& frame, const arr& ytarget, const Vector& rel_offset=NoVector, int max_iter=3);
 
-  /// @name get infos
-  arr getHmetric() const;
+  /// @name dynamics based on the fs() interface
+  void equationOfMotion(arr& M, arr& F, const arr& qdot, bool gravity=true);
+  void fwdDynamics(arr& qdd, const arr& qd, const arr& tau, bool gravity=true);
+  void inverseDynamics(arr& tau, const arr& qd, const arr& qdd, bool gravity=true);
+
+  /// @name collisions & proxies
+  void copyProxies(const ProxyA& _proxies);
+  void addProxies(const uintA& collisionPairs);
 
   /// @name extensions on demand
   shared_ptr<ConfigurationViewer>& gl(const char* window_title=nullptr, bool offscreen=false);
@@ -242,17 +240,6 @@ struct Configuration : GLDrawer {
   void stepOde(double tau);
   void stepDynamics(arr& qdot, const arr& u_control, double tau, double dynamicNoise = 0.0, bool gravity = true);
 
-  /// @name dynamics based on the fs() interface
-  void equationOfMotion(arr& M, arr& F, const arr& qdot, bool gravity=true);
-  void fwdDynamics(arr& qdd, const arr& qd, const arr& tau, bool gravity=true);
-  void inverseDynamics(arr& tau, const arr& qd, const arr& qdd, bool gravity=true);
-  double getEnergy(const arr& qdot);
-
-  /// @name collisions & proxies
-  double totalCollisionPenetration(); ///< proxies are returns from a collision engine; contacts stable constraints
-  void copyProxies(const ProxyA& _proxies);
-  void addProxies(const uintA& collisionPairs);
-
   /// @name I/O
   void write(std::ostream& os) const;
   void write(Graph& G) const;
@@ -269,23 +256,21 @@ struct Configuration : GLDrawer {
   //some info
   void report(std::ostream& os=std::cout) const;
   void reportProxies(std::ostream& os=std::cout, double belowMargin=1., bool brief=true) const;
-  Graph reportForces();
 
+private:
+  void readFromGraph(const Graph& G, bool addInsteadOfClear=false);
   friend struct KinematicSwitch;
+  friend void editConfiguration(const char* orsfile, Configuration& G);
 };
 
-} //namespace rai
-
-stdPipes(rai::Configuration)
+stdPipes(Configuration)
 
 //===========================================================================
 //
 // OpenGL static draw functions
 //
 
-uintA namesToIndices(const StringA& names, const rai::Configuration& C);
 uintA framesToIndices(const FrameL& frames);
-inline FrameL indicesToFrames(const uintA& ids, const rai::Configuration& C){ return C.getFrames(ids); }
 uintA jointsToIndices(const JointL& joints);
 
 //===========================================================================
@@ -293,23 +278,12 @@ uintA jointsToIndices(const JointL& joints);
 // C-style functions
 //
 
-void lib_ors();
 void makeConvexHulls(FrameL& frames, bool onlyContactShapes=true);
 void computeOptimalSSBoxes(FrameL& frames);
 void computeMeshNormals(FrameL& frames, bool force=false);
 void computeMeshGraphs(FrameL& frames, bool force=false);
-double forceClosureFromProxies(rai::Configuration& C, uint frameIndex,
-                               double distanceThreshold=0.01,
-                               double mu=.5,     //friction coefficient
-                               double discountTorques=1.);  //friction coefficient
 
-void displayState(const arr& x, rai::Configuration& G, const char* tag);
-void displayTrajectory(const arr& x, int steps, rai::Configuration& G, const KinematicSwitchL& switches, const char* tag, double delay=0., uint dim_z=0, bool copyG=false);
-inline void displayTrajectory(const arr& x, int steps, rai::Configuration& G, const char* tag, double delay=0., uint dim_z=0, bool copyG=false) {
-  displayTrajectory(x, steps, G, {}, tag, delay, dim_z, copyG);
-}
-void editConfiguration(const char* orsfile, rai::Configuration& G);
-int animateConfiguration(rai::Configuration& G, struct Inotify* ino=nullptr);
+void editConfiguration(const char* orsfile, Configuration& G);
+int animateConfiguration(Configuration& G, struct Inotify* ino=nullptr);
 
-void kinVelocity(arr& y, arr& J, uint frameId, const ConfigurationL& Ktuple, double tau);
-void kinAngVelocity(arr& y, arr& J, uint frameId, const ConfigurationL& Ktuple, double tau);
+} //namespace rai

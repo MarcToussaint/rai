@@ -33,12 +33,12 @@ void TEST(FCL) {
 
   cout <<"** SWIFT: " <<endl;
   C.stepSwift();
-  C.totalCollisionPenetration();
+  C.getTotalPenetration();
   C.reportProxies();
 
   cout <<"** FCL: " <<endl;
   C.stepFcl();
-  C.totalCollisionPenetration();
+  C.getTotalPenetration();
   C.reportProxies();
 }
 
@@ -85,7 +85,7 @@ void TEST(CollisionTiming){
     cout <<"SWIFT:" <<endl;
     cout <<"#proxies: " <<C.proxies.N <<endl; //this also calls pair collisions!!
     cout <<"time: " <<rai::timerRead(true) <<endl;
-    cout <<"total penetration: " <<C.totalCollisionPenetration() <<endl; //this also calls pair collisions!!
+    cout <<"total penetration: " <<C.getTotalPenetration() <<endl; //this also calls pair collisions!!
     cout <<"time: " <<rai::timerRead(true) <<endl;
     C.reportProxies(FILE("z.col"), 0.);
 
@@ -95,7 +95,7 @@ void TEST(CollisionTiming){
     cout <<"FCL:" <<endl;
     cout <<"#proxies: " <<C.proxies.N <<endl; //this also calls pair collisions!!
     cout <<"time: " <<rai::timerRead(true) <<endl;
-    cout <<"total penetration: " <<C.totalCollisionPenetration() <<endl; //this also calls pair collisions!!
+    cout <<"total penetration: " <<C.getTotalPenetration() <<endl; //this also calls pair collisions!!
     cout <<"time: " <<rai::timerRead(true) <<endl;
     C.reportProxies(FILE("z.col"), 0.);
 

@@ -59,7 +59,7 @@ void GravityCompensation::learnGCModel() {
   joints.append(headJoints);
 
   for(rai::String joint : joints) {
-    uint index = world.getFrameByName(joint)->joint->qIndex;
+    uint index = world.getFrame(joint)->joint->qIndex;
     double c;
     betasGC[joint] = cv.calculateBetaWithCV(featuresGC(q, qSign, joint), u.sub(0, -1, index, index), lambdas, false, c);
     cout << c << endl;
@@ -70,7 +70,7 @@ arr GravityCompensation::compensate(const arr& q, const arr& qSign, const String
   arr u = zeros(world.getJointStateDimension());
 
   for(rai::String joint : joints) {
-    uint index = world.getFrameByName(joint)->joint->qIndex;
+    uint index = world.getFrame(joint)->joint->qIndex;
     u(index) = (featuresGC(q, qSign, joint)*betasGC.find(joint)->second).first();
   }
   clip(u, -7.0, 7.0); //TODO: More sophisticated clipping!
@@ -119,15 +119,15 @@ arr GravityCompensation::compensateFTR(const arr& q) {
 GravityCompensation::GravityCompensation(const rai::Configuration& world) : world(world) {
   TLeftArm = zeros(leftJoints.N, world.getJointStateDimension());
   for(uint i = 0; i < leftJoints.N; i++) {
-    TLeftArm(i, world.getFrameByName(leftJoints(i))->joint->qIndex) = 1;
+    TLeftArm(i, world.getFrame(leftJoints(i))->joint->qIndex) = 1;
   }
   TRightArm = zeros(rightJoints.N, world.getJointStateDimension());
   for(uint i = 0; i < rightJoints.N; i++) {
-    TRightArm(i, world.getFrameByName(rightJoints(i))->joint->qIndex) = 1;
+    TRightArm(i, world.getFrame(rightJoints(i))->joint->qIndex) = 1;
   }
   THead = zeros(headJoints.N, world.getJointStateDimension());
   for(uint i = 0; i < headJoints.N; i++) {
-    THead(i, world.getFrameByName(headJoints(i))->joint->qIndex) = 1;
+    THead(i, world.getFrame(headJoints(i))->joint->qIndex) = 1;
   }
 }
 
@@ -139,7 +139,7 @@ arr GravityCompensation::featuresGC(arr q, arr qSign, const rai::String& joint) 
     qSign = ~qSign;
   }
 
-  uint index = world.getFrameByName(joint)->joint->qIndex;
+  uint index = world.getFrame(joint)->joint->qIndex;
   arr T;
   FeatureType featureType = linearFT;
   bool dynamicFeature=false, cosFeature=false, sinFeature=false, stictionFeature=false;

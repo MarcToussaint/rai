@@ -32,7 +32,7 @@ void POA_distance(arr& y, arr& J, rai::ForceExchange* ex, bool b_or_a) {
   M0.setDot();
   rai::Transformation X0=0;
   arr pos, Jpos;
-  K.kinematicsContactPOA(pos, Jpos, ex);
+  ex->kinPOA(pos, Jpos);
   X0.pos = pos;
 
   PairCollision coll(M0, *m, X0, s->frame.ensure_X(), 0., r);

@@ -62,10 +62,10 @@ template<> const char* rai::Enum<rai::KOMOsolver>::names []= {
 double shapeSize(const Configuration& K, const char* name, uint i=2);
 
 struct getQFramesAndScale_Return { uintA frames; arr scale; };
-getQFramesAndScale_Return getQFramesAndScale(const rai::Configuration& C);
+getQFramesAndScale_Return getCtrlFramesAndScale(const rai::Configuration& C);
 
 Shape* getShape(const Configuration& K, const char* name) {
-  Frame* f = K.getFrameByName(name);
+  Frame* f = K.getFrame(name);
   Shape* s = f->shape;
   if(!s) {
     for(Frame* b:f->children) if(b->name==name && b->shape) { s=b->shape; break; }
@@ -120,15 +120,15 @@ void KOMO::setTiming(double _phases, uint _stepsPerPhase, double durationPerPhas
 
 void KOMO::activateCollisions(const char* s1, const char* s2) {
   if(!computeCollisions) return;
-  Frame* sh1 = world.getFrameByName(s1);
-  Frame* sh2 = world.getFrameByName(s2);
+  Frame* sh1 = world.getFrame(s1);
+  Frame* sh2 = world.getFrame(s2);
   if(sh1 && sh2) world.swift()->activate(sh1, sh2);
 }
 
 void KOMO::deactivateCollisions(const char* s1, const char* s2) {
   if(!computeCollisions) return;
-  Frame* sh1 = world.getFrameByName(s1);
-  Frame* sh2 = world.getFrameByName(s2);
+  Frame* sh1 = world.getFrame(s1);
+  Frame* sh2 = world.getFrame(s2);
   if(sh1 && sh2) world.swift()->deactivate(sh1, sh2);
   else LOG(-1) <<"not found:" <<s1 <<' ' <<s2;
 }
@@ -180,7 +180,7 @@ ptr<Objective> KOMO::addObjective(const arr& times,
 
   if(!!frames && frames.N){
     if(frames.N==1 && frames.scalar()=="ALL") f->frameIDs = framesToIndices(world.frames); //important! this means that, if no explicit selection of frames was made, all frames (of a time slice) are referred to
-    else f->frameIDs = namesToIndices(frames, world);
+    else f->frameIDs = world.getFrameIDs(frames);
   }
   if(!!scale) f->scale = scale;
   if(!!target) f->target = target;
@@ -590,7 +590,7 @@ void KOMO_ext::setHoming(double startTime, double endTime, double prec, const ch
 //}
 
 ptr<Objective> KOMO::add_qControlObjective(const arr& times, uint order, double scale, const arr& target, int deltaFromStep, int deltaToStep) {
-  auto F = getQFramesAndScale(world);
+  auto F = getCtrlFramesAndScale(world);
   scale *= sqrt(tau);
 
   CHECK_GE(k_order, order, "");
@@ -599,7 +599,7 @@ ptr<Objective> KOMO::add_qControlObjective(const arr& times, uint order, double 
 }
 
 void KOMO_ext::setSquaredQAccVelHoming(double startTime, double endTime, double accPrec, double velPrec, double homingPrec, int deltaFromStep, int deltaToStep) {
-  auto F = getQFramesAndScale(world);
+  auto F = getCtrlFramesAndScale(world);
   F.scale *= sqrt(tau);
 
   if(accPrec) {
@@ -635,7 +635,7 @@ void KOMO::addSquaredQuaternionNorms(double startTime, double endTime, double pr
 }
 
 void KOMO_ext::setHoldStill(double startTime, double endTime, const char* shape, double prec) {
-  Frame* s = world.getFrameByName(shape);
+  Frame* s = world.getFrame(shape);
   addObjective({startTime, endTime}, make_shared<F_qItself>(TUP(s->ID)), {}, OT_sos, {prec}, NoArr, 1);
 }
 
@@ -1250,9 +1250,9 @@ void KOMO_ext::setAlignedStacking(double time, const char* object, ObjectiveType
 
 void KOMO::add_collision(bool hardConstraint, double margin, double prec) {
   if(hardConstraint) { //interpreted as hard constraint (default)
-    addObjective({}, make_shared<F_AccumulatedCollisions>(TMT_allP, uintA(), margin), {"ALL"}, OT_eq, {prec}, NoArr);
+    addObjective({}, make_shared<F_AccumulatedCollisions>(margin), {"ALL"}, OT_eq, {prec}, NoArr);
   } else { //cost term
-    addObjective({}, make_shared<F_AccumulatedCollisions>(TMT_allP, uintA(), margin), {"ALL"}, OT_sos, {prec}, NoArr);
+    addObjective({}, make_shared<F_AccumulatedCollisions>(margin), {"ALL"}, OT_sos, {prec}, NoArr);
   }
 }
 
@@ -1881,7 +1881,7 @@ void KOMO::setupConfigurations2() {
 
   rai::Configuration C;
   C.copy(world, true);
-  C.setTimes(tau);
+  C.setTaus(tau);
 
   if(computeCollisions) {
     CHECK(!fcl, "");
@@ -1899,7 +1899,7 @@ void KOMO::setupConfigurations2() {
 //    }
 
 //    uint nBefore = pathConfig.frames.N;
-    pathConfig.addConfigurationCopy(C.frames, C.forces);
+    pathConfig.addCopies(C.frames, C.forces);
 //    timeSlices[s] = pathConfig.frames({nBefore, -1});
 
   }

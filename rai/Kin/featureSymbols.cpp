@@ -74,23 +74,14 @@ template<> const char* rai::Enum<FeatureSymbol>::names []= {
 };
 
 //fwd declarations
-auto getQFramesAndScale(const rai::Configuration& C) {
+auto getCtrlFramesAndScale(const rai::Configuration& C) {
   struct Return { uintA frames; arr scale; } R;
-  for(rai::Frame* f : C.frames) {
-    rai::Joint *j = f->joint;
-    if(j && j->active && j->dim>0 && (!j->mimic) && j->H>0. && j->type!=rai::JT_tau && (!f->ats["constant"])) {
-      CHECK(!j->mimic, "");
-      R.frames.append(TUP(f->ID, f->parent->ID));
-      R.scale.append(j->H, j->dim);
-    }
-  }
-  R.frames.reshape(-1, 2);
-  //  cout <<scale <<endl <<world.getHmetric() <<endl;
+  R.frames = C.getCtrlFramesAndScale(R.scale);
   return R;
 }
 
 double shapeSize(const rai::Configuration& K, const char* name, uint i=2) {
-  rai::Frame* f = K.getFrameByName(name);
+  rai::Frame* f = K.getFrame(name);
   rai::Shape* s = f->shape;
   if(!s) {
     for(rai::Frame* b:f->children) if(b->name==name && b->shape) { s=b->shape; break; }
@@ -160,14 +151,12 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
   else if(feat==FS_angularVel) { f=make_shared<F_AngVel>(); }
 
   else if(feat==FS_accumulatedCollisions) {
-    if(frames.N) f=make_shared<F_AccumulatedCollisions>(TMT_allP, namesToIndices(frames, C));
-    else f=make_shared<F_AccumulatedCollisions>(TMT_allP, framesToIndices(C.frames));
+    f=make_shared<F_AccumulatedCollisions>();
+    if(!frames.N) f->frameIDs = framesToIndices(C.frames);
   }
   else if(feat==FS_jointLimits) {
     f=make_shared<F_qLimits2>();
-    f->frameIDs = namesToIndices(frames, C);
-//    f=make_shared<F_qLimits>();
-//    for(auto *j:C.activeJoints) f->frameIDs.append(j->frame->ID);
+    if(!frames.N) f->frameIDs = framesToIndices(C.frames);
   }
 
   else if(feat==FS_qItself) {
@@ -177,7 +166,7 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
 
   else if(feat==FS_qControl) {
     CHECK(!frames.N, "NIY");
-    auto F = getQFramesAndScale(C);
+    auto F = getCtrlFramesAndScale(C);
     f = make_shared<F_qItself>(F.frames);
     f->scale = F.scale;
   }
@@ -212,7 +201,7 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
 
   f->fs = feat;
 
-  if(!f->frameIDs.N) f->frameIDs = namesToIndices(frames, C);
+  if(!f->frameIDs.N) f->frameIDs = C.getFrameIDs(frames);
 
   return f;
 }

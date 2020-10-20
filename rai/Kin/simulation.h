@@ -65,7 +65,7 @@ struct Simulation {
   byteA getScreenshot();
 
   //== ground truth interface
-  rai::Frame* getGroundTruthFrame(const char* frame) { return C.getFrameByName("frame"); }
+  rai::Frame* getGroundTruthFrame(const char* frame) { return C.getFrame("frame"); }
 
   //== perturbation/adversarial interface
 

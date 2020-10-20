@@ -55,8 +55,8 @@ TM_Default::TM_Default(const rai::Graph& specs, const rai::Configuration& G)
   else if(Type=="vecAlign") type=TMT_vecAlign;
   else if(Type=="gazeAt") type=TMT_gazeAt;
   else HALT("unknown type " <<Type);
-  if((it=specs["sym2"]) || (it=specs["ref1"])) { auto name=it->get<rai::String>(); auto* s=G.getFrameByName(name); CHECK(s, "shape name '" <<name <<"' does not exist"); i=s->ID; }
-  if((it=specs["sym3"]) || (it=specs["ref2"])) { auto name=it->get<rai::String>(); auto* s=G.getFrameByName(name); CHECK(s, "shape name '" <<name <<"' does not exist"); j=s->ID; }
+  if((it=specs["sym2"]) || (it=specs["ref1"])) { auto name=it->get<rai::String>(); auto* s=G.getFrame(name); CHECK(s, "shape name '" <<name <<"' does not exist"); i=s->ID; }
+  if((it=specs["sym3"]) || (it=specs["ref2"])) { auto name=it->get<rai::String>(); auto* s=G.getFrame(name); CHECK(s, "shape name '" <<name <<"' does not exist"); j=s->ID; }
   if((it=specs["vec1"])) ivec = rai::Vector(it->get<arr>());  else ivec.setZero();
   if((it=specs["vec2"])) jvec = rai::Vector(it->get<arr>());  else jvec.setZero();
   if(type==TMT_quat) flipTargetSignOnNegScalarProduct=true;
@@ -79,8 +79,8 @@ TM_Default::TM_Default(const rai::Node* specs, const rai::Configuration& G)
   else if(Type=="vecAlign") type=TMT_vecAlign;
   else if(Type=="gazeAt") type=TMT_gazeAt;
   else HALT("unknown type " <<Type);
-  if(ref1) { rai::Frame* s=G.getFrameByName(ref1); CHECK(s, "shape name '" <<ref1 <<"' does not exist"); i=s->ID; }
-  if(ref2) { rai::Frame* s=G.getFrameByName(ref2); CHECK(s, "shape name '" <<ref2 <<"' does not exist"); j=s->ID; }
+  if(ref1) { rai::Frame* s=G.getFrame(ref1); CHECK(s, "shape name '" <<ref1 <<"' does not exist"); i=s->ID; }
+  if(ref2) { rai::Frame* s=G.getFrame(ref2); CHECK(s, "shape name '" <<ref2 <<"' does not exist"); j=s->ID; }
   if(specs->isGraph()) {
     const rai::Graph& params = specs->graph();
     rai::Node* it;

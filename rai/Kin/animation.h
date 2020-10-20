@@ -24,7 +24,7 @@ struct Animation{
 
   void set_t(rai::Configuration& C, uint t){
     for(auto& a: A){
-      if(a.X.d0>t) C.setFrameState(a.X[t], indicesToFrames(a.frameIDs, C));
+      if(a.X.d0>t) C.setFrameState(a.X[t], C.getFrames(a.frameIDs));
     }
   }
 
