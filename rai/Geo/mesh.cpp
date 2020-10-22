@@ -1314,7 +1314,9 @@ void rai::Mesh::readPLY(const char* fn) {
 }
 
 #else
-void rai::Mesh::writePLY(const char* fn, bool bin) { NICO }
+void rai::Mesh::writePLY(const char* fn, bool bin) {
+  writeAssimp(*this, fn, "ply");
+}
 void rai::Mesh::readPLY(const char* fn) { NICO }
 #endif
 

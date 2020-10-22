@@ -1354,7 +1354,7 @@ double* Transformation::getAffineMatrix(double* m) const {
   m[0] = M.m00; m[1] = M.m01; m[2] = M.m02; m[3] =pos.x;
   m[4] = M.m10; m[5] = M.m11; m[6] = M.m12; m[7] =pos.y;
   m[8] = M.m20; m[9] = M.m21; m[10]= M.m22; m[11]=pos.z;
-  m[12]=0.;    m[13]=0.;    m[14]=0.;    m[15]=1.;
+  m[12]= 0.;    m[13]= 0.;    m[14]= 0.;    m[15]=1.;
   return m;
 }
 
@@ -1371,7 +1371,7 @@ double* Transformation::getInverseAffineMatrix(double* m) const {
   m[0] =M.m00; m[1] =M.m10; m[2] =M.m20; m[3] =-pinv.x;
   m[4] =M.m01; m[5] =M.m11; m[6] =M.m21; m[7] =-pinv.y;
   m[8] =M.m02; m[9] =M.m12; m[10]=M.m22; m[11]=-pinv.z;
-  m[12]=0.;   m[13]=0.;   m[14]=0.;   m[15]=1.;
+  m[12]=0.;    m[13]=0.;    m[14]=0.;    m[15]=1.;
   return m;
 }
 

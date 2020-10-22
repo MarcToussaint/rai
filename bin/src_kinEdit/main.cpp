@@ -25,7 +25,11 @@ int main(int argc,char **argv){
     try {
       rai::lineCount=1;
       C.clear();
-      C.addFile(file);
+      if(file.endsWith(".dae")){
+        C.addAssimp(file);
+      }else{
+        C.addFile(file);
+      }
       C.report();
       break;
     } catch(std::runtime_error& err) {
@@ -50,12 +54,16 @@ int main(int argc,char **argv){
   if(rai::checkParameter<bool>("prune")){
     cout <<"PRUNING STRUCTURE" <<endl;
     C.optimizeTree(true, true, false);
-  }else{
-    C.optimizeTree(false, false, false);
   }
+//    C.optimizeTree(false, false, false);
   C.ensure_q();
   C.checkConsistency();
   C.sortFrames();
+
+  if(rai::checkParameter<bool>("writeMeshes")){
+    rai::system("mkdir -p meshes");
+    C.writeMeshes();
+  }
 
   //    makeConvexHulls(G.frames);
   //    computeOptimalSSBoxes(G.shapes);
@@ -69,7 +77,11 @@ int main(int argc,char **argv){
   if(rai::checkParameter<bool>("cleanOnly")) return 0;
 
   //-- continuously animate
-  editConfiguration(file, C);
+  if(file.endsWith(".dae")){
+    C.watch(true);
+  }else{
+    editConfiguration(file, C);
+  }
 
   return 0;
 }

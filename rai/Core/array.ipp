@@ -1214,7 +1214,7 @@ rai::Array<T> rai::Array<T>::row(uint row_index) const {
  */
 template<class T>
 rai::Array<T> rai::Array<T>::col(uint col_index) const {
-  return sub(0, d0 - 1, col_index, col_index);
+  return sub(0, d0 - 1, col_index, col_index).reshape(d0);
 }
 
 /**
@@ -2122,7 +2122,7 @@ template<class T> void rai::Array<T>::read(std::istream& is) {
 template<class T> void rai::Array<T>::writeDim(std::ostream& os) const {
   uint i;
   os <<'<';
-  if(nd) os <<dim(0); else os <<0;
+  if(nd) os <<dim(0);
   for(i=1; i<nd; i++) os <<' ' <<dim(i);
   os <<'>';
 }
@@ -2132,6 +2132,13 @@ template<class T> void rai::Array<T>::readDim(std::istream& is) {
   char c;
   uint ND, dim[10];
   is >>PARSE("<");
+  is.get(c);
+  if(c=='>'){
+    clear();
+    return;
+  }else{
+    is.putback(c);
+  }
   for(ND=0;; ND++) {
     is >>dim[ND];
     is.get(c);

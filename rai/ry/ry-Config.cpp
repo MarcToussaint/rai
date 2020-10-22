@@ -106,11 +106,11 @@ void init_Config(pybind11::module& m) {
       )
 
   .def("addConfigurationCopy", [](shared_ptr<rai::Configuration>& self, shared_ptr<rai::Configuration>& other){
-    self->addConfigurationCopy(*other);
+    self->addConfiguration(*other);
   }, "")
 
   .def("getFrame", [](shared_ptr<rai::Configuration>& self, const std::string& frameName) {
-    rai::Frame *f = self->getFrameByName(frameName.c_str(), true);
+    rai::Frame *f = self->getFrame(frameName.c_str(), true);
     return shared_ptr<rai::Frame>(f, &null_deleter ); //giving it a non-sense deleter!
   },
   "get access to a frame by name; use the Frame methods to set/get frame properties",
@@ -118,7 +118,7 @@ void init_Config(pybind11::module& m) {
       )
 
   .def("frame", [](shared_ptr<rai::Configuration>& self, const std::string& frameName) {
-    rai::Frame *f = self->getFrameByName(frameName.c_str(), true);
+    rai::Frame *f = self->getFrame(frameName.c_str(), true);
     return shared_ptr<rai::Frame>(f, &null_deleter ); //giving it a non-sense deleter!
   },
   "get access to a frame by name; use the Frame methods to set/get frame properties",
@@ -126,7 +126,7 @@ void init_Config(pybind11::module& m) {
       )
 
   .def("delFrame", [](shared_ptr<rai::Configuration>& self, const std::string& frameName) {
-    rai::Frame* p = self->getFrameByName(frameName.c_str(), true);
+    rai::Frame* p = self->getFrame(frameName.c_str(), true);
     if(p) delete p;
     checkView(self);
   },
@@ -171,7 +171,7 @@ void init_Config(pybind11::module& m) {
       )
 
       .def("setJointState", [](shared_ptr<rai::Configuration>& self, const std::vector<double>& q, const ry::I_StringA& joints) {
-        self->setJointState(arr(q, true), self->getFramesByNames(I_conv(joints)));
+        self->setJointState(arr(q, true), self->getFrames(I_conv(joints)));
         checkView(self);
       },
       "set the joint state, optionally only for a subset of joints specified as list of joint names",
@@ -205,7 +205,7 @@ void init_Config(pybind11::module& m) {
 
   .def("getFrameState", [](shared_ptr<rai::Configuration>& self, const char* frame) {
     arr X;
-    rai::Frame* f = self->getFrameByName(frame, true);
+    rai::Frame* f = self->getFrame(frame, true);
     if(f) X = f->ensure_X().getArr7d();
     return pybind11::array(X.dim(), X.p);
   }, "TODO remove -> use individual frame!")
@@ -214,7 +214,7 @@ void init_Config(pybind11::module& m) {
     arr _X (X, true);
     _X.reshape(_X.N/7, 7);
     if(frames.size()){
-      self->setFrameState(_X, self->getFramesByNames(I_conv(frames)));
+      self->setFrameState(_X, self->getFrames(I_conv(frames)));
     }else{
       self->setFrameState(_X);
     }
@@ -229,7 +229,7 @@ void init_Config(pybind11::module& m) {
     arr _X = numpy2arr<double>(X);
     _X.reshape(_X.N/7, 7);
     if(frames.size()){
-      self->setFrameState(_X, self->getFramesByNames(I_conv(frames)));
+      self->setFrameState(_X, self->getFrames(I_conv(frames)));
     }else{
       self->setFrameState(_X);
     }

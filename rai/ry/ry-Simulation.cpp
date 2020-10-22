@@ -98,19 +98,19 @@ void init_Simulation(pybind11::module& m) {
       )
 
   .def("getGroundTruthPosition", [](std::shared_ptr<rai::Simulation>& self, const char* frame) {
-    rai::Frame* f = self->C.getFrameByName(frame);
+    rai::Frame* f = self->C.getFrame(frame);
     arr x = f->getPosition();
     return pybind11::array_t<double>(x.dim(), x.p);
   })
 
   .def("getGroundTruthRotationMatrix", [](std::shared_ptr<rai::Simulation>& self, const char* frame) {
-    rai::Frame* f = self->C.getFrameByName(frame);
+    rai::Frame* f = self->C.getFrame(frame);
     arr x = f->getRotationMatrix();
     return pybind11::array_t<double>(x.dim(), x.p);
   })
 
   .def("getGroundTruthSize", [](std::shared_ptr<rai::Simulation>& self, const char* frame) {
-    rai::Frame* f = self->C.getFrameByName(frame);
+    rai::Frame* f = self->C.getFrame(frame);
     arr x = f->getSize();
     return pybind11::array_t<double>(x.dim(), x.p);
   })

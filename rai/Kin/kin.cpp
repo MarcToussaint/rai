@@ -205,12 +205,43 @@ Frame* Configuration::addFile(const char* filename) {
 }
 
 void Configuration::addAssimp(const char* filename) {
-  AssimpLoader A(filename);
-  for(Mesh& m:A.meshes) {
-    Frame* f = new Frame(*this);
-    Shape* s = new Shape(*f);
-    s->type() = ST_mesh;
-    s->mesh() = m;
+  AssimpLoader A(filename, true, true);
+  //-- create all frames
+  uint Nold = frames.N;
+  for(uint i=0;i<A.names.N;i++){
+    Frame* f = addFrame(A.names(i));
+  }
+  //-- link to parents
+  for(uint i=0;i<A.names.N;i++){
+    Frame* f = frames(Nold+i);
+    if(A.parents(i).N){
+      Frame* f = frames(Nold+i);
+      rai::Frame *parent = getFrame(A.parents(i));
+      if(parent) f->linkFrom(parent);
+    }
+    f->set_X() = A.poses(i);
+  }
+  for(uint i=0;i<A.names.N;i++){
+    Frame* f = frames(Nold+i);
+    if(A.meshes(i).N==1){
+      if(A.meshes(i)(0).V.N){
+        Shape* s = new Shape(*f);
+        s->type() = ST_mesh;
+        s->mesh() = A.meshes(i).scalar();
+      }
+    }else if(A.meshes(i).N>1){
+      uint j=0;
+      for(auto& mesh:A.meshes(i)){
+        if(mesh.V.N){
+          Frame* f1 = addFrame(STRING(f->name<<'_' <<j++));
+          f1->linkFrom(f);
+          f1->set_Q()->setZero();
+          Shape* s = new Shape(*f1);
+          s->type() = ST_mesh;
+          s->mesh() = mesh;
+        }
+      }
+    }
   }
 }
 
@@ -307,8 +338,7 @@ Frame* Configuration::getFrame(const char* name, bool warnIfNotExist, bool rever
   } else {
     for(uint i=frames.N; i--;) if(frames.elem(i)->name==name) return frames.elem(i);
   }
-  if(strcmp("glCamera", name)!=0)
-    if(warnIfNotExist) RAI_MSG("cannot find frame named '" <<name);
+  if(warnIfNotExist) RAI_MSG("cannot find frame named '" <<name <<"'");
   return 0;
 }
 
@@ -989,7 +1019,7 @@ bool Configuration::checkConsistency() const {
     CHECK_ZERO(a->Q.rot.normalization()-1., 1e-4, "");
     CHECK_ZERO(a->X.rot.normalization()-1., 1e-4, "");
 
-    // frame has no parent -> Q and X are identical, X is good
+    // frame has no parent -> Q needs to be zero, X is good
     if(!a->parent) {
       CHECK(a->_state_X_isGood, "");
       CHECK(a->Q.isZero(), "");
@@ -2117,32 +2147,6 @@ void Configuration::writeURDF(std::ostream& os, const char* robotName) const {
 }
 
 #ifdef RAI_ASSIMP
-void buildAiMesh(const Mesh& M, aiMesh* pMesh) {
-  pMesh->mVertices = new aiVector3D[ M.V.d0 ];
-//  pMesh->mNormals = new aiVector3D[ M.V.d0 ];
-  pMesh->mNumVertices = M.V.d0;
-
-//  pMesh->mTextureCoords[ 0 ] = new aiVector3D[ M.V.d0 ];
-//  pMesh->mNumUVComponents[ 0 ] = M.V.d0;
-
-  for(uint i=0; i<M.V.d0; i++) {
-    pMesh->mVertices[i] = aiVector3D(M.V(i, 0), M.V(i, 1), M.V(i, 2));
-//      pMesh->mNormals[ itr - vVertices.begin() ] = aiVector3D( normals[j].x, normals[j].y, normals[j].z );
-//      pMesh->mTextureCoords[0][ itr - vVertices.begin() ] = aiVector3D( uvs[j].x, uvs[j].y, 0 );
-  }
-
-  pMesh->mFaces = new aiFace[ M.T.d0 ];
-  pMesh->mNumFaces = M.T.d0;
-
-  for(uint i=0; i<M.T.d0; i++) {
-    aiFace& face = pMesh->mFaces[i];
-    face.mIndices = new unsigned int[3];
-    face.mNumIndices = 3;
-    face.mIndices[0] = M.T(i, 0);
-    face.mIndices[1] = M.T(i, 1);
-    face.mIndices[2] = M.T(i, 2);
-  }
-}
 
 /// write a 3D model file using the assimp library (esp collada to include the tree structure)
 void Configuration::writeCollada(const char* filename, const char* format) const {
@@ -2231,10 +2235,17 @@ void Configuration::writeMeshes(const char* pathPrefix) const {
     if(f->shape &&
         (f->shape->type()==ST_mesh || f->shape->type()==ST_ssCvx)) {
       String filename = pathPrefix;
+#if 0
       filename <<f->name <<".arr";
       f->ats.getNew<String>("mesh") = filename;
       if(f->shape->type()==ST_mesh) f->shape->mesh().writeArr(FILE(filename));
       if(f->shape->type()==ST_ssCvx) f->shape->sscCore().writeArr(FILE(filename));
+#else
+      filename <<f->name <<".ply";
+      f->ats.getNew<String>("mesh") = filename;
+      if(f->shape->type()==ST_mesh) f->shape->mesh().writePLY(filename.p);
+      if(f->shape->type()==ST_ssCvx) f->shape->sscCore().writePLY(filename.p);
+#endif
     }
   }
 }

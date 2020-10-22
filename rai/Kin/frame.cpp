@@ -152,6 +152,7 @@ void rai::Frame::_state_updateAfterTouchingX() {
 }
 
 void rai::Frame::_state_updateAfterTouchingQ() {
+  CHECK(parent, "can't set Q for a root frame '" <<name <<"'");
   _state_setXBadinBranch();
   if(joint) C._state_q_isGood = false;
 }
@@ -527,8 +528,6 @@ void rai::Frame::unLink() {
   parent->children.removeValue(this);
   parent=nullptr;
   Q.setZero();
-  _state_updateAfterTouchingQ();
-  _state_X_isGood=true;
   if(joint) {  delete joint;  joint=nullptr;  }
 }
 
