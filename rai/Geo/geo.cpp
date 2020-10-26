@@ -1257,7 +1257,12 @@ Transformation& Transformation::setZero() {
 
 void Transformation::set(const double* p) { pos.set(p); rot.set(p+3); }
 
-void Transformation::set(const arr& t) { CHECK_EQ(t.N, 7, "");  set(t.p); }
+void Transformation::set(const arr& t) {
+  if(t.N==7) set(t.p);
+  else if(t.N==3){ pos.set(t.p); rot.setZero(); }
+  else if(t.N==4){ pos.setZero(); rot.set(t.p); }
+  else HALT("transformation can be assigned only to a 7D, 3D, or 4D array");
+}
 
 /// randomize the frame
 Transformation& Transformation::setRandom() {

@@ -582,8 +582,8 @@ void Configuration::selectJoints(const FrameL& F, bool notThose) {
     if(f->joint->mimic->active) f->joint->active = true;
   }
   reset_q();
-  ensure_indexedJoints();
-  calc_qInactive_from_Q();
+//  ensure_indexedJoints();
+//  ensure_q();
 //  checkConsistency();
 }
 
@@ -1016,8 +1016,8 @@ bool Configuration::checkConsistency() const {
 
     a->Q.checkNan();
     a->X.checkNan();
-    CHECK_ZERO(a->Q.rot.normalization()-1., 1e-4, "");
-    CHECK_ZERO(a->X.rot.normalization()-1., 1e-4, "");
+    CHECK_ZERO(a->Q.rot.normalization()-1., 1e-6, "");
+    CHECK_ZERO(a->X.rot.normalization()-1., 1e-6, "");
 
     // frame has no parent -> Q needs to be zero, X is good
     if(!a->parent) {
@@ -1238,8 +1238,10 @@ void Configuration::calc_q_from_Q() {
   ensure_indexedJoints();
 
   q.setZero();
+  qInactive.setZero();
 
   uint n=0;
+  //-- active joints (part of the DOFs)
   for(Joint* j: activeJoints) {
     if(j->mimic) continue; //don't count dependent joints
     CHECK_EQ(j->qIndex, n, "joint indexing is inconsistent");
@@ -1253,6 +1255,8 @@ void Configuration::calc_q_from_Q() {
       n += j->dim;
     }
   }
+
+  //-- forces (part of the DOFs)
   for(ForceExchange* c: forces) {
     CHECK_EQ(c->qIndex, n, "joint indexing is inconsistent");
     arr contact_q = c->calc_q_from_F();
@@ -1262,15 +1266,8 @@ void Configuration::calc_q_from_Q() {
   }
   CHECK_EQ(n, q.N, "");
 
-  _state_q_isGood=true;
-}
-
-void Configuration::calc_qInactive_from_Q() {
-  ensure_indexedJoints();
-
-  qInactive.setZero();
-
-  uint n=0;
+  //-- inactive joints (not part of DOFs)
+  n=0;
   for(Frame* f: frames) if(f->joint && !f->joint->active){ //this includes mimic'ing joints!
     Joint *j = f->joint;
     CHECK_EQ(j->qIndex, n, "joint indexing is inconsistent");
@@ -1552,10 +1549,10 @@ void Configuration::kinematicsPos(arr& y, arr& J, Frame* a, const Vector& rel) c
 /// Jacobian of the i-th body's z-orientation vector
 void Configuration::kinematicsVec(arr& y, arr& J, Frame* a, const Vector& vec) const {
   CHECK_EQ(&a->C, this, "");
+  CHECK(!!vec, "need a vector");
 
   Vector vec_world;
-  if(!!vec) vec_world = a->ensure_X().rot*vec;
-  else     vec_world = a->ensure_X().rot.getZ();
+  vec_world = a->ensure_X().rot*vec;
   if(!!y) y = conv_vec2arr(vec_world);
   if(!!J) {
     arr A;
@@ -2726,8 +2723,6 @@ void Configuration::glDraw_sub(OpenGL& gl, const FrameL& F, int drawOpaqueOrTran
 //        ((Proxy*)&p)->glDraw(gl);
 //      }
 
-    //contacts
-    //  if(orsDrawProxies)
     for(Frame* fr: F) for(ForceExchange* f:fr->forces) {
       if(f->sign(fr)>0.) f->glDraw(gl);
     }

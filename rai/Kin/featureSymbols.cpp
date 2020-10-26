@@ -166,9 +166,10 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
 
   else if(feat==FS_qControl) {
     CHECK(!frames.N, "NIY");
-    auto F = getCtrlFramesAndScale(C);
-    f = make_shared<F_qItself>(F.frames);
-    f->scale = F.scale;
+    arr _scale;
+    uintA F = C.getCtrlFramesAndScale(_scale);
+    f = make_shared<F_qItself>(F);
+    f->setScale(_scale);
   }
 
   else if(feat==FS_physics) { f=make_shared<F_NewtonEuler>(); }

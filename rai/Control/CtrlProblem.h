@@ -24,8 +24,10 @@ struct CtrlProblem : NonCopyable {
   CtrlObjectiveL objectives;    ///< list of objectives
 
   CtrlProblem(rai::Configuration& _C, double _tau, uint k_order=1);
+  ~CtrlProblem();
   CtrlObjective* addPDTask(CtrlObjectiveL& tasks, const char* name, double decayTime, double dampingRatio, ptr<Feature> map);
 
+  void set(const rai::Array<shared_ptr<CtrlObjective>>& O);
   void addObjectives(const rai::Array<ptr<CtrlObjective>>& O);
   void delObjectives(const rai::Array<ptr<CtrlObjective>>& O);
   std::shared_ptr<CtrlObjective> addObjective(const ptr<Feature>& f, const StringA& frames, ObjectiveType type);

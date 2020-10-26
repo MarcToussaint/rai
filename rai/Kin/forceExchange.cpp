@@ -129,6 +129,14 @@ void rai::ForceExchange::glDraw(OpenGL& gl) {
   }
   double scale = 1.;
 
+  arr _torque = torque;
+  arr _force = force;
+  if(b.joint && b.joint->type==JT_hingeX){
+    arr x = b.ensure_X().rot.getX().getArr();
+    _torque = x * scalarProduct(x, torque);
+    _force = 0.;
+  }
+
 #ifdef RAI_GL
   glLoadIdentity();
   glLineWidth(3.f);
@@ -136,10 +144,10 @@ void rai::ForceExchange::glDraw(OpenGL& gl) {
   glBegin(GL_LINES);
   glColor(1., 0., 1., 1.);
   glVertex3dv(poa.p);
-  glVertex3dv((poa+scale*torque).p);
+  glVertex3dv((poa+scale*_torque).p);
   glColor(1., 1., 1., 1.);
   glVertex3dv(poa.p);
-  glVertex3dv((poa+scale*force).p);
+  glVertex3dv((poa+scale*_force).p);
   glEnd();
   glLineWidth(1.f);
 

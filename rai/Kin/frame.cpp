@@ -256,16 +256,19 @@ void rai::Frame::read(const Graph& ats) {
     if(n->isOfType<String>()) set_X()->read(n->get<String>().resetIstream());
     else if(n->isOfType<arr>()) set_X()->set(n->get<arr>());
     else NIY;
+    set_X()->rot.normalize();
   }
   if((n=ats["pose"])) {
     if(n->isOfType<String>()) set_X()->read(n->get<String>().resetIstream());
     else if(n->isOfType<arr>()) set_X()->set(n->get<arr>());
     else NIY;
+    set_X()->rot.normalize();
   }
   if((n=ats["Q"])) {
     if(n->isOfType<String>()) set_Q()->read(n->get<String>().resetIstream());
     else if(n->isOfType<arr>()) set_Q()->set(n->get<arr>());
     else NIY;
+    set_Q()->rot.normalize();
   }
 
   if(ats["type"]) ats["type"]->key = "shape"; //compatibility with old convention: 'body { type... }' generates shape

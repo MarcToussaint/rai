@@ -265,6 +265,8 @@ struct GlfwSpinner : Thread {
   Mutex mutex;
 
   GlfwSpinner() : Thread("GlfwSpinnerSpinner", .01) {
+    if(rai::getDisableGui()){ HALT("you must not be here with -disableGui"); }
+
     glfwSetErrorCallback(error_callback);
     if(!glfwInit()) exit(EXIT_FAILURE);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);

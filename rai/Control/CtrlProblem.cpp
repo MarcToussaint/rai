@@ -17,22 +17,29 @@ CtrlProblem::CtrlProblem(rai::Configuration& _C, double _tau, uint k_order)
   komo.setupConfigurations2();
 }
 
+CtrlProblem::~CtrlProblem(){
+}
+
 std::shared_ptr<CtrlObjective> CtrlProblem::add_qControlObjective(uint order, double scale, const arr& target) {
   ptr<Objective> o = komo.add_qControlObjective({}, order, scale, target);
   return addObjective(o->feat, NoStringA, o->type);
 }
 
+void CtrlProblem::set(const rai::Array<ptr<CtrlObjective>>& O) {
+  objectives.clear();
+  objectives.resize(O.N);
+  for(uint i=0;i<O.N;i++) objectives(i) = O(i).get();
+}
+
 void CtrlProblem::addObjectives(const rai::Array<ptr<CtrlObjective>>& O) {
   for(auto& o:O) {
     objectives.append(o.get());
-    o->selfRemove = &objectives;
   }
 }
 
 void CtrlProblem::delObjectives(const rai::Array<ptr<CtrlObjective>>& O) {
   for(auto& o:O) {
     objectives.removeValue(o.get());
-    o->selfRemove = 0;
   }
 }
 
@@ -55,15 +62,14 @@ ptr<CtrlObjective> CtrlProblem::addObjective(const FeatureSymbol& feat, const St
 void CtrlProblem::update(rai::Configuration& C) {
   //-- update the KOMO configurations (push one step back, and update current configuration)
   for(int t=-komo.k_order; t<0; t++) {
-    komo.setConfiguration_X(t, komo.getFrameState(t+1));
-//    komo.pathConfigconfigurations(s-1)->setJointState(komo.configurations(s)->getJointState());
+    komo.setConfiguration(t, komo.getConfiguration_q(t+1));
   }
-  arr X = C.getFrameState();
-  komo.setConfiguration_X(-1, X);
-  komo.setConfiguration_X(0, X);
+  arr q = C.getJointState();
+  komo.setConfiguration(-1, q);
+  komo.setConfiguration(0, q);
   komo.pathConfig.ensure_q();
 
-  //-- step the targets forward, if they have a target
+  //-- step the moving targets forward, if they have one
   for(CtrlObjective* o: objectives) if(o->active){
     if(!o->name.N) o->name = o->feat->shortTag(C);
 
@@ -90,6 +96,8 @@ void CtrlProblem::report(std::ostream& os) {
   os <<optReport <<endl;
 }
 
+static int animate=0;
+
 arr CtrlProblem::solve() {
 #if 0
   TaskControlMethods M(komo.getConfiguration_t(0).getHmetric());
@@ -110,12 +118,13 @@ arr CtrlProblem::solve() {
 //  opt.damping = 1.;
 //  opt.maxStep = 1.;
 //  komo.verbose=4;
-//  komo.animateOptimization=1;
+  komo.animateOptimization=animate;
   komo.optimize(0., opt);
   optReport = komo.getReport(false);
   if(optReport.get<double>("sos")>.1){
       cout <<optReport <<endl <<"something's wrong?" <<endl;
       rai::wait();
+      animate=2;
   }
   return komo.getPath_q(0);
 #else

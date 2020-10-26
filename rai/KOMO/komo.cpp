@@ -1864,7 +1864,7 @@ void KOMO::retrospectApplySwitches2() {
     }
   }
   switchesWereApplied=true;
-  pathConfig.selectJoints(timeSlices({k_order,-1})); //select only the non-prefix joints as active!!
+//  pathConfig.selectJoints(timeSlices({k_order,-1})); //select only the non-prefix joints as active!!
 #endif
 }
 
@@ -1976,12 +1976,12 @@ void KOMO::set_x2(const arr& x, const uintA& selectedConfigurationsOnly) {
 
   rai::timerRead(true);
 
-  if(selectedConfigurationsOnly.N){
-    pathConfig.selectJoints(timeSlices.sub(selectedConfigurationsOnly+k_order));
+  if(!selectedConfigurationsOnly.N){
+    pathConfig.setJointState(x);
   }else{
-    pathConfig.selectJoints(timeSlices({k_order,-1}));
+    pathConfig.setJointState(x, timeSlices.sub(selectedConfigurationsOnly+k_order));
+    HALT("this is untested...");
   }
-  pathConfig.setJointState(x);
 
   timeKinematics += rai::timerRead(true);
   if(computeCollisions) {

@@ -9,6 +9,7 @@
 #pragma once
 
 #include "CtrlObjective.h"
+#include "CtrlSet.h"
 #include "CtrlProblem.h"
 #include "CtrlTargets.h"
 #include "CtrlSolvers.h"
