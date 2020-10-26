@@ -134,16 +134,22 @@ template<class T>
 std::shared_ptr<Feature> make_feature(const StringA& frames, const rai::Configuration& C, const arr& scale=NoArr, const arr& target=NoArr, int order=-1){
   std::shared_ptr<Feature> f = make_shared<T>();
 
+  if(!!frames && frames.N){
+    CHECK(!f->frameIDs.N, "frameIDs are already set");
+    if(frames.N==1 && frames.scalar()=="ALL") f->frameIDs = framesToIndices(C.frames);
+    else f->frameIDs = C.getFrameIDs(frames);
+  }
+
   if(!!scale) {
     if(!f->scale.N) f->scale = scale;
     else if(scale.N==1) f->scale *= scale.scalar();
     else if(scale.N==f->scale.N) f->scale *= scale.scalar();
     else NIY;
   }
-  if(!!target) f->target = target;
-  if(order>=0) f->order = order;
 
-  if(!f->frameIDs.N) f->frameIDs = C.getFrameIDs(frames);
+  if(!!target) f->target = target;
+
+  if(order>=0) f->order = order;
 
   return f;
 }

@@ -209,7 +209,7 @@ void Configuration::addAssimp(const char* filename) {
   //-- create all frames
   uint Nold = frames.N;
   for(uint i=0;i<A.names.N;i++){
-    Frame* f = addFrame(A.names(i));
+    addFrame(A.names(i));
   }
   //-- link to parents
   for(uint i=0;i<A.names.N;i++){
@@ -439,6 +439,20 @@ uintA Configuration::getCtrlFramesAndScale(arr& scale) const {
   return qFrames;
 }
 
+/// get all frames without parent
+FrameL Configuration::getRoots() const {
+  FrameL roots;
+  for(Frame* f:frames) if(!f->parent) roots.append(f);
+  return roots;
+}
+
+/// get all frames without parent or with joint
+FrameL Configuration::getLinks() const {
+  FrameL links;
+  for(Frame* a:frames) if(!a->parent || a->joint) links.append(a);
+  return links;
+}
+
 /// get the number of DOFs (size of the q-vector, including DOFs of joints and forces
 uint Configuration::getJointStateDimension() const {
   ((Configuration*)this)->ensure_q();
@@ -562,8 +576,10 @@ void Configuration::setFrameState(const arr& X, const FrameL& F) {
     f->X.rot.normalize();
     f->_state_X_isGood = true;
   }
-  for(Frame* f:F) if(f->parent) f->Q.setDifference(f->parent->ensure_X(), f->X);
-  _state_q_isGood=false;
+  for(Frame* f:F) if(f->parent){
+    f->Q.setDifference(f->parent->ensure_X(), f->X);
+    _state_q_isGood=false;
+  }
 }
 
 /// set the 'tau-coordinate' (time interval from previous time slice) for equal for all frames
@@ -770,11 +786,10 @@ bool Configuration::checkUniqueNames() const {
 
 /// compute the natural order of all frames (first adding all root frames, then expanding using breadth-first search)
 FrameL Configuration::calc_topSort() const {
-  FrameL fringe;
   FrameL order;
   boolA done = consts<byte>(false, frames.N);
 
-  for(Frame* a:frames) if(!a->parent) fringe.append(a);
+  FrameL fringe = getRoots();
   if(frames.N) CHECK(fringe.N, "none of the frames is a root -- must be loopy!");
 
   while(fringe.N) {
@@ -2330,12 +2345,6 @@ struct Link {
 //  }
 //  return links;
 //}
-
-Array<Frame*> Configuration::getLinks() const {
-  FrameL links;
-  for(Frame* a:frames) if(!a->parent || a->joint) links.append(a);
-  return links;
-}
 
 void Configuration::displayDot() {
   Graph G = getGraph();

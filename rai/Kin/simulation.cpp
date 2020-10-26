@@ -323,9 +323,9 @@ bool Simulation::getGripperIsClose(const char* gripperFrameName) {
 }
 
 bool Simulation::getGripperIsOpen(const char* gripperFrameName) {
-  rai::Frame* gripper, *fing1, *fing2;
+  rai::Frame *gripper, *fing1, *fing2;
   getFingersForGripper(gripper, fing1, fing2, C, gripperFrameName);
-  if(!gripper) return -1.;
+  if(!gripper) return false;
   double q = fing1->joint->calc_q_from_Q(fing1->get_Q()).scalar();
   if(q>=fing1->joint->limits(1)) return true;
   return false;

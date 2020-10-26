@@ -54,18 +54,19 @@ void controlMobile(){
 
   double tau = .02;
 
-  CtrlProblem ctrl(C, tau, 2);
-  auto c_acc = ctrl.add_qControlObjective(2, 1e-4);
-  auto c_vel = ctrl.add_qControlObjective(1, 1e-1);
+  CtrlSet CS;
+  auto c_acc = CS.add_qControlObjective(2, 1e-4*sqrt(tau), C);
+  auto c_vel = CS.add_qControlObjective(1, 1e-1*sqrt(tau), C);
 
-  auto co = ctrl.addObjective(FS_qItself, {"mobileBase"}, OT_sos, {1e1}, {}, 1);
+  auto co = CS.addObjective(make_feature(FS_qItself, {"mobileBase"}, C, {1e1}, {}, 1), OT_sos);
 
-  auto w1 = ctrl.addObjective(make_shared<WheelConstraint>(), {"W1_center", "W1_wheelJoint"}, OT_eq);
-  auto w2 = ctrl.addObjective(make_shared<WheelConstraint>(), {"W2_center", "W2_wheelJoint"}, OT_eq);
-  auto w3 = ctrl.addObjective(make_shared<WheelConstraint>(), {"W3_center", "W3_wheelJoint"}, OT_eq);
-  auto w4 = ctrl.addObjective(make_shared<WheelConstraint>(), {"W4_center", "W4_wheelJoint"}, OT_eq);
+  auto w1 = CS.addObjective(make_feature<WheelConstraint>({"W1_center", "W1_wheelJoint"}, C), OT_eq);
+  auto w2 = CS.addObjective(make_feature<WheelConstraint>({"W2_center", "W2_wheelJoint"}, C), OT_eq);
+  auto w3 = CS.addObjective(make_feature<WheelConstraint>({"W3_center", "W3_wheelJoint"}, C), OT_eq);
+  auto w4 = CS.addObjective(make_feature<WheelConstraint>({"W4_center", "W4_wheelJoint"}, C), OT_eq);
 
 //  ctrl.maxVel=1e1;
+  CtrlProblem ctrl(C, tau, 2);
 
   ofstream fil("z.path");
   for(uint k=0;k<20;k++){
@@ -74,6 +75,7 @@ void controlMobile(){
     co->feat->setTarget(vstar);
 
     for(uint t=0;t<20;t++){
+      ctrl.set(CS);
       ctrl.update(C);
       arr q = ctrl.solve();
       C.setJointState(q);

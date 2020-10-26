@@ -71,7 +71,7 @@ ActStatus CtrlTarget_MaxCarrot::step(double tau, CtrlObjective* o, const arr& y_
     isTransient=false;
   }
   if(o->type==OT_ineq){
-    cout <<"GOAL:" <<goal <<endl;
+    cout <<"GOAL:" <<goal <<" target:" <<o->feat->target <<endl;
   }
   if(goalDistance<maxDistance) countInGoalRange++; else countInGoalRange=0;
   if(countInGoalRange>10) return AS_converged;

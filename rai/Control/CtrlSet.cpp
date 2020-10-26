@@ -46,8 +46,8 @@ bool isFeasible(const CtrlSet& CS, const rai::Configuration& Ctuple, bool initOn
     if(o->type==OT_ineq || o->type==OT_eq) {
       if(!initOnly && o->transientStep>0. && o->movingTarget->isTransient) { isFeasible=false; break; }
       if(!initOnly || o->transientStep<=0.) {
-        arr y;
-        o->feat->__phi(y, NoArr, Ctuple);
+        arr y, J;
+        o->feat->__phi(y, J, Ctuple);
         if(o->type==OT_ineq) {
           for(double& yi : y) if(yi>eqPrecision) { isFeasible=false; break; }
         }

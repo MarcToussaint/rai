@@ -116,6 +116,8 @@ struct Configuration : GLDrawer {
   uintA getJointIDs() const;
   StringA getJointNames() const;
   uintA getCtrlFramesAndScale(arr& scale=NoArr) const;
+  FrameL getRoots() const;
+  FrameL getLinks() const;
 
   /// @name get state
   uint getJointStateDimension() const;
@@ -125,6 +127,7 @@ struct Configuration : GLDrawer {
   arr getJointStateSlice(uint t, bool activesOnly=true){  return getJointState(getJointsSlice(t, activesOnly), activesOnly);  }
   arr getFrameState() const { return getFrameState(frames); } ///< same as getFrameState() for all \ref frames
   arr getFrameState(const FrameL& F) const;
+  arr getFrameState(const uintA& F) const { return getFrameState(getFrames(F)); } ///< same as getFrameState() with getFrames()
 
   /// @name set state
   void setJointState(const arr& _q);
@@ -133,6 +136,7 @@ struct Configuration : GLDrawer {
   void setJointStateSlice(const arr& _q, uint t, bool activesOnly=true){  setJointState(_q, getJointsSlice(t, activesOnly), activesOnly);  }
   void setFrameState(const arr& X){ setFrameState(X, frames); } ///< same as setFrameState() for all \ref frames
   void setFrameState(const arr& X, const FrameL& F);
+  void setFrameState(const arr& X, const uintA& F){ setFrameState(X, getFrames(F)); } ///< same as setFrameState() with getFrames()
   void setTaus(double tau);
 
   /// @name active DOFs selection
@@ -249,7 +253,6 @@ struct Configuration : GLDrawer {
   void glDraw(struct OpenGL&);
   void glDraw_sub(struct OpenGL& gl, const FrameL& F, int drawOpaqueOrTransparanet=0);
   Graph getGraph() const;
-  Array<Frame*> getLinks() const;
   void displayDot();
 
   //some info

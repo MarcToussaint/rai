@@ -20,27 +20,24 @@ CtrlProblem::CtrlProblem(rai::Configuration& _C, double _tau, uint k_order)
 CtrlProblem::~CtrlProblem(){
 }
 
-std::shared_ptr<CtrlObjective> CtrlProblem::add_qControlObjective(uint order, double scale, const arr& target) {
-  ptr<Objective> o = komo.add_qControlObjective({}, order, scale, target);
-  return addObjective(o->feat, NoStringA, o->type);
-}
-
 void CtrlProblem::set(const rai::Array<ptr<CtrlObjective>>& O) {
-  objectives.clear();
-  objectives.resize(O.N);
-  for(uint i=0;i<O.N;i++) objectives(i) = O(i).get();
+  objectives = O;
 }
 
 void CtrlProblem::addObjectives(const rai::Array<ptr<CtrlObjective>>& O) {
-  for(auto& o:O) {
-    objectives.append(o.get());
-  }
+  objectives.append(O);
 }
 
 void CtrlProblem::delObjectives(const rai::Array<ptr<CtrlObjective>>& O) {
   for(auto& o:O) {
-    objectives.removeValue(o.get());
+    objectives.removeValue(o);
   }
+}
+
+#if 0
+std::shared_ptr<CtrlObjective> CtrlProblem::add_qControlObjective(uint order, double scale, const arr& target) {
+  ptr<Objective> o = komo.add_qControlObjective({}, order, scale, target);
+  return addObjective(o->feat, NoStringA, o->type);
 }
 
 ptr<CtrlObjective> CtrlProblem::addObjective(const ptr<Feature>& _feat, const StringA& frames, ObjectiveType _type) {
@@ -58,24 +55,35 @@ ptr<CtrlObjective> CtrlProblem::addObjective(const ptr<Feature>& _feat, const St
 ptr<CtrlObjective> CtrlProblem::addObjective(const FeatureSymbol& feat, const StringA& frames, ObjectiveType type, const arr& scale, const arr& target, int order) {
   return addObjective(symbols2feature(feat, frames, komo.world, scale, target, order), NoStringA, type);
 }
+#endif
 
 void CtrlProblem::update(rai::Configuration& C) {
   //-- update the KOMO configurations (push one step back, and update current configuration)
-  for(int t=-komo.k_order; t<0; t++) {
-    komo.setConfiguration(t, komo.getConfiguration_q(t+1));
-  }
+  //the joint state:
+  arr qold = komo.getConfiguration_q(-1);
   arr q = C.getJointState();
+  for(int t=-komo.k_order; t<0; t++) komo.setConfiguration(t, komo.getConfiguration_q(t+1));
   komo.setConfiguration(-1, q);
-  komo.setConfiguration(0, q);
+  komo.setConfiguration(0, q); // + (q-qold));
+  //the frame state of roots only:
+  uintA roots = framesToIndices(C.getRoots());
+  arr X = C.getFrameState(roots);
+  for(int t=-komo.k_order; t<0; t++){
+    arr Xt = komo.pathConfig.getFrameState(roots+komo.timeSlices(komo.k_order+t+1,0)->ID);
+    komo.pathConfig.setFrameState(Xt, roots+komo.timeSlices(komo.k_order+t,0)->ID);
+  }
+  komo.pathConfig.setFrameState(X, roots+komo.timeSlices(komo.k_order-1,0)->ID);
+  komo.pathConfig.setFrameState(X, roots+komo.timeSlices(komo.k_order,0)->ID);
+
   komo.pathConfig.ensure_q();
 
   //-- step the moving targets forward, if they have one
-  for(CtrlObjective* o: objectives) if(o->active){
+  for(shared_ptr<CtrlObjective>& o: objectives) if(o->active){
     if(!o->name.N) o->name = o->feat->shortTag(C);
 
     if(o->movingTarget) {
       o->y_buffer = o->getValue(*this);
-      ActStatus s_new = o->movingTarget->step(tau, o, o->y_buffer);
+      ActStatus s_new = o->movingTarget->step(tau, o.get(), o->y_buffer);
       if(o->status != s_new) {
         o->status = s_new;
         //callbacks
@@ -91,7 +99,7 @@ void CtrlProblem::update(rai::Configuration& C) {
 
 void CtrlProblem::report(std::ostream& os) {
   os <<"    control objectives:" <<endl;
-  for(CtrlObjective* o: objectives) o->reportState(os);
+  for(auto& o: objectives) o->reportState(os);
   os <<"    optimization result:" <<endl;
   os <<optReport <<endl;
 }
@@ -106,7 +114,7 @@ arr CtrlProblem::solve() {
   return q;
 #elif 1
   komo.clearObjectives();
-  for(CtrlObjective* o: objectives) if(o->active){
+  for(auto& o: objectives) if(o->active){
     komo.addObjective({}, o->feat, {}, o->type);
   }
   OptOptions opt;
@@ -124,8 +132,9 @@ arr CtrlProblem::solve() {
   if(optReport.get<double>("sos")>.1){
       cout <<optReport <<endl <<"something's wrong?" <<endl;
       rai::wait();
-      animate=2;
+//      animate=2;
   }
+//  komo.pathConfig.watch(false, "komo");
   return komo.getPath_q(0);
 #else
   return solve_optim(*this);

@@ -11,11 +11,15 @@
 #include "CtrlObjective.h"
 #include <Kin/feature.h>
 
+
 //===========================================================================
 
 struct CtrlSet {
+  rai::String name;
   rai::Array<shared_ptr<CtrlObjective>> objectives;    ///< list of objectives
+  rai::Array<StringA> symbolicCommands;
 
+  CtrlSet(const char* _name=0) : name(_name) {}
   shared_ptr<CtrlObjective> addObjective(const ptr<Feature>& f, ObjectiveType type, double transientStep=-1.);
   shared_ptr<CtrlObjective> add_qControlObjective(uint order, double scale, const rai::Configuration& C);
 
