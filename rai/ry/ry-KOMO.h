@@ -7,3 +7,11 @@
     --------------------------------------------------------------  */
 
 #pragma once
+
+#ifdef RAI_PYBIND
+
+#include <pybind11/pybind11.h>
+
+void init_KOMO(pybind11::module& m);
+
+#endif

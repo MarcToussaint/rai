@@ -8,19 +8,10 @@
 
 #pragma once
 
-#include "../Core/thread.h"
-#include <memory>
+#ifdef RAI_PYBIND
 
-namespace rai {
-struct Simulation;
-struct Configuration;
-}
+#include <pybind11/pybind11.h>
 
-namespace ry {
+void init_Simulation(pybind11::module& m);
 
-struct RySimulation {
-  std::shared_ptr<rai::Simulation> sim;
-  std::shared_ptr<Var<rai::Configuration>> config;
-};
-
-};
+#endif

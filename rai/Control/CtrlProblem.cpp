@@ -20,8 +20,8 @@ CtrlProblem::CtrlProblem(rai::Configuration& _C, double _tau, uint k_order)
 CtrlProblem::~CtrlProblem(){
 }
 
-void CtrlProblem::set(const rai::Array<ptr<CtrlObjective>>& O) {
-  objectives = O;
+void CtrlProblem::set(const CtrlSet& CS) {
+  objectives = CS.objectives;
 }
 
 void CtrlProblem::addObjectives(const rai::Array<ptr<CtrlObjective>>& O) {

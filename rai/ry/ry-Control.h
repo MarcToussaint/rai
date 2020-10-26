@@ -12,6 +12,7 @@
 
 #include <pybind11/pybind11.h>
 
-void init_Feature(pybind11::module& m);
+void init_CtrlSet(pybind11::module& m);
+void init_CtrlSolver(pybind11::module& m);
 
 #endif

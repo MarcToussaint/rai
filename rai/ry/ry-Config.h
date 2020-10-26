@@ -8,6 +8,14 @@
 
 #pragma once
 
+#ifdef RAI_PYBIND
+
+#include <pybind11/pybind11.h>
+
+void init_Config(pybind11::module& m);
+
+#endif
+
 #include "../Core/thread.h"
 
 namespace rai {

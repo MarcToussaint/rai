@@ -51,24 +51,23 @@ void testGrasp(){
 
   double tau=.01;
 
-  CtrlSet preGrasp;
-  preGrasp.addObjective(make_feature(FS_vectorZDiff, {"object", "R_gripperCenter"}, C, {1e1}), OT_sos, .005);
-  preGrasp.addObjective(make_feature(FS_positionRel, {"object", "R_gripperCenter"}, C, {1e1}, {.0, 0., -.15}), OT_sos, .005);
-  preGrasp.symbolicCommands.append({"openGripper", "R_gripper"});
+  CtrlSet approach;
+  approach.addObjective(make_feature(FS_vectorZDiff, {"object", "R_gripperCenter"}, C, {1e1}), OT_sos, .005);
+  approach.addObjective(make_feature(FS_positionRel, {"object", "R_gripperCenter"}, C, {1e1}, {.0, 0., -.15}), OT_sos, .005);
+  approach.symbolicCommands.append({"openGripper", "R_gripper"});
 
-  CtrlSet preGrasp2;
+  CtrlSet preGrasp;
   //immediate constraint:
-  preGrasp2.addObjective(make_feature(FS_insideBox, {"object", "R_gripperPregrasp"}, C, {1e0}), OT_ineq, -1);
+  preGrasp.addObjective(make_feature(FS_insideBox, {"object", "R_gripperPregrasp"}, C, {1e0}), OT_ineq, -1);
   //transient:
-  preGrasp2.addObjective(make_feature(FS_vectorZDiff, {"object", "R_gripperCenter"}, C, {1e1}), OT_sos, .005);
-  preGrasp2.addObjective(make_feature(FS_positionDiff, {"R_gripperCenter", "object"}, C, {1e1}), OT_sos, .002);
-  preGrasp2.symbolicCommands.append({"preOpenGripper", "R_gripper"});
+  preGrasp.addObjective(make_feature(FS_vectorZDiff, {"object", "R_gripperCenter"}, C, {1e1}), OT_sos, .005);
+  preGrasp.addObjective(make_feature(FS_positionDiff, {"R_gripperCenter", "object"}, C, {1e1}), OT_sos, .002);
+  preGrasp.symbolicCommands.append({"preOpenGripper", "R_gripper"});
 
   CtrlSet grasp;
   grasp.addObjective(make_feature(FS_vectorZ, {"R_gripperCenter"}, C, {}, {0., 0., 1.}), OT_eq, -1.);
   grasp.addObjective(make_feature(FS_positionDiff, {"R_gripperCenter", "object"}, C, {1e1}), OT_eq, -1.);
   grasp.symbolicCommands.append({"closeGripper", "R_gripper"});
-
 
   CtrlSet controls;
   controls.add_qControlObjective(2, 1e-3*sqrt(tau), C);
@@ -85,11 +84,11 @@ void testGrasp(){
     }else if(grasp.canBeInitiated(ctrl.komo.pathConfig)){
       ctrl.set(controls + grasp);
       txt <<"grasp";
-    }else if(preGrasp2.canBeInitiated(ctrl.komo.pathConfig)){
-      ctrl.set(controls + preGrasp2);
-      txt <<"preGrasp2";
     }else if(preGrasp.canBeInitiated(ctrl.komo.pathConfig)){
       ctrl.set(controls + preGrasp);
+      txt <<"preGrasp2";
+    }else if(approach.canBeInitiated(ctrl.komo.pathConfig)){
+      ctrl.set(controls + approach);
       txt <<"preGrasp";
     }
 

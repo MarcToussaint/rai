@@ -161,7 +161,7 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
 
   else if(feat==FS_qItself) {
     if(!frames.N) f=make_shared<F_qItself>(F_qItself::allActiveJoints, frames, C);
-    else f=make_shared<F_qItself>(F_qItself::byJointNames, frames, C);
+    else f=make_shared<F_qItself>();
   }
 
   else if(feat==FS_qControl) {
@@ -191,18 +191,25 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
 
   else HALT("can't interpret feature symbols: " <<feat);
 
+//  if(!f->frameIDs.N) f->frameIDs = C.getFrameIDs(frames);
+  if(!!frames && frames.N){
+    CHECK(!f->frameIDs.N, "frameIDs are already set");
+    if(frames.N==1 && frames.scalar()=="ALL") f->frameIDs = framesToIndices(C.frames);
+    else f->frameIDs = C.getFrameIDs(frames);
+  }
+
   if(!!scale) {
     if(!f->scale.N) f->scale = scale;
     else if(scale.N==1) f->scale *= scale.scalar();
     else if(scale.N==f->scale.N) f->scale *= scale.scalar();
     else NIY;
   }
+
   if(!!target) f->target = target;
+
   if(order>=0) f->order = order;
 
   f->fs = feat;
-
-  if(!f->frameIDs.N) f->frameIDs = C.getFrameIDs(frames);
 
   return f;
 }

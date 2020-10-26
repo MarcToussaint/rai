@@ -240,14 +240,18 @@ void init_Config(pybind11::module& m) {
   pybind11::arg("frames") = ry::I_StringA()
       )
 
-  .def("feature", [](shared_ptr<rai::Configuration>& self, FeatureSymbol featureSymbol, const ry::I_StringA& frameNames) {
-    return symbols2feature(featureSymbol, I_conv(frameNames), *self);
+  .def("feature", [](shared_ptr<rai::Configuration>& self, FeatureSymbol featureSymbol, const ry::I_StringA& frameNames, const std::vector<double>& scale, const std::vector<double>& target, int order) {
+    return symbols2feature(featureSymbol, I_conv(frameNames), *self, arr(scale, true), arr(target, true), order);
   },
   "create a feature (a differentiable map from joint state to a vector space), as they're typically used for IK or optimization. See the dedicated tutorial for details. \
 featureSymbol defines which mapping this is (position, vectors, collision distance, etc). \
 many mapping refer to one or several frames, which need to be specified using frameNames",
   pybind11::arg("featureSymbol"),
-  pybind11::arg("frameNames"))
+  pybind11::arg("frameNames")=ry::I_StringA(),
+    pybind11::arg("scale")=std::vector<double>(),
+    pybind11::arg("target")=std::vector<double>(),
+    pybind11::arg("order")=0
+    )
 
   .def("evalFeature", [](shared_ptr<rai::Configuration>& self, FeatureSymbol fs, const ry::I_StringA& frames) {
     arr y, J;

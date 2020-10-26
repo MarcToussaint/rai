@@ -8,16 +8,10 @@
 
 #pragma once
 
-#include "../Core/thread.h"
+#ifdef RAI_PYBIND
 
-//namespace rai {
-//struct Configuration;
-//struct Frame;
-//}
+#include <pybind11/pybind11.h>
 
-//namespace ry {
-//struct RyFrame {
-//  shared_ptr<rai::Configuration> config; //only to ensure the containing configuration is not destroyed
-//  rai::Frame* frame=0;
-//};
-//}
+void init_Frame(pybind11::module& m);
+
+#endif

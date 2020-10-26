@@ -9,6 +9,7 @@
 #pragma once
 
 #include "CtrlObjective.h"
+#include "CtrlSet.h"
 
 #include "../KOMO/komo.h"
 
@@ -26,7 +27,7 @@ struct CtrlProblem : NonCopyable {
   CtrlProblem(rai::Configuration& _C, double _tau, uint k_order=1);
   ~CtrlProblem();
 
-  void set(const rai::Array<shared_ptr<CtrlObjective>>& O);
+  void set(const CtrlSet& CS);
   void addObjectives(const rai::Array<ptr<CtrlObjective>>& O);
   void delObjectives(const rai::Array<ptr<CtrlObjective>>& O);
 
