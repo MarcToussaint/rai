@@ -28,14 +28,14 @@ struct Animation{
     }
   }
 
-  void play(rai::Configuration& C){
+  void play(rai::Configuration& C, bool pause){
     rai::ConfigurationViewer V;
     V.setConfiguration(C);
     uint T=getT();
 
     for(uint t=0;t<T;t++){
       set_t(C, t);
-      V.setConfiguration(C, STRING("Animation t:" <<t));
+      V.setConfiguration(C, STRING("Animation t:" <<t), pause);
       rai::wait(.1);
     }
   }

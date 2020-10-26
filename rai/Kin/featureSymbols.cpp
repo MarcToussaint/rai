@@ -185,7 +185,7 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
   }
   else if(feat==FS_qQuaternionNorms) {
     f = make_shared<F_qQuaternionNorms>();
-    for(auto *j:C.activeJoints) if(j->type==rai::JT_quatBall || j->type==rai::JT_free) f->frameIDs.append(j->frame->ID);
+    for(auto *j:C.activeJoints) if(j->type==rai::JT_quatBall || j->type==rai::JT_free || j->type==rai::JT_rigid) f->frameIDs.append(j->frame->ID);
   }
 
   else HALT("can't interpret feature symbols: " <<feat);
