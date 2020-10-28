@@ -14,7 +14,7 @@
 
 struct CtrlObjective;
 struct CtrlMovingTarget;
-struct CtrlProblem;
+struct CtrlSolver;
 typedef rai::Array<CtrlObjective*> CtrlObjectiveL;
 
 //===========================================================================
@@ -45,8 +45,8 @@ struct CtrlObjective {
 //  CtrlObjective(char* _name, const ptr<Feature>& _feat, const ptr<CtrlReference>& _ref, double _kp, double _kd, const arr& _C);
   ~CtrlObjective() {}
 
-  arr getResidual(CtrlProblem& cp);
-  arr getValue(CtrlProblem& cp);
+  arr getResidual(CtrlSolver& cp);
+  arr getValue(CtrlSolver& cp);
 
 //  arr update_y(const ConfigurationL& Ctuple); //returns the CHANGE in y (to estimate velocity)
   void resetState();

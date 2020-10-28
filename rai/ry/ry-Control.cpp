@@ -23,11 +23,11 @@ void init_CtrlSet(pybind11::module& m) {
            )
       .def("add_qControlObjective", &CtrlSet::add_qControlObjective)
 
-  .def("canBeInitiated", [](std::shared_ptr<CtrlSet>& self, std::shared_ptr<CtrlProblem>& solver) {
+  .def("canBeInitiated", [](std::shared_ptr<CtrlSet>& self, std::shared_ptr<CtrlSolver>& solver) {
       return self->canBeInitiated(solver->komo.pathConfig);
   })
 
-  .def("isConverged", [](std::shared_ptr<CtrlSet>& self, std::shared_ptr<CtrlProblem>& solver) {
+  .def("isConverged", [](std::shared_ptr<CtrlSet>& self, std::shared_ptr<CtrlSolver>& solver) {
       return self->isConverged(solver->komo.pathConfig);
   })
   ;
@@ -37,16 +37,16 @@ void init_CtrlSet(pybind11::module& m) {
 }
 
 void init_CtrlSolver(pybind11::module& m) {
-  pybind11::class_<CtrlProblem, std::shared_ptr<CtrlProblem>>(m, "CtrlSolver", "A control solver")
+  pybind11::class_<CtrlSolver, std::shared_ptr<CtrlSolver>>(m, "CtrlSolver", "A control solver")
 
       .def(pybind11::init<rai::Configuration&, double, uint>(),
            pybind11::arg("configuration"),
            pybind11::arg("tau"),
            pybind11::arg("order"))
-      .def("set", &CtrlProblem::set)
-      .def("update", &CtrlProblem::update)
+      .def("set", &CtrlSolver::set)
+      .def("update", &CtrlSolver::update)
       //      void report(ostream& os=std::cout);
-      .def("solve", &CtrlProblem::solve)
+      .def("solve", &CtrlSolver::solve)
       ;
 }
 

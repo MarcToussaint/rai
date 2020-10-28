@@ -2254,7 +2254,7 @@ void Configuration::writeMeshes(const char* pathPrefix) const {
       if(f->shape->type()==ST_ssCvx) f->shape->sscCore().writeArr(FILE(filename));
 #else
       filename <<f->name <<".ply";
-      f->ats.getNew<String>("mesh") = filename;
+      f->ats.getNew<FileToken>("mesh").name = filename;
       if(f->shape->type()==ST_mesh) f->shape->mesh().writePLY(filename.p);
       if(f->shape->type()==ST_ssCvx) f->shape->sscCore().writePLY(filename.p);
 #endif

@@ -6,41 +6,42 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "CtrlProblem.h"
+#include "CtrlSolver.h"
+#include "CtrlSolvers.h"
 
 #include "CtrlTargets.h"
 
-CtrlProblem::CtrlProblem(rai::Configuration& _C, double _tau, uint k_order)
+CtrlSolver::CtrlSolver(rai::Configuration& _C, double _tau, uint k_order)
   : tau(_tau) {
   komo.setModel(_C, true);
   komo.setTiming(1., 1, _tau, k_order);
   komo.setupConfigurations2();
 }
 
-CtrlProblem::~CtrlProblem(){
+CtrlSolver::~CtrlSolver(){
 }
 
-void CtrlProblem::set(const CtrlSet& CS) {
+void CtrlSolver::set(const CtrlSet& CS) {
   objectives = CS.objectives;
 }
 
-void CtrlProblem::addObjectives(const rai::Array<ptr<CtrlObjective>>& O) {
+void CtrlSolver::addObjectives(const rai::Array<ptr<CtrlObjective>>& O) {
   objectives.append(O);
 }
 
-void CtrlProblem::delObjectives(const rai::Array<ptr<CtrlObjective>>& O) {
+void CtrlSolver::delObjectives(const rai::Array<ptr<CtrlObjective>>& O) {
   for(auto& o:O) {
     objectives.removeValue(o);
   }
 }
 
 #if 0
-std::shared_ptr<CtrlObjective> CtrlProblem::add_qControlObjective(uint order, double scale, const arr& target) {
+std::shared_ptr<CtrlObjective> CtrlSolver::add_qControlObjective(uint order, double scale, const arr& target) {
   ptr<Objective> o = komo.add_qControlObjective({}, order, scale, target);
   return addObjective(o->feat, NoStringA, o->type);
 }
 
-ptr<CtrlObjective> CtrlProblem::addObjective(const ptr<Feature>& _feat, const StringA& frames, ObjectiveType _type) {
+ptr<CtrlObjective> CtrlSolver::addObjective(const ptr<Feature>& _feat, const StringA& frames, ObjectiveType _type) {
   std::shared_ptr<CtrlObjective> t = make_shared<CtrlObjective>();
   t->feat = _feat;
   t->type = _type;
@@ -52,12 +53,12 @@ ptr<CtrlObjective> CtrlProblem::addObjective(const ptr<Feature>& _feat, const St
   return t;
 }
 
-ptr<CtrlObjective> CtrlProblem::addObjective(const FeatureSymbol& feat, const StringA& frames, ObjectiveType type, const arr& scale, const arr& target, int order) {
+ptr<CtrlObjective> CtrlSolver::addObjective(const FeatureSymbol& feat, const StringA& frames, ObjectiveType type, const arr& scale, const arr& target, int order) {
   return addObjective(symbols2feature(feat, frames, komo.world, scale, target, order), NoStringA, type);
 }
 #endif
 
-void CtrlProblem::update(rai::Configuration& C) {
+void CtrlSolver::update(rai::Configuration& C) {
   //-- update the KOMO configurations (push one step back, and update current configuration)
   //the joint state:
   arr qold = komo.getConfiguration_q(-1);
@@ -97,7 +98,7 @@ void CtrlProblem::update(rai::Configuration& C) {
   }
 }
 
-void CtrlProblem::report(std::ostream& os) {
+void CtrlSolver::report(std::ostream& os) {
   os <<"    control objectives:" <<endl;
   for(auto& o: objectives) o->reportState(os);
   os <<"    optimization result:" <<endl;
@@ -106,7 +107,7 @@ void CtrlProblem::report(std::ostream& os) {
 
 static int animate=0;
 
-arr CtrlProblem::solve() {
+arr CtrlSolver::solve() {
 #if 0
   TaskControlMethods M(komo.getConfiguration_t(0).getHmetric());
   arr q = komo.getConfiguration_t(0).getJointState();
@@ -123,8 +124,7 @@ arr CtrlProblem::solve() {
   opt.stopIters = 20;
 //  opt.nonStrictSteps=-1;
   opt.maxStep = .1; //*tau; //maxVel*tau;
-//  opt.damping = 1.;
-//  opt.maxStep = 1.;
+  opt.damping = 1e-3;
 //  komo.verbose=4;
   komo.animateOptimization=animate;
   komo.optimize(0., opt);
@@ -134,6 +134,7 @@ arr CtrlProblem::solve() {
       rai::wait();
 //      animate=2;
   }
+//  komo.checkGradients();
 //  komo.pathConfig.watch(false, "komo");
   return komo.getPath_q(0);
 #else

@@ -47,13 +47,13 @@ struct TaskControlMethods {
 //===========================================================================
 
 struct CtrlProblem_MathematicalProgram : MathematicalProgram {
-  CtrlProblem& CP;
+  CtrlSolver& CP;
   ConfigurationL Ctuple;
   uint dimPhi=0;
   arr store_phi;
   arr store_J;
 
-  CtrlProblem_MathematicalProgram(CtrlProblem& _CP);
+  CtrlProblem_MathematicalProgram(CtrlSolver& _CP);
 
   virtual uint getDimension();
   virtual void getBounds(arr& bounds_lo, arr& bounds_up);
@@ -68,4 +68,4 @@ struct CtrlProblem_MathematicalProgram : MathematicalProgram {
 
 //===========================================================================
 
-arr solve_optim(CtrlProblem& CP);
+arr solve_optim(CtrlSolver& CP);

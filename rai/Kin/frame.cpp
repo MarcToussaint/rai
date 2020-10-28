@@ -1011,6 +1011,7 @@ void rai::Joint::read(const Graph& G) {
     if(n->isOfType<String>()) frame->set_Q()->read(n->get<String>().resetIstream());
     else if(n->isOfType<arr>()) frame->set_Q()->set(n->get<arr>());
     else NIY;
+    frame->set_Q()->rot.normalize();
   }
   G.get(H, "ctrl_H");
   G.get(scale, "joint_scale");

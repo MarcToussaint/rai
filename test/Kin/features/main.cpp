@@ -40,6 +40,8 @@ void testFeature() {
   Ctuple.addConfiguration(C);
   Ctuple.addConfiguration(C);
   Ctuple.jacMode = rai::Configuration::JM_rowShifted;
+//  Ctuple.jacMode = rai::Configuration::JM_dense;
+//  Ctuple.jacMode = rai::Configuration::JM_sparse;
 
   uint n=Ctuple.getJointStateDimension();
   arr q=Ctuple.getJointState();
@@ -65,6 +67,7 @@ void testFeature() {
   F.append(symbols2feature(FS_poseDiff, {"obj1", "obj2"}, C)) ->setOrder(0);
   F.append(symbols2feature(FS_poseDiff, {"obj1", "obj2"}, C)) ->setOrder(1);
   F.append(symbols2feature(FS_poseDiff, {"obj1", "obj2"}, C)) ->setOrder(2);
+  F.append(symbols2feature(FS_insideBox, {"obj1", "obj2"}, C)) ->setOrder(0);
   F.append(make_shared<F_NewtonEuler>()) ->setFrameIDs({"obj1"}, C);
 
   rai_Kin_frame_ignoreQuatNormalizationWarning=true;

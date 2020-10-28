@@ -15,7 +15,7 @@
 
 //===========================================================================
 
-struct CtrlProblem : NonCopyable {
+struct CtrlSolver : NonCopyable {
   KOMO komo;
   double tau;
   double maxVel=1.;
@@ -24,8 +24,8 @@ struct CtrlProblem : NonCopyable {
 
   rai::Array<shared_ptr<CtrlObjective>> objectives;    ///< list of objectives
 
-  CtrlProblem(rai::Configuration& _C, double _tau, uint k_order=1);
-  ~CtrlProblem();
+  CtrlSolver(rai::Configuration& _C, double _tau, uint k_order=1);
+  ~CtrlSolver();
 
   void set(const CtrlSet& CS);
   void addObjectives(const rai::Array<ptr<CtrlObjective>>& O);

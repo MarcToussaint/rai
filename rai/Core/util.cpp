@@ -870,6 +870,8 @@ rai::String rai::String::getSubString(int start, int end) const {
  * @param n number of chars to return
  */
 rai::String rai::String::getLastN(uint n) const {
+  CHECK_LE(n,N, "");
+  if(n==N) return *this;
   return getSubString(-int(n), -1);
 }
 
@@ -946,6 +948,7 @@ bool rai::String::startsWith(const char* substring) const {
 
 /// Return true iff the string ends with 'substring'.
 bool rai::String::endsWith(const String& substring) const {
+  if(substring.N>N) return false;
   return this->getLastN(substring.N) == substring;
 }
 /// Return true iff the string ends with 'substring'.

@@ -7,9 +7,9 @@
     --------------------------------------------------------------  */
 
 #include "CtrlObjective.h"
-#include "CtrlProblem.h"
+#include "CtrlSolver.h"
 #include "CtrlTargets.h"
-#include "CtrlSolvers.h"
+
 #include "../KOMO/komo.h"
 #include "../Core/graph.h"
 #include "../Kin/frame.h"
@@ -23,11 +23,11 @@
 //  : feat(_feat), name(name), ref(_ref), active(true), kp(_kp), kd(_kd), C(_C), status(AS_init){
 //}
 
-arr CtrlObjective::getResidual(CtrlProblem& cp) {
+arr CtrlObjective::getResidual(CtrlSolver& cp) {
   return movingTarget->getResidual(getValue(cp));
 }
 
-arr CtrlObjective::getValue(CtrlProblem& cp) {
+arr CtrlObjective::getValue(CtrlSolver& cp) {
   FrameL F = groundFeatureFrames(feat, cp.komo.pathConfig, 2);
   arr y, J;
   feat->__phi2(y, J, F);
