@@ -712,7 +712,7 @@ void KOMO_ext::setGrasp(double time, double endTime, const char* endeffRef, cons
 #else
 //  addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_free, endeffRef, object, world));
   addSwitch_stable(time, endTime, endeffRef, object);
-  addObjective({time}, make_shared<TM_InsideBox>(), {endeffRef, object}, OT_ineq, {1e1});
+  addObjective({time}, make_shared<F_InsideBox>(), {endeffRef, object}, OT_ineq, {1e1});
 //  setTouch(time, time, endeffRef, object);
 #endif
 
@@ -742,7 +742,7 @@ void KOMO_ext::setGraspStick(double time, const char* endeffRef, const char* obj
 //              new TM_Default(TMT_posDiff, world, endeffRef, NoVector, object, NoVector),
 //              arr(2,3,{0,1,0,0,0,1}), {}),
 //          OT_eq, NoArr, 3e1);
-  addObjective({time}, make_shared<TM_InsideBox>(), {endeffRef, object}, OT_ineq, {1e1});
+  addObjective({time}, make_shared<F_InsideBox>(), {endeffRef, object}, OT_ineq, {1e1});
 
   if(stepsPerPhase>2) { //velocities down and up
     addObjective({time-timeToLift, time}, make_shared<F_Position>(), {endeffRef}, OT_sos, {3e0}, {0., 0., -.1}, 1); //move down
@@ -837,7 +837,7 @@ void KOMO_ext::setPush(double startTime, double endTime, const char* stick, cons
   add_touch(startTime, endTime, stick, table);
 
   double dist = .05; //.5*shapeSize(world, object, 0)+.01;
-  addObjective({startTime, endTime}, make_shared<TM_InsideBox>(), {"slider1b", stick}, OT_ineq);
+  addObjective({startTime, endTime}, make_shared<F_InsideBox>(), {"slider1b", stick}, OT_ineq);
   HALT("ivec = Vector(dist, .0, .0) is missing");
   Vector(dist, .0, .0),
 //  setTask(startTime, endTime, new TM_Default(TMT_posDiff, world, stick, NoVector, "slider1b", {dist, .0, .0}), OT_sos, {}, 1e1);
@@ -933,7 +933,7 @@ void KOMO_ext::setSlideAlong(double time, const char* stick, const char* object,
   addObjective({time, time+1.}, make_shared<F_ScalarProduct>(Vector_x, Vector_z), {stick}, OT_sos, {1e1}, {0.});
 
 //  double dist = .5*shapeSize(world, object, 0)+.01;
-  addObjective({time, time+1.}, make_shared<TM_InsideBox>(), {object, stick}, OT_ineq);
+  addObjective({time, time+1.}, make_shared<F_InsideBox>(), {object, stick}, OT_ineq);
   HALT("ivec = Vector(dist, .0, .0), is missing");
 
   add_touch(time, time+1., stick, wall);
@@ -1227,7 +1227,7 @@ void KOMO_ext::add_aboveBox(double startTime, double endTime, const char* shape1
 }
 
 void KOMO_ext::add_insideBox(double startTime, double endTime, const char* shape1, const char* shape2, double prec) {
-  addObjective({startTime, endTime}, make_shared<TM_InsideBox>(), {shape1, shape2}, OT_ineq, {prec}, NoArr);
+  addObjective({startTime, endTime}, make_shared<F_InsideBox>(), {shape1, shape2}, OT_ineq, {prec}, NoArr);
 }
 
 //void KOMO::add_impulse(double time, const char* shape1, const char* shape2, ObjectiveType type, double prec) {

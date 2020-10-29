@@ -7,7 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "CtrlSolvers.h"
-#include "CtrlProblem.h"
+#include "CtrlSolver.h"
 
 #include "../Kin/feature.h"
 #include "../Optim/constrained.h"
@@ -548,7 +548,7 @@ void TaskControlMethods::calcForceControl(CtrlObjectiveL& tasks, arr& K_ft, arr&
 
 #endif
 
-CtrlProblem_MathematicalProgram::CtrlProblem_MathematicalProgram(CtrlProblem& _CP)
+CtrlProblem_MathematicalProgram::CtrlProblem_MathematicalProgram(CtrlSolver& _CP)
   : CP(_CP) {
   for(uint k=0; k<2; k++) {
     rai::Configuration* C = Ctuple.append(new rai::Configuration());
@@ -658,7 +658,7 @@ void CtrlProblem_MathematicalProgram::evaluate(arr& phi, arr& J, const arr& x) {
 //  reportAfterPhiComputation(komo);
 }
 
-arr solve_optim(CtrlProblem& CP) {
+arr solve_optim(CtrlSolver& CP) {
   auto MP = make_shared<CtrlProblem_MathematicalProgram>(CP);
 
   arr x = CP.komo.world.getJointState();

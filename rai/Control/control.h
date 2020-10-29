@@ -10,7 +10,7 @@
 
 #include "CtrlObjective.h"
 #include "CtrlSet.h"
-#include "CtrlProblem.h"
+#include "CtrlSolver.h"
 #include "CtrlTargets.h"
 #include "CtrlSolvers.h"
 

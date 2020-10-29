@@ -66,7 +66,7 @@ void controlMobile(){
   auto w4 = CS.addObjective(make_feature<WheelConstraint>({"W4_center", "W4_wheelJoint"}, C), OT_eq);
 
 //  ctrl.maxVel=1e1;
-  CtrlProblem ctrl(C, tau, 2);
+  CtrlSolver ctrl(C, tau, 2);
 
   ofstream fil("z.path");
   for(uint k=0;k<20;k++){

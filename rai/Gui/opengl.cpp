@@ -276,7 +276,7 @@ struct GlfwSpinner : Thread {
     char* argv[1]= {(char*)"x"};
     glutInit(&argc, argv);
 
-    threadLoop();
+    threadLoop(true);
   }
   ~GlfwSpinner() {
     threadClose();
@@ -321,7 +321,7 @@ struct GlfwSpinner : Thread {
     if(glwins.N==1) start=true; //start looping
     mutex.unlock();
 
-    if(start) threadLoop(); //start looping
+//    if(start) threadLoop(true); //start looping
   }
 
   void delGL(OpenGL* gl) {
@@ -331,7 +331,7 @@ struct GlfwSpinner : Thread {
     if(!glwins.N) stop=true; //stop looping
     mutex.unlock();
 
-    if(stop) threadStop(); //stop looping
+//    if(stop) threadStop(); //stop looping
   }
 
   static void error_callback(int error, const char* description) {

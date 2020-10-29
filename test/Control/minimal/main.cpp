@@ -25,7 +25,7 @@ void testMinimal(){
   //collision constraint
   CS.addObjective(make_feature<F_AccumulatedCollisions>({"ALL"}, C, {1e2}), OT_eq);
 
-  CtrlProblem ctrl(C, tau, 2);
+  CtrlSolver ctrl(C, tau, 2);
 
   for(uint t=0;t<1000;t++){
     ctrl.set(CS);
@@ -74,7 +74,7 @@ void testGrasp(){
   controls.add_qControlObjective(1, 1e-1*sqrt(tau), C);
 //  auto coll = ctrl.addObjective(FS_accumulatedCollisions, {}, OT_eq, {1e2});
 
-  CtrlProblem ctrl(C, tau, 2);
+  CtrlSolver ctrl(C, tau, 2);
 
   for(uint t=0;t<1000;t++){
     rai::String txt;
@@ -106,11 +106,54 @@ void testGrasp(){
 
 //===========================================================================
 
+void testIneqCarrot(){
+  rai::Configuration C;
+  C.addFile("pandas.g");
+  C.watch(true, "start");
+
+  double tau=.01;
+
+  CtrlSet home;
+  home.addObjective(make_feature(FS_insideBox, {"R_gripperCenter", "R_workspace"}, C, {1e1}), OT_ineq, .01);
+
+  CtrlSet reach;
+  reach.addObjective(make_feature(FS_positionDiff, {"object", "R_gripperCenter"}, C, {1e1}, {.0, 0., -.05}), OT_eq, .01);
+
+  CtrlSet controls;
+//  controls.add_qControlObjective(2, 1e-2*sqrt(tau), C);
+  controls.add_qControlObjective(1, 1e-1*sqrt(tau), C);
+
+  CtrlSolver ctrl(C, tau, 2);
+
+  int mode = 0;
+
+  for(uint t=0;t<1000;t++){
+    if(mode==0){
+      ctrl.set(controls + home);
+      if(home.isConverged(ctrl.komo.pathConfig)) mode=1;
+    }else if(mode==1){
+      ctrl.set(controls + reach);
+      if(reach.isConverged(ctrl.komo.pathConfig)) mode=0;
+    }
+
+    ctrl.update(C);
+    arr q = ctrl.solve();
+    C.setJointState(q);
+
+    ctrl.report();
+    C.watch(false, STRING("mode: " <<mode <<" t:" <<t));
+    rai::wait(.01);
+  }
+}
+
+//===========================================================================
+
 int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
 //  testMinimal();
-  testGrasp();
+//  testGrasp();
+  testIneqCarrot();
 
   return 0;
 }
