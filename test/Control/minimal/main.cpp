@@ -127,7 +127,7 @@ void testIneqCarrot(){
 
   int mode = 0;
 
-  for(uint t=0;t<1000;t++){
+  for(uint t=0;t<300;t++){
     if(mode==0){
       ctrl.set(controls + home);
       if(home.isConverged(ctrl.komo.pathConfig)) mode=1;

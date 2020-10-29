@@ -1031,8 +1031,8 @@ bool Configuration::checkConsistency() const {
 
     a->Q.checkNan();
     a->X.checkNan();
-    CHECK_ZERO(a->Q.rot.normalization()-1., 1e-4, "");
-    CHECK_ZERO(a->X.rot.normalization()-1., 1e-4, "");
+    CHECK_ZERO(a->Q.rot.normalization()-1., 1e-6, "");
+    CHECK_ZERO(a->X.rot.normalization()-1., 1e-6, "");
 
     // frame has no parent -> Q needs to be zero, X is good
     if(!a->parent) {
