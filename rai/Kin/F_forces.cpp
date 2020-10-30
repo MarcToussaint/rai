@@ -297,7 +297,6 @@ void F_NewtonEuler::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_EQ(F.d0, 3, "");
   CHECK_EQ(F.d1, 1, "");
 
-  rai::Frame* a = F.elem(-2);
 //  if((a->flags & (1<<FL_impulseExchange))){
 //    y.resize(3).setZero();
 //    if(!!J) J.resize(3, getKtupleDim(Ktuple).last()).setZero();
@@ -305,12 +304,13 @@ void F_NewtonEuler::phi2(arr& y, arr& J, const FrameL& F) {
 //  }
 
   //get linear and angular accelerations
-  F_LinAngVel pos;
-  pos.order=2;
-  pos.impulseInsteadOfAcceleration=true;
-  pos.phi2(y, J, F);
+  Value acc = F_LinAngVel()
+              .setImpulseInsteadOfAcceleration()
+              .setOrder(2)
+              .eval(F);
 
   //add gravity
+#if 0
   rai::Frame *r = F.elem(-1)->getRoot();
   if(r->C.hasTauJoint(r)) {
     double tau; arr Jtau;
@@ -345,6 +345,28 @@ void F_NewtonEuler::phi2(arr& y, arr& J, const FrameL& F) {
 
   y += one_over_mass % fo.y;
   if(!!J) J += one_over_mass % fo.J;
+#else
+  rai::Frame* a = F.elem(-2);
+
+  //-- multiply acc with masses
+  double mass=1.;
+  arr Imatrix = diag(.1, 3);
+  if(a->inertia) {
+    mass = a->inertia->mass;
+    Imatrix = 2.*conv_mat2arr(a->inertia->matrix);
+  }
+  arr mass_diag(6);
+  for(uint i=0; i<3; i++) mass_diag(i) = mass;
+  for(uint i=0; i<3; i++) mass_diag(i+3) = Imatrix(i, i);
+//  mass_diag *= .1;
+
+  //-- add static and exchange forces
+  Value fo = F_ObjectTotalForce(false, false)
+             .eval({a}); // ! THIS IS THE MID TIME SLICE !
+
+  y = mass_diag % acc.y + fo.y;
+  if(!!J) J = mass_diag % acc.J + fo.J;
+#endif
 }
 
 //===========================================================================
