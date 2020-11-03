@@ -369,7 +369,7 @@ MiniThread::MiniThread(const char* _name) : Signaler(tsIsClosed), name(_name) {
 
   statusLock();
 
-  thread = make_unique<std::thread>(&MiniThread::threadMain, this);
+  thread = std::make_unique<std::thread>(&MiniThread::threadMain, this);
 #ifndef RAI_MSVC
   if(name) pthread_setname_np(thread->native_handle(), name);
 #endif
@@ -486,7 +486,7 @@ void Thread::threadOpen(bool wait, int priority) {
   {
     auto lock = event.statusMutex(RAI_HERE);
     if(thread) return; //this is already open -- or has just beend opened (parallel call to threadOpen)
-    thread = make_unique<std::thread>(&Thread::main, this);
+    thread = std::make_unique<std::thread>(&Thread::main, this);
 #ifndef RAI_MSVC
     if(name) pthread_setname_np(thread->native_handle(), name);
 #endif

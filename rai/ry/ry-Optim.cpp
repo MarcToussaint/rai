@@ -9,7 +9,7 @@
 #ifdef RAI_PYBIND
 
 #include "../ry/types.h"
-#include "../Optim/MathematicalProgram_Factory.h"
+#include "../Optim/NLP_Factory.h"
 #include "../Optim/solver.h"
 #include <pybind11/functional.h>
 #include <pybind11/iostream.h>
@@ -57,14 +57,22 @@ void init_Optim(pybind11::module& m) {
 
       ;
 
-#define ENUMVAL(x) .value(#x, NLPS_##x)
+#define ENUMVAL(pre, x) .value(#x, pre##_##x)
 
   pybind11::enum_<NLP_SolverID>(m, "NLP_SolverID")
-      ENUMVAL(gradientDescent) ENUMVAL(rprop) ENUMVAL(LBFGS) ENUMVAL(newton)
-      ENUMVAL(augmentedLag) ENUMVAL(squaredPenalty) ENUMVAL(logBarrier) ENUMVAL(singleSquaredPenalty)
-      ENUMVAL(NLopt) ENUMVAL(Ipopt) ENUMVAL(Ceres)
+      ENUMVAL(NLPS, gradientDescent) ENUMVAL(NLPS, rprop) ENUMVAL(NLPS, LBFGS) ENUMVAL(NLPS, newton)
+      ENUMVAL(NLPS, augmentedLag) ENUMVAL(NLPS, squaredPenalty) ENUMVAL(NLPS, logBarrier) ENUMVAL(NLPS, singleSquaredPenalty)
+      ENUMVAL(NLPS, NLopt) ENUMVAL(NLPS, Ipopt) ENUMVAL(NLPS, Ceres)
       .export_values();
 
+
+  pybind11::enum_<ObjectiveType>(m, "OT")
+  ENUMVAL(OT, none)
+  ENUMVAL(OT, f)
+  ENUMVAL(OT, sos)
+  ENUMVAL(OT, ineq)
+  ENUMVAL(OT, eq)
+  .export_values();
 }
 
 #endif
