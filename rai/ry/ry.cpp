@@ -28,6 +28,7 @@ PYBIND11_MODULE(libry, m) {
   init_CtrlSet(m);
   init_CtrlSolver(m);
 
+  init_Optim(m);
 }
 
 #endif

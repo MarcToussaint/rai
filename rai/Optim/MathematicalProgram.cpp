@@ -8,6 +8,21 @@
 
 #include "MathematicalProgram.h"
 
+//===========================================================================
+
+arr summarizeErrors(const arr& phi, const ObjectiveTypeA& tt) {
+  arr err = zeros(3);
+  for(uint i=0; i<phi.N; i++) {
+    if(tt(i)==OT_f) err(0) += phi(i);
+    if(tt(i)==OT_sos) err(0) += rai::sqr(phi(i));
+    if(tt(i)==OT_ineq && phi(i)>0.) err(1) += phi(i);
+    if(tt(i)==OT_eq) err(2) += fabs(phi(i));
+  }
+  return err;
+}
+
+//===========================================================================
+
 arr MathematicalProgram::getInitializationSample(const arrL& previousOptima) {
   arr blo, bup;
   uint n = getDimension();
@@ -201,3 +216,4 @@ void Conv_FactoredNLP_BandedNLP::evaluate(arr& phi, arr& J, const arr& x) {
   }
   P.report();
 }
+
