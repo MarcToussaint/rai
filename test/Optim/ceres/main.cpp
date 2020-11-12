@@ -274,7 +274,7 @@ int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
 //  tutorialBasics();
-  testCeres();
+  testCeres2();
 
   return 0;
 }

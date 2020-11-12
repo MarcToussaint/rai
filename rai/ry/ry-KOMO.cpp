@@ -202,13 +202,13 @@ void init_KOMO(pybind11::module& m) {
 
 #define ENUMVAL(pre, x) .value(#x, pre##_##x)
 
-  pybind11::enum_<ObjectiveType>(m, "OT")
-  ENUMVAL(OT, none)
-  ENUMVAL(OT, f)
-  ENUMVAL(OT, sos)
-  ENUMVAL(OT, ineq)
-  ENUMVAL(OT, eq)
-  .export_values();
+  // pybind11::enum_<ObjectiveType>(m, "OT")
+  // ENUMVAL(OT, none)
+  // ENUMVAL(OT, f)
+  // ENUMVAL(OT, sos)
+  // ENUMVAL(OT, ineq)
+  // ENUMVAL(OT, eq)
+  // .export_values();
 
 //pybind11::enum_<BoundType>(m, "BT")
 //ENUMVAL(BD, all)

@@ -25,7 +25,10 @@ printUbuntuAll: $(DEPEND:%=inPath_printUbuntu/%) printUbuntu
 
 printDependAll: $(DEPEND:%=inPath_printDepend/%) printDepend
 
-tests: $(test_paths:%=inPath_make/%)
+tests: $(test_paths:%=inPath_make/%) pyTests
+
+pyTests: force
+	+@-make -C test/ry
 
 bin: $(bin_paths:%=inPath_make/%)
 

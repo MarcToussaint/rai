@@ -8,6 +8,8 @@ DEPEND = Core Kin KOMO LGP Control Perception Operate
 PYBIND = 1
 PHYSX = 1
 
+CXXFLAGS += -DRAI_BIND_KOMO
+
 SRCS = $(shell find . -maxdepth 1 -name '*.cpp' )
 OBJS = $(SRCS:%.cpp=%.o)
 
