@@ -58,7 +58,7 @@ using std::ifstream;
 using std::unique_ptr;
 using std::shared_ptr;
 template<class T> using ptr=std::shared_ptr<T>;
-//using std::make_unique;
+using std::make_unique;
 using std::make_shared;
 
 //===========================================================================
