@@ -36,6 +36,10 @@ pybind11::list graph2list(const rai::Graph& G);
 
 pybind11::tuple uintA2tuple(const uintA& tup);
 
+template<class T> pybind11::array_t<T> arr2numpy(const rai::Array<T>& x){
+  return pybind11::array_t<T>(x.dim(), x.p);
+}
+
 template<class T> rai::Array<T> numpy2arr(const pybind11::array_t<T>& X) {
   rai::Array<T> Y;
   uintA dim(X.ndim());

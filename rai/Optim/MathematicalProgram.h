@@ -17,6 +17,8 @@ enum ObjectiveType { OT_none=0, OT_f, OT_sos, OT_ineq, OT_eq };
 typedef rai::Array<ObjectiveType> ObjectiveTypeA;
 extern ObjectiveTypeA& NoObjectiveTypeA;
 
+arr summarizeErrors(const arr& phi, const ObjectiveTypeA& tt);
+
 //===========================================================================
 
 /** The MathematicalProgram abstraction provides a solver access to all it needs. To declare a MP problem, the user needs to
@@ -74,19 +76,27 @@ struct MathematicalProgram_Factored : MathematicalProgram {
 
 struct MathematicalProgram_Logged : MathematicalProgram {
   MathematicalProgram& P;
-  arr phiLog, JLog, xLog;
+  ObjectiveTypeA featureTypes;
+  arr xLog, costLog, phiLog, JLog;
+  bool log_x=true;
+  bool log_costs=true;
+  bool log_phi=false;
+  bool log_J=false;
 
   MathematicalProgram_Logged(MathematicalProgram& P) : P(P) {}
 
+  void setLogging(bool log_x, bool log_costs, bool log_phi, bool log_J){ NIY }
+
   virtual void evaluate(arr& phi, arr& J, const arr& x) {
     P.evaluate(phi, J, x);
-    xLog.append(x); xLog.reshape(-1, x.N);
-    if(!!phi) { phiLog.append(phi); phiLog.reshape(-1, phi.N); }
-    if(!!J) {   JLog.append(J);     JLog.reshape(-1, phi.N, x.N); }
+    if(log_x){ xLog.append(x); xLog.reshape(-1, x.N); }
+    if(log_costs){ costLog.append(summarizeErrors(phi, featureTypes)); costLog.reshape(-1,3);  }
+    if(!!phi && log_phi) { phiLog.append(phi); phiLog.reshape(-1, phi.N); }
+    if(!!J && log_J) {   JLog.append(J);     JLog.reshape(-1, phi.N, x.N); }
   }
 
   //trivial
-  virtual void getFeatureTypes(ObjectiveTypeA& featureTypes) { P.getFeatureTypes(featureTypes); }
+  virtual void getFeatureTypes(ObjectiveTypeA& _featureTypes) { P.getFeatureTypes(_featureTypes); featureTypes = _featureTypes; }
   virtual uint getDimension() { return P.getDimension(); }
   virtual void getBounds(arr& bounds_lo, arr& bounds_up) { P.getBounds(bounds_lo, bounds_up); }
   virtual void getNames(StringA& variableNames, StringA& featureNames) { P.getNames(variableNames, featureNames); }
@@ -142,4 +152,6 @@ struct Conv_FactoredNLP_BandedNLP : MathematicalProgram {
 
   virtual void evaluate(arr& phi, arr& J, const arr& x);
 };
+
+//===========================================================================
 

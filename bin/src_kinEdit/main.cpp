@@ -5,18 +5,22 @@
 const char *USAGE =
     "\nUsage:  kinEdit <g-filename>"
     "\n"
-    "\nIterate between editing the file (with an external editor) and"
-    "\nviewing the model in the OpenGL window (after pressing ENTER)."
-    "\nUse the number keys 1 2 3 4 5 to toggle display options.";
+    "\n  -file <g-file>"
+    "\n  -prune           to optimize the tree structure and prune useless frames"
+    "\n  -writeMeshes     to write all meshes in a folder"
+    "\n  -dot             to illustrate the tree structure as graph"
+    "\n  -cleanOnly       to skip the animation/edit loop\n";
 
 int main(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
   cout <<USAGE <<endl;
 
-  rai::String file=rai::getParameter<rai::String>("file",STRING("test.g"));
+  rai::String file=rai::getParameter<rai::String>("file",STRING("none"));
   if(rai::argc>=2 && rai::argv[1][0]!='-') file=rai::argv[1];
   LOG(0) <<"opening file `" <<file <<"'" <<endl;
+
+  if(file=="none") return 0;
 
   //-- load configuration
   rai::Configuration C;

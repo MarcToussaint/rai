@@ -132,7 +132,7 @@ struct sRprop {
 };
 
 Rprop::Rprop() {
-  self = make_unique<sRprop>();
+  self = std::make_unique<sRprop>();
   self->incr   = 1.2;
   self->decr   = .33;
   self->dMax = 50.;

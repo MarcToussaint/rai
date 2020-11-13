@@ -8,18 +8,10 @@
 
 #pragma once
 
-#ifdef RAI_BIND_KOMO
-#include "ry-Config.h"
-#include "ry-Feature.h"
-#include "ry-Frame.h"
-#include "ry-KOMO.h"
-#include "ry-Simulation.h"
-//#include "ry-Bullet.h"
-//#include "ry-Camera.h"
-//#include "ry-LGP_Tree.h"
-//#include "ry-Operate.h"
-//#include "ry-PhysX.h"
-#include "ry-Control.h"
-#endif
+#ifdef RAI_PYBIND
 
-#include "ry-Optim.h"
+#include <pybind11/pybind11.h>
+
+void init_Optim(pybind11::module& m);
+
+#endif

@@ -75,12 +75,15 @@ LIBS += -lassimp
 endif
 
 ifeq ($(CERES),1)
+DEPEND_UBUNTU += libceres-dev
 CXXFLAGS += -DRAI_CERES
-CPATHS += $(HOME)/git/ceres-solver/include
-CPATHS += $(HOME)/git/ceres-solver/build/config
-CPATHS += $(HOME)/git/ceres-solver/internal/ceres/miniglog
-LPATHS += $(HOME)/git/ceres-solver/build/lib
-LIBS += -lceres -lglog -lcholmod -llapack -lblas -lpthread  /usr/lib/x86_64-linux-gnu/libspqr.so /usr/lib/x86_64-linux-gnu/libtbbmalloc.so /usr/lib/x86_64-linux-gnu/libtbb.so /usr/lib/x86_64-linux-gnu/libcholmod.so /usr/lib/x86_64-linux-gnu/libccolamd.so /usr/lib/x86_64-linux-gnu/libcamd.so /usr/lib/x86_64-linux-gnu/libcolamd.so /usr/lib/x86_64-linux-gnu/libamd.so /usr/lib/x86_64-linux-gnu/liblapack.so /usr/lib/x86_64-linux-gnu/libf77blas.so /usr/lib/x86_64-linux-gnu/libatlas.so /usr/lib/x86_64-linux-gnu/libsuitesparseconfig.so /usr/lib/x86_64-linux-gnu/librt.so /usr/lib/x86_64-linux-gnu/libcxsparse.so /usr/lib/x86_64-linux-gnu/liblapack.so /usr/lib/x86_64-linux-gnu/libf77blas.so /usr/lib/x86_64-linux-gnu/libatlas.so /usr/lib/x86_64-linux-gnu/libsuitesparseconfig.so /usr/lib/x86_64-linux-gnu/librt.so /usr/lib/x86_64-linux-gnu/libcxsparse.so /usr/lib/x86_64-linux-gnu/libgflags.so.2.2.1 -lpthread /usr/lib/x86_64-linux-gnu/libglog.so
+#CPATHS += $(HOME)/git/ceres-solver/include
+#CPATHS += $(HOME)/git/ceres-solver/build/config
+#CPATHS += $(HOME)/git/ceres-solver/internal/ceres/miniglog
+#LPATHS += $(HOME)/git/ceres-solver/build/lib
+LIBS += -lceres
+#-lglog -lcholmod -llapack -lblas -lpthread
+#/usr/lib/x86_64-linux-gnu/libspqr.so /usr/lib/x86_64-linux-gnu/libtbbmalloc.so /usr/lib/x86_64-linux-gnu/libtbb.so /usr/lib/x86_64-linux-gnu/libcholmod.so /usr/lib/x86_64-linux-gnu/libccolamd.so /usr/lib/x86_64-linux-gnu/libcamd.so /usr/lib/x86_64-linux-gnu/libcolamd.so /usr/lib/x86_64-linux-gnu/libamd.so /usr/lib/x86_64-linux-gnu/liblapack.so /usr/lib/x86_64-linux-gnu/libf77blas.so /usr/lib/x86_64-linux-gnu/libatlas.so /usr/lib/x86_64-linux-gnu/libsuitesparseconfig.so /usr/lib/x86_64-linux-gnu/librt.so /usr/lib/x86_64-linux-gnu/libcxsparse.so /usr/lib/x86_64-linux-gnu/liblapack.so /usr/lib/x86_64-linux-gnu/libf77blas.so /usr/lib/x86_64-linux-gnu/libatlas.so /usr/lib/x86_64-linux-gnu/libsuitesparseconfig.so /usr/lib/x86_64-linux-gnu/librt.so /usr/lib/x86_64-linux-gnu/libcxsparse.so /usr/lib/x86_64-linux-gnu/libgflags.so.2.2.1 -lpthread /usr/lib/x86_64-linux-gnu/libglog.so
 endif
 
 ifeq ($(NLOPT),1)
@@ -91,7 +94,7 @@ endif
 
 ifeq ($(IPOPT),1)
 DEPEND_UBUNTU += coinor-libipopt-dev
-CXXFLAGS += -DRAI_NLOPT `pkg-config --cflags ipopt`
+CXXFLAGS += -DRAI_IPOPT `pkg-config --cflags ipopt`
 LIBS     += `pkg-config --libs ipopt`
 endif
 
@@ -179,7 +182,7 @@ LIBS     += `pkg-config --libs  gtk+-3.0`
 endif
 
 ifeq ($(GRAPHVIZ),1)
-DEPEND_UBUNTU += graphviz-dev
+DEPEND_UBUNTU += graphviz graphviz-dev
 CXXFLAGS += -DRAI_GRAPHVIZ
 LIBS += -lcgraph -lgvc
 endif
