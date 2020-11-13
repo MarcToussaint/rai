@@ -212,7 +212,7 @@ void F_ObjectTotalForce::phi2(arr& y, arr& J, const FrameL& F) {
   a->C.kinematicsZero(torque, Jtorque, 3);
 
   if(gravity) {
-    double mass=.1;
+    double mass=.01;
     if(a->inertia) mass = a->inertia->mass;
     force(2) += gravity * mass;
   }
