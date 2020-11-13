@@ -25,10 +25,7 @@ printUbuntuAll: $(DEPEND:%=inPath_printUbuntu/%) printUbuntu
 
 printDependAll: $(DEPEND:%=inPath_printDepend/%) printDepend
 
-tests: $(test_paths:%=inPath_make/%) pyTests
-
-pyTests: force
-	+@-make -C test/ry
+tests: $(test_paths:%=inPath_make/%)
 
 bin: $(bin_paths:%=inPath_make/%)
 
@@ -79,6 +76,8 @@ install: src bin
 runTests: tests
 	@rm -f z.test-report
 	@for p in $(test_paths); do build/run-path.sh $$p; done
+	+@-make -C test/ry run clean
+
 
 ################################################################################
 

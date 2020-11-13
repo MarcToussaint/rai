@@ -459,7 +459,7 @@ LIBS += -lpthread -lrt\
 -lSimulationController 
 endif
 
-ifeq ($(BULLET),1)
+ifeq ($(BULLET_LOCAL),1)
 #BULLET_PATH=$(HOME)/git/bullet3
 CXXFLAGS  += -DRAI_BULLET -DBT_USE_DOUBLE_PRECISION
 CPATH := $(HOME)/opt/include/bullet/:$(CPATH)
@@ -469,7 +469,7 @@ CPATH := $(HOME)/opt/include/bullet/:$(CPATH)
 LIBS += -lBulletSoftBody -lBulletDynamics -lBulletCollision  -lLinearMath
 endif
 
-ifeq ($(BULLET_UBUNTU),1)
+ifeq ($(BULLET),1)
 DEPEND_UBUNTU += libbullet-dev
 CXXFLAGS += -DRAI_BULLET `pkg-config --cflags bullet`
 LIBS     += `pkg-config --libs bullet`
