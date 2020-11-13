@@ -44,16 +44,18 @@ struct ConfigurationViewer : GLDrawer {
  private://draw data
   Configuration C;
 
-  ptr<struct OpenGL> gl;
   arr framePath;
   FrameL drawSubFrames;
   String drawText;
   int drawTimeSlice;
-  bool drawFullPath, drawFrameLines=true;
+  bool drawFullPath;
   int tprefix;
   bool writeToFiles;
   String text;
   uint pngCount=0;
+public:
+  ptr<struct OpenGL> gl;
+  bool drawFrameLines=true;
 };
 
 }
