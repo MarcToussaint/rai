@@ -2392,6 +2392,12 @@ void KOMO::Conv_KOMO_SparseNonfactored::getFHessian(arr& H, const arr& x) {
   }
 }
 
+void KOMO::Conv_KOMO_SparseNonfactored::report(std::ostream& os, int verbose) {
+  komo.reportProblem(os);
+  if(verbose>1) os <<komo.getReport(verbose>2);
+  if(verbose>3) komo.pathConfig.watch();
+}
+
 void KOMO::Conv_KOMO_SparseNonfactored::getDimPhi() {
 #ifndef KOMO_PATH_CONFIG
   CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet: use komo.reset()");

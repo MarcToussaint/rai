@@ -19,7 +19,7 @@
 bool loadTextures = true;
 
 AssimpLoader::AssimpLoader(const std::string& path, bool flipYZ, bool relativeMeshPoses) {
-  verbose = rai::getParameter<double>("Assimp/verbose", 0);
+  verbose = 0; //rai::getParameter<double>("Assimp/verbose", 0);
 
   Assimp::Importer importer;
   const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);

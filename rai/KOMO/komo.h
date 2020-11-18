@@ -390,6 +390,8 @@ struct KOMO : NonCopyable {
     virtual arr getInitializationSample(const arrL& previousOptima= {});
     virtual void evaluate(arr& phi, arr& J, const arr& x);
     virtual void getFHessian(arr& H, const arr& x);
+
+    virtual void report(ostream& os, int verbose);
   };
 
   struct TimeSliceProblem : MathematicalProgram {
