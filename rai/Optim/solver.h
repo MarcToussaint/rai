@@ -17,11 +17,12 @@ struct NLP_Solver : NonCopyable {
 
   NLP_Solver& setSolver(NLP_SolverID _solverID){ solverID=_solverID; return *this; }
   NLP_Solver& setProblem(MathematicalProgram& _P){ CHECK(!P, "problem was already set!"); P = make_shared<MathematicalProgram_Logged>(_P); return *this; }
+  void setInitialization(const arr& _x){ x=_x; }
   rai::Graph getOptions(){ return rai::Graph(); }
   void setOptions(const rai::Graph& opt){ NIY }
   void setLogging(bool log_x, bool log_costs, bool log_phi, bool log_J){ NIY }
 
-  arr solve(bool resampleInitialization=true);
+  arr solve(int resampleInitialization=-1); ///< -1: only when not yet set
 
   arr getLog_x(){ return P->xLog; }
   arr getLog_costs(){ return P->costLog; }

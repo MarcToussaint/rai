@@ -9,8 +9,7 @@
 #include <Optim/MathematicalProgram.h>
 
 struct NLOptInterface {
-//  MathematicalProgram& P;
-  MathematicalProgram_Logged P;
+  MathematicalProgram& P;
   arr x, phi_x, J_x;
   ObjectiveTypeA featureTypes;
 
