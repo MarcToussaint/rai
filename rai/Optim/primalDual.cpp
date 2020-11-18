@@ -224,7 +224,7 @@ uint OptPrimalDual::run(uint maxIt) {
   newton.logFile = fil;
 
   //newton loop (cp newton.run() )
-  newton.numTinySteps=0;
+  newton.numTinyFSteps=0;
   for(uint i=0; i<maxIt; i++) {
     newton.step();
 
@@ -232,7 +232,7 @@ uint OptPrimalDual::run(uint maxIt) {
       if(opt.stopGTolerance<0.
           || PD.L.get_sumOfGviolations() + PD.L.get_sumOfHviolations() < opt.stopGTolerance) {
         if(newton.stopCriterion==newton.stopStepFailed) continue;
-        if(newton.stopCriterion>=newton.stopCrit1) break;
+        if(newton.stopCriterion>=newton.stopDeltaConverge) break;
       }
     }
 

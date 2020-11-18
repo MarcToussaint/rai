@@ -21,10 +21,10 @@ arr NLOptInterface::solve() {
   arr x = P.getInitializationSample();
   arr bounds_lo, bounds_up;
   P.getBounds(bounds_lo, bounds_up);
-  for(uint i=0; i<bounds_lo.N; i++) {
-    if(bounds_lo.elem(i)>=bounds_up.elem(i)) { bounds_lo.elem(i) = -10.;  bounds_up.elem(i) = 10.; }
-  }
 
+  CHECK_EQ(x.N, bounds_up.N, "NLOpt requires bounds");
+  CHECK_EQ(x.N, bounds_lo.N, "NLOpt requires bounds");
+  for(uint i=0; i<bounds_lo.N; i++) CHECK(bounds_lo.elem(i)<bounds_up.elem(i), "NLOpt requires bounds");
   CHECK_LE(max(x-bounds_up), 0., "initialization is above upper bound");
   CHECK_GE(min(x-bounds_lo), 0., "initialization is above upper bound");
 
@@ -81,7 +81,8 @@ double NLOptInterface::f(const arr& _x, arr& _grad) {
     if(featureTypes.elem(i)==OT_f) { fval += phi_x.elem(i);  if(grad.N) grad += J_x[i]; }
     if(featureTypes.elem(i)==OT_sos) { double y = phi_x.elem(i);  fval += y*y;  if(grad.N) grad += (2.*y) * J_x[i]; }
   }
-  for(uint i=0; i<grad.N; i++) _grad[i] = grad.elem(i);
+//  for(uint i=0; i<grad.N; i++) _grad[i] = grad.elem(i);
+  _grad = grad;
 //  cout <<fval <<endl;
   return fval;
 }

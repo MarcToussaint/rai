@@ -17,11 +17,11 @@ struct OptNewton {
   ScalarFunction f;
   OptOptions o;
 
-  enum StopCriterion { stopNone=0, stopCrit1, stopTinySteps, stopCritEvals, stopStepFailed };
+  enum StopCriterion { stopNone=0, stopDeltaConverge, stopTinyFSteps, stopTinyXSteps, stopCritEvals, stopStepFailed };
   double fx;
   arr gx, Hx;
   double alpha, beta;
-  uint its=0, evals=0, numTinySteps=0;
+  uint its=0, evals=0, numTinyFSteps=0, numTinyXSteps=0;
   StopCriterion stopCriterion;
   arr bound_lo, bound_up;
   bool rootFinding=false;
