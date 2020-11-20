@@ -46,7 +46,10 @@ template<class T> rai::Array<T> numpy2arr(const pybind11::array_t<T>& X) {
   for(uint i=0; i<dim.N; i++) dim(i)=X.shape()[i];
   Y.resize(dim);
   auto ref = X.unchecked();
-  if(Y.nd==1) {
+  if(Y.nd==0) {
+    Y.clear();
+    return Y;
+  } else if(Y.nd==1) {
     for(uint i=0; i<Y.d0; i++) Y(i) = ref(i);
     return Y;
   } else if(Y.nd==2) {
@@ -57,6 +60,12 @@ template<class T> rai::Array<T> numpy2arr(const pybind11::array_t<T>& X) {
     return Y;
   }
   NIY;
+  return Y;
+}
+
+template<class T> rai::Array<T> list2arr(const pybind11::list& X) {
+  rai::Array<T> Y(X.size());
+  for(uint i=0; i<Y.N; i++) Y.elem(i) = X[i].cast<T>();
   return Y;
 }
 
@@ -124,7 +133,7 @@ template <typename T>  struct type_caster<rai::Array<T>> {
   bool load(pybind11::handle src, bool) {
     auto buf = pybind11::array_t<T>::ensure(src);
     if(!buf) {
-      LOG(-1) <<"THIS IS NOT A NUMPY ARRAY!";
+      //LOG(-1) <<"THIS IS NOT A NUMPY ARRAY!";
       return false;
     }
     value = numpy2arr<T>(buf);

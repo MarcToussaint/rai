@@ -25,7 +25,7 @@ intA conv_times2tuples(const arr& times, uint order, int stepsPerPhase, uint T,
                        int deltaFromStep, int deltaToStep){
   //interpret times as always, single slice, interval, or tuples
   double fromTime=0, toTime=-1.;
-  if(!times.N) {
+  if(!times || !times.N) {
   } else if(times.N==1) {
     fromTime = toTime = times(0);
   } else {

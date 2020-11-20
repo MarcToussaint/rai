@@ -190,7 +190,7 @@ struct KOMO : NonCopyable {
   //
 
   ptr<struct Objective> add_qControlObjective(const arr& times, uint order, double scale=1., const arr& target=NoArr, int deltaFromStep=0, int deltaToStep=0);
-  void addSquaredQuaternionNorms(double startTime=0., double endTime=-1., double prec=3e0);
+  void addSquaredQuaternionNorms(const arr& times=NoArr, double scale=3e0);
 
   void add_collision(bool hardConstraint, double margin=.0, double prec=1e1);
   void add_jointLimits(bool hardConstraint, double margin=.05, double prec=1.);
@@ -292,7 +292,7 @@ struct KOMO : NonCopyable {
   void checkGradients();          ///< checks all gradients numerically
 
   int view(bool pause=false, const char* txt=nullptr);
-  int view_play(double delay=.2, bool pause=false, const char* txt=nullptr);
+  int view_play(double delay=.2, bool pause=false);
 
   void plotTrajectory();
   void plotPhaseTrajectory();
