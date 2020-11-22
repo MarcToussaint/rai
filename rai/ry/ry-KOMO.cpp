@@ -113,7 +113,8 @@ void init_KOMO(pybind11::module& m) {
        &KOMO::addSwitch_stable,
        "",
        pybind11::arg("startTime"),
-       pybind11::arg("entTime"),
+       pybind11::arg("endTime"),
+       pybind11::arg("prevFromFrame"),
        pybind11::arg("fromFrame"),
        pybind11::arg("toFrame")
        )
@@ -175,8 +176,9 @@ void init_KOMO(pybind11::module& m) {
   })
 
   .def("getReport", [](std::shared_ptr<KOMO>& self) {
-    rai::Graph G = self->getProblemGraph(true);
-    return graph2list(G);
+//    rai::Graph G = self->getProblemGraph(true);
+    rai::Graph R = self->getReport(true);
+    return graph2dict(R);
   })
 
   .def("getConstraintViolations", [](std::shared_ptr<KOMO>& self) {

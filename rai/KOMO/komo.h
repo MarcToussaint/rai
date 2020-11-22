@@ -202,7 +202,7 @@ struct KOMO : NonCopyable {
   void addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode,
                       double time, double endTime,
                       const char* prevFrom, const char* newFrom, const char* obj);
-  void addSwitch_stable(double time, double endTime, const char* from, const char* to);
+  void addSwitch_stable(double time, double endTime, const char* prevFrom, const char* from, const char* to);
   void addSwitch_stableOn(double time, double endTime, const char* from, const char* to);
   void addSwitch_dynamic(double time, double endTime, const char* from, const char* to, bool dampedVelocity=false);
   void addSwitch_dynamicOn(double time, double endTime, const char* from, const char* to);

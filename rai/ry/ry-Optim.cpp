@@ -74,10 +74,10 @@ void init_Optim(pybind11::module& m) {
   ;
 
 
-  pybind11::module_ mBench = m.def_submodule("nlp_benchmark", "ry submodule to define optimization benchmarks");
+  //  pybind11::module_ mBench = m.def_submodule("nlp_benchmark", "ry submodule to define optimization benchmarks");
 //  pybind11::class_<MathematicalProgram, shared_ptr<MathematicalProgram>>(m, "MathematicalProgram")
 
-  pybind11::class_<OptBench_InvKin_Endeff, std::shared_ptr<OptBench_InvKin_Endeff>>(mBench, "InvKin_Endeff")
+  pybind11::class_<OptBench_InvKin_Endeff, std::shared_ptr<OptBench_InvKin_Endeff>>(m, "InvKin_Endeff")
       .def(pybind11::init<const char*, bool>())
       .def("get", &OptBench_InvKin_Endeff::get)
       ;

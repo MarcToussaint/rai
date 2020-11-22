@@ -362,9 +362,9 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
   }
 }
 
-void KOMO::addSwitch_stable(double time, double endTime, const char* from, const char* to) {
+void KOMO::addSwitch_stable(double time, double endTime, const char* prevFrom, const char* from, const char* to) {
 #if 1
-  addSwitch_mode(SY_none, SY_stable, time, endTime, NULL, from, to);
+  addSwitch_mode(SY_none, SY_stable, time, endTime, prevFrom, from, to);
 #else
   addSwitch(time, true, JT_free, SWInit_zero, from, to);
   //-- DOF-is-constant constraint
@@ -711,7 +711,7 @@ void KOMO_ext::setGrasp(double time, double endTime, const char* endeffRef, cons
   setTask(time, time, new TM_InsideBox(world, endeffRef, NoVector, object), OT_ineq, NoArr, 1e1);
 #else
 //  addSwitch(time, true, new KinematicSwitch(SW_effJoint, JT_free, endeffRef, object, world));
-  addSwitch_stable(time, endTime, endeffRef, object);
+  addSwitch_stable(time, endTime, 0, endeffRef, object);
   addObjective({time}, make_shared<F_InsideBox>(), {endeffRef, object}, OT_ineq, {1e1});
 //  setTouch(time, time, endeffRef, object);
 #endif

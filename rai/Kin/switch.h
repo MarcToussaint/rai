@@ -33,6 +33,7 @@ struct KinematicSwitch {
   Enum<JointType> jointType;
   Enum<SwitchInitializationType> init;
   int timeOfApplication;
+  int timeOfTermination;
   int fromId, toId;
   rai::Transformation jA, jB;
   KinematicSwitch();
