@@ -2183,7 +2183,7 @@ template<class T> void rai::Array<T>::writeRaw(std::ostream& os) const {
 
 /// write data with a name tag (convenient to write multiple data arrays into one file)
 template<class T> void rai::Array<T>::writeTagged(std::ostream& os, const char* tag, bool binary) const {
-  os <<tag <<' ';
+  os <<tag <<": ";
   write(os, " ", "\n ", "[]", true, binary);
 }
 
@@ -2191,9 +2191,10 @@ template<class T> void rai::Array<T>::writeTagged(std::ostream& os, const char* 
 template<class T> bool rai::Array<T>::readTagged(std::istream& is, const char* tag) {
   if(tag) {
     String read_tag;
-    read_tag.read(is, " \t\n\r", " \t\n\r");
+    read_tag.read(is, " \t\n\r", ": \t\n\r");
     if(!is.good() || read_tag.N==0) return false;
     CHECK_EQ(read_tag, tag, "read `" <<read_tag <<"' instead of `" <<tag <<"' in arr file");
+    rai::skip(is, ": \t\n\r");
   };
   read(is);
   return true;

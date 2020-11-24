@@ -98,6 +98,11 @@ CXXFLAGS += -DRAI_IPOPT `pkg-config --cflags ipopt`
 LIBS     += `pkg-config --libs ipopt`
 endif
 
+ifeq ($(OMPL),1)
+CXXFLAGS += -DRAI_OMPL
+CPATHS  += /usr/local/include/ompl-1.6/
+endif
+
 ifeq ($(CUDA),1)
 CXXFLAGS += -DRAI_CUDA
 NXX = nvcc #$(RAI_LIBPATH)/cuda/bin/
