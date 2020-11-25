@@ -290,7 +290,7 @@ struct GlfwSpinner : Thread {
 //    cout <<"HERE" <<count++;
     mutex.lock(RAI_HERE);
     glfwPollEvents();
-    for(OpenGL* gl: glwins) if(gl->self && gl->self->window && gl->self->needsRedraw) {
+    for(OpenGL* gl: glwins) if(gl->self && !gl->offscreen && gl->self->window && gl->self->needsRedraw) {
         gl->isUpdating.setStatus(1);
 
         glfwMakeContextCurrent(gl->self->window);
@@ -394,23 +394,32 @@ void OpenGL::openWindow() {
     fg->mutex.lock(RAI_HERE);
 
     if(offscreen) {
+//      glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_NATIVE_CONTEXT_API);
+//      glfwWindowHint(GLFW_CONTEXT_ROBUSTNESS, GLFW_NO_ROBUSTNESS);
+//      glfwWindowHintString()
+//      glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+//      glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
+//      glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
       glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
+//      glfwWindowHint(GLFW_VISIBLE, GL_TRUE);
     } else {
       glfwWindowHint(GLFW_VISIBLE, GL_TRUE);
     }
     if(!title.N) title="GLFW window";
     self->window = glfwCreateWindow(width, height, title.p, nullptr, nullptr);
-    glfwMakeContextCurrent(self->window);
-    glfwSetWindowUserPointer(self->window, this);
-    glfwSetMouseButtonCallback(self->window, GlfwSpinner::_MouseButton);
-    glfwSetCursorPosCallback(self->window, GlfwSpinner::_MouseMotion);
-    glfwSetKeyCallback(self->window, GlfwSpinner::_Key);
-    glfwSetScrollCallback(self->window, GlfwSpinner::_Scroll);
-    glfwSetWindowSizeCallback(self->window, GlfwSpinner::_Resize);
-    glfwSetWindowCloseCallback(self->window, GlfwSpinner::_Close);
+    if(!offscreen){
+      glfwMakeContextCurrent(self->window);
+      glfwSetWindowUserPointer(self->window, this);
+      glfwSetMouseButtonCallback(self->window, GlfwSpinner::_MouseButton);
+      glfwSetCursorPosCallback(self->window, GlfwSpinner::_MouseMotion);
+      glfwSetKeyCallback(self->window, GlfwSpinner::_Key);
+      glfwSetScrollCallback(self->window, GlfwSpinner::_Scroll);
+      glfwSetWindowSizeCallback(self->window, GlfwSpinner::_Resize);
+      glfwSetWindowCloseCallback(self->window, GlfwSpinner::_Close);
+      glfwSwapInterval(1);
+      glfwMakeContextCurrent(nullptr);
+    }
 
-    glfwSwapInterval(1);
-    glfwMakeContextCurrent(nullptr);
     fg->mutex.unlock();
 
     fg->addGL(this);
