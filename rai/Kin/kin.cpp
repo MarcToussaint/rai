@@ -626,10 +626,9 @@ void Configuration::selectJointsByName(const StringA& names, bool notThose) {
 }
 
 /// select joint frames of trees given by the set of roots
-void Configuration::selectJointsBySubtrees(const StringA& roots, bool notThose) {
+void Configuration::selectJointsBySubtrees(const FrameL& roots, bool notThose) {
   FrameL F;
-  for(const String& s: roots) {
-    Frame* f = getFrame(s);
+  for(Frame* f: roots) {
     F.append(f);
     f->getSubtree(F);
   }

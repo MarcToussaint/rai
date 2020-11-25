@@ -1868,6 +1868,36 @@ void KOMO::retrospectApplySwitches2() {
 #endif
 }
 
+void KOMO::retrospectChangeJointType(int startStep, int endStep, uint frameID, JointType newJointType) {
+  uint s = startStep+k_order;
+  //apply the same switch on all following configurations!
+  for(; s<endStep+k_order; s++) {
+    rai::Frame* f = timeSlices(s, frameID);
+    f->setJoint(newJointType);
+  }
+}
+
+void KOMO::selectJointsBySubtrees(const StringA& roots, const arr& times, bool notThose){
+  uintA rootIds = world.getFrameIDs(roots);
+
+  world.selectJointsBySubtrees(world.getFrames(rootIds), notThose);
+
+  FrameL allRoots;
+
+  if(!times.N) {
+    for(uint s=0;s<timeSlices.d0;s++) allRoots.append( pathConfig.getFrames(rootIds+s*timeSlices.d1) );
+  } else {
+    int tfrom = conv_time2step(times(0), stepsPerPhase);
+    int tto   = conv_time2step(times(1), stepsPerPhase);
+    for(uint t=tfrom;t<=tto;t++) allRoots.append( pathConfig.getFrames(rootIds+(t+k_order)*timeSlices.d1) );
+  }
+  pathConfig.selectJointsBySubtrees(allRoots, notThose);
+  pathConfig.ensure_q();
+  pathConfig.checkConsistency();
+
+}
+
+
 //===========================================================================
 
 void KOMO::setupConfigurations2() {

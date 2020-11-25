@@ -255,7 +255,6 @@ struct KOMO : NonCopyable {
   //-- setting individual time slices
   void setConfiguration(int t, const arr& q); ///< t<0 allows to set the prefix configurations; while 0 <= t < T allows to set all other initial configurations
   void setConfiguration_X(int t, const arr& X); ///< t<0 allows to set the prefix configurations; while 0 <= t < T allows to set all other initial configurations
-  void setStartConfigurations(const arr& q); ///< set all prefix configurations to a particular state
   void initWithConstant(const arr& q); ///< set all configurations EXCEPT the prefix to a particular state
   void initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase=1, bool sineProfile=true); ///< set all configurations (EXCEPT prefix) to interpolate given waypoints
 
@@ -308,7 +307,6 @@ struct KOMO : NonCopyable {
   void selectJointsBySubtrees(const StringA& roots, const arr& times= {}, bool notThose=false);
   void setupConfigurations2();
   void checkBounds(const arr& x);
-  void retrospectApplySwitches(rai::Array<rai::KinematicSwitch*>& _switches);
   void retrospectApplySwitches2();
   void retrospectChangeJointType(int startStep, int endStep, uint frameID, rai::JointType newJointType);
   void set_x2(const arr& x, const uintA& selectedConfigurationsOnly=NoUintA);            ///< set the state trajectory of all configurations

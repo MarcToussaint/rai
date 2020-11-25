@@ -143,7 +143,7 @@ struct Configuration : GLDrawer {
   void selectJoints(const FrameL& F, bool notThose=false);
   void selectJointsByName(const StringA&, bool notThose=false);
   void selectJointsByGroup(const StringA& groupNames, bool notThose=false);
-  void selectJointsBySubtrees(const StringA& roots, bool notThose=false);
+  void selectJointsBySubtrees(const FrameL& roots, bool notThose=false);
 
   /// @name get other information
   arr getCtrlMetric() const;
