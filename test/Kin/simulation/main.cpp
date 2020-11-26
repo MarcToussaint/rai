@@ -13,8 +13,8 @@ void testPushes(){
   C.addFile("model.g");
   C.watch(true);
 
-//  rai::Simulation S(C, S._bullet, true);
-  rai::Simulation S(C, S._physx, true);
+  rai::Simulation S(C, S._bullet, true);
+  //rai::Simulation S(C, S._physx, true);
 
   double tau=.01;
   Metronome tic(tau);
@@ -62,8 +62,8 @@ void testGrasp(){
 
   C.selectJointsByName({"finger1", "finger2"}, true);
 
-//  rai::Simulation S(C, S._bullet, true);
-  rai::Simulation S(C, S._physx, true);
+  rai::Simulation S(C, S._bullet, true);
+  //rai::Simulation S(C, S._physx, true);
 
   byteA rgb;
   floatA depth;
@@ -114,7 +114,8 @@ void testGrasp(){
 void testOpenClose(){
   rai::Configuration RealWorld;
   RealWorld.addFile("../../../../rai-robotModels/scenarios/pandasTable.g");
-  rai::Simulation S(RealWorld, S._physx, true);
+  rai::Simulation S(RealWorld, S._bullet, true);
+  //rai::Simulation S(RealWorld, S._physx, true);
 
   rai::Configuration C;
   C.addFile("../../../../rai-robotModels/scenarios/pandasTable.g");
@@ -169,8 +170,8 @@ void makeRndScene(){
 
   C.addFile("../../../../rai-robotModels/scenarios/pandasTable.g");
 
-  //  rai::Simulation S(C, S._bullet, true);
-  rai::Simulation S(C, S._physx, true);
+  rai::Simulation S(C, S._bullet, true);
+  //rai::Simulation S(C, S._physx, true);
   S.cameraview().addSensor("camera");
 
   byteA rgb;
@@ -211,8 +212,8 @@ void testFriction(){
 
   C["table"]->setQuaternion({1.,-.1,0.,0.}); //tilt the table!!
 
-  //  rai::Simulation S(C, S._bullet, true);
-  rai::Simulation S(C, S._physx, true);
+  rai::Simulation S(C, S._bullet, true);
+  //rai::Simulation S(C, S._physx, true);
   S.cameraview().addSensor("camera");
 
   double tau=.01;
@@ -249,7 +250,7 @@ void testStackOfBlocks(){
   C.addFile("../../../../rai-robotModels/scenarios/pandasTable.g");
 
   rai::Simulation S(C, S._bullet, true);
-//  rai::Simulation S(C, S._physx, true);
+  //rai::Simulation S(C, S._physx, true);
 
   double tau=.01;  //jumps a bit for tau=.01
   Metronome tic(tau);
@@ -268,12 +269,12 @@ void testStackOfBlocks(){
 int main(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
+  makeRndScene();
+  testFriction();
   testStackOfBlocks();
   testPushes();
   testGrasp();
   testOpenClose();
-  makeRndScene();
-  testFriction();
 
   return 0;
 }
