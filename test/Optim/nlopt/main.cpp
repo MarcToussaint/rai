@@ -12,7 +12,7 @@ void TEST(NLOpt){
     NLOptInterface nlo(P);
     nlo.solve();
     ofstream fil2("z.opt2");
-    nlo.P.xLog.writeRaw(fil2);
+    //    nlo.P.xLog.writeRaw(fil2);
   }
 
   arr x, phi;

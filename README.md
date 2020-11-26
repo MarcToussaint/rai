@@ -37,12 +37,15 @@ git clone https://github.com/MarcToussaint/rai.git
 cd rai
 
 # The following two commands depend on the config.mk -- see below
-make -j1 printUbuntuAll    # to just print Ubuntu package dependencies per component
+make -j1 printUbuntuAll    # for your information: what the next step will install
 make -j1 installUbuntuAll  # calls sudo apt-get install; you can always interrupt
 
 make -j4
+make -j4 tests bin
 make runTests      # compile and run the essential tests
-make bin           # compile rai/bin/kinEdit and similar
+
+# when interested in the python bindings:
+pip3 install --user pybind11 jupyter nbconvert matplotlib
 ```
 
 ## Dependencies
