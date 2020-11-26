@@ -2429,28 +2429,16 @@ struct XBackgroundContext {
 Singleton<XBackgroundContext> xBackgroundContext;
 
 void OpenGL::renderInBack(int w, int h) {
-#ifdef RAI_GLFW
-  LOG(-3) <<"NO! do this with offscreen window";
-  return;
-#endif
+  beginNonThreadedDraw();
 
 #ifdef RAI_GL
   if(w<0) w=width;
   if(h<0) h=height;
 
-//  singletonGlSpinner(); //ensure that glut is initialized (if the drawer called glut)
-
-//  auto mut=singleGLAccess();
-//  auto _dataLock = dataLock(RAI_HERE);
-//  xBackgroundContext()->makeCurrent();
-
   CHECK_EQ(w%4, 0, "should be devidable by 4!!");
 
-  isUpdating.waitForStatusEq(0);
-  isUpdating.setStatus(1);
-
   if(!rboColor || !rboDepth) { //need to initialize
-//    glewInit();
+    glewInit();
     glGenRenderbuffers(1, &rboColor);  // Create a new renderbuffer unique name.
     glBindRenderbuffer(GL_RENDERBUFFER, rboColor);  // Set it as the current.
     glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, w, h); // Sets storage type for currently bound renderbuffer.
@@ -2521,25 +2509,12 @@ void OpenGL::renderInBack(int w, int h) {
   }
 
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fboId);
-
-  //-- draw!
   Draw(w, h, nullptr, true);
   glFlush();
-
-  //-- read
-  captureImage.resize(h, w, 3);
-  glReadBuffer(GL_COLOR_ATTACHMENT0);
-  glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, captureImage.p);
-
-  captureDepth.resize(h, w);
-  glReadBuffer(GL_DEPTH_ATTACHMENT);
-  glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_FLOAT, captureDepth.p);
-
-  // Return to onscreen rendering:
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-
-  isUpdating.setStatus(0);
 #endif
+
+  endNonThreadedDraw();
 }
 
 //===========================================================================
