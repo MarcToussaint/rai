@@ -10,7 +10,7 @@ void TEST(SqrProblem) {
 
   Conv_ScalarProblem_MathematicalProgram _nlp(_f, dim);
   _nlp.setBounds(-2., 2.);
-  MathematicalProgram_Logged nlp(_nlp);
+  MathematicalProgram_Traced nlp(_nlp);
   Conv_MathematicalProgram_ScalarProblem f(nlp);
 
   displayFunction(f, true);
@@ -30,7 +30,7 @@ void TEST(SqrProblem) {
   S.setInitialization({1., 1.});
   S.solve();
 
-  arr path = catCol(S.getLog_x(), S.getLog_costs());
+  arr path = catCol(S.getTrace_x(), S.getTrace_costs());
   path.writeRaw(FILE("z.path"));
   gnuplot("load 'plt'", false, true);
   rai::wait();

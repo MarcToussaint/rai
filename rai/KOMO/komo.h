@@ -329,7 +329,7 @@ struct KOMO : NonCopyable {
     virtual uint getDimension();
     virtual void getFeatureTypes(ObjectiveTypeA& featureTypes);
     virtual void getBounds(arr& bounds_lo, arr& bounds_up);
-    virtual arr getInitializationSample(const arrL& previousOptima= {});
+    virtual arr getInitializationSample(const arr& previousOptima= {});
     virtual void getFactorization(uintA& variableDimensions, uintA& featureDimensions, intAA& featureVariables);
 
     virtual void setAllVariables(const arr& x);
@@ -385,7 +385,7 @@ struct KOMO : NonCopyable {
     virtual uint getDimension() { return komo.pathConfig.getJointStateDimension(); }
     virtual void getFeatureTypes(ObjectiveTypeA& ft);
     virtual void getBounds(arr& bounds_lo, arr& bounds_up);
-    virtual arr getInitializationSample(const arrL& previousOptima= {});
+    virtual arr getInitializationSample(const arr& previousOptima= {});
     virtual void evaluate(arr& phi, arr& J, const arr& x);
     virtual void getFHessian(arr& H, const arr& x);
 

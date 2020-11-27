@@ -2473,7 +2473,7 @@ void KOMO::Conv_KOMO_SparseNonfactored::getBounds(arr& bounds_lo, arr& bounds_up
   bounds_up = komo.bound_up;
 }
 
-arr KOMO::Conv_KOMO_SparseNonfactored::getInitializationSample(const arrL& previousOptima) {
+arr KOMO::Conv_KOMO_SparseNonfactored::getInitializationSample(const arr& previousOptima) {
   komo.run_prepare(.01);
   return komo.x;
 }
@@ -2561,7 +2561,7 @@ void KOMO::Conv_KOMO_FactoredNLP::getBounds(arr& bounds_lo, arr& bounds_up) {
   bounds_up = komo.bound_up;
 }
 
-arr KOMO::Conv_KOMO_FactoredNLP::getInitializationSample(const arrL& previousOptima) {
+arr KOMO::Conv_KOMO_FactoredNLP::getInitializationSample(const arr& previousOptima) {
   komo.run_prepare(.01);
   return komo.x;
 }
