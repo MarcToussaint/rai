@@ -5,7 +5,7 @@ OUTPUT = lib$(NAME).so
 DEPEND = Core Geo
 
 X11 = 1
-#PNG = 1
+PNG = 1
 GL = 1
 GTK = 0
 #GTKGL = 1

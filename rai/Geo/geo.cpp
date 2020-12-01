@@ -1257,7 +1257,12 @@ Transformation& Transformation::setZero() {
 
 void Transformation::set(const double* p) { pos.set(p); rot.set(p+3); }
 
-void Transformation::set(const arr& t) { CHECK_EQ(t.N, 7, "");  set(t.p); }
+void Transformation::set(const arr& t) {
+  if(t.N==7) set(t.p);
+  else if(t.N==3){ pos.set(t.p); rot.setZero(); }
+  else if(t.N==4){ pos.setZero(); rot.set(t.p); }
+  else HALT("transformation can be assigned only to a 7D, 3D, or 4D array");
+}
 
 /// randomize the frame
 Transformation& Transformation::setRandom() {
@@ -1354,7 +1359,7 @@ double* Transformation::getAffineMatrix(double* m) const {
   m[0] = M.m00; m[1] = M.m01; m[2] = M.m02; m[3] =pos.x;
   m[4] = M.m10; m[5] = M.m11; m[6] = M.m12; m[7] =pos.y;
   m[8] = M.m20; m[9] = M.m21; m[10]= M.m22; m[11]=pos.z;
-  m[12]=0.;    m[13]=0.;    m[14]=0.;    m[15]=1.;
+  m[12]= 0.;    m[13]= 0.;    m[14]= 0.;    m[15]=1.;
   return m;
 }
 
@@ -1371,7 +1376,7 @@ double* Transformation::getInverseAffineMatrix(double* m) const {
   m[0] =M.m00; m[1] =M.m10; m[2] =M.m20; m[3] =-pinv.x;
   m[4] =M.m01; m[5] =M.m11; m[6] =M.m21; m[7] =-pinv.y;
   m[8] =M.m02; m[9] =M.m12; m[10]=M.m22; m[11]=-pinv.z;
-  m[12]=0.;   m[13]=0.;   m[14]=0.;   m[15]=1.;
+  m[12]=0.;    m[13]=0.;    m[14]=0.;    m[15]=1.;
   return m;
 }
 
@@ -1515,6 +1520,7 @@ void Transformation::read(std::istream& is) {
     if(is.fail()) HALT("error reading '" <<c <<"' parameters in frame");
   }
   if(is.fail()) HALT("could not read Transformation struct");
+  rot.normalize();
 }
 
 //==============================================================================

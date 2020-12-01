@@ -76,6 +76,8 @@ install: src bin
 runTests: tests
 	@rm -f z.test-report
 	@for p in $(test_paths); do build/run-path.sh $$p; done
+	+@-make -C test/ry run clean
+
 
 ################################################################################
 

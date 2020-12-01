@@ -1590,7 +1590,7 @@ arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
     HALT("here");
   }
   if(INFO) {
-#if 1
+#if 0
     uint k=(N>3?3:N); //number of required eigenvalues
     rai::Array<integer> IWORK(5*N), IFAIL(N);
     arr WORK(10*(3*N)), Acopy=A;
@@ -1606,12 +1606,12 @@ arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
       dsbevx_((char*)"N", (char*)"I", (char*)"L", &N, &KD, Acopy.p, &LDAB, (double*)nullptr, &LDQ, &VL, &VU, &IL, &IU, &ABSTOL, &M, sig.p, (double*)nullptr, &LDZ, WORK.p, IWORK.p, IFAIL.p, &INFO);
     } else NIY;
     sig.resizeCopy(k);
-#else
-    arr sig, eig;
-    lapack_EigenDecomp(A, sig, eig);
+//    arr sig, eig;
+//    lapack_EigenDecomp(A, sig, eig);
 #endif
     rai::errString <<"lapack_Ainv_b_sym error info = " <<INFO
-                   <<". Typically this is because A is not pos-def.\nsmallest "<<k<<" eigenvalues=" <<sig;
+                   <<". Typically this is because A is not pos-def.";
+//    \nsmallest "<<k<<" eigenvalues=" <<sig;
     throw(rai::errString.p);
 //    THROW("lapack_Ainv_b_sym error info = " <<INFO
 //         <<". Typically this is because A is not pos-def.\nsmallest "<<k<<" eigenvalues=" <<sig);
@@ -2503,7 +2503,7 @@ void SparseMatrix::rowShift(int shift) {
 void SparseMatrix::colShift(int shift) {
   if(rows.nd){ rows.clear(); cols.clear(); }
   for(uint i=0; i<elems.d0; i++) {
-    int& j = elems(i, 0);
+    int& j = elems.p[2*i]; //(i, 0);
     CHECK_GE(j+shift, 0, "");
     CHECK_LE(j+shift+1, (int)Z.d0, "");
     j += shift;
@@ -2563,10 +2563,10 @@ arr SparseMatrix::B_A(const arr& B) const {
     S.resize(B.d0, Z.d1, B.d0*Z.N); //resize to maximal possible
     uint l=0;
     for(uint k=0;k<Z.N;k++){
-      uint a=elems(k,0);
-      uint b=elems(k,1);
-      double x = Z.elem(k);
-      for(uint i=0;i<B.d0;i++) S.entry(i, b, l++) = B(i,a) * x;
+      uint a=elems.p[2*k]; //(k,0);
+      uint b=elems.p[2*k+1]; //(k,1);
+      double x = Z.p[k]; //elem(k);
+      for(uint i=0;i<B.d0;i++) S.entry(i, b, l++) = B.p[i*B.d1+a] * x; //B(i,a) * x;
     }
     CHECK_EQ(l, C.N, "");
 //    S.resizeCopy(B.d0, Z.d1, l);
@@ -2648,6 +2648,34 @@ void SparseMatrix::add(const SparseMatrix& a, uint lo0, uint lo1, double coeff){
     }
   }
 #endif
+}
+
+void SparseMatrix::add(const arr& B, uint lo0, uint lo1, double coeff){
+  CHECK_LE(lo0+B.d0, Z.d0, "");
+  CHECK_LE(lo1+B.d1, Z.d1, "");
+  if(!B.N) return; //nothing to add
+  uint Nold=Z.N;
+  Z.resizeMEM(Nold+B.N, true);
+  memmove(Z.p+Nold, B.p, Z.sizeT*B.N);
+  if(isSparseMatrix(B)){
+    elems.append(B.sparse().elems);
+  }else{
+    elems.resizeCopy(Nold+B.N, 2);
+    int *e = &elems(Nold,0);
+    for(uint i=0;i<B.d0;i++) for(uint j=0;j<B.d1;j++){
+      *(e++) = i;
+      *(e++) = j;
+    }
+  }
+  if(coeff){
+    for(double* x=&Z.elem(Nold); x!=Z.p+Z.N; x++) (*x) *= coeff;
+  }
+  if(lo0){
+    for(int* i=&elems(Nold,0); i!=elems.p+elems.N; i+=2) (*i) += lo0;
+  }
+  if(lo1){
+    for(int* i=&elems(Nold,1); i!=elems.p+elems.N+1; i+=2) (*i) += lo1;
+  }
 }
 
 arr SparseVector::unsparse() {
@@ -2875,10 +2903,10 @@ void graphRandomFixedDegree(uintA& E, uint N, uint d) {
 //===========================================================================
 //
 // explicit instantiations
-// (in old versions, array.tpp was not included by array.h -- one could revive this)
+// (in old versions, array.ipp was not included by array.h -- one could revive this)
 //
 
-//#include "array.tpp"
+//#include "array.ipp"
 //#define T double
 //#  include "array_instantiate.cxx"
 //#undef T
@@ -2930,7 +2958,7 @@ template rai::Array<arr>::Array();
 template rai::Array<arr>::Array(uint);
 template rai::Array<arr>::~Array();
 
-#include "util.tpp"
+#include "util.ipp"
 
 template rai::Array<double> rai::getParameter<arr>(char const*);
 template rai::Array<double> rai::getParameter<arr>(char const*, const arr&);

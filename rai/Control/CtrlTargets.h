@@ -41,17 +41,17 @@ struct CtrlTarget_Const : CtrlMovingTarget {
 //===========================================================================
 
 struct CtrlTarget_MaxCarrot : CtrlMovingTarget {
-  double maxDistance;
+  double maxDistance, goalDistance=0.;
   arr goal;
-  uint countInRange=0;
+  uint countInGoalRange=0;
   CtrlTarget_MaxCarrot(CtrlObjective& co, double maxDistance, const arr& _goal=NoArr);
   virtual ActStatus step(double tau, CtrlObjective* o, const arr& y_real);
   virtual void resetGoal(const arr& _goal) { goal=_goal; }
   virtual void setTimeScale(double d) {}
-  virtual void resetState() { countInRange=0; }
+  virtual void resetState() { countInGoalRange=0; }
   virtual arr getResidual(const arr& y_real) { if(goal.N) return y_real-goal; return y_real; }
   virtual void reportState(ostream& os) const {
-    os <<" [MaxCarrot: #" <<countInRange <<"]";
+    os <<" [MaxCarrot: isTransient:" <<isTransient <<" goalDistance:" <<goalDistance <<" maxDistance:" <<maxDistance <<" #countInGoalRange:" <<countInGoalRange <<"]";
   }
 };
 

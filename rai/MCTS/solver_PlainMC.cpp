@@ -28,7 +28,7 @@ PlainMC::PlainMC(MCTS_Environment& world)
 }
 
 void PlainMC::reset() {
-  A = conv_stdvec2arr(world.get_actions());
+  A = world.get_actions();
 //  if(verbose>1){ cout <<"START decisions: [" <<A.N <<']'; listWrite(A); cout <<endl; }
   D.clear();
   D.resize(A.N);
@@ -64,7 +64,7 @@ double PlainMC::finishRollout(int stepAbort) {
   //-- continue with random rollout
   while(!world.is_terminal_state() && (stepAbort<0 || rolloutStep++<(uint)stepAbort)) {
     rai::Array<MCTS_Environment::Handle> actions;
-    actions = conv_stdvec2arr(world.get_actions()); //WARNING: conv... returns a reference!!
+    actions = world.get_actions(); //WARNING: conv... returns a reference!!
     if(verbose>2) { cout <<"Possible decisions: "; listWrite(actions); cout <<endl; }
     if(!actions.N) {
       if(verbose>1) { cout <<" -- no decisions left -> terminal" <<endl; }

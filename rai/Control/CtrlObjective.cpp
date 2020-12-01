@@ -7,10 +7,9 @@
     --------------------------------------------------------------  */
 
 #include "CtrlObjective.h"
-#include "CtrlProblem.h"
+#include "CtrlSolver.h"
 #include "CtrlTargets.h"
-#include "CtrlSolvers.h"
-#include "komoControl.h"
+
 #include "../KOMO/komo.h"
 #include "../Core/graph.h"
 #include "../Kin/frame.h"
@@ -24,16 +23,12 @@
 //  : feat(_feat), name(name), ref(_ref), active(true), kp(_kp), kd(_kd), C(_C), status(AS_init){
 //}
 
-arr CtrlObjective::getResidual(CtrlProblem& cp) {
+arr CtrlObjective::getResidual(CtrlSolver& cp) {
   return movingTarget->getResidual(getValue(cp));
 }
 
-arr CtrlObjective::getValue(CtrlProblem& cp) {
-//  return feat->phi(cp.komo.configurations);
-  CHECK(feat->order==0,"")
-  FrameL F = indicesToFrames(feat->frameIDs, cp.komo.pathConfig );
-  if(feat->frameIDs.nd==2) F.reshape(1, feat->frameIDs.d0, feat->frameIDs.d1);
-  else  F.reshape(1, F.N);
+arr CtrlObjective::getValue(CtrlSolver& cp) {
+  FrameL F = groundFeatureFrames(feat, cp.komo.pathConfig, 2);
   arr y, J;
   feat->__phi2(y, J, F);
   return y;
@@ -70,13 +65,14 @@ void CtrlObjective::reportState(ostream& os) const {
   if(!active) cout <<" INACTIVE";
   cout <<rai::Enum<ActStatus>(status) <<' ';
   if(movingTarget) {
+    os <<" -- moving target:" <<feat->target <<' ';
     movingTarget->reportState(os);
 //    if(ref->v_ref.N==y.N){
 //      os <<" \tv_ref=" <<ref->v_ref;
 //    }
     os <<endl;
   } else {
-    os <<" -- no reference defined " <<endl;
+    os <<" -- fixed target:" <<feat->target <<endl;
   }
 }
 

@@ -8,22 +8,14 @@
 
 #ifdef RAI_PYBIND
 
-#include <pybind11/pybind11.h>
+#include "ry.h"
 
-void init_Config(pybind11::module& m);
-void init_Feature(pybind11::module& m);
-void init_Frame(pybind11::module& m);
-void init_KOMO(pybind11::module& m);
-//void init_LGP_Tree(pybind11::module &m);
-//void init_Bullet(pybind11::module &m);
-//void init_PhysX(pybind11::module &m);
-//void init_Operate(pybind11::module &m);
-//void init_Camera(pybind11::module &m);
-void init_Simulation(pybind11::module& m);
+#include <pybind11/pybind11.h>
 
 PYBIND11_MODULE(libry, m) {
   m.doc() = "rai bindings";
 
+#ifdef RAI_BIND_KOMO
   init_Config(m);
   init_Feature(m);
   init_Frame(m);
@@ -34,7 +26,11 @@ PYBIND11_MODULE(libry, m) {
 //  init_Operate(m);
 //  init_Camera(m);
   init_Simulation(m);
+  init_CtrlSet(m);
+  init_CtrlSolver(m);
+#endif
 
+  init_Optim(m);
 }
 
 #endif

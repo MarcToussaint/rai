@@ -136,7 +136,7 @@ void Simulation::setJointStateSafe(arr q_ref, StringA& jointsInLimit, StringA& c
 
   arr y;
   double margin = .03;
-  KK.kinematicsProxyCost(y, NoArr, margin);
+  KK.kinematicsPenetration(y, NoArr, margin);
 
   for(rai::Proxy& p:KK.proxies) if(p.d<margin) {
       collisionPairs.append({p.a->name, p.b->name});
@@ -151,7 +151,7 @@ void Simulation::setJointStateSafe(arr q_ref, StringA& jointsInLimit, StringA& c
     arr y, J, JJ, invJ, I=eye(KK.q.N);
     KK.setJointState(q, self->currentlyUsedJoints);
     KK.stepSwift();
-    KK.kinematicsProxyCost(y, J, margin);
+    KK.kinematicsPenetration(y, J, margin);
 
     uint k;
     for(k=0; k<10; k++) {
@@ -171,7 +171,7 @@ void Simulation::setJointStateSafe(arr q_ref, StringA& jointsInLimit, StringA& c
 
       KK.setJointState(q, self->currentlyUsedJoints);
       KK.stepSwift();
-      KK.kinematicsProxyCost(y, J, margin);
+      KK.kinematicsPenetration(y, J, margin);
     }
 
     if(y.scalar()>1.) {
@@ -179,7 +179,7 @@ void Simulation::setJointStateSafe(arr q_ref, StringA& jointsInLimit, StringA& c
       q=q0;
       KK.setJointState(q, self->currentlyUsedJoints);
       KK.stepSwift();
-      KK.kinematicsProxyCost(y, J, margin);
+      KK.kinematicsPenetration(y, J, margin);
     }
 
     if(y.scalar()>1.) {
@@ -221,8 +221,8 @@ void Simulation::exec(const StringA& command) {
 
   LOG(0) <<"CMD = " <<command <<endl;
   if(command(0)=="attach") {
-    rai::Frame* a = K.getFrameByName(command(1));
-    rai::Frame* b = K.getFrameByName(command(2));
+    rai::Frame* a = K.getFrame(command(1));
+    rai::Frame* b = K.getFrame(command(2));
     b = b->getUpwardLink();
 
     if(b->parent) b->unLink();

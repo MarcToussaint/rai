@@ -14,7 +14,7 @@
 
 struct CtrlObjective;
 struct CtrlMovingTarget;
-struct CtrlProblem;
+struct CtrlSolver;
 typedef rai::Array<CtrlObjective*> CtrlObjectiveL;
 
 //===========================================================================
@@ -26,7 +26,6 @@ struct CtrlObjective {
   ObjectiveType type;               ///< element of {sumOfSqr, inequality, equality}
   double transientStep;
   rai::String name;                 ///< just for easier reporting
-  CtrlObjectiveL* selfRemove = 0;
 
   //-- the reference (zero point in feature space (target in KOMO)) can be continuously changed by motion primitives or other means
   std::shared_ptr<CtrlMovingTarget> movingTarget;  ///< non-nullptr iff this is a pos/vel task
@@ -44,14 +43,10 @@ struct CtrlObjective {
 
   CtrlObjective() : type(OT_sos), transientStep(-1.), active(true), /*kp(1.), kd(1.),*/ status(AS_init) {}
 //  CtrlObjective(char* _name, const ptr<Feature>& _feat, const ptr<CtrlReference>& _ref, double _kp, double _kd, const arr& _C);
-  ~CtrlObjective() {
-    if(selfRemove) {
-      selfRemove->removeValue(this);
-    }
-  }
+  ~CtrlObjective() {}
 
-  arr getResidual(CtrlProblem& cp);
-  arr getValue(CtrlProblem& cp);
+  arr getResidual(CtrlSolver& cp);
+  arr getValue(CtrlSolver& cp);
 
 //  arr update_y(const ConfigurationL& Ctuple); //returns the CHANGE in y (to estimate velocity)
   void resetState();

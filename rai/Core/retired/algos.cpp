@@ -7,7 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "algos.h"
-#include "array.tpp"
+#include "array.ipp"
 
 #include <cmath>
 #include <cstdlib>

@@ -254,9 +254,9 @@ void PairCollision::libccd(rai::Mesh& m1, rai::Mesh& m2, CCDmethod method) {
   } else if(simplexType(2, 2)) {
     d=coll_2on2(p1, p2, normal, simplex1, simplex2);
   } else if(simplexType(2, 3)) {
-    d=coll_2on3(p1, p2, normal, simplex1, simplex2, arr(_pos.v, 3));
+    d=coll_2on3(p1, p2, normal, simplex1, simplex2, arr(_pos.v, 3, true));
   } else if(simplexType(3, 2)) {
-    d=coll_2on3(p2, p1, normal, simplex2, simplex1, arr(_pos.v, 3));
+    d=coll_2on3(p2, p1, normal, simplex2, simplex1, arr(_pos.v, 3, true));
   } else if(simplexType(3, 3)) {
     d=coll_3on3(p2, p1, normal, simplex2, simplex1, mean(simplex1)); //arr(_pos.v, 3));
   } else HALT("simplex types " <<simplex1.d0 <<' ' <<simplex2.d0 <<" not handled");
@@ -322,16 +322,16 @@ void PairCollision::GJK_sqrDistance() {
   simplex1.resize(0, 3);
   simplex2.resize(0, 3);
   if(simplex.npts>=1) {
-    simplex1.append(arr(simplex.coords1[0], 3));
-    simplex2.append(arr(simplex.coords2[0], 3));
+    simplex1.append(arr(simplex.coords1[0], 3, true));
+    simplex2.append(arr(simplex.coords2[0], 3, true));
   }
   if(simplex.npts>=2) {
-    if(simplex.simplex1[1]!=simplex.simplex1[0]) simplex1.append(arr(simplex.coords1[1], 3));
-    if(simplex.simplex2[1]!=simplex.simplex2[0]) simplex2.append(arr(simplex.coords2[1], 3));
+    if(simplex.simplex1[1]!=simplex.simplex1[0]) simplex1.append(arr(simplex.coords1[1], 3, true));
+    if(simplex.simplex2[1]!=simplex.simplex2[0]) simplex2.append(arr(simplex.coords2[1], 3, true));
   }
   if(simplex.npts>=3) {
-    if(simplex.simplex1[2]!=simplex.simplex1[0] && simplex.simplex1[2]!=simplex.simplex1[1]) simplex1.append(arr(simplex.coords1[2], 3));
-    if(simplex.simplex2[2]!=simplex.simplex2[0] && simplex.simplex2[2]!=simplex.simplex2[1]) simplex2.append(arr(simplex.coords2[2], 3));
+    if(simplex.simplex1[2]!=simplex.simplex1[0] && simplex.simplex1[2]!=simplex.simplex1[1]) simplex1.append(arr(simplex.coords1[2], 3, true));
+    if(simplex.simplex2[2]!=simplex.simplex2[0] && simplex.simplex2[2]!=simplex.simplex2[1]) simplex2.append(arr(simplex.coords2[2], 3, true));
   }
 #else
   NICO

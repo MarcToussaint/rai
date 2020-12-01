@@ -114,7 +114,9 @@ rai::String Feature::shortTag(const rai::Configuration& C) {
 VectorFunction Feature::vf(rai::Configuration& C) { ///< direct conversion to vector function: use to check gradient or evaluate
   return [this, &C](arr& y, arr& J, const arr& x) -> void {
     C.setJointState(x);
+    C.setJacModeAs(J);
     phi(y, J, C);
+    C.jacMode=C.JM_dense;
   };
 }
 

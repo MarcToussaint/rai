@@ -49,26 +49,31 @@ int rai::ConfigurationViewer::update(bool watch) {
   return gl->pressedkey;
 }
 
-int rai::ConfigurationViewer::setConfiguration(rai::Configuration& _C, const char* text, bool watch) {
+int rai::ConfigurationViewer::setConfiguration(const rai::Configuration& _C, const char* text, bool watch) {
   ensure_gl();
-  if(_C.frames.N!=C.frames.N) {
-    recopyMeshes(_C);
-  } else if(_C.proxies.N) {
+  bool copyMeshes = false;
+  if(_C.frames.N!=C.frames.N) copyMeshes = true;
+  else{
+    for(uint i=0;i<C.frames.N;i++){
+      if((!_C.frames.elem(i)->shape) != (!C.frames.elem(i)->shape)){
+        copyMeshes=true;
+        break;
+      }
+    }
+  }
+  if(copyMeshes) recopyMeshes(_C);
+
+  if(_C.proxies.N) {
     auto _dataLock = gl->dataLock(RAI_HERE);
     C.copyProxies(_C.proxies);
   }
 
   {
     auto _dataLock = gl->dataLock(RAI_HERE);
-#if 0
-    framePath.resize(_C.frames.N, 7);
-    for(uint i=0; i<_C.frames.N; i++) framePath[i] = _C.frames(i)->getPose();
-    framePath.reshape(1, _C.frames.N, 7);
-#else
     framePath = _C.getFrameState();
     framePath.reshape(1, _C.frames.N, 7);
-#endif
     drawTimeSlice=0;
+    drawSubFrames.clear();
     if(text) drawText = text;
   }
 
@@ -125,6 +130,8 @@ int rai::ConfigurationViewer::setPath(const arr& _framePath, const char* text, b
 }
 
 bool rai::ConfigurationViewer::playVideo(uint nFrames, bool watch, double delay, const char* saveVideoPath){
+  if(rai::getDisableGui()) return false;
+
   const rai::String tag = drawText;
 
   if(saveVideoPath) {
@@ -157,7 +164,7 @@ bool rai::ConfigurationViewer::playVideo(uint nFrames, bool watch, double delay,
     }
   }
   drawText = tag;
-  if(watch) {
+  if(watch && rai::getInteractivity()) {
     int key = update(true);
     return !(key==27 || key=='q');
   }
@@ -196,7 +203,7 @@ bool rai::ConfigurationViewer::playVideo(bool watch, double delay, const char* s
     }
   }
   drawText = tag;
-  if(watch) {
+  if(watch && rai::getInteractivity()) {
     int key = update(true);
     return !(key==27 || key=='q');
   }
@@ -217,17 +224,17 @@ byteA rai::ConfigurationViewer::getScreenshot() {
   return gl->captureImage;
 }
 
-void rai::ConfigurationViewer::recopyMeshes(rai::Configuration& _C) {
+void rai::ConfigurationViewer::recopyMeshes(const rai::Configuration& _C) {
   ensure_gl();
 
   {
     auto _dataLock = gl->dataLock(RAI_HERE);
     C.copy(_C, false);
     //deep copy meshes!
-    for(rai::Frame* f:C.frames) if(f->shape) {
-        ptr<Mesh> org = f->shape->_mesh;
-        f->shape->_mesh = make_shared<Mesh> (*org.get());
-      }
+//    for(rai::Frame* f:C.frames) if(f->shape) {
+//        ptr<Mesh> org = f->shape->_mesh;
+//        f->shape->_mesh = make_shared<Mesh> (*org.get());
+//      }
   }
 }
 

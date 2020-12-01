@@ -29,7 +29,7 @@ void TEST(Grasp){
 #else
   komo.addObjective({1.}, FS_distance, {"endeff", "stickTip"}, OT_eq, {1e2});
 //  komo.addObjective({1.}, FS_positionDiff, {"endeff", "stickTip"}, OT_eq, {1e2});
-  komo.addSwitch_stable(1., -1., "endeff", "stickTip");
+  komo.addSwitch_stable(1., -1., 0, "endeff", "stickTip");
 #endif
 
   komo.add_collision(true);
@@ -52,7 +52,7 @@ void TEST(Grasp){
 
 //===========================================================================
 
-int TEST(Pnp){
+void testPnP(bool keyframesOnly){
   rai::Configuration C("model2.g");
 
   rai::ConfigurationViewer V;
@@ -61,28 +61,37 @@ int TEST(Pnp){
   KOMO komo;
 
   komo.setModel(C, false);
-  komo.setTiming(2.5, 30, 5., 2);
-  komo.add_qControlObjective({}, 2);
+  if(!keyframesOnly){
+    komo.setTiming(2.5, 30, 5., 2);
+    komo.add_qControlObjective({}, 2);
+  }else{
+    komo.setTiming(3., 1, 5., 1);
+    komo.add_qControlObjective({}, 1, 1e-1);
+  }
   komo.addSquaredQuaternionNorms();
 
   //grasp
-  komo.addSwitch_stable(1., 2., "gripper", "box");
+  komo.addSwitch_stable(1., 2., "table", "gripper", "box");
   komo.addObjective({1.}, FS_positionDiff, {"gripper", "box"}, OT_eq, {1e2});
   komo.addObjective({1.}, FS_scalarProductXX, {"gripper", "box"}, OT_eq, {1e2}, {0.});
   komo.addObjective({1.}, FS_vectorZ, {"gripper"}, OT_eq, {1e2}, {0., 0., 1.});
 
-  //slow - down - up
-  komo.addObjective({1.}, FS_qItself, {}, OT_eq, {}, {}, 1);
-  komo.addObjective({.9,1.1}, FS_position, {"gripper"}, OT_eq, {}, {0.,0.,.1}, 2);
+  if(!keyframesOnly){
+    //slow - down - up
+    komo.addObjective({1.}, FS_qItself, {}, OT_eq, {}, {}, 1);
+    komo.addObjective({.9,1.1}, FS_position, {"gripper"}, OT_eq, {}, {0.,0.,.1}, 2);
+  }
 
   //place
-  komo.addSwitch_stable(2., -1., "table", "box");
-  komo.addObjective({2.}, FS_positionDiff, {"box", "table"}, OT_eq, arr({1,3},{0,0,1e2}), {0,0,.1});
+  komo.addSwitch_stable(2., -1., "gripper", "table", "box");
+  komo.addObjective({2.}, FS_positionDiff, {"box", "table"}, OT_eq, {1e2}, {0,0,.08}); //arr({1,3},{0,0,1e2})
   komo.addObjective({2.}, FS_vectorZ, {"gripper"}, OT_eq, {1e2}, {0., 0., 1.});
 
-  //slow - down - up
-  komo.addObjective({2.}, FS_qItself, {}, OT_eq, {}, {}, 1);
-  komo.addObjective({1.9,2.2}, FS_position, {"gripper"}, OT_eq, {}, {0.,0.,.1}, 2);
+  if(!keyframesOnly){
+    //slow - down - up
+    komo.addObjective({2.}, FS_qItself, {}, OT_eq, {}, {}, 1);
+    komo.addObjective({1.9,2.2}, FS_position, {"gripper"}, OT_eq, {}, {0.,0.,.1}, 2);
+  }
 
   komo.verbose = 4;
   komo.optimize();
@@ -90,8 +99,6 @@ int TEST(Pnp){
 
   V.setPath(komo.getPath_frames(), "optimized motion", true);
   for(uint i=0;i<2;i++) V.playVideo(true);
-
-  return 0;
 }
 
 //===========================================================================
@@ -100,7 +107,8 @@ int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
   //  testGrasp();
-  testPnp();
+  testPnP(false);
+  testPnP(true);
 
   return 0;
 }

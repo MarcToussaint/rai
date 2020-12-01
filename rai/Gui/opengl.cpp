@@ -21,7 +21,7 @@
 #endif
 
 #include "opengl.h"
-#include "../Core/array.tpp"
+#include "../Core/array.ipp"
 #include "../Geo/geo.h"
 
 #ifdef RAI_GLFW
@@ -38,15 +38,6 @@ OpenGL& NoOpenGL = *((OpenGL*)(nullptr));
 //===========================================================================
 
 Singleton<SingleGLAccess> singleGLAccess;
-
-bool disableGui() {
-  static int _disableGui = -1;
-  if(_disableGui==-1) {
-    if(rai::checkParameter<bool>("disableGui")) _disableGui = 1;
-    else _disableGui = 0;
-  }
-  return _disableGui==1;
-}
 
 //===========================================================================
 
@@ -274,6 +265,8 @@ struct GlfwSpinner : Thread {
   Mutex mutex;
 
   GlfwSpinner() : Thread("GlfwSpinnerSpinner", .01) {
+    if(rai::getDisableGui()){ HALT("you must not be here with -disableGui"); }
+
     glfwSetErrorCallback(error_callback);
     if(!glfwInit()) exit(EXIT_FAILURE);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
@@ -283,7 +276,7 @@ struct GlfwSpinner : Thread {
     char* argv[1]= {(char*)"x"};
     glutInit(&argc, argv);
 
-    threadLoop();
+    threadLoop(true);
   }
   ~GlfwSpinner() {
     threadClose();
@@ -328,7 +321,7 @@ struct GlfwSpinner : Thread {
     if(glwins.N==1) start=true; //start looping
     mutex.unlock();
 
-    if(start) threadLoop(); //start looping
+//    if(start) threadLoop(true); //start looping
   }
 
   void delGL(OpenGL* gl) {
@@ -338,7 +331,7 @@ struct GlfwSpinner : Thread {
     if(!glwins.N) stop=true; //stop looping
     mutex.unlock();
 
-    if(stop) threadStop(); //stop looping
+//    if(stop) threadStop(); //stop looping
   }
 
   static void error_callback(int error, const char* description) {
@@ -394,7 +387,7 @@ static GlfwSpinner* singletonGlSpinner() {
 }
 
 void OpenGL::openWindow() {
-  if(disableGui()) return;
+  if(rai::getDisableGui()) return;
 
   if(!self->window) {
     auto fg = singletonGlSpinner();
@@ -447,7 +440,7 @@ void OpenGL::setTitle(const char* _title) {
 }
 
 void OpenGL::beginNonThreadedDraw() {
-  if(disableGui()) return;
+  if(rai::getDisableGui()) return;
   openWindow();
   auto fg = singletonGlSpinner();
   fg->mutex.lock(RAI_HERE);
@@ -455,7 +448,7 @@ void OpenGL::beginNonThreadedDraw() {
 }
 
 void OpenGL::endNonThreadedDraw() {
-  if(disableGui()) return;
+  if(rai::getDisableGui()) return;
   auto fg = singletonGlSpinner();
   glfwSwapBuffers(self->window);
   glfwMakeContextCurrent(nullptr);
@@ -1675,7 +1668,7 @@ void OpenGL::clear() {
 }
 
 void OpenGL::Draw(int w, int h, rai::Camera* cam, bool callerHasAlreadyLocked) {
-  if(disableGui()) HALT("you should not be here!");
+  if(rai::getDisableGui()) HALT("you should not be here!");
 
 #ifdef RAI_GL
   if(!callerHasAlreadyLocked) {
@@ -1943,7 +1936,7 @@ void OpenGL::Select(bool callerHasAlreadyLocked) {
 /** @brief watch in interactive mode and wait for an exiting event
   (key pressed or right mouse) */
 int OpenGL::watch(const char* txt) {
-  if(disableGui()) return 27; //ESC key
+  if(rai::getDisableGui()) return 27; //ESC key
   if(offscreen) {
     LOG(0) <<"can't watch an offscreen context";
     return 'q';
@@ -1962,7 +1955,7 @@ int OpenGL::watch(const char* txt) {
 
 /// update the view (in Qt: also starts displaying the window)
 int OpenGL::update(const char* txt, bool nonThreaded) {
-  if(disableGui()) return 27; //ESC key
+  if(rai::getDisableGui()) return 27; //ESC key
   openWindow();
   if(txt) text.clear() <<txt;
 #ifdef RAI_GL

@@ -1009,6 +1009,7 @@ struct SparseMatrix : SpecialArray {
   void transpose();
   void rowWiseMult(const arr& a);
   void add(const SparseMatrix& a, uint lo0=0, uint lo1=0, double coeff=1.);
+  void add(const arr& B, uint lo0=0, uint lo1=0, double coeff=1.);
   arr unsparse();
 };
 
@@ -1115,7 +1116,7 @@ Eigen::MatrixXd conv_arr2eigen(const arr& in);
 
 void linkArray();
 
-#include "array.tpp"
+#include "array.ipp"
 
 #endif //SWIG
 

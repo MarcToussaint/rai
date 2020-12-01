@@ -5,18 +5,22 @@
 const char *USAGE =
     "\nUsage:  kinEdit <g-filename>"
     "\n"
-    "\nIterate between editing the file (with an external editor) and"
-    "\nviewing the model in the OpenGL window (after pressing ENTER)."
-    "\nUse the number keys 1 2 3 4 5 to toggle display options.";
+    "\n  -file <g-file>"
+    "\n  -prune           to optimize the tree structure and prune useless frames"
+    "\n  -writeMeshes     to write all meshes in a folder"
+    "\n  -dot             to illustrate the tree structure as graph"
+    "\n  -cleanOnly       to skip the animation/edit loop\n";
 
 int main(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
   cout <<USAGE <<endl;
 
-  rai::String file=rai::getParameter<rai::String>("file",STRING("test.g"));
+  rai::String file=rai::getParameter<rai::String>("file",STRING("none"));
   if(rai::argc>=2 && rai::argv[1][0]!='-') file=rai::argv[1];
   LOG(0) <<"opening file `" <<file <<"'" <<endl;
+
+  if(file=="none") return 0;
 
   //-- load configuration
   rai::Configuration C;
@@ -24,7 +28,12 @@ int main(int argc,char **argv){
     Inotify ino(file);
     try {
       rai::lineCount=1;
-      C.readFromGraph(file);
+      C.clear();
+      if(file.endsWith(".dae")){
+        C.addAssimp(file);
+      }else{
+        C.addFile(file);
+      }
       C.report();
       break;
     } catch(std::runtime_error& err) {
@@ -49,12 +58,16 @@ int main(int argc,char **argv){
   if(rai::checkParameter<bool>("prune")){
     cout <<"PRUNING STRUCTURE" <<endl;
     C.optimizeTree(true, true, false);
-  }else{
-    C.optimizeTree(false, false, false);
   }
+//    C.optimizeTree(false, false, false);
   C.ensure_q();
   C.checkConsistency();
   C.sortFrames();
+
+  if(rai::checkParameter<bool>("writeMeshes")){
+    rai::system("mkdir -p meshes");
+    C.writeMeshes();
+  }
 
   //    makeConvexHulls(G.frames);
   //    computeOptimalSSBoxes(G.shapes);
@@ -68,7 +81,11 @@ int main(int argc,char **argv){
   if(rai::checkParameter<bool>("cleanOnly")) return 0;
 
   //-- continuously animate
-  editConfiguration(file, C);
+  if(file.endsWith(".dae")){
+    C.watch(true);
+  }else{
+    editConfiguration(file, C);
+  }
 
   return 0;
 }

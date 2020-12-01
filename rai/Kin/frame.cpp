@@ -152,6 +152,7 @@ void rai::Frame::_state_updateAfterTouchingX() {
 }
 
 void rai::Frame::_state_updateAfterTouchingQ() {
+  CHECK(parent, "can't set Q for a root frame '" <<name <<"'");
   _state_setXBadinBranch();
   if(joint) C._state_q_isGood = false;
 }
@@ -255,16 +256,19 @@ void rai::Frame::read(const Graph& ats) {
     if(n->isOfType<String>()) set_X()->read(n->get<String>().resetIstream());
     else if(n->isOfType<arr>()) set_X()->set(n->get<arr>());
     else NIY;
+    set_X()->rot.normalize();
   }
   if((n=ats["pose"])) {
     if(n->isOfType<String>()) set_X()->read(n->get<String>().resetIstream());
     else if(n->isOfType<arr>()) set_X()->set(n->get<arr>());
     else NIY;
+    set_X()->rot.normalize();
   }
   if((n=ats["Q"])) {
     if(n->isOfType<String>()) set_Q()->read(n->get<String>().resetIstream());
     else if(n->isOfType<arr>()) set_Q()->set(n->get<arr>());
     else NIY;
+    set_Q()->rot.normalize();
   }
 
   if(ats["type"]) ats["type"]->key = "shape"; //compatibility with old convention: 'body { type... }' generates shape
@@ -527,8 +531,6 @@ void rai::Frame::unLink() {
   parent->children.removeValue(this);
   parent=nullptr;
   Q.setZero();
-  _state_updateAfterTouchingQ();
-  _state_X_isGood=true;
   if(joint) {  delete joint;  joint=nullptr;  }
 }
 
@@ -1009,6 +1011,7 @@ void rai::Joint::read(const Graph& G) {
     if(n->isOfType<String>()) frame->set_Q()->read(n->get<String>().resetIstream());
     else if(n->isOfType<arr>()) frame->set_Q()->set(n->get<arr>());
     else NIY;
+    frame->set_Q()->rot.normalize();
   }
   G.get(H, "ctrl_H");
   G.get(scale, "joint_scale");

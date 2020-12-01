@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include <memory>
+#ifdef RAI_PYBIND
 
-struct Feature;
+#include <pybind11/pybind11.h>
 
-namespace ry {
-struct RyFeature { std::shared_ptr<Feature> feature; };
-}
+void init_Feature(pybind11::module& m);
+
+#endif

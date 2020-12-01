@@ -1,6 +1,6 @@
 #ifndef RAI_CERES
 #error *** this only compiles with the ceres dependency ***
-#endif
+#else
 
 #include <Optim/opt-ceres.h>
 #include <Optim/benchmarks.h>
@@ -196,7 +196,7 @@ void tutorialBasics(){
   std::cout << summary.BriefReport() << "\n";
   std::cout << "solution : " <<cer.x_full << "\n";
 
-  komo.set_x(cer.x_full);
+  komo.set_x2(cer.x_full);
   for(uint i=0;i<2;i++) komo.displayTrajectory(.1, true); //play the trajectory
   return;
 #endif
@@ -274,7 +274,9 @@ int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
 //  tutorialBasics();
-  testCeres();
+  testCeres2();
 
   return 0;
 }
+
+#endif

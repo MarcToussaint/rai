@@ -25,6 +25,7 @@ struct ForceExchange : NonCopyable, GLDrawer {
   Frame &a, &b;
   uint qIndex=UINT_MAX;
   ForceExchangeType type;
+  double scale=1.;
  private:
   PairCollision* __coll=0;
  public:
@@ -33,7 +34,7 @@ struct ForceExchange : NonCopyable, GLDrawer {
   arr force;
   arr torque;
 
-  ForceExchange(Frame& a, Frame& b, ForceExchange* copyContact=nullptr);
+  ForceExchange(Frame& a, Frame& b, ForceExchangeType _type, ForceExchange* copyContact=nullptr);
   ~ForceExchange();
 
   void setZero();

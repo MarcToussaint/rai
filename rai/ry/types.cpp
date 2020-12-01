@@ -70,7 +70,6 @@ pybind11::list graph2list(const rai::Graph& G) {
       list.append(n->get<bool>());
     } else {
     }
-
   }
   return list;
 }

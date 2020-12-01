@@ -65,7 +65,7 @@ OptNewton::StopCriterion OptNewton::step() {
   arr y, gy, Hy, Delta;
 
   its++;
-  if(o.verbose>1) cout <<"optNewton it=" <<std::setw(4) <<its << " \tbeta=" <<std::setw(8) <<beta <<flush;
+  if(o.verbose>1) cout <<"optNewton it:" <<std::setw(4) <<its << "  beta:" <<std::setw(4) <<beta <<flush;
 
   if(!(fx==fx)) HALT("you're calling a newton step with initial function value = NAN");
 
@@ -73,6 +73,12 @@ OptNewton::StopCriterion OptNewton::step() {
 
   //-- compute Delta
   arr R=Hx;
+#if 0
+  arr sig = lapack_kSmallestEigenValues_sym(R, 3);
+  double sigmin = sig.min();
+  double diag = 0.;
+  if(sigmin<beta) diag = beta-sigmin;
+#endif
   if(beta) { //Levenberg Marquardt damping
     if(!isSpecial(R)) {
       for(uint i=0; i<R.d0; i++) R(i, i) += beta;
@@ -93,22 +99,32 @@ OptNewton::StopCriterion OptNewton::step() {
     } catch(...) {
       inversionFailed=true;
     }
+    if(!inversionFailed && scalarProduct(Delta,gx)>0.){
+      inversionFailed = true;
+    }
     if(inversionFailed) {
-      if(false) { //increase beta
-        arr sig = lapack_kSmallestEigenValues_sym(R, 3);
-        if(o.verbose>0) {
-          cout <<"** hessian inversion failed ... increasing damping **\neigenvalues=" <<sig <<endl;
-        }
-        double sigmin = sig.min();
-        if(sigmin>0.) THROW("Hessian inversion failed, but eigenvalues are positive???");
-        beta = 2.*beta - sigmin;
-        return stopCriterion=stopNone;
-      } else { //use gradient
-        if(o.verbose>0) {
-          cout <<"** hessian inversion failed ... using gradient descent direction" <<endl;
-        }
-        Delta = gx * (-o.maxStep/length(gx));
+#if 0 //increase beta to min eig value and repeat
+      arr sig = lapack_kSmallestEigenValues_sym(R, 3);
+      if(o.verbose>0) {
+        cout <<"** hessian inversion failed ... increasing damping **\neigenvalues=" <<sig <<endl;
       }
+      double sigmin = sig.min();
+      if(sigmin>0.) THROW("Hessian inversion failed, but eigenvalues are positive???");
+      beta = 2.*beta - sigmin;
+      return stopCriterion=stopNone;
+#endif
+#if 1 //increase beta by betaInc
+      if(o.dampingInc!=1.) beta*=o.dampingInc;
+#endif
+      //use gradient
+      if(o.verbose>0) {
+        cout <<"** hessian inversion failed ... using gradient descent direction" <<endl;
+      }
+      Delta = gx * (-o.maxStep/length(gx));
+    } else { //inversion successful
+      //decrease beta by betaDec
+      if(o.dampingDec!=1.) beta *= o.dampingDec;
+      if(beta<o.damping) beta=o.damping;
     }
   }
 
@@ -118,12 +134,12 @@ OptNewton::StopCriterion OptNewton::step() {
   double alphaHiLimit = o.maxStep/maxDelta;
   double alphaLoLimit = 1e-1*o.stopTolerance/maxDelta;
 
-  if(o.verbose>1) cout <<" \t|Delta|=" <<std::setw(11) <<maxDelta <<flush;
+  if(o.verbose>1) cout <<"  |Delta|:" <<std::setw(11) <<maxDelta <<flush;
 
   //lazy stopping criterion: stop without any update
   if(absMax(Delta)<1e-1*o.stopTolerance) {
-    if(o.verbose>1) cout <<" \t - NO UPDATE" <<endl;
-    return stopCriterion=stopCrit1;
+    if(o.verbose>1) cout <<" \t -- absMax(Delta)<1e-1*o.stopTolerance -- NO UPDATE" <<endl;
+    return stopCriterion=stopDeltaConverge;
   }
   timeNewton += rai::timerRead(true);
 
@@ -137,8 +153,8 @@ OptNewton::StopCriterion OptNewton::step() {
     double timeBefore = rai::timerStart();
     fy = f(gy, Hy, y);  evals++;
     timeEval += rai::timerRead(true, timeBefore);
-    if(o.verbose>5) cout <<" \tprobing y=" <<y;
-    if(o.verbose>1) cout <<" \tevals=" <<std::setw(4) <<evals <<" \talpha=" <<std::setw(11) <<alpha <<" \tf(y)=" <<fy <<flush;
+    if(o.verbose>5) cout <<"  probing y:" <<y;
+    if(o.verbose>1) cout <<"  evals:" <<std::setw(4) <<evals <<"  alpha:" <<std::setw(11) <<alpha <<"  f(y):" <<fy <<flush;
     if(simpleLog) {
       (*simpleLog) <<its <<' ' <<evals <<' ' <<fy <<' ' <<alpha;
       if(y.N<=5) y.writeRaw(*simpleLog);
@@ -153,7 +169,8 @@ OptNewton::StopCriterion OptNewton::step() {
       if(logFile) {
         (*logFile) <<"{ lineSearch: " <<lineSearchSteps <<", alpha: " <<alpha <<", beta: " <<beta <<", f_x: " <<fx <<", f_y: " <<fy <<", wolfe: " <<wolfe <<", accept: True }," <<endl;
       }
-      if(fx-fy<o.stopFTolerance) numTinySteps++; else numTinySteps=0;
+      if(o.stopFTolerance<0. && fx-fy<o.stopFTolerance) numTinyFSteps++; else numTinyFSteps=0;
+      if(absMax(y-x)<1e-1*o.stopTolerance) numTinyXSteps++; else numTinyXSteps=0;
       x = y;
       fx = fy;
       gx = gy;
@@ -196,10 +213,10 @@ OptNewton::StopCriterion OptNewton::step() {
         endLineSearch=true;
         if(o.verbose>1) cout <<", stop & betaInc"<<endl;
       } else {
-        if(o.verbose>1) cout <<"\n\t\t\t\t\t(line search)\t" <<flush;
+        if(o.verbose>1) cout <<"\n                                  (line search)  " <<flush;
       }
       alpha *= o.stepDec;
-      if(alpha<alphaLoLimit) endLineSearch=true;
+//      if(alpha<alphaLoLimit) endLineSearch=true;
     }
   }
 
@@ -213,8 +230,9 @@ OptNewton::StopCriterion OptNewton::step() {
 
 #define STOPIF(expr, code, ret) if(expr){ if(o.verbose>1) cout <<"\t\t\t\t\t\t--- stopping criterion='" <<#expr <<"'" <<endl; code; return stopCriterion=ret; }
 
-  STOPIF(absMax(Delta)<o.stopTolerance,, stopCrit1);
-  STOPIF(numTinySteps>4, numTinySteps=0, stopTinySteps);
+  STOPIF(absMax(Delta)<o.stopTolerance,, stopDeltaConverge);
+  STOPIF(numTinyFSteps>4, numTinyFSteps=0, stopTinyFSteps);
+  STOPIF(numTinyXSteps>4, numTinyXSteps=0, stopTinyXSteps);
 //  STOPIF(alpha*absMax(Delta)<1e-3*o.stopTolerance, stopCrit2);
   STOPIF(evals>=o.stopEvals,, stopCritEvals);
   STOPIF(its>=o.stopIters,, stopCritEvals);
@@ -233,11 +251,11 @@ OptNewton::~OptNewton() {
 }
 
 OptNewton::StopCriterion OptNewton::run(uint maxIt) {
-  numTinySteps=0;
+  numTinyFSteps=numTinyXSteps=0;
   for(uint i=0; i<maxIt; i++) {
     step();
     if(stopCriterion==stopStepFailed) continue;
-    if(stopCriterion>=stopCrit1) break;
+    if(stopCriterion>=stopDeltaConverge) break;
   }
   return stopCriterion;
 }

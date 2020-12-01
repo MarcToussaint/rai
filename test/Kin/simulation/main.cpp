@@ -101,7 +101,7 @@ void testGrasp(){
       S.openGripper("gripper");
     }
 
-    if(t>1000 && S.getGripperWidth("gripper")>=.02){ //that's the upper limit of this gripper
+    if(t>1200 && S.getGripperWidth("gripper")>=.02){ //that's the upper limit of this gripper
       break;
     }
 
@@ -118,8 +118,7 @@ void testOpenClose(){
 
   rai::Configuration C;
   C.addFile("../../../../rai-robotModels/scenarios/pandasTable.g");
-
-  rai::ConfigurationViewer V;
+  C.watch(false, "initial");
 
   double tau = .01;
 
@@ -129,7 +128,7 @@ void testOpenClose(){
 
     arr q = S.get_q();
     C.setJointState(q);
-    V.setConfiguration(C);
+    C.watch();
 
     S.step({}, tau, S._none);
     if(S.getGripperIsClose("R_gripper")) break;
@@ -141,7 +140,7 @@ void testOpenClose(){
 
     arr q = S.get_q();
     C.setJointState(q);
-    V.setConfiguration(C);
+    C.watch();
 
     S.step({}, tau, S._none);
     if(S.getGripperIsOpen("R_gripper")) break;

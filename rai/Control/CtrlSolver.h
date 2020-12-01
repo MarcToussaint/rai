@@ -9,30 +9,27 @@
 #pragma once
 
 #include "CtrlObjective.h"
+#include "CtrlSet.h"
 
 #include "../KOMO/komo.h"
 
 //===========================================================================
 
-struct CtrlProblem : NonCopyable {
+struct CtrlSolver : NonCopyable {
   KOMO komo;
   double tau;
   double maxVel=1.;
   double maxAcc=1.;
   rai::Graph optReport;
 
-  CtrlObjectiveL objectives;    ///< list of objectives
+  rai::Array<shared_ptr<CtrlObjective>> objectives;    ///< list of objectives
 
-  CtrlProblem(rai::Configuration& _C, double _tau, uint k_order=1);
-  CtrlObjective* addPDTask(CtrlObjectiveL& tasks, const char* name, double decayTime, double dampingRatio, ptr<Feature> map);
+  CtrlSolver(rai::Configuration& _C, double _tau, uint k_order=1);
+  ~CtrlSolver();
 
+  void set(const CtrlSet& CS);
   void addObjectives(const rai::Array<ptr<CtrlObjective>>& O);
   void delObjectives(const rai::Array<ptr<CtrlObjective>>& O);
-  std::shared_ptr<CtrlObjective> addObjective(const ptr<Feature>& f, const StringA& frames, ObjectiveType type);
-  std::shared_ptr<CtrlObjective> addObjective(const FeatureSymbol& feat, const StringA& frames,
-      ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr, int order=-1);
-
-  std::shared_ptr<CtrlObjective> add_qControlObjective(uint order, double scale=1., const arr& target=NoArr);
 
   void update(rai::Configuration& C);
   void report(ostream& os=std::cout);

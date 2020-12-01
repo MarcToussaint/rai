@@ -7,8 +7,8 @@
     --------------------------------------------------------------  */
 
 #include "gtk.h"
-#include "../Core/util.tpp"
-#include "../Core/array.tpp"
+#include "../Core/util.ipp"
+#include "../Core/array.ipp"
 #include "../Core/thread.h"
 
 #include <sys/syscall.h>

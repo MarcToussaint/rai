@@ -10,8 +10,8 @@
 #include "../Gui/opengl.h"
 #include "../Geo/pairCollision.h"
 
-rai::ForceExchange::ForceExchange(rai::Frame& a, rai::Frame& b, rai::ForceExchange* copyContact)
-  : a(a), b(b), type(FXT_poa) {
+rai::ForceExchange::ForceExchange(rai::Frame& a, rai::Frame& b, ForceExchangeType _type, rai::ForceExchange* copyContact)
+  : a(a), b(b), type(_type), scale(1.) {
   CHECK(&a != &b, "");
   CHECK_EQ(&a.C, &b.C, "contact between frames of different configuration!");
   a.C.reset_q();
@@ -54,6 +54,10 @@ void rai::ForceExchange::calc_F_from_q(const arr& q, uint n) {
     force = q({n, n+2});
     torque = q({n+3, n+5});
   }
+  if(scale!=1.){
+    force *= scale;
+    torque *= scale;
+  }
   if(__coll) { delete __coll; __coll=0; }
 }
 
@@ -61,10 +65,10 @@ arr rai::ForceExchange::calc_q_from_F() const {
   arr q(6);
   if(type==FXT_poa){
     q.setVectorBlock(poa, 0);
-    q.setVectorBlock(force, 3);
+    q.setVectorBlock(force/scale, 3);
   }else if(type==FXT_torque){
-    q.setVectorBlock(force, 0);
-    q.setVectorBlock(torque, 3);
+    q.setVectorBlock(force/scale, 0);
+    q.setVectorBlock(torque/scale, 3);
   }
   return q;
 }
@@ -86,10 +90,10 @@ void rai::ForceExchange::kinForce(arr& y, arr& J) const {
 
   if(type==FXT_poa){
     y = force;
-    if(!!J) for(uint i=0; i<3; i++) J.elem(i, qIndex+3+i) = 1.;
+    if(!!J) for(uint i=0; i<3; i++) J.elem(i, qIndex+3+i) = scale;
   }else if(type==FXT_torque){
     y = force;
-    if(!!J) for(uint i=0; i<3; i++) J.elem(i, qIndex+0+i) = 1.;
+    if(!!J) for(uint i=0; i<3; i++) J.elem(i, qIndex+0+i) = scale;
   }
 }
 
@@ -100,7 +104,7 @@ void rai::ForceExchange::kinTorque(arr& y, arr& J) const {
     //zero: POA is zero-momentum point
   }else if(type==FXT_torque){
     y = torque;
-    if(!!J) for(uint i=0; i<3; i++) J.elem(i, qIndex+3+i) = 1.;
+    if(!!J) for(uint i=0; i<3; i++) J.elem(i, qIndex+3+i) = scale;
   }
 }
 
@@ -133,6 +137,14 @@ void rai::ForceExchange::glDraw(OpenGL& gl) {
   }
   double scale = 1.;
 
+  arr _torque = torque;
+  arr _force = force;
+  if(b.joint && b.joint->type==JT_hingeX){
+    arr x = b.ensure_X().rot.getX().getArr();
+    _torque = x * scalarProduct(x, torque);
+    _force = 0.;
+  }
+
 #ifdef RAI_GL
   const arr pt = (.5*(a.ensure_X().pos + b.ensure_X().pos)).getArr();
 
@@ -140,8 +152,12 @@ void rai::ForceExchange::glDraw(OpenGL& gl) {
   glLineWidth(3.f);
   glDrawDiamond(pt(0), pt(1), pt(2), .02, .02, .02);
   glBegin(GL_LINES);
-  glVertex3dv(pt.p);
-  glVertex3dv((pt+force).p);
+  glColor(1., 0., 1., 1.);
+  glVertex3dv(poa.p);
+  glVertex3dv((poa+scale*_torque).p);
+  glColor(1., 1., 1., 1.);
+  glVertex3dv(poa.p);
+  glVertex3dv((poa+scale*_force).p);
   glEnd();
   glLineWidth(1.f);
 

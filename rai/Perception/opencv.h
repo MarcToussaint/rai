@@ -45,8 +45,8 @@ inline cv::Mat CV(const doubleA& img) {
 
 inline byteA conv_cvMat2byteA(const cv::Mat& mat) {
   CHECK_EQ(mat.dims, 2, "");
-  if(mat.elemSize()==1) return byteA(mat.data, mat.total());
-  if(mat.elemSize()==3) return byteA(mat.data, 3*mat.total()).reshape(mat.rows, mat.cols, 3);
+  if(mat.elemSize()==1) return byteA(mat.data, mat.total(), true);
+  if(mat.elemSize()==3) return byteA(mat.data, 3*mat.total(), true).reshape(mat.rows, mat.cols, 3);
   NIY;
   return byteA();
 }
@@ -70,7 +70,7 @@ void getDiffProb(floatA& diff, const byteA& img0, const byteA& img1, float pixSd
 
 #include "../Core/array.h"
 inline char cvShow(const byteA& img, const char* window="opencv", bool wait=false) { NICO }
-inline char cvShow(const floatA& img, const char* window="opencv", bool wait=false) { NICO };
-void getDiffProb(floatA& diff, const byteA& img0, const byteA& img1, float pixSdv, uint range) { NICO };
+inline char cvShow(const floatA& img, const char* window="opencv", bool wait=false) { NICO }
+inline void getDiffProb(floatA& diff, const byteA& img0, const byteA& img1, float pixSdv, uint range) { NICO }
 
 #endif //RAI_OPENCV

@@ -28,7 +28,7 @@ MCTS_Environment::TransitionReturn BlindBranch::transition_randomly() {
 }
 
 const std::vector<MCTS_Environment::Handle> BlindBranch::get_actions() {
-  return conv_arr2stdvec(actions);
+  return actions.vec();
 }
 
 const MCTS_Environment::Handle BlindBranch::get_state() {

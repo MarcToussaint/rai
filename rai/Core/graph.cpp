@@ -7,8 +7,8 @@
     --------------------------------------------------------------  */
 
 #include "graph.h"
-#include "util.tpp"
-#include "array.tpp"
+#include "util.ipp"
+#include "array.ipp"
 
 #include <map>
 

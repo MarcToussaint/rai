@@ -7,14 +7,14 @@
     --------------------------------------------------------------  */
 
 #include "F_geometrics.h"
+
 #include "F_collisions.h"
 #include "F_pose.h"
-#include "TM_default.h"
 #include "frame.h"
 
 //===========================================================================
 
-void TM_AboveBox::phi2(arr& y, arr& J, const FrameL& F) {
+void F_AboveBox::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_EQ(order, 0, "");
   CHECK_EQ(F.N, 2, "");
 
@@ -35,36 +35,30 @@ void TM_AboveBox::phi2(arr& y, arr& J, const FrameL& F) {
 //===========================================================================
 
 
-void TM_InsideBox::phi2(arr& y, arr& J, const FrameL& F) {
+void F_InsideBox::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_EQ(F.N, 2, "");
-  rai::Shape* pnt=F.elem(0)->shape;
-  rai::Shape* box=F.elem(1)->shape;
-  CHECK(pnt && box, "I need shapes!");
-  CHECK(box->type()==rai::ST_ssBox || box->type()==rai::ST_box, "the 2nd shape needs to be a box"); //s1 should be the board
+  rai::Frame* pnt=F.elem(0);
+  rai::Frame* box=F.elem(1);
+  CHECK(box->shape, "I need shapes!");
+  CHECK(box->shape->type()==rai::ST_ssBox, "the 2nd shape needs to be a box"); //s1 should be the board
 //  arr pos, posJ;
 //  G.kinematicsRelPos(pos, posJ, &pnt->frame, ivec, &box->frame, NoVector);
-  Value pos = evalFeature<F_PositionRel>({&pnt->frame, &box->frame});
-  arr range = box->size();
+  Value pos = F_PositionRel() .eval({pnt, box});
+  arr range = box->shape->size();
   range *= .5;
   range -= margin;
   for(double& r:range) if(r<.01) r=.01;
 
-  y.resize(6);
+  pnt->C.kinematicsZero(y, J, 6);
+
   y(0) =  pos.y(0) - range(0);
-  y(1) = -pos.y(0) - range(0);
-  y(2) =  pos.y(1) - range(1);
-  y(3) = -pos.y(1) - range(1);
-  y(4) =  pos.y(2) - range(2);
+  y(1) =  pos.y(1) - range(1);
+  y(2) =  pos.y(2) - range(2);
+  y(3) = -pos.y(0) - range(0);
+  y(4) = -pos.y(1) - range(1);
   y(5) = -pos.y(2) - range(2);
-  if(!!J) {
-    J.resize(6, pos.J.d1);
-    J[0] =  pos.J[0];
-    J[1] = -pos.J[0];
-    J[2] =  pos.J[1];
-    J[3] = -pos.J[1];
-    J[4] =  pos.J[2];
-    J[5] = -pos.J[2];
-  }
+
+  if(!!J) J.setBlockMatrix(pos.J, -pos.J);
 }
 
 //===========================================================================
@@ -88,6 +82,7 @@ void TM_InsideLine::phi2(arr& y, arr& J, const FrameL& F) {
   y(1) = -pos.y(2) - range;
   if(!!J) {
     J.resize(2, pos.J.d1);
+    CHECK(!isSpecial(pos.J), "");
     J[0] =  pos.J[2];
     J[1] = -pos.J[2];
   }

@@ -22,7 +22,7 @@ rai::CameraView::CameraView(const rai::Configuration& _C, bool _offscreen, int _
 rai::CameraView::Sensor& rai::CameraView::addSensor(const char* name, const char* frameAttached, uint width, uint height, double focalLength, double orthoAbsHeight, const arr& zRange, const char* backgroundImageFile) {
   Sensor& sen = sensors.append();
   sen.name = name;
-  sen.frame = C.getFrameByName(frameAttached)->ID;
+  sen.frame = C.getFrame(frameAttached)->ID;
   rai::Camera& cam = sen.cam;
   sen.width=width;
   sen.height=height;
@@ -45,7 +45,7 @@ rai::CameraView::Sensor& rai::CameraView::addSensor(const char* name, const char
 }
 
 rai::CameraView::Sensor& rai::CameraView::addSensor(const char* frameAttached) {
-  rai::Frame* frame = C.getFrameByName(frameAttached);
+  rai::Frame* frame = C.getFrame(frameAttached);
 
   CHECK(frame, "frame '" <<frameAttached <<"' is not defined");
 

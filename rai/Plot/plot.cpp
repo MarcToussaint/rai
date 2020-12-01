@@ -7,7 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "plot.h"
-#include "../Core/array.tpp"
+#include "../Core/array.ipp"
 #include "../Geo/geo.h"
 #include "../Geo/mesh.h"
 #include "../Gui/opengl.h"

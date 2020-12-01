@@ -118,7 +118,7 @@ struct Mesh : GLDrawer {
   bool readStlFile(std::istream& is);
   void writeTriFile(const char* filename);
   void writeOffFile(const char* filename);
-  void writePLY(const char* fn, bool bin);
+  void writePLY(const char* fn, bool bin=true);
   void readPLY(const char* fn);
   void writeArr(std::ostream&);
   void readArr(std::istream&);

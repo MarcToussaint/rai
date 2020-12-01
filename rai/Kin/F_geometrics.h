@@ -12,7 +12,7 @@
 
 //===========================================================================
 
-struct TM_AboveBox : Feature {
+struct F_AboveBox : Feature {
   double margin=.0;
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F) { return 4; }
@@ -20,10 +20,10 @@ struct TM_AboveBox : Feature {
 
 //===========================================================================
 
-struct TM_InsideBox : Feature {
+struct F_InsideBox : Feature {
   rai::Vector ivec;       ///< additional position or vector
   double margin;
-  TM_InsideBox(double _margin=.01) : margin(_margin) {}
+  F_InsideBox(double _margin=.01) : margin(_margin) {}
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F) { return 6; }
 };

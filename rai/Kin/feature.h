@@ -38,7 +38,7 @@ struct Feature {
   Feature& setScale(const arr& _scale) { scale=_scale; return *this; }
   Feature& setTarget(const arr& _target) { target=_target; return *this; }
   Feature& setFrameIDs(const uintA& _frameIDs) { frameIDs=_frameIDs; return *this; }
-  Feature& setFrameIDs(const StringA& frames, const rai::Configuration& C) { setFrameIDs( namesToIndices(frames, C) ); return *this; }
+  Feature& setFrameIDs(const StringA& frames, const rai::Configuration& C) { setFrameIDs( C.getFrameIDs(frames) ); return *this; }
   Feature& setDiffInsteadOfVel(){ diffInsteadOfVel=true; return *this; }
 
  protected:
@@ -93,7 +93,7 @@ inline uintA getKtupleDim(const ConfigurationL& Ctuple) {
 
 inline int initIdArg(const rai::Configuration& C, const char* frameName) {
   rai::Frame* a = 0;
-  if(frameName && frameName[0]) a = C.getFrameByName(frameName);
+  if(frameName && frameName[0]) a = C.getFrame(frameName);
   if(a) return a->ID;
 //  HALT("frame '" <<frameName <<"' does not exist");
   return -1;
@@ -134,16 +134,45 @@ template<class T>
 std::shared_ptr<Feature> make_feature(const StringA& frames, const rai::Configuration& C, const arr& scale=NoArr, const arr& target=NoArr, int order=-1){
   std::shared_ptr<Feature> f = make_shared<T>();
 
+  if(!!frames && frames.N){
+    CHECK(!f->frameIDs.N, "frameIDs are already set");
+    if(frames.N==1 && frames.scalar()=="ALL") f->frameIDs = framesToIndices(C.frames);
+    else f->frameIDs = C.getFrameIDs(frames);
+  }
+
   if(!!scale) {
     if(!f->scale.N) f->scale = scale;
     else if(scale.N==1) f->scale *= scale.scalar();
     else if(scale.N==f->scale.N) f->scale *= scale.scalar();
     else NIY;
   }
-  if(!!target) f->target = target;
-  if(order>=0) f->order = order;
 
-  if(!f->frameIDs.N) f->frameIDs = namesToIndices(frames, C);
+  if(!!target) f->target = target;
+
+  if(order>=0) f->order = order;
 
   return f;
 }
+
+inline FrameL groundFeatureFrames(const std::shared_ptr<Feature>& f, const rai::Configuration& C, uint s){
+  FrameL F;
+  if(C.frames.nd==1){
+    CHECK(!s, "C does not have multiple slices");
+    CHECK(!f->order, "can't ground a order>0 feature on configuration without slices");
+    F = C.getFrames(f->frameIDs);
+    F.reshape(1, F.N);
+  }else{
+    F.resize(f->order+1, f->frameIDs.N);
+    for(uint i=0;i<=f->order;i++){
+      for(uint j=0;j<f->frameIDs.N;j++){
+        uint fID = f->frameIDs.elem(j);
+        F(i,j) = C.frames(s+i-f->order, fID);
+      }
+    }
+  }
+  if(f->frameIDs.nd==2){
+    F.reshape(f->order+1, f->frameIDs.d0, f->frameIDs.d1);
+  }
+  return F;
+}
+

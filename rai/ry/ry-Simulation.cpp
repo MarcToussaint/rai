@@ -28,8 +28,8 @@ struct SimulationState {
 void init_Simulation(pybind11::module& m) {
   pybind11::class_<rai::Simulation, std::shared_ptr<rai::Simulation>>(m, "Simulation")
 
-  .def(pybind11::init([](ry::Config& C, rai::Simulation::SimulatorEngine engine, int verbose) {
-    return make_shared<rai::Simulation>(C.set(), engine, verbose);
+  .def(pybind11::init([](shared_ptr<rai::Configuration>& C, rai::Simulation::SimulatorEngine engine, int verbose) {
+    return make_shared<rai::Simulation>(*C, engine, verbose);
   }))
 
   .def("step", &rai::Simulation::step,
@@ -98,19 +98,19 @@ void init_Simulation(pybind11::module& m) {
       )
 
   .def("getGroundTruthPosition", [](std::shared_ptr<rai::Simulation>& self, const char* frame) {
-    rai::Frame* f = self->C.getFrameByName(frame);
+    rai::Frame* f = self->C.getFrame(frame);
     arr x = f->getPosition();
     return pybind11::array_t<double>(x.dim(), x.p);
   })
 
   .def("getGroundTruthRotationMatrix", [](std::shared_ptr<rai::Simulation>& self, const char* frame) {
-    rai::Frame* f = self->C.getFrameByName(frame);
+    rai::Frame* f = self->C.getFrame(frame);
     arr x = f->getRotationMatrix();
     return pybind11::array_t<double>(x.dim(), x.p);
   })
 
   .def("getGroundTruthSize", [](std::shared_ptr<rai::Simulation>& self, const char* frame) {
-    rai::Frame* f = self->C.getFrameByName(frame);
+    rai::Frame* f = self->C.getFrame(frame);
     arr x = f->getSize();
     return pybind11::array_t<double>(x.dim(), x.p);
   })

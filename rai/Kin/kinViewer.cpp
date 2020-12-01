@@ -18,7 +18,7 @@ KinViewer::KinViewer(const Var<rai::Configuration>& _kin, double beatIntervalSec
   : Thread("KinViewer", beatIntervalSec),
     world(this, _kin, (beatIntervalSec<0.)) {
   if(_cameraFrameName && strlen(_cameraFrameName)>0) {
-    cameraFrameID =  world.get()->getFrameByName(_cameraFrameName, true)->ID;
+    cameraFrameID =  world.get()->getFrame(_cameraFrameName, true)->ID;
   }
   if(beatIntervalSec>=0.) threadLoop(); else threadStep();
 }
@@ -286,7 +286,7 @@ void ComputeCameraView::step() {
   copy = modelWorld.get();
   copy.orsDrawJoints = copy.orsDrawMarkers = copy.orsDrawProxies = false;
 
-  rai::Frame* kinectShape = copy.getFrameByName("endeffKinect");
+  rai::Frame* kinectShape = copy.getFrame("endeffKinect");
   if(kinectShape) { //otherwise 'copy' is not up-to-date yet
     {
       auto _dataLock = gl.dataLock(RAI_HERE);

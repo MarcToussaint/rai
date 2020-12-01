@@ -22,20 +22,32 @@ ptr<CtrlObjective> CtrlSet::addObjective(const ptr<Feature>& f, ObjectiveType ty
   return t;
 }
 
+shared_ptr<CtrlObjective> CtrlSet::add_qControlObjective(uint order, double _scale, const rai::Configuration& C) {
+  return addObjective(symbols2feature(FS_qControl, {}, C, {_scale}, NoArr, order), OT_sos);
+}
+
 void CtrlSet::report(std::ostream& os) const {
   for(auto& o: objectives) {
     o->reportState(os);
   }
 }
 
-bool isFeasible(const CtrlSet& CS, const ConfigurationL& Ctuple, bool initOnly, double eqPrecision) {
+bool CtrlSet::canBeInitiated(const rai::Configuration& Ctuple) const {
+  return isFeasible(*this, Ctuple, true);
+}
+
+bool CtrlSet::isConverged(const rai::Configuration& Ctuple) const {
+  return isFeasible(*this, Ctuple, false);
+}
+
+bool isFeasible(const CtrlSet& CS, const rai::Configuration& Ctuple, bool initOnly, double eqPrecision) {
   bool isFeasible=true;
   for(const auto& o: CS.objectives) {
     if(o->type==OT_ineq || o->type==OT_eq) {
       if(!initOnly && o->transientStep>0. && o->movingTarget->isTransient) { isFeasible=false; break; }
       if(!initOnly || o->transientStep<=0.) {
-        arr y;
-        o->feat->__phi(y, NoArr, Ctuple);
+        arr y, J;
+        o->feat->__phi(y, J, Ctuple);
         if(o->type==OT_ineq) {
           for(double& yi : y) if(yi>eqPrecision) { isFeasible=false; break; }
         }
@@ -47,4 +59,12 @@ bool isFeasible(const CtrlSet& CS, const ConfigurationL& Ctuple, bool initOnly, 
     if(!isFeasible) break;
   }
   return isFeasible;
+}
+
+CtrlSet operator+(const CtrlSet& A, const CtrlSet& B){
+  CtrlSet CS;
+  CS.objectives.resize(A.objectives.N+B.objectives.N);
+  CS.objectives.setVectorBlock(A.objectives, 0);
+  CS.objectives.setVectorBlock(B.objectives, A.objectives.N);
+  return CS;
 }

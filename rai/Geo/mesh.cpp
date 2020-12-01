@@ -1314,7 +1314,9 @@ void rai::Mesh::readPLY(const char* fn) {
 }
 
 #else
-void rai::Mesh::writePLY(const char* fn, bool bin) { NICO }
+void rai::Mesh::writePLY(const char* fn, bool bin) {
+  writeAssimp(*this, fn, "ply");
+}
 void rai::Mesh::readPLY(const char* fn) { NICO }
 #endif
 
@@ -2342,7 +2344,7 @@ inline double __scalarProduct(const double* p1, const double* p2) {
 uint rai::Mesh::support(const double* dir) {
 #if 1
 
-  arr _dir(dir, 3);
+  arr _dir(dir, 3, true);
   arr q = V*_dir;
   return argmax(q);
 

@@ -107,12 +107,3 @@ struct CG {
   rai::Graph G;
   rai::Array<std::shared_ptr<SubCG>> subproblems;
 };
-
-ptr<CG> skeleton2CGO(const Skeleton& S,
-                     const rai::Configuration& startKinematics,
-                     bool collisions);
-
-void CG2komo(KOMO& komo,
-             const SubCG& scg,
-             const rai::Configuration& C,
-             bool collisions);

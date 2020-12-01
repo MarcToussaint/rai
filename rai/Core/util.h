@@ -90,7 +90,6 @@ extern char** argv;
 extern bool IOraw;  ///< stream modifier for some classes (Mem in particular)
 extern uint lineCount;
 extern int verboseLevel;
-extern int interactivity;
 
 //----- execute a system command
 void system(const char* cmd);
@@ -188,6 +187,7 @@ template<class T> bool getFromMap(T& x, const char* tag);
 //----- get verbose level
 uint getVerboseLevel();
 bool getInteractivity();
+bool getDisableGui();
 }
 
 //----- parsing strings in a stream

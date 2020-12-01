@@ -11,14 +11,28 @@
 #include "CtrlObjective.h"
 #include <Kin/feature.h>
 
+
 //===========================================================================
 
 struct CtrlSet {
-  rai::Array<std::shared_ptr<CtrlObjective>> objectives;    ///< list of objectives
-  std::shared_ptr<CtrlObjective> addObjective(const ptr<Feature>& f, ObjectiveType type, double transientStep=-1.);
-  void report(ostream& os=std::cout) const;
+  rai::String name;
+  rai::Array<shared_ptr<CtrlObjective>> objectives;    ///< list of objectives
+  rai::Array<StringA> symbolicCommands;
+
+  CtrlSet(const char* _name=0) : name(_name) {}
+  shared_ptr<CtrlObjective> addObjective(const ptr<Feature>& f, ObjectiveType type, double transientStep=-1.);
+  shared_ptr<CtrlObjective> add_qControlObjective(uint order, double scale, const rai::Configuration& C);
+
+  operator rai::Array<shared_ptr<CtrlObjective>>&(){ return objectives; }
+
+  void report(ostream& os=cout) const;
+
+  bool canBeInitiated(const rai::Configuration& Ctuple) const;
+  bool isConverged(const rai::Configuration& Ctuple) const;
 };
 
 //===========================================================================
 
-bool isFeasible(const CtrlSet& CS, const ConfigurationL& Ctuple, bool initOnly=true, double eqPrecision=1e-4);
+bool isFeasible(const CtrlSet& CS, const rai::Configuration& Ctuple, bool initOnly=true, double eqPrecision=1e-4);
+
+CtrlSet operator+(const CtrlSet& A, const CtrlSet& B);

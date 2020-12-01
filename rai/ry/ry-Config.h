@@ -10,25 +10,22 @@
 
 #include "../Core/thread.h"
 
+#ifdef RAI_PYBIND
+
+#include <pybind11/pybind11.h>
+
+void init_Config(pybind11::module& m);
+
+#endif
+
+
 namespace rai {
 struct Configuration;
 struct ConfigurationViewer;
 struct CameraView;
 }
 
-struct KinViewer;
-struct KinPoseViewer;
-struct ImageViewer;
-struct PointCloudViewer;
-
 namespace ry {
-
-typedef Var<rai::Configuration> Config;
-
-struct ConfigViewer { ptr<KinViewer> view; };
-struct ConfigurationViewer { ptr<rai::ConfigurationViewer> view; };
-struct ImageViewer { ptr<::ImageViewer> view; };
-struct PointCloudViewer { ptr<::PointCloudViewer> view; };
 
 struct RyCameraView {
   ptr<rai::CameraView> cam;

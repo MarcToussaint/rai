@@ -130,7 +130,7 @@ double distanceToConvexHull(const arr& X, const arr& y, arr& distances, arr& pro
 
     if(!!projectedPoints) {
       arr p = Y[i];
-      arr n(bestfacet->normal, p.N);
+      arr n(bestfacet->normal, p.N, true);
       projectedPoints.append(p - bestdist*n);
       if(y.nd==2) projectedPoints.reshape(i+1, X.d1);
     }

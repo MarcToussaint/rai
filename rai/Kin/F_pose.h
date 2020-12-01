@@ -114,6 +114,7 @@ struct F_AngVel : Feature {
 struct F_LinAngVel : Feature {
   bool impulseInsteadOfAcceleration=false;
   F_LinAngVel() { order=1; }
+  Feature& setImpulseInsteadOfAcceleration(){ impulseInsteadOfAcceleration=true; return *this; }
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F){ return 6; }
 };

@@ -29,19 +29,26 @@ void testFeature() {
   obj1->setMass(1.);
   obj2->setMass(1.);
 
-  rai::ForceExchange con(*obj1, *obj2);
+  rai::ForceExchange con(*obj1, *obj2, rai::FXT_poa);
 
-  C.setTimes(.1);
+  C.setTaus(.1);
+
+  arr q1 = C.getJointState();
 
   rai::Configuration Ctuple;
-  Ctuple.addConfigurationCopy(C.frames);
-  Ctuple.addConfigurationCopy(C.frames);
-  Ctuple.addConfigurationCopy(C.frames);
+  Ctuple.addConfiguration(C);
+  Ctuple.addConfiguration(C);
+  Ctuple.addConfiguration(C);
   Ctuple.jacMode = rai::Configuration::JM_rowShifted;
+//  Ctuple.jacMode = rai::Configuration::JM_dense;
+//  Ctuple.jacMode = rai::Configuration::JM_sparse;
 
   uint n=Ctuple.getJointStateDimension();
   arr q=Ctuple.getJointState();
   Ctuple.setJointState(q);
+
+  arr q0 = C.getJointState();
+  Ctuple.setJointStateSlice(q0, 1);
 
   rai::Array<std::shared_ptr<Feature>> F;
   F.append(make_shared<F_PairCollision>(F_PairCollision::_negScalar)) ->setFrameIDs({"obj1", "obj2"}, C);
@@ -60,6 +67,7 @@ void testFeature() {
   F.append(symbols2feature(FS_poseDiff, {"obj1", "obj2"}, C)) ->setOrder(0);
   F.append(symbols2feature(FS_poseDiff, {"obj1", "obj2"}, C)) ->setOrder(1);
   F.append(symbols2feature(FS_poseDiff, {"obj1", "obj2"}, C)) ->setOrder(2);
+  F.append(symbols2feature(FS_insideBox, {"obj1", "obj2"}, C)) ->setOrder(0);
   F.append(make_shared<F_NewtonEuler>()) ->setFrameIDs({"obj1"}, C);
 
   rai_Kin_frame_ignoreQuatNormalizationWarning=true;

@@ -1214,7 +1214,7 @@ rai::Array<T> rai::Array<T>::row(uint row_index) const {
  */
 template<class T>
 rai::Array<T> rai::Array<T>::col(uint col_index) const {
-  return sub(0, d0 - 1, col_index, col_index);
+  return sub(0, d0 - 1, col_index, col_index).reshape(d0);
 }
 
 /**
@@ -1504,6 +1504,9 @@ template<class T> void rai::Array<T>::setMatrixBlock(const rai::Array<T>& B, uin
         for(i=0; i<B.d0; i++) for(j=0; j<B.d1; j++) p[(lo0+i)*d1+lo1+j] = B.p[i*B.d1+j];   // operator()(lo0+i, lo1+j)=B(i, j);
       }
     } else if(isSparseMatrix(*this)) {
+#if 1
+        sparse().add(B, lo0, lo1);
+#else
       if(!isSparseMatrix(B)) {
         for(i=0; i<B.d0; i++) for(j=0; j<B.d1; j++){
             double z = B.p[i*B.d1+j];
@@ -1516,6 +1519,7 @@ template<class T> void rai::Array<T>::setMatrixBlock(const rai::Array<T>& B, uin
           S.addEntry(lo0 + BS.elems(i, 0), lo1 + BS.elems(i, 1)) = B.elem(i);
         }
       }
+#endif
     } else if(isRowShifted(*this)) {
       rowShifted().add(B, lo0, lo1);
     }
@@ -2118,7 +2122,7 @@ template<class T> void rai::Array<T>::read(std::istream& is) {
 template<class T> void rai::Array<T>::writeDim(std::ostream& os) const {
   uint i;
   os <<'<';
-  if(nd) os <<dim(0); else os <<0;
+  if(nd) os <<dim(0);
   for(i=1; i<nd; i++) os <<' ' <<dim(i);
   os <<'>';
 }
@@ -2128,6 +2132,13 @@ template<class T> void rai::Array<T>::readDim(std::istream& is) {
   char c;
   uint ND, dim[10];
   is >>PARSE("<");
+  is.get(c);
+  if(c=='>'){
+    clear();
+    return;
+  }else{
+    is.putback(c);
+  }
   for(ND=0;; ND++) {
     is >>dim[ND];
     is.get(c);
@@ -2172,7 +2183,7 @@ template<class T> void rai::Array<T>::writeRaw(std::ostream& os) const {
 
 /// write data with a name tag (convenient to write multiple data arrays into one file)
 template<class T> void rai::Array<T>::writeTagged(std::ostream& os, const char* tag, bool binary) const {
-  os <<tag <<' ';
+  os <<tag <<": ";
   write(os, " ", "\n ", "[]", true, binary);
 }
 
@@ -2180,9 +2191,10 @@ template<class T> void rai::Array<T>::writeTagged(std::ostream& os, const char* 
 template<class T> bool rai::Array<T>::readTagged(std::istream& is, const char* tag) {
   if(tag) {
     String read_tag;
-    read_tag.read(is, " \t\n\r", " \t\n\r");
+    read_tag.read(is, " \t\n\r", ": \t\n\r");
     if(!is.good() || read_tag.N==0) return false;
     CHECK_EQ(read_tag, tag, "read `" <<read_tag <<"' instead of `" <<tag <<"' in arr file");
+    rai::skip(is, ": \t\n\r");
   };
   read(is);
   return true;

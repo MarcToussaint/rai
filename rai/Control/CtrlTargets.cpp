@@ -31,49 +31,50 @@ CtrlTarget_MaxCarrot::CtrlTarget_MaxCarrot(CtrlObjective& co, double maxDistance
 //  isTransient = true;
 }
 
-uint getRealValue(CtrlObjective* o, arr& y_raw, const arr& y_real_org) {
+arr undoScaling(shared_ptr<Feature>& f, const arr& y_real) {
   //get the current (scaled) feature value
-  arr y_real = y_real_org;
-  if(o->type==OT_ineq) for(double& d:y_real) if(d<0.) d=0.;
-
   //what's the raw (unscaled) y-dimension?
   uint d_raw = y_real.N;
-  if(o->feat->scale.nd==2) d_raw = o->feat->scale.d1;
+  if(f->scale.nd==2) d_raw = f->scale.d1;
 
   //get the raw y-value (before scaling; also projected in scale's input space)
-  y_raw = y_real;
-  if(o->feat->scale.N==1) y_raw /= o->feat->scale.scalar();
-  else if(o->feat->scale.nd==1) y_raw /= o->feat->scale;
-  else if(o->feat->scale.nd==2) y_raw = pseudoInverse(o->feat->scale)*y_real;
-  if(o->feat->target.N) y_raw += o->feat->target;
+  arr y_raw = y_real;
+  if(f->scale.N==1) y_raw /= f->scale.scalar();
+  else if(f->scale.nd==1) y_raw /= f->scale;
+  else if(f->scale.nd==2) y_raw = pseudoInverse(f->scale)*y_real;
+  if(f->target.N) y_raw += f->target;
 
   CHECK_EQ(d_raw, y_raw.N, "");
 
-  return d_raw;
+  return y_raw;
 }
 
 ActStatus CtrlTarget_MaxCarrot::step(double tau, CtrlObjective* o, const arr& y_real) {
-  arr y_raw;
+  arr y_real_cut = y_real;
+  if(o->type==OT_ineq) for(double& d:y_real_cut) if(d<0.) d=0.;
 
-  uint d_raw = getRealValue(o, y_raw, y_real);
+  arr y_raw = undoScaling(o->feat, y_real_cut);
 
   //initialize goal
-  if(goal.N!=d_raw) {
-    if(o->feat->target.N==d_raw) goal = o->feat->target;
-    else goal = zeros(d_raw);
+  if(goal.N!=y_raw.N) {
+    if(o->feat->target.N==y_raw.N) goal = o->feat->target;
+    else goal = zeros(y_raw.N);
   }
 
-  double d = length(y_raw-goal);
-  if(d > maxDistance) {
-    o->feat->target = y_raw - (maxDistance/d)*(y_raw-goal);
+  goalDistance = length(y_raw-goal);
+  if(goalDistance > maxDistance) {
+    o->feat->target = y_raw - (maxDistance/goalDistance)*(y_raw-goal);
     //cout << "maxD" << endl;
     isTransient=true;
   } else {
     o->feat->target = goal;
     isTransient=false;
   }
-  if(d<maxDistance) countInRange++; else countInRange=0;
-  if(countInRange>10) return AS_converged;
+  if(o->type==OT_ineq){
+    cout <<"GOAL:" <<goal <<" target:" <<o->feat->target <<endl;
+  }
+  if(goalDistance<maxDistance) countInGoalRange++; else countInGoalRange=0;
+  if(countInGoalRange>10) return AS_converged;
   return AS_running;
 }
 
@@ -95,8 +96,7 @@ CtrlTarget_PathCarrot::CtrlTarget_PathCarrot(const arr& path, double maxDistance
 ActStatus CtrlTarget_PathCarrot::step(double tau, CtrlObjective* o, const arr& y_real) {
   if(time+tau > endTime) tau = endTime - time;
 
-  arr y_raw;
-  getRealValue(o, y_raw, y_real);
+  arr y_raw = undoScaling(o->feat, y_real);
 
   arr ref = spline.eval(time);
   arr goal = spline.eval(time + tau);
