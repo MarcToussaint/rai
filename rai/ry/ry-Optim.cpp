@@ -25,7 +25,7 @@ void init_Optim(pybind11::module& m) {
   .def("evaluate", [](std::shared_ptr<MathematicalProgram>& self, const arr& x){
     arr phi, J;
     self->evaluate(phi, J, x);
-    return std::tuple<arr,arr>(phi, J);
+    return std::tuple<arr,arr>(phi, unpack(J));
   },
   "query the NLP at a point $x$; returns the tuple $(phi,J)$, which is the feature vector and its Jacobian; features define cost terms, sum-of-square (sos) terms, inequalities, and equalities depending on 'getFeatureTypes'"
   )

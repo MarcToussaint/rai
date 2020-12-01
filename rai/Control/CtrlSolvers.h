@@ -9,7 +9,7 @@
 #pragma once
 
 #include "CtrlObjective.h"
-#include <Optim/MathematicalProgram.h>
+#include "../Optim/MathematicalProgram.h"
 
 //===========================================================================
 
