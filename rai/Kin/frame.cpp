@@ -475,6 +475,10 @@ arr rai::Frame::getMeshPoints() {
   return getShape().mesh().V;
 }
 
+uintA rai::Frame::getMeshTriangles() {
+  return getShape().mesh().T;
+}
+
 arr rai::Frame::getMeshCorePoints() {
   return getShape().sscCore().V;
 }

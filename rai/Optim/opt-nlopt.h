@@ -6,7 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include <Optim/MathematicalProgram.h>
+#include "MathematicalProgram.h"
 
 struct NLOptInterface {
   MathematicalProgram& P;

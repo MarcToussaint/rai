@@ -597,7 +597,7 @@ void CtrlProblem_MathematicalProgram::getNames(StringA& variableNames, StringA& 
   }
 }
 
-arr CtrlProblem_MathematicalProgram::getInitializationSample(const arrL& previousOptima) {
+arr CtrlProblem_MathematicalProgram::getInitializationSample(const arr& previousOptima) {
   NIY;
 }
 

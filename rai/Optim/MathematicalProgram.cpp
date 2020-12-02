@@ -23,7 +23,7 @@ arr summarizeErrors(const arr& phi, const ObjectiveTypeA& tt) {
 
 //===========================================================================
 
-arr MathematicalProgram::getInitializationSample(const arrL& previousOptima) {
+arr MathematicalProgram::getInitializationSample(const arr& previousOptima) {
   arr blo, bup;
   uint n = getDimension();
   getBounds(blo, bup);

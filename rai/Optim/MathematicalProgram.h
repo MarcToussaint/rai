@@ -45,7 +45,7 @@ struct MathematicalProgram : NonCopyable {
   virtual uint getDimension() { return 0; }                 //the dimensionality of the full decision variable
   virtual void getBounds(arr& bounds_lo, arr& bounds_up) { bounds_lo.clear(); bounds_up.clear(); } //lower/upper bounds for the decision variable (may be {})
   virtual void getNames(StringA& variableNames, StringA& featureNames) { variableNames.clear(); featureNames.clear(); } //the names of each variable/feature block (or element if unstructured)
-  virtual arr  getInitializationSample(const arrL& previousOptima= {}); //get an initialization (for MC sampling/restarts) [default: initialize random within bounds]
+  virtual arr  getInitializationSample(const arr& previousOptima= {}); //get an initialization (for MC sampling/restarts) [default: initialize random within bounds]
 
   //-- optional evaluation of Hessian of all scalar objectives
   virtual void getFHessian(arr& H, const arr& x) { H.clear(); } //the Hessian of the sum of all f-features (or Hessian in addition to the Gauss-Newton Hessian of all other features)
@@ -77,25 +77,25 @@ struct MathematicalProgram_Factored : MathematicalProgram {
 //===========================================================================
 // TRIVIAL only header
 
-struct MathematicalProgram_Logged : MathematicalProgram {
+struct MathematicalProgram_Traced : MathematicalProgram {
   MathematicalProgram& P;
   ObjectiveTypeA featureTypes;
-  arr xLog, costLog, phiLog, JLog;
-  bool log_x=true;
-  bool log_costs=true;
-  bool log_phi=false;
-  bool log_J=false;
+  arr xTrace, costTrace, phiTrace, JTrace;
+  bool trace_x=true;
+  bool trace_costs=true;
+  bool trace_phi=false;
+  bool trace_J=false;
 
-  MathematicalProgram_Logged(MathematicalProgram& P) : P(P) {}
+  MathematicalProgram_Traced(MathematicalProgram& P) : P(P) {}
 
-  void setLogging(bool log_x, bool log_costs, bool log_phi, bool log_J){ NIY }
+  void setTracing(bool trace_x, bool trace_costs, bool trace_phi, bool trace_J){ NIY }
 
   virtual void evaluate(arr& phi, arr& J, const arr& x) {
     P.evaluate(phi, J, x);
-    if(log_x){ xLog.append(x); xLog.reshape(-1, x.N); }
-    if(log_costs){ costLog.append(summarizeErrors(phi, featureTypes)); costLog.reshape(-1,3);  }
-    if(!!phi && log_phi) { phiLog.append(phi); phiLog.reshape(-1, phi.N); }
-    if(!!J && log_J) {   JLog.append(J);     JLog.reshape(-1, phi.N, x.N); }
+    if(trace_x){ xTrace.append(x); xTrace.reshape(-1, x.N); }
+    if(trace_costs){ costTrace.append(summarizeErrors(phi, featureTypes)); costTrace.reshape(-1,3);  }
+    if(!!phi && trace_phi) { phiTrace.append(phi); phiTrace.reshape(-1, phi.N); }
+    if(!!J && trace_J) {   JTrace.append(J);     JTrace.reshape(-1, phi.N, x.N); }
   }
 
   //trivial
@@ -103,7 +103,7 @@ struct MathematicalProgram_Logged : MathematicalProgram {
   virtual uint getDimension() { return P.getDimension(); }
   virtual void getBounds(arr& bounds_lo, arr& bounds_up) { P.getBounds(bounds_lo, bounds_up); }
   virtual void getNames(StringA& variableNames, StringA& featureNames) { P.getNames(variableNames, featureNames); }
-  virtual arr  getInitializationSample(const arrL& previousOptima= {}) { return P.getInitializationSample(previousOptima); }
+  virtual arr  getInitializationSample(const arr& previousOptima= {}) { return P.getInitializationSample(previousOptima); }
   virtual void getFHessian(arr& H, const arr& x) { P.getFHessian(H, x); }
 };
 
@@ -119,7 +119,7 @@ struct Conv_MathematicalProgram_TrivialFactoreded : MathematicalProgram_Factored
   virtual void getFeatureTypes(ObjectiveTypeA& featureTypes) { P.getFeatureTypes(featureTypes); }
   virtual uint getDimension() { return P.getDimension(); }
   virtual void getBounds(arr& bounds_lo, arr& bounds_up) { P.getBounds(bounds_lo, bounds_up); }
-  virtual arr  getInitializationSample(const arrL& previousOptima= {}) { return P.getInitializationSample(previousOptima); }
+  virtual arr  getInitializationSample(const arr& previousOptima= {}) { return P.getInitializationSample(previousOptima); }
 
   virtual void getFactorization(uintA& variableDimensions, uintA& featureDimensions, intAA& featureVariables) {
     variableDimensions = { getDimension() };
@@ -150,7 +150,7 @@ struct Conv_FactoredNLP_BandedNLP : MathematicalProgram {
   virtual void getFeatureTypes(ObjectiveTypeA& featureTypes) { P.getFeatureTypes(featureTypes); }
   virtual void getBounds(arr& bounds_lo, arr& bounds_up) { P.getBounds(bounds_lo, bounds_up); }
   virtual void getNames(StringA& variableNames, StringA& featureNames) { P.getNames(variableNames, featureNames); }
-  virtual arr  getInitializationSample(const arrL& previousOptima= {}) { return P.getInitializationSample(previousOptima); }
+  virtual arr  getInitializationSample(const arr& previousOptima= {}) { return P.getInitializationSample(previousOptima); }
   virtual void getFHessian(arr& H, const arr& x) { P.getFHessian(H, x); }
 
   virtual void evaluate(arr& phi, arr& J, const arr& x);
