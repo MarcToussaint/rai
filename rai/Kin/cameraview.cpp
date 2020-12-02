@@ -100,7 +100,8 @@ void rai::CameraView::updateConfiguration(const rai::Configuration& newC) {
 void rai::CameraView::computeImageAndDepth(byteA& image, floatA& depth) {
   updateCamera();
   //  renderMode=all;
-  gl.update(nullptr, true);
+  // gl.update(nullptr, true);
+  gl.renderInBack();
   image = gl.captureImage;
   flip_image(image);
   if(renderMode==seg && frameIDmap.N) {

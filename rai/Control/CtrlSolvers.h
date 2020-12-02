@@ -9,7 +9,7 @@
 #pragma once
 
 #include "CtrlObjective.h"
-#include <Optim/MathematicalProgram.h>
+#include "../Optim/MathematicalProgram.h"
 
 //===========================================================================
 
@@ -61,7 +61,7 @@ struct CtrlProblem_MathematicalProgram : MathematicalProgram {
 
   virtual void getNames(StringA& variableNames, StringA& featureNames);
 
-  virtual arr getInitializationSample(const arrL& previousOptima= {});
+  virtual arr getInitializationSample(const arr& previousOptima= {});
 
   virtual void evaluate(arr& phi, arr& J, const arr& x);
 };

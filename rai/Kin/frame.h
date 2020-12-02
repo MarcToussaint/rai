@@ -160,6 +160,7 @@ struct Frame : NonCopyable {
   arr getRelativeQuaternion() const { return get_Q().rot.getArr(); }
   arr getSize() ;
   arr getMeshPoints();
+  uintA getMeshTriangles();
   arr getMeshCorePoints();
   arr getJointState() const; ///< throws error if this frame is not also a joint
 

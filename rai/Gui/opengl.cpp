@@ -290,7 +290,7 @@ struct GlfwSpinner : Thread {
 //    cout <<"HERE" <<count++;
     mutex.lock(RAI_HERE);
     glfwPollEvents();
-    for(OpenGL* gl: glwins) if(gl->self && gl->self->window && gl->self->needsRedraw) {
+    for(OpenGL* gl: glwins) if(gl->self && !gl->offscreen && gl->self->window && gl->self->needsRedraw) {
         gl->isUpdating.setStatus(1);
 
         glfwMakeContextCurrent(gl->self->window);
@@ -394,23 +394,32 @@ void OpenGL::openWindow() {
     fg->mutex.lock(RAI_HERE);
 
     if(offscreen) {
+//      glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_NATIVE_CONTEXT_API);
+//      glfwWindowHint(GLFW_CONTEXT_ROBUSTNESS, GLFW_NO_ROBUSTNESS);
+//      glfwWindowHintString()
+//      glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+//      glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
+//      glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
       glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
+//      glfwWindowHint(GLFW_VISIBLE, GL_TRUE);
     } else {
       glfwWindowHint(GLFW_VISIBLE, GL_TRUE);
     }
     if(!title.N) title="GLFW window";
     self->window = glfwCreateWindow(width, height, title.p, nullptr, nullptr);
-    glfwMakeContextCurrent(self->window);
-    glfwSetWindowUserPointer(self->window, this);
-    glfwSetMouseButtonCallback(self->window, GlfwSpinner::_MouseButton);
-    glfwSetCursorPosCallback(self->window, GlfwSpinner::_MouseMotion);
-    glfwSetKeyCallback(self->window, GlfwSpinner::_Key);
-    glfwSetScrollCallback(self->window, GlfwSpinner::_Scroll);
-    glfwSetWindowSizeCallback(self->window, GlfwSpinner::_Resize);
-    glfwSetWindowCloseCallback(self->window, GlfwSpinner::_Close);
+    if(!offscreen){
+      glfwMakeContextCurrent(self->window);
+      glfwSetWindowUserPointer(self->window, this);
+      glfwSetMouseButtonCallback(self->window, GlfwSpinner::_MouseButton);
+      glfwSetCursorPosCallback(self->window, GlfwSpinner::_MouseMotion);
+      glfwSetKeyCallback(self->window, GlfwSpinner::_Key);
+      glfwSetScrollCallback(self->window, GlfwSpinner::_Scroll);
+      glfwSetWindowSizeCallback(self->window, GlfwSpinner::_Resize);
+      glfwSetWindowCloseCallback(self->window, GlfwSpinner::_Close);
+      glfwSwapInterval(1);
+      glfwMakeContextCurrent(nullptr);
+    }
 
-    glfwSwapInterval(1);
-    glfwMakeContextCurrent(nullptr);
     fg->mutex.unlock();
 
     fg->addGL(this);
@@ -2420,28 +2429,16 @@ struct XBackgroundContext {
 Singleton<XBackgroundContext> xBackgroundContext;
 
 void OpenGL::renderInBack(int w, int h) {
-#ifdef RAI_GLFW
-  LOG(-3) <<"NO! do this with offscreen window";
-  return;
-#endif
+  beginNonThreadedDraw();
 
 #ifdef RAI_GL
   if(w<0) w=width;
   if(h<0) h=height;
 
-//  singletonGlSpinner(); //ensure that glut is initialized (if the drawer called glut)
-
-//  auto mut=singleGLAccess();
-//  auto _dataLock = dataLock(RAI_HERE);
-//  xBackgroundContext()->makeCurrent();
-
   CHECK_EQ(w%4, 0, "should be devidable by 4!!");
 
-  isUpdating.waitForStatusEq(0);
-  isUpdating.setStatus(1);
-
   if(!rboColor || !rboDepth) { //need to initialize
-//    glewInit();
+    glewInit();
     glGenRenderbuffers(1, &rboColor);  // Create a new renderbuffer unique name.
     glBindRenderbuffer(GL_RENDERBUFFER, rboColor);  // Set it as the current.
     glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, w, h); // Sets storage type for currently bound renderbuffer.
@@ -2512,25 +2509,12 @@ void OpenGL::renderInBack(int w, int h) {
   }
 
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fboId);
-
-  //-- draw!
   Draw(w, h, nullptr, true);
   glFlush();
-
-  //-- read
-  captureImage.resize(h, w, 3);
-  glReadBuffer(GL_COLOR_ATTACHMENT0);
-  glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, captureImage.p);
-
-  captureDepth.resize(h, w);
-  glReadBuffer(GL_DEPTH_ATTACHMENT);
-  glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_FLOAT, captureDepth.p);
-
-  // Return to onscreen rendering:
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-
-  isUpdating.setStatus(0);
 #endif
+
+  endNonThreadedDraw();
 }
 
 //===========================================================================
