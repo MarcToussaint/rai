@@ -115,6 +115,11 @@ void init_Frame(pybind11::module& m) {
     self->addAttribute(key, value);
   })
 
+  .def("getName", [](shared_ptr<rai::Frame>& self) {
+    std::string str(self->name.p);
+    return str;
+  })
+
   .def("getPosition", [](shared_ptr<rai::Frame>& self) {
     //RToken<rai::Configuration> token(*self.config, &self.config->data);
     arr x = self->getPosition();
@@ -157,11 +162,8 @@ void init_Frame(pybind11::module& m) {
     return pybind11::array_t<double>(x.dim(), x.p);
   })
 
-  .def("getMeshPoints", [](shared_ptr<rai::Frame>& self) {
-    //RToken<rai::Configuration> token(*self.config, &self.config->data);
-    arr x = self->getMeshPoints();
-    return pybind11::array_t<double>(x.dim(), x.p);
-  })
+  .def("getMeshPoints", &rai::Frame::getMeshPoints)
+  .def("getMeshTriangles", &rai::Frame::getMeshTriangles)
 
   .def("info", [](shared_ptr<rai::Frame>& self) {
     rai::Graph G;

@@ -14,7 +14,7 @@
 
 #include "../Kin/frame.h"
 #include "../Kin/simulation.h"
-#include "../Perception/depth2PointCloud.h"
+#include "../Geo/depth2PointCloud.h"
 
 namespace rai {
 struct SimulationState {
