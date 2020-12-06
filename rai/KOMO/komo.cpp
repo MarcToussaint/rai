@@ -240,6 +240,40 @@ void KOMO::addSwitch(double time, bool before, rai::JointType type, SwitchInitia
   addSwitch(time, before, sw);
 }
 
+void KOMO::addSwitch_mode2(const arr& times, SkeletonSymbol newMode, const StringA& frames, bool firstSwitch) {
+  //-- creating a stable kinematic linking
+  if(newMode==SY_stable){
+    addSwitch(times(0), true, JT_free, SWInit_copy, frames(0), frames(1));
+
+    // ensure the DOF is constant throughout its existance
+    if((times(1)<0. && stepsPerPhase*times(0)<T) || stepsPerPhase*times(1)>stepsPerPhase*times(0)+1) {
+      addObjective({times(0), times(1)}, make_shared<F_qZeroVel>(), {frames(-1)}, OT_eq, {1e1}, NoArr, 1, +1, -1);
+    }
+
+    //-- no jump at start
+    if(firstSwitch){
+      addObjective({times(0)}, FS_pose, {frames(-1)}, OT_eq, {1e2}, NoArr, 1, 0, 0);
+    }
+//    if(k_order>1) addObjective({times(0)}, make_shared<F_LinAngVel>(), {frames(-1)}, OT_eq, {1e0}, NoArr, 2, +1, +1);
+
+    //-- no jump at end
+    if(times(1)>=0){
+      addObjective({times(1)}, FS_poseRel, {frames(1), frames(0)}, OT_eq, {1e2}, NoArr, 1, 0, 0);
+    }
+
+  } else if(newMode==SY_dynamic) {
+    CHECK_EQ(frames.N, 1, "");
+    addSwitch(times(0), true, JT_free, SWInit_copy, world.frames.first()->name, frames(-1));
+    //new contacts don't exist in step [-1], so we rather impose only zero acceleration at [-2,-1,0]
+    if(firstSwitch){
+      addObjective({times(0)}, FS_pose, {frames(-1)}, OT_eq, {1e0}, NoArr, k_order, +0, +0);
+    }
+    //... and physics starting from [-1,0,+1], ... until [-3,-2,-1]
+    addObjective({times(0), times(1)}, make_shared<F_NewtonEuler>(), {frames(-1)}, OT_eq, {1e0}, NoArr, k_order, +1, 0);
+  } else NIY;
+}
+
+
 void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, double time, double endTime, const char* prevFrom, const char* from, const char* to) {
   //-- creating a stable kinematic linking
   if(newMode==SY_stable || newMode==SY_stableOn) {
@@ -254,7 +288,7 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
 
     // ensure the DOF is constant throughout its existance
     if((endTime<0. && stepsPerPhase*time<T) || stepsPerPhase*endTime>stepsPerPhase*time+1) {
-      addObjective({time, endTime}, make_shared<F_qZeroVel>(world, to), {}, OT_eq, {1e1}, NoArr, 1, +1, -1);
+      addObjective({time, endTime}, make_shared<F_qZeroVel>(), {to}, OT_eq, {1e1}, NoArr, 1, +1, -1);
       //      addObjective({time, endTime}, FS_poseRel, {from, to}, OT_eq, {1e1}, NoArr, 1, +1, -1);
     }
 
@@ -362,19 +396,11 @@ void KOMO::addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode, doubl
   }
 }
 
-void KOMO::addSwitch_stable(double time, double endTime, const char* prevFrom, const char* from, const char* to) {
-#if 1
+void KOMO::addSwitch_stable(double time, double endTime, const char* prevFrom, const char* from, const char* to, bool firstSwitch) {
+#if 0
   addSwitch_mode(SY_none, SY_stable, time, endTime, prevFrom, from, to);
 #else
-  addSwitch(time, true, JT_free, SWInit_zero, from, to);
-  //-- DOF-is-constant constraint
-  if(endTime<0. || stepsPerPhase*endTime>stepsPerPhase*time+1)
-    addObjective({time, endTime}, make_shared<F_qZeroVel>(world, to), OT_eq, {3e1}, NoArr, 1, +1, -1);
-  //-- no relative jump at end
-  if(endTime>0.) addObjective({endTime, endTime}, make_shared<TM_NoJumpFromParent>(world, to), OT_eq, {1e2}, NoArr, 1, 0, 0);
-  //-- no object acceleration at start: +0 include (x-2, x-1, x0), which enforces a SMOOTH pickup
-  if(k_order>1) addObjective({time}, make_shared<TM_LinAngVel>(world, to), OT_eq, {1e2}, NoArr, 2, +0, +1);
-  else addObjective({time}, make_shared<TM_NoJumpFromParent>(world, to), OT_eq, {1e2}, NoArr, 1, 0, 0);
+  addSwitch_mode2({time, endTime}, SY_stable, {from, to}, firstSwitch);
 #endif
 }
 
@@ -564,8 +590,8 @@ void KOMO_ext::setKS_slider(double time, double endTime, bool before, const char
   addSwitch(time, true, JT_transXYPhi, SWInit_zero, table, slidera, rel);
   addSwitch(time, true, JT_hingeZ, SWInit_zero, sliderb, obj);
 
-  addObjective({time, endTime}, make_shared<F_qZeroVel>(world, slidera), {}, OT_eq, {3e1}, NoArr, 1, +1, +0);
-  addObjective({time, endTime}, make_shared<F_qZeroVel>(world, obj), {}, OT_eq, {3e1}, NoArr, 1, +1, -1);
+  addObjective({time, endTime}, make_shared<F_qZeroVel>(), {slidera}, OT_eq, {3e1}, NoArr, 1, +1, +0);
+  addObjective({time, endTime}, make_shared<F_qZeroVel>(), {obj}, OT_eq, {3e1}, NoArr, 1, +1, -1);
   addObjective({time}, make_shared<F_LinAngVel>(), {obj}, OT_eq, {1e2}, NoArr, 1);
 
 //  setKinematicSwitch(time, before, "sliderMechanism", table, obj, rel );
@@ -886,7 +912,7 @@ void KOMO_ext::setGraspSlide(double time, const char* endeff, const char* object
 
 //  addSwitch_stable(startTime, endTime+1., endeff, object);
   addSwitch(startTime, true, JT_free, SWInit_zero, endeff, object);
-  addObjective({time, endTime}, make_shared<F_qZeroVel>(world, object), {}, OT_eq, {3e1}, NoArr, 1, +1, -1);
+  addObjective({time, endTime}, make_shared<F_qZeroVel>(), {object}, OT_eq, {3e1}, NoArr, 1, +1, -1);
   if(k_order>1) addObjective({time}, make_shared<F_LinAngVel>(), {object}, OT_eq, {1e2}, NoArr, 2, 0);
   else addObjective({time}, make_shared<F_NoJumpFromParent_OBSOLETE>(), {object}, OT_eq, {1e2}, NoArr, 1, 0, 0);
 
@@ -1135,12 +1161,16 @@ void KOMO::setSkeleton(const Skeleton& S, bool ignoreSwitches) {
     for(uint i=0; i<switches.d0; i++) {
       int j = switches(i, 0);
       int k = switches(i, 1);
+#if 0
       const char* newFrom=world.frames.first()->name;
       if(S(k).frames.N==2) newFrom = S(k).frames(0);
       if(j<0)
         addSwitch_mode(SY_initial, S(k).symbol, S(k).phase0, S(k).phase1+1., nullptr, newFrom, S(k).frames.last());
       else
         addSwitch_mode(S(j).symbol, S(k).symbol, S(k).phase0, S(k).phase1+1., S(j).frames(0), newFrom, S(k).frames.last());
+#else
+      addSwitch_mode2({S(k).phase0, S(k).phase1}, S(k).symbol, S(k).frames, j<0);
+#endif
     }
   }
   //-- add objectives for rest
@@ -1154,6 +1184,28 @@ void KOMO::setSkeleton(const Skeleton& S, bool ignoreSwitches) {
 //      case SY_inside:     addObjective({s.phase0, s.phase1}, make_shared<TM_InsideLine>(world, s.frames(0), s.frames(1)), OT_ineq, {1e1});  break;
       case SY_oppose:     addObjective({s.phase0, s.phase1}, FS_oppose, s.frames, OT_eq, {1e1});  break;
       case SY_impulse:    HALT("obsolete"); /*add_impulse(s.phase0, s.frames(0), s.frames(1));*/  break;
+
+      case SY_topBoxGrasp: {
+        addObjective({s.phase0}, FS_positionDiff, s.frames, OT_eq, {1e2});
+        addObjective({s.phase0}, FS_scalarProductXX, s.frames, OT_eq, {1e2}, {0.});
+        addObjective({s.phase0}, FS_vectorZ, {s.frames(0)}, OT_eq, {1e2}, {0., 0., 1.});
+        //slow - down - up
+        if(k_order>=2){
+          addObjective({s.phase0}, FS_qItself, {}, OT_eq, {}, {}, 1);
+          addObjective({s.phase0-.1,s.phase0+.1}, FS_position, {s.frames(0)}, OT_eq, {}, {0.,0.,.1}, 2);
+        }
+        break;
+      }
+      case SY_topBoxPlace: {
+        addObjective({s.phase0}, FS_positionDiff, {s.frames(1), s.frames(2)}, OT_eq, {1e2}, {0,0,.08}); //arr({1,3},{0,0,1e2})
+        addObjective({s.phase0}, FS_vectorZ, {s.frames(0)}, OT_eq, {1e2}, {0., 0., 1.});
+        //slow - down - up
+        if(k_order>=2){
+          addObjective({s.phase0}, FS_qItself, {}, OT_eq, {}, {}, 1);
+          addObjective({s.phase0-.1,s.phase0+.1}, FS_position, {s.frames(0)}, OT_eq, {}, {0.,0.,.1}, 2);
+        }
+        break;
+      }
 
       case SY_makeFree:   world.makeObjectsFree(s.frames);  break;
       case SY_stableRelPose: addObjective({s.phase0, s.phase1+1.}, FS_poseRel, s.frames, OT_eq, {1e2}, {}, 1);  break;
@@ -1200,6 +1252,7 @@ void KOMO::setSkeleton(const Skeleton& S, bool ignoreSwitches) {
       case SY_free:
         break;
       case SY_magic:      addSwitch_magic(s.phase0, s.phase1, world.frames.first()->name, s.frames(0), 0., 0.);  break;
+      default: HALT("undefined symbol: " <<s.symbol);
     }
   }
 }
@@ -1717,7 +1770,7 @@ void KOMO::checkGradients() {
 
 int KOMO::view(bool pause, const char* txt){ pathConfig.gl()->recopyMeshes(pathConfig); return pathConfig.watch(pause, txt); }
 
-int KOMO::view_play(double delay, bool pause){ pathConfig.gl()->recopyMeshes(pathConfig); return pathConfig.gl()->playVideo(timeSlices.d1, pause, delay*tau*T); }
+int KOMO::view_play(bool pause, double delay){ pathConfig.gl()->recopyMeshes(pathConfig); return pathConfig.gl()->playVideo(timeSlices.d1, pause, delay*tau*T); }
 
 void KOMO::plotTrajectory() {
   ofstream fil("z.trajectories");
@@ -3235,6 +3288,9 @@ template<> const char* rai::Enum<SkeletonSymbol>::names []= {
 
   "magic",
   "magicTrans",
+
+  "topBoxGrasp",
+  "topBoxPlace",
 
   "push",
   "graspSlide",

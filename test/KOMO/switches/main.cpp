@@ -55,8 +55,8 @@ void TEST(Grasp){
 void testPnP(bool keyframesOnly){
   rai::Configuration C("model2.g");
 
-  rai::ConfigurationViewer V;
-  V.setConfiguration(C, "initial model", false);
+//  rai::ConfigurationViewer V;
+//  V.setConfiguration(C, "initial model", false);
 
   KOMO komo;
 
@@ -83,22 +83,24 @@ void testPnP(bool keyframesOnly){
   }
 
   //place
-  komo.addSwitch_stable(2., -1., "gripper", "table", "box");
+  komo.addSwitch_stable(2., -1., "gripper", "table", "box", false);
   komo.addObjective({2.}, FS_positionDiff, {"box", "table"}, OT_eq, {1e2}, {0,0,.08}); //arr({1,3},{0,0,1e2})
   komo.addObjective({2.}, FS_vectorZ, {"gripper"}, OT_eq, {1e2}, {0., 0., 1.});
 
   if(!keyframesOnly){
     //slow - down - up
     komo.addObjective({2.}, FS_qItself, {}, OT_eq, {}, {}, 1);
-    komo.addObjective({1.9,2.2}, FS_position, {"gripper"}, OT_eq, {}, {0.,0.,.1}, 2);
+    komo.addObjective({1.9,2.1}, FS_position, {"gripper"}, OT_eq, {}, {0.,0.,.1}, 2);
   }
 
   komo.verbose = 4;
   komo.optimize();
 //  komo.checkGradients();
 
-  V.setPath(komo.getPath_frames(), "optimized motion", true);
-  for(uint i=0;i<2;i++) V.playVideo(true);
+  komo.view(true, "optimized motion");
+  for(uint i=0;i<2;i++) komo.view_play(true);
+//  V.setPath(komo.getPath_frames(), "optimized motion", true);
+//  for(uint i=0;i<2;i++) V.playVideo(true);
 }
 
 //===========================================================================
@@ -106,8 +108,8 @@ void testPnP(bool keyframesOnly){
 int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
-  //  testGrasp();
-  testPnP(false);
+//  testGrasp();
+//  testPnP(false);
   testPnP(true);
 
   return 0;

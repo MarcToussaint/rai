@@ -64,6 +64,10 @@ enum SkeletonSymbol {
   SY_magic,
   SY_magicTrans,
 
+  //grasps/placements:
+  SY_topBoxGrasp,
+  SY_topBoxPlace,
+
   SY_push,  //old
   SY_graspSlide, //old
 
@@ -202,7 +206,9 @@ struct KOMO : NonCopyable {
   void addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode,
                       double time, double endTime,
                       const char* prevFrom, const char* newFrom, const char* obj);
-  void addSwitch_stable(double time, double endTime, const char* prevFrom, const char* from, const char* to);
+  void addSwitch_mode2(const arr& times, SkeletonSymbol newMode, const StringA& frames, bool firstSwitch);
+
+  void addSwitch_stable(double time, double endTime, const char* prevFrom, const char* from, const char* to, bool firstSwitch=true);
   void addSwitch_stableOn(double time, double endTime, const char* from, const char* to);
   void addSwitch_dynamic(double time, double endTime, const char* from, const char* to, bool dampedVelocity=false);
   void addSwitch_dynamicOn(double time, double endTime, const char* from, const char* to);
@@ -291,7 +297,7 @@ struct KOMO : NonCopyable {
   void checkGradients();          ///< checks all gradients numerically
 
   int view(bool pause=false, const char* txt=nullptr);
-  int view_play(double delay=.2, bool pause=false);
+  int view_play(bool pause=false, double delay=.2);
 
   void plotTrajectory();
   void plotPhaseTrajectory();
