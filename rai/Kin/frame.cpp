@@ -211,7 +211,7 @@ FrameL rai::Frame::getPathToUpwardLink(bool untilPartBreak) {
       if(f->joint) break;
     } else {
       if(f->joint
-          && !(f->joint->type>=JT_hingeX && f->joint->type<=JT_hingeZ)
+          && (f->joint->type==JT_rigid || f->joint->type==JT_free) //!(f->joint->type>=JT_hingeX && f->joint->type<=JT_hingeZ)
           && !f->joint->mimic) break;
     }
     f = f->parent;

@@ -52,7 +52,7 @@ void TEST(Grasp){
 
 //===========================================================================
 
-void testPnP(bool keyframesOnly){
+void testPickAndPlace(bool keyframesOnly){
   rai::Configuration C("model2.g");
 
 //  rai::ConfigurationViewer V;
@@ -109,8 +109,8 @@ int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
 //  testGrasp();
-//  testPnP(false);
-  testPnP(true);
+  testPickAndPlace(false);
+//  testPickAndPlace(true);
 
   return 0;
 }

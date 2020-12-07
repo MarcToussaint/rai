@@ -51,7 +51,7 @@ enum SkeletonSymbol {
   SY_dynamicTrans,
   SY_quasiStatic,
   SY_quasiStaticOn,
-  SY_liftDownUp, //old
+  SY_downUp, //old
   SY_break,
 
   //interactions:
@@ -173,8 +173,8 @@ struct KOMO : NonCopyable {
   ptr<struct Objective> addObjective(const arr& times, const FeatureSymbol& feat, const StringA& frames,
                                      ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr, int order=-1, int deltaFromStep=0, int deltaToStep=0);
 
-  void addSwitch(double time, bool before, rai::KinematicSwitch* sw);
-  void addSwitch(double time, bool before, rai::JointType type, rai::SwitchInitializationType init,
+  void addSwitch(const arr& times, bool before, rai::KinematicSwitch* sw);
+  void addSwitch(const arr& times, bool before, rai::JointType type, rai::SwitchInitializationType init,
                  const char* ref1, const char* ref2,
                  const rai::Transformation& jFrom=NoTransformation, const rai::Transformation& jTo=NoTransformation);
   void addContact_slide(double startTime, double endTime, const char* from, const char* to);
