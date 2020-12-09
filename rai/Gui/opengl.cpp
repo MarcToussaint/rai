@@ -429,6 +429,7 @@ void OpenGL::openWindow() {
 void OpenGL::closeWindow() {
   self->needsRedraw=0;
   if(self->window) {
+    singletonGlSpinner()->delGL(this);
     {
       auto fg = singletonGlSpinner();
       fg->mutex.lock(RAI_HERE);
@@ -437,7 +438,6 @@ void OpenGL::closeWindow() {
       isUpdating.setStatus(0);
       watching.setStatus(0);
     }
-    singletonGlSpinner()->delGL(this);
   }
 }
 
@@ -1840,7 +1840,9 @@ void OpenGL::Draw(int w, int h, rai::Camera* cam, bool callerHasAlreadyLocked) {
   //check matrix stack
   GLint s;
   glGetIntegerv(GL_MODELVIEW_STACK_DEPTH, &s);
-  if(s!=1) RAI_MSG("OpenGL name stack has not depth 1 (pushs>pops) in DRAW mode:" <<s);
+  if(s!=1){
+    RAI_MSG("OpenGL name stack has not depth 1 (pushs>pops) in DRAW mode:" <<s);
+  }
   //CHECK_LE(s, 1, "OpenGL matrix stack has not depth 1 (pushs>pops)");
 
   if(!callerHasAlreadyLocked) {

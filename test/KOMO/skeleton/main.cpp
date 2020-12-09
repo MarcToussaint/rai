@@ -41,7 +41,7 @@ void testPickAndPlace(bool keyframesOnly){
 
   komo.getReport(true);
   komo.view(true, "optimized motion");
-  for(uint i=0;i<2;i++) komo.view_play(true);
+  while(komo.view_play(true));
 }
 
 //===========================================================================
@@ -76,7 +76,7 @@ void testPickAndPush(bool keyframesOnly){
 
   komo.getReport(true);
   komo.view(true, "optimized motion");
-  for(uint i=0;i<2;i++) komo.view_play(true);
+  while(komo.view_play(true));
 }
 
 //===========================================================================
@@ -115,7 +115,7 @@ void testPickAndThrow(bool keyframesOnly){
 
   komo.getReport(true);
   komo.view(true, "optimized motion");
-  for(uint i=0;i<2;i++) komo.view_play(true);
+  while(komo.view_play(true));
 }
 
 //===========================================================================
@@ -157,7 +157,7 @@ void testWalkAndPick(bool keyframesOnly){
 
   komo.getReport(true);
   komo.view(true, "optimized motion");
-  for(uint i=0;i<2;i++) komo.view_play(true);
+  while(komo.view_play(true));
 }
 //===========================================================================
 

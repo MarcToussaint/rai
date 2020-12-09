@@ -389,7 +389,7 @@ FrameL Configuration::getJointsSlice(uint t, bool activesOnly) const{
 /// get the frame IDs of all active joints
 uintA Configuration::getJointIDs() const {
   ((Configuration*)this)->ensure_indexedJoints();
-  uintA joints(getJointStateDimension());
+  uintA joints(activeJoints.N);
   uint i=0;
   for(Joint* j:activeJoints) joints(i++) = j->frame->ID;
   return joints;
@@ -1081,7 +1081,7 @@ bool Configuration::checkConsistency() const {
     boolA jointIsInActiveSet = consts<byte>(false, frames.N);
     for(Joint* j: activeJoints) { CHECK(j->active, ""); jointIsInActiveSet.elem(j->frame->ID)=true; }
     if(q.nd) {
-      for(Frame* f: frames) if(f->joint && f->joint->active) CHECK(jointIsInActiveSet(f->ID), "");
+      for(Frame* f: frames) if(f->joint && f->joint->active && f->joint->type!=JT_rigid) CHECK(jointIsInActiveSet(f->ID), "");
     }
   }
 
@@ -1201,7 +1201,7 @@ void Configuration::calc_indexedActiveJoints() {
 
   //-- collect active joints
   activeJoints.clear();
-  for(Frame* f:frames) if(f->joint && f->joint->active)
+  for(Frame* f:frames) if(f->joint && f->joint->active && f->joint->type!=JT_rigid)
       activeJoints.append(f->joint);
 
   _state_indexedJoints_areGood=true;
