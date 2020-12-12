@@ -275,22 +275,22 @@ void F_Link::updateFeatherstones() {
 
 void FeatherstoneInterface::setGravity(double g) {
   rai::Vector grav(0, 0, g);
-  for(rai::Frame* f: K.frames) {
+  for(rai::Frame* f: C.frames) {
     F_Link& link=tree(f->ID);
     link.force = link.mass * grav;
   }
 }
 
 void FeatherstoneInterface::update() {
-  if(tree.N != K.frames.N) { //new instance -> create the tree
-    CHECK_EQ(K.frames, sortedFrames, "Featherstone requires a sorted optimized frame tree (call optimizeTree and fwdIndexIDs)");
+  if(tree.N != C.frames.N) { //new instance -> create the tree
+    CHECK_EQ(C.frames, sortedFrames, "Featherstone requires a sorted optimized frame tree (call optimizeTree and fwdIndexIDs)");
     tree.clear();
-    tree.resize(K.frames.N);
+    tree.resize(C.frames.N);
 
     for(F_Link& link:tree) { link.parent=-1; link.qIndex=-1; link.com.setZero(); } //TODO: remove
 
     uint n=0;
-    for(rai::Frame* f : K.frames) {
+    for(rai::Frame* f : C.frames) {
       F_Link& link=tree(f->ID);
       link.ID = f->ID;
       link.X = f->ensure_X();
@@ -316,7 +316,7 @@ void FeatherstoneInterface::update() {
     }
 //    CHECK_EQ(n, C.getJointStateDimension(), "");
   } else { //just update an existing structure
-    for(rai::Frame* f: K.frames) {
+    for(rai::Frame* f: C.frames) {
       F_Link& link=tree(f->ID);
       link.X = f->ensure_X();
       if(f->parent) link.Q = f->get_Q();
@@ -833,23 +833,23 @@ void FeatherstoneInterface::invDynamics(arr& tau,
                                         const arr& qd,
                                         const arr& qdd) {
   int par;
-  uint i, N=tree.N, d_i, n;
+  uint i, N=tree.N, d_i, qidx;
   rai::Array<arr> h(N), qd_i(N), qdd_i(N), tau_i(N);
   arr Xup(N, 6, 6), v(N, 6), fJ(N, 6), a(N, 6);
   tau.resizeAs(qdd);
 
-  for(i=0, n=0; i<N; i++) {
-    d_i=tree(i).dof();
+  for(i=0; i<N; i++) {
+    d_i = tree(i).dof();
+    qidx = tree(i).qIndex;
     if(d_i) {
-      qd_i(i) .referToRange(qd, n, n+d_i-1);
-      qdd_i(i).referToRange(qdd, n, n+d_i-1);
-      tau_i(i).referToRange(tau, n, n+d_i-1);
+      qd_i(i) .referToRange(qd, qidx, qidx+d_i-1);
+      qdd_i(i).referToRange(qdd, qidx, qidx+d_i-1);
+      tau_i(i).referToRange(tau, qidx, qidx+d_i-1);
     } else {
       qd_i(i) .clear(); qd_i(i). resize(0);
       qdd_i(i).clear(); qdd_i(i).resize(0);
       tau_i(i).clear(); tau_i(i).resize(0);
     }
-    n += d_i;
     if(d_i!=0) {
       h(i) = tree(i)._h;
       h(i).reshape(6, d_i);
@@ -875,7 +875,11 @@ void FeatherstoneInterface::invDynamics(arr& tau,
 
   for(i=N; i--;) {
     par = tree(i).parent;
-    if(tree(i).dof()) tau_i(i) = ~h(i) * fJ[i];
+    d_i = tree(i).dof();
+    if(d_i!=0){
+      qidx = tree(i).qIndex;
+      tau_i(qidx) = ~h(i) * fJ[i];
+    }
     if(par != -1)     fJ[par]() += ~Xup[i] * fJ[i];
   }
 }

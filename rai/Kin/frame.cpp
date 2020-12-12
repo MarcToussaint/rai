@@ -18,10 +18,6 @@
 
 //===========================================================================
 
-template<> const char* rai::Enum<rai::ShapeType>::names []= {
-  "box", "sphere", "capsule", "mesh", "cylinder", "marker", "SSBox", "pointCloud", "ssCvx", "ssBox", nullptr
-};
-
 template<> const char* rai::Enum<rai::JointType>::names []= {
   "hingeX", "hingeY", "hingeZ", "transX", "transY", "transZ", "transXY", "trans3", "transXYPhi", "universal", "rigid", "quatBall", "phiTransXY", "XBall", "free", "tau", nullptr
 };
@@ -1292,10 +1288,6 @@ void rai::Shape::createMeshes() {
       sscCore().V = arr({2, 3}, {0., 0., -.5*size(-2), 0., 0., .5*size(-2)});
       mesh().setSSCvx(sscCore().V, size(-1));
       break;
-    case rai::ST_retired_SSBox:
-      HALT("deprecated?");
-      mesh().setSSBox(size(0), size(1), size(2), size(3));
-      break;
     case rai::ST_marker:
       break;
     case rai::ST_mesh:
@@ -1324,6 +1316,19 @@ void rai::Shape::createMeshes() {
       sscCore().scale(size(0)-2.*r, size(1)-2.*r, size(2)-2.*r);
       mesh().setSSBox(size(0), size(1), size(2), r);
       //      mesh().setSSCvx(sscCore, r);
+    } break;
+    case rai::ST_ssBoxElip: {
+      CHECK_EQ(size.N, 7, "");
+      double r = size(-1);
+      for(uint i=0; i<3; i++) if(size(i)<2.*r) size(i) = 2.*r;
+      rai::Mesh box;
+      box.setBox();
+      box.scale(size(0)-2.*r, size(1)-2.*r, size(2)-2.*r);
+      rai::Mesh elip;
+      elip.setSphere();
+      elip.scale(size(3), size(4), size(5));
+      sscCore().setSSCvx(MinkowskiSum(box.V, elip.V), 0);
+      mesh().setSSCvx(sscCore().V, r);
     } break;
     default: {
       HALT("createMeshes not possible for shape type '" <<_type <<"'");

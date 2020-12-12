@@ -30,6 +30,12 @@ extern void glColorId(uint id);
 #define sphereSweptFactor
 
 //==============================================================================
+
+template<> const char* rai::Enum<rai::ShapeType>::names []= {
+  "box", "sphere", "capsule", "mesh", "cylinder", "marker", "pointCloud", "ssCvx", "ssBox", "ssBoxElip", nullptr
+};
+
+//==============================================================================
 //
 // Mesh code
 //
@@ -441,6 +447,19 @@ void rai::Mesh::setSSCvx(const arr& core, double r, uint fineness) {
     makeConvexHull();
     C=c;
   }
+}
+
+arr MinkowskiSum(const arr& A, const arr& B) {
+  arr S;
+  for(uint i=0; i<A.d0; i++) {
+    const arr& a = A[i];
+    for(uint j=0; j<B.d0; j++) {
+      const arr& b = B[j];
+      S.append(a+b);
+    }
+  }
+  S.reshape(-1, A.d1);
+  return S;
 }
 
 /** @brief calculate the normals of all triangles (Tn) and the average

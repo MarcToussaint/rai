@@ -18,6 +18,8 @@ void glDrawMeshes(void*, OpenGL&);
 
 namespace rai {
 
+enum ShapeType { ST_none=-1, ST_box=0, ST_sphere, ST_capsule, ST_mesh, ST_cylinder, ST_marker, ST_pointCloud, ST_ssCvx, ST_ssBox, ST_ssBoxElip };
+
 //===========================================================================
 /// a mesh (arrays of vertices, triangles, colors & normals)
 struct Mesh : GLDrawer {
@@ -143,6 +145,7 @@ struct MeshCollection : GLDrawer {
 //
 
 uintA getSubMeshPositions(const char* filename);
+arr MinkowskiSum(const arr& A, const arr& B);
 
 //===========================================================================
 //
