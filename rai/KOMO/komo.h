@@ -277,7 +277,7 @@ struct KOMO : NonCopyable {
   arr getConfiguration_q(int t);
   arr getPath_decisionVariable();              ///< get all DOFs of all configurations in a single flat vector (the decision variable of optimization)
   arr getPath(uintA joints={});      ///< get joint path, optionally for selected joints
-  arr getPath_frames(const uintA& frames={});     ///< get frame path for selected frames
+  arr getPath_frames(const uintA& frames={});     ///< get frame path, optionally for selected frames
   arr getFrameState(int t);     ///< get frame path for selected frames
   arr getPath_q(int t);     ///< get frame path for selected frames
   arrA getPath_q();                            ///< get the DOFs (of potentially varying dimensionality) for each configuration

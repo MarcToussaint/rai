@@ -11,7 +11,6 @@ using namespace std;
 
 void testPickAndPlace(bool keyframesOnly){
   rai::Configuration C;
-//  C.addFile("../switches/model2.g");
   C.addFile("model.g");
 
   KOMO komo;
@@ -131,7 +130,7 @@ void testWalkAndPick(bool keyframesOnly){
     komo.setTiming(4.5, 30, 5., 2);
     komo.add_qControlObjective({}, 2, 1e0);
   }else{
-    komo.setTiming(5., 1, 2., 1);
+    komo.setTiming(2., 1, 2., 1);
     komo.add_qControlObjective({}, 1, 1e-1);
   }
   komo.addSquaredQuaternionNorms();
@@ -141,15 +140,19 @@ void testWalkAndPick(bool keyframesOnly){
     { 1., 1., SY_touch, {"table", "handB"} },
     { 1., -1., SY_stable, {"table", "handB"} },
 
-    //grasp box
-    { 2., 4., SY_touch, {"handA", "box"} },
-    { 2., 3., SY_stable, {"handA", "box"} },
-    { 2., 2., SY_downUp, {"handA"} },
+//    //grasp box
+//    { 2., 2., SY_touch, {"handA", "box"} },
+//    { 2., 3., SY_stable, {"handA", "box"} },
+//    { 2., 2., SY_downUp, {"handA"} },
 
-    //place box
-    { 3., 3., SY_downUp, {"handA"} },
-    { 3., 3., SY_poseEq, {"box", "target"} },
-    { 3., -1., SY_stable, {"table", "box"} },
+//    //handover
+//    { 3., 3., SY_touch, {"gripper", "box"} },
+//    { 3., 4., SY_stable, {"gripper", "box"} },
+
+//    //place box
+//    { 4., 4., SY_downUp, {"handA"} },
+//    { 4., 4., SY_poseEq, {"box", "target"} },
+//    { 4., -1., SY_stable, {"table", "box"} },
   };
   komo.setSkeleton(S);
 
@@ -164,13 +167,13 @@ void testWalkAndPick(bool keyframesOnly){
 int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
-  testPickAndPlace(false);
-  testPickAndPlace(true);
-  testPickAndPush(false);
-  testPickAndPush(true);
-  testPickAndThrow(false);
-  testPickAndThrow(true);
-  testWalkAndPick(false);
+//  testPickAndPlace(false);
+//  testPickAndPlace(true);
+//  testPickAndPush(false);
+//  testPickAndPush(true);
+//  testPickAndThrow(false);
+//  testPickAndThrow(true);rai/Kin/frame.h
+//  testWalkAndPick(false);
   testWalkAndPick(true);
 
   return 0;

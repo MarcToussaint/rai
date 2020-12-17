@@ -471,7 +471,7 @@ arr Configuration::getJointState(const FrameL& joints, bool activesOnly) const {
   uint nd=0;
   for(Frame* f:joints) {
     Joint* j = f->joint;
-    if(!j) HALT("frame '" <<f->name <<"' is not a joint!");
+    if(!j){ LOG(-1) <<"frame '" <<f->name <<"'[" <<f->ID <<"] is not a joint!"; continue; }
     if(!j->active && activesOnly) HALT("frame '" <<f->name <<"' is a joint, but INACTIVE!");
     if(!j->mimic){
       nd += j->dim;
@@ -482,7 +482,7 @@ arr Configuration::getJointState(const FrameL& joints, bool activesOnly) const {
   nd=0;
   for(Frame* f:joints) {
     Joint* j = f->joint;
-    CHECK(j, "");
+    if(!j) continue; //{ LOG(-1) <<"frame '" <<f->name <<"' is not a joint!"; continue; }
     if(!j->mimic){
       if(j->active){
         for(uint ii=0; ii<j->dim; ii++) x(nd+ii) = q(j->qIndex+ii);

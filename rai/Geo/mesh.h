@@ -57,7 +57,7 @@ struct Mesh : GLDrawer {
   void setSphere(uint fineness=2);
   void setHalfSphere(uint fineness=2);
   void setCylinder(double r, double l, uint fineness=2);
-  void setCappedCylinder(double r, double l, uint fineness=2);
+  void setCapsule(double r, double l, uint fineness=2);
   void setSSBox(double x_width, double y_width, double z_height, double r, uint fineness=2);
   void setSSCvx(const arr& core, double r, uint fineness=2);
   void setImplicitSurface(ScalarFunction f, double lo=-10., double hi=+10., uint res=100);
@@ -125,17 +125,9 @@ struct Mesh : GLDrawer {
 
   void glDraw(struct OpenGL&);
 };
-} //END of namespace
-stdOutPipe(rai::Mesh)
 
-//===========================================================================
+stdOutPipe(Mesh)
 
-namespace rai {
-struct MeshCollection : GLDrawer {
-  Array<Mesh*> M;
-  arr X;
-  void glDraw(struct OpenGL&);
-};
 } //END of namespace
 
 //===========================================================================
@@ -156,30 +148,6 @@ void inertiaSphere(double* Inertia, double& mass, double density, double radius)
 void inertiaBox(double* Inertia, double& mass, double density, double dx, double dy, double dz);
 void inertiaCylinder(double* Inertia, double& mass, double density, double height, double radius);
 
-//===========================================================================
-//
-// analytic distance functions
-//
-
-struct DistanceFunction_Sphere:ScalarFunction {
-  rai::Transformation t; double r;
-  DistanceFunction_Sphere(const rai::Transformation& _t, double _r);
-  double f(arr& g, arr& H, const arr& x);
-};
-
-struct DistanceFunction_Box:ScalarFunction {
-  rai::Transformation t; double dx, dy, dz, r;
-  DistanceFunction_Box(const rai::Transformation& _t, double _dx, double _dy, double _dz, double _r=0.);
-  double f(arr& g, arr& H, const arr& x);
-};
-
-struct DistanceFunction_Cylinder:ScalarFunction {
-  rai::Transformation t; double r, dz;
-  DistanceFunction_Cylinder(const rai::Transformation& _t, double _r, double _dz);
-  double f(arr& g, arr& H, const arr& x);
-};
-
-extern ScalarFunction DistanceFunction_SSBox;
 
 //===========================================================================
 //

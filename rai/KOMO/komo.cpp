@@ -253,7 +253,13 @@ void KOMO::addSwitch_mode2(const arr& times, SkeletonSymbol newMode, const Strin
 
     //-- no jump at start
     if(firstSwitch){
-      addObjective({times(0)}, FS_pose, {frames(-1)}, OT_eq, {1e2}, NoArr, 1, 0, 0);
+      //NOTE: when frames(0) is picking up a kinematic chain (e.g., where frames(1) is a handB of a walker),
+      //  then we actually need to impose the no-jump constrained on the root of the kinematic chain!
+      //  To prevent special case for the skeleton specifer, we use this ugly code to determine the root of
+      //  the kinematic chain for frames(1) -- when frames(1) is a normal object, this should be just frames(1) itself
+      rai::Frame *toBePicked = world[frames(1)];
+      rai::Frame *rootOfPicked = toBePicked->getUpwardLink(NoTransformation, true);
+      addObjective({times(0)}, FS_pose, {rootOfPicked->name}, OT_eq, {1e2}, NoArr, 1, 0, 0);
     }
 //    if(k_order>1) addObjective({times(0)}, make_shared<F_LinAngVel>(), {frames(-1)}, OT_eq, {1e0}, NoArr, 2, +1, +1);
 
@@ -1510,6 +1516,25 @@ arr KOMO::getConfiguration_q(int t) {
 #endif
 }
 
+arr KOMO::getFrameState(int t) {
+#ifdef KOMO_PATH_CONFIG
+  return pathConfig.getFrameState(timeSlices[k_order+t]);
+#else
+  NIY;
+#endif
+}
+
+arr KOMO::getPath_q(int t) {
+#ifdef KOMO_PATH_CONFIG
+  uintA F = jointsToIndices(world.activeJoints);
+  F += timeSlices(k_order+t,0)->ID;
+  return pathConfig.getJointState(F);
+//  return pathConfig.getJointState(timeSlices[k_order+t]);
+#else
+  NIY;
+#endif
+}
+
 arr KOMO::getPath(uintA joints){
   if(!joints.N) joints = jointsToIndices( world.activeJoints );
   arr q = pathConfig.getJointState(joints+timeSlices(0+k_order,0)->ID);
@@ -1518,6 +1543,86 @@ arr KOMO::getPath(uintA joints){
     q[t] = pathConfig.getJointState(joints+timeSlices(t+k_order,0)->ID);
   }
   return q;
+}
+
+arr KOMO::getPath_frames(const uintA& frames) {
+#ifdef KOMO_PATH_CONFIG
+  CHECK(!frames.N, "NIY");
+  arr X(T, timeSlices.d1, 7);
+  for(uint t=0; t<T; t++) {
+    X[t] = pathConfig.getFrameState(timeSlices[k_order+t]);
+  }
+#else
+  CHECK_EQ(configurations.N, k_order+T, "configurations are not setup yet");
+  arr X(T, frames.N, 7);
+  for(uint t=0; t<T; t++) {
+    for(uint i=0; i<frames.N; i++) {
+      X(t, i, {}) = configurations(t+k_order)->frames(frames(i))->ensure_X().getArr7d();
+    }
+  }
+#endif
+  return X;
+}
+
+arrA KOMO::getPath_q() {
+  arrA q(T);
+  for(uint t=0; t<T; t++) {
+#ifdef KOMO_PATH_CONFIG
+    FrameL F;
+    for(auto* f:timeSlices[k_order+t]) if(f->joint && f->joint->active) F.append(f);
+    q(t) = pathConfig.getJointState(F, true);
+#else
+    CHECK_EQ(configurations.N, k_order+T, "configurations are not setup yet");
+    q(t) = configurations(t+k_order)->getJointState();
+#endif
+  }
+  return q;
+}
+
+arr KOMO::getPath_tau() {
+  bool hasTau = world.hasTauJoint();
+  if(!hasTau) return consts<double>(tau, T);
+  arr X(T);
+  for(uint t=0; t<T; t++) {
+    rai::Frame *first = timeSlices(t+k_order,0);
+    CHECK(first->joint && first->joint->type==JT_tau, "");
+    X(t) = first->tau;
+  }
+  return X;
+}
+
+arr KOMO::getPath_times() {
+  arr tau = getPath_tau();
+  return integral(tau);
+}
+
+arr KOMO::getPath_energies() {
+  F_Energy E;
+  E.order=1;
+  arr X(T), y;
+  for(uint t=0; t<T; t++) {
+    NIY//    E.phi2(y, NoArr, cat(configurations(t+k_order-1)->frames, configurations(t+k_order)->frames).reshape(2,-1));
+    X(t) = y.scalar();
+  }
+  return X;
+}
+
+arr KOMO::getActiveConstraintJacobian() {
+  uint n=0;
+  for(uint i=0; i<dual.N; i++) if(dual.elem(i)>0.) n++;
+
+  arr J(n, x.N);
+
+  n=0;
+  for(uint i=0; i<dual.N; i++) {
+    if(dual.elem(i)>0.) {
+      J[n] = featureJacobians.scalar()[i];
+      n++;
+    }
+  }
+  CHECK_EQ(n, J.d0, "");
+
+  return J;
 }
 
 void KOMO::initWithConstant(const arr& q) {
@@ -3194,104 +3299,6 @@ void KOMO::TimeSliceProblem::evaluate(arr& phi, arr& J, const arr& x) {
 
 #endif
 
-arr KOMO::getPath_frames(const uintA& frames) {
-#ifdef KOMO_PATH_CONFIG
-  CHECK(!frames.N, "NIY");
-  arr X(T, timeSlices.d1, 7);
-  for(uint t=0; t<T; t++) {
-    X[t] = pathConfig.getFrameState(timeSlices[k_order+t]);
-  }
-#else
-  CHECK_EQ(configurations.N, k_order+T, "configurations are not setup yet");
-  arr X(T, frames.N, 7);
-  for(uint t=0; t<T; t++) {
-    for(uint i=0; i<frames.N; i++) {
-      X(t, i, {}) = configurations(t+k_order)->frames(frames(i))->ensure_X().getArr7d();
-    }
-  }
-#endif
-  return X;
-}
-
-arr KOMO::getFrameState(int t) {
-#ifdef KOMO_PATH_CONFIG
-  return pathConfig.getFrameState(timeSlices[k_order+t]);
-#else
-  NIY;
-#endif
-}
-
-arr KOMO::getPath_q(int t) {
-#ifdef KOMO_PATH_CONFIG
-  uintA F = jointsToIndices(world.activeJoints);
-  F += timeSlices(k_order+t,0)->ID;
-  return pathConfig.getJointState(F);
-//  return pathConfig.getJointState(timeSlices[k_order+t]);
-#else
-  NIY;
-#endif
-}
-
-arrA KOMO::getPath_q() {
-  arrA q(T);
-  for(uint t=0; t<T; t++) {
-#ifdef KOMO_PATH_CONFIG
-    FrameL F;
-    for(auto* f:timeSlices[k_order+t]) if(f->joint && f->joint->active) F.append(f);
-    q(t) = pathConfig.getJointState(F, true);
-#else
-    CHECK_EQ(configurations.N, k_order+T, "configurations are not setup yet");
-    q(t) = configurations(t+k_order)->getJointState();
-#endif
-  }
-  return q;
-}
-
-arr KOMO::getPath_tau() {
-  bool hasTau = world.hasTauJoint();
-  if(!hasTau) return consts<double>(tau, T);
-  arr X(T);
-  for(uint t=0; t<T; t++) {
-    rai::Frame *first = timeSlices(t+k_order,0);
-    CHECK(first->joint && first->joint->type==JT_tau, "");
-    X(t) = first->tau;
-  }
-  return X;
-}
-
-arr KOMO::getPath_times() {
-  arr tau = getPath_tau();
-  return integral(tau);
-}
-
-arr KOMO::getPath_energies() {
-  F_Energy E;
-  E.order=1;
-  arr X(T), y;
-  for(uint t=0; t<T; t++) {
-    NIY//    E.phi2(y, NoArr, cat(configurations(t+k_order-1)->frames, configurations(t+k_order)->frames).reshape(2,-1));
-    X(t) = y.scalar();
-  }
-  return X;
-}
-
-arr KOMO::getActiveConstraintJacobian() {
-  uint n=0;
-  for(uint i=0; i<dual.N; i++) if(dual.elem(i)>0.) n++;
-
-  arr J(n, x.N);
-
-  n=0;
-  for(uint i=0; i<dual.N; i++) {
-    if(dual.elem(i)>0.) {
-      J[n] = featureJacobians.scalar()[i];
-      n++;
-    }
-  }
-  CHECK_EQ(n, J.d0, "");
-
-  return J;
-}
 
 template<> const char* rai::Enum<SkeletonSymbol>::names []= {
   "touch",

@@ -647,9 +647,15 @@ struct Singleton {
 //
 
 struct OpenGL;
+struct OpenGLDrawOptions{
+  bool drawWires=false;
+  bool drawColors=true;
+  bool drawMode_idColor=false;
+};
 struct GLDrawer {
   virtual void glDraw(OpenGL&) = 0;
   virtual ~GLDrawer() {}
+  static OpenGLDrawOptions& glDrawOptions(OpenGL&);
 };
 
 //===========================================================================

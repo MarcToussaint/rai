@@ -35,6 +35,8 @@
 
 OpenGL& NoOpenGL = *((OpenGL*)(nullptr));
 
+OpenGLDrawOptions& GLDrawer::glDrawOptions(OpenGL& gl){ return gl.drawOptions; }
+
 //===========================================================================
 
 Singleton<SingleGLAccess> singleGLAccess;
@@ -613,11 +615,11 @@ void glColorId(uint id) {
 extern bool Geo_mesh_drawColors;
 
 void OpenGL::drawId(uint id) {
-  if(drawMode_idColor) {
+  if(drawOptions.drawMode_idColor) {
     glColorId(id);
-    Geo_mesh_drawColors=false;
+    drawOptions.drawColors=false;
   } else {
-    Geo_mesh_drawColors=true;
+    drawOptions.drawColors=true;
   }
 }
 
@@ -2228,7 +2230,7 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) 
   if(mouse_button==1 && (mods&2)) {
     drawFocus = false;
     if(!downPressed) {
-      drawMode_idColor = true;
+      drawOptions.drawMode_idColor = true;
       Draw(w, h, nullptr, true);
       double x=mouseposx, y=mouseposy, d = captureDepth(mouseposy, mouseposx);
       if(d<.01 || d==1.) {
@@ -2240,7 +2242,7 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) 
            <<" point: (" <<x <<' ' <<y <<' ' <<d <<")" <<endl;
     }
   } else {
-    drawMode_idColor = false;
+    drawOptions.drawMode_idColor = false;
   }
 
   //mouse scroll wheel:

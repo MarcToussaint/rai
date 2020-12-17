@@ -17,7 +17,7 @@ box (table){
     shape:ssBox, size:[.3 .2 .1 .02], color:[.8 .8 .8] }
 
 target (table){
-    Q:<t(.5 0. .1) d(20 0 0 1)>
+    Q:<t(.5 .0 .1) d(20 0 0 1)>
     shape:ssBox, size:[.3 .2 .1 .02], color:[.3 .6 .3 .6] }
 
 stick (table){
@@ -32,13 +32,16 @@ target3 (table) {
     Q:<t(.8 .8 .05)>
     shape:ssBox, size:[.3 .3 .04 .01], color:[.3 .6 .3 .6] }
 
-Include: '../../../../rai-robotModels/panda/panda.g'
-(table panda_link0){ joint:rigid, Q:<t(-.5 -.5 .05)> }
+#Include: '../../../../rai-robotModels/panda/panda.g'
+#(table panda_link0){ joint:rigid, Q:<t(-.5 -.5 .05)> }
+#gripper (joint7){
+#    Q:<d(-90 0 1 0) d(135 0 0 1) t(0 0 -.155) t(0 0 -.05)>
+#    shape:marker, size:[.03], color:[.9 .9 .5] }
 
-gripper (panda_joint7){
-    Q:<d(-90 0 1 0) d(135 0 0 1) t(0 0 -.155) t(0 0 -.05)>  
-    shape:marker, size:[.03], color:[.9 .9 .5] }
+Include: '../../../../rai-robotModels/scenarios/simpleArm.g'
+(table base){ joint:rigid, Q:<t(-.5 -.5 .1) d(90 0 0 1)> }
+gripper (endeff) { shape:marker, size:[.03], color:[.9 .9 .5] }
 
 Include: '../../../../rai-robotModels/scenarios/walker.g'
-(table handA){ joint:rigid, Q:<t(-.6 .5 .1) d(90 0 0 1)> }
+Edit handA(table){ joint:rigid, Q:<t(-.6 .5 .1) d(90 0 0 1)> }
 

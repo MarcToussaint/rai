@@ -12,7 +12,6 @@
 #include "../Geo/geo.h"
 #include "../Core/graph.h"
 #include "../Geo/mesh.h"
-#include "../Geo/geoms.h"
 
 /* TODO:
  * replace the types by more fundamental:
@@ -213,7 +212,10 @@ struct Joint : NonCopyable {
   uint getDimFromType() const;
   arr get_h() const;
 
-  bool isPartBreak() { return (dim!=1 && !mimic) || type==JT_tau; }
+  bool isPartBreak() {
+    return (type==JT_rigid || type==JT_free) && !mimic;
+//    return (dim!=1 && !mimic) || type==JT_tau;
+  }
 
   //access the K's q vector
   double& getQ();

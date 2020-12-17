@@ -11,7 +11,7 @@
 #include "featureSymbols.h"
 #include "../Core/array.h"
 #include "../Geo/geo.h"
-#include "../Geo/geoms.h"
+#include "../Geo/mesh.h"
 
 struct OpenGL;
 struct PhysXInterface;

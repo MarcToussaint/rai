@@ -190,7 +190,7 @@ rai::Frame* rai::Frame::getUpwardLink(rai::Transformation& Qtotal, bool untilPar
     if(!untilPartBreak) {
       if(f->joint) break;
     } else {
-      if(f->joint->isPartBreak()) break;
+      if(f->joint && f->joint->isPartBreak()) break;
     }
     if(!!Qtotal) Qtotal = f->Q*Qtotal;
     f = f->parent;
@@ -206,9 +206,9 @@ FrameL rai::Frame::getPathToUpwardLink(bool untilPartBreak) {
     if(!untilPartBreak) {
       if(f->joint) break;
     } else {
-      if(f->joint
-          && (f->joint->type==JT_rigid || f->joint->type==JT_free) //!(f->joint->type>=JT_hingeX && f->joint->type<=JT_hingeZ)
-          && !f->joint->mimic) break;
+      if(f->joint && f->joint->isPartBreak()) break;
+//          && (f->joint->type==JT_rigid || f->joint->type==JT_free) //!(f->joint->type>=JT_hingeX && f->joint->type<=JT_hingeZ)
+//          && !f->joint->mimic) break;
     }
     f = f->parent;
   }
@@ -1205,7 +1205,7 @@ void rai::Shape::glDraw(OpenGL& gl) {
 #ifdef RAI_GL
   //set name (for OpenGL selection)
   glPushName((frame.ID <<2) | 1);
-  if(frame.C.orsDrawColors && !frame.C.orsDrawIndexColors && !gl.drawMode_idColor) {
+  if(frame.C.orsDrawColors && !frame.C.orsDrawIndexColors && !gl.drawOptions.drawMode_idColor) {
     if(mesh().C.N) glColor(mesh().C); //color[0], color[1], color[2], color[3]*world.orsDrawAlpha);
     else   glColor(.5, .5, .5);
   }
@@ -1233,7 +1233,7 @@ void rai::Shape::glDraw(OpenGL& gl) {
         CHECK_GE(size.N, 1, "need a marker size");
         if(size(0)>0.){
           glDrawDiamond(size(0)/5., size(0)/5., size(0)/5.);
-          glDrawAxes(size(0), !gl.drawMode_idColor);
+          glDrawAxes(size(0), !gl.drawOptions.drawMode_idColor);
         }else if(size(0)<0.){
           glDrawAxis(-size(0));
         }
