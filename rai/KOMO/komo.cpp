@@ -1249,8 +1249,8 @@ void KOMO::setSkeleton(const Skeleton& S, bool ignoreSwitches) {
 
       case SY_downUp:{
         if(k_order>=2){
-          addObjective({s.phase0}, FS_qItself, {}, OT_eq, {}, {}, 1);
-          addObjective({s.phase0-.1,s.phase0+.1}, FS_position, {s.frames(0)}, OT_eq, {}, {0.,0.,.1}, 2);
+//          addObjective({s.phase0}, FS_qItself, {}, OT_eq, {}, {}, 1);
+          addObjective({s.phase0,s.phase1}, FS_position, {s.frames(0)}, OT_eq, {}, {0.,0.,.1}, 2, +1);
         }
         break;
       }
