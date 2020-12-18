@@ -1193,9 +1193,6 @@ void Configuration::prefixNames(bool clear) {
   else       for(Frame* a: frames) a->name.clear() <<a->ID;
 }
 
-
-
-
 void Configuration::calc_indexedActiveJoints() {
   reset_q();
 
@@ -2786,13 +2783,13 @@ void Configuration::glDraw_sub(OpenGL& gl, const FrameL& F, int drawOpaqueOrTran
   if(orsDrawBodies) {
     if(drawOpaqueOrTransparanet==0 || drawOpaqueOrTransparanet==1) {
       //first non-transparent
-      for(Frame* f: F) if(f->shape && f->shape->alpha()==1. && (f->shape->visual||!orsDrawVisualsOnly)) {
+      for(Frame* f: F) if(f->shape && f->shape->alpha()==1.) {
           gl.drawId(f->ID);
           f->shape->glDraw(gl);
         }
     }
     if(drawOpaqueOrTransparanet==0 || drawOpaqueOrTransparanet==2) {
-      for(Frame* f: F) if(f->shape && f->shape->alpha()<1. && (f->shape->visual||!orsDrawVisualsOnly)) {
+      for(Frame* f: F) if(f->shape && f->shape->alpha()<1.) {
           gl.drawId(f->ID);
           f->shape->glDraw(gl);
         }

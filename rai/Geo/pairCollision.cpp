@@ -20,6 +20,7 @@ extern "C" {
 #endif
 
 #include "../Gui/opengl.h"
+#include "../Optim/newton.h"
 #include "qhull.h"
 
 #ifndef RAI_GJK
@@ -78,6 +79,47 @@ PairCollision::PairCollision(const rai::Mesh& _mesh1, const rai::Mesh& _mesh2, c
   CHECK_GE(rai::sign(distance) * scalarProduct(normal, p1-p2), -1e-10, "");
 
   //in current state, the rad1, rad2, have not been used at all!!
+}
+
+PairCollision::PairCollision(ScalarFunction func1, ScalarFunction func2, const arr& seed, double rad1, double rad2){
+
+  ScalarFunction f = [&func1, &func2](arr& g, arr& H, const arr& x){
+    arr g1, g2, H1, H2;
+    double d1 = func1(g1, H1, x);
+    H = (2.*d1)*H1 + 2.*(g1^g1);
+    g = (2.*d1)*g1;
+    double d2 = func2(g2, H2, x);
+    H += (2.*d2)*H2 + 2.*(g2^g2);
+    g += (2.*d2)*g2;
+    return d1*d1+d2*d2;
+  };
+
+  arr x = seed;
+  CHECK_EQ(x.N, 3, "");
+  OptNewton newton(x, f);
+  newton.options
+      .set_verbose(0)
+      .set_maxStep(10.)
+      .set_damping(1e-10);
+  newton.run();
+
+  arr g1, g2;
+  double d1 = func1(g1, NoArr, x);
+  double d2 = func2(g2, NoArr, x);
+
+  cout <<"d1^2+d2^2:" <<newton.fx <<" d1:" <<d1 <<" d2:" <<d2 <<endl;
+
+  g1 /= length(g1);
+  g2 /= length(g2);
+  p1 = x - d1*g1;
+  p2 = x - d2*g2;
+
+  normal = p1-p2;
+  distance = length(normal);
+  normal /= distance;
+
+  simplex1 = p1;  simplex1.reshape(1,3);
+  simplex2 = p2;  simplex2.reshape(1,3);
 }
 
 void PairCollision::write(std::ostream& os) const {

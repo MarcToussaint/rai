@@ -260,12 +260,12 @@ stdOutPipe(Inertia)
 /// a Frame with Shape is a collision or visual object
 struct Shape : NonCopyable, GLDrawer {
   Frame& frame;
-  ptr<Mesh> _mesh;
-  ptr<Mesh> _sscCore;
   Enum<ShapeType> _type;
   arr size;
+  ptr<Mesh> _mesh;
+  ptr<Mesh> _sscCore;
+  char cont=0;           ///< are contacts registered (or filtered in the callback)
 
-  void setMeshMimic(const Frame* f);
   double radius() { if(size.N) return size(-1); return 0.; }
   Enum<ShapeType>& type() { return _type; }
   Mesh& mesh() { if(!_mesh) _mesh = make_shared<Mesh>();  return *_mesh; }
@@ -273,9 +273,7 @@ struct Shape : NonCopyable, GLDrawer {
   double alpha() { arr& C=mesh().C; if(C.N==4) return C(3); return 1.; }
 
   void createMeshes();
-
-  char cont=0;           ///< are contacts registered (or filtered in the callback)
-  bool visual=true;
+  shared_ptr<ScalarFunction> functional();
 
   Shape(Frame& f, const Shape* copyShape=nullptr); //new Shape, being added to graph and frame's shape lists
   virtual ~Shape();

@@ -10,6 +10,7 @@
 #include "kin.h"
 #include "uncertainty.h"
 #include "forceExchange.h"
+#include "../Geo/analyticShapes.h"
 #include <climits>
 
 #ifdef RAI_GL
@@ -1094,7 +1095,6 @@ rai::Shape::Shape(Frame& f, const Shape* copyShape)
     _type = s._type;
     size = s.size;
     cont = s.cont;
-    visual = s.visual;
   } else {
     mesh().C= {.8, .8, .8};
   }
@@ -1102,12 +1102,6 @@ rai::Shape::Shape(Frame& f, const Shape* copyShape)
 
 rai::Shape::~Shape() {
   frame.shape = nullptr;
-}
-
-void rai::Shape::setMeshMimic(const rai::Frame* f) {
-  CHECK(!_mesh, "");
-  CHECK(f->shape->_mesh, "");
-  _mesh = f->shape->_mesh;
 }
 
 void rai::Shape::read(const Graph& ats) {
@@ -1161,9 +1155,6 @@ void rai::Shape::read(const Graph& ats) {
     double d;
     if(ats.get(d, "contact")) cont = (char)d;
     else cont=1;
-  }
-  if(ats["noVisual"]) {
-    visual=false;
   }
 
   //center the mesh:
@@ -1334,6 +1325,27 @@ void rai::Shape::createMeshes() {
       HALT("createMeshes not possible for shape type '" <<_type <<"'");
     }
   }
+}
+
+shared_ptr<ScalarFunction> rai::Shape::functional(){
+  //create mesh for basic shapes
+  switch(_type) {
+    case rai::ST_none: HALT("shapes should have a type - somehow wrong initialization..."); break;
+    case rai::ST_box:
+      return make_shared<DistanceFunction_ssBox>(frame.ensure_X(), size(0), size(1), size(2), 0.);
+    case rai::ST_sphere:
+      return make_shared<DistanceFunction_Sphere>(frame.ensure_X(), radius());
+    case rai::ST_cylinder:
+      return make_shared<DistanceFunction_Cylinder>(frame.ensure_X(), size(-1), size(-2));
+    case rai::ST_capsule:
+      return make_shared<DistanceFunction_Capsule>(frame.ensure_X(), size(-1), size(-2));
+    case rai::ST_ssBox: {
+      return make_shared<DistanceFunction_ssBox>(frame.ensure_X(), size(0), size(1), size(2), size(3));
+    default:
+      return shared_ptr<ScalarFunction>();
+    }
+  }
+
 }
 
 rai::Inertia::Inertia(Frame& f, Inertia* copyInertia) : frame(f), type(BT_dynamic) {

@@ -18,6 +18,8 @@ struct F_PairCollision : Feature {
   Type type;
   bool neglectRadii=false;
 
+  shared_ptr<struct PairCollision> coll;
+
   F_PairCollision(Type _type, bool _neglectRadii=false)
     : type(_type), neglectRadii(_neglectRadii) {
   }
