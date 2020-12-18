@@ -18,7 +18,7 @@ GlobalIterativeNewton::GlobalIterativeNewton(const ScalarFunction& f, const arr&
     best(nullptr) {
   newton.bound_lo = bounds_lo;
   newton.bound_up = bounds_hi;
-  newton.o.verbose = 0;
+  newton.options.verbose = 0;
 }
 
 GlobalIterativeNewton::~GlobalIterativeNewton() {
@@ -53,14 +53,14 @@ void addRun(GlobalIterativeNewton& gin, const arr& x, double fx, double tol) {
   if(found->fx<gin.best->fx) gin.best=found;
   gin.newton.x = gin.best->x;
   gin.newton.fx = gin.best->fx;
-  if(gin.newton.o.verbose>1) cout <<"***** optGlobalIterativeNewton: local minimum: " <<found->hits <<' ' <<found->fx <<' ' <<found->x <<endl;
+  if(gin.newton.options.verbose>1) cout <<"***** optGlobalIterativeNewton: local minimum: " <<found->hits <<' ' <<found->fx <<' ' <<found->x <<endl;
 }
 
 void addRunFrom(GlobalIterativeNewton& gin, const arr& x) {
   if(useNewton) {
     gin.newton.reinit(x);
     gin.newton.run();
-    addRun(gin, gin.newton.x, gin.newton.fx, 3.*gin.newton.o.stopTolerance);
+    addRun(gin, gin.newton.x, gin.newton.fx, 3.*gin.newton.options.stopTolerance);
   } else {
     gin.grad.reinit(x);
     gin.grad.run();
@@ -70,7 +70,7 @@ void addRunFrom(GlobalIterativeNewton& gin, const arr& x) {
 
 void GlobalIterativeNewton::step() {
   arr x = bounds_lo + (bounds_hi-bounds_lo) % rand(bounds_lo.N);
-  if(newton.o.verbose>1) cout <<"***** optGlobalIterativeNewton: new iteration from x=" <<x <<endl;
+  if(newton.options.verbose>1) cout <<"***** optGlobalIterativeNewton: new iteration from x=" <<x <<endl;
   addRunFrom(*this, x);
 }
 

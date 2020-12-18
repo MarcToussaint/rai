@@ -15,7 +15,7 @@ int optNewton(arr& x, const ScalarFunction& f, OptOptions opt=NOOPT);
 struct OptNewton {
   arr& x;
   ScalarFunction f;
-  OptOptions o;
+  OptOptions options;
 
   enum StopCriterion { stopNone=0, stopDeltaConverge, stopTinyFSteps, stopTinyXSteps, stopCritEvals, stopStepFailed };
   double fx;
@@ -28,7 +28,7 @@ struct OptNewton {
   ostream* logFile=nullptr, *simpleLog=nullptr;
   double timeNewton=0., timeEval=0.;
 
-  OptNewton(arr& x, const ScalarFunction& f, OptOptions o=NOOPT, ostream* _logFile=0);
+  OptNewton(arr& x, const ScalarFunction& f, OptOptions options=NOOPT, ostream* _logFile=0);
   ~OptNewton();
   StopCriterion step();
   StopCriterion run(uint maxIt = 1000);

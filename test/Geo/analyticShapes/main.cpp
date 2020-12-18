@@ -5,6 +5,8 @@
 #include <Geo/mesh.h>
 #include <Gui/opengl.h>
 
+#include <Optim/newton.h>
+
 
 //===========================================================================
 
@@ -123,12 +125,68 @@ void TEST(SimpleImplicitSurfaces) {
 
 //===========================================================================
 
+void projectToSurface(){
+
+
+  rai::Transformation pose;
+  pose.setRandom();
+
+  rai::Array<shared_ptr<ScalarFunction>> fcts = {
+    make_shared<DistanceFunction_Sphere>(pose, 1.),
+    make_shared<DistanceFunction_ssBox>(pose, 1., 2., 3., 1.),
+    make_shared<DistanceFunction_Cylinder>(pose, 1., 2.),
+    make_shared<DistanceFunction_Capsule>(pose, 1., 2.)
+  };
+
+
+  ScalarFunction f = [&fcts](arr& g, arr& H, const arr& x){
+    double d = (*fcts(1))(g, H, x);
+    H *= 2.*d;
+    H += 2.*(g^g);
+    g *= 2.*d;
+    return d*d;
+  };
+
+  arr X = randn(1000,3);
+  for(uint i=0;i<X.d0;i++) X[i] *= 10./length(X[i]);
+
+  for(uint i=0;i<X.d0;i++){
+    cout <<i <<'-' <<flush;
+    arr x = X[i];
+    //    cout <<"initial x: " <<x <<" f(x): " <<(*fcts(0))(NoArr, NoArr, x) <<endl;
+    OptNewton newton(x, f);
+    newton.options
+        .set_verbose(0)
+        .set_maxStep(10.)
+        .set_damping(1e-10);
+    newton.run();
+    //  cout <<"final x: " <<x <<" f(x): " <<(*fcts(0))(NoArr, NoArr, x) <<endl;
+  }
+  cout <<endl;
+
+  rai::Mesh m;
+  m.V=X;
+  m.makeConvexHull();
+
+  OpenGL gl;
+  gl.drawOptions.drawWires=true;
+  gl.add(glStandardScene,nullptr);
+  gl.add(m);
+  gl.watch();
+
+
+
+}
+//===========================================================================
+
 int MAIN(int argc, char** argv){
   rai::initCmdLine(argc, argv);
 
-  testDistanceFunctions();
-  testDistanceFunctions2();
-  testSimpleImplicitSurfaces();
+//  testDistanceFunctions();
+//  testDistanceFunctions2();
+//  testSimpleImplicitSurfaces();
+
+  projectToSurface();
 
   return 0;
 }

@@ -209,7 +209,7 @@ OptPrimalDual::OptPrimalDual(arr& x, arr& dual, MathematicalProgram& P, int verb
   : x(x), PD(x, P, opt, dual), newton(PD.x_lambda, PD, opt), opt(opt) {
 
   if(verbose>=0) opt.verbose=verbose;
-  newton.o.verbose = rai::MAX(opt.verbose-1, 0);
+  newton.options.verbose = rai::MAX(opt.verbose-1, 0);
 
   newton.rootFinding = true;
   newton.bound_lo.resize(newton.x.N).setZero();
