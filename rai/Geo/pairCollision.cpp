@@ -96,11 +96,11 @@ PairCollision::PairCollision(ScalarFunction func1, ScalarFunction func2, const a
 
   arr x = seed;
   CHECK_EQ(x.N, 3, "");
-  OptNewton newton(x, f);
-  newton.options
-      .set_verbose(0)
-      .set_maxStep(10.)
-      .set_damping(1e-10);
+  OptNewton newton(x, f, OptOptions()
+                   .set_verbose(0)
+                   .set_stopTolerance(1e-4)
+                   .set_maxStep(1.)
+                   .set_damping(1e-10) );
   newton.run();
 
   arr g1, g2;

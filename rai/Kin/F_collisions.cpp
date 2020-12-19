@@ -27,13 +27,17 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
   if(!m2->V.N) m2->V = zeros(1, 3);
 
   coll.reset();
-//  auto func1=f1->shape->functional();
-//  auto func2=f2->shape->functional();
-//  if(func1 && func2){
-//    coll=make_shared<PairCollision>(*func1, *func2, .5*(f1->getPosition()+f2->getPosition()), r1, r2);
-//  }else{
+#if 1 //use functionals!
+  auto func1=f1->shape->functional();
+  auto func2=f2->shape->functional();
+  if(func1 && func2){
+    coll=make_shared<PairCollision>(*func1, *func2, .5*(f1->getPosition()+f2->getPosition()), r1, r2);
+  }else{
     coll=make_shared<PairCollision>(*m1, *m2, f1->ensure_X(), f2->ensure_X(), r1, r2);
-//  }
+  }
+#else
+  coll=make_shared<PairCollision>(*m1, *m2, f1->ensure_X(), f2->ensure_X(), r1, r2);
+#endif
 
   if(neglectRadii) coll->rad1=coll->rad2=0.;
 

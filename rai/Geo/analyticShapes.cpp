@@ -1,11 +1,11 @@
 #include "analyticShapes.h"
 
-DistanceFunction_Sphere::DistanceFunction_Sphere(const rai::Transformation& _t, double _r):t(_t), r(_r) {
+DistanceFunction_Sphere::DistanceFunction_Sphere(const rai::Transformation& _pose, double _r):pose(_pose), r(_r) {
   ScalarFunction::operator=([this](arr& g, arr& H, const arr& x)->double{ return f(g, H, x); });
 }
 
 double DistanceFunction_Sphere::f(arr& g, arr& H, const arr& x) {
-  arr d = x-conv_vec2arr(t.pos);
+  arr d = x-conv_vec2arr(pose.pos);
   double len = length(d);
   if(!!g) g = d/len;
   if(!!H) H = 1./len * (eye(3) - (d^d)/(len*len));
@@ -32,13 +32,13 @@ double DistanceFunction_Sphere::f(arr& g, arr& H, const arr& x) {
 
 //===========================================================================
 
-DistanceFunction_Cylinder::DistanceFunction_Cylinder(const rai::Transformation& _t, double _r, double _dz):t(_t), r(_r), dz(_dz) {
+DistanceFunction_Cylinder::DistanceFunction_Cylinder(const rai::Transformation& _pose, double _size_z, double _r):pose(_pose), size_z(_size_z), r(_r) {
   ScalarFunction::operator=([this](arr& g, arr& H, const arr& x)->double{ return f(g, H, x); });
 }
 
 double DistanceFunction_Cylinder::f(arr& g, arr& H, const arr& x) {
-  arr z = conv_vec2arr(t.rot.getZ());
-  arr c = conv_vec2arr(t.pos);
+  arr z = conv_vec2arr(pose.rot.getZ());
+  arr c = conv_vec2arr(pose.pos);
   arr b = scalarProduct(x-c, z) * z;
   arr a = (x-c) - b;
   arr I(3, 3);
@@ -47,11 +47,11 @@ double DistanceFunction_Cylinder::f(arr& g, arr& H, const arr& x) {
   arr aaTovasq = 1/(la*la) * (a^a);
   arr zzT = z^z;
 
-  if(lb < dz/2.) {   // x projection on z is inside cyl
-    if(la<r && (dz/2.-lb)<(r-la)) { // x is INSIDE the cyl and closer to the lid than the wall
+  if(lb < size_z/2.) {   // x projection on z is inside cyl
+    if(la<r && (size_z/2.-lb)<(r-la)) { // x is INSIDE the cyl and closer to the lid than the wall
       if(!!g) g = 1./lb*b; //z is unit: s*z*|z|*sgn(b*z) = s*b/nb
       if(!!H) { I.setZero(); H=I; }
-      return lb-dz/2.;
+      return lb-size_z/2.;
     } else { // closer to the side than to a lid (inc. cases in- and outside the tube, because (r-na)<0 then)
       if(!!g) g = a/la;
       if(!!H) {
@@ -64,9 +64,9 @@ double DistanceFunction_Cylinder::f(arr& g, arr& H, const arr& x) {
     if(la < r) {  // inside the infinite cylinder
       if(!!g) g = b/lb;
       if(!!H) H.resize(3, 3).setZero();
-      return lb-dz/2.;
+      return lb-size_z/2.;
     } else { // outside the infinite cyl
-      arr v =  b/lb * (lb-dz/2.)  + a/la * (la-r); //MT: good! (note: b/nb is the same as z) SD: well, b/nb is z or -z.
+      arr v =  b/lb * (lb-size_z/2.)  + a/la * (la-r); //MT: good! (note: b/nb is the same as z) SD: well, b/nb is z or -z.
       double nv=length(v);
       if(!!g) g = v/nv;
       if(!!H) {
@@ -83,13 +83,13 @@ double DistanceFunction_Cylinder::f(arr& g, arr& H, const arr& x) {
 
 //===========================================================================
 
-DistanceFunction_Capsule::DistanceFunction_Capsule(const rai::Transformation& _t, double _r, double _dz):t(_t), r(_r), dz(_dz) {
+DistanceFunction_Capsule::DistanceFunction_Capsule(const rai::Transformation& _pose, double _size_z,  double _r):pose(_pose), size_z(_size_z), r(_r) {
   ScalarFunction::operator=([this](arr& g, arr& H, const arr& x)->double{ return f(g, H, x); });
 }
 
 double DistanceFunction_Capsule::f(arr& g, arr& H, const arr& x) {
-  arr z = conv_vec2arr(t.rot.getZ());
-  arr c = conv_vec2arr(t.pos);
+  arr z = conv_vec2arr(pose.rot.getZ());
+  arr c = conv_vec2arr(pose.pos);
   double zcoord = scalarProduct(x-c, z);
   arr b = zcoord * z;
   arr a = (x-c) - b;
@@ -98,7 +98,7 @@ double DistanceFunction_Capsule::f(arr& g, arr& H, const arr& x) {
   arr aaTovasq = 1/(la*la) * (a^a);
   arr zzT = z^z;
 
-  if(zcoord < .5*dz && zcoord > -.5*dz) {   // x projection on z is inside line
+  if(zcoord < .5*size_z && zcoord > -.5*size_z) {   // x projection on z is inside line
     if(!!g) g = a/la;
     if(!!H) {
       I.setId(3);
@@ -107,8 +107,8 @@ double DistanceFunction_Capsule::f(arr& g, arr& H, const arr& x) {
     return la-r;
   } else { // x projection on z is outside line
     arr v;
-    if(zcoord>0.) v=c+(0.5*dz)*z;
-    else  v=c-(0.5*dz)*z;
+    if(zcoord>0.) v=c+(0.5*size_z)*z;
+    else  v=c-(0.5*size_z)*z;
     arr d = x-v;
     double len=length(d);
     if(!!g) g = d/len;
@@ -145,27 +145,29 @@ void closestPointOnBox(arr& closest, arr& signs, const rai::Transformation& t, d
 
 //===========================================================================
 
-DistanceFunction_ssBox::DistanceFunction_ssBox(const rai::Transformation& _t, double _dx, double _dy, double _dz, double _r):t(_t), dx(_dx), dy(_dy), dz(_dz), r(_r) {
+DistanceFunction_ssBox::DistanceFunction_ssBox(const rai::Transformation& _pose, double _size_x, double _size_y, double _size_z, double _r)
+  : pose(_pose), size_x(_size_x), size_y(_size_y), size_z(_size_z), r(_r) {
   ScalarFunction::operator=([this](arr& g, arr& H, const arr& x)->double{ return f(g, H, x); });
 }
 
 double DistanceFunction_ssBox::f(arr& g, arr& H, const arr& x) {
-  arr rot = t.rot.getArr();
-  arr a_rel = (~rot)*(x-conv_vec2arr(t.pos)); //point in box coordinates
-  arr dim = {dx, dy, dz};
+  arr rot = pose.rot.getArr();
+  arr x_rel = (~rot)*(x-conv_vec2arr(pose.pos)); //point in box coordinates
+  arr box = {.5*size_x-r, .5*size_y-r, .5*size_z-r};
 
-  arr closest = a_rel;
-  arr del_abs = fabs(a_rel)-dim;
-  //-- find closest point on box and distance to it
+  arr closest = x_rel;
+  arr del_abs = fabs(x_rel)-box;
+  //-- find closest point on box
   if(del_abs.max()<0.) { //inside
     uint side=del_abs.argmax(); //which side are we closest to?
-    if(a_rel(side)>0) closest(side) = dim(side);  else  closest(side)=-dim(side); //in positive or neg direction?
+    if(x_rel(side)>0) closest(side) = box(side);  else  closest(side)=-box(side); //in positive or neg direction?
   } else { //outside
-    closest = elemWiseMax(-dim, closest);
-    closest = elemWiseMin(dim, closest);
+    closest = elemWiseMax(-box, closest);
+    closest = elemWiseMin(box, closest);
   }
 
-  arr del = a_rel-closest;
+ //-- distance to closest point
+  arr del = x_rel-closest;
   double d = length(del);
   if(!!g) g = rot*del/d; //transpose(R) rotates the gradient back to world coordinates
   if(!!H) {

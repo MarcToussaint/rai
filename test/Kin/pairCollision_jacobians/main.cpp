@@ -267,7 +267,7 @@ void TEST(Functional) {
 
     F_PairCollision dist(F_PairCollision::_negScalar);
     auto y = dist.eval({C(1), C(2)});
-    checkJacobian(dist.vf2({C(1), C(2)}), x, 1e-4);
+//    checkJacobian(dist.vf2({C(1), C(2)}), x, 1e-4);
 
     gl.add(*dist.coll);
     gl.add(C);
