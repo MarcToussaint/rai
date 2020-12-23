@@ -199,6 +199,20 @@ rai::Frame* rai::Frame::getUpwardLink(rai::Transformation& Qtotal, bool untilPar
   return (Frame*)f;
 }
 
+rai::Frame* rai::Frame::getDownwardLink(bool untilPartBreak) const {
+  const Frame* f=this;
+  while(f->children.N) {
+    Frame* ch = f->children.first();
+    if(!untilPartBreak) {
+      if(ch->joint) break;
+    } else {
+      if(ch->joint && ch->joint->isPartBreak()) break;
+    }
+    f = ch;
+  }
+  return (Frame*)f;
+}
+
 FrameL rai::Frame::getPathToUpwardLink(bool untilPartBreak) {
   FrameL pathToLink;
   rai::Frame* f = this;

@@ -27,7 +27,7 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
   if(!m2->V.N) m2->V = zeros(1, 3);
 
   coll.reset();
-#if 1 //use functionals!
+#if 0 //use functionals!
   auto func1=f1->shape->functional();
   auto func2=f2->shape->functional();
   if(func1 && func2){

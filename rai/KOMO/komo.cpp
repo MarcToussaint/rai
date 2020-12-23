@@ -1191,7 +1191,7 @@ void KOMO_ext::setAbstractTask(double phase, const Graph& facts, int verbose) {
 
 void KOMO::setSkeleton(const Skeleton& S, bool ignoreSwitches) {
   //-- add objectives for mode switches
-  intA switches = getSwitchesFromSkeleton(S);
+  intA switches = getSwitchesFromSkeleton(S, world);
   if(!ignoreSwitches) {
     for(uint i=0; i<switches.d0; i++) {
       int j = switches(i, 0);
@@ -1204,6 +1204,7 @@ void KOMO::setSkeleton(const Skeleton& S, bool ignoreSwitches) {
       else
         addSwitch_mode(S(j).symbol, S(k).symbol, S(k).phase0, S(k).phase1+1., S(j).frames(0), newFrom, S(k).frames.last());
 #else
+//      cout <<"SKELETON: " <<S(k) <<"  firstSwitch: " <<(j<0) <<endl;
       addSwitch_mode2({S(k).phase0, S(k).phase1}, S(k).symbol, S(k).frames, j<0);
 #endif
     }
@@ -3349,18 +3350,26 @@ template<> const char* rai::Enum<SkeletonSymbol>::names []= {
   nullptr
 };
 
-intA getSwitchesFromSkeleton(const Skeleton& S) {
+intA getSwitchesFromSkeleton(const Skeleton& S, const rai::Configuration& world) {
   rai::Array<SkeletonSymbol> modes = { SY_free, SY_stable, SY_stableOn, SY_dynamic, SY_dynamicOn, SY_dynamicTrans, SY_quasiStatic, SY_quasiStaticOn, SY_magicTrans };
 
   intA ret;
   for(int i=0; i<(int)S.N; i++) {
-    if(modes.contains(S.elem(i).symbol)) {
+    if(modes.contains(S.elem(i).symbol)) { //S(i) is about a switch
       int j=i-1;
+      rai::Frame *toBeSwitched = world[S.elem(i).frames(-1)];
+      rai::Frame *rootOfSwitch = toBeSwitched->getUpwardLink(NoTransformation, true);
+      rai::Frame *childOfSwitch = toBeSwitched->getDownwardLink(true);
       for(; j>=0; j--) {
-        if(modes.contains(S.elem(j).symbol) && S.elem(j).frames.last()==S.elem(i).frames.last()) {
-          break;
+        if(modes.contains(S.elem(j).symbol)){ //S(j) is about a switch
+          const rai::String& prevSwitched = S.elem(j).frames.last();
+          if(prevSwitched==toBeSwitched->name
+             || prevSwitched==rootOfSwitch->name
+             || prevSwitched==childOfSwitch->name)
+            break;
         }
       }
+      //j=-1 if not previously switched, otherwise the index of the previous switch
       ret.append({j, i});
     }
   }

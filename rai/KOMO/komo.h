@@ -95,7 +95,7 @@ stdOutPipe(SkeletonEntry)
 
 typedef rai::Array<SkeletonEntry> Skeleton;
 
-intA getSwitchesFromSkeleton(const Skeleton& S);
+intA getSwitchesFromSkeleton(const Skeleton& S, const rai::Configuration& world);
 void writeSkeleton(std::ostream& os, const Skeleton& S, const intA& switches= {});
 
 //===========================================================================
