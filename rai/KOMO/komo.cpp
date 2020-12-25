@@ -2130,7 +2130,17 @@ void KOMO::setupConfigurations2() {
   }
   timeSlices = pathConfig.frames;
 
-  pathConfig.selectJoints(timeSlices({k_order,-1})); //select only the non-prefix joints as active!!
+  //select only the non-prefix joints as active, and only joints that have previously been active
+  FrameL activeJoints;
+  for(uint t=0; t<T; ++t){
+    for(auto* f:timeSlices[t + k_order]) {
+      if(f->joint && f->joint->active &&
+          f->joint->type != rai::JT_rigid && f->joint->type != rai::JT_free){
+        activeJoints.append(f);
+      }
+    }
+  }
+  pathConfig.selectJoints(activeJoints); 
 
   pathConfig.ensure_q();
   pathConfig.checkConsistency();
