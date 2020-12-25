@@ -1536,12 +1536,12 @@ arr KOMO::getPath_q(int t) {
 #endif
 }
 
-arr KOMO::getPath(uintA joints){
+arr KOMO::getPath(uintA joints, const bool activesOnly){
   if(!joints.N) joints = jointsToIndices( world.activeJoints );
-  arr q = pathConfig.getJointState(joints+timeSlices(0+k_order,0)->ID);
+  arr q = pathConfig.getJointState(joints+timeSlices(0+k_order,0)->ID, activesOnly);
   q.resizeCopy(T, q.N);
   for(uint t=1; t<T; t++) {
-    q[t] = pathConfig.getJointState(joints+timeSlices(t+k_order,0)->ID);
+    q[t] = pathConfig.getJointState(joints+timeSlices(t+k_order,0)->ID, activesOnly);
   }
   return q;
 }

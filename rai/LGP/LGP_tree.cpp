@@ -294,7 +294,7 @@ void LGP_Tree::inspectSequence(const rai::String& seq) {
   cout <<"### INSPECT SEQUENCE\n  " <<seq <<endl;
   cout <<"  Node Info:\n" <<node->getInfo() <<endl;
   auto S = node->getSkeleton();
-  writeSkeleton(cout, S, getSwitchesFromSkeleton(S));
+  writeSkeleton(cout, S, getSwitchesFromSkeleton(S, kin));
 
   ptr<OpenGL> gl = make_shared<OpenGL>();
   gl->camera.setDefault();

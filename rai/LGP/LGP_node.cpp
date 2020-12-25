@@ -116,10 +116,10 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
 
   Skeleton S = getSkeleton();
 
-  if(komo->logFile) writeSkeleton(*komo->logFile, S, getSwitchesFromSkeleton(S));
+  if(komo->logFile) writeSkeleton(*komo->logFile, S, getSwitchesFromSkeleton(S, komo->world));
 
   if(komo->verbose>1) {
-    writeSkeleton(cout, S, getSwitchesFromSkeleton(S));
+    writeSkeleton(cout, S, getSwitchesFromSkeleton(S, komo->world));
   }
 
   arrA waypoints;
