@@ -2134,8 +2134,7 @@ void KOMO::setupConfigurations2() {
   FrameL activeJoints;
   for(uint t=0; t<T; ++t){
     for(auto* f:timeSlices[t + k_order]) {
-      if(f->joint && f->joint->active &&
-          f->joint->type != rai::JT_rigid && f->joint->type != rai::JT_free){
+      if(f->joint && f->joint->active){
         activeJoints.append(f);
       }
     }
