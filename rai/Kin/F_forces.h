@@ -141,6 +141,16 @@ struct F_fex_POASurfaceNormal : Feature {
   uint dim_phi2(const FrameL& F) { return 3; }
 };
 
+struct F_fex_POASurfaceNormalsOppose : Feature {
+  void phi2(arr& y, arr& J, const FrameL& F);
+  uint dim_phi2(const FrameL& F) { return 3; }
+};
+
+struct F_fex_POASurfaceAvgNormal : Feature {
+  void phi2(arr& y, arr& J, const FrameL& F);
+  uint dim_phi2(const FrameL& F) { return 3; }
+};
+
 struct F_fex_POAisInIntersection_InEq : Feature {
   double margin=0.;
   F_fex_POAisInIntersection_InEq(double _margin=0.) : margin(_margin) {}

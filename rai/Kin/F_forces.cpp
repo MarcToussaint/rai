@@ -492,8 +492,14 @@ void F_fex_ForceIsNormal::phi2(arr& y, arr& J, const FrameL& F) {
                 .eval(F);
 
   //-- from the geometry we need normal
+#if 0
   Value normal = F_PairCollision(F_PairCollision::_normal, true)
                  .eval(F);
+#else
+  Value normal = F_fex_POASurfaceAvgNormal()
+                 .eval(F);
+  normalizeWithJac(normal.y, normal.J);
+#endif
 
   //-- force needs to align with normal -> project force along normal
   y = force.y - normal.y*scalarProduct(normal.y, force.y);
@@ -540,8 +546,14 @@ void F_fex_ForceIsPositive::phi2(arr& y, arr& J, const FrameL& F) {
                 .eval(F);
 
   //-- from the geometry we need normal
+#if 0
   Value normal = F_PairCollision(F_PairCollision::_normal, true)
                  .eval(F);
+#else
+  Value normal = F_fex_POASurfaceAvgNormal()
+                 .eval(F);
+  normalizeWithJac(normal.y, normal.J);
+#endif
 
   //-- force needs to align with normal -> project force along normal
   y.resize(1);
@@ -553,7 +565,8 @@ void F_fex_POASurfaceDistance::phi2(arr& y, arr& J, const FrameL& F){
   if(order>0){  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
   rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1));
-  rai::Frame *f = F.elem(0);
+  rai::Frame *f;
+  if(leftRight == rai::_left) f = F.elem(0);
   if(leftRight == rai::_right) f = F.elem(1);
 
   //-- get POA
@@ -573,7 +586,7 @@ void F_fex_POASurfaceDistance::phi2(arr& y, arr& J, const FrameL& F){
 
   //-- value & Jacobian
   y.resize(1);
-  y.scalar() = d - f->shape->radius();
+  y.scalar() = d;
   J = ~g * (Jpoa - Jp);
 }
 
@@ -581,7 +594,8 @@ void F_fex_POASurfaceNormal::phi2(arr& y, arr& J, const FrameL& F){
   if(order>0){  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
   rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1));
-  rai::Frame *f = F.elem(0);
+  rai::Frame *f;
+  if(leftRight == rai::_left) f = F.elem(0);
   if(leftRight == rai::_right) f = F.elem(1);
 
   //-- get POA
@@ -605,6 +619,26 @@ void F_fex_POASurfaceNormal::phi2(arr& y, arr& J, const FrameL& F){
   y = g;
   J = H * (Jpoa - Jp);
   J += crossProduct(Jang, g);
+}
+
+void F_fex_POASurfaceNormalsOppose::phi2(arr& y, arr& J, const FrameL& F) {
+  Value n1 = F_fex_POASurfaceNormal(rai::_left)
+             .eval(F);
+  Value n2 = F_fex_POASurfaceNormal(rai::_right)
+             .eval(F);
+
+  y = n1.y + n2.y;
+  if(!!J) J = n1.J + n2.J;
+}
+
+void F_fex_POASurfaceAvgNormal::phi2(arr& y, arr& J, const FrameL& F) {
+  Value n1 = F_fex_POASurfaceNormal(rai::_left)
+             .eval(F);
+  Value n2 = F_fex_POASurfaceNormal(rai::_right)
+             .eval(F);
+
+  y = 0.5*(n2.y - n1.y); //normals should oppose, so this should be the avg normal; normal always points 'against obj1'
+  if(!!J) J = 0.5*(n2.J - n1.J);
 }
 
 void F_fex_POAisInIntersection_InEq::phi2(arr& y, arr& J, const FrameL& F) {
@@ -776,3 +810,4 @@ void F_fex_NormalVelIsComplementary::phi2(arr& y, arr& J, const FrameL& F) {
   y(0) = scalarProduct(force, v1);
   if(!!J) J = ~force * Jv1 + ~v1 * Jforce;
 }
+
