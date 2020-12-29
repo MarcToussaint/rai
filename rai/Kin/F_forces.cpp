@@ -11,7 +11,6 @@
 #include "F_pose.h"
 #include "frame.h"
 #include "forceExchange.h"
-//#include "TM_default.h"
 #include "F_collisions.h"
 #include "../Geo/pairCollision.h"
 
@@ -138,12 +137,6 @@ void POA_vel(arr& y, arr& J, const FrameL& F, rai::ForceExchange* ex, bool b_or_
   if(!!J) J = v.J - skew(w.y) * (Jcp - p.J) + skew(cp-p.y) * w.J;
 }
 
-rai::ForceExchange* getContact(rai::Frame* a, rai::Frame* b){
-  for(rai::ForceExchange* c : a->forces) if(&c->a==a && &c->b==b) return c;
-  HALT("can't retrieve contact " <<a->name <<"--" <<b->name);
-  return nullptr;
-}
-
 void shapeFunction(double& x, double& dx);
 
 //===========================================================================
@@ -198,7 +191,7 @@ F_ObjectTotalForce::F_ObjectTotalForce(bool _transOnly, bool _zeroGravity) : tra
   if(_zeroGravity) {
     gravity = 0.;
   } else {
-    gravity = rai::getParameter<double>("F_static/gravity", 9.81);
+    gravity = rai::getParameter<double>("gravity", 9.81);
   }
 }
 
@@ -212,7 +205,7 @@ void F_ObjectTotalForce::phi2(arr& y, arr& J, const FrameL& F) {
   a->C.kinematicsZero(torque, Jtorque, 3);
 
   if(gravity) {
-    double mass=.1;
+    double mass=1.;
     if(a->inertia) mass = a->inertia->mass;
     force(2) += gravity * mass;
   }
@@ -353,7 +346,7 @@ void F_NewtonEuler::phi2(arr& y, arr& J, const FrameL& F) {
   arr Imatrix = diag(.1, 3);
   if(a->inertia) {
     mass = a->inertia->mass;
-    Imatrix = 2.*conv_mat2arr(a->inertia->matrix);
+    Imatrix = conv_mat2arr(a->inertia->matrix);
   }
   arr mass_diag(6);
   for(uint i=0; i<3; i++) mass_diag(i) = mass;
@@ -556,6 +549,64 @@ void F_fex_ForceIsPositive::phi2(arr& y, arr& J, const FrameL& F) {
   if(!!J) J = - (~normal.y*force.J + ~force.y*normal.J);
 }
 
+void F_fex_POASurfaceDistance::phi2(arr& y, arr& J, const FrameL& F){
+  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  CHECK_EQ(F.N, 2, "");
+  rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1));
+  rai::Frame *f = F.elem(0);
+  if(leftRight == rai::_right) f = F.elem(1);
+
+  //-- get POA
+  arr poa, Jpoa;
+  ex->kinPOA(poa, Jpoa);
+
+  //-- evaluate functional
+  CHECK(f->shape, "");
+  shared_ptr<ScalarFunction> func = f->shape->functional();
+  CHECK(func, "");
+  arr g;
+  double d = (*func)(g, NoArr, poa);
+
+  //-- evaluate Jacobian of POA if f1 moves
+  arr Jp;
+  f->C.jacobian_pos(Jp, f, poa);
+
+  //-- value & Jacobian
+  y.resize(1);
+  y.scalar() = d - f->shape->radius();
+  J = ~g * (Jpoa - Jp);
+}
+
+void F_fex_POASurfaceNormal::phi2(arr& y, arr& J, const FrameL& F){
+  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  CHECK_EQ(F.N, 2, "");
+  rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1));
+  rai::Frame *f = F.elem(0);
+  if(leftRight == rai::_right) f = F.elem(1);
+
+  //-- get POA
+  arr poa, Jpoa;
+  ex->kinPOA(poa, Jpoa);
+
+  //-- evaluate functional with Hessian
+  CHECK(f->shape, "");
+  shared_ptr<ScalarFunction> func = f->shape->functional();
+  CHECK(func, "");
+  arr g,H;
+  (*func)(g, H, poa);
+
+  //-- evaluate Jacobian of POA if f1 moves
+  arr Jp;
+  f->C.jacobian_pos(Jp, f, poa);
+  arr Jang;
+  f->C.jacobian_angular(Jang, f);
+
+  //-- value & Jacobian
+  y = g;
+  J = H * (Jpoa - Jp);
+  J += crossProduct(Jang, g);
+}
+
 void F_fex_POAisInIntersection_InEq::phi2(arr& y, arr& J, const FrameL& F) {
   if(order>0){  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
@@ -725,5 +776,3 @@ void F_fex_NormalVelIsComplementary::phi2(arr& y, arr& J, const FrameL& F) {
   y(0) = scalarProduct(force, v1);
   if(!!J) J = ~force * Jv1 + ~v1 * Jforce;
 }
-
-

@@ -176,7 +176,6 @@ void rai::ForceExchange::glDraw(OpenGL& gl) {
 #endif
 }
 
-
 void rai::ForceExchange::write(std::ostream& os) const {
   os <<a.name <<'-' <<b.name;
   double d = 0.;
@@ -187,3 +186,8 @@ void rai::ForceExchange::write(std::ostream& os) const {
 //  <<" type=" <<a_type <<'-' <<b_type <<" dist=" <<getDistance() /*<<" pDist=" <<get_pDistance()*/ <<" y=" <<y <<" l=" <<lagrangeParameter;
 }
 
+rai::ForceExchange* rai::getContact(rai::Frame* a, rai::Frame* b){
+  for(rai::ForceExchange* c : a->forces) if(&c->a==a && &c->b==b) return c;
+  HALT("can't retrieve contact " <<a->name <<"--" <<b->name);
+  return nullptr;
+}

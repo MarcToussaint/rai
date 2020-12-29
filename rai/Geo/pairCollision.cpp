@@ -123,13 +123,13 @@ PairCollision::PairCollision(ScalarFunction func1, ScalarFunction func2, const a
 }
 
 void PairCollision::write(std::ostream& os) const {
-  os <<"PairCollide INFO" <<endl;
+  os <<"PairCollision INFO" <<endl;
   if(distance>0.) {
     os <<"  distance=" <<distance <<endl;
   } else {
     os <<"  penetration=" <<distance <<endl;
   }
-  os <<"  closest points: " <<p1 <<"  " <<p2 <<endl;
+  os <<"  witness points: " <<p1 <<"  " <<p2 <<endl;
   os <<"  simplex #: " <<simplex1.d0 <<"  " <<simplex2.d0 <<endl;
 //  if(eig1.N || eig2.N) os <<"  EIG #: " <<eig1.d0<<'-' <<eig2.d0 <<endl;
 }

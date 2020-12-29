@@ -382,7 +382,10 @@ FrameL Configuration::getJoints(bool activesOnly) const{
 
 FrameL Configuration::getJointsSlice(uint t, bool activesOnly) const{
   FrameL F;
-  for(auto* f:frames[t]) if(f->joint && (!activesOnly || f->joint->active)) F.append(f);
+  for(auto* f:frames[t]){
+    if((f->joint && (!activesOnly || f->joint->active))
+       || f->forces.N)  F.append(f);
+  }
   return F;
 }
 
@@ -537,6 +540,7 @@ void Configuration::setJointState(const arr& _q, const FrameL& F, bool activesOn
   for(Frame* f:F) {
     Joint* j = f->joint;
     if(!j && !f->forces.N) HALT("frame '" <<f->name <<"' is not a joint and has no forces!");
+    if(!j) continue;
     if(j->active){
       if(!j->mimic){
         for(uint ii=0; ii<j->dim; ii++) q.elem(j->qIndex+ii) = _q(nd+ii);

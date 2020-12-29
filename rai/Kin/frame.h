@@ -136,21 +136,21 @@ struct Frame : NonCopyable {
   void write(std::ostream& os) const;
 
   //-- HIGHER LEVEL USER INTERFACE
-  void setShape(rai::ShapeType shape, const arr& size);
-  void setPose(const rai::Transformation& _X);
-  void setPosition(const arr& pos);
-  void setQuaternion(const arr& quat);
-  void setRelativePosition(const arr& pos);
-  void setRelativeQuaternion(const arr& quat);
-  void setPointCloud(const arr& points, const byteA& colors= {});
-  void setConvexMesh(const arr& points, const byteA& colors= {}, double radius=0.);
-  void setMesh(const arr& points, const byteA& colors= {}, double radius=0.);
-  void setColor(const arr& color);
-  void setJoint(rai::JointType jointType);
-  void setContact(int cont);
-  void setMass(double mass);
-  void addAttribute(const char* key, double value);
-  void setJointState(const arr& q); ///< throws error if this frame is not also a joint, and if q.size() != joint->dim
+  Frame& setShape(rai::ShapeType shape, const arr& size);
+  Frame& setPose(const rai::Transformation& _X);
+  Frame& setPosition(const arr& pos);
+  Frame& setQuaternion(const arr& quat);
+  Frame& setRelativePosition(const arr& pos);
+  Frame& setRelativeQuaternion(const arr& quat);
+  Frame& setPointCloud(const arr& points, const byteA& colors= {});
+  Frame& setConvexMesh(const arr& points, const byteA& colors= {}, double radius=0.);
+  Frame& setMesh(const arr& points, const byteA& colors= {}, double radius=0.);
+  Frame& setColor(const arr& color);
+  Frame& setJoint(rai::JointType jointType);
+  Frame& setContact(int cont);
+  Frame& setMass(double mass);
+  Frame& addAttribute(const char* key, double value);
+  Frame& setJointState(const arr& q); ///< throws error if this frame is not also a joint, and if q.size() != joint->dim
 
   arr getPose() { return ensure_X().getArr7d(); }
   arr getPosition() { return ensure_X().pos.getArr(); }

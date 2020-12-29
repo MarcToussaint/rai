@@ -309,7 +309,7 @@ struct GlfwSpinner : Thread {
   void close() {}
 
   void addGL(OpenGL* gl) {
-    bool start=false;
+//    bool start=false;
     mutex.lock(RAI_HERE);
     glwins.append(gl);
 #if 0
@@ -320,17 +320,17 @@ struct GlfwSpinner : Thread {
     glfwSwapBuffers(gl->self->window);
     glfwMakeContextCurrent(nullptr);
 #endif
-    if(glwins.N==1) start=true; //start looping
+//    if(glwins.N==1) start=true; //start looping
     mutex.unlock();
 
 //    if(start) threadLoop(true); //start looping
   }
 
   void delGL(OpenGL* gl) {
-    bool stop=false;
+//    bool stop=false;
     mutex.lock(RAI_HERE);
     glwins.removeValue(gl);
-    if(!glwins.N) stop=true; //stop looping
+//    if(!glwins.N) stop=true; //stop looping
     mutex.unlock();
 
 //    if(stop) threadStop(); //stop looping

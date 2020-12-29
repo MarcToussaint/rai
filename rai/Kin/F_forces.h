@@ -29,7 +29,7 @@ struct F_fex_Wrench : Feature {
 };
 
 //===========================================================================
-// totals acting on a joint or object
+// totals acting on a frame (joint or object)
 
 struct F_HingeXTorque : Feature {
   void phi2(arr& y, arr& J, const FrameL& F);
@@ -48,11 +48,7 @@ struct F_ObjectTotalForce : Feature {
 // dynamics
 
 struct F_NewtonEuler : Feature {
-  double gravity=9.81;
-  F_NewtonEuler(bool _transOnly=false) {
-    order = 2;
-    gravity = rai::getParameter<double>("TM_NewtonEuler/gravity", 9.81);
-  }
+  F_NewtonEuler(bool _transOnly=false) { order=2; }
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F) { return 6; }
 };
@@ -65,7 +61,7 @@ struct F_NewtonEuler_DampedVelocities : Feature {
     if(_gravity>=0.) {
       gravity = _gravity;
     } else {
-      gravity = rai::getParameter<double>("TM_NewtonEuler/gravity", 9.81);
+      gravity = rai::getParameter<double>("gravity", 9.81);
     }
   }
   virtual void phi2(arr& y, arr& J, const FrameL& F);
@@ -76,7 +72,7 @@ struct F_Energy : Feature {
   double gravity=9.81;
   F_Energy() {
     order=1;
-    gravity = rai::getParameter<double>("TM_Physics/gravity", 9.81);
+    gravity = rai::getParameter<double>("gravity", 9.81);
   }
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F) {  return 1;  }
@@ -129,6 +125,20 @@ struct F_fex_NormalVelIsComplementary : Feature {
   F_fex_NormalVelIsComplementary(double _elasticity, double _stickiness) : elasticity(_elasticity), stickiness(_stickiness) { order=1; }
   void phi2(arr& y, arr& J, const FrameL& F);
   uint dim_phi2(const FrameL& F) { return 1; }
+};
+
+struct F_fex_POASurfaceDistance : Feature {
+  rai::LeftRight leftRight;
+  F_fex_POASurfaceDistance(rai::LeftRight leftRight) : leftRight(leftRight) {}
+  void phi2(arr& y, arr& J, const FrameL& F);
+  uint dim_phi2(const FrameL& F) { return 1; }
+};
+
+struct F_fex_POASurfaceNormal : Feature {
+  rai::LeftRight leftRight;
+  F_fex_POASurfaceNormal(rai::LeftRight leftRight) : leftRight(leftRight) {}
+  void phi2(arr& y, arr& J, const FrameL& F);
+  uint dim_phi2(const FrameL& F) { return 3; }
 };
 
 struct F_fex_POAisInIntersection_InEq : Feature {

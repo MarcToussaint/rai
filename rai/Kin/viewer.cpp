@@ -15,12 +15,13 @@ rai::ConfigurationViewer::~ConfigurationViewer() {
   if(gl) gl.reset();
 }
 
-void rai::ConfigurationViewer::ensure_gl() {
+OpenGL& rai::ConfigurationViewer::ensure_gl() {
   if(!gl) {
     gl = make_shared<OpenGL>("ConfigurationViewer");
     gl->camera.setDefault();
     gl->add(*this);
   }
+  return *gl;
 }
 
 int rai::ConfigurationViewer::update(const char* text, bool nonThreaded) { ensure_gl(); return gl->update(text, nonThreaded); }
@@ -129,7 +130,7 @@ int rai::ConfigurationViewer::setPath(const arr& _framePath, const char* text, b
   return update(watch);
 }
 
-bool rai::ConfigurationViewer::playVideo(uint nFrames, bool watch, double delay, const char* saveVideoPath){
+bool rai::ConfigurationViewer::playVideo(uint T, uint nFrames, bool watch, double delay, const char* saveVideoPath){
   if(rai::getDisableGui()) return false;
 
   const rai::String tag = drawText;
@@ -139,7 +140,7 @@ bool rai::ConfigurationViewer::playVideo(uint nFrames, bool watch, double delay,
     rai::system(STRING("rm -f " <<saveVideoPath <<"*.ppm"));
   }
 
-  uint T = C.frames.N/nFrames;
+  CHECK_GE(C.frames.N, T*nFrames, "");
 
   FrameL F = C.frames;
   F.resizeCopy(T, nFrames);

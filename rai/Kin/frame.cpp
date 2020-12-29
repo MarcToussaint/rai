@@ -376,57 +376,64 @@ void rai::Frame::write(std::ostream& os) const {
 
 /************* USER INTERFACE **************/
 
-void rai::Frame::setShape(rai::ShapeType shape, const arr& size) {
+rai::Frame& rai::Frame::setShape(rai::ShapeType shape, const arr& size) {
   getShape().type() = shape;
   getShape().size() = size;
   getShape().createMeshes();
+  return *this;
 }
 
-void rai::Frame::setPose(const rai::Transformation& _X) {
+rai::Frame& rai::Frame::setPose(const rai::Transformation& _X) {
   ensure_X();
   X = _X;
   _state_updateAfterTouchingX();
+  return *this;
 }
 
-void rai::Frame::setPosition(const arr& pos) {
+rai::Frame& rai::Frame::setPosition(const arr& pos) {
   ensure_X();
   X.pos.set(pos);
   _state_updateAfterTouchingX();
+  return *this;
 }
 
-void rai::Frame::setQuaternion(const arr& quat) {
+rai::Frame& rai::Frame::setQuaternion(const arr& quat) {
   ensure_X();
   X.rot.set(quat);
   X.rot.normalize();
   _state_updateAfterTouchingX();
+  return *this;
 }
 
-void rai::Frame::setRelativePosition(const arr& pos) {
+rai::Frame& rai::Frame::setRelativePosition(const arr& pos) {
   CHECK(parent, "you cannot set relative position for a frame without parent");
   Q.pos.set(pos);
   _state_updateAfterTouchingQ();
+  return *this;
 }
 
-void rai::Frame::setRelativeQuaternion(const arr& quat) {
+rai::Frame& rai::Frame::setRelativeQuaternion(const arr& quat) {
   CHECK(parent, "you cannot set relative position for a frame without parent");
   Q.rot.set(quat);
   Q.rot.normalize();
   _state_updateAfterTouchingQ();
+  return *this;
 }
 
-void rai::Frame::setPointCloud(const arr& points, const byteA& colors) {
+rai::Frame& rai::Frame::setPointCloud(const arr& points, const byteA& colors) {
   getShape().type() = ST_pointCloud;
   if(!points.N) {
     cerr <<"given point cloud has zero size" <<endl;
-    return;
+    return *this;
   }
   getShape().mesh().V.clear().operator=(points).reshape(-1, 3);
   if(colors.N) {
     getShape().mesh().C.clear().operator=(convert<double>(byteA(colors))/255.).reshape(-1, 3);
   }
+  return *this;
 }
 
-void rai::Frame::setConvexMesh(const arr& points, const byteA& colors, double radius) {
+rai::Frame& rai::Frame::setConvexMesh(const arr& points, const byteA& colors, double radius) {
   if(!radius) {
     getShape().type() = ST_mesh;
     getShape().mesh().V.clear().operator=(points).reshape(-1, 3);
@@ -442,40 +449,47 @@ void rai::Frame::setConvexMesh(const arr& points, const byteA& colors, double ra
   if(colors.N) {
     getShape().mesh().C.clear().operator=(convert<double>(byteA(colors))/255.).reshape(-1, 3);
   }
+  return *this;
 }
 
-void rai::Frame::setColor(const arr& color) {
+rai::Frame& rai::Frame::setColor(const arr& color) {
   getShape().mesh().C = color;
+  return *this;
 }
 
-void rai::Frame::setJoint(rai::JointType jointType) {
+rai::Frame& rai::Frame::setJoint(rai::JointType jointType) {
   if(joint) { delete joint; joint=nullptr; }
   if(jointType != JT_none) {
     new Joint(*this, jointType);
   }
+  return *this;
 }
 
-void rai::Frame::setContact(int cont) {
+rai::Frame& rai::Frame::setContact(int cont) {
   getShape().cont = cont;
+  return *this;
 }
 
-void rai::Frame::setMass(double mass) {
+rai::Frame& rai::Frame::setMass(double mass) {
   if(mass<0.) {
     if(inertia) delete inertia;
   } else {
     getInertia().mass = mass;
   }
+  return *this;
 }
 
-void rai::Frame::addAttribute(const char* key, double value) {
+rai::Frame& rai::Frame::addAttribute(const char* key, double value) {
   ats.newNode<double>(key, {}, value);
+  return *this;
 }
 
-void rai::Frame::setJointState(const arr& q) {
+rai::Frame& rai::Frame::setJointState(const arr& q) {
   CHECK(joint, "cannot setJointState for a non-joint");
   CHECK_EQ(q.N, joint->dim, "given q has wrong dimension");
   joint->calc_Q_from_q(arr{q}, 0);
   C._state_q_isGood = false;
+  return *this;
 }
 
 arr rai::Frame::getSize() {
@@ -625,10 +639,11 @@ uint rai::Joint::qDim() {
 }
 
 void rai::Joint::calc_Q_from_q(const arr& q_full, uint _qIndex) {
+  if(type==JT_rigid) return;
   CHECK(dim!=UINT_MAX, "");
   CHECK_LE(_qIndex+dim, q_full.N, "");
   rai::Transformation& Q = frame->Q;
-  if(type!=JT_rigid) Q.setZero();
+  Q.setZero();
   std::shared_ptr<arr> q_copy;
   double* qp;
   if(scale==1.) {

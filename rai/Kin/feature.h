@@ -42,7 +42,7 @@ struct Feature {
   Feature& setDiffInsteadOfVel(){ diffInsteadOfVel=true; return *this; }
 
  protected:
-  virtual void phi2(arr& y, arr& J, const FrameL& F);
+  virtual void phi2(arr& y, arr& J, const FrameL& F); //TODO: rename to finite-difference!
   virtual uint dim_phi2(const FrameL& F) {  NIY; }
 
   virtual void phi(arr& y, arr& J, const rai::Configuration& C);

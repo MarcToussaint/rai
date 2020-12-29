@@ -243,8 +243,14 @@ void KOMO::addSwitch(const arr& times, bool before,
 
 void KOMO::addSwitch_mode2(const arr& times, SkeletonSymbol newMode, const StringA& frames, bool firstSwitch) {
   //-- creating a stable kinematic linking
-  if(newMode==SY_stable){
-    addSwitch(times, true, JT_free, SWInit_copy, frames(0), frames(1));
+  if(newMode==SY_stable || newMode==SY_stableOn){
+    if(newMode==SY_stable) {
+      addSwitch(times, true, JT_free, SWInit_copy, frames(0), frames(1));
+    } else { //SY_stableOn
+      Transformation rel = 0;
+      rel.pos.set(0, 0, .5*(shapeSize(world, frames(0)) + shapeSize(world, frames(1))));
+      addSwitch(times, true, JT_transXYPhi, SWInit_copy, frames(0), frames(1), rel);
+    }
 
     // ensure the DOF is constant throughout its existance
     if((times(1)<0. && stepsPerPhase*times(0)<T) || stepsPerPhase*times(1)>stepsPerPhase*times(0)+1) {
@@ -273,25 +279,27 @@ void KOMO::addSwitch_mode2(const arr& times, SkeletonSymbol newMode, const Strin
     addSwitch(times, true, JT_free, SWInit_copy, world.frames.first()->name, frames(-1));
     //new contacts don't exist in step [-1], so we rather impose only zero acceleration at [-2,-1,0]
     if(firstSwitch){
-      addObjective({times(0)}, FS_pose, {frames(-1)}, OT_eq, {1e0}, NoArr, k_order, +0, +0);
+//      addObjective({times(0)}, FS_pose, {frames(-1)}, OT_eq, {1e0}, NoArr, 2, +0, +0);
+      addObjective({times(0)}, FS_pose, {frames(-1)}, OT_eq, {1e2}, NoArr, 1, 0, 0);
     }
     if(k_order>1){
       //... and physics starting from [-1,0,+1], ... until [-3,-2,-1]
-      addObjective({times(0), times(1)}, make_shared<F_NewtonEuler>(), {frames(-1)}, OT_eq, {1e0}, NoArr, k_order, +1, 0);
+      addObjective(times, make_shared<F_NewtonEuler>(), {frames(-1)}, OT_eq, {1e2}, NoArr, 2, +1, 0);
     }
   } else if(newMode==SY_quasiStaticOn) {
+    CHECK_EQ(frames.N, 2, "");
     Transformation rel = 0;
-    rel.pos.set(0, 0, .5*(shapeSize(world, frames(0)) + shapeSize(world, frames(-1))));
-    addSwitch(times, true, JT_transXYPhi, SWInit_copy, frames(0), frames(-1), rel);
+    rel.pos.set(0, 0, .5*(shapeSize(world, frames(0)) + shapeSize(world, frames(1))));
+    addSwitch(times, true, JT_transXYPhi, SWInit_copy, frames(0), frames(1), rel);
     //-- no jump at start
     if(firstSwitch){
-      addObjective({times(0)}, FS_pose, {frames(-1)}, OT_eq, {1e2}, NoArr, 1, 0, 0);
+      addObjective({times(0)}, FS_pose, {frames(-1)}, OT_eq, {1e2}, NoArr, 1, 0, +1);
     }
 #if 0
-    addObjective(times, make_shared<F_NewtonEuler_DampedVelocities>(0., false), {frames(-1)}, OT_eq, {1e2}, NoArr, 1, +0, 0);
+    addObjective(times, make_shared<F_NewtonEuler_DampedVelocities>(0., false), {frames(-1)}, OT_eq, {1e2}, NoArr, 1, +1, 0);
 #else
     //eq for 3DOFs only
-    ptr<Objective> o = addObjective(times, make_shared<F_NewtonEuler_DampedVelocities>(0., false), {frames(-1)}, OT_eq, {1e2}, NoArr, 1, +0, -0);
+    ptr<Objective> o = addObjective(times, make_shared<F_NewtonEuler_DampedVelocities>(0., false), {frames(-1)}, OT_eq, {1e2}, NoArr, 1, +1, 0);
     o->feat->scale=1e2 * arr({3, 6}, {
       1, 0, 0, 0, 0, 0,
       0, 1, 0, 0, 0, 0,
@@ -1912,7 +1920,7 @@ void KOMO::checkGradients() {
 
 int KOMO::view(bool pause, const char* txt){ pathConfig.gl()->recopyMeshes(pathConfig); return pathConfig.watch(pause, txt); }
 
-int KOMO::view_play(bool pause, double delay){ pathConfig.gl()->recopyMeshes(pathConfig); return pathConfig.gl()->playVideo(timeSlices.d1, pause, delay*tau*T); }
+int KOMO::view_play(bool pause, double delay){ pathConfig.gl()->recopyMeshes(pathConfig); return pathConfig.gl()->playVideo(timeSlices.d0, timeSlices.d1, pause, delay*tau*T); }
 
 void KOMO::plotTrajectory() {
   ofstream fil("z.trajectories");

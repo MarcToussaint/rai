@@ -56,4 +56,6 @@ stdOutPipe(ForceExchange)
 
 //===========================================================================
 
+rai::ForceExchange* getContact(rai::Frame* a, rai::Frame* b);
+
 } //rai
