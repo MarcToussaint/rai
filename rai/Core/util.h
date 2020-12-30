@@ -87,6 +87,7 @@ using std::make_shared;
 namespace rai {
 extern int argc;
 extern char** argv;
+extern std::string initDir;
 extern bool IOraw;  ///< stream modifier for some classes (Mem in particular)
 extern uint lineCount;
 extern int verboseLevel;

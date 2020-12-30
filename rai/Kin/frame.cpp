@@ -1354,22 +1354,28 @@ void rai::Shape::createMeshes() {
       HALT("createMeshes not possible for shape type '" <<_type <<"'");
     }
   }
+  auto func = functional(false);
+  if(func){
+    mesh().setImplicitSurfaceBySphereProjection(*func, 2.);
+  }
 }
 
-shared_ptr<ScalarFunction> rai::Shape::functional(){
+shared_ptr<ScalarFunction> rai::Shape::functional(bool worldCoordinates){
+  rai::Transformation pose = 0;
+  if(worldCoordinates) pose = frame.ensure_X();
   //create mesh for basic shapes
   switch(_type) {
     case rai::ST_none: HALT("shapes should have a type - somehow wrong initialization..."); break;
     case rai::ST_box:
-      return make_shared<DistanceFunction_ssBox>(frame.ensure_X(), size(0), size(1), size(2), 0.);
+      return make_shared<DistanceFunction_ssBox>(pose, size(0), size(1), size(2), 0.);
     case rai::ST_sphere:
-      return make_shared<DistanceFunction_Sphere>(frame.ensure_X(), radius());
+      return make_shared<DistanceFunction_Sphere>(pose, radius());
     case rai::ST_cylinder:
-      return make_shared<DistanceFunction_Cylinder>(frame.ensure_X(), size(-1), size(-2));
+      return make_shared<DistanceFunction_Cylinder>(pose, size(0), size(1));
     case rai::ST_capsule:
-      return make_shared<DistanceFunction_Capsule>(frame.ensure_X(), size(-1), size(-2));
+      return make_shared<DistanceFunction_Capsule>(pose, size(0), size(1));
     case rai::ST_ssBox: {
-      return make_shared<DistanceFunction_ssBox>(frame.ensure_X(), size(0), size(1), size(2), size(3));
+      return make_shared<DistanceFunction_ssBox>(pose, size(0), size(1), size(2), size(3));
     default:
       return shared_ptr<ScalarFunction>();
     }

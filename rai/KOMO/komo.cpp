@@ -75,6 +75,7 @@ Shape* getShape(const Configuration& K, const char* name) {
 
 KOMO::KOMO() : computeCollisions(true), verbose(1) {
   verbose = getParameter<double>("KOMO/verbose", 1);
+  animateOptimization = getParameter<double>("KOMO/animateOptimization", 0);
   solver = getParameter<rai::Enum<rai::KOMOsolver>>("KOMO/solver", KS_sparse);
 }
 
@@ -306,8 +307,8 @@ void KOMO::addSwitch_mode2(const arr& times, SkeletonSymbol newMode, const Strin
       0, 0, 0, 0, 0, 1
     });
     //sos penalty of other forces
-    o = addObjective(times, make_shared<F_NewtonEuler_DampedVelocities>(0., false), {frames(-1)}, OT_sos, {1e2}, NoArr, 1, +0, -0);
-    o->feat->scale=1e1 * arr({3, 6}, {
+    o = addObjective(times, make_shared<F_NewtonEuler_DampedVelocities>(0., false), {frames(-1)}, OT_sos, {1e0}, NoArr, 1, +1, 0);
+    o->feat->scale=1e0 * arr({3, 6}, {
       0, 0, 1, 0, 0, 0,
       0, 0, 0, 1, 0, 0,
       0, 0, 0, 0, 1, 0
@@ -527,11 +528,12 @@ void KOMO::addContact_slide(double startTime, double endTime, const char* from, 
 
   //constraints
 #if 1 //new, based on functionals
-  addObjective({startTime, endTime}, make_shared<F_fex_ForceIsNormal>(), {from, to}, OT_sos, {1e2});
-  addObjective({startTime, endTime}, make_shared<F_fex_ForceIsPositive>(), {from, to}, OT_ineq, {1e2});
+  addObjective({startTime, endTime}, make_shared<F_fex_ForceIsNormal>(), {from, to}, OT_eq, {1e1});
+  addObjective({startTime, endTime}, make_shared<F_fex_ForceIsPositive>(), {from, to}, OT_ineq, {1e1});
   addObjective({startTime, endTime}, make_shared<F_fex_POASurfaceDistance>(rai::_left), {from, to}, OT_eq, {1e1});
   addObjective({startTime, endTime}, make_shared<F_fex_POASurfaceDistance>(rai::_right), {from, to}, OT_eq, {1e1});
-  addObjective({startTime, endTime}, make_shared<F_fex_POASurfaceNormalsOppose>(), {from, to}, OT_eq, {1e1});
+//  addObjective({startTime, endTime}, make_shared<F_fex_POASurfaceNormalsOppose>(), {from, to}, OT_eq, {1e0});
+  addObjective({startTime, endTime}, FS_pairCollision_negScalar, {from, to}, OT_eq, {1e1});
 #else //old, based on PairCollision
   addObjective({startTime, endTime}, make_shared<F_fex_ForceIsNormal>(), {from, to}, OT_sos, {1e2});
   addObjective({startTime, endTime}, make_shared<F_fex_ForceIsPositive>(), {from, to}, OT_ineq, {1e2});
@@ -552,7 +554,7 @@ void KOMO::addContact_stick(double startTime, double endTime, const char* from, 
 
   //constraints
   addObjective({startTime, endTime}, make_shared<F_fex_ForceIsPositive>(), {from, to}, OT_ineq, {1e1});
-  addObjective({startTime, endTime}, make_shared<F_fex_POAisInIntersection_InEq>(), {from, to}, OT_ineq, {1e1});
+  addObjective({startTime, endTime}, make_shared<F_fex_POAContactDistances>(), {from, to}, OT_ineq, {1e1});
   addObjective({startTime, endTime}, FS_pairCollision_negScalar, {from, to}, OT_eq, {1e1});
   addObjective({startTime, endTime}, make_shared<F_fex_POAzeroRelVel>(), {from, to}, OT_eq, {1e0}, NoArr, 1, +1, +1);
 
@@ -587,7 +589,7 @@ void KOMO::addContact_staticPush(double startTime, double endTime, const char* f
 
   addObjective({startTime, endTime}, make_shared<F_fex_ForceIsNormal>(), {from, to}, OT_sos, {1e1});
   addObjective({startTime, endTime}, make_shared<F_fex_ForceIsPositive>(), {from, to}, OT_ineq, {1e2});
-  addObjective({startTime, endTime}, make_shared<F_fex_POAisInIntersection_InEq>(), {from, to}, OT_ineq, {1e1});
+  addObjective({startTime, endTime}, make_shared<F_fex_POAContactDistances>(), {from, to}, OT_ineq, {1e1});
   addObjective({startTime, endTime}, make_shared<F_fex_POAmovesContinuously>(), {from, to}, OT_sos, {1e0}, NoArr, 1, +1, +0);
   addObjective({startTime, endTime}, make_shared<F_fex_Force>(), {from, to}, OT_sos, {1e-1});
   addObjective({startTime, endTime}, make_shared<F_fex_POAzeroRelVel>(), {from, to}, OT_sos, {1e-1}, NoArr, 1, +1, +0);
@@ -602,7 +604,7 @@ void KOMO::addContact_noFriction(double startTime, double endTime, const char* f
 
   addObjective({startTime, endTime}, make_shared<F_fex_ForceIsNormal>(), {from, to}, OT_eq, {3e1});
   addObjective({startTime, endTime}, make_shared<F_fex_ForceIsPositive>(), {from, to}, OT_ineq, {1e1});
-  addObjective({startTime, endTime}, make_shared<F_fex_POAisInIntersection_InEq>(), {from, to}, OT_ineq, {1e1});
+  addObjective({startTime, endTime}, make_shared<F_fex_POAContactDistances>(), {from, to}, OT_ineq, {1e1});
   addObjective({startTime, endTime}, make_shared<F_fex_POAmovesContinuously>(), {from, to}, OT_sos, {1e0}, NoArr, 1, +1, +0);
   addObjective({startTime, endTime}, make_shared<F_fex_Force>(), {from, to}, OT_sos, {1e-4});
   addObjective({startTime, endTime}, FS_pairCollision_negScalar, {from, to}, OT_eq, {1e1});
@@ -614,7 +616,7 @@ void KOMO::addContact_elasticBounce(double time, const char* from, const char* t
 
   if(stickiness<=0.) addObjective({time}, make_shared<F_fex_ForceIsNormal>(), {from, to}, OT_eq, {1e2});
   addObjective({time}, make_shared<F_fex_ForceIsPositive>(), {from, to}, OT_ineq, {1e1});
-  addObjective({time}, make_shared<F_fex_POAisInIntersection_InEq>(), {from, to}, OT_ineq, {1e1});
+  addObjective({time}, make_shared<F_fex_POAContactDistances>(), {from, to}, OT_ineq, {1e1});
   addObjective({time}, make_shared<F_fex_Force>(), {from, to}, OT_sos, {1e-4});
   addObjective({time}, FS_pairCollision_negScalar, {from, to}, OT_eq, {1e1});
 

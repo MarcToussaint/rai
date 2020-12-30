@@ -96,6 +96,7 @@ bool IOraw=false;
 bool noLog=true;
 uint lineCount=1;
 int verboseLevel=-1;
+std::string initDir;
 
 std::chrono::system_clock::time_point startTime;
 double timerStartTime=0.;
@@ -584,6 +585,7 @@ void timerResume() {
 /// memorize the command line arguments and open a log file
 void initCmdLine(int _argc, char* _argv[]) {
   argc=_argc; argv=_argv;
+  initDir = getcwd_string();
   rai::String msg;
   msg <<"** cmd line arguments: '"; for(int i=0; i<argc; i++) msg <<argv[i] <<' ';
   msg <<"\b'";

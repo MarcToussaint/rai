@@ -10,6 +10,8 @@
 #include "qhull.h"
 #include "mesh_readAssimp.h"
 
+#include "../Optim/newton.h"
+
 #include <limits>
 
 #ifdef RAI_PLY
@@ -1842,6 +1844,29 @@ void rai::Mesh::setImplicitSurface(ScalarFunction f, double lo, double hi, uint 
   NICO
 }
 #endif
+
+void rai::Mesh::setImplicitSurfaceBySphereProjection(ScalarFunction f, double rad, uint fineness){
+  setSphere(fineness);
+  scale(rad);
+
+  ScalarFunction distSqr = [&f](arr& g, arr& H, const arr& x){
+    double d = f(g, H, x);
+    H *= 2.*d;
+    H += 2.*(g^g);
+    g *= 2.*d;
+    return d*d;
+  };
+
+  for(uint i=0;i<V.d0;i++){
+    arr x = V[i];
+    OptNewton newton(x, distSqr);
+    newton.options
+        .set_verbose(0)
+        .set_maxStep(.5*rad)
+        .set_damping(1e-10);
+    newton.run();
+  }
+}
 
 void rai::Mesh::buildGraph() {
   graph.resize(V.d0);

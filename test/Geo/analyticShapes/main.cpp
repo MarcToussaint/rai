@@ -7,32 +7,63 @@
 
 #include <Optim/newton.h>
 
-
 //===========================================================================
 
 void TEST(DistanceFunctions) {
   rai::Transformation t;
   t.setRandom();
   rai::Mesh m;
+  m.C = {.5, .5, .5, .5};
+
+  struct DrawPair : GLDrawer {
+    arr P1, P2;
+
+    void glDraw(OpenGL& gl){
+      glColor(0., 1., 0., 1.);
+      glDrawDiamond(P1(0), P1(1), P1(2), .05, .05, .05);
+
+      glColor(0., 0., 1., 1.);
+      glDrawDiamond(P2(0), P2(1), P2(2), .05, .05, .05);
+
+      glColor(1., 0., 0., 1.);
+      glLineWidth(2.f);
+      glDrawProxy(P1, P2, .02);
+      glLineWidth(1.f);
+      glLoadIdentity();
+    }
+  } pairDrawer;
+
   OpenGL gl;
   gl.add(glStandardScene,nullptr);
+  gl.add(pairDrawer);
   gl.add(m);
 
   rai::Array<shared_ptr<ScalarFunction>> fcts = {
     make_shared<DistanceFunction_Sphere>(t, 1.),
     make_shared<DistanceFunction_ssBox>(t, 1., 2., 3., 1.),
-    make_shared<DistanceFunction_Cylinder>(t, 1., 2.),
-    make_shared<DistanceFunction_Capsule>(t, 1., 2.)
+    make_shared<DistanceFunction_Cylinder>(t, 2., 1.),
+    make_shared<DistanceFunction_Capsule>(t, 2., 1.)
   };
 
   for(shared_ptr<ScalarFunction>& f: fcts){
+    m.setImplicitSurfaceBySphereProjection(*f, 3.);
+
     //-- check hessian and gradient
     for(uint i=0;i<100;i++){
       arr x(3);
-      rndUniform(x, -5., 5.);
+      rndUniform(x, -1., 1.);
       bool suc=true;
       suc &= checkGradient(*f, x, 1e-6);
       suc &= checkHessian(*f, x, 1e-6);
+
+      {
+        arr g;
+        double d = (*f)(g, NoArr, x);
+        pairDrawer.P1 = x;
+        pairDrawer.P2 = x-d*g;
+        gl.update(0, true);
+      }
+
       if(!suc){
         arr g,H;
         (*f)(g,H,x); //set breakpoint here;
@@ -41,7 +72,6 @@ void TEST(DistanceFunctions) {
     }
 
     //-- display
-    m.setImplicitSurface(*f,-10.,10.,100);
     gl.watch();
   }
 }
@@ -126,57 +156,30 @@ void TEST(SimpleImplicitSurfaces) {
 //===========================================================================
 
 void projectToSurface(){
-
-
   rai::Transformation pose;
   pose.setRandom();
 
   rai::Array<shared_ptr<ScalarFunction>> fcts = {
     make_shared<DistanceFunction_Sphere>(pose, 1.),
-    make_shared<DistanceFunction_ssBox>(pose, 1., 2., 3., 1.),
-    make_shared<DistanceFunction_Cylinder>(pose, 1., 2.),
-    make_shared<DistanceFunction_Capsule>(pose, 1., 2.)
+    make_shared<DistanceFunction_ssBox>(pose, 1., 2., 3., .2),
+    make_shared<DistanceFunction_Cylinder>(pose, 2., .2),
+    make_shared<DistanceFunction_Capsule>(pose, 2., .2)
   };
-
-
-  ScalarFunction f = [&fcts](arr& g, arr& H, const arr& x){
-    double d = (*fcts(1))(g, H, x);
-    H *= 2.*d;
-    H += 2.*(g^g);
-    g *= 2.*d;
-    return d*d;
-  };
-
-  arr X = randn(1000,3);
-  for(uint i=0;i<X.d0;i++) X[i] *= 10./length(X[i]);
-
-  for(uint i=0;i<X.d0;i++){
-    cout <<i <<'-' <<flush;
-    arr x = X[i];
-    //    cout <<"initial x: " <<x <<" f(x): " <<(*fcts(0))(NoArr, NoArr, x) <<endl;
-    OptNewton newton(x, f);
-    newton.options
-        .set_verbose(0)
-        .set_maxStep(10.)
-        .set_damping(1e-10);
-    newton.run();
-    //  cout <<"final x: " <<x <<" f(x): " <<(*fcts(0))(NoArr, NoArr, x) <<endl;
-  }
-  cout <<endl;
 
   rai::Mesh m;
-  m.V=X;
-  m.makeConvexHull();
-
   OpenGL gl;
   gl.drawOptions.drawWires=true;
   gl.add(glStandardScene,nullptr);
   gl.add(m);
-  gl.watch();
 
+  for(shared_ptr<ScalarFunction>& fct:fcts){
 
+    m.setImplicitSurfaceBySphereProjection(*fct, 10., 3);
 
+    gl.watch();
+  }
 }
+
 //===========================================================================
 
 int MAIN(int argc, char** argv){

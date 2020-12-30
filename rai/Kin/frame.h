@@ -274,7 +274,7 @@ struct Shape : NonCopyable, GLDrawer {
   double alpha() { arr& C=mesh().C; if(C.N==4) return C(3); return 1.; }
 
   void createMeshes();
-  shared_ptr<ScalarFunction> functional();
+  shared_ptr<ScalarFunction> functional(bool worldCoordinates=true);
 
   Shape(Frame& f, const Shape* copyShape=nullptr); //new Shape, being added to graph and frame's shape lists
   virtual ~Shape();

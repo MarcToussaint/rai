@@ -75,7 +75,7 @@ void testFeature() {
   F.append(make_shared<F_fex_ForceIsNormal>()) ->setFrameIDs({"obj1", "obj2"}, C);
   F.append(make_shared<F_fex_ForceIsPositive>()) ->setFrameIDs({"obj1", "obj2"}, C);
   F.append(make_shared<F_fex_POAzeroRelVel>()) ->setFrameIDs({"obj1", "obj2"}, C);
-  F.append(make_shared<F_fex_POAisInIntersection_InEq>()) ->setFrameIDs({"obj1", "obj2"}, C);
+  F.append(make_shared<F_fex_POAContactDistances>()) ->setFrameIDs({"obj1", "obj2"}, C);
   F.append(make_shared<F_fex_POASurfaceDistance>(rai::_left)) ->setFrameIDs({"obj1", "obj2"}, C);
   F.append(make_shared<F_fex_POASurfaceDistance>(rai::_right)) ->setFrameIDs({"obj1", "obj2"}, C);
   F.append(make_shared<F_fex_POASurfaceNormal>(rai::_left)) ->setFrameIDs({"obj1", "obj2"}, C);

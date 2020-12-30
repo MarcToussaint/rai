@@ -641,7 +641,7 @@ void F_fex_POASurfaceAvgNormal::phi2(arr& y, arr& J, const FrameL& F) {
   if(!!J) J = 0.5*(n2.J - n1.J);
 }
 
-void F_fex_POAisInIntersection_InEq::phi2(arr& y, arr& J, const FrameL& F) {
+void F_fex_POAContactDistances::phi2(arr& y, arr& J, const FrameL& F) {
   if(order>0){  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
   rai::Frame *f1 = F.elem(0);
@@ -679,7 +679,6 @@ void F_fex_POAisInIntersection_InEq::phi2(arr& y, arr& J, const FrameL& F) {
   y.setBlockVector(y1, y2);
   J.setBlockMatrix(J1, J2);
 
-  if(margin) y -= margin;
   if(!!J) checkNan(J);
 }
 

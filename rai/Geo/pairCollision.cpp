@@ -107,7 +107,7 @@ PairCollision::PairCollision(ScalarFunction func1, ScalarFunction func2, const a
   double d1 = func1(g1, NoArr, x);
   double d2 = func2(g2, NoArr, x);
 
-  cout <<"d1^2+d2^2:" <<newton.fx <<" d1:" <<d1 <<" d2:" <<d2 <<endl;
+//  cout <<"d1^2+d2^2:" <<newton.fx <<" d1:" <<d1 <<" d2:" <<d2 <<endl;
 
   g1 /= length(g1);
   g2 /= length(g2);

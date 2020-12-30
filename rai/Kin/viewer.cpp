@@ -142,8 +142,8 @@ bool rai::ConfigurationViewer::playVideo(uint T, uint nFrames, bool watch, doubl
 
   CHECK_GE(C.frames.N, T*nFrames, "");
 
-  FrameL F = C.frames;
-  F.resizeCopy(T, nFrames);
+  FrameL F = C.frames({0,T*nFrames-1});
+  F.reshape(T, nFrames);
 
   for(uint t=0; t<F.d0; t++) {
     {
