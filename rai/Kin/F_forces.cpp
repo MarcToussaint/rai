@@ -119,22 +119,22 @@ void POA_rel_vel(arr& y, arr& J, const FrameL& F, rai::ForceExchange* ex, bool a
 void POA_vel(arr& y, arr& J, const FrameL& F, rai::ForceExchange* ex, bool b_or_a) {
   CHECK_GE(F.d0, 2, "");
   CHECK_GE(F.d1, 2, "");
-  CHECK_EQ(F(-2,0), &ex->a, "");
-  CHECK_EQ(F(-2,1), &ex->b, "");
+  CHECK_EQ(F(1,0), &ex->a, "");
+  CHECK_EQ(F(1,1), &ex->b, "");
 
   FrameL ff = {F(0,0), F(1,0)};
   if(b_or_a) ff = {F(0,1), F(1,1)};
 
   //POA
-  arr cp, Jcp;
-  ex->kinPOA(cp, Jcp);
+  arr poa, Jpoa;
+  ex->kinPOA(poa, Jpoa);
 
   Value p = F_Position() .eval({ff(1)});
   Value v = F_LinVel() .eval(ff);
   Value w = F_AngVel() .eval(ff);
 
-  y = v.y - crossProduct(w.y, cp - p.y);
-  if(!!J) J = v.J - skew(w.y) * (Jcp - p.J) + skew(cp-p.y) * w.J;
+  y = v.y - crossProduct(w.y, poa - p.y);
+  if(!!J) J = v.J - skew(w.y) * (Jpoa - p.J) + skew(poa-p.y) * w.J;
 }
 
 void shapeFunction(double& x, double& dx);
@@ -732,7 +732,7 @@ void F_fex_NormalForceEqualsNormalPOAmotion::phi2(arr& y, arr& J, const FrameL& 
 
 void F_fex_POAzeroRelVel::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_EQ(order, 1, "");
-  rai::ForceExchange* ex = getContact(F(0,0), F(0,1));
+  rai::ForceExchange* ex = getContact(F(1,0), F(1,1));
 #if 0
   POA_rel_vel(y, J, Ktuple, con, true);
 #else

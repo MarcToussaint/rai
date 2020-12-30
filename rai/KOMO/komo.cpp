@@ -266,7 +266,11 @@ void KOMO::addSwitch_mode2(const arr& times, SkeletonSymbol newMode, const Strin
       //  the kinematic chain for frames(1) -- when frames(1) is a normal object, this should be just frames(1) itself
       rai::Frame *toBePicked = world[frames(1)];
       rai::Frame *rootOfPicked = toBePicked->getUpwardLink(NoTransformation, true);
-      addObjective({times(0)}, FS_pose, {rootOfPicked->name}, OT_eq, {1e2}, NoArr, 1, 0, 0);
+      if(stepsPerPhase>3){
+        addObjective({times(0)}, FS_pose, {rootOfPicked->name}, OT_eq, {1e2}, NoArr, 1, 0, +1);
+      }else{
+        addObjective({times(0)}, FS_pose, {rootOfPicked->name}, OT_eq, {1e2}, NoArr, 1, 0, 0);
+      }
     }
 //    if(k_order>1) addObjective({times(0)}, make_shared<F_LinAngVel>(), {frames(-1)}, OT_eq, {1e0}, NoArr, 2, +1, +1);
 
@@ -280,11 +284,14 @@ void KOMO::addSwitch_mode2(const arr& times, SkeletonSymbol newMode, const Strin
     addSwitch(times, true, JT_free, SWInit_copy, world.frames.first()->name, frames(-1));
     //new contacts don't exist in step [-1], so we rather impose only zero acceleration at [-2,-1,0]
     if(firstSwitch){
-//      addObjective({times(0)}, FS_pose, {frames(-1)}, OT_eq, {1e0}, NoArr, 2, +0, +0);
-      addObjective({times(0)}, FS_pose, {frames(-1)}, OT_eq, {1e2}, NoArr, 1, 0, 0);
+      if(stepsPerPhase>3){
+        addObjective({times(0)}, FS_pose, {frames(-1)}, OT_eq, {1e2}, NoArr, 1, 0, +1); //overlaps with Newton-Euler -> requires forces!
+      }else{
+        addObjective({times(0)}, FS_pose, {frames(-1)}, OT_eq, {1e2}, NoArr, 1, 0, 0);
+      }
     }
     if(k_order>1){
-      //... and physics starting from [-1,0,+1], ... until [-3,-2,-1]
+      //... and physics starting from [-1,0,+1], ... until [-2,-1,-0]
       addObjective(times, make_shared<F_NewtonEuler>(), {frames(-1)}, OT_eq, {1e2}, NoArr, 2, +1, 0);
     }
   } else if(newMode==SY_quasiStaticOn) {
@@ -553,10 +560,18 @@ void KOMO::addContact_stick(double startTime, double endTime, const char* from, 
   if(endTime>0.) addSwitch({endTime}, false, new rai::KinematicSwitch(rai::SW_delContact, rai::JT_none, from, to, world));
 
   //constraints
+#if 1 //new, based on functionals
+  addObjective({startTime, endTime}, make_shared<F_fex_ForceIsPositive>(), {from, to}, OT_ineq, {1e1});
+  addObjective({startTime, endTime}, make_shared<F_fex_POASurfaceDistance>(rai::_left), {from, to}, OT_eq, {1e1});
+  addObjective({startTime, endTime}, make_shared<F_fex_POASurfaceDistance>(rai::_right), {from, to}, OT_eq, {1e1});
+  addObjective({startTime, endTime}, FS_pairCollision_negScalar, {from, to}, OT_eq, {1e1});
+  addObjective({startTime, endTime}, make_shared<F_fex_POAzeroRelVel>(), {from, to}, OT_eq, {3e0}, NoArr, 1, 0, 0);
+#else
   addObjective({startTime, endTime}, make_shared<F_fex_ForceIsPositive>(), {from, to}, OT_ineq, {1e1});
   addObjective({startTime, endTime}, make_shared<F_fex_POAContactDistances>(), {from, to}, OT_ineq, {1e1});
   addObjective({startTime, endTime}, FS_pairCollision_negScalar, {from, to}, OT_eq, {1e1});
   addObjective({startTime, endTime}, make_shared<F_fex_POAzeroRelVel>(), {from, to}, OT_eq, {1e0}, NoArr, 1, +1, +1);
+#endif
 
   //regularization
 //  addObjective({startTime, endTime}, make_shared<TM_Contact_Force>(world, from, to), OT_sos, {1e-2}, NoArr, 2, +2, 0);
@@ -1930,7 +1945,7 @@ void KOMO::checkGradients() {
 
 int KOMO::view(bool pause, const char* txt){ pathConfig.gl()->recopyMeshes(pathConfig); return pathConfig.watch(pause, txt); }
 
-int KOMO::view_play(bool pause, double delay){ pathConfig.gl()->recopyMeshes(pathConfig); return pathConfig.gl()->playVideo(timeSlices.d0, timeSlices.d1, pause, delay*tau*T); }
+int KOMO::view_play(bool pause, double delay, const char* saveVideoPath){ pathConfig.gl()->recopyMeshes(pathConfig); return pathConfig.gl()->playVideo(timeSlices.d0, timeSlices.d1, pause, delay*tau*T, saveVideoPath); }
 
 void KOMO::plotTrajectory() {
   ofstream fil("z.trajectories");
