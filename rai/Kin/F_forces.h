@@ -36,10 +36,10 @@ struct F_HingeXTorque : Feature {
   uint dim_phi2(const FrameL& F){ return 1; }
 };
 
-struct F_ObjectTotalForce : Feature {
+struct F_TotalForce : Feature {
   double gravity=9.81;
   bool transOnly=false;
-  F_ObjectTotalForce(bool _transOnly=false, bool _zeroGravity=false);
+  F_TotalForce(bool _transOnly=false, bool _zeroGravity=false);
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& C){ if(transOnly) return 3;  return 6; }
 };
@@ -48,7 +48,8 @@ struct F_ObjectTotalForce : Feature {
 // dynamics
 
 struct F_NewtonEuler : Feature {
-  F_NewtonEuler(bool _transOnly=false) { order=2; }
+  double gravity=9.81;
+  F_NewtonEuler();
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F) { return 6; }
 };

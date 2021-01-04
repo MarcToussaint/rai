@@ -137,8 +137,8 @@ void KOMO::deactivateCollisions(const char* s1, const char* s2) {
 void KOMO::addTimeOptimization() {
   world.addTauJoint();
   rai::Frame *timeF = world.frames.first();
-#if 0 //break the constraint at phase switches:
-  ptr<Objective> o = addObjective({}, make_shared<TM_Time>(), {timeF->name}, OT_sos, {1e2}, {}, 1); //smooth time evolution
+#if 0 //break the constraint at phase switches: EMPIRICAL EQUIVALENT TO BELOW (passive_ballBounce TEST)
+  ptr<Objective> o = addObjective({}, make_shared<F_qTime>(), {timeF->name}, OT_sos, {1e2}, {}, 1); //smooth time evolution
   if(o->configs.nd==1) { //for KOMO optimization
     CHECK(o->configs.nd==1 && o->configs.N==T, "");
     CHECK_GE(stepsPerPhase, 10, "NIY");
@@ -149,7 +149,7 @@ void KOMO::addTimeOptimization() {
     for(uint t=o->configs.d0; t--;) if(o->configs(t, 0)%stepsPerPhase==0) o->configs.delRows(t);
   }
 #else
-  addObjective({0.,0.}, make_shared<F_qTime>(), {timeF->name}, OT_sos, {1e2}, {}, 1, 0, +1); //smooth time evolution
+  addObjective({0.}, make_shared<F_qTime>(), {timeF->name}, OT_sos, {1e2}, {}, 1, 0, +1); //smooth time evolution
   for(uint t=0; t<T/stepsPerPhase; t++){
     addObjective({double(t), double(t+1)}, make_shared<F_qTime>(), {timeF->name}, OT_sos, {1e2}, {}, 1, +3, +1); //smooth time evolution
   }
@@ -535,18 +535,15 @@ void KOMO::addContact_slide(double startTime, double endTime, const char* from, 
 
   //constraints
 #if 1 //new, based on functionals
-  addObjective({startTime, endTime}, make_shared<F_fex_ForceIsNormal>(), {from, to}, OT_eq, {1e1});
-  addObjective({startTime, endTime}, make_shared<F_fex_ForceIsPositive>(), {from, to}, OT_ineq, {1e1});
   addObjective({startTime, endTime}, make_shared<F_fex_POASurfaceDistance>(rai::_left), {from, to}, OT_eq, {1e1});
   addObjective({startTime, endTime}, make_shared<F_fex_POASurfaceDistance>(rai::_right), {from, to}, OT_eq, {1e1});
 //  addObjective({startTime, endTime}, make_shared<F_fex_POASurfaceNormalsOppose>(), {from, to}, OT_eq, {1e0});
-  addObjective({startTime, endTime}, FS_pairCollision_negScalar, {from, to}, OT_eq, {1e1});
 #else //old, based on PairCollision
-  addObjective({startTime, endTime}, make_shared<F_fex_ForceIsNormal>(), {from, to}, OT_sos, {1e2});
-  addObjective({startTime, endTime}, make_shared<F_fex_ForceIsPositive>(), {from, to}, OT_ineq, {1e2});
   addObjective({startTime, endTime}, make_shared<F_fex_POAisInIntersection_InEq>(), {from, to}, OT_ineq, {1e1});
-  addObjective({startTime, endTime}, FS_pairCollision_negScalar, {from, to}, OT_eq, {1e1});
 #endif
+  addObjective({startTime, endTime}, FS_pairCollision_negScalar, {from, to}, OT_eq, {1e1});
+  addObjective({startTime, endTime}, make_shared<F_fex_ForceIsNormal>(), {from, to}, OT_eq, {1e1});
+  addObjective({startTime, endTime}, make_shared<F_fex_ForceIsPositive>(), {from, to}, OT_ineq, {1e1});
 
   //regularization
   addObjective({startTime, endTime}, make_shared<F_fex_Force>(), {from, to}, OT_sos, {1e-2}, NoArr, k_order, +2, 0);
@@ -561,17 +558,14 @@ void KOMO::addContact_stick(double startTime, double endTime, const char* from, 
 
   //constraints
 #if 1 //new, based on functionals
-  addObjective({startTime, endTime}, make_shared<F_fex_ForceIsPositive>(), {from, to}, OT_ineq, {1e1});
   addObjective({startTime, endTime}, make_shared<F_fex_POASurfaceDistance>(rai::_left), {from, to}, OT_eq, {1e1});
   addObjective({startTime, endTime}, make_shared<F_fex_POASurfaceDistance>(rai::_right), {from, to}, OT_eq, {1e1});
-  addObjective({startTime, endTime}, FS_pairCollision_negScalar, {from, to}, OT_eq, {1e1});
-  addObjective({startTime, endTime}, make_shared<F_fex_POAzeroRelVel>(), {from, to}, OT_eq, {3e0}, NoArr, 1, 0, 0);
 #else
-  addObjective({startTime, endTime}, make_shared<F_fex_ForceIsPositive>(), {from, to}, OT_ineq, {1e1});
   addObjective({startTime, endTime}, make_shared<F_fex_POAContactDistances>(), {from, to}, OT_ineq, {1e1});
-  addObjective({startTime, endTime}, FS_pairCollision_negScalar, {from, to}, OT_eq, {1e1});
-  addObjective({startTime, endTime}, make_shared<F_fex_POAzeroRelVel>(), {from, to}, OT_eq, {1e0}, NoArr, 1, +1, +1);
 #endif
+  addObjective({startTime, endTime}, FS_pairCollision_negScalar, {from, to}, OT_eq, {1e1});
+  addObjective({startTime, endTime}, make_shared<F_fex_ForceIsPositive>(), {from, to}, OT_ineq, {1e1});
+  addObjective({startTime, endTime}, make_shared<F_fex_POAzeroRelVel>(), {from, to}, OT_eq, {1e0}, NoArr, 1, +1, +1);
 
   //regularization
 //  addObjective({startTime, endTime}, make_shared<TM_Contact_Force>(world, from, to), OT_sos, {1e-2}, NoArr, 2, +2, 0);
@@ -629,17 +623,24 @@ void KOMO::addContact_elasticBounce(double time, const char* from, const char* t
   addSwitch({time}, true,  new rai::KinematicSwitch(rai::SW_addContact, rai::JT_none, from, to, world));
   addSwitch({time}, false, new rai::KinematicSwitch(rai::SW_delContact, rai::JT_none, from, to, world));
 
-  if(stickiness<=0.) addObjective({time}, make_shared<F_fex_ForceIsNormal>(), {from, to}, OT_eq, {1e2});
-  addObjective({time}, make_shared<F_fex_ForceIsPositive>(), {from, to}, OT_ineq, {1e1});
+  //constraints
+#if 1 //new, based on functionals
+  addObjective({time}, make_shared<F_fex_POASurfaceDistance>(rai::_left), {from, to}, OT_eq, {1e1});
+  addObjective({time}, make_shared<F_fex_POASurfaceDistance>(rai::_right), {from, to}, OT_eq, {1e1});
+#else
   addObjective({time}, make_shared<F_fex_POAContactDistances>(), {from, to}, OT_ineq, {1e1});
-  addObjective({time}, make_shared<F_fex_Force>(), {from, to}, OT_sos, {1e-4});
+#endif
   addObjective({time}, FS_pairCollision_negScalar, {from, to}, OT_eq, {1e1});
-
+  if(stickiness<=0.) addObjective({time}, make_shared<F_fex_ForceIsNormal>(), {from, to}, OT_eq, {1e1});
+  addObjective({time}, make_shared<F_fex_ForceIsPositive>(), {from, to}, OT_ineq, {1e1});
   if(!elasticity && stickiness>=1.) {
     addObjective({time}, make_shared<F_fex_POAzeroRelVel>(), {from, to}, OT_eq, {1e1}, NoArr, 2, +1, +1);
   } else {
     addObjective({time}, make_shared<F_fex_ElasticVel>(elasticity, stickiness), {from, to}, OT_eq, {1e1}, NoArr, 2, +1, +1);
   }
+
+  //regularization
+  addObjective({time}, make_shared<F_fex_Force>(), {from, to}, OT_sos, {1e-4});
 }
 
 void KOMO_ext::setKS_slider(double time, double endTime, bool before, const char* obj, const char* slider, const char* table) {

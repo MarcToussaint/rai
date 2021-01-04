@@ -186,7 +186,7 @@ void F_HingeXTorque::phi2(arr& y, arr& J, const FrameL& F){
   if(!!J) J = ~y2 * axis.J + ~axis.y * J2;
 }
 
-F_ObjectTotalForce::F_ObjectTotalForce(bool _transOnly, bool _zeroGravity) : transOnly(_transOnly) {
+F_TotalForce::F_TotalForce(bool _transOnly, bool _zeroGravity) : transOnly(_transOnly) {
   order=0;
   if(_zeroGravity) {
     gravity = 0.;
@@ -195,7 +195,7 @@ F_ObjectTotalForce::F_ObjectTotalForce(bool _transOnly, bool _zeroGravity) : tra
   }
 }
 
-void F_ObjectTotalForce::phi2(arr& y, arr& J, const FrameL& F) {
+void F_TotalForce::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_EQ(order, 0, "");
 
   rai::Frame* a = F.scalar();
@@ -220,31 +220,12 @@ void F_ObjectTotalForce::phi2(arr& y, arr& J, const FrameL& F) {
     for(rai::ForceExchange* ex:f->forces) {
       contacts.append(ex);
       signs.append(ex->sign(f));
-//      auto con = dynamic_cast<rai::ForceExchange_Wrench*>(ex);
-//      if(con){
-//        CHECK(&con->a==f || &con->b==f, "");
-//        contacts.append(con);
-//        signs.append((&con->a==f ? +1. : -1.));
-//      }else{
-//        auto tor = dynamic_cast<rai::ForceExchange_JointTorque*>(ex);
-//        if(tor){
-//          contacts.append(tor);
-//          signs.append((tor->j.frame==f) ? +1. : -1.);
-//        }else NIY;
-//      }
     }
   }
 
-#if 0
-  for(rai::ForceExchange* con:a->forces) {
-    double sign = +1.;
-    CHECK(&con->a==a || &con->b==a, "");
-    if(&con->b==a) sign=-1.;
-#else
   for(uint i=0; i<contacts.N; i++) {
     rai::ForceExchange* con = contacts(i);
     double sign = signs(i);
-#endif
 
     //get the force
     arr f, Jf;
@@ -285,65 +266,27 @@ void F_ObjectTotalForce::phi2(arr& y, arr& J, const FrameL& F) {
 
 //===========================================================================
 
+F_NewtonEuler::F_NewtonEuler() {
+  order=2;
+  gravity = rai::getParameter<double>("gravity", 9.81);
+}
+
 void F_NewtonEuler::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_EQ(order, 2, "");
   CHECK_EQ(F.d0, 3, "");
   CHECK_EQ(F.d1, 1, "");
 
-//  if((a->flags & (1<<FL_impulseExchange))){
-//    y.resize(3).setZero();
-//    if(!!J) J.resize(3, getKtupleDim(Ktuple).last()).setZero();
-//    return;
-//  }
-
-  //get linear and angular accelerations
+  //-- get linear and angular accelerations - ACTUALLY CHANGE OF VELOCITY!! (~IMPULSE)
   Value acc = F_LinAngVel()
               .setImpulseInsteadOfAcceleration()
               .setOrder(2)
               .eval(F);
 
-  //add gravity
-#if 0
-  rai::Frame *r = F.elem(-1)->getRoot();
-  if(r->C.hasTauJoint(r)) {
-    double tau; arr Jtau;
-    r->C.kinematicsTau(tau, Jtau, r);
-    y(2) += gravity*tau;
-    if(!!J){
-      if(!J.isSparse()) J[2] += gravity*Jtau;
-      else J.setMatrixBlock(gravity*Jtau, 2, 0);
-    }
-  } else {
-    y(2) += gravity * r->C.frames.first()->tau;
-  }
 
-  //collect mass info (assume diagonal inertia matrix!!)
+  //-- collect mass info (assume diagonal inertia matrix!!)
   double mass=1.;
   arr Imatrix = diag(.1, 3);
-  if(a->inertia) {
-    mass = a->inertia->mass;
-    Imatrix = 2.*conv_mat2arr(a->inertia->matrix);
-    //      rai::Quaternion &rot = f->X.rot;
-    //      I=(rot).getMatrix() * f->inertia->matrix * (-rot).getMatrix();
-  }
-  arr one_over_mass(6);
-  for(uint i=0; i<3; i++) one_over_mass(i) = 1./mass;
-  for(uint i=0; i<3; i++) one_over_mass(i+3) = 1./Imatrix(i, i);
-  double forceScaling = 1e1;
-  one_over_mass *= forceScaling;
-
-  //collect total contact forces
-  Value fo = F_ObjectTotalForce(false, true)
-             .eval({a}); // ! THIS IS THE MID TIME SLICE !
-
-  y += one_over_mass % fo.y;
-  if(!!J) J += one_over_mass % fo.J;
-#else
   rai::Frame* a = F.elem(-2);
-
-  //-- multiply acc with masses
-  double mass=1.;
-  arr Imatrix = diag(.1, 3);
   if(a->inertia) {
     mass = a->inertia->mass;
     Imatrix = conv_mat2arr(a->inertia->matrix);
@@ -351,15 +294,39 @@ void F_NewtonEuler::phi2(arr& y, arr& J, const FrameL& F) {
   arr mass_diag(6);
   for(uint i=0; i<3; i++) mass_diag(i) = mass;
   for(uint i=0; i<3; i++) mass_diag(i+3) = Imatrix(i, i);
-//  mass_diag *= .1;
 
-  //-- add static and exchange forces
-  Value fo = F_ObjectTotalForce(false, false)
+#if 1
+  //-- collect total contact forces
+  Value fo = F_TotalForce(false, true) // ignore gravity
              .eval({a}); // ! THIS IS THE MID TIME SLICE !
 
-  y = mass_diag % acc.y + fo.y;
+  //-- add gravity to accelerations - ACTUALLY TO CHANGE OF VELOCITY -> MULTIPLY WITH TAU! (this is where tau optimization has effect!)
+  rai::Frame *r = F.elem(-1)->getRoot();
+  if(r->C.hasTauJoint(r)) {
+    double tau; arr Jtau;
+    r->C.kinematicsTau(tau, Jtau, r);
+    acc.y(2) += gravity*tau;
+    if(!acc.J.isSparse()) acc.J[2] += gravity*Jtau;
+    else acc.J.setMatrixBlock(gravity*Jtau, 2, 0);
+  } else {
+    acc.y(2) += gravity * r->C.frames.first()->tau;
+  }
+#else
+  //-- add static and exchange forces
+  Value fo = F_TotalForce(false, false)
+             .eval({a}); // ! THIS IS THE MID TIME SLICE !
+#endif
+
+#if 0
+  arr one_over_mass = ones(6);
+  one_over_mass /= mass_diag;
+  y = acc.y + one_over_mass % fo.y;
+  if(!!J) J = acc.J + one_over_mass % fo.J;
+#else
+  y = mass_diag % acc.y + fo.y; //THIS IS ACTUALLY AN IMPULSE EQUATION: COLLECTED FORCES fo.y ARE INTERPRETED AS IMPULSE (and that's why gravity should not be mixed in)
   if(!!J) J = mass_diag % acc.J + fo.J;
 #endif
+
 }
 
 //===========================================================================
@@ -407,7 +374,7 @@ void F_NewtonEuler_DampedVelocities::phi2(arr& y, arr& J, const FrameL& F) {
   one_over_mass *= forceScaling;
 
   //collect total contact forces
-  Value fo = F_ObjectTotalForce(false, true)
+  Value fo = F_TotalForce(false, true)
              .eval({a});
 
   y += one_over_mass % fo.y;
