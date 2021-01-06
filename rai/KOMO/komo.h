@@ -79,6 +79,7 @@ enum SkeletonSymbol {
   SY_alignByInt,
 
   SY_makeFree,
+  SY_forceBalance,
 
 };
 

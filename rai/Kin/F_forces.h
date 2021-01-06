@@ -38,32 +38,35 @@ struct F_HingeXTorque : Feature {
 
 struct F_TotalForce : Feature {
   double gravity=9.81;
-  bool transOnly=false;
-  F_TotalForce(bool _transOnly=false, bool _zeroGravity=false);
+  F_TotalForce(bool _zeroGravity=false);
   virtual void phi2(arr& y, arr& J, const FrameL& F);
-  virtual uint dim_phi2(const FrameL& C){ if(transOnly) return 3;  return 6; }
+  virtual uint dim_phi2(const FrameL& C){ return 6; }
 };
 
 //===========================================================================
 // dynamics
 
-struct F_NewtonEuler : Feature {
+struct F_GravityAcceleration : Feature {
   double gravity=9.81;
-  F_NewtonEuler();
+  bool impulseInsteadOfAcceleration=false;
+  F_GravityAcceleration() {
+    gravity = rai::getParameter<double>("gravity", 9.81);
+  }
+  Feature& setImpulseInsteadOfAcceleration(){ impulseInsteadOfAcceleration=true; return *this; }
+  virtual void phi2(arr& y, arr& J, const FrameL& F);
+  virtual uint dim_phi2(const FrameL& F){ return 6; }
+};
+
+struct F_NewtonEuler : Feature {
+  F_NewtonEuler() { order = 2; }
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F) { return 6; }
 };
 
 struct F_NewtonEuler_DampedVelocities : Feature {
-  double gravity=9.81;
-  bool onlyXYPhi=false;
-  F_NewtonEuler_DampedVelocities(double _gravity=-1., bool _onlyXYPhi=false) : onlyXYPhi(_onlyXYPhi) {
+  bool useGravity=false;
+  F_NewtonEuler_DampedVelocities(bool _useGravity = false) : useGravity(_useGravity) {
     order = 1;
-    if(_gravity>=0.) {
-      gravity = _gravity;
-    } else {
-      gravity = rai::getParameter<double>("gravity", 9.81);
-    }
   }
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F) { return 6; }

@@ -2,7 +2,6 @@
 #include <Optim/solver.h>
 
 void TEST(KOMO_IK) {
-
   OptBench_InvKin_Endeff nlp("../../KOMO/switches/model2.g", true);
 
   NLP_Solver S;

@@ -39,7 +39,7 @@ target3 (table) {
 #    shape:marker, size:[.03], color:[.9 .9 .5] }
 
 Include: '../../../../rai-robotModels/scenarios/simpleArm.g'
-(table base){ joint:rigid, Q:<t(-.5 -.5 .1) d(90 0 0 1)> }
+(table base){ joint:rigid, Q:<t(-.5 -.5 .1) d(-90 0 0 1)> }
 gripper (endeff) { shape:marker, size:[.03], color:[.9 .9 .5] }
 
 Include: '../../../../rai-robotModels/scenarios/walker.g'
