@@ -2661,7 +2661,13 @@ void KOMO::Conv_KOMO_SparseNonfactored::getFHessian(arr& H, const arr& x) {
 void KOMO::Conv_KOMO_SparseNonfactored::report(std::ostream& os, int verbose) {
   komo.reportProblem(os);
   if(verbose>1) os <<komo.getReport(verbose>2);
-  if(verbose>3) komo.pathConfig.watch();
+  if(verbose>3) komo.view(true, "Conv_KOMO_SparseNonfactored - report");
+  if(verbose>4) komo.view_play(true);
+  if(verbose>5){
+    rai::system("mkdir -p z.vid");
+    komo.view_play(false, .1, "z.vid/");
+    if(verbose>3) komo.view(true, "Conv_KOMO_SparseNonfactored - video saved in z.vid/");
+  }
 }
 
 void KOMO::Conv_KOMO_SparseNonfactored::getDimPhi() {
@@ -3434,3 +3440,11 @@ void writeSkeleton(ostream& os, const Skeleton& S, const intA& switches) {
   }
 }
 
+double getMaxPhaseFromSkeleton(const Skeleton& S){
+  double maxPhase=0;
+  for(const SkeletonEntry& s:S){
+    if(s.phase0>maxPhase) maxPhase=s.phase0;
+    if(s.phase1>maxPhase) maxPhase=s.phase1;
+  }
+  return maxPhase;
+}

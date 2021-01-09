@@ -36,6 +36,8 @@ arr MathematicalProgram::getInitializationSample(const arr& previousOptima) {
   return blo + rand(n) % (bup - blo);
 }
 
+//===========================================================================
+
 void MathematicalProgram_Factored::evaluate(arr& phi, arr& J, const arr& x) {
   uintA variableDimensions; //the size of each variable block
   uintA featureDimensions;  //the size of each feature block
@@ -83,6 +85,8 @@ void MathematicalProgram_Factored::evaluate(arr& phi, arr& J, const arr& x) {
   CHECK_EQ(n, phi.N, "");
 }
 
+//===========================================================================
+
 Conv_FactoredNLP_BandedNLP::Conv_FactoredNLP_BandedNLP(MathematicalProgram_Factored& P, uint _maxBandSize, bool _sparseNotBanded)
   : P(P), maxBandSize(_maxBandSize), sparseNotBanded(_sparseNotBanded) {
   P.getFactorization(variableDimensions, //the size of each variable block
@@ -92,6 +96,8 @@ Conv_FactoredNLP_BandedNLP::Conv_FactoredNLP_BandedNLP(MathematicalProgram_Facto
   varDimIntegral = integral(variableDimensions).prepend(0);
   featDimIntegral = integral(featureDimensions).prepend(0);
 }
+
+//===========================================================================
 
 void Conv_FactoredNLP_BandedNLP::evaluate(arr& phi, arr& J, const arr& x) {
   CHECK_EQ(x.N, varDimIntegral.last(), "");
@@ -217,3 +223,12 @@ void Conv_FactoredNLP_BandedNLP::evaluate(arr& phi, arr& J, const arr& x) {
   P.report();
 }
 
+//===========================================================================
+
+void MathematicalProgram_Traced::evaluate(arr& phi, arr& J, const arr& x) {
+  P.evaluate(phi, J, x);
+  if(trace_x){ xTrace.append(x); xTrace.reshape(-1, x.N); }
+  if(trace_costs){ if(!featureTypes.N) P.getFeatureTypes(featureTypes); costTrace.append(summarizeErrors(phi, featureTypes)); costTrace.reshape(-1,3);  }
+  if(trace_phi && !!phi) { phiTrace.append(phi);  phiTrace.reshape(-1, phi.N); }
+  if(trace_J && !!J) { JTrace.append(J);  JTrace.reshape(-1, phi.N, x.N); }
+}

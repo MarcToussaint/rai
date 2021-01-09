@@ -97,6 +97,7 @@ stdOutPipe(SkeletonEntry)
 typedef rai::Array<SkeletonEntry> Skeleton;
 
 intA getSwitchesFromSkeleton(const Skeleton& S, const rai::Configuration& world);
+double getMaxPhaseFromSkeleton(const Skeleton& S);
 void writeSkeleton(std::ostream& os, const Skeleton& S, const intA& switches= {});
 
 //===========================================================================

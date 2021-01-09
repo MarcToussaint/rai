@@ -1859,11 +1859,10 @@ void rai::Mesh::setImplicitSurfaceBySphereProjection(ScalarFunction f, double ra
 
   for(uint i=0;i<V.d0;i++){
     arr x = V[i];
-    OptNewton newton(x, distSqr);
-    newton.options
-        .set_verbose(0)
-        .set_maxStep(.5*rad)
-        .set_damping(1e-10);
+    OptNewton newton(x, distSqr, OptOptions()
+                     .set_verbose(0)
+                     .set_maxStep(.5*rad)
+                     .set_damping(1e-10) );
     newton.run();
   }
 }

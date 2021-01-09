@@ -112,12 +112,20 @@ bool OptConstrained::step() {
   if(newtonOnce || opt.constrainedMethod==squaredPenaltyFixed) {
     newtonStop = newton.run();
   } else {
-    double stopTol = newton.options.stopTolerance;
-    if(!its) newton.options.stopTolerance *= 3.;
-    if(earlyPhase) newton.options.stopTolerance *= 10.;
+    double org_stopTol = newton.options.stopTolerance;
+    double org_stopGTol = newton.options.stopGTolerance;
+    if(!its){
+      newton.options.stopTolerance *= 3.;
+      newton.options.stopGTolerance *= 3.;
+    }
+    if(earlyPhase){
+      newton.options.stopTolerance *= 10.;
+      newton.options.stopGTolerance *= 10.;
+    }
     if(opt.constrainedMethod==anyTimeAula)  newtonStop = newton.run(20);
     else                                    newtonStop = newton.run();
-    newton.options.stopTolerance = stopTol;
+    newton.options.stopTolerance = org_stopTol;
+    newton.options.stopGTolerance = org_stopGTol;
   }
 
   if(L.lambda.N) CHECK_EQ(L.lambda.N, L.phi_x.N, "the evaluation (within newton) changed the phi-dimensionality");

@@ -90,13 +90,7 @@ struct MathematicalProgram_Traced : MathematicalProgram {
 
   void setTracing(bool trace_x, bool trace_costs, bool trace_phi, bool trace_J){ NIY }
 
-  virtual void evaluate(arr& phi, arr& J, const arr& x) {
-    P.evaluate(phi, J, x);
-    if(trace_x){ xTrace.append(x); xTrace.reshape(-1, x.N); }
-    if(trace_costs){ costTrace.append(summarizeErrors(phi, featureTypes)); costTrace.reshape(-1,3);  }
-    if(!!phi && trace_phi) { phiTrace.append(phi); phiTrace.reshape(-1, phi.N); }
-    if(!!J && trace_J) {   JTrace.append(J);     JTrace.reshape(-1, phi.N, x.N); }
-  }
+  virtual void evaluate(arr& phi, arr& J, const arr& x);
 
   //trivial
   virtual void getFeatureTypes(ObjectiveTypeA& _featureTypes) { P.getFeatureTypes(_featureTypes); featureTypes = _featureTypes; }

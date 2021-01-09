@@ -37,12 +37,12 @@ ball (table) {
 Prefix: "L_"
 Include: '../../../../rai-robotModels/scenarios/simpleArm.g'
 (table L_base){ joint:rigid, Q:<t(-.5 -.5 .1)> }
-L_gripper (L_endeff) { shape:marker, size:[.03], color:[.9 .9 .5] }
+#L_gripper (L_endeff) { shape:marker, size:[.03], color:[.9 .9 .5] }
 
 
 Prefix: "R_"
 Include: '../../../../rai-robotModels/scenarios/simpleArm.g'
 (table R_base){ joint:rigid, Q:<t( .5 -.5 .1)> }
-R_gripper (R_endeff) { shape:marker, size:[.03], color:[.9 .9 .5] }
+#R_gripper (R_endeff) { shape:marker, size:[.03], color:[.9 .9 .5] }
 
 Prefix!

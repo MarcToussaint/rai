@@ -92,7 +92,7 @@ extern bool IOraw;  ///< stream modifier for some classes (Mem in particular)
 extern uint lineCount;
 extern int verboseLevel;
 
-enum LeftRight { _left, _right };
+enum ArgWord { _left, _right, _sequence, _path };
 
 //----- execute a system command
 void system(const char* cmd);

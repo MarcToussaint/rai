@@ -132,15 +132,15 @@ struct F_fex_NormalVelIsComplementary : Feature {
 };
 
 struct F_fex_POASurfaceDistance : Feature {
-  rai::LeftRight leftRight;
-  F_fex_POASurfaceDistance(rai::LeftRight leftRight) : leftRight(leftRight) {}
+  rai::ArgWord leftRight;
+  F_fex_POASurfaceDistance(rai::ArgWord leftRight) : leftRight(leftRight) {}
   void phi2(arr& y, arr& J, const FrameL& F);
   uint dim_phi2(const FrameL& F) { return 1; }
 };
 
 struct F_fex_POASurfaceNormal : Feature {
-  rai::LeftRight leftRight;
-  F_fex_POASurfaceNormal(rai::LeftRight leftRight) : leftRight(leftRight) {}
+  rai::ArgWord leftRight;
+  F_fex_POASurfaceNormal(rai::ArgWord leftRight) : leftRight(leftRight) {}
   void phi2(arr& y, arr& J, const FrameL& F);
   uint dim_phi2(const FrameL& F) { return 3; }
 };

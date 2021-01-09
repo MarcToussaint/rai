@@ -4,6 +4,7 @@
 #include "opt-nlopt.h"
 #include "opt-ceres.h"
 #include "MathematicalProgram.h"
+#include "constrained.h"
 
 template<> const char* rai::Enum<NLP_SolverID>::names []= {
   "gradientDescent", "rprop", "LBFGS", "newton",
@@ -30,6 +31,11 @@ arr NLP_Solver::solve(int resampleInitialization){
     Conv_MathematicalProgram_ScalarProblem P1(*P);
     OptOptions opts;
     Rprop().loop(x, P1, opts.fmin_return, opts.stopTolerance, opts.initStep, opts.stopEvals, opts.verbose);
+  }
+  else if(solverID==NLPS_augmentedLag){
+    OptConstrained opt(x, dual, *P, OptOptions()
+                       .set_constrainedMethod(augmentedLag) );
+    opt.run();
   }
   else if(solverID==NLPS_NLopt){
     NLOptInterface nlo(*P);
