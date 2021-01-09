@@ -585,7 +585,6 @@ void timerResume() {
 /// memorize the command line arguments and open a log file
 void initCmdLine(int _argc, char* _argv[]) {
   argc=_argc; argv=_argv;
-  initDir = getcwd_string();
   rai::String msg;
   msg <<"** cmd line arguments: '"; for(int i=0; i<argc; i++) msg <<argv[i] <<' ';
   msg <<"\b'";
