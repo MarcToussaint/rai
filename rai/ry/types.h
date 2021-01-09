@@ -40,6 +40,9 @@ template<class T> pybind11::array_t<T> arr2numpy(const rai::Array<T>& x){
   return pybind11::array_t<T>(x.dim(), x.p);
 }
 
+//explicit specialization for double!
+template<> pybind11::array_t<double> arr2numpy(const rai::Array<double>& x);
+
 template<class T> rai::Array<T> numpy2arr(const pybind11::array_t<T>& X) {
   rai::Array<T> Y;
   uintA dim(X.ndim());
@@ -161,7 +164,7 @@ template <typename T>  struct type_caster<rai::Array<T>> {
 
   /// Conversion part 2 (C++ -> Python): convert rai::Array<T> instance to numpy array
   static handle cast(rai::Array<T> src, return_value_policy /* policy */, handle /* parent */) {
-    pybind11::array_t<T> ret(src.dim(), src.p);
+    pybind11::array_t<T> ret = arr2numpy(src);
     return ret.release();
   }
 };

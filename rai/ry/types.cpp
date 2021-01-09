@@ -11,6 +11,14 @@
 #include "types.h"
 #include "../Geo/mesh.h"
 
+template<> pybind11::array_t<double> arr2numpy(const rai::Array<double>& x){
+  //default!
+  if(!x.isSparse()) return pybind11::array_t<double>(x.dim(), x.p);
+  //sparse!
+  arr triplets = x.sparse().getTriplets();
+  return pybind11::array_t<double>(triplets.dim(), triplets.p);
+}
+
 pybind11::dict graph2dict(const rai::Graph& G) {
   pybind11::dict dict;
   for(rai::Node* n:G) {
