@@ -9,6 +9,19 @@ enum NLP_SolverID { NLPS_none=-1,
                     NLPS_NLopt, NLPS_Ipopt, NLPS_Ceres
                   };
 
+enum NLP_SolverOption { _NLopt_LD_SLSQP,
+                        _NLopt_LD_MMA,
+                        _NLopt_LN_COBYLA,
+                        _NLopt_LD_AUGLAG,
+                        _NLopt_LD_AUGLAG_EQ,
+                        _NLopt_LN_NELDERMEAD,
+                        _NLopt_LD_LBFGS,
+                        _NLopt_LD_TNEWTON,
+                        _NLopt_LD_TNEWTON_RESTART,
+                        _NLopt_LD_TNEWTON_PRECOND,
+                        _NLopt_LD_TNEWTON_PRECOND_RESTART,
+                      };
+
 /** User Interface: Meta class to call several different solvers in a unified manner. */
 struct NLP_Solver : NonCopyable {
   NLP_SolverID solverID=NLPS_none;
@@ -28,4 +41,8 @@ struct NLP_Solver : NonCopyable {
   arr getTrace_costs(){ return P->costTrace; }
   arr getTrace_phi(){ return P->phiTrace; }
   arr getTrace_J(){ return P->JTrace; }
+  void gnuplot_costs(){
+    FILE("z.opt.trace") <<getTrace_costs();
+    gnuplot("plot 'z.opt.trace' us 0:1 t 'sos', '' us 0:2 t 'ineq', '' us 0:3 t 'eq'");
+  }
 };

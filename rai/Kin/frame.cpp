@@ -462,6 +462,7 @@ rai::Frame& rai::Frame::setJoint(rai::JointType jointType) {
   if(jointType != JT_none) {
     new Joint(*this, jointType);
   }
+  if(jointType == JT_free) { joint->limits = {-10.,10,-10,10,-10,10, -1.,1,-1,1,-1,1,-1,1}; }
   return *this;
 }
 

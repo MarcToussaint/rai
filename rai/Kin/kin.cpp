@@ -697,24 +697,22 @@ arr Configuration::getLimits() const {
       if(j->limits.N) {
         limits(i+k, 0)=j->limits(2*k+0); //lo
         limits(i+k, 1)=j->limits(2*k+1); //up
-      } else {
-        limits(i+k, 0)=0.; //lo
-        limits(i+k, 1)=0.; //up
       }
     }
   }
-//  for(ForceExchange* f: forces) {
-//    uint i=f->qIndex;
-//    uint d=f->qDim();
-//    for(uint k=0; k<3; k++) { //in case joint has multiple dimensions
-//        limits(i+k, 0)=-10.; //lo
-//        limits(i+k, 1)=+10.; //up
-//    }
-//    for(uint k=3; k<6; k++) { //in case joint has multiple dimensions
-//        limits(i+k, 0)=-1.; //lo
-//        limits(i+k, 1)=+1.; //up
-//    }
-//  }
+  for(ForceExchange* f: forces) {
+    uint i=f->qIndex;
+    uint d=f->qDim();
+    CHECK_EQ(d, 6, "");
+    for(uint k=0; k<3; k++) {
+      limits(i+k, 0)=-10.; //lo
+      limits(i+k, 1)=+10.; //up
+    }
+    for(uint k=3; k<6; k++) {
+      limits(i+k, 0)=-1.; //lo
+      limits(i+k, 1)=+1.; //up
+    }
+  }
 //    cout <<"limits:" <<limits <<endl;
   return limits;
 }
@@ -2365,6 +2363,9 @@ void Configuration::report(std::ostream& os) const {
      <<" #forces=" <<forces.N
      <<" #evals=" <<setJointStateCount
      <<endl;
+
+//  os <<" limits=" <<getLimits() <<endl;
+  //  os <<" joints=" <<getJointNames() <<endl;
 }
 
 void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {

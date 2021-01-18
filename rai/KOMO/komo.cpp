@@ -1812,7 +1812,7 @@ void KOMO::run(OptOptions options) {
 
   } else if(solver==rai::KS_NLopt) {
     Conv_KOMO_SparseNonfactored P(*this, false);
-    NLOptInterface nlopt(P);
+    NLoptInterface nlopt(P);
     x = nlopt.solve();
     set_x2(x);
 
@@ -1855,6 +1855,7 @@ void KOMO::reportProblem(std::ostream& os) {
   for(uint i=0; i<configurations.N; i++) dims(i)=configurations(i)->q.N;
   writeConsecutiveConstant(os, dims);
 #endif
+  os <<"  #pathQueries:" <<pathConfig.setJointStateCount;
   os <<endl;
 
   arr times = getPath_times();

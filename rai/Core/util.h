@@ -187,6 +187,16 @@ template<class T> bool checkParameter(const char* tag);
 template<class T> void putParameter(const char* tag, const T& x);
 template<class T> bool getFromMap(T& x, const char* tag);
 
+template<class T> struct Parameter{
+  const char* name;
+  T value;
+  Parameter(const char* name) : name(name) { value = getParameter<T>(name); }
+  const T& operator()(){ return value; }
+};
+#define raiPARAM(type, name) \
+  rai::Parameter<type> name = {#name}; \
+  auto set_##name(type _##name){ name.value=_##name; return *this; }
+
 //----- get verbose level
 uint getVerboseLevel();
 bool getInteractivity();

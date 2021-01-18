@@ -8,12 +8,13 @@
 
 #include "MathematicalProgram.h"
 
-struct NLOptInterface {
+struct NLoptInterface {
   MathematicalProgram& P;
   arr x, phi_x, J_x;
   ObjectiveTypeA featureTypes;
+  int verbose=1;
 
-  NLOptInterface(MathematicalProgram& _P) : P(_P) {
+  NLoptInterface(MathematicalProgram& _P) : P(_P) {
     P.getFeatureTypes(featureTypes);
   }
 

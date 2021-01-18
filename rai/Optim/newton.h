@@ -20,6 +20,7 @@ struct OptNewton {
   enum StopCriterion { stopNone=0, stopDeltaConverge, stopTinyFSteps, stopTinyXSteps, stopCritEvals, stopStepFailed };
   double fx;
   arr gx, Hx;
+  intA boundActive; //analogy to dual parameters for bounds: -1: lower active; +1: upper active
   double alpha, beta;
   uint its=0, evals=0, numTinyFSteps=0, numTinyXSteps=0;
   StopCriterion stopCriterion;

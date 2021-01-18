@@ -112,15 +112,18 @@ struct _ChoiceFunction : ScalarFunction {
     if(condition.N!=x.N) {
       condition.resize(x.N);
       double cond = rai::getParameter<double>("condition");
+      double curv = rai::getParameter<double>("curvature");
       if(x.N>1) {
-        for(uint i=0; i<x.N; i++) condition(i) = pow(cond, 0.5*i/(x.N-1));
+        for(uint i=0; i<x.N; i++) condition(i) = curv*pow(cond, 0.5*i/(x.N-1));
       } else {
-        condition = cond;
+        condition = curv;
       }
     }
 
-    arr y = x;
-    y *= condition; //elem-wise product
+    arr C = diag(condition);
+    C(0,1) = C(0,0);
+    C(1,0) = -C(1,1);
+    arr y = C * x;
     double f;
     switch(which) {
       case sum: f = _SumFunction(g, H, y); break;
@@ -130,8 +133,8 @@ struct _ChoiceFunction : ScalarFunction {
       case rastrigin: f = _RastriginFunction(g, H, y); break;
       default: NIY;
     }
-    if(!!g) g *= condition; //elem-wise product
-    if(!!H) H = condition%H%condition;
+    if(!!g) g = ~C*g; //elem-wise product
+    if(!!H) H = ~C * H * C;
     return f;
   }
 
@@ -313,12 +316,21 @@ void ChoiceConstraintFunction::getFeatureTypes(ObjectiveTypeA& tt) {
     case randomLinear:
       tt.append(consts(OT_ineq, 5*n+5));
       break;
+    case boundConstrained:
+      break;
+    case boundConstrainedIneq:
+      tt.append(OT_ineq);
+      break;
+    default: HALT("not taken care of");
   }
 }
 
 void ChoiceConstraintFunction::getBounds(arr& bounds_lo, arr& bounds_hi) {
   bounds_lo.resize(n) = -2.;
   bounds_hi.resize(n) = +2.;
+  if(which==boundConstrained){
+    bounds_lo(0) = +0.5;
+  }
 }
 
 void ChoiceConstraintFunction::evaluate(arr& phi, arr& J, const arr& x) {
@@ -352,6 +364,14 @@ void ChoiceConstraintFunction::evaluate(arr& phi, arr& J, const arr& x) {
       CHECK_EQ(randomG.d1, x.N+1, "you changed dimensionality");
       phi.append(randomG * cat({1.}, x));
       if(!!J) J.append(randomG.sub(0, -1, 1, -1));
+    } break;
+    case boundConstrained: {
+//      phi.append(1. - x(0));
+//      if(!!J) { J.append( eyeVec(x.N, 0) ); }
+    } break;
+    case boundConstrainedIneq: {
+      phi.append(0.5 - x(0));
+      if(!!J) { J.append( -eyeVec(x.N, 0) ); }
     } break;
   }
 

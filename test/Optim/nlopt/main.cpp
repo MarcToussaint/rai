@@ -9,7 +9,7 @@ void TEST(NLOpt){
   ChoiceConstraintFunction P;
 
   {
-    NLOptInterface nlo(P);
+    NLoptInterface nlo(P);
     nlo.solve();
     ofstream fil2("z.opt2");
     //    nlo.P.xLog.writeRaw(fil2);

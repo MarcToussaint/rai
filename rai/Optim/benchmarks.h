@@ -83,7 +83,7 @@ struct RandomLPFunction : MathematicalProgram {
 //===========================================================================
 
 struct ChoiceConstraintFunction : MathematicalProgram {
-  enum WhichConstraint { wedge2D=1, halfcircle2D, randomLinear, circleLine2D } which;
+  enum WhichConstraint { wedge2D=1, halfcircle2D, randomLinear, circleLine2D, boundConstrained, boundConstrainedIneq } which;
   uint n;
   arr randomG;
   ChoiceConstraintFunction();

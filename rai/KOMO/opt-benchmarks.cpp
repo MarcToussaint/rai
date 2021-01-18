@@ -19,7 +19,7 @@ OptBench_InvKin_Endeff::OptBench_InvKin_Endeff(const char* modelFile, bool uncon
   komo->addObjective({}, FS_vectorZDiff, {"gripper", "box"}, ot, {prec});
   komo->addObjective({}, FS_scalarProductXX, {"gripper", "box"}, ot, {prec});
 
-  nlp = make_shared<KOMO::Conv_KOMO_SparseNonfactored>(*komo, true);
+  nlp = make_shared<KOMO::Conv_KOMO_SparseNonfactored>(*komo, false);
 }
 
 void OptBench_Skeleton::create(const char* modelFile, const Skeleton& S, rai::ArgWord sequenceOrPath) {
@@ -48,6 +48,8 @@ void OptBench_Skeleton::create(const char* modelFile, const Skeleton& S, rai::Ar
   nlp = make_shared<KOMO::Conv_KOMO_SparseNonfactored>(*komo, sequenceOrPath==rai::_path);
 
   komo->run_prepare(0.);
+  cout <<"** OptBench_Skeleton: created path ";
+  komo->pathConfig.report();
 }
 
 //===========================================================================

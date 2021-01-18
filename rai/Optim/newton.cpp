@@ -10,6 +10,8 @@
 #include <iomanip>
 
 bool sanityCheck=false; //true;
+void updateBoundActive(intA& boundActive, const arr& x, const arr& bound_lo, const arr& bound_up);
+void boundClip(arr& y, const arr& bound_lo, const arr& bound_up);
 
 /** @brief Minimizes \f$f(x) = A(x)^T x A^T(x) - 2 a(x)^T x + c(x)\f$. The optional _user arguments specify,
  * if f has already been evaluated at x (another initial evaluation is then omitted
@@ -32,6 +34,8 @@ OptNewton::OptNewton(arr& _x, const ScalarFunction& _f,  OptOptions _o, ostream*
 
 void OptNewton::reinit(const arr& _x) {
   if(&x!=&_x) x = _x;
+
+  boundClip(x, bound_lo, bound_up);
   fx = f(gx, Hx, x);  evals++;
 
   //startup verbose
@@ -51,14 +55,29 @@ void OptNewton::reinit(const arr& _x) {
 
 //===========================================================================
 
+void updateBoundActive(intA& boundActive, const arr& x, const arr& bound_lo, const arr& bound_up) {
+  if(!boundActive.N) boundActive.resize(x.N).setZero();
+#define BOUND_EPS 1e-10
+  if(bound_lo.N && bound_up.N) {
+    for(uint i=0; i<x.N; i++) if(bound_up(i)>bound_lo(i)) {
+      if(x(i)>=bound_up(i)-BOUND_EPS) boundActive(i) = +1;
+      else if(x(i)<=bound_lo(i)+BOUND_EPS) boundActive(i) = -1;
+      else boundActive(i) = 0;
+    }
+  }
+#undef BOUND_EPS
+}
+
 void boundClip(arr& y, const arr& bound_lo, const arr& bound_up) {
   if(bound_lo.N && bound_up.N) {
     for(uint i=0; i<y.N; i++) if(bound_up(i)>bound_lo(i)) {
-        if(y(i)>bound_up(i)) y(i) = bound_up(i);
-        if(y(i)<bound_lo(i)) y(i) = bound_lo(i);
-      }
+      if(y(i)>bound_up(i)) y(i) = bound_up(i);
+      if(y(i)<bound_lo(i)) y(i) = bound_lo(i);
+    }
   }
 }
+
+//===========================================================================
 
 OptNewton::StopCriterion OptNewton::step() {
   double fy;
@@ -71,8 +90,19 @@ OptNewton::StopCriterion OptNewton::step() {
 
   rai::timerRead(true);
 
-  //-- compute Delta
+  //-- check active bounds, and decorrelated Hessian
+  updateBoundActive(boundActive, x, bound_lo, bound_up);
   arr R=Hx;
+  //zero correlations to bound-active variables
+  if(!isSpecial(R)) {
+    for(uint i=0;i<x.N;i++) if(boundActive.elem(i)){
+      for(uint j=0;j<x.N;j++) if(i!=j){ R(i,j)=0; R(j,i)=0; }
+    }
+  } else NIY;
+  if(options.verbose>5) cout <<"  boundActive:" <<boundActive;
+
+
+  //-- compute Delta
 #if 0
   arr sig = lapack_kSmallestEigenValues_sym(R, 3);
   double sigmin = sig.min();

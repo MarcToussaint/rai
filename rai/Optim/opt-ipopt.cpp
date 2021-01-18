@@ -67,20 +67,28 @@ Conv_MP_Ipopt::~Conv_MP_Ipopt() {}
 arr IpoptInterface::solve() {
   Ipopt::IpoptApplication opt;
 
-  opt.Options()->SetStringValue("output_file", "z.ipopt.out");
+  bool ret=true;
 
-  opt.Options()->SetNumericValue("tol", 1e-3);
-  opt.Options()->SetNumericValue("constr_viol_tol", 1e-3);
-  opt.Options()->SetNumericValue("compl_inf_tol", 1e-3);
+  ret &= opt.Options()->SetStringValue("output_file", "z.ipopt.out");
 
-  //  opt.Options()->SetStringValue("mu_strategy", "adaptive");
-  //  opt.Options()->SetNumericValue("mu_init", 10.);
-  //  opt.Options()->SetStringValue("hessian_approximation", "limited-memory");
+  ret &= opt.Options()->SetNumericValue("tol", 1e-3);
+  ret &= opt.Options()->SetNumericValue("constr_viol_tol", 1e-3);
+  ret &= opt.Options()->SetNumericValue("compl_inf_tol", 1e-3);
+
+  ret &= opt.Options()->SetIntegerValue("max_iter", 10000);
+  ret &= opt.Options()->SetStringValue("nlp_scaling_method", "none");
+
+//    opt.Options()->SetStringValue("mu_strategy", "adaptive");
+    ret &= opt.Options()->SetNumericValue("mu_init", 1e-3);
+//    opt.Options()->SetStringValue("hessian_approximation", "limited-memory");
   //  opt.Options()->SetStringValue("linear_solver", "ma27");
 
-  //  opt.Options()->SetStringValue("derivative_test", "first-order");
-  opt.Options()->SetNumericValue("derivative_test_perturbation", 1e-8);
-  opt.Options()->SetNumericValue("derivative_test_tol", 1e-4);
+//    opt.Options()->SetStringValue("derivative_test", "first-order");
+//  opt.Options()->SetNumericValue("derivative_test_perturbation", 1e-8);
+//  opt.Options()->SetNumericValue("derivative_test_tol", 1e-4);
+
+
+  CHECK(ret, "some option could not be set");
 
   Ipopt::ApplicationReturnStatus status;
   status = opt.Initialize();

@@ -117,6 +117,8 @@ struct Conv_MathematicalProgram_ScalarProblem : ScalarFunction {
 
 bool checkJacobianCP(MathematicalProgram& P, const arr& x, double tolerance);
 bool checkHessianCP(MathematicalProgram& P, const arr& x, double tolerance);
+bool checkInBound(MathematicalProgram& P, const arr& x);
+void boundClip(MathematicalProgram& P, arr& x);
 bool checkDirectionalGradient(const ScalarFunction& f, const arr& x, const arr& delta, double tolerance);
 bool checkDirectionalJacobian(const VectorFunction& f, const arr& x, const arr& delta, double tolerance);
 
