@@ -4,6 +4,7 @@
 #include <Geo/mesh.h>
 #include <Gui/opengl.h>
 #include <Geo/qhull.h>
+#include <Geo/analyticShapes.h>
 
 void drawInit(void*, OpenGL& gl){
   glStandardLight(nullptr, gl);
@@ -127,8 +128,8 @@ void TEST(DistanceFunctions) {
 
   rai::Array<ScalarFunction*> fcts = {
     new DistanceFunction_Sphere(t, 1.),
-    new DistanceFunction_Box(t, 1., 2., 3., 1.),
-    new DistanceFunction_Cylinder(t, 1., 2.)
+    new DistanceFunction_ssBox(t, 1., 2., 3., 1.),
+    new DistanceFunction_Cylinder(t, 2., 1.)
   };
 
   for(ScalarFunction* f: fcts){

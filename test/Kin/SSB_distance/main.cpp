@@ -29,7 +29,7 @@ inline void clip(double& x, double r){
 }
 
 double distance_SSPoints(rai::Frame& A, rai::Frame& B,rai::Vector& Pa, rai::Vector& Pb){
-  CHECK(A.shape && A.shape->type()==rai::ST_retired_SSBox && B.shape && B.shape->type()==rai::ST_retired_SSBox,"");
+  CHECK(A.shape && A.shape->type()==rai::ST_ssBox && B.shape && B.shape->type()==rai::ST_ssBox,"");
   CHECK(!A.shape->size(0) && !B.shape->size(0) && !A.shape->size(1) && !B.shape->size(1) && !A.shape->size(2) && !B.shape->size(2), "can only handle SSpoints");
   Pa = A.ensure_X().pos;
   Pb = B.ensure_X().pos;
@@ -42,7 +42,7 @@ double distance_SSPoints(rai::Frame& A, rai::Frame& B,rai::Vector& Pa, rai::Vect
 }
 
 double distance_SSLinePoint(rai::Frame& A, rai::Frame& B,rai::Vector& Pa, rai::Vector& Pb){
-  CHECK(A.shape && A.shape->type()==rai::ST_retired_SSBox && B.shape && B.shape->type()==rai::ST_retired_SSBox,"");
+  CHECK(A.shape && A.shape->type()==rai::ST_ssBox && B.shape && B.shape->type()==rai::ST_ssBox,"");
   CHECK(!B.shape->size(0) && !A.shape->size(1) && !B.shape->size(1) && !A.shape->size(2) && !B.shape->size(2), "can only handle SSLinePoint");
   if(!A.shape->size(0)){ //SSLinePoint
     return distance_SSPoints(A, B, Pa, Pb);
@@ -65,7 +65,7 @@ double distance_SSLinePoint(rai::Frame& A, rai::Frame& B,rai::Vector& Pa, rai::V
 }
 
 double distance_SSLines(rai::Frame& A, rai::Frame& B,rai::Vector& Pa, rai::Vector& Pb){
-  CHECK(A.shape && A.shape->type()==rai::ST_retired_SSBox && B.shape && B.shape->type()==rai::ST_retired_SSBox,"");
+  CHECK(A.shape && A.shape->type()==rai::ST_ssBox && B.shape && B.shape->type()==rai::ST_ssBox,"");
   CHECK(!A.shape->size(1) && !B.shape->size(1) && !A.shape->size(2) && !B.shape->size(2), "can only handle SS line segments (cylinders)");
   if(!B.shape->size(0)){ //SSLinePoint
     return distance_SSLinePoint(A, B, Pa, Pb);

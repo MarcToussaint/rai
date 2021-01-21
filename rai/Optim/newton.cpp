@@ -35,7 +35,7 @@ OptNewton::OptNewton(arr& _x, const ScalarFunction& _f,  OptOptions _o, ostream*
 void OptNewton::reinit(const arr& _x) {
   if(&x!=&_x) x = _x;
 
-  boundClip(x, bound_lo, bound_up);
+  boundClip(x, bounds_lo, bounds_up);
   fx = f(gx, Hx, x);  evals++;
 
   //startup verbose
@@ -84,10 +84,10 @@ OptNewton::StopCriterion OptNewton::step() {
     intA boundActive; //analogy to dual parameters for bounds: -1: lower active; +1: upper active
     if(!boundActive.N) boundActive.resize(x.N).setZero();
 #define BOUND_EPS 1e-10
-    if(bound_lo.N && bound_up.N) {
-      for(uint i=0; i<x.N; i++) if(bound_up(i)>bound_lo(i)) {
-        if(x(i)>=bound_up(i)-BOUND_EPS) boundActive(i) = +1;
-        else if(x(i)<=bound_lo(i)+BOUND_EPS) boundActive(i) = -1;
+    if(bounds_lo.N && bounds_up.N) {
+      for(uint i=0; i<x.N; i++) if(bounds_up(i)>bounds_lo(i)) {
+        if(x(i)>=bounds_up(i)-BOUND_EPS) boundActive(i) = +1;
+        else if(x(i)<=bounds_lo(i)+BOUND_EPS) boundActive(i) = -1;
         else boundActive(i) = 0;
       }
     }
@@ -96,6 +96,15 @@ OptNewton::StopCriterion OptNewton::step() {
     if(!isSpecial(R)) {
       for(uint i=0;i<x.N;i++) if(boundActive.elem(i)){
         for(uint j=0;j<x.N;j++) if(i!=j){ R(i,j)=0; R(j,i)=0; }
+      }
+    } else if(R.isSparse()) {
+      rai::SparseMatrix& s = R.sparse();
+      for(uint k=0; k<s.elems.d0; k++) {
+        uint i = s.elems(k, 0);
+        uint j = s.elems(k, 1);
+        if(i!=j && (boundActive.elem(i) || boundActive.elem(j))){
+          s.Z.elem(k) = 0.;
+        }
       }
     } else NIY;
     if(options.verbose>5) cout <<"  boundActive:" <<boundActive;
@@ -179,7 +188,7 @@ OptNewton::StopCriterion OptNewton::step() {
     if(!options.allowOverstep) if(alpha>1.) alpha=1.;
     if(alphaHiLimit>0. && alpha>alphaHiLimit) alpha=alphaHiLimit;
     y = x + alpha*Delta;
-    boundClip(y, bound_lo, bound_up);
+    boundClip(y, bounds_lo, bounds_up);
     double timeBefore = rai::timerStart();
     fy = f(gy, Hy, y);  evals++;
     timeEval += rai::timerRead(true, timeBefore);

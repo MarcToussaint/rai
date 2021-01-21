@@ -56,7 +56,7 @@ void TEST(Dynamics){
 //  for(rai::Body *b:G.bodies){ b->mass=1.; b->inertia.setZero(); }
 
   for(t=0;t<T;t++){
-    if(t>=500){ //hold steady
+    if(false && t>=500){ //hold steady **THIS BREAKS! INV DYNAMICS ARE BROKE **
       qdd_ = -1. * qd;
       C.inverseDynamics(u, qd, qdd_);
       //tau.resize(n); tau.setZero();

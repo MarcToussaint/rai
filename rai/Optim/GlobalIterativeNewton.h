@@ -22,7 +22,7 @@ struct GlobalIterativeNewton {
   rai::Array<LocalMinimum> localMinima;
   LocalMinimum* best;
 
-  GlobalIterativeNewton(const ScalarFunction& f, const arr& bounds_lo, const arr& bounds_hi, OptOptions o=NOOPT);
+  GlobalIterativeNewton(const ScalarFunction& f, const arr& bounds_lo, const arr& bounds_up, OptOptions o=NOOPT);
   ~GlobalIterativeNewton();
 
   void step();

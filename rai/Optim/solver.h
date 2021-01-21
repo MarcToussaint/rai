@@ -30,10 +30,10 @@ struct NLP_Solver : NonCopyable {
 
   NLP_Solver& setSolver(NLP_SolverID _solverID){ solverID=_solverID; return *this; }
   NLP_Solver& setProblem(MathematicalProgram& _P){ CHECK(!P, "problem was already set!"); P = make_shared<MathematicalProgram_Traced>(_P); return *this; }
-  void setInitialization(const arr& _x){ x=_x; }
+  NLP_Solver& setInitialization(const arr& _x){ x=_x; return *this; }
+  NLP_Solver& setOptions(const rai::Graph& opt){ NIY; return *this; }
+  NLP_Solver& setTracing(bool trace_x, bool trace_costs, bool trace_phi, bool trace_J){ P->setTracing(trace_x, trace_costs, trace_phi, trace_J); return *this; }
   rai::Graph getOptions(){ return rai::Graph(); }
-  void setOptions(const rai::Graph& opt){ NIY }
-  void setTracing(bool trace_x, bool trace_costs, bool trace_phi, bool trace_J){ P->setTracing(trace_x, trace_costs, trace_phi, trace_J); }
 
   arr& solve(int resampleInitialization=-1); ///< -1: only when not yet set
 

@@ -30,7 +30,6 @@ PCL = 0
 ODE = 0
 PHYSX = 0
 BULLET = 0
-BULLET_UBUNTU = 0
 
 ROS = 0
 ROS_VERSION = melodic

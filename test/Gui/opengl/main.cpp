@@ -125,7 +125,7 @@ void TEST(Obj) {
   rai::Mesh mesh,mesh2;
 
   //mesh.readObjFile(FILE("../../external/3dmodel/obj/gipshand2-273k.obj"));
-  mesh.readObjFile(FILE("base-male-nude.obj"));
+  mesh.readFile("base-male-nude.obj");
   //mesh.readObjFile(FILE("../../../3dmodel/obj/gipshand2-273k.obj"));
   //mesh.readObjFile(FILE("../../../3dmodel/obj/base-male-nude.obj"));
   mesh.scale(.1,.1,.1);

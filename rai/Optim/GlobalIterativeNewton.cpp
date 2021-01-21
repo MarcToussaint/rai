@@ -10,14 +10,13 @@
 
 bool useNewton=true;
 
-GlobalIterativeNewton::GlobalIterativeNewton(const ScalarFunction& f, const arr& bounds_lo, const arr& bounds_hi, OptOptions opt)
-  : x(.5*(bounds_lo+bounds_hi)),
+GlobalIterativeNewton::GlobalIterativeNewton(const ScalarFunction& f, const arr& bounds_lo, const arr& bounds_up, OptOptions opt)
+  : x(.5*(bounds_lo+bounds_up)),
     newton(x, f, opt),
     grad(x, f, opt),
-    bounds_lo(bounds_lo), bounds_hi(bounds_hi),
+    bounds_lo(bounds_lo), bounds_hi(bounds_up),
     best(nullptr) {
-  newton.bound_lo = bounds_lo;
-  newton.bound_up = bounds_hi;
+  newton.setBounds(bounds_lo, bounds_up);
   newton.options.verbose = 0;
 }
 

@@ -13,7 +13,6 @@
 #include "../Gui/opengl.h"
 
 //#include "SimulationThread_self.h"
-extern bool Geo_mesh_drawColors;
 
 struct sRobotOperation : Thread, GLDrawer {
   BaxterInterface baxter;
@@ -83,12 +82,12 @@ struct sRobotOperation : Thread, GLDrawer {
       if(q_real.N == K_baxter.getJointStateDimension()) {
         K_baxter.setJointState(q_real);
       }
-      Geo_mesh_drawColors=false;
+      gl.drawOptions.drawColors=false;
       glColor(.8, .2, .2, .5);
-      gl.drawMode_idColor = true;
+      gl.drawOptions.drawMode_idColor = true;
       K_baxter.glDraw(gl);
-      Geo_mesh_drawColors=true;
-      gl.drawMode_idColor = false;
+      gl.drawOptions.drawColors=true;
+      gl.drawOptions.drawMode_idColor = false;
     }
   }
 
