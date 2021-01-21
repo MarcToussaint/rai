@@ -49,8 +49,8 @@ int MAIN(int argc,char** argv){
 //  rnd.clockSeed();
   rnd.seed(0);
 
-//  testKOMO_IK();
-  testSkeleton_Handover();
+  testKOMO_IK();
+//  testSkeleton_Handover();
 
   return 0;
 }

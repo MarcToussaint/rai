@@ -44,32 +44,40 @@ nlopt::algorithm getSolverEnum(const char* param, bool& needsSubsolver, int verb
   return nlopt::NUM_ALGORITHMS;
 }
 
-arr NLoptInterface::solve() {
-  arr x = P.getInitializationSample();
+arr NLoptInterface::solve(const arr& x_init) {
+  //-- get initialization
+  arr x;
+  if(!!x_init){
+    x = x_init;
+  }else{
+    x = P.getInitializationSample();
+  }
+
+  //-- get and check bounds, clip x
   arr bounds_lo, bounds_up;
   P.getBounds(bounds_lo, bounds_up);
-
   CHECK_EQ(x.N, bounds_up.N, "NLOpt requires bounds");
   CHECK_EQ(x.N, bounds_lo.N, "NLOpt requires bounds");
   for(uint i=0; i<bounds_lo.N; i++) CHECK(bounds_lo.elem(i)<bounds_up.elem(i), "NLOpt requires bounds");
   boundClip(P, x);
-  checkInBound(P, x);
 
+  //-- create NLopt solver
   bool needsSubsolver;
   nlopt::opt opt(getSolverEnum("NLopt_solver", needsSubsolver, verbose), x.N);
-  opt.set_min_objective(_f, this);
   opt.set_xtol_abs(rai::getParameter<double>("NLopt_xtol", 1e-4));
   //  opt.set_ftol_abs(1e-3);
-
   if(needsSubsolver){
     nlopt::opt subopt(getSolverEnum("NLopt_subSolver", needsSubsolver, verbose), x.N);
     subopt.set_xtol_abs(rai::getParameter<double>("NLopt_xtol", 1e-4));
     opt.set_local_optimizer(subopt);
   }
 
+  //-- set bounds
   if(bounds_lo.N==x.N) opt.set_lower_bounds(bounds_lo.vec());
   if(bounds_up.N==x.N) opt.set_upper_bounds(bounds_up.vec());
 
+  //-- set cost and add constraints
+  opt.set_min_objective(_f, this);
   rai::Array<FuncCallData> funcCallData(featureTypes.N);
   for(uint i=0; i<featureTypes.N; i++) {
     FuncCallData& d = funcCallData.elem(i);
@@ -79,6 +87,7 @@ arr NLoptInterface::solve() {
     if(featureTypes.elem(i) == OT_eq) opt.add_equality_constraint(_h, &d);
   }
 
+  //-- optimize
   double fval;
   try {
     std::vector<double> x_vec = x.vec();

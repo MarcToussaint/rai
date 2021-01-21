@@ -2117,7 +2117,7 @@ void KOMO::selectJointsBySubtrees(const StringA& roots, const arr& times, bool n
   } else {
     int tfrom = conv_time2step(times(0), stepsPerPhase);
     int tto   = conv_time2step(times(1), stepsPerPhase);
-    for(uint t=tfrom;t<=tto;t++) allRoots.append( pathConfig.getFrames(rootIds+(t+k_order)*timeSlices.d1) );
+    for(int t=tfrom;t<=tto;t++) allRoots.append( pathConfig.getFrames(rootIds+(t+k_order)*timeSlices.d1) );
   }
   pathConfig.selectJointsBySubtrees(allRoots, notThose);
   pathConfig.ensure_q();
@@ -2731,9 +2731,8 @@ KOMO::Conv_KOMO_FactoredNLP::Conv_KOMO_FactoredNLP(KOMO& _komo) : komo(_komo) {
   uint count=0;
   for(uint t=0; t<komo.T; t++) {
     VariableIndexEntry& V = variableIndex(t);
-    int s = t+komo.k_order;
     V.t = t;
-    V.dim = komo.getConfiguration_q(t).N; //.configurations(s)->getJointStateDimension();
+    V.dim = komo.getConfiguration_q(t).N; //.configurations(t+komo.k_order)->getJointStateDimension();
     V.xIndex = count;
     for(uint i=0; i<V.dim; i++) xIndex2VarId(count++) = t;
   }

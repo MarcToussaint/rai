@@ -18,7 +18,7 @@ struct NLoptInterface {
     P.getFeatureTypes(featureTypes);
   }
 
-  arr solve();
+  arr solve(const arr& x_init=NoArr);
 
  private:
   double f(const arr& _x, arr& _grad);

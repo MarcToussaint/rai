@@ -26,7 +26,7 @@ template<> const char* rai::Enum<NLP_SolverOption>::names []= {
     "LD_TNEWTON_PRECOND",
     "LD_TNEWTON_PRECOND_RESTART", nullptr };
 
-arr NLP_Solver::solve(int resampleInitialization){
+arr& NLP_Solver::solve(int resampleInitialization){
   if(resampleInitialization==1 || !x.N){
     x = P->getInitializationSample();
   }else{
@@ -63,11 +63,11 @@ arr NLP_Solver::solve(int resampleInitialization){
   }
   else if(solverID==NLPS_NLopt){
     NLoptInterface nlo(*P);
-    x = nlo.solve();
+    x = nlo.solve(x);
   }
   else if(solverID==NLPS_Ipopt){
     IpoptInterface nlo(*P);
-    x = nlo.solve();
+    x = nlo.solve(x);
   }
   else if(solverID==NLPS_Ceres){
     Conv_MathematicalProgram_TrivialFactoreded P1(*P);

@@ -39,7 +39,7 @@ void OptNewton::reinit(const arr& _x) {
   fx = f(gx, Hx, x);  evals++;
 
   //startup verbose
-  if(options.verbose>1) cout <<"*** optNewton: starting point f(x)=" <<fx <<" alpha=" <<alpha <<" beta=" <<beta <<endl;
+  if(options.verbose>1) cout <<"*** optNewton: initial point f(x)=" <<fx <<" alpha=" <<alpha <<" beta=" <<beta <<endl;
   if(options.verbose>3){ if(x.N<5) cout <<"x=" <<x <<endl; }
   if(logFile) {
     (*logFile) <<"{ newton: " <<its <<", evaluations: " <<evals <<", f_x: " <<fx <<", alpha: " <<alpha;
@@ -54,19 +54,6 @@ void OptNewton::reinit(const arr& _x) {
 }
 
 //===========================================================================
-
-void updateBoundActive(intA& boundActive, const arr& x, const arr& bound_lo, const arr& bound_up) {
-  if(!boundActive.N) boundActive.resize(x.N).setZero();
-#define BOUND_EPS 1e-10
-  if(bound_lo.N && bound_up.N) {
-    for(uint i=0; i<x.N; i++) if(bound_up(i)>bound_lo(i)) {
-      if(x(i)>=bound_up(i)-BOUND_EPS) boundActive(i) = +1;
-      else if(x(i)<=bound_lo(i)+BOUND_EPS) boundActive(i) = -1;
-      else boundActive(i) = 0;
-    }
-  }
-#undef BOUND_EPS
-}
 
 void boundClip(arr& y, const arr& bound_lo, const arr& bound_up) {
   if(bound_lo.N && bound_up.N) {
@@ -90,17 +77,30 @@ OptNewton::StopCriterion OptNewton::step() {
 
   rai::timerRead(true);
 
-  //-- check active bounds, and decorrelated Hessian
-  updateBoundActive(boundActive, x, bound_lo, bound_up);
+  //-- check active bounds, and decorrelate Hessian
   arr R=Hx;
-  //zero correlations to bound-active variables
-  if(!isSpecial(R)) {
-    for(uint i=0;i<x.N;i++) if(boundActive.elem(i)){
-      for(uint j=0;j<x.N;j++) if(i!=j){ R(i,j)=0; R(j,i)=0; }
+#if 1
+  {
+    intA boundActive; //analogy to dual parameters for bounds: -1: lower active; +1: upper active
+    if(!boundActive.N) boundActive.resize(x.N).setZero();
+#define BOUND_EPS 1e-10
+    if(bound_lo.N && bound_up.N) {
+      for(uint i=0; i<x.N; i++) if(bound_up(i)>bound_lo(i)) {
+        if(x(i)>=bound_up(i)-BOUND_EPS) boundActive(i) = +1;
+        else if(x(i)<=bound_lo(i)+BOUND_EPS) boundActive(i) = -1;
+        else boundActive(i) = 0;
+      }
     }
-  } else NIY;
-  if(options.verbose>5) cout <<"  boundActive:" <<boundActive;
-
+#undef BOUND_EPS
+    //zero correlations to bound-active variables
+    if(!isSpecial(R)) {
+      for(uint i=0;i<x.N;i++) if(boundActive.elem(i)){
+        for(uint j=0;j<x.N;j++) if(i!=j){ R(i,j)=0; R(j,i)=0; }
+      }
+    } else NIY;
+    if(options.verbose>5) cout <<"  boundActive:" <<boundActive;
+  }
+#endif
 
   //-- compute Delta
 #if 0

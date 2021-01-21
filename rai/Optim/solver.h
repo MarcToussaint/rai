@@ -35,7 +35,7 @@ struct NLP_Solver : NonCopyable {
   void setOptions(const rai::Graph& opt){ NIY }
   void setTracing(bool trace_x, bool trace_costs, bool trace_phi, bool trace_J){ P->setTracing(trace_x, trace_costs, trace_phi, trace_J); }
 
-  arr solve(int resampleInitialization=-1); ///< -1: only when not yet set
+  arr& solve(int resampleInitialization=-1); ///< -1: only when not yet set
 
   arr getTrace_x(){ return P->xTrace; }
   arr getTrace_costs(){ return P->costTrace; }
