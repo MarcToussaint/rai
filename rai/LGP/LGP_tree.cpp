@@ -73,7 +73,7 @@ void initFolStateFromKin(FOL_World& L, const rai::Configuration& K) {
   for(rai::Frame* a:K.frames) if(a->ats["logical"]) {
       const Graph& G = a->ats["logical"]->graph();
       for(Node* n:G) L.addFact({n->key, a->name});
-      L.addFact({"initial", a->name});
+//      L.addFact({"initial", a->name}); //*** THE INITIAL FACT WAS INTRODUCED TO SIMPLIFY SKELETONS - OBSOLETE ***
     }
   for(rai::Frame* a:K.frames) if(a->shape && a->ats["logical"]) {
       rai::Frame* p = a->getUpwardLink();

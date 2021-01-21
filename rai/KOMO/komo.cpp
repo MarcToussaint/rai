@@ -57,6 +57,8 @@ template<> const char* rai::Enum<rai::KOMOsolver>::names []= {
   "dense", "sparse", "banded", "sparseFactored", "NLopt", "Ipopt", "Ceres", nullptr
 };
 
+rai::Array<SkeletonSymbol> skeletonModes = { SY_free, SY_stable, SY_stableOn, SY_dynamic, SY_dynamicOn, SY_dynamicTrans, SY_quasiStatic, SY_quasiStaticOn, SY_magicTrans };
+
 //===========================================================================
 
 double shapeSize(const Configuration& K, const char* name, uint i=2);
@@ -1695,8 +1697,8 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, 
     if(i1-1<T) {
 #ifdef KOMO_PATH_CONFIG
       uintA nonSwitched = getNonSwitchedFrames(timeSlices[k_order+i0], timeSlices[k_order+i1]);
-      arr q0 = pathConfig.getJointState(timeSlices[k_order+i0].sub(nonSwitched));
-      arr q1 = pathConfig.getJointState(timeSlices[k_order+i1].sub(nonSwitched));
+      arr q0 = pathConfig.getJointState(timeSlices[k_order+i0].sub(nonSwitched), false);
+      arr q1 = pathConfig.getJointState(timeSlices[k_order+i1].sub(nonSwitched), false);
 #else
       uintA nonSwitched = getNonSwitchedFrames({configurations(k_order+j), configurations(k_order+i1)});
       arr q0 = configurations(k_order+j)->getJointState(nonSwitched);
@@ -1711,7 +1713,7 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, 
           q = q0 + phase * (q1-q0);
         }
 #ifdef KOMO_PATH_CONFIG
-        pathConfig.setJointState(q, timeSlices[k_order+j].sub(nonSwitched));
+        pathConfig.setJointState(q, timeSlices[k_order+j].sub(nonSwitched), false);
 #else
         configurations(k_order+j)->setJointState(q, nonSwitched);
 #endif
@@ -3398,17 +3400,15 @@ template<> const char* rai::Enum<SkeletonSymbol>::names []= {
 };
 
 intA getSwitchesFromSkeleton(const Skeleton& S, const rai::Configuration& world) {
-  rai::Array<SkeletonSymbol> modes = { SY_free, SY_stable, SY_stableOn, SY_dynamic, SY_dynamicOn, SY_dynamicTrans, SY_quasiStatic, SY_quasiStaticOn, SY_magicTrans };
-
   intA ret;
   for(int i=0; i<(int)S.N; i++) {
-    if(modes.contains(S.elem(i).symbol)) { //S(i) is about a switch
+    if(skeletonModes.contains(S.elem(i).symbol)) { //S(i) is about a switch
       int j=i-1;
       rai::Frame *toBeSwitched = world[S.elem(i).frames(-1)];
       rai::Frame *rootOfSwitch = toBeSwitched->getUpwardLink(NoTransformation, true);
       rai::Frame *childOfSwitch = toBeSwitched->getDownwardLink(true);
       for(; j>=0; j--) {
-        if(modes.contains(S.elem(j).symbol)){ //S(j) is about a switch
+        if(skeletonModes.contains(S.elem(j).symbol)){ //S(j) is about a switch
           const rai::String& prevSwitched = S.elem(j).frames.last();
           if(prevSwitched==toBeSwitched->name
              || prevSwitched==rootOfSwitch->name

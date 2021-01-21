@@ -82,32 +82,35 @@ OptNewton::StopCriterion OptNewton::step() {
 #if 1
   {
     intA boundActive; //analogy to dual parameters for bounds: -1: lower active; +1: upper active
+    uint nActiveBounds=0;
     if(!boundActive.N) boundActive.resize(x.N).setZero();
 #define BOUND_EPS 1e-10
     if(bounds_lo.N && bounds_up.N) {
       for(uint i=0; i<x.N; i++) if(bounds_up(i)>bounds_lo(i)) {
-        if(x(i)>=bounds_up(i)-BOUND_EPS) boundActive(i) = +1;
-        else if(x(i)<=bounds_lo(i)+BOUND_EPS) boundActive(i) = -1;
+        if(x(i)>=bounds_up(i)-BOUND_EPS){ boundActive(i) = +1; nActiveBounds++; }
+        else if(x(i)<=bounds_lo(i)+BOUND_EPS){ boundActive(i) = -1; nActiveBounds++; }
         else boundActive(i) = 0;
       }
     }
 #undef BOUND_EPS
-    //zero correlations to bound-active variables
-    if(!isSpecial(R)) {
-      for(uint i=0;i<x.N;i++) if(boundActive.elem(i)){
-        for(uint j=0;j<x.N;j++) if(i!=j){ R(i,j)=0; R(j,i)=0; }
-      }
-    } else if(R.isSparse()) {
-      rai::SparseMatrix& s = R.sparse();
-      for(uint k=0; k<s.elems.d0; k++) {
-        uint i = s.elems(k, 0);
-        uint j = s.elems(k, 1);
-        if(i!=j && (boundActive.elem(i) || boundActive.elem(j))){
-          s.Z.elem(k) = 0.;
+    if(nActiveBounds){
+      //zero correlations to bound-active variables
+      if(!isSpecial(R)) {
+        for(uint i=0;i<x.N;i++) if(boundActive.elem(i)){
+          for(uint j=0;j<x.N;j++) if(i!=j){ R(i,j)=0; R(j,i)=0; }
         }
-      }
-    } else NIY;
-    if(options.verbose>5) cout <<"  boundActive:" <<boundActive;
+      } else if(R.isSparse()) {
+        rai::SparseMatrix& s = R.sparse();
+        for(uint k=0; k<s.elems.d0; k++) {
+          uint i = s.elems(k, 0);
+          uint j = s.elems(k, 1);
+          if(i!=j && (boundActive.elem(i) || boundActive.elem(j))){
+            s.Z.elem(k) = 0.;
+          }
+        }
+      } else NIY;
+      if(options.verbose>5) cout <<"  boundActive:" <<boundActive;
+    }
   }
 #endif
 

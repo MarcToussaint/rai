@@ -116,12 +116,6 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
 
   Skeleton S = getSkeleton();
 
-  if(komo->logFile) writeSkeleton(*komo->logFile, S, getSwitchesFromSkeleton(S, komo->world));
-
-  if(komo->verbose>1) {
-    writeSkeleton(cout, S, getSwitchesFromSkeleton(S, komo->world));
-  }
-
   arrA waypoints;
   if(bound==BD_seqPath || bound==BD_seqVelPath) {
     CHECK(komoProblem(BD_seq), "BD_seq needs to be computed before");
@@ -134,6 +128,12 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
                              waypoints);
 
   CHECK(comp, "no compute object returned");
+
+  if(komo->logFile) writeSkeleton(*komo->logFile, S, getSwitchesFromSkeleton(S, komo->world));
+
+  if(komo->verbose>1) {
+    writeSkeleton(cout, S, getSwitchesFromSkeleton(S, komo->world));
+  }
 
   computes.append(comp);
 
@@ -291,6 +291,8 @@ rai::String LGP_Node::getTreePathString(char sep) const {
   return str;
 }
 
+extern rai::Array<SkeletonSymbol> skeletonModes;
+
 Skeleton LGP_Node::getSkeleton(bool finalStateOnly) const {
   rai::Array<Graph*> states;
   arr times;
@@ -346,6 +348,18 @@ Skeleton LGP_Node::getSkeleton(bool finalStateOnly) const {
       }
     }
   }
+
+  for(uint i=0; i<skeleton.N; i++) {
+    SkeletonEntry& se =  skeleton.elem(i);
+    if(skeletonModes.contains(se.symbol)){ //S(i) is about a switch
+      if(se.phase1<times.last()){
+        se.phase1 += 1.; //*** MODES EXTEND TO THE /NEXT/ TIME SLICE ***
+      }else{
+        se.phase1 = -1.;
+      }
+    }
+  }
+
 
   return skeleton;
 }
