@@ -29,6 +29,18 @@ struct F_PairCollision : Feature {
 
 //===========================================================================
 
+struct F_PairFunctional : Feature, GLDrawer {
+  virtual void phi2(arr& y, arr& J, const FrameL& F);
+  virtual uint dim_phi2(const FrameL& F){ return 1; }
+  virtual void glDraw(struct OpenGL&);
+protected:
+  arr x;
+  double d1, d2;
+  arr g1, g2;
+};
+
+//===========================================================================
+
 struct F_AccumulatedCollisions : Feature {
   double margin;
   F_AccumulatedCollisions(double _margin=.0) : margin(_margin) {}

@@ -81,17 +81,30 @@ PairCollision::PairCollision(const rai::Mesh& _mesh1, const rai::Mesh& _mesh2, c
   //in current state, the rad1, rad2, have not been used at all!!
 }
 
-PairCollision::PairCollision(ScalarFunction func1, ScalarFunction func2, const arr& seed, double rad1, double rad2){
+PairCollision::PairCollision(ScalarFunction func1, ScalarFunction func2, const arr& seed){
 
   ScalarFunction f = [&func1, &func2](arr& g, arr& H, const arr& x){
     arr g1, g2, H1, H2;
+#if 0
     double d1 = func1(g1, H1, x);
+    d1 += 1.; //boundingRadius1;
+    CHECK_GE(d1, 0., "");
     H = (2.*d1)*H1 + 2.*(g1^g1);
     g = (2.*d1)*g1;
     double d2 = func2(g2, H2, x);
+    d2 += 1.; //boundingRadius2;
+    CHECK_GE(d2, 0., "");
     H += (2.*d2)*H2 + 2.*(g2^g2);
     g += (2.*d2)*g2;
     return d1*d1+d2*d2;
+#else
+    double d1 = func1(g1, H1, x);
+    double d2 = func2(g2, H2, x);
+    double dd = d1 - d2;
+    H = H1 + H2 + (2.*dd)*(H1-H2) + 2.*((g1-g2)^(g1-g2));
+    g = g1 + g2 + (2.*dd)*(g1-g2);
+    return d1+d2+dd*dd;
+#endif
   };
 
   arr x = seed;
@@ -107,16 +120,34 @@ PairCollision::PairCollision(ScalarFunction func1, ScalarFunction func2, const a
   double d1 = func1(g1, NoArr, x);
   double d2 = func2(g2, NoArr, x);
 
-//  cout <<"d1^2+d2^2:" <<newton.fx <<" d1:" <<d1 <<" d2:" <<d2 <<endl;
+  cout <<"d1^2+d2^2:" <<newton.fx <<" d1:" <<d1 <<" d2:" <<d2 <<endl;
 
-  g1 /= length(g1);
-  g2 /= length(g2);
-  p1 = x - d1*g1;
-  p2 = x - d2*g2;
+//  CHECK_ZERO(d1-d2, 1e-4, "point should have equal distance (pos or negative) to both surfaces!");
+//  CHECK_ZERO(sumOfSqr(g1+g2), 1e-4, "gradients should exactly oppose!");
 
-  normal = p1-p2;
-  distance = length(normal);
-  normal /= distance;
+  if(d1<d2){ //deeper into d1 -- use g1 as normal!
+    normal = g1;
+    normal /= length(normal);
+    p1 = x - d1*normal;
+    p2 = x + d1*normal;
+    distance = 2.*d1;
+  }else{
+    normal = -g2;
+    normal /= length(normal);
+    p1 = x - d2*normal;
+    p2 = x + d2*normal;
+    distance = 2.*d2;
+  }
+  rad1=rad2=0.;
+
+//  normal = p1-p2;
+//  distance = d1+d2;
+////  normal = g1-g2;
+//  normal = g1-g2;
+//  normal /= length(normal);
+
+  if(rai::sign(distance) * scalarProduct(normal, p1-p2) < 0.)
+    normal *= -1.;
 
   simplex1 = p1;  simplex1.reshape(1,3);
   simplex2 = p2;  simplex2.reshape(1,3);

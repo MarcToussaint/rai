@@ -172,7 +172,17 @@ void projectToSurface(){
   gl.add(glStandardScene,nullptr);
   gl.add(m);
 
+  ofstream fil("z.obj");
+
   for(shared_ptr<ScalarFunction>& fct:fcts){
+    for(uint k=0;k<1000;k++){
+      arr x = randn(3);
+      x += pose.pos.getArr();
+      checkGradient(*fct, x, 1e-4);
+      checkHessian(*fct, x, 1e-4);
+      x.writeRaw(fil);
+      fil <<(*fct)(NoArr, NoArr, x) <<endl;
+    }
 
     m.setImplicitSurfaceBySphereProjection(*fct, 10., 3);
 

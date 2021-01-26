@@ -157,11 +157,13 @@ double DistanceFunction_ssBox::f(arr& g, arr& H, const arr& x) {
 
   arr closest = x_rel;
   arr del_abs = fabs(x_rel)-box;
+  bool inside=true;
   //-- find closest point on box
   if(del_abs.max()<0.) { //inside
     uint side=del_abs.argmax(); //which side are we closest to?
     if(x_rel(side)>0) closest(side) = box(side);  else  closest(side)=-box(side); //in positive or neg direction?
   } else { //outside
+    inside = false;
     closest = elemWiseMax(-box, closest);
     closest = elemWiseMin(box, closest);
   }
@@ -169,9 +171,10 @@ double DistanceFunction_ssBox::f(arr& g, arr& H, const arr& x) {
  //-- distance to closest point
   arr del = x_rel-closest;
   double d = length(del);
+  if(inside) d *= -1.;
   if(!!g) g = rot*del/d; //transpose(R) rotates the gradient back to world coordinates
   if(!!H) {
-    if(d<0.) { //inside
+    if(inside) { //inside
       H.resize(3, 3).setZero();
     } else { //outside
       if(del_abs.min()>0.) { //outside on all 3 axis

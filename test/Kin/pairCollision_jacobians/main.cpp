@@ -250,7 +250,11 @@ void TEST(Functional) {
     a->setJoint(rai::JT_free);
     a->set_Q()->setRandom();
 
-    a->setShape(rai::ST_ssBox, {.3, .2, .1, .02});
+    if(i==0)
+      a->setShape(rai::ST_sphere, {1.});
+    else
+//      a->setShape(rai::ST_capsule, {1.,.3});
+      a->setShape(rai::ST_ssBox, {1.3, 1.2, 1.1, .1});
     a->setColor({.8,.8,.8,.6});
     a->setContact(1);
   }
@@ -265,17 +269,18 @@ void TEST(Functional) {
     rndGauss(x, .7);
     C.setJointState(x);
 
-    F_PairCollision dist(F_PairCollision::_negScalar);
+//    F_PairCollision dist(F_PairCollision::_negScalar);
+    F_PairFunctional dist;
     auto y = dist.eval({C(1), C(2)});
-//    checkJacobian(dist.vf2({C(1), C(2)}), x, 1e-4);
+    checkJacobian(dist.vf2({C(1), C(2)}), x, 1e-4);
 
-    gl.add(*dist.coll);
+    gl.add(dist);
     gl.add(C);
     gl.update(STRING(t), true);
     /*if(!succ)*/ gl.watch();
 
     gl.remove(C);
-    gl.remove(*dist.coll);
+    gl.remove(dist);
 
   }
 }

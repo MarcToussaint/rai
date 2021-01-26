@@ -32,8 +32,7 @@ struct PairCollision : GLDrawer, NonCopyable {
   PairCollision(const rai::Mesh& mesh1, const rai::Mesh& mesh2,
                 const rai::Transformation& t1, const rai::Transformation& t2,
                 double rad1=0., double rad2=0.);
-  PairCollision(ScalarFunction func1, ScalarFunction func2, const arr& seed,
-                double rad1=0., double rad2=0.);
+  PairCollision(ScalarFunction func1, ScalarFunction func2, const arr& seed);
   ~PairCollision() {}
 
   void write(std::ostream& os) const;
