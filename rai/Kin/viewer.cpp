@@ -167,8 +167,10 @@ bool rai::ConfigurationViewer::playVideo(uint T, uint nFrames, bool watch, doubl
   drawText = tag;
   if(watch && rai::getInteractivity()) {
     int key = update(true);
+    drawSubFrames.clear();
     return !(key==27 || key=='q');
   }
+  drawSubFrames.clear();
   return false;
 
 }

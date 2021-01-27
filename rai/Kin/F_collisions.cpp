@@ -8,6 +8,7 @@
 
 #include "F_collisions.h"
 #include "proxy.h"
+#include "forceExchange.h"
 
 #include "../Geo/pairCollision.h"
 #include "../Optim/newton.h"
@@ -29,7 +30,7 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
   if(!m2->V.N) m2->V = zeros(1, 3);
 
   coll.reset();
-#if 1 //use functionals!
+#if 0 //use functionals!
   auto func1=f1->shape->functional();
   auto func2=f2->shape->functional();
   if(func1 && func2){
@@ -136,11 +137,14 @@ void F_PairFunctional::phi2(arr& y, arr& J, const FrameL& F){
   };
 
   arr seed = .5*(f1->getPosition()+f2->getPosition());
+  rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1), false);
+  if(ex) seed = ex->poa;
+
   x = seed;
   CHECK_EQ(x.N, 3, "");
   OptNewton newton(x, f, OptOptions()
                    .set_verbose(0)
-                   .set_stopTolerance(1e-4)
+                   .set_stopTolerance(1e-5)
                    .set_maxStep(1.)
                    .set_damping(1e-10) );
   newton.run();
@@ -148,7 +152,7 @@ void F_PairFunctional::phi2(arr& y, arr& J, const FrameL& F){
   d1 = (*func1)(g1, NoArr, x);
   d2 = (*func2)(g2, NoArr, x);
 
-  cout <<"d1^2+d2^2:" <<newton.fx <<" d1:" <<d1 <<" d2:" <<d2 <<endl;
+//  cout <<"d1^2+d2^2:" <<newton.fx <<" d1:" <<d1 <<" d2:" <<d2 <<endl;
 
   y.resize(1).scalar() = -d1 -d2;
   if(!!J) {

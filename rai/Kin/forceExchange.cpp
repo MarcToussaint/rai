@@ -186,8 +186,8 @@ void rai::ForceExchange::write(std::ostream& os) const {
 //  <<" type=" <<a_type <<'-' <<b_type <<" dist=" <<getDistance() /*<<" pDist=" <<get_pDistance()*/ <<" y=" <<y <<" l=" <<lagrangeParameter;
 }
 
-rai::ForceExchange* rai::getContact(rai::Frame* a, rai::Frame* b){
+rai::ForceExchange* rai::getContact(rai::Frame* a, rai::Frame* b, bool raiseErrorIfNonExist){
   for(rai::ForceExchange* c : a->forces) if(&c->a==a && &c->b==b) return c;
-  HALT("can't retrieve contact " <<a->name <<"--" <<b->name);
+  if(raiseErrorIfNonExist) HALT("can't retrieve contact " <<a->name <<"--" <<b->name);
   return nullptr;
 }

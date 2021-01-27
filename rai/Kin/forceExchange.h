@@ -56,6 +56,6 @@ stdOutPipe(ForceExchange)
 
 //===========================================================================
 
-rai::ForceExchange* getContact(rai::Frame* a, rai::Frame* b);
+rai::ForceExchange* getContact(rai::Frame* a, rai::Frame* b, bool raiseErrorIfNonExist=true);
 
 } //rai
