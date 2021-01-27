@@ -87,7 +87,7 @@ LIBS += -lceres
 endif
 
 ifeq ($(NLOPT),1)
-DEPEND_UBUNTU += libnlopt-dev gfortran
+DEPEND_UBUNTU += libnlopt-cxx-dev gfortran
 CXXFLAGS += -DRAI_NLOPT `pkg-config --cflags nlopt`
 LIBS     += `pkg-config --libs nlopt`
 endif

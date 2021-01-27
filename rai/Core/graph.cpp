@@ -1335,7 +1335,7 @@ struct Registry {
     rai::String cfgFileName="rai.cfg";
     if(registry["cfg"]) cfgFileName = registry.get<rai::String>("cfg");
     std::string cwd = getcwd_string();
-    if(chdir(rai::initDir.c_str())){
+    if(rai::initDir.length() && chdir(rai::initDir.c_str())){
       LOG(-1) <<"can't open rai.cfg -- couldn't change to directory '" <<rai::initDir <<"'";
     }else{
       LOG(3) <<"opening config file '" <<cfgFileName <<"'";

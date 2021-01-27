@@ -31,12 +31,12 @@ bool sortComp2(const OptLGP_SolutionDataPtr& a, const OptLGP_SolutionDataPtr& b)
   return sortComp(a->node, b->node);
 }
 
-struct DisplayThread : MiniThread {
+struct DisplayThread : Thread {
   LGP_Tree* lgp;
   OpenGL gl;
   uint t=0;
   bool saveVideo=false;
-  DisplayThread(LGP_Tree* lgp) : MiniThread("OptLGP_Display"), lgp(lgp), gl("OptLGP", 3*displaySize, 2*displaySize) {}
+  DisplayThread(LGP_Tree* lgp) : Thread("OptLGP_Display"), lgp(lgp), gl("OptLGP", 3*displaySize, 2*displaySize) { threadLoop(); }
   ~DisplayThread() { threadClose(); }
   void resetSteppings() {
     lgp->solutions.writeAccess();
@@ -46,26 +46,22 @@ struct DisplayThread : MiniThread {
     lgp->solutions.deAccess();
   }
 
-  void main() {
-    //    Metronome tic(.1);
-    for(;;) {
-      if(getStatus()<0) break;
-      //      tic.waitForTic();
-      rai::wait(.1);
-      lgp->solutions.writeAccess();
-      uint numSolutions = lgp->solutions().N;
-      for(uint i=0; i<numSolutions; i++) {
-        lgp->solutions()(i)->displayStep++;
-        if(gl.views.N>i)
-          gl.views(i).text.clear() <<i <<':' <<lgp->solutions()(i)->displayStep <<": "
-                                   <<lgp->solutions()(i)->node->cost <<"|  " <<lgp->solutions()(i)->node->constraints.last() <<'\n'
-                                   <<lgp->solutions()(i)->decisions;
-      }
-      lgp->solutions.deAccess();
-      if(numSolutions)
-        gl.update();
-      if(saveVideo) write_ppm(gl.captureImage, STRING(OptLGPDataPath <<"vid/" <<std::setw(4)<<std::setfill('0')<<t++<<".ppm"));
+  void step(){
+    //      tic.waitForTic();
+    rai::wait(.1);
+    lgp->solutions.writeAccess();
+    uint numSolutions = lgp->solutions().N;
+    for(uint i=0; i<numSolutions; i++) {
+      lgp->solutions()(i)->displayStep++;
+      if(gl.views.N>i)
+        gl.views(i).text.clear() <<i <<':' <<lgp->solutions()(i)->displayStep <<": "
+                                <<lgp->solutions()(i)->node->cost <<"|  " <<lgp->solutions()(i)->node->constraints.last() <<'\n'
+                               <<lgp->solutions()(i)->decisions;
     }
+    lgp->solutions.deAccess();
+    if(numSolutions)
+      gl.update();
+    if(saveVideo) write_ppm(gl.captureImage, STRING(OptLGPDataPath <<"vid/" <<std::setw(4)<<std::setfill('0')<<t++<<".ppm"));
   }
 };
 
