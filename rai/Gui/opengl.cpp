@@ -381,6 +381,10 @@ struct GlfwSpinner : Thread {
     gl->Scroll(0, yoffset);
   }
 
+  static void _Refresh(GLFWwindow* window){
+    OpenGL* gl=(OpenGL*)glfwGetWindowUserPointer(window);
+    gl->postRedrawEvent(true);
+  }
 };
 
 static GlfwSpinner* singletonGlSpinner() {
@@ -418,6 +422,8 @@ void OpenGL::openWindow() {
       glfwSetScrollCallback(self->window, GlfwSpinner::_Scroll);
       glfwSetWindowSizeCallback(self->window, GlfwSpinner::_Resize);
       glfwSetWindowCloseCallback(self->window, GlfwSpinner::_Close);
+      glfwSetWindowRefreshCallback(self->window, GlfwSpinner::_Refresh);
+ 
       glfwSwapInterval(1);
       glfwMakeContextCurrent(nullptr);
     }
