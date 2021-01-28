@@ -315,13 +315,9 @@ stdOutPipe(RenderingInfo)
 
 //===========================================================================
 
-/// global registry of parameters (taken from cmd line or file) as a singleton traph
-rai::Graph& getRegistry();
-
-template<class T>
-bool getParameterFromGraph(T& x, const char* key) {
-  return getRegistry().get(x, key);
-}
+/// global registry of parameters (taken from cmd line or file) as a singleton graph
+Mutex::TypedToken<rai::Graph> getParameters();
+void initParameters(int _argc, char* _argv[]);
 
 //===========================================================================
 

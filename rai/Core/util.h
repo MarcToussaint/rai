@@ -87,7 +87,7 @@ using std::make_shared;
 namespace rai {
 extern int argc;
 extern char** argv;
-extern std::string initDir;
+extern std::string startDir;
 extern bool IOraw;  ///< stream modifier for some classes (Mem in particular)
 extern uint lineCount;
 extern int verboseLevel;
@@ -184,13 +184,10 @@ template<class T> void getParameter(T& x, const char* tag, const T& Default);
 template<class T> void getParameter(T& x, const char* tag);
 template<class T> bool checkParameter(const char* tag);
 
-template<class T> void putParameter(const char* tag, const T& x);
-template<class T> bool getFromMap(T& x, const char* tag);
-
 template<class T> struct Parameter{
-  const char* name;
+  const char* key;
   T value;
-  Parameter(const char* name) : name(name) { value = getParameter<T>(name); }
+  Parameter(const char* _key) : key(_key) { value = getParameter<T>(_key); }
   const T& operator()(){ return value; }
 };
 #define raiPARAM(type, name) \
@@ -642,8 +639,6 @@ struct Singleton {
     static T singleton;
     return singleton;
   }
-
-  T* operator->() const { return &getSingleton(); }
 
   Singleton() {}
   Singleton(Singleton const&) = delete;

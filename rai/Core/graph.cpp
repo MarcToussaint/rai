@@ -49,7 +49,7 @@ stdOutPipe(ParseInfo)
 
 //-- query existing types
 inline Node* reg_findType(const char* key) {
-  NodeL types = getRegistry().getNodesOfType<std::shared_ptr<Type>>();
+  NodeL types = getParameters()->getNodesOfType<std::shared_ptr<Type>>();
   for(Node* ti: types) {
     if(String(ti->get<std::shared_ptr<Type>>()->typeId().name())==key) return ti;
     if(ti->matches(key)) return ti;
@@ -1311,52 +1311,47 @@ int distance(NodeL A, NodeL B) {
 // global singleton TypeRegistrationSpace
 //
 
-struct Registry {
-  rai::Graph registry;
-  Registry() {
-    int n;
-    StringA tags;
-    for(n=1; n<rai::argc; n++) {
-      if(rai::argv[n][0]=='-') {
-        rai::String key(rai::argv[n]+1);
-        if(n+1<rai::argc && rai::argv[n+1][0]!='-') {
-          rai::String value;
-          value <<':' <<rai::argv[n+1];
-          registry.readNode(value, tags, key, false, false);
-          n++;
-        } else {
-          registry.newNode<bool>(key, {}, true);
-        }
-      } else {
-        RAI_MSG("non-parsed cmd line argument:" <<rai::argv[n]);
-      }
-    }
+Singleton<Graph> parameterGraph;
 
-    rai::String cfgFileName="rai.cfg";
-    if(registry["cfg"]) cfgFileName = registry.get<rai::String>("cfg");
-    std::string cwd = getcwd_string();
-    if(rai::initDir.length() && chdir(rai::initDir.c_str())){
-      LOG(-1) <<"can't open rai.cfg -- couldn't change to directory '" <<rai::initDir <<"'";
-    }else{
-      LOG(3) <<"opening config file '" <<cfgFileName <<"'";
-      ifstream fil;
-      fil.open(cfgFileName);
-      if(fil.good()) {
-        fil >>registry;
-      } else {
-        LOG(3) <<" - failed";
-      }
+Mutex::TypedToken<Graph> getParameters(){
+  return parameterGraph();
+}
 
-      if(chdir(cwd.c_str())) HALT("couldn't change to directory '" <<cwd <<"'");
+void initParameters(int _argc, char*_argv[]){
+  auto P = parameterGraph();
+  //-- parse cmd line arguments into graph
+  int n;
+  StringA tags;
+  for(n=1; n<argc; n++) {
+    if(rai::argv[n][0]=='-') {
+      rai::String key(rai::argv[n]+1);
+      if(n+1<rai::argc && rai::argv[n+1][0]!='-') {
+        rai::String value;
+        value <<':' <<rai::argv[n+1];
+        P->readNode(value, tags, key, false, false);
+        n++;
+      } else {
+        P->newNode<bool>(key, {}, true);
+      }
+    } else {
+      RAI_MSG("non-parsed cmd line argument:" <<rai::argv[n]);
     }
   }
-  ~Registry() {
+
+  //-- append 'rai.cfg'
+  rai::String cfgFileName="rai.cfg";
+  if(P->findNode("cfg")) cfgFileName = P->get<rai::String>("cfg");
+  LOG(3) <<"opening config file '" <<cfgFileName <<"'";
+  ifstream fil;
+  fil.open(cfgFileName);
+  if(fil.good()) {
+    fil >>P();
+  } else {
+    LOG(3) <<" - failed";
   }
-};
 
-Singleton<Registry> registry;
-
-rai::Graph& getRegistry(){ return registry()->registry; }
+  LOG(1) <<"** parsed parameters:\n" <<P() <<'\n';
+}
 
 } //namespace
 
@@ -1384,5 +1379,4 @@ rai::Graph& getRegistry(){ return registry()->registry; }
 RUN_ON_INIT_BEGIN(graph)
 rai::NodeL::memMove=true;
 rai::GraphEditCallbackL::memMove=true;
-rai::initDir = getcwd_string();
 RUN_ON_INIT_END(graph)

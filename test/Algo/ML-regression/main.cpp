@@ -39,11 +39,11 @@ void testLinReg(const char *datafile=nullptr) {
   arr s_grid = sqrt(evaluateBayesianRidgeRegressionSigma(Phi, Sigma)/*+rai::sqr(sigma)*/);
 
   if(X.d1==1){
-    plot->Gnuplot();
-    if(plotDev) plot->FunctionPrecision(X_grid, y_grid, y_grid+s_grid, y_grid-s_grid);
-    else plot->Function(X_grid, y_grid);
-    plot->Points(X,y);
-    plot->update(true);
+    plot()->Gnuplot();
+    if(plotDev) plot()->FunctionPrecision(X_grid, y_grid, y_grid+s_grid, y_grid-s_grid);
+    else plot()->Function(X_grid, y_grid);
+    plot()->Points(X,y);
+    plot()->update(true);
   }
 
   //-- gnuplot
@@ -104,11 +104,11 @@ void testRobustRegression(const char *datafile=nullptr) {
   arr s_grid = sqrt(evaluateBayesianRidgeRegressionSigma(Phi, Sigma)/*+rai::sqr(sigma)*/);
 
   if(X.d1==1){
-    plot->Gnuplot();
-    plot->FunctionPrecision(X_grid, y_grid, y_grid+s_grid, y_grid-s_grid);
-    //plot->Function(X_grid, y_grid);
-    plot->Points(X,y);
-    plot->update(true);
+    plot()->Gnuplot();
+    plot()->FunctionPrecision(X_grid, y_grid, y_grid+s_grid, y_grid-s_grid);
+    //plot()->Function(X_grid, y_grid);
+    plot()->Points(X,y);
+    plot()->update(true);
   }
 
   //-- gnuplot
@@ -198,10 +198,10 @@ void testKernelReg(const char *datafile=nullptr) {
   s_grid = sqrt(s_grid);
 
   if(X.d1==1){
-    plot->Gnuplot();
-    plot->FunctionPrecision(X_grid, y_grid, y_grid+s_grid, y_grid-s_grid);
-    plot->Points(X,y);
-    plot->update(true);
+    plot()->Gnuplot();
+    plot()->FunctionPrecision(X_grid, y_grid, y_grid+s_grid, y_grid-s_grid);
+    plot()->Points(X,y);
+    plot()->update(true);
   }
 
   //-- gnuplot
@@ -249,11 +249,11 @@ void test2Class() {
   arr pba_grid=exp(ybay_grid); pba_grid /= pba_grid+1.;
 
   if(X.d1==1){
-    plot->Gnuplot();
-    plot->FunctionPrecision(X_grid, p_grid, pup_grid, pdn_grid);
-    plot->Function(X_grid, pba_grid);
-    plot->Points(X,y);
-    plot->update(true);
+    plot()->Gnuplot();
+    plot()->FunctionPrecision(X_grid, p_grid, pup_grid, pdn_grid);
+    plot()->Function(X_grid, pba_grid);
+    plot()->Points(X,y);
+    plot()->update(true);
   }
 
   rai::arrayBrackets="  ";
@@ -287,11 +287,11 @@ void TEST(KernelLogReg){
   arr p_grid = klr.evaluate(X_grid, p_ba, p_hi, p_lo);
 
   if(X.d1==1){
-    plot->Gnuplot();
-    plot->FunctionPrecision(X_grid, p_grid, p_hi, p_lo);
-    plot->Function(X_grid, p_ba);
-    plot->Points(X,y);
-    plot->update(true);
+    plot()->Gnuplot();
+    plot()->FunctionPrecision(X_grid, p_grid, p_hi, p_lo);
+    plot()->Function(X_grid, p_ba);
+    plot()->Points(X,y);
+    plot()->update(true);
   }
   if(X.d1==2){
     rai::arrayBrackets="  ";
@@ -466,7 +466,7 @@ int main(int argc, char *argv[]) {
     break;
   }
   
-  plot->Clear();
+  plot()->Clear();
   return 0;
 }
 
