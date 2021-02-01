@@ -195,7 +195,13 @@ void init_KOMO(pybind11::module& m) {
 //-- display
 
   .def("view", &KOMO::view)
-  .def("view_play", &KOMO::view_play)
+    .def("view_play",
+	 &KOMO::view_play,
+	 "",
+	 pybind11::arg("pause"),
+       pybind11::arg("delay"),
+	 pybind11::arg("saveVideoPath") = nullptr)
+
   .def("view_close", [](shared_ptr<KOMO>& self) {
     self->pathConfig.gl().reset();
   }, "close the view")

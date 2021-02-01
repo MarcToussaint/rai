@@ -1,3 +1,4 @@
 *.py
 *.html
 .ipynb_checkpoints
+*.nbconvert.ipynb
