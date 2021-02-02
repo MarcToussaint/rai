@@ -94,19 +94,16 @@ Signaler::~Signaler() {
 }
 
 void Signaler::setStatus(int i, Signaler* messenger) {
-  statusMutex.lock(RAI_HERE);
+  auto lock = statusMutex(RAI_HERE);
   status=i;
   broadcast(messenger);
-  statusMutex.unlock();
 }
 
 int Signaler::incrementStatus(Signaler* messenger) {
-  statusMutex.lock(RAI_HERE);
+  auto lock = statusMutex(RAI_HERE);
   status++;
   broadcast(messenger);
-  int i=status;
-  statusMutex.unlock();
-  return i;
+  return status;
 }
 
 void Signaler::broadcast(Signaler* messenger) {
@@ -141,8 +138,6 @@ void Event::callback(Var_base* v) {
   if(eventFct) {
     int newEventStatus = eventFct(variables, i);
     //  cout <<"event callback: BOOL=" <<eventStatus <<' ' <<s <<' ' <<status <<" statuses=" <<statuses <<endl;
-    auto lock = statusMutex(RAI_HERE);
-//    if(this->status!=newEventStatus)
     setStatus(newEventStatus);
   } else { //we don't have an eventFct, just increment value
     incrementStatus();
@@ -183,7 +178,7 @@ bool Signaler::waitForSignal(Mutex::Token *userHasLocked, double timeout) {
       ret = (cond.wait_for(*userHasLocked, std::chrono::duration<double>(timeout)) == std::cv_status::no_timeout);
     }
   }else{
-    std::unique_lock<std::mutex> lk(statusMutex.mutex);
+    auto lk = statusMutex(RAI_HERE);
     if(timeout<0.) {
       cond.wait(lk);
     } else {
@@ -197,7 +192,7 @@ bool Signaler::waitForEvent(std::function<bool()> f, Mutex::Token *userHasLocked
   if(userHasLocked){
     cond.wait(*userHasLocked, f);
   }else{
-    std::unique_lock<std::mutex> lk(statusMutex.mutex);
+    auto lk = statusMutex(RAI_HERE);
     cond.wait(lk, f);
   }
   return true;
@@ -209,7 +204,7 @@ bool Signaler::waitForStatusEq(int i, Mutex::Token *userHasLocked, double timeou
   if(userHasLocked){
     while(status!=i) ret = waitForSignal(userHasLocked, timeout);
   }else{
-    std::unique_lock<std::mutex> lk(statusMutex.mutex);
+    auto lk = statusMutex(RAI_HERE);
     while(status!=i) ret = waitForSignal(&lk, timeout);
   }
   return ret;
@@ -219,7 +214,7 @@ int Signaler::waitForStatusNotEq(int i, Mutex::Token *userHasLocked, double time
   if(userHasLocked){
     while(status==i) waitForSignal(userHasLocked, timeout);
   }else{
-    std::unique_lock<std::mutex> lk(statusMutex.mutex);
+    auto lk = statusMutex(RAI_HERE);
     while(status==i) waitForSignal(&lk, timeout);
   }
   return status;
@@ -229,7 +224,7 @@ int Signaler::waitForStatusGreaterThan(int i, Mutex::Token *userHasLocked, doubl
   if(userHasLocked){
     while(status<=i) waitForSignal(userHasLocked, timeout);
   }else{
-    std::unique_lock<std::mutex> lk(statusMutex.mutex);
+    auto lk = statusMutex(RAI_HERE);
     while(status<=i) waitForSignal(&lk, timeout);
   }
   return status;
@@ -239,7 +234,7 @@ int Signaler::waitForStatusSmallerThan(int i, Mutex::Token* userHasLocked, doubl
   if(userHasLocked){
     while(status>=i) waitForSignal(userHasLocked, timeout);
   }else{
-    std::unique_lock<std::mutex> lk(statusMutex.mutex);
+    auto lk = statusMutex(RAI_HERE);
     while(status>=i) waitForSignal(&lk, timeout);
   }
   return status;

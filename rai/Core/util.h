@@ -600,11 +600,11 @@ struct Mutex {
   void unlock();
 
   typedef std::unique_lock<std::mutex> Token;
-  Token operator()(const char* _lockInfo) { lockInfo=_lockInfo; return std::unique_lock<std::mutex>(mutex); }
+  Token operator()(const char* _lockInfo) { lockInfo=_lockInfo; return Token(mutex); }
 
-  template<class T> struct TypedToken : std::unique_lock<std::mutex> {
+  template<class T> struct TypedToken : Token {
     T* data;
-    TypedToken(Mutex& m, T* data, const char* _lockInfo) : std::unique_lock<std::mutex>(m.mutex), data(data) { m.lockInfo=_lockInfo; }
+    TypedToken(Mutex& m, T* data, const char* _lockInfo) : Token(m.mutex), data(data) { m.lockInfo=_lockInfo; }
     T* operator->() { return data; }
     operator T& () { return *data; }
     T& operator()() { return *data; }

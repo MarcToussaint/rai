@@ -2606,6 +2606,11 @@ void SparseMatrix::rowWiseMult(const arr& a) {
   for(uint k=0; k<Z.N; k++) Z.elem(k) *= a.elem(elems.p[2*k]);
 }
 
+void SparseMatrix::rowWiseMult(const floatA& a) {
+  CHECK_EQ(a.N, Z.d0, "");
+  for(uint k=0; k<Z.N; k++) Z.elem(k) *= a.elem(elems.p[2*k]);
+}
+
 //void SparseMatrix::add(const SparseMatrix& a, double coeff) {
 //  CHECK_EQ(a.Z.d0, Z.d0, "");
 //  CHECK_EQ(a.Z.d1, Z.d1, "");

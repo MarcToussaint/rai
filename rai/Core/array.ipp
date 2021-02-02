@@ -2966,14 +2966,17 @@ void indexWiseProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array
     CHECK_EQ(y.N, z.d0, "wrong dims for indexWiseProduct:" <<y.N <<"!=" <<z.d0);
     x = z;
     if(isSparseMatrix(z)){
+      CHECK(typeid(T)==typeid(double), "only for double!");
       x.sparse().rowWiseMult(y);
       return;
     }
     if(isRowShifted(z)){
+      CHECK(typeid(T)==typeid(double), "only for double!");
       uint rowSize = x.rowShifted().rowSize;
       for(uint i=0; i<x.d0; i++) {
         T yi=y.p[i];
-        T* xp=&x.rowShifted().entry(i,0), *xstop=xp+rowSize;
+        double *xp=&x.rowShifted().entry(i,0);
+        double *xstop=xp+rowSize;
         for(; xp!=xstop; xp++) *xp *= yi;
       }
       return;
