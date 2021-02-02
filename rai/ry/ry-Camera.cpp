@@ -11,7 +11,7 @@
 #include "ry-Camera.h"
 #include "types.h"
 #include "../RosCom/rosCamera.h"
-#include "../Perception/depth2PointCloud.h"
+#include "../Geo/depth2PointCloud.h"
 
 void init_Camera(pybind11::module& m) {
   pybind11::class_<ry::RyCamera>(m, "Camera")

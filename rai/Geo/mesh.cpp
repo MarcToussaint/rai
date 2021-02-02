@@ -10,6 +10,8 @@
 #include "qhull.h"
 #include "mesh_readAssimp.h"
 
+#include "../Optim/newton.h"
+
 #include <limits>
 
 #ifdef RAI_PLY
@@ -20,14 +22,16 @@
 #  include <GL/gl.h>
 #endif
 
-bool orsDrawWires=false;
-
-bool Geo_mesh_drawColors=true;
-
 extern void glColorId(uint id);
 
 //#define sphereSweptFactor *1.08
 #define sphereSweptFactor
+
+//==============================================================================
+
+template<> const char* rai::Enum<rai::ShapeType>::names []= {
+  "box", "sphere", "capsule", "mesh", "cylinder", "marker", "pointCloud", "ssCvx", "ssBox", "ssBoxElip", nullptr
+};
 
 //==============================================================================
 //
@@ -229,7 +233,7 @@ void rai::Mesh::setSSBox(double x_width, double y_width, double z_height, double
   makeConvexHull();
 }
 
-void rai::Mesh::setCappedCylinder(double r, double l, uint fineness) {
+void rai::Mesh::setCapsule(double r, double l, uint fineness) {
   uint i;
   setSphere(fineness);
   scale(r);
@@ -348,16 +352,24 @@ void rai::Mesh::box() {
 }
 
 void rai::Mesh::addMesh(const Mesh& mesh2, const rai::Transformation& X) {
-  uint n=V.d0, t=T.d0, tt=Tt.d0;
+  uint n=V.d0, tn=tex.d0, t=T.d0, tt=Tt.d0;
   V.append(mesh2.V);
   if(V.N==C.N && mesh2.V.N==mesh2.C.N) C.append(mesh2.C); else C.clear();
   tex.append(mesh2.tex);
   T.append(mesh2.T);
   for(; t<T.d0; t++) {  T(t, 0)+=n;  T(t, 1)+=n;  T(t, 2)+=n;  }
-  Tt.append(mesh2.Tt);
-  for(; tt<Tt.d0; tt++) {  Tt(tt, 0)+=n;  Tt(tt, 1)+=n;  Tt(tt, 2)+=n;  }
+  if(mesh2.Tt.N){
+    Tt.append(mesh2.Tt);
+    for(; tt<Tt.d0; tt++) {  Tt(tt, 0)+=tn;  Tt(tt, 1)+=tn;  Tt(tt, 2)+=tn;  }
+  }else{
+    Tt.append(consts<uint>(0, mesh2.T.d0, 3));
+  }
   if(!X.isZero()) {
     X.applyOnPointArray(V({n, -1})());
+  }
+  if(mesh2.texImg.N){
+//    CHECK(!texImg.N, "can't append texture images");
+    texImg = mesh2.texImg;
   }
 }
 
@@ -433,6 +445,19 @@ void rai::Mesh::setSSCvx(const arr& core, double r, uint fineness) {
     makeConvexHull();
     C=c;
   }
+}
+
+arr MinkowskiSum(const arr& A, const arr& B) {
+  arr S;
+  for(uint i=0; i<A.d0; i++) {
+    const arr& a = A[i];
+    for(uint j=0; j<B.d0; j++) {
+      const arr& b = B[j];
+      S.append(a+b);
+    }
+  }
+  S.reshape(-1, A.d1);
+  return S;
 }
 
 /** @brief calculate the normals of all triangles (Tn) and the average
@@ -1062,18 +1087,14 @@ void rai::Mesh::readFile(const char* filename) {
 }
 
 void rai::Mesh::read(std::istream& is, const char* fileExtension, const char* filename) {
-  if(!strcmp(fileExtension, "ply")
-      || !strcmp(fileExtension, "PLY")
-      || !strcmp(fileExtension, "dae")
-      || !strcmp(fileExtension, "DAE")) {
-    *this = AssimpLoader(filename, false).getSingleMesh();
-  } else if(!strcmp(fileExtension, "obj")) { readObjFile(is); }
+  if(!strcmp(fileExtension, "arr")) { readArr(is); }
   else if(!strcmp(fileExtension, "off")) { readOffFile(is); }
-  else if(!strcmp(fileExtension, "ply")) { readPLY(filename); }
+  //  else if(!strcmp(fileExtension, "ply")) { readPLY(filename); }
   else if(!strcmp(fileExtension, "tri")) { readTriFile(is); }
-  else if(!strcmp(fileExtension, "arr")) { readArr(is); }
-  else if(!strcmp(fileExtension, "stl") || !strcmp(fileExtension, "STL")) { readStlFile(is); }
-  else HALT("can't read fileExtension '" <<fileExtension <<"' file '" <<filename <<"'");
+  //  else if(!strcmp(fileExtension, "stl") || !strcmp(fileExtension, "STL")) { readStlFile(is); }
+  else {
+    *this = AssimpLoader(filename, false).getSingleMesh();
+  }
 }
 
 void rai::Mesh::writeTriFile(const char* filename) {
@@ -1336,305 +1357,6 @@ void rai::Mesh::readArr(std::istream& is) {
   texImg.readTagged(is, "texImg");
 }
 
-bool rai::Mesh::readStlFile(std::istream& is) {
-  //first check if binary
-  if(rai::parse(is, "solid", true)) { //is ascii
-    rai::String name;
-    is >>name;
-    uint i, k=0, k0;
-    double x, y, z;
-//    cout <<"reading STL file -- object name '" <<name <<"'..." <<endl;
-    V.resize(10000);
-    //1st pass
-    for(i=0, k=0;; i++) {
-      k0=k;
-      if(k>V.N-10) V.resizeCopy(2*V.N);
-      if(!(i%100)) cout <<"\r" <<i <<' ' <<i*7;
-      if(rai::peerNextChar(is)!='f') break;
-      is >>PARSE("facet");
-      is >>PARSE("normal") >>x >>y >>z;  rai::skip(is);
-      is >>PARSE("outer") >>PARSE("loop");      rai::skip(is);
-      is >>PARSE("vertex")>>V(k++); is>>V(k++); is>>V(k++);   rai::skip(is);
-      is >>PARSE("vertex")>>V(k++); is>>V(k++); is>>V(k++);   rai::skip(is);
-      is >>PARSE("vertex")>>V(k++); is>>V(k++); is>>V(k++);   rai::skip(is);
-      is >>PARSE("endloop");             rai::skip(is);
-      is >>PARSE("endfacet");            rai::skip(is);
-      if(!is.good()) {
-        RAI_MSG("reading error - skipping facet " <<i <<" (line " <<i*7+2 <<")");
-        is.clear();
-        cout <<1 <<endl;
-        rai::skipUntil(is, "endfacet");
-        cout <<2 <<endl;
-        k=k0;
-      }
-    }
-    is >>PARSE("endsolid");
-    if(!is.good()) RAI_MSG("couldn't read STL end tag (line" <<i*7+2);
-    cout <<"... STL file read: #tris=" <<i <<" #lines=" <<i*7+2 <<endl;
-    CHECK(!(k%9), "not mod 9..");
-    V.resizeCopy(k/3, 3);
-    T.resize(k/9, 3);
-    for(i=0; i<T.N; i++) { T.elem(i)=i; }
-  } else { //is binary
-    is.clear();
-    is.seekg(0, std::ios::beg);
-    char header[80];
-    is.read(header, 80);
-    uint ntri;
-    is.read((char*)&ntri, sizeof(ntri));
-    T.resize(ntri, 3);
-    floatA Vfloat(3*ntri, 3);
-    float normal[3];
-    uint16_t att;
-    for(uint i=0; i<ntri; i++) {
-      is.read((char*)&normal, 3*Vfloat.sizeT);
-      is.read((char*)&Vfloat(3*i, 0), 9*Vfloat.sizeT);
-      T(i, 0)=3*i+0;  T(i, 1)=3*i+1;  T(i, 2)=3*i+2;
-      is.read((char*)&att, 2);
-      CHECK_EQ(att, 0, "this stl file is broke");
-    }
-    copy(V, Vfloat);
-  }
-  return true;
-}
-
-/*void rai::Mesh::getOBJ(char* filename){
-  if(!glm){
-  glm = glmReadOBJ(filename);
-  glmReverseWinding(glm);
-  }
-
-  ////glmUnitize(glm);
-  glmFacetNormals(glm);
-  glmVertexNormals(glm, 90.0);
-
-  // creates a display list for the OBJ
-  ////  g._pmodel_displaylist = glmList(glm, GLM_SMOOTH | GLM_MATERIAL);
-  }*/
-
-uint& Tni(uint, uint) { static uint dummy; return dummy; } //normal index
-
-rai::String str;
-
-char* strn(std::istream& is) {
-  str.read(is, " \n\t\r", " \n\t\r", true); //we once had a character '\d' in there -- for Windows?
-  CHECK(is.good(), "could not read line");
-  return str.p;
-}
-
-/** initialises the ascii-obj file "filename"*/
-void rai::Mesh::readObjFile(std::istream& is) {
-  // make a first pass through the file to get a count of the number
-  // of vertices, normals, texcoords & triangles
-  uint nV, nN, nTex, nT;
-  nV = nN = nTex = nT = 0;
-  int v, n, t;
-
-//  // we only want to parse the relevant subpart/submesh of the mesh therefore
-//  // jump to the right position and stop parsing at the right positon.
-//  if (parsing_pos_start > -1)
-//    is.seekg(parsing_pos_start); //  fseek(file, parsing_pos_start, SEEK_SET);
-
-//  while ((sscanf(strn(is), "%s", str.p) != EOF) && (ftell(file) < parsing_pos_end)) {
-  strn(is);
-  for(bool ex=false; !ex;) {
-//    if(parsing_pos_start>-1 && is.tellg()>=parsing_pos_end) break;
-    switch(str.p[0]) {
-      case '\0':
-        is.clear();
-        ex=true;
-        break; //EOF
-      case '#':
-        rai::skipRestOfLine(is);
-        strn(is);
-        break;
-      case 'v':
-        switch(str.p[1]) {
-          case '\0': nV++;    rai::skipRestOfLine(is); break;  // vertex
-          case 'n':  nN++;    rai::skipRestOfLine(is); break;  // normal
-          case 't':  nTex++;  rai::skipRestOfLine(is); break;  // texcoord
-          default: HALT("firstPass(): Unknown token '" <<str.p <<"'");  break;
-        }
-        strn(is);
-        break;
-      case 'f':               // face
-        v = n = t = 0;
-        strn(is);
-        // can be one of %d, %d//%d, %d/%d, %d/%d/%d %d//%d
-        if(strstr(str.p, "//")) {
-          // v//n
-          CHECK(sscanf(str.p, "%d//%d", &v, &n), "fscan failed");
-          CHECK(sscanf(strn(is), "%d//%d", &v, &n), "fscan failed");
-          CHECK(sscanf(strn(is), "%d//%d", &v, &n), "fscan failed");
-          nT++;
-          while(sscanf(strn(is), "%d//%d", &v, &n) > 0) nT++;
-        } else if(sscanf(str.p, "%d/%d/%d", &v, &t, &n) == 3) {
-          // v/t/n
-          CHECK(sscanf(strn(is), "%d/%d/%d", &v, &t, &n), "fscan failed");
-          CHECK(sscanf(strn(is), "%d/%d/%d", &v, &t, &n), "fscan failed");
-          nT++;
-          while(sscanf(strn(is), "%d/%d/%d", &v, &t, &n) > 0) nT++;
-        } else if(sscanf(str.p, "%d/%d", &v, &t) == 2) {
-          // v/t
-          CHECK(sscanf(strn(is), "%d/%d", &v, &t), "fscan failed");
-          CHECK(sscanf(strn(is), "%d/%d", &v, &t), "fscan failed");
-          nT++;
-          while(sscanf(strn(is), "%d/%d", &v, &t) > 0) nT++;
-        } else {
-          // v
-          CHECK(sscanf(strn(is), "%d", &v), "fscan failed");
-          CHECK(sscanf(strn(is), "%d", &v), "fscan failed");
-          nT++;
-          while(sscanf(strn(is), "%d", &v) > 0) nT++;
-        }
-        break;
-
-      default:  RAI_MSG("unsupported .obj file tag '" <<str <<"'");  rai::skipRestOfLine(is);  strn(is);  break;
-    }
-  }
-
-  //allocate memory
-  V.resize(nV, 3);
-  Vn.resize(nN, 3);
-  T.resize(nT, 3);
-  Tn.resize(nT, 3);
-  if(nTex) Tt.resize(nT, 3);
-  //if(nVN) N.resize(nVN, 3);
-  if(nTex) tex.resize(nTex, 2);
-
-  // rewind to beginning of file and read in the data this pass
-  is.seekg(0);
-  is.clear();
-//  if (parsing_pos_start > -1)
-//    is.seekg(parsing_pos_start); //  fseek(file, parsing_pos_start, SEEK_SET);
-
-  /* on the second pass through the file, read all the data into the
-     allocated arrays */
-  nV = nN = nTex = nT = 0;
-  ////_material = 0;
-
-//  while ((sscanf(strn(is), "%s", str.p) != EOF) && (ftell(file) < parsing_pos_end)) {
-  strn(is);
-  for(bool ex=false; !ex;) {
-//    if(parsing_pos_start>-1 && is.tellg()>=parsing_pos_end) break;
-    switch(str.p[0]) {
-      case '\0':
-        is.clear();
-        ex=true;
-        break; //EOF
-      case '#':
-        rai::skipRestOfLine(is);
-        strn(is);
-        break;  //comment
-      case 'v':               // v, vn, vt
-        switch(str.p[1]) {
-          case '\0': is >>V(nV, 0) >>V(nV, 1) >> V(nV, 2);  nV++;  break;  //vertex
-          case 'n':  is >>Vn(nN, 0) >>Vn(nN, 1) >>Vn(nN, 2);  nN++;  break;  //normal
-          case 't':  is >>tex(nTex, 0) >>tex(nTex, 1);   nTex++;  break;  //texcoord
-        }
-        strn(is);
-        break;
-      case 'f':               // face
-        v = n = t = 0;
-        strn(is);
-        if(strstr(str.p, "//")) {
-          // v//vn
-          sscanf(str.p, "%d//%d", &v, &n);
-
-          T(nT, 0) = v < 0 ? v + nV : v;
-          Tni(nT, 0) = n < 0 ? n + nN : n;
-          CHECK(sscanf(strn(is), "%d//%d", &v, &n), "fscan failed");
-          T(nT, 1) = v < 0 ? v + nV : v;
-          Tni(nT, 1) = n < 0 ? n + nN : n;
-          CHECK(sscanf(strn(is), "%d//%d", &v, &n), "fscan failed");
-          T(nT, 2) = v < 0 ? v + nV : v;
-          Tni(nT, 2) = n < 0 ? n + nN : n;
-          //// group->triangles[group->nT++] = nT;
-          nT++;
-          while(sscanf(strn(is), "%d//%d", &v, &n) > 0) {
-            T(nT, 0) = T(nT-1, 0);
-            Tni(nT, 0) = Tni(nT-1, 0);
-            T(nT, 1) = T(nT-1, 2);
-            Tni(nT, 1) = Tni(nT-1, 2);
-            T(nT, 2) = v < 0 ? v + nV : v;
-            Tni(nT, 2) = n < 0 ? n + nN : n;
-            //// group->triangles[group->numtriangles++] = numtriangles;
-            nT++;
-          }
-        } else if(sscanf(str.p, "%d/%d/%d", &v, &t, &n) == 3) {
-          // v/vt/vn
-          T(nT, 0) = v < 0 ? v + nV : v;
-          Tt(nT, 0) = t < 0 ? t + nTex : t;
-          Tni(nT, 0) = n < 0 ? n + nN : n;
-          CHECK(sscanf(strn(is), "%d/%d/%d", &v, &t, &n), "fscan failed");
-          T(nT, 1) = v < 0 ? v + nV : v;
-          Tt(nT, 1) = t < 0 ? t + nTex : t;
-          Tni(nT, 1) = n < 0 ? n + nN : n;
-          CHECK(sscanf(strn(is), "%d/%d/%d", &v, &t, &n), "fscan failed");
-          T(nT, 2) = v < 0 ? v + nV : v;
-          Tt(nT, 2) = t < 0 ? t + nTex : t;
-          Tni(nT, 2) = n < 0 ? n + nN : n;
-          //// group->triangles[group->numtriangles++] = numtriangles;
-          nT++;
-          while(sscanf(strn(is), "%d/%d/%d", &v, &t, &n) > 0) {
-            T(nT, 0) = T(nT-1, 0);  Tt(nT, 0) = Tt(nT-1, 0);  Tni(nT, 0) = Tni(nT-1, 0);
-            T(nT, 1) = T(nT-1, 2);  Tt(nT, 1) = Tt(nT-1, 2);  Tni(nT, 1) = Tni(nT-1, 2);
-            T(nT, 2) = v < 0 ? v + nV : v;
-            Tt(nT, 2) = t < 0 ? t + nTex : t;
-            Tni(nT, 2) = n < 0 ? n + nN : n;
-            //// group->triangles[group->numtriangles++] = numtriangles;
-            nT++;
-          }
-        } else if(sscanf(str.p, "%d/%d", &v, &t) == 2) {
-          // v/vt
-          T(nT, 0) = v < 0 ? v + nV : v;
-          Tt(nT, 0) = t < 0 ? t + nTex : t;
-          CHECK(sscanf(strn(is), "%d/%d", &v, &t), "fscan failed");
-          T(nT, 1) = v < 0 ? v + nV : v;
-          Tt(nT, 1) = t < 0 ? t + nTex : t;
-          CHECK(sscanf(strn(is), "%d/%d", &v, &t), "fscan failed");
-          T(nT, 2) = v < 0 ? v + nV : v;
-          Tt(nT, 2) = t < 0 ? t + nTex : t;
-          //// group->triangles[group->numtriangles++] = numtriangles;
-          nT++;
-          while(sscanf(strn(is), "%d/%d", &v, &t) > 0) {
-            T(nT, 0) = T(nT-1, 0);  Tt(nT, 0) = Tt(nT-1, 0);  T(nT, 1) = T(nT-1, 2);
-            Tt(nT, 1) = Tt(nT-1, 2);  T(nT, 2) = v < 0 ? v + nV : v;  Tt(nT, 2) = t < 0 ? t + nTex : t;
-            //// group->triangles[group->numtriangles++] = numtriangles;
-            nT++;
-          }
-        } else {
-          // v
-          sscanf(str.p, "%d", &v);
-          T(nT, 0) = v < 0 ? v + nV : v;
-          CHECK(sscanf(strn(is), "%d", &v), "fscan failed");
-          T(nT, 1) = v < 0 ? v + nV : v;
-          CHECK(sscanf(strn(is), "%d", &v), "fscan failed");
-          T(nT, 2) = v < 0 ? v + nV : v;
-          //// group->triangles[group->numtriangles++] = nT;
-          nT++;
-          while(sscanf(strn(is), "%d", &v) > 0) {
-            T(nT, 0) = T(nT-1, 0);
-            T(nT, 1) = T(nT-1, 2);
-            T(nT, 2) = v < 0 ? v + nV : v;
-            //// group->triangles[group->numtriangles++] = numtriangles;
-            nT++;
-          }
-        }
-        break;
-
-      default:  rai::skipRestOfLine(is);  strn(is);  break;
-    }
-  }
-
-  //CONVENTION!: start counting vertex indices from 0!!
-  T -= 1u;
-  CHECK(T.max() < nV, "");
-  if(nTex) {
-    Tt -= 1u;
-    CHECK(Tt.max() < nTex, "");
-  }
-}
 
 //===========================================================================
 // Util
@@ -1686,7 +1408,7 @@ extern void glColor(float r, float g, float b, float alpha);
 
 /// GL routine to draw a rai::Mesh
 void rai::Mesh::glDraw(struct OpenGL& gl) {
-  if(Geo_mesh_drawColors) {
+  if(glDrawOptions(gl).drawColors) {
     if(C.nd==1) {
       CHECK(C.N==3 || C.N==4, "need a basic color");
       GLboolean light=true;
@@ -1733,7 +1455,7 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
   if(V.d0!=Vn.d0 || T.d0!=Tn.d0) computeNormals();
 
   //-- if not yet done, GenTexture
-  if(texImg.N && Geo_mesh_drawColors) {
+  if(texImg.N && glDrawOptions(gl).drawColors) {
     if(texture<0) {
       GLuint texName;
       glGenTextures(1, &texName);
@@ -1759,7 +1481,7 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
     //  glShadeModel(GL_FLAT);
     glShadeModel(GL_SMOOTH);
     glEnableClientState(GL_VERTEX_ARRAY);
-    if(Geo_mesh_drawColors) {
+    if(glDrawOptions(gl).drawColors) {
       if(tex.N) CHECK_EQ(tex.d0, V.d0, "this needs tex coords for each vertex; if you have it face wise, render the slow way..");
       if(tex.N) glEnable(GL_TEXTURE_2D);
 
@@ -1770,7 +1492,7 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
     }
 
     glVertexPointer(3, GL_DOUBLE, 0, V.p);
-    if(Geo_mesh_drawColors) {
+    if(glDrawOptions(gl).drawColors) {
       glNormalPointer(GL_DOUBLE, 0, Vn.p);
       if(C.N==V.N) glColorPointer(3, GL_DOUBLE, 0, C.p);
       if(tex.N) glTexCoordPointer(2, GL_DOUBLE, 0, tex.p);
@@ -1809,7 +1531,7 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
     uint i, v;
 
     if(tex.N) CHECK_EQ(Tt.d0, T.d0, "this needs tex coords for each tri");
-    if(tex.N && Geo_mesh_drawColors) glEnable(GL_TEXTURE_2D);
+    if(tex.N && glDrawOptions(gl).drawColors) glEnable(GL_TEXTURE_2D);
 
     glBegin(GL_TRIANGLES);
     for(i=0; i<T.d0; i++) {
@@ -1822,7 +1544,7 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
       v=T(i, 2);  glNormal3dv(&Vn(v, 0));  if(C.d0==V.d0) glColor3dv(&C(v, 0));  if(Tt.N) glTexCoord2dv(&tex(Tt(i, 2), 0));  glVertex3dv(&V(v, 0));
     }
     glEnd();
-    if(Tt.N && texImg.N &&  Geo_mesh_drawColors) {
+    if(Tt.N && texImg.N && glDrawOptions(gl).drawColors) {
       glDisable(GL_TEXTURE_2D);
       glEnable(GL_LIGHTING);
     }
@@ -1842,7 +1564,7 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
 #endif
   }
 
-  if(orsDrawWires) { //on top of mesh
+  if(glDrawOptions(gl).drawWires) { //on top of mesh
 #if 0
     uint t;
     for(t=0; t<T.d0; t++) {
@@ -1875,9 +1597,7 @@ void glTransform(const rai::Transformation&) { NICO }
 
 //==============================================================================
 
-extern OpenGL& NoOpenGL;
-
-void glDrawMeshes(void* P, OpenGL&) {
+void glDrawMeshes(void* P, OpenGL& gl) {
 #ifdef RAI_GL
   MeshA& meshes = *((MeshA*)P);
   double GLmatrix[16];
@@ -1885,25 +1605,7 @@ void glDrawMeshes(void* P, OpenGL&) {
     glPushMatrix();
     mesh.glX.getAffineMatrixGL(GLmatrix);
     glLoadMatrixd(GLmatrix);
-    mesh.glDraw(NoOpenGL);
-    glPopMatrix();
-  }
-#endif
-}
-
-void rai::MeshCollection::glDraw(OpenGL& gl) {
-#ifdef RAI_GL
-  CHECK_EQ(X.nd, 2, "");
-  CHECK_EQ(X.d0, M.N, "");
-  CHECK_EQ(X.d1, 7, "");
-
-  double GLmatrix[16];
-  rai::Transformation t;
-  for(uint i=0; i<M.N; i++) {
-    glPushMatrix();
-    t.set(&X(i, 0));
-    glLoadMatrixd(t.getAffineMatrixGL(GLmatrix));
-    M(i)->glDraw(gl);
+    mesh.glDraw(gl);
     glPopMatrix();
   }
 #endif
@@ -2143,187 +1845,27 @@ void rai::Mesh::setImplicitSurface(ScalarFunction f, double lo, double hi, uint 
 }
 #endif
 
-//===========================================================================
+void rai::Mesh::setImplicitSurfaceBySphereProjection(ScalarFunction f, double rad, uint fineness){
+  setSphere(fineness);
+  scale(rad);
 
-DistanceFunction_Sphere::DistanceFunction_Sphere(const rai::Transformation& _t, double _r):t(_t), r(_r) {
-  ScalarFunction::operator=([this](arr& g, arr& H, const arr& x)->double{ return f(g, H, x); });
-}
+  ScalarFunction distSqr = [&f](arr& g, arr& H, const arr& x){
+    double d = f(g, H, x);
+    H *= 2.*d;
+    H += 2.*(g^g);
+    g *= 2.*d;
+    return d*d;
+  };
 
-double DistanceFunction_Sphere::f(arr& g, arr& H, const arr& x) {
-  arr d = x-conv_vec2arr(t.pos);
-  double len = length(d);
-  if(!!g) g = d/len;
-  if(!!H) H = 1./len * (eye(3) - (d^d)/(len*len));
-  return len-r;
-}
-
-//===========================================================================
-
-//double DistanceFunction_InfCylinder::fs(arr& g, arr& H, const arr& x){
-//  z = z / length(z);
-//  arr a = (x-c) - scalarProduct((x-c), z) * z;
-//  arr I(x.d0,x.d0);
-//  uint i;
-//  double na = length(a);
-
-//  if(!!g) g = s*a/na;
-//  if(!!H){
-//    I.setZero();
-//    for(i=0;i<x.d0;++i) I(i,i)=1;
-//    H = s/na * (I - z*(~z) - 1/(na*na) * a*(~a));
-//  }
-//  return s*(na-r);
-//}
-
-//===========================================================================
-
-DistanceFunction_Cylinder::DistanceFunction_Cylinder(const rai::Transformation& _t, double _r, double _dz):t(_t), r(_r), dz(_dz) {
-  ScalarFunction::operator=([this](arr& g, arr& H, const arr& x)->double{ return f(g, H, x); });
-}
-
-double DistanceFunction_Cylinder::f(arr& g, arr& H, const arr& x) {
-  arr z = conv_vec2arr(t.rot.getZ());
-  arr c = conv_vec2arr(t.pos);
-  arr b = scalarProduct(x-c, z) * z;
-  arr a = (x-c) - b;
-  arr I(3, 3);
-  double la = length(a);
-  double lb = length(b);
-  arr aaTovasq = 1/(la*la) * (a^a);
-  arr zzT = z^z;
-
-  if(lb < dz/2.) {   // x projection on z is inside cyl
-    if(la<r && (dz/2.-lb)<(r-la)) { // x is INSIDE the cyl and closer to the lid than the wall
-      if(!!g) g = 1./lb*b; //z is unit: s*z*|z|*sgn(b*z) = s*b/nb
-      if(!!H) { I.setZero(); H=I; }
-      return lb-dz/2.;
-    } else { // closer to the side than to a lid (inc. cases in- and outside the tube, because (r-na)<0 then)
-      if(!!g) g = a/la;
-      if(!!H) {
-        I.setId(3);
-        H = 1./la * (I - zzT - aaTovasq);
-      }
-      return la-r;
-    }
-  } else { // x projection on z is outside cylinder
-    if(la < r) {  // inside the infinite cylinder
-      if(!!g) g = b/lb;
-      if(!!H) H.resize(3, 3).setZero();
-      return lb-dz/2.;
-    } else { // outside the infinite cyl
-      arr v =  b/lb * (lb-dz/2.)  + a/la * (la-r); //MT: good! (note: b/nb is the same as z) SD: well, b/nb is z or -z.
-      double nv=length(v);
-      if(!!g) g = v/nv;
-      if(!!H) {
-        I.setId(3);
-        arr dvdx = (la-r)/la*(I - zzT - aaTovasq)
-                   + aaTovasq + zzT;
-        H = 1./nv* (dvdx - 1/nv/nv * (v^v) * (~dvdx));
-      }
-      return nv;
-    }
+  for(uint i=0;i<V.d0;i++){
+    arr x = V[i];
+    OptNewton newton(x, distSqr, OptOptions()
+                     .set_verbose(0)
+                     .set_maxStep(.5*rad)
+                     .set_damping(1e-10) );
+    newton.run();
   }
-  HALT("You shouldn't be here!");
 }
-
-//===========================================================================
-
-/// dx, dy, dz are box-wall-coordinates: width=2*dx...; t is box transform; x is query point in world
-void closestPointOnBox(arr& closest, arr& signs, const rai::Transformation& t, double dx, double dy, double dz, const arr& x) {
-  arr rot = t.rot.getArr();
-  arr a_rel = (~rot)*(x-conv_vec2arr(t.pos)); //point in box coordinates
-  arr dim = {dx, dy, dz};
-  signs.resize(3);
-  signs.setZero();
-  closest = a_rel;
-  arr del_abs = fabs(a_rel)-dim;
-  if(del_abs.max()<0.) { //inside
-    uint side=del_abs.argmax(); //which side are we closest to?
-    //in positive or neg direction?
-    if(a_rel(side)>0) { closest(side) = dim(side);  signs(side)=+1.; }
-    else             { closest(side) =-dim(side);  signs(side)=-1.; }
-  } else { //outside
-    for(uint side=0; side<3; side++) {
-      if(closest(side)<-dim(side)) { signs(side)=-1.; closest(side)=-dim(side); }
-      if(closest(side)> dim(side)) { signs(side)=+1.; closest(side)= dim(side); }
-    }
-  }
-  closest = rot*closest + t.pos.getArr();
-}
-
-//===========================================================================
-
-DistanceFunction_Box::DistanceFunction_Box(const rai::Transformation& _t, double _dx, double _dy, double _dz, double _r):t(_t), dx(_dx), dy(_dy), dz(_dz), r(_r) {
-  ScalarFunction::operator=([this](arr& g, arr& H, const arr& x)->double{ return f(g, H, x); });
-}
-
-double DistanceFunction_Box::f(arr& g, arr& H, const arr& x) {
-  arr rot = t.rot.getArr();
-  arr a_rel = (~rot)*(x-conv_vec2arr(t.pos)); //point in box coordinates
-  arr dim = {dx, dy, dz};
-
-  arr closest = a_rel;
-  arr del_abs = fabs(a_rel)-dim;
-  //-- find closest point on box and distance to it
-  if(del_abs.max()<0.) { //inside
-    uint side=del_abs.argmax(); //which side are we closest to?
-    if(a_rel(side)>0) closest(side) = dim(side);  else  closest(side)=-dim(side); //in positive or neg direction?
-  } else { //outside
-    closest = elemWiseMax(-dim, closest);
-    closest = elemWiseMin(dim, closest);
-  }
-
-  arr del = a_rel-closest;
-  double d = length(del);
-  if(!!g) g = rot*del/d; //transpose(R) rotates the gradient back to world coordinates
-  if(!!H) {
-    if(d<0.) { //inside
-      H.resize(3, 3).setZero();
-    } else { //outside
-      if(del_abs.min()>0.) { //outside on all 3 axis
-        H = 1./d * (eye(3) - (del^del)/(d*d));
-      } else {
-        arr edge=del_abs;
-        for(double& z: edge) z=(z<0.)?0.:1.;
-        if(sum(edge)<=1.1) { //closest to the plane (equals 1.)
-          H.resize(3, 3).setZero();
-        } else { //closest to an edge
-          edge = 1.-edge;
-          H = 1./d * (eye(3) - (del^del)/(d*d) - (edge^edge));
-        }
-      }
-      H = rot*H*(~rot);
-    }
-  }
-
-  return d-r;
-}
-
-ScalarFunction DistanceFunction_SSBox = [](arr& g, arr& H, const arr& x) -> double{
-  // x{0,2} are box-wall-coordinates, not width!
-  CHECK_EQ(x.N, 14, "query-pt + abcr + pose");
-  rai::Transformation t;
-  t.pos.set(x({7, 9}));
-  t.rot.set(x({10, 13}));
-  t.rot.normalize();
-  arr closest, signs;
-  closestPointOnBox(closest, signs, t, x(3), x(4), x(5), x({0, 2}));
-  arr grad = x({0, 2}) - closest;
-  double d = length(grad);
-  grad /= d;
-  d -= x(6);
-  if(!!g) {
-    g.resize(14);
-    g.setZero();
-    g({0, 2}) = grad;
-    g({7, 9}) = - grad;
-    g({3, 5}) = - signs%(t.rot / rai::Vector(grad)).getArr();
-    g(6) = -1.;
-    g({10, 13}) = ~grad*crossProduct(t.rot.getJacobian(), (x({0, 2})-t.pos.getArr()));
-    g({10, 13})() /= -sqrt(sumOfSqr(x({10, 13}))); //account for the potential non-normalization of q
-  }
-  return d;
-};
 
 void rai::Mesh::buildGraph() {
   graph.resize(V.d0);

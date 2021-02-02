@@ -101,6 +101,7 @@ void glRasterImage(float x, float y, byteA& img, float zoom=1.);
 
 void read_png(byteA& img, const char* file_name, bool swap_rows);
 
+
 //===========================================================================
 //
 // OpenGL class
@@ -159,7 +160,7 @@ struct OpenGL {
   uint rboDepth;
   Signaler isUpdating;
   Signaler watching;
-  bool drawMode_idColor=false;
+  OpenGLDrawOptions drawOptions;
 
   /// @name constructors & destructors
   OpenGL(const char* title="rai::OpenGL", int w=400, int h=400, bool _offscreen=false);

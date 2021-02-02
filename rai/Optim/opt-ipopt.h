@@ -6,14 +6,14 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include <Optim/MathematicalProgram.h>
+#include "MathematicalProgram.h"
 
 struct IpoptInterface {
-  MathematicalProgram_Logged P;
-//  MathematicalProgram& P;
+//  MathematicalProgram_Traced P;
+  MathematicalProgram& P;
 
   IpoptInterface(MathematicalProgram& P) : P(P) {}
 
-  arr solve();
+  arr solve(const arr& x_init=NoArr);
 };
 

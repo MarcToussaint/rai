@@ -236,14 +236,14 @@ void TEST(Ceres){
   ChoiceConstraintFunction P;
 
   {
-    MathematicalProgram_Logged P2(P);
+    MathematicalProgram_Traced P2(P);
     LagrangianProblem L(P2);
     Conv_MathematicalProgram_TrivialFactoreded P3(L);
 
     CeresInterface opt(P3);
     opt.solve();
     ofstream fil2("z.opt2");
-    P2.xLog.writeRaw(fil2);
+    P2.xTrace.writeRaw(fil2);
   }
 
   arr x, phi;
@@ -253,7 +253,7 @@ void TEST(Ceres){
 
   OptConstrained opt(x, NoArr, P);
   {
-    P.getBounds(opt.newton.bound_lo, opt.newton.bound_up);
+    P.getBounds(opt.newton.bounds_lo, opt.newton.bounds_up);
     ofstream fil("z.opt");
     opt.newton.simpleLog = &fil;
     opt.run();

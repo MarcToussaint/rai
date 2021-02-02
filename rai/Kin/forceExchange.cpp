@@ -122,6 +122,14 @@ PairCollision* rai::ForceExchange::coll() {
   return __coll;
 }
 
+arr gnuplot(const double x){
+  double r = std::sqrt(x);
+  double g = x * x * x;
+  double b = std::sin(x * 2 * RAI_PI);
+
+  return ARR(r, g, b);
+}
+
 void rai::ForceExchange::glDraw(OpenGL& gl) {
   if(type==FXT_poa){
   }else if(type==FXT_torque){
@@ -178,3 +186,8 @@ void rai::ForceExchange::write(std::ostream& os) const {
 //  <<" type=" <<a_type <<'-' <<b_type <<" dist=" <<getDistance() /*<<" pDist=" <<get_pDistance()*/ <<" y=" <<y <<" l=" <<lagrangeParameter;
 }
 
+rai::ForceExchange* rai::getContact(rai::Frame* a, rai::Frame* b, bool raiseErrorIfNonExist){
+  for(rai::ForceExchange* c : a->forces) if(&c->a==a && &c->b==b) return c;
+  if(raiseErrorIfNonExist) HALT("can't retrieve contact " <<a->name <<"--" <<b->name);
+  return nullptr;
+}

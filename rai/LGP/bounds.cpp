@@ -100,7 +100,7 @@ PoseBound::PoseBound(ptr<KOMO>& komo,
 
   if(komo->verbose>1) {
     cout <<"POSE skeleton:" <<endl;
-    writeSkeleton(cout, finalS, getSwitchesFromSkeleton(finalS));
+    writeSkeleton(cout, finalS, getSwitchesFromSkeleton(finalS, komo->world));
   }
 
   komo->setModel(startKinematics, collisions);

@@ -11,8 +11,6 @@
 #include <Kin/F_qFeatures.h>
 #include <Kin/viewer.h>
 
-extern bool orsDrawWires;
-
 //===========================================================================
 
 void TEST(GJK_Jacobians) {
@@ -28,8 +26,8 @@ void TEST(GJK_Jacobians) {
   C.calc_q_from_Q();
   arr q = C.getJointState();
 
-  orsDrawWires=true;
   OpenGL gl;
+  gl.drawOptions.drawWires=true;
   gl.add(glStandardScene);
 //  gl.add(draw);
 //  gl.add(K);
@@ -243,14 +241,62 @@ void TEST(GJK_Jacobians3) {
 
 //===========================================================================
 
+void TEST(Functional) {
+  rai::Configuration C;
+  auto base = C.addFrame("base");
+  base->setPosition({0.,0.,1.});
+  for(uint i=0;i<2;i++){
+    rai::Frame *a = C.addFrame(STRING("obj_" <<i), "base");
+    a->setJoint(rai::JT_free);
+    a->set_Q()->setRandom();
+
+    if(i==0)
+      a->setShape(rai::ST_sphere, {1.});
+    else
+//      a->setShape(rai::ST_capsule, {1.,.3});
+      a->setShape(rai::ST_ssBox, {1.3, 1.2, 1.1, .1});
+    a->setColor({.8,.8,.8,.6});
+    a->setContact(1);
+  }
+
+  OpenGL gl;
+  gl.camera.setDefault();
+  gl.drawOptions.drawWires=true;
+  gl.add(glStandardScene);
+
+  arr x = C.getJointState();
+  for(uint t=0;t<10;t++){
+    rndGauss(x, .7);
+    C.setJointState(x);
+
+//    F_PairCollision dist(F_PairCollision::_negScalar);
+    F_PairFunctional dist;
+    auto y = dist.eval({C(1), C(2)});
+    checkJacobian(dist.vf2({C(1), C(2)}), x, 1e-4);
+
+    gl.add(dist);
+    gl.add(C);
+    gl.update(STRING(t), true);
+    /*if(!succ)*/ gl.watch();
+
+    gl.remove(C);
+    gl.remove(dist);
+
+  }
+}
+
+//===========================================================================
+
 int MAIN(int argc, char** argv){
   rai::initCmdLine(argc, argv);
 
   rnd.clockSeed();
 
-  testGJK_Jacobians();
-  testGJK_Jacobians2();
+//  testGJK_Jacobians();
+//  testGJK_Jacobians2();
 //  testGJK_Jacobians3();
+
+  testFunctional();
 
   return 0;
 }

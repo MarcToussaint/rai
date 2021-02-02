@@ -2697,6 +2697,16 @@ arr SparseMatrix::unsparse() {
   return x;
 }
 
+arr SparseMatrix::getTriplets() const{
+  arr T(Z.N, 3);
+  for(uint k=0; k<Z.N; k++){
+    T.p[3*k+0] = elems.p[2*k];
+    T.p[3*k+1] = elems.p[2*k+1];
+    T.p[3*k+2] = Z.p[k];
+  }
+  return T;
+}
+
 } //namespace rai
 
 void operator -= (rai::SparseMatrix& x, const rai::SparseMatrix& y) { x.add(y, 0, 0, -1.); }

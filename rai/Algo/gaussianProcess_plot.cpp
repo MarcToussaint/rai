@@ -19,28 +19,28 @@ void plotBelief(GaussianProcess& gp, double lo, double hi, bool pause) {
 
   X.setGrid(dim, lo, hi, 100);
   gp.evaluate(X, Y, S);
-  plot->Clear();
+  plot()->Clear();
   switch(dim) {
     case 1:
-      plot->FunctionPrecision(X, Y, Y+S, Y-S);
-      //plot->Function(X, Y);
-      //plot->Function(X, Y+S);
-      //plot->Function(X, Y-S);
-      plot->Points(gp.X, gp.Y);
-      plot->Points(gp.dX, gp.dY);
+      plot()->FunctionPrecision(X, Y, Y+S, Y-S);
+      //plot()->Function(X, Y);
+      //plot()->Function(X, Y+S);
+      //plot()->Function(X, Y-S);
+      plot()->Points(gp.X, gp.Y);
+      plot()->Points(gp.dX, gp.dY);
       break;
     case 2:
-      //plot->Function(X, Y);
-      //plot->Function(X, Y+S);
-      //plot->Function(X, Y-S);
-      plot->Points(gp.X, gp.Y);
-      plot->Points(gp.dX, gp.dY);
+      //plot()->Function(X, Y);
+      //plot()->Function(X, Y+S);
+      //plot()->Function(X, Y-S);
+      plot()->Points(gp.X, gp.Y);
+      plot()->Points(gp.dX, gp.dY);
       break;
     default :
       HALT("Space is either 0- or higher than 3-dimensional. Tell me how to plot that!")
       break;
   }
-  plot->update(pause);
+  plot()->update(pause);
 }
 
 void plotKernel1D(GaussianProcess& gp, double lo, double hi, bool pause) {
@@ -55,11 +55,11 @@ void plotKernel1D(GaussianProcess& gp, double lo, double hi, bool pause) {
     KD1(i) = gp.covF_D(0, gp.kernelP, null, X[i]);
     KD2(i) = gp.covDD_F(0, 0, gp.kernelP, X[i], null);
   }
-  plot->Clear();
-  plot->Function(X, K);
-  plot->Function(X, KD1);
-  plot->Function(X, KD2);
-  plot->update(pause);
+  plot()->Clear();
+  plot()->Function(X, K);
+  plot()->Function(X, KD1);
+  plot()->Function(X, KD2);
+  plot()->update(pause);
 }
 
 void plotKernel2D(GaussianProcess& gp, double lo, double hi, bool pause) {
@@ -76,9 +76,9 @@ void plotKernel2D(GaussianProcess& gp, double lo, double hi, bool pause) {
       KD2(i, j) = gp.covDD_F(0, 0, gp.kernelP, X[i], null);
     }
   }
-  plot->Clear();
-  plot->Surface(K);
-  plot->Surface(KD1);
-  plot->Surface(KD2);
-  plot->update(pause);
+  plot()->Clear();
+  plot()->Surface(K);
+  plot()->Surface(KD1);
+  plot()->Surface(KD2);
+  plot()->update(pause);
 }

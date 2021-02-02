@@ -75,7 +75,7 @@ OptConstrained::OptConstrained(arr& _x, arr& _dual, MathematicalProgram& P, OptO
 
 //  P.getBounds(newton.bound_lo, newton.bound_up);
 
-  newton.o.verbose = rai::MAX(opt.verbose-1, 0);
+  newton.options.verbose = rai::MAX(opt.verbose-1, 0);
 
   if(opt.verbose>0) cout <<"***** optConstrained: method=" <<MethodName[opt.constrainedMethod] <<endl;
 
@@ -112,11 +112,20 @@ bool OptConstrained::step() {
   if(newtonOnce || opt.constrainedMethod==squaredPenaltyFixed) {
     newtonStop = newton.run();
   } else {
-    double stopTol = newton.o.stopTolerance;
-    if(earlyPhase) newton.o.stopTolerance *= 10.;
+    double org_stopTol = newton.options.stopTolerance;
+    double org_stopGTol = newton.options.stopGTolerance;
+    if(!its){
+      newton.options.stopTolerance *= 3.;
+      newton.options.stopGTolerance *= 3.;
+    }
+    if(earlyPhase){
+      newton.options.stopTolerance *= 10.;
+      newton.options.stopGTolerance *= 10.;
+    }
     if(opt.constrainedMethod==anyTimeAula)  newtonStop = newton.run(20);
     else                                    newtonStop = newton.run();
-    newton.o.stopTolerance = stopTol;
+    newton.options.stopTolerance = org_stopTol;
+    newton.options.stopGTolerance = org_stopGTol;
   }
 
   if(L.lambda.N) CHECK_EQ(L.lambda.N, L.phi_x.N, "the evaluation (within newton) changed the phi-dimensionality");

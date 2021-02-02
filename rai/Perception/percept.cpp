@@ -82,7 +82,6 @@ void PercMesh::syncWith(rai::Configuration& K) {
     f->name <<"perc_" <<id;
     new rai::Shape(*f);
     f->shape->type() = rai::ST_mesh;
-    f->shape->visual = true;
     f->ats.getNew<int>("label") = 0x80+id;
   }
   f->setPose(pose);

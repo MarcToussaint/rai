@@ -39,13 +39,13 @@ stdOutPipe(F_Link)
 typedef rai::Array<F_Link> F_LinkTree;
 
 struct FeatherstoneInterface {
-  rai::Configuration& K;
+  rai::Configuration& C;
 
   FrameL sortedFrames;
 
   rai::Array<F_Link> tree;
 
-  FeatherstoneInterface(rai::Configuration& K):K(K) { sortedFrames = K.calc_topSort(); }
+  FeatherstoneInterface(rai::Configuration& C):C(C) { sortedFrames = C.calc_topSort(); }
 
   void setGravity(double g=-9.81);
   void update();

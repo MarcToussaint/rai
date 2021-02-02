@@ -40,6 +40,9 @@ template<class T> pybind11::array_t<T> arr2numpy(const rai::Array<T>& x){
   return pybind11::array_t<T>(x.dim(), x.p);
 }
 
+//explicit specialization for double!
+template<> pybind11::array_t<double> arr2numpy(const rai::Array<double>& x);
+
 template<class T> rai::Array<T> numpy2arr(const pybind11::array_t<T>& X) {
   rai::Array<T> Y;
   uintA dim(X.ndim());
@@ -104,6 +107,24 @@ inline arr I_conv(const ry::I_arr& x) {
 namespace pybind11 {
 namespace detail {
 
+  template <>  struct type_caster<rai::String> {
+   public:
+    PYBIND11_TYPE_CASTER(rai::String, _("rai::String"));
+
+    /// Conversion part 1 (Python->C++): convert numpy array to rai::Array<T>
+    bool load(pybind11::handle src, bool) {
+      std::string str = src.cast<std::string>();
+      value = str;
+      return !PyErr_Occurred();
+    }
+
+    /// Conversion part 2 (C++ -> Python): convert rai::Array<T> instance to numpy array
+    static handle cast(rai::String src, return_value_policy, handle) {
+      std::string str(src.p);
+      return pybind11::cast(str);
+    }
+  };
+
 //** StringA <--> vector<std::string>
 template <>  struct type_caster<StringA> {
  public:
@@ -143,7 +164,7 @@ template <typename T>  struct type_caster<rai::Array<T>> {
 
   /// Conversion part 2 (C++ -> Python): convert rai::Array<T> instance to numpy array
   static handle cast(rai::Array<T> src, return_value_policy /* policy */, handle /* parent */) {
-    pybind11::array_t<T> ret(src.dim(), src.p);
+    pybind11::array_t<T> ret = arr2numpy(src);
     return ret.release();
   }
 };

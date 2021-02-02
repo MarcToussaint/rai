@@ -18,6 +18,8 @@ void glDrawMeshes(void*, OpenGL&);
 
 namespace rai {
 
+enum ShapeType { ST_none=-1, ST_box=0, ST_sphere, ST_capsule, ST_mesh, ST_cylinder, ST_marker, ST_pointCloud, ST_ssCvx, ST_ssBox, ST_ssBoxElip };
+
 //===========================================================================
 /// a mesh (arrays of vertices, triangles, colors & normals)
 struct Mesh : GLDrawer {
@@ -55,11 +57,12 @@ struct Mesh : GLDrawer {
   void setSphere(uint fineness=2);
   void setHalfSphere(uint fineness=2);
   void setCylinder(double r, double l, uint fineness=2);
-  void setCappedCylinder(double r, double l, uint fineness=2);
+  void setCapsule(double r, double l, uint fineness=2);
   void setSSBox(double x_width, double y_width, double z_height, double r, uint fineness=2);
   void setSSCvx(const arr& core, double r, uint fineness=2);
   void setImplicitSurface(ScalarFunction f, double lo=-10., double hi=+10., uint res=100);
   void setImplicitSurface(ScalarFunction f, double xLo, double xHi, double yLo, double yHi, double zLo, double zHi, uint res);
+  void setImplicitSurfaceBySphereProjection(ScalarFunction f, double rad, uint fineness=3);
   Mesh& setRandom(uint vertices=10);
   void setGrid(uint X, uint Y);
 
@@ -112,10 +115,8 @@ struct Mesh : GLDrawer {
   void read(std::istream&, const char* fileExtension, const char* filename=nullptr);
   void readFile(const char* filename);
   void readTriFile(std::istream& is);
-  void readObjFile(std::istream& is);
   void readOffFile(std::istream& is);
   void readPlyFile(std::istream& is);
-  bool readStlFile(std::istream& is);
   void writeTriFile(const char* filename);
   void writeOffFile(const char* filename);
   void writePLY(const char* fn, bool bin=true);
@@ -125,17 +126,9 @@ struct Mesh : GLDrawer {
 
   void glDraw(struct OpenGL&);
 };
-} //END of namespace
-stdOutPipe(rai::Mesh)
 
-//===========================================================================
+stdOutPipe(Mesh)
 
-namespace rai {
-struct MeshCollection : GLDrawer {
-  Array<Mesh*> M;
-  arr X;
-  void glDraw(struct OpenGL&);
-};
 } //END of namespace
 
 //===========================================================================
@@ -145,6 +138,7 @@ struct MeshCollection : GLDrawer {
 //
 
 uintA getSubMeshPositions(const char* filename);
+arr MinkowskiSum(const arr& A, const arr& B);
 
 //===========================================================================
 //
@@ -155,30 +149,6 @@ void inertiaSphere(double* Inertia, double& mass, double density, double radius)
 void inertiaBox(double* Inertia, double& mass, double density, double dx, double dy, double dz);
 void inertiaCylinder(double* Inertia, double& mass, double density, double height, double radius);
 
-//===========================================================================
-//
-// analytic distance functions
-//
-
-struct DistanceFunction_Sphere:ScalarFunction {
-  rai::Transformation t; double r;
-  DistanceFunction_Sphere(const rai::Transformation& _t, double _r);
-  double f(arr& g, arr& H, const arr& x);
-};
-
-struct DistanceFunction_Box:ScalarFunction {
-  rai::Transformation t; double dx, dy, dz, r;
-  DistanceFunction_Box(const rai::Transformation& _t, double _dx, double _dy, double _dz, double _r=0.);
-  double f(arr& g, arr& H, const arr& x);
-};
-
-struct DistanceFunction_Cylinder:ScalarFunction {
-  rai::Transformation t; double r, dz;
-  DistanceFunction_Cylinder(const rai::Transformation& _t, double _r, double _dz);
-  double f(arr& g, arr& H, const arr& x);
-};
-
-extern ScalarFunction DistanceFunction_SSBox;
 
 //===========================================================================
 //

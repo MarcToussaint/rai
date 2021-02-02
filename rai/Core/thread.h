@@ -319,28 +319,6 @@ struct CycleTimer {
 
 //===========================================================================
 /**
- * MiniThread might replace Thread some time
- */
-struct MiniThread : Signaler {
-  rai::String name;
-  std::unique_ptr<std::thread> thread;  ///< the underlying pthread; nullptr iff not opened
-  int tid = 0;                    ///< system thread id
-
-  /// @name c'tor/d'tor
-  MiniThread(const char* _name);
-  virtual ~MiniThread();
-
-  /// @name to be called from `outside' (e.g. the main) to start/step/close the thread
-  void threadClose(double timeoutForce=-1.);       ///< close the thread (stops looping and waits for idle mode before joining the thread)
-  void threadCancel();                             ///< a hard kill (pthread_cancel) of the thread
-
-  virtual void main() { LOG(-1) <<"you're calling the 'pseudo-pure virtual' main(), which should be overloaded (are you in a destructor?)"; }
-
-  void threadMain(); //this is the thread main - should be private!
-};
-
-//===========================================================================
-/**
  * A Thread does some calculation and shares the result via a VariableData.
  *
  * Inherit from the class Thread to create your own process.

@@ -93,7 +93,7 @@ void tutorialInverseKinematics(){
 
   //-- default tasks for transition costs
   komo.add_qControlObjective({}, 1, 1.);
-  komo.addSquaredQuaternionNorms(-1., -1., 1e3); //when the kinematics includes quaternion joints, keep them roughly regularized
+  komo.addSquaredQuaternionNorms({}, 1e3); //when the kinematics includes quaternion joints, keep them roughly regularized
 
   //-- simple tasks, called low-level
   komo.addObjective({}, FS_positionDiff, {"endeff", "target"}, OT_eq, {1e0});

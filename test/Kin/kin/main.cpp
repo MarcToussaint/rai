@@ -404,7 +404,7 @@ void TEST(FollowRedundantSequence){
   rai::Frame *endeff = G.getFrame("arm7");
   G.kinematicsPos(y, NoArr, endeff, rel);
   for(t=0;t<T;t++) Z[t]() += y; //adjust coordinates to be inside the arm range
-  plot->Line(Z);
+  plot()->Line(Z);
   G.gl()->add(plot()());
   G.watch(false);
   //-- follow the trajectory kinematically
@@ -472,7 +472,7 @@ void TEST(Dynamics){
 //  for(rai::Body *b:G.bodies){ b->mass=1.; b->inertia.setZero(); }
 
   for(t=0;t<T;t++){
-    if(t>=500){ //hold steady
+    if(false && t>=500){ //hold steady ** TODO: INV DYN IS BROKE!! **
       qdd_ = -1. * qd;
       G.inverseDynamics(u, qd, qdd_);
       //tau.resize(n); tau.setZero();

@@ -1012,6 +1012,7 @@ struct SparseMatrix : SpecialArray {
   void add(const SparseMatrix& a, uint lo0=0, uint lo1=0, double coeff=1.);
   void add(const arr& B, uint lo0=0, uint lo1=0, double coeff=1.);
   arr unsparse();
+  arr getTriplets() const;
 };
 
 arr unpack(const arr& X);

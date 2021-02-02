@@ -12,7 +12,6 @@
 #include "../Geo/geo.h"
 #include "../Core/graph.h"
 #include "../Geo/mesh.h"
-#include "../Geo/geoms.h"
 
 /* TODO:
  * replace the types by more fundamental:
@@ -125,6 +124,7 @@ struct Frame : NonCopyable {
   Frame* getRoot();
   FrameL getPathToRoot();
   Frame* getUpwardLink(rai::Transformation& Qtotal=NoTransformation, bool untilPartBreak=false) const; ///< recurse upward BEFORE the next joint and return relative transform (this->Q is not included!b)
+  Frame* getDownwardLink(bool untilPartBreak=false) const; ///< recurse upward BEFORE the next joint and return relative transform (this->Q is not included!b)
   FrameL getPathToUpwardLink(bool untilPartBreak=false); ///< recurse upward BEFORE the next joint and return relative transform (this->Q is not included!b)
   const char* isPart();
 
@@ -136,21 +136,21 @@ struct Frame : NonCopyable {
   void write(std::ostream& os) const;
 
   //-- HIGHER LEVEL USER INTERFACE
-  void setShape(rai::ShapeType shape, const arr& size);
-  void setPose(const rai::Transformation& _X);
-  void setPosition(const arr& pos);
-  void setQuaternion(const arr& quat);
-  void setRelativePosition(const arr& pos);
-  void setRelativeQuaternion(const arr& quat);
-  void setPointCloud(const arr& points, const byteA& colors= {});
-  void setConvexMesh(const arr& points, const byteA& colors= {}, double radius=0.);
-  void setMesh(const arr& points, const byteA& colors= {}, double radius=0.);
-  void setColor(const arr& color);
-  void setJoint(rai::JointType jointType);
-  void setContact(int cont);
-  void setMass(double mass);
-  void addAttribute(const char* key, double value);
-  void setJointState(const arr& q); ///< throws error if this frame is not also a joint, and if q.size() != joint->dim
+  Frame& setShape(rai::ShapeType shape, const arr& size);
+  Frame& setPose(const rai::Transformation& _X);
+  Frame& setPosition(const arr& pos);
+  Frame& setQuaternion(const arr& quat);
+  Frame& setRelativePosition(const arr& pos);
+  Frame& setRelativeQuaternion(const arr& quat);
+  Frame& setPointCloud(const arr& points, const byteA& colors= {});
+  Frame& setConvexMesh(const arr& points, const byteA& colors= {}, double radius=0.);
+  Frame& setMesh(const arr& points, const byteA& colors= {}, double radius=0.);
+  Frame& setColor(const arr& color);
+  Frame& setJoint(rai::JointType jointType);
+  Frame& setContact(int cont);
+  Frame& setMass(double mass);
+  Frame& addAttribute(const char* key, double value);
+  Frame& setJointState(const arr& q); ///< throws error if this frame is not also a joint, and if q.size() != joint->dim
 
   arr getPose() { return ensure_X().getArr7d(); }
   arr getPosition() { return ensure_X().pos.getArr(); }
@@ -160,6 +160,7 @@ struct Frame : NonCopyable {
   arr getRelativeQuaternion() const { return get_Q().rot.getArr(); }
   arr getSize() ;
   arr getMeshPoints();
+  uintA getMeshTriangles();
   arr getMeshCorePoints();
   arr getJointState() const; ///< throws error if this frame is not also a joint
 
@@ -212,7 +213,10 @@ struct Joint : NonCopyable {
   uint getDimFromType() const;
   arr get_h() const;
 
-  bool isPartBreak() { return (dim!=1 && !mimic) || type==JT_tau; }
+  bool isPartBreak() {
+    return (type==JT_rigid || type==JT_free) && !mimic;
+//    return (dim!=1 && !mimic) || type==JT_tau;
+  }
 
   //access the K's q vector
   double& getQ();
@@ -257,12 +261,12 @@ stdOutPipe(Inertia)
 /// a Frame with Shape is a collision or visual object
 struct Shape : NonCopyable, GLDrawer {
   Frame& frame;
-  ptr<Mesh> _mesh;
-  ptr<Mesh> _sscCore;
   Enum<ShapeType> _type;
   arr size;
+  ptr<Mesh> _mesh;
+  ptr<Mesh> _sscCore;
+  char cont=0;           ///< are contacts registered (or filtered in the callback)
 
-  void setMeshMimic(const Frame* f);
   double radius() { if(size.N) return size(-1); return 0.; }
   Enum<ShapeType>& type() { return _type; }
   Mesh& mesh() { if(!_mesh) _mesh = make_shared<Mesh>();  return *_mesh; }
@@ -270,9 +274,7 @@ struct Shape : NonCopyable, GLDrawer {
   double alpha() { arr& C=mesh().C; if(C.N==4) return C(3); return 1.; }
 
   void createMeshes();
-
-  char cont=0;           ///< are contacts registered (or filtered in the callback)
-  bool visual=true;
+  shared_ptr<ScalarFunction> functional(bool worldCoordinates=true);
 
   Shape(Frame& f, const Shape* copyShape=nullptr); //new Shape, being added to graph and frame's shape lists
   virtual ~Shape();

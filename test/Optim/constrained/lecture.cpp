@@ -60,6 +60,8 @@ void testConstraint(MathematicalProgram& p, uint dim_x, arr& x_start=NoArr, uint
 //    system("cat z.opt >> z.opt_all");
 
     OptNewton newton(x, lag, options);
+    lag.getBounds(newton.bounds_lo, newton.bounds_up);
+    newton.reinit(x);
     ofstream fil("z.opt");
     newton.simpleLog = &fil;
     newton.run();

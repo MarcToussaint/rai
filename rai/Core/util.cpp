@@ -96,6 +96,7 @@ bool IOraw=false;
 bool noLog=true;
 uint lineCount=1;
 int verboseLevel=-1;
+std::string startDir;
 
 std::chrono::system_clock::time_point startTime;
 double timerStartTime=0.;
@@ -581,13 +582,24 @@ void timerResume() {
   timerPauseTime=-1.;
 }
 
+//COPY & PAST from graph.h
+Mutex::TypedToken<rai::Graph> getParameters();
+void initParameters(int _argc, char* _argv[]);
+
 /// memorize the command line arguments and open a log file
 void initCmdLine(int _argc, char* _argv[]) {
   argc=_argc; argv=_argv;
-  rai::String msg;
-  msg <<"** cmd line arguments: '"; for(int i=0; i<argc; i++) msg <<argv[i] <<' ';
-  msg <<"\b'";
-  LOG(1) <<msg;
+  {
+    rai::String msg;
+    msg <<"** cmd line arguments: '"; for(int i=0; i<argc; i++) msg <<argv[i] <<' ';
+    msg <<"\b'";
+    LOG(1) <<msg;
+  }
+
+  startDir = getcwd_string();
+  LOG(1) <<"** run path: '" <<startDir <<"'";
+
+  initParameters(argc, argv);
 }
 
 /// returns true if the tag was found on command line
@@ -643,22 +655,23 @@ void handleSIGUSR2(int) {
   i*=i;    //set a break point here, if you want to catch errors directly
 }
 
-struct LogServer {
-  LogServer() {
-    signal(SIGABRT, rai::handleSIGUSR2);
-    timerStartTime = rai::cpuTime();
+struct ProcessInfo {
+  ProcessInfo() {
+    signal(SIGABRT, handleSIGUSR2);
+    timerStartTime = cpuTime();
     startTime = std::chrono::system_clock::now();
   }
 
-  ~LogServer() {
+  ~ProcessInfo() {
   }
 };
 
-Singleton<rai::LogServer> logServer;
+Singleton<rai::ProcessInfo> processInfo;
 }
 
 rai::LogObject::LogObject(const char* key, int defaultLogCoutLevel, int defaultLogFileLevel)
   : key(key), logCoutLevel(defaultLogCoutLevel), logFileLevel(defaultLogFileLevel) {
+  processInfo.getSingleton(); //just to ensure it was created
   if(!strcmp(key, "global")) {
     fil.open("z.log.global");
     fil <<"** compiled at:     " <<__DATE__ <<" " <<__TIME__ <<'\n';
@@ -683,7 +696,7 @@ rai::LogToken rai::LogObject::getToken(int log_level, const char* code_file, con
 }
 
 rai::LogToken::~LogToken() {
-  auto mut = rai::logServer(); //keep the mutex
+  auto mut = rai::processInfo(); //keep the mutex
   if(log.logFileLevel>=log_level) {
     if(!log.fil.is_open()) log.fil.open(STRING("z.log."<<log.key));
     log.fil <<code_file <<':' <<code_func <<':' <<code_line <<'(' <<log_level <<") " <<msg <<endl;
@@ -1431,3 +1444,9 @@ template bool rai::checkParameter<int>(const char*);
 template bool rai::checkParameter<bool>(const char*);
 template bool rai::checkParameter<rai::String>(const char*);
 
+
+//===========================================================================
+
+RUN_ON_INIT_BEGIN(util)
+//rai::processInfo(); //creates the singleton
+RUN_ON_INIT_END(util)

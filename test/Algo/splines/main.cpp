@@ -58,27 +58,27 @@ void TEST(BSpline){
   cout <<"times = " <<S.times <<endl;
 
   arr path = S.eval();
-//  plot->Gnuplot();
-  plot->Opengl();
-  plot->drawBox=true;
+//  plot()->Gnuplot();
+  plot()->Opengl();
+  plot()->drawBox=true;
   S.plotBasis(plot());
-  plot->update();
+  plot()->update();
   
-  plot->Clear();
-  plot->Function(path);
-  plot->Function(S.points);
-  plot->Points(S.points);
-  plot->update();
+  plot()->Clear();
+  plot()->Function(path);
+  plot()->Function(S.points);
+  plot()->Points(S.points);
+  plot()->update();
 
   for(double lambda = 0.; lambda < .1; lambda += .001) {
     path = S.smooth(lambda);
-    plot->Clear();
-    plot->Function(path);
-    plot->Function(S.points);
-    plot->Points(S.points);
-    plot->update(false);
+    plot()->Clear();
+    plot()->Function(path);
+    plot()->Function(S.points);
+    plot()->Points(S.points);
+    plot()->update(false);
   }
-  plot->update();
+  plot()->update();
 
   rai::arrayBrackets="  ";
   ofstream fil("z.test");
@@ -118,15 +118,15 @@ void TEST(BSpline){
     path = S.eval();
     cout <<cost(NoArr, NoArr, path) <<endl;
 
-    plot->Clear();
-    plot->Function(path);
-    plot->Function(S.points);
-    plot->Points(S.points);
-    plot->update(false);
+    plot()->Clear();
+    plot()->Function(path);
+    plot()->Function(S.points);
+    plot()->Points(S.points);
+    plot()->update(false);
   }
-  plot->update();
+  plot()->update();
 
-  plot->Close();
+  plot()->Close();
 }
 
 void TEST(BSpline2){
@@ -147,7 +147,7 @@ void TEST(BSpline2){
   fil.close();
   gnuplot("plot 'z.test' us 1:2", true);
 
-  plot->Close();
+  plot()->Close();
 }
 
 void TEST(Path){

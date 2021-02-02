@@ -116,7 +116,8 @@ void init_KOMO(pybind11::module& m) {
        pybind11::arg("endTime"),
        pybind11::arg("prevFromFrame"),
        pybind11::arg("fromFrame"),
-       pybind11::arg("toFrame")
+       pybind11::arg("toFrame"),
+       pybind11::arg("firstSwitch")=true
        )
 
   .def("addSwitch_magic", &KOMO::addSwitch_magic)
@@ -194,7 +195,13 @@ void init_KOMO(pybind11::module& m) {
 //-- display
 
   .def("view", &KOMO::view)
-  .def("view_play", &KOMO::view_play)
+    .def("view_play",
+	 &KOMO::view_play,
+	 "",
+	 pybind11::arg("pause"),
+       pybind11::arg("delay"),
+	 pybind11::arg("saveVideoPath") = nullptr)
+
   .def("view_close", [](shared_ptr<KOMO>& self) {
     self->pathConfig.gl().reset();
   }, "close the view")
@@ -230,24 +237,58 @@ void init_KOMO(pybind11::module& m) {
 //.export_values();
 
   pybind11::enum_<SkeletonSymbol>(m, "SY")
-  ENUMVAL(SY, touch)
-  ENUMVAL(SY, above)
-  ENUMVAL(SY, inside)
-  ENUMVAL(SY, impulse)
-  ENUMVAL(SY, stable)
-  ENUMVAL(SY, stableOn)
-  ENUMVAL(SY, dynamic)
-  ENUMVAL(SY, dynamicOn)
-  ENUMVAL(SY, dynamicTrans)
-  ENUMVAL(SY, liftDownUp)
+      //geometric:
+      ENUMVAL(SY,touch)
+      ENUMVAL(SY,above)
+      ENUMVAL(SY,inside)
+      ENUMVAL(SY,oppose)
 
-  ENUMVAL(SY, contact)
-  ENUMVAL(SY, bounce)
+      ENUMVAL(SY,impulse) //old
+      ENUMVAL(SY,initial)
+      ENUMVAL(SY,free) //old
 
-  ENUMVAL(SY, magic)
+      //pose constraints:
+      ENUMVAL(SY,poseEq)
+      ENUMVAL(SY,stableRelPose)
+      ENUMVAL(SY,stablePose)
 
-  ENUMVAL(SY, push)
-  ENUMVAL(SY, graspSlide)
+      //mode switches:
+      ENUMVAL(SY,stable)
+      ENUMVAL(SY,stableOn)
+      ENUMVAL(SY,dynamic)
+      ENUMVAL(SY,dynamicOn)
+      ENUMVAL(SY,dynamicTrans)
+      ENUMVAL(SY,quasiStatic)
+      ENUMVAL(SY,quasiStaticOn)
+      ENUMVAL(SY,downUp) //old
+      ENUMVAL(SY,break)
+
+      //interactions:
+      ENUMVAL(SY,contact)
+      ENUMVAL(SY,contactStick)
+      ENUMVAL(SY,contactComplementary)
+      ENUMVAL(SY,bounce)
+
+      //mode switches:
+      ENUMVAL(SY,magic)
+      ENUMVAL(SY,magicTrans)
+
+      //grasps/placements:
+      ENUMVAL(SY,topBoxGrasp)
+      ENUMVAL(SY,topBoxPlace)
+
+      ENUMVAL(SY,push)  //old
+      ENUMVAL(SY,graspSlide) //old
+
+      ENUMVAL(SY,dampMotion)
+
+      ENUMVAL(SY,noCollision) //old
+      ENUMVAL(SY,identical)
+
+      ENUMVAL(SY,alignByInt)
+
+      ENUMVAL(SY,makeFree)
+      ENUMVAL(SY,forceBalance)
   .export_values();
 
 }

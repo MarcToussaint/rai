@@ -51,7 +51,7 @@ enum SkeletonSymbol {
   SY_dynamicTrans,
   SY_quasiStatic,
   SY_quasiStaticOn,
-  SY_liftDownUp, //old
+  SY_downUp, //old
   SY_break,
 
   //interactions:
@@ -64,6 +64,10 @@ enum SkeletonSymbol {
   SY_magic,
   SY_magicTrans,
 
+  //grasps/placements:
+  SY_topBoxGrasp,
+  SY_topBoxPlace,
+
   SY_push,  //old
   SY_graspSlide, //old
 
@@ -75,6 +79,7 @@ enum SkeletonSymbol {
   SY_alignByInt,
 
   SY_makeFree,
+  SY_forceBalance,
 
 };
 
@@ -91,7 +96,8 @@ stdOutPipe(SkeletonEntry)
 
 typedef rai::Array<SkeletonEntry> Skeleton;
 
-intA getSwitchesFromSkeleton(const Skeleton& S);
+intA getSwitchesFromSkeleton(const Skeleton& S, const rai::Configuration& world);
+double getMaxPhaseFromSkeleton(const Skeleton& S);
 void writeSkeleton(std::ostream& os, const Skeleton& S, const intA& switches= {});
 
 //===========================================================================
@@ -169,8 +175,8 @@ struct KOMO : NonCopyable {
   ptr<struct Objective> addObjective(const arr& times, const FeatureSymbol& feat, const StringA& frames,
                                      ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr, int order=-1, int deltaFromStep=0, int deltaToStep=0);
 
-  void addSwitch(double time, bool before, rai::KinematicSwitch* sw);
-  void addSwitch(double time, bool before, rai::JointType type, rai::SwitchInitializationType init,
+  void addSwitch(const arr& times, bool before, rai::KinematicSwitch* sw);
+  void addSwitch(const arr& times, bool before, rai::JointType type, rai::SwitchInitializationType init,
                  const char* ref1, const char* ref2,
                  const rai::Transformation& jFrom=NoTransformation, const rai::Transformation& jTo=NoTransformation);
   void addContact_slide(double startTime, double endTime, const char* from, const char* to);
@@ -202,7 +208,9 @@ struct KOMO : NonCopyable {
   void addSwitch_mode(SkeletonSymbol prevMode, SkeletonSymbol newMode,
                       double time, double endTime,
                       const char* prevFrom, const char* newFrom, const char* obj);
-  void addSwitch_stable(double time, double endTime, const char* prevFrom, const char* from, const char* to);
+  void addSwitch_mode2(const arr& times, SkeletonSymbol newMode, const StringA& frames, bool firstSwitch);
+
+  void addSwitch_stable(double time, double endTime, const char* prevFrom, const char* from, const char* to, bool firstSwitch=true);
   void addSwitch_stableOn(double time, double endTime, const char* from, const char* to);
   void addSwitch_dynamic(double time, double endTime, const char* from, const char* to, bool dampedVelocity=false);
   void addSwitch_dynamicOn(double time, double endTime, const char* from, const char* to);
@@ -270,8 +278,8 @@ struct KOMO : NonCopyable {
   //-- reading results
   arr getConfiguration_q(int t);
   arr getPath_decisionVariable();              ///< get all DOFs of all configurations in a single flat vector (the decision variable of optimization)
-  arr getPath(uintA joints={});      ///< get joint path, optionally for selected joints
-  arr getPath_frames(const uintA& frames={});     ///< get frame path for selected frames
+  arr getPath(uintA joints={}, const bool activesOnly=true);      ///< get joint path, optionally for selected joints
+  arr getPath_frames(const uintA& frames={});     ///< get frame path, optionally for selected frames
   arr getFrameState(int t);     ///< get frame path for selected frames
   arr getPath_q(int t);     ///< get frame path for selected frames
   arrA getPath_q();                            ///< get the DOFs (of potentially varying dimensionality) for each configuration
@@ -291,7 +299,7 @@ struct KOMO : NonCopyable {
   void checkGradients();          ///< checks all gradients numerically
 
   int view(bool pause=false, const char* txt=nullptr);
-  int view_play(double delay=.2, bool pause=false);
+  int view_play(bool pause=false, double delay=.2, const char* saveVideoPath=nullptr);
 
   void plotTrajectory();
   void plotPhaseTrajectory();
@@ -329,7 +337,7 @@ struct KOMO : NonCopyable {
     virtual uint getDimension();
     virtual void getFeatureTypes(ObjectiveTypeA& featureTypes);
     virtual void getBounds(arr& bounds_lo, arr& bounds_up);
-    virtual arr getInitializationSample(const arrL& previousOptima= {});
+    virtual arr getInitializationSample(const arr& previousOptima= {});
     virtual void getFactorization(uintA& variableDimensions, uintA& featureDimensions, intAA& featureVariables);
 
     virtual void setAllVariables(const arr& x);
@@ -385,7 +393,7 @@ struct KOMO : NonCopyable {
     virtual uint getDimension() { return komo.pathConfig.getJointStateDimension(); }
     virtual void getFeatureTypes(ObjectiveTypeA& ft);
     virtual void getBounds(arr& bounds_lo, arr& bounds_up);
-    virtual arr getInitializationSample(const arrL& previousOptima= {});
+    virtual arr getInitializationSample(const arr& previousOptima= {});
     virtual void evaluate(arr& phi, arr& J, const arr& x);
     virtual void getFHessian(arr& H, const arr& x);
 
