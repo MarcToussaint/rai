@@ -1161,7 +1161,7 @@ void rai::Shape::read(const Graph& ats) {
     if(ats.get(d, "meshscale"))  { mesh().scale(d); }
     if(ats.get(x, "meshscale"))  { mesh().scale(x(0), x(1), x(2)); }
     if(ats.get(mesh().C, "color")) {
-      CHECK(mesh().C.N==3 || mesh().C.N==4, "");
+      CHECK(mesh().C.N==3 || mesh().C.N==4, "color needs to be 3D or 4D (floats)");
     }
 
     if(mesh().V.N && type()==ST_none) type()=ST_mesh;

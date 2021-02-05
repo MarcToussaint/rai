@@ -356,7 +356,7 @@ extern String errString;
 #ifndef HALT
 #  define RAI_MSG(msg){ LOG(-1) <<msg; }
 #  define THROW(msg){ LOG(-1) <<msg; throw std::runtime_error(rai::errString.p); }
-#  define HALT(msg){ LOG(-2) <<msg; throw std::runtime_error(rai::errString.p); exit(1); }
+#  define HALT(msg){ LOG(-2) <<msg; throw std::runtime_error(rai::errString.p); }
 #  define NIY  { LOG(-2) <<"not implemented yet"; exit(1); }
 #  define NICO { LOG(-2) <<"not implemented with this compiler options: usually this means that the implementation needs an external library and a corresponding compiler option - see the source code"; exit(1); }
 #endif
@@ -489,9 +489,10 @@ struct Enum {
     if(!good) {
       rai::String all;
       for(int i=0; names[i]; i++) all <<names[i] <<' ';
-      LOG(-2) <<"Enum::read could not find the keyword '" <<str <<"'. Possible Enum keywords: " <<all;
+      HALT("Enum::read could not find the keyword '" <<str <<"'. Possible Enum keywords: " <<all);
+    }else{
+      CHECK(str.p && !strcmp(names[x], str.p), "");
     }
-    CHECK(!strcmp(names[x], str.p), "");
   }
   static bool contains(const rai::String& str) {
     for(int i=0; names[i]; i++) {

@@ -12,8 +12,20 @@
 
 #include <pybind11/pybind11.h>
 
+namespace rai{
+  void initCmdLine(int _argc, char* _argv[]);
+}
+
+void init_CfgFileParameters(){
+  char* argv[2] = {(char*)"rai-pybind", (char*)"-python"};
+  int argc = 2;
+  rai::initCmdLine(argc, argv);
+}
+
 PYBIND11_MODULE(libry, m) {
   m.doc() = "rai bindings";
+
+  init_CfgFileParameters();
 
 #ifdef RAI_BIND_KOMO
   init_Config(m);

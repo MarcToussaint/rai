@@ -1318,11 +1318,14 @@ Mutex::TypedToken<Graph> getParameters(){
 }
 
 void initParameters(int _argc, char*_argv[]){
+  static bool wasInitialized=false;
+  if(wasInitialized) return;
+  wasInitialized=true;
+
   auto P = parameterGraph();
   //-- parse cmd line arguments into graph
-  int n;
   StringA tags;
-  for(n=1; n<argc; n++) {
+  for(int n=1; n<argc; n++) {
     if(rai::argv[n][0]=='-') {
       rai::String key(rai::argv[n]+1);
       if(n+1<rai::argc && rai::argv[n+1][0]!='-') {

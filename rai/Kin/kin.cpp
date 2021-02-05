@@ -3246,19 +3246,25 @@ void editConfiguration(const char* filename, Configuration& C) {
   for(; !exit;) {
     cout <<"reloading `" <<filename <<"' ... " <<std::endl;
     Configuration C_tmp;
-    FileToken file(filename, true);
-    try {
-      lineCount=1;
-      Graph G(file);
-      G.checkConsistency();
-      C_tmp.readFromGraph(G);
-      C = C_tmp;
-      C.report();
-    } catch(std::runtime_error& err) {
-      cout <<"line " <<lineCount <<": " <<err.what() <<" -- please check the file and re-save" <<endl;
-      //      continue;
+    {
+      FileToken file(filename, true);
+      Graph G;
+      try {
+        lineCount=1;
+        G.read(file);
+        G.checkConsistency();
+      } catch(std::runtime_error& err) {
+        cout <<"g-File Synax Error line " <<lineCount <<": " <<err.what() <<" -- please check the file and re-save" <<endl;
+      }
+      try {
+        C_tmp.readFromGraph(G);
+        C = C_tmp;
+        C.report();
+      } catch(std::runtime_error& err) {
+        cout <<"Configuration initialization failed: " <<err.what() <<" -- please check the file and re-save" <<endl;
+      }
+      file.cd_start(); //important: also on crash - cd back to original
     }
-    file.cd_start(); //important: also on crash - cd back to original
     cout <<"watching..." <<endl;
     int key = -1;
     C.gl()->recopyMeshes(C);
