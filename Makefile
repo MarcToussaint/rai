@@ -31,7 +31,7 @@ bin: $(bin_paths:%=inPath_make/%)
 
 src: $(src_paths:%=inPath_makeLib/%)
 
-python: inPath_makeLib/ry
+ry: inPath_makeLib/ry
 
 dependAll: $(src_paths:%=inPath_depend/%)
 

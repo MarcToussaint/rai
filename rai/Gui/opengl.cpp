@@ -371,9 +371,12 @@ struct GlfwSpinner : Thread {
 
   static void _Close(GLFWwindow* window) {
     OpenGL* gl=(OpenGL*)glfwGetWindowUserPointer(window);
+//    LOG(-1) <<"closing window";
 //      if (!time_to_close)
 //    OpenGL *gl=(OpenGL*)glfwSetWindowShouldClose(window, GLFW_FALSE);
-    gl->WindowStatus(0);
+//    gl->WindowStatus(0);
+    glfwHideWindow(window);
+//    gl->closeWindow();
   }
 
   static void _Scroll(GLFWwindow* window, double xoffset, double yoffset) {
@@ -431,6 +434,8 @@ void OpenGL::openWindow() {
     fg->mutex.unlock();
 
     fg->addGL(this);
+  }else{
+    //glfwShowWindow(self->window);
   }
 }
 

@@ -82,7 +82,7 @@ const char* rai::String::readStopSymbols = "\n\r";
 int   rai::String::readEatStopSymbol     = 1;
 rai::String rai::errString;
 Mutex coutMutex;
-rai::LogObject _log("global", 2, 3);
+rai::LogObject rai::_log("global", 2, 3);
 
 //===========================================================================
 //
@@ -739,6 +739,7 @@ rai::LogToken::~LogToken() {
 // #ifdef RAI_ROS
 //       ROS_INFO("RAI-MSG: %s",rai::errString.p);
 // #endif
+      if(log.callback) log.callback(rai::errString.p);
       if(log_level==-1) { cout <<"** WARNING:" <<rai::errString <<endl; return; }
       else if(log_level==-2) { cerr <<"** ERROR:" <<rai::errString <<endl; /*throw does not WORK!!! Because this is a destructor. The THROW macro does it inline*/ }
       else if(log_level==-3) { cerr <<"** HARD EXIT! " <<rai::errString <<endl;  exit(1); }
@@ -750,8 +751,8 @@ rai::LogToken::~LogToken() {
 }
 
 void setLogLevels(int fileLogLevel, int consoleLogLevel) {
-  _log.logCoutLevel=consoleLogLevel;
-  _log.logFileLevel=fileLogLevel;
+  rai::_log.logCoutLevel=consoleLogLevel;
+  rai::_log.logFileLevel=fileLogLevel;
 }
 
 //===========================================================================

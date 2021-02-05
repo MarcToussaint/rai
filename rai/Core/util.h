@@ -16,6 +16,7 @@
 #include <memory>
 #include <climits>
 #include <mutex>
+#include <functional>
 
 //----- if no system flag, I assume Linux
 #if !defined RAI_MSVC && !defined RAI_Cygwin && !defined RAI_Linux && !defined RAI_MinGW && !defined RAI_Darwin
@@ -305,6 +306,7 @@ namespace rai {
 /// An object that represents a log file and/or cout logging, together with log levels read from a cfg file
 struct LogObject {
   std::ofstream fil;
+  std::function<void(const char*)> callback;
   const char* key;
   int logCoutLevel, logFileLevel;
   LogObject(const char* key, int defaultLogCoutLevel=0, int defaultLogFileLevel=0);
@@ -325,11 +327,12 @@ struct LogToken {
   ~LogToken(); //that's where the magic happens!
   std::ostream& os() { return msg; }
 };
+
+extern LogObject _log;
+
 }
 
-extern rai::LogObject _log;
-
-#define LOG(log_level) _log.getNonConst().getToken(log_level, __FILE__, __func__, __LINE__).os()
+#define LOG(log_level) rai::_log.getNonConst().getToken(log_level, __FILE__, __func__, __LINE__).os()
 
 void setLogLevels(int fileLogLevel=3, int consoleLogLevel=2);
 

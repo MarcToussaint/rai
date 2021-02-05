@@ -11,10 +11,8 @@
 #include "ry.h"
 
 #include <pybind11/pybind11.h>
+#include "../Core/util.h"
 
-namespace rai{
-  void initCmdLine(int _argc, char* _argv[]);
-}
 
 void init_CfgFileParameters(){
   char* argv[2] = {(char*)"rai-pybind", (char*)"-python"};
@@ -22,10 +20,26 @@ void init_CfgFileParameters(){
   rai::initCmdLine(argc, argv);
 }
 
+
+namespace pybind11{
+  void logCallback(const char* str){
+    std::cerr <<"logCallback was called!: <<" <<str <<">>" <<endl;
+    std::string _str(str);
+    pybind11::print("**ry-c++-log**", str, "flush"_a=true);
+    pybind11::print("flush"_a=true);
+  }
+}
+
+void init_LogToPythonConsole(){
+  rai::_log.callback = pybind11::logCallback;
+  LOG(-2) <<"initializing ry log callback";
+}
+
 PYBIND11_MODULE(libry, m) {
   m.doc() = "rai bindings";
 
   init_CfgFileParameters();
+  init_LogToPythonConsole();
 
 #ifdef RAI_BIND_KOMO
   init_Config(m);
