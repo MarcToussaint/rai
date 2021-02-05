@@ -1422,7 +1422,6 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
   if(!T.N) { //-- draw point cloud
     if(!V.N) return;
     CHECK(V.nd==2 && V.d1==3, "wrong dimension");
-//    glPointSize(3.);
     glDisable(GL_LIGHTING);
 
     glEnableClientState(GL_VERTEX_ARRAY);
@@ -1435,8 +1434,21 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
 
     glDrawArrays(GL_POINTS, 0, V.d0);
 
+    if(Vn.N){ //draw normals!
+      CHECK_EQ(Vn.N, V.N, "");
+      arr p, n;
+      glBegin(GL_LINES);
+      for(uint i=0; i<V.d0; i++) {
+        if(C.N==V.N) glColor3dv(&C(i,0));
+        p.setCarray(&V(i, 0), 3);
+        n.setCarray(&Vn(i, 0), 3);
+        glVertex3dv(p.p);
+        glVertex3dv((p+.02*n).p);
+      }
+      glEnd();
+    }
+
     glEnable(GL_LIGHTING);
-//    glPointSize(1.);
     return;
   }
 

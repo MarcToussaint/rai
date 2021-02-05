@@ -1714,6 +1714,8 @@ void OpenGL::Draw(int w, int h, rai::Camera* cam, bool callerHasAlreadyLocked) {
   glEnable(GL_CULL_FACE);  glFrontFace(GL_CCW);
   glShadeModel(GL_FLAT);  //glShadeModel(GL_SMOOTH);
 
+  if(drawOptions.pclPointSize>0.) glPointSize(drawOptions.pclPointSize);
+
   //select mode?
   GLint mode;
   glGetIntegerv(GL_RENDER_MODE, &mode);

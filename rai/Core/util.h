@@ -659,6 +659,7 @@ struct OpenGLDrawOptions{
   bool drawWires=false;
   bool drawColors=true;
   bool drawMode_idColor=false;
+  float pclPointSize=-1.;
 };
 struct GLDrawer {
   virtual void glDraw(OpenGL&) = 0;

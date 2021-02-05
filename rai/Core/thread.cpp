@@ -270,10 +270,7 @@ int Var_base::deAccess(Thread* th) {
   int i;
   if(rwlock.rwCount == -1) { //log a revision after write access
     i = revision++;
-    for(auto* c:callbacks) {
-      //don't call a callback-event for a thread that accessed the variable:
-      if(!th || c->id!=&th->event) c->call()(this);
-    }
+    for(auto* c:callbacks) c->call()(this);
   } else {
     i = revision;
   }

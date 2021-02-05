@@ -47,7 +47,8 @@ struct PointCloudViewer : Thread {
   unique_ptr<struct sPointCloudViewer> self;
   Var<arr> pts;
   Var<byteA> rgb;
-  PointCloudViewer(const char* pts_name="kinect_points", const char* rgb_name="kinect_rgb");
+  Var<arr> normals;
+  PointCloudViewer();
   PointCloudViewer(const Var<arr>& _pts, const Var<byteA>& _rgb, double beatIntervalSec=-1.);
   ~PointCloudViewer();
   void open();

@@ -332,8 +332,8 @@ DEPEND_UBUNTU += libpcl-dev
 EIGEN = 1
 #QHULL = 1
 CXXFLAGS  +=  -DRAI_PCL -DEIGEN_USE_NEW_STDVECTOR -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET
-LIBS += -lpcl_keypoints -lpcl_visualization -lpcl_registration -lpcl_segmentation -lpcl_features -lpcl_surface -lpcl_tracking -lpcl_filters -lpcl_sample_consensus -lpcl_search -lpcl_kdtree -lpcl_octree -lpcl_common
-CPATH := $(CPATH):/usr/include/pcl-1.7:
+LIBS += -lpcl_keypoints -lpcl_visualization -lpcl_registration -lpcl_segmentation -lpcl_features -lpcl_surface -lpcl_tracking -lpcl_filters -lpcl_sample_consensus -lpcl_search -lpcl_kdtree -lpcl_octree -lpcl_common -lboost_system
+CPATH := $(CPATH):/usr/include/pcl-1.8:
 
 #CPATH := $(CPATH):/opt/ros/$(ROS_VERSION)/include/pcl_ros:/usr/include/eigen3:/usr/include/pcl-1.7:
 #CPATH := $(CPATH):/usr/include/eigen3:/home/lib/include/pcl-1.7:
