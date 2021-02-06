@@ -35,11 +35,15 @@ void init_LogToPythonConsole(){
   LOG(-2) <<"initializing ry log callback";
 }
 
+void init_enums(pybind11::module& m);
+
+
 PYBIND11_MODULE(libry, m) {
   m.doc() = "rai bindings";
 
   init_CfgFileParameters();
   init_LogToPythonConsole();
+  init_enums(m);
 
 #ifdef RAI_BIND_KOMO
   init_Config(m);
@@ -57,6 +61,18 @@ PYBIND11_MODULE(libry, m) {
 #endif
 
   init_Optim(m);
+
+}
+
+void init_enums(pybind11::module& m){
+#define ENUMVAL(x) .value(#x, rai::_##x)
+
+ pybind11::enum_<rai::ArgWord>(m, "arg")
+    ENUMVAL(left)
+    ENUMVAL(right)
+    ENUMVAL(sequence)
+    ENUMVAL(path)
+     .export_values();
 }
 
 #endif

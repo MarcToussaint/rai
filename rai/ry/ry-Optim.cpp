@@ -153,14 +153,6 @@ void init_Optim(pybind11::module& m) {
   .export_values();
 
 #undef ENUMVAL
-#define ENUMVAL(x) .value(#x, rai::_##x)
-
-  pybind11::enum_<rai::ArgWord>(m, "Arg")
-  ENUMVAL(left)
-  ENUMVAL(right)
-  ENUMVAL(sequence)
-  ENUMVAL(path)
-  .export_values();
 
 }
 

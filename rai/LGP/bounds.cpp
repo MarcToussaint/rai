@@ -115,7 +115,7 @@ PoseBound::PoseBound(ptr<KOMO>& komo,
   komo->add_qControlObjective({}, 0, 1e-2);
 #endif
 
-  komo->setSkeleton(finalS, false);
+  komo->setSkeleton(finalS);
 
   //-- deactivate all velocity objectives except for transition
   //      for(Objective *o:komo->objectives){

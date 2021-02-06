@@ -221,7 +221,9 @@ struct KOMO : NonCopyable {
   void addSwitch_on(double time, const char* from, const char* to, bool copyInitialization=false);
 
   //-- objectives - logic level (used within LGP)
-  void setSkeleton(const Skeleton& S, bool ignoreSwitches=false);
+  void setSkeleton(const Skeleton& S);
+  void setSkeleton(const Skeleton& S, rai::ArgWord sequenceOrPath);
+
 
   //macros for pick-and-place in CGO -- should perhaps not be here.. KOMOext?
   void add_StableRelativePose(const std::vector<int>& confs, const char* gripper, const char* object) {

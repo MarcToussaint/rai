@@ -274,11 +274,11 @@ void KOMO::addSwitch_mode2(const arr& times, SkeletonSymbol newMode, const Strin
         addObjective({times(0)}, FS_pose, {rootOfPicked->name}, OT_eq, {1e2}, NoArr, 1, 0, 0);
       }
     }
-//    if(k_order>1) addObjective({times(0)}, make_shared<F_LinAngVel>(), {frames(-1)}, OT_eq, {1e0}, NoArr, 2, +1, +1);
 
     //-- no jump at end
     if(times(1)>=0){
       addObjective({times(1)}, FS_poseRel, {frames(1), frames(0)}, OT_eq, {1e2}, NoArr, 1, 0, 0);
+      if(k_order>1) addObjective({times(1)}, make_shared<F_LinAngVel>(), {frames(-1)}, OT_eq, {1e0}, NoArr, 2, +1, +1); //no acceleration of the object
     }
 
   } else if(newMode==SY_dynamic) {
@@ -1219,25 +1219,13 @@ void KOMO_ext::setAbstractTask(double phase, const Graph& facts, int verbose) {
 }
 */
 
-void KOMO::setSkeleton(const Skeleton& S, bool ignoreSwitches) {
+void KOMO::setSkeleton(const Skeleton& S) {
   //-- add objectives for mode switches
   intA switches = getSwitchesFromSkeleton(S, world);
-  if(!ignoreSwitches) {
-    for(uint i=0; i<switches.d0; i++) {
-      int j = switches(i, 0);
-      int k = switches(i, 1);
-#if 0
-      const char* newFrom=world.frames.first()->name;
-      if(S(k).frames.N==2) newFrom = S(k).frames(0);
-      if(j<0)
-        addSwitch_mode(SY_initial, S(k).symbol, S(k).phase0, S(k).phase1+1., nullptr, newFrom, S(k).frames.last());
-      else
-        addSwitch_mode(S(j).symbol, S(k).symbol, S(k).phase0, S(k).phase1+1., S(j).frames(0), newFrom, S(k).frames.last());
-#else
-//      cout <<"SKELETON: " <<S(k) <<"  firstSwitch: " <<(j<0) <<endl;
-      addSwitch_mode2({S(k).phase0, S(k).phase1}, S(k).symbol, S(k).frames, j<0);
-#endif
-    }
+  for(uint i=0; i<switches.d0; i++) {
+    int j = switches(i, 0);
+    int k = switches(i, 1);
+    addSwitch_mode2({S(k).phase0, S(k).phase1}, S(k).symbol, S(k).frames, j<0);
   }
   //-- add objectives for rest
   for(const SkeletonEntry& s:S) {
@@ -1280,8 +1268,7 @@ void KOMO::setSkeleton(const Skeleton& S, bool ignoreSwitches) {
 
       case SY_downUp:{
         if(k_order>=2){
-//          addObjective({s.phase0}, FS_qItself, {}, OT_eq, {}, {}, 1);
-          addObjective({s.phase0,s.phase1}, FS_position, {s.frames(0)}, OT_eq, {}, {0.,0.,.1}, 2, +1);
+          addObjective({s.phase0,s.phase1}, FS_position, {s.frames(0)}, OT_eq, {}, {0.,0.,.1}, 2, +1,+1);
         }
         break;
       }
@@ -1332,6 +1319,26 @@ void KOMO::setSkeleton(const Skeleton& S, bool ignoreSwitches) {
       default: HALT("undefined symbol: " <<s.symbol);
     }
   }
+}
+
+void KOMO::setSkeleton(const Skeleton& S, rai::ArgWord sequenceOrPath){
+  if(sequenceOrPath==rai::_sequence){
+    solver = rai::KS_dense;
+  }else{
+    solver = rai::KS_sparse;
+  }
+
+  double maxPhase = getMaxPhaseFromSkeleton(S);
+  if(sequenceOrPath==rai::_sequence){
+    setTiming(maxPhase, 1, 2., 1);
+    add_qControlObjective({}, 1, 1e-1);
+  }else{
+    setTiming(maxPhase, 30, 5., 2);
+    add_qControlObjective({}, 2, 1e0);
+  }
+  addSquaredQuaternionNorms();
+
+  setSkeleton(S);
 }
 
 void KOMO_ext::setAlign(double startTime, double endTime, const char* shape, const arr& whichAxis, const char* shapeRel, const arr& whichAxisRel, ObjectiveType type, const arr& target, double prec) {
@@ -1849,14 +1856,7 @@ void KOMO::reportProblem(std::ostream& os) {
   os <<"KOMO Problem:" <<endl;
   os <<"  x-dim:" <<x.N <<"  dual-dim:" <<dual.N <<endl;
   os <<"  T:" <<T <<" k:" <<k_order <<" phases:" <<double(T)/stepsPerPhase <<" stepsPerPhase:" <<stepsPerPhase <<" tau:" <<tau <<endl;
-#ifdef KOMO_PATH_CONFIG
   os <<"  #timeSlices:" <<timeSlices.d0 <<" #totalDOFs:" <<pathConfig.getJointStateDimension() <<" #frames:" <<pathConfig.frames.N;
-#else
-  os <<"  #configurations:" <<configurations.N <<" q-dims: ";
-  uintA dims(configurations.N);
-  for(uint i=0; i<configurations.N; i++) dims(i)=configurations(i)->q.N;
-  writeConsecutiveConstant(os, dims);
-#endif
   os <<"  #pathQueries:" <<pathConfig.setJointStateCount;
   os <<endl;
 

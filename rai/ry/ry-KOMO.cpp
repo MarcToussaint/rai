@@ -19,9 +19,22 @@ Skeleton list2skeleton(const pybind11::list& L) {
   Skeleton S;
   for(uint i=0; i<L.size(); i+=3) {
     std::vector<double> when = L[i].cast<std::vector<double>>();
-    SkeletonSymbol symbol = L[i+1].cast<SkeletonSymbol>();
-    ry::I_StringA frames = L[i+2].cast<ry::I_StringA>();
-    S.append(SkeletonEntry(when[0], when[1], symbol, I_conv(frames)));
+    CHECK(when.size()<=2, "Skeleton error entry " <<i/3 <<" time interval: interval needs no, 1, or 2 elements");
+    if(when.size()==0) when={0.,-1.};
+    if(when.size()==1) when={when[0],when[0]};
+    SkeletonSymbol symbol;
+    try{
+      symbol = L[i+1].cast<SkeletonSymbol>();
+    } catch(std::runtime_error& err) {
+      LOG(-1) <<"Skeleton error line " <<i/3 <<" symbol: " <<err.what() <<endl;
+    }
+    StringA frames;
+    try{
+      frames = L[i+2].cast<StringA>();
+    } catch(std::runtime_error& err) {
+      LOG(-1) <<"Skeleton error line " <<i/3 <<" frames: " <<err.what() <<endl;
+    }
+    S.append(SkeletonEntry(when[0], when[1], symbol, frames));
   }
   return S;
 }
@@ -133,7 +146,9 @@ void init_KOMO(pybind11::module& m) {
        pybind11::arg("elasticity") = .8,
        pybind11::arg("stickiness") = 0.)
 
-
+  .def("setSkeleton", [](std::shared_ptr<KOMO>& self, const pybind11::list& S, rai::ArgWord sequenceOrPath) {
+        self->setSkeleton(list2skeleton(S), sequenceOrPath);
+      })
 
 //-- run
 
@@ -177,9 +192,14 @@ void init_KOMO(pybind11::module& m) {
   })
 
   .def("getReport", [](std::shared_ptr<KOMO>& self) {
-//    rai::Graph G = self->getProblemGraph(true);
     rai::Graph R = self->getReport(true);
     return graph2dict(R);
+  })
+
+  .def("reportProblem", [](std::shared_ptr<KOMO>& self) {
+    std::stringstream str;
+    self->reportProblem(str);
+    return str.str();
   })
 
   .def("getConstraintViolations", [](std::shared_ptr<KOMO>& self) {

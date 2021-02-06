@@ -340,7 +340,7 @@ int main(int argc,char** argv){
 
   rnd.clockSeed();
 
-//  testPickAndPlace(false);
+  testPickAndPlace(false);
 //  testPickAndPlace(true);
 //  testPickAndPush(false);
 //  testPickAndPush(true);
@@ -352,7 +352,7 @@ int main(int argc,char** argv){
 //  testWalking(true);
 //  testHandover(false);
 //  testHandover(true);
-  testStackAndBalance(false);
+//  testStackAndBalance(false);
 //  testStackAndBalance(true);
 
   return 0;
