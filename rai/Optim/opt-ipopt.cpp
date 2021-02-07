@@ -317,7 +317,7 @@ void Conv_MP_Ipopt::finalize_solution(Ipopt::SolverReturn status, Ipopt::Index n
 
 #else
 
-arr IpoptInterface::solve() {
+arr IpoptInterface::solve(const arr& x_init) {
   NICO
 }
 

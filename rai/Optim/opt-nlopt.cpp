@@ -153,6 +153,6 @@ double NLoptInterface::_h(const std::vector<double>& _x, std::vector<double>& _g
 
 #else
 
-arr NLOptInterface::solve() { NICO; return arr(); }
+arr NLoptInterface::solve(const arr& x_init) { NICO; return arr(); }
 
 #endif

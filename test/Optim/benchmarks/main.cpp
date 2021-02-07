@@ -24,7 +24,7 @@ void TEST(KOMO_IK) {
 //===========================================================================
 
 void TEST(Skeleton_Handover) {
-  OptBench_Skeleton_Handover nlp(rai::_sequence);
+  OptBench_Skeleton_Handover nlp(rai::_path);
 //  OptBench_Skeleton_StackAndBalance nlp(rai::_sequence);
 
   NLP_Solver S;
@@ -49,8 +49,8 @@ int MAIN(int argc,char** argv){
 //  rnd.clockSeed();
   rnd.seed(0);
 
-  testKOMO_IK();
-//  testSkeleton_Handover();
+//  testKOMO_IK();
+  testSkeleton_Handover();
 
   return 0;
 }
