@@ -30,6 +30,7 @@ struct OptNewton {
       boundClip(x, bounds_lo, bounds_up);
       reinit(x);
     }
+    return *this;
   }
   void reinit(const arr& _x);
 

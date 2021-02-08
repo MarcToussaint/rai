@@ -54,6 +54,17 @@ void OptBench_Skeleton::create(const char* modelFile, const Skeleton& S, rai::Ar
 
 //===========================================================================
 
+OptBench_Skeleton_Pick::OptBench_Skeleton_Pick(rai::ArgWord sequenceOrPath){
+  Skeleton S = {
+    //grasp
+    { 1., 1., SY_touch, {"R_endeff", "box3"} },
+    { 1., 1.2, SY_stable, {"R_endeff", "box3"} },
+  };
+  create(rai::raiPath("test/KOMO/skeleton/model2.g"), S, sequenceOrPath);
+}
+
+//===========================================================================
+
 OptBench_Skeleton_Handover::OptBench_Skeleton_Handover(rai::ArgWord sequenceOrPath){
   Skeleton S = {
     //grasp

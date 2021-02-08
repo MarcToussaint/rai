@@ -24,7 +24,8 @@ void TEST(KOMO_IK) {
 //===========================================================================
 
 void TEST(Skeleton_Handover) {
-  OptBench_Skeleton_Handover nlp(rai::_path);
+  OptBench_Skeleton_Pick nlp(rai::_path);
+//  OptBench_Skeleton_Handover nlp(rai::_path);
 //  OptBench_Skeleton_StackAndBalance nlp(rai::_sequence);
 
   NLP_Solver S;

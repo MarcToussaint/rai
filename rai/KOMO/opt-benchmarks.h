@@ -20,6 +20,11 @@ struct OptBench_Skeleton {
   shared_ptr<KOMO::Conv_KOMO_SparseNonfactored> nlp;
 };
 
+struct OptBench_Skeleton_Pick : OptBench_Skeleton {
+  Skeleton S;
+  OptBench_Skeleton_Pick(rai::ArgWord sequenceOrPath);
+};
+
 struct OptBench_Skeleton_Handover : OptBench_Skeleton {
   Skeleton S;
   OptBench_Skeleton_Handover(rai::ArgWord sequenceOrPath);

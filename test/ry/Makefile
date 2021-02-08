@@ -4,7 +4,7 @@ ipynb_paths =  $(shell find . -type f -name '*.ipynb' -not -name '*checkpoint*' 
 run_paths = 1-basics.ipynb 2-cameraView.ipynb 4-path-optimization.ipynb 2-KOMO-switches.ipynb ry-skeletons.ipynb
 
 run:
-	@for p in $(run_paths); do jupyter nbconvert --to notebook --execute $$p; done
+	@for p in $(run_paths); do jupyter-nbconvert --to notebook --execute $$p; done
 
 clean: $(ipynb_paths:%=clean/%)
 
