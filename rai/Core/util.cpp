@@ -702,8 +702,11 @@ rai::LogToken::~LogToken() {
     log.fil <<code_file <<':' <<code_func <<':' <<code_line <<'(' <<log_level <<") " <<msg <<endl;
   }
   if(log.logCoutLevel>=log_level) {
-    if(log_level>=0) std::cout <<code_file <<':' <<code_func <<':' <<code_line <<'(' <<log_level <<") " <<msg <<endl;
-    if(log_level<0) {
+    rai::errString.clear() <<code_file <<':' <<code_func <<':' <<code_line <<'(' <<log_level <<") " <<msg;
+    if(log.callback) log.callback(rai::errString.p, log_level);
+    if(log_level>=0){
+      cout <<"** INFO:" <<rai::errString <<endl; return;
+    } else {
 
 #ifndef RAI_MSVC
       if(log_level<=-2) {
@@ -735,11 +738,6 @@ rai::LogToken::~LogToken() {
       }
 #endif
 
-      rai::errString.clear() <<code_file <<':' <<code_func <<':' <<code_line <<'(' <<log_level <<") " <<msg;
-// #ifdef RAI_ROS
-//       ROS_INFO("RAI-MSG: %s",rai::errString.p);
-// #endif
-      if(log.callback) log.callback(rai::errString.p);
       if(log_level==-1) { cout <<"** WARNING:" <<rai::errString <<endl; return; }
       else if(log_level==-2) { cerr <<"** ERROR:" <<rai::errString <<endl; /*throw does not WORK!!! Because this is a destructor. The THROW macro does it inline*/ }
       else if(log_level==-3) { cerr <<"** HARD EXIT! " <<rai::errString <<endl;  exit(1); }

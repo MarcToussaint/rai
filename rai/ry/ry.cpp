@@ -22,8 +22,7 @@ void init_CfgFileParameters(){
 
 
 namespace pybind11{
-  void logCallback(const char* str){
-    std::cerr <<"logCallback was called!: <<" <<str <<">>" <<endl;
+  void logCallback(const char* str, int log_level){
     std::string _str(str);
     pybind11::print("**ry-c++-log**", str, "flush"_a=true);
     pybind11::print("flush"_a=true);
@@ -32,7 +31,7 @@ namespace pybind11{
 
 void init_LogToPythonConsole(){
   rai::_log.callback = pybind11::logCallback;
-  LOG(-2) <<"initializing ry log callback";
+  LOG(0) <<"initializing ry log callback";
 }
 
 void init_enums(pybind11::module& m);
