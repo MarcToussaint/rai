@@ -15,10 +15,6 @@
 #include <memory>
 #include <vector>
 
-//-- don't require previously defined iterators
-#define for_list(Type, it, X)     Type *it=nullptr; for(uint it##_COUNT=0;   it##_COUNT<X.N && ((it=X(it##_COUNT)) || true); it##_COUNT++)
-#define for_list_rev(Type, it, X) Type *it=nullptr; for(uint it##_COUNT=X.N; it##_COUNT--   && ((it=X(it##_COUNT)) || true); )
-
 #define ARR ARRAY<double> ///< write ARR(1., 4., 5., 7.) to generate a double-Array
 #define TUP ARRAY<uint> ///< write TUP(1, 2, 3) to generate a uint-Array
 
@@ -901,7 +897,9 @@ struct SpecialArray {
   enum Type { ST_none, ST_NoArr, ST_EmptyShape, hasCarrayST, sparseVectorST, sparseMatrixST, diagST, RowShiftedST, CpointerST };
   Type type;
   SpecialArray(Type _type=ST_none) : type(_type) {}
+  SpecialArray(const SpecialArray&) = delete; //non-copyable
   virtual ~SpecialArray() {}
+  SpecialArray& operator=(const SpecialArray&) = delete; //non-copyable
 };
 
 namespace rai {
@@ -1013,6 +1011,7 @@ struct SparseMatrix : SpecialArray {
   void add(const arr& B, uint lo0=0, uint lo1=0, double coeff=1.);
   arr unsparse();
   arr getTriplets() const;
+  void checkConsistency() const;
 };
 
 arr unpack(const arr& X);

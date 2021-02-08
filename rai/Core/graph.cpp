@@ -153,8 +153,8 @@ void Node::write(std::ostream& os, bool yamlMode) const {
   if(parents.N) {
     //    if(keys.N) os <<' ';
     os <<'(';
-    for_list(Node, it, parents) {
-      if(it_COUNT) os <<' ';
+    for(Node* it: parents) {
+      if(it!=parents.first()) os <<' ';
       if(it->key.N) {
         os <<it->key;
       } else { //relative numerical reference
@@ -1099,13 +1099,14 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
         }
       }
       if(nodesOrEdges<=0) {
-        for_list(Node, pa, n->parents) {
+        uint pa_COUNT=0;
+        for(Node* pa: n->parents) {
           if(hasRenderingInfo(pa) && getRenderingInfo(pa).skip) continue;
           //              if(pa->index<n->index)
           os <<pa->index <<" -> " <<n->index <<" [ ";
           //              else
           //                  os <<n->index <<" -> " <<pa->index <<" [ ";
-          os <<"label=" <<pa_COUNT;
+          os <<"label=" <<pa_COUNT++;
           os <<" ];" <<endl;
         }
       }
@@ -1120,15 +1121,17 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
 void Graph::sortByDotOrder() {
   uintA perm;
   perm.setStraightPerm(N);
-  for_list(Node, it, list()) {
+  uint it_COUNT=0;
+  for(Node* it: list()) {
     if(it->isGraph()) {
       double* order = it->graph().find<double>("dot_order");
       if(!order) { RAI_MSG("doesn't have dot_order attribute"); return; }
-      perm(it_COUNT) = (uint)*order;
+      perm(it_COUNT++) = (uint)*order;
     }
   }
   permuteInv(perm);
-  for_list(Node, it2, list()) it2->index=it2_COUNT;
+  it_COUNT=0;
+  for(Node *it: list()) it->index=it_COUNT++;
 }
 
 ParseInfo& Graph::getParseInfo(Node* n) {

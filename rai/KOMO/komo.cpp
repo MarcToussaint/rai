@@ -2864,7 +2864,7 @@ void KOMO::Conv_KOMO_FactoredNLP::evaluateSingleFeature(uint feat_id, arr& phi, 
   if(absMax(phi)>1e10) RAI_MSG("WARNING phi=" <<phi);
 
   if(isSparseMatrix(Jy)) {
-    auto S = Jy.sparse();
+    auto& S = Jy.sparse();
 
     uint n=0;
     for(uint v:F.varIds) n += variableIndex(v).dim;

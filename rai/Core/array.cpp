@@ -2707,6 +2707,17 @@ arr SparseMatrix::getTriplets() const{
   return T;
 }
 
+void SparseMatrix::checkConsistency() const {
+  CHECK(Z.isSparse(), "")
+  CHECK_EQ(this, Z.special, "");
+  CHECK_EQ(elems.d0, Z.N, "");
+  CHECK_EQ(elems.d1, 2, "");
+  if(cols.N){
+    CHECK_EQ(rows.N, Z.d0, "");
+    CHECK_EQ(cols.N, Z.d1, "");
+  }
+}
+
 } //namespace rai
 
 void operator -= (rai::SparseMatrix& x, const rai::SparseMatrix& y) { x.add(y, 0, 0, -1.); }

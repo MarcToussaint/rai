@@ -4155,19 +4155,19 @@ template<class T> void listReindex(rai::Array<T*>& L) {
 }
 
 template<class T> T* listFindByName(const rai::Array<T*>& L, const char* name) {
-  for_list(T,  e,  L) if(e->name==name) return e;
+  for(T* e: L) if(e->name==name) return e;
   //std::cerr <<"\n*** name '" <<name <<"' not in this list!" <<std::endl;
   return NULL;
 }
 
 template<class T> T* listFindByType(const rai::Array<T*>& L, const char* type) {
-  for_list(T,  e,  L) if(!strcmp(e->type, type)) return e;
+  for(T* e: L) if(!strcmp(e->type, type)) return e;
   //std::cerr <<"type '" <<type <<"' not in this list!" <<std::endl;
   return NULL;
 }
 
 template<class T> T* listFindValue(const rai::Array<T*>& L, const T& x) {
-  for_list(T,  e,  L) if(*e==x) return e;
+  for(T* e: L) if(*e==x) return e;
   //std::cerr <<"value '" <<x <<"' not in this list!" <<std::endl;
   return NULL;
 }
@@ -4188,7 +4188,7 @@ template<class vert, class edge> void graphDelete(rai::Array<vert*>& V, rai::Arr
 }
 
 template<class vert, class edge> edge* graphGetEdge(vert* from, vert* to) {
-  for_list(edge,  e,  to->inLinks) if(e->from==from) return e;
+  for(edge* e: to->inLinks) if(e->from==from) return e;
   return NULL;
 }
 
@@ -4314,7 +4314,7 @@ template<class vert, class edge> void graphRandomFixedDegree(rai::Array<vert*>& 
       // If G is d-regular, output, otherwise return to Step 1.
       uintA degrees(N);
       degrees.setZero();
-      for_list(edge,  e,  E) {
+      for(edge* e: E) {
         degrees(e->ifrom)++;
         degrees(e->ito)  ++;
       }
@@ -4348,11 +4348,11 @@ template<class vert, class edge> void graphLayered(rai::Array<vert*>& V, rai::Ar
 }
 
 template<class vert, class edge> void graphMakeLists(rai::Array<vert*>& V, rai::Array<edge*>& E) {
-  for_list(vert,  v,  V) {
+  for(vert* v: V) {
     v->parentOf.clear();
     v-> inLinks.clear();
   }
-  for_list(edge,  e,  E) {
+  for(edge* e: E) {
     e->from = V(e->ifrom);
     e->to   = V(e->ito);
     e->from->parentOf.append(e);
@@ -4361,8 +4361,8 @@ template<class vert, class edge> void graphMakeLists(rai::Array<vert*>& V, rai::
 }
 
 template<class vert, class edge> void graphConnectUndirected(rai::Array<vert*>& V, rai::Array<edge*>& E) {
-  for_list(vert,  v,  V) v->edges.clear();
-  for_list(edge,  e,  E) {
+  for(vert* v: V) v->edges.clear();
+  for(edge* e: E) {
     e->from = V(e->ifrom);
     e->to   = V(e->ito);
     e->from->edges.append(e);
@@ -4401,24 +4401,28 @@ template<class vert, class edge> edge* del_edge(edge* e, rai::Array<vert*>& V, r
 }
 
 template<class vert, class edge> void graphWriteDirected(std::ostream& os, const rai::Array<vert*>& V, const rai::Array<edge*>& E) {
-  for_list(vert,  v,  V) {
-    for_list(edge,  e,  v->inLinks) os <<e->ifrom <<' ';
+  int v_COUNT=0;
+  for(vert* v: V) {
+    for(edge* e: v->inLinks) os <<e->ifrom <<' ';
     os <<"-> ";
     os <<v_COUNT <<" -> ";
-    for_list(edge,  e2,  v->parentOf) os <<e2->ito <<' ';
+    for(edge* e2: v->parentOf) os <<e2->ito <<' ';
     os <<'\n';
+    v_COUNT++;
   }
-  for_list(edge,  e,  E) os <<e->ifrom <<"->" <<e->ito <<'\n';
+  for(edge* e: E) os <<e->ifrom <<"->" <<e->ito <<'\n';
   //for_list(Type,  e,  E) os <<e->from->name <<"->" <<e->to->name <<'\n';
 }
 
 template<class vert, class edge> void graphWriteUndirected(std::ostream& os, const rai::Array<vert*>& V, const rai::Array<edge*>& E) {
-  for_list(vert,  v,  V) {
+  int v_COUNT=0;
+  for(vert* v: V) {
     os <<v_COUNT <<": ";
-    for_list(edge,  e,  v->edges) if(e->ifrom==v_COUNT) os <<e->ito <<' '; else os <<e->ifrom <<' ';
+    for(edge* e: v->edges) if(e->ifrom==v_COUNT) os <<e->ito <<' '; else os <<e->ifrom <<' ';
     os <<'\n';
+    v_COUNT++;
   }
-  for_list(edge,  e,  E) os <<e->ifrom <<"-" <<e->ito <<'\n';
+  for(edge* e: E) os <<e->ifrom <<"-" <<e->ito <<'\n';
 }
 
 template<class vert, class edge> bool graphTopsort(rai::Array<vert*>& V, rai::Array<edge*>& E) {
@@ -4431,7 +4435,7 @@ template<class vert, class edge> bool graphTopsort(rai::Array<vert*>& V, rai::Ar
 
   uint count=0;
 
-  for_list(vert,  v,  V) v->index = v_COUNT;
+  for(vert* v: V) v->index = v_COUNT;
 
   for(vert* v:V) {
     inputs(v->index)=v->numInputs(); //inLinks.N;
@@ -4469,7 +4473,8 @@ template<class vert> rai::Array<vert*> graphGetTopsortOrder(rai::Array<vert*>& V
   intA inputs(V.N);
   rai::Array<vert*> order;
 
-  for_list(vert,  v,  V) v->ID = v_COUNT;
+  uint v_COUNT=0;
+  for(vert* v: V) v->ID = v_COUNT++;
 
   for(vert* v:V) {
     inputs(v->ID)=v->numInputs(); //inLinks.N;
@@ -4477,7 +4482,7 @@ template<class vert> rai::Array<vert*> graphGetTopsortOrder(rai::Array<vert*>& V
   }
 
   while(fringe.N) {
-    v=fringe.popFirst();
+    vert* v=fringe.popFirst();
     order.append(v);
 
     for(vert* to : v->parentOf) {
@@ -4513,7 +4518,7 @@ void maximumSpanningTree(rai::Array<vert*>& V, rai::Array<edge*>& E, const Compa
     m=0;
     for(uint i=0; i<addedNodes.N; i++) {
       n=V(addedNodes(i));
-      for_list(edge,  e,  n->parentOf) if(!nodeAdded(e->to  ->index) && (!m || cmp(e, m))) m=e;
+      for(edge* e: n->parentOf) if(!nodeAdded(e->to->index) && (!m || cmp(e, m))) m=e;
       for(edge* e: n->inLinks) if(!nodeAdded(e->from->index) && (!m || cmp(e, m))) m=e;
     }
     CHECK(m, "graph is not connected!");
@@ -4523,7 +4528,7 @@ void maximumSpanningTree(rai::Array<vert*>& V, rai::Array<edge*>& E, const Compa
     nodeAdded(m->to->index)=true;
     addedNodes.append(m->to->index);
   }
-  for_list_rev(edge, e, E) if(!edgeAdded(e_COUNT)) del_edge(e, V, E, true);
+  for(uint i=E.N;i--;) if(!edgeAdded(i)) del_edge(E.elem(i), V, E, true);
   graphMakeLists(V, E);
 }
 
