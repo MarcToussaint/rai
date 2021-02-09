@@ -77,6 +77,12 @@ void conv_ArrCloud_PclCloud(PclC& cloud,
   }
 }
 
+Pcl::Ptr conv_ArrCloud_PclCloud(const arr& pts){
+  Pcl::Ptr pcl(new Pcl);
+  conv_ArrCloud_PclCloud(*pcl, pts);
+  return pcl;
+}
+
 PclC::Ptr conv_ArrCloud_PclCloud(const arr& pts, const byteA& rgb){
   PclC::Ptr pcl(new PclC);
   conv_ArrCloud_PclCloud(*pcl, pts, rgb);

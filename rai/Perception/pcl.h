@@ -24,6 +24,7 @@
 typedef pcl::PointCloud<pcl::PointXYZ> Pcl;
 typedef pcl::PointCloud<pcl::PointXYZRGB> PclC;
 
+Pcl::Ptr conv_ArrCloud_PclCloud(const arr& pts);
 void conv_ArrCloud_PclCloud(Pcl& cloud, const arr& pts);
 void conv_PclCloud_ArrCloud(arr& pts, const Pcl& cloud);
 

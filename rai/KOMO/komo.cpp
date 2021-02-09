@@ -1834,7 +1834,7 @@ void KOMO::run(OptOptions options) {
   } else if(solver==rai::KS_Ceres) {
     Conv_KOMO_SparseNonfactored P(*this, false);
 //    Conv_KOMO_FactoredNLP P(*this);
-    LagrangianProblem L(P);
+    LagrangianProblem L(P, options);
     Conv_MathematicalProgram_TrivialFactoreded P2(L);
     CeresInterface ceres(P2);
     x = ceres.solve();

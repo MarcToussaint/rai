@@ -1577,7 +1577,7 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
   }
 
   if(glDrawOptions(gl).drawWires) { //on top of mesh
-#if 0
+#if 1
     uint t;
     for(t=0; t<T.d0; t++) {
       glBegin(GL_LINE_LOOP);
@@ -1778,40 +1778,7 @@ double GJK_distance(rai::Mesh& mesh1, rai::Mesh& mesh2,
 #  include "Lewiner/MarchingCubes.h"
 
 void rai::Mesh::setImplicitSurface(ScalarFunction f, double lo, double hi, uint res) {
-  MarchingCubes mc(res, res, res);
-  mc.init_all() ;
-  double startTime = rai::timerRead();
-  //compute data
-  uint k=0, j=0, i=0;
-  float x=lo, y=lo, z=lo;
-  for(k=0; k<res; k++) {
-    z = lo+k*(hi-lo)/res;
-    for(j=0; j<res; j++) {
-      y = lo+j*(hi-lo)/res;
-      for(i=0; i<res; i++) {
-        x = lo+i*(hi-lo)/res;
-        mc.set_data(f(NoArr, NoArr, ARR((double)x, (double)y, (double)z)), i, j, k) ;
-      }
-    }
-  }
-  cout << "calculation of data took: " << rai::timerRead() - startTime << " seconds" << endl;
-  mc.run();
-  mc.clean_temps();
-
-  //convert to Mesh
-  clear();
-  V.resize(mc.nverts(), 3);
-  T.resize(mc.ntrigs(), 3);
-  for(i=0; i<V.d0; i++) {
-    V(i, 0)=lo+mc.vert(i)->x*(hi-lo)/res;
-    V(i, 1)=lo+mc.vert(i)->y*(hi-lo)/res;
-    V(i, 2)=lo+mc.vert(i)->z*(hi-lo)/res;
-  }
-  for(i=0; i<T.d0; i++) {
-    T(i, 0)=mc.trig(i)->v1;
-    T(i, 1)=mc.trig(i)->v2;
-    T(i, 2)=mc.trig(i)->v3;
-  }
+  setImplicitSurface(f, lo, hi, lo, hi, lo, hi, res);
 }
 
 void rai::Mesh::setImplicitSurface(ScalarFunction f, double xLo, double xHi, double yLo, double yHi, double zLo, double zHi, uint res) {
@@ -1843,6 +1810,39 @@ void rai::Mesh::setImplicitSurface(ScalarFunction f, double xLo, double xHi, dou
     V(i, 0)=xLo+mc.vert(i)->x*(xHi-xLo)/res;
     V(i, 1)=yLo+mc.vert(i)->y*(yHi-yLo)/res;
     V(i, 2)=zLo+mc.vert(i)->z*(zHi-zLo)/res;
+  }
+  for(i=0; i<T.d0; i++) {
+    T(i, 0)=mc.trig(i)->v1;
+    T(i, 1)=mc.trig(i)->v2;
+    T(i, 2)=mc.trig(i)->v3;
+  }
+}
+
+void rai::Mesh::setImplicitSurface(const arr& gridValues, const arr& lo, const arr& hi){
+  CHECK_EQ(gridValues.nd, 3, "");
+
+  MarchingCubes mc(gridValues.d0, gridValues.d1, gridValues.d2);
+  mc.init_all() ;
+  uint k=0, j=0, i=0;
+  for(k=0; k<gridValues.d2; k++) {
+    for(j=0; j<gridValues.d1; j++) {
+      for(i=0; i<gridValues.d0; i++) {
+        mc.set_data(gridValues(i,j,k), i, j, k) ;
+      }
+    }
+  }
+
+  mc.run();
+  mc.clean_temps();
+
+  //convert to Mesh
+  clear();
+  V.resize(mc.nverts(), 3);
+  T.resize(mc.ntrigs(), 3);
+  for(i=0; i<V.d0; i++) {
+    V(i, 0)=lo(0)+mc.vert(i)->x*(hi(0)-lo(0))/(gridValues.d0-1);
+    V(i, 1)=lo(1)+mc.vert(i)->y*(hi(1)-lo(1))/(gridValues.d1-1);
+    V(i, 2)=lo(2)+mc.vert(i)->z*(hi(2)-lo(2))/(gridValues.d2-1);
   }
   for(i=0; i<T.d0; i++) {
     T(i, 0)=mc.trig(i)->v1;

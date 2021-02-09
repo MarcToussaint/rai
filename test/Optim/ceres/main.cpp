@@ -273,8 +273,8 @@ void TEST(Ceres){
 int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
-//  tutorialBasics();
-  testCeres2();
+  tutorialBasics();
+//  testCeres2();
 
   return 0;
 }
