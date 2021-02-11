@@ -1221,7 +1221,7 @@ void SWIFT_Tri_Mesh::Create_BV_Subtree( int& bvid, SPLIT_TYPE split,
             children[1]->Set_Level( bvs[this_bvid].Level()+1 );
             children[1]->Set_Parent( bvs(this_bvid) );
 #ifndef SWIFT_DEBUG
-            height = max( height, bvs[this_bvid].Level()+1 );
+            height = SWIFT_max( height, bvs[this_bvid].Level()+1 );
 #else
             height = std::max( height, bvs[this_bvid].Level()+1 );
 #endif
@@ -1905,7 +1905,7 @@ void SWIFT_Tri_Mesh::Create_BV_Hierarchy( SPLIT_TYPE split,
             children[1]->Set_Level( 1 );
             children[1]->Set_Parent( bvs(0) );
 #ifndef SWIFT_DEBUG
-            height = max( height, 1 );
+            height = SWIFT_max( height, 1 );
 #else
             height = std::max( height, 1 );
 #endif

@@ -118,11 +118,11 @@ static const SWIFT_Real EPSILON1 = 1.0e-1;
 
 // Standard min/max macros
 # ifndef min
-#define min(a,b) ((a)<(b)?(a):(b))
+#define SWIFT_min(a,b) ((a)<(b)?(a):(b))
 # endif
 
 # ifndef max
-#define max(a,b) ((a)>(b)?(a):(b))
+#define SWIFT_max(a,b) ((a)>(b)?(a):(b))
 # endif
 
 // Special min and max function which accumulates min and max

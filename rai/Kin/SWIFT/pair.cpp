@@ -2508,7 +2508,7 @@ bool SWIFT_PairWorkspace::Distance_LC( RESULT_TYPE start_state,
                 return true;
             }
 #endif
-            distance = min( distance, loc_dist );
+            distance = SWIFT_min( distance, loc_dist );
             loc_dist = distance;
             bv0 = save_bv0->Children()[1]; bv1 = save_bv1;
             level0 = bv0->Level(); level1 = bv1->Level();
@@ -2557,7 +2557,7 @@ cerr << "!!!!!!!!!!!!!!!! new node is null !!!!!!!!!!!!!!!!!" << endl;
             result = Distance_LC( start_state, tolerance, abs_error, rel_error,
                                   loc_dist, contacts );
 #endif
-            distance = min( distance, loc_dist );
+            distance = SWIFT_min( distance, loc_dist );
             return result;
         } else if( c2 == CLASS_FREE ) {
             // Save the bv pointers
@@ -2597,7 +2597,7 @@ cerr << "!!!!!!!!!!!!!!!! new node is null !!!!!!!!!!!!!!!!!" << endl;
                 return true;
             }
 #endif
-            distance = min( distance, loc_dist );
+            distance = SWIFT_min( distance, loc_dist );
             loc_dist = distance;
             bv0 = save_bv0; bv1 = save_bv1->Children()[1];
             level0 = bv0->Level(); level1 = bv1->Level();
@@ -2646,15 +2646,15 @@ cerr << "!!!!!!!!!!!!!!!! new node is null !!!!!!!!!!!!!!!!!" << endl;
             result = Distance_LC( start_state, tolerance, abs_error, rel_error,
                                   loc_dist, contacts );
 #endif
-            distance = min( distance, loc_dist );
+            distance = SWIFT_min( distance, loc_dist );
             return result;
         } else {
 #ifndef SWIFT_PIECE_CACHING
-            distance = min( distance, loc_dist );
+            distance = SWIFT_min( distance, loc_dist );
 #endif
             if( contacts ) {
 #ifdef SWIFT_PIECE_CACHING
-                distance = min( distance, loc_dist );
+                distance = SWIFT_min( distance, loc_dist );
 #endif
                 if( !result ) {
                     // This is the closest pair of features that there can ever
@@ -2832,7 +2832,7 @@ bool SWIFT_Pair::Handle_Full_Queue( SWIFT_Real tolerance, SWIFT_Real abs_error,
         }
 #endif
 
-        distance = min( distance, loc_dist );
+        distance = SWIFT_min( distance, loc_dist );
         loc_dist = distance;
         bv0 = save_bv0->Children()[1]; bv1 = save_bv1;
         level0 = bv0->Level(); level1 = bv1->Level();
@@ -2876,7 +2876,7 @@ bool SWIFT_Pair::Handle_Full_Queue( SWIFT_Real tolerance, SWIFT_Real abs_error,
         result = Distance_LC( start_state, tolerance, abs_error, rel_error,
                                                                  loc_dist );
 #endif
-        distance = min( distance, loc_dist );
+        distance = SWIFT_min( distance, loc_dist );
     } else {
         // Go down on bv1
         SWIFT_Triple st = trans01 * save_bv0->Center_Of_Mass();
@@ -2954,7 +2954,7 @@ bool SWIFT_Pair::Handle_Full_Queue( SWIFT_Real tolerance, SWIFT_Real abs_error,
         result = Distance_LC( start_state, tolerance, abs_error, rel_error,
                                                                  loc_dist );
 #endif
-        distance = min( distance, loc_dist );
+        distance = SWIFT_min( distance, loc_dist );
     }
     return result;
 }
@@ -3024,7 +3024,7 @@ bool SWIFT_Pair::Distance( SWIFT_Object* o0, SWIFT_Object* o1,
                     distance = loc_dist;
                 }
 #else
-                distance = min( distance, loc_dist );
+                distance = SWIFT_min( distance, loc_dist );
 #endif
                 if( result ) {
                     pqueue.Reset();
@@ -3044,7 +3044,7 @@ cerr << "Full Queue when processing leaves" << endl;
                     loc_dist = distance;
                     result = Handle_Full_Queue( tolerance, abs_error,
                                                 rel_error, loc_dist, leaf );
-                    distance = min( distance, loc_dist );
+                    distance = SWIFT_min( distance, loc_dist );
                     if( result ) {
                         pqueue.Reset();
                         break;
@@ -3131,7 +3131,7 @@ cerr << "Full Queue when processing leaves" << endl;
                         distance = loc_dist;
                     }
 #else
-                    distance = min( distance, loc_dist );
+                    distance = SWIFT_min( distance, loc_dist );
 #endif
                     if( result ) {
                         // Have to create sibling front node
@@ -3217,7 +3217,7 @@ cerr << "Full Queue when processing leaves" << endl;
                         distance = loc_dist;
                     }
 #else
-                    distance = min( distance, loc_dist );
+                    distance = SWIFT_min( distance, loc_dist );
 #endif
                     if( result ) {
                         break;
@@ -3241,7 +3241,7 @@ cerr << "Full Queue when processing queue" << endl;
                                         dp.Front_Node()->Right_Child()
 #endif
                                     );
-                        distance = min( distance, loc_dist );
+                        distance = SWIFT_min( distance, loc_dist );
                         if( result ) {
                             break;
                         }
@@ -3290,7 +3290,7 @@ cerr << "Full Queue when processing queue" << endl;
                         distance = loc_dist;
                     }
 #else
-                    distance = min( distance, loc_dist );
+                    distance = SWIFT_min( distance, loc_dist );
 #endif
                     if( result ) {
 #ifdef SWIFT_FRONT_TRACKING
@@ -3374,7 +3374,7 @@ cerr << "Full Queue when processing queue" << endl;
                         distance = loc_dist;
                     }
 #else
-                    distance = min( distance, loc_dist );
+                    distance = SWIFT_min( distance, loc_dist );
 #endif
                     if( result ) {
                         break;
@@ -3398,7 +3398,7 @@ cerr << "Full Queue when processing queue" << endl;
                                         dp.Front_Node()->Right_Child()
 #endif
                                     );
-                        distance = min( distance, loc_dist );
+                        distance = SWIFT_min( distance, loc_dist );
                         if( result ) {
                             break;
                         }
