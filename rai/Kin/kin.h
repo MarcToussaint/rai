@@ -11,7 +11,7 @@
 #include "featureSymbols.h"
 #include "../Core/array.h"
 #include "../Geo/geo.h"
-#include "../Geo/geoms.h"
+#include "../Geo/mesh.h"
 
 struct OpenGL;
 struct PhysXInterface;
@@ -123,7 +123,7 @@ struct Configuration : GLDrawer {
   uint getJointStateDimension() const;
   const arr& getJointState() const;
   arr getJointState(const FrameL& F, bool activesOnly=true) const;
-  arr getJointState(const uintA& F) const { return getJointState(getFrames(F)); } ///< same as getJointState() with getFrames()
+  arr getJointState(const uintA& F, bool activesOnly=true) const { return getJointState(getFrames(F), activesOnly); } ///< same as getJointState() with getFrames()
   arr getJointStateSlice(uint t, bool activesOnly=true){  return getJointState(getJointsSlice(t, activesOnly), activesOnly);  }
   arr getFrameState() const { return getFrameState(frames); } ///< same as getFrameState() for all \ref frames
   arr getFrameState(const FrameL& F) const;
@@ -143,7 +143,7 @@ struct Configuration : GLDrawer {
   void selectJoints(const FrameL& F, bool notThose=false);
   void selectJointsByName(const StringA&, bool notThose=false);
   void selectJointsByGroup(const StringA& groupNames, bool notThose=false);
-  void selectJointsBySubtrees(const StringA& roots, bool notThose=false);
+  void selectJointsBySubtrees(const FrameL& roots, bool notThose=false);
 
   /// @name get other information
   arr getCtrlMetric() const;

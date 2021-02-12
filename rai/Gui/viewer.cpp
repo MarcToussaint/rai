@@ -147,7 +147,7 @@ void ImageViewerCallback::call(Var_base* v) {
 
 struct sPointCloudViewer {
   OpenGL gl;
-  sPointCloudViewer(const char* tit) : gl(tit) {}
+  sPointCloudViewer(const char* tit) : gl(tit) { gl.drawOptions.pclPointSize=3.; }
   rai::Mesh pc;
 };
 
@@ -161,6 +161,13 @@ void glDrawAxes(void*) {
 //    rgb(this, rgb_name) {
 //  threadLoop();
 //}
+
+PointCloudViewer::PointCloudViewer()
+  : Thread("PointCloudViewer"),
+    pts(this, true),
+    rgb(this, true) {
+  threadOpen(true);
+}
 
 PointCloudViewer::PointCloudViewer(const Var<arr>& _pts, const Var<byteA>& _rgb, double beatIntervalSec)
   : Thread(STRING("PointCloudViewer_"<<_pts.name() <<'_' <<_rgb.name()), beatIntervalSec),
@@ -199,6 +206,7 @@ void PointCloudViewer::step() {
     auto _dataLock = self->gl.dataLock(RAI_HERE);
     self->pc.V=pts.get();
     copy(self->pc.C, rgb.get()());
+    self->pc.Vn=normals.get();
     H=self->pc.C.d0;
     W=self->pc.C.d1;
     uint n=self->pc.V.N/3;
@@ -209,6 +217,7 @@ void PointCloudViewer::step() {
     self->pc.C /= 255.;
     self->pc.V.reshape(n, 3);
     self->pc.C.reshape(n, 3);
+    if(self->pc.Vn.N) self->pc.Vn.reshape(n, 3);
   }
 
   if(W!=self->gl.width || H!=self->gl.height) self->gl.resize(W, H);

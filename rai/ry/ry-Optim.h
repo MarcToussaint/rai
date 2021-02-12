@@ -6,3 +6,12 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
+#pragma once
+
+#ifdef RAI_PYBIND
+
+#include <pybind11/pybind11.h>
+
+void init_Optim(pybind11::module& m);
+
+#endif

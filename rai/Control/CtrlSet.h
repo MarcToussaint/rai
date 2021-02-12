@@ -9,7 +9,7 @@
 #pragma once
 
 #include "CtrlObjective.h"
-#include <Kin/feature.h>
+#include "../Kin/feature.h"
 
 
 //===========================================================================

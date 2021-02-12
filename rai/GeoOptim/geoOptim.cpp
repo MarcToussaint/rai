@@ -12,6 +12,7 @@
 #include "../Gui/opengl.h"
 #include "../Algo/ann.h"
 #include "../Geo/pairCollision.h"
+#include "../Geo/analyticShapes.h"
 
 void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
   struct fitSSBoxProblem : MathematicalProgram {

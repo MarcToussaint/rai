@@ -1590,7 +1590,7 @@ arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
     HALT("here");
   }
   if(INFO) {
-#if 1
+#if 0
     uint k=(N>3?3:N); //number of required eigenvalues
     rai::Array<integer> IWORK(5*N), IFAIL(N);
     arr WORK(10*(3*N)), Acopy=A;
@@ -1606,12 +1606,12 @@ arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
       dsbevx_((char*)"N", (char*)"I", (char*)"L", &N, &KD, Acopy.p, &LDAB, (double*)nullptr, &LDQ, &VL, &VU, &IL, &IU, &ABSTOL, &M, sig.p, (double*)nullptr, &LDZ, WORK.p, IWORK.p, IFAIL.p, &INFO);
     } else NIY;
     sig.resizeCopy(k);
-#else
-    arr sig, eig;
-    lapack_EigenDecomp(A, sig, eig);
+//    arr sig, eig;
+//    lapack_EigenDecomp(A, sig, eig);
 #endif
     rai::errString <<"lapack_Ainv_b_sym error info = " <<INFO
-                   <<". Typically this is because A is not pos-def.\nsmallest "<<k<<" eigenvalues=" <<sig;
+                   <<". Typically this is because A is not pos-def.";
+//    \nsmallest "<<k<<" eigenvalues=" <<sig;
     throw(rai::errString.p);
 //    THROW("lapack_Ainv_b_sym error info = " <<INFO
 //         <<". Typically this is because A is not pos-def.\nsmallest "<<k<<" eigenvalues=" <<sig);
@@ -2606,6 +2606,11 @@ void SparseMatrix::rowWiseMult(const arr& a) {
   for(uint k=0; k<Z.N; k++) Z.elem(k) *= a.elem(elems.p[2*k]);
 }
 
+void SparseMatrix::rowWiseMult(const floatA& a) {
+  CHECK_EQ(a.N, Z.d0, "");
+  for(uint k=0; k<Z.N; k++) Z.elem(k) *= a.elem(elems.p[2*k]);
+}
+
 //void SparseMatrix::add(const SparseMatrix& a, double coeff) {
 //  CHECK_EQ(a.Z.d0, Z.d0, "");
 //  CHECK_EQ(a.Z.d1, Z.d1, "");
@@ -2690,6 +2695,27 @@ arr SparseMatrix::unsparse() {
   x.resize(Z.d0, Z.d1).setZero();
   for(uint k=0; k<Z.N; k++) x(elems(k, 0), elems(k, 1)) += Z.elem(k);
   return x;
+}
+
+arr SparseMatrix::getTriplets() const{
+  arr T(Z.N, 3);
+  for(uint k=0; k<Z.N; k++){
+    T.p[3*k+0] = elems.p[2*k];
+    T.p[3*k+1] = elems.p[2*k+1];
+    T.p[3*k+2] = Z.p[k];
+  }
+  return T;
+}
+
+void SparseMatrix::checkConsistency() const {
+  CHECK(Z.isSparse(), "")
+  CHECK_EQ(this, Z.special, "");
+  CHECK_EQ(elems.d0, Z.N, "");
+  CHECK_EQ(elems.d1, 2, "");
+  if(cols.N){
+    CHECK_EQ(rows.N, Z.d0, "");
+    CHECK_EQ(cols.N, Z.d1, "");
+  }
 }
 
 } //namespace rai

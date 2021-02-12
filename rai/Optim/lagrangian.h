@@ -43,7 +43,7 @@ struct LagrangianProblem : ScalarFunction, MathematicalProgram {
   virtual void getFHessian(arr& H, const arr& x);              //the Hessian of the sum of all f-features (or Hessian in addition to the Gauss-Newton Hessian of all other features)
   virtual uint getDimension() { return P.getDimension(); }                 //the dimensionality of the full decision variable
   virtual void getBounds(arr& bounds_lo, arr& bounds_up) { P.getBounds(bounds_lo, bounds_up); }
-  virtual arr  getInitializationSample(const arrL& previousOptima= {}) { return P.getInitializationSample(previousOptima); }
+  virtual arr  getInitializationSample(const arr& previousOptima= {}) { return P.getInitializationSample(previousOptima); }
 
   double lagrangian(arr& dL, arr& HL, const arr& x); ///< CORE METHOD: the unconstrained scalar function F
 

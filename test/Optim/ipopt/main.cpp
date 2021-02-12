@@ -12,8 +12,8 @@ void TEST(Ipopt){
   {
     IpoptInterface ipo(P);
     ipo.solve();
-    ofstream fil2("z.opt2");
-    ipo.P.xLog.writeRaw(fil2);
+    //ofstream fil2("z.opt2");
+    //ipo.P.xLog.writeRaw(fil2);
   }
 
   arr x, phi;
@@ -23,7 +23,7 @@ void TEST(Ipopt){
 
   OptConstrained opt(x, NoArr, P, OptOptions().set_verbose(6));
   {
-    P.getBounds(opt.newton.bound_lo, opt.newton.bound_up);
+    P.getBounds(opt.newton.bounds_lo, opt.newton.bounds_up);
     ofstream fil("z.opt");
     opt.newton.simpleLog = &fil;
     opt.run();

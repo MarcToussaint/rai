@@ -22,55 +22,25 @@
 #endif
 
 namespace rai {
-/** @brief Search for a command line option \c -tag and, if found, pipe the
- next command line option into \c value by the
- \c operator>>(istream&, type&). Returns false on failure. */
 template<class T>
-bool getFromCmdLine(T& x, const char* tag) {
-  char* opt=getCmdLineArgument(tag);
-  if(!opt) return false;
-  std::istringstream s(opt);
-  s >>x;
-  if(s.fail()) HALT("error when reading parameter from command line: " <<tag);
-  return true;
-}
-
-template<class T>
-bool getParameterBase(T& x, const char* tag, bool hasDefault, const T* Default) {
-#if 1
-  if(getParameterFromGraph<T>(x, tag)) {
-    LOG(3) <<std::setw(20) <<tag <<" = " <<std::setw(5) <<x <<" [" <<typeid(x).name() <<"] (graph!)";
+bool getParameterBase(T& x, const char* key, bool hasDefault, const T* Default) {
+  if(getParameters()->get<T>(x, key)) {
+    LOG(3) <<std::setw(20) <<key <<" = " <<std::setw(5) <<x <<" [" <<typeid(x).name() <<"] (graph!)";
     return true;
   }
-#else
-  if(getFromMap<T>(x, tag)) {
-    LOG(3) <<std::setw(20) <<tag <<" = " <<std::setw(5) <<x <<" [" <<typeid(x).name() <<"] (map!)";
-    return true;
-  }
-
-  if(getFromCmdLine<T>(x, tag)) {
-    LOG(3) <<std::setw(20) <<tag <<" = " <<std::setw(5) <<x <<" [" <<typeid(x).name() <<"] (cmd line!)";
-    return true;
-  }
-
-  if(getFromCfgFile<T>(x, tag)) {
-    LOG(3) <<std::setw(20) <<tag <<" = " <<std::setw(5) <<x <<" [" <<typeid(x).name() <<"]";
-    return true;
-  }
-#endif
 
   if(hasDefault) {
     if(Default) {
       x=*Default;
-      LOG(3) <<std::setw(20) <<tag <<" = " <<std::setw(5) <<x <<" [" <<typeid(x).name() <<"] (default!)";
+      LOG(3) <<std::setw(20) <<key <<" = " <<std::setw(5) <<x <<" [" <<typeid(x).name() <<"] (default!)";
     }
     return false;
   }
 
-  HALT("could not initialize parameter `" <<tag
+  HALT("could not initialize parameter `" <<key
        <<"': parameter has no default;\n     either use command option `-"
-       <<tag <<" ...' or specify `"
-       <<tag <<"= ...' in the config file (which might be `rai.cfg')");
+       <<key <<" ...' or specify `"
+       <<key <<"= ...' in the config file (which might be `rai.cfg')");
 }
 
 template<class T> T getParameter(const char* tag) {
@@ -83,11 +53,11 @@ template<class T> T getParameter(const char* tag, const T& Default) {
   getParameterBase<T>(x, tag, true, &Default);
   return x;
 }
-template<class T> void getParameter(T& x, const char* tag, const T& Default) {
-  getParameterBase<T>(x, tag, true, &Default);
-}
 template<class T> void getParameter(T& x, const char* tag) {
   getParameterBase(x, tag, false, (T*)NULL);
+}
+template<class T> void getParameter(T& x, const char* tag, const T& Default) {
+  getParameterBase<T>(x, tag, true, &Default);
 }
 template<class T> bool checkParameter(const char* tag) {
   T x;

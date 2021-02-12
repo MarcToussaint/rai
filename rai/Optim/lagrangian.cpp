@@ -186,7 +186,6 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
 
   if(!!HL) { //L hessian: Most terms are of the form   "J^T  diag(coeffs)  J"
     arr coeff=zeros(phi_x.N);
-    int fterm=-1;
     for(uint i=0; i<phi_x.N; i++) {
       //if(tt_x.p[i]==OT_f) { if(fterm!=-1) HALT("There must only be 1 f-term (in the current implementation)");  fterm=i; }
       if(tt_x.p[i]==OT_sos) coeff.p[i] += 2.;                                 // sumOfSqr terms
@@ -206,7 +205,7 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
     }
     HL = comp_At_A(tmp); //Gauss-Newton type!
 
-    if(fterm!=-1 && H_x.N) { //For f-terms, the Hessian must be given explicitly, and is not \propto J^T J
+    if(H_x.N) { //For f-terms, the Hessian must be given explicitly, and is not \propto J^T J
       HL += H_x;
     }
 

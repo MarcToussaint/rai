@@ -17,7 +17,7 @@ F_qItself::F_qItself(bool relative_q0) : relative_q0(relative_q0) {}
 F_qItself::F_qItself(PickMode pickMode, const StringA& picks, const rai::Configuration& C, bool relative_q0)
   : relative_q0(relative_q0) {
   if(pickMode==allActiveJoints) {
-    for(rai::Frame* f: C.frames) if(f->joint && f->joint->active && f->joint->dim!=0){
+    for(rai::Frame* f: C.frames) if(f->joint && f->parent && f->joint->active && f->joint->dim!=0){
       frameIDs.append(f->ID);
       frameIDs.append(f->parent->ID);
     }

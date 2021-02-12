@@ -19,19 +19,23 @@ int main(int argc, char** argv){
     glutInit(&argc, argv);
   }
 
-  OpenGL gl("bla", 800, 600, true);
+  bool offscreen=true;
+
+  OpenGL gl("bla", 800, 600, offscreen);
+  gl.camera.setZRange(8, 10);
   gl.add(draw1,0);
-  gl.update();
-//  gl.watch();
-//  gl.renderInBack();
+//  gl.update();
+  gl.renderInBack();
 
   write_ppm(gl.captureImage, "z.ppm", true);
-//  write_ppm(convert<byte>(255.f*gl.captureDepth), "z.ppm", true);
+  write_ppm(convert<byte>(255.f*gl.captureDepth), "z.depth.ppm", true);
 
-//  OpenGL gl2("depth", 800, 600);
-//  gl2.displayGrey(convert<double>(gl.captureDepth), true, 1.);
-
-//  gl.watch(); //if this is commented, never ever glut/gtk is initalized
+  if(!offscreen){
+    gl.watch();
+    OpenGL gl2("depth", 800, 600);
+    gl2.watchImage(gl.captureImage, true, 1.);
+    gl2.displayGrey(gl.captureDepth, true, 1.);
+  }
 
   cout <<"DONE!" <<endl;
 

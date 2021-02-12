@@ -50,6 +50,27 @@ bool checkHessianCP(MathematicalProgram& P, const arr& x, double tolerance) {
   return checkHessian(F, x, tolerance);
 }
 
+bool checkInBound(MathematicalProgram& P, const arr& x){
+  arr bounds_lo, bounds_up;
+  P.getBounds(bounds_lo, bounds_up);
+  CHECK_EQ(x.N, bounds_lo.N, "");
+  CHECK_EQ(x.N, bounds_up.N, "");
+  for(uint i=0;i<x.N;i++){
+    CHECK_GE(x.elem(i), bounds_lo.elem(i), "x(" <<i <<") violates lower bound");
+    CHECK_LE(x.elem(i), bounds_up.elem(i), "x(" <<i <<") violates upper bound");
+  }
+  return true;
+}
+
+void boundClip(arr& y, const arr& bound_lo, const arr& bound_up);
+
+void boundClip(MathematicalProgram& P, arr& x){
+  arr bounds_lo, bounds_up;
+  P.getBounds(bounds_lo, bounds_up);
+  boundClip(x, bounds_lo, bounds_up);
+
+}
+
 //===========================================================================
 //
 // optimization options
@@ -120,7 +141,7 @@ void displayFunction(const ScalarFunction& f, bool wait, double lo, double hi) {
     Y(i) = ((fx==fx && fx<10.)? fx : 10.);
   }
   Y.reshape(101, 101);
-//  plot->Gnuplot();  plot->Surface(Y);  plot->update(true);
+//  plot()->Gnuplot();  plot()->Surface(Y);  plot()->update(true);
   write(LIST<arr>(Y), "z.fct");
   gnuplot("reset; splot [-1:1][-1:1] 'z.fct' matrix us ($1/50-1):($2/50-1):3 w l", wait, true);
 }

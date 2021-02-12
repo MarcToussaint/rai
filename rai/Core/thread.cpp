@@ -94,19 +94,16 @@ Signaler::~Signaler() {
 }
 
 void Signaler::setStatus(int i, Signaler* messenger) {
-  statusMutex.lock(RAI_HERE);
+  auto lock = statusMutex(RAI_HERE);
   status=i;
   broadcast(messenger);
-  statusMutex.unlock();
 }
 
 int Signaler::incrementStatus(Signaler* messenger) {
-  statusMutex.lock(RAI_HERE);
+  auto lock = statusMutex(RAI_HERE);
   status++;
   broadcast(messenger);
-  int i=status;
-  statusMutex.unlock();
-  return i;
+  return status;
 }
 
 void Signaler::broadcast(Signaler* messenger) {
@@ -141,8 +138,6 @@ void Event::callback(Var_base* v) {
   if(eventFct) {
     int newEventStatus = eventFct(variables, i);
     //  cout <<"event callback: BOOL=" <<eventStatus <<' ' <<s <<' ' <<status <<" statuses=" <<statuses <<endl;
-    auto lock = statusMutex(RAI_HERE);
-//    if(this->status!=newEventStatus)
     setStatus(newEventStatus);
   } else { //we don't have an eventFct, just increment value
     incrementStatus();
@@ -183,7 +178,7 @@ bool Signaler::waitForSignal(Mutex::Token *userHasLocked, double timeout) {
       ret = (cond.wait_for(*userHasLocked, std::chrono::duration<double>(timeout)) == std::cv_status::no_timeout);
     }
   }else{
-    std::unique_lock<std::mutex> lk(statusMutex.mutex);
+    auto lk = statusMutex(RAI_HERE);
     if(timeout<0.) {
       cond.wait(lk);
     } else {
@@ -197,7 +192,7 @@ bool Signaler::waitForEvent(std::function<bool()> f, Mutex::Token *userHasLocked
   if(userHasLocked){
     cond.wait(*userHasLocked, f);
   }else{
-    std::unique_lock<std::mutex> lk(statusMutex.mutex);
+    auto lk = statusMutex(RAI_HERE);
     cond.wait(lk, f);
   }
   return true;
@@ -209,7 +204,7 @@ bool Signaler::waitForStatusEq(int i, Mutex::Token *userHasLocked, double timeou
   if(userHasLocked){
     while(status!=i) ret = waitForSignal(userHasLocked, timeout);
   }else{
-    std::unique_lock<std::mutex> lk(statusMutex.mutex);
+    auto lk = statusMutex(RAI_HERE);
     while(status!=i) ret = waitForSignal(&lk, timeout);
   }
   return ret;
@@ -219,7 +214,7 @@ int Signaler::waitForStatusNotEq(int i, Mutex::Token *userHasLocked, double time
   if(userHasLocked){
     while(status==i) waitForSignal(userHasLocked, timeout);
   }else{
-    std::unique_lock<std::mutex> lk(statusMutex.mutex);
+    auto lk = statusMutex(RAI_HERE);
     while(status==i) waitForSignal(&lk, timeout);
   }
   return status;
@@ -229,7 +224,7 @@ int Signaler::waitForStatusGreaterThan(int i, Mutex::Token *userHasLocked, doubl
   if(userHasLocked){
     while(status<=i) waitForSignal(userHasLocked, timeout);
   }else{
-    std::unique_lock<std::mutex> lk(statusMutex.mutex);
+    auto lk = statusMutex(RAI_HERE);
     while(status<=i) waitForSignal(&lk, timeout);
   }
   return status;
@@ -239,7 +234,7 @@ int Signaler::waitForStatusSmallerThan(int i, Mutex::Token* userHasLocked, doubl
   if(userHasLocked){
     while(status>=i) waitForSignal(userHasLocked, timeout);
   }else{
-    std::unique_lock<std::mutex> lk(statusMutex.mutex);
+    auto lk = statusMutex(RAI_HERE);
     while(status>=i) waitForSignal(&lk, timeout);
   }
   return status;
@@ -275,10 +270,7 @@ int Var_base::deAccess(Thread* th) {
   int i;
   if(rwlock.rwCount == -1) { //log a revision after write access
     i = revision++;
-    for(auto* c:callbacks) {
-      //don't call a callback-event for a thread that accessed the variable:
-      if(!th || c->id!=&th->event) c->call()(this);
-    }
+    for(auto* c:callbacks) c->call()(this);
   } else {
     i = revision;
   }
@@ -359,91 +351,6 @@ rai::String CycleTimer::report() {
   return s;
 }
 
-//===========================================================================
-//
-// MiniThread
-//
-
-MiniThread::MiniThread(const char* _name) : Signaler(tsIsClosed), name(_name) {
-  if(name.N>14) name.resize(14, true);
-
-  statusLock();
-
-  thread = make_unique<std::thread>(&MiniThread::threadMain, this);
-#ifndef RAI_MSVC
-  if(name) pthread_setname_np(thread->native_handle(), name);
-#endif
-
-  status=0;
-  statusUnlock();
-}
-
-MiniThread::~MiniThread() {
-    if (thread){
-        std::cerr << "Call 'threadClose()' in the destructor of the DERIVED class! \
-           That's because the 'virtual table is destroyed' before calling the destructor ~Thread (google 'call virtual function\
-           in destructor') but now the destructor has to call 'threadClose' which triggers a Thread::close(), which is\
-           pure virtual while you're trying to call ~Thread." << endl;
-    exit(1);
-}
-  }
-
-void MiniThread::threadClose(double timeoutForce) {
-//  stopListening();
-  setStatus(tsToClose);
-  if(!thread) { setStatus(tsIsClosed); return; }
-  for(;;) {
-    bool ended = waitForStatusEq(tsIsClosed, 0, .2);
-    if(ended) break;
-    LOG(-1) <<"timeout to end Thread::main of '" <<name <<"'";
-//    if(timeoutForce>0.){
-//      ended = waitForStatusEq(tsEndOfMain, false, timeoutForce);
-//      if(!ended){
-//        threadCancel();
-//        return;
-//      }
-//    }
-  }
-  thread.reset();
-}
-
-void MiniThread::threadCancel() {
-//  stopListening();
-  setStatus(tsToClose);
-  if(!thread) { setStatus(tsIsClosed); return; }
-#ifndef RAI_MSVC
-  int rc;
-  rc = pthread_cancel(thread->native_handle());         if(rc) HALT("pthread_cancel failed with err " <<rc <<" '" <<strerror(rc) <<"'");
-#endif
-  thread->join();
-  thread.reset();
-}
-
-void MiniThread::threadMain() {
-  tid = getpid();
-//  if(verbose>0) cout <<"*** Entering Thread '" <<name <<"'" <<endl;
-  //http://linux.die.net/man/3/setpriority
-  //if(Thread::threadPriority) setRRscheduling(Thread::threadPriority);
-  //if(Thread::threadPriority) setNice(Thread::threadPriority);
-
-  setStatus(1);
-
-  try {
-    main();
-  } catch(const std::exception& ex) {
-    setStatus(tsFAILURE);
-    cerr <<"*** main() of Thread'" <<name <<"'failed: " <<ex.what() <<" -- closing it again" <<endl;
-  } catch(const char* ex) {
-    setStatus(tsFAILURE);
-    cerr <<"*** main() of Thread'" <<name <<"'failed: " <<ex <<" -- closing it again" <<endl;
-  } catch(...) {
-    setStatus(tsFAILURE);
-    cerr <<"*** main() of Thread '" <<name <<"' failed! -- closing it again";
-  }
-
-  setStatus(tsIsClosed);
-}
-
 //=============================================
 //
 // Thread
@@ -486,7 +393,7 @@ void Thread::threadOpen(bool wait, int priority) {
   {
     auto lock = event.statusMutex(RAI_HERE);
     if(thread) return; //this is already open -- or has just beend opened (parallel call to threadOpen)
-    thread = make_unique<std::thread>(&Thread::main, this);
+    thread = std::make_unique<std::thread>(&Thread::main, this);
 #ifndef RAI_MSVC
     if(name) pthread_setname_np(thread->native_handle(), name);
 #endif

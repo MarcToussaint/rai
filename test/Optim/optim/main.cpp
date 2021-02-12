@@ -1,31 +1,39 @@
 #include <Optim/optimization.h>
 #include <Optim/benchmarks.h>
 #include <functional>
+#include <Optim/solver.h>
 
 void TEST(SqrProblem) {
-  const ScalarFunction& f = ChoiceFunction();
+  const ScalarFunction& _f = ChoiceFunction();
+
+  uint dim=rai::getParameter<double>("dim");
+
+  Conv_ScalarProblem_MathematicalProgram _nlp(_f, dim);
+  _nlp.setBounds(-2., 2.);
+  MathematicalProgram_Traced nlp(_nlp);
+  Conv_MathematicalProgram_ScalarProblem f(nlp);
 
   displayFunction(f, true);
 
-  arr x(10),x0;
+  arr x(dim),x0;
   rndUniform(x,-1.,1.,false);
   x0=x;
 
   checkGradient(f, x, 1e-3);
   checkHessian (f, x, 1e-3);
 
-  optRprop(x, f, OPT(initStep=.01, stopTolerance=1e-5, stopEvals=1000, verbose=2));
-  system("cp z.opt z.rprop");
+  NLP_Solver S;
 
-  x=x0;
-  optGrad(x, f, OPT(stopEvals=10000));
-  system("cp z.opt z.grad");
+  rai::Enum<NLP_SolverID> sid (rai::getParameter<rai::String>("solver"));
+  S.setSolver(sid);
+  S.setProblem(nlp);
+  S.setInitialization({1., 1.});
+  S.solve();
 
-  x=x0;
-  optNewton(x, f, OPT(stopEvals=1000, initStep=1., stopTolerance=1e-5, verbose=2, damping=.1));
-  system("cp z.opt z.newton");
-
-  gnuplot("set log y; plot 'z.newton' us 1:3 w l,'z.grad' us 1:3 w l,'z.rprop' us 1:3 w l",false,true);
+  arr path = catCol(S.getTrace_x(), S.getTrace_costs());
+  path.writeRaw(FILE("z.path"));
+  gnuplot("load 'plt'", false, true);
+  rai::wait();
 }
 
 //===========================================================================

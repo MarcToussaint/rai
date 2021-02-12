@@ -1520,6 +1520,7 @@ void Transformation::read(std::istream& is) {
     if(is.fail()) HALT("error reading '" <<c <<"' parameters in frame");
   }
   if(is.fail()) HALT("could not read Transformation struct");
+  rot.normalize();
 }
 
 //==============================================================================

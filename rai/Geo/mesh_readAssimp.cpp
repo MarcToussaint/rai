@@ -19,7 +19,7 @@
 bool loadTextures = true;
 
 AssimpLoader::AssimpLoader(const std::string& path, bool flipYZ, bool relativeMeshPoses) {
-  verbose = rai::getParameter<double>("Assimp/verbose", 0);
+  verbose = 0; //rai::getParameter<double>("Assimp/verbose", 0);
 
   Assimp::Importer importer;
   const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
@@ -57,6 +57,7 @@ rai::Mesh AssimpLoader::getSingleMesh() {
   for(auto& _meshes: meshes) for(auto& mesh:_meshes){
     M.addMesh(mesh);
   }
+  if(!M.tex.N) M.Tt.clear();
   return M;
 }
 
@@ -165,7 +166,8 @@ rai::Mesh AssimpLoader::loadMesh(const aiMesh* mesh, const aiScene* scene) {
       cout <<"texture=" <<str.C_Str() <<endl;
     }
 
-    std::string filename = this->directory + '/' + std::string(str.C_Str());
+//    std::string filename = this->directory + '/' + std::string(str.C_Str());
+    std::string filename = std::string(str.C_Str());
 
     int width, height, nrComponents;
     unsigned char* data = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
@@ -174,9 +176,13 @@ rai::Mesh AssimpLoader::loadMesh(const aiMesh* mesh, const aiScene* scene) {
       memmove(M.texImg.p, data, M.texImg.N);
       M.C = {1., 1., 1.};
     } else {
-      std::cout << "Texture failed to load at path: " << filename << std::endl;
+      LOG(-1) << "Texture failed to load at path: " <<filename;
     }
     stbi_image_free(data);
+
+    CHECK_EQ(M.Tt.d0, M.T.d0, "");
+    CHECK_EQ(M.tex.d0, M.V.d0, "");
+    CHECK_EQ(M.texImg.nd, 3, "");
   }
 
   return M;

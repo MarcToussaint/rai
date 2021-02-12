@@ -6,19 +6,19 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include <Optim/MathematicalProgram.h>
+#include "MathematicalProgram.h"
 
-struct NLOptInterface {
-//  MathematicalProgram& P;
-  MathematicalProgram_Logged P;
+struct NLoptInterface {
+  MathematicalProgram& P;
   arr x, phi_x, J_x;
   ObjectiveTypeA featureTypes;
+  int verbose=1;
 
-  NLOptInterface(MathematicalProgram& _P) : P(_P) {
+  NLoptInterface(MathematicalProgram& _P) : P(_P) {
     P.getFeatureTypes(featureTypes);
   }
 
-  arr solve();
+  arr solve(const arr& x_init=NoArr);
 
  private:
   double f(const arr& _x, arr& _grad);

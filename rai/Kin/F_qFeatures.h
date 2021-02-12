@@ -32,7 +32,6 @@ struct F_qItself : Feature {
 //===========================================================================
 
 struct F_qZeroVel : Feature {
-  F_qZeroVel(const rai::Configuration& K, const char* iShapeName=nullptr) { frameIDs = TUP(initIdArg(K, iShapeName)); }
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F);
 };

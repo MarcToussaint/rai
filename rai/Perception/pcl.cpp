@@ -43,6 +43,22 @@ void conv_PclCloud_ArrCloud(arr& pts,
   if(p) CHECK_EQ(p, pts.p+pts.N, "");
 }
 
+arr conv_PclNormals_Arr(const pcl::PointCloud<pcl::Normal>::Ptr& normals){
+  arr N(normals->size(), 3);
+  double *p=N.p;
+
+  for(const pcl::Normal& no:*normals) {
+    if(p) {
+      *(p++) = no.normal_x;
+      *(p++) = no.normal_y;
+      *(p++) = no.normal_z;
+    }
+  }
+  CHECK_EQ(p, N.p+N.N, "");
+  return N;
+}
+
+
 void conv_ArrCloud_PclCloud(PclC& cloud,
                             const arr& pts, const byteA& rgb) {
   CHECK((pts.nd==3 && pts.d2==3) || (pts.nd==2 && pts.d1==3), "");
@@ -59,6 +75,18 @@ void conv_ArrCloud_PclCloud(PclC& cloud,
     pt.b = (*c++); //255.*cols.elem(i*3+2);
 //    i++;
   }
+}
+
+Pcl::Ptr conv_ArrCloud_PclCloud(const arr& pts){
+  Pcl::Ptr pcl(new Pcl);
+  conv_ArrCloud_PclCloud(*pcl, pts);
+  return pcl;
+}
+
+PclC::Ptr conv_ArrCloud_PclCloud(const arr& pts, const byteA& rgb){
+  PclC::Ptr pcl(new PclC);
+  conv_ArrCloud_PclCloud(*pcl, pts, rgb);
+  return pcl;
 }
 
 void conv_PclCloud_ArrCloud(arr& pts,

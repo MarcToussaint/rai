@@ -16,6 +16,7 @@
 #include <memory>
 #include <climits>
 #include <mutex>
+#include <functional>
 
 //----- if no system flag, I assume Linux
 #if !defined RAI_MSVC && !defined RAI_Cygwin && !defined RAI_Linux && !defined RAI_MinGW && !defined RAI_Darwin
@@ -87,9 +88,12 @@ using std::make_shared;
 namespace rai {
 extern int argc;
 extern char** argv;
+extern std::string startDir;
 extern bool IOraw;  ///< stream modifier for some classes (Mem in particular)
 extern uint lineCount;
 extern int verboseLevel;
+
+enum ArgWord { _left, _right, _sequence, _path };
 
 //----- execute a system command
 void system(const char* cmd);
@@ -181,8 +185,15 @@ template<class T> void getParameter(T& x, const char* tag, const T& Default);
 template<class T> void getParameter(T& x, const char* tag);
 template<class T> bool checkParameter(const char* tag);
 
-template<class T> void putParameter(const char* tag, const T& x);
-template<class T> bool getFromMap(T& x, const char* tag);
+template<class T> struct Parameter{
+  const char* key;
+  T value;
+  Parameter(const char* _key) : key(_key) { value = getParameter<T>(_key); }
+  const T& operator()(){ return value; }
+};
+#define raiPARAM(type, name) \
+  rai::Parameter<type> name = {#name}; \
+  auto set_##name(type _##name){ name.value=_##name; return *this; }
 
 //----- get verbose level
 uint getVerboseLevel();
@@ -295,6 +306,7 @@ namespace rai {
 /// An object that represents a log file and/or cout logging, together with log levels read from a cfg file
 struct LogObject {
   std::ofstream fil;
+  std::function<void(const char*,int)> callback;
   const char* key;
   int logCoutLevel, logFileLevel;
   LogObject(const char* key, int defaultLogCoutLevel=0, int defaultLogFileLevel=0);
@@ -315,11 +327,12 @@ struct LogToken {
   ~LogToken(); //that's where the magic happens!
   std::ostream& os() { return msg; }
 };
+
+extern LogObject _log;
+
 }
 
-extern rai::LogObject _log;
-
-#define LOG(log_level) _log.getNonConst().getToken(log_level, __FILE__, __func__, __LINE__).os()
+#define LOG(log_level) rai::_log.getNonConst().getToken(log_level, __FILE__, __func__, __LINE__).os()
 
 void setLogLevels(int fileLogLevel=3, int consoleLogLevel=2);
 
@@ -346,7 +359,7 @@ extern String errString;
 #ifndef HALT
 #  define RAI_MSG(msg){ LOG(-1) <<msg; }
 #  define THROW(msg){ LOG(-1) <<msg; throw std::runtime_error(rai::errString.p); }
-#  define HALT(msg){ LOG(-2) <<msg; throw std::runtime_error(rai::errString.p); exit(1); }
+#  define HALT(msg){ LOG(-2) <<msg; throw std::runtime_error(rai::errString.p); }
 #  define NIY  { LOG(-2) <<"not implemented yet"; exit(1); }
 #  define NICO { LOG(-2) <<"not implemented with this compiler options: usually this means that the implementation needs an external library and a corresponding compiler option - see the source code"; exit(1); }
 #endif
@@ -479,9 +492,10 @@ struct Enum {
     if(!good) {
       rai::String all;
       for(int i=0; names[i]; i++) all <<names[i] <<' ';
-      LOG(-2) <<"Enum::read could not find the keyword '" <<str <<"'. Possible Enum keywords: " <<all;
+      HALT("Enum::read could not find the keyword '" <<str <<"'. Possible Enum keywords: " <<all);
+    }else{
+      CHECK(str.p && !strcmp(names[x], str.p), "");
     }
-    CHECK(!strcmp(names[x], str.p), "");
   }
   static bool contains(const rai::String& str) {
     for(int i=0; names[i]; i++) {
@@ -600,11 +614,11 @@ struct Mutex {
   void unlock();
 
   typedef std::unique_lock<std::mutex> Token;
-  Token operator()(const char* _lockInfo) { lockInfo=_lockInfo; return std::unique_lock<std::mutex>(mutex); }
+  Token operator()(const char* _lockInfo) { lockInfo=_lockInfo; return Token(mutex); }
 
-  template<class T> struct TypedToken : std::unique_lock<std::mutex> {
+  template<class T> struct TypedToken : Token {
     T* data;
-    TypedToken(Mutex& m, T* data, const char* _lockInfo) : std::unique_lock<std::mutex>(m.mutex), data(data) { m.lockInfo=_lockInfo; }
+    TypedToken(Mutex& m, T* data, const char* _lockInfo) : Token(m.mutex), data(data) { m.lockInfo=_lockInfo; }
     T* operator->() { return data; }
     operator T& () { return *data; }
     T& operator()() { return *data; }
@@ -630,8 +644,6 @@ struct Singleton {
     return singleton;
   }
 
-  T* operator->() const { return &getSingleton(); }
-
   Singleton() {}
   Singleton(Singleton const&) = delete;
   void operator=(Singleton const&) = delete;
@@ -647,9 +659,16 @@ struct Singleton {
 //
 
 struct OpenGL;
+struct OpenGLDrawOptions{
+  bool drawWires=false;
+  bool drawColors=true;
+  bool drawMode_idColor=false;
+  float pclPointSize=-1.;
+};
 struct GLDrawer {
   virtual void glDraw(OpenGL&) = 0;
   virtual ~GLDrawer() {}
+  static OpenGLDrawOptions& glDrawOptions(OpenGL&);
 };
 
 //===========================================================================

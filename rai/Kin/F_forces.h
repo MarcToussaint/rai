@@ -29,44 +29,44 @@ struct F_fex_Wrench : Feature {
 };
 
 //===========================================================================
-// totals acting on a joint or object
+// totals acting on a frame (joint or object)
 
 struct F_HingeXTorque : Feature {
   void phi2(arr& y, arr& J, const FrameL& F);
   uint dim_phi2(const FrameL& F){ return 1; }
 };
 
-struct F_ObjectTotalForce : Feature {
+struct F_TotalForce : Feature {
   double gravity=9.81;
-  bool transOnly=false;
-  F_ObjectTotalForce(bool _transOnly=false, bool _zeroGravity=false);
+  F_TotalForce(bool _zeroGravity=false);
   virtual void phi2(arr& y, arr& J, const FrameL& F);
-  virtual uint dim_phi2(const FrameL& C){ if(transOnly) return 3;  return 6; }
+  virtual uint dim_phi2(const FrameL& C){ return 6; }
 };
 
 //===========================================================================
 // dynamics
 
-struct F_NewtonEuler : Feature {
+struct F_GravityAcceleration : Feature {
   double gravity=9.81;
-  F_NewtonEuler(bool _transOnly=false) {
-    order = 2;
-    gravity = rai::getParameter<double>("TM_NewtonEuler/gravity", 9.81);
+  bool impulseInsteadOfAcceleration=false;
+  F_GravityAcceleration() {
+    gravity = rai::getParameter<double>("gravity", 9.81);
   }
+  Feature& setImpulseInsteadOfAcceleration(){ impulseInsteadOfAcceleration=true; return *this; }
+  virtual void phi2(arr& y, arr& J, const FrameL& F);
+  virtual uint dim_phi2(const FrameL& F){ return 6; }
+};
+
+struct F_NewtonEuler : Feature {
+  F_NewtonEuler() { order = 2; }
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F) { return 6; }
 };
 
 struct F_NewtonEuler_DampedVelocities : Feature {
-  double gravity=9.81;
-  bool onlyXYPhi=false;
-  F_NewtonEuler_DampedVelocities(double _gravity=-1., bool _onlyXYPhi=false) : onlyXYPhi(_onlyXYPhi) {
+  bool useGravity=false;
+  F_NewtonEuler_DampedVelocities(bool _useGravity = false) : useGravity(_useGravity) {
     order = 1;
-    if(_gravity>=0.) {
-      gravity = _gravity;
-    } else {
-      gravity = rai::getParameter<double>("TM_NewtonEuler/gravity", 9.81);
-    }
   }
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F) { return 6; }
@@ -76,7 +76,7 @@ struct F_Energy : Feature {
   double gravity=9.81;
   F_Energy() {
     order=1;
-    gravity = rai::getParameter<double>("TM_Physics/gravity", 9.81);
+    gravity = rai::getParameter<double>("gravity", 9.81);
   }
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F) {  return 1;  }
@@ -131,9 +131,31 @@ struct F_fex_NormalVelIsComplementary : Feature {
   uint dim_phi2(const FrameL& F) { return 1; }
 };
 
-struct F_fex_POAisInIntersection_InEq : Feature {
-  double margin=0.;
-  F_fex_POAisInIntersection_InEq(double _margin=0.) : margin(_margin) {}
+struct F_fex_POASurfaceDistance : Feature {
+  rai::ArgWord leftRight;
+  F_fex_POASurfaceDistance(rai::ArgWord leftRight) : leftRight(leftRight) {}
+  void phi2(arr& y, arr& J, const FrameL& F);
+  uint dim_phi2(const FrameL& F) { return 1; }
+};
+
+struct F_fex_POASurfaceNormal : Feature {
+  rai::ArgWord leftRight;
+  F_fex_POASurfaceNormal(rai::ArgWord leftRight) : leftRight(leftRight) {}
+  void phi2(arr& y, arr& J, const FrameL& F);
+  uint dim_phi2(const FrameL& F) { return 3; }
+};
+
+struct F_fex_POASurfaceNormalsOppose : Feature {
+  void phi2(arr& y, arr& J, const FrameL& F);
+  uint dim_phi2(const FrameL& F) { return 3; }
+};
+
+struct F_fex_POASurfaceAvgNormal : Feature {
+  void phi2(arr& y, arr& J, const FrameL& F);
+  uint dim_phi2(const FrameL& F) { return 3; }
+};
+
+struct F_fex_POAContactDistances : Feature {
   void phi2(arr& y, arr& J, const FrameL& F);
   uint dim_phi2(const FrameL& F) { return 2; }
 };

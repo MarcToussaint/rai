@@ -49,7 +49,7 @@ stdOutPipe(ParseInfo)
 
 //-- query existing types
 inline Node* reg_findType(const char* key) {
-  NodeL types = getRegistry().getNodesOfType<std::shared_ptr<Type>>();
+  NodeL types = getParameters()->getNodesOfType<std::shared_ptr<Type>>();
   for(Node* ti: types) {
     if(String(ti->get<std::shared_ptr<Type>>()->typeId().name())==key) return ti;
     if(ti->matches(key)) return ti;
@@ -153,8 +153,8 @@ void Node::write(std::ostream& os, bool yamlMode) const {
   if(parents.N) {
     //    if(keys.N) os <<' ';
     os <<'(';
-    for_list(Node, it, parents) {
-      if(it_COUNT) os <<' ';
+    for(Node* it: parents) {
+      if(it!=parents.first()) os <<' ';
       if(it->key.N) {
         os <<it->key;
       } else { //relative numerical reference
@@ -1099,13 +1099,14 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
         }
       }
       if(nodesOrEdges<=0) {
-        for_list(Node, pa, n->parents) {
+        uint pa_COUNT=0;
+        for(Node* pa: n->parents) {
           if(hasRenderingInfo(pa) && getRenderingInfo(pa).skip) continue;
           //              if(pa->index<n->index)
           os <<pa->index <<" -> " <<n->index <<" [ ";
           //              else
           //                  os <<n->index <<" -> " <<pa->index <<" [ ";
-          os <<"label=" <<pa_COUNT;
+          os <<"label=" <<pa_COUNT++;
           os <<" ];" <<endl;
         }
       }
@@ -1120,15 +1121,17 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
 void Graph::sortByDotOrder() {
   uintA perm;
   perm.setStraightPerm(N);
-  for_list(Node, it, list()) {
+  uint it_COUNT=0;
+  for(Node* it: list()) {
     if(it->isGraph()) {
       double* order = it->graph().find<double>("dot_order");
       if(!order) { RAI_MSG("doesn't have dot_order attribute"); return; }
-      perm(it_COUNT) = (uint)*order;
+      perm(it_COUNT++) = (uint)*order;
     }
   }
   permuteInv(perm);
-  for_list(Node, it2, list()) it2->index=it2_COUNT;
+  it_COUNT=0;
+  for(Node *it: list()) it->index=it_COUNT++;
 }
 
 ParseInfo& Graph::getParseInfo(Node* n) {
@@ -1311,46 +1314,50 @@ int distance(NodeL A, NodeL B) {
 // global singleton TypeRegistrationSpace
 //
 
-struct Registry {
-  rai::Graph registry;
-  Registry() {
-    int n;
-    StringA tags;
-    for(n=1; n<rai::argc; n++) {
-      if(rai::argv[n][0]=='-') {
-        rai::String key(rai::argv[n]+1);
-        if(n+1<rai::argc && rai::argv[n+1][0]!='-') {
-          rai::String value;
-          value <<':' <<rai::argv[n+1];
-          registry.readNode(value, tags, key, false, false);
-          n++;
-        } else {
-          registry.newNode<bool>(key, {}, true);
-        }
+Singleton<Graph> parameterGraph;
+
+Mutex::TypedToken<Graph> getParameters(){
+  return parameterGraph();
+}
+
+void initParameters(int _argc, char*_argv[]){
+  static bool wasInitialized=false;
+  if(wasInitialized) return;
+  wasInitialized=true;
+
+  auto P = parameterGraph();
+  //-- parse cmd line arguments into graph
+  StringA tags;
+  for(int n=1; n<argc; n++) {
+    if(rai::argv[n][0]=='-') {
+      rai::String key(rai::argv[n]+1);
+      if(n+1<rai::argc && rai::argv[n+1][0]!='-') {
+        rai::String value;
+        value <<':' <<rai::argv[n+1];
+        P->readNode(value, tags, key, false, false);
+        n++;
       } else {
-        RAI_MSG("non-parsed cmd line argument:" <<rai::argv[n]);
+        P->newNode<bool>(key, {}, true);
       }
-    }
-
-    rai::String cfgFileName="rai.cfg";
-    if(registry["cfg"]) cfgFileName = registry.get<rai::String>("cfg");
-    LOG(3) <<"opening config file '" <<cfgFileName <<"'";
-    ifstream fil;
-    fil.open(cfgFileName);
-    if(fil.good()) {
-      fil >>registry;
     } else {
-      LOG(3) <<" - failed";
+      RAI_MSG("non-parsed cmd line argument:" <<rai::argv[n]);
     }
-
   }
-  ~Registry() {
+
+  //-- append 'rai.cfg'
+  rai::String cfgFileName="rai.cfg";
+  if(P->findNode("cfg")) cfgFileName = P->get<rai::String>("cfg");
+  LOG(3) <<"opening config file '" <<cfgFileName <<"'";
+  ifstream fil;
+  fil.open(cfgFileName);
+  if(fil.good()) {
+    fil >>P();
+  } else {
+    LOG(3) <<" - failed";
   }
-};
 
-Singleton<Registry> registry;
-
-rai::Graph& getRegistry(){ return registry()->registry; }
+  LOG(1) <<"** parsed parameters:\n" <<P() <<'\n';
+}
 
 } //namespace
 

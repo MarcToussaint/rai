@@ -82,7 +82,7 @@ const char* rai::String::readStopSymbols = "\n\r";
 int   rai::String::readEatStopSymbol     = 1;
 rai::String rai::errString;
 Mutex coutMutex;
-rai::LogObject _log("global", 2, 3);
+rai::LogObject rai::_log("global", 2, 3);
 
 //===========================================================================
 //
@@ -96,6 +96,7 @@ bool IOraw=false;
 bool noLog=true;
 uint lineCount=1;
 int verboseLevel=-1;
+std::string startDir;
 
 std::chrono::system_clock::time_point startTime;
 double timerStartTime=0.;
@@ -581,13 +582,24 @@ void timerResume() {
   timerPauseTime=-1.;
 }
 
+//COPY & PAST from graph.h
+Mutex::TypedToken<rai::Graph> getParameters();
+void initParameters(int _argc, char* _argv[]);
+
 /// memorize the command line arguments and open a log file
 void initCmdLine(int _argc, char* _argv[]) {
   argc=_argc; argv=_argv;
-  rai::String msg;
-  msg <<"** cmd line arguments: '"; for(int i=0; i<argc; i++) msg <<argv[i] <<' ';
-  msg <<"\b'";
-  LOG(1) <<msg;
+  {
+    rai::String msg;
+    msg <<"** cmd line arguments: '"; for(int i=0; i<argc; i++) msg <<argv[i] <<' ';
+    msg <<"\b'";
+    LOG(1) <<msg;
+  }
+
+  startDir = getcwd_string();
+  LOG(1) <<"** run path: '" <<startDir <<"'";
+
+  initParameters(argc, argv);
 }
 
 /// returns true if the tag was found on command line
@@ -643,22 +655,23 @@ void handleSIGUSR2(int) {
   i*=i;    //set a break point here, if you want to catch errors directly
 }
 
-struct LogServer {
-  LogServer() {
-    signal(SIGABRT, rai::handleSIGUSR2);
-    timerStartTime = rai::cpuTime();
+struct ProcessInfo {
+  ProcessInfo() {
+    signal(SIGABRT, handleSIGUSR2);
+    timerStartTime = cpuTime();
     startTime = std::chrono::system_clock::now();
   }
 
-  ~LogServer() {
+  ~ProcessInfo() {
   }
 };
 
-Singleton<rai::LogServer> logServer;
+Singleton<rai::ProcessInfo> processInfo;
 }
 
 rai::LogObject::LogObject(const char* key, int defaultLogCoutLevel, int defaultLogFileLevel)
   : key(key), logCoutLevel(defaultLogCoutLevel), logFileLevel(defaultLogFileLevel) {
+  processInfo.getSingleton(); //just to ensure it was created
   if(!strcmp(key, "global")) {
     fil.open("z.log.global");
     fil <<"** compiled at:     " <<__DATE__ <<" " <<__TIME__ <<'\n';
@@ -683,14 +696,17 @@ rai::LogToken rai::LogObject::getToken(int log_level, const char* code_file, con
 }
 
 rai::LogToken::~LogToken() {
-  auto mut = rai::logServer(); //keep the mutex
+  auto mut = rai::processInfo(); //keep the mutex
   if(log.logFileLevel>=log_level) {
     if(!log.fil.is_open()) log.fil.open(STRING("z.log."<<log.key));
     log.fil <<code_file <<':' <<code_func <<':' <<code_line <<'(' <<log_level <<") " <<msg <<endl;
   }
   if(log.logCoutLevel>=log_level) {
-    if(log_level>=0) std::cout <<code_file <<':' <<code_func <<':' <<code_line <<'(' <<log_level <<") " <<msg <<endl;
-    if(log_level<0) {
+    rai::errString.clear() <<code_file <<':' <<code_func <<':' <<code_line <<'(' <<log_level <<") " <<msg;
+    if(log.callback) log.callback(rai::errString.p, log_level);
+    if(log_level>=0){
+      cout <<"** INFO:" <<rai::errString <<endl; return;
+    } else {
 
 #ifndef RAI_MSVC
       if(log_level<=-2) {
@@ -722,10 +738,6 @@ rai::LogToken::~LogToken() {
       }
 #endif
 
-      rai::errString.clear() <<code_file <<':' <<code_func <<':' <<code_line <<'(' <<log_level <<") " <<msg;
-// #ifdef RAI_ROS
-//       ROS_INFO("RAI-MSG: %s",rai::errString.p);
-// #endif
       if(log_level==-1) { cout <<"** WARNING:" <<rai::errString <<endl; return; }
       else if(log_level==-2) { cerr <<"** ERROR:" <<rai::errString <<endl; /*throw does not WORK!!! Because this is a destructor. The THROW macro does it inline*/ }
       else if(log_level==-3) { cerr <<"** HARD EXIT! " <<rai::errString <<endl;  exit(1); }
@@ -737,8 +749,8 @@ rai::LogToken::~LogToken() {
 }
 
 void setLogLevels(int fileLogLevel, int consoleLogLevel) {
-  _log.logCoutLevel=consoleLogLevel;
-  _log.logFileLevel=fileLogLevel;
+  rai::_log.logCoutLevel=consoleLogLevel;
+  rai::_log.logFileLevel=fileLogLevel;
 }
 
 //===========================================================================
@@ -1431,3 +1443,9 @@ template bool rai::checkParameter<int>(const char*);
 template bool rai::checkParameter<bool>(const char*);
 template bool rai::checkParameter<rai::String>(const char*);
 
+
+//===========================================================================
+
+RUN_ON_INIT_BEGIN(util)
+//rai::processInfo(); //creates the singleton
+RUN_ON_INIT_END(util)

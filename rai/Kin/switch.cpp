@@ -25,7 +25,7 @@ intA conv_times2tuples(const arr& times, uint order, int stepsPerPhase, uint T,
                        int deltaFromStep, int deltaToStep){
   //interpret times as always, single slice, interval, or tuples
   double fromTime=0, toTime=-1.;
-  if(!times.N) {
+  if(!times || !times.N) {
   } else if(times.N==1) {
     fromTime = toTime = times(0);
   } else {
@@ -92,14 +92,19 @@ template<> const char* rai::Enum<rai::SwitchInitializationType>::names []= {
 //
 
 rai::KinematicSwitch::KinematicSwitch()
-  : symbol(SW_none), jointType(JT_none), init(SWInit_zero), timeOfApplication(-1), fromId(-1), toId(-1), jA(0), jB(0)
+  : symbol(SW_none), jointType(JT_none), init(SWInit_zero), timeOfApplication(-1), timeOfTermination(-1), fromId(-1), toId(-1), jA(0), jB(0)
 {}
 
-rai::KinematicSwitch::KinematicSwitch(SwitchType _symbol, JointType _jointType, int aFrame, int bFrame, SwitchInitializationType _init, int _timeOfApplication, const rai::Transformation& jFrom, const rai::Transformation& jTo)
+rai::KinematicSwitch::KinematicSwitch(SwitchType _symbol, JointType _jointType,
+                                      int aFrame, int bFrame,
+                                      SwitchInitializationType _init,
+                                      int _timeOfApplication,
+                                      const rai::Transformation& jFrom, const rai::Transformation& jTo)
   : symbol(_symbol),
     jointType(_jointType),
     init(_init),
     timeOfApplication(_timeOfApplication),
+    timeOfTermination(-1),
     fromId(aFrame), toId(bFrame),
     jA(0), jB(0) {
   if(!!jFrom) jA = jFrom;
@@ -110,9 +115,14 @@ rai::KinematicSwitch::KinematicSwitch(rai::SwitchType op, rai::JointType type, c
   : KinematicSwitch(op, type, initIdArg(K, ref1), initIdArg(K, ref2), _init, _timeOfApplication, jFrom, jTo)
 {}
 
-void rai::KinematicSwitch::setTimeOfApplication(double time, bool before, int stepsPerPhase, uint T) {
+void rai::KinematicSwitch::setTimeOfApplication(const arr& times, bool before, int stepsPerPhase, uint T) {
   if(stepsPerPhase<0) stepsPerPhase=T;
-  timeOfApplication = (time<0.?0:conv_time2step(time, stepsPerPhase))+(before?0:1);
+  double startTime = times(0);
+  double endTime = (times.N==2?times(1): -1.);
+  timeOfApplication = (startTime<0.?0:conv_time2step(startTime, stepsPerPhase))+(before?0:1);
+  if(endTime!=-1.){
+    timeOfTermination = conv_time2step(endTime, stepsPerPhase);
+  }
 }
 
 rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) {

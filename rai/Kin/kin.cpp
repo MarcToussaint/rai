@@ -382,14 +382,17 @@ FrameL Configuration::getJoints(bool activesOnly) const{
 
 FrameL Configuration::getJointsSlice(uint t, bool activesOnly) const{
   FrameL F;
-  for(auto* f:frames[t]) if(f->joint && (!activesOnly || f->joint->active)) F.append(f);
+  for(auto* f:frames[t]){
+    if((f->joint && (!activesOnly || f->joint->active))
+       || f->forces.N)  F.append(f);
+  }
   return F;
 }
 
 /// get the frame IDs of all active joints
 uintA Configuration::getJointIDs() const {
   ((Configuration*)this)->ensure_indexedJoints();
-  uintA joints(getJointStateDimension());
+  uintA joints(activeJoints.N);
   uint i=0;
   for(Joint* j:activeJoints) joints(i++) = j->frame->ID;
   return joints;
@@ -471,7 +474,7 @@ arr Configuration::getJointState(const FrameL& joints, bool activesOnly) const {
   uint nd=0;
   for(Frame* f:joints) {
     Joint* j = f->joint;
-    if(!j) HALT("frame '" <<f->name <<"' is not a joint!");
+    if(!j){ LOG(-1) <<"frame '" <<f->name <<"'[" <<f->ID <<"] is not a joint!"; continue; }
     if(!j->active && activesOnly) HALT("frame '" <<f->name <<"' is a joint, but INACTIVE!");
     if(!j->mimic){
       nd += j->dim;
@@ -482,7 +485,7 @@ arr Configuration::getJointState(const FrameL& joints, bool activesOnly) const {
   nd=0;
   for(Frame* f:joints) {
     Joint* j = f->joint;
-    CHECK(j, "");
+    if(!j) continue; //{ LOG(-1) <<"frame '" <<f->name <<"' is not a joint!"; continue; }
     if(!j->mimic){
       if(j->active){
         for(uint ii=0; ii<j->dim; ii++) x(nd+ii) = q(j->qIndex+ii);
@@ -537,6 +540,7 @@ void Configuration::setJointState(const arr& _q, const FrameL& F, bool activesOn
   for(Frame* f:F) {
     Joint* j = f->joint;
     if(!j && !f->forces.N) HALT("frame '" <<f->name <<"' is not a joint and has no forces!");
+    if(!j) continue;
     if(j->active){
       if(!j->mimic){
         for(uint ii=0; ii<j->dim; ii++) q.elem(j->qIndex+ii) = _q(nd+ii);
@@ -626,10 +630,9 @@ void Configuration::selectJointsByName(const StringA& names, bool notThose) {
 }
 
 /// select joint frames of trees given by the set of roots
-void Configuration::selectJointsBySubtrees(const StringA& roots, bool notThose) {
+void Configuration::selectJointsBySubtrees(const FrameL& roots, bool notThose) {
   FrameL F;
-  for(const String& s: roots) {
-    Frame* f = getFrame(s);
+  for(Frame* f: roots) {
     F.append(f);
     f->getSubtree(F);
   }
@@ -694,24 +697,22 @@ arr Configuration::getLimits() const {
       if(j->limits.N) {
         limits(i+k, 0)=j->limits(2*k+0); //lo
         limits(i+k, 1)=j->limits(2*k+1); //up
-      } else {
-        limits(i+k, 0)=0.; //lo
-        limits(i+k, 1)=0.; //up
       }
     }
   }
-//  for(ForceExchange* f: forces) {
-//    uint i=f->qIndex;
-//    uint d=f->qDim();
-//    for(uint k=0; k<3; k++) { //in case joint has multiple dimensions
-//        limits(i+k, 0)=-10.; //lo
-//        limits(i+k, 1)=+10.; //up
-//    }
-//    for(uint k=3; k<6; k++) { //in case joint has multiple dimensions
-//        limits(i+k, 0)=-1.; //lo
-//        limits(i+k, 1)=+1.; //up
-//    }
-//  }
+  for(ForceExchange* f: forces) {
+    uint i=f->qIndex;
+    uint d=f->qDim();
+    CHECK_EQ(d, 6, "");
+    for(uint k=0; k<3; k++) {
+      limits(i+k, 0)=-10.; //lo
+      limits(i+k, 1)=+10.; //up
+    }
+    for(uint k=3; k<6; k++) {
+      limits(i+k, 0)=-1.; //lo
+      limits(i+k, 1)=+1.; //up
+    }
+  }
 //    cout <<"limits:" <<limits <<endl;
   return limits;
 }
@@ -1082,7 +1083,7 @@ bool Configuration::checkConsistency() const {
     boolA jointIsInActiveSet = consts<byte>(false, frames.N);
     for(Joint* j: activeJoints) { CHECK(j->active, ""); jointIsInActiveSet.elem(j->frame->ID)=true; }
     if(q.nd) {
-      for(Frame* f: frames) if(f->joint && f->joint->active) CHECK(jointIsInActiveSet(f->ID), "");
+      for(Frame* f: frames) if(f->joint && f->joint->active && f->joint->type!=JT_rigid) CHECK(jointIsInActiveSet(f->ID), "");
     }
   }
 
@@ -1194,15 +1195,12 @@ void Configuration::prefixNames(bool clear) {
   else       for(Frame* a: frames) a->name.clear() <<a->ID;
 }
 
-
-
-
 void Configuration::calc_indexedActiveJoints() {
   reset_q();
 
   //-- collect active joints
   activeJoints.clear();
-  for(Frame* f:frames) if(f->joint && f->joint->active)
+  for(Frame* f:frames) if(f->joint && f->joint->active && f->joint->type!=JT_rigid)
       activeJoints.append(f->joint);
 
   _state_indexedJoints_areGood=true;
@@ -2365,6 +2363,9 @@ void Configuration::report(std::ostream& os) const {
      <<" #forces=" <<forces.N
      <<" #evals=" <<setJointStateCount
      <<endl;
+
+//  os <<" limits=" <<getLimits() <<endl;
+  //  os <<" joints=" <<getJointNames() <<endl;
 }
 
 void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
@@ -2787,13 +2788,13 @@ void Configuration::glDraw_sub(OpenGL& gl, const FrameL& F, int drawOpaqueOrTran
   if(orsDrawBodies) {
     if(drawOpaqueOrTransparanet==0 || drawOpaqueOrTransparanet==1) {
       //first non-transparent
-      for(Frame* f: F) if(f->shape && f->shape->alpha()==1. && (f->shape->visual||!orsDrawVisualsOnly)) {
+      for(Frame* f: F) if(f->shape && f->shape->alpha()==1.) {
           gl.drawId(f->ID);
           f->shape->glDraw(gl);
         }
     }
     if(drawOpaqueOrTransparanet==0 || drawOpaqueOrTransparanet==2) {
-      for(Frame* f: F) if(f->shape && f->shape->alpha()<1. && (f->shape->visual||!orsDrawVisualsOnly)) {
+      for(Frame* f: F) if(f->shape && f->shape->alpha()<1.) {
           gl.drawId(f->ID);
           f->shape->glDraw(gl);
         }
@@ -3245,19 +3246,25 @@ void editConfiguration(const char* filename, Configuration& C) {
   for(; !exit;) {
     cout <<"reloading `" <<filename <<"' ... " <<std::endl;
     Configuration C_tmp;
-    FileToken file(filename, true);
-    try {
-      lineCount=1;
-      Graph G(file);
-      G.checkConsistency();
-      C_tmp.readFromGraph(G);
-      C = C_tmp;
-      C.report();
-    } catch(std::runtime_error& err) {
-      cout <<"line " <<lineCount <<": " <<err.what() <<" -- please check the file and re-save" <<endl;
-      //      continue;
+    {
+      FileToken file(filename, true);
+      Graph G;
+      try {
+        lineCount=1;
+        G.read(file);
+        G.checkConsistency();
+      } catch(std::runtime_error& err) {
+        cout <<"g-File Synax Error line " <<lineCount <<": " <<err.what() <<" -- please check the file and re-save" <<endl;
+      }
+      try {
+        C_tmp.readFromGraph(G);
+        C = C_tmp;
+        C.report();
+      } catch(std::runtime_error& err) {
+        cout <<"Configuration initialization failed: " <<err.what() <<" -- please check the file and re-save" <<endl;
+      }
+      file.cd_start(); //important: also on crash - cd back to original
     }
-    file.cd_start(); //important: also on crash - cd back to original
     cout <<"watching..." <<endl;
     int key = -1;
     C.gl()->recopyMeshes(C);

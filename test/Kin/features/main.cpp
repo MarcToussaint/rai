@@ -35,23 +35,24 @@ void testFeature() {
 
   arr q1 = C.getJointState();
 
-  rai::Configuration Ctuple;
-  Ctuple.addConfiguration(C);
-  Ctuple.addConfiguration(C);
-  Ctuple.addConfiguration(C);
-  Ctuple.jacMode = rai::Configuration::JM_rowShifted;
-//  Ctuple.jacMode = rai::Configuration::JM_dense;
-//  Ctuple.jacMode = rai::Configuration::JM_sparse;
+  rai::Configuration pathConfig;
+  pathConfig.addConfiguration(C);
+  pathConfig.addConfiguration(C);
+  pathConfig.addConfiguration(C);
+//  pathConfig.jacMode = rai::Configuration::JM_rowShifted;
+//  pathConfig.jacMode = rai::Configuration::JM_dense;
+  pathConfig.jacMode = rai::Configuration::JM_sparse;
 
-  uint n=Ctuple.getJointStateDimension();
-  arr q=Ctuple.getJointState();
-  Ctuple.setJointState(q);
+  uint n=pathConfig.getJointStateDimension();
+  arr q=pathConfig.getJointState();
+  pathConfig.setJointState(q);
 
   arr q0 = C.getJointState();
-  Ctuple.setJointStateSlice(q0, 1);
+  pathConfig.setJointStateSlice(q0, 1);
 
   rai::Array<std::shared_ptr<Feature>> F;
   F.append(make_shared<F_PairCollision>(F_PairCollision::_negScalar)) ->setFrameIDs({"obj1", "obj2"}, C);
+  F.append(make_shared<F_PairCollision>(F_PairCollision::_normal)) ->setFrameIDs({"obj1", "obj2"}, C);
   F.append(make_shared<F_PairCollision>(F_PairCollision::_vector)) ->setFrameIDs({"obj1", "obj2"}, C);
   F.append(make_shared<F_PairCollision>(F_PairCollision::_center)) ->setFrameIDs({"obj1", "obj2"}, C);
   F.append(make_shared<F_LinAngVel>()) ->setFrameIDs({"obj1"}, C);
@@ -69,6 +70,16 @@ void testFeature() {
   F.append(symbols2feature(FS_poseDiff, {"obj1", "obj2"}, C)) ->setOrder(2);
   F.append(symbols2feature(FS_insideBox, {"obj1", "obj2"}, C)) ->setOrder(0);
   F.append(make_shared<F_NewtonEuler>()) ->setFrameIDs({"obj1"}, C);
+  F.append(make_shared<F_fex_POA>()) ->setFrameIDs({"obj1", "obj2"}, C);
+  F.append(make_shared<F_fex_Force>()) ->setFrameIDs({"obj1", "obj2"}, C);
+  F.append(make_shared<F_fex_ForceIsNormal>()) ->setFrameIDs({"obj1", "obj2"}, C);
+  F.append(make_shared<F_fex_ForceIsPositive>()) ->setFrameIDs({"obj1", "obj2"}, C);
+  F.append(make_shared<F_fex_POAzeroRelVel>()) ->setFrameIDs({"obj1", "obj2"}, C);
+  F.append(make_shared<F_fex_POAContactDistances>()) ->setFrameIDs({"obj1", "obj2"}, C);
+  F.append(make_shared<F_fex_POASurfaceDistance>(rai::_left)) ->setFrameIDs({"obj1", "obj2"}, C);
+  F.append(make_shared<F_fex_POASurfaceDistance>(rai::_right)) ->setFrameIDs({"obj1", "obj2"}, C);
+  F.append(make_shared<F_fex_POASurfaceNormal>(rai::_left)) ->setFrameIDs({"obj1", "obj2"}, C);
+  F.append(make_shared<F_fex_POASurfaceNormal>(rai::_right)) ->setFrameIDs({"obj1", "obj2"}, C);
 
   rai_Kin_frame_ignoreQuatNormalizationWarning=true;
 
@@ -80,13 +91,13 @@ void testFeature() {
 
     for(ptr<Feature>& f: F){
       cout <<k <<std::setw(30) <<f->shortTag(C) <<' ';
-      succ &= checkJacobian(f->vf(Ctuple), x, 1e-5);
+      succ &= checkJacobian(f->vf(pathConfig), x, 1e-5);
     }
 
     arr y;
-    F.first()->__phi(y, NoArr, Ctuple);
+    F.first()->__phi(y, NoArr, pathConfig);
 
-    if(!succ) Ctuple.watch(true);
+    if(!succ) pathConfig.watch(true);
   }
   cout <<"*** COMPUTE TIME: " <<rai::timerRead() <<"sec" <<endl;
 }

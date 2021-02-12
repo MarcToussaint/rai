@@ -12,7 +12,7 @@
 
 //===========================================================================
 //
-// types (mostly abstract classes or lambda expressions) to represent non-linear programs
+// lambda expression interfaces
 //
 
 /// A scalar function $y = f(x)$, if @df@ or @Hf@ are not NoArr, the gradient and/or Hessian is returned
@@ -23,31 +23,14 @@ typedef std::function<double(arr& df, arr& Hf, const arr& x)> ScalarFunction;
 /// Gauss-Newton type where the Hessian is approximated by J^T J
 typedef std::function<void(arr& y, arr& Jy, const arr& x)> VectorFunction;
 
-//struct ConstrainedProblem {
-//  //TODO: add getStructure -> dim_x, tt
-//  virtual ~ConstrainedProblem() = default;
-//  virtual void phi(arr& phi, arr& J, arr& H, ObjectiveTypeA& ot, const arr& x) = 0;
-//};
-
-//===========================================================================
-//
-// lambda expression interfaces
-//
-
-typedef std::function<void(arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x)> ConstrainedProblemLambda;
-
-struct Conv_Lambda_ConstrainedProblem : MathematicalProgram {
-  ConstrainedProblemLambda f;
-  Conv_Lambda_ConstrainedProblem(const ConstrainedProblemLambda& f): f(f) {}
-  void getFeatureTypes(ObjectiveTypeA& ot) { f(NoArr, NoArr, NoArr, ot, NoArr); }
-  void evaluate(arr& phi, arr& J, const arr& x) { f(phi, J, NoArr, NoObjectiveTypeA, x); }
-};
 
 struct Conv_ScalarProblem_MathematicalProgram : MathematicalProgram {
   ScalarFunction f;
   uint xDim;
+  arr bounds_lo, bounds_up;
   Conv_ScalarProblem_MathematicalProgram(const ScalarFunction& f, uint xDim): f(f), xDim(xDim) {}
   uint getDimension() { return xDim; }
+  void getBounds(arr& _bounds_lo, arr& _bounds_up) { _bounds_lo=bounds_lo; _bounds_up=bounds_up; }
   void getFeatureTypes(ObjectiveTypeA& ot) { ot = {OT_f}; }
   void evaluate(arr& phi, arr& J, const arr& x) {
     double y = f(J, NoArr, x);
@@ -57,6 +40,8 @@ struct Conv_ScalarProblem_MathematicalProgram : MathematicalProgram {
   void getFHessian(arr& H, const arr& x) {
     f(NoArr, H, x);
   }
+
+  void setBounds(double lo, double up){ bounds_lo.resize(xDim) = lo;  bounds_up.resize(xDim) = up; }
 };
 
 struct Conv_MathematicalProgram_ScalarProblem : ScalarFunction {
@@ -132,19 +117,12 @@ struct Conv_MathematicalProgram_ScalarProblem : ScalarFunction {
 
 bool checkJacobianCP(MathematicalProgram& P, const arr& x, double tolerance);
 bool checkHessianCP(MathematicalProgram& P, const arr& x, double tolerance);
+bool checkInBound(MathematicalProgram& P, const arr& x);
+void boundClip(MathematicalProgram& P, arr& x);
+void boundClip(arr& y, const arr& bound_lo, const arr& bound_up);
 bool checkDirectionalGradient(const ScalarFunction& f, const arr& x, const arr& delta, double tolerance);
 bool checkDirectionalJacobian(const VectorFunction& f, const arr& x, const arr& delta, double tolerance);
 
-inline arr summarizeErrors(const arr& phi, const ObjectiveTypeA& tt) {
-  arr err = zeros(3);
-  for(uint i=0; i<phi.N; i++) {
-    if(tt(i)==OT_f) err(0) += phi(i);
-    if(tt(i)==OT_sos) err(0) += rai::sqr(phi(i));
-    if(tt(i)==OT_ineq && phi(i)>0.) err(1) += phi(i);
-    if(tt(i)==OT_eq) err(2) += fabs(phi(i));
-  }
-  return err;
-}
 
 //===========================================================================
 //

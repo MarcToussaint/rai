@@ -4,6 +4,7 @@
 #include <Geo/mesh.h>
 #include <Gui/opengl.h>
 #include <Geo/qhull.h>
+#include <Geo/analyticShapes.h>
 
 void drawInit(void*, OpenGL& gl){
   glStandardLight(nullptr, gl);
@@ -13,24 +14,15 @@ void drawInit(void*, OpenGL& gl){
 
 //===========================================================================
 
-extern bool orsDrawWires;
-
-void TEST(Sphere) {
+void TEST(Primitives) {
   rai::Mesh mesh;
 
   OpenGL gl;
   gl.add(drawInit,0);
   gl.add(mesh);
-  orsDrawWires=true;
+  gl.drawOptions.drawWires=true;
 
-  //MeshSetTetrahedron(mesh);
-  //MeshSetOctahedron(mesh);
-  //MeshSetDodecahedron(mesh);
-  //MeshSetBox(mesh);
   mesh.setSphere(2);
-  //MeshSetHalfSphere(mesh);
-  //MeshSetCylinder(mesh,.2,1.);
-  //MeshSetCappedCylinder(mesh,.2,1.);
   cout <<"#V=" <<mesh.V.d0 <<endl;
   gl.watch();
 
@@ -38,28 +30,32 @@ void TEST(Sphere) {
   cout <<"#V=" <<mesh.V.d0 <<endl;
   gl.watch();
 
-  mesh.setCappedCylinder(1,3,2);
+  mesh.setCapsule(1,3,2);
   cout <<"#V=" <<mesh.V.d0 <<endl;
   gl.watch();
 }
 
 //===========================================================================
 
-void TEST(Meshes) {
+void TEST(FuseVertices) {
   if(!rai::FileToken("../../../../rai-robotModels/pr2/head_v0/head_pan.stl", false).exists()) return;
+
   OpenGL gl;
   rai::Mesh mesh;
-  mesh.readStlFile(FILE("../../../../rai-robotModels/pr2/head_v0/head_pan.stl"));
+  mesh.readFile("../../../../rai-robotModels/pr2/head_v0/head_pan.stl");
   gl.add(drawInit,0);
   gl.add(mesh);
   gl.watch();
+
   mesh.writeTriFile(("z.full.tri"));
   mesh.fuseNearVertices(1e-6);
   mesh.writeTriFile(("z.e4.tri"));
   gl.watch();
+
   mesh.fuseNearVertices(1e-5);
   mesh.writeTriFile(("z.e3.tri"));
   gl.watch();
+
   mesh.fuseNearVertices(1e-4);
   mesh.writeTriFile(("z.e2.tri"));
   gl.watch();
@@ -67,7 +63,7 @@ void TEST(Meshes) {
 
 //===========================================================================
 
-void TEST(Meshes2) {
+void TEST(AddMesh) {
   if(!rai::FileToken("../../../../rai-robotModels/pr2/head_v0/head_pan.stl", false).exists()) return;
   rai::Mesh mesh1,mesh2;
   OpenGL gl;
@@ -81,6 +77,7 @@ void TEST(Meshes2) {
   mesh1.addMesh(mesh2);
   //mesh1.writeTriFile(("z.e3.tri"));
   //mesh1.writeOffFile(("z.e3.off"));
+
   gl.watch();
 }
 
@@ -103,61 +100,6 @@ void TEST(Meshes3) {
   }
   gl.watch();
 }
-
-//===========================================================================
-// obsolete -> use PairCollision
-
-#if 0
-rai::Mesh m1, m2;
-rai::Transformation t1, t2;
-rai::Vector p1, p2;
-
-void drawGJK(void*, OpenGL& gl){
-  glDisable(GL_DEPTH_TEST);
-
-  glColor(.8, .8, .8, .8);
-  glTransform(t1);  m1.glDraw(gl);
-  glTransform(t2);  m2.glDraw(gl);
-  glLoadIdentity();
-
-  glColor(1., 0., 0., .9);
-  glDrawDiamond(p1.x, p1.y, p1.z, .1, .1, .1);
-  glDrawDiamond(p2.x, p2.y, p2.z, .1, .1, .1);
-  glBegin(GL_LINES);
-  glVertex3f(p1.x, p1.y, p1.z);
-  glVertex3f(p2.x, p2.y, p2.z);
-  glEnd();
-  glLoadIdentity();
-}
-
-extern bool orsDrawWires;
-void TEST(GJK) {
-  OpenGL gl;
-  gl.add(glStandardScene);
-  gl.add(drawGJK, &m2);
-  orsDrawWires = true;
-
-  t1.setZero();
-  t2.setZero();
-
-  m1.setRandom();  m1.clean();  t1.pos.set(-0., -0., 1.);
-  m2.setRandom();  m2.clean();  t2.pos.set( 0., 0., 1.5);
-
-  gl.update();
-
-  for(uint i=0;i<50;i++){
-    t1.pos.y += .1; t1.addRelativeRotationDeg(10, 0., 1., 0.);
-    t2.pos.y -= .2; t2.addRelativeRotationDeg(10, 1., 0., 0.);
-
-    double d=GJK_sqrDistance(m1, m2, t1, t2, p1, p2, NoVector, NoVector, NoPointType, NoPointType);
-    double c_dist=(t1.pos-t2.pos).length();
-    cout <<"distance = " <<d <<"\np1=" <<p1 <<"\np2=" <<p2 <<"\ncenter dist=" <<c_dist <<endl;
-//    CHECK_LE(d, c_dist+1.,"distance doesn't make sense");
-    CHECK_GE(d, c_dist-3.,"distance doesn't make sense");
-    gl.timedupdate(.1);
-  }
-}
-#endif
 
 //===========================================================================
 
@@ -186,8 +128,8 @@ void TEST(DistanceFunctions) {
 
   rai::Array<ScalarFunction*> fcts = {
     new DistanceFunction_Sphere(t, 1.),
-    new DistanceFunction_Box(t, 1., 2., 3., 1.),
-    new DistanceFunction_Cylinder(t, 1., 2.)
+    new DistanceFunction_ssBox(t, 1., 2., 3., 1.),
+    new DistanceFunction_Cylinder(t, 2., 1.)
   };
 
   for(ScalarFunction* f: fcts){
@@ -293,9 +235,9 @@ void TEST(SimpleImplicitSurfaces) {
 int MAIN(int argc, char** argv){
   rai::initCmdLine(argc, argv);
 
-  testSphere();
-  testMeshes();
-  testMeshes2();
+  testPrimitives();
+  testFuseVertices();
+  testAddMesh();
   testMeshes3();
   testVolume();
   testDistanceFunctions();

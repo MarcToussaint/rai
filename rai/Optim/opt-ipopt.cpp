@@ -15,6 +15,7 @@
 
 struct Conv_MP_Ipopt : Ipopt::TNLP {
   MathematicalProgram& P;
+  arr x_init;
   arr x, phi_x, J_x;
   ObjectiveTypeA featureTypes;
 
@@ -64,30 +65,41 @@ Conv_MP_Ipopt::Conv_MP_Ipopt(MathematicalProgram& P) : P(P) {
 
 Conv_MP_Ipopt::~Conv_MP_Ipopt() {}
 
-arr IpoptInterface::solve() {
+arr IpoptInterface::solve(const arr& x_init) {
   Ipopt::IpoptApplication opt;
 
-  opt.Options()->SetStringValue("output_file", "z.ipopt.out");
+  //-- set options
+  bool ret=true;
+  ret &= opt.Options()->SetStringValue("output_file", "z.ipopt.out");
 
-  opt.Options()->SetNumericValue("tol", 1e-3);
-  opt.Options()->SetNumericValue("constr_viol_tol", 1e-3);
-  opt.Options()->SetNumericValue("compl_inf_tol", 1e-3);
+  ret &= opt.Options()->SetNumericValue("tol", 1e-3);
+  ret &= opt.Options()->SetNumericValue("constr_viol_tol", 1e-3);
+  ret &= opt.Options()->SetNumericValue("compl_inf_tol", 1e-3);
+
+  ret &= opt.Options()->SetIntegerValue("max_iter", 10000);
+  ret &= opt.Options()->SetStringValue("nlp_scaling_method", "none");
 
   //  opt.Options()->SetStringValue("mu_strategy", "adaptive");
-  //  opt.Options()->SetNumericValue("mu_init", 10.);
+  ret &= opt.Options()->SetNumericValue("mu_init", 1e-3);
   //  opt.Options()->SetStringValue("hessian_approximation", "limited-memory");
   //  opt.Options()->SetStringValue("linear_solver", "ma27");
 
   //  opt.Options()->SetStringValue("derivative_test", "first-order");
-  opt.Options()->SetNumericValue("derivative_test_perturbation", 1e-8);
-  opt.Options()->SetNumericValue("derivative_test_tol", 1e-4);
+  //  opt.Options()->SetNumericValue("derivative_test_perturbation", 1e-8);
+  //  opt.Options()->SetNumericValue("derivative_test_tol", 1e-4);
+  CHECK(ret, "some option could not be set");
 
+  //-- create template NLP structure and set x_init
+  Conv_MP_Ipopt* conv = new Conv_MP_Ipopt(P);
+  Ipopt::SmartPtr<Ipopt::TNLP> mynlp(conv);
+  if(!!x_init) conv->x_init = x_init;
+
+  //-- initialize IPopt
   Ipopt::ApplicationReturnStatus status;
   status = opt.Initialize();
   CHECK_EQ(status, Ipopt::Solve_Succeeded, "Error during Ipopt initialization!");
 
-  Conv_MP_Ipopt* conv = new Conv_MP_Ipopt(P);
-  Ipopt::SmartPtr<Ipopt::TNLP> mynlp(conv);
+  //-- optimize
   status = opt.OptimizeTNLP(mynlp);
 
   if(status == Ipopt::Solve_Succeeded) {
@@ -141,9 +153,14 @@ bool Conv_MP_Ipopt::get_starting_point(Ipopt::Index n, bool init_x, Ipopt::Numbe
   CHECK_EQ(init_z, false, "");
   CHECK_EQ(init_lambda, false, "");
 
-  arr x0 = P.getInitializationSample();
-
-  for(uint i=0; i<x0.N; i++) x[i] = x0.elem(i);
+  if(x_init.N){
+    CHECK_EQ((int)x_init.N, n, "");
+    for(int i=0; i<n; i++) x[i] = x_init.elem(i);
+  }else{
+    arr x0 = P.getInitializationSample();
+    CHECK_EQ((int)x0.N, n, "");
+    for(int i=0; i<n; i++) x[i] = x0.elem(i);
+  }
 
   return true;
 }
@@ -300,7 +317,7 @@ void Conv_MP_Ipopt::finalize_solution(Ipopt::SolverReturn status, Ipopt::Index n
 
 #else
 
-arr IpoptInterface::solve() {
+arr IpoptInterface::solve(const arr& x_init) {
   NICO
 }
 

@@ -25,11 +25,13 @@ printUbuntuAll: $(DEPEND:%=inPath_printUbuntu/%) printUbuntu
 
 printDependAll: $(DEPEND:%=inPath_printDepend/%) printDepend
 
-tests: $(test_paths:%=inPath_make/%)
+tests: $(test_paths:%=inPath_make/%) inPath_makeLib/ry
 
 bin: $(bin_paths:%=inPath_make/%)
 
 src: $(src_paths:%=inPath_makeLib/%)
+
+ry: inPath_makeLib/ry
 
 dependAll: $(src_paths:%=inPath_depend/%)
 
@@ -76,6 +78,8 @@ install: src bin
 runTests: tests
 	@rm -f z.test-report
 	@for p in $(test_paths); do build/run-path.sh $$p; done
+	+@-make -C test/ry run clean
+
 
 ################################################################################
 
