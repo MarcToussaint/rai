@@ -1355,10 +1355,10 @@ void rai::Shape::createMeshes() {
       HALT("createMeshes not possible for shape type '" <<_type <<"'");
     }
   }
-  auto func = functional(false);
-  if(func){
-    mesh().setImplicitSurfaceBySphereProjection(*func, 2.);
-  }
+//  auto func = functional(false);
+//  if(func){
+//    mesh().setImplicitSurfaceBySphereProjection(*func, 2.);
+//  }
 }
 
 shared_ptr<ScalarFunction> rai::Shape::functional(bool worldCoordinates){

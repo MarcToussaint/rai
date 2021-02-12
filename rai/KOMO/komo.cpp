@@ -2703,7 +2703,7 @@ void KOMO::Conv_KOMO_SparseNonfactored::getFeatureTypes(ObjectiveTypeA& ft) {
   for(ptr<GroundedObjective>& ob : komo.objs) {
     uint m = ob->feat->__dim_phi2(ob->frames);
     for(uint i=0; i<m; i++) ft(M+i) = ob->type;
-    for(uint j=0; j<m; j++) komo.featureNames.append("TODO");
+    for(uint j=0; j<m; j++) komo.featureNames.append(ob->feat->shortTag(komo.pathConfig));
     M += m;
   }
   if(quadraticPotentialLinear.N) {
