@@ -302,6 +302,15 @@ void Configuration::addCopies(const FrameL& F, const ForceExchangeL& _forces) {
   for(Frame* f:F) {
     Frame* f_new = new Frame(*this, f);
     FId2thisId(f->ID) = f_new->ID;
+
+    //convert constant joints to mimic joints
+    if(f->joint && f->ats["constant"]){
+      Frame *f_orig = getFrame(f_new->name); //identify by name!!!
+      if(f_orig!=f_new){
+        CHECK(f_orig->joint, "");
+        f_new->joint->mimic = f_orig->joint;
+      }
+    }
   }
 
   //relink frames - special attention to mimic'ing
@@ -312,14 +321,6 @@ void Configuration::addCopies(const FrameL& F, const ForceExchangeL& _forces) {
     if(f->joint && f->joint->mimic){
       CHECK(f->joint && f->joint->mimic, "");
       f_new->joint->mimic = frames.elem(FId2thisId(f->joint->mimic->frame->ID))->joint;
-    }
-    //convert constant joints to mimic joints
-    if(f->joint && f->ats["constant"]){
-      Frame *f_orig = getFrame(f_new->name); //identify by name!!!
-      if(f_orig!=f_new){
-        CHECK(f_orig->joint, "");
-        f_new->joint->mimic = f_orig->joint;
-      }
     }
   }
 

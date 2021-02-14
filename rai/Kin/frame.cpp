@@ -656,7 +656,11 @@ void rai::Joint::calc_Q_from_q(const arr& q_full, uint _qIndex) {
     qp = q_copy->p;
   }
   if(mimic) {
-    Q = mimic->frame->get_Q();
+    if(type!=JT_tau){
+      Q = mimic->frame->get_Q();
+    }else{
+      frame->tau = mimic->frame->tau;
+    }
   } else {
     switch(type) {
       case JT_hingeX: {
