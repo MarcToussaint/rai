@@ -389,6 +389,7 @@ uintA getNonSwitchedFrames(const FrameL& A, const FrameL& B) {
     rai::Frame* f1 = B.elem(i);
     if(!f0->joint || !f1->joint) continue;
     if(f0->joint->type!=f1->joint->type) continue;
+    if(f0->joint->mimic || f1->joint->mimic) continue;
     if(f0->ID - f0->parent->ID != f1->ID-f1->parent->ID) continue; //comparing the DIFFERENCE in IDs between parent and joint
     nonSwitchedFrames.append(i);
   }

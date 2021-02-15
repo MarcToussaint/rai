@@ -1430,7 +1430,6 @@ void Configuration::jacobian_pos(arr& J, Frame* a, const Vector& pos_world) cons
           R *= j->scale;
           J.setMatrixBlock(R.sub(0, -1, 0, 1), 0, j_idx);
         } else if(j->type==JT_transXYPhi) {
-          if(j->mimic) NIY;
           arr R = j->X().rot.getArr();
           R *= j->scale;
           J.setMatrixBlock(R.sub(0, -1, 0, 1), 0, j_idx);
@@ -1440,7 +1439,6 @@ void Configuration::jacobian_pos(arr& J, Frame* a, const Vector& pos_world) cons
           J.elem(1, j_idx+2) += tmp.y;
           J.elem(2, j_idx+2) += tmp.z;
         } else if(j->type==JT_phiTransXY) {
-          if(j->mimic) NIY;
           Vector tmp = j->axis ^ (pos_world-j->X().pos);
           tmp *= j->scale;
           J.elem(0, j_idx) += tmp.x;
@@ -1451,7 +1449,6 @@ void Configuration::jacobian_pos(arr& J, Frame* a, const Vector& pos_world) cons
           J.setMatrixBlock(R.sub(0, -1, 0, 1), 0, j_idx+1);
         }
         if(j->type==JT_XBall) {
-          if(j->mimic) NIY;
           arr R = conv_vec2arr(j->X().rot.getX());
           R *= j->scale;
           R.reshape(3, 1);

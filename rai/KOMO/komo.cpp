@@ -1710,6 +1710,7 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, 
 //  displayPath(STRING("before"));
 
   //first set the path piece-wise CONSTANT at waypoints and the subsequent steps (each waypoint may have different dimension!...)
+#if 1 //depends on sw->isStable -> mimic !!
   for(uint i=0; i<steps.N; i++) {
     uint Tstop=T;
     if(i+1<steps.N && steps(i+1)<T) Tstop=steps(i+1);
@@ -1717,6 +1718,11 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, 
       setConfiguration(t, waypoints(i));
     }
   }
+#else
+  for(uint i=0; i<steps.N; i++) {
+    if(steps(i)<T) setConfiguration(steps(i), waypoints(i));
+  }
+#endif
 
 //  displayPath(STRING("after"));
 
@@ -2117,7 +2123,7 @@ void KOMO::retrospectApplySwitches2() {
           ex1->poa = ex0->poa;
         }else{
           f->set_Q() = f0->get_Q(); //copy the relative pose (switch joint initialization) from the first application
-          /*CRUCIAL CHANGE!*/ if(sw->isStable)  f->joint->mimic = f0->joint;
+//          /*CRUCIAL CHANGE!*/ if(sw->isStable)  f->joint->mimic = f0->joint;
         }
       }
     }
