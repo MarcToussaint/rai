@@ -81,6 +81,12 @@ enum SkeletonSymbol {
   SY_makeFree,
   SY_forceBalance,
 
+  SY_touchBoxNormalX,
+  SY_touchBoxNormalY,
+  SY_touchBoxNormalZ,
+
+  SY_end,
+
 };
 
 struct SkeletonEntry {
@@ -176,7 +182,7 @@ struct KOMO : NonCopyable {
                                      ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr, int order=-1, int deltaFromStep=0, int deltaToStep=0);
 
   void addSwitch(const arr& times, bool before, rai::KinematicSwitch* sw);
-  void addSwitch(const arr& times, bool before, rai::JointType type, rai::SwitchInitializationType init,
+  rai::KinematicSwitch* addSwitch(const arr& times, bool before, rai::JointType type, rai::SwitchInitializationType init,
                  const char* ref1, const char* ref2,
                  const rai::Transformation& jFrom=NoTransformation, const rai::Transformation& jTo=NoTransformation);
   void addContact_slide(double startTime, double endTime, const char* from, const char* to);

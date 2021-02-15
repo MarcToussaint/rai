@@ -35,6 +35,7 @@ struct KinematicSwitch {
   int timeOfApplication;
   int timeOfTermination;
   int fromId, toId;
+  bool isStable=false;
   rai::Transformation jA, jB;
   KinematicSwitch();
   KinematicSwitch(SwitchType op, JointType type,

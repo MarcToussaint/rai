@@ -214,7 +214,7 @@ struct Joint : NonCopyable {
   arr get_h() const;
 
   bool isPartBreak() {
-    return (type==JT_rigid || type==JT_free) && !mimic;
+    return (type==JT_rigid || type==JT_free); // && !mimic;
 //    return (dim!=1 && !mimic) || type==JT_tau;
   }
 

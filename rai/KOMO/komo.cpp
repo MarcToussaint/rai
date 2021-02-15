@@ -236,23 +236,26 @@ void KOMO::addSwitch(const arr& times, bool before, KinematicSwitch* sw) {
   switches.append(sw);
 }
 
-void KOMO::addSwitch(const arr& times, bool before,
+KinematicSwitch* KOMO::addSwitch(const arr& times, bool before,
                      rai::JointType type, SwitchInitializationType init,
                      const char* ref1, const char* ref2,
                      const rai::Transformation& jFrom, const rai::Transformation& jTo) {
   KinematicSwitch* sw = new KinematicSwitch(SW_joint, type, ref1, ref2, world, init, 0, jFrom, jTo);
   addSwitch(times, before, sw);
+  return sw;
 }
 
 void KOMO::addSwitch_mode2(const arr& times, SkeletonSymbol newMode, const StringA& frames, bool firstSwitch) {
   //-- creating a stable kinematic linking
   if(newMode==SY_stable || newMode==SY_stableOn){
     if(newMode==SY_stable) {
-      addSwitch(times, true, JT_free, SWInit_copy, frames(0), frames(1));
+      auto sw = addSwitch(times, true, JT_free, SWInit_copy, frames(0), frames(1));
+      sw->isStable = true;
     } else { //SY_stableOn
       Transformation rel = 0;
       rel.pos.set(0, 0, .5*(shapeSize(world, frames(0)) + shapeSize(world, frames(1))));
-      addSwitch(times, true, JT_transXYPhi, SWInit_copy, frames(0), frames(1), rel);
+      auto sw = addSwitch(times, true, JT_transXYPhi, SWInit_copy, frames(0), frames(1), rel);
+      sw->isStable = true;
     }
 
     // ensure the DOF is constant throughout its existance
@@ -1231,6 +1234,7 @@ void KOMO::setSkeleton(const Skeleton& S) {
   for(const SkeletonEntry& s:S) {
     switch(s.symbol) {
       case SY_none:       HALT("should not be here");  break;
+      case SY_end: break; //explicit redundant symbol, e.g. to mark the end of a skeleton
       case SY_initial: case SY_identical: case SY_noCollision:    break;
       case SY_touch:      addObjective({s.phase0, s.phase1}, FS_distance, {s.frames(0), s.frames(1)}, OT_eq, {1e2});  break;
       case SY_above:      addObjective({s.phase0, s.phase1}, FS_aboveBox, {s.frames(0), s.frames(1)}, OT_ineq, {1e1});  break;
@@ -1258,6 +1262,27 @@ void KOMO::setSkeleton(const Skeleton& S) {
           addObjective({s.phase0}, FS_qItself, {}, OT_eq, {}, {}, 1);
           addObjective({s.phase0-.1,s.phase0+.1}, FS_position, {s.frames(0)}, OT_eq, {}, {0.,0.,.1}, 2);
         }
+        break;
+      }
+
+      case SY_touchBoxNormalX: {
+        rai::Frame* box = world.getFrame(s.frames(1));
+        CHECK(box, "");
+        CHECK(box->shape && box->shape->type()==rai::ST_ssBox, "");
+        double boxSize = shapeSize(world, s.frames(1), 0);
+        addObjective({s.phase0}, FS_positionDiff, {s.frames(0), s.frames(1)}, OT_eq, {{1,3},{1e2,.0,.0}}, {.5*boxSize,0.,0.}); //arr({1,3},{0,0,1e2})
+        addObjective({s.phase0}, FS_scalarProductXZ, {s.frames(1), s.frames(0)}, OT_eq, {1e2}, {1.});
+//        addObjective({s.phase0}, FS_scalarProductYZ, {s.frames(1), s.frames(0)}, OT_eq, {1e2});
+        break;
+      }
+      case SY_touchBoxNormalZ: {
+        rai::Frame* box = world.getFrame(s.frames(1));
+        CHECK(box, "");
+        CHECK(box->shape && box->shape->type()==rai::ST_ssBox, "");
+        double boxSize = shapeSize(world, s.frames(1), 2);
+        addObjective({s.phase0}, FS_positionDiff, {s.frames(0), s.frames(1)}, OT_eq, {{1,3},{0.,0.,1e2}}, {0,0,.5*boxSize}); //arr({1,3},{0,0,1e2})
+        addObjective({s.phase0}, FS_scalarProductZZ, {s.frames(1), s.frames(0)}, OT_eq, {1e2}, {1.});
+//        addObjective({s.phase0}, FS_vectorZDiff, {s.frames(0), s.frames(1)}, OT_eq, {1e2});
         break;
       }
 
@@ -2077,8 +2102,11 @@ void KOMO::retrospectApplySwitches2() {
   for(KinematicSwitch* sw:switches) {
     int s = sw->timeOfApplication+(int)k_order;
     if(s<0) s=0;
+    int sEnd = int(k_order+T);
+//    if(sw->timeOfTermination>=0)  sEnd = sw->timeOfTermination+(int)k_order;
+    CHECK(sEnd>s, "");
     rai::Frame *f0=0;
-    for(; s<int(k_order+T); s++) { //apply switch on all configurations!
+    for(; s<sEnd; s++) { //apply switch on all configurations!
       rai::Frame* f = sw->apply(timeSlices[s]());
       if(!f0){
         f0=f;
@@ -2089,12 +2117,12 @@ void KOMO::retrospectApplySwitches2() {
           ex1->poa = ex0->poa;
         }else{
           f->set_Q() = f0->get_Q(); //copy the relative pose (switch joint initialization) from the first application
+          /*CRUCIAL CHANGE!*/ if(sw->isStable)  f->joint->mimic = f0->joint;
         }
       }
     }
   }
   switchesWereApplied=true;
-//  pathConfig.selectJoints(timeSlices({k_order,-1})); //select only the non-prefix joints as active!!
 #endif
 }
 
