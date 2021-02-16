@@ -31,7 +31,7 @@ void TEST(Easy){
   komo.plotTrajectory();
 //  komo.reportProxies();
   komo.checkGradients();
-  for(uint i=0;i<2;i++) komo.displayTrajectory();
+  for(uint i=0;i<2;i++) komo.view(true);
 }
 
 //===========================================================================

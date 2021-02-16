@@ -308,7 +308,7 @@ void Configuration::addCopies(const FrameL& F, const ForceExchangeL& _forces) {
       Frame *f_orig = getFrame(f_new->name); //identify by name!!!
       if(f_orig!=f_new){
         CHECK(f_orig->joint, "");
-        f_new->joint->mimic = f_orig->joint;
+        f_new->joint->setMimic(f_orig->joint);
       }
     }
   }
@@ -320,7 +320,7 @@ void Configuration::addCopies(const FrameL& F, const ForceExchangeL& _forces) {
     //take care of within-F mimic joints:
     if(f->joint && f->joint->mimic){
       CHECK(f->joint && f->joint->mimic, "");
-      f_new->joint->mimic = frames.elem(FId2thisId(f->joint->mimic->frame->ID))->joint;
+      f_new->joint->setMimic(frames.elem(FId2thisId(f->joint->mimic->frame->ID))->joint);
     }
   }
 
@@ -1064,6 +1064,10 @@ bool Configuration::checkConsistency() const {
         CHECK(j->mimic>(void*)1, "mimic was not parsed correctly");
         CHECK(frames.contains(j->mimic->frame), "mimic points to a frame outside this kinematic configuration");
       } else {
+      }
+
+      for(Joint* m:j->mimicers) {
+        CHECK_EQ(m->mimic, j, "");
       }
     }
 
@@ -2504,7 +2508,8 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
         }
         Frame* mimicFrame = getFrame(jointName, true, true);
         CHECK(mimicFrame, "the argument to 'mimic', '" <<jointName <<"' is not a frame name");
-        j->mimic = mimicFrame->joint;
+        j->mimic=0; //UNDO the =(Joint*)1
+        j->setMimic( mimicFrame->joint );
         if(!j->mimic) HALT("The joint '" <<*j <<"' is declared mimicking '" <<jointName <<"' -- but that doesn't exist!");
         j->type = j->mimic->type;
         j->q0 = j->mimic->q0;

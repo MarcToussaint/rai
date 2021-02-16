@@ -134,8 +134,8 @@ std::pair<arr, arr> getStartGoalPath(const rai::Configuration& K, const arr& tar
   path[path.d0-1] = target_q; //overwrite last config
   arr times = komo.getPath_times();
   cout <<validatePath(K, K.getJointState(), target_joints, path, times) <<endl;
-  bool go = komo.displayPath("", true, true);//;/komo.display();
-  if(!go) {
+  int key = komo.view(true);
+  if(key=='q') {
     cout <<"ABORT!" <<endl;
     return {arr(), arr()};
   }

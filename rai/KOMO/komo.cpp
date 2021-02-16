@@ -1707,7 +1707,7 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, 
     steps(i) = conv_time2step(conv_step2time(i, waypointStepsPerPhase), stepsPerPhase);
   }
 
-//  displayPath(STRING("before"));
+//  view(true, STRING("before"));
 
   //first set the path piece-wise CONSTANT at waypoints and the subsequent steps (each waypoint may have different dimension!...)
 #if 1 //depends on sw->isStable -> mimic !!
@@ -1724,7 +1724,7 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, 
   }
 #endif
 
-//  displayPath(STRING("after"));
+//  view(true, STRING("after"));
 
   //then interpolate w.r.t. non-switching frames within the intervals
 #if 1
@@ -1755,7 +1755,7 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, 
 #else
         configurations(k_order+j)->setJointState(q, nonSwitched);
 #endif
-//        displayPath(STRING("interpolating: step:" <<i <<" t: " <<j));
+//        view(true, STRING("interpolating: step:" <<i <<" t: " <<j));
       }
     }/*else{
       for(uint j=i0+1;j<T;j++){
@@ -2046,60 +2046,6 @@ struct DrawPaths : GLDrawer {
   }
 };
 
-bool KOMO::displayTrajectory(double delay, bool watch, bool overlayPaths, const char* saveVideoPath, const char* addText) {
-  pathConfig.watch();
-  NIY;
-  return false;
-}
-
-bool KOMO::displayPath(const char* txt, bool watch, bool full) {
-#ifdef KOMO_PATH_CONFIG
-#else
-  uintA allFrames;
-  allFrames.setStraightPerm(configurations.first()->frames.N);
-  arr X = getPath_frames(allFrames);
-  CHECK_EQ(X.nd, 3, "");
-  CHECK_EQ(X.d2, 7, "");
-
-  DrawPaths drawX(X);
-#endif
-
-  if(!gl) {
-    gl = make_shared<OpenGL>("KOMO display");
-    gl->camera.setDefault();
-  }
-  gl->clear();
-  gl->add(glStandardScene, 0);
-#ifdef KOMO_PATH_CONFIG
-  gl->add(pathConfig);
-#else
-  if(!full) {
-    gl->addDrawer(configurations.last());
-    gl->add(drawX);
-  } else {
-    for(uint t=0; t<T; t++) gl->addDrawer(configurations(k_order+t));
-  }
-#endif
-  if(watch) {
-    int key = gl->watch(txt);
-//    gl.reset();
-    gl->clear();
-    return !(key==27 || key=='q');
-  }
-  gl->update(txt, true);
-//  gl.reset();
-  gl->clear();
-  return true;
-}
-
-Camera& KOMO::displayCamera() {
-  if(!gl) {
-    gl = make_shared<OpenGL>("KOMO display");
-    gl->camera.setDefault();
-  }
-  return gl->camera;
-}
-
 
 //===========================================================================
 
@@ -2123,7 +2069,7 @@ void KOMO::retrospectApplySwitches2() {
           ex1->poa = ex0->poa;
         }else{
           f->set_Q() = f0->get_Q(); //copy the relative pose (switch joint initialization) from the first application
-//          /*CRUCIAL CHANGE!*/ if(sw->isStable)  f->joint->mimic = f0->joint;
+//          /*CRUCIAL CHANGE!*/ if(sw->isStable)  f->joint->setMimic(f0->joint);
         }
       }
     }
@@ -2262,13 +2208,13 @@ void KOMO::checkBounds(const arr& x) {
 
 void reportAfterPhiComputation(KOMO& komo) {
   if(komo.verbose>6 || komo.animateOptimization>2) {
-//        komo.reportProxies();
+    //  komo.reportProxies();
     cout <<komo.getReport(true) <<endl;
   }
   if(komo.animateOptimization>0) {
-    komo.displayPath("optAnim", komo.animateOptimization>1);
-//    komo.plotPhaseTrajectory();
-//    rai::wait();
+    komo.view(komo.animateOptimization>1, "optAnim");
+    //  komo.plotPhaseTrajectory();
+    //  rai::wait();
     //  reportProxies();
   }
 }

@@ -189,6 +189,7 @@ struct Joint : NonCopyable {
   double scale=1.;   ///< scaling robot-q = scale * q-vector
 
   Joint* mimic=nullptr; ///< if non-nullptr, this joint's state is identical to another's
+  JointL mimicers;      ///< list of mimicing joints
 
   Vector axis=0;          ///< joint axis (same as X.rot.getX() for standard hinge joints)
   Enum<JointType> type;   ///< joint type
@@ -206,6 +207,7 @@ struct Joint : NonCopyable {
   const Transformation& Q() const; ///< the transformation realized by this joint (i.e. from parent->X to frame->X)
   Frame* from() const { return frame->parent; }
 
+  void setMimic(Joint* j);
   uint qDim();
   void calc_Q_from_q(const arr& q, uint n);
   arr calc_q_from_Q(const Transformation& Q) const;

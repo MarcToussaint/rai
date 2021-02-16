@@ -601,12 +601,12 @@ rai::Joint::Joint(Frame& f, Joint* copyJoint)
   frame->C.reset_q();
 
   if(copyJoint) {
-    qIndex=copyJoint->qIndex; dim=copyJoint->dim; mimic=reinterpret_cast<Joint*>(copyJoint->mimic?1l:0l);
+    qIndex=copyJoint->qIndex; dim=copyJoint->dim;
     type=copyJoint->type; axis=copyJoint->axis; limits=copyJoint->limits; q0=copyJoint->q0; H=copyJoint->H; scale=copyJoint->scale;
     active=copyJoint->active;
 
-    if(copyJoint->mimic) {
-      mimic = frame->C.frames.elem(copyJoint->mimic->frame->ID)->joint;
+    if(copyJoint->mimic){
+      setMimic(frame->C.frames.elem(copyJoint->mimic->frame->ID)->joint);
     }
 
     if(copyJoint->uncertainty) {
@@ -623,7 +623,8 @@ rai::Joint::Joint(Frame& from, Frame& f, Joint* copyJoint)
 rai::Joint::~Joint() {
   frame->C.reset_q();
   frame->joint = nullptr;
-  //if(frame->parent) frame->unLink();
+  for(Joint *j:mimicers) j->mimic=0;
+  if(mimic) mimic->mimicers.removeValue(this);
 }
 
 const rai::Transformation& rai::Joint::X() const {
@@ -632,6 +633,17 @@ const rai::Transformation& rai::Joint::X() const {
 
 const rai::Transformation& rai::Joint::Q() const {
   return frame->get_Q();
+}
+
+void rai::Joint::setMimic(rai::Joint* j){
+  if(!j){
+    if(mimic) mimic->mimicers.removeValue(this);
+    mimic=0;
+  }else{
+    CHECK(!mimic,"");
+    mimic=j;
+    mimic->mimicers.append(this);
+  }
 }
 
 uint rai::Joint::qDim() {
@@ -764,6 +776,15 @@ void rai::Joint::calc_Q_from_q(const arr& q_full, uint _qIndex) {
     frame->_state_setXBadinBranch();
   }
   //    link->link = A * Q * B; //total rel transformation
+
+  for(Joint* j:mimicers){
+    if(type!=JT_tau){
+      j->frame->Q = Q;
+      j->frame->_state_setXBadinBranch();
+    }else{
+      j->frame->tau = frame->tau;
+    }
+  }
 }
 
 arr rai::Joint::calc_q_from_Q(const rai::Transformation& Q) const {
