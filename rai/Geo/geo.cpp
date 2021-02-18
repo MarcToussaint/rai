@@ -1514,7 +1514,7 @@ void Transformation::read(std::istream& is) {
         case '|':
         case '>': is.putback(c); return; //those symbols finish the reading without error
         default: {
-          RAI_MSG("unknown Transformation read tag: " <<c <<"abort reading this frame"); is.putback(c); return;
+          RAI_MSG("unknown Transformation read tag: '" <<c <<"' abort reading this frame"); is.putback(c); return;
         }
       }
     if(is.fail()) HALT("error reading '" <<c <<"' parameters in frame");

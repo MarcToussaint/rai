@@ -2390,6 +2390,7 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
     b->read(b->ats);
   }
 
+  //-- normal case! just normal frames or edges
   for(Node* n: G) {
     CHECK(n->isGraph(), "frame must have value Graph");
     if(n->graph().findNode("%body") || n->graph().findNode("%shape") || n->graph().findNode("%joint")
@@ -2414,8 +2415,9 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
       Frame* to   = node2frame(n->parents(1)->index);
       CHECK(from, "JOINT: from '" <<n->parents(0)->key <<"' does not exist ["<<*n <<"]");
       CHECK(to, "JOINT: to '" <<n->parents(1)->key <<"' does not exist ["<<*n <<"]");
+      CHECK(!from->isChildOf(to, INT32_MAX), "you can't insert joint in loops!");
 
-      //generate a pre node
+      //generate a pre node?
       Frame* pre = from;
       if(n->graph().findNode("A")) {
         pre = new Frame(from);
@@ -2426,12 +2428,12 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
         n->graph().index();
       }
 
-      //generate a frame, as below
+      //generate a new 'between' frame
       Frame* b = new Frame(pre);
       node2frame(n->index) = b;
       b->name=n->key;
 
-      //connect the post node and impose the post node relative transform
+      //connect the new frame and optionally impose the post node relative transform
       to->linkFrom(b, false);
       if(n->graph().findNode("B")) {
         to->set_Q()->read(n->graph().get<String>("B"));
@@ -2441,7 +2443,6 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
 
       b->ats.copy(n->graph(), false, true);
       b->read(b->ats);
-
     }
   }
 

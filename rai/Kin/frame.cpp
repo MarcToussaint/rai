@@ -149,7 +149,8 @@ void rai::Frame::_state_updateAfterTouchingX() {
 }
 
 void rai::Frame::_state_updateAfterTouchingQ() {
-  CHECK(parent, "can't set Q for a root frame '" <<name <<"'");
+//  CHECK(parent, "can't set Q for a root frame '" <<name <<"'");
+  if(!parent) LOG(-1) <<"can't set Q for a root frame '" <<name <<"'";
   _state_setXBadinBranch();
   if(joint) C._state_q_isGood = false;
 }
@@ -278,7 +279,7 @@ void rai::Frame::read(const Graph& ats) {
   if((n=ats["Q"])) {
     if(n->isOfType<String>()) set_Q()->read(n->get<String>().resetIstream());
     else if(n->isOfType<arr>()) set_Q()->set(n->get<arr>());
-    else NIY;
+    else LOG(-2) <<"can't parse '" <<*n <<"' as Q transformation";
     set_Q()->rot.normalize();
   }
 
@@ -1276,12 +1277,13 @@ void rai::Shape::glDraw(OpenGL& gl) {
 
     if(_type==rai::ST_marker) {
       if(frame.C.orsDrawMarkers) {
-        CHECK_GE(size.N, 1, "need a marker size");
-        if(size(0)>0.){
-          glDrawDiamond(size(0)/5., size(0)/5., size(0)/5.);
-          glDrawAxes(size(0), !gl.drawOptions.drawMode_idColor);
-        }else if(size(0)<0.){
-          glDrawAxis(-size(0));
+        double s=1.;
+        if(size.N) s = size.last();
+        if(s>0.){
+          glDrawDiamond(s/5., s/5., s/5.);
+          glDrawAxes(s, !gl.drawOptions.drawMode_idColor);
+        }else if(s<0.){
+          glDrawAxis(-s);
         }
       }
     } else {

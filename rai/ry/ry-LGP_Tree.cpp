@@ -57,9 +57,9 @@ void init_LGP_Tree(pybind11::module& m) {
   .def("optBound", [](ry::RyLGP_Tree& self, BoundType bound, bool collisions) {
     self.lgp->focusNode->optBound(bound, collisions);
     if(bound == BD_seqPath) {
-      self.lgp->focusNode->komoProblem(bound)->displayTrajectory(.02, false, false);
+      self.lgp->focusNode->komoProblem(bound)->view(false); //(.02, false, false);
     } else {
-      self.lgp->focusNode->komoProblem(bound)->displayTrajectory(.1, false, false);
+      self.lgp->focusNode->komoProblem(bound)->view(false); //displayTrajectory(.1, false, false);
     }
   })
 

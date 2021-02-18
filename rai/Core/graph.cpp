@@ -602,11 +602,15 @@ void Graph::read(std::istream& is, bool parseInfo) {
     if(!is.good() || c=='}') { is.clear(); break; }
     Node* n = readNode(is, tags, NULL, false, parseInfo);
     if(!n) break;
-    if(n->key=="Quit") {
+    if(n->key=="Parent" && n->isOfType<NodeL>()) {
+      NodeL& P = n->get<NodeL>();
+      Node *nn = n->container.isNodeOfGraph;
+      CHECK(nn,"can set 'Parent' only within a subgraph node");
+      for(Node *par:P) nn->addParent(par);
       delete n; n=nullptr;
-    }
-    if(!n) break;
-    if(n->key=="Include") {
+    }else if(n->key=="Quit") {
+      delete n; n=nullptr;
+    }else if(n->key=="Include") {
       uint Nbefore = N;
       read(n->get<FileToken>().getIs(true), parseInfo);
       if(namePrefix.N) { //prepend a naming prefix to all nodes just read
