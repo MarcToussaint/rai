@@ -100,6 +100,7 @@ struct F_PoseRel : Feature {
 struct F_LinVel : Feature {
   bool impulseInsteadOfAcceleration=false;
   F_LinVel() { order=1; }
+  Feature& setImpulseInsteadOfAcceleration(){ impulseInsteadOfAcceleration=true; return *this; }
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F) { return 3; }
 };
@@ -107,6 +108,7 @@ struct F_LinVel : Feature {
 struct F_AngVel : Feature {
   bool impulseInsteadOfAcceleration=false;
   F_AngVel() { order=1; }
+  Feature& setImpulseInsteadOfAcceleration(){ impulseInsteadOfAcceleration=true; return *this; }
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& G) { return 3; }
 };

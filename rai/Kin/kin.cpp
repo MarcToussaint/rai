@@ -1614,13 +1614,14 @@ void Configuration::kinematicsQuat(arr& y, arr& J, Frame* a) const { //TODO: all
 void Configuration::kinematicsTau(double& tau, arr& J, Frame* a) const {
   if(!a) a=frames.first();
   else a = a->getRoot();
-  CHECK(a && a->joint && a->joint->type==JT_tau, "this configuration does not have a tau DOF");
 
-  Joint* j = a->joint;
   tau = a->tau;
   if(!!J) {
     jacobian_zero(J, 1);
-    J.elem(0, j->qIndex) += 1e-1;
+    if(a && a->joint && a->joint->type==JT_tau){
+      //    CHECK(a && a->joint && a->joint->type==JT_tau, "this configuration does not have a tau DOF");
+      J.elem(0, a->joint->qIndex) += 1e-1;
+    }
   }
 }
 
