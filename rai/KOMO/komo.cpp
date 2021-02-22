@@ -1275,6 +1275,16 @@ void KOMO::setSkeleton(const Skeleton& S) {
 //        addObjective({s.phase0}, FS_scalarProductYZ, {s.frames(1), s.frames(0)}, OT_eq, {1e2});
         break;
       }
+      case SY_touchBoxNormalY: {
+        rai::Frame* box = world.getFrame(s.frames(1));
+        CHECK(box, "");
+        CHECK(box->shape && box->shape->type()==rai::ST_ssBox, "");
+        double boxSize = shapeSize(world, s.frames(1), 1);
+        addObjective({s.phase0}, FS_positionDiff, {s.frames(0), s.frames(1)}, OT_eq, {{1,3},{1e2,.0,.0}}, {.5*boxSize,0.,0.}); //arr({1,3},{0,0,1e2})
+        addObjective({s.phase0}, FS_scalarProductYZ, {s.frames(1), s.frames(0)}, OT_eq, {1e2}, {1.});
+//        addObjective({s.phase0}, FS_scalarProductYZ, {s.frames(1), s.frames(0)}, OT_eq, {1e2});
+        break;
+      }
       case SY_touchBoxNormalZ: {
         rai::Frame* box = world.getFrame(s.frames(1));
         CHECK(box, "");
@@ -1347,11 +1357,11 @@ void KOMO::setSkeleton(const Skeleton& S) {
 }
 
 void KOMO::setSkeleton(const Skeleton& S, rai::ArgWord sequenceOrPath){
-  if(sequenceOrPath==rai::_sequence){
-    solver = rai::KS_dense;
-  }else{
-    solver = rai::KS_sparse;
-  }
+//  if(sequenceOrPath==rai::_sequence){
+//    solver = rai::KS_dense;
+//  }else{
+//    solver = rai::KS_sparse;
+//  }
 
   double maxPhase = getMaxPhaseFromSkeleton(S);
   if(sequenceOrPath==rai::_sequence){
@@ -1710,7 +1720,7 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, 
 //  view(true, STRING("before"));
 
   //first set the path piece-wise CONSTANT at waypoints and the subsequent steps (each waypoint may have different dimension!...)
-#if 1 //depends on sw->isStable -> mimic !!
+#if 0 //depends on sw->isStable -> mimic !!
   for(uint i=0; i<steps.N; i++) {
     uint Tstop=T;
     if(i+1<steps.N && steps(i+1)<T) Tstop=steps(i+1);
@@ -2069,7 +2079,7 @@ void KOMO::retrospectApplySwitches2() {
           ex1->poa = ex0->poa;
         }else{
           f->set_Q() = f0->get_Q(); //copy the relative pose (switch joint initialization) from the first application
-//          /*CRUCIAL CHANGE!*/ if(sw->isStable)  f->joint->setMimic(f0->joint);
+          /*CRUCIAL CHANGE!*/ if(sw->isStable)  f->joint->setMimic(f0->joint);
         }
       }
     }
@@ -3376,6 +3386,14 @@ template<> const char* rai::Enum<SkeletonSymbol>::names []= {
   "alignByInt",
 
   "makeFree",
+  "forceBalance",
+
+  "touchBoxNormalX",
+  "touchBoxNormalY",
+  "touchBoxNormalZ",
+
+  "end",
+
   nullptr
 };
 
@@ -3427,4 +3445,35 @@ double getMaxPhaseFromSkeleton(const Skeleton& S){
     if(s.phase1>maxPhase) maxPhase=s.phase1;
   }
   return maxPhase;
+}
+
+Skeleton readSkeleton(std::istream& is){
+  rai::Graph G(is);
+  Skeleton S;
+  for(rai::Node* n:G){
+    cout <<"ENTRY: " << *n <<endl;
+    rai::Graph& entry = n->graph();
+    arr& when = entry.elem(0)->get<arr>();
+    CHECK(when.N<=2, "Skeleton error entry " <<n->index <<" time interval: interval needs no, 1, or 2 elements");
+    if(when.N==0) when={0.,-1.};
+    if(when.N==1) when={when.scalar(),when.scalar()};
+    rai::Enum<SkeletonSymbol> symbol;
+    try{
+      symbol = entry.elem(1)->key;
+    } catch(std::runtime_error& err) {
+      LOG(-1) <<"Skeleton error line " <<n->index <<" symbol: " <<err.what() <<endl;
+    }
+    StringA frames;
+    try{
+      if(entry.elem(2)->isOfType<arr>()){
+        CHECK(!entry.elem(2)->get<arr>().N, "");
+      }else{
+        frames = entry.elem(2)->get<StringA>();
+      }
+    } catch(std::runtime_error& err) {
+      LOG(-1) <<"Skeleton error line " <<n->index <<" frames: " <<err.what() <<endl;
+    }
+    S.append(SkeletonEntry(when(0), when(1), symbol, frames));
+  }
+  return S;
 }

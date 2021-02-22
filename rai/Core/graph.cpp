@@ -810,7 +810,7 @@ Node* Graph::readNode(std::istream& is, StringA& tags, const char* predetermined
             is.putback(c2);
             is.putback(c);
             StringA strings;
-            String::readStopSymbols=" \n\t]";
+            String::readStopSymbols=" ,\n\t]";
             String::readEatStopSymbol = 0;
             is >>strings;
             String::readStopSymbols = "\n\r";

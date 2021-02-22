@@ -18,7 +18,7 @@ namespace rai {
 
 //===========================================================================
 
-enum ForceExchangeType { FXT_none=-1, FXT_poa=0, FXT_torque=1 };
+enum ForceExchangeType { FXT_none=-1, FXT_poa=0, FXT_torque=1, FXT_force };
 
 ///Description of a ForceExchange
 struct ForceExchange : NonCopyable, GLDrawer {
@@ -38,7 +38,7 @@ struct ForceExchange : NonCopyable, GLDrawer {
   ~ForceExchange();
 
   void setZero();
-  uint qDim() { return 6; }
+  uint qDim() { if(type==FXT_force) return 3; return 6; }
   void calc_F_from_q(const arr& q, uint n);
   arr calc_q_from_F() const;
 

@@ -155,6 +155,13 @@ void F_fex_Force::phi2(arr& y, arr& J, const FrameL& F) {
   ex->kinForce(y, J);
 }
 
+void F_fex_Torque::phi2(arr& y, arr& J, const FrameL& F){
+  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  CHECK_EQ(F.N, 2, "");
+  rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1));
+  ex->kinTorque(y, J);
+}
+
 void F_fex_Wrench::phi2(arr& y, arr& J, const FrameL& F){
   if(order>0){  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
@@ -301,6 +308,7 @@ void F_NewtonEuler::phi2(arr& y, arr& J, const FrameL& F) {
   Value grav = F_GravityAcceleration()
                .setImpulseInsteadOfAcceleration()
                .eval({F.elem(-1)}); //END TIME SLICE!
+
   //-- subtract nominal gravity change-of-velocity from object change-of-velocity
   acc.y -= grav.y;
   acc.J -= grav.J;

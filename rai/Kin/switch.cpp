@@ -50,7 +50,6 @@ intA conv_times2tuples(const arr& times, uint order, int stepsPerPhase, uint T,
 
   //clip
   if(fromStep<0) fromStep=0;
-//  if(toStep<0) toStep=0;
   if(toStep>=(int)T && T>0) toStep=T-1;
 
   //create tuples
@@ -65,7 +64,6 @@ intA conv_times2tuples(const arr& times, uint order, int stepsPerPhase, uint T,
 
   return configs;
 }
-//#define STEP(t) (floor(t*double(stepsPerPhase) + .500001))-1
 
 //===========================================================================
 

@@ -541,6 +541,7 @@ void Configuration::setJointState(const arr& _q, const FrameL& F, bool activesOn
   for(Frame* f:F) {
     Joint* j = f->joint;
     if(!j && !f->forces.N) HALT("frame '" <<f->name <<"' is not a joint and has no forces!");
+    CHECK_LE(nd+j->dim,_q.N, "given q-vector too small");
     if(!j) continue;
     if(j->active){
       if(!j->mimic){
@@ -562,7 +563,7 @@ void Configuration::setJointState(const arr& _q, const FrameL& F, bool activesOn
       nd += c->qDim();
     }
   }
-  CHECK_EQ(_q.N, nd, "");
+  CHECK_EQ(_q.N, nd, "given q-vector has wrong size");
 
   proxies.clear();
 
@@ -1226,7 +1227,6 @@ void Configuration::calc_indexedActiveJoints() {
     }
   }
   for(ForceExchange* c: forces) {
-    CHECK_EQ(c->qDim(), 6, "");
     c->qIndex = qcount;
     qcount += c->qDim();
   }

@@ -23,6 +23,11 @@ struct F_fex_Force : Feature {
   uint dim_phi2(const FrameL& F) { return 3; }
 };
 
+struct F_fex_Torque : Feature {
+  void phi2(arr& y, arr& J, const FrameL& F);
+  uint dim_phi2(const FrameL& F) { return 3; }
+};
+
 struct F_fex_Wrench : Feature {
   void phi2(arr& y, arr& J, const FrameL& F);
   uint dim_phi2(const FrameL& F){ return 6; }
