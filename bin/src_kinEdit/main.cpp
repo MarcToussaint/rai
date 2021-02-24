@@ -52,7 +52,7 @@ int main(int argc,char **argv){
 
   //-- some optional manipulations
   if(rai::checkParameter<bool>("prune")){
-    cout <<"PRUNING STRUCTURE" <<endl;
+    LOG(0) <<"PRUNING STRUCTURE";
     C.optimizeTree(true, true, false);
   }
 //    C.optimizeTree(false, false, false);
@@ -62,7 +62,8 @@ int main(int argc,char **argv){
 
   //-- make convex
   if(rai::checkParameter<bool>("makeConvexHulls")){
-    makeConvexHulls(C.frames);
+    LOG(0) <<"creating convex hulls";
+    makeConvexHulls(C.frames, false);
   }
 
   //-- report collisions
@@ -75,11 +76,13 @@ int main(int argc,char **argv){
 
   //-- save meshes
   if(rai::checkParameter<bool>("writeMeshes")){
+    LOG(0) <<"writing meshes";
     rai::system("mkdir -p meshes");
     C.writeMeshes();
   }
 
   //-- save file in different formats
+  LOG(0) <<"saving urdf and dae files";
   FILE("z.g") <<C;
   C.writeURDF(FILE("z.urdf"));
   C.writeCollada("z.dae");
