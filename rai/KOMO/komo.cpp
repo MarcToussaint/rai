@@ -260,7 +260,7 @@ void KOMO::addSwitch_mode2(const arr& times, SkeletonSymbol newMode, const Strin
 
     // ensure the DOF is constant throughout its existance
     if((times(1)<0. && stepsPerPhase*times(0)<T) || stepsPerPhase*times(1)>stepsPerPhase*times(0)+1) {
-      addObjective({times(0), times(1)}, make_shared<F_qZeroVel>(), {frames(-1)}, OT_eq, {1e1}, NoArr, 1, +1, -1);
+      addObjective({times(0), times(1)}, make_shared<F_qZeroVel>(), {frames(1)}, OT_eq, {1e1}, NoArr, 1, +1, -1);
     }
 
     //-- no jump at start
@@ -281,23 +281,26 @@ void KOMO::addSwitch_mode2(const arr& times, SkeletonSymbol newMode, const Strin
     //-- no jump at end
     if(times(1)>=0){
       addObjective({times(1)}, FS_poseRel, {frames(1), frames(0)}, OT_eq, {1e2}, NoArr, 1, 0, 0);
-      if(k_order>1) addObjective({times(1)}, make_shared<F_LinAngVel>(), {frames(-1)}, OT_eq, {1e0}, NoArr, 2, +1, +1); //no acceleration of the object
+      if(k_order>1) addObjective({times(1)}, make_shared<F_LinAngVel>(), {frames(1)}, OT_eq, {1e0}, NoArr, 2, +1, +1); //no acceleration of the object
     }
 
   } else if(newMode==SY_dynamic) {
-    CHECK_EQ(frames.N, 1, "");
-    addSwitch(times, true, JT_free, SWInit_copy, world.frames.first()->name, frames(-1));
+    if(frames.N==1){
+      addSwitch(times, true, JT_free, SWInit_copy, world.frames.first()->name, frames(-1));
+    }else{
+      addSwitch(times, true, JT_free, SWInit_copy, frames(0), frames(1));
+   }
     //new contacts don't exist in step [-1], so we rather impose only zero acceleration at [-2,-1,0]
     if(firstSwitch){
       if(stepsPerPhase>3){
-        addObjective({times(0)}, FS_pose, {frames(-1)}, OT_eq, {1e2}, NoArr, 1, 0, +1); //overlaps with Newton-Euler -> requires forces!
+        addObjective({times(0)}, FS_pose, {frames(1)}, OT_eq, {1e2}, NoArr, 1, 0, +1); //overlaps with Newton-Euler -> requires forces!
       }else{
-        addObjective({times(0)}, FS_pose, {frames(-1)}, OT_eq, {1e2}, NoArr, 1, 0, 0);
+        addObjective({times(0)}, FS_pose, {frames(1)}, OT_eq, {1e2}, NoArr, 1, 0, 0);
       }
     }
     if(k_order>1){
       //... and physics starting from [-1,0,+1], ... until [-2,-1,-0]
-      addObjective(times, make_shared<F_NewtonEuler>(), {frames(-1)}, OT_eq, {1e2}, NoArr, 2, +1, 0);
+      addObjective(times, make_shared<F_NewtonEuler>(), {frames(1)}, OT_eq, {1e2}, NoArr, 2, +1, 0);
     }
   } else if(newMode==SY_quasiStaticOn) {
     CHECK_EQ(frames.N, 2, "");
@@ -306,20 +309,20 @@ void KOMO::addSwitch_mode2(const arr& times, SkeletonSymbol newMode, const Strin
     addSwitch(times, true, JT_transXYPhi, SWInit_copy, frames(0), frames(1), rel);
     //-- no jump at start
     if(firstSwitch){
-      addObjective({times(0)}, FS_pose, {frames(-1)}, OT_eq, {1e2}, NoArr, 1, 0, +1);
+      addObjective({times(0)}, FS_pose, {frames(1)}, OT_eq, {1e2}, NoArr, 1, 0, +1);
     }
 #if 0
-    addObjective(times, make_shared<F_NewtonEuler_DampedVelocities>(0., false), {frames(-1)}, OT_eq, {1e2}, NoArr, 1, +1, 0);
+    addObjective(times, make_shared<F_NewtonEuler_DampedVelocities>(0., false), {frames(1)}, OT_eq, {1e2}, NoArr, 1, +1, 0);
 #else
     //eq for 3DOFs only
-    ptr<Objective> o = addObjective(times, make_shared<F_NewtonEuler_DampedVelocities>(false), {frames(-1)}, OT_eq, {1e2}, NoArr, 1, +1, 0);
+    ptr<Objective> o = addObjective(times, make_shared<F_NewtonEuler_DampedVelocities>(false), {frames(1)}, OT_eq, {1e2}, NoArr, 1, +1, 0);
     o->feat->scale=1e2 * arr({3, 6}, {
       1, 0, 0, 0, 0, 0,
       0, 1, 0, 0, 0, 0,
       0, 0, 0, 0, 0, 1
     });
     //sos penalty of other forces
-    o = addObjective(times, make_shared<F_NewtonEuler_DampedVelocities>(false), {frames(-1)}, OT_sos, {1e0}, NoArr, 1, +1, 0);
+    o = addObjective(times, make_shared<F_NewtonEuler_DampedVelocities>(false), {frames(1)}, OT_sos, {1e0}, NoArr, 1, +1, 0);
     o->feat->scale=1e0 * arr({3, 6}, {
       0, 0, 1, 0, 0, 0,
       0, 0, 0, 1, 0, 0,
@@ -3402,12 +3405,12 @@ intA getSwitchesFromSkeleton(const Skeleton& S, const rai::Configuration& world)
   for(int i=0; i<(int)S.N; i++) {
     if(skeletonModes.contains(S.elem(i).symbol)) { //S(i) is about a switch
       int j=i-1;
-      rai::Frame *toBeSwitched = world[S.elem(i).frames(-1)];
+      rai::Frame *toBeSwitched = world[S.elem(i).frames(1)];
       rai::Frame *rootOfSwitch = toBeSwitched->getUpwardLink(NoTransformation, true);
       rai::Frame *childOfSwitch = toBeSwitched->getDownwardLink(true);
       for(; j>=0; j--) {
         if(skeletonModes.contains(S.elem(j).symbol)){ //S(j) is about a switch
-          const rai::String& prevSwitched = S.elem(j).frames.last();
+          const rai::String& prevSwitched = S.elem(j).frames(1);
           if(prevSwitched==toBeSwitched->name
              || prevSwitched==rootOfSwitch->name
              || prevSwitched==childOfSwitch->name)
@@ -3475,5 +3478,61 @@ Skeleton readSkeleton(std::istream& is){
     }
     S.append(SkeletonEntry(when(0), when(1), symbol, frames));
   }
+  return S;
+}
+
+Skeleton readSkeleton2(std::istream& is){
+  //-- first get a PRE-skeleton
+  rai::Graph G(is);
+  Skeleton S;
+  double phase0=1.;
+  for(rai::Node* step:G){
+    rai::Graph& stepG = step->graph();
+    for(rai::Node *lit:stepG){
+      StringA frames;
+      try{
+        frames = lit->get<StringA>();
+      } catch(std::runtime_error& err) {
+        LOG(-1) <<"Skeleton error step" <<phase0 <<" literal: " <<*lit <<" err: " <<err.what() <<endl;
+      }
+
+      rai::Enum<SkeletonSymbol> symbol;
+      rai::String& symb = frames.first();
+      double phase1 = phase0;
+      if(symb(-1)=='_'){
+        phase1=-1.;
+        symb.resize(symb.N-1, true);
+      }
+      try{
+        symbol = symb;
+      } catch(std::runtime_error& err) {
+        LOG(-1) <<"Skeleton error line " <<phase0 <<" literal: " <<*lit <<" err: " <<err.what() <<endl;
+      }
+
+      S.append(SkeletonEntry(phase0, phase1, symbol, frames({1,-1})));
+    }
+    phase0 += 1.;
+  }
+
+  cout <<"PRE_skeleton: " <<endl;
+  writeSkeleton(cout, S);
+
+  //-- fill in the missing phase1!
+  for(uint i=0;i<S.N;i++){
+    SkeletonEntry& si = S(i);
+    if(si.phase1==-1 && si.frames.N){
+      for(uint j=i+1;j<S.N;j++){
+        SkeletonEntry& sj = S(j);
+        if(sj.phase1==-1. && sj.frames.N && sj.frames.last()==si.frames.last()){ //this is also a mode symbol (due to phase1==-1.)
+          si.phase1 = sj.phase0;
+          break;
+        }
+      }
+    }
+  }
+
+  cout <<"TIMED_skeleton: " <<endl;
+  writeSkeleton(cout, S);
+
   return S;
 }
