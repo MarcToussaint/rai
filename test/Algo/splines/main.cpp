@@ -6,7 +6,7 @@ ScalarFunction cost = [](arr &g, arr &H, const arr &x) -> double{
   uint t;
   double C=0.;
   //obstacle
-  /*  for(t=0;t<f.d0;t++){
+  /*for(t=0;t<f.d0;t++){
     if(f(t,0)<1. && f(t,1)>0.){
       (*grad)(t,0) += .01*(f(t,0)-1.);
       (*grad)(t,1) += .01*f(t,1);
@@ -131,23 +131,28 @@ void TEST(BSpline){
 
 void TEST(BSpline2){
 
-  arr X({5, 1}, {0., 2., 1.9, 1.8, 2.});
-  arr T = {0., 10.9, 11., 11.1, 12.};
+  double tau=.1;
 
   rai::Spline S;
-  S.set(2, X, T);
+  arr X = {1.-tau, 1.};  X.reshape(-1,1);
+  arr T = {0., .1};
+  arr vel = {1.};
+//  T = {0, 0, 0, 0.05, 0.1, 0.1, 0.1};
+//  X = {.9,.925, 1., 1.};  X.reshape(-1,1);
+//  S.points = X;  S.times = T;
+  S.set(2, X, T, vel, -vel);
 
   cout <<"times = " <<S.times <<endl;
+  cout <<"points = " <<S.points <<endl;
 
   ofstream fil("z.test");
   rai::arrayBrackets="  ";
-  for(double t=T.first();t<=T.last();t+=.001){
-    fil <<t <<' ' <<S.eval(t) <<endl;
+  for(double t=S.begin();t<=S.end();t+=.001){
+    fil <<t <<' ' <<S.eval(t) /*<<' ' <<S.eval(t,1)*/ <<endl;
   }
   fil.close();
-  gnuplot("plot 'z.test' us 1:2", true);
-
-  plot()->Close();
+  gnuplot("set size square; plot [-.05:.15][.85:1.05] 'z.test' us 1:2, '' us 1:3, x+.9", true);
+  rai::wait();
 }
 
 void TEST(Path){
@@ -187,8 +192,8 @@ void TEST(Path){
 int MAIN(int argc,char** argv){
   rai::initCmdLine(argc, argv);
 
-  testBSpline();
-  //  testBSpline2();
+  //  testBSpline();
+  testBSpline2();
 //  testPath();
 
   return 0;

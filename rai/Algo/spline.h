@@ -38,7 +38,7 @@ struct Spline {
   void setBasisAndTimeGradient(uint T, uint K); ///< as above, but computes also gradient w.r.t. times
   void setUniformNonperiodicBasis(uint T, uint nPoints, uint degree); ///< sets the times uniformly, then computes basis
   void setUniformNonperiodicBasis();
-  void set(uint degree, const arr& points, const arr& times);
+  void set(uint degree, const arr& points, const arr& times, const arr& startVel=NoArr, const arr& endVel=NoArr);
 
   /// returns f(t/T) at one of the precomputed grid points of the basis matrix
   arr eval(uint t) const;
@@ -47,6 +47,8 @@ struct Spline {
   arr smooth(double lambda) const;
 
   double duration() { return times.last(); }
+  double begin(){ return times.elem(degree); }
+  double end(){ return times.elem(-degree-1); }
 
   /// gradient w.r.t. the points (trivial: mapping is linear)
   void partial(arr& grad_points, const arr& grad_path) const;

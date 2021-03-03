@@ -136,7 +136,7 @@ void Spline::setUniformNonperiodicBasis() {
   setUniformNonperiodicBasis(0, points.d0, degree);
 }
 
-void Spline::set(uint _degree, const arr& x, const arr& t) {
+void Spline::set(uint _degree, const arr& x, const arr& t, const arr& startVel, const arr& endVel) {
   CHECK_EQ(x.d0, t.N, "");
   degree = _degree;
 
@@ -145,11 +145,19 @@ void Spline::set(uint _degree, const arr& x, const arr& t) {
     points.prepend(x[0]);
     points.append(x[x.d0-1]);
   }
+  if(!!startVel){
+    CHECK_EQ(degree, 2, "");
+    points[1] += startVel*.25*(t(1)-t(0));
+  }
+  if(!!endVel){
+    CHECK_EQ(degree, 2, "");
+    points[-2] -= endVel*.25*(t(-1)-t(-2));
+  }
 
   uint m=t.N+2*degree;
   times.resize(m+1);
   for(uint i=0; i<=m; i++) {
-    if(i<=degree) times(i)=.0;
+    if(i<=degree) times(i)=t.first();
     else if(i>=m-degree) times(i)=t.last();
     else if((degree%2)) {
       times(i) = t(i-degree);
