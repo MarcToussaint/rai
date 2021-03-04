@@ -289,7 +289,7 @@ void KOMO::addSwitch_mode2(const arr& times, SkeletonSymbol newMode, const Strin
       addSwitch(times, true, JT_free, SWInit_copy, world.frames.first()->name, frames(-1));
     }else{
       addSwitch(times, true, JT_free, SWInit_copy, frames(0), frames(1));
-   }
+    }
     //new contacts don't exist in step [-1], so we rather impose only zero acceleration at [-2,-1,0]
     if(firstSwitch){
       if(stepsPerPhase>3){
@@ -301,6 +301,24 @@ void KOMO::addSwitch_mode2(const arr& times, SkeletonSymbol newMode, const Strin
     if(k_order>1){
       //... and physics starting from [-1,0,+1], ... until [-2,-1,-0]
       addObjective(times, make_shared<F_NewtonEuler>(), {frames(1)}, OT_eq, {1e2}, NoArr, 2, +1, 0);
+    }
+  } else if(newMode==SY_dynamicOn) {
+    CHECK_EQ(frames.N, 2, "");
+    Transformation rel = 0;
+    rel.pos.set(0, 0, .5*(shapeSize(world, frames(0)) + shapeSize(world, frames(1))));
+
+    addSwitch(times, true, JT_transXYPhi, SWInit_copy, frames(0), frames(1), rel);
+    //new contacts don't exist in step [-1], so we rather impose only zero acceleration at [-2,-1,0]
+    if(firstSwitch){
+      if(stepsPerPhase>3){
+        addObjective({times(0)}, FS_pose, {frames(1)}, OT_eq, {1e2}, NoArr, 1, 0, +1); //overlaps with Newton-Euler -> requires forces!
+      }else{
+        addObjective({times(0)}, FS_pose, {frames(1)}, OT_eq, {1e2}, NoArr, 1, 0, 0);
+      }
+    }
+
+    if(k_order>1){
+        addObjective(times, make_shared<F_NewtonEuler>(false), {frames(1)}, OT_eq, {1e2}, NoArr, 2, +1, 0);
     }
   } else if(newMode==SY_quasiStaticOn) {
     CHECK_EQ(frames.N, 2, "");
@@ -1376,8 +1394,8 @@ void KOMO::setSkeleton(const Skeleton& S, rai::ArgWord sequenceOrPath){
     setTiming(maxPhase, 1, 2., 1);
     add_qControlObjective({}, 1, 1e-1);
   }else{
-    setTiming(maxPhase, 30, 5., 2);
-    add_qControlObjective({}, 2, 1e0);
+    setTiming(maxPhase, 30, 2., 2);
+    add_qControlObjective({}, 2, 1e-1);
   }
   addSquaredQuaternionNorms();
 

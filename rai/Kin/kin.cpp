@@ -320,7 +320,7 @@ void Configuration::addCopies(const FrameL& F, const ForceExchangeL& _forces) {
     //take care of within-F mimic joints:
     if(f->joint && f->joint->mimic){
       CHECK(f->joint && f->joint->mimic, "");
-      f_new->joint->setMimic(frames.elem(FId2thisId(f->joint->mimic->frame->ID))->joint);
+      f_new->joint->setMimic(frames.elem(FId2thisId(f->joint->mimic->frame->ID))->joint, true);
     }
   }
 

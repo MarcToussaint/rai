@@ -20,6 +20,7 @@ rai::ForceExchange::ForceExchange(rai::Frame& a, rai::Frame& b, ForceExchangeTyp
   a.C.forces.append(this);
   setZero();
   if(copyContact) {
+    type = copyContact->type;
     poa = copyContact->poa;
     force = copyContact->force;
     torque = copyContact->torque;
@@ -141,7 +142,7 @@ void rai::ForceExchange::glDraw(OpenGL& gl) {
   }else if(type==FXT_torque || type==FXT_force){
     poa = b.getPosition();
   }
-  double scale = 1.;
+  double scale = 2.;
 
   arr _torque = torque;
   arr _force = force;

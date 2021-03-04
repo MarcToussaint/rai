@@ -87,6 +87,7 @@ double shapeSize(const rai::Configuration& K, const char* name, uint i=2) {
     for(rai::Frame* b:f->children) if(b->name==name && b->shape) { s=b->shape; break; }
   }
   if(!s) return 0;
+  if(s->type()==rai::ST_sphere) return 2.*s->radius();
   return s->size(i);
 }
 

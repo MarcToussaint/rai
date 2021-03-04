@@ -1,4 +1,4 @@
-frame table1{ shape=9, X=<T t(.0 0 .7)>, size=[1. 1. .1 .02], color=[.3 .3 .3 .7] contact }
+frame table1{ shape=ssBox, X=<T t(.0 0 .7)>, size=[1. 1. .1 .02], color=[.3 .3 .3 .7] contact }
 
 frame world (table1){ Q = <t(0 0 .1)> }
 

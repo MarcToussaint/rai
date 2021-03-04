@@ -636,11 +636,15 @@ const rai::Transformation& rai::Joint::Q() const {
   return frame->get_Q();
 }
 
-void rai::Joint::setMimic(rai::Joint* j){
+void rai::Joint::setMimic(rai::Joint* j, bool unsetPreviousMimic){
   if(!j){
     if(mimic) mimic->mimicers.removeValue(this);
     mimic=0;
   }else{
+    if(mimic && unsetPreviousMimic){
+      mimic->mimicers.removeValue(this);
+      mimic=0;
+    }
     CHECK(!mimic,"");
     mimic=j;
     mimic->mimicers.append(this);

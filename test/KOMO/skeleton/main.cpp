@@ -119,6 +119,32 @@ void testPickAndThrow(bool keyframesOnly){
 
 //===========================================================================
 
+void testTouchAndRoll(rai::ArgWord pathOrSeq){
+  rai::Configuration C;
+  C.addFile("model.g");
+
+  KOMO komo;
+
+  komo.setModel(C, false);
+
+  //grasp
+  Skeleton S = {
+    { 1., 1., SY_touch, {"handB", "ball"} },
+    { 1., 1.2, SY_contact, {"handB", "ball"} },
+    { 1., -1., SY_dynamicOn, {"table", "ball"} },
+    { 2., 2., SY_touch, {"ball", "box"} },
+  };
+  komo.setSkeleton(S, pathOrSeq);
+
+  komo.optimize();
+
+  komo.getReport(true);
+  komo.view(true, "optimized motion");
+  while(komo.view_play(true, 1.));
+}
+
+//===========================================================================
+
 void testWalkAndPick(bool keyframesOnly){
   rai::Configuration C;
   C.addFile("model.g");
@@ -338,7 +364,7 @@ void testWalking(bool keyframesOnly){
 int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
-  rnd.clockSeed();
+//  rnd.clockSeed();
 
 //  testPickAndPlace(false);
 //  testPickAndPlace(true);
@@ -346,10 +372,12 @@ int main(int argc,char** argv){
 //  testPickAndPush(true);
 //  testPickAndThrow(false);
 //  testPickAndThrow(true);
+  testTouchAndRoll(rai::_path);
+//  testTouchAndRoll(rai::_sequence);
 //  testWalkAndPick(false);
 //  testWalkAndPick(true);
 //  testWalking(false);
-  testWalking(true);
+//  testWalking(true);
 //  testHandover(false);
 //  testHandover(true);
 //  testStackAndBalance(false);

@@ -207,7 +207,7 @@ struct Joint : NonCopyable {
   const Transformation& Q() const; ///< the transformation realized by this joint (i.e. from parent->X to frame->X)
   Frame* from() const { return frame->parent; }
 
-  void setMimic(Joint* j);
+  void setMimic(Joint* j, bool unsetPreviousMimic=false);
   uint qDim();
   void calc_Q_from_q(const arr& q, uint n);
   arr calc_q_from_Q(const Transformation& Q) const;

@@ -304,14 +304,16 @@ void F_NewtonEuler::phi2(arr& y, arr& J, const FrameL& F) {
   Value fo = F_TotalForce(true) // ignore gravity
              .eval({F.elem(-2)}); // ! THIS IS THE MID TIME SLICE !
 
-  //-- collect gravity change-of-velocities -> MULTIPLIES WITH TAU! (this is where tau optimization has major effect!)
-  Value grav = F_GravityAcceleration()
-               .setImpulseInsteadOfAcceleration()
-               .eval({F.elem(-1)}); //END TIME SLICE!
+  if(useGravity){
+    //-- collect gravity change-of-velocities -> MULTIPLIES WITH TAU! (this is where tau optimization has major effect!)
+    Value grav = F_GravityAcceleration()
+                 .setImpulseInsteadOfAcceleration()
+                 .eval({F.elem(-1)}); //END TIME SLICE!
 
-  //-- subtract nominal gravity change-of-velocity from object change-of-velocity
-  acc.y -= grav.y;
-  acc.J -= grav.J;
+    //-- subtract nominal gravity change-of-velocity from object change-of-velocity
+    acc.y -= grav.y;
+    acc.J -= grav.J;
+  }
 #else
   //-- add static and exchange forces
   Value fo = F_TotalForce(false)
