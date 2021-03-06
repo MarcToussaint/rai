@@ -26,3 +26,14 @@ struct BulletInterface {
 
   void saveBulletFile(const char* filename);
 };
+
+
+struct BulletBridge{
+  class btDiscreteDynamicsWorld* dynamicsWorld;
+  rai::Array<class btRigidBody*> actors;
+
+  BulletBridge(class btDiscreteDynamicsWorld* _dynamicsWorld);
+
+  void getConfiguration(rai::Configuration& C);
+  void pullPoses(rai::Configuration& C, bool alsoStaticAndKinematic);
+};

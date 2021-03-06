@@ -114,15 +114,15 @@ void BulletInterface::step(double tau) {
   self->dynamicsWorld->stepSimulation(tau);
 }
 
-void BulletInterface::pullDynamicStates(FrameL& frames, arr& frameVelocities) {
+void pullPoses(FrameL& frames, const rai::Array<btRigidBody*>& actors, arr& frameVelocities, bool alsoStaticAndKinematic){
   if(!!frameVelocities) frameVelocities.resize(frames.N, 2, 3).setZero();
 
   for(rai::Frame* f : frames) {
-    if(self->actors.N <= f->ID) continue;
-    btRigidBody* b = self->actors(f->ID);
+    if(actors.N <= f->ID) continue;
+    btRigidBody* b = actors(f->ID);
     if(!b) continue;
 
-    if(self->actorTypes(f->ID) == rai::BT_dynamic) {
+    if(alsoStaticAndKinematic || !b->isStaticOrKinematicObject()){
       rai::Transformation X;
       btTransform pose;
       if(b->getMotionState()) {
@@ -138,6 +138,10 @@ void BulletInterface::pullDynamicStates(FrameL& frames, arr& frameVelocities) {
       }
     }
   }
+}
+
+void BulletInterface::pullDynamicStates(FrameL& frames, arr& frameVelocities) {
+  pullPoses(frames, self->actors, frameVelocities, false);
 }
 
 void BulletInterface::changeObjectType(rai::Frame* f, int _type) {
@@ -340,6 +344,50 @@ btCollisionShape* BulletInterface_self::createCompoundCollisionShape(rai::Frame*
   }
   return colShape;
 }
+
+BulletBridge::BulletBridge(btDiscreteDynamicsWorld* _dynamicsWorld) : dynamicsWorld(_dynamicsWorld) {
+  btCollisionObjectArray& collisionObjects = dynamicsWorld->getCollisionObjectArray();
+  actors.resize(collisionObjects.size()).setZero();
+  for(int i=0;i<collisionObjects.size();i++){
+    actors(i) = btRigidBody::upcast(collisionObjects[i]);
+  }
+}
+
+void BulletBridge::getConfiguration(rai::Configuration& C){
+  btCollisionObjectArray& collisionObjects = dynamicsWorld->getCollisionObjectArray();
+  for(int i=0;i<collisionObjects.size();i++){
+    btCollisionObject* obj = collisionObjects[i];
+    btCollisionShape* shape = obj->getCollisionShape();
+    btRigidBody* body = btRigidBody::upcast(obj);
+    rai::Transformation X;
+    btTransform pose;
+    if(body->getMotionState()) {
+      body->getMotionState()->getWorldTransform(pose);
+    } else {
+      NIY; //trans = obj->getWorldTransform();
+    }
+    btTrans2raiTrans(X, pose);
+    cout <<"OBJECT " <<i <<" pose: " <<X <<" shapeType: " <<shape->getShapeType() <<' ' <<shape->getName();
+    switch(shape->getShapeType()){
+      case BOX_SHAPE_PROXYTYPE:{
+        btBoxShape* box = dynamic_cast<btBoxShape*>(shape);
+        arr size = 2.*conv_btVec3_arr(box->getHalfExtentsWithMargin());
+        cout <<" margin: " <<box->getMargin() <<" size: " <<size;
+        C.addFrame(STRING("obj"<<i)) ->setShape(rai::ST_box, size). setPose(X);
+      } break;
+      default: NIY;
+    }
+    cout <<endl;
+  }
+}
+
+
+
+void BulletBridge::pullPoses(rai::Configuration& C, bool alsoStaticAndKinematic){
+  CHECK_EQ(C.frames.N, actors.N, "");
+  ::pullPoses(C.frames, actors, NoArr, alsoStaticAndKinematic);
+}
+
 
 #else
 
