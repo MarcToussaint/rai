@@ -362,6 +362,7 @@ extern String errString;
 #  define HALT(msg){ LOG(-2) <<msg; throw std::runtime_error(rai::errString.p); }
 #  define NIY  { LOG(-2) <<"not implemented yet"; exit(1); }
 #  define NICO { LOG(-2) <<"not implemented with this compiler options: usually this means that the implementation needs an external library and a corresponding compiler option - see the source code"; exit(1); }
+#  define DEPR { LOG(0) <<"this method is deprecated -- please see the code to replace (should be only a rename or one liner)"; }
 #endif
 
 //----- check macros:

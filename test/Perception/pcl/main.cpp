@@ -1,4 +1,7 @@
 #include <Core/array.h>
+
+#ifdef RAI_PCL
+
 #include <Geo/depth2PointCloud.h>
 #include <Gui/viewer.h>
 #include <Gui/opengl.h>
@@ -118,6 +121,9 @@ void testPcl(){
 
   cout <<"bye bye" <<endl;
 }
+#else //RAI_PCL
+void testPcl(){ NICO }
+#endif
 
 
 int main(int argc,char **argv) {
@@ -127,6 +133,8 @@ int main(int argc,char **argv) {
 
   return 0;
 }
+
+
 
 #if 0
 pcl::MarchingCubesHoppe<pcl::PointXYZRGBNormal> hoppe;

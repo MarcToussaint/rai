@@ -397,7 +397,8 @@ from broadphase collision computation)",
     CHECK_GE(numConfigs, 1, "");
     auto komo = make_shared<KOMO>();
     komo->setModel(*self, useSwift);
-    komo->setDiscreteOpt(numConfigs);
+    komo->setTiming(numConfigs, 1, 1., 1);
+    komo->addSquaredQuaternionNorms();
     return komo;
   },
   "create KOMO solver configured for dense graph optimization, \

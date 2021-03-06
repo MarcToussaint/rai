@@ -172,7 +172,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
 //  COUNT_evals += komo->opt->newton.evals;
   COUNT_kin += rai::Configuration::setJointStateCount;
   COUNT_opt(bound)++;
-  COUNT_time += komo->runTime;
+  COUNT_time += komo->timeTotal;
   count(bound)++;
 
   DEBUG(komo->getReport(false, 1, FILE("z.problem")););
@@ -214,7 +214,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
     constraints(bound) = constraints_here;
     feasible(bound) = feas;
     opt(bound) = komo->x;
-    computeTime(bound) = komo->runTime;
+    computeTime(bound) = komo->timeTotal;
   }
 
   if(!feasible(bound))
