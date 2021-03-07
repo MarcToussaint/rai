@@ -113,6 +113,7 @@ struct Configuration : GLDrawer {
   StringA getFrameNames() const;
   FrameL getJoints(bool activesOnly=true) const;
   FrameL getJointsSlice(uint t, bool activesOnly=true) const;
+  FrameL getJointsSlice(const FrameL& slice, bool activesOnly=true) const;
   uintA getJointIDs() const;
   StringA getJointNames() const;
   uintA getCtrlFramesAndScale(arr& scale=NoArr) const;

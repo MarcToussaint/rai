@@ -130,6 +130,7 @@ struct KOMO : NonCopyable {
   //-- internals
   rai::Configuration world;       ///< original configuration; which is the blueprint for all time-slice worlds (almost const: only makeConvexHulls modifies it)
   rai::Configuration pathConfig;  ///< configuration containing full path (T+k_order copies of world, with switches applied)
+  uintA orgJointIndices;          ///< set of joint IDs (IDs of frames with dofs) of the original world
   FrameL timeSlices;              ///< the original timeSlices of the pathConfig (when switches add frames, pathConfig.frames might differ from timeSlices - otherwise not)
   bool computeCollisions;         ///< whether swift or fcl (collisions/proxies) is evaluated whenever new configurations are set (needed if features read proxy list)
   shared_ptr<rai::FclInterface> fcl;
@@ -175,11 +176,8 @@ struct KOMO : NonCopyable {
                                      ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr, int order=-1, int deltaFromStep=0, int deltaToStep=0);
   ptr<struct Objective> addObjective(const arr& times, const FeatureSymbol& feat, const StringA& frames,
                                      ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr, int order=-1, int deltaFromStep=0, int deltaToStep=0);
+  void clearObjectives(); ///< clear all objective
 
-  void addSwitch(const arr& times, bool before, rai::KinematicSwitch* sw);
-  rai::KinematicSwitch* addSwitch(const arr& times, bool before, rai::JointType type, rai::SwitchInitializationType init,
-                 const char* ref1, const char* ref2,
-                 const rai::Transformation& jFrom=NoTransformation, const rai::Transformation& jTo=NoTransformation);
   void addContact_slide(double startTime, double endTime, const char* from, const char* to);
   void addContact_stick(double startTime, double endTime, const char* from, const char* to);
   void addContact_elasticBounce(double time, const char* from, const char* to, double elasticity=.8, double stickiness=0.);
@@ -189,7 +187,6 @@ struct KOMO : NonCopyable {
   void addContact_staticPush(double startTime, double endTime, const char* from, const char* to);
 
   void getBounds(arr& bounds_lo, arr& bounds_up);       ///< define the bounds (passed to the constrained optimization) based on the limit definitions of all DOFs
-  void clearObjectives(); ///< clear all objective
 
   //===========================================================================
   //
@@ -206,8 +203,17 @@ struct KOMO : NonCopyable {
   void setSlowAround(double time, double delta, double prec=1e1, bool hardConstrained=false);
 
   //-- core kinematic switch symbols of skeletons
-  void addSwitch_mode2(const arr& times, SkeletonSymbol newMode, const StringA& frames, bool firstSwitch);
+protected:
+  //low-level add dof switches
+  void addSwitch(const arr& times, bool before, rai::KinematicSwitch* sw);
+  rai::KinematicSwitch* addSwitch(const arr& times, bool before, rai::JointType type, rai::SwitchInitializationType init,
+                 const char* ref1, const char* ref2,
+                 const rai::Transformation& jFrom=NoTransformation, const rai::Transformation& jTo=NoTransformation);
+public:
+  //add a mode switch: both, the low-level dof switches and corresponding constraints of consistency
+  void addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA& frames, bool firstSwitch);
 
+  //1-liner specializations of setModeSwitch:
   void addSwitch_stable(double time, double endTime, const char* prevFrom, const char* from, const char* to, bool firstSwitch=true);
   void addSwitch_stableOn(double time, double endTime, const char* prevFrom, const char* from, const char* to, bool firstSwitch);
   void addSwitch_dynamic(double time, double endTime, const char* from, const char* to, bool dampedVelocity=false);
@@ -231,7 +237,8 @@ struct KOMO : NonCopyable {
   //
 
   //-- setting individual time slices
-  void setConfiguration(int t, const arr& q); ///< t<0 allows to set the prefix configurations; while 0 <= t < T allows to set all other initial configurations
+  void setConfiguration_qAll(int t, const arr& q); ///< t<0 allows to set the prefix configurations; while 0 <= t < T allows to set all other initial configurations
+  void setConfiguration_qOrg(int t, const arr& q); ///< set only those DOFs that were defined in the original world (excluding extra DOFs from switches)
   void setConfiguration_X(int t, const arr& X); ///< t<0 allows to set the prefix configurations; while 0 <= t < T allows to set all other initial configurations
   void initWithConstant(const arr& q); ///< set all configurations EXCEPT the prefix to a particular state
   void initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase=1, bool sineProfile=true); ///< set all configurations (EXCEPT prefix) to interpolate given waypoints
@@ -246,13 +253,14 @@ struct KOMO : NonCopyable {
   void setSpline(uint splineT);      ///< optimize B-spline nodes instead of the path; splineT specifies the time steps per node
 
   //-- reading results
-  arr getConfiguration_q(int t);
-  arr getPath_decisionVariable();              ///< get all DOFs of all configurations in a single flat vector (the decision variable of optimization)
-  arr getPath(uintA joints={}, const bool activesOnly=true);      ///< get joint path, optionally for selected joints
-  arr getPath_frames(const uintA& frames={});     ///< get frame path, optionally for selected frames
-  arr getFrameState(int t);     ///< get frame path for selected frames
-  arr getPath_q(int t);     ///< get frame path for selected frames
-  arrA getPath_q();                            ///< get the DOFs (of potentially varying dimensionality) for each configuration
+  arr getConfiguration_qAll(int t);  ///< get all DOFs
+  arr getConfiguration_qOrg(int t);  ///< get only those DOFs that were defined in the original world (excluding extra DOFs from switches)
+  arr getConfiguration_X(int t);     ///< get frame path for selected frames
+
+  arrA getPath_qAll();                            ///< get the DOFs (of potentially varying dimensionality) for each configuration
+  arr getPath_qOrg();      ///< get joint path, optionally for selected joints
+  arr getPath_X();     ///< get frame path, optionally for selected frames
+
   arr getPath_tau();
   arr getPath_times();
   arr getPath_energies();
@@ -432,6 +440,9 @@ struct KOMO : NonCopyable {
   }
   void activateCollisions(const char* s1, const char* s2){ DEPR; HALT("see komo-21-03-06"); }
   void deactivateCollisions(const char* s1, const char* s2);
-
+  arr getFrameStateX(int t){ DEPR; return getConfiguration_X(t); }
+  arr getPath_qAll(int t){ DEPR; return getConfiguration_qOrg(t); }
+  arr getConfiguration_q(int t) { DEPR; return getConfiguration_qAll(t); }
+  arr getPath_qOrg(uintA joints, const bool activesOnly){ DEPR; return getPath_qOrg(); }
 };
 

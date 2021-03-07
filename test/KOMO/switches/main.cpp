@@ -46,7 +46,7 @@ void TEST(Grasp){
   rai::Graph result = komo.getReport(true);
 
 //  for(uint i=0;i<2;i++) if(!komo.displayTrajectory(.1, true)) break;
-  V.setPath(komo.getPath_frames(), "optimized motion", true);
+  V.setPath(komo.getPath_X(), "optimized motion", true);
   for(uint i=0;i<2;i++) V.playVideo(true);
 }
 

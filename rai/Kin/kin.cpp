@@ -390,6 +390,15 @@ FrameL Configuration::getJointsSlice(uint t, bool activesOnly) const{
   return F;
 }
 
+FrameL Configuration::getJointsSlice(const FrameL& slice, bool activesOnly) const{
+  FrameL F;
+  for(auto* f:slice){
+    if((f->joint && (!activesOnly || f->joint->active))
+       || f->forces.N)  F.append(f);
+  }
+  return F;
+}
+
 /// get the frame IDs of all active joints
 uintA Configuration::getJointIDs() const {
   ((Configuration*)this)->ensure_indexedJoints();
@@ -541,7 +550,7 @@ void Configuration::setJointState(const arr& _q, const FrameL& F, bool activesOn
   for(Frame* f:F) {
     Joint* j = f->joint;
     if(!j && !f->forces.N) HALT("frame '" <<f->name <<"' is not a joint and has no forces!");
-    CHECK_LE(nd+j->dim,_q.N, "given q-vector too small");
+    if(!j->mimic) CHECK_LE(nd+j->dim,_q.N, "given q-vector too small");
     if(!j) continue;
     if(j->active){
       if(!j->mimic){

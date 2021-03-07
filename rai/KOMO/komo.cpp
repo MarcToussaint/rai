@@ -90,6 +90,7 @@ KOMO::~KOMO() {
 }
 
 void KOMO::setModel(const Configuration& C, bool _computeCollisions) {
+  orgJointIndices = C.getJointIDs();
   if(&C!=&world) world.copy(C, _computeCollisions);
   computeCollisions = _computeCollisions;
   if(computeCollisions) {
@@ -214,7 +215,7 @@ KinematicSwitch* KOMO::addSwitch(const arr& times, bool before,
   return sw;
 }
 
-void KOMO::addSwitch_mode2(const arr& times, SkeletonSymbol newMode, const StringA& frames, bool firstSwitch) {
+void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA& frames, bool firstSwitch) {
   //-- creating a stable kinematic linking
   if(newMode==SY_stable || newMode==SY_stableOn){
     if(newMode==SY_stable) {
@@ -320,11 +321,11 @@ void KOMO::addSwitch_mode2(const arr& times, SkeletonSymbol newMode, const Strin
 }
 
 void KOMO::addSwitch_stable(double time, double endTime, const char* prevFrom, const char* from, const char* to, bool firstSwitch) {
-  addSwitch_mode2({time, endTime}, SY_stable, {from, to}, firstSwitch);
+  addModeSwitch({time, endTime}, SY_stable, {from, to}, firstSwitch);
 }
 
 void KOMO::addSwitch_stableOn(double time, double endTime, const char* prevFrom, const char* from, const char* to, bool firstSwitch) {
-  addSwitch_mode2({time, endTime}, SY_stableOn, {from, to}, firstSwitch);
+  addModeSwitch({time, endTime}, SY_stableOn, {from, to}, firstSwitch);
 }
 
 void KOMO::addSwitch_dynamic(double time, double endTime, const char* from, const char* to, bool dampedVelocity) {
@@ -529,7 +530,7 @@ void KOMO::setSkeleton(const Skeleton& S) {
   for(uint i=0; i<switches.d0; i++) {
     int j = switches(i, 0);
     int k = switches(i, 1);
-    addSwitch_mode2({S(k).phase0, S(k).phase1}, S(k).symbol, S(k).frames, j<0);
+    addModeSwitch({S(k).phase0, S(k).phase1}, S(k).symbol, S(k).frames, j<0);
   }
   //-- add objectives for rest
   for(const SkeletonEntry& s:S) {
@@ -719,69 +720,57 @@ void KOMO::setIKOpt() {
   addSquaredQuaternionNorms();
 }
 
-void KOMO::setConfiguration(int t, const arr& q) {
-  FrameL F;
-  for(auto* f:timeSlices[k_order+t]) if(f->joint) F.append(f);
-  pathConfig.setJointState(q, F, false);
+void KOMO::setConfiguration_qAll(int t, const arr& q) {
+  pathConfig.setJointState(q, pathConfig.getJointsSlice(timeSlices[k_order+t], false), false);
+}
+
+arr KOMO::getConfiguration_qAll(int t) {
+  return pathConfig.getJointState(pathConfig.getJointsSlice(timeSlices[k_order+t], false), false);
 }
 
 void KOMO::setConfiguration_X(int t, const arr& X) {
   pathConfig.setFrameState(X, timeSlices[k_order+t]);
 }
 
-arr KOMO::getConfiguration_q(int t) {
-  FrameL F;
-  for(auto* f:timeSlices[k_order+t]) if(f->joint) F.append(f);
-  return pathConfig.getJointState(F, false);
-}
-
-arr KOMO::getFrameState(int t) {
+arr KOMO::getConfiguration_X(int t) {
   return pathConfig.getFrameState(timeSlices[k_order+t]);
 }
 
-arr KOMO::getPath_q(int t) {
-  uintA F = jointsToIndices(world.activeJoints);
-  F += timeSlices(k_order+t,0)->ID;
-  return pathConfig.getJointState(F);
+arr KOMO::getConfiguration_qOrg(int t) {
+  return pathConfig.getJointState(orgJointIndices + timeSlices(k_order+t,0)->ID);
 }
 
-arr KOMO::getPath(uintA joints, const bool activesOnly){
-  if(!joints.N) joints = jointsToIndices( world.activeJoints );
-  arr q = pathConfig.getJointState(joints+timeSlices(0+k_order,0)->ID, activesOnly);
+void KOMO::setConfiguration_qOrg(int t, const arr& q) {
+  return pathConfig.setJointState(q, orgJointIndices + timeSlices(k_order+t,0)->ID);
+}
+
+arr KOMO::getPath_qOrg(){
+  arr q = getConfiguration_qOrg(0);
   q.resizeCopy(T, q.N);
   for(uint t=1; t<T; t++) {
-    q[t] = pathConfig.getJointState(joints+timeSlices(t+k_order,0)->ID, activesOnly);
+    q[t] = getConfiguration_qOrg(t);
   }
   return q;
 }
 
-arr KOMO::getPath_frames(const uintA& frames) {
-  CHECK(!frames.N, "NIY");
+arr KOMO::getPath_X() {
   arr X(T, timeSlices.d1, 7);
   for(uint t=0; t<T; t++) {
-    X[t] = pathConfig.getFrameState(timeSlices[k_order+t]);
+    X[t] = getConfiguration_X(t);
   }
   return X;
 }
 
-arrA KOMO::getPath_q() {
+arrA KOMO::getPath_qAll() {
   arrA q(T);
-  for(uint t=0; t<T; t++) {
-    FrameL F;
-    for(auto* f:timeSlices[k_order+t]) if(f->joint && f->joint->active) F.append(f);
-    q(t) = pathConfig.getJointState(F, true);
-  }
+  for(uint t=0; t<T; t++) q(t) = getConfiguration_qAll(t);
   return q;
 }
 
 arr KOMO::getPath_tau() {
-  bool hasTau = world.hasTauJoint();
-  if(!hasTau) return consts<double>(tau, T);
   arr X(T);
   for(uint t=0; t<T; t++) {
-    rai::Frame *first = timeSlices(t+k_order,0);
-    CHECK(first->joint && first->joint->type==JT_tau, "");
-    X(t) = first->tau;
+    pathConfig.kinematicsTau(X(t), NoArr, timeSlices(t+k_order,0));
   }
   return X;
 }
@@ -822,7 +811,7 @@ arr KOMO::getActiveConstraintJacobian() {
 
 void KOMO::initWithConstant(const arr& q) {
   for(uint t=0; t<T; t++) {
-    setConfiguration(t, q);
+    setConfiguration_qAll(t, q);
   }
   run_prepare(0.);
 }
@@ -842,12 +831,12 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, 
     uint Tstop=T;
     if(i+1<steps.N && steps(i+1)<T) Tstop=steps(i+1);
     for(uint t=steps(i); t<Tstop; t++) {
-      setConfiguration(t, waypoints(i));
+      setConfiguration_qAll(t, waypoints(i));
     }
   }
 #else
   for(uint i=0; i<steps.N; i++) {
-    if(steps(i)<T) setConfiguration(steps(i), waypoints(i));
+    if(steps(i)<T) setConfiguration_qAll(steps(i), waypoints(i));
   }
 #endif
 
@@ -1433,8 +1422,8 @@ rai::Graph KOMO::getProblemGraph(bool includeValues, bool includeSolution) {
 
   if(includeSolution) {
     //full configuration paths
-    g.newNode<arr>({"X"}, {}, getPath_frames());
-    g.newNode<arrA>({"x"}, {}, getPath_q());
+    g.newNode<arr>({"X"}, {}, getPath_X());
+    g.newNode<arrA>({"x"}, {}, getPath_qAll());
     g.newNode<arr>({"dual"}, {}, dual);
   }
 
@@ -1616,7 +1605,7 @@ KOMO::Conv_KOMO_FactoredNLP::Conv_KOMO_FactoredNLP(KOMO& _komo) : komo(_komo) {
   for(uint t=0; t<komo.T; t++) {
     VariableIndexEntry& V = variableIndex(t);
     V.t = t;
-    V.dim = komo.getConfiguration_q(t).N; //.configurations(t+komo.k_order)->getJointStateDimension();
+    V.dim = komo.getConfiguration_qAll(t).N; //.configurations(t+komo.k_order)->getJointStateDimension();
     V.xIndex = count;
     for(uint i=0; i<V.dim; i++) xIndex2VarId(count++) = t;
   }

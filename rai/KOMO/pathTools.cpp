@@ -107,9 +107,9 @@ rai::String validatePath(const rai::Configuration& _C, const arr& q_now, const S
 //  }
 //}
 
-std::pair<arr, arr> getStartGoalPath(const rai::Configuration& K, const arr& target_q, const StringA& target_joints, const char* endeff, double up, double down) {
+std::pair<arr, arr> getStartGoalPath(const rai::Configuration& C, const arr& target_q, const StringA& target_joints, const char* endeff, double up, double down) {
   KOMO komo;
-  komo.setModel(K, true);
+  komo.setModel(C, true);
   komo.setTiming(1., 20, 3.);
   komo.add_qControlObjective({}, 2, 1.);
 
@@ -130,10 +130,10 @@ std::pair<arr, arr> getStartGoalPath(const rai::Configuration& K, const arr& tar
   komo.verbose=1;
   komo.optimize();
 
-  arr path = komo.getPath(K.getJointIDs());
+  arr path = komo.getPath_qOrg();
   path[path.d0-1] = target_q; //overwrite last config
   arr times = komo.getPath_times();
-  cout <<validatePath(K, K.getJointState(), target_joints, path, times) <<endl;
+  cout <<validatePath(C, C.getJointState(), target_joints, path, times) <<endl;
   int key = komo.view(true);
   if(key=='q') {
     cout <<"ABORT!" <<endl;

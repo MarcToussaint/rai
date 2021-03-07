@@ -90,7 +90,7 @@ void testBounds(){
   node->optBound(bound, true, 2);
 //  auto gl = make_shared<OpenGL>();
 //  node->displayBound(gl, bound);
-  V.setPath(node->komoProblem(bound)->getPath_frames(), "", true);
+  V.setPath(node->komoProblem(bound)->getPath_X(), "", true);
   for(uint i=0;i<2;i++) V.playVideo(true, 3.);
 }
 

@@ -173,9 +173,9 @@ void init_KOMO(pybind11::module& m) {
     return self->T;
   })
 
-  .def("getFrameState", &KOMO::getFrameState)
+  .def("getFrameState", &KOMO::getConfiguration_X)
 
-  .def("getPathFrames", &KOMO::getPath_frames)
+  .def("getPathFrames", &KOMO::getPath_X)
 //  .def("getPathFrames", [](std::shared_ptr<KOMO>& self, const ry::I_StringA& frames) {
 //    arr X = self->getPath_frames(I_conv(frames));
 //    return pybind11::array(X.dim(), X.p);

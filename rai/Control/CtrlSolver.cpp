@@ -61,11 +61,11 @@ ptr<CtrlObjective> CtrlSolver::addObjective(const FeatureSymbol& feat, const Str
 void CtrlSolver::update(rai::Configuration& C) {
   //-- update the KOMO configurations (push one step back, and update current configuration)
   //the joint state:
-  arr qold = komo.getConfiguration_q(-1);
+  arr qold = komo.getConfiguration_qAll(-1);
   arr q = C.getJointState();
-  for(int t=-komo.k_order; t<0; t++) komo.setConfiguration(t, komo.getConfiguration_q(t+1));
-  komo.setConfiguration(-1, q);
-  komo.setConfiguration(0, q); // + (q-qold));
+  for(int t=-komo.k_order; t<0; t++) komo.setConfiguration_qAll(t, komo.getConfiguration_qAll(t+1));
+  komo.setConfiguration_qAll(-1, q);
+  komo.setConfiguration_qAll(0, q); // + (q-qold));
   //the frame state of roots only:
   uintA roots = framesToIndices(C.getRoots());
   arr X = C.getFrameState(roots);
@@ -136,7 +136,7 @@ arr CtrlSolver::solve() {
   }
 //  komo.checkGradients();
 //  komo.pathConfig.watch(false, "komo");
-  return komo.getPath_q(0);
+  return komo.getConfiguration_qOrg(0);
 #else
   return solve_optim(*this);
 #endif

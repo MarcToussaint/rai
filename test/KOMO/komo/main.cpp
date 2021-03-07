@@ -59,7 +59,7 @@ void TEST(Align){
 //  komo.plotTrajectory();
   rai::ConfigurationViewer V;
   V.setConfiguration(C);
-  V.setPath(komo.getPath_frames(), "optimized motion", true);
+  V.setPath(komo.getPath_X(), "optimized motion", true);
   for(uint i=0;i<2;i++) V.playVideo();
 
 //  komo.pathConfig.setJointState(komo.x);

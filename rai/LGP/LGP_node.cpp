@@ -119,7 +119,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
   arrA waypoints;
   if(bound==BD_seqPath || bound==BD_seqVelPath) {
     CHECK(komoProblem(BD_seq), "BD_seq needs to be computed before");
-    waypoints = komoProblem(BD_seq)->getPath_q();
+    waypoints = komoProblem(BD_seq)->getPath_qAll();
   }
 
   auto comp = skeleton2Bound(komo, bound, S,
@@ -531,7 +531,7 @@ void LGP_Node::displayBound(ptr<OpenGL>& gl, BoundType bound) {
     s <<"BOUND " <<_bound <<" at step " <<step;
 //    komoProblem(bound)->gl = gl;
     V.setConfiguration(komoProblem(bound)->world, s);
-    V.setPath(komoProblem(bound)->getPath_frames(), s, true);
+    V.setPath(komoProblem(bound)->getPath_X(), s, true);
     if(bound>=BD_path && bound<=BD_seqVelPath){
 //      while(komoProblem(bound)->displayTrajectory(.1, true, false));
       while(V.playVideo(true, 1.*komoProblem(bound)->T/komoProblem(bound)->stepsPerPhase));
