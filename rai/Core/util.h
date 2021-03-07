@@ -360,8 +360,8 @@ extern String errString;
 #  define RAI_MSG(msg){ LOG(-1) <<msg; }
 #  define THROW(msg){ LOG(-1) <<msg; throw std::runtime_error(rai::errString.p); }
 #  define HALT(msg){ LOG(-2) <<msg; throw std::runtime_error(rai::errString.p); }
-#  define NIY  { LOG(-2) <<"not implemented yet"; exit(1); }
-#  define NICO { LOG(-2) <<"not implemented with this compiler options: usually this means that the implementation needs an external library and a corresponding compiler option - see the source code"; exit(1); }
+#  define NIY  { LOG(-2) <<"not implemented yet"; exit(2); }
+#  define NICO { LOG(-2) <<"not implemented with this compiler options: usually this means that the implementation needs an external library and a corresponding compiler option - see the source code"; exit(3); }
 #  define DEPR { LOG(0) <<"this method is deprecated -- please see the code to replace (should be only a rename or one liner)"; }
 #endif
 

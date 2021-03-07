@@ -11,7 +11,7 @@ if [ $RETVAL = 124 ]; then
     echo "     ***** TIMEOUT " $1
     echo "  ****TIMEOUT****" $1 $RETVAL >> $THISPATH/z.test-report
 elif [ $RETVAL != 0 ]; then
-    echo "     ***** FAILED  " $1 " with return code " $RETVAL
+    echo "     ***** FAILED  " $1 " with return code " $RETVAL " (2=NIY 3=NICO 134=HALT)"
     echo "  ****FAILED****" $1 $RETVAL >> $THISPATH/z.test-report
 fi
 echo "         * Done " $1 $RETVAL >> $THISPATH/z.test-report

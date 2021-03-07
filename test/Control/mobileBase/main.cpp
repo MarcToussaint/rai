@@ -45,7 +45,7 @@ struct WheelConstraint : Feature{
 void controlMobile(){
 
   rai::Configuration C;
-  C.addFile("../../../../rai-robotModels/scenarios/mobileBase.g");
+  C.addFile("../../../../rai-robotModels/holoDrive/sketchBase.g");
 
   rai::ConfigurationViewer V;
   V.setConfiguration(C, "", true);

@@ -165,9 +165,9 @@ void tutorialBasics(){
   komo.run_prepare(.01);
 
 #if 1
-  KOMO::Conv_KOMO_FactoredNLP P(komo);
-//  auto P1 = make_shared<KOMO::Conv_KOMO_SparseUnstructured>(komo, false);
-//  auto P = make_shared<Conv_MathematicalProgram_TrivialStructured>(*P1);
+//  KOMO::Conv_KOMO_FactoredNLP P(komo);
+  KOMO::Conv_KOMO_SparseNonfactored P1(komo, false);
+  Conv_MathematicalProgram_TrivialFactoreded P(P1);
 
   checkJacobianCP(P, komo.x, 1e-4);
 
