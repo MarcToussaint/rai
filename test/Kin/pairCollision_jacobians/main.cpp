@@ -131,10 +131,10 @@ void TEST(GJK_Jacobians2) {
 
   rai::ConfigurationViewer V;
   V.setConfiguration(C, 0, true);
+  V.ensure_gl().drawOptions.drawProxies=true;
 
   C.stepSwift();
 //  C.reportProxies();
-  C.orsDrawProxies=true;
 
   VectorFunction f = [&C](arr& y, arr& J, const arr& x) -> void {
     C.setJointState(x);
@@ -204,10 +204,10 @@ void TEST(GJK_Jacobians3) {
 
   rai::ConfigurationViewer V;
   V.setConfiguration(C, 0, true);
+  V.ensure_gl().drawOptions.drawProxies=true;
 
   C.stepSwift();
   C.reportProxies();
-  C.orsDrawProxies=true;
 
   arr q = C.getJointState();
 

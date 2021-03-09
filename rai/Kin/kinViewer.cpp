@@ -144,7 +144,7 @@ void KinPathViewer::step() {
     copy.checkConsistency();
   }
   if(T) {
-    copy.orsDrawMarkers=false;
+//    copy.orsDrawMarkers=false;
     gl->update(STRING("(time " <<tprefix+int(tt) <<'/' <<tprefix+int(T) <<")\n" <<text).p, true); //, false, false, true);
     if(writeToFiles) write_ppm(gl->captureImage, STRING("vid/"<<std::setw(4)<<std::setfill('0')<<tprefix+int(tt)<<".ppm"));
   }
@@ -155,12 +155,12 @@ void KinPathViewer::step() {
 
 void renderConfigurations(const ConfigurationL& cs, const char* filePrefix, int tprefix, int w, int h, rai::Camera* camera) {
   rai::Configuration copy;
-  copy.orsDrawMarkers=false;
   rai::system(STRING("mkdir -p " <<filePrefix));
   rai::system(STRING("rm -f " <<filePrefix <<"*.ppm"));
   OpenGL gl("RenderConfiguration", w, h, true);
   gl.add(glStandardScene, 0);
   gl.add(copy);
+  gl.drawOptions.drawVisualsOnly=true;
   if(camera) {
     gl.camera = *camera;
   } else {
@@ -284,7 +284,6 @@ void ComputeCameraView::close() {
 
 void ComputeCameraView::step() {
   copy = modelWorld.get();
-  copy.orsDrawJoints = copy.orsDrawMarkers = copy.orsDrawProxies = false;
 
   rai::Frame* kinectShape = copy.getFrame("endeffKinect");
   if(kinectShape) { //otherwise 'copy' is not up-to-date yet
@@ -293,6 +292,7 @@ void ComputeCameraView::step() {
       gl.camera.setKinect();
       gl.camera.X = kinectShape->ensure_X() * gl.camera.X;
     }
+    gl.drawOptions.drawVisualsOnly=true;
     gl.renderInBack(640, 480);
     flip_image(gl.captureImage);
     flip_image(gl.captureDepth);

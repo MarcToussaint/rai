@@ -155,7 +155,7 @@ void LGP_Tree::initDisplay() {
     views(1) = make_shared<KinPathViewer>(Var<ConfigurationL>(), 1.2, -1);
     views(2) = make_shared<KinPathViewer>(Var<ConfigurationL>(), 1.2, -1);
     views(3) = make_shared<KinPathViewer>(Var<ConfigurationL>(), .05, -2);
-    for(auto& v:views) if(v) v->copy.orsDrawJoints=v->copy.orsDrawMarkers=v->copy.orsDrawProxies=false;
+//    for(auto& v:views) if(v) v->copy.orsDrawJoints=v->copy.orsDrawMarkers=v->copy.orsDrawProxies=false;
   }
   if(!dth) dth = make_shared<DisplayThread>(this);
 }

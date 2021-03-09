@@ -139,7 +139,6 @@ void Configuration::copy(const Configuration& C, bool referenceSwiftOnCopy) {
   CHECK(this != &C, "never copy C onto itself");
 
   clear();
-  orsDrawProxies = C.orsDrawProxies;
   jacMode = C.jacMode;
 
   //copy frames; first each Frame/Link/Joint directly, where all links go to the origin K (!!!); then relink to itself
@@ -479,13 +478,13 @@ const arr& Configuration::getJointState() const {
 }
 
 /// get a q-vector for only a subset of joints (no force DOFs)
-arr Configuration::getJointState(const FrameL& joints, bool activesOnly) const {
+arr Configuration::getJointState(const FrameL& joints) const {
   ((Configuration*)this)->ensure_q();
   uint nd=0;
   for(Frame* f:joints) {
     Joint* j = f->joint;
     if(!j){ LOG(-1) <<"frame '" <<f->name <<"'[" <<f->ID <<"] is not a joint!"; continue; }
-    if(!j->active && activesOnly) HALT("frame '" <<f->name <<"' is a joint, but INACTIVE!");
+//    if(!j->active && activesOnly) HALT("frame '" <<f->name <<"' is a joint, but INACTIVE!");
     if(!j->mimic){
       nd += j->dim;
     }
@@ -499,9 +498,9 @@ arr Configuration::getJointState(const FrameL& joints, bool activesOnly) const {
     if(!j->mimic){
       if(j->active){
         for(uint ii=0; ii<j->dim; ii++) x(nd+ii) = q(j->qIndex+ii);
-      }else if(!activesOnly){
+      }else{
         for(uint ii=0; ii<j->dim; ii++) x(nd+ii) = qInactive(j->qIndex+ii);
-      }else HALT("");
+      }
       nd += j->dim;
     }
   }
@@ -518,7 +517,7 @@ arr Configuration::getFrameState(const FrameL& F) const {
   return X;
 }
 
-/// set the q-vector (all joint and forces DOFs)
+/// set the q-vector (all joint and force DOFs)
 void Configuration::setJointState(const arr& _q) {
   setJointStateCount++; //global counter
 
@@ -542,9 +541,9 @@ void Configuration::setJointState(const arr& _q) {
 }
 
 /// set the DOFs (joints and forces) for the given subset of frames
-void Configuration::setJointState(const arr& _q, const FrameL& F, bool activesOnly) {
+void Configuration::setJointState(const arr& _q, const FrameL& F) {
   setJointStateCount++; //global counter
-  getJointState();
+  ensure_q();
 
   uint nd=0;
   for(Frame* f:F) {
@@ -558,7 +557,7 @@ void Configuration::setJointState(const arr& _q, const FrameL& F, bool activesOn
       }
       j->calc_Q_from_q(q, j->qIndex);
     }else{
-      if(activesOnly) HALT("frame '" <<f->name <<"' is a joint, but INACTIVE!");
+//      if(activesOnly) HALT("frame '" <<f->name <<"' is a joint, but INACTIVE!");
       if(!j->mimic){
         for(uint ii=0; ii<j->dim; ii++) qInactive.elem(j->qIndex+ii) = _q(nd+ii);
       }
@@ -2738,8 +2737,8 @@ void Configuration::glDraw_sub(OpenGL& gl, const FrameL& F, int drawOpaqueOrTran
   glColor(.5, .5, .5);
 
   if(drawOpaqueOrTransparanet!=2) {
-    if(orsDrawVisualsOnly) {
-      orsDrawProxies=orsDrawJoints=orsDrawMarkers=false;
+    if(gl.drawOptions.drawVisualsOnly) {
+      gl.drawOptions.drawProxies=gl.drawOptions.drawJoints=false;
     }
 
     //proxies
@@ -2753,7 +2752,7 @@ void Configuration::glDraw_sub(OpenGL& gl, const FrameL& F, int drawOpaqueOrTran
 
     //joints
     Joint* e;
-    if(orsDrawJoints) for(Frame* fr: F) if((e=fr->joint)) {
+    if(gl.drawOptions.drawJoints) for(Frame* fr: F) if((e=fr->joint)) {
           //set name (for OpenGL selection)
           glPushName((fr->ID <<2) | 2);
 
@@ -2799,19 +2798,17 @@ void Configuration::glDraw_sub(OpenGL& gl, const FrameL& F, int drawOpaqueOrTran
   }
 
   //shapes
-  if(orsDrawBodies) {
-    if(drawOpaqueOrTransparanet==0 || drawOpaqueOrTransparanet==1) {
-      //first non-transparent
-      for(Frame* f: F) if(f->shape && f->shape->alpha()==1.) {
-          gl.drawId(f->ID);
-          f->shape->glDraw(gl);
-        }
+  if(drawOpaqueOrTransparanet==0 || drawOpaqueOrTransparanet==1) {
+    //first non-transparent
+    for(Frame* f: F) if(f->shape && f->shape->alpha()==1.) {
+      gl.drawId(f->ID);
+      f->shape->glDraw(gl);
     }
-    if(drawOpaqueOrTransparanet==0 || drawOpaqueOrTransparanet==2) {
-      for(Frame* f: F) if(f->shape && f->shape->alpha()<1.) {
-          gl.drawId(f->ID);
-          f->shape->glDraw(gl);
-        }
+  }
+  if(drawOpaqueOrTransparanet==0 || drawOpaqueOrTransparanet==2) {
+    for(Frame* f: F) if(f->shape && f->shape->alpha()<1.) {
+      gl.drawId(f->ID);
+      f->shape->glDraw(gl);
     }
   }
 
@@ -3096,7 +3093,7 @@ int animateConfiguration(Configuration& C, Inotify* ino) {
       C.setJointState(x);
       int key = C.watch(false, STRING("DOF = " <<i <<" : " <<jointNames(i) <<lim[i]));
 
-      if(key==13 || key==32 || key==27 || key=='q') {
+      if(key==13 || key==27 || key=='q') {
         C.setJointState(x0);
         return key;
       }
@@ -3185,42 +3182,29 @@ EditConfigurationHoverCall::EditConfigurationHoverCall(Configuration& _ors) {
 }
 
 struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
-  Configuration& K;
+  Configuration& C;
   bool& exit;
-  EditConfigurationKeyCall(Configuration& _K, bool& _exit): K(_K), exit(_exit) {}
+  EditConfigurationKeyCall(Configuration& _C, bool& _exit): C(_C), exit(_exit) {}
   bool keyCallback(OpenGL& gl) {
-    if(false && gl.pressedkey==' ') { //grab a body
-      if(movingBody) { movingBody=nullptr; return true; }
-      Joint* j=nullptr;
-      Frame* s=nullptr;
-      gl.Select();
-      OpenGL::GLSelect* top=gl.topSelection;
-      if(!top) { cout <<"No object below mouse!" <<endl;  return false; }
-      uint i=top->name;
-      //cout <<"HOVER call: id = 0x" <<std::hex <<gl.topSelection->name <<endl;
-      if((i&3)==1) s=K.frames.elem(i>>2);
-      if((i&3)==2) j=K.frames.elem(i>>2)->joint;
-      if(s) {
-        cout <<"selected shape " <<s->name <<" of body " <<s->name <<endl;
-        selx=top->x;
-        sely=top->y;
-        selz=top->z;
-        seld=top->dmin;
-        cout <<"x=" <<selx <<" y=" <<sely <<" z=" <<selz <<" d=" <<seld <<endl;
-        selpos = s->ensure_X().pos;
-        movingBody=s;
-      }
-      if(j) {
-        cout <<"selected joint " <<j->frame->ID <<" connecting " <<j->from()->name <<"--" <<j->frame->name <<endl;
-      }
+    if(gl.pressedkey==' ') { //grab a body
+      gl.drawOptions.drawMode_idColor=true;
+      gl.beginNonThreadedDraw(true);
+      gl.Draw(gl.width, gl.height, 0, true);
+      gl.endNonThreadedDraw(true);
+      gl.drawOptions.drawMode_idColor=false;
+      write_ppm(gl.captureImage,"z.ppm");
+      uint id = color2id(&gl.captureImage(gl.mouseposy, gl.mouseposx, 0));
+      cout <<"SELECTION id: " <<id <<endl;
+      if(id<C.frames.N) cout <<*C.frames.elem(id) <<endl;
       return true;
     } else switch(gl.pressedkey) {
-        case '1':  K.orsDrawBodies^=1;  break;
-        case '2':  K.orsDrawShapes^=1;  break;
-        case '3':  K.orsDrawJoints^=1;  K.orsDrawMarkers^=1; break;
-        case '4':  K.orsDrawProxies^=1;  break;
+        case '1':  gl.drawOptions.drawShapes^=1;  break;
+        case '2':  gl.drawOptions.drawJoints^=1;  break;
+        case '3':  gl.drawOptions.drawProxies^=1;  break;
+        case '4':  gl.drawOptions.drawZlines^=1;  break;
         case '5':  gl.reportSelects^=1;  break;
         case '6':  gl.reportEvents^=1;  break;
+        case '7':  gl.drawOptions.drawMode_idColor^=1;  break;
         case 'j':  gl.camera.X.pos += gl.camera.X.rot*Vector(0, 0, .1);  break;
         case 'k':  gl.camera.X.pos -= gl.camera.X.rot*Vector(0, 0, .1);  break;
         case 'i':  gl.camera.X.pos += gl.camera.X.rot*Vector(0, .1, 0);  break;
@@ -3254,8 +3238,8 @@ void editConfiguration(const char* filename, Configuration& C) {
   //  gl.exitkeys="1234567890qhjklias, "; //TODO: move the key handling to the keyCall!
   bool exit=false;
   //  gl.addHoverCall(new EditConfigurationHoverCall(K));
-//  K.gl()->addKeyCall(new EditConfigurationKeyCall(K,exit));
-//  K.gl()->addClickCall(new EditConfigurationClickCall(K));
+  C.gl()->ensure_gl().addKeyCall(new EditConfigurationKeyCall(C,exit));
+  C.gl()->ensure_gl().addClickCall(new EditConfigurationClickCall(C));
   Inotify ino(filename);
   for(; !exit;) {
     cout <<"reloading `" <<filename <<"' ... " <<std::endl;
@@ -3285,12 +3269,12 @@ void editConfiguration(const char* filename, Configuration& C) {
     C.gl()->resetPressedKey();
     for(;;) {
       key = C.gl()->setConfiguration(C, "waiting for file change", false);
-      if(key==13 || key==32 || key==27 || key=='q') break;
+      if(key==13 || key==27 || key=='q') break;
       if(ino.poll(false, true)) break;
       wait(.2);
     }
     if(exit) break;
-    if(key==13 || key==32) {
+    if(key==13) {
       cout <<"animating.." <<endl;
       //while(ino.pollForModification());
       key = animateConfiguration(C, &ino);

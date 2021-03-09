@@ -664,6 +664,14 @@ struct OpenGLDrawOptions{
   bool drawWires=false;
   bool drawColors=true;
   bool drawMode_idColor=false;
+  bool drawVisualsOnly=false;
+
+  bool drawShapes=true;
+  bool drawProxies=true;
+  bool drawJoints=false;
+  bool drawFrameNames=false;
+  bool drawZlines=false;
+
   float pclPointSize=-1.;
 };
 struct GLDrawer {

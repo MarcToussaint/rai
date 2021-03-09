@@ -198,11 +198,9 @@ void rai::CameraView::glDraw(OpenGL& gl) {
     glStandardScene(nullptr, gl);
     gl.drawOptions.drawMode_idColor = false;
     if(renderMode==visuals) {
-      C.orsDrawVisualsOnly=true;
-      C.orsDrawMarkers = false;
+      gl.drawOptions.drawVisualsOnly=true;
     } else {
-      C.orsDrawVisualsOnly=false;
-      C.orsDrawMarkers = true;
+      gl.drawOptions.drawVisualsOnly=false;
     }
 
     C.glDraw(gl);
@@ -219,8 +217,7 @@ void rai::CameraView::glDraw(OpenGL& gl) {
     gl.setClearColors(1, 1, 1, 0);
     gl.background.clear();
     gl.drawOptions.drawMode_idColor = true;
-    C.orsDrawMarkers = false;
-    C.orsDrawVisualsOnly=true;
+    gl.drawOptions.drawVisualsOnly=true;
     C.glDraw(gl);
     gl.drawOptions.drawMode_idColor = false;
   }

@@ -721,11 +721,11 @@ void KOMO::setIKOpt() {
 }
 
 void KOMO::setConfiguration_qAll(int t, const arr& q) {
-  pathConfig.setJointState(q, pathConfig.getJointsSlice(timeSlices[k_order+t], false), false);
+  pathConfig.setJointState(q, pathConfig.getJointsSlice(timeSlices[k_order+t], false));
 }
 
 arr KOMO::getConfiguration_qAll(int t) {
-  return pathConfig.getJointState(pathConfig.getJointsSlice(timeSlices[k_order+t], false), false);
+  return pathConfig.getJointState(pathConfig.getJointsSlice(timeSlices[k_order+t], false));
 }
 
 void KOMO::setConfiguration_X(int t, const arr& X) {
@@ -850,8 +850,8 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, 
     //motion profile
     if(i1-1<T) {
       uintA nonSwitched = getNonSwitchedFrames(timeSlices[k_order+i0], timeSlices[k_order+i1]);
-      arr q0 = pathConfig.getJointState(timeSlices[k_order+i0].sub(nonSwitched), false);
-      arr q1 = pathConfig.getJointState(timeSlices[k_order+i1].sub(nonSwitched), false);
+      arr q0 = pathConfig.getJointState(timeSlices[k_order+i0].sub(nonSwitched));
+      arr q1 = pathConfig.getJointState(timeSlices[k_order+i1].sub(nonSwitched));
       for(uint j=i0+1; j<i1; j++) {
         arr q;
         double phase = double(j-i0)/double(i1-i0);
@@ -860,7 +860,7 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, 
         } else {
           q = q0 + phase * (q1-q0);
         }
-        pathConfig.setJointState(q, timeSlices[k_order+j].sub(nonSwitched), false);
+        pathConfig.setJointState(q, timeSlices[k_order+j].sub(nonSwitched));
 //        view(true, STRING("interpolating: step:" <<i <<" t: " <<j));
       }
     }/*else{

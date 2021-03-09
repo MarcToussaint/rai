@@ -461,20 +461,20 @@ void OpenGL::setTitle(const char* _title) {
   }
 }
 
-void OpenGL::beginNonThreadedDraw() {
+void OpenGL::beginNonThreadedDraw(bool fromWithinCallback) {
   if(rai::getDisableGui()) return;
   openWindow();
   auto fg = singletonGlSpinner();
-  fg->mutex.lock(RAI_HERE);
+  if(!fromWithinCallback) fg->mutex.lock(RAI_HERE);
   glfwMakeContextCurrent(self->window);
 }
 
-void OpenGL::endNonThreadedDraw() {
+void OpenGL::endNonThreadedDraw(bool fromWithinCallback) {
   if(rai::getDisableGui()) return;
   auto fg = singletonGlSpinner();
   glfwSwapBuffers(self->window);
   glfwMakeContextCurrent(nullptr);
-  fg->mutex.unlock();
+  if(!fromWithinCallback) fg->mutex.unlock();
 }
 
 void OpenGL::postRedrawEvent(bool fromWithinCallback) {

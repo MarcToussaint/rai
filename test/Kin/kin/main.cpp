@@ -155,7 +155,6 @@ void TEST(Graph){
 
 void TEST(QuaternionKinematics){
   rai::Configuration G("kinematicTestQuat.g");
-  G.orsDrawJoints=false;
 
   for(uint k=0;k<3;k++){
     rai::Quaternion target;

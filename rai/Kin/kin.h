@@ -78,13 +78,6 @@ struct Configuration : GLDrawer {
 
   static uint setJointStateCount;
 
-  // options -> TODO: somehow refactor away from here
-  bool orsDrawJoints=false, orsDrawShapes=true, orsDrawBodies=true, orsDrawProxies=true, orsDrawMarkers=true, orsDrawColors=true, orsDrawIndexColors=false;
-  bool orsDrawVisualsOnly=false, orsDrawMeshes=true, orsDrawCores=false, orsDrawZlines=false;
-  bool orsDrawFrameNames=false;
-  double orsDrawAlpha=1.;
-  uint orsDrawLimit=0;
-
   /// @name constructors
   Configuration();
   Configuration(const Configuration& other, bool referenceSwiftOnCopy=false) : Configuration() {  copy(other, referenceSwiftOnCopy);  } ///< same as copy()
@@ -123,18 +116,18 @@ struct Configuration : GLDrawer {
   /// @name get state
   uint getJointStateDimension() const;
   const arr& getJointState() const;
-  arr getJointState(const FrameL& F, bool activesOnly=true) const;
-  arr getJointState(const uintA& F, bool activesOnly=true) const { return getJointState(getFrames(F), activesOnly); } ///< same as getJointState() with getFrames()
-  arr getJointStateSlice(uint t, bool activesOnly=true){  return getJointState(getJointsSlice(t, activesOnly), activesOnly);  }
+  arr getJointState(const FrameL& F) const;
+  arr getJointState(const uintA& F) const { return getJointState(getFrames(F)); } ///< same as getJointState() with getFrames()
+  arr getJointStateSlice(uint t, bool activesOnly=true){  return getJointState(getJointsSlice(t, activesOnly));  }
   arr getFrameState() const { return getFrameState(frames); } ///< same as getFrameState() for all \ref frames
   arr getFrameState(const FrameL& F) const;
   arr getFrameState(const uintA& F) const { return getFrameState(getFrames(F)); } ///< same as getFrameState() with getFrames()
 
   /// @name set state
   void setJointState(const arr& _q);
-  void setJointState(const arr& _q, const FrameL& F, bool activesOnly=true);
-  void setJointState(const arr& _q, const uintA& F){ setJointState(_q, getFrames(F), true); } ///< same as setJointState() with getFrames()
-  void setJointStateSlice(const arr& _q, uint t, bool activesOnly=true){  setJointState(_q, getJointsSlice(t, activesOnly), activesOnly);  }
+  void setJointState(const arr& _q, const FrameL& F);
+  void setJointState(const arr& _q, const uintA& F){ setJointState(_q, getFrames(F)); } ///< same as setJointState() with getFrames()
+  void setJointStateSlice(const arr& _q, uint t, bool activesOnly=true){  setJointState(_q, getJointsSlice(t, activesOnly));  }
   void setFrameState(const arr& X){ setFrameState(X, frames); } ///< same as setFrameState() for all \ref frames
   void setFrameState(const arr& X, const FrameL& F);
   void setFrameState(const arr& X, const uintA& F){ setFrameState(X, getFrames(F)); } ///< same as setFrameState() with getFrames()

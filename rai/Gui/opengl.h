@@ -221,8 +221,8 @@ struct OpenGL {
   void openWindow();
   void closeWindow();
   void setTitle(const char* _title=0);
-  void beginNonThreadedDraw();
-  void endNonThreadedDraw();
+  void beginNonThreadedDraw(bool fromWithinCallback=false);
+  void endNonThreadedDraw(bool fromWithinCallback=false);
   void postRedrawEvent(bool fromWithinCallback);
 
  public:

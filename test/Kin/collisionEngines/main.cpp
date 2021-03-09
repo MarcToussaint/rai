@@ -9,7 +9,7 @@ void TEST(Swift) {
 
   C.swift()->cutoff = 2.;
   C.stepSwift();
-  C.orsDrawProxies=true;
+  C.gl()->ensure_gl().drawOptions.drawProxies=true;
 
   uint t;
   for(t=0;t<50;t++){

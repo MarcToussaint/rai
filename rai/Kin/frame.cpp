@@ -1256,18 +1256,20 @@ void rai::Shape::glDraw(OpenGL& gl) {
 #ifdef RAI_GL
   //set name (for OpenGL selection)
   glPushName((frame.ID <<2) | 1);
-  if(frame.C.orsDrawColors && !frame.C.orsDrawIndexColors && !gl.drawOptions.drawMode_idColor) {
+
+  if(gl.drawOptions.drawMode_idColor){
+    gl.drawId(frame.ID);
+  } else if(gl.drawOptions.drawColors) {
     if(mesh().C.N) glColor(mesh().C); //color[0], color[1], color[2], color[3]*world.orsDrawAlpha);
-    else   glColor(.5, .5, .5);
+    else glColor(.5, .5, .5);
   }
-  if(frame.C.orsDrawIndexColors) gl.drawId(frame.ID);
 
   double GLmatrix[16];
   frame.ensure_X().getAffineMatrixGL(GLmatrix);
   glLoadMatrixd(GLmatrix);
 
-  if(!frame.C.orsDrawShapes) {
-    double scale=.33*(size(0)+size(1)+size(2) + 2.*size(3)); //some scale
+  if(!gl.drawOptions.drawShapes) {
+    double scale=.33*(.02+sum(size)); //some scale
     if(!scale) scale=1.;
     scale*=.3;
     glDrawAxes(scale);
@@ -1276,11 +1278,11 @@ void rai::Shape::glDraw(OpenGL& gl) {
   }
 
   //default!
-  if(frame.C.orsDrawShapes) {
+  if(gl.drawOptions.drawShapes) {
     CHECK(_type!=rai::ST_none, "shape type is not initialized");
 
     if(_type==rai::ST_marker) {
-      if(frame.C.orsDrawMarkers) {
+      if(!gl.drawOptions.drawVisualsOnly) {
         double s=1.;
         if(size.N) s = size.last();
         if(s>0.){
@@ -1299,7 +1301,7 @@ void rai::Shape::glDraw(OpenGL& gl) {
     }
   }
 
-  if(frame.C.orsDrawZlines) {
+  if(gl.drawOptions.drawZlines) {
     glColor(0, .7, 0);
     glBegin(GL_LINES);
     glVertex3d(0., 0., 0.);
@@ -1307,7 +1309,7 @@ void rai::Shape::glDraw(OpenGL& gl) {
     glEnd();
   }
 
-  if(frame.C.orsDrawFrameNames) {
+  if(gl.drawOptions.drawFrameNames) {
     glColor(1, 1, 1);
     glDrawText(frame.name, 0, 0, 0);
   }
