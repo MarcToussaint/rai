@@ -57,13 +57,13 @@ void TM_FlagConstraints::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
       if(a->flags & (1<<FL_zeroVel)) {
         TM_Default pos(TMT_pos, a->ID);
         pos.order=1;
-        pos.Feature::__phi(y({d, d+2})(), (!!J?J({d, d+2})():NoArr), Ktuple);
+        pos.Feature::eval(y({d, d+2})(), (!!J?J({d, d+2})():NoArr), Ktuple);
 
         TM_Default quat(TMT_quat, a->ID); //mt: NOT TMT_quatDiff!! (this would compute the diff to world, which zeros the w=1...)
         // flip the quaternion sign if necessary
         quat.flipTargetSignOnNegScalarProduct = true;
         quat.order=1;
-        quat.Feature::__phi(y({d+3, d+6})(), (!!J?J({d+3, d+6})():NoArr), Ktuple);
+        quat.Feature::eval(y({d+3, d+6})(), (!!J?J({d+3, d+6})():NoArr), Ktuple);
 
         d += 7;
       }
@@ -72,13 +72,13 @@ void TM_FlagConstraints::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
         CHECK_GE(order, 2, "FT_zeroAcc needs k-order 2");
         TM_Default pos(TMT_pos, a->ID);
         pos.order=2;
-        pos.Feature::__phi(y({d, d+2})(), (!!J?J({d, d+2})():NoArr), Ktuple);
+        pos.Feature::eval(y({d, d+2})(), (!!J?J({d, d+2})():NoArr), Ktuple);
 
         TM_Default quat(TMT_quat, a->ID); //mt: NOT TMT_quatDiff!! (this would compute the diff to world, which zeros the w=1...)
         // flip the quaternion sign if necessary
         quat.flipTargetSignOnNegScalarProduct = true;
         quat.order=2;
-        quat.Feature::__phi(y({d+3, d+6})(), (!!J?J({d+3, d+6})():NoArr), Ktuple);
+        quat.Feature::eval(y({d+3, d+6})(), (!!J?J({d+3, d+6})():NoArr), Ktuple);
 
         d += 7;
       }
@@ -87,19 +87,19 @@ void TM_FlagConstraints::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
         CHECK_GE(order, 2, "FT_zeroAcc needs k-order 2");
         TM_Default pos(TMT_pos, a->ID);
         pos.order=2;
-        pos.Feature::__phi(y({d, d+2})(), (!!J?J({d, d+2})():NoArr), Ktuple);
+        pos.Feature::eval(y({d, d+2})(), (!!J?J({d, d+2})():NoArr), Ktuple);
         y(d+2) += g;
 
         TM_Default quat(TMT_quat, a->ID); //mt: NOT TMT_quatDiff!! (this would compute the diff to world, which zeros the w=1...)
         // flip the quaternion sign if necessary
         quat.flipTargetSignOnNegScalarProduct = true;
         quat.order=1;
-        quat.Feature::__phi(y({d+3, d+6})(), (!!J?J({d+3, d+6})():NoArr), Ktuple);
+        quat.Feature::eval(y({d+3, d+6})(), (!!J?J({d+3, d+6})():NoArr), Ktuple);
         if(false) { //rotational friction
           double eps = 1e-2;
           arr w, Jw;
           quat.order=1;
-          quat.Feature::__phi(w, (!!J?Jw:NoArr), Ktuple);
+          quat.Feature::eval(w, (!!J?Jw:NoArr), Ktuple);
           y({d+3, d+6}) += eps*w;
           if(!!J) J({d+3, d+6}) += eps*Jw;
         }
@@ -112,7 +112,7 @@ void TM_FlagConstraints::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
 
           F_qItself q({a->ID}, false);
           q.order=1;
-          q.Feature::__phi(y({d, d+jdim-1})(), (!!J?J({d, d+jdim-1})():NoArr), Ktuple);
+          q.Feature::eval(y({d, d+jdim-1})(), (!!J?J({d, d+jdim-1})():NoArr), Ktuple);
 
           d += jdim;
         }
@@ -153,7 +153,7 @@ void TM_FlagCosts::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
         CHECK_GE(order, 2, "FT_zeroAcc needs k-order 2");
         TM_Default pos(TMT_pos, a->ID);
         pos.order=2;
-        pos.Feature::__phi(y({d, d+2})(), (!!J?J({d, d+2})():NoArr), Ktuple);
+        pos.Feature::eval(y({d, d+2})(), (!!J?J({d, d+2})():NoArr), Ktuple);
 
         d += 3;
       }
@@ -162,7 +162,7 @@ void TM_FlagCosts::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
         CHECK_GE(order, 1, "FT_velCost needs k-order 2");
         TM_Default pos(TMT_pos, a->ID);
         pos.order=1;
-        pos.Feature::__phi(y({d, d+2})(), (!!J?J({d, d+2})():NoArr), Ktuple);
+        pos.Feature::eval(y({d, d+2})(), (!!J?J({d, d+2})():NoArr), Ktuple);
 
         d += 3;
       }
@@ -172,7 +172,7 @@ void TM_FlagCosts::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
 
           F_qItself q({a->ID}, false);
           q.order=2;
-          q.Feature::__phi(y({d, d+jdim-1})(), (!!J?J({d, d+jdim-1})():NoArr), Ktuple);
+          q.Feature::eval(y({d, d+jdim-1})(), (!!J?J({d, d+jdim-1})():NoArr), Ktuple);
 
           d += jdim;
         }
@@ -182,7 +182,7 @@ void TM_FlagCosts::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
 
           F_qItself q({a->ID}, false);
           q.order=1;
-          q.Feature::__phi(y({d, d+jdim-1})(), (!!J?J({d, d+jdim-1})():NoArr), Ktuple);
+          q.Feature::eval(y({d, d+jdim-1})(), (!!J?J({d, d+jdim-1})():NoArr), Ktuple);
 
           d += jdim;
         }

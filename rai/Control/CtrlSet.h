@@ -27,12 +27,12 @@ struct CtrlSet {
 
   void report(ostream& os=cout) const;
 
-  bool canBeInitiated(const rai::Configuration& Ctuple) const;
-  bool isConverged(const rai::Configuration& Ctuple) const;
+  bool canBeInitiated(const rai::Configuration& pathConfig) const;
+  bool isConverged(const rai::Configuration& pathConfig) const;
 };
 
 //===========================================================================
 
-bool isFeasible(const CtrlSet& CS, const rai::Configuration& Ctuple, bool initOnly=true, double eqPrecision=1e-4);
+bool isFeasible(const CtrlSet& CS, const rai::Configuration& pathConfig, bool initOnly=true, double eqPrecision=1e-4);
 
 CtrlSet operator+(const CtrlSet& A, const CtrlSet& B);

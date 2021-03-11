@@ -24,11 +24,10 @@ void init_Feature(pybind11::module& m) {
 
 
   .def("eval", [](shared_ptr<Feature>& self, shared_ptr<rai::Configuration>& C) {
-    arr y, J;
-    self->__phi(y, J, *C);
+    Value val = self->eval(*C);
     pybind11::tuple ret(2);
-    ret[0] = pybind11::array(y.dim(), y.p);
-    ret[1] = pybind11::array(J.dim(), J.p);
+    ret[0] = pybind11::array(val.y.dim(), val.y.p);
+    ret[1] = pybind11::array(val.J.dim(), val.J.p);
     return ret;
   })
 //  .def("eval", [](shared_ptr<Feature>& self, pybind11::tuple& Kpytuple) {
@@ -40,7 +39,7 @@ void init_Feature(pybind11::module& m) {
 
 //    arr y, J;
 //    self.feature->order=Ktuple.N-1;
-//    self.feature->__phi(y, J, Ktuple);
+//    self.feature->eval(y, J, Ktuple);
 //    cout <<"THERE!!" <<J.dim() <<endl;
 //    pybind11::tuple ret(2);
 //    ret[0] = pybind11::array(y.dim(), y.p);

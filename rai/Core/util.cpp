@@ -258,23 +258,23 @@ double linsig(double x) { if(x<0.) return 0.; if(x>1.) return 1.; return x; }
 /// x ends up in the interval [a, b]
 //void clip(double& x, double a, double b) { if(x<a) x=a; if(x>b) x=b; }
 
-/// the angle of the vector (x, y) in [-pi, pi]
-double phi(double x, double y) {
-  if(x==0. || ::fabs(x)<1e-10) { if(y>0.) return RAI_PI/2.; else return -RAI_PI/2.; }
-  double p=::atan(y/x);
-  if(x<0.) { if(y<0.) p-=RAI_PI; else p+=RAI_PI; }
-  if(p>RAI_PI)  p-=2.*RAI_PI;
-  if(p<-RAI_PI) p+=2.*RAI_PI;
-  return p;
-}
+///// the angle of the vector (x, y) in [-pi, pi]
+//double phi(double x, double y) {
+//  if(x==0. || ::fabs(x)<1e-10) { if(y>0.) return RAI_PI/2.; else return -RAI_PI/2.; }
+//  double p=::atan(y/x);
+//  if(x<0.) { if(y<0.) p-=RAI_PI; else p+=RAI_PI; }
+//  if(p>RAI_PI)  p-=2.*RAI_PI;
+//  if(p<-RAI_PI) p+=2.*RAI_PI;
+//  return p;
+//}
 
-/// the change of angle of the vector (x, y) when displaced by (dx, dy)
-double dphi(double x, double y, double dx, double dy) {
-  //return (dy*x - dx*y)/sqrt(x*x+y*y);
-  if(x==0. || ::fabs(x)<1e-10) { if(y>0.) return -dx/y; else return dx/y; }
-  double f=y/x;
-  return 1./(1.+f*f)*(dy/x - f/x*dx);
-}
+///// the change of angle of the vector (x, y) when displaced by (dx, dy)
+//double dphi(double x, double y, double dx, double dy) {
+//  //return (dy*x - dx*y)/sqrt(x*x+y*y);
+//  if(x==0. || ::fabs(x)<1e-10) { if(y>0.) return -dx/y; else return dx/y; }
+//  double f=y/x;
+//  return 1./(1.+f*f)*(dy/x - f/x*dx);
+//}
 
 /** @brief save division, checks for division by zero; force=true will return
   zero if y=0 */

@@ -1310,7 +1310,7 @@ rai::Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featur
   arr taskF=zeros(objectives.N);
   uint M=0;
   for(ptr<GroundedObjective>& ob:objs) {
-    uint d = ob->feat->__dim_phi2(ob->frames);
+    uint d = ob->feat->dim(ob->frames);
     int i = ob->objId;
     uint time = ob->configs.last();
     //          for(uint j=0; j<d; j++) CHECK_EQ(featureTypes(M+j), ob->type, "");
@@ -1441,8 +1441,8 @@ rai::Graph KOMO::getProblemGraph(bool includeValues, bool includeSolution) {
       arrA V, J;
       for(uint l=0; l<ob->configs.d0; l++) {
 //        ConfigurationL Ktuple = configurations.sub(convert<uint, int>(ob->configs[l]+(int)k_order));
-//        ob->feat->__phi(y, Jy, Ktuple);
-        ob->feat->__phi2(y, Jy, ob->frames);
+//        ob->feat->eval(y, Jy, Ktuple);
+        ob->feat->eval(y, Jy, ob->frames);
         if(isSpecial(Jy)) Jy = unpack(Jy);
 
         V.append(y);
@@ -1502,15 +1502,15 @@ void KOMO::Conv_KOMO_SparseNonfactored::evaluate(arr& phi, arr& J, const arr& x)
   for(ptr<GroundedObjective>& ob : komo.objs) {
       arr y, Jy;
       //query the task map and check dimensionalities of returns
-      ob->feat->__phi2(y, Jy, ob->frames);
+      ob->feat->eval(y, Jy, ob->frames);
       if(!!J) CHECK_EQ(y.N, Jy.d0, "");
       if(!y.N) continue;
       if(!!J) CHECK_EQ(Jy.nd, 2, "");
       if(!!J) CHECK_EQ(Jy.d1, komo.pathConfig.getJointStateDimension(), "");
-//      uint d = ob->feat->__dim_phi2(ob->frames);
+//      uint d = ob->feat->dim(ob->frames);
 //      if(d!=y.N){
-//        d  = ob->feat->__dim_phi2(ob->frames);
-//        ob->feat->__phi2(y, Jy, ob->frames);
+//        d  = ob->feat->dim(ob->frames);
+//        ob->feat->eval(y, Jy, ob->frames);
 //      }
 //      CHECK_EQ(d, y.N, "");
       if(absMax(y)>1e10) RAI_MSG("WARNING y=" <<y);
@@ -1567,7 +1567,7 @@ void KOMO::Conv_KOMO_SparseNonfactored::report(std::ostream& os, int verbose) {
 void KOMO::Conv_KOMO_SparseNonfactored::getDimPhi() {
   uint M=0;
   for(ptr<GroundedObjective>& ob : komo.objs) {
-    M += ob->feat->__dim_phi2(ob->frames);
+    M += ob->feat->dim(ob->frames);
   }
   dimPhi = M;
 }
@@ -1578,7 +1578,7 @@ void KOMO::Conv_KOMO_SparseNonfactored::getFeatureTypes(ObjectiveTypeA& ft) {
   komo.featureNames.clear();
   uint M=0;
   for(ptr<GroundedObjective>& ob : komo.objs) {
-    uint m = ob->feat->__dim_phi2(ob->frames);
+    uint m = ob->feat->dim(ob->frames);
     for(uint i=0; i<m; i++) ft(M+i) = ob->type;
     for(uint j=0; j<m; j++) komo.featureNames.append(ob->feat->shortTag(komo.pathConfig));
     M += m;
@@ -1627,7 +1627,7 @@ KOMO::Conv_KOMO_FactoredNLP::Conv_KOMO_FactoredNLP(KOMO& _komo) : komo(_komo) {
 //    F.Ctuple = komo.configurations.sub(convert<uint, int>(ob->configs+(int)komo.k_order));
 //    F.t = l;
     F.varIds = ob->configs;
-    F.dim = ob->feat->__dim_phi2(ob->frames); //dimensionality of this task
+    F.dim = ob->feat->dim(ob->frames); //dimensionality of this task
     F.phiIndex = fDim;
     fDim += F.dim;
     f++;
@@ -1645,7 +1645,7 @@ void KOMO::Conv_KOMO_FactoredNLP::getFeatureTypes(ObjectiveTypeA& featureTypes) 
   komo.featureNames.resize(featuresDim);
   uint M=0;
   for(ptr<GroundedObjective>& ob : komo.objs) {
-    uint m = ob->feat->__dim_phi2(ob->frames);
+    uint m = ob->feat->dim(ob->frames);
     for(uint i=0; i<m; i++) featureTypes(M+i) = ob->type;
     for(uint i=0; i<m; i++) komo.featureNames(M+i) = "TODO";
     M += m;
@@ -1695,7 +1695,7 @@ void KOMO::Conv_KOMO_FactoredNLP::evaluateSingleFeature(uint feat_id, arr& phi, 
   FeatureIndexEntry& F = featureIndex(feat_id);
 
   arr y,Jy;
-  F.ob2->feat->__phi2(phi, Jy, F.ob2->frames);
+  F.ob2->feat->eval(phi, Jy, F.ob2->frames);
   CHECK_EQ(phi.N, F.dim, "");
 
   komo.featureValues.setVectorBlock(phi, F.phiIndex);
@@ -1767,7 +1767,7 @@ void KOMO::Conv_KOMO_FactoredNLP::evaluateSingleFeature(uint feat_id, arr& phi, 
 
         //query the task map and check dimensionalities of returns
         arr Jy;
-        ob->feat->__phi(phi, Jy, Ktuple);
+        ob->feat->eval(phi, Jy, Ktuple);
         if(!!J && isSpecial(Jy)) Jy = unpack(Jy);
 
         if(!!J) CHECK_EQ(phi.N, Jy.d0, "");
@@ -1918,7 +1918,7 @@ void KOMO::Conv_KOMO_FineStructuredProblem::getFactorization(uintA& variableDime
     featureDimensions(f) = F.dim;
     if(!F.dim) continue;
 
-    F.ob->feat->__phi(y, J, F.Ctuple);
+    F.ob->feat->eval(y, J, F.Ctuple);
 
     if(isSparseMatrix(J)) {
       F.varIds.clear();
@@ -1965,7 +1965,7 @@ void KOMO::Conv_KOMO_FineStructuredProblem::getFactorization(uintA& variableDime
     if(!F.dim) continue;
 
 #if 1 //simpler and more direct
-    F.ob->feat->__phi(y, Jy, F.Ctuple);
+    F.ob->feat->eval(y, Jy, F.Ctuple);
     CHECK_EQ(y.N, F.dim, "");
     if(!!J) CHECK_EQ(y.N, Jy.d0, "");
     if(!!J) CHECK_EQ(Jy.nd, 2, "");
@@ -2038,12 +2038,12 @@ void KOMO::Conv_KOMO_FineStructuredProblem::evaluateSingleFeature(uint feat_id, 
   FeatureIndexEntry& F = featureIndex(feat_id);
 
   if(!J) {
-    F.ob->feat->__phi(phi, NoArr, F.Ctuple);
+    F.ob->feat->eval(phi, NoArr, F.Ctuple);
     return;
   }
 
   arr Jy;
-  F.ob->feat->__phi(phi, Jy, F.Ctuple);
+  F.ob->feat->eval(phi, Jy, F.Ctuple);
   CHECK_EQ(phi.N, F.dim, "");
   CHECK_EQ(phi.N, Jy.d0, "");
   CHECK_EQ(Jy.nd, 2, "");
@@ -2163,7 +2163,7 @@ void KOMO::TimeSliceProblem::evaluate(arr& phi, arr& J, const arr& x) {
       kdim.prepend(0);
 
       //query the task map and check dimensionalities of returns
-      ob->feat->__phi(y, Jy, Ktuple);
+      ob->feat->eval(y, Jy, Ktuple);
       if(!!J) CHECK_EQ(y.N, Jy.d0, "");
       if(!!J) CHECK_EQ(Jy.nd, 2, "");
       if(!!J) CHECK_EQ(Jy.d1, kdim.last(), "");

@@ -28,9 +28,9 @@ arr CtrlObjective::getResidual(CtrlSolver& cp) {
 }
 
 arr CtrlObjective::getValue(CtrlSolver& cp) {
-  FrameL F = groundFeatureFrames(feat, cp.komo.pathConfig, 2);
+  FrameL F = feat->getFrames(cp.komo.pathConfig, 2);
   arr y, J;
-  feat->__phi2(y, J, F);
+  feat->eval(y, J, F);
   return y;
 }
 
@@ -38,7 +38,7 @@ void CtrlObjective::resetState() { if(movingTarget) movingTarget->resetState(); 
 
 //arr CtrlObjective::update_y(const ConfigurationL& Ctuple) {
 //  arr y_old = y;
-//  feat->__phi(y, J_y, Ctuple);
+//  feat->eval(y, J_y, Ctuple);
 //  if(y_old.N==y.N) return y-y_old;
 //  return zeros(y.N);
 //}

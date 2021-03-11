@@ -152,7 +152,7 @@ bool Gamepad2Tasks::updateTasks(arr& gamepadState, const rai::Configuration& K) 
       if(!pdt) break;
       pdt->active=true;
       if(!pdt->y.N || !pdt->v.N) {
-        pdt->feat->__phi(pdt->y, NoArr, K);
+        pdt->feat->eval(pdt->y, NoArr, K);
       }
       rai::Vector vel(gamepadLeftRight, gamepadForwardBack, gamepadUpDown);
       if(sel==down) {
@@ -183,7 +183,7 @@ bool Gamepad2Tasks::updateTasks(arr& gamepadState, const rai::Configuration& K) 
       rai::Joint* j = K.getFrameByName("worldTranslationRotation")->joint;
       if(j) {
         arr b;
-        base->feat->__phi(b, NoArr, K);
+        base->feat->eval(b, NoArr, K);
         if(b.N && j && j->qDim()) {
           for(uint i=0; i<j->qDim(); i++)
             homing->PD().y_target(j->qIndex+i) = b(i);

@@ -309,13 +309,13 @@ void F_LinAngVel::phi2(arr& y, arr& J, const FrameL& F) {
   lin.order=order;
   lin.impulseInsteadOfAcceleration = impulseInsteadOfAcceleration;
   arr  yl, Jl;
-  lin.__phi2(yl, Jl, F);
+  lin.eval(yl, Jl, F);
 
   F_AngVel ang;
   ang.order=order;
   ang.impulseInsteadOfAcceleration = impulseInsteadOfAcceleration;
   arr ya, Ja;
-  ang.__phi2(ya, Ja, F);
+  ang.eval(ya, Ja, F);
 
   y.setBlockVector(yl, ya);
   J.setBlockMatrix(Jl, Ja);

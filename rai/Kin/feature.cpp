@@ -10,12 +10,10 @@
 
 //===========================================================================
 
-void Feature::phi2(arr& y, arr& J, const FrameL& F) {
-  if(order==0){
-    phi(y, J, F.last()->C);
-    return;
-//    CHECK(order>0, "phi needs to be implemented at least for order=0");
-  }
+
+
+void Feature::phi_finiteDifferenceReduce(arr& y, arr& J, const FrameL& F) {
+  CHECK(order>0, "can't reduce for order=0");
 
   arr y0, y1, Jy0, Jy1;
   order--;
@@ -63,29 +61,55 @@ void Feature::phi2(arr& y, arr& J, const FrameL& F) {
   }
 }
 
-void Feature::phi(arr& y, arr& J, const rai::Configuration& C) {
-  FrameL F(order+1, frameIDs.N);
-  if(order==0 && C.frames.nd==1){
-    F[0] = C.frames.sub(frameIDs);
+//void Feature::phi(arr& y, arr& J, const rai::Configuration& C) {
+//  FrameL F(order+1, frameIDs.N);
+//  if(order==0 && C.frames.nd==1){
+//    F[0] = C.frames.sub(frameIDs);
+//  }else{
+//    CHECK_EQ(C.frames.nd, 2, "");
+//    CHECK_GE(C.frames.d0, order+1, "");
+//    for(uint k=0;k<F.d0;k++){
+//      F[k] = C.frames[C.frames.d0-F.d0+k].sub(frameIDs);
+//    }
+//  }
+//  if(frameIDs.nd==2) F.reshape(F.d0, frameIDs.d0, frameIDs.d1);
+//  phi2(y, J, F);
+//}
+
+//void Feature::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
+//  FrameL F(order+1, frameIDs.N);
+//  for(uint k=0;k<F.d0;k++){
+//    F[k] = Ctuple(Ctuple.N-F.d0+k)->frames.sub(frameIDs);
+//  }
+//  if(frameIDs.nd==2) F.reshape(F.d0, frameIDs.d0, frameIDs.d1);
+//  phi2(y, J, F);
+//}
+
+FrameL Feature::getFrames(const rai::Configuration& C, uint s) {
+  FrameL F;
+  if(C.frames.nd==1){
+    CHECK(!s, "C does not have multiple slices");
+    CHECK(!order, "can't ground a order>0 feature on configuration without slices");
+    F = C.getFrames(frameIDs);
+    F.reshape(1, F.N);
   }else{
     CHECK_EQ(C.frames.nd, 2, "");
-    CHECK_GE(C.frames.d0, order+1, "");
-    for(uint k=0;k<F.d0;k++){
-      F[k] = C.frames[C.frames.d0-F.d0+k].sub(frameIDs);
+    CHECK_GE(C.frames.d0, order+s+1, "");
+    F.resize(order+1, frameIDs.N);
+    for(uint i=0;i<=order;i++){
+      for(uint j=0;j<frameIDs.N;j++){
+        uint fID = frameIDs.elem(j);
+        F(i,j) = C.frames(s+i-order, fID);
+      }
     }
   }
-  if(frameIDs.nd==2) F.reshape(F.d0, frameIDs.d0, frameIDs.d1);
-  phi2(y, J, F);
+  if(frameIDs.nd==2){
+    F.reshape(order+1, frameIDs.d0, frameIDs.d1);
+  }
+  return F;
 }
 
-void Feature::phi(arr& y, arr& J, const ConfigurationL& Ctuple) {
-  FrameL F(order+1, frameIDs.N);
-  for(uint k=0;k<F.d0;k++){
-    F[k] = Ctuple(Ctuple.N-F.d0+k)->frames.sub(frameIDs);
-  }
-  if(frameIDs.nd==2) F.reshape(F.d0, frameIDs.d0, frameIDs.d1);
-  phi2(y, J, F);
-}
+
 
 rai::String Feature::shortTag(const rai::Configuration& C) {
   rai::String s;
@@ -111,32 +135,35 @@ rai::String Feature::shortTag(const rai::Configuration& C) {
 //  }
 //}
 
-VectorFunction Feature::vf(rai::Configuration& C) { ///< direct conversion to vector function: use to check gradient or evaluate
-  return [this, &C](arr& y, arr& J, const arr& x) -> void {
-    C.setJointState(x);
-    C.setJacModeAs(J);
-    phi(y, J, C);
-    C.jacMode=C.JM_dense;
-  };
-}
+//VectorFunction Feature::vf(rai::Configuration& C) { ///< direct conversion to vector function: use to check gradient or evaluate
+//  return [this, &C](arr& y, arr& J, const arr& x) -> void {
+//    C.setJointState(x);
+//    C.setJacModeAs(J);
+//    phi(y, J, C);
+//    C.jacMode=C.JM_dense;
+//  };
+//}
 
 VectorFunction Feature::vf2(const FrameL& F) { ///< direct conversion to vector function: use to check gradient or evaluate
   return [this, &F](arr& y, arr& J, const arr& x) -> void {
     F.first()->C.setJointState(x);
+    auto jacMode = F.first()->C.jacMode;
+    F.first()->C.setJacModeAs(J);
     phi2(y, J, F);
+    F.first()->C.jacMode=jacMode;
   };
 }
 
-VectorFunction Feature::vf(ConfigurationL& Ctuple) { ///< direct conversion to vector function: use to check gradient or evaluate
-  return [this, &Ctuple](arr& y, arr& J, const arr& x) -> void {
-    uintA qdim = getKtupleDim(Ctuple);
-    qdim.prepend(0);
-    for(uint i=0; i<Ctuple.N; i++){
-      Ctuple(i)->setJointState(x({qdim(i), qdim(i+1)-1}));
-    }
-    phi(y, J, Ctuple);
-  };
-}
+//VectorFunction Feature::vf(ConfigurationL& Ctuple) { ///< direct conversion to vector function: use to check gradient or evaluate
+//  return [this, &Ctuple](arr& y, arr& J, const arr& x) -> void {
+//    uintA qdim = getKtupleDim(Ctuple);
+//    qdim.prepend(0);
+//    for(uint i=0; i<Ctuple.N; i++){
+//      Ctuple(i)->setJointState(x({qdim(i), qdim(i+1)-1}));
+//    }
+//    phi(y, J, Ctuple);
+//  };
+//}
 
 void Feature::applyLinearTrans(arr& y, arr& J) {
   if(target.N) {

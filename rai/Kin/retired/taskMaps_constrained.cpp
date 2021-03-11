@@ -90,7 +90,7 @@ void PlaneConstraint::phi(arr& y, arr& J, const rai::Configuration& G) {
 //===========================================================================
 
 void ConstraintStickiness::phi(arr& y, arr& J, const rai::Configuration& G) {
-  map.__phi(y, J, G);
+  map.eval(y, J, G);
   for(uint j=0; j<y.N; j++) y(j) = -y(j);
   if(!!J) for(uint j=0; j<J.d0; j++) J[j]() *= -1.;
 }

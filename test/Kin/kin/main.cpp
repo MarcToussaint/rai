@@ -302,14 +302,14 @@ void TEST(Limits){
   arr x(n);
   for(uint k=0;k<10;k++){
     rndUniform(x,-2.,2.,false);
-    checkJacobian(F->vf(G),x,1e-4);
+    checkJacobian(F->vf2(F->getFrames(G)),x,1e-4);
     for(uint t=0;t<10;t++){
-      auto lim = F->eval(G);
+      auto lim = F->eval(F->getFrames(G));
       cout <<"y=" <<lim.y <<"  " <<flush;
 //      cout <<"J:" <<lim.J <<endl;
       for(uint i=0;i<lim.y.N;i++) if(lim.y(i)<0.) lim.y(i)=0.; //penalize only positive
       x -= 1. * pseudoInverse(lim.J) * lim.y;
-      checkJacobian(F->vf(G),x,1e-4);
+      checkJacobian(F->vf2(F->getFrames(G)),x,1e-4);
       G.setJointState(x);
       G.watch();
     }

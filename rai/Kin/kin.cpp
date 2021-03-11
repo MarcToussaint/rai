@@ -2632,7 +2632,8 @@ std::shared_ptr<Feature> Configuration::feature(FeatureSymbol fs, const StringA&
 
 /// evaluate a feature for a given frame(s)
 void Configuration::evalFeature(arr& y, arr& J, FeatureSymbol fs, const StringA& frames) const {
-  feature(fs, frames)->__phi(y, J, *this);
+  std::shared_ptr<Feature> feat = feature(fs, frames);
+  feat->eval(y, J, feat->getFrames(*this));
 }
 
 /// Compute the new configuration q such that body is located at ytarget (with deplacement rel).

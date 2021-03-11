@@ -48,7 +48,7 @@ void TM_BeliefTransition::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   arr J_xi = zeros(Ktuple.N, Ktuple.elem(-1)->q.N);
   if(viewError) {
     arr y_view, J_view;
-    viewError->__phi(y_view, J_view, Ktuple);
+    viewError->eval(y_view, J_view, Ktuple);
     y_view *= 2.;
     J_view *= 2.;
     xi = 1. - Forsyth(J_xi, y_view, 1.);

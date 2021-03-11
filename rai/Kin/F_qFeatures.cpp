@@ -199,7 +199,7 @@ void F_qZeroVel::phi2(arr& y, arr& J, const FrameL& F){
   CHECK_EQ(order, 1, "");
   F_qItself()
       .setOrder(order)
-      .__phi2(y, J, F);
+      .eval(y, J, F);
 #if 1
   rai::Frame *f = F.last();
   if(f->joint->type==rai::JT_transXYPhi) {
@@ -218,7 +218,7 @@ void F_qZeroVel::phi2(arr& y, arr& J, const FrameL& F){
 uint F_qZeroVel::dim_phi2(const FrameL& F){
   return F_qItself()
       .setOrder(order)
-      .__dim_phi2(F);
+      .dim(F);
 }
 
 //===========================================================================

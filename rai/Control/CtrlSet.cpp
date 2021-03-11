@@ -32,22 +32,22 @@ void CtrlSet::report(std::ostream& os) const {
   }
 }
 
-bool CtrlSet::canBeInitiated(const rai::Configuration& Ctuple) const {
-  return isFeasible(*this, Ctuple, true);
+bool CtrlSet::canBeInitiated(const rai::Configuration& pathConfig) const {
+  return isFeasible(*this, pathConfig, true);
 }
 
-bool CtrlSet::isConverged(const rai::Configuration& Ctuple) const {
-  return isFeasible(*this, Ctuple, false);
+bool CtrlSet::isConverged(const rai::Configuration& pathConfig) const {
+  return isFeasible(*this, pathConfig, false);
 }
 
-bool isFeasible(const CtrlSet& CS, const rai::Configuration& Ctuple, bool initOnly, double eqPrecision) {
+bool isFeasible(const CtrlSet& CS, const rai::Configuration& pathConfig, bool initOnly, double eqPrecision) {
   bool isFeasible=true;
   for(const auto& o: CS.objectives) {
     if(o->type==OT_ineq || o->type==OT_eq) {
       if(!initOnly && o->transientStep>0. && o->movingTarget->isTransient) { isFeasible=false; break; }
       if(!initOnly || o->transientStep<=0.) {
         arr y, J;
-        o->feat->__phi(y, J, Ctuple);
+        o->feat->eval(y, J, o->feat->getFrames(pathConfig));
         if(o->type==OT_ineq) {
           for(double& yi : y) if(yi>eqPrecision) { isFeasible=false; break; }
         }

@@ -9,7 +9,7 @@
 #include "TM_linTrans.h"
 
 void TM_LinTrans::phi(arr& y, arr& J, const rai::Configuration& G) {
-  map->__phi(y, J, G);
+  map->eval(y, J, G);
   if(A.N) {
     y = A*y;
     if(!!J) J = A*J;

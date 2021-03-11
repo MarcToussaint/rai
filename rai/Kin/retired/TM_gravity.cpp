@@ -49,7 +49,7 @@ void TM_Gravity::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
 //      if(a->inertia && a->inertia->type==rai::BT_dynamic){
         TM_Default pos(TMT_pos, a->ID);
         pos.order=1;
-        pos.Feature::__phi(p0, (!!J?J0:NoArr), Ktuple);
+        pos.Feature::eval(p0, (!!J?J0:NoArr), Ktuple);
 
         arr v_ref = {0., 0., -gravity};
         arr Jv_ref = zeros(3, K.q.N);
@@ -119,7 +119,7 @@ void TM_Gravity::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
       if(a->flags & (1<<FL_gravityAcc)) {
         TM_Default pos(TMT_posDiff, a->ID);
         pos.order=2;
-        pos.Feature::__phi(acc, (!!J?Jacc:NoArr), Ktuple);
+        pos.Feature::eval(acc, (!!J?Jacc:NoArr), Ktuple);
 
         arr err = acc - acc_ref;
         arr Jerr = Jacc;
@@ -237,19 +237,19 @@ void TM_Gravity2::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   }
   TM_LinVel pos(i);
   pos.order=2;
-  pos.Feature::__phi(y, J, Ktuple);
+  pos.Feature::eval(y, J, Ktuple);
   y(2) += gravity;
 
 //  TM_Default quat(TMT_quat, a->ID); //mt: NOT TMT_quatDiff!! (this would compute the diff to world, which zeros the w=1...)
 //  // flip the quaternion sign if necessary
 //  quat.flipTargetSignOnNegScalarProduct = true;
 //  quat.order=1;
-//  quat.Feature::__phi(y({d+3,d+6})(), (!!J?J({d+3,d+6})():NoArr), Ktuple);
+//  quat.Feature::eval(y({d+3,d+6})(), (!!J?J({d+3,d+6})():NoArr), Ktuple);
 //  if(false) { //rotational friction
 //    double eps = 1e-2;
 //    arr w,Jw;
 //    quat.order=1;
-//    quat.Feature::__phi(w, (!!J?Jw:NoArr), Ktuple);
+//    quat.Feature::eval(w, (!!J?Jw:NoArr), Ktuple);
 //    y({d+3,d+6}) += eps*w;
 //    if(!!J) J({d+3,d+6}) += eps*Jw;
 //  }
@@ -271,6 +271,6 @@ void TM_ZeroAcc::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
   }
   TM_Default pos(TMT_pos, i);
   pos.order=2;
-  pos.Feature::__phi(y, J, Ktuple);
+  pos.Feature::eval(y, J, Ktuple);
 }
 

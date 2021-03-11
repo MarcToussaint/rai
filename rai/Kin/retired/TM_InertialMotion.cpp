@@ -25,7 +25,7 @@ void TM_InertialMotion::phi(arr& y, arr& J, const ConfigurationL& Ktuple) {
 
   TM_Default pos(TMT_pos, i);
   pos.order=2;
-  pos.Feature::__phi(acc, (!!J?Jacc:NoArr), Ktuple);
+  pos.Feature::eval(acc, (!!J?Jacc:NoArr), Ktuple);
 
   y = acc - acc_ref;
   if(!!J) {

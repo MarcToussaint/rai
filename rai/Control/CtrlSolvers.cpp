@@ -389,7 +389,7 @@ void TaskControlMethods::calcForceControl(CtrlObjectiveL& tasks, arr& K_ft, arr&
       rai::Frame* body = world.frames(feat->i);
       rai::Frame* lFtSensor = world.getFrameByName("r_ft_sensor");
       arr y, J, J_ft;
-      task->feat->__phi(y, J, world);
+      task->feat->eval(y, J, world);
       world.kinematicsPos_wrtFrame(NoArr, J_ft, body, feat->ivec, lFtSensor);
       J_ft_inv = -~conv_vec2arr(feat->ivec)*inverse_SymPosDef(J_ft*~J_ft)*J_ft;
       K_ft = -~J*task->f_alpha;
@@ -426,13 +426,13 @@ double TaskControlMethods::getIKCosts(CtrlObjectiveL& tasks, const arr& q, const
   NIY
 }
 
-arr TaskControlMethods::inverseKinematics(const ConfigurationL& Ctuple, CtrlObjectiveL& tasks, arr& qdot, const arr& P_compliance, const arr& nullRef, double* cost) {
+arr TaskControlMethods::inverseKinematics(const rai::Configuration& pathConfig, CtrlObjectiveL& tasks, arr& qdot, const arr& P_compliance, const arr& nullRef, double* cost) {
   arr y, v, J, J_vel; //separate J only for velocity tasks
   arr t_y, t_J;
   for(auto& t: tasks) {
     if(t->active) {
 //      if(t->ref->y_ref.N) {
-      t->feat->__phi(t_y, t_J, Ctuple);
+      t->feat->eval(t_y, t_J, t->feat->getFrames(pathConfig));
       y.append(-t_y);
       J.append(t_J);
 //      }
@@ -583,7 +583,7 @@ void CtrlProblem_MathematicalProgram::getBounds(arr& bounds_lo, arr& bounds_up) 
 
 void CtrlProblem_MathematicalProgram::getFeatureTypes(ObjectiveTypeA& featureTypes) {
   for(auto& o: CP.objectives) if(o->active) {
-    uint d = o->feat->__dim_phi(CP.komo.world);
+    uint d = o->feat->dim(o->feat->getFrames(CP.komo.world));
     featureTypes.append(consts<ObjectiveType>(o->type, d));
   }
   dimPhi = featureTypes.N;
@@ -592,7 +592,7 @@ void CtrlProblem_MathematicalProgram::getFeatureTypes(ObjectiveTypeA& featureTyp
 void CtrlProblem_MathematicalProgram::getNames(StringA& variableNames, StringA& featureNames) {
   variableNames = CP.komo.world.getJointNames();
   for(auto& o: CP.objectives) if(o->active) {
-    uint d = o->feat->__dim_phi(CP.komo.world);
+    uint d = o->feat->dim(o->feat->getFrames(CP.komo.world));
     featureNames.append(consts<rai::String>(o->name, d));
   }
 }
@@ -622,11 +622,11 @@ void CtrlProblem_MathematicalProgram::evaluate(arr& phi, arr& J, const arr& x) {
   arr y, Jy;
   uint M=0;
   for(auto& ob: CP.objectives) if(ob->active) {
-    uintA kdim = getKtupleDim(Ctuple);
+    uintA kdim; NIY// = getKtupleDim(Ctuple);
     kdim.prepend(0);
 
     //query the task map and check dimensionalities of returns
-    ob->feat->__phi(y, Jy, Ctuple);
+    NIY; //ob->feat->eval(y, Jy, Ctuple);
     if(!!J) CHECK_EQ(y.N, Jy.d0, "");
     if(!!J) CHECK_EQ(Jy.nd, 2, "");
     if(!!J) CHECK_EQ(Jy.d1, kdim.last(), "");

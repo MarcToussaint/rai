@@ -18,9 +18,9 @@ struct F_Max : Feature {
 
   F_Max(const ptr<Feature>& f, bool neg=false) : f(f), neg(neg) {}
 
-  virtual void phi(arr& y, arr& J, const rai::Configuration& G);
-  virtual uint dim_phi(const rai::Configuration& G) { return 1; }
-  virtual rai::String shortTag(const rai::Configuration& G) { return STRING("Max:"<<f->shortTag((G))); }
+  virtual void phi2(arr& y, arr& J, const FrameL& F);
+  virtual uint dim_phi2( const FrameL& F) { return 1; }
+  virtual rai::String shortTag(const rai::Configuration& C) { return STRING("Max:"<<f->shortTag(C)); }
 };
 
 //===========================================================================
@@ -30,9 +30,9 @@ struct F_Norm : Feature {
 
   F_Norm(const ptr<Feature>& f) : f(f) {}
 
-  virtual void phi(arr& y, arr& J, const rai::Configuration& G);
-  virtual uint dim_phi(const rai::Configuration& G) { return 1; }
-  virtual rai::String shortTag(const rai::Configuration& G) { return STRING("Norm:"<<f->shortTag((G))); }
+  virtual void phi2(arr& y, arr& J, const FrameL& F);
+  virtual uint dim_phi2( const FrameL& F) { return 1; }
+  virtual rai::String shortTag(const rai::Configuration& C) { return STRING("Norm:"<<f->shortTag(C)); }
 };
 
 //===========================================================================
@@ -42,7 +42,7 @@ struct F_Normalized : Feature {
 
   F_Normalized(const ptr<Feature>& f) : f(f) {}
 
-  virtual void phi(arr& y, arr& J, const rai::Configuration& G);
-  virtual uint dim_phi(const rai::Configuration& G) { return f->__dim_phi(G); }
-  virtual rai::String shortTag(const rai::Configuration& G) { return STRING("Normalized:"<<f->shortTag((G))); }
+  virtual void phi2(arr& y, arr& J, const FrameL& F);
+  virtual uint dim_phi2( const FrameL& F) { return f->dim(F); }
+  virtual rai::String shortTag(const rai::Configuration& C) { return STRING("Normalized:"<<f->shortTag(C)); }
 };

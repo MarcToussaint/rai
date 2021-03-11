@@ -91,11 +91,11 @@ void testFeature() {
 
     for(ptr<Feature>& f: F){
       cout <<k <<std::setw(30) <<f->shortTag(C) <<' ';
-      succ &= checkJacobian(f->vf(pathConfig), x, 1e-5);
+      succ &= checkJacobian(f->vf2(f->getFrames(pathConfig)), x, 1e-5);
     }
 
     arr y;
-    F.first()->__phi(y, NoArr, pathConfig);
+    F.first()->eval(y, NoArr, F.first()->getFrames(pathConfig));
 
     if(!succ) pathConfig.watch(true);
   }
