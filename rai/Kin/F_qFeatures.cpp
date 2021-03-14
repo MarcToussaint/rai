@@ -102,7 +102,7 @@ void F_qItself::phi(arr& q, arr& J, const rai::Configuration& C) {
 
 void F_qItself::phi2(arr& q, arr& J, const FrameL& F) {
   if(order!=0){
-    Feature::phi2(q, J, F);
+    phi_finiteDifferenceReduce(q, J, F);
     return;
   }
   uint n=dim_phi2(F);

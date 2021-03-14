@@ -258,7 +258,7 @@ void F_LinVel::phi2(arr& y, arr& J, const FrameL& F) {
 
   if(order==2) {
     if(impulseInsteadOfAcceleration) diffInsteadOfVel=true;
-    Feature::phi2(y, J, F);
+    phi_finiteDifferenceReduce(y, J, F);
     if(impulseInsteadOfAcceleration) diffInsteadOfVel=false;
   }
 }
@@ -296,7 +296,7 @@ void F_AngVel::phi2(arr& y, arr& J, const FrameL& F){
 
   if(order==2) {
     if(impulseInsteadOfAcceleration) diffInsteadOfVel=true;
-    Feature::phi2(y, J, F);
+    phi_finiteDifferenceReduce(y, J, F);
     if(impulseInsteadOfAcceleration) diffInsteadOfVel=false;
   }
 }

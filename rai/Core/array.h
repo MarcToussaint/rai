@@ -64,6 +64,7 @@ template<class T> bool greaterEqual(const T& a, const T& b) { return a>=b; }
 namespace rai {
 
 template<class T> struct ArrayIterationEnumerated;
+template<class T> struct ArrayModRaw;
 
 /** Simple array container to store arbitrary-dimensional arrays (tensors).
   Can buffer more memory than necessary for faster
@@ -309,6 +310,9 @@ template<class T> struct Array : /*std::vector<T>,*/ Serializable {
   const Array<T>& ioraw() const;
   const char* prt(); //gdb pretty print
 
+  /// modifiers
+  ArrayModRaw<T> modRaw();
+
   /// @name kind of private
   void resizeMEM(uint n, bool copy, int Mforce=-1);
   void reserveMEM(uint Mforce) { resizeMEM(N, true, Mforce); if(!nd) nd=1; }
@@ -372,6 +376,14 @@ template<class T> bool operator!=(const Array<T>& v, const Array<T>& w);
 template<class T> bool operator<(const Array<T>& v, const Array<T>& w);
 template<class T> std::istream& operator>>(std::istream& is, Array<T>& x);
 //template<class T> std::ostream& operator<<(std::ostream& os, const Array<T>& x);
+
+template <class T> struct ArrayModRaw{
+  Array<T> *x;
+  ArrayModRaw(Array<T>* x) : x(x) {}
+  void write(std::ostream& os) const{ x->writeRaw(os); }
+};
+template <class T> ArrayModRaw<T> Array<T>::modRaw(){ return ArrayModRaw<T>(this); }
+template <class T> std::ostream& operator<<(std::ostream& os, const ArrayModRaw<T>& x) { x.write(os); return os; }
 
 //element-wise update operators
 #ifndef SWIG

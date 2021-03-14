@@ -397,7 +397,7 @@ void F_NewtonEuler_DampedVelocities::phi2(arr& y, arr& J, const FrameL& F) {
 void F_Energy::phi2(arr& y, arr& J, const FrameL& F) {
   if(order==2){
     diffInsteadOfVel=true;
-    Feature::phi2(y, J, F);
+    phi_finiteDifferenceReduce(y, J, F);
     diffInsteadOfVel=false;
     return;
   }

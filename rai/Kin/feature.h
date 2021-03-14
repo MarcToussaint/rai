@@ -26,6 +26,7 @@ struct Feature {
   arr  scale, target;  ///< optional linear transformation
   bool flipTargetSignOnNegScalarProduct = false; ///< for order==1 (vel mode), when taking temporal difference, flip sign when scalar product it negative [specific to quats -> move to special TM for quats only]
   bool diffInsteadOfVel = false;
+  int timeIntegral = 0;
   FeatureSymbol fs = FS_none;
   uintA frameIDs;
 
