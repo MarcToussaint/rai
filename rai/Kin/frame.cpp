@@ -247,7 +247,8 @@ rai::Inertia& rai::Frame::getInertia() {
 }
 
 const char* rai::Frame::isPart() {
-  rai::String* p = ats.find<rai::String>("part");
+  rai::String* p = 0;
+  if(ats) ats->find<rai::String>("part");
   if(p) return p->p;
   return 0;
 }
@@ -294,7 +295,6 @@ void rai::Frame::read(const Graph& ats) {
     if(ats["B"]) { //there is an extra transform from the joint into this frame -> create an own joint frame
       Frame* f = new Frame(parent);
       f->name <<'|' <<name; //the joint frame is actually the link frame of all child frames
-      f->ats.copy(ats, false, true);
       this->unLink();
       this->linkFrom(f, false);
       new Joint(*f);
@@ -342,7 +342,7 @@ void rai::Frame::write(Graph& G) {
   if(inertia) inertia->write(G);
 
   StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H", "axis", "A", "B", "mimic"};
-  for(Node* n : ats) {
+  for(Node* n : *ats) {
     if(!n->key.startsWith("%") && !avoid.contains(n->key)) {
       n->newClone(G);
     }
@@ -368,7 +368,7 @@ void rai::Frame::write(std::ostream& os) const {
   if(inertia) inertia->write(os);
 
   StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H", "axis", "A", "B", "mimic"};
-  for(Node* n : ats) {
+  for(Node* n : *ats) {
     if(!n->key.startsWith("%") && !avoid.contains(n->key)) os <<", " <<*n;
   }
 
@@ -487,7 +487,8 @@ rai::Frame& rai::Frame::setMass(double mass) {
 }
 
 rai::Frame& rai::Frame::addAttribute(const char* key, double value) {
-  ats.newNode<double>(key, {}, value);
+  if(!ats) ats = make_shared<Graph>();
+  ats->newNode<double>(key, {}, value);
   return *this;
 }
 
@@ -1241,10 +1242,12 @@ void rai::Shape::write(std::ostream& os) const {
   os <<", shape:" <<_type;
   if(_type!=ST_mesh) os <<", size:" <<size;
 
-  Node* n;
-  if((n=frame.ats["color"])) os <<", " <<*n;
-  if((n=frame.ats["mesh"])) os <<", " <<*n;
-  if((n=frame.ats["meshscale"])) os <<", " <<*n;
+  if(frame.ats){
+    Node* n;
+    if((n=(*frame.ats)["color"])) os <<", " <<*n;
+    if((n=(*frame.ats)["mesh"])) os <<", " <<*n;
+    if((n=(*frame.ats)["meshscale"])) os <<", " <<*n;
+  }
   if(cont) os <<", contact:" <<(int)cont;
 }
 

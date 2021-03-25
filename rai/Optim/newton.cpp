@@ -174,7 +174,7 @@ OptNewton::StopCriterion OptNewton::step() {
   double maxDelta = absMax(Delta);
   if(options.maxStep>0. && maxDelta>options.maxStep) {  Delta *= options.maxStep/maxDelta; maxDelta = options.maxStep; }
   double alphaHiLimit = options.maxStep/maxDelta;
-  double alphaLoLimit = 1e-1*options.stopTolerance/maxDelta;
+  //double alphaLoLimit = 1e-1*options.stopTolerance/maxDelta;
 
   if(options.verbose>1) cout <<"  |Delta|:" <<std::setw(11) <<maxDelta <<flush;
 

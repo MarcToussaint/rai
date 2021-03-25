@@ -184,8 +184,9 @@ Frame* Configuration::addFrame(const char* name, const char* parent, const char*
   }
 
   if(args && args[0]) {
-    String(args) >>f->ats;
-    f->read(f->ats);
+    if(!f->ats) f->ats = make_shared<Graph>();
+    String(args) >>*(f->ats);
+    f->read(*f->ats);
   }
 
 //  if(f->parent) f->calc_X_from_parent();
@@ -303,7 +304,7 @@ void Configuration::addCopies(const FrameL& F, const ForceExchangeL& _forces) {
     FId2thisId(f->ID) = f_new->ID;
 
     //convert constant joints to mimic joints
-    if(f->joint && f->ats["constant"]){
+    if(f->joint && (*f->ats)["constant"]){
       Frame *f_orig = getFrame(f_new->name); //identify by name!!!
       if(f_orig!=f_new){
         CHECK(f_orig->joint, "");
@@ -442,7 +443,7 @@ uintA Configuration::getCtrlFramesAndScale(arr& scale) const {
   uintA qFrames;
   for(rai::Frame* f : frames) {
     rai::Joint *j = f->joint;
-    if(j && j->active && j->dim>0 && (!j->mimic) && j->H>0. && j->type!=rai::JT_tau && (!f->ats["constant"])) {
+    if(j && j->active && j->dim>0 && (!j->mimic) && j->H>0. && j->type!=rai::JT_tau && (!(*f->ats)["constant"])) {
       qFrames.append(TUP(f->ID, f->parent->ID));
       if(!!scale) scale.append(j->H, j->dim);
     }
@@ -615,15 +616,6 @@ void Configuration::selectJoints(const FrameL& F, bool notThose) {
 //  ensure_indexedJoints();
 //  ensure_q();
 //  checkConsistency();
-}
-
-/// select joint frames that have a given attribute in the g-file
-void Configuration::selectJointsByGroup(const StringA& groupNames, bool notThose) {
-  FrameL F;
-  for(Frame* f:frames) if(f->joint) {
-    for(const String& s:groupNames) if(f->ats[s]) { F.append(f); break; }
-  }
-  selectJoints(F, notThose);
 }
 
 /// select joint frames by name (names may refer to any part of a link, not necessarily the joint frame)
@@ -1038,7 +1030,7 @@ bool Configuration::checkConsistency() const {
     if(a->joint) CHECK_EQ(a->joint->frame, a, "");
     if(a->shape) CHECK_EQ(&a->shape->frame, a, "");
     if(a->inertia) CHECK_EQ(&a->inertia->frame, a, "");
-    a->ats.checkConsistency();
+    if(a->ats) a->ats->checkConsistency();
 
     a->Q.checkNan();
     a->X.checkNan();
@@ -2112,8 +2104,8 @@ void Configuration::writeURDF(std::ostream& os, const char* robotName) const {
         case ST_box:       os <<"      <box size=\"" <<size({0, 2}) <<"\" />\n";  break;
         case ST_cylinder:  os <<"      <cylinder length=\"" <<size.elem(-2) <<"\" radius=\"" <<size.elem(-1) <<"\" />\n";  break;
         case ST_sphere:    os <<"      <sphere radius=\"" <<size.last() <<"\" />\n";  break;
-        case ST_mesh:      os <<"      <mesh filename=\"" <<a->ats.get<FileToken>("mesh").name <<'"';
-          if(a->ats["meshscale"]) os <<" scale=\"" <<a->ats.get<arr>("meshscale") <<'"';
+        case ST_mesh:      os <<"      <mesh filename=\"" <<a->ats->get<FileToken>("mesh").name <<'"';
+          if((*a->ats)["meshscale"]) os <<" scale=\"" <<a->ats->get<arr>("meshscale") <<'"';
           os <<" />\n";  break;
         default:           os <<"      <UNKNOWN_" <<a->shape->type() <<" />\n";  break;
       }
@@ -2139,8 +2131,8 @@ void Configuration::writeURDF(std::ostream& os, const char* robotName) const {
             case ST_box:       os <<"      <box size=\"" <<size({0, 2}) <<"\" />\n";  break;
             case ST_cylinder:  os <<"      <cylinder length=\"" <<size.elem(-2) <<"\" radius=\"" <<size.elem(-1) <<"\" />\n";  break;
             case ST_sphere:    os <<"      <sphere radius=\"" <<size.last() <<"\" />\n";  break;
-            case ST_mesh:      os <<"      <mesh filename=\"" <<b->ats.get<FileToken>("mesh").name <<'"';
-              if(b->ats["meshscale"]) os <<" scale=\"" <<b->ats.get<arr>("meshscale") <<'"';
+            case ST_mesh:      os <<"      <mesh filename=\"" <<b->ats->get<FileToken>("mesh").name <<'"';
+              if((*b->ats)["meshscale"]) os <<" scale=\"" <<b->ats->get<arr>("meshscale") <<'"';
               os <<" />\n";  break;
             default:           os <<"      <UNKNOWN_" <<b->shape->type() <<" />\n";  break;
           }
@@ -2263,7 +2255,7 @@ void Configuration::writeMeshes(const char* pathPrefix) const {
       if(f->shape->type()==ST_ssCvx) f->shape->sscCore().writeArr(FILE(filename));
 #else
       filename <<f->name <<".ply";
-      f->ats.getNew<FileToken>("mesh").name = filename;
+      f->ats->getNew<FileToken>("mesh").name = filename;
       if(f->shape->type()==ST_mesh) f->shape->mesh().writePLY(filename.p);
       if(f->shape->type()==ST_ssCvx) f->shape->sscCore().writePLY(filename.p);
 #endif
@@ -2395,8 +2387,9 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
     Frame* b=new Frame(*this);
     node2frame(n->index) = b;
     b->name=n->key;
-    b->ats.copy(n->graph(), false, true);
-    b->read(b->ats);
+    b->ats = make_shared<Graph>();
+    b->ats->copy(n->graph(), false, true);
+    b->read(*b->ats);
   }
 
   //-- normal case! just normal frames or edges
@@ -2415,8 +2408,9 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
       else HALT("a frame can only have one parent");
       node2frame(n->index) = b;
       b->name=n->key;
-      b->ats.copy(n->graph(), false, true);
-      b->read(b->ats);
+      b->ats = make_shared<Graph>();
+      b->ats->copy(n->graph(), false, true);
+      b->read(*b->ats);
 
     } else { //this is an inserted joint -> 2 frames (pre-joint and joint)
 
@@ -2450,8 +2444,9 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
         n->graph().index();
       }
 
-      b->ats.copy(n->graph(), false, true);
-      b->read(b->ats);
+      b->ats = make_shared<Graph>();
+      b->ats->copy(n->graph(), false, true);
+      b->read(*b->ats);
     }
   }
 
@@ -2464,15 +2459,15 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
 
     Frame* f = new Frame(*this);
     f->name=n->key;
-    f->ats.copy(n->graph(), false, true);
+    f->ats = make_shared<Graph>(n->graph());
     Shape* s = new Shape(*f);
-    s->read(f->ats);
+    s->read(*f->ats);
 
     if(n->parents.N==1) {
       Frame* b = listFindByName(frames, n->parents(0)->key);
       CHECK(b, "could not find frame '" <<n->parents(0)->key <<"'");
       f->linkFrom(b);
-      if(f->ats["rel"]) n->graph().get(f->Q, "rel");
+      if((*f->ats)["rel"]) f->ats->get(f->Q, "rel");
     }
   }
 
@@ -2494,20 +2489,20 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
     } else {
       f->name <<'|' <<to->name; //the joint frame is actually the link frame of all child frames
     }
-    f->ats.copy(n->graph(), false, true);
+    f->ats = make_shared<Graph>(n->graph());
 
     f->linkFrom(from);
     to->linkFrom(f);
 
     Joint* j=new Joint(*f);
-    j->read(f->ats);
+    j->read(*f->ats);
   }
 
   //if the joint is coupled to another:
   {
     Joint* j;
     for(Frame* f: frames) if((j=f->joint) && j->mimic==(Joint*)1) {
-        Node* mim = f->ats["mimic"];
+        Node* mim = (*f->ats)["mimic"];
         String jointName;
         if(mim->isOfType<String>()) jointName = mim->get<String>();
         else if(mim->isOfType<NodeL>()) {
@@ -2526,7 +2521,7 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
         j->calc_Q_from_q(j->q0, 0);
 
         delete mim;
-        f->ats.index();
+        f->ats->index();
       }
   }
 

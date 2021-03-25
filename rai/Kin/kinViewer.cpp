@@ -37,11 +37,12 @@ void KinViewer::open() {
     rai::Frame* frame = world.get()->frames(cameraFrameID);
     double d;
     arr z;
-    if(frame->ats.get<double>(d, "focalLength")) gl->camera.setFocalLength(d);
-    if(frame->ats.get<arr>(z, "zrange")) gl->camera.setZRange(z(0), z(1));
+    CHECK(frame->ats, "");
+    if(frame->ats->get<double>(d, "focalLength")) gl->camera.setFocalLength(d);
+    if(frame->ats->get<arr>(z, "zrange")) gl->camera.setZRange(z(0), z(1));
     uint w=0, h=0;
-    if(frame->ats.get<double>(d, "width")) w = (uint)d;
-    if(frame->ats.get<double>(d, "height")) h = (uint)d;
+    if(frame->ats->get<double>(d, "width")) w = (uint)d;
+    if(frame->ats->get<double>(d, "height")) h = (uint)d;
     if(w && h) {
       gl->resize(w, h);
       gl->camera.setWHRatio((double)w/h);

@@ -54,11 +54,12 @@ rai::CameraView::Sensor& rai::CameraView::addSensor(const char* frameAttached) {
   double orthoAbsHeight=-1.;
   arr zRange;
 
-  frame->ats.get<double>(focalLength, "focalLength");
-  frame->ats.get<double>(orthoAbsHeight, "orthoAbsHeight");
-  frame->ats.get<arr>(zRange, "zRange");
-  frame->ats.get<double>(width, "width");
-  frame->ats.get<double>(height, "height");
+  CHECK(frame->ats, "");
+  frame->ats->get<double>(focalLength, "focalLength");
+  frame->ats->get<double>(orthoAbsHeight, "orthoAbsHeight");
+  frame->ats->get<arr>(zRange, "zRange");
+  frame->ats->get<double>(width, "width");
+  frame->ats->get<double>(height, "height");
 
   return addSensor(frameAttached, frameAttached, width, height, focalLength, orthoAbsHeight, zRange);
 }
@@ -90,7 +91,7 @@ void rai::CameraView::updateConfiguration(const rai::Configuration& newC) {
     if(renderMode==seg) { //update frameIDmap
       frameIDmap.resize(C.frames.N).setZero();
       for(rai::Frame* f:C.frames) {
-        int* label=f->ats.find<int>("label");
+        int* label=f->ats->find<int>("label");
         if(label) frameIDmap(f->ID) = *label;
       }
     }

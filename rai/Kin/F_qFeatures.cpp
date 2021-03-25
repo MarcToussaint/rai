@@ -22,12 +22,6 @@ F_qItself::F_qItself(PickMode pickMode, const StringA& picks, const rai::Configu
       frameIDs.append(f->parent->ID);
     }
     frameIDs.reshape(-1,2);
-  }else if(pickMode==byJointGroups) {
-    for(rai::Frame* f: C.frames) {
-      bool pick=false;
-      for(const rai::String& s:picks) if(f->ats.getNode(s)) { pick=true; break; }
-      if(pick) frameIDs.setAppend(f->ID);
-    }
   }else if(pickMode==byJointNames) {
     for(rai::String s:picks) {
       if(s(-2)==':') s.resize(s.N-2, true);

@@ -52,7 +52,8 @@ SwiftInterface::SwiftInterface(const FrameL& frames, double _cutoff, int verbose
         case rai::ST_none: HALT("shapes should have a type - somehow wrong initialization..."); break;
         case rai::ST_mesh: {
           //check if there is a specific swiftfile!
-          rai::FileToken* file = s->frame.ats.find<rai::FileToken>("swiftfile");
+          CHECK(s->frame.ats, "");
+          rai::FileToken* file = s->frame.ats->find<rai::FileToken>("swiftfile");
           if(false && file) {
             r=scene->Add_General_Object(file->name, swiftID(f->ID), false);
             CHECK_GE(swiftID(f->ID), 0, "no object generated from swiftfile");

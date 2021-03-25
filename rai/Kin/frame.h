@@ -87,7 +87,7 @@ struct Frame : NonCopyable {
 
  public:
   double tau=0.;             ///< frame's relative time transformation (could be thought as part of the transformation X in space-time)
-  Graph ats;                 ///< list of any-type attributes
+  std::shared_ptr<Graph> ats;                 ///< list of any-type attributes
 
   //attachments to the frame
   Joint* joint=nullptr;          ///< this frame is an articulated joint

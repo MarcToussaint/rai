@@ -13,7 +13,7 @@
 //===========================================================================
 
 struct F_qItself : Feature {
-  enum PickMode { byJointNames, byFrameNames, byJointGroups, byExcludeJointNames, allActiveJoints };
+  enum PickMode { byJointNames, byFrameNames, byExcludeJointNames, allActiveJoints };
 
   bool relative_q0; ///< if true, absolute values are given relative to Joint::q0
 

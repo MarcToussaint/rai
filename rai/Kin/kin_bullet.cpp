@@ -256,7 +256,7 @@ btRigidBody* BulletInterface_self::addLink(rai::Frame* f, int verbose) {
   double fric=1.;
   if(shapes.N==1 && f == &shapes.scalar()->frame) {
     //try to read friction from attributes
-    shapes.scalar()->frame.ats.get<double>(fric, "friction");
+    shapes.scalar()->frame.ats->get<double>(fric, "friction");
   }
   body->setFriction(fric);
   body->setRollingFriction(.01);

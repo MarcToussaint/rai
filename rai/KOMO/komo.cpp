@@ -565,7 +565,7 @@ void KOMO::setSkeleton(const Skeleton& S) {
       }
 
       case SY_touchBoxNormalX: {
-        rai::Frame* box = world.getFrame(s.frames(1));
+        //rai::Frame* box = world.getFrame(s.frames(1));
         CHECK(box, "");
         CHECK(box->shape && box->shape->type()==rai::ST_ssBox, "");
         double boxSize = shapeSize(world, s.frames(1), 0);
@@ -575,7 +575,7 @@ void KOMO::setSkeleton(const Skeleton& S) {
         break;
       }
       case SY_touchBoxNormalY: {
-        rai::Frame* box = world.getFrame(s.frames(1));
+        //rai::Frame* box = world.getFrame(s.frames(1));
         CHECK(box, "");
         CHECK(box->shape && box->shape->type()==rai::ST_ssBox, "");
         double boxSize = shapeSize(world, s.frames(1), 1);

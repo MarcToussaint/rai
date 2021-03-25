@@ -757,10 +757,6 @@ void setLogLevels(int fileLogLevel, int consoleLogLevel) {
 //
 // parameters
 
-namespace rai {
-
-}
-
 /// a global operator to scan (parse) strings from a stream
 std::istream& operator>>(std::istream& is, const PARSE& x) {
   rai::parse(is, x.str); return is;

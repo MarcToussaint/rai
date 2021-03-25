@@ -216,6 +216,49 @@ void TEST(PR2){
 //   K.watch(true);
 // }
 
+void testDataStructure(){
+  rai::Configuration C("../switches/model2.g");
+
+  KOMO komo;
+
+  komo.setModel(C, false);
+  komo.setTiming(2.5, 30, 5., 2);
+  komo.add_qControlObjective({}, 2);
+  komo.addSquaredQuaternionNorms();
+
+  //grasp
+  komo.addSwitch_stable(1., 2., "table", "gripper", "box");
+  komo.addObjective({1.}, FS_positionDiff, {"gripper", "box"}, OT_eq, {1e2});
+  komo.addObjective({1.}, FS_scalarProductXX, {"gripper", "box"}, OT_eq, {1e2}, {0.});
+  komo.addObjective({1.}, FS_vectorZ, {"gripper"}, OT_eq, {1e2}, {0., 0., 1.});
+
+  //slow - down - up
+  komo.addObjective({1.}, FS_qItself, {}, OT_eq, {}, {}, 1);
+  komo.addObjective({.9,1.1}, FS_position, {"gripper"}, OT_eq, {}, {0.,0.,.1}, 2);
+
+  //place
+  komo.addSwitch_stable(2., -1., "gripper", "table", "box", false);
+  komo.addObjective({2.}, FS_positionDiff, {"box", "table"}, OT_eq, {1e2}, {0,0,.08}); //arr({1,3},{0,0,1e2})
+  komo.addObjective({2.}, FS_vectorZ, {"gripper"}, OT_eq, {1e2}, {0., 0., 1.});
+
+  //slow - down - up
+  komo.addObjective({2.}, FS_qItself, {}, OT_eq, {}, {}, 1);
+  komo.addObjective({1.9,2.1}, FS_position, {"gripper"}, OT_eq, {}, {0.,0.,.1}, 2);
+
+  komo.verbose = 4;
+//  komo.optimize();
+//  komo.checkGradients();
+
+//  komo.view(false, "optimized motion");
+//  for(uint k=0;k<2;k++) komo.view_play(false);
+
+  for(uint k=0;k<20;k++){
+    rai::Configuration C;
+    C.copy(komo.pathConfig, true);
+  }
+
+}
+
 //===========================================================================
 
 int main(int argc,char** argv){
@@ -226,7 +269,9 @@ int main(int argc,char** argv){
 //  testEasy();
 //  testAlign();
 //  testThin();
-  testPR2();
+//  testPR2();
+
+  testDataStructure();
 
   return 0;
 }
