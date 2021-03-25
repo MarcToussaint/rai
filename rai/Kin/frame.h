@@ -114,7 +114,7 @@ struct Frame : NonCopyable {
   Frame* insertPreLink(const rai::Transformation& A=0);
   Frame* insertPostLink(const rai::Transformation& B=0);
   void unLink();
-  void linkFrom(Frame* _parent, bool adoptRelTransform=false);
+  void setParent(Frame* _parent, bool adoptRelTransform=false);
 
   //structural information/retrieval
   bool isChildOf(const Frame* par, int order=1) const;

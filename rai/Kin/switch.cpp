@@ -144,7 +144,7 @@ rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) {
 #endif
 
     //create a new joint
-    to->linkFrom(from, false);
+    to->setParent(from, false);
     to->setJoint(jointType);
     CHECK(jointType!=JT_none, "");
 
@@ -185,7 +185,7 @@ rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) {
     CHECK_EQ(jointType, JT_none, "");
 
     if(to->parent) to->unLink();
-    to->linkFrom(from, true);
+    to->setParent(from, true);
     return to;
   }
 

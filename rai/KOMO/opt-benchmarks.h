@@ -8,7 +8,7 @@ struct OptBench_InvKin_Endeff {
 
 private:
   unique_ptr<KOMO> komo;
-  shared_ptr<KOMO::Conv_KOMO_SparseNonfactored> nlp;
+  shared_ptr<MathematicalProgram> nlp;
 };
 
 struct OptBench_Skeleton {
@@ -17,7 +17,7 @@ struct OptBench_Skeleton {
 
 //private:
   unique_ptr<KOMO> komo;
-  shared_ptr<KOMO::Conv_KOMO_SparseNonfactored> nlp;
+  shared_ptr<MathematicalProgram> nlp;
 };
 
 struct OptBench_Skeleton_Pick : OptBench_Skeleton {

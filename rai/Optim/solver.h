@@ -24,7 +24,7 @@ enum NLP_SolverOption { _NLopt_LD_SLSQP,
 
 /** User Interface: Meta class to call several different solvers in a unified manner. */
 struct NLP_Solver : NonCopyable {
-  NLP_SolverID solverID=NLPS_none;
+  NLP_SolverID solverID=NLPS_augmentedLag;
   arr x, dual;
   shared_ptr<MathematicalProgram_Traced> P;
 

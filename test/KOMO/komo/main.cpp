@@ -3,6 +3,7 @@
 #include <Kin/F_collisions.h>
 #include <Kin/viewer.h>
 #include <Kin/F_pose.h>
+#include <Optim/solver.h>
 
 //===========================================================================
 
@@ -216,8 +217,18 @@ void TEST(PR2){
 //   K.watch(true);
 // }
 
-void testDataStructure(){
+void testFactors(){
   rai::Configuration C("../switches/model2.g");
+
+  rai::Frame* g = C["gripper"];
+  g->ensure_X();
+  rai::Frame* g2 = new rai::Frame(C, g);
+  g2->name = "gripperDUP";
+  g2->setShape(rai::ST_box, {.1,.05,.05}); //usually not!
+  g2->setParent(C.frames.first(), true);
+  g2->setJoint(rai::JT_free);
+
+  //=== define the full problem
 
   KOMO komo;
 
@@ -226,11 +237,13 @@ void testDataStructure(){
   komo.add_qControlObjective({}, 2);
   komo.addSquaredQuaternionNorms();
 
+  //consistency constraint
+  komo.addObjective({}, FS_poseDiff, {"gripper", "gripperDUP"}, OT_eq, {1e2});
   //grasp
   komo.addSwitch_stable(1., 2., "table", "gripper", "box");
-  komo.addObjective({1.}, FS_positionDiff, {"gripper", "box"}, OT_eq, {1e2});
-  komo.addObjective({1.}, FS_scalarProductXX, {"gripper", "box"}, OT_eq, {1e2}, {0.});
-  komo.addObjective({1.}, FS_vectorZ, {"gripper"}, OT_eq, {1e2}, {0., 0., 1.});
+  komo.addObjective({1.}, FS_positionDiff, {"gripperDUP", "box"}, OT_eq, {1e2});
+  komo.addObjective({1.}, FS_scalarProductXX, {"gripperDUP", "box"}, OT_eq, {1e2}, {0.});
+  komo.addObjective({1.}, FS_vectorZ, {"gripperDUP"}, OT_eq, {1e2}, {0., 0., 1.});
 
   //slow - down - up
   komo.addObjective({1.}, FS_qItself, {}, OT_eq, {}, {}, 1);
@@ -245,17 +258,25 @@ void testDataStructure(){
   komo.addObjective({2.}, FS_qItself, {}, OT_eq, {}, {}, 1);
   komo.addObjective({1.9,2.1}, FS_position, {"gripper"}, OT_eq, {}, {0.,0.,.1}, 2);
 
+
+  //=== select only gripperDUB
+//  komo.selectJointsBySubtrees({"gripperDUP"});
+
+
   komo.verbose = 4;
+//  komo.animateOptimization = 1;
 //  komo.optimize();
+
+  NLP_Solver()
+      .setProblem(*komo.nlp_SparseNonFactored())
+      .solve();
+
+
 //  komo.checkGradients();
 
-//  komo.view(false, "optimized motion");
-//  for(uint k=0;k<2;k++) komo.view_play(false);
+  komo.view(true, "optimized motion");
+  while(komo.view_play(true));
 
-  for(uint k=0;k<20;k++){
-    rai::Configuration C;
-    C.copy(komo.pathConfig, true);
-  }
 
 }
 
@@ -271,7 +292,7 @@ int main(int argc,char** argv){
 //  testThin();
 //  testPR2();
 
-  testDataStructure();
+  testFactors();
 
   return 0;
 }

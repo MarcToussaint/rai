@@ -64,7 +64,7 @@ rai::Frame::Frame(Frame* _parent)
   : Frame(_parent->C) {
   CHECK(_parent, "");
   _state_X_isGood=false;
-  linkFrom(_parent, false);
+  setParent(_parent, false);
 }
 
 rai::Frame::~Frame() {
@@ -296,7 +296,7 @@ void rai::Frame::read(const Graph& ats) {
       Frame* f = new Frame(parent);
       f->name <<'|' <<name; //the joint frame is actually the link frame of all child frames
       this->unLink();
-      this->linkFrom(f, false);
+      this->setParent(f, false);
       new Joint(*f);
       f->joint->read(ats);
     } else {
@@ -464,6 +464,7 @@ rai::Frame& rai::Frame::setColor(const arr& color) {
 }
 
 rai::Frame& rai::Frame::setJoint(rai::JointType jointType) {
+  CHECK(parent, "a frame needs a parent to have a joint");
   if(joint) { delete joint; joint=nullptr; }
   if(jointType != JT_none) {
     new Joint(*this, jointType);
@@ -557,7 +558,7 @@ rai::Frame* rai::Frame::insertPostLink(const rai::Transformation& B) {
   if(!!B) f->Q=B; else f->Q.setZero();
   f->_state_updateAfterTouchingQ();
 
-  f->linkFrom(this, false);
+  f->setParent(this, false);
 
   return f;
 }
@@ -571,9 +572,9 @@ void rai::Frame::unLink() {
   if(joint) {  delete joint;  joint=nullptr;  }
 }
 
-void rai::Frame::linkFrom(rai::Frame* _parent, bool adoptRelTransform) {
+void rai::Frame::setParent(rai::Frame* _parent, bool adoptRelTransform) {
   CHECK(_parent, "you need to set a parent to link from");
-  CHECK(!parent, "this frame ('" <<name <<"') is already linked to a parent");
+  CHECK(!parent, "this frame ('" <<name <<"') already has a parent");
   if(parent==_parent) return;
 
   if(adoptRelTransform) ensure_X();
@@ -624,7 +625,7 @@ rai::Joint::Joint(Frame& f, Joint* copyJoint)
 
 rai::Joint::Joint(Frame& from, Frame& f, Joint* copyJoint)
   : Joint(f, copyJoint) {
-  frame->linkFrom(&from, false);
+  frame->setParent(&from, false);
 }
 
 rai::Joint::~Joint() {

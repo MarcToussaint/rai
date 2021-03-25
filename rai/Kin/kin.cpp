@@ -143,7 +143,7 @@ void Configuration::copy(const Configuration& C, bool referenceSwiftOnCopy) {
 
   //copy frames; first each Frame/Link/Joint directly, where all links go to the origin K (!!!); then relink to itself
   for(Frame* f:C.frames) new Frame(*this, f);
-  for(Frame* f:C.frames) if(f->parent) frames.elem(f->ID)->linkFrom(frames.elem(f->parent->ID));
+  for(Frame* f:C.frames) if(f->parent) frames.elem(f->ID)->setParent(frames.elem(f->parent->ID));
 //  addFramesCopy(C.frames);
 
   //copy proxies; first they point to origin frames; afterwards, let them point to own frames
@@ -179,7 +179,7 @@ Frame* Configuration::addFrame(const char* name, const char* parent, const char*
     Frame* p = getFrame(parent);
     if(p) {
       f->set_X() = p->ensure_X();
-      f->linkFrom(p, true);
+      f->setParent(p, true);
     }
   }
 
@@ -217,7 +217,7 @@ void Configuration::addAssimp(const char* filename) {
     if(A.parents(i).N){
       Frame* f = frames(Nold+i);
       rai::Frame *parent = getFrame(A.parents(i));
-      if(parent) f->linkFrom(parent);
+      if(parent) f->setParent(parent);
     }
     f->set_X() = A.poses(i);
   }
@@ -234,7 +234,7 @@ void Configuration::addAssimp(const char* filename) {
       for(auto& mesh:A.meshes(i)){
         if(mesh.V.N){
           Frame* f1 = addFrame(STRING(f->name<<'_' <<j++));
-          f1->linkFrom(f);
+          f1->setParent(f);
           f1->set_Q()->setZero();
           Shape* s = new Shape(*f1);
           s->type() = ST_mesh;
@@ -316,7 +316,7 @@ void Configuration::addCopies(const FrameL& F, const ForceExchangeL& _forces) {
   //relink frames - special attention to mimic'ing
   for(Frame* f:F) if(f->parent && f->parent->ID<=maxId && FId2thisId(f->parent->ID)!=-1) {
     Frame* f_new = frames.elem(FId2thisId(f->ID));
-    f_new->linkFrom(frames.elem(FId2thisId(f->parent->ID)));
+    f_new->setParent(frames.elem(FId2thisId(f->parent->ID)));
     //take care of within-F mimic joints:
     if(f->joint && f->joint->mimic){
       CHECK(f->joint && f->joint->mimic, "");
@@ -882,7 +882,7 @@ void Configuration::flipFrames(Frame* a, Frame* b) {
   a->Q = -b->Q;
   b->Q.setZero();
   b->unLink();
-  a->linkFrom(b);
+  a->setParent(b);
 }
 
 void Configuration::pruneRigidJoints() {
@@ -955,7 +955,7 @@ void Configuration::makeObjectsFree(const StringA& objects, double H_cost) {
     Frame* a = getFrame(s, true);
     CHECK(a, "");
     a = a->getUpwardLink();
-    if(!a->parent) a->linkFrom(frames.first());
+    if(!a->parent) a->setParent(frames.first());
     if(!a->joint) new Joint(*a);
     a->joint->makeFree(H_cost);
   }
@@ -1112,7 +1112,7 @@ bool Configuration::checkConsistency() const {
 Joint* Configuration::attach(Frame* a, Frame* b) {
   b = b->getUpwardLink();
   if(b->parent) b->unLink();
-  b->linkFrom(a, true);
+  b->setParent(a, true);
   return new Joint(*b, JT_rigid);
 }
 
@@ -2437,7 +2437,7 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
       b->name=n->key;
 
       //connect the new frame and optionally impose the post node relative transform
-      to->linkFrom(b, false);
+      to->setParent(b, false);
       if(n->graph().findNode("B")) {
         to->set_Q()->read(n->graph().get<String>("B"));
         n->graph().delNode(n->graph().findNode("B"));
@@ -2466,7 +2466,7 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
     if(n->parents.N==1) {
       Frame* b = listFindByName(frames, n->parents(0)->key);
       CHECK(b, "could not find frame '" <<n->parents(0)->key <<"'");
-      f->linkFrom(b);
+      f->setParent(b);
       if((*f->ats)["rel"]) f->ats->get(f->Q, "rel");
     }
   }
@@ -2491,8 +2491,8 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
     }
     f->ats = make_shared<Graph>(n->graph());
 
-    f->linkFrom(from);
-    to->linkFrom(f);
+    f->setParent(from);
+    to->setParent(f);
 
     Joint* j=new Joint(*f);
     j->read(*f->ats);
