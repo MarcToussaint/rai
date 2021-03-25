@@ -505,16 +505,12 @@ void KOMO::addSquaredQuaternionNorms(const arr& times, double scale) {
 
 void KOMO::setSlow(double startTime, double endTime, double prec, bool hardConstrained) {
   if(stepsPerPhase>2) { //otherwise: no velocities
-#if 1
     uintA selectedBodies;
     for(rai::Frame* f:world.frames) if(f->joint && f->joint->dim>0 && f->joint->dim<7 && f->joint->type!=rai::JT_tau && f->joint->active && f->joint->H>0.) {
         selectedBodies.append(TUP(f->ID, f->parent->ID));
       }
     selectedBodies.reshape(selectedBodies.N/2, 2);
     ptr<Feature> feat = make_shared<F_qItself>(selectedBodies);
-#else
-    Feature* map = new TM_qItself;
-#endif
     if(!hardConstrained) addObjective({startTime, endTime}, feat, {}, OT_sos, {prec}, NoArr, 1);
     else addObjective({startTime, endTime}, feat, {}, OT_eq, {prec}, NoArr, 1);
   }

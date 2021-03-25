@@ -74,9 +74,14 @@ rai::Frame::~Frame() {
   if(inertia) delete inertia;
   if(parent) unLink();
   while(children.N) children.last()->unLink();
-  CHECK_EQ(this, C.frames.elem(ID), "")
-  C.frames.remove(ID);
-  listReindex(C.frames);
+  if(this==C.frames.last()) { //great: this is very efficient to remove without breaking indexing
+    CHECK_EQ(ID, C.frames.N-1, "");
+    C.frames.resizeCopy(C.frames.N-1);
+  }else{
+    CHECK_EQ(this, C.frames.elem(ID), "");
+    C.frames.remove(ID);
+    listReindex(C.frames);
+  }
   C.reset_q();
 }
 

@@ -310,7 +310,7 @@ void F_qQuaternionNorms::phi2(arr& y, arr& J, const FrameL& F) {
   uint i=0;
   for(const rai::Frame* f:F) {
     rai::Joint *j = f->joint;
-    if(!j) continue;
+    if(!j || !j->active) continue;
     if(j->type==rai::JT_quatBall || j->type==rai::JT_free || j->type==rai::JT_XBall) {
       arr q;
       if(j->type==rai::JT_quatBall) q.referToRange(C.q, j->qIndex+0, j->qIndex+3);
@@ -333,7 +333,7 @@ uint F_qQuaternionNorms::dim_phi2(const FrameL& F) {
   uint n=0;
   for(const rai::Frame* f:F) {
     rai::Joint *j = f->joint;
-    if(!j) continue;
+    if(!j || !j->active) continue;
     if(j->type==rai::JT_quatBall || j->type==rai::JT_free || j->type==rai::JT_XBall) n++;
   }
   return n;
