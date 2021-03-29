@@ -160,14 +160,14 @@ rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) {
       if(to->joint->dim>0) {
         arr q = to->joint->calc_q_from_Q(to->Q);
         to->Q.setZero();
-        to->joint->calc_Q_from_q(q, 0);
+        to->joint->setDofs(q, 0);
       }
     } if(init==SWInit_random) { //random, modulo DOFs
       to->Q.setRandom();
       if(to->joint->dim>0) {
         arr q = to->joint->calc_q_from_Q(to->Q);
         to->Q.setZero();
-        to->joint->calc_Q_from_q(q, 0);
+        to->joint->setDofs(q, 0);
       }
     }
     to->_state_updateAfterTouchingQ();

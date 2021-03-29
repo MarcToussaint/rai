@@ -114,7 +114,7 @@ void rai::Frame::calc_Q_from_parent(bool enforceWithinJoint) {
   Q.setDifference(parent->ensure_X(), X);
   if(joint && enforceWithinJoint) {
     arr q = joint->calc_q_from_Q(Q);
-    joint->calc_Q_from_q(q, 0);
+    joint->setDofs(q, 0);
   }
   _state_updateAfterTouchingQ();
 }
@@ -496,7 +496,7 @@ rai::Frame& rai::Frame::addAttribute(const char* key, double value) {
 rai::Frame& rai::Frame::setJointState(const arr& q) {
   CHECK(joint, "cannot setJointState for a non-joint");
   CHECK_EQ(q.N, joint->dim, "given q has wrong dimension");
-  joint->calc_Q_from_q(arr{q}, 0);
+  joint->setDofs(arr{q}, 0);
   C._state_q_isGood = false;
   return *this;
 }
@@ -603,7 +603,7 @@ rai::Joint::Joint(rai::Frame& f, rai::JointType _type) : Joint(f, (Joint*)nullpt
 }
 
 rai::Joint::Joint(Frame& f, Joint* copyJoint)
-  : frame(&f), qIndex(UINT_MAX) {
+  : frame(&f) {
   CHECK(!frame->joint, "the Link already has a Joint");
   frame->joint = this;
   frame->C.reset_q();
@@ -663,7 +663,7 @@ uint rai::Joint::qDim() {
   return dim;
 }
 
-void rai::Joint::calc_Q_from_q(const arr& q_full, uint _qIndex) {
+void rai::Joint::setDofs(const arr& q_full, uint _qIndex) {
   if(type==JT_rigid) return;
   CHECK(dim!=UINT_MAX, "");
   CHECK_LE(_qIndex+dim, q_full.N, "");
@@ -1098,11 +1098,11 @@ void rai::Joint::read(const Graph& G) {
       CHECK(dim!=UINT_MAX, "setting q (in config file) for 0-dim joint");
       CHECK(dim, "setting q (in config file) for 0-dim joint");
       q0 = consts<double>(d, dim);
-      calc_Q_from_q(q0, 0);
+      setDofs(q0, 0);
     }
   } else if(G.get(q0, "q")) {
     CHECK_EQ(q0.N, dim, "given q (in config file) does not match dim");
-    calc_Q_from_q(q0, 0);
+    setDofs(q0, 0);
   } else {
     //    link->Q.setZero();
     q0 = calc_q_from_Q(frame->Q);

@@ -556,13 +556,13 @@ void Configuration::setJointState(const arr& _q, const FrameL& F) {
       if(!j->mimic){
         for(uint ii=0; ii<j->dim; ii++) q.elem(j->qIndex+ii) = _q(nd+ii);
       }
-      j->calc_Q_from_q(q, j->qIndex);
+      j->setDofs(q, j->qIndex);
     }else{
 //      if(activesOnly) HALT("frame '" <<f->name <<"' is a joint, but INACTIVE!");
       if(!j->mimic){
         for(uint ii=0; ii<j->dim; ii++) qInactive.elem(j->qIndex+ii) = _q(nd+ii);
       }
-      j->calc_Q_from_q(qInactive, j->qIndex);
+      j->setDofs(qInactive, j->qIndex);
     }
     if(!j->mimic) nd += j->dim;
   }
@@ -600,6 +600,15 @@ void Configuration::setFrameState(const arr& X, const FrameL& F) {
 /// set the 'tau-coordinate' (time interval from previous time slice) for equal for all frames
 void Configuration::setTaus(double tau) {
   for(Frame* a:frames) a->tau = tau;
+}
+
+void Configuration::setActiveJoints(const JointL& joints){
+  for(rai::Frame *f:frames) if(f->joint) f->joint->active=false;
+  for(rai::Joint *j:joints) j->active=true;
+  reset_q();
+  activeJoints = joints;
+  calc_indexedActiveJoints(false);
+  checkConsistency();
 }
 
 /// selects only the joints of the given frames to be active -- the q-vector (and Jacobians) will refer only to those DOFs
@@ -1201,13 +1210,17 @@ void Configuration::prefixNames(bool clear) {
   else       for(Frame* a: frames) a->name.clear() <<a->ID;
 }
 
-void Configuration::calc_indexedActiveJoints() {
-  reset_q();
+void Configuration::calc_indexedActiveJoints(bool resetActiveJointSet) {
+  if(resetActiveJointSet){
+    reset_q();
 
-  //-- collect active joints
-  activeJoints.clear();
-  for(Frame* f:frames) if(f->joint && f->joint->active && f->joint->type!=JT_rigid)
+    //-- collect active joints
+    activeJoints.clear();
+    for(Frame* f:frames) if(f->joint && f->joint->active && f->joint->type!=JT_rigid)
       activeJoints.append(f->joint);
+  }else{
+    //we assume the activeJoints were set properly before!
+  }
 
   _state_indexedJoints_areGood=true;
 
@@ -1305,7 +1318,7 @@ void Configuration::calc_Q_from_q() {
   uint n=0;
   for(Joint* j: activeJoints) {
     if(!j->mimic) CHECK_EQ(j->qIndex, n, "joint indexing is inconsistent");
-    j->calc_Q_from_q(q, j->qIndex);
+    j->setDofs(q, j->qIndex);
     if(!j->mimic) {
       n += j->dim;
       if(j->uncertainty) {
@@ -2518,7 +2531,7 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
         if(!j->mimic) HALT("The joint '" <<*j <<"' is declared mimicking '" <<jointName <<"' -- but that doesn't exist!");
         j->type = j->mimic->type;
         j->q0 = j->mimic->q0;
-        j->calc_Q_from_q(j->q0, 0);
+        j->setDofs(j->q0, 0);
 
         delete mim;
         f->ats->index();

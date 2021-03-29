@@ -134,6 +134,7 @@ struct Configuration : GLDrawer {
   void setTaus(double tau);
 
   /// @name active DOFs selection
+  void setActiveJoints(const JointL& F);
   void selectJoints(const FrameL& F, bool notThose=false);
   void selectJointsByName(const StringA&, bool notThose=false);
   void selectJointsBySubtrees(const FrameL& roots, bool notThose=false);
@@ -171,7 +172,7 @@ struct Configuration : GLDrawer {
   void prefixNames(bool clear=false);
 
   /// @name computations on the tree
-  void calc_indexedActiveJoints(); ///< sort of private: count the joint dimensionalities and assign j->q_index
+  void calc_indexedActiveJoints(bool resetActiveJointSet=true); ///< sort of private: count the joint dimensionalities and assign j->q_index
   void calc_Q_from_q();  ///< from q compute the joint's Q transformations
   void calc_q_from_Q();  ///< updates q based on the joint's Q transformations
   arr calc_fwdPropagateVelocities(const arr& qdot);    ///< elementary forward kinematics

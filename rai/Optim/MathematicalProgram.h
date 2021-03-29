@@ -60,7 +60,7 @@ struct MathematicalProgram_Factored : MathematicalProgram {
   //-- structure of the mathematical problem
   virtual void getFactorization(uintA& variableDimensions, //the size of each variable block
                                 uintA& featureDimensions,  //the size of each feature block
-                                intAA& featureVariables    //which variables the j-th feature block depends on
+                                uintAA& featureVariables    //which variables the j-th feature block depends on
                                ) = 0;
 
   //-- structured (local) setting variable and evaluate feature
@@ -115,12 +115,12 @@ struct Conv_MathematicalProgram_TrivialFactoreded : MathematicalProgram_Factored
   virtual void getBounds(arr& bounds_lo, arr& bounds_up) { P.getBounds(bounds_lo, bounds_up); }
   virtual arr  getInitializationSample(const arr& previousOptima= {}) { return P.getInitializationSample(previousOptima); }
 
-  virtual void getFactorization(uintA& variableDimensions, uintA& featureDimensions, intAA& featureVariables) {
+  virtual void getFactorization(uintA& variableDimensions, uintA& featureDimensions, uintAA& featureVariables) {
     variableDimensions = { getDimension() };
     ObjectiveTypeA featureTypes;
     getFeatureTypes(featureTypes);
     featureDimensions = { featureTypes.N };
-    featureVariables = { intA({0}) };
+    featureVariables = { uintA({0}) };
   }
   virtual void setSingleVariable(uint var_id, const arr& x) { x_buffer = x; }
   virtual void evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H) {  P.evaluate(phi, J, x_buffer);   if(!!H) NIY;  }
@@ -133,7 +133,7 @@ struct Conv_FactoredNLP_BandedNLP : MathematicalProgram {
   uint maxBandSize;
   bool sparseNotBanded;
   uintA variableDimensions, varDimIntegral, featureDimensions, featDimIntegral;
-  intAA featureVariables;
+  uintAA featureVariables;
   //buffers
   arrA J_i;
 

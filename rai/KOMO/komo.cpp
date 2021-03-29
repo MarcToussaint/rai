@@ -901,6 +901,41 @@ struct Conv_KOMO_SparseNonfactored : MathematicalProgram {
   virtual void report(ostream& os, int verbose);
 };
 
+//this treats EACH BRANCH and dof as its own variable
+struct Conv_KOMO_FineStructuredProblem : MathematicalProgram_Factored {
+  KOMO& komo;
+  //each variable refers to a SET OF dofs (e.g., a set of joints)
+  uintA xIndex2VarId;
+  struct VariableIndexEntry { DofL dofs; uint dim; uint xIndex; };
+  rai::Array<VariableIndexEntry> variableIndex;
+
+  //..and each frame varies only with a single variable (THAT'S A LIMITING ASSUMPTION)
+  uintA frameID2VarId;
+
+  //features are one-to-one with gounded KOMO features, but with additional info on varIds
+  struct FeatureIndexEntry { ptr<GroundedObjective> ob; uint dim; uintA varIds; };
+  rai::Array<FeatureIndexEntry> featureIndex;
+
+  Conv_KOMO_FineStructuredProblem(KOMO& _komo);
+
+  ///-- signature/structure of the mathematical problem
+  virtual uint getDimension(){ return komo.pathConfig.getJointStateDimension(); }
+  virtual void getFeatureTypes(ObjectiveTypeA& featureTypes);
+  virtual void getBounds(arr& bounds_lo, arr& bounds_up){ komo.getBounds(bounds_lo, bounds_up); }
+//    virtual arr getInitializationSample();
+  virtual arr getInitializationSample(const arr& previousOptima) {
+    komo.run_prepare(.01);
+    return komo.x;
+  }
+  virtual void getFactorization(uintA& variableDimensions, uintA& featureDimensions, uintAA& featureVariables);
+
+  ///--- evaluation
+  virtual void setSingleVariable(uint var_id, const arr& x); //set a single variable block
+  virtual void evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H); //get a single feature block
+
+  void report();
+};
+
 //this treats each time slice as its own variable
 struct Conv_KOMO_FactoredNLP : MathematicalProgram_Factored {
   KOMO& komo;
@@ -908,7 +943,7 @@ struct Conv_KOMO_FactoredNLP : MathematicalProgram_Factored {
   struct VariableIndexEntry { uint t; uint dim; uint xIndex; };
   rai::Array<VariableIndexEntry> variableIndex;
 
-  struct FeatureIndexEntry { shared_ptr<Objective> ob; shared_ptr<GroundedObjective> ob2; uint t; intA varIds; uint dim; uint phiIndex; };
+  struct FeatureIndexEntry { shared_ptr<Objective> ob; shared_ptr<GroundedObjective> ob2; uint t; uintA varIds; uint dim; uint phiIndex; };
   rai::Array<FeatureIndexEntry> featureIndex;
 
   uintA xIndex2VarId;
@@ -920,7 +955,7 @@ struct Conv_KOMO_FactoredNLP : MathematicalProgram_Factored {
   virtual void getFeatureTypes(ObjectiveTypeA& featureTypes);
   virtual void getBounds(arr& bounds_lo, arr& bounds_up) {  komo.getBounds(bounds_lo, bounds_up);  }
   virtual arr getInitializationSample(const arr& previousOptima= {});
-  virtual void getFactorization(uintA& variableDimensions, uintA& featureDimensions, intAA& featureVariables);
+  virtual void getFactorization(uintA& variableDimensions, uintA& featureDimensions, uintAA& featureVariables);
 
   virtual void setAllVariables(const arr& x);
   virtual void setSingleVariable(uint var_id, const arr& x); //set a single variable block
@@ -928,37 +963,6 @@ struct Conv_KOMO_FactoredNLP : MathematicalProgram_Factored {
   virtual void report();
 };
 
-//this treats EACH JOINT and dof as its own variable... tricky
-struct Conv_KOMO_FineStructuredProblem : MathematicalProgram_Factored {
-  KOMO& komo;
-  uintA xIndex2VarId;
-  struct VariableIndexEntry { rai::Joint* joint=0; rai::ForceExchange* force=0; uint dim; uint xIndex; };
-  rai::Array<VariableIndexEntry> variableIndex;
-
-  uint featuresDim;
-  struct FeatureIndexEntry { ptr<Objective> ob; ConfigurationL Ctuple; uint t; uint dim; intA varIds; };
-  rai::Array<FeatureIndexEntry> featureIndex;
-
-  Conv_KOMO_FineStructuredProblem(KOMO& _komo);
-
-  ///-- signature/structure of the mathematical problem
-  virtual uint getDimension();
-  virtual void getFeatureTypes(ObjectiveTypeA& featureTypes);
-  virtual void getBounds(arr& bounds_lo, arr& bounds_up);
-//    virtual arr getInitializationSample();
-  virtual void getFactorization(uintA& variableDimensions, uintA& featureDimensions, intAA& featureVariables);
-
-  ///--- evaluation
-
-  //unstructured (batch) interface (where J may/should be sparse! and H optional
-//    virtual void evaluate(arr& phi, arr& J, const arr& x); //default implementation: if isStructured, gets everything from there
-
-  //structured (local) interface
-  virtual void setSingleVariable(uint var_id, const arr& x); //set a single variable block
-  virtual void evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H); //get a single feature block
-
-  void reportFeatures();
-};
 
 struct Conv_KOMO_TimeSliceProblem : MathematicalProgram {
   KOMO& komo;
@@ -1394,7 +1398,11 @@ shared_ptr<MathematicalProgram> KOMO::nlp_SparseNonFactored(){
   return make_shared<Conv_KOMO_SparseNonfactored>(*this, solver==rai::KS_sparse);
 }
 
-Camera&KOMO::displayCamera(){ DEPR; return pathConfig.gl()->displayCamera(); }
+shared_ptr<MathematicalProgram> KOMO::nlp_Factored(){
+  return make_shared<Conv_KOMO_FineStructuredProblem>(*this);
+}
+
+Camera& KOMO::displayCamera(){ DEPR; return pathConfig.gl()->displayCamera(); }
 
 rai::Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featuresOs) {
   //-- collect all task costs and constraints
@@ -1600,6 +1608,7 @@ void Conv_KOMO_SparseNonfactored::evaluate(arr& phi, arr& J, const arr& x) {
       arr y, Jy;
       //query the task map and check dimensionalities of returns
       ob->feat->eval(y, Jy, ob->frames);
+//      cout <<"EVAL '" <<ob->name() <<"' phi:" <<y <<endl <<Jy <<endl<<endl;
       if(!!J) CHECK_EQ(y.N, Jy.d0, "");
       if(!y.N) continue;
       if(!!J) CHECK_EQ(Jy.nd, 2, "");
@@ -1686,6 +1695,13 @@ void Conv_KOMO_SparseNonfactored::getFeatureTypes(ObjectiveTypeA& ft) {
   komo.featureTypes = ft;
 }
 
+void Conv_KOMO_FineStructuredProblem::getFeatureTypes(ObjectiveTypeA& featureTypes) {
+  featureTypes.clear();
+  for(uint f=0; f<featureIndex.N; f++) {
+    featureTypes.append(consts<ObjectiveType>(featureIndex(f).ob->type, featureIndex(f).dim));
+  }
+}
+
 arr Conv_KOMO_SparseNonfactored::getInitializationSample(const arr& previousOptima) {
   komo.run_prepare(.01);
   return komo.x;
@@ -1723,7 +1739,7 @@ Conv_KOMO_FactoredNLP::Conv_KOMO_FactoredNLP(KOMO& _komo) : komo(_komo) {
     F.ob2 = ob;
 //    F.Ctuple = komo.configurations.sub(convert<uint, int>(ob->configs+(int)komo.k_order));
 //    F.t = l;
-    F.varIds = ob->configs;
+    copy(F.varIds, ob->configs);
     F.dim = ob->feat->dim(ob->frames); //dimensionality of this task
     F.phiIndex = fDim;
     fDim += F.dim;
@@ -1756,7 +1772,7 @@ arr Conv_KOMO_FactoredNLP::getInitializationSample(const arr& previousOptima) {
   return komo.x;
 }
 
-void Conv_KOMO_FactoredNLP::getFactorization(uintA& variableDimensions, uintA& featureDimensions, intAA& featureVariables) {
+void Conv_KOMO_FactoredNLP::getFactorization(uintA& variableDimensions, uintA& featureDimensions, uintAA& featureVariables) {
   variableDimensions.resize(variableIndex.N);
   variableDimensions.resize(variableIndex.N);
   for(uint i=0; i<variableIndex.N; i++) variableDimensions(i) = variableIndex(i).dim;
@@ -1897,111 +1913,85 @@ void Conv_KOMO_FactoredNLP::evaluateSingleFeature(uint feat_id, arr& phi, arr& J
 #endif
 }
 
-#if 0 //the factored NLPs are NIY for pathConfig!
 Conv_KOMO_FineStructuredProblem::Conv_KOMO_FineStructuredProblem(KOMO& _komo) : komo(_komo) {
-  if(!komo.configurations.N) komo.setupConfigurations();
-  CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet");
-
-  //count variables
-  uint numVars=0;
-  uint xDim=0;
-  for(uint t=0; t<komo.T; t++) {
-    int s = t+komo.k_order;
-    komo.configurations(s)->ensure_indexedJoints();
-    numVars += komo.configurations(s)->activeJoints.N;
-    numVars += komo.configurations(s)->forces.N;
-    xDim += komo.configurations(s)->getJointStateDimension();
-  }
-
   //create variable index
-  xIndex2VarId.resize(xDim);
-  variableIndex.resize(numVars);
-  uint var=0;
-  uint idx=0;
-  for(uint t=0; t<komo.T; t++) {
-    int s = t+komo.k_order;
-    for(rai::Joint* j:komo.configurations(s)->activeJoints) {
-//      CHECK_EQ(idx, j->qIndex + j->frame->C.xIndex, "mismatch index counting");
-      VariableIndexEntry& V = variableIndex(var);
-      V.joint = j;
-      V.dim = j->qDim();
-      V.xIndex = idx;
-      for(uint i=0; i<j->qDim(); i++) xIndex2VarId(idx++) = var;
-      var++;
+  uint xDim=0;
+  uint varId=0;
+  FrameL roots = komo.pathConfig.getRoots();
+  JointL activeJoints;
+  frameID2VarId.resize(komo.pathConfig.frames.N) = UINT_MAX;
+  for(Frame *f:roots) {
+    if(f->ID < komo.timeSlices(komo.k_order,0)->ID) continue; //ignore prefixes!
+    DofL varDofs;
+    FrameL branch;
+    f->getSubtree(branch);
+    uint varDim=0;
+    for(Frame* b:branch){
+      frameID2VarId(b->ID) = varId; //the branch contains all frames that depend on this variable:
+      if(b->joint && b->joint->active && b->joint->type!=JT_rigid){ //and we collect all branch active dofs into this variable
+         if(!b->joint->mimic && b->joint->dim){ //this is different to Configuration::calc_indexActiveJoints
+//           cout <<b->name <<", ";
+           varDofs.append(b->joint);
+           activeJoints.append(b->joint);
+           varDim += b->joint->dim;
+         }
+      }
     }
-    for(rai::ForceExchange* c:komo.configurations(s)->forces) {
-//      CHECK_EQ(idx, c->qIndex + c->a.C.xIndex, "mismatch index counting");
-      VariableIndexEntry& V = variableIndex(var);
-      V.force = c;
-      V.dim = c->qDim();
-      V.xIndex = idx;
-      for(uint i=0; i<c->qDim(); i++) xIndex2VarId(idx++) = var;
-      var++;
-    }
-  }
-  CHECK_EQ(var, numVars, "");
-  CHECK_EQ(idx, xDim, "");
-
-  //count features
-  uint F=0;
-  for(ptr<Objective>& ob:komo.objectives) {
-    CHECK_EQ(ob->configs.nd, 2, "in sparse mode, vars need to be tuples of variables");
-    F += ob->configs.d0;
+//    cout <<"--" <<endl;
+    CHECK_EQ(varId, variableIndex.N, "");
+    variableIndex.append( VariableIndexEntry{varDofs, varDim, xDim} );
+    xDim += varDim;
+    varId++;
   }
 
-  featureIndex.resize(F);
+  //create x indexing
+  xIndex2VarId.resize(xDim) = UINT_MAX;
+  varId=0;
+  for(VariableIndexEntry& v:variableIndex){
+    for(uint i=0;i<v.dim;i++) xIndex2VarId(v.xIndex+i) = varId;
+    varId++;
+  }
+
+  //ensure that komo.pathConfig uses the same indexing -- that its activeJoint set is indexed exactly as consecutive variables
+  komo.pathConfig.setActiveJoints(activeJoints);
+
+//  cout <<"\n\n" <<komo.pathConfig.getJointNames() <<endl;
+  CHECK_EQ(xDim, komo.pathConfig.getJointStateDimension(), "");
+//  cout <<"#DOFS: " <<xDim <<endl;
+
+  //check consistent indexing
+  for(uint i=0;i<xDim;i++){
+    VariableIndexEntry& v = variableIndex(xIndex2VarId(i));
+    CHECK_LE(i - v.xIndex, v.dim, "");
+    uint k=0,d=0;
+    while(d+v.dofs(k)->dim <= i-v.xIndex){ k++; d+=v.dofs(k)->dim; }
+    rai::Joint *j = dynamic_cast<rai::Joint*>(v.dofs(k));
+    CHECK_GE(i, j->qIndex, "");
+    CHECK_LE(i, j->qIndex+j->dim-1, "");
+  }
+  komo.pathConfig.checkConsistency();
+
+  for(VariableIndexEntry& v:variableIndex){
+    uint dofIdx = v.xIndex;
+    for(Dof *dof:v.dofs){
+      CHECK_EQ(dof->qIndex, dofIdx, "");
+      dofIdx += dof->dim;
+    }
+  }
 
   //create feature index
-  uint f=0;
-  uint fDim = 0;
-  for(ptr<Objective>& ob:komo.objectives) {
-    for(uint l=0; l<ob->configs.d0; l++) {
-      FeatureIndexEntry& F = featureIndex(f);
-      F.ob = ob;
-      F.Ctuple = komo.configurations.sub(convert<uint, int>(ob->configs[l]+(int)komo.k_order));
-      F.dim = ob->feat->__dim_phi(F.Ctuple); //dimensionality of this task
-      fDim += F.dim;
-      f++;
+  for(ptr<GroundedObjective>& ob:komo.objs) {
+    uint featDim = ob->feat->dim(ob->frames);
+    uintA featVars;
+    for(rai::Frame *f:ob->frames){ //which frames does the objective depend on?
+      uint varId = frameID2VarId(f->ID); //which variable parameterized that frame
+      featVars.setAppendInSorted(varId);
     }
-  }
-
-  featuresDim = fDim;
-}
-
-uint Conv_KOMO_FineStructuredProblem::getDimension() {
-  return xIndex2VarId.N;
-}
-
-void Conv_KOMO_FineStructuredProblem::getBounds(arr& bounds_lo, arr& bounds_up) {
-  if(!komo.configurations.N) komo.setupConfigurations();
-  CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet");
-
-  uint n = getDimension();
-  bounds_lo.resize(n);
-  bounds_up.resize(n);
-
-  uint x_count=0;
-  arr limits;
-  for(uint t=0; t<komo.T; t++) {
-    int s = t+komo.k_order;
-    uint x_dim = komo.configurations(s)->getJointStateDimension();
-    if(x_dim) {
-      limits = ~komo.configurations(s)->getLimits();
-      bounds_lo.setVectorBlock(limits[0], x_count);
-      bounds_up.setVectorBlock(limits[1], x_count);
-      x_count += x_dim;
-    }
+    featureIndex.append( FeatureIndexEntry{ ob, featDim, featVars } );
   }
 }
 
-void Conv_KOMO_FineStructuredProblem::getFeatureTypes(ObjectiveTypeA& featureTypes) {
-  featureTypes.clear();
-  for(uint f=0; f<featureIndex.N; f++) {
-    featureTypes.append(consts<ObjectiveType>(featureIndex(f).ob->type, featureIndex(f).dim));
-  }
-}
-
-void Conv_KOMO_FineStructuredProblem::getFactorization(uintA& variableDimensions, uintA& featureDimensions, intAA& featureVariables) {
+void Conv_KOMO_FineStructuredProblem::getFactorization(uintA& variableDimensions, uintA& featureDimensions, uintAA& featureVariables) {
   variableDimensions.resize(variableIndex.N);
   for(uint i=0; i<variableIndex.N; i++) {
     variableDimensions(i) = variableIndex(i).dim;
@@ -2010,196 +2000,59 @@ void Conv_KOMO_FineStructuredProblem::getFactorization(uintA& variableDimensions
   featureDimensions.resize(featureIndex.N);
   featureVariables.resize(featureIndex.N);
   arr y, J;
+
   for(uint f=0; f<featureIndex.N; f++) {
     FeatureIndexEntry& F = featureIndex(f);
     featureDimensions(f) = F.dim;
     if(!F.dim) continue;
-
-    F.ob->feat->eval(y, J, F.Ctuple);
-
-    if(isSparseMatrix(J)) {
-      F.varIds.clear();
-      intA& elems = J.sparse().elems;
-      for(uint i=0; i<elems.d0; i++) {
-        uint idx = elems(i, 1);
-        F.varIds.setAppendInSorted(xIndex2VarId(idx));
-      }
-    } else {
-      intA vars = F.ob->configs[F.t];
-      for(int& i : vars) if(i>=0) F.varIds.append(i);
-    }
     featureVariables(f) = F.varIds;
   }
 }
 
-/*void Conv_KOMO_MathematicalProgram::evaluate(arr& phi, arr& J, const arr& x){
-  HALT("should not be used!");
-  //-- set the decision variable
-#if 0 //the following should be equivalent, althought they work quite differently
-  komo.set_x2(x);
-#else
-  for(uint i=0;i<variableIndex.N;i++){
-    VariableIndexEntry& V = variableIndex(i);
-    if(!V.dim) continue;
-    setSingleVariable(i, x({V.xIndex, V.xIndex+V.dim-1}));
-  }
-#endif
-
-  //-- query the features
-  phi.resize(featuresDim);
-  if(!!J){
-    if(!komo.world.useSparseJacobians) {
-      J.resize(featuresDim, x.N).setZero();
-    } else {
-      J.sparse().resize(featuresDim, x.N, 0);
-    }
-  }
-
-  arr y, Jy;
-  uint M=0;
-  for(uint f=0;f<featureIndex.N;f++){
-    FeatureIndexEntry& F = featureIndex(f);
-    if(!F.dim) continue;
-
-#if 1 //simpler and more direct
-    F.ob->feat->eval(y, Jy, F.Ctuple);
-    CHECK_EQ(y.N, F.dim, "");
-    if(!!J) CHECK_EQ(y.N, Jy.d0, "");
-    if(!!J) CHECK_EQ(Jy.nd, 2, "");
-    if(absMax(y)>1e10) RAI_MSG("WARNING y=" <<y);
-
-    //write into phi and J
-    phi.setVectorBlock(y, M);
-
-    if(!!J) {
-      if(!isSpecial(Jy)){
-        uintA kdim = getKtupleDim(F.Ctuple);
-        kdim.prepend(0);
-        for(uint j=0;j<F.Ctuple.N;j++){
-          if(F.Ctuple(j)->xIndex>=0){
-            J.setMatrixBlock(Jy.sub(0, -1, kdim(j), kdim(j+1)-1), M, F.Ctuple(j)->xIndex);
-          }
-        }
-      }else{
-        //          uint j=0;
-        Jy.sparse().reshape(J.d0, J.d1);
-        Jy.sparse().colShift(M);
-        //          Jy.sparse().rowShift(F.Ctuple(j)->xIndex);   //sparse matrix should be properly shifted already!
-        J += Jy;
-      }
-    }
-#else //calling the single features, then converting back to sparse... just for checking..
-    evaluateSingleFeature(f, y, Jy, NoArr);
-    phi.setVectorBlock(y, M);
-    if(!!J) {
-      CHECK(!isSpecial(Jy), "");
-      uint xCount = 0;
-      for(uint v=0;v<F.varIds.N;v++){
-        VariableIndexEntry& V = variableIndex(F.varIds(v));
-        if(!V.dim) continue;
-        if(V.xIndex<0) continue;
-        for(uint j=0;j<V.dim;j++){
-          for(uint i=0;i<Jy.d0;i++){
-            J.elem(M+i, V.xIndex+j) += Jy(i, xCount+j);
-          }
-        }
-        xCount += V.dim;
-      }
-      CHECK_EQ(xCount, Jy.d1, "");
-    }
-#endif
-
-    //counter for features phi
-    M += F.dim;
-  }
-
-  CHECK_EQ(M, featuresDim, "");
-  komo.featureValues = phi;
-  if(!!J) komo.featureJacobians.resize(1).scalar() = J;
-
-  reportAfterPhiComputation(komo);
-}*/
-
 void Conv_KOMO_FineStructuredProblem::setSingleVariable(uint var_id, const arr& x) {
-  VariableIndexEntry& V = variableIndex(var_id);
-  CHECK_EQ(V.dim, x.N, "");
-  if(V.joint) {
-    V.joint->calc_Q_from_q(x, 0);
+  //komo.pathConfig.ensure_q();
+
+  VariableIndexEntry& v = variableIndex(var_id);
+  CHECK_EQ(v.dim, x.N, "");
+//  uint dofIdx = v.xIndex;
+  uint xIdx=0;
+  for(Dof *dof:v.dofs){
+    dof->setDofs(x, xIdx);
+    //      if(!j->mimic){
+    if(dof->active){
+      for(uint ii=0; ii<dof->dim; ii++) komo.pathConfig.q.elem(dof->qIndex+ii) = x(xIdx+ii);
+    }else{
+      HALT("shoudn't be here..?");
+      for(uint ii=0; ii<dof->dim; ii++) komo.pathConfig.qInactive.elem(dof->qIndex+ii) = x(xIdx+ii);
+    }
+    xIdx += dof->dim;
   }
-  if(V.force) {
-    V.force->calc_F_from_q(x, 0);
-  }
+  CHECK_EQ(xIdx, v.dim, "");
+
+  komo.pathConfig.proxies.clear();
+  komo.pathConfig._state_q_isGood=true;
+  komo.pathConfig._state_proxies_isGood=false;
 }
 
 void Conv_KOMO_FineStructuredProblem::evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H) {
   FeatureIndexEntry& F = featureIndex(feat_id);
 
-  if(!J) {
-    F.ob->feat->eval(phi, NoArr, F.Ctuple);
-    return;
-  }
-
-  arr Jy;
-  F.ob->feat->eval(phi, Jy, F.Ctuple);
-  CHECK_EQ(phi.N, F.dim, "");
-  CHECK_EQ(phi.N, Jy.d0, "");
-  CHECK_EQ(Jy.nd, 2, "");
-  if(absMax(phi)>1e10) RAI_MSG("WARNING phi=" <<phi);
-
-  if(!isSparseMatrix(Jy)) {
-    intA vars = F.ob->configs[F.t];
-    uintA kdim = getKtupleDim(F.Ctuple).prepend(0);
-    for(uint j=vars.N; j--;) {
-      if(vars(j)<0) {
-        Jy.delColumns(kdim(j), kdim(j+1)-kdim(j)); //delete the columns that correspond to the prefix!!
-      }
-    }
-    J = Jy;
-  } else {
-    auto S = Jy.sparse();
-
-    uint n=0;
-    for(uint v:F.varIds) n += variableIndex(v).dim;
-    J.resize(phi.N, n).setZero();
-
-    for(uint k=0; k<Jy.N; k++) {
-      uint i = S.elems(k, 0);
-      uint j = S.elems(k, 1);
-      double x = Jy.elem(k);
-      uint var = xIndex2VarId(j);
-      VariableIndexEntry& V = variableIndex(var);
-      uint var_j = j - V.xIndex;
-      CHECK(var_j < V.dim, "");
-      if(V.dim == J.d1) {
-        J(i, var_j) += x;
-      } else {
-        bool good=false;
-        uint offset=0;
-        for(uint v:F.varIds) {
-          if(v==var) {
-            J(i, offset+var_j) += x;
-            good=true;
-            break;
-          }
-          offset += variableIndex(v).dim;
-        }
-        CHECK(good, "Jacobian is non-zero on variable " <<var <<", but indices say that feature depends on " <<F.varIds);
-      }
-    }
-  }
+  F.ob->feat->eval(phi, J, F.ob->frames);
+//  cout <<"EVAL '" <<F.ob->name() <<"' phi:" <<phi <<endl;
 }
 
-void Conv_KOMO_FineStructuredProblem::reportFeatures() {
+void Conv_KOMO_FineStructuredProblem::report() {
   arr y, J;
   for(uint f=0; f<featureIndex.N; f++) {
     FeatureIndexEntry& F = featureIndex(f);
-    cout <<f <<' ' <<F.dim <<' ' <<F.ob->feat->shortTag(*F.Ctuple.last()) <<endl;
+    cout <<f <<' ' <<F.dim <<' ' <<F.ob->feat->shortTag(komo.pathConfig) <<endl;
     evaluateSingleFeature(f, y, J, NoArr);
     cout <<"y:" <<y <<endl;
     cout <<"J:" <<J <<endl;
   }
 }
 
+#if 0
 void KOMO::TimeSliceProblem::getDimPhi() {
   CHECK_EQ(komo.configurations.N, komo.k_order+komo.T, "configurations are not setup yet: use komo.reset()");
   uint M=0;

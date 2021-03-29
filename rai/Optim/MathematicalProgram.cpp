@@ -41,7 +41,7 @@ arr MathematicalProgram::getInitializationSample(const arr& previousOptima) {
 void MathematicalProgram_Factored::evaluate(arr& phi, arr& J, const arr& x) {
   uintA variableDimensions; //the size of each variable block
   uintA featureDimensions;  //the size of each feature block
-  intAA featureVariables;
+  uintAA featureVariables;
   getFactorization(variableDimensions, //the size of each variable block
                    featureDimensions,  //the size of each feature block
                    featureVariables    //which variables the j-th feature block depends on
@@ -58,7 +58,7 @@ void MathematicalProgram_Factored::evaluate(arr& phi, arr& J, const arr& x) {
   CHECK_EQ(n, x.N, "");
 
   phi.resize(sum(featureDimensions)).setZero();
-  if(!!J) J.resize(phi.N, x.N).setZero();
+  bool resetJ=true;
 
   n=0;
   arr phi_i, J_i;
@@ -69,16 +69,26 @@ void MathematicalProgram_Factored::evaluate(arr& phi, arr& J, const arr& x) {
     CHECK_EQ(J_i.d0, d, "");
     phi({n, n+d-1}) = phi_i;
     if(!!J) {
-      uint Jii=0;
-      for(uint j=0; j<featureVariables(i).N; j++) {
-        int varId = featureVariables(i)(j);
-        if(varId>=0) {
-          uint varDim = variableDimensions(varId);
-          J.setMatrixBlock(J_i.sub(0, -1, Jii, Jii+varDim-1), n, varDimIntegral(varId));
-          Jii += varDim;
-        }
+      CHECK(!!J_i, "");
+      if(resetJ){
+        if(J_i.isSparse()) J.sparse().resize(phi.N, x.N, 0);
+        else J.resize(phi.N, x.N).setZero();
+        resetJ=false;
       }
-      CHECK_EQ(Jii, J_i.d1, "");
+      if(J_i.d1 < x.N){ //-- shift the row index!
+        uint Jii=0;
+        for(uint j=0; j<featureVariables(i).N; j++) {
+          int varId = featureVariables(i)(j);
+          if(varId>=0) {
+            uint varDim = variableDimensions(varId);
+            J.setMatrixBlock(J_i.sub(0, -1, Jii, Jii+varDim-1), n, varDimIntegral(varId));
+            Jii += varDim;
+          }
+        }
+        CHECK_EQ(Jii, J_i.d1, "");
+      }else{
+        J.setMatrixBlock(J_i, n, 0);
+      }
     }
     n += d;
   }
@@ -152,12 +162,12 @@ void Conv_FactoredNLP_BandedNLP::evaluate(arr& phi, arr& J, const arr& x) {
     for(uint i=0; i<J_i.N; i++) { //loop over features
       arr& Ji = J_i(i);
       uint f_dim = featureDimensions(i);
-      intA& vars = featureVariables(i);
+      uintA& vars = featureVariables(i);
       if(!isSparseVector(Ji)) {
         CHECK(!isSpecial(Ji), "");
         uint c=0;
         for(uint fi=0; fi<f_dim; fi++) { //loop over feature dimension
-          for(int& j:vars) if(j>=0) { //loop over variables of this features
+          for(uint& j:vars) if(j>=0) { //loop over variables of this features
               uint x_dim = variableDimensions.elem(j);
               for(uint xi=0; xi<x_dim; xi++) { //loop over variable dimension
                 double J_value = Ji.elem(c);
@@ -174,7 +184,7 @@ void Conv_FactoredNLP_BandedNLP::evaluate(arr& phi, arr& J, const arr& x) {
         for(uint l=0; l<Ji.N; l++) {
           double J_value = Ji.elem(l);
           uint   xi      = Ji.sparseVec().elems(l); //column index
-          for(int& j:featureVariables(i)) if(j>=0) {
+          for(uint& j:featureVariables(i)) if(j>=0) {
               uint xj_dim = variableDimensions(j);
               if(xi<xj_dim) { //xj is the variable, and xi is the index within the variable
                 uint jj = (j?varDimIntegral(j-1):0) + xi;

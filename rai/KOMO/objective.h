@@ -37,4 +37,6 @@ struct GroundedObjective {
 
   GroundedObjective(const ptr<Feature>& _feat, const ObjectiveType& _type) : feat(_feat), type(_type) {}
   ~GroundedObjective() {}
+
+  rai::String name(){ return feat->shortTag(frames.first()->C); }
 };

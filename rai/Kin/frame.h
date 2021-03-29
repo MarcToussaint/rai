@@ -22,6 +22,7 @@
 namespace rai {
 struct Configuration;
 struct Frame;
+struct Dof;
 struct Joint;
 struct Shape;
 struct Inertia;
@@ -32,6 +33,7 @@ enum BodyType  { BT_none=-1, BT_dynamic=0, BT_kinematic, BT_static };
 
 typedef rai::Array<rai::Frame*> FrameL;
 typedef rai::Array<rai::Joint*> JointL;
+typedef rai::Array<rai::Dof*> DofL;
 typedef rai::Array<rai::Shape*> ShapeL;
 
 extern rai::Frame& NoFrame;
@@ -175,15 +177,21 @@ stdOutPipe(Frame)
 
 //===========================================================================
 
+struct Dof {
+  bool active=true;  ///< if false, this dof is not considered part of the configuration's q-vector
+  uint dim=UINT_MAX;
+  uint qIndex=UINT_MAX;
+  arr  limits;        ///< joint limits (lo, up, [maxvel, maxeffort])
+  virtual ~Dof() {}
+  virtual void setDofs(const arr& q, uint n=0) = 0;
+};
+
 /// for a Frame with Joint-Link, the relative transformation 'Q' is articulated
-struct Joint : NonCopyable {
+struct Joint : Dof, NonCopyable {
   Frame* frame;      ///< this is the frame that Joint articulates! I.e., the output frame
 
   // joint information
-  uint dim=UINT_MAX;
-  uint qIndex;
   byte generator;    ///< (7bits), h in Featherstone's code (indicates basis vectors of the Lie algebra, but including the middle quaternion w)
-  arr limits;        ///< joint limits (lo, up, [maxvel, maxeffort])
   arr q0;            ///< joint null position
   double H=1.;       ///< control cost scalar
   double scale=1.;   ///< scaling robot-q = scale * q-vector
@@ -193,7 +201,6 @@ struct Joint : NonCopyable {
 
   Vector axis=0;          ///< joint axis (same as X.rot.getX() for standard hinge joints)
   Enum<JointType> type;   ///< joint type
-  bool active=true;  ///< if false, this joint is not considered part of the q-vector
 
   //attachments to the joint
   struct Uncertainty* uncertainty=nullptr;
@@ -209,7 +216,7 @@ struct Joint : NonCopyable {
 
   void setMimic(Joint* j, bool unsetPreviousMimic=false);
   uint qDim();
-  void calc_Q_from_q(const arr& q, uint n);
+  void setDofs(const arr& q, uint n=0);
   arr calc_q_from_Q(const Transformation& Q) const;
   arr getScrewMatrix();
   uint getDimFromType() const;

@@ -50,7 +50,7 @@ class Conv_Feature_CostFunction : public ceres::CostFunction {
   Conv_MathematicalProgram_CeresProblem& P;
   uint feature_id;
   uint featureDim;
-  intA varIds;
+  uintA varIds;
   uintA varDims;
   uint varTotalDim;
 
@@ -59,14 +59,14 @@ class Conv_Feature_CostFunction : public ceres::CostFunction {
                             uint _feature_id,
                             const uintA& variableDimensions,
                             const uintA& featureDimensions,
-                            const intAA& featureVariables);
+                            const uintAA& featureVariables);
 
   virtual bool Evaluate(double const* const* parameters,
                         double* residuals,
                         double** jacobians) const;
 };
 
-Conv_Feature_CostFunction::Conv_Feature_CostFunction(Conv_MathematicalProgram_CeresProblem& _P, uint _feature_id, const uintA& variableDimensions, const uintA& featureDimensions, const intAA& featureVariables)
+Conv_Feature_CostFunction::Conv_Feature_CostFunction(Conv_MathematicalProgram_CeresProblem& _P, uint _feature_id, const uintA& variableDimensions, const uintA& featureDimensions, const uintAA& featureVariables)
   : P(_P), feature_id(_feature_id) {
   featureDim = featureDimensions(feature_id);
   varIds = featureVariables(feature_id);
@@ -111,7 +111,7 @@ Conv_MathematicalProgram_CeresProblem::Conv_MathematicalProgram_CeresProblem(Mat
   arr bounds_lo, bounds_up;
   ObjectiveTypeA featureTypes;
   uintA variableDimensions, featureDimensions, variableDimIntegral, featureDimIntegral;
-  intAA featureVariables;
+  uintAA featureVariables;
   uint n = MP.getDimension();
   MP.getBounds(bounds_lo, bounds_up);
   for(uint i=0; i<bounds_lo.N; i++) {
