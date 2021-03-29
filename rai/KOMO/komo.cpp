@@ -905,12 +905,8 @@ struct Conv_KOMO_SparseNonfactored : MathematicalProgram {
 struct Conv_KOMO_FineStructuredProblem : MathematicalProgram_Factored {
   KOMO& komo;
   //each variable refers to a SET OF dofs (e.g., a set of joints)
-  uintA xIndex2VarId;
-  struct VariableIndexEntry { DofL dofs; uint dim; uint xIndex; };
+  struct VariableIndexEntry { DofL dofs; uint dim; };
   rai::Array<VariableIndexEntry> variableIndex;
-
-  //..and each frame varies only with a single variable (THAT'S A LIMITING ASSUMPTION)
-  uintA frameID2VarId;
 
   //features are one-to-one with gounded KOMO features, but with additional info on varIds
   struct FeatureIndexEntry { ptr<GroundedObjective> ob; uint dim; uintA varIds; };
@@ -1914,11 +1910,15 @@ void Conv_KOMO_FactoredNLP::evaluateSingleFeature(uint feat_id, arr& phi, arr& J
 }
 
 Conv_KOMO_FineStructuredProblem::Conv_KOMO_FineStructuredProblem(KOMO& _komo) : komo(_komo) {
+  komo.run_prepare(0.);
+
   //create variable index
   uint xDim=0;
   uint varId=0;
   FrameL roots = komo.pathConfig.getRoots();
   JointL activeJoints;
+  //each frame varies only with a single variable (THAT'S A LIMITING ASSUMPTION)
+  uintA frameID2VarId;
   frameID2VarId.resize(komo.pathConfig.frames.N) = UINT_MAX;
   for(Frame *f:roots) {
     if(f->ID < komo.timeSlices(komo.k_order,0)->ID) continue; //ignore prefixes!
@@ -1929,55 +1929,24 @@ Conv_KOMO_FineStructuredProblem::Conv_KOMO_FineStructuredProblem(KOMO& _komo) : 
     for(Frame* b:branch){
       frameID2VarId(b->ID) = varId; //the branch contains all frames that depend on this variable:
       if(b->joint && b->joint->active && b->joint->type!=JT_rigid){ //and we collect all branch active dofs into this variable
-         if(!b->joint->mimic && b->joint->dim){ //this is different to Configuration::calc_indexActiveJoints
-//           cout <<b->name <<", ";
-           varDofs.append(b->joint);
-           activeJoints.append(b->joint);
-           varDim += b->joint->dim;
-         }
+        activeJoints.append(b->joint);
+        if(!b->joint->mimic && b->joint->dim){ //this is different to Configuration::calc_indexActiveJoints
+          //           cout <<b->name <<", ";
+          varDofs.append(b->joint);
+          varDim += b->joint->dim;
+        }
       }
     }
 //    cout <<"--" <<endl;
     CHECK_EQ(varId, variableIndex.N, "");
-    variableIndex.append( VariableIndexEntry{varDofs, varDim, xDim} );
+    variableIndex.append( VariableIndexEntry{varDofs, varDim} );
     xDim += varDim;
     varId++;
   }
-
-  //create x indexing
-  xIndex2VarId.resize(xDim) = UINT_MAX;
-  varId=0;
-  for(VariableIndexEntry& v:variableIndex){
-    for(uint i=0;i<v.dim;i++) xIndex2VarId(v.xIndex+i) = varId;
-    varId++;
-  }
+  CHECK_EQ(xDim, komo.pathConfig.getJointStateDimension(), "");
 
   //ensure that komo.pathConfig uses the same indexing -- that its activeJoint set is indexed exactly as consecutive variables
   komo.pathConfig.setActiveJoints(activeJoints);
-
-//  cout <<"\n\n" <<komo.pathConfig.getJointNames() <<endl;
-  CHECK_EQ(xDim, komo.pathConfig.getJointStateDimension(), "");
-//  cout <<"#DOFS: " <<xDim <<endl;
-
-  //check consistent indexing
-  for(uint i=0;i<xDim;i++){
-    VariableIndexEntry& v = variableIndex(xIndex2VarId(i));
-    CHECK_LE(i - v.xIndex, v.dim, "");
-    uint k=0,d=0;
-    while(d+v.dofs(k)->dim <= i-v.xIndex){ k++; d+=v.dofs(k)->dim; }
-    rai::Joint *j = dynamic_cast<rai::Joint*>(v.dofs(k));
-    CHECK_GE(i, j->qIndex, "");
-    CHECK_LE(i, j->qIndex+j->dim-1, "");
-  }
-  komo.pathConfig.checkConsistency();
-
-  for(VariableIndexEntry& v:variableIndex){
-    uint dofIdx = v.xIndex;
-    for(Dof *dof:v.dofs){
-      CHECK_EQ(dof->qIndex, dofIdx, "");
-      dofIdx += dof->dim;
-    }
-  }
 
   //create feature index
   for(ptr<GroundedObjective>& ob:komo.objs) {

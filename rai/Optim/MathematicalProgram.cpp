@@ -87,7 +87,13 @@ void MathematicalProgram_Factored::evaluate(arr& phi, arr& J, const arr& x) {
         }
         CHECK_EQ(Jii, J_i.d1, "");
       }else{
-        J.setMatrixBlock(J_i, n, 0);
+        if(J.isSparse()){
+          J_i.sparse().reshape(J.d0, J.d1);
+          J_i.sparse().colShift(n);
+          J += J_i;
+        }else{
+          J.setMatrixBlock(J_i, n, 0);
+        }
       }
     }
     n += d;

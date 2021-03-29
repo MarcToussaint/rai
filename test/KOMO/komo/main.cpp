@@ -263,43 +263,23 @@ void testFactors(){
 //  komo.selectJointsBySubtrees({"gripperDUP"});
 
 
-  JointL ajo = komo.pathConfig.activeJoints;
-  ajo.permuteRandomly();
-  komo.pathConfig.setActiveJoints(ajo);
+//  JointL ajo = komo.pathConfig.activeJoints;
+//  ajo.permuteRandomly();
+//  komo.pathConfig.setActiveJoints(ajo);
 
   komo.verbose = 4;
 //  komo.animateOptimization = 1;
-//  komo.optimize();
-
-  komo.run_prepare(0);
-//  komo.reportProblem();
-
-  arr x,phi,J, blo,bup;
-
-  auto nlp1 = komo.nlp_Factored();
-  x = komo.pathConfig.getJointState();
-  nlp1->getBounds(blo,bup);
-  nlp1->evaluate(phi, J, x);
-//  cout <<blo <<endl <<bup <<endl;
-  cout <<"*****************" <<endl <<endl;
-
-  auto nlp2 = komo.nlp_SparseNonFactored();
-  x = komo.pathConfig.getJointState();
-  nlp2->getBounds(blo,bup);
-  nlp2->evaluate(phi, J, x);
-//  cout <<blo <<endl <<bup <<endl;
-  cout <<"*****************" <<endl <<endl;
-
-//  return;
-  //  checkJacobianCP(*nlp1, x, 1e-4);
-
+#if 0
+  komo.optimize();
+#else
   NLP_Solver()
-//      .setProblem(*nlp2)
-      .setProblem(*nlp1)
+      .setProblem(*komo.nlp_Factored())
+//      .setProblem(*komo.nlp_SparseNonFactored())
       .solve();
+#endif
 
-  komo.view(true, "optimized motion");
-  while(komo.view_play(true));
+//  komo.view(true, "optimized motion");
+//  while(komo.view_play(true));
 
 
 }
