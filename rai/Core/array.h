@@ -311,7 +311,7 @@ template<class T> struct Array : /*std::vector<T>,*/ Serializable {
   const char* prt(); //gdb pretty print
 
   /// modifiers
-  ArrayModRaw<T> modRaw();
+  ArrayModRaw<T> modRaw() const;
 
   /// @name kind of private
   void resizeMEM(uint n, bool copy, int Mforce=-1);
@@ -378,11 +378,11 @@ template<class T> std::istream& operator>>(std::istream& is, Array<T>& x);
 //template<class T> std::ostream& operator<<(std::ostream& os, const Array<T>& x);
 
 template <class T> struct ArrayModRaw{
-  Array<T> *x;
-  ArrayModRaw(Array<T>* x) : x(x) {}
+  const Array<T> *x;
+  ArrayModRaw(const Array<T>* x) : x(x) {}
   void write(std::ostream& os) const{ x->writeRaw(os); }
 };
-template <class T> ArrayModRaw<T> Array<T>::modRaw(){ return ArrayModRaw<T>(this); }
+template <class T> ArrayModRaw<T> Array<T>::modRaw() const{ return ArrayModRaw<T>(this); }
 template <class T> std::ostream& operator<<(std::ostream& os, const ArrayModRaw<T>& x) { x.write(os); return os; }
 
 //element-wise update operators

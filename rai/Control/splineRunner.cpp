@@ -8,6 +8,8 @@
 
 #include "splineRunner.h"
 
+namespace rai {
+
 void SplineRunner::set(const arr& x, const arr& t, const arr& x0, bool append) {
   if(!refTimes.N) append=false;
 
@@ -56,3 +58,5 @@ void SplineRunner::stop() {
   refTimes.clear();
   refSpline.clear();
 }
+
+} //namespace

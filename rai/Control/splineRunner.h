@@ -8,6 +8,8 @@
 
 #include "../Algo/spline.h"
 
+namespace rai {
+
 struct SplineRunner {
   rai::Spline refSpline; // reference spline constructed from ref
   arr refPoints, refTimes; // the knot points and times of the spline
@@ -18,3 +20,5 @@ struct SplineRunner {
   double timeToGo();
   void stop();
 };
+
+} //namespace
