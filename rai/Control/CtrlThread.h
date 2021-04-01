@@ -3,22 +3,42 @@
 #include <Core/thread.h>
 #include <Kin/kin.h>
 
+struct ConstantReference{
+  arr q, qDot, qDDot; //default references
+  void defaultReferenceFunction(arr& q_ref, arr& qDot_ref, arr& qDDot_ref, double time){
+    q_ref = q;
+    qDot_ref = qDot;
+    qDDot_ref = qDDot;
+  }
+};
+
+
 struct ControlLoop {
+  shared_ptr<ConstantReference> _ref;
+
   virtual void initialize(const arr& q_real, const arr& qDot_real) {}
 
   virtual void stepReference(arr& qRef, arr& qDotRef, arr& qDDotRef, const arr& q_real, const arr& qDot_real){ NIY; }
 
-  virtual void step(CtrlCmdMsg& ctrlCmdMsg, const arr& q_real, const arr& qDot_real){
-    ctrlCmdMsg.controlType=ControlType::configRefs;
-    stepReference(ctrlCmdMsg.qRef, ctrlCmdMsg.qDotRef, ctrlCmdMsg.qDDotRef, q_real, qDot_real);
+  virtual void step(rai::CtrlCmdMsg& ctrlCmdMsg, const arr& q_real, const arr& qDot_real, double time){
+    ctrlCmdMsg.controlType=rai::ControlType::configRefs;
+    if(!_ref) _ref = make_shared<ConstantReference>();
+    stepReference(_ref->q, _ref->qDot, _ref->qDDot, q_real, qDot_real);
+    ctrlCmdMsg.ref = std::bind(&ConstantReference::defaultReferenceFunction,
+                               _ref,
+                               std::placeholders::_1,
+                               std::placeholders::_2,
+                               std::placeholders::_3,
+                               std::placeholders::_4);
   }
+
 };
 
 
 struct ControlThread : Thread {
   Var<rai::Configuration> ctrl_config;
-  Var<CtrlCmdMsg> ctrl_ref;
-  Var<CtrlStateMsg> ctrl_state;
+  Var<rai::CtrlCmdMsg> ctrl_ref;
+  Var<rai::CtrlStateMsg> ctrl_state;
 
   shared_ptr<ControlLoop> ctrlLoop;
 
@@ -30,8 +50,8 @@ struct ControlThread : Thread {
   int verbose;
 
   ControlThread(const Var<rai::Configuration>& _ctrl_config,
-                const Var<CtrlCmdMsg>& _ctrl_ref,
-                const Var<CtrlStateMsg>& _ctrl_state,
+                const Var<rai::CtrlCmdMsg>& _ctrl_ref,
+                const Var<rai::CtrlStateMsg>& _ctrl_state,
                 const shared_ptr<ControlLoop>& _ctrlLoop)
       : Thread("ControlThread", .01),
       ctrl_config(this, _ctrl_config),
@@ -81,7 +101,7 @@ void ControlThread::step() {
   }
 
   //-- read current state
-  CtrlStateMsg ctrlStateMsg;
+  rai::CtrlStateMsg ctrlStateMsg;
   {
     auto state = ctrl_state.get();
     ctrlStateMsg = ctrl_state();
@@ -96,7 +116,7 @@ void ControlThread::step() {
   ctrl_config.set()->setJointState(q_real);
 
   //-- call the given ctrlLoop
-  CtrlCmdMsg ctrlCmdMsg;
-  ctrlLoop->step(ctrlCmdMsg, q_real, qdot_real);
+  rai::CtrlCmdMsg ctrlCmdMsg;
+  ctrlLoop->step(ctrlCmdMsg, q_real, qdot_real, rai::realTime());
   ctrl_ref.set() = ctrlCmdMsg;
 }
