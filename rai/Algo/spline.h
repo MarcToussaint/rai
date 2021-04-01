@@ -15,47 +15,33 @@ namespace rai {
 /// a spline
 struct Spline {
   uint degree;
-  arr points; ///< the reference points
-  arr times;  ///< what times (in [0,1]) the reference points refer to (usually uniform)
-  arr basis, basis_trans, basis_timeGradient; ///< these are only used when evaluating the spline over a grid
+  arr points, times; ///< the points and times as provided by the user
+  arr knotPoints, knotTimes; ///< the points and times with (non-intuitive) head and tail added depending on degree
 
-  /// for T>0 this is directly constructing basis functions over a (fine) grid of resolution T
-  Spline(uint degree=2);
-  Spline(uint T, const arr& X, uint degree=2);
-
+  //-- methods to define the points and times
+  void set(uint degree, const arr& _points, const arr& _times, const arr& startVel=NoArr, const arr& endVel=NoArr);
+  void append(const arr& _points, const arr& _times);
   void clear();
+
+  //experimental
+  void doubleKnot(uint t);
+  void setDoubleKnotVel(int t, const arr& vel);
+
+
+  /// core method to evaluate spline
+  arr eval(double t, uint derivative=0) const;
 
   /// for t \in [0,1] the coefficients are the weighting of the points: f(t) = coeffs(t)^T * points
   arr getCoeffs(double t, uint K, uint derivative=0) const;
 
-  /// returns f(t) using getCoeffs for any t \in [0,1]
-  arr eval(double t, uint derivative=0) const;
 
-  //-- the rest are all matrix methods, using the basis mastix for fixed grid of size T
+  double begin(){ return times.first(); }
+  double end(){ return times.last(); }
 
-  /// methods to construct a basis matrix mapping from the K points to a (fine) grid of resolution T
-  void setBasis(uint T, uint K); ///< requires that degree and times has been set; computes basis, basis_trans
-  void setBasisAndTimeGradient(uint T, uint K); ///< as above, but computes also gradient w.r.t. times
-  void setUniformNonperiodicBasis(uint T, uint nPoints, uint degree); ///< sets the times uniformly, then computes basis
-  void setUniformNonperiodicBasis();
-  void set(uint degree, const arr& points, const arr& times, const arr& startVel=NoArr, const arr& endVel=NoArr);
+  arr getGridBasis(uint derivative=0){ HALT("see retired/spline-21-04-01.cpp"); }
 
-  /// returns f(t/T) at one of the precomputed grid points of the basis matrix
-  arr eval(uint t) const;
-  /// returns the full f(:) at all grid points -> (T+1, points.d1)-matrix
-  arr eval() const;
-  arr smooth(double lambda) const;
+  static arr getCoeffs2(double t, uint degree, double* knotTimes, uint knotN, uint knotTimesN, uint derivative=0);
 
-  double duration() { return times.last(); }
-  double begin(){ return times.elem(degree); }
-  double end(){ return times.elem(-degree-1); }
-
-  /// gradient w.r.t. the points (trivial: mapping is linear)
-  void partial(arr& grad_points, const arr& grad_path) const;
-  /// gradient w.r.t. the timings of the point
-  void partial(arr& dCdx, arr& dCdt, const arr& dCdf, bool clip=true) const;
-
-  void plotBasis(struct PlotModule& plt);
 };
 
 } //namespace rai
@@ -66,7 +52,7 @@ namespace rai {
 
 /// a wrapper around a spline with methods specific to online path adaptation
 struct Path : Spline {
-  Path(arr& X, uint degree=3) : Spline(0, X, degree) {}
+  Path(arr& X, uint degree=3) { set(3, X, grid(1, 0., 1., X.d0-1)); }
 
   arr getPosition(double t) const;
   arr getVelocity(double t) const;

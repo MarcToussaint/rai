@@ -176,7 +176,7 @@ arr path_resample(const arr& q, double durationScale) {
 rai::Spline getSpline(const arr& q, double duration, uint degree) {
   rai::Spline S = rai::Spline(0, q, degree);
   if(duration!=1.) {
-    S.times *= duration;
+    S.knotTimes *= duration;
   }
   return S;
 }
