@@ -35,8 +35,8 @@ struct Spline {
   arr getCoeffs(double t, uint K, uint derivative=0) const;
 
 
-  double begin(){ return times.first(); }
-  double end(){ return times.last(); }
+  double begin(){ return knotTimes.first(); }
+  double end(){ return knotTimes.last(); }
 
   arr getGridBasis(uint derivative=0){ HALT("see retired/spline-21-04-01.cpp"); }
 

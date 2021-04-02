@@ -128,6 +128,7 @@ arr Spline::eval(double t, uint derivative) const {
   //find the first knotTime >t
   int offset = knotTimes.rankInSorted(t, rai::lowerEqual<double>, true);
   offset -= degree+1;
+  if(offset<0) offset=0;
 
   uint knotN = degree+1;
   uint knotTimesN = knotN + 1+degree;
@@ -162,16 +163,6 @@ void Spline::set(uint _degree, const arr& _points, const arr& _times, const arr&
     knotPoints.append(_points[_points.d0-1]);
   }
 
-  //can also tune startVel and endVel for degree 2
-  if(!!startVel){
-    CHECK_EQ(degree, 2, "");
-    knotPoints[1] += startVel*.25*(_times(1)-_times(0));
-  }
-  if(!!endVel){
-    CHECK_EQ(degree, 2, "");
-    knotPoints[-2] -= endVel*.25*(_times(-1)-_times(-2));
-  }
-
   //knot times with head and tail
   uint m=knotPoints.d0+degree;
   knotTimes.resize(m+1);
@@ -184,6 +175,11 @@ void Spline::set(uint _degree, const arr& _points, const arr& _times, const arr&
       knotTimes(i) = .5*(_times(i-degree-1)+_times(i-degree));
     }
   }
+
+  //can also tune startVel and endVel for degree 2
+  if(!!startVel) setDoubleKnotVel(-1, startVel);
+  if(!!endVel) setDoubleKnotVel(points.N-1, endVel);
+
 
   CHECK_EQ(knotPoints.d0, knotTimes.N-degree-1 , "");
 }
@@ -234,8 +230,12 @@ void Spline::doubleKnot(uint t){
 }
 
 void Spline::setDoubleKnotVel(int t, const arr& vel){
-  knotPoints[t+degree/2] -= vel*.5*(knotTimes(t+degree+1)-knotTimes(t+degree));
-  knotPoints[t+degree/2+1] += vel*.5*(knotTimes(t+degree+2)-knotTimes(t+degree+1));
+  CHECK_EQ(degree, 2, "NIY");
+  arr a=knotPoints[t+degree/2];
+  arr b=knotPoints[t+degree/2+1];
+  CHECK(maxDiff(a,b)<1e-10,"this is not a double knot!");
+  a -= vel*.5*(knotTimes(t+degree+1)-knotTimes(t+degree));
+  b += vel*.5*(knotTimes(t+degree+2)-knotTimes(t+degree+1));
 }
 
 //==============================================================================

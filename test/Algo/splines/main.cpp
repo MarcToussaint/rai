@@ -17,22 +17,20 @@ void TEST(Basics){
   cout <<"\ntimes = " <<S.knotTimes <<endl;
   cout <<"points = " <<~S.knotPoints <<endl;
 
-  S.append(arr{1., 0., 1.}.reshape(-1,1), {.0, .5, 1.});
+  S.append(arr{0., 1.}.reshape(-1,1), {.5, 1.});
 
   cout <<"\ntimes = " <<S.knotTimes <<endl;
   cout <<"points = " <<~S.knotPoints <<endl;
 
   S.setDoubleKnotVel(-1, vel);
-  S.setDoubleKnotVel(3, vel);
-  S.setDoubleKnotVel(6, vel);
-//  S.setDoubleKnotVel(0, vel);
-//  S.setDoubleKnotVel(5, vel);
+  S.setDoubleKnotVel(1, vel);
+  S.setDoubleKnotVel(5, -vel);
 
   cout <<"\ntimes = " <<S.knotTimes <<endl;
   cout <<"points = " <<~S.knotPoints <<endl;
 
   ofstream fil("z.test");
-  for(double t=S.begin();t<=S.end();t+=.001){
+  for(double t=S.begin()-.1;t<=S.end()+.1;t+=.001){
     fil <<t <<' ' <<S.eval(t).modRaw() /*<<' ' <<S.eval(t,1)*/ <<endl;
   }
   fil.close();
