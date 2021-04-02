@@ -15,7 +15,7 @@ namespace rai {
 enum class ControlType { configRefs, projectedAcc };
 
 struct ReferenceFeed {
-  virtual void getReference(arr& qRef, arr& qDotRef, arr& qDDotRef, const arr& q_real, const arr& qDot_real, double time) = 0;
+  virtual void getReference(arr& q_ref, arr& qDot_ref, arr& qDDot_ref, const arr& q_real, const arr& qDot_real, double time) = 0;
 
 };
 
@@ -23,8 +23,7 @@ struct ReferenceFeed {
 struct CtrlCmdMsg {
   ControlType controlType=ControlType::configRefs;
   shared_ptr<ReferenceFeed> ref; // joint space references
-//  ReferenceFunction ref; // joint space references
-//  arr qRef, qDotRef, qDDotRef; // joint space references
+//  arr q_ref, qDot_ref, qDDot_ref; // joint space references
   arr u_b; // open-loop/feed-forward torque term
   arr Kp, Kd; // gain matrices
   arr P_compliance;

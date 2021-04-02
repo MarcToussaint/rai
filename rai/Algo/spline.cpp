@@ -68,17 +68,18 @@ arr Spline::getCoeffs(double t, uint K, uint derivative) const {
 
 #define ZDIV(x,y) (y?x/y:0.)
 
-arr Spline::getCoeffs2(double t, uint degree, double* knotTimes, uint knotN, uint knotTimesN, uint derivative) {
+void Spline::getCoeffs2(arr& b, arr& db, arr& ddb, double t, uint degree, double* knotTimes, uint knotN, uint knotTimesN, uint derivatives) {
   CHECK_EQ(knotN+degree+1, knotTimesN, "");
 
-  arr b, b_0, db, db_0, ddb, ddb_0;
-  b.resize(knotN); b_0.resize(knotN);
-  if(derivative>0) { db.resize(knotN); db_0.resize(knotN); }
-  if(derivative>1) { ddb.resize(knotN); ddb_0.resize(knotN); }
+  b.resize(knotN).setZero();
+  if(derivatives>0) db.resize(knotN).setZero();
+  if(derivatives>1) ddb.resize(knotN).setZero();
+
+  arr b_prev, db_prev, ddb_prev;
   for(uint p=0; p<=degree; p++) {
-    b_0=b; b.setZero();
-    if(derivative>0) { db_0=db; db.setZero(); }
-    if(derivative>1) { ddb_0=ddb; ddb.setZero(); }
+    b_prev=b; b.setZero();
+    if(derivatives>0) { db_prev=db; db.setZero(); }
+    if(derivatives>1) { ddb_prev=ddb; ddb.setZero(); }
     for(uint k=0; k<knotN; k++) {
       if(!p) {
         if(!k && t<knotTimes[0]) b.elem(k)=1.;
@@ -89,42 +90,32 @@ arr Spline::getCoeffs2(double t, uint degree, double* knotTimes, uint knotN, uin
           double xnom = t - knotTimes[k];
           double xden = knotTimes[k+p] - knotTimes[k];
           double x = ZDIV(xnom, xden);
-          b.elem(k) = x * b_0.elem(k);
-          if(derivative>0) db.elem(k) = ZDIV(1., xden) * b_0.elem(k) + x * db_0.elem(k);
-          if(derivative>1) ddb.elem(k) = ZDIV(2., xden) * db_0.elem(k) + x * ddb_0.elem(k);
+          b.elem(k) = x * b_prev.elem(k);
+          if(derivatives>0) db.elem(k) = ZDIV(1., xden) * b_prev.elem(k) + x * db_prev.elem(k);
+          if(derivatives>1) ddb.elem(k) = ZDIV(2., xden) * db_prev.elem(k) + x * ddb_prev.elem(k);
         }
         if(k<knotN-1 && k+p+1<knotTimesN) {
           double ynom = knotTimes[k+p+1] - t;
           double yden = knotTimes[k+p+1] - knotTimes[k+1];
           double y = ZDIV(ynom, yden);
-          b.elem(k) += y * b_0.elem(k+1);
-          if(derivative>0) db.elem(k) += ZDIV(-1., yden) * b_0.elem(k+1) + y * db_0.elem(k+1);
-          if(derivative>1) ddb.elem(k) += ZDIV(-2., yden) * db_0.elem(k+1) + y * ddb_0.elem(k+1);
+          b.elem(k) += y * b_prev.elem(k+1);
+          if(derivatives>0) db.elem(k) += ZDIV(-1., yden) * b_prev.elem(k+1) + y * db_prev.elem(k+1);
+          if(derivatives>1) ddb.elem(k) += ZDIV(-2., yden) * db_prev.elem(k+1) + y * ddb_prev.elem(k+1);
         }
       }
     }
     if(t<knotTimes[0] || t>=knotTimes[knotTimesN-1]) break;
   }
-  switch(derivative) {
-    case 0:
-      return b;
-    case 1:
-      return db;
-    case 2:
-      return ddb;
-    default:
-      HALT("Derivate of order " << derivative << " not yet implemented.");
-  }
-  return NoArr;
 }
 
-arr Spline::eval(double t, uint derivative) const {
+void Spline::eval(arr& x, arr& xDot, arr& xDDot, double t) const {
 #if 0 //computing coeffs for ALL knot points (most zero...)
 //  uint K = knotPoints.d0-1;
 //  arr coeffs = getCoeffs(t, K, derivative);
   arr coeffs = getCoeffs2(t, degree, knotTimes.p, knotPoints.d0, knotTimes.N, derivative);
   return (~coeffs * knotPoints).reshape(knotPoints.d1);
 #else //pick out only the LOCAL knot points
+
   //find the first knotTime >t
   int offset = knotTimes.rankInSorted(t, rai::lowerEqual<double>, true);
   offset -= degree+1;
@@ -135,16 +126,22 @@ arr Spline::eval(double t, uint derivative) const {
   if(offset+knotTimesN>knotTimes.N) offset = knotTimes.N - knotTimesN;
 
   //get coeffs
-  arr coeffs = getCoeffs2(t, degree, knotTimes.p+offset, knotN, knotTimesN, derivative);
+  arr b, db, ddb;
+  uint derivative=0;
+  if(!!xDot) derivative=1;
+  if(!!xDDot) derivative=2;
+  getCoeffs2(b, db, ddb, t, degree, knotTimes.p+offset, knotN, knotTimesN, derivative);
 
   //linear combination
-  arr x;
-  x.resize(knotPoints.d1).setZero();
-  for(uint j=0;j<coeffs.N;j++){
-    double c = coeffs.elem(j);
-    for(uint k=0;k<x.N;k++) x.elem(k) +=  c*knotPoints(offset+j,k);
+  uint n = knotPoints.d1;
+  if(!!x) x.resize(n).setZero();
+  if(!!xDot) xDot.resize(n).setZero();
+  if(!!xDDot) xDDot.resize(n).setZero();
+  for(uint j=0;j<b.N;j++){
+    if(!!x) for(uint k=0;k<n;k++) x.elem(k) += b.elem(j)*knotPoints(offset+j,k);
+    if(!!xDot) for(uint k=0;k<n;k++) xDot.elem(k) += db.elem(j)*knotPoints(offset+j,k);
+    if(!!xDDot) for(uint k=0;k<n;k++) xDDot.elem(k) += ddb.elem(j)*knotPoints(offset+j,k);
   }
-  return x;
 #endif
 }
 

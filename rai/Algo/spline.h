@@ -29,7 +29,15 @@ struct Spline {
 
 
   /// core method to evaluate spline
-  arr eval(double t, uint derivative=0) const;
+  void eval(arr& x, arr& xDot, arr& xDDot, double t) const;
+  arr eval(double t, uint derivative=0) const{
+    arr x;
+    if(derivative==0) eval(x, NoArr, NoArr, t);
+    else if(derivative==1) eval(NoArr, x, NoArr, t);
+    else if(derivative==2) eval(NoArr, NoArr, x, t);
+    else NIY;
+    return x;
+  }
 
   /// for t \in [0,1] the coefficients are the weighting of the points: f(t) = coeffs(t)^T * points
   arr getCoeffs(double t, uint K, uint derivative=0) const;
@@ -40,7 +48,7 @@ struct Spline {
 
   arr getGridBasis(uint derivative=0){ HALT("see retired/spline-21-04-01.cpp"); }
 
-  static arr getCoeffs2(double t, uint degree, double* knotTimes, uint knotN, uint knotTimesN, uint derivative=0);
+  static void getCoeffs2(arr& c0, arr& c1, arr& c2, double t, uint degree, double* knotTimes, uint knotN, uint knotTimesN, uint derivatives=0);
 
 };
 

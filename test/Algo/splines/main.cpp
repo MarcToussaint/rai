@@ -30,11 +30,15 @@ void TEST(Basics){
   cout <<"points = " <<~S.knotPoints <<endl;
 
   ofstream fil("z.test");
-  for(double t=S.begin()-.1;t<=S.end()+.1;t+=.001){
-    fil <<t <<' ' <<S.eval(t).modRaw() /*<<' ' <<S.eval(t,1)*/ <<endl;
+  for(double t=S.begin()+.1;t<=S.end()+.1;t+=.001){
+    arr x, xDot, xDDot;
+    S.eval(x, xDot, xDDot, t);
+    fil <<t <<' ' <<x.modRaw() <<' ' <<xDot.modRaw() <<' ' <<xDDot.modRaw() <<endl;
+//    fil <<t <<' ' <<S.eval(t,2).modRaw() <<endl;
   }
   fil.close();
-  gnuplot("set size square; plot  'z.test' us 1:2, '' us 1:3, x", true);
+  gnuplot("set size square; plot  'z.test' us 1:2, x", true);
+//  gnuplot("plot 'z.test' us 1:2, '' us 1:3, '' us 1:4, x", true);
   rai::wait();
 }
 
