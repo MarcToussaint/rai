@@ -49,18 +49,18 @@ struct ControlThread : Thread {
   bool requiresInitialSync;
   int verbose;
 
-  ControlThread(const Var<rai::Configuration>& _ctrl_config,
+  ControlThread(const rai::Configuration& C,
                 const Var<rai::CtrlCmdMsg>& _ctrl_ref,
                 const Var<rai::CtrlStateMsg>& _ctrl_state,
                 const shared_ptr<ControlLoop>& _ctrlLoop)
       : Thread("ControlThread", .01),
-      ctrl_config(this, _ctrl_config),
       ctrl_ref(this, _ctrl_ref),
       ctrl_state(this, _ctrl_state),
       ctrlLoop(_ctrlLoop),
       requiresInitialSync(true),
       verbose(0)
   {
+    ctrl_config.set() = C;
 
     double hyper = rai::getParameter<double>("hyperSpeed", -1.);
     if(hyper>0.) this->metronome.reset(.01/hyper);

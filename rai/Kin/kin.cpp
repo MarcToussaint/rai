@@ -1835,7 +1835,7 @@ bool Configuration::hasView(){
 }
 
 int Configuration::watch(bool pause, const char* txt) {
-//  gl()->pressedkey=0;
+//  gl()->resetPressedKey();
   int key = gl()->setConfiguration(*this, txt, pause);
 //  if(pause) {
 //    if(!txt) txt="Config::watch";

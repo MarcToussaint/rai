@@ -14,12 +14,16 @@ namespace rai {
 
 enum class ControlType { configRefs, projectedAcc };
 
-typedef std::function<void(arr& q_ref, arr& qDot_ref, arr& qDDot_ref, double time)> ReferenceFunction;
+struct ReferenceFeed {
+  virtual void getReference(arr& qRef, arr& qDotRef, arr& qDDotRef, const arr& q_real, const arr& qDot_real, double time) = 0;
+
+};
 
 //The control message send to the robot
 struct CtrlCmdMsg {
   ControlType controlType=ControlType::configRefs;
-  ReferenceFunction ref; // joint space references
+  shared_ptr<ReferenceFeed> ref; // joint space references
+//  ReferenceFunction ref; // joint space references
 //  arr qRef, qDotRef, qDDotRef; // joint space references
   arr u_b; // open-loop/feed-forward torque term
   arr Kp, Kd; // gain matrices
