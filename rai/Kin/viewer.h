@@ -32,6 +32,7 @@ struct ConfigurationViewer : GLDrawer {
 
 
   int update(bool watch=false);
+  void raiseWindow();
   void glDraw(OpenGL&);
   OpenGL& ensure_gl();
 

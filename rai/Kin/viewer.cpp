@@ -46,8 +46,12 @@ int rai::ConfigurationViewer::update(bool watch) {
     gl->text = drawText();
   }
 
-  gl->update(nullptr, false);
-  return gl->pressedkey;
+  return gl->update(nullptr, false);
+}
+
+void rai::ConfigurationViewer::raiseWindow(){
+  ensure_gl();
+  gl->raiseWindow();
 }
 
 int rai::ConfigurationViewer::setConfiguration(const rai::Configuration& _C, const char* text, bool watch) {

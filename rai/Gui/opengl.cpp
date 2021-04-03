@@ -454,6 +454,12 @@ void OpenGL::closeWindow() {
   }
 }
 
+void OpenGL::raiseWindow(){
+  if(self->window) {
+    glfwFocusWindow(self->window);
+  }
+}
+
 void OpenGL::setTitle(const char* _title) {
   if(_title) title = _title;
   if(self->window) {
@@ -1564,6 +1570,7 @@ OpenGL* OpenGL::newClone() const {
 void OpenGL::init() {
   drawFocus=false;
   clearR=clearG=clearB=1.; clearA=0.;
+  pressedkey=0;
   mouseposx=mouseposy=0;
   mouse_button=0;
   mouseIsDown=false;
@@ -1998,7 +2005,10 @@ int OpenGL::update(const char* txt, bool nonThreaded) {
   }
 #endif
 #endif
-  return pressedkey;
+  int key=pressedkey;
+  pressedkey=0;
+//  if(key) LOG(0) <<"KEY! " <<key;
+  return key;
 }
 
 /// waits some msecons before updating
