@@ -39,6 +39,14 @@ struct ConfigurationViewer;
 
 //===========================================================================
 
+struct Value {
+  arr y, J;
+  Value(){}
+  Value(const arr& y, const arr& J) : y(y), J(J) {}
+  void write(ostream& os) const { os <<"y:" <<y <<" J:" <<J; }
+};
+stdOutPipe(Value)
+
 extern rai::Configuration& NoConfiguration;
 
 typedef rai::Array<rai::Joint*> JointL;
@@ -204,6 +212,8 @@ struct Configuration : GLDrawer {
   /// @name features
   shared_ptr<Feature> feature(FeatureSymbol fs, const StringA& frames= {}) const;
   void evalFeature(arr& y, arr& J, FeatureSymbol fs, const StringA& frames= {}) const;
+  template<class T> Value eval(const StringA& frames= {}){ return T().eval(getFrames(frames)); }
+  Value eval(FeatureSymbol fs, const StringA& frames= {});
 
   /// @name high level inverse kinematics
   void inverseKinematicsPos(Frame& frame, const arr& ytarget, const Vector& rel_offset=NoVector, int max_iter=3);

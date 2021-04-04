@@ -12,14 +12,6 @@
 #include "frame.h"
 #include "featureSymbols.h"
 
-struct Value {
-  arr y, J;
-  Value(){}
-  Value(const arr& y, const arr& J) : y(y), J(J) {}
-  void write(ostream& os) const { os <<"y:" <<y <<" J:" <<J; }
-};
-stdOutPipe(Value)
-
 /// defines only a map (task space), not yet the costs or constraints in this space
 struct Feature {
   uint order = 0;          ///< 0=position, 1=vel, etc

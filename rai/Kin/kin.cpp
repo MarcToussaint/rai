@@ -2644,6 +2644,10 @@ void Configuration::evalFeature(arr& y, arr& J, FeatureSymbol fs, const StringA&
   feat->eval(y, J, feat->getFrames(*this));
 }
 
+Value Configuration::eval(FeatureSymbol fs, const StringA& frames){
+  return feature(fs,frames)->eval(getFrames(frames));
+}
+
 /// Compute the new configuration q such that body is located at ytarget (with deplacement rel).
 void Configuration::inverseKinematicsPos(Frame& frame, const arr& ytarget,
     const Vector& rel_offset, int max_iter) {
