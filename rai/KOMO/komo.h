@@ -319,7 +319,7 @@ public:
   //
 
   shared_ptr<MathematicalProgram> nlp_SparseNonFactored();
-  shared_ptr<MathematicalProgram> nlp_Factored();
+  shared_ptr<MathematicalProgram_Factored> nlp_Factored();
 
 
   //===========================================================================

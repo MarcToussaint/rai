@@ -184,6 +184,7 @@ struct Dof {
   arr  limits;        ///< joint limits (lo, up, [maxvel, maxeffort])
   virtual ~Dof() {}
   virtual void setDofs(const arr& q, uint n=0) = 0;
+  virtual String name() const = 0;
 };
 
 /// for a Frame with Joint-Link, the relative transformation 'Q' is articulated
@@ -213,6 +214,7 @@ struct Joint : Dof, NonCopyable {
   const Transformation& X() const; ///< the frame where the joint STARTS (i.e. parent->X)
   const Transformation& Q() const; ///< the transformation realized by this joint (i.e. from parent->X to frame->X)
   Frame* from() const { return frame->parent; }
+  virtual String name() const { return STRING(frame->name<<'.'<<frame->ID); }
 
   void setMimic(Joint* j, bool unsetPreviousMimic=false);
   uint qDim();

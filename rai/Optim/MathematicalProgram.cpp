@@ -236,7 +236,8 @@ void Conv_FactoredNLP_BandedNLP::evaluate(arr& phi, arr& J, const arr& x) {
       Jaux.computeColPatches(true);
     }
   }
-  P.report();
+
+  P.report(cout, 0);
 }
 
 //===========================================================================

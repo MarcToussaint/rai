@@ -1309,6 +1309,8 @@ void Configuration::calc_q_from_Q() {
     n += j->dim;
   }
   CHECK_EQ(n, qInactive.N, "");
+
+  _state_q_isGood=true;
 }
 
 void Configuration::calc_Q_from_q() {
@@ -2472,7 +2474,8 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
 
     Frame* f = new Frame(*this);
     f->name=n->key;
-    f->ats = make_shared<Graph>(n->graph());
+    f->ats = make_shared<Graph>();
+    f->ats->copy(n->graph(), false, true);
     Shape* s = new Shape(*f);
     s->read(*f->ats);
 
@@ -2502,7 +2505,8 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
     } else {
       f->name <<'|' <<to->name; //the joint frame is actually the link frame of all child frames
     }
-    f->ats = make_shared<Graph>(n->graph());
+    f->ats = make_shared<Graph>();
+    f->ats->copy(n->graph(), false, true);
 
     f->setParent(from);
     to->setParent(f);

@@ -906,13 +906,28 @@ struct Conv_KOMO_FineStructuredProblem : MathematicalProgram_Factored {
   KOMO& komo;
   //each variable refers to a SET OF dofs (e.g., a set of joints)
   struct VariableIndexEntry { DofL dofs; uint dim; };
-  rai::Array<VariableIndexEntry> variableIndex;
+  rai::Array<VariableIndexEntry> __variableIndex;
+  uintA subVars;
 
   //features are one-to-one with gounded KOMO features, but with additional info on varIds
   struct FeatureIndexEntry { ptr<GroundedObjective> ob; uint dim; uintA varIds; };
-  rai::Array<FeatureIndexEntry> featureIndex;
+  rai::Array<FeatureIndexEntry> __featureIndex;
+  uintA subFeats;
+
+  VariableIndexEntry& variableIndex(uint var_id){ if(subVars.N) return __variableIndex(subVars(var_id)); else return __variableIndex(var_id); }
+  FeatureIndexEntry& featureIndex(uint feat_id){ if(subFeats.N) return __featureIndex(subFeats(feat_id)); else return __featureIndex(feat_id); }
 
   Conv_KOMO_FineStructuredProblem(KOMO& _komo);
+
+  virtual void subSelect(const uintA& activeVariables, const uintA& conditionalVariables);
+
+  virtual uint getNumVariables() { if(subVars.N) return subVars.N; return __variableIndex.N; }
+  virtual uint getNumFeatures() { if(subFeats.N) return subFeats.N; return __featureIndex.N; }
+//  virtual uint getVariableDim(uint var_id) { return variableIndex(var_id).dim; }
+//  virtual uint getFactorDim(uint feat_id) { return featureIndex(feat_id).dim; }
+//  virtual uintA getVariableFactors(uint var_id) { NIY; } //return variableIndex(var_id).featIds; }
+//  virtual uintA getFactorVariables(uint feat_id) { return featureIndex(feat_id).varIds; }
+  virtual rai::String getVariableName(uint var_id);
 
   ///-- signature/structure of the mathematical problem
   virtual uint getDimension(){ return komo.pathConfig.getJointStateDimension(); }
@@ -929,7 +944,7 @@ struct Conv_KOMO_FineStructuredProblem : MathematicalProgram_Factored {
   virtual void setSingleVariable(uint var_id, const arr& x); //set a single variable block
   virtual void evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H); //get a single feature block
 
-  void report();
+  void report(ostream& os, int verbose);
 };
 
 //this treats each time slice as its own variable
@@ -1394,7 +1409,7 @@ shared_ptr<MathematicalProgram> KOMO::nlp_SparseNonFactored(){
   return make_shared<Conv_KOMO_SparseNonfactored>(*this, solver==rai::KS_sparse);
 }
 
-shared_ptr<MathematicalProgram> KOMO::nlp_Factored(){
+shared_ptr<MathematicalProgram_Factored> KOMO::nlp_Factored(){
   return make_shared<Conv_KOMO_FineStructuredProblem>(*this);
 }
 
@@ -1693,7 +1708,7 @@ void Conv_KOMO_SparseNonfactored::getFeatureTypes(ObjectiveTypeA& ft) {
 
 void Conv_KOMO_FineStructuredProblem::getFeatureTypes(ObjectiveTypeA& featureTypes) {
   featureTypes.clear();
-  for(uint f=0; f<featureIndex.N; f++) {
+  for(uint f=0; f<getNumFeatures(); f++) {
     featureTypes.append(consts<ObjectiveType>(featureIndex(f).ob->type, featureIndex(f).dim));
   }
 }
@@ -1911,6 +1926,7 @@ void Conv_KOMO_FactoredNLP::evaluateSingleFeature(uint feat_id, arr& phi, arr& J
 
 Conv_KOMO_FineStructuredProblem::Conv_KOMO_FineStructuredProblem(KOMO& _komo) : komo(_komo) {
   komo.run_prepare(0.);
+  komo.pathConfig.jacMode = rai::Configuration::JM_sparse;
 
   //create variable index
   uint xDim=0;
@@ -1927,7 +1943,7 @@ Conv_KOMO_FineStructuredProblem::Conv_KOMO_FineStructuredProblem(KOMO& _komo) : 
     f->getSubtree(branch);
     uint varDim=0;
     for(Frame* b:branch){
-      frameID2VarId(b->ID) = varId; //the branch contains all frames that depend on this variable:
+      frameID2VarId(b->ID) = varId; //all frames in the branch depend on this variable
       if(b->joint && b->joint->active && b->joint->type!=JT_rigid){ //and we collect all branch active dofs into this variable
         activeJoints.append(b->joint);
         if(!b->joint->mimic && b->joint->dim){ //this is different to Configuration::calc_indexActiveJoints
@@ -1938,8 +1954,8 @@ Conv_KOMO_FineStructuredProblem::Conv_KOMO_FineStructuredProblem(KOMO& _komo) : 
       }
     }
 //    cout <<"--" <<endl;
-    CHECK_EQ(varId, variableIndex.N, "");
-    variableIndex.append( VariableIndexEntry{varDofs, varDim} );
+    CHECK_EQ(varId, getNumVariables(), "");
+    __variableIndex.append( VariableIndexEntry{ varDofs, varDim } );
     xDim += varDim;
     varId++;
   }
@@ -1949,28 +1965,66 @@ Conv_KOMO_FineStructuredProblem::Conv_KOMO_FineStructuredProblem(KOMO& _komo) : 
   komo.pathConfig.setActiveJoints(activeJoints);
 
   //create feature index
+  uint featId=0;
   for(ptr<GroundedObjective>& ob:komo.objs) {
     uint featDim = ob->feat->dim(ob->frames);
     uintA featVars;
     for(rai::Frame *f:ob->frames){ //which frames does the objective depend on?
       uint varId = frameID2VarId(f->ID); //which variable parameterized that frame
-      featVars.setAppendInSorted(varId);
+      if(varId!=UINT_MAX) featVars.setAppendInSorted(varId);
     }
-    featureIndex.append( FeatureIndexEntry{ ob, featDim, featVars } );
+    __featureIndex.append( FeatureIndexEntry{ ob, featDim, featVars } );
+    featId++;
   }
 }
 
+void Conv_KOMO_FineStructuredProblem::subSelect(const uintA& activeVariables, const uintA& conditionalVariables){
+  uintA allVars;
+  for(uint i:activeVariables) allVars.setAppendInSorted(i);
+  for(uint i:conditionalVariables) allVars.setAppendInSorted(i);
+
+  JointL activeJoints;
+  for(uint v:activeVariables){
+    VariableIndexEntry& V = __variableIndex(v);
+    for(Dof *d:V.dofs) activeJoints.append(dynamic_cast<Joint*>(d));
+  }
+  subVars = activeVariables;
+
+  //ensure that komo.pathConfig uses the same indexing -- that its activeJoint set is indexed exactly as consecutive variables
+  komo.pathConfig.setActiveJoints(activeJoints);
+  komo.run_prepare(0.);
+
+  subFeats.clear();
+  for(uint f=0;f<__featureIndex.N;f++){
+    FeatureIndexEntry& F = __featureIndex(f);
+    bool active=true;
+    for(int j:F.varIds){
+      if(!allVars.containsInSorted(j)) { //only objectives that link only to X \cup Y
+        active=false;
+      }
+    }
+    if(active) subFeats.append(f);
+  }
+}
+
+String Conv_KOMO_FineStructuredProblem::getVariableName(uint var_id){
+  Dof* d = variableIndex(var_id).dofs.first();
+  Joint *j = dynamic_cast<Joint*>(d);
+  CHECK(j, "");
+  return STRING(j->frame->name <<'.' <<j->frame->ID);
+}
+
 void Conv_KOMO_FineStructuredProblem::getFactorization(uintA& variableDimensions, uintA& featureDimensions, uintAA& featureVariables) {
-  variableDimensions.resize(variableIndex.N);
-  for(uint i=0; i<variableIndex.N; i++) {
+  variableDimensions.resize(getNumVariables());
+  for(uint i=0; i<getNumVariables(); i++) {
     variableDimensions(i) = variableIndex(i).dim;
   }
 
-  featureDimensions.resize(featureIndex.N);
-  featureVariables.resize(featureIndex.N);
+  featureDimensions.resize(getNumFeatures());
+  featureVariables.resize(getNumFeatures());
   arr y, J;
 
-  for(uint f=0; f<featureIndex.N; f++) {
+  for(uint f=0; f<getNumFeatures(); f++) {
     FeatureIndexEntry& F = featureIndex(f);
     featureDimensions(f) = F.dim;
     if(!F.dim) continue;
@@ -2007,17 +2061,44 @@ void Conv_KOMO_FineStructuredProblem::evaluateSingleFeature(uint feat_id, arr& p
   FeatureIndexEntry& F = featureIndex(feat_id);
 
   F.ob->feat->eval(phi, J, F.ob->frames);
-//  cout <<"EVAL '" <<F.ob->name() <<"' phi:" <<phi <<endl;
+  //  cout <<"EVAL '" <<F.ob->name() <<"' phi:" <<phi <<endl;
 }
 
-void Conv_KOMO_FineStructuredProblem::report() {
-  arr y, J;
-  for(uint f=0; f<featureIndex.N; f++) {
-    FeatureIndexEntry& F = featureIndex(f);
-    cout <<f <<' ' <<F.dim <<' ' <<F.ob->feat->shortTag(komo.pathConfig) <<endl;
-    evaluateSingleFeature(f, y, J, NoArr);
-    cout <<"y:" <<y <<endl;
-    cout <<"J:" <<J <<endl;
+void Conv_KOMO_FineStructuredProblem::report(std::ostream& os, int verbose) {
+  komo.reportProblem(os);
+  komo.pathConfig.ensure_q();
+
+  if(verbose>1){
+    for(uint v=0; v<getNumVariables(); v++) {
+      VariableIndexEntry& V = variableIndex(v);
+      os <<"Variable " <<v <<" dim:" <<V.dim <<" dofs:{ ";
+      for(Dof* d:V.dofs){
+        Joint *j = dynamic_cast<Joint*>(d);
+        CHECK(j, "");
+        os <<j->frame->name <<'.' <<j->frame->ID <<' ';
+      }
+      os <<'}' <<endl;
+    }
+
+
+    arr y, J;
+    for(uint f=0; f<getNumFeatures(); f++) {
+      FeatureIndexEntry& F = featureIndex(f);
+      os <<"Feature " <<f <<" dim:" <<F.dim <<" vars:( ";
+      for(uint& i:F.varIds) os <<i <<' ';
+      os <<") desc:" <<F.ob->feat->shortTag(komo.pathConfig);
+      evaluateSingleFeature(f, y, J, NoArr);
+      os <<" y:" <<y <<endl;
+//      os <<"J:" <<J <<endl;
+    }
+  }
+
+  if(verbose>3) komo.view(true, "Conv_KOMO_FineStructuredProblem - report");
+  if(verbose>4) komo.view_play(true);
+  if(verbose>5){
+    rai::system("mkdir -p z.vid");
+    komo.view_play(false, .1, "z.vid/");
+    if(verbose>3) komo.view(true, "Conv_KOMO_SparseNonfactored - video saved in z.vid/");
   }
 }
 

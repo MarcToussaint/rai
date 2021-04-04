@@ -217,73 +217,6 @@ void TEST(PR2){
 //   K.watch(true);
 // }
 
-void testFactors(){
-  rai::Configuration C("../switches/model2.g");
-
-  rai::Frame* g = C["gripper"];
-  g->ensure_X();
-  rai::Frame* g2 = new rai::Frame(C, g);
-  g2->name = "gripperDUP";
-  g2->setShape(rai::ST_box, {.1,.05,.05}); //usually not!
-  g2->setParent(C.frames.first(), true);
-  g2->setJoint(rai::JT_free);
-
-  //=== define the full problem
-
-  KOMO komo;
-
-  komo.setModel(C, false);
-  komo.setTiming(2.5, 3, 5., 2);
-  komo.add_qControlObjective({}, 2);
-  komo.addSquaredQuaternionNorms();
-
-  //consistency constraint
-  komo.addObjective({}, FS_poseDiff, {"gripper", "gripperDUP"}, OT_eq, {1e2});
-  //grasp
-  komo.addSwitch_stable(1., 2., "table", "gripper", "box");
-  komo.addObjective({1.}, FS_positionDiff, {"gripperDUP", "box"}, OT_eq, {1e2});
-  komo.addObjective({1.}, FS_scalarProductXX, {"gripperDUP", "box"}, OT_eq, {1e2}, {0.});
-  komo.addObjective({1.}, FS_vectorZ, {"gripperDUP"}, OT_eq, {1e2}, {0., 0., 1.});
-
-  //slow - down - up
-  komo.addObjective({1.}, FS_qItself, {}, OT_eq, {}, {}, 1);
-  komo.addObjective({.9,1.1}, FS_position, {"gripper"}, OT_eq, {}, {0.,0.,.1}, 2);
-
-  //place
-  komo.addSwitch_stable(2., -1., "gripper", "table", "box", false);
-  komo.addObjective({2.}, FS_positionDiff, {"box", "table"}, OT_eq, {1e2}, {0,0,.08}); //arr({1,3},{0,0,1e2})
-  komo.addObjective({2.}, FS_vectorZ, {"gripper"}, OT_eq, {1e2}, {0., 0., 1.});
-
-  //slow - down - up
-  komo.addObjective({2.}, FS_qItself, {}, OT_eq, {}, {}, 1);
-  komo.addObjective({1.9,2.1}, FS_position, {"gripper"}, OT_eq, {}, {0.,0.,.1}, 2);
-
-
-  //=== select only gripperDUB
-//  komo.selectJointsBySubtrees({"gripperDUP"});
-
-
-//  JointL ajo = komo.pathConfig.activeJoints;
-//  ajo.permuteRandomly();
-//  komo.pathConfig.setActiveJoints(ajo);
-
-  komo.verbose = 4;
-//  komo.animateOptimization = 1;
-#if 0
-  komo.optimize();
-#else
-  NLP_Solver()
-      .setProblem(*komo.nlp_Factored())
-//      .setProblem(*komo.nlp_SparseNonFactored())
-      .solve();
-#endif
-
-//  komo.view(true, "optimized motion");
-//  while(komo.view_play(true));
-
-
-}
-
 //===========================================================================
 
 int main(int argc,char** argv){
@@ -294,9 +227,7 @@ int main(int argc,char** argv){
 //  testEasy();
 //  testAlign();
 //  testThin();
-//  testPR2();
-
-  testFactors();
+  testPR2();
 
   return 0;
 }

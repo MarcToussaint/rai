@@ -71,7 +71,16 @@ struct MathematicalProgram_Factored : MathematicalProgram {
   //-- unstructured (batch) evaluation
   virtual void evaluate(arr& phi, arr& J, const arr& x); //default implementation: use setSingleVariable and evaluateSingleFeature
 
-  virtual void report(){}
+  virtual void subSelect(const uintA& activeVariables, const uintA& conditionalVariables){ NIY }
+
+  //same as 'getFactorization' - but more easily accessible
+  virtual uint getNumVariables() { return UINT_MAX; }
+  virtual uint getNumFeatures() { return UINT_MAX; }
+//  virtual uint getVariableDim(uint var_id) { return UINT_MAX; }
+//  virtual uint getFactorDim(uint feat_id) { return UINT_MAX; }
+//  virtual uintA getVariableFactors(uint var_id) { return uintA(); }
+//  virtual uintA getFactorVariables(uint feat_id) { return uintA(); }
+  virtual rai::String getVariableName(uint var_id){ return STRING("-dummy-"); }
 };
 
 //===========================================================================
