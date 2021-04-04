@@ -74,7 +74,8 @@ void CtrlSolver::update(const arr& q_real, const arr& qDot_real, rai::Configurat
   //-- use the q_real and qDot_real to define the prefix
   //the joint state:
   if(komo.k_order==2){
-    komo.setConfiguration_qAll(-2, q_real - tau*qDot_real);
+    if(qDot_real.N) komo.setConfiguration_qAll(-2, q_real - tau*qDot_real);
+    else komo.setConfiguration_qAll(-2, komo.getConfiguration_qAll(-1));
     komo.setConfiguration_qAll(-1, q_real);
     komo.setConfiguration_qAll( 0, q_real);
   }else if(komo.k_order==1){

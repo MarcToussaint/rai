@@ -145,7 +145,7 @@ void Spline::eval(arr& x, arr& xDot, arr& xDDot, double t) const {
 #endif
 }
 
-void Spline::set(uint _degree, const arr& _points, const arr& _times, const arr& startVel, const arr& endVel) {
+Spline& Spline::set(uint _degree, const arr& _points, const arr& _times, const arr& startVel, const arr& endVel) {
   CHECK_EQ(_points.nd, 2, "");
   CHECK_EQ(_points.d0, _times.N, "");
 
@@ -177,8 +177,9 @@ void Spline::set(uint _degree, const arr& _points, const arr& _times, const arr&
   if(!!startVel) setDoubleKnotVel(-1, startVel);
   if(!!endVel) setDoubleKnotVel(points.N-1, endVel);
 
-
   CHECK_EQ(knotPoints.d0, knotTimes.N-degree-1 , "");
+
+  return *this;
 }
 
 void Spline::append(const arr& _points, const arr& _times){

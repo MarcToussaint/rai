@@ -82,12 +82,12 @@ void PercMesh::syncWith(rai::Configuration& K) {
     f->name <<"perc_" <<id;
     new rai::Shape(*f);
     f->shape->type() = rai::ST_mesh;
-    f->ats.getNew<int>("label") = 0x80+id;
+    f->ats->getNew<int>("label") = 0x80+id;
   }
   f->setPose(pose);
   f->shape->mesh() = mesh;
   f->shape->mesh().C = ARR(.5, 1., .5);
-  f->ats.getNew<int>("label") = 0x80+id;
+  f->ats->getNew<int>("label") = 0x80+id;
 }
 
 double PercMesh::fuse(PerceptPtr& other) {

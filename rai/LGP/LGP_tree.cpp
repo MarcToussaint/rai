@@ -66,21 +66,21 @@ struct DisplayThread : Thread {
 };
 
 void initFolStateFromKin(FOL_World& L, const rai::Configuration& K) {
-  for(rai::Frame* a:K.frames) if(a->ats["logical"]) {
-      const Graph& G = a->ats["logical"]->graph();
+  for(rai::Frame* a:K.frames) if(a->ats && (*a->ats)["logical"]) {
+      const Graph& G = (*a->ats)["logical"]->graph();
       for(Node* n:G) L.addFact({n->key, a->name});
 //      L.addFact({"initial", a->name}); //*** THE INITIAL FACT WAS INTRODUCED TO SIMPLIFY SKELETONS - OBSOLETE ***
     }
-  for(rai::Frame* a:K.frames) if(a->shape && a->ats["logical"]) {
+  for(rai::Frame* a:K.frames) if(a->shape && a->ats && (*a->ats)["logical"]) {
       rai::Frame* p = a->getUpwardLink();
       if(!p) continue;
       FrameL F;
       p->getRigidSubFrames(F);
-      for(rai::Frame* b:F) if(b!=a && b->shape && b->ats["logical"]) {
+      for(rai::Frame* b:F) if(b!=a && b->shape && a->ats && (*b->ats)["logical"]) {
           L.addFact({"partOf", a->name, b->name});
         }
     }
-  for(rai::Frame* a:K.frames) if(a->shape && a->ats["logical"]) {
+  for(rai::Frame* a:K.frames) if(a->shape && a->ats && (*a->ats)["logical"]) {
       rai::Frame* p = a;
       while(p && !p->joint) p=p->parent;
       if(!p) continue;
@@ -91,7 +91,7 @@ void initFolStateFromKin(FOL_World& L, const rai::Configuration& K) {
         if(p->joint) break;
         p=p->parent;
       }
-      for(rai::Frame* b:F) if(b!=a && b->shape && b->ats["logical"]) {
+      for(rai::Frame* b:F) if(b!=a && b->shape && b->ats && (*b->ats)["logical"]) {
           L.addFact({"on", b->name, a->name});
         }
     }

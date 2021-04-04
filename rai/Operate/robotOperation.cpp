@@ -7,7 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "robotOperation.h"
-#include "splineRunner.h"
+#include "../Control/splineRunner.h"
 #include "../RosCom/roscom.h"
 #include "../RosCom/baxter.h"
 #include "../Gui/opengl.h"
@@ -23,7 +23,7 @@ struct sRobotOperation : Thread, GLDrawer {
   bool useBaxter=false;
   bool sendToBaxter=false;
 
-  SplineRunner spline;
+  rai::SplineRunner spline;
   double dt; // time stepping interval
 
   sRobotOperation(const rai::Configuration& _K, double _dt, bool useRosDefault)

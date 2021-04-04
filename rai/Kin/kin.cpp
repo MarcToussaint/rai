@@ -304,7 +304,7 @@ void Configuration::addCopies(const FrameL& F, const ForceExchangeL& _forces) {
     FId2thisId(f->ID) = f_new->ID;
 
     //convert constant joints to mimic joints
-    if(f->joint && (*f->ats)["constant"]){
+    if(f->joint && f->ats && (*f->ats)["constant"]){
       Frame *f_orig = getFrame(f_new->name); //identify by name!!!
       if(f_orig!=f_new){
         CHECK(f_orig->joint, "");
@@ -443,7 +443,7 @@ uintA Configuration::getCtrlFramesAndScale(arr& scale) const {
   uintA qFrames;
   for(rai::Frame* f : frames) {
     rai::Joint *j = f->joint;
-    if(j && j->active && j->dim>0 && (!j->mimic) && j->H>0. && j->type!=rai::JT_tau && (!(*f->ats)["constant"])) {
+    if(j && j->active && j->dim>0 && (!j->mimic) && j->H>0. && j->type!=rai::JT_tau && (!f->ats || !(*f->ats)["constant"])) {
       qFrames.append(TUP(f->ID, f->parent->ID));
       if(!!scale) scale.append(j->H, j->dim);
     }
@@ -646,6 +646,15 @@ void Configuration::selectJointsBySubtrees(const FrameL& roots, bool notThose) {
   for(Frame* f: roots) {
     F.append(f);
     f->getSubtree(F);
+  }
+  selectJoints(F, notThose);
+}
+
+/// select joint frames that have a given attribute in the gfile
+void Configuration::selectJointsByAtt(const StringA& attNames, bool notThose) {
+  FrameL F;
+  for(Frame* f:frames) if(f->joint) {
+    for(const String& s:attNames) if((*f->ats)[s]) { F.append(f); break; }
   }
   selectJoints(F, notThose);
 }

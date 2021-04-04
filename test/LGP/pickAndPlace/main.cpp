@@ -12,11 +12,11 @@ void generateProblem(rai::Configuration& C){
   for(;;){
     C.clear();
     C.addFile("../../../../rai-robotModels/pr2/pr2.g");
-    C.selectJointsByGroup({"base","armL","armR"});
+    C.selectJointsByAtt({"base","armL","armR"});
     C.pruneInactiveJoints();
     C.optimizeTree();
-    C["pr2L"]->ats.newNode<Graph>({"logical"}, {}, {{"gripper", true}});
-    C["pr2R"]->ats.newNode<Graph>({"logical"}, {}, {{"gripper", true}});
+    C["pr2L"]->ats->newNode<Graph>({"logical"}, {}, {{"gripper", true}});
+    C["pr2R"]->ats->newNode<Graph>({"logical"}, {}, {{"gripper", true}});
     C["worldTranslationRotation"]->joint->H = 1e-0;
     C.addFile("../../../../rai-robotModels/objects/tables.g");
     for(uint i=0;i<numObj;i++){
@@ -52,7 +52,7 @@ void solve(){
   rai::Configuration C;
   generateProblem(C);
   //  K.addFile("model2.g");
-  C.selectJointsByGroup({"base","armL","armR"});
+  C.selectJointsByAtt({"base","armL","armR"});
   C.optimizeTree();
 
   LGP_Tree lgp(C, "fol-pnp-switch.g");

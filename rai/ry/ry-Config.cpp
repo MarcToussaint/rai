@@ -278,7 +278,7 @@ part of the joint state and define the number of DOFs",
       )
 
   .def("selectJointsByTag", [](shared_ptr<rai::Configuration>& self, const ry::I_StringA& jointGroups) {
-    self->selectJointsByGroup(I_conv(jointGroups));
+    self->selectJointsByAtt(I_conv(jointGroups));
     self->ensure_q();
   },
   "redefine what are considered the DOFs of this configuration: only joint that have a tag listed in jointGroups are considered \

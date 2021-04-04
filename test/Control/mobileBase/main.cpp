@@ -76,8 +76,9 @@ void controlMobile(){
 
     for(uint t=0;t<20;t++){
       ctrl.set(CS);
-      ctrl.update(C);
-      arr q = ctrl.solve();
+      arr q = C.getJointState();
+      ctrl.update(q, {}, C);
+      q = ctrl.solve();
       C.setJointState(q);
 
       V.setConfiguration(C, STRING("t:" <<t), false);

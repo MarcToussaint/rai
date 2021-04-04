@@ -19,7 +19,7 @@ struct Spline {
   arr knotPoints, knotTimes; ///< the points and times with (non-intuitive) head and tail added depending on degree
 
   //-- methods to define the points and times
-  void set(uint degree, const arr& _points, const arr& _times, const arr& startVel=NoArr, const arr& endVel=NoArr);
+  Spline& set(uint degree, const arr& _points, const arr& _times, const arr& startVel=NoArr, const arr& endVel=NoArr);
   void append(const arr& _points, const arr& _times);
   void clear();
 
@@ -37,6 +37,11 @@ struct Spline {
     else if(derivative==2) eval(NoArr, NoArr, x, t);
     else NIY;
     return x;
+  }
+  arr eval(const arr& ts){
+    arr f(ts.N, points.d1);
+    for(uint i=0;i<ts.N;i++) f[i] = eval(ts(i));
+    return f;
   }
 
   /// for t \in [0,1] the coefficients are the weighting of the points: f(t) = coeffs(t)^T * points

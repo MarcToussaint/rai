@@ -28,6 +28,9 @@ DEPEND_UBUNTU += python3-dev python3 python3-numpy python3-pip python3-distutils
 CXXFLAGS += -DRAI_PYBIND `python3-config --cflags` `python3 -m pybind11 --includes`
 LIBS += `python3-config --ldflags`
 #CPATH := $(CPATH):$(BASE)/../pybind11/include::$(BASE)/../../pybind11/include
+
+# sudo update-alternatives --install /usr/bin/python3-config python3 /usr/bin/python3.7 0
+# sudo update-alternatives --install /usr/bin/python3-config python3-config /usr/bin/python3.7-config 0
 endif
 
 ifeq ($(X11),1)

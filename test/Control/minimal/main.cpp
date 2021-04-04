@@ -29,8 +29,9 @@ void testMinimal(){
 
   for(uint t=0;t<1000;t++){
     ctrl.set(CS);
-    ctrl.update(C);
-    arr q = ctrl.solve();
+    arr q = C.getJointState();
+    ctrl.update(q, {}, C);
+    q = ctrl.solve();
     C.setJointState(q);
     C.stepSwift();
 
@@ -92,8 +93,9 @@ void testGrasp(){
       txt <<"preGrasp";
     }
 
-    ctrl.update(C);
-    arr q = ctrl.solve();
+    arr q = C.getJointState();
+    ctrl.update(q, {}, C);
+    q = ctrl.solve();
     C.setJointState(q);
     C.stepSwift();
 
@@ -136,8 +138,9 @@ void testIneqCarrot(){
       if(reach.isConverged(ctrl.komo.pathConfig)) mode=0;
     }
 
-    ctrl.update(C);
-    arr q = ctrl.solve();
+    arr q = C.getJointState();
+    ctrl.update(q, {}, C);
+    q = ctrl.solve();
     C.setJointState(q);
 
     ctrl.report();

@@ -368,7 +368,7 @@ void rai::Frame::write(std::ostream& os) const {
   if(inertia) inertia->write(os);
 
   StringA avoid = {"Q", "pose", "rel", "X", "from", "to", "q", "shape", "joint", "type", "color", "size", "contact", "mesh", "meshscale", "mass", "limits", "ctrl_H", "axis", "A", "B", "mimic"};
-  for(Node* n : *ats) {
+  if(ats) for(Node* n : *ats) {
     if(!n->key.startsWith("%") && !avoid.contains(n->key)) os <<", " <<*n;
   }
 
