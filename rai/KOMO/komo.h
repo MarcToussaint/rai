@@ -253,7 +253,7 @@ public:
     uintA roots = framesToIndices(C.getRoots());
     arr X0 = C.getFrameState(roots);
     //set t=0..T to new frame state:
-    for(int t=0; t<T; t++) pathConfig.setFrameState(X0, roots+timeSlices(k_order+t,0)->ID);
+    for(uint t=0; t<T; t++) pathConfig.setFrameState(X0, roots+timeSlices(k_order+t,0)->ID);
     //shift the frame states within the prefix (t=-1 becomes equal to t=0, which is new state)
     for(int t=-k_order; t<0; t++){
       arr Xt = pathConfig.getFrameState(roots+timeSlices(k_order+t+1,0)->ID);

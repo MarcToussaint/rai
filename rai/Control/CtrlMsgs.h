@@ -16,7 +16,6 @@ enum class ControlType { configRefs, projectedAcc };
 
 struct ReferenceFeed {
   virtual void getReference(arr& q_ref, arr& qDot_ref, arr& qDDot_ref, const arr& q_real, const arr& qDot_real, double time) = 0;
-
 };
 
 //The control message send to the robot

@@ -17,6 +17,7 @@ struct SplineCtrlReference : ReferenceFeed {
 
   void append(const arr& x, const arr& t, bool prependLast=true);
   void override(const arr& x, const arr& t);
+  void overrideHardRealTime(const arr& x, const arr& t, const arr& xDot0);
 
   void moveTo(const arr& x, double t, bool append=true);
 

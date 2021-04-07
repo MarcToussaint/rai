@@ -44,6 +44,23 @@ void SplineCtrlReference::override(const arr& x, const arr& t){
   splineSet->set(2, _x, _t+now, xDot_now);
 }
 
+void SplineCtrlReference::overrideHardRealTime(const arr& x, const arr& t, const arr& xDot0){
+  waitForInitialized();
+  //only saftey checks: evaluate the current spline and time
+  auto splineSet = spline.set();
+  {
+      double now = rai::realTime();
+      arr x_now, xDot_now;
+      splineSet->eval(x_now, xDot_now, NoArr, now);
+      CHECK_GE(now, t.first(), "");
+      CHECK_LE(now-t.first(), .2, "you first time knot is more than 200msec ago!");
+      CHECK_LE(maxDiff(x[0],x_now), .1, "your first point knot is too far from the current spline");
+      CHECK_LE(maxDiff(xDot0,xDot_now), .1, "your initial velocity is too far from the current spline");
+  }
+
+  splineSet->set(2, x, t, xDot0);
+}
+
 void SplineCtrlReference::moveTo(const arr& x, double t, bool append){
   if(append) this->append(~x, {t}, true);
   else  override(~x, {t});
