@@ -12,6 +12,7 @@ struct LeapMPC{
   LeapMPC(rai::Configuration& C, double timingScale=1.);
 
   void reinit(const arr& x, const arr& v);
+  void reinit(const rai::Configuration& C);
 
-  void step(rai::Configuration& C);
+  void solve();
 };

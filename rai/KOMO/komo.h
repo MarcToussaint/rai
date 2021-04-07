@@ -246,14 +246,15 @@ public:
     //-- joint state
     //set t=0 to new joint state:
     setConfiguration_qAll(0, C.getJointState());
-    //shift the joint state (t=-1 becomes equal to t=0, which is new state)
+    //shift the joint state within prefix (t=-1 becomes equal to t=0, which is new state)
     for(int t=-k_order; t<0; t++) setConfiguration_qOrg(t, getConfiguration_qOrg(t+1));
-    //-- frame state of roots only:
+
+    //-- frame state of roots only, if objects moved:
     uintA roots = framesToIndices(C.getRoots());
-    //set t=0 to new joint state:
     arr X0 = C.getFrameState(roots);
-    pathConfig.setFrameState(X0, roots+timeSlices(k_order,0)->ID);
-    //shift the joint state (t=-1 becomes equal to t=0, which is new state)
+    //set t=0..T to new frame state:
+    for(int t=0; t<T; t++) pathConfig.setFrameState(X0, roots+timeSlices(k_order+t,0)->ID);
+    //shift the frame states within the prefix (t=-1 becomes equal to t=0, which is new state)
     for(int t=-k_order; t<0; t++){
       arr Xt = pathConfig.getFrameState(roots+timeSlices(k_order+t+1,0)->ID);
       pathConfig.setFrameState(Xt, roots+timeSlices(k_order+t,0)->ID);

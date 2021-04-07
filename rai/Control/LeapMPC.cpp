@@ -2,6 +2,7 @@
 
 LeapMPC::LeapMPC(rai::Configuration& C, double timingScale){
   komo.setModel(C, false);
+#if 0
   komo.setTiming(2., 1, .1, 2);
 
   //control costs at short horizon
@@ -21,6 +22,14 @@ LeapMPC::LeapMPC(rai::Configuration& C, double timingScale){
   komo.reportProblem();
 
   komo.timeSlices(-1,0)->setJointState({100.}); //this should be the tau joint!
+#else
+  komo.setTiming(1., 3, 1., 1);
+
+  //control costs at short horizon
+  komo.add_qControlObjective({}, 1, 1e-1);
+  komo.reportProblem();
+#endif
+
 
   //MISSING: THE TASK COSTS..
 }
@@ -32,13 +41,15 @@ void LeapMPC::reinit(const arr& x, const arr& v){
   //initialize x(0) also to current
   komo.setConfiguration_qOrg(0, x);
   //leave the leap configuration as is...
-  komo.timeSlices(-1,0)->setJointState({100.}); //this should be the tau joint!
+//  komo.timeSlices(-1,0)->setJointState({100.}); //this should be the tau joint!
 }
 
-void LeapMPC::step(rai::Configuration& C){
+void LeapMPC::reinit(const rai::Configuration& C){
   //shifts only prefix, not the whole trajectory! (would not make sense for x(H) \gets x(T) )
   komo.updateAndShiftPrefix(C);
+}
 
+void LeapMPC::solve(){
   //re-run KOMO
   OptOptions opt;
   opt.stopTolerance = 1e-4;
