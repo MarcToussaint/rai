@@ -10,16 +10,16 @@ namespace rai {
 struct SplineCtrlReference : ReferenceFeed {
   Var<Spline> spline;
 
-  void initialize(const arr& q_real, const arr& qDot_real);
+  void initialize(const arr& q_real, const arr& qDot_real, double time);
   void waitForInitialized();
 
   void getReference(arr& q_ref, arr& qDot_ref, arr& qDDot_ref, const arr& q_real, const arr& qDot_real, double time);
 
-  void append(const arr& x, const arr& t, bool prependLast=true);
-  void override(const arr& x, const arr& t);
-  void overrideHardRealTime(const arr& x, const arr& t, const arr& xDot0);
+  void append(const arr& x, const arr& t, double nowTime, bool prependLast);
+  void override(const arr& x, const arr& t, double nowTime);
+  void overrideHardRealTime(const arr& x, const arr& t, const arr& xDot0, double nowTime);
 
-  void moveTo(const arr& x, double t, bool append=true);
+  void moveTo(const arr& x, double t, double nowTime, bool append);
 
 };
 
