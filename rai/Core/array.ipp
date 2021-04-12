@@ -23,6 +23,9 @@
   the memory if the new size is smaller than a fourth */
 #define ARRAY_flexiMem true
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wclass-memaccess"
+
 //#ifdef RAI_MSVC
 //#define RAI_NO_VEC_IMPL
 //#endif
@@ -4542,3 +4545,5 @@ void maximumSpanningTree(rai::Array<vert*>& V, rai::Array<edge*>& E, const Compa
 //    HALT("NEVER CALL THIS CONSTRUCTOR!")
 //}
 //}
+
+#pragma GCC diagnostic pop

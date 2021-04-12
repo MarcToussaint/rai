@@ -177,7 +177,10 @@ struct Transformation {
   Transformation(const Transformation& t) : pos(t.pos), rot(t.rot) {}
   Transformation(const char* init) { setText(init); }
   Transformation(const arr& t) { set(t); }
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wclass-memaccess"
   void operator=(const Transformation& f) { memcpy(this, &f, sizeof(Transformation)); }
+#pragma GCC diagnostic pop
   bool operator!() const;
 
   Transformation& setZero();

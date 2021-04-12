@@ -14,6 +14,8 @@
 #  include <GL/glu.h>
 #endif
 
+#pragma GCC diagnostic ignored "-Wclass-memaccess"
+
 const rai::Vector Vector_x(1, 0, 0);
 const rai::Vector Vector_y(0, 1, 0);
 const rai::Vector Vector_z(0, 0, 1);
