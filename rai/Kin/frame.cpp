@@ -157,7 +157,7 @@ void rai::Frame::_state_updateAfterTouchingQ() {
 //  CHECK(parent, "can't set Q for a root frame '" <<name <<"'");
   if(!parent) LOG(-1) <<"can't set Q for a root frame '" <<name <<"'";
   _state_setXBadinBranch();
-  if(joint) C._state_q_isGood = false;
+  if(joint && joint->dim) C._state_q_isGood = false;
 }
 
 void rai::Frame::getRigidSubFrames(FrameL& F) {

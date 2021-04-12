@@ -96,7 +96,7 @@ LPATHS	+= $(BASE)/lib $(HOME)/opt/lib /usr/local/lib
 LIBS += -lrt
 SHAREFLAG = -shared #-Wl,--warn-unresolved-symbols #-Wl,--no-allow-shlib-undefined
 
-CXXFLAGS += -Wno-terminate -Wno-class-memaccess -fPIC
+CXXFLAGS += -Wno-terminate -Wno-pragmas -fPIC
 CFLAGS += -fPIC
 
 ifndef RAI_NO_CXX11
@@ -191,6 +191,7 @@ clean: cleanLocks cleanLibs force
 	@echo "   *** clean      " $(PWD)
 	rm -f $(OUTPUT) $(OBJS) $(PREOBJS) callgrind.out.* $(CLEAN)
 	@rm -f $(MODULE_NAME)_wrap.* $(MODULE_NAME)py.so $(MODULE_NAME)py.py
+	if [ -f "main.ipynb" ]; then jupyter-nbconvert --clear-output --inplace main.ipynb; fi
 
 cleanLocks: force
 	@echo "   *** cleanLocks " $(PWD)
@@ -206,6 +207,9 @@ cleanAll: cleanLocks cleanDepends force
 
 cleanDepends: force
 	@find $(BASE) $(BASE2) -type f -name 'Makefile.dep' -delete -print
+
+clean/%.ipynb: %.ipynb
+	+@-jupyter-nbconvert --clear-output --inplace $<
 
 installUbuntu: force
 	sudo apt-get -q $(APTGETYES) install $(DEPEND_UBUNTU)

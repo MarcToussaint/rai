@@ -511,7 +511,7 @@ allows you to control robot motors by position, velocity, or accelerations, \
 
 //===========================================================================
 
-//  pybind11::class_<ry::ConfigViewer>(m, "ConfigViewer");
+  pybind11::class_<rai::ConfigurationViewer, shared_ptr<rai::ConfigurationViewer>>(m, "ConfigurationViewer");
   pybind11::class_<ImageViewerCallback, shared_ptr<ImageViewerCallback>>(m, "ImageViewer");
   pybind11::class_<PointCloudViewerCallback, shared_ptr<PointCloudViewerCallback>>(m, "PointCloudViewer");
 

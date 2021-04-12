@@ -190,8 +190,8 @@ bool getFingersForGripper(rai::Frame*& gripper, rai::Frame*& fing1, rai::Frame*&
 
   CHECK(fing1->joint, "");
   CHECK(fing2->joint, "");
-  CHECK_EQ(fing1->joint->type, JT_rigid, ""); //grippers need to be rigid joints! (to not be part of the dynamic/control system)
-  CHECK_EQ(fing2->joint->type, JT_rigid, "");
+  CHECK(!fing1->joint->active || !fing1->joint->dim, ""); //grippers need to be rigid joints! (to not be part of the dynamic/control system)
+  CHECK(!fing2->joint->active || !fing2->joint->dim, "");
 
   //requirement: two of the children of need to be the finger geometries
 //  fing1 = gripper->children(0); while(!fing1->shape && fing1->children.N) fing1 = fing1->children(0);
@@ -324,7 +324,7 @@ double Simulation::getGripperWidth(const char* gripperFrameName) {
   rai::Frame* gripper, *fing1, *fing2;
   getFingersForGripper(gripper, fing1, fing2, C, gripperFrameName);
   if(!gripper) return -1.;
-  CHECK_EQ(fing1->joint->type, JT_rigid, "");
+  CHECK(!fing1->joint->active || !fing1->joint->dim, "");
   return fing1->get_Q().pos.x;
 }
 
@@ -507,7 +507,7 @@ Imp_CloseGripper::Imp_CloseGripper(Frame* _gripper, Frame* _fing1, Frame* _fing2
     coll2->setFrameIDs({finger2->ID, obj->ID});
   }
 
-  CHECK_EQ(fing1->joint->type, JT_rigid, "");
+  CHECK(!fing1->joint->active || !fing1->joint->dim, "");
   q = fing1->get_Q().pos.x;
 }
 
@@ -522,8 +522,8 @@ void Imp_CloseGripper::modConfiguration(Simulation& S, double tau) {
 
   //-- actually close gripper until both distances are < .001
   q -= 1e-1*speed*tau;
-  fing1->set_Q()->pos.x = q;
-  fing2->set_Q()->pos.x = q;
+  fing1->set_Q()->pos.set(q, 0., 0.);
+  fing2->set_Q()->pos.set(q, 0., 0.);
 
   if(q<fing1->joint->limits(0)) { //stop grasp by joint limits -> unsuccessful
     if(S.verbose>1) {
@@ -576,7 +576,7 @@ Imp_OpenGripper::Imp_OpenGripper(Frame* _gripper, Frame* _fing1, Frame* _fing2, 
   when = _beforePhysics;
   type = Simulation::_openGripper;
 
-  CHECK_EQ(fing1->joint->type, JT_rigid, "");
+  CHECK(!fing1->joint->active || !fing1->joint->dim, "");
   q = fing1->get_Q().pos.x;
 }
 
@@ -589,8 +589,8 @@ void Imp_OpenGripper::modConfiguration(Simulation& S, double tau) {
 
   //-- actually open gripper until limit
   q += 1e-1*speed*tau;
-  fing1->set_Q()->pos.x = q;
-  fing2->set_Q()->pos.x = q;
+  fing1->set_Q()->pos.set(q, 0., 0.);
+  fing2->set_Q()->pos.set(q, 0., 0.);
   if(q > fing1->joint->limits(1)) { //stop opening
     if(S.verbose>1) {
       LOG(1) <<"terminating opening gripper " <<gripper->name;
