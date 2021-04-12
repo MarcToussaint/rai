@@ -366,16 +366,16 @@ void PhysXInterface_self::addJoint(rai::Joint* jj) {
       PxD6Joint* desc = PxD6JointCreate(*physxSingleton().mPhysics, actors(from->ID), A, actors(jj->frame->ID), B.getInverse());
       CHECK(desc, "PhysX joint creation failed.");
 
-      if(jj->frame->ats.find<arr>("drive")) {
-        arr drive_values = jj->frame->ats.get<arr>("drive");
+      if(jj->frame->ats && jj->frame->ats->find<arr>("drive")) {
+        arr drive_values = jj->frame->ats->get<arr>("drive");
         PxD6JointDrive drive(drive_values(0), drive_values(1), PX_MAX_F32, true);
         desc->setDrive(PxD6Drive::eTWIST, drive);
       }
 
-      if(jj->frame->ats.find<arr>("limit")) {
+      if(jj->frame->ats && jj->frame->ats->find<arr>("limit")) {
         desc->setMotion(PxD6Axis::eTWIST, PxD6Motion::eLIMITED);
 
-        arr limits = jj->frame->ats.get<arr>("limit");
+        arr limits = jj->frame->ats->get<arr>("limit");
         PxJointAngularLimitPair limit(limits(0), limits(1), 0.1f);
         limit.restitution = limits(2);
         //limit.spring = limits(3);
@@ -386,8 +386,8 @@ void PhysXInterface_self::addJoint(rai::Joint* jj) {
         desc->setMotion(PxD6Axis::eTWIST, PxD6Motion::eFREE);
       }
 
-      if(jj->frame->ats.find<arr>("drive")) {
-        arr drive_values = jj->frame->ats.get<arr>("drive");
+      if(jj->frame->ats && jj->frame->ats->find<arr>("drive")) {
+        arr drive_values = jj->frame->ats->get<arr>("drive");
         PxD6JointDrive drive(drive_values(0), drive_values(1), PX_MAX_F32, false);
         desc->setDrive(PxD6Drive::eTWIST, drive);
         //desc->setDriveVelocity(PxVec3(0, 0, 0), PxVec3(5e-1, 0, 0));
@@ -422,16 +422,16 @@ void PhysXInterface_self::addJoint(rai::Joint* jj) {
       PxD6Joint* desc = PxD6JointCreate(*physxSingleton().mPhysics, actors(jj->from()->ID), A, actors(jj->frame->ID), B.getInverse());
       CHECK(desc, "PhysX joint creation failed.");
 
-      if(jj->frame->ats.find<arr>("drive")) {
-        arr drive_values = jj->frame->ats.get<arr>("drive");
+      if(jj->frame->ats && jj->frame->ats->find<arr>("drive")) {
+        arr drive_values = jj->frame->ats->get<arr>("drive");
         PxD6JointDrive drive(drive_values(0), drive_values(1), PX_MAX_F32, true);
         desc->setDrive(PxD6Drive::eX, drive);
       }
 
-      if(jj->frame->ats.find<arr>("limit")) {
+      if(jj->frame->ats && jj->frame->ats->find<arr>("limit")) {
         desc->setMotion(PxD6Axis::eX, PxD6Motion::eLIMITED);
 
-        arr limits = jj->frame->ats.get<arr>("limit");
+        arr limits = jj->frame->ats->get<arr>("limit");
         PxJointLinearLimit limit(physxSingleton().mPhysics->getTolerancesScale(), limits(0), 0.1f);
         limit.restitution = limits(2);
         //if(limits(3)>0) {
@@ -564,8 +564,8 @@ void PhysXInterface_self::addLink(rai::Frame* f, int verbose) {
       //-- decide/create a specific material
       PxMaterial* mMaterial = defaultMaterial;
       double fric=-1.;
-      if(s->frame.ats.get<double>(fric, "friction")) {
-        double rest=s->frame.ats.get<double>("restitution", 0.1);
+      if(s->frame.ats && s->frame.ats->get<double>(fric, "friction")) {
+        double rest=s->frame.ats->get<double>("restitution", 0.1);
         mMaterial = physxSingleton().mPhysics->createMaterial(fric, fric, rest);
       }
 

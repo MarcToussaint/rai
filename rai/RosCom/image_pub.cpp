@@ -116,7 +116,7 @@ ImagePublisher::~ImagePublisher() {
 }
 
 void ImagePublisher::publish(const rai::Array<unsigned char>& image, double timestamp) {
-  self->publish(image, timestamp);
+  s->publish(image, timestamp);
 }
 
 void init_image_publishers(int argc, char* argv[], const char* name, bool install_sigint_handler) {
