@@ -15,6 +15,7 @@
 #include "switch.h"
 #include "F_collisions.h"
 #include "../Gui/opengl.h"
+#include "../Control/SplineCtrlFeed.h"
 
 namespace rai {
 
@@ -27,6 +28,8 @@ struct Simulation_self {
   std::shared_ptr<CameraView> cameraview;
   std::shared_ptr<BulletInterface> bullet;
   std::shared_ptr<PhysXInterface> physx;
+
+  SplineCtrlReference ref;
 
   void updateDisplayData(double _time, const Configuration& _C);
   void updateDisplayData(const byteA& _image, const floatA& _depth);
@@ -115,6 +118,7 @@ Simulation::Simulation(Configuration& _C, Simulation::SimulatorEngine _engine, i
   } else if(engine==_kinematic) {
     //nothing
   } else NIY;
+  self->ref.initialize(C.getJointState(), NoArr, time);
   if(verbose>0) self->display = make_shared<Simulation_DisplayThread>(C);
 }
 
@@ -143,6 +147,10 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     arr q = C.getJointState();
     q += tau * ucontrol;
     C.setJointState(q);
+  } else if(u_mode==_spline) {
+    arr q = C.getJointState();
+    self->ref.getReference(q, NoArr, NoArr, q, NoArr, time);
+    C.setJointState(q);
   } else NIY;
 
   //-- imps before physics
@@ -168,6 +176,12 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     }
 
   if(verbose>0) self->updateDisplayData(time, C);
+}
+
+void Simulation::setMoveTo(const arr& x, double t, bool append){
+
+  if(append) self->ref.append(~x, {t}, time, true);
+  else self->ref.overrideSmooth(~x, {t}, time);
 }
 
 bool getFingersForGripper(rai::Frame*& gripper, rai::Frame*& fing1, rai::Frame*& fing2, rai::Configuration& C, const char* gripperFrameName) {
@@ -318,6 +332,10 @@ void Simulation::restoreState(const ptr<SimulationState>& state) {
 
 const arr& Simulation::get_qDot() {
   return self->qdot;
+}
+
+double Simulation::getTimeToMove(){
+  return self->ref.getEndTime()-time;
 }
 
 double Simulation::getGripperWidth(const char* gripperFrameName) {

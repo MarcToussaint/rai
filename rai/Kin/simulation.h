@@ -18,7 +18,7 @@ struct SimulationImp;
 
 struct Simulation {
   enum SimulatorEngine { _physx, _bullet, _kinematic };
-  enum ControlMode { _none, _position, _velocity, _acceleration };
+  enum ControlMode { _none, _position, _velocity, _acceleration, _spline };
   enum ImpType { _closeGripper, _openGripper, _depthNoise, _rgbNoise, _adversarialDropper, _objectImpulses, _blockJoints };
 
   std::unique_ptr<struct Simulation_self> self;
@@ -35,8 +35,11 @@ struct Simulation {
 
   //== controller interface
 
-  //-- send a low-level control and step the simulation
-  void step(const arr& u_control, double tau=.01, ControlMode u_mode = _velocity);
+  //-- step the simulation, optionally send a low-level control, or use the spline reference
+  void step(const arr& u_control={}, double tau=.01, ControlMode u_mode = _spline);
+
+  //-- adapt the spline reference to genreate motion (should become the default way)
+  void setMoveTo(const arr& q, double t, bool append=true);
 
   //-- send a gripper command
   void openGripper(const char* gripperFrameName, double width=.075, double speed=.3);
@@ -45,6 +48,7 @@ struct Simulation {
   //-- get state information
   const arr& get_q() { return C.getJointState(); }
   const arr& get_qDot();
+  double getTimeToMove();
   double getGripperWidth(const char* gripperFrameName);
   bool getGripperIsGrasping(const char* gripperFrameName);
   bool getGripperIsClose(const char* gripperFrameName);
@@ -64,15 +68,16 @@ struct Simulation {
   rai::CameraView::Sensor&  selectSensor(const char* name) { return cameraview().selectSensor(name); }
   byteA getScreenshot();
 
+
   //== ground truth interface
   rai::Frame* getGroundTruthFrame(const char* frame) { return C.getFrame("frame"); }
+
 
   //== perturbation/adversarial interface
 
   //what are really the fundamental perturbations? Their (reactive?) management should be realized by 'agents'. We need a method to add purturbation agents.
   void addImp(ImpType type, const StringA& frames, const arr& parameters);
 
-  //displace object
 
   //== management interface
 

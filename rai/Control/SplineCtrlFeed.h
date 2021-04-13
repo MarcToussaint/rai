@@ -29,6 +29,9 @@ struct SplineCtrlReference : ReferenceFeed {
     if(append) this->append(~x, {t}, ctrlTime, true);
     else  overrideSmooth(~x, {t}, ctrlTime);
   }
+
+  //info:
+  double getEndTime() { return spline.get()->end(); }
 };
 
 } //namespace
