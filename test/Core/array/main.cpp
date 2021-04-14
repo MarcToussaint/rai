@@ -197,14 +197,18 @@ void TEST(Basics){
 
 //===========================================================================
 
-void TEST(Iterations) {
+void TEST(Iterators) {
   arr x(10);
   x.setStraightPerm();
   x += 10.;
   cout <<x <<endl;
 
-  for(auto& e:x.enumerated()){
+  for(auto& e:x.itEnumerated()){
     cout <<e.i <<' ' <<e() <<endl;
+  }
+
+  for(auto& e:x.itReverse()){
+    cout <<e <<endl;
   }
 }
 
@@ -878,7 +882,7 @@ int MAIN(int argc, char **argv){
   rai::initCmdLine(argc, argv);
 
   testBasics();
-  testIterations();
+  testIterators();
   testCheatSheet();
   testInitializationList();
   testSimpleIterators();

@@ -64,6 +64,7 @@ template<class T> bool greaterEqual(const T& a, const T& b) { return a>=b; }
 namespace rai {
 
 template<class T> struct ArrayIterationEnumerated;
+template<class T> struct ArrayIterationReverse;
 template<class T> struct ArrayModRaw;
 
 /** Simple array container to store arbitrary-dimensional arrays (tensors).
@@ -117,7 +118,8 @@ template<class T> struct Array : /*std::vector<T>,*/ Serializable {
   typename vec_type::const_iterator begin() const { return typename vec_type::const_iterator(p); }
   typename vec_type::iterator end() { return typename vec_type::iterator(p+N); }
   typename vec_type::const_iterator end() const { return typename vec_type::const_iterator(p+N); }
-  ArrayIterationEnumerated<T> enumerated() { return ArrayIterationEnumerated<T>(*this); }
+  ArrayIterationEnumerated<T> itEnumerated() { return ArrayIterationEnumerated<T>(*this); }
+  ArrayIterationReverse<T> itReverse() { return ArrayIterationReverse<T>(*this); }
   //TODO: more: rows iterator, reverse iterator
 
   /// @name resizing
@@ -336,6 +338,7 @@ template<class T> struct ArrayItEnumerated {
   T& operator()() { return *p; } //access to value by user
   void operator++() { p++; i++; }
   ArrayItEnumerated<T>& operator*() { return *this; } //in for(auto& it:array.enumerated())  it is assigned to *iterator
+  friend bool operator!=(const ArrayItEnumerated& i, const ArrayItEnumerated& j) { return i.p!=j.p; }
 };
 
 template<class T> struct ArrayIterationEnumerated {
@@ -347,7 +350,20 @@ template<class T> struct ArrayIterationEnumerated {
   //  const_iterator end() const { return p+N; }
 };
 
-template<class T> bool operator!=(const ArrayItEnumerated<T>& i, const ArrayItEnumerated<T>& j) { return i.p!=j.p; }
+template<class T> struct ArrayIterationReverse_It {
+  T* p;
+  T& operator*() { return *p; } //access to value by user
+  void operator++() { p--; }
+  friend bool operator!=(const ArrayIterationReverse_It& i, const ArrayIterationReverse_It& j) { return i.p!=j.p; }
+};
+
+template<class T> struct ArrayIterationReverse {
+  Array<T>& x;
+  ArrayIterationReverse(Array<T>& x):x(x) {}
+  ArrayIterationReverse_It<T> begin() { return {x.p+x.N-1}; }
+  ArrayIterationReverse_It<T> end() { return {x.p-1}; }
+};
+
 
 //===========================================================================
 /// @}
