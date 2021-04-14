@@ -15,7 +15,7 @@
 #include "switch.h"
 #include "F_collisions.h"
 #include "../Gui/opengl.h"
-#include "../Control/SplineCtrlFeed.h"
+#include "../Algo/SplineCtrlFeed.h"
 
 namespace rai {
 

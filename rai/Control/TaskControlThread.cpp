@@ -118,7 +118,7 @@ void TaskControlThread::step() {
     }
 
     ctrl_tasks.writeAccess();
-    for(CtrlObjective* t: ctrl_tasks()) NIY; // t->update(.01, K);
+    NIY// for(CtrlObjective* t: ctrl_tasks()) NIY; // t->update(.01, K);
 
     TaskControlMethods taskController(Hmetric);
 

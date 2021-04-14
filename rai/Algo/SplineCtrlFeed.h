@@ -1,11 +1,15 @@
 #pragma once
 
-#include "CtrlMsgs.h"
+#include "spline.h"
 
 #include "../Core/thread.h"
-#include "../Algo/spline.h"
 
 namespace rai {
+
+struct ReferenceFeed {
+  /// callback called by a robot control loop
+  virtual void getReference(arr& q_ref, arr& qDot_ref, arr& qDDot_ref, const arr& q_real, const arr& qDot_real, double ctrlTime) = 0;
+};
 
 struct SplineCtrlReference : ReferenceFeed {
   Var<Spline> spline;

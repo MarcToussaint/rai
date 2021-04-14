@@ -253,19 +253,21 @@ btRigidBody* BulletInterface_self::addLink(rai::Frame* f, int verbose) {
   btDefaultMotionState* motionState = new btDefaultMotionState(pose);
   btRigidBody* body = new btRigidBody(btRigidBody::btRigidBodyConstructionInfo(mass, motionState, colShape, localInertia));
 
+  //-- these are physics tweaks - TODO: introduce global parameters for them
   double fric=1.;
   if(shapes.N==1 && f == &shapes.scalar()->frame) {
     //try to read friction from attributes
     if(shapes.scalar()->frame.ats) shapes.scalar()->frame.ats->get<double>(fric, "friction");
   }
   body->setFriction(fric);
-  body->setRollingFriction(.01);
-  body->setSpinningFriction(.01);
+//  body->setRollingFriction(.01);
+//  body->setSpinningFriction(.01);
 //  cout <<body->getContactStiffness() <<endl;
 //  cout <<body->getContactDamping() <<endl;
 //  body->setContactStiffnessAndDamping(1e4, 1e-1);
 //  body->setContactStiffnessAndDamping(1e7, 3e4);
-  body->setRestitution(objectRestitution);
+//  body->setRestitution(objectRestitution);
+
   dynamicsWorld->addRigidBody(body);
 
   if(type==rai::BT_kinematic) {
@@ -373,7 +375,11 @@ void BulletBridge::getConfiguration(rai::Configuration& C){
         btBoxShape* box = dynamic_cast<btBoxShape*>(shape);
         arr size = 2.*conv_btVec3_arr(box->getHalfExtentsWithMargin());
         cout <<" margin: " <<box->getMargin() <<" size: " <<size;
-        C.addFrame(STRING("obj"<<i)) ->setShape(rai::ST_box, size). setPose(X);
+        auto& f = C.addFrame(STRING("obj"<<i))
+            ->setShape(rai::ST_box, size)
+            .setPose(X);
+        double mInv = body->getInvMass();
+        if(mInv>0.) f.setMass(1./mInv);
       } break;
       default: NIY;
     }
