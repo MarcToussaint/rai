@@ -160,10 +160,10 @@ struct Frame : NonCopyable {
   arr getRotationMatrix() { return ensure_X().rot.getArr(); }
   arr getRelativePosition() const { return get_Q().pos.getArr(); }
   arr getRelativeQuaternion() const { return get_Q().rot.getArr(); }
-  arr getSize() ;
-  arr getMeshPoints();
-  uintA getMeshTriangles();
-  arr getMeshCorePoints();
+  arr getSize() const ;
+  arr getMeshPoints() const ;
+  uintA getMeshTriangles() const ;
+  arr getMeshCorePoints() const ;
   arr getJointState() const; ///< throws error if this frame is not also a joint
 
   friend struct Configuration;

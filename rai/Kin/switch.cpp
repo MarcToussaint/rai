@@ -21,8 +21,8 @@ int conv_time2step(double time, uint stepsPerPhase) {
 double conv_step2time(int step, uint stepsPerPhase) {
   return double(step+1)/double(stepsPerPhase);
 }
-intA conv_times2tuples(const arr& times, uint order, int stepsPerPhase, uint T,
-                       int deltaFromStep, int deltaToStep){
+void conv_times2steps(int& fromStep, int& toStep, const arr& times, int stepsPerPhase, uint T,
+                      int deltaFromStep, int deltaToStep) {
   //interpret times as always, single slice, interval, or tuples
   double fromTime=0, toTime=-1.;
   if(!times || !times.N) {
@@ -41,8 +41,8 @@ intA conv_times2tuples(const arr& times, uint order, int stepsPerPhase, uint T,
   CHECK_GE(stepsPerPhase, 0, "");
 
   //convert to steps
-  int fromStep = (fromTime<0.?0:conv_time2step(fromTime, stepsPerPhase));
-  int toStep   = (toTime<0.?T-1:conv_time2step(toTime, stepsPerPhase));
+  fromStep = (fromTime<0.?0:conv_time2step(fromTime, stepsPerPhase));
+  toStep   = (toTime<0.?T-1:conv_time2step(toTime, stepsPerPhase));
 
   //account for deltas
   if(fromTime>=0 && deltaFromStep) fromStep+=deltaFromStep;
@@ -51,6 +51,13 @@ intA conv_times2tuples(const arr& times, uint order, int stepsPerPhase, uint T,
   //clip
   if(fromStep<0) fromStep=0;
   if(toStep>=(int)T && T>0) toStep=T-1;
+}
+
+intA conv_times2tuples(const arr& times, uint order, int stepsPerPhase, uint T,
+                       int deltaFromStep, int deltaToStep){
+
+  int fromStep, toStep;
+  conv_times2steps(fromStep, toStep, times, stepsPerPhase, T, deltaFromStep, deltaToStep);
 
   //create tuples
   intA configs;

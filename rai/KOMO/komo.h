@@ -175,7 +175,10 @@ struct KOMO : NonCopyable {
   ptr<struct Objective> addObjective(const arr& times, const ptr<Feature>& f, const StringA& frames,
                                      ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr, int order=-1, int deltaFromStep=0, int deltaToStep=0);
   ptr<struct Objective> addObjective(const arr& times, const FeatureSymbol& feat, const StringA& frames,
-                                     ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr, int order=-1, int deltaFromStep=0, int deltaToStep=0);
+                                     ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr, int order=-1, int deltaFromStep=0, int deltaToStep=0) {
+    return addObjective(times, symbols2feature(feat, frames, world),
+                        NoStringA, type, scale, target, order, deltaFromStep, deltaToStep);
+  }
   void clearObjectives(); ///< clear all objective
 
   void addContact_slide(double startTime, double endTime, const char* from, const char* to);
@@ -307,7 +310,7 @@ public:
   //
 
   void selectJointsBySubtrees(const StringA& roots, const arr& times= {}, bool notThose=false);
-  void setupConfigurations();
+  void setupPathConfig();
   void checkBounds(const arr& x);
   void retrospectApplySwitches();
   void retrospectChangeJointType(int startStep, int endStep, uint frameID, rai::JointType newJointType);

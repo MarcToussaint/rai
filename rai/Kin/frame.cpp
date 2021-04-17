@@ -501,20 +501,24 @@ rai::Frame& rai::Frame::setJointState(const arr& q) {
   return *this;
 }
 
-arr rai::Frame::getSize() {
-  return getShape().size;
+arr rai::Frame::getSize() const {
+  if(!shape) return {};
+  return shape->size;
 }
 
-arr rai::Frame::getMeshPoints() {
-  return getShape().mesh().V;
+arr rai::Frame::getMeshPoints() const {
+  if(!shape) return {};
+  return shape->mesh().V;
 }
 
-uintA rai::Frame::getMeshTriangles() {
-  return getShape().mesh().T;
+uintA rai::Frame::getMeshTriangles() const {
+  if(!shape) return {};
+  return shape->mesh().T;
 }
 
-arr rai::Frame::getMeshCorePoints() {
-  return getShape().sscCore().V;
+arr rai::Frame::getMeshCorePoints() const {
+  if(!shape) return {};
+  return shape->sscCore().V;
 }
 
 arr rai::Frame::getJointState() const {

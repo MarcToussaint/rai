@@ -15,7 +15,7 @@ CtrlSolver::CtrlSolver(const rai::Configuration& _C, double _tau, uint k_order)
   : tau(_tau) {
   komo.setModel(_C, true);
   komo.setTiming(1., 1, _tau, k_order);
-  komo.setupConfigurations();
+  komo.setupPathConfig();
 }
 
 CtrlSolver::~CtrlSolver(){

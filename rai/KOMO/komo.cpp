@@ -151,8 +151,10 @@ ptr<Objective> KOMO::addObjective(const arr& times,
                                   const ptr<Feature>& f, const StringA& frames,
                                   ObjectiveType type, const arr& scale, const arr& target, int order,
                                   int deltaFromStep, int deltaToStep) {
-  if(!timeSlices.N) setupConfigurations();
+  //-- we need the path configuration to ground the objectives
+  if(!timeSlices.N) setupPathConfig();
 
+  //-- if arguments are given, modify the feature's frames, scaling and order
   if(!!frames && frames.N){
     if(frames.N==1 && frames.scalar()=="ALL") f->frameIDs = framesToIndices(world.frames); //important! this means that, if no explicit selection of frames was made, all frames (of a time slice) are referred to
     else f->frameIDs = world.getFrameIDs(frames);
@@ -161,39 +163,33 @@ ptr<Objective> KOMO::addObjective(const arr& times,
   if(!!target) f->target = target;
   if(order>=0) f->order = order;
 
+  //-- create a (non-grounded) objective
   CHECK_GE(k_order, f->order, "task requires larger k-order: " <<f->shortTag(world));
-  std::shared_ptr<Objective> task = make_shared<Objective>(f, type);
-  task->name = f->shortTag(world);
-  objectives.append(task);
-//  task->setCostSpecs(times, stepsPerPhase, T, deltaFromStep, deltaToStep, true); //solver!=rai::KS_banded);
-  task->configs = conv_times2tuples(times, f->order, stepsPerPhase, T, deltaFromStep, deltaToStep);
-//  if(solver!=rai::KS_banded)
-  CHECK_EQ(task->configs.nd, 2, "");
-  for(uint c=0;c<task->configs.d0;c++){
+  std::shared_ptr<Objective> task = objectives.append( make_shared<Objective>(f, type, f->shortTag(world), times) );
+
+  //-- create the grounded objectives
+  intA timeSlices = conv_times2tuples(times, f->order, stepsPerPhase, T, deltaFromStep, deltaToStep);
+  CHECK_EQ(timeSlices .nd, 2, "");
+  for(uint c=0;c<timeSlices .d0;c++){
     shared_ptr<GroundedObjective> o = objs.append( make_shared<GroundedObjective>(f, type) );
-    o->configs = task->configs[c];
+    o->timeSlices = timeSlices[c];
     o->objId = objectives.N-1;
-    o->frames.resize(task->configs.d1, o->feat->frameIDs.N);
-    for(uint i=0;i<task->configs.d1;i++){
-      int s = task->configs(c,i) + k_order;
+    o->frames.resize(timeSlices .d1, o->feat->frameIDs.N);
+    for(uint i=0;i<timeSlices .d1;i++){
+      int s = timeSlices (c,i) + k_order;
       for(uint j=0;j<o->feat->frameIDs.N;j++){
         uint fID = o->feat->frameIDs.elem(j);
-        o->frames(i,j) = timeSlices(s, fID);
+        o->frames(i,j) = this->timeSlices(s, fID);
       }
     }
     if(o->feat->frameIDs.nd==2){
-      o->frames.reshape(task->configs.d1, o->feat->frameIDs.d0, o->feat->frameIDs.d1);
+      o->frames.reshape(timeSlices.d1, o->feat->frameIDs.d0, o->feat->frameIDs.d1);
     }
   }
   return task;
 }
 
-ptr<Objective> KOMO::addObjective(const arr& times, const FeatureSymbol& feat, const StringA& frames,
-                                  ObjectiveType type, const arr& scale, const arr& target, int order,
-                                  int deltaFromStep, int deltaToStep) {
-  return addObjective(times, symbols2feature(feat, frames, world),
-                      NoStringA, type, scale, target, order, deltaFromStep, deltaToStep);
-}
+
 
 //void KOMO::addFlag(double time, Flag *fl, int deltaStep) {
 //  if(time<0.) time=0.;
@@ -999,7 +995,7 @@ void KOMO::optimize(double addInitializationNoise, const OptOptions options) {
 
 void KOMO::run_prepare(double addInitializationNoise) {
   //ensure the configurations are setup
-  if(!timeSlices.nd) setupConfigurations();
+  if(!timeSlices.nd) setupPathConfig();
   if(!switchesWereApplied) retrospectApplySwitches();
 
   //ensure the decision variable is in sync from the configurations
@@ -1097,7 +1093,12 @@ void KOMO::reportProblem(std::ostream& os) {
   os <<"    times:" <<times <<endl;
 
   os <<"  computeCollisions:" <<computeCollisions <<endl;
-  for(ptr<Objective>& t:objectives) os <<"    " <<*t <<endl;
+  for(ptr<Objective>& t:objectives){
+    os <<"    " <<*t;
+    int fromStep, toStep;
+    conv_times2steps(fromStep, toStep, t->times, stepsPerPhase, T, +0, +0);
+    os <<"  timeSlices: [" <<fromStep <<".." <<toStep <<"]" <<endl;
+  }
   for(KinematicSwitch* sw:switches) {
     os <<"    ";
     if(sw->timeOfApplication+k_order >= timeSlices.d0) {
@@ -1286,7 +1287,7 @@ void KOMO::selectJointsBySubtrees(const StringA& roots, const arr& times, bool n
 
 //===========================================================================
 
-void KOMO::setupConfigurations() {
+void KOMO::setupPathConfig() {
   //IMPORTANT: The configurations need to include the k prefix configurations!
   //Therefore configurations(0) is for time=-k and configurations(k+t) is for time=t
   CHECK(timeSlices.d0 != k_order+T, "why setup again?");
@@ -1428,7 +1429,7 @@ rai::Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featur
   for(ptr<GroundedObjective>& ob:objs) {
     uint d = ob->feat->dim(ob->frames);
     int i = ob->objId;
-    uint time = ob->configs.last();
+    uint time = ob->timeSlices.last();
     //          for(uint j=0; j<d; j++) CHECK_EQ(featureTypes(M+j), ob->type, "");
     if(d) {
       if(ob->type==OT_sos) {
@@ -1451,7 +1452,7 @@ rai::Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featur
     }
     //        }
     if(reportFeatures==1) {
-      featuresOs <<std::setw(4) <<time <<' ' <<std::setw(2) <<i <<' ' <<std::setw(2) <<d <<ob->configs
+      featuresOs <<std::setw(4) <<time <<' ' <<std::setw(2) <<i <<' ' <<std::setw(2) <<d <<ob->timeSlices
                 <<' ' <<std::setw(40) <<typeid(*ob->feat).name()
                <<" k=" <<ob->feat->order <<" ot=" <<ob->type <<" prec=" <<std::setw(4) <<ob->feat->scale;
       if(ob->feat->target.N<5) featuresOs <<" y*=[" <<ob->feat->target <<']'; else featuresOs<<"y*=[..]";
@@ -1467,7 +1468,7 @@ CHECK_EQ(M, featureValues.N, "");
     ptr<Objective> c = objectives(i);
     Graph& g = report.newSubgraph({c->name}, {});
     g.newNode<double>({"order"}, {}, c->feat->order);
-    g.newNode<String>({"type"}, {}, STRING(c->type.name()));
+    g.newNode<String>({"type"}, {}, Enum<ObjectiveType>(c->type).name());
     if(taskC(i)) g.newNode<double>("sos", {}, taskC(i));
     if(taskG(i)) g.newNode<double>("ineq", {}, taskG(i));
     if(taskH(i)) g.newNode<double>("eq", {}, taskH(i));
@@ -1550,13 +1551,13 @@ rai::Graph KOMO::getProblemGraph(bool includeValues, bool includeSolution) {
     g.newNode<double>({"order"}, {}, ob->feat->order);
     g.newNode<String>({"type"}, {}, STRING(ob->type));
     g.newNode<String>({"feature"}, {}, ob->feat->shortTag(pathConfig));
-    if(ob->configs.N) g.newNode<intA>({"vars"}, {}, ob->configs);
+    if(ob->timeSlices.N) g.newNode<intA>({"vars"}, {}, ob->timeSlices);
 //    g.copy(task->feat->getSpec(world), true);
     if(includeValues) {
       arr y, Jy;
       arrA V, J;
-      for(uint l=0; l<ob->configs.d0; l++) {
-//        ConfigurationL Ktuple = configurations.sub(convert<uint, int>(ob->configs[l]+(int)k_order));
+      for(uint l=0; l<ob->timeSlices.d0; l++) {
+//        ConfigurationL Ktuple = configurations.sub(convert<uint, int>(ob->timeSlices[l]+(int)k_order));
 //        ob->feat->eval(y, Jy, Ktuple);
         ob->feat->eval(y, Jy, ob->frames);
         if(isSpecial(Jy)) Jy = unpack(Jy);
@@ -1736,10 +1737,11 @@ Conv_KOMO_FactoredNLP::Conv_KOMO_FactoredNLP(KOMO& _komo) : komo(_komo) {
 
   //count features
   uint F=0;
-  for(ptr<Objective>& ob:komo.objectives) if(ob->configs.N) {
-      CHECK_EQ(ob->configs.nd, 2, "in sparse mode, vars need to be tuples of variables");
-      F += ob->configs.d0;
-    }
+  NIY;
+//  for(ptr<Objective>& ob:komo.objectives) if(ob->timeSlices.N) {
+//      CHECK_EQ(ob->timeSlices.nd, 2, "in sparse mode, vars need to be tuples of variables");
+//      F += ob->timeSlices.d0;
+//    }
   featureIndex.resize(F);
 
   //create feature index
@@ -1748,9 +1750,9 @@ Conv_KOMO_FactoredNLP::Conv_KOMO_FactoredNLP(KOMO& _komo) : komo(_komo) {
   for(ptr<GroundedObjective>& ob:komo.objs) {
     FeatureIndexEntry& F = featureIndex(f);
     F.ob2 = ob;
-//    F.Ctuple = komo.configurations.sub(convert<uint, int>(ob->configs+(int)komo.k_order));
+//    F.Ctuple = komo.configurations.sub(convert<uint, int>(ob->timeSlices+(int)komo.k_order));
 //    F.t = l;
-    copy(F.varIds, ob->configs);
+    copy(F.varIds, ob->timeSlices);
     F.dim = ob->feat->dim(ob->frames); //dimensionality of this task
     F.phiIndex = fDim;
     fDim += F.dim;

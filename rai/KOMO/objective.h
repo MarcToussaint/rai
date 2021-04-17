@@ -13,17 +13,13 @@
 
 struct Objective {
   std::shared_ptr<Feature> feat;
-  const rai::Enum<ObjectiveType> type;  ///< element of {f, sumOfSqr, inequality, equality}
+  ObjectiveType type;  ///< element of {f, sumOfSqr, inequality, equality}
   rai::String name;
-  intA configs; //either a (0,1)-indicator per time slice, or a list of variable tuples
+  arr times;
 
-  Objective(const ptr<Feature>& _feat, const ObjectiveType& _type, const rai::String& _name=rai::String()) : feat(_feat), type(_type), name(_name) {}
-  ~Objective() {}
+  Objective(const ptr<Feature>& _feat, const ObjectiveType& _type, const rai::String& _name, const arr& _times)
+    : feat(_feat), type(_type), name(_name), times(_times) {}
 
-  void setCostSpecs(int fromStep, int toStep, bool tuples=false);
-  void setCostSpecs(const arr& times, int stepsPerPhase, uint T,
-                    int deltaFromStep=0, int deltaToStep=0, bool tuples=false);
-  bool isActive(uint t);
   void write(std::ostream& os) const;
 };
 stdOutPipe(Objective)
@@ -32,7 +28,7 @@ struct GroundedObjective {
   std::shared_ptr<Feature> feat;
   const rai::Enum<ObjectiveType> type;  ///< element of {f, sumOfSqr, inequality, equality}
   FrameL frames;
-  intA configs;
+  intA timeSlices;
   int objId=-1;
 
   GroundedObjective(const ptr<Feature>& _feat, const ObjectiveType& _type) : feat(_feat), type(_type) {}
