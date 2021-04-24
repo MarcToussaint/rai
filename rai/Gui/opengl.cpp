@@ -1613,7 +1613,6 @@ void OpenGL::add(void (*call)(void*, OpenGL&), void* classP) {
   auto _dataLock = dataLock(RAI_HERE);
   toBeDeletedOnCleanup.append(new CstyleDrawer(call, classP));
   drawers.append(toBeDeletedOnCleanup.last());
-
 }
 
 /// add a draw routine
@@ -2699,3 +2698,6 @@ void read_png(byteA& img, const char* file_name, bool swap_rows) {
 #endif
 }
 
+RUN_ON_INIT_BEGIN(opengl)
+rai::Array<GLDrawer*>::memMove=1;
+RUN_ON_INIT_END(opengl)

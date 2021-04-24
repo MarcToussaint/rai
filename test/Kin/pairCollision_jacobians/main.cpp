@@ -78,19 +78,19 @@ void TEST(GJK_Jacobians) {
     arr y,y2,y3;
     dist.eval(y, NoArr, F);
     cout <<k <<" dist ";
-    succ &= checkJacobian(dist.vf2(dist.getFrames(C)), q, 1e-5);
+    succ &= checkJacobian(dist.vf2(F), q, 1e-5);
 
     distVec.eval(y2, NoArr, F);
     cout <<k <<" vec  ";
-    succ &= checkJacobian(distVec.vf2(distVec.getFrames(C)), q, 1e-5);
+    succ &= checkJacobian(distVec.vf2(F), q, 1e-5);
 
     distNorm.eval(y3, NoArr, F);
     cout <<k <<" norm  ";
-    succ &= checkJacobian(distNorm.vf2(distNorm.getFrames(C)), q, 1e-5);
+    succ &= checkJacobian(distNorm.vf2(F), q, 1e-5);
 
     distCenter.eval(y3, NoArr, F);
     cout <<k <<" center  ";
-    succ &= checkJacobian(distCenter.vf2(distCenter.getFrames(C)), q, 1e-5);
+    succ &= checkJacobian(distCenter.vf2(F), q, 1e-5);
 
     PairCollision collInfo(s1.sscCore(), s2.sscCore(), s1.frame.ensure_X(), s2.frame.ensure_X(), s1.size(-1), s2.size(-1));
 
@@ -221,15 +221,15 @@ void TEST(GJK_Jacobians3) {
 //    PairCollision collInfo(s1.sscCore(), s2.sscCore(), s1.frame.X, s2.frame.X, s1.size(-1), s2.size(-1));
 
     F_PairCollision gjk(F_PairCollision::_negScalar);
-    gjk.setFrameIDs({1, 2});
-    checkJacobian(gjk.vf2(gjk.getFrames(C)), q, 1e-4);
+    FrameL F = {&B1, &B2};
+    checkJacobian(gjk.vf2(F), q, 1e-4);
 
     arr y,J;
-    gjk.eval(y, J, gjk.getFrames(C));
+    gjk.eval(y, J, F);
 
     F_qQuaternionNorms qn;
     arr y2, J2;
-    qn.eval(y2, J2, qn.getFrames(C));
+    qn.eval(y2, J2, C.frames);
 
     cout <<"contact meassure = " <<y(0) <<endl;
     V.setConfiguration(C, STRING("t=" <<t <<"  movement along negative contact gradient"), false);
@@ -293,9 +293,9 @@ int MAIN(int argc, char** argv){
 
   rnd.clockSeed();
 
-//  testGJK_Jacobians();
-//  testGJK_Jacobians2();
-//  testGJK_Jacobians3();
+  testGJK_Jacobians();
+  testGJK_Jacobians2();
+  testGJK_Jacobians3();
 
   testFunctional();
 

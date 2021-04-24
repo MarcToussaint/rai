@@ -126,7 +126,7 @@ void F_PairFunctional::phi2(arr& y, arr& J, const FrameL& F){
     g += (2.*d2)*g2;
     return d1*d1+d2*d2;
 #else
-    double b = 1.;
+    double b = 10.;
     double d1 = (*func1)(g1, H1, x);
     double d2 = (*func2)(g2, H2, x);
     double dd = d1 - d2;
@@ -152,7 +152,7 @@ void F_PairFunctional::phi2(arr& y, arr& J, const FrameL& F){
   d1 = (*func1)(g1, NoArr, x);
   d2 = (*func2)(g2, NoArr, x);
 
-//  cout <<"d1^2+d2^2:" <<newton.fx <<" d1:" <<d1 <<" d2:" <<d2 <<endl;
+//  if(!!J) LOG(0) <<"f(x):" <<newton.fx <<" d1:" <<d1 <<" d2:" <<d2 <<" iters:" <<newton.its;
 
   y.resize(1).scalar() = -d1 -d2;
   if(!!J) {

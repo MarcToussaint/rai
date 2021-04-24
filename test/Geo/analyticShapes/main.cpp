@@ -195,9 +195,9 @@ void projectToSurface(){
 int MAIN(int argc, char** argv){
   rai::initCmdLine(argc, argv);
 
-//  testDistanceFunctions();
-//  testDistanceFunctions2();
-//  testSimpleImplicitSurfaces();
+  testDistanceFunctions();
+  testDistanceFunctions2();
+  testSimpleImplicitSurfaces();
 
   projectToSurface();
 

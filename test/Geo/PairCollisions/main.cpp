@@ -12,7 +12,7 @@ extern bool orsDrawWires;
 //===========================================================================
 
 void TEST(PairCollision){
-  uint n=500;
+  uint n=50;
   MeshA meshes(n);
   OpenGL gl;
   gl.add(glStandardScene);
@@ -34,10 +34,12 @@ void TEST(PairCollision){
   for(uint i=0;i<n;i++) for(uint j=i+1;j<n;j++){
     PairCollision pc(meshes(i), meshes(j), 0, 0);
     D(i,j)=pc.distance;
-//    cout <<pc <<endl;
-//    gl.add(pc);
-//    gl.watch();
-//    gl.remove(pc);
+#if 1 //turn off for timing
+    cout <<pc <<endl;
+    gl.add(pc);
+    if(pc.distance<0) gl.watch(); else gl.timedupdate(.1);
+    gl.remove(pc);
+#endif
   }
   cout <<"time: " <<rai::timerRead() <<"sec" <<endl;
 
