@@ -288,16 +288,94 @@ void TEST(Functional) {
 
 //===========================================================================
 
+void testSweepingSDFs(){
+  //-- create a single config with 2 objects
+  rai::Configuration C0;
+  auto base = C0.addFrame("base");
+  base->setPosition({0.,0.,1.});
+  for(uint i=0;i<2;i++){
+    rai::Frame *a = C0.addFrame(STRING("obj_" <<i), "base");
+    a->setJoint(rai::JT_trans3);
+    a->set_Q()->setRandom();
+    if(i==0)
+      a->setShape(rai::ST_sphere, {.1});
+    else
+//      a->setShape(rai::ST_sphere, {.03});
+//      a->setShape(rai::ST_capsule, {1.,.3});
+      a->setShape(rai::ST_ssBox, {.3, .2, .1, .03});
+//      a->setShape(rai::ST_ssBox, {1.3, 1.2, 1.1, .1});
+    a->setColor({.8,.8,.8,.6});
+    a->setContact(1);
+  }
+
+  rai::Configuration C;
+  C.addConfiguration(C0);
+  C.addConfiguration(C0);
+  FrameL F ({2,2},{C.frames(0,1), C.frames(0,2), C.frames(1,1), C.frames(1,2)});
+
+  OpenGL gl;
+  gl.camera.setDefault();
+  gl.drawOptions.drawWires=true;
+  gl.add(glStandardScene);
+
+  rai::Mesh sweep1;
+  rai::Mesh sweep2;
+
+  arr x = C.getJointState();
+  for(uint t=0;t<10;t++){
+    rndGauss(x, .7);
+    C.setJointState(x);
+
+    F_PairFunctional dist;
+//    auto y = dist.eval({C.frames(0,1), C.frames(0,2)});
+//    checkJacobian(dist.vf2({C.frames(0,1), C.frames(0,2)}), x, 1e-4);
+    dist.setOrder(1);
+    auto y = dist.eval(F);
+    checkJacobian(dist.vf2(F), x, 1e-4);
+
+    arr V = F(0,0)->getMeshPoints(), Vt=V;
+    sweep1.clear();
+    sweep1.C = {.7, .9, .7, .3};
+    sweep1.V.append(F(0,0)->ensure_X().applyOnPointArray(V));
+    sweep1.V.append(F(1,0)->ensure_X().applyOnPointArray(Vt));
+    sweep1.makeConvexHull();
+
+    V = F(0,1)->getMeshPoints();
+    Vt=V;
+    sweep2.clear();
+    sweep2.C = {.7, .7, .9, .3};
+    sweep2.V.append(F(0,1)->ensure_X().applyOnPointArray(V));
+    sweep2.V.append(F(1,1)->ensure_X().applyOnPointArray(Vt));
+    sweep2.makeConvexHull();
+
+    gl.add(dist);
+    gl.add(C);
+    gl.add(sweep1);
+    gl.add(sweep2);
+    gl.update(STRING(t), true);
+    /*if(!succ)*/ gl.watch();
+
+    gl.remove(sweep2);
+    gl.remove(sweep1);
+    gl.remove(C);
+    gl.remove(dist);
+  }
+
+}
+
+//===========================================================================
+
 int MAIN(int argc, char** argv){
   rai::initCmdLine(argc, argv);
 
-  rnd.clockSeed();
+//  rnd.clockSeed();
 
-  testGJK_Jacobians();
-  testGJK_Jacobians2();
-  testGJK_Jacobians3();
+//  testGJK_Jacobians();
+//  testGJK_Jacobians2();
+//  testGJK_Jacobians3();
 
-  testFunctional();
+//  testFunctional();
+  testSweepingSDFs();
 
   return 0;
 }

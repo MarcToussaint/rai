@@ -1437,10 +1437,10 @@ void Transformation::applyOnPoint(arr& pt) const {
   if(!pos.isZero) pt += pos.getArr();
 }
 
-void Transformation::applyOnPointArray(arr& pts) const {
+arr& Transformation::applyOnPointArray(arr& pts) const {
   if(!((pts.nd==2 && pts.d1==3) || (pts.nd==3 && pts.d2==3))) {
     LOG(-1) <<"wrong pts dimensions for transformation:" <<pts.dim();
-    return;
+    return pts;
   }
   if(!rot.isZero) {
     arr R = ~rot.getArr(); //transposed, only to make it applicable to an n-times-3 array
@@ -1453,6 +1453,7 @@ void Transformation::applyOnPointArray(arr& pts) const {
       p[2] += pos.z;
     }
   }
+  return pts;
 }
 
 bool Transformation::isZero() const {

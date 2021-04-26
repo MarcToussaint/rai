@@ -216,7 +216,7 @@ struct Transformation {
   arr getWrenchTransform() const;
 
   void applyOnPoint(arr& pt) const;
-  void applyOnPointArray(arr& pts) const;
+  arr& applyOnPointArray(arr& pts) const;
 
   void write(std::ostream& os) const;
   void read(std::istream& is);
