@@ -114,23 +114,19 @@ struct SweepingSDFPenetration : ScalarFunction {
   //inputs
   shared_ptr<ScalarFunction> sdf1;
   shared_ptr<ScalarFunction> sdf2;
-  arr R1, t1, R2, t2;
+  arr vel1, vel2;
   //query outputs
-  arr x, g1, g2;
+  arr x, g1, g2, z1, z2, y1, y2;
   double d1, d2, s;
+  arr w1, w2;
+
   SweepingSDFPenetration(const FrameL& F){
     CHECK_EQ(F.d0, 2, "");
     CHECK_EQ(F.d1, 2, "");
     sdf1 = F(0,0)->shape->functional();
     sdf2 = F(0,1)->shape->functional();
-    rai::Transformation rel1 = F(0,0)->ensure_X() * -F(1,0)->ensure_X();
-    //rel1=-rel1;
-    R1 = rel1.rot.getArr();
-    t1 = rel1.pos.getArr();
-    rai::Transformation rel2 = F(0,1)->ensure_X() * -F(1,1)->ensure_X();
-    //rel2=-rel2;
-    R2 = rel2.rot.getArr();
-    t2 = rel2.pos.getArr();
+    vel1 = F(0,0)->getPosition() - F(1,0)->getPosition();
+    vel2 = F(0,1)->getPosition() - F(1,1)->getPosition();
 
     ScalarFunction::operator=([this](arr& g, arr& H, const arr& x) -> double {
       return this->scalarFunction(g, H, x);
@@ -145,10 +141,16 @@ struct SweepingSDFPenetration : ScalarFunction {
 //    CHECK_GE(s, 0., "");
 //    CHECK_LE(s, 1., "");
 
-    arr z1 = (1.-s)*x + s*(R1*x+t1);
-    arr z2 = (1.-s)*x + s*(R2*x+t2);
-    arr dz1 = catCol((1.-s)*eye(3) + s*R1, -x + (R1*x+t1)) ;
-    arr dz2 = catCol((1.-s)*eye(3) + s*R2, -x + (R2*x+t2)) ;
+    w1 = x+vel1;
+    w2 = x+vel2;
+
+    z1 = x + s*vel1;
+    z2 = x + s*vel2;
+    arr dz1 = catCol(eye(3), vel1) ;
+    arr dz2 = catCol(eye(3), vel2) ;
+
+    y1 = x + (s-1.)*vel1;
+    y2 = x + (s-1.)*vel2;
 
     arr H1, H2;
     double b = 10.;
@@ -156,8 +158,8 @@ struct SweepingSDFPenetration : ScalarFunction {
     d2 = (*sdf2)(g2, H2, z2);
     double dd = d1 - d2;
 
-    arr tmp1 = (~g1)*(-eye(3) + R1);
-    arr tmp2 = (~g2)*(-eye(3) + R2);
+    arr tmp1 = -~g1;
+    arr tmp2 = -~g2;
     H1 = ~dz1 * H1 * dz1 + rai::block(zeros(3,3), ~tmp1, tmp1, zeros(1,1));
     H2 = ~dz2 * H2 * dz2 + rai::block(zeros(3,3), ~tmp2, tmp2, zeros(1,1));
     g1 = ((~g1) * dz1).reshape(-1);
@@ -169,25 +171,56 @@ struct SweepingSDFPenetration : ScalarFunction {
     return d1+d2+b*dd*dd;
 
   }
-
 };
 
 //===========================================================================
 
 void F_PairFunctional::phi2(arr& y, arr& J, const FrameL& F){
-  ScalarFunction f;
-  arr seed;
-  shared_ptr<ScalarFunction>  func1, func2;
-  shared_ptr<SweepingSDFPenetration> P;
-
   if(order==1){
+    P.reset();
     P = make_shared<SweepingSDFPenetration>(F);
-    f = *P;
+    ScalarFunction f = *P;
 
-    seed = .25*(F(0,0)->getPosition() + F(0,1)->getPosition() +
-                F(1,0)->getPosition() + F(1,1)->getPosition() );
+    arr seed = .25*(F(0,0)->getPosition() + F(0,1)->getPosition() +
+                    F(1,0)->getPosition() + F(1,1)->getPosition() );
 
     seed.append(0.5);
+
+//    checkGradient(f, seed, 1e-5);
+//    checkHessian(f, seed, 1e-5);
+
+    x = seed;
+    OptNewton newton(x, f, OptOptions()
+                     .set_verbose(0)
+                     .set_stopTolerance(1e-5)
+                     .set_maxStep(1.)
+                     .set_damping(1e-10) );
+    newton.setBounds({0.,0.,0.,0.},{0.,0.,0.,1});
+    newton.run();
+
+    d1 = P->d1;
+    d2 = P->d2;
+    x = P->x;
+    g1 = P->g1.sub(0,2);
+    g2 = P->g2.sub(0,2);
+    double s = P->s;
+//    LOG(0) <<"f(x):" <<newton.fx <<" d1:" <<d1 <<" d2:" <<d2 <<" s:" <<s <<" iters:" <<newton.its;
+//    LOG(0) <<"x:" <<x ;
+
+  //  if(!!J) LOG(0) <<"f(x):" <<newton.fx <<" d1:" <<d1 <<" d2:" <<d2 <<" iters:" <<newton.its;
+
+    y.resize(1).scalar() = -d1 -d2;
+    if(!!J) {
+      arr Jp1a, Jp1b, Jp2a, Jp2b, Jp1c, Jp2c;
+      F(0,0)->C.jacobian_pos(Jp1a, F(0,0), P->z1);
+      F(0,1)->C.jacobian_pos(Jp2a, F(0,1), P->z2);
+      F(0,0)->C.jacobian_pos(Jp1c, F(0,0), F(0,0)->ensure_X().pos);
+      F(0,1)->C.jacobian_pos(Jp2c, F(0,1), F(0,1)->ensure_X().pos);
+      F(1,0)->C.jacobian_pos(Jp1b, F(1,0), F(1,0)->ensure_X().pos);
+      F(1,1)->C.jacobian_pos(Jp2b, F(1,1), F(1,1)->ensure_X().pos);
+      J = ~g1*(Jp1a + s*(Jp1b-Jp1c)) + ~g2*(Jp2a + s*(Jp2b-Jp2c));
+      checkNan(J);
+    }
 
   }else{
     if(order>0){  Feature::phi2(y, J, F);  return;  }
@@ -199,7 +232,7 @@ void F_PairFunctional::phi2(arr& y, arr& J, const FrameL& F){
     auto func2=f2->shape->functional();
     CHECK(func1 && func2, "");
 
-    f = [&func1, &func2](arr& g, arr& H, const arr& x){
+    auto f = [&func1, &func2](arr& g, arr& H, const arr& x){
       arr g1, g2, H1, H2;
       double b = 10.;
       double d1 = (*func1)(g1, H1, x);
@@ -210,47 +243,35 @@ void F_PairFunctional::phi2(arr& y, arr& J, const FrameL& F){
       return d1+d2+b*dd*dd;
     };
 
-    seed = .5*(f1->getPosition()+f2->getPosition());
+    arr seed = .5*(f1->getPosition()+f2->getPosition());
     rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1), false);
     if(ex) seed = ex->poa;
-  }
 
-  checkGradient(f, seed, 1e-5);
-  checkHessian(f, seed, 1e-5);
+    checkGradient(f, seed, 1e-5);
+    checkHessian(f, seed, 1e-5);
 
-  x = seed;
-  OptNewton newton(x, f, OptOptions()
-                   .set_verbose(0)
-                   .set_stopTolerance(1e-5)
-                   .set_maxStep(1.)
-                   .set_damping(1e-10) );
-  if(order==1) newton.setBounds({0.,0.,0.,0.},{0.,0.,0.,1});
-  newton.run();
+    x = seed;
+    OptNewton newton(x, f, OptOptions()
+                     .set_verbose(0)
+                     .set_stopTolerance(1e-5)
+                     .set_maxStep(1.)
+                     .set_damping(1e-10) );
+    newton.run();
 
-  if(order==1){
-    d1 = P->d1;
-    d2 = P->d2;
-    x = P->x;
-    g1 = P->g1.sub(0,2);
-    g2 = P->g2.sub(0,2);
-    LOG(0) <<"f(x):" <<newton.fx <<" d1:" <<d1 <<" d2:" <<d2 <<" iters:" <<newton.its;
-    LOG(0) <<"x:" <<x <<" s:" <<P->s;
-  }else{
     d1 = (*func1)(g1, NoArr, x);
     d2 = (*func2)(g2, NoArr, x);
+
+  //  if(!!J) LOG(0) <<"f(x):" <<newton.fx <<" d1:" <<d1 <<" d2:" <<d2 <<" iters:" <<newton.its;
+
+    y.resize(1).scalar() = -d1 -d2;
+    if(!!J) {
+      arr Jp1, Jp2;
+      F(0,0)->C.jacobian_pos(Jp1, F(0,0), x);
+      F(0,1)->C.jacobian_pos(Jp2, F(0,1), x);
+      J = ~g1*Jp1 + ~g2*Jp2;
+      checkNan(J);
+    }
   }
-
-//  if(!!J) LOG(0) <<"f(x):" <<newton.fx <<" d1:" <<d1 <<" d2:" <<d2 <<" iters:" <<newton.its;
-
-  y.resize(1).scalar() = -d1 -d2;
-  if(!!J) {
-    arr Jp1, Jp2;
-    F(0,0)->C.jacobian_pos(Jp1, F(0,0), x);
-    F(0,1)->C.jacobian_pos(Jp2, F(0,1), x);
-    J = ~g1*Jp1 + ~g2*Jp2;
-    checkNan(J);
-  }
-
 }
 
 
@@ -258,6 +279,10 @@ void F_PairFunctional::glDraw(OpenGL&) {
 #ifdef RAI_GL
   glColor(0., 1., 0., 1.);
   glDrawDiamond(x(0), x(1), x(2), .05, .05, .05);
+  glColor(0., 1., 1., 1.);
+  glDrawDiamond(P->z1(0), P->z1(1), P->z1(2), .05, .05, .05);
+  glColor(0., 0., 1., 1.);
+  glDrawDiamond(P->z2(0), P->z2(1), P->z2(2), .05, .05, .05);
 
   glColor(1., 0., 0., 1.);
   glLineWidth(2.f);

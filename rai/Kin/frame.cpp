@@ -576,10 +576,10 @@ void rai::Frame::unLink() {
   if(joint) {  delete joint;  joint=nullptr;  }
 }
 
-void rai::Frame::setParent(rai::Frame* _parent, bool adoptRelTransform) {
+rai::Frame& rai::Frame::setParent(rai::Frame* _parent, bool adoptRelTransform) {
   CHECK(_parent, "you need to set a parent to link from");
   CHECK(!parent, "this frame ('" <<name <<"') already has a parent");
-  if(parent==_parent) return;
+  if(parent==_parent) return *this;
 
   if(adoptRelTransform) ensure_X();
 
@@ -588,6 +588,8 @@ void rai::Frame::setParent(rai::Frame* _parent, bool adoptRelTransform) {
 
   if(adoptRelTransform) calc_Q_from_parent();
   _state_updateAfterTouchingQ();
+
+  return *this;
 }
 
 bool rai::Frame::isChildOf(const rai::Frame* par, int order) const {

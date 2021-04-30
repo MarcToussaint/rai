@@ -295,14 +295,15 @@ void testSweepingSDFs(){
   base->setPosition({0.,0.,1.});
   for(uint i=0;i<2;i++){
     rai::Frame *a = C0.addFrame(STRING("obj_" <<i), "base");
-    a->setJoint(rai::JT_trans3);
+    a->setJoint(rai::JT_free);
     a->set_Q()->setRandom();
     if(i==0)
-      a->setShape(rai::ST_sphere, {.1});
+//      a->setShape(rai::ST_sphere, {.1});
+    a->setShape(rai::ST_capsule, {.5,.1});
     else
-//      a->setShape(rai::ST_sphere, {.03});
-//      a->setShape(rai::ST_capsule, {1.,.3});
-      a->setShape(rai::ST_ssBox, {.3, .2, .1, .03});
+//      a->setShape(rai::ST_sphere, {.1});
+      a->setShape(rai::ST_capsule, {.5,.1});
+//      a->setShape(rai::ST_ssBox, {.3, .2, .1, .03});
 //      a->setShape(rai::ST_ssBox, {1.3, 1.2, 1.1, .1});
     a->setColor({.8,.8,.8,.6});
     a->setContact(1);
@@ -313,6 +314,11 @@ void testSweepingSDFs(){
   C.addConfiguration(C0);
   FrameL F ({2,2},{C.frames(0,1), C.frames(0,2), C.frames(1,1), C.frames(1,2)});
 
+  C.addFrame("") ->setParent(F(0,0)). setShape(rai::ST_marker, {.3}). setColor({1.,0.,0.});
+  C.addFrame("") ->setParent(F(0,1)). setShape(rai::ST_marker, {.3}). setColor({1.,0.,0.});
+  C.addFrame("") ->setParent(F(1,0)). setShape(rai::ST_marker, {.3}). setColor({1.,1.,0.});
+  C.addFrame("") ->setParent(F(1,1)). setShape(rai::ST_marker, {.3}). setColor({1.,1.,0.});
+
   OpenGL gl;
   gl.camera.setDefault();
   gl.drawOptions.drawWires=true;
@@ -322,7 +328,7 @@ void testSweepingSDFs(){
   rai::Mesh sweep2;
 
   arr x = C.getJointState();
-  for(uint t=0;t<10;t++){
+  for(uint t=0;t<20;t++){
     rndGauss(x, .7);
     C.setJointState(x);
 
@@ -333,19 +339,22 @@ void testSweepingSDFs(){
     auto y = dist.eval(F);
     checkJacobian(dist.vf2(F), x, 1e-4);
 
-    arr V = F(0,0)->getMeshPoints(), Vt=V;
+    arr V = F(0,0)->getMeshPoints();
+    F(0,0)->ensure_X().applyOnPointArray(V);
+    arr vel = (F(1,0)->ensure_X().pos - F(0,0)->ensure_X().pos).getArr();
     sweep1.clear();
     sweep1.C = {.7, .9, .7, .3};
-    sweep1.V.append(F(0,0)->ensure_X().applyOnPointArray(V));
-    sweep1.V.append(F(1,0)->ensure_X().applyOnPointArray(Vt));
+    sweep1.V.append(V);
+    sweep1.V.append(V+(ones(V.d0)^vel));
     sweep1.makeConvexHull();
 
     V = F(0,1)->getMeshPoints();
-    Vt=V;
+    F(0,1)->ensure_X().applyOnPointArray(V);
+    vel = (F(1,1)->ensure_X().pos - F(0,1)->ensure_X().pos).getArr();
     sweep2.clear();
     sweep2.C = {.7, .7, .9, .3};
-    sweep2.V.append(F(0,1)->ensure_X().applyOnPointArray(V));
-    sweep2.V.append(F(1,1)->ensure_X().applyOnPointArray(Vt));
+    sweep2.V.append(V);
+    sweep2.V.append(V+(ones(V.d0)^vel));
     sweep2.makeConvexHull();
 
     gl.add(dist);

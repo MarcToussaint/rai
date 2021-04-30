@@ -34,6 +34,7 @@ struct F_PairFunctional : Feature, GLDrawer {
   virtual uint dim_phi2(const FrameL& F){ return 1; }
   virtual void glDraw(struct OpenGL&);
 protected:
+  std::shared_ptr<struct SweepingSDFPenetration> P;
   arr x;
   double d1, d2;
   arr g1, g2;
