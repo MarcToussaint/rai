@@ -119,7 +119,7 @@ void system(const char* cmd) {
 void open(std::ofstream& fs, const char* name, const char* errmsg) {
   fs.clear();
   fs.open(name);
-  LOG(3) <<"opening output file '" <<name <<"'" <<std::endl;
+  LOG(3) <<"opening output file '" <<name <<"'";
   if(!fs.good()) RAI_MSG("could not open file '" <<name <<"' for output" <<errmsg);
 }
 
@@ -127,7 +127,7 @@ void open(std::ofstream& fs, const char* name, const char* errmsg) {
 void open(std::ifstream& fs, const char* name, const char* errmsg) {
   fs.clear();
   fs.open(name);
-  LOG(3) <<"opening input file '" <<name <<"'" <<std::endl;
+  LOG(3) <<"opening input file '" <<name <<"'";
   if(!fs.good()) HALT("could not open file '" <<name <<"' for input" <<errmsg);
 }
 
@@ -1036,7 +1036,7 @@ void rai::FileToken::decomposeFilename() {
 }
 
 void rai::FileToken::cd_start() {
-  LOG(3) <<"entering path '" <<cwd<<"'" <<std::endl;
+  LOG(3) <<"entering path '" <<cwd<<"'";
   if(chdir(cwd)) HALT("couldn't change to directory '" <<cwd <<"'");
 }
 
@@ -1044,7 +1044,7 @@ void rai::FileToken::cd_file() {
   cd_start();
   if(!path.N) decomposeFilename();
   if(path!=".") {
-    LOG(3) <<"entering path '" <<path<<"' from '" <<cwd <<"'" <<std::endl;
+    LOG(3) <<"entering path '" <<path<<"' from '" <<cwd <<"'";
     if(chdir(path)) HALT("couldn't change to directory '" <<path <<"' from '" <<cwd <<"'");
   }
 }
@@ -1061,7 +1061,7 @@ std::ofstream& rai::FileToken::getOs(bool change_dir) {
     if(change_dir) cd_file();
     os = std::make_unique<std::ofstream>();
     os->open(name);
-    LOG(3) <<"opening output file '" <<name <<"'" <<std::endl;
+    LOG(3) <<"opening output file '" <<name <<"'";
     if(!os->good()) RAI_MSG("could not open file '" <<name <<"' for output from '" <<cwd <<"./" <<path <<"'");
   }
   return *os;
@@ -1073,7 +1073,7 @@ std::ifstream& rai::FileToken::getIs(bool change_dir) {
     if(change_dir) cd_file();
     is = std::make_unique<std::ifstream>();
     is->open(name);
-    LOG(3) <<"opening input file '" <<name <<"'" <<std::endl;
+    LOG(3) <<"opening input file '" <<name <<"'";
     if(!is->good()) THROW("could not open file '" <<name <<"' for input from '" <<cwd <<"./" <<path <<"'");
   }
   return *is;
