@@ -24,14 +24,14 @@ typedef rai::Array<CtrlObjective*> CtrlObjectiveL;
 struct CtrlObjective {
   std::shared_ptr<Feature> feat;    ///< this defines the task space
   ObjectiveType type;               ///< element of {sumOfSqr, inequality, equality}
-  double transientStep;
+  double transientStep; //TODO -> arr times;
   rai::String name;                 ///< just for easier reporting
 
   //-- the reference (zero point in feature space (target in KOMO)) can be continuously changed by motion primitives or other means
   std::shared_ptr<CtrlMovingTarget> movingTarget;  ///< non-nullptr iff this is a pos/vel task
 
   //-- parameters that influence how CtrlMethods treat this objective
-  bool active;       ///< also non-active tasks are updated (states evaluated), but don't enter the TaskControlMethods
+  bool active;     //TODO REMOVE  ///< also non-active tasks are updated (states evaluated), but don't enter the TaskControlMethods
 //  double kp, kd;     ///< gains
 //  arr C;             ///< feature space compliance matrix (TODO: needed?)
 

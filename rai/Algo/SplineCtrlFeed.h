@@ -28,7 +28,7 @@ struct SplineCtrlReference : ReferenceFeed {
   /// fully override the spline with new knots x and t, as well as initial vel xDot0; for safety, the first x needs to be close to the current spline's current pos
   void overrideHard(const arr& x, const arr& t, const arr& xDot0, double nowTime);
 
-  //just a helper for single goal spline
+  //simple helper for single goal spline
   void moveTo(const arr& x, double t, double ctrlTime, bool append){
     if(append) this->append(~x, {t}, ctrlTime, true);
     else  overrideSmooth(~x, {t}, ctrlTime);

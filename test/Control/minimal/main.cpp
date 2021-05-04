@@ -154,7 +154,7 @@ void testIneqCarrot(){
 int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
-  testMinimal();
+//  testMinimal();
   testGrasp();
   testIneqCarrot();
 
