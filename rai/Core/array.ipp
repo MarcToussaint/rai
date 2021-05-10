@@ -2698,6 +2698,13 @@ template<class T> T sumOfAbs(const rai::Array<T>& v) {
   return t;
 }
 
+/// \f$\sum_i |x_i|_+\f$
+template<class T> T sumOfPos(const rai::Array<T>& v) {
+  T t(0);
+  for(uint i=0;i<v.N;i++) if(v.p[i]>0) t+=v.p[i];
+  return t;
+}
+
 /// \f$\sum_i x_i^2\f$
 template<class T> T sumOfSqr(const rai::Array<T>& v) {
   T t(0);

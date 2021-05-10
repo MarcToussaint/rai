@@ -608,6 +608,9 @@ inline arr rand(uint n) { return rand(TUP(n)); }
 /// return array with uniform random numbers in [0, 1]
 inline arr rand(uint d0, uint d1) { return rand(TUP(d0, d1)); }
 
+/// return tensor of c's
+template<class T> const T& random(const rai::Array<T>& range) { return range.rndElem(); }
+
 /// return array with normal (Gaussian) random numbers
 arr randn(const uintA& d);
 /// return array with normal (Gaussian) random numbers
@@ -766,6 +769,7 @@ template<class T> T sum(const rai::Array<T>& v);
 template<class T> T scalar(const rai::Array<T>& v);
 template<class T> rai::Array<T> sum(const rai::Array<T>& v, uint d);
 template<class T> T sumOfAbs(const rai::Array<T>& v);
+template<class T> T sumOfPos(const rai::Array<T>& v);
 template<class T> T sumOfSqr(const rai::Array<T>& v);
 template<class T> T length(const rai::Array<T>& v);
 template<class T> T product(const rai::Array<T>& v);

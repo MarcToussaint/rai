@@ -1587,12 +1587,12 @@ rai::Graph KOMO::getProblemGraph(bool includeValues, bool includeSolution) {
 
 double KOMO::getConstraintViolations() {
   Graph R = getReport(false);
-  return R.get<double>("ineq_sumOfPos") + R.get<double>("eq_sumOfAbs");
+  return R.get<double>("ineq") + R.get<double>("eq");
 }
 
 double KOMO::getCosts() {
   Graph R = getReport(false);
-  return R.get<double>("sos_sumOfSqr");
+  return R.get<double>("sos");
 }
 
 void Conv_KOMO_SparseNonfactored::evaluate(arr& phi, arr& J, const arr& x) {
@@ -1615,6 +1615,8 @@ void Conv_KOMO_SparseNonfactored::evaluate(arr& phi, arr& J, const arr& x) {
     }
   }
 
+  komo.sos=komo.ineq=komo.eq=0.;
+
   uint M=0;
   for(ptr<GroundedObjective>& ob : komo.objs) {
       arr y, Jy;
@@ -1635,6 +1637,10 @@ void Conv_KOMO_SparseNonfactored::evaluate(arr& phi, arr& J, const arr& x) {
 
       //write into phi and J
       phi.setVectorBlock(y, M);
+
+      if(ob->type==OT_sos) komo.sos+=sumOfSqr(y);
+      else if(ob->type==OT_ineq) komo.ineq += sumOfPos(y);
+      else if(ob->type==OT_eq) komo.eq += sumOfAbs(y);
 
       if(!!J) {
         if(sparse){
