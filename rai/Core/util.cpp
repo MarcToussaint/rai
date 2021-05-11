@@ -85,6 +85,12 @@ Mutex coutMutex;
 rai::LogObject rai::_log("global", 2, 3);
 
 //===========================================================================
+
+template<> const char* rai::Enum<rai::ArgWord>::names []= {
+  "left", "right", "sequence", "path", "xAxis", "yAxis", "zAxis", "xNegAxis", "yNegAxis", "zNegAxis", 0
+};
+
+//===========================================================================
 //
 // utilities in rai namespace
 //

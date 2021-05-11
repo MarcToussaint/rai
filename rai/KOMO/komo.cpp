@@ -804,7 +804,7 @@ arr KOMO::getActiveConstraintJacobian() {
 
 void KOMO::initWithConstant(const arr& q) {
   for(uint t=0; t<T; t++) {
-    setConfiguration_qAll(t, q);
+    setConfiguration_qOrg(t, q);
   }
   run_prepare(0.);
 }
