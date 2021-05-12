@@ -988,7 +988,7 @@ struct Conv_KOMO_TimeSliceProblem : MathematicalProgram {
 void KOMO::optimize(double addInitializationNoise, const OptOptions options) {
   run_prepare(addInitializationNoise);
 
-  if(verbose>0) reportProblem();
+  if(verbose>1) reportProblem();
 
   run(options);
 }
@@ -1073,11 +1073,12 @@ void KOMO::run(OptOptions options) {
   timeTotal = rai::realTime() - timeZero;
   if(logFile)(*logFile) <<"\n] #end of KOMO_run_log" <<endl;
   if(verbose>0) {
-    cout <<"** optimization time=" <<timeTotal
+    cout <<"** optimization time:" <<timeTotal
          <<" (kin:" <<timeKinematics <<" coll:" <<timeCollisions <<" feat:" <<timeFeatures <<" newton: " <<timeNewton <<")"
-         <<" setJointStateCount=" <<Configuration::setJointStateCount <<endl;
+         <<" setJointStateCount:" <<Configuration::setJointStateCount
+        <<"\n   sos:" <<sos <<" ineq:" <<ineq <<" eq:" <<eq <<endl;
   }
-  if(verbose>0) cout <<getReport(verbose>1) <<endl;
+  if(verbose>1) cout <<getReport(verbose>2) <<endl;
 }
 
 void KOMO::reportProblem(std::ostream& os) {
