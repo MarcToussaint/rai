@@ -21,17 +21,7 @@ struct OptNewton {
 
   OptNewton(arr& x, const ScalarFunction& f, OptOptions options=NOOPT, ostream* _logFile=0);
   ~OptNewton();
-  OptNewton& setBounds(const arr& _bounds_lo, const arr& _bounds_up){
-    bounds_lo = _bounds_lo;
-    bounds_up = _bounds_up;
-    if(x.N){
-      CHECK_EQ(bounds_lo.N, x.N, "");
-      CHECK_EQ(bounds_up.N, x.N, "");
-      boundClip(x, bounds_lo, bounds_up);
-      reinit(x);
-    }
-    return *this;
-  }
+  OptNewton& setBounds(const arr& _bounds_lo, const arr& _bounds_up);
   void reinit(const arr& _x);
 
   StopCriterion step();

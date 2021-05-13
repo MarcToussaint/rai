@@ -12,6 +12,7 @@
 bool sanityCheck=false; //true;
 void updateBoundActive(intA& boundActive, const arr& x, const arr& bound_lo, const arr& bound_up);
 void boundClip(arr& y, const arr& bound_lo, const arr& bound_up);
+void checkBound(arr& y, const arr& bound_lo, const arr& bound_up, double eps=1e-3);
 
 /** @brief Minimizes \f$f(x) = A(x)^T x A^T(x) - 2 a(x)^T x + c(x)\f$. The optional _user arguments specify,
  * if f has already been evaluated at x (another initial evaluation is then omitted
@@ -29,13 +30,14 @@ OptNewton::OptNewton(arr& _x, const ScalarFunction& _f,  OptOptions _o, ostream*
   x(_x), f(_f), options(_o), logFile(_logFile) {
   alpha = options.initStep;
   beta = options.damping;
-  if(f) reinit(_x);
+//  if(f) reinit(_x);
 }
 
 void OptNewton::reinit(const arr& _x) {
   if(&x!=&_x) x = _x;
 
-  boundClip(x, bounds_lo, bounds_up);
+//  boundClip(x, bounds_lo, bounds_up);
+  checkBound(x, bounds_lo, bounds_up);
   fx = f(gx, Hx, x);  evals++;
 
   //startup verbose
@@ -66,7 +68,22 @@ void boundClip(arr& y, const arr& bound_lo, const arr& bound_up) {
 
 //===========================================================================
 
+void checkBound(arr& y, const arr& bound_lo, const arr& bound_up, double eps){
+  double lo = min(y-bound_lo);
+  if(lo < -eps){
+    LOG(-2) << "lower bound violated: " <<lo;
+  }
+  double up = max(y-bound_up);
+  if(up > eps){
+    LOG(-2) << "lower bound violated: " <<up;
+  }
+}
+
+//===========================================================================
+
 OptNewton::StopCriterion OptNewton::step() {
+  if(!evals) reinit(x);
+
   double fy;
   arr y, gy, Hy, Delta;
 
@@ -172,7 +189,10 @@ OptNewton::StopCriterion OptNewton::step() {
 
   //restrict stepsize
   double maxDelta = absMax(Delta);
-  if(options.maxStep>0. && maxDelta>options.maxStep) {  Delta *= options.maxStep/maxDelta; maxDelta = options.maxStep; }
+  if(options.maxStep>0. && maxDelta>options.maxStep) {
+    Delta *= options.maxStep/maxDelta;
+    maxDelta = options.maxStep;
+  }
   double alphaHiLimit = options.maxStep/maxDelta;
   //double alphaLoLimit = 1e-1*options.stopTolerance/maxDelta;
 
@@ -290,6 +310,19 @@ OptNewton::~OptNewton() {
 //  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", nullptr, true);
 #endif
   if(options.verbose>1) cout <<"--- optNewtonStop: f(x)=" <<fx <<endl;
+}
+
+OptNewton&OptNewton::setBounds(const arr& _bounds_lo, const arr& _bounds_up){
+  bounds_lo = _bounds_lo;
+  bounds_up = _bounds_up;
+  if(x.N){
+    CHECK_EQ(bounds_lo.N, x.N, "");
+    CHECK_EQ(bounds_up.N, x.N, "");
+    checkBound(x, bounds_lo, bounds_up);
+//    boundClip(x, bounds_lo, bounds_up);
+//    reinit(x);
+  }
+  return *this;
 }
 
 OptNewton::StopCriterion OptNewton::run(uint maxIt) {
