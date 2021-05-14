@@ -8,6 +8,7 @@
 ARCH = $(shell uname -m)
 
 ifeq ($(RAI_CMAKE),1)
+DEPEND :=
 LPATHS += $(BASE)/../build
 LIBS += -lrai
 endif
