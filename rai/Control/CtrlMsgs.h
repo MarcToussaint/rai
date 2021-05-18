@@ -32,4 +32,11 @@ struct CtrlStateMsg {
   arr tauExternal; // external torques
 };
 
+struct RobotAbstraction{
+  Var<rai::CtrlCmdMsg> cmd;
+  Var<rai::CtrlStateMsg> state;
+  bool writeData=false;
+};
+
+
 } //namespace
