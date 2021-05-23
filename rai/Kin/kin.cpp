@@ -2765,6 +2765,7 @@ void Configuration::glDraw_sub(OpenGL& gl, const FrameL& F, int drawOpaqueOrTran
   if(drawOpaqueOrTransparanet!=2) {
     if(gl.drawOptions.drawVisualsOnly) {
       gl.drawOptions.drawProxies=gl.drawOptions.drawJoints=false;
+      drawOpaqueOrTransparanet=1;
     }
 
     //proxies

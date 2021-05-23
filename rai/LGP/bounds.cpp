@@ -131,7 +131,7 @@ PoseBound::PoseBound(ptr<KOMO>& komo,
        && !std::dynamic_pointer_cast<F_Pose>(o->feat)
        && !std::dynamic_pointer_cast<F_PoseRel>(o->feat)
        && o->feat->order>0) {
-      o->configs.clear();
+      o->times={1e6};
     }
   }
   for(ptr<GroundedObjective>& o:komo->objs) {
