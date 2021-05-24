@@ -69,13 +69,15 @@ void boundClip(arr& y, const arr& bound_lo, const arr& bound_up) {
 //===========================================================================
 
 void checkBound(arr& y, const arr& bound_lo, const arr& bound_up, double eps){
-  double lo = min(y-bound_lo);
-  if(lo < -eps){
-    LOG(-2) << "lower bound violated: " <<lo;
-  }
-  double up = max(y-bound_up);
-  if(up > eps){
-    LOG(-2) << "lower bound violated: " <<up;
+  if(bound_lo.N && bound_up.N) {
+    double lo = min(y-bound_lo);
+    if(lo < -eps){
+      LOG(-2) << "lower bound violated: " <<lo;
+    }
+    double up = max(y-bound_up);
+    if(up > eps){
+      LOG(-2) << "lower bound violated: " <<up;
+    }
   }
 }
 

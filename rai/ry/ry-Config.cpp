@@ -105,9 +105,12 @@ void init_Config(pybind11::module& m) {
   pybind11::arg("quat") = std::vector<double>()
       )
 
-  .def("addConfigurationCopy", [](shared_ptr<rai::Configuration>& self, shared_ptr<rai::Configuration>& other){
-    self->addConfiguration(*other);
-  }, "")
+  .def("addConfigurationCopy", [](shared_ptr<rai::Configuration>& self, shared_ptr<rai::Configuration>& other, double tau){
+    self->addConfiguration(*other, tau);
+  }, "",
+    pybind11::arg("config"),
+    pybind11::arg("tau")=1.
+  )
 
   .def("getFrame", [](shared_ptr<rai::Configuration>& self, const std::string& frameName) {
     rai::Frame *f = self->getFrame(frameName.c_str(), true);
