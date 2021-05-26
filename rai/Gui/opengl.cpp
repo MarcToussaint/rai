@@ -2251,15 +2251,19 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) 
     drawFocus = false;
     if(!downPressed) {
       drawOptions.drawMode_idColor = true;
+      beginNonThreadedDraw(true);
       Draw(w, h, nullptr, true);
-      double x=mouseposx, y=mouseposy, d = captureDepth(mouseposy, mouseposx);
+      endNonThreadedDraw(true);
+      float d = captureDepth(mouseposy, mouseposx);
+      arr x = {double(mouseposx), double(mouseposy), d};
+//      cout <<" image coords: " <<x;
       if(d<.01 || d==1.) {
         cout <<"NO SELECTION: SELECTION DEPTH = " <<d <<' ' <<camera.glConvertToTrueDepth(d) <<endl;
       } else {
-        unproject(x, y, d, true, mouseView);
+        camera.unproject_fromPixelsAndGLDepth(x, width, height);
       }
-      cout <<"SELECTION: ID: " <<color2id(&captureImage(mouseposy, mouseposx, 0))
-           <<" point: (" <<x <<' ' <<y <<' ' <<d <<")" <<endl;
+      LOG(1) <<"SELECTION: ID: " <<color2id(&captureImage(mouseposy, mouseposx, 0))
+            <<" world coords: " <<x;
     }
   } else {
     drawOptions.drawMode_idColor = false;
@@ -2284,6 +2288,7 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) 
         cam->unproject_fromPixelsAndGLDepth(x, width, height);
         cam->focus(x);
       }
+      LOG(1) <<"FOCUS: world coords: " <<x;
     }
   }
 

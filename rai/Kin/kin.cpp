@@ -3233,7 +3233,14 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
       gl.drawOptions.drawMode_idColor=false;
       write_ppm(gl.captureImage,"z.ppm");
       uint id = color2id(&gl.captureImage(gl.mouseposy, gl.mouseposx, 0));
-      cout <<"SELECTION id: " <<id <<endl;
+      float d = gl.captureDepth(gl.mouseposy, gl.mouseposx);
+      arr x = {double(gl.mouseposx), double(gl.mouseposy), d};
+      if(d<.01 || d==1.) {
+        cout <<"NO SELECTION: SELECTION DEPTH = " <<d <<' ' <<gl.camera.glConvertToTrueDepth(d) <<endl;
+      } else {
+        gl.camera.unproject_fromPixelsAndGLDepth(x, gl.width, gl.height);
+      }
+      cout <<"SELECTION id: " <<id <<" world coords:" <<x <<endl;
       if(id<C.frames.N) cout <<*C.frames.elem(id) <<endl;
       return true;
     } else switch(gl.pressedkey) {
@@ -3244,23 +3251,12 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
         case '5':  gl.reportSelects^=1;  break;
         case '6':  gl.reportEvents^=1;  break;
         case '7':  gl.drawOptions.drawMode_idColor^=1;  break;
-        case 'j':  gl.camera.X.pos += gl.camera.X.rot*Vector(0, 0, .1);  break;
-        case 'k':  gl.camera.X.pos -= gl.camera.X.rot*Vector(0, 0, .1);  break;
-        case 'i':  gl.camera.X.pos += gl.camera.X.rot*Vector(0, .1, 0);  break;
-        case ',':  gl.camera.X.pos -= gl.camera.X.rot*Vector(0, .1, 0);  break;
-        case 'l':  gl.camera.X.pos += gl.camera.X.rot*Vector(.1, .0, 0);  break;
-        case 'h':  gl.camera.X.pos -= gl.camera.X.rot*Vector(.1, 0, 0);  break;
-        case 'a':  gl.camera.focus(
-            (gl.camera.X.rot*(gl.camera.foc - gl.camera.X.pos)
-             ^ gl.camera.X.rot*Vector(1, 0, 0)) * .001
-            + gl.camera.foc);
-          break;
-        case 's':  gl.camera.X.pos +=
-            (
-              gl.camera.X.rot*(gl.camera.foc - gl.camera.X.pos)
-              ^(gl.camera.X.rot * Vector(1., 0, 0))
-            ) * .01;
-          break;
+        case 'o':  gl.camera.X.pos += gl.camera.X.rot*Vector(0, 0, .1);  break;
+        case 'u':  gl.camera.X.pos -= gl.camera.X.rot*Vector(0, 0, .1);  break;
+        case 'k':  gl.camera.X.pos += gl.camera.X.rot*Vector(0, .1, 0);  break;
+        case 'i':  gl.camera.X.pos -= gl.camera.X.rot*Vector(0, .1, 0);  break;
+        case 'j':  gl.camera.X.pos += gl.camera.X.rot*Vector(.1, 0, 0);  break; //right
+        case 'l':  gl.camera.X.pos -= gl.camera.X.rot*Vector(.1, 0, 0);  break; //left
         case 'q' :
           cout <<"EXITING" <<endl;
           exit=true;
@@ -3307,8 +3303,20 @@ void editConfiguration(const char* filename, Configuration& C) {
     C.gl()->recopyMeshes(C);
     C.gl()->resetPressedKey();
     for(;;) {
-      key = C.gl()->setConfiguration(C, "waiting for file change", false);
+      key = C.gl()->setConfiguration(C, "waiting for file change ('h' for help)", false);
       if(key==13 || key==27 || key=='q') break;
+      if(key=='h'){
+        C.watch(true, "HELP:\n"
+                      "RIGHT CLICK - set focus point (move view and set center of rotation)\n"
+                      "LEFT CLICK - rotate (ball; or around z at view rim)\n"
+                      "q - quit\n"
+                      "SHIFT-LEFT CLICK - move view\n"
+                      "CTRL-LEFT CLICK - show object ID\n"
+                      "1..7 - view options\n"
+                      "jkluio - keyboard move\n"
+                      "as - keyboard rotate\n"
+                      "h - help");
+      }
       if(ino.poll(false, true)) break;
       wait(.2);
     }
