@@ -39,6 +39,7 @@ void TEST(DistanceFunctions) {
   gl.add(m);
 
   rai::Array<shared_ptr<ScalarFunction>> fcts = {
+    make_shared<DistanceFunction_super>(t, arr{2., 2., 2.}, 1.2),
     make_shared<DistanceFunction_Sphere>(t, 1.),
     make_shared<DistanceFunction_ssBox>(t, 1., 2., 3., 1.),
     make_shared<DistanceFunction_Cylinder>(t, 2., 1.),
@@ -67,7 +68,7 @@ void TEST(DistanceFunctions) {
       if(!suc){
         arr g,H;
         (*f)(g,H,x); //set breakpoint here;
-        HALT("x=" <<x);
+        LOG(-1)  <<"x=" <<x;
       }
     }
 

@@ -53,7 +53,7 @@ struct BulletInterface_self {
 
   uint stepCount=0;
 
-  btRigidBody* addGround();
+  btRigidBody* addGround(bool yAxisGravity=false);
   btRigidBody* addLink(rai::Frame* f, int verbose);
 
   btCollisionShape* createCollisionShape(rai::Shape* s);
@@ -62,7 +62,7 @@ struct BulletInterface_self {
 
 // ============================================================================
 
-BulletInterface::BulletInterface(rai::Configuration& C, int verbose) : self(nullptr) {
+BulletInterface::BulletInterface(rai::Configuration& C, int verbose, bool yAxisGravity) : self(nullptr) {
   self = new BulletInterface_self;
 
   if(verbose>0) LOG(0) <<"starting bullet engine ...";
@@ -72,11 +72,15 @@ BulletInterface::BulletInterface(rai::Configuration& C, int verbose) : self(null
   self->overlappingPairCache = new btDbvtBroadphase();
   self->solver = new btSequentialImpulseConstraintSolver;
   self->dynamicsWorld = new btDiscreteDynamicsWorld(self->dispatcher, self->overlappingPairCache, self->solver, self->collisionConfiguration);
-  self->dynamicsWorld->setGravity(btVector3(0, 0, gravity));
+  if(yAxisGravity){
+    self->dynamicsWorld->setGravity(btVector3(0, gravity, 0));
+  }else{
+    self->dynamicsWorld->setGravity(btVector3(0, 0, gravity));
+  }
 
   if(verbose>0) LOG(0) <<"... done starting bullet engine";
 
-  self->addGround();
+  self->addGround(yAxisGravity);
 
   if(verbose>0) LOG(0) <<"creating Configuration within bullet ...";
 
@@ -199,12 +203,16 @@ void BulletInterface::pushFullState(const FrameL& frames, const arr& frameVeloci
   self->dynamicsWorld->stepSimulation(.01); //without this, two consequtive pushFullState won't work! (something active tag?)
 }
 
-btRigidBody* BulletInterface_self::addGround() {
+btRigidBody* BulletInterface_self::addGround(bool yAxisGravity) {
   btTransform groundTransform;
   groundTransform.setIdentity();
   groundTransform.setOrigin(btVector3(0, 0, 0));
   btCollisionShape* groundShape;
-  groundShape = new btStaticPlaneShape(btVector3(0, 0, 1), 0);
+  if(yAxisGravity){
+    groundShape = new btStaticPlaneShape(btVector3(0, 1, 0), 0);
+  }else{
+    groundShape = new btStaticPlaneShape(btVector3(0, 0, 1), 0);
+  }
   collisionShapes.push_back(groundShape);
   btDefaultMotionState* myMotionState = new btDefaultMotionState(groundTransform);
   btRigidBody::btRigidBodyConstructionInfo rbInfo(0, myMotionState, groundShape, btVector3(0, 0, 0));
