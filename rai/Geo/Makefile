@@ -4,7 +4,7 @@ OUTPUT = lib$(NAME).so
 
 OPTIM = fast_debug
 
-DEPEND = Core Optim
+DEPEND = Core Optim Algo
 
 QHULL = 1
 GL = 1

@@ -8,6 +8,10 @@
 
 #include "pairCollision.h"
 
+#include "../Gui/opengl.h"
+#include "../Optim/newton.h"
+#include "../Algo/ann.h"
+
 #ifdef RAI_GJK
 extern "C" {
 #  include "GJK/gjk.h"
@@ -19,18 +23,41 @@ extern "C" {
 #  include "ccd/quat.h"
 #endif
 
-#include "../Gui/opengl.h"
-#include "../Optim/newton.h"
 #include "qhull.h"
 
 #ifndef RAI_GJK
 #  define FCLmode
 #endif
 
-PairCollision::PairCollision(const rai::Mesh& _mesh1, const rai::Mesh& _mesh2, const rai::Transformation& _t1, const rai::Transformation& _t2, double rad1, double rad2)
+PairCollision::PairCollision(rai::Mesh& _mesh1, rai::Mesh& _mesh2, const rai::Transformation& _t1, const rai::Transformation& _t2, double rad1, double rad2)
   : mesh1(&_mesh1), mesh2(&_mesh2), t1(&_t1), t2(&_t2), rad1(rad1), rad2(rad2) {
 
   distance=-1.;
+
+
+  //-- special cases: point to pcl
+  if(_mesh1.V.d0==1 && !_mesh2.T.N){
+    CHECK(_t2.isZero(), "");
+    if(!_mesh2.ann){
+      _mesh2.ann = make_shared<ANN>();
+      _mesh2.ann->setX(_mesh2.V);
+    }
+    uint K=1;
+    arr nn;
+    arr x = ~_mesh1.V;
+    t1->applyOnPoint(x);
+    _mesh2.ann->getkNN(nn,x,K);
+    p2 = mean(nn);
+    p1 = x;
+    p1.reshape(-1);
+    normal = p1-p2;
+    distance = length(normal);
+    if(fabs(distance)>1e-10) normal/=distance;
+    simplex1 = ~p1;
+    simplex2 = ~p2;
+    return;
+  }
+
 
 #ifdef FCLmode
   //THIS IS COSTLY! DO WITHIN THE SUPPORT FUNCTION?

@@ -872,6 +872,7 @@ void KOMO::reset() {
   featureValues.clear();
   featureJacobians.clear();
   featureTypes.clear();
+  timeTotal=timeCollisions=timeKinematics=timeNewton=timeFeatures=0.;
 }
 
 //default - transcription as sparse, but non-factored NLP
@@ -1020,7 +1021,7 @@ void KOMO::run(OptOptions options) {
   }
 
   options.verbose = rai::MAX(verbose-2, 0);
-  double timeZero = rai::realTime();
+  timeTotal -= rai::cpuTime();
   CHECK(T, "");
   if(logFile)(*logFile) <<"KOMO_run_log: [" <<endl;
 
@@ -1070,7 +1071,8 @@ void KOMO::run(OptOptions options) {
 
   } else NIY;
 
-  timeTotal = rai::realTime() - timeZero;
+  timeTotal += rai::cpuTime();
+
   if(logFile)(*logFile) <<"\n] #end of KOMO_run_log" <<endl;
   if(verbose>0) {
     cout <<"** optimization time:" <<timeTotal
@@ -1294,8 +1296,8 @@ void KOMO::setupPathConfig() {
   CHECK(timeSlices.d0 != k_order+T, "why setup again?");
   CHECK(!pathConfig.frames.N, "why setup again?");
 
-  computeMeshNormals(world.frames, true);
-  computeMeshGraphs(world.frames, true);
+  //computeMeshNormals(world.frames, true);
+  //computeMeshGraphs(world.frames, true);
 
   rai::Configuration C;
   C.copy(world, true);
@@ -1378,7 +1380,7 @@ void reportAfterPhiComputation(KOMO& komo) {
 void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
   CHECK_EQ(timeSlices.d0, k_order+T, "configurations are not setup yet");
 
-  rai::timerRead(true);
+  timeKinematics -= rai::cpuTime();
 
   if(!selectedConfigurationsOnly.N){
     pathConfig.setJointState(x);
@@ -1387,8 +1389,10 @@ void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
     HALT("this is untested...");
   }
 
-  timeKinematics += rai::timerRead(true);
+  timeKinematics += rai::cpuTime();
+
   if(computeCollisions) {
+    timeCollisions -= rai::cpuTime();
     pathConfig.proxies.clear();
     arr X;
     uintA collisionPairs;
@@ -1403,8 +1407,8 @@ void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
       collisionPairs += timeSlices.d1 * s; //fcl returns frame IDs related to 'world' -> map them into frameIDs within that time slice
       pathConfig.addProxies(collisionPairs);
     }
+    timeCollisions += rai::cpuTime();
   }
-  timeCollisions += rai::timerRead(true);
 }
 
 shared_ptr<MathematicalProgram> KOMO::nlp_SparseNonFactored(){
@@ -1618,6 +1622,8 @@ void Conv_KOMO_SparseNonfactored::evaluate(arr& phi, arr& J, const arr& x) {
 
   komo.sos=komo.ineq=komo.eq=0.;
 
+  komo.timeFeatures -= rai::cpuTime();
+
   uint M=0;
   for(ptr<GroundedObjective>& ob : komo.objs) {
       arr y, Jy;
@@ -1656,6 +1662,8 @@ void Conv_KOMO_SparseNonfactored::evaluate(arr& phi, arr& J, const arr& x) {
       //counter for features phi
       M += y.N;
   }
+
+  komo.timeFeatures += rai::cpuTime();
 
   CHECK_EQ(M, dimPhi, "");
   komo.featureValues = phi;

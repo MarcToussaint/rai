@@ -146,7 +146,9 @@ bool rai::ConfigurationViewer::playVideo(uint T, uint nFrames, bool watch, doubl
 
   CHECK_GE(C.frames.N, T*nFrames, "");
 
-  FrameL F = C.frames({0,T*nFrames-1});
+  FrameL F;
+  if(C.frames.nd==1) F = C.frames({0,T*nFrames-1});
+  else F = C.frames;
   F.reshape(T, nFrames);
 
   for(uint t=0; t<F.d0; t++) {

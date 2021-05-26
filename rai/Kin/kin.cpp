@@ -145,6 +145,7 @@ void Configuration::copy(const Configuration& C, bool referenceSwiftOnCopy) {
   for(Frame* f:C.frames) new Frame(*this, f);
   for(Frame* f:C.frames) if(f->parent) frames.elem(f->ID)->setParent(frames.elem(f->parent->ID));
 //  addFramesCopy(C.frames);
+  frames.reshapeAs(C.frames);
 
   //copy proxies; first they point to origin frames; afterwards, let them point to own frames
   copyProxies(C.proxies);
@@ -2836,6 +2837,9 @@ void Configuration::glDraw_sub(OpenGL& gl, const FrameL& F, int drawOpaqueOrTran
   if(drawOpaqueOrTransparanet==0 || drawOpaqueOrTransparanet==1) {
     //first non-transparent
     for(Frame* f: F) if(f->shape && f->shape->alpha()==1.) {
+      if(F.nd==2 && f->ID>F.d1 && f->shape->_mesh==F.elem(f->ID-F.d1)->shape->_mesh && f->X==F.elem(f->ID-F.d1)->X){//has the same shape and pose as previous time slice frame
+        continue;
+      }
       gl.drawId(f->ID);
       f->shape->glDraw(gl);
     }

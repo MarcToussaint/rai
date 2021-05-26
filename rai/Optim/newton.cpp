@@ -38,7 +38,9 @@ void OptNewton::reinit(const arr& _x) {
 
 //  boundClip(x, bounds_lo, bounds_up);
   checkBound(x, bounds_lo, bounds_up);
+  timeEval -= rai::cpuTime();
   fx = f(gx, Hx, x);  evals++;
+  timeEval += rai::cpuTime();
 
   //startup verbose
   if(options.verbose>1) cout <<"*** optNewton: initial point f(x)=" <<fx <<" alpha=" <<alpha <<" beta=" <<beta <<endl;
@@ -94,7 +96,7 @@ OptNewton::StopCriterion OptNewton::step() {
 
   if(!(fx==fx)) HALT("you're calling a newton step with initial function value = NAN");
 
-  rai::timerRead(true);
+  timeNewton -= rai::cpuTime();
 
   //-- check active bounds, and decorrelate Hessian
   arr R=Hx;
@@ -205,7 +207,8 @@ OptNewton::StopCriterion OptNewton::step() {
     if(options.verbose>1) cout <<" \t -- absMax(Delta)<1e-1*o.stopTolerance -- NO UPDATE" <<endl;
     return stopCriterion=stopDeltaConverge;
   }
-  timeNewton += rai::timerRead(true);
+
+  timeNewton += rai::cpuTime();
 
   //-- line search along Delta
   uint lineSearchSteps=0;
@@ -214,9 +217,9 @@ OptNewton::StopCriterion OptNewton::step() {
     if(alphaHiLimit>0. && alpha>alphaHiLimit) alpha=alphaHiLimit;
     y = x + alpha*Delta;
     boundClip(y, bounds_lo, bounds_up);
-    double timeBefore = rai::timerStart();
+    timeEval -= rai::cpuTime();
     fy = f(gy, Hy, y);  evals++;
-    timeEval += rai::timerRead(true, timeBefore);
+    timeEval += rai::cpuTime();
     if(options.verbose>5) cout <<"  probing y:" <<y;
     if(options.verbose>1) cout <<"  evals:" <<std::setw(4) <<evals <<"  alpha:" <<std::setw(11) <<alpha <<"  f(y):" <<fy <<flush;
     if(simpleLog) {

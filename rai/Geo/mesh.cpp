@@ -465,6 +465,7 @@ arr MinkowskiSum(const arr& A, const arr& B) {
   all adjacent triangles that are in the triangle list or member of
   a strip */
 void rai::Mesh::computeNormals() {
+  CHECK(T.N, "can't compute normals for a point cloud");
   Vector a, b, c;
   Tn.resize(T.d0, 3);
   Tn.setZero();
@@ -1464,7 +1465,7 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
   }
 
   //-- draw a mesh
-  if(V.d0!=Vn.d0 || T.d0!=Tn.d0) computeNormals();
+  if(T.N && (V.d0!=Vn.d0 || T.d0!=Tn.d0)) computeNormals();
 
   //-- if not yet done, GenTexture
   if(texImg.N && glDrawOptions(gl).drawColors) {

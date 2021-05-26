@@ -16,6 +16,8 @@ typedef rai::Array<rai::Mesh> MeshA;
 typedef rai::Array<rai::Mesh*> MeshL;
 void glDrawMeshes(void*, OpenGL&);
 
+struct ANN;
+
 namespace rai {
 
 enum ShapeType { ST_none=-1, ST_box=0, ST_sphere, ST_capsule, ST_mesh, ST_cylinder, ST_marker, ST_pointCloud, ST_ssCvx, ST_ssBox, ST_ssBoxElip };
@@ -36,6 +38,7 @@ struct Mesh : GLDrawer {
   int texture=-1;       ///< GL texture name created with glBindTexture
 
   uintAA graph;         ///< for every vertex, the set of neighboring vertices
+  shared_ptr<ANN> ann;
 
   rai::Transformation glX; ///< transform (only used for drawing! Otherwise use applyOnPoints)  (optional)
 
