@@ -266,6 +266,32 @@ void testStackOfBlocks(){
 
 //===========================================================================
 
+void testCompound(){
+  rai::Configuration C;
+  C.addFile("compound.g");
+
+  C.watch(true);
+
+  rai::Simulation S(C, S._bullet, 4);
+
+  C.watch(true);
+
+  double tau=.01;
+  Metronome tic(tau);
+
+  for(uint t=0;t<4./tau;t++){
+    tic.waitForTic();
+
+    S.step({}, tau, S._none);
+    write_ppm(S.getScreenshot(), STRING("z.vid/"<<std::setw(4)<<std::setfill('0')<<t<<".ppm"));
+  }
+
+  rai::wait();
+
+}
+
+//===========================================================================
+
 int main(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
@@ -275,6 +301,7 @@ int main(int argc,char **argv){
   testPushes();
   testGrasp();
   testOpenClose();
+  testCompound();
 
   return 0;
 }

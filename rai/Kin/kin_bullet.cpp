@@ -216,10 +216,30 @@ btRigidBody* BulletInterface_self::addGround() {
 
 btRigidBody* BulletInterface_self::addLink(rai::Frame* f, int verbose) {
   //-- collect all shapes of that link
-  FrameL parts = {f};
-  f->getRigidSubFrames(parts);
   ShapeL shapes;
-  for(rai::Frame* p: parts) if(p->shape && p->getShape().type()!=rai::ST_marker) shapes.append(p->shape);
+  {
+    FrameL tmp = {f};
+    f->getRigidSubFrames(tmp);
+    for(rai::Frame* p: tmp){
+      if(p->shape
+         && p->getShape().type()!=rai::ST_marker
+         && p->getShape().alpha()==1.) shapes.append(p->shape);
+    }
+  }
+
+  //-- check inertia
+  bool shapesHaveInertia=false;
+  for(rai::Shape *s:shapes) if(s->frame.inertia){ shapesHaveInertia=true; break; }
+  if(shapesHaveInertia && !f->inertia){
+    f->computeCompoundInertia();
+    if(!f->inertia->com.isZero){
+      CHECK(!f->shape || f->shape->type()==rai::ST_marker, "can't translate this frame if it has a shape attached");
+      f->set_X()->pos += f->ensure_X().rot * f->inertia->com;
+      for(rai::Frame* ch:f->children) ch->set_Q()->pos -= f->inertia->com;
+      f->inertia->com.setZero();
+//MISSING HERE: ALSO TRANSFORM THE INERTIA MATRIX TO BECOME DIAG!
+    }
+  }
 
   //-- decide on the type
   rai::BodyType type = rai::BT_static;

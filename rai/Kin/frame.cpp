@@ -260,6 +260,17 @@ void rai::Frame::prefixSubtree(const char* prefix) {
 
 }
 
+void rai::Frame::computeCompoundInertia(){
+  CHECK(!inertia, "this frame already has inertia");
+  FrameL all = {};
+  getRigidSubFrames(all);
+  Inertia *I = new Inertia(*this);
+  I->setZero();
+  for(rai::Frame *f:all){
+    if(f->inertia) I->add(*f->inertia, f->ensure_X() / ensure_X());
+  }
+}
+
 void rai::Frame::_state_setXBadinBranch() {
   if(_state_X_isGood) { //no need to propagate to children if already bad
     _state_X_isGood=false;
@@ -1447,28 +1458,34 @@ rai::Inertia::~Inertia() {
   frame.inertia = nullptr;
 }
 
+void rai::Inertia::add(const rai::Inertia& I, const rai::Transformation& rel){
+  double newMass = mass + I.mass;
+  Vector newCom = (mass*com + I.mass*(I.com+rel.pos))/newMass;
+  //com displacement of both parts
+  arr deltaB = ((I.com+rel.pos) - newCom).getArr();
+  arr deltaA = (com - newCom).getArr();
+  //additional inertias due to displacement
+  arr rotB = rel.rot.getArr();
+  arr matrixB =  rotB * I.matrix.getArr() * ~rotB + I.mass*(sumOfSqr(deltaB) * eye(3) - (deltaB^deltaB));
+  arr matrixA =  matrix.getArr() + mass*(sumOfSqr(deltaA) * eye(3) - (deltaA^deltaA));
+  //assign new inertias
+  matrix = matrixA + matrixB;
+  com = newCom;
+  mass = newMass;
+}
+
 void rai::Inertia::defaultInertiaByShape() {
   CHECK(frame.shape, "");
 
   //add inertia to the body
   switch(frame.shape->type()) {
-    case ST_sphere:   inertiaSphere(matrix.p(), mass, 1000., frame.shape->radius());  break;
+    case ST_sphere:   inertiaSphere(matrix.p(), mass, (mass>0.?0.:1000.), frame.shape->radius());  break;
     case ST_ssBox:
-    case ST_box:      inertiaBox(matrix.p(), mass, 1000., frame.shape->size(0), frame.shape->size(1), frame.shape->size(2));  break;
+    case ST_box:      inertiaBox(matrix.p(), mass, (mass>0.?0.:1000.), frame.shape->size(0), frame.shape->size(1), frame.shape->size(2));  break;
     case ST_capsule:
-    case ST_cylinder: inertiaCylinder(matrix.p(), mass, 1000., frame.shape->size(-2), frame.shape->size(-1));  break;
+    case ST_cylinder: inertiaCylinder(matrix.p(), mass, (mass>0.?0.:1000.), frame.shape->size(-2), frame.shape->size(-1));  break;
     default: HALT("not implemented for this shape type");
   }
-}
-
-arr rai::Inertia::getFrameRelativeWrench() {
-  NIY;
-  arr f(6);
-//  rai::Vector fo = frame.ensure_X().rot/force;
-//  rai::Vector to = frame.ensure_X().rot/(torque + ((frame.ensure_X().rot*com)^force));
-//  f(0)=to.x;  f(1)=to.y;  f(2)=to.z;
-//  f(3)=fo.x;  f(4)=fo.y;  f(5)=fo.z;
-  return f;
 }
 
 void rai::Inertia::write(std::ostream& os) const {

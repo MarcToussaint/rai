@@ -131,6 +131,7 @@ struct Frame : NonCopyable {
   const char* isPart();
 
   void prefixSubtree(const char* prefix);
+  void computeCompoundInertia();
 
   //I/O
   void read(const Graph& ats);
@@ -253,13 +254,13 @@ struct Inertia : NonCopyable {
   Matrix matrix=0;
   Enum<BodyType> type;
   Vector com=0;             ///< its center of mass
-//  Vector force=0, torque=0; ///< current forces applying on the body
 
   Inertia(Frame& f, rai::Inertia* copyInertia=nullptr);
   ~Inertia();
 
+  void setZero(){ mass=0; com=0; matrix=0; }
+  void add(const Inertia& I, const rai::Transformation& rel);
   void defaultInertiaByShape();
-  arr getFrameRelativeWrench();
 
   void write(std::ostream& os) const;
   void write(Graph& g);
