@@ -196,6 +196,32 @@ double DistanceFunction_ssBox::f(arr& g, arr& H, const arr& x) {
   return d-r;
 }
 
+//===========================================================================
+
+DistanceFunction_super::DistanceFunction_super(const rai::Transformation& _pose, const arr& _size, double _degree)
+  : pose(_pose), size(_size), degree(_degree) {
+  ScalarFunction::operator=([this](arr& g, arr& H, const arr& x)->double{ return f(g, H, x); });
+}
+
+double DistanceFunction_super::f(arr& g, arr& H, const arr& x) {
+  double fx=0;
+  if(!!g) g.resize(3).setZero();
+  if(!!H) H.resize(3,3).setZero();
+  for(uint i=0;i<3;i++){
+    double s=size.elem(i);
+    double z=x.elem(i)/s;
+    if(z<0.){ z*=-1.; s*=-1.; }
+//    double sign=rai::sign(z);
+    fx += pow(z, degree);
+    if(!!g) g(i) += degree*pow(z, degree-1.)/s;
+    if(!!H) H(i,i) += degree*(degree-1.)*pow(z, degree-2.)/(s*s);
+  }
+
+  return fx-1.;
+}
+
+//===========================================================================
+
 ScalarFunction DistanceFunction_SSBox = [](arr& g, arr& H, const arr& x) -> double{
   // x{0,2} are box-wall-coordinates, not width!
   CHECK_EQ(x.N, 14, "query-pt + abcr + pose");
@@ -221,3 +247,4 @@ ScalarFunction DistanceFunction_SSBox = [](arr& g, arr& H, const arr& x) -> doub
   }
   return d;
 };
+

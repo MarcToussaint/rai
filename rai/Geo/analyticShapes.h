@@ -19,6 +19,14 @@ struct DistanceFunction_ssBox : ScalarFunction {
   double f(arr& g, arr& H, const arr& x);
 };
 
+struct DistanceFunction_super : ScalarFunction {
+  rai::Transformation pose;
+  arr size;
+  double degree;
+  DistanceFunction_super(const rai::Transformation& _pose, const arr& _size, double _degree=5.);
+  double f(arr& g, arr& H, const arr& x);
+};
+
 struct DistanceFunction_Cylinder : ScalarFunction {
   rai::Transformation pose; double size_z, r;
   DistanceFunction_Cylinder(const rai::Transformation& _pose, double _size_z, double _r);

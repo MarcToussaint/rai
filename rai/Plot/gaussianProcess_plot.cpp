@@ -6,9 +6,9 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "gaussianProcess.h"
-
 #include "../Plot/plot.h"
+
+#include "../Algo/gaussianProcess.h"
 
 void plotBelief(GaussianProcess& gp, double lo, double hi, bool pause) {
   arr X, Y, Z, S;

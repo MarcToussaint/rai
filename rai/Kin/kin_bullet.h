@@ -13,7 +13,7 @@ class btRigidBody;
 struct BulletInterface {
   struct BulletInterface_self* self=0;
 
-  BulletInterface(rai::Configuration& C, int verbose=1);
+  BulletInterface(rai::Configuration& C, int verbose=1, bool yAxisGravity=false);
   ~BulletInterface();
 
   void step(double tau=.01);
