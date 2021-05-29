@@ -92,6 +92,8 @@ bool OptConstrained::step() {
   newton.logFile = logFile;
   L.logFile = logFile;
 
+  if(!newton.evals) newton.reinit(newton.x);
+
   if(opt.verbose>0) {
     cout <<"** optConstr. it=" <<its
          <<(earlyPhase?'e':'l')

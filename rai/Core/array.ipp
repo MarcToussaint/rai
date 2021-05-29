@@ -1366,9 +1366,10 @@ template<class T> rai::Array<T>& rai::Array<T>::operator=(const std::vector<T>& 
 
 /** @brief same as memset(p, 0, sizeT*N); precondition: memMove is
   true! */
-template<class T> void rai::Array<T>::setZero(byte zero) {
+template<class T> rai::Array<T>& rai::Array<T>::setZero(byte zero) {
   CHECK(memMove, "can set array's memory to zero only if memMove option is true");
   memset(p, zero, sizeT*N);
+  return *this;
 }
 
 /// concatenate 2D matrices (or vectors) column-wise

@@ -1030,7 +1030,7 @@ bool Configuration::checkConsistency() const {
       }
     }
     for(ForceExchange* c: forces) {
-      CHECK_EQ(c->qDim(), 6, "");
+//      CHECK_EQ(c->qDim(), 6, "");
       CHECK_EQ(c->qIndex, myqdim, "joint indexing is inconsistent");
       myqdim += c->qDim();
     }

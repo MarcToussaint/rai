@@ -151,7 +151,7 @@ template<class T> struct Array : /*std::vector<T>,*/ Serializable {
 
   /// @name initializing/assigning entries
   rai::Array<T>& clear();
-  void setZero(byte zero=0);
+  rai::Array<T>& setZero(byte zero=0);
   void setUni(const T& scalar, int d=-1);
   void setId(int d=-1);
   void setDiag(const T& scalar, int d=-1);
