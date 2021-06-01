@@ -590,7 +590,7 @@ void timerResume() {
 
 //COPY & PAST from graph.h
 Mutex::TypedToken<rai::Graph> getParameters();
-void initParameters(int _argc, char* _argv[]);
+void initParameters(int _argc, char* _argv[], bool forceReload);
 
 /// memorize the command line arguments and open a log file
 void initCmdLine(int _argc, char* _argv[]) {
@@ -605,7 +605,7 @@ void initCmdLine(int _argc, char* _argv[]) {
   startDir = getcwd_string();
   LOG(1) <<"** run path: '" <<startDir <<"'";
 
-  initParameters(argc, argv);
+  initParameters(argc, argv, false);
 }
 
 /// returns true if the tag was found on command line

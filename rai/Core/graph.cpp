@@ -1324,12 +1324,14 @@ Mutex::TypedToken<Graph> getParameters(){
   return parameterGraph();
 }
 
-void initParameters(int _argc, char*_argv[]){
+void initParameters(int _argc, char*_argv[], bool forceReload){
   static bool wasInitialized=false;
-  if(wasInitialized) return;
+  if(wasInitialized&&!forceReload) return;
   wasInitialized=true;
 
   auto P = parameterGraph();
+  if(forceReload) P->clear();
+
   //-- parse cmd line arguments into graph
   StringA tags;
   for(int n=1; n<argc; n++) {
