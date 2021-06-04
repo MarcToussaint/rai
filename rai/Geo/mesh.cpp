@@ -30,7 +30,7 @@ extern void glColorId(uint id);
 //==============================================================================
 
 template<> const char* rai::Enum<rai::ShapeType>::names []= {
-  "box", "sphere", "capsule", "mesh", "cylinder", "marker", "pointCloud", "ssCvx", "ssBox", "ssBoxElip", nullptr
+  "box", "sphere", "capsule", "mesh", "cylinder", "marker", "pointCloud", "ssCvx", "ssBox", "ssCylinder", "ssBoxElip", nullptr
 };
 
 //==============================================================================

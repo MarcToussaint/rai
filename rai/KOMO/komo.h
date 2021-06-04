@@ -9,6 +9,7 @@
 #pragma once
 
 #include "objective.h"
+#include "skeletonSymbol.h"
 #include "../Kin/kin.h"
 #include "../Optim/optimization.h"
 #include "../Optim/constrained.h"
@@ -22,91 +23,6 @@
 namespace rai {
   struct FclInterface;
 }
-
-//===========================================================================
-
-enum SkeletonSymbol {
-  SY_none=-1,
-
-  //geometric:
-  SY_touch,
-  SY_above,
-  SY_inside,
-  SY_oppose,
-
-  SY_impulse, //old
-  SY_initial,
-  SY_free, //old
-
-  //pose constraints:
-  SY_poseEq,
-  SY_stableRelPose,
-  SY_stablePose,
-
-  //mode switches:
-  SY_stable,
-  SY_stableOn,
-  SY_dynamic,
-  SY_dynamicOn,
-  SY_dynamicTrans,
-  SY_quasiStatic,
-  SY_quasiStaticOn,
-  SY_downUp, //old
-  SY_break,
-
-  //interactions:
-  SY_contact,
-  SY_contactStick,
-  SY_contactComplementary,
-  SY_bounce,
-
-  //mode switches:
-  SY_magic,
-  SY_magicTrans,
-
-  //grasps/placements:
-  SY_topBoxGrasp,
-  SY_topBoxPlace,
-
-  SY_push,  //old
-  SY_graspSlide, //old
-
-  SY_dampMotion,
-
-  SY_noCollision, //old
-  SY_identical,
-
-  SY_alignByInt,
-
-  SY_makeFree,
-  SY_forceBalance,
-
-  SY_touchBoxNormalX,
-  SY_touchBoxNormalY,
-  SY_touchBoxNormalZ,
-
-  SY_end,
-
-};
-
-struct SkeletonEntry {
-  double phase0=-1.;
-  double phase1=-1.;
-  rai::Enum<SkeletonSymbol> symbol;
-  StringA frames; //strings referring to things
-  SkeletonEntry() {}
-  SkeletonEntry(double phase0, double phase1, SkeletonSymbol symbol, StringA frames) : phase0(phase0), phase1(phase1), symbol(symbol), frames(frames) {}
-  void write(ostream& os) const { os <<symbol <<' '; frames.write(os, " ", nullptr, "()"); os <<" from " <<phase0 <<" to " <<phase1; }
-};
-stdOutPipe(SkeletonEntry)
-
-typedef rai::Array<SkeletonEntry> Skeleton;
-
-intA getSwitchesFromSkeleton(const Skeleton& S, const rai::Configuration& world);
-double getMaxPhaseFromSkeleton(const Skeleton& S);
-void writeSkeleton(std::ostream& os, const Skeleton& S, const intA& switches= {});
-Skeleton readSkeleton(std::istream& is);
-Skeleton readSkeleton2(std::istream& is);
 
 //===========================================================================
 
@@ -214,7 +130,7 @@ protected:
                  const rai::Transformation& jFrom=NoTransformation, const rai::Transformation& jTo=NoTransformation);
 public:
   //add a mode switch: both, the low-level dof switches and corresponding constraints of consistency
-  void addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA& frames, bool firstSwitch);
+  void addModeSwitch(const arr& times, rai::SkeletonSymbol newMode, const StringA& frames, bool firstSwitch);
 
   //1-liner specializations of setModeSwitch:
   void addSwitch_stable(double time, double endTime, const char* prevFrom, const char* from, const char* to, bool firstSwitch=true);
@@ -225,10 +141,6 @@ public:
   void addSwitch_dynamicTrans(double time, double endTime, const char* from, const char* to);
   void addSwitch_magic(double time, double endTime, const char* from, const char* to, double sqrAccCost, double sqrVelCost);
   void addSwitch_magicTrans(double time, double endTime, const char* from, const char* to, double sqrAccCost);
-
-  //-- objectives - logic level (used within LGP)
-  void setSkeleton(const Skeleton& S);
-  void setSkeleton(const Skeleton& S, rai::ArgWord sequenceOrPath);
 
   //advanced:
   void setPairedTimes();

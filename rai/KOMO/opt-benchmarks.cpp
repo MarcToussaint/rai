@@ -22,7 +22,7 @@ OptBench_InvKin_Endeff::OptBench_InvKin_Endeff(const char* modelFile, bool uncon
   nlp = komo->nlp_SparseNonFactored();
 }
 
-void OptBench_Skeleton::create(const char* modelFile, const Skeleton& S, rai::ArgWord sequenceOrPath) {
+void OptBench_Skeleton::create(const char* modelFile, const rai::Skeleton& S, rai::ArgWord sequenceOrPath) {
   rai::Configuration C(modelFile);
 
   komo = make_unique<KOMO>();
@@ -33,7 +33,7 @@ void OptBench_Skeleton::create(const char* modelFile, const Skeleton& S, rai::Ar
   }
   komo->setModel(C, false);
 
-  double maxPhase = getMaxPhaseFromSkeleton(S);
+  double maxPhase = S.getMaxPhase();
   if(sequenceOrPath==rai::_sequence){
     komo->setTiming(maxPhase, 1, 2., 1);
     komo->add_qControlObjective({}, 1, 1e-1);
@@ -43,7 +43,7 @@ void OptBench_Skeleton::create(const char* modelFile, const Skeleton& S, rai::Ar
   }
   komo->addSquaredQuaternionNorms();
 
-  komo->setSkeleton(S);
+  S.setKOMO(*komo);
 
   nlp = komo->nlp_SparseNonFactored();
 
@@ -55,10 +55,10 @@ void OptBench_Skeleton::create(const char* modelFile, const Skeleton& S, rai::Ar
 //===========================================================================
 
 OptBench_Skeleton_Pick::OptBench_Skeleton_Pick(rai::ArgWord sequenceOrPath){
-  Skeleton S = {
+  rai::Skeleton S = {
     //grasp
-    { 1., 1., SY_touch, {"R_endeff", "box3"} },
-    { 1., 1.2, SY_stable, {"R_endeff", "box3"} },
+    { 1., 1., rai::SY_touch, {"R_endeff", "box3"} },
+    { 1., 1.2, rai::SY_stable, {"R_endeff", "box3"} },
   };
   create(rai::raiPath("test/KOMO/skeleton/model2.g"), S, sequenceOrPath);
 }
@@ -66,17 +66,17 @@ OptBench_Skeleton_Pick::OptBench_Skeleton_Pick(rai::ArgWord sequenceOrPath){
 //===========================================================================
 
 OptBench_Skeleton_Handover::OptBench_Skeleton_Handover(rai::ArgWord sequenceOrPath){
-  Skeleton S = {
+  rai::Skeleton S = {
     //grasp
-    { 1., 1., SY_touch, {"R_endeff", "stick"} },
-    { 1., 2., SY_stable, {"R_endeff", "stick"} },
+    { 1., 1., rai::SY_touch, {"R_endeff", "stick"} },
+    { 1., 2., rai::SY_stable, {"R_endeff", "stick"} },
 
     //handover
-    { 2., 2., SY_touch, {"L_endeff", "stick"} },
-    { 2., -1., SY_stable, {"L_endeff", "stick"} },
+    { 2., 2., rai::SY_touch, {"L_endeff", "stick"} },
+    { 2., -1., rai::SY_stable, {"L_endeff", "stick"} },
 
     //touch something
-    { 3., -1., SY_touch, {"stick", "ball"} },
+    { 3., -1., rai::SY_touch, {"stick", "ball"} },
   };
   create(rai::raiPath("test/KOMO/skeleton/model2.g"), S, sequenceOrPath);
 }
@@ -84,59 +84,59 @@ OptBench_Skeleton_Handover::OptBench_Skeleton_Handover(rai::ArgWord sequenceOrPa
 //===========================================================================
 
 OptBench_Skeleton_StackAndBalance::OptBench_Skeleton_StackAndBalance(rai::ArgWord sequenceOrPath){
-  Skeleton S = {
+  rai::Skeleton S = {
     //pick
-    { 1., 1., SY_touch, {"R_endeff", "box0"} },
-    { 1., 2., SY_stable, {"R_endeff", "box0"} },
-    { .9, 1.1, SY_downUp, {"R_endeff"} },
+    { 1., 1., rai::SY_touch, {"R_endeff", "box0"} },
+    { 1., 2., rai::SY_stable, {"R_endeff", "box0"} },
+    { .9, 1.1, rai::SY_downUp, {"R_endeff"} },
 
     //place
-    { 2., 2., SY_touch, {"table", "box0"} },
-    { 2., -1., SY_stable, {"table", "box0"} },
-    { 1.9, 2.1, SY_downUp, {"R_endeff"} },
+    { 2., 2., rai::SY_touch, {"table", "box0"} },
+    { 2., -1., rai::SY_stable, {"table", "box0"} },
+    { 1.9, 2.1, rai::SY_downUp, {"R_endeff"} },
 
     //pick
-    { 1.5, 1.5, SY_touch, {"L_endeff", "box1"} },
-    { 1.5, 3., SY_stable, {"L_endeff", "box1"} },
-    { 1.4, 1.5, SY_downUp, {"L_endeff"} },
+    { 1.5, 1.5, rai::SY_touch, {"L_endeff", "box1"} },
+    { 1.5, 3., rai::SY_stable, {"L_endeff", "box1"} },
+    { 1.4, 1.5, rai::SY_downUp, {"L_endeff"} },
 
     //place
-    { 3., 3., SY_touch, {"box0", "box1"} },
-    { 3., -1., SY_stable, {"box0", "box1"} },
-    { 2.9, 3.1, SY_downUp, {"L_endeff"} },
+    { 3., 3., rai::SY_touch, {"box0", "box1"} },
+    { 3., -1., rai::SY_stable, {"box0", "box1"} },
+    { 2.9, 3.1, rai::SY_downUp, {"L_endeff"} },
 
-    { 3., 4., SY_forceBalance, {"box1"} },
-    { 3., 4., SY_contact, {"box0", "box1"} },
+    { 3., 4., rai::SY_forceBalance, {"box1"} },
+    { 3., 4., rai::SY_contact, {"box0", "box1"} },
 
     //pick
-    { 4., 4., SY_touch, {"R_endeff", "box2"} },
-    { 4., 5., SY_stable, {"R_endeff", "box2"} },
-    { 3.9, 4.5, SY_downUp, {"R_endeff"} },
+    { 4., 4., rai::SY_touch, {"R_endeff", "box2"} },
+    { 4., 5., rai::SY_stable, {"R_endeff", "box2"} },
+    { 3.9, 4.5, rai::SY_downUp, {"R_endeff"} },
 
     //place
-    { 5., 5., SY_touch, {"box1", "box2"} },
-    { 5., -1., SY_stable, {"box1", "box2"} },
-    { 4.9, 5.1, SY_downUp, {"R_endeff"} },
+    { 5., 5., rai::SY_touch, {"box1", "box2"} },
+    { 5., -1., rai::SY_stable, {"box1", "box2"} },
+    { 4.9, 5.1, rai::SY_downUp, {"R_endeff"} },
 
-    { 5., 5., SY_forceBalance, {"box2"} },
-    { 5., 5., SY_contact, {"box1", "box2"} },
+    { 5., 5., rai::SY_forceBalance, {"box2"} },
+    { 5., 5., rai::SY_contact, {"box1", "box2"} },
 
-    { 5., -1., SY_forceBalance, {"box1"} },
-    { 5., -1., SY_contact, {"box0", "box1"} },
+    { 5., -1., rai::SY_forceBalance, {"box1"} },
+    { 5., -1., rai::SY_contact, {"box0", "box1"} },
 
     //pick
-    { 4., 4., SY_touch, {"L_endeff", "box3"} },
-    { 4., 5., SY_stable, {"L_endeff", "box3"} },
-    { 3.9, 4.5, SY_downUp, {"L_endeff"} },
+    { 4., 4., rai::SY_touch, {"L_endeff", "box3"} },
+    { 4., 5., rai::SY_stable, {"L_endeff", "box3"} },
+    { 3.9, 4.5, rai::SY_downUp, {"L_endeff"} },
 
     //place
-    { 5., 5., SY_touch, {"box1", "box3"} },
-    { 5., 5., SY_touch, {"box2", "box3"} },
-    { 5., 5.5, SY_stable, {"box1", "box3"} },
-    { 4.9, 5.1, SY_downUp, {"L_endeff"} },
+    { 5., 5., rai::SY_touch, {"box1", "box3"} },
+    { 5., 5., rai::SY_touch, {"box2", "box3"} },
+    { 5., 5.5, rai::SY_stable, {"box1", "box3"} },
+    { 4.9, 5.1, rai::SY_downUp, {"L_endeff"} },
 
-    { 5., 5., SY_forceBalance, {"box3"} },
-    { 5., 5., SY_contact, {"box1", "box3"} },
+    { 5., 5., rai::SY_forceBalance, {"box3"} },
+    { 5., 5., rai::SY_contact, {"box1", "box3"} },
 
   };
   create(rai::raiPath("test/KOMO/skeleton/model2.g"), S, sequenceOrPath);

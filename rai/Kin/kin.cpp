@@ -3310,6 +3310,7 @@ void editConfiguration(const char* filename, Configuration& C) {
                       "RIGHT CLICK - set focus point (move view and set center of rotation)\n"
                       "LEFT CLICK - rotate (ball; or around z at view rim)\n"
                       "q - quit\n"
+                      "[SPACE] - display object info\n"
                       "SHIFT-LEFT CLICK - move view\n"
                       "CTRL-LEFT CLICK - show object ID\n"
                       "1..7 - view options\n"

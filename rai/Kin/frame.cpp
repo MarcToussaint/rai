@@ -120,11 +120,11 @@ void rai::Frame::calc_Q_from_parent(bool enforceWithinJoint) {
 }
 
 const rai::Transformation& rai::Frame::ensure_X() {
-#if 0 //for testing loops
+#if 1 //for testing loops during debugging
   {
     rai::Frame* f=parent;
     while(f) {
-      CHECK(f!=this, "");
+      CHECK(f!=this, "loop at frame '" <<f->name <<"'");
       f=f->parent;
     }
   }
@@ -1396,6 +1396,18 @@ void rai::Shape::createMeshes() {
       sscCore().scale(size(0)-2.*r, size(1)-2.*r, size(2)-2.*r);
       mesh().setSSBox(size(0), size(1), size(2), r);
       //      mesh().setSSCvx(sscCore, r);
+    } break;
+    case rai::ST_ssCylinder: {
+      if(size(2)<1e-10) {
+        sscCore().setCylinder(size(1), size(0));
+        mesh() = sscCore();
+        break;
+      }
+      double r = size(2);
+      CHECK(size.N==3 && r>1e-10, "");
+      for(uint i=0; i<2; i++) if(size(i)<2.*r) size(i) = 2.*r;
+      sscCore().setCylinder(size(1)-2.*r, size(0)-2.*r);
+      mesh().setSSCvx(sscCore().V, r);
     } break;
     case rai::ST_ssBoxElip: {
       CHECK_EQ(size.N, 7, "");
