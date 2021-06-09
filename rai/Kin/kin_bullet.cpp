@@ -294,7 +294,11 @@ btRigidBody* BulletInterface_self::addLink(rai::Frame* f, int verbose) {
 //  cout <<body->getContactDamping() <<endl;
 //  body->setContactStiffnessAndDamping(1e4, 1e-1);
 //  body->setContactStiffnessAndDamping(1e7, 3e4);
-//  body->setRestitution(objectRestitution);
+  {
+    double restitution=-1.;
+    for(auto s:shapes) s->frame.ats->get<double>(restitution, "restitution");
+    if(restitution>0.) body->setRestitution(restitution);
+  }
 
   dynamicsWorld->addRigidBody(body);
 
