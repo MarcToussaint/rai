@@ -29,12 +29,12 @@ inhand
 fixed
 
 ## constants
-Constant 67
-Constant 71
-Constant 72
-Constant 76
-Constant 77
-Constant 78
+67
+71
+72
+76
+77
+78
 
 ## initial state
 STATE {

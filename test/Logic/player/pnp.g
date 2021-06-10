@@ -57,7 +57,7 @@ DecisionRule pick {
   { (on A Y) (gripper X) (obj Y) (busy X)! (held Y)! (INFEASIBLE pick X Y)! }
   { (stableOn A Y)! (above Y A)! (on A Y)!
     (busy X) (held Y) (touch X Y) (stable X Y) (on X Y)
-    } #komo(liftDownUp X) #komo(pick X Y) } #komo(lift X)
+    }
 }
 
 #####################################################################

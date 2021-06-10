@@ -22,12 +22,10 @@ void testFolLoadFile(){
 
 //  cout <<"\n-----------------\n" <<G <<"\n-----------------\n" <<endl;
 
-  NodeL consts = G.getNodes("Constant");
+  NodeL consts = G.getNodesOfType<bool>();
   Node *s = G["STATE"];
   Node *r = G["cruiseto"]->graph()["precond"];
   NodeL vars = G["cruiseto"]->graph().getNodes("Var");
-
-  cout <<"symbols = " <<G.getNodes("Symbol") <<endl;
 
   cout <<"state = " <<*s <<"\nrule=" <<*r <<endl;
 
@@ -229,13 +227,15 @@ int main(int argc, char** argv){
     testLoadAndDot(argv[1]);
     return 0;
   }
-//  testFolLoadFile();
+
+  testFolLoadFile();
   testPolFwdChaining();
   testFolFwdChaining();
   testFolDisplay();
   testFolSubstitution();
   testFolFunction();
-  testMonteCarlo();
+//  testMonteCarlo();
+
   cout <<"BYE BYE" <<endl;
 
   return 0;

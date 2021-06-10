@@ -1,9 +1,9 @@
-Symbol A
-Symbol B
-Symbol M
-Symbol L
-Symbol Q
-Symbol P
+A
+B
+M
+L
+Q
+P
 Clause (L) { (A) (B) }
 Clause (L) { (A) (P) }
 Clause (M) { (B) (L) }

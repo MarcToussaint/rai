@@ -541,7 +541,7 @@ rai::String FOL_World::callPDDLsolver() {
 
   rai::system(cmd);
 
-  rai::system("mv sas_plan z.sas_plan; mv output.sas z.output.sas");
+  rai::system("mv sas_plan z.sas_plan");
 
   rai::String plan(FILE("z.sas_plan"));
 
