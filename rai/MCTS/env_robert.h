@@ -8,14 +8,14 @@
 
 #pragma once
 
-#include "environment.h"
-#include "../../include/MCTS_Environment/AbstractEnvironment.h"
+#include "../Logic/treeSearchDomain.h"
+#include "AbstractEnvironment.h"
 
 class InterfaceMarc: public AbstractEnvironment {
   //----typedefs/classes----//
  public:
   struct InterfaceMarcAction: public Action {
-    InterfaceMarcAction(MCTS_Environment::Handle action): action(action) {}
+    InterfaceMarcAction(TreeSearchDomain::Handle action): action(action) {}
     virtual bool operator==(const Action& other) const {
       auto interface_action = dynamic_cast<const InterfaceMarcAction*>(&other);
       return interface_action!=nullptr && *(interface_action->action)==*action;
@@ -26,10 +26,10 @@ class InterfaceMarc: public AbstractEnvironment {
     virtual void write(std::ostream& out) const {
       action->write(out);
     }
-    MCTS_Environment::Handle action;
+    TreeSearchDomain::Handle action;
   };
   struct InterfaceMarcObservation: public Observation {
-    InterfaceMarcObservation(MCTS_Environment::Handle observation): observation(observation) {}
+    InterfaceMarcObservation(TreeSearchDomain::Handle observation): observation(observation) {}
     virtual bool operator==(const Observation& other) const {
       auto interface_observation = dynamic_cast<const InterfaceMarcObservation*>(&other);
       return interface_observation!=nullptr && *(interface_observation->observation)==*(observation);
@@ -40,16 +40,16 @@ class InterfaceMarc: public AbstractEnvironment {
     virtual void write(std::ostream& out) const {
       observation->write(out);
     }
-    MCTS_Environment::Handle observation;
+    TreeSearchDomain::Handle observation;
   };
 
   //----members----//
  public:
-  std::shared_ptr<MCTS_Environment> env_marc;
+  std::shared_ptr<TreeSearchDomain> env_marc;
 
   //----methods----//
  public:
-  InterfaceMarc(std::shared_ptr<MCTS_Environment> env_marc): env_marc(env_marc) {}
+  InterfaceMarc(std::shared_ptr<TreeSearchDomain> env_marc): env_marc(env_marc) {}
   virtual observation_reward_pair_t transition(const action_handle_t& action_handle) {
     auto interface_action = std::dynamic_pointer_cast<const InterfaceMarcAction>(action_handle);
     assert(interface_action!=nullptr);
@@ -58,11 +58,11 @@ class InterfaceMarc: public AbstractEnvironment {
   }
   template<class C>
   static std::shared_ptr<AbstractEnvironment> makeAbstractEnvironment(C* env) {
-    auto mcts = dynamic_cast<MCTS_Environment*>(env);
+    auto mcts = dynamic_cast<TreeSearchDomain*>(env);
     assert(mcts!=nullptr);
     return std::shared_ptr<AbstractEnvironment>(
              std::make_shared<InterfaceMarc>(
-               std::shared_ptr<MCTS_Environment>(mcts)));
+               std::shared_ptr<TreeSearchDomain>(mcts)));
   }
   virtual action_container_t get_actions() {
     action_container_t action_container;
@@ -79,28 +79,28 @@ class InterfaceMarc: public AbstractEnvironment {
   }
 
   virtual bool has_terminal_state() const {
-    return env_marc->get_info(MCTS_Environment::InfoTag::hasTerminal);
+    return env_marc->get_info(TreeSearchDomain::InfoTag::hasTerminal);
   }
   virtual bool is_terminal_state() const {
     return env_marc->is_terminal_state();
   }
   virtual bool is_deterministic() const {
-    return env_marc->get_info(MCTS_Environment::InfoTag::isDeterministic);
+    return env_marc->get_info(TreeSearchDomain::InfoTag::isDeterministic);
   }
   virtual bool has_max_reward() const {
-    return env_marc->get_info(MCTS_Environment::InfoTag::hasMaxReward);
+    return env_marc->get_info(TreeSearchDomain::InfoTag::hasMaxReward);
   }
   virtual reward_t max_reward() const {
-    return (reward_t)env_marc->get_info_value(MCTS_Environment::InfoTag::getMaxReward);
+    return (reward_t)env_marc->get_info_value(TreeSearchDomain::InfoTag::getMaxReward);
   }
   virtual bool has_min_reward() const {
-    return env_marc->get_info(MCTS_Environment::InfoTag::hasMinReward);
+    return env_marc->get_info(TreeSearchDomain::InfoTag::hasMinReward);
   }
   virtual reward_t min_reward() const {
-    return (reward_t)env_marc->get_info_value(MCTS_Environment::InfoTag::getMinReward);
+    return (reward_t)env_marc->get_info_value(TreeSearchDomain::InfoTag::getMinReward);
   }
   virtual bool is_markov() const {
-    return env_marc->get_info(MCTS_Environment::InfoTag::isMarkov);
+    return env_marc->get_info(TreeSearchDomain::InfoTag::isMarkov);
   }
 };
 

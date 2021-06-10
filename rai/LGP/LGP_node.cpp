@@ -20,12 +20,14 @@
 #define DEBUG(x) //x
 #define DEL_INFEASIBLE(x) //x
 
+namespace rai {
+
 uint COUNT_kin=0;
 uint COUNT_evals=0;
 uint COUNT_node=0;
 uintA COUNT_opt=consts<uint>(0, BD_max);
 double COUNT_time=0.;
-rai::String OptLGPDataPath;
+String OptLGPDataPath;
 ofstream* filNodes=nullptr;
 
 bool LGP_useHoming = true;
@@ -56,7 +58,7 @@ LGP_Node::LGP_Node(LGP_Tree* _tree, uint levels)
   if(filNodes)(*filNodes) <<id <<' ' <<step <<' ' <<time <<' ' <<getTreePathString() <<endl;
 }
 
-LGP_Node::LGP_Node(LGP_Node* parent, MCTS_Environment::Handle& a)
+LGP_Node::LGP_Node(LGP_Node* parent, TreeSearchDomain::Handle& a)
   : parent(parent), tree(parent->tree), step(parent->step+1), id(COUNT_node++),
     fol(parent->fol),
     startKinematics(parent->startKinematics),
@@ -170,7 +172,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
     return;
   }
 //  COUNT_evals += komo->opt->newton.evals;
-  COUNT_kin += rai::Configuration::setJointStateCount;
+  COUNT_kin += Configuration::setJointStateCount;
   COUNT_opt(bound)++;
   COUNT_time += komo->timeTotal;
   count(bound)++;
@@ -281,9 +283,9 @@ LGP_NodeL LGP_Node::getTreePath() const {
   return path;
 }
 
-rai::String LGP_Node::getTreePathString(char sep) const {
+String LGP_Node::getTreePathString(char sep) const {
   LGP_NodeL path = getTreePath();
-  rai::String str;
+  String str;
   for(LGP_Node* b : path) {
     if(b->decision) str <<*b->decision <<sep;
 //    else str <<"ROOT" <<sep;
@@ -291,10 +293,10 @@ rai::String LGP_Node::getTreePathString(char sep) const {
   return str;
 }
 
-extern rai::Array<SkeletonSymbol> skeletonModes;
+extern Array<SkeletonSymbol> skeletonModes;
 
 Skeleton LGP_Node::getSkeleton(bool finalStateOnly) const {
-  rai::Array<Graph*> states;
+  Array<Graph*> states;
   arr times;
   if(!finalStateOnly) {
     for(LGP_Node* node:getTreePath()) {
@@ -328,7 +330,7 @@ Skeleton LGP_Node::getSkeleton(bool finalStateOnly) const {
         if(!symbols.N) continue;
 
         //check if predicate is a SkeletonSymbol
-        if(!rai::Enum<SkeletonSymbol>::contains(symbols.first())) continue;
+        if(!Enum<SkeletonSymbol>::contains(symbols.first())) continue;
 
         //trace into the future
         uint k_end=k+1;
@@ -339,7 +341,7 @@ Skeleton LGP_Node::getSkeleton(bool finalStateOnly) const {
         }
         k_end--;
 
-        rai::Enum<SkeletonSymbol> sym(symbols.first());
+        Enum<SkeletonSymbol> sym(symbols.first());
         if(k_end==states.N-1) {
           skeleton.append(SkeletonEntry({times(k), times.last(), sym, symbols({1, -1})}));
         } else {
@@ -475,10 +477,10 @@ void LGP_Node::write(ostream& os, bool recursive, bool path) const {
 
 Graph LGP_Node::getInfo() const {
   Graph G;
-  if(decision) G.newNode<rai::String>({"decision"}, {}, STRING(*decision));
-  else         G.newNode<rai::String>({"decision"}, {}, "<ROOT>");
-  G.newNode<rai::String>({"state"}, {}, STRING(*folState->isNodeOfGraph));
-  G.newNode<rai::String>({"path"}, {}, getTreePathString());
+  if(decision) G.newNode<String>({"decision"}, {}, STRING(*decision));
+  else         G.newNode<String>({"decision"}, {}, "<ROOT>");
+  G.newNode<String>({"state"}, {}, STRING(*folState->isNodeOfGraph));
+  G.newNode<String>({"path"}, {}, getTreePathString());
   G.newNode<arr>({"boundsCost"}, {}, cost);
   G.newNode<arr>({"boundsConstraints"}, {}, constraints);
   G.newNode<boolA>({"boundsFeasible"}, {}, feasible);
@@ -495,7 +497,7 @@ void LGP_Node::getGraph(Graph& G, Node* n, bool brief) {
   if(!brief) {
     n->key <<(STRING("s:" <<step <<" t:" <<time <<" bound:" <<highestBound <<" feas:" <<!isInfeasible <<" term:" <<isTerminal <<' ' <<folState->isNodeOfGraph->key));
     for(uint l=0; l<L; l++)
-      n->key <<(STRING(rai::Enum<BoundType>::name(l) <<" #:" <<count(l) <<" c:" <<cost(l) <<"|" <<constraints(l) <<" " <<(feasible(l)?'1':'0') <<" time:" <<computeTime(l)));
+      n->key <<(STRING(Enum<BoundType>::name(l) <<" #:" <<count(l) <<" c:" <<cost(l) <<"|" <<constraints(l) <<" " <<(feasible(l)?'1':'0') <<" time:" <<computeTime(l)));
     if(folAddToState) n->key <<(STRING("symAdd:" <<*folAddToState));
     if(note.N) n->key <<(note);
   }
@@ -519,15 +521,15 @@ void LGP_Node::getGraph(Graph& G, Node* n, bool brief) {
 }
 
 void LGP_Node::displayBound(ptr<OpenGL>& gl, BoundType bound) {
-  rai::ConfigurationViewer V;
+  ConfigurationViewer V;
 //  V.gl = gl;
 
   if(!komoProblem(bound)) {
     LOG(-1) <<"bound was not computed - cannot display";
   } else {
 //    CHECK(!komoProblem(bound)->gl, "");
-    rai::Enum<BoundType> _bound(bound);
-    rai::String s;
+    Enum<BoundType> _bound(bound);
+    String s;
     s <<"BOUND " <<_bound <<" at step " <<step;
 //    komoProblem(bound)->gl = gl;
     V.setConfiguration(komoProblem(bound)->world, s);
@@ -543,6 +545,8 @@ void LGP_Node::displayBound(ptr<OpenGL>& gl, BoundType bound) {
   }
 }
 
+} //namespace
+
 RUN_ON_INIT_BEGIN(manipulationTree)
-LGP_NodeL::memMove = true;
+rai::LGP_NodeL::memMove = true;
 RUN_ON_INIT_END(manipulationTree)

@@ -8,7 +8,7 @@
 
 #include "solver_AStar.h"
 
-AStar_Node::AStar_Node(AStar& astar, MCTS_Environment& world)
+AStar_Node::AStar_Node(AStar& astar, rai::TreeSearchDomain& world)
   : astar(astar), world(world), parent(nullptr), d(0), time(0.) {
   astar.size++;
   //this is the root node!
@@ -17,7 +17,7 @@ AStar_Node::AStar_Node(AStar& astar, MCTS_Environment& world)
 //  folState = fol.createStateCopy();
 }
 
-AStar_Node::AStar_Node(AStar_Node* parent, const MCTS_Environment::Handle& a)
+AStar_Node::AStar_Node(AStar_Node* parent, const rai::TreeSearchDomain::Handle& a)
   : astar(parent->astar), world(parent->world), action(a), parent(parent), d(parent->d+1) {
   astar.size++;
   if(d>astar.depth) astar.depth=d;
@@ -39,7 +39,7 @@ void AStar_Node::expand() {
   world.set_state(state);
 //  FILE("z.2") <<world <<endl;
   auto actions = world.get_actions();
-  for(const MCTS_Environment::Handle& a:actions) {
+  for(const rai::TreeSearchDomain::Handle& a:actions) {
     new AStar_Node(this, a);
   }
   isExpanded=true;
@@ -102,7 +102,7 @@ void AStar_Node::write(ostream& os, bool recursive) const {
 
 //===========================================================================
 
-AStar::AStar(MCTS_Environment& world) : root(nullptr), size(0), depth(0) {
+AStar::AStar(rai::TreeSearchDomain& world) : root(nullptr), size(0), depth(0) {
   root = new AStar_Node(*this, world);
   queue.add(0., root);
 }

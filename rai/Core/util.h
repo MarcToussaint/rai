@@ -293,9 +293,10 @@ struct String : public std::iostream {
   uint read(std::istream& is, const char* skipSymbols=nullptr, const char* stopSymbols=nullptr, int eatStopSymbol=-1);
 };
 stdPipes(String)
-}
 
-inline rai::String operator+(const rai::String& a, const char* b) { rai::String s=a; s <<b; return s; }
+inline String operator+(const String& a, const char* b) { String s=a; s <<b; return s; }
+
+}
 
 //===========================================================================
 //

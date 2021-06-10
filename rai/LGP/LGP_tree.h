@@ -12,6 +12,9 @@
 #include "../Core/thread.h"
 
 struct KinPathViewer;
+
+namespace rai {
+
 struct LGP_Tree;
 struct DisplayThread;
 typedef rai::Array<rai::Transformation> TransformationA;
@@ -142,3 +145,5 @@ struct LGP_Tree_Thread : LGP_Tree, Thread {
   }
 
 };
+
+} //namespace

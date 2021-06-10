@@ -14,7 +14,7 @@ BlindBranch::BlindBranch(uint H):H(H) {
 
 void BlindBranch::reset_state() { state=0; T=0; }
 
-MCTS_Environment::TransitionReturn BlindBranch::transition(const MCTS_Environment::Handle& action) {
+rai::TreeSearchDomain::TransitionReturn BlindBranch::transition(const rai::TreeSearchDomain::Handle& action) {
   state += std::dynamic_pointer_cast<const Action>(action)->d;
   T++;
   double r=0.;
@@ -22,20 +22,20 @@ MCTS_Environment::TransitionReturn BlindBranch::transition(const MCTS_Environmen
   return {Handle(nullptr), r, 1.};
 }
 
-MCTS_Environment::TransitionReturn BlindBranch::transition_randomly() {
+rai::TreeSearchDomain::TransitionReturn BlindBranch::transition_randomly() {
   if(rnd.uni()<.5) return transition(actions(0));
   return transition(actions(1));
 }
 
-const std::vector<MCTS_Environment::Handle> BlindBranch::get_actions() {
+const std::vector<rai::TreeSearchDomain::Handle> BlindBranch::get_actions() {
   return actions.vec();
 }
 
-const MCTS_Environment::Handle BlindBranch::get_state() {
-  return MCTS_Environment::Handle(new State(state, T));
+const rai::TreeSearchDomain::Handle BlindBranch::get_state() {
+  return rai::TreeSearchDomain::Handle(new State(state, T));
 }
 
-void BlindBranch::set_state(const MCTS_Environment::Handle& _state) {
+void BlindBranch::set_state(const rai::TreeSearchDomain::Handle& _state) {
   auto s = std::dynamic_pointer_cast<const State>(_state);
   state = s->sum;
   T = s->T;

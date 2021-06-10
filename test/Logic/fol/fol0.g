@@ -1,14 +1,14 @@
 
-Symbol  incity
-Symbol  gas
-Symbol  noise
+incity
+gas
+noise
 
-Constant 20
-Constant 21
-Constant 22
+20
+21
+22
 
 Literals{
- Var X
+ X
  (incity, X)  
  (incity, 22) =false
  (gas) = 3
@@ -29,8 +29,8 @@ Rule default(){
 }
 
 Rule cruiseto{
-  Var X
-  Var Y
+  X
+  Y
   precond{ (gas)=1 (incity Y)=! (incity X) }
   # Outcome 1:  action succeeded: different city
   out1{ (incity Y) (incity X)=! } 

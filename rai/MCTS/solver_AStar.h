@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "environment.h"
+#include "../Logic/treeSearchDomain.h"
 #include "../Core/graph.h"
 #include "../Algo/priorityQueue.h"
 
@@ -22,10 +22,10 @@ typedef rai::Array<AStar_Node*> AStar_NodeL;
 
 struct AStar_Node {
   AStar& astar;
-  MCTS_Environment& world;
-  MCTS_Environment::Handle action;
-  MCTS_Environment::Handle state;
-  MCTS_Environment::TransitionReturn ret;
+  rai::TreeSearchDomain& world;
+  rai::TreeSearchDomain::Handle action;
+  rai::TreeSearchDomain::Handle state;
+  rai::TreeSearchDomain::TransitionReturn ret;
 
   AStar_Node* parent;
   rai::Array<AStar_Node*> children;
@@ -40,10 +40,10 @@ struct AStar_Node {
   bool isTerminal=false;
 
   /// root node init
-  AStar_Node(AStar& astar, MCTS_Environment& world);
+  AStar_Node(AStar& astar, rai::TreeSearchDomain& world);
 
   /// child node creation
-  AStar_Node(AStar_Node* parent, const MCTS_Environment::Handle& a);
+  AStar_Node(AStar_Node* parent, const rai::TreeSearchDomain::Handle& a);
 
   ~AStar_Node() { NIY; }
 
@@ -78,7 +78,7 @@ struct AStar {
   rai::Array<AStar_Node*> solutions;
   uint size, depth;
 
-  AStar(MCTS_Environment& world);
+  AStar(rai::TreeSearchDomain& world);
 
   bool step();
   void run();

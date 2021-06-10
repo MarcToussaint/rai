@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "environment.h"
+#include "../Logic/treeSearchDomain.h"
 #include "../Core/graph.h"
 #include "../Algo/priorityQueue.h"
 
@@ -22,10 +22,10 @@ typedef rai::Array<MBTS_Node*> MBTS_NodeL;
 
 struct MBTS_Node {
   MBTS& MBTS;
-  MCTS_Environment& world;
-  MCTS_Environment::Handle action;
-  MCTS_Environment::Handle state;
-  MCTS_Environment::TransitionReturn ret;
+  TreeSearchDomain& world;
+  TreeSearchDomain::Handle action;
+  TreeSearchDomain::Handle state;
+  TreeSearchDomain::TransitionReturn ret;
 
   MBTS_Node* parent;
   rai::Array<MBTS_Node*> children;
@@ -41,10 +41,10 @@ struct MBTS_Node {
   bool isTerminal=false; ///< for logic level only
 
   /// root node init
-  MBTS_Node(MBTS& MBTS, MCTS_Environment& world);
+  MBTS_Node(MBTS& MBTS, TreeSearchDomain& world);
 
   /// child node creation
-  MBTS_Node(MBTS_Node* parent, const MCTS_Environment::Handle& a);
+  MBTS_Node(MBTS_Node* parent, const TreeSearchDomain::Handle& a);
 
   ~MBTS_Node() { NIY; }
 
@@ -97,7 +97,7 @@ struct MBTS {
   rai::Array<MBTS_Node*> solutions;
   uint size, depth;
 
-  MBTS(MCTS_Environment& world, MBTS_Heuristic& heuristic, uint L);
+  MBTS(TreeSearchDomain& world, MBTS_Heuristic& heuristic, uint L);
 
   bool step(int level);
   void run();

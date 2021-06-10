@@ -4,35 +4,33 @@
 //===========================================================================
 
 void testPolFwdChaining(){
-  Graph G;
+  rai::Graph G;
   FILE("pol.g") >>G;
 
   cout <<G <<endl;
 
-  cout <<"Q=" <<(forwardChaining_propositional(G, G["Q"]) ?"true":"false") <<endl;
+  cout <<"Q=" <<(rai::forwardChaining_propositional(G, G["Q"]) ?"true":"false") <<endl;
 }
 
 //===========================================================================
 
 void testFolLoadFile(){
-  Graph G;
+  rai::Graph G;
   G.checkConsistency();
   FILE("fol0.g") >>G;
   G.checkConsistency();
 
 //  cout <<"\n-----------------\n" <<G <<"\n-----------------\n" <<endl;
 
-  NodeL consts = G.getNodes("Constant");
-  Node *s = G["STATE"];
-  Node *r = G["cruiseto"]->graph()["precond"];
-  NodeL vars = G["cruiseto"]->graph().getNodes("Var");
-
-  cout <<"symbols = " <<G.getNodes("Symbol") <<endl;
+  rai::NodeL consts = G.getNodesOfType<bool>();
+  rai::Node *s = G["STATE"];
+  rai::Node *r = G["cruiseto"]->graph()["precond"];
+  rai::NodeL vars = G["cruiseto"]->graph().getNodes("Var");
 
   cout <<"state = " <<*s <<"\nrule=" <<*r <<endl;
 
   G.checkConsistency();
-  Graph& sub = G.newSubgraph({}, {});
+  rai::Graph& sub = G.newSubgraph({}, {});
   G.checkConsistency();
   sub.newNode<bool>({}, {s, consts(0)}, true);
   G.checkConsistency();
@@ -43,7 +41,7 @@ void testFolLoadFile(){
 //===========================================================================
 
 void testLoadAndDot(const char* filename="fol.g"){
-  Graph G(filename);
+  rai::Graph G(filename);
   G.checkConsistency();
 
   G.writeDot(FILE("z.dot"), false, false, 0);
@@ -54,23 +52,23 @@ void testLoadAndDot(const char* filename="fol.g"){
 //===========================================================================
 
 void testFolFwdChaining(){
-  Graph G;
+  rai::Graph G;
 
   FILE("fol.g") >>G;
 
-  Graph& state = G.get<Graph>("STATE");
+  rai::Graph& state = G.get<rai::Graph>("STATE");
 
   cout <<"INIT STATE = " <<state <<endl;
 
-  Node *query=G["Query"]->graph()(0);
-  forwardChaining_FOL(G, state, query);
+  rai::Node *query=G["Query"]->graph()(0);
+  rai::forwardChaining_FOL(G, state, query);
 //  cout <<"FINAL STATE = " <<state <<endl;
 }
 
 //===========================================================================
 
 void testFolDisplay(){
-  Graph G;
+  rai::Graph G;
   FILE("fol.g") >>G;
 
   G.displayDot();
@@ -79,22 +77,22 @@ void testFolDisplay(){
 //===========================================================================
 
 void testFolSubstitution(){
-  Graph KB;
+  rai::Graph KB;
 
 //  FILE("boxes.g") >>G;
   FILE("substTest.g") >>KB;
 
-  NodeL rules = KB.getNodes("Rule");
-  NodeL constants = KB.getNodes("Constant");
-  Graph& state = KB.get<Graph>("STATE");
+  rai::NodeL rules = KB.getNodes("Rule");
+  rai::NodeL constants = KB.getNodes("Constant");
+  rai::Graph& state = KB.get<rai::Graph>("STATE");
 
-  for(Node* rule:rules){
+  for(rai::Node* rule:rules){
     cout <<"*** RULE: " <<*rule <<endl;
     cout <<  "Substitutions:" <<endl;
-    NodeL subs = getRuleSubstitutions2(state, rule->graph(), 2);
+    rai::NodeL subs = getRuleSubstitutions2(state, rule->graph(), 2);
     cout <<"BEFORE state="; state.write(cout, " "); cout <<endl;
     for(uint s=0;s<subs.d0;s++){
-      Node *effect = rule->graph().last();
+      rai::Node *effect = rule->graph().last();
       { cout <<"*** applying" <<*effect <<" SUBS"; listWrite(subs[s], cout); cout <<endl; }
       applyEffectLiterals(state, effect->graph(), subs[s], &rule->graph());
       cout <<"AFTER state="; state.write(cout, " "); cout <<endl;
@@ -105,29 +103,32 @@ void testFolSubstitution(){
 //===========================================================================
 
 void testFolFunction(){
-  Graph KB(FILE("functionTest.g"));
+  rai::Graph KB(FILE("functionTest.g"));
 
-  Graph& state = KB.get<Graph>("STATE");
-  Graph& func = KB.get<Graph>("Qfunction");
+  rai::Graph& state = KB.get<rai::Graph>("STATE");
+  rai::Graph& func = KB.get<rai::Graph>("Qfunction");
 
-  cout <<"f=" <<evaluateFunction(func, state, 3) <<endl;
+  cout <<"f=" <<rai::evaluateFunction(func, state, 3) <<endl;
 }
 
 //===========================================================================
 
+using rai::Node;
+using rai::NodeL;
+
 void testMonteCarlo(){
-  Graph Gorig;
+  rai::Graph Gorig;
   FILE("boxes.g") >>Gorig;
   rnd.seed(3);
   int verbose=2;
 
   for(uint k=0;k<10;k++){
-    Graph KB = Gorig;
+    rai::Graph KB = Gorig;
     KB.checkConsistency();
-    Node *Terminate_keyword = KB["Terminate"];
-    Graph& state = KB.get<Graph>("STATE");
-    NodeL rules = KB.getNodes("Rule");
-    Graph& terminal = KB.get<Graph>("terminal");
+    rai::Node *Terminate_keyword = KB["Terminate"];
+    rai::Graph& state = KB.get<rai::Graph>("STATE");
+    rai::NodeL rules = KB.getNodes("Rule");
+    rai::Graph& terminal = KB.get<rai::Graph>("terminal");
 
     for(uint h=0;h<100;h++){
       if(verbose>2) cout <<"****************** " <<k <<" MonteCarlo rollout step " <<h <<endl;
@@ -139,7 +140,7 @@ void testMonteCarlo(){
         //-- get all possible decisions
         rai::Array<std::pair<Node*, NodeL> > decisions; //tuples of rule and substitution
         for(Node* rule:rules){
-          NodeL subs = getRuleSubstitutions2(state, rule->graph(), verbose-2 );
+          NodeL subs = rai::getRuleSubstitutions2(state, rule->graph(), verbose-2 );
 //          NodeL subs = getRuleSubstitutions2(state, rule, verbose-2 );
           for(uint s=0;s<subs.d0;s++){
             decisions.append(std::pair<Node*, NodeL>(rule, subs[s]));
@@ -229,13 +230,15 @@ int main(int argc, char** argv){
     testLoadAndDot(argv[1]);
     return 0;
   }
-//  testFolLoadFile();
+
+  testFolLoadFile();
   testPolFwdChaining();
   testFolFwdChaining();
   testFolDisplay();
   testFolSubstitution();
   testFolFunction();
-  testMonteCarlo();
+//  testMonteCarlo();
+
   cout <<"BYE BYE" <<endl;
 
   return 0;

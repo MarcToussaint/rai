@@ -13,11 +13,13 @@
 #include <memory>
 #include <tuple>
 
-/** This is an abstraction of an environment for MCTS. The environment essentially only needs to simulate (=transition
+namespace rai {
+
+/** This is an abstraction of a decision domain for tree search. The environment essentially only needs to simulate (=transition
  *  forward the state for given actions), and for each transition return the observation and reward. Additionally, it
- *  needs to provide the set of feasible decisions for the current state. For the MCTS solver, states, actions, and
+ *  needs to provide the set of feasible decisions for the current state. For tree search, states, actions, and
  *  rewards are fully abstract entities -- they can only be referred to via 'handles'. */
-struct MCTS_Environment {
+struct TreeSearchDomain {
   /** A generic State-or-Action-or-Observation object as abstraction of a real state, action, or observation. The environment can,
    *  via dynamic casting, get the semantics back. The MCTS solver should not use any other properties than equality. */
   struct SAO {
@@ -40,8 +42,8 @@ struct MCTS_Environment {
     double duration;
   };
 
-  MCTS_Environment() = default;
-  virtual ~MCTS_Environment() {}
+  TreeSearchDomain() = default;
+  virtual ~TreeSearchDomain() {}
 
   /// Perform the action; return the resulting observation and reward
   virtual TransitionReturn transition(const Handle& action) = 0;
@@ -80,8 +82,8 @@ struct MCTS_Environment {
 
   virtual void write(std::ostream& os) const { std::cerr <<"NOT OVERLOADED!" <<std::endl; }
 };
-inline std::ostream& operator<<(std::ostream& os, const MCTS_Environment& E) { E.write(os); return os; }
+inline std::ostream& operator<<(std::ostream& os, const TreeSearchDomain& E) { E.write(os); return os; }
+inline std::ostream& operator<<(std::ostream& os, const TreeSearchDomain::SAO& x) { x.write(os); return os; }
+extern std::shared_ptr<const TreeSearchDomain::SAO> NoHandle;
 
-extern std::shared_ptr<const MCTS_Environment::SAO> NoHandle;
-
-inline std::ostream& operator<<(std::ostream& os, const MCTS_Environment::SAO& x) { x.write(os); return os; }
+} //namspace

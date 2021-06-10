@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "environment.h"
+#include "../Logic/treeSearchDomain.h"
 #include "../Core/array.h"
 #include "../Core/graph.h"
 
@@ -27,8 +27,8 @@ struct MCStatistics {
 
 struct PlainMC {
 
-  MCTS_Environment& world;
-  rai::Array<MCTS_Environment::Handle> A;  ///< what decisions do we have in the start state
+  rai::TreeSearchDomain& world;
+  rai::Array<rai::TreeSearchDomain::Handle> A;  ///< what decisions do we have in the start state
   rai::Array<MCStatistics> D;                ///< data of returns for all first actions
   MCStatistics Droot;
   double gamma;
@@ -39,19 +39,19 @@ struct PlainMC {
   //partly internal: results of a rollout
   uint rolloutStep;
   double rolloutR, rolloutDiscount;
-  rai::Array<MCTS_Environment::Handle> rolloutDecisions;
+  rai::Array<rai::TreeSearchDomain::Handle> rolloutDecisions;
 
-  PlainMC(MCTS_Environment& world);
+  PlainMC(rai::TreeSearchDomain& world);
   void reset();
 
-  double initRollout(const rai::Array<MCTS_Environment::Handle>& prefixDecisions);
+  double initRollout(const rai::Array<rai::TreeSearchDomain::Handle>& prefixDecisions);
   double finishRollout(int stepAbort=-1);
-  double generateRollout(int stepAbort=-1, const rai::Array<MCTS_Environment::Handle>& prefixDecisions= {});
+  double generateRollout(int stepAbort=-1, const rai::Array<rai::TreeSearchDomain::Handle>& prefixDecisions= {});
   double addRollout(int stepAbort=-1);                 ///< adds one more rollout to the tree
-  void addReturnToStatistics(double R, MCTS_Environment::Handle decision, int decisionIndex=-1);
+  void addReturnToStatistics(double R, rai::TreeSearchDomain::Handle decision, int decisionIndex=-1);
   void report();
   uint getBestActionIdx();
-  MCTS_Environment::Handle getBestAction();
+  rai::TreeSearchDomain::Handle getBestAction();
 };
 
 //===========================================================================

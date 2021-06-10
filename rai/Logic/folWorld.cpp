@@ -6,10 +6,13 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "fol_mcts_world.h"
+#include "folWorld.h"
+
 #include "fol.h"
 
 #define DEBUG(x) //x
+
+namespace rai {
 
 NodeL FOL_World::Decision::getTuple() const {
   NodeL t;
@@ -48,7 +51,7 @@ FOL_World::FOL_World(const char* filename) : FOL_World() {
 }
 
 void FOL_World::init(const char* filename) {
-  rai::FileToken file(filename, true);
+  FileToken file(filename, true);
   init(Graph(file));
   file.cd_start();
 }
@@ -89,7 +92,7 @@ void FOL_World::init(const Graph& _KB) {
   }
 
   if(verbFil) {
-    rai::open(fil, "z.FOL_World");
+    open(fil, "z.FOL_World");
   }
 
   start_T_step=0;
@@ -100,7 +103,7 @@ void FOL_World::init(const Graph& _KB) {
 FOL_World::~FOL_World() {
 }
 
-MCTS_Environment::TransitionReturn FOL_World::transition(const Handle& action) {
+TreeSearchDomain::TransitionReturn FOL_World::transition(const Handle& action) {
   lastStepReward = -stepCost;
   lastStepDuration = 0.;
   lastStepProbability = 1.;
@@ -230,7 +233,7 @@ MCTS_Environment::TransitionReturn FOL_World::transition(const Handle& action) {
 const std::vector<FOL_World::Handle> FOL_World::get_actions() {
   CHECK(state, "you need to set the state first! (e.g., reset_state)");
   if(verbose>2) cout <<"****************** FOL_World: Computing possible decisions" <<flush;
-  rai::Array<Handle> decisions; //tuples of rule and substitution
+  Array<Handle> decisions; //tuples of rule and substitution
   if(hasWait) {
     decisions.append(Handle(new Decision(true, nullptr, {}, decisions.N))); //the wait decision (true as first argument, no rule, no substitution)
   }
@@ -246,16 +249,16 @@ const std::vector<FOL_World::Handle> FOL_World::get_actions() {
   return decisions.vec();
 }
 
-bool FOL_World::is_feasible_action(const MCTS_Environment::Handle& action) {
+bool FOL_World::is_feasible_action(const TreeSearchDomain::Handle& action) {
   const Decision* d = std::dynamic_pointer_cast<const Decision>(action).get();
   return substitutedRulePreconditionHolds(*state, d->rule, d->substitution);
 }
 
-const MCTS_Environment::Handle FOL_World::get_stateCopy() {
+const TreeSearchDomain::Handle FOL_World::get_stateCopy() {
   return std::make_shared<const State>(createStateCopy(), *this);
 }
 
-void FOL_World::set_state(const MCTS_Environment::Handle& _state) {
+void FOL_World::set_state(const TreeSearchDomain::Handle& _state) {
   const State* s = std::dynamic_pointer_cast<const State>(_state).get();
   CHECK(s, "the given handle was not a FOL_World::State handle");
   setState(s->state, s->T_step);
@@ -366,9 +369,9 @@ void FOL_World::write_state(ostream& os) {
   state->write(os, " ", "{}");
 }
 
-void FOL_World::set_state(rai::String& s) {
+void FOL_World::set_state(String& s) {
   state->clear();
-  s >>"{";
+  s >>PARSE("{");
   state->read(s);
 }
 
@@ -525,25 +528,25 @@ void FOL_World::writePDDLproblem(std::ostream& os, const char* domainName, const
   os <<")\n)" <<endl;
 }
 
-void FOL_World::writePDDLfiles(rai::String name) {
+void FOL_World::writePDDLfiles(const String& name) {
   ofstream f1(name+".domain.pddl");
   ofstream f2(name+".problem.pddl");
   writePDDLdomain(f1, name+"-domain");
   writePDDLproblem(f2, name+"-domain", name+"-problem");
 }
 
-rai::String FOL_World::callPDDLsolver() {
+String FOL_World::callPDDLsolver() {
   writePDDLfiles("z");
 
-  rai::String cmd = "~/git/downward/fast-downward.py";
+  String cmd = "~/git/downward/fast-downward.py";
   cmd <<" z.domain.pddl z.problem.pddl";
   cmd <<" --search \"astar(ff(transform=no_transform(), cache_estimates=true))\"";
 
   rai::system(cmd);
 
-  rai::system("mv sas_plan z.sas_plan; mv output.sas z.output.sas");
+  rai::system("mv sas_plan z.sas_plan");
 
-  rai::String plan(FILE("z.sas_plan"));
+  String plan(FILE("z.sas_plan"));
 
   //cut the last line comment with ';'
   uint i=plan.N;
@@ -561,7 +564,7 @@ Node* FOL_World::addSymbol(const char* name) {
 
 void FOL_World::addFact(const StringA& symbols) {
   NodeL parents;
-  for(const rai::String& s:symbols) {
+  for(const String& s:symbols) {
     Node* sym = KB[s];
     if(!sym) sym=addSymbol(s);
     parents.append(sym);
@@ -601,7 +604,7 @@ void FOL_World::addTerminalRule(const StringAA& literals) {
 
   for(const StringA& lit:literals) {
     NodeL parents;
-    for(const rai::String& s:lit) parents.append(KB[s]);
+    for(const String& s:lit) parents.append(KB[s]);
     preconditions.newNode<bool>({}, parents, true);
   }
 
@@ -613,3 +616,5 @@ void FOL_World::addDecisionSequence(std::istream& is) {
   seq.read(is);
   cout <<"CREATED DECISION SEQUENCE:" <<*seq.isNodeOfGraph <<endl;
 }
+
+} //namespace

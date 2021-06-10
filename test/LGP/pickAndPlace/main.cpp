@@ -15,8 +15,8 @@ void generateProblem(rai::Configuration& C){
     C.selectJointsByAtt({"base","armL","armR"});
     C.pruneInactiveJoints();
     C.optimizeTree();
-    C["pr2L"]->ats->newNode<Graph>({"logical"}, {}, {{"gripper", true}});
-    C["pr2R"]->ats->newNode<Graph>({"logical"}, {}, {{"gripper", true}});
+    C["pr2L"]->ats->newNode<rai::Graph>({"logical"}, {}, {{"gripper", true}});
+    C["pr2R"]->ats->newNode<rai::Graph>({"logical"}, {}, {{"gripper", true}});
     C["worldTranslationRotation"]->joint->H = 1e-0;
     C.addFile("../../../../rai-robotModels/objects/tables.g");
     for(uint i=0;i<numObj;i++){
@@ -55,7 +55,7 @@ void solve(){
   C.selectJointsByAtt({"base","armL","armR"});
   C.optimizeTree();
 
-  LGP_Tree lgp(C, "fol-pnp-switch.g");
+  rai::LGP_Tree lgp(C, "fol-pnp-switch.g");
   lgp.fol.addTerminalRule("(on tray obj0) (on tray obj1) (on tray obj2)");
   lgp.displayBound = BD_seqPath;
   //lgp.verbose=2;
@@ -78,14 +78,15 @@ void testBounds(){
   rai::ConfigurationViewer V;
   V.setConfiguration(C);
 
-  LGP_Tree lgp(C, "fol-pnp-switch.g");
+  rai::LGP_Tree lgp(C, "fol-pnp-switch.g");
+  lgp.player();
 
 //  lgp.inspectSequence("(pick pr2R obj0) (place pr2R obj0 tray)");
 //  lgp.inspectSequence("(pick pr2R obj0) (pick pr2L obj1) (place pr2R obj0 tray) (place pr2L obj1 tray) (pick pr2L obj2) (place pr2L obj2 tray)");
   lgp.inspectSequence("(pick pr2R obj0) (pick pr2L obj3) (place pr2R obj0 tray) (place pr2L obj3 tray)");
   return;
 
-  LGP_Node* node = lgp.walkToNode("(pick pr2R obj0) (pick pr2L obj3) (place pr2R obj0 tray) (place pr2L obj3 tray)");
+  rai::LGP_Node* node = lgp.walkToNode("(pick pr2R obj0) (pick pr2L obj3) (place pr2R obj0 tray) (place pr2L obj3 tray)");
   BoundType bound = BD_path;
   node->optBound(bound, true, 2);
 //  auto gl = make_shared<OpenGL>();
@@ -100,7 +101,7 @@ int MAIN(int argc,char **argv){
 
   solve();
 
-//  testBounds();
+  testBounds();
 
   return 0;
 }

@@ -1,8 +1,8 @@
-Constant M1
-Constant M2
-Constant Nono
-Constant America
-Constant West
+M1
+M2
+Nono
+America
+West
 
 American
 Weapon
