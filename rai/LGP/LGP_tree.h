@@ -52,8 +52,6 @@ struct LGP_Tree : GLDrawer {
   FOL_World fol;
   rai::Configuration kin;
 
-  KOMO finalGeometryObjectives;
-
   rai::Array<std::shared_ptr<KinPathViewer>> views; //displays for the 3 different levels
 
   //-- these are lists or queues; I don't maintain them sorted because their evaluation (e.g. f(n)=g(n)+h(n)) changes continuously
@@ -133,7 +131,7 @@ struct LGP_Tree_Thread : LGP_Tree, Thread {
   uint numSolutions() { return solutions.get()->N; }
 
   const std::shared_ptr<KOMO>& getKOMO(uint i, BoundType bound) {
-    const auto& komo = solutions.get()->elem(i)->node->komoProblem(bound);
+    const auto& komo = solutions.get()->elem(i)->node->problem(bound).komo;
     CHECK(komo, "solution " <<i <<" has not evaluated the bound " <<bound <<" -- returning KOMO reference to nil");
     return komo;
   }

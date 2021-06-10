@@ -26,7 +26,7 @@ template<> const char* rai::Enum<NLP_SolverOption>::names []= {
     "LD_TNEWTON_PRECOND",
     "LD_TNEWTON_PRECOND_RESTART", nullptr };
 
-arr& NLP_Solver::solve(int resampleInitialization){
+shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization){
   if(resampleInitialization==1 || !x.N){
     x = P->getInitializationSample();
   }else{
@@ -34,7 +34,8 @@ arr& NLP_Solver::solve(int resampleInitialization){
   }
   if(solverID==NLPS_newton){
     Conv_MathematicalProgram_ScalarProblem P1(*P);
-    OptNewton newton(x, P1);
+    OptNewton newton(x, P1, OptOptions()
+                     .set_verbose(verbose));
     newton.run();
   }
   else if(solverID==NLPS_gradientDescent){
@@ -48,12 +49,14 @@ arr& NLP_Solver::solve(int resampleInitialization){
   }
   else if(solverID==NLPS_augmentedLag){
     OptConstrained opt(x, dual, *P, OptOptions()
-                       .set_constrainedMethod(augmentedLag) );
+                       .set_constrainedMethod(augmentedLag)
+                       .set_verbose(verbose) );
     opt.run();
   }
   else if(solverID==NLPS_squaredPenalty){
     OptConstrained opt(x, dual, *P, OptOptions()
-                       .set_constrainedMethod(squaredPenalty) );
+                       .set_constrainedMethod(squaredPenalty)
+                       .set_verbose(verbose) );
     opt.run();
   }
   else if(solverID==NLPS_logBarrier){
@@ -76,5 +79,7 @@ arr& NLP_Solver::solve(int resampleInitialization){
   }
   else HALT("solver wrapper not implemented yet for solver ID '" <<rai::Enum<NLP_SolverID>(solverID) <<"'");
 
-  return x;
+  auto ret = make_shared<SolverReturn>();
+  ret->x=x;
+  return ret;
 }

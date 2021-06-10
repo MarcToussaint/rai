@@ -4,25 +4,16 @@
 
 #include "../Kin/F_pose.h"
 #include "../Kin/F_forces.h"
+#include "../Kin/F_qFeatures.h"
+#include "../Optim/solver.h"
+#include "../Logic/fol.h"
+
 
 double shapeSize(const rai::Configuration& K, const char* name, uint i=2);
 
 namespace rai {
 
 Array<SkeletonSymbol> skeletonModes = { SY_stable, SY_stableOn, SY_dynamic, SY_dynamicOn, SY_dynamicTrans, SY_quasiStatic, SY_quasiStaticOn, SY_magicTrans };
-
-void Skeleton::solve(const rai::Configuration& C) {
-  komo.reset();
-  komo=make_shared<KOMO>();
-  komo->setModel(C, false);
-  setKOMO(*komo, rai::_sequence);
-  komo->optimize();
-  //  komo->checkGradients();
-
-  komo->getReport(true);
-  komo->view(true, "optimized motion");
-  while(komo->view_play(true));
-}
 
 void Skeleton::ensure_komo() {
   if(!komo) {
@@ -44,6 +35,61 @@ void Skeleton::write(ostream& os, const intA& switches) const {
   }
 }
 
+void Skeleton::setFromStateSequence(Array<Graph*>& states, const arr& times){
+  //setup a done marker array: which literal in each state is DONE
+  uint maxLen=0;
+  for(Graph* s:states) if(s->N>maxLen) maxLen = s->N;
+  boolA done(states.N, maxLen);
+  done = false;
+
+  for(uint k=0; k<states.N; k++) {
+    Graph& G = *states(k);
+//    cout <<G <<endl;
+    for(uint i=0; i<G.N; i++) {
+      if(!done(k, i)) {
+        Node* n = G(i);
+        if(n->isGraph() && n->graph().findNode("%decision")) continue; //don't pickup decision literals
+        StringA symbols;
+        for(Node* p:n->parents) symbols.append(p->key);
+
+        //check if there is a predicate
+        if(!symbols.N) continue;
+
+        //check if predicate is a SkeletonSymbol
+        if(!Enum<SkeletonSymbol>::contains(symbols.first())) continue;
+
+        //trace into the future
+        uint k_end=k+1;
+        for(; k_end<states.N; k_end++) {
+          Node* persists = getEqualFactInList(n, *states(k_end), true);
+          if(!persists) break;
+          done(k_end, persists->index) = true;
+        }
+        k_end--;
+
+        Enum<SkeletonSymbol> sym(symbols.first());
+        if(k_end==states.N-1) {
+          S.append(SkeletonEntry({times(k), times.last(), sym, symbols({1, -1})}));
+        } else {
+          S.append(SkeletonEntry({times(k), times(k_end), sym, symbols({1, -1})}));
+        }
+      }
+    }
+  }
+
+  for(uint i=0; i<S.N; i++) {
+    SkeletonEntry& se =  S.elem(i);
+    if(skeletonModes.contains(se.symbol)){ //S(i) is about a switch
+      if(se.phase1<times.last()){
+        se.phase1 += 1.; //*** MODES EXTEND TO THE /NEXT/ TIME SLICE ***
+      }else{
+        se.phase1 = -1.;
+      }
+    }
+  }
+
+}
+
 double Skeleton::getMaxPhase() const {
   double maxPhase=0;
   for(const SkeletonEntry& s:S) {
@@ -59,6 +105,7 @@ intA Skeleton::getSwitches(const rai::Configuration& C) const {
     if(skeletonModes.contains(S.elem(i).symbol)) { //S(i) is about a switch
       int j=i-1;
       rai::Frame* toBeSwitched = C[S.elem(i).frames(1)];
+      CHECK(toBeSwitched,"");
       rai::Frame* rootOfSwitch = toBeSwitched->getUpwardLink(NoTransformation, true);
       rai::Frame* childOfSwitch = toBeSwitched->getDownwardLink(true);
       for(; j>=0; j--) {
@@ -79,6 +126,195 @@ intA Skeleton::getSwitches(const rai::Configuration& C) const {
   return ret;
 }
 
+void Skeleton::solve() {
+  CHECK(C, "");
+  komo.reset();
+  komo=make_shared<KOMO>();
+  komo->setModel(*C, false);
+  setKOMO(*komo, rai::_sequence);
+  komo->optimize();
+  //  komo->checkGradients();
+
+  komo->getReport(true);
+  komo->view(true, "optimized motion");
+  while(komo->view_play(true));
+}
+
+shared_ptr<SolverReturn> Skeleton::solve2(){
+  auto trans = this->mp();
+
+  NLP_Solver sol;
+  sol.setProblem(*trans.mp);
+
+  auto ret = sol.solve();
+  trans.mp->report(cout, 10);
+  sol.gnuplot_costs();
+  return ret;
+}
+
+SkeletonTranscription Skeleton::mp(){
+  SkeletonTranscription ret;
+  ret.komo=make_shared<KOMO>();
+  ret.komo->verbose=verbose;
+#if 0
+  ret.komo->solver = rai::KS_sparse;
+  ret.komo->setModel(*C, collisions);
+  setKOMO(*ret.komo, rai::_sequence);
+  ret.komo->run_prepare(0.);
+#else
+  ptr<KOMO> komo = ret.komo;
+  double maxPhase = getMaxPhase();
+  komo->clearObjectives();
+
+  komo->setModel(*C, collisions);
+  komo->setTiming(maxPhase+1., 1, 5., 1);
+//  komo->solver=rai::KS_sparse; //sparseOptimization = true;
+  komo->animateOptimization = 0;
+
+  komo->addSquaredQuaternionNorms();
+#if 0
+  komo->setHoming(0., -1., 1e-2);
+  komo->setSquaredQVelocities(0., -1., 1e-2);
+#else
+  komo->add_qControlObjective({}, 1, 1e-2);
+  komo->add_qControlObjective({}, 0, 1e-2);
+#endif
+  setKOMO(*komo);
+
+  if(collisions) komo->add_collision(true);
+
+  komo->run_prepare(.01);
+#endif
+  ret.mp=ret.komo->nlp_SparseNonFactored();
+  return ret;
+}
+
+SkeletonTranscription Skeleton::mp_finalSlice(){
+  SkeletonTranscription ret;
+  ret.komo=make_shared<KOMO>();
+  ret.komo->verbose=verbose;
+  ptr<KOMO> komo = ret.komo;
+
+  double maxPhase = getMaxPhase();
+  komo->clearObjectives();
+
+  //-- prepare the komo problem
+  double optHorizon=maxPhase;
+  if(optHorizon<1.) optHorizon=maxPhase=1.;
+  if(optHorizon>2.) optHorizon=2.;
+
+  //-- remove non-switches
+  rai::Skeleton finalS;
+  for(const rai::SkeletonEntry& s:S) {
+    if(rai::skeletonModes.contains(s.symbol)
+        || s.phase0>=maxPhase) {
+      rai::SkeletonEntry& fs = finalS.S.append(s);
+      fs.phase0 -= maxPhase-optHorizon;
+      fs.phase1 -= maxPhase-optHorizon;
+      if(fs.phase0<0.) fs.phase0=0.;
+      if(fs.phase1<0.) fs.phase1=0.;
+    }
+  }
+#if 0
+  //-- grep only the latest entries in the skeleton
+  Skeleton finalS;
+  for(const SkeletonEntry& s:S) if(s.phase0>=maxPhase) {
+      finalS.append(s);
+      finalS.last().phase0 -= maxPhase-1.;
+      finalS.last().phase1 -= maxPhase-1.;
+    }
+#endif
+
+  if(komo->verbose>1) {
+    cout <<"POSE skeleton:" <<endl;
+    finalS.write(cout, finalS.getSwitches(*C));
+  }
+
+  komo->setModel(*C, collisions);
+  komo->setTiming(optHorizon, 1, 10., 1);
+
+  komo->addSquaredQuaternionNorms();
+#if 0
+  komo->setHoming(0., -1., 1e-2);
+  komo->setSquaredQVelocities(1., -1., 1e-1); //IMPORTANT: do not penalize transitions of from prefix to x_{0} -> x_{0} is 'loose'
+#else
+  komo->add_qControlObjective({}, 1, 1e-2);
+  komo->add_qControlObjective({}, 0, 1e-2);
+#endif
+
+  finalS.setKOMO(*komo);
+
+  //-- deactivate all velocity objectives except for transition
+  for(ptr<Objective>& o:komo->objectives) {
+    if(o->feat->order>0
+       && !std::dynamic_pointer_cast<F_qItself>(o->feat)
+       && !std::dynamic_pointer_cast<F_Pose>(o->feat)
+       && !std::dynamic_pointer_cast<F_PoseRel>(o->feat)) {
+      o->times={1e6};
+    }
+  }
+  for(ptr<GroundedObjective>& o:komo->objs) {
+    if(o->feat->order>0
+       && !std::dynamic_pointer_cast<F_qItself>(o->feat)
+       && !std::dynamic_pointer_cast<F_Pose>(o->feat)
+       && !std::dynamic_pointer_cast<F_PoseRel>(o->feat)) {
+      o->feat.reset();
+    }
+  }
+  for(uint i=komo->objs.N;i--;) if(!komo->objs(i)->feat){
+    komo->objs.remove(i);
+  }
+
+  if(collisions) komo->add_collision(false);
+
+  komo->run_prepare(.01);
+  //      komo->setPairedTimes();
+
+  ret.mp=ret.komo->nlp_SparseNonFactored();
+  return ret;
+}
+
+SkeletonTranscription Skeleton::mp_path(const arrA& waypoints){
+  SkeletonTranscription ret;
+  ret.komo=make_shared<KOMO>();
+  ret.komo->verbose=verbose;
+#if 0
+  ret.komo->solver = rai::KS_sparse;
+  ret.komo->setModel(*C, collisions);
+  setKOMO(*ret.komo, rai::_path);
+  ret.komo->run_prepare(0.);
+#else
+  ptr<KOMO> komo = ret.komo;
+  double maxPhase = getMaxPhase();
+  komo->clearObjectives();
+
+  komo->setModel(*C, collisions);
+  uint stepsPerPhase = rai::getParameter<uint>("LGP/stepsPerPhase", 10);
+  uint pathOrder = rai::getParameter<uint>("LGP/pathOrder", 2);
+  komo->setTiming(maxPhase+.5, stepsPerPhase, 10., pathOrder);
+  komo->animateOptimization = 0;
+
+  komo->addSquaredQuaternionNorms();
+#if 0
+  komo->setHoming(0., -1., 1e-2);
+  if(pathOrder==1) komo->setSquaredQVelocities();
+  else komo->setSquaredQAccelerations();
+#else
+  komo->add_qControlObjective({}, 2, 1.);
+  komo->add_qControlObjective({}, 0, 1e-2);
+#endif
+
+  setKOMO(*komo);
+
+  if(collisions) komo->add_collision(true, 0., 1e1);
+
+  komo->run_prepare(.01);
+#endif
+  ret.mp=ret.komo->nlp_SparseNonFactored();
+  return ret;
+
+}
+
 void Skeleton::setKOMO(KOMO& komo, ArgWord sequenceOrPath) const {
   //  if(sequenceOrPath==rai::_sequence){
   //    solver = rai::KS_dense;
@@ -89,14 +325,22 @@ void Skeleton::setKOMO(KOMO& komo, ArgWord sequenceOrPath) const {
   double maxPhase = getMaxPhase();
   if(sequenceOrPath==rai::_sequence) {
     komo.setTiming(maxPhase, 1, 2., 1);
-    komo.add_qControlObjective({}, 1, 1e-1);
+//    komo.setTiming(maxPhase+1., 1, 5., 1); //as defined in bounds.cpp
+    komo.add_qControlObjective({}, 1, 1e-2);
+    komo.add_qControlObjective({}, 0, 1e-2);
   } else {
     komo.setTiming(maxPhase, 30, 2., 2);
-    komo.add_qControlObjective({}, 2, 1e-1);
+//    komo->setTiming(maxPhase+.5, 10, 10., 2); //as defined in bounds.cpp
+    komo.add_qControlObjective({}, 2, 1.);
+    komo.add_qControlObjective({}, 0, 1e-2);
   }
   komo.addSquaredQuaternionNorms();
 
+  if(collisions) komo.add_collision(true);
+
   setKOMO(komo);
+
+  komo.run_prepare(.01);
 }
 
 void Skeleton::setKOMO(KOMO& komo) const {

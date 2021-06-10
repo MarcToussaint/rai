@@ -124,8 +124,6 @@ LGP_Tree::LGP_Tree(const Configuration& _kin, const char* folFileName) : LGP_Tre
   fol.init(folFileName);
   initFolStateFromKin(fol, kin);
   if(verbose>0) cout <<"INITIAL LOGIC STATE = " <<*fol.start_state <<endl;
-  finalGeometryObjectives.setModel(kin);
-  finalGeometryObjectives.setTiming(1., 1, 1., 1);
   root = new LGP_Node(this, BD_max);
   focusNode = root;
 }
@@ -133,8 +131,6 @@ LGP_Tree::LGP_Tree(const Configuration& _kin, const char* folFileName) : LGP_Tre
 LGP_Tree::LGP_Tree(const Configuration& _kin, const FOL_World& _fol) : LGP_Tree() {
   kin.copy(_kin);
   fol.copy(_fol);
-  finalGeometryObjectives.setModel(kin);
-  finalGeometryObjectives.setTiming(1., 1, 1., 1);
   root = new LGP_Node(this, BD_max);
   focusNode = root;
   if(verbose>0) cout <<"INITIAL LOGIC STATE = " <<*root->folState <<endl;
@@ -164,7 +160,7 @@ void LGP_Tree::initDisplay() {
 
 void LGP_Tree::renderToVideo(int specificBound, const char* filePrefix) {
   if(specificBound<0) specificBound=displayBound;
-  CHECK(focusNode->komoProblem(specificBound) && focusNode->komoProblem(specificBound)->pathConfig.frames.N, "level " <<specificBound <<" has not been computed for the current 'displayFocus'");
+  CHECK(focusNode->problem(specificBound).komo && focusNode->problem(specificBound).komo->pathConfig.frames.N, "level " <<specificBound <<" has not been computed for the current 'displayFocus'");
   if(specificBound<(int)views.N && views(specificBound)) {
     NIY //renderConfigurations(focusNode->komoProblem(specificBound)->configurations, filePrefix, -2, 600, 600, &views(specificBound)->copy.gl()->displayCamera());
   } else {
@@ -203,7 +199,7 @@ void LGP_Tree::updateDisplay() {
   if(verbose>2) {
     String decisions = focusNode->getTreePathString('\n');
     for(uint i=1; i<views.N; i++) {
-      if(focusNode->komoProblem(i) && focusNode->komoProblem(i)->timeSlices.N) {
+      if(focusNode->problem(i).komo && focusNode->problem(i).komo->timeSlices.N) {
         NIY//views(i)->setConfigurations(focusNode->komoProblem(i)->configurations);
         views(i)->text.clear() <<focusNode->cost <<"|  " <<focusNode->constraints.last() <<'\n' <<decisions;
       } else views(i)->clear();
@@ -291,8 +287,8 @@ void LGP_Tree::inspectSequence(const String& seq) {
 
   cout <<"### INSPECT SEQUENCE\n  " <<seq <<endl;
   cout <<"  Node Info:\n" <<node->getInfo() <<endl;
-  auto S = node->getSkeleton();
-  writeSkeleton(cout, S, getSwitchesFromSkeleton(S, kin));
+  node->ensure_skeleton();
+  node->skeleton->write(cout, node->skeleton->getSwitches(kin));
 
   ptr<OpenGL> gl = make_shared<OpenGL>();
   gl->camera.setDefault();
@@ -556,8 +552,8 @@ String LGP_Tree::report(bool detailed) {
 
 void LGP_Tree::reportEffectiveJoints() {
   //  MNode *best = getBest();
-  if(!focusNode->komoProblem.last()) return;
-  focusNode->komoProblem.last()->reportProblem();
+  if(!focusNode->problem.last().komo) return;
+  focusNode->problem.last().komo->reportProblem();
   NIY//focusNode->komoProblem.last()->reportEffectiveJoints();
 }
 
@@ -683,10 +679,10 @@ LGP_Tree_SolutionData::LGP_Tree_SolutionData(LGP_Tree& _tree, LGP_Node* _node) :
   geoms.resize(frameIDs.N);
   for(uint i=0; i<geoms.N; i++) geoms(i) = K.frames(frameIDs(i))->shape->_mesh;
 
-  uint L = node->komoProblem.N;
+  uint L = node->problem.N;
   paths.resize(L);
   for(uint l=0; l<L; l++) {
-    std::shared_ptr<KOMO> komo = node->komoProblem(l);
+    std::shared_ptr<KOMO> komo = node->problem(l).komo;
     if(komo && komo->timeSlices.N) {
       paths(l).resize(komo->timeSlices.d0, frameIDs.N);
       for(uint s=0; s<komo->timeSlices.d0; s++) for(uint i=0; i<frameIDs.N; i++) {

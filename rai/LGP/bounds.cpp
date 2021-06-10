@@ -26,16 +26,18 @@ template<> const char* rai::Enum<BoundType>::names []= {
   nullptr
 };
 
-rai::Array<SkeletonSymbol> modes = { SY_stable, SY_stableOn, SY_dynamic, SY_dynamicOn, SY_dynamicTrans, };
+namespace rai {
+  Array<SkeletonSymbol> modes = { SY_stable, SY_stableOn, SY_dynamic, SY_dynamicOn, SY_dynamicTrans, };
+}
 
-ptr<ComputeObject> skeleton2Bound(ptr<KOMO>& komo, BoundType boundType, const Skeleton& S,
+ptr<KOMO_based_bound> skeleton2Bound(ptr<KOMO>& komo, BoundType boundType, const rai::Skeleton& S,
                                   const rai::Configuration& startKinematics,
                                   bool collisions, const arrA& waypoints) {
 
   if(boundType==BD_pose)
     return make_shared<PoseBound>(komo, S, startKinematics, collisions);
 
-  if(boundType==BD_seq || boundType==BD_poseFromSeq)
+  if(boundType==BD_seq)
     return make_shared<SeqBound>(komo, S, startKinematics, collisions);
 
   if(boundType==BD_path)
@@ -44,31 +46,39 @@ ptr<ComputeObject> skeleton2Bound(ptr<KOMO>& komo, BoundType boundType, const Sk
   if(boundType==BD_seqPath)
     return make_shared<SeqPathBound>(komo, S, startKinematics, collisions, waypoints);
 
-  if(boundType==BD_seqVelPath)
-    return make_shared<SeqVelPathBound>(komo, S, startKinematics, collisions, waypoints);
+   HALT("should not be here!");
 
-  HALT("should not be here!");
-
-  return ptr<ComputeObject>();
+  return ptr<KOMO_based_bound>();
 }
+
+rai::SkeletonTranscription skeleton2Bound2(BoundType boundType, rai::Skeleton& S,
+                                           const arrA& waypoints) {
+
+          if(boundType==BD_pose)
+            return S.mp_finalSlice();
+
+          if(boundType==BD_seq)
+            return S.mp();
+
+          if(boundType==BD_path)
+            return S.mp_path();
+
+          if(boundType==BD_seqPath)
+            return S.mp_path(waypoints);
+
+          HALT("should not be here!");
+
+          return rai::SkeletonTranscription();
+        }
 
 //===========================================================================
 
-double getMaxPhase(const Skeleton& S) {
-  double maxPhase=0;
-  for(const SkeletonEntry& s:S) {
-    if(s.phase0>maxPhase) maxPhase=s.phase0;
-    if(s.phase1>maxPhase) maxPhase=s.phase1;
-  }
-  return maxPhase;
-}
-
 PoseBound::PoseBound(ptr<KOMO>& komo,
-                     const Skeleton& S, const rai::Configuration& startKinematics,
+                     const rai::Skeleton& S, const rai::Configuration& startKinematics,
                      bool collisions)
   : KOMO_based_bound(komo) {
 
-  double maxPhase = getMaxPhase(S);
+  double maxPhase = S.getMaxPhase();
   komo->clearObjectives();
 
   //-- prepare the komo problem
@@ -77,11 +87,11 @@ PoseBound::PoseBound(ptr<KOMO>& komo,
   if(optHorizon>2.) optHorizon=2.;
 
   //-- remove non-switches
-  Skeleton finalS;
-  for(const SkeletonEntry& s:S) {
-    if(modes.contains(s.symbol)
+  rai::Skeleton finalS;
+  for(const rai::SkeletonEntry& s:S.S) {
+    if(rai::modes.contains(s.symbol)
         || s.phase0>=maxPhase) {
-      SkeletonEntry& fs = finalS.append(s);
+      rai::SkeletonEntry& fs = finalS.S.append(s);
       fs.phase0 -= maxPhase-optHorizon;
       fs.phase1 -= maxPhase-optHorizon;
       if(fs.phase0<0.) fs.phase0=0.;
@@ -100,7 +110,7 @@ PoseBound::PoseBound(ptr<KOMO>& komo,
 
   if(komo->verbose>1) {
     cout <<"POSE skeleton:" <<endl;
-    writeSkeleton(cout, finalS, getSwitchesFromSkeleton(finalS, komo->world));
+    finalS.write(cout, finalS.getSwitches(startKinematics));
   }
 
   komo->setModel(startKinematics, collisions);
@@ -115,30 +125,22 @@ PoseBound::PoseBound(ptr<KOMO>& komo,
   komo->add_qControlObjective({}, 0, 1e-2);
 #endif
 
-  komo->setSkeleton(finalS);
+  finalS.setKOMO(*komo);
 
   //-- deactivate all velocity objectives except for transition
-  //      for(Objective *o:komo->objectives){
-  //        if((std::dynamic_pointer_cast<TM_ZeroQVel>(o->feat)
-  //           || std::dynamic_pointer_cast<TM_Default>(o->feat))
-  //           && o->feat->order==1){
-  //          o->vars.clear();
-  //        }
-  //      }
   for(ptr<Objective>& o:komo->objectives) {
-    if(!std::dynamic_pointer_cast<F_qItself>(o->feat)
-//        && !std::dynamic_pointer_cast<TM_NoJumpFromParent>(o->feat)
+    if(o->feat->order>0
+       && !std::dynamic_pointer_cast<F_qItself>(o->feat)
        && !std::dynamic_pointer_cast<F_Pose>(o->feat)
-       && !std::dynamic_pointer_cast<F_PoseRel>(o->feat)
-       && o->feat->order>0) {
+       && !std::dynamic_pointer_cast<F_PoseRel>(o->feat)) {
       o->times={1e6};
     }
   }
   for(ptr<GroundedObjective>& o:komo->objs) {
-    if(!std::dynamic_pointer_cast<F_qItself>(o->feat)
+    if(o->feat->order>0
+       && !std::dynamic_pointer_cast<F_qItself>(o->feat)
        && !std::dynamic_pointer_cast<F_Pose>(o->feat)
-       && !std::dynamic_pointer_cast<F_PoseRel>(o->feat)
-       && o->feat->order>0) {
+       && !std::dynamic_pointer_cast<F_PoseRel>(o->feat)) {
       o->feat.reset();
     }
   }
@@ -154,11 +156,11 @@ PoseBound::PoseBound(ptr<KOMO>& komo,
 }
 
 SeqBound::SeqBound(ptr<KOMO>& komo,
-                   const Skeleton& S, const rai::Configuration& startKinematics,
+                   const rai::Skeleton& S, const rai::Configuration& startKinematics,
                    bool collisions)
   : KOMO_based_bound(komo) {
 
-  double maxPhase = getMaxPhase(S);
+  double maxPhase = S.getMaxPhase();
   komo->clearObjectives();
 
   komo->setModel(startKinematics, collisions);
@@ -174,7 +176,7 @@ SeqBound::SeqBound(ptr<KOMO>& komo,
   komo->add_qControlObjective({}, 1, 1e-2);
   komo->add_qControlObjective({}, 0, 1e-2);
 #endif
-  komo->setSkeleton(S);
+  S.setKOMO(*komo);
 
   if(collisions) komo->add_collision(true);
 
@@ -185,11 +187,11 @@ SeqBound::SeqBound(ptr<KOMO>& komo,
 }
 
 PathBound::PathBound(ptr<KOMO>& komo,
-                     const Skeleton& S, const rai::Configuration& startKinematics,
+                     const rai::Skeleton& S, const rai::Configuration& startKinematics,
                      bool collisions)
   : KOMO_based_bound(komo) {
 
-  double maxPhase = getMaxPhase(S);
+  double maxPhase = S.getMaxPhase();
   komo->clearObjectives();
 
   komo->setModel(startKinematics, collisions);
@@ -208,7 +210,7 @@ PathBound::PathBound(ptr<KOMO>& komo,
   komo->add_qControlObjective({}, 0, 1e-2);
 #endif
 
-  komo->setSkeleton(S);
+  S.setKOMO(*komo);
 
   if(collisions) komo->add_collision(true, 0., 1e1);
 
@@ -218,11 +220,11 @@ PathBound::PathBound(ptr<KOMO>& komo,
 }
 
 SeqPathBound::SeqPathBound(ptr<KOMO>& komo,
-                           const Skeleton& S, const rai::Configuration& startKinematics,
+                           const rai::Skeleton& S, const rai::Configuration& startKinematics,
                            bool collisions, const arrA& waypoints)
   : KOMO_based_bound(komo) {
 
-  double maxPhase = getMaxPhase(S);
+  double maxPhase = S.getMaxPhase();
   komo->clearObjectives();
 
   komo->setModel(startKinematics, collisions);
@@ -250,7 +252,7 @@ SeqPathBound::SeqPathBound(ptr<KOMO>& komo,
   }
 #endif
 
-  komo->setSkeleton(S);
+  S.setKOMO(*komo);
   //delete all added objectives! -> only keep switches
   //      uint O = komo->objectives.N;
   //      for(uint i=O; i<komo->objectives.N; i++) delete komo->objectives(i);
@@ -265,11 +267,11 @@ SeqPathBound::SeqPathBound(ptr<KOMO>& komo,
 }
 
 SeqVelPathBound::SeqVelPathBound(ptr<KOMO>& komo,
-                                 const Skeleton& S, const rai::Configuration& startKinematics,
+                                 const rai::Skeleton& S, const rai::Configuration& startKinematics,
                                  bool collisions, const arrA& waypoints)
   : KOMO_based_bound(komo) {
 
-  double maxPhase = getMaxPhase(S);
+  double maxPhase = S.getMaxPhase();
   komo->clearObjectives();
 
   komo->setModel(startKinematics, collisions);
@@ -287,7 +289,7 @@ SeqVelPathBound::SeqVelPathBound(ptr<KOMO>& komo,
   }
 //      uint O = komo->objectives.N;
 
-  komo->setSkeleton(S);
+  S.setKOMO(*komo);
   //delete all added objectives! -> only keep switches
 //      for(uint i=O; i<komo->objectives.N; i++) delete komo->objectives(i);
 //      komo->objectives.resizeCopy(O);

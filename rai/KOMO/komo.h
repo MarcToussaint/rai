@@ -231,7 +231,7 @@ public:
 
   //===========================================================================
   //
-  // MathematicalProgram transcriptions
+  // MP transcriptions
   //
 
   shared_ptr<MathematicalProgram> nlp_SparseNonFactored();

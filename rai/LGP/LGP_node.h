@@ -13,6 +13,7 @@
 #include "../Logic/folWorld.h"
 #include "../Logic/fol.h"
 #include "../KOMO/komo.h"
+#include "../KOMO/skeleton.h"
 
 namespace rai {
 
@@ -35,7 +36,8 @@ struct LGP_Node {
   LGP_Node* parent;
   struct LGP_Tree* tree=0;
   Array<LGP_Node*> children;
-  Array<ptr<ComputeObject>> computes;
+  shared_ptr<Skeleton> skeleton;
+  Array<SkeletonTranscription> problem;
   uint step;            ///< decision depth/step of this node
   double time;          ///< real time
   uint id;
@@ -64,7 +66,7 @@ struct LGP_Node {
   arr computeTime;  ///< computation times for each level
   double highestBound=0.;
 
-  Array<std::shared_ptr<KOMO>> komoProblem; //komo problems for all levels
+//  Array<std::shared_ptr<KOMO>> komoProblem; //komo problems for all levels
   arrA opt; //these are the optima (trajectories) computed
 
   // display helpers
@@ -94,7 +96,7 @@ struct LGP_Node {
   LGP_NodeL getAll() { LGP_NodeL L; getAll(L); return L; }
   void checkConsistency();
 
-  Skeleton getSkeleton(bool finalStateOnly=false) const;
+  void ensure_skeleton();
  private:
   void setInfeasible(); ///< set this and all children infeasible
   void labelInfeasible(); ///< sets this infeasible AND propagates this label up-down to others

@@ -64,6 +64,13 @@ void solve(){
 
   lgp.run();
 
+  for(auto* s:lgp.solutions.set()()){
+    cout <<"SOLUTION:\n";
+    s->write(cout);
+    cout <<endl;
+  }
+
+  rai::wait();
   // if(lgp.verbose>1){
   //   rai::wait();
   //   lgp.renderToVideo();
@@ -91,7 +98,7 @@ void testBounds(){
   node->optBound(bound, true, 2);
 //  auto gl = make_shared<OpenGL>();
 //  node->displayBound(gl, bound);
-  V.setPath(node->komoProblem(bound)->getPath_X(), "", true);
+  V.setPath(node->problem(bound).komo->getPath_X(), "", true);
   for(uint i=0;i<2;i++) V.playVideo(true, 3.);
 }
 
@@ -101,7 +108,7 @@ int MAIN(int argc,char **argv){
 
   solve();
 
-  testBounds();
+//  testBounds();
 
   return 0;
 }
