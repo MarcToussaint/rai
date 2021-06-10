@@ -13,7 +13,7 @@
 #include "effectivePoseProblem.h"
 #include "towerProblem.h"
 #include "../KOMO/komo.h"
-#include "../Logic/fol_mcts_world.h"
+#include "../Logic/folWorld.h"
 
 //===========================================================================
 

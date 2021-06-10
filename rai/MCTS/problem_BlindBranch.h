@@ -8,11 +8,11 @@
 
 #pragma once
 
-#include "environment.h"
+#include "../Logic/treeSearchDomain.h"
 #include "../Core/array.h"
 
-struct BlindBranch:MCTS_Environment {
-  struct Action:SAO {
+struct BlindBranch : rai::TreeSearchDomain {
+  struct Action : SAO {
     Action(int d):d(d) {}
     int d;
     bool operator==(const SAO& other) const { return d==dynamic_cast<const Action&>(other).d; }

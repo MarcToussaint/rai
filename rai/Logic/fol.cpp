@@ -10,12 +10,14 @@
 
 #define DEBUG(x) //x
 
+namespace rai {
+
 //inline bool NodeComp(Node* const& a, Node* const& b){ //TODO: why?
 //  return a < b;
 //}
 
 /// any node that has a key, no parents, and is bool, is a symbol declaration
-bool isSymbol(rai::Node* n) {
+bool isSymbol(Node* n) {
   return n->key.N>0 && n->parents.N==0 && n->isOfType<bool>() && n->key(0)!='%';
 }
 
@@ -425,9 +427,9 @@ NodeL getSubstitutions2(Graph& KB, NodeL& relations, int verbose) {
   if(!vars.N) return NodeL(1u, 0u);
 
   //-- collect domains for each variable by checking (marginally) for potentially matching facts
-  rai::Array<NodeL> domainOf(vars.N);
-  rai::Array<unsigned char> domainIsConstrained(vars.N);
-  rai::Array<NodeL> domainsForThisRel(vars.N);
+  Array<NodeL> domainOf(vars.N);
+  Array<unsigned char> domainIsConstrained(vars.N);
+  Array<NodeL> domainsForThisRel(vars.N);
   if(vars.N) domainIsConstrained = false;
 
   for(Node* rel:relations) if(nFreeVars(rel->index)>0) { //first go through all (non-negated) relations...
@@ -669,3 +671,4 @@ double evaluateFunction(Graph& func, Graph& state, int verbose) {
   return f;
 }
 
+} //namespace

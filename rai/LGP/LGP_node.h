@@ -10,20 +10,22 @@
 
 #include "bounds.h"
 #include "../Kin/kin.h"
-#include "../Logic/fol_mcts_world.h"
+#include "../Logic/folWorld.h"
 #include "../Logic/fol.h"
 #include "../KOMO/komo.h"
 
+namespace rai {
+
 struct LGP_Node;
-typedef rai::Array<LGP_Node*> LGP_NodeL;
+typedef Array<LGP_Node*> LGP_NodeL;
 
 //struct SkeletonEntry{ StringL symbols; uint k0,k1; double phase0, phase1; };
-//typedef rai::Array<SkeletonEntry> Skeleton;
+//typedef Array<SkeletonEntry> Skeleton;
 
 extern uint COUNT_kin, COUNT_evals, COUNT_node;
 extern uintA COUNT_opt;
 extern double COUNT_time;
-extern rai::String OptLGPDataPath;
+extern String OptLGPDataPath;
 extern ofstream* filNodes;
 extern bool LGP_useHoming;
 
@@ -32,8 +34,8 @@ extern bool LGP_useHoming;
 struct LGP_Node {
   LGP_Node* parent;
   struct LGP_Tree* tree=0;
-  rai::Array<LGP_Node*> children;
-  rai::Array<ptr<ComputeObject>> computes;
+  Array<LGP_Node*> children;
+  Array<ptr<ComputeObject>> computes;
   uint step;            ///< decision depth/step of this node
   double time;          ///< real time
   uint id;
@@ -47,7 +49,7 @@ struct LGP_Node {
   Graph* folAddToState=nullptr; ///< facts that are added to the state /after/ the fol.transition, e.g., infeasibility predicates
 
   //-- kinematics: the kinematic structure of the world after the decision path
-  const rai::Configuration& startKinematics; ///< initial start state kinematics
+  const Configuration& startKinematics; ///< initial start state kinematics
 
   bool isExpanded=false;
   bool isInfeasible=false;
@@ -62,11 +64,11 @@ struct LGP_Node {
   arr computeTime;  ///< computation times for each level
   double highestBound=0.;
 
-  rai::Array<std::shared_ptr<KOMO>> komoProblem; //komo problems for all levels
+  Array<std::shared_ptr<KOMO>> komoProblem; //komo problems for all levels
   arrA opt; //these are the optima (trajectories) computed
 
   // display helpers
-  rai::String note;
+  String note;
 
   /// root node init
   LGP_Node(LGP_Tree* _tree, uint levels);
@@ -85,7 +87,7 @@ struct LGP_Node {
 
   //-- helpers to get other nodes
   LGP_NodeL getTreePath() const; ///< return the decision path in terms of a list of nodes (just walking to the root)
-  rai::String getTreePathString(char sep=' ') const;
+  String getTreePathString(char sep=' ') const;
   LGP_Node* getRoot(); ///< return the decision path in terms of a list of nodes (just walking to the root)
   LGP_Node* getChildByAction(Node*  folDecision); ///<
   void getAll(LGP_NodeL& L);
@@ -111,3 +113,5 @@ struct LGP_Node {
 inline ostream& operator<<(ostream& os, const LGP_Node& n) { n.write(os); return os; }
 
 //===========================================================================
+
+} //namespace

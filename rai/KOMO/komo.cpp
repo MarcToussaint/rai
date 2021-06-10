@@ -58,7 +58,9 @@ template<> const char* rai::Enum<rai::KOMOsolver>::names []= {
   "dense", "sparse", "banded", "sparseFactored", "NLopt", "Ipopt", "Ceres", nullptr
 };
 
+namespace rai{
 rai::Array<SkeletonSymbol> skeletonModes = { SY_free, SY_stable, SY_stableOn, SY_dynamic, SY_dynamicOn, SY_dynamicTrans, SY_quasiStatic, SY_quasiStaticOn, SY_magicTrans };
+}
 
 //===========================================================================
 

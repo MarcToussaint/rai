@@ -24,11 +24,7 @@
 
  */
 
-//### Level 0 routines
-
-using rai::NodeL;
-using rai::Graph;
-using rai::Node;
+namespace rai {
 
 bool isSymbol(Node* n);
 NodeL getLiteralsOfScope(Graph& KB);
@@ -80,9 +76,4 @@ bool forwardChaining_propositional(Graph& KB, Node* q);
 
 double evaluateFunction(Graph& func, Graph& state, int verbose=0);
 
-//### Level 1 class
-
-//struct FOL: Graph{
-//  Graph& state;
-
-//};
+} //namespace

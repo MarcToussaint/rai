@@ -8,6 +8,8 @@
 
 #include "relationalMachine.h"
 
+namespace rai{
+
 RelationalMachine::RelationalMachine()
   : state(nullptr), tmp(nullptr), _log("RelationalMachine", 1, 0) {
 }
@@ -18,7 +20,7 @@ RelationalMachine::RelationalMachine(const char* filename)
 }
 
 void RelationalMachine::init(const char* filename) {
-  rai::FileToken fil(filename);
+  FileToken fil(filename);
   if(fil.exists()) {
     fil >>KB;
     KB.checkConsistency();
@@ -29,7 +31,7 @@ void RelationalMachine::init(const char* filename) {
   tmp   = &KB["TMP"]->graph();
 }
 
-rai::Node* RelationalMachine::getFact(rai::String query) const {
+Node* RelationalMachine::getFact(String query) const {
   tmp->clear();
   try {
     query >>*tmp;
@@ -42,7 +44,7 @@ rai::Node* RelationalMachine::getFact(rai::String query) const {
   return 0;
 }
 
-rai::Node* RelationalMachine::addFact(rai::String query) const {
+Node* RelationalMachine::addFact(String query) const {
   tmp->clear();
   try {
     query >>*tmp;
@@ -55,7 +57,7 @@ rai::Node* RelationalMachine::addFact(rai::String query) const {
   return 0;
 }
 
-bool RelationalMachine::queryCondition(rai::String query) const {
+bool RelationalMachine::queryCondition(String query) const {
   tmp->clear();
   bool q=false;
   try {
@@ -70,9 +72,9 @@ bool RelationalMachine::queryCondition(rai::String query) const {
   return q;
 }
 
-rai::NodeL RelationalMachine::querySubstitutions(rai::String query) const {
+NodeL RelationalMachine::querySubstitutions(String query) const {
   tmp->clear();
-  rai::NodeL substitutions;
+  NodeL substitutions;
   try {
     query >>*tmp;
     tmp->checkConsistency();
@@ -85,7 +87,7 @@ rai::NodeL RelationalMachine::querySubstitutions(rai::String query) const {
   return substitutions;
 }
 
-bool RelationalMachine::applyEffect(rai::String effect, bool fwdChain) {
+bool RelationalMachine::applyEffect(String effect, bool fwdChain) {
   tmp->clear();
   bool e=false;
   try {
@@ -103,7 +105,7 @@ bool RelationalMachine::applyEffect(rai::String effect, bool fwdChain) {
 }
 
 /*
-bool RelationalMachine::applyEffects(rai::String effects, const NodeL& substitutions, bool fwdChain) {
+bool RelationalMachine::applyEffects(String effects, const NodeL& substitutions, bool fwdChain) {
   tmp->clear();
   bool e=false;
   try {
@@ -129,7 +131,7 @@ bool RelationalMachine::applyEffect(Node* literal, bool fwdChain) {
   return e;
 }
 
-void RelationalMachine::delFact(rai::Node* fact) {
+void RelationalMachine::delFact(Node* fact) {
   CHECK_EQ(&fact->container, state, "");
   state->delNode(fact);
 }
@@ -142,27 +144,27 @@ NodeL RelationalMachine::fwdChainRules() {
   return *tmp;
 }
 
-Node* RelationalMachine::declareNewSymbol(rai::String symbolStr) {
+Node* RelationalMachine::declareNewSymbol(String symbolStr) {
   StringA tags;
   Node* it = KB.readNode(symbolStr, tags, 0, false, false);
   return it;
 }
 
-rai::String RelationalMachine::getKB() {
-  rai::String str;
+String RelationalMachine::getKB() {
+  String str;
   KB.write(str, "\n  ");
   return str;
 }
 
-rai::String RelationalMachine::getState() const {
-  rai::String str;
+String RelationalMachine::getState() const {
+  String str;
   state->write(str, "\n  ");
   return str;
 }
 
-rai::String RelationalMachine::getRules() const {
+String RelationalMachine::getRules() const {
   NodeL rules = KB.getNodes("Rule");
-  rai::String str;
+  String str;
   listWrite(rules, str, "\n  ", "[]");
   return str;
 }
@@ -175,3 +177,5 @@ StringA RelationalMachine::getSymbols() const {
   }
   return strs;
 }
+
+} //namespace

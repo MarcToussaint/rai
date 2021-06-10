@@ -19,7 +19,7 @@ void MCTS::addRollout(int stepAbort) {
     if(!n->children.N && !n->N) break; //freshmen -> do not expand
     if(!n->children.N && n->N) { //expand: compute new decisions and add corresponding nodes
       if(verbose>2) cout <<"****************** MCTS: expanding: computing all decisions for current node and adding them as freshmen nodes" <<endl;
-      for(const MCTS_Environment::Handle& d:world.get_actions()) new MCTS_Node(n, d); //this adds a bunch of freshmen for all possible decisions
+      for(const rai::TreeSearchDomain::Handle& d:world.get_actions()) new MCTS_Node(n, d); //this adds a bunch of freshmen for all possible decisions
       //n->children.permuteRandomly();
     } else {
       if(verbose>2) cout <<"****************** MCTS: decisions in current node already known" <<endl;

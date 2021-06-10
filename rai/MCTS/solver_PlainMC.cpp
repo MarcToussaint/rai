@@ -17,10 +17,10 @@ void MCStatistics::add(double R, uint topSize) {
   }
 }
 
-PlainMC::PlainMC(MCTS_Environment& world)
+PlainMC::PlainMC(rai::TreeSearchDomain& world)
   : world(world), gamma(.9), verbose(2), topSize(10) {
   reset();
-  gamma = world.get_info_value(MCTS_Environment::getGamma);
+  gamma = world.get_info_value(rai::TreeSearchDomain::getGamma);
   rai::FileToken fil("PlainMC.blackList");
   if(fil.exists()) {
     blackList.read(fil.getIs());
@@ -34,7 +34,7 @@ void PlainMC::reset() {
   D.resize(A.N);
 }
 
-double PlainMC::initRollout(const rai::Array<MCTS_Environment::Handle>& prefixDecisions) {
+double PlainMC::initRollout(const rai::Array<rai::TreeSearchDomain::Handle>& prefixDecisions) {
   world.reset_state();
 
   //reset rollout 'return' variables
@@ -43,11 +43,11 @@ double PlainMC::initRollout(const rai::Array<MCTS_Environment::Handle>& prefixDe
   rolloutDiscount=1.;
   rolloutDecisions.clear();
 
-  MCTS_Environment::TransitionReturn ret;
+  rai::TreeSearchDomain::TransitionReturn ret;
 
   //-- follow prefixDecisions
   for(uint i=0; i<prefixDecisions.N; i++) {
-    MCTS_Environment::Handle& a = prefixDecisions(i);
+    rai::TreeSearchDomain::Handle& a = prefixDecisions(i);
     if(verbose>1) cout <<"****************** MC: prefix decision " <<i <<": " <<*a <<endl;
     rolloutDecisions.append(a);
     ret = world.transition(a);
@@ -59,11 +59,11 @@ double PlainMC::initRollout(const rai::Array<MCTS_Environment::Handle>& prefixDe
 }
 
 double PlainMC::finishRollout(int stepAbort) {
-  MCTS_Environment::TransitionReturn ret;
+  rai::TreeSearchDomain::TransitionReturn ret;
 
   //-- continue with random rollout
   while(!world.is_terminal_state() && (stepAbort<0 || rolloutStep++<(uint)stepAbort)) {
-    rai::Array<MCTS_Environment::Handle> actions;
+    rai::Array<rai::TreeSearchDomain::Handle> actions;
     actions = world.get_actions(); //WARNING: conv... returns a reference!!
     if(verbose>2) { cout <<"Possible decisions: "; listWrite(actions); cout <<endl; }
     if(!actions.N) {
@@ -84,7 +84,7 @@ double PlainMC::finishRollout(int stepAbort) {
   return rolloutR;
 }
 
-double PlainMC::generateRollout(int stepAbort, const rai::Array<MCTS_Environment::Handle>& prefixDecisions) {
+double PlainMC::generateRollout(int stepAbort, const rai::Array<rai::TreeSearchDomain::Handle>& prefixDecisions) {
 #if 1
   initRollout(prefixDecisions);
   return finishRollout(stepAbort);
@@ -157,7 +157,7 @@ double PlainMC::addRollout(int stepAbort) {
   return rolloutR;
 }
 
-void PlainMC::addReturnToStatistics(double rolloutR, MCTS_Environment::Handle decision, int decisionIndex) {
+void PlainMC::addReturnToStatistics(double rolloutR, rai::TreeSearchDomain::Handle decision, int decisionIndex) {
   if(decisionIndex>=0) {
     CHECK_EQ(A(decisionIndex), decision, "")
   } else { //search for index..
@@ -192,7 +192,7 @@ uint PlainMC::getBestActionIdx() {
   return Q.argmax();
 }
 
-MCTS_Environment::Handle PlainMC::getBestAction() {
+rai::TreeSearchDomain::Handle PlainMC::getBestAction() {
   return A(getBestActionIdx());
 }
 

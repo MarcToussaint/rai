@@ -6,6 +6,6 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "environment.h"
+#include "treeSearchDomain.h"
 
-std::shared_ptr<const MCTS_Environment::SAO> NoHandle;
+std::shared_ptr<const rai::TreeSearchDomain::SAO> rai::NoHandle;

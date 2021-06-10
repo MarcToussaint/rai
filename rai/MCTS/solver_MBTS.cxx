@@ -8,7 +8,7 @@
 
 #include "solver_MBTS.h"
 
-MBTS_Node::MBTS_Node(MBTS& MBTS, MCTS_Environment& world)
+MBTS_Node::MBTS_Node(MBTS& MBTS, TreeSearchDomain& world)
   : MBTS(MBTS), world(world), parent(nullptr), d(0), time(0.) {
   MBTS.size++;
   //this is the root node!
@@ -17,7 +17,7 @@ MBTS_Node::MBTS_Node(MBTS& MBTS, MCTS_Environment& world)
 //  folState = fol.createStateCopy();
 }
 
-MBTS_Node::MBTS_Node(MBTS_Node* parent, const MCTS_Environment::Handle& a)
+MBTS_Node::MBTS_Node(MBTS_Node* parent, const TreeSearchDomain::Handle& a)
   : MBTS(parent->MBTS), world(parent->world), action(a), parent(parent), d(parent->d+1) {
   MBTS.size++;
   if(d>MBTS.depth) MBTS.depth=d;
@@ -39,7 +39,7 @@ void MBTS_Node::expand() {
   world.set_state(state);
   FILE("z.2") <<world <<endl;
   auto actions = world.get_actions();
-  for(const MCTS_Environment::Handle& a:actions) {
+  for(const TreeSearchDomain::Handle& a:actions) {
     new MBTS_Node(this, a);
   }
   isExpanded=true;
@@ -102,7 +102,7 @@ void MBTS_Node::write(ostream& os, bool recursive) const {
 
 //===========================================================================
 
-MBTS::MBTS(MCTS_Environment& world, MBTS_Heuristic& heuristic, uint L)
+MBTS::MBTS(TreeSearchDomain& world, MBTS_Heuristic& heuristic, uint L)
   : root(nullptr), heuristic(heuristic), size(0), depth(0) {
   root = new NodeT(*this, world);
   queue.resize(L);
