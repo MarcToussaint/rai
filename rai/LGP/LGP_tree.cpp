@@ -250,7 +250,6 @@ void LGP_Tree::printChoices() {
   cout <<"(p) pose optim" <<endl;
   cout <<"(s) sequence optim" <<endl;
   cout <<"(x) path optim" <<endl;
-  cout <<"(m) MC planning" <<endl;
   uint c=0;
   for(LGP_Node* a:focusNode->children) {
     cout <<"(" <<c++ <<") DECISION: " <<*a->decision <<endl;
@@ -268,12 +267,11 @@ String LGP_Tree::queryForChoice() {
 bool LGP_Tree::execRandomChoice() {
   String cmd;
   if(rnd.uni()<.5) {
-    switch(rnd.num(5)) {
+    switch(rnd.num(4)) {
       case 0: cmd="u"; break;
       case 1: cmd="p"; break;
       case 2: cmd="s"; break;
       case 3: cmd="x"; break;
-      case 4: cmd="m"; break;
     }
   } else {
     cmd <<rnd(focusNode->children.N);
@@ -290,8 +288,7 @@ void LGP_Tree::inspectSequence(const String& seq) {
   node->ensure_skeleton();
   node->skeleton->write(cout, node->skeleton->getSwitches(kin));
 
-  ptr<OpenGL> gl = make_shared<OpenGL>();
-  gl->camera.setDefault();
+  if(!singleView) singleView = make_shared<ConfigurationViewer>();
 
   //-- first test pose bounds along the path
   BoundType bound = BD_pose;
@@ -309,21 +306,22 @@ void LGP_Tree::inspectSequence(const String& seq) {
   //-- sequence bound
   bound = BD_seq;
   node->optBound(bound, true, verbose-2);
-  node->displayBound(gl, bound);
+  node->displayBound(*singleView, bound);
 
   //-- path bounds
   bound = BD_seqPath;
   node->optBound(bound, true, verbose-2);
-  node->displayBound(gl, bound);
+  node->displayBound(*singleView, bound);
 
   bound = BD_path;
   node->optBound(bound, true, verbose-2);
-  node->displayBound(gl, bound);
+  node->displayBound(*singleView, bound);
 }
 
 void LGP_Tree::player(StringA cmds) {
   bool interactive = getParameter<bool>("interact", false);
   bool random = getParameter<bool>("random", false);
+  displayTree = true;
 
   root->expand(5);
 
@@ -417,13 +415,14 @@ void LGP_Tree::glDraw(OpenGL& gl) {
 bool LGP_Tree::execChoice(String cmd) {
   cout <<"COMMAND: '" <<cmd <<"'" <<endl;
 
+  if(!singleView) singleView = make_shared<ConfigurationViewer>();
+
   if(cmd=="q") return false;
   else if(cmd=="u") { if(focusNode->parent) focusNode = focusNode->parent; }
   else if(cmd=="e") focusNode->expand();
-  else if(cmd=="p") focusNode->optBound(BD_pose, collisions, verbose-2);
-  else if(cmd=="s") focusNode->optBound(BD_seq, collisions, verbose-2);
-  else if(cmd=="x") focusNode->optBound(BD_path, collisions, verbose-2);
-  //  else if(cmd=="m") node->addMCRollouts(100,10);
+  else if(cmd=="p"){ focusNode->optBound(BD_pose, collisions, verbose-2); focusNode->displayBound(*singleView, BD_pose); }
+  else if(cmd=="s"){ focusNode->optBound(BD_seq, collisions, verbose-2); focusNode->displayBound(*singleView, BD_seq); }
+  else if(cmd=="x"){ focusNode->optBound(BD_path, collisions, verbose-2); focusNode->displayBound(*singleView, BD_path); }
   else {
     int choice=-1;
     cmd >>choice;
@@ -431,7 +430,7 @@ bool LGP_Tree::execChoice(String cmd) {
     if(choice<0 || choice>=(int)focusNode->children.N) {
       cout <<"--- there is no such choice" <<endl;
     } else {
-      focusNode = focusNode->children(choice);
+      focusNode = focusNode->children(choice); //choose a decision
       if(!focusNode->isExpanded) focusNode->expand();
     }
   }
@@ -530,7 +529,7 @@ String LGP_Tree::report(bool detailed) {
   LGP_Node* bpath = getBest(fringe_solved, 3);
 
   String out;
-  out <<"TIME= " <<cpuTime() <<" TIME= " <<COUNT_time <<" KIN= " <<COUNT_kin <<" EVALS= " <<COUNT_evals << " TREE= " <<COUNT_node
+  out <<"TIME= " <<cpuTime() <<" TIME= " <<COUNT_time <<" KIN= " <<COUNT_kin << " TREE= " <<COUNT_node
       <<" POSE= " <<COUNT_opt(BD_pose) <<" SEQ= " <<COUNT_opt(BD_seq) <<" PATH= " <<COUNT_opt(BD_path)+COUNT_opt(BD_seqPath)
       <<" bestPose= " <<(bpose?bpose->cost(1):100.)
       <<" bestSeq= " <<(bseq ?bseq ->cost(2):100.)

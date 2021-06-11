@@ -23,7 +23,6 @@
 namespace rai {
 
 uint COUNT_kin=0;
-uint COUNT_evals=0;
 uint COUNT_node=0;
 uintA COUNT_opt=consts<uint>(0, BD_max);
 double COUNT_time=0.;
@@ -200,19 +199,15 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
     problem(bound).komo.reset();
     return;
   }
-//  COUNT_evals += komo->opt->newton.evals;
   COUNT_kin += Configuration::setJointStateCount;
   COUNT_opt(bound)++;
   COUNT_time += komo->timeTotal;
   count(bound)++;
 
   DEBUG(komo->getReport(false, 1, FILE("z.problem")););
-//  cout <<komo->getReport(true) <<endl;
-//  komo->reportProxies(cout, 0.);
-//  komo->checkGradients();
-
   Graph result = komo->getReport((komo->verbose>0 && bound>=2));
   DEBUG(FILE("z.problem.cost") <<result;);
+
   double cost_here = komo->sos;
   double constraints_here = komo->ineq + komo->eq;
   bool feas = (constraints_here<1.);
@@ -221,7 +216,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
     cout <<"  RESULTS: cost: " <<cost_here <<" constraints: " <<constraints_here <<" feasible: " <<feas <<endl;
   }
 
-  //-- post process komo problem for level==1
+  //-- post process costs for level==1
   if(bound==BD_pose) {
     cost_here -= 0.1*ret.reward; //account for the symbolic costs
     if(parent) cost_here += parent->cost(bound); //this is sequentially additive cost
@@ -232,7 +227,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
   //-- read out and update bound
   //update the bound
   if(feas) {
-    if(count(bound)==1/*&& count({2,-1})==0 (also no higher levels)*/ || cost_here<highestBound) highestBound=cost_here;
+    if(count(bound)==1 || cost_here<highestBound) highestBound=cost_here;
   }
 
   if(count(bound)==1 || cost_here<cost(bound)) {
@@ -463,11 +458,11 @@ void LGP_Node::getGraph(Graph& G, Node* n, bool brief) {
   }
 
   if(!brief) {
-    n->key <<(STRING("s:" <<step <<" t:" <<time <<" bound:" <<highestBound <<" feas:" <<!isInfeasible <<" term:" <<isTerminal <<' ' <<folState->isNodeOfGraph->key));
-    for(uint l=0; l<L; l++)
-      n->key <<(STRING(Enum<BoundType>::name(l) <<" #:" <<count(l) <<" c:" <<cost(l) <<"|" <<constraints(l) <<" " <<(feasible(l)?'1':'0') <<" time:" <<computeTime(l)));
-    if(folAddToState) n->key <<(STRING("symAdd:" <<*folAddToState));
-    if(note.N) n->key <<(note);
+    n->key <<STRING("\ns:" <<step <<" t:" <<time <<" bound:" <<highestBound <<" feas:" <<!isInfeasible <<" term:" <<isTerminal <<' ' <<folState->isNodeOfGraph->key);
+    for(uint l=0; l<L; l++) if(count(l))
+      n->key <<STRING('\n' <<Enum<BoundType>::name(l) <<" #:" <<count(l) <<" c:" <<cost(l) <<"|" <<constraints(l) <<" " <<(feasible(l)?'1':'0') <<" time:" <<computeTime(l));
+    if(folAddToState) n->key <<STRING("\nsymAdd:" <<*folAddToState);
+    if(note.N) n->key <<'\n' <<note;
   }
 
   G.getRenderingInfo(n).dotstyle="shape=box";
@@ -480,6 +475,9 @@ void LGP_Node::getGraph(Graph& G, Node* n, bool brief) {
   } else {
     if(sum(count) - count(BD_symbolic)>0) G.getRenderingInfo(n).dotstyle <<" style=filled fillcolor=green";
   }
+
+  if(this==tree.focusNode) G.getRenderingInfo(n).dotstyle <<" peripheries=2";
+
   //  if(inFringe1) G.getRenderingInfo(n).dotstyle <<" color=green";
   //  if(inFringe1) G.getRenderingInfo(n).dotstyle <<" peripheries=2";
   //  if(inFringe2) G.getRenderingInfo(n).dotstyle <<" peripheries=3";
@@ -488,28 +486,21 @@ void LGP_Node::getGraph(Graph& G, Node* n, bool brief) {
   for(LGP_Node* ch:children) ch->getGraph(G, n, brief);
 }
 
-void LGP_Node::displayBound(ptr<OpenGL>& gl, BoundType bound) {
-  ConfigurationViewer V;
-//  V.gl = gl;
-
+void LGP_Node::displayBound(ConfigurationViewer& V, BoundType bound) {
   if(!problem(bound).komo) {
     LOG(-1) <<"bound was not computed - cannot display";
   } else {
-//    CHECK(!komoProblem(bound)->gl, "");
+    LOG(0) <<"hit 'q' in the ConfigurationViewer to continue";
     Enum<BoundType> _bound(bound);
     String s;
     s <<"BOUND " <<_bound <<" at step " <<step;
-//    komoProblem(bound)->gl = gl;
-    V.setConfiguration(problem(bound).komo->world, s);
+    V.setConfiguration(tree.kin, s);
     V.setPath(problem(bound).komo->getPath_X(), s, true);
     if(bound>=BD_path){
-//      while(komoProblem(bound)->displayTrajectory(.1, true, false));
       while(V.playVideo(true, 1.*problem(bound).komo->T/problem(bound).komo->stepsPerPhase));
     }else{
-//      while(komoProblem(bound)->displayTrajectory(-1., true, false));
       while(V.playVideo(true, 1.*problem(bound).komo->T));
     }
-//    komoProblem(bound)->gl.reset();
   }
 }
 

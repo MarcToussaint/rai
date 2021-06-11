@@ -48,6 +48,7 @@ struct LGP_Tree : GLDrawer {
   BoundType displayBound=BD_seqPath;
   bool collisions=false;
   shared_ptr<DisplayThread> dth;
+  shared_ptr<ConfigurationViewer> singleView;
   rai::String dataPath;
   arr cameraFocus;
   bool firstTimeDisplayTree=true;
