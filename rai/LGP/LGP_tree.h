@@ -37,6 +37,10 @@ struct LGP_Tree_SolutionData : GLDrawer {
 };
 
 struct LGP_Tree : GLDrawer {
+  LGP_Node* root=0, *focusNode=0;
+  FOL_World fol;
+  rai::Configuration kin;
+
   int verbose;
   uint numSteps;
   ofstream fil;
@@ -47,10 +51,6 @@ struct LGP_Tree : GLDrawer {
   rai::String dataPath;
   arr cameraFocus;
   bool firstTimeDisplayTree=true;
-
-  LGP_Node* root=0, *focusNode=0;
-  FOL_World fol;
-  rai::Configuration kin;
 
   rai::Array<std::shared_ptr<KinPathViewer>> views; //displays for the 3 different levels
 
@@ -78,7 +78,6 @@ struct LGP_Tree : GLDrawer {
  private:
   LGP_Node* getBest(LGP_NodeL& fringe, uint level);
   LGP_Node* popBest(LGP_NodeL& fringe, uint level);
-  LGP_Node* getBest() { return getBest(fringe_solved, 3); }
   LGP_Node* expandNext(int stopOnLevel=-1, LGP_NodeL* addIfTerminal=nullptr);
 
   void optBestOnLevel(BoundType bound, LGP_NodeL& drawFringe, BoundType drawBound, LGP_NodeL* addIfTerminal, LGP_NodeL* addChildren);
@@ -98,9 +97,8 @@ struct LGP_Tree : GLDrawer {
   LGP_Node* walkToNode(const rai::String& seq);
 
   // output
-  uint numFoundSolutions();
+  uint numFoundSolutions() const { return fringe_solved.N; }
   rai::String report(bool detailed=false);
-  void reportEffectiveJoints();
   void displayTreeUsingDot();
   void initDisplay();
   void updateDisplay();
@@ -117,31 +115,6 @@ struct LGP_Tree : GLDrawer {
   //-- inspection and debugging
   void inspectSequence(const rai::String& seq);
   void player(StringA cmds= {});
-};
-
-struct LGP_Tree_Thread : LGP_Tree, Thread {
-  LGP_Tree_Thread(const rai::Configuration& _kin, const char* folFileName="fol.g")
-    : LGP_Tree(_kin, folFileName), Thread("LGP_Tree", -1) {}
-
-  void open() { LGP_Tree::init(); }
-  void step() { LGP_Tree::step(); }
-  void close() {}
-
-  //convenience to retrieve solution data
-  uint numSolutions() { return solutions.get()->N; }
-
-  const std::shared_ptr<KOMO>& getKOMO(uint i, BoundType bound) {
-    const auto& komo = solutions.get()->elem(i)->node->problem(bound).komo;
-    CHECK(komo, "solution " <<i <<" has not evaluated the bound " <<bound <<" -- returning KOMO reference to nil");
-    return komo;
-  }
-
-  Graph getReport(uint i, BoundType bound) {
-    const auto& komo = getKOMO(i, bound);
-    if(!komo) return Graph();
-    return komo->getProblemGraph(true);
-  }
-
 };
 
 } //namespace

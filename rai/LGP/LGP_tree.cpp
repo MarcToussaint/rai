@@ -124,14 +124,14 @@ LGP_Tree::LGP_Tree(const Configuration& _kin, const char* folFileName) : LGP_Tre
   fol.init(folFileName);
   initFolStateFromKin(fol, kin);
   if(verbose>0) cout <<"INITIAL LOGIC STATE = " <<*fol.start_state <<endl;
-  root = new LGP_Node(this, BD_max);
+  root = new LGP_Node(*this, BD_max);
   focusNode = root;
 }
 
 LGP_Tree::LGP_Tree(const Configuration& _kin, const FOL_World& _fol) : LGP_Tree() {
   kin.copy(_kin);
   fol.copy(_fol);
-  root = new LGP_Node(this, BD_max);
+  root = new LGP_Node(*this, BD_max);
   focusNode = root;
   if(verbose>0) cout <<"INITIAL LOGIC STATE = " <<*root->folState <<endl;
 }
@@ -522,9 +522,7 @@ void LGP_Tree::clearFromInfeasibles(LGP_NodeL& fringe) {
     if(fringe.elem(i)->isInfeasible) fringe.remove(i);
 }
 
-uint LGP_Tree::numFoundSolutions() {
-  return fringe_solved.N;
-}
+
 
 String LGP_Tree::report(bool detailed) {
   LGP_Node* bpose = getBest(terminals, 1);
@@ -548,13 +546,6 @@ String LGP_Tree::report(bool detailed) {
   }
 
   return out;
-}
-
-void LGP_Tree::reportEffectiveJoints() {
-  //  MNode *best = getBest();
-  if(!focusNode->problem.last().komo) return;
-  focusNode->problem.last().komo->reportProblem();
-  NIY//focusNode->komoProblem.last()->reportEffectiveJoints();
 }
 
 void LGP_Tree::step() {
@@ -665,10 +656,12 @@ void LGP_Tree::run(uint steps) {
 }
 
 LGP_Tree_SolutionData::LGP_Tree_SolutionData(LGP_Tree& _tree, LGP_Node* _node) : tree(_tree), node(_node) {
+  CHECK_EQ(&tree, &node->tree, "");
+
   decisions = node->getTreePathString('\n');
 
   //--init geoms
-  const Configuration& K = node->startKinematics;
+  const Configuration& K = tree.kin;
   uintA frameIDs;
   for(uint f=0; f<K.frames.N; f++) {
     const Frame* a = K.frames(f);

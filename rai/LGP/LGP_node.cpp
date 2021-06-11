@@ -8,7 +8,6 @@
 
 #include "LGP_node.h"
 #include "LGP_tree.h"
-#include "bounds.h"
 
 #include "../MCTS/solver_PlainMC.h"
 #include "../KOMO/komo.h"
@@ -31,24 +30,53 @@ double COUNT_time=0.;
 String OptLGPDataPath;
 ofstream* filNodes=nullptr;
 
-bool LGP_useHoming = true;
+template<> const char* rai::Enum<BoundType>::names []= {
+  "symbolic",
+  "pose",
+  "seq",
+  "path",
+  "seqPath",
+  "seqVelPath",
+  "poseFromSub",
+  "max",
+  nullptr
+};
+
+rai::SkeletonTranscription skeleton2Bound2(BoundType boundType, rai::Skeleton& S,
+                                           const arrA& waypoints) {
+
+  if(boundType==BD_pose)
+    return S.mp_finalSlice();
+
+  if(boundType==BD_seq)
+    return S.mp();
+
+  if(boundType==BD_path)
+    return S.mp_path();
+
+  if(boundType==BD_seqPath)
+    return S.mp_path(waypoints);
+
+  HALT("should not be here!");
+
+  return rai::SkeletonTranscription();
+}
 
 void LGP_Node::resetData() {
+  skeleton.reset();
   cost = zeros(L);
   constraints = zeros(L);
   count = consts<uint>(0, L);
   count(BD_symbolic) = 1;
   feasible = consts<byte>(true, L);
   problem.resize(L);
-  opt.resize(L);
   computeTime = zeros(L);
   highestBound=0.;
 }
 
-LGP_Node::LGP_Node(LGP_Tree* _tree, uint levels)
+LGP_Node::LGP_Node(LGP_Tree& _tree, uint levels)
   : parent(nullptr), tree(_tree), step(0), time(0.), id(COUNT_node++),
-    fol(tree->fol),
-    startKinematics(tree->kin),
+    fol(tree.fol),
     L(levels) {
   //this is the root node!
   fol.reset_state();
@@ -62,7 +90,6 @@ LGP_Node::LGP_Node(LGP_Tree* _tree, uint levels)
 LGP_Node::LGP_Node(LGP_Node* parent, TreeSearchDomain::Handle& a)
   : parent(parent), tree(parent->tree), step(parent->step+1), id(COUNT_node++),
     fol(parent->fol),
-    startKinematics(parent->startKinematics),
     L(parent->L) {
   parent->children.append(this);
 
@@ -106,7 +133,7 @@ void LGP_Node::expand(int verbose) {
 
 void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
   ensure_skeleton();
-  skeleton->setConfiguration(startKinematics);
+  skeleton->setConfiguration(tree.kin);
   skeleton->collisions = collisions;
   skeleton->verbose = verbose;
 
@@ -212,7 +239,6 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
     cost(bound) = cost_here;
     constraints(bound) = constraints_here;
     feasible(bound) = feas;
-    opt(bound) = komo->x;
     computeTime(bound) = komo->timeTotal;
   }
 
@@ -296,7 +322,7 @@ void LGP_Node::ensure_skeleton() {
   if(skeleton) return;
 
   skeleton = make_shared<Skeleton>();
-  skeleton->setConfiguration(startKinematics);
+  skeleton->setConfiguration(tree.kin);
 
   Array<Graph*> states;
   arr times;

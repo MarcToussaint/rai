@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include "bounds.h"
 #include "../Kin/kin.h"
 #include "../Logic/folWorld.h"
 #include "../Logic/fol.h"
@@ -18,23 +17,31 @@
 namespace rai {
 
 struct LGP_Node;
+struct LGP_Tree;
 typedef Array<LGP_Node*> LGP_NodeL;
-
-//struct SkeletonEntry{ StringL symbols; uint k0,k1; double phase0, phase1; };
-//typedef Array<SkeletonEntry> Skeleton;
 
 extern uint COUNT_kin, COUNT_evals, COUNT_node;
 extern uintA COUNT_opt;
 extern double COUNT_time;
 extern String OptLGPDataPath;
 extern ofstream* filNodes;
-extern bool LGP_useHoming;
+
+enum BoundType { BD_all=-1,
+                 BD_symbolic=0,
+                 BD_pose,
+                 BD_seq,
+                 BD_path,
+                 BD_seqPath,
+                 BD_max
+               };
+
+rai::SkeletonTranscription skeleton2Bound2(BoundType boundType, rai::Skeleton& S, const arrA& waypoints={});
 
 //===========================================================================
 
 struct LGP_Node {
   LGP_Node* parent;
-  struct LGP_Tree* tree=0;
+  LGP_Tree& tree;
   Array<LGP_Node*> children;
   shared_ptr<Skeleton> skeleton;
   Array<SkeletonTranscription> problem;
@@ -50,9 +57,6 @@ struct LGP_Node {
   Node*  folDecision=nullptr; ///< the predicate in the folState that represents the decision
   Graph* folAddToState=nullptr; ///< facts that are added to the state /after/ the fol.transition, e.g., infeasibility predicates
 
-  //-- kinematics: the kinematic structure of the world after the decision path
-  const Configuration& startKinematics; ///< initial start state kinematics
-
   bool isExpanded=false;
   bool isInfeasible=false;
   bool isTerminal=false;
@@ -66,14 +70,11 @@ struct LGP_Node {
   arr computeTime;  ///< computation times for each level
   double highestBound=0.;
 
-//  Array<std::shared_ptr<KOMO>> komoProblem; //komo problems for all levels
-  arrA opt; //these are the optima (trajectories) computed
-
   // display helpers
   String note;
 
   /// root node init
-  LGP_Node(LGP_Tree* _tree, uint levels);
+  LGP_Node(rai::LGP_Tree& _tree, uint levels);
 
   /// child node creation
   LGP_Node(LGP_Node* parent, FOL_World::Handle& a);
@@ -83,8 +84,6 @@ struct LGP_Node {
   //- computations on the node
   void expand(int verbose=0);           ///< expand this node (symbolically: compute possible decisions and add their effect nodes)
   void optBound(BoundType bound, bool collisions=false, int verbose=-1);
-  ptr<KOMO> optSubCG(const SubCG& scg, bool collisions, int verbose);
-  ptr<CG> getCGO(bool collisions=false, int verbose=-1);
   void resetData();
 
   //-- helpers to get other nodes
@@ -97,14 +96,14 @@ struct LGP_Node {
   void checkConsistency();
 
   void ensure_skeleton();
- private:
+
+private:
   void setInfeasible(); ///< set this and all children infeasible
   void labelInfeasible(); ///< sets this infeasible AND propagates this label up-down to others
   LGP_Node* treePolicy_random(); ///< returns leave -- by descending children randomly
-  LGP_Node* treePolicy_softMax(double temperature);
   bool recomputeAllFolStates();
 
- public:
+public:
   void write(ostream& os=cout, bool recursive=false, bool path=true) const;
   Graph getInfo() const;
   void getGraph(Graph& G, Node* n=nullptr, bool brief=false);

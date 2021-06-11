@@ -57,7 +57,7 @@ void solve(){
 
   rai::LGP_Tree lgp(C, "fol-pnp-switch.g");
   lgp.fol.addTerminalRule("(on tray obj0) (on tray obj1) (on tray obj2)");
-  lgp.displayBound = BD_seqPath;
+  lgp.displayBound = rai::BD_seqPath;
   //lgp.verbose=2;
 
   lgp.fol.writePDDLfiles("z");
@@ -94,7 +94,7 @@ void testBounds(){
   return;
 
   rai::LGP_Node* node = lgp.walkToNode("(pick pr2R obj0) (pick pr2L obj3) (place pr2R obj0 tray) (place pr2L obj3 tray)");
-  BoundType bound = BD_path;
+  rai::BoundType bound = rai::BD_path;
   node->optBound(bound, true, 2);
 //  auto gl = make_shared<OpenGL>();
 //  node->displayBound(gl, bound);

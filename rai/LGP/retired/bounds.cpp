@@ -51,25 +51,6 @@ ptr<KOMO_based_bound> skeleton2Bound(ptr<KOMO>& komo, BoundType boundType, const
   return ptr<KOMO_based_bound>();
 }
 
-rai::SkeletonTranscription skeleton2Bound2(BoundType boundType, rai::Skeleton& S,
-                                           const arrA& waypoints) {
-
-          if(boundType==BD_pose)
-            return S.mp_finalSlice();
-
-          if(boundType==BD_seq)
-            return S.mp();
-
-          if(boundType==BD_path)
-            return S.mp_path();
-
-          if(boundType==BD_seqPath)
-            return S.mp_path(waypoints);
-
-          HALT("should not be here!");
-
-          return rai::SkeletonTranscription();
-        }
 
 //===========================================================================
 
