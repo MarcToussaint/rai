@@ -435,6 +435,7 @@ void LGP_Node::write(ostream& os, bool recursive, bool path) const {
   os <<"\t poseCost=" <<cost(BD_pose) <<endl;
   os <<"\t seqCost=" <<cost(BD_seq) <<endl;
   os <<"\t pathCost=" <<cost(BD_path) <<endl;
+  if(skeleton) os <<*skeleton;
   if(recursive) for(LGP_Node* n:children) n->write(os);
 }
 
@@ -493,7 +494,7 @@ void LGP_Node::displayBound(ConfigurationViewer& V, BoundType bound) {
     LOG(0) <<"hit 'q' in the ConfigurationViewer to continue";
     Enum<BoundType> _bound(bound);
     String s;
-    s <<"BOUND " <<_bound <<" at step " <<step;
+    s <<"BOUND " <<_bound <<" at step " <<step <<"\n" <<*skeleton;
     V.setConfiguration(tree.kin, s);
     V.setPath(problem(bound).komo->getPath_X(), s, true);
     if(bound>=BD_path){

@@ -109,11 +109,11 @@ int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 //  rnd.clockSeed();
 
-//  solve();
+  solve();
 
   playIt();
 
-//  testBounds();
+  testBounds();
 
   return 0;
 }

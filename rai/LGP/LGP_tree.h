@@ -17,17 +17,17 @@ namespace rai {
 
 struct LGP_Tree;
 struct DisplayThread;
-typedef rai::Array<rai::Transformation> TransformationA;
+typedef Array<Transformation> TransformationA;
 
-void initFolStateFromKin(FOL_World& L, const rai::Configuration& K);
+void initFolStateFromKin(FOL_World& L, const Configuration& K);
 
 struct LGP_Tree_SolutionData : GLDrawer {
   LGP_Tree& tree;
   LGP_Node* node; ///< contains costs, constraints, and solutions for each level
-  rai::String decisions;
+  String decisions;
 
-  rai::Array<ptr<rai::Mesh>> geoms; ///< for display
-  rai::Array<TransformationA> paths; ///< for display
+  Array<ptr<Mesh>> geoms; ///< for display
+  Array<TransformationA> paths; ///< for display
   uint displayStep=0;
 
   LGP_Tree_SolutionData(LGP_Tree& _tree, LGP_Node* _node);
@@ -39,7 +39,7 @@ struct LGP_Tree_SolutionData : GLDrawer {
 struct LGP_Tree : GLDrawer {
   LGP_Node* root=0, *focusNode=0;
   FOL_World fol;
-  rai::Configuration kin;
+  Configuration kin;
 
   int verbose;
   uint numSteps;
@@ -49,11 +49,11 @@ struct LGP_Tree : GLDrawer {
   bool collisions=false;
   shared_ptr<DisplayThread> dth;
   shared_ptr<ConfigurationViewer> singleView;
-  rai::String dataPath;
+  String dataPath;
   arr cameraFocus;
   bool firstTimeDisplayTree=true;
 
-  rai::Array<std::shared_ptr<KinPathViewer>> views; //displays for the 3 different levels
+  Array<std::shared_ptr<KinPathViewer>> views; //displays for the 3 different levels
 
   //-- these are lists or queues; I don't maintain them sorted because their evaluation (e.g. f(n)=g(n)+h(n)) changes continuously
   // while new bounds are computed. Therefore, whenever I pop from these lists, I find the minimum w.r.t. a heuristic. The
@@ -67,12 +67,12 @@ struct LGP_Tree : GLDrawer {
   LGP_NodeL fringe_path;  //list of terminal nodes that have been seq tested
   LGP_NodeL fringe_solved;  //list of terminal nodes that have been path tested
 
-  Var<rai::Array<LGP_Tree_SolutionData*>> solutions;
+  Var<Array<LGP_Tree_SolutionData*>> solutions;
 
   //high-level
   LGP_Tree();
-  LGP_Tree(const rai::Configuration& _kin, const char* folFileName="fol.g");
-  LGP_Tree(const rai::Configuration& _kin, const FOL_World& _fol);
+  LGP_Tree(const Configuration& _kin, const char* folFileName="fol.g");
+  LGP_Tree(const Configuration& _kin, const FOL_World& _fol);
   ~LGP_Tree();
 
   //-- methods called in the run loop
@@ -91,15 +91,15 @@ struct LGP_Tree : GLDrawer {
   void step();
   void buildTree(uint depth);
   void getSymbolicSolutions(uint depth);
-  void optFixedSequence(const rai::String& seq, BoundType specificBound=BD_all, bool collisions=false);
+  void optFixedSequence(const String& seq, BoundType specificBound=BD_all, bool collisions=false);
   void optMultiple(const StringA& seqs);
 
   //-- work directly on the tree
-  LGP_Node* walkToNode(const rai::String& seq);
+  LGP_Node* walkToNode(const String& seq);
 
   // output
   uint numFoundSolutions() const { return fringe_solved.N; }
-  rai::String report(bool detailed=false);
+  String report(bool detailed=false);
   void displayTreeUsingDot();
   void initDisplay();
   void updateDisplay();
@@ -109,13 +109,13 @@ struct LGP_Tree : GLDrawer {
 
   //-- kind of a gui:
   void printChoices();
-  rai::String queryForChoice();
-  bool execChoice(rai::String cmd);
+  String queryForChoice();
+  bool execChoice(String& cmd);
   bool execRandomChoice();
 
   //-- inspection and debugging
-  void inspectSequence(const rai::String& seq);
-  void player(StringA cmds= {});
+  void inspectSequence(const String& seq);
+  void player();
 };
 
 } //namespace

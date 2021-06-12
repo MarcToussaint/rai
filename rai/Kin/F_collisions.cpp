@@ -21,13 +21,20 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_EQ(F.N, 2, "");
   rai::Frame* f1 = F.elem(0);
   rai::Frame* f2 = F.elem(1);
-  CHECK(f1->shape && f2->shape, "");
-  double r1=f1->shape->radius();
-  double r2=f2->shape->radius();
-  rai::Mesh* m1 = &f1->shape->sscCore();  if(!m1->V.N) { m1 = &f1->shape->mesh(); r1=0.; }
-  rai::Mesh* m2 = &f2->shape->sscCore();  if(!m2->V.N) { m2 = &f2->shape->mesh(); r2=0.; }
-  if(!m1->V.N) m1->V = zeros(1, 3);
-  if(!m2->V.N) m2->V = zeros(1, 3);
+  double r1=0., r2=0.;
+  rai::Mesh dot;
+  dot.setDot();
+  rai::Mesh *m1=&dot, *m2=&dot;
+  if(f1->shape){
+    r1=f1->shape->radius();
+    m1 = &f1->shape->sscCore();  if(!m1->V.N) { m1 = &f1->shape->mesh(); r1=0.; }
+    if(!m1->V.N) m1 = &dot;
+  }
+  if(f1->shape){
+    r2=f2->shape->radius();
+    m2 = &f2->shape->sscCore();  if(!m2->V.N) { m2 = &f2->shape->mesh(); r2=0.; }
+    if(!m2->V.N) m2 = &dot;
+  }
 
   coll.reset();
 #if 0 //use functionals!

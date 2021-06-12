@@ -21,7 +21,7 @@ struct SkeletonEntry { //-> rename to Mode or something
   StringA frames; //strings referring to things
   SkeletonEntry() {}
   SkeletonEntry(double phase0, double phase1, SkeletonSymbol symbol, StringA frames) : phase0(phase0), phase1(phase1), symbol(symbol), frames(frames) {}
-  void write(ostream& os) const { os <<symbol <<' '; frames.write(os, " ", nullptr, "()"); os <<" from " <<phase0 <<" to " <<phase1; }
+  void write(ostream& os) const;
 };
 stdOutPipe(SkeletonEntry)
 
