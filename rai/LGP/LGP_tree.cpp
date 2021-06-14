@@ -110,22 +110,25 @@ void initFolStateFromKin(FOL_World& L, const Configuration& C) {
 }
 
 LGP_Tree::LGP_Tree()
-  : verbose(2), numSteps(0) {
-  dataPath <<"z." <<rai::date(true) <<"/";
-  dataPath = getParameter<String>("LGP_dataPath", dataPath);
-  rai::system(STRING("mkdir -p " <<dataPath));
-  rai::system(STRING("rm -Rf " <<dataPath <<"vid  &&  rm -f " <<dataPath <<"*"));
-
-  OptLGPDataPath = dataPath;
-  if(!filNodes) filNodes = new ofstream(dataPath + "nodes");
-
+  : verbose(1), numSteps(0) {
   collisions = getParameter<bool>("LGP/collisions", true);
   displayTree = getParameter<bool>("LGP/displayTree", false);
 
-  verbose = getParameter<double>("LGP/verbose", 2);
-  if(verbose>0) fil.open(dataPath + "optLGP.dat"); //STRING("z.optLGP." <<rai::date() <<".dat"));
+  verbose = getParameter<double>("LGP/verbose", 1);
+  if(verbose>1) fil.open(dataPath + "optLGP.dat"); //STRING("z.optLGP." <<rai::date() <<".dat"));
 
   cameraFocus = getParameter<arr>("LGP/cameraFocus", {});
+
+  if(verbose>1){
+    dataPath <<"z." <<rai::date(true) <<"/";
+    dataPath = getParameter<String>("LGP_dataPath", dataPath);
+    rai::system(STRING("mkdir -p " <<dataPath));
+    rai::system(STRING("rm -Rf " <<dataPath <<"vid  &&  rm -f " <<dataPath <<"*"));
+
+    OptLGPDataPath = dataPath;
+    if(!filNodes) filNodes = new ofstream(dataPath + "nodes");
+  }
+
 }
 
 LGP_Tree::LGP_Tree(const Configuration& _kin, const char* folFileName) : LGP_Tree() {
@@ -585,7 +588,7 @@ void LGP_Tree::step() {
 
   if(verbose>0) {
     String out=report();
-    fil <<out <<endl;
+    if(verbose>1) fil <<out <<endl;
     cout <<out <<endl;
     if(verbose>1 && !(numSteps%1)) updateDisplay();
   }
@@ -607,7 +610,7 @@ void LGP_Tree::buildTree(uint depth) {
 
   if(verbose>0) {
     String out=report();
-    fil <<out <<endl;
+    if(verbose>1) fil <<out <<endl;
     cout <<out <<endl;
     if(verbose>1) updateDisplay();
   }

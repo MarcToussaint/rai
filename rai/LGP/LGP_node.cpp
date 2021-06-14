@@ -158,7 +158,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
   ptr<KOMO>& komo = problem(bound).komo;
 
   //-- verbosity...
-  {
+  if(tree.verbose>1){
     if(komo->verbose>0) {
       cout <<"########## OPTIM lev " <<bound <<endl;
     }
