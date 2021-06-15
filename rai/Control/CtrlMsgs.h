@@ -35,7 +35,7 @@ struct CtrlStateMsg {
 struct RobotAbstraction{
   Var<rai::CtrlCmdMsg> cmd;
   Var<rai::CtrlStateMsg> state;
-  bool writeData=false;
+  int writeData=0;
 };
 
 
