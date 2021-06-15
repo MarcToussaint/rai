@@ -120,7 +120,7 @@ void rai::Frame::calc_Q_from_parent(bool enforceWithinJoint) {
 }
 
 const rai::Transformation& rai::Frame::ensure_X() {
-#if 1 //for testing loops during debugging
+#if 0 //for testing loops during debugging
   {
     rai::Frame* f=parent;
     while(f) {

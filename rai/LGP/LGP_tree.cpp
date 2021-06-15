@@ -67,55 +67,68 @@ struct DisplayThread : Thread {
   }
 };
 
-void initFolStateFromKin(FOL_World& L, const Configuration& K) {
-  for(Frame* a:K.frames) if(a->ats && (*a->ats)["logical"]) {
+void initFolStateFromKin(FOL_World& L, const Configuration& C) {
+  boolA isSymbol;
+  isSymbol.resize(C.frames.N) = false;
+  for(Frame* a:C.frames) if(a->ats){
+    if((*a->ats)["logical"]) {
       const Graph& G = (*a->ats)["logical"]->graph();
       for(Node* n:G) L.addFact({n->key, a->name});
-//      L.addFact({"initial", a->name}); //*** THE INITIAL FACT WAS INTRODUCED TO SIMPLIFY SKELETONS - OBSOLETE ***
+      //      L.addFact({"initial", a->name}); //*** THE INITIAL FACT WAS INTRODUCED TO SIMPLIFY SKELETONS - OBSOLETE ***
+      isSymbol(a->ID)=true;
+    }else if(a->joint && a->joint->type==JT_rigid){
+      L.addFact({"object", a->name});
+      isSymbol(a->ID)=true;
     }
-  for(Frame* a:K.frames) if(a->shape && a->ats && (*a->ats)["logical"]) {
+  }
+  for(Frame* a:C.frames) if(isSymbol(a->ID)) {
       Frame* p = a->getUpwardLink();
-      if(!p) continue;
-      FrameL F;
-      p->getRigidSubFrames(F);
-      for(Frame* b:F) if(b!=a && b->shape && a->ats && (*b->ats)["logical"]) {
-          L.addFact({"partOf", a->name, b->name});
-        }
-    }
-  for(Frame* a:K.frames) if(a->shape && a->ats && (*a->ats)["logical"]) {
-      Frame* p = a;
-      while(p && !p->joint) p=p->parent;
-      if(!p) continue;
-      p = p->parent;
-      FrameL F;
-      while(p) {
-        F.append(p);
-        if(p->joint) break;
-        p=p->parent;
+      if(p && p!=a && isSymbol(p->ID)){
+        L.addFact({"partOf", p->name, a->name});
       }
-      for(Frame* b:F) if(b!=a && b->shape && b->ats && (*b->ats)["logical"]) {
-          L.addFact({"on", b->name, a->name});
-        }
+//      FrameL F;
+//      p->getRigidSubFrames(F);
+//      for(Frame* b:F) if(b!=a && b->shape && a->ats && (*b->ats)["logical"]) {
+//          L.addFact({"partOf", a->name, b->name});
+//        }
     }
+  for(Frame* a:C.frames) if(isSymbol(a->ID)) {
+    Frame* p = a->getUpwardLink();
+    if(!p) continue;
+    p = p->parent;
+    if(p && isSymbol(p->ID)){
+//      FrameL F;
+//      while(p) {
+//        F.append(p);
+//        if(p->joint) break;
+//        p=p->parent;
+//      }
+//      for(Frame* b:F) if(b!=a && b->shape && b->ats && (*b->ats)["logical"]) {
+      L.addFact({"on", p->name, a->name});
+    }
+  }
 }
 
 LGP_Tree::LGP_Tree()
-  : verbose(2), numSteps(0) {
-  dataPath <<"z." <<rai::date(true) <<"/";
-  dataPath = getParameter<String>("LGP_dataPath", dataPath);
-  rai::system(STRING("mkdir -p " <<dataPath));
-  rai::system(STRING("rm -Rf " <<dataPath <<"vid  &&  rm -f " <<dataPath <<"*"));
-
-  OptLGPDataPath = dataPath;
-  if(!filNodes) filNodes = new ofstream(dataPath + "nodes");
-
+  : verbose(1), numSteps(0) {
   collisions = getParameter<bool>("LGP/collisions", true);
   displayTree = getParameter<bool>("LGP/displayTree", false);
 
-  verbose = getParameter<double>("LGP/verbose", 2);
-  if(verbose>0) fil.open(dataPath + "optLGP.dat"); //STRING("z.optLGP." <<rai::date() <<".dat"));
+  verbose = getParameter<double>("LGP/verbose", 1);
+  if(verbose>1) fil.open(dataPath + "optLGP.dat"); //STRING("z.optLGP." <<rai::date() <<".dat"));
 
   cameraFocus = getParameter<arr>("LGP/cameraFocus", {});
+
+  if(verbose>1){
+    dataPath <<"z." <<rai::date(true) <<"/";
+    dataPath = getParameter<String>("LGP_dataPath", dataPath);
+    rai::system(STRING("mkdir -p " <<dataPath));
+    rai::system(STRING("rm -Rf " <<dataPath <<"vid  &&  rm -f " <<dataPath <<"*"));
+
+    OptLGPDataPath = dataPath;
+    if(!filNodes) filNodes = new ofstream(dataPath + "nodes");
+  }
+
 }
 
 LGP_Tree::LGP_Tree(const Configuration& _kin, const char* folFileName) : LGP_Tree() {
@@ -241,7 +254,7 @@ void LGP_Tree::updateDisplay() {
 void LGP_Tree::printChoices() {
   //-- query UI
   cout <<"********************" <<endl;
-  cout <<"NODE:\n" <<*focusNode <<endl;
+  cout <<*focusNode <<endl;
   cout <<"--------------------" <<endl;
   cout <<"\nCHOICES:" <<endl;
   cout <<"(q) quit" <<endl;
@@ -318,9 +331,10 @@ void LGP_Tree::inspectSequence(const String& seq) {
   node->displayBound(*singleView, bound);
 }
 
-void LGP_Tree::player(StringA cmds) {
+void LGP_Tree::player() {
   bool interactive = getParameter<bool>("interact", false);
   bool random = getParameter<bool>("random", false);
+  StringA cmds = getParameter<StringA>("cmds", {});
   displayTree = true;
 
   root->expand(5);
@@ -412,7 +426,7 @@ void LGP_Tree::writeNodeList(std::ostream& os) {
 void LGP_Tree::glDraw(OpenGL& gl) {
 }
 
-bool LGP_Tree::execChoice(String cmd) {
+bool LGP_Tree::execChoice(String& cmd) {
   cout <<"COMMAND: '" <<cmd <<"'" <<endl;
 
   if(!singleView) singleView = make_shared<ConfigurationViewer>();
@@ -574,7 +588,7 @@ void LGP_Tree::step() {
 
   if(verbose>0) {
     String out=report();
-    fil <<out <<endl;
+    if(verbose>1) fil <<out <<endl;
     cout <<out <<endl;
     if(verbose>1 && !(numSteps%1)) updateDisplay();
   }
@@ -596,7 +610,7 @@ void LGP_Tree::buildTree(uint depth) {
 
   if(verbose>0) {
     String out=report();
-    fil <<out <<endl;
+    if(verbose>1) fil <<out <<endl;
     cout <<out <<endl;
     if(verbose>1) updateDisplay();
   }

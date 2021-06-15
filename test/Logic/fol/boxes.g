@@ -1,5 +1,7 @@
 
 ## Syntactic keywords
+QUIT
+WAIT
 Terminate
 #Rule
 
@@ -37,7 +39,7 @@ fixed
 78
 
 ## initial state
-STATE {
+START_STATE {
 (screw 67)
 (object 67)
 (ground 71)
@@ -60,6 +62,7 @@ STATE {
 ### terminal state
 
 terminal { (used 67) (inPosition 71) (inPosition 72) }
+REWARD {}
 
 ### RULES
 

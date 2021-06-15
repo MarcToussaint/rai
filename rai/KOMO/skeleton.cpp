@@ -15,14 +15,19 @@ namespace rai {
 
 Array<SkeletonSymbol> skeletonModes = { SY_stable, SY_stableOn, SY_dynamic, SY_dynamicOn, SY_dynamicTrans, SY_quasiStatic, SY_quasiStaticOn, SY_magicTrans };
 
+void SkeletonEntry::write(std::ostream& os) const {
+  os <<"[" <<phase0 <<", " <<phase1 <<"] " <<symbol <<' ';
+  frames.write(os, " ", nullptr, "()");
+}
+
 void Skeleton::ensure_komo() {
   if(!komo) {
   }
 }
 
 void Skeleton::write(ostream& os, const intA& switches) const {
-  os <<"SKELETON:" <<endl;
-  for(auto& s:S) os <<"  " <<s <<endl;
+  os <<"SKELETON:";
+  for(auto& s:S) os <<"\n  " <<s;
   if(switches.N) {
     os <<"SWITCHES:" <<endl;
     for(uint i=0; i<switches.d0; i++) {

@@ -1,13 +1,18 @@
-# In this file you can unset dependencies by defining them = 0
+# In this file you can unset dependencies, e.g.
 # 
+# LAPACK=0 #to avoid need to include/link to LAPACK
 # PHYSX=0 #to avoid linking to Physx (Nvidia simulator)
+# GTK = 0 #to avoid linking to GTK
+# etc
 #
+
 # only UNCOMMENT some of the following lines
 # (they are already set =1 in the components that depend on them)
 
 
 #OPTIM = debug      ## compile everything with non-optimized debug info (default: optimized debug -g -O3)
 #OPTIM = fast	    ## compile without debug info
+#OPTIM = fast_debug ## compile with -O3 and debug
 
 
 ## by default we use OpenGL a lot, but can be disabled

@@ -539,12 +539,11 @@ String FOL_World::callPDDLsolver() {
   writePDDLfiles("z");
 
   String cmd = "~/git/downward/fast-downward.py";
+  cmd <<" --plan-file z.sas_plan";
   cmd <<" z.domain.pddl z.problem.pddl";
-  cmd <<" --search \"astar(ff(transform=no_transform(), cache_estimates=true))\"";
+  cmd <<" --landmarks 'lm=lm_hm(m=2)' --search 'astar(ff(transform=no_transform(), cache_estimates=true))'";
 
   rai::system(cmd);
-
-  rai::system("mv sas_plan z.sas_plan");
 
   String plan(FILE("z.sas_plan"));
 
