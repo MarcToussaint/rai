@@ -12,7 +12,7 @@
 bool sanityCheck=false; //true;
 void updateBoundActive(intA& boundActive, const arr& x, const arr& bound_lo, const arr& bound_up);
 void boundClip(arr& y, const arr& bound_lo, const arr& bound_up);
-void checkBound(arr& y, const arr& bound_lo, const arr& bound_up, double eps=1e-3);
+bool checkBound(arr& y, const arr& bound_lo, const arr& bound_up, double eps=1e-3);
 
 /** @brief Minimizes \f$f(x) = A(x)^T x A^T(x) - 2 a(x)^T x + c(x)\f$. The optional _user arguments specify,
  * if f has already been evaluated at x (another initial evaluation is then omitted
@@ -70,17 +70,21 @@ void boundClip(arr& y, const arr& bound_lo, const arr& bound_up) {
 
 //===========================================================================
 
-void checkBound(arr& y, const arr& bound_lo, const arr& bound_up, double eps){
+bool checkBound(arr& y, const arr& bound_lo, const arr& bound_up, double eps){
+  bool good=true;
   if(bound_lo.N && bound_up.N) {
     double lo = min(y-bound_lo);
     if(lo < -eps){
-      LOG(-2) << "lower bound violated: " <<lo;
+      LOG(-1) << "lower bound violated: " <<lo;
+      good=false;
     }
     double up = max(y-bound_up);
     if(up > eps){
-      LOG(-2) << "lower bound violated: " <<up;
+      LOG(-1) << "lower bound violated: " <<up;
+      good = false;
     }
   }
+  return good;
 }
 
 //===========================================================================

@@ -178,6 +178,7 @@ struct Configuration : GLDrawer {
   Joint* attach(const char* a, const char* b);
   uintA getCollisionExcludeIDs(bool verbose=false);
   uintA getCollisionExcludePairIDs(bool verbose=false);
+  FrameL getCollisionAllPairs();
   void prefixNames(bool clear=false);
 
   /// @name computations on the tree
@@ -279,6 +280,7 @@ stdPipes(Configuration)
 
 uintA framesToIndices(const FrameL& frames);
 uintA jointsToIndices(const JointL& joints);
+StringA framesToNames(const FrameL& frames);
 
 //===========================================================================
 //

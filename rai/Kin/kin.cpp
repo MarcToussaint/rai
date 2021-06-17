@@ -61,6 +61,14 @@ uintA framesToIndices(const FrameL& frames) {
   return I;
 }
 
+StringA framesToNames(const FrameL& frames){
+  StringA names;
+  resizeAs(names, frames);
+  for(uint i=0; i<frames.N; i++) {
+    names.elem(i) = frames.elem(i)->name;
+  }
+  return names;
+}
 uintA jointsToIndices(const JointL& joints) {
   uintA I;
   resizeAs(I, joints);
@@ -375,10 +383,11 @@ FrameL Configuration::getFrames(const StringA& names) const {
 /// calls getFrame() for all given names
 uintA Configuration::getFrameIDs(const StringA& names) const {
   if(!names.N) return uintA();
-  uintA I(names.N);
+  uintA I;
+  resizeAs(I, names);
   for(uint i=0; i<names.N; i++) {
-    Frame* f = getFrame(names(i));
-    if(!f) HALT("frame name '"<<names(i)<<"' doesn't exist");
+    Frame* f = getFrame(names.elem(i));
+    if(!f) HALT("frame name '"<<names.elem(i)<<"' doesn't exist");
     I.elem(i) = f->ID;
   }
   return I;
@@ -440,11 +449,7 @@ StringA Configuration::getJointNames() const {
 
 /// get the names of all frames
 StringA Configuration::getFrameNames() const {
-  StringA names(frames.N);
-  for(uint i=0; i<frames.N; i++) {
-    names(i) = frames.elem(i)->name;
-  }
-  return names;
+  return framesToNames(frames);
 }
 
 /// get the (frame-ID, parent-ID) tuples and control scale for all active joints that represent controls
@@ -1220,6 +1225,19 @@ uintA Configuration::getCollisionExcludePairIDs(bool verbose) {
 
   ex.reshape(-1,2);
   return ex;
+}
+
+FrameL Configuration::getCollisionAllPairs(){
+  FrameL coll;
+
+  //shapes within a link
+  for(Frame* A:frames) if(A->shape) for(Frame* B:frames) if(B->shape){
+    if(A->ID>=B->ID) continue;
+    if(A->shape->canCollideWith(B)){ coll.append(A); coll.append(B); }
+  }
+
+  coll.reshape(-1,2);
+  return coll;
 }
 
 /// creates uniques names by prefixing the node-index-number to each name */
@@ -3242,7 +3260,24 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
       }
       cout <<"SELECTION id: " <<id <<" world coords:" <<x <<endl;
       if(id<C.frames.N) cout <<*C.frames.elem(id) <<endl;
-      return true;
+    } else if(gl.pressedkey=='c') { //compute collisions
+      C.ensure_proxies();
+      C.getTotalPenetration();
+      double eps=.1;
+      C.reportProxies(cout, eps, false);
+#if 0
+      FrameL collisionPairs = C.getCollisionAllPairs();
+//      cout <<" CollisionPairs:" <<endl;
+//      for(uint i=0;i<collisionPairs.d0;i++) cout <<collisionPairs(i,0)->name <<'-' <<collisionPairs(i,1)->name <<endl;
+      auto coll = F_PairCollision().eval(collisionPairs);
+      bool doesCollide=false;
+      for(uint i=0;i<coll.y.N;i++){
+        if(coll.y.elem(i)>-eps){
+          LOG(-1) <<"in collision: " <<collisionPairs(i,0)->name <<'-' <<collisionPairs(i,1)->name <<' ' <<coll.y.elem(i);
+          doesCollide=true;
+        }
+      }
+#endif
     } else switch(gl.pressedkey) {
         case '1':  gl.drawOptions.drawShapes^=1;  break;
         case '2':  gl.drawOptions.drawJoints^=1;  break;

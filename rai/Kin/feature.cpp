@@ -160,7 +160,11 @@ void Feature::applyLinearTrans(arr& y, arr& J) {
     if(flipTargetSignOnNegScalarProduct) {
       if(scalarProduct(y, target)<-.0) { y *= -1.;  if(!!J) J *= -1.; }
     }
-    y -= target;
+    if(target.N==1) { //scalar
+      y -= target.scalar();
+    }else{
+      y -= target;
+    }
   }
   if(scale.N) {
     if(scale.N==1) { //scalar

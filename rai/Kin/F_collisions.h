@@ -20,11 +20,11 @@ struct F_PairCollision : Feature {
 
   shared_ptr<struct PairCollision> coll;
 
-  F_PairCollision(Type _type, bool _neglectRadii=false)
+  F_PairCollision(Type _type=_negScalar, bool _neglectRadii=false)
     : type(_type), neglectRadii(_neglectRadii) {
   }
   virtual void phi2(arr& y, arr& J, const FrameL& F);
-  virtual uint dim_phi2(const FrameL& F){  if(type==_negScalar) return 1; return 3;  }
+  virtual uint dim_phi2(const FrameL& F);
 };
 
 //===========================================================================

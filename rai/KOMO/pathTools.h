@@ -42,3 +42,8 @@ void mirrorDuplicate(std::pair<arr, arr>& path);
 //convert to spline, then resample to new length
 arr path_resample(const arr& q, double durationScale);
 
+
+//-- POSE
+
+void checkCollisionsAndLimits(rai::Configuration& C, FrameL collisionPairs, const arr& limits, bool solveForFeasible);
+

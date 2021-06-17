@@ -16,8 +16,30 @@
 
 //===========================================================================
 
+uint F_PairCollision::dim_phi2(const FrameL& F){
+  if(type==_negScalar){
+    if(F.nd==3){ CHECK_EQ(F.d0, 1, ""); return F.d1; }
+    if(F.nd==2) return F.d0;
+    return 1;
+  }
+  return 3;
+}
+
+
 void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
   if(order>0){  Feature::phi2(y, J, F);  return;  }
+  if(F.nd>=2){
+    FrameL _F = F.ref();
+    if(F.nd==3) _F.reshape(F.d1, F.d2);
+    F.last()->C.kinematicsZero(y, J, _F.d0);
+    arr ysub, Jsub;
+    for(uint i=0;i<_F.d0;i++){
+      F_PairCollision(type).phi2(ysub, Jsub, _F[i]);
+      y.elem(i) = ysub.scalar();
+      J.setMatrixBlock(Jsub, i, 0);
+    }
+    return;
+  }
   CHECK_EQ(F.N, 2, "");
   rai::Frame* f1 = F.elem(0);
   rai::Frame* f2 = F.elem(1);
