@@ -14,7 +14,7 @@ void TEST(KOMO_IK) {
   S.setSolver(sid);
   S.setProblem(*nlp.get());
 
-  arr x = S.solve();
+  auto ret = S.solve();
   nlp.get()->report(cout, 10);
   S.gnuplot_costs();
 
@@ -35,7 +35,7 @@ void TEST(Skeleton_Handover) {
   S.setProblem(*nlp.get());
 
 //  nlp.get()->report(cout, 0);
-  arr x = S.solve();
+  auto ret = S.solve();
   nlp.get()->report(cout, 10);
   S.gnuplot_costs();
 
