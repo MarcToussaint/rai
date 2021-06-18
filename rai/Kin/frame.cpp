@@ -20,7 +20,7 @@
 //===========================================================================
 
 template<> const char* rai::Enum<rai::JointType>::names []= {
-  "hingeX", "hingeY", "hingeZ", "transX", "transY", "transZ", "transXY", "trans3", "transXYPhi", "universal", "rigid", "quatBall", "phiTransXY", "XBall", "free", "tau", nullptr
+  "none", "hingeX", "hingeY", "hingeZ", "transX", "transY", "transZ", "transXY", "trans3", "transXYPhi", "universal", "rigid", "quatBall", "phiTransXY", "XBall", "free", "tau", nullptr
 };
 
 template<> const char* rai::Enum<rai::BodyType>::names []= {
@@ -302,7 +302,7 @@ void rai::Frame::read(const Graph& ats) {
 
   if(ats["type"]) ats["type"]->key = "shape"; //compatibility with old convention: 'body { type... }' generates shape
 
-  if(ats["joint"]) {
+  if(n=ats["joint"]) {
     if(ats["B"]) { //there is an extra transform from the joint into this frame -> create an own joint frame
       Frame* f = new Frame(parent);
       f->name <<'|' <<name; //the joint frame is actually the link frame of all child frames
@@ -310,7 +310,7 @@ void rai::Frame::read(const Graph& ats) {
       this->setParent(f, false);
       new Joint(*f);
       f->joint->read(ats);
-    } else {
+    } else if(n->get<String>()!="none") {
       new Joint(*this);
       joint->read(ats);
     }

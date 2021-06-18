@@ -98,7 +98,7 @@ struct Graph : NodeL {
 
   //-- constructors
   Graph();                                               ///< empty graph
-  explicit Graph(const char* filename);                  ///< read from a file
+  explicit Graph(const char* filename, bool parseInfo=false);         ///< read from a file
   explicit Graph(istream& is);                           ///< read from a stream
   Graph(const std::map<std::string, std::string>& dict); ///< useful to represent Python dicts
   Graph(std::initializer_list<struct NodeInitializer> list);         ///< initialize, e.g.: {"x", "b", {"a", 3.}, {"b", {"x"}, 5.}, {"c", rai::String("BLA")} };

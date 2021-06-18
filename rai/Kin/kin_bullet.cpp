@@ -296,7 +296,7 @@ btRigidBody* BulletInterface_self::addLink(rai::Frame* f, int verbose) {
 //  body->setContactStiffnessAndDamping(1e7, 3e4);
   {
     double restitution=-1.;
-    for(auto s:shapes) s->frame.ats->get<double>(restitution, "restitution");
+    for(auto s:shapes) if(s->frame.ats) s->frame.ats->get<double>(restitution, "restitution");
     if(restitution>0.) body->setRestitution(restitution);
   }
 

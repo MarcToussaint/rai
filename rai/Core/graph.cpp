@@ -245,9 +245,9 @@ NodeInitializer::NodeInitializer(const char* key, const char* stringValue) {
 Graph::Graph() : isNodeOfGraph(nullptr), pi(nullptr), ri(nullptr) {
 }
 
-Graph::Graph(const char* filename): Graph() {
+Graph::Graph(const char* filename, bool parseInfo): Graph() {
   FileToken file(filename, true);
-  read(file);
+  read(file, parseInfo);
   file.cd_start();
 }
 

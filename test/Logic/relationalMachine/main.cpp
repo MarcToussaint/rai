@@ -3,7 +3,7 @@
 //===========================================================================
 
 void TEST(RM){
-  RelationalMachine RM("machine.g");
+  rai::RelationalMachine RM("machine.g");
 
   cout <<"symbols = " <<RM.getSymbols() <<endl;
   cout <<"rules = " <<RM.getRules() <<endl;
