@@ -11,20 +11,21 @@
 #include "types.h"
 #include "ry-Config.h"
 #include "../KOMO/komo.h"
+#include "../KOMO/skeleton.h"
 
 //#include "../LGP/bounds.h"
 #include "../Kin/viewer.h"
 
-Skeleton list2skeleton(const pybind11::list& L) {
-  Skeleton S;
+rai::Skeleton list2skeleton(const pybind11::list& L) {
+  rai::Skeleton S;
   for(uint i=0; i<L.size(); i+=3) {
     std::vector<double> when = L[i].cast<std::vector<double>>();
     CHECK(when.size()<=2, "Skeleton error entry " <<i/3 <<" time interval: interval needs no, 1, or 2 elements");
     if(when.size()==0) when={0.,-1.};
     if(when.size()==1) when={when[0],when[0]};
-    SkeletonSymbol symbol;
+    rai::SkeletonSymbol symbol=rai::SY_none;
     try{
-      symbol = L[i+1].cast<SkeletonSymbol>();
+      symbol = L[i+1].cast<rai::SkeletonSymbol>();
     } catch(std::runtime_error& err) {
       LOG(-1) <<"Skeleton error line " <<i/3 <<" symbol: " <<err.what() <<endl;
     }
@@ -34,7 +35,7 @@ Skeleton list2skeleton(const pybind11::list& L) {
     } catch(std::runtime_error& err) {
       LOG(-1) <<"Skeleton error line " <<i/3 <<" frames: " <<err.what() <<endl;
     }
-    S.append(SkeletonEntry(when[0], when[1], symbol, frames));
+    S.S.append(rai::SkeletonEntry(when[0], when[1], symbol, frames));
   }
   return S;
 }
@@ -147,7 +148,8 @@ void init_KOMO(pybind11::module& m) {
        pybind11::arg("stickiness") = 0.)
 
   .def("setSkeleton", [](std::shared_ptr<KOMO>& self, const pybind11::list& S, rai::ArgWord sequenceOrPath) {
-        self->setSkeleton(list2skeleton(S), sequenceOrPath);
+      auto SK = list2skeleton(S);
+      SK.setKOMO(*self, sequenceOrPath);
       })
 
 //-- run
@@ -256,59 +258,51 @@ void init_KOMO(pybind11::module& m) {
 //ENUMVAL(BD, max)
 //.export_values();
 
-  pybind11::enum_<SkeletonSymbol>(m, "SY")
+  pybind11::enum_<rai::SkeletonSymbol>(m, "SY")
       //geometric:
-      ENUMVAL(SY,touch)
-      ENUMVAL(SY,above)
-      ENUMVAL(SY,inside)
-      ENUMVAL(SY,oppose)
-
-      ENUMVAL(SY,impulse) //old
-      ENUMVAL(SY,initial)
-      ENUMVAL(SY,free) //old
+      ENUMVAL(rai::SY,touch)
+      ENUMVAL(rai::SY,above)
+      ENUMVAL(rai::SY,inside)
+      ENUMVAL(rai::SY,oppose)
 
       //pose constraints:
-      ENUMVAL(SY,poseEq)
-      ENUMVAL(SY,stableRelPose)
-      ENUMVAL(SY,stablePose)
+      ENUMVAL(rai::SY,poseEq)
+      ENUMVAL(rai::SY,stableRelPose)
+      ENUMVAL(rai::SY,stablePose)
 
       //mode switches:
-      ENUMVAL(SY,stable)
-      ENUMVAL(SY,stableOn)
-      ENUMVAL(SY,dynamic)
-      ENUMVAL(SY,dynamicOn)
-      ENUMVAL(SY,dynamicTrans)
-      ENUMVAL(SY,quasiStatic)
-      ENUMVAL(SY,quasiStaticOn)
-      ENUMVAL(SY,downUp) //old
-      ENUMVAL(SY,break)
+      ENUMVAL(rai::SY,stable)
+      ENUMVAL(rai::SY,stableOn)
+      ENUMVAL(rai::SY,dynamic)
+      ENUMVAL(rai::SY,dynamicOn)
+      ENUMVAL(rai::SY,dynamicTrans)
+      ENUMVAL(rai::SY,quasiStatic)
+      ENUMVAL(rai::SY,quasiStaticOn)
+      ENUMVAL(rai::SY,downUp) //old
+      ENUMVAL(rai::SY,break)
 
       //interactions:
-      ENUMVAL(SY,contact)
-      ENUMVAL(SY,contactStick)
-      ENUMVAL(SY,contactComplementary)
-      ENUMVAL(SY,bounce)
+      ENUMVAL(rai::SY,contact)
+      ENUMVAL(rai::SY,contactStick)
+      ENUMVAL(rai::SY,contactComplementary)
+      ENUMVAL(rai::SY,bounce)
 
       //mode switches:
-      ENUMVAL(SY,magic)
-      ENUMVAL(SY,magicTrans)
+      ENUMVAL(rai::SY,magic)
+      ENUMVAL(rai::SY,magicTrans)
 
       //grasps/placements:
-      ENUMVAL(SY,topBoxGrasp)
-      ENUMVAL(SY,topBoxPlace)
+      ENUMVAL(rai::SY,topBoxGrasp)
+      ENUMVAL(rai::SY,topBoxPlace)
 
-      ENUMVAL(SY,push)  //old
-      ENUMVAL(SY,graspSlide) //old
+      ENUMVAL(rai::SY,dampMotion)
 
-      ENUMVAL(SY,dampMotion)
+      ENUMVAL(rai::SY,identical)
 
-      ENUMVAL(SY,noCollision) //old
-      ENUMVAL(SY,identical)
+      ENUMVAL(rai::SY,alignByInt)
 
-      ENUMVAL(SY,alignByInt)
-
-      ENUMVAL(SY,makeFree)
-      ENUMVAL(SY,forceBalance)
+      ENUMVAL(rai::SY,makeFree)
+      ENUMVAL(rai::SY,forceBalance)
   .export_values();
 
 }
