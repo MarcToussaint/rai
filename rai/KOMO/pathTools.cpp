@@ -184,7 +184,7 @@ rai::Spline getSpline(const arr& q, double duration, uint degree) {
 void boundClip(arr& y, const arr& bound_lo, const arr& bound_up);
 bool checkBound(arr& y, const arr& bound_lo, const arr& bound_up, double eps=1e-3);
 
-bool checkCollisionsAndLimits(rai::Configuration& C, FrameL collisionPairs, const arr& limits, bool solveForFeasible){
+bool checkCollisionsAndLimits(rai::Configuration& C, FrameL collisionPairs, const arr& limits, bool solveForFeasible, int verbose){
   //-- check for limits
   if(limits.N){
     arr q = C.getJointState();
@@ -227,7 +227,7 @@ bool checkCollisionsAndLimits(rai::Configuration& C, FrameL collisionPairs, cons
 
         if(komo.ineq>1e-1){
           LOG(-1) <<"solveForFeasible failed!" <<komo.getReport();
-          komo.view(true, "FAILED!");
+          if(verbose>1) komo.view(verbose>2, "FAILED!");
           return false;
         }else{
           LOG(0) <<"collisions resolved";

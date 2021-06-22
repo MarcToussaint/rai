@@ -69,6 +69,7 @@ PairCollision::PairCollision(rai::Mesh& _mesh1, rai::Mesh& _mesh2, const rai::Tr
   GJK_sqrDistance();
 #endif
 
+  CHECK_EQ(distance, distance, "distance is nan");
 //  libccd(M1, M2, _ccdMPRIntersect);
 //  if(distance<1e-10) libccd(M1, M2, _ccdGJKIntersect);
 //  if(distance<1e-10) GJK_sqrDistance();
@@ -775,6 +776,7 @@ double coll_1on2(arr& p2, arr& normal, double& s, const arr& pts1, const arr& pt
 
   p2.setCarray(_p2.p(), 3);
   normal.setCarray(_normal.p(), 3);
+  CHECK_EQ(d, d, "distance is nan");
   return d;
 }
 
@@ -851,6 +853,7 @@ double coll_2on3(arr& p1, arr& p2, arr& normal, const arr& pts1, const arr& pts2
   p1.reshape(1, 3);
   double d = coll_1on3(p2, normal, p1, pts2);
   p1.reshape(3);
+  CHECK_EQ(d, d, "distance is nan");
   return d;
 }
 
