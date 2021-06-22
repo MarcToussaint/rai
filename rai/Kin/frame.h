@@ -291,16 +291,7 @@ struct Shape : NonCopyable, GLDrawer {
   Shape(Frame& f, const Shape* copyShape=nullptr); //new Shape, being added to graph and frame's shape lists
   virtual ~Shape();
 
-  bool canCollideWith(const Frame* f) const {
-    if(!cont) return false;
-    if(!f->shape || !f->shape->cont) return false;
-    Frame* a = frame.getUpwardLink();
-    Frame* b = f->getUpwardLink();
-    if(a==b) return false;
-    if(cont<0) if(a->isChildOf(b, -cont)) return false;
-    if(f->shape->cont<0)  if(b->isChildOf(a, -f->shape->cont)) return false;
-    return true;
-  }
+  bool canCollideWith(const Frame* f) const;
 
   void read(const Graph& ats);
   void write(std::ostream& os) const;

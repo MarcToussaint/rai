@@ -302,7 +302,7 @@ void rai::Frame::read(const Graph& ats) {
 
   if(ats["type"]) ats["type"]->key = "shape"; //compatibility with old convention: 'body { type... }' generates shape
 
-  if(n=ats["joint"]) {
+  if((n=ats["joint"])) {
     if(ats["B"]) { //there is an extra transform from the joint into this frame -> create an own joint frame
       Frame* f = new Frame(parent);
       f->name <<'|' <<name; //the joint frame is actually the link frame of all child frames
@@ -1186,6 +1186,17 @@ rai::Shape::Shape(Frame& f, const Shape* copyShape)
 
 rai::Shape::~Shape() {
   frame.shape = nullptr;
+}
+
+bool rai::Shape::canCollideWith(const rai::Frame* f) const {
+  if(!cont) return false;
+  if(!f->shape || !f->shape->cont) return false;
+  Frame* a = frame.getUpwardLink();
+  Frame* b = f->getUpwardLink();
+  if(a==b) return false;
+  if(cont<0) if(a->isChildOf(b, -cont)) return false;
+  if(f->shape->cont<0)  if(b->isChildOf(a, -f->shape->cont)) return false;
+  return true;
 }
 
 void rai::Shape::read(const Graph& ats) {

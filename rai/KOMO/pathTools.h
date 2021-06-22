@@ -45,5 +45,5 @@ arr path_resample(const arr& q, double durationScale);
 
 //-- POSE
 
-void checkCollisionsAndLimits(rai::Configuration& C, FrameL collisionPairs, const arr& limits, bool solveForFeasible);
+bool checkCollisionsAndLimits(rai::Configuration& C, FrameL collisionPairs, const arr& limits, bool solveForFeasible);
 
