@@ -8,15 +8,7 @@
 
 #ifdef RAI_PYBIND
 
-#include "ry-Config.h"
-#include "ry-Feature.h"
-#include "ry-Frame.h"
-#include "ry-KOMO.h"
-#include "ry-LGP_Tree.h"
-#include "ry-Bullet.h"
-#include "ry-PhysX.h"
-#include "ry-Operate.h"
-#include "ry-Simulation.h"
+#include "ry.h"
 
 #include "types.h"
 

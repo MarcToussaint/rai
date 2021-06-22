@@ -44,7 +44,6 @@ PYBIND11_MODULE(libry, m) {
   init_LogToPythonConsole();
   init_enums(m);
 
-#ifdef RAI_BIND_KOMO
   init_Config(m);
   init_Feature(m);
   init_Frame(m);
@@ -57,7 +56,6 @@ PYBIND11_MODULE(libry, m) {
   init_Simulation(m);
   init_CtrlSet(m);
   init_CtrlSolver(m);
-#endif
 
   init_Optim(m);
 

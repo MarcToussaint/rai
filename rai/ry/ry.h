@@ -8,7 +8,6 @@
 
 #pragma once
 
-#ifdef RAI_BIND_KOMO
 #include "ry-Config.h"
 #include "ry-Feature.h"
 #include "ry-Frame.h"
@@ -20,6 +19,5 @@
 //#include "ry-Operate.h"
 //#include "ry-PhysX.h"
 #include "ry-Control.h"
-#endif
 
 #include "ry-Optim.h"
