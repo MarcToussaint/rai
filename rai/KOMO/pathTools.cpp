@@ -223,7 +223,7 @@ bool checkCollisionsAndLimits(rai::Configuration& C, FrameL collisionPairs, cons
         komo.addObjective({}, FS_distance, framesToNames(collisionPairs), OT_ineq, {1e2}, {-.001});
 
         komo.verbose=0;
-        komo.optimize(0., OptOptions().set_verbose(0));
+        komo.optimize(0., OptOptions().set_verbose(0).set_stopTolerance(1e-3));
 
         if(komo.ineq>1e-1){
           LOG(-1) <<"solveForFeasible failed!" <<komo.getReport();

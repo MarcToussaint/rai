@@ -26,7 +26,7 @@ void SplineCtrlReference::append(const arr& x, const arr& t, double ctrlTime, bo
   if(ctrlTime > splineSet->end()){ //previous spline is done... create new one
     splineSet->set(2, _x, _t+ctrlTime);
   }else{ //previous spline still active... append
-    CHECK(t.first()>.01, "that's too harsh! When appending the first time knot should be greater zero (otherwise non-smooth).");
+    CHECK_GE(t.first(), .01, "that's too harsh! When appending the first time knot should be greater zero (otherwise non-smooth).");
     splineSet->append(_x, _t);
   }
 }
