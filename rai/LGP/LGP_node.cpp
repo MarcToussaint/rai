@@ -419,11 +419,11 @@ void LGP_Node::checkConsistency() {
 }
 
 void LGP_Node::write(ostream& os, bool recursive, bool path) const {
-  os <<"------- NODE -------\ns=" <<step <<" t=" <<time;
-  if(decision) os <<" a=" <<*decision <<endl;
-  else os <<" a=<ROOT>"<<endl;
+  os <<"------- NODE -------\ns:" <<step <<" t:" <<time;
+  if(decision) os <<" a:" <<*decision <<endl;
+  else os <<" a:<ROOT>"<<endl;
 
-  os <<"\t state= " <<*folState->isNodeOfGraph <<endl;
+  os <<"\t state: " <<*folState->isNodeOfGraph <<endl;
   if(path) {
     os <<"\t decision path:";
     LGP_NodeL _path = getTreePath();
@@ -431,10 +431,10 @@ void LGP_Node::write(ostream& os, bool recursive, bool path) const {
         if(nn->decision) os <<*nn->decision <<' '; else os <<" <ROOT> ";
     os <<endl;
   }
-  os <<"\t depth=" <<step <<endl;
-  os <<"\t poseCost=" <<cost(BD_pose) <<endl;
-  os <<"\t seqCost=" <<cost(BD_seq) <<endl;
-  os <<"\t pathCost=" <<cost(BD_path) <<endl;
+  os <<"\t depth: " <<step <<endl;
+  os <<"\t poseCost: " <<cost(BD_pose) <<'|' <<constraints(BD_pose) <<' ' <<(int)feasible(BD_pose) <<endl;
+  os <<"\t seqCost: " <<cost(BD_seq) <<'|' <<constraints(BD_seq) <<' ' <<(int)feasible(BD_seq) <<endl;
+  os <<"\t pathCost: " <<cost(BD_path) <<'|' <<constraints(BD_path) <<' ' <<(int)feasible(BD_path) <<endl;
   if(skeleton) os <<*skeleton;
   if(recursive) for(LGP_Node* n:children) n->write(os);
 }
@@ -495,6 +495,7 @@ void LGP_Node::displayBound(ConfigurationViewer& V, BoundType bound) {
     Enum<BoundType> _bound(bound);
     String s;
     s <<"BOUND " <<_bound <<" at step " <<step <<"\n" <<*skeleton;
+    s <<"\n sos:" <<problem(bound).komo->sos <<" eq:" <<problem(bound).komo->eq <<" ineq:" <<problem(bound).komo->ineq;
     V.setConfiguration(tree.kin, s);
     V.setPath(problem(bound).komo->getPath_X(), s, true);
     if(bound>=BD_path){

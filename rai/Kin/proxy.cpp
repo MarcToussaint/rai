@@ -19,8 +19,8 @@
 void rai::Proxy::copy(const rai::Configuration& C, const rai::Proxy& p) {
   collision.reset();
   if(!!C) {
-    if(a){ a = C.frames(p.a->ID); CHECK(a, ""); }
-    if(b){ b = C.frames(p.b->ID); CHECK(b, ""); }
+    a = C.frames.elem(p.a->ID); CHECK(a, "");
+    b = C.frames.elem(p.b->ID); CHECK(b, "");
   } else a=b=0;
   posA = p.posA;
   posB = p.posB;

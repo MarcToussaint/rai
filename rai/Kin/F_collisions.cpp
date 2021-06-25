@@ -47,12 +47,12 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
   rai::Mesh dot;
   dot.setDot();
   rai::Mesh *m1=&dot, *m2=&dot;
-  if(f1->shape){
+  if(f1->shape && f1->shape->type()!=rai::ST_marker){
     r1=f1->shape->radius();
     m1 = &f1->shape->sscCore();  if(!m1->V.N) { m1 = &f1->shape->mesh(); r1=0.; }
     if(!m1->V.N) m1 = &dot;
   }
-  if(f1->shape){
+  if(f2->shape && f2->shape->type()!=rai::ST_marker){
     r2=f2->shape->radius();
     m2 = &f2->shape->sscCore();  if(!m2->V.N) { m2 = &f2->shape->mesh(); r2=0.; }
     if(!m2->V.N) m2 = &dot;

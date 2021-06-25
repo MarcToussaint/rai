@@ -36,7 +36,7 @@ PairCollision::PairCollision(rai::Mesh& _mesh1, rai::Mesh& _mesh2, const rai::Tr
 
 
   //-- special cases: point to pcl
-  if(_mesh1.V.d0==1 && _mesh2.V.d0>1 && !_mesh2.T.N){
+  if(_mesh1.V.d0==1 && _mesh2.V.d0>2 && !_mesh2.T.N){
     CHECK(_t2.isZero(), "");
     if(!_mesh2.ann){
       _mesh2.ann = make_shared<ANN>();
