@@ -23,6 +23,7 @@ struct FeatherstoneInterface;
 
 namespace rai {
 
+struct Dof;
 struct Joint;
 struct Shape;
 struct Frame;
@@ -49,6 +50,7 @@ stdOutPipe(Value)
 
 extern rai::Configuration& NoConfiguration;
 
+typedef rai::Array<rai::Dof*> DofL;
 typedef rai::Array<rai::Joint*> JointL;
 //typedef rai::Array<rai::Shape*> ShapeL;
 typedef rai::Array<rai::Frame*> FrameL;
@@ -58,9 +60,9 @@ typedef rai::Array<rai::ForceExchange*> ForceExchangeL;
 typedef rai::Array<rai::KinematicSwitch*> KinematicSwitchL;
 typedef rai::Array<rai::Configuration*> ConfigurationL;
 
-//===========================================================================
-
 namespace rai {
+
+//===========================================================================
 
 /// data structure to store a kinematic/physical situation (lists of frames (with joints, shapes, inertias), forces & proxies)
 struct Configuration : GLDrawer {
@@ -74,7 +76,7 @@ struct Configuration : GLDrawer {
   arr qInactive;    ///< configuration state of all inactive DOFs
 
   //-- data structure state (lazy evaluation leave the state structure out of sync)
-  JointL activeJoints; //list of currently active joints (computed with ensure_activeSets(); reset with reset_q())
+  DofL activeJoints; //list of currently active joints (computed with ensure_activeSets(); reset with reset_q())
   bool _state_indexedJoints_areGood=false; // the active sets, incl. their topological sorting, are up to date
   bool _state_q_isGood=false; // the q-vector represents the current relative transforms (and force dofs)
   bool _state_proxies_isGood=false; // the proxies have been created for the current state
@@ -121,7 +123,7 @@ struct Configuration : GLDrawer {
   FrameL getRoots() const;
   FrameL getLinks() const;
 
-  /// @name get state
+  /// @name get dof or frame state
   uint getJointStateDimension() const;
   const arr& getJointState() const;
   arr getJointState(const FrameL& F) const;
@@ -142,7 +144,7 @@ struct Configuration : GLDrawer {
   void setTaus(double tau);
 
   /// @name active DOFs selection
-  void setActiveJoints(const JointL& F);
+  void setActiveJoints(const DofL& F);
   void selectJoints(const FrameL& F, bool notThose=false);
   void selectJointsByName(const StringA&, bool notThose=false);
   void selectJointsBySubtrees(const FrameL& roots, bool notThose=false);

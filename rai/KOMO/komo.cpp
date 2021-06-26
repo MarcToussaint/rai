@@ -956,7 +956,7 @@ void KOMO::reportProblem(std::ostream& os) {
   if(verbose>6){
     os <<"  INITIAL STATE" <<endl;
     for(rai::Frame* f:pathConfig.frames){
-      if(f->joint && f->joint->dim) os <<"    " <<f->name <<" [" <<f->joint->type <<"] : " <<f->joint->calc_q_from_Q(f->get_Q()) /*<<" - " <<pathConfig.q.elem(f->joint->qIndex)*/ <<endl;
+      if(f->joint && f->joint->dim) os <<"    " <<f->name <<" [" <<f->joint->type <<"] : " <<f->joint->calcDofsFromConfig() /*<<" - " <<pathConfig.q.elem(f->joint->qIndex)*/ <<endl;
       for(auto *ex:f->forces) os <<"    " <<f->name <<" [force " <<ex->a.name <<'-' <<ex->b.name <<"] : " <<ex->force /*<<' ' <<ex->torque*/ <<' ' <<ex->poa <<endl;
     }
   }
@@ -1788,7 +1788,7 @@ Conv_KOMO_FineStructuredProblem::Conv_KOMO_FineStructuredProblem(KOMO& _komo) : 
   uint xDim=0;
   uint varId=0;
   FrameL roots = komo.pathConfig.getRoots();
-  JointL activeJoints;
+  DofL activeJoints;
   //each frame varies only with a single variable (THAT'S A LIMITING ASSUMPTION)
   uintA frameID2VarId;
   frameID2VarId.resize(komo.pathConfig.frames.N) = UINT_MAX;
@@ -1839,7 +1839,7 @@ void Conv_KOMO_FineStructuredProblem::subSelect(const uintA& activeVariables, co
   for(uint i:activeVariables) allVars.setAppendInSorted(i);
   for(uint i:conditionalVariables) allVars.setAppendInSorted(i);
 
-  JointL activeJoints;
+  DofL activeJoints;
   for(uint v:activeVariables){
     VariableIndexEntry& V = __variableIndex(v);
     for(Dof *d:V.dofs) activeJoints.append(dynamic_cast<Joint*>(d));

@@ -19,5 +19,5 @@ rai::Uncertainty::Uncertainty(rai::Joint* j, rai::Uncertainty* copyUncertainty) 
 
 void rai::Uncertainty::read(const Graph& ats) {
   ats.get(sigma, "sigma");
-  CHECK_EQ(sigma.N, joint->qDim(), "");
+  CHECK_EQ(sigma.N, joint->dim, "");
 }

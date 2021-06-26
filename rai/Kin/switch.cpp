@@ -165,14 +165,14 @@ rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) {
       to->Q = orgX / to->parent->ensure_X(); //that's important for the initialization of x during the very first komo.setupConfigurations !!
       //cout <<to->Q <<' ' <<to->Q.rot.normalization() <<endl;
       if(to->joint->dim>0) {
-        arr q = to->joint->calc_q_from_Q(to->Q);
+        arr q = to->joint->calcDofsFromConfig();
         to->Q.setZero();
         to->joint->setDofs(q, 0);
       }
     } if(init==SWInit_random) { //random, modulo DOFs
       to->Q.setRandom();
       if(to->joint->dim>0) {
-        arr q = to->joint->calc_q_from_Q(to->Q);
+        arr q = to->joint->calcDofsFromConfig();
         to->Q.setZero();
         to->joint->setDofs(q, 0);
       }

@@ -119,7 +119,7 @@ void RTControlStep(
   }
 
   //-- base velocities
-  if(j_baseTranslationRotation && j_baseTranslationRotation->qDim()==3) {
+  if(j_baseTranslationRotation && j_baseTranslationRotation->dim==3) {
     double phi = cmd.q(j_baseTranslationRotation->qIndex+2);
     double vx  = cmd.qdot(j_baseTranslationRotation->qIndex+0);
     double vy  = cmd.qdot(j_baseTranslationRotation->qIndex+1);
@@ -184,16 +184,16 @@ void RTControllerSimulation::open() {
   Kd_base.resize(world->q.N).setZero();
   limits.resize(world->q.N, 5).setZero();
   rai::Joint* j;
-  for(rai::Frame* f: world->frames) if((j=f->joint) && j->qDim()>0) {
+  for(rai::Frame* f: world->frames) if((j=f->joint) && j->dim>0) {
       arr* info;
       info = f->ats->find<arr>("gains");  if(info) {
-        for(uint i=0; i<j->qDim(); i++) { Kp_base(j->qIndex+i)=info->elem(0); Kd_base(j->qIndex+i)=info->elem(1); }
+        for(uint i=0; i<j->dim; i++) { Kp_base(j->qIndex+i)=info->elem(0); Kd_base(j->qIndex+i)=info->elem(1); }
       }
       info = f->ats->find<arr>("limits");  if(info) {
-        for(uint i=0; i<j->qDim(); i++) { limits(j->qIndex+i, 0)=info->elem(0); limits(j->qIndex+i, 1)=info->elem(1); }
+        for(uint i=0; i<j->dim; i++) { limits(j->qIndex+i, 0)=info->elem(0); limits(j->qIndex+i, 1)=info->elem(1); }
       }
       info = f->ats->find<arr>("ctrl_limits");  if(info) {
-        for(uint i=0; i<j->qDim(); i++) { limits(j->qIndex+i, 2)=info->elem(0); limits(j->qIndex+i, 3)=info->elem(1); limits(j->qIndex+i, 4)=info->elem(2); }
+        for(uint i=0; i<j->dim; i++) { limits(j->qIndex+i, 2)=info->elem(0); limits(j->qIndex+i, 3)=info->elem(1); limits(j->qIndex+i, 4)=info->elem(2); }
       }
     }
 

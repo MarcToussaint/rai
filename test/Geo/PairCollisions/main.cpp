@@ -37,7 +37,7 @@ void TEST(PairCollision){
 #if 1 //turn off for timing
     cout <<pc <<endl;
     gl.add(pc);
-    if(pc.distance<0) gl.watch(); else gl.timedupdate(.1);
+    if(pc.distance<0) gl.watch(); else gl.timedupdate(.01);
     gl.remove(pc);
 #endif
   }

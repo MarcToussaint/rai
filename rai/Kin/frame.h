@@ -97,7 +97,7 @@ struct Frame : NonCopyable {
   Inertia* inertia=nullptr;      ///< this frame has inertia (is a mass)
   Array<ForceExchange*> forces;  ///< this frame exchanges forces with other frames
 
-  Frame(Configuration& _K, const Frame* copyFrame=nullptr);
+  Frame(Configuration& _C, const Frame* copyFrame=nullptr);
   Frame(Frame* _parent);
   ~Frame();
 
@@ -179,18 +179,25 @@ stdOutPipe(Frame)
 //===========================================================================
 
 struct Dof {
+  Frame* frame=0;      ///< this is the frame that Joint articulates! I.e., the output frame
   bool active=true;  ///< if false, this dof is not considered part of the configuration's q-vector
   uint dim=UINT_MAX;
   uint qIndex=UINT_MAX;
   arr  limits;        ///< joint limits (lo, up, [maxvel, maxeffort])
+  Joint* mimic=0; ///< if non-nullptr, this joint's state is identical to another's
+
   virtual ~Dof() {}
   virtual void setDofs(const arr& q, uint n=0) = 0;
+  virtual arr calcDofsFromConfig() const = 0;
   virtual String name() const = 0;
+
+  const Joint* joint() const;
 };
+
+//===========================================================================
 
 /// for a Frame with Joint-Link, the relative transformation 'Q' is articulated
 struct Joint : Dof, NonCopyable {
-  Frame* frame;      ///< this is the frame that Joint articulates! I.e., the output frame
 
   // joint information
   byte generator;    ///< (7bits), h in Featherstone's code (indicates basis vectors of the Lie algebra, but including the middle quaternion w)
@@ -198,7 +205,6 @@ struct Joint : Dof, NonCopyable {
   double H=1.;       ///< control cost scalar
   double scale=1.;   ///< scaling robot-q = scale * q-vector
 
-  Joint* mimic=nullptr; ///< if non-nullptr, this joint's state is identical to another's
   JointL mimicers;      ///< list of mimicing joints
 
   Vector axis=0;          ///< joint axis (same as X.rot.getX() for standard hinge joints)
@@ -218,9 +224,8 @@ struct Joint : Dof, NonCopyable {
   virtual String name() const { return STRING(frame->name<<'.'<<frame->ID); }
 
   void setMimic(Joint* j, bool unsetPreviousMimic=false);
-  uint qDim();
   void setDofs(const arr& q, uint n=0);
-  arr calc_q_from_Q(const Transformation& Q) const;
+  arr calcDofsFromConfig() const;
   arr getScrewMatrix();
   uint getDimFromType() const;
   arr get_h() const;

@@ -191,14 +191,15 @@ bool getFingersForGripper(rai::Frame*& gripper, rai::Frame*& fing1, rai::Frame*&
     gripper=fing1=fing2=0;
     return false;
   }
-  gripper = gripper->getUpwardLink();
+  rai::Frame* handLink = gripper->getUpwardLink();
   //browse all children of the gripper and find by name
   FrameL F;
-  gripper->getSubtree(F);
+  handLink->getSubtree(F);
   for(rai::Frame* f:F){
-    if(f->name.endsWith("finger1")) fing1=f;
-    if(f->name.endsWith("finger2")) fing2=f;
+    if(f->name.endsWith("finger_joint1")) fing1=f;
+    if(f->name.endsWith("finger_joint2")) fing2=f;
   }
+#if 0
   fing1 = fing1->getUpwardLink();
   fing2 = fing2->getUpwardLink();
 
@@ -206,6 +207,7 @@ bool getFingersForGripper(rai::Frame*& gripper, rai::Frame*& fing1, rai::Frame*&
   CHECK(fing2->joint, "");
   CHECK(!fing1->joint->active || !fing1->joint->dim, ""); //grippers need to be rigid joints! (to not be part of the dynamic/control system)
   CHECK(!fing2->joint->active || !fing2->joint->dim, "");
+#endif
 
   //requirement: two of the children of need to be the finger geometries
 //  fing1 = gripper->children(0); while(!fing1->shape && fing1->children.N) fing1 = fing1->children(0);
@@ -224,7 +226,8 @@ void Simulation::openGripper(const char* gripperFrameName, double width, double 
   }
 
   //check if an object is attached
-  rai::Frame* obj = gripper->children(-1);
+  rai::Frame* obj = 0;
+  if(gripper->children.N) obj = gripper->children(-1);
   if(!obj || !obj->joint || obj->joint->type != rai::JT_rigid) {
     if(verbose>1) {
       LOG(1) <<"gripper '" <<gripper->name <<"' does not hold an object";
@@ -342,7 +345,6 @@ double Simulation::getGripperWidth(const char* gripperFrameName) {
   rai::Frame* gripper, *fing1, *fing2;
   getFingersForGripper(gripper, fing1, fing2, C, gripperFrameName);
   if(!gripper) return -1.;
-  CHECK(!fing1->joint->active || !fing1->joint->dim, "");
   return fing1->get_Q().pos.x;
 }
 
@@ -358,7 +360,7 @@ bool Simulation::getGripperIsClose(const char* gripperFrameName) {
   getFingersForGripper(gripper, fing1, fing2, C, gripperFrameName);
   if(!gripper) return -1.;
   double q = fing1->get_Q().pos.x;
-  if(q<=fing1->joint->limits(0)) return true;
+  if(q<=fing1->ats->get<arr>("limits")(0)) return true;
   return false;
 }
 
@@ -367,7 +369,7 @@ bool Simulation::getGripperIsOpen(const char* gripperFrameName) {
   getFingersForGripper(gripper, fing1, fing2, C, gripperFrameName);
   if(!gripper) return false;
   double q = fing1->get_Q().pos.x;
-  if(q>=fing1->joint->limits(1)) return true;
+  if(q>=fing1->ats->get<arr>("limits")(1)) return true;
   return false;
 }
 
@@ -525,7 +527,6 @@ Imp_CloseGripper::Imp_CloseGripper(Frame* _gripper, Frame* _fing1, Frame* _fing2
     coll2->setFrameIDs({finger2->ID, obj->ID});
   }
 
-  CHECK(!fing1->joint->active || !fing1->joint->dim, "");
   q = fing1->get_Q().pos.x;
 }
 
@@ -543,7 +544,7 @@ void Imp_CloseGripper::modConfiguration(Simulation& S, double tau) {
   fing1->set_Q()->pos.set(q, 0., 0.);
   fing2->set_Q()->pos.set(q, 0., 0.);
 
-  if(q<fing1->joint->limits(0)) { //stop grasp by joint limits -> unsuccessful
+  if(q<fing1->ats->get<arr>("limits")(0)) { //stop grasp by joint limits -> unsuccessful
     if(S.verbose>1) {
       LOG(1) <<"terminating closing gripper (limit) - nothing grasped";
     }
@@ -594,7 +595,6 @@ Imp_OpenGripper::Imp_OpenGripper(Frame* _gripper, Frame* _fing1, Frame* _fing2, 
   when = _beforePhysics;
   type = Simulation::_openGripper;
 
-  CHECK(!fing1->joint->active || !fing1->joint->dim, "");
   q = fing1->get_Q().pos.x;
 }
 
@@ -609,7 +609,7 @@ void Imp_OpenGripper::modConfiguration(Simulation& S, double tau) {
   q += 1e-1*speed*tau;
   fing1->set_Q()->pos.set(q, 0., 0.);
   fing2->set_Q()->pos.set(q, 0., 0.);
-  if(q > fing1->joint->limits(1)) { //stop opening
+  if(q > fing1->ats->get<arr>("limits")(1)) { //stop opening
     if(S.verbose>1) {
       LOG(1) <<"terminating opening gripper " <<gripper->name;
     }

@@ -47,6 +47,7 @@ void F_InsideBox::phi2(arr& y, arr& J, const FrameL& F) {
 
   Value pos = F_PositionRel() .eval({pnt, box});
   arr range = box->shape->size();
+  range.resizeCopy(3);
   range *= .5;
   range -= margin;
   for(double& r:range) if(r<.01) r=.01;

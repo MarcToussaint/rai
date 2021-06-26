@@ -53,22 +53,22 @@ void testGrasp(){
   double tau=.01;
 
   CtrlSet approach;
-  approach.addObjective(make_feature(FS_vectorZDiff, {"object", "R_gripperCenter"}, C, {1e1}), OT_sos, .005);
-  approach.addObjective(make_feature(FS_positionRel, {"object", "R_gripperCenter"}, C, {1e1}, {.0, 0., -.15}), OT_sos, .005);
-  approach.symbolicCommands.append({"openGripper", "R_gripper"});
+  approach.addObjective(make_feature(FS_vectorZDiff, {"object", "r_gripper"}, C, {1e1}), OT_sos, .005);
+  approach.addObjective(make_feature(FS_positionRel, {"object", "r_gripper"}, C, {1e1}, {.0, 0., -.15}), OT_sos, .005);
+  approach.symbolicCommands.append({"openGripper", "r_gripper"});
 
   CtrlSet preGrasp;
   //immediate constraint:
-  preGrasp.addObjective(make_feature(FS_insideBox, {"object", "R_gripperPregrasp"}, C, {1e0}), OT_ineq, -1);
+  preGrasp.addObjective(make_feature(FS_insideBox, {"object", "r_gripperPregrasp"}, C, {1e0}), OT_ineq, -1);
   //transient:
-  preGrasp.addObjective(make_feature(FS_vectorZDiff, {"object", "R_gripperCenter"}, C, {1e1}), OT_sos, .005);
-  preGrasp.addObjective(make_feature(FS_positionDiff, {"R_gripperCenter", "object"}, C, {1e1}), OT_sos, .002);
-  preGrasp.symbolicCommands.append({"preOpenGripper", "R_gripper"});
+  preGrasp.addObjective(make_feature(FS_vectorZDiff, {"object", "r_gripper"}, C, {1e1}), OT_sos, .005);
+  preGrasp.addObjective(make_feature(FS_positionDiff, {"r_gripper", "object"}, C, {1e1}), OT_sos, .002);
+  preGrasp.symbolicCommands.append({"preOpenGripper", "r_gripper"});
 
   CtrlSet grasp;
-  grasp.addObjective(make_feature(FS_vectorZ, {"R_gripperCenter"}, C, {}, {0., 0., 1.}), OT_eq, -1.);
-  grasp.addObjective(make_feature(FS_positionDiff, {"R_gripperCenter", "object"}, C, {1e1}), OT_eq, -1.);
-  grasp.symbolicCommands.append({"closeGripper", "R_gripper"});
+  grasp.addObjective(make_feature(FS_vectorZ, {"r_gripper"}, C, {}, {0., 0., 1.}), OT_eq, -1.);
+  grasp.addObjective(make_feature(FS_positionDiff, {"r_gripper", "object"}, C, {1e1}), OT_eq, -1.);
+  grasp.symbolicCommands.append({"closeGripper", "r_gripper"});
 
   CtrlSet controls;
   controls.add_qControlObjective(2, 1e-3*sqrt(tau), C);
@@ -116,10 +116,10 @@ void testIneqCarrot(){
   double tau=.01;
 
   CtrlSet home;
-  home.addObjective(make_feature(FS_insideBox, {"R_gripperCenter", "R_workspace"}, C, {1e1}), OT_ineq, .01);
+  home.addObjective(make_feature(FS_insideBox, {"r_gripperCenter", "r_workspace"}, C, {1e1}), OT_ineq, .01);
 
   CtrlSet reach;
-  reach.addObjective(make_feature(FS_positionDiff, {"object", "R_gripperCenter"}, C, {1e1}, {.0, 0., -.05}), OT_eq, .01);
+  reach.addObjective(make_feature(FS_positionDiff, {"object", "r_gripperCenter"}, C, {1e1}, {.0, 0., -.05}), OT_eq, .01);
 
   CtrlSet controls;
 //  controls.add_qControlObjective(2, 1e-2*sqrt(tau), C);
@@ -154,9 +154,9 @@ void testIneqCarrot(){
 int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
-//  testMinimal();
-  testGrasp();
-  testIneqCarrot();
+  testMinimal();
+//  testGrasp();
+//  testIneqCarrot();
 
   return 0;
 }

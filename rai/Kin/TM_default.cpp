@@ -324,7 +324,7 @@ void TM_Default::signature(intA& S, const rai::Configuration& C) {
 
   for(rai::Frame* f:F) if(f->joint) {
       rai::Joint* j = f->joint;
-      for(uint i=0; i<j->qDim(); i++) S.setAppendInSorted(j->qIndex+i);
+      for(uint i=0; i<j->dim; i++) S.setAppendInSorted(j->qIndex+i);
     }
 }
 

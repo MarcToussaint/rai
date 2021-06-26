@@ -32,7 +32,9 @@ void TEST(Easy){
   komo.plotTrajectory();
 //  komo.reportProxies();
   komo.checkGradients();
-  for(uint i=0;i<2;i++) komo.view(true);
+
+  komo.view(true, "result");
+  while(komo.view_play(true));
 }
 
 //===========================================================================
@@ -58,10 +60,8 @@ void TEST(Align){
 //  komo.checkGradients();
 
 //  komo.plotTrajectory();
-  rai::ConfigurationViewer V;
-  V.setConfiguration(C);
-  V.setPath(komo.getPath_X(), "optimized motion", true);
-  for(uint i=0;i<2;i++) V.playVideo();
+  komo.view(true, "result");
+  while(komo.view_play(true));
 
 //  komo.pathConfig.setJointState(komo.x);
 //  V.setConfiguration(komo.pathConfig, "path", true);
@@ -165,10 +165,8 @@ void TEST(Thin){
 //  komo.reportProxies();
 //  komo.checkGradients();
 
-//  while(komo.displayTrajectory());
-  rai::ConfigurationViewer V;
-  V.setConfiguration(komo.pathConfig, "result", true);
-  while(V.playVideo(C.frames.N));
+  komo.view(true, "result");
+  while(komo.view_play(true));
 }
 
 //===========================================================================
@@ -199,9 +197,8 @@ void TEST(PR2){
   komo.optimize();
   komo.plotTrajectory();
 //  komo.checkGradients();
-  rai::ConfigurationViewer V;
-  V.setPath(C, komo.x, "result", true);
-  while(V.playVideo());
+  komo.view(true, "result");
+  while(komo.view_play(true));
 }
 
 //===========================================================================
@@ -224,9 +221,9 @@ int main(int argc,char** argv){
 
 //  rnd.clockSeed();
 
-//  testEasy();
-//  testAlign();
-//  testThin();
+  testEasy();
+  testAlign();
+  testThin();
   testPR2();
 
   return 0;

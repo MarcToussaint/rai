@@ -31,7 +31,7 @@ F_qItself::F_qItself(PickMode pickMode, const StringA& picks, const rai::Configu
       frameIDs.setAppend(f->ID);
     }
   }else if(pickMode==byExcludeJointNames) {
-    for(rai::Joint* j: C.activeJoints) {
+    for(rai::Dof* j: C.activeJoints) {
       if(picks.contains(j->frame->name)) continue;
       frameIDs.setAppend(j->frame->ID);
     }
@@ -51,7 +51,7 @@ void F_qItself::phi(arr& q, arr& J, const rai::Configuration& C) {
   if(!frameIDs.nd) {
     q = C.getJointState();
     if(relative_q0) {
-      for(rai::Joint* j: C.activeJoints) if(j->q0.N && j->qDim()==1) q(j->qIndex) -= j->q0.scalar();
+      for(rai::Dof* j: C.activeJoints) if(j->joint() && j->dim==1 && j->joint()->q0.N) q(j->qIndex) -= j->joint()->q0.scalar();
     }
     if(!!J) J.setId(q.N);
   } else {
@@ -159,7 +159,7 @@ uint F_qItself::dim_phi(const rai::Configuration& C) {
         else HALT("a (" <<a->name <<") and b (" <<b->name <<") are not linked");
         CHECK(j, "");
       }
-      n += j->qDim();
+      n += j->dim;
     }
     return n;
   }
@@ -260,7 +260,7 @@ void F_qLimits2::phi2(arr& y, arr& J, const FrameL& F){
     rai::Joint *j = f->joint;
     if(!j) continue;
     if(!j->limits.N) continue;
-    uint d=j->qDim();
+    uint d=j->dim;
     for(uint k=0; k<d; k++) { //in case joint has multiple dimensions
       double lo = j->limits(2*k+0);
       double up = j->limits(2*k+1);
@@ -281,7 +281,7 @@ uint F_qLimits2::dim_phi2(const FrameL& F) {
     rai::Joint *j = f->joint;
     if(!j) continue;
     if(!j->limits.N) continue;
-    m += 2*j->qDim();
+    m += 2*j->dim;
   }
   return m;
 }
@@ -335,8 +335,9 @@ uint F_qQuaternionNorms::dim_phi2(const FrameL& F) {
 
 void F_qQuaternionNorms::setAllActiveQuats(const rai::Configuration& C){
   frameIDs.clear();
-  for(const rai::Joint* j:C.activeJoints) {
-    if(j->type==rai::JT_quatBall || j->type==rai::JT_free || j->type==rai::JT_XBall) frameIDs.append(j->frame->ID);
+  for(const rai::Dof* dof:C.activeJoints) {
+    const rai::Joint* j = dof->joint();
+    if(j && (j->type==rai::JT_quatBall || j->type==rai::JT_free || j->type==rai::JT_XBall)) frameIDs.append(j->frame->ID);
   }
 }
 

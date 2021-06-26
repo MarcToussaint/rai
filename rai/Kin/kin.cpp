@@ -422,7 +422,7 @@ uintA Configuration::getJointIDs() const {
   ((Configuration*)this)->ensure_indexedJoints();
   uintA joints(activeJoints.N);
   uint i=0;
-  for(Joint* j:activeJoints) joints(i++) = j->frame->ID;
+  for(Dof* j:activeJoints) joints(i++) = j->frame->ID;
   return joints;
 }
 
@@ -430,19 +430,19 @@ uintA Configuration::getJointIDs() const {
 StringA Configuration::getJointNames() const {
   ((Configuration*)this)->ensure_q();
   StringA names(getJointStateDimension());
-  for(Joint* j:activeJoints) {
+  for(Dof* j:activeJoints) {
     String name=j->frame->name;
     if(!name) name <<'q' <<j->qIndex;
     if(j->dim==1) names(j->qIndex) <<name;
     else for(uint i=0; i<j->dim; i++) names(j->qIndex+i) <<name <<':' <<i;
 
-    if(j->uncertainty) {
-      if(j->dim) {
-        for(uint i=j->dim; i<2*j->dim; i++) names(j->qIndex+i) <<name <<":UC:" <<i;
-      } else {
-        names(j->qIndex+1) <<name <<":UC";
-      }
-    }
+//    if(j->uncertainty) {
+//      if(j->dim) {
+//        for(uint i=j->dim; i<2*j->dim; i++) names(j->qIndex+i) <<name <<":UC:" <<i;
+//      } else {
+//        names(j->qIndex+1) <<name <<":UC";
+//      }
+//    }
   }
   return names;
 }
@@ -547,8 +547,8 @@ void Configuration::setJointState(const arr& _q) {
 
   _state_q_isGood=true;
   _state_proxies_isGood=false;
-  for(Joint* j:activeJoints) {
-    if(j->type!=JT_tau) {
+  for(Dof* j:activeJoints) {
+    if(j->joint() && j->joint()->type!=JT_tau) {
       j->frame->_state_setXBadinBranch();
     }
   }
@@ -616,9 +616,9 @@ void Configuration::setTaus(double tau) {
   for(Frame* a:frames) a->tau = tau;
 }
 
-void Configuration::setActiveJoints(const JointL& joints){
+void Configuration::setActiveJoints(const DofL& joints){
   for(rai::Frame *f:frames) if(f->joint) f->joint->active=false;
-  for(rai::Joint *j:joints) j->active=true;
+  for(rai::Dof *j:joints) j->active=true;
   reset_q();
   activeJoints = joints;
   calc_indexedActiveJoints(false);
@@ -676,15 +676,18 @@ void Configuration::selectJointsByAtt(const StringA& attNames, bool notThose) {
 /// returns diagonal of the metric in q-space determined by all joints' Joint::H
 arr Configuration::getCtrlMetric() const {
   arr H = zeros(getJointStateDimension());
-  for(Joint* j: activeJoints) {
-    double h=j->H;
-    //    CHECK(h>0.,"Hmetric should be larger than 0");
-    if(j->type==JT_transXYPhi) {
-      H(j->qIndex+0)=h*10.;
-      H(j->qIndex+1)=h*10.;
-      H(j->qIndex+2)=h;
-    } else {
-      for(uint k=0; k<j->qDim(); k++) H(j->qIndex+k)=h;
+  for(const Dof* dof:activeJoints) {
+    const Joint* j = dof->joint();
+    if(j){
+      double h=j->H;
+      //    CHECK(h>0.,"Hmetric should be larger than 0");
+      if(j->type==JT_transXYPhi) {
+        H(j->qIndex+0)=h*10.;
+        H(j->qIndex+1)=h*10.;
+        H(j->qIndex+2)=h;
+      } else {
+        for(uint k=0; k<j->dim; k++) H(j->qIndex+k)=h;
+      }
     }
   }
   return H;
@@ -710,8 +713,8 @@ arr Configuration::getNaturalCtrlMetric(double power) const {
   }
   if(!q.N) getJointStateDimension();
   arr Wdiag(q.N);
-  for(Joint* j: activeJoints) {
-    for(uint i=0; i<j->qDim(); i++) {
+  for(Dof* j:activeJoints) {
+    for(uint i=0; i<j->dim; i++) {
       Wdiag(j->qIndex+i) = ::pow(BM(j->frame->ID), power);
     }
   }
@@ -724,9 +727,9 @@ arr Configuration::getLimits() const {
   uint N=getJointStateDimension();
   arr limits(N, 2);
   limits.setZero();
-  for(Joint* j: activeJoints) {
+  for(Dof* j:activeJoints) {
     uint i=j->qIndex;
-    uint d=j->qDim();
+    uint d=j->dim;
     for(uint k=0; k<d; k++) { //in case joint has multiple dimensions
       if(j->limits.N) {
         limits(i+k, 0)=j->limits(2*k+0); //lo
@@ -1023,15 +1026,15 @@ bool Configuration::checkConsistency() const {
 
     //count dimensions yourself and check...
     uint myqdim = 0;
-    for(Joint* j: activeJoints) {
+    for(Dof* j:activeJoints) {
       if(j->mimic) {
         CHECK_EQ(j->qIndex, j->mimic->qIndex, "");
       } else {
         CHECK_EQ(j->qIndex, myqdim, "joint indexing is inconsistent");
-        if(!j->uncertainty)
-          myqdim += j->qDim();
-        else
-          myqdim += 2*j->qDim();
+//        if(!j->uncertainty)
+          myqdim += j->dim;
+//        else
+//          myqdim += 2*j->dim;
       }
     }
     for(ForceExchange* c: forces) {
@@ -1044,7 +1047,7 @@ bool Configuration::checkConsistency() const {
     //consistency with Q
     for(Frame* f : frames) if(f->joint){
       Joint *j = f->joint;
-      arr jq = j->calc_q_from_Q(f->Q);
+      arr jq = j->calcDofsFromConfig();
       CHECK_EQ(jq.N, j->dim, "");
       if(j->active){
         for(uint i=0; i<jq.N; i++) CHECK_ZERO(jq.elem(i) - q.elem(j->qIndex+i), 1e-6, "joint vector q and relative transform Q do not match for joint '" <<j->frame->name <<"', index " <<i);
@@ -1119,7 +1122,7 @@ bool Configuration::checkConsistency() const {
   //check active sets
   if(_state_indexedJoints_areGood) {
     boolA jointIsInActiveSet = consts<byte>(false, frames.N);
-    for(Joint* j: activeJoints) { CHECK(j->active, ""); jointIsInActiveSet.elem(j->frame->ID)=true; }
+    for(Dof* j: activeJoints) { CHECK(j->active, ""); jointIsInActiveSet.elem(j->frame->ID)=true; }
     if(q.nd) {
       for(Frame* f: frames) if(f->joint && f->joint->active && f->joint->type!=JT_rigid) CHECK(jointIsInActiveSet(f->ID), "");
     }
@@ -1262,14 +1265,13 @@ void Configuration::calc_indexedActiveJoints(bool resetActiveJointSet) {
 
   //-- count active DOFs
   uint qcount=0;
-  for(Joint* j: activeJoints) {
-    j->dim = j->getDimFromType();
+  for(Dof* j: activeJoints) {
     if(!j->mimic) {
       j->qIndex = qcount;
-      if(!j->uncertainty)
-        qcount += j->qDim();
-      else
-        qcount += 2*j->qDim();
+//      if(!j->uncertainty)
+        qcount += j->dim;
+//      else
+//        qcount += 2*j->dim;
     } else {
       CHECK(j->mimic->active, "active joint '" << j->frame->name <<"' mimics inactive joint '" <<j->mimic->frame->name <<"'");
       j->qIndex = j->mimic->qIndex;
@@ -1291,9 +1293,9 @@ void Configuration::calc_indexedActiveJoints(bool resetActiveJointSet) {
     j->dim = j->getDimFromType();
     j->qIndex = qcount;
     if(!j->uncertainty)
-      qcount += j->qDim();
+      qcount += j->dim;
     else
-      qcount += 2*j->qDim();
+      qcount += 2*j->dim;
   }
 
   //-- resize qInactive
@@ -1309,18 +1311,18 @@ void Configuration::calc_q_from_Q() {
 
   uint n=0;
   //-- active joints (part of the DOFs)
-  for(Joint* j: activeJoints) {
+  for(Dof* j: activeJoints) {
     if(j->mimic) continue; //don't count dependent joints
     CHECK_EQ(j->qIndex, n, "joint indexing is inconsistent");
-    arr joint_q = j->calc_q_from_Q(j->frame->Q);
+    arr joint_q = j->calcDofsFromConfig();
     CHECK_EQ(joint_q.N, j->dim, "");
     if(!j->dim) continue; //nothing to do
     q.setVectorBlock(joint_q, j->qIndex);
     n += j->dim;
-    if(j->uncertainty) {
-      q.setVectorBlock(j->uncertainty->sigma, j->qIndex+j->dim);
-      n += j->dim;
-    }
+//    if(j->uncertainty) {
+//      q.setVectorBlock(j->uncertainty->sigma, j->qIndex+j->dim);
+//      n += j->dim;
+//    }
   }
 
   //-- forces (part of the DOFs)
@@ -1338,7 +1340,7 @@ void Configuration::calc_q_from_Q() {
   for(Frame* f: frames) if(f->joint && !f->joint->active){ //this includes mimic'ing joints!
     Joint *j = f->joint;
     CHECK_EQ(j->qIndex, n, "joint indexing is inconsistent");
-    arr joint_q = j->calc_q_from_Q(f->Q);
+    arr joint_q = j->calcDofsFromConfig();
     CHECK_EQ(joint_q.N, j->dim, "");
     if(!f->joint->dim) continue; //nothing to do
     qInactive.setVectorBlock(joint_q, j->qIndex);
@@ -1354,15 +1356,15 @@ void Configuration::calc_Q_from_q() {
   CHECK(_state_indexedJoints_areGood, "");
 
   uint n=0;
-  for(Joint* j: activeJoints) {
+  for(Dof* j: activeJoints) {
     if(!j->mimic) CHECK_EQ(j->qIndex, n, "joint indexing is inconsistent");
     j->setDofs(q, j->qIndex);
     if(!j->mimic) {
       n += j->dim;
-      if(j->uncertainty) {
-        j->uncertainty->sigma = q.sub(j->qIndex+j->dim, j->qIndex+2*j->dim-1);
-        n += j->dim;
-      }
+//      if(j->uncertainty) {
+//        j->uncertainty->sigma = q.sub(j->qIndex+j->dim, j->qIndex+2*j->dim-1);
+//        n += j->dim;
+//      }
     }
   }
   for(ForceExchange* c: forces) {
@@ -1433,6 +1435,7 @@ arr Configuration::calc_fwdPropagateVelocities(const arr& qdot) {
 
 /// returns the 'Jacobian' of a zero n-vector (initializes Jacobian to proper sparse/dense/rowShifted/noArr)
 void Configuration::jacobian_zero(arr& J, uint n) const {
+  if(!J) return;
   uint N=getJointStateDimension();
   if(jacMode==JM_dense) {
     J.resize(n, N).setZero();
@@ -2406,7 +2409,7 @@ void Configuration::displayDot() {
 void Configuration::report(std::ostream& os) const {
   uint nShapes=0, nUc=0;
   for(Frame* f:frames) if(f->shape) nShapes++;
-  for(Joint* j:activeJoints) if(j->uncertainty) nUc++;
+//  for(Dof* j:activeJoints) if(j->uncertainty) nUc++;
 
   os <<"Config: q.N=" <<getJointStateDimension()
      <<" #frames=" <<frames.N
@@ -2756,15 +2759,16 @@ const Proxy* Configuration::getContact(uint a, uint b) const {
 void Configuration::glDraw(OpenGL& gl) {
   glDraw_sub(gl, frames);
 
+#if 0
   bool displayUncertainties = false;
-  for(Joint* j:activeJoints) if(j->uncertainty) {
+  for(Dof* j:activeJoints) if(j->uncertainty) {
       displayUncertainties=true; break;
     }
 
   if(displayUncertainties) {
     arr q_org = getJointState();
-    for(Joint* j:activeJoints) if(j->uncertainty) {
-        for(uint i=0; i<j->qDim(); i++) {
+    for(Dof* j:activeJoints) if(j->uncertainty) {
+        for(uint i=0; i<j->dim; i++) {
           arr q=q_org;
           q(j->qIndex+i) -= j->uncertainty->sigma(i);
           setJointState(q);
@@ -2777,6 +2781,7 @@ void Configuration::glDraw(OpenGL& gl) {
       }
     setJointState(q_org);
   }
+#endif
 }
 
 /// GL routine to draw a Configuration
