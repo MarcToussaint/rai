@@ -18,19 +18,20 @@ void F_AboveBox::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_EQ(order, 0, "");
   CHECK_EQ(F.N, 2, "");
 
-  rai::Shape* box=F.elem(0)->shape;
-  CHECK(box, "I need a shape as second frame!");
-  CHECK_EQ(box->type(), rai::ST_ssBox, "the 2nd shape needs to be a box"); //s1 should be the board
-  Value pos = F_PositionRel()
-              .eval({F.elem(1), F.elem(0)}); //TODO - that's somewhat awkward?
+  rai::Frame* pnt=F.elem(0); //object center that is above
+  rai::Frame* box=F.elem(1); //box that is below
+  CHECK(box->shape, "I need a shape as 2nd frame");
+  CHECK_EQ(box->shape->type(), rai::ST_ssBox, "the 2nd shape needs to be a box");
+
+  Value pos = F_PositionRel().eval({pnt, box});
   arr proj({2,3}, {1,0,0,0,1,0});
   pos.y = proj * pos.y;
   pos.J = proj * pos.J;
-  double radMargin = margin + box->radius();
-  arr range = { .5*box->size(0)-radMargin, .5*box->size(1)-radMargin };
+  double radMargin = margin + box->shape->radius();
+  arr range = { .5*box->shape->size(0)-radMargin, .5*box->shape->size(1)-radMargin };
 
   y.setBlockVector(pos.y - range, -pos.y - range);
-  J.setBlockMatrix(pos.J, -pos.J);
+  if(!!J) J.setBlockMatrix(pos.J, -pos.J);
 }
 
 //===========================================================================
@@ -38,12 +39,12 @@ void F_AboveBox::phi2(arr& y, arr& J, const FrameL& F) {
 
 void F_InsideBox::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_EQ(F.N, 2, "");
-  rai::Frame* pnt=F.elem(0);
-  rai::Frame* box=F.elem(1);
-  CHECK(box->shape, "I need shapes!");
-  CHECK(box->shape->type()==rai::ST_ssBox, "the 2nd shape needs to be a box"); //s1 should be the board
-//  arr pos, posJ;
-//  G.kinematicsRelPos(pos, posJ, &pnt->frame, ivec, &box->frame, NoVector);
+
+  rai::Frame* pnt=F.elem(0); //pnt to be inside
+  rai::Frame* box=F.elem(1); //box that is around
+  CHECK(box->shape, "I need a shape as 2nd frame");
+  CHECK_EQ(box->shape->type(), rai::ST_ssBox, "the 2nd shape needs to be a box");
+
   Value pos = F_PositionRel() .eval({pnt, box});
   arr range = box->shape->size();
   range *= .5;
@@ -52,13 +53,7 @@ void F_InsideBox::phi2(arr& y, arr& J, const FrameL& F) {
 
   pnt->C.kinematicsZero(y, J, 6);
 
-  y(0) =  pos.y(0) - range(0);
-  y(1) =  pos.y(1) - range(1);
-  y(2) =  pos.y(2) - range(2);
-  y(3) = -pos.y(0) - range(0);
-  y(4) = -pos.y(1) - range(1);
-  y(5) = -pos.y(2) - range(2);
-
+  y.setBlockVector(pos.y - range, -pos.y - range);
   if(!!J) J.setBlockMatrix(pos.J, -pos.J);
 }
 
