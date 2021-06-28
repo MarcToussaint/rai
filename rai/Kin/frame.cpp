@@ -618,6 +618,8 @@ bool rai::Frame::isChildOf(const rai::Frame* par, int order) const {
 
 const rai::Joint*rai::Dof::joint() const{ return dynamic_cast<const Joint*>(this); }
 
+const rai::ForceExchange*rai::Dof::fex() const{ return dynamic_cast<const ForceExchange*>(this); }
+
 //===========================================================================
 
 rai::Joint::Joint(rai::Frame& f, rai::JointType _type) : Joint(f, (Joint*)nullptr) {

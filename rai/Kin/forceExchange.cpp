@@ -14,6 +14,8 @@ rai::ForceExchange::ForceExchange(rai::Frame& a, rai::Frame& b, ForceExchangeTyp
   : a(a), b(b), type(_type), scale(1.) {
   CHECK(&a != &b, "");
   CHECK_EQ(&a.C, &b.C, "contact between frames of different configuration!");
+  frame=&a;
+  dim = getDimFromType();
   a.C.reset_q();
   a.forces.append(this);
   b.forces.append(this);
@@ -45,13 +47,13 @@ void rai::ForceExchange::setZero() {
   if(__coll) { delete __coll; __coll=0; }
 }
 
-uint rai::ForceExchange::qDim() {
+uint rai::ForceExchange::getDimFromType() {
   if(type==FXT_forceZ) return 1;
   else if(type==FXT_force) return 3;
   else return 6;
 }
 
-void rai::ForceExchange::calc_F_from_q(const arr& q, uint n) {
+void rai::ForceExchange::setDofs(const arr& q, uint n) {
   if(type==FXT_poa){
     poa = q({n, n+2});
     force = q({n+3, n+5});
@@ -79,7 +81,7 @@ void rai::ForceExchange::calc_F_from_q(const arr& q, uint n) {
   if(__coll) { delete __coll; __coll=0; }
 }
 
-arr rai::ForceExchange::calc_q_from_F() const {
+arr rai::ForceExchange::calcDofsFromConfig() const {
   arr q;
   if(type==FXT_poa){
     q.resize(6);

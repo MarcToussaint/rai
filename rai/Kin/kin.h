@@ -186,12 +186,12 @@ struct Configuration : GLDrawer {
   /// @name computations on the tree
   void calc_indexedActiveJoints(bool resetActiveJointSet=true); ///< sort of private: count the joint dimensionalities and assign j->q_index
   void calc_Q_from_q();  ///< from q compute the joint's Q transformations
-  void calc_q_from_Q();  ///< updates q based on the joint's Q transformations
+  void calcDofsFromConfig();  ///< updates q based on the joint's Q transformations
   arr calc_fwdPropagateVelocities(const arr& qdot);    ///< elementary forward kinematics
 
   /// @name ensure state consistencies
   void ensure_indexedJoints() {   if(!_state_indexedJoints_areGood) calc_indexedActiveJoints();  }
-  void ensure_q() {  if(!_state_q_isGood) calc_q_from_Q();  }
+  void ensure_q() {  if(!_state_q_isGood) calcDofsFromConfig();  }
   void ensure_proxies() {  if(!_state_proxies_isGood) stepSwift();  }
 
   /// @name Jacobians and kinematics (low level)
