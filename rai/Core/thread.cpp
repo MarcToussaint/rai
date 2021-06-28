@@ -99,9 +99,9 @@ void Signaler::setStatus(int i, Signaler* messenger) {
   broadcast(messenger);
 }
 
-int Signaler::incrementStatus(Signaler* messenger) {
+int Signaler::incrementStatus(Signaler* messenger, int delta) {
   auto lock = statusMutex(RAI_HERE);
-  status++;
+  status+=delta;
   broadcast(messenger);
   return status;
 }
@@ -517,7 +517,7 @@ void Thread::main() {
     int s = event.waitForStatusNotEq(tsIDLE);
     if(s==tsToClose) break;
     if(s==tsBEATING) metronome.waitForTic();
-    if(s>0) event.setStatus(tsIDLE); //step command -> reset to idle
+    if(s>0) event.setStatus(1); //step command -> reset to step
 
     //-- make a step
     timer.cycleStart();
@@ -526,6 +526,8 @@ void Thread::main() {
     stepMutex.unlock();
     step_count++;
     timer.cycleDone();
+
+    if(s>0) event.incrementStatus(0, -1); //step command -> reset to idle
   };
 
   stepMutex.lock(RAI_HERE);
