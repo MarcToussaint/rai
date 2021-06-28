@@ -1070,6 +1070,13 @@ void KOMO::plotPhaseTrajectory() {
 
 void KOMO::retrospectApplySwitches() {
   for(KinematicSwitch* sw:switches) {
+#if 0 //for debugging
+    cout <<"APPLYING SWITCH:\n" <<*sw <<endl;
+    cout <<world.frames(sw->fromId)->name <<"->" <<world.frames(sw->toId)->name <<endl;
+    sw->apply(world.frames);
+    listWriteNames( world.frames(sw->toId)->getPathToRoot(), cout );
+    listWriteNames( world.frames(sw->toId)->children, cout );
+#endif
     int s = sw->timeOfApplication+(int)k_order;
     if(s<0) s=0;
     int sEnd = int(k_order+T);

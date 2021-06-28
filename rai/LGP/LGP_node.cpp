@@ -27,7 +27,6 @@ uint COUNT_node=0;
 uintA COUNT_opt=consts<uint>(0, BD_max);
 double COUNT_time=0.;
 String OptLGPDataPath;
-ofstream* filNodes=nullptr;
 
 template<> const char* rai::Enum<BoundType>::names []= {
   "symbolic",
@@ -83,7 +82,7 @@ LGP_Node::LGP_Node(LGP_Tree& _tree, uint levels)
 
   resetData();
 
-  if(filNodes)(*filNodes) <<id <<' ' <<step <<' ' <<time <<' ' <<getTreePathString() <<endl;
+  if(tree.filNodes) (*tree.filNodes) <<id <<' ' <<step <<' ' <<time <<' ' <<getTreePathString() <<endl;
 }
 
 LGP_Node::LGP_Node(LGP_Node* parent, TreeSearchDomain::Handle& a)
@@ -106,7 +105,7 @@ LGP_Node::LGP_Node(LGP_Node* parent, TreeSearchDomain::Handle& a)
   cost(BD_symbolic) = parent->cost(BD_symbolic) - 0.1*ret.reward; //cost-so-far
   highestBound = parent->highestBound - 0.1*ret.reward;
 
-  if(filNodes)(*filNodes) <<id <<' ' <<step <<' ' <<time <<' ' <<getTreePathString() <<endl;
+  if(tree.filNodes) (*tree.filNodes) <<id <<' ' <<step <<' ' <<time <<' ' <<getTreePathString() <<endl;
 }
 
 LGP_Node::~LGP_Node() {
@@ -131,6 +130,7 @@ void LGP_Node::expand(int verbose) {
 }
 
 void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
+  if(tree.filComputes) (*tree.filComputes) <<id <<'-' <<step <<'-' <<bound <<endl;
   ensure_skeleton();
   skeleton->setConfiguration(tree.kin);
   skeleton->collisions = collisions;
@@ -143,7 +143,15 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
   }
 
 #if 1
-  problem(bound) = skeleton2Bound2(bound, *skeleton, waypoints);
+  try {
+    problem(bound) = skeleton2Bound2(bound, *skeleton, waypoints);
+  } catch(std::runtime_error& err) {
+    cout <<"CREATING KOMO FOR SKELETON CRASHED: " <<err.what() <<endl;
+    if(tree.filComputes) (*tree.filComputes) <<"SKELETON->KOMO CRASHED:" <<*skeleton <<endl;
+    feasible(bound) = false;
+    labelInfeasible();
+    return;
+  }
 #else
   if(komoProblem(bound)) komoProblem(bound).reset();
   komoProblem(bound) = make_shared<KOMO>();
@@ -166,15 +174,17 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
     komo->logFile = new ofstream(OptLGPDataPath + STRING("komo-" <<id <<'-' <<step <<'-' <<bound));
 
 
-    if(komo->logFile) skeleton->write(*komo->logFile, skeleton->getSwitches(komo->world));
+    if(komo->logFile){
+      (*komo->logFile) <<getTreePathString() <<'\n' <<endl;
+      skeleton->write(*komo->logFile, skeleton->getSwitches(komo->world));
+      (*komo->logFile) <<'\n';
+      komo->reportProblem(*komo->logFile);
+      (*komo->logFile) <<'\n';
+      (*komo->logFile) <<komo->getProblemGraph(false);
+    }
 
     if(komo->verbose>1) {
       skeleton->write(cout, skeleton->getSwitches(komo->world));
-    }
-
-    if(komo->logFile) {
-      komo->reportProblem(*komo->logFile);
-      (*komo->logFile) <<komo->getProblemGraph(false);
     }
 
     DEBUG(FILE("z.fol") <<fol;);
@@ -196,7 +206,10 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
 
   } catch(std::runtime_error& err) {
     cout <<"KOMO CRASHED: " <<err.what() <<endl;
+    if(tree.filComputes) (*tree.filComputes) <<"KOMO CRASHED"<<endl;
     problem(bound).komo.reset();
+    feasible(bound) = false;
+    labelInfeasible();
     return;
   }
   COUNT_kin += Configuration::setJointStateCount;

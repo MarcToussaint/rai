@@ -587,10 +587,18 @@ void rai::Frame::unLink() {
   if(joint) {  delete joint;  joint=nullptr;  }
 }
 
-rai::Frame& rai::Frame::setParent(rai::Frame* _parent, bool adoptRelTransform) {
+rai::Frame& rai::Frame::setParent(rai::Frame* _parent, bool adoptRelTransform, bool checkForLoop) {
   CHECK(_parent, "you need to set a parent to link from");
   CHECK(!parent, "this frame ('" <<name <<"') already has a parent");
   if(parent==_parent) return *this;
+
+  if(checkForLoop){
+    rai::Frame* f=_parent;
+    while(f) {
+      CHECK(f!=this, "loop at frame '" <<f->name <<"'");
+      f=f->parent;
+    }
+  }
 
   if(adoptRelTransform) ensure_X();
 

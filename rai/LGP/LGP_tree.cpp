@@ -71,14 +71,17 @@ void initFolStateFromKin(FOL_World& L, const Configuration& C) {
   boolA isSymbol;
   isSymbol.resize(C.frames.N) = false;
   for(Frame* a:C.frames) if(a->ats){
-    if((*a->ats)["logical"]) {
+    if((*a->ats)["logical"]) { //-- explicit setting of logic
       const Graph& G = (*a->ats)["logical"]->graph();
       for(Node* n:G) L.addFact({n->key, a->name});
       //      L.addFact({"initial", a->name}); //*** THE INITIAL FACT WAS INTRODUCED TO SIMPLIFY SKELETONS - OBSOLETE ***
       isSymbol(a->ID)=true;
-    }else if(a->joint && a->joint->type==JT_rigid){
+    }else if(a->joint && a->joint->type==JT_rigid){ //-- implicit object
       L.addFact({"object", a->name});
       isSymbol(a->ID)=true;
+      if(a->shape && a->shape->type()==ST_ssBox){ //-- implicit box
+        L.addFact({"is_box", a->name});
+      }
     }
   }
   for(Frame* a:C.frames) if(isSymbol(a->ID)) {
@@ -126,7 +129,8 @@ LGP_Tree::LGP_Tree()
     rai::system(STRING("rm -Rf " <<dataPath <<"vid  &&  rm -f " <<dataPath <<"*"));
 
     OptLGPDataPath = dataPath;
-    if(!filNodes) filNodes = new ofstream(dataPath + "nodes");
+    if(!filNodes) filNodes = make_unique<ofstream>(dataPath + "nodes");
+    if(!filComputes) filComputes = make_unique<ofstream>(dataPath + "computes");
   }
 
 }
@@ -154,7 +158,8 @@ LGP_Tree::~LGP_Tree() {
   if(dth) dth.reset();
   delete root;
   root=nullptr;
-  if(filNodes) { delete filNodes; filNodes=nullptr; }
+  filNodes.reset();
+  filComputes.reset();
   solutions.writeAccess();
   listDelete(solutions());
   solutions.deAccess();

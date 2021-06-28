@@ -69,9 +69,9 @@ void playFOL(const char* file){
 
 //===========================================================================
 
-void playLGP(const char* folFile, const char* gFile){
+void playLGP(const char* folFile, const char* confFile){
   rai::Configuration C;
-  C.addFile(gFile);
+  C.addFile(confFile);
   rai::LGP_Tree lgp(C, folFile);
 
   //-- we need a goal - the generic domain logic does not define one
@@ -103,20 +103,20 @@ int main(int argn, char** argv){
   cout <<USAGE <<endl;
 
   rai::String folFile=rai::getParameter<rai::String>("folFile",STRING("none"));
-  rai::String gFile=rai::getParameter<rai::String>("gFile",STRING("none"));
+  rai::String confFile=rai::getParameter<rai::String>("confFile",STRING("none"));
   if(rai::argc>=2 && rai::argv[1][0]!='-'){
     folFile=rai::argv[1];
-    if(rai::argc>=3 && rai::argv[2][0]!='-') gFile=rai::argv[2];
+    if(rai::argc>=3 && rai::argv[2][0]!='-') confFile=rai::argv[2];
   }
   LOG(0) <<"using fol-file '" <<folFile <<"'" <<endl;
-  LOG(0) <<"using g-file '" <<gFile <<"'" <<endl;
+  LOG(0) <<"using conf-file '" <<confFile <<"'" <<endl;
 
   if(folFile=="none") return 0;
 
   rnd.clockSeed();
 
-  if(gFile=="none") playFOL(folFile);
-  else playLGP(folFile, gFile);
+  if(confFile=="none") playFOL(folFile);
+  else playLGP(folFile, confFile);
 
   cout <<"bye bye" <<endl;
 }

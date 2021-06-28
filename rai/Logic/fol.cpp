@@ -511,10 +511,11 @@ NodeL getSubstitutions2(Graph& KB, NodeL& relations, int verbose) {
       uintA valueIndex = getIndexTuple(config, domainN);
       bool feasible=true;
       for(uint i=0; i<vars.N; i++) values(vars(i)->index) = domainOf(i)(valueIndex(i)); //assign the configuration
-      //only allow for disjoint assignments -- DISABLED!
-//        for(uint i=0; i<values.N && feasible; i++) for(uint j=i+1; j<values.N && feasible; j++) {
-//          if(values(i)==values(j)) feasible=false;
-//        }
+#if 1 //only allow for disjoint assignments -- DISABLED!?
+      for(uint i=0; i<values.N && feasible; i++) for(uint j=i+1; j<values.N && feasible; j++) {
+        if(values(i)==values(j)) feasible=false;
+      }
+#endif
       if(!feasible) continue;
       for(Node* literal:constraints) { //loop through all constraints
         //         if(literal->parents.N && literal->parents(0)==EQ){ //check equality of subsequent literals

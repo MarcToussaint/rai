@@ -151,7 +151,7 @@ rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) {
 #endif
 
     //create a new joint
-    to->setParent(from, false);
+    to->setParent(from, false, true); //checkForLoop might throw an error
     to->setJoint(jointType);
     CHECK(jointType!=JT_none, "");
 
