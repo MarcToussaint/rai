@@ -2247,7 +2247,7 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) 
   downFoc=cam->foc;
 
   //check object clicked on
-  if(mouse_button==1 && (mods&2)) {
+  if(mouse_button==1 && !(modifiers&1) && (modifiers&2)) {
     drawFocus = false;
     if(!downPressed) {
       drawOptions.drawMode_idColor = true;
@@ -2293,9 +2293,7 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) 
   }
 
   //step through all callbacks
-  if(!downPressed) {
-    for(uint i=0; i<clickCalls.N; i++) clickCalls(i)->clickCallback(*this);
-  }
+  for(uint i=0; i<clickCalls.N; i++) clickCalls(i)->clickCallback(*this);
 
   postRedrawEvent(true);
 }
@@ -2342,14 +2340,10 @@ void OpenGL::MouseMotion(int _x, int _y) {
   }
   CALLBACK_DEBUG("associated to view " <<mouseView <<" x=" <<vec.x <<" y=" <<vec.y <<endl);
   lastEvent.set(mouse_button, -1, _x, _y, vec.x-downVec.x, vec.y-downVec.y);
-  if(!mouseIsDown) {  //passive motion -> hover callbacks
-    mouseposx=_x; mouseposy=_y;
-    bool ud=false;
-    for(uint i=0; i<hoverCalls.N; i++) ud=ud || hoverCalls(i)->hoverCallback(*this);
+  mouseposx=_x; mouseposy=_y;
 
-    if(ud) postRedrawEvent(true);
-    return;
-  }
+  bool needsUpdate=false;
+  
   if(mouse_button==1 && !modifiers) {  //rotation
     rai::Quaternion rot;
     if(downVec.z<.1) {
@@ -2363,18 +2357,25 @@ void OpenGL::MouseMotion(int _x, int _y) {
     cam->X.rot = downRot * rot;   //rotate camera's direction
     rot = downRot * rot / downRot; //interpret rotation relative to current viewing
     cam->X.pos = downFoc + rot * (downPos - downFoc);   //rotate camera's position
+    needsUpdate=true;
   }
+  
   if(mouse_button==1 && (modifiers&1) && !(modifiers&2)) {  //translation mouse_button==2){
     rai::Vector trans = vec - downVec;
     trans.z = 0.;
     trans *= .1*(downFoc - downPos).length();
     trans = downRot * trans;
     cam->X.pos = downPos - trans;
+    needsUpdate=true;
   }
+  
   if(mouse_button==3 && !modifiers) {  //zooming || (mouse_button==1 && !(modifiers&GLUT_ACTIVE_SHIFT) && (modifiers&GLUT_ACTIVE_CTRL))){
   }
 
-  postRedrawEvent(true);
+  //step through all callbacks
+  for(uint i=0; i<hoverCalls.N; i++) needsUpdate = needsUpdate || hoverCalls(i)->hoverCallback(*this);
+
+  if(needsUpdate) postRedrawEvent(true);
 }
 
 //===========================================================================
