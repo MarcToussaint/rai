@@ -2474,8 +2474,11 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
 
       Frame* b = nullptr;
       if(!n->parents.N) b = new Frame(*this);
-      else if(n->parents.N==1) b = new Frame(node2frame(n->parents(0)->index)); //getFrameByName(n->parents(0)->key));
-      else HALT("a frame can only have one parent");
+      else if(n->parents.N==1){
+        Frame *p = node2frame(n->parents(0)->index);
+        CHECK(p, "parent frame '" <<n->parents(0)->key <<"' does not yet exist - is graph DAG?");
+        b = new Frame(p); //getFrameByName(n->parents(0)->key));
+      }else HALT("a frame can only have one parent");
       node2frame(n->index) = b;
       b->name=n->key;
       b->ats = make_shared<Graph>();

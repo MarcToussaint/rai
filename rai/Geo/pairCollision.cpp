@@ -79,7 +79,7 @@ PairCollision::PairCollision(rai::Mesh& _mesh1, rai::Mesh& _mesh2, const rai::Tr
     //THIS IS COSTLY! DO WITHIN THE SUPPORT FUNCTION?
     rai::Mesh M1(*mesh1); if(!t1->isZero()) t1->applyOnPointArray(M1.V);
     rai::Mesh M2(*mesh2); if(!t2->isZero()) t2->applyOnPointArray(M2.V);
-    libccd(M1, M2, _ccdMPRPenetration);
+    libccd(M1, M2, _ccdGJKPenetration);
   }
 #else
   if(distance<0.) {
@@ -303,6 +303,35 @@ void PairCollision::libccd(rai::Mesh& m1, rai::Mesh& m2, CCDmethod method) {
     else _getSimplex(simplex2, simplex+4, m2.getMean());
     if(simplex1.d0>3) simplex1.resizeCopy(3, 3);
     if(simplex2.d0>3) simplex2.resizeCopy(3, 3);
+
+  }else if(method==_ccdGJKPenetration) {
+      int ret = ccdGJKPenetration(&m1, &m2, &ccd, &_depth, &_dir, &_pos);
+      if(ret<0) {
+        LOG(0) <<"WARNING: called MPR penetration for non intersecting meshes...";
+        m1._support_vertex = rnd(m1.V.d0);
+        m2._support_vertex = rnd(m2.V.d0);
+        libccd(m1, m2, _ccdGJKIntersect);
+        if(distance<0.) {
+          LOG(0) <<"WARNING: but GJK says intersection";
+          distance=0;
+        }
+        return;
+      }
+
+      penetration=true;
+
+      p1.setCarray(_pos.v, 3);
+      p2.setCarray(_pos.v, 3);
+      normal.setCarray(_dir.v, 3);
+      distance = -_depth;
+      p1 += (.5*distance)*normal;
+      p2 -= (.5*distance)*normal;
+
+      if(distance>-1e-10) return; //minimal penetration -> simplices below are not robust
+
+      //grab simplex points
+      simplex1 = ~p1; //m1 is a point/sphere
+      simplex2 = ~p2; //m2 is a point/sphere
 
   } else if(method==_ccdGJKIntersect) {
     int ret = ccdGJKIntersect(&m1, &m2, &ccd, &_v1, &_v2, simplex);

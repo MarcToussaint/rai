@@ -23,7 +23,7 @@ void TEST(GJK_Jacobians) {
   j2.frame->insertPreLink(rai::Transformation(0))->set_Q()->addRelativeTranslation(-1,-1,1);
   J1.type = J2.type = rai::JT_free;
 
-  C.calc_q_from_Q();
+  C.calcDofsFromConfig();
   arr q = C.getJointState();
 
   OpenGL gl;
@@ -379,12 +379,12 @@ int MAIN(int argc, char** argv){
 
 //  rnd.clockSeed();
 
-//  testGJK_Jacobians();
-//  testGJK_Jacobians2();
-//  testGJK_Jacobians3();
+  testGJK_Jacobians();
+  testGJK_Jacobians2();
+  testGJK_Jacobians3();
 
 //  testFunctional();
-  testSweepingSDFs();
+//  testSweepingSDFs();
 
   return 0;
 }
