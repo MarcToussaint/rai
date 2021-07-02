@@ -17,6 +17,8 @@
 #include "../Gui/opengl.h"
 #include "../Algo/SplineCtrlFeed.h"
 
+//#define BACK_BRIDGE
+
 namespace rai {
 
 //===========================================================================
@@ -28,6 +30,10 @@ struct Simulation_self {
   std::shared_ptr<CameraView> cameraview;
   std::shared_ptr<BulletInterface> bullet;
   std::shared_ptr<PhysXInterface> physx;
+#ifdef BACK_BRIDGE
+  std::shared_ptr<BulletBridge> bulletBridge;
+  rai::Configuration bridgeC;
+#endif
 
   SplineCtrlReference ref;
 
@@ -115,6 +121,11 @@ Simulation::Simulation(Configuration& _C, Simulation::SimulatorEngine _engine, i
     self->physx = make_shared<PhysXInterface>(C, verbose-1);
   } else if(engine==_bullet) {
     self->bullet = make_shared<BulletInterface>(C, verbose-1);
+#ifdef BACK_BRIDGE
+    self->bulletBridge = make_shared<BulletBridge>(self->bullet->getDynamicsWorld());
+    self->bulletBridge->getConfiguration(self->bridgeC);
+    self->bulletBridge->pullPoses(self->bridgeC, true);
+#endif
   } else if(engine==_kinematic) {
     //nothing
   } else NIY;
@@ -167,6 +178,10 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     self->bullet->pushKinematicStates(C.frames);
     self->bullet->step(tau);
     self->bullet->pullDynamicStates(C.frames, self->frameVelocities);
+#ifdef BACK_BRIDGE
+    self->bulletBridge->pullPoses(self->bridgeC, true);
+    self->bridgeC.watch(false, "bullet bridge");
+#endif
   } else if(engine==_kinematic) {
   } else NIY;
 
@@ -313,6 +328,10 @@ ptr<SimulationState> Simulation::getState() {
 
 void Simulation::setState(const arr& frameState, const arr& frameVelocities) {
   C.setFrameState(frameState);
+  pushConfigurationToSimulator(frameVelocities);
+}
+
+void Simulation::pushConfigurationToSimulator(const arr& frameVelocities) {
   if(engine==_physx) {
     self->physx->pushFullState(C.frames, frameVelocities);
   } else if(engine==_bullet) {

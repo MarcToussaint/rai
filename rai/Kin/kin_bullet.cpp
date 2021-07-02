@@ -331,6 +331,10 @@ void BulletInterface::saveBulletFile(const char* filename) {
   }
 }
 
+btDiscreteDynamicsWorld*BulletInterface::getDynamicsWorld(){
+  return self->dynamicsWorld;
+}
+
 btCollisionShape* BulletInterface_self::createCollisionShape(rai::Shape* s) {
   btCollisionShape* colShape=0;
   arr& size = s->size;
@@ -403,17 +407,49 @@ void BulletBridge::getConfiguration(rai::Configuration& C){
     btTrans2raiTrans(X, pose);
     cout <<"OBJECT " <<i <<" pose: " <<X <<" shapeType: " <<shape->getShapeType() <<' ' <<shape->getName();
     switch(shape->getShapeType()){
+      case CONVEX_HULL_SHAPE_PROXYTYPE:{
+        btConvexHullShape* obj = dynamic_cast<btConvexHullShape*>(shape);
+        arr V(obj->getNumPoints(), 3);
+        for(uint i=0;i<V.d0;i++) V[i] = conv_btVec3_arr(obj->getUnscaledPoints()[i]);
+        auto& f = C.addFrame(STRING("obj"<<i))
+                  ->setConvexMesh(V)
+                  .setPose(X);
+        double mInv = body->getInvMass();
+        if(mInv>0.) f.setMass(1./mInv);
+      } break;
       case BOX_SHAPE_PROXYTYPE:{
         btBoxShape* box = dynamic_cast<btBoxShape*>(shape);
         arr size = 2.*conv_btVec3_arr(box->getHalfExtentsWithMargin());
         cout <<" margin: " <<box->getMargin() <<" size: " <<size;
         auto& f = C.addFrame(STRING("obj"<<i))
-            ->setShape(rai::ST_box, size)
-            .setPose(X);
+                  ->setShape(rai::ST_box, size)
+                  .setPose(X);
         double mInv = body->getInvMass();
         if(mInv>0.) f.setMass(1./mInv);
       } break;
-      default: NIY;
+      case CYLINDER_SHAPE_PROXYTYPE:{
+        btCylinderShape* obj = dynamic_cast<btCylinderShape*>(shape);
+        arr size = 2.*conv_btVec3_arr(obj->getHalfExtentsWithMargin());
+        cout <<" margin: " <<obj->getMargin() <<" size: " <<size;
+        size(1) = size(0);
+        size(0) = size(2);
+        size.resizeCopy(2);
+        auto& f = C.addFrame(STRING("obj"<<i))
+            ->setShape(rai::ST_cylinder, size)
+            .setPose(X);
+        double mInv = body->getInvMass();
+        if(mInv>0.) f.setMass(1./mInv);
+
+      } break;
+      case COMPOUND_SHAPE_PROXYTYPE:
+      case STATIC_PLANE_PROXYTYPE: {
+        auto& f = C.addFrame(STRING("obj"<<i))
+            ->setShape(rai::ST_marker, {.1})
+            .setPose(X);
+      } break;
+      default:{
+        NIY;
+      }
     }
     cout <<endl;
   }
