@@ -16,7 +16,7 @@
 void plan(){
   rai::Configuration K("model.g");
 
-  K["ball2"]->joint->type=rai::JT_rigid;
+  K["ball2"]->joint->setType(rai::JT_rigid);
   K.reset_q();
 
   KOMO_ext komo;

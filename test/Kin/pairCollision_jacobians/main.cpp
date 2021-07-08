@@ -18,10 +18,12 @@ void TEST(GJK_Jacobians) {
   rai::Frame base(C), b1(C), B1(C), b2(C), B2(C);
   rai::Joint j1(base, b1), J1(b1, B1), j2(B1, b2), J2(b2, B2);
   rai::Shape s1(B1), s2(B2);
-  j1.type = j2.type = rai::JT_free; //trans3;
+  j1.setType(rai::JT_free);
+  j2.setType(rai::JT_free);
   j1.frame->insertPreLink(rai::Transformation(0))->set_Q()->addRelativeTranslation(1,1,1);
   j2.frame->insertPreLink(rai::Transformation(0))->set_Q()->addRelativeTranslation(-1,-1,1);
-  J1.type = J2.type = rai::JT_free;
+  J1.setType(rai::JT_free);
+  J2.setType(rai::JT_free);
 
   C.calcDofsFromConfig();
   arr q = C.getJointState();
@@ -184,8 +186,8 @@ void TEST(GJK_Jacobians3) {
   rai::Frame base(C), B1(C), B2(C);
   rai::Joint J1(base, B1), J2(base, B2);
   rai::Shape s1(B1), s2(B2);
-  J1.type = rai::JT_free;
-  J2.type = rai::JT_rigid;
+  J1.setType(rai::JT_free);
+  J2.setType(rai::JT_rigid);
 //  B1.set_Q()->setRandom();
   B1.set_Q()->pos = {0.,0., 1.05};
   B2.set_Q()->pos = {0.,0., 1.21};
@@ -263,7 +265,6 @@ void TEST(Functional) {
   OpenGL gl;
   gl.camera.setDefault();
   gl.drawOptions.drawWires=true;
-  gl.add(glStandardScene);
 
   arr x = C.getJointState();
   for(uint t=0;t<10;t++){
@@ -275,13 +276,13 @@ void TEST(Functional) {
     auto y = dist.eval({C(1), C(2)});
     checkJacobian(dist.vf2({C(1), C(2)}), x, 1e-4);
 
-    gl.add(dist);
+    gl.clear();
+    gl.add(glStandardScene);
+//    gl.add(dist);
     gl.add(C);
     gl.update(STRING(t), true);
     /*if(!succ)*/ gl.watch();
-
-    gl.remove(C);
-    gl.remove(dist);
+    gl.clear();
 
   }
 }
@@ -383,8 +384,8 @@ int MAIN(int argc, char** argv){
   testGJK_Jacobians2();
   testGJK_Jacobians3();
 
-//  testFunctional();
-//  testSweepingSDFs();
+  testFunctional();
+  testSweepingSDFs();
 
   return 0;
 }

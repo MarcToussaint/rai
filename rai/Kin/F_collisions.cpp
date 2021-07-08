@@ -267,8 +267,8 @@ void F_PairFunctional::phi2(arr& y, arr& J, const FrameL& F){
       double d1 = (*func1)(g1, H1, x);
       double d2 = (*func2)(g2, H2, x);
       double dd = d1 - d2;
-      H = H1 + H2 + (2.*b*dd)*(H1-H2) + (2.*b)*((g1-g2)^(g1-g2));
-      g = g1 + g2 + (2.*b*dd)*(g1-g2);
+      if(!!H) H = H1 + H2 + (2.*b*dd)*(H1-H2) + (2.*b)*((g1-g2)^(g1-g2));
+      if(!!g) g = g1 + g2 + (2.*b*dd)*(g1-g2);
       return d1+d2+b*dd*dd;
     };
 
@@ -276,8 +276,8 @@ void F_PairFunctional::phi2(arr& y, arr& J, const FrameL& F){
     rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1), false);
     if(ex) seed = ex->poa;
 
-    checkGradient(f, seed, 1e-5);
-    checkHessian(f, seed, 1e-5);
+//    checkGradient(f, seed, 1e-5);
+//    checkHessian(f, seed, 1e-5);
 
     x = seed;
     OptNewton newton(x, f, OptOptions()
@@ -295,8 +295,8 @@ void F_PairFunctional::phi2(arr& y, arr& J, const FrameL& F){
     y.resize(1).scalar() = -d1 -d2;
     if(!!J) {
       arr Jp1, Jp2;
-      F(0,0)->C.jacobian_pos(Jp1, F(0,0), x);
-      F(0,1)->C.jacobian_pos(Jp2, F(0,1), x);
+      F.elem(0)->C.jacobian_pos(Jp1, F.elem(0), x);
+      F.elem(1)->C.jacobian_pos(Jp2, F.elem(1), x);
       J = ~g1*Jp1 + ~g2*Jp2;
       checkNan(J);
     }
