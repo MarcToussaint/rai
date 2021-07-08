@@ -59,6 +59,8 @@ void testFeature() {
   F.append(make_shared<F_LinAngVel>()) ->setFrameIDs({"obj2"}, C) .setOrder(2);
   F.append(symbols2feature(FS_position, {"obj1"}, C));
   F.append(symbols2feature(FS_positionDiff, {"obj1", "obj2"}, C));
+  F.append(make_shared<F_Matrix>()) ->setFrameIDs({"obj1"}, C);
+  F.append(make_shared<F_MatrixDiff>()) ->setFrameIDs({"obj1", "obj2"}, C);
   F.append(symbols2feature(FS_pose, {"obj1"}, C)) ->setOrder(0);
   F.append(symbols2feature(FS_pose, {"obj2"}, C)) ->setOrder(1);
   F.append(symbols2feature(FS_pose, {"obj1"}, C)) ->setOrder(2);

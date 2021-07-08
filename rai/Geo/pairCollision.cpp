@@ -79,7 +79,7 @@ PairCollision::PairCollision(rai::Mesh& _mesh1, rai::Mesh& _mesh2, const rai::Tr
     //THIS IS COSTLY! DO WITHIN THE SUPPORT FUNCTION?
     rai::Mesh M1(*mesh1); if(!t1->isZero()) t1->applyOnPointArray(M1.V);
     rai::Mesh M2(*mesh2); if(!t2->isZero()) t2->applyOnPointArray(M2.V);
-    libccd(M1, M2, _ccdGJKPenetration);
+    libccd(M1, M2, _ccdMPRPenetration);
   }
 #else
   if(distance<0.) {
@@ -330,8 +330,8 @@ void PairCollision::libccd(rai::Mesh& m1, rai::Mesh& m2, CCDmethod method) {
       if(distance>-1e-10) return; //minimal penetration -> simplices below are not robust
 
       //grab simplex points
-      simplex1 = ~p1; //m1 is a point/sphere
-      simplex2 = ~p2; //m2 is a point/sphere
+//      simplex1 = ~p1; //m1 is a point/sphere
+//      simplex2 = ~p2; //m2 is a point/sphere
 
   } else if(method==_ccdGJKIntersect) {
     int ret = ccdGJKIntersect(&m1, &m2, &ccd, &_v1, &_v2, simplex);

@@ -1646,6 +1646,28 @@ void Configuration::kinematicsVec(arr& y, arr& J, Frame* a, const Vector& vec) c
   }
 }
 
+/// Jacobian of the i-th body's orientation matrix (flattened as 9-vector)
+void Configuration::kinematicsMat(arr& y, arr& J, Frame* a) const {
+  CHECK_EQ(&a->C, this, "");
+
+  arr R = a->ensure_X().rot.getMatrix().getArr();
+  transpose(R); //the transpose has easier Jacobian...
+  if(!!y){
+    y = R;
+    y.reshape(9);
+  }
+  if(!!J) {
+    arr A;
+    jacobian_angular(A, a);
+    jacobian_zero(J, 9);
+    if(A.N){
+      J.setMatrixBlock(crossProduct(A, R[0]), 0, 0);
+      J.setMatrixBlock(crossProduct(A, R[1]), 3, 0);
+      J.setMatrixBlock(crossProduct(A, R[2]), 6, 0);
+    }
+  }
+}
+
 /* takes the joint state x and returns the jacobian dz of
    the position of the ith body (w.r.t. all joints) -> 2D array */
 /// Jacobian of the i-th body's z-orientation vector
