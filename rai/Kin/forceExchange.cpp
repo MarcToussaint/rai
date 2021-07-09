@@ -44,7 +44,7 @@ void rai::ForceExchange::setZero() {
   }else if(type==FXT_forceZ){
     force.resize(1).setZero();
     torque.resize(1).setZero();
-    double max_force_per_motor = 12 / 1000 * 9.81;
+    double max_force_per_motor = 12. / 1000. * 9.81;
 //    scale = 1e2;
     limits = {-max_force_per_motor/scale, 0.};
   }else{
