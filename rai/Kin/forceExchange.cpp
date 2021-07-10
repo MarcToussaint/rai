@@ -10,7 +10,7 @@
 #include "../Gui/opengl.h"
 #include "../Geo/pairCollision.h"
 
-rai::ForceExchange::ForceExchange(rai::Frame& a, rai::Frame& b, ForceExchangeType _type, rai::ForceExchange* copyContact)
+rai::ForceExchange::ForceExchange(rai::Frame& a, rai::Frame& b, ForceExchangeType _type, rai::ForceExchange* copy)
   : a(a), b(b), type(_type), scale(1.) {
   CHECK(&a != &b, "");
   CHECK_EQ(&a.C, &b.C, "contact between frames of different configuration!");
@@ -21,11 +21,16 @@ rai::ForceExchange::ForceExchange(rai::Frame& a, rai::Frame& b, ForceExchangeTyp
   b.forces.append(this);
   a.C.forces.append(this);
   setZero();
-  if(copyContact) {
-    type = copyContact->type;
-    poa = copyContact->poa;
-    force = copyContact->force;
-    torque = copyContact->torque;
+  if(copy) {
+    qIndex=copy->qIndex; dim=copy->dim; limits=copy->limits; active=copy->active;
+    if(copy->mimic) NIY;
+
+    scale=copy->scale;
+    type = copy->type;
+    force_to_torque = copy->force_to_torque;
+    poa = copy->poa;
+    force = copy->force;
+    torque = copy->torque;
   }
 }
 
@@ -44,9 +49,6 @@ void rai::ForceExchange::setZero() {
   }else if(type==FXT_forceZ){
     force.resize(1).setZero();
     torque.resize(1).setZero();
-    double max_force_per_motor = 12. / 1000. * 9.81;
-//    scale = 1e2;
-    limits = {-max_force_per_motor/scale, 0.};
   }else{
     poa = b.getPosition();
   }
@@ -140,11 +142,6 @@ void rai::ForceExchange::kinTorque(arr& y, arr& J) const {
   if(type==FXT_poa || type==FXT_force){
     //zero: POA is zero-momentum point
   }else if(type==FXT_forceZ){
-    double force_to_torque = 0.006; // force-to-torque ratio
-    uint frameID = b.ID;
-    if(b.C.frames.nd==2) frameID = frameID % b.C.frames.d1;
-    if(!(frameID%2)) force_to_torque *= -1.;
-
     arr z, Jz;
     b.C.kinematicsVec(z, Jz, &b, Vector_z);
     y = force_to_torque * force.scalar() * z;
