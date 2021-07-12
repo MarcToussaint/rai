@@ -2458,8 +2458,8 @@ struct XBackgroundContext {
 
 Singleton<XBackgroundContext> xBackgroundContext;
 
-void OpenGL::renderInBack(int w, int h) {
-  beginNonThreadedDraw();
+void OpenGL::renderInBack(int w, int h, bool fromWithinCallback) {
+  beginNonThreadedDraw(fromWithinCallback);
 
 #ifdef RAI_GL
   if(w<0) w=width;
@@ -2544,7 +2544,7 @@ void OpenGL::renderInBack(int w, int h) {
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 #endif
 
-  endNonThreadedDraw();
+  endNonThreadedDraw(fromWithinCallback);
 }
 
 //===========================================================================
