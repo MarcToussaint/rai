@@ -290,7 +290,7 @@ arr logisticRegression2Class(const arr& X, const arr& y, double lambda, arr& bay
   CHECK_EQ(y.nd, 1, "");
   uint n=y.N, d=X.d1;
   arr Xt;
-  transpose(Xt, X);
+  op_transpose(Xt, X);
 
   arr I;
   I.setDiag(lambda, X.d1);
@@ -346,7 +346,7 @@ arr logisticRegressionMultiClass(const arr& X, const arr& y, double lambda) {
   CHECK(y.nd==2 && y.d0==X.d0, "");
   uint n=y.d0, d=X.d1, M=y.d1;
   arr Xt;
-  transpose(Xt, X);
+  op_transpose(Xt, X);
 
   arr XtWX, I;
   I.setDiag(lambda, X.d1);
@@ -392,7 +392,7 @@ arr logisticRegressionMultiClass(const arr& X, const arr& y, double lambda) {
     XtWX.setZero();
     for(uint c1=0; c1<M; c1++) for(uint c2=0; c2<M; c2++) {
         for(uint i=0; i<n; i++) w(i) = p(i, c1)*(rai::indicate(c1==c2)-p(i, c2));
-        XtWX.setMatrixBlock(Xt*diagProduct(w, X) + 2.*rai::indicate(c1==c2)*I, c1*d, c2*d);
+        XtWX.setMatrixBlock(Xt*(w%X) + 2.*rai::indicate(c1==c2)*I, c1*d, c2*d);
       }
     //compute the beta update
     arr tmp = ~(Xt*(y-p) - 2.*I*beta); //the gradient as M-times-d matrix

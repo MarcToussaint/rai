@@ -234,6 +234,19 @@ void TEST(StdVectorCompat) {
 
 //===========================================================================
 
+void TEST(Autodiff){
+  arr  A(5,3), x(3), y;
+  rndGauss(A);
+  rndGauss(x);
+
+  x.diff_setId();
+
+  y = A*x;
+  cout <<y <<endl <<A <<endl;
+}
+
+//===========================================================================
+
 void TEST(SimpleIterators) {
   // This test shows how to use the iterators
 
@@ -486,7 +499,7 @@ void TEST(MM){
 
   rai::useLapack=false; 
   rai::timerStart();
-  innerProduct(D,A,B);
+  op_innerProduct(D,A,B);
   double t_native=rai::timerRead();
   cout <<"native time = " <<t_native <<endl;
 
@@ -881,6 +894,9 @@ void TEST(EigenValues){
 int MAIN(int argc, char **argv){
   rai::initCmdLine(argc, argv);
 
+  testAutodiff();
+  return 0;
+
   testBasics();
   testIterators();
   testCheatSheet();
@@ -889,6 +905,7 @@ int MAIN(int argc, char **argv){
   testSorted();
   testRowsAndColumsAccess();
   testStdVectorCompat();
+  testAutodiff();
   testMatlab();
   testException();
 //  testMemoryBound();
