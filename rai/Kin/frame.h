@@ -27,6 +27,7 @@ struct Joint;
 struct Shape;
 struct Inertia;
 struct ForceExchange;
+struct ParticleDofs;
 enum JointType { JT_none=0, JT_hingeX, JT_hingeY, JT_hingeZ, JT_transX, JT_transY, JT_transZ, JT_transXY, JT_trans3, JT_transXYPhi, JT_universal, JT_rigid, JT_quatBall, JT_phiTransXY, JT_XBall, JT_free, JT_tau };
 enum BodyType  { BT_none=-1, BT_dynamic=0, BT_kinematic, BT_static };
 }
@@ -96,6 +97,7 @@ struct Frame : NonCopyable {
   Shape* shape=nullptr;          ///< this frame has a (collision or visual) geometry
   Inertia* inertia=nullptr;      ///< this frame has inertia (is a mass)
   Array<ForceExchange*> forces;  ///< this frame exchanges forces with other frames
+  ParticleDofs* particleDofs=nullptr;
 
   Frame(Configuration& _C, const Frame* copyFrame=nullptr);
   Frame(Frame* _parent);

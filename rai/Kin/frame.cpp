@@ -10,6 +10,7 @@
 #include "kin.h"
 #include "uncertainty.h"
 #include "forceExchange.h"
+#include "dof_particles.h"
 #include "../Geo/analyticShapes.h"
 #include <climits>
 
@@ -57,6 +58,7 @@ rai::Frame::Frame(Configuration& _C, const Frame* copyFrame)
     if(copyFrame->joint) new Joint(*this, copyFrame->joint);
     if(copyFrame->shape) new Shape(*this, copyFrame->shape);
     if(copyFrame->inertia) new Inertia(*this, copyFrame->inertia);
+    if(copyFrame->particleDofs) new ParticleDofs(*this, copyFrame->particleDofs);
   }
 }
 

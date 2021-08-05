@@ -9,6 +9,7 @@
 #include "kin.h"
 #include "frame.h"
 #include "forceExchange.h"
+#include "dof_particles.h"
 #include "uncertainty.h"
 #include "proxy.h"
 #include "kin_swift.h"
@@ -1260,6 +1261,9 @@ void Configuration::calc_indexedActiveJoints(bool resetActiveJointSet) {
     for(Frame* f:frames){
       if(f->joint && f->joint->active && f->joint->type!=JT_rigid){
         activeJoints.append(f->joint);
+      }
+      if(f->particleDofs && f->particleDofs->active){
+        activeJoints.append(f->particleDofs);
       }
       for(rai::ForceExchange* fex:f->forces){
         if(fex->frame==f && fex->active){
