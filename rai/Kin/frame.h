@@ -185,7 +185,7 @@ struct Dof {
   bool active=true;  ///< if false, this dof is not considered part of the configuration's q-vector
   uint dim=UINT_MAX;
   uint qIndex=UINT_MAX;
-  arr  limits;        ///< joint limits (lo, up, [maxvel, maxeffort])
+  arr  limits;    ///< joint limits (lo, up, [maxvel, maxeffort])
   Joint* mimic=0; ///< if non-nullptr, this joint's state is identical to another's
 
   virtual ~Dof() {}

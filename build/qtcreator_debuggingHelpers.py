@@ -84,6 +84,7 @@ def qdump__rai__Array(d, value):
             d.putSubItem("isReference", value["isReference"])
             d.putSubItem("M", value["M"])
             d.putSubItem("special", value["special"])
+            d.putSubItem("jac", value["jac"])
             
 def qdump__rai__Node_typed(d, value):
     pars_N = int(value["parents"]["N"])

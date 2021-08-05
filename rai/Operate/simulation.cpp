@@ -227,7 +227,7 @@ void Simulation::exec(const StringA& command) {
 
     if(b->parent) b->unLink();
     b->setParent(a, true);
-    (new rai::Joint(*b)) -> type=rai::JT_rigid;
+    (new rai::Joint(*b)) -> setType(rai::JT_rigid);
     K.ensure_q();
   }
 }

@@ -81,7 +81,7 @@ template<class T> struct Array : /*std::vector<T>,*/ Serializable {
   uint nd;  ///< number of dimensions
   uint d0, d1, d2; ///< 0th, 1st, 2nd dim
   uint* d;  ///< pointer to dimensions (for nd<=3 points to d0)
-  bool isReference; ///< true if this refers to some external memory
+  bool isReference; ///< true if this refers to memory of another array
   uint M;   ///< memory allocated (>=N)
 
   static int  sizeT;   ///< constant for each type T: stores the sizeof(T)
@@ -89,6 +89,7 @@ template<class T> struct Array : /*std::vector<T>,*/ Serializable {
 
   //-- special: arrays can be sparse/packed/etc and augmented with aux data to support this
   SpecialArray* special; ///< auxiliary data, e.g. if this is a sparse matrics, depends on special type
+  std::unique_ptr<Array<T>> jac=0; ///< optional pointer to Jacobian, to enable autodiff
 
   typedef std::vector<T> vec_type;
   typedef std::function<bool(const T& a, const T& b)> ElemCompare;
@@ -178,6 +179,8 @@ template<class T> struct Array : /*std::vector<T>,*/ Serializable {
   void takeOver(Array<T>& a);  //a becomes a reference to its previously owned memory!
   void swap(Array<T>& a);      //the two arrays swap their contents!
   void setGrid(uint dim, T lo, T hi, uint steps);
+
+  void diff_setId();
 
   /// @name access by reference (direct memory access)
   Array<T> ref() const; //a reference on this
@@ -370,11 +373,11 @@ template<class T> struct ArrayIterationReverse {
 /// @name basic Array operators
 /// @{
 
-template<class T> Array<T> operator~(const Array<T>& y); //transpose
-template<class T> Array<T> operator-(const Array<T>& y); //negative
-template<class T> Array<T> operator^(const Array<T>& y, const Array<T>& z); //outer product
-template<class T> Array<T> operator%(const Array<T>& y, const Array<T>& z); //index/element-wise product
-template<class T> Array<T> operator*(const Array<T>& y, const Array<T>& z); //inner product
+template<class T> Array<T> operator~(const Array<T>& y); //op_transpose
+template<class T> Array<T> operator-(const Array<T>& y); //op_negative
+template<class T> Array<T> operator^(const Array<T>& y, const Array<T>& z); //op_outerProduct
+template<class T> Array<T> operator%(const Array<T>& y, const Array<T>& z); //op_indexWiseProduct
+template<class T> Array<T> operator*(const Array<T>& y, const Array<T>& z); //op_innerProduct
 template<class T> Array<T> operator*(const Array<T>& y, T z);
 template<class T> Array<T> operator*(T y, const Array<T>& z);
 template<class T> Array<T> operator/(int mustBeOne, const Array<T>& z_tobeinverted);
@@ -402,7 +405,6 @@ template <class T> ArrayModRaw<T> Array<T>::modRaw() const{ return ArrayModRaw<T
 template <class T> std::ostream& operator<<(std::ostream& os, const ArrayModRaw<T>& x) { x.write(os); return os; }
 
 //element-wise update operators
-#ifndef SWIG
 #define UpdateOperator( op )        \
   template<class T> Array<T>& operator op (Array<T>& x, const Array<T>& y); \
   template<class T> Array<T>& operator op (Array<T>& x, T y ); \
@@ -417,7 +419,6 @@ UpdateOperator(*=)
 UpdateOperator(/=)
 UpdateOperator(%=)
 #undef UpdateOperator
-#endif
 
 //element-wise operators
 #define BinaryOperator( op, updateOp)         \
@@ -437,7 +438,6 @@ BinaryOperator(-, -=);
 /// @name basic Array functions
 /// @{
 
-#ifndef SWIG
 #define UnaryFunction( func )           \
   template<class T> rai::Array<T> func (const rai::Array<T>& y)
 UnaryFunction(acos);
@@ -473,7 +473,6 @@ BinaryFunction(pow);
 BinaryFunction(fmod);
 #undef BinaryFunction
 
-#endif //SWIG
 
 //===========================================================================
 /// @}
@@ -734,8 +733,6 @@ rai::String singleString(const StringA& strs);
 // -- more methods should return an array instead of have a returned parameter...
 
 template<class T> rai::Array<T> vectorShaped(const rai::Array<T>& x) {  rai::Array<T> y;  y.referTo(x);  y.reshape(y.N);  return y;  }
-template<class T> void transpose(rai::Array<T>& x, const rai::Array<T>& y);
-template<class T> void negative(rai::Array<T>& x, const rai::Array<T>& y);
 template<class T> rai::Array<T> getDiag(const rai::Array<T>& y);
 template<class T> rai::Array<T> diag(const rai::Array<T>& x) {  rai::Array<T> y;  y.setDiag(x);  return y;  }
 template<class T> rai::Array<T> skew(const rai::Array<T>& x);
@@ -756,7 +753,6 @@ template<class T> void eliminate(rai::Array<T>& x, const rai::Array<T>& y, uint 
 template<class T> void eliminate(rai::Array<T>& x, const rai::Array<T>& y, uint d, uint e);
 template<class T> void eliminatePartial(rai::Array<T>& x, const rai::Array<T>& y, uint d);
 
-#ifndef SWIG
 template<class T> T sqrDistance(const rai::Array<T>& v, const rai::Array<T>& w);
 template<class T> T maxDiff(const rai::Array<T>& v, const rai::Array<T>& w, uint* maxi=0);
 template<class T> T maxRelDiff(const rai::Array<T>& v, const rai::Array<T>& w, T tol);
@@ -785,13 +781,16 @@ template<class T> T absMax(const rai::Array<T>& x);
 template<class T> T absMin(const rai::Array<T>& x);
 template<class T> void clip(const rai::Array<T>& x, T lo, T hi);
 
-template<class T> void innerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>& z);
-template<class T> void outerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>& z);
-template<class T> void indexWiseProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>& z);
-template<class T> rai::Array<T> crossProduct(const rai::Array<T>& y, const rai::Array<T>& z); //only for 3 x 3 or (3,n) x 3
+template<class T> void op_transpose(rai::Array<T>& x, const rai::Array<T>& y);
+template<class T> void op_negative(rai::Array<T>& x, const rai::Array<T>& y);
+
+template<class T> void op_innerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>& z);
+template<class T> void op_outerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>& z);
+template<class T> void op_indexWiseProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>& z);
+template<class T> void op_crossProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>& z); //only for 3 x 3 or (3,n) x 3
+template<class T> rai::Array<T> crossProduct(const rai::Array<T>& y, const rai::Array<T>& z){ rai::Array<T> x; op_crossProduct(x,y,z); return x; }
 template<class T> T scalarProduct(const rai::Array<T>& v, const rai::Array<T>& w);
 template<class T> T scalarProduct(const rai::Array<T>& g, const rai::Array<T>& v, const rai::Array<T>& w);
-template<class T> rai::Array<T> diagProduct(const rai::Array<T>& v, const rai::Array<T>& w);
 
 template<class T> rai::Array<T> elemWiseMin(const rai::Array<T>& v, const rai::Array<T>& w);
 template<class T> rai::Array<T> elemWiseMax(const rai::Array<T>& v, const rai::Array<T>& w);
@@ -869,7 +868,6 @@ template<class T> void tensorDivide(rai::Array<T>& X, const rai::Array<T>& Y, co
 /// @name twice template functions
 /// @{
 
-#ifndef SWIG
 template<class T, class S> void resizeAs(rai::Array<T>& x, const rai::Array<S>& a) {
   x.nd=a.nd; x.d0=a.d0; x.d1=a.d1; x.d2=a.d2;
   x.resetD();
@@ -892,7 +890,6 @@ template<class T, class S>
 bool samedim(const rai::Array<T>& a, const rai::Array<S>& b) {
   return (b.nd==a.nd && b.d0==a.d0 && b.d1==a.d1 && b.d2==a.d2);
 }
-#endif //SWIG
 
 //===========================================================================
 /// @}
@@ -1153,7 +1150,5 @@ Eigen::MatrixXd conv_arr2eigen(const arr& in);
 void linkArray();
 
 #include "array.ipp"
-
-#endif //SWIG
 
 // (note: http://www.informit.com/articles/article.aspx?p=31783&seqNum=2)

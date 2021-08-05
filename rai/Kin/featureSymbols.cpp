@@ -156,7 +156,7 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
     if(!frames.N) f->frameIDs = framesToIndices(C.frames);
   }
   else if(feat==FS_jointLimits) {
-    f=make_shared<F_qLimits2>();
+    f=make_shared<F_qLimits>();
     if(!frames.N) f->frameIDs = framesToIndices(C.frames);
   }
 

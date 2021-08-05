@@ -97,8 +97,9 @@ OptOptions::OptOptions() {
   dampingInc= rai::getParameter<double>("opt/dampingInc", 1.);
   dampingDec= rai::getParameter<double>("opt/dampingDec", 1.);
   wolfe     = rai::getParameter<double>("opt/wolfe", .01);
-  nonStrictSteps= rai::getParameter<double> ("opt/nonStrictSteps", 0);
-  allowOverstep= rai::getParameter<bool> ("opt/allowOverstep", false);
+  nonStrictSteps = rai::getParameter<double> ("opt/nonStrictSteps", 0);
+  boundedNewton = rai::getParameter<double> ("opt/boundedNewton", 0);
+  allowOverstep = rai::getParameter<double> ("opt/allowOverstep", 0);
   constrainedMethod = (ConstrainedMethodType)rai::getParameter<double>("opt/constrainedMethod", augmentedLag);
   muInit = rai::getParameter<double>("opt/muInit", 1.);
   muLBInit = rai::getParameter<double>("opt/muLBInit", 1.);

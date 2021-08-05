@@ -170,6 +170,7 @@ struct OptOptions {
   arg(double, dampingDec)
   arg(double, wolfe)
   arg(int, nonStrictSteps) //# of non-strict iterations
+  arg(bool, boundedNewton)
   arg(bool, allowOverstep)
   arg(ConstrainedMethodType, constrainedMethod)
   arg(double, muInit)

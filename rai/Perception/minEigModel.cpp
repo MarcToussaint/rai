@@ -43,7 +43,7 @@ void MinEigModel::addStatistics(const uintA& points, bool minus) {
     if(!w) continue;
     const arr& Xi=data.X[i];
     wXi=Xi;  wXi*=w;
-    outerProduct(wXiXi, wXi, Xi);
+    op_outerProduct(wXiXi, wXi, Xi);
     if(!minus) {
       stat_n += w;
       stat_x += wXi;

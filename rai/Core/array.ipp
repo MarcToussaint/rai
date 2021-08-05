@@ -1353,8 +1353,8 @@ template<class T> rai::Array<T>& rai::Array<T>::operator=(const rai::Array<T>& a
     } else if(isNoArr(a)){
       setNoArr();
     } else NIY;
-
   }
+  if(a.jac) jac = make_unique<rai::Array<T>>(*a.jac);
   return *this;
 }
 
@@ -2057,6 +2057,9 @@ template<class T> void rai::Array<T>::write(std::ostream& os, const char* ELEMSE
     }
     if(BRACKETS[1]) os <<BRACKETS[1];
   }
+  if(jac){
+    os <<" -- JACOBIAN:\n" <<*jac <<endl;
+  }
 }
 
 /** @brief prototype for operator>>, if there is a dimensionality tag: fast reading of ascii (if there is brackets[]) or binary (if there is \\0\\0 brackets) data; otherwise slow ascii read */
@@ -2270,7 +2273,8 @@ template<class T> const char* rai::Array<T>::prt() {
 }
 
 /// x = y^T
-template<class T> void transpose(rai::Array<T>& x, const rai::Array<T>& y) {
+template<class T> void op_transpose(rai::Array<T>& x, const rai::Array<T>& y) {
+  if(y.jac){ NIY }
   CHECK(&x!=&y, "can't transpose matrix into itself");
   CHECK_LE(y.nd, 3, "can only transpose up to 3D arrays");
   if(y.nd==3) {
@@ -2792,7 +2796,7 @@ template<class T> T product(const rai::Array<T>& v) {
   \f$\forall_{ik}:~ x_{ik} = \sum_j v_{ij}\, w_{jk}\f$ but also:
   \f$\forall_{i}:~ x_{i} = \sum_j v_{ij}\, w_{j}\f$*/
 template<class T>
-void innerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>& z) {
+void op_innerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>& z) {
   if(!y || !z){ x.setNoArr(); return; }
   /*
     if(y.nd==2 && z.nd==2 && y.N==z.N && y.d1==1 && z.d1==1){  //elem-wise
@@ -2814,6 +2818,10 @@ void innerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>&
       a=y.p+i*dk; astop=a+dk; b=z.p;
       for(; a!=astop; a++, b++)(*c)+=(*a) * (*b);
       c++;
+    }
+    if(z.jac){
+      x.jac = make_unique<rai::Array<T>>();
+      *x.jac = y*(*z.jac);
     }
     return;
   }
@@ -2849,12 +2857,14 @@ void innerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>&
         for(; a!=astop; a++, b+=d1)(*c)+=(*a) * (*b);
         c++;
       }
+    if(y.jac || z.jac){ NIY }
     return;
   }
   if(y.nd==1 && z.nd==1 && z.N==1) {  //vector multiplied with scalar (disguised as 1D vector)
     uint k, dk=y.N;
     x.resize(y.N);
     for(k=0; k<dk; k++) x.p[k]=y.p[k]*z.p[0];
+    if(y.jac || z.jac){ NIY }
     return;
   }
   if(y.nd==1 && z.nd==2 && z.d0==1) {  //vector x vector^T -> matrix (outer product)
@@ -2867,6 +2877,7 @@ void innerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>&
     uint i, j, d0=y.d0, d1=z.d1;
     x.resize(d0, d1);
     for(i=0; i<d0; i++) for(j=0; j<d1; j++) x(i, j)=y(i)*z(0, j);
+    if(y.jac || z.jac){ NIY }
     return;
   }
   if(y.nd==1 && z.nd==2) {  //vector^T x matrix -> vector^T
@@ -2880,29 +2891,33 @@ void innerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>&
   if(y.nd==2 && z.nd==3) {
     rai::Array<T> zz; zz.referTo(z);
     zz.reshape(z.d0, z.d1*z.d2);
-    innerProduct(x, y, zz);
+    op_innerProduct(x, y, zz);
     x.reshape(y.d0, z.d1, z.d2);
+    if(y.jac || z.jac){ NIY }
     return;
   }
   if(y.nd==3 && z.nd==2) {
     rai::Array<T> yy; yy.referTo(y);
     yy.reshape(y.d0*y.d1, y.d2);
-    innerProduct(x, yy, z);
+    op_innerProduct(x, yy, z);
     x.reshape(y.d0, y.d1, z.d1);
+    if(y.jac || z.jac){ NIY }
     return;
   }
   if(y.nd==3 && z.nd==1) {
     rai::Array<T> yy; yy.referTo(y);
     yy.reshape(y.d0*y.d1, y.d2);
-    innerProduct(x, yy, z);
+    op_innerProduct(x, yy, z);
     x.reshape(y.d0, y.d1);
+    if(y.jac || z.jac){ NIY }
     return;
   }
   if(y.nd==1 && z.nd==3) {
     rai::Array<T> zz; zz.referTo(z);
     zz.reshape(z.d0, z.d1*z.d2);
-    innerProduct(x, y, zz);
+    op_innerProduct(x, y, zz);
     x.reshape(z.d1, z.d2);
+    if(y.jac || z.jac){ NIY }
     return;
   }
   if(y.nd==1 && z.nd==1) {  //should be scalar product, but be careful
@@ -2913,6 +2928,7 @@ void innerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>&
     T s;
     for(s=0, k=0; k<dk; k++) s+=y.p[k]*z.p[k];
     x.p[0]=s;
+    if(y.jac || z.jac){ NIY }
     return;
   }
   HALT("inner product - not yet implemented for these dimensions: " <<y.nd <<" " <<z.nd);
@@ -2921,7 +2937,7 @@ void innerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>&
 /** @brief outer product (also exterior or tensor product): \f$\forall_{ijk}:~
   x_{ijk} = v_{ij}\, w_{k}\f$ */
 template<class T>
-void outerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>& z) {
+void op_outerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>& z) {
   if(y.nd==1 && z.nd==1) {
 #if 1
     uint i, j, d0=y.d0, d1=z.d0;
@@ -2937,12 +2953,14 @@ void outerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>&
       for(; zp!=zstop; zp++, xp++) *xp = yi * *zp;
     }
 #endif
+    if(y.jac || z.jac){ NIY }
     return;
   }
   if(y.nd==2 && z.nd==1) {
     uint i, j, k, d0=y.d0, d1=y.d1, d2=z.d0;
     x.resize(d0, d1, d2);
     for(i=0; i<d0; i++) for(j=0; j<d1; j++) for(k=0; k<d2; k++) x.p[(i*d1+j)*d2+k] = y.p[i*d1+j] * z.p[k];
+    if(y.jac || z.jac){ NIY }
     return;
   }
   HALT("outer product - not yet implemented for these dimensions");
@@ -2950,10 +2968,11 @@ void outerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>&
 
 /** @brief element wise product */
 template<class T>
-void elemWiseProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>& z) {
+void op_elemWiseProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>& z) {
   CHECK_EQ(y.N, z.N, "");
   x = z;
   for(uint i=0; i<x.N; i++) x.elem(i) *= y.elem(i);
+  if(y.jac || z.jac){ NIY }
   return;
 }
 
@@ -2962,15 +2981,17 @@ void elemWiseProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<
   \f$\forall_{i}:~ x_{i} = \sum_j v_{ij}\, w_{j}\f$
   \f$\forall_{i}:~ x_{ij} = v_{ij} w_{ij}\f$*/
 template<class T>
-void indexWiseProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>& z) {
+void op_indexWiseProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>& z) {
   if(y.N==1) { //scalar x any -> ..
     x=z;
     x*=y.scalar();
+    if(y.jac || z.jac){ NIY }
     return;
   }
   if(y.nd==1 && z.nd==1) {  //vector x vector -> element wise
     x=y;
     x*=z;
+    if(y.jac || z.jac){ NIY }
     return;
   }
   if(y.nd==1 && z.nd==2) {  //vector x matrix -> index-wise
@@ -2979,6 +3000,7 @@ void indexWiseProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array
     if(isSparseMatrix(z)){
       CHECK(typeid(T)==typeid(double), "only for double!");
       x.sparse().rowWiseMult(y);
+      if(y.jac || z.jac){ NIY }
       return;
     }
     if(isRowShifted(z)){
@@ -2990,6 +3012,7 @@ void indexWiseProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array
         double *xstop=xp+rowSize;
         for(; xp!=xstop; xp++) *xp *= yi;
       }
+      if(y.jac || z.jac){ NIY }
       return;
     }
     for(uint i=0; i<x.d0; i++) {
@@ -2997,12 +3020,14 @@ void indexWiseProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array
       T* xp=&x(i, 0), *xstop=xp+x.d1;
       for(; xp!=xstop; xp++) *xp *= yi;
     }
+    if(y.jac || z.jac){ NIY }
     return;
   }
   if(y.nd==2 && z.nd==1) {  //matrix x vector -> index-wise
     CHECK_EQ(y.d1, z.N, "wrong dims for indexWiseProduct:" <<y.d1 <<"!=" <<z.N);
     x=y;
     for(uint i=0; i<x.d0; i++) for(uint j=0; j<x.d1; j++) x(i, j) *= z(j);
+    if(y.jac || z.jac){ NIY }
     return;
   }
   if(y.dim() == z.dim()) { //matrix x matrix -> element-wise
@@ -3010,6 +3035,7 @@ void indexWiseProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array
     x = y;
     T* xp=x.p, *xstop=x.p+x.N, *zp=z.p;
     for(; xp!=xstop; xp++, zp++) *xp *= *zp;
+    if(y.jac || z.jac){ NIY }
     return;
   }
   HALT("operator% not implemented for "<<y.dim() <<" %" <<z.dim() <<" [I would like to change convention on the interpretation of operator% - contact Marc!")
@@ -3018,19 +3044,22 @@ void indexWiseProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array
 /** @brief outer product (also exterior or tensor product): \f$\forall_{ijk}:~
   x_{ijk} = v_{ij}\, w_{k}\f$ */
 template<class T>
-rai::Array<T> crossProduct(const rai::Array<T>& y, const rai::Array<T>& z) {
-  if(isNoArr(y)) return NoArr;
+void op_crossProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>& z) {
+  if(!y || !z){ x.setNoArr(); return; }
   if(y.nd==1 && z.nd==1) {
     CHECK(y.N==3 && z.N==3, "cross product only works for 3D vectors!");
-    rai::Array<T> x(3);
+    x.resize(3);
     x.p[0]=y.p[1]*z.p[2]-y.p[2]*z.p[1];
     x.p[1]=y.p[2]*z.p[0]-y.p[0]*z.p[2];
     x.p[2]=y.p[0]*z.p[1]-y.p[1]*z.p[0];
-    return x;
+    if(y.jac || z.jac){ NIY }
+    return;
   }
   if(y.nd==2 && z.nd==1) { //every COLUMN of y is cross-product'd with z!
     CHECK(y.d0==3 && z.N==3, "cross product only works for 3D vectors!");
-    return skew(-z) * y;
+    x = skew(-z) * y;
+    if(y.jac || z.jac){ NIY }
+    return;
   }
   HALT("cross product - not yet implemented for these dimensions");
 }
@@ -3081,26 +3110,6 @@ T scalarProduct(const rai::Array<T>& g, const rai::Array<T>& v, const rai::Array
     vp++;
   }
   return t;
-}
-
-template<class T>
-rai::Array<T> diagProduct(const rai::Array<T>& y, const rai::Array<T>& z) {
-  CHECK((y.nd==1 && z.nd==2) || (y.nd==2 && z.nd==1), "");
-  arr x;
-  uint i, j;
-  if(y.nd==1) {
-    CHECK_EQ(y.N, z.d0, "");
-    x=z;
-    for(i=0; i<x.d0; i++) for(j=0; j<x.d1; j++) x(i, j) *= y(i);
-    return x;
-  }
-  if(z.nd==1) {
-    CHECK_EQ(z.N, y.d1, "");
-    x=y;
-    for(i=0; i<x.d0; i++) for(j=0; j<x.d1; j++) x(i, j) *= z(j);
-    return x;
-  }
-  HALT("");
 }
 
 template<class T> rai::Array<T> elemWiseMin(const rai::Array<T>& v, const rai::Array<T>& w) {
@@ -3369,7 +3378,7 @@ template<class T> void tensorEquation_doesntWorkLikeThat(rai::Array<T>& X, const
   Bperm.reshape(sdim, rdim);
 
   //matrix multiplication
-  innerProduct(X, Aperm, Bperm);
+  op_innerProduct(X, Aperm, Bperm);
 
   //reshape
 }
@@ -3781,18 +3790,22 @@ template<class T> Array<T> operator+(const Array<T>& y, const Array<T>& z) { Arr
 template<class T> Array<T> operator-(const Array<T>& y, const Array<T>& z) { Array<T> x(y); x-=z; return x; }
 
 /// transpose
-template<class T> Array<T> operator~(const Array<T>& y) { Array<T> x; transpose(x, y); return x; }
+template<class T> Array<T> operator~(const Array<T>& y) { Array<T> x; op_transpose(x, y); return x; }
 /// negative
-template<class T> Array<T> operator-(const Array<T>& y) { Array<T> x; negative(x, y);  return x; }
+template<class T> Array<T> operator-(const Array<T>& y) { Array<T> x; op_negative(x, y);  return x; }
+
 /// outer product (notation borrowed from the wedge product, though not anti-symmetric)
-template<class T> Array<T> operator^(const Array<T>& y, const Array<T>& z) { Array<T> x; outerProduct(x, y, z); return x; }
+template<class T> Array<T> operator^(const Array<T>& y, const Array<T>& z) { Array<T> x; op_outerProduct(x, y, z); return x; }
 
 /// inner product
-template<class T> Array<T> operator*(const Array<T>& y, const Array<T>& z) { Array<T> x; innerProduct(x, y, z); return x; }
+template<class T> Array<T> operator*(const Array<T>& y, const Array<T>& z) { Array<T> x; op_innerProduct(x, y, z); return x; }
 /// scalar multiplication
 template<class T> Array<T> operator*(const Array<T>& y, T z) {             Array<T> x(y); x*=z; return x; }
 /// scalar multiplication
 template<class T> Array<T> operator*(T y, const Array<T>& z) {             Array<T> x(z); x*=y; return x; }
+
+/// index-wise (elem-wise) product (x_i = y_i z_i   or  X_{ij} = y_i Z_{ij}  or  X_{ijk} = Y_{ij} Z_{jk}   etc)
+template<class T> Array<T> operator%(const Array<T>& y, const Array<T>& z) { Array<T> x; op_indexWiseProduct(x, y, z); return x; }
 
 /// inverse
 template<class T> Array<T> operator/(int y, const Array<T>& z) {  CHECK_EQ(y, 1, ""); Array<T> x=inverse(z); return x; }
@@ -3813,8 +3826,6 @@ template<class T> Array<T>& operator<<(Array<T>& x, const T& y) { x.append(y); r
 /// x.append(y)
 template<class T> Array<T>& operator<<(Array<T>& x, const Array<T>& y) { x.append(y); return x; }
 
-/// index-wise (elem-wise) product (x_i = y_i z_i   or  X_{ij} = y_i Z_{ij}  or  X_{ijk} = Y_{ij} Z_{jk}   etc)
-template<class T> Array<T> operator%(const Array<T>& y, const Array<T>& z) { Array<T> x; indexWiseProduct(x, y, z); return x; }
 
 #define UpdateOperator( op )        \
   template<class T> Array<T>& operator op (Array<T>& x, const Array<T>& y){ \
@@ -3952,10 +3963,14 @@ template<class T> bool operator<(const Array<T>& v, const Array<T>& w) {
 /// @name arithmetic operators
 //
 
-template<class T> void negative(rai::Array<T>& x, const rai::Array<T>& y) {
+template<class T> void op_negative(rai::Array<T>& x, const rai::Array<T>& y) {
   x=y;
   T* xp=x.p, *xstop=xp+x.N;
   for(; xp!=xstop; xp++) *xp = - (*xp);
+  if(y.jac){
+    x.jac = make_unique<rai::Array<T>>();
+    op_negative(*x.jac, *y.jac);
+  }
 }
 
 //---------- unary functions
@@ -3971,6 +3986,7 @@ inline double sign(double x) {  return (x > 0) - (x < 0); }
     if(&x!=&y) x.resizeAs(y);         \
     T *xp=x.p, *xstop=xp+x.N, *yp=y.p;            \
     for(; xp!=xstop; xp++, yp++) *xp = (T)::func( (double) *yp );  \
+    CHECK(!y.jac, "AutoDiff NIY"); \
     return x;         \
   }
 
@@ -4075,6 +4091,21 @@ template struct rai::Array<bool>;
 #define T int
 #  include "array_instantiate.cpp"
 #endif
+
+
+//===========================================================================
+//
+// differentiation
+//
+
+template<class T>
+void rai::Array<T>::diff_setId() {
+  CHECK(!jac, "");
+  CHECK(nd==1,"");
+  jac = make_unique<arr>();
+  jac->setId(N);
+}
+
 
 //===========================================================================
 //

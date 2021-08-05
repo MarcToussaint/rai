@@ -25,6 +25,7 @@ struct ForceExchange : Dof, NonCopyable, GLDrawer {
   Frame &a, &b;
   ForceExchangeType type;
   double scale=1.;
+  double force_to_torque = 0.;
  private:
   PairCollision* __coll=0;
  public:
