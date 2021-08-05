@@ -14,6 +14,8 @@
 #include "F_collisions.h"
 #include "../Geo/pairCollision.h"
 
+#define RAI_USE_FUNCTIONAL_NORMALS
+
 //===========================================================================
 //helper methods:
 
@@ -365,7 +367,7 @@ void F_NewtonEuler_DampedVelocities::phi2(arr& y, arr& J, const FrameL& F) {
 
   //collect mass info (assume diagonal inertia matrix!!)
   double mass=1.;
-  arr Imatrix = diag(.03, 3);
+  arr Imatrix = diag(.02, 3);
   rai::Frame* a = F.elem(-2);
   if(a->inertia) {
     mass = a->inertia->mass;
@@ -463,13 +465,13 @@ void F_fex_ForceIsNormal::phi2(arr& y, arr& J, const FrameL& F) {
                 .eval(F);
 
   //-- from the geometry we need normal
-#if 0
-  Value normal = F_PairCollision(F_PairCollision::_normal, true)
-                 .eval(F);
-#else
+#ifdef RAI_USE_FUNCTIONAL_NORMALS
   Value normal = F_fex_POASurfaceAvgNormal()
                  .eval(F);
   normalizeWithJac(normal.y, normal.J);
+#else
+  Value normal = F_PairCollision(F_PairCollision::_normal, true)
+                 .eval(F);
 #endif
 
   //-- force needs to align with normal -> project force along normal
@@ -517,13 +519,13 @@ void F_fex_ForceIsPositive::phi2(arr& y, arr& J, const FrameL& F) {
                 .eval(F);
 
   //-- from the geometry we need normal
-#if 0
-  Value normal = F_PairCollision(F_PairCollision::_normal, true)
-                 .eval(F);
-#else
+#ifdef RAI_USE_FUNCTIONAL_NORMALS
   Value normal = F_fex_POASurfaceAvgNormal()
                  .eval(F);
   normalizeWithJac(normal.y, normal.J);
+#else
+  Value normal = F_PairCollision(F_PairCollision::_normal, true)
+                 .eval(F);
 #endif
 
   //-- force needs to align with normal -> project force along normal

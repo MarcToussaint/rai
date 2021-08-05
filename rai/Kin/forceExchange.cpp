@@ -44,7 +44,7 @@ rai::ForceExchange::~ForceExchange() {
 void rai::ForceExchange::setZero() {
   force.resize(3).setZero();
   torque.resize(3).setZero();
-  if(type==FXT_poa){
+  if(type==FXT_poa || type==FXT_poaOnly){
     poa = .5*a.getPosition() + .5*b.getPosition();
   }else if(type==FXT_forceZ){
     force.resize(1).setZero();
@@ -58,6 +58,7 @@ void rai::ForceExchange::setZero() {
 uint rai::ForceExchange::getDimFromType() {
   if(type==FXT_forceZ) return 1;
   else if(type==FXT_force) return 3;
+  else if(type==FXT_poaOnly) return 3;
   else return 6;
 }
 
@@ -66,6 +67,10 @@ void rai::ForceExchange::setDofs(const arr& q, uint n) {
     poa = q({n, n+2});
     force = q({n+3, n+5});
     torque.resize(3).setZero();
+  }else if(type==FXT_poaOnly){
+    poa = q({n, n+2});
+    force.clear();
+    torque.clear();
   }else if(type==FXT_torque){
     poa = b.getPosition();
     force = q({n, n+2});
@@ -92,6 +97,8 @@ arr rai::ForceExchange::calcDofsFromConfig() const {
     q.resize(6);
     q.setVectorBlock(poa, 0);
     q.setVectorBlock(force/scale, 3);
+  }else if(type==FXT_poaOnly){
+    q = poa;
   }else if(type==FXT_torque){
     q.resize(6);
     q.setVectorBlock(force/scale, 0);
@@ -110,6 +117,9 @@ void rai::ForceExchange::kinPOA(arr& y, arr& J) const {
   if(type==FXT_poa){
     y = poa;
     if(!!J) for(uint i=0; i<3; i++) J.elem(i, qIndex+0+i) = 1.;
+  }else if(type==FXT_poaOnly){
+    y = poa;
+    if(!!J) for(uint i=0; i<3; i++) J.elem(i, qIndex+0+i) = 1.;
   }else if(type==FXT_torque || type==FXT_force || type==FXT_forceZ){
     //use b as the POA!!
     b.C.kinematicsPos(y, J, &b);
@@ -122,6 +132,8 @@ void rai::ForceExchange::kinForce(arr& y, arr& J) const {
   if(type==FXT_poa){
     y = force;
     if(!!J) for(uint i=0; i<3; i++) J.elem(i, qIndex+3+i) = scale;
+  }else if(type==FXT_poaOnly){
+    //is zero already
   }else if(type==FXT_torque || type==FXT_force || type==FXT_force){
     y = force;
     if(!!J) for(uint i=0; i<3; i++) J.elem(i, qIndex+0+i) = scale;
@@ -139,7 +151,7 @@ void rai::ForceExchange::kinForce(arr& y, arr& J) const {
 void rai::ForceExchange::kinTorque(arr& y, arr& J) const {
   a.C.kinematicsZero(y, J, 3);
 
-  if(type==FXT_poa || type==FXT_force){
+  if(type==FXT_poa || type==FXT_force || type==FXT_poaOnly){
     //zero: POA is zero-momentum point
   }else if(type==FXT_forceZ){
     arr z, Jz;
@@ -178,12 +190,7 @@ arr gnuplot(const double x){
 }
 
 void rai::ForceExchange::glDraw(OpenGL& gl) {
-  if(type==FXT_poa){
-  }else if(type==FXT_torque || type==FXT_force){
-    poa = b.getPosition();
-  }
   double scale = 2.;
-
   arr _poa, _torque, _force;
   kinPOA(_poa, NoArr);
   kinForce(_force, NoArr);

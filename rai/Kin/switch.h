@@ -20,6 +20,7 @@ enum SwitchType {
   makeKinematic,
   SW_delContact,
   SW_addContact,
+  SW_addPOAonly,
 };
 
 enum SwitchInitializationType {

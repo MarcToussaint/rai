@@ -122,7 +122,7 @@ struct KOMO : NonCopyable {
   void setSlowAround(double time, double delta, double prec=1e1, bool hardConstrained=false);
 
   //-- core kinematic switch symbols of skeletons
-protected:
+//protected:
   //low-level add dof switches
   void addSwitch(const arr& times, bool before, rai::KinematicSwitch* sw);
   rai::KinematicSwitch* addSwitch(const arr& times, bool before, rai::JointType type, rai::SwitchInitializationType init,

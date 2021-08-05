@@ -81,6 +81,7 @@ template<> const char* rai::Enum<rai::SwitchType>::names []= {
   "makeKinematic",
   "delContact",
   "addContact",
+  "addPOAonly",
   nullptr
 };
 
@@ -224,6 +225,12 @@ rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) {
   if(symbol==SW_addContact) {
     CHECK_EQ(jointType, JT_none, "");
     new ForceExchange(*from, *to, FXT_poa);
+    return from;
+  }
+
+  if(symbol==SW_addPOAonly) {
+    CHECK_EQ(jointType, JT_none, "");
+    new ForceExchange(*from, *to, FXT_poaOnly);
     return from;
   }
 
