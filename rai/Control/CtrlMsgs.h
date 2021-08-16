@@ -30,12 +30,15 @@ struct CtrlStateMsg {
   double time=0.;
   arr q, qDot; // actual joint state
   arr tauExternal; // external torques
+  void initZero(uint n){ q.resize(n).setZero(); qDot.resize(n).setZero(); tauExternal.resize(n).setZero(); }
 };
 
 struct RobotAbstraction{
   Var<rai::CtrlCmdMsg> cmd;
   Var<rai::CtrlStateMsg> state;
   int writeData=0;
+  RobotAbstraction() {}
+  RobotAbstraction(const Var<rai::CtrlCmdMsg>& _cmd, const Var<rai::CtrlStateMsg>& _state) : cmd(_cmd), state(_state) {}
 };
 
 
