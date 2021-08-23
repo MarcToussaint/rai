@@ -91,7 +91,6 @@ template<class T> struct Array : /*std::vector<T>,*/ Serializable {
   SpecialArray* special; ///< auxiliary data, e.g. if this is a sparse matrics, depends on special type
   std::unique_ptr<Array<T>> jac=0; ///< optional pointer to Jacobian, to enable autodiff
 
-  typedef std::vector<T> vec_type;
   typedef std::function<bool(const T& a, const T& b)> ElemCompare;
 
   /// @name constructors
@@ -115,10 +114,10 @@ template<class T> struct Array : /*std::vector<T>,*/ Serializable {
   Array<T>& operator=(const std::vector<T>& values);
 
   /// @name iterators
-  typename vec_type::iterator begin() { return typename vec_type::iterator(p); }
-  typename vec_type::const_iterator begin() const { return typename vec_type::const_iterator(p); }
-  typename vec_type::iterator end() { return typename vec_type::iterator(p+N); }
-  typename vec_type::const_iterator end() const { return typename vec_type::const_iterator(p+N); }
+  typename std::vector<T>::iterator begin() { return typename std::vector<T>::iterator(p); }
+  typename std::vector<T>::const_iterator begin() const { return typename std::vector<T>::const_iterator(p); }
+  typename std::vector<T>::iterator end() { return typename std::vector<T>::iterator(p+N); }
+  typename std::vector<T>::const_iterator end() const { return typename std::vector<T>::const_iterator(p+N); }
   ArrayIterationEnumerated<T> itEnumerated() { return ArrayIterationEnumerated<T>(*this); }
   ArrayIterationReverse<T> itReverse() { return ArrayIterationReverse<T>(*this); }
   //TODO: more: rows iterator, reverse iterator

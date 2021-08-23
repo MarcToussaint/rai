@@ -321,13 +321,14 @@ OptNewton::~OptNewton() {
   if(options.verbose>1) cout <<"--- optNewtonStop: f(x)=" <<fx <<endl;
 }
 
-OptNewton&OptNewton::setBounds(const arr& _bounds_lo, const arr& _bounds_up){
+OptNewton& OptNewton::setBounds(const arr& _bounds_lo, const arr& _bounds_up){
   bounds_lo = _bounds_lo;
   bounds_up = _bounds_up;
   if(x.N){
     CHECK_EQ(bounds_lo.N, x.N, "");
     CHECK_EQ(bounds_up.N, x.N, "");
-    checkBound(x, bounds_lo, bounds_up);
+    bool good = checkBound(x, bounds_lo, bounds_up);
+    if(!good) HALT("seed x is not within bounds")
 //    boundClip(x, bounds_lo, bounds_up);
 //    reinit(x);
   }
