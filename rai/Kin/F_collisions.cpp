@@ -75,8 +75,10 @@ void F_PairCollision::phi2(arr& y, arr& J, const FrameL& F) {
 
   if(type==_negScalar) {
     arr Jp1, Jp2;
-    f1->C.jacobian_pos(Jp1, f1, coll->p1);
-    f2->C.jacobian_pos(Jp2, f2, coll->p2);
+    if(!!J){
+      f1->C.jacobian_pos(Jp1, f1, coll->p1);
+      f2->C.jacobian_pos(Jp2, f2, coll->p2);
+    }
     coll->kinDistance(y, J, Jp1, Jp2);
     y *= -1.;
     if(!!J) J *= -1.;

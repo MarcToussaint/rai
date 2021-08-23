@@ -1263,6 +1263,7 @@ void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
       collisionPairs += timeSlices.d1 * s; //fcl returns frame IDs related to 'world' -> map them into frameIDs within that time slice
       pathConfig.addProxies(collisionPairs);
     }
+    pathConfig._state_proxies_isGood=true;
     timeCollisions += rai::cpuTime();
   }
 }
@@ -1454,6 +1455,39 @@ double KOMO::getConstraintViolations() {
 double KOMO::getCosts() {
   Graph R = getReport(false);
   return R.get<double>("sos");
+}
+
+StringA KOMO::getCollisionPairs(double belowMargin){
+  //similar to Configuration::getTotalPenetration
+  uint nFrames = world.frames.N;
+  CHECK_EQ(nFrames, timeSlices.d1, "");
+  intAA collisions(nFrames);
+
+  for(const Proxy& p:pathConfig.proxies) {
+    //early check: if proxy is way out of collision, don't bother computing it precise
+    if(p.d > p.a->shape->radius()+p.b->shape->radius()+.01+belowMargin) continue;
+    //exact computation
+    if(!p.collision)((Proxy*)&p)->calc_coll();
+    double d = p.collision->getDistance();
+    if(d<belowMargin){
+      cout <<"KOMO collision pair: " <<p.a->name <<"--" <<p.b->name <<" : " <<p.d <<endl;
+      uint i=p.a->ID % nFrames;
+      uint j=p.b->ID % nFrames;
+      if(j<i){ int a=i; i=j; j=a; }
+      collisions(i).setAppendInSorted(j);
+    }
+  }
+
+  StringA cols;
+  for(uint i=0;i<collisions.N;i++){
+    for(int j:collisions(i)){
+      cols.append(world.frames.elem(i)->name);
+      cols.append(world.frames.elem(j)->name);
+    }
+  }
+  cols.reshape(-1, 2);
+  cout <<"KOMO collision pairs: " <<cols;
+  return cols;
 }
 
 void Conv_KOMO_SparseNonfactored::evaluate(arr& phi, arr& J, const arr& x) {
