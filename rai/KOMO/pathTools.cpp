@@ -181,15 +181,13 @@ rai::Spline getSpline(const arr& q, double duration, uint degree) {
   return S;
 }
 
-void boundClip(arr& y, const arr& bound_lo, const arr& bound_up);
-bool checkBound(arr& y, const arr& bound_lo, const arr& bound_up, double eps=1e-3);
-
-bool checkCollisionsAndLimits(rai::Configuration& C, FrameL collisionPairs, const arr& limits, bool solveForFeasible, int verbose){
+bool checkCollisionsAndLimits(rai::Configuration& C, const FrameL& collisionPairs, const arr& limits, bool solveForFeasible, int verbose){
+  arr B;
   //-- check for limits
   if(limits.N){
     arr q = C.getJointState();
-    arr B = ~limits;
-    bool good = checkBound(q, B[0], B[1]);
+    B = ~limits;
+    bool good = boundCheck(q, B[0], B[1]);
     if(!good){
       if(solveForFeasible){
         boundClip(q, B[0], B[1]);
@@ -231,6 +229,11 @@ bool checkCollisionsAndLimits(rai::Configuration& C, FrameL collisionPairs, cons
           return false;
         }else{
           LOG(0) <<"collisions resolved";
+          if(B.N){
+            bool good = boundCheck(komo.x, B[0], B[1]);
+            LOG(0) <<"bounds=good after resolution: " <<good;
+            if(!good) HALT("this should not be the case! collision resolution should respect bounds!");
+          }
           C.setJointState(komo.x);
         }
       }else{
