@@ -168,7 +168,7 @@ void makeRndScene(){
 
   FILE("z.rndObjects.g") <<C; //write configuration into a file
 
-  C.addFile("../../../../rai-robotModels/scenarios/pandasTable.g");
+  C.addFile(rai::raiPath("../rai-robotModels/scenarios/pandasTable.g"));
 
   rai::Simulation S(C, S._bullet, true);
   //rai::Simulation S(C, S._physx, true);

@@ -330,6 +330,7 @@ void ChoiceConstraintFunction::getBounds(arr& bounds_lo, arr& bounds_hi) {
   bounds_hi.resize(n) = +2.;
   if(which==boundConstrained){
     bounds_lo(0) = +0.5;
+//    bounds_lo(1) = +0.51;
   }
 }
 

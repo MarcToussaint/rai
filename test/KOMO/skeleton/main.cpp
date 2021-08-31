@@ -369,11 +369,11 @@ int main(int argc,char** argv){
 
 //  testPickAndPlace(false);
 //  testPickAndPlace(true);
-//  testPickAndPush(false);
+  testPickAndPush(false);
 //  testPickAndPush(true);
 //  testPickAndThrow(false);
 //  testPickAndThrow(true);
-  testTouchAndRoll(rai::_path);
+//  testTouchAndRoll(rai::_path);
 //  testTouchAndRoll(rai::_sequence);
 //  testWalkAndPick(false);
 //  testWalkAndPick(true);

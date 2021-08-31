@@ -82,6 +82,29 @@ void F_VectorRel::phi2(arr& y, arr& J, const FrameL& F){
 
 //===========================================================================
 
+void F_Matrix::phi2(arr& y, arr& J, const FrameL& F){
+  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  CHECK_EQ(F.N, 1, "");
+  rai::Frame *f = F.elem(0);
+  f->C.kinematicsMat(y, J, f);
+}
+
+//===========================================================================
+
+void F_MatrixDiff::phi2(arr& y, arr& J, const FrameL& F){
+  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  CHECK_EQ(F.N, 2, "");
+  rai::Frame *f1 = F.elem(0);
+  rai::Frame *f2 = F.elem(1);
+  arr y2, J2;
+  f1->C.kinematicsMat(y, J, f1);
+  f2->C.kinematicsMat(y2, J2, f2);
+  y -= y2;
+  J -= J2;
+}
+
+//===========================================================================
+
 void F_Quaternion::phi2(arr& y, arr& J, const FrameL& F){
   flipTargetSignOnNegScalarProduct = true;
   if(order>0){  Feature::phi2(y, J, F);  return;  }

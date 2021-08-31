@@ -27,6 +27,7 @@ struct Joint;
 struct Shape;
 struct Inertia;
 struct ForceExchange;
+struct ParticleDofs;
 enum JointType { JT_none=0, JT_hingeX, JT_hingeY, JT_hingeZ, JT_transX, JT_transY, JT_transZ, JT_transXY, JT_trans3, JT_transXYPhi, JT_universal, JT_rigid, JT_quatBall, JT_phiTransXY, JT_XBall, JT_free, JT_tau };
 enum BodyType  { BT_none=-1, BT_dynamic=0, BT_kinematic, BT_static };
 }
@@ -96,6 +97,7 @@ struct Frame : NonCopyable {
   Shape* shape=nullptr;          ///< this frame has a (collision or visual) geometry
   Inertia* inertia=nullptr;      ///< this frame has inertia (is a mass)
   Array<ForceExchange*> forces;  ///< this frame exchanges forces with other frames
+  ParticleDofs* particleDofs=nullptr;
 
   Frame(Configuration& _C, const Frame* copyFrame=nullptr);
   Frame(Frame* _parent);
@@ -116,7 +118,7 @@ struct Frame : NonCopyable {
   Frame* insertPreLink(const rai::Transformation& A=0);
   Frame* insertPostLink(const rai::Transformation& B=0);
   void unLink();
-  Frame& setParent(Frame* _parent, bool adoptRelTransform=false);
+  Frame& setParent(Frame* _parent, bool keepAbsolutePose_and_adaptRelativePose=false, bool checkForLoop=false);
 
   //structural information/retrieval
   bool isChildOf(const Frame* par, int order=1) const;
@@ -183,7 +185,7 @@ struct Dof {
   bool active=true;  ///< if false, this dof is not considered part of the configuration's q-vector
   uint dim=UINT_MAX;
   uint qIndex=UINT_MAX;
-  arr  limits;        ///< joint limits (lo, up, [maxvel, maxeffort])
+  arr  limits;    ///< joint limits (lo, up, [maxvel, maxeffort])
   Joint* mimic=0; ///< if non-nullptr, this joint's state is identical to another's
 
   virtual ~Dof() {}

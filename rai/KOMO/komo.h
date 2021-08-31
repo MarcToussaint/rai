@@ -122,7 +122,7 @@ struct KOMO : NonCopyable {
   void setSlowAround(double time, double delta, double prec=1e1, bool hardConstrained=false);
 
   //-- core kinematic switch symbols of skeletons
-protected:
+//protected:
   //low-level add dof switches
   void addSwitch(const arr& times, bool before, rai::KinematicSwitch* sw);
   rai::KinematicSwitch* addSwitch(const arr& times, bool before, rai::JointType type, rai::SwitchInitializationType init,
@@ -206,7 +206,7 @@ public:
   rai::Graph getProblemGraph(bool includeValues, bool includeSolution=true);
   double getConstraintViolations();
   double getCosts();
-  void reportProxies(ostream& os=std::cout, double belowMargin=.1); ///< report the proxies (collisions) for each time slice
+  StringA getCollisionPairs(double belowMargin=.01); ///< report the proxies (collisions) for each time slice
 
   void checkGradients();          ///< checks all gradients numerically
 

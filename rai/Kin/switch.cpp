@@ -81,6 +81,7 @@ template<> const char* rai::Enum<rai::SwitchType>::names []= {
   "makeKinematic",
   "delContact",
   "addContact",
+  "addPOAonly",
   nullptr
 };
 
@@ -151,7 +152,7 @@ rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) {
 #endif
 
     //create a new joint
-    to->setParent(from, false);
+    to->setParent(from, false, true); //checkForLoop might throw an error
     to->setJoint(jointType);
     CHECK(jointType!=JT_none, "");
 
@@ -224,6 +225,12 @@ rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) {
   if(symbol==SW_addContact) {
     CHECK_EQ(jointType, JT_none, "");
     new ForceExchange(*from, *to, FXT_poa);
+    return from;
+  }
+
+  if(symbol==SW_addPOAonly) {
+    CHECK_EQ(jointType, JT_none, "");
+    new ForceExchange(*from, *to, FXT_poaOnly);
     return from;
   }
 

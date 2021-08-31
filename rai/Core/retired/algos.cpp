@@ -31,11 +31,11 @@ void rai::normalizeData(arr& X) {
   arr mean, var, x, sd;
   arr ones(N); ones=1.;
 
-  innerProduct(mean, ones, X);
+  op_innerProduct(mean, ones, X);
   mean/=(double)N;
   for(n=0; n<N; n++) X[n]()-=mean;
 
-  innerProduct(var, ~X, X);
+  op_innerProduct(var, ~X, X);
   var/=(double)N;
   sd.resize(K);
   for(k=0; k<K; k++) sd(k)=sqrt(var(k, k));

@@ -24,7 +24,6 @@ extern uint COUNT_kin, COUNT_node;
 extern uintA COUNT_opt;
 extern double COUNT_time;
 extern String OptLGPDataPath;
-extern ofstream* filNodes;
 
 enum BoundType { BD_all=-1,
                  BD_symbolic=0,

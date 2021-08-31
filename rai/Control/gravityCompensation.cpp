@@ -301,7 +301,7 @@ void GravityCompensation::testForLimits() {
     world.setJointState(q[i]);
     F_qLimits limits; //(0.03);
     arr y;
-    limits.phi(y, NoArr, world);
+    limits.phi2(y, NoArr, world.frames);
     if(y(0) > 0) {
       cout << i << " " << y<< endl;
       j++;
@@ -325,7 +325,7 @@ void GravityCompensation::removeLimits() {
     world.setJointState(q[i]);
     F_qLimits limits;
     arr y;
-    limits.phi(y, NoArr, world);
+    limits.phi2(y, NoArr, world.frames);
     if(y(0) <= 0) {
       qNew.append(~q[i]);
       qSignNew.append(~qSign[i]);

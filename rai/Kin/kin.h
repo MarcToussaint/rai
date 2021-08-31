@@ -203,6 +203,7 @@ struct Configuration : GLDrawer {
   void kinematicsZero(arr& y, arr& J, uint n) const;
   void kinematicsPos(arr& y, arr& J, Frame* a, const Vector& rel=NoVector) const;
   void kinematicsVec(arr& y, arr& J, Frame* a, const Vector& vec=NoVector) const;
+  void kinematicsMat(arr& y, arr& J, Frame* a) const;
   void kinematicsQuat(arr& y, arr& J, Frame* a) const;
   void kinematicsPos_wrtFrame(arr& y, arr& J, Frame* b, const Vector& rel, Frame* self) const;
   void hessianPos(arr& H, Frame* a, Vector* rel=0) const;

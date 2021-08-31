@@ -196,7 +196,7 @@ void VelAlignConstraint::phi(arr& y, arr& J, const ConfigurationL& G) {
     dy_i = dy_i/(length(dy_i));
   }
 
-  innerProduct(y, ~dy_i, y_j);
+  op_innerProduct(y, ~dy_i, y_j);
 
   if(!!J) {
     J = ~dy_i*J_j + ~y_j*dJ_i;

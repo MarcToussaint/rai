@@ -5,18 +5,17 @@
 #include <Optim/convert.h>
 
 //lecture.cpp:
-void testConstraint(MathematicalProgram& p, uint dim_x, arr& x_start=NoArr, uint iters=20);
+void testConstraint(MathematicalProgram& p, arr& x_start=NoArr, uint iters=20);
 
 //==============================================================================
 //
 // test standard constrained optimizers
 //
 
-void testConstraint2(MathematicalProgram& p, uint dim_x, arr& x_start=NoArr){
+void testConstraint2(MathematicalProgram& p, arr& x_start=NoArr){
   //-- initial x
-  arr x = zeros(dim_x);
+  arr x = p.getInitializationSample();
   if(!!x_start) x=x_start;
-  rnd.seed(0);
 
   OptConstrained(x, NoArr, p)
       .run();
@@ -35,13 +34,13 @@ void testPhaseOne(MathematicalProgram& f, uint dim_x){
   arr x;
   x = {1., 1., 10.};
 
-  testConstraint(metaF, dim_x, x, 1);
+  testConstraint(metaF, x, 1);
   //one iteration of phase one should be enough
   //properly done: check in each step if constraints are fulfilled and exit phase one then
   //no need to really minimize
 
   x=x.sub(0,-2);
-  testConstraint(f, dim_x, x);
+  testConstraint(f, x);
 }
 
 //==============================================================================
@@ -95,8 +94,8 @@ int main(int argc,char** argv){
   ChoiceConstraintFunction F;
 //  RandomLPFunction F;
 //  SimpleConstraintFunction F;
-  testConstraint(F, F.getDimension());
-//  testConstraint2(F, F.getDimension());
+  testConstraint(F);
+//  testConstraint2(F);
 
 //  testCoveringSphere();
 //  testMathematicalProgram();

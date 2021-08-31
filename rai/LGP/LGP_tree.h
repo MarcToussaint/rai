@@ -44,6 +44,8 @@ struct LGP_Tree : GLDrawer {
   int verbose;
   uint numSteps;
   ofstream fil;
+  unique_ptr<ofstream> filNodes;
+  unique_ptr<ofstream> filComputes;
   bool displayTree=true;
   BoundType displayBound=BD_seqPath;
   bool collisions=false;

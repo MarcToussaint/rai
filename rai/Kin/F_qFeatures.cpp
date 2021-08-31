@@ -7,7 +7,10 @@
     --------------------------------------------------------------  */
 
 #include "F_qFeatures.h"
+
 #include "frame.h"
+#include "forceExchange.h"
+
 #include <climits>
 
 //===========================================================================
@@ -252,46 +255,46 @@ rai::Array<rai::Joint*> getMatchingJoints(const ConfigurationL& Ktuple, bool zer
 
 //===========================================================================
 
-void F_qLimits2::phi2(arr& y, arr& J, const FrameL& F){
-  uint M = dim_phi2(F);
-  F.last()->C.kinematicsZero(y, J, M);
-  uint m=0;
+DofL getDofs(const FrameL& F){
+  DofL dofs;
   for(rai::Frame *f: F){
     rai::Joint *j = f->joint;
-    if(!j) continue;
-    if(!j->limits.N) continue;
-    uint d=j->dim;
+    if(j && j->limits.N) dofs.append(j);
+    for(rai::ForceExchange* fex:f->forces){
+      if(fex->sign(f)>0.) dofs.append(fex);
+    }
+  }
+  return dofs;
+}
+
+void F_qLimits::phi2(arr& y, arr& J, const FrameL& F){
+  uint M = dim_phi2(F);
+  F.last()->C.kinematicsZero(y, J, M);
+  CHECK(F.last()->C._state_q_isGood, "");
+  uint m=0;
+  DofL dofs = getDofs(F);
+  for(rai::Dof* dof: dofs){
+    uint d=dof->dim;
     for(uint k=0; k<d; k++) { //in case joint has multiple dimensions
-      double lo = j->limits(2*k+0);
-      double up = j->limits(2*k+1);
-      uint i = j->qIndex+k;
-      y.elem(m) = lo - f->C.q(i);
+      double lo = dof->limits(2*k+0);
+      double up = dof->limits(2*k+1);
+      uint i = dof->qIndex+k;
+      y.elem(m) = lo - F.last()->C.q(i);
       if(!!J) J.elem(m, i) -= 1.;
       m++;
-      y.elem(m) = f->C.q(i) - up;
+      y.elem(m) = F.last()->C.q(i) - up;
       if(!!J) J.elem(m, i) += 1.;
       m++;
     }
   }
+  CHECK_EQ(m, M, "");
 }
 
-uint F_qLimits2::dim_phi2(const FrameL& F) {
+uint F_qLimits::dim_phi2(const FrameL& F) {
   uint m=0;
-  for(rai::Frame *f: F){
-    rai::Joint *j = f->joint;
-    if(!j) continue;
-    if(!j->limits.N) continue;
-    m += 2*j->dim;
-  }
+  DofL dofs = getDofs(F);
+  for(rai::Dof* dof: dofs) m += 2*dof->dim;
   return m;
-}
-
-//===========================================================================
-
-void F_qLimits::phi(arr& y, arr& J, const rai::Configuration& G) {
-//  if(!limits.N)
-  limits=G.getLimits(); //G might change joint ordering (kinematic switches), need to query limits every time
-  NIY//G.kinematicsLimits(y, J, limits);
 }
 
 //===========================================================================

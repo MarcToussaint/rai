@@ -17,7 +17,7 @@ void Kalman::stepObserve(const arr& y, const arr& C, const arr& c, const arr& W)
   arr Winv, Sinv, Ct;
   inverse_SymPosDef(Winv, W);
   inverse_SymPosDef(Sinv, b_var);
-  transpose(Ct, C);
+  op_transpose(Ct, C);
   b_var  = inverse_SymPosDef(Ct * Winv * C + Sinv);
   b_mean = b_var * (Ct * (Winv * (y-c)) + Sinv*b_mean);
 }

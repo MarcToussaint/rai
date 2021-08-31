@@ -52,6 +52,18 @@ struct F_VectorRel: Feature {
 
 //===========================================================================
 
+struct F_Matrix: Feature {
+  virtual void phi2(arr& y, arr& J, const FrameL& F);
+  virtual uint dim_phi2(const FrameL& F) { return 9; }
+};
+
+struct F_MatrixDiff : Feature {
+  virtual void phi2(arr& y, arr& J, const FrameL& F);
+  virtual uint dim_phi2(const FrameL& F) { return 9; }
+};
+
+//===========================================================================
+
 struct F_ScalarProduct : Feature {
   rai::Vector vec1, vec2;
   F_ScalarProduct(const rai::Vector& _vec1, const rai::Vector& _vec2)  : vec1(_vec1), vec2(_vec2) {}

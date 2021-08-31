@@ -101,7 +101,7 @@ struct GaussianProcessGaussKernel : GaussianProcessKernel {
     double co = k(x, xPrime)/l;
     arr diff = (x-xPrime);
     arr hessian;
-    outerProduct(hessian, diff, diff);
+    op_outerProduct(hessian, diff, diff);
     hessian = hessian*co/l;
     for(uint i = 0; i < hessian.d0; i++) {
       hessian(i, i) -= co;
@@ -156,7 +156,7 @@ struct GaussianProcessInverseMultiQuadricKernel : GaussianProcessKernel {
     double co3 = co*co*co;
     arr diff = (x-xPrime);
     arr hessian;
-    outerProduct(hessian, diff, diff);
+    op_outerProduct(hessian, diff, diff);
     hessian = 3.0*co3*co*co*hessian;
     for(uint i = 0; i < hessian.d0; i++) {
       hessian(i, i) -= co3;

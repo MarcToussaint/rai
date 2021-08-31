@@ -22,19 +22,14 @@
 // test standard constrained optimizers
 //
 
-void testConstraint(MathematicalProgram& p, uint dim_x, arr& x_start=NoArr, uint iters=20){
-
+void testConstraint(MathematicalProgram& p, arr& x_start=NoArr, uint iters=20){
   OptOptions options;
   LagrangianProblem lag(p, options);
 
   //-- initial x
-  arr x(dim_x);
+  arr x = p.getInitializationSample();
   if(!!x_start) x=x_start;
-  else{
-    x.setZero();
-    if(options.constrainedMethod==logBarrier){ } //log barrier needs a feasible starting point
-    else rndUniform(x, -1., 1.);
-  }
+
   //  cout <<std::setprecision(2);
   cout <<"x0=" <<x <<endl;
 
@@ -75,13 +70,6 @@ void testConstraint(MathematicalProgram& p, uint dim_x, arr& x_start=NoArr, uint
 
     //upate unconstraint problem parameters
     lag.autoUpdate(options, &newton.fx, newton.gx, newton.Hx);
-//    switch(options.constrainedMethod){
-//    case squaredPenalty: lag.mu *= 2.;  lag.nu *= 2.;  break;
-//    case augmentedLag:   lag.aulaUpdate(false, 1., muInc, &newton.fx, newton.gx, newton.Hx);  break;
-//    case anyTimeAula:    lag.aulaUpdate(true,  1., muInc, &newton.fx, newton.gx, newton.Hx);  break;
-//    case logBarrier:     lag.muLB /= 2.;  lag.nu *= 10;  break;
-//    default: NIY;
-//    }
 
     cout <<k <<' ' <<evals <<" f(x)=" <<lag.get_costs()
          <<" \tg_compl=" <<lag.get_sumOfGviolations()

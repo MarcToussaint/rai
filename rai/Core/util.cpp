@@ -216,7 +216,7 @@ bool parse(std::istream& is, const char* str, bool silent) {
     is.setstate(std::ios::failbit);
     if(!silent)  RAI_MSG("(LINE=" <<rai::lineCount <<") parsing of constant string '" <<str
                            <<"' failed! (read instead: '" <<buf <<"')");
-    delete buf;
+    delete[] buf;
     return false;
   }
   delete[] buf;

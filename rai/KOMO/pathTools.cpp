@@ -181,15 +181,13 @@ rai::Spline getSpline(const arr& q, double duration, uint degree) {
   return S;
 }
 
-void boundClip(arr& y, const arr& bound_lo, const arr& bound_up);
-bool checkBound(arr& y, const arr& bound_lo, const arr& bound_up, double eps=1e-3);
-
-bool checkCollisionsAndLimits(rai::Configuration& C, FrameL collisionPairs, const arr& limits, bool solveForFeasible, int verbose){
+bool checkCollisionsAndLimits(rai::Configuration& C, const FrameL& collisionPairs, const arr& limits, bool solveForFeasible, int verbose){
+  arr B;
   //-- check for limits
   if(limits.N){
     arr q = C.getJointState();
-    arr B = ~limits;
-    bool good = checkBound(q, B[0], B[1]);
+    B = ~limits;
+    bool good = boundCheck(q, B[0], B[1]);
     if(!good){
       if(solveForFeasible){
         boundClip(q, B[0], B[1]);
@@ -231,6 +229,11 @@ bool checkCollisionsAndLimits(rai::Configuration& C, FrameL collisionPairs, cons
           return false;
         }else{
           LOG(0) <<"collisions resolved";
+          if(B.N){
+            bool good = boundCheck(komo.x, B[0], B[1]);
+            LOG(0) <<"bounds=good after resolution: " <<good;
+            if(!good) HALT("this should not be the case! collision resolution should respect bounds!");
+          }
           C.setJointState(komo.x);
         }
       }else{
@@ -240,4 +243,104 @@ bool checkCollisionsAndLimits(rai::Configuration& C, FrameL collisionPairs, cons
     }
   }
   return true;
+}
+
+bool PoseTool::checkLimits(const arr& limits, bool solve, bool assert){
+  //get bounds
+  arr B;
+  if(limits.N) B = ~limits;
+  else B = ~C.getLimits();
+
+  //check
+  arr q = C.getJointState();
+  bool good = boundCheck(q, B[0], B[1]);
+  if(good) return true;
+
+  //without solve
+  if(!solve){
+    if(verbose) LOG(-2) <<"BOUNDS FAILED";
+    if(assert) HALT("limit check failed");
+    return false;
+  }
+
+  //solve
+  boundClip(q, B[0], B[1]);
+  C.setJointState(q);
+  return true;
+}
+
+bool PoseTool::checkCollisions(const FrameL& collisionPairs, bool solve, bool assert){
+  bool good=true;
+  if(collisionPairs.N){
+    //use explicitly given collision pairs
+    CHECK_EQ(&collisionPairs.last()->C, &C, "");
+    auto coll = F_PairCollision().eval(collisionPairs);
+    for(uint i=0;i<coll.y.N;i++){
+      if(coll.y.elem(i)>0.){
+        if(verbose>1) LOG(-1) <<"in collision: " <<collisionPairs(i,0)->name <<'-' <<collisionPairs(i,1)->name <<' ' <<coll.y.elem(i);
+        good=false;
+      }
+    }
+  }else{
+    //use broadphase
+    C.ensure_proxies();
+    double p = C.getTotalPenetration();
+    if(verbose>1) C.reportProxies();
+    if(p>0.) good=false;
+  }
+
+  if(good) return true;
+
+  //without solve
+  if(!solve){
+    if(verbose){
+      LOG(-1) <<"collision check failed";
+      if(!collisionPairs.N) C.reportProxies();
+    }
+    if(assert) HALT("collision check failed");
+    return false;
+  }
+
+  //solve
+  KOMO komo;
+  komo.setModel(C);
+  komo.setTiming(1., 1, 1., 1);
+  komo.add_qControlObjective({}, 1, 1e-1);
+  komo.addSquaredQuaternionNorms();
+
+  if(collisionPairs.N){
+    komo.addObjective({}, FS_distance, framesToNames(collisionPairs), OT_ineq, {1e2}, {-.001});
+  }else{
+    komo.addObjective({}, FS_accumulatedCollisions, {}, OT_ineq, {1e2}, {-.001});
+  }
+
+  komo.verbose=0;
+  komo.optimize(0., OptOptions().set_verbose(0).set_stopTolerance(1e-3));
+
+  if(komo.ineq>1e-1){
+    if(verbose) LOG(-1) <<"solveForFeasible failed!" <<komo.getReport();
+    if(verbose>1) komo.view(verbose>2, "collision resolution failed");
+    if(assert) HALT("collision resolution failed");
+    return false;
+  }else{
+    if(verbose) LOG(0) <<"collisions resolved";
+//          if(B.N){
+//            bool good = boundCheck(komo.x, B[0], B[1]);
+//            LOG(0) <<"bounds=good after resolution: " <<good;
+//            if(!good) HALT("this should not be the case! collision resolution should respect bounds!");
+//          }
+    C.setJointState(komo.x);
+    if(verbose>1){
+      C.ensure_proxies();
+      double p = C.getTotalPenetration();
+      if(verbose>1) C.reportProxies();
+      CHECK(p<=0., "not resolved");
+    }
+    return true;
+  }
+  return true;
+}
+
+bool PoseTool::checkLimitsAndCollisions(const arr& limits, const FrameL& collisionPairs, bool solve, bool assert){
+  return checkLimits(limits, solve, assert) && checkCollisions(collisionPairs, solve, assert);
 }

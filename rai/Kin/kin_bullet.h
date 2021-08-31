@@ -25,6 +25,7 @@ struct BulletInterface {
   void changeObjectType(rai::Frame* f, int _type);
 
   void saveBulletFile(const char* filename);
+  class btDiscreteDynamicsWorld* getDynamicsWorld();
 };
 
 

@@ -188,17 +188,17 @@ void rai::KinematicSwitch::apply(Configuration& K) {
     //placement of the slider1 on the table -> fixed
     slider1->linkFrom(from);
     Joint* j1 = new Joint(*slider1);
-    j1->type = JT_transXYPhi;
+    j1->setType(JT_transXYPhi);
     j1->constrainToZeroVel=true;
     //the actual sliding translation -> articulated
     slider2->linkFrom(slider1);
     Joint* j2 = new Joint(*slider2);
-    j2->type = JT_transX;
+    j2->setType(JT_transX);
     j2->constrainToZeroVel=false;
     //orientation of the object on the slider2 -> fixed
     to->linkFrom(slider2);
     Joint* j3 = new Joint(*to);
-    j3->type = JT_hingeZ;
+    j3->setType(JT_hingeZ);
     j3->constrainToZeroVel=true;
 
     //    NIY;//j3->B = jB;

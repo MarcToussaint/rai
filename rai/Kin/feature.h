@@ -40,11 +40,6 @@ protected:
   virtual void phi2(arr& y, arr& J, const FrameL& F) {  phi_finiteDifferenceReduce(y, J, F);  }
   virtual uint dim_phi2(const FrameL& F) {  NIY; }
 
-//  virtual void phi(arr& y, arr& J, const rai::Configuration& C);
-//  virtual void phi(arr& y, arr& J, const ConfigurationL& Ctuple); ///< if not overloaded this computes the generic pos/vel/acc depending on order
-//  virtual uint dim_phi(const rai::Configuration& C) { return dim_phi2(C.frames.sub(frameIDs)); }
-//  virtual uint dim_phi(const ConfigurationL& Ctuple) { return dim_phi(*Ctuple.last()); } ///< if not overloaded, returns dim_phi for last configuration
-
  public:
   void eval(arr& y, arr& J, const FrameL& F) { phi2(y, J, F); applyLinearTrans(y, J); }
   Value eval(const FrameL& F) { arr y, J; eval(y, J, F); return Value(y, J); }
@@ -52,24 +47,8 @@ protected:
   uint dim(const FrameL& F) { uint d=dim_phi2(F); return applyLinearTrans_dim(d); }
   VectorFunction vf2(const FrameL& F);
 
-//  void eval(arr& y, arr& J, const rai::Configuration& C) { phi(y, J, C); applyLinearTrans(y, J); }
-//  void eval(arr& y, arr& J, const ConfigurationL& Ctuple) { phi(y, J, Ctuple); applyLinearTrans(y, J); }
-//  uint __dim_phi(const rai::Configuration& C) { uint d=dim_phi(C); return applyLinearTrans_dim(d); }
-//  uint __dim_phi(const ConfigurationL& Ctuple) { uint d=dim_phi(Ctuple); return applyLinearTrans_dim(d); }
-
   virtual rai::String shortTag(const rai::Configuration& C);
   virtual rai::Graph getSpec(const rai::Configuration& C) { return rai::Graph({{"description", shortTag(C)}}); }
-
-  //-- evaluation helpers
-//  arr phi(const ConfigurationL& Ctuple) { arr y; eval(y, NoArr, Ctuple); return y; } ///< evaluate without computing Jacobian
-//  arr phiRaw(const ConfigurationL& Ctuple) { arr y; phi(y, NoArr, Ctuple); return y; } ///< evaluate without computing Jacobian
-//  Value operator()(const ConfigurationL& Ctuple) { arr y, J; eval(y, J, Ctuple); return Value(y, J); }
-//  Value operator()(const rai::Configuration& C) { arr y, J; eval(y, J, C); return Value(y, J); }
-//  Value eval(const ConfigurationL& Ctuple) { arr y, J; eval(y, J, Ctuple); return Value(y, J); }
-
-  //-- for direct gradient checking (move outside)
-//  VectorFunction vf(rai::Configuration& C);
-//  VectorFunction vf(ConfigurationL& Ctuple);
 
   //automatic finite difference definition of higher order features
   void phi_finiteDifferenceReduce(arr& y, arr& J, const FrameL& F);

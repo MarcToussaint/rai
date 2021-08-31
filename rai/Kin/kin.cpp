@@ -9,6 +9,7 @@
 #include "kin.h"
 #include "frame.h"
 #include "forceExchange.h"
+#include "dof_particles.h"
 #include "uncertainty.h"
 #include "proxy.h"
 #include "kin_swift.h"
@@ -786,7 +787,7 @@ double Configuration::getTotalPenetration() {
 
   double D=0.;
   for(const Proxy& p:proxies) {
-    //early check: if swift is way out of collision, don't bother computing it precise
+    //early check: if proxy is way out of collision, don't bother computing it precise
     if(p.d > p.a->shape->radius()+p.b->shape->radius()+.01) continue;
     //exact computation
     if(!p.collision)((Proxy*)&p)->calc_coll();
@@ -1261,6 +1262,9 @@ void Configuration::calc_indexedActiveJoints(bool resetActiveJointSet) {
       if(f->joint && f->joint->active && f->joint->type!=JT_rigid){
         activeJoints.append(f->joint);
       }
+      if(f->particleDofs && f->particleDofs->active){
+        activeJoints.append(f->particleDofs);
+      }
       for(rai::ForceExchange* fex:f->forces){
         if(fex->frame==f && fex->active){
           activeJoints.append(fex);
@@ -1643,6 +1647,28 @@ void Configuration::kinematicsVec(arr& y, arr& J, Frame* a, const Vector& vec) c
     arr A;
     jacobian_angular(A, a);
     J = crossProduct(A, conv_vec2arr(vec_world));
+  }
+}
+
+/// Jacobian of the i-th body's orientation matrix (flattened as 9-vector)
+void Configuration::kinematicsMat(arr& y, arr& J, Frame* a) const {
+  CHECK_EQ(&a->C, this, "");
+
+  arr R = a->ensure_X().rot.getMatrix().getArr();
+  transpose(R); //the transpose has easier Jacobian...
+  if(!!y){
+    y = R;
+    y.reshape(9);
+  }
+  if(!!J) {
+    arr A;
+    jacobian_angular(A, a);
+    jacobian_zero(J, 9);
+    if(A.N){
+      J.setMatrixBlock(crossProduct(A, R[0]), 0, 0);
+      J.setMatrixBlock(crossProduct(A, R[1]), 3, 0);
+      J.setMatrixBlock(crossProduct(A, R[2]), 6, 0);
+    }
   }
 }
 
@@ -2474,8 +2500,11 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
 
       Frame* b = nullptr;
       if(!n->parents.N) b = new Frame(*this);
-      else if(n->parents.N==1) b = new Frame(node2frame(n->parents(0)->index)); //getFrameByName(n->parents(0)->key));
-      else HALT("a frame can only have one parent");
+      else if(n->parents.N==1){
+        Frame *p = node2frame(n->parents(0)->index);
+        CHECK(p, "parent frame '" <<n->parents(0)->key <<"' does not yet exist - is graph DAG?");
+        b = new Frame(p); //getFrameByName(n->parents(0)->key));
+      }else HALT("a frame can only have one parent");
       node2frame(n->index) = b;
       b->name=n->key;
       b->ats = make_shared<Graph>();
