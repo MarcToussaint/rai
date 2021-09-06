@@ -288,15 +288,23 @@ namespace rai {
 extern bool useLapack;
 }
 
-void normalizeWithJac(arr& y, arr& J) {
+void normalizeWithJac(arr& y, arr& J, double eps) {
   double l = length(y);
-  if(l<1e-10) {
-    LOG(-1) <<"can't normalize vector of length " <<l;
-  } else {
-    y /= l;
+  if(!eps){
+    if(l<1e-10) {
+      LOG(-1) <<"can't normalize vector of length " <<l;
+    } else {
+      y /= l;
+      if(!!J && J.N) {
+        J -= (y^y)*J;
+        J /= l;
+      }
+    }
+  }else{
+    y /= (eps+l);
     if(!!J && J.N) {
-      J -= (y^y)*J;
-      J /= l;
+      J -= ((eps+l)/l * (y^y)) * J;
+      J /= (eps+l);
     }
   }
 }

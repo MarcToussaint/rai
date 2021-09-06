@@ -669,17 +669,6 @@ void F_fex_POA_isAtWitnesspoint::phi2(arr& y, arr& J, const FrameL& F) {
   if(!!J) { J = Jpoa - wit.J; }
 }
 
-void F_fex_POAmovesContinuously::phi2(arr& y, arr& J, const FrameL& F) {
-  CHECK_EQ(order, 1, "");
-  arr cp1, Jcp1;
-  arr cp2, Jcp2;
-  getContact(F(0,0), F(0,1))->kinPOA(cp1, Jcp1);
-  getContact(F(1,0), F(1,1))->kinPOA(cp2, Jcp2);
-
-  y = cp1 - cp2;
-  if(!!J) J = Jcp1 - Jcp2;
-}
-
 void F_fex_NormalForceEqualsNormalPOAmotion::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_EQ(order, 1, "");
 
@@ -703,11 +692,32 @@ void F_fex_NormalForceEqualsNormalPOAmotion::phi2(arr& y, arr& J, const FrameL& 
   if(!!J) J = ~normal.y*(force.J - poavel.J) + ~(force.y - poavel.y) * normal.J;
 }
 
+void F_fex_POA_PositionRel::phi2(arr& y, arr& J, const FrameL& F) {
+  if(order>0){  phi_finiteDifferenceReduce(y, J, F);  return;  }
+  CHECK_EQ(F.N, 2, "");
+  rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1));
+
+  rai::Frame *f1 = F.elem(0);
+  rai::Frame *f2 = F.elem(1);
+  if(b_or_a){ f1=F.elem(1); f2=F.elem(0); }
+
+  arr y1, y2, J1, J2;
+  ex->kinPOA(y1, J1);
+  f2->C.kinematicsPos(y2, J2, f2);
+  arr Rinv = ~(f2->ensure_X().rot.getArr());
+  y = Rinv * (y1 - y2);
+  if(!!J) {
+    arr A;
+    f2->C.jacobian_angular(A, f2);
+    J = Rinv * (J1 - J2 - crossProduct(A, y1 - y2));
+  }
+}
+
 void F_fex_POAzeroRelVel::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_EQ(order, 1, "");
   rai::ForceExchange* ex = getContact(F(1,0), F(1,1));
 #if 0
-  POA_rel_vel(y, J, Ktuple, con, true);
+  POA_rel_vel(y, J, F, ex, false);
 #else
   arr v1, Jv1, v2, Jv2;
   POA_vel(v1, Jv1, F, ex, false);

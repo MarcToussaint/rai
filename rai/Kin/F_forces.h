@@ -106,14 +106,16 @@ struct F_fex_ForceIsPositive : Feature {
   uint dim_phi2(const FrameL& F) { return 1; }
 };
 
-struct F_fex_POAmovesContinuously : Feature {
-  void phi2(arr& y, arr& J, const FrameL& F);
-  uint dim_phi2(const FrameL& F) { return 3; }
-};
-
 struct F_fex_NormalForceEqualsNormalPOAmotion: Feature {
   void phi2(arr& y, arr& J, const FrameL& F);
   uint dim_phi2(const FrameL& F) { return 1; }
+};
+
+struct F_fex_POA_PositionRel : Feature {
+  bool b_or_a;
+  F_fex_POA_PositionRel(bool b_or_a) : b_or_a(b_or_a) { order=1; }
+  void phi2(arr& y, arr& J, const FrameL& F);
+  uint dim_phi2(const FrameL& F) { return 3; }
 };
 
 struct F_fex_POAzeroRelVel : Feature {
