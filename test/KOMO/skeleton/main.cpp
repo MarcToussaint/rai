@@ -101,7 +101,7 @@ void testPickAndThrow(bool keyframesOnly){
   rai::Skeleton S = {
     { 1., 1., rai::SY_topBoxGrasp, {"gripper", "box2"} },
     { 1., 2., rai::SY_stable, {"gripper", "box2"} },
-    { 2., 3., rai::SY_dynamic, {"box2"} },
+    { 2., 3., rai::SY_dynamic, {"world", "box2"} },
     { 3., 3., rai::SY_topBoxGrasp, {"gripper", "box2"} },
     { 3., 4., rai::SY_stable, {"gripper", "box2"} },
 //    { 5., 5., rai::SY_topBoxPlace, {"gripper", "box2", "table"} },
@@ -130,8 +130,8 @@ void testTouchAndRoll(rai::ArgWord pathOrSeq){
 
   //grasp
   rai::Skeleton S = {
-    { 1., 1., rai::SY_touch, {"handB", "ball"} },
-    { 1., 1.2, rai::SY_contact, {"handB", "ball"} },
+    { 1., 1., rai::SY_touch, {"palmB", "ball"} },
+    { 1., 1.2, rai::SY_contact, {"palmB", "ball"} },
     { 1., -1., rai::SY_dynamicOn, {"table", "ball"} },
     { 2., 2., rai::SY_touch, {"ball", "box"} },
   };
@@ -367,21 +367,21 @@ int main(int argc,char** argv){
 
 //  rnd.clockSeed();
 
-//  testPickAndPlace(false);
+  testPickAndPlace(false);
 //  testPickAndPlace(true);
   testPickAndPush(false);
 //  testPickAndPush(true);
-//  testPickAndThrow(false);
+  testPickAndThrow(false);
 //  testPickAndThrow(true);
-//  testTouchAndRoll(rai::_path);
+  testTouchAndRoll(rai::_path);
 //  testTouchAndRoll(rai::_sequence);
-//  testWalkAndPick(false);
+  testWalkAndPick(false);
 //  testWalkAndPick(true);
-//  testWalking(false);
+  testWalking(false);
 //  testWalking(true);
-//  testHandover(false);
+  testHandover(false);
 //  testHandover(true);
-//  testStackAndBalance(false);
+  testStackAndBalance(false);
 //  testStackAndBalance(true);
 
   return 0;

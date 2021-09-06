@@ -547,9 +547,9 @@ void F_fex_POASurfaceDistance::phi2(arr& y, arr& J, const FrameL& F){
   ex->kinPOA(poa, Jpoa);
 
   //-- evaluate functional
-  CHECK(f->shape, "");
+  CHECK(f->shape, "the frame '" <<f->name <<"' needs to have a shape");
   shared_ptr<ScalarFunction> func = f->shape->functional();
-  CHECK(func, "");
+  CHECK(func, "the frame '" <<f->name <<"' needs to have a functional shape");
   arr g;
   double d = (*func)(g, NoArr, poa);
 

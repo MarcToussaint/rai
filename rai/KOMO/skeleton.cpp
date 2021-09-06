@@ -109,6 +109,7 @@ intA Skeleton::getSwitches(const rai::Configuration& C) const {
   for(int i=0; i<(int)S.N; i++) {
     if(skeletonModes.contains(S.elem(i).symbol)) { //S(i) is about a switch
       int j=i-1;
+      CHECK_GE(S.elem(i).frames.N, 2, "switch symbols need at least 2 frames (e.g. {world, obj})")
       rai::Frame* toBeSwitched = C[S.elem(i).frames(1)];
       CHECK(toBeSwitched,"");
       rai::Frame* rootOfSwitch = toBeSwitched->getUpwardLink(NoTransformation, true);

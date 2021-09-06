@@ -433,34 +433,6 @@ void KOMO::addContact_ComplementarySlide(double startTime, double endTime, const
 //  addObjective({startTime, endTime}, make_shared<TM_Contact_POAzeroRelVel>(world, from, to), OT_sos, {1e-1}, NoArr, 1, +1, +0);
 }
 
-void KOMO::addContact_staticPush(double startTime, double endTime, const char* from, const char* to) {
-  HALT("OBSOLETE");
-  addSwitch({startTime}, true, new rai::KinematicSwitch(rai::SW_addContact, rai::JT_none, from, to, world));
-  if(endTime>0.) addSwitch({endTime}, false, new rai::KinematicSwitch(rai::SW_delContact, rai::JT_none, from, to, world));
-
-  addObjective({startTime, endTime}, make_shared<F_fex_ForceIsNormal>(), {from, to}, OT_sos, {1e1});
-  addObjective({startTime, endTime}, make_shared<F_fex_ForceIsPositive>(), {from, to}, OT_ineq, {1e2});
-  addObjective({startTime, endTime}, make_shared<F_fex_POAContactDistances>(), {from, to}, OT_ineq, {1e1});
-  addObjective({startTime, endTime}, make_shared<F_fex_POAmovesContinuously>(), {from, to}, OT_sos, {1e0}, NoArr, 1, +1, +0);
-  addObjective({startTime, endTime}, make_shared<F_fex_Force>(), {from, to}, OT_sos, {1e-1});
-  addObjective({startTime, endTime}, make_shared<F_fex_POAzeroRelVel>(), {from, to}, OT_sos, {1e-1}, NoArr, 1, +1, +0);
-  //  addObjective({startTime, endTime}, make_shared<TM_Contact_POAzeroRelVel>(world, from, to), OT_eq, {1e1}, NoArr, 1, +1, +0);
-  //  addObjective({time}, make_shared<F_pushed>(world, to), OT_eq, {1e1}, NoArr, 1, +1, +0);
-}
-
-void KOMO::addContact_noFriction(double startTime, double endTime, const char* from, const char* to) {
-  HALT("OBSOLETE");
-  addSwitch({startTime}, true, new rai::KinematicSwitch(rai::SW_addContact, rai::JT_none, from, to, world));
-  if(endTime>0.) addSwitch({endTime}, false, new rai::KinematicSwitch(rai::SW_delContact, rai::JT_none, from, to, world));
-
-  addObjective({startTime, endTime}, make_shared<F_fex_ForceIsNormal>(), {from, to}, OT_eq, {3e1});
-  addObjective({startTime, endTime}, make_shared<F_fex_ForceIsPositive>(), {from, to}, OT_ineq, {1e1});
-  addObjective({startTime, endTime}, make_shared<F_fex_POAContactDistances>(), {from, to}, OT_ineq, {1e1});
-  addObjective({startTime, endTime}, make_shared<F_fex_POAmovesContinuously>(), {from, to}, OT_sos, {1e0}, NoArr, 1, +1, +0);
-  addObjective({startTime, endTime}, make_shared<F_fex_Force>(), {from, to}, OT_sos, {1e-4});
-  addObjective({startTime, endTime}, FS_pairCollision_negScalar, {from, to}, OT_eq, {1e1});
-}
-
 void KOMO::addContact_elasticBounce(double time, const char* from, const char* to, double elasticity, double stickiness) {
   addSwitch({time}, true,  new rai::KinematicSwitch(rai::SW_addContact, rai::JT_none, from, to, world));
   addSwitch({time}, false, new rai::KinematicSwitch(rai::SW_delContact, rai::JT_none, from, to, world));

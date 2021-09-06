@@ -100,10 +100,8 @@ struct KOMO : NonCopyable {
   void addContact_slide(double startTime, double endTime, const char* from, const char* to);
   void addContact_stick(double startTime, double endTime, const char* from, const char* to);
   void addContact_elasticBounce(double time, const char* from, const char* to, double elasticity=.8, double stickiness=0.);
-  void addContact_noFriction(double startTime, double endTime, const char* from, const char* to);
   void addContact_ComplementarySlide(double startTime, double endTime, const char* from, const char* to);
   //  void addContact_Relaxed(double startTime, double endTime, const char *from, const char* to);
-  void addContact_staticPush(double startTime, double endTime, const char* from, const char* to);
 
   void getBounds(arr& bounds_lo, arr& bounds_up);       ///< define the bounds (passed to the constrained optimization) based on the limit definitions of all DOFs
 
