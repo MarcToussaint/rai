@@ -144,6 +144,7 @@ void Skeleton::solve(ArgWord sequenceOrPath) {
   komo->getReport(true);
   komo->view(true, "optimized motion");
   while(komo->view_play(true));
+  komo->view_play(false, .1, "z.vid/");
 }
 
 shared_ptr<SolverReturn> Skeleton::solve2(){

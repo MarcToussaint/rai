@@ -728,6 +728,7 @@ arr Configuration::getLimits() const {
   uint N=getJointStateDimension();
   arr limits(N, 2);
   limits.setZero();
+  for(uint i=0;i<N;i++) limits(i,1)=-1.;
   for(Dof* j:activeJoints) {
     for(uint k=0; k<j->dim; k++) { //in case joint has multiple dimensions
       if(j->limits.N) {

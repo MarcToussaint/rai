@@ -1188,12 +1188,6 @@ void KOMO::checkBounds(const arr& x) {
   CHECK_EQ(x.N, bound_lo.N, "");
   CHECK_EQ(x.N, bound_up.N, "");
   boundCheck(x, bound_lo, bound_up);
-
-//  for(uint i=0; i<x.N; i++) if(bound_up.elem(i)>bound_lo.elem(i)) {
-//      if(x.elem(i)<bound_lo.elem(i)) cout <<"lower bound violation: x_" <<i <<"=" <<x.elem(i) <<" lo_" <<i <<"=" <<bound_lo.elem(i) <<endl;
-//      if(x.elem(i)>bound_up.elem(i)) cout <<"lower upper violation: x_" <<i <<"=" <<x.elem(i) <<" up_" <<i <<"=" <<bound_up.elem(i) <<endl;
-//    }
-
 }
 
 //===========================================================================

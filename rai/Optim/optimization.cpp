@@ -50,23 +50,11 @@ bool checkHessianCP(MathematicalProgram& P, const arr& x, double tolerance) {
   return checkHessian(F, x, tolerance);
 }
 
-bool checkInBound(MathematicalProgram& P, const arr& x){
-  arr bounds_lo, bounds_up;
-  P.getBounds(bounds_lo, bounds_up);
-  CHECK_EQ(x.N, bounds_lo.N, "");
-  CHECK_EQ(x.N, bounds_up.N, "");
-  for(uint i=0;i<x.N;i++){
-    CHECK_GE(x.elem(i), bounds_lo.elem(i), "x(" <<i <<") violates lower bound");
-    CHECK_LE(x.elem(i), bounds_up.elem(i), "x(" <<i <<") violates upper bound");
-  }
-  return true;
-}
-
 void boundClip(arr& y, const arr& bound_lo, const arr& bound_up) {
   if(bound_lo.N && bound_up.N) {
-    for(uint i=0; i<y.N; i++) if(bound_up(i)>=bound_lo(i)) {
-      if(y(i)>bound_up(i)) y(i) = bound_up(i);
-      if(y(i)<bound_lo(i)) y(i) = bound_lo(i);
+    for(uint i=0; i<y.N; i++) if(bound_up.elem(i)>=bound_lo.elem(i)) {
+      if(y.elem(i)>bound_up.elem(i)) y.elem(i) = bound_up.elem(i);
+      if(y.elem(i)<bound_lo.elem(i)) y.elem(i) = bound_lo.elem(i);
     }
   }
 }
@@ -77,21 +65,23 @@ void boundClip(MathematicalProgram& P, arr& x){
   boundClip(x, bounds_lo, bounds_up);
 }
 
-bool boundCheck(const arr& y, const arr& bound_lo, const arr& bound_up, double eps){
+bool boundCheck(const arr& x, const arr& bound_lo, const arr& bound_up, double eps){
   bool good=true;
   if(bound_lo.N && bound_up.N) {
-    double lo = min(y-bound_lo);
-    if(lo < -eps){
-      LOG(-1) << "lower bound violated: " <<lo;
-      good=false;
-    }
-    double up = max(y-bound_up);
-    if(up > eps){
-      LOG(-1) << "lower bound violated: " <<up;
-      good = false;
+    for(uint i=0; i<x.N; i++) if(bound_up.elem(i)>=bound_lo.elem(i)) {
+      if(x.elem(i) < bound_lo.elem(i)-eps){ good=false; LOG(0) <<"x(" <<i <<")=" <<x.elem(i) <<" violates lower bound " <<bound_lo.elem(i); }
+      if(x.elem(i) > bound_up.elem(i)+eps){ good=false;  LOG(0) <<"x(" <<i <<")=" <<x.elem(i) <<" violates upper bound " <<bound_up.elem(i); }
     }
   }
   return good;
+}
+
+bool checkInBound(MathematicalProgram& P, const arr& x){
+  arr bound_lo, bound_up;
+  P.getBounds(bound_lo, bound_up);
+  CHECK_EQ(x.N, bound_lo.N, "");
+  CHECK_EQ(x.N, bound_up.N, "");
+  return boundCheck(x, bound_lo, bound_up);
 }
 
 
