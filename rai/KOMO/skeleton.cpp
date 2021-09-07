@@ -13,7 +13,7 @@ double shapeSize(const rai::Configuration& K, const char* name, uint i=2);
 
 namespace rai {
 
-Array<SkeletonSymbol> skeletonModes = { SY_stable, SY_stableOn, SY_dynamic, SY_dynamicOn, SY_dynamicTrans, SY_quasiStatic, SY_quasiStaticOn, SY_magicTrans };
+Array<SkeletonSymbol> skeletonModes = { SY_stable, SY_stableOn, SY_stableYPhi, SY_dynamic, SY_dynamicOn, SY_dynamicTrans, SY_quasiStatic, SY_quasiStaticOn, SY_magicTrans };
 
 void SkeletonEntry::write(std::ostream& os) const {
   os <<"[" <<phase0 <<", " <<phase1 <<"] " <<symbol <<' ';
@@ -132,12 +132,12 @@ intA Skeleton::getSwitches(const rai::Configuration& C) const {
   return ret;
 }
 
-void Skeleton::solve() {
+void Skeleton::solve(ArgWord sequenceOrPath) {
   CHECK(C, "");
   komo.reset();
   komo=make_shared<KOMO>();
-  komo->setModel(*C, false);
-  setKOMO(*komo, rai::_sequence);
+  komo->setModel(*C, collisions);
+  setKOMO(*komo, sequenceOrPath);
   komo->optimize();
   //  komo->checkGradients();
 
@@ -370,8 +370,8 @@ void Skeleton::setKOMO(KOMO& komo) const {
 
       case SY_topBoxGrasp: {
         komo.addObjective({s.phase0}, FS_positionDiff, s.frames, OT_eq, {1e2});
-        komo.addObjective({s.phase0}, FS_scalarProductXX, s.frames, OT_eq, {1e2}, {0.});
-        komo.addObjective({s.phase0}, FS_vectorZ, {s.frames(0)}, OT_eq, {1e2}, {0., 0., 1.});
+        komo.addObjective({s.phase0}, FS_scalarProductXY, s.frames, OT_eq, {1e2}, {0.});
+        komo.addObjective({s.phase0}, FS_vectorZDiff, s.frames, OT_eq, {1e2}, {0., 0., 1.});
         //slow - down - up
         if(komo.k_order>=2) {
           komo.addObjective({s.phase0}, FS_qItself, {}, OT_eq, {}, {}, 1);
@@ -467,6 +467,7 @@ void Skeleton::setKOMO(KOMO& komo) const {
       //switches are handled above now
       case SY_stable:      //if(!ignoreSwitches) addSwitch_stable(s.phase0, s.phase1+1., s.frames(0), s.frames(1));  break;
       case SY_stableOn:    //if(!ignoreSwitches) addSwitch_stableOn(s.phase0, s.phase1+1., s.frames(0), s.frames(1));  break;
+      case SY_stableYPhi:    //if(!ignoreSwitches) addSwitch_stableOn(s.phase0, s.phase1+1., s.frames(0), s.frames(1));  break;
       case SY_dynamic:     //if(!ignoreSwitches) addSwitch_dynamic(s.phase0, s.phase1+1., "base", s.frames(0));  break;
       case SY_dynamicOn:   //if(!ignoreSwitches) addSwitch_dynamicOn(s.phase0, s.phase1+1., s.frames(0), s.frames(1));  break;
       case SY_dynamicTrans:   //if(!ignoreSwitches) addSwitch_dynamicTrans(s.phase0, s.phase1+1., "base", s.frames(0));  break;
@@ -513,6 +514,7 @@ void Skeleton::read(std::istream& is) {
   //-- first get a PRE-skeleton
   rai::Graph G(is);
   double phase0=1.;
+  double maxPhase=0.;
   for(rai::Node* step:G) {
     rai::Graph& stepG = step->graph();
     for(rai::Node* lit:stepG) {
@@ -537,6 +539,7 @@ void Skeleton::read(std::istream& is) {
       }
 
       S.append(SkeletonEntry(phase0, phase1, symbol, frames({1, -1})));
+      maxPhase=phase0;
     }
     phase0 += 1.;
   }
@@ -548,6 +551,7 @@ void Skeleton::read(std::istream& is) {
   for(uint i=0; i<S.N; i++) {
     SkeletonEntry& si = S(i);
     if(si.phase1==-1 && si.frames.N) {
+      si.phase1=maxPhase;
       for(uint j=i+1; j<S.N; j++) {
         SkeletonEntry& sj = S(j);
         if(sj.phase1==-1. && sj.frames.N && sj.frames.last()==si.frames.last()) { //this is also a mode symbol (due to phase1==-1.)

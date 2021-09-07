@@ -48,7 +48,7 @@
 //#endif
 
 #define KOMO_PATH_CONFIG
-//#define KOMO_MIMIC_STABLE
+#define KOMO_MIMIC_STABLE
 
 #define RAI_USE_FUNCTIONALS
 
@@ -214,21 +214,28 @@ KinematicSwitch* KOMO::addSwitch(const arr& times, bool before,
 
 void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA& frames, bool firstSwitch) {
   //-- creating a stable kinematic linking
-  if(newMode==SY_stable || newMode==SY_stableOn){
+  if(newMode==SY_stable || newMode==SY_stableOn || newMode==SY_stableYPhi){
     if(newMode==SY_stable) {
       auto sw = addSwitch(times, true, JT_free, SWInit_copy, frames(0), frames(1));
       sw->isStable = true;
-    } else { //SY_stableOn
+    } else if(newMode==SY_stableOn) {
       Transformation rel = 0;
       rel.pos.set(0, 0, .5*(shapeSize(world, frames(0)) + shapeSize(world, frames(1))));
       auto sw = addSwitch(times, true, JT_transXYPhi, SWInit_copy, frames(0), frames(1), rel);
       sw->isStable = true;
-    }
+    } else if(newMode==SY_stableYPhi) {
+      Transformation rel = 0;
+//      rel.pos.set(0, 0, -.5*(shapeSize(world, frames(0)) + shapeSize(world, frames(1))));
+      auto sw = addSwitch(times, true, JT_transY, SWInit_copy, frames(0), frames(1), rel);
+      sw->isStable = true;
+    } else NIY;
 
+#ifndef KOMO_MIMIC_STABLE
     // ensure the DOF is constant throughout its existance
     if((times(1)<0. && stepsPerPhase*times(0)<T) || stepsPerPhase*times(1)>stepsPerPhase*times(0)+1) {
       addObjective({times(0), times(1)}, make_shared<F_qZeroVel>(), {frames(1)}, OT_eq, {1e1}, NoArr, 1, +1, -1);
     }
+#endif
 
     //-- no jump at start
     if(firstSwitch){

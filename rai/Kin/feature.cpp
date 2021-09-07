@@ -26,6 +26,7 @@ void Feature::phi_finiteDifferenceReduce(arr& y, arr& J, const FrameL& F) {
 
   if(flipTargetSignOnNegScalarProduct) if(scalarProduct(y0, y1)<-.0) { y0 *= -1.;  if(!!J) Jy0 *= -1.; }
 
+  CHECK_EQ(y0.N, y1.N, "feature dim differs over time slices -- that's unusual. Possible case: qZeroVel across a switch, which happens in walker skeleton if the last entry does not indicate switch of robot");
   y = y1-y0;
   if(!!J) J = Jy1 - Jy0;
 

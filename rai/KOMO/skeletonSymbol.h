@@ -33,6 +33,8 @@ enum SkeletonSymbol {
 
   SY_touchBoxNormalX, SY_touchBoxNormalY, SY_touchBoxNormalZ,
 
+  SY_stableYPhi,
+
   SY_end,
 };
 

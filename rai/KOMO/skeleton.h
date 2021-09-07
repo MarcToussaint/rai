@@ -64,7 +64,7 @@ struct Skeleton {
   SkeletonTranscription mp_path(const arrA& waypoints={});
 
   //-- to be removed (call generic NLPsolver)
-  void solve();
+  void solve(rai::ArgWord sequenceOrPath);
   shared_ptr<SolverReturn> solve2();
 
   //not sure

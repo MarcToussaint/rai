@@ -28,7 +28,7 @@ struct Shape;
 struct Inertia;
 struct ForceExchange;
 struct ParticleDofs;
-enum JointType { JT_none=0, JT_hingeX, JT_hingeY, JT_hingeZ, JT_transX, JT_transY, JT_transZ, JT_transXY, JT_trans3, JT_transXYPhi, JT_universal, JT_rigid, JT_quatBall, JT_phiTransXY, JT_XBall, JT_free, JT_tau };
+enum JointType { JT_none=0, JT_hingeX, JT_hingeY, JT_hingeZ, JT_transX, JT_transY, JT_transZ, JT_transXY, JT_trans3, JT_transXYPhi, JT_transYPhi, JT_universal, JT_rigid, JT_quatBall, JT_phiTransXY, JT_XBall, JT_free, JT_tau };
 enum BodyType  { BT_none=-1, BT_dynamic=0, BT_kinematic, BT_static };
 }
 
@@ -233,10 +233,7 @@ struct Joint : Dof, NonCopyable {
   uint getDimFromType() const;
   arr get_h() const;
 
-  bool isPartBreak() {
-    return (type==JT_rigid || type==JT_free); // && !mimic;
-//    return (dim!=1 && !mimic) || type==JT_tau;
-  }
+  bool isPartBreak();
 
   //access the K's q vector
   double& getQ();
