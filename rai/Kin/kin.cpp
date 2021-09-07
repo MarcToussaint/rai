@@ -787,7 +787,7 @@ double Configuration::getTotalPenetration() {
 
   double D=0.;
   for(const Proxy& p:proxies) {
-    //early check: if swift is way out of collision, don't bother computing it precise
+    //early check: if proxy is way out of collision, don't bother computing it precise
     if(p.d > p.a->shape->radius()+p.b->shape->radius()+.01) continue;
     //exact computation
     if(!p.collision)((Proxy*)&p)->calc_coll();

@@ -825,6 +825,9 @@ void KOMO::run_prepare(double addInitializationNoise) {
   //add noise
   if(addInitializationNoise>0.) {
     rndGauss(x, addInitializationNoise, true); //don't initialize at a singular config
+    arr lo, up;
+    getBounds(lo, up);
+    boundClip(x, lo, up);
   }
 }
 
@@ -1184,11 +1187,12 @@ void KOMO::checkBounds(const arr& x) {
   getBounds(bound_lo, bound_up);
   CHECK_EQ(x.N, bound_lo.N, "");
   CHECK_EQ(x.N, bound_up.N, "");
+  boundCheck(x, bound_lo, bound_up);
 
-  for(uint i=0; i<x.N; i++) if(bound_up.elem(i)>bound_lo.elem(i)) {
-      if(x.elem(i)<bound_lo.elem(i)) cout <<"lower bound violation: x_" <<i <<"=" <<x.elem(i) <<" lo_" <<i <<"=" <<bound_lo.elem(i) <<endl;
-      if(x.elem(i)>bound_up.elem(i)) cout <<"lower upper violation: x_" <<i <<"=" <<x.elem(i) <<" up_" <<i <<"=" <<bound_up.elem(i) <<endl;
-    }
+//  for(uint i=0; i<x.N; i++) if(bound_up.elem(i)>bound_lo.elem(i)) {
+//      if(x.elem(i)<bound_lo.elem(i)) cout <<"lower bound violation: x_" <<i <<"=" <<x.elem(i) <<" lo_" <<i <<"=" <<bound_lo.elem(i) <<endl;
+//      if(x.elem(i)>bound_up.elem(i)) cout <<"lower upper violation: x_" <<i <<"=" <<x.elem(i) <<" up_" <<i <<"=" <<bound_up.elem(i) <<endl;
+//    }
 
 }
 
@@ -1238,6 +1242,7 @@ void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
       collisionPairs += timeSlices.d1 * s; //fcl returns frame IDs related to 'world' -> map them into frameIDs within that time slice
       pathConfig.addProxies(collisionPairs);
     }
+    pathConfig._state_proxies_isGood=true;
     timeCollisions += rai::cpuTime();
   }
 }
@@ -1429,6 +1434,39 @@ double KOMO::getConstraintViolations() {
 double KOMO::getCosts() {
   Graph R = getReport(false);
   return R.get<double>("sos");
+}
+
+StringA KOMO::getCollisionPairs(double belowMargin){
+  //similar to Configuration::getTotalPenetration
+  uint nFrames = world.frames.N;
+  CHECK_EQ(nFrames, timeSlices.d1, "");
+  intAA collisions(nFrames);
+
+  for(const Proxy& p:pathConfig.proxies) {
+    //early check: if proxy is way out of collision, don't bother computing it precise
+    if(p.d > p.a->shape->radius()+p.b->shape->radius()+.01+belowMargin) continue;
+    //exact computation
+    if(!p.collision)((Proxy*)&p)->calc_coll();
+    double d = p.collision->getDistance();
+    if(d<belowMargin){
+//      cout <<"KOMO collision pair: " <<p.a->name <<"--" <<p.b->name <<" : " <<p.d <<endl;
+      uint i=p.a->ID % nFrames;
+      uint j=p.b->ID % nFrames;
+      if(j<i){ int a=i; i=j; j=a; }
+      collisions(i).setAppendInSorted(j);
+    }
+  }
+
+  StringA cols;
+  for(uint i=0;i<collisions.N;i++){
+    for(int j:collisions(i)){
+      cols.append(world.frames.elem(i)->name);
+      cols.append(world.frames.elem(j)->name);
+    }
+  }
+  cols.reshape(-1, 2);
+//  cout <<"KOMO collision pairs: " <<cols;
+  return cols;
 }
 
 void Conv_KOMO_SparseNonfactored::evaluate(arr& phi, arr& J, const arr& x) {

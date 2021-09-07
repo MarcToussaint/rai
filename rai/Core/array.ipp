@@ -11,7 +11,7 @@
 #include "array.h"
 #include "util.h"
 
-#include <math.h>
+#include <cmath>
 #include <algorithm>
 #include <sstream>
 
@@ -2392,7 +2392,7 @@ template<class T> rai::Array<T> integral(const rai::Array<T>& x) {
   from \c 0 to \c range-1, of the \c ith variable */
 template<class T> T entropy(const rai::Array<T>& v) {
   T t(0);
-  for(uint i=v.N; i--;) if(v.p[i]) t-=(T)(v.p[i]*::log((double)v.p[i]));
+  for(uint i=v.N; i--;) if(v.p[i]) t-=(T)(v.p[i]*std::log((double)v.p[i]));
   return (T)(t/RAI_LN2);
 }
 
@@ -2425,25 +2425,25 @@ template<class T> void checkNormalization(rai::Array<T>& v, double tol) {
   switch(v.nd) {
     case 1:
       for(p=0, i=0; i<v.d0; i++) p+=v(i);
-      CHECK(fabs(1.-p)<tol, "distribution is not normalized: " <<v);
+      CHECK(std::fabs(1.-p)<tol, "distribution is not normalized: " <<v);
       break;
     case 2:
       for(j=0; j<v.d1; j++) {
         for(p=0, i=0; i<v.d0; i++) p+=v(i, j);
-        CHECK(fabs(1.-p)<tol, "distribution is not normalized: " <<v);
+        CHECK(std::fabs(1.-p)<tol, "distribution is not normalized: " <<v);
       }
       break;
     case 3:
       for(j=0; j<v.d1; j++) for(k=0; k<v.d2; k++) {
           for(p=0, i=0; i<v.d0; i++) p+=v(i, j, k);
-          CHECK(fabs(1.-p)<tol, "distribution is not normalized: " <<v);
+          CHECK(std::fabs(1.-p)<tol, "distribution is not normalized: " <<v);
         }
       break;
     case 4:
       for(j=0; j<v.d1; j++) for(k=0; k<v.d2; k++) {
           for(l=0; l<v.N/(v.d0*v.d1*v.d2); l++) {
             for(p=0, i=0; i<v.d0; i++) p+=v.elem(TUP(i, j, k, l));
-            CHECK(fabs(1.-p)<tol, "distribution is not normalized: " <<v <<" " <<p);
+            CHECK(std::fabs(1.-p)<tol, "distribution is not normalized: " <<v <<" " <<p);
           }
         }
       break;
@@ -2522,11 +2522,11 @@ template<class T> T maxDiff(const rai::Array<T>& v, const rai::Array<T>& w, uint
   T d(0), t(0);
   if(!im)
     for(uint i=v.N; i--;) {
-      d=(T)::fabs((double)(v.p[i]-w.p[i]));
+      d=(T)std::fabs((double)(v.p[i]-w.p[i]));
       if(d>t) t=d;
     } else {
     *im=0;
-    for(uint i=v.N; i--;) { d=(T)::fabs((double)(v.p[i]-w.p[i])); if(d>t) { t=d; *im=i; } }
+    for(uint i=v.N; i--;) { d=(T)std::fabs((double)(v.p[i]-w.p[i])); if(d>t) { t=d; *im=i; } }
   }
   return t;
 }
@@ -2536,8 +2536,8 @@ template<class T> T maxRelDiff(const rai::Array<T>& v, const rai::Array<T>& w, T
            "maxDiff on different array dimensions (" <<v.N <<", " <<w.N <<")");
   T d, t(0), a, b, c;
   for(uint i=v.N; i--;) {
-    a=(T)::fabs((double)v.p[i]) + tol;
-    b=(T)::fabs((double)w.p[i]) + tol;
+    a=(T)std::fabs((double)v.p[i]) + tol;
+    b=(T)std::fabs((double)w.p[i]) + tol;
     if(a<b) { c=a; a=b; b=c; }
     d=a/b-(T)1;
     if(d>t) t=d;
@@ -2565,13 +2565,13 @@ template<class T> T sqrDistance(const rai::Array<T>& g, const rai::Array<T>& v, 
 /// \f$\sqrt{\sum_i (v^i-w^i)^2}\f$
 template<class T>
 T euclideanDistance(const rai::Array<T>& v, const rai::Array<T>& w) {
-  return (T)::sqrt((double)sqrDistance(v, w));
+  return (T)std::sqrt((double)sqrDistance(v, w));
 }
 
 /// \f$\sqrt{\sum_i (v^i-w^i)^2}\f$
 template<class T>
 T metricDistance(const rai::Array<T>& g, const rai::Array<T>& v, const rai::Array<T>& w) {
-  return (T)::sqrt((double)sqrDistance(g, v, w));
+  return (T)std::sqrt((double)sqrDistance(g, v, w));
 }
 
 //===========================================================================
@@ -2699,7 +2699,7 @@ template<class T> rai::Array<T> min(const rai::Array<T>& v, uint d) {
 /// \f$\sum_i |x_i|\f$
 template<class T> T sumOfAbs(const rai::Array<T>& v) {
   T t(0);
-  for(uint i=v.N; i--; t+=(T)::fabs((double)v.p[i])) {};
+  for(uint i=v.N; i--; t+=(T)std::fabs((double)v.p[i])) {};
   return t;
 }
 
@@ -2718,7 +2718,7 @@ template<class T> T sumOfSqr(const rai::Array<T>& v) {
 }
 
 /// \f$\sqrt{\sum_i x_i^2}\f$
-template<class T> T length(const rai::Array<T>& x) { return (T)::sqrt((double)sumOfSqr(x)); }
+template<class T> T length(const rai::Array<T>& x) { return (T)std::sqrt((double)sumOfSqr(x)); }
 
 template<class T> T var(const rai::Array<T>& x) { T m=sum(x)/x.N; return sumOfSqr(x)/x.N-m*m; }
 
@@ -2738,7 +2738,7 @@ template<class T> rai::Array<T> stdDev(const rai::Array<T>& v) {
       x(j) += rai::sqr(vX(i, j)-m(j)/vX.d0)/(vX.d0-1);
     }
   }
-  x = sqrt(x);
+  x = std::sqrt(x);
   return x;
 }
 
@@ -2761,8 +2761,8 @@ template<class T> T minDiag(const rai::Array<T>& v) {
 template<class T> T absMin(const rai::Array<T>& x) {
   CHECK(x.N, "");
   uint i;
-  T t((T)::fabs((double)x.p[0]));
-  for(i=1; i<x.N; i++) if(fabs((double)x.p[i])<t) t=(T)::fabs((double)x.p[i]);
+  T t((T)std::fabs((double)x.p[0]));
+  for(i=1; i<x.N; i++) if(std::fabs((double)x.p[i])<t) t=(T)std::fabs((double)x.p[i]);
   return t;
 }
 
@@ -2770,8 +2770,8 @@ template<class T> T absMin(const rai::Array<T>& x) {
 template<class T> T absMax(const rai::Array<T>& x) {
   if(!x.N) return (T)0;
   uint i;
-  T t((T)::fabs((double)x.p[0]));
-  for(i=1; i<x.N; i++) if(fabs((double)x.p[i])>t) t=(T)::fabs((double)x.p[i]);
+  T t((T)std::fabs((double)x.p[0]));
+  for(i=1; i<x.N; i++) if(std::fabs((double)x.p[i])>t) t=(T)std::fabs((double)x.p[i]);
   return t;
 }
 
@@ -3255,7 +3255,7 @@ template<class T> void tensorCheckCondNormalization(const rai::Array<T>& X, uint
   for(i=0; i<dr; i++) {
     sum=0.;
     for(j=0; j<dl; j++) sum += X.p[j*dr + i];
-    CHECK(fabs(1.-sum)<tol, "distribution is not normalized: " <<X);
+    CHECK(std::fabs(1.-sum)<tol, "distribution is not normalized: " <<X);
   }
 }
 
@@ -3269,7 +3269,7 @@ template<class T> void tensorCheckCondNormalization_with_logP(const rai::Array<T
     sum=0.;
     uintA checkedIds;
     for(j=0; j<dl; j++) { sum += X.p[j*dr + i]*coeff; checkedIds.append(j*dr + i); }
-    CHECK(fabs(1.-sum)<tol, "distribution is not normalized for parents-config#" <<i <<endl <<checkedIds<<endl <<" " <<X);
+    CHECK(std::fabs(1.-sum)<tol, "distribution is not normalized for parents-config#" <<i <<endl <<checkedIds<<endl <<" " <<X);
   }
 }
 
@@ -3751,7 +3751,7 @@ template<class T> void rndGauss(rai::Array<T>& x, double stdDev, bool add) {
 /// returns an array with \c dim Gaussian noise elements
 /*template<class T> rai::Array<T>& rndGauss(double stdDev, uint dim){
   static rai::Array<T> z;
-  stdDev/=::sqrt(dim);
+  stdDev/=std::sqrt(dim);
   z.resize(dim);
   rndGauss(z, stdDev);
   return z;

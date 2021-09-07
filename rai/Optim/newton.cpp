@@ -11,8 +11,6 @@
 
 bool sanityCheck=false; //true;
 void updateBoundActive(intA& boundActive, const arr& x, const arr& bound_lo, const arr& bound_up);
-void boundClip(arr& y, const arr& bound_lo, const arr& bound_up);
-bool checkBound(arr& y, const arr& bound_lo, const arr& bound_up, double eps=1e-3);
 
 /** @brief Minimizes \f$f(x) = A(x)^T x A^T(x) - 2 a(x)^T x + c(x)\f$. The optional _user arguments specify,
  * if f has already been evaluated at x (another initial evaluation is then omitted
@@ -37,7 +35,7 @@ void OptNewton::reinit(const arr& _x) {
   if(&x!=&_x) x = _x;
 
 //  boundClip(x, bounds_lo, bounds_up);
-  checkBound(x, bounds_lo, bounds_up);
+  boundCheck(x, bounds_lo, bounds_up);
   timeEval -= rai::cpuTime();
   fx = f(gx, Hx, x);  evals++;
   timeEval += rai::cpuTime();
@@ -55,36 +53,6 @@ void OptNewton::reinit(const arr& _x) {
     if(x.N<=5) x.writeRaw(*simpleLog);
     (*simpleLog) <<endl;
   }
-}
-
-//===========================================================================
-
-void boundClip(arr& y, const arr& bound_lo, const arr& bound_up) {
-  if(bound_lo.N && bound_up.N) {
-    for(uint i=0; i<y.N; i++) if(bound_up(i)>bound_lo(i)) {
-      if(y(i)>bound_up(i)) y(i) = bound_up(i);
-      if(y(i)<bound_lo(i)) y(i) = bound_lo(i);
-    }
-  }
-}
-
-//===========================================================================
-
-bool checkBound(arr& y, const arr& bound_lo, const arr& bound_up, double eps){
-  bool good=true;
-  if(bound_lo.N && bound_up.N) {
-    double lo = min(y-bound_lo);
-    if(lo < -eps){
-      LOG(-1) << "lower bound violated: " <<lo;
-      good=false;
-    }
-    double up = max(y-bound_up);
-    if(up > eps){
-      LOG(-1) << "lower bound violated: " <<up;
-      good = false;
-    }
-  }
-  return good;
 }
 
 //===========================================================================
@@ -321,13 +289,14 @@ OptNewton::~OptNewton() {
   if(options.verbose>1) cout <<"--- optNewtonStop: f(x)=" <<fx <<endl;
 }
 
-OptNewton&OptNewton::setBounds(const arr& _bounds_lo, const arr& _bounds_up){
+OptNewton& OptNewton::setBounds(const arr& _bounds_lo, const arr& _bounds_up){
   bounds_lo = _bounds_lo;
   bounds_up = _bounds_up;
   if(x.N){
     CHECK_EQ(bounds_lo.N, x.N, "");
     CHECK_EQ(bounds_up.N, x.N, "");
-    checkBound(x, bounds_lo, bounds_up);
+    bool good = boundCheck(x, bounds_lo, bounds_up);
+    if(!good) HALT("seed x is not within bounds")
 //    boundClip(x, bounds_lo, bounds_up);
 //    reinit(x);
   }

@@ -204,7 +204,7 @@ public:
   rai::Graph getProblemGraph(bool includeValues, bool includeSolution=true);
   double getConstraintViolations();
   double getCosts();
-  void reportProxies(ostream& os=std::cout, double belowMargin=.1); ///< report the proxies (collisions) for each time slice
+  StringA getCollisionPairs(double belowMargin=.01); ///< report the proxies (collisions) for each time slice
 
   void checkGradients();          ///< checks all gradients numerically
 
