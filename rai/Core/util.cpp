@@ -1441,6 +1441,9 @@ template rai::String rai::getParameter<rai::String>(const char*);
 template rai::String rai::getParameter<rai::String>(const char*, const rai::String&);
 template StringA rai::getParameter<StringA>(const char*, const StringA&);
 
+template rai::Enum<rai::ArgWord> rai::getParameter<rai::Enum<rai::ArgWord>>(const char*);
+template rai::Enum<rai::ArgWord> rai::getParameter<rai::Enum<rai::ArgWord>>(const char*, const rai::Enum<rai::ArgWord>&);
+
 template bool rai::checkParameter<uint>(const char*);
 template bool rai::checkParameter<int>(const char*);
 template bool rai::checkParameter<bool>(const char*);
