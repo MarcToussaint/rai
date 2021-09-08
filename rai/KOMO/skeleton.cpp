@@ -545,8 +545,8 @@ void Skeleton::read(std::istream& is) {
     phase0 += 1.;
   }
 
-  cout <<"PRE_skeleton: " <<endl;
-  write(cout);
+//  cout <<"PRE_skeleton: " <<endl;
+//  write(cout);
 
   //-- fill in the missing phase1!
   for(uint i=0; i<S.N; i++) {
@@ -563,8 +563,8 @@ void Skeleton::read(std::istream& is) {
     }
   }
 
-  cout <<"TIMED_skeleton: " <<endl;
-  write(cout);
+//  cout <<"TIMED_skeleton: " <<endl;
+//  write(cout);
 }
 
 } //namespace

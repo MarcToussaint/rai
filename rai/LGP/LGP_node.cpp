@@ -167,7 +167,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
 
   //-- verbosity...
   if(tree.verbose>1){
-    if(komo->verbose>0) {
+    if(komo->opt.verbose>0) {
       cout <<"########## OPTIM lev " <<bound <<endl;
     }
 
@@ -183,15 +183,15 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
       (*komo->logFile) <<komo->getProblemGraph(false);
     }
 
-    if(komo->verbose>1) {
+    if(komo->opt.verbose>1) {
       skeleton->write(cout, skeleton->getSwitches(komo->world));
     }
 
     DEBUG(FILE("z.fol") <<fol;);
     DEBUG(komo->getReport(false, 1, FILE("z.problem")););
 
-    if(komo->verbose>1) komo->reportProblem();
-    if(komo->verbose>5) komo->animateOptimization = komo->verbose-5;
+    if(komo->opt.verbose>1) komo->reportProblem();
+    if(komo->opt.verbose>5) komo->opt.animateOptimization = komo->opt.verbose-5;
   }
 
   //-- optimize
@@ -218,14 +218,14 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
   count(bound)++;
 
   DEBUG(komo->getReport(false, 1, FILE("z.problem")););
-  Graph result = komo->getReport((komo->verbose>0 && bound>=2));
+  Graph result = komo->getReport((komo->opt.verbose>0 && bound>=2));
   DEBUG(FILE("z.problem.cost") <<result;);
 
   double cost_here = komo->sos;
   double constraints_here = komo->ineq + komo->eq;
   bool feas = (constraints_here<1.);
 
-  if(komo->verbose>0) {
+  if(komo->opt.verbose>0) {
     cout <<"  RESULTS: cost: " <<cost_here <<" constraints: " <<constraints_here <<" feasible: " <<feas <<endl;
   }
 

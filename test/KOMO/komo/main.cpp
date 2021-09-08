@@ -158,7 +158,7 @@ void TEST(Thin){
 
   komo.reportProblem();
 
-  komo.animateOptimization=1;
+  komo.opt.animateOptimization=1;
   //  komo.setSpline(5);
   komo.optimize(1e-2);
   komo.plotTrajectory();

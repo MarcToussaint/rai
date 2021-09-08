@@ -211,8 +211,8 @@ bool getFingersForGripper(rai::Frame*& gripper, rai::Frame*& fing1, rai::Frame*&
   FrameL F;
   handLink->getSubtree(F);
   for(rai::Frame* f:F){
-    if(f->name.endsWith("finger_joint1")) fing1=f;
-    if(f->name.endsWith("finger_joint2")) fing2=f;
+    if(f->name.endsWith("finger1")) fing1=f->parent;
+    if(f->name.endsWith("finger2")) fing2=f->parent;
   }
 #if 0
   fing1 = fing1->getUpwardLink();

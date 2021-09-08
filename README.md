@@ -45,6 +45,7 @@ make -j4 tests bin
 make runTests      # compile and run the essential tests
 
 # when interested in the python bindings:
+```
 pip3 install --user pybind11 jupyter nbconvert matplotlib
 ```
 

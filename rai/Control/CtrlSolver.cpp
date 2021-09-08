@@ -132,8 +132,8 @@ arr CtrlSolver::solve() {
 //  opt.nonStrictSteps=-1;
 //  opt.maxStep = .1; //*tau; //maxVel*tau;
   opt.damping = 1e-1;
-  komo.verbose=0;
-  komo.animateOptimization=animate;
+  komo.opt.verbose=0;
+  komo.opt.animateOptimization=animate;
   komo.optimize(0., opt);
   optReport = komo.getReport(false);
   if(optReport.get<double>("sos")>1.1

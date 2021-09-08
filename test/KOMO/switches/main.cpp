@@ -93,7 +93,7 @@ void testPickAndPlace(bool keyframesOnly){
     komo.addObjective({1.9,2.1}, FS_position, {"gripper"}, OT_eq, {}, {0.,0.,.1}, 2);
   }
 
-  komo.verbose = 4;
+  komo.opt.verbose = 4;
   komo.optimize();
 //  komo.checkGradients();
 
