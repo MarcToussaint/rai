@@ -7,22 +7,45 @@
 #include <LGP/LGP_tree.h>
 #include <KOMO/komo.h>
 
+void loadProblem(rai::Configuration& C, const std::string &filename){
+  C.addFile(filename.c_str());
+  //C.selectJointsByAtt({"ego"});
+  //C.pruneInactiveJoints();
+  //C.optimizeTree();
+  //check for collisions
+ // C.stepSwift();
+  //arr y, J;
+  //C.kinematicsPenetration(y, J);
+ // LOG(0) <<"collision costs of config: " << y.scalar() <<endl;
+//    K.reportProxies(cout, .1, true);
+//    K.watch();
+ // if(y.scalar()==0.) { 
+ //   LOG(0) << "Problem without collisions"; 
+ // }
+ // else {
+ //   LOG(1) << "Collisions found in the config";
+ // }
+  
+ // C.proxies.clear();
+}
+
+
 void generateProblem(rai::Configuration& C){
   uint numObj = 4;
   for(;;){
     C.clear();
-    //C.addFile("../../../../rai-robotModels/pr2/pr2.g");
-    C.addFile("/home/lana/git/p30branchraimarc/puzzle-scenes/scenes-30a/0k-2d-room-ego-obj-panda.g");
-    //C.selectJointsByAtt({"ego"});
+    // C.addFile("../../../../rai-robotModels/pr2/pr2.g");
+    C.addFile("0k-2d-room-ego-obj-limits.g");
+       // C.addFile("quim.g");
+
+    C.selectJointsByAtt({"ego"});
     //C.selectJointsByAtt({"base","armL","armR"});
     ///C.pruneInactiveJoints();
-    C.optimizeTree();
-    //C["pr2L"]->ats->newNode<rai::Graph>({"logical"}, {}, {{"gripper", true}});
-    //C["pr2R"]->ats->newNode<rai::Graph>({"logical"}, {}, {{"gripper", true}});
-    //C["worldTranslationRotation"]->joint->H = 1e-0;   
-    ///C.addFile("../../../../rai-robotModels/objects/tables.g");
+    //C.optimizeTree();
+    C["ego"]->ats->newNode<rai::Graph>({"logical"}, {}, {{"gripper", true}});
+    
     for(uint i=0;i<numObj;i++){
-      rai::Frame *f = C.addFrame(STRING("obj"<<i), "floor", "type:ssBox size:[.1 .1 .2 .02] color:[1. 0. 0.], contact, logical={ object }, joint:rigid" );
+      rai::Frame *f = C.addFrame(STRING("obj"<<i), "floor", "type:ssBox size:[.1 .1 .2 .02] color:[1. 0. 0.],  logical={ object }, joint:rigid" );
       f->setRelativePosition({rnd.uni(-.3, .3), rnd.uni(-1.,1.), .15});
       f->setRelativeQuaternion(rai::Quaternion(0).addZ(rnd.uni(-RAI_PI,RAI_PI)).getArr4d());
     }
@@ -40,26 +63,31 @@ void generateProblem(rai::Configuration& C){
   rai::Frame *f = C.addFrame("tray", "floor", "type:ssBox size:[.15 .15 .04 .02] color:[0. 1. 0.], logical={ table }" );
   f->setRelativePosition({0.,0.,.07});
 
-  C.addFrame("", "tray", "type:ssBox size:[.27 .27 .04 .02] color:[0. 1. 0.]" );
+  // C.addFrame("", "tray", "type:ssBox size:[.27 .27 .04 .02] color:[0. 1. 0.]" );
 
 }
 
-void solve(){
+  
+void solve() {
   rai::Configuration C;
-  generateProblem(C);
-  //  K.addFile("model2.g");
-  C.selectJointsByAtt({"ego"});
-  C.optimizeTree();
+  loadProblem(C, "minimal.g");
 
   rai::LGP_Tree lgp(C, "fol-pnp-switch.g");
-  lgp.fol.addTerminalRule("(on tray obj0) (on tray obj1) (on tray obj2)"); 
+  //lgp.fol.addTerminalRule("(on goal obj)"); 
+  //lgp.fol.addTerminalRule("(on goal obj) (on goal ego)"); 
+  lgp.fol.addTerminalRule("(on goal obj)"); 
+
+
+
   lgp.displayBound = rai::BD_seqPath;
   //lgp.verbose=2;
 
   lgp.fol.writePDDLfiles("z");
 
   lgp.run();
-
+  if(lgp.solutions.set().data->d0 == 0) {
+    LOG(0) << "No solutions found";
+  }
   for(auto* s:lgp.solutions.set()()){
     cout <<"SOLUTION:\n";
     s->write(cout);
@@ -75,28 +103,28 @@ void solve(){
 
 void playIt(){
   rai::Configuration C;
-  generateProblem(C);
+   //generateProblem(C);
+  loadProblem(C, "minimal.g");
   rai::LGP_Tree lgp(C, "fol-pnp-switch.g");
   lgp.player();
 }
 
+
 void testBounds(){
   rai::Configuration C;
-  generateProblem(C);
-//  K.addFile("model2.g");
+  //generateProblem(C);
+  loadProblem(C, "minimal.g");
 
   rai::LGP_Tree lgp(C, "fol-pnp-switch.g");
 
-//  lgp.inspectSequence("(pick pr2R obj0) (place pr2R obj0 tray)");
-//  lgp.inspectSequence("(pick pr2R obj0) (pick pr2L obj1) (place pr2R obj0 tray) (place pr2L obj1 tray) (pick pr2L obj2) (place pr2L obj2 tray)");
-  lgp.inspectSequence("(pick ego obj0) (place ego obj0 tray) (pick ego obj1) (place ego obj1 tray) (pick ego obj2) (place ego obj2 tray)");
+  lgp.inspectSequence("(pick ego obj) (place ego obj goal) ");
   return;
 
-  rai::LGP_Node* node = lgp.walkToNode("(pick pr2R obj0) (pick pr2L obj3) (place pr2R obj0 tray) (place pr2L obj3 tray)");
-  rai::BoundType bound = rai::BD_path;
-  node->optBound(bound, true, 2);
-  rai::ConfigurationViewer V;
-  node->displayBound(V, bound);
+  ////rai::LGP_Node* node = lgp.walkToNode("(pick pr2R obj0) (pick pr2L obj3) (place pr2R obj0 tray) (place pr2L obj3 tray)");
+  ////rai::BoundType bound = rai::BD_path;
+  ////node->optBound(bound, true, 2);
+  ////rai::ConfigurationViewer V;
+  ////node->displayBound(V, bound);
 //  V.setPath(node->problem(bound).komo->getPath_X(), "", true);
 //  for(uint i=0;i<2;i++) V.playVideo(true, 3.);
 }
@@ -109,7 +137,7 @@ int MAIN(int argc,char **argv){
 
   playIt();
 
-  testBounds();
+  //testBounds();
 
   return 0;
 }
