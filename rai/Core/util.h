@@ -185,6 +185,7 @@ template<class T> void getParameter(T& x, const char* tag, const T& Default);
 template<class T> void getParameter(T& x, const char* tag);
 template<class T> bool checkParameter(const char* tag);
 
+#if 0
 template<class T> struct Parameter{
   const char* key;
   T value;
@@ -194,6 +195,15 @@ template<class T> struct Parameter{
 #define raiPARAM(type, name) \
   rai::Parameter<type> name = {#name}; \
   auto set_##name(type _##name){ name.value=_##name; return *this; }
+#else
+template<class T> struct ParameterInit {
+  ParameterInit(T& x, const char* tag, const T& Default) { getParameter<T>(x, tag, Default); }
+};
+#define RAI_PARAM(scope, type, name, Default) \
+  type name; \
+  KOMO_Options& set_##name(type _##name){ name=_##name; return *this; } \
+  rai::ParameterInit<type> __init_##name = {name, scope #name, Default};
+#endif
 
 //----- get verbose level
 uint getVerboseLevel();

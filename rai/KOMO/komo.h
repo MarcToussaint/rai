@@ -32,6 +32,15 @@ enum KOMOsolver { KS_none=-1, KS_dense=0, KS_sparse, KS_banded, KS_sparseFactore
 
 //===========================================================================
 
+
+namespace rai {
+  struct KOMO_Options {
+    RAI_PARAM("KOMO/", int, verbose, 1)
+    RAI_PARAM("KOMO/", int, animateOptimization, 0)
+    RAI_PARAM("KOMO/", bool, mimicStable, false)
+  };
+}//namespace
+
 struct KOMO : NonCopyable {
 
   //-- the problem definition
@@ -57,14 +66,15 @@ struct KOMO : NonCopyable {
   rai::KOMOsolver solver=rai::KS_sparse;
   arr x, dual;                 ///< the primal and dual solution
 
+  //-- options
+  rai::KOMO_Options opt;
+
   //-- verbosity only: buffers of all feature values computed on last set_x
   double sos, eq, ineq;
   arr featureValues;           ///< storage of all features in all time slices
   arrA featureJacobians;       ///< storage of all features in all time slices
   ObjectiveTypeA featureTypes; ///< storage of all feature-types in all time slices
   StringA featureNames;
-  int verbose;                 ///< verbosity level
-  int animateOptimization=0;   ///< display the current path for each evaluation during optimization
   double timeTotal=0.;           ///< measured run time
   double timeCollisions=0., timeKinematics=0., timeNewton=0., timeFeatures=0.;
   ofstream* logFile=0;

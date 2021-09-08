@@ -48,7 +48,6 @@
 //#endif
 
 #define KOMO_PATH_CONFIG
-#define KOMO_MIMIC_STABLE
 
 #define RAI_USE_FUNCTIONALS
 
@@ -77,9 +76,7 @@ Shape* getShape(const Configuration& K, const char* name) {
   return s;
 }
 
-KOMO::KOMO() : computeCollisions(true), verbose(1) {
-  verbose = getParameter<double>("KOMO/verbose", 1);
-  animateOptimization = getParameter<double>("KOMO/animateOptimization", 0);
+KOMO::KOMO() : computeCollisions(true) {
   solver = getParameter<rai::Enum<rai::KOMOsolver>>("KOMO/solver", KS_sparse);
 }
 
@@ -230,12 +227,12 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
       sw->isStable = true;
     } else NIY;
 
-#ifndef KOMO_MIMIC_STABLE
-    // ensure the DOF is constant throughout its existance
-    if((times(1)<0. && stepsPerPhase*times(0)<T) || stepsPerPhase*times(1)>stepsPerPhase*times(0)+1) {
-      addObjective({times(0), times(1)}, make_shared<F_qZeroVel>(), {frames(1)}, OT_eq, {1e1}, NoArr, 1, +1, -1);
+    if(!opt.mimicStable){
+      // ensure the DOF is constant throughout its existance
+      if((times(1)<0. && stepsPerPhase*times(0)<T) || stepsPerPhase*times(1)>stepsPerPhase*times(0)+1) {
+        addObjective({times(0), times(1)}, make_shared<F_qZeroVel>(), {frames(1)}, OT_eq, {1e1}, NoArr, 1, +1, -1);
+      }
     }
-#endif
 
     //-- no jump at start
     if(firstSwitch){
@@ -639,19 +636,19 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, 
 //  view(true, STRING("before"));
 
   //first set the path piece-wise CONSTANT at waypoints and the subsequent steps (each waypoint may have different dimension!...)
-#ifndef KOMO_MIMIC_STABLE //depends on sw->isStable -> mimic !!
-  for(uint i=0; i<steps.N; i++) {
-    uint Tstop=T;
-    if(i+1<steps.N && steps(i+1)<T) Tstop=steps(i+1);
-    for(uint t=steps(i); t<Tstop; t++) {
-      setConfiguration_qAll(t, waypoints(i));
+  if(!opt.mimicStable){ //depends on sw->isStable -> mimic !!
+    for(uint i=0; i<steps.N; i++) {
+      uint Tstop=T;
+      if(i+1<steps.N && steps(i+1)<T) Tstop=steps(i+1);
+      for(uint t=steps(i); t<Tstop; t++) {
+        setConfiguration_qAll(t, waypoints(i));
+      }
+    }
+  }else{
+    for(uint i=0; i<steps.N; i++) {
+      if(steps(i)<T) setConfiguration_qAll(steps(i), waypoints(i));
     }
   }
-#else
-  for(uint i=0; i<steps.N; i++) {
-    if(steps(i)<T) setConfiguration_qAll(steps(i), waypoints(i));
-  }
-#endif
 
 //  view(true, STRING("after"));
 
@@ -809,7 +806,7 @@ struct Conv_KOMO_TimeSliceProblem : MathematicalProgram {
 void KOMO::optimize(double addInitializationNoise, const OptOptions options) {
   run_prepare(addInitializationNoise);
 
-  if(verbose>1) reportProblem();
+  if(opt.verbose>1) reportProblem();
 
   run(options);
 }
@@ -833,7 +830,7 @@ void KOMO::run_prepare(double addInitializationNoise) {
 
 void KOMO::run(OptOptions options) {
   Configuration::setJointStateCount=0;
-  if(verbose>0) {
+  if(opt.verbose>0) {
     cout <<"** KOMO::run solver:"
         <<rai::Enum<KOMOsolver>(solver)
        <<" collisions:" <<computeCollisions
@@ -843,7 +840,7 @@ void KOMO::run(OptOptions options) {
     cout <<endl;
   }
 
-  options.verbose = rai::MAX(verbose-2, 0);
+  options.verbose = rai::MAX(opt.verbose-2, 0);
   timeTotal -= rai::cpuTime();
   CHECK(T, "");
   if(logFile)(*logFile) <<"KOMO_run_log: [" <<endl;
@@ -897,13 +894,13 @@ void KOMO::run(OptOptions options) {
   timeTotal += rai::cpuTime();
 
   if(logFile)(*logFile) <<"\n] #end of KOMO_run_log" <<endl;
-  if(verbose>0) {
+  if(opt.verbose>0) {
     cout <<"** optimization time:" <<timeTotal
          <<" (kin:" <<timeKinematics <<" coll:" <<timeCollisions <<" feat:" <<timeFeatures <<" newton: " <<timeNewton <<")"
          <<" setJointStateCount:" <<Configuration::setJointStateCount
         <<"\n   sos:" <<sos <<" ineq:" <<ineq <<" eq:" <<eq <<endl;
   }
-  if(verbose>1) cout <<getReport(verbose>2) <<endl;
+  if(opt.verbose>1) cout <<getReport(opt.verbose>2) <<endl;
 }
 
 void KOMO::reportProblem(std::ostream& os) {
@@ -936,7 +933,7 @@ void KOMO::reportProblem(std::ostream& os) {
     os <<endl;
   }
 
-  if(verbose>6){
+  if(opt.verbose>6){
     os <<"  INITIAL STATE" <<endl;
     for(rai::Frame* f:pathConfig.frames){
       if(f->joint && f->joint->dim) os <<"    " <<f->name <<" [" <<f->joint->type <<"] : " <<f->joint->calcDofsFromConfig() /*<<" - " <<pathConfig.q.elem(f->joint->qIndex)*/ <<endl;
@@ -1077,10 +1074,10 @@ void KOMO::retrospectApplySwitches() {
           ex1->poa = ex0->poa;
         }else{
           f->set_Q() = f0->get_Q(); //copy the relative pose (switch joint initialization) from the first application
-#ifdef KOMO_MIMIC_STABLE
-          /*CRUCIAL CHANGE!*/
-          if(sw->isStable) f->joint->setMimic(f0->joint);
-#endif
+          if(opt.mimicStable){
+            /*CRUCIAL CHANGE!*/
+            if(sw->isStable) f->joint->setMimic(f0->joint);
+          }
         }
       }
     }
@@ -1193,12 +1190,12 @@ void KOMO::checkBounds(const arr& x) {
 //===========================================================================
 
 void reportAfterPhiComputation(KOMO& komo) {
-  if(komo.verbose>6 || komo.animateOptimization>2) {
+  if(komo.opt.verbose>6 || komo.opt.animateOptimization>2) {
     //  komo.reportProxies();
     cout <<komo.getReport(true) <<endl;
   }
-  if(komo.animateOptimization>0) {
-    komo.view(komo.animateOptimization>1, "optAnim");
+  if(komo.opt.animateOptimization>0) {
+    komo.view(komo.opt.animateOptimization>1, "optAnim");
     //  komo.plotPhaseTrajectory();
     //  rai::wait();
     //  reportProxies();

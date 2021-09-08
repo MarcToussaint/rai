@@ -129,7 +129,7 @@ std::pair<arr, arr> getStartGoalPath(const rai::Configuration& C, const arr& tar
   komo.setSlow(0., 0., 1e2, true);
   komo.setSlow(1., 1., 1e2, true);
 
-  komo.verbose=1;
+  komo.opt.verbose=1;
   komo.optimize();
 
   arr path = komo.getPath_qOrg();
@@ -220,7 +220,7 @@ bool checkCollisionsAndLimits(rai::Configuration& C, const FrameL& collisionPair
 
         komo.addObjective({}, FS_distance, framesToNames(collisionPairs), OT_ineq, {1e2}, {-.001});
 
-        komo.verbose=0;
+        komo.opt.verbose=0;
         komo.optimize(0., OptOptions().set_verbose(0).set_stopTolerance(1e-3));
 
         if(komo.ineq>1e-1){
@@ -314,7 +314,7 @@ bool PoseTool::checkCollisions(const FrameL& collisionPairs, bool solve, bool as
     komo.addObjective({}, FS_accumulatedCollisions, {}, OT_ineq, {1e2}, {-.001});
   }
 
-  komo.verbose=0;
+  komo.opt.verbose=0;
   komo.optimize(0., OptOptions().set_verbose(0).set_stopTolerance(1e-3));
 
   if(komo.ineq>1e-1){

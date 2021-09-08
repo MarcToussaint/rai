@@ -55,6 +55,7 @@ struct Node {
   template<class T> std::shared_ptr<T> getPtr() const;  ///< query whether node type is equal to (or derived from) shared_ptr<T>, return the shared_ptr if so
   template<class T> T& get() { T* x=getValue<T>(); CHECK(x, "this node '" <<*this <<"' is not of type '" <<typeid(T).name() <<"' but type '" <<type.name() <<"'"); return *x; }
   template<class T> const T& get() const { const T* x=getValue<T>(); CHECK(x, "this node '" <<*this <<"'is not of type '" <<typeid(T).name() <<"' but type '" <<type.name() <<"'"); return *x; }
+  template<class T> bool getFromDouble(T& x) const; ///< return value = false means parsing object of type T from the string failed
   template<class T> bool getFromString(T& x) const; ///< return value = false means parsing object of type T from the string failed
   template<class T> bool getFromArr(T& x) const; ///< return value = false means parsing object of type T from the string failed
   bool isBoolAndTrue() const { if(type!=typeid(bool)) return false; return *getValue<bool>() == true; }
@@ -435,6 +436,22 @@ template<class T> std::shared_ptr<T> Node::getPtr() const {
 //  return typed->value;
 }
 
+template<class T> bool Node::getFromDouble(T& x) const {
+  if(!isOfType<double>()) return false;
+  double y = get<double>();
+  if(typeid(T)==typeid(int)){
+    CHECK(!modf(y, &y), "numerical parameter " <<key <<" should be integer");
+    *((int*)&x)=(int)y;
+    return true;
+  }
+  if(typeid(T)==typeid(bool)){
+    CHECK(y==0. || y==1., "numerical parameter " <<key <<" should be boolean");
+    *((bool*)&x)=(y==1.);
+    return true;
+  }
+  return false;
+}
+
 template<class T> bool Node::getFromString(T& x) const {
   if(!isOfType<rai::String>()) return false;
   rai::String str = get<rai::String>();
@@ -486,6 +503,10 @@ template<class T> const T& Graph::get(const char* key, const T& defaultValue) co
 template<class T> bool Graph::get(T& x, const char* key) const {
   Node* n = findNodeOfType(typeid(T), key);
   if(n) { x=n->get<T>();  return true; }
+
+  //auto type conversions
+  n = findNodeOfType(typeid(double), key);
+  if(n) return n->getFromDouble<T>(x);
 
   n = findNodeOfType(typeid(rai::String), key);
   if(n) return n->getFromString<T>(x);

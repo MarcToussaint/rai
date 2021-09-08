@@ -162,7 +162,7 @@ shared_ptr<SolverReturn> Skeleton::solve2(){
 SkeletonTranscription Skeleton::mp(){
   SkeletonTranscription ret;
   ret.komo=make_shared<KOMO>();
-  ret.komo->verbose=verbose;
+  ret.komo->opt.verbose=verbose;
 #if 0
   ret.komo->solver = rai::KS_sparse;
   ret.komo->setModel(*C, collisions);
@@ -176,7 +176,7 @@ SkeletonTranscription Skeleton::mp(){
   komo->setModel(*C, collisions);
   komo->setTiming(maxPhase+1., 1, 5., 1);
 //  komo->solver=rai::KS_sparse; //sparseOptimization = true;
-  komo->animateOptimization = 0;
+  komo->opt.animateOptimization = 0;
 
   komo->addSquaredQuaternionNorms();
 #if 0
@@ -199,7 +199,7 @@ SkeletonTranscription Skeleton::mp(){
 SkeletonTranscription Skeleton::mp_finalSlice(){
   SkeletonTranscription ret;
   ret.komo=make_shared<KOMO>();
-  ret.komo->verbose=verbose;
+  ret.komo->opt.verbose=verbose;
   ptr<KOMO> komo = ret.komo;
 
   double maxPhase = getMaxPhase();
@@ -232,7 +232,7 @@ SkeletonTranscription Skeleton::mp_finalSlice(){
     }
 #endif
 
-  if(komo->verbose>1) {
+  if(komo->opt.verbose>1) {
     cout <<"POSE skeleton:" <<endl;
     finalS.write(cout, finalS.getSwitches(*C));
   }
@@ -284,7 +284,7 @@ SkeletonTranscription Skeleton::mp_finalSlice(){
 SkeletonTranscription Skeleton::mp_path(const arrA& waypoints){
   SkeletonTranscription ret;
   ret.komo=make_shared<KOMO>();
-  ret.komo->verbose=verbose;
+  ret.komo->opt.verbose=verbose;
 #if 0
   ret.komo->solver = rai::KS_sparse;
   ret.komo->setModel(*C, collisions);
@@ -299,7 +299,7 @@ SkeletonTranscription Skeleton::mp_path(const arrA& waypoints){
   uint stepsPerPhase = rai::getParameter<uint>("LGP/stepsPerPhase", 10);
   uint pathOrder = rai::getParameter<uint>("LGP/pathOrder", 2);
   komo->setTiming(maxPhase+.5, stepsPerPhase, 10., pathOrder);
-  komo->animateOptimization = 0;
+  komo->opt.animateOptimization = 0;
 
   komo->addSquaredQuaternionNorms();
 #if 0
