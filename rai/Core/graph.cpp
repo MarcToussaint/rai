@@ -1358,9 +1358,23 @@ void initParameters(int _argc, char*_argv[], bool forceReload){
   fil.open(cfgFileName);
   if(fil.good()) {
     fil >>P();
+    LOG(3) <<" - success";
   } else {
     LOG(3) <<" - failed";
   }
+  fil.close();
+
+  //-- append 'raiBase/local.cfg'
+  cfgFileName = rai::raiPath("../local.cfg");
+  LOG(3) <<"opening base config file '" <<cfgFileName <<"'";
+  fil.open(cfgFileName);
+  if(fil.good()){
+    fil >>P();
+    LOG(3) <<" - success";
+  } else {
+    LOG(3) <<" - failed";
+  }
+  fil.close();
 
   LOG(1) <<"** parsed parameters:\n" <<P() <<'\n';
 }
