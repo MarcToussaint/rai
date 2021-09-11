@@ -626,6 +626,14 @@ bool rai::Frame::isChildOf(const rai::Frame* par, int order) const {
 
 //===========================================================================
 
+void rai::Dof::setActive(bool _active){
+  if(mimic){ mimic->setActive(_active); return; }
+  active = _active;
+  for(Joint* j:mimicers) j->active=_active;
+  qIndex=UINT_MAX;
+  if(frame) frame->C.reset_q();
+}
+
 const rai::Joint*rai::Dof::joint() const{ return dynamic_cast<const Joint*>(this); }
 
 const rai::ForceExchange*rai::Dof::fex() const{ return dynamic_cast<const ForceExchange*>(this); }

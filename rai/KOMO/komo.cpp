@@ -1155,7 +1155,14 @@ void KOMO::setupPathConfig() {
   pathConfig.calc_indexedActiveJoints();
   uint firstID = timeSlices(k_order, 0)->ID;
   for(Dof* dof:pathConfig.activeJoints){
-    if(dof->frame->ID < firstID) dof->active=false;
+    if(dof->frame->ID < firstID){
+      if(!dof->mimicers.N) dof->active=false;
+      else{
+        bool act=false;
+        for(Dof* m:dof->mimicers) if(m->active){ act=true; break; }
+        if(!act) dof->active=false;
+      }
+    }
   }
   pathConfig.calc_indexedActiveJoints();
 //  for(uint t=0; t<T; ++t){
