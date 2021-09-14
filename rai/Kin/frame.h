@@ -145,6 +145,7 @@ struct Frame : NonCopyable {
   Frame& setPose(const rai::Transformation& _X);
   Frame& setPosition(const arr& pos);
   Frame& setQuaternion(const arr& quat);
+  Frame& setRelativePose(const rai::Transformation& _Q);
   Frame& setRelativePosition(const arr& pos);
   Frame& setRelativeQuaternion(const arr& quat);
   Frame& setPointCloud(const arr& points, const byteA& colors= {});
