@@ -1024,8 +1024,6 @@ bool Configuration::checkConsistency() const {
      */
   //check qdim
   if(_state_q_isGood) {
-    CHECK_EQ(1, q.nd, "");
-
     //count dimensions yourself and check...
     uint myqdim = 0;
     for(Dof* j:activeJoints) {

@@ -31,15 +31,21 @@ arr getAccelerations_centralDifference(const arr& q, double tau) {
   return a;
 }
 
-double getNaturalDuration(const arr& q, double maxVel, double maxAcc) {
+double getMinDuration(const arr& q, double maxVel, double maxAcc) {
   arr v = getVelocities_centralDifference(q, 1.);
-  arr a = getVelocities_centralDifference(q, 1.);
+  arr a = getAccelerations_centralDifference(q, 1.);
 
-  double vscale = maxVel / absMax(v);
-  double ascale = sqrt(maxAcc / absMax(a));
+  CHECK(maxVel>0. || maxAcc>0., "");
 
-  double duration = q.d0 / rai::MAX(vscale, ascale);
-  return duration;
+  double vscale = maxVel>0. ? maxVel / absMax(v) : 1e10;
+  double ascale = maxAcc>0. ? sqrt(maxAcc / absMax(a)) : 1e10;
+  double tau = 1./ rai::MIN(vscale, ascale);
+
+  v = getVelocities_centralDifference(q, tau);
+  a = getAccelerations_centralDifference(q, tau);
+  cout <<absMax(v) <<' ' <<absMax(a) <<endl;
+
+  return q.d0*tau;
 }
 
 arr getSineProfile(const arr& q0, const arr& qT, uint T) {

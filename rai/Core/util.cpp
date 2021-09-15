@@ -598,7 +598,7 @@ void initCmdLine(int _argc, char* _argv[]) {
   {
     rai::String msg;
     msg <<"** cmd line arguments: '"; for(int i=0; i<argc; i++) msg <<argv[i] <<' ';
-    msg <<"\b'";
+    msg <<"'";
     LOG(1) <<msg;
   }
 
