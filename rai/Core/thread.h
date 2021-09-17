@@ -17,7 +17,7 @@
 #include <condition_variable>
 #include <thread>
 
-enum ThreadState { tsIsClosed=-6, tsToOpen=-2, tsLOOPING=-3, tsBEATING=-4, tsIDLE=0, tsToStep=1, tsToClose=-1,  tsFAILURE=-5,  }; //positive states indicate steps-to-go
+enum ThreadState { tsIsClosed=-6, tsToOpen=-1, tsLOOPING=-2, tsBEATING=-3, tsIDLE=0, tsToStep=1, tsToClose=-4,  tsFAILURE=-5,  }; //positive states indicate steps-to-go
 struct Signaler;
 struct Event;
 struct Var_base;
