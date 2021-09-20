@@ -253,7 +253,7 @@ struct Configuration : GLDrawer {
   void stepDynamics(arr& qdot, const arr& u_control, double tau, double dynamicNoise = 0.0, bool gravity = true);
 
   /// @name I/O
-  void write(std::ostream& os) const;
+  void write(std::ostream& os, bool explicitlySorted=false) const;
   void write(Graph& G) const;
   void writeURDF(std::ostream& os, const char* robotName="myrobot") const;
   void writeCollada(const char* filename, const char* format="collada") const;

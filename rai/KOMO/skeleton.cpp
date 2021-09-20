@@ -132,7 +132,7 @@ intA Skeleton::getSwitches(const rai::Configuration& C) const {
   return ret;
 }
 
-void Skeleton::solve(ArgWord sequenceOrPath) {
+arr Skeleton::solve(ArgWord sequenceOrPath, int verbose) {
   CHECK(C, "");
   komo.reset();
   komo=make_shared<KOMO>();
@@ -141,10 +141,14 @@ void Skeleton::solve(ArgWord sequenceOrPath) {
   komo->optimize();
   //  komo->checkGradients();
 
-  komo->getReport(true);
-  komo->view(true, "optimized motion");
-  while(komo->view_play(true));
-  komo->view_play(false, .1, "z.vid/");
+  if(verbose>0) komo->getReport(true);
+  if(verbose>1) komo->view(true, "optimized motion");
+  if(verbose>2){
+    while(komo->view_play(true));
+    komo->view_play(false, .1, "z.vid/");
+  }
+
+  return komo->getPath_X();
 }
 
 shared_ptr<SolverReturn> Skeleton::solve2(){
@@ -157,6 +161,19 @@ shared_ptr<SolverReturn> Skeleton::solve2(){
   trans.mp->report(cout, 10);
   sol.gnuplot_costs();
   return ret;
+}
+
+void Skeleton::getKeyframeConfiguration(Configuration& C, int step, int verbose){
+  CHECK(komo, "");
+  CHECK_EQ(komo->k_order, 1, "");
+  C.copy(komo->world);
+  for(KinematicSwitch* sw:komo->switches) {
+    int s = sw->timeOfApplication;
+    if(s<=step){
+      if(verbose){ LOG(0) <<"applying switch:"; sw->write(cout, C.frames); cout <<endl; }
+      sw->apply(C.frames);
+    }
+  }
 }
 
 SkeletonTranscription Skeleton::mp(){

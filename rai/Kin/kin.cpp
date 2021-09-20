@@ -861,7 +861,7 @@ bool Configuration::check_topSort() const {
 /// clear all frames, forces & proxies
 void Configuration::clear() {
 //  glClose();
-  swiftDelete();
+//  swiftDelete();
 
   reset_q();
   proxies.clear(); //while(proxies.N){ delete proxies.last(); /*checkConsistency();*/ }
@@ -1260,7 +1260,8 @@ void Configuration::calc_indexedActiveJoints(bool resetActiveJointSet) {
     //-- collect active dofs
     activeJoints.clear();
     for(Frame* f:frames){
-      if(f->joint && f->joint->active && f->joint->type!=JT_rigid){
+      if(f->joint && !f->joint->dim) f->joint->active=false;
+      if(f->joint && f->joint->active){
         activeJoints.append(f->joint);
       }
       if(f->particleDofs && f->particleDofs->active){
@@ -1881,7 +1882,9 @@ std::shared_ptr<FclInterface> Configuration::fcl() {
     Array<ptr<Mesh>> geometries(frames.N);
     for(Frame* f:frames) {
       if(f->shape && f->shape->cont) {
+        CHECK(f->shape->type()!=rai::ST_marker, "collision object can't be a marker");
         if(!f->shape->mesh().V.N) f->shape->createMeshes();
+        CHECK(f->shape->mesh().V.N, "collision object with no vertices");
         geometries(f->ID) = f->shape->_mesh;
       }
     }
@@ -2149,33 +2152,15 @@ void Configuration::copyProxies(const ProxyA& _proxies) {
 }
 
 /// prototype for \c operator<<
-void Configuration::write(std::ostream& os) const {
+void Configuration::write(std::ostream& os, bool explicitlySorted) const {
   for(Frame* f: frames) if(!f->name.N) f->name <<'_' <<f->ID;
-  for(Frame* f: frames) { //fwdActiveSet) {
-    //    os <<"frame " <<f->name;
-    //    if(f->parent) os <<'(' <<f->parent->name <<')';
-    //    os <<" \t{ ";
-    f->write(os);
-    //    os <<" }\n";
+  if(!explicitlySorted){
+    for(Frame* f: frames) f->write(os);
+  }else{
+    FrameL sorted = calc_topSort();
+    for(Frame* f: sorted) f->write(os);
   }
   os <<std::endl;
-  //  for(Frame *f: frames) if(f->shape){
-  //    os <<"shape ";
-  //    os <<"(" <<f->name <<"){ ";
-  //    f->shape->write(os);  os <<" }\n";
-  //  }
-  //  os <<std::endl;
-  //  for(Frame *f: fwdActiveSet) if(f->parent) {
-  //    if(f->joint){
-  //      os <<"joint ";
-  //      os <<"(" <<f->parent->name <<' ' <<f->name <<"){ ";
-  //      f->joint->write(os);  os <<" }\n";
-  //    }else{
-  //      os <<"link ";
-  //      os <<"(" <<f->parent->name <<' ' <<f->name <<"){ ";
-  //      f->write(os);  os <<" }\n";
-  //    }
-  //  }
 }
 
 void Configuration::write(Graph& G) const {
