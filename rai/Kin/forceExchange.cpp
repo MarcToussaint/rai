@@ -45,7 +45,8 @@ void rai::ForceExchange::setZero() {
   force.resize(3).setZero();
   torque.resize(3).setZero();
   if(type==FXT_poa || type==FXT_poaOnly){
-    poa = .5*a.getPosition() + .5*b.getPosition();
+//    poa = .5*a.getPosition() + .5*b.getPosition();
+    poa = b.getPosition();
   }else if(type==FXT_forceZ){
     force.resize(1).setZero();
     torque.resize(1).setZero();
