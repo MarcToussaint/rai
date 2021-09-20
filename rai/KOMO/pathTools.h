@@ -16,7 +16,7 @@
 arr getVelocities_centralDifference(const arr& q, double tau);
 arr getAccelerations_centralDifference(const arr& q, double tau);
 
-double getNaturalDuration(const arr& q, double maxVel=1., double maxAcc=1.);
+double getMinDuration(const arr& q, double maxVel=1., double maxAcc=1.);
 
 rai::Spline getSpline(const arr& q, double duration=1., uint degree=2);
 

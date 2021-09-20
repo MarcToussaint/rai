@@ -424,6 +424,13 @@ rai::Frame& rai::Frame::setQuaternion(const arr& quat) {
   return *this;
 }
 
+rai::Frame& rai::Frame::setRelativePose(const rai::Transformation& _Q) {
+  CHECK(parent, "you cannot set relative pose for a frame without parent");
+  Q = _Q;
+  _state_updateAfterTouchingQ();
+  return *this;
+}
+
 rai::Frame& rai::Frame::setRelativePosition(const arr& pos) {
   CHECK(parent, "you cannot set relative position for a frame without parent");
   Q.pos.set(pos);
@@ -432,7 +439,7 @@ rai::Frame& rai::Frame::setRelativePosition(const arr& pos) {
 }
 
 rai::Frame& rai::Frame::setRelativeQuaternion(const arr& quat) {
-  CHECK(parent, "you cannot set relative position for a frame without parent");
+  CHECK(parent, "you cannot set relative pose for a frame without parent");
   Q.rot.set(quat);
   Q.rot.normalize();
   _state_updateAfterTouchingQ();

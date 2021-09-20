@@ -33,6 +33,7 @@ bool getParameterBase(T& x, const char* key, bool hasDefault, const T* Default) 
     if(Default) {
       x=*Default;
       LOG(3) <<std::setw(20) <<key <<" = " <<std::setw(5) <<x <<" [" <<typeid(x).name() <<"] (default)";
+//      getParameters()->newNode<T>(key, {}, x); //add the parameter to the parameterGraph
     }
     return false;
   }
