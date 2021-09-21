@@ -299,6 +299,10 @@ template<class T> struct Array : /*std::vector<T>,*/ Serializable {
   bool isSparse() const;
   void setNoArr();
 
+  /// @name attached Jacobian
+  Array<T>& J();
+  Array<T> J_reset();
+
   /// @name I/O
   void write(std::ostream& os=std::cout, const char* ELEMSEP=nullptr, const char* LINESEP=nullptr, const char* BRACKETS=nullptr, bool dimTag=false, bool binary=false) const;
   void read(std::istream& is);
@@ -382,7 +386,6 @@ template<class T> Array<T> operator*(T y, const Array<T>& z);
 template<class T> Array<T> operator/(int mustBeOne, const Array<T>& z_tobeinverted);
 template<class T> Array<T> operator/(const Array<T>& y, T z);
 template<class T> Array<T> operator/(const Array<T>& y, const Array<T>& z); //element-wise devision
-template<class T> Array<T> operator|(const Array<T>& A, const Array<T>& B); //A^-1 B
 template<class T> Array<T> operator, (const Array<T>& y, const Array<T>& z); //concat
 
 template<class T> Array<T>& operator<<(Array<T>& x, const T& y); //append
@@ -407,16 +410,16 @@ template <class T> std::ostream& operator<<(std::ostream& os, const ArrayModRaw<
 #define UpdateOperator( op )        \
   template<class T> Array<T>& operator op (Array<T>& x, const Array<T>& y); \
   template<class T> Array<T>& operator op (Array<T>& x, T y ); \
-  template<class T> void operator op (Array<T>&& x, const Array<T>& y); \
-  template<class T> void operator op (Array<T>&& x, T y );
-UpdateOperator(|=)
-UpdateOperator(^=)
-UpdateOperator(&=)
+  template<class T> Array<T>& operator op (Array<T>&& x, const Array<T>& y); \
+  template<class T> Array<T>& operator op (Array<T>&& x, T y );
+//UpdateOperator(|=)
+//UpdateOperator(^=)
+//UpdateOperator(&=)
+//UpdateOperator(%=)
 UpdateOperator(+=)
 UpdateOperator(-=)
 UpdateOperator(*=)
 UpdateOperator(/=)
-UpdateOperator(%=)
 #undef UpdateOperator
 
 //element-wise operators

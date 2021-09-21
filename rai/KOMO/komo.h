@@ -121,7 +121,7 @@ struct KOMO : NonCopyable {
   //
 
   ptr<struct Objective> add_qControlObjective(const arr& times, uint order, double scale=1., const arr& target=NoArr, int deltaFromStep=0, int deltaToStep=0);
-  void addSquaredQuaternionNorms(const arr& times=NoArr, double scale=3e0);
+  void addQuaternionNorms(const arr& times=NoArr, double scale=3e0, bool hard=true);
 
   void add_collision(bool hardConstraint, double margin=.0, double prec=1e1);
   void add_jointLimits(bool hardConstraint, double margin=.05, double prec=1.);
@@ -250,6 +250,8 @@ public:
   //
   // deprecated
   //
+
+  void addSquaredQuaternionNorms(const arr& times=NoArr, double scale=3e0){ DEPR; addQuaternionNorms(times, scale); }
 
   bool displayTrajectory(double delay=1., bool watch=true, bool overlayPaths=true, const char* saveVideoPath=nullptr, const char* addText=nullptr){
     DEPR; return view_play(watch, delay, saveVideoPath);  }

@@ -10,27 +10,22 @@
 
 //===========================================================================
 
-
-
-void Feature::phi_finiteDifferenceReduce(arr& y, arr& J, const FrameL& F) {
+arr Feature::phi_finiteDifferenceReduce(const FrameL& F) {
   CHECK(order>0, "can't reduce for order=0");
-
-  arr y0, y1, Jy0, Jy1;
 
   timeIntegral--;
   order--;
-  phi2(y0, Jy0, F({0, -2}));
-  phi2(y1, Jy1, F({1,-1}));
+  arr y0 = phi(F({0, -2}));
+  arr y1 = phi(F({1,-1}));
   order++;
   timeIntegral++;
 
-  if(flipTargetSignOnNegScalarProduct) if(scalarProduct(y0, y1)<-.0) { y0 *= -1.;  if(!!J) Jy0 *= -1.; }
+  if(flipTargetSignOnNegScalarProduct) if(scalarProduct(y0, y1)<-.0) { y0 *= -1.; }
 
   CHECK_EQ(y0.N, y1.N, "feature dim differs over time slices -- that's unusual. Possible case: qZeroVel across a switch, which happens in walker skeleton if the last entry does not indicate switch of robot");
-  y = y1-y0;
-  if(!!J) J = Jy1 - Jy0;
+  arr y = y1-y0;
 
-  if(!y.N) return;
+  if(!y.N) return y;
 
   if(!diffInsteadOfVel){
     double tau; arr Jtau;
@@ -38,18 +33,13 @@ void Feature::phi_finiteDifferenceReduce(arr& y, arr& J, const FrameL& F) {
     CHECK_GE(tau, 1e-10, "");
     if(timeIntegral<=0){
       y /= tau;
-      if(!!J) {
-        J /= tau;
-        if(Jtau.N) J += (-1./tau)*y*Jtau;
-      }
+      if(Jtau.N && !!y.J()) y.J() += (-1./tau)*y*Jtau;
     }else{ //this assumes that we talk about a SOS feature! and that the cost is multiplied by tau (the feature by sqrt(tau))
       y /= sqrt(tau);
-      if(!!J) {
-        J /= sqrt(tau);
-        if(Jtau.N) J += (-0.5/tau)*y*Jtau;
-      }
+      if(Jtau.N && !!y.J()) y.J() += (-0.5/tau)*y*Jtau;
     }
   }
+  return y;
 }
 
 //void Feature::phi(arr& y, arr& J, const rai::Configuration& C) {
@@ -98,6 +88,18 @@ FrameL Feature::getFrames(const rai::Configuration& C, uint s) {
     F.reshape(order+1, frameIDs.d0, frameIDs.d1);
   }
   return F;
+}
+
+arr Feature::phi(const FrameL& F) {
+  arr y,J;
+  phi2(y, J, F);
+  y.J() = J;
+  return y;
+}
+
+void Feature::phi2(arr& y, arr& J, const FrameL& F) {
+  y = phi_finiteDifferenceReduce(F);
+  if(!!J && (&J != &y.J())){ J=y.J(); y.jac.reset(); }
 }
 
 
@@ -156,10 +158,10 @@ VectorFunction Feature::vf2(const FrameL& F) { ///< direct conversion to vector 
 //  };
 //}
 
-void Feature::applyLinearTrans(arr& y, arr& J) {
+void Feature::applyLinearTrans(arr& y) {
   if(target.N) {
     if(flipTargetSignOnNegScalarProduct) {
-      if(scalarProduct(y, target)<-.0) { y *= -1.;  if(!!J) J *= -1.; }
+      if(scalarProduct(y, target)<-.0) { y *= -1.;  /*if(!!J) J *= -1.; */}
     }
     if(target.N==1) { //scalar
       y -= target.scalar();
@@ -170,18 +172,18 @@ void Feature::applyLinearTrans(arr& y, arr& J) {
   if(scale.N) {
     if(scale.N==1) { //scalar
       y *= scale.scalar();
-      if(!!J) J *= scale.scalar();
+      //      if(!!J) J *= scale.scalar(); //automatic
     } else if(scale.nd==1) { //element-wise
       CHECK_EQ(scale.d0, y.N, "");
-      y = scale % y;
-      if(!!J){
-        if(isSparseMatrix(J)) J.sparse().rowWiseMult(scale);
-        else J = scale % J;
-      }
+      y = y % scale;
+//      if(!!y.J()){
+//        if(isSparseMatrix(y.J())) y.J().sparse().rowWiseMult(scale);
+//        else y.J() = scale % y.J();
+//      }
     } else if(scale.nd==2) { //matrix
       CHECK_EQ(scale.d1, y.N, "");
       y = scale * y;
-      if(!!J) J = scale * J;
+      //if(!!J) J = scale * J; //automatic
     }
   }
 }

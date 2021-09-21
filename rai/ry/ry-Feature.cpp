@@ -24,7 +24,7 @@ void init_Feature(pybind11::module& m) {
 
 
   .def("eval", [](shared_ptr<Feature>& self, shared_ptr<rai::Configuration>& C) {
-    Value val = self->eval(*C);
+    arr val = self->eval(*C);
     pybind11::tuple ret(2);
     ret[0] = pybind11::array(val.y.dim(), val.y.p);
     ret[1] = pybind11::array(val.J.dim(), val.J.p);

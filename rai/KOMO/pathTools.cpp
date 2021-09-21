@@ -210,9 +210,9 @@ bool checkCollisionsAndLimits(rai::Configuration& C, const FrameL& collisionPair
     CHECK_EQ(&collisionPairs.last()->C, &C, "");
     auto coll = F_PairCollision().eval(collisionPairs);
     bool doesCollide=false;
-    for(uint i=0;i<coll.y.N;i++){
-      if(coll.y.elem(i)>0.){
-        LOG(-1) <<"in collision: " <<collisionPairs(i,0)->name <<'-' <<collisionPairs(i,1)->name <<' ' <<coll.y.elem(i);
+    for(uint i=0;i<coll.N;i++){
+      if(coll.elem(i)>0.){
+        LOG(-1) <<"in collision: " <<collisionPairs(i,0)->name <<'-' <<collisionPairs(i,1)->name <<' ' <<coll.elem(i);
         doesCollide=true;
       }
     }
@@ -222,7 +222,7 @@ bool checkCollisionsAndLimits(rai::Configuration& C, const FrameL& collisionPair
         komo.setModel(C);
         komo.setTiming(1., 1, 1., 1);
         komo.add_qControlObjective({}, 1, 1e-1);
-        komo.addSquaredQuaternionNorms();
+        komo.addQuaternionNorms();
 
         komo.addObjective({}, FS_distance, framesToNames(collisionPairs), OT_ineq, {1e2}, {-.001});
 
@@ -281,9 +281,9 @@ bool PoseTool::checkCollisions(const FrameL& collisionPairs, bool solve, bool as
     //use explicitly given collision pairs
     CHECK_EQ(&collisionPairs.last()->C, &C, "");
     auto coll = F_PairCollision().eval(collisionPairs);
-    for(uint i=0;i<coll.y.N;i++){
-      if(coll.y.elem(i)>0.){
-        if(verbose>1) LOG(-1) <<"in collision: " <<collisionPairs(i,0)->name <<'-' <<collisionPairs(i,1)->name <<' ' <<coll.y.elem(i);
+    for(uint i=0;i<coll.N;i++){
+      if(coll.elem(i)>0.){
+        if(verbose>1) LOG(-1) <<"in collision: " <<collisionPairs(i,0)->name <<'-' <<collisionPairs(i,1)->name <<' ' <<coll.elem(i);
         good=false;
       }
     }
@@ -312,7 +312,7 @@ bool PoseTool::checkCollisions(const FrameL& collisionPairs, bool solve, bool as
   komo.setModel(C);
   komo.setTiming(1., 1, 1., 1);
   komo.add_qControlObjective({}, 1, 1e-1);
-  komo.addSquaredQuaternionNorms();
+  komo.addQuaternionNorms();
 
   if(collisionPairs.N){
     komo.addObjective({}, FS_distance, framesToNames(collisionPairs), OT_ineq, {1e2}, {-.001});

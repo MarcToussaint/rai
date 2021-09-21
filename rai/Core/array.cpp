@@ -178,6 +178,20 @@ template<> const RowShifted& Array<double>::rowShifted() const{
   return *r;
 }
 
+/// attach jacobian
+template<> Array<double>& Array<double>::J() {
+  if(!jac){
+    jac = make_unique<rai::Array<double>>();
+  }
+  return *jac;
+}
+template<> Array<double> Array<double>::J_reset() {
+  CHECK(jac, "");
+  arr J = *jac;
+  jac.reset();
+  return J;
+}
+
 #define NONSENSE( type ) \
   template<> SparseMatrix& Array<type>::sparse() { NIY; return *(new SparseMatrix(NoArr)); } \
   template<> const SparseMatrix& Array<type>::sparse() const{ NIY; return *(new SparseMatrix(NoArr)); } \

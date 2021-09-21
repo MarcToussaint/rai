@@ -358,7 +358,7 @@ void Skeleton::setKOMO(KOMO& komo, ArgWord sequenceOrPath) const {
     komo.add_qControlObjective({}, 2, 1.);
     komo.add_qControlObjective({}, 0, 1e-2);
   }
-  komo.addSquaredQuaternionNorms();
+  komo.addQuaternionNorms();
 
   if(collisions) komo.add_collision(true);
 

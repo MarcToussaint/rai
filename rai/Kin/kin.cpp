@@ -2711,12 +2711,12 @@ std::shared_ptr<Feature> Configuration::feature(FeatureSymbol fs, const StringA&
 }
 
 /// evaluate a feature for a given frame(s)
-void Configuration::evalFeature(arr& y, arr& J, FeatureSymbol fs, const StringA& frames) const {
+arr Configuration::evalFeature(FeatureSymbol fs, const StringA& frames) const {
   std::shared_ptr<Feature> feat = feature(fs, frames);
-  feat->eval(y, J, feat->getFrames(*this));
+  return feat->eval(feat->getFrames(*this));
 }
 
-Value Configuration::eval(FeatureSymbol fs, const StringA& frames){
+arr Configuration::eval(FeatureSymbol fs, const StringA& frames){
   return feature(fs,frames)->eval(getFrames(frames));
 }
 

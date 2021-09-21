@@ -471,8 +471,8 @@ ptr<Objective> KOMO::add_qControlObjective(const arr& times, uint order, double 
   return o;
 }
 
-void KOMO::addSquaredQuaternionNorms(const arr& times, double scale) {
-  addObjective(times, make_shared<F_qQuaternionNorms>(), {"ALL"}, OT_eq, {scale}, NoArr);
+void KOMO::addQuaternionNorms(const arr& times, double scale, bool hard) {
+  addObjective(times, make_shared<F_qQuaternionNorms>(), {"ALL"}, (hard?OT_eq:OT_sos), {scale}, NoArr);
 }
 
 void KOMO::setSlow(double startTime, double endTime, double prec, bool hardConstrained) {
@@ -527,7 +527,7 @@ void KOMO::setIKOpt() {
   solver = rai::KS_dense;
   setTiming(1., 1, 1., 1);
   add_qControlObjective({}, 1, 1e-1);
-  addSquaredQuaternionNorms();
+  addQuaternionNorms();
 }
 
 void KOMO::setConfiguration_qAll(int t, const arr& q) {
@@ -1393,16 +1393,16 @@ rai::Graph KOMO::getProblemGraph(bool includeValues, bool includeSolution) {
     if(ob->timeSlices.N) g.newNode<intA>({"vars"}, {}, ob->timeSlices);
 //    g.copy(task->feat->getSpec(world), true);
     if(includeValues) {
-      arr y, Jy;
+      arr y;
       arrA V, J;
       for(uint l=0; l<ob->timeSlices.d0; l++) {
 //        ConfigurationL Ktuple = configurations.sub(convert<uint, int>(ob->timeSlices[l]+(int)k_order));
 //        ob->feat->eval(y, Jy, Ktuple);
-        ob->feat->eval(y, Jy, ob->frames);
-        if(isSpecial(Jy)) Jy = unpack(Jy);
+        y = ob->feat->eval(ob->frames);
+        if(isSpecial(y.J())) y.J() = unpack(y.J());
 
         V.append(y);
-        J.append(Jy);
+        J.append(y.J());
       }
       g.newNode<arrA>({"y"}, {}, V);
       g.newNode<arrA>({"J"}, {}, J);
@@ -1493,18 +1493,17 @@ void Conv_KOMO_SparseNonfactored::evaluate(arr& phi, arr& J, const arr& x) {
 
   uint M=0;
   for(ptr<GroundedObjective>& ob : komo.objs) {
-      arr y, Jy;
       //query the task map and check dimensionalities of returns
-      ob->feat->eval(y, Jy, ob->frames);
-//      cout <<"EVAL '" <<ob->name() <<"' phi:" <<y <<endl <<Jy <<endl<<endl;
-      if(!!J) CHECK_EQ(y.N, Jy.d0, "");
+      arr y = ob->feat->eval(ob->frames);
+//      cout <<"EVAL '" <<ob->name() <<"' phi:" <<y <<endl <<y.J() <<endl<<endl;
+      if(!!J) CHECK_EQ(y.N, y.J().d0, "");
       if(!y.N) continue;
-      if(!!J) CHECK_EQ(Jy.nd, 2, "");
-      if(!!J) CHECK_EQ(Jy.d1, komo.pathConfig.getJointStateDimension(), "");
+      if(!!J) CHECK_EQ(y.J().nd, 2, "");
+      if(!!J) CHECK_EQ(y.J().d1, komo.pathConfig.getJointStateDimension(), "");
 //      uint d = ob->feat->dim(ob->frames);
 //      if(d!=y.N){
 //        d  = ob->feat->dim(ob->frames);
-//        ob->feat->eval(y, Jy, ob->frames);
+//        ob->feat->eval(y, y.J(), ob->frames);
 //      }
 //      CHECK_EQ(d, y.N, "");
       if(absMax(y)>1e10) RAI_MSG("WARNING y=" <<y);
@@ -1518,11 +1517,11 @@ void Conv_KOMO_SparseNonfactored::evaluate(arr& phi, arr& J, const arr& x) {
 
       if(!!J) {
         if(sparse){
-          Jy.sparse().reshape(J.d0, J.d1);
-          Jy.sparse().colShift(M);
-          J += Jy;
+          y.J().sparse().reshape(J.d0, J.d1);
+          y.J().sparse().colShift(M);
+          J += y.J();
         }else{
-          J.setMatrixBlock(Jy, M, 0);
+          J.setMatrixBlock(y.J(), M, 0);
         }
       }
 
@@ -1702,29 +1701,28 @@ void Conv_KOMO_FactoredNLP::evaluateSingleFeature(uint feat_id, arr& phi, arr& J
 
   FeatureIndexEntry& F = featureIndex(feat_id);
 
-  arr y,Jy;
-  F.ob2->feat->eval(phi, Jy, F.ob2->frames);
+  phi = F.ob2->feat->eval(F.ob2->frames);
   CHECK_EQ(phi.N, F.dim, "");
 
   komo.featureValues.setVectorBlock(phi, F.phiIndex);
 
   if(!J) return;
 
-  CHECK_EQ(phi.N, Jy.d0, "");
-  CHECK_EQ(Jy.nd, 2, "");
+  CHECK_EQ(phi.N, phi.J().d0, "");
+  CHECK_EQ(phi.J().nd, 2, "");
   if(absMax(phi)>1e10) RAI_MSG("WARNING phi=" <<phi);
 
-  if(isSparseMatrix(Jy)) {
-    auto& S = Jy.sparse();
+  if(isSparseMatrix(phi.J())) {
+    auto& S = phi.J().sparse();
 
     uint n=0;
     for(uint v:F.varIds) n += variableIndex(v).dim;
     J.resize(phi.N, n).setZero();
 
-    for(uint k=0; k<Jy.N; k++) {
+    for(uint k=0; k<phi.J().N; k++) {
       uint i = S.elems(k, 0);
       uint j = S.elems(k, 1);
-      double x = Jy.elem(k);
+      double x = phi.J().elem(k);
       uint var = xIndex2VarId(j);
       VariableIndexEntry& V = variableIndex(var);
       uint var_j = j - V.xIndex;
@@ -1745,8 +1743,8 @@ void Conv_KOMO_FactoredNLP::evaluateSingleFeature(uint feat_id, arr& phi, arr& J
         CHECK(good, "Jacobian is non-zero on variable " <<var <<", but indices say that feature depends on " <<F.varIds);
       }
     }
-  } else if(isRowShifted(Jy)){
-    J = Jy;
+  } else if(isRowShifted(phi.J())){
+    J = phi.J();
   } else {
 #ifdef KOMO_PATH_CONFIG
     HALT("??");
@@ -1944,7 +1942,8 @@ void Conv_KOMO_FineStructuredProblem::setSingleVariable(uint var_id, const arr& 
 void Conv_KOMO_FineStructuredProblem::evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H) {
   FeatureIndexEntry& F = featureIndex(feat_id);
 
-  F.ob->feat->eval(phi, J, F.ob->frames);
+  phi = F.ob->feat->eval(F.ob->frames);
+  J = phi.J();
   //  cout <<"EVAL '" <<F.ob->name() <<"' phi:" <<phi <<endl;
 }
 

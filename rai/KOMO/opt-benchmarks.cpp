@@ -41,7 +41,7 @@ void OptBench_Skeleton::create(const char* modelFile, const rai::Skeleton& S, ra
     komo->setTiming(maxPhase, 30, 5., 2);
     komo->add_qControlObjective({}, 2, 1e0);
   }
-  komo->addSquaredQuaternionNorms();
+  komo->addQuaternionNorms();
 
   S.setKOMO(*komo);
 

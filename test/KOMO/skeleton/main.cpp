@@ -24,7 +24,7 @@ void testPickAndPlace(rai::ArgWord pathOrSeq){
     komo.setTiming(3., 1, 5., 1);
     komo.add_qControlObjective({}, 1, 1e-1);
   }
-  komo.addSquaredQuaternionNorms();
+  komo.addQuaternionNorms();
 
   //grasp
   rai::Skeleton S = {
@@ -60,7 +60,7 @@ void testPickAndPush(rai::ArgWord pathOrSeq){
     komo.setTiming(3., 1, 5., 1);
     komo.add_qControlObjective({}, 1, 1e-1);
   }
-  komo.addSquaredQuaternionNorms();
+  komo.addQuaternionNorms();
 
   //grasp
   rai::Skeleton S = {
@@ -95,7 +95,7 @@ void testPickAndThrow(rai::ArgWord pathOrSeq){
     komo.setTiming(5., 1, 2., 1);
     komo.add_qControlObjective({}, 1, 1e-1);
   }
-  komo.addSquaredQuaternionNorms();
+  komo.addQuaternionNorms();
 
   //grasp
   rai::Skeleton S = {
@@ -160,7 +160,7 @@ void testWalkAndPick(rai::ArgWord pathOrSeq){
     komo.setTiming(5., 1, 2., 1);
     komo.add_qControlObjective({}, 1, 1e-1);
   }
-  komo.addSquaredQuaternionNorms();
+  komo.addQuaternionNorms();
 
   rai::Skeleton S = {
     //take a step
@@ -206,7 +206,7 @@ void testHandover(rai::ArgWord pathOrSeq){
     komo.setTiming(4., 1, 2., 1);
     komo.add_qControlObjective({}, 1, 1e-1);
   }
-  komo.addSquaredQuaternionNorms();
+  komo.addQuaternionNorms();
 
   rai::Skeleton S = {
     //grasp
@@ -245,7 +245,7 @@ void testStackAndBalance(rai::ArgWord pathOrSeq){
     komo.setTiming(6., 1, 2., 1);
     komo.add_qControlObjective({}, 1, 1e-1);
   }
-  komo.addSquaredQuaternionNorms();
+  komo.addQuaternionNorms();
 
   rai::Skeleton S = {
     //pick
@@ -327,7 +327,7 @@ void testWalking(rai::ArgWord pathOrSeq){
     komo.setTiming(5., 1, 2., 1);
     komo.add_qControlObjective({}, 1, 1e-1);
   }
-  komo.addSquaredQuaternionNorms();
+  komo.addQuaternionNorms();
 
   rai::Skeleton S = {
     //take a step
