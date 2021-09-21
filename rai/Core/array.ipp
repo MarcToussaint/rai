@@ -461,31 +461,31 @@ template<class T> void rai::Array<T>::resizeMEM(uint n, bool copy, int Mforce) {
   CHECK((p && M) || (!p && !M), "");
   if(Mnew!=Mold) {  //if M changed, allocate the memory
     if(Mnew) {
-        if(memMove==1){
-            if(p){
-                p=(T*)realloc(p, Mnew*sizeT);
-            } else {
-                p=(T*)malloc(Mnew*sizeT);
-//                memset(p, 0, Mnew*sizeT);
-            }
-            if(!p) { HALT("memory allocation failed! Wanted size = " <<Mnew*sizeT <<"bytes"); }
-        }else{
-            T* pold = p;
-            p=new T [Mnew];
-            if(!p) { HALT("memory allocation failed! Wanted size = " <<Mnew*sizeT <<"bytes"); }
-            if(copy) for(uint i=N<n?N:n; i--;) p[i]=pold[i];
-            if(pold) delete[] pold;
+      if(memMove==1){
+        if(p){
+          p=(T*)realloc(p, Mnew*sizeT);
+        } else {
+          p=(T*)malloc(Mnew*sizeT);
+          //memset(p, 0, Mnew*sizeT);
         }
-        M=Mnew;
+        if(!p) { HALT("memory allocation failed! Wanted size = " <<Mnew*sizeT <<"bytes"); }
+      }else{
+        T* pold = p;
+        p=new T [Mnew];
+        if(!p) { HALT("memory allocation failed! Wanted size = " <<Mnew*sizeT <<"bytes"); }
+        if(copy) for(uint i=N<n?N:n; i--;) p[i]=pold[i];
+        if(pold) delete[] pold;
+      }
+      M=Mnew;
     } else {
       if(p) {
-          if(memMove==1){
-              free(p);
-          }else{
-              delete[] p;
-          }
-          p=0;
-          M=0;
+        if(memMove==1){
+          free(p);
+        }else{
+          delete[] p;
+        }
+        p=0;
+        M=0;
       }
     }
   }
