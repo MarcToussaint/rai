@@ -93,13 +93,24 @@ FrameL Feature::getFrames(const rai::Configuration& C, uint s) {
 arr Feature::phi(const FrameL& F) {
   arr y,J;
   phi2(y, J, F);
-  y.J() = J;
+  if(!!J){
+    CHECK_EQ(J.d0, y.N, "wrong Jacobian size");
+    y.J() = J;
+  }
   return y;
+}
+
+void grabJ(arr& y, arr& J){
+  CHECK(&J != y.jac.get(), "");
+  if(!!J){
+    if(y.jac){ J=(*y.jac); y.jac.reset(); }
+    else J.setNoArr();
+  }
 }
 
 void Feature::phi2(arr& y, arr& J, const FrameL& F) {
   y = phi_finiteDifferenceReduce(F);
-  if(!!J && (&J != &y.J())){ J=y.J(); y.jac.reset(); }
+  grabJ(y,J);
 }
 
 
@@ -142,7 +153,9 @@ VectorFunction Feature::vf2(const FrameL& F) { ///< direct conversion to vector 
     F.first()->C.setJointState(x);
     auto jacMode = F.first()->C.jacMode;
     F.first()->C.setJacModeAs(J);
-    phi2(y, J, F);
+    y = phi(F);
+    grabJ(y, J);
+    //if(!!J && y.jac) J = *y.jac;
     F.first()->C.jacMode=jacMode;
   };
 }

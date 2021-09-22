@@ -130,13 +130,18 @@ void POA_vel(arr& y, arr& J, const FrameL& F, rai::ForceExchange* ex, bool b_or_
   //POA
   arr poa, Jpoa;
   ex->kinPOA(poa, Jpoa);
+  if(!!Jpoa) poa.J() = Jpoa;
 
   arr p = F_Position() .eval({ff(1)});
   arr v = F_LinVel() .eval(ff);
   arr w = F_AngVel() .eval(ff);
 
   y = v - crossProduct(w, poa - p);
-  if(!!J) J = v.J() - skew(w) * (Jpoa - p.J()) + skew(poa-p) * w.J();
+  grabJ(y, J);
+//  if(!!J){
+//    arr Jtmp = v.J() - skew(w) * (Jpoa - p.J()) + skew(poa-p) * w.J();
+//    CHECK_ZERO(maxDiff(J, Jtmp), 1e-10, "");
+//  }
 }
 
 void shapeFunction(double& x, double& dx);
@@ -314,7 +319,7 @@ void F_NewtonEuler::phi2(arr& y, arr& J, const FrameL& F) {
 
     //-- subtract nominal gravity change-of-velocity from object change-of-velocity
     acc -= grav;
-    acc.J() -= grav.J();
+    //acc.J() -= grav.J(); AUTODIFF
   }
 #else
   //-- add static and exchange forces
@@ -337,8 +342,9 @@ void F_NewtonEuler::phi2(arr& y, arr& J, const FrameL& F) {
 #if 1
   arr one_over_mass = ones(6);
   one_over_mass /= mass_diag;
-  y = acc + one_over_mass % fo;
-  if(!!J) J = acc.J() + one_over_mass % fo.J();
+  y = acc + fo % one_over_mass;
+  grabJ(y,J);
+  //if(!!J) J = acc.J() + one_over_mass % fo.J(); AUTODIFF
 #else
   y = mass_diag % acc + fo; //THIS IS ACTUALLY AN IMPULSE EQUATION: COLLECTED FORCES fo ARE INTERPRETED AS IMPULSE (and that's why gravity should not be mixed in)
   if(!!J) J = mass_diag % acc.J() + fo.J();
@@ -459,7 +465,7 @@ FrameL getShapesAbove(rai::Frame* a) {
 
 //===========================================================================
 
-void F_fex_ForceIsNormal::phi2(arr& y, arr& J, const FrameL& F) {
+arr F_fex_ForceIsNormal::phi(const FrameL& F) {
   //-- from the contact we need force
   arr force = F_fex_Force()
                 .eval(F);
@@ -468,20 +474,22 @@ void F_fex_ForceIsNormal::phi2(arr& y, arr& J, const FrameL& F) {
 #ifdef RAI_USE_FUNCTIONAL_NORMALS
   arr normal = F_fex_POASurfaceAvgNormal()
                  .eval(F);
-  normalizeWithJac(normal, normal.J());
+  op_normalize(normal);
 #else
   Value normal = F_PairCollision(F_PairCollision::_normal, true)
                  .eval(F);
 #endif
 
   //-- force needs to align with normal -> project force along normal
-  y = force - normal*scalarProduct(normal, force);
-  if(!!J){
-    J = force.J();
-    J -= (normal^normal)*force.J();
-    J -= (normal^force)*normal.J();
-    J -= scalarProduct(normal, force)*normal.J();
-  }
+  arr y = force - normal*(~normal * force);
+  return y;
+  //AUTODIFF
+//  if(!!J){
+//    J = force.J();
+//    J -= (normal^normal)*force.J();
+//    J -= (normal^force)*normal.J();
+//    J -= scalarProduct(normal, force)*normal.J();
+//  }
 }
 
 void F_fex_ForceIsComplementary::phi2(arr& y, arr& J, const FrameL& F) {
@@ -522,16 +530,16 @@ void F_fex_ForceIsPositive::phi2(arr& y, arr& J, const FrameL& F) {
 #ifdef RAI_USE_FUNCTIONAL_NORMALS
   arr normal = F_fex_POASurfaceAvgNormal()
                  .eval(F);
-  normalizeWithJac(normal, normal.J());
+  op_normalize(normal);
 #else
   Value normal = F_PairCollision(F_PairCollision::_normal, true)
                  .eval(F);
 #endif
 
   //-- force needs to align with normal -> project force along normal
-  y.resize(1);
-  y.scalar() = -scalarProduct(normal, force);
-  if(!!J) J = - (~normal*force.J() + ~force*normal.J());
+  y = - (~normal * force); //-scalarProduct(normal, force);
+  grabJ(y,J);
+//  if(!!J) J = - (~normal*force.J() + ~force*normal.J()); AUTODIFF
 }
 
 void F_fex_POASurfaceDistance::phi2(arr& y, arr& J, const FrameL& F){
@@ -611,7 +619,8 @@ void F_fex_POASurfaceAvgNormal::phi2(arr& y, arr& J, const FrameL& F) {
              .eval(F);
 
   y = 0.5*(n2 - n1); //normals should oppose, so this should be the avg normal; normal always points 'against obj1'
-  if(!!J) J = 0.5*(n2.J() - n1.J());
+  grabJ(y,J);
+//  if(!!J) J = 0.5*(n2.J() - n1.J()); AUTODIFF
 }
 
 void F_fex_POAContactDistances::phi2(arr& y, arr& J, const FrameL& F) {
@@ -728,7 +737,7 @@ void F_fex_POAzeroRelVel::phi2(arr& y, arr& J, const FrameL& F) {
     arr normal = F_PairCollision(F_PairCollision::_normal, true)
                    .eval(F[-1]);
     if(!!J) J = ~normal*J + ~y*normal.J();
-    y = ARR(scalarProduct(normal, y));
+    y = ~normal * y;
   }
 #endif
 }

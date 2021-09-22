@@ -68,7 +68,7 @@ void TM_InsideLine::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK(box->type()==rai::ST_capsule, "the 2nd shape needs to be a capsule"); //s1 should be the board
 //  arr pos, posJ;
 //  G.kinematicsRelPos(pos, posJ, &pnt->frame, NoVector, &box->frame, NoVector);
-  arr pos = evalFeature<F_PositionDiff>({&pnt->frame, &box->frame});
+  arr pos = F_PositionDiff().eval({&pnt->frame, &box->frame});
   double range = box->size(-2);
   range *= .5;
   range -= margin;

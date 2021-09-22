@@ -185,6 +185,11 @@ template<> Array<double>& Array<double>::J() {
   }
   return *jac;
 }
+template<> Array<double> Array<double>::noJ() const {
+  Array<double> x;
+  x.referTo(*this);
+  return x;
+}
 template<> Array<double> Array<double>::J_reset() {
   CHECK(jac, "");
   arr J = *jac;
@@ -320,6 +325,20 @@ void normalizeWithJac(arr& y, arr& J, double eps) {
       J -= ((eps+l)/l * (y^y)) * J;
       J /= (eps+l);
     }
+  }
+}
+void op_normalize(arr& y, double eps) {
+  double l = length(y);
+  if(!eps){
+    if(l<1e-10) {
+      LOG(-1) <<"can't normalize vector of length " <<l;
+    } else {
+      y /= l;
+      if(y.jac) y.J() -= (y.noJ()^y.noJ())*y.J();
+    }
+  }else{
+    y /= (eps+l);
+    if(y.jac) y.J() -= ((eps+l)/l * (y.noJ()^y.noJ())) * y.J();
   }
 }
 

@@ -92,7 +92,7 @@ struct F_Energy : Feature {
 // force geometry, complementarity, velocities
 
 struct F_fex_ForceIsNormal : Feature {
-  void phi2(arr& y, arr& J, const FrameL& F);
+  arr phi(const FrameL& F);
   uint dim_phi2(const FrameL& F) { return 3; }
 };
 

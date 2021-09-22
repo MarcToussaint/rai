@@ -39,10 +39,11 @@ void F_PositionRel::phi2(arr& y, arr& J, const FrameL& F) {
   arr y2 = f2->C.kinematics_pos(f2);
   arr Rinv = ~(f2->ensure_X().rot.getArr());
   y = Rinv * (y1 - y2);
+  grabJ(y,J);
   if(!!J) {
     arr A;
     f2->C.jacobian_angular(A, f2);
-    J = Rinv * (y1.J() - y2.J() - crossProduct(A, y1 - y2));
+    J -= Rinv * crossProduct(A, y1 - y2);
   }
 }
 
@@ -174,28 +175,31 @@ void F_ScalarProduct::phi2(arr& y, arr& J, const FrameL& F){
 //===========================================================================
 
 void F_Pose::phi2(arr& y, arr& J, const FrameL& F) {
-  arr pos = evalFeature<F_Position>(F, order);
-  arr quat = evalFeature<F_Quaternion>(F, order);
+  arr pos = F_Position().setOrder(order).eval(F);
+  arr quat = F_Quaternion().setOrder(order).eval(F);
   y.setBlockVector(pos, quat);
-  J.setBlockMatrix(pos.J(), quat.J());
+  grabJ(y,J);
+//  J.setBlockMatrix(pos.J(), quat.J());
 }
 
 //===========================================================================
 
 void F_PoseDiff::phi2(arr& y, arr& J, const FrameL& F) {
-  arr pos = evalFeature<F_PositionDiff>(F, order);
-  arr quat = evalFeature<F_QuaternionDiff>(F, order);
+  arr pos = F_PositionDiff().setOrder(order).eval(F);
+  arr quat = F_QuaternionDiff().setOrder(order).eval(F);
   y.setBlockVector(pos, quat);
-  J.setBlockMatrix(pos.J(), quat.J());
+  grabJ(y,J);
+//  J.setBlockMatrix(pos.J(), quat.J());
 }
 
 //===========================================================================
 
 void F_PoseRel::phi2(arr& y, arr& J, const FrameL& F) {
-  arr pos = evalFeature<F_PositionRel>(F, order);
-  arr quat = evalFeature<F_QuaternionRel>(F, order);
+  arr pos = F_PositionRel().setOrder(order).eval(F);
+  arr quat = F_QuaternionRel().setOrder(order).eval(F);
   y.setBlockVector(pos, quat);
-  J.setBlockMatrix(pos.J(), quat.J());
+  grabJ(y,J);
+//  J.setBlockMatrix(pos.J(), quat.J());
 }
 
 //===========================================================================
@@ -334,7 +338,8 @@ void F_LinAngVel::phi2(arr& y, arr& J, const FrameL& F) {
   arr ya = ang.eval(F);
 
   y.setBlockVector(yl, ya);
-  J.setBlockMatrix(yl.J(), ya.J());
+  grabJ(y,J);
+  //J.setBlockMatrix(yl.J(), ya.J());
 }
 
 //===========================================================================

@@ -1492,6 +1492,11 @@ template<class T> void rai::Array<T>::setBlockVector(const rai::Array<T>& a, con
   resize(a.N+b.N);
   setVectorBlock(a, 0);   //for(i=0;i<a.N;i++) operator()(i    )=a(i);
   setVectorBlock(b, a.N); //for(i=0;i<b.N;i++) operator()(i+a.N)=b(i);
+  if(a.jac || b.jac){
+    if(a.jac && b.jac){
+      J().setBlockMatrix(*a.jac, *b.jac);
+    } else NIY;
+  }
 }
 
 /// write the matrix B into 'this' matrix at location lo0, lo1
@@ -2812,22 +2817,34 @@ void op_innerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<
   */
   if(y.nd==2 && z.nd==1) {  //matrix x vector -> vector
     CHECK_EQ(y.d1, z.d0, "wrong dimensions for inner product");
-    if(rai::useLapack && typeid(T)==typeid(double)) { blas_Mv(x, y, z); return; }
-    uint i, d0=y.d0, dk=y.d1;
-    T* a, *astop, *b, *c;
-    x.resize(d0); x.setZero();
-    c=x.p;
-    for(i=0; i<d0; i++) {
-      //for(s=0., k=0;k<dk;k++) s+=y.p[i*dk+k]*z.p[k];
-      //this is faster:
-      a=y.p+i*dk; astop=a+dk; b=z.p;
-      for(; a!=astop; a++, b++)(*c)+=(*a) * (*b);
-      c++;
-    }
-    if(z.jac){
-      if(y.jac) NIY;
-      x.jac = make_unique<rai::Array<T>>();
-      *x.jac = y*(*z.jac);
+    if(y.d0==1){ //row vector -> scalar product}
+      x.resize(1);
+      x.p[0] = scalarProduct(y,z);
+      if(y.jac || z.jac){
+        if(y.jac && !z.jac) x.J() = ~z.noJ() * (*y.jac);
+        else if(!y.jac && z.jac) x.J() = ~y.noJ() * (*z.jac);
+        else x.J() = y.noJ() * (*z.jac) + ~z.noJ() * (*y.jac);
+      }
+    }else{
+      if(rai::useLapack && typeid(T)==typeid(double)) {
+        blas_Mv(x, y, z);
+      }else{
+        uint i, d0=y.d0, dk=y.d1;
+        T* a, *astop, *b, *c;
+        x.resize(d0); x.setZero();
+        c=x.p;
+        for(i=0; i<d0; i++) {
+          //for(s=0., k=0;k<dk;k++) s+=y.p[i*dk+k]*z.p[k];
+          //this is faster:
+          a=y.p+i*dk; astop=a+dk; b=z.p;
+          for(; a!=astop; a++, b++)(*c)+=(*a) * (*b);
+          c++;
+        }
+      }
+      if(y.jac || z.jac){
+        if(y.jac) NIY;
+        x.J() = y.noJ() * (*z.jac);
+      }
     }
     return;
   }
@@ -2863,14 +2880,23 @@ void op_innerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<
         for(; a!=astop; a++, b+=d1)(*c)+=(*a) * (*b);
         c++;
       }
-    if(y.jac || z.jac){ NIY }
+    if(y.jac || z.jac){
+      if(y.jac && !z.jac){
+        CHECK_EQ(y.d0, 1, "");
+        x.J().resize(z.d1, y.jac->d1);
+        tensorEquation(x.J(), *y.jac, TUP(2,1), z, TUP(2,0), 1);
+      }else NIY;
+    }
     return;
   }
   if(y.nd==1 && z.nd==1 && z.N==1) {  //vector multiplied with scalar (disguised as 1D vector)
     uint k, dk=y.N;
     x.resize(y.N);
     for(k=0; k<dk; k++) x.p[k]=y.p[k]*z.p[0];
-    if(y.jac || z.jac){ NIY }
+   if(y.jac || z.jac){
+      if(y.jac && z.jac) x.J() = y.noJ() * (*z.jac) + z.scalar() * (*y.jac);
+      else NIY;
+    }
     return;
   }
   if(y.nd==1 && z.nd==2 && z.d0==1) {  //vector x vector^T -> matrix (outer product)
@@ -2884,7 +2910,10 @@ void op_innerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<
     x.resize(d0, d1);
     for(i=0; i<d0; i++) for(j=0; j<d1; j++) x(i, j)=y(i)*z(0, j);
     if(y.jac || z.jac){
-      NIY;
+      if(y.jac && !z.jac){
+        x.J().resize(y.N, z.N, y.jac->d1);
+        tensorEquation(x.J(), *y.jac, TUP(0,2), z, TUP(3,1), 1);
+      }else NIY;
     }
     return;
   }
@@ -3026,7 +3055,12 @@ void op_indexWiseProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Ar
       T* xp=&x(i, 0), *xstop=xp+x.d1;
       for(; xp!=xstop; xp++) *xp *= yi;
     }
-    if(y.jac || z.jac){ NIY }
+    if(y.jac || z.jac){
+      if(y.jac && !z.jac){
+        x.J().resize(z.d0, z.d1, y.jac->d1);
+        tensorEquation(x.J(), *y.jac, TUP(0,2), z, TUP(0,1));
+      }else NIY;
+    }
     return;
   }
   if(y.nd==2 && z.nd==1) {  //matrix x vector -> index-wise
@@ -3061,13 +3095,19 @@ void op_crossProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<
     x.p[0]=y.p[1]*z.p[2]-y.p[2]*z.p[1];
     x.p[1]=y.p[2]*z.p[0]-y.p[0]*z.p[2];
     x.p[2]=y.p[0]*z.p[1]-y.p[1]*z.p[0];
-    if(y.jac || z.jac){ NIY }
+    if(y.jac || z.jac){
+      if(!y.jac && z.jac) x.J() = skew(y) * (*z.jac);
+      if(y.jac && !z.jac) x.J() = -skew(z) * (*y.jac);
+      else x.J() = skew(y) * (*z.jac) - skew(z) * (*y.jac);
+    }
     return;
   }
   if(y.nd==2 && z.nd==1) { //every COLUMN of y is cross-product'd with z!
     CHECK(y.d0==3 && z.N==3, "cross product only works for 3D vectors!");
     x = skew(-z) * y;
-    if(y.jac || z.jac){ NIY }
+    if(y.jac || z.jac){
+      //above should do autoDiff;
+    }
     return;
   }
   HALT("cross product - not yet implemented for these dimensions");
@@ -3861,7 +3901,7 @@ template<class T> Array<T>& operator<<(Array<T>& x, const Array<T>& y) { x.appen
 
 template<class T> Array<T>& operator+=(Array<T>& x, const Array<T>& y){
   UpdateOperator_MM(+=);
-  if(x.jac || y.jac){
+  if(y.jac){
     if(x.jac) *x.jac += *y.jac;
     else x.J() = *y.jac;
   }
@@ -3873,7 +3913,7 @@ template<class T> Array<T>& operator+=(Array<T>& x, T y){
 }
   template<class T> Array<T>& operator+=(Array<T>&& x, const Array<T>& y){
     UpdateOperator_MM(+=);
-    if(x.jac || y.jac){
+    if(y.jac){
       if(x.jac) *x.jac += *y.jac;
       else x.J() = *y.jac;
     }
@@ -3886,7 +3926,7 @@ template<class T> Array<T>& operator+=(Array<T>& x, T y){
 
 template<class T> Array<T>& operator-=(Array<T>& x, const Array<T>& y){
   UpdateOperator_MM(-=);
-  if(x.jac || y.jac){
+  if(y.jac){
     if(x.jac) *x.jac -= *y.jac;
     else x.J() = -(*y.jac);
   }
@@ -3898,7 +3938,7 @@ template<class T> Array<T>& operator-=(Array<T>& x, T y){
 }
   template<class T> Array<T>& operator-=(Array<T>&& x, const Array<T>& y){
     UpdateOperator_MM(-=);
-    if(x.jac || y.jac){
+    if(y.jac){
       if(x.jac) *x.jac -= *y.jac;
       else x.J() = -(*y.jac);
     }
@@ -3913,8 +3953,8 @@ template<class T> Array<T>& operator*=(Array<T>& x, const Array<T>& y){
   UpdateOperator_MM(*=);
   if(x.jac || y.jac){
     CHECK_EQ(x.nd, 1, "");
-    if(x.jac && !y.jac) *x.jac = y % (*x.jac);
-    else if(!x.jac && y.jac) x.J() = x % (*y.jac);
+    if(x.jac && !y.jac) *x.jac = y.noJ() % (*x.jac);
+    else if(!x.jac && y.jac) x.J() = x.noJ() % (*y.jac);
     else NIY;
   }
   return x;
@@ -3928,8 +3968,8 @@ template<class T> Array<T>& operator*=(Array<T>& x, T y){
     UpdateOperator_MM(*=);
     if(x.jac || y.jac){
       CHECK_EQ(x.nd, 1, "");
-      if(x.jac && !y.jac) *x.jac = y % (*x.jac);
-      else if(!x.jac && y.jac) x.J() = x % (*y.jac);
+      if(x.jac && !y.jac) *x.jac = y.noJ() % (*x.jac);
+      else if(!x.jac && y.jac) x.J() = x.noJ() % (*y.jac);
       else NIY;
     }
     return x;

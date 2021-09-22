@@ -12,6 +12,8 @@
 #include "frame.h"
 #include "featureSymbols.h"
 
+void grabJ(arr& y, arr& J);
+
 /// defines only a map (task space), not yet the costs or constraints in this space
 struct Feature {
   uint order = 0;          ///< 0=position, 1=vel, etc
@@ -57,8 +59,6 @@ private:
   void applyLinearTrans(arr& y);
   uint applyLinearTrans_dim(uint d);
 };
-
-template<class T> arr evalFeature(const FrameL& F, uint order=0){ return T().setOrder(order).eval(F); }
 
 //these are frequently used by implementations of task maps
 

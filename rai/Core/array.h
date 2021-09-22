@@ -301,6 +301,7 @@ template<class T> struct Array : /*std::vector<T>,*/ Serializable {
 
   /// @name attached Jacobian
   Array<T>& J();
+  Array<T> noJ() const;
   Array<T> J_reset();
 
   /// @name I/O
@@ -639,6 +640,7 @@ inline arr linspace(double base, double limit, uint n) {  arr z;  z.setGrid(1, b
 arr logspace(double base, double limit, uint n);
 
 void normalizeWithJac(arr& y, arr& J, double eps=0.);
+void op_normalize(arr& y, double eps=0.);
 
 //===========================================================================
 /// @}
