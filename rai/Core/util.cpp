@@ -525,7 +525,9 @@ int x11_getKey() {
         char string[4];
         XLookupString(&ev.xkey, string, 4, nullptr, nullptr);
         key = string[0];
-        quit=true;
+//        LOG(0) <<"key: " <<key;
+        if(key==' ' || key=='q' || key==27 || key==13)
+          quit=true;
         break;
       case ButtonPress:
         quit=true;

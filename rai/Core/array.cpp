@@ -58,7 +58,7 @@ const bool lapackSupported=true;
 #else
 const bool lapackSupported=false;
 #endif
-uint64_t globalMemoryTotal=0, globalMemoryBound=1ull<<30; //this is 1GB
+int64_t globalMemoryTotal=0, globalMemoryBound=1ull<<30; //this is 1GB
 bool globalMemoryStrict=false;
 const char* arrayElemsep=", ";
 const char* arrayLinesep=",\n ";
@@ -192,8 +192,11 @@ template<> Array<double> Array<double>::noJ() const {
 }
 template<> Array<double> Array<double>::J_reset() {
   CHECK(jac, "");
-  arr J = *jac;
-  jac.reset();
+  arr J;
+  if(jac){
+    J = *jac;
+    jac.reset();
+  }else J.setNoArr();
   return J;
 }
 

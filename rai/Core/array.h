@@ -40,7 +40,7 @@ struct RowShifted;
 // OLD, TODO: hide -> array.cpp
 extern bool useLapack;
 extern const bool lapackSupported;
-extern uint64_t globalMemoryTotal, globalMemoryBound;
+extern int64_t globalMemoryTotal, globalMemoryBound;
 extern bool globalMemoryStrict;
 
 // default write formatting
@@ -179,7 +179,7 @@ template<class T> struct Array : /*std::vector<T>,*/ Serializable {
   void swap(Array<T>& a);      //the two arrays swap their contents!
   void setGrid(uint dim, T lo, T hi, uint steps);
 
-  void diff_setId();
+  void J_setId();
 
   /// @name access by reference (direct memory access)
   Array<T> ref() const; //a reference on this
@@ -530,6 +530,8 @@ extern StringA& NoStringA; //this is a pointer to nullptr!!!! I use it for optio
 
 typedef std::function<double(arr& g, arr& H, const arr& x)> ScalarFunction;
 
+typedef std::function<arr(const arr& x)> fct;
+
 /// a vector function \f$f:~x\mapsto y\in\mathbb{R}^d\f$ with optional Jacobian
 //struct VectorFunction {
 //  virtual void fv(arr& y, arr& J, const arr& x) = 0; ///< returning a vector y and (optionally, if NoArr) Jacobian J for x
@@ -703,7 +705,7 @@ void image_halfResolution(byteA& img);
 void scanArrFile(const char* name);
 
 arr finiteDifferenceGradient(const ScalarFunction& f, const arr& x, arr& Janalytic=NoArr);
-arr finiteDifferenceJacobian(const VectorFunction& f, const arr& _x, arr& Janalytic=NoArr);
+arr finiteDifferenceJacobian(const fct& f, const arr& _x, arr& Janalytic=NoArr);
 bool checkGradient(const ScalarFunction& f, const arr& x, double tolerance, bool verbose=false);
 bool checkHessian(const ScalarFunction& f, const arr& x, double tolerance, bool verbose=false);
 bool checkJacobian(const VectorFunction& f, const arr& x, double tolerance, bool verbose=false);

@@ -460,6 +460,15 @@ template<class T> void rai::Array<T>::resizeMEM(uint n, bool copy, int Mforce) {
   CHECK_GE(Mnew, n, "");
   CHECK((p && M) || (!p && !M), "");
   if(Mnew!=Mold) {  //if M changed, allocate the memory
+    globalMemoryTotal -= Mold;
+    globalMemoryTotal += Mnew;
+    if(globalMemoryTotal>globalMemoryBound){
+      if(globalMemoryStrict){
+        globalMemoryTotal -= Mnew;
+        HALT("out of memory: " <<((globalMemoryTotal+Mnew)>>20) <<"MB");
+      }
+      LOG(0) <<"using massive memory: " <<(globalMemoryTotal>>20) <<"MB";
+    }
     if(Mnew) {
       if(memMove==1){
         if(p){
@@ -2822,7 +2831,7 @@ void op_innerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<
       x.p[0] = scalarProduct(y,z);
       if(y.jac || z.jac){
         if(y.jac && !z.jac) x.J() = ~z.noJ() * (*y.jac);
-        else if(!y.jac && z.jac) x.J() = ~y.noJ() * (*z.jac);
+        else if(!y.jac && z.jac) x.J() = y.noJ() * (*z.jac);
         else x.J() = y.noJ() * (*z.jac) + ~z.noJ() * (*y.jac);
       }
     }else{
@@ -3007,10 +3016,8 @@ void op_outerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<
 template<class T>
 void op_elemWiseProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>& z) {
   CHECK_EQ(y.N, z.N, "");
-  x = z;
-  for(uint i=0; i<x.N; i++) x.elem(i) *= y.elem(i);
-  if(y.jac || z.jac){ NIY }
-  return;
+  x = y;
+  x *= z;
 }
 
 /** @brief index wise (element-wise for vectors and matrices) product (also ordinary matrix or scalar product).:
@@ -3097,8 +3104,8 @@ void op_crossProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<
     x.p[2]=y.p[0]*z.p[1]-y.p[1]*z.p[0];
     if(y.jac || z.jac){
       if(!y.jac && z.jac) x.J() = skew(y) * (*z.jac);
-      if(y.jac && !z.jac) x.J() = -skew(z) * (*y.jac);
-      else x.J() = skew(y) * (*z.jac) - skew(z) * (*y.jac);
+      else if(y.jac && !z.jac) x.J() = -skew(z) * (*y.jac);
+      else x.J() = skew(y.noJ()) * (*z.jac) - skew(z.noJ()) * (*y.jac);
     }
     return;
   }
@@ -3950,33 +3957,34 @@ template<class T> Array<T>& operator-=(Array<T>& x, T y){
   }
 
 template<class T> Array<T>& operator*=(Array<T>& x, const Array<T>& y){
-  UpdateOperator_MM(*=);
   if(x.jac || y.jac){
     CHECK_EQ(x.nd, 1, "");
-    if(x.jac && !y.jac) *x.jac = y.noJ() % (*x.jac);
-    else if(!x.jac && y.jac) x.J() = x.noJ() % (*y.jac);
+    CHECK_EQ(y.nd, 1, "");
+    if(x.jac && !y.jac) *x.jac = y % (*x.jac);
+    else if(!x.jac && y.jac) x.J() = x % (*y.jac);
     else NIY;
   }
+  UpdateOperator_MM(*=);
   return x;
 }
 template<class T> Array<T>& operator*=(Array<T>& x, T y){
-  UpdateOperator_MS(*=);
   if(x.jac) *x.jac *= y;
+  UpdateOperator_MS(*=);
   return x;
 }
   template<class T> Array<T>& operator*=(Array<T>&& x, const Array<T>& y){
-    UpdateOperator_MM(*=);
     if(x.jac || y.jac){
       CHECK_EQ(x.nd, 1, "");
       if(x.jac && !y.jac) *x.jac = y.noJ() % (*x.jac);
       else if(!x.jac && y.jac) x.J() = x.noJ() % (*y.jac);
       else NIY;
     }
+    UpdateOperator_MM(*=);
     return x;
   }
   template<class T> Array<T>& operator*=(Array<T>&& x, T y){
-    UpdateOperator_MS(*=);
     if(x.jac) *x.jac *= y;
+    UpdateOperator_MS(*=);
     return x;
   }
 
@@ -4220,7 +4228,7 @@ template struct rai::Array<bool>;
 //
 
 template<class T>
-void rai::Array<T>::diff_setId() {
+void rai::Array<T>::J_setId() {
   CHECK(!jac, "");
   CHECK(nd==1,"");
   jac = make_unique<arr>();
