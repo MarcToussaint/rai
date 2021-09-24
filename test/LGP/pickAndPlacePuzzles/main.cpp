@@ -33,15 +33,10 @@ void loadProblem(rai::Configuration& C, const std::string &filename){
 void generateProblem(rai::Configuration& C){
   uint numObj = 4;
   for(;;){
-    C.clear();
-    // C.addFile("../../../../rai-robotModels/pr2/pr2.g");
+    C.clear();    
     C.addFile("0k-2d-room-ego-obj-limits.g");
-       // C.addFile("quim.g");
 
     C.selectJointsByAtt({"ego"});
-    //C.selectJointsByAtt({"base","armL","armR"});
-    ///C.pruneInactiveJoints();
-    //C.optimizeTree();
     C["ego"]->ats->newNode<rai::Graph>({"logical"}, {}, {{"gripper", true}});
     
     for(uint i=0;i<numObj;i++){
@@ -68,16 +63,17 @@ void generateProblem(rai::Configuration& C){
 }
 
   
-void solve() {
+void solve(const std::string &configName) {
   rai::Configuration C;
-  loadProblem(C, "minimal.g");
+  loadProblem(C,  configName);
 
   rai::LGP_Tree lgp(C, "fol-pnp-switch.g");
+  //rai::LGP_Tree lgp(C, "fol-pnp.g");
+
   //lgp.fol.addTerminalRule("(on goal obj)"); 
   //lgp.fol.addTerminalRule("(on goal obj) (on goal ego)"); 
   lgp.fol.addTerminalRule("(on goal obj)"); 
-
-
+  ///lgp.fol.addTerminalRule("(stable ego obj)"); 
 
   lgp.displayBound = rai::BD_seqPath;
   //lgp.verbose=2;
@@ -101,23 +97,30 @@ void solve() {
   // }
 }
 
-void playIt(){
+void playIt(const std::string &configName){
   rai::Configuration C;
    //generateProblem(C);
-  loadProblem(C, "minimal.g");
+  loadProblem(C, configName);
   rai::LGP_Tree lgp(C, "fol-pnp-switch.g");
+
   lgp.player();
 }
 
 
-void testBounds(){
+void testBounds(const std::string &configName){
   rai::Configuration C;
   //generateProblem(C);
-  loadProblem(C, "minimal.g");
-
+  loadProblem(C, configName);
+  FrameL collisions = C.getCollisionAllPairs();
+  for(auto coll : collisions) {
+    std::cout << coll->name << std::endl;
+  }
   rai::LGP_Tree lgp(C, "fol-pnp-switch.g");
 
   lgp.inspectSequence("(pick ego obj) (place ego obj goal) ");
+  //lgp.inspectSequence("(pick ego cube2) (place ego cube2 floor_right) ");
+  //lgp.inspectSequence("(pick ego obj) (place ego obj floor_left) (pick ego cube2) (place ego cube2 goal) (pick ego obj) (place ego obj goal)  ");
+
   return;
 
   ////rai::LGP_Node* node = lgp.walkToNode("(pick pr2R obj0) (pick pr2L obj3) (place pr2R obj0 tray) (place pr2L obj3 tray)");
@@ -132,12 +135,16 @@ void testBounds(){
 int MAIN(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 //  rnd.clockSeed();
+  std::string configName = "minimal.g";
 
-  //solve();
+  if(argc > 1) {
+    configName = argv[1];
+  }
+  //solve(configName);
 
-  playIt();
+  //playIt(configName);
 
-  //testBounds();
+  testBounds(configName);
 
   return 0;
 }
