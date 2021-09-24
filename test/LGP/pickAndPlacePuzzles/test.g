@@ -12,7 +12,9 @@ goal (world){ shape:ssBox, Q:<t(0 2.7 .05)>, size:[4.1 0.6 .1 .02], color:[1. .3
 wall1 (world){ shape:ssBox, Q:<t(-1.25 1.2 0.5)>, size:[1.4 .1 1 .02], color:[.3 .3 .3],  contact:1 }
 wall2 (world){ shape:ssBox, Q:<t(1.25 1.2 0.5)>, size:[1.4 .1 1 .02], color:[.3 .3 .3],  contact:1 }
 
-ego (floor_left) {joint:transXY, shape:ssBox, Q:<t(-1.0 0 0.2)>, size:[0.3 .3 0.3 0.01], color:[1.0 1.0 .5] logical:{gripper:True, object:True},  contact:1 }
+ego_base_origin (floor_left){ X:[0 0 .3] }
+ego (ego_base_origin) {joint:transXY, shape:ssBox, Q:<t(-1.0 0 0)>, size:[0.3 .3 0.3 0.01], color:[1.0 1.0 .5] logical:{gripper:True, object:True},  contact:1 }
+
 obj (floor_left) { joint:rigid, shape:ssBox, Q:<t(0.7 -1 0.2)>, size:[0.3 .3 0.3 0.01], color:[0.0 0.0 1.0],  contact:1, logical:{object:True} }
 
 
