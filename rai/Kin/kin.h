@@ -138,6 +138,7 @@ struct Configuration : GLDrawer {
   /// @name active DOFs selection
   void setActiveJoints(const DofL& F);
   void selectJoints(const FrameL& F, bool notThose=false);
+  void selectJoints(const DofL& dofs, bool notThose=false);
   void selectJointsByName(const StringA&, bool notThose=false);
   void selectJointsBySubtrees(const FrameL& roots, bool notThose=false);
   void selectJointsByAtt(const StringA& attNames, bool notThose=false);
