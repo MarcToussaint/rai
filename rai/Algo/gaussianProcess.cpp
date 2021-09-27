@@ -151,7 +151,7 @@ void GaussianProcess::evaluate(const arr& x, double& y, double& sig, bool calcSi
 
   y = scalarProduct(k, GinvY) + mu_func(x, priorP) + mu;
   if(calcSig) {
-    innerProduct(Ginvk, Ginv, k);
+    op_innerProduct(Ginvk, Ginv, k);
     sig = cov(kernelP, x, x) - scalarProduct(k, Ginvk);
     //if(sig<=10e-10) {
     //cout << "---" << endl;

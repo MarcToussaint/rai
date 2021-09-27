@@ -10,6 +10,7 @@
 #include "kin.h"
 #include "uncertainty.h"
 #include "forceExchange.h"
+#include "dof_particles.h"
 #include "../Geo/analyticShapes.h"
 #include <climits>
 
@@ -57,6 +58,7 @@ rai::Frame::Frame(Configuration& _C, const Frame* copyFrame)
     if(copyFrame->joint) new Joint(*this, copyFrame->joint);
     if(copyFrame->shape) new Shape(*this, copyFrame->shape);
     if(copyFrame->inertia) new Inertia(*this, copyFrame->inertia);
+    if(copyFrame->particleDofs) new ParticleDofs(*this, copyFrame->particleDofs);
   }
 }
 
@@ -587,17 +589,25 @@ void rai::Frame::unLink() {
   if(joint) {  delete joint;  joint=nullptr;  }
 }
 
-rai::Frame& rai::Frame::setParent(rai::Frame* _parent, bool adoptRelTransform) {
+rai::Frame& rai::Frame::setParent(rai::Frame* _parent, bool keepAbsolutePose_and_adaptRelativePose, bool checkForLoop) {
   CHECK(_parent, "you need to set a parent to link from");
   CHECK(!parent, "this frame ('" <<name <<"') already has a parent");
   if(parent==_parent) return *this;
 
-  if(adoptRelTransform) ensure_X();
+  if(checkForLoop){
+    rai::Frame* f=_parent;
+    while(f) {
+      CHECK(f!=this, "loop at frame '" <<f->name <<"'");
+      f=f->parent;
+    }
+  }
+
+  if(keepAbsolutePose_and_adaptRelativePose) ensure_X();
 
   parent=_parent;
   parent->children.append(this);
 
-  if(adoptRelTransform) calc_Q_from_parent();
+  if(keepAbsolutePose_and_adaptRelativePose) calc_Q_from_parent();
   _state_updateAfterTouchingQ();
 
   return *this;

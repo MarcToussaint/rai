@@ -1093,6 +1093,7 @@ void rai::Mesh::read(std::istream& is, const char* fileExtension, const char* fi
   else if(!strcmp(fileExtension, "ply")) { readPLY(filename); }
   else if(!strcmp(fileExtension, "tri")) { readTriFile(is); }
   //  else if(!strcmp(fileExtension, "stl") || !strcmp(fileExtension, "STL")) { readStlFile(is); }
+  else if(!strcmp(fileExtension, "dae")) { *this = AssimpLoader(filename, true).getSingleMesh(); }
   else {
     *this = AssimpLoader(filename, false).getSingleMesh();
   }

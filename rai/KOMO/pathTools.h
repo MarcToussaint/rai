@@ -45,5 +45,15 @@ arr path_resample(const arr& q, double durationScale);
 
 //-- POSE
 
-bool checkCollisionsAndLimits(rai::Configuration& C, FrameL collisionPairs, const arr& limits, bool solveForFeasible, int verbose=1);
+struct PoseTool{
+  rai::Configuration& C;
+  int verbose;
+
+  PoseTool(rai::Configuration& _C, int _verbose=0) : C(_C), verbose(_verbose) {}
+  bool checkLimits(const arr& limits={}, bool solve=false, bool assert=false); //default: use limites defined in C
+  bool checkCollisions(const FrameL& collisionPairs={}, bool solve=false, bool assert=false); //default: use broadphase method in C
+  bool checkLimitsAndCollisions(const arr& limits={}, const FrameL& collisionPairs={}, bool solve=false, bool assert=false);
+};
+
+bool checkCollisionsAndLimits(rai::Configuration& C, const FrameL& collisionPairs, const arr& limits, bool solveForFeasible, int verbose=1);
 

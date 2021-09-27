@@ -1171,7 +1171,7 @@ void lognormScale(arr& P, double& logP, bool force) {
 
 void sparseProduct(arr& y, arr& A, const arr& x) {
   if(!A.special && !x.special) {
-    innerProduct(y, A, x);
+    op_innerProduct(y, A, x);
     return;
   }
 #if 0
@@ -1464,9 +1464,9 @@ rai::String singleString(const StringA& strs) {
 
 #ifdef RAI_LAPACK
 #if 1 //def NO_BLAS
-void blas_MM(arr& X, const arr& A, const arr& B) {       rai::useLapack=false; innerProduct(X, A, B); rai::useLapack=true; };
-void blas_MsymMsym(arr& X, const arr& A, const arr& B) { rai::useLapack=false; innerProduct(X, A, B); rai::useLapack=true; };
-void blas_Mv(arr& y, const arr& A, const arr& x) {       rai::useLapack=false; innerProduct(y, A, x); rai::useLapack=true; };
+void blas_MM(arr& X, const arr& A, const arr& B) {       rai::useLapack=false; op_innerProduct(X, A, B); rai::useLapack=true; };
+void blas_MsymMsym(arr& X, const arr& A, const arr& B) { rai::useLapack=false; op_innerProduct(X, A, B); rai::useLapack=true; };
+void blas_Mv(arr& y, const arr& A, const arr& x) {       rai::useLapack=false; op_innerProduct(y, A, x); rai::useLapack=true; };
 void blas_A_At(arr& X, const arr& A) { X = A*~A; }
 void blas_At_A(arr& X, const arr& A) { X = ~A*A; }
 #else
@@ -1647,7 +1647,7 @@ void lapack_LU(arr& LU, const arr& A) {
 }
 
 void lapack_RQ(arr& R, arr& Q, const arr& A) {
-  transpose(Q, A);
+  op_transpose(Q, A);
   R.resizeAs(A); R.setZero();
   integer M=A.d0, N=A.d1, D=M<N?M:N, LWORK=M*N, info;
   arr tau(D), work(LWORK);
@@ -1835,9 +1835,9 @@ dlauum = multiply L'*L
 #if !defined RAI_MSVC && defined RAI_NOCHECK
 #  warning "RAI_LAPACK undefined - using inefficient implementations"
 #endif
-void blas_MM(arr& X, const arr& A, const arr& B) { rai::useLapack=false; innerProduct(X, A, B); };
-void blas_MsymMsym(arr& X, const arr& A, const arr& B) { rai::useLapack=false; innerProduct(X, A, B); };
-void blas_Mv(arr& y, const arr& A, const arr& x) {       rai::useLapack=false; innerProduct(y, A, x); rai::useLapack=true; };
+void blas_MM(arr& X, const arr& A, const arr& B) { rai::useLapack=false; op_innerProduct(X, A, B); };
+void blas_MsymMsym(arr& X, const arr& A, const arr& B) { rai::useLapack=false; op_innerProduct(X, A, B); };
+void blas_Mv(arr& y, const arr& A, const arr& x) {       rai::useLapack=false; op_innerProduct(y, A, x); rai::useLapack=true; };
 void blas_A_At(arr& X, const arr& A) { NICO }
 void blas_At_A(arr& X, const arr& A) { NICO }
 void lapack_cholesky(arr& C, const arr& A) { NICO }
@@ -2318,7 +2318,8 @@ SparseMatrix::SparseMatrix(arr& _Z, const SparseMatrix& s) : SparseMatrix(_Z) {
 }
 
 /// return fraction of non-zeros in the array
-template<> double Array<double>::sparsity() {
+template<>
+double Array<double>::sparsity() {
   uint i, m=0;
   for(i=0; i<N; i++) if(elem(i)) m++;
   return ((double)m)/N;
@@ -2778,7 +2779,7 @@ arr rai::comp_A_At(const arr& A) {
 //}
 
 arr rai::comp_At_x(const arr& A, const arr& x) {
-  if(!isSpecial(A)) { arr y; innerProduct(y, ~A, x); return y; }
+  if(!isSpecial(A)) { arr y; op_innerProduct(y, ~A, x); return y; }
   if(isRowShifted(A)) return ((rai::RowShifted*)A.special)->At_x(x);
   if(isSparseMatrix(A)) return ((rai::SparseMatrix*)A.special)->At_x(x);
   return NoArr;
@@ -2791,7 +2792,7 @@ arr rai::comp_At(const arr& A) {
 }
 
 arr rai::comp_A_x(const arr& A, const arr& x) {
-  if(!isSpecial(A)) { arr y; innerProduct(y, A, x); return y; }
+  if(!isSpecial(A)) { arr y; op_innerProduct(y, A, x); return y; }
   if(isRowShifted(A)) return ((rai::RowShifted*)A.special)->A_x(x);
   return NoArr;
 }

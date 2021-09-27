@@ -62,14 +62,38 @@ bool checkInBound(MathematicalProgram& P, const arr& x){
   return true;
 }
 
-void boundClip(arr& y, const arr& bound_lo, const arr& bound_up);
+void boundClip(arr& y, const arr& bound_lo, const arr& bound_up) {
+  if(bound_lo.N && bound_up.N) {
+    for(uint i=0; i<y.N; i++) if(bound_up(i)>=bound_lo(i)) {
+      if(y(i)>bound_up(i)) y(i) = bound_up(i);
+      if(y(i)<bound_lo(i)) y(i) = bound_lo(i);
+    }
+  }
+}
 
 void boundClip(MathematicalProgram& P, arr& x){
   arr bounds_lo, bounds_up;
   P.getBounds(bounds_lo, bounds_up);
   boundClip(x, bounds_lo, bounds_up);
-
 }
+
+bool boundCheck(const arr& y, const arr& bound_lo, const arr& bound_up, double eps){
+  bool good=true;
+  if(bound_lo.N && bound_up.N) {
+    double lo = min(y-bound_lo);
+    if(lo < -eps){
+      LOG(-1) << "lower bound violated: " <<lo;
+      good=false;
+    }
+    double up = max(y-bound_up);
+    if(up > eps){
+      LOG(-1) << "lower bound violated: " <<up;
+      good = false;
+    }
+  }
+  return good;
+}
+
 
 //===========================================================================
 //
@@ -97,8 +121,9 @@ OptOptions::OptOptions() {
   dampingInc= rai::getParameter<double>("opt/dampingInc", 1.);
   dampingDec= rai::getParameter<double>("opt/dampingDec", 1.);
   wolfe     = rai::getParameter<double>("opt/wolfe", .01);
-  nonStrictSteps= rai::getParameter<double> ("opt/nonStrictSteps", 0);
-  allowOverstep= rai::getParameter<bool> ("opt/allowOverstep", false);
+  nonStrictSteps = rai::getParameter<double> ("opt/nonStrictSteps", 0);
+  boundedNewton = rai::getParameter<double> ("opt/boundedNewton", 1);
+  allowOverstep = rai::getParameter<double> ("opt/allowOverstep", 0);
   constrainedMethod = (ConstrainedMethodType)rai::getParameter<double>("opt/constrainedMethod", augmentedLag);
   muInit = rai::getParameter<double>("opt/muInit", 1.);
   muLBInit = rai::getParameter<double>("opt/muLBInit", 1.);

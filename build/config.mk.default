@@ -10,9 +10,10 @@
 # (they are already set =1 in the components that depend on them)
 
 
-#OPTIM = debug      ## compile everything with non-optimized debug info (default: optimized debug -g -O3)
-#OPTIM = fast	    ## compile without debug info
-#OPTIM = fast_debug ## compile with -O3 and debug
+## force compile with -g, -O3, or -g -O3 (default: varying for different modules)
+OPTIM = debug
+#OPTIM = fast
+#OPTIM = fast_debug
 
 
 ## by default we use OpenGL a lot, but can be disabled

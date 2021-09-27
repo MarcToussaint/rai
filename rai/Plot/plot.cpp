@@ -153,7 +153,7 @@ void rai::PlotModule::Function(const arr& f, double x0, double x1) {
 void rai::PlotModule::Functions(const arr& F, double x0, double x1) {
   CHECK_EQ(F.nd, 2, "");
   arr tF;
-  transpose(tF, F);
+  op_transpose(tF, F);
   for(uint j=0; j<tF.d0; j++) Function(tF[j], x0, x1);
 }
 

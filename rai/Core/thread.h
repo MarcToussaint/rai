@@ -235,7 +235,7 @@ struct Signaler {
   virtual ~Signaler(); //virtual, to enforce polymorphism
 
   void setStatus(int i, Signaler* messenger=nullptr); ///< sets status and broadcasts
-  int  incrementStatus(Signaler* messenger=nullptr);  ///< increase status by 1
+  int  incrementStatus(Signaler* messenger=nullptr, int delta=+1);  ///< increase status by 1
   void broadcast(Signaler* messenger=nullptr);        ///< wake up waitForSignal callers
 
   void statusLock();   //the user can manually lock/unlock, if he needs locked state access for longer -> use userHasLocked=true below!

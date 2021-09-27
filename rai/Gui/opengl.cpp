@@ -2007,7 +2007,7 @@ int OpenGL::update(const char* txt, bool nonThreaded) {
 #endif
 #endif
   int key=pressedkey;
-  pressedkey=0;
+//  pressedkey=0;
 //  if(key) LOG(0) <<"KEY! " <<key;
   return key;
 }
@@ -2158,7 +2158,7 @@ void OpenGL::about(std::ostream& os) { RAI_MSG("NICO"); }
 #if 1
 #  define CALLBACK_DEBUG(x) if(reportEvents) { LOG(0) <<x; }
 #elif 1
-#  define CALLBACK_DEBUG(x) { cout <<RAI_HERE <<s <<':'; x; }
+#  define CALLBACK_DEBUG(x) { cout <<RAI_HERE <<':' <<x <<endl; }
 #else
 #  define CALLBACK_DEBUG(x)
 #endif
@@ -2200,7 +2200,6 @@ void OpenGL::Key(unsigned char key, int mods) {
   for(uint i=0; i<keyCalls.N; i++) cont=cont && keyCalls(i)->keyCallback(*this);
 
   if(key==13 || key==27 || key=='q' || rai::contains(exitkeys, key)) watching.setStatus(0);
-
 }
 
 void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) {

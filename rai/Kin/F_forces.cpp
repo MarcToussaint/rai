@@ -14,6 +14,8 @@
 #include "F_collisions.h"
 #include "../Geo/pairCollision.h"
 
+#define RAI_USE_FUNCTIONAL_NORMALS
+
 //===========================================================================
 //helper methods:
 
@@ -142,28 +144,28 @@ void shapeFunction(double& x, double& dx);
 //===========================================================================
 
 void F_fex_POA::phi2(arr& y, arr& J, const FrameL& F) {
-  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  if(order>0){  phi_finiteDifferenceReduce(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
   rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1));
   ex->kinPOA(y, J);
 }
 
 void F_fex_Force::phi2(arr& y, arr& J, const FrameL& F) {
-  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  if(order>0){  phi_finiteDifferenceReduce(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
   rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1));
   ex->kinForce(y, J);
 }
 
 void F_fex_Torque::phi2(arr& y, arr& J, const FrameL& F){
-  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  if(order>0){  phi_finiteDifferenceReduce(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
   rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1));
   ex->kinTorque(y, J);
 }
 
 void F_fex_Wrench::phi2(arr& y, arr& J, const FrameL& F){
-  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  if(order>0){  phi_finiteDifferenceReduce(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
   rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1));
   arr y1, y2, J1, J2;
@@ -176,7 +178,7 @@ void F_fex_Wrench::phi2(arr& y, arr& J, const FrameL& F){
 //===========================================================================
 
 void F_HingeXTorque::phi2(arr& y, arr& J, const FrameL& F){
-  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  if(order>0){  phi_finiteDifferenceReduce(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
   rai::Frame *f1 = F.elem(0);
   rai::Frame *f2 = F.elem(1);
@@ -365,7 +367,7 @@ void F_NewtonEuler_DampedVelocities::phi2(arr& y, arr& J, const FrameL& F) {
 
   //collect mass info (assume diagonal inertia matrix!!)
   double mass=1.;
-  arr Imatrix = diag(.03, 3);
+  arr Imatrix = diag(.02, 3);
   rai::Frame* a = F.elem(-2);
   if(a->inertia) {
     mass = a->inertia->mass;
@@ -463,13 +465,13 @@ void F_fex_ForceIsNormal::phi2(arr& y, arr& J, const FrameL& F) {
                 .eval(F);
 
   //-- from the geometry we need normal
-#if 0
-  Value normal = F_PairCollision(F_PairCollision::_normal, true)
-                 .eval(F);
-#else
+#ifdef RAI_USE_FUNCTIONAL_NORMALS
   Value normal = F_fex_POASurfaceAvgNormal()
                  .eval(F);
   normalizeWithJac(normal.y, normal.J);
+#else
+  Value normal = F_PairCollision(F_PairCollision::_normal, true)
+                 .eval(F);
 #endif
 
   //-- force needs to align with normal -> project force along normal
@@ -517,13 +519,13 @@ void F_fex_ForceIsPositive::phi2(arr& y, arr& J, const FrameL& F) {
                 .eval(F);
 
   //-- from the geometry we need normal
-#if 0
-  Value normal = F_PairCollision(F_PairCollision::_normal, true)
-                 .eval(F);
-#else
+#ifdef RAI_USE_FUNCTIONAL_NORMALS
   Value normal = F_fex_POASurfaceAvgNormal()
                  .eval(F);
   normalizeWithJac(normal.y, normal.J);
+#else
+  Value normal = F_PairCollision(F_PairCollision::_normal, true)
+                 .eval(F);
 #endif
 
   //-- force needs to align with normal -> project force along normal
@@ -533,7 +535,7 @@ void F_fex_ForceIsPositive::phi2(arr& y, arr& J, const FrameL& F) {
 }
 
 void F_fex_POASurfaceDistance::phi2(arr& y, arr& J, const FrameL& F){
-  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  if(order>0){  phi_finiteDifferenceReduce(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
   rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1));
   rai::Frame *f=0;
@@ -562,7 +564,7 @@ void F_fex_POASurfaceDistance::phi2(arr& y, arr& J, const FrameL& F){
 }
 
 void F_fex_POASurfaceNormal::phi2(arr& y, arr& J, const FrameL& F){
-  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  if(order>0){  phi_finiteDifferenceReduce(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
   rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1));
   rai::Frame *f=0;
@@ -613,7 +615,7 @@ void F_fex_POASurfaceAvgNormal::phi2(arr& y, arr& J, const FrameL& F) {
 }
 
 void F_fex_POAContactDistances::phi2(arr& y, arr& J, const FrameL& F) {
-  if(order>0){  Feature::phi2(y, J, F);  return;  }
+  if(order>0){  phi_finiteDifferenceReduce(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
   rai::Frame *f1 = F.elem(0);
   rai::Frame *f2 = F.elem(1);
