@@ -625,12 +625,21 @@ void Configuration::setActiveJoints(const DofL& joints){
   checkConsistency();
 }
 
+void Configuration::selectJoints(const FrameL& F, bool notThose){
+  DofL D(F.N);
+  D.setZero();
+  uint n=0;
+  for(Frame* f: F) if(f && f->joint) D.elem(n++) = f->joint;
+  D.resizeCopy(n);
+  selectJoints(D, notThose);
+}
+
 /// selects only the joints of the given frames to be active -- the q-vector (and Jacobians) will refer only to those DOFs
-void Configuration::selectJoints(const FrameL& F, bool notThose) {
+void Configuration::selectJoints(const DofL& dofs, bool notThose) {
   for(Frame* f: frames) if(f->joint) f->joint->active = notThose;
-  for(Frame* f: F) if(f && f->joint){
-    f->joint->active = !notThose;
-    if(f->joint->mimic) f->joint->mimic->active = f->joint->active; //activate also the joint mimic'ed
+  for(Dof* dof: dofs) if(dof){
+    dof->active = !notThose;
+    if(dof->mimic) dof->mimic->active = dof->active; //activate also the joint mimic'ed
   }
   for(Frame* f: frames) if(f && f->joint && f->joint->mimic){ //mimic's of active joints are active as well
     if(f->joint->mimic->active) f->joint->active = true;
