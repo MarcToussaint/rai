@@ -1509,6 +1509,7 @@ void Conv_KOMO_SparseNonfactored::evaluate(arr& phi, arr& J, const arr& x) {
       if(absMax(y)>1e10) RAI_MSG("WARNING y=" <<y);
 
       //write into phi and J
+      arr yJ = y.J_reset();
       phi.setVectorBlock(y, M);
 
       if(ob->type==OT_sos) komo.sos+=sumOfSqr(y);
@@ -1517,11 +1518,11 @@ void Conv_KOMO_SparseNonfactored::evaluate(arr& phi, arr& J, const arr& x) {
 
       if(!!J) {
         if(sparse){
-          y.J().sparse().reshape(J.d0, J.d1);
-          y.J().sparse().colShift(M);
-          J += y.J();
+          yJ.sparse().reshape(J.d0, J.d1);
+          yJ.sparse().colShift(M);
+          J += yJ;
         }else{
-          J.setMatrixBlock(y.J(), M, 0);
+          J.setMatrixBlock(yJ, M, 0);
         }
       }
 

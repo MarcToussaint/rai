@@ -1500,8 +1500,14 @@ template<class T> void rai::Array<T>::setBlockMatrix(const rai::Array<T>& A, con
 template<class T> void rai::Array<T>::setBlockVector(const rai::Array<T>& a, const rai::Array<T>& b) {
   CHECK(a.nd==1 && b.nd==1, "");
   resize(a.N+b.N);
-  setVectorBlock(a, 0);   //for(i=0;i<a.N;i++) operator()(i    )=a(i);
-  setVectorBlock(b, a.N); //for(i=0;i<b.N;i++) operator()(i+a.N)=b(i);
+//  if(a.jac || b.jac){
+//    if(a.jac && b.jac){
+//      if(a.jac->isSparse()) J().sparse().resize(N, a.jac->d1, 0);
+//      else J().resize(N, a.jac->d1).setZero();
+//    } else NIY;
+//  }
+  setVectorBlock(a.noJ(), 0);   //for(i=0;i<a.N;i++) operator()(i    )=a(i);
+  setVectorBlock(b.noJ(), a.N); //for(i=0;i<b.N;i++) operator()(i+a.N)=b(i);
   if(a.jac || b.jac){
     if(a.jac && b.jac){
       J().setBlockMatrix(*a.jac, *b.jac);
@@ -3096,8 +3102,9 @@ void op_indexWiseProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Ar
     T* xp=x.p, *xstop=x.p+x.N, *zp=z.p;
     for(; xp!=xstop; xp++, zp++) *xp *= *zp;
     if(y.jac || z.jac){
-      if(!y.jac && z.jac) x.J() = y % (*z.jac);
-      else NIY;
+      NIY;
+      //if(!y.jac && z.jac) x.J() = y % (*z.jac);
+      //else if(y.jac && !z.jac) x.J() = z % (*y.jac);
     }
     return;
   }

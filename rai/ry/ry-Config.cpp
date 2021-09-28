@@ -255,9 +255,8 @@ many mapping refer to one or several frames, which need to be specified using fr
     )
 
   .def("evalFeature", [](shared_ptr<rai::Configuration>& self, FeatureSymbol fs, const ry::I_StringA& frames) {
-    arr y, J;
-    self->evalFeature(y, J, fs, I_conv(frames));
-    return pybind11::make_tuple(pybind11::array(y.dim(), y.p), pybind11::array(J.dim(), J.p));
+    arr y = self->evalFeature(fs, I_conv(frames));
+    return pybind11::make_tuple(pybind11::array(y.dim(), y.p), pybind11::array(y.J().dim(), y.J().p));
   }, "TODO remove -> use feature directly"
       )
 
@@ -393,7 +392,7 @@ from broadphase collision computation)",
     auto komo = make_shared<KOMO>();
     komo->setModel(*self, useSwift);
     komo->setTiming(numConfigs, 1, 1., 1);
-    komo->addSquaredQuaternionNorms();
+    komo->addQuaternionNorms();
     return komo;
   },
   "create KOMO solver configured for dense graph optimization, \

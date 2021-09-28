@@ -33,10 +33,10 @@ arr Feature::phi_finiteDifferenceReduce(const FrameL& F) {
     CHECK_GE(tau, 1e-10, "");
     if(timeIntegral<=0){
       y /= tau;
-      if(Jtau.N && y.jac) y.J() += (-1./tau)*y*Jtau;
+      if(Jtau.N && y.jac) y.J() += (-1./tau)*y.noJ()*Jtau;
     }else{ //this assumes that we talk about a SOS feature! and that the cost is multiplied by tau (the feature by sqrt(tau))
       y /= sqrt(tau);
-      if(Jtau.N && y.jac) y.J() += (-0.5/tau)*y*Jtau;
+      if(Jtau.N && y.jac) y.J() += (-0.5/tau)*y.noJ()*Jtau;
     }
   }
   return y;
@@ -95,6 +95,7 @@ arr Feature::phi(const FrameL& F) {
   phi2(y, J, F);
   if(!!J){
     CHECK_EQ(J.d0, y.N, "wrong Jacobian size");
+    CHECK(!J.jac, "");
     y.J() = J;
   }
   return y;

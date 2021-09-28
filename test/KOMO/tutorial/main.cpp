@@ -25,7 +25,7 @@ void tutorialBasics(){
 
   //-- default tasks for transition costs
   komo.add_qControlObjective({}, 2, 1.);
-//  komo.addSquaredQuaternionNorms(-1., -1., 1e1); //when the kinematics includes quaternion joints, keep them roughly regularized
+//  komo.addQuaternionNorms(-1., -1., 1e1); //when the kinematics includes quaternion joints, keep them roughly regularized
 
   //-- simple tasks, called low-level
 

@@ -124,7 +124,7 @@ void KOMO::setDiscreteOpt(uint k) {
 //  tau = 1.;
 //  k_order = 1;
   setTiming(k, 1, 1., 1);
-  addSquaredQuaternionNorms();
+  addQuaternionNorms();
 }
 
 void KOMO::addSwitch_on(double time, const char* from, const char* to, bool copyInitialization) {

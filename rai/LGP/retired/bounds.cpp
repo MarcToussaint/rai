@@ -97,7 +97,7 @@ PoseBound::PoseBound(ptr<KOMO>& komo,
   komo->setModel(startKinematics, collisions);
   komo->setTiming(optHorizon, 1, 10., 1);
 
-  komo->addSquaredQuaternionNorms();
+  komo->addQuaternionNorms();
 #if 0
   komo->setHoming(0., -1., 1e-2);
   komo->setSquaredQVelocities(1., -1., 1e-1); //IMPORTANT: do not penalize transitions of from prefix to x_{0} -> x_{0} is 'loose'
@@ -149,7 +149,7 @@ SeqBound::SeqBound(ptr<KOMO>& komo,
 //  komo->solver=rai::KS_sparse; //sparseOptimization = true;
   komo->animateOptimization = 0;
 
-  komo->addSquaredQuaternionNorms();
+  komo->addQuaternionNorms();
 #if 0
   komo->setHoming(0., -1., 1e-2);
   komo->setSquaredQVelocities(0., -1., 1e-2);
@@ -181,7 +181,7 @@ PathBound::PathBound(ptr<KOMO>& komo,
   komo->setTiming(maxPhase+.5, stepsPerPhase, 10., pathOrder);
   komo->animateOptimization = 0;
 
-  komo->addSquaredQuaternionNorms();
+  komo->addQuaternionNorms();
 #if 0
   komo->setHoming(0., -1., 1e-2);
   if(pathOrder==1) komo->setSquaredQVelocities();
@@ -214,7 +214,7 @@ SeqPathBound::SeqPathBound(ptr<KOMO>& komo,
   komo->setTiming(maxPhase+.5, stepsPerPhase, 10., pathOrder);
   komo->animateOptimization = 0;
 
-  komo->addSquaredQuaternionNorms();
+  komo->addQuaternionNorms();
 #if 0
   komo->setHoming(0., -1., 1e-2);
   if(pathOrder==1) komo->setSquaredQVelocities();
@@ -261,7 +261,7 @@ SeqVelPathBound::SeqVelPathBound(ptr<KOMO>& komo,
 
   komo->add_qControlObjective({}, 1, 1.);
   komo->add_qControlObjective({}, 0, 1e-2);
-  komo->addSquaredQuaternionNorms();
+  komo->addQuaternionNorms();
 
   CHECK_EQ(waypoints.N-1, floor(maxPhase+.5), "");
   for(uint i=0; i<waypoints.N-1; i++) {
