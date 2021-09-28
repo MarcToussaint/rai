@@ -127,7 +127,7 @@ struct sOpenGL : NonCopyable {
   static void _Motion(int x, int y) {                        singletonGlSpinner()->getGL(glutGetWindow())->MouseMotion(x, y); }
   static void _PassiveMotion(int x, int y) {                 singletonGlSpinner()->getGL(glutGetWindow())->MouseMotion(x, y); }
   static void _Reshape(int w, int h) {                        singletonGlSpinner()->getGL(glutGetWindow())->Reshape(w, h); }
-  static void _MouseWheel(int wheel, int dir, int x, int y) { singletonGlSpinner()->getGL(glutGetWindow())->Scroll(wheel, dir); }
+  static void _MouseWheel(int wheel, int dir, int x, int y) { singletonGlSpinner()->getGL(glutGetWindow())->Scroll(wheel, dir, leftButton); }
   static void _WindowStatus(int status)                     { singletonGlSpinner()->getGL(glutGetWindow())->WindowStatus(status); }
 };
 
@@ -380,8 +380,9 @@ struct GlfwSpinner : Thread {
   }
 
   static void _Scroll(GLFWwindow* window, double xoffset, double yoffset) {
-    OpenGL* gl=(OpenGL*)glfwGetWindowUserPointer(window);
-    gl->Scroll(0, yoffset);
+    OpenGL* gl=(OpenGL*)glfwGetWindowUserPointer(window);    
+    bool leftButtonPressed = (glfwGetMouseButton(window, 0) == 1);    
+    gl->Scroll(0, yoffset, leftButtonPressed);
   }
 
   static void _Refresh(GLFWwindow* window){
@@ -1689,6 +1690,7 @@ void OpenGL::clear() {
   hoverCalls.clear();
   clickCalls.clear();
   keyCalls.clear();
+  scrollCalls.clear();
 
   text.clear();
 }
@@ -2245,8 +2247,8 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) 
   downPos=cam->X.pos;
   downFoc=cam->foc;
 
-  //check object clicked on
-  if(mouse_button==1 && (mods&2)) {
+  //check object clicked on 
+  if(mouse_button==1 && !(modifiers&1) && (modifiers&2)) { //left button + CTRL (no SHIFT)
     drawFocus = false;
     if(!downPressed) {
       drawOptions.drawMode_idColor = true;
@@ -2292,29 +2294,45 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) 
   }
 
   //step through all callbacks
-  if(!downPressed) {
-    for(uint i=0; i<clickCalls.N; i++) clickCalls(i)->clickCallback(*this);
-  }
+  for(uint i=0; i<clickCalls.N; i++) clickCalls(i)->clickCallback(*this);
 
   postRedrawEvent(true);
 }
 
-void OpenGL::Scroll(int wheel, int direction) {
+void OpenGL::Scroll(int wheel, int direction, bool leftButtonPressed) {
+///void OpenGL::Scroll(int wheel, int direction) {
   auto _dataLock = dataLock(RAI_HERE);
   CALLBACK_DEBUG("Mouse Wheel Callback: " <<wheel <<' ' <<direction);
-  rai::Camera* cam=&camera;
-  for(mouseView=views.N; mouseView--;) {
-    GLView* v = &views(mouseView);
-    if(mouseposx<v->ri*width && mouseposx>v->le*width && mouseposy<v->to*height && mouseposy>v->bo*height) {
-      cam=&views(mouseView).camera;
-      break;
+  LOG(0) << "Mouse Wheel Callback: " <<wheel <<' ' <<direction; 
+
+  if(leftButtonPressed) {
+    bool needsUpdate = false; //shouldn't we update all callbacks available?
+    for(uint i=0; i< scrollCalls.N; i++) {
+      needsUpdate = needsUpdate || scrollCalls(i)->scrollCallback(*this, direction);
     }
+
+
+  }
+  else {
+    rai::Camera* cam=&camera;
+    for(mouseView=views.N; mouseView--;) {
+      GLView* v = &views(mouseView);
+      if(mouseposx<v->ri*width && mouseposx>v->le*width && mouseposy<v->to*height && mouseposy>v->bo*height) {
+        cam=&views(mouseView).camera;
+        break;
+      }
+    }
+    //should this be moved to a callback method?
+    if(direction>0) cam->X.pos += cam->X.rot*Vector_z * (.1 * (cam->X.pos-cam->foc).length());
+    else            cam->X.pos -= cam->X.rot*Vector_z * (.1 * (cam->X.pos-cam->foc).length());
+
+    postRedrawEvent(true);
   }
 
-  if(direction>0) cam->X.pos += cam->X.rot*Vector_z * (.1 * (cam->X.pos-cam->foc).length());
-  else            cam->X.pos -= cam->X.rot*Vector_z * (.1 * (cam->X.pos-cam->foc).length());
+  //just loop through the callbacks
 
-  postRedrawEvent(true);
+  
+
 }
 
 void OpenGL::WindowStatus(int status) {
@@ -2341,15 +2359,11 @@ void OpenGL::MouseMotion(int _x, int _y) {
   }
   CALLBACK_DEBUG("associated to view " <<mouseView <<" x=" <<vec.x <<" y=" <<vec.y <<endl);
   lastEvent.set(mouse_button, -1, _x, _y, vec.x-downVec.x, vec.y-downVec.y);
-  if(!mouseIsDown) {  //passive motion -> hover callbacks
-    mouseposx=_x; mouseposy=_y;
-    bool ud=false;
-    for(uint i=0; i<hoverCalls.N; i++) ud=ud || hoverCalls(i)->hoverCallback(*this);
+  mouseposx=_x; mouseposy=_y;
 
-    if(ud) postRedrawEvent(true);
-    return;
-  }
-  if(mouse_button==1 && !modifiers) {  //rotation
+  bool needsUpdate=false;
+  //right button and SHIFT CTRL
+  if(mouse_button==1 && (modifiers&1) && (modifiers&2)) {  //rotation
     rai::Quaternion rot;
     if(downVec.z<.1) {
       //margin:
@@ -2362,18 +2376,25 @@ void OpenGL::MouseMotion(int _x, int _y) {
     cam->X.rot = downRot * rot;   //rotate camera's direction
     rot = downRot * rot / downRot; //interpret rotation relative to current viewing
     cam->X.pos = downFoc + rot * (downPos - downFoc);   //rotate camera's position
+    needsUpdate=true;
   }
+  
   if(mouse_button==1 && (modifiers&1) && !(modifiers&2)) {  //translation mouse_button==2){
     rai::Vector trans = vec - downVec;
     trans.z = 0.;
     trans *= .1*(downFoc - downPos).length();
     trans = downRot * trans;
     cam->X.pos = downPos - trans;
+    needsUpdate=true;
   }
+  
   if(mouse_button==3 && !modifiers) {  //zooming || (mouse_button==1 && !(modifiers&GLUT_ACTIVE_SHIFT) && (modifiers&GLUT_ACTIVE_CTRL))){
   }
 
-  postRedrawEvent(true);
+  //step through all callbacks
+  for(uint i=0; i<hoverCalls.N; i++) needsUpdate = needsUpdate || hoverCalls(i)->hoverCallback(*this);
+
+  if(needsUpdate) postRedrawEvent(true);
 }
 
 //===========================================================================
@@ -2456,8 +2477,8 @@ struct XBackgroundContext {
 
 Singleton<XBackgroundContext> xBackgroundContext;
 
-void OpenGL::renderInBack(int w, int h) {
-  beginNonThreadedDraw();
+void OpenGL::renderInBack(int w, int h, bool fromWithinCallback) {
+  beginNonThreadedDraw(fromWithinCallback);
 
 #ifdef RAI_GL
   if(w<0) w=width;
@@ -2542,7 +2563,7 @@ void OpenGL::renderInBack(int w, int h) {
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 #endif
 
-  endNonThreadedDraw();
+  endNonThreadedDraw(fromWithinCallback);
 }
 
 //===========================================================================

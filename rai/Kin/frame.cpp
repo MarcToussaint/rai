@@ -1591,5 +1591,6 @@ void rai::Inertia::read(const Graph& G) {
 
 RUN_ON_INIT_BEGIN(frame)
 FrameL::memMove=true;
+DofL::memMove=true;
 JointL::memMove=true;
 RUN_ON_INIT_END(frame)

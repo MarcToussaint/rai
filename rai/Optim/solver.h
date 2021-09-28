@@ -27,7 +27,12 @@ struct SolverReturn {
   double time=0.;
   bool feasible=false;
   double sos=-1., cost=-1., ineq=-1., eq=-1.;
+  void write(ostream& os) const{
+    os <<"SolverReturn: time: " <<time <<" feasible: " <<feasible;
+    os <<" sos: " <<sos <<" cost: " <<cost <<" ineq: " <<ineq <<" eq: " <<eq;
+  }
 };
+stdOutPipe(SolverReturn)
 
 /** User Interface: Meta class to call several different solvers in a unified manner. */
 struct NLP_Solver : NonCopyable {
@@ -41,6 +46,7 @@ struct NLP_Solver : NonCopyable {
   NLP_Solver& setInitialization(const arr& _x){ x=_x; return *this; }
   NLP_Solver& setOptions(const rai::Graph& opt){ NIY; return *this; }
   NLP_Solver& setTracing(bool trace_x, bool trace_costs, bool trace_phi, bool trace_J){ P->setTracing(trace_x, trace_costs, trace_phi, trace_J); return *this; }
+  NLP_Solver& setVerbose(int _verbose){ verbose=_verbose; return *this; }
   rai::Graph getOptions(){ return rai::Graph(); }
 
   shared_ptr<SolverReturn> solve(int resampleInitialization=-1); ///< -1: only when not yet set
