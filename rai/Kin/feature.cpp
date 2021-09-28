@@ -33,10 +33,10 @@ arr Feature::phi_finiteDifferenceReduce(const FrameL& F) {
     CHECK_GE(tau, 1e-10, "");
     if(timeIntegral<=0){
       y /= tau;
-      if(Jtau.N && !!y.J()) y.J() += (-1./tau)*y*Jtau;
+      if(Jtau.N && y.jac) y.J() += (-1./tau)*y*Jtau;
     }else{ //this assumes that we talk about a SOS feature! and that the cost is multiplied by tau (the feature by sqrt(tau))
       y /= sqrt(tau);
-      if(Jtau.N && !!y.J()) y.J() += (-0.5/tau)*y*Jtau;
+      if(Jtau.N && y.jac) y.J() += (-0.5/tau)*y*Jtau;
     }
   }
   return y;
@@ -189,7 +189,7 @@ void Feature::applyLinearTrans(arr& y) {
     } else if(scale.nd==1) { //element-wise
       CHECK_EQ(scale.d0, y.N, "");
       y = y % scale;
-//      if(!!y.J()){
+//      if(y.jac){
 //        if(isSparseMatrix(y.J())) y.J().sparse().rowWiseMult(scale);
 //        else y.J() = scale % y.J();
 //      }

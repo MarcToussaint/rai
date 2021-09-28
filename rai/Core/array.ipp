@@ -460,11 +460,11 @@ template<class T> void rai::Array<T>::resizeMEM(uint n, bool copy, int Mforce) {
   CHECK_GE(Mnew, n, "");
   CHECK((p && M) || (!p && !M), "");
   if(Mnew!=Mold) {  //if M changed, allocate the memory
-    globalMemoryTotal -= Mold;
-    globalMemoryTotal += Mnew;
+    globalMemoryTotal -= Mold*sizeT;
+    globalMemoryTotal += Mnew*sizeT;
     if(globalMemoryTotal>globalMemoryBound){
       if(globalMemoryStrict){
-        globalMemoryTotal -= Mnew;
+        globalMemoryTotal -= Mnew*sizeT;
         HALT("out of memory: " <<((globalMemoryTotal+Mnew)>>20) <<"MB");
       }
       LOG(0) <<"using massive memory: " <<(globalMemoryTotal>>20) <<"MB";
@@ -509,13 +509,14 @@ template<class T> void rai::Array<T>::freeMEM() {
   vec_type::clear();
 #else
   if(M) {
-      if(memMove==1){
-          free(p);
-      }else{
-          delete[] p;
-      }
-      p=0;
-      M=0;
+    rai::globalMemoryTotal -= M*sizeT;
+    if(memMove==1){
+      free(p);
+    }else{
+      delete[] p;
+    }
+    p=0;
+    M=0;
   }
 #endif
   if(d && d!=&d0) { delete[] d; d=NULL; }
@@ -1523,7 +1524,7 @@ template<class T> void rai::Array<T>::setMatrixBlock(const rai::Array<T>& B, uin
       }
     } else if(isSparseMatrix(*this)) {
 #if 1
-        sparse().add(B, lo0, lo1);
+      sparse().add(B, lo0, lo1);
 #else
       if(!isSparseMatrix(B)) {
         for(i=0; i<B.d0; i++) for(j=0; j<B.d1; j++){
@@ -1564,6 +1565,10 @@ template<class T> void rai::Array<T>::setVectorBlock(const rai::Array<T>& B, uin
   CHECK(nd==1 && B.nd==1 && lo+B.N<=N, "");
   uint i;
   for(i=0; i<B.N; i++) operator()(lo+i)=B(i);
+  if(B.jac){
+    CHECK(jac && jac->d1==B.jac->d1, "Jacobian needs to be pre-sized");
+    jac->setMatrixBlock(B.jac->noJ(), lo, 0);
+  }
 }
 
 /// B (needs to be sized before) becomes sub-vector of 'this' at location lo
@@ -2899,11 +2904,19 @@ void op_innerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<
     return;
   }
   if(y.nd==1 && z.nd==1 && z.N==1) {  //vector multiplied with scalar (disguised as 1D vector)
-    uint k, dk=y.N;
-    x.resize(y.N);
-    for(k=0; k<dk; k++) x.p[k]=y.p[k]*z.p[0];
-   if(y.jac || z.jac){
-      if(y.jac && z.jac) x.J() = y.noJ() * (*z.jac) + z.scalar() * (*y.jac);
+    x = y;
+    x *= z.p[0];
+    if(y.jac || z.jac){
+      if(y.jac && z.jac) x.J() += y.noJ() * (*z.jac);
+      else NIY;
+    }
+    return;
+  }
+  if(y.nd==1 && z.nd==1 && y.N==1) {  //vector multiplied with scalar (disguised as 1D vector)
+    x = z;
+    x *= y.p[0];
+    if(y.jac || z.jac){
+      if(y.jac && z.jac) x.J() += z.noJ() * (*y.jac);
       else NIY;
     }
     return;
@@ -3155,6 +3168,7 @@ template<class T>
 T scalarProduct(const rai::Array<T>& g, const rai::Array<T>& v, const rai::Array<T>& w) {
   CHECK(v.N==w.N && g.nd==2 && g.d0==v.N && g.d1==w.N,
         "scalar product on different array dimensions (" <<v.N <<", " <<w.N <<")");
+  CHECK(!v.jac && !w.jac, "you're loosing the jacobians with this method");
   T t(0);
   uint i, j;
   T* gp=g.p, *vp=v.p;

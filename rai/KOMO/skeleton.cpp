@@ -195,7 +195,7 @@ SkeletonTranscription Skeleton::mp(){
 //  komo->solver=rai::KS_sparse; //sparseOptimization = true;
   komo->opt.animateOptimization = 0;
 
-  komo->addSquaredQuaternionNorms();
+  komo->addQuaternionNorms();
 #if 0
   komo->setHoming(0., -1., 1e-2);
   komo->setSquaredQVelocities(0., -1., 1e-2);
@@ -257,7 +257,7 @@ SkeletonTranscription Skeleton::mp_finalSlice(){
   komo->setModel(*C, collisions);
   komo->setTiming(optHorizon, 1, 10., 1);
 
-  komo->addSquaredQuaternionNorms();
+  komo->addQuaternionNorms();
 #if 0
   komo->setHoming(0., -1., 1e-2);
   komo->setSquaredQVelocities(1., -1., 1e-1); //IMPORTANT: do not penalize transitions of from prefix to x_{0} -> x_{0} is 'loose'
@@ -318,7 +318,7 @@ SkeletonTranscription Skeleton::mp_path(const arrA& waypoints){
   komo->setTiming(maxPhase+.5, stepsPerPhase, 10., pathOrder);
   komo->opt.animateOptimization = 0;
 
-  komo->addSquaredQuaternionNorms();
+  komo->addQuaternionNorms();
 #if 0
   komo->setHoming(0., -1., 1e-2);
   if(pathOrder==1) komo->setSquaredQVelocities();

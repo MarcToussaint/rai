@@ -358,5 +358,6 @@ void F_NoJumpFromParent_OBSOLETE::phi2(arr& y, arr& J, const FrameL& F) {
               .eval(F);
 
   y.setBlockVector(pos, quat);
-  J.setBlockMatrix(pos.J(), quat.J());
+  if(!!J) J = y.J_reset();
+  //J.setBlockMatrix(pos.J(), quat.J());
 }

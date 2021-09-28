@@ -30,9 +30,9 @@ struct WheelConstraint : Feature{
                     .setOrder(1)
                     .eval(FrameL({2,1},{F(0,1), F(1,1)}));
 
-    y = centerVel.y - centerX.y * (.05 * jointVel.y.scalar());
+    y = centerVel - centerX * (.05 * jointVel.scalar());
     if(!!J){
-      J = centerVel.J - (centerX.J * (.05 * jointVel.y.scalar()) + (centerX.y.reshape(3,1) * (.05 * jointVel.J)));
+      J = centerVel.J() - (centerX.J() * (.05 * jointVel.scalar()) + (centerX.reshape(3,1) * (.05 * jointVel.J())));
     }
 
   }

@@ -89,20 +89,21 @@ struct MyFeature : Feature {
       return;
     }
 
-    double weight = 1. + D.scalar()/range;
+    arr weight = 1. + D/range;
     double normalWeight = 1.;
 
-    arr CJ = C.J_reset();
-    arr DJ = D.J_reset();
-    arr VJ = V.J_reset();
+//    arr CJ = C.J_reset();
+//    arr DJ = D.J_reset();
+//    arr VJ = V.J_reset();
 
-    arr P = eye(3) + normalWeight*(C*~C);
-    y = weight * P * V;
-    if(!!J){
-      J = weight * P * VJ;
-      J += P * V.reshape(3,1) * (1./range)*DJ;
-      J += (weight * 2. * normalWeight * scalarProduct(C,V)) * CJ;
-    }
+//    arr P = eye(3) + normalWeight*(C*~C);
+    y = weight * (V + C*normalWeight*(~C * V));
+    grabJ(y, J);
+//    if(!!J){
+//      J = weight * P * VJ;
+//      J += P * V.reshape(3,1) * (1./range)*DJ;
+//      J += (weight * 2. * normalWeight * scalarProduct(C,V)) * CJ;
+//    }
 
 #if 0
     //penalizing normal velocity
@@ -167,7 +168,7 @@ void TEST(Thin){
   komo.optimize(1e-2);
   komo.plotTrajectory();
 //  komo.reportProxies();
-//  komo.checkGradients();
+  komo.checkGradients();
 
   komo.view(true, "result");
   while(komo.view_play(true));

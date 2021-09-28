@@ -192,7 +192,7 @@ struct Configuration : GLDrawer {
   void jacobian_tau(arr& J, Frame* a) const;
   void jacobian_zero(arr& J, uint n) const;
 
-  arr kinematics_pos(Frame* a, const Vector& rel=NoVector) const { arr y; kinematicsPos(y, y.J(), a, rel); return y; }
+  arr kinematics_pos(Frame* a, const Vector& rel=NoVector) const { arr y,J; kinematicsPos(y, J, a, rel); if(!!J) y.J()=J; return y; }
 
   void kinematicsZero(arr& y, arr& J, uint n) const;
   void kinematicsPos(arr& y, arr& J, Frame* a, const Vector& rel=NoVector) const;

@@ -197,20 +197,21 @@ void F_qZeroVel::phi2(arr& y, arr& J, const FrameL& F){
   y = F_qItself()
       .setOrder(order)
       .eval(F);
-  J = y.J();
+  //J = y.J();
 #if 1
   rai::Frame *f = F.last();
   if(f->joint->type==rai::JT_transXYPhi) {
     arr s = ARR(10., 10., 1.);
     y = s%y;
-    if(!!J) J = s%J;
+    //if(!!J) J = s%J;
   }
   if(f->joint->type==rai::JT_free) {
     arr s = ARR(10., 10., 10., 1., 1., 1., 1.);
     y = s%y;
-    if(!!J) J = s%J;
+    //if(!!J) J = s%J;
   }
 #endif
+  if(!!J) J = y.J_reset();
 }
 
 uint F_qZeroVel::dim_phi2(const FrameL& F){

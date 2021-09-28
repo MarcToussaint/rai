@@ -26,7 +26,7 @@ void F_AboveBox::phi2(arr& y, arr& J, const FrameL& F) {
   arr pos = F_PositionRel().eval({pnt, box});
   arr proj({2,3}, {1,0,0,0,1,0});
   pos = proj * pos;
-  pos.J() = proj * pos.J();
+  //  pos.J() = proj * pos.J();
   double radMargin = margin + box->shape->radius();
   arr range = { .5*box->shape->size(0)-radMargin, .5*box->shape->size(1)-radMargin };
 
