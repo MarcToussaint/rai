@@ -127,7 +127,7 @@ struct sOpenGL : NonCopyable {
   static void _Motion(int x, int y) {                        singletonGlSpinner()->getGL(glutGetWindow())->MouseMotion(x, y); }
   static void _PassiveMotion(int x, int y) {                 singletonGlSpinner()->getGL(glutGetWindow())->MouseMotion(x, y); }
   static void _Reshape(int w, int h) {                        singletonGlSpinner()->getGL(glutGetWindow())->Reshape(w, h); }
-  static void _MouseWheel(int wheel, int dir, int x, int y) { singletonGlSpinner()->getGL(glutGetWindow())->Scroll(wheel, dir, leftButton); }
+  static void _MouseWheel(int wheel, int dir, int x, int y) { singletonGlSpinner()->getGL(glutGetWindow())->Scroll(wheel, dir); }
   static void _WindowStatus(int status)                     { singletonGlSpinner()->getGL(glutGetWindow())->WindowStatus(status); }
 };
 
@@ -380,9 +380,8 @@ struct GlfwSpinner : Thread {
   }
 
   static void _Scroll(GLFWwindow* window, double xoffset, double yoffset) {
-    OpenGL* gl=(OpenGL*)glfwGetWindowUserPointer(window);    
-    bool leftButtonPressed = (glfwGetMouseButton(window, 0) == 1);    
-    gl->Scroll(0, yoffset, leftButtonPressed);
+    OpenGL* gl=(OpenGL*)glfwGetWindowUserPointer(window);
+    gl->Scroll(0, yoffset);
   }
 
   static void _Refresh(GLFWwindow* window){
@@ -1690,7 +1689,6 @@ void OpenGL::clear() {
   hoverCalls.clear();
   clickCalls.clear();
   keyCalls.clear();
-  scrollCalls.clear();
 
   text.clear();
 }
@@ -2299,40 +2297,22 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) 
   postRedrawEvent(true);
 }
 
-void OpenGL::Scroll(int wheel, int direction, bool leftButtonPressed) {
-///void OpenGL::Scroll(int wheel, int direction) {
+void OpenGL::Scroll(int wheel, int direction) {
   auto _dataLock = dataLock(RAI_HERE);
   CALLBACK_DEBUG("Mouse Wheel Callback: " <<wheel <<' ' <<direction);
-  LOG(0) << "Mouse Wheel Callback: " <<wheel <<' ' <<direction; 
-
-  if(leftButtonPressed) {
-    bool needsUpdate = false; //shouldn't we update all callbacks available?
-    for(uint i=0; i< scrollCalls.N; i++) {
-      needsUpdate = needsUpdate || scrollCalls(i)->scrollCallback(*this, direction);
+  rai::Camera* cam=&camera;
+  for(mouseView=views.N; mouseView--;) {
+    GLView* v = &views(mouseView);
+    if(mouseposx<v->ri*width && mouseposx>v->le*width && mouseposy<v->to*height && mouseposy>v->bo*height) {
+      cam=&views(mouseView).camera;
+      break;
     }
-
-
-  }
-  else {
-    rai::Camera* cam=&camera;
-    for(mouseView=views.N; mouseView--;) {
-      GLView* v = &views(mouseView);
-      if(mouseposx<v->ri*width && mouseposx>v->le*width && mouseposy<v->to*height && mouseposy>v->bo*height) {
-        cam=&views(mouseView).camera;
-        break;
-      }
-    }
-    //should this be moved to a callback method?
-    if(direction>0) cam->X.pos += cam->X.rot*Vector_z * (.1 * (cam->X.pos-cam->foc).length());
-    else            cam->X.pos -= cam->X.rot*Vector_z * (.1 * (cam->X.pos-cam->foc).length());
-
-    postRedrawEvent(true);
   }
 
-  //just loop through the callbacks
+  if(direction>0) cam->X.pos += cam->X.rot*Vector_z * (.1 * (cam->X.pos-cam->foc).length());
+  else            cam->X.pos -= cam->X.rot*Vector_z * (.1 * (cam->X.pos-cam->foc).length());
 
-  
-
+  postRedrawEvent(true);
 }
 
 void OpenGL::WindowStatus(int status) {

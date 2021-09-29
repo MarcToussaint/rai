@@ -119,7 +119,6 @@ struct OpenGL {
   struct GLHoverCall { virtual bool hoverCallback(OpenGL&) = 0; };
   struct GLClickCall { virtual bool clickCallback(OpenGL&) = 0; };
   struct GLKeyCall  { virtual bool keyCallback(OpenGL&) = 0; };
-  struct GLScrollCall  { virtual bool scrollCallback(OpenGL&, int direction) = 0; };
   struct GLEvent    { int button, key, x, y; float dx, dy; void set(int b, int k, int _x, int _y, float _dx, float _dy) { button=b; key=k; x=_x; y=_y; dx=_dx; dy=_dy; } };
   struct GLSelect   { int name; double dmin, dmax, x, y, z; };
   struct GLView     { double le, ri, bo, to;  rai::Array<GLDrawer*> drawers;  rai::Camera camera;  byteA* img;  rai::String text;  GLView() { img=nullptr; le=bo=0.; ri=to=1.; } };
@@ -131,7 +130,6 @@ struct OpenGL {
   rai::Array<GLHoverCall*> hoverCalls; ///< list of hover callbacks
   rai::Array<GLClickCall*> clickCalls; ///< list of click callbacks
   rai::Array<GLKeyCall*> keyCalls;     ///< list of click callbacks
-  rai::Array<GLScrollCall*> scrollCalls;     ///< list of scroll callbacks
   rai::Array<struct CstyleDrawer*> toBeDeletedOnCleanup;
 
   rai::String title;     ///< the window title
@@ -185,7 +183,6 @@ struct OpenGL {
   void addHoverCall(GLHoverCall* c) { hoverCalls.append(c); }
   void addClickCall(GLClickCall* c) { clickCalls.append(c); }
   void addKeyCall(GLKeyCall* c) { keyCalls.append(c); }
-  void addScrollCall(GLScrollCall* c) {scrollCalls.append(c); }
   void addSubView(uint view, void (*call)(void*, OpenGL&), void* classP=0);
   void addSubView(uint view, GLDrawer& c);
   void setSubViewTiles(uint cols, uint rows);
@@ -243,9 +240,7 @@ struct OpenGL {
   void MouseButton(int button, int updown, int x, int y, int mods);
   void MouseMotion(int x, int y);
   void Reshape(int w, int h);
-  void Scroll(int wheel, int direction, bool leftButton);
-  //void Scroll(int wheel, int direction);
-
+  void Scroll(int wheel, int direction);
   void WindowStatus(int status);
 
   friend struct sOpenGL;
