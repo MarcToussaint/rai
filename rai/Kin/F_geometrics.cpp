@@ -19,7 +19,7 @@ void F_AboveBox::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_EQ(F.N, 2, "");
 
   rai::Frame* pnt=F.elem(0); //object center that is above
-  rai::Frame* box=F.elem(1); //box that is below
+  rai::Frame* box=F.elem(1); //box/table that is below
   CHECK(box->shape, "I need a shape as 2nd frame");
   CHECK_EQ(box->shape->type(), rai::ST_ssBox, "the 2nd shape needs to be a box");
 
