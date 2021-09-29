@@ -27,12 +27,13 @@ struct SolverReturn {
   uint evals=0;
   double time=0.;
   bool feasible=false;
-  double sos=-1., f=-1., ineq=-1., eq=-1.;
-  void write(std::ostream& os) const{
-    os <<"SolverReturn:  sos:" <<sos <<" f:" <<f <<" ineq:" <<ineq <<" eq:" <<eq <<" evals:" <<evals <<" time:" <<time <<"\nx=" <<x <<endl;
+  double sos=-1., cost=-1., ineq=-1., eq=-1.;
+  void write(ostream& os) const{
+    os <<"SolverReturn: time: " <<time <<" feasible: " <<feasible;
+    os <<" sos: " <<sos <<" f: " <<f <<" ineq: " <<ineq <<" eq: " <<eq;
   }
 };
-stdOutPipe(SolverReturn);
+stdOutPipe(SolverReturn)
 
 /** User Interface: Meta class to call several different solvers in a unified manner. */
 struct NLP_Solver : NonCopyable {

@@ -64,8 +64,12 @@ struct Skeleton {
   SkeletonTranscription mp_path(const arrA& waypoints={});
 
   //-- to be removed (call generic NLPsolver)
-  void solve();
+  arr solve(rai::ArgWord sequenceOrPath, int verbose=2);
   shared_ptr<SolverReturn> solve2();
+
+  //-- drivers
+  void getKeyframeConfiguration(rai::Configuration& C, int step, int verbose=0); //get the Configuration (esp. correct switches/dofs) for given step
+  void solve_RRTconnectKeyframes(const arr& keyFrames_X);
 
   //not sure
   //void setKOMOBackground(const Animation& _A, const arr& times);

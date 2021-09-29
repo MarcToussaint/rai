@@ -13,7 +13,7 @@ double shapeSize(const rai::Configuration& K, const char* name, uint i=2);
 
 namespace rai {
 
-Array<SkeletonSymbol> skeletonModes = { SY_stable, SY_stableOn, SY_dynamic, SY_dynamicOn, SY_dynamicTrans, SY_quasiStatic, SY_quasiStaticOn, SY_magicTrans };
+Array<SkeletonSymbol> skeletonModes = { SY_stable, SY_stableOn, SY_stableYPhi, SY_dynamic, SY_dynamicOn, SY_dynamicTrans, SY_quasiStatic, SY_quasiStaticOn, SY_magicTrans };
 
 void SkeletonEntry::write(std::ostream& os) const {
   os <<"[" <<phase0 <<", " <<phase1 <<"] " <<symbol <<' ';
@@ -109,6 +109,7 @@ intA Skeleton::getSwitches(const rai::Configuration& C) const {
   for(int i=0; i<(int)S.N; i++) {
     if(skeletonModes.contains(S.elem(i).symbol)) { //S(i) is about a switch
       int j=i-1;
+      CHECK_GE(S.elem(i).frames.N, 2, "switch symbols need at least 2 frames (e.g. {world, obj})")
       rai::Frame* toBeSwitched = C[S.elem(i).frames(1)];
       CHECK(toBeSwitched,"");
       rai::Frame* rootOfSwitch = toBeSwitched->getUpwardLink(NoTransformation, true);
@@ -131,18 +132,23 @@ intA Skeleton::getSwitches(const rai::Configuration& C) const {
   return ret;
 }
 
-void Skeleton::solve() {
+arr Skeleton::solve(ArgWord sequenceOrPath, int verbose) {
   CHECK(C, "");
   komo.reset();
   komo=make_shared<KOMO>();
-  komo->setModel(*C, false);
-  setKOMO(*komo, rai::_sequence);
+  komo->setModel(*C, collisions);
+  setKOMO(*komo, sequenceOrPath);
   komo->optimize();
   //  komo->checkGradients();
 
-  komo->getReport(true);
-  komo->view(true, "optimized motion");
-  while(komo->view_play(true));
+  if(verbose>0) komo->getReport(true);
+  if(verbose>1) komo->view(true, "optimized motion");
+  if(verbose>2){
+    while(komo->view_play(true));
+    komo->view_play(false, .1, "z.vid/");
+  }
+
+  return komo->getPath_X();
 }
 
 shared_ptr<SolverReturn> Skeleton::solve2(){
@@ -157,10 +163,23 @@ shared_ptr<SolverReturn> Skeleton::solve2(){
   return ret;
 }
 
+void Skeleton::getKeyframeConfiguration(Configuration& C, int step, int verbose){
+  CHECK(komo, "");
+  CHECK_EQ(komo->k_order, 1, "");
+  C.copy(komo->world);
+  for(KinematicSwitch* sw:komo->switches) {
+    int s = sw->timeOfApplication;
+    if(s<=step){
+      if(verbose){ LOG(0) <<"applying switch:"; sw->write(cout, C.frames); cout <<endl; }
+      sw->apply(C.frames);
+    }
+  }
+}
+
 SkeletonTranscription Skeleton::mp(){
   SkeletonTranscription ret;
   ret.komo=make_shared<KOMO>();
-  ret.komo->verbose=verbose;
+  ret.komo->opt.verbose=verbose;
 #if 0
   ret.komo->solver = rai::KS_sparse;
   ret.komo->setModel(*C, collisions);
@@ -174,9 +193,9 @@ SkeletonTranscription Skeleton::mp(){
   komo->setModel(*C, collisions);
   komo->setTiming(maxPhase+1., 1, 5., 1);
 //  komo->solver=rai::KS_sparse; //sparseOptimization = true;
-  komo->animateOptimization = 0;
+  komo->opt.animateOptimization = 0;
 
-  komo->addSquaredQuaternionNorms();
+  komo->addQuaternionNorms();
 #if 0
   komo->setHoming(0., -1., 1e-2);
   komo->setSquaredQVelocities(0., -1., 1e-2);
@@ -197,7 +216,7 @@ SkeletonTranscription Skeleton::mp(){
 SkeletonTranscription Skeleton::mp_finalSlice(){
   SkeletonTranscription ret;
   ret.komo=make_shared<KOMO>();
-  ret.komo->verbose=verbose;
+  ret.komo->opt.verbose=verbose;
   ptr<KOMO> komo = ret.komo;
 
   double maxPhase = getMaxPhase();
@@ -230,7 +249,7 @@ SkeletonTranscription Skeleton::mp_finalSlice(){
     }
 #endif
 
-  if(komo->verbose>1) {
+  if(komo->opt.verbose>1) {
     cout <<"POSE skeleton:" <<endl;
     finalS.write(cout, finalS.getSwitches(*C));
   }
@@ -238,7 +257,7 @@ SkeletonTranscription Skeleton::mp_finalSlice(){
   komo->setModel(*C, collisions);
   komo->setTiming(optHorizon, 1, 10., 1);
 
-  komo->addSquaredQuaternionNorms();
+  komo->addQuaternionNorms();
 #if 0
   komo->setHoming(0., -1., 1e-2);
   komo->setSquaredQVelocities(1., -1., 1e-1); //IMPORTANT: do not penalize transitions of from prefix to x_{0} -> x_{0} is 'loose'
@@ -282,7 +301,7 @@ SkeletonTranscription Skeleton::mp_finalSlice(){
 SkeletonTranscription Skeleton::mp_path(const arrA& waypoints){
   SkeletonTranscription ret;
   ret.komo=make_shared<KOMO>();
-  ret.komo->verbose=verbose;
+  ret.komo->opt.verbose=verbose;
 #if 0
   ret.komo->solver = rai::KS_sparse;
   ret.komo->setModel(*C, collisions);
@@ -297,9 +316,9 @@ SkeletonTranscription Skeleton::mp_path(const arrA& waypoints){
   uint stepsPerPhase = rai::getParameter<uint>("LGP/stepsPerPhase", 10);
   uint pathOrder = rai::getParameter<uint>("LGP/pathOrder", 2);
   komo->setTiming(maxPhase+.5, stepsPerPhase, 10., pathOrder);
-  komo->animateOptimization = 0;
+  komo->opt.animateOptimization = 0;
 
-  komo->addSquaredQuaternionNorms();
+  komo->addQuaternionNorms();
 #if 0
   komo->setHoming(0., -1., 1e-2);
   if(pathOrder==1) komo->setSquaredQVelocities();
@@ -339,7 +358,7 @@ void Skeleton::setKOMO(KOMO& komo, ArgWord sequenceOrPath) const {
     komo.add_qControlObjective({}, 2, 1.);
     komo.add_qControlObjective({}, 0, 1e-2);
   }
-  komo.addSquaredQuaternionNorms();
+  komo.addQuaternionNorms();
 
   if(collisions) komo.add_collision(true);
 
@@ -369,8 +388,8 @@ void Skeleton::setKOMO(KOMO& komo) const {
 
       case SY_topBoxGrasp: {
         komo.addObjective({s.phase0}, FS_positionDiff, s.frames, OT_eq, {1e2});
-        komo.addObjective({s.phase0}, FS_scalarProductXX, s.frames, OT_eq, {1e2}, {0.});
-        komo.addObjective({s.phase0}, FS_vectorZ, {s.frames(0)}, OT_eq, {1e2}, {0., 0., 1.});
+        komo.addObjective({s.phase0}, FS_scalarProductXY, s.frames, OT_eq, {1e2}, {0.});
+        komo.addObjective({s.phase0}, FS_vectorZDiff, s.frames, OT_eq, {1e2}, {0., 0., 1.});
         //slow - down - up
         if(komo.k_order>=2) {
           komo.addObjective({s.phase0}, FS_qItself, {}, OT_eq, {}, {}, 1);
@@ -466,6 +485,7 @@ void Skeleton::setKOMO(KOMO& komo) const {
       //switches are handled above now
       case SY_stable:      //if(!ignoreSwitches) addSwitch_stable(s.phase0, s.phase1+1., s.frames(0), s.frames(1));  break;
       case SY_stableOn:    //if(!ignoreSwitches) addSwitch_stableOn(s.phase0, s.phase1+1., s.frames(0), s.frames(1));  break;
+      case SY_stableYPhi:    //if(!ignoreSwitches) addSwitch_stableOn(s.phase0, s.phase1+1., s.frames(0), s.frames(1));  break;
       case SY_dynamic:     //if(!ignoreSwitches) addSwitch_dynamic(s.phase0, s.phase1+1., "base", s.frames(0));  break;
       case SY_dynamicOn:   //if(!ignoreSwitches) addSwitch_dynamicOn(s.phase0, s.phase1+1., s.frames(0), s.frames(1));  break;
       case SY_dynamicTrans:   //if(!ignoreSwitches) addSwitch_dynamicTrans(s.phase0, s.phase1+1., "base", s.frames(0));  break;
@@ -512,6 +532,7 @@ void Skeleton::read(std::istream& is) {
   //-- first get a PRE-skeleton
   rai::Graph G(is);
   double phase0=1.;
+  double maxPhase=0.;
   for(rai::Node* step:G) {
     rai::Graph& stepG = step->graph();
     for(rai::Node* lit:stepG) {
@@ -536,17 +557,19 @@ void Skeleton::read(std::istream& is) {
       }
 
       S.append(SkeletonEntry(phase0, phase1, symbol, frames({1, -1})));
+      maxPhase=phase0;
     }
     phase0 += 1.;
   }
 
-  cout <<"PRE_skeleton: " <<endl;
-  write(cout);
+//  cout <<"PRE_skeleton: " <<endl;
+//  write(cout);
 
   //-- fill in the missing phase1!
   for(uint i=0; i<S.N; i++) {
     SkeletonEntry& si = S(i);
     if(si.phase1==-1 && si.frames.N) {
+      si.phase1=maxPhase;
       for(uint j=i+1; j<S.N; j++) {
         SkeletonEntry& sj = S(j);
         if(sj.phase1==-1. && sj.frames.N && sj.frames.last()==si.frames.last()) { //this is also a mode symbol (due to phase1==-1.)
@@ -557,8 +580,8 @@ void Skeleton::read(std::istream& is) {
     }
   }
 
-  cout <<"TIMED_skeleton: " <<endl;
-  write(cout);
+//  cout <<"TIMED_skeleton: " <<endl;
+//  write(cout);
 }
 
 } //namespace

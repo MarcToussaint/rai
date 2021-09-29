@@ -515,7 +515,7 @@ void Thread::main() {
   for(;;) {
     //-- wait for a non-idle state
     int s = event.waitForStatusNotEq(tsIDLE);
-    if(s==tsToClose) break;
+    if(s<=tsToClose) break;
     if(s==tsBEATING) metronome.waitForTic();
     if(s>0) event.setStatus(1); //step command -> reset to step
 

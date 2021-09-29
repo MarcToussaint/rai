@@ -21,7 +21,7 @@
 //===========================================================================
 
 template<> const char* rai::Enum<rai::JointType>::names []= {
-  "none", "hingeX", "hingeY", "hingeZ", "transX", "transY", "transZ", "transXY", "trans3", "transXYPhi", "universal", "rigid", "quatBall", "phiTransXY", "XBall", "free", "tau", nullptr
+  "none", "hingeX", "hingeY", "hingeZ", "transX", "transY", "transZ", "transXY", "trans3", "transXYPhi", "transYPhi", "universal", "rigid", "quatBall", "phiTransXY", "XBall", "free", "tau", nullptr
 };
 
 template<> const char* rai::Enum<rai::BodyType>::names []= {
@@ -101,7 +101,7 @@ void rai::Frame::calc_X_from_parent() {
     if(j->type==JT_hingeX || j->type==JT_transX || j->type==JT_XBall)  j->axis = from.rot.getX();
     if(j->type==JT_hingeY || j->type==JT_transY)  j->axis = from.rot.getY();
     if(j->type==JT_hingeZ || j->type==JT_transZ)  j->axis = from.rot.getZ();
-    if(j->type==JT_transXYPhi)  j->axis = from.rot.getZ();
+    if(j->type==JT_transXYPhi || j->type==JT_transYPhi)  j->axis = from.rot.getZ();
     if(j->type==JT_phiTransXY)  j->axis = from.rot.getZ();
   }
 
@@ -424,6 +424,13 @@ rai::Frame& rai::Frame::setQuaternion(const arr& quat) {
   return *this;
 }
 
+rai::Frame& rai::Frame::setRelativePose(const rai::Transformation& _Q) {
+  CHECK(parent, "you cannot set relative pose for a frame without parent");
+  Q = _Q;
+  _state_updateAfterTouchingQ();
+  return *this;
+}
+
 rai::Frame& rai::Frame::setRelativePosition(const arr& pos) {
   CHECK(parent, "you cannot set relative position for a frame without parent");
   Q.pos.set(pos);
@@ -432,7 +439,7 @@ rai::Frame& rai::Frame::setRelativePosition(const arr& pos) {
 }
 
 rai::Frame& rai::Frame::setRelativeQuaternion(const arr& quat) {
-  CHECK(parent, "you cannot set relative position for a frame without parent");
+  CHECK(parent, "you cannot set relative pose for a frame without parent");
   Q.rot.set(quat);
   Q.rot.normalize();
   _state_updateAfterTouchingQ();
@@ -482,7 +489,7 @@ rai::Frame& rai::Frame::setJoint(rai::JointType jointType) {
   if(jointType != JT_none) {
     new Joint(*this, jointType);
   }
-  if(jointType == JT_free) { joint->limits = {-10.,10,-10,10,-10,10, -1.,1,-1,1,-1,1,-1,1}; }
+//  if(jointType == JT_free) { joint->limits = {-10.,10,-10,10,-10,10, -1.,1,-1,1,-1,1,-1,1}; } //WTF!
   return *this;
 }
 
@@ -625,6 +632,14 @@ bool rai::Frame::isChildOf(const rai::Frame* par, int order) const {
 }
 
 //===========================================================================
+
+void rai::Dof::setActive(bool _active){
+  if(mimic){ mimic->setActive(_active); return; }
+  active = _active;
+  for(Joint* j:mimicers) j->active=_active;
+  qIndex=UINT_MAX;
+  if(frame) frame->C.reset_q();
+}
 
 const rai::Joint*rai::Dof::joint() const{ return dynamic_cast<const Joint*>(this); }
 
@@ -796,6 +811,11 @@ void rai::Joint::setDofs(const arr& q_full, uint _qIndex) {
         Q.rot.setRadZ(qp[2]);
       } break;
 
+      case JT_transYPhi: {
+        Q.pos.set(0., qp[0], 0.);
+        Q.rot.setRadZ(qp[1]);
+      } break;
+
       case JT_phiTransXY: {
         Q.rot.setRadZ(qp[0]);
         Q.pos = Q.rot*Vector(qp[1], qp[2], 0.);
@@ -892,6 +912,14 @@ arr rai::Joint::calcDofsFromConfig() const {
       if(q(2)>RAI_PI) q(2)-=RAI_2PI;
       if(rotv*Vector_z<0.) q(2)=-q(2);
     } break;
+    case JT_transYPhi: {
+      q.resize(2);
+      q(0)=Q.pos.y;
+      rai::Vector rotv;
+      Q.rot.getRad(q(1), rotv);
+      if(q(1)>RAI_PI) q(1)-=RAI_2PI;
+      if(rotv*Vector_z<0.) q(1)=-q(1);
+    } break;
     case JT_phiTransXY: {
       q.resize(3);
       rai::Vector rotv;
@@ -979,6 +1007,13 @@ arr rai::Joint::getScrewMatrix() {
     S(1, 1, {}) = R[1];
     S(0, 2, {}) = axis.getArr();
     S(1, 2, {}) = (-axis ^ (X().pos + X().rot*Q().pos)).getArr();
+  } else if(type==JT_transYPhi) {
+    if(mimic) NIY;
+    arr R = X().rot.getArr();
+    axis = R[2];
+    S(1, 0, {}) = R[1];
+    S(0, 1, {}) = axis.getArr();
+    S(1, 1, {}) = (-axis ^ (X().pos + X().rot*Q().pos)).getArr();
   } else if(type==JT_phiTransXY) {
     if(mimic) NIY;
     axis = X().rot.getX();
@@ -1009,6 +1044,7 @@ uint rai::Joint::getDimFromType() const {
   if(type>=JT_hingeX && type<=JT_transZ) return 1;
   if(type==JT_transXY) return 2;
   if(type==JT_transXYPhi) return 3;
+  if(type==JT_transYPhi) return 2;
   if(type==JT_phiTransXY) return 3;
   if(type==JT_trans3) return 3;
   if(type==JT_universal) return 2;
@@ -1025,8 +1061,7 @@ arr rai::Joint::get_h() const {
   arr h(6);
   h.setZero();
   switch(type) {
-    case rai::JT_rigid:
-    case rai::JT_transXYPhi: break;
+    case rai::JT_rigid: break;
     case rai::JT_hingeX: h.resize(6).setZero(); h(0)=1.; break;
     case rai::JT_hingeY: h.resize(6).setZero(); h(1)=1.; break;
     case rai::JT_hingeZ: h.resize(6).setZero(); h(2)=1.; break;
@@ -1036,6 +1071,12 @@ arr rai::Joint::get_h() const {
     default: NIY;
   }
   return h;
+}
+
+bool rai::Joint::isPartBreak() {
+  return !(type>=JT_hingeX && type<=JT_hingeZ);
+//  return (type==JT_rigid || type==JT_free || type==JT_transY || mimic); // && !mimic;
+  //    return (dim!=1 && !mimic) || type==JT_tau;
 }
 
 double& rai::Joint::getQ() {
@@ -1550,5 +1591,6 @@ void rai::Inertia::read(const Graph& G) {
 
 RUN_ON_INIT_BEGIN(frame)
 FrameL::memMove=true;
+DofL::memMove=true;
 JointL::memMove=true;
 RUN_ON_INIT_END(frame)

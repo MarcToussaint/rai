@@ -20,16 +20,12 @@ void F_Position::phi2(arr& y, arr& J, const FrameL& F) {
 
 //===========================================================================
 
-void F_PositionDiff::phi2(arr& y, arr& J, const FrameL& F) {
-  if(order>0){  Feature::phi2(y, J, F);  return;  }
+arr F_PositionDiff::phi(const FrameL& F) {
+  if(order>0) return phi_finiteDifferenceReduce(F);
   CHECK_EQ(F.N, 2, "");
-  rai::Frame *f1 = F.elem(0);
-  rai::Frame *f2 = F.elem(1);
-  arr y2, J2;
-  f1->C.kinematicsPos(y, J, f1);
-  f2->C.kinematicsPos(y2, J2, f2);
-  y -= y2;
-  J -= J2;
+  arr p1 = F_Position().eval({F.elem(0)});
+  arr p2 = F_Position().eval({F.elem(1)});
+  return p1-p2;
 }
 
 //===========================================================================
@@ -39,15 +35,15 @@ void F_PositionRel::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_EQ(F.N, 2, "");
   rai::Frame *f1 = F.elem(0);
   rai::Frame *f2 = F.elem(1);
-  arr y1, y2, J1, J2;
-  f1->C.kinematicsPos(y1, J1, f1);
-  f2->C.kinematicsPos(y2, J2, f2);
+  arr y1 = f1->C.kinematics_pos(f1);
+  arr y2 = f2->C.kinematics_pos(f2);
   arr Rinv = ~(f2->ensure_X().rot.getArr());
   y = Rinv * (y1 - y2);
+  grabJ(y,J);
   if(!!J) {
     arr A;
     f2->C.jacobian_angular(A, f2);
-    J = Rinv * (J1 - J2 - crossProduct(A, y1 - y2));
+    J -= Rinv * crossProduct(A, y1 - y2);
   }
 }
 
@@ -179,28 +175,31 @@ void F_ScalarProduct::phi2(arr& y, arr& J, const FrameL& F){
 //===========================================================================
 
 void F_Pose::phi2(arr& y, arr& J, const FrameL& F) {
-  auto pos = evalFeature<F_Position>(F, order);
-  auto quat = evalFeature<F_Quaternion>(F, order);
-  y.setBlockVector(pos.y, quat.y);
-  J.setBlockMatrix(pos.J, quat.J);
+  arr pos = F_Position().setOrder(order).eval(F);
+  arr quat = F_Quaternion().setOrder(order).eval(F);
+  y.setBlockVector(pos, quat);
+  grabJ(y,J);
+//  J.setBlockMatrix(pos.J(), quat.J());
 }
 
 //===========================================================================
 
 void F_PoseDiff::phi2(arr& y, arr& J, const FrameL& F) {
-  auto pos = evalFeature<F_PositionDiff>(F, order);
-  auto quat = evalFeature<F_QuaternionDiff>(F, order);
-  y.setBlockVector(pos.y, quat.y);
-  J.setBlockMatrix(pos.J, quat.J);
+  arr pos = F_PositionDiff().setOrder(order).eval(F);
+  arr quat = F_QuaternionDiff().setOrder(order).eval(F);
+  y.setBlockVector(pos, quat);
+  grabJ(y,J);
+//  J.setBlockMatrix(pos.J(), quat.J());
 }
 
 //===========================================================================
 
 void F_PoseRel::phi2(arr& y, arr& J, const FrameL& F) {
-  auto pos = evalFeature<F_PositionRel>(F, order);
-  auto quat = evalFeature<F_QuaternionRel>(F, order);
-  y.setBlockVector(pos.y, quat.y);
-  J.setBlockMatrix(pos.J, quat.J);
+  arr pos = F_PositionRel().setOrder(order).eval(F);
+  arr quat = F_QuaternionRel().setOrder(order).eval(F);
+  y.setBlockVector(pos, quat);
+  grabJ(y,J);
+//  J.setBlockMatrix(pos.J(), quat.J());
 }
 
 //===========================================================================
@@ -281,7 +280,7 @@ void F_LinVel::phi2(arr& y, arr& J, const FrameL& F) {
 
   if(order==2) {
     if(impulseInsteadOfAcceleration) diffInsteadOfVel=true;
-    phi_finiteDifferenceReduce(y, J, F);
+    Feature::phi2(y, J, F);
     if(impulseInsteadOfAcceleration) diffInsteadOfVel=false;
   }
 }
@@ -319,7 +318,7 @@ void F_AngVel::phi2(arr& y, arr& J, const FrameL& F){
 
   if(order==2) {
     if(impulseInsteadOfAcceleration) diffInsteadOfVel=true;
-    phi_finiteDifferenceReduce(y, J, F);
+    Feature::phi2(y, J, F);
     if(impulseInsteadOfAcceleration) diffInsteadOfVel=false;
   }
 }
@@ -331,17 +330,16 @@ void F_LinAngVel::phi2(arr& y, arr& J, const FrameL& F) {
   F_LinVel lin;
   lin.order=order;
   lin.impulseInsteadOfAcceleration = impulseInsteadOfAcceleration;
-  arr  yl, Jl;
-  lin.eval(yl, Jl, F);
+  arr  yl = lin.eval(F);
 
   F_AngVel ang;
   ang.order=order;
   ang.impulseInsteadOfAcceleration = impulseInsteadOfAcceleration;
-  arr ya, Ja;
-  ang.eval(ya, Ja, F);
+  arr ya = ang.eval(F);
 
   y.setBlockVector(yl, ya);
-  J.setBlockMatrix(Jl, Ja);
+  grabJ(y,J);
+  //J.setBlockMatrix(yl.J(), ya.J());
 }
 
 //===========================================================================
@@ -350,15 +348,16 @@ void F_NoJumpFromParent_OBSOLETE::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_EQ(order, 1, "");
   CHECK_EQ(F.d1, 2, "");
 
-  auto pos = F_PositionRel()
+  arr pos = F_PositionRel()
              .setOrder(1)
              .setDiffInsteadOfVel()
              .eval(F);
-  auto quat = F_QuaternionRel()
+  arr quat = F_QuaternionRel()
               .setOrder(1)
               .setDiffInsteadOfVel()
               .eval(F);
 
-  y.setBlockVector(pos.y, quat.y);
-  J.setBlockMatrix(pos.J, quat.J);
+  y.setBlockVector(pos, quat);
+  if(!!J) J = y.J_reset();
+  //J.setBlockMatrix(pos.J(), quat.J());
 }

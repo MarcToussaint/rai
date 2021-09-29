@@ -105,11 +105,12 @@ void init_KOMO(pybind11::module& m) {
 //      pybind11::arg("scale")=double(1.),
 //      pybind11::arg("target")=std::vector<double>())
 
-  .def("addSquaredQuaternionNorms",
-       &KOMO::addSquaredQuaternionNorms,
+  .def("addQuaternionNorms",
+       &KOMO::addQuaternionNorms,
        "",
        pybind11::arg("times")=arr(),
-       pybind11::arg("scale")=3.
+       pybind11::arg("scale")=3.,
+       pybind11::arg("hard")=true
                               )
 
   .def("add_qControlObjective",

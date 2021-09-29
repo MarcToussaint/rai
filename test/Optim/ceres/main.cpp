@@ -154,7 +154,7 @@ void tutorialBasics(){
   komo.setModel(C, false);
   komo.setTiming(1, 1, 5., 1);
   komo.add_qControlObjective({}, 1, 1e0);
-//  komo.addSquaredQuaternionNorms(-1., -1., 1e1); //when the kinematics includes quaternion joints, keep them roughly regularized
+//  komo.addQuaternionNorms(-1., -1., 1e1); //when the kinematics includes quaternion joints, keep them roughly regularized
 
   komo.addObjective({1.,-1.}, FS_positionDiff, {"endeff", "target"}, OT_sos, {1e1});
 

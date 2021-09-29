@@ -626,12 +626,21 @@ void Configuration::setActiveJoints(const DofL& joints){
   checkConsistency();
 }
 
+void Configuration::selectJoints(const FrameL& F, bool notThose){
+  DofL D(F.N);
+  D.setZero();
+  uint n=0;
+  for(Frame* f: F) if(f && f->joint) D.elem(n++) = f->joint;
+  D.resizeCopy(n);
+  selectJoints(D, notThose);
+}
+
 /// selects only the joints of the given frames to be active -- the q-vector (and Jacobians) will refer only to those DOFs
-void Configuration::selectJoints(const FrameL& F, bool notThose) {
+void Configuration::selectJoints(const DofL& dofs, bool notThose) {
   for(Frame* f: frames) if(f->joint) f->joint->active = notThose;
-  for(Frame* f: F) if(f && f->joint){
-    f->joint->active = !notThose;
-    if(f->joint->mimic) f->joint->mimic->active = f->joint->active; //activate also the joint mimic'ed
+  for(Dof* dof: dofs) if(dof){
+    dof->active = !notThose;
+    if(dof->mimic) dof->mimic->active = dof->active; //activate also the joint mimic'ed
   }
   for(Frame* f: frames) if(f && f->joint && f->joint->mimic){ //mimic's of active joints are active as well
     if(f->joint->mimic->active) f->joint->active = true;
@@ -728,6 +737,7 @@ arr Configuration::getLimits() const {
   uint N=getJointStateDimension();
   arr limits(N, 2);
   limits.setZero();
+  for(uint i=0;i<N;i++) limits(i,1)=-1.;
   for(Dof* j:activeJoints) {
     for(uint k=0; k<j->dim; k++) { //in case joint has multiple dimensions
       if(j->limits.N) {
@@ -860,7 +870,7 @@ bool Configuration::check_topSort() const {
 /// clear all frames, forces & proxies
 void Configuration::clear() {
 //  glClose();
-  swiftDelete();
+//  swiftDelete();
 
   reset_q();
   proxies.clear(); //while(proxies.N){ delete proxies.last(); /*checkConsistency();*/ }
@@ -1023,8 +1033,6 @@ bool Configuration::checkConsistency() const {
      */
   //check qdim
   if(_state_q_isGood) {
-    CHECK_EQ(1, q.nd, "");
-
     //count dimensions yourself and check...
     uint myqdim = 0;
     for(Dof* j:activeJoints) {
@@ -1259,7 +1267,8 @@ void Configuration::calc_indexedActiveJoints(bool resetActiveJointSet) {
     //-- collect active dofs
     activeJoints.clear();
     for(Frame* f:frames){
-      if(f->joint && f->joint->active && f->joint->type!=JT_rigid){
+      if(f->joint && !f->joint->dim) f->joint->active=false;
+      if(f->joint && f->joint->active){
         activeJoints.append(f->joint);
       }
       if(f->particleDofs && f->particleDofs->active){
@@ -1880,7 +1889,9 @@ std::shared_ptr<FclInterface> Configuration::fcl() {
     Array<ptr<Mesh>> geometries(frames.N);
     for(Frame* f:frames) {
       if(f->shape && f->shape->cont) {
+        CHECK(f->shape->type()!=rai::ST_marker, "collision object can't be a marker");
         if(!f->shape->mesh().V.N) f->shape->createMeshes();
+        CHECK(f->shape->mesh().V.N, "collision object with no vertices");
         geometries(f->ID) = f->shape->_mesh;
       }
     }
@@ -2148,33 +2159,15 @@ void Configuration::copyProxies(const ProxyA& _proxies) {
 }
 
 /// prototype for \c operator<<
-void Configuration::write(std::ostream& os) const {
+void Configuration::write(std::ostream& os, bool explicitlySorted) const {
   for(Frame* f: frames) if(!f->name.N) f->name <<'_' <<f->ID;
-  for(Frame* f: frames) { //fwdActiveSet) {
-    //    os <<"frame " <<f->name;
-    //    if(f->parent) os <<'(' <<f->parent->name <<')';
-    //    os <<" \t{ ";
-    f->write(os);
-    //    os <<" }\n";
+  if(!explicitlySorted){
+    for(Frame* f: frames) f->write(os);
+  }else{
+    FrameL sorted = calc_topSort();
+    for(Frame* f: sorted) f->write(os);
   }
   os <<std::endl;
-  //  for(Frame *f: frames) if(f->shape){
-  //    os <<"shape ";
-  //    os <<"(" <<f->name <<"){ ";
-  //    f->shape->write(os);  os <<" }\n";
-  //  }
-  //  os <<std::endl;
-  //  for(Frame *f: fwdActiveSet) if(f->parent) {
-  //    if(f->joint){
-  //      os <<"joint ";
-  //      os <<"(" <<f->parent->name <<' ' <<f->name <<"){ ";
-  //      f->joint->write(os);  os <<" }\n";
-  //    }else{
-  //      os <<"link ";
-  //      os <<"(" <<f->parent->name <<' ' <<f->name <<"){ ";
-  //      f->write(os);  os <<" }\n";
-  //    }
-  //  }
 }
 
 void Configuration::write(Graph& G) const {
@@ -2727,12 +2720,12 @@ std::shared_ptr<Feature> Configuration::feature(FeatureSymbol fs, const StringA&
 }
 
 /// evaluate a feature for a given frame(s)
-void Configuration::evalFeature(arr& y, arr& J, FeatureSymbol fs, const StringA& frames) const {
+arr Configuration::evalFeature(FeatureSymbol fs, const StringA& frames) const {
   std::shared_ptr<Feature> feat = feature(fs, frames);
-  feat->eval(y, J, feat->getFrames(*this));
+  return feat->eval(feat->getFrames(*this));
 }
 
-Value Configuration::eval(FeatureSymbol fs, const StringA& frames){
+arr Configuration::eval(FeatureSymbol fs, const StringA& frames){
   return feature(fs,frames)->eval(getFrames(frames));
 }
 

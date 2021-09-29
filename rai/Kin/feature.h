@@ -12,6 +12,8 @@
 #include "frame.h"
 #include "featureSymbols.h"
 
+void grabJ(arr& y, arr& J);
+
 /// defines only a map (task space), not yet the costs or constraints in this space
 struct Feature {
   uint order = 0;          ///< 0=position, 1=vel, etc
@@ -36,14 +38,15 @@ struct Feature {
   FrameL getFrames(const rai::Configuration& C, uint s=0);
 
 protected:
-  //-- core methods to imlement the feature -- to be overloaded
-  virtual void phi2(arr& y, arr& J, const FrameL& F) {  phi_finiteDifferenceReduce(y, J, F);  }
+  //-- core methods to imlement the feature -- to be overloaded (you can choose to overload phi or phi2
+  virtual arr phi(const FrameL& F);
+  virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F) {  NIY; }
 
  public:
-  void eval(arr& y, arr& J, const FrameL& F) { phi2(y, J, F); applyLinearTrans(y, J); }
-  Value eval(const FrameL& F) { arr y, J; eval(y, J, F); return Value(y, J); }
-  Value eval(const rai::Configuration& C) { return eval(getFrames(C)); }
+  arr eval(const FrameL& F) { arr y = phi(F); applyLinearTrans(y); return y; }
+//  Value eval(const FrameL& F) { arr y, J; eval(y, J, F); return Value(y, J); }
+  arr eval(const rai::Configuration& C) { return eval(getFrames(C)); }
   uint dim(const FrameL& F) { uint d=dim_phi2(F); return applyLinearTrans_dim(d); }
   VectorFunction vf2(const FrameL& F);
 
@@ -51,13 +54,11 @@ protected:
   virtual rai::Graph getSpec(const rai::Configuration& C) { return rai::Graph({{"description", shortTag(C)}}); }
 
   //automatic finite difference definition of higher order features
-  void phi_finiteDifferenceReduce(arr& y, arr& J, const FrameL& F);
+  arr phi_finiteDifferenceReduce(const FrameL& F);
 private:
-  void applyLinearTrans(arr& y, arr& J);
+  void applyLinearTrans(arr& y);
   uint applyLinearTrans_dim(uint d);
 };
-
-template<class T> Value evalFeature(const FrameL& F, uint order=0){ arr y,J; T().setOrder(order).eval(y, J, F); return Value{y,J}; }
 
 //these are frequently used by implementations of task maps
 

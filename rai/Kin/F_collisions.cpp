@@ -109,7 +109,7 @@ void F_AccumulatedCollisions::phi2(arr& y, arr& J, const FrameL& F) {
       CHECK(p.a->shape, "");
       CHECK(p.b->shape, "");
 
-      //early check: if swift is way out of collision, don't bother computing it precise
+      //early check: if swift is way out of collision, don't bother computing it precisely
       if(p.d > p.a->shape->radius() + p.b->shape->radius() + .01 + margin) continue;
 
       if(!p.collision) p.calc_coll();
@@ -123,7 +123,8 @@ void F_AccumulatedCollisions::phi2(arr& y, arr& J, const FrameL& F) {
       arr y_dist, J_dist;
       p.collision->kinDistance(y_dist, J_dist, Jp1, Jp2);
 
-      if(y_dist.scalar()>margin) continue;
+      if(y_dist.scalar()>margin) continue; //this is the hinge: proxies contribute only when below margin
+
       y += margin-y_dist.scalar();
       J -= J_dist;
     }

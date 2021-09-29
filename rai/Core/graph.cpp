@@ -759,8 +759,8 @@ Node* Graph::readNode(std::istream& is, StringA& tags, const char* predetermined
     if((c>='a' && c<='z') || (c>='A' && c<='Z') || c=='_') { //String or boolean
       is.putback(c);
       str.read(is, "", " \n\r\t,;}", false);
-      if(str=="true") node = newNode<bool>(key, parents, true);
-      else if(str=="false") node = newNode<bool>(key, parents, false);
+      if(str=="true" || str=="True") node = newNode<bool>(key, parents, true);
+      else if(str=="false" || str=="False") node = newNode<bool>(key, parents, false);
       else node = newNode<String>(key, parents, str);
     } else if(rai::contains("-.0123456789", c)) {  //single double
       is.putback(c);
@@ -1358,9 +1358,23 @@ void initParameters(int _argc, char*_argv[], bool forceReload){
   fil.open(cfgFileName);
   if(fil.good()) {
     fil >>P();
+    LOG(3) <<" - success";
   } else {
     LOG(3) <<" - failed";
   }
+  fil.close();
+
+  //-- append 'raiBase/local.cfg'
+  cfgFileName = rai::raiPath("../local.cfg");
+  LOG(3) <<"opening base config file '" <<cfgFileName <<"'";
+  fil.open(cfgFileName);
+  if(fil.good()){
+    fil >>P();
+    LOG(3) <<" - success";
+  } else {
+    LOG(3) <<" - failed";
+  }
+  fil.close();
 
   LOG(1) <<"** parsed parameters:\n" <<P() <<'\n';
 }

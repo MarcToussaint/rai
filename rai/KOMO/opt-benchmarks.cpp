@@ -9,7 +9,7 @@ OptBench_InvKin_Endeff::OptBench_InvKin_Endeff(const char* modelFile, bool uncon
   komo->setModel(C, false);
   komo->setTiming(1., 1, 1., 1);
   komo->add_qControlObjective({}, 1, 1.);
-  //    komo->addSquaredQuaternionNorms(-1., -1., 1e3); //when the kinematics includes quaternion joints, keep them roughly regularized
+  //    komo->addQuaternionNorms(-1., -1., 1e3); //when the kinematics includes quaternion joints, keep them roughly regularized
 
   ObjectiveType ot = OT_eq;
   double prec = 1e0;
@@ -41,7 +41,7 @@ void OptBench_Skeleton::create(const char* modelFile, const rai::Skeleton& S, ra
     komo->setTiming(maxPhase, 30, 5., 2);
     komo->add_qControlObjective({}, 2, 1e0);
   }
-  komo->addSquaredQuaternionNorms();
+  komo->addQuaternionNorms();
 
   S.setKOMO(*komo);
 

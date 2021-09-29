@@ -25,7 +25,7 @@ void testFactored(){
   komo.setModel(C, false);
   komo.setTiming(2.5, 3, 5., 2);
   komo.add_qControlObjective({}, 2);
-  komo.addSquaredQuaternionNorms();
+  komo.addQuaternionNorms();
 
   //consistency constraint
   komo.addObjective({}, FS_poseDiff, {"gripper", "gripperDUP"}, OT_eq, {1e2});

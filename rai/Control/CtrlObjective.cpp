@@ -29,8 +29,7 @@ arr CtrlObjective::getResidual(CtrlSolver& cp) {
 
 arr CtrlObjective::getValue(CtrlSolver& cp) {
   FrameL F = feat->getFrames(cp.komo.pathConfig, cp.komo.k_order);
-  arr y, J;
-  feat->eval(y, J, F);
+  arr y = feat->eval(F);
   return y;
 }
 

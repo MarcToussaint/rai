@@ -11,25 +11,26 @@
 //===========================================================================
 
 void F_Max::phi2(arr& y, arr& J,  const FrameL& F) {
-  f->eval(y, J, F);
-  uint i=argmax(y);
-  y = ARR(y(i));
-  if(!!J) J=~J[i];
+  arr z = f->eval(F);
+  uint i=argmax(z);
+  y = ARR(z(i));
+  if(!!J) J=~z.J()[i];
   if(neg) { y*=-1.; if(!!J) J*=-1.; }
 }
 
 //===========================================================================
 
 void F_Norm::phi2(arr& y, arr& J,  const FrameL& F) {
-  f->eval(y, J, F);
-  double l = sqrt(sumOfSqr(y));
-  if(!!J) J = ~(y/l)*J;
+  arr z = f->eval(F);
+  double l = sqrt(sumOfSqr(z));
+  if(!!J) J = ~(z/l)*z.J();
   y = ARR(l);
 }
 
 //===========================================================================
 
 void F_Normalized::phi2(arr& y, arr& J,  const FrameL& F) {
-  f->eval(y, J, F);
+  y = f->eval(F);
+  J = y.J();
   normalizeWithJac(y, J);
 }

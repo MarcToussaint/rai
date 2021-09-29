@@ -32,6 +32,15 @@ enum KOMOsolver { KS_none=-1, KS_dense=0, KS_sparse, KS_banded, KS_sparseFactore
 
 //===========================================================================
 
+
+namespace rai {
+  struct KOMO_Options {
+    RAI_PARAM("KOMO/", int, verbose, 1)
+    RAI_PARAM("KOMO/", int, animateOptimization, 0)
+    RAI_PARAM("KOMO/", bool, mimicStable, false)
+  };
+}//namespace
+
 struct KOMO : NonCopyable {
 
   //-- the problem definition
@@ -57,14 +66,15 @@ struct KOMO : NonCopyable {
   rai::KOMOsolver solver=rai::KS_sparse;
   arr x, dual;                 ///< the primal and dual solution
 
+  //-- options
+  rai::KOMO_Options opt;
+
   //-- verbosity only: buffers of all feature values computed on last set_x
   double sos, eq, ineq;
   arr featureValues;           ///< storage of all features in all time slices
   arrA featureJacobians;       ///< storage of all features in all time slices
   ObjectiveTypeA featureTypes; ///< storage of all feature-types in all time slices
   StringA featureNames;
-  int verbose;                 ///< verbosity level
-  int animateOptimization=0;   ///< display the current path for each evaluation during optimization
   double timeTotal=0.;           ///< measured run time
   double timeCollisions=0., timeKinematics=0., timeNewton=0., timeFeatures=0.;
   ofstream* logFile=0;
@@ -100,10 +110,8 @@ struct KOMO : NonCopyable {
   void addContact_slide(double startTime, double endTime, const char* from, const char* to);
   void addContact_stick(double startTime, double endTime, const char* from, const char* to);
   void addContact_elasticBounce(double time, const char* from, const char* to, double elasticity=.8, double stickiness=0.);
-  void addContact_noFriction(double startTime, double endTime, const char* from, const char* to);
   void addContact_ComplementarySlide(double startTime, double endTime, const char* from, const char* to);
   //  void addContact_Relaxed(double startTime, double endTime, const char *from, const char* to);
-  void addContact_staticPush(double startTime, double endTime, const char* from, const char* to);
 
   void getBounds(arr& bounds_lo, arr& bounds_up);       ///< define the bounds (passed to the constrained optimization) based on the limit definitions of all DOFs
 
@@ -113,7 +121,7 @@ struct KOMO : NonCopyable {
   //
 
   ptr<struct Objective> add_qControlObjective(const arr& times, uint order, double scale=1., const arr& target=NoArr, int deltaFromStep=0, int deltaToStep=0);
-  void addSquaredQuaternionNorms(const arr& times=NoArr, double scale=3e0);
+  void addQuaternionNorms(const arr& times=NoArr, double scale=3e0, bool hard=true);
 
   void add_collision(bool hardConstraint, double margin=.0, double prec=1e1);
   void add_jointLimits(bool hardConstraint, double margin=.05, double prec=1.);
@@ -242,6 +250,8 @@ public:
   //
   // deprecated
   //
+
+  void addSquaredQuaternionNorms(const arr& times=NoArr, double scale=3e0){ DEPR; addQuaternionNorms(times, scale); }
 
   bool displayTrajectory(double delay=1., bool watch=true, bool overlayPaths=true, const char* saveVideoPath=nullptr, const char* addText=nullptr){
     DEPR; return view_play(watch, delay, saveVideoPath);  }

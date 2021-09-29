@@ -525,7 +525,9 @@ int x11_getKey() {
         char string[4];
         XLookupString(&ev.xkey, string, 4, nullptr, nullptr);
         key = string[0];
-        quit=true;
+//        LOG(0) <<"key: " <<key;
+        if(key==' ' || key=='q' || key==27 || key==13)
+          quit=true;
         break;
       case ButtonPress:
         quit=true;
@@ -598,7 +600,7 @@ void initCmdLine(int _argc, char* _argv[]) {
   {
     rai::String msg;
     msg <<"** cmd line arguments: '"; for(int i=0; i<argc; i++) msg <<argv[i] <<' ';
-    msg <<"\b'";
+    msg <<"'";
     LOG(1) <<msg;
   }
 
@@ -1440,6 +1442,9 @@ template long rai::getParameter<long>(const char*);
 template rai::String rai::getParameter<rai::String>(const char*);
 template rai::String rai::getParameter<rai::String>(const char*, const rai::String&);
 template StringA rai::getParameter<StringA>(const char*, const StringA&);
+
+template rai::Enum<rai::ArgWord> rai::getParameter<rai::Enum<rai::ArgWord>>(const char*);
+template rai::Enum<rai::ArgWord> rai::getParameter<rai::Enum<rai::ArgWord>>(const char*, const rai::Enum<rai::ArgWord>&);
 
 template bool rai::checkParameter<uint>(const char*);
 template bool rai::checkParameter<int>(const char*);

@@ -10,21 +10,21 @@ using namespace std;
 
 //===========================================================================
 
-void testPickAndPlace(bool keyframesOnly){
+void testPickAndPlace(rai::ArgWord pathOrSeq){
   rai::Configuration C;
   C.addFile("model.g");
 
   KOMO komo;
 
   komo.setModel(C, false);
-  if(!keyframesOnly){
+  if(pathOrSeq==rai::_path){
     komo.setTiming(2.5, 30, 5., 2);
     komo.add_qControlObjective({}, 2);
   }else{
     komo.setTiming(3., 1, 5., 1);
     komo.add_qControlObjective({}, 1, 1e-1);
   }
-  komo.addSquaredQuaternionNorms();
+  komo.addQuaternionNorms();
 
   //grasp
   rai::Skeleton S = {
@@ -46,21 +46,21 @@ void testPickAndPlace(bool keyframesOnly){
 
 //===========================================================================
 
-void testPickAndPush(bool keyframesOnly){
+void testPickAndPush(rai::ArgWord pathOrSeq){
   rai::Configuration C;
   C.addFile("model.g");
 
   KOMO komo;
 
   komo.setModel(C, false);
-  if(!keyframesOnly){
+  if(pathOrSeq==rai::_path){
     komo.setTiming(3.5, 30, 5., 2);
     komo.add_qControlObjective({}, 2);
   }else{
     komo.setTiming(3., 1, 5., 1);
     komo.add_qControlObjective({}, 1, 1e-1);
   }
-  komo.addSquaredQuaternionNorms();
+  komo.addQuaternionNorms();
 
   //grasp
   rai::Skeleton S = {
@@ -81,27 +81,27 @@ void testPickAndPush(bool keyframesOnly){
 
 //===========================================================================
 
-void testPickAndThrow(bool keyframesOnly){
+void testPickAndThrow(rai::ArgWord pathOrSeq){
   rai::Configuration C;
   C.addFile("model.g");
 
   KOMO komo;
 
   komo.setModel(C, false);
-  if(!keyframesOnly){
+  if(pathOrSeq==rai::_path){
     komo.setTiming(4.5, 30, 2., 2);
     komo.add_qControlObjective({}, 2, 1e-1);
   }else{
     komo.setTiming(5., 1, 2., 1);
     komo.add_qControlObjective({}, 1, 1e-1);
   }
-  komo.addSquaredQuaternionNorms();
+  komo.addQuaternionNorms();
 
   //grasp
   rai::Skeleton S = {
     { 1., 1., rai::SY_topBoxGrasp, {"gripper", "box2"} },
     { 1., 2., rai::SY_stable, {"gripper", "box2"} },
-    { 2., 3., rai::SY_dynamic, {"box2"} },
+    { 2., 3., rai::SY_dynamic, {"world", "box2"} },
     { 3., 3., rai::SY_topBoxGrasp, {"gripper", "box2"} },
     { 3., 4., rai::SY_stable, {"gripper", "box2"} },
 //    { 5., 5., rai::SY_topBoxPlace, {"gripper", "box2", "table"} },
@@ -130,8 +130,8 @@ void testTouchAndRoll(rai::ArgWord pathOrSeq){
 
   //grasp
   rai::Skeleton S = {
-    { 1., 1., rai::SY_touch, {"handB", "ball"} },
-    { 1., 1.2, rai::SY_contact, {"handB", "ball"} },
+    { 1., 1., rai::SY_touch, {"palmB", "ball"} },
+    { 1., 1.2, rai::SY_contact, {"palmB", "ball"} },
     { 1., -1., rai::SY_dynamicOn, {"table", "ball"} },
     { 2., 2., rai::SY_touch, {"ball", "box"} },
   };
@@ -146,21 +146,21 @@ void testTouchAndRoll(rai::ArgWord pathOrSeq){
 
 //===========================================================================
 
-void testWalkAndPick(bool keyframesOnly){
+void testWalkAndPick(rai::ArgWord pathOrSeq){
   rai::Configuration C;
   C.addFile("model.g");
 
   KOMO komo;
 
   komo.setModel(C, false);
-  if(!keyframesOnly){
+  if(pathOrSeq==rai::_path){
     komo.setTiming(4.5, 30, 5., 2);
     komo.add_qControlObjective({}, 2, 1e0);
   }else{
     komo.setTiming(5., 1, 2., 1);
     komo.add_qControlObjective({}, 1, 1e-1);
   }
-  komo.addSquaredQuaternionNorms();
+  komo.addQuaternionNorms();
 
   rai::Skeleton S = {
     //take a step
@@ -192,21 +192,21 @@ void testWalkAndPick(bool keyframesOnly){
 
 //===========================================================================
 
-void testHandover(bool keyframesOnly){
+void testHandover(rai::ArgWord pathOrSeq){
   rai::Configuration C;
   C.addFile("model2.g");
 
   KOMO komo;
 
   komo.setModel(C, false);
-  if(!keyframesOnly){
+  if(pathOrSeq==rai::_path){
     komo.setTiming(3.5, 30, 5., 2);
     komo.add_qControlObjective({}, 2, 1e0);
   }else{
     komo.setTiming(4., 1, 2., 1);
     komo.add_qControlObjective({}, 1, 1e-1);
   }
-  komo.addSquaredQuaternionNorms();
+  komo.addQuaternionNorms();
 
   rai::Skeleton S = {
     //grasp
@@ -231,21 +231,21 @@ void testHandover(bool keyframesOnly){
 
 //===========================================================================
 
-void testStackAndBalance(bool keyframesOnly){
+void testStackAndBalance(rai::ArgWord pathOrSeq){
   rai::Configuration C;
   C.addFile("model2.g");
 
   KOMO komo;
 
   komo.setModel(C, false);
-  if(!keyframesOnly){
+  if(pathOrSeq==rai::_path){
     komo.setTiming(5.5, 30, 5., 2);
     komo.add_qControlObjective({}, 2, 1e0);
   }else{
     komo.setTiming(6., 1, 2., 1);
     komo.add_qControlObjective({}, 1, 1e-1);
   }
-  komo.addSquaredQuaternionNorms();
+  komo.addQuaternionNorms();
 
   rai::Skeleton S = {
     //pick
@@ -313,21 +313,21 @@ void testStackAndBalance(bool keyframesOnly){
 
 //===========================================================================
 
-void testWalking(bool keyframesOnly){
+void testWalking(rai::ArgWord pathOrSeq){
   rai::Configuration C;
   C.addFile("model.g");
 
   KOMO komo;
 
   komo.setModel(C, false);
-  if(!keyframesOnly){
+  if(pathOrSeq==rai::_path){
     komo.setTiming(4.5, 30, 5., 2);
     komo.add_qControlObjective({}, 2, 1e0);
   }else{
     komo.setTiming(5., 1, 2., 1);
     komo.add_qControlObjective({}, 1, 1e-1);
   }
-  komo.addSquaredQuaternionNorms();
+  komo.addQuaternionNorms();
 
   rai::Skeleton S = {
     //take a step
@@ -367,22 +367,22 @@ int main(int argc,char** argv){
 
 //  rnd.clockSeed();
 
-//  testPickAndPlace(false);
-//  testPickAndPlace(true);
-  testPickAndPush(false);
-//  testPickAndPush(true);
-//  testPickAndThrow(false);
-//  testPickAndThrow(true);
-//  testTouchAndRoll(rai::_path);
+  testPickAndPlace(rai::_path);
+//  testPickAndPlace(rai::_sequence);
+  testPickAndPush(rai::_path);
+//  testPickAndPush(rai::_sequence);
+  testPickAndThrow(rai::_path);
+//  testPickAndThrow(rai::_sequence);
+  testTouchAndRoll(rai::_path);
 //  testTouchAndRoll(rai::_sequence);
-//  testWalkAndPick(false);
-//  testWalkAndPick(true);
-//  testWalking(false);
-//  testWalking(true);
-//  testHandover(false);
-//  testHandover(true);
-//  testStackAndBalance(false);
-//  testStackAndBalance(true);
+  testWalkAndPick(rai::_path);
+//  testWalkAndPick(rai::_sequence);
+  testWalking(rai::_path);
+//  testWalking(rai::_sequence);
+  testHandover(rai::_path);
+//  testHandover(rai::_sequence);
+  testStackAndBalance(rai::_path);
+//  testStackAndBalance(rai::_sequence);
 
   return 0;
 }

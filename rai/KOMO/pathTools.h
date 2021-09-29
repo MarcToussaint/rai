@@ -6,6 +6,8 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
+#pragma once
+
 #include "../Core/array.h"
 #include "../Kin/kin.h"
 #include "../Algo/spline.h"
@@ -16,7 +18,7 @@
 arr getVelocities_centralDifference(const arr& q, double tau);
 arr getAccelerations_centralDifference(const arr& q, double tau);
 
-double getNaturalDuration(const arr& q, double maxVel=1., double maxAcc=1.);
+double getMinDuration(const arr& q, double maxVel=1., double maxAcc=1.);
 
 rai::Spline getSpline(const arr& q, double duration=1., uint degree=2);
 
@@ -29,7 +31,19 @@ rai::String validatePath(const rai::Configuration& _C, const arr& q_now, const S
 arr getSineProfile(const arr& q0, const arr& qT, uint T);
 
 //call KOMO to compute a collision free start-goal path
-std::pair<arr, arr> getStartGoalPath(const rai::Configuration& K, const arr& target_q, const StringA& target_joints= {}, const char* endeff=nullptr, double up=.2, double down=.8);
+std::pair<arr, arr> getStartGoalPath_obsolete(const rai::Configuration& K, const arr& target_q, const StringA& target_joints= {}, const char* endeff=nullptr, double up=.2, double down=.8);
+
+struct Avoid{
+  arr times;
+  StringA frames;
+  double dist;
+};
+
+//C is start configuration, qTarget is goal
+//if endeffs are given, the goal is ONLY the endeff poses, not q
+arr getStartGoalPath(rai::Configuration& C, const arr& qTarget, const arr& qHome,
+                     const rai::Array<Avoid>& avoids={},
+                     StringA endeffectors={}, bool endeffApproach=false, bool endeffRetract=false);
 
 //-- PATH MODIFICATION
 
@@ -55,5 +69,4 @@ struct PoseTool{
   bool checkLimitsAndCollisions(const arr& limits={}, const FrameL& collisionPairs={}, bool solve=false, bool assert=false);
 };
 
-bool checkCollisionsAndLimits(rai::Configuration& C, const FrameL& collisionPairs, const arr& limits, bool solveForFeasible, int verbose=1);
-
+//bool checkCollisionsAndLimits(rai::Configuration& C, const FrameL& collisionPairs, const arr& limits, bool solveForFeasible, int verbose=1);

@@ -28,7 +28,7 @@ struct Shape;
 struct Inertia;
 struct ForceExchange;
 struct ParticleDofs;
-enum JointType { JT_none=0, JT_hingeX, JT_hingeY, JT_hingeZ, JT_transX, JT_transY, JT_transZ, JT_transXY, JT_trans3, JT_transXYPhi, JT_universal, JT_rigid, JT_quatBall, JT_phiTransXY, JT_XBall, JT_free, JT_tau };
+enum JointType { JT_none=0, JT_hingeX, JT_hingeY, JT_hingeZ, JT_transX, JT_transY, JT_transZ, JT_transXY, JT_trans3, JT_transXYPhi, JT_transYPhi, JT_universal, JT_rigid, JT_quatBall, JT_phiTransXY, JT_XBall, JT_free, JT_tau };
 enum BodyType  { BT_none=-1, BT_dynamic=0, BT_kinematic, BT_static };
 }
 
@@ -145,6 +145,7 @@ struct Frame : NonCopyable {
   Frame& setPose(const rai::Transformation& _X);
   Frame& setPosition(const arr& pos);
   Frame& setQuaternion(const arr& quat);
+  Frame& setRelativePose(const rai::Transformation& _Q);
   Frame& setRelativePosition(const arr& pos);
   Frame& setRelativeQuaternion(const arr& quat);
   Frame& setPointCloud(const arr& points, const byteA& colors= {});
@@ -187,11 +188,14 @@ struct Dof {
   uint qIndex=UINT_MAX;
   arr  limits;    ///< joint limits (lo, up, [maxvel, maxeffort])
   Joint* mimic=0; ///< if non-nullptr, this joint's state is identical to another's
+  JointL mimicers;  ///< list of mimicing joints
 
   virtual ~Dof() {}
   virtual void setDofs(const arr& q, uint n=0) = 0;
   virtual arr calcDofsFromConfig() const = 0;
   virtual String name() const = 0;
+
+  void setActive(bool _active);
 
   const Joint* joint() const;
   const ForceExchange* fex() const;
@@ -207,8 +211,6 @@ struct Joint : Dof, NonCopyable {
   arr q0;            ///< joint null position
   double H=1.;       ///< control cost scalar
   double scale=1.;   ///< scaling robot-q = scale * q-vector
-
-  JointL mimicers;      ///< list of mimicing joints
 
   Vector axis=0;          ///< joint axis (same as X.rot.getX() for standard hinge joints)
   Enum<JointType> type;   ///< joint type
@@ -233,10 +235,7 @@ struct Joint : Dof, NonCopyable {
   uint getDimFromType() const;
   arr get_h() const;
 
-  bool isPartBreak() {
-    return (type==JT_rigid || type==JT_free); // && !mimic;
-//    return (dim!=1 && !mimic) || type==JT_tau;
-  }
+  bool isPartBreak();
 
   //access the K's q vector
   double& getQ();

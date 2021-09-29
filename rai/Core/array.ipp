@@ -460,32 +460,41 @@ template<class T> void rai::Array<T>::resizeMEM(uint n, bool copy, int Mforce) {
   CHECK_GE(Mnew, n, "");
   CHECK((p && M) || (!p && !M), "");
   if(Mnew!=Mold) {  //if M changed, allocate the memory
+    globalMemoryTotal -= Mold*sizeT;
+    globalMemoryTotal += Mnew*sizeT;
+    if(globalMemoryTotal>globalMemoryBound){
+      if(globalMemoryStrict){
+        globalMemoryTotal -= Mnew*sizeT;
+        HALT("out of memory: " <<((globalMemoryTotal+Mnew)>>20) <<"MB");
+      }
+      LOG(0) <<"using massive memory: " <<(globalMemoryTotal>>20) <<"MB";
+    }
     if(Mnew) {
-        if(memMove==1){
-            if(p){
-                p=(T*)realloc(p, Mnew*sizeT);
-            } else {
-                p=(T*)malloc(Mnew*sizeT);
-//                memset(p, 0, Mnew*sizeT);
-            }
-            if(!p) { HALT("memory allocation failed! Wanted size = " <<Mnew*sizeT <<"bytes"); }
-        }else{
-            T* pold = p;
-            p=new T [Mnew];
-            if(!p) { HALT("memory allocation failed! Wanted size = " <<Mnew*sizeT <<"bytes"); }
-            if(copy) for(uint i=N<n?N:n; i--;) p[i]=pold[i];
-            if(pold) delete[] pold;
+      if(memMove==1){
+        if(p){
+          p=(T*)realloc(p, Mnew*sizeT);
+        } else {
+          p=(T*)malloc(Mnew*sizeT);
+          //memset(p, 0, Mnew*sizeT);
         }
-        M=Mnew;
+        if(!p) { HALT("memory allocation failed! Wanted size = " <<Mnew*sizeT <<"bytes"); }
+      }else{
+        T* pold = p;
+        p=new T [Mnew];
+        if(!p) { HALT("memory allocation failed! Wanted size = " <<Mnew*sizeT <<"bytes"); }
+        if(copy) for(uint i=N<n?N:n; i--;) p[i]=pold[i];
+        if(pold) delete[] pold;
+      }
+      M=Mnew;
     } else {
       if(p) {
-          if(memMove==1){
-              free(p);
-          }else{
-              delete[] p;
-          }
-          p=0;
-          M=0;
+        if(memMove==1){
+          free(p);
+        }else{
+          delete[] p;
+        }
+        p=0;
+        M=0;
       }
     }
   }
@@ -500,13 +509,14 @@ template<class T> void rai::Array<T>::freeMEM() {
   vec_type::clear();
 #else
   if(M) {
-      if(memMove==1){
-          free(p);
-      }else{
-          delete[] p;
-      }
-      p=0;
-      M=0;
+    rai::globalMemoryTotal -= M*sizeT;
+    if(memMove==1){
+      free(p);
+    }else{
+      delete[] p;
+    }
+    p=0;
+    M=0;
   }
 #endif
   if(d && d!=&d0) { delete[] d; d=NULL; }
@@ -1490,8 +1500,19 @@ template<class T> void rai::Array<T>::setBlockMatrix(const rai::Array<T>& A, con
 template<class T> void rai::Array<T>::setBlockVector(const rai::Array<T>& a, const rai::Array<T>& b) {
   CHECK(a.nd==1 && b.nd==1, "");
   resize(a.N+b.N);
-  setVectorBlock(a, 0);   //for(i=0;i<a.N;i++) operator()(i    )=a(i);
-  setVectorBlock(b, a.N); //for(i=0;i<b.N;i++) operator()(i+a.N)=b(i);
+//  if(a.jac || b.jac){
+//    if(a.jac && b.jac){
+//      if(a.jac->isSparse()) J().sparse().resize(N, a.jac->d1, 0);
+//      else J().resize(N, a.jac->d1).setZero();
+//    } else NIY;
+//  }
+  setVectorBlock(a.noJ(), 0);   //for(i=0;i<a.N;i++) operator()(i    )=a(i);
+  setVectorBlock(b.noJ(), a.N); //for(i=0;i<b.N;i++) operator()(i+a.N)=b(i);
+  if(a.jac || b.jac){
+    if(a.jac && b.jac){
+      J().setBlockMatrix(*a.jac, *b.jac);
+    } else NIY;
+  }
 }
 
 /// write the matrix B into 'this' matrix at location lo0, lo1
@@ -1509,7 +1530,7 @@ template<class T> void rai::Array<T>::setMatrixBlock(const rai::Array<T>& B, uin
       }
     } else if(isSparseMatrix(*this)) {
 #if 1
-        sparse().add(B, lo0, lo1);
+      sparse().add(B, lo0, lo1);
 #else
       if(!isSparseMatrix(B)) {
         for(i=0; i<B.d0; i++) for(j=0; j<B.d1; j++){
@@ -1550,6 +1571,10 @@ template<class T> void rai::Array<T>::setVectorBlock(const rai::Array<T>& B, uin
   CHECK(nd==1 && B.nd==1 && lo+B.N<=N, "");
   uint i;
   for(i=0; i<B.N; i++) operator()(lo+i)=B(i);
+  if(B.jac){
+    CHECK(jac && jac->d1==B.jac->d1, "Jacobian needs to be pre-sized");
+    jac->setMatrixBlock(B.jac->noJ(), lo, 0);
+  }
 }
 
 /// B (needs to be sized before) becomes sub-vector of 'this' at location lo
@@ -2274,7 +2299,6 @@ template<class T> const char* rai::Array<T>::prt() {
 
 /// x = y^T
 template<class T> void op_transpose(rai::Array<T>& x, const rai::Array<T>& y) {
-  if(y.jac){ NIY }
   CHECK(&x!=&y, "can't transpose matrix into itself");
   CHECK_LE(y.nd, 3, "can only transpose up to 3D arrays");
   if(y.nd==3) {
@@ -2283,12 +2307,14 @@ template<class T> void op_transpose(rai::Array<T>& x, const rai::Array<T>& y) {
     for(i=0; i<d0; i++) for(j=0; j<d1; j++) for(k=0; k<d2; k++)
           x(i, j, k) = y(k, j, i);
     //x.p[(i*d1+j)*d2+k]=y.p[(k*d1+j)*d0+i];
+    if(y.jac){ NIY }
     return;
   }
   if(y.nd==2) {
     if(isSparseMatrix(y)) {
       x = y;
       x.sparse().transpose();
+      if(y.jac){ NIY }
       return;
     }
     x.resize(y.d1, y.d0);
@@ -2300,11 +2326,15 @@ template<class T> void op_transpose(rai::Array<T>& x, const rai::Array<T>& y) {
       for(; xp!=xstop; xp++, yp+=ystep) *xp = *yp;
 //      for(j=0; j<d1; j++) x.p[i*d1+j]=y.p[j*d0+i];
     }
+    if(y.jac){ NIY }
     return;
   }
   if(y.nd==1) {
     x=y;
     x.reshape(1, y.N);
+    if(y.jac){
+      // don't do anything
+    }
     return;
   }
   HALT("transpose not implemented for this dims");
@@ -2807,21 +2837,34 @@ void op_innerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<
   */
   if(y.nd==2 && z.nd==1) {  //matrix x vector -> vector
     CHECK_EQ(y.d1, z.d0, "wrong dimensions for inner product");
-    if(rai::useLapack && typeid(T)==typeid(double)) { blas_Mv(x, y, z); return; }
-    uint i, d0=y.d0, dk=y.d1;
-    T* a, *astop, *b, *c;
-    x.resize(d0); x.setZero();
-    c=x.p;
-    for(i=0; i<d0; i++) {
-      //for(s=0., k=0;k<dk;k++) s+=y.p[i*dk+k]*z.p[k];
-      //this is faster:
-      a=y.p+i*dk; astop=a+dk; b=z.p;
-      for(; a!=astop; a++, b++)(*c)+=(*a) * (*b);
-      c++;
-    }
-    if(z.jac){
-      x.jac = make_unique<rai::Array<T>>();
-      *x.jac = y*(*z.jac);
+    if(y.d0==1){ //row vector -> scalar product}
+      x.resize(1);
+      x.p[0] = scalarProduct(y,z);
+      if(y.jac || z.jac){
+        if(y.jac && !z.jac) x.J() = ~z.noJ() * (*y.jac);
+        else if(!y.jac && z.jac) x.J() = y.noJ() * (*z.jac);
+        else x.J() = y.noJ() * (*z.jac) + ~z.noJ() * (*y.jac);
+      }
+    }else{
+      if(rai::useLapack && typeid(T)==typeid(double)) {
+        blas_Mv(x, y, z);
+      }else{
+        uint i, d0=y.d0, dk=y.d1;
+        T* a, *astop, *b, *c;
+        x.resize(d0); x.setZero();
+        c=x.p;
+        for(i=0; i<d0; i++) {
+          //for(s=0., k=0;k<dk;k++) s+=y.p[i*dk+k]*z.p[k];
+          //this is faster:
+          a=y.p+i*dk; astop=a+dk; b=z.p;
+          for(; a!=astop; a++, b++)(*c)+=(*a) * (*b);
+          c++;
+        }
+      }
+      if(y.jac || z.jac){
+        if(y.jac) NIY;
+        x.J() = y.noJ() * (*z.jac);
+      }
     }
     return;
   }
@@ -2857,14 +2900,31 @@ void op_innerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<
         for(; a!=astop; a++, b+=d1)(*c)+=(*a) * (*b);
         c++;
       }
-    if(y.jac || z.jac){ NIY }
+    if(y.jac || z.jac){
+      if(y.jac && !z.jac){
+        CHECK_EQ(y.d0, 1, "");
+        x.J().resize(z.d1, y.jac->d1);
+        tensorEquation(x.J(), *y.jac, TUP(2,1), z, TUP(2,0), 1);
+      }else NIY;
+    }
     return;
   }
   if(y.nd==1 && z.nd==1 && z.N==1) {  //vector multiplied with scalar (disguised as 1D vector)
-    uint k, dk=y.N;
-    x.resize(y.N);
-    for(k=0; k<dk; k++) x.p[k]=y.p[k]*z.p[0];
-    if(y.jac || z.jac){ NIY }
+    x = y;
+    x *= z.p[0];
+    if(y.jac || z.jac){
+      if(y.jac && z.jac) x.J() += y.noJ() * (*z.jac);
+      else NIY;
+    }
+    return;
+  }
+  if(y.nd==1 && z.nd==1 && y.N==1) {  //vector multiplied with scalar (disguised as 1D vector)
+    x = z;
+    x *= y.p[0];
+    if(y.jac || z.jac){
+      if(y.jac && z.jac) x.J() += z.noJ() * (*y.jac);
+      else NIY;
+    }
     return;
   }
   if(y.nd==1 && z.nd==2 && z.d0==1) {  //vector x vector^T -> matrix (outer product)
@@ -2877,7 +2937,12 @@ void op_innerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<
     uint i, j, d0=y.d0, d1=z.d1;
     x.resize(d0, d1);
     for(i=0; i<d0; i++) for(j=0; j<d1; j++) x(i, j)=y(i)*z(0, j);
-    if(y.jac || z.jac){ NIY }
+    if(y.jac || z.jac){
+      if(y.jac && !z.jac){
+        x.J().resize(y.N, z.N, y.jac->d1);
+        tensorEquation(x.J(), *y.jac, TUP(0,2), z, TUP(3,1), 1);
+      }else NIY;
+    }
     return;
   }
   if(y.nd==1 && z.nd==2) {  //vector^T x matrix -> vector^T
@@ -2970,10 +3035,8 @@ void op_outerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<
 template<class T>
 void op_elemWiseProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<T>& z) {
   CHECK_EQ(y.N, z.N, "");
-  x = z;
-  for(uint i=0; i<x.N; i++) x.elem(i) *= y.elem(i);
-  if(y.jac || z.jac){ NIY }
-  return;
+  x = y;
+  x *= z;
 }
 
 /** @brief index wise (element-wise for vectors and matrices) product (also ordinary matrix or scalar product).:
@@ -2985,13 +3048,11 @@ void op_indexWiseProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Ar
   if(y.N==1) { //scalar x any -> ..
     x=z;
     x*=y.scalar();
-    if(y.jac || z.jac){ NIY }
     return;
   }
   if(y.nd==1 && z.nd==1) {  //vector x vector -> element wise
     x=y;
     x*=z;
-    if(y.jac || z.jac){ NIY }
     return;
   }
   if(y.nd==1 && z.nd==2) {  //vector x matrix -> index-wise
@@ -3020,7 +3081,12 @@ void op_indexWiseProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Ar
       T* xp=&x(i, 0), *xstop=xp+x.d1;
       for(; xp!=xstop; xp++) *xp *= yi;
     }
-    if(y.jac || z.jac){ NIY }
+    if(y.jac || z.jac){
+      if(y.jac && !z.jac){
+        x.J().resize(z.d0, z.d1, y.jac->d1);
+        tensorEquation(x.J(), *y.jac, TUP(0,2), z, TUP(0,1));
+      }else NIY;
+    }
     return;
   }
   if(y.nd==2 && z.nd==1) {  //matrix x vector -> index-wise
@@ -3035,7 +3101,11 @@ void op_indexWiseProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Ar
     x = y;
     T* xp=x.p, *xstop=x.p+x.N, *zp=z.p;
     for(; xp!=xstop; xp++, zp++) *xp *= *zp;
-    if(y.jac || z.jac){ NIY }
+    if(y.jac || z.jac){
+      NIY;
+      //if(!y.jac && z.jac) x.J() = y % (*z.jac);
+      //else if(y.jac && !z.jac) x.J() = z % (*y.jac);
+    }
     return;
   }
   HALT("operator% not implemented for "<<y.dim() <<" %" <<z.dim() <<" [I would like to change convention on the interpretation of operator% - contact Marc!")
@@ -3052,13 +3122,19 @@ void op_crossProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<
     x.p[0]=y.p[1]*z.p[2]-y.p[2]*z.p[1];
     x.p[1]=y.p[2]*z.p[0]-y.p[0]*z.p[2];
     x.p[2]=y.p[0]*z.p[1]-y.p[1]*z.p[0];
-    if(y.jac || z.jac){ NIY }
+    if(y.jac || z.jac){
+      if(!y.jac && z.jac) x.J() = skew(y) * (*z.jac);
+      else if(y.jac && !z.jac) x.J() = -skew(z) * (*y.jac);
+      else x.J() = skew(y.noJ()) * (*z.jac) - skew(z.noJ()) * (*y.jac);
+    }
     return;
   }
   if(y.nd==2 && z.nd==1) { //every COLUMN of y is cross-product'd with z!
     CHECK(y.d0==3 && z.N==3, "cross product only works for 3D vectors!");
     x = skew(-z) * y;
-    if(y.jac || z.jac){ NIY }
+    if(y.jac || z.jac){
+      //above should do autoDiff;
+    }
     return;
   }
   HALT("cross product - not yet implemented for these dimensions");
@@ -3099,6 +3175,7 @@ template<class T>
 T scalarProduct(const rai::Array<T>& g, const rai::Array<T>& v, const rai::Array<T>& w) {
   CHECK(v.N==w.N && g.nd==2 && g.d0==v.N && g.d1==w.N,
         "scalar product on different array dimensions (" <<v.N <<", " <<w.N <<")");
+  CHECK(!v.jac && !w.jac, "you're loosing the jacobians with this method");
   T t(0);
   uint i, j;
   T* gp=g.p, *vp=v.p;
@@ -3785,9 +3862,13 @@ template<class T> uint softMax(const rai::Array<T>& a, arr& soft, double beta) {
 namespace rai {
 //addition
 template<class T> Array<T> operator+(const Array<T>& y, const Array<T>& z) { Array<T> x(y); x+=z; return x; }
+template<class T> Array<T> operator+(T y, const Array<T>& z){                Array<T> x; x.resizeAs(z); x=y; x+=z; return x; }
+template<class T> Array<T> operator+(const Array<T>& y, T z){                Array<T> x(y); x+=z; return x; }
 
 //subtraction
 template<class T> Array<T> operator-(const Array<T>& y, const Array<T>& z) { Array<T> x(y); x-=z; return x; }
+template<class T> Array<T> operator-(T y, const Array<T>& z){                Array<T> x; x.resizeAs(z); x=y; x-=z; return x; }
+template<class T> Array<T> operator-(const Array<T>& y, T z){                Array<T> x(y); x-=z; return x; }
 
 /// transpose
 template<class T> Array<T> operator~(const Array<T>& y) { Array<T> x; op_transpose(x, y); return x; }
@@ -3814,9 +3895,6 @@ template<class T> Array<T> operator/(const Array<T>& y, T z) {             Array
 /// element-wise division
 template<class T> Array<T> operator/(const Array<T>& y, const Array<T>& z) { Array<T> x(y); x/=z; return x; }
 
-/// A^-1 B
-template<class T> Array<T> operator|(const Array<T>& A, const Array<T>& B) { Array<T> x; lapack_mldivide(x, A, B); return x; }
-
 /// contatenation of two arrays
 template<class T> Array<T> operator, (const Array<T>& y, const Array<T>& z) { Array<T> x(y); x.append(z); return x; }
 
@@ -3827,69 +3905,144 @@ template<class T> Array<T>& operator<<(Array<T>& x, const T& y) { x.append(y); r
 template<class T> Array<T>& operator<<(Array<T>& x, const Array<T>& y) { x.append(y); return x; }
 
 
-#define UpdateOperator( op )        \
-  template<class T> Array<T>& operator op (Array<T>& x, const Array<T>& y){ \
+//core for matrix-matrix (elem-wise) update
+#define UpdateOperator_MM( op )        \
     if(isNoArr(x)){ return x; } \
     if(isSparseMatrix(x) && isSparseMatrix(y)){ x.sparse() op y.sparse(); return x; }  \
     if(isRowShifted(x) && isRowShifted(y)){ x.rowShifted() op y.rowShifted(); return x; }  \
     CHECK(!isSpecial(x), "");  \
     CHECK(!isSpecial(y), "");  \
-    CHECK_EQ(x.N, y.N, "binary operator on different array dimensions (" <<x.N <<", " <<y.N <<")"); \
+    CHECK_EQ(x.N, y.N, "update operator on different array dimensions (" <<x.N <<", " <<y.N <<")"); \
     T *xp=x.p, *xstop=xp+x.N;              \
     const T *yp=y.p;              \
-    for(; xp!=xstop; xp++, yp++) *xp op *yp;       \
-    return x;           \
-  }                 \
-  \
-  template<class T> Array<T>& operator op (Array<T>& x, T y ){ \
-    if(isNoArr(x)){ return x; } \
-    if(isSparseMatrix(x)){ x.sparse() op y; return x; }  \
-    if(isRowShifted(x)){ x.rowShifted() op y; return x; }  \
-    CHECK(!isSpecial(x), "");  \
-    T *xp=x.p, *xstop=xp+x.N;              \
-    for(; xp!=xstop; xp++) *xp op y;        \
-    return x;           \
-  } \
-  \
-  template<class T> void operator op (Array<T>&& x, const Array<T>& y){ \
-    if(isNoArr(x)){ return; } \
-    if(isSparseMatrix(x) && isSparseMatrix(y)){ x.sparse() op y.sparse(); return; }  \
-    if(isRowShifted(x) && isRowShifted(y)){ x.rowShifted() op y.rowShifted(); return; }  \
-    CHECK(!isSpecial(x), "");  \
-    CHECK_EQ(x.N, y.N, "binary operator on different array dimensions (" <<x.N <<", " <<y.N <<")"); \
-    T *xp=x.p, *xstop=xp+x.N;              \
-    const T *yp=y.p;              \
-    for(; xp!=xstop; xp++, yp++) *xp op *yp;       \
-  }                 \
-  \
-  template<class T> void operator op (Array<T>&& x, T y ){ \
-    if(isNoArr(x)){ return; } \
-    if(isSparseMatrix(x)){ x.sparse() op y; return; }  \
-    if(isRowShifted(x)){ x.rowShifted() op y; return; }  \
-    CHECK(!isSpecial(x), "");  \
-    T *xp=x.p, *xstop=xp+x.N;              \
-    for(; xp!=xstop; xp++) *xp op y;        \
+    for(; xp!=xstop; xp++, yp++) *xp op *yp;
+
+//core for matrix-scalar update
+#define UpdateOperator_MS( op ) \
+  if(isNoArr(x)){ return x; } \
+  if(isSparseMatrix(x)){ x.sparse() op y; return x; }  \
+  if(isRowShifted(x)){ x.rowShifted() op y; return x; }  \
+  CHECK(!isSpecial(x), "");  \
+  T *xp=x.p, *xstop=xp+x.N;              \
+  for(; xp!=xstop; xp++) *xp op y;
+
+
+template<class T> Array<T>& operator+=(Array<T>& x, const Array<T>& y){
+  UpdateOperator_MM(+=);
+  if(y.jac){
+    if(x.jac) *x.jac += *y.jac;
+    else x.J() = *y.jac;
+  }
+  return x;
+}
+template<class T> Array<T>& operator+=(Array<T>& x, T y){
+  UpdateOperator_MS(+=);
+  return x;
+}
+  template<class T> Array<T>& operator+=(Array<T>&& x, const Array<T>& y){
+    UpdateOperator_MM(+=);
+    if(y.jac){
+      if(x.jac) *x.jac += *y.jac;
+      else x.J() = *y.jac;
+    }
+    return x;
+  }
+  template<class T> Array<T>& operator+=(Array<T>&& x, T y){
+    UpdateOperator_MS(+=);
+    return x;
   }
 
-UpdateOperator(|=)
-UpdateOperator(^=)
-UpdateOperator(&=)
-UpdateOperator(+=)
-UpdateOperator(-=)
-UpdateOperator(*=)
-UpdateOperator(/=)
-UpdateOperator(%=)
-#undef UpdateOperator
+template<class T> Array<T>& operator-=(Array<T>& x, const Array<T>& y){
+  UpdateOperator_MM(-=);
+  if(y.jac){
+    if(x.jac) *x.jac -= *y.jac;
+    else x.J() = -(*y.jac);
+  }
+  return x;
+}
+template<class T> Array<T>& operator-=(Array<T>& x, T y){
+  UpdateOperator_MS(-=);
+  return x;
+}
+  template<class T> Array<T>& operator-=(Array<T>&& x, const Array<T>& y){
+    UpdateOperator_MM(-=);
+    if(y.jac){
+      if(x.jac) *x.jac -= *y.jac;
+      else x.J() = -(*y.jac);
+    }
+    return x;
+  }
+  template<class T> Array<T>& operator-=(Array<T>&& x, T y){
+    UpdateOperator_MS(-=);
+    return x;
+  }
 
-#define BinaryOperator( op, updateOp)         \
-  template<class T> Array<T> operator op(T y, const Array<T>& z){               Array<T> x; x.resizeAs(z); x=y; x updateOp z; return x; } \
-  template<class T> Array<T> operator op(const Array<T>& y, T z){               Array<T> x(y); x updateOp z; return x; }
+template<class T> Array<T>& operator*=(Array<T>& x, const Array<T>& y){
+  if(x.jac || y.jac){
+    CHECK_EQ(x.nd, 1, "");
+    CHECK_EQ(y.nd, 1, "");
+    if(x.jac && !y.jac) *x.jac = y % (*x.jac);
+    else if(!x.jac && y.jac) x.J() = x % (*y.jac);
+    else NIY;
+  }
+  UpdateOperator_MM(*=);
+  return x;
+}
+template<class T> Array<T>& operator*=(Array<T>& x, T y){
+  if(x.jac) *x.jac *= y;
+  UpdateOperator_MS(*=);
+  return x;
+}
+  template<class T> Array<T>& operator*=(Array<T>&& x, const Array<T>& y){
+    if(x.jac || y.jac){
+      CHECK_EQ(x.nd, 1, "");
+      if(x.jac && !y.jac) *x.jac = y.noJ() % (*x.jac);
+      else if(!x.jac && y.jac) x.J() = x.noJ() % (*y.jac);
+      else NIY;
+    }
+    UpdateOperator_MM(*=);
+    return x;
+  }
+  template<class T> Array<T>& operator*=(Array<T>&& x, T y){
+    if(x.jac) *x.jac *= y;
+    UpdateOperator_MS(*=);
+    return x;
+  }
 
-BinaryOperator(+, +=)
-BinaryOperator(-, -=)
-//BinaryOperator(% , *=);
-//BinaryOperator(/ , /=);
-#undef BinaryOperator
+template<class T> Array<T>& operator/=(Array<T>& x, const Array<T>& y){
+  UpdateOperator_MM(/=);
+  if(x.jac || y.jac){
+    NIY;
+  }
+  return x;
+}
+template<class T> Array<T>& operator/=(Array<T>& x, T y){
+  UpdateOperator_MS(/=);
+  if(x.jac) *x.jac /= y;
+  return x;
+}
+  template<class T> Array<T>& operator/=(Array<T>&& x, const Array<T>& y){
+    UpdateOperator_MM(/=);
+    if(x.jac || y.jac){
+      NIY;
+    }
+    return x;
+  }
+  template<class T> Array<T>& operator/=(Array<T>&& x, T y){
+    UpdateOperator_MS(/=);
+    if(x.jac) *x.jac /= y;
+    return x;
+  }
+
+
+
+//UpdateOperator(|=)
+//UpdateOperator(^=)
+//UpdateOperator(&=)
+//UpdateOperator(%=)
+#undef UpdateOperator_MM
+#undef UpdateOperator_MS
+
 
 /// allows a notation such as x <<"[0 1; 2 3]"; to initialize an array x
 //template<class T> Array<T>& operator<<(Array<T>& x, const char* str) { std::istringstream ss(str); ss >>x; return x; }
@@ -3967,10 +4120,7 @@ template<class T> void op_negative(rai::Array<T>& x, const rai::Array<T>& y) {
   x=y;
   T* xp=x.p, *xstop=xp+x.N;
   for(; xp!=xstop; xp++) *xp = - (*xp);
-  if(y.jac){
-    x.jac = make_unique<rai::Array<T>>();
-    op_negative(*x.jac, *y.jac);
-  }
+  if(y.jac) op_negative(x.J(), *y.jac);
 }
 
 //---------- unary functions
@@ -4099,7 +4249,7 @@ template struct rai::Array<bool>;
 //
 
 template<class T>
-void rai::Array<T>::diff_setId() {
+void rai::Array<T>::J_setId() {
   CHECK(!jac, "");
   CHECK(nd==1,"");
   jac = make_unique<arr>();

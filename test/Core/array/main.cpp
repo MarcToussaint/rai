@@ -157,7 +157,6 @@ void TEST(Basics){
   cout <<"\nA:\n" <<A <<endl;
   cout <<"\n(1/A):\n" <<(1/A) <<endl;
   cout <<"\n(1/A)*A:\n" <<(1/A)*A <<endl;
-  cout <<"\n(1/A)*A:\n" <<(A|A) <<endl;
 
   //concatenation
   a = {1.,2,3};
@@ -235,14 +234,40 @@ void TEST(StdVectorCompat) {
 //===========================================================================
 
 void TEST(Autodiff){
-  arr  A(5,3), x(3), y;
+  arr  A(5,3), x(3), a(3);
   rndGauss(A);
   rndGauss(x);
+  rndGauss(a);
 
-  x.diff_setId();
+  x.J_setId();
 
-  y = A*x;
+
+  arr y = A*x;
   cout <<y <<endl <<A <<endl;
+
+
+#define checkOperation(op) \
+  { \
+  VectorFunction f = [&](arr& y, arr& J, const arr& x) -> void { \
+    y = op; \
+    if(!!J) J = y.J_reset(); \
+  }; \
+  checkJacobian(f, x, 1e-1); \
+  }
+
+  checkOperation(A*x);
+  checkOperation(x+a);
+  checkOperation(a+x);
+  checkOperation(x-a);
+  checkOperation(a-x);
+  checkOperation(x%a);
+  checkOperation(a%x);
+  checkOperation(-x);
+  checkOperation(~x);
+  checkOperation(~x*a);
+  checkOperation(~a*x);
+  checkOperation(crossProduct(x,a));
+  checkOperation(crossProduct(a,x));
 }
 
 //===========================================================================
@@ -349,8 +374,8 @@ void TEST(MemoryBound){
   arr A;
   try{
     A.resize(1000,1000,1000);
-  }catch(...){
-    cout <<"caught memory restriction exception..." <<endl;
+  }catch(const std::runtime_error& err){
+    cout <<"caught memory restriction exception (INTENDED)" <<endl;
   }
   A.resize(1000);
   cout <<"total memory allocated = " <<rai::globalMemoryTotal <<endl;
@@ -894,8 +919,7 @@ void TEST(EigenValues){
 int MAIN(int argc, char **argv){
   rai::initCmdLine(argc, argv);
 
-  testAutodiff();
-  return 0;
+  testMemoryBound(); return 0;
 
   testBasics();
   testIterators();
@@ -908,7 +932,7 @@ int MAIN(int argc, char **argv){
   testAutodiff();
   testMatlab();
   testException();
-//  testMemoryBound();
+  testMemoryBound();
   testBinaryIO();
   testExpression();
   testPermutation();

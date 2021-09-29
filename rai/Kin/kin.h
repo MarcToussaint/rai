@@ -40,14 +40,6 @@ struct ConfigurationViewer;
 
 //===========================================================================
 
-struct Value {
-  arr y, J;
-  Value(){}
-  Value(const arr& y, const arr& J) : y(y), J(J) {}
-  void write(ostream& os) const { os <<"y:" <<y <<" J:" <<J; }
-};
-stdOutPipe(Value)
-
 extern rai::Configuration& NoConfiguration;
 
 typedef rai::Array<rai::Dof*> DofL;
@@ -146,6 +138,7 @@ struct Configuration : GLDrawer {
   /// @name active DOFs selection
   void setActiveJoints(const DofL& F);
   void selectJoints(const FrameL& F, bool notThose=false);
+  void selectJoints(const DofL& dofs, bool notThose=false);
   void selectJointsByName(const StringA&, bool notThose=false);
   void selectJointsBySubtrees(const FrameL& roots, bool notThose=false);
   void selectJointsByAtt(const StringA& attNames, bool notThose=false);
@@ -200,6 +193,8 @@ struct Configuration : GLDrawer {
   void jacobian_tau(arr& J, Frame* a) const;
   void jacobian_zero(arr& J, uint n) const;
 
+  arr kinematics_pos(Frame* a, const Vector& rel=NoVector) const { arr y,J; kinematicsPos(y, J, a, rel); if(!!J) y.J()=J; return y; }
+
   void kinematicsZero(arr& y, arr& J, uint n) const;
   void kinematicsPos(arr& y, arr& J, Frame* a, const Vector& rel=NoVector) const;
   void kinematicsVec(arr& y, arr& J, Frame* a, const Vector& vec=NoVector) const;
@@ -216,9 +211,9 @@ struct Configuration : GLDrawer {
 
   /// @name features
   shared_ptr<Feature> feature(FeatureSymbol fs, const StringA& frames= {}) const;
-  void evalFeature(arr& y, arr& J, FeatureSymbol fs, const StringA& frames= {}) const;
-  template<class T> Value eval(const StringA& frames= {}){ return T().eval(getFrames(frames)); }
-  Value eval(FeatureSymbol fs, const StringA& frames= {});
+  arr evalFeature(FeatureSymbol fs, const StringA& frames= {}) const;
+  template<class T> arr eval(const StringA& frames= {}){ return T().eval(getFrames(frames)); }
+  arr eval(FeatureSymbol fs, const StringA& frames= {});
 
   /// @name high level inverse kinematics
   void inverseKinematicsPos(Frame& frame, const arr& ytarget, const Vector& rel_offset=NoVector, int max_iter=3);
@@ -253,7 +248,7 @@ struct Configuration : GLDrawer {
   void stepDynamics(arr& qdot, const arr& u_control, double tau, double dynamicNoise = 0.0, bool gravity = true);
 
   /// @name I/O
-  void write(std::ostream& os) const;
+  void write(std::ostream& os, bool explicitlySorted=false) const;
   void write(Graph& G) const;
   void writeURDF(std::ostream& os, const char* robotName="myrobot") const;
   void writeCollada(const char* filename, const char* format="collada") const;

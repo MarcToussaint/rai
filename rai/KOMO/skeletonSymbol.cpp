@@ -13,6 +13,7 @@ template<> const char* rai::Enum<rai::SkeletonSymbol>::names []= {
   "alignByInt",
   "makeFree", "forceBalance",
   "touchBoxNormalX", "touchBoxNormalY", "touchBoxNormalZ",
+  "stableYPhi",
   "end",
   nullptr
 };

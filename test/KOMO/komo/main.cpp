@@ -15,14 +15,15 @@ void TEST(Easy){
   komo.setModel(C);
   komo.setTiming(1., 100, 5., 2);
   komo.add_qControlObjective({}, 2, 1.);
+  komo.addQuaternionNorms({}, 1., false);
 
   //-- set a time optim objective
 //  komo.addObjective({}, make_shared<TM_Time>(), OT_sos, {1e2}, {}, 1); //smooth time evolution
 //  komo.addObjective({}, make_shared<TM_Time>(), OT_sos, {1e1}, {komo.tau}, 0); //prior on timing
 
-  komo.addObjective({1.}, FS_positionDiff, {"endeff", "target"}, OT_sos, {1e1});
-  komo.addObjective({.98,1.}, FS_qItself, {}, OT_sos, {1e1}, {}, 1);
-  komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1.});
+  komo.addObjective({1.}, FS_positionDiff, {"endeff", "target"}, OT_eq, {1e2});
+  komo.addObjective({1.}, FS_qItself, {}, OT_eq, {1e2}, {}, 1);
+  komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1e0});
 
   komo.reportProblem();
 
@@ -31,7 +32,6 @@ void TEST(Easy){
   cout <<"TIME OPTIM: total=" <<sum(komo.getPath_times()) <<komo.getPath_times() <<endl;
   komo.plotTrajectory();
 //  komo.reportProxies();
-  komo.checkGradients();
 
   komo.view(true, "result");
   while(komo.view_play(true));
@@ -83,51 +83,56 @@ struct MyFeature : Feature {
 
     //penalizing velocity whenever close
     double range=.2;
-    if(-D.y.scalar() > range){
+    if(-D.scalar() > range){
       y = zeros(3);
-      if(!!J) J = zeros(3, V.J.d1);
+      if(!!J) J = zeros(3, V.J().d1);
       return;
     }
 
-    double weight = 1. + D.y.scalar()/range;
+    arr weight = 1. + D/range;
     double normalWeight = 1.;
 
-    arr P = eye(3) + normalWeight*(C.y*~C.y);
-    y = weight * P * V.y;
-    if(!!J){
-      J = weight * P * V.J;
-      J += P * V.y.reshape(3,1) * (1./range)*D.J;
-      J += (weight * 2. * normalWeight * scalarProduct(C.y,V.y)) * C.J;
-    }
+//    arr CJ = C.J_reset();
+//    arr DJ = D.J_reset();
+//    arr VJ = V.J_reset();
+
+//    arr P = eye(3) + normalWeight*(C*~C);
+    y = weight * (V + C*normalWeight*(~C * V));
+    grabJ(y, J);
+//    if(!!J){
+//      J = weight * P * VJ;
+//      J += P * V.reshape(3,1) * (1./range)*DJ;
+//      J += (weight * 2. * normalWeight * scalarProduct(C,V)) * CJ;
+//    }
 
 #if 0
     //penalizing normal velocity
-    double normalVel = scalarProduct(V.y, C.y);
+    double normalVel = scalarProduct(V, C);
     if(normalVel>0.){
       y = 0.;
-      if(!!J) J = zeros(1, V.J.d1);
+      if(!!J) J = zeros(1, V.J().d1);
       return;
     }
 
     double scale = 3.;
-    double weight = ::exp(scale * D.y.scalar());
+    double weight = ::exp(scale * D.scalar());
     weight = 1.; scale=0.;
 
     y.resize(1);
     y(0) = weight * normalVel;
     if(!!J){
-      J = weight * ( ~V.y * C.J + ~C.y * V.J );
-      J += (normalVel * weight * scale) * D.J;
+      J = weight * ( ~V * C.J() + ~C * V.J() );
+      J += (normalVel * weight * scale) * D.J();
     }
 
 #if 0
     normalVel += 1.;
 
-    y = D.y / normalVel;
+    y = D / normalVel;
 
     if(!!J){
-      J = D.J / normalVel;
-      J += (-D.y.scalar() / (normalVel*normalVel)) * ( ~V.y * C.J + ~C.y * V.J );
+      J = D.J() / normalVel;
+      J += (-D.scalar() / (normalVel*normalVel)) * ( ~V * C.J() + ~C * V.J() );
     }
 #endif
 #endif
@@ -158,12 +163,12 @@ void TEST(Thin){
 
   komo.reportProblem();
 
-  komo.animateOptimization=1;
+  komo.opt.animateOptimization=1;
   //  komo.setSpline(5);
   komo.optimize(1e-2);
   komo.plotTrajectory();
 //  komo.reportProxies();
-//  komo.checkGradients();
+  komo.checkGradients();
 
   komo.view(true, "result");
   while(komo.view_play(true));

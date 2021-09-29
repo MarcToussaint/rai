@@ -99,7 +99,7 @@ void F_qItself::phi(arr& q, arr& J, const rai::Configuration& C) {
 
 void F_qItself::phi2(arr& q, arr& J, const FrameL& F) {
   if(order!=0){
-    phi_finiteDifferenceReduce(q, J, F);
+    Feature::phi2(q, J, F);
     return;
   }
   uint n=dim_phi2(F);
@@ -194,22 +194,24 @@ uint F_qItself::dim_phi2(const FrameL& F){
 
 void F_qZeroVel::phi2(arr& y, arr& J, const FrameL& F){
   CHECK_EQ(order, 1, "");
-  F_qItself()
+  y = F_qItself()
       .setOrder(order)
-      .eval(y, J, F);
+      .eval(F);
+  //J = y.J();
 #if 1
   rai::Frame *f = F.last();
   if(f->joint->type==rai::JT_transXYPhi) {
     arr s = ARR(10., 10., 1.);
     y = s%y;
-    if(!!J) J = s%J;
+    //if(!!J) J = s%J;
   }
   if(f->joint->type==rai::JT_free) {
     arr s = ARR(10., 10., 10., 1., 1., 1., 1.);
     y = s%y;
-    if(!!J) J = s%J;
+    //if(!!J) J = s%J;
   }
 #endif
+  if(!!J) J = y.J_reset();
 }
 
 uint F_qZeroVel::dim_phi2(const FrameL& F){

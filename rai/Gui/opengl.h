@@ -192,7 +192,7 @@ struct OpenGL {
   /// @name the core draw routines (actually only for internal use)
   void Draw(int w, int h, rai::Camera* cam=nullptr, bool callerHasAlreadyLocked=false);
   void Select(bool callerHasAlreadyLocked=false);
-  void renderInBack(int w=-1, int h=-1);
+  void renderInBack(int w=-1, int h=-1, bool fromWithinCallback=false);
 
   /// @name showing, updating, and watching
   int update(const char* text=nullptr, bool nonThreaded=false);

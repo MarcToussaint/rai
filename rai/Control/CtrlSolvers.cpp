@@ -432,7 +432,7 @@ arr TaskControlMethods::inverseKinematics(const rai::Configuration& pathConfig, 
   for(auto& t: tasks) {
     if(t->active) {
 //      if(t->ref->y_ref.N) {
-      t->feat->eval(t_y, t_J, t->feat->getFrames(pathConfig));
+      NIY; //t->feat->eval(t_y, t_J, t->feat->getFrames(pathConfig));
       y.append(-t_y);
       J.append(t_J);
 //      }

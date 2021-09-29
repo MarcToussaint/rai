@@ -1,0 +1,13 @@
+{ [touch, r_gripper, block1], [stable_, r_gripper, block1] }
+{ [above, block1, block2], [stableOn_, block2, block1] }
+{ [touch, r_gripper, block2], [stable_, r_gripper, block2] }
+{ [above, block2, block3], [stableOn_, block3, block2] }
+{ [touch, r_gripper, block3], [stable_, r_gripper, block3] }
+{ [above, block3, block4], [stableOn_, block4, block3] }
+{ [touch, r_gripper, block4], [stable_, r_gripper, block4] }
+{ [above, block4, block5], [stableOn_, block5, block4] }
+
+{ [touch, r_gripper, block5], [stable_, r_gripper, block5] }
+{ [above, block5, box1], [stableOn_, box1, block5] }
+
+{ [end] }

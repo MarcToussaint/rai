@@ -22,7 +22,7 @@ void TEST(Grasp){
   komo.setModel(C);
   komo.setTiming(2.5, 10., 5.);
   komo.add_qControlObjective({}, 2, 1.);
-  komo.addSquaredQuaternionNorms();
+  komo.addQuaternionNorms();
 
 #if 0
   komo.setGrasp(1., "endeff", "stick");
@@ -68,7 +68,7 @@ void testPickAndPlace(bool keyframesOnly){
     komo.setTiming(3., 1, 5., 1);
     komo.add_qControlObjective({}, 1, 1e-1);
   }
-  komo.addSquaredQuaternionNorms();
+  komo.addQuaternionNorms();
 
   //grasp
   komo.addSwitch_stable(1., 2., "table", "gripper", "box");
@@ -93,7 +93,7 @@ void testPickAndPlace(bool keyframesOnly){
     komo.addObjective({1.9,2.1}, FS_position, {"gripper"}, OT_eq, {}, {0.,0.,.1}, 2);
   }
 
-  komo.verbose = 4;
+  komo.opt.verbose = 4;
   komo.optimize();
 //  komo.checkGradients();
 

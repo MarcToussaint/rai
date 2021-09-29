@@ -40,7 +40,7 @@ struct RowShifted;
 // OLD, TODO: hide -> array.cpp
 extern bool useLapack;
 extern const bool lapackSupported;
-extern uint64_t globalMemoryTotal, globalMemoryBound;
+extern int64_t globalMemoryTotal, globalMemoryBound;
 extern bool globalMemoryStrict;
 
 // default write formatting
@@ -179,7 +179,7 @@ template<class T> struct Array : /*std::vector<T>,*/ Serializable {
   void swap(Array<T>& a);      //the two arrays swap their contents!
   void setGrid(uint dim, T lo, T hi, uint steps);
 
-  void diff_setId();
+  void J_setId();
 
   /// @name access by reference (direct memory access)
   Array<T> ref() const; //a reference on this
@@ -299,6 +299,11 @@ template<class T> struct Array : /*std::vector<T>,*/ Serializable {
   bool isSparse() const;
   void setNoArr();
 
+  /// @name attached Jacobian
+  Array<T>& J();
+  Array<T> noJ() const;
+  Array<T> J_reset();
+
   /// @name I/O
   void write(std::ostream& os=std::cout, const char* ELEMSEP=nullptr, const char* LINESEP=nullptr, const char* BRACKETS=nullptr, bool dimTag=false, bool binary=false) const;
   void read(std::istream& is);
@@ -382,7 +387,6 @@ template<class T> Array<T> operator*(T y, const Array<T>& z);
 template<class T> Array<T> operator/(int mustBeOne, const Array<T>& z_tobeinverted);
 template<class T> Array<T> operator/(const Array<T>& y, T z);
 template<class T> Array<T> operator/(const Array<T>& y, const Array<T>& z); //element-wise devision
-template<class T> Array<T> operator|(const Array<T>& A, const Array<T>& B); //A^-1 B
 template<class T> Array<T> operator, (const Array<T>& y, const Array<T>& z); //concat
 
 template<class T> Array<T>& operator<<(Array<T>& x, const T& y); //append
@@ -407,16 +411,16 @@ template <class T> std::ostream& operator<<(std::ostream& os, const ArrayModRaw<
 #define UpdateOperator( op )        \
   template<class T> Array<T>& operator op (Array<T>& x, const Array<T>& y); \
   template<class T> Array<T>& operator op (Array<T>& x, T y ); \
-  template<class T> void operator op (Array<T>&& x, const Array<T>& y); \
-  template<class T> void operator op (Array<T>&& x, T y );
-UpdateOperator(|=)
-UpdateOperator(^=)
-UpdateOperator(&=)
+  template<class T> Array<T>& operator op (Array<T>&& x, const Array<T>& y); \
+  template<class T> Array<T>& operator op (Array<T>&& x, T y );
+//UpdateOperator(|=)
+//UpdateOperator(^=)
+//UpdateOperator(&=)
+//UpdateOperator(%=)
 UpdateOperator(+=)
 UpdateOperator(-=)
 UpdateOperator(*=)
 UpdateOperator(/=)
-UpdateOperator(%=)
 #undef UpdateOperator
 
 //element-wise operators
@@ -525,6 +529,8 @@ extern StringA& NoStringA; //this is a pointer to nullptr!!!! I use it for optio
 //};
 
 typedef std::function<double(arr& g, arr& H, const arr& x)> ScalarFunction;
+
+typedef std::function<arr(const arr& x)> fct;
 
 /// a vector function \f$f:~x\mapsto y\in\mathbb{R}^d\f$ with optional Jacobian
 //struct VectorFunction {
@@ -635,7 +641,8 @@ inline uintA randperm(uint n) {  uintA z;  z.setRandomPerm(n);  return z; }
 inline arr linspace(double base, double limit, uint n) {  arr z;  z.setGrid(1, base, limit, n);  return z;  }
 arr logspace(double base, double limit, uint n);
 
-void normalizeWithJac(arr& y, arr& J);
+void normalizeWithJac(arr& y, arr& J, double eps=0.);
+void op_normalize(arr& y, double eps=0.);
 
 //===========================================================================
 /// @}

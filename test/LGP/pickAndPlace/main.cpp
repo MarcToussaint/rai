@@ -111,7 +111,8 @@ int MAIN(int argc,char **argv){
 
   solve();
 
-  playIt();
+  if(rai::getInteractivity())
+    playIt();
 
   testBounds();
 

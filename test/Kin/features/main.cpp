@@ -96,8 +96,7 @@ void testFeature() {
       succ &= checkJacobian(f->vf2(f->getFrames(pathConfig)), x, 1e-5);
     }
 
-    arr y;
-    F.first()->eval(y, NoArr, F.first()->getFrames(pathConfig));
+    arr y = F.first()->eval(F.first()->getFrames(pathConfig));
 
     if(!succ) pathConfig.watch(true);
   }

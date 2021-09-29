@@ -58,7 +58,7 @@ const bool lapackSupported=true;
 #else
 const bool lapackSupported=false;
 #endif
-uint64_t globalMemoryTotal=0, globalMemoryBound=1ull<<30; //this is 1GB
+int64_t globalMemoryTotal=0, globalMemoryBound=1ull<<32; //this is 1GB
 bool globalMemoryStrict=false;
 const char* arrayElemsep=", ";
 const char* arrayLinesep=",\n ";
@@ -178,6 +178,28 @@ template<> const RowShifted& Array<double>::rowShifted() const{
   return *r;
 }
 
+/// attach jacobian
+template<> Array<double>& Array<double>::J() {
+  if(!jac){
+    jac = make_unique<rai::Array<double>>();
+  }
+  return *jac;
+}
+template<> Array<double> Array<double>::noJ() const {
+  Array<double> x;
+  x.referTo(*this);
+  return x;
+}
+template<> Array<double> Array<double>::J_reset() {
+  CHECK(jac, "");
+  arr J;
+  if(jac){
+    J = *jac;
+    jac.reset();
+  }else J.setNoArr();
+  return J;
+}
+
 #define NONSENSE( type ) \
   template<> SparseMatrix& Array<type>::sparse() { NIY; return *(new SparseMatrix(NoArr)); } \
   template<> const SparseMatrix& Array<type>::sparse() const{ NIY; return *(new SparseMatrix(NoArr)); } \
@@ -288,16 +310,38 @@ namespace rai {
 extern bool useLapack;
 }
 
-void normalizeWithJac(arr& y, arr& J) {
+void normalizeWithJac(arr& y, arr& J, double eps) {
   double l = length(y);
-  if(l<1e-10) {
-    LOG(-1) <<"can't normalize vector of length " <<l;
-  } else {
-    y /= l;
-    if(!!J && J.N) {
-      J -= (y^y)*J;
-      J /= l;
+  if(!eps){
+    if(l<1e-10) {
+      LOG(-1) <<"can't normalize vector of length " <<l;
+    } else {
+      y /= l;
+      if(!!J && J.N) {
+        J -= (y^y)*J;
+        J /= l;
+      }
     }
+  }else{
+    y /= (eps+l);
+    if(!!J && J.N) {
+      J -= ((eps+l)/l * (y^y)) * J;
+      J /= (eps+l);
+    }
+  }
+}
+void op_normalize(arr& y, double eps) {
+  double l = length(y);
+  if(!eps){
+    if(l<1e-10) {
+      LOG(-1) <<"can't normalize vector of length " <<l;
+    } else {
+      y /= l;
+      if(y.jac) y.J() -= (y.noJ()^y.noJ())*y.J();
+    }
+  }else{
+    y /= (eps+l);
+    if(y.jac) y.J() -= ((eps+l)/l * (y.noJ()^y.noJ())) * y.J();
   }
 }
 

@@ -31,15 +31,21 @@ arr getAccelerations_centralDifference(const arr& q, double tau) {
   return a;
 }
 
-double getNaturalDuration(const arr& q, double maxVel, double maxAcc) {
+double getMinDuration(const arr& q, double maxVel, double maxAcc) {
   arr v = getVelocities_centralDifference(q, 1.);
-  arr a = getVelocities_centralDifference(q, 1.);
+  arr a = getAccelerations_centralDifference(q, 1.);
 
-  double vscale = maxVel / absMax(v);
-  double ascale = sqrt(maxAcc / absMax(a));
+  CHECK(maxVel>0. || maxAcc>0., "");
 
-  double duration = q.d0 / rai::MAX(vscale, ascale);
-  return duration;
+  double vscale = maxVel>0. ? maxVel / absMax(v) : 1e10;
+  double ascale = maxAcc>0. ? sqrt(maxAcc / absMax(a)) : 1e10;
+  double tau = 1./ rai::MIN(vscale, ascale);
+
+  v = getVelocities_centralDifference(q, tau);
+  a = getAccelerations_centralDifference(q, tau);
+  cout <<absMax(v) <<' ' <<absMax(a) <<endl;
+
+  return q.d0*tau;
 }
 
 arr getSineProfile(const arr& q0, const arr& qT, uint T) {
@@ -109,7 +115,7 @@ rai::String validatePath(const rai::Configuration& _C, const arr& q_now, const S
 //  }
 //}
 
-std::pair<arr, arr> getStartGoalPath(const rai::Configuration& C, const arr& target_q, const StringA& target_joints, const char* endeff, double up, double down) {
+std::pair<arr, arr> getStartGoalPath_obsolete(const rai::Configuration& C, const arr& target_q, const StringA& target_joints, const char* endeff, double up, double down) {
   KOMO komo;
   komo.setModel(C, true);
   komo.setTiming(1., 20, 3.);
@@ -129,7 +135,7 @@ std::pair<arr, arr> getStartGoalPath(const rai::Configuration& C, const arr& tar
   komo.setSlow(0., 0., 1e2, true);
   komo.setSlow(1., 1., 1e2, true);
 
-  komo.verbose=1;
+  komo.opt.verbose=1;
   komo.optimize();
 
   arr path = komo.getPath_qOrg();
@@ -143,6 +149,115 @@ std::pair<arr, arr> getStartGoalPath(const rai::Configuration& C, const arr& tar
   }
   return {path, times};
 }
+
+//===========================================================================
+
+arr getStartGoalPath(rai::Configuration& C, const arr& qTarget, const arr& qHome, const rai::Array<Avoid>& avoids, StringA endeffectors, bool endeffApproach, bool endeffRetract) {
+
+  arr q0 = C.getJointState();
+
+  //set endeff target helper frames
+  if(endeffectors.N){
+    C.setJointState(qTarget);
+    for(rai::String endeff:endeffectors){
+      rai::Frame *f = C[STRING(endeff<<"_target")];
+      if(!f){
+        f = C.addFrame(STRING(endeff<<"_target"));
+        f->setShape(rai::ST_marker, {.5})
+            .setColor({1.,1.,0,.5});
+      }
+      f->set_X() = C[endeff]->ensure_X();
+    }
+    C.setJointState(q0);
+  }
+
+  KOMO komo;
+  komo.opt.verbose=0;
+  komo.setModel(C, true);
+  komo.setTiming(1., 32, 5., 2);
+  komo.add_qControlObjective({}, 2, 1.);
+
+  // constrain target - either hard endeff target (and soft q), or hard qTarget
+  if(endeffectors.N){
+    for(rai::String endeff:endeffectors){
+      komo.addObjective({1.}, FS_poseDiff, {endeff, STRING(endeff<<"_target")}, OT_eq, {1e0}); //uses endeff target helper frames
+    }
+    komo.addObjective({1.}, FS_qItself, {}, OT_sos, {1e0}, qTarget);
+  }else{
+    komo.addObjective({1.}, FS_qItself, {}, OT_eq, {1e0}, qTarget);
+  }
+
+  // final still
+  komo.addObjective({1.}, FS_qItself, {}, OT_eq, {1e0}, {}, 1);
+
+  // homing
+  if(qHome.N) komo.addObjective({.4,.6}, FS_qItself, {}, OT_sos, {.1}, qHome);
+
+  // generic collisions
+  komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1e1});
+
+  // explicit collision avoidances
+  for(const Avoid& a:avoids){
+    komo.addObjective(a.times, FS_distance, a.frames, OT_ineq, {1e1}, {-a.dist});
+  }
+
+  // retract: only longitudial velocity, only about-z rotation
+  if(endeffRetract){
+    for(rai::String endeff:endeffectors){
+      arr ori = ~C[endeff]->ensure_X().rot.getArr();
+      arr yz = ori({1,2});
+      komo.addObjective({0.,.2}, FS_position, {endeff}, OT_eq, ori[0].reshape(1,-1)*1e2, {}, 1);
+      komo.addObjective({0.,.2}, FS_angularVel, {endeff}, OT_eq, yz*1e1, {}, 1);
+    }
+  }
+
+  // approach: only longitudial velocity, only about-z rotation
+  if(endeffApproach){
+    for(rai::String endeff:endeffectors){
+      arr ori = ~C[STRING(endeff<<"_target")]->get_X().rot.getArr();
+      arr yz = ori({1,2});
+      komo.addObjective({.8,1.}, FS_position, {endeff}, OT_eq, ori[0].reshape(1,-1)*1e2, {}, 1);
+      komo.addObjective({.8,1.}, FS_angularVel, {endeff}, OT_eq, yz*1e1, {}, 1);
+    }
+  }
+
+  //-- run several times with random initialization
+  bool feasible=false;
+  uint trials=3;
+  for(uint trial=0;trial<trials;trial++){
+    //initialize with constant q0 or qTarget
+    komo.reset();
+    if(trial%2) komo.initWithConstant(qTarget);
+    else komo.initWithConstant(q0);
+
+    //optimize
+    komo.optimize(.01*trial, OptOptions().set_stopTolerance(1e-3)); //trial=0 -> no noise!
+
+    //is feasible?
+    feasible=komo.sos<50. && komo.ineq<.1 && komo.eq<.1;
+
+    //if not feasible -> add explicit collision pairs (from proxies presently in komo.pathConfig)
+    if(!feasible){
+//      cout <<komo.getReport(false);
+      //komo.pathConfig.reportProxies();
+      StringA collisionPairs = komo.getCollisionPairs(.01);
+      if(collisionPairs.N){
+        komo.addObjective({}, FS_distance, collisionPairs, OT_ineq, {1e2}, {-.001});
+      }
+    }
+
+    cout <<"  path trial " <<trial <<(feasible?" good":" FAIL") <<" -- time:" <<komo.timeTotal <<"\t sos:" <<komo.sos <<"\t ineq:" <<komo.ineq <<"\t eq:" <<komo.eq <<endl;
+    if(feasible) break;
+  }
+
+  if(!feasible) return {};
+
+  arr path = komo.getPath_qOrg();
+
+  return path;
+}
+
+//===========================================================================
 
 void mirrorDuplicate(std::pair<arr, arr>& path) {
   arr& q = path.first;
@@ -181,6 +296,7 @@ rai::Spline getSpline(const arr& q, double duration, uint degree) {
   return S;
 }
 
+#if 0 //deprecated
 bool checkCollisionsAndLimits(rai::Configuration& C, const FrameL& collisionPairs, const arr& limits, bool solveForFeasible, int verbose){
   arr B;
   //-- check for limits
@@ -204,9 +320,9 @@ bool checkCollisionsAndLimits(rai::Configuration& C, const FrameL& collisionPair
     CHECK_EQ(&collisionPairs.last()->C, &C, "");
     auto coll = F_PairCollision().eval(collisionPairs);
     bool doesCollide=false;
-    for(uint i=0;i<coll.y.N;i++){
-      if(coll.y.elem(i)>0.){
-        LOG(-1) <<"in collision: " <<collisionPairs(i,0)->name <<'-' <<collisionPairs(i,1)->name <<' ' <<coll.y.elem(i);
+    for(uint i=0;i<coll.N;i++){
+      if(coll.elem(i)>0.){
+        LOG(-1) <<"in collision: " <<collisionPairs(i,0)->name <<'-' <<collisionPairs(i,1)->name <<' ' <<coll.elem(i);
         doesCollide=true;
       }
     }
@@ -216,11 +332,11 @@ bool checkCollisionsAndLimits(rai::Configuration& C, const FrameL& collisionPair
         komo.setModel(C);
         komo.setTiming(1., 1, 1., 1);
         komo.add_qControlObjective({}, 1, 1e-1);
-        komo.addSquaredQuaternionNorms();
+        komo.addQuaternionNorms();
 
         komo.addObjective({}, FS_distance, framesToNames(collisionPairs), OT_ineq, {1e2}, {-.001});
 
-        komo.verbose=0;
+        komo.opt.verbose=0;
         komo.optimize(0., OptOptions().set_verbose(0).set_stopTolerance(1e-3));
 
         if(komo.ineq>1e-1){
@@ -244,6 +360,7 @@ bool checkCollisionsAndLimits(rai::Configuration& C, const FrameL& collisionPair
   }
   return true;
 }
+#endif
 
 bool PoseTool::checkLimits(const arr& limits, bool solve, bool assert){
   //get bounds
@@ -275,9 +392,9 @@ bool PoseTool::checkCollisions(const FrameL& collisionPairs, bool solve, bool as
     //use explicitly given collision pairs
     CHECK_EQ(&collisionPairs.last()->C, &C, "");
     auto coll = F_PairCollision().eval(collisionPairs);
-    for(uint i=0;i<coll.y.N;i++){
-      if(coll.y.elem(i)>0.){
-        if(verbose>1) LOG(-1) <<"in collision: " <<collisionPairs(i,0)->name <<'-' <<collisionPairs(i,1)->name <<' ' <<coll.y.elem(i);
+    for(uint i=0;i<coll.N;i++){
+      if(coll.elem(i)>0.){
+        if(verbose>1) LOG(-1) <<"in collision: " <<collisionPairs(i,0)->name <<'-' <<collisionPairs(i,1)->name <<' ' <<coll.elem(i);
         good=false;
       }
     }
@@ -306,7 +423,7 @@ bool PoseTool::checkCollisions(const FrameL& collisionPairs, bool solve, bool as
   komo.setModel(C);
   komo.setTiming(1., 1, 1., 1);
   komo.add_qControlObjective({}, 1, 1e-1);
-  komo.addSquaredQuaternionNorms();
+  komo.addQuaternionNorms();
 
   if(collisionPairs.N){
     komo.addObjective({}, FS_distance, framesToNames(collisionPairs), OT_ineq, {1e2}, {-.001});
@@ -314,7 +431,7 @@ bool PoseTool::checkCollisions(const FrameL& collisionPairs, bool solve, bool as
     komo.addObjective({}, FS_accumulatedCollisions, {}, OT_ineq, {1e2}, {-.001});
   }
 
-  komo.verbose=0;
+  komo.opt.verbose=0;
   komo.optimize(0., OptOptions().set_verbose(0).set_stopTolerance(1e-3));
 
   if(komo.ineq>1e-1){

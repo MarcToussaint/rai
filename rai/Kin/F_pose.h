@@ -18,7 +18,7 @@ struct F_Position : Feature {
 };
 
 struct F_PositionDiff : Feature {
-  virtual void phi2(arr& y, arr& J, const FrameL& F);
+  virtual arr phi(const FrameL& F);
   virtual uint dim_phi2(const FrameL& F) { return 3; }
 };
 
