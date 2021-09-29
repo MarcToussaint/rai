@@ -121,21 +121,21 @@ struct F_fex_POA_PositionRel : Feature {
 struct F_fex_POAzeroRelVel : Feature {
   bool normalOnly=false;
   F_fex_POAzeroRelVel(bool _normalOnly=false) : normalOnly(_normalOnly) { order=1; }
-  void phi2(arr& y, arr& J, const FrameL& F);
+  arr phi(const FrameL& F);
   uint dim_phi2(const FrameL& F) { if(normalOnly) return 1; return 3; }
 };
 
 struct F_fex_ElasticVel : Feature {
   double elasticity, stickiness;
   F_fex_ElasticVel(double _elasticity, double _stickiness) : elasticity(_elasticity), stickiness(_stickiness) { order=1; }
-  void phi2(arr& y, arr& J, const FrameL& F);
+  arr phi(const FrameL& F);
   uint dim_phi2(const FrameL& F) { return 4; }
 };
 
 struct F_fex_NormalVelIsComplementary : Feature {
   double elasticity, stickiness;
   F_fex_NormalVelIsComplementary(double _elasticity, double _stickiness) : elasticity(_elasticity), stickiness(_stickiness) { order=1; }
-  void phi2(arr& y, arr& J, const FrameL& F);
+  arr phi(const FrameL& F);
   uint dim_phi2(const FrameL& F) { return 1; }
 };
 

@@ -83,7 +83,7 @@ void POA_rel_vel2(arr& y, arr& J, const FrameL& F, rai::ForceExchange* ex, bool 
 }
 
 //3-dim feature: the difference in POA velocities (V)
-void POA_rel_vel(arr& y, arr& J, const FrameL& F, rai::ForceExchange* ex, bool after_or_before) {
+arr POA_rel_vel(const FrameL& F, rai::ForceExchange* ex, bool after_or_before) {
   CHECK_EQ(F.d0, 2, "");
   CHECK_EQ(F.d1, 2, "");
   if(after_or_before){
@@ -109,16 +109,16 @@ void POA_rel_vel(arr& y, arr& J, const FrameL& F, rai::ForceExchange* ex, bool a
   w2 = F_AngVel().eval({{2,1}, {F(0,1), F(1,1)}});
 
   arr vc1 = v1 - crossProduct(w1, cp - p1);
-  arr Jvc1 = v1.J() - skew(w1) * (cpJ - p1.J()) + skew(cp-p1) * w1.J();
+//  arr Jvc1 = v1.J() - skew(w1) * (cpJ - p1.J()) + skew(cp-p1) * w1.J();
   arr vc2 = v2 - crossProduct(w2, cp - p2);
-  arr Jvc2 = v2.J() - skew(w2) * (cpJ - p2.J()) + skew(cp-p2) * w2.J();
+//  arr Jvc2 = v2.J() - skew(w2) * (cpJ - p2.J()) + skew(cp-p2) * w2.J();
 
-  y = vc1 - vc2;
-  if(!!J) J = Jvc1 - Jvc2;
+  arr y = vc1 - vc2;
+  return y;
 }
 
 //3-dim feature: the POA velocities (V)
-void POA_vel(arr& y, arr& J, const FrameL& F, rai::ForceExchange* ex, bool b_or_a) {
+arr POA_vel(const FrameL& F, rai::ForceExchange* ex, bool b_or_a) {
   CHECK_GE(F.d0, 2, "");
   CHECK_GE(F.d1, 2, "");
   CHECK_EQ(F(1,0), &ex->a, "");
@@ -136,8 +136,8 @@ void POA_vel(arr& y, arr& J, const FrameL& F, rai::ForceExchange* ex, bool b_or_
   arr v = F_LinVel() .eval(ff);
   arr w = F_AngVel() .eval(ff);
 
-  y = v - crossProduct(w, poa - p);
-  grabJ(y, J);
+  arr y = v - crossProduct(w, poa - p);
+  return y;
 //  if(!!J){
 //    arr Jtmp = v.J() - skew(w) * (Jpoa - p.J()) + skew(poa-p) * w.J();
 //    CHECK_ZERO(maxDiff(J, Jtmp), 1e-10, "");
@@ -722,27 +722,27 @@ void F_fex_POA_PositionRel::phi2(arr& y, arr& J, const FrameL& F) {
   }
 }
 
-void F_fex_POAzeroRelVel::phi2(arr& y, arr& J, const FrameL& F) {
+arr F_fex_POAzeroRelVel::phi(const FrameL& F) {
   CHECK_EQ(order, 1, "");
   rai::ForceExchange* ex = getContact(F(1,0), F(1,1));
-#if 0
-  POA_rel_vel(y, J, F, ex, false);
+#if 1
+  arr y = POA_rel_vel(F, ex, false);
+  return y;
 #else
-  arr v1, Jv1, v2, Jv2;
-  POA_vel(v1, Jv1, F, ex, false);
-  POA_vel(v2, Jv2, F, ex, true);
-  y = v1 - v2;
-  if(!!J) J = Jv1 - Jv2;
+  arr v1 = POA_vel(F, ex, false);
+  arr v2 = POA_vel(F, ex, true);
+  arr y = v1 - v2;
   if(normalOnly) {
     arr normal = F_PairCollision(F_PairCollision::_normal, true)
                    .eval(F[-1]);
-    if(!!J) J = ~normal*J + ~y*normal.J();
+//    if(!!J) J = ~normal*J + ~y*normal.J();
     y = ~normal * y;
   }
+  return y;
 #endif
 }
 
-void F_fex_ElasticVel::phi2(arr& y, arr& J, const FrameL& F) {
+arr F_fex_ElasticVel::phi(const FrameL& F) {
   CHECK_EQ(order, 2, "");
   CHECK_EQ(F.d0, 3, "");
   CHECK_EQ(F.d1, 2, "");
@@ -750,55 +750,55 @@ void F_fex_ElasticVel::phi2(arr& y, arr& J, const FrameL& F) {
   rai::Frame *f2 = F(1,1);
 
   rai::ForceExchange* ex = getContact(f1, f2);
-  arr v0, Jv0, v1, Jv1;
-  POA_rel_vel(v0, Jv0, F({0,1}), ex, false);
-  POA_rel_vel(v1, Jv1, F({1,2}), ex, true);
+  arr v0 = POA_rel_vel(F({0,1}), ex, false);
+  arr v1 = POA_rel_vel(F({1,2}), ex, true);
 
   //-- from the geometry we need normal
   arr normal = F_PairCollision (F_PairCollision::_normal, false)
                  .eval(F[-2]);
 
-  arr y1, y2, J1, J2;
-  f1->C.kinematicsZero(y1, J1, 3);
+  arr y1, y2;
+//  f1->C.kinematicsZero(y1, J1, 3);
   //tangential vel
   if(stickiness==1.) {
-    y1 = v1 - normal*scalarProduct(normal, v1);
-    if(!!J) J1 = Jv1 - (normal*~normal*Jv1 + normal*~v1*normal.J() + scalarProduct(normal, v1)*normal.J());
+    y1 = v1 - normal*(~normal * v1);
+//    if(!!J) J1 = Jv1 - (normal*~normal*Jv1 + normal*~v1*normal.J() + scalarProduct(normal, v1)*normal.J());
   } else if(stickiness>0.) {
     CHECK_LE(stickiness, 1., "");
     double alpha=1.-stickiness;
-    y1 = (v1-alpha*v0) - normal*scalarProduct(normal, v1-alpha*v0);
-    if(!!J) J1 = (Jv1-alpha*Jv0) - (normal*~normal*(Jv1-alpha*Jv0) + normal*~(v1-alpha*v0)*normal.J() + scalarProduct(normal, (v1-alpha*v0))*normal.J());
+    y1 = (v1-alpha*v0) - normal*(~normal * (v1-alpha*v0));
+//    if(!!J) J1 = (Jv1-alpha*Jv0) - (normal*~normal*(Jv1-alpha*Jv0) + normal*~(v1-alpha*v0)*normal.J() + scalarProduct(normal, (v1-alpha*v0))*normal.J());
   }
 
   //normal vel
   if(elasticity>0.) {
-    y2.resize(1) = scalarProduct(normal, v1 + elasticity*v0);
-    if(!!J) J2 = ~normal*(Jv1+elasticity*Jv0) + ~(v1+elasticity*v0)*normal.J();
+    y2 = ~normal * (v1 + elasticity*v0);
+//    if(!!J) J2 = ~normal*(Jv1+elasticity*Jv0) + ~(v1+elasticity*v0)*normal.J();
   } else if(elasticity==0.) {
-    y2.resize(1) = scalarProduct(normal, v1);
-    if(!!J) J2 = ~normal*(Jv1) + ~(v1)*normal.J();
+    y2 = ~normal * v1;
+//    if(!!J) J2 = ~normal*(Jv1) + ~(v1)*normal.J();
   }
 
+  arr y;
   y.setBlockVector(y1, y2);
-  J.setBlockMatrix(J1, J2);
+  return y;
+//  J.setBlockMatrix(J1, J2);
 }
 
-void F_fex_NormalVelIsComplementary::phi2(arr& y, arr& J, const FrameL& F) {
+arr F_fex_NormalVelIsComplementary::phi(const FrameL& F) {
   CHECK_EQ(F.d0, 2, "");
   rai::ForceExchange* ex = getContact(F(0,0), F(0,1));
 
   //-- get the pre and post V:
-  arr /*v0, Jv0, */v1, Jv1;
 //  POA_rel_vel(v0, Jv0, Ktuple, con, false);
-  POA_rel_vel(v1, Jv1, F, ex, true);
+  arr v1 = POA_rel_vel(F, ex, true);
 
   //-- get the force
   arr force, Jforce;
   ex->kinForce(force, Jforce);
+  force.J() = Jforce;
 
-  y.resize(1);
-  y(0) = scalarProduct(force, v1);
-  if(!!J) J = ~force * Jv1 + ~v1 * Jforce;
+  arr y = ~force * v1;
+  return y;
 }
 

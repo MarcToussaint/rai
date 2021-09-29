@@ -411,13 +411,12 @@ void KOMO::addContact_stick(double startTime, double endTime, const char* from, 
 #endif
   addObjective({startTime, endTime}, FS_pairCollision_negScalar, {from, to}, OT_eq, {1e1});
   addObjective({startTime, endTime}, make_shared<F_fex_ForceIsPositive>(), {from, to}, OT_ineq, {1e1});
-  addObjective({startTime, endTime}, make_shared<F_fex_POAzeroRelVel>(), {from, to}, OT_eq, {1e0}, NoArr, 1, +1, +1);
+  addObjective({startTime, endTime}, make_shared<F_fex_POAzeroRelVel>(), {from, to}, OT_eq, {1e0}, NoArr, 1, +1, 0);
 
   //regularization
-//  addObjective({startTime, endTime}, make_shared<TM_Contact_Force>(world, from, to), OT_sos, {1e-2}, NoArr, 2, +2, 0);
+  addObjective({startTime, endTime}, make_shared<F_fex_Force>(), {from, to}, OT_sos, {1e-2}, NoArr, k_order, +2, 0);
   addObjective({startTime, endTime}, make_shared<F_fex_Force>(), {from, to}, OT_sos, {1e-4});
-  addObjective({startTime, endTime}, make_shared<F_fex_POA>(), {from, to}, OT_sos, {1e-2}, NoArr, 2, +2, +0);
-  addObjective({startTime, endTime}, make_shared<F_fex_POA>(), {from, to}, OT_sos, {1e-2}, NoArr, 1, +1, +0);
+  addObjective({startTime, endTime}, make_shared<F_fex_POA>(), {from, to}, OT_sos, {1e-2}, NoArr, k_order, +2, +0);
 }
 
 void KOMO::addContact_ComplementarySlide(double startTime, double endTime, const char* from, const char* to) {
@@ -1496,10 +1495,13 @@ void Conv_KOMO_SparseNonfactored::evaluate(arr& phi, arr& J, const arr& x) {
       //query the task map and check dimensionalities of returns
       arr y = ob->feat->eval(ob->frames);
 //      cout <<"EVAL '" <<ob->name() <<"' phi:" <<y <<endl <<y.J() <<endl<<endl;
-      if(!!J) CHECK_EQ(y.N, y.J().d0, "");
       if(!y.N) continue;
-      if(!!J) CHECK_EQ(y.J().nd, 2, "");
-      if(!!J) CHECK_EQ(y.J().d1, komo.pathConfig.getJointStateDimension(), "");
+      if(!!J){
+        CHECK(y.jac, "Jacobian needed but missing");
+        CHECK_EQ(y.J().nd, 2, "");
+        CHECK_EQ(y.J().d0, y.N, "");
+        CHECK_EQ(y.J().d1, komo.pathConfig.getJointStateDimension(), "");
+      }
 //      uint d = ob->feat->dim(ob->frames);
 //      if(d!=y.N){
 //        d  = ob->feat->dim(ob->frames);

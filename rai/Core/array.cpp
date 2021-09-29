@@ -58,7 +58,7 @@ const bool lapackSupported=true;
 #else
 const bool lapackSupported=false;
 #endif
-int64_t globalMemoryTotal=0, globalMemoryBound=1ull<<30; //this is 1GB
+int64_t globalMemoryTotal=0, globalMemoryBound=1ull<<32; //this is 1GB
 bool globalMemoryStrict=false;
 const char* arrayElemsep=", ";
 const char* arrayLinesep=",\n ";

@@ -27,7 +27,7 @@ DEPEND_UBUNTU += python3-dev python3 python3-numpy python3-pip python3-distutils
 #pybind11-dev NO! don't use the ubuntu package. Instead use:
 #  pip3 install --user pybind11
 CXXFLAGS += -DRAI_PYBIND `python3 -m pybind11 --includes`
-LIBS += `python3m-config --ldflags`
+LIBS += `python3-config --ldflags`
 #CPATH := $(CPATH):$(BASE)/../pybind11/include::$(BASE)/../../pybind11/include
 
 # sudo update-alternatives --install /usr/bin/python3-config python3 /usr/bin/python3.7 0
