@@ -2245,8 +2245,8 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) 
   downPos=cam->X.pos;
   downFoc=cam->foc;
 
-  //check object clicked on 
-  if(mouse_button==1 && !(modifiers&1) && (modifiers&2)) { //left button + CTRL (no SHIFT)
+  //check object clicked on
+  if(mouse_button==1 && !(modifiers&1) && (modifiers&2)) {
     drawFocus = false;
     if(!downPressed) {
       drawOptions.drawMode_idColor = true;
@@ -2342,8 +2342,8 @@ void OpenGL::MouseMotion(int _x, int _y) {
   mouseposx=_x; mouseposy=_y;
 
   bool needsUpdate=false;
-  //right button and SHIFT CTRL
-  if(mouse_button==1 && (modifiers&1) && (modifiers&2)) {  //rotation
+  
+  if(mouse_button==1 && !modifiers) {  //rotation
     rai::Quaternion rot;
     if(downVec.z<.1) {
       //margin:
