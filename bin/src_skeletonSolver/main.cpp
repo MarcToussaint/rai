@@ -36,7 +36,7 @@ int main(int argc,char **argv){
   cout <<S <<endl;
 
   S.setConfiguration(C);
-  S.solve(mode);
+  S.solve(mode, rai::getParameter<int>("Skeleton/verbose", 3));
 
   return 0;
 }

@@ -1,6 +1,7 @@
 #include "skeleton.h"
 
 #include "komo.h"
+#include "manipTools.h"
 
 #include "../Kin/F_pose.h"
 #include "../Kin/F_forces.h"
@@ -443,6 +444,18 @@ void Skeleton::setKOMO(KOMO& komo) const {
         //        komo.addObjective({s.phase0}, FS_vectorZDiff, {s.frames(0), s.frames(1)}, OT_eq, {1e2});
         break;
       }
+
+      case SY_boxGraspX: {
+            rai::Frame* box = komo.world.getFrame(s.frames(1));
+            arr size = box->getSize();
+            size.resizeCopy(3);
+            addBoxPickObjectives(komo, {s.phase0},
+                                 rai::_xAxis,
+                                 s.frames(1),
+                                 size,
+                                 s.frames(0),
+                                 "r_palm", 0);
+      } break;
 
       case SY_makeFree:   komo.world.makeObjectsFree(s.frames);  break;
       case SY_stableRelPose: komo.addObjective({s.phase0, s.phase1+1.}, FS_poseRel, s.frames, OT_eq, {1e2}, {}, 1);  break;

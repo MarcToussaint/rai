@@ -3305,9 +3305,10 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
       if(id<C.frames.N) cout <<*C.frames.elem(id) <<endl;
     } else if(gl.pressedkey=='c') { //compute collisions
       C.ensure_proxies();
-      C.getTotalPenetration();
+      double p = C.getTotalPenetration();
       double eps=.1;
-      C.reportProxies(cout, eps, false);
+      C.reportProxies(cout, eps, true);
+      cout <<"TOTAL PENETRATION: " <<p <<endl;
 #if 0
       FrameL collisionPairs = C.getCollisionAllPairs();
 //      cout <<" CollisionPairs:" <<endl;
@@ -3388,9 +3389,10 @@ void editConfiguration(const char* filename, Configuration& C) {
                       "RIGHT CLICK - set focus point (move view and set center of rotation)\n"
                       "LEFT CLICK - rotate (ball; or around z at view rim)\n"
                       "q - quit\n"
-                      "[SPACE] - display object info\n"
+                      "[SPACE] - write object info\n"
                       "SHIFT-LEFT CLICK - move view\n"
-                      "CTRL-LEFT CLICK - show object ID\n"
+                      "CTRL-LEFT CLICK - write object ID\n"
+                      "c - compute and write collisions\n"
                       "1..7 - view options\n"
                       "jkluio - keyboard move\n"
                       "as - keyboard rotate\n"

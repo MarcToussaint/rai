@@ -233,7 +233,7 @@ double LagrangianProblem::get_cost_sos() {
   return S;
 }
 
-double LagrangianProblem::get_costs() { return get_cost_flin() + get_cost_sos(); }
+double LagrangianProblem::get_costs() { return get_cost_f() + get_cost_sos(); }
 
 double LagrangianProblem::get_sumOfGviolations() {
   double S=0.;
