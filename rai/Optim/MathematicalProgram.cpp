@@ -243,6 +243,7 @@ void Conv_FactoredNLP_BandedNLP::evaluate(arr& phi, arr& J, const arr& x) {
 //===========================================================================
 
 void MathematicalProgram_Traced::evaluate(arr& phi, arr& J, const arr& x) {
+  evals++;
   P.evaluate(phi, J, x);
   if(trace_x){ xTrace.append(x); xTrace.reshape(-1, x.N); }
   if(trace_costs){ if(!featureTypes.N) P.getFeatureTypes(featureTypes); costTrace.append(summarizeErrors(phi, featureTypes)); costTrace.reshape(-1,3);  }

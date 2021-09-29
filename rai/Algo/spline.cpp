@@ -145,18 +145,19 @@ void Spline::eval(arr& x, arr& xDot, arr& xDDot, double t) const {
 }
 
 Spline& Spline::set(uint _degree, const arr& _points, const arr& _times, const arr& startVel, const arr& endVel) {
-  CHECK_EQ(_points.nd, 2, "");
+  CHECK_EQ(_times.nd, 1, "");
+  CHECK_LE(_points.nd, 2, "");
   CHECK_EQ(_points.d0, _times.N, "");
 
   degree = _degree;
-  points=_points;
+  points=_points; if(points.nd==1) points.reshape(points.N, 1);
   times=_times;
 
   //knot points with head and tail
-  knotPoints = _points;
+  knotPoints = points;
   for(uint i=0; i<degree/2; i++) {
-    knotPoints.prepend(_points[0]);
-    knotPoints.append(_points[_points.d0-1]);
+    knotPoints.prepend(points[0]);
+    knotPoints.append(points[points.d0-1]);
   }
 
   //knot times with head and tail

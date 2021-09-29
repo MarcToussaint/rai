@@ -217,14 +217,23 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
   return L;
 }
 
-double LagrangianProblem::get_costs() {
+double LagrangianProblem::get_cost_f() {
   double S=0.;
   for(uint i=0; i<phi_x.N; i++) {
     if(tt_x(i)==OT_f) S += phi_x(i);
+  }
+  return S;
+}
+
+double LagrangianProblem::get_cost_sos() {
+  double S=0.;
+  for(uint i=0; i<phi_x.N; i++) {
     if(tt_x(i)==OT_sos) S += rai::sqr(phi_x(i));
   }
   return S;
 }
+
+double LagrangianProblem::get_costs() { return get_cost_flin() + get_cost_sos(); }
 
 double LagrangianProblem::get_sumOfGviolations() {
   double S=0.;

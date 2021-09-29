@@ -89,6 +89,7 @@ struct MathematicalProgram_Factored : MathematicalProgram {
 struct MathematicalProgram_Traced : MathematicalProgram {
   MathematicalProgram& P;
   ObjectiveTypeA featureTypes;
+  uint evals=0;
   arr xTrace, costTrace, phiTrace, JTrace;
   bool trace_x=true;
   bool trace_costs=true;
@@ -97,7 +98,9 @@ struct MathematicalProgram_Traced : MathematicalProgram {
 
   MathematicalProgram_Traced(MathematicalProgram& P) : P(P) {}
 
-  void setTracing(bool trace_x, bool trace_costs, bool trace_phi, bool trace_J){ NIY }
+  void setTracing(bool _trace_x, bool _trace_costs, bool _trace_phi, bool _trace_J){
+    trace_x=_trace_x; trace_costs=_trace_costs, trace_phi=_trace_phi, trace_J=_trace_J;
+  }
 
   virtual void evaluate(arr& phi, arr& J, const arr& x);
 

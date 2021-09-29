@@ -9,7 +9,6 @@
 #include "komo.h"
 #include "komo-ext.h"
 
-#include "../Algo/spline.h"
 #include "../Gui/opengl.h"
 #include "../Geo/fclInterface.h"
 

@@ -20,6 +20,20 @@ struct Spline {
 
   //-- methods to define the points and times
   Spline& set(uint degree, const arr& _points, const arr& _times, const arr& startVel=NoArr, const arr& endVel=NoArr);
+  Spline& setUniform(uint _degree, uint steps) {
+    arr x=range(0.,1.,steps);
+    set(_degree, x, x);
+    return *this;
+  }
+  arr getGridBasis(uint T) {
+    arr basis(T, knotPoints.d0);
+    arr db,ddb;
+    for(uint t=0; t<T; t++){
+      getCoeffs2(basis[t](), db, ddb, double(t)/(T-1), degree, knotTimes.p, knotPoints.d0, knotTimes.N, 0);
+    }
+    return basis;
+  }
+
   void append(const arr& _points, const arr& _times);
   void clear();
 
@@ -51,7 +65,7 @@ struct Spline {
   double begin() const { return knotTimes.first(); }
   double end() const { return knotTimes.last(); }
 
-  arr getGridBasis(uint derivative=0){ HALT("see retired/spline-21-04-01.cpp"); }
+//  arr getGridBasis(uint derivative=0){ HALT("see retired/spline-21-04-01.cpp"); }
 
   static void getCoeffs2(arr& c0, arr& c1, arr& c2, double t, uint degree, double* knotTimes, uint knotN, uint knotTimesN, uint derivatives=0);
 

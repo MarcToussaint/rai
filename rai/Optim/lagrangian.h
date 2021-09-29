@@ -47,6 +47,8 @@ struct LagrangianProblem : ScalarFunction, MathematicalProgram {
 
   double lagrangian(arr& dL, arr& HL, const arr& x); ///< CORE METHOD: the unconstrained scalar function F
 
+  double get_cost_f();            ///< info on the terms from last call
+  double get_cost_sos();            ///< info on the terms from last call
   double get_costs();            ///< info on the terms from last call
   double get_sumOfGviolations(); ///< info on the terms from last call
   double get_sumOfHviolations(); ///< info on the terms from last call

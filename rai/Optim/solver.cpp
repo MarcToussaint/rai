@@ -27,6 +27,9 @@ template<> const char* rai::Enum<NLP_SolverOption>::names []= {
     "LD_TNEWTON_PRECOND_RESTART", nullptr };
 
 shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization){
+  auto ret = make_shared<SolverReturn>();
+  double time = -rai::cpuTime();
+
   if(resampleInitialization==1 || !x.N){
     x = P->getInitializationSample();
   }else{
@@ -52,6 +55,10 @@ shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization){
                        .set_constrainedMethod(augmentedLag)
                        .set_verbose(verbose) );
     opt.run();
+    ret->ineq = opt.L.get_sumOfGviolations();
+    ret->eq = opt.L.get_sumOfHviolations();
+    ret->sos = opt.L.get_cost_sos();
+    ret->f = opt.L.get_cost_f();
   }
   else if(solverID==NLPS_squaredPenalty){
     OptConstrained opt(x, dual, *P, OptOptions()
@@ -61,7 +68,8 @@ shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization){
   }
   else if(solverID==NLPS_logBarrier){
     OptConstrained opt(x, dual, *P, OptOptions()
-                       .set_constrainedMethod(logBarrier) );
+                       .set_constrainedMethod(logBarrier)
+                       .set_verbose(verbose) );
     opt.run();
   }
   else if(solverID==NLPS_NLopt){
@@ -79,7 +87,9 @@ shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization){
   }
   else HALT("solver wrapper not implemented yet for solver ID '" <<rai::Enum<NLP_SolverID>(solverID) <<"'");
 
-  auto ret = make_shared<SolverReturn>();
+  time += rai::cpuTime();
   ret->x=x;
+  ret->evals=P->evals;
+  ret->time = time;
   return ret;
 }

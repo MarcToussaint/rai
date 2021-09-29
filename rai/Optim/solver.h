@@ -24,10 +24,15 @@ enum NLP_SolverOption { _NLopt_LD_SLSQP,
 
 struct SolverReturn {
   arr x;
+  uint evals=0;
   double time=0.;
   bool feasible=false;
-  double sos=-1., cost=-1., ineq=-1., eq=-1.;
+  double sos=-1., f=-1., ineq=-1., eq=-1.;
+  void write(std::ostream& os) const{
+    os <<"SolverReturn:  sos:" <<sos <<" f:" <<f <<" ineq:" <<ineq <<" eq:" <<eq <<" evals:" <<evals <<" time:" <<time <<"\nx=" <<x <<endl;
+  }
 };
+stdOutPipe(SolverReturn);
 
 /** User Interface: Meta class to call several different solvers in a unified manner. */
 struct NLP_Solver : NonCopyable {
@@ -40,6 +45,7 @@ struct NLP_Solver : NonCopyable {
   NLP_Solver& setProblem(MathematicalProgram& _P){ CHECK(!P, "problem was already set!"); P = make_shared<MathematicalProgram_Traced>(_P); return *this; }
   NLP_Solver& setInitialization(const arr& _x){ x=_x; return *this; }
   NLP_Solver& setOptions(const rai::Graph& opt){ NIY; return *this; }
+  NLP_Solver& setVerbose(int _verbose){ verbose=_verbose; return *this; }
   NLP_Solver& setTracing(bool trace_x, bool trace_costs, bool trace_phi, bool trace_J){ P->setTracing(trace_x, trace_costs, trace_phi, trace_J); return *this; }
   rai::Graph getOptions(){ return rai::Graph(); }
 
