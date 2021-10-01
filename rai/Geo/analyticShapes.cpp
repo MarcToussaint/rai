@@ -7,8 +7,9 @@ DistanceFunction_Sphere::DistanceFunction_Sphere(const rai::Transformation& _pos
 double DistanceFunction_Sphere::f(arr& g, arr& H, const arr& x) {
   arr d = x-conv_vec2arr(pose.pos);
   double len = length(d);
-  if(!!g) g = d/len;
-  if(!!H) H = 1./len * (eye(3) - (d^d)/(len*len));
+  double eps=1e-10;
+  if(!!g) g = d/(len+eps);
+  if(!!H) H = 1./(len+eps) * (eye(3) - (g^g));
   return len-r;
 }
 

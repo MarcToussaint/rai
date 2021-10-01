@@ -118,6 +118,3 @@ void F_GraspOppose::phi2(arr& y, arr& J, const FrameL& F) {
     J.setBlockMatrix(D1.J() + D2.J(), cenJ);
   }
 }
-
-
-

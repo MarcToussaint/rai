@@ -15,7 +15,7 @@ enum SkeletonSymbol {
   SY_stable, SY_stableOn, SY_dynamic, SY_dynamicOn, SY_dynamicTrans, SY_quasiStatic, SY_quasiStaticOn, SY_downUp, SY_break,
 
   //interactions:
-  SY_contact, SY_contactStick, SY_contactComplementary, SY_bounce,
+  SY_contact, SY_contactStick, SY_contactComplementary, SY_bounce, SY_push,
 
   //mode switches:
   SY_magic, SY_magicTrans,

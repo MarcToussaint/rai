@@ -9,7 +9,6 @@
 #include "../Optim/solver.h"
 #include "../Logic/fol.h"
 
-
 double shapeSize(const rai::Configuration& K, const char* name, uint i=2);
 
 namespace rai {
@@ -474,6 +473,21 @@ void Skeleton::setKOMO(KOMO& komo) const {
       case SY_contact:    komo.addContact_slide(s.phase0, s.phase1, s.frames(0), s.frames(1));  break;
       case SY_contactStick:    komo.addContact_stick(s.phase0, s.phase1, s.frames(0), s.frames(1));  break;
       case SY_contactComplementary: komo.addContact_ComplementarySlide(s.phase0, s.phase1, s.frames(0), s.frames(1));  break;
+      case SY_push:{
+        komo.addContact_slide(s.phase0, s.phase1, s.frames(0), s.frames(1));
+        if(s.phase1>=s.phase0+.8){
+          rai::Frame* obj = komo.world.getFrame(s.frames(1));
+          if(!(obj->shape && obj->shape->type()==ST_sphere) && obj->children.N){
+            obj = obj->children.last();
+          }
+          if(obj->shape && obj->shape->type()==ST_sphere){
+            double rad = obj->shape->radius();
+            arr times = {s.phase0+.2,s.phase1-.2};
+            if(komo.k_order==1) times = {s.phase0, s.phase1};
+            komo.addObjective(times, make_shared<F_PushRadiusPrior>(rad), s.frames, OT_sos, {1e0}, NoArr, 1, +1, 0);
+          }
+        }
+      } break;
       case SY_bounce:     komo.addContact_elasticBounce(s.phase0, s.frames(0), s.frames(1), .9);  break;
       //case SY_contactComplementary:     addContact_Complementary(s.phase0, s.phase1, s.frames(0), s.frames(1));  break;
 

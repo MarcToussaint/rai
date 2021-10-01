@@ -802,3 +802,30 @@ arr F_fex_NormalVelIsComplementary::phi(const FrameL& F) {
   return y;
 }
 
+//===========================================================================
+
+arr F_PushRadiusPrior::phi(const FrameL& F){
+  CHECK_EQ(order, 1, "");
+  CHECK_EQ(F.N, 4, "");
+
+  //poa
+  arr p = F_fex_POA() .eval(F[0]);
+
+  //object center
+  arr c = F_Position() .eval({F(0,1)});
+
+  arr dir;
+  if(!target.N){ //push 'towards' velocity
+    //object velocity
+    dir = F_Position() .setOrder(1) .eval({F(0,1),F(1,1)});
+  }else{
+    dir = -c;
+    //dir.J = -c.J;
+    dir += target;
+  }
+
+  op_normalize(dir, 1e-3);
+
+  arr y = rad * dir - (c-p);
+  return y;
+}

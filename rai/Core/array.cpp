@@ -341,7 +341,7 @@ void op_normalize(arr& y, double eps) {
     }
   }else{
     y /= (eps+l);
-    if(y.jac) y.J() -= ((eps+l)/l * (y.noJ()^y.noJ())) * y.J();
+    if(y.jac) y.J() -= (/*(eps+l)/l * */ (y.noJ()^y.noJ())) * y.J();
   }
 }
 

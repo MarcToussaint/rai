@@ -297,7 +297,11 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
     addSwitch(times, true, JT_transXYPhi, SWInit_copy, frames(0), frames(1), rel);
     //-- no jump at start
     if(firstSwitch){
-      addObjective({times(0)}, FS_pose, {frames(1)}, OT_eq, {1e2}, NoArr, 1, 0, +1);
+      if(stepsPerPhase>3){
+        addObjective({times(0)}, FS_pose, {frames(1)}, OT_eq, {1e2}, NoArr, 1, 0, +1); //overlaps with Newton-Euler -> requires forces!
+      }else{
+        addObjective({times(0)}, FS_pose, {frames(1)}, OT_eq, {1e2}, NoArr, 1, 0, 0);
+      }
     }
 #if 0
     addObjective(times, make_shared<F_NewtonEuler_DampedVelocities>(0., false), {frames(1)}, OT_eq, {1e2}, NoArr, 1, +1, 0);
@@ -1495,6 +1499,7 @@ void Conv_KOMO_SparseNonfactored::evaluate(arr& phi, arr& J, const arr& x) {
       arr y = ob->feat->eval(ob->frames);
 //      cout <<"EVAL '" <<ob->name() <<"' phi:" <<y <<endl <<y.J() <<endl<<endl;
       if(!y.N) continue;
+      checkNan(y);
       if(!!J){
         CHECK(y.jac, "Jacobian needed but missing");
         CHECK_EQ(y.J().nd, 2, "");
