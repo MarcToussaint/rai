@@ -50,7 +50,7 @@ struct KOMO : NonCopyable {
   uint k_order=0;              ///< the (Markov) order of the KOMO problem (default 2)
   rai::Array<ptr<Objective>> objectives;    ///< list of objectives
   rai::Array<ptr<GroundedObjective>> objs;
-  rai::Array<rai::KinematicSwitch*> switches;  ///< list of kinematic switches along the motion
+  rai::Array<ptr<rai::KinematicSwitch>> switches;  ///< list of kinematic switches along the motion -- only as record: they are now applied immediately at addSwitch
 
   //-- internals
   rai::Configuration world;       ///< original configuration; which is the blueprint for all time-slice worlds (almost const: only makeConvexHulls modifies it)
@@ -60,7 +60,6 @@ struct KOMO : NonCopyable {
   bool computeCollisions;         ///< whether swift or fcl (collisions/proxies) is evaluated whenever new configurations are set (needed if features read proxy list)
   shared_ptr<rai::FclInterface> fcl;
   shared_ptr<SwiftInterface> swift;
-  bool switchesWereApplied = false; //TODO: apply them directly? Would only work when no frames were added?
 
   //-- optimizer
   rai::KOMOsolver solver=rai::KS_sparse;
@@ -132,23 +131,13 @@ struct KOMO : NonCopyable {
   //-- core kinematic switch symbols of skeletons
 //protected:
   //low-level add dof switches
-  void addSwitch(const arr& times, bool before, rai::KinematicSwitch* sw);
-  rai::KinematicSwitch* addSwitch(const arr& times, bool before, rai::JointType type, rai::SwitchInitializationType init,
+  void addSwitch(const arr& times, bool before, const ptr<rai::KinematicSwitch>& sw);
+  ptr<rai::KinematicSwitch> addSwitch(const arr& times, bool before, rai::JointType type, rai::SwitchInitializationType init,
                  const char* ref1, const char* ref2,
                  const rai::Transformation& jFrom=NoTransformation, const rai::Transformation& jTo=NoTransformation);
 public:
   //add a mode switch: both, the low-level dof switches and corresponding constraints of consistency
   void addModeSwitch(const arr& times, rai::SkeletonSymbol newMode, const StringA& frames, bool firstSwitch);
-
-  //1-liner specializations of setModeSwitch:
-  void addSwitch_stable(double time, double endTime, const char* prevFrom, const char* from, const char* to, bool firstSwitch=true);
-  void addSwitch_stableOn(double time, double endTime, const char* prevFrom, const char* from, const char* to, bool firstSwitch);
-  void addSwitch_dynamic(double time, double endTime, const char* from, const char* to, bool dampedVelocity=false);
-  void addSwitch_dynamicOn(double time, double endTime, const char* from, const char* to);
-  void addSwitch_dynamicOnNewton(double time, double endTime, const char* from, const char* to);
-  void addSwitch_dynamicTrans(double time, double endTime, const char* from, const char* to);
-  void addSwitch_magic(double time, double endTime, const char* from, const char* to, double sqrAccCost, double sqrVelCost);
-  void addSwitch_magicTrans(double time, double endTime, const char* from, const char* to, double sqrAccCost);
 
   //advanced:
   void setPairedTimes();
@@ -232,7 +221,7 @@ public:
   void selectJointsBySubtrees(const StringA& roots, const arr& times= {}, bool notThose=false);
   void setupPathConfig();
   void checkBounds(const arr& x);
-  void applySwitch(const rai::KinematicSwitch* sw);
+  void applySwitch(const rai::KinematicSwitch& sw);
   void retrospectApplySwitches();
   void retrospectChangeJointType(int startStep, int endStep, uint frameID, rai::JointType newJointType);
   void set_x(const arr& x, const uintA& selectedConfigurationsOnly=NoUintA);            ///< set the state trajectory of all configurations

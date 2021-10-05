@@ -83,7 +83,7 @@ KOMO::~KOMO() {
   if(logFile) delete logFile;
   objs.clear();
   objectives.clear();
-  listDelete(switches);
+  switches.clear();
 }
 
 void KOMO::setModel(const Configuration& C, bool _computeCollisions) {
@@ -140,7 +140,7 @@ void KOMO::addTimeOptimization() {
 void KOMO::clearObjectives() {
   objectives.clear(); //listDelete(objectives);
   objs.clear();
-  listDelete(switches);
+  switches.clear();
   reset();
 }
 
@@ -194,16 +194,17 @@ ptr<Objective> KOMO::addObjective(const arr& times,
 //  flags.append(fl);
 //}
 
-void KOMO::addSwitch(const arr& times, bool before, KinematicSwitch* sw) {
+void KOMO::addSwitch(const arr& times, bool before, const ptr<KinematicSwitch>& sw) {
   sw->setTimeOfApplication(times, before, stepsPerPhase, T);
-  switches.append(sw);
+  applySwitch(*sw); //apply immediately
+  switches.append(sw); //only to report, not apply in retrospect
 }
 
-KinematicSwitch* KOMO::addSwitch(const arr& times, bool before,
+ptr<KinematicSwitch> KOMO::addSwitch(const arr& times, bool before,
                      rai::JointType type, SwitchInitializationType init,
                      const char* ref1, const char* ref2,
                      const rai::Transformation& jFrom, const rai::Transformation& jTo) {
-  KinematicSwitch* sw = new KinematicSwitch(SW_joint, type, ref1, ref2, world, init, 0, jFrom, jTo);
+  auto sw = make_shared<KinematicSwitch>(SW_joint, type, ref1, ref2, world, init, 0, jFrom, jTo);
   addSwitch(times, before, sw);
   return sw;
 }
@@ -324,64 +325,9 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
   } else NIY;
 }
 
-void KOMO::addSwitch_stable(double time, double endTime, const char* prevFrom, const char* from, const char* to, bool firstSwitch) {
-  addModeSwitch({time, endTime}, SY_stable, {from, to}, firstSwitch);
-}
-
-void KOMO::addSwitch_stableOn(double time, double endTime, const char* prevFrom, const char* from, const char* to, bool firstSwitch) {
-  addModeSwitch({time, endTime}, SY_stableOn, {from, to}, firstSwitch);
-}
-
-void KOMO::addSwitch_dynamic(double time, double endTime, const char* from, const char* to, bool dampedVelocity) {
-  addSwitch({time}, true, JT_free, SWInit_copy, from, to);
-  if(!dampedVelocity)
-    addObjective({time, endTime}, make_shared<F_NewtonEuler>(), {to}, OT_eq, {1e0}, NoArr, 2, +0, -1);
-  else
-    addObjective({time, endTime}, make_shared<F_NewtonEuler_DampedVelocities>(), {to}, OT_eq, {1e2}, NoArr, 1, +0, -1);
-//  addObjective({time}, make_shared<TM_LinAngVel>(world, to), OT_eq, {1e2}, NoArr, 2); //this should be implicit in the NE equations!
-}
-
-void KOMO::addSwitch_dynamicTrans(double time, double endTime, const char* from, const char* to) {
-  HALT("deprecated")
-//  addSwitch({time}, true, JT_trans3, SWInit_copy, from, to);
-//  addObjective({time, endTime}, make_shared<F_NewtonEuler>(true), {to}, OT_eq, {3e1}, NoArr, k_order, +0, -1);
-}
-
-void KOMO::addSwitch_dynamicOn(double time, double endTime, const char* from, const char* to) {
-  Transformation rel = 0;
-  rel.pos.set(0, 0, .5*(shapeSize(world, from) + shapeSize(world, to)));
-  addSwitch({time}, true, JT_transXYPhi, SWInit_zero, from, to, rel);
-  if(k_order>=2) addObjective({time, endTime}, FS_pose, {to}, OT_eq, {3e1}, NoArr, k_order, +0, -1);
-//  else addObjective({time}, make_shared<TM_NoJumpFromParent>(world, to), OT_eq, {1e2}, NoArr, 1, 0, 0);
-}
-
-void KOMO::addSwitch_dynamicOnNewton(double time, double endTime, const char* from, const char* to) {
-  Transformation rel = 0;
-  rel.pos.set(0, 0, .5*(shapeSize(world, from) + shapeSize(world, to)));
-  addSwitch({time}, true, JT_transXYPhi, SWInit_zero, from, to, rel);
-  if(k_order>=2) addObjective({time, endTime}, make_shared<F_NewtonEuler>(), {to}, OT_eq, {1e0}, NoArr, k_order, +0, -1);
-}
-
-void KOMO::addSwitch_magic(double time, double endTime, const char* from, const char* to, double sqrAccCost, double sqrVelCost) {
-  addSwitch({time}, true, JT_free, SWInit_copy, from, to);
-  if(sqrVelCost>0. && k_order>=1) {
-    addObjective({time, endTime}, make_shared<F_LinAngVel>(), {to}, OT_sos, {sqrVelCost}, NoArr, 1);
-  }
-  if(sqrAccCost>0. && k_order>=2) {
-    addObjective({time, endTime}, make_shared<F_LinAngVel>(), {to}, OT_sos, {sqrAccCost}, NoArr, 2);
-  }
-}
-
-void KOMO::addSwitch_magicTrans(double time, double endTime, const char* from, const char* to, double sqrAccCost) {
-  addSwitch({time}, true, JT_transZ, SWInit_copy, from, to);
-  if(sqrAccCost>0.) {
-    addObjective({time, endTime}, make_shared<F_LinAngVel>(), {to}, OT_eq, {sqrAccCost}, NoArr, 2);
-  }
-}
-
 void KOMO::addContact_slide(double startTime, double endTime, const char* from, const char* to) {
-  addSwitch({startTime}, true, new rai::KinematicSwitch(rai::SW_addContact, rai::JT_none, from, to, world));
-  if(endTime>0.) addSwitch({endTime}, false, new rai::KinematicSwitch(rai::SW_delContact, rai::JT_none, from, to, world));
+  addSwitch({startTime}, true, make_shared<rai::KinematicSwitch>(rai::SW_addContact, rai::JT_none, from, to, world));
+  if(endTime>0.) addSwitch({endTime}, false, make_shared<rai::KinematicSwitch>(rai::SW_delContact, rai::JT_none, from, to, world));
 
   //constraints
 #ifdef RAI_USE_FUNCTIONALS //new, based on functionals
@@ -402,8 +348,8 @@ void KOMO::addContact_slide(double startTime, double endTime, const char* from, 
 }
 
 void KOMO::addContact_stick(double startTime, double endTime, const char* from, const char* to) {
-  addSwitch({startTime}, true, new rai::KinematicSwitch(rai::SW_addContact, rai::JT_none, from, to, world));
-  if(endTime>0.) addSwitch({endTime}, false, new rai::KinematicSwitch(rai::SW_delContact, rai::JT_none, from, to, world));
+  addSwitch({startTime}, true, make_shared<rai::KinematicSwitch>(rai::SW_addContact, rai::JT_none, from, to, world));
+  if(endTime>0.) addSwitch({endTime}, false, make_shared<rai::KinematicSwitch>(rai::SW_delContact, rai::JT_none, from, to, world));
 
   //constraints
 #ifdef RAI_USE_FUNCTIONALS //new, based on functionals
@@ -423,8 +369,8 @@ void KOMO::addContact_stick(double startTime, double endTime, const char* from, 
 }
 
 void KOMO::addContact_ComplementarySlide(double startTime, double endTime, const char* from, const char* to) {
-  addSwitch({startTime}, true, new rai::KinematicSwitch(rai::SW_addContact, rai::JT_none, from, to, world));
-  if(endTime>0.) addSwitch({endTime}, false, new rai::KinematicSwitch(rai::SW_delContact, rai::JT_none, from, to, world));
+  addSwitch({startTime}, true, make_shared<rai::KinematicSwitch>(rai::SW_addContact, rai::JT_none, from, to, world));
+  if(endTime>0.) addSwitch({endTime}, false, make_shared<rai::KinematicSwitch>(rai::SW_delContact, rai::JT_none, from, to, world));
 
   //constraints
   addObjective({startTime, endTime}, make_shared<F_fex_ForceIsNormal>(), {from, to}, OT_eq, {1e2});
@@ -440,8 +386,8 @@ void KOMO::addContact_ComplementarySlide(double startTime, double endTime, const
 }
 
 void KOMO::addContact_elasticBounce(double time, const char* from, const char* to, double elasticity, double stickiness) {
-  addSwitch({time}, true,  new rai::KinematicSwitch(rai::SW_addContact, rai::JT_none, from, to, world));
-  addSwitch({time}, false, new rai::KinematicSwitch(rai::SW_delContact, rai::JT_none, from, to, world));
+  addSwitch({time}, true,  make_shared<rai::KinematicSwitch>(rai::SW_addContact, rai::JT_none, from, to, world));
+  addSwitch({time}, false, make_shared<rai::KinematicSwitch>(rai::SW_delContact, rai::JT_none, from, to, world));
 
   //constraints
 #ifdef RAI_USE_FUNCTIONALS //new, based on functionals
@@ -816,7 +762,7 @@ void KOMO::optimize(double addInitializationNoise, const OptOptions options) {
 void KOMO::run_prepare(double addInitializationNoise) {
   //ensure the configurations are setup
   if(!timeSlices.nd) setupPathConfig();
-  if(!switchesWereApplied) retrospectApplySwitches();
+//  if(!switchesWereApplied) retrospectApplySwitches(); //should be applied immediately!
 
   //ensure the decision variable is in sync from the configurations
   x = pathConfig.getJointState();
@@ -924,7 +870,7 @@ void KOMO::reportProblem(std::ostream& os) {
     conv_times2steps(fromStep, toStep, t->times, stepsPerPhase, T, +0, +0);
     os <<"  timeSlices: [" <<fromStep <<".." <<toStep <<"]" <<endl;
   }
-  for(KinematicSwitch* sw:switches) {
+  for(std::shared_ptr<KinematicSwitch>& sw:switches) {
     os <<"    ";
     if(sw->timeOfApplication+k_order >= timeSlices.d0) {
 //      LOG(-1) <<"switch time " <<sw->timeOfApplication <<" is beyond time horizon " <<T;
@@ -1050,26 +996,26 @@ void KOMO::plotPhaseTrajectory() {
 
 //===========================================================================
 
-void KOMO::applySwitch(const KinematicSwitch* sw) {
+void KOMO::applySwitch(const KinematicSwitch& sw) {
 #if 0 //for debugging
     cout <<"APPLYING SWITCH:\n" <<*sw <<endl;
-    cout <<world.frames(sw->fromId)->name <<"->" <<world.frames(sw->toId)->name <<endl;
-    sw->apply(world.frames);
-    listWriteNames( world.frames(sw->toId)->getPathToRoot(), cout );
-    listWriteNames( world.frames(sw->toId)->children, cout );
+    cout <<world.frames(sw.fromId)->name <<"->" <<world.frames(sw.toId)->name <<endl;
+    sw.apply(world.frames);
+    listWriteNames( world.frames(sw.toId)->getPathToRoot(), cout );
+    listWriteNames( world.frames(sw.toId)->children, cout );
 #endif
-    int s = sw->timeOfApplication+(int)k_order;
+    int s = sw.timeOfApplication+(int)k_order;
     if(s<0) s=0;
     int sEnd = int(k_order+T);
-//    if(sw->timeOfTermination>=0)  sEnd = sw->timeOfTermination+(int)k_order;
+//    if(sw.timeOfTermination>=0)  sEnd = sw.timeOfTermination+(int)k_order;
     CHECK(s<sEnd, "");
     rai::Frame *f0=0;
     for(; s<sEnd; s++) { //apply switch on all configurations!
-      rai::Frame* f = sw->apply(timeSlices[s]());
+      rai::Frame* f = sw.apply(timeSlices[s]());
       if(!f0){
         f0=f;
       } else {
-        if(sw->symbol==SW_addContact){
+        if(sw.symbol==SW_addContact){
           rai::ForceExchange* ex0 = f0->forces.last();
           rai::ForceExchange* ex1 = f->forces.last();
           ex1->poa = ex0->poa;
@@ -1077,7 +1023,7 @@ void KOMO::applySwitch(const KinematicSwitch* sw) {
           f->set_Q() = f0->get_Q(); //copy the relative pose (switch joint initialization) from the first application
           if(opt.mimicStable){
             /*CRUCIAL CHANGE!*/
-            if(sw->isStable) f->joint->setMimic(f0->joint);
+            if(sw.isStable) f->joint->setMimic(f0->joint);
           }
         }
       }
@@ -1085,8 +1031,8 @@ void KOMO::applySwitch(const KinematicSwitch* sw) {
 }
 
 void KOMO::retrospectApplySwitches() {
-  for(KinematicSwitch* sw:switches) applySwitch(sw);
-  switchesWereApplied=true;
+  DEPR; //switches are applied immediately on addSwitch
+  for(std::shared_ptr<KinematicSwitch>& sw:switches) applySwitch(*sw);
 }
 
 void KOMO::retrospectChangeJointType(int startStep, int endStep, uint frameID, JointType newJointType) {
@@ -1145,7 +1091,7 @@ void KOMO::setupPathConfig() {
 
   for(uint s=0;s<k_order+T;s++) {
 //    for(KinematicSwitch* sw:switches) { //apply potential switches
-//      if(sw->timeOfApplication+(int)k_order==(int)s)  sw->apply(C.frames);
+//      if(sw.timeOfApplication+(int)k_order==(int)s)  sw.apply(C.frames);
 //    }
 
 //    uint nBefore = pathConfig.frames.N;

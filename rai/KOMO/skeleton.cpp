@@ -168,7 +168,7 @@ void Skeleton::getKeyframeConfiguration(Configuration& C, int step, int verbose)
   CHECK(komo, "");
   CHECK_EQ(komo->k_order, 1, "");
   C.copy(komo->world);
-  for(KinematicSwitch* sw:komo->switches) {
+  for(ptr<KinematicSwitch>& sw:komo->switches) {
     int s = sw->timeOfApplication;
     if(s<=step){
       if(verbose){ LOG(0) <<"applying switch:"; sw->write(cout, C.frames); cout <<endl; }
@@ -525,7 +525,10 @@ void Skeleton::setKOMO(KOMO& komo) const {
       case SY_quasiStaticOn:
         break;
       case SY_magicTrans: //addSwitch_magicTrans(s.phase0, s.phase1, world.frames.first()->name, s.frames(0), 0.);  break;
-      case SY_magic:      komo.addSwitch_magic(s.phase0, s.phase1, komo.world.frames.first()->name, s.frames(0), 0., 0.);  break;
+      case SY_magic: {
+            komo.addSwitch({s.phase0}, true, JT_free, SWInit_copy, komo.world.frames.first()->name, s.frames(0));
+//            komo.addSwitch_magic(s.phase0, s.phase1, komo.world.frames.first()->name, s.frames(0), 0., 0.);  break;
+        } break;
       default: HALT("undefined symbol: " <<s.symbol);
     }
   }
