@@ -136,6 +136,7 @@ arr Skeleton::solve(ArgWord sequenceOrPath, int verbose) {
   CHECK(C, "");
   komo.reset();
   komo=make_shared<KOMO>();
+  komo->opt.verbose = verbose-2;
   komo->setModel(*C, collisions);
   setKOMO(*komo, sequenceOrPath);
   komo->optimize();
@@ -487,6 +488,10 @@ void Skeleton::setKOMO(KOMO& komo) const {
             komo.addObjective(times, make_shared<F_PushRadiusPrior>(rad), s.frames, OT_sos, {1e0}, NoArr, 1, +1, 0);
           }
         }
+        if(komo.k_order>1){
+          komo.addObjective({s.phase1}, FS_pose, {s.frames(0)}, OT_eq, {1e0}, {}, 1);
+          komo.addObjective({s.phase1}, FS_pose, {s.frames(1)}, OT_eq, {1e0}, {}, 1);
+        }
       } break;
       case SY_bounce:     komo.addContact_elasticBounce(s.phase0, s.frames(0), s.frames(1), .9);  break;
       //case SY_contactComplementary:     addContact_Complementary(s.phase0, s.phase1, s.frames(0), s.frames(1));  break;
@@ -599,7 +604,11 @@ void Skeleton::read(std::istream& is) {
       si.phase1=maxPhase;
       for(uint j=i+1; j<S.N; j++) {
         SkeletonEntry& sj = S(j);
-        if(sj.phase1==-1. && sj.frames.N && sj.frames.last()==si.frames.last()) { //this is also a mode symbol (due to phase1==-1.)
+        if(     sj.phase0>si.phase0 && //needs to be in the future
+                sj.phase1==-1. &&  //is also a '_' mode symbol
+                sj.frames.N &&
+                sj.frames.last()==si.frames.last() //has the same last frame
+                ) {
           si.phase1 = sj.phase0;
           break;
         }

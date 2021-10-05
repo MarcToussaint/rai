@@ -395,10 +395,10 @@ void KOMO::addContact_slide(double startTime, double endTime, const char* from, 
   addObjective({startTime, endTime}, make_shared<F_fex_ForceIsPositive>(), {from, to}, OT_ineq, {1e2});
 
   //regularization
-  addObjective({startTime, endTime}, make_shared<F_fex_Force>(), {from, to}, OT_sos, {1e-2}, NoArr, k_order, +2, 0);
+  addObjective({startTime, endTime}, make_shared<F_fex_Force>(), {from, to}, OT_sos, {1e-1}, NoArr, k_order, +2, 0);
   addObjective({startTime, endTime}, make_shared<F_fex_Force>(), {from, to}, OT_sos, {1e-2});
   addObjective({startTime, endTime}, make_shared<F_fex_POA>(), {from, to}, OT_sos, {1e-2}, NoArr, k_order, +2, +0);
-//  addObjective({startTime, endTime}, make_shared<F_fex_POAzeroRelVel>(), {from, to}, OT_sos, {1e-1}, NoArr, 1, +1, +0);
+  addObjective({startTime, endTime}, make_shared<F_fex_POAzeroRelVel>(), {from, to}, OT_sos, {1e-1}, NoArr, 1, +1, +0);
 }
 
 void KOMO::addContact_stick(double startTime, double endTime, const char* from, const char* to) {
@@ -1050,8 +1050,7 @@ void KOMO::plotPhaseTrajectory() {
 
 //===========================================================================
 
-void KOMO::retrospectApplySwitches() {
-  for(KinematicSwitch* sw:switches) {
+void KOMO::applySwitch(const KinematicSwitch* sw) {
 #if 0 //for debugging
     cout <<"APPLYING SWITCH:\n" <<*sw <<endl;
     cout <<world.frames(sw->fromId)->name <<"->" <<world.frames(sw->toId)->name <<endl;
@@ -1083,7 +1082,10 @@ void KOMO::retrospectApplySwitches() {
         }
       }
     }
-  }
+}
+
+void KOMO::retrospectApplySwitches() {
+  for(KinematicSwitch* sw:switches) applySwitch(sw);
   switchesWereApplied=true;
 }
 

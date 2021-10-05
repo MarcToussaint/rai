@@ -131,7 +131,7 @@ void rai::KinematicSwitch::setTimeOfApplication(const arr& times, bool before, i
   }
 }
 
-rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) {
+rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) const {
   Frame* from=nullptr, *to=nullptr;
   if(fromId!=-1) from=frames(fromId);
   if(toId!=-1) to=frames(toId);

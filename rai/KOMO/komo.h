@@ -232,6 +232,7 @@ public:
   void selectJointsBySubtrees(const StringA& roots, const arr& times= {}, bool notThose=false);
   void setupPathConfig();
   void checkBounds(const arr& x);
+  void applySwitch(const rai::KinematicSwitch* sw);
   void retrospectApplySwitches();
   void retrospectChangeJointType(int startStep, int endStep, uint frameID, rai::JointType newJointType);
   void set_x(const arr& x, const uintA& selectedConfigurationsOnly=NoUintA);            ///< set the state trajectory of all configurations

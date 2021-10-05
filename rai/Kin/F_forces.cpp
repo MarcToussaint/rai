@@ -150,7 +150,7 @@ void shapeFunction(double& x, double& dx);
 
 void F_fex_POA::phi2(arr& y, arr& J, const FrameL& F) {
   if(order>0){  Feature::phi2(y, J, F);  return;  }
-  CHECK_EQ(F.N, 2, "");
+  CHECK_GE(F.N, 2, "");
   rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1));
   ex->kinPOA(y, J);
 }
@@ -806,7 +806,7 @@ arr F_fex_NormalVelIsComplementary::phi(const FrameL& F) {
 
 arr F_PushRadiusPrior::phi(const FrameL& F){
   CHECK_EQ(order, 1, "");
-  CHECK_EQ(F.N, 4, "");
+//  CHECK_EQ(F.N, 4, "");
 
   //poa
   arr p = F_fex_POA() .eval(F[0]);
