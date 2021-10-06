@@ -34,7 +34,7 @@ void conv_times2steps(int& fromStep, int& toStep, const arr& times, int stepsPer
     toTime = times(1);
   }
 
-  if(toTime>double(T)/stepsPerPhase+1.) {
+  if(toTime>double(T)/stepsPerPhase+1. && toTime<1e6) {
     LOG(-1) <<"beyond the time!: endTime=" <<toTime <<" phases=" <<double(T)/stepsPerPhase;
   }
 
@@ -138,7 +138,7 @@ rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) const {
 
   CHECK(from!=to, "not allowed to link '" <<from->name <<"' to itself");
 
-  if(symbol==SW_joint || symbol==SW_joint) {
+  if(symbol==SW_joint) {
     Transformation orgX = to->ensure_X();
 
     //first find link frame above 'to', and make it a root
@@ -189,7 +189,7 @@ rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) const {
     return to;
   }
 
-  if(symbol==SW_noJointLink) {
+  else if(symbol==SW_noJointLink) {
     CHECK_EQ(jointType, JT_none, "");
 
     if(to->parent) to->unLink();
@@ -197,7 +197,7 @@ rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) const {
     return to;
   }
 
-  if(symbol==makeDynamic) {
+  else if(symbol==makeDynamic) {
     CHECK_EQ(jointType, JT_none, "");
     CHECK_EQ(to, 0, "");
     CHECK(from->inertia, "can only make frames with intertia dynamic");
@@ -209,7 +209,7 @@ rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) const {
     return from;
   }
 
-  if(symbol==makeKinematic) {
+  else if(symbol==makeKinematic) {
     CHECK_EQ(jointType, JT_none, "");
     CHECK_EQ(to, 0, "");
     CHECK(from->inertia, "can only make frames with intertia kinematic");
@@ -222,19 +222,19 @@ rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) const {
     return from;
   }
 
-  if(symbol==SW_addContact) {
+  else if(symbol==SW_addContact) {
     CHECK_EQ(jointType, JT_none, "");
     new ForceExchange(*from, *to, FXT_poa);
     return from;
   }
 
-  if(symbol==SW_addPOAonly) {
+  else if(symbol==SW_addPOAonly) {
     CHECK_EQ(jointType, JT_none, "");
     new ForceExchange(*from, *to, FXT_poaOnly);
     return from;
   }
 
-  if(symbol==SW_delContact) {
+  else if(symbol==SW_delContact) {
     CHECK_EQ(jointType, JT_none, "");
     ForceExchange* c = nullptr;
     for(ForceExchange* cc:to->forces) if(&cc->a==from || &cc->b==from) { c=cc; break; }

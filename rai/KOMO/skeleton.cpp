@@ -164,6 +164,37 @@ shared_ptr<SolverReturn> Skeleton::solve2(){
   return ret;
 }
 
+shared_ptr<SolverReturn> Skeleton::solve3(bool useKeyframes){
+  SkeletonTranscription keyframes = this->mp();
+
+  shared_ptr<SolverReturn> ret;
+  {
+    MP_Solver sol;
+    sol.setProblem(*keyframes.mp);
+    sol.setInitialization(keyframes.komo->x); //to avoid adding noise again
+    ret = sol.solve();
+    keyframes.mp->report(cout, 5);
+    sol.gnuplot_costs();
+  }
+
+  arr X = keyframes.komo->getPath_X();
+  arrA waypoints(X.d0);
+  for(uint i=0;i<waypoints.N;i++) waypoints(i) = X[i];
+
+  SkeletonTranscription path = this->mp_path( (useKeyframes?waypoints:arrA()));
+
+  {
+    MP_Solver sol;
+    sol.setProblem(*path.mp);
+    sol.setInitialization(path.komo->x); //to avoid adding noise again
+    ret = sol.solve();
+    path.mp->report(cout, 5);
+    sol.gnuplot_costs();
+  }
+
+  return ret;
+}
+
 void Skeleton::getKeyframeConfiguration(Configuration& C, int step, int verbose){
   CHECK(komo, "");
   CHECK_EQ(komo->k_order, 1, "");
@@ -180,12 +211,10 @@ void Skeleton::getKeyframeConfiguration(Configuration& C, int step, int verbose)
 SkeletonTranscription Skeleton::mp(){
   SkeletonTranscription ret;
   ret.komo=make_shared<KOMO>();
-  ret.komo->opt.verbose=verbose;
+  ret.komo->opt.verbose = verbose-2;
 #if 0
-  ret.komo->solver = rai::KS_sparse;
   ret.komo->setModel(*C, collisions);
   setKOMO(*ret.komo, rai::_sequence);
-  ret.komo->run_prepare(0.);
 #else
   ptr<KOMO> komo = ret.komo;
   double maxPhase = getMaxPhase();
@@ -193,22 +222,16 @@ SkeletonTranscription Skeleton::mp(){
 
   komo->setModel(*C, collisions);
   komo->setTiming(maxPhase+1., 1, 5., 1);
-//  komo->solver=rai::KS_sparse; //sparseOptimization = true;
-  komo->opt.animateOptimization = 0;
-
-  komo->addQuaternionNorms();
-#if 0
-  komo->setHoming(0., -1., 1e-2);
-  komo->setSquaredQVelocities(0., -1., 1e-2);
-#else
   komo->add_qControlObjective({}, 1, 1e-2);
   komo->add_qControlObjective({}, 0, 1e-2);
-#endif
-  setKOMO(*komo);
+  komo->addQuaternionNorms();
 
   if(collisions) komo->add_collision(true);
 
+  setKOMO(*komo);
+
   komo->run_prepare(.01);
+  //komo->opt.animateOptimization = 0;
 #endif
   ret.mp=ret.komo->nlp_SparseNonFactored();
   return ret;
@@ -302,12 +325,23 @@ SkeletonTranscription Skeleton::mp_finalSlice(){
 SkeletonTranscription Skeleton::mp_path(const arrA& waypoints){
   SkeletonTranscription ret;
   ret.komo=make_shared<KOMO>();
-  ret.komo->opt.verbose=verbose;
+  ret.komo->opt.verbose = verbose-2;
 #if 0
-  ret.komo->solver = rai::KS_sparse;
   ret.komo->setModel(*C, collisions);
   setKOMO(*ret.komo, rai::_path);
-  ret.komo->run_prepare(0.);
+
+  if(waypoints.N){
+    #if 0 //impose waypoint costs?
+      for(uint i=0; i<waypoints.N-1; i++) {
+          ret.komo->addObjective(ARR(conv_step2time(i, waypointsStepsPerPhase)), FS_qItself, {}, OT_sos, {1e-1}, waypoints(i));
+      }
+    #endif
+
+    ret.komo->run_prepare(.01);
+//    ret.komo->reportProblem();
+    ret.komo->initWithWaypoints(waypoints, 1);
+  }
+
 #else
   ptr<KOMO> komo = ret.komo;
   double maxPhase = getMaxPhase();
@@ -315,25 +349,26 @@ SkeletonTranscription Skeleton::mp_path(const arrA& waypoints){
 
   komo->setModel(*C, collisions);
   uint stepsPerPhase = rai::getParameter<uint>("LGP/stepsPerPhase", 10);
-  uint pathOrder = rai::getParameter<uint>("LGP/pathOrder", 2);
-  komo->setTiming(maxPhase+.5, stepsPerPhase, 10., pathOrder);
-  komo->opt.animateOptimization = 0;
-
-  komo->addQuaternionNorms();
-#if 0
-  komo->setHoming(0., -1., 1e-2);
-  if(pathOrder==1) komo->setSquaredQVelocities();
-  else komo->setSquaredQAccelerations();
-#else
+  komo->setTiming(maxPhase+.5, stepsPerPhase, 10., 2);
   komo->add_qControlObjective({}, 2, 1.);
   komo->add_qControlObjective({}, 0, 1e-2);
-#endif
-
-  setKOMO(*komo);
+  komo->addQuaternionNorms();
 
   if(collisions) komo->add_collision(true, 0., 1e1);
 
-  komo->run_prepare(.01);
+  setKOMO(*komo);
+
+  if(waypoints.N){
+    #if 0 //impose waypoint costs?
+      for(uint i=0; i<waypoints.N-1; i++) {
+          ret.komo->addObjective(ARR(conv_step2time(i, waypointsStepsPerPhase)), FS_qItself, {}, OT_sos, {1e-1}, waypoints(i));
+      }
+    #endif
+
+    komo->initWithWaypoints(waypoints, 1);
+  }else{
+    komo->run_prepare(.01);
+  }
 #endif
   ret.mp=ret.komo->nlp_SparseNonFactored();
   return ret;
@@ -485,10 +520,11 @@ void Skeleton::setKOMO(KOMO& komo) const {
             double rad = obj->shape->radius();
             arr times = {s.phase0+.2,s.phase1-.2};
             if(komo.k_order==1) times = {s.phase0, s.phase1};
-            komo.addObjective(times, make_shared<F_PushRadiusPrior>(rad), s.frames, OT_sos, {1e0}, NoArr, 1, +1, 0);
+            komo.addObjective(times, make_shared<F_PushRadiusPrior>(rad), s.frames, OT_sos, {1e1}, NoArr, 1, +1, 0);
           }
         }
         if(komo.k_order>1){
+          komo.addObjective({s.phase0, s.phase1}, FS_position, {s.frames(1)}, OT_sos, {3e0}, {}, 2); //smooth obj motion
           komo.addObjective({s.phase1}, FS_pose, {s.frames(0)}, OT_eq, {1e0}, {}, 1);
           komo.addObjective({s.phase1}, FS_pose, {s.frames(1)}, OT_eq, {1e0}, {}, 1);
         }

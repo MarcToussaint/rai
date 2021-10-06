@@ -1,7 +1,7 @@
 { [touch, r_gripper, stick1], [stable_, r_gripper, stick1] }
 { [push_, stick1, ball2] [quasiStaticOn_, table, ball2] }
 { [stableOn_, table, ball2] }
-{ [stable_, table, stick1] [touch, table, stick1] }
+#{ [stable_, table, stick1] [touch, table, stick1] }
 { [touch, l_gripper, ball2] [stable_, l_gripper, ball2] }
 { [above, ball2, box1], [stableOn_, box1, ball2] }
 { [end] }

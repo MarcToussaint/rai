@@ -12,6 +12,9 @@ const char *USAGE =
 int main(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
+//  rnd.clockSeed();
+  rnd.seed(0);
+
   cout <<USAGE <<endl;
 
   rai::String sktFile = rai::getParameter<rai::String>("sktFile", STRING("none"));
@@ -36,7 +39,8 @@ int main(int argc,char **argv){
   cout <<S <<endl;
 
   S.setConfiguration(C);
-  S.solve(mode, rai::getParameter<int>("verbose", 3));
+//  S.solve(mode, rai::getParameter<int>("verbose", 3));
+  S.solve3(false);
 
   return 0;
 }

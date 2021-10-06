@@ -66,6 +66,7 @@ struct Skeleton {
   //-- to be removed (call generic NLPsolver)
   arr solve(rai::ArgWord sequenceOrPath, int verbose=2);
   shared_ptr<SolverReturn> solve2();
+  shared_ptr<SolverReturn> solve3(bool useKeyframes);
 
   //-- drivers
   void getKeyframeConfiguration(rai::Configuration& C, int step, int verbose=0); //get the Configuration (esp. correct switches/dofs) for given step

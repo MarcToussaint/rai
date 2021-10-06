@@ -294,7 +294,9 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
     CHECK_EQ(frames.N, 2, "");
     Transformation rel = 0;
     rel.pos.set(0, 0, .5*(shapeSize(world, frames(0)) + shapeSize(world, frames(1))));
-    addSwitch(times, true, JT_transXYPhi, SWInit_copy, frames(0), frames(1), rel);
+//    addSwitch(times, true, JT_transXYPhi, SWInit_copy, frames(0), frames(1), rel);
+    addSwitch(times, true, make_shared<KinematicSwitch>(SW_joint, JT_transXYPhi, frames(0), frames(1), world, SWInit_copy, 0, rel, NoTransformation));
+
     //-- no jump at start
     if(firstSwitch){
       if(stepsPerPhase>3){
@@ -343,7 +345,7 @@ void KOMO::addContact_slide(double startTime, double endTime, const char* from, 
   addObjective({startTime, endTime}, make_shared<F_fex_Force>(), {from, to}, OT_sos, {1e-1}, NoArr, k_order, +2, 0);
   addObjective({startTime, endTime}, make_shared<F_fex_Force>(), {from, to}, OT_sos, {1e-2});
   addObjective({startTime, endTime}, make_shared<F_fex_POA>(), {from, to}, OT_sos, {1e-2}, NoArr, k_order, +2, +0);
-  addObjective({startTime, endTime}, make_shared<F_fex_POAzeroRelVel>(), {from, to}, OT_sos, {1e-1}, NoArr, 1, +1, +0);
+  addObjective({startTime, endTime}, make_shared<F_fex_POAzeroRelVel>(), {from, to}, OT_sos, {1e0}, NoArr, 1, +1, +0);
 }
 
 void KOMO::addContact_stick(double startTime, double endTime, const char* from, const char* to) {
@@ -588,7 +590,13 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, 
       uint Tstop=T;
       if(i+1<steps.N && steps(i+1)<T) Tstop=steps(i+1);
       for(uint t=steps(i); t<Tstop; t++) {
-        setConfiguration_qAll(t, waypoints(i));
+        if(waypoints(i).nd==1){
+          try{
+            setConfiguration_qAll(t, waypoints(i));
+          }catch(...){}
+        }else{
+          setConfiguration_X(t, waypoints(i));
+        }
       }
     }
   }else{
@@ -617,7 +625,9 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, 
         } else {
           q = q0 + phase * (q1-q0);
         }
-        pathConfig.setJointState(q, timeSlices[k_order+j].sub(nonSwitched));
+        try{
+          pathConfig.setJointState(q, timeSlices[k_order+j].sub(nonSwitched));
+        }catch(...){}
 //        view(true, STRING("interpolating: step:" <<i <<" t: " <<j));
       }
     }/*else{
@@ -1010,7 +1020,7 @@ void KOMO::applySwitch(const KinematicSwitch& sw) {
     if(s<0) s=0;
     int sEnd = int(k_order+T);
 //    if(sw.timeOfTermination>=0)  sEnd = sw.timeOfTermination+(int)k_order;
-    CHECK(s<sEnd, "");
+    CHECK(s<sEnd, "s:" <<s <<" sEnd:" <<sEnd);
     rai::Frame *f0=0;
     for(; s<sEnd; s++) { //apply switch on all configurations!
       rai::Frame* f = sw.apply(timeSlices[s]());
