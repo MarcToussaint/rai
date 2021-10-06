@@ -6,7 +6,7 @@
 #include "../Core/array.h"
 #include "../Kin/kin.h"
 #include "../Optim/MathematicalProgram.h"
-#include "../Optim/solver.h"
+#include "../Optim/MP_Solver.h"
 
 struct KOMO;
 

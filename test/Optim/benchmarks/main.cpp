@@ -1,5 +1,5 @@
 #include <KOMO/opt-benchmarks.h>
-#include <Optim/solver.h>
+#include <Optim/MP_Solver.h>
 #include <KOMO/komo.h>
 
 
@@ -8,9 +8,9 @@
 void TEST(KOMO_IK) {
   OptBench_InvKin_Endeff nlp("../../KOMO/switches/model2.g", false);
 
-  NLP_Solver S;
+  MP_Solver S;
 
-  rai::Enum<NLP_SolverID> sid (rai::getParameter<rai::String>("solver"));
+  rai::Enum<MP_SolverID> sid (rai::getParameter<rai::String>("solver"));
   S.setSolver(sid);
   S.setProblem(*nlp.get());
 
@@ -28,9 +28,9 @@ void TEST(Skeleton_Handover) {
 //  OptBench_Skeleton_Handover nlp(rai::_path);
 //  OptBench_Skeleton_StackAndBalance nlp(rai::_sequence);
 
-  NLP_Solver S;
+  MP_Solver S;
 
-  rai::Enum<NLP_SolverID> sid (rai::getParameter<rai::String>("solver"));
+  rai::Enum<MP_SolverID> sid (rai::getParameter<rai::String>("solver"));
   S.setSolver(sid);
   S.setProblem(*nlp.get());
 
@@ -50,7 +50,7 @@ int MAIN(int argc,char** argv){
 //  rnd.clockSeed();
   rnd.seed(0);
 
-//  testKOMO_IK();
+  testKOMO_IK();
   testSkeleton_Handover();
 
   return 0;

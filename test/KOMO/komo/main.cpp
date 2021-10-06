@@ -3,7 +3,7 @@
 #include <Kin/F_collisions.h>
 #include <Kin/viewer.h>
 #include <Kin/F_pose.h>
-#include <Optim/solver.h>
+#include <Optim/MP_Solver.h>
 
 //===========================================================================
 

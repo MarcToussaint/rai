@@ -1,7 +1,7 @@
 #include <Optim/optimization.h>
 #include <Optim/benchmarks.h>
 #include <functional>
-#include <Optim/solver.h>
+#include <Optim/MP_Solver.h>
 
 void TEST(SqrProblem) {
   const ScalarFunction& _f = ChoiceFunction();
@@ -22,9 +22,9 @@ void TEST(SqrProblem) {
   checkGradient(f, x, 1e-3);
   checkHessian (f, x, 1e-3);
 
-  NLP_Solver S;
+  MP_Solver S;
 
-  rai::Enum<NLP_SolverID> sid (rai::getParameter<rai::String>("solver"));
+  rai::Enum<MP_SolverID> sid (rai::getParameter<rai::String>("solver"));
   S.setSolver(sid);
   S.setProblem(nlp);
   S.setInitialization({1., 1.});

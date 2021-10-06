@@ -8,7 +8,6 @@
 
 #include "optimization.h"
 #include "Graph_Problem.h"
-#include "convert.h"
 #include "constrained.h"
 
 struct VariableNode {

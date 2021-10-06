@@ -12,10 +12,9 @@
 #include "../MCTS/solver_PlainMC.h"
 #include "../KOMO/komo.h"
 #include "../Kin/switch.h"
-#include "../Optim/GraphOptim.h"
 #include "../Gui/opengl.h"
 #include "../Kin/viewer.h"
-#include "../Optim/solver.h"
+#include "../Optim/MP_Solver.h"
 
 #define DEBUG(x) //x
 #define DEL_INFEASIBLE(x) //x

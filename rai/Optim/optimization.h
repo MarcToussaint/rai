@@ -15,14 +15,10 @@
 // lambda expression interfaces
 //
 
-/// A scalar function $y = f(x)$, if @df@ or @Hf@ are not NoArr, the gradient and/or Hessian is returned
-typedef std::function<double(arr& df, arr& Hf, const arr& x)> ScalarFunction;
-
-/// A vector function $y = f(x)$, if @J@ is not NoArr, Jacobian is returned
-/// This also implies an optimization problem $\hat f(y) = y^T(x) y(x)$ of (iterated)
-/// Gauss-Newton type where the Hessian is approximated by J^T J
-typedef std::function<void(arr& y, arr& Jy, const arr& x)> VectorFunction;
-
+// see function types defined in array.h
+//ScalarFunction
+//VectorFunction
+//fct
 
 struct Conv_ScalarProblem_MathematicalProgram : MathematicalProgram {
   ScalarFunction f;
@@ -40,7 +36,6 @@ struct Conv_ScalarProblem_MathematicalProgram : MathematicalProgram {
   void getFHessian(arr& H, const arr& x) {
     f(NoArr, H, x);
   }
-
   void setBounds(double lo, double up){ bounds_lo.resize(xDim) = lo;  bounds_up.resize(xDim) = up; }
 };
 
@@ -53,60 +48,7 @@ struct Conv_MathematicalProgram_ScalarProblem : ScalarFunction {
     });
   }
 
-  double scalar(arr& g, arr& H, const arr& x){
-    ObjectiveTypeA featureTypes;
-    arr phi, J;
-    P.getFeatureTypes(featureTypes);
-    P.evaluate(phi, J, x);
-
-    CHECK_EQ(phi.N, featureTypes.N, "");
-    CHECK_EQ(phi.N, J.d0, "");
-    CHECK_EQ(x.N, J.d1, "");
-
-    double f=0.;
-    for(uint i=0; i<phi.N; i++) {
-      if(featureTypes.p[i]==OT_sos) f += rai::sqr(phi.p[i]);
-      else if(featureTypes.p[i]==OT_f) f += phi.p[i];
-      else HALT("this must be an unconstrained problem!")
-    }
-
-    if(!!g) { //gradient
-      arr coeff=zeros(phi.N);
-      for(uint i=0; i<phi.N; i++) {
-        if(featureTypes.p[i]==OT_sos) coeff.p[i] += 2.* phi.p[i];
-        else if(featureTypes.p[i]==OT_f) coeff.p[i] += 1.;
-      }
-      g = comp_At_x(J, coeff);
-      g.reshape(x.N);
-    }
-
-    if(!!H) { //hessian: Most terms are of the form   "J^T  diag(coeffs)  J"
-      arr coeff=zeros(phi.N);
-      double hasF=false;
-      for(uint i=0; i<phi.N; i++) {
-        if(featureTypes.p[i]==OT_sos) coeff.p[i] += 2.;
-        else if(featureTypes.p[i]==OT_f) hasF=true;
-      }
-      arr tmp = J;
-      if(!isSparseMatrix(tmp)) {
-        for(uint i=0; i<phi.N; i++) tmp[i]() *= sqrt(coeff.p[i]);
-      } else {
-        arr sqrtCoeff = sqrt(coeff);
-        tmp.sparse().rowWiseMult(sqrtCoeff);
-      }
-      H = comp_At_A(tmp); //Gauss-Newton type!
-
-      if(hasF) { //For f-terms, the Hessian must be given explicitly, and is not \propto J^T J
-        arr fH;
-        P.getFHessian(fH, x);
-        H += fH;
-      }
-
-      if(!H.special) H.reshape(x.N, x.N);
-    }
-
-    return f;
-  }
+  double scalar(arr& g, arr& H, const arr& x);
 };
 
 

@@ -3,7 +3,7 @@
 #include <Kin/F_collisions.h>
 #include <Kin/viewer.h>
 #include <Kin/F_pose.h>
-#include <Optim/solver.h>
+#include <Optim/MP_Solver.h>
 
 //===========================================================================
 
@@ -31,7 +31,8 @@ void testFactored(){
   komo.addObjective({}, FS_poseDiff, {"gripper", "gripperDUP"}, OT_eq, {1e2});
 
   //grasp
-  komo.addSwitch_stable(1., 2., "table", "gripper", "box");
+//  komo.addSwitch_stable(1., 2., "table", "gripper", "box");
+  komo.addModeSwitch({1., 2.}, rai::SY_stable, {"gripper", "box"}, true);
   komo.addObjective({1.}, FS_positionDiff, {"gripperDUP", "box"}, OT_eq, {1e2});
   komo.addObjective({1.}, FS_scalarProductXX, {"gripperDUP", "box"}, OT_eq, {1e2}, {0.});
   komo.addObjective({1.}, FS_vectorZ, {"gripperDUP"}, OT_eq, {1e2}, {0., 0., 1.});
@@ -41,7 +42,8 @@ void testFactored(){
   komo.addObjective({.9,1.1}, FS_position, {"gripper"}, OT_eq, {}, {0.,0.,.1}, 2);
 
   //place
-  komo.addSwitch_stable(2., -1., "gripper", "table", "box", false);
+//  komo.addSwitch_stable(2., -1., "gripper", "table", "box", false);
+  komo.addModeSwitch({2., -1.}, rai::SY_stable, {"table", "box"}, false);
   komo.addObjective({2.}, FS_positionDiff, {"box", "table"}, OT_eq, {1e2}, {0,0,.08}); //arr({1,3},{0,0,1e2})
   komo.addObjective({2.}, FS_vectorZ, {"gripper"}, OT_eq, {1e2}, {0., 0., 1.});
 
@@ -51,8 +53,8 @@ void testFactored(){
 
   //== get info from the factored problem
   {
-    std::shared_ptr<MathematicalProgram_Factored> nlp = komo.nlp_Factored();
-    nlp->report(cout, 3);
+    std::shared_ptr<MathematicalProgram_Factored> mp = komo.mp_Factored();
+    mp->report(cout, 3);
   }
 
   //== three equivalent options to solve the full problem:
@@ -78,27 +80,27 @@ void testFactored(){
   while(komo.view_play(true));
 #endif
 
-  std::shared_ptr<MathematicalProgram_Factored> nlp = komo.nlp_Factored();
-  nlp->report(cout, 3);
+  std::shared_ptr<MathematicalProgram_Factored> mp = komo.mp_Factored();
+  mp->report(cout, 3);
 
   uintA gripperDUP_vars;
-  for(uint i=0;i<nlp->getNumVariables();i++){
-    if(nlp->getVariableName(i).startsWith("gripperDUP")) gripperDUP_vars.append(i);
+  for(uint i=0;i<mp->getNumVariables();i++){
+    if(mp->getVariableName(i).startsWith("gripperDUP")) gripperDUP_vars.append(i);
   }
   cout <<gripperDUP_vars <<endl;
 
-  nlp->subSelect(gripperDUP_vars, {});
+  mp->subSelect(gripperDUP_vars, {});
 
   cout <<"======== SUBSELECT ==========" <<endl;
-  nlp->report(cout, 3);
+  mp->report(cout, 3);
 
-  checkJacobianCP(*nlp, komo.x, 1e-6);
+  checkJacobianCP(*mp, komo.x, 1e-6);
 
-  NLP_Solver()
-      .setProblem(*nlp)
+  MP_Solver()
+      .setProblem(*mp)
       .solve();
 
-  nlp->report(cout, 3);
+  mp->report(cout, 3);
 
 //  komo.checkGradients();
 //  komo.optimize();

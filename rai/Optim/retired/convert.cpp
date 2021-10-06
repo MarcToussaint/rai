@@ -26,11 +26,10 @@ Convert::~Convert() {
 
 //void conv_KOrderMarkovFunction_MathematicalProgram(KOrderMarkovFunction& f, arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x);
 double conv_VectorFunction_ScalarFunction(VectorFunction f, arr& g, arr& H, const arr& x) {
-  arr y, J;
-  f(y, (!!g?J:NoArr), x);
+  arr y = f(x);
   //  if(J.special==arr::RowShiftedST) J = unpack(J);
-  if(!!g) { g = comp_At_x(J, y); g *= 2.; }
-  if(!!H) { H = comp_At_A(J); H *= 2.; }
+  if(!!g) { g = comp_At_x(y.J(), y); g *= 2.; }
+  if(!!H) { H = comp_At_A(y.J()); H *= 2.; }
   return sumOfSqr(y);
 }
 
@@ -93,12 +92,7 @@ VectorFunction conv_cstylefv2VectorFunction(void (*fv)(arr&, arr*, const arr&, v
 
 ScalarFunction conv_VectorFunction2ScalarFunction(const VectorFunction& f) {
   return [&f](arr& g, arr& H, const arr& x) -> double {
-    arr y, J;
-    f(y, (!!g?J:NoArr), x);
-    //  if(J.special==arr::RowShiftedST) J = unpack(J);
-    if(!!g) { g = comp_At_x(J, y); g *= 2.; }
-    if(!!H) { H = comp_At_A(J); H *= 2.; }
-    return sumOfSqr(y);
+    return conv_VectorFunction_ScalarFunction(f, g, H, x);
   };
 }
 

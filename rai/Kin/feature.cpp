@@ -150,14 +150,15 @@ rai::String Feature::shortTag(const rai::Configuration& C) {
 //}
 
 VectorFunction Feature::vf2(const FrameL& F) { ///< direct conversion to vector function: use to check gradient or evaluate
-  return [this, &F](arr& y, arr& J, const arr& x) -> void {
+  return [this, &F](const arr& x) -> arr {
     F.first()->C.setJointState(x);
-    auto jacMode = F.first()->C.jacMode;
-    F.first()->C.setJacModeAs(J);
-    y = phi(F);
-    grabJ(y, J);
+//    auto jacMode = F.first()->C.jacMode;
+//    F.first()->C.setJacModeAs(J);
+    arr y = phi(F);
+//    grabJ(y, J);
     //if(!!J && y.jac) J = *y.jac;
-    F.first()->C.jacMode=jacMode;
+//    F.first()->C.jacMode=jacMode;
+    return y;
   };
 }
 

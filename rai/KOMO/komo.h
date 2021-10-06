@@ -13,7 +13,6 @@
 #include "../Kin/kin.h"
 #include "../Optim/optimization.h"
 #include "../Optim/constrained.h"
-#include "../Optim/KOMO_Problem.h"
 #include "../Optim/MathematicalProgram.h"
 #include "../Kin/switch.h"
 #include "../Kin/featureSymbols.h"
@@ -233,7 +232,7 @@ public:
   //
 
   shared_ptr<MathematicalProgram> nlp_SparseNonFactored();
-  shared_ptr<MathematicalProgram_Factored> nlp_Factored();
+  shared_ptr<MathematicalProgram_Factored> mp_Factored();
 
 
   //===========================================================================

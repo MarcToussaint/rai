@@ -248,10 +248,7 @@ void TEST(Autodiff){
 
 #define checkOperation(op) \
   { \
-  VectorFunction f = [&](arr& y, arr& J, const arr& x) -> void { \
-    y = op; \
-    if(!!J) J = y.J_reset(); \
-  }; \
+  VectorFunction f = [&](const arr& x) -> arr { return op; }; \
   checkJacobian(f, x, 1e-1); \
   }
 

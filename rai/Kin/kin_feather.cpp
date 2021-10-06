@@ -311,6 +311,9 @@ void FeatherstoneInterface::update() {
         link.com = f->inertia->com;
         link.mass=f->inertia->mass; CHECK(link.mass>0. || link.qIndex==-1, "a moving link without mass -> this will diverge");
         link.inertia=f->inertia->matrix;
+      }else{
+//        CHECK_EQ(link.type, rai::JT_rigid, "frame '" <<f->name <<"' has zero mass but joint");
+//        link.mass=1e-4;
       }
       n += link.dof();
     }

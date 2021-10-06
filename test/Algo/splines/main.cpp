@@ -74,10 +74,11 @@ void TEST(Path){
       <<"\npoints= " <<P.knotPoints <<endl;
 
   //-- gradient check of velocity
-  VectorFunction Test = [&P](arr& y, arr& J, const arr& x) -> void {
+  fct Test = [&P](const arr& x) -> arr {
     CHECK_EQ(x.N,1,"");
-    y = P.getPosition(x(0));
-    if(!!J) J = P.getVelocity(x(0));
+    arr y = P.getPosition(x(0));
+    y.J() = P.getVelocity(x(0));
+    return y;
   };
   for(uint k=0;k<10;k++){
     arr x(1);

@@ -32,17 +32,21 @@ void TEST(Dynamics){
 
   arr u;
   bool friction=false;
-  VectorFunction diffEqn = [&C,&u,&friction](arr& y,arr&,const arr& x){
+  VectorFunction diffEqn = [&C,&u,&friction](const arr& x) -> arr{
+    checkNan(x);
     C.setJointState(x[0]);
     if(!u.N) u.resize(x.d1).setZero();
     if(friction) u = -10. * x[1];
     /*if(T2::addContactsToDynamics){
         G.contactsToForces(100.,10.);
       }*/
+    arr y;
     C.fwdDynamics(y, x[1], u);
+    checkNan(y);
+    return y;
   };
   
-  uint t,T=720,n=C.getJointStateDimension();
+  uint t,T=500,n=C.getJointStateDimension();
   arr q,qd(n),qdd(n),qdd_(n);
   q = C.getJointState();
   qd.setZero();
@@ -56,7 +60,7 @@ void TEST(Dynamics){
 //  for(rai::Body *b:G.bodies){ b->mass=1.; b->inertia.setZero(); }
 
   for(t=0;t<T;t++){
-    if(false && t>=500){ //hold steady **THIS BREAKS! INV DYNAMICS ARE BROKE **
+    if(t>1000){ //hold steady **THIS BREAKS! INV DYNAMICS ARE BROKE **
       qdd_ = -1. * qd;
       C.inverseDynamics(u, qd, qdd_);
       //tau.resize(n); tau.setZero();
@@ -77,7 +81,7 @@ void TEST(Dynamics){
       arr x=cat(q,qd).reshape(2,q.N);
       rai::rk4_2ndOrder(x, x, diffEqn, dt);
       q=x[0]; qd=x[1];
-      if(t>300){
+      if(t>500){
         friction=true;
         text.clear() <<"t=" <<t <<"  friction swing using RK4,  energy=" <<C.getEnergy(qd);
       }else{

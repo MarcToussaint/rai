@@ -6,7 +6,7 @@
  *  wants to query. The MathematicalProgram_Factory class is an interface for /users/: It makes it easier to
  *  declare an NLP (as an alternative to overloading the virtuals of MathematicalProgram). But the semantics
  *  of the setting methods are perfectly analogous to the virtual methods of MathematicalProgram */
-struct NLP_Factory : MathematicalProgram {
+struct MP_Factory : MathematicalProgram {
   void *userData;
   uint dim;
   ObjectiveTypeA featureTypes;
@@ -16,7 +16,7 @@ struct NLP_Factory : MathematicalProgram {
   std::function<std::tuple<arr, arr> (const arr&)> eval2;
   std::function<arr(const arrL& previousOptima, void* _userData)> init;
 
-  NLP_Factory() {}
+  MP_Factory() {}
 
   void setDimension(uint _dim) { dim = _dim; }
   void setFeatureTypes(const ObjectiveTypeA& _featureTypes){ featureTypes = _featureTypes; }

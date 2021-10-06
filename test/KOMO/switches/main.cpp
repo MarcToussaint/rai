@@ -29,7 +29,8 @@ void TEST(Grasp){
 #else
   komo.addObjective({1.}, FS_distance, {"endeff", "stickTip"}, OT_eq, {1e2});
 //  komo.addObjective({1.}, FS_positionDiff, {"endeff", "stickTip"}, OT_eq, {1e2});
-  komo.addSwitch_stable(1., -1., 0, "endeff", "stickTip");
+//  komo.addSwitch_stable(1., -1., 0, "endeff", "stickTip");
+  komo.addModeSwitch({1., -1.}, rai::SY_stable, {"endeff", "stickTip"}, true);
 #endif
 
   komo.add_collision(true);
@@ -71,7 +72,8 @@ void testPickAndPlace(bool keyframesOnly){
   komo.addQuaternionNorms();
 
   //grasp
-  komo.addSwitch_stable(1., 2., "table", "gripper", "box");
+//  komo.addSwitch_stable(1., 2., "table", "gripper", "box");
+  komo.addModeSwitch({1., 2.}, rai::SY_stable, {"gripper", "box"}, true);
   komo.addObjective({1.}, FS_positionDiff, {"gripper", "box"}, OT_eq, {1e2});
   komo.addObjective({1.}, FS_scalarProductXX, {"gripper", "box"}, OT_eq, {1e2}, {0.});
   komo.addObjective({1.}, FS_vectorZ, {"gripper"}, OT_eq, {1e2}, {0., 0., 1.});
@@ -83,7 +85,8 @@ void testPickAndPlace(bool keyframesOnly){
   }
 
   //place
-  komo.addSwitch_stable(2., -1., "gripper", "table", "box", false);
+//  komo.addSwitch_stable(2., -1., "gripper", "table", "box", false);
+  komo.addModeSwitch({2., -1.}, rai::SY_stable, {"table", "box"}, false);
   komo.addObjective({2.}, FS_positionDiff, {"box", "table"}, OT_eq, {1e2}, {0,0,.08}); //arr({1,3},{0,0,1e2})
   komo.addObjective({2.}, FS_vectorZ, {"gripper"}, OT_eq, {1e2}, {0., 0., 1.});
 

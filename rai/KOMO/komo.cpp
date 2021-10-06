@@ -29,7 +29,6 @@
 
 #include "../Optim/optimization.h"
 #include "../Optim/primalDual.h"
-#include "../Optim/GraphOptim.h"
 #include "../Optim/opt-nlopt.h"
 #include "../Optim/opt-ipopt.h"
 #include "../Optim/opt-ceres.h"
@@ -914,8 +913,11 @@ void KOMO::checkGradients() {
     CP = make_shared<Conv_KOMO_SparseNonfactored>(*this, solver==rai::KS_sparse);
   }
 
-  VectorFunction F = [CP](arr& phi, arr& J, const arr& x) {
-    return CP->evaluate(phi, J, x);
+  VectorFunction F = [CP](const arr& x) -> arr{
+    arr phi, J;
+    CP->evaluate(phi, J, x);
+    phi.J() = J;
+    return phi;
   };
   //    checkJacobian(F, x, tolerance);
   arr J;
@@ -1199,7 +1201,7 @@ shared_ptr<MathematicalProgram> KOMO::nlp_SparseNonFactored(){
   return make_shared<Conv_KOMO_SparseNonfactored>(*this, solver==rai::KS_sparse);
 }
 
-shared_ptr<MathematicalProgram_Factored> KOMO::nlp_Factored(){
+shared_ptr<MathematicalProgram_Factored> KOMO::mp_Factored(){
   return make_shared<Conv_KOMO_FineStructuredProblem>(*this);
 }
 

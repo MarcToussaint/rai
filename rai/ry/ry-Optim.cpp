@@ -9,8 +9,8 @@
 #ifdef RAI_PYBIND
 
 #include "../ry/types.h"
-#include "../Optim/NLP_Factory.h"
-#include "../Optim/solver.h"
+#include "../Optim/MP_Factory.h"
+#include "../Optim/MP_Solver.h"
 #include "../KOMO/opt-benchmarks.h"
 #include <pybind11/functional.h>
 #include <pybind11/iostream.h>
@@ -27,7 +27,7 @@ void init_Optim(pybind11::module& m) {
     self->evaluate(phi, J, x);
     return std::tuple<arr,arr>(phi, J);
   },
-  "query the NLP at a point $x$; returns the tuple $(phi,J)$, which is the feature vector and its Jacobian; features define cost terms, sum-of-square (sos) terms, inequalities, and equalities depending on 'getFeatureTypes'"
+  "query the MP at a point $x$; returns the tuple $(phi,J)$, which is the feature vector and its Jacobian; features define cost terms, sum-of-square (sos) terms, inequalities, and equalities depending on 'getFeatureTypes'"
   )
 
   .def("getFeatureTypes", [](std::shared_ptr<MathematicalProgram>& self){
@@ -73,16 +73,16 @@ void init_Optim(pybind11::module& m) {
 
   //===========================================================================
 
-  pybind11::class_<NLP_Factory, std::shared_ptr<NLP_Factory>>(m, "NLP_Factory", __mp)
+  pybind11::class_<MP_Factory, std::shared_ptr<MP_Factory>>(m, "MP_Factory", __mp)
 
       .def(pybind11::init<>())
 
-      .def("setDimension", &NLP_Factory::setDimension)
-      .def("setFeatureTypes", &NLP_Factory::setFeatureTypes)
-      .def("setBounds", &NLP_Factory::setBounds)
-      .def("setEvalCallback", &NLP_Factory::setEvalCallback2)
+      .def("setDimension", &MP_Factory::setDimension)
+      .def("setFeatureTypes", &MP_Factory::setFeatureTypes)
+      .def("setBounds", &MP_Factory::setBounds)
+      .def("setEvalCallback", &MP_Factory::setEvalCallback2)
 
-  .def("testCallingEvalCallback", [](std::shared_ptr<NLP_Factory>& self, const arr& x){
+  .def("testCallingEvalCallback", [](std::shared_ptr<MP_Factory>& self, const arr& x){
     arr y, J;
     self->evaluate(y, J, x);
     return std::tuple<arr,arr>(y, J);
@@ -117,24 +117,24 @@ void init_Optim(pybind11::module& m) {
 
   //===========================================================================
 
-  pybind11::class_<NLP_Solver, std::shared_ptr<NLP_Solver>>(m, "NLP_Solver", "An interface to portfolio of solvers")
+  pybind11::class_<MP_Solver, std::shared_ptr<MP_Solver>>(m, "MP_Solver", "An interface to portfolio of solvers")
 
       .def(pybind11::init<>())
-//      .def("setProblem", &NLP_Solver::setProblem)
-      .def("setProblem", [](std::shared_ptr<NLP_Solver>& self, std::shared_ptr<MathematicalProgram>& P){
+//      .def("setProblem", &MP_Solver::setProblem)
+      .def("setProblem", [](std::shared_ptr<MP_Solver>& self, std::shared_ptr<MathematicalProgram>& P){
          self->setProblem(*P);
       } )
-      .def("setSolver", &NLP_Solver::setSolver)
+      .def("setSolver", &MP_Solver::setSolver)
 
-      .def("getOptions", &NLP_Solver::getOptions)
-      .def("setOptions", &NLP_Solver::setOptions)
-      .def("setTracing", &NLP_Solver::setTracing)
-      .def("solve", &NLP_Solver::solve)
+      .def("getOptions", &MP_Solver::getOptions)
+      .def("setOptions", &MP_Solver::setOptions)
+      .def("setTracing", &MP_Solver::setTracing)
+      .def("solve", &MP_Solver::solve)
 
-      .def("getTrace_x", &NLP_Solver::getTrace_x)
-      .def("getTrace_costs", &NLP_Solver::getTrace_costs)
-      .def("getTrace_phi", &NLP_Solver::getTrace_phi)
-      .def("getTrace_J", &NLP_Solver::getTrace_J)
+      .def("getTrace_x", &MP_Solver::getTrace_x)
+      .def("getTrace_costs", &MP_Solver::getTrace_costs)
+      .def("getTrace_phi", &MP_Solver::getTrace_phi)
+      .def("getTrace_J", &MP_Solver::getTrace_J)
 
       ;
 
@@ -142,10 +142,10 @@ void init_Optim(pybind11::module& m) {
 
 #define ENUMVAL(pre, x) .value(#x, pre##_##x)
 
-  pybind11::enum_<NLP_SolverID>(m, "NLP_SolverID")
-      ENUMVAL(NLPS, gradientDescent) ENUMVAL(NLPS, rprop) ENUMVAL(NLPS, LBFGS) ENUMVAL(NLPS, newton)
-      ENUMVAL(NLPS, augmentedLag) ENUMVAL(NLPS, squaredPenalty) ENUMVAL(NLPS, logBarrier) ENUMVAL(NLPS, singleSquaredPenalty)
-      ENUMVAL(NLPS, NLopt) ENUMVAL(NLPS, Ipopt) ENUMVAL(NLPS, Ceres)
+  pybind11::enum_<MP_SolverID>(m, "MP_SolverID")
+      ENUMVAL(MPS, gradientDescent) ENUMVAL(MPS, rprop) ENUMVAL(MPS, LBFGS) ENUMVAL(MPS, newton)
+      ENUMVAL(MPS, augmentedLag) ENUMVAL(MPS, squaredPenalty) ENUMVAL(MPS, logBarrier) ENUMVAL(MPS, singleSquaredPenalty)
+      ENUMVAL(MPS, NLopt) ENUMVAL(MPS, Ipopt) ENUMVAL(MPS, Ceres)
       .export_values();
 
 

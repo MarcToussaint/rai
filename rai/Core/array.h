@@ -522,22 +522,12 @@ extern StringA& NoStringA; //this is a pointer to nullptr!!!! I use it for optio
 /// @name basic function types
 /// @{
 
-/// a scalar function \f$f:~x\mapsto y\in\mathbb{R}\f$ with optional gradient and hessian
-//struct ScalarFunction {
-//  virtual double fs(arr& g, arr& H, const arr& x) = 0;
-//  virtual ~ScalarFunction(){}
-//};
-
-typedef std::function<double(arr& g, arr& H, const arr& x)> ScalarFunction;
-
+/// a generic vector-valued function \f$f:~x\mapsto y\in\mathbb{R}^d\f$, where return value may have Jacobian attached
 typedef std::function<arr(const arr& x)> fct;
+typedef std::function<arr(const arr& x)> VectorFunction;
 
-/// a vector function \f$f:~x\mapsto y\in\mathbb{R}^d\f$ with optional Jacobian
-//struct VectorFunction {
-//  virtual void fv(arr& y, arr& J, const arr& x) = 0; ///< returning a vector y and (optionally, if NoArr) Jacobian J for x
-//  virtual ~VectorFunction(){}
-//};
-typedef std::function<void(arr& y, arr& J, const arr& x)> VectorFunction;
+/// a scalar function \f$f:~x\mapsto y\in\mathbb{R}\f$ with optional gradient and hessian
+typedef std::function<double(arr& g, arr& H, const arr& x)> ScalarFunction;
 
 /// a kernel function
 struct KernelFunction {

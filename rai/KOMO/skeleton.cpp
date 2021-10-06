@@ -6,7 +6,7 @@
 #include "../Kin/F_pose.h"
 #include "../Kin/F_forces.h"
 #include "../Kin/F_qFeatures.h"
-#include "../Optim/solver.h"
+#include "../Optim/MP_Solver.h"
 #include "../Logic/fol.h"
 
 double shapeSize(const rai::Configuration& K, const char* name, uint i=2);
@@ -155,7 +155,7 @@ arr Skeleton::solve(ArgWord sequenceOrPath, int verbose) {
 shared_ptr<SolverReturn> Skeleton::solve2(){
   auto trans = this->mp();
 
-  NLP_Solver sol;
+  MP_Solver sol;
   sol.setProblem(*trans.mp);
 
   auto ret = sol.solve();

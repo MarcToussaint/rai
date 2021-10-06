@@ -39,11 +39,12 @@ void TEST(QuaternionJacobian){
   for(uint k=0;k<1;k++){
     rai::Vector z;
     z.setRandom();
-    VectorFunction f = [&z](arr& y, arr& J, const arr& x){
+    VectorFunction f = [&z](const arr& x) -> arr{
 //      double l = length(x);
       rai::Quaternion q(x);
-      y = conv_vec2arr(q*z);
-      if(!!J){ J = ~(q.getMatrixJacobian() * conv_vec2arr(z)); }
+      arr y = conv_vec2arr(q*z);
+      y.J() = ~(q.getMatrixJacobian() * conv_vec2arr(z));
+      return y;
     };
 
     arr x = randn(4);

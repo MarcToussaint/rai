@@ -36,18 +36,16 @@ void TEST(LoadSave){
 //
 
 void testJacobianInFile(const char* filename, const char* shape){
-  rai::Configuration K(filename);
+  rai::Configuration C(filename);
 
-  rai::Frame *a=K.getFrame(shape);
+  rai::Frame *a=C.getFrame(shape);
 
-  VectorFunction f = ( [&a, &K](arr& y, arr& J, const arr& x) -> void
-  {
-    K.setJointState(x);
-    K.kinematicsPos(y, J, a, NoVector);
-    if(!!J) cout <<"J=" <<J <<endl;
+  VectorFunction f = ( [&a, &C](const arr& x) -> arr {
+    C.setJointState(x);
+    return C.kinematics_pos(a);
   } );
 
-  checkJacobian(f, K.q, 1e-4);
+  checkJacobian(f, C.q, 1e-4);
 
 //  rai::wait();
 }
@@ -80,7 +78,8 @@ void TEST(Kinematics){
     MyFct(Mode _mode, rai::Configuration &_K,
           rai::Frame *_b, rai::Vector &_vec, rai::Frame *_b2, rai::Vector &_vec2)
       : mode(_mode), K(_K), b(_b), b2(_b2), vec(_vec), vec2(_vec2){
-      VectorFunction::operator= ( [this](arr& y, arr& J, const arr& x) -> void{
+      VectorFunction::operator= ( [this](const arr& x) -> arr {
+        arr y, J;
         K.setJointState(x);
         K.setJacModeAs(J);
         switch(mode){
@@ -89,6 +88,8 @@ void TEST(Kinematics){
           case Quat:   K.kinematicsQuat(y,J,b); break;
 //          case RelRot: K.kinematicsRelRot(y,J,b,b2); break;
         }
+        y.J() = J;
+        return y;
         //if(!!J) cout <<"\nJ=" <<J <<endl;
       } );
     }
@@ -257,11 +258,12 @@ void TEST(Contacts){
 
   G.swift()->cutoff =.5;
 
-  VectorFunction f = [&G](arr& y, arr& J, const arr& x) -> void {
+  VectorFunction f = [&G](const arr& x) -> arr {
     G.setJointState(x);
-    G.setJacModeAs(J);
     G.stepSwift();
-    G.kinematicsPenetration(y, J, .2);
+    arr y;
+    G.kinematicsPenetration(y, y.J(), .2);
+    return y;
   };
 
   x = G.getJointState();
@@ -446,7 +448,7 @@ void TEST(Dynamics){
 
   arr u;
   bool friction=false;
-  VectorFunction diffEqn = [&G,&u,&friction](arr& y, arr&, const arr& x){
+  VectorFunction diffEqn = [&G,&u,&friction](const arr& x) -> arr{
     checkNan(x);
     G.setJointState(x[0]);
     if(!u.N) u.resize(x.d1).setZero();
@@ -455,8 +457,10 @@ void TEST(Dynamics){
     /*if(T2::addContactsToDynamics){
         G.contactsToForces(100.,10.);
       }*/
+    arr y;
     G.fwdDynamics(y, x[1], u, true);
     checkNan(y);
+    return y;
   };
   
   uint t,T=720,n=G.getJointStateDimension();

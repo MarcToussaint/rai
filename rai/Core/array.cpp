@@ -1327,10 +1327,11 @@ arr finiteDifferenceGradient(const ScalarFunction& f, const arr& x, arr& Janalyt
 }
 
 /// numeric (finite difference) computation of the gradient
-arr finiteDifferenceJacobian(const VectorFunction& f, const arr& _x, arr& Janalytic) {
+arr finiteDifferenceJacobian(const fct& f, const arr& _x, arr& Janalytic) {
   arr x=_x;
   arr y, dx, dy, J;
-  f(y, Janalytic, x);
+  y = f(x);
+  Janalytic = y.J_reset();
   if(isRowShifted(Janalytic)
       || isSparseMatrix(Janalytic)) {
     Janalytic = unpack(Janalytic);
@@ -1342,8 +1343,8 @@ arr finiteDifferenceJacobian(const VectorFunction& f, const arr& _x, arr& Janaly
   for(i=0; i<x.N; i++) {
     dx=x;
     dx.elem(i) += eps;
-    f(dy, NoArr, dx);
-    dy = (dy-y)/eps;
+    dy = f(dx);
+    dy = (dy.noJ()-y.noJ())/eps;
     for(k=0; k<y.N; k++) J(k, i)=dy.elem(k);
   }
   J.reshapeAs(Janalytic);

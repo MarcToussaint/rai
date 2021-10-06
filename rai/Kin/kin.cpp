@@ -2052,24 +2052,15 @@ void Configuration::stepOde(double tau) {
 
 void Configuration::stepDynamics(arr& qdot, const arr& Bu_control, double tau, double dynamicNoise, bool gravity) {
 
-  struct DiffEqn:VectorFunction {
-    Configuration& S;
-    const arr& Bu;
-    bool gravity;
-    DiffEqn(Configuration& _S, const arr& _Bu, bool _gravity):S(_S), Bu(_Bu), gravity(_gravity) {
-      VectorFunction::operator=([this](arr& y, arr& J, const arr& x) -> void {
-        this->fv(y, J, x);
-      });
-    }
-    void fv(arr& y, arr& J, const arr& x) {
-      S.setJointState(x[0]);
-      arr M, Minv, F;
-      S.equationOfMotion(M, F, x[1], gravity);
-      inverse_SymPosDef(Minv, M);
-      //Minv = inverse(M); //TODO why does symPosDef fail?
-      y = Minv * (Bu - F);
-    }
-  } eqn(*this, Bu_control, gravity);
+  auto eqn = [&](const arr& x) -> arr {
+    setJointState(x[0]);
+    arr M, Minv, F;
+    equationOfMotion(M, F, x[1], gravity);
+    inverse_SymPosDef(Minv, M);
+    //Minv = inverse(M); //TODO why does symPosDef fail?
+    arr y = Minv * (Bu_control - F);
+    return y;
+  };
 
 #if 0
   arr M, Minv, F;

@@ -98,23 +98,24 @@ void F_GraspOppose::phi2(arr& y, arr& J, const FrameL& F) {
 
   if(!centering) {
     y = D1 + D2;
-    if(!!J) J = D1.J() + D2.J();
+    if(!!J) J=y.J_reset();
   }else{
-    normalizeWithJac(D1, D1.J());
-    normalizeWithJac(D2, D2.J());
+
+    arr n1 = D1;
+    arr n2 = D2;
+    op_normalize(n1);
+    op_normalize(n2);
 
     arr P1 = F_Position() .eval({F.elem(0)});
     arr P2 = F_Position() .eval({F.elem(1)});
 
-    arr P = 2.*eye(3) - (D1*~D1) - (D2*~D2);
     arr p = P2 - P1;
     double scale = 1e-1;
 
-    arr cen, cenJ;
-    cen = scale * (P * p);
-    if(!!J) cenJ = P * (P2.J()-P1.J()) - (D1.J()*scalarProduct(D1, p) + D1*(~p*D1.J())) - (D2.J()*scalarProduct(D2, p) + D2*(~p*D2.J()));
-
+    arr cen = scale * (2.*p - n1*(~n1*p) - n2*(~n2*p));
+//    if(!!J) cenJ = P * (P2.J()-P1.J()) - (D1.J()*scalarProduct(D1, p) + D1*(~p*D1.J())) - (D2.J()*scalarProduct(D2, p) + D2*(~p*D2.J()));
     y.setBlockVector(D1 + D2, cen);
-    J.setBlockMatrix(D1.J() + D2.J(), cenJ);
+//    J.setBlockMatrix(D1.J() + D2.J(), cenJ);
+    if(!!J) J=y.J_reset();
   }
 }

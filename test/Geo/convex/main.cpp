@@ -5,7 +5,6 @@
 #include <qhull/qhull_a.h>
 #include <Optim/optimization.h>
 #include <Geo/qhull.h>
-#include <Optim/convert.h>
 
 //===========================================================================
 
@@ -163,7 +162,10 @@ void TEST(ForceClosure) {
 
     FCtest::center=center;
     FCtest::Xn=Xn;
-    checkGradient(Convert(FCtest::f, nullptr), X, 1e-4);
+    auto f = [&](arr& g, arr& H, const arr& x) -> double {
+      return FCtest::f(&g, x, 0);
+    };
+    checkGradient(f, X, 1e-4);
   }
 }
 

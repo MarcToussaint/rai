@@ -2,7 +2,6 @@
 #include <Optim/benchmarks.h>
 #include "problems.h"
 #include <Optim/constrained.h>
-#include <Optim/convert.h>
 
 //lecture.cpp:
 void testConstraint(MathematicalProgram& p, arr& x_start=NoArr, uint iters=20);

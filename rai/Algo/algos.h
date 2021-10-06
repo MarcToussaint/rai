@@ -14,12 +14,12 @@ namespace rai {
 
 //----- Runge-Kutta
 /// standard Runge-Kutta 4
-void rk4(arr& x, const arr& x0, const VectorFunction& f, double dt);
+void rk4(arr& x, const arr& x0, const fct& f, double dt);
 /// same for second order diff equation
 //void rk4dd(arr& x1, arr& v1, const arr& x0, const arr& v0,
 //           void (*ddf)(arr& xdd, const arr& x, const arr& v),
 //           double dt);
-void rk4_2ndOrder(arr& x, const arr& x0, const VectorFunction& f, double dt);
+void rk4_2ndOrder(arr& x, const arr& x0, const fct& f, double dt);
 
 /** RK with discrete event localization (zero-crossing detection): the
     function sf computes some double-valued indicators. If one of

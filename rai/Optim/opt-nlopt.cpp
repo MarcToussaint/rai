@@ -7,7 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "opt-nlopt.h"
-#include "solver.h"
+#include "MP_Solver.h"
 #include "optimization.h"
 
 #ifdef RAI_NLOPT
@@ -20,7 +20,7 @@ struct FuncCallData {
 };
 
 nlopt::algorithm getSolverEnum(const char* param, bool& needsSubsolver, int verbose){
-  rai::Enum<NLP_SolverOption> sol;
+  rai::Enum<NLopt_SolverOption> sol;
   sol = rai::getParameter<rai::String>(param);
   if(verbose){
     cout <<"NLopt option: " <<param <<": " <<sol <<endl;

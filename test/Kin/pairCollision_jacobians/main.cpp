@@ -138,10 +138,12 @@ void TEST(GJK_Jacobians2) {
   C.stepSwift();
 //  C.reportProxies();
 
-  VectorFunction f = [&C](arr& y, arr& J, const arr& x) -> void {
+  VectorFunction f = [&C](const arr& x) -> arr {
     C.setJointState(x);
     C.stepSwift();
-    C.kinematicsPenetration(y, (!!J?J:NoArr), .05);
+    arr y;
+    C.kinematicsPenetration(y, y.J(), .05);
+    return y;
   };
 
 //  checkJacobian(f, K.getJointState(), 1e-4);

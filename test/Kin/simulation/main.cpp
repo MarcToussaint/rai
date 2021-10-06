@@ -3,6 +3,7 @@
 #include <Kin/feature.h>
 #include <Kin/simulation.h>
 #include <Kin/viewer.h>
+#include <Kin/F_geometrics.h>
 
 #include <iomanip>
 
@@ -82,13 +83,16 @@ void testGrasp(){
     arr q = C.getJointState();
 
     //some good old fashioned IK
-    if(t<=300){
-      arr diff = C.feature(FS_oppose, {"finger1", "finger2", "ring4"})->eval(C);
-      diff *= rai::MIN(.008/length(diff), 1.);
+    if(t<=500){
+      arr diff = F_GraspOppose()
+//                 .setCentering()
+                 .eval(C.getFrames({"finger1", "finger2", "ring4"}));
+//                 C.feature(FS_oppose, {"finger1", "finger2", "ring4"})->eval(C);
+      diff *= rai::MIN(.005/length(diff), 1.);
       q -= pseudoInverse(diff.J(), NoArr, 1e-2) * diff;
     }
 
-    if(t==300){
+    if(t==500){
       S.closeGripper("gripper");
     }
 
@@ -113,17 +117,17 @@ void testGrasp(){
 
 void testOpenClose(){
   rai::Configuration RealWorld;
-  RealWorld.addFile("../../../../rai-robotModels/scenarios/pandasTable.g");
+  RealWorld.addFile("model.g"); //../../../../rai-robotModels/scenarios/pandasTable.g");
   rai::Simulation S(RealWorld, S._bullet, true);
   //rai::Simulation S(RealWorld, S._physx, true);
 
   rai::Configuration C;
-  C.addFile("../../../../rai-robotModels/scenarios/pandasTable.g");
+  C.addFile("model.g"); //../../../../rai-robotModels/scenarios/pandasTable.g");
   C.watch(false, "initial");
 
   double tau = .01;
 
-  S.closeGripper("r_gripper");
+  S.closeGripper("gripper");
   for(uint t=0;;t++){
     rai::wait(tau);
 
@@ -132,10 +136,10 @@ void testOpenClose(){
     C.watch();
 
     S.step({}, tau, S._none);
-    if(S.getGripperIsClose("r_gripper")) break;
+    if(S.getGripperIsClose("gripper")) break;
   }
 
-  S.openGripper("r_gripper");
+  S.openGripper("gripper");
   for(uint t=0;;t++){
     rai::wait(tau);
 
@@ -144,7 +148,7 @@ void testOpenClose(){
     C.watch();
 
     S.step({}, tau, S._none);
-    if(S.getGripperIsOpen("r_gripper")) break;
+    if(S.getGripperIsOpen("gripper")) break;
   }
 }
 
@@ -299,8 +303,8 @@ int main(int argc,char **argv){
   testFriction();
   testStackOfBlocks();
   testPushes();
-  testGrasp();
   testOpenClose();
+  testGrasp();
   testCompound();
 
   return 0;

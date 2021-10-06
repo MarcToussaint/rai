@@ -91,7 +91,7 @@ void CtrlSolver::update(const arr& q_real, const arr& qDot_real, rai::Configurat
 
     if(o->movingTarget) {
       o->y_buffer = o->getValue(*this);
-      ActStatus s_new = o->movingTarget->step(tau, o.get(), o->y_buffer);
+      ActStatus s_new = o->movingTarget->step(tau, o.get(), o->y_buffer.noJ());
       if(o->status != s_new) {
         o->status = s_new;
         //callbacks

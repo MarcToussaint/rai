@@ -41,6 +41,7 @@ struct TM_InsideLine : Feature {
 
 struct F_GraspOppose : Feature {
   bool centering=false;
+  F_GraspOppose& setCentering(bool _centering=true){ centering=_centering; return *this; }
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F) { if(centering) return 6; return 3; }
 };
