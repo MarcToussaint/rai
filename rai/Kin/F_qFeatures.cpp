@@ -391,7 +391,22 @@ uintA getNonSwitchedFrames(const FrameL& A, const FrameL& B) {
     if(f0->joint->type!=f1->joint->type) continue;
     if(f0->joint->mimic || f1->joint->mimic) continue;
     if(f0->ID - f0->parent->ID != f1->ID-f1->parent->ID) continue; //comparing the DIFFERENCE in IDs between parent and joint
+    if(f0->forces.N != f1->forces.N) continue;
     nonSwitchedFrames.append(i);
   }
   return nonSwitchedFrames;
+}
+
+uintA getSwitchedFrames(const FrameL& A, const FrameL& B) {
+  uintA switchedFrames;
+  CHECK_EQ(A.N, B.N, "");
+
+  for(uint i=0;i<A.N;i++) {
+    rai::Frame* f0 = A.elem(i);
+    rai::Frame* f1 = B.elem(i);
+    if(!f0->parent && !f1->parent) continue;
+    if(f0->parent && f1->parent && f0->ID - f0->parent->ID == f1->ID - f1->parent->ID) continue;
+    switchedFrames.append(i);
+  }
+  return switchedFrames;
 }

@@ -199,11 +199,12 @@ void KOMO::addSwitch(const arr& times, bool before, const ptr<KinematicSwitch>& 
   switches.append(sw); //only to report, not apply in retrospect
 }
 
-ptr<KinematicSwitch> KOMO::addSwitch(const arr& times, bool before,
+ptr<KinematicSwitch> KOMO::addSwitch(const arr& times, bool before, bool stable,
                      rai::JointType type, SwitchInitializationType init,
                      const char* ref1, const char* ref2,
                      const rai::Transformation& jFrom, const rai::Transformation& jTo) {
   auto sw = make_shared<KinematicSwitch>(SW_joint, type, ref1, ref2, world, init, 0, jFrom, jTo);
+  sw->isStable = stable;
   addSwitch(times, before, sw);
   return sw;
 }
@@ -212,18 +213,15 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
   //-- creating a stable kinematic linking
   if(newMode==SY_stable || newMode==SY_stableOn || newMode==SY_stableYPhi){
     if(newMode==SY_stable) {
-      auto sw = addSwitch(times, true, JT_free, SWInit_copy, frames(0), frames(1));
-      sw->isStable = true;
+      auto sw = addSwitch(times, true, true, JT_free, SWInit_copy, frames(0), frames(1));
     } else if(newMode==SY_stableOn) {
       Transformation rel = 0;
       rel.pos.set(0, 0, .5*(shapeSize(world, frames(0)) + shapeSize(world, frames(1))));
-      auto sw = addSwitch(times, true, JT_transXYPhi, SWInit_copy, frames(0), frames(1), rel);
-      sw->isStable = true;
+      auto sw = addSwitch(times, true, true, JT_transXYPhi, SWInit_copy, frames(0), frames(1), rel);
     } else if(newMode==SY_stableYPhi) {
       Transformation rel = 0;
 //      rel.pos.set(0, 0, -.5*(shapeSize(world, frames(0)) + shapeSize(world, frames(1))));
-      auto sw = addSwitch(times, true, JT_transY, SWInit_copy, frames(0), frames(1), rel);
-      sw->isStable = true;
+      auto sw = addSwitch(times, true, true, JT_transY, SWInit_copy, frames(0), frames(1), rel);
     } else NIY;
 
     if(!opt.mimicStable){
@@ -256,9 +254,9 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
 
   } else if(newMode==SY_dynamic) {
     if(frames.N==1){
-      addSwitch(times, true, JT_free, SWInit_copy, world.frames.first()->name, frames(-1));
+      addSwitch(times, true, false, JT_free, SWInit_copy, world.frames.first()->name, frames(-1));
     }else{
-      addSwitch(times, true, JT_free, SWInit_copy, frames(0), frames(1));
+      addSwitch(times, true, false, JT_free, SWInit_copy, frames(0), frames(1));
     }
     //new contacts don't exist in step [-1], so we rather impose only zero acceleration at [-2,-1,0]
     if(firstSwitch){
@@ -277,7 +275,7 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
     Transformation rel = 0;
     rel.pos.set(0, 0, .5*(shapeSize(world, frames(0)) + shapeSize(world, frames(1))));
 
-    addSwitch(times, true, JT_transXYPhi, SWInit_copy, frames(0), frames(1), rel);
+    addSwitch(times, true, false, JT_transXYPhi, SWInit_copy, frames(0), frames(1), rel);
     //new contacts don't exist in step [-1], so we rather impose only zero acceleration at [-2,-1,0]
     if(firstSwitch){
       if(stepsPerPhase>3){
@@ -480,11 +478,11 @@ void KOMO::setIKOpt() {
 }
 
 void KOMO::setConfiguration_qAll(int t, const arr& q) {
-  pathConfig.setJointState(q, pathConfig.getJointsSlice(timeSlices[k_order+t], false));
+  pathConfig.setDofState(q, pathConfig.getDofs(timeSlices[k_order+t], false));
 }
 
 arr KOMO::getConfiguration_qAll(int t) {
-  return pathConfig.getJointState(pathConfig.getJointsSlice(timeSlices[k_order+t], false));
+  return pathConfig.getDofState(pathConfig.getDofs(timeSlices[k_order+t], false));
 }
 
 void KOMO::setConfiguration_X(int t, const arr& X) {
@@ -575,7 +573,7 @@ void KOMO::initWithConstant(const arr& q) {
   run_prepare(0.);
 }
 
-void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, bool sineProfile) {
+void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase) {
   //compute in which steps (configuration time slices) the waypoints are imposed
   uintA steps(waypoints.N);
   for(uint i=0; i<steps.N; i++) {
@@ -610,31 +608,37 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, 
   //then interpolate w.r.t. non-switching frames within the intervals
 #if 1
   for(uint i=0; i<steps.N; i++) {
-    uint i1=steps(i);
-    uint i0=0; if(i) i0 = steps(i-1);
-    //motion profile
-    if(i1-1<T) {
-      uintA nonSwitched = getNonSwitchedFrames(timeSlices[k_order+i0], timeSlices[k_order+i1]);
-      arr q0 = pathConfig.getJointState(timeSlices[k_order+i0].sub(nonSwitched));
-      arr q1 = pathConfig.getJointState(timeSlices[k_order+i1].sub(nonSwitched));
-      for(uint j=i0+1; j<i1; j++) {
-        arr q;
-        double phase = double(j-i0)/double(i1-i0);
-        if(sineProfile) {
-          q = q0 + (.5*(1.-cos(RAI_PI*phase))) * (q1-q0);
-        } else {
-          q = q0 + phase * (q1-q0);
+    uint t0=0; if(i) t0 = steps(i-1);
+    uint t1=steps(i);
+
+    //motion profile for dof values
+    if(t1-1<T) {
+      uintA nonSwitched = getNonSwitchedFrames(timeSlices[k_order+t0], timeSlices[k_order+t1]);
+      arr q0 = pathConfig.getJointState(timeSlices[k_order+t0].sub(nonSwitched));
+      arr q1 = pathConfig.getJointState(timeSlices[k_order+t1].sub(nonSwitched));
+      for(uint t=t0+1; t<t1; t++) {
+        double phase = double(t-t0)/double(t1-t0);
+        arr q = q0 + (.5*(1.-cos(RAI_PI*phase))) * (q1-q0); //p = p0 + phase * (p1-p0);
+        pathConfig.setJointState(q, timeSlices[k_order+t].sub(nonSwitched));
+        //view(true, STRING("interpolating: step:" <<i <<" t: " <<j));
+      }
+    }
+
+    //motion profile for switched object positions
+    if(t1-1<T) {
+      uintA switched = getSwitchedFrames(timeSlices[k_order+t0], timeSlices[k_order+t1]);
+      for(uint k:switched){
+        if(timeSlices(k_order+t0,k)->joint && timeSlices(k_order+t0,k)->joint->isStable) continue; //don't interpolate stable joints
+        arr p0 = timeSlices(k_order+t0,k)->getPosition();
+        arr p1 = timeSlices(k_order+t1,k)->getPosition();
+        for(uint t=t0+1; t<t1; t++) {
+          double phase = double(t-t0)/double(t1-t0);
+          arr p = p0 + (.5*(1.-cos(RAI_PI*phase))) * (p1-p0); //p = p0 + phase * (p1-p0);
+          timeSlices(k_order+t, k)->setPosition(p);
+          //view(true, STRING("interpolating: step:" <<i <<" t: " <<j));
         }
-        try{
-          pathConfig.setJointState(q, timeSlices[k_order+j].sub(nonSwitched));
-        }catch(...){}
-//        view(true, STRING("interpolating: step:" <<i <<" t: " <<j));
       }
-    }/*else{
-      for(uint j=i0+1;j<T;j++){
-        configurations(k_order+j)->setJointState(q0, nonSwitched);
-      }
-    }*/
+    }
   }
 #endif
 
@@ -1165,6 +1169,9 @@ void reportAfterPhiComputation(KOMO& komo) {
   }
   if(komo.opt.animateOptimization>0) {
     komo.view(komo.opt.animateOptimization>1, "optAnim");
+    if(komo.opt.animateOptimization>2){
+      komo.view_play(komo.opt.animateOptimization>3);
+    }
     //  komo.plotPhaseTrajectory();
     //  rai::wait();
     //  reportProxies();
@@ -1522,11 +1529,11 @@ void Conv_KOMO_SparseNonfactored::report(std::ostream& os, int verbose) {
   komo.reportProblem(os);
   if(verbose>1) os <<komo.getReport(verbose>2);
   if(verbose>3) komo.view(true, "Conv_KOMO_SparseNonfactored - report");
-  if(verbose>4) komo.view_play(true);
-  if(verbose>5){
+  if(verbose>4) komo.view_play(false);
+  if(verbose>5) while(komo.view_play(true));
+  if(verbose>6){
     rai::system("mkdir -p z.vid");
     komo.view_play(false, .1, "z.vid/");
-    if(verbose>3) komo.view(true, "Conv_KOMO_SparseNonfactored - video saved in z.vid/");
   }
 }
 

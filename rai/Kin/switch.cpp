@@ -180,6 +180,8 @@ rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) const {
     }
     to->_state_updateAfterTouchingQ();
 
+    to->joint->isStable = isStable;
+
     //K.reset_q();
     //K.calc_q(); K.checkConsistency();
 //    {

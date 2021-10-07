@@ -177,9 +177,14 @@ shared_ptr<SolverReturn> Skeleton::solve3(bool useKeyframes){
     sol.gnuplot_costs();
   }
 
+#if 0
   arr X = keyframes.komo->getPath_X();
   arrA waypoints(X.d0);
   for(uint i=0;i<waypoints.N;i++) waypoints(i) = X[i];
+#else
+  arrA waypoints = keyframes.komo->getPath_qAll();
+#endif
+
 
   SkeletonTranscription path = this->mp_path( (useKeyframes?waypoints:arrA()));
 
@@ -187,6 +192,7 @@ shared_ptr<SolverReturn> Skeleton::solve3(bool useKeyframes){
     MP_Solver sol;
     sol.setProblem(*path.mp);
     sol.setInitialization(path.komo->x); //to avoid adding noise again
+//    path.komo->opt.animateOptimization = 1;
     ret = sol.solve();
     path.mp->report(cout, 5);
     sol.gnuplot_costs();
@@ -366,6 +372,7 @@ SkeletonTranscription Skeleton::mp_path(const arrA& waypoints){
     #endif
 
     komo->initWithWaypoints(waypoints, 1);
+//    komo->opt.animateOptimization = 3;
   }else{
     komo->run_prepare(.01);
   }
@@ -562,7 +569,7 @@ void Skeleton::setKOMO(KOMO& komo) const {
         break;
       case SY_magicTrans: //addSwitch_magicTrans(s.phase0, s.phase1, world.frames.first()->name, s.frames(0), 0.);  break;
       case SY_magic: {
-            komo.addSwitch({s.phase0}, true, JT_free, SWInit_copy, komo.world.frames.first()->name, s.frames(0));
+            komo.addSwitch({s.phase0}, true, false, JT_free, SWInit_copy, komo.world.frames.first()->name, s.frames(0));
 //            komo.addSwitch_magic(s.phase0, s.phase1, komo.world.frames.first()->name, s.frames(0), 0., 0.);  break;
         } break;
       default: HALT("undefined symbol: " <<s.symbol);

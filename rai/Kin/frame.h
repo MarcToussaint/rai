@@ -189,6 +189,7 @@ struct Dof {
   arr  limits;    ///< joint limits (lo, up, [maxvel, maxeffort])
   Joint* mimic=0; ///< if non-nullptr, this joint's state is identical to another's
   JointL mimicers;  ///< list of mimicing joints
+  bool isStable=false;
 
   virtual ~Dof() {}
   virtual void setDofs(const arr& q, uint n=0) = 0;

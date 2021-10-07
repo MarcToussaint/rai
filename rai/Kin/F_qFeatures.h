@@ -64,3 +64,4 @@ struct F_qTime : Feature {
 
 rai::Array<rai::Joint*> getMatchingJoints(const ConfigurationL& Ktuple, bool zeroVelJointsOnly);
 uintA getNonSwitchedFrames(const FrameL& A, const FrameL& B);
+uintA getSwitchedFrames(const FrameL& A, const FrameL& B);

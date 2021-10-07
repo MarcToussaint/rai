@@ -448,6 +448,20 @@ StringA Configuration::getJointNames() const {
   return names;
 }
 
+DofL Configuration::getDofs(const FrameL& F, bool activesOnly) const{
+  DofL dofs;
+  for(Frame* f:F) {
+    Dof* j = f->joint;
+    if(j && (!activesOnly || j->active)) dofs.append(j);
+  }
+  for(Frame* f:F) {
+    for(ForceExchange* fex: f->forces) if(&fex->a==f){
+      if(fex && (!activesOnly || fex->active)) dofs.append(fex);
+    }
+  }
+  return dofs;
+}
+
 /// get the names of all frames
 StringA Configuration::getFrameNames() const {
   return framesToNames(frames);
@@ -493,34 +507,27 @@ const arr& Configuration::getJointState() const {
   return q;
 }
 
-/// get a q-vector for only a subset of joints (no force DOFs)
-arr Configuration::getJointState(const FrameL& joints) const {
+arr Configuration::getDofState(const DofL& dofs) const {
   ((Configuration*)this)->ensure_q();
-  uint nd=0;
-  for(Frame* f:joints) {
-    Joint* j = f->joint;
-    if(!j){ LOG(-1) <<"frame '" <<f->name <<"'[" <<f->ID <<"] is not a joint!"; continue; }
-//    if(!j->active && activesOnly) HALT("frame '" <<f->name <<"' is a joint, but INACTIVE!");
-    if(!j->mimic){
-      nd += j->dim;
-    }
+
+  uint n=0;
+  for(Dof* dof: dofs) {
+    if(!dof->mimic) n += dof->dim;
   }
 
-  arr x(nd);
-  nd=0;
-  for(Frame* f:joints) {
-    Joint* j = f->joint;
-    if(!j) continue; //{ LOG(-1) <<"frame '" <<f->name <<"' is not a joint!"; continue; }
-    if(!j->mimic){
-      if(j->active){
-        for(uint ii=0; ii<j->dim; ii++) x(nd+ii) = q(j->qIndex+ii);
+  arr x(n);
+  n=0;
+  for(Dof *dof:dofs) {
+    if(!dof->mimic){
+      if(dof->active){
+        for(uint ii=0; ii<dof->dim; ii++) x(n+ii) = q(dof->qIndex+ii);
       }else{
-        for(uint ii=0; ii<j->dim; ii++) x(nd+ii) = qInactive(j->qIndex+ii);
+        for(uint ii=0; ii<dof->dim; ii++) x(n+ii) = qInactive(dof->qIndex+ii);
       }
-      nd += j->dim;
+      n += dof->dim;
     }
   }
-  CHECK_EQ(nd, x.N, "");
+  CHECK_EQ(n, x.N, "");
   return x;
 }
 
@@ -557,14 +564,14 @@ void Configuration::setJointState(const arr& _q) {
 }
 
 /// set the DOFs (joints and forces) for the given subset of frames
-void Configuration::setJointState(const arr& _q, const FrameL& F) {
+void Configuration::setDofState(const arr& _q, const DofL& dofs) {
   setJointStateCount++; //global counter
   ensure_q();
 
   uint nd=0;
-  for(Frame* f:F) {
-    Joint* j = f->joint;
-    if(!j && !f->forces.N) HALT("frame '" <<f->name <<"' is not a joint and has no forces!");
+  for(Dof* j:dofs) {
+//    Dof* j = f->joint;
+//    if(!j && !f->forces.N) HALT("frame '" <<f->name <<"' is not a joint and has no forces!");
     if(!j->mimic) CHECK_LE(nd+j->dim,_q.N, "given q-vector too small");
     if(!j) continue;
     if(j->active){
@@ -581,12 +588,12 @@ void Configuration::setJointState(const arr& _q, const FrameL& F) {
     }
     if(!j->mimic) nd += j->dim;
   }
-  for(Frame* f:F) {
-    for(ForceExchange* c: f->forces) if(&c->a==f){
-      c->setDofs(q, c->qIndex);
-      nd += c->getDimFromType();
-    }
-  }
+//  for(Frame* f:F) {
+//    for(ForceExchange* c: f->forces) if(&c->a==f){
+//      c->setDofs(q, c->qIndex);
+//      nd += c->getDimFromType();
+//    }
+//  }
   CHECK_EQ(_q.N, nd, "given q-vector has wrong size");
 
   proxies.clear();

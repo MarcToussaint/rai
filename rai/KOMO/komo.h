@@ -131,7 +131,7 @@ struct KOMO : NonCopyable {
 //protected:
   //low-level add dof switches
   void addSwitch(const arr& times, bool before, const ptr<rai::KinematicSwitch>& sw);
-  ptr<rai::KinematicSwitch> addSwitch(const arr& times, bool before, rai::JointType type, rai::SwitchInitializationType init,
+  ptr<rai::KinematicSwitch> addSwitch(const arr& times, bool before, bool stable, rai::JointType type, rai::SwitchInitializationType init,
                  const char* ref1, const char* ref2,
                  const rai::Transformation& jFrom=NoTransformation, const rai::Transformation& jTo=NoTransformation);
 public:
@@ -152,7 +152,7 @@ public:
   void setConfiguration_qOrg(int t, const arr& q); ///< set only those DOFs that were defined in the original world (excluding extra DOFs from switches)
   void setConfiguration_X(int t, const arr& X); ///< t<0 allows to set the prefix configurations; while 0 <= t < T allows to set all other initial configurations
   void initWithConstant(const arr& q); ///< set all configurations EXCEPT the prefix to a particular state
-  void initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase=1, bool sineProfile=true); ///< set all configurations (EXCEPT prefix) to interpolate given waypoints
+  void initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase=1); ///< set all configurations (EXCEPT prefix) to interpolate given waypoints
   void updateAndShiftPrefix(const rai::Configuration& C){
     //-- joint state
     //set t=0 to new joint state:

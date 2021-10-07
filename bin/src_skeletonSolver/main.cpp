@@ -40,7 +40,9 @@ int main(int argc,char **argv){
 
   S.setConfiguration(C);
 //  S.solve(mode, rai::getParameter<int>("verbose", 3));
-  S.solve3(false);
+  S.solve3(true);
+
+  rai::wait();
 
   return 0;
 }
