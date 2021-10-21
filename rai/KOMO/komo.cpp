@@ -41,12 +41,6 @@
 #  include <GL/gl.h>
 #endif
 
-//#ifndef RAI_SWIFT
-//#  define FCLmode
-//#endif
-
-#define KOMO_PATH_CONFIG
-
 #define RAI_USE_FUNCTIONALS
 
 using namespace rai;
@@ -90,11 +84,8 @@ void KOMO::setModel(const Configuration& C, bool _computeCollisions) {
   if(&C!=&world) world.copy(C, _computeCollisions);
   computeCollisions = _computeCollisions;
   if(computeCollisions) {
-#ifndef FCLmode
-    world.swift();
-#else
-    world.fcl();
-#endif
+    if(!opt.useFCL) world.swift();
+    else world.fcl();
   }
   world.ensure_q();
 }
@@ -104,6 +95,32 @@ void KOMO::setTiming(double _phases, uint _stepsPerPhase, double durationPerPhas
   T = ceil(stepsPerPhase*_phases);
   tau = durationPerPhase/double(stepsPerPhase);
   k_order = _k_order;
+}
+
+void KOMO::clone(const KOMO& komo){
+  clearObjectives();
+  opt = komo.opt;
+  setModel(komo.world, komo.computeCollisions);
+  //setTiming:
+  stepsPerPhase = komo.stepsPerPhase;
+  T = komo.T;
+  tau = komo.tau;
+  k_order = komo.k_order;
+
+  //directly copy pathConfig instead of recreating it (including switches)
+  pathConfig.copy(komo.pathConfig, false);
+  timeSlices = pathConfig.getFrames(framesToIndices(komo.timeSlices));
+
+  //copy running objectives
+  for(const ptr<Objective>& o:komo.objectives){
+    objectives.append(make_shared<Objective>(o->feat, o->type, o->name, o->times, o->timeSlices));
+  }
+
+  //copy grounded objectives
+  for(const ptr<GroundedObjective>& o:komo.objs){
+    auto ocopy = objs.append(make_shared<GroundedObjective>(o->feat, o->type, o->timeSlices));
+    ocopy->frames = pathConfig.getFrames(framesToIndices(o->frames));
+  }
 }
 
 void KOMO::addTimeOptimization() {
@@ -143,6 +160,27 @@ void KOMO::clearObjectives() {
   reset();
 }
 
+void KOMO::_addObjective(const std::shared_ptr<Objective>& task){
+  objectives.append(task);
+
+  CHECK_EQ(task->timeSlices.nd, 2, "");
+  for(uint c=0;c<task->timeSlices.d0;c++){
+    shared_ptr<GroundedObjective> o = objs.append( make_shared<GroundedObjective>(task->feat, task->type, task->timeSlices[c]) );
+    o->objId = objectives.N-1;
+    o->frames.resize(task->timeSlices.d1, o->feat->frameIDs.N);
+    for(uint i=0;i<task->timeSlices.d1;i++){
+      int s = task->timeSlices(c,i) + k_order;
+      for(uint j=0;j<o->feat->frameIDs.N;j++){
+        uint fID = o->feat->frameIDs.elem(j);
+        o->frames(i,j) = this->timeSlices(s, fID);
+      }
+    }
+    if(o->feat->frameIDs.nd==2){
+      o->frames.reshape(task->timeSlices.d1, o->feat->frameIDs.d0, o->feat->frameIDs.d1);
+    }
+  }
+}
+
 ptr<Objective> KOMO::addObjective(const arr& times,
                                   const ptr<Feature>& f, const StringA& frames,
                                   ObjectiveType type, const arr& scale, const arr& target, int order,
@@ -159,29 +197,15 @@ ptr<Objective> KOMO::addObjective(const arr& times,
   if(!!target) f->target = target;
   if(order>=0) f->order = order;
 
+  //-- determine when exactly it is active (list of tuples of given order
+  intA timeSlices = conv_times2tuples(times, f->order, stepsPerPhase, T, deltaFromStep, deltaToStep);
+
   //-- create a (non-grounded) objective
   CHECK_GE(k_order, f->order, "task requires larger k-order: " <<f->shortTag(world));
-  std::shared_ptr<Objective> task = objectives.append( make_shared<Objective>(f, type, f->shortTag(world), times) );
+  std::shared_ptr<Objective> task = make_shared<Objective>(f, type, f->shortTag(world), times, timeSlices);
 
   //-- create the grounded objectives
-  intA timeSlices = conv_times2tuples(times, f->order, stepsPerPhase, T, deltaFromStep, deltaToStep);
-  CHECK_EQ(timeSlices .nd, 2, "");
-  for(uint c=0;c<timeSlices .d0;c++){
-    shared_ptr<GroundedObjective> o = objs.append( make_shared<GroundedObjective>(f, type) );
-    o->timeSlices = timeSlices[c];
-    o->objId = objectives.N-1;
-    o->frames.resize(timeSlices .d1, o->feat->frameIDs.N);
-    for(uint i=0;i<timeSlices .d1;i++){
-      int s = timeSlices (c,i) + k_order;
-      for(uint j=0;j<o->feat->frameIDs.N;j++){
-        uint fID = o->feat->frameIDs.elem(j);
-        o->frames(i,j) = this->timeSlices(s, fID);
-      }
-    }
-    if(o->feat->frameIDs.nd==2){
-      o->frames.reshape(timeSlices.d1, o->feat->frameIDs.d0, o->feat->frameIDs.d1);
-    }
-  }
+  _addObjective(task);
   return task;
 }
 
@@ -1098,11 +1122,8 @@ void KOMO::setupPathConfig() {
   if(computeCollisions) {
     CHECK(!fcl, "");
     CHECK(!swift, "");
-#ifndef FCLmode
-    swift = C.swift();
-#else
-    fcl = C.fcl();
-#endif
+    if(!opt.useFCL) swift = C.swift();
+    else fcl = C.fcl();
   }
 
   for(uint s=0;s<k_order+T;s++) {
@@ -1200,12 +1221,12 @@ void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
     uintA collisionPairs;
     for(uint s=k_order;s<timeSlices.d0;s++){
       X = pathConfig.getFrameState(timeSlices[s]);
-#ifndef FCLmode
-      collisionPairs = swift->step(X);
-#else
-      fcl->step(X);
-      collisionPairs = fcl->collisions;
-#endif
+      if(!opt.useFCL){
+        collisionPairs = swift->step(X);
+      }else{
+        fcl->step(X);
+        collisionPairs = fcl->collisions;
+      }
       collisionPairs += timeSlices.d1 * s; //fcl returns frame IDs related to 'world' -> map them into frameIDs within that time slice
       pathConfig.addProxies(collisionPairs);
     }
@@ -1720,9 +1741,8 @@ void Conv_KOMO_FactoredNLP::evaluateSingleFeature(uint feat_id, arr& phi, arr& J
   } else if(isRowShifted(phi.J())){
     J = phi.J();
   } else {
-#ifdef KOMO_PATH_CONFIG
     HALT("??");
-#else
+#if 0 //ndef KOMO_PATH_CONFIG
     intA vars = F.ob->configs[F.t];
     uintA kdim = getKtupleDim(F.Ctuple).prepend(0);
     for(uint j=vars.N; j--;) {

@@ -1335,10 +1335,10 @@ template<class T> rai::Array<T>& rai::Array<T>::operator=(std::initializer_list<
 
 /// set all elements to value \c v
 template<class T> rai::Array<T>& rai::Array<T>::operator=(const T& v) {
-  uint i;
-  //if(memMove && typeid(T)==typeid(T)) memset(p, *((int*)&v), N); else
-//  CHECK(N,"assigning constant to empty array");
-  for(i=0; i<N; i++) p[i]=v;
+  if(N){
+    T *x=p, *xstop=p+N;
+    for(; x!=xstop; x++) *x = v;
+  }
   return *this;
 }
 

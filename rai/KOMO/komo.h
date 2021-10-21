@@ -37,6 +37,7 @@ namespace rai {
     RAI_PARAM("KOMO/", int, verbose, 1)
     RAI_PARAM("KOMO/", int, animateOptimization, 0)
     RAI_PARAM("KOMO/", bool, mimicStable, false)
+    RAI_PARAM("KOMO/", bool, useFCL, true)
   };
 }//namespace
 
@@ -47,9 +48,9 @@ struct KOMO : NonCopyable {
   uint T=0;                    ///< total number of time steps
   double tau=0.;               ///< real time duration of single step (used when evaluating feature space velocities/accelerations)
   uint k_order=0;              ///< the (Markov) order of the KOMO problem (default 2)
-  rai::Array<ptr<Objective>> objectives;    ///< list of objectives
-  rai::Array<ptr<GroundedObjective>> objs;
-  rai::Array<ptr<rai::KinematicSwitch>> switches;  ///< list of kinematic switches along the motion -- only as record: they are now applied immediately at addSwitch
+  rai::Array<ptr<Objective>> objectives;    ///< list of running objectives (each for a running interval of indexed time slices)
+  rai::Array<ptr<GroundedObjective>> objs;  ///< list of grounded objective (each for only a single tuple of frames (not running intervals))
+  rai::Array<ptr<rai::KinematicSwitch>> switches;  ///< list of kinematic switches along the motion -- only as record: they are applied immediately at addSwitch
 
   //-- internals
   rai::Configuration world;       ///< original configuration; which is the blueprint for all time-slice worlds (almost const: only makeConvexHulls modifies it)
@@ -83,6 +84,8 @@ struct KOMO : NonCopyable {
   //-- setup the problem
   void setModel(const rai::Configuration& C, bool _computeCollisions=true);
   void setTiming(double _phases=1., uint _stepsPerPhase=30, double durationPerPhase=5., uint _k_order=2);
+
+  void clone(const KOMO& komo);
 
   //-- higher-level default setups
   void setIKOpt(); ///< setTiming(1., 1, 1., 1); and velocity objective
@@ -284,5 +287,8 @@ public:
   arr getPath_qAll(int t){ DEPR; return getConfiguration_qOrg(t); }
   arr getConfiguration_q(int t) { DEPR; return getConfiguration_qAll(t); }
   arr getPath_qOrg(uintA joints, const bool activesOnly){ DEPR; return getPath_qOrg(); }
+
+private:
+  void _addObjective(const std::shared_ptr<Objective>& task);
 };
 

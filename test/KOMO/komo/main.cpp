@@ -5,6 +5,8 @@
 #include <Kin/F_pose.h>
 #include <Optim/MP_Solver.h>
 
+#include <thread>
+
 //===========================================================================
 
 void TEST(Easy){
@@ -208,16 +210,63 @@ void TEST(PR2){
 
 //===========================================================================
 
-// void TEST(FinalPosePR2){
-//   rai::Configuration K("model.g");
-//   K.pruneRigidJoints();
-//   K.optimizeTree();
-//   makeConvexHulls(K.frames);
-//   cout <<"configuration space dim=" <<K.getJointStateDimension() <<endl;
-//   arr x = finalPoseTo(K, *K.getFrameByName("endeff"), *K.getFrameByName("target"));
-//   K.setJointState(x.reshape(x.N));
-//   K.watch(true);
-// }
+void trivialWork(){
+  uint n=100;
+  arr A(n,n), a(n), x(n), B;
+  A = 2.;
+  a = 1.;
+  for(uint t=0;t<100;t++){
+    A += 1.;
+    a += 1.;
+    op_elemWiseProduct(B, A, A);
+    //op_innerProduct(x, A, a);
+  }
+}
+
+void TEST(Threading) {
+  rai::Configuration C;
+  C.addFile(rai::raiPath("../rai-robotModels/scenarios/workshopTable.g"));
+
+  KOMO komo;
+  komo.opt.verbose = 0;
+  //komo.opt.animateOptimization=1;
+  komo.setModel(C, false);
+  komo.setTiming(1, 10, 2, 2);
+  komo.add_qControlObjective({}, 2);
+  komo.addObjective({1, 1}, FS_positionDiff, {"r_gripper", "block1"}, OT_eq, {1e2});
+
+  arr x0 = komo.pathConfig.getJointState();
+
+  uint nThreads = 2;
+  uint nIters = 120 / nThreads;
+  double time = -rai::realTime();
+
+#if 1
+  auto routine = [&]() {
+    KOMO komo2;
+    komo2.clone(komo);
+    for (uint i=0; i<nIters; i++) {
+      komo2.pathConfig.setJointState(x0);
+      komo2.optimize();
+      //memAllocs();
+    }
+    return 0;
+  };
+#else
+  auto routine = [&]() {
+    for (uint i=0; i<nIters; i++) trivialWork();
+  };
+#endif
+
+  {
+    rai::Array<std::shared_ptr<std::thread>> threads;
+    for(uint t=0;t<nThreads;t++) threads.append(make_shared<std::thread>(routine));
+    for(uint t=0;t<nThreads;t++) threads(t)->join();
+  }
+
+  time += rai::realTime();
+  std::cout <<nThreads <<" threads, " <<nIters <<" runs each: " <<time <<" sec"<< std::endl;
+}
 
 //===========================================================================
 
@@ -230,6 +279,7 @@ int main(int argc,char** argv){
   testAlign();
   testThin();
   testPR2();
+  testThreading();
 
   return 0;
 }

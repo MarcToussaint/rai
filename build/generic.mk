@@ -94,6 +94,12 @@ CPATHS	+= $(BASE2)
 endif
 LPATHS	+= $(BASE)/lib $(HOME)/opt/lib /usr/local/lib
 LIBS += -lrt
+
+#google-pprof:
+##LIBS += -Wl,--no-as-needed -lprofiler -Wl,--as-needed -ltcmalloc
+#CPUPROFILE=/tmp/prof.out ./x.exe
+#google-pprof ./x /tmp/prof.out
+
 SHAREFLAG = -shared #-Wl,--warn-unresolved-symbols #-Wl,--no-allow-shlib-undefined
 
 CXXFLAGS += -Wno-terminate -Wno-pragmas -fPIC

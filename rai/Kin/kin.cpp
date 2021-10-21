@@ -363,8 +363,8 @@ Frame* Configuration::getFrame(const char* name, bool warnIfNotExist, bool rever
 
 /// get all frames of given indices (almost same as \ref frames . Array::sub() )
 FrameL Configuration::getFrames(const uintA& ids) const {
-  if(frames.nd==1) return frames.sub(ids);
-  FrameL F(ids.N);
+  FrameL F;
+  resizeAs(F,ids);
   for(uint i=0;i<ids.N;i++) F.elem(i) = frames.elem(ids.elem(i));
   return F;
 }

@@ -16,9 +16,10 @@ struct Objective {
   ObjectiveType type;  ///< element of {f, sumOfSqr, inequality, equality}
   rai::String name;
   arr times;
+  intA timeSlices;
 
-  Objective(const ptr<Feature>& _feat, const ObjectiveType& _type, const rai::String& _name, const arr& _times)
-    : feat(_feat), type(_type), name(_name), times(_times) {}
+  Objective(const ptr<Feature>& _feat, const ObjectiveType& _type, const rai::String& _name, const arr& _times, const intA& _timeSlices)
+    : feat(_feat), type(_type), name(_name), times(_times), timeSlices(_timeSlices) {}
 
   void write(std::ostream& os) const;
 };
@@ -31,7 +32,7 @@ struct GroundedObjective {
   intA timeSlices;
   int objId=-1;
 
-  GroundedObjective(const ptr<Feature>& _feat, const ObjectiveType& _type) : feat(_feat), type(_type) {}
+  GroundedObjective(const ptr<Feature>& _feat, const ObjectiveType& _type, const intA& _timeSlices) : feat(_feat), type(_type), timeSlices(_timeSlices) {}
   ~GroundedObjective() {}
 
   rai::String name(){ return feat->shortTag(frames.first()->C); }
