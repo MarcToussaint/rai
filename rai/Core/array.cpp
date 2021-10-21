@@ -555,7 +555,8 @@ void inverse_LU(arr& Xinv, const arr& X) {
 void inverse_SymPosDef(arr& Ainv, const arr& A) {
   CHECK_EQ(A.d0, A.d1, "");
 #ifdef RAI_LAPACK
-  lapack_inverseSymPosDef(Ainv, A);
+  if(rai::useLapack) lapack_inverseSymPosDef(Ainv, A);
+  else inverse_SVD(Ainv, A);
 #else
   inverse_SVD(Ainv, A);
 #endif
@@ -2805,7 +2806,12 @@ arr rai::unpack(const arr& X) {
 }
 
 arr rai::comp_At_A(const arr& A) {
-  if(!isSpecial(A)) { arr X; blas_At_A(X, A); return X; }
+  if(!isSpecial(A)) {
+    arr X;
+    if(rai::useLapack) blas_At_A(X, A);
+    else X = ~A * A;
+    return X;
+  }
   if(isRowShifted(A)) return dynamic_cast<rai::RowShifted*>(A.special)->At_A();
   if(isSparseMatrix(A)) return dynamic_cast<rai::SparseMatrix*>(A.special)->At_A();
   return NoArr;

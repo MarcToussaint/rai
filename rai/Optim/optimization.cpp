@@ -9,10 +9,13 @@
 #include "optimization.h"
 
 uint eval_count=0;
-Singleton<OptOptions> globalOptOptions;
-OptOptions *__globalOptOptions=0;
 ObjectiveTypeA __NoTermTypeA(new SpecialArray(SpecialArray::ST_NoArr));
 ObjectiveTypeA& NoObjectiveTypeA = __NoTermTypeA;
+
+OptOptions& globalOptOptions() {
+  static OptOptions opt;
+  return opt;
+}
 
 template<> const char* rai::Enum<ObjectiveType>::names []= {
   "none", "f", "sos", "ineq", "eq", nullptr
@@ -152,7 +155,6 @@ bool checkInBound(MathematicalProgram& P, const arr& x){
 //
 
 OptOptions::OptOptions() {
-  __globalOptOptions = this;
   verbose    = rai::getParameter<double> ("opt/verbose", 1);
   fmin_return=nullptr;
   stopTolerance= rai::getParameter<double>("opt/stopTolerance", 1e-2);

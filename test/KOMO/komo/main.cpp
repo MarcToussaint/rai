@@ -210,51 +210,50 @@ void TEST(PR2){
 
 //===========================================================================
 
-void trivialWork(){
-  uint n=100;
-  arr A(n,n), a(n), x(n), B;
-  A = 2.;
-  a = 1.;
-  for(uint t=0;t<100;t++){
-    A += 1.;
-    a += 1.;
-    op_elemWiseProduct(B, A, A);
-    //op_innerProduct(x, A, a);
-  }
-}
-
 void TEST(Threading) {
   rai::Configuration C;
   C.addFile(rai::raiPath("../rai-robotModels/scenarios/workshopTable.g"));
 
-  KOMO komo;
-  komo.opt.verbose = 0;
-  //komo.opt.animateOptimization=1;
-  komo.setModel(C, false);
-  komo.setTiming(1, 10, 2, 2);
-  komo.add_qControlObjective({}, 2);
-  komo.addObjective({1, 1}, FS_positionDiff, {"r_gripper", "block1"}, OT_eq, {1e2});
-
-  arr x0 = komo.pathConfig.getJointState();
-
-  uint nThreads = 2;
+  uint nThreads = 3;
   uint nIters = 120 / nThreads;
   double time = -rai::realTime();
 
+  std::mutex mux;
+
 #if 1
   auto routine = [&]() {
-    KOMO komo2;
-    komo2.clone(komo);
+
+    KOMO komo;
+    komo.opt.verbose = 0;
+    //komo.opt.animateOptimization=1;
+    mux.lock();
+    komo.setModel(C, false);
+    mux.unlock();
+    komo.setTiming(1, 10, 2, 2);
+    komo.add_qControlObjective({}, 2);
+    komo.addObjective({1, 1}, FS_positionDiff, {"r_gripper", "block1"}, OT_eq, {1e2});
+    arr x0 = komo.pathConfig.getJointState();
+
+//    KOMO komo2;
+//    komo2.clone(komo);
     for (uint i=0; i<nIters; i++) {
-      komo2.pathConfig.setJointState(x0);
-      komo2.optimize();
-      //memAllocs();
+      komo.pathConfig.setJointState(x0);
+      komo.optimize();
     }
     return 0;
   };
 #else
   auto routine = [&]() {
-    for (uint i=0; i<nIters; i++) trivialWork();
+    uint n=100;
+    arr A(n,n), a(n), x(n), B(n,n);
+    for (uint i=0; i<nIters; i++){
+      A = 2.;
+      a = 1.;
+      B = rai::comp_At_A(A);
+      x = inverse_SymPosDef(B)*a;
+      //op_elemWiseProduct(B, A, A);
+      //op_innerProduct(x, A, a);
+    }
   };
 #endif
 
@@ -275,10 +274,10 @@ int main(int argc,char** argv){
 
 //  rnd.clockSeed();
 
-  testEasy();
-  testAlign();
-  testThin();
-  testPR2();
+//  testEasy();
+//  testAlign();
+//  testThin();
+//  testPR2();
   testThreading();
 
   return 0;
