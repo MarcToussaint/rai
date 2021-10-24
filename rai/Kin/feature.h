@@ -48,27 +48,21 @@ protected:
 //  Value eval(const FrameL& F) { arr y, J; eval(y, J, F); return Value(y, J); }
   arr eval(const rai::Configuration& C) { return eval(getFrames(C)); }
   uint dim(const FrameL& F) { uint d=dim_phi2(F); return applyLinearTrans_dim(d); }
-  VectorFunction vf2(const FrameL& F);
+  fct vf2(const FrameL& F);
 
   virtual rai::String shortTag(const rai::Configuration& C);
   virtual rai::Graph getSpec(const rai::Configuration& C) { return rai::Graph({{"description", shortTag(C)}}); }
+  virtual std::shared_ptr<Feature> deepCopy();
 
   //automatic finite difference definition of higher order features
   arr phi_finiteDifferenceReduce(const FrameL& F);
+
 private:
   void applyLinearTrans(arr& y);
   uint applyLinearTrans_dim(uint d);
 };
 
 //these are frequently used by implementations of task maps
-
-//TODO: return with a zero in front..
-//inline uintA getKtupleDim(const ConfigurationL& Ctuple) {
-//  uintA dim(Ctuple.N);
-//  dim(0)=Ctuple(0)->getJointStateDimension();
-//  for(uint i=1; i<dim.N; i++) dim(i) = dim(i-1)+Ctuple(i)->getJointStateDimension();
-//  return dim;
-//}
 
 inline int initIdArg(const rai::Configuration& C, const char* frameName) {
   rai::Frame* a = 0;
@@ -77,37 +71,6 @@ inline int initIdArg(const rai::Configuration& C, const char* frameName) {
 //  HALT("frame '" <<frameName <<"' does not exist");
   return -1;
 }
-
-//inline void expandJacobian(arr& J, const ConfigurationL& Ctuple, int i=-1) {
-//  CHECK(i<(int)Ctuple.N && -i<=(int)Ctuple.N, "")
-//  if(Ctuple.N==1) return;
-//  uintA qdim = getKtupleDim(Ctuple);
-//  qdim.prepend(0);
-//  if(!isSparseMatrix(J)) {
-//    arr tmp = zeros(J.d0, qdim.last());
-//    //  CHECK_EQ(J.d1, qdim.elem(i)-qdim.elem(i-1), "");
-//    tmp.setMatrixBlock(J, 0, qdim.elem(i-1));
-//    J = tmp;
-//  } else {
-//    J.sparse().reshape(J.d0, qdim.last());
-//    J.sparse().rowShift(qdim.elem(i-1));
-//  }
-//}
-
-//inline void padJacobian(arr& J, const ConfigurationL& Ctuple) {
-//  uintA qdim = getKtupleDim(Ctuple);
-//  if(!isSpecial(J)){
-//    arr tmp = zeros(J.d0, qdim.last());
-//    tmp.setMatrixBlock(J, 0, 0);
-//    J = tmp;
-//  }else{
-//    if(J.isSparse()){
-//      J.sparse().reshape(J.d0, qdim.last());
-//    } else if(!J){
-//      return;
-//    } else NIY;
-//  }
-//}
 
 template<class T>
 std::shared_ptr<Feature> make_feature(const StringA& frames, const rai::Configuration& C, const arr& scale=NoArr, const arr& target=NoArr, int order=-1){

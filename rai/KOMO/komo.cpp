@@ -113,12 +113,12 @@ void KOMO::clone(const KOMO& komo){
 
   //copy running objectives
   for(const ptr<Objective>& o:komo.objectives){
-    objectives.append(make_shared<Objective>(o->feat, o->type, o->name, o->times, o->timeSlices));
+    objectives.append(make_shared<Objective>(o->feat->deepCopy(), o->type, o->name, o->times, o->timeSlices));
   }
 
   //copy grounded objectives
   for(const ptr<GroundedObjective>& o:komo.objs){
-    auto ocopy = objs.append(make_shared<GroundedObjective>(o->feat, o->type, o->timeSlices));
+    auto ocopy = objs.append(make_shared<GroundedObjective>(o->feat->deepCopy(), o->type, o->timeSlices));
     ocopy->frames = pathConfig.getFrames(framesToIndices(o->frames));
   }
 }

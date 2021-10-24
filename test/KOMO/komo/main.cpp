@@ -214,55 +214,38 @@ void TEST(Threading) {
   rai::Configuration C;
   C.addFile(rai::raiPath("../rai-robotModels/scenarios/workshopTable.g"));
 
+  //-- create KOMO problem, to be cloned later
+  KOMO komo;
+  komo.opt.verbose = 0;
+  //komo.opt.animateOptimization=1;
+  komo.setModel(C, false);
+  komo.setTiming(1, 10, 2, 2);
+  komo.add_qControlObjective({}, 2);
+  komo.addObjective({1, 1}, FS_positionDiff, {"r_gripper", "block1"}, OT_eq, {1e2});
+  arr x0 = komo.pathConfig.getJointState();
+
+  //-- how many threads?
   uint nThreads = 3;
   uint nIters = 120 / nThreads;
-  double time = -rai::realTime();
 
-  std::mutex mux;
-
-#if 1
+  //-- define worker routine
   auto routine = [&]() {
-
-    KOMO komo;
-    komo.opt.verbose = 0;
-    //komo.opt.animateOptimization=1;
-    mux.lock();
-    komo.setModel(C, false);
-    mux.unlock();
-    komo.setTiming(1, 10, 2, 2);
-    komo.add_qControlObjective({}, 2);
-    komo.addObjective({1, 1}, FS_positionDiff, {"r_gripper", "block1"}, OT_eq, {1e2});
-    arr x0 = komo.pathConfig.getJointState();
-
-//    KOMO komo2;
-//    komo2.clone(komo);
+    KOMO komo2;
+    komo2.clone(komo); //each worker clones original problem
     for (uint i=0; i<nIters; i++) {
-      komo.pathConfig.setJointState(x0);
-      komo.optimize();
+      komo2.pathConfig.setJointState(x0);
+      komo2.optimize();
     }
     return 0;
   };
-#else
-  auto routine = [&]() {
-    uint n=100;
-    arr A(n,n), a(n), x(n), B(n,n);
-    for (uint i=0; i<nIters; i++){
-      A = 2.;
-      a = 1.;
-      B = rai::comp_At_A(A);
-      x = inverse_SymPosDef(B)*a;
-      //op_elemWiseProduct(B, A, A);
-      //op_innerProduct(x, A, a);
-    }
-  };
-#endif
 
+  //-- run them all
+  double time = -rai::realTime();
   {
     rai::Array<std::shared_ptr<std::thread>> threads;
     for(uint t=0;t<nThreads;t++) threads.append(make_shared<std::thread>(routine));
     for(uint t=0;t<nThreads;t++) threads(t)->join();
   }
-
   time += rai::realTime();
   std::cout <<nThreads <<" threads, " <<nIters <<" runs each: " <<time <<" sec"<< std::endl;
 }
@@ -274,10 +257,10 @@ int main(int argc,char** argv){
 
 //  rnd.clockSeed();
 
-//  testEasy();
-//  testAlign();
-//  testThin();
-//  testPR2();
+  testEasy();
+  testAlign();
+  testThin();
+  testPR2();
   testThreading();
 
   return 0;

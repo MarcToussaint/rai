@@ -93,6 +93,15 @@ double shapeSize(const rai::Configuration& K, const char* name, uint i=2) {
   return s->size(i);
 }
 
+std::shared_ptr<Feature> Feature::deepCopy(){
+#define _cpy(T) { T* f = dynamic_cast<T*>(this); if(f) return make_shared<T>(*f); }
+  _cpy(F_PositionDiff);
+  _cpy(F_qItself);
+#undef _cpy
+  HALT("deepCopy not registered for this type: " <<niceTypeidName(typeid(this)));
+  return make_shared<Feature>();
+}
+
 ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const rai::Configuration& C, const arr& scale, const arr& target, int order) {
   shared_ptr<Feature> f;
   if(feat==FS_distance) {  f=make_shared<F_PairCollision>(F_PairCollision::_negScalar, false); }
