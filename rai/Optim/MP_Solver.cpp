@@ -37,22 +37,22 @@ shared_ptr<SolverReturn> MP_Solver::solve(int resampleInitialization){
     CHECK(x.N, "x is of zero dimensionality - needs initialization");
   }
   if(solverID==MPS_newton){
-    Conv_MathematicalProgram_ScalarProblem P1(*P);
+    Conv_MathematicalProgram_ScalarProblem P1(P);
     OptNewton newton(x, P1, OptOptions()
                      .set_verbose(verbose));
     newton.run();
   }
   else if(solverID==MPS_gradientDescent){
-    Conv_MathematicalProgram_ScalarProblem P1(*P);
+    Conv_MathematicalProgram_ScalarProblem P1(P);
     OptGrad(x, P1).run();
   }
   else if(solverID==MPS_rprop){
-    Conv_MathematicalProgram_ScalarProblem P1(*P);
+    Conv_MathematicalProgram_ScalarProblem P1(P);
     OptOptions opts;
     Rprop().loop(x, P1, opts.fmin_return, opts.stopTolerance, opts.initStep, opts.stopEvals, opts.verbose);
   }
   else if(solverID==MPS_augmentedLag){
-    OptConstrained opt(x, dual, *P, OptOptions()
+    OptConstrained opt(x, dual, P, OptOptions()
                        .set_constrainedMethod(augmentedLag)
                        .set_verbose(verbose) );
     opt.run();
@@ -62,13 +62,13 @@ shared_ptr<SolverReturn> MP_Solver::solve(int resampleInitialization){
     ret->f = opt.L.get_cost_f();
   }
   else if(solverID==MPS_squaredPenalty){
-    OptConstrained opt(x, dual, *P, OptOptions()
+    OptConstrained opt(x, dual, P, OptOptions()
                        .set_constrainedMethod(squaredPenalty)
                        .set_verbose(verbose) );
     opt.run();
   }
   else if(solverID==MPS_logBarrier){
-    OptConstrained opt(x, dual, *P, OptOptions()
+    OptConstrained opt(x, dual, P, OptOptions()
                        .set_constrainedMethod(logBarrier)
                        .set_verbose(verbose) );
     opt.run();
@@ -82,7 +82,7 @@ shared_ptr<SolverReturn> MP_Solver::solve(int resampleInitialization){
     x = nlo.solve(x);
   }
   else if(solverID==MPS_Ceres){
-    Conv_MathematicalProgram_TrivialFactoreded P1(*P);
+    Conv_MathematicalProgram_TrivialFactoreded P1(P);
     CeresInterface nlo(P1);
     x = nlo.solve();
   }

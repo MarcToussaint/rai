@@ -27,7 +27,7 @@ struct OptConstrained {
   bool earlyPhase=false;
   ostream* logFile=nullptr;
 
-  OptConstrained(arr& x, arr& dual, MathematicalProgram& P, OptOptions opt=NOOPT, ostream* _logFile=0);
+  OptConstrained(arr& x, arr& dual, const shared_ptr<MathematicalProgram>& P, OptOptions opt=NOOPT, ostream* _logFile=0);
   ~OptConstrained();
   bool step();
   uint run();

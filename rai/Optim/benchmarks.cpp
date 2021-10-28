@@ -7,7 +7,42 @@
     --------------------------------------------------------------  */
 
 #include "benchmarks.h"
+#include "lagrangian.h"
 //#include "functions.h"
+
+//===========================================================================
+
+enum BenchmarkSymbol {
+  BS_none=0,
+  BS_Rosenbrock,
+  BS_Rastrigin,
+  BS_RastriginSOS,
+  BS_Square,
+  BS_RandomSquared,
+  BS_Sum,
+  BS_RandomLP,
+  BS_SimpleConstrained,
+  BS_Wedge,
+  BS_HalfCircle,
+  BS_CircleLine,
+};
+
+template<> const char* rai::Enum<BenchmarkSymbol>::names []= {
+  "none",
+  "Rosenbrock",
+  "Rastrigin",
+  "RastriginSOS",
+  "Square",
+  "RandomSquared",
+  "Sum",
+  "RandomLP",
+  "SimpleConstrained",
+  "Wedge",
+  "HalfCircle",
+  "CircleLine",
+  0
+};
+
 
 //===========================================================================
 
@@ -41,7 +76,12 @@ double _RosenbrockFunction(arr& g, arr& H, const arr& x) {
   return f;
 };
 
-ScalarFunction RosenbrockFunction() { return _RosenbrockFunction; }
+struct MP_Rosenbrock : ScalarUnconstrainedProgram {
+  uint dim;
+  MP_Rosenbrock(uint _dim) : dim(_dim) {}
+  virtual uint getDimension(){ return dim; }
+  virtual double f(arr &g, arr &H, const arr &x){ return _RosenbrockFunction(g, H, x); }
+};
 
 //===========================================================================
 
@@ -59,7 +99,12 @@ double _RastriginFunction(arr& g, arr& H, const arr& x) {
   return f;
 }
 
-ScalarFunction RastriginFunction() { return _RastriginFunction; }
+struct MP_Rastrigin : ScalarUnconstrainedProgram {
+  uint dim;
+  MP_Rastrigin(uint _dim) : dim(_dim) {}
+  virtual uint getDimension(){ return dim; }
+  virtual double f(arr &g, arr &H, const arr &x){ return _RastriginFunction(g, H, x); }
+};
 
 //===========================================================================
 
@@ -149,61 +194,24 @@ ScalarFunction ChoiceFunction() { return (ScalarFunction&)choice; }
 //===========================================================================
 
 void generateConditionedRandomProjection(arr& M, uint n, double condition) {
-  uint i, j;
+}
+
+//===========================================================================
+
+MP_RandomSquared::MP_RandomSquared(uint _n, double condition) : n(_n) {
   //let M be a ortho-normal matrix (=random rotation matrix)
   M.resize(n, n);
   rndUniform(M, -1., 1., false);
   //orthogonalize
-  for(i=0; i<n; i++) {
-    for(j=0; j<i; j++) M[i]()-=scalarProduct(M[i], M[j])*M[j];
+  for(uint i=0; i<n; i++) {
+    for(uint j=0; j<i; j++) M[i]()-=scalarProduct(M[i], M[j])*M[j];
     M[i]()/=length(M[i]);
   }
   //we condition each column of M with powers of the condition
-  for(i=0; i<n; i++) M[i]() *= pow(condition, double(i) / (2.*double(n - 1)));
+  for(uint i=0; i<n; i++) M[i]() *= pow(condition, double(i) / (2.*double(n - 1)));
 }
 
 //===========================================================================
-
-SquaredCost::SquaredCost(uint _n, double condition) {
-  initRandom(_n, condition);
-}
-
-void SquaredCost::initRandom(uint _n, double condition) {
-  n=_n;
-  generateConditionedRandomProjection(M, n, condition);
-  //the metric is equal M^T*M
-  //C=~M*M;
-  //arr U,d,V;    svd(U, d, V, C);    cout <<U <<d <<V <<M <<C <<endl;
-}
-
-void SquaredCost::fv(arr& y, arr& J, const arr& x) {
-  CHECK_EQ(x.N, n, "");
-  y = M*x;
-  if(!!J) J=M;
-}
-
-//===========================================================================
-
-NonlinearlyWarpedSquaredCost::NonlinearlyWarpedSquaredCost(uint _n, double condition):sq(_n, condition) {
-  n=_n;
-}
-
-void NonlinearlyWarpedSquaredCost::initRandom(uint _n, double condition) {
-  n=_n;
-  sq.initRandom(n, condition);
-}
-
-void NonlinearlyWarpedSquaredCost::fv(arr& y, arr& J, const arr& x) {
-  CHECK_EQ(x.N, n, "");
-  arr xx=atan(x);
-  y=sq.M*xx;
-  if(!!J) {
-    arr gg(xx.N);
-    for(uint i=0; i<gg.N; i++) gg(i) = 1./(1.+x(i)*x(i));
-    J = sq.M*diag(gg);
-  }
-}
-
 
 ChoiceConstraintFunction::ChoiceConstraintFunction() {
   which = (WhichConstraint) rai::getParameter<double>("constraintChoice");
@@ -218,6 +226,8 @@ void ChoiceConstraintFunction::getFeatureTypes(ObjectiveTypeA& tt) {
   tt.clear();
   tt.append(OT_f);
   switch(which) {
+    case none:
+      break;
     case wedge2D:
       tt.append(consts(OT_ineq, n));
       break;
@@ -299,3 +309,47 @@ void ChoiceConstraintFunction::getFHessian(arr& H, const arr& x) {
   ChoiceFunction()(NoArr, H, x);
 }
 
+
+
+std::shared_ptr<MathematicalProgram> getBenchmarkFromCfg(){
+  rai::Enum<BenchmarkSymbol> bs (rai::getParameter<rai::String>("benchmark"));
+  uint dim = rai::getParameter<uint>("benchmark/dim", 2);
+  double forsyth = rai::getParameter<double>("benchmark/forsyth", -1.);
+
+  //-- unconstrained problems
+
+  {
+    std::shared_ptr<ScalarUnconstrainedProgram> mp;
+
+    if(bs==BS_Rosenbrock) mp = make_shared<MP_Rosenbrock>(dim);
+    else if(bs==BS_Rastrigin) mp = make_shared<MP_Rastrigin>(dim);
+    else if(forsyth>0.){
+      shared_ptr<MathematicalProgram> org;
+      if(bs==BS_RandomSquared) org = make_shared<MP_RandomSquared>(dim);
+      else if(bs==BS_RastriginSOS) org = make_shared<MP_RastriginSOS>();
+      if(org){
+        auto lag = make_shared<LagrangianProblem>(org); //convert to scalar
+        mp = make_shared<ScalarUnconstrainedProgram>(lag, dim);
+      }
+    }
+
+    if(mp){
+      if(forsyth>0.) mp->forsythAlpha = forsyth;
+      return mp;
+    }
+  }
+
+  //-- constrained problems
+
+  std::shared_ptr<MathematicalProgram> mp;
+
+  if(bs==BS_RandomLP) mp = make_shared<MP_RandomLP>(dim);
+  else if(bs==BS_RandomSquared) mp = make_shared<MP_RandomSquared>(dim);
+  else if(bs==BS_RastriginSOS) mp = make_shared<MP_RastriginSOS>();
+  else if(bs==BS_Wedge) mp = make_shared<MP_Wedge>();
+  else if(bs==BS_HalfCircle) mp = make_shared<MP_HalfCircle>();
+  else if(bs==BS_CircleLine) mp = make_shared<MP_CircleLine>();
+  else HALT("can't interpret benchmark symbol: " <<bs);
+
+  return mp;
+}

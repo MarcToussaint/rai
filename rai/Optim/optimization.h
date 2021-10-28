@@ -31,7 +31,7 @@ struct Conv_ScalarProblem_MathematicalProgram : MathematicalProgram {
   void evaluate(arr& phi, arr& J, const arr& x) {
     double y = f(J, NoArr, x);
     phi = {y};
-    J.reshape(1, x.N);
+    if(!!J) J.reshape(1, x.N);
   }
   void getFHessian(arr& H, const arr& x) {
     f(NoArr, H, x);
@@ -40,9 +40,9 @@ struct Conv_ScalarProblem_MathematicalProgram : MathematicalProgram {
 };
 
 struct Conv_MathematicalProgram_ScalarProblem : ScalarFunction {
-  MathematicalProgram &P;
+  std::shared_ptr<MathematicalProgram> P;
 
-  Conv_MathematicalProgram_ScalarProblem(MathematicalProgram &P) : P(P){
+  Conv_MathematicalProgram_ScalarProblem(std::shared_ptr<MathematicalProgram> _P) : P(_P) {
     ScalarFunction::operator=([this](arr& g, arr& H, const arr& x) -> double {
       return this->scalar(g, H, x);
     });

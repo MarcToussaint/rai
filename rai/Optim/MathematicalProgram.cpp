@@ -103,9 +103,9 @@ void MathematicalProgram_Factored::evaluate(arr& phi, arr& J, const arr& x) {
 
 //===========================================================================
 
-Conv_FactoredNLP_BandedNLP::Conv_FactoredNLP_BandedNLP(MathematicalProgram_Factored& P, uint _maxBandSize, bool _sparseNotBanded)
+Conv_FactoredNLP_BandedNLP::Conv_FactoredNLP_BandedNLP(const shared_ptr<MathematicalProgram_Factored>& P, uint _maxBandSize, bool _sparseNotBanded)
   : P(P), maxBandSize(_maxBandSize), sparseNotBanded(_sparseNotBanded) {
-  P.getFactorization(variableDimensions, //the size of each variable block
+  P->getFactorization(variableDimensions, //the size of each variable block
                      featureDimensions,  //the size of each feature block
                      featureVariables    //which variables the j-th feature block depends on
                     );
@@ -129,7 +129,7 @@ void Conv_FactoredNLP_BandedNLP::evaluate(arr& phi, arr& J, const arr& x) {
     n += d;
   }
 #else
-  P.setAllVariables(x);
+  P->setAllVariables(x);
 #endif
 
   //evaluate all features individually
@@ -139,7 +139,7 @@ void Conv_FactoredNLP_BandedNLP::evaluate(arr& phi, arr& J, const arr& x) {
   for(uint i=0; i<featureDimensions.N; i++) {
     uint d = featureDimensions(i);
     if(d) {
-      P.evaluateSingleFeature(i, phi_i, J_i(i), NoArr);
+      P->evaluateSingleFeature(i, phi_i, J_i(i), NoArr);
       CHECK_EQ(phi_i.N, d, "");
       if(!!J) CHECK_EQ(J_i.elem(i).d0, d, "");
       phi.setVectorBlock(phi_i, featDimIntegral(i));
@@ -237,16 +237,16 @@ void Conv_FactoredNLP_BandedNLP::evaluate(arr& phi, arr& J, const arr& x) {
     }
   }
 
-  P.report(cout, 0);
+  P->report(cout, 0);
 }
 
 //===========================================================================
 
 void MathematicalProgram_Traced::evaluate(arr& phi, arr& J, const arr& x) {
   evals++;
-  P.evaluate(phi, J, x);
+  P->evaluate(phi, J, x);
   if(trace_x){ xTrace.append(x); xTrace.reshape(-1, x.N); }
-  if(trace_costs){ if(!featureTypes.N) P.getFeatureTypes(featureTypes); costTrace.append(summarizeErrors(phi, featureTypes)); costTrace.reshape(-1,3);  }
+  if(trace_costs){ if(!featureTypes.N) P->getFeatureTypes(featureTypes); costTrace.append(summarizeErrors(phi, featureTypes)); costTrace.reshape(-1,3);  }
   if(trace_phi && !!phi) { phiTrace.append(phi);  phiTrace.reshape(-1, phi.N); }
   if(trace_J && !!J) { JTrace.append(J);  JTrace.reshape(-1, phi.N, x.N); }
 }

@@ -26,8 +26,8 @@ template<> const char* rai::Enum<ObjectiveType>::names []= {
 double Conv_MathematicalProgram_ScalarProblem::scalar(arr& g, arr& H, const arr& x){
   ObjectiveTypeA featureTypes;
   arr phi, J;
-  P.getFeatureTypes(featureTypes);
-  P.evaluate(phi, J, x);
+  P->getFeatureTypes(featureTypes);
+  P->evaluate(phi, J, x);
 
   CHECK_EQ(phi.N, featureTypes.N, "");
   CHECK_EQ(phi.N, J.d0, "");
@@ -68,7 +68,7 @@ double Conv_MathematicalProgram_ScalarProblem::scalar(arr& g, arr& H, const arr&
 
     if(hasF) { //For f-terms, the Hessian must be given explicitly, and is not \propto J^T J
       arr fH;
-      P.getFHessian(fH, x);
+      P->getFHessian(fH, x);
       H += fH;
     }
 

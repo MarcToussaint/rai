@@ -4,7 +4,7 @@
 #include <Optim/constrained.h>
 
 //lecture.cpp:
-void testConstraint(MathematicalProgram& p, arr& x_start=NoArr, uint iters=20);
+void lectureDemo(MathematicalProgram& p, arr& x_start=NoArr, uint iters=20);
 
 //==============================================================================
 //
@@ -33,13 +33,13 @@ void testPhaseOne(MathematicalProgram& f, uint dim_x){
   arr x;
   x = {1., 1., 10.};
 
-  testConstraint(metaF, x, 1);
+  lectureDemo(metaF, x, 1);
   //one iteration of phase one should be enough
   //properly done: check in each step if constraints are fulfilled and exit phase one then
   //no need to really minimize
 
   x=x.sub(0,-2);
-  testConstraint(f, x);
+  lectureDemo(f, x);
 }
 
 //==============================================================================
@@ -93,7 +93,7 @@ int main(int argc,char** argv){
   ChoiceConstraintFunction F;
 //  RandomLPFunction F;
 //  SimpleConstraintFunction F;
-  testConstraint(F);
+  lectureDemo(F);
 //  testConstraint2(F);
 
 //  testCoveringSphere();

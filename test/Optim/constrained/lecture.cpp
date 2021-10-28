@@ -6,23 +6,12 @@
 
 //this code is only for demo in the lecture -- a bit messy!
 
-//void displayFunction(const ScalarFunction& f){
-//  arr phi;
-//  arr X, Y;
-//  X.setGrid(2,-1.2,1.2,100);
-//  Y.resize(X.d0);
-//  for(uint i=0;i<X.d0;i++) Y(i) = f(NoArr, NoArr, X[i]);
-//  Y.reshape(101,101);
-//  write(LIST<arr>(Y),"z.fct");
-//  gnuplot("reset; splot [-1:1][-1:1] 'z.fct' matrix us (1.2*($1/50-1)):(1.2*($2/50-1)):3 w l", false, true);
-//}
-
 //==============================================================================
 //
 // test standard constrained optimizers
 //
 
-void testConstraint(MathematicalProgram& p, arr& x_start=NoArr, uint iters=20){
+void lectureDemo(MathematicalProgram& p, arr& x_start=NoArr, uint iters=20){
   OptOptions options;
   LagrangianProblem lag(p, options);
 

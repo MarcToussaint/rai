@@ -20,8 +20,10 @@ double I_lambda_x(uint i, arr& lambda, arr& g) {
 
 //==============================================================================
 
-LagrangianProblem::LagrangianProblem(MathematicalProgram& P, const OptOptions& opt, arr& lambdaInit)
+LagrangianProblem::LagrangianProblem(const shared_ptr<MathematicalProgram>& P, const OptOptions& opt, arr& lambdaInit)
   : P(P), muLB(0.), mu(0.), nu(0.) {
+
+  CHECK(P, "null problem given");
 
   ScalarFunction::operator=([this](arr& dL, arr& HL, const arr& x) -> double {
     return this->lagrangian(dL, HL, x);
@@ -43,7 +45,7 @@ LagrangianProblem::LagrangianProblem(MathematicalProgram& P, const OptOptions& o
 
 uint LagrangianProblem::getFeatureDim() {
   if(!tt_x.N) { //need to get feature types
-    P.getFeatureTypes(tt_x);
+    P->getFeatureTypes(tt_x);
   }
   uint nphi=0;
   for(ObjectiveType& t:tt_x) {
@@ -59,7 +61,7 @@ uint LagrangianProblem::getFeatureDim() {
 }
 
 void LagrangianProblem::getFeatureTypes(ObjectiveTypeA& featureTypes) {
-  P.getFeatureTypes(tt_x);
+  P->getFeatureTypes(tt_x);
 
   featureTypes.clear();
   for(ObjectiveType& t:tt_x) {
@@ -77,12 +79,12 @@ void LagrangianProblem::evaluate(arr& phi, arr& J, const arr& _x) {
   //-- evaluate constrained problem and buffer
   if(_x!=x) {
     x=_x;
-    P.evaluate(phi_x, J_x, x);
-    P.getFHessian(H_x, x);
+    P->evaluate(phi_x, J_x, x);
+    P->getFHessian(H_x, x);
   } else { //we evaluated this before - use buffered values; the meta F is still recomputed as (dual) parameters might have changed
   }
   if(tt_x.N!=phi_x.N) { //need to get feature types
-    P.getFeatureTypes(tt_x);
+    P->getFeatureTypes(tt_x);
   }
 
   CHECK(x.N, "zero-dim optimization variables!");
@@ -127,7 +129,7 @@ void LagrangianProblem::evaluate(arr& phi, arr& J, const arr& _x) {
 }
 
 void LagrangianProblem::getFHessian(arr& H, const arr& x) {
-  P.getFHessian(H, x);
+  P->getFHessian(H, x);
 
   for(uint i=0; i<phi_x.N; i++) {
     if(muLB     && tt_x.p[i]==OT_ineq) NIY; //add something to the Hessian
@@ -138,12 +140,12 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
   //-- evaluate constrained problem and buffer
   if(_x!=x) {
     x=_x;
-    P.evaluate(phi_x, J_x, x);
-    P.getFHessian(H_x, x);
+    P->evaluate(phi_x, J_x, x);
+    P->getFHessian(H_x, x);
   } else { //we evaluated this before - use buffered values; the meta F is still recomputed as (dual) parameters might have changed
   }
   if(tt_x.N!=phi_x.N) { //need to get feature types
-    P.getFeatureTypes(tt_x);
+    P->getFeatureTypes(tt_x);
   }
 
   CHECK(x.N, "zero-dim optimization variables!");
