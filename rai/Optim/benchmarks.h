@@ -25,11 +25,11 @@ std::shared_ptr<MathematicalProgram> getBenchmarkFromCfg();
 struct ScalarUnconstrainedProgram : MathematicalProgram {
   double forsythAlpha = -1.;
   shared_ptr<ScalarFunction> S;
-  uint dim;
   ScalarUnconstrainedProgram() {}
-  ScalarUnconstrainedProgram(const shared_ptr<ScalarFunction>& S, uint dim) : S(S), dim(dim) {}
-  uint getDimension(){ return dim; }
-  void getFeatureTypes(ObjectiveTypeA& ot) { ot = {OT_f}; }
+  ScalarUnconstrainedProgram(const shared_ptr<ScalarFunction>& S, uint dim) : S(S) {
+    dimension=dim;
+    featureTypes = {OT_f};
+  }
   void evaluate(arr& phi, arr& J, const arr& x) {
     double y = f(J, NoArr, x);
     if(forsythAlpha>0.){
@@ -54,18 +54,13 @@ struct ScalarUnconstrainedProgram : MathematicalProgram {
 //===========================================================================
 
 struct MP_TrivialSquareFunction : MathematicalProgram {
-  uint dim;
   double lo, hi;
 
-  MP_TrivialSquareFunction(uint dim=10, double lo=-1., double hi=1.) : dim(dim), lo(lo), hi(hi) {}
-
-  virtual uint getDimension() { return dim; }
-  virtual void getBounds(arr& bounds_lo, arr& bounds_up) { //lower/upper bounds for the decision variable (may be {})
-    bounds_lo = consts<double>(lo, dim);
-    bounds_up = consts<double>(hi, dim);
-  }
-  virtual void getFeatureTypes(ObjectiveTypeA& featureTypes) {
-    featureTypes = consts<ObjectiveType>(OT_sos, dim);
+  MP_TrivialSquareFunction(uint dim=10, double lo=-1., double hi=1.){
+    dimension = dim;
+    featureTypes = consts<ObjectiveType>(OT_sos, dimension);
+    bounds_lo = consts<double>(lo, dimension);
+    bounds_up = consts<double>(hi, dimension);
   }
 
   void evaluate(arr& phi, arr& J, const arr& x) {
@@ -80,19 +75,17 @@ struct MP_RandomLP : MathematicalProgram {
   arr randomG;
 
   MP_RandomLP(uint dim) {
+    dimension = dim;
+
     randomG.resize(5*dim+5, dim+1);
     rndGauss(randomG, 1.);
     for(uint i=0; i<randomG.d0; i++) {
       if(randomG(i, 0)>0.) randomG(i, 0) *= -1.; //ensure (0,0) is feasible
       randomG(i, 0) -= .2;
     }
-  }
 
-  virtual uint getDimension(){ return randomG.d1-1; }
-
-  virtual void getFeatureTypes(ObjectiveTypeA& tt) {
-    tt = { OT_f };
-    tt.append(consts(OT_ineq, randomG.d0));
+    featureTypes = { OT_f };
+    featureTypes.append(consts(OT_ineq, randomG.d0));
   }
 
   virtual void evaluate(arr &phi, arr &J, const arr &x) {
@@ -137,8 +130,8 @@ struct ChoiceConstraintFunction : MathematicalProgram {
 
 struct SimpleConstraintFunction : MathematicalProgram {
   SimpleConstraintFunction() {
+    featureTypes = { OT_sos, OT_sos, OT_ineq, OT_ineq };
   }
-  virtual void getFeatureTypes(ObjectiveTypeA& tt) { tt = { OT_sos, OT_sos, OT_ineq, OT_ineq }; }
   virtual void evaluate(arr& phi, arr& J, const arr& _x) {
     CHECK_EQ(_x.N, 2, "");
     phi.resize(4);
@@ -164,9 +157,10 @@ struct MP_RastriginSOS : MathematicalProgram {
   MP_RastriginSOS() {
     a = rai::getParameter<double>("Rastrigin/a");
     condition = rai::getParameter<double>("benchmark/condition");
+
+    dimension=2;
+    featureTypes = consts<ObjectiveType>(OT_sos, 4);
   }
-  virtual uint getDimension(){ return 2; }
-  virtual void getFeatureTypes(ObjectiveTypeA &featureTypes){ featureTypes = consts<ObjectiveType>(OT_sos, 4); }
   virtual void evaluate(arr &phi, arr &J, const arr &x) {
     CHECK_EQ(x.N, 2, "");
     phi.resize(4);
@@ -194,18 +188,16 @@ struct MP_RandomSquared : MathematicalProgram {
 
   MP_RandomSquared(uint n, double condition=100.);
 
-  virtual uint getDimension(){ return n; }
-  virtual void getFeatureTypes(ObjectiveTypeA &featureTypes){ featureTypes = consts<ObjectiveType>(OT_sos, n); }
   virtual void evaluate(arr &phi, arr &J, const arr &x){ phi=M*x; if(!!J) J=M; }
 };
 
 //===========================================================================
 
 struct MP_Wedge : MathematicalProgram {
-  virtual uint getDimension(){ return 2; }
-  virtual void getFeatureTypes(ObjectiveTypeA& tt) {
-    tt = { OT_f };
-    tt.append(consts(OT_ineq, 2));
+  MP_Wedge(){
+    dimension=2;
+    featureTypes = { OT_f };
+    featureTypes.append(consts(OT_ineq, 2));
   }
 
   virtual void evaluate(arr &phi, arr &J, const arr &x) {
@@ -220,10 +212,10 @@ struct MP_Wedge : MathematicalProgram {
 //===========================================================================
 
 struct MP_HalfCircle : MathematicalProgram {
-  virtual uint getDimension(){ return 2; }
-  virtual void getFeatureTypes(ObjectiveTypeA& tt) {
-    tt = { OT_f };
-    tt.append(consts(OT_ineq, 2));
+  MP_HalfCircle(){
+    dimension=2;
+    featureTypes = { OT_f };
+    featureTypes.append(consts(OT_ineq, 2));
   }
 
   virtual void evaluate(arr &phi, arr &J, const arr &x) {
@@ -238,11 +230,11 @@ struct MP_HalfCircle : MathematicalProgram {
 //===========================================================================
 
 struct MP_CircleLine : MathematicalProgram {
-  virtual uint getDimension(){ return 2; }
-  virtual void getFeatureTypes(ObjectiveTypeA& tt) {
-    tt = { OT_f };
-    tt.append(OT_ineq);
-    tt.append(OT_eq);
+  MP_CircleLine(){
+    dimension=2;
+    featureTypes = { OT_f };
+    featureTypes.append(OT_ineq);
+    featureTypes.append(OT_eq);
   }
 
   virtual void evaluate(arr &phi, arr &J, const arr &x) {

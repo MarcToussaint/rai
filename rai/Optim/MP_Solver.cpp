@@ -74,15 +74,15 @@ shared_ptr<SolverReturn> MP_Solver::solve(int resampleInitialization){
     opt.run();
   }
   else if(solverID==MPS_NLopt){
-    NLoptInterface nlo(*P);
+    NLoptInterface nlo(P);
     x = nlo.solve(x);
   }
   else if(solverID==MPS_Ipopt){
-    IpoptInterface nlo(*P);
+    IpoptInterface nlo(P);
     x = nlo.solve(x);
   }
   else if(solverID==MPS_Ceres){
-    Conv_MathematicalProgram_TrivialFactoreded P1(P);
+    auto P1 = make_shared<Conv_MathematicalProgram_TrivialFactoreded>(P);
     CeresInterface nlo(P1);
     x = nlo.solve();
   }

@@ -38,11 +38,8 @@ struct LagrangianProblem : ScalarFunction, MathematicalProgram {
   LagrangianProblem(const shared_ptr<MathematicalProgram>& P, const OptOptions& opt=NOOPT, arr& lambdaInit=NoArr);
 
   uint getFeatureDim();
-  virtual void getFeatureTypes(ObjectiveTypeA& featureTypes);  //the number and type of all features (sos, ineq, eq, or f)
   virtual void evaluate(arr& phi, arr& J, const arr& x);       //evaluate all features and (optionally) their Jacobians for state x
   virtual void getFHessian(arr& H, const arr& x);              //the Hessian of the sum of all f-features (or Hessian in addition to the Gauss-Newton Hessian of all other features)
-  virtual uint getDimension() { return P->getDimension(); }                 //the dimensionality of the full decision variable
-  virtual void getBounds(arr& bounds_lo, arr& bounds_up) { P->getBounds(bounds_lo, bounds_up); }
   virtual arr  getInitializationSample(const arr& previousOptima= {}) { return P->getInitializationSample(previousOptima); }
 
   double lagrangian(arr& dL, arr& HL, const arr& x); ///< CORE METHOD: the unconstrained scalar function F

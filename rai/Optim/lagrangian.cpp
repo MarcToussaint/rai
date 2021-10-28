@@ -41,11 +41,23 @@ LagrangianProblem::LagrangianProblem(const shared_ptr<MathematicalProgram>& P, c
   }
 
   if(!!lambdaInit) lambda = lambdaInit;
+
+  featureTypes.clear();
+  for(ObjectiveType& t:P->featureTypes) {
+    if(t==OT_f) featureTypes.append(OT_f);                    // direct cost term
+    if(t==OT_sos) featureTypes.append(OT_sos);                // sumOfSqr term
+    if(muLB     && t==OT_ineq) featureTypes.append(OT_f);     // log barrier
+    if(mu       && t==OT_ineq) featureTypes.append(OT_sos);   // square g-penalty
+    if(lambda.N && t==OT_ineq) featureTypes.append(OT_f);     // g-lagrange terms
+    if(nu       && t==OT_eq) featureTypes.append(OT_sos);     // square h-penalty
+    if(lambda.N && t==OT_eq) featureTypes.append(OT_f);       // h-lagrange terms
+  }
+
 }
 
 uint LagrangianProblem::getFeatureDim() {
   if(!tt_x.N) { //need to get feature types
-    P->getFeatureTypes(tt_x);
+    tt_x = P->featureTypes;
   }
   uint nphi=0;
   for(ObjectiveType& t:tt_x) {
@@ -60,21 +72,6 @@ uint LagrangianProblem::getFeatureDim() {
   return nphi;
 }
 
-void LagrangianProblem::getFeatureTypes(ObjectiveTypeA& featureTypes) {
-  P->getFeatureTypes(tt_x);
-
-  featureTypes.clear();
-  for(ObjectiveType& t:tt_x) {
-    if(t==OT_f) featureTypes.append(OT_f);                    // direct cost term
-    if(t==OT_sos) featureTypes.append(OT_sos);                // sumOfSqr term
-    if(muLB     && t==OT_ineq) featureTypes.append(OT_f);     // log barrier
-    if(mu       && t==OT_ineq) featureTypes.append(OT_sos);   // square g-penalty
-    if(lambda.N && t==OT_ineq) featureTypes.append(OT_f);     // g-lagrange terms
-    if(nu       && t==OT_eq) featureTypes.append(OT_sos);     // square h-penalty
-    if(lambda.N && t==OT_eq) featureTypes.append(OT_f);       // h-lagrange terms
-  }
-}
-
 void LagrangianProblem::evaluate(arr& phi, arr& J, const arr& _x) {
   //-- evaluate constrained problem and buffer
   if(_x!=x) {
@@ -84,7 +81,7 @@ void LagrangianProblem::evaluate(arr& phi, arr& J, const arr& _x) {
   } else { //we evaluated this before - use buffered values; the meta F is still recomputed as (dual) parameters might have changed
   }
   if(tt_x.N!=phi_x.N) { //need to get feature types
-    P->getFeatureTypes(tt_x);
+    tt_x = P->featureTypes;
   }
 
   CHECK(x.N, "zero-dim optimization variables!");
@@ -145,7 +142,7 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
   } else { //we evaluated this before - use buffered values; the meta F is still recomputed as (dual) parameters might have changed
   }
   if(tt_x.N!=phi_x.N) { //need to get feature types
-    P->getFeatureTypes(tt_x);
+    tt_x = P->featureTypes;
   }
 
   CHECK(x.N, "zero-dim optimization variables!");

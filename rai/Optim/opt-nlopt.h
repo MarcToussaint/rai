@@ -9,14 +9,11 @@
 #include "MathematicalProgram.h"
 
 struct NLoptInterface {
-  MathematicalProgram& P;
+  shared_ptr<MathematicalProgram> P;
   arr x, phi_x, J_x;
-  ObjectiveTypeA featureTypes;
   int verbose=1;
 
-  NLoptInterface(MathematicalProgram& _P) : P(_P) {
-    P.getFeatureTypes(featureTypes);
-  }
+  NLoptInterface(const shared_ptr<MathematicalProgram>& _P) : P(_P) {}
 
   arr solve(const arr& x_init=NoArr);
 

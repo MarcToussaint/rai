@@ -14,14 +14,14 @@
 #include <coin/IpIpoptApplication.hpp>
 
 struct Conv_MP_Ipopt : Ipopt::TNLP {
-  MathematicalProgram& P;
+  shared_ptr<MathematicalProgram> P;
   arr x_init;
   arr x, phi_x, J_x;
   ObjectiveTypeA featureTypes;
 
   //-- buffers to avoid recomputing gradients
 
-  Conv_MP_Ipopt(MathematicalProgram& P);
+  Conv_MP_Ipopt(const shared_ptr<MathematicalProgram>& P);
 
   virtual ~Conv_MP_Ipopt();
 
@@ -59,9 +59,7 @@ struct Conv_MP_Ipopt : Ipopt::TNLP {
                                  Ipopt::IpoptCalculatedQuantities* ip_cq);
 };
 
-Conv_MP_Ipopt::Conv_MP_Ipopt(MathematicalProgram& P) : P(P) {
-  P.getFeatureTypes(featureTypes);
-}
+Conv_MP_Ipopt::Conv_MP_Ipopt(const shared_ptr<MathematicalProgram>& P) : P(P) {}
 
 Conv_MP_Ipopt::~Conv_MP_Ipopt() {}
 
@@ -90,8 +88,8 @@ arr IpoptInterface::solve(const arr& x_init) {
   CHECK(ret, "some option could not be set");
 
   //-- create template NLP structure and set x_init
-  Conv_MP_Ipopt* conv = new Conv_MP_Ipopt(P);
-  Ipopt::SmartPtr<Ipopt::TNLP> mynlp(conv);
+  auto conv = make_shared<Conv_MP_Ipopt>(P);
+  Ipopt::SmartPtr<Ipopt::TNLP> mynlp(conv.get());
   if(!!x_init) conv->x_init = x_init;
 
   //-- initialize IPopt
@@ -112,7 +110,7 @@ arr IpoptInterface::solve(const arr& x_init) {
 }
 
 bool Conv_MP_Ipopt::get_nlp_info(Ipopt::Index& n, Ipopt::Index& m, Ipopt::Index& nnz_jac_g, Ipopt::Index& nnz_h_lag, Ipopt::TNLP::IndexStyleEnum& index_style) {
-  n = P.getDimension();
+  n = P->getDimension();
 
   m=0;
   for(auto t:featureTypes) {
@@ -128,7 +126,7 @@ bool Conv_MP_Ipopt::get_nlp_info(Ipopt::Index& n, Ipopt::Index& m, Ipopt::Index&
 
 bool Conv_MP_Ipopt::get_bounds_info(Ipopt::Index n, Ipopt::Number* x_l, Ipopt::Number* x_u, Ipopt::Index m, Ipopt::Number* g_l, Ipopt::Number* g_u) {
   arr bounds_lo, bounds_up;
-  P.getBounds(bounds_lo, bounds_up);
+  P->getBounds(bounds_lo, bounds_up);
   for(int i=0; i<n; i++) {
     double l = bounds_lo.elem(i), u = bounds_up.elem(i);
     if(l<u) {
@@ -157,7 +155,7 @@ bool Conv_MP_Ipopt::get_starting_point(Ipopt::Index n, bool init_x, Ipopt::Numbe
     CHECK_EQ((int)x_init.N, n, "");
     for(int i=0; i<n; i++) x[i] = x_init.elem(i);
   }else{
-    arr x0 = P.getInitializationSample();
+    arr x0 = P->getInitializationSample();
     CHECK_EQ((int)x0.N, n, "");
     for(int i=0; i<n; i++) x[i] = x0.elem(i);
   }
@@ -168,7 +166,7 @@ bool Conv_MP_Ipopt::get_starting_point(Ipopt::Index n, bool init_x, Ipopt::Numbe
 bool Conv_MP_Ipopt::eval_f(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, Ipopt::Number& obj_value) {
   if(new_x) {
     x.setCarray(_x, n);
-    P.evaluate(phi_x, J_x, x);
+    P->evaluate(phi_x, J_x, x);
   }
 
   double f=0.;
@@ -185,7 +183,7 @@ bool Conv_MP_Ipopt::eval_f(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, 
 bool Conv_MP_Ipopt::eval_grad_f(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, Ipopt::Number* grad_f) {
   if(new_x) {
     x.setCarray(_x, n);
-    P.evaluate(phi_x, J_x, x);
+    P->evaluate(phi_x, J_x, x);
   }
 
   arr coeff=zeros(phi_x.N);
@@ -208,7 +206,7 @@ bool Conv_MP_Ipopt::eval_grad_f(Ipopt::Index n, const Ipopt::Number* _x, bool ne
 bool Conv_MP_Ipopt::eval_g(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, Ipopt::Index m, Ipopt::Number* _g) {
   if(new_x) {
     x.setCarray(_x, n);
-    P.evaluate(phi_x, J_x, x);
+    P->evaluate(phi_x, J_x, x);
   }
 
   arr g;
@@ -224,12 +222,12 @@ bool Conv_MP_Ipopt::eval_g(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, 
 
 bool Conv_MP_Ipopt::eval_jac_g(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, Ipopt::Index m, Ipopt::Index nele_jac, Ipopt::Index* iRow, Ipopt::Index* jCol, Ipopt::Number* values) {
   if(!_x) {
-    x = P.getInitializationSample();
-    P.evaluate(phi_x, J_x, x);
+    x = P->getInitializationSample();
+    P->evaluate(phi_x, J_x, x);
   }
   if(new_x) {
     x.setCarray(_x, n);
-    P.evaluate(phi_x, J_x, x);
+    P->evaluate(phi_x, J_x, x);
   }
 
   //construct trivial (sparse linear identity) mapping from all features to selection
@@ -283,7 +281,7 @@ bool Conv_MP_Ipopt::eval_h(Ipopt::Index n, const Ipopt::Number* _x, bool new_x, 
 
   if(hasFterms) {
     arr H_x;
-    P.getFHessian(H_x, x);
+    P->getFHessian(H_x, x);
     H_x.sparse();
     H += H_x;
   }

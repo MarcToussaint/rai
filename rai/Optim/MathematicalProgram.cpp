@@ -246,7 +246,7 @@ void MathematicalProgram_Traced::evaluate(arr& phi, arr& J, const arr& x) {
   evals++;
   P->evaluate(phi, J, x);
   if(trace_x){ xTrace.append(x); xTrace.reshape(-1, x.N); }
-  if(trace_costs){ if(!featureTypes.N) P->getFeatureTypes(featureTypes); costTrace.append(summarizeErrors(phi, featureTypes)); costTrace.reshape(-1,3);  }
+  if(trace_costs){ costTrace.append(summarizeErrors(phi, P->featureTypes)); costTrace.reshape(-1,3);  }
   if(trace_phi && !!phi) { phiTrace.append(phi);  phiTrace.reshape(-1, phi.N); }
   if(trace_J && !!J) { JTrace.append(J);  JTrace.reshape(-1, phi.N, x.N); }
 }

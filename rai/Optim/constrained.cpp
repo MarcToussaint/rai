@@ -15,42 +15,33 @@
 
 void PhaseOneProblem::initialize(arr& x) {
   arr phi;
-  ObjectiveTypeA ot;
-  f_orig.getFeatureTypes(ot);
-  f_orig.evaluate(phi, NoArr, x);
-  dim_x=x.N;
+  P->evaluate(phi, NoArr, x);
   dim_eq=dim_ineq=0;
   double gmax=0.;
   for(uint i=0; i<phi.N; i++) {
-    if(ot.elem(i)==OT_ineq) {
+    if(featureTypes.elem(i)==OT_ineq) {
       dim_ineq++;
       gmax = rai::MAX(gmax, phi.elem(i));
     }
-    if(ot.elem(i)==OT_eq) {
+    if(featureTypes.elem(i)==OT_eq) {
       dim_eq++;
     }
   }
   x.append(gmax);
 }
 
-void PhaseOneProblem::getFeatureTypes(ObjectiveTypeA& meta_ot) {
-  f_orig.getFeatureTypes(ft);
-  meta_ot = ft;
-  meta_ot.append(OT_ineq);
-}
-
 void PhaseOneProblem::evaluate(arr& meta_phi, arr& meta_J, const arr& meta_x) {
-  CHECK_EQ(meta_x.N, dim_x+1, "");
+  CHECK_EQ(meta_x.N, dimension+1, "");
   arr x = meta_x({0, -2});
   double s = meta_x(-1);
 
   arr phi, J;
-  f_orig.evaluate(phi, J, x);
+  P->evaluate(phi, J, x);
 
   meta_phi = phi;
   meta_phi.append(-s);
 
-  for(uint i=0; i<phi.N; i++) if(ft.elem(i)==OT_ineq) {
+  for(uint i=0; i<phi.N; i++) if(P->featureTypes.elem(i)==OT_ineq) {
       meta_phi(i) = phi(i) - s; //subtract slack!
     }
 

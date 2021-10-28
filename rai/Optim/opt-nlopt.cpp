@@ -50,16 +50,16 @@ arr NLoptInterface::solve(const arr& x_init) {
   if(!!x_init){
     x = x_init;
   }else{
-    x = P.getInitializationSample();
+    x = P->getInitializationSample();
   }
 
   //-- get and check bounds, clip x
   arr bounds_lo, bounds_up;
-  P.getBounds(bounds_lo, bounds_up);
+  P->getBounds(bounds_lo, bounds_up);
   CHECK_EQ(x.N, bounds_up.N, "NLOpt requires bounds");
   CHECK_EQ(x.N, bounds_lo.N, "NLOpt requires bounds");
   for(uint i=0; i<bounds_lo.N; i++) CHECK(bounds_lo.elem(i)<bounds_up.elem(i), "NLOpt requires bounds");
-  boundClip(P, x);
+  boundClip(*P, x);
 
   //-- create NLopt solver
   bool needsSubsolver;
@@ -78,13 +78,13 @@ arr NLoptInterface::solve(const arr& x_init) {
 
   //-- set cost and add constraints
   opt.set_min_objective(_f, this);
-  rai::Array<FuncCallData> funcCallData(featureTypes.N);
-  for(uint i=0; i<featureTypes.N; i++) {
+  rai::Array<FuncCallData> funcCallData(P->featureTypes.N);
+  for(uint i=0; i<P->featureTypes.N; i++) {
     FuncCallData& d = funcCallData.elem(i);
     d.I = this;
     d.feature = i;
-    if(featureTypes.elem(i) == OT_ineq) opt.add_inequality_constraint(_g, &d);
-    if(featureTypes.elem(i) == OT_eq) opt.add_equality_constraint(_h, &d);
+    if(P->featureTypes.elem(i) == OT_ineq) opt.add_inequality_constraint(_g, &d);
+    if(P->featureTypes.elem(i) == OT_eq) opt.add_equality_constraint(_h, &d);
   }
 
   //-- optimize
@@ -102,14 +102,14 @@ arr NLoptInterface::solve(const arr& x_init) {
 }
 
 double NLoptInterface::f(const arr& _x, arr& _grad) {
-  if(x!=_x) { x=_x;  P.evaluate(phi_x, J_x, x); }
+  if(x!=_x) { x=_x;  P->evaluate(phi_x, J_x, x); }
   CHECK(!J_x.isSparse(), "NLopt can't handle sparse Jacobians")
-  CHECK_EQ(phi_x.N, featureTypes.N, "");
+  CHECK_EQ(phi_x.N, P->featureTypes.N, "");
   double fval=0;
   arr grad=zeros(_grad.N);
   for(uint i=0; i<phi_x.N; i++) {
-    if(featureTypes.elem(i)==OT_f) { fval += phi_x.elem(i);  if(grad.N) grad += J_x[i]; }
-    if(featureTypes.elem(i)==OT_sos) { double y = phi_x.elem(i);  fval += y*y;  if(grad.N) grad += (2.*y) * J_x[i]; }
+    if(P->featureTypes.elem(i)==OT_f) { fval += phi_x.elem(i);  if(grad.N) grad += J_x[i]; }
+    if(P->featureTypes.elem(i)==OT_sos) { double y = phi_x.elem(i);  fval += y*y;  if(grad.N) grad += (2.*y) * J_x[i]; }
   }
 //  for(uint i=0; i<grad.N; i++) _grad[i] = grad.elem(i);
   _grad = grad;
@@ -118,16 +118,16 @@ double NLoptInterface::f(const arr& _x, arr& _grad) {
 }
 
 double NLoptInterface::g(const arr& _x, arr& _grad, uint feature) {
-  if(x!=_x) { x=_x;  P.evaluate(phi_x, J_x, x); }
-  CHECK_EQ(featureTypes(feature), OT_ineq, "");
+  if(x!=_x) { x=_x;  P->evaluate(phi_x, J_x, x); }
+  CHECK_EQ(P->featureTypes(feature), OT_ineq, "");
   if(_grad.N) _grad = J_x[feature];
   return phi_x.elem(feature);
 
 }
 
 double NLoptInterface::h(const arr& _x, arr& _grad, uint feature) {
-  if(x!=_x) { x=_x;  P.evaluate(phi_x, J_x, x); }
-  CHECK_EQ(featureTypes(feature), OT_eq, "");
+  if(x!=_x) { x=_x;  P->evaluate(phi_x, J_x, x); }
+  CHECK_EQ(P->featureTypes(feature), OT_eq, "");
   if(_grad.N) _grad = J_x[feature];
   return phi_x.elem(feature);
 }

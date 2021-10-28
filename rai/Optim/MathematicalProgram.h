@@ -35,16 +35,20 @@ arr summarizeErrors(const arr& phi, const ObjectiveTypeA& tt);
  *  Importantly: the Jacobian may be sparse! This allows to implicitly represent structured NLP (in contrast to explicit structure, see below)
  */
 struct MathematicalProgram : NonCopyable {
+protected:
+  //need to be defined in the constructor or a derived class
+  uint dimension=0;
+  arr bounds_lo, bounds_up;
+public:
+  ObjectiveTypeA featureTypes;
+
+public:
   virtual ~MathematicalProgram() {}
 
-  //-- essential methods that need overload
-  virtual void getFeatureTypes(ObjectiveTypeA& featureTypes) = 0;  //the number and type of all features (sos, ineq, eq, or f)
+  //-- essential method that needs overload
   virtual void evaluate(arr& phi, arr& J, const arr& x) = 0;       //evaluate all features and (optionally) their Jacobians for state x
 
-  //-- optional signature and semantics
-  virtual uint getDimension() { return 0; }                 //the dimensionality of the full decision variable
-  virtual void getBounds(arr& bounds_lo, arr& bounds_up) { bounds_lo.clear(); bounds_up.clear(); } //lower/upper bounds for the decision variable (may be {})
-  virtual void getNames(StringA& variableNames, StringA& featureNames) { variableNames.clear(); featureNames.clear(); } //the names of each variable/feature block (or element if unstructured)
+  //-- optional initialization method
   virtual arr  getInitializationSample(const arr& previousOptima= {}); //get an initialization (for MC sampling/restarts) [default: initialize random within bounds]
 
   //-- optional evaluation of Hessian of all scalar objectives
@@ -52,6 +56,10 @@ struct MathematicalProgram : NonCopyable {
 
   //-- optional: return some info on the problem and the last evaluation, potentially with display
   virtual void report(ostream& os, int verbose){ os <<"NLP of type '" <<niceTypeidName(typeid(*this)) <<"' -- no reporting implemented"; }
+
+  uint getDimension() const { return dimension; }
+  void getBounds(arr& lo, arr& up) const { lo=bounds_lo; up=bounds_up; }
+  const ObjectiveTypeA& getFeatureTypes() const { return featureTypes; }
 };
 
 //===========================================================================
@@ -105,10 +113,6 @@ struct MathematicalProgram_Traced : MathematicalProgram {
   virtual void evaluate(arr& phi, arr& J, const arr& x);
 
   //trivial
-  virtual void getFeatureTypes(ObjectiveTypeA& _featureTypes) { P->getFeatureTypes(_featureTypes); featureTypes = _featureTypes; }
-  virtual uint getDimension() { return P->getDimension(); }
-  virtual void getBounds(arr& bounds_lo, arr& bounds_up) { P->getBounds(bounds_lo, bounds_up); }
-  virtual void getNames(StringA& variableNames, StringA& featureNames) { P->getNames(variableNames, featureNames); }
   virtual arr  getInitializationSample(const arr& previousOptima= {}) { return P->getInitializationSample(previousOptima); }
   virtual void getFHessian(arr& H, const arr& x) { P->getFHessian(H, x); }
 };
@@ -122,15 +126,10 @@ struct Conv_MathematicalProgram_TrivialFactoreded : MathematicalProgram_Factored
 
   Conv_MathematicalProgram_TrivialFactoreded(const shared_ptr<MathematicalProgram>& P) : P(P) {}
 
-  virtual void getFeatureTypes(ObjectiveTypeA& featureTypes) { P->getFeatureTypes(featureTypes); }
-  virtual uint getDimension() { return P->getDimension(); }
-  virtual void getBounds(arr& bounds_lo, arr& bounds_up) { P->getBounds(bounds_lo, bounds_up); }
   virtual arr  getInitializationSample(const arr& previousOptima= {}) { return P->getInitializationSample(previousOptima); }
 
   virtual void getFactorization(uintA& variableDimensions, uintA& featureDimensions, uintAA& featureVariables) {
-    variableDimensions = { getDimension() };
-    ObjectiveTypeA featureTypes;
-    getFeatureTypes(featureTypes);
+    variableDimensions = dimension;
     featureDimensions = { featureTypes.N };
     featureVariables = { uintA({0}) };
   }
@@ -152,10 +151,6 @@ struct Conv_FactoredNLP_BandedNLP : MathematicalProgram {
   Conv_FactoredNLP_BandedNLP(const shared_ptr<MathematicalProgram_Factored>& P, uint _maxBandSize, bool _sparseNotBanded=false);
 
   // trivial
-  virtual uint getDimension() { return P->getDimension(); }
-  virtual void getFeatureTypes(ObjectiveTypeA& featureTypes) { P->getFeatureTypes(featureTypes); }
-  virtual void getBounds(arr& bounds_lo, arr& bounds_up) { P->getBounds(bounds_lo, bounds_up); }
-  virtual void getNames(StringA& variableNames, StringA& featureNames) { P->getNames(variableNames, featureNames); }
   virtual arr  getInitializationSample(const arr& previousOptima= {}) { return P->getInitializationSample(previousOptima); }
   virtual void getFHessian(arr& H, const arr& x) { P->getFHessian(H, x); }
 

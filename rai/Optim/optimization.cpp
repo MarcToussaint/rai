@@ -24,27 +24,25 @@ template<> const char* rai::Enum<ObjectiveType>::names []= {
 //===========================================================================
 
 double Conv_MathematicalProgram_ScalarProblem::scalar(arr& g, arr& H, const arr& x){
-  ObjectiveTypeA featureTypes;
   arr phi, J;
-  P->getFeatureTypes(featureTypes);
   P->evaluate(phi, J, x);
 
-  CHECK_EQ(phi.N, featureTypes.N, "");
+  CHECK_EQ(phi.N, P->featureTypes.N, "");
   CHECK_EQ(phi.N, J.d0, "");
   CHECK_EQ(x.N, J.d1, "");
 
   double f=0.;
   for(uint i=0; i<phi.N; i++) {
-    if(featureTypes.p[i]==OT_sos) f += rai::sqr(phi.p[i]);
-    else if(featureTypes.p[i]==OT_f) f += phi.p[i];
+    if(P->featureTypes.p[i]==OT_sos) f += rai::sqr(phi.p[i]);
+    else if(P->featureTypes.p[i]==OT_f) f += phi.p[i];
     else HALT("this must be an unconstrained problem!")
   }
 
   if(!!g) { //gradient
     arr coeff=zeros(phi.N);
     for(uint i=0; i<phi.N; i++) {
-      if(featureTypes.p[i]==OT_sos) coeff.p[i] += 2.* phi.p[i];
-      else if(featureTypes.p[i]==OT_f) coeff.p[i] += 1.;
+      if(P->featureTypes.p[i]==OT_sos) coeff.p[i] += 2.* phi.p[i];
+      else if(P->featureTypes.p[i]==OT_f) coeff.p[i] += 1.;
     }
     g = comp_At_x(J, coeff);
     g.reshape(x.N);
@@ -54,8 +52,8 @@ double Conv_MathematicalProgram_ScalarProblem::scalar(arr& g, arr& H, const arr&
     arr coeff=zeros(phi.N);
     double hasF=false;
     for(uint i=0; i<phi.N; i++) {
-      if(featureTypes.p[i]==OT_sos) coeff.p[i] += 2.;
-      else if(featureTypes.p[i]==OT_f) hasF=true;
+      if(P->featureTypes.p[i]==OT_sos) coeff.p[i] += 2.;
+      else if(P->featureTypes.p[i]==OT_f) hasF=true;
     }
     arr tmp = J;
     if(!isSparseMatrix(tmp)) {
@@ -97,11 +95,9 @@ bool checkJacobianCP(MathematicalProgram& P, const arr& x, double tolerance) {
 bool checkHessianCP(MathematicalProgram& P, const arr& x, double tolerance) {
   uint i;
   arr phi, J;
-  ObjectiveTypeA tt;
-  P.getFeatureTypes(tt);
   P.evaluate(phi, NoArr, x); //TODO: only call getStructure
-  for(i=0; i<tt.N; i++) if(tt(i)==OT_f) break;
-  if(i==tt.N) {
+  for(i=0; i<P.featureTypes.N; i++) if(P.featureTypes(i)==OT_f) break;
+  if(i==P.featureTypes.N) {
     RAI_MSG("no f-term in this KOM problem");
     return true;
   }

@@ -10,9 +10,9 @@
 
 struct IpoptInterface {
 //  MathematicalProgram_Traced P;
-  MathematicalProgram& P;
+  shared_ptr<MathematicalProgram> P;
 
-  IpoptInterface(MathematicalProgram& P) : P(P) {}
+  IpoptInterface(const shared_ptr<MathematicalProgram>& P) : P(P) {}
 
   arr solve(const arr& x_init=NoArr);
 };

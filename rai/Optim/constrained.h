@@ -41,15 +41,13 @@ struct OptConstrained {
 
 inline void evaluateMathematicalProgram(const arr& x, MathematicalProgram& P, std::ostream& os) {
   arr phi_x;
-  ObjectiveTypeA tt_x;
-  P.getFeatureTypes(tt_x);
   P.evaluate(phi_x, NoArr, x);
   double Ef=0., Eh=0., Eg=0.;
   for(uint i=0; i<phi_x.N; i++) {
-    if(tt_x(i)==OT_f) Ef += phi_x(i);
-    if(tt_x(i)==OT_sos) Ef += rai::sqr(phi_x(i));
-    if(tt_x(i)==OT_ineq && phi_x(i)>0.) Eg += phi_x(i);
-    if(tt_x(i)==OT_eq) Eh += fabs(phi_x(i));
+    if(P.featureTypes(i)==OT_f) Ef += phi_x(i);
+    if(P.featureTypes(i)==OT_sos) Ef += rai::sqr(phi_x(i));
+    if(P.featureTypes(i)==OT_ineq && phi_x(i)>0.) Eg += phi_x(i);
+    if(P.featureTypes(i)==OT_eq) Eh += fabs(phi_x(i));
   }
   os <<"f=" <<Ef <<" sum([g>0]g)="<<Eg <<" sum(|h|)=" <<Eh <<endl;
 }
@@ -63,13 +61,15 @@ inline void evaluateMathematicalProgram(const arr& x, MathematicalProgram& P, st
 //
 
 struct PhaseOneProblem : MathematicalProgram {
-  MathematicalProgram& f_orig;
-  ObjectiveTypeA ft;
-  uint dim_x, dim_ineq, dim_eq;
+  shared_ptr<MathematicalProgram> P;
+  uint dim_ineq, dim_eq;
 
-  PhaseOneProblem(MathematicalProgram& f_orig):f_orig(f_orig) {}
+  PhaseOneProblem(const shared_ptr<MathematicalProgram>& _P):P(_P) {
+    dimension = P->getDimension();
+    featureTypes = P->featureTypes;
+    featureTypes.append(OT_ineq);
+  }
   void initialize(arr& x);
-  virtual void getFeatureTypes(ObjectiveTypeA& featureTypes);
   virtual void evaluate(arr& phi, arr& J, const arr& x);
 };
 

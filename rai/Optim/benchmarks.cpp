@@ -77,9 +77,7 @@ double _RosenbrockFunction(arr& g, arr& H, const arr& x) {
 };
 
 struct MP_Rosenbrock : ScalarUnconstrainedProgram {
-  uint dim;
-  MP_Rosenbrock(uint _dim) : dim(_dim) {}
-  virtual uint getDimension(){ return dim; }
+  MP_Rosenbrock(uint dim) { dimension=dim; }
   virtual double f(arr &g, arr &H, const arr &x){ return _RosenbrockFunction(g, H, x); }
 };
 
@@ -100,9 +98,8 @@ double _RastriginFunction(arr& g, arr& H, const arr& x) {
 }
 
 struct MP_Rastrigin : ScalarUnconstrainedProgram {
-  uint dim;
-  MP_Rastrigin(uint _dim) : dim(_dim) {}
-  virtual uint getDimension(){ return dim; }
+  MP_Rastrigin(uint dim){ dimension=dim; }
+  virtual uint getDimension(){ return dimension; }
   virtual double f(arr &g, arr &H, const arr &x){ return _RastriginFunction(g, H, x); }
 };
 
@@ -199,6 +196,9 @@ void generateConditionedRandomProjection(arr& M, uint n, double condition) {
 //===========================================================================
 
 MP_RandomSquared::MP_RandomSquared(uint _n, double condition) : n(_n) {
+  dimension = n;
+  featureTypes = consts<ObjectiveType>(OT_sos, n);
+
   //let M be a ortho-normal matrix (=random rotation matrix)
   M.resize(n, n);
   rndUniform(M, -1., 1., false);
