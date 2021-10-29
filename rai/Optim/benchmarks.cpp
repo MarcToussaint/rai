@@ -48,14 +48,14 @@ template<> const char* rai::Enum<BenchmarkSymbol>::names []= {
 
 double _RosenbrockFunction(arr& g, arr& H, const arr& x) {
   double f=0.;
-  for(uint i=1; i<x.N; i++) f += rai::sqr(x(i)-rai::sqr(x(i-1))) + .01*rai::sqr(1-10.*x(i-1));
+  for(uint i=1; i<x.N; i++) f += rai::sqr(x(i)-rai::sqr(x(i-1))) + .01*rai::sqr(1-x(i-1));
 //  f = ::log(1.+f);
   if(!!g) {
     g.resize(x.N).setZero();
     for(uint i=1; i<x.N; i++) {
       g(i) += 2.*(x(i)-rai::sqr(x(i-1)));
       g(i-1) += 2.*(x(i)-rai::sqr(x(i-1)))*(-2.*x(i-1));
-      g(i-1) += .01*2.*(1-10.*x(i-1))*(-10.);
+      g(i-1) -= .01*2.*(1-x(i-1));
     }
   }
   if(!!H) {
@@ -69,8 +69,8 @@ double _RosenbrockFunction(arr& g, arr& H, const arr& x) {
       H(i-1, i) += -4.*x(i-1);
       H(i-1, i-1) += -4.*x(i-1)*(-2.*x(i-1)) - 4.*(x(i)-rai::sqr(x(i-1)));
 
-      //g(i-1) += .01*2.*(1-10.*x(i-1))*(-10.);
-      H(i-1, i-1) += .01*2.*(-10.)*(-10.);
+      //g(i-1) += .01*2.*(1-x(i-1))*(-10.);
+      H(i-1, i-1) += .01*2.;
     }
   }
   return f;
@@ -175,7 +175,7 @@ struct _ChoiceFunction : ScalarFunction {
       case rastrigin: f = _RastriginFunction(g, H, y); break;
       default: NIY;
     }
-    if(!!g) g = ~C*g; //elem-wise product
+    if(!!g) g = ~C * g;
     if(!!H) H = ~C * H * C;
     return f;
   }
@@ -195,20 +195,35 @@ void generateConditionedRandomProjection(arr& M, uint n, double condition) {
 
 //===========================================================================
 
-MP_RandomSquared::MP_RandomSquared(uint _n, double condition) : n(_n) {
+MP_Squared::MP_Squared(uint _n, double condition, bool random) : n(_n) {
   dimension = n;
   featureTypes = consts<ObjectiveType>(OT_sos, n);
 
-  //let M be a ortho-normal matrix (=random rotation matrix)
-  M.resize(n, n);
-  rndUniform(M, -1., 1., false);
-  //orthogonalize
-  for(uint i=0; i<n; i++) {
-    for(uint j=0; j<i; j++) M[i]()-=scalarProduct(M[i], M[j])*M[j];
-    M[i]()/=length(M[i]);
+  //let C be a ortho-normal matrix (=random rotation matrix)
+  C.resize(n, n);
+
+  if(random){
+    rndUniform(C, -1., 1., false);
+    //orthogonalize
+    for(uint i=0; i<n; i++) {
+      for(uint j=0; j<i; j++) C[i]()-=scalarProduct(C[i], C[j])*C[j];
+      C[i]()/=length(C[i]);
+    }
+    //we condition each column of M with powers of the condition
+    for(uint i=0; i<n; i++) C[i]() *= pow(condition, double(i) / (2.*double(n - 1)));
+
+  }else{
+    arr cond(n);
+    if(n>1) {
+      for(uint i=0; i<n; i++) cond(i) = pow(condition, 0.5*i/(n-1));
+    }else{
+      cond = 1.;
+    }
+
+    C = diag(cond);
+//    C(0,1) = C(0,0);
+//    C(1,0) = -C(1,1);
   }
-  //we condition each column of M with powers of the condition
-  for(uint i=0; i<n; i++) M[i]() *= pow(condition, double(i) / (2.*double(n - 1)));
 }
 
 //===========================================================================
@@ -315,17 +330,22 @@ std::shared_ptr<MathematicalProgram> getBenchmarkFromCfg(){
   rai::Enum<BenchmarkSymbol> bs (rai::getParameter<rai::String>("benchmark"));
   uint dim = rai::getParameter<uint>("benchmark/dim", 2);
   double forsyth = rai::getParameter<double>("benchmark/forsyth", -1.);
+  double condition = rai::getParameter<double>("benchmark/condition", 10.);
 
   //-- unconstrained problems
 
   {
     std::shared_ptr<ScalarUnconstrainedProgram> mp;
 
-    if(bs==BS_Rosenbrock) mp = make_shared<MP_Rosenbrock>(dim);
-    else if(bs==BS_Rastrigin) mp = make_shared<MP_Rastrigin>(dim);
+    if(bs==BS_Rosenbrock){
+      mp = make_shared<MP_Rosenbrock>(dim);
+//      mp->bounds_lo = -3.*ones(dim);
+//      mp->bounds_up = 3.*ones(dim);
+    }else if(bs==BS_Rastrigin) mp = make_shared<MP_Rastrigin>(dim);
     else if(forsyth>0.){
       shared_ptr<MathematicalProgram> org;
-      if(bs==BS_RandomSquared) org = make_shared<MP_RandomSquared>(dim);
+      if(bs==BS_Square) org = make_shared<MP_Squared>(dim, condition, false);
+      else if(bs==BS_RandomSquared) org = make_shared<MP_Squared>(dim, condition, true);
       else if(bs==BS_RastriginSOS) org = make_shared<MP_RastriginSOS>();
       if(org){
         auto lag = make_shared<LagrangianProblem>(org); //convert to scalar
@@ -344,7 +364,8 @@ std::shared_ptr<MathematicalProgram> getBenchmarkFromCfg(){
   std::shared_ptr<MathematicalProgram> mp;
 
   if(bs==BS_RandomLP) mp = make_shared<MP_RandomLP>(dim);
-  else if(bs==BS_RandomSquared) mp = make_shared<MP_RandomSquared>(dim);
+  else if(bs==BS_Square) mp = make_shared<MP_Squared>(dim, condition, false);
+  else if(bs==BS_RandomSquared) mp = make_shared<MP_Squared>(dim, condition, true);
   else if(bs==BS_RastriginSOS) mp = make_shared<MP_RastriginSOS>();
   else if(bs==BS_Wedge) mp = make_shared<MP_Wedge>();
   else if(bs==BS_HalfCircle) mp = make_shared<MP_HalfCircle>();

@@ -67,7 +67,7 @@ OptConstrained::OptConstrained(arr& _x, arr& _dual, const shared_ptr<Mathematica
   if(opt.boundedNewton){
     arr lo, up;
     P->getBounds(lo, up);
-    newton.setBounds(lo, up);
+    if(lo.N || up.N) newton.setBounds(lo, up);
   }
 
   newton.options.verbose = rai::MAX(opt.verbose-1, 0);

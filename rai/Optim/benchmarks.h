@@ -25,7 +25,7 @@ std::shared_ptr<MathematicalProgram> getBenchmarkFromCfg();
 struct ScalarUnconstrainedProgram : MathematicalProgram {
   double forsythAlpha = -1.;
   shared_ptr<ScalarFunction> S;
-  ScalarUnconstrainedProgram() {}
+  ScalarUnconstrainedProgram() { featureTypes = {OT_f}; }
   ScalarUnconstrainedProgram(const shared_ptr<ScalarFunction>& S, uint dim) : S(S) {
     dimension=dim;
     featureTypes = {OT_f};
@@ -182,13 +182,14 @@ struct MP_RastriginSOS : MathematicalProgram {
 //===========================================================================
 
 /// $f(x) = x^T C x$ where C has eigen values ranging from 1 to 'condition'
-struct MP_RandomSquared : MathematicalProgram {
-  arr M; /// $C = M^T M $
+struct MP_Squared : MathematicalProgram {
+  arr C; /// $A = C^T C $
   uint n;  /// dimensionality of $x$
 
-  MP_RandomSquared(uint n, double condition=100.);
+  MP_Squared(uint n, double condition=100., bool random=true);
 
-  virtual void evaluate(arr &phi, arr &J, const arr &x){ phi=M*x; if(!!J) J=M; }
+  virtual void evaluate(arr &phi, arr &J, const arr &x){ phi=C*x; if(!!J) J=C; }
+//  virtual arr getInitializationSample(const arr &previousOptima={}){ return ones(n); }
 };
 
 //===========================================================================

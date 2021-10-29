@@ -38,8 +38,8 @@ struct MathematicalProgram : NonCopyable {
 protected:
   //need to be defined in the constructor or a derived class
   uint dimension=0;
-  arr bounds_lo, bounds_up;
 public:
+  arr bounds_lo, bounds_up;
   ObjectiveTypeA featureTypes;
 
 public:
@@ -96,7 +96,6 @@ struct MathematicalProgram_Factored : MathematicalProgram {
 
 struct MathematicalProgram_Traced : MathematicalProgram {
   shared_ptr<MathematicalProgram> P;
-  ObjectiveTypeA featureTypes;
   uint evals=0;
   arr xTrace, costTrace, phiTrace, JTrace;
   bool trace_x=true;
@@ -104,7 +103,11 @@ struct MathematicalProgram_Traced : MathematicalProgram {
   bool trace_phi=false;
   bool trace_J=false;
 
-  MathematicalProgram_Traced(const shared_ptr<MathematicalProgram>& P) : P(P) {}
+  MathematicalProgram_Traced(const shared_ptr<MathematicalProgram>& P) : P(P) {
+    dimension = P->getDimension();
+    featureTypes = P->getFeatureTypes();
+    P->getBounds(bounds_lo,bounds_up);
+  }
 
   void setTracing(bool _trace_x, bool _trace_costs, bool _trace_phi, bool _trace_J){
     trace_x=_trace_x; trace_costs=_trace_costs, trace_phi=_trace_phi, trace_J=_trace_J;
