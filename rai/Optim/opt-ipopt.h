@@ -9,7 +9,6 @@
 #include "MathematicalProgram.h"
 
 struct IpoptInterface {
-//  MathematicalProgram_Traced P;
   shared_ptr<MathematicalProgram> P;
 
   IpoptInterface(const shared_ptr<MathematicalProgram>& P) : P(P) {}

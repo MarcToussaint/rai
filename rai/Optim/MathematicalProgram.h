@@ -94,7 +94,7 @@ struct MathematicalProgram_Factored : MathematicalProgram {
 //===========================================================================
 // TRIVIAL only header
 
-struct MathematicalProgram_Traced : MathematicalProgram {
+struct MP_Traced : MathematicalProgram {
   shared_ptr<MathematicalProgram> P;
   uint evals=0;
   arr xTrace, costTrace, phiTrace, JTrace;
@@ -103,7 +103,7 @@ struct MathematicalProgram_Traced : MathematicalProgram {
   bool trace_phi=false;
   bool trace_J=false;
 
-  MathematicalProgram_Traced(const shared_ptr<MathematicalProgram>& P) : P(P) {
+  MP_Traced(const shared_ptr<MathematicalProgram>& P) : P(P) {
     dimension = P->getDimension();
     featureTypes = P->getFeatureTypes();
     P->getBounds(bounds_lo,bounds_up);
@@ -112,12 +112,33 @@ struct MathematicalProgram_Traced : MathematicalProgram {
   void setTracing(bool _trace_x, bool _trace_costs, bool _trace_phi, bool _trace_J){
     trace_x=_trace_x; trace_costs=_trace_costs, trace_phi=_trace_phi, trace_J=_trace_J;
   }
+  void clear(){
+    evals=0;
+    xTrace.clear();
+    costTrace.clear();
+    phiTrace.clear();
+    JTrace.clear();
+  }
 
   virtual void evaluate(arr& phi, arr& J, const arr& x);
 
   //trivial
   virtual arr  getInitializationSample(const arr& previousOptima= {}) { return P->getInitializationSample(previousOptima); }
   virtual void getFHessian(arr& H, const arr& x) { P->getFHessian(H, x); }
+
+  virtual void report(std::ostream &os, int verbose);
+};
+
+//===========================================================================
+
+struct MP_Viewer {
+  shared_ptr<MathematicalProgram> P;
+  shared_ptr<MP_Traced> T;
+
+  MP_Viewer(const shared_ptr<MathematicalProgram>& P, const shared_ptr<MP_Traced>& T={}) : P(P), T(T) {}
+
+  void display();
+  void plotCostTrace();
 };
 
 //===========================================================================

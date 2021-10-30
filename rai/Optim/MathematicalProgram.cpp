@@ -7,6 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "MathematicalProgram.h"
+#include "lagrangian.h"
 
 //===========================================================================
 
@@ -242,11 +243,94 @@ void Conv_FactoredNLP_BandedNLP::evaluate(arr& phi, arr& J, const arr& x) {
 
 //===========================================================================
 
-void MathematicalProgram_Traced::evaluate(arr& phi, arr& J, const arr& x) {
+void MP_Traced::evaluate(arr& phi, arr& J, const arr& x) {
   evals++;
   P->evaluate(phi, J, x);
   if(trace_x){ xTrace.append(x); xTrace.reshape(-1, x.N); }
   if(trace_costs){ costTrace.append(summarizeErrors(phi, featureTypes)); costTrace.reshape(-1,3);  }
   if(trace_phi && !!phi) { phiTrace.append(phi);  phiTrace.reshape(-1, phi.N); }
   if(trace_J && !!J) { JTrace.append(J);  JTrace.reshape(-1, phi.N, x.N); }
+}
+
+void MP_Traced::report(std::ostream& os, int verbose){
+  os <<"TRACE: #evals: " <<evals;
+  if(costTrace.N) os <<" costs: " <<costTrace[-1];
+  if(xTrace.N && xTrace.d1<10) os <<" x: " <<xTrace[-1];
+  os <<endl;
+}
+
+//===========================================================================
+
+void MP_Viewer::display(){
+  uint d = P->getDimension();
+  CHECK_EQ(d, 2, "can only display 2D problems for now");
+
+  //-- get bounds
+  arr lo, up;
+  P->getBounds(lo, up);
+  if(!lo.N) lo = -ones(2);
+  if(!up.N) up = ones(2);
+
+  //-- make grid
+  arr X, Y, phi;
+  X.setGrid(2, 0., 1., 100);
+  for(uint i=0;i<X.d0;i++){ X[i] = lo + (up-lo)%X[i]; }
+  Y.resize(X.d0);
+
+  //-- transform constrained problem to AugLag scalar function
+  P->evaluate(phi, NoArr, X[0]);
+  std::shared_ptr<LagrangianProblem> lag;
+  std::shared_ptr<MathematicalProgram> mp_save;
+  if(phi.N>1){
+    lag = make_shared<LagrangianProblem>(P);
+    lag->mu = lag->nu = 1e3;
+    mp_save = P;
+    P.reset();
+    P = make_shared<Conv_ScalarProblem_MathematicalProgram>(*lag, d);
+  }
+
+  //-- evaluate over the grid
+  for(uint i=0; i<X.d0; i++) {
+    P->evaluate(phi, NoArr, X[i]);
+    CHECK_EQ(phi.N, 1, "only 1 feature for now");
+    double fx=phi.scalar();
+    Y(i) = ((fx==fx && fx<10.)? fx : 10.);
+  }
+  Y.reshape(101, 101);
+
+  //-- plot
+  //  plot()->Gnuplot();  plot()->Surface(Y);  plot()->update(true);
+  write(LIST<arr>(Y), "z.fct");
+
+  rai::String cmd;
+  cmd <<"reset; set contour; set cntrparam linear; set cntrparam levels incremental 0,.1,10; set xlabel 'x'; set ylabel 'y'; ";
+  rai::String splot;
+  splot <<"splot [" <<lo(0) <<':' <<up(0) <<"][" <<lo(1) <<':' <<up(1) <<"] "
+       <<"'z.fct' matrix us (" <<lo(0) <<"+(" <<up(0)-lo(0) <<")*$2/100):(" <<lo(1) <<"+(" <<up(1)-lo(1) <<")*$1/100):3 w l";
+  if(!T){
+    cmd <<splot <<";";
+  }else{
+    T->report(cout, 0);
+    if(false && T->costTrace.N){
+      catCol(T->xTrace, T->costTrace.col(0)).writeRaw(FILE("z.trace"));
+      cmd <<splot <<", 'z.trace' us 1:2:3 w lp; ";
+    }else{
+      T->xTrace.writeRaw(FILE("z.trace"));
+      cmd <<"unset surface; set table 'z.table'; ";
+      cmd <<splot <<"; ";
+      cmd <<"unset table; ";
+      cmd <<"plot 'z.table' w l, 'z.trace' us 1:2 w lp lw 2; ";
+    }
+  }
+  cout <<cmd <<endl;
+  gnuplot(cmd);
+}
+
+void MP_Viewer::plotCostTrace(){
+  CHECK(T, "");
+  T->costTrace.writeRaw(FILE("z.trace"));
+  rai::String cmd;
+  cmd <<"reset; set xlabel 'evals'; set ylabel 'objectives'; set style data lines;";
+  cmd <<"plot 'z.trace' us ($0+1):1 t 'f+sos', '' us ($0+1):2 t 'ineq', '' us ($0+1):3 t 'eq';";
+  gnuplot(cmd);
 }

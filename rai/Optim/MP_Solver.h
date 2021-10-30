@@ -39,11 +39,11 @@ stdOutPipe(SolverReturn)
 struct MP_Solver : NonCopyable {
   MP_SolverID solverID=MPS_augmentedLag;
   arr x, dual;
-  shared_ptr<MathematicalProgram_Traced> P;
+  shared_ptr<MP_Traced> P;
   int verbose=0;
 
   MP_Solver& setSolver(MP_SolverID _solverID){ solverID=_solverID; return *this; }
-  MP_Solver& setProblem(const shared_ptr<MathematicalProgram>& _P){ CHECK(!P, "problem was already set!"); P = make_shared<MathematicalProgram_Traced>(_P); return *this; }
+  MP_Solver& setProblem(const shared_ptr<MathematicalProgram>& _P){ CHECK(!P, "problem was already set!"); P = make_shared<MP_Traced>(_P); return *this; }
   MP_Solver& setInitialization(const arr& _x){ x=_x; return *this; }
   MP_Solver& setOptions(const rai::Graph& opt){ NIY; return *this; }
   MP_Solver& setVerbose(int _verbose){ verbose=_verbose; return *this; }

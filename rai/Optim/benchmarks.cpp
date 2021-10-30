@@ -337,11 +337,8 @@ std::shared_ptr<MathematicalProgram> getBenchmarkFromCfg(){
   {
     std::shared_ptr<ScalarUnconstrainedProgram> mp;
 
-    if(bs==BS_Rosenbrock){
-      mp = make_shared<MP_Rosenbrock>(dim);
-//      mp->bounds_lo = -3.*ones(dim);
-//      mp->bounds_up = 3.*ones(dim);
-    }else if(bs==BS_Rastrigin) mp = make_shared<MP_Rastrigin>(dim);
+    if(bs==BS_Rosenbrock) mp = make_shared<MP_Rosenbrock>(dim);
+    else if(bs==BS_Rastrigin) mp = make_shared<MP_Rastrigin>(dim);
     else if(forsyth>0.){
       shared_ptr<MathematicalProgram> org;
       if(bs==BS_Square) org = make_shared<MP_Squared>(dim, condition, false);
@@ -354,6 +351,11 @@ std::shared_ptr<MathematicalProgram> getBenchmarkFromCfg(){
     }
 
     if(mp){
+      arr bounds = rai::getParameter<arr>("benchmark/bounds", {});
+      if(bounds.N){
+        mp->bounds_lo = consts<double>(bounds(0), dim);
+        mp->bounds_up = consts<double>(bounds(1), dim);
+      }
       if(forsyth>0.) mp->forsythAlpha = forsyth;
       return mp;
     }
@@ -371,6 +373,12 @@ std::shared_ptr<MathematicalProgram> getBenchmarkFromCfg(){
   else if(bs==BS_HalfCircle) mp = make_shared<MP_HalfCircle>();
   else if(bs==BS_CircleLine) mp = make_shared<MP_CircleLine>();
   else HALT("can't interpret benchmark symbol: " <<bs);
+
+  arr bounds = rai::getParameter<arr>("benchmark/bounds", {});
+  if(bounds.N){
+    mp->bounds_lo = consts<double>(bounds(0), dim);
+    mp->bounds_up = consts<double>(bounds(1), dim);
+  }
 
   return mp;
 }
