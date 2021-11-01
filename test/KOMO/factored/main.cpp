@@ -97,7 +97,7 @@ void testFactored(){
   checkJacobianCP(*mp, komo.x, 1e-6);
 
   MP_Solver()
-      .setProblem(*mp)
+      .setProblem(mp)
       .solve();
 
   mp->report(cout, 3);

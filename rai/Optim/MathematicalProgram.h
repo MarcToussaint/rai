@@ -36,7 +36,7 @@ arr summarizeErrors(const arr& phi, const ObjectiveTypeA& tt);
  */
 struct MathematicalProgram : NonCopyable {
 protected:
-  //need to be defined in the constructor or a derived class
+  //-- problem signature: needs to be defined in the constructor or a derived class
   uint dimension=0;
 public:
   arr bounds_lo, bounds_up;
@@ -60,6 +60,8 @@ public:
   uint getDimension() const { return dimension; }
   void getBounds(arr& lo, arr& up) const { lo=bounds_lo; up=bounds_up; }
   const ObjectiveTypeA& getFeatureTypes() const { return featureTypes; }
+
+  shared_ptr<MathematicalProgram> ptr(){ return shared_ptr<MathematicalProgram>(this, [](MathematicalProgram*){}); }
 };
 
 //===========================================================================
@@ -148,12 +150,17 @@ struct Conv_MathematicalProgram_TrivialFactoreded : MathematicalProgram_Factored
   shared_ptr<MathematicalProgram> P;
   arr x_buffer;
 
-  Conv_MathematicalProgram_TrivialFactoreded(const shared_ptr<MathematicalProgram>& P) : P(P) {}
+  Conv_MathematicalProgram_TrivialFactoreded(const shared_ptr<MathematicalProgram>& P) : P(P) {
+    dimension = P->getDimension();
+    bounds_lo = P->bounds_lo;
+    bounds_up = P->bounds_up;
+    featureTypes = P->featureTypes;
+  }
 
   virtual arr  getInitializationSample(const arr& previousOptima= {}) { return P->getInitializationSample(previousOptima); }
 
   virtual void getFactorization(uintA& variableDimensions, uintA& featureDimensions, uintAA& featureVariables) {
-    variableDimensions = dimension;
+    variableDimensions = { dimension };
     featureDimensions = { featureTypes.N };
     featureVariables = { uintA({0}) };
   }

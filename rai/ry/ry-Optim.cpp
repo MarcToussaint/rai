@@ -30,12 +30,8 @@ void init_Optim(pybind11::module& m) {
   "query the MP at a point $x$; returns the tuple $(phi,J)$, which is the feature vector and its Jacobian; features define cost terms, sum-of-square (sos) terms, inequalities, and equalities depending on 'getFeatureTypes'"
   )
 
-  .def("getFeatureTypes", [](std::shared_ptr<MathematicalProgram>& self){
-    ObjectiveTypeA ot;
-    self->getFeatureTypes(ot);
-    return ot;
-  },
-  "features (entries of $phi$) can be of one of (ry.OT.f, ry.OT.sos, ry.OT.ineq, ry.OT.eq), which means (cost, sum-of-square, inequality, equality). The total cost $f(x)$ is the sum of all f-terms plus sum-of-squares of sos-terms."
+  .def("getFeatureTypes", &MathematicalProgram::getFeatureTypes,
+       "features (entries of $phi$) can be of one of (ry.OT.f, ry.OT.sos, ry.OT.ineq, ry.OT.eq), which means (cost, sum-of-square, inequality, equality). The total cost $f(x)$ is the sum of all f-terms plus sum-of-squares of sos-terms."
   )
 
   .def("getDimension", &MathematicalProgram::getDimension, "return the dimensionality of $x$")
@@ -121,9 +117,7 @@ void init_Optim(pybind11::module& m) {
 
       .def(pybind11::init<>())
 //      .def("setProblem", &MP_Solver::setProblem)
-      .def("setProblem", [](std::shared_ptr<MP_Solver>& self, std::shared_ptr<MathematicalProgram>& P){
-         self->setProblem(*P);
-      } )
+      .def("setProblem", &MP_Solver::setProblem)
       .def("setSolver", &MP_Solver::setSolver)
 
       .def("getOptions", &MP_Solver::getOptions)

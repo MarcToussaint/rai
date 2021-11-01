@@ -166,13 +166,13 @@ void tutorialBasics(){
 
 #if 1
   komo.solver=rai::KS_dense;
-  auto P1 = komo.nlp_SparseNonFactored();
-  Conv_MathematicalProgram_TrivialFactoreded P(*P1);
+  auto P1 = komo.mp_SparseNonFactored();
+  auto P = make_shared<Conv_MathematicalProgram_TrivialFactoreded>(P1);
 
-  checkJacobianCP(P, komo.x, 1e-4);
+  checkJacobianCP(*P, komo.x, 1e-4);
 
   Conv_MathematicalProgram_CeresProblem cer(P);
-  cer.x_full = P.getInitializationSample();
+  cer.x_full = P->getInitializationSample();
 
   // Run the solver!
   ceres::Solver::Options options;
@@ -213,7 +213,7 @@ void testCeres2(){
   MP_TrivialSquareFunction P(20, 1., 2.);
 //  auto P = make_shared<ChoiceConstraintFunction>();
 
-  Conv_MathematicalProgram_TrivialFactoreded P2(P);
+  auto P2 = make_shared<Conv_MathematicalProgram_TrivialFactoreded>(P.ptr());
   Conv_MathematicalProgram_CeresProblem cer(P2);
 
   cer.x_full = P.getInitializationSample();
@@ -236,9 +236,9 @@ void TEST(Ceres){
   ChoiceConstraintFunction P;
 
   {
-    MathematicalProgram_Traced P2(P);
-    LagrangianProblem L(P2);
-    Conv_MathematicalProgram_TrivialFactoreded P3(L);
+    MP_Traced P2(P.ptr());
+    LagrangianProblem L(P2.ptr());
+    auto P3 = make_shared<Conv_MathematicalProgram_TrivialFactoreded>(L.ptr());
 
     CeresInterface opt(P3);
     opt.solve();
@@ -251,7 +251,7 @@ void TEST(Ceres){
 
   checkJacobianCP(P, x, 1e-4);
 
-  OptConstrained opt(x, NoArr, P);
+  OptConstrained opt(x, NoArr, P.ptr());
   {
     P.getBounds(opt.newton.bounds_lo, opt.newton.bounds_up);
     ofstream fil("z.opt");

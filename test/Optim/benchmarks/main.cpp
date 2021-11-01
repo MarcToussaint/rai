@@ -12,7 +12,7 @@ void TEST(KOMO_IK) {
 
   rai::Enum<MP_SolverID> sid (rai::getParameter<rai::String>("solver"));
   S.setSolver(sid);
-  S.setProblem(*nlp.get());
+  S.setProblem(nlp.get());
 
   auto ret = S.solve();
   nlp.get()->report(cout, 10);
@@ -32,7 +32,7 @@ void TEST(Skeleton_Handover) {
 
   rai::Enum<MP_SolverID> sid (rai::getParameter<rai::String>("solver"));
   S.setSolver(sid);
-  S.setProblem(*nlp.get());
+  S.setProblem(nlp.get());
 
 //  nlp.get()->report(cout, 0);
   auto ret = S.solve();

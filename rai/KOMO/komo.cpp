@@ -681,18 +681,11 @@ void KOMO::reset() {
 struct Conv_KOMO_SparseNonfactored : MathematicalProgram {
   KOMO& komo;
   bool sparse;
-  uint dimPhi=0;
 
   arr quadraticPotentialLinear, quadraticPotentialHessian;
 
-  Conv_KOMO_SparseNonfactored(KOMO& _komo, bool sparse=true) : komo(_komo), sparse(sparse) {}
-  void clear() { dimPhi=0; }
+  Conv_KOMO_SparseNonfactored(KOMO& _komo, bool sparse=true);
 
-  void getDimPhi();
-
-  virtual uint getDimension() { return komo.pathConfig.getJointStateDimension(); }
-  virtual void getFeatureTypes(ObjectiveTypeA& ft);
-  virtual void getBounds(arr& bounds_lo, arr& bounds_up) { komo.getBounds(bounds_lo, bounds_up); }
   virtual arr getInitializationSample(const arr& previousOptima= {});
   virtual void evaluate(arr& phi, arr& J, const arr& x);
   virtual void getFHessian(arr& H, const arr& x);
@@ -709,7 +702,7 @@ struct Conv_KOMO_FineStructuredProblem : MathematicalProgram_Factored {
   uintA subVars;
 
   //features are one-to-one with gounded KOMO features, but with additional info on varIds
-  struct FeatureIndexEntry { ptr<GroundedObjective> ob; uint dim; uintA varIds; };
+  struct FeatureIndexEntry { shared_ptr<GroundedObjective> ob; uint dim; uintA varIds; };
   rai::Array<FeatureIndexEntry> __featureIndex;
   uintA subFeats;
 
@@ -777,14 +770,13 @@ struct Conv_KOMO_FactoredNLP : MathematicalProgram_Factored {
 struct Conv_KOMO_TimeSliceProblem : MathematicalProgram {
   KOMO& komo;
   int slice;
-  uint dimPhi=0;
 
-  Conv_KOMO_TimeSliceProblem(KOMO& _komo, int _slice) : komo(_komo), slice(_slice) {}
+  Conv_KOMO_TimeSliceProblem(KOMO& _komo, int _slice) : komo(_komo), slice(_slice) {
+    dimension = komo.pathConfig.getJointStateDimension();
+  }
 
   void getDimPhi();
 
-  virtual uint getDimension() { return komo.pathConfig.getJointStateDimension(); }
-  virtual void getFeatureTypes(ObjectiveTypeA& ft);
   virtual void evaluate(arr& phi, arr& J, const arr& x);
 };
 
@@ -835,41 +827,41 @@ void KOMO::run(OptOptions options) {
 
   } else if(solver==rai::KS_dense || solver==rai::KS_sparse) {
     Conv_KOMO_SparseNonfactored P(*this, solver==rai::KS_sparse);
-    OptConstrained _opt(x, dual, P, options, logFile);
+    OptConstrained _opt(x, dual, P.ptr(), options, logFile);
     _opt.run();
     timeNewton += _opt.newton.timeNewton;
 
   } else if(solver==rai::KS_sparseFactored) {
     Conv_KOMO_SparseNonfactored P(*this, true);
-    OptConstrained _opt(x, dual, P, options, logFile);
+    OptConstrained _opt(x, dual, P.ptr(), options, logFile);
     _opt.run();
     timeNewton += _opt.newton.timeNewton;
 
   } else if(solver==rai::KS_banded) {
     pathConfig.jacMode = rai::Configuration::JM_rowShifted;
-    Conv_KOMO_FactoredNLP P(*this);
+    auto P = make_shared<Conv_KOMO_FactoredNLP>(*this);
     Conv_FactoredNLP_BandedNLP C(P, 0);
     C.maxBandSize = (k_order+1)*max(C.variableDimensions);
-    OptConstrained opt(x, dual, C, options, logFile);
+    OptConstrained opt(x, dual, C.ptr(), options, logFile);
     opt.run();
 
   } else if(solver==rai::KS_NLopt) {
     Conv_KOMO_SparseNonfactored P(*this, false);
-    NLoptInterface nlopt(P);
+    NLoptInterface nlopt(P.ptr());
     x = nlopt.solve();
     set_x(x);
 
   } else if(solver==rai::KS_Ipopt) {
     Conv_KOMO_SparseNonfactored P(*this, false);
-    IpoptInterface ipopt(P);
+    IpoptInterface ipopt(P.ptr());
     x = ipopt.solve();
     set_x(x);
 
   } else if(solver==rai::KS_Ceres) {
     Conv_KOMO_SparseNonfactored P(*this, false);
 //    Conv_KOMO_FactoredNLP P(*this);
-    LagrangianProblem L(P, options);
-    Conv_MathematicalProgram_TrivialFactoreded P2(L);
+    LagrangianProblem L(P.ptr(), options);
+    auto P2 = make_shared<Conv_MathematicalProgram_TrivialFactoreded>(L.ptr());
     CeresInterface ceres(P2);
     x = ceres.solve();
     set_x(x);
@@ -901,7 +893,7 @@ void KOMO::reportProblem(std::ostream& os) {
   os <<"    times:" <<times <<endl;
 
   os <<"  computeCollisions:" <<computeCollisions <<endl;
-  for(ptr<Objective>& t:objectives){
+  for(shared_ptr<Objective>& t:objectives){
     os <<"    " <<*t;
     int fromStep, toStep;
     conv_times2steps(fromStep, toStep, t->times, stepsPerPhase, T, +0, +0);
@@ -934,19 +926,19 @@ void KOMO::checkGradients() {
 #else
   double tolerance=1e-4;
 
-  ptr<MathematicalProgram_Factored> SP;
-  ptr<MathematicalProgram> CP;
+  shared_ptr<MathematicalProgram_Factored> SP;
+  shared_ptr<MathematicalProgram> CP;
 
   if(solver==rai::KS_none) {
     NIY;
   } else if(solver==rai::KS_banded) {
     SP = make_shared<Conv_KOMO_FactoredNLP>(*this);
-    auto BP = make_shared<Conv_FactoredNLP_BandedNLP>(*SP, 0);
+    auto BP = make_shared<Conv_FactoredNLP_BandedNLP>(SP, 0);
     BP->maxBandSize = (k_order+1)*max(BP->variableDimensions);
     CP = BP;
   } else if(solver==rai::KS_sparseFactored) {
     SP = make_shared<Conv_KOMO_FactoredNLP>(*this);
-    CP = make_shared<Conv_FactoredNLP_BandedNLP>(*SP, 0, true);
+    CP = make_shared<Conv_FactoredNLP_BandedNLP>(SP, 0, true);
   } else {
     CP = make_shared<Conv_KOMO_SparseNonfactored>(*this, solver==rai::KS_sparse);
   }
@@ -1235,7 +1227,7 @@ void KOMO::set_x(const arr& x, const uintA& selectedConfigurationsOnly) {
   }
 }
 
-shared_ptr<MathematicalProgram> KOMO::nlp_SparseNonFactored(){
+shared_ptr<MathematicalProgram> KOMO::mp_SparseNonFactored(){
   return make_shared<Conv_KOMO_SparseNonfactored>(*this, solver==rai::KS_sparse);
 }
 
@@ -1255,7 +1247,7 @@ rai::Graph KOMO::getReport(bool gnuplt, int reportFeatures, std::ostream& featur
   arr taskH=zeros(objectives.N);
   arr taskF=zeros(objectives.N);
   uint M=0;
-  for(ptr<GroundedObjective>& ob:objs) {
+  for(shared_ptr<GroundedObjective>& ob:objs) {
     uint d = ob->feat->dim(ob->frames);
     int i = ob->objId;
     uint time = ob->timeSlices.last();
@@ -1374,7 +1366,7 @@ rai::Graph KOMO::getProblemGraph(bool includeValues, bool includeSolution) {
   }
 
   //objectives
-  for(ptr<GroundedObjective>& ob:objs) {
+  for(shared_ptr<GroundedObjective>& ob:objs) {
 
     Graph& g = K.newSubgraph({ob->feat->shortTag(pathConfig)});
     g.newNode<double>({"order"}, {}, ob->feat->order);
@@ -1466,14 +1458,12 @@ void Conv_KOMO_SparseNonfactored::evaluate(arr& phi, arr& J, const arr& x) {
     komo.pathConfig.jacMode = rai::Configuration::JM_dense;
   }
 
-  if(!dimPhi) getDimPhi();
-
-  phi.resize(dimPhi);
+  phi.resize(featureTypes.N);
   if(!!J) {
     if(sparse) {
-      J.sparse().resize(dimPhi, x.N, 0);
+      J.sparse().resize(phi.N, x.N, 0);
     } else {
-      J.resize(dimPhi, x.N).setZero();
+      J.resize(phi.N, x.N).setZero();
     }
   }
 
@@ -1482,7 +1472,7 @@ void Conv_KOMO_SparseNonfactored::evaluate(arr& phi, arr& J, const arr& x) {
   komo.timeFeatures -= rai::cpuTime();
 
   uint M=0;
-  for(ptr<GroundedObjective>& ob : komo.objs) {
+  for(shared_ptr<GroundedObjective>& ob : komo.objs) {
       //query the task map and check dimensionalities of returns
       arr y = ob->feat->eval(ob->frames);
 //      cout <<"EVAL '" <<ob->name() <<"' phi:" <<y <<endl <<y.J() <<endl<<endl;
@@ -1526,7 +1516,7 @@ void Conv_KOMO_SparseNonfactored::evaluate(arr& phi, arr& J, const arr& x) {
 
   komo.timeFeatures += rai::cpuTime();
 
-  CHECK_EQ(M, dimPhi, "");
+  CHECK_EQ(M, phi.N, "");
   komo.featureValues = phi;
   if(!!J) komo.featureJacobians.resize(1).scalar() = J;
 
@@ -1558,36 +1548,35 @@ void Conv_KOMO_SparseNonfactored::report(std::ostream& os, int verbose) {
   }
 }
 
-void Conv_KOMO_SparseNonfactored::getDimPhi() {
-  uint M=0;
-  for(ptr<GroundedObjective>& ob : komo.objs) {
-    M += ob->feat->dim(ob->frames);
-  }
-  dimPhi = M;
-}
-
-void Conv_KOMO_SparseNonfactored::getFeatureTypes(ObjectiveTypeA& ft) {
-  if(!dimPhi) getDimPhi();
-  ft.resize(dimPhi);
-  komo.featureNames.clear();
-  uint M=0;
-  for(ptr<GroundedObjective>& ob : komo.objs) {
-    uint m = ob->feat->dim(ob->frames);
-    for(uint i=0; i<m; i++) ft(M+i) = ob->type;
-    for(uint j=0; j<m; j++) komo.featureNames.append(ob->feat->shortTag(komo.pathConfig));
-    M += m;
-  }
-  if(quadraticPotentialLinear.N) {
-    ft.append(OT_f);
-  }
-  komo.featureTypes = ft;
-}
-
 void Conv_KOMO_FineStructuredProblem::getFeatureTypes(ObjectiveTypeA& featureTypes) {
   featureTypes.clear();
   for(uint f=0; f<getNumFeatures(); f++) {
     featureTypes.append(consts<ObjectiveType>(featureIndex(f).ob->type, featureIndex(f).dim));
   }
+}
+
+Conv_KOMO_SparseNonfactored::Conv_KOMO_SparseNonfactored(KOMO& _komo, bool sparse) : komo(_komo), sparse(sparse) {
+  dimension = komo.pathConfig.getJointStateDimension();
+
+  komo.getBounds(bounds_lo, bounds_up);
+
+  //-- feature types
+  uint M=0;
+  for(shared_ptr<GroundedObjective>& ob : komo.objs) M += ob->feat->dim(ob->frames);
+
+  featureTypes.resize(M);
+  komo.featureNames.clear();
+  M=0;
+  for(shared_ptr<GroundedObjective>& ob : komo.objs) {
+    uint m = ob->feat->dim(ob->frames);
+    for(uint i=0; i<m; i++) featureTypes(M+i) = ob->type;
+    for(uint j=0; j<m; j++) komo.featureNames.append(ob->feat->shortTag(komo.pathConfig));
+    M += m;
+  }
+  if(quadraticPotentialLinear.N) {
+    featureTypes.append(OT_f);
+  }
+  komo.featureTypes = featureTypes;
 }
 
 arr Conv_KOMO_SparseNonfactored::getInitializationSample(const arr& previousOptima) {
@@ -1614,8 +1603,8 @@ Conv_KOMO_FactoredNLP::Conv_KOMO_FactoredNLP(KOMO& _komo) : komo(_komo) {
   //count features
   uint F=0;
   NIY;
-//  for(ptr<Objective>& ob:komo.objectives) if(ob->timeSlices.N) {
-//      CHECK_EQ(ob->timeSlices.nd, 2, "in sparse mode, vars need to be tuples of variables");
+  //  for(shared_ptr<Objective>& ob:komo.objectives) if(ob->timeSlices.N) {
+  //      CHECK_EQ(ob->timeSlices.nd, 2, "in sparse mode, vars need to be tuples of variables");
 //      F += ob->timeSlices.d0;
 //    }
   featureIndex.resize(F);
@@ -1623,7 +1612,7 @@ Conv_KOMO_FactoredNLP::Conv_KOMO_FactoredNLP(KOMO& _komo) : komo(_komo) {
   //create feature index
   uint f=0;
   uint fDim = 0;
-  for(ptr<GroundedObjective>& ob:komo.objs) {
+  for(shared_ptr<GroundedObjective>& ob:komo.objs) {
     FeatureIndexEntry& F = featureIndex(f);
     F.ob2 = ob;
 //    F.Ctuple = komo.configurations.sub(convert<uint, int>(ob->timeSlices+(int)komo.k_order));
@@ -1646,7 +1635,7 @@ void Conv_KOMO_FactoredNLP::getFeatureTypes(ObjectiveTypeA& featureTypes) {
   featureTypes.resize(featuresDim);
   komo.featureNames.resize(featuresDim);
   uint M=0;
-  for(ptr<GroundedObjective>& ob : komo.objs) {
+  for(shared_ptr<GroundedObjective>& ob : komo.objs) {
     uint m = ob->feat->dim(ob->frames);
     for(uint i=0; i<m; i++) featureTypes(M+i) = ob->type;
     for(uint i=0; i<m; i++) komo.featureNames(M+i) = "TODO";
@@ -1758,7 +1747,7 @@ void Conv_KOMO_FactoredNLP::evaluateSingleFeature(uint feat_id, arr& phi, arr& J
   //count to the feat_id;
 
   uint count=0;
-  for(ptr<Objective>& ob:komo.objectives) {
+  for(shared_ptr<Objective>& ob:komo.objectives) {
     for(uint l=0; l<ob->configs.d0; l++) {
       if(count==feat_id) { //this is the feature we want!
         ConfigurationL Ktuple = komo.configurations.sub(convert<uint, int>(ob->configs[l]+(int)komo.k_order));
@@ -1842,7 +1831,7 @@ Conv_KOMO_FineStructuredProblem::Conv_KOMO_FineStructuredProblem(KOMO& _komo) : 
 
   //create feature index
   uint featId=0;
-  for(ptr<GroundedObjective>& ob:komo.objs) {
+  for(shared_ptr<GroundedObjective>& ob:komo.objs) {
     uint featDim = ob->feat->dim(ob->frames);
     uintA featVars;
     for(rai::Frame *f:ob->frames){ //which frames does the objective depend on?

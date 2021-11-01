@@ -179,7 +179,7 @@ void testKernelReg(const char *datafile=nullptr) {
 
     arr bounds_lo = consts<double>(-2., X.d1);
     arr bounds_hi = consts<double>(+2., X.d1);
-    GlobalIterativeNewton opt(f.getF(-1.), bounds_lo, bounds_hi, OPT(verbose=1, stopTolerance=1e-3));
+    GlobalIterativeNewton opt(f.getF(-1.), bounds_lo, bounds_hi, OptOptions().set_verbose(1) .set_stopTolerance(1e-3));
     opt.run(10);
     opt.report();
     cout <<"optimum at x=" <<opt.x <<' ' <<f.getF(-1.)(NoArr, NoArr, opt.x) <<endl;

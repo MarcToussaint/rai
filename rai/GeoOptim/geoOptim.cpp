@@ -91,7 +91,7 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
     checkHessianCP(F, x, 1e-4);
   }
 
-  OptConstrained opt(x, NoArr, F, OptOptions()
+  OptConstrained opt(x, NoArr, F.ptr(), OptOptions()
                        .set_stopTolerance(1e-4)
                        .set_stopFTolerance(1e-3)
                        .set_damping(1)
@@ -255,7 +255,7 @@ void minimalConvexCore(arr& core, const arr& points, double radius, int verbose)
     checkHessianCP(P, x, 1e-4);
   }
 
-  OptConstrained opt(x, NoArr, P, OptOptions()
+  OptConstrained opt(x, NoArr, P.ptr(), OptOptions()
                        .set_stopTolerance(1e-4)
                        .set_stopFTolerance(1e-3)
                        .set_damping(1.)
@@ -435,7 +435,7 @@ double sphereReduceConvex(rai::Mesh& M, double radius, int verbose) {
     arr x = M.V[i];
     arr c = -M.Vn[i];
     LinearProgram LP(c, G, g);
-    OptConstrained opt(x, NoArr, LP, OptOptions().set_stopTolerance(1e-4).set_stopGTolerance(1e-4));
+    OptConstrained opt(x, NoArr, LP.ptr(), OptOptions().set_stopTolerance(1e-4).set_stopGTolerance(1e-4));
     opt.run();
   }
 
@@ -576,7 +576,7 @@ void optimalSphere(arr& core, uint num, const arr& org_pts, double& radius, int 
   }
 
 #if 1
-  OptConstrained opt(x, NoArr, *F, OptOptions()
+  OptConstrained opt(x, NoArr, F, OptOptions()
                        .set_stopTolerance(1e-4)
                        .set_stopFTolerance(1e-3)
                        .set_damping(1)
@@ -585,7 +585,7 @@ void optimalSphere(arr& core, uint num, const arr& org_pts, double& radius, int 
                        .set_aulaMuInc(1.1)
                      );
 #else
-  OptPrimalDual opt(x, NoArr, *F, OptOptions()
+  OptPrimalDual opt(x, NoArr, F, OptOptions()
                       .set_stopTolerance(1e-5)
                       .set_stopFTolerance(1e-5)
                       .set_damping(1e-0)

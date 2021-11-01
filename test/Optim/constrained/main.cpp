@@ -4,7 +4,7 @@
 #include <Optim/constrained.h>
 
 //lecture.cpp:
-void lectureDemo(MathematicalProgram& p, arr& x_start=NoArr, uint iters=20);
+void lectureDemo(const shared_ptr<MathematicalProgram>& P, arr& x_start=NoArr, uint iters=20);
 
 //==============================================================================
 //
@@ -16,7 +16,7 @@ void testConstraint2(MathematicalProgram& p, arr& x_start=NoArr){
   arr x = p.getInitializationSample();
   if(!!x_start) x=x_start;
 
-  OptConstrained(x, NoArr, p)
+  OptConstrained(x, NoArr, p.ptr())
       .run();
 
   if(!!x_start) x_start = x;
@@ -27,8 +27,8 @@ void testConstraint2(MathematicalProgram& p, arr& x_start=NoArr){
 // test the phase one optimization
 //
 
-void testPhaseOne(MathematicalProgram& f, uint dim_x){
-  PhaseOneProblem metaF(f);
+void testPhaseOne(const shared_ptr<MathematicalProgram>& f, uint dim_x){
+  auto metaF = make_shared<PhaseOneProblem>(f);
 
   arr x;
   x = {1., 1., 10.};
@@ -56,7 +56,7 @@ void TEST(CoveringSphere){
   cout <<"point = " <<x <<endl;
   cout <<"cr_init=" <<cr <<endl;
   checkJacobianCP(F, cr, 1e-4);
-  OptConstrained(cr, NoArr, F)
+  OptConstrained(cr, NoArr, F.ptr())
       .run();
   cout <<"cr_opt=" <<cr <<endl;
 }
@@ -75,7 +75,7 @@ void TEST(MathematicalProgram){
   //Conv_MathematicalProgram_ConstrainedProblem F(P);
   checkJacobianCP(*P, x, 1e-4);
 
-  OptConstrained opt(x, NoArr, *P, OptOptions().set_verbose(6));
+  OptConstrained opt(x, NoArr, P, OptOptions().set_verbose(6));
   P->getBounds(opt.newton.bounds_lo, opt.newton.bounds_up);
   opt.run();
 
@@ -93,7 +93,7 @@ int main(int argc,char** argv){
   ChoiceConstraintFunction F;
 //  RandomLPFunction F;
 //  SimpleConstraintFunction F;
-  lectureDemo(F);
+  lectureDemo(F.ptr());
 //  testConstraint2(F);
 
 //  testCoveringSphere();

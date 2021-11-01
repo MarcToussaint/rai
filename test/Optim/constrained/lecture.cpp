@@ -11,12 +11,12 @@
 // test standard constrained optimizers
 //
 
-void lectureDemo(MathematicalProgram& p, arr& x_start=NoArr, uint iters=20){
+void lectureDemo(const shared_ptr<MathematicalProgram>& P, arr& x_start=NoArr, uint iters=20){
   OptOptions options;
-  LagrangianProblem lag(p, options);
+  LagrangianProblem lag(P, options);
 
   //-- initial x
-  arr x = p.getInitializationSample();
+  arr x = P->getInitializationSample();
   if(!!x_start) x=x_start;
 
   //  cout <<std::setprecision(2);
@@ -26,7 +26,7 @@ void lectureDemo(MathematicalProgram& p, arr& x_start=NoArr, uint iters=20){
 
   uint evals=0;
   for(uint k=0;k<iters;k++){
-    checkJacobianCP(p, x, 1e-4);
+    checkJacobianCP(*P, x, 1e-4);
     checkGradient(lag, x, 1e-4);
     checkHessian (lag, x, 1e-4); //will throw errors: no Hessians for g!
 

@@ -156,7 +156,7 @@ shared_ptr<SolverReturn> Skeleton::solve2(){
   auto trans = this->mp();
 
   MP_Solver sol;
-  sol.setProblem(*trans.mp);
+  sol.setProblem(trans.mp);
 
   auto ret = sol.solve();
   trans.mp->report(cout, 10);
@@ -170,7 +170,7 @@ shared_ptr<SolverReturn> Skeleton::solve3(bool useKeyframes){
   shared_ptr<SolverReturn> ret;
   {
     MP_Solver sol;
-    sol.setProblem(*keyframes.mp);
+    sol.setProblem(keyframes.mp);
     sol.setInitialization(keyframes.komo->x); //to avoid adding noise again
     ret = sol.solve();
     keyframes.mp->report(cout, 5);
@@ -190,7 +190,7 @@ shared_ptr<SolverReturn> Skeleton::solve3(bool useKeyframes){
 
   {
     MP_Solver sol;
-    sol.setProblem(*path.mp);
+    sol.setProblem(path.mp);
     sol.setInitialization(path.komo->x); //to avoid adding noise again
 //    path.komo->opt.animateOptimization = 1;
     ret = sol.solve();
@@ -239,7 +239,7 @@ SkeletonTranscription Skeleton::mp(){
   komo->run_prepare(.01);
   //komo->opt.animateOptimization = 0;
 #endif
-  ret.mp=ret.komo->nlp_SparseNonFactored();
+  ret.mp=ret.komo->mp_SparseNonFactored();
   return ret;
 }
 
@@ -324,7 +324,7 @@ SkeletonTranscription Skeleton::mp_finalSlice(){
   komo->run_prepare(.01);
   //      komo->setPairedTimes();
 
-  ret.mp=ret.komo->nlp_SparseNonFactored();
+  ret.mp=ret.komo->mp_SparseNonFactored();
   return ret;
 }
 
@@ -377,7 +377,7 @@ SkeletonTranscription Skeleton::mp_path(const arrA& waypoints){
     komo->run_prepare(.01);
   }
 #endif
-  ret.mp=ret.komo->nlp_SparseNonFactored();
+  ret.mp=ret.komo->mp_SparseNonFactored();
   return ret;
 
 }

@@ -172,7 +172,7 @@ OptOptions::OptOptions() {
   wolfe     = rai::getParameter<double>("opt/wolfe", .01);
   nonStrictSteps = rai::getParameter<double> ("opt/nonStrictSteps", 0);
   boundedNewton = rai::getParameter<bool> ("opt/boundedNewton", true);
-  allowOverstep = rai::getParameter<double> ("opt/allowOverstep", 0);
+  allowOverstep = rai::getParameter<bool> ("opt/allowOverstep", false);
   constrainedMethod = (ConstrainedMethodType)rai::getParameter<double>("opt/constrainedMethod", augmentedLag);
   muInit = rai::getParameter<double>("opt/muInit", 1.);
   muLBInit = rai::getParameter<double>("opt/muLBInit", 1.);
