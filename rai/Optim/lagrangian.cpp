@@ -343,7 +343,7 @@ void LagrangianProblem::autoUpdate(const OptOptions& opt, double* L_x, arr& dL_x
     case squaredPenalty: aulaUpdate(false, -1., opt.aulaMuInc, L_x, dL_x, HL_x);  break;
     case augmentedLag:   aulaUpdate(false, 1., opt.aulaMuInc, L_x, dL_x, HL_x);  break;
     case anyTimeAula:    aulaUpdate(true,  1., opt.aulaMuInc, L_x, dL_x, HL_x);  break;
-    case logBarrier:     muLB /= 2.;  break;
+    case logBarrier:     muLB /= 10.;  break;
     case squaredPenaltyFixed: HALT("you should not be here"); break;
     case noMethod: HALT("need to set method before");  break;
   }

@@ -40,15 +40,9 @@ arr MathematicalProgram::getInitializationSample(const arr& previousOptima) {
 //===========================================================================
 
 void MathematicalProgram_Factored::evaluate(arr& phi, arr& J, const arr& x) {
-  uintA variableDimensions; //the size of each variable block
-  uintA featureDimensions;  //the size of each feature block
-  uintAA featureVariables;
-  getFactorization(variableDimensions, //the size of each variable block
-                   featureDimensions,  //the size of each feature block
-                   featureVariables    //which variables the j-th feature block depends on
-                  );
   uintA varDimIntegral = integral(variableDimensions).prepend(0);
 
+  //-- loop through variables and set them
   uint n=0;
   for(uint i=0; i<variableDimensions.N; i++) {
     uint d = variableDimensions(i);
@@ -61,6 +55,7 @@ void MathematicalProgram_Factored::evaluate(arr& phi, arr& J, const arr& x) {
   phi.resize(sum(featureDimensions)).setZero();
   bool resetJ=true;
 
+  //-- loop through features and evaluate them
   n=0;
   arr phi_i, J_i;
   for(uint i=0; i<featureDimensions.N; i++) {
@@ -106,12 +101,8 @@ void MathematicalProgram_Factored::evaluate(arr& phi, arr& J, const arr& x) {
 
 Conv_FactoredNLP_BandedNLP::Conv_FactoredNLP_BandedNLP(const shared_ptr<MathematicalProgram_Factored>& P, uint _maxBandSize, bool _sparseNotBanded)
   : P(P), maxBandSize(_maxBandSize), sparseNotBanded(_sparseNotBanded) {
-  P->getFactorization(variableDimensions, //the size of each variable block
-                     featureDimensions,  //the size of each feature block
-                     featureVariables    //which variables the j-th feature block depends on
-                    );
-  varDimIntegral = integral(variableDimensions).prepend(0);
-  featDimIntegral = integral(featureDimensions).prepend(0);
+  varDimIntegral = integral(P->variableDimensions).prepend(0);
+  featDimIntegral = integral(P->featureDimensions).prepend(0);
 }
 
 //===========================================================================
@@ -136,9 +127,9 @@ void Conv_FactoredNLP_BandedNLP::evaluate(arr& phi, arr& J, const arr& x) {
   //evaluate all features individually
   phi.resize(featDimIntegral.last()).setZero();
   arr phi_i;
-  J_i.resize(featureDimensions.N);
-  for(uint i=0; i<featureDimensions.N; i++) {
-    uint d = featureDimensions(i);
+  J_i.resize(P->featureDimensions.N);
+  for(uint i=0; i<P->featureDimensions.N; i++) {
+    uint d = P->featureDimensions(i);
     if(d) {
       P->evaluateSingleFeature(i, phi_i, J_i(i), NoArr);
       CHECK_EQ(phi_i.N, d, "");
@@ -168,14 +159,14 @@ void Conv_FactoredNLP_BandedNLP::evaluate(arr& phi, arr& J, const arr& x) {
     k=0;
     for(uint i=0; i<J_i.N; i++) { //loop over features
       arr& Ji = J_i(i);
-      uint f_dim = featureDimensions(i);
-      uintA& vars = featureVariables(i);
+      uint f_dim = P->featureDimensions(i);
+      uintA& vars = P->featureVariables(i);
       if(!isSparseVector(Ji)) {
         CHECK(!isSpecial(Ji), "");
         uint c=0;
         for(uint fi=0; fi<f_dim; fi++) { //loop over feature dimension
           for(uint& j:vars) if(j>=0) { //loop over variables of this features
-              uint x_dim = variableDimensions.elem(j);
+              uint x_dim = P->variableDimensions.elem(j);
               for(uint xi=0; xi<x_dim; xi++) { //loop over variable dimension
                 double J_value = Ji.elem(c);
                 if(J_value) {
@@ -191,8 +182,8 @@ void Conv_FactoredNLP_BandedNLP::evaluate(arr& phi, arr& J, const arr& x) {
         for(uint l=0; l<Ji.N; l++) {
           double J_value = Ji.elem(l);
           uint   xi      = Ji.sparseVec().elems(l); //column index
-          for(uint& j:featureVariables(i)) if(j>=0) {
-              uint xj_dim = variableDimensions(j);
+          for(uint& j:P->featureVariables(i)) if(j>=0) {
+              uint xj_dim = P->variableDimensions(j);
               if(xi<xj_dim) { //xj is the variable, and xi is the index within the variable
                 uint jj = (j?varDimIntegral(j-1):0) + xi;
                 J.sparse().entry(i, jj, k) = J_value;
@@ -212,9 +203,9 @@ void Conv_FactoredNLP_BandedNLP::evaluate(arr& phi, arr& J, const arr& x) {
       Jaux.resize(phi.N, x.N, maxBandSize); //(k+1)*dim_xmax
       J.setZero();
 
-      for(uint i=0; i<featureDimensions.N; i++) {
+      for(uint i=0; i<P->featureDimensions.N; i++) {
         uint n = featDimIntegral(i);
-        uint d = featureDimensions(i);
+        uint d = P->featureDimensions(i);
         if(d) {
           J.setMatrixBlock(J_i(i), n, 0);
           //      memmove(&J(i, 0), J_i.p, J_i.sizeT*J_i.N);

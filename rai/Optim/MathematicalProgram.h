@@ -45,6 +45,13 @@ public:
 public:
   virtual ~MathematicalProgram() {}
 
+  void copySignature(const MathematicalProgram& P){
+    dimension = P.dimension;
+    bounds_lo = P.bounds_lo;
+    bounds_up = P.bounds_up;
+    featureTypes = P.featureTypes;
+  };
+
   //-- essential method that needs overload
   virtual void evaluate(arr& phi, arr& J, const arr& x) = 0;       //evaluate all features and (optionally) their Jacobians for state x
 
@@ -67,11 +74,10 @@ public:
 //===========================================================================
 
 struct MathematicalProgram_Factored : MathematicalProgram {
-  //-- structure of the mathematical problem
-  virtual void getFactorization(uintA& variableDimensions, //the size of each variable block
-                                uintA& featureDimensions,  //the size of each feature block
-                                uintAA& featureVariables    //which variables the j-th feature block depends on
-                               ) = 0;
+  //-- problem factorization: needs to be defined in the constructor or a derived class
+  uintA variableDimensions; //the size of each variable block
+  uintA featureDimensions;  //the size of each feature block
+  uintAA featureVariables;  //which variables the j-th feature block depends on
 
   //-- structured (local) setting variable and evaluate feature
   virtual void setAllVariables(const arr& x){ NIY; } //set all variables at once
@@ -79,17 +85,10 @@ struct MathematicalProgram_Factored : MathematicalProgram {
   virtual void evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H) = 0; //get a single feature block
 
   //-- unstructured (batch) evaluation
-  virtual void evaluate(arr& phi, arr& J, const arr& x); //default implementation: use setSingleVariable and evaluateSingleFeature
+  virtual void evaluate(arr& phi, arr& J, const arr& x); //default implementation: loop using setSingleVariable and evaluateSingleFeature
 
   virtual void subSelect(const uintA& activeVariables, const uintA& conditionalVariables){ NIY }
 
-  //same as 'getFactorization' - but more easily accessible
-  virtual uint getNumVariables() { return UINT_MAX; }
-  virtual uint getNumFeatures() { return UINT_MAX; }
-//  virtual uint getVariableDim(uint var_id) { return UINT_MAX; }
-//  virtual uint getFactorDim(uint feat_id) { return UINT_MAX; }
-//  virtual uintA getVariableFactors(uint var_id) { return uintA(); }
-//  virtual uintA getFactorVariables(uint feat_id) { return uintA(); }
   virtual rai::String getVariableName(uint var_id){ return STRING("-dummy-"); }
 };
 
@@ -106,9 +105,7 @@ struct MP_Traced : MathematicalProgram {
   bool trace_J=false;
 
   MP_Traced(const shared_ptr<MathematicalProgram>& P) : P(P) {
-    dimension = P->getDimension();
-    featureTypes = P->getFeatureTypes();
-    P->getBounds(bounds_lo,bounds_up);
+    copySignature(*P);
   }
 
   void setTracing(bool _trace_x, bool _trace_costs, bool _trace_phi, bool _trace_J){
@@ -151,10 +148,7 @@ struct Conv_MathematicalProgram_TrivialFactoreded : MathematicalProgram_Factored
   arr x_buffer;
 
   Conv_MathematicalProgram_TrivialFactoreded(const shared_ptr<MathematicalProgram>& P) : P(P) {
-    dimension = P->getDimension();
-    bounds_lo = P->bounds_lo;
-    bounds_up = P->bounds_up;
-    featureTypes = P->featureTypes;
+    copySignature(*P);
   }
 
   virtual arr  getInitializationSample(const arr& previousOptima= {}) { return P->getInitializationSample(previousOptima); }
@@ -174,8 +168,7 @@ struct Conv_FactoredNLP_BandedNLP : MathematicalProgram {
   shared_ptr<MathematicalProgram_Factored> P;
   uint maxBandSize;
   bool sparseNotBanded;
-  uintA variableDimensions, varDimIntegral, featureDimensions, featDimIntegral;
-  uintAA featureVariables;
+  uintA varDimIntegral, featDimIntegral;
   //buffers
   arrA J_i;
 

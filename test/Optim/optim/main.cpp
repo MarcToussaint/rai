@@ -21,16 +21,17 @@ void TEST(Solver) {
 
 //  displayMathematicalProgram(mp);
 
-  arr x = mp->getInitializationSample();
-  checkJacobianCP(*mp, x, 1e-4);
+//  arr x = mp->getInitializationSample();
+//  checkJacobianCP(*mp, x, 1e-4);
 
+  arr x_init = rai::getParameter<arr>("x_init", {});
   MP_Solver S;
 
   rai::Enum<MP_SolverID> sid (rai::getParameter<rai::String>("solver"));
   S.setVerbose(rai::getParameter<int>("opt/verbose"));
   S.setSolver(sid);
   S.setProblem(mp);
-//  S.setInitialization(ones(x.N)); //{2., 0.});
+  if(x_init.N) S.setInitialization(x_init);
   S.solve();
 
   arr path = catCol(S.getTrace_x(), S.getTrace_costs());
@@ -49,7 +50,7 @@ int MAIN(int argc,char** argv){
 
   rnd.clockSeed();
 
-//  testDisplay();
+  testDisplay();
   testSolver();
 
   return 0;

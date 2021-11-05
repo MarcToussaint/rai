@@ -84,7 +84,7 @@ void testFactored(){
   mp->report(cout, 3);
 
   uintA gripperDUP_vars;
-  for(uint i=0;i<mp->getNumVariables();i++){
+  for(uint i=0;i<mp->variableDimensions.N;i++){
     if(mp->getVariableName(i).startsWith("gripperDUP")) gripperDUP_vars.append(i);
   }
   cout <<gripperDUP_vars <<endl;
