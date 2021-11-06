@@ -21,6 +21,10 @@ template<> const char* rai::Enum<ObjectiveType>::names []= {
   "none", "f", "sos", "ineq", "eq", nullptr
 };
 
+template<> const char* rai::Enum<ConstrainedMethodType>::names []= {
+  "noMethod", "squaredPenalty", "augmentedLag", "logBarrier", "anyTimeAula", "squaredPenaltyFixed", nullptr
+};
+
 //===========================================================================
 
 double Conv_MathematicalProgram_ScalarProblem::scalar(arr& g, arr& H, const arr& x){
@@ -145,61 +149,27 @@ bool checkInBound(MathematicalProgram& P, const arr& x){
 }
 
 
-//===========================================================================
-//
-// optimization options
-//
-
-OptOptions::OptOptions() {
-  verbose    = rai::getParameter<double> ("opt/verbose", 1);
-  fmin_return=nullptr;
-  stopTolerance= rai::getParameter<double>("opt/stopTolerance", 1e-2);
-  stopFTolerance= rai::getParameter<double>("opt/stopFTolerance", 1e-1);
-  stopGTolerance= rai::getParameter<double>("opt/stopGTolerance", -1.);
-  stopEvals = rai::getParameter<double> ("opt/stopEvals", 1000);
-  stopIters = rai::getParameter<double> ("opt/stopIters", 1000);
-  stopOuters = rai::getParameter<double> ("opt/stopOuters", 1000);
-  stopLineSteps = rai::getParameter<double> ("opt/stopLineSteps", 10);
-  stopTinySteps = rai::getParameter<double> ("opt/stopTinySteps", 10);
-  initStep  = rai::getParameter<double>("opt/initStep", 1.);
-  minStep   = rai::getParameter<double>("opt/minStep", -1.);
-  maxStep   = rai::getParameter<double>("opt/maxStep", .2);
-  damping   = rai::getParameter<double>("opt/damping", 1.);
-  stepInc   = rai::getParameter<double>("opt/stepInc", 1.5);
-  stepDec   = rai::getParameter<double>("opt/stepDec", .5);
-  dampingInc= rai::getParameter<double>("opt/dampingInc", 1.);
-  dampingDec= rai::getParameter<double>("opt/dampingDec", 1.);
-  wolfe     = rai::getParameter<double>("opt/wolfe", .01);
-  nonStrictSteps = rai::getParameter<double> ("opt/nonStrictSteps", 0);
-  boundedNewton = rai::getParameter<bool> ("opt/boundedNewton", true);
-  allowOverstep = rai::getParameter<bool> ("opt/allowOverstep", false);
-  constrainedMethod = (ConstrainedMethodType)rai::getParameter<double>("opt/constrainedMethod", augmentedLag);
-  muInit = rai::getParameter<double>("opt/muInit", 1.);
-  muLBInit = rai::getParameter<double>("opt/muLBInit", 1.);
-  aulaMuInc = rai::getParameter<double>("opt/aulaMuInc", 5.);
-}
-
-void OptOptions::write(std::ostream& os) const {
-#define WRT(x) os <<#x <<" = " <<x <<endl;
-  WRT(verbose);
-//  double *fmin_return);
-  WRT(stopTolerance);
-  WRT(stopEvals);
-  WRT(stopIters);
-  WRT(initStep);
-  WRT(minStep);
-  WRT(maxStep);
-  WRT(damping);
-  WRT(stepInc);
-  WRT(stepDec);
-  WRT(dampingInc);
-  WRT(dampingDec);
-  WRT(nonStrictSteps);
-  WRT(allowOverstep);
-  WRT(constrainedMethod);
-  WRT(aulaMuInc);
-#undef WRT
-}
+//void OptOptions::write(std::ostream& os) const {
+//#define WRT(x) os <<#x <<" = " <<x <<endl;
+//  WRT(verbose);
+////  double *fmin_return);
+//  WRT(stopTolerance);
+//  WRT(stopEvals);
+//  WRT(stopIters);
+//  WRT(initStep);
+//  WRT(minStep);
+//  WRT(maxStep);
+//  WRT(damping);
+//  WRT(stepInc);
+//  WRT(stepDec);
+//  WRT(dampingInc);
+//  WRT(dampingDec);
+//  WRT(nonStrictSteps);
+//  WRT(allowOverstep);
+//  WRT(constrainedMethod);
+//  WRT(aulaMuInc);
+//#undef WRT
+//}
 
 //===========================================================================
 //
@@ -255,8 +225,8 @@ uint optGradDescent(arr& x, const ScalarFunction& f, OptOptions o) {
       if(o.verbose>1) cout <<" - reject" <<endl;
       a *= .5;
     }
-    if(evals>o.stopEvals) break; //WARNING: this may lead to non-monotonicity -> make evals high!
-    if(k>o.stopIters) break;
+    if(o.stopEvals>0 && evals>(uint)o.stopEvals) break; //WARNING: this may lead to non-monotonicity -> make evals high!
+    if(o.stopIters>0 && k>(uint)o.stopIters) break;
   }
   if(o.verbose>0) fil.close();
   if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", true);

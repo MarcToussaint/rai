@@ -92,38 +92,34 @@ inline void accumulateInequalities(arr& y, arr& J, const arr& yAll, const arr& J
 enum ConstrainedMethodType { noMethod=0, squaredPenalty, augmentedLag, logBarrier, anyTimeAula, squaredPenaltyFixed };
 
 struct OptOptions {
-#define arg(type, name) type name; OptOptions& set_##name(type _##name){ name=_##name; return *this; }
-  arg(int, verbose)
-  arg(double*, fmin_return)
-  arg(double, stopTolerance)
-  arg(double, stopFTolerance)
-  arg(double, stopGTolerance)
-  arg(uint,   stopEvals)
-  arg(uint,   stopIters)
-  arg(uint,   stopOuters)
-  arg(uint,   stopLineSteps)
-  arg(uint,   stopTinySteps)
-  arg(double, initStep)
-  arg(double, minStep)
-  arg(double, maxStep)
-  arg(double, damping)
-  arg(double, stepInc)
-  arg(double, stepDec)
-  arg(double, dampingInc)
-  arg(double, dampingDec)
-  arg(double, wolfe)
-  arg(int, nonStrictSteps) //# of non-strict iterations
-  arg(bool, boundedNewton)
-  arg(bool, allowOverstep)
-  arg(ConstrainedMethodType, constrainedMethod)
-  arg(double, muInit)
-  arg(double, muLBInit)
-  arg(double, aulaMuInc)
-#undef arg
-  OptOptions();
-  void write(std::ostream& os) const;
+  RAI_PARAM("opt/", int, verbose, 1)
+  RAI_PARAM("opt/", double, stopTolerance, 1e-2)
+  RAI_PARAM("opt/", double, stopFTolerance, 1e-1)
+  RAI_PARAM("opt/", double, stopGTolerance, -1.)
+  RAI_PARAM("opt/", int,    stopEvals, 1000)
+  RAI_PARAM("opt/", int,    stopIters, 1000)
+  RAI_PARAM("opt/", int,    stopOuters, 1000)
+  RAI_PARAM("opt/", int,    stopLineSteps, 10)
+  RAI_PARAM("opt/", int,    stopTinySteps, 10)
+  RAI_PARAM("opt/", double, initStep, 1.)
+  RAI_PARAM("opt/", double, minStep, -1.)
+  RAI_PARAM("opt/", double, maxStep, .2)
+  RAI_PARAM("opt/", double, damping, 1.)
+  RAI_PARAM("opt/", double, stepInc, 1.5)
+  RAI_PARAM("opt/", double, stepDec, .5)
+  RAI_PARAM("opt/", double, dampingInc, -1.)
+  RAI_PARAM("opt/", double, dampingDec, -1.)
+  RAI_PARAM("opt/", double, wolfe, .01)
+  RAI_PARAM("opt/", int,    nonStrictSteps, 0) //# of non-strict iterations
+  RAI_PARAM("opt/", bool,   boundedNewton, true)
+  RAI_PARAM("opt/", bool,   allowOverstep, false)
+  RAI_PARAM("opt/", double, muInit, 1.)
+  RAI_PARAM("opt/", double, muLBInit, 1.)
+  RAI_PARAM("opt/", double, aulaMuInc, 5.)
+  RAI_PARAM_ENUM("opt/", ConstrainedMethodType, constrainedMethod, augmentedLag)
+//  void write(std::ostream& os) const;
 };
-stdOutPipe(OptOptions)
+//stdOutPipe(OptOptions)
 
 OptOptions& globalOptOptions();
 #define NOOPT (globalOptOptions())

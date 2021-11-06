@@ -1394,6 +1394,7 @@ double gaussIntExpectation(double x) {
 //===========================================================================
 // MISC
 
+namespace rai{
 /**
  * @brief Return the current working dir as std::string.
  */
@@ -1411,6 +1412,7 @@ const char* niceTypeidName(const std::type_info& type) {
   const char* name = type.name();
   while(*name>='0' && *name<='9') name++;
   return name;
+}
 }
 
 //===========================================================================

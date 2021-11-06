@@ -175,15 +175,15 @@ bool OptConstrained::step() {
 //        return true;
 //    }
 //  }
-  if(newton.evals>=opt.stopEvals) {
+  if(opt.stopEvals>0 && newton.evals>=(uint)opt.stopEvals) {
     if(opt.verbose>0) cout <<"** optConstr. StoppingCriterion MAX EVALS" <<endl;
     return true;
   }
-  if(newton.its>=opt.stopIters) {
+  if(opt.stopIters>0 && newton.its>=(uint)opt.stopIters) {
     if(opt.verbose>0) cout <<"** optConstr. StoppingCriterion MAX ITERS" <<endl;
     return true;
   }
-  if(its>=opt.stopOuters) {
+  if(opt.stopOuters>0 && its>=(uint)opt.stopOuters) {
     if(opt.verbose>0) cout <<"** optConstr. StoppingCriterion MAX OUTERS" <<endl;
     return true;
   }

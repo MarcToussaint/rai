@@ -108,26 +108,24 @@ bool Conv_Feature_CostFunction::Evaluate(const double* const* parameters, double
 }
 
 Conv_MathematicalProgram_CeresProblem::Conv_MathematicalProgram_CeresProblem(const shared_ptr<MathematicalProgram_Factored>& _P) : P(_P) {
-  uintA variableDimensions, featureDimensions, variableDimIntegral, featureDimIntegral;
-  uintAA featureVariables;
+  uintA variableDimIntegral, featureDimIntegral;
   arr bounds_lo, bounds_up;
   P->getBounds(bounds_lo, bounds_up);
   uint n = P->getDimension();
   for(uint i=0; i<bounds_lo.N; i++) {
     if(bounds_lo.elem(i)>=bounds_up.elem(i)) { bounds_lo.elem(i) = -10.;  bounds_up.elem(i) = 10.; }
   }
-  P->getFactorization(variableDimensions, featureDimensions, featureVariables);
-  variableDimIntegral = integral(variableDimensions).prepend(0);
-  featureDimIntegral = integral(featureDimensions).prepend(0);
+  variableDimIntegral = integral(P->variableDimensions).prepend(0);
+  featureDimIntegral = integral(P->featureDimensions).prepend(0);
 
   if(n!=variableDimIntegral.last()) throw("");
   if(P->featureTypes.N!=featureDimIntegral.last()) throw("");
 
   //you must never ever resize these arrays, as ceres takes pointers directly into these fixed memory buffers!
   x_full.resize(variableDimIntegral.last());
-  arrA x(variableDimensions.N);
+  arrA x(P->variableDimensions.N);
   for(uint i=0; i<x.N; i++) {
-    x(i).referTo(x_full.p+variableDimIntegral(i), variableDimensions(i));
+    x(i).referTo(x_full.p+variableDimIntegral(i), P->variableDimensions(i));
   }
 
 //  phi_full.resize(featureDimIntegral.last());
@@ -159,16 +157,16 @@ Conv_MathematicalProgram_CeresProblem::Conv_MathematicalProgram_CeresProblem(con
     }
   }
 
-  for(uint i=0; i<featureDimensions.N; i++) {
-    if(featureDimensions(i)) {
+  for(uint i=0; i<P->featureDimensions.N; i++) {
+    if(P->featureDimensions(i)) {
       assert(P->featureTypes(i) == OT_sos);
       std::vector<double*> parameter_blocks;
-      for(uint k=0; k<featureVariables(i).N; k++) {
-        int var = featureVariables(i)(k);
+      for(uint k=0; k<P->featureVariables(i).N; k++) {
+        int var = P->featureVariables(i)(k);
         if(var>=0) parameter_blocks.push_back(x(var).p);
 //        parameter_blocks(k) = x().p;
       }
-      auto fct = new Conv_Feature_CostFunction(*this, i, variableDimensions, featureDimensions, featureVariables);
+      auto fct = new Conv_Feature_CostFunction(*this, i, P->variableDimensions, P->featureDimensions, P->featureVariables);
       ceresProblem->AddResidualBlock(fct, nullptr, parameter_blocks);
     }
   }

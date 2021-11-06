@@ -51,10 +51,10 @@ struct Rprop {
   ~Rprop();
   void init(double initialStepSize=1., double minStepSize=1e-6, double maxStepSize=50.);
   bool step(arr& x, const ScalarFunction& f);
-  uint loop(arr& x, const ScalarFunction& f, double* fmin_return=nullptr, double stoppingTolerance=1e-2, double initialStepSize=1., uint maxIterations=1000, int verbose=0);
+  uint loop(arr& x, const ScalarFunction& f, double stoppingTolerance=1e-2, double initialStepSize=1., uint maxIterations=1000, int verbose=0);
 };
 
 inline uint optRprop(arr& x, const ScalarFunction& f, OptOptions opt=NOOPT) {
-  return Rprop().loop(x, f, opt.fmin_return, opt.stopTolerance, opt.initStep, opt.stopEvals, opt.verbose);
+  return Rprop().loop(x, f, opt.stopTolerance, opt.initStep, opt.stopEvals, opt.verbose);
 }
 

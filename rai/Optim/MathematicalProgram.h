@@ -62,7 +62,7 @@ public:
   virtual void getFHessian(arr& H, const arr& x) { H.clear(); } //the Hessian of the sum of all f-features (or Hessian in addition to the Gauss-Newton Hessian of all other features)
 
   //-- optional: return some info on the problem and the last evaluation, potentially with display
-  virtual void report(ostream& os, int verbose){ os <<"NLP of type '" <<niceTypeidName(typeid(*this)) <<"' -- no reporting implemented"; }
+  virtual void report(ostream& os, int verbose){ os <<"NLP of type '" <<rai::niceTypeidName(typeid(*this)) <<"' -- no reporting implemented"; }
 
   uint getDimension() const { return dimension; }
   void getBounds(arr& lo, arr& up) const { lo=bounds_lo; up=bounds_up; }

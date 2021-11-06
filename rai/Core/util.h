@@ -178,32 +178,8 @@ void initCmdLine(int _argc, char* _argv[]);
 bool checkCmdLineTag(const char* tag);
 char* getCmdLineArgument(const char* tag);
 
-//----- parameter grabbing from command line, config file, or default value
-template<class T> T getParameter(const char* tag);
-template<class T> T getParameter(const char* tag, const T& Default);
-template<class T> void getParameter(T& x, const char* tag, const T& Default);
-template<class T> void getParameter(T& x, const char* tag);
-template<class T> bool checkParameter(const char* tag);
-
-#if 0
-template<class T> struct Parameter{
-  const char* key;
-  T value;
-  Parameter(const char* _key) : key(_key) { value = getParameter<T>(_key); }
-  const T& operator()(){ return value; }
-};
-#define raiPARAM(type, name) \
-  rai::Parameter<type> name = {#name}; \
-  auto set_##name(type _##name){ name.value=_##name; return *this; }
-#else
-template<class T> struct ParameterInit {
-  ParameterInit(T& x, const char* tag, const T& Default) { getParameter<T>(x, tag, Default); }
-};
-#define RAI_PARAM(scope, type, name, Default) \
-  type name; \
-  KOMO_Options& set_##name(type _##name){ name=_##name; return *this; } \
-  rai::ParameterInit<type> __init_##name = {name, scope #name, Default};
-#endif
+std::string getcwd_string();
+const char* niceTypeidName(const std::type_info& type);
 
 //----- get verbose level
 uint getVerboseLevel();
@@ -402,74 +378,6 @@ extern String errString;
 #define CHECK_LE(A, B, msg)
 #endif
 
-//----- TESTING
-#ifndef EXAMPLES_AS_TESTS
-#  define TEST(name) test##name()
-#  define MAIN main
-#else
-#  define GTEST_DONT_DEFINE_TEST 1
-#  include <gtest/gtest.h>
-#  define TEST(name) test##name(){} GTEST_TEST(examples, name)
-#  define MAIN \
-  main(int argc, char** argv){               \
-    rai::initCmdLine(argc,argv);             \
-    testing::InitGoogleTest(&argc, argv);  \
-    return RUN_ALL_TESTS();      \
-  }                                          \
-  inline int obsolete_main //this starts a method declaration
-#endif
-
-//----- verbose:
-#define VERBOSE(l, x) if(l<=rai::getVerboseLevel()) x;
-
-//----- other macros:
-#define MEM_COPY_OPERATOR(x) memmove(this, &x, sizeof(this));
-
-//===========================================================================
-//
-// FileToken
-//
-
-namespace rai {
-
-String raiPath(const char* rel=nullptr);
-
-/** @brief A ostream/istream wrapper that allows easier initialization of objects, like:
-arr X = FILE("inname");
-X >>FILE("outfile");
-etc
-*/
-struct FileToken {
-  rai::String path, name, cwd;
-  std::shared_ptr<std::ofstream> os;
-  std::shared_ptr<std::ifstream> is;
-
-  FileToken();
-  FileToken(const char* _filename, bool change_dir=false);
-  FileToken(const FileToken& ft);
-  ~FileToken();
-  FileToken& operator()() { return *this; }
-
-  void decomposeFilename();
-  void cd_start();
-  void cd_file();
-  bool exists();
-  std::ofstream& getOs(bool change_dir=false);
-  std::ifstream& getIs(bool change_dir=false);
-  operator std::istream& () { return getIs(); }
-  operator std::ostream& () { return getOs(); }
-
-  rai::String absolutePathName() const;
-};
-template<class T> FileToken& operator>>(FileToken& fil, T& x) { fil.getIs() >>x;  return fil; }
-template<class T> std::ostream& operator<<(FileToken& fil, const T& x) { fil.getOs() <<x;  return fil.getOs(); }
-inline std::ostream& operator<<(std::ostream& os, const FileToken& fil) { return os <<fil.name; }
-template<class T> FileToken& operator<<(T& x, FileToken& fil) { fil.getIs() >>x; return fil; }
-template<class T> void operator>>(const T& x, FileToken& fil) { fil.getOs() <<x; }
-inline bool operator==(const FileToken&, const FileToken&) { return false; }
-}
-#define FILE(filename) (rai::FileToken(filename, false)()) //it needs to return a REFERENCE to a local scope object
-
 //===========================================================================
 //
 // give names to Enum (for pipe << >> )
@@ -527,6 +435,109 @@ struct Enum {
 template<class T> std::istream& operator>>(std::istream& is, Enum<T>& x) { x.read(is); return is; }
 template<class T> std::ostream& operator<<(std::ostream& os, const Enum<T>& x) { x.write(os); return os; }
 }
+
+//===========================================================================
+//
+// parameters
+//
+
+namespace rai{
+//----- parameter grabbing from command line, config file, or default value
+template<class T> T getParameter(const char* tag);
+template<class T> T getParameter(const char* tag, const T& Default);
+template<class T> void getParameter(T& x, const char* tag, const T& Default);
+template<class T> void getParameter(T& x, const char* tag);
+template<class T> bool checkParameter(const char* tag);
+
+template<class T> struct ParameterInit {
+  ParameterInit(T& x, const char* tag, const T& Default) { getParameter<T>(x, tag, Default); }
+};
+#define RAI_PARAM(scope, type, name, Default) \
+  type name; \
+  auto& set_##name(type _##name){ name=_##name; return *this; } \
+  rai::ParameterInit<type> __init_##name = {name, scope #name, Default};
+
+template<class T> struct ParameterInitEnum {
+  ParameterInitEnum(T& x, const char* tag, const T& Default) {
+    String str;
+    getParameter<String>(str, tag, "");
+    if(str.N) x = Enum<T>(str);
+    else x = Default;
+  }
+};
+#define RAI_PARAM_ENUM(scope, type, name, Default) \
+  type name; \
+  auto& set_##name(type _##name){ name=_##name; return *this; } \
+  rai::ParameterInitEnum<type> __init_##name = {name, scope #name, Default};
+
+}
+
+
+//===========================================================================
+//
+// Testing
+//
+
+#ifndef EXAMPLES_AS_TESTS
+#  define TEST(name) test##name()
+#  define MAIN main
+#else
+#  define GTEST_DONT_DEFINE_TEST 1
+#  include <gtest/gtest.h>
+#  define TEST(name) test##name(){} GTEST_TEST(examples, name)
+#  define MAIN \
+  main(int argc, char** argv){               \
+    rai::initCmdLine(argc,argv);             \
+    testing::InitGoogleTest(&argc, argv);  \
+    return RUN_ALL_TESTS();      \
+  }                                          \
+  inline int obsolete_main //this starts a method declaration
+#endif
+
+//===========================================================================
+//
+// FileToken
+//
+
+namespace rai {
+
+String raiPath(const char* rel=nullptr);
+
+/** @brief A ostream/istream wrapper that allows easier initialization of objects, like:
+arr X = FILE("inname");
+X >>FILE("outfile");
+etc
+*/
+struct FileToken {
+  rai::String path, name, cwd;
+  std::shared_ptr<std::ofstream> os;
+  std::shared_ptr<std::ifstream> is;
+
+  FileToken();
+  FileToken(const char* _filename, bool change_dir=false);
+  FileToken(const FileToken& ft);
+  ~FileToken();
+  FileToken& operator()() { return *this; }
+
+  void decomposeFilename();
+  void cd_start();
+  void cd_file();
+  bool exists();
+  std::ofstream& getOs(bool change_dir=false);
+  std::ifstream& getIs(bool change_dir=false);
+  operator std::istream& () { return getIs(); }
+  operator std::ostream& () { return getOs(); }
+
+  rai::String absolutePathName() const;
+};
+template<class T> FileToken& operator>>(FileToken& fil, T& x) { fil.getIs() >>x;  return fil; }
+template<class T> std::ostream& operator<<(FileToken& fil, const T& x) { fil.getOs() <<x;  return fil.getOs(); }
+inline std::ostream& operator<<(std::ostream& os, const FileToken& fil) { return os <<fil.name; }
+template<class T> FileToken& operator<<(T& x, FileToken& fil) { fil.getIs() >>x; return fil; }
+template<class T> void operator>>(const T& x, FileToken& fil) { fil.getOs() <<x; }
+inline bool operator==(const FileToken&, const FileToken&) { return false; }
+}
+#define FILE(filename) (rai::FileToken(filename, false)()) //it needs to return a REFERENCE to a local scope object
 
 //===========================================================================
 //
@@ -757,15 +768,3 @@ inline bool operator==(Type& t1, Type& t2) { return t1.typeId() == t2.typeId(); 
 void gnuplot(const char* command, bool pauseMouse=false, bool persist=false, const char* PDFfile=nullptr);
 void gnuplotClose();
 
-//===========================================================================
-//
-// Stefan's misc
-//
-
-/// Clip the `value` of n between `lower` and `upper`.
-template <typename T> T clip(T& x, const T& lower, const T& upper) {
-  if(x<lower) x=lower; else if(x>upper) x=upper; return x;
-}
-
-std::string getcwd_string();
-const char* niceTypeidName(const std::type_info& type);

@@ -49,7 +49,7 @@ shared_ptr<SolverReturn> MP_Solver::solve(int resampleInitialization){
   else if(solverID==MPS_rprop){
     Conv_MathematicalProgram_ScalarProblem P1(P);
     OptOptions opts;
-    Rprop().loop(x, P1, opts.fmin_return, opts.stopTolerance, opts.initStep, opts.stopEvals, opts.verbose);
+    Rprop().loop(x, P1, opts.stopTolerance, opts.initStep, opts.stopEvals, opts.verbose);
   }
   else if(solverID==MPS_augmentedLag){
     OptConstrained opt(x, dual, P, OptOptions()

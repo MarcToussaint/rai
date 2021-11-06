@@ -66,8 +66,8 @@ OptGrad::StopCriterion OptGrad::step() {
     } else {
       //reject new point
       if(o.verbose>1) cout <<" - reject" <<flush;
-      if(lineSteps>o.stopLineSteps) break;
-      if(evals>o.stopEvals) break; //WARNING: this may lead to non-monotonicity -> make evals high!
+      if(o.stopLineSteps>0 && lineSteps>(uint)o.stopLineSteps) break;
+      if(o.stopEvals>0 && evals>(uint)o.stopEvals) break; //WARNING: this may lead to non-monotonicity -> make evals high!
       if(o.verbose>1) cout <<"\n  (line search)" <<flush;
       alpha *= o.stepDec;
     }
@@ -78,18 +78,17 @@ OptGrad::StopCriterion OptGrad::step() {
   //stopping criteria
 #define STOPIF(expr, code, ret) if(expr){ if(o.verbose>1) cout <<"\t\t\t\t\t\t--- stopping criterion='" <<#expr <<"'" <<endl; code; return stopCriterion=ret; }
   //  STOPIF(absMax(Delta)<o.stopTolerance, , stopCrit1);
-  STOPIF(numTinySteps>o.stopTinySteps, numTinySteps=0, stopCrit2);
+  STOPIF(numTinySteps>(uint)o.stopTinySteps, numTinySteps=0, stopCrit2);
   //  STOPIF(alpha<1e-3*o.stopTolerance, stopCrit2);
-  STOPIF(lineSteps>=o.stopLineSteps,, stopCritLineSteps);
-  STOPIF(evals>=o.stopEvals,, stopCritEvals);
-  STOPIF(it>=o.stopIters,, stopCritEvals);
+  STOPIF(lineSteps>=(uint)o.stopLineSteps,, stopCritLineSteps);
+  STOPIF(evals>=(uint)o.stopEvals,, stopCritEvals);
+  STOPIF(it>=(uint)o.stopIters,, stopCritEvals);
 #undef STOPIF
 
   return stopCriterion=stopNone;
 }
 
 OptGrad::~OptGrad() {
-  if(o.fmin_return) *o.fmin_return=fx;
   if(o.verbose>0) fil.close();
 #ifndef RAI_MSVC
 //  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", nullptr, true);
@@ -106,7 +105,6 @@ OptGrad::StopCriterion OptGrad::run(uint maxIt) {
     if(stopCriterion>=stopCrit1) break;
   }
 //  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", nullptr, false);
-  if(o.fmin_return) *o.fmin_return= fx;
   return stopCriterion;
 }
 
@@ -192,7 +190,6 @@ bool Rprop::step(arr& x, const ScalarFunction& f) {
 //----- the rprop wrapped with stopping criteria
 uint Rprop::loop(arr& _x,
                  const ScalarFunction& f,
-                 double* fmin_return,
                  double stoppingTolerance,
                  double initialStepSize,
                  uint maxEvals,
@@ -260,7 +257,6 @@ uint Rprop::loop(arr& _x,
   }
   if(verbose>0) fil.close();
 //  if(verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", nullptr, true);
-  if(fmin_return) *fmin_return= fx_min;
   _x=x_min;
   return evals;
 }
