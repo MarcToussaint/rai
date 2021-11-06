@@ -11,6 +11,12 @@
 
 //===========================================================================
 
+template<> const char* rai::Enum<ObjectiveType>::names []= {
+  "none", "f", "sos", "ineq", "eq", "OT_ineqB", nullptr
+};
+
+//===========================================================================
+
 arr summarizeErrors(const arr& phi, const ObjectiveTypeA& tt) {
   arr err = zeros(3);
   for(uint i=0; i<phi.N; i++) {

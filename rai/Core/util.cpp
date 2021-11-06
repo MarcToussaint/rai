@@ -262,7 +262,7 @@ double sign0(double x) { if(x<0.) return -1.; if(!x) return 0.; return 1.; }
 double linsig(double x) { if(x<0.) return 0.; if(x>1.) return 1.; return x; }
 
 /// x ends up in the interval [a, b]
-//void clip(double& x, double a, double b) { if(x<a) x=a; if(x>b) x=b; }
+void clip(double& x, double a, double b) { if(x<a) x=a; else if(x>b) x=b; }
 
 ///// the angle of the vector (x, y) in [-pi, pi]
 //double phi(double x, double y) {

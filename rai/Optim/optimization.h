@@ -114,8 +114,9 @@ struct OptOptions {
   RAI_PARAM("opt/", bool,   boundedNewton, true)
   RAI_PARAM("opt/", bool,   allowOverstep, false)
   RAI_PARAM("opt/", double, muInit, 1.)
-  RAI_PARAM("opt/", double, muLBInit, 1.)
   RAI_PARAM("opt/", double, aulaMuInc, 5.)
+  RAI_PARAM("opt/", double, muLBInit, 1.)
+  RAI_PARAM("opt/", double, muLBDec, 5.)
   RAI_PARAM_ENUM("opt/", ConstrainedMethodType, constrainedMethod, augmentedLag)
 //  void write(std::ostream& os) const;
 };

@@ -16,10 +16,8 @@ PrimalDualProblem::PrimalDualProblem(const arr& x, const shared_ptr<Mathematical
   L.lagrangian(NoArr, NoArr, x);
 //  cout <<"x=" <<x <<endl <<"L=" <<Lval <<endl;
 
-  n_ineq=0;
-  n_eq=0;
-  for(uint i=0; i<L.phi_x.N; i++) if(L.tt_x.p[i]==OT_eq) n_eq++;
-  for(uint i=0; i<L.phi_x.N; i++) if(L.tt_x.p[i]==OT_ineq) n_ineq++;
+  n_ineq=L.get_dimOfType(OT_ineq);
+  n_eq=L.get_dimOfType(OT_eq);
   x_lambda = x;
   if(n_eq) x_lambda.append(zeros(n_eq));
   x_lambda.append(ones(n_ineq));
@@ -32,12 +30,14 @@ PrimalDualProblem::PrimalDualProblem(const arr& x, const shared_ptr<Mathematical
 
 double PrimalDualProblem::primalDual(arr& r, arr& R, const arr& x_lambda) {
 
+  ObjectiveTypeA& ot = L.P->featureTypes;
+
   //copy the latter part of x into lambdas for the inequalities
   uint n = L.x.N; //x_lambda.N - (n_eq+n_ineq);
   const arr x = x_lambda({0, n-1});
   if(!L.lambda.N) L.lambda = zeros(L.phi_x.N);
-  for(uint i=0; i<L.phi_x.N; i++) if(L.tt_x.p[i]==OT_eq) L.lambda(i) = x_lambda(n++);
-  for(uint i=0; i<L.phi_x.N; i++) if(L.tt_x.p[i]==OT_ineq) L.lambda(i) = x_lambda(n++);
+  for(uint i=0; i<L.phi_x.N; i++) if(ot.p[i]==OT_eq) L.lambda(i) = x_lambda(n++);
+  for(uint i=0; i<L.phi_x.N; i++) if(ot.p[i]==OT_ineq) L.lambda(i) = x_lambda(n++);
   CHECK_EQ(n, x_lambda.N, "");
   CHECK_EQ(x.N+n_eq+n_ineq, x_lambda.N, "");
 
@@ -52,13 +52,13 @@ double PrimalDualProblem::primalDual(arr& r, arr& R, const arr& x_lambda) {
   primalFeasible=true;
   dualityMeasure=0.;
   for(uint i=0; i<L.phi_x.N; i++) {
-    if(L.tt_x.p[i]==OT_ineq) {
+    if(ot.p[i]==OT_ineq) {
       if(L.phi_x.p[i] > 0.) { primalFeasible=false; /*break;*/ }
 //      if(L.phi_x.p[i] > 0.) dualityMeasure += ::fabs(L.phi_x.p[i]); else
       HALT("Isn't this wrong for positive phi? Should we exclude those from the duality measure? (Because for those we want lambda positive!!)");
       dualityMeasure += ::fabs(L.lambda.p[i] * L.phi_x.p[i]);
     }
-    if(L.tt_x.p[i]==OT_eq) {
+    if(ot.p[i]==OT_eq) {
 //      dualityMeasure += ::fabs(L.phi_x.p[i]);
     }
   }
@@ -78,14 +78,14 @@ double PrimalDualProblem::primalDual(arr& r, arr& R, const arr& x_lambda) {
     // 2nd KKT: primal feasibility of equalities h
     n=x.N;
     for(uint i=0; i<L.phi_x.N; i++) {
-      if(L.tt_x.p[i]==OT_eq) r(n++) = L.phi_x.p[i];
+      if(ot.p[i]==OT_eq) r(n++) = L.phi_x.p[i];
     }
     CHECK_EQ(n, x.N+n_eq, "");
 
     // 4th KKT
     n=x.N+n_eq;
     for(uint i=0; i<L.phi_x.N; i++) {
-      if(L.tt_x.p[i]==OT_ineq) {
+      if(ot.p[i]==OT_ineq) {
 //        if(L.phi_x.p[i] > 0.) r(n++) = - L.phi_x.p[i] - mu; else
         r(n++) = - L.lambda.p[i] * L.phi_x.p[i] - mu;
       }
@@ -117,7 +117,7 @@ double PrimalDualProblem::primalDual(arr& r, arr& R, const arr& x_lambda) {
     // top-mid: transposed \del h
     n=x.N;
     for(uint i=0; i<L.phi_x.N; i++) {
-      if(L.tt_x.p[i]==OT_eq) {
+      if(ot.p[i]==OT_eq) {
         if(!sparse) {
           for(uint j=0; j<x.N; j++) R(j, n) = L.J_x(i, j);
         } else {
@@ -134,7 +134,7 @@ double PrimalDualProblem::primalDual(arr& r, arr& R, const arr& x_lambda) {
     // top-right: transposed \del g
     n=x.N+n_eq;
     for(uint i=0; i<L.phi_x.N; i++) {
-      if(L.tt_x.p[i]==OT_ineq) {
+      if(ot.p[i]==OT_ineq) {
         for(uint j=0; j<x.N; j++) {
           if(!sparse) R(j, n) = L.J_x(i, j);
           else Rsparse->addEntry(j, n) = L.J_x(i, j);
@@ -149,7 +149,7 @@ double PrimalDualProblem::primalDual(arr& r, arr& R, const arr& x_lambda) {
     // mid-left:
     n=x.N;
     for(uint i=0; i<L.phi_x.N; i++) {
-      if(L.tt_x.p[i]==OT_eq) {
+      if(ot.p[i]==OT_eq) {
         if(!sparse) {
           for(uint j=0; j<x.N; j++) R(n, j) = L.J_x(i, j);
         } else {
@@ -166,7 +166,7 @@ double PrimalDualProblem::primalDual(arr& r, arr& R, const arr& x_lambda) {
     // bottom-left:
     n=x.N+n_eq;
     for(uint i=0; i<L.phi_x.N; i++) {
-      if(L.tt_x.p[i]==OT_ineq) {
+      if(ot.p[i]==OT_ineq) {
         for(uint j=0; j<x.N; j++) {
 //          if(L.phi_x.p[i] > 0.) R(n,j) = -L.J_x(i, j); else
           if(!sparse) R(n, j) = -L.lambda(i) * L.J_x(i, j);
@@ -180,7 +180,7 @@ double PrimalDualProblem::primalDual(arr& r, arr& R, const arr& x_lambda) {
     // bottom-right:
     n=x.N+n_eq;
     for(uint i=0; i<L.phi_x.N; i++) {
-      if(L.tt_x.p[i]==OT_ineq) {
+      if(ot.p[i]==OT_ineq) {
 //          if(L.phi_x.p[i] > 0.) {} else
         if(!sparse) R(n, n) = - L.phi_x(i);
         else Rsparse->addEntry(n, n) = - L.phi_x(i);

@@ -1374,8 +1374,7 @@ uintA getSubMeshPositions(const char* filename) {
   FILE* file;
   char buf[128];
   file = fopen(filename, "r");
-  CHECK(file,
-        "can't open data file " << filename << "; cwd is " << getcwd_string());
+  CHECK(file, "can't open data file " <<filename << "; cwd is " <<rai::getcwd_string());
 
   int flag = 0;
   long start_pos = 0;

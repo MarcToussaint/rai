@@ -17,10 +17,6 @@ OptOptions& globalOptOptions() {
   return opt;
 }
 
-template<> const char* rai::Enum<ObjectiveType>::names []= {
-  "none", "f", "sos", "ineq", "eq", nullptr
-};
-
 template<> const char* rai::Enum<ConstrainedMethodType>::names []= {
   "noMethod", "squaredPenalty", "augmentedLag", "logBarrier", "anyTimeAula", "squaredPenaltyFixed", nullptr
 };

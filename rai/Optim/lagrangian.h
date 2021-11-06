@@ -23,21 +23,20 @@ struct LagrangianProblem : ScalarFunction, MathematicalProgram {
   shared_ptr<MathematicalProgram> P;
 
   //-- parameters of the unconstrained (Lagrangian) scalar function
-  double muLB;       ///< log barrier weight
+  double muLB;       ///< log barrier mu
   double mu;         ///< penalty parameter for inequalities g
   double nu;         ///< penalty parameter for equalities h
   arr lambda;        ///< lagrange multipliers for inequalities g and equalities h
+  bool useLB;        ///< interpret ALL ineq as LG instead of penalty
 
   //-- buffers to avoid re-evaluating points
   arr x;               ///< point where P was last evaluated
   arr phi_x, J_x, H_x; ///< features at x
-  ObjectiveTypeA tt_x; ///< feature types at x
 
   ostream* logFile=nullptr;  ///< file for logging
 
   LagrangianProblem(const shared_ptr<MathematicalProgram>& P, const OptOptions& opt=NOOPT, arr& lambdaInit=NoArr);
 
-  uint getFeatureDim();
   virtual void evaluate(arr& phi, arr& J, const arr& x);       //evaluate all features and (optionally) their Jacobians for state x
   virtual void getFHessian(arr& H, const arr& x);              //the Hessian of the sum of all f-features (or Hessian in addition to the Gauss-Newton Hessian of all other features)
   virtual arr  getInitializationSample(const arr& previousOptima= {}) { return P->getInitializationSample(previousOptima); }
@@ -49,9 +48,9 @@ struct LagrangianProblem : ScalarFunction, MathematicalProgram {
   double get_costs();            ///< info on the terms from last call
   double get_sumOfGviolations(); ///< info on the terms from last call
   double get_sumOfHviolations(); ///< info on the terms from last call
-  uint get_dimOfType(const ObjectiveType& tt); ///< info on the terms from last call
+  uint get_dimOfType(const ObjectiveType& ot); ///< info on the terms from last call
 
-  void aulaUpdate(bool anyTimeVariant, double lambdaStepsize=1., double muInc=1., double* L_x=nullptr, arr& dL_x=NoArr, arr& HL_x=NoArr);
+  void aulaUpdate(const OptOptions& opt, bool anyTimeVariant, double lambdaStepsize=1., double* L_x=nullptr, arr& dL_x=NoArr, arr& HL_x=NoArr);
   void autoUpdate(const OptOptions& opt, double* L_x=nullptr, arr& dL_x=NoArr, arr& HL_x=NoArr);
 
   //private: used gpenalty function

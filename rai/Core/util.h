@@ -129,7 +129,7 @@ double modMetric(double x, double y, double mod);
 double sign(double x);
 double sign0(double x);
 double linsig(double x);
-//void   clip(double& x, double a, double b);
+void   clip(double& x, double a, double b);
 //double phi(double dx, double dy);
 //double dphi(double x, double y, double dx, double dy);
 double DIV(double x, double y, bool force=false);

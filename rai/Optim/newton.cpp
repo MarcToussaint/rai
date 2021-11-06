@@ -282,7 +282,6 @@ OptNewton::StopCriterion OptNewton::step() {
 }
 
 OptNewton::~OptNewton() {
-  if(options.fmin_return) *options.fmin_return=fx;
 #ifndef RAI_MSVC
 //  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", nullptr, true);
 #endif

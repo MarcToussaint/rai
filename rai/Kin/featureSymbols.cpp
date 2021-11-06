@@ -98,7 +98,7 @@ std::shared_ptr<Feature> Feature::deepCopy(){
   _cpy(F_PositionDiff);
   _cpy(F_qItself);
 #undef _cpy
-  HALT("deepCopy not registered for this type: " <<niceTypeidName(typeid(this)));
+  HALT("deepCopy not registered for this type: " <<rai::niceTypeidName(typeid(this)));
   return make_shared<Feature>();
 }
 

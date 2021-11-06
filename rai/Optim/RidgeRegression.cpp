@@ -238,7 +238,7 @@ KernelLogisticRegression::KernelLogisticRegression(const arr& X, const arr& y, K
     arr f_old=f;
     alpha = lapack_Ainv_b_sym(kernelMatrix_lambda, f - (p-y)/w - mu);
     f = mu + kernelMatrix * alpha;
-    for(uint i=0; i<f.N; i++) clip(f.elem(i), -100., 100.);  //constrain the discriminative values to avoid NANs...
+    for(uint i=0; i<f.N; i++) rai::clip(f.elem(i), -100., 100.);  //constrain the discriminative values to avoid NANs...
 
     if(maxDiff(f, f_old)<1e-5) break;
   }
@@ -262,7 +262,7 @@ arr KernelLogisticRegression::evaluate(const arr& Z, arr& p_bayes, arr& p_hi, ar
   arr kappa(Z.d0, X.d0);
   for(uint i=0; i<Z.d0; i++) for(uint j=0; j<X.d0; j++) kappa(i, j) = kernel.k(Z[i], X[j]);
   arr f = mu + kappa * alpha;
-  for(uint i=0; i<f.N; i++) clip(f.elem(i), -100., 100.);  //constrain the discriminative values to avoid NANs...
+  for(uint i=0; i<f.N; i++) rai::clip(f.elem(i), -100., 100.);  //constrain the discriminative values to avoid NANs...
   arr p = exp(f); p/=1.+p;
 
   if(!!p_bayes || !!p_hi || !!p_lo) { //take sigma of discriminative function to estimate p_bayes, p_up and p_lo
@@ -273,7 +273,7 @@ arr KernelLogisticRegression::evaluate(const arr& Z, arr& p_bayes, arr& p_hi, ar
       s(i) -= scalarProduct(kappa[i], invKernelMatrix_lambda*kappa[i]);
     }
     s /= 2.*lambda; //TODO: why?? why not for KRR?
-    for(uint i=0; i<s.N; i++) clip(s.elem(i), -100., 100.);  //constrain the discriminative values to avoid NANs...
+    for(uint i=0; i<s.N; i++) rai::clip(s.elem(i), -100., 100.);  //constrain the discriminative values to avoid NANs...
     if(!!p_bayes) { p_bayes = exp(f/sqrt(1.+s*RAI_PI/8.)); p_bayes /= 1.+p_bayes; }
     s = sqrt(s);
     if(!!p_hi) { p_hi = exp(f+s); p_hi /= 1.+p_hi; }
@@ -302,7 +302,7 @@ arr logisticRegression2Class(const arr& X, const arr& y, double lambda, arr& bay
   beta.setZero();
   for(uint k=0; k<100; k++) {
     f = X*beta;
-    for(uint i=0; i<f.N; i++) clip(f.elem(i), -100., 100.);  //constrain the discriminative values to avoid NANs...
+    for(uint i=0; i<f.N; i++) rai::clip(f.elem(i), -100., 100.);  //constrain the discriminative values to avoid NANs...
     p = exp(f);
     Z = 1.+p;
     for(uint i=0; i<n; i++) p(i) /= Z(i);
@@ -358,7 +358,7 @@ arr logisticRegressionMultiClass(const arr& X, const arr& y, double lambda) {
   beta.setZero();
   for(uint k=0; k<100; k++) {
     f = X*beta;
-    for(uint i=0; i<f.N; i++) clip(f.elem(i), -100., 100.);  //constrain the discriminative values to avoid NANs...
+    for(uint i=0; i<f.N; i++) rai::clip(f.elem(i), -100., 100.);  //constrain the discriminative values to avoid NANs...
     p = exp(f);
     Z = sum(p, 1);
     for(uint i=0; i<n; i++) p[i]() /= Z(i);
