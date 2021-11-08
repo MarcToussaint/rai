@@ -416,7 +416,12 @@ void OpenGL::openWindow() {
       glfwWindowHint(GLFW_VISIBLE, GL_TRUE);
     }
     if(!title.N) title="GLFW window";
-    self->window = glfwCreateWindow(width, height, title.p, nullptr, nullptr);
+    if(fullscreen) {
+      self->window = glfwCreateWindow(width, height, title.p, glfwGetPrimaryMonitor(), nullptr); 
+    }
+    else{
+      self->window = glfwCreateWindow(width, height, title.p, nullptr, nullptr); 
+    }
     if(!offscreen){
       glfwMakeContextCurrent(self->window);
       glfwSetWindowUserPointer(self->window, this);
@@ -1542,8 +1547,9 @@ bool glUI::clickCallback(OpenGL& gl) { NICO }
 // OpenGL implementations
 //
 
-OpenGL::OpenGL(const char* _title, int w, int h, bool _offscreen)
-  : title(_title), width(w), height(h), offscreen(_offscreen), reportEvents(false), topSelection(nullptr), fboId(0), rboColor(0), rboDepth(0) {
+OpenGL::OpenGL(const char* _title, int w, int h, bool _offscreen, bool _fullscreen, bool _enableCC)
+  : title(_title), width(w), height(h), offscreen(_offscreen), fullscreen(_fullscreen), enableCameraControls(_enableCC),
+  reportEvents(false), topSelection(nullptr), fboId(0), rboColor(0), rboDepth(0) {
   //RAI_MSG("creating OpenGL=" <<this);
   self = make_unique<sOpenGL>(this); //this might call some callbacks (Reshape/Draw) already!
   init();
@@ -2213,6 +2219,7 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) 
   modifiers = mods;
   lastEvent.set(mouse_button, -1, _x, _y, 0., 0.);
 
+  
   GLView* v=0;
   rai::Camera* cam=&camera;
   rai::Vector vec;
@@ -2224,11 +2231,14 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) 
       break;
     }
   }
+  
+  
   if(mouseView==-1) {
     getSphereVector(vec, _x, _y, 0, w, 0, h);
     v=0;
   }
   CALLBACK_DEBUG("associated to view " <<mouseView <<" x=" <<vec.x <<" y=" <<vec.y <<endl);
+  
 
   if(!downPressed) {  //down press
     if(mouseIsDown) {  return; } //the button is already down (another button was pressed...)
@@ -2274,7 +2284,7 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) 
   if(mouse_button==4 && !downPressed) cam->X.pos += downRot*Vector_z * (.1 * (downPos-downFoc).length());
   if(mouse_button==5 && !downPressed) cam->X.pos -= downRot*Vector_z * (.1 * (downPos-downFoc).length());
 
-  if(mouse_button==3) {  //focus on selected point
+  if(mouse_button==3 && enableCameraControls) {  //focus on selected point
     double d = captureDepth(mouseposy, mouseposx);
     if(d<.001 || d==1.) {
       cout <<"NO SELECTION: SELECTION DEPTH = " <<d <<' ' <<camera.glConvertToTrueDepth(d) <<endl;
@@ -2313,7 +2323,7 @@ void OpenGL::Scroll(int wheel, int direction, bool leftButtonPressed) {
 
 
   }
-  else {
+  else if(enableCameraControls){
     rai::Camera* cam=&camera;
     for(mouseView=views.N; mouseView--;) {
       GLView* v = &views(mouseView);
@@ -2363,7 +2373,7 @@ void OpenGL::MouseMotion(int _x, int _y) {
 
   bool needsUpdate=false;
   //right button and SHIFT CTRL
-  if(mouse_button==1 && (modifiers&1) && (modifiers&2)) {  //rotation
+  if(mouse_button==1 && (modifiers&1) && (modifiers&2) && enableCameraControls) {  //rotation
     rai::Quaternion rot;
     if(downVec.z<.1) {
       //margin:
@@ -2379,7 +2389,7 @@ void OpenGL::MouseMotion(int _x, int _y) {
     needsUpdate=true;
   }
   
-  if(mouse_button==1 && (modifiers&1) && !(modifiers&2)) {  //translation mouse_button==2){
+  if(mouse_button==1 && (modifiers&1) && !(modifiers&2) && enableCameraControls) {  //translation mouse_button==2){
     rai::Vector trans = vec - downVec;
     trans.z = 0.;
     trans *= .1*(downFoc - downPos).length();
@@ -2388,7 +2398,8 @@ void OpenGL::MouseMotion(int _x, int _y) {
     needsUpdate=true;
   }
   
-  if(mouse_button==3 && !modifiers) {  //zooming || (mouse_button==1 && !(modifiers&GLUT_ACTIVE_SHIFT) && (modifiers&GLUT_ACTIVE_CTRL))){
+  if(mouse_button==3 && !modifiers && enableCameraControls) {  //zooming || (mouse_button==1 && !(modifiers&GLUT_ACTIVE_SHIFT) && (modifiers&GLUT_ACTIVE_CTRL))){    
+    LOG(0) << "This should zoom but is not implemented";
   }
 
   //step through all callbacks

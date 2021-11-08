@@ -164,8 +164,11 @@ struct OpenGL {
   Signaler watching;
   OpenGLDrawOptions drawOptions;
 
+  bool fullscreen; ///<window starts in fullscreenmode on the primary screen
+  bool enableCameraControls; ///<camera can be tilted, rotated, zoomed in/out if controls are enabled 
+
   /// @name constructors & destructors
-  OpenGL(const char* title="rai::OpenGL", int w=400, int h=400, bool _offscreen=false);
+  OpenGL(const char* title="rai::OpenGL", int w=400, int h=400, bool _offscreen=false, bool _fullscreen=false, bool enableCC=true);
   //OpenGL(void *parent, const char* title="rai::OpenGL", int w=400, int h=400, int posx=-1, int posy=-1);
   OpenGL(void* container); //special constructor: used when the underlying system-dependent class exists already
 
