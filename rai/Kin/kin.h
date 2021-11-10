@@ -120,7 +120,7 @@ struct Configuration : GLDrawer {
   uint getJointStateDimension() const;
   const arr& getJointState() const;
   arr getDofState(const DofL& dofs) const;
-  arr getJointState(const FrameL& F) const { return getDofState(getDofs(F)); }
+  arr getJointState(const FrameL& F) const { return getDofState(getDofs(F, false)); }
   arr getJointState(const uintA& F) const { return getJointState(getFrames(F)); } ///< same as getJointState() with getFrames()
   arr getJointStateSlice(uint t, bool activesOnly=true){  return getJointState(getJointsSlice(t, activesOnly));  }
   arr getFrameState() const { return getFrameState(frames); } ///< same as getFrameState() for all \ref frames
@@ -130,7 +130,7 @@ struct Configuration : GLDrawer {
   /// @name set state
   void setJointState(const arr& _q);
   void setDofState(const arr& _q, const DofL& dofs);
-  void setJointState(const arr& _q, const FrameL& F){ setDofState(_q, getDofs(F)); }
+  void setJointState(const arr& _q, const FrameL& F){ setDofState(_q, getDofs(F, false)); }
   void setJointState(const arr& _q, const uintA& F){ setJointState(_q, getFrames(F)); } ///< same as setJointState() with getFrames()
   void setJointStateSlice(const arr& _q, uint t, bool activesOnly=true){  setJointState(_q, getJointsSlice(t, activesOnly));  }
   void setFrameState(const arr& X){ setFrameState(X, frames); } ///< same as setFrameState() for all \ref frames

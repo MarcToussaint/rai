@@ -178,7 +178,7 @@ arr CeresInterface::solve() {
   NICO
 }
 
-Conv_MathematicalProgram_CeresProblem::Conv_MathematicalProgram_CeresProblem(MathematicalProgram_Factored& _MP) : MP(_MP) {
+Conv_MathematicalProgram_CeresProblem::Conv_MathematicalProgram_CeresProblem(const shared_ptr<MathematicalProgram_Factored>& _P) : P(_P) {
   NICO
 }
 

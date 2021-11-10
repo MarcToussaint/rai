@@ -518,12 +518,13 @@ arr KOMO::getConfiguration_X(int t) {
 }
 
 arr KOMO::getConfiguration_qOrg(int t) {
-  return pathConfig.getJointState(orgJointIndices + timeSlices(k_order+t,0)->ID);
+  return pathConfig.getDofState(pathConfig.getDofs(pathConfig.getFrames(orgJointIndices + timeSlices(k_order+t,0)->ID), false));
 }
 
 void KOMO::setConfiguration_qOrg(int t, const arr& q) {
-  return pathConfig.setJointState(q, orgJointIndices + timeSlices(k_order+t,0)->ID);
+  pathConfig.setDofState(q, pathConfig.getDofs(pathConfig.getFrames(orgJointIndices + timeSlices(k_order+t,0)->ID), false));
 }
+
 
 arr KOMO::getPath_qOrg(){
   arr q = getConfiguration_qOrg(0);

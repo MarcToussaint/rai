@@ -2807,7 +2807,7 @@ template<class T> T absMax(const rai::Array<T>& x) {
 
 /// get absolute min (using fabs)
 template<class T> void clip(const rai::Array<T>& x, T lo, T hi) {
-  for(uint i=0; i<x.N; i++) ::clip(x.p[i], lo, hi);
+  for(uint i=0; i<x.N; i++) rai::clip(x.p[i], lo, hi);
 }
 
 //===========================================================================

@@ -94,7 +94,7 @@ void RTControlStep(
   if(cmd.Ki.N==1) {
     I_term += Kp_base % (cmd.Ki.scalar() *0.01 * (cmd.q - q));
     //limits: [q_lo, q_hi, vel_limit, u_limit, int_limit]
-    for(uint i=0; i<q.N; i++) clip(I_term(i), -cmd.intLimitRatio*limits(i, 4), cmd.intLimitRatio*limits(i, 4));
+    for(uint i=0; i<q.N; i++) rai::clip(I_term(i), -cmd.intLimitRatio*limits(i, 4), cmd.intLimitRatio*limits(i, 4));
     u += I_term;
   }
 
