@@ -41,7 +41,7 @@ TaskControlThread::TaskControlThread(const Var<rai::Configuration>& _ctrl_config
   //initialize Kp and Kd
   Kp_base = zeros(q0.N);
   Kd_base = zeros(q0.N);
-  for(rai::Dof* j:ctrl_config.get()->activeJoints) {
+  for(rai::Dof* j:ctrl_config.get()->activeDofs) {
     arr* gains = j->frame->ats->find<arr>("gains");
     if(gains) {
       for(uint i=0; i<j->dim; i++) {

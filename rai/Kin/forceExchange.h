@@ -34,7 +34,7 @@ struct ForceExchange : Dof, NonCopyable, GLDrawer {
   arr force;
   arr torque;
 
-  ForceExchange(Frame& a, Frame& b, ForceExchangeType _type, ForceExchange* copyContact=nullptr);
+  ForceExchange(Frame& a, Frame& b, ForceExchangeType _type, const ForceExchange* copyContact=nullptr);
   ~ForceExchange();
 
   void setZero();

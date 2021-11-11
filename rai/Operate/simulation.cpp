@@ -110,7 +110,7 @@ void Simulation::setJointStateSafe(arr q_ref, StringA& jointsInLimit, StringA& c
   collisionPairs.clear();
 
   //-- first check limits -> box constraints -> clip
-  for(rai::Dof* j:KK.activeJoints) {
+  for(rai::Dof* j:KK.activeDofs) {
     bool active=false;
     if(j->limits.N) {
       for(uint d=0; d<j->dim; d++) {

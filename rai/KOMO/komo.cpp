@@ -1117,7 +1117,7 @@ void KOMO::setupPathConfig() {
 //    }
 
 //    uint nBefore = pathConfig.frames.N;
-    pathConfig.addCopies(C.frames, C.forces);
+    pathConfig.addCopies(C.frames, C.dofs);
 //    timeSlices[s] = pathConfig.frames({nBefore, -1});
 
   }
@@ -1126,7 +1126,7 @@ void KOMO::setupPathConfig() {
   //deactivate prefix dofs
   pathConfig.calc_indexedActiveJoints();
   uint firstID = timeSlices(k_order, 0)->ID;
-  for(Dof* dof:pathConfig.activeJoints){
+  for(Dof* dof:pathConfig.activeDofs){
     if(dof->frame->ID < firstID){
       if(!dof->mimicers.N) dof->active=false;
       else{

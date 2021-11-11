@@ -320,7 +320,7 @@ void PhysXInterface::pushFullState(const FrameL& frames, const arr& frameVelocit
 
 void PhysXInterface::setArticulatedBodiesKinematic(const rai::Configuration& C) {
   HALT("NOT SURE IF THIS IS DESIRED");
-  for(rai::Joint* j:C.activeJoints) if(j->type!=rai::JT_free) {
+  for(rai::Joint* j:C.activeDofs) if(j->type!=rai::JT_free) {
       if(j->from()->inertia && j->from()->inertia->type==rai::BT_dynamic) j->from()->inertia->type=rai::BT_kinematic;
       if(j->frame->inertia   && j->frame->inertia->type==rai::BT_dynamic) j->frame->inertia->type=rai::BT_kinematic;
     }

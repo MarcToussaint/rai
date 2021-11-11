@@ -162,8 +162,9 @@ void Configuration::copy(const Configuration& C, bool referenceSwiftOnCopy) {
   //  for(Proxy& p:proxies) { p.a = frames.elem(p.a->ID); p.b = frames.elem(p.b->ID);  p.coll.reset(); }
 
   //copy contacts
-  for(ForceExchange* ex:C.forces){
-    new ForceExchange(*frames.elem(ex->a.ID), *frames.elem(ex->b.ID), ex->type, ex);
+  for(Dof* dof:C.dofs){
+    const ForceExchange* ex = dof->fex();
+    if(ex) new ForceExchange(*frames.elem(ex->a.ID), *frames.elem(ex->b.ID), ex->type, ex);
   }
 
   //copy swift reference
@@ -301,7 +302,7 @@ Frame* Configuration::addObject(const char* name, const char* parent, ShapeType 
 #endif
 
 /// add copies of all given frames and forces, which can be from another Configuration -> \ref frames array becomes sliced! (a matrix)
-Frame* Configuration::addCopies(const FrameL& F, const ForceExchangeL& _forces) {
+Frame* Configuration::addCopies(const FrameL& F, const DofL& _dofs) {
   //prepare an index FId -> thisId
   uint maxId=0;
   for(Frame* f:F) if(f->ID>maxId) maxId=f->ID;
@@ -335,8 +336,9 @@ Frame* Configuration::addCopies(const FrameL& F, const ForceExchangeL& _forces) 
   }
 
   //copy force exchanges
-  for(ForceExchange* ex:_forces){
-    new ForceExchange(*frames.elem(FId2thisId(ex->a.ID)), *frames.elem(FId2thisId(ex->b.ID)), ex->type, ex);
+  for(Dof * dof:_dofs){
+    const ForceExchange* ex = dof->fex();
+    if(ex) new ForceExchange(*frames.elem(FId2thisId(ex->a.ID)), *frames.elem(FId2thisId(ex->b.ID)), ex->type, ex);
   }
 
   if(!(frames.N%F.N)) frames.reshape(-1, F.N);
@@ -346,7 +348,7 @@ Frame* Configuration::addCopies(const FrameL& F, const ForceExchangeL& _forces) 
 
 /// same as addCopies() with C.frames and C.forces
 void Configuration::addConfiguration(const Configuration& C, double tau){
-  Frame* f=addCopies(C.frames, C.forces);
+  Frame* f=addCopies(C.frames, C.dofs);
   if(tau>=0.) f->tau=tau;
 }
 
@@ -421,9 +423,9 @@ FrameL Configuration::getJointsSlice(const FrameL& slice, bool activesOnly) cons
 /// get the frame IDs of all active joints
 uintA Configuration::getJointIDs() const {
   ((Configuration*)this)->ensure_indexedJoints();
-  uintA joints(activeJoints.N);
+  uintA joints(activeDofs.N);
   uint i=0;
-  for(Dof* j:activeJoints) joints(i++) = j->frame->ID;
+  for(Dof* j:activeDofs) joints(i++) = j->frame->ID;
   return joints;
 }
 
@@ -431,7 +433,7 @@ uintA Configuration::getJointIDs() const {
 StringA Configuration::getJointNames() const {
   ((Configuration*)this)->ensure_q();
   StringA names(getJointStateDimension());
-  for(Dof* j:activeJoints) {
+  for(Dof* j:activeDofs) {
     String name=j->frame->name;
     if(!name) name <<'q' <<j->qIndex;
     if(j->dim==1) names(j->qIndex) <<name;
@@ -555,7 +557,7 @@ void Configuration::setJointState(const arr& _q) {
 
   _state_q_isGood=true;
   _state_proxies_isGood=false;
-  for(Dof* j:activeJoints) {
+  for(Dof* j:activeDofs) {
     if(j->joint() && j->joint()->type!=JT_tau) {
       j->frame->_state_setXBadinBranch();
     }
@@ -628,7 +630,7 @@ void Configuration::setActiveJoints(const DofL& joints){
   for(rai::Frame *f:frames) if(f->joint) f->joint->active=false;
   for(rai::Dof *j:joints) j->active=true;
   reset_q();
-  activeJoints = joints;
+  activeDofs = joints;
   calc_indexedActiveJoints(false);
   checkConsistency();
 }
@@ -693,7 +695,7 @@ void Configuration::selectJointsByAtt(const StringA& attNames, bool notThose) {
 /// returns diagonal of the metric in q-space determined by all joints' Joint::H
 arr Configuration::getCtrlMetric() const {
   arr H = zeros(getJointStateDimension());
-  for(const Dof* dof:activeJoints) {
+  for(const Dof* dof:activeDofs) {
     const Joint* j = dof->joint();
     if(j){
       double h=j->H;
@@ -730,7 +732,7 @@ arr Configuration::getNaturalCtrlMetric(double power) const {
   }
   if(!q.N) getJointStateDimension();
   arr Wdiag(q.N);
-  for(Dof* j:activeJoints) {
+  for(Dof* j:activeDofs) {
     for(uint i=0; i<j->dim; i++) {
       Wdiag(j->qIndex+i) = ::pow(BM(j->frame->ID), power);
     }
@@ -745,7 +747,7 @@ arr Configuration::getLimits() const {
   arr limits(N, 2);
   limits.setZero();
   for(uint i=0;i<N;i++) limits(i,1)=-1.;
-  for(Dof* j:activeJoints) {
+  for(Dof* j:activeDofs) {
     for(uint k=0; k<j->dim; k++) { //in case joint has multiple dimensions
       if(j->limits.N) {
         limits(j->qIndex+k, 0) = j->limits.elem(2*k+0); //lo
@@ -820,13 +822,16 @@ double Configuration::getTotalPenetration() {
 
 Graph Configuration::reportForces() {
   Graph G;
-  for(ForceExchange* f:forces) {
-    Graph& g = G.newSubgraph();
-    g.newNode<String>({"from"}, {}, f->a.name);
-    g.newNode<String>({"to"}, {}, f->b.name);
-    g.newNode<arr>({"force"}, {}, f->force);
-    g.newNode<arr>({"torque"}, {}, f->torque);
-    g.newNode<arr>({"poa"}, {}, f->poa);
+  for(Dof *dof : dofs) {
+    const ForceExchange* ex = dof->fex();
+    if(ex){
+      Graph& g = G.newSubgraph();
+      g.newNode<String>({"from"}, {}, ex->a.name);
+      g.newNode<String>({"to"}, {}, ex->b.name);
+      g.newNode<arr>({"force"}, {}, ex->force);
+      g.newNode<arr>({"torque"}, {}, ex->torque);
+      g.newNode<arr>({"poa"}, {}, ex->poa);
+    }
   }
   return G;
 }
@@ -891,7 +896,7 @@ void Configuration::clear() {
 void Configuration::reset_q() {
   q.clear();
   qInactive.clear();
-  activeJoints.clear();
+  activeDofs.clear();
 
   _state_indexedJoints_areGood=false;
   _state_q_isGood=false;
@@ -1042,7 +1047,7 @@ bool Configuration::checkConsistency() const {
   if(_state_q_isGood) {
     //count dimensions yourself and check...
     uint myqdim = 0;
-    for(Dof* j:activeJoints) {
+    for(Dof* j:activeDofs) {
       if(j->mimic) {
         CHECK_EQ(j->qIndex, j->mimic->qIndex, "");
       } else {
@@ -1140,7 +1145,7 @@ bool Configuration::checkConsistency() const {
   //check active sets
   if(_state_indexedJoints_areGood) {
     boolA jointIsInActiveSet = consts<byte>(false, frames.N);
-    for(Dof* j: activeJoints) { CHECK(j->active, ""); jointIsInActiveSet.elem(j->frame->ID)=true; }
+    for(Dof* j: activeDofs) { CHECK(j->active, ""); jointIsInActiveSet.elem(j->frame->ID)=true; }
     if(q.nd) {
       for(Frame* f: frames) if(f->joint && f->joint->active && f->joint->type!=JT_rigid) CHECK(jointIsInActiveSet(f->ID), "");
     }
@@ -1272,18 +1277,18 @@ void Configuration::calc_indexedActiveJoints(bool resetActiveJointSet) {
     reset_q();
 
     //-- collect active dofs
-    activeJoints.clear();
+    activeDofs.clear();
     for(Frame* f:frames){
       if(f->joint && !f->joint->dim) f->joint->active=false;
       if(f->joint && f->joint->active){
-        activeJoints.append(f->joint);
+        activeDofs.append(f->joint);
       }
       if(f->particleDofs && f->particleDofs->active){
-        activeJoints.append(f->particleDofs);
+        activeDofs.append(f->particleDofs);
       }
       for(rai::ForceExchange* fex:f->forces){
         if(fex->frame==f && fex->active){
-          activeJoints.append(fex);
+          activeDofs.append(fex);
         }
       }
     }
@@ -1295,7 +1300,7 @@ void Configuration::calc_indexedActiveJoints(bool resetActiveJointSet) {
 
   //-- count active DOFs
   uint qcount=0;
-  for(Dof* j: activeJoints) {
+  for(Dof* j: activeDofs) {
     if(!j->mimic) {
       j->qIndex = qcount;
 //      if(!j->uncertainty)
@@ -1343,7 +1348,7 @@ void Configuration::calcDofsFromConfig() {
 
   uint n=0;
   //-- active dofs
-  for(Dof* j: activeJoints) {
+  for(Dof* j: activeDofs) {
     if(j->mimic) continue; //don't count dependent joints
     CHECK_EQ(j->qIndex, n, "joint indexing is inconsistent");
     arr joint_q = j->calcDofsFromConfig();
@@ -1390,7 +1395,7 @@ void Configuration::calc_Q_from_q() {
   CHECK(_state_indexedJoints_areGood, "");
 
   uint n=0;
-  for(Dof* j: activeJoints) {
+  for(Dof* j: activeDofs) {
     if(!j->mimic) CHECK_EQ(j->qIndex, n, "joint indexing is inconsistent");
     j->setDofs(q, j->qIndex);
     if(!j->mimic) {
@@ -2446,11 +2451,11 @@ void Configuration::report(std::ostream& os) const {
 
   os <<"Config: q.N=" <<getJointStateDimension()
      <<" #frames=" <<frames.N
-     <<" #dofs=" <<activeJoints.N
+     <<" #dofs=" <<activeDofs.N
      <<" #shapes=" <<nShapes
      <<" #ucertainties=" <<nUc
      <<" #proxies=" <<proxies.N
-     <<" #forces=" <<forces.N
+     <<" #dofs=" <<dofs.N
      <<" #evals=" <<setJointStateCount
      <<endl;
 

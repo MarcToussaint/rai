@@ -61,14 +61,14 @@ struct Configuration : GLDrawer {
   unique_ptr<struct sConfiguration> self;
 
   //-- fundamental structure
-  FrameL frames;     ///< list of coordinate frames, with shapes, joints, inertias attached
-  ForceExchangeL forces; ///< list of force exchanges between frames
-  ProxyA proxies;    ///< list of current collision proximities between frames
-  arr q;             ///< the current configuration state (DOF) vector
+  FrameL frames;    ///< list of coordinate frames, with shapes, joints, inertias attached
+  DofL dofs;        ///< list of degrees of freedom
+  ProxyA proxies;   ///< list of current collision proximities between frames
+  arr q;            ///< the current configuration state (DOF) vector
   arr qInactive;    ///< configuration state of all inactive DOFs
 
   //-- data structure state (lazy evaluation leave the state structure out of sync)
-  DofL activeJoints; //list of currently active joints (computed with ensure_activeSets(); reset with reset_q())
+  DofL activeDofs; //list of currently active dofs (computed with ensure_activeSets(); reset with reset_q())
   bool _state_indexedJoints_areGood=false; // the active sets, incl. their topological sorting, are up to date
   bool _state_q_isGood=false; // the q-vector represents the current relative transforms (and force dofs)
   bool _state_proxies_isGood=false; // the proxies have been created for the current state
@@ -95,7 +95,7 @@ struct Configuration : GLDrawer {
   Frame* addFrame(const char* name, const char* parent=nullptr, const char* args=nullptr);
   Frame* addFile(const char* filename);
   void addAssimp(const char* filename);
-  Frame* addCopies(const FrameL& F, const ForceExchangeL& _forces);
+  Frame* addCopies(const FrameL& F, const DofL& _dofs);
   void addConfiguration(const Configuration& C, double tau=1.);
 
   /// @name get frames

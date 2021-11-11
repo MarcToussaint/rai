@@ -10,7 +10,7 @@
 #include "../Gui/opengl.h"
 #include "../Geo/pairCollision.h"
 
-rai::ForceExchange::ForceExchange(rai::Frame& a, rai::Frame& b, ForceExchangeType _type, rai::ForceExchange* copy)
+rai::ForceExchange::ForceExchange(rai::Frame& a, rai::Frame& b, ForceExchangeType _type, const ForceExchange* copy)
   : a(a), b(b), type(_type), scale(1.) {
   CHECK(&a != &b, "");
   CHECK_EQ(&a.C, &b.C, "contact between frames of different configuration!");
@@ -19,7 +19,7 @@ rai::ForceExchange::ForceExchange(rai::Frame& a, rai::Frame& b, ForceExchangeTyp
   a.C.reset_q();
   a.forces.append(this);
   b.forces.append(this);
-  a.C.forces.append(this);
+  a.C.dofs.append(this);
   setZero();
   if(copy) {
     qIndex=copy->qIndex; dim=copy->dim; limits=copy->limits; active=copy->active;
@@ -38,7 +38,7 @@ rai::ForceExchange::~ForceExchange() {
   a.C.reset_q();
   a.forces.removeValue(this);
   b.forces.removeValue(this);
-  a.C.forces.removeValue(this);
+  a.C.dofs.removeValue(this);
 }
 
 void rai::ForceExchange::setZero() {

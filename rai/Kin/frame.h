@@ -182,7 +182,7 @@ stdOutPipe(Frame)
 //===========================================================================
 
 struct Dof {
-  Frame* frame=0;      ///< this is the frame that Joint articulates! I.e., the output frame
+  Frame* frame=0;    ///< this is the frame that Joint articulates! I.e., the output frame
   bool active=true;  ///< if false, this dof is not considered part of the configuration's q-vector
   uint dim=UINT_MAX;
   uint qIndex=UINT_MAX;

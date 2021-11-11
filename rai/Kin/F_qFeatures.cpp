@@ -34,7 +34,7 @@ F_qItself::F_qItself(PickMode pickMode, const StringA& picks, const rai::Configu
       frameIDs.setAppend(f->ID);
     }
   }else if(pickMode==byExcludeJointNames) {
-    for(rai::Dof* j: C.activeJoints) {
+    for(rai::Dof* j: C.activeDofs) {
       if(picks.contains(j->frame->name)) continue;
       frameIDs.setAppend(j->frame->ID);
     }
@@ -54,7 +54,7 @@ void F_qItself::phi(arr& q, arr& J, const rai::Configuration& C) {
   if(!frameIDs.nd) {
     q = C.getJointState();
     if(relative_q0) {
-      for(rai::Dof* j: C.activeJoints) if(j->joint() && j->dim==1 && j->joint()->q0.N) q(j->qIndex) -= j->joint()->q0.scalar();
+      for(rai::Dof* j: C.activeDofs) if(j->joint() && j->dim==1 && j->joint()->q0.N) q(j->qIndex) -= j->joint()->q0.scalar();
     }
     if(!!J) J.setId(q.N);
   } else {
@@ -340,7 +340,7 @@ uint F_qQuaternionNorms::dim_phi2(const FrameL& F) {
 
 void F_qQuaternionNorms::setAllActiveQuats(const rai::Configuration& C){
   frameIDs.clear();
-  for(const rai::Dof* dof:C.activeJoints) {
+  for(const rai::Dof* dof:C.activeDofs) {
     const rai::Joint* j = dof->joint();
     if(j && (j->type==rai::JT_quatBall || j->type==rai::JT_free || j->type==rai::JT_XBall)) frameIDs.append(j->frame->ID);
   }
