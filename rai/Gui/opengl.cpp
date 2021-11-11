@@ -436,9 +436,16 @@ void OpenGL::openWindow() {
       glfwSetWindowCloseCallback(self->window, GlfwSpinner::_Close);
       glfwSetWindowRefreshCallback(self->window, GlfwSpinner::_Refresh);
  
+      if(noCursor){
+        glfwSetInputMode(self->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+//        if (glfwRawMouseMotionSupported()) glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+      }
+
       glfwSwapInterval(1);
       glfwMakeContextCurrent(nullptr);
     }
+    glfwGetCursorPos(self->window, &mouseposx, &mouseposy);
+    mouseposy = height-mouseposy;
 
     fg->mutex.unlock();
 
@@ -1550,10 +1557,10 @@ bool glUI::clickCallback(OpenGL& gl) { NICO }
 // OpenGL implementations
 //
 
-OpenGL::OpenGL(const char* _title, int w, int h, bool _offscreen, bool _fullscreen, bool _enableCC)
+OpenGL::OpenGL(const char* _title, int w, int h, bool _offscreen, bool _fullscreen, bool _enableCC, bool _noCursor)
   : title(_title), width(w), height(h), offscreen(_offscreen),
   reportEvents(false), topSelection(nullptr), fboId(0), rboColor(0), rboDepth(0),
-   fullscreen(_fullscreen), enableCameraControls(_enableCC) {
+   fullscreen(_fullscreen), enableCameraControls(_enableCC), noCursor(_noCursor) {
   //RAI_MSG("creating OpenGL=" <<this);
   self = make_unique<sOpenGL>(this); //this might call some callbacks (Reshape/Draw) already!
   init();
@@ -2356,7 +2363,7 @@ void OpenGL::WindowStatus(int status) {
 
 }
 
-void OpenGL::MouseMotion(int _x, int _y) {
+void OpenGL::MouseMotion(double _x, double _y) {
   auto _dataLock = dataLock(RAI_HERE);
   int w=width, h=height;
   _y = h-_y;

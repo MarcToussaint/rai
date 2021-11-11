@@ -145,7 +145,7 @@ struct OpenGL {
   const char* exitkeys;   ///< additional keys to exit watch mode
   int modifiers;          ///< stores modifier keys
   int mouse_button;       ///< stores which button was pressed
-  int mouseposx, mouseposy;  ///< current x- and y-position of mouse
+  double mouseposx, mouseposy;  ///< current x- and y-position of mouse
   int mouseView;
   bool mouseIsDown;
   rai::Array<GLSelect> selection; ///< list of all selected objects
@@ -166,9 +166,10 @@ struct OpenGL {
 
   bool fullscreen; ///<window starts in fullscreenmode on the primary screen
   bool enableCameraControls; ///<camera can be tilted, rotated, zoomed in/out if controls are enabled 
+  bool noCursor;
 
   /// @name constructors & destructors
-  OpenGL(const char* title="rai::OpenGL", int w=400, int h=400, bool _offscreen=false, bool _fullscreen=false, bool enableCC=true);
+  OpenGL(const char* title="rai::OpenGL", int w=400, int h=400, bool _offscreen=false, bool _fullscreen=false, bool enableCC=true, bool _noCursor=false);
   //OpenGL(void *parent, const char* title="rai::OpenGL", int w=400, int h=400, int posx=-1, int posy=-1);
   OpenGL(void* container); //special constructor: used when the underlying system-dependent class exists already
 
@@ -244,7 +245,7 @@ struct OpenGL {
   rai::Quaternion downRot;
   void Key(unsigned char key, int mods);
   void MouseButton(int button, int updown, int x, int y, int mods);
-  void MouseMotion(int x, int y);
+  void MouseMotion(double x, double y);
   void Reshape(int w, int h);
   void Scroll(int wheel, int direction, bool leftButton);
   //void Scroll(int wheel, int direction);
