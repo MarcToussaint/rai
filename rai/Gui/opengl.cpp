@@ -417,7 +417,10 @@ void OpenGL::openWindow() {
     }
     if(!title.N) title="GLFW window";
     if(fullscreen) {
-      self->window = glfwCreateWindow(width, height, title.p, glfwGetPrimaryMonitor(), nullptr); 
+      GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+      const GLFWvidmode * mode = glfwGetVideoMode(monitor);
+      //glfwSetWindowMonitor( _wnd, _monitor, 0, 0, mode->width, mode->height, 0 );
+      self->window = glfwCreateWindow(mode->width, mode->height, title.p, monitor, nullptr);
     }
     else{
       self->window = glfwCreateWindow(width, height, title.p, nullptr, nullptr); 
@@ -1548,8 +1551,9 @@ bool glUI::clickCallback(OpenGL& gl) { NICO }
 //
 
 OpenGL::OpenGL(const char* _title, int w, int h, bool _offscreen, bool _fullscreen, bool _enableCC)
-  : title(_title), width(w), height(h), offscreen(_offscreen), fullscreen(_fullscreen), enableCameraControls(_enableCC),
-  reportEvents(false), topSelection(nullptr), fboId(0), rboColor(0), rboDepth(0) {
+  : title(_title), width(w), height(h), offscreen(_offscreen),
+  reportEvents(false), topSelection(nullptr), fboId(0), rboColor(0), rboDepth(0),
+   fullscreen(_fullscreen), enableCameraControls(_enableCC) {
   //RAI_MSG("creating OpenGL=" <<this);
   self = make_unique<sOpenGL>(this); //this might call some callbacks (Reshape/Draw) already!
   init();
