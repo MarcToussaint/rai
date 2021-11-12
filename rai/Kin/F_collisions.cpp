@@ -107,7 +107,7 @@ void F_AccumulatedCollisions::phi2(arr& y, arr& J, const FrameL& F) {
   for(rai::Proxy& p: C.proxies) {
 //    if((p.a->ID>=F.first()->ID && p.a->ID<=F.last()->ID)
 //      || (p.b->ID>=F.first()->ID && p.b->ID<=F.last()->ID)) { //F.contains(p.a) && F.contains(p.b)) {
-    if(F.contains(p.a) || F.contains(p.b)) {
+    if(F.contains(p.a) ^ F.contains(p.b)) {
       CHECK(p.a->shape, "");
       CHECK(p.b->shape, "");
 
