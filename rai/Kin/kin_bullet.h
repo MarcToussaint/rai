@@ -24,7 +24,7 @@ struct BulletInterface {
   void hardSetVelocity(const rai::Frame* f, const arr& linearVel, const arr& angularVel);
 
 
-  void changeObjectType(rai::Frame* f, int _type);
+  void changeObjectType(rai::Frame* f, int _type, const arr& withVelocity={});
 
   void saveBulletFile(const char* filename);
   class btDiscreteDynamicsWorld* getDynamicsWorld();
