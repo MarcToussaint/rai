@@ -2327,14 +2327,8 @@ void OpenGL::Scroll(int wheel, int direction, bool leftButtonPressed) {
   LOG(0) << "Mouse Wheel Callback: " <<wheel <<' ' <<direction; 
 
   if(leftButtonPressed) {
-    bool needsUpdate = false; //shouldn't we update all callbacks available?
-    for(uint i=0; i< scrollCalls.N; i++) {
-      needsUpdate = needsUpdate || scrollCalls(i)->scrollCallback(*this, direction);
-    }
-
-
-  }
-  else if(enableCameraControls){
+    for(uint i=0; i< scrollCalls.N; i++) scrollCalls(i)->scrollCallback(*this, direction);
+  }else if((modifiers&1) && (modifiers&2) && enableCameraControls){
     rai::Camera* cam=&camera;
     for(mouseView=views.N; mouseView--;) {
       GLView* v = &views(mouseView);
