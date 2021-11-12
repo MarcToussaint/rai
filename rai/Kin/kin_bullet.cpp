@@ -375,6 +375,7 @@ btCollisionShape* BulletInterface_self::createCollisionShape(rai::Shape* s) {
 //    } break;
     case rai::ST_capsule:
     case rai::ST_cylinder:
+    case rai::ST_ssCylinder:
     case rai::ST_ssBox:
     case rai::ST_ssCvx:
 //    {
