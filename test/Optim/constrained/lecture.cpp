@@ -11,9 +11,10 @@
 // test standard constrained optimizers
 //
 
-void lectureDemo(const shared_ptr<MathematicalProgram>& P, arr& x_start=NoArr, uint iters=20){
+void lectureDemo(const shared_ptr<MathematicalProgram>& P, const arr& x_start=NoArr, uint iters=20){
   OptOptions options;
   LagrangianProblem lag(P, options);
+  lag.useLB = true;
 
   //-- initial x
   arr x = P->getInitializationSample();
@@ -27,8 +28,8 @@ void lectureDemo(const shared_ptr<MathematicalProgram>& P, arr& x_start=NoArr, u
   uint evals=0;
   for(uint k=0;k<iters;k++){
     checkJacobianCP(*P, x, 1e-4);
-    checkGradient(lag, x, 1e-4);
-    checkHessian (lag, x, 1e-4); //will throw errors: no Hessians for g!
+//    checkGradient(lag, x, 1e-4);
+//    checkHessian (lag, x, 1e-4); //will throw errors: no Hessians for g!
 
     lag.lagrangian(NoArr, NoArr, x);
 
@@ -72,5 +73,5 @@ void lectureDemo(const shared_ptr<MathematicalProgram>& P, arr& x_start=NoArr, u
   system("mv z.opt_all z.opt");
   if(x.N==2) gnuplot("load 'plt'", false, true);
 
-  if(!!x_start) x_start = x;
+//  if(!!x_start) x_start = x;
 }

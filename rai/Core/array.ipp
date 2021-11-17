@@ -990,6 +990,11 @@ template<class T> rai::Array<T> rai::Array<T>::operator()(int i, int j, std::ini
 /// get a subarray (e.g., row of a matrix); use in conjuction with operator()() to get a reference
 template<class T> rai::Array<T> rai::Array<T>::operator[](int i) const {
 //  return Array(*this, i);
+  if(isSparse()){
+    CHECK(typeid(T) == typeid(double), "is not double");
+    NIY;
+//    return ((arr*)(this))->sparse().getSparseRow(i));
+  }
   rai::Array<T> z;
   z.referToDim(*this, i);
   return z;
@@ -1517,6 +1522,10 @@ template<class T> void rai::Array<T>::setBlockVector(const rai::Array<T>& a, con
 
 /// write the matrix B into 'this' matrix at location lo0, lo1
 template<class T> void rai::Array<T>::setMatrixBlock(const rai::Array<T>& B, uint lo0, uint lo1) {
+  if(isSparse()){
+    sparse().add(B, lo0, lo1);
+    return;
+  }
   CHECK(B.nd==1 || B.nd==2, "");
   if(B.nd==2) {
     CHECK(nd==2 && lo0+B.d0<=d0 && lo1+B.d1<=d1, "");
@@ -1528,34 +1537,15 @@ template<class T> void rai::Array<T>::setMatrixBlock(const rai::Array<T>& B, uin
       } else {
         for(i=0; i<B.d0; i++) for(j=0; j<B.d1; j++) p[(lo0+i)*d1+lo1+j] = B.p[i*B.d1+j];   // operator()(lo0+i, lo1+j)=B(i, j);
       }
-    } else if(isSparseMatrix(*this)) {
-#if 1
-      sparse().add(B, lo0, lo1);
-#else
-      if(!isSparseMatrix(B)) {
-        for(i=0; i<B.d0; i++) for(j=0; j<B.d1; j++){
-            double z = B.p[i*B.d1+j];
-            if(z) sparse().addEntry(lo0+i, lo1+j) = z;
-        }
-      } else {
-        SparseMatrix& S = sparse();
-        const SparseMatrix& BS = B.sparse();
-        for(i=0; i<B.N; i++) {
-          S.addEntry(lo0 + BS.elems(i, 0), lo1 + BS.elems(i, 1)) = B.elem(i);
-        }
-      }
-#endif
     } else if(isRowShifted(*this)) {
       rowShifted().add(B, lo0, lo1);
-    }
-  } else {
+    } else NIY;
+  } else { //N.nd==1
     CHECK(nd==2 && lo0+B.d0<=d0 && lo1+1<=d1, "");
     uint i;
     if(!isSparseMatrix(*this)) {
       for(i=0; i<B.d0; i++) p[(lo0+i)*d1+lo1] = B.p[i];  // operator()(lo0+i, lo1+j)=B(i, j);
-    } else {
-      for(i=0; i<B.d0; i++) sparse().addEntry(lo0+i, lo1) = B.p[i];
-    }
+    } else NIY;
   }
 }
 

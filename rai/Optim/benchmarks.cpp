@@ -231,13 +231,17 @@ MP_Squared::MP_Squared(uint _n, double condition, bool random) : n(_n) {
 ChoiceConstraintFunction::ChoiceConstraintFunction() {
   which = (WhichConstraint) rai::getParameter<double>("constraintChoice");
   n = rai::getParameter<uint>("dim", 2);
-}
 
-uint ChoiceConstraintFunction::getDimension() {
-  return n;
-}
+  dimension = n;
 
-void ChoiceConstraintFunction::getFeatureTypes(ObjectiveTypeA& tt) {
+  bounds_lo.resize(n) = -2.;
+  bounds_up.resize(n) = +2.;
+  if(which==boundConstrained){
+      bounds_lo(0) = +0.5;
+  //    bounds_lo(1) = +0.51;
+  }
+
+  ObjectiveTypeA& tt = featureTypes;
   tt.clear();
   tt.append(OT_f);
   switch(which) {
@@ -263,15 +267,6 @@ void ChoiceConstraintFunction::getFeatureTypes(ObjectiveTypeA& tt) {
       tt.append(OT_ineq);
       break;
     default: HALT("not taken care of");
-  }
-}
-
-void ChoiceConstraintFunction::getBounds(arr& bounds_lo, arr& bounds_hi) {
-  bounds_lo.resize(n) = -2.;
-  bounds_hi.resize(n) = +2.;
-  if(which==boundConstrained){
-    bounds_lo(0) = +0.5;
-//    bounds_lo(1) = +0.51;
   }
 }
 

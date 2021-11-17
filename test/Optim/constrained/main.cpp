@@ -4,7 +4,7 @@
 #include <Optim/constrained.h>
 
 //lecture.cpp:
-void lectureDemo(const shared_ptr<MathematicalProgram>& P, arr& x_start=NoArr, uint iters=20);
+void lectureDemo(const shared_ptr<MathematicalProgram>& P, const arr& x_start=NoArr, uint iters=20);
 
 //==============================================================================
 //
@@ -93,7 +93,7 @@ int main(int argc,char** argv){
   ChoiceConstraintFunction F;
 //  RandomLPFunction F;
 //  SimpleConstraintFunction F;
-  lectureDemo(F.ptr());
+  lectureDemo(F.ptr(), {.2,.2});
 //  testConstraint2(F);
 
 //  testCoveringSphere();

@@ -67,7 +67,7 @@ double Conv_MathematicalProgram_ScalarProblem::scalar(arr& g, arr& H, const arr&
     if(hasF) { //For f-terms, the Hessian must be given explicitly, and is not \propto J^T J
       arr fH;
       P->getFHessian(fH, x);
-      H += fH;
+      if(fH.N) H += fH;
     }
 
     if(!H.special) H.reshape(x.N, x.N);
