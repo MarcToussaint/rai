@@ -22,6 +22,7 @@
 #endif
 
 namespace rai {
+
 template<class T>
 bool getParameterBase(T& x, const char* key, bool hasDefault, const T* Default) {
   if(getParameters()->get<T>(x, key)) {
@@ -49,21 +50,34 @@ template<class T> T getParameter(const char* tag) {
   getParameterBase<T>(x, tag, false, (T*)NULL);
   return x;
 }
+
 template<class T> T getParameter(const char* tag, const T& Default) {
   T x;
   getParameterBase<T>(x, tag, true, &Default);
   return x;
 }
+
 template<class T> void getParameter(T& x, const char* tag) {
   getParameterBase(x, tag, false, (T*)NULL);
 }
+
 template<class T> void getParameter(T& x, const char* tag, const T& Default) {
   getParameterBase<T>(x, tag, true, &Default);
 }
+
 template<class T> bool checkParameter(const char* tag) {
   T x;
   return getParameterBase(x, tag, true, (T*)NULL);
 }
+
+template<class T> void setParameter(const char* key, const T& x){
+  T* y = getParameters()->find<T>(key);
+  if(y) *y = x;
+  else{
+    getParameters()->newNode<T>(key, {}, x);
+  }
 }
+
+}//namespace
 
 #endif

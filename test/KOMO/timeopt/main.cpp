@@ -6,7 +6,7 @@
 
 //===========================================================================
 
-arr getPath(){
+void createPath(){
   rai::Configuration C("arm.g");
   cout <<"configuration space dim=" <<C.getJointStateDimension() <<endl;
   
@@ -31,7 +31,7 @@ arr getPath(){
   komo.view(false, "result");
 //  while(komo.view_play(true));
 
-  return komo.getPath_qOrg();
+  FILE("z.path") <<komo.getPath_qOrg();
 }
 
 //===========================================================================
@@ -48,6 +48,8 @@ struct TimeOpt : MathematicalProgram {
   bool animate=true;
   arr delta;
   arr tau;
+  double prefixTau = 1e-1;
+  uint jacSize=0;
 
   TimeOpt(const arr& _path, uint _prefix, double _maxVel, double _maxAcc, double _maxJer, double _smooth)
     : path(_path),
@@ -71,14 +73,15 @@ struct TimeOpt : MathematicalProgram {
 
     //-- init feature types
     uint dimPhi = 1;
-    if(smooth>0) dimPhi+=n-2;
-    if(maxVel>0) dimPhi+=2*n*d;
-    if(maxAcc>0) dimPhi+=2*n*d;
-    if(maxJer>0) dimPhi+=2*n*d;
+    jacSize += n;
+    if(smooth>0){ dimPhi+=n-2; jacSize+=(n-2)*3; }
+    if(maxVel>0){ dimPhi+=2*n*d; jacSize+=2*n*d; }
+    if(maxAcc>0){ dimPhi+=2*n*d; jacSize+=2*n*d*4; }
+    if(maxJer>0){ dimPhi+=2*n*d; jacSize+=2*n*d*9; }
     featureTypes.resize(dimPhi);
 
     //all objectives are inequalities...
-    featureTypes = OT_ineq;
+    featureTypes = OT_ineqB;
 
     //..except for the total time cost
     featureTypes(0) = OT_f;
@@ -93,14 +96,20 @@ struct TimeOpt : MathematicalProgram {
     CHECK_EQ(tau.N, n, "");
 
     phi.resize(featureTypes.N).setZero();
-    if(!!J) J.sparse().resize(phi.N, n, 0);
+    rai::SparseMatrix* JS=0;
+    uint Jsize=0;
+    if(!!J){
+      JS = &J.sparse();
+      JS->resize(phi.N, n, jacSize);
+    }
     uint m=0;
+    uint z=0;
 
     //total time cost
     double a = 1e1;
     phi(0) = a*sum(tau);
     if(!!J){
-      for(uint i=0;i<n;i++) J.elem(0,i) += a;
+      for(uint i=0;i<n;i++) JS->entry(0, i, z++) += a;
     }
     m += 1;
 
@@ -110,9 +119,9 @@ struct TimeOpt : MathematicalProgram {
 //        phi(m) = smooth*(tau(t+3) - 3.*tau(t+2) + 3.*tau(t+1) - tau(t));
         phi(m) = smooth*(tau(t+2) - 2.*tau(t+1) + tau(t));
         if(!!J){
-          J.elem(m, t) += smooth;
-          J.elem(m, t+1) -= 2.*smooth;
-          J.elem(m, t+2) += smooth;
+          JS->entry(m, t, z++) += smooth;
+          JS->entry(m, t+1, z++) -= 2.*smooth;
+          JS->entry(m, t+2, z++) += smooth;
 //          J(m, t+3) += smooth;
         }
         m++;
@@ -125,7 +134,7 @@ struct TimeOpt : MathematicalProgram {
       for(uint t=0;t<n;t++) for(uint i=0;i<d;i++){
         phi(m) = sign*delta(prefix+t, i);
         phi(m) -= tau(t) * maxVel;
-        if(!!J) J.elem(m, t) = -maxVel;
+        if(!!J) JS->entry(m, t, z++) = -maxVel;
         m++;
       }
     }
@@ -134,15 +143,15 @@ struct TimeOpt : MathematicalProgram {
     if(maxAcc>0) for(uint s=0;s<2;s++){
       double sign = (s?1.:-1.);
       for(uint t=0;t<n;t++) for(uint i=0;i<d;i++){
-        double tau0 = (t>=0 ? tau(t) : 1e-2);
-        double tau1 = (t>0 ? tau(t-1) : 1e-2);
+        double tau0 = (t>=0 ? tau(t) : prefixTau);
+        double tau1 = (t>0 ? tau(t-1) : prefixTau);
         phi(m) = sign*(delta(prefix+t, i)/tau0 - delta(prefix+t-1, i)/tau1);
         phi(m) -= 0.5*(tau0+tau1)*maxAcc;
         if(!!J){
-          J.elem(m, t) -= sign*delta(prefix+t, i)/rai::sqr(tau0);
-          if(t>0) J.elem(m, t-1) += sign*delta(prefix+t-1, i)/rai::sqr(tau1);
-          J.elem(m, t) -= 0.5*maxAcc;
-          if(t>0) J.elem(m, t-1) -= 0.5*maxAcc;
+          JS->entry(m, t, z++) -= sign*delta(prefix+t, i)/rai::sqr(tau0);
+          if(t>0) JS->entry(m, t-1, z++) += sign*delta(prefix+t-1, i)/rai::sqr(tau1);
+          JS->entry(m, t, z++) -= 0.5*maxAcc;
+          if(t>0) JS->entry(m, t-1, z++) -= 0.5*maxAcc;
         }
         m++;
       }
@@ -152,24 +161,24 @@ struct TimeOpt : MathematicalProgram {
     if(maxJer>0) for(uint s=0;s<2;s++){
       double sign = (s?1.:-1.);
       for(uint t=0;t<n;t++) for(uint i=0;i<d;i++){
-        double tau0 = (t>=0 ? tau(t) : 1e-2);
-        double tau1 = (t>0 ? tau(t-1) : 1e-2);
-        double tau2 = (t>1 ? tau(t-2) : 1e-2);
+        double tau0 = (t>=0 ? tau(t) : prefixTau);
+        double tau1 = (t>0 ? tau(t-1) : prefixTau);
+        double tau2 = (t>1 ? tau(t-2) : prefixTau);
         phi(m) = sign*(delta(prefix+t, i)/tau0 - delta(prefix+t-1, i)/tau1)/(tau0+tau1);
         phi(m) -= sign*(delta(prefix+t-1, i)/tau1 - delta(prefix+t-2, i)/tau2)/(tau1+tau2);
         phi(m) -= 0.5*tau1*maxJer;
         if(!!J){
-          J.elem(m, t) -= sign*delta(prefix+t, i)/rai::sqr(tau0*(tau0+tau1))*(2.*tau0+tau1);
-          if(t>0) J.elem(m, t-1) -= sign*delta(prefix+t, i)/rai::sqr(tau0*(tau0+tau1))*tau0;
-          J.elem(m, t) += sign*delta(prefix+t-1, i)/rai::sqr(tau1*(tau0+tau1))*tau1;
-          if(t>0) J.elem(m, t-1) += sign*delta(prefix+t-1, i)/rai::sqr(tau1*(tau0+tau1))*(2.*tau1+tau0);
+          JS->entry(m, t, z++) -= sign*delta(prefix+t, i)/rai::sqr(tau0*(tau0+tau1))*(2.*tau0+tau1);
+          if(t>0) JS->entry(m, t-1, z++) -= sign*delta(prefix+t, i)/rai::sqr(tau0*(tau0+tau1))*tau0;
+          JS->entry(m, t, z++) += sign*delta(prefix+t-1, i)/rai::sqr(tau1*(tau0+tau1))*tau1;
+          if(t>0) JS->entry(m, t-1, z++) += sign*delta(prefix+t-1, i)/rai::sqr(tau1*(tau0+tau1))*(2.*tau1+tau0);
 
-          if(t>0) J.elem(m, t-1) += sign*delta(prefix+t-1, i)/rai::sqr(tau1*(tau1+tau2))*(2.*tau1+tau2);
-          if(t>1) J.elem(m, t-2) += sign*delta(prefix+t-1, i)/rai::sqr(tau1*(tau1+tau2))*tau1;
-          if(t>0) J.elem(m, t-1) -= sign*delta(prefix+t-2, i)/rai::sqr(tau2*(tau1+tau2))*tau2;
-          if(t>1) J.elem(m, t-2) -= sign*delta(prefix+t-2, i)/rai::sqr(tau2*(tau1+tau2))*(2.*tau2+tau1);
+          if(t>0) JS->entry(m, t-1, z++) += sign*delta(prefix+t-1, i)/rai::sqr(tau1*(tau1+tau2))*(2.*tau1+tau2);
+          if(t>1) JS->entry(m, t-2, z++) += sign*delta(prefix+t-1, i)/rai::sqr(tau1*(tau1+tau2))*tau1;
+          if(t>0) JS->entry(m, t-1, z++) -= sign*delta(prefix+t-2, i)/rai::sqr(tau2*(tau1+tau2))*tau2;
+          if(t>1) JS->entry(m, t-2, z++) -= sign*delta(prefix+t-2, i)/rai::sqr(tau2*(tau1+tau2))*(2.*tau2+tau1);
 
-          if(t>0) J.elem(m, t-1) -= 0.5*maxJer;
+          if(t>0) JS->entry(m, t-1, z++) -= 0.5*maxJer;
         }
         m++;
       }
@@ -213,16 +222,21 @@ struct TimeOpt : MathematicalProgram {
 //===========================================================================
 
 void timeOpt(){
-  arr path = getPath();
-  path = path.cols(1,7);
+  arr path;
+  FILE("z.path") >>path;
+//  path = path.cols(0,7);
   uint k=2;
   arr x0=path[0];
   for(uint i=0;i<k;i++){ path.prepend(x0); }
 
-  TimeOpt mp(path, k, 1., 4., 30., 1e1);
+  TimeOpt mp(path, k, 2., 4., 30., 1e1);
   mp.animate=false;
 //  checkJacobianCP(mp, tau.sub(k,-1), 1e-6);
 //  rai::wait();
+
+  rai::setParameter<double>("opt/maxStep", 1e-1);
+  rai::setParameter<double>("opt/stopTolerance", 1e-6);
+  rai::setParameter<double>("opt/damping", 1e-2);
 
   rai::Enum<MP_SolverID> sid (rai::getParameter<rai::String>("solver"));
   MP_Solver solver;
@@ -234,7 +248,7 @@ void timeOpt(){
   auto ret = solver.solve();
   cout <<*ret <<endl;
 
-  checkJacobianCP(mp, ret->x, 1e-6);
+//  checkJacobianCP(mp, ret->x, 1e-6);
   arr tau(path.d0);
   tau=.01;
   tau({k,-1}) = mp.tau;
@@ -257,6 +271,7 @@ int main(int argc,char** argv){
 
 //  rnd.clockSeed();
 
+  createPath();
   timeOpt();
 
   return 0;

@@ -1919,7 +1919,11 @@ Eigen::SparseMatrix<double> conv_sparseArr2sparseEigen(const rai::SparseMatrix& 
   E.resize(Z.d0, Z.d1);
   std::vector<Eigen::Triplet<double>> triplets;
   triplets.reserve(Z.N);
-  for(uint k=0; k<Z.N; k++) triplets.push_back(Eigen::Triplet<double>(S.elems.p[2*k], S.elems.p[2*k+1], Z.p[k]));
+  for(uint k=0; k<Z.N; k++){
+    int i=S.elems.p[2*k];
+    int j=S.elems.p[2*k+1];
+    if(i>=0 && j>=0) triplets.push_back(Eigen::Triplet<double>(i, j, Z.p[k]));
+  }
   E.setFromTriplets(triplets.begin(), triplets.end());
   return E;
 //  cout <<E <<endl;

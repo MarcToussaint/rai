@@ -101,7 +101,7 @@ bool OptConstrained::step() {
 
   //check for no constraints
   bool newtonOnce=false;
-  if(L.get_dimOfType(OT_ineq)==0 && L.get_dimOfType(OT_eq)==0) {
+  if(L.get_dimOfType(OT_ineq)==0 && L.get_dimOfType(OT_ineqB)==0 && L.get_dimOfType(OT_eq)==0) {
     if(opt.verbose>0) cout <<"** optConstr. NO CONSTRAINTS -> run Newton once and stop" <<endl;
     newtonOnce=true;
   }
