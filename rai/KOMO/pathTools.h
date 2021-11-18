@@ -18,6 +18,11 @@
 arr getVelocities_centralDifference(const arr& q, double tau);
 arr getAccelerations_centralDifference(const arr& q, double tau);
 
+//KOMO-convention (backward) finite differencing
+arr getVel(const arr& x, const arr& tau);
+arr getAcc(const arr& x, const arr& tau);
+arr getJerk(const arr& x, const arr& tau);
+
 double getMinDuration(const arr& q, double maxVel=1., double maxAcc=1.);
 
 rai::Spline getSpline(const arr& q, double duration=1., uint degree=2);

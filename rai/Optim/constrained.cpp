@@ -70,6 +70,10 @@ OptConstrained::OptConstrained(arr& _x, arr& _dual, const shared_ptr<Mathematica
     if(lo.N || up.N) newton.setBounds(lo, up);
   }
 
+  if(opt.constrainedMethod==logBarrier){
+    L.useLB=true;
+  }
+
   newton.options.verbose = rai::MAX(opt.verbose-1, 0);
 
   if(opt.verbose>0) cout <<"***** optConstrained: method=" <<MethodName[opt.constrainedMethod] <<" bounds: " <<(opt.boundedNewton?"yes":"no") <<endl;

@@ -29,7 +29,8 @@ struct SolverReturn {
   bool feasible=false;
   double sos=-1., f=-1., ineq=-1., eq=-1.;
   void write(ostream& os) const{
-    os <<"SolverReturn: time: " <<time <<" feasible: " <<feasible;
+    os <<"SolverReturn: time: " <<time <<" evals: " <<evals;
+    os <<" feasible: " <<feasible;
     os <<" sos: " <<sos <<" f: " <<f <<" ineq: " <<ineq <<" eq: " <<eq;
   }
 };
