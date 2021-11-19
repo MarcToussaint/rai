@@ -148,7 +148,7 @@ void BulletInterface::pullDynamicStates(FrameL& frames, arr& frameVelocities) {
   pullPoses(frames, self->actors, frameVelocities, false);
 }
 
-void BulletInterface::changeObjectType(rai::Frame* f, int _type) {
+void BulletInterface::changeObjectType(rai::Frame* f, int _type, const arr& withVelocity) {
   rai::Enum<rai::BodyType> type((rai::BodyType)_type);
   if(self->actorTypes(f->ID) == type) {
     LOG(-1) <<"frame " <<*f <<" is already of type " <<type;
@@ -163,6 +163,9 @@ void BulletInterface::changeObjectType(rai::Frame* f, int _type) {
   } else if(type==rai::BT_dynamic) {
     a->setCollisionFlags(a->getCollisionFlags() & ~btCollisionObject::CF_KINEMATIC_OBJECT);
     a->setActivationState(DISABLE_DEACTIVATION);
+    if(withVelocity.N){
+      a->setLinearVelocity(btVector3(withVelocity(0), withVelocity(1), withVelocity(2)));
+    }
   } else NIY;
   self->actorTypes(f->ID) = type;
 }
@@ -200,6 +203,31 @@ void BulletInterface::pushFullState(const FrameL& frames, const arr& frameVeloci
       }
     }
   }
+  self->dynamicsWorld->stepSimulation(.01); //without this, two consequtive pushFullState won't work! (something active tag?)
+}
+
+void BulletInterface::hardSetVelocity(const rai::Frame* f, const arr& linearVel, const arr& angularVel) {
+  LOG(0) << "Setting the velocity";
+  if(self->actors.N <= f->ID) return;
+  btRigidBody* b = self->actors(f->ID);
+  if(!b) return; //f is not an actor
+
+  CHECK_EQ(self->actorTypes(f->ID), rai::BT_dynamic, "");
+  b->clearForces();
+  if(linearVel.N){
+    b->setLinearVelocity(btVector3(linearVel(0), linearVel(1), linearVel(2)));
+  }else{
+    b->setLinearVelocity(btVector3(0., 0., 0.));
+  }
+  if(angularVel.N) {
+    //b->setAngularVelocity(btVector3(frameVelocities(f->ID, 1, 0), frameVelocities(f->ID, 1, 1), frameVelocities(f->ID, 1, 2)));
+    b->setAngularVelocity(btVector3(angularVel(0), angularVel(1), angularVel(2) ));
+  }
+  else {
+        b->setAngularVelocity(btVector3(0., 0., 0.));
+  }
+    
+  
   self->dynamicsWorld->stepSimulation(.01); //without this, two consequtive pushFullState won't work! (something active tag?)
 }
 
@@ -350,6 +378,7 @@ btCollisionShape* BulletInterface_self::createCollisionShape(rai::Shape* s) {
 //    } break;
     case rai::ST_capsule:
     case rai::ST_cylinder:
+    case rai::ST_ssCylinder:
     case rai::ST_ssBox:
     case rai::ST_ssCvx:
 //    {
