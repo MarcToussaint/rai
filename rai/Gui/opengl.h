@@ -119,6 +119,7 @@ struct OpenGL {
   struct GLHoverCall { virtual bool hoverCallback(OpenGL&) = 0; };
   struct GLClickCall { virtual bool clickCallback(OpenGL&) = 0; };
   struct GLKeyCall  { virtual bool keyCallback(OpenGL&) = 0; };
+  struct GLScrollCall { virtual bool scrollCallback(OpenGL&, int) = 0; };
   struct GLEvent    { int button, key, x, y; float dx, dy; void set(int b, int k, int _x, int _y, float _dx, float _dy) { button=b; key=k; x=_x; y=_y; dx=_dx; dy=_dy; } };
   struct GLSelect   { int name; double dmin, dmax, x, y, z; };
   struct GLView     { double le, ri, bo, to;  rai::Array<GLDrawer*> drawers;  rai::Camera camera;  byteA* img;  rai::String text;  GLView() { img=nullptr; le=bo=0.; ri=to=1.; } };
@@ -130,6 +131,7 @@ struct OpenGL {
   rai::Array<GLHoverCall*> hoverCalls; ///< list of hover callbacks
   rai::Array<GLClickCall*> clickCalls; ///< list of click callbacks
   rai::Array<GLKeyCall*> keyCalls;     ///< list of click callbacks
+  rai::Array<GLScrollCall*> scrollCalls;     ///< list of click callbacks
   rai::Array<struct CstyleDrawer*> toBeDeletedOnCleanup;
 
   rai::String title;     ///< the window title
@@ -163,11 +165,11 @@ struct OpenGL {
   OpenGLDrawOptions drawOptions;
 
   bool fullscreen; ///<window starts in fullscreenmode on the primary screen
-  bool enableCameraControls; ///<camera can be tilted, rotated, zoomed in/out if controls are enabled 
+  bool hideCameraControls; ///<camera can be tilted, rotated, zoomed in/out if controls are enabled
   bool noCursor;
 
   /// @name constructors & destructors
-  OpenGL(const char* title="rai::OpenGL", int w=400, int h=400, bool _offscreen=false, bool _fullscreen=false, bool enableCC=true, bool _noCursor=false);
+  OpenGL(const char* title="rai::OpenGL", int w=400, int h=400, bool _offscreen=false, bool _fullscreen=false, bool _hideCameraControls=false, bool _noCursor=false);
   //OpenGL(void *parent, const char* title="rai::OpenGL", int w=400, int h=400, int posx=-1, int posy=-1);
   OpenGL(void* container); //special constructor: used when the underlying system-dependent class exists already
 

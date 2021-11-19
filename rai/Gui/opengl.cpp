@@ -1555,10 +1555,10 @@ bool glUI::clickCallback(OpenGL& gl) { NICO }
 // OpenGL implementations
 //
 
-OpenGL::OpenGL(const char* _title, int w, int h, bool _offscreen, bool _fullscreen, bool _enableCC, bool _noCursor)
+OpenGL::OpenGL(const char* _title, int w, int h, bool _offscreen, bool _fullscreen, bool _hideCameraControls, bool _noCursor)
   : title(_title), width(w), height(h), offscreen(_offscreen),
-  reportEvents(false), topSelection(nullptr), fboId(0), rboColor(0), rboDepth(0),
-   fullscreen(_fullscreen), enableCameraControls(_enableCC), noCursor(_noCursor) {
+   reportEvents(false), topSelection(nullptr), fboId(0), rboColor(0), rboDepth(0),
+   fullscreen(_fullscreen), hideCameraControls(_hideCameraControls), noCursor(_noCursor) {
   //RAI_MSG("creating OpenGL=" <<this);
   self = make_unique<sOpenGL>(this); //this might call some callbacks (Reshape/Draw) already!
   init();
@@ -2219,6 +2219,7 @@ void OpenGL::Key(unsigned char key, int mods) {
 void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) {
   auto _dataLock = dataLock(RAI_HERE);
   int w=width, h=height;
+  bool needsUpdate=false;
   _y = h-_y;
   CALLBACK_DEBUG("Mouse Click Callback: " <<button <<' ' <<downPressed <<' ' <<_x <<' ' <<_y);
   mouse_button=1+button;
@@ -2243,15 +2244,15 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) 
     getSphereVector(vec, _x, _y, 0, w, 0, h);
     v=0;
   }
-  CALLBACK_DEBUG("associated to view " <<mouseView <<" x=" <<vec.x <<" y=" <<vec.y <<endl);  
+  CALLBACK_DEBUG("associated to view " <<mouseView <<" x=" <<vec.x <<" y=" <<vec.y <<endl);
 
   if(!downPressed) {  //down press
     if(mouseIsDown) {  return; } //the button is already down (another button was pressed...)
     //CHECK(!mouseIsDown, "I thought the mouse is up...");
     mouseIsDown=true;
-    drawFocus = true;
+    if(!hideCameraControls || ((modifiers&1) && (modifiers&2))) drawFocus = true;
   } else {
-    if(!mouseIsDown) {  return; } //the button is already up (another button was pressed...)
+    if(!mouseIsDown) return; //the button is already up (another button was pressed...)
     //CHECK(mouseIsDown, "mouse-up event although the mouse is not down???");
     mouseIsDown=false;
     drawFocus = false;
@@ -2262,7 +2263,7 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) 
   downPos=cam->X.pos;
   downFoc=cam->foc;
 
-  //check object clicked on
+  //-- ctrl-LEFT -> check object clicked on
   if(mouse_button==1 && !(modifiers&1) && (modifiers&2)) {
     drawFocus = false;
     if(!downPressed) {
@@ -2286,10 +2287,11 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) 
   }
 
   //mouse scroll wheel:
-  if(mouse_button==4 && !downPressed) cam->X.pos += downRot*Vector_z * (.1 * (downPos-downFoc).length());
-  if(mouse_button==5 && !downPressed) cam->X.pos -= downRot*Vector_z * (.1 * (downPos-downFoc).length());
+  if(mouse_button==4 && !hideCameraControls && !downPressed) cam->X.pos += downRot*Vector_z * (.1 * (downPos-downFoc).length());
+  if(mouse_button==5 && !hideCameraControls && !downPressed) cam->X.pos -= downRot*Vector_z * (.1 * (downPos-downFoc).length());
 
-  if(mouse_button==3 && enableCameraControls) {  //focus on selected point
+  //-- RIGHT -> focus on selected point
+  if(mouse_button==3 && (!hideCameraControls || ((modifiers&1) && (modifiers&2)))) {
     double d = captureDepth(mouseposy, mouseposx);
     if(d<.001 || d==1.) {
       cout <<"NO SELECTION: SELECTION DEPTH = " <<d <<' ' <<camera.glConvertToTrueDepth(d) <<endl;
@@ -2306,22 +2308,22 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) 
       }
       LOG(1) <<"FOCUS: world coords: " <<x;
     }
+    needsUpdate=true;
   }
 
   //step through all callbacks
-  for(uint i=0; i<clickCalls.N; i++) clickCalls(i)->clickCallback(*this);
+  for(uint i=0; i<clickCalls.N; i++) needsUpdate = needsUpdate || clickCalls(i)->clickCallback(*this);
 
-  postRedrawEvent(true);
+  if(needsUpdate) postRedrawEvent(true);
 }
 
 void OpenGL::Scroll(int wheel, int direction) {
   auto _dataLock = dataLock(RAI_HERE);
   CALLBACK_DEBUG("Mouse Wheel Callback: " <<wheel <<' ' <<direction);
-  LOG(0) << "Mouse Wheel Callback: " <<wheel <<' ' <<direction; 
+  bool needsUpdate=false;
 
-  if(leftButtonPressed) {
-    for(uint i=0; i< scrollCalls.N; i++) scrollCalls(i)->scrollCallback(*this, direction);
-  }else if((modifiers&1) && (modifiers&2) && enableCameraControls){
+  //-- SCROLL -> zoom
+  if(!hideCameraControls || ((modifiers&1) && (modifiers&2))){
     rai::Camera* cam=&camera;
     for(mouseView=views.N; mouseView--;) {
       GLView* v = &views(mouseView);
@@ -2334,8 +2336,13 @@ void OpenGL::Scroll(int wheel, int direction) {
     if(direction>0) cam->X.pos += cam->X.rot*Vector_z * (.1 * (cam->X.pos-cam->foc).length());
     else            cam->X.pos -= cam->X.rot*Vector_z * (.1 * (cam->X.pos-cam->foc).length());
 
-    postRedrawEvent(true);
+    needsUpdate=true;
   }
+
+  //step through all callbacks
+  for(uint i=0; i<scrollCalls.N; i++) needsUpdate = needsUpdate || scrollCalls(i)->scrollCallback(*this, direction);
+
+  if(needsUpdate) postRedrawEvent(true);
 }
 
 void OpenGL::WindowStatus(int status) {
@@ -2365,8 +2372,9 @@ void OpenGL::MouseMotion(double _x, double _y) {
   mouseposx=_x; mouseposy=_y;
 
   bool needsUpdate=false;
-  //right button and SHIFT CTRL
-  if(mouse_button==1 && (modifiers&1) && (modifiers&2) && enableCameraControls) {  //rotation
+  
+  //-- LEFT -> rotation
+  if(mouse_button==1 && ((!hideCameraControls && !modifiers) || (hideCameraControls && (modifiers&1) && (modifiers&2)))) {
     rai::Quaternion rot;
     if(downVec.z<.1) {
       //margin:
@@ -2382,7 +2390,8 @@ void OpenGL::MouseMotion(double _x, double _y) {
     needsUpdate=true;
   }
   
-  if(mouse_button==1 && (modifiers&1) && !(modifiers&2) && enableCameraControls) {  //translation mouse_button==2){
+  //-- shift-LEFT -> translation
+  if(mouse_button==1 && (!hideCameraControls && (modifiers&1) && !(modifiers&2))) {
     rai::Vector trans = vec - downVec;
     trans.z = 0.;
     trans *= .1*(downFoc - downPos).length();
@@ -2391,10 +2400,6 @@ void OpenGL::MouseMotion(double _x, double _y) {
     needsUpdate=true;
   }
   
-  if(mouse_button==3 && !modifiers && enableCameraControls) {  //zooming || (mouse_button==1 && !(modifiers&GLUT_ACTIVE_SHIFT) && (modifiers&GLUT_ACTIVE_CTRL))){    
-    LOG(0) << "This should zoom but is not implemented";
-  }
-
   //step through all callbacks
   for(uint i=0; i<hoverCalls.N; i++) needsUpdate = needsUpdate || hoverCalls(i)->hoverCallback(*this);
 
@@ -2723,7 +2728,7 @@ void read_png(byteA& img, const char* file_name, bool swap_rows) {
 
   if(swap_rows) flip_image(img);
 #else
-  NICO;
+  LOG(-2) <<"libpng not linked";
 #endif
 }
 
