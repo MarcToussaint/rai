@@ -30,7 +30,7 @@ extern void glColorId(uint id);
 //==============================================================================
 
 template<> const char* rai::Enum<rai::ShapeType>::names []= {
-  "box", "sphere", "capsule", "mesh", "cylinder", "marker", "pointCloud", "ssCvx", "ssBox", "ssCylinder", "ssBoxElip", nullptr
+  "box", "sphere", "capsule", "mesh", "cylinder", "marker", "pointCloud", "ssCvx", "ssBox", "ssCylinder", "ssBoxElip", "quad", nullptr
 };
 
 //==============================================================================
@@ -89,6 +89,27 @@ void rai::Mesh::setLine(double l) {
   V.resize(2, 3).setZero();
   V(0, 2) = -.5*l;
   V(1, 2) = +.5*l;
+}
+
+void rai::Mesh::setQuad(double x_width, double y_width, const byteA& _texImg){
+  clear();
+  V = {
+    -.5*x_width, -.5*y_width, 0,
+    +.5*x_width, -.5*y_width, 0,
+    +.5*x_width, +.5*y_width, 0,
+    -.5*x_width, +.5*y_width, 0  };
+  T = {
+    0, 1, 2, 2, 3, 0
+  };
+  V.reshape(4,3);
+  T.reshape(2,3);
+  if(_texImg.N){
+    texImg = _texImg;
+//    C = {1.,1.,1.}; //bright color
+    Tt = T;
+    tex = {0.,1.,  1.,1.,  1.,0.,  0.,0.};
+    tex.reshape(V.d0, 2);
+  }
 }
 
 void rai::Mesh::setTetrahedron() {
@@ -1552,9 +1573,9 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
         if(C.d1==3) glColor(C(i, 0), C(i, 1), C(i, 2), 1.);
         if(C.d1==1) glColorId(C(i, 0));
       }
-      v=T(i, 0);  glNormal3dv(&Vn(v, 0));  if(C.d0==V.d0) glColor3dv(&C(v, 0));  if(Tt.N) glTexCoord2dv(&tex(Tt(i, 0), 0));  glVertex3dv(&V(v, 0));
-      v=T(i, 1);  glNormal3dv(&Vn(v, 0));  if(C.d0==V.d0) glColor3dv(&C(v, 0));  if(Tt.N) glTexCoord2dv(&tex(Tt(i, 1), 0));  glVertex3dv(&V(v, 0));
-      v=T(i, 2);  glNormal3dv(&Vn(v, 0));  if(C.d0==V.d0) glColor3dv(&C(v, 0));  if(Tt.N) glTexCoord2dv(&tex(Tt(i, 2), 0));  glVertex3dv(&V(v, 0));
+      v=T(i, 0);  glNormal3dv(&Vn(v, 0));  if(C.nd==2 && C.d0==V.d0) glColor3dv(&C(v, 0));  if(Tt.N) glTexCoord2dv(&tex(Tt(i, 0), 0));  glVertex3dv(&V(v, 0));
+      v=T(i, 1);  glNormal3dv(&Vn(v, 0));  if(C.nd==2 && C.d0==V.d0) glColor3dv(&C(v, 0));  if(Tt.N) glTexCoord2dv(&tex(Tt(i, 1), 0));  glVertex3dv(&V(v, 0));
+      v=T(i, 2);  glNormal3dv(&Vn(v, 0));  if(C.nd==2 && C.d0==V.d0) glColor3dv(&C(v, 0));  if(Tt.N) glTexCoord2dv(&tex(Tt(i, 2), 0));  glVertex3dv(&V(v, 0));
     }
     glEnd();
     if(Tt.N && texImg.N && glDrawOptions(gl).drawColors) {

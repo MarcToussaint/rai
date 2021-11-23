@@ -1275,7 +1275,7 @@ void rai::Shape::read(const Graph& ats) {
     }
     if(ats.get(fil, "texture"))     {
       fil.cd_file();
-      read_png(mesh().texImg, fil.name, true);
+      read_ppm(mesh().texImg, fil.name, true);
 //      cout <<"TEXTURE: " <<mesh().texImg.dim() <<endl;
     }
     if(ats.get(d, "meshscale"))  { mesh().scale(d); }
@@ -1440,6 +1440,10 @@ void rai::Shape::createMeshes() {
     case rai::ST_pointCloud:
 //      if(!mesh().V.N) LOG(-1) <<"mesh needs to be loaded";
       break;
+    case rai::ST_quad: {
+      byteA tex = mesh().texImg;
+      mesh().setQuad(size(0), size(1), tex);
+    } break;
     case rai::ST_ssCvx:
       CHECK(size(-1)>1e-10, "");
       if(!sscCore().V.N) {
