@@ -148,7 +148,7 @@ void BulletInterface::pullDynamicStates(FrameL& frames, arr& frameVelocities) {
   pullPoses(frames, self->actors, frameVelocities, false);
 }
 
-void BulletInterface::changeObjectType(rai::Frame* f, int _type) {
+void BulletInterface::changeObjectType(rai::Frame* f, int _type, const arr& withVelocity) {
   rai::Enum<rai::BodyType> type((rai::BodyType)_type);
   if(self->actorTypes(f->ID) == type) {
     LOG(-1) <<"frame " <<*f <<" is already of type " <<type;
@@ -163,6 +163,9 @@ void BulletInterface::changeObjectType(rai::Frame* f, int _type) {
   } else if(type==rai::BT_dynamic) {
     a->setCollisionFlags(a->getCollisionFlags() & ~btCollisionObject::CF_KINEMATIC_OBJECT);
     a->setActivationState(DISABLE_DEACTIVATION);
+    if(withVelocity.N){
+      a->setLinearVelocity(btVector3(withVelocity(0), withVelocity(1), withVelocity(2)));
+    }
   } else NIY;
   self->actorTypes(f->ID) = type;
 }
@@ -350,6 +353,7 @@ btCollisionShape* BulletInterface_self::createCollisionShape(rai::Shape* s) {
 //    } break;
     case rai::ST_capsule:
     case rai::ST_cylinder:
+    case rai::ST_ssCylinder:
     case rai::ST_ssBox:
     case rai::ST_ssCvx:
 //    {

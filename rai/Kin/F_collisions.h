@@ -44,8 +44,10 @@ protected:
 
 struct F_AccumulatedCollisions : Feature {
   double margin;
+  bool xorSelect=false;
   F_AccumulatedCollisions(double _margin=.0) : margin(_margin) {}
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F){ return 1; }
+  void setXorSelect(bool xorSel){ xorSelect=xorSel; }
 };
 

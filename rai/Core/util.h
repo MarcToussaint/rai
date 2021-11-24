@@ -449,6 +449,8 @@ template<class T> void getParameter(T& x, const char* tag, const T& Default);
 template<class T> void getParameter(T& x, const char* tag);
 template<class T> bool checkParameter(const char* tag);
 
+template<class T> void setParameter(const char* key, const T& x);
+
 template<class T> struct ParameterInit {
   ParameterInit(T& x, const char* tag, const T& Default) { getParameter<T>(x, tag, Default); }
 };

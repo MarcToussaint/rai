@@ -312,8 +312,16 @@ void TEST(Texture2) {
   rai::Mesh m;
   m.readFile("owl.obj");
   read_png(m.texImg, "owl.png", true);
+
+  byteA img;
+  read_ppm(img, "box.ppm", false);
+  rai::Mesh m2;
+  m2.setQuad(1., 1., img);
+  m2.C = {1., 1., 1., .5}; //transparent
+
   gl.add(glStandardLight);
   gl.add(m);
+  gl.add(m2);
   gl.watch();
 }
 

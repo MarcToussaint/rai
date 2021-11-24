@@ -461,3 +461,29 @@ bool PoseTool::checkCollisions(const FrameL& collisionPairs, bool solve, bool as
 bool PoseTool::checkLimitsAndCollisions(const arr& limits, const FrameL& collisionPairs, bool solve, bool assert){
   return checkLimits(limits, solve, assert) && checkCollisions(collisionPairs, solve, assert);
 }
+
+arr getVel(const arr& x, const arr& tau){
+  arr v;
+  v.resizeAs(x).setZero();
+  for(uint t=1;t<x.d0;t++) v[t] = (x[t]-x[t-1])/tau(t);
+  return v;
+}
+
+arr getAcc(const arr& x, const arr& tau){
+  arr a;
+  a.resizeAs(x).setZero();
+  for(uint t=2;t<x.d0;t++) a[t] = ( (x[t]-x[t-1])/tau(t) - (x[t-1]-x[t-2])/tau(t-1) ) /(.5*(tau(t)+tau(t-1)));
+  return a;
+}
+
+arr getJerk(const arr& x, const arr& tau){
+  arr j;
+  j.resizeAs(x).setZero();
+  for(uint t=3;t<x.d0;t++){
+    j[t] = (
+             ( (x[t-0]-x[t-1])/tau(t-0) - (x[t-1]-x[t-2])/tau(t-1) ) /(.5*(tau(t-0)+tau(t-1)))
+             -( (x[t-1]-x[t-2])/tau(t-1) - (x[t-2]-x[t-3])/tau(t-2) ) /(.5*(tau(t-1)+tau(t-2)))
+             ) / tau(t-1);
+  }
+  return j;
+}

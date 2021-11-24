@@ -1016,7 +1016,7 @@ struct SparseMatrix : SpecialArray {
   double& entry(uint i, uint j, uint k);
   double& elem(uint i, uint j);
   double& addEntry(int i, int j);
-  arr getSparseRow(uint i);
+  arr getSparseRow(uint i) const;
   arr memRef() const{ return arr(Z.p, Z.N, true); }
   //construction
   void setFromDense(const arr& X);

@@ -70,6 +70,10 @@ OptConstrained::OptConstrained(arr& _x, arr& _dual, const shared_ptr<Mathematica
     if(lo.N || up.N) newton.setBounds(lo, up);
   }
 
+  if(opt.constrainedMethod==logBarrier){
+    L.useLB=true;
+  }
+
   newton.options.verbose = rai::MAX(opt.verbose-1, 0);
 
   if(opt.verbose>0) cout <<"***** optConstrained: method=" <<MethodName[opt.constrainedMethod] <<" bounds: " <<(opt.boundedNewton?"yes":"no") <<endl;
@@ -97,7 +101,7 @@ bool OptConstrained::step() {
 
   //check for no constraints
   bool newtonOnce=false;
-  if(L.get_dimOfType(OT_ineq)==0 && L.get_dimOfType(OT_eq)==0) {
+  if(L.get_dimOfType(OT_ineq)==0 && L.get_dimOfType(OT_ineqB)==0 && L.get_dimOfType(OT_eq)==0) {
     if(opt.verbose>0) cout <<"** optConstr. NO CONSTRAINTS -> run Newton once and stop" <<endl;
     newtonOnce=true;
   }

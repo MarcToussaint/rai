@@ -20,7 +20,7 @@ struct ANN;
 
 namespace rai {
 
-enum ShapeType { ST_none=-1, ST_box=0, ST_sphere, ST_capsule, ST_mesh, ST_cylinder, ST_marker, ST_pointCloud, ST_ssCvx, ST_ssBox, ST_ssCylinder, ST_ssBoxElip };
+enum ShapeType { ST_none=-1, ST_box=0, ST_sphere, ST_capsule, ST_mesh, ST_cylinder, ST_marker, ST_pointCloud, ST_ssCvx, ST_ssBox, ST_ssCylinder, ST_ssBoxElip, ST_quad };
 
 //===========================================================================
 /// a mesh (arrays of vertices, triangles, colors & normals)
@@ -32,7 +32,7 @@ struct Mesh : GLDrawer {
   uintA T;              ///< triangles (faces, empty -> point cloud)
   arr   Tn;             ///< triangle normals (optional)
 
-  uintA Tt;             ///< triangle texture indices
+  uintA Tt;             ///< triangle texture indices (pointing into coordinates)
   arr tex;              ///< texture coordinates
   byteA texImg;         ///< texture image
   int texture=-1;       ///< GL texture name created with glBindTexture
@@ -54,6 +54,7 @@ struct Mesh : GLDrawer {
   void setBox();
   void setDot(); ///< an awkward mesh: just a single dot, not tris (e.g. cvx core of a sphere...)
   void setLine(double l); ///< an awkward mesh: just a single line, not tris (e.g. cvx core of a sphere...)
+  void setQuad(double x_width=1., double y_width=1., const byteA& _texImg={}); ///< a quat, optionally with texture
   void setTetrahedron();
   void setOctahedron();
   void setDodecahedron();

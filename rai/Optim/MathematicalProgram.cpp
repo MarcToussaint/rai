@@ -19,11 +19,14 @@ template<> const char* rai::Enum<ObjectiveType>::names []= {
 
 arr summarizeErrors(const arr& phi, const ObjectiveTypeA& tt) {
   arr err = zeros(3);
+  CHECK_EQ(phi.N, tt.N, "");
   for(uint i=0; i<phi.N; i++) {
-    if(tt(i)==OT_f) err(0) += phi(i);
-    if(tt(i)==OT_sos) err(0) += rai::sqr(phi(i));
-    if(tt(i)==OT_ineq && phi(i)>0.) err(1) += phi(i);
-    if(tt(i)==OT_eq) err(2) += fabs(phi(i));
+    double phii = phi.p[i];
+    ObjectiveType ot = tt.p[i];
+    if(ot==OT_f) err(0) += phii;
+    if(ot==OT_sos) err(0) += rai::sqr(phii);
+    if((ot==OT_ineq || ot==OT_ineqB) && phii>0.) err(1) += phii;
+    if(ot==OT_eq) err(2) += fabs(phii);
   }
   return err;
 }
