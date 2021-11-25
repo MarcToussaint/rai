@@ -235,9 +235,11 @@ ptr<KinematicSwitch> KOMO::addSwitch(const arr& times, bool before, bool stable,
 
 void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA& frames, bool firstSwitch) {
   //-- creating a stable kinematic linking
-  if(newMode==SY_stable || newMode==SY_stableOn || newMode==SY_stableYPhi){
+  if(newMode==SY_stable || newMode==SY_stableOn || newMode==SY_stableYPhi || newMode==SY_stableZero){
     if(newMode==SY_stable) {
       auto sw = addSwitch(times, true, true, JT_free, SWInit_copy, frames(0), frames(1));
+    } else if(newMode==SY_stableZero) {
+      auto sw = addSwitch(times, true, true, JT_rigid, SWInit_zero, frames(0), frames(1));
     } else if(newMode==SY_stableOn) {
       Transformation rel = 0;
       rel.pos.set(0, 0, .5*(shapeSize(world, frames(0)) + shapeSize(world, frames(1))));
@@ -248,7 +250,7 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
       auto sw = addSwitch(times, true, true, JT_transY, SWInit_copy, frames(0), frames(1), rel);
     } else NIY;
 
-    if(!opt.mimicStable){
+    if(!opt.mimicStable && newMode!=SY_stableZero){
       // ensure the DOF is constant throughout its existance
       if((times(1)<0. && stepsPerPhase*times(0)<T) || stepsPerPhase*times(1)>stepsPerPhase*times(0)+1) {
         addObjective({times(0), times(1)}, make_shared<F_qZeroVel>(), {frames(1)}, OT_eq, {1e1}, NoArr, 1, +1, -1);

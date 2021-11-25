@@ -438,10 +438,10 @@ void rai::Mesh::makeTriangleFan() {
 }
 
 void rai::Mesh::makeLineStrip() {
-  T.resize(V.d0, 2);
-  T[0] = {V.d0-1, 0};
+  T.resize(V.d0-1, 2);
+//  T[0] = {V.d0-1, 0};
   for(uint i=1; i<V.d0; i++) {
-    T[i] = {i-1, i};
+    T[i-1] = {i-1, i};
   }
 }
 

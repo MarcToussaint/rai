@@ -2383,12 +2383,13 @@ void SparseVector::resize(uint d0, uint n) {
   for(int& e:elems) e=-1;
 }
 
-void SparseMatrix::resize(uint d0, uint d1, uint n) {
+SparseMatrix& SparseMatrix::resize(uint d0, uint d1, uint n) {
   Z.nd=2; Z.d0=d0; Z.d1=d1;
   Z.resizeMEM(n, false);
   Z.setZero();
   elems.resize(n, 2);
   for(int& e:elems) e=-1;
+  return *this;
 }
 
 void SparseMatrix::resizeCopy(uint d0, uint d1, uint n) {

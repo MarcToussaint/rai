@@ -97,7 +97,6 @@ struct TimeOpt : MathematicalProgram {
 
     phi.resize(featureTypes.N).setZero();
     rai::SparseMatrix* JS=0;
-    uint Jsize=0;
     if(!!J){
       JS = &J.sparse();
       JS->resize(phi.N, n, jacSize);

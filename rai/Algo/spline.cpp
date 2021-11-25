@@ -182,6 +182,18 @@ Spline& Spline::set(uint _degree, const arr& _points, const arr& _times, const a
   return *this;
 }
 
+Spline& Spline::set_vel(uint degree, const arr& _points, const arr& velocities, const arr& _times){
+  arr pts = repmat(_points,1,2).reshape(-1, _points.d1);
+  arr tms = repmat(_times,1,2).reshape(-1);
+  set(degree, pts, tms);
+  if(velocities.N){
+    for(uint t=0;t<velocities.d0;t++){
+      setDoubleKnotVel(2*t, velocities[t]);
+    }
+  }
+  return *this;
+}
+
 void Spline::append(const arr& _points, const arr& _times){
   CHECK_EQ(_points.nd, 2, "");
   CHECK_EQ(_points.d0, _times.N, "");

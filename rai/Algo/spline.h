@@ -20,6 +20,7 @@ struct Spline {
 
   //-- methods to define the points and times
   Spline& set(uint degree, const arr& _points, const arr& _times, const arr& startVel=NoArr, const arr& endVel=NoArr);
+  Spline& set_vel(uint degree, const arr& _points, const arr& velocities, const arr& _times);
   Spline& setUniform(uint _degree, uint steps) {
     arr x=range(0.,1.,steps);
     set(_degree, x, x);

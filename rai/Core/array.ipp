@@ -93,7 +93,8 @@ template<class T> rai::Array<T>::Array(rai::Array<T>&& a)
     d(&d0),
     isReference(a.isReference),
     M(a.M),
-    special(a.special) {
+    special(a.special){
+  if(a.jac) jac = std::move(a.jac);
   CHECK_EQ(a.d, &a.d0, "");
   a.p=NULL;
   a.N=a.nd=a.d0=a.d1=a.d2=0;

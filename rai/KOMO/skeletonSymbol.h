@@ -12,7 +12,7 @@ enum SkeletonSymbol {
   SY_poseEq, SY_stableRelPose, SY_stablePose,
 
   //mode switches:
-  SY_stable, SY_stableOn, SY_dynamic, SY_dynamicOn, SY_dynamicTrans, SY_quasiStatic, SY_quasiStaticOn, SY_downUp, SY_break,
+  SY_stable, SY_stableOn, SY_dynamic, SY_dynamicOn, SY_dynamicTrans, SY_quasiStatic, SY_quasiStaticOn, SY_downUp, SY_break, SY_stableZero,
 
   //interactions:
   SY_contact, SY_contactStick, SY_contactComplementary, SY_bounce, SY_push,

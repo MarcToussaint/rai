@@ -1022,7 +1022,7 @@ struct SparseMatrix : SpecialArray {
   void setFromDense(const arr& X);
   void setupRowsCols();
   //manipulations
-  void resize(uint d0, uint d1, uint n);
+  SparseMatrix& resize(uint d0, uint d1, uint n);
   void resizeCopy(uint d0, uint d1, uint n);
   void reshape(uint d0, uint d1);
   void rowShift(int shift); //shift all rows to the right
