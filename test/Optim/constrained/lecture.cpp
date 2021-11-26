@@ -14,7 +14,6 @@
 void lectureDemo(const shared_ptr<MathematicalProgram>& P, const arr& x_start=NoArr, uint iters=20){
   OptOptions options;
   LagrangianProblem lag(P, options);
-  lag.useLB = true;
 
   //-- initial x
   arr x = P->getInitializationSample();

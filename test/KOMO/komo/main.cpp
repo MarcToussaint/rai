@@ -160,10 +160,11 @@ void TEST(Thin){
   komo.addObjective({1.}, FS_positionDiff, {"ball", "target"}, OT_eq, {1e1});
   komo.addObjective({1.}, FS_qItself, {}, OT_eq, {1e1}, {}, 1);
   komo.addObjective({}, FS_distance, {"wall", "ball"}, OT_ineqB, {1.});
-
   komo.addObjective({}, make_shared<MyFeature>(), {"ball", "wall"}, OT_sos, {1e1}, {}, 1);
 
   komo.reportProblem();
+
+  komo.view(true, "init");
 
   komo.opt.animateOptimization=1;
   //  komo.setSpline(5);

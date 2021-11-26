@@ -29,6 +29,8 @@ LagrangianProblem::LagrangianProblem(const shared_ptr<MathematicalProgram>& P, c
     return this->lagrangian(dL, HL, x);
   });
 
+  if(opt.constrainedMethod==logBarrier) useLB=true;
+
   //switch on penalty terms
   mu=opt.muInit;
   nu=opt.muInit;
