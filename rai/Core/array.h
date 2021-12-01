@@ -66,6 +66,7 @@ namespace rai {
 template<class T> struct ArrayIterationEnumerated;
 template<class T> struct ArrayIterationReverse;
 template<class T> struct ArrayModRaw;
+template<class T> struct ArrayModList;
 
 /** Simple array container to store arbitrary-dimensional arrays (tensors).
   Can buffer more memory than necessary for faster
@@ -321,6 +322,7 @@ template<class T> struct Array : /*std::vector<T>,*/ Serializable {
 
   /// modifiers
   ArrayModRaw<T> modRaw() const;
+  ArrayModList<T> modList() const;
 
   /// @name kind of private
   void resizeMEM(uint n, bool copy, int Mforce=-1);
@@ -406,6 +408,14 @@ template <class T> struct ArrayModRaw{
 };
 template <class T> ArrayModRaw<T> Array<T>::modRaw() const{ return ArrayModRaw<T>(this); }
 template <class T> std::ostream& operator<<(std::ostream& os, const ArrayModRaw<T>& x) { x.write(os); return os; }
+
+template <class T> struct ArrayModList{
+  const Array<T> *x;
+  ArrayModList(const Array<T>* x) : x(x) {}
+  void write(std::ostream& os) const{ listWrite(*x, os); }
+};
+template <class T> ArrayModList<T> Array<T>::modList() const{ return ArrayModList<T>(this); }
+template <class T> std::ostream& operator<<(std::ostream& os, const ArrayModList<T>& x) { x.write(os); return os; }
 
 //element-wise update operators
 #define UpdateOperator( op )        \

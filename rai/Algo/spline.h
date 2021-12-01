@@ -12,6 +12,8 @@
 
 namespace rai {
 
+//==============================================================================
+
 /// a spline
 struct Spline {
   uint degree;
@@ -21,19 +23,8 @@ struct Spline {
   //-- methods to define the points and times
   Spline& set(uint degree, const arr& _points, const arr& _times, const arr& startVel=NoArr, const arr& endVel=NoArr);
   Spline& set_vel(uint degree, const arr& _points, const arr& velocities, const arr& _times);
-  Spline& setUniform(uint _degree, uint steps) {
-    arr x=range(0.,1.,steps);
-    set(_degree, x, x);
-    return *this;
-  }
-  arr getGridBasis(uint T) {
-    arr basis(T, knotPoints.d0);
-    arr db,ddb;
-    for(uint t=0; t<T; t++){
-      getCoeffs2(basis[t](), db, ddb, double(t)/(T-1), degree, knotTimes.p, knotPoints.d0, knotTimes.N, 0);
-    }
-    return basis;
-  }
+  Spline& setUniform(uint _degree, uint steps);
+  arr getGridBasis(uint T);
 
   void append(const arr& _points, const arr& _times);
   void clear();
@@ -42,22 +33,10 @@ struct Spline {
   void doubleKnot(uint t);
   void setDoubleKnotVel(int t, const arr& vel);
 
-
   /// core method to evaluate spline
   void eval(arr& x, arr& xDot, arr& xDDot, double t) const;
-  arr eval(double t, uint derivative=0) const{
-    arr x;
-    if(derivative==0) eval(x, NoArr, NoArr, t);
-    else if(derivative==1) eval(NoArr, x, NoArr, t);
-    else if(derivative==2) eval(NoArr, NoArr, x, t);
-    else NIY;
-    return x;
-  }
-  arr eval(const arr& ts){
-    arr f(ts.N, points.d1);
-    for(uint i=0;i<ts.N;i++) f[i] = eval(ts(i));
-    return f;
-  }
+  arr eval(double t, uint derivative=0) const;
+  arr eval(const arr& ts);
 
   /// for t \in [0,1] the coefficients are the weighting of the points: f(t) = coeffs(t)^T * points
   arr getCoeffs(double t, uint K, uint derivative=0) const;
@@ -69,14 +48,25 @@ struct Spline {
 //  arr getGridBasis(uint derivative=0){ HALT("see retired/spline-21-04-01.cpp"); }
 
   static void getCoeffs2(arr& c0, arr& c1, arr& c2, double t, uint degree, double* knotTimes, uint knotN, uint knotTimesN, uint derivatives=0);
-
 };
-
-} //namespace rai
 
 //==============================================================================
 
-namespace rai {
+struct CubicPiece{
+  arr a, b, d, c;
+  void set(const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau);
+  arr eval(double t, uint diff);
+};
+
+struct CubicSpline{
+  rai::Array<CubicPiece> pieces;
+  arr times;
+  void set(const arr& pts, const arr& vels, const arr& _times);
+  arr eval(double t, uint diff=0);
+  arr eval(const arr& T);
+};
+
+//==============================================================================
 
 /// a wrapper around a spline with methods specific to online path adaptation
 struct Path : Spline {

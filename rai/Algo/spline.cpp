@@ -144,6 +144,21 @@ void Spline::eval(arr& x, arr& xDot, arr& xDDot, double t) const {
 #endif
 }
 
+arr Spline::eval(double t, uint derivative) const{
+  arr x;
+  if(derivative==0) eval(x, NoArr, NoArr, t);
+  else if(derivative==1) eval(NoArr, x, NoArr, t);
+  else if(derivative==2) eval(NoArr, NoArr, x, t);
+  else NIY;
+  return x;
+}
+
+arr Spline::eval(const arr& ts){
+  arr f(ts.N, points.d1);
+  for(uint i=0;i<ts.N;i++) f[i] = eval(ts(i));
+  return f;
+}
+
 Spline& Spline::set(uint _degree, const arr& _points, const arr& _times, const arr& startVel, const arr& endVel) {
   CHECK_EQ(_times.nd, 1, "");
   CHECK_LE(_points.nd, 2, "");
@@ -192,6 +207,21 @@ Spline& Spline::set_vel(uint degree, const arr& _points, const arr& velocities, 
     }
   }
   return *this;
+}
+
+Spline&Spline::setUniform(uint _degree, uint steps) {
+  arr x=range(0.,1.,steps);
+  set(_degree, x, x);
+  return *this;
+}
+
+arr Spline::getGridBasis(uint T) {
+  arr basis(T, knotPoints.d0);
+  arr db,ddb;
+  for(uint t=0; t<T; t++){
+    getCoeffs2(basis[t](), db, ddb, double(t)/(T-1), degree, knotTimes.p, knotPoints.d0, knotTimes.N, 0);
+  }
+  return basis;
 }
 
 void Spline::append(const arr& _points, const arr& _times){
@@ -280,5 +310,59 @@ void Path::transform_CurrentBecomes_AllFollow(const arr& current, double t) {
   arr delta = current - eval(t);
   for(uint i=0; i<knotPoints.d0; i++) knotPoints[i]() += delta;
 }
+
+//==============================================================================
+
+void CubicPiece::set(const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau) {
+  double tau2 = tau*tau, tau3 = tau*tau2;
+  d = x0;
+  c = v0;
+  b = 1./tau2 * (  3.*(x1-d) - tau*(v1+2.*c) );
+  a = 1./tau3 * ( -2.*(x1-d) + tau*(v1+c) );
+}
+
+arr CubicPiece::eval(double t, uint diff){
+  double t2=t*t, t3=t*t2;
+  if(diff==0){
+    arr x = d;
+    x += t*c;
+    x += t2*b;
+    x += t3*a;
+    return x;
+  }else if(diff==1){
+    arr v = c;
+    v += (2.*t)*b;
+    v += (3.*t2)*a;
+    return v;
+  }else NIY;
+  return c;
+}
+
+void CubicSpline::set(const arr& pts, const arr& vels, const arr& _times){
+  times = _times;
+  uint K=pts.d0-1;
+  pieces.resize(K);
+  for(uint k=0;k<K;k++){
+    pieces(k).set(pts[k], vels[k], pts[k+1], vels[k+1], times(k+1)-times(k));
+  }
+}
+
+arr CubicSpline::eval(double t, uint diff){
+  uint k = times.rankInSorted(t,rai::lowerEqual<double>, false);
+  if(k<times.N){ CHECK_LE(t, times(k), ""); }
+  else{ CHECK_GE(t, times.last(), ""); }
+  if(k) k--;
+  if(k>=pieces.N-1) k=pieces.N-1;
+  //    CHECK_GE(t, times(k), "");
+  //    cout <<"t: " <<t <<" k: " <<k <<' ' <<times <<endl;
+  return pieces(k).eval(t-times(k), diff);
+}
+
+arr CubicSpline::eval(const arr& T){
+  arr x(T.N, pieces.first().d.N);
+  for(uint i=0;i<T.N;i++) x[i] = eval(T(i));
+  return x;
+}
+
 
 } //namespace rai
