@@ -317,8 +317,8 @@ void CubicPiece::set(const arr& x0, const arr& v0, const arr& x1, const arr& v1,
   double tau2 = tau*tau, tau3 = tau*tau2;
   d = x0;
   c = v0;
-  b = 1./tau2 * (  3.*(x1-d) - tau*(v1+2.*c) );
-  a = 1./tau3 * ( -2.*(x1-d) + tau*(v1+c) );
+  b = 1./tau2 * (  3.*(x1-x0) - tau*(v1+2.*v0) );
+  a = 1./tau3 * ( -2.*(x1-x0) + tau*(v1+v0) );
 }
 
 arr CubicPiece::eval(double t, uint diff){
@@ -362,6 +362,31 @@ arr CubicSpline::eval(const arr& T){
   arr x(T.N, pieces.first().d.N);
   for(uint i=0;i<T.N;i++) x[i] = eval(T(i));
   return x;
+}
+
+arr CubicSplineLeapCost(const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ) {
+  arr D = (x1-x0) - (.5*tau)*(v0+v1);
+  if(tauJ.N){
+    if(!D.jac) D.J().sparse().resize(v0.N, tauJ.d1, 0);
+    D.J() -= .5 * (v0+v1).noJ() * tauJ;
+  }
+
+  arr V = v1 - v0;
+
+  double s12 = sqrt(12.);
+
+  arr tilD = (s12 * pow(tau, -1.5)) * D;
+  if(tauJ.N) tilD.J() += (s12 * (-1.5) * pow(tau,-2.5)) * D.noJ() * tauJ;
+
+  arr tilV = pow(tau, -0.5) * V;
+  if(tauJ.N){
+    if(!tilV.jac) tilV.J().sparse().resize(v0.N, tauJ.d1, 0);
+    tilV.J() += ((-0.5) * pow(tau,-1.5)) * V.noJ() * tauJ;
+  }
+
+  arr y;
+  y.setBlockVector(tilD, tilV);
+  return y;
 }
 
 

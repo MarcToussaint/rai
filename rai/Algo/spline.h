@@ -68,6 +68,10 @@ struct CubicSpline{
 
 //==============================================================================
 
+arr CubicSplineLeapCost(const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ={});
+
+//===========================================================================
+
 /// a wrapper around a spline with methods specific to online path adaptation
 struct Path : Spline {
   Path(arr& X, uint degree=3) { set(3, X, grid(1, 0., 1., X.d0-1)); }
