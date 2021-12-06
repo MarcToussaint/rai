@@ -206,6 +206,15 @@ void center_mesh(const void* obj, ccd_vec3_t* center) {
   memmove(center->v, &c.x, 3*sizeof(double));
 }
 
+bool _legal(double* a) {
+  return a[0]==a[0]
+      && a[1]==a[1]
+      && a[2]==a[2]
+      && -1e10<a[0] && a[0]<1e10
+      && -1e10<a[1] && a[1]<1e10
+      && -1e10<a[2] && a[2]<1e10;
+}
+
 bool _equal(double* a, double* b) {
   return a[0]==b[0] && a[1]==b[1] && a[2]==b[2];
 }
@@ -227,7 +236,7 @@ void _getSimplex(arr& S, ccd_vec3_t* simplex, const arr& mean) {
   //first count and select
   for(uint i=0; i<4; i++) {
     double* s=simplex[i].v;
-    if(!_equal(s, s)) continue; //don't append nan!
+    if(!_legal(s)) continue;  //don't append nan!
     if(_equal(s, mean.p)) continue;
     sel=true;
     for(uint j=0; j<i; j++) if(_approxEqual(s, simplex[j].v)) { sel=false; break; }
@@ -806,7 +815,7 @@ double coll_1on2(arr& p2, arr& normal, double& s, const arr& pts1, const arr& pt
 
   p2.setCarray(_p2.p(), 3);
   normal.setCarray(_normal.p(), 3);
-  CHECK_EQ(d, d, "distance is nan");
+  CHECK_EQ(d, d, "distance is nan; p1:" <<p1 <<" p20:" <<p20 <<" p21" <<p21 <<" p2:" <<_p2 <<" normal:" <<_normal);
   return d;
 }
 

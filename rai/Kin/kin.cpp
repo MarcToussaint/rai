@@ -626,6 +626,12 @@ void Configuration::setTaus(double tau) {
   for(Frame* a:frames) a->tau = tau;
 }
 
+/// set the 'tau-coordinate' (time interval from previous time slice) for equal for all frames
+void Configuration::setTaus(const arr& tau) {
+  CHECK_EQ(frames.nd, 2, "only for matrix of frames (=series of configurations)");
+  for(uint t=0;t<frames.d0;t++) frames(t,0)->tau = tau(t);
+}
+
 void Configuration::setActiveJoints(const DofL& joints){
   for(rai::Frame *f:frames) if(f->joint) f->joint->active=false;
   for(rai::Dof *j:joints) j->active=true;

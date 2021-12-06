@@ -321,24 +321,27 @@ void CubicPiece::set(const arr& x0, const arr& v0, const arr& x1, const arr& v1,
   a = 1./tau3 * ( -2.*(x1-x0) + tau*(v1+v0) );
 }
 
-arr CubicPiece::eval(double t, uint diff){
+void CubicPiece::eval(arr& x, arr& xDot, arr& xDDot, double t) const {
   double t2=t*t, t3=t*t2;
-  if(diff==0){
-    arr x = d;
+  if(!!x){
+    x = d;
     x += t*c;
     x += t2*b;
     x += t3*a;
-    return x;
-  }else if(diff==1){
-    arr v = c;
-    v += (2.*t)*b;
-    v += (3.*t2)*a;
-    return v;
-  }else NIY;
-  return c;
+  }
+  if(!!xDot){
+    xDot = c;
+    xDot += (2.*t)*b;
+    xDot += (3.*t2)*a;
+  }
+  if(!!xDDot){
+    xDDot = 2.*b;
+    xDDot += (6.*t)*a;
+  }
 }
 
 void CubicSpline::set(const arr& pts, const arr& vels, const arr& _times){
+  CHECK_GE(_times.N, 2, "need at least 2 knots");
   times = _times;
   uint K=pts.d0-1;
   pieces.resize(K);
@@ -347,7 +350,38 @@ void CubicSpline::set(const arr& pts, const arr& vels, const arr& _times){
   }
 }
 
-arr CubicSpline::eval(double t, uint diff){
+void CubicSpline::append(const arr& pts, const arr& vels, const arr& _times){
+  CHECK_GE(_times(0), 1e-6, "for appending, first time needs to be greater zero");
+
+  //current end state
+  arr x, xDot;
+  pieces(-1).eval(x, xDot, NoArr, times(-1)-times(-2));
+
+  //new times
+  double Tend = times.last();
+  times.append(_times+Tend);
+
+  uint K0=pieces.N;
+  uint K=pts.d0;
+  pieces.resizeCopy(K0+K);
+  pieces(K0+0).set(x, xDot, pts[0], vels[0], _times(0));
+  for(uint k=1;k<K;k++){
+    pieces(K0+k).set(pts[k-1], vels[k-1], pts[k], vels[k], _times(k)-_times(k-1));
+  }
+}
+
+
+void CubicSpline::eval(arr& x, arr& xDot, arr& xDDot, double t) const {
+  CHECK_GE(times.N, 2, "spline is empty");
+  if(t<times(0)){
+    pieces(0).eval(x, xDot, xDDot, 0.);
+    return;
+  }
+  if(t>times(-1)){
+    pieces(-1).eval(x, xDot, xDDot, times(-1)-times(-2));
+    return;
+  }
+
   uint k = times.rankInSorted(t,rai::lowerEqual<double>, false);
   if(k<times.N){ CHECK_LE(t, times(k), ""); }
   else{ CHECK_GE(t, times.last(), ""); }
@@ -355,10 +389,20 @@ arr CubicSpline::eval(double t, uint diff){
   if(k>=pieces.N-1) k=pieces.N-1;
   //    CHECK_GE(t, times(k), "");
   //    cout <<"t: " <<t <<" k: " <<k <<' ' <<times <<endl;
-  return pieces(k).eval(t-times(k), diff);
+
+  pieces(k).eval(x, xDot, xDDot, t-times(k));
 }
 
-arr CubicSpline::eval(const arr& T){
+arr CubicSpline::eval(double t, uint diff) const{
+  arr ret;
+  if(diff==0) eval(ret, NoArr, NoArr, t);
+  else if(diff==1) eval(NoArr, ret, NoArr, t);
+  else if(diff==2) eval(NoArr, NoArr, ret, t);
+  else NIY;
+  return ret;
+}
+
+arr CubicSpline::eval(const arr& T) const{
   arr x(T.N, pieces.first().d.N);
   for(uint i=0;i<T.N;i++) x[i] = eval(T(i));
   return x;

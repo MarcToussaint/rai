@@ -137,6 +137,7 @@ struct Configuration : GLDrawer {
   void setFrameState(const arr& X, const FrameL& F);
   void setFrameState(const arr& X, const uintA& F){ setFrameState(X, getFrames(F)); } ///< same as setFrameState() with getFrames()
   void setTaus(double tau);
+  void setTaus(const arr& tau);
 
   /// @name active DOFs selection
   void setActiveJoints(const DofL& F);
