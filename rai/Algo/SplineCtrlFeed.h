@@ -62,7 +62,8 @@ struct CubicSplineCtrlReference : ReferenceFeed {
   }
 
   //info:
-  double getEndTime() { return spline.get()->end(); }
+  double getEndTime() { waitForInitialized(); return spline.get()->end(); }
+  void eval(arr& x, arr& xDot, arr& xDDot, double t) { spline.get()->eval(x, xDot, xDDot, t); }
 
   void report(double ctrlTime);
 };

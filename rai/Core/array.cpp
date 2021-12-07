@@ -2793,11 +2793,11 @@ void SparseMatrix::checkConsistency() const {
   if(cols.N){
     CHECK_EQ(rows.N, Z.d0, "");
     CHECK_EQ(cols.N, Z.d1, "");
-    for(uint i=0; i<Z.d0; i++) for(uint k=0;k<rows(i).d0;k++){
+    for(int i=0; i<Z.d0; i++) for(int k=0;k<rows(i).d0;k++){
       CHECK_EQ(elems(rows(i)(k,1), 0), i, "");
       CHECK_EQ(elems(rows(i)(k,1), 1), rows(i)(k,0), "");
     }
-    for(uint j=0; j<Z.d1; j++) for(uint k=0;k<cols(j).d0;k++){
+    for(int j=0; j<Z.d1; j++) for(int k=0;k<cols(j).d0;k++){
       CHECK_EQ(elems(cols(j)(k,1), 1), j, "");
       CHECK_EQ(elems(cols(j)(k,1), 0), cols(j)(k,0), "");
     }

@@ -745,6 +745,7 @@ template<class T> rai::Array<T> skew(const rai::Array<T>& x);
 template<class T> void inverse2d(rai::Array<T>& Ainv, const rai::Array<T>& A);
 template<class T> rai::Array<T> replicate(const rai::Array<T>& A, uint d0);
 template<class T> rai::Array<T> integral(const rai::Array<T>& x);
+template<class T> rai::Array<T> differencing(const rai::Array<T>& x);
 
 template<class T> uintA size(const rai::Array<T>& x) { return x.dim(); } //TODO: remove
 template<class T> void checkNan(const rai::Array<T>& x);

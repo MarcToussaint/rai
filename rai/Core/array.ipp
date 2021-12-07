@@ -2400,6 +2400,22 @@ template<class T> rai::Array<T> integral(const rai::Array<T>& x) {
   return rai::Array<T>();
 }
 
+/// return the integral image, or vector
+template<class T> rai::Array<T> differencing(const rai::Array<T>& x) {
+  CHECK(x.nd==1 || x.nd==2, "");
+  if(x.nd==1) {
+    T s(0);
+    rai::Array<T> y(x.N);
+    if(x.N) y.elem(0) = x.elem(0);
+    for(uint i=1; i<x.N; i++) { y.elem(i)=x.elem(i)-x.elem(i-1); }
+    return y;
+  }
+  if(x.nd==2) {
+    NIY;
+  }
+  return rai::Array<T>();
+}
+
 #ifdef RAI_CLANG
 #  pragma clang diagnostic pop
 #endif

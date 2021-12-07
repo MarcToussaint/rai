@@ -89,7 +89,7 @@ void CubicSplineCtrlReference::append(const arr& x, const arr& v, const arr& t, 
 
 void CubicSplineCtrlReference::overrideSmooth(const arr& x, const arr& v, const arr& t, double ctrlTime){
   waitForInitialized();
-  CHECK(t.first()>.1, "that's too harsh!");
+  CHECK_GE(t.first(), .01, "that's too harsh!");
   arr x_now, xDot_now;
   arr _x(x), _v(v), _t(t);
   auto splineSet = spline.set();
