@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include "optimization.h"
 #include "newton.h"
 #include "gradient.h"
 
@@ -22,7 +21,7 @@ struct GlobalIterativeNewton {
   rai::Array<LocalMinimum> localMinima;
   LocalMinimum* best;
 
-  GlobalIterativeNewton(const ScalarFunction& f, const arr& bounds_lo, const arr& bounds_up, OptOptions o=NOOPT);
+  GlobalIterativeNewton(const ScalarFunction& f, const arr& bounds_lo, const arr& bounds_up, rai::OptOptions o=NOOPT);
   ~GlobalIterativeNewton();
 
   void step();

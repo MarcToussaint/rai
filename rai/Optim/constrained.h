@@ -22,12 +22,12 @@ struct OptConstrained {
   LagrangianProblem L;
   OptNewton newton;
   arr& dual;
-  OptOptions opt;
-  uint its=0;
+  rai::OptOptions opt;
+  int its=0;
   bool earlyPhase=false;
   ostream* logFile=nullptr;
 
-  OptConstrained(arr& x, arr& dual, const shared_ptr<MathematicalProgram>& P, OptOptions opt=NOOPT, ostream* _logFile=0);
+  OptConstrained(arr& x, arr& dual, const shared_ptr<MathematicalProgram>& P, rai::OptOptions opt=NOOPT, ostream* _logFile=0);
   ~OptConstrained();
   bool step();
   uint run();

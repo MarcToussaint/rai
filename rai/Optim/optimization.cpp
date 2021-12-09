@@ -12,15 +12,6 @@ uint eval_count=0;
 ObjectiveTypeA __NoTermTypeA(new SpecialArray(SpecialArray::ST_NoArr));
 ObjectiveTypeA& NoObjectiveTypeA = __NoTermTypeA;
 
-OptOptions& globalOptOptions() {
-  static OptOptions opt;
-  return opt;
-}
-
-template<> const char* rai::Enum<ConstrainedMethodType>::names []= {
-  "noMethod", "squaredPenalty", "augmentedLag", "logBarrier", "anyTimeAula", "squaredPenaltyFixed", nullptr
-};
-
 //===========================================================================
 
 double Conv_MathematicalProgram_ScalarProblem::scalar(arr& g, arr& H, const arr& x){
@@ -187,7 +178,7 @@ void displayFunction(const ScalarFunction& f, bool wait, double lo, double hi) {
 }
 
 /// minimizes \f$f(x)\f$ using its gradient only
-uint optGradDescent(arr& x, const ScalarFunction& f, OptOptions o) {
+uint optGradDescent(arr& x, const ScalarFunction& f, rai::OptOptions o) {
   uint evals=0;
   arr y, grad_x, grad_y;
   double fx, fy;

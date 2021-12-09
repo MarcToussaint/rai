@@ -14,11 +14,19 @@ TimingProblem::TimingProblem(const arr& _flags, const arr& _tangents, const arr&
   uint K = flags.d0;
   uint d = flags.d1;
 
+  if(tangents.N){
+    CHECK_EQ(tangents.nd, 2, "");
+    CHECK_EQ(tangents.d0, K-1, "");
+    CHECK_EQ(tangents.d1, d, "");
+  }
+
   if(!v.N){
     if(tangents.N) v.resize(K-1).setZero();
     else v.resize(K-1, d).setZero();
   }
+
   if(!tau.N) tau.resize(K) = 1.;
+  CHECK_EQ(tau.N, K, "");
 
   //init dim and bounds
   dimension = v.N;
@@ -71,7 +79,9 @@ void TimingProblem::evaluate(arr& phi, arr& J, const arr& x){
   //total time cost
   phi(0) = alpha*sum(tau);
   if(!!J){
-    for(uint i=0;i<tau.N;i++) J.elem(0, i) = alpha;
+    if(optTau){
+      for(uint i=0;i<tau.N;i++) J.elem(0, i) = alpha;
+    }
   }
   m += 1;
 

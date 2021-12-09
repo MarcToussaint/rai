@@ -1,5 +1,6 @@
 #include "MP_Solver.h"
 
+#include "optimization.h"
 #include "gradient.h"
 #include "newton.h"
 #include "opt-nlopt.h"
@@ -29,6 +30,7 @@ template<> const char* rai::Enum<NLopt_SolverOption>::names []= {
 
 shared_ptr<SolverReturn> MP_Solver::solve(int resampleInitialization){
   auto ret = make_shared<SolverReturn>();
+  shared_ptr<OptConstrained> optCon;
   double time = -rai::cpuTime();
 
   if(resampleInitialization==1 || !x.N){
@@ -38,9 +40,9 @@ shared_ptr<SolverReturn> MP_Solver::solve(int resampleInitialization){
   }
   if(solverID==MPS_newton){
     Conv_MathematicalProgram_ScalarProblem P1(P);
-    OptNewton newton(x, P1, OptOptions()
-                     .set_verbose(verbose));
+    OptNewton newton(x, P1, opt);
     newton.run();
+    ret->f = newton.fx;
   }
   else if(solverID==MPS_gradientDescent){
     Conv_MathematicalProgram_ScalarProblem P1(P);
@@ -48,30 +50,22 @@ shared_ptr<SolverReturn> MP_Solver::solve(int resampleInitialization){
   }
   else if(solverID==MPS_rprop){
     Conv_MathematicalProgram_ScalarProblem P1(P);
-    OptOptions opts;
-    Rprop().loop(x, P1, opts.stopTolerance, opts.initStep, opts.stopEvals, opts.verbose);
+    Rprop().loop(x, P1, opt.stopTolerance, opt.initStep, opt.stopEvals, opt.verbose);
   }
   else if(solverID==MPS_augmentedLag){
-    OptConstrained opt(x, dual, P, OptOptions()
-                       .set_constrainedMethod(augmentedLag)
-                       .set_verbose(verbose) );
-    opt.run();
-    ret->ineq = opt.L.get_sumOfGviolations();
-    ret->eq = opt.L.get_sumOfHviolations();
-    ret->sos = opt.L.get_cost_sos();
-    ret->f = opt.L.get_cost_f();
+    opt.set_constrainedMethod(rai::augmentedLag);
+    optCon = make_shared<OptConstrained>(x, dual, P, opt);
+    optCon->run();
   }
   else if(solverID==MPS_squaredPenalty){
-    OptConstrained opt(x, dual, P, OptOptions()
-                       .set_constrainedMethod(squaredPenalty)
-                       .set_verbose(verbose) );
-    opt.run();
+    opt.set_constrainedMethod(rai::squaredPenalty);
+    optCon = make_shared<OptConstrained>(x, dual, P, opt);
+    optCon->run();
   }
   else if(solverID==MPS_logBarrier){
-    OptConstrained opt(x, dual, P, OptOptions()
-                       .set_constrainedMethod(logBarrier)
-                       .set_verbose(verbose) );
-    opt.run();
+    opt.set_constrainedMethod(rai::logBarrier);
+    optCon = make_shared<OptConstrained>(x, dual, P, opt);
+    optCon->run();
   }
   else if(solverID==MPS_NLopt){
     NLoptInterface nlo(P);
@@ -87,6 +81,13 @@ shared_ptr<SolverReturn> MP_Solver::solve(int resampleInitialization){
     x = nlo.solve();
   }
   else HALT("solver wrapper not implemented yet for solver ID '" <<rai::Enum<MP_SolverID>(solverID) <<"'");
+
+  if(optCon){
+      ret->ineq = optCon->L.get_sumOfGviolations();
+      ret->eq = optCon->L.get_sumOfHviolations();
+      ret->sos = optCon->L.get_cost_sos();
+      ret->f = optCon->L.get_cost_f();
+  }
 
   time += rai::cpuTime();
   ret->x=x;

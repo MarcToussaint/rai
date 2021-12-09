@@ -311,8 +311,6 @@ extern LogObject _log;
 
 }
 
-#define LOG(log_level) rai::_log.getNonConst().getToken(log_level, __FILE__, __func__, __LINE__).os()
-
 void setLogLevels(int fileLogLevel=3, int consoleLogLevel=2);
 
 //The destructor ~LogToken writes into the log file and
@@ -328,8 +326,10 @@ void setLogLevels(int fileLogLevel=3, int consoleLogLevel=2);
 //#define RAI_HERE __FILE__<<':' <<__FUNCTION__ <<':' <<__LINE__ <<' ' //":" <<std::setprecision(5) <<rai::realTime() <<"s "
 #define S1(x) #x
 #define S2(x) S1(x)
+#define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 #define RAI_HERE __FILE__ ":" S2(__LINE__)
 //#define RAI_HERE __FILE__ ## ":" ## #__FUNCTION__ ## ":" ## #__LINE__
+#define LOG(log_level) rai::_log.getNonConst().getToken(log_level, __FILENAME__, __func__, __LINE__).os()
 
 namespace rai {
 extern String errString;

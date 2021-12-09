@@ -625,8 +625,6 @@ void drawGnuplot(rai::sPlotModule& data) {
   if(data.lines.N+data.points.N) gnuplotcmd <<"\nplot \\\n";
 
   //pipe data
-  bool ior=rai::IOraw;
-  rai::IOraw=true;
   //lines
   for(i=0; i<data.lines.N; i++) {
     data.lines(i).write(gnuplotdata, " ", "\n", "  ", false, false);
@@ -670,7 +668,6 @@ void drawGnuplot(rai::sPlotModule& data) {
     PLOTEVERY(block, " with l notitle");
     block++;
   }
-  rai::IOraw=ior;
   gnuplotcmd <<endl;
 
   //close files

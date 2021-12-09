@@ -61,7 +61,7 @@ const char* MethodName[]= { "NoMethod", "SquaredPenalty", "AugmentedLagrangian",
 
 //==============================================================================
 
-OptConstrained::OptConstrained(arr& _x, arr& _dual, const shared_ptr<MathematicalProgram>& P, OptOptions _opt, std::ostream* _logFile)
+OptConstrained::OptConstrained(arr& _x, arr& _dual, const shared_ptr<MathematicalProgram>& P, rai::OptOptions _opt, std::ostream* _logFile)
   : L(P, _opt, _dual), newton(_x, L, _opt, _logFile), dual(_dual), opt(_opt), logFile(_logFile) {
 
   if(opt.boundedNewton){
@@ -70,7 +70,7 @@ OptConstrained::OptConstrained(arr& _x, arr& _dual, const shared_ptr<Mathematica
     if(lo.N || up.N) newton.setBounds(lo, up);
   }
 
-  if(opt.constrainedMethod==logBarrier){
+  if(opt.constrainedMethod==rai::logBarrier){
     L.useLB=true;
   }
 
@@ -110,7 +110,7 @@ bool OptConstrained::step() {
 
   //run newton on the Lagrangian problem
   OptNewton::StopCriterion newtonStop = newton.stopNone;
-  if(newtonOnce || opt.constrainedMethod==squaredPenaltyFixed) {
+  if(newtonOnce || opt.constrainedMethod==rai::squaredPenaltyFixed) {
     newtonStop = newton.run();
   } else {
     double org_stopTol = newton.options.stopTolerance;
@@ -123,8 +123,8 @@ bool OptConstrained::step() {
       newton.options.stopTolerance *= 10.;
       newton.options.stopGTolerance *= 10.;
     }
-    if(opt.constrainedMethod==anyTimeAula)  newtonStop = newton.run(20);
-    else                                    newtonStop = newton.run();
+    if(opt.constrainedMethod==rai::anyTimeAula)  newtonStop = newton.run(20);
+    else                                         newtonStop = newton.run();
     newton.options.stopTolerance = org_stopTol;
     newton.options.stopGTolerance = org_stopGTol;
   }
@@ -144,7 +144,7 @@ bool OptConstrained::step() {
   }
 
   //check for squaredPenaltyFixed method
-  if(opt.constrainedMethod==squaredPenaltyFixed) {
+  if(opt.constrainedMethod==rai::squaredPenaltyFixed) {
     if(opt.verbose>0) cout <<"** optConstr. squaredPenaltyFixed stops after one outer iteration" <<endl;
     return true;
   }
@@ -155,7 +155,7 @@ bool OptConstrained::step() {
   }
 
   //check for squaredPenaltyFixed method
-  if(opt.constrainedMethod==squaredPenaltyFixed) {
+  if(opt.constrainedMethod==rai::squaredPenaltyFixed) {
     if(opt.verbose>0) cout <<"** optConstr. squaredPenaltyFixed stops after one outer iteration" <<endl;
     return true;
   }
@@ -179,15 +179,15 @@ bool OptConstrained::step() {
 //        return true;
 //    }
 //  }
-  if(opt.stopEvals>0 && newton.evals>=(uint)opt.stopEvals) {
+  if(opt.stopEvals>0 && newton.evals>=opt.stopEvals) {
     if(opt.verbose>0) cout <<"** optConstr. StoppingCriterion MAX EVALS" <<endl;
     return true;
   }
-  if(opt.stopIters>0 && newton.its>=(uint)opt.stopIters) {
+  if(opt.stopIters>0 && newton.its>=opt.stopIters) {
     if(opt.verbose>0) cout <<"** optConstr. StoppingCriterion MAX ITERS" <<endl;
     return true;
   }
-  if(opt.stopOuters>0 && its>=(uint)opt.stopOuters) {
+  if(opt.stopOuters>0 && its>=opt.stopOuters) {
     if(opt.verbose>0) cout <<"** optConstr. StoppingCriterion MAX OUTERS" <<endl;
     return true;
   }

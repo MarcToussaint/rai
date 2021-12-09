@@ -225,7 +225,7 @@ void F_PairFunctional::phi2(arr& y, arr& J, const FrameL& F){
 //    checkHessian(f, seed, 1e-5);
 
     x = seed;
-    OptNewton newton(x, f, OptOptions()
+    OptNewton newton(x, f, rai::OptOptions()
                      .set_verbose(0)
                      .set_stopTolerance(1e-5)
                      .set_maxStep(1.)
@@ -286,7 +286,7 @@ void F_PairFunctional::phi2(arr& y, arr& J, const FrameL& F){
 //    checkHessian(f, seed, 1e-5);
 
     x = seed;
-    OptNewton newton(x, f, OptOptions()
+    OptNewton newton(x, f, rai::OptOptions()
                      .set_verbose(0)
                      .set_stopTolerance(1e-5)
                      .set_maxStep(1.)

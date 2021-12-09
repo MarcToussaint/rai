@@ -137,7 +137,7 @@ PairCollision::PairCollision(ScalarFunction func1, ScalarFunction func2, const a
 
   arr x = seed;
   CHECK_EQ(x.N, 3, "");
-  OptNewton newton(x, f, OptOptions()
+  OptNewton newton(x, f, rai::OptOptions()
                    .set_verbose(0)
                    .set_stopTolerance(1e-4)
                    .set_maxStep(1.)

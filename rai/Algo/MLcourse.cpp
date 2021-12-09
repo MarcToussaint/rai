@@ -208,7 +208,7 @@ arr artificialData(arr& X, arr& y, ArtificialDataType dataType) {
         for(uint j=1; j<beta.N; j++) if(rnd.uni()<pr) beta(j)=0.;
       }
       y = Z*beta;
-      y = y + sigma*randn(size(y));
+      y = y + sigma*randn(y.dim());
       beta_true = beta;
       break;
     }
@@ -216,7 +216,7 @@ arr artificialData(arr& X, arr& y, ArtificialDataType dataType) {
       X.setGrid(1, -3, 3, n-1);
       y.resize(X.d0);
       for(uint i=0; i<X.d0; i++) y(i) = sin(X(i, 0));
-      y += sigma*randn(size(y));
+      y += sigma*randn(y.dim());
       break;
     }
     case linearOutlier: {

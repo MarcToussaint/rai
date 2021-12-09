@@ -231,7 +231,7 @@ arr getStartGoalPath(rai::Configuration& C, const arr& qTarget, const arr& qHome
     else komo.initWithConstant(q0);
 
     //optimize
-    komo.optimize(.01*trial, OptOptions().set_stopTolerance(1e-3)); //trial=0 -> no noise!
+    komo.optimize(.01*trial, rai::OptOptions().set_stopTolerance(1e-3)); //trial=0 -> no noise!
 
     //is feasible?
     feasible=komo.sos<50. && komo.ineq<.1 && komo.eq<.1;
@@ -432,7 +432,7 @@ bool PoseTool::checkCollisions(const FrameL& collisionPairs, bool solve, bool as
   }
 
   komo.opt.verbose=0;
-  komo.optimize(0., OptOptions().set_verbose(0).set_stopTolerance(1e-3));
+  komo.optimize(0., rai::OptOptions().set_verbose(0).set_stopTolerance(1e-3));
 
   if(komo.ineq>1e-1){
     if(verbose) LOG(-1) <<"solveForFeasible failed!" <<komo.getReport();

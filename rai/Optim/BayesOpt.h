@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "optimization.h"
 #include "GlobalIterativeNewton.h"
+#include "../Core/array.h"
 
 struct BayesOpt {
   ScalarFunction f;
@@ -29,7 +29,7 @@ struct BayesOpt {
   double lengthScale;
 
   //lengthScale is always relative to hi-lo
-  BayesOpt(const ScalarFunction& f, const arr& bounds_lo, const arr& bounds_hi, double init_lengthScale=1., double prior_var=1., OptOptions o=NOOPT);
+  BayesOpt(const ScalarFunction& f, const arr& bounds_lo, const arr& bounds_hi, double init_lengthScale=1., double prior_var=1., rai::OptOptions o=NOOPT);
   ~BayesOpt();
 
   void step();

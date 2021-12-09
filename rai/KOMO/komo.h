@@ -177,12 +177,12 @@ public:
 
 
   //-- optimization
-  void optimize(double addInitializationNoise=.01, const OptOptions options=NOOPT);  ///< run the solver (same as run_prepare(); run(); )
+  void optimize(double addInitializationNoise=.01, const rai::OptOptions options=NOOPT);  ///< run the solver (same as run_prepare(); run(); )
   void reset();                                      ///< reset the dual variables and feature value buffers (always needed when adding/changing objectives before continuing an optimization)
 
   //advanced
   void run_prepare(double addInitializationNoise);   ///< ensure the configurations are setup, decision variable is initialized, and noise added (if >0)
-  void run(OptOptions options=NOOPT);          ///< run the solver iterations (configurations and decision variable needs to be setup before)
+  void run(rai::OptOptions options=NOOPT);          ///< run the solver iterations (configurations and decision variable needs to be setup before)
   void setSpline(uint splineT);      ///< optimize B-spline nodes instead of the path; splineT specifies the time steps per node
 
   //-- reading results

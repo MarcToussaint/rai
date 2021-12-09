@@ -7,11 +7,12 @@
     --------------------------------------------------------------  */
 
 #include "gradient.h"
+#include "optimization.h"
 #include <iomanip>
 
 //===========================================================================
 
-OptGrad::OptGrad(arr& _x, const ScalarFunction& _f,  OptOptions _o):
+OptGrad::OptGrad(arr& _x, const ScalarFunction& _f, rai::OptOptions _o):
   x(_x), f(_f), o(_o), it(0), evals(0), numTinySteps(0) {
   alpha = o.initStep;
 //  if(f) reinit();

@@ -9,7 +9,7 @@
 #pragma once
 
 #include "MathematicalProgram.h"
-#include "optimization.h"
+#include "options.h"
 
 //==============================================================================
 //
@@ -35,7 +35,7 @@ struct LagrangianProblem : ScalarFunction, MathematicalProgram {
 
   ostream* logFile=nullptr;  ///< file for logging
 
-  LagrangianProblem(const shared_ptr<MathematicalProgram>& P, const OptOptions& opt=NOOPT, arr& lambdaInit=NoArr);
+  LagrangianProblem(const shared_ptr<MathematicalProgram>& P, const rai::OptOptions& opt=NOOPT, arr& lambdaInit=NoArr);
 
   virtual void evaluate(arr& phi, arr& J, const arr& x);       //evaluate all features and (optionally) their Jacobians for state x
   virtual void getFHessian(arr& H, const arr& x);              //the Hessian of the sum of all f-features (or Hessian in addition to the Gauss-Newton Hessian of all other features)
@@ -50,8 +50,8 @@ struct LagrangianProblem : ScalarFunction, MathematicalProgram {
   double get_sumOfHviolations(); ///< info on the terms from last call
   uint get_dimOfType(const ObjectiveType& ot); ///< info on the terms from last call
 
-  void aulaUpdate(const OptOptions& opt, bool anyTimeVariant, double lambdaStepsize=1., double* L_x=nullptr, arr& dL_x=NoArr, arr& HL_x=NoArr);
-  void autoUpdate(const OptOptions& opt, double* L_x=nullptr, arr& dL_x=NoArr, arr& HL_x=NoArr);
+  void aulaUpdate(const rai::OptOptions& opt, bool anyTimeVariant, double lambdaStepsize=1., double* L_x=nullptr, arr& dL_x=NoArr, arr& HL_x=NoArr);
+  void autoUpdate(const rai::OptOptions& opt, double* L_x=nullptr, arr& dL_x=NoArr, arr& HL_x=NoArr);
 
   //private: used gpenalty function
   double gpenalty(double g);

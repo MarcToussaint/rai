@@ -662,7 +662,7 @@ arr solve_optim(CtrlSolver& CP) {
   auto MP = make_shared<CtrlProblem_MathematicalProgram>(CP);
 
   arr x = CP.komo.world.getJointState();
-  OptOptions opt;
+  rai::OptOptions opt;
   opt.stopTolerance = 1e-4;
   opt.stopGTolerance = 1e-4;
   opt.stopIters = 10;

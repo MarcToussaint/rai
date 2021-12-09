@@ -1,6 +1,7 @@
 #pragma once
 
 #include "MathematicalProgram.h"
+#include "options.h"
 #include "../Core/graph.h"
 
 enum MP_SolverID { MPS_none=-1,
@@ -41,15 +42,12 @@ struct MP_Solver : NonCopyable {
   MP_SolverID solverID=MPS_augmentedLag;
   arr x, dual;
   shared_ptr<MP_Traced> P;
-  int verbose=0;
+  rai::OptOptions opt;
 
   MP_Solver& setSolver(MP_SolverID _solverID){ solverID=_solverID; return *this; }
   MP_Solver& setProblem(const shared_ptr<MathematicalProgram>& _P){ CHECK(!P, "problem was already set!"); P = make_shared<MP_Traced>(_P); return *this; }
   MP_Solver& setInitialization(const arr& _x){ x=_x; return *this; }
-  MP_Solver& setOptions(const rai::Graph& opt){ NIY; return *this; }
-  MP_Solver& setVerbose(int _verbose){ verbose=_verbose; return *this; }
   MP_Solver& setTracing(bool trace_x, bool trace_costs, bool trace_phi, bool trace_J){ P->setTracing(trace_x, trace_costs, trace_phi, trace_J); return *this; }
-  rai::Graph getOptions(){ return rai::Graph(); }
 
   shared_ptr<SolverReturn> solve(int resampleInitialization=-1); ///< -1: only when not yet set
 

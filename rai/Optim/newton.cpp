@@ -7,6 +7,8 @@
     --------------------------------------------------------------  */
 
 #include "newton.h"
+#include "optimization.h"
+
 #include <iomanip>
 
 bool sanityCheck=false; //true;
@@ -15,7 +17,7 @@ void updateBoundActive(intA& boundActive, const arr& x, const arr& bound_lo, con
 /** @brief Minimizes \f$f(x) = A(x)^T x A^T(x) - 2 a(x)^T x + c(x)\f$. The optional _user arguments specify,
  * if f has already been evaluated at x (another initial evaluation is then omitted
  * to increase performance) and the evaluation of the returned x is also returned */
-int optNewton(arr& x, const ScalarFunction& f,  OptOptions o) {
+int optNewton(arr& x, const ScalarFunction& f, rai::OptOptions o) {
   OptNewton opt(x, f, o);
   ofstream fil("z.opt");
   opt.simpleLog = &fil;
@@ -24,7 +26,7 @@ int optNewton(arr& x, const ScalarFunction& f,  OptOptions o) {
 
 //===========================================================================
 
-OptNewton::OptNewton(arr& _x, const ScalarFunction& _f,  OptOptions _o, ostream* _logFile):
+OptNewton::OptNewton(arr& _x, const ScalarFunction& _f, rai::OptOptions _o, ostream* _logFile):
   x(_x), f(_f), options(_o), logFile(_logFile) {
   alpha = options.initStep;
   beta = options.damping;

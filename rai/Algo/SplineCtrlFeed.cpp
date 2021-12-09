@@ -80,16 +80,18 @@ void CubicSplineCtrlReference::getReference(arr& q_ref, arr& qDot_ref, arr& qDDo
 void CubicSplineCtrlReference::append(const arr& x, const arr& v, const arr& t, double ctrlTime){
   waitForInitialized();
   if(ctrlTime > getEndTime()){ //previous spline is done... create new one but 'overwrite'
+    LOG(1) <<"override";
     overrideSmooth(x, v, t, ctrlTime);
   }else{ //previous spline still active... append
     CHECK_GE(t.first(), .01, "that's too harsh! When appending the first time knot should be greater zero (otherwise non-smooth).");
     spline.set()->append(x, v, t);
+    report(ctrlTime);
   }
 }
 
 void CubicSplineCtrlReference::overrideSmooth(const arr& x, const arr& v, const arr& t, double ctrlTime){
   waitForInitialized();
-  CHECK_GE(t.first(), .01, "that's too harsh!");
+  CHECK_GE(t.first(), .001, "that's too harsh!");
   arr x_now, xDot_now;
   arr _x(x), _v(v), _t(t);
   auto splineSet = spline.set();

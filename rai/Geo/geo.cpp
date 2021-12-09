@@ -183,13 +183,11 @@ arr Vector::generateOrthonormalSystemMatrix() const {
 
 //{ I/O
 void Vector::write(std::ostream& os) const {
-  if(!rai::IOraw) os <<'[' <<x <<", " <<y <<", " <<z <<']';
-  else os <<' ' <<x <<", " <<y <<' ' <<z;
+  os <<'[' <<x <<", " <<y <<", " <<z <<']';
 }
 
 void Vector::read(std::istream& is) {
-  if(!rai::IOraw) is >>PARSE("(") >>x >>y >>z >>PARSE(")");
-  else is >>x >>y >>z;
+  is >>PARSE("[") >>x >>y >>z >>PARSE("]");
 }
 //}
 
@@ -1002,10 +1000,12 @@ arr Quaternion::getQuaternionMultiplicationMatrix() const{
 
 void Quaternion::writeNice(std::ostream& os) const { os <<"Quaternion: " <<getDeg() <<" around " <<getVec() <<"\n"; }
 void Quaternion::write(std::ostream& os) const {
-  if(!rai::IOraw) os <<'[' <<w <<", " <<x <<", " <<y <<", " <<z <<']';
-  else os <<' ' <<w <<' ' <<x <<' ' <<y <<' ' <<z;
+  os <<'[' <<w <<", " <<x <<", " <<y <<", " <<z <<']';
 }
-void Quaternion::read(std::istream& is) { is >>PARSE("(") >>w >>x >>y  >>z >>PARSE(")"); normalize();}
+void Quaternion::read(std::istream& is) {
+  is >>PARSE("[") >>w >>x >>y  >>z >>PARSE("]");
+  normalize();
+}
 //}
 
 /// inverse rotation

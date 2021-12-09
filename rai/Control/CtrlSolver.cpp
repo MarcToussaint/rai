@@ -125,7 +125,7 @@ arr CtrlSolver::solve() {
   for(auto& o: objectives) if(o->active){
     komo.addObjective({}, o->feat, {}, o->type);
   }
-  OptOptions opt;
+  rai::OptOptions opt;
   opt.stopTolerance = 1e-4;
   opt.stopGTolerance = 1e-4;
   opt.stopIters = 20;

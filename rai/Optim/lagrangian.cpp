@@ -20,7 +20,7 @@ double I_lambda_x(uint i, arr& lambda, arr& g) {
 
 //==============================================================================
 
-LagrangianProblem::LagrangianProblem(const shared_ptr<MathematicalProgram>& P, const OptOptions& opt, arr& lambdaInit)
+LagrangianProblem::LagrangianProblem(const shared_ptr<MathematicalProgram>& P, const rai::OptOptions& opt, arr& lambdaInit)
   : P(P), muLB(0.), mu(0.), nu(0.), useLB(false) {
 
   CHECK(P, "null problem given");
@@ -29,7 +29,7 @@ LagrangianProblem::LagrangianProblem(const shared_ptr<MathematicalProgram>& P, c
     return this->lagrangian(dL, HL, x);
   });
 
-  if(opt.constrainedMethod==logBarrier) useLB=true;
+  if(opt.constrainedMethod==rai::logBarrier) useLB=true;
 
   //switch on penalty terms
   mu=opt.muInit;
@@ -262,7 +262,7 @@ uint LagrangianProblem::get_dimOfType(const ObjectiveType& ot) {
   return d;
 }
 
-void LagrangianProblem::aulaUpdate(const OptOptions& opt, bool anyTimeVariant, double lambdaStepsize, double* L_x, arr& dL_x, arr& HL_x) {
+void LagrangianProblem::aulaUpdate(const rai::OptOptions& opt, bool anyTimeVariant, double lambdaStepsize, double* L_x, arr& dL_x, arr& HL_x) {
   if(!lambda.N) lambda=zeros(phi_x.N);
 
   //-- lambda update
@@ -342,15 +342,15 @@ void LagrangianProblem::aulaUpdate(const OptOptions& opt, bool anyTimeVariant, d
   }
 }
 
-void LagrangianProblem::autoUpdate(const OptOptions& opt, double* L_x, arr& dL_x, arr& HL_x) {
+void LagrangianProblem::autoUpdate(const rai::OptOptions& opt, double* L_x, arr& dL_x, arr& HL_x) {
   switch(opt.constrainedMethod) {
 //  case squaredPenalty: UCP.mu *= opt.aulaMuInc;  break;
-    case squaredPenalty: aulaUpdate(opt, false, -1., L_x, dL_x, HL_x);  break;
-    case augmentedLag:   aulaUpdate(opt, false, 1., L_x, dL_x, HL_x);  break;
-    case anyTimeAula:    aulaUpdate(opt, true,  1., L_x, dL_x, HL_x);  break;
-    case logBarrier:     muLB *= opt.muLBDec;  break;
-    case squaredPenaltyFixed: HALT("you should not be here"); break;
-    case noMethod: HALT("need to set method before");  break;
+    case rai::squaredPenalty: aulaUpdate(opt, false, -1., L_x, dL_x, HL_x);  break;
+    case rai::augmentedLag:   aulaUpdate(opt, false, 1., L_x, dL_x, HL_x);  break;
+    case rai::anyTimeAula:    aulaUpdate(opt, true,  1., L_x, dL_x, HL_x);  break;
+    case rai::logBarrier:     muLB *= opt.muLBDec;  break;
+    case rai::squaredPenaltyFixed: HALT("you should not be here"); break;
+    case rai::noMethod: HALT("need to set method before");  break;
   }
 }
 

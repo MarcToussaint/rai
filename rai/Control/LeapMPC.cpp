@@ -51,7 +51,7 @@ void LeapMPC::reinit(const rai::Configuration& C){
 
 void LeapMPC::solve(){
   //re-run KOMO
-  OptOptions opt;
+  rai::OptOptions opt;
   opt.stopTolerance = 1e-4;
   opt.stopGTolerance = 1e-4;
   komo.opt.verbose=0;

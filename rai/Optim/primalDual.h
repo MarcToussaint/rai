@@ -22,7 +22,7 @@ struct PrimalDualProblem : ScalarFunction {
   double dualityMeasure=1.;
   bool primalFeasible=false;
 
-  PrimalDualProblem(const arr& x, const shared_ptr<MathematicalProgram>& P, OptOptions opt=NOOPT, arr& lambdaInit=NoArr);
+  PrimalDualProblem(const arr& x, const shared_ptr<MathematicalProgram>& P, rai::OptOptions opt=NOOPT, arr& lambdaInit=NoArr);
 
   double primalDual(arr& r, arr& R, const arr& x); ///< CORE METHOD: the unconstrained scalar function F
 
@@ -38,11 +38,11 @@ struct OptPrimalDual {
   arr& x;
   PrimalDualProblem PD;
   OptNewton newton;
-  OptOptions opt;
+  rai::OptOptions opt;
   uint its=0;
   ofstream* fil=nullptr;
 
-  OptPrimalDual(arr& x, arr& dual, const shared_ptr<MathematicalProgram>& P, int verbose=-1, OptOptions opt=NOOPT);
+  OptPrimalDual(arr& x, arr& dual, const shared_ptr<MathematicalProgram>& P, int verbose=-1, rai::OptOptions opt=NOOPT);
   ~OptPrimalDual();
   uint run(uint maxIt=1000);
 };

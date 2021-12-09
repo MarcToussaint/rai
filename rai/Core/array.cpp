@@ -480,7 +480,7 @@ uint inverse_SVD(arr& Ainv, const arr& A) {
   Ainv.resize(n, m);
   if(m==0 || n==0) return 0;
   if(m==n && m==1) { Ainv(0, 0)=1./A(0, 0); return 0; }
-  if(m==n && m==2) { inverse2d(Ainv, A); return 0; }
+  if(m==n && m==2) { Ainv = inverse2d(A); return 0; }
 
   r=svd(U, w, V, A, true);
 
@@ -2793,11 +2793,11 @@ void SparseMatrix::checkConsistency() const {
   if(cols.N){
     CHECK_EQ(rows.N, Z.d0, "");
     CHECK_EQ(cols.N, Z.d1, "");
-    for(int i=0; i<Z.d0; i++) for(int k=0;k<rows(i).d0;k++){
+    for(uint i=0; i<Z.d0; i++) for(int k=0;k<rows(i).d0;k++){
       CHECK_EQ(elems(rows(i)(k,1), 0), i, "");
       CHECK_EQ(elems(rows(i)(k,1), 1), rows(i)(k,0), "");
     }
-    for(int j=0; j<Z.d1; j++) for(int k=0;k<cols(j).d0;k++){
+    for(uint j=0; j<Z.d1; j++) for(int k=0;k<cols(j).d0;k++){
       CHECK_EQ(elems(cols(j)(k,1), 1), j, "");
       CHECK_EQ(elems(cols(j)(k,1), 0), cols(j)(k,0), "");
     }

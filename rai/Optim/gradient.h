@@ -8,7 +8,8 @@
 
 #pragma once
 
-#include "optimization.h"
+#include "options.h"
+#include "../Core/array.h"
 
 //===========================================================================
 //
@@ -18,7 +19,7 @@
 struct OptGrad {
   arr& x;
   ScalarFunction f;
-  OptOptions o;
+  rai::OptOptions o;
 
   enum StopCriterion { stopNone=0, stopCrit1, stopCrit2, stopCritLineSteps, stopCritEvals, stopStepFailed };
   double fx;
@@ -28,14 +29,14 @@ struct OptGrad {
   StopCriterion stopCriterion;
   ofstream fil;
 
-  OptGrad(arr& x, const ScalarFunction& f, OptOptions o=NOOPT);
+  OptGrad(arr& x, const ScalarFunction& f, rai::OptOptions o=NOOPT);
   ~OptGrad();
   StopCriterion step();
   StopCriterion run(uint maxIt = 1000);
   void reinit(const arr& _x=NoArr);
 };
 
-inline int optGrad(arr& x, const ScalarFunction& f, OptOptions opt=NOOPT) {
+inline int optGrad(arr& x, const ScalarFunction& f, rai::OptOptions opt=NOOPT) {
   return OptGrad(x, f, opt).run();
 }
 
@@ -54,7 +55,7 @@ struct Rprop {
   uint loop(arr& x, const ScalarFunction& f, double stoppingTolerance=1e-2, double initialStepSize=1., uint maxIterations=1000, int verbose=0);
 };
 
-inline uint optRprop(arr& x, const ScalarFunction& f, OptOptions opt=NOOPT) {
+inline uint optRprop(arr& x, const ScalarFunction& f, rai::OptOptions opt=NOOPT) {
   return Rprop().loop(x, f, opt.stopTolerance, opt.initStep, opt.stopEvals, opt.verbose);
 }
 
