@@ -82,16 +82,15 @@ using std::make_shared;
 
 //===========================================================================
 //
-// standard little methods in my namespace (this needs cleanup)
+// standard little methods (this needs cleanup)
 //
 
 namespace rai {
 extern int argc;
 extern char** argv;
 extern std::string startDir;
-extern bool IOraw;  ///< stream modifier for some classes (Mem in particular)
 extern uint lineCount;
-extern int verboseLevel;
+struct String;
 
 enum ArgWord { _left, _right, _sequence, _path, _xAxis, _yAxis, _zAxis, _xNegAxis, _yNegAxis, _zNegAxis };
 
@@ -101,6 +100,7 @@ void system(const char* cmd);
 //----- files
 void open(std::ofstream& fs, const char* name, const char* errmsg="");
 void open(std::ifstream& fs, const char* name, const char* errmsg="");
+String raiPath(const char* rel=nullptr);
 
 //----- very basic ui
 int x11_getKey();
@@ -147,13 +147,6 @@ double gaussInt(double x);
 double gaussIntExpectation(double x);
 double NNsdv(const double& a, const double& b, double sdv);
 double NNsdv(double x, double sdv);
-double smoothRamp(double x, double eps, double power);
-double d_smoothRamp(double x, double eps, double power);
-
-double ineqConstraintCost(double g, double margin, double power);
-double d_ineqConstraintCost(double g, double margin, double power);
-double eqConstraintCost(double h, double margin, double power);
-double d_eqConstraintCost(double h, double margin, double power);
 
 //----- time access
 double clockTime(); //(really on the clock)
@@ -182,7 +175,6 @@ std::string getcwd_string();
 const char* niceTypeidName(const std::type_info& type);
 
 //----- get verbose level
-uint getVerboseLevel();
 bool getInteractivity();
 bool getDisableGui();
 }
@@ -502,8 +494,6 @@ template<class T> struct ParameterInitEnum {
 //
 
 namespace rai {
-
-String raiPath(const char* rel=nullptr);
 
 /** @brief A ostream/istream wrapper that allows easier initialization of objects, like:
 arr X = FILE("inname");

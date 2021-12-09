@@ -106,12 +106,6 @@ struct ChoiceConstraintFunction : MathematicalProgram {
   arr randomG;
   ChoiceConstraintFunction();
 
-  uint getDimension();
-
-  void getFeatureTypes(ObjectiveTypeA& tt);
-
-  void getBounds(arr& bounds_lo, arr& bounds_hi);
-
   void evaluate(arr& phi, arr& J, const arr& x);
   void getFHessian(arr& H, const arr& x);
 //  virtual uint dim_g(){

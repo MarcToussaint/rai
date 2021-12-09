@@ -63,17 +63,15 @@ void TEST(Timer){
   }
 
   double realTime = -rai::realTime();
+  double cpuTime = -rai::cpuTime();
 
-  rai::timerStart();
   for(uint i=0;i<4;i++){
     cout <<"i=" <<i <<flush;
     for(uint j=0;j<100000;j++){ j+=10; j-=10; } //do something stupid
     rai::wait(.5);
-    cout <<" cpu timer reads " <<rai::timerRead(false) <<"sec" <<endl;
-    if(i==1){ rai::timerPause(); cout <<"timer paused" <<endl; }
-    if(i==2){ rai::timerResume(); cout <<"timer resumed" <<endl; }
+    cout <<" cpu timer reads " <<rai::cpuTime()+cpuTime <<"sec" <<endl;
   }
-  double cpuTime=rai::timerRead();
+  cpuTime += rai::cpuTime();
   realTime += rai::realTime();
   CHECK_ZERO(realTime-2., .01, "wait failed");
   CHECK(cpuTime>=0. && cpuTime<1.,"no cpu time measured");

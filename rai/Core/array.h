@@ -734,22 +734,15 @@ rai::String singleString(const StringA& strs);
 /// @name template functions
 /// @{
 
-//NOTES:
-// -- past-tense names do not modify the array, but return variants
-// -- more methods should return an array instead of have a returned parameter...
-
-template<class T> rai::Array<T> vectorShaped(const rai::Array<T>& x) {  rai::Array<T> y;  y.referTo(x);  y.reshape(y.N);  return y;  }
 template<class T> rai::Array<T> getDiag(const rai::Array<T>& y);
 template<class T> rai::Array<T> diag(const rai::Array<T>& x) {  rai::Array<T> y;  y.setDiag(x);  return y;  }
 template<class T> rai::Array<T> skew(const rai::Array<T>& x);
-template<class T> void inverse2d(rai::Array<T>& Ainv, const rai::Array<T>& A);
+template<class T> rai::Array<T> inverse2d(const rai::Array<T>& A);
 template<class T> rai::Array<T> replicate(const rai::Array<T>& A, uint d0);
 template<class T> rai::Array<T> integral(const rai::Array<T>& x);
 template<class T> rai::Array<T> differencing(const rai::Array<T>& x);
 
-template<class T> uintA size(const rai::Array<T>& x) { return x.dim(); } //TODO: remove
 template<class T> void checkNan(const rai::Array<T>& x);
-template<class T> void sort(rai::Array<T>& x);
 
 template<class T> T entropy(const rai::Array<T>& v);
 template<class T> T normalizeDist(rai::Array<T>& v);

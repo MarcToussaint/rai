@@ -2172,10 +2172,10 @@ template<class T> void rai::Array<T>::readDim(std::istream& is) {
 }
 
 /// OBSOLETE - I should remove this. IO-manip: arrays will be streamed as raw (without tags)
-template<class T> const rai::Array<T>& rai::Array<T>::ioraw() const { IOraw=true; return *this; }
+template<class T> const rai::Array<T>& rai::Array<T>::ioraw() const { NIY; }
 
 /// IO-manip: arrays will be streamed non-raw (with tags)
-//template<class T> const rai::Array<T>& rai::Array<T>::ionoraw() const{ IOraw=false; return *this; }
+//template<class T> const rai::Array<T>& rai::Array<T>::ionoraw() const{ NIY;  }
 
 /// array must have correct size! simply streams in all elements sequentially
 template<class T> void rai::Array<T>::readRaw(std::istream& is) {
@@ -2342,10 +2342,11 @@ template<class T> rai::Array<T> getDiag(const rai::Array<T>& y) {
 }
 
 /// inverse of a 2d matrix
-template<class T> void inverse2d(rai::Array<T>& Ainv, const rai::Array<T>& A) {
-  Ainv.resize(2, 2);
+template<class T> rai::Array<T> inverse2d(const rai::Array<T>& A) {
+  rai::Array<T> Ainv(2, 2);
   Ainv(0, 0)=A(1, 1); Ainv(1, 1)=A(0, 0); Ainv(0, 1)=-A(0, 1); Ainv(1, 0)=-A(1, 0);
   Ainv/=(T)(A(0, 0)*A(1, 1)-A(0, 1)*A(1, 0));
+  return Ainv;
 }
 
 /// sets x to be the diagonal matrix with diagonal v
@@ -2365,11 +2366,6 @@ template<class T> void checkNan(const rai::Array<T>& x) {
     //CHECK(x.elem(i)!=NAN, "found a NaN" <<x.elem(i) <<'[' <<i <<']');
     CHECK_EQ(x.elem(i), x.elem(i), "inconsistent number: " <<x.elem(i) <<'[' <<i <<']');
   }
-}
-
-template<class T> void sort(rai::Array<T>& x) {
-  T* pstop=x.p+x.N;
-  std::sort(x.p, pstop);
 }
 
 template<class T> rai::Array<T> replicate(const rai::Array<T>& A, uint d0) {

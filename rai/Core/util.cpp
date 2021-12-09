@@ -364,65 +364,6 @@ double NNsdv(double x, double sdv) {
   return norm*EXP(-.5*x*x);
 }
 
-/* gnuplot:
-heavy(x) = (1+sgn(x))/2
-eps = 0.1
-g(x) = heavy(x-eps)*(x-eps/2) + (1-heavy(x-eps))*x**2/(2*eps)
-plot [-.5:.5] g(abs(x))
-*/
-double POW(double x, double power) { if(power==1.) return x; if(power==2.) return x*x; return pow(x, power); }
-double smoothRamp(double x, double eps, double power) {
-  if(x<0.) return 0.;
-  if(power!=1.) return pow(smoothRamp(x, eps, 1.), power);
-  if(!eps) return x;
-  if(x>eps) return x - .5*eps;
-  return x*x/(2*eps);
-}
-
-double d_smoothRamp(double x, double eps, double power) {
-  if(x<0.) return 0.;
-  if(power!=1.) return power*pow(smoothRamp(x, eps, 1.), power-1.)*d_smoothRamp(x, eps, 1.);
-  if(!eps || x>eps) return 1.;
-  return x/eps;
-}
-
-/*
-heavy(x) = (1+sgn(x))/2
-power = 1.5
-margin = 1.5
-f(x) = heavy(x)*x**power
-plot f(x/margin+1), 1
-*/
-double ineqConstraintCost(double g, double margin, double power) {
-  double y=g+margin;
-  if(y<0.) return 0.;
-  if(power==1.) return y;
-  if(power==2.) return y*y;
-  return pow(y, power);
-}
-
-double d_ineqConstraintCost(double g, double margin, double power) {
-  double y=g+margin;
-  if(y<0.) return 0.;
-  if(power==1.) return 1.;
-  if(power==2.) return 2.*y;
-  return power*pow(y, power-1.);
-}
-
-double eqConstraintCost(double h, double margin, double power) {
-  double y=h/margin;
-  if(power==1.) return fabs(y);
-  if(power==2.) return y*y;
-  return pow(fabs(y), power);
-}
-
-double d_eqConstraintCost(double h, double margin, double power) {
-  double y=h/margin;
-  if(power==1.) return rai::sign(y)/margin;
-  if(power==2.) return 2.*y/margin;
-  return power*pow(y, power-1.)*rai::sign(y)/margin;
-}
-
 /** @brief double time on the wall clock (probably counted from decades back)
   (probably in micro second resolution) -- Windows checked! */
 double clockTime() {
@@ -632,11 +573,6 @@ String raiPath(const char* rel) {
   String path(RAI_ROOT_PATH);
   path <<"/" <<rel;
   return path;
-}
-
-uint getVerboseLevel() {
-  if(verboseLevel==-1) verboseLevel=getParameter<int>("verbose", 0);
-  return verboseLevel;
 }
 
 bool getInteractivity() {

@@ -31,7 +31,7 @@ public:
   double fx;
   arr gx, Hx;
   double alpha, beta;
-  uint its=0, evals=0, numTinyFSteps=0, numTinyXSteps=0;
+  int its=0, evals=0, numTinyFSteps=0, numTinyXSteps=0;
   StopCriterion stopCriterion;
   arr bounds_lo, bounds_up;
   bool rootFinding=false;
