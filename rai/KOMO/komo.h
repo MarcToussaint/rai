@@ -156,24 +156,7 @@ public:
   void setConfiguration_X(int t, const arr& X); ///< t<0 allows to set the prefix configurations; while 0 <= t < T allows to set all other initial configurations
   void initWithConstant(const arr& q); ///< set all configurations EXCEPT the prefix to a particular state
   void initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase=1); ///< set all configurations (EXCEPT prefix) to interpolate given waypoints
-  void updateAndShiftPrefix(const rai::Configuration& C){
-    //-- joint state
-    //set t=0 to new joint state:
-    setConfiguration_qAll(0, C.getJointState());
-    //shift the joint state within prefix (t=-1 becomes equal to t=0, which is new state)
-    for(int t=-k_order; t<0; t++) setConfiguration_qOrg(t, getConfiguration_qOrg(t+1));
-
-    //-- frame state of roots only, if objects moved:
-    uintA roots = framesToIndices(C.getRoots());
-    arr X0 = C.getFrameState(roots);
-    //set t=0..T to new frame state:
-    for(uint t=0; t<T; t++) pathConfig.setFrameState(X0, roots+timeSlices(k_order+t,0)->ID);
-    //shift the frame states within the prefix (t=-1 becomes equal to t=0, which is new state)
-    for(int t=-k_order; t<0; t++){
-      arr Xt = pathConfig.getFrameState(roots+timeSlices(k_order+t+1,0)->ID);
-      pathConfig.setFrameState(Xt, roots+timeSlices(k_order+t,0)->ID);
-    }
-  }
+  void updateAndShiftPrefix(const rai::Configuration& C);
 
 
   //-- optimization

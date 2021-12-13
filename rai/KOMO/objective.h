@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "../Optim/optimization.h"
+#include "../Optim/MathematicalProgram.h"
 #include "../Kin/feature.h"
 
 struct Objective {
