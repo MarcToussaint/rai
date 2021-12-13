@@ -120,8 +120,6 @@ void init_Optim(pybind11::module& m) {
       .def("setProblem", &MP_Solver::setProblem)
       .def("setSolver", &MP_Solver::setSolver)
 
-      .def("getOptions", &MP_Solver::getOptions)
-      .def("setOptions", &MP_Solver::setOptions)
       .def("setTracing", &MP_Solver::setTracing)
       .def("solve", &MP_Solver::solve)
 
