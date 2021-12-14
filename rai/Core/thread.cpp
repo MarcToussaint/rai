@@ -288,9 +288,9 @@ Metronome::Metronome(double ticIntervalSec) {
 }
 
 void Metronome::reset(double ticIntervalSec) {
-  ticTime = std::chrono::high_resolution_clock::now();
   tics=0;
   ticInterval = ticIntervalSec;
+  ticTime = std::chrono::high_resolution_clock::now();
 }
 
 void Metronome::waitForTic() {

@@ -20,6 +20,7 @@ struct FlagHuntingControl{
 
   shared_ptr<SolverReturn> solve(const arr& x0, const arr& v0, int verbose=1);
 
+  bool done() const{ return phase>=flags.d0; }
   arr getFlags() const{ return flags({phase, -1}).copy(); }
   arr getTimes() const{ return integral(tau({phase, -1})); }
   arr getVels() const{

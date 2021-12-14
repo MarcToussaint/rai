@@ -156,6 +156,7 @@ public:
   void setConfiguration_X(int t, const arr& X); ///< t<0 allows to set the prefix configurations; while 0 <= t < T allows to set all other initial configurations
   void initWithConstant(const arr& q); ///< set all configurations EXCEPT the prefix to a particular state
   void initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase=1); ///< set all configurations (EXCEPT prefix) to interpolate given waypoints
+  void updateRootObjects(const rai::Configuration& C);
   void updateAndShiftPrefix(const rai::Configuration& C);
 
 

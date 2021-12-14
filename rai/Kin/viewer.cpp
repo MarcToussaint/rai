@@ -41,12 +41,15 @@ int rai::ConfigurationViewer::update(bool watch) {
     if(watch) gl->text <<"\n[ENTER]";
   }
 
+  int ret=0;
   if(watch) {
-    gl->watch();
+    ret = gl->watch();
     gl->text = drawText();
+  }else{
+    ret = gl->update(nullptr, false);
   }
 
-  return gl->update(nullptr, false);
+  return ret;
 }
 
 void rai::ConfigurationViewer::raiseWindow(){

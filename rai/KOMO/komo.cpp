@@ -672,14 +672,7 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase) 
   run_prepare(0.);
 }
 
-void KOMO::updateAndShiftPrefix(const Configuration& C){
-  //-- joint state
-  //set t=0 to new joint state:
-  //setConfiguration_qAll(0, C.getJointState());
-  //shift the joint state within prefix (t=-1 becomes equal to t=0, which is new state)
-//  for(int t=-k_order; t<-1; t++) setConfiguration_qOrg(t, getConfiguration_qOrg(t+1));
-//  setConfiguration_qOrg(-1, C.getJointState());
-
+void KOMO::updateRootObjects(const Configuration& C){
   //-- frame state of roots only, if objects moved:
   uintA roots = framesToIndices(C.getRoots());
   arr X0 = C.getFrameState(roots);
@@ -690,6 +683,16 @@ void KOMO::updateAndShiftPrefix(const Configuration& C){
     arr Xt = pathConfig.getFrameState(roots+timeSlices(k_order+t+1,0)->ID);
     pathConfig.setFrameState(Xt, roots+timeSlices(k_order+t,0)->ID);
   }
+}
+
+void KOMO::updateAndShiftPrefix(const Configuration& C){
+  //-- joint state
+  //set t=0 to new joint state:
+  setConfiguration_qOrg(0, C.getJointState());
+  //shift the joint state within prefix (t=-1 becomes equal to t=0, which is new state)
+  for(int t=-k_order; t<0; t++) setConfiguration_qOrg(t, getConfiguration_qOrg(t+1));
+
+  updateRootObjects(C);
 }
 
 void KOMO::reset() {
