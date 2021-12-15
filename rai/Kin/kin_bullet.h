@@ -10,6 +10,15 @@
 
 class btRigidBody;
 
+namespace rai {
+  struct Bullet_Options {
+    RAI_PARAM("bullet/", double, defaultFriction, 1.)
+    RAI_PARAM("bullet/", double, defaultRestitution, .1)
+    RAI_PARAM("bullet/", double, contactStiffness, 1e4)
+    RAI_PARAM("bullet/", double, contactDamping, 1e-1)
+  };
+}//namespace
+
 struct BulletInterface {
   struct BulletInterface_self* self=0;
 

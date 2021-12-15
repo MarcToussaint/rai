@@ -16,8 +16,6 @@
 // ============================================================================
 
 constexpr float gravity = -9.8f;
-constexpr float groundRestitution = .1f;
-constexpr float objectRestitution = .1f;
 
 // ============================================================================
 
@@ -50,6 +48,8 @@ struct BulletInterface_self {
 
   rai::Array<btRigidBody*> actors;
   rai::Array<rai::BodyType> actorTypes;
+
+  rai::Bullet_Options opt;
 
   uint stepCount=0;
 
@@ -220,7 +220,8 @@ btRigidBody* BulletInterface_self::addGround(bool yAxisGravity) {
   btDefaultMotionState* myMotionState = new btDefaultMotionState(groundTransform);
   btRigidBody::btRigidBodyConstructionInfo rbInfo(0, myMotionState, groundShape, btVector3(0, 0, 0));
   btRigidBody* body = new btRigidBody(rbInfo);
-  body->setRestitution(groundRestitution);
+  body->setRestitution(opt.defaultRestitution);
+  body->setFriction(opt.defaultFriction);
   dynamicsWorld->addRigidBody(body);
   return body;
 }
@@ -284,23 +285,20 @@ btRigidBody* BulletInterface_self::addLink(rai::Frame* f, int verbose) {
   btDefaultMotionState* motionState = new btDefaultMotionState(pose);
   btRigidBody* body = new btRigidBody(btRigidBody::btRigidBodyConstructionInfo(mass, motionState, colShape, localInertia));
 
-  //-- these are physics tweaks - TODO: introduce global parameters for them
-  double fric=1.;
-  if(shapes.N==1 && f == &shapes.scalar()->frame) {
-    //try to read friction from attributes
-    if(shapes.scalar()->frame.ats) shapes.scalar()->frame.ats->get<double>(fric, "friction");
+  //-- these are physics tweaks
+  {
+    double friction=opt.defaultFriction;
+    for(auto s:shapes) if(s->frame.ats) s->frame.ats->get<double>(friction, "friction");
+    if(friction>=0.) body->setFriction(friction);
   }
-  body->setFriction(fric);
 //  body->setRollingFriction(.01);
 //  body->setSpinningFriction(.01);
-//  cout <<body->getContactStiffness() <<endl;
-//  cout <<body->getContactDamping() <<endl;
-//  body->setContactStiffnessAndDamping(1e4, 1e-1);
-//  body->setContactStiffnessAndDamping(1e7, 3e4);
+  cout <<body->getContactStiffness() <<' ' <<body->getContactDamping() <<endl;
+  body->setContactStiffnessAndDamping(opt.contactStiffness, opt.contactDamping);
   {
-    double restitution=-1.;
+    double restitution=opt.defaultRestitution;
     for(auto s:shapes) if(s->frame.ats) s->frame.ats->get<double>(restitution, "restitution");
-    if(restitution>0.) body->setRestitution(restitution);
+    if(restitution>=0.) body->setRestitution(restitution);
   }
 
   dynamicsWorld->addRigidBody(body);
