@@ -3110,7 +3110,7 @@ void op_indexWiseProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Ar
     }
     return;
   }
-  HALT("operator% not implemented for "<<y.dim() <<" %" <<z.dim() <<" [I would like to change convention on the interpretation of operator% - contact Marc!")
+  HALT("operator% not implemented for dimensions "<<y.dim() <<"%" <<z.dim())
 }
 
 /** @brief outer product (also exterior or tensor product): \f$\forall_{ijk}:~

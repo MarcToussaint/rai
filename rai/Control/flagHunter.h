@@ -21,11 +21,16 @@ struct FlagHuntingControl{
   shared_ptr<SolverReturn> solve(const arr& x0, const arr& v0, int verbose=1);
 
   bool done() const{ return phase>=flags.d0; }
-  arr getFlags() const{ return flags({phase, -1}).copy(); }
-  arr getTimes() const{ return integral(tau({phase, -1})); }
+  arr getFlags() const{ if(done()) return arr{}; return flags({phase, -1}).copy(); }
+  arr getTimes() const{ if(done()) return arr{}; return integral(tau({phase, -1})); }
   arr getVels() const{
-      arr _vels = vels({phase, -1}).copy();
-      if(tangents.N) _vels = _vels % tangents;
+      if(done()) return arr{};
+      arr _vels;
+      if(!tangents.N){
+          _vels = vels({phase, -1}).copy();
+      }else{
+          _vels = (vels%tangents)({phase, -1}).copy();
+      }
       _vels.append(zeros(flags.d1));
       _vels.reshape(flags.d0 - phase, flags.d1);
       return _vels;

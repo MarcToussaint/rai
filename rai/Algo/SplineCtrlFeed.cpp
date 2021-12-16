@@ -69,7 +69,7 @@ void CubicSplineCtrlReference::initialize(const arr& q_real, const arr& qDot_rea
 }
 
 void CubicSplineCtrlReference::waitForInitialized(){
-  while(!spline.get()->times.N) spline.waitForNextRevision();
+  while(!spline.get()->times.N) rai::wait(.01); //spline.waitForNextRevision();
 }
 
 void CubicSplineCtrlReference::getReference(arr& q_ref, arr& qDot_ref, arr& qDDot_ref, const arr& q_real, const arr& qDot_real, double ctrlTime){
