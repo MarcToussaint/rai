@@ -151,7 +151,7 @@ void BulletInterface::pullDynamicStates(FrameL& frames, arr& frameVelocities) {
 void BulletInterface::changeObjectType(rai::Frame* f, int _type, const arr& withVelocity) {
   rai::Enum<rai::BodyType> type((rai::BodyType)_type);
   if(self->actorTypes(f->ID) == type) {
-    LOG(-1) <<"frame " <<*f <<" is already of type " <<type;
+    //LOG(-1) <<"frame " <<*f <<" is already of type " <<type;
   }
 
   btRigidBody* a = self->actors(f->ID);
@@ -293,7 +293,7 @@ btRigidBody* BulletInterface_self::addLink(rai::Frame* f, int verbose) {
   }
 //  body->setRollingFriction(.01);
 //  body->setSpinningFriction(.01);
-  cout <<body->getContactStiffness() <<' ' <<body->getContactDamping() <<endl;
+  //cout <<body->getContactStiffness() <<' ' <<body->getContactDamping() <<endl;
   body->setContactStiffnessAndDamping(opt.contactStiffness, opt.contactDamping);
   {
     double restitution=opt.defaultRestitution;
