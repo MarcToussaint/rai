@@ -23,18 +23,11 @@ struct FlagHuntingControl{
   bool done() const{ return phase>=flags.d0; }
   arr getFlags() const{ if(done()) return arr{}; return flags({phase, -1}).copy(); }
   arr getTimes() const{ if(done()) return arr{}; return integral(tau({phase, -1})); }
-  arr getVels() const{
-      if(done()) return arr{};
-      arr _vels;
-      if(!tangents.N){
-          _vels = vels({phase, -1}).copy();
-      }else{
-          _vels = (vels%tangents)({phase, -1}).copy();
-      }
-      _vels.append(zeros(flags.d1));
-      _vels.reshape(flags.d0 - phase, flags.d1);
-      return _vels;
-  }
+  arr getVels() const;
+
+  void update_progressTime(double gap);
+  void update_flags(const arr& _flags);
+  void update_backtrack();
 
   void getCubicSpline(rai::CubicSpline& S, const arr& x0, const arr& v0) const;
 };

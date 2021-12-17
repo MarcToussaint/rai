@@ -42,6 +42,46 @@ shared_ptr<SolverReturn> FlagHuntingControl::solve(const arr& x0, const arr& v0,
   return ret;
 }
 
+arr FlagHuntingControl::getVels() const{
+  if(done()) return arr{};
+  arr _vels;
+  if(!tangents.N){
+    _vels = vels({phase, -1}).copy();
+  }else{
+    _vels = (vels%tangents)({phase, -1}).copy();
+  }
+  _vels.append(zeros(flags.d1));
+  _vels.reshape(flags.d0 - phase, flags.d1);
+  return _vels;
+}
+
+void FlagHuntingControl::update_progressTime(double gap){
+  if(gap < tau(phase)){ //time still within phase
+    tau(phase) -= gap; //change initialization of timeOpt
+  }else{ //time beyond current phase
+    if(phase+1<tau.N){ //if there exists another phase
+      tau(phase+1) -= gap-tau(phase); //change initialization of timeOpt
+      tau(phase) = 0.; //change initialization of timeOpt
+    }else{
+      tau = 0.;
+    }
+    phase++; //increase phase
+  }
+}
+
+void FlagHuntingControl::update_flags(const arr& _flags){
+  flags = _flags;
+  tangents[-1] = flags[-1] - flags[-0];
+  op_normalize(tangents[-1]());
+}
+
+void FlagHuntingControl::update_backtrack(){
+  LOG(0) <<"backtracking " <<phase <<"->" <<phase-1 <<" tau:" <<tau;
+  CHECK(phase>0, "");
+  phase--;
+  tau(phase) = 1.;
+}
+
 void FlagHuntingControl::getCubicSpline(rai::CubicSpline& S, const arr& x0, const arr& v0) const{
 
   arr _pts = getFlags();
