@@ -3084,6 +3084,7 @@ template rai::Array<float> rai::getParameter<floatA>(char const*);
 template rai::Array<uint> rai::getParameter<uintA>(char const*);
 template bool rai::checkParameter<arr>(char const*);
 template void rai::getParameter(uintA&, const char*, const uintA&);
+template void rai::getParameter(arr&, const char*, const arr&);
 
 void linkArray() { cout <<"*** libArray.so dynamically loaded ***" <<endl; }
 

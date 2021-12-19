@@ -40,8 +40,8 @@ void init_enums(pybind11::module& m);
 PYBIND11_MODULE(libry, m) {
   m.doc() = "rai bindings";
 
-  init_CfgFileParameters();
   init_LogToPythonConsole();
+  init_CfgFileParameters();
   init_enums(m);
 
   init_Config(m);
