@@ -40,7 +40,7 @@ struct BulletInterface {
 
 struct BulletBridge{
   class btDiscreteDynamicsWorld* dynamicsWorld;
-  rai::Array<class btRigidBody*> actors;
+  rai::Array<class btCollisionObject*> actors;
 
   BulletBridge(class btDiscreteDynamicsWorld* _dynamicsWorld);
 

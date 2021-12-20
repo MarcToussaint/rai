@@ -12,6 +12,7 @@
 
 #include "frame.h"
 #include <btBulletDynamicsCommon.h>
+#include <BulletSoftBody/btSoftBody.h>
 
 // ============================================================================
 
@@ -46,7 +47,7 @@ struct BulletInterface_self {
   btDiscreteDynamicsWorld* dynamicsWorld;
   btAlignedObjectArray<btCollisionShape*> collisionShapes;
 
-  rai::Array<btRigidBody*> actors;
+  rai::Array<btCollisionObject*> actors;
   rai::Array<rai::BodyType> actorTypes;
 
   rai::Bullet_Options opt;
@@ -95,7 +96,7 @@ BulletInterface::BulletInterface(rai::Configuration& C, int verbose, bool yAxisG
 BulletInterface::~BulletInterface() {
   for(int i = self->dynamicsWorld->getNumCollisionObjects() - 1; i >= 0; --i) {
     btCollisionObject* obj = self->dynamicsWorld->getCollisionObjectArray()[i];
-    btRigidBody* body = btRigidBody::upcast(obj);
+    btRigidBody* body = dynamic_cast<btRigidBody*>(obj);
     if(body && body->getMotionState()) {
       delete body->getMotionState();
     }
@@ -118,27 +119,35 @@ void BulletInterface::step(double tau) {
   self->dynamicsWorld->stepSimulation(tau);
 }
 
-void pullPoses(FrameL& frames, const rai::Array<btRigidBody*>& actors, arr& frameVelocities, bool alsoStaticAndKinematic){
+void pullPoses(FrameL& frames, const rai::Array<btCollisionObject*>& actors, arr& frameVelocities, bool alsoStaticAndKinematic){
   if(!!frameVelocities) frameVelocities.resize(frames.N, 2, 3).setZero();
 
   for(rai::Frame* f : frames) {
     if(actors.N <= f->ID) continue;
-    btRigidBody* b = actors(f->ID);
-    if(!b) continue;
-
-    if(alsoStaticAndKinematic || !b->isStaticOrKinematicObject()){
-      rai::Transformation X;
-      btTransform pose;
-      if(b->getMotionState()) {
-        b->getMotionState()->getWorldTransform(pose);
-      } else {
-        NIY; //trans = obj->getWorldTransform();
+    btRigidBody* b = dynamic_cast<btRigidBody*>(actors(f->ID));
+    if(b){
+      if(alsoStaticAndKinematic || !b->isStaticOrKinematicObject()){
+        rai::Transformation X;
+        btTransform pose;
+        if(b->getMotionState()) {
+          b->getMotionState()->getWorldTransform(pose);
+        } else {
+          NIY; //trans = obj->getWorldTransform();
+        }
+        btTrans2raiTrans(X, pose);
+        f->set_X() = X;
+        if(!!frameVelocities) {
+          frameVelocities(f->ID, 0, {}) = conv_btVec3_arr(b->getLinearVelocity());
+          frameVelocities(f->ID, 1, {}) = conv_btVec3_arr(b->getAngularVelocity());
+        }
       }
-      btTrans2raiTrans(X, pose);
-      f->set_X() = X;
-      if(!!frameVelocities) {
-        frameVelocities(f->ID, 0, {}) = conv_btVec3_arr(b->getLinearVelocity());
-        frameVelocities(f->ID, 1, {}) = conv_btVec3_arr(b->getAngularVelocity());
+    }
+    btSoftBody* softbody = dynamic_cast<btSoftBody*>(actors(f->ID));
+    if(softbody){
+      rai::Mesh &m = f->shape->mesh();
+      CHECK_EQ(m.V.d0, softbody->m_nodes.size(), "");
+      for(int i=0; i<softbody->m_nodes.size(); i++){
+        m.V[i] = conv_btVec3_arr(softbody->m_nodes[i].m_x);
       }
     }
   }
@@ -154,7 +163,7 @@ void BulletInterface::changeObjectType(rai::Frame* f, int _type, const arr& with
     //LOG(-1) <<"frame " <<*f <<" is already of type " <<type;
   }
 
-  btRigidBody* a = self->actors(f->ID);
+  btRigidBody* a = dynamic_cast<btRigidBody*>(self->actors(f->ID));
   if(!a) HALT("frame " <<*f <<"is not an actor");
 
   if(type==rai::BT_kinematic) {
@@ -175,7 +184,7 @@ void BulletInterface::pushKinematicStates(const FrameL& frames) {
   for(rai::Frame* f: frames) {
     if(self->actors.N <= f->ID) continue;
     if(self->actorTypes(f->ID)==rai::BT_kinematic) {
-      btRigidBody* b = self->actors(f->ID);
+      btRigidBody* b = dynamic_cast<btRigidBody*>(self->actors(f->ID));
       if(!b) continue; //f is not an actor
 
       CHECK(b->getMotionState(), "");
@@ -187,7 +196,7 @@ void BulletInterface::pushKinematicStates(const FrameL& frames) {
 void BulletInterface::pushFullState(const FrameL& frames, const arr& frameVelocities) {
   for(rai::Frame* f : frames) {
     if(self->actors.N <= f->ID) continue;
-    btRigidBody* b = self->actors(f->ID);
+    btRigidBody* b = dynamic_cast<btRigidBody*>(self->actors(f->ID));
     if(!b) continue; //f is not an actor
 
     b->setWorldTransform(conv_raiTrans2btTrans(f->ensure_X()));
@@ -388,9 +397,7 @@ btCollisionShape* BulletInterface_self::createCompoundCollisionShape(rai::Frame*
 BulletBridge::BulletBridge(btDiscreteDynamicsWorld* _dynamicsWorld) : dynamicsWorld(_dynamicsWorld) {
   btCollisionObjectArray& collisionObjects = dynamicsWorld->getCollisionObjectArray();
   actors.resize(collisionObjects.size()).setZero();
-  for(int i=0;i<collisionObjects.size();i++){
-    actors(i) = btRigidBody::upcast(collisionObjects[i]);
-  }
+  for(int i=0;i<collisionObjects.size();i++)  actors(i) = collisionObjects[i];
 }
 
 void BulletBridge::getConfiguration(rai::Configuration& C){
@@ -398,63 +405,99 @@ void BulletBridge::getConfiguration(rai::Configuration& C){
   for(int i=0;i<collisionObjects.size();i++){
     btCollisionObject* obj = collisionObjects[i];
     btCollisionShape* shape = obj->getCollisionShape();
-    btRigidBody* body = btRigidBody::upcast(obj);
-    rai::Transformation X;
-    btTransform pose;
-    if(body->getMotionState()) {
-      body->getMotionState()->getWorldTransform(pose);
-    } else {
-      NIY; //trans = obj->getWorldTransform();
+    cout <<"OBJECT " <<i <<" type:" <<obj->getInternalType() <<" shapeType: " <<shape->getShapeType() <<' ' <<shape->getName() <<endl;
+    if(obj->getInternalType()==obj->CO_COLLISION_OBJECT){
+      rai::Transformation X;
+      btTrans2raiTrans(X, obj->getWorldTransform());
+      auto& f = C.addFrame(STRING("coll"<<i))
+                ->setShape(rai::ST_marker, {.1})
+                .setPose(X);
     }
-    btTrans2raiTrans(X, pose);
-    cout <<"OBJECT " <<i <<" pose: " <<X <<" shapeType: " <<shape->getShapeType() <<' ' <<shape->getName();
-    switch(shape->getShapeType()){
-      case CONVEX_HULL_SHAPE_PROXYTYPE:{
-        btConvexHullShape* obj = dynamic_cast<btConvexHullShape*>(shape);
-        arr V(obj->getNumPoints(), 3);
-        for(uint i=0;i<V.d0;i++) V[i] = conv_btVec3_arr(obj->getUnscaledPoints()[i]);
-        auto& f = C.addFrame(STRING("obj"<<i))
-                  ->setConvexMesh(V)
-                  .setPose(X);
-        double mInv = body->getInvMass();
-        if(mInv>0.) f.setMass(1./mInv);
-      } break;
-      case BOX_SHAPE_PROXYTYPE:{
-        btBoxShape* box = dynamic_cast<btBoxShape*>(shape);
-        arr size = 2.*conv_btVec3_arr(box->getHalfExtentsWithMargin());
-        cout <<" margin: " <<box->getMargin() <<" size: " <<size;
-        auto& f = C.addFrame(STRING("obj"<<i))
-                  ->setShape(rai::ST_box, size)
-                  .setPose(X);
-        double mInv = body->getInvMass();
-        if(mInv>0.) f.setMass(1./mInv);
-      } break;
-      case CYLINDER_SHAPE_PROXYTYPE:{
-        btCylinderShape* obj = dynamic_cast<btCylinderShape*>(shape);
-        arr size = 2.*conv_btVec3_arr(obj->getHalfExtentsWithMargin());
-        cout <<" margin: " <<obj->getMargin() <<" size: " <<size;
-        size(1) = size(0);
-        size(0) = size(2);
-        size.resizeCopy(2);
-        auto& f = C.addFrame(STRING("obj"<<i))
-            ->setShape(rai::ST_cylinder, size)
-            .setPose(X);
-        double mInv = body->getInvMass();
-        if(mInv>0.) f.setMass(1./mInv);
-
-      } break;
-      case COMPOUND_SHAPE_PROXYTYPE:
-      case STATIC_PLANE_PROXYTYPE: {
-        auto& f = C.addFrame(STRING("obj"<<i))
-            ->setShape(rai::ST_marker, {.1})
-            .setPose(X);
-      } break;
-      default:{
-        NIY;
+    btRigidBody* body = dynamic_cast<btRigidBody*>(obj);
+    if(body){
+      rai::Transformation X;
+      btTransform pose;
+      if(body->getMotionState()) {
+        body->getMotionState()->getWorldTransform(pose);
+      } else {
+        NIY; //trans = obj->getWorldTransform();
       }
+      btTrans2raiTrans(X, pose);
+      cout <<"OBJECT " <<i <<" pose: " <<X <<" shapeType: " <<shape->getShapeType() <<' ' <<shape->getName();
+      switch(shape->getShapeType()){
+        case CONVEX_HULL_SHAPE_PROXYTYPE:{
+          btConvexHullShape* obj = dynamic_cast<btConvexHullShape*>(shape);
+          arr V(obj->getNumPoints(), 3);
+          for(uint i=0;i<V.d0;i++) V[i] = conv_btVec3_arr(obj->getUnscaledPoints()[i]);
+          auto& f = C.addFrame(STRING("obj"<<i))
+                    ->setConvexMesh(V)
+                    .setPose(X);
+          double mInv = body->getInvMass();
+          if(mInv>0.) f.setMass(1./mInv);
+        } break;
+        case BOX_SHAPE_PROXYTYPE:{
+          btBoxShape* box = dynamic_cast<btBoxShape*>(shape);
+          arr size = 2.*conv_btVec3_arr(box->getHalfExtentsWithMargin());
+          cout <<" margin: " <<box->getMargin() <<" size: " <<size;
+          auto& f = C.addFrame(STRING("obj"<<i))
+                    ->setShape(rai::ST_box, size)
+                    .setPose(X);
+          double mInv = body->getInvMass();
+          if(mInv>0.) f.setMass(1./mInv);
+        } break;
+        case SPHERE_SHAPE_PROXYTYPE:{
+          btSphereShape* obj = dynamic_cast<btSphereShape*>(shape);
+          arr size = {obj->getRadius()};
+          cout <<" margin: " <<obj->getMargin() <<" size: " <<size;
+          auto& f = C.addFrame(STRING("obj"<<i))
+                    ->setShape(rai::ST_sphere, size)
+                    .setPose(X);
+          double mInv = body->getInvMass();
+          if(mInv>0.) f.setMass(1./mInv);
+        } break;
+        case CYLINDER_SHAPE_PROXYTYPE:{
+          btCylinderShape* obj = dynamic_cast<btCylinderShape*>(shape);
+          arr size = 2.*conv_btVec3_arr(obj->getHalfExtentsWithMargin());
+          cout <<" margin: " <<obj->getMargin() <<" size: " <<size;
+          size(1) = size(0);
+          size(0) = size(2);
+          size.resizeCopy(2);
+          auto& f = C.addFrame(STRING("obj"<<i))
+                    ->setShape(rai::ST_cylinder, size)
+                    .setPose(X);
+          double mInv = body->getInvMass();
+          if(mInv>0.) f.setMass(1./mInv);
+
+        } break;
+        case COMPOUND_SHAPE_PROXYTYPE:
+        case STATIC_PLANE_PROXYTYPE: {
+          auto& f = C.addFrame(STRING("obj"<<i))
+                    ->setShape(rai::ST_marker, {.1})
+                    .setPose(X);
+        } break;
+        default:{
+          NIY;
+        }
+      }
+      cout <<endl;
     }
-    cout <<endl;
+    btSoftBody* softbody = dynamic_cast<btSoftBody*>(obj);
+    if(softbody){
+      rai::Frame& f = C.addFrame(STRING("soft"<<i))
+                      ->setShape(rai::ST_mesh, {});
+      rai::Mesh &m = f.shape->mesh();
+      {
+        m.V.resize(softbody->m_nodes.size(), 3);
+        for(int i=0; i<softbody->m_nodes.size(); i++){
+          m.V[i] = conv_btVec3_arr(softbody->m_nodes[i].m_x);
+        }
+        m.makeLineStrip();
+      }
+
+      cout <<"IS SOFT" <<endl;
+    }
   }
+  CHECK_EQ(C.frames.N, actors.N, "");
 }
 
 
@@ -480,7 +523,7 @@ void BulletInterface::changeObjectType(rai::Frame* f, int _type, const arr& with
 
 #ifdef RAI_BULLET
 RUN_ON_INIT_BEGIN(kin_bullet)
-rai::Array<btRigidBody*>::memMove=true;
+rai::Array<btCollisionObject*>::memMove=true;
 rai::Array<rai::BodyType>::memMove=true;
 RUN_ON_INIT_END(kin_bullet)
 #endif
