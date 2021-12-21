@@ -61,6 +61,19 @@ void SplineCtrlReference::overrideHard(const arr& x, const arr& t, const arr& xD
   splineSet->set(2, x, t+nowTime, xDot0);
 }
 
+void SplineCtrlReference::report(double ctrlTime){
+  waitForInitialized();
+  arr x, xDot;
+  auto splineGet = spline.get();
+  cout <<"times: current: " <<ctrlTime << " knots: " <<splineGet->times <<endl;
+  splineGet->eval(x, xDot, NoArr, splineGet->times.first());
+  cout <<"eval(first): " <<x <<' ' <<xDot <<endl;
+  splineGet->eval(x, xDot, NoArr, splineGet->times.last());
+  cout <<"eval(last): " <<x <<' ' <<xDot <<endl;
+  splineGet->eval(x, xDot, NoArr, ctrlTime);
+  cout <<"eval(current): " <<x <<' ' <<xDot <<endl;
+}
+
 //===========================================================================
 
 

@@ -375,10 +375,12 @@ void CubicSpline::eval(arr& x, arr& xDot, arr& xDDot, double t) const {
   CHECK_GE(times.N, 2, "spline is empty");
   if(t<times(0)){
     pieces(0).eval(x, xDot, xDDot, 0.);
+    if(!!xDDot) xDDot.setZero();
     return;
   }
   if(t>times(-1)){
     pieces(-1).eval(x, xDot, xDDot, times(-1)-times(-2));
+    if(!!xDDot) xDDot.setZero();
     return;
   }
 

@@ -36,6 +36,8 @@ struct SplineCtrlReference : ReferenceFeed {
 
   //info:
   double getEndTime() { return spline.get()->end(); }
+
+  void report(double ctrlTime);
 };
 
 struct CubicSplineCtrlReference : ReferenceFeed {
