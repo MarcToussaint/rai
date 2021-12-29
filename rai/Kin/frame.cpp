@@ -25,7 +25,7 @@ template<> const char* rai::Enum<rai::JointType>::names []= {
 };
 
 template<> const char* rai::Enum<rai::BodyType>::names []= {
-  "dynamic", "kinematic", "static", nullptr
+  "dynamic", "kinematic", "static", "soft", nullptr
 };
 
 rai::Transformation_Xtoken::~Transformation_Xtoken() { f._state_updateAfterTouchingX(); }

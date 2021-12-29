@@ -13,6 +13,8 @@
 #include "frame.h"
 #include <btBulletDynamicsCommon.h>
 #include <BulletSoftBody/btSoftBody.h>
+#include <BulletSoftBody/btSoftBodyHelpers.h>
+#include <BulletSoftBody/btSoftRigidDynamicsWorld.h>
 
 // ============================================================================
 
@@ -37,15 +39,22 @@ arr conv_btVec3_arr(const btVector3& v) {
   return ARR(v.x(), v.y(), v.z());
 }
 
+btVector3 conv_arr_btVec3(const arr& v) {
+  CHECK_EQ(v.N, 3, "");
+  return btVector3(v.elem(0), v.elem(1), v.elem(2));
+}
+
 // ============================================================================
 
 struct BulletInterface_self {
   btDefaultCollisionConfiguration* collisionConfiguration;
   btCollisionDispatcher* dispatcher;
-  btBroadphaseInterface* overlappingPairCache;
+  btBroadphaseInterface* broadphase;
   btSequentialImpulseConstraintSolver* solver;
   btDiscreteDynamicsWorld* dynamicsWorld;
   btAlignedObjectArray<btCollisionShape*> collisionShapes;
+
+  btSoftBodyWorldInfo softBodyWorldInfo;
 
   rai::Array<btCollisionObject*> actors;
   rai::Array<rai::BodyType> actorTypes;
@@ -56,6 +65,7 @@ struct BulletInterface_self {
 
   btRigidBody* addGround(bool yAxisGravity=false);
   btRigidBody* addLink(rai::Frame* f, int verbose);
+  btSoftBody* addSoft(rai::Frame* f, int verbose);
 
   btCollisionShape* createCollisionShape(rai::Shape* s);
   btCollisionShape* createCompoundCollisionShape(rai::Frame* link, ShapeL& shapes);
@@ -63,21 +73,38 @@ struct BulletInterface_self {
 
 // ============================================================================
 
-BulletInterface::BulletInterface(rai::Configuration& C, int verbose, bool yAxisGravity) : self(nullptr) {
+BulletInterface::BulletInterface(rai::Configuration& C, int verbose, bool yAxisGravity, bool enableSoftBodies) : self(nullptr) {
   self = new BulletInterface_self;
 
   if(verbose>0) LOG(0) <<"starting bullet engine ...";
 
   self->collisionConfiguration = new btDefaultCollisionConfiguration();
   self->dispatcher = new btCollisionDispatcher(self->collisionConfiguration);
-  self->overlappingPairCache = new btDbvtBroadphase();
+  self->broadphase = new btDbvtBroadphase();
+  //m_broadphase = new btAxisSweep3(worldAabbMin, worldAabbMax, maxProxies);
   self->solver = new btSequentialImpulseConstraintSolver;
-  self->dynamicsWorld = new btDiscreteDynamicsWorld(self->dispatcher, self->overlappingPairCache, self->solver, self->collisionConfiguration);
+
+  if(enableSoftBodies){
+    self->dynamicsWorld = new btSoftRigidDynamicsWorld(self->dispatcher, self->broadphase, self->solver, self->collisionConfiguration);
+  }else{
+    self->dynamicsWorld = new btDiscreteDynamicsWorld(self->dispatcher, self->broadphase, self->solver, self->collisionConfiguration);
+  }
+
   if(yAxisGravity){
     self->dynamicsWorld->setGravity(btVector3(0, gravity, 0));
+    self->softBodyWorldInfo.m_gravity.setValue(0, gravity, 0);
   }else{
     self->dynamicsWorld->setGravity(btVector3(0, 0, gravity));
+    self->softBodyWorldInfo.m_gravity.setValue(0, 0, gravity);
   }
+
+  self->softBodyWorldInfo.m_dispatcher = self->dispatcher;
+  self->softBodyWorldInfo.m_broadphase = self->broadphase;
+  self->softBodyWorldInfo.m_sparsesdf.Initialize();
+  self->softBodyWorldInfo.air_density = (btScalar)1.2;
+  self->softBodyWorldInfo.water_density = 0;
+  self->softBodyWorldInfo.water_offset = 0;
+  self->softBodyWorldInfo.water_normal = btVector3(0, 0, 0);
 
   if(verbose>0) LOG(0) <<"... done starting bullet engine";
 
@@ -88,7 +115,13 @@ BulletInterface::BulletInterface(rai::Configuration& C, int verbose, bool yAxisG
   self->actors.resize(C.frames.N); self->actors.setZero();
   self->actorTypes.resize(C.frames.N); self->actorTypes.setZero();
   FrameL links = C.getLinks();
-  for(rai::Frame* a : links) self->addLink(a, verbose);
+  for(rai::Frame* a : links){
+    if(a->inertia && a->inertia->type==rai::BT_soft){
+      self->addSoft(a, verbose);
+    }else{
+      self->addLink(a, verbose);
+    }
+  }
 
   if(verbose>0) LOG(0) <<"... done creating Configuration within bullet";
 }
@@ -108,7 +141,7 @@ BulletInterface::~BulletInterface() {
   }
   delete self->dynamicsWorld;
   delete self->solver;
-  delete self->overlappingPairCache;
+  delete self->broadphase;
   delete self->dispatcher;
   delete self->collisionConfiguration;
   self->collisionShapes.clear();
@@ -323,6 +356,34 @@ btRigidBody* BulletInterface_self::addLink(rai::Frame* f, int verbose) {
   return body;
 }
 
+btSoftBody* BulletInterface_self::addSoft(rai::Frame* f, int verbose) {
+  //-- collect all shapes of that link
+  CHECK_EQ(f->children.N, 0, "");
+  //-- check inertia
+
+  //-- decide on the type
+  actorTypes(f->ID) = rai::BT_soft;
+  if(verbose>0) LOG(0) <<"adding link anchored at '" <<f->name <<"' as " <<rai::Enum<rai::BodyType>(rai::BT_soft);
+
+  //-- create a bullet collision shape
+  rai::Mesh& m = f->shape->mesh();
+
+  btSoftBody* softbody = btSoftBodyHelpers::CreateRope(softBodyWorldInfo,
+                                                  conv_arr_btVec3(m.V[0]),
+      conv_arr_btVec3(m.V[-1]),
+      m.V.d0-2,
+      1); //root fixed? tail fixed?
+  softbody->m_cfg.piterations = 4;
+  softbody->m_materials[0]->m_kLST = 0.5;
+  softbody->setTotalMass(f->inertia->mass);
+  dynamic_cast<btSoftRigidDynamicsWorld*>(dynamicsWorld)->addSoftBody(softbody);
+
+  while(actors.N<=f->ID) actors.append(0);
+  CHECK(!actors(f->ID), "you already added a frame with ID" <<f->ID);
+  actors(f->ID) = softbody;
+  return softbody;
+}
+
 void BulletInterface::saveBulletFile(const char* filename) {
   //adapted from PhysicsServerCommandProcessor::processSaveBulletCommand
 
@@ -494,7 +555,8 @@ void BulletBridge::getConfiguration(rai::Configuration& C){
         m.makeLineStrip();
       }
 
-      cout <<"IS SOFT" <<endl;
+      f.setMass(softbody->getTotalMass());
+      f.inertia->type = rai::BT_soft;
     }
   }
   CHECK_EQ(C.frames.N, actors.N, "");

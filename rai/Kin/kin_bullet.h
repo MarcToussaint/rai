@@ -22,7 +22,7 @@ namespace rai {
 struct BulletInterface {
   struct BulletInterface_self* self=0;
 
-  BulletInterface(rai::Configuration& C, int verbose=1, bool yAxisGravity=false);
+  BulletInterface(rai::Configuration& C, int verbose=1, bool yAxisGravity=false, bool enableSoftBodies=false);
   ~BulletInterface();
 
   void step(double tau=.01);
