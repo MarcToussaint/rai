@@ -273,6 +273,6 @@ public:
   arr getPath_qOrg(uintA joints, const bool activesOnly){ DEPR; return getPath_qOrg(); }
 
 private:
-  void _addObjective(const std::shared_ptr<Objective>& task);
+  void _addObjective(const std::shared_ptr<Objective>& ob, const intA& timeSlices);
 };
 

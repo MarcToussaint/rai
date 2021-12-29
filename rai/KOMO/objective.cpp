@@ -28,3 +28,32 @@ void Objective::write(std::ostream& os) const {
 }
 
 //===========================================================================
+
+ptr<Objective> ObjectiveL::add(const arr& times, const ptr<Feature>& f, ObjectiveType type, const char* name) {
+  append(make_shared<Objective>(f, type, name, times) );
+  return last();
+}
+
+ptr<Objective> ObjectiveL::add(const arr& times, const FeatureSymbol& feat, const rai::Configuration& C, const StringA& frames, ObjectiveType type, const arr& scale, const arr& target, int order, int deltaFromStep, int deltaToStep) {
+  auto f = make_feature(feat, frames, C, scale, target, order);
+  return add(times, f, type, f->shortTag(C));
+}
+
+double ObjectiveL::maxError(const rai::Configuration& C, int verbose) const {
+  double maxError = 0.;
+  for(const auto& o: *this) {
+    if(o->type==OT_ineq || o->type==OT_eq) {
+      arr y = o->feat->eval(o->feat->getFrames(C));
+      double m=0.;
+      for(double& yi : y){
+        if(o->type==OT_ineq && yi>m) m=yi;
+        if(o->type==OT_eq  && fabs(yi)>m) m=fabs(yi);
+      }
+      if(verbose>0){
+        LOG(0) <<"err: " <<m <<' ' <<o->name <<' ' <<o->feat->shortTag(C);
+      }
+      if(m>maxError) maxError=m;
+    }
+  }
+  return maxError;
+}

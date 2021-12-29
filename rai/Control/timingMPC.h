@@ -6,8 +6,9 @@
 
 struct SolverReturn;
 
-struct FlagHuntingControl{
-  arr flags;
+//A wrapper of TimingOpt optimize the timing (and vels) along given waypoints, and progressing/backtracking the phase
+struct TimingMPC{
+  arr waypoints;
   arr tangents;
   arr vels;
   arr tau;
@@ -16,12 +17,12 @@ struct FlagHuntingControl{
   rai::OptOptions opt;
   uint phase=0;
 
-  FlagHuntingControl(const arr& _flags, double _alpha=1e4);
+  TimingMPC(const arr& _flags, double _alpha=1e4);
 
   shared_ptr<SolverReturn> solve(const arr& x0, const arr& v0, int verbose=1);
 
-  bool done() const{ return phase>=flags.d0; }
-  arr getFlags() const{ if(done()) return arr{}; return flags({phase, -1}).copy(); }
+  bool done() const{ return phase>=waypoints.d0; }
+  arr getFlags() const{ if(done()) return arr{}; return waypoints({phase, -1}).copy(); }
   arr getTimes() const{ if(done()) return arr{}; return integral(tau({phase, -1})); }
   arr getVels() const;
 

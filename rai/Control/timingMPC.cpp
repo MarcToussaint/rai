@@ -1,11 +1,11 @@
-#include "flagHunter.h"
+#include "timingMPC.h"
 #include "timingOpt.h"
 #include "../Optim/MP_Solver.h"
 
-FlagHuntingControl::FlagHuntingControl(const arr& _flags, double _alpha)
-  : flags(_flags), alpha(_alpha){
+TimingMPC::TimingMPC(const arr& _flags, double _alpha)
+  : waypoints(_flags), alpha(_alpha){
 
-  tau = ones(flags.d0);
+  tau = ones(waypoints.d0);
 
   opt .set_maxStep(1e0)
       .set_stopTolerance(1e-4)
@@ -13,13 +13,13 @@ FlagHuntingControl::FlagHuntingControl(const arr& _flags, double _alpha)
       .set_verbose(rai::getParameter<int>("opt/verbose"));
 }
 
-shared_ptr<SolverReturn> FlagHuntingControl::solve(const arr& x0, const arr& v0, int verbose){
+shared_ptr<SolverReturn> TimingMPC::solve(const arr& x0, const arr& v0, int verbose){
   if(!vels.N){
-    vels = zeros(flags.d0-1, flags.d1);
-    if(tangents.N) vels=zeros(flags.d0-1);
+    vels = zeros(waypoints.d0-1, waypoints.d1);
+    if(tangents.N) vels=zeros(waypoints.d0-1);
   }
 
-  TimingProblem mp(flags({phase, -1}), tangents({phase, -1}), x0, v0, alpha, vels({phase, -1}), tau({phase, -1}));
+  TimingProblem mp(waypoints({phase, -1}), tangents({phase, -1}), x0, v0, alpha, vels({phase, -1}), tau({phase, -1}));
 
   auto ret = MP_Solver()
              .setOptions(opt)
@@ -42,7 +42,7 @@ shared_ptr<SolverReturn> FlagHuntingControl::solve(const arr& x0, const arr& v0,
   return ret;
 }
 
-arr FlagHuntingControl::getVels() const{
+arr TimingMPC::getVels() const{
   if(done()) return arr{};
   arr _vels;
   if(!tangents.N){
@@ -50,12 +50,12 @@ arr FlagHuntingControl::getVels() const{
   }else{
     _vels = (vels%tangents)({phase, -1}).copy();
   }
-  _vels.append(zeros(flags.d1));
-  _vels.reshape(flags.d0 - phase, flags.d1);
+  _vels.append(zeros(waypoints.d1));
+  _vels.reshape(waypoints.d0 - phase, waypoints.d1);
   return _vels;
 }
 
-void FlagHuntingControl::update_progressTime(double gap){
+void TimingMPC::update_progressTime(double gap){
   if(gap < tau(phase)){ //time still within phase
     tau(phase) -= gap; //change initialization of timeOpt
   }else{ //time beyond current phase
@@ -69,20 +69,20 @@ void FlagHuntingControl::update_progressTime(double gap){
   }
 }
 
-void FlagHuntingControl::update_flags(const arr& _flags){
-  flags = _flags;
-  tangents[-1] = flags[-1] - flags[-0];
+void TimingMPC::update_flags(const arr& _flags){
+  waypoints = _flags;
+  tangents[-1] = waypoints[-1] - waypoints[-0];
   op_normalize(tangents[-1]());
 }
 
-void FlagHuntingControl::update_backtrack(){
+void TimingMPC::update_backtrack(){
   LOG(0) <<"backtracking " <<phase <<"->" <<phase-1 <<" tau:" <<tau;
   CHECK(phase>0, "");
   phase--;
   tau(phase) = 1.;
 }
 
-void FlagHuntingControl::getCubicSpline(rai::CubicSpline& S, const arr& x0, const arr& v0) const{
+void TimingMPC::getCubicSpline(rai::CubicSpline& S, const arr& x0, const arr& v0) const{
 
   arr _pts = getFlags();
   arr _times = getTimes();

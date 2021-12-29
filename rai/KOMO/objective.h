@@ -11,19 +11,22 @@
 #include "../Optim/MathematicalProgram.h"
 #include "../Kin/feature.h"
 
+//===========================================================================
+
 struct Objective {
   std::shared_ptr<Feature> feat;
   ObjectiveType type;  ///< element of {f, sumOfSqr, inequality, equality}
   rai::String name;
   arr times;
-  intA timeSlices;
 
-  Objective(const ptr<Feature>& _feat, const ObjectiveType& _type, const rai::String& _name, const arr& _times, const intA& _timeSlices)
-    : feat(_feat), type(_type), name(_name), times(_times), timeSlices(_timeSlices) {}
+  Objective(const ptr<Feature>& _feat, const ObjectiveType& _type, const rai::String& _name, const arr& _times)
+    : feat(_feat), type(_type), name(_name), times(_times) {}
 
   void write(std::ostream& os) const;
 };
 stdOutPipe(Objective)
+
+//===========================================================================
 
 struct GroundedObjective {
   std::shared_ptr<Feature> feat;
@@ -36,4 +39,15 @@ struct GroundedObjective {
   ~GroundedObjective() {}
 
   rai::String name(){ return feat->shortTag(frames.first()->C); }
+};
+
+//===========================================================================
+
+struct ObjectiveL : rai::Array<shared_ptr<Objective>>{
+  ptr<struct Objective> add(const arr& times, const ptr<Feature>& f, ObjectiveType type, const char* name);
+
+  ptr<struct Objective> add(const arr& times, const FeatureSymbol& feat,  const rai::Configuration& C, const StringA& frames,
+                  ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr, int order=-1, int deltaFromStep=0, int deltaToStep=0);
+
+  double maxError(const rai::Configuration& C, int verbose=0) const;
 };

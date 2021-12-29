@@ -113,7 +113,7 @@ void KOMO::clone(const KOMO& komo){
 
   //copy running objectives
   for(const ptr<Objective>& o:komo.objectives){
-    objectives.append(make_shared<Objective>(o->feat->deepCopy(), o->type, o->name, o->times, o->timeSlices));
+    objectives.append(make_shared<Objective>(o->feat->deepCopy(), o->type, o->name, o->times));
   }
 
   //copy grounded objectives
@@ -160,23 +160,23 @@ void KOMO::clearObjectives() {
   reset();
 }
 
-void KOMO::_addObjective(const std::shared_ptr<Objective>& task){
-  objectives.append(task);
+void KOMO::_addObjective(const std::shared_ptr<Objective>& ob, const intA& timeSlices){
+  objectives.append(ob);
 
-  CHECK_EQ(task->timeSlices.nd, 2, "");
-  for(uint c=0;c<task->timeSlices.d0;c++){
-    shared_ptr<GroundedObjective> o = objs.append( make_shared<GroundedObjective>(task->feat, task->type, task->timeSlices[c]) );
+  CHECK_EQ(timeSlices.nd, 2, "");
+  for(uint c=0;c<timeSlices.d0;c++){
+    shared_ptr<GroundedObjective> o = objs.append( make_shared<GroundedObjective>(ob->feat, ob->type, timeSlices[c]) );
     o->objId = objectives.N-1;
-    o->frames.resize(task->timeSlices.d1, o->feat->frameIDs.N);
-    for(uint i=0;i<task->timeSlices.d1;i++){
-      int s = task->timeSlices(c,i) + k_order;
+    o->frames.resize(timeSlices.d1, o->feat->frameIDs.N);
+    for(uint i=0;i<timeSlices.d1;i++){
+      int s = timeSlices(c,i) + k_order;
       for(uint j=0;j<o->feat->frameIDs.N;j++){
         uint fID = o->feat->frameIDs.elem(j);
         o->frames(i,j) = this->timeSlices(s, fID);
       }
     }
     if(o->feat->frameIDs.nd==2){
-      o->frames.reshape(task->timeSlices.d1, o->feat->frameIDs.d0, o->feat->frameIDs.d1);
+      o->frames.reshape(timeSlices.d1, o->feat->frameIDs.d0, o->feat->frameIDs.d1);
     }
   }
 }
@@ -202,10 +202,10 @@ ptr<Objective> KOMO::addObjective(const arr& times,
 
   //-- create a (non-grounded) objective
   CHECK_GE(k_order, f->order, "task requires larger k-order: " <<f->shortTag(world));
-  std::shared_ptr<Objective> task = make_shared<Objective>(f, type, f->shortTag(world), times, timeSlices);
+  std::shared_ptr<Objective> task = make_shared<Objective>(f, type, f->shortTag(world), times);
 
   //-- create the grounded objectives
-  _addObjective(task);
+  _addObjective(task, timeSlices);
   return task;
 }
 
