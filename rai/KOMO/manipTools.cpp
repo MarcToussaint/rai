@@ -1,6 +1,7 @@
 #include "manipTools.h"
 
-void addBoxPickObjectives(KOMO& komo, double time, rai::ArgWord dir, const char* boxName, const arr& boxSize, const char* gripperName, const char* palmName, const char* tableName) {
+template<class OBJS>
+void addBoxPickObjectives(OBJS& komo, double time, rai::ArgWord dir, const char* boxName, const arr& boxSize, const char* gripperName, const char* palmName, const char* tableName) {
     arr xLine, yzPlane;
     FeatureSymbol xyScalarProduct=FS_none, xzScalarProduct=FS_none;
     if(dir==rai::_xAxis){
@@ -41,7 +42,8 @@ void addBoxPickObjectives(KOMO& komo, double time, rai::ArgWord dir, const char*
     if(komo.k_order>1) komo.addObjective({time}, FS_qItself, {}, OT_eq, {}, {}, 1);
 }
 
-void addBoxPlaceObjectives(KOMO& komo, double time,
+template<class OBJS>
+void addBoxPlaceObjectives(OBJS& komo, double time,
                            rai::ArgWord dir, const char* boxName, const arr& boxSize,
                            const char* tableName,
                            const char* gripperName, const char* palmName) {
@@ -87,3 +89,14 @@ void addBoxPlaceObjectives(KOMO& komo, double time,
     //zero vel
     if(komo.k_order>1) komo.addObjective({time}, FS_qItself, {}, OT_eq, {}, {}, 1);
 }
+
+//INSTANTIATE
+template
+void addBoxPickObjectives(KOMO& komo, double time, rai::ArgWord dir,
+                          const char* boxName, const arr& boxSize,
+                          const char* gripperName, const char* palmName, const char* tableName);
+
+template
+void addBoxPlaceObjectives(KOMO& komo, double time,
+                           rai::ArgWord dir, const char* boxName, const arr& boxSize, const char* tableName,
+                           const char* gripperName, const char* palmName);
