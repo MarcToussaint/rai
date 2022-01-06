@@ -21,10 +21,12 @@ void addBoxPickObjectives(OBJS& komo, double time, rai::ArgWord dir, const char*
         xzScalarProduct = FS_scalarProductXY;
     }
 
+    double margin=.02;
+
     //position: center in inner target plane; X-specific
     komo.addObjective({time}, FS_positionRel, {gripperName, boxName}, OT_eq, xLine*1e2, {});
-    komo.addObjective({time}, FS_positionRel, {gripperName, boxName}, OT_ineq, yzPlane*1e2, (boxSize/2.-.02));
-    komo.addObjective({time}, FS_positionRel, {gripperName, boxName}, OT_ineq, yzPlane*(-1e2), -(boxSize/2.-.02));
+    komo.addObjective({time}, FS_positionRel, {gripperName, boxName}, OT_ineq, yzPlane*1e2, (boxSize/2.-margin));
+    komo.addObjective({time}, FS_positionRel, {gripperName, boxName}, OT_ineq, yzPlane*(-1e2), -(boxSize/2.-margin));
 
     //orientation: grasp axis orthoginal to target plane; X-specific
     komo.addObjective({time-.2,time}, xyScalarProduct, {gripperName, boxName}, OT_eq, {1e2}, {});

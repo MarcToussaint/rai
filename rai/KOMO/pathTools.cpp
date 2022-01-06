@@ -173,6 +173,7 @@ arr getStartGoalPath(rai::Configuration& C, const arr& qTarget, const arr& qHome
 
   KOMO komo;
   komo.opt.verbose=0;
+//  komo.opt.animateOptimization=4;
   komo.setModel(C, true);
   komo.setTiming(1., 32, 5., 2);
   komo.add_qControlObjective({}, 2, 1.);
@@ -238,7 +239,7 @@ arr getStartGoalPath(rai::Configuration& C, const arr& qTarget, const arr& qHome
 
     //if not feasible -> add explicit collision pairs (from proxies presently in komo.pathConfig)
     if(!feasible){
-//      cout <<komo.getReport(false);
+      //cout <<komo.getReport(false);
       //komo.pathConfig.reportProxies();
       StringA collisionPairs = komo.getCollisionPairs(.01);
       if(collisionPairs.N){
