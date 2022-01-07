@@ -12,14 +12,21 @@
 
 //===========================================================================
 
-template<class OBJS>
-void addBoxPickObjectives(OBJS& komo, double time, rai::ArgWord dir,
+void addBoxPickObjectives(KOMO& komo, double time, rai::ArgWord dir,
                           const char* boxName, const arr& boxSize,
                           const char* gripperName, const char* palmName, const char* tableName);
 
-template<class OBJS>
-void addBoxPlaceObjectives(OBJS& komo, double time,
+void addBoxPlaceObjectives(KOMO& komo, double time,
                            rai::ArgWord dir, const char* boxName, const arr& boxSize, const char* tableName,
                            const char* gripperName, const char* palmName);
 
+
+void addBoxPickObjectives(ObjectiveL& objs, const rai::Configuration& C,
+                          double time, rai::ArgWord dir,
+                          const char* boxName, const char* gripperName, const char* palmName, const char* tableName);
+
+void addBoxPlaceObjectives(ObjectiveL& objs, const rai::Configuration& C,
+                           double time, rai::ArgWord dir,
+                           const char* boxName, const char* tableName,
+                           const char* gripperName, const char* palmName);
 

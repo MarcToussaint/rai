@@ -21,7 +21,7 @@ void Objective::write(std::ostream& os) const {
 //    } else os <<" (" <<configs.first() <<".." <<configs.last() <<')';
 //  } else os <<" ()";
   os <<"  times:" <<times
-     <<"  type:" <<type
+     <<"  type:" <<rai::Enum<ObjectiveType>(type)
      <<"  order:" <<feat->order
      <<"  target:" <<feat->target
      <<"  scale:" <<feat->scale;

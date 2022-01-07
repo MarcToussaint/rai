@@ -61,6 +61,8 @@ struct CubicPiece{
 };
 stdOutPipe(CubicPiece);
 
+struct CubicSplineCtor{ arr pts, vels, times; };
+
 struct CubicSpline{
   rai::Array<CubicPiece> pieces;
   arr times;

@@ -106,7 +106,7 @@ void CubicSplineCtrlReference::overrideSmooth(const arr& x, const arr& v, const 
   waitForInitialized();
   arr x_now, xDot_now;
   arr _x(x), _v(v), _t(t);
-  if(_t.first()<.01){
+  while(_t.first()<.01){
     LOG(0) <<"time.first()=" <<_t.first() <<"is harsh! -> I'll cut the first waypoint";
     if(_t.N==1) return;
     CHECK_GE(t(1), .001, "that's too harsh!");
