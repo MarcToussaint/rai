@@ -674,7 +674,13 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase) 
 
 void KOMO::updateRootObjects(const Configuration& C){
   //-- frame state of roots only, if objects moved:
-  uintA roots = framesToIndices(C.getRoots());
+  FrameL _roots = C.getRoots();
+  {//also add rigid children of roots
+    FrameL F;
+    for(auto f:_roots) f->getRigidSubFrames(F);
+    _roots.append(F);
+  }
+  uintA roots = framesToIndices(_roots);
   arr X0 = C.getFrameState(roots);
   //set t=0..T to new frame state:
   for(uint t=0; t<T; t++) pathConfig.setFrameState(X0, roots+timeSlices(k_order+t,0)->ID);

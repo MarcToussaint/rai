@@ -71,8 +71,12 @@ void TimingMPC::update_progressTime(double gap){
 
 void TimingMPC::update_flags(const arr& _flags){
   waypoints = _flags;
-  tangents[-1] = waypoints[-1] - waypoints[-0];
-  op_normalize(tangents[-1]());
+  if(tangents.N){
+    for(uint k=1; k<waypoints.d0; k++){
+      tangents[k-1] = waypoints[k] - waypoints[k-1];
+      op_normalize(tangents[k-1]());
+    }
+  }
 }
 
 void TimingMPC::update_backtrack(){
