@@ -116,15 +116,15 @@ void addBoxPickObjectives(ObjectiveL& objs, const rai::Configuration& C, double 
 
     //pre-position: close enough
     objs.add({time}, FS_distance, C, {gripperName, boxName}, OT_eq, {1e1}, {-.1});
-    objs.add({time, time+1}, FS_positionRel, C, {gripperName, boxName}, OT_eq, xLine*1e2, {});
+    objs.add({time, time+1}, FS_positionRel, C, {gripperName, boxName}, OT_eq, xLine*1e1, {});
 
     //position: center in inner target plane; X-specific
     objs.add({time+1}, FS_positionRel, C, {gripperName, boxName}, OT_ineq, yzPlane*1e2, (boxSize/2.-.02));
     objs.add({time+1}, FS_positionRel, C, {gripperName, boxName}, OT_ineq, yzPlane*(-1e2), -(boxSize/2.-.02));
 
     //orientation: grasp axis orthoginal to target plane; X-specific
-    objs.add({time, time+1}, xyScalarProduct, C, {gripperName, boxName}, OT_eq, {1e2}, {});
-    objs.add({time, time+1}, xzScalarProduct, C, {gripperName, boxName}, OT_eq, {1e2}, {});
+    objs.add({time, time+1}, xyScalarProduct, C, {gripperName, boxName}, OT_eq, {1e1}, {});
+    objs.add({time, time+1}, xzScalarProduct, C, {gripperName, boxName}, OT_eq, {1e1}, {});
 
     //no collision with palm
     objs.add({time, time+1}, FS_distance, C, {palmName, boxName}, OT_ineq, {1e1}, {-.001});

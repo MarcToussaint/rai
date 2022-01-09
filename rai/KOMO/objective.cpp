@@ -12,6 +12,15 @@
 
 //===========================================================================
 
+bool Objective::activeAtTime(double time){
+  if(!times.N) return true; //always
+  if(times.N==1){
+    if(times.scalar()==time) return true; else return false;
+  }
+  CHECK_EQ(times.N, 2, "");
+  return time>=times(0) && time<=times(1);
+}
+
 void Objective::write(std::ostream& os) const {
   os <<"OBJECTIVE '" <<name <<"'";
 //  if(configs.N) {
@@ -39,20 +48,22 @@ ptr<Objective> ObjectiveL::add(const arr& times, const FeatureSymbol& feat, cons
   return add(times, f, type, f->shortTag(C));
 }
 
-double ObjectiveL::maxError(const rai::Configuration& C, int verbose) const {
+double ObjectiveL::maxError(const rai::Configuration& C, double time, int verbose) const {
   double maxError = 0.;
   for(const auto& o: *this) {
-    if(o->type==OT_ineq || o->type==OT_eq) {
-      arr y = o->feat->eval(o->feat->getFrames(C));
-      double m=0.;
-      for(double& yi : y){
-        if(o->type==OT_ineq && yi>m) m=yi;
-        if(o->type==OT_eq  && fabs(yi)>m) m=fabs(yi);
+    if(time<0. || o->activeAtTime(time)){
+      if(o->type==OT_ineq || o->type==OT_eq) {
+        arr y = o->feat->eval(o->feat->getFrames(C));
+        double m=0.;
+        for(double& yi : y){
+          if(o->type==OT_ineq && yi>m) m=yi;
+          if(o->type==OT_eq  && fabs(yi)>m) m=fabs(yi);
+        }
+        if(verbose>0){
+          LOG(0) <<"err: " <<m <<' ' <<o->name <<' ' <<o->feat->shortTag(C);
+        }
+        if(m>maxError) maxError=m;
       }
-      if(verbose>0){
-        LOG(0) <<"err: " <<m <<' ' <<o->name <<' ' <<o->feat->shortTag(C);
-      }
-      if(m>maxError) maxError=m;
     }
   }
   return maxError;
