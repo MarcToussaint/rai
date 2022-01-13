@@ -18,7 +18,7 @@ enum class ControlType { configRefs, projectedAcc };
 //The control message send to the robot
 struct CtrlCmdMsg {
   ControlType controlType=ControlType::configRefs;
-  shared_ptr<ReferenceFeed> ref; // joint space references
+  std::shared_ptr<ReferenceFeed> ref; // joint space references
 //  arr q_ref, qDot_ref, qDDot_ref; // joint space references
   arr u_b; // open-loop/feed-forward torque term
   arr Kp, Kd; // gain matrices
