@@ -189,13 +189,7 @@ ptr<Objective> KOMO::addObjective(const arr& times,
   if(!timeSlices.N) setupPathConfig();
 
   //-- if arguments are given, modify the feature's frames, scaling and order
-  if(!!frames && frames.N){
-    if(frames.N==1 && frames.scalar()=="ALL") f->frameIDs = framesToIndices(world.frames); //important! this means that, if no explicit selection of frames was made, all frames (of a time slice) are referred to
-    else f->frameIDs = world.getFrameIDs(frames);
-  }
-  if(!!scale) f->scale = scale;
-  if(!!target) f->target = target;
-  if(order>=0) f->order = order;
+  f->setup(world, frames, scale, target, order);
 
   //-- determine when exactly it is active (list of tuples of given order
   intA timeSlices = conv_times2tuples(times, f->order, stepsPerPhase, T, deltaFromStep, deltaToStep);

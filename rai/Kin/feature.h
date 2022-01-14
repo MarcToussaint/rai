@@ -29,6 +29,7 @@ struct Feature {
   virtual ~Feature() {}
 
   //-- construction helpers
+  void setup(const rai::Configuration& C, const StringA& frames, const arr& scale=NoArr, const arr& target=NoArr, int _order=-1);
   Feature& setOrder(uint _order) { order=_order; return *this; }
   Feature& setScale(const arr& _scale) { scale=_scale; return *this; }
   Feature& setTarget(const arr& _target) { target=_target; return *this; }

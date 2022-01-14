@@ -805,27 +805,46 @@ arr F_fex_NormalVelIsComplementary::phi(const FrameL& F) {
 //===========================================================================
 
 arr F_PushRadiusPrior::phi(const FrameL& F){
-  CHECK_EQ(order, 1, "");
 //  CHECK_EQ(F.N, 4, "");
 
   //poa
-  arr p = F_fex_POA() .eval(F[0]);
+  arr p;
+  if(rai::getContact(F.elem(0), F.elem(1), false)){
+    p = F_fex_POA() .eval({F.elem(0), F.elem(1)});
+  }else{
+    p = F_Position() .eval({F.elem(0)});
+  }
 
   //object center
-  arr c = F_Position() .eval({F(0,1)});
+  arr c = F_Position() .eval({F.elem(1)});
 
   arr dir;
-  if(!target.N){ //push 'towards' velocity
+  if(target.N){
+    dir = -c;
+    dir += target;
+  }else if(F.N==3){
+    CHECK_EQ(order, 0, "");
+    dir = -c;
+    dir += F_Position() .eval({F.elem(2)});
+  }else{ //push 'towards' velocity
+    CHECK_EQ(order, 1, "");
     //object velocity
     dir = F_Position() .setOrder(1) .eval({F(0,1),F(1,1)});
-  }else{
-    dir = -c;
-    //dir.J = -c.J;
-    dir += target;
   }
 
   op_normalize(dir, 1e-3);
 
   arr y = rad * dir - (c-p);
+  return y;
+}
+
+arr F_PushAligned::phi(const FrameL& F){
+  CHECK_EQ(F.N, 3, "");
+  arr a = F_Position() .eval({F.elem(0)});
+  arr b = F_Position() .eval({F.elem(1)});
+  arr c = F_Position() .eval({F.elem(2)});
+
+  arr y;
+  op_crossProduct(y, a-b, c-b);
   return y;
 }

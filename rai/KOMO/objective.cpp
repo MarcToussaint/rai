@@ -43,6 +43,11 @@ ptr<Objective> ObjectiveL::add(const arr& times, const ptr<Feature>& f, Objectiv
   return last();
 }
 
+ptr<Objective> ObjectiveL::add(const arr& times, const ptr<Feature>& f, const rai::Configuration& C, const StringA& frames, ObjectiveType type, const arr& scale, const arr& target, int order, int deltaFromStep, int deltaToStep){
+  f->setup(C, frames, scale, target, order);
+  return add(times, f, type, f->shortTag(C));
+}
+
 ptr<Objective> ObjectiveL::add(const arr& times, const FeatureSymbol& feat, const rai::Configuration& C, const StringA& frames, ObjectiveType type, const arr& scale, const arr& target, int order, int deltaFromStep, int deltaToStep) {
   auto f = make_feature(feat, frames, C, scale, target, order);
   return add(times, f, type, f->shortTag(C));
