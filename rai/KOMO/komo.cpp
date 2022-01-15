@@ -189,13 +189,7 @@ ptr<Objective> KOMO::addObjective(const arr& times,
   if(!timeSlices.N) setupPathConfig();
 
   //-- if arguments are given, modify the feature's frames, scaling and order
-  if(!!frames && frames.N){
-    if(frames.N==1 && frames.scalar()=="ALL") f->frameIDs = framesToIndices(world.frames); //important! this means that, if no explicit selection of frames was made, all frames (of a time slice) are referred to
-    else f->frameIDs = world.getFrameIDs(frames);
-  }
-  if(!!scale) f->scale = scale;
-  if(!!target) f->target = target;
-  if(order>=0) f->order = order;
+  f->setup(world, frames, scale, target, order);
 
   //-- determine when exactly it is active (list of tuples of given order
   intA timeSlices = conv_times2tuples(times, f->order, stepsPerPhase, T, deltaFromStep, deltaToStep);
@@ -436,7 +430,7 @@ void KOMO::addContact_elasticBounce(double time, const char* from, const char* t
 
 ptr<Objective> KOMO::add_qControlObjective(const arr& times, uint order, double scale, const arr& target, int deltaFromStep, int deltaToStep) {
   auto F = getCtrlFramesAndScale(world);
-//  scale *= sqrt(tau);
+  F.scale *= sqrt(tau);
 
   CHECK_GE(k_order, order, "");
   ptr<Objective> o = addObjective(times, make_shared<F_qItself>(F.frames, (order==0)), {}, OT_sos, scale*F.scale, target, order, deltaFromStep, deltaToStep);
@@ -674,7 +668,13 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase) 
 
 void KOMO::updateRootObjects(const Configuration& C){
   //-- frame state of roots only, if objects moved:
-  uintA roots = framesToIndices(C.getRoots());
+  FrameL _roots = C.getRoots();
+  {//also add rigid children of roots
+    FrameL F;
+    for(auto f:_roots) f->getRigidSubFrames(F);
+    _roots.append(F);
+  }
+  uintA roots = framesToIndices(_roots);
   arr X0 = C.getFrameState(roots);
   //set t=0..T to new frame state:
   for(uint t=0; t<T; t++) pathConfig.setFrameState(X0, roots+timeSlices(k_order+t,0)->ID);

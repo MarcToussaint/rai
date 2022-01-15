@@ -104,9 +104,16 @@ void CubicSplineCtrlReference::append(const arr& x, const arr& v, const arr& t, 
 
 void CubicSplineCtrlReference::overrideSmooth(const arr& x, const arr& v, const arr& t, double ctrlTime){
   waitForInitialized();
-  CHECK_GE(t.first(), .001, "that's too harsh!");
   arr x_now, xDot_now;
   arr _x(x), _v(v), _t(t);
+  while(_t.first()<.01){
+    LOG(0) <<"time.first()=" <<_t.first() <<"is harsh! -> I'll cut the first waypoint";
+    if(_t.N==1) return;
+    CHECK_GE(t(1), .001, "that's too harsh!");
+    _x.delRows(0);
+    _v.delRows(0);
+    _t.remove(0);
+  }
   auto splineSet = spline.set();
   CHECK_GE(splineSet->times.N, 2, "need a previous spline in order to override");
   splineSet->eval(x_now, xDot_now, NoArr, ctrlTime);

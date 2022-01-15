@@ -70,19 +70,18 @@ void TimingMPC::update_progressTime(double gap){
 
 void TimingMPC::update_flags(const arr& _flags){
   waypoints = _flags;
-  for(uint k=0;k<tangents.d0;k++){
-    tangents[k] = _flags[k+1] - _flags[k];
-    op_normalize(tangents[k]());
+  if(tangents.N){
+    for(uint k=1; k<waypoints.d0; k++){
+      tangents[k-1] = waypoints[k] - waypoints[k-1];
+      op_normalize(tangents[k-1]());
+    }
   }
-//  if(tangents.d0){
-//      tangents[-1] = waypoints[-1] - waypoints[-2];
-//      op_normalize(tangents[-1]());
-//  }
 }
 
 void TimingMPC::update_backtrack(){
   LOG(0) <<"backtracking " <<phase <<"->" <<phase-1 <<" tau:" <<tau;
   CHECK(phase>0, "");
+  if(phase<tau.N) tau(phase) = rai::MAX(1., tau(phase));
   phase--;
   tau(phase) = 1.;
 }

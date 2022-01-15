@@ -151,7 +151,7 @@ OptNewton::StopCriterion OptNewton::step() {
       return stopCriterion=stopNone;
 #endif
 #if 1 //increase beta by betaInc
-      if(options.dampingInc!=1.) beta*=options.dampingInc;
+      if(options.dampingInc>0.) beta*=options.dampingInc;
 #endif
       //use gradient
       if(options.verbose>0) {
@@ -160,7 +160,7 @@ OptNewton::StopCriterion OptNewton::step() {
       Delta = gx * (-options.maxStep/length(gx));
     } else { //inversion successful
       //decrease beta by betaDec
-      if(options.dampingDec!=1.) beta *= options.dampingDec;
+      if(options.dampingDec>0.) beta *= options.dampingDec;
       if(beta<options.damping) beta=options.damping;
     }
   }
@@ -225,7 +225,7 @@ OptNewton::StopCriterion OptNewton::step() {
         alpha *= options.stepInc;
       } else {
         //this is the nonStrict case... weird, but well
-        if(alpha<.01 && options.dampingInc!=1.) {
+        if(alpha<.01 && options.dampingInc>0.) {
           beta*=options.dampingInc;
           alpha*=options.dampingInc*options.dampingInc;
           endLineSearch=true;
@@ -248,7 +248,7 @@ OptNewton::StopCriterion OptNewton::step() {
         if(options.verbose>1) cout <<" (lineSearchSteps>10)" <<endl;
         break; //WARNING: this may lead to non-monotonicity -> make evals high!
       }
-      if(alpha<.01 && options.dampingInc!=1.) {
+      if(alpha<.01 && options.dampingInc>0.) {
         beta*=options.dampingInc;
         alpha*=options.dampingInc*options.dampingInc;
         endLineSearch=true;

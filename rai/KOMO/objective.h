@@ -22,6 +22,7 @@ struct Objective {
   Objective(const ptr<Feature>& _feat, const ObjectiveType& _type, const rai::String& _name, const arr& _times)
     : feat(_feat), type(_type), name(_name), times(_times) {}
 
+  bool activeAtTime(double time);
   void write(std::ostream& os) const;
 };
 stdOutPipe(Objective)
@@ -47,8 +48,13 @@ struct ObjectiveL : rai::Array<shared_ptr<Objective>>{
 
   ptr<struct Objective> add(const arr& times, const ptr<Feature>& f, ObjectiveType type, const char* name=0);
 
-  ptr<struct Objective> add(const arr& times, const FeatureSymbol& feat,  const rai::Configuration& C, const StringA& frames,
-                  ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr, int order=-1, int deltaFromStep=0, int deltaToStep=0);
+  ptr<struct Objective> add(const arr& times,
+                            const ptr<Feature>& f, const rai::Configuration& C, const StringA& frames,
+                            ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr, int order=-1, int deltaFromStep=0, int deltaToStep=0);
 
-  double maxError(const rai::Configuration& C, int verbose=0) const;
+  ptr<struct Objective> add(const arr& times,
+                            const FeatureSymbol& feat,  const rai::Configuration& C, const StringA& frames,
+                            ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr, int order=-1, int deltaFromStep=0, int deltaToStep=0);
+
+  double maxError(const rai::Configuration& C, double time, int verbose=0) const;
 };
