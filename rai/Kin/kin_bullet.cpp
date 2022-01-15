@@ -376,7 +376,9 @@ btSoftBody* BulletInterface_self::addSoft(rai::Frame* f, int verbose) {
   softbody->m_cfg.piterations = 4;
   softbody->m_materials[0]->m_kLST = 0.5;
   softbody->setTotalMass(f->inertia->mass);
-  dynamic_cast<btSoftRigidDynamicsWorld*>(dynamicsWorld)->addSoftBody(softbody);
+  auto world = dynamic_cast<btSoftRigidDynamicsWorld*>(dynamicsWorld);
+  CHECK(world, "need a btSoftRigidDynamicsWorld");
+  world->addSoftBody(softbody);
 
   while(actors.N<=f->ID) actors.append(0);
   CHECK(!actors(f->ID), "you already added a frame with ID" <<f->ID);

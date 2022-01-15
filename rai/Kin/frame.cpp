@@ -1283,6 +1283,17 @@ void rai::Shape::read(const Graph& ats) {
     if(ats.get(mesh().C, "color")) {
       CHECK(mesh().C.N==3 || mesh().C.N==4, "color needs to be 3D or 4D (floats)");
     }
+    if(ats.get(x, "mesh_rope"))  {
+      CHECK_EQ(x.N, 4, "requires 3D extend and numSegments");
+      uint n=x(-1);
+      arr y = x({0,2});
+      arr& V = mesh().V;
+      V.resize(n+1, 3).setZero();
+      for(uint i=1;i<=n;i++){
+        V[i] = (double(i)/n)*y;
+      }
+      mesh().makeLineStrip();
+    }
 
     if(mesh().V.N && type()==ST_none) type()=ST_mesh;
 
@@ -1567,6 +1578,7 @@ void rai::Inertia::defaultInertiaByShape() {
     case ST_capsule:
     case ST_cylinder:
     case ST_ssCylinder: inertiaCylinder(matrix.p(), mass, (mass>0.?0.:1000.), frame.shape->size(0), frame.shape->size(1));  break;
+    case ST_mesh: break;
     default: HALT("not implemented for this shape type");
   }
 }
@@ -1591,6 +1603,7 @@ void rai::Inertia::read(const Graph& G) {
   if(G["static"])      type=BT_static;
   if(G["kinematic"])   type=BT_kinematic;
   if(G["dynamic"])     type=BT_dynamic;
+  if(G["soft"])        type=BT_soft;
   if(G.get(d, "dyntype")) type=(BodyType)d;
 }
 

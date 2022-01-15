@@ -44,7 +44,8 @@ struct GroundedObjective {
 //===========================================================================
 
 struct ObjectiveL : rai::Array<shared_ptr<Objective>>{
-  ptr<struct Objective> add(const arr& times, const ptr<Feature>& f, ObjectiveType type, const char* name);
+
+  ptr<struct Objective> add(const arr& times, const ptr<Feature>& f, ObjectiveType type, const char* name=0);
 
   ptr<struct Objective> add(const arr& times, const FeatureSymbol& feat,  const rai::Configuration& C, const StringA& frames,
                   ObjectiveType type, const arr& scale=NoArr, const arr& target=NoArr, int order=-1, int deltaFromStep=0, int deltaToStep=0);

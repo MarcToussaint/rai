@@ -202,16 +202,21 @@ void buildAiMesh(const rai::Mesh& M, aiMesh* pMesh) {
 //      pMesh->mTextureCoords[0][ itr - vVertices.begin() ] = aiVector3D( uvs[j].x, uvs[j].y, 0 );
   }
 
-  pMesh->mFaces = new aiFace[ M.T.d0 ];
-  pMesh->mNumFaces = M.T.d0;
+  if(M.T.d1==3){
+    pMesh->mFaces = new aiFace[ M.T.d0 ];
+    pMesh->mNumFaces = M.T.d0;
 
-  for(uint i=0; i<M.T.d0; i++) {
-    aiFace& face = pMesh->mFaces[i];
-    face.mIndices = new unsigned int[3];
-    face.mNumIndices = 3;
-    face.mIndices[0] = M.T(i, 0);
-    face.mIndices[1] = M.T(i, 1);
-    face.mIndices[2] = M.T(i, 2);
+    for(uint i=0; i<M.T.d0; i++) {
+      aiFace& face = pMesh->mFaces[i];
+      face.mIndices = new unsigned int[3];
+      face.mNumIndices = 3;
+      face.mIndices[0] = M.T(i, 0);
+      face.mIndices[1] = M.T(i, 1);
+      face.mIndices[2] = M.T(i, 2);
+    }
+  }else{
+    LOG(-1) <<"can't export non tri meshes";
+    pMesh->mNumFaces = 0;
   }
 }
 

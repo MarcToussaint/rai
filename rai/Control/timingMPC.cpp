@@ -9,8 +9,7 @@ TimingMPC::TimingMPC(const arr& _flags, double _alpha)
 
   opt .set_maxStep(1e0)
       .set_stopTolerance(1e-4)
-      .set_damping(1e-2)
-      .set_verbose(rai::getParameter<int>("opt/verbose"));
+      .set_damping(1e-2);
 }
 
 shared_ptr<SolverReturn> TimingMPC::solve(const arr& x0, const arr& v0, int verbose){
@@ -71,8 +70,14 @@ void TimingMPC::update_progressTime(double gap){
 
 void TimingMPC::update_flags(const arr& _flags){
   waypoints = _flags;
-  tangents[-1] = waypoints[-1] - waypoints[-0];
-  op_normalize(tangents[-1]());
+  for(uint k=0;k<tangents.d0;k++){
+    tangents[k] = _flags[k+1] - _flags[k];
+    op_normalize(tangents[k]());
+  }
+//  if(tangents.d0){
+//      tangents[-1] = waypoints[-1] - waypoints[-2];
+//      op_normalize(tangents[-1]());
+//  }
 }
 
 void TimingMPC::update_backtrack(){
@@ -91,7 +96,9 @@ void TimingMPC::getCubicSpline(rai::CubicSpline& S, const arr& x0, const arr& v0
   _vels.prepend(v0);
   _times.prepend(0.);
 
-  S.set(_pts, _vels, _times);
+  if(_times.N>1){
+    S.set(_pts, _vels, _times);
+  }
 
   //  //check spline errors
   //  for(uint k=0;k<times.N;k++){
