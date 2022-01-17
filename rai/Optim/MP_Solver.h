@@ -24,7 +24,7 @@ enum NLopt_SolverOption { _NLopt_LD_SLSQP,
                         };
 
 struct SolverReturn {
-  arr x;
+  arr x, dual;
   uint evals=0;
   double time=0.;
   bool feasible=false;
@@ -48,6 +48,7 @@ struct MP_Solver : NonCopyable {
   MP_Solver& setProblem(const shared_ptr<MathematicalProgram>& _P){ CHECK(!P, "problem was already set!"); P = make_shared<MP_Traced>(_P); return *this; }
   MP_Solver& setOptions(const rai::OptOptions& _opt){ opt = _opt; return *this; }
   MP_Solver& setInitialization(const arr& _x){ x=_x; return *this; }
+  MP_Solver& setWarmstart(const arr& _x, const arr& _dual){ x=_x; dual=_dual; return *this; }
   MP_Solver& setTracing(bool trace_x, bool trace_costs, bool trace_phi, bool trace_J){ P->setTracing(trace_x, trace_costs, trace_phi, trace_J); return *this; }
 
   shared_ptr<SolverReturn> solve(int resampleInitialization=-1); ///< -1: only when not yet set

@@ -1561,10 +1561,11 @@ template<class T> void rai::Array<T>::getMatrixBlock(rai::Array<T>& B, uint lo0,
 template<class T> void rai::Array<T>::setVectorBlock(const rai::Array<T>& B, uint lo) {
   CHECK(nd==1 && B.nd==1 && lo+B.N<=N, "");
   uint i;
-  for(i=0; i<B.N; i++) operator()(lo+i)=B(i);
+  for(i=0; i<B.N; i++) elem(lo+i)=B.elem(i);
   if(B.jac){
     CHECK(jac && jac->d1==B.jac->d1, "Jacobian needs to be pre-sized");
-    jac->setMatrixBlock(B.jac->noJ(), lo, 0);
+    CHECK(!B.jac->jac, "NOT HANDLED YET");
+    jac->setMatrixBlock(*B.jac, lo, 0);
   }
 }
 
@@ -1635,6 +1636,7 @@ template<class T> void rai::Array<T>::copyInto2D(T** buffer) const {
 
 /// make this array a reference to the array \c a
 template<class T> void rai::Array<T>::referTo(const rai::Array<T>& a) {
+  CHECK(!isSpecial(a), "");
   referTo(a.p, a.N);
   reshapeAs(a);
 }

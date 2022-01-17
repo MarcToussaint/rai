@@ -89,8 +89,11 @@ shared_ptr<SolverReturn> MP_Solver::solve(int resampleInitialization){
       ret->f = optCon->L.get_cost_f();
   }
 
+  //checkJacobianCP(*P, x, 1e-4);
+
   time += rai::cpuTime();
   ret->x=x;
+  ret->dual=dual;
   ret->evals=P->evals;
   ret->time = time;
   return ret;

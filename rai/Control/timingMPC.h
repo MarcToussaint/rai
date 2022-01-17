@@ -12,6 +12,8 @@ struct TimingMPC{
   arr tangents;
   arr vels;
   arr tau;
+  arr warmstart_dual;
+
   //optimization parameters
   double alpha = 1e4;
   rai::OptOptions opt;

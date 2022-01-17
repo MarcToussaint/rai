@@ -81,6 +81,7 @@ struct CubicSpline{
 //==============================================================================
 
 arr CubicSplineLeapCost(const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ={});
+arr CubicSplineMaxAcc(const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ={});
 
 //===========================================================================
 

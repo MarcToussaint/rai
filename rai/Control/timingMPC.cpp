@@ -5,7 +5,7 @@
 TimingMPC::TimingMPC(const arr& _flags, double _alpha)
   : waypoints(_flags), alpha(_alpha){
 
-  tau = ones(waypoints.d0);
+  tau = 10.*ones(waypoints.d0);
 
   opt .set_maxStep(1e0)
       .set_stopTolerance(1e-4)
@@ -18,13 +18,22 @@ shared_ptr<SolverReturn> TimingMPC::solve(const arr& x0, const arr& v0, int verb
     if(tangents.N) vels=zeros(waypoints.d0-1);
   }
 
-  TimingProblem mp(waypoints({phase, -1}), tangents({phase, -1}), x0, v0, alpha, vels({phase, -1}), tau({phase, -1}));
+  TimingProblem mp(waypoints({phase, -1}), tangents({phase, -1}),
+                   x0, v0, alpha,
+                   vels({phase, -1}), tau({phase, -1}),
+                   true,
+                   -1., -1., -1., 1e-1);
 
-  auto ret = MP_Solver()
-             .setOptions(opt)
-             .setProblem(mp.ptr())
-             .setSolver(MPS_newton)
-             .solve();
+  MP_Solver S;
+  if(warmstart_dual.N){
+//    S.setWarmstart({}, warmstart_dual);
+//    opt.muInit = 25;
+  }
+  S.setOptions(opt)
+      .setProblem(mp.ptr())
+      .setSolver(MPS_augmentedLag);
+
+  auto ret = S.solve();
 
   if(verbose>1){
     cout <<*ret <<endl;
@@ -34,6 +43,7 @@ shared_ptr<SolverReturn> TimingMPC::solve(const arr& x0, const arr& v0, int verb
 
   tau({phase, -1}) = mp.tau;
   vels({phase, -1}) = mp.v;
+  warmstart_dual = ret->dual;
 
   if(verbose>0){
     cout <<"FLAGS phase: " <<phase <<" tau: " <<tau <<endl;

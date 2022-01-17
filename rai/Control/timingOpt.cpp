@@ -1,18 +1,22 @@
 #include "timingOpt.h"
 
-TimingProblem::TimingProblem(const arr& _flags, const arr& _tangents, const arr& _x0, const arr& _v0, double _alpha, const arr& v_init, const arr& tau_init, bool _optTau)
-  : flags(_flags),
+TimingProblem::TimingProblem(const arr& _waypoints, const arr& _tangents, const arr& _x0, const arr& _v0, double _timeCost, const arr& v_init, const arr& tau_init, bool _optTau, double _maxVel, double _maxAcc, double _maxJer, double _ctrlCost)
+  : waypoints(_waypoints),
     tangents(_tangents),
     x0(_x0),
     v0(_v0),
-    alpha(_alpha),
+    timeCost(_timeCost),
+    ctrlCost(_ctrlCost),
     optTau(_optTau),
+    maxVel(_maxVel),
+    maxAcc(_maxAcc),
+    maxJer(_maxJer),
     v(v_init),
     tau(tau_init){
 
-  CHECK_EQ(flags.nd, 2, "");
-  uint K = flags.d0;
-  uint d = flags.d1;
+  CHECK_EQ(waypoints.nd, 2, "");
+  uint K = waypoints.d0;
+  uint d = waypoints.d1;
 
   if(tangents.N){
     CHECK_EQ(tangents.nd, 2, "");
@@ -41,20 +45,32 @@ TimingProblem::TimingProblem(const arr& _flags, const arr& _tangents, const arr&
   }
 
   //-- init feature types
-  featureTypes.resize(1 + flags.d0*2*flags.d1);
+  uint m=1; //timeCost
+  if(ctrlCost>0.) m += K*2*d; //control costs
+  if(maxAcc>0.) m += K*4*d;
+  featureTypes.resize(m);
 
-  //all objectives are sos...
-  featureTypes = OT_sos;
-
-  //..except for the total time cost
-  featureTypes(0) = OT_f;
+  m=0;
+  featureTypes(m) = OT_f;
+  m++;
+  for(uint k=0;k<K;k++){
+    if(ctrlCost>0.){
+      featureTypes({m,m+2*d-1}) = OT_sos; //control costs
+      m += 2*d;
+    }
+    if(maxAcc>0.){
+      featureTypes({m,m+4*d-1}) = OT_ineq; //maxAcc
+      m += 4*d;
+    }
+  }
 }
 
 void TimingProblem::evaluate(arr& phi, arr& J, const arr& x){
   CHECK_EQ(x.N, dimension, "");
 
-  uint K = flags.d0;
-  uint d = flags.d1;
+  //-- read the decision variables tau,v from x
+  uint K = waypoints.d0;
+  uint d = waypoints.d1;
   uint vIdx=0;
   if(optTau){
     tau = x.sub(0, K-1).reshape(K);
@@ -68,6 +84,7 @@ void TimingProblem::evaluate(arr& phi, arr& J, const arr& x){
     else v.resize(0,d);
   }
 
+  //-- initialize phi and sparse Jacobian
   phi.resize(featureTypes.N).setZero();
   rai::SparseMatrix* JS=0;
   if(!!J){
@@ -76,21 +93,24 @@ void TimingProblem::evaluate(arr& phi, arr& J, const arr& x){
   }
   uint m=0;
 
-  //total time cost
-  phi(0) = alpha*sum(tau);
-  if(!!J){
-    if(optTau){
-      for(uint i=0;i<tau.N;i++) J.elem(0, i) = alpha;
+  // 1) total time cost
+  if(timeCost>0.){
+    phi(m) = timeCost*sum(tau);
+    if(!!J){
+      if(optTau){
+        for(uint i=0;i<tau.N;i++) J.elem(m, i) = timeCost;
+      }
     }
+    m += 1;
   }
-  m += 1;
 
-  //leaps
+  // loop through segments for other objectives
   for(uint k=0;k<K;k++){
+    //get x0,v0,x1,v1 with jacobians
     arr _x0 = x0;
     arr _v0 = v0;
     if(k){
-      _x0 = flags[k-1];
+      _x0 = waypoints[k-1];
       if(tangents.N){
         _v0 = v(k-1) * tangents[k-1];
         rai::SparseMatrix& J = _v0.J().sparse().resize(d, dimension, d);
@@ -101,7 +121,7 @@ void TimingProblem::evaluate(arr& phi, arr& J, const arr& x){
         for(uint i=0;i<d;i++) J.entry(i, vIdx+(k-1)*d+i, i) = 1.;
       }
     }
-    arr _x1 = flags[k];
+    arr _x1 = waypoints[k];
     arr _v1 = zeros(d);
     if(k<K-1){
       if(tangents.N){
@@ -115,16 +135,30 @@ void TimingProblem::evaluate(arr& phi, arr& J, const arr& x){
       }
     }
 
+    //get tau with jacobian
     arr tauJ;
     if(optTau){
       tauJ.sparse().resize(1, dimension, 1).entry(0, k, 0) = 1;
     }
 
-    arr y = CubicSplineLeapCost(_x0, _v0, _x1, _v1, tau(k), tauJ);
-    phi.setVectorBlock(y.noJ(), m);
-    if(!!J) J.sparse().add(y.J(), m, 0);
+    //- 2) control costs (sum of sqr-acc
+    if(ctrlCost>0.){
+      arr y = rai::CubicSplineLeapCost(_x0, _v0, _x1, _v1, tau(k), tauJ);
+      y *= ctrlCost;
+      phi.setVectorBlock(y.noJ(), m);
+      if(!!J) J.sparse().add(y.J(), m, 0);
+      m += y.N;
+    }
 
-    m += 2*d;
+    // 3) acc limits
+    if(maxAcc>0.){
+      arr y = rai::CubicSplineMaxAcc(_x0, _v0, _x1, _v1, tau(k), tauJ);
+      y -= maxAcc;
+      y *= 1e1;
+      phi.setVectorBlock(y.noJ(), m);
+      if(!!J) J.sparse().add(y.J(), m, 0);
+      m += y.N;
+    }
   }
 
   CHECK_EQ(m, phi.N, "");
@@ -139,4 +173,11 @@ arr TimingProblem::getInitializationSample(const arr& previousOptima){
   }
   //    rndGauss(x, .1, true);
   return x.reshape(-1);
+}
+
+void TimingProblem::getVels(arr& vel){
+  if(tangents.N) vel = v%tangents;
+  else vel = v;
+  vel.append(zeros(waypoints.d1));
+  vel.reshape(waypoints.d0, waypoints.d1);
 }

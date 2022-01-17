@@ -187,6 +187,7 @@ template<> Array<double>& Array<double>::J() {
 }
 template<> Array<double> Array<double>::noJ() const {
   Array<double> x;
+  CHECK(!isSpecial(*this), "reference for special doesn't work yet..");
   x.referTo(*this);
   return x;
 }
