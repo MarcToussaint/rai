@@ -15,11 +15,12 @@ struct TimingMPC{
   arr warmstart_dual;
 
   //optimization parameters
-  double alpha = 1e4;
+  double timeCost;
+  double ctrlCost;
   rai::OptOptions opt;
   uint phase=0;
 
-  TimingMPC(const arr& _flags, double _alpha=1e4);
+  TimingMPC(const arr& _flags, double _timeCost=1e4, double _ctrlCost=1e-2);
 
   shared_ptr<SolverReturn> solve(const arr& x0, const arr& v0, int verbose=1);
 

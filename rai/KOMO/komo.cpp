@@ -97,7 +97,7 @@ void KOMO::setTiming(double _phases, uint _stepsPerPhase, double durationPerPhas
   k_order = _k_order;
 }
 
-void KOMO::clone(const KOMO& komo){
+void KOMO::clone(const KOMO& komo, bool deepCopyFeatures){
   clearObjectives();
   opt = komo.opt;
   setModel(komo.world, komo.computeCollisions);
@@ -113,12 +113,17 @@ void KOMO::clone(const KOMO& komo){
 
   //copy running objectives
   for(const ptr<Objective>& o:komo.objectives){
-    objectives.append(make_shared<Objective>(o->feat->deepCopy(), o->type, o->name, o->times));
+    std::shared_ptr<Feature> f = o->feat;
+    if(deepCopyFeatures) f = f->deepCopy();
+    objectives.append(make_shared<Objective>(f, o->type, o->name, o->times));
   }
+
 
   //copy grounded objectives
   for(const ptr<GroundedObjective>& o:komo.objs){
-    auto ocopy = objs.append(make_shared<GroundedObjective>(o->feat->deepCopy(), o->type, o->timeSlices));
+    std::shared_ptr<Feature> f = o->feat;
+    if(deepCopyFeatures) f = f->deepCopy();
+    auto ocopy = objs.append(make_shared<GroundedObjective>(f, o->type, o->timeSlices));
     ocopy->frames = pathConfig.getFrames(framesToIndices(o->frames));
   }
 }

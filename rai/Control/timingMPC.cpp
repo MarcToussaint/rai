@@ -2,8 +2,8 @@
 #include "timingOpt.h"
 #include "../Optim/MP_Solver.h"
 
-TimingMPC::TimingMPC(const arr& _flags, double _alpha)
-  : waypoints(_flags), alpha(_alpha){
+TimingMPC::TimingMPC(const arr& _flags, double _timeCost, double _ctrlCost)
+  : waypoints(_flags), timeCost(_timeCost), ctrlCost(_ctrlCost){
 
   tau = 10.*ones(waypoints.d0);
 
@@ -19,10 +19,10 @@ shared_ptr<SolverReturn> TimingMPC::solve(const arr& x0, const arr& v0, int verb
   }
 
   TimingProblem mp(waypoints({phase, -1}), tangents({phase, -1}),
-                   x0, v0, alpha,
+                   x0, v0, timeCost,
                    vels({phase, -1}), tau({phase, -1}),
                    true,
-                   -1., -1., -1., 1e-1);
+                   -1., -1., -1., ctrlCost);
 
   MP_Solver S;
   if(warmstart_dual.N){
