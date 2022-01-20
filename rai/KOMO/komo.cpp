@@ -107,6 +107,9 @@ void KOMO::clone(const KOMO& komo, bool deepCopyFeatures){
   tau = komo.tau;
   k_order = komo.k_order;
 
+  if(komo.fcl) fcl=komo.fcl;
+  if(komo.swift) swift=komo.swift;
+
   //directly copy pathConfig instead of recreating it (including switches)
   pathConfig.copy(komo.pathConfig, false);
   timeSlices = pathConfig.getFrames(framesToIndices(komo.timeSlices));
@@ -117,7 +120,6 @@ void KOMO::clone(const KOMO& komo, bool deepCopyFeatures){
     if(deepCopyFeatures) f = f->deepCopy();
     objectives.append(make_shared<Objective>(f, o->type, o->name, o->times));
   }
-
 
   //copy grounded objectives
   for(const ptr<GroundedObjective>& o:komo.objs){
