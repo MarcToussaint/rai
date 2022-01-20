@@ -3,7 +3,9 @@
 #include "../Optim/MP_Solver.h"
 
 TimingMPC::TimingMPC(const arr& _flags, double _timeCost, double _ctrlCost)
-  : waypoints(_flags), timeCost(_timeCost), ctrlCost(_ctrlCost){
+  : waypoints(_flags),
+    timeCost(_timeCost),
+    ctrlCost(_ctrlCost){
 
   tau = 10.*ones(waypoints.d0);
 

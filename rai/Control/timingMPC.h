@@ -23,7 +23,7 @@ struct TimingMPC{
   uint phase=0;
   uintA backtrackingTable;
 
-  TimingMPC(const arr& _flags, double _timeCost=1e4, double _ctrlCost=1e-2);
+  TimingMPC(const arr& _flags, double _timeCost=1e0, double _ctrlCost=1e0);
 
   shared_ptr<SolverReturn> solve(const arr& x0, const arr& v0, int verbose=1);
 
