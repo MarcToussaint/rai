@@ -18,7 +18,10 @@ struct TimingMPC{
   double timeCost;
   double ctrlCost;
   rai::OptOptions opt;
+
+  //phase management
   uint phase=0;
+  uintA backtrackingTable;
 
   TimingMPC(const arr& _flags, double _timeCost=1e4, double _ctrlCost=1e-2);
 

@@ -89,10 +89,12 @@ void TimingMPC::update_flags(const arr& _flags){
 }
 
 void TimingMPC::update_backtrack(){
-  LOG(0) <<"backtracking " <<phase <<"->" <<phase-1 <<" tau:" <<tau;
   CHECK(phase>0, "");
+  uint phaseTo = phase-1;
+  if(backtrackingTable.N) phaseTo = backtrackingTable(phase);
+  LOG(0) <<"backtracking " <<phase <<"->" <<phaseTo <<" tau:" <<tau;
   if(phase<tau.N) tau(phase) = rai::MAX(1., tau(phase));
-  phase--;
+  phase=phaseTo;
   tau(phase) = 1.;
 }
 
