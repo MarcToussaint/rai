@@ -35,6 +35,7 @@ struct TimingMPC{
   void update_progressTime(double gap);
   void update_flags(const arr& _flags);
   void update_backtrack();
+  void update_setPhase(uint phaseTo);
 
   void getCubicSpline(rai::CubicSpline& S, const arr& x0, const arr& v0) const;
 };

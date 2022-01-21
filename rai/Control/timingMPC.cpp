@@ -94,7 +94,12 @@ void TimingMPC::update_backtrack(){
   CHECK(phase>0, "");
   uint phaseTo = phase-1;
   if(backtrackingTable.N) phaseTo = backtrackingTable(phase);
+  update_setPhase(phaseTo);
+}
+
+void TimingMPC::update_setPhase(uint phaseTo){
   LOG(0) <<"backtracking " <<phase <<"->" <<phaseTo <<" tau:" <<tau;
+  CHECK_LE(phaseTo, phase, "");
   while(phase>phaseTo){
     if(phase<tau.N) tau(phase) = rai::MAX(1., tau(phase));
     phase--;
