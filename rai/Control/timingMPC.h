@@ -23,17 +23,17 @@ struct TimingMPC{
   uint phase=0;
   uintA backtrackingTable;
 
-  TimingMPC(const arr& _flags, double _timeCost=1e0, double _ctrlCost=1e0);
+  TimingMPC(const arr& _waypoints, double _timeCost=1e0, double _ctrlCost=1e0);
 
   shared_ptr<SolverReturn> solve(const arr& x0, const arr& v0, int verbose=1);
 
   bool done() const{ return phase>=waypoints.d0; }
-  arr getFlags() const{ if(done()) return arr{}; return waypoints({phase, -1}).copy(); }
+  arr getWaypoints() const{ if(done()) return arr{}; return waypoints({phase, -1}).copy(); }
   arr getTimes() const{ if(done()) return arr{}; return integral(tau({phase, -1})); }
   arr getVels() const;
 
   void update_progressTime(double gap);
-  void update_flags(const arr& _flags);
+  void update_waypoints(const arr& _waypoints);
   void update_backtrack();
   void update_setPhase(uint phaseTo);
 

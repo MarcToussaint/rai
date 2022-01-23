@@ -2,8 +2,8 @@
 #include "timingOpt.h"
 #include "../Optim/MP_Solver.h"
 
-TimingMPC::TimingMPC(const arr& _flags, double _timeCost, double _ctrlCost)
-  : waypoints(_flags),
+TimingMPC::TimingMPC(const arr& _waypoints, double _timeCost, double _ctrlCost)
+  : waypoints(_waypoints),
     timeCost(_timeCost),
     ctrlCost(_ctrlCost){
 
@@ -48,7 +48,7 @@ shared_ptr<SolverReturn> TimingMPC::solve(const arr& x0, const arr& v0, int verb
   warmstart_dual = ret->dual;
 
   if(verbose>0){
-    cout <<"FLAGS phase: " <<phase <<" tau: " <<tau <<endl;
+    cout <<"phase: " <<phase <<" tau: " <<tau <<endl;
   }
   return ret;
 }
@@ -80,8 +80,10 @@ void TimingMPC::update_progressTime(double gap){
   }
 }
 
-void TimingMPC::update_flags(const arr& _flags){
-  waypoints = _flags;
+void TimingMPC::update_waypoints(const arr& _waypoints){
+  CHECK_EQ(waypoints.d0, _waypoints.d0, "");
+  CHECK_EQ(waypoints.d1, _waypoints.d1, "");
+  waypoints = _waypoints;
   if(tangents.N){
     for(uint k=1; k<waypoints.d0; k++){
       tangents[k-1] = waypoints[k] - waypoints[k-1];
@@ -109,7 +111,7 @@ void TimingMPC::update_setPhase(uint phaseTo){
 
 void TimingMPC::getCubicSpline(rai::CubicSpline& S, const arr& x0, const arr& v0) const{
 
-  arr _pts = getFlags();
+  arr _pts = getWaypoints();
   arr _times = getTimes();
   arr _vels = getVels();
   _pts.prepend(x0);
