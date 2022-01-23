@@ -158,7 +158,8 @@ void F_fex_POA::phi2(arr& y, arr& J, const FrameL& F) {
 void F_fex_Force::phi2(arr& y, arr& J, const FrameL& F) {
   if(order>0){  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
-  rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1));
+  rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1), false);
+  if(!ex){ F.elem(0)->C.kinematicsZero(y, J, dim_phi2(F)); return; }
   ex->kinForce(y, J);
 }
 
@@ -466,6 +467,9 @@ FrameL getShapesAbove(rai::Frame* a) {
 //===========================================================================
 
 arr F_fex_ForceIsNormal::phi(const FrameL& F) {
+  rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1), false);
+  if(!ex){ arr y; F.elem(0)->C.kinematicsZero(y, y.J(), dim_phi2(F)); return y; }
+
   //-- from the contact we need force
   arr force = F_fex_Force()
                 .eval(F);
@@ -522,6 +526,9 @@ void F_fex_ForceIsComplementary::phi2(arr& y, arr& J, const FrameL& F) {
 uint F_fex_ForceIsComplementary::dim_phi2(const FrameL& F) { return 6; }
 
 void F_fex_ForceIsPositive::phi2(arr& y, arr& J, const FrameL& F) {
+  rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1), false);
+  if(!ex){ F.elem(0)->C.kinematicsZero(y, J, dim_phi2(F)); return; }
+
   //-- from the contact we need force
   arr force = F_fex_Force()
                 .eval(F);
@@ -545,7 +552,8 @@ void F_fex_ForceIsPositive::phi2(arr& y, arr& J, const FrameL& F) {
 void F_fex_POASurfaceDistance::phi2(arr& y, arr& J, const FrameL& F){
   if(order>0){  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
-  rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1));
+  rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1), false);
+  if(!ex){ F.elem(0)->C.kinematicsZero(y, J, dim_phi2(F)); return; }
   rai::Frame *f=0;
   if(leftRight == rai::_left) f = F.elem(0);
   if(leftRight == rai::_right) f = F.elem(1);
@@ -574,7 +582,8 @@ void F_fex_POASurfaceDistance::phi2(arr& y, arr& J, const FrameL& F){
 void F_fex_POASurfaceNormal::phi2(arr& y, arr& J, const FrameL& F){
   if(order>0){  Feature::phi2(y, J, F);  return;  }
   CHECK_EQ(F.N, 2, "");
-  rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1));
+  rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1), false);
+  if(!ex){ F.elem(0)->C.kinematicsZero(y, J, dim_phi2(F)); return; }
   rai::Frame *f=0;
   if(leftRight == rai::_left) f = F.elem(0);
   if(leftRight == rai::_right) f = F.elem(1);
