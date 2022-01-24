@@ -18,6 +18,6 @@ void addBoxPickObjectives(KOMO& komo, double time, rai::ArgWord dir,
 
 void addBoxPlaceObjectives(KOMO& komo, double time,
                            rai::ArgWord dir, const char* boxName, const arr& boxSize, const char* tableName,
-                           const char* gripperName, const char* palmName, double margin=-.02);
+                           const char* gripperName, const char* palmName, double margin=-.02, bool pre=false);
 
 

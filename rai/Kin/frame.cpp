@@ -164,7 +164,7 @@ void rai::Frame::_state_updateAfterTouchingQ() {
 
 void rai::Frame::getRigidSubFrames(FrameL& F) {
   for(Frame* child:children)
-    if(!child->joint) { F.append(child); child->getRigidSubFrames(F); }
+    if(!child->joint || child->joint->type==JT_rigid) { F.append(child); child->getRigidSubFrames(F); }
 }
 
 void rai::Frame::getPartSubFrames(FrameL& F) {

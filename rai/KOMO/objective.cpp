@@ -66,7 +66,7 @@ double ObjectiveL::maxError(const rai::Configuration& C, double time, int verbos
             if(o->type==OT_eq  && fabs(yi)>m) m=fabs(yi);
           }
           if(verbose>0){
-            LOG(0) <<"err: " <<m <<' ' <<o->name <<' ' <<o->feat->shortTag(C);
+            LOG(0) <<"err: " <<m <<' ' <<o->feat->shortTag(C);
           }
           if(m>maxError) maxError=m;
         }
