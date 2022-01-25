@@ -80,11 +80,14 @@ void TimingMPC::update_progressTime(double gap){
   }
 }
 
-void TimingMPC::update_waypoints(const arr& _waypoints){
+void TimingMPC::update_waypoints(const arr& _waypoints, bool setNextWaypointTangent){
   CHECK_EQ(waypoints.d0, _waypoints.d0, "");
   CHECK_EQ(waypoints.d1, _waypoints.d1, "");
-  waypoints = _waypoints;
-  if(tangents.N){
+  if(&waypoints!=&_waypoints){
+    waypoints = _waypoints;
+  }
+  if(setNextWaypointTangent){
+    tangents.resize(waypoints.d0-1, waypoints.d1);
     for(uint k=1; k<waypoints.d0; k++){
       tangents[k-1] = waypoints[k] - waypoints[k-1];
       op_normalize(tangents[k-1]());

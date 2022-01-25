@@ -19,6 +19,9 @@ struct TimingMPC{
   double ctrlCost;
   rai::OptOptions opt;
 
+  //tangent options
+  bool useNextWaypointTangent=true;
+
   //phase management
   uint phase=0;
   uintA backtrackingTable;
@@ -33,7 +36,7 @@ struct TimingMPC{
   arr getVels() const;
 
   void update_progressTime(double gap);
-  void update_waypoints(const arr& _waypoints);
+  void update_waypoints(const arr& _waypoints, bool setNextWaypointTangent);
   void update_backtrack();
   void update_setPhase(uint phaseTo);
 
