@@ -857,3 +857,13 @@ arr F_PushAligned::phi(const FrameL& F){
   op_crossProduct(y, a-b, c-b);
   return y;
 }
+
+arr F_PushSide::phi(const FrameL& F){
+  CHECK_EQ(F.N, 3, "");
+  arr a = F_Position() .eval({F.elem(0)});
+  arr b = F_Position() .eval({F.elem(1)});
+  arr c = F_Position() .eval({F.elem(2)});
+
+  arr y = ~(a-b) * (c-b);
+  return y;
+}

@@ -24,11 +24,11 @@ void addBoxPickObjectives(KOMO& komo, double time, rai::ArgWord dir, const char*
 
     //position: center in inner target plane; X-specific
     if(!pre){
-      komo.addObjective({time}, FS_positionRel, {gripperName, boxName}, OT_eq, xLine*1e0, {});
+      komo.addObjective({time}, FS_positionRel, {gripperName, boxName}, OT_eq, xLine*1e1, {});
       komo.addObjective({time}, FS_positionRel, {gripperName, boxName}, OT_ineq, yzPlane*1e0, (boxSize/2.-margin));
       komo.addObjective({time}, FS_positionRel, {gripperName, boxName}, OT_ineq, yzPlane*(-1e0), -(boxSize/2.-margin));
     }else{
-      komo.addObjective({time, time+1.}, FS_positionRel, {gripperName, boxName}, OT_eq, xLine*1e0, {});
+      komo.addObjective({time, time+1.}, FS_positionRel, {gripperName, boxName}, OT_eq, xLine*1e1, {});
     }
 
     //orientation: grasp axis orthoginal to target plane; X-specific
@@ -39,7 +39,7 @@ void addBoxPickObjectives(KOMO& komo, double time, rai::ArgWord dir, const char*
     if(!pre){
       komo.addObjective({time-.3,time}, FS_distance, {palmName, boxName}, OT_ineq, {1e1}, {-.001});
     }else{
-      komo.addObjective({time-.3,time}, FS_distance, {palmName, boxName}, OT_eq, {1e1}, {-.05});
+      komo.addObjective({time-.3,time}, FS_distance, {palmName, boxName}, OT_eq, {1e1}, {-.07});
     }
 
     //approach: only longitudial velocity, min distance before and at grasp
@@ -90,13 +90,15 @@ void addBoxPlaceObjectives(KOMO& komo, double time,
 
     //xy-position: above table
     if(!pre){
-      komo.addObjective({time}, FS_aboveBox, {boxName, tableName}, OT_ineq, {3e0}, {margin});
+      komo.addObjective({time}, FS_positionDiff, {boxName, tableName}, OT_eq, 1e1*arr({2,3},{1,0,0,0,1,0}));
+      //komo.addObjective({time}, FS_aboveBox, {boxName, tableName}, OT_ineq, {3e0}, {margin});
     }else{
-      komo.addObjective({time, time+1.}, FS_aboveBox, {boxName, tableName}, OT_ineq, {3e0}, {margin});
+      komo.addObjective({time}, FS_positionDiff, {boxName, tableName}, OT_eq, 1e1*arr({2,3},{1,0,0,0,1,0}));
+      //komo.addObjective({time, time+1.}, FS_aboveBox, {boxName, tableName}, OT_ineq, {3e0}, {margin});
     }
 
     //orientation: Y-up
-    komo.addObjective({time-.2, time}, zVector, {boxName}, OT_eq, {1e0}, zVectorTarget);
+    komo.addObjective({time-.2, time}, zVector, {boxName}, OT_eq, {0.5}, zVectorTarget);
 
     //retract: only longitudial velocity, min distance after grasp
     if(komo.k_order>1) komo.addObjective({time,time+.3}, FS_positionRel, {boxName, gripperName}, OT_eq, arr{{2,3}, {1,0,0,0,1,0}}*1e2, {}, 1);

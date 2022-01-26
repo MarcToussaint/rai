@@ -54,8 +54,6 @@ template<> const char* rai::Enum<rai::KOMOsolver>::names []= {
 
 //===========================================================================
 
-double shapeSize(const Configuration& K, const char* name, uint i=2);
-
 struct getQFramesAndScale_Return { uintA frames; arr scale; };
 getQFramesAndScale_Return getCtrlFramesAndScale(const rai::Configuration& C);
 

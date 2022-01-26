@@ -81,3 +81,4 @@ inline ptr<Feature> make_feature(FeatureSymbol feat, const StringA& frames, cons
   return symbols2feature(feat, frames, C, scale, target, order);
 }
 
+double shapeSize(const rai::Configuration& K, const char* name, uint i=2);
