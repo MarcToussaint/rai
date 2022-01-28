@@ -95,6 +95,27 @@ void Skeleton::setFromStateSequence(Array<Graph*>& states, const arr& times){
 
 }
 
+void Skeleton::fillInEndPhaseOfModes(){
+  double maxPhase = getMaxPhase();
+  for(uint i=0; i<S.N; i++) {
+    SkeletonEntry& si = S(i);
+    if(si.phase1==-1 && si.frames.N) {
+      si.phase1=maxPhase;
+      for(uint j=i+1; j<S.N; j++) {
+        SkeletonEntry& sj = S(j);
+        if(     sj.phase0>si.phase0 && //needs to be in the future
+                sj.phase1==-1. &&  //is also a '_' mode symbol
+                sj.frames.N &&
+                sj.frames.last()==si.frames.last() //has the same last frame
+                ) {
+          si.phase1 = sj.phase0;
+          break;
+        }
+      }
+    }
+  }
+}
+
 double Skeleton::getMaxPhase() const {
   double maxPhase=0;
   for(const SkeletonEntry& s:S) {
@@ -214,7 +235,7 @@ void Skeleton::getKeyframeConfiguration(Configuration& C, int step, int verbose)
   }
 }
 
-SkeletonTranscription Skeleton::mp(){
+SkeletonTranscription Skeleton::mp(uint stepsPerPhase){
   SkeletonTranscription ret;
   ret.komo=make_shared<KOMO>();
   ret.komo->opt.verbose = verbose-2;
@@ -227,7 +248,7 @@ SkeletonTranscription Skeleton::mp(){
   komo->clearObjectives();
 
   komo->setModel(*C, collisions);
-  komo->setTiming(maxPhase+1., 1, 5., 1);
+  komo->setTiming(maxPhase+1., stepsPerPhase, 5., 1);
   komo->add_qControlObjective({}, 1, 1e-2);
   komo->add_qControlObjective({}, 0, 1e-2);
   komo->addQuaternionNorms();
@@ -349,7 +370,7 @@ SkeletonTranscription Skeleton::mp_path(const arrA& waypoints){
   }
 
 #else
-  ptr<KOMO> komo = ret.komo;
+  std::shared_ptr<KOMO> komo = ret.komo;
   double maxPhase = getMaxPhase();
   komo->clearObjectives();
 
@@ -644,24 +665,7 @@ void Skeleton::read(std::istream& is) {
 //  write(cout);
 
   //-- fill in the missing phase1!
-  for(uint i=0; i<S.N; i++) {
-    SkeletonEntry& si = S(i);
-    if(si.phase1==-1 && si.frames.N) {
-      si.phase1=maxPhase;
-      for(uint j=i+1; j<S.N; j++) {
-        SkeletonEntry& sj = S(j);
-        if(     sj.phase0>si.phase0 && //needs to be in the future
-                sj.phase1==-1. &&  //is also a '_' mode symbol
-                sj.frames.N &&
-                sj.frames.last()==si.frames.last() //has the same last frame
-                ) {
-          si.phase1 = sj.phase0;
-          break;
-        }
-      }
-    }
-  }
-
+  fillInEndPhaseOfModes();
 //  cout <<"TIMED_skeleton: " <<endl;
 //  write(cout);
 }

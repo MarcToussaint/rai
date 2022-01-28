@@ -38,7 +38,7 @@ struct SkeletonTranscription {
 struct Skeleton {
   Array<SkeletonEntry> S;
   const Configuration *C=0;
-  shared_ptr<KOMO> komo;
+  std::shared_ptr<KOMO> komo;
   bool collisions=false;
   int verbose=1;
 
@@ -48,6 +48,7 @@ struct Skeleton {
   //-- set the skeleton
   void setConfiguration(const Configuration& _C){ C=&_C; } //brittle..
   void setFromStateSequence(Array<Graph*>& states, const arr& times);
+  void fillInEndPhaseOfModes();
 
   //-- skeleton info
   double getMaxPhase() const;
@@ -55,7 +56,7 @@ struct Skeleton {
 
   //-- get MP transcriptions
   //keyframes
-  SkeletonTranscription mp();
+  SkeletonTranscription mp(uint stepsPerPhase=1);
   SkeletonTranscription mp_finalSlice(); //"pose bound"
   shared_ptr<MathematicalProgram> mp_timeConditional(const uintA& vars, const uintA& cond);
   shared_ptr<MathematicalProgram_Factored> mp_timeFactored();

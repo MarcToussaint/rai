@@ -1203,6 +1203,7 @@ template<class T> rai::Array<T> rai::Array<T>::sub(Array<uint> elems) const {
     x.resize(elems.N, d1, d2);
     for(int l=0; l<(int)elems.N; l++) for(uint j=0; j<d1; j++) for(uint k=0; k<d2; k++) x(l, j, k)=operator()(elems(l), j, k);
   } else NIY;
+  //x.reshape(elems.dim());
   return x;
 }
 

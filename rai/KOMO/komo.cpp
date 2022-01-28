@@ -594,6 +594,20 @@ void KOMO::initWithConstant(const arr& q) {
   run_prepare(0.);
 }
 
+void setQByPairs(rai::Configuration& C, const FrameL& F, arr q){
+  uint m=0;
+  FrameL sel;
+  for(uint i=0; i<F.N; i+=2) {
+    rai::Frame* a = F.elem(i+0);
+    rai::Frame* b = F.elem(i+1);
+    if(a->parent==b) { sel.append(a); m += a->joint->dim; }
+    else if(b->parent==a) { sel.append(b); for(uint k=0; k<b->joint->dim; k++) q.elem(m++) *= -1; }
+    else HALT("a and b are not linked");
+  }
+  CHECK_EQ(m, q.N, "");
+  C.setJointState(q, sel);
+}
+
 void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase) {
   //compute in which steps (configuration time slices) the waypoints are imposed
   uintA steps(waypoints.N);
@@ -633,6 +647,7 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase) 
     uint t1=steps(i);
 
     //motion profile for dof values
+#if 0
     if(t1-1<T) {
       uintA nonSwitched = getNonSwitchedFrames(timeSlices[k_order+t0], timeSlices[k_order+t1]);
       arr q0 = pathConfig.getJointState(timeSlices[k_order+t0].sub(nonSwitched));
@@ -644,8 +659,26 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase) 
         //view(true, STRING("interpolating: step:" <<i <<" t: " <<j));
       }
     }
+#else
+    auto F = getCtrlFramesAndScale(world);
+    F.frames.reshape(1,-1,2);
+    F_qItself qfeat;
+    if(t1-1<T) {
+      arr q0 = qfeat.eval(pathConfig.getFrames(F.frames + timeSlices(k_order+t0,0)->ID));
+      arr q1 = qfeat.eval(pathConfig.getFrames(F.frames + timeSlices(k_order+t1,0)->ID));
+      q0.J_reset();
+      q1.J_reset();
+      for(uint t=t0+1; t<t1; t++) {
+        double phase = double(t-t0)/double(t1-t0);
+        arr q = q0 + (.5*(1.-cos(RAI_PI*phase))) * (q1-q0); //p = p0 + phase * (p1-p0);
+        setQByPairs(pathConfig, pathConfig.getFrames(F.frames + timeSlices(k_order+t,0)->ID), q);
+        //view(true, STRING("interpolating: step:" <<i <<" t: " <<t));
+      }
+    }
+#endif
 
     //motion profile for switched object positions
+#if 0 //that doesn't work for walking!!
     if(t1-1<T) {
       uintA switched = getSwitchedFrames(timeSlices[k_order+t0], timeSlices[k_order+t1]);
       for(uint k:switched){
@@ -660,6 +693,7 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase) 
         }
       }
     }
+#endif
   }
 #endif
 
