@@ -80,7 +80,7 @@ auto getCtrlFramesAndScale(const rai::Configuration& C) {
   return R;
 }
 
-double shapeSize(const rai::Configuration& K, const char* name, uint i=2) {
+double shapeSize(const rai::Configuration& K, const char* name, uint i) {
   rai::Frame* f = K.getFrame(name);
   rai::Shape* s = f->shape;
   if(!s) {

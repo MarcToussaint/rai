@@ -2,8 +2,10 @@
 #include "timingOpt.h"
 #include "../Optim/MP_Solver.h"
 
-TimingMPC::TimingMPC(const arr& _flags, double _alpha)
-  : waypoints(_flags), alpha(_alpha){
+TimingMPC::TimingMPC(const arr& _waypoints, double _timeCost, double _ctrlCost)
+  : waypoints(_waypoints),
+    timeCost(_timeCost),
+    ctrlCost(_ctrlCost){
 
   tau = 10.*ones(waypoints.d0);
 
@@ -19,10 +21,10 @@ shared_ptr<SolverReturn> TimingMPC::solve(const arr& x0, const arr& v0, int verb
   }
 
   TimingProblem mp(waypoints({phase, -1}), tangents({phase, -1}),
-                   x0, v0, alpha,
+                   x0, v0, timeCost,
                    vels({phase, -1}), tau({phase, -1}),
                    true,
-                   -1., -1., -1., 1e-1);
+                   -1., -1., -1., ctrlCost);
 
   MP_Solver S;
   if(warmstart_dual.N){
@@ -46,7 +48,7 @@ shared_ptr<SolverReturn> TimingMPC::solve(const arr& x0, const arr& v0, int verb
   warmstart_dual = ret->dual;
 
   if(verbose>0){
-    cout <<"FLAGS phase: " <<phase <<" tau: " <<tau <<endl;
+    cout <<"phase: " <<phase <<" tau: " <<tau <<endl;
   }
   return ret;
 }
@@ -78,9 +80,14 @@ void TimingMPC::update_progressTime(double gap){
   }
 }
 
-void TimingMPC::update_flags(const arr& _flags){
-  waypoints = _flags;
-  if(tangents.N){
+void TimingMPC::update_waypoints(const arr& _waypoints, bool setNextWaypointTangent){
+  CHECK_EQ(waypoints.d0, _waypoints.d0, "");
+  CHECK_EQ(waypoints.d1, _waypoints.d1, "");
+  if(&waypoints!=&_waypoints){
+    waypoints = _waypoints;
+  }
+  if(setNextWaypointTangent){
+    tangents.resize(waypoints.d0-1, waypoints.d1);
     for(uint k=1; k<waypoints.d0; k++){
       tangents[k-1] = waypoints[k] - waypoints[k-1];
       op_normalize(tangents[k-1]());
@@ -89,16 +96,25 @@ void TimingMPC::update_flags(const arr& _flags){
 }
 
 void TimingMPC::update_backtrack(){
-  LOG(0) <<"backtracking " <<phase <<"->" <<phase-1 <<" tau:" <<tau;
   CHECK(phase>0, "");
-  if(phase<tau.N) tau(phase) = rai::MAX(1., tau(phase));
-  phase--;
+  uint phaseTo = phase-1;
+  if(backtrackingTable.N) phaseTo = backtrackingTable(phase);
+  update_setPhase(phaseTo);
+}
+
+void TimingMPC::update_setPhase(uint phaseTo){
+  LOG(0) <<"backtracking " <<phase <<"->" <<phaseTo <<" tau:" <<tau;
+  CHECK_LE(phaseTo, phase, "");
+  while(phase>phaseTo){
+    if(phase<tau.N) tau(phase) = rai::MAX(1., tau(phase));
+    phase--;
+  }
   tau(phase) = 1.;
 }
 
 void TimingMPC::getCubicSpline(rai::CubicSpline& S, const arr& x0, const arr& v0) const{
 
-  arr _pts = getFlags();
+  arr _pts = getWaypoints();
   arr _times = getTimes();
   arr _vels = getVels();
   _pts.prepend(x0);

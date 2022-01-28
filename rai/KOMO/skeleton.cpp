@@ -9,8 +9,6 @@
 #include "../Optim/MP_Solver.h"
 #include "../Logic/fol.h"
 
-double shapeSize(const rai::Configuration& K, const char* name, uint i=2);
-
 namespace rai {
 
 Array<SkeletonSymbol> skeletonModes = { SY_stable, SY_stableOn, SY_stableYPhi, SY_dynamic, SY_dynamicOn, SY_dynamicTrans, SY_quasiStatic, SY_quasiStaticOn, SY_magicTrans };

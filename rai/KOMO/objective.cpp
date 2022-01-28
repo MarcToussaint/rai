@@ -58,16 +58,18 @@ double ObjectiveL::maxError(const rai::Configuration& C, double time, int verbos
   for(const auto& o: *this) {
     if(time<0. || o->activeAtTime(time)){
       if(o->type==OT_ineq || o->type==OT_eq) {
-        arr y = o->feat->eval(o->feat->getFrames(C));
-        double m=0.;
-        for(double& yi : y){
-          if(o->type==OT_ineq && yi>m) m=yi;
-          if(o->type==OT_eq  && fabs(yi)>m) m=fabs(yi);
+        if(o->feat->order==0){
+          arr y = o->feat->eval(o->feat->getFrames(C));
+          double m=0.;
+          for(double& yi : y){
+            if(o->type==OT_ineq && yi>m) m=yi;
+            if(o->type==OT_eq  && fabs(yi)>m) m=fabs(yi);
+          }
+          if(verbose>0){
+            LOG(0) <<"err: " <<m <<' ' <<o->feat->shortTag(C);
+          }
+          if(m>maxError) maxError=m;
         }
-        if(verbose>0){
-          LOG(0) <<"err: " <<m <<' ' <<o->name <<' ' <<o->feat->shortTag(C);
-        }
-        if(m>maxError) maxError=m;
       }
     }
   }

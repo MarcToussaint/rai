@@ -2175,7 +2175,7 @@ template<class T> void rai::Array<T>::readDim(std::istream& is) {
 }
 
 /// OBSOLETE - I should remove this. IO-manip: arrays will be streamed as raw (without tags)
-template<class T> const rai::Array<T>& rai::Array<T>::ioraw() const { NIY; }
+template<class T> const rai::Array<T>& rai::Array<T>::ioraw() const { HALT("OBSOLETE: replace by modRaw"); }
 
 /// IO-manip: arrays will be streamed non-raw (with tags)
 //template<class T> const rai::Array<T>& rai::Array<T>::ionoraw() const{ NIY;  }

@@ -189,3 +189,8 @@ struct F_PushAligned : Feature {
   virtual arr phi(const FrameL& F);
   virtual uint dim_phi2(const FrameL& F) { return 3; }
 };
+
+struct F_PushSide : Feature {
+  virtual arr phi(const FrameL& F);
+  virtual uint dim_phi2(const FrameL& F) { return 1; }
+};

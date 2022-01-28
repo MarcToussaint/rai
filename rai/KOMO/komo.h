@@ -48,7 +48,7 @@ struct KOMO : NonCopyable {
   uint T=0;                    ///< total number of time steps
   double tau=0.;               ///< real time duration of single step (used when evaluating feature space velocities/accelerations)
   uint k_order=0;              ///< the (Markov) order of the KOMO problem (default 2)
-  rai::Array<ptr<Objective>> objectives;    ///< list of running objectives (each for a running interval of indexed time slices)
+  ObjectiveL objectives;    ///< list of running objectives (each for a running interval of indexed time slices)
   rai::Array<ptr<GroundedObjective>> objs;  ///< list of grounded objective (each for only a single tuple of frames (not running intervals))
   rai::Array<ptr<rai::KinematicSwitch>> switches;  ///< list of kinematic switches along the motion -- only as record: they are applied immediately at addSwitch
 
@@ -85,7 +85,7 @@ struct KOMO : NonCopyable {
   void setModel(const rai::Configuration& C, bool _computeCollisions=true);
   void setTiming(double _phases=1., uint _stepsPerPhase=30, double durationPerPhase=5., uint _k_order=2);
 
-  void clone(const KOMO& komo);
+  void clone(const KOMO& komo, bool deepCopyFeatures=true);
 
   //-- higher-level default setups
   void setIKOpt(); ///< setTiming(1., 1, 1., 1); and velocity objective

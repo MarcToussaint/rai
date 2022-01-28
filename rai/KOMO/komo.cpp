@@ -54,8 +54,6 @@ template<> const char* rai::Enum<rai::KOMOsolver>::names []= {
 
 //===========================================================================
 
-double shapeSize(const Configuration& K, const char* name, uint i=2);
-
 struct getQFramesAndScale_Return { uintA frames; arr scale; };
 getQFramesAndScale_Return getCtrlFramesAndScale(const rai::Configuration& C);
 
@@ -97,7 +95,7 @@ void KOMO::setTiming(double _phases, uint _stepsPerPhase, double durationPerPhas
   k_order = _k_order;
 }
 
-void KOMO::clone(const KOMO& komo){
+void KOMO::clone(const KOMO& komo, bool deepCopyFeatures){
   clearObjectives();
   opt = komo.opt;
   setModel(komo.world, komo.computeCollisions);
@@ -107,18 +105,25 @@ void KOMO::clone(const KOMO& komo){
   tau = komo.tau;
   k_order = komo.k_order;
 
+  if(komo.fcl) fcl=komo.fcl;
+  if(komo.swift) swift=komo.swift;
+
   //directly copy pathConfig instead of recreating it (including switches)
   pathConfig.copy(komo.pathConfig, false);
   timeSlices = pathConfig.getFrames(framesToIndices(komo.timeSlices));
 
   //copy running objectives
   for(const ptr<Objective>& o:komo.objectives){
-    objectives.append(make_shared<Objective>(o->feat->deepCopy(), o->type, o->name, o->times));
+    std::shared_ptr<Feature> f = o->feat;
+    if(deepCopyFeatures) f = f->deepCopy();
+    objectives.append(make_shared<Objective>(f, o->type, o->name, o->times));
   }
 
   //copy grounded objectives
   for(const ptr<GroundedObjective>& o:komo.objs){
-    auto ocopy = objs.append(make_shared<GroundedObjective>(o->feat->deepCopy(), o->type, o->timeSlices));
+    std::shared_ptr<Feature> f = o->feat;
+    if(deepCopyFeatures) f = f->deepCopy();
+    auto ocopy = objs.append(make_shared<GroundedObjective>(f, o->type, o->timeSlices));
     ocopy->frames = pathConfig.getFrames(framesToIndices(o->frames));
   }
 }
