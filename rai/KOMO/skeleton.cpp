@@ -192,7 +192,7 @@ shared_ptr<SolverReturn> Skeleton::solve3(bool useKeyframes){
     sol.setProblem(keyframes.mp);
     sol.setInitialization(keyframes.komo->x); //to avoid adding noise again
     ret = sol.solve();
-    keyframes.mp->report(cout, 5);
+    keyframes.mp->report(cout, 4);
     sol.gnuplot_costs();
   }
 
@@ -448,6 +448,7 @@ void Skeleton::setKOMO(KOMO& komo) const {
       //      case SY_inside:     komo.addObjective({s.phase0, s.phase1}, make_shared<TM_InsideLine>(world, s.frames(0), s.frames(1)), OT_ineq, {1e1});  break;
       case SY_oppose:     komo.addObjective({s.phase0, s.phase1}, FS_oppose, s.frames, OT_eq, {1e1});  break;
 
+      case SY_relPosY:    komo.addObjective({s.phase0, s.phase1}, FS_positionRel, {s.frames(0), s.frames(1)}, OT_ineq, {{1,3},{0,1e1,0}});  break;
       case SY_topBoxGrasp: {
         komo.addObjective({s.phase0}, FS_positionDiff, s.frames, OT_eq, {1e2});
         komo.addObjective({s.phase0}, FS_scalarProductXY, s.frames, OT_eq, {1e2}, {0.});

@@ -613,6 +613,18 @@ void setQByPairs(rai::Configuration& C, const FrameL& F, arr q){
   C.setJointState(q, sel);
 }
 
+void getDofsAndSignFromFramePairs(DofL& dofs, arr& signs, const FrameL& F){
+  signs.clear();
+  dofs.resize(F.N/2);
+  for(uint i=0; i<F.N/2; i++) {
+    rai::Frame* a = F.elem(2*i+0);
+    rai::Frame* b = F.elem(2*i+1);
+    if(a->parent==b) { dofs(i)=a->joint; signs.append(ones(a->joint->dim)); }
+    else if(b->parent==a) { dofs(i)=b->joint; signs.append(-ones(b->joint->dim)); }
+    else HALT("a and b are not linked");
+  }
+}
+
 void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase) {
   //compute in which steps (configuration time slices) the waypoints are imposed
   uintA steps(waypoints.N);
@@ -646,12 +658,16 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase) 
 //  view(true, STRING("after"));
 
   //then interpolate w.r.t. non-switching frames within the intervals
+  auto F = getCtrlFramesAndScale(world);
+  //F.frames.reshape(1,-1,2); F_qItself qfeat;
+  arr signs;
+  DofL dofs;
 #if 1
   for(uint i=0; i<steps.N; i++) {
     uint t0=0; if(i) t0 = steps(i-1);
     uint t1=steps(i);
 
-    //motion profile for dof values
+    //interpolate the controlled DOFs, using qItself to also use the pair-wise joint indexing for flipped joints (walker case)
 #if 0
     if(t1-1<T) {
       uintA nonSwitched = getNonSwitchedFrames(timeSlices[k_order+t0], timeSlices[k_order+t1]);
@@ -665,18 +681,19 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase) 
       }
     }
 #else
-    auto F = getCtrlFramesAndScale(world);
-    F.frames.reshape(1,-1,2);
-    F_qItself qfeat;
     if(t1-1<T) {
-      arr q0 = qfeat.eval(pathConfig.getFrames(F.frames + timeSlices(k_order+t0,0)->ID));
-      arr q1 = qfeat.eval(pathConfig.getFrames(F.frames + timeSlices(k_order+t1,0)->ID));
-      q0.J_reset();
-      q1.J_reset();
+      getDofsAndSignFromFramePairs(dofs, signs, pathConfig.getFrames(F.frames + timeSlices(k_order+t0,0)->ID));
+      arr q0 = signs%pathConfig.getDofState(dofs);
+      getDofsAndSignFromFramePairs(dofs, signs, pathConfig.getFrames(F.frames + timeSlices(k_order+t1,0)->ID));
+      arr q1 = signs%pathConfig.getDofState(dofs);
+//      arr q0 = qfeat.eval(pathConfig.getFrames(F.frames + timeSlices(k_order+t0,0)->ID));  q0.J_reset();
+//      arr q1 = qfeat.eval(pathConfig.getFrames(F.frames + timeSlices(k_order+t1,0)->ID));  q1.J_reset();
       for(uint t=t0+1; t<t1; t++) {
         double phase = double(t-t0)/double(t1-t0);
         arr q = q0 + (.5*(1.-cos(RAI_PI*phase))) * (q1-q0); //p = p0 + phase * (p1-p0);
-        setQByPairs(pathConfig, pathConfig.getFrames(F.frames + timeSlices(k_order+t,0)->ID), q);
+        getDofsAndSignFromFramePairs(dofs, signs, pathConfig.getFrames(F.frames + timeSlices(k_order+t,0)->ID));
+        pathConfig.setDofState(signs%q, dofs);
+//        setQByPairs(pathConfig, pathConfig.getFrames(F.frames + timeSlices(k_order+t,0)->ID), q);
         //view(true, STRING("interpolating: step:" <<i <<" t: " <<t));
       }
     }

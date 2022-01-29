@@ -31,6 +31,8 @@ enum SkeletonSymbol {
 
   SY_makeFree, SY_forceBalance,
 
+  SY_relPosY,
+
   SY_touchBoxNormalX, SY_touchBoxNormalY, SY_touchBoxNormalZ,
 
   SY_boxGraspX, SY_boxGraspY, SY_boxGraspZ,
