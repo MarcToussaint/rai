@@ -232,9 +232,9 @@ struct Configuration : GLDrawer {
   void addProxies(const uintA& collisionPairs);
 
   /// @name extensions on demand
-  shared_ptr<ConfigurationViewer>& gl(const char* window_title=nullptr, bool offscreen=false);
-  shared_ptr<SwiftInterface> swift();
-  shared_ptr<FclInterface> fcl();
+  std::shared_ptr<ConfigurationViewer>& gl(const char* window_title=nullptr, bool offscreen=false);
+  std::shared_ptr<SwiftInterface> swift();
+  std::shared_ptr<FclInterface> fcl();
   void swiftDelete();
   PhysXInterface& physx();
   OdeInterface& ode();

@@ -14,7 +14,7 @@ template<class T> struct PriorityQueueEntry {
   double p;
   T x;
 
-  void write(std::ostream& os) const { os <<'[' <<p <<": " <<*x <<']' <<endl; }
+  void write(std::ostream& os) const { os <<'[' <<p <<": " <<*x <<']'; }
   static bool cmp(const PriorityQueueEntry<T>& a, const PriorityQueueEntry<T>& b);
 };
 

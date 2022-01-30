@@ -171,19 +171,20 @@ arr Skeleton::solve(ArgWord sequenceOrPath, int verbose) {
   return komo->getPath_X();
 }
 
-shared_ptr<SolverReturn> Skeleton::solve2(){
-  auto trans = this->mp();
+SkeletonTranscription Skeleton::solve2(int verbose){
+  SkeletonTranscription keyframes = this->mp();
 
   MP_Solver sol;
-  sol.setProblem(trans.mp);
-
-  auto ret = sol.solve();
-  trans.mp->report(cout, 10);
-  sol.gnuplot_costs();
-  return ret;
+  sol.setProblem(keyframes.mp);
+  sol.setInitialization(keyframes.komo->x); //to avoid adding noise again
+  sol.setOptions(OptOptions().set_verbose(verbose));
+  keyframes.ret = sol.solve();
+  if(verbose>0) keyframes.mp->report(cout, verbose);
+  if(verbose>1) sol.gnuplot_costs();
+  return keyframes;
 }
 
-shared_ptr<SolverReturn> Skeleton::solve3(bool useKeyframes){
+shared_ptr<SolverReturn> Skeleton::solve3(bool useKeyframes, int verbose){
   SkeletonTranscription keyframes = this->mp();
 
   shared_ptr<SolverReturn> ret;
@@ -192,7 +193,7 @@ shared_ptr<SolverReturn> Skeleton::solve3(bool useKeyframes){
     sol.setProblem(keyframes.mp);
     sol.setInitialization(keyframes.komo->x); //to avoid adding noise again
     ret = sol.solve();
-    keyframes.mp->report(cout, 4);
+    keyframes.mp->report(cout, verbose);
     sol.gnuplot_costs();
   }
 
@@ -213,7 +214,7 @@ shared_ptr<SolverReturn> Skeleton::solve3(bool useKeyframes){
     sol.setInitialization(path.komo->x); //to avoid adding noise again
 //    path.komo->opt.animateOptimization = 1;
     ret = sol.solve();
-    path.mp->report(cout, 5);
+    path.mp->report(cout, verbose);
     sol.gnuplot_costs();
   }
 
@@ -246,7 +247,7 @@ SkeletonTranscription Skeleton::mp(uint stepsPerPhase){
   komo->clearObjectives();
 
   komo->setModel(*C, collisions);
-  komo->setTiming(maxPhase+1., stepsPerPhase, 5., 1);
+  komo->setTiming(maxPhase, stepsPerPhase, 5., 1);
   komo->add_qControlObjective({}, 1, 1e-2);
   komo->add_qControlObjective({}, 0, 1e-2);
   komo->addQuaternionNorms();
@@ -448,7 +449,7 @@ void Skeleton::setKOMO(KOMO& komo) const {
       //      case SY_inside:     komo.addObjective({s.phase0, s.phase1}, make_shared<TM_InsideLine>(world, s.frames(0), s.frames(1)), OT_ineq, {1e1});  break;
       case SY_oppose:     komo.addObjective({s.phase0, s.phase1}, FS_oppose, s.frames, OT_eq, {1e1});  break;
 
-      case SY_relPosY:    komo.addObjective({s.phase0, s.phase1}, FS_positionRel, {s.frames(0), s.frames(1)}, OT_ineq, {{1,3},{0,1e1,0}});  break;
+      case SY_relPosY:    komo.addObjective({s.phase0, s.phase1}, FS_positionRel, {s.frames(0), s.frames(1)}, OT_eq, {{1,3},{0,1e2,0}});  break;
       case SY_topBoxGrasp: {
         komo.addObjective({s.phase0}, FS_positionDiff, s.frames, OT_eq, {1e2});
         komo.addObjective({s.phase0}, FS_scalarProductXY, s.frames, OT_eq, {1e2}, {0.});

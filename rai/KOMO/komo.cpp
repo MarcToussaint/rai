@@ -1612,8 +1612,8 @@ void Conv_KOMO_SparseNonfactored::getFHessian(arr& H, const arr& x) {
 
 void Conv_KOMO_SparseNonfactored::report(std::ostream& os, int verbose) {
   komo.reportProblem(os);
-  if(verbose>1) os <<komo.getReport(verbose>2);
-  if(verbose>3) komo.view(true, "Conv_KOMO_SparseNonfactored - report");
+  if(verbose>1) os <<komo.getReport(verbose>3);
+  if(verbose>2) komo.view(verbose>3, "Conv_KOMO_SparseNonfactored - report");
   if(verbose>4) komo.view_play(false);
   if(verbose>5) while(komo.view_play(true));
   if(verbose>6){

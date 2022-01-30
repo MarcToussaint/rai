@@ -1884,7 +1884,7 @@ void Configuration::inverseDynamics(arr& tau, const arr& qd, const arr& qdd, boo
 
 
 /// return a OpenGL extension
-shared_ptr<ConfigurationViewer>& Configuration::gl(const char* window_title, bool offscreen) {
+std::shared_ptr<ConfigurationViewer>& Configuration::gl(const char* window_title, bool offscreen) {
   if(!self->viewer) {
     self->viewer = make_shared<ConfigurationViewer>();
   }

@@ -86,4 +86,27 @@ inline std::ostream& operator<<(std::ostream& os, const TreeSearchDomain& E) { E
 inline std::ostream& operator<<(std::ostream& os, const TreeSearchDomain::SAO& x) { x.write(os); return os; }
 extern std::shared_ptr<const TreeSearchDomain::SAO> NoHandle;
 
+//===========================================================================
+
+struct TreeSearchNode{
+  double f_prio=0.;
+
+  virtual ~TreeSearchNode() {}
+
+  //transition in new state
+  virtual const uint getNumActions() = 0;
+  virtual std::shared_ptr<TreeSearchNode> transition(int action) = 0;
+  virtual std::shared_ptr<TreeSearchNode> transitionRandomly() { return transition(rnd(getNumActions())); }
+
+  virtual bool refine() = 0; //return true, when f_prio changed;
+
+  //Astar heuristics
+  virtual bool isFailure() const{ return false; }
+  virtual bool isGoal() const{ return false; }
+
+  virtual void write(std::ostream& os) const { std::cerr <<"NOT OVERLOADED!" <<std::endl; }
+  virtual void report(std::ostream& os, int verbose) const { std::cerr <<"NOT OVERLOADED!" <<std::endl; }
+};
+stdOutPipe(TreeSearchNode);
+
 } //namspace
