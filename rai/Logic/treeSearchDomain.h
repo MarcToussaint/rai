@@ -96,7 +96,7 @@ struct TreeSearchNode{
   //transition in new state
   virtual const uint getNumActions() = 0;
   virtual std::shared_ptr<TreeSearchNode> transition(int action) = 0;
-  virtual std::shared_ptr<TreeSearchNode> transitionRandomly() { return transition(rnd(getNumActions())); }
+  virtual std::shared_ptr<TreeSearchNode> transitionRandomly();
 
   virtual bool refine() = 0; //return true, when f_prio changed;
 
@@ -107,6 +107,6 @@ struct TreeSearchNode{
   virtual void write(std::ostream& os) const { std::cerr <<"NOT OVERLOADED!" <<std::endl; }
   virtual void report(std::ostream& os, int verbose) const { std::cerr <<"NOT OVERLOADED!" <<std::endl; }
 };
-stdOutPipe(TreeSearchNode);
+inline std::ostream& operator<<(std::ostream& os, const TreeSearchNode& D) { D.write(os); return os; }
 
 } //namspace

@@ -8,4 +8,8 @@
 
 #include "treeSearchDomain.h"
 
+#include "../Core/util.h"
+
 std::shared_ptr<const rai::TreeSearchDomain::SAO> rai::NoHandle;
+
+std::shared_ptr<rai::TreeSearchNode> rai::TreeSearchNode::transitionRandomly() { return transition(rnd(getNumActions())); }

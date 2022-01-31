@@ -123,6 +123,20 @@ void CubicSplineCtrlReference::overrideSmooth(const arr& x, const arr& v, const 
   splineSet->set(_x, _v, _t+ctrlTime);
 }
 
+void CubicSplineCtrlReference::overrideHard(const arr& x, const arr& v, const arr& t, double ctrlTime){
+  waitForInitialized();
+  auto splineSet = spline.set();
+  { //some safety checks!
+    arr x_now, xDot_now;
+    splineSet->eval(x_now, xDot_now, NoArr, ctrlTime);
+    CHECK_LE(t.first(), .0, "hard overwrite requires the spline to include a NOW node");
+    CHECK_GE(t.first(), -.2, "you first time knot is more than 200msec ago!");
+    CHECK_LE(maxDiff(x[0],x_now), .1, "your first point knot is too far from the current spline");
+    CHECK_LE(maxDiff(v[0],xDot_now), .5, "your initial velocity is too far from the current spline");
+  }
+  splineSet->set(x, v, t+ctrlTime);
+}
+
 void CubicSplineCtrlReference::report(double ctrlTime){
   waitForInitialized();
   arr x, xDot;

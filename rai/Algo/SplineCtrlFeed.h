@@ -55,7 +55,7 @@ struct CubicSplineCtrlReference : ReferenceFeed {
   /// override the spline, but use the current spline's current pos/vel as start knot of the new spline; the first time knot needs to be >.1 sec
   void overrideSmooth(const arr& x, const arr& v, const arr& t, double ctrlTime);
   /// fully override the spline with new knots x and t, as well as initial vel xDot0; for safety, the first x needs to be close to the current spline's current pos
-  void overrideHard(const arr& x, const arr& v, const arr& t, double nowTime);
+  void overrideHard(const arr& x, const arr& v, const arr& t, double ctrlTime);
 
   //simple helper for single goal spline
   void moveTo(const arr& x, double t, double ctrlTime, bool append){
