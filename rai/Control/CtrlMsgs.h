@@ -42,5 +42,14 @@ struct RobotAbstraction{
   RobotAbstraction(const Var<rai::CtrlCmdMsg>& _cmd, const Var<rai::CtrlStateMsg>& _state) : cmd(_cmd), state(_state) {}
 };
 
+struct GripperAbstraction {
+  virtual void open(double width=1.,
+                    double speed=1.) = 0;
+  virtual void close(double force=.0, //relative to [min,max]
+                     double width=.2, //relative to [min,max]
+                     double speed=.2) = 0; //relative to [min,max]
+  virtual double pos() = 0;
+  virtual bool isDone() = 0;
+};
 
 } //namespace
