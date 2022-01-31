@@ -66,18 +66,20 @@ arr TimingMPC::getVels() const{
   return _vels;
 }
 
-void TimingMPC::update_progressTime(double gap){
+bool TimingMPC::update_progressTime(double gap){
   if(gap < tau(phase)){ //time still within phase
     tau(phase) -= gap; //change initialization of timeOpt
-  }else{ //time beyond current phase
-    if(phase+1<tau.N){ //if there exists another phase
+    return false;
+  }
+  //time beyond current phase
+  if(phase+1<tau.N){ //if there exists another phase
       tau(phase+1) -= gap-tau(phase); //change initialization of timeOpt
       tau(phase) = 0.; //change initialization of timeOpt
-    }else{
+  }else{
       tau = 0.;
-    }
-    phase++; //increase phase
   }
+  phase++; //increase phase
+  return true;
 }
 
 void TimingMPC::update_waypoints(const arr& _waypoints, bool setNextWaypointTangent){

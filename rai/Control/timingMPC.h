@@ -35,7 +35,7 @@ struct TimingMPC{
   arr getTimes() const{ if(done()) return arr{}; return integral(tau({phase, -1})); }
   arr getVels() const;
 
-  void update_progressTime(double gap);
+  bool update_progressTime(double gap);
   void update_waypoints(const arr& _waypoints, bool setNextWaypointTangent);
   void update_backtrack();
   void update_setPhase(uint phaseTo);
