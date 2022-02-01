@@ -14,7 +14,7 @@ namespace fcl {
 class CollisionObject;
 class DynamicAABBTreeCollisionManager;
 class BroadPhaseCollisionManager;
-};
+}
 
 namespace rai {
 

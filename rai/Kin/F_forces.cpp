@@ -715,9 +715,9 @@ void F_fex_POA_PositionRel::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_EQ(F.N, 2, "");
   rai::ForceExchange* ex = getContact(F.elem(0), F.elem(1));
 
-  rai::Frame *f1 = F.elem(0);
+  //rai::Frame *f1 = F.elem(0);
   rai::Frame *f2 = F.elem(1);
-  if(b_or_a){ f1=F.elem(1); f2=F.elem(0); }
+  if(b_or_a){ /*f1=F.elem(1);*/ f2=F.elem(0); }
 
   arr y1, y2, J1, J2;
   ex->kinPOA(y1, J1);

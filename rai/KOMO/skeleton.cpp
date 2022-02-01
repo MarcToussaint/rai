@@ -631,7 +631,7 @@ void Skeleton::read(std::istream& is) {
   //-- first get a PRE-skeleton
   rai::Graph G(is);
   double phase0=1.;
-  double maxPhase=0.;
+  //double maxPhase=0.;
   for(rai::Node* step:G) {
     rai::Graph& stepG = step->graph();
     for(rai::Node* lit:stepG) {
@@ -656,7 +656,7 @@ void Skeleton::read(std::istream& is) {
       }
 
       S.append(SkeletonEntry(phase0, phase1, symbol, frames({1, -1})));
-      maxPhase=phase0;
+      //maxPhase=phase0;
     }
     phase0 += 1.;
   }

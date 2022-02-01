@@ -59,7 +59,7 @@ struct CubicPiece{
   arr eval(double t, uint diff);
   void write(ostream& os) const { os <<"a:" <<a <<"b:" <<b <<"c:" <<c <<"d:" <<d; }
 };
-stdOutPipe(CubicPiece);
+stdOutPipe(CubicPiece)
 
 struct CubicSplineCtor{ arr pts, vels, times; };
 

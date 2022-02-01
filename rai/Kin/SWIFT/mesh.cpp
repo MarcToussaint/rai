@@ -522,7 +522,7 @@ SWIFT_Tri_Edge* SWIFT_BV::Close_Edge( const SWIFT_Triple& pt )
 {
     int i;
     SWIFT_Real dsq, mdsq;
-    SWIFT_Tri_Edge* e;
+    SWIFT_Tri_Edge* e=0;
 
     mdsq = SWIFT_INFINITY;
     for( i = 0; i < Num_Faces(); i++ ) {

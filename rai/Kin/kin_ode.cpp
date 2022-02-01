@@ -1051,5 +1051,5 @@ void OdeInterface::exportStateToOde() {}
 void OdeInterface::importStateFromOde() {}
 void OdeInterface::importProxiesFromOde() {}
 void OdeInterface::addJointForce(arr& f) {}
-void OdeInterface::pushPoseForShape(rai::Shape* s) {};
+void OdeInterface::pushPoseForShape(rai::Shape* s) {}
 #endif

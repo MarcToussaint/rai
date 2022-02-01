@@ -641,7 +641,7 @@ G4FeatSeqL G4Rec::featseqlist(bool with_ann, const char* obj1, const char* obj2)
   G4FeatSeqL seqlist;
   G4FeatSeq* seq;
 
-  bool checklist[nsensors][nsensors];
+  boolA checklist(nsensors, nsensors);
   uint i1, i2;
   for(i1 = 0; i1 < nsensors; i1++)
     for(i2 = 0; i2 < nsensors; i2++)
@@ -653,8 +653,8 @@ G4FeatSeqL G4Rec::featseqlist(bool with_ann, const char* obj1, const char* obj2)
     for(const rai::String& sens2: sensors2) {
       i1 = g4id.i(sens1);
       i2 = g4id.i(sens2);
-      if(i1 != i2 && !checklist[i1][i2] && (!with_ann || hasAnn(sens1, sens2))) {
-        checklist[i1][i2] = checklist[i2][i1] = true;
+      if(i1 != i2 && !checklist(i1,i2) && (!with_ann || hasAnn(sens1, sens2))) {
+        checklist(i1,i2) = checklist(i2,i1) = true;
         seq = new G4FeatSeq();
         seq->set(*this, sens1, sens2);
         seqlist.append(seq);

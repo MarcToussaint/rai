@@ -157,4 +157,4 @@ class Color {
   void read(std::istream& is) { is >>PARSE("(") >>r >>PARSE(":") >>g >>PARSE(":") >>b >>PARSE(")"); }
 };
 }
-stdPipes(rai::Color);
+stdPipes(rai::Color)

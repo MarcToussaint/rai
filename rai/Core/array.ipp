@@ -4146,37 +4146,37 @@ inline double sign(double x) {  return (x > 0) - (x < 0); }
   }
 
 // trigonometric functions
-UnaryFunction(acos);
-UnaryFunction(asin);
-UnaryFunction(atan);
-UnaryFunction(cos);
-UnaryFunction(sin);
-UnaryFunction(tan);
+UnaryFunction(acos)
+UnaryFunction(asin)
+UnaryFunction(atan)
+UnaryFunction(cos)
+UnaryFunction(sin)
+UnaryFunction(tan)
 
 // hyperbolic functions
-UnaryFunction(cosh);
-UnaryFunction(sinh);
-UnaryFunction(tanh);
-UnaryFunction(acosh);
-UnaryFunction(asinh);
-UnaryFunction(atanh);
+UnaryFunction(cosh)
+UnaryFunction(sinh)
+UnaryFunction(tanh)
+UnaryFunction(acosh)
+UnaryFunction(asinh)
+UnaryFunction(atanh)
 
 // exponential and logarithmic functions
-UnaryFunction(exp);
-UnaryFunction(log);
-UnaryFunction(log10);
+UnaryFunction(exp)
+UnaryFunction(log)
+UnaryFunction(log10)
 
 //roots
-UnaryFunction(sqrt);
-UnaryFunction(cbrt);
+UnaryFunction(sqrt)
+UnaryFunction(cbrt)
 
 // nearest integer and absolute value
-UnaryFunction(ceil);
-UnaryFunction(fabs);
-UnaryFunction(floor);
-UnaryFunction(sigm);
+UnaryFunction(ceil)
+UnaryFunction(fabs)
+UnaryFunction(floor)
+UnaryFunction(sigm)
 
-UnaryFunction(sign);
+UnaryFunction(sign)
 
 #undef UnaryFunction
 
@@ -4209,11 +4209,11 @@ UnaryFunction(sign);
     return x;           \
   }
 
-BinaryFunction(atan2);
+BinaryFunction(atan2)
 #ifndef RAI_MSVC
-BinaryFunction(pow);
+BinaryFunction(pow)
 #endif
-BinaryFunction(fmod);
+BinaryFunction(fmod)
 #undef BinaryFunction
 
 #ifndef RAI_doxy // exclude these macros when generating the documentation

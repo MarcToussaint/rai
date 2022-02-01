@@ -1601,7 +1601,7 @@ void OpenGL::init() {
   exitkeys="";
 
   backgroundZoom=1;
-};
+}
 
 struct CstyleDrawer : GLDrawer {
   void* classP;

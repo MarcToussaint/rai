@@ -109,9 +109,8 @@ bool OptConstrained::step() {
   if(L.lambda.N) CHECK_EQ(L.lambda.N, L.phi_x.N, "");
 
   //run newton on the Lagrangian problem
-  OptNewton::StopCriterion newtonStop = newton.stopNone;
   if(newtonOnce || opt.constrainedMethod==rai::squaredPenaltyFixed) {
-    newtonStop = newton.run();
+    newton.run();
   } else {
     double org_stopTol = newton.options.stopTolerance;
     double org_stopGTol = newton.options.stopGTolerance;
@@ -123,8 +122,8 @@ bool OptConstrained::step() {
       newton.options.stopTolerance *= 10.;
       newton.options.stopGTolerance *= 10.;
     }
-    if(opt.constrainedMethod==rai::anyTimeAula)  newtonStop = newton.run(20);
-    else                                         newtonStop = newton.run();
+    if(opt.constrainedMethod==rai::anyTimeAula)  newton.run(20);
+    else                                         newton.run();
     newton.options.stopTolerance = org_stopTol;
     newton.options.stopGTolerance = org_stopGTol;
   }

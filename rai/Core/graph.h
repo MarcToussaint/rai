@@ -81,7 +81,7 @@ struct Node {
 };
 
 inline std::istream& operator>>(std::istream& is, Node*& x) { HALT("prohibited"); return is; }
-stdOutPipe(Node);
+stdOutPipe(Node)
 } //namespace
 
 //===========================================================================

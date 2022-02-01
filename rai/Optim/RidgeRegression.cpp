@@ -121,7 +121,7 @@ double DefaultKernelFunction::k(const arr& x1, const arr& x2, arr& gx1, arr& Hx1
   if(!!gx1) gx1 = a * (x1-x2);
   if(!!Hx1) Hx1 = (-2.*a/hyperParam1.scalar())*((x1-x2)^(x1-x2)) + a*eye(x1.N);
   return k;
-};
+}
 DefaultKernelFunction defaultKernelFunction;
 
 //===========================================================================

@@ -62,6 +62,9 @@ using std::cerr;
 #include "SWIFT_pair.h"
 #include "SWIFT_fileio.h"
 
+#pragma GCC diagnostic ignored "-Waddress"
+#pragma GCC diagnostic ignored "-Wunused-function"
+
 SWIFT_Scene *global_scene=nullptr;
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -70,7 +70,7 @@ struct G4ID {
 
   void write(std::ostream& os = std::cout) const;
 };
-stdOutPipe(G4ID);
+stdOutPipe(G4ID)
 
 // =============================================================================
 // G4Rec
@@ -130,7 +130,7 @@ struct G4Rec {
 
   void write(std::ostream& os = std::cout) const;
 };
-stdOutPipe(G4Rec);
+stdOutPipe(G4Rec)
 
 // =============================================================================
 // G4Data
@@ -154,7 +154,7 @@ struct G4Data {
 
   void write(std::ostream& os = std::cout) const;
 };
-stdOutPipe(G4Data);
+stdOutPipe(G4Data)
 
 // =============================================================================
 // G4RawSeq
@@ -175,7 +175,7 @@ struct G4RawSeq {
 
   void write(std::ostream& os = std::cout) const;
 };
-stdOutPipe(G4RawSeq);
+stdOutPipe(G4RawSeq)
 
 // =============================================================================
 // G4FeatSeq
@@ -196,6 +196,6 @@ struct G4FeatSeq { /*: Parametric*/
 
   void write(std::ostream& os = std::cout) const;
 };
-stdOutPipe(G4FeatSeq);
+stdOutPipe(G4FeatSeq)
 
 #include "g4data.ipp"

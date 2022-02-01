@@ -74,7 +74,7 @@ double _RosenbrockFunction(arr& g, arr& H, const arr& x) {
     }
   }
   return f;
-};
+}
 
 struct MP_Rosenbrock : ScalarUnconstrainedProgram {
   MP_Rosenbrock(uint dim) { dimension=dim; }
@@ -277,6 +277,7 @@ void ChoiceConstraintFunction::evaluate(arr& phi, arr& J, const arr& x) {
   phi.append(ChoiceFunction()(J, NoArr, x));
 
   switch(which) {
+    case none: HALT("should not be here")
     case wedge2D:
       for(uint i=0; i<x.N; i++) { phi.append(-sum(x)+1.5*x(i)-.2); }
       if(!!J) { arr Jg(x.N, x.N); Jg=-1.; for(uint i=0; i<x.N; i++) Jg(i, i) = +.5; J.append(Jg); }

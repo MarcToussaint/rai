@@ -289,7 +289,7 @@ bool SWIFT_Obj_File_Reader::Read( ifstream& fin, SWIFT_Real*& vs, int*& fs,
 		fin.ignore(255,'\n');
 	};
     return true;
-};
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
