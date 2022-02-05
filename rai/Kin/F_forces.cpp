@@ -230,7 +230,7 @@ void F_TotalForce::phi2(arr& y, arr& J, const FrameL& F) {
   arr signs;
   FrameL linkF;
   linkF.append(a);
-  a->getRigidSubFrames(linkF);
+  a->getRigidSubFrames(linkF, false);
   for(rai::Frame* f:linkF) {
     for(rai::ForceExchange* ex:f->forces) {
       contacts.append(ex);

@@ -162,14 +162,14 @@ void rai::Frame::_state_updateAfterTouchingQ() {
   if(joint && joint->dim) C._state_q_isGood = false;
 }
 
-void rai::Frame::getRigidSubFrames(FrameL& F) {
+void rai::Frame::getRigidSubFrames(FrameL& F, bool includeRigidJoints) {
   for(Frame* child:children)
-    if(!child->joint || child->joint->type==JT_rigid) { F.append(child); child->getRigidSubFrames(F); }
+    if(!child->joint || (includeRigidJoints && child->joint->type==JT_rigid)) { F.append(child); child->getRigidSubFrames(F, includeRigidJoints); }
 }
 
 void rai::Frame::getPartSubFrames(FrameL& F) {
   for(Frame* child:children)
-    if(!child->joint || !child->joint->isPartBreak()) { F.append(child); child->getRigidSubFrames(F); }
+    if(!child->joint || !child->joint->isPartBreak()) { F.append(child); child->getPartSubFrames(F); }
 }
 
 void rai::Frame::getSubtree(FrameL& F) {
@@ -265,7 +265,7 @@ void rai::Frame::prefixSubtree(const char* prefix) {
 void rai::Frame::computeCompoundInertia(){
   CHECK(!inertia, "this frame already has inertia");
   FrameL all = {};
-  getRigidSubFrames(all);
+  getRigidSubFrames(all, false);
   Inertia *I = new Inertia(*this);
   I->setZero();
   for(rai::Frame *f:all){
@@ -1281,7 +1281,7 @@ void rai::Shape::read(const Graph& ats) {
     if(ats.get(d, "meshscale"))  { mesh().scale(d); }
     if(ats.get(x, "meshscale"))  { mesh().scale(x(0), x(1), x(2)); }
     if(ats.get(mesh().C, "color")) {
-      CHECK(mesh().C.N==3 || mesh().C.N==4, "color needs to be 3D or 4D (floats)");
+      CHECK(mesh().C.N>=1 && mesh().C.N<=4, "color needs to be 1D, 2D, 3D or 4D (floats)");
     }
     if(ats.get(x, "mesh_rope"))  {
       CHECK_EQ(x.N, 4, "requires 3D extend and numSegments");
@@ -1395,6 +1395,10 @@ void rai::Shape::glDraw(OpenGL& gl) {
           glDrawAxis(-s);
         }
       }
+    } else if(_type==rai::ST_camera){
+      if(!gl.drawOptions.drawVisualsOnly) {
+        glDrawCamera(gl.camera);
+      }
     } else {
       if(!mesh().V.N) {
         LOG(1) <<"trying to draw empty mesh";
@@ -1446,6 +1450,7 @@ void rai::Shape::createMeshes() {
       mesh().setSSCvx(sscCore().V, size(-1));
       break;
     case rai::ST_marker:
+    case rai::ST_camera:
       break;
     case rai::ST_mesh:
     case rai::ST_pointCloud:

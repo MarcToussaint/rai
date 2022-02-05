@@ -35,6 +35,7 @@ struct ConfigurationViewer : GLDrawer {
   void raiseWindow();
   void glDraw(OpenGL&);
   OpenGL& ensure_gl();
+  void setCamera(rai::Frame* cam);
 
   //mimic a OpenGL, directly calling the same methods in its gl
   int update(const char* text=nullptr, bool nonThreaded=false);
@@ -55,7 +56,7 @@ struct ConfigurationViewer : GLDrawer {
   String text;
   uint pngCount=0;
 public:
-  ptr<struct OpenGL> gl;
+  std::shared_ptr<struct OpenGL> gl;
   bool drawFrameLines=true;
 };
 

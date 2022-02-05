@@ -291,6 +291,7 @@ void Simulation::glDraw(OpenGL& gl) {
   //  glEnable(GL_LIGHTING);
 
   for(Sensor& sen:self->sensors) {
+    glTransform(sen.cam.X);
     glDrawCamera(sen.cam);
     glDrawText(STRING("SENSOR " <<sen.name), 0., 0., 0.);
   }

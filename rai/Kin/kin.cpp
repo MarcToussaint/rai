@@ -1215,7 +1215,7 @@ uintA Configuration::getCollisionExcludePairIDs(bool verbose) {
   FrameL links = getLinks();
   for(Frame* f: links) {
     FrameL F = {f};
-    f->getRigidSubFrames(F);
+    f->getRigidSubFrames(F, false);
     for(uint i=F.N; i--;) if(!F(i)->shape || !F(i)->shape->cont) F.remove(i);
     if(F.N>1) {
       if(verbose) {
@@ -1232,7 +1232,7 @@ uintA Configuration::getCollisionExcludePairIDs(bool verbose) {
       FrameL F, P;
       Frame* p = f->getUpwardLink();
       F = {p};
-      p->getRigidSubFrames(F);
+      p->getRigidSubFrames(F, false);
       for(uint i=F.N; i--;) if(!F(i)->shape || !F(i)->shape->cont) F.remove(i);
 
       for(char i=0; i<-f->shape->cont; i++) {
@@ -1240,7 +1240,7 @@ uintA Configuration::getCollisionExcludePairIDs(bool verbose) {
         if(!p) break;
         p = p->getUpwardLink();
         P = {p};
-        p->getRigidSubFrames(P);
+        p->getRigidSubFrames(P, false);
         for(uint i=P.N; i--;) if(!P(i)->shape || !P(i)->shape->cont) P.remove(i);
 
         if(F.N && P.N) {
@@ -1887,6 +1887,8 @@ void Configuration::inverseDynamics(arr& tau, const arr& qd, const arr& qdd, boo
 std::shared_ptr<ConfigurationViewer>& Configuration::gl(const char* window_title, bool offscreen) {
   if(!self->viewer) {
     self->viewer = make_shared<ConfigurationViewer>();
+    rai::Frame *camF = getFrame("camera", false);
+    if(camF) self->viewer->setCamera(camF);
   }
   return self->viewer;
 }
@@ -2192,7 +2194,7 @@ void Configuration::writeURDF(std::ostream& os, const char* robotName) const {
   //-- write base_link first
 
   FrameL bases;
-  for(Frame* a:frames) { if(!a->parent) a->getRigidSubFrames(bases); }
+  for(Frame* a:frames) { if(!a->parent) a->getRigidSubFrames(bases, false); }
   os <<"<link name=\"base_link\">\n";
   for(Frame* a:frames) {
     if(a->shape && a->shape->type()!=ST_mesh && a->shape->type()!=ST_marker) {
@@ -2220,7 +2222,7 @@ void Configuration::writeURDF(std::ostream& os, const char* robotName) const {
       os <<"<link name=\"" <<a->name <<"\">\n";
 
       FrameL shapes;
-      a->getRigidSubFrames(shapes);
+      a->getRigidSubFrames(shapes, false);
       for(Frame* b:shapes) {
         if(b->shape && b->shape->type()!=ST_mesh && b->shape->type()!=ST_marker) {
           os <<"  <visual>\n    <geometry>\n";

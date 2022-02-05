@@ -24,6 +24,24 @@ OpenGL& rai::ConfigurationViewer::ensure_gl() {
   return *gl;
 }
 
+void rai::ConfigurationViewer::setCamera(rai::Frame* camF){
+  ensure_gl();
+  rai::Camera& cam = gl->camera;
+  {
+    auto _dataLock = gl->dataLock(RAI_HERE);
+    cam.X = camF->ensure_X();
+
+    rai::Node *at=0;
+    if((at=camF->ats->getNode("focalLength"))) cam.setFocalLength(at->get<double>());
+    if((at=camF->ats->getNode("orthoAbsHeight"))) cam.setHeightAbs(at->get<double>());
+    if((at=camF->ats->getNode("zRange"))){ arr z=at->get<arr>(); cam.setZRange(z(0), z(1)); }
+    if((at=camF->ats->getNode("width"))) gl->width=at->get<double>();
+    if((at=camF->ats->getNode("height"))) gl->height=at->get<double>();
+//    cam.setWHRatio((double)gl->width/gl->height);
+  }
+  gl->resize(gl->width, gl->height);
+}
+
 int rai::ConfigurationViewer::update(const char* text, bool nonThreaded) { ensure_gl(); return gl->update(text, nonThreaded); }
 
 int rai::ConfigurationViewer::watch(const char* text) { ensure_gl(); return gl->watch(text); }
@@ -58,7 +76,6 @@ void rai::ConfigurationViewer::raiseWindow(){
 }
 
 int rai::ConfigurationViewer::setConfiguration(const rai::Configuration& _C, const char* text, bool watch) {
-  ensure_gl();
   bool copyMeshes = false;
   if(_C.frames.N!=C.frames.N) copyMeshes = true;
   else{
@@ -70,6 +87,8 @@ int rai::ConfigurationViewer::setConfiguration(const rai::Configuration& _C, con
     }
   }
   if(copyMeshes) recopyMeshes(_C);
+
+  ensure_gl();
 
   if(_C.proxies.N) {
     auto _dataLock = gl->dataLock(RAI_HERE);

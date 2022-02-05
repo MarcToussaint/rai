@@ -928,8 +928,6 @@ void glDrawAxes(double scale, bool colored) {
 }
 
 void glDrawCamera(const rai::Camera& cam) {
-  glTransform(cam.X);
-
   glDrawAxes(.1);
 
   double dxFar, dyFar, zFar;

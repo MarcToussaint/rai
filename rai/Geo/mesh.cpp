@@ -30,7 +30,7 @@ extern void glColorId(uint id);
 //==============================================================================
 
 template<> const char* rai::Enum<rai::ShapeType>::names []= {
-  "box", "sphere", "capsule", "mesh", "cylinder", "marker", "pointCloud", "ssCvx", "ssBox", "ssCylinder", "ssBoxElip", "quad", nullptr
+  "box", "sphere", "capsule", "mesh", "cylinder", "marker", "pointCloud", "ssCvx", "ssBox", "ssCylinder", "ssBoxElip", "quad", "camera", nullptr
 };
 
 //==============================================================================
@@ -1432,10 +1432,19 @@ extern void glColor(float r, float g, float b, float alpha);
 void rai::Mesh::glDraw(struct OpenGL& gl) {
   if(glDrawOptions(gl).drawColors) {
     if(C.nd==1) {
-      CHECK(C.N==3 || C.N==4, "need a basic color");
+      CHECK(C.N>=1 && C.N<=4, "need a basic color");
       GLboolean light=true;
       glGetBooleanv(GL_LIGHTING, &light);
-      GLfloat col[4] = { (float)C(0), (float)C(1), (float)C(2), (C.N==3?1.f:(float)C(3)) };
+      GLfloat col[4];
+      if(C.N>=3){
+        col[0] = C.elem(0);
+        col[1] = C.elem(1);
+        col[2] = C.elem(2);
+        col[3] = (C.N==4?C.elem(3):1.);
+      }else{
+        col[0] = col[1] = col[2] = C.elem(0);
+        col[3] = (C.N==2?C.elem(1):1.);
+      }
       glColor4fv(col);
       if(light) glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, col);
     }

@@ -208,6 +208,7 @@ void rai::CameraView::glDraw(OpenGL& gl) {
 
     if(renderMode!=visuals) {
       for(Sensor& sen:sensors) {
+        glTransform(sen.cam.X);
         glDrawCamera(sen.cam);
         glDrawText(STRING("SENSOR " <<sen.name), 0., 0., 0.);
       }

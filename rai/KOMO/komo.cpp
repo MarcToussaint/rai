@@ -727,7 +727,7 @@ void KOMO::updateRootObjects(const Configuration& C){
   FrameL _roots = C.getRoots();
   {//also add rigid children of roots
     FrameL F;
-    for(auto f:_roots) f->getRigidSubFrames(F);
+    for(auto f:_roots) f->getRigidSubFrames(F, true);
     _roots.append(F);
   }
   uintA roots = framesToIndices(_roots);

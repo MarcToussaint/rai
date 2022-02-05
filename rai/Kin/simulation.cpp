@@ -199,6 +199,10 @@ void Simulation::setMoveTo(const arr& x, double t, bool append){
   else self->ref.overrideSmooth(~x, {t}, time);
 }
 
+void Simulation::move(const arr& path, const arr& t){
+  self->ref.append(path, t, time, true);
+}
+
 bool getFingersForGripper(rai::Frame*& gripper, rai::Frame*& fing1, rai::Frame*& fing2, rai::Configuration& C, const char* gripperFrameName) {
   gripper = C.getFrame(gripperFrameName);
   if(!gripper) {
@@ -471,6 +475,8 @@ struct Simulation_DisplayThread : Thread, GLDrawer {
     gl.add(*this);
     gl.camera.setDefault();
     gl.addClickCall(new MoveBallHereCallback());///added
+
+    if(Ccopy["camera"]) gl.camera.X = Ccopy["camera"]->ensure_X();
 
     threadLoop();
     while(step_count<2) rai::wait(.05);
