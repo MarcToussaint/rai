@@ -23,7 +23,7 @@ void testMinimal(){
   auto pos = CS.addObjective(make_feature(FS_poseDiff, {"gripper", "target"}, C, {1e0}), OT_sos, .1);
 
   //collision constraint
-  CS.addObjective(make_feature<F_AccumulatedCollisions>({"ALL"}, C, {1e2}), OT_eq);
+  CS.addObjective(make_feature<F_AccumulatedCollisions>({"ALL"}, C, {1e0}), OT_eq);
 
   CtrlSolver ctrl(C, tau, 2);
 
@@ -154,8 +154,8 @@ void testIneqCarrot(){
 int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
-//  testMinimal();
-  testGrasp();
+  testMinimal();
+//  testGrasp();
 //  testIneqCarrot();
 
   return 0;

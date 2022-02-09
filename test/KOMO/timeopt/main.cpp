@@ -241,9 +241,8 @@ void timeOpt(){
   MP_Solver solver;
   solver
       .setProblem(mp.ptr())
-      .setSolver(sid)
 //      .setTracing(true, true,true, false)
-      .setVerbose(rai::getParameter<int>("opt/verbose"));
+      .setSolver(sid);
   auto ret = solver.solve();
   cout <<*ret <<endl;
 

@@ -111,7 +111,7 @@ CXXFLAGS += -std=c++14
 endif
 
 ifndef OPTIM
-OPTIM = debug
+OPTIM = fast_debug
 endif
 
 ifeq ($(OPTIM),debug)

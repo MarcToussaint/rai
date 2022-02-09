@@ -218,7 +218,7 @@ OptNewton::StopCriterion OptNewton::step() {
       Hx = Hy;
       if(wolfe) {
         if(alpha>.9 && beta>options.damping) {
-          beta *= options.dampingDec;
+          if(options.dampingDec>0.) beta *= options.dampingDec;
           if(alpha>1.) alpha=1.;
           endLineSearch=true;
         }

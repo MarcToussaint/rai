@@ -75,7 +75,7 @@ void TEST(MathematicalProgram){
   //Conv_MathematicalProgram_ConstrainedProblem F(P);
   checkJacobianCP(*P, x, 1e-4);
 
-  OptConstrained opt(x, NoArr, P, OptOptions().set_verbose(6));
+  OptConstrained opt(x, NoArr, P, rai::OptOptions().set_verbose(6));
   P->getBounds(opt.newton.bounds_lo, opt.newton.bounds_up);
   opt.run();
 

@@ -435,7 +435,7 @@ void KOMO::addContact_elasticBounce(double time, const char* from, const char* t
 
 ptr<Objective> KOMO::add_qControlObjective(const arr& times, uint order, double scale, const arr& target, int deltaFromStep, int deltaToStep) {
   auto F = getCtrlFramesAndScale(world);
-  F.scale *= sqrt(tau);
+  //F.scale *= sqrt(tau); NO!! The Feature::finiteDifference does this automatically, depending on the timeIntegral flag!
 
   CHECK_GE(k_order, order, "");
   ptr<Objective> o = addObjective(times, make_shared<F_qItself>(F.frames, (order==0)), {}, OT_sos, scale*F.scale, target, order, deltaFromStep, deltaToStep);

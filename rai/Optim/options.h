@@ -17,7 +17,7 @@ enum ConstrainedMethodType { noMethod=0, squaredPenalty, augmentedLag, logBarrie
 struct OptOptions {
   RAI_PARAM("opt/", int, verbose, 1)
   RAI_PARAM("opt/", double, stopTolerance, 1e-2)
-  RAI_PARAM("opt/", double, stopFTolerance, 1e-1)
+  RAI_PARAM("opt/", double, stopFTolerance, -1.)
   RAI_PARAM("opt/", double, stopGTolerance, -1.)
   RAI_PARAM("opt/", int,    stopEvals, 1000)
   RAI_PARAM("opt/", int,    stopIters, 1000)

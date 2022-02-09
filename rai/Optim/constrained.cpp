@@ -159,6 +159,8 @@ bool OptConstrained::step() {
     return true;
   }
 
+  its++;
+
   //stopping criteron
   if(its>=2 && absMax(x_old-newton.x) < (earlyPhase?5.:1.)*opt.stopTolerance) {
     if(opt.verbose>0) cout <<"** optConstr. StoppingCriterion Delta<" <<opt.stopTolerance <<endl;
@@ -197,8 +199,6 @@ bool OptConstrained::step() {
   L.autoUpdate(opt, &newton.fx, newton.gx, newton.Hx);
 
   if(!!dual) dual=L.lambda;
-
-  its++;
 
   if(logFile) {
     (*logFile) <<"{ optConstraint: " <<its <<", mu: " <<L.mu <<", nu: " <<L.nu <<", L_x_beforeUpdate: " <<L_x_before <<", L_x_afterUpdate: " <<newton.fx <<", errors: ["<<L.get_costs() <<", " <<L.get_sumOfGviolations() <<", " <<L.get_sumOfHviolations() <<"], lambda: " <<L.lambda <<" }," <<endl;

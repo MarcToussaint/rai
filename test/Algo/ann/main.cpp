@@ -11,8 +11,6 @@ void TEST(ANN) {
 
   rndUniform(X,0.,1.,false);
 
-  rai::IOraw=true;
-
   rai::timerStart();
   ann.setX(X);
   rndUniform(x,0.,1.,false); //x=.5;

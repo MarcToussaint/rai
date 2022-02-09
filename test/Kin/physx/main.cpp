@@ -28,8 +28,8 @@ int main(int argc,char** argv){
     f->set_X()->pos.z += 2.;
   }
 
-  BulletInterface sim(C, true);
-//  PhysXInterface sim(C, true);
+  BulletInterface sim(C);
+//  PhysXInterface sim(C);
 
   for(uint t=0; t<300; t++) {
     rai::wait(.01);

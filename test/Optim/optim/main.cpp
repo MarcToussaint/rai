@@ -28,7 +28,6 @@ void TEST(Solver) {
   MP_Solver S;
 
   rai::Enum<MP_SolverID> sid (rai::getParameter<rai::String>("solver"));
-  S.setVerbose(rai::getParameter<int>("opt/verbose"));
   S.setSolver(sid);
   S.setProblem(mp);
   if(x_init.N) S.setInitialization(x_init);
