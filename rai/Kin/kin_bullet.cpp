@@ -77,38 +77,39 @@ struct BulletInterface_self {
 
   uint stepCount=0;
 
-  void initPhysics(bool yAxisGravity, bool enableSoftBodies, int verbose);
-  void initPhysics2(bool yAxisGravity, bool enableSoftBodies, int verbose);
-  btRigidBody* addGround(bool yAxisGravity=false);
-  btRigidBody* addLink(rai::Frame* f, int verbose);
-  btSoftBody* addSoft(rai::Frame* f, int verbose);
-  btMultiBody* addMultiBody(rai::Frame* f, int verbose);
+  void initPhysics();
+  void initPhysics2();
+  btRigidBody* addGround();
+  btRigidBody* addLink(rai::Frame* f);
+  btSoftBody* addSoft(rai::Frame* f);
+  btMultiBody* addMultiBody(rai::Frame* f);
   void addExample();
 
   btCollisionShape* createCollisionShape(rai::Shape* s);
   btCollisionShape* createCompoundCollisionShape(rai::Frame* link, ShapeL& shapes);
-  btCollisionShape* createLinkShape(ShapeL& shapes, rai::BodyType& type, rai::Frame* f, int verbose);
+  btCollisionShape* createLinkShape(ShapeL& shapes, rai::BodyType& type, rai::Frame* f);
 };
 
-void BulletInterface_self::initPhysics(bool yAxisGravity, bool enableSoftBodies, int verbose){
-  if(verbose>0) LOG(0) <<"starting bullet engine ...";
+void BulletInterface_self::initPhysics(){
+  if(opt.verbose>0) LOG(0) <<"starting bullet engine ...";
   collisionConfiguration = new btDefaultCollisionConfiguration();
   dispatcher = new btCollisionDispatcher(collisionConfiguration);
   broadphase = new btDbvtBroadphase();
   //m_broadphase = new btAxisSweep3(worldAabbMin, worldAabbMax, maxProxies);
 
-  if(enableSoftBodies){
+  if(opt.softBody){
     solver = new btSequentialImpulseConstraintSolver;
     dynamicsWorld = new btSoftRigidDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration);
-  }else{
-    //solver = new btSequentialImpulseConstraintSolver;
-    //dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration);
+  } else if(opt.multiBody){
     mbsol = new btMultiBodyConstraintSolver;
     dynamicsWorld = new btMultiBodyDynamicsWorld(dispatcher, broadphase, mbsol, collisionConfiguration);
     dynamicsWorld->getSolverInfo().m_globalCfm = 1e-3;
+  } else{
+    solver = new btSequentialImpulseConstraintSolver;
+    dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration);
   }
 
-  if(yAxisGravity){
+  if(opt.yGravity){
     dynamicsWorld->setGravity(btVector3(0, gravity, 0));
     softBodyWorldInfo.m_gravity.setValue(0, gravity, 0);
   }else{
@@ -116,7 +117,7 @@ void BulletInterface_self::initPhysics(bool yAxisGravity, bool enableSoftBodies,
     softBodyWorldInfo.m_gravity.setValue(0, 0, gravity);
   }
 
-  if(enableSoftBodies){
+  if(opt.softBody){
     softBodyWorldInfo.m_dispatcher = dispatcher;
     softBodyWorldInfo.m_broadphase = broadphase;
     softBodyWorldInfo.m_sparsesdf.Initialize();
@@ -126,10 +127,10 @@ void BulletInterface_self::initPhysics(bool yAxisGravity, bool enableSoftBodies,
     softBodyWorldInfo.water_normal = btVector3(0, 0, 0);
   }
 
-  if(verbose>0) LOG(0) <<"... done starting bullet engine";
+  if(opt.verbose>0) LOG(0) <<"... done starting bullet engine";
 }
 
-void BulletInterface_self::initPhysics2(bool yAxisGravity, bool enableSoftBodies, int verbose){
+void BulletInterface_self::initPhysics2(){
   collisionConfiguration = new btDefaultCollisionConfiguration();
   dispatcher = new btCollisionDispatcher(collisionConfiguration);
   broadphase = new btDbvtBroadphase();
@@ -142,39 +143,42 @@ void BulletInterface_self::initPhysics2(bool yAxisGravity, bool enableSoftBodies
 
 // ============================================================================
 
-BulletInterface::BulletInterface(rai::Configuration& C, int verbose, bool yAxisGravity, bool enableSoftBodies) : self(nullptr) {
+BulletInterface::BulletInterface(rai::Configuration& C, const rai::Bullet_Options& opt) : self(nullptr) {
   self = new BulletInterface_self;
 
-  self->initPhysics(yAxisGravity, enableSoftBodies, verbose);
+  self->opt = opt;
 
-  self->addGround(yAxisGravity);
+  self->initPhysics();
 
-  if(verbose>0) LOG(0) <<"creating Configuration within bullet ...";
+  self->addGround();
+
+  if(opt.verbose>0) LOG(0) <<"creating Configuration within bullet ...";
 
   self->actors.resize(C.frames.N); self->actors.setZero();
   self->actorTypes.resize(C.frames.N); self->actorTypes.setZero();
-#if 0
-  FrameL links = C.getLinks();
-  for(rai::Frame* a : links){
-    if(a->inertia && a->inertia->type==rai::BT_soft){
-      self->addSoft(a, verbose);
-    }else{
-      self->addLink(a, verbose);
+
+  if(opt.multiBody){
+    //-- collect all links for that root
+    for(rai::Frame *f : C.frames){
+      if(!f->parent || (f->joint && f->joint->type==rai::JT_free)){
+        self->addMultiBody(f);
+      }
+    }
+    //  self->addMultiBody(C(0), verbose);
+    //  self->addExample();
+  } else {
+    FrameL links = C.getLinks();
+    for(rai::Frame* a : links){
+      if(a->inertia && a->inertia->type==rai::BT_soft){
+        CHECK(opt.softBody, "");
+        self->addSoft(a);
+      }else{
+        self->addLink(a);
+      }
     }
   }
-#else
-  //-- collect all links for that root
-  for(rai::Frame* f : C.frames){
-    if(!f->parent || (f->joint && f->joint->type==rai::JT_free)){
-      self->addMultiBody(f, verbose);
-    }
-  }
-//  self->addMultiBody(C(0), verbose);
-//  self->addExample();
-#endif
 
-
-  if(verbose>0) LOG(0) <<"... done creating Configuration within bullet";
+  if(opt.verbose>0) LOG(0) <<"... done creating Configuration within bullet";
 }
 
 BulletInterface::~BulletInterface() {
@@ -256,7 +260,7 @@ void pullPoses(FrameL& frames, const rai::Array<btCollisionObject*>& actors, con
       }
     } else if(softbody){
       rai::Mesh &m = f->shape->mesh();
-      CHECK_EQ(m.V.d0, softbody->m_nodes.size(), "");
+      CHECK_EQ((int)m.V.d0, softbody->m_nodes.size(), "");
       for(int i=0; i<softbody->m_nodes.size(); i++){
         m.V[i] = conv_btVec3_arr(softbody->m_nodes[i].m_x);
       }
@@ -328,12 +332,12 @@ void BulletInterface::pushFullState(const FrameL& frames, const arr& frameVeloci
   self->dynamicsWorld->stepSimulation(.01); //without this, two consequtive pushFullState won't work! (something active tag?)
 }
 
-btRigidBody* BulletInterface_self::addGround(bool yAxisGravity) {
+btRigidBody* BulletInterface_self::addGround() {
   btTransform groundTransform;
   groundTransform.setIdentity();
   groundTransform.setOrigin(btVector3(0, 0, 0));
   btCollisionShape* groundShape;
-  if(yAxisGravity){
+  if(opt.yGravity){
     groundShape = new btStaticPlaneShape(btVector3(0, 1, 0), 0);
   }else{
     groundShape = new btStaticPlaneShape(btVector3(0, 0, 1), 0);
@@ -348,12 +352,13 @@ btRigidBody* BulletInterface_self::addGround(bool yAxisGravity) {
   return body;
 }
 
-btCollisionShape* BulletInterface_self::createLinkShape(ShapeL& shapes, rai::BodyType& type, rai::Frame* f, int verbose) {
+btCollisionShape* BulletInterface_self::createLinkShape(ShapeL& shapes, rai::BodyType& type, rai::Frame* f) {
   //-- collect all shapes of that link
 
   {
-    FrameL tmp = {f};
-    f->getRigidSubFrames(tmp, false);
+    rai::Frame* link=f->getUpwardLink();
+    FrameL tmp = {link};
+    link->getRigidSubFrames(tmp, false);
     for(rai::Frame* p: tmp){
       if(p->shape
          && p->getShape().type()!=rai::ST_marker
@@ -371,6 +376,7 @@ btCollisionShape* BulletInterface_self::createLinkShape(ShapeL& shapes, rai::Bod
     if(!f->inertia->com.isZero){
       CHECK(!f->shape || f->shape->type()==rai::ST_marker, "can't translate this frame if it has a shape attached");
       CHECK(!f->joint || f->joint->type==rai::JT_rigid || f->joint->type==rai::JT_free, "can't translate this frame if it has a joint attached");
+      LOG(0) <<"translating frame '" <<f->name <<"' to accomodate for centered compound inertia for bullet";
       f->set_X()->pos += f->ensure_X().rot * f->inertia->com;
       for(rai::Frame* ch:f->children) ch->set_Q()->pos -= f->inertia->com;
       f->inertia->com.setZero();
@@ -386,7 +392,7 @@ btCollisionShape* BulletInterface_self::createLinkShape(ShapeL& shapes, rai::Bod
     if(f->inertia) type = f->inertia->type;
   }
   actorTypes(f->ID) = type;
-  if(verbose>0) LOG(0) <<"adding link anchored at '" <<f->name <<"' as " <<rai::Enum<rai::BodyType>(type);
+  if(opt.verbose>0) LOG(0) <<"adding link anchored at '" <<f->name <<"' as " <<rai::Enum<rai::BodyType>(type);
 
   //-- create a bullet collision shape
   btCollisionShape* colShape=0;
@@ -400,10 +406,10 @@ btCollisionShape* BulletInterface_self::createLinkShape(ShapeL& shapes, rai::Bod
   return colShape;
 }
 
-btRigidBody* BulletInterface_self::addLink(rai::Frame* f, int verbose) {
+btRigidBody* BulletInterface_self::addLink(rai::Frame* f) {
   ShapeL shapes;
   rai::BodyType type;
-  btCollisionShape* colShape = createLinkShape(shapes, type, f, verbose);
+  btCollisionShape* colShape = createLinkShape(shapes, type, f);
 
   //-- create a bullet body
   btTransform pose = conv_trans_btTrans(f->ensure_X());
@@ -447,7 +453,7 @@ btRigidBody* BulletInterface_self::addLink(rai::Frame* f, int verbose) {
   return body;
 }
 
-btMultiBody* BulletInterface_self::addMultiBody(rai::Frame* root, int verbose) {
+btMultiBody* BulletInterface_self::addMultiBody(rai::Frame* root) {
   CHECK(!root->parent || (root->joint && root->inertia), "");
   //-- collect all links for that root
   FrameL F = {root};
@@ -464,44 +470,61 @@ btMultiBody* BulletInterface_self::addMultiBody(rai::Frame* root, int verbose) {
     CHECK(idx>=0, "");
     parents(i) = idx;
   }
+  //   and decide on COM frames
+  FrameL masses = links;
+  for(uint i=0;i<links.N;i++){
+    if(links(i)->inertia){
+      //mass = link -- all good
+    }else{
+      for(rai::Frame *f:links(i)->children){
+        if(f->inertia){
+          masses(i) = f;
+          break;
+        }
+      }
+    }
+  }
+
 
   btMultiBody* multibody = 0;
 
   for(uint i=0; i<links.N; i++) {
     //create collision shape
-    rai::Frame* f = links(i);
-    if(i){
-      CHECK(!f->inertia, "");
-      CHECK(f->joint, "");
-      CHECK_EQ(f->parent->parent, links(parents(i)), "");
-      f = f->children.scalar();
+    rai::Frame* linkJoint = links(i);
+    rai::Frame* linkMass = masses(i);
+    if(i==0){
+      linkJoint=0;
+    } else {
+      CHECK(!linkJoint->inertia, "");
+      CHECK(linkJoint->joint, "");
+      CHECK_EQ(linkJoint->parent->parent, links(parents(i)), "");
     }
     ShapeL shapes;
     rai::BodyType type;
-    btCollisionShape* colShape=createLinkShape(shapes, type, f, verbose);
+    btCollisionShape* colShape=createLinkShape(shapes, type, linkMass);
 
     //get inertia
     btScalar mass(1.0f);
     btVector3 localInertia(0, 0, 0);
-    if(f->inertia) mass = f->inertia->mass;
+    if(linkMass->inertia) mass = linkMass->inertia->mass;
     colShape->calculateLocalInertia(mass, localInertia);
 
     if(!i){ //base!!
       multibody = new btMultiBody(links.N-1, mass, localInertia, false, false);
-      multibody->setBaseWorldTransform(conv_trans_btTrans(f->ensure_X()));
+      multibody->setBaseWorldTransform(conv_trans_btTrans(linkMass->ensure_X()));
     }else{ //link
       //get parent and coms
-      rai::Frame* p = links(parents(i));
-      rai::Frame* j = links(i);
-      rai::Frame* jparent = j->parent;
-      rai::Transformation relA = jparent->ensure_X()/p->ensure_X();
-      rai::Transformation relB = f->get_Q();
-      //    btVector3 linkInertiaDiag(0.01f, 0.05f, 0.01f);
-      switch(j->joint->type){
+      rai::Frame* parJoint = links(parents(i));
+      CHECK_EQ(linkJoint->parent->parent, parJoint, "");
+      rai::Frame* parMass = masses(parents(i));
+      rai::Transformation relA = linkJoint->parent->ensure_X() / parMass ->ensure_X();
+      rai::Transformation relB = linkMass->get_Q();
+      //CHECK(relB.rot.isZero, ""); //check should hold only when all joint angles (linkJoint->Q) are zero
+      switch(linkJoint->joint->type){
         case rai::JT_hingeX:{
           btVector3 axis(1,0,0);
           multibody->setupRevolute(i-1, mass, localInertia, parents(i)-1,
-                                   conv_rot_btQuat(relA.rot), axis, conv_vec_btVec3(relA.pos), conv_vec_btVec3(relB.pos), true);
+                                   conv_rot_btQuat(-relA.rot), axis, conv_vec_btVec3(relA.pos), conv_vec_btVec3(relB.pos), true);
         } break;
         default: NIY;
       };
@@ -511,12 +534,12 @@ btMultiBody* BulletInterface_self::addMultiBody(rai::Frame* root, int verbose) {
     {
       btMultiBodyLinkCollider* col = new btMultiBodyLinkCollider(multibody, i-1); //-1 for root!
       col->setCollisionShape(colShape);
-      col->setWorldTransform(conv_trans_btTrans(f->ensure_X()));
+      col->setWorldTransform(conv_trans_btTrans(linkMass->ensure_X()));
       //col->setFriction(friction);
       dynamicsWorld->addCollisionObject(col, 2, 1+2);
       if(!i) multibody->setBaseCollider(col);
       else multibody->getLink(i-1).m_collider = col;
-      actors(f->ID) = col;
+      actors(linkMass->ID) = col;
     }
   }
 
@@ -527,7 +550,20 @@ btMultiBody* BulletInterface_self::addMultiBody(rai::Frame* root, int verbose) {
   multibody->setUseGyroTerm(false);
   multibody->setLinearDamping(0.1f);
   multibody->setAngularDamping(0.9f);
-  multibody->setJointPos(0, 1.f);
+
+  for(uint i=1; i<links.N; i++) {
+    multibody->setJointPos(i-1, links(i)->joint->q0.scalar());
+  }
+
+  if(false){ //use bullet's internal forward kinematics to recompute all poses
+    btAlignedObjectArray<btQuaternion> rot;
+    btAlignedObjectArray<btVector3> pos;
+    multibody->forwardKinematics(rot, pos);
+
+    for(uint i=1; i<links.N; i++) {
+      multibody->getLink(i-1).m_collider->setWorldTransform(multibody->getLink(i-1).m_cachedWorldTransform);
+    }
+  }
 
   auto world = dynamic_cast<btMultiBodyDynamicsWorld*>(dynamicsWorld);
   CHECK(world, "need a btMultiBodyDynamicsWorld");
@@ -599,14 +635,14 @@ void BulletInterface_self::addExample(){
 
 }
 
-btSoftBody* BulletInterface_self::addSoft(rai::Frame* f, int verbose) {
+btSoftBody* BulletInterface_self::addSoft(rai::Frame* f) {
   //-- collect all shapes of that link
   CHECK_EQ(f->children.N, 0, "");
   //-- check inertia
 
   //-- decide on the type
   actorTypes(f->ID) = rai::BT_soft;
-  if(verbose>0) LOG(0) <<"adding link anchored at '" <<f->name <<"' as " <<rai::Enum<rai::BodyType>(rai::BT_soft);
+  if(opt.verbose>0) LOG(0) <<"adding link anchored at '" <<f->name <<"' as " <<rai::Enum<rai::BodyType>(rai::BT_soft);
 
   //-- create a bullet collision shape
   rai::Mesh& m = f->shape->mesh();
@@ -714,9 +750,9 @@ void BulletBridge::getConfiguration(rai::Configuration& C){
     if(obj->getInternalType()==obj->CO_COLLISION_OBJECT){
       rai::Transformation X;
       btTrans2raiTrans(X, obj->getWorldTransform());
-      auto& f = C.addFrame(STRING("coll"<<i))
-                ->setShape(rai::ST_marker, {.1})
-                .setPose(X);
+      C.addFrame(STRING("coll"<<i))
+          ->setShape(rai::ST_marker, {.1})
+          .setPose(X);
     }
     btRigidBody* body = dynamic_cast<btRigidBody*>(obj);
     btMultiBodyLinkCollider* multibodycoll = dynamic_cast<btMultiBodyLinkCollider*>(obj);

@@ -14,6 +14,10 @@ class btRigidBody;
 
 namespace rai {
   struct Bullet_Options {
+    RAI_PARAM("bullet/", int, verbose, 1)
+    RAI_PARAM("bullet/", bool, yGravity, false)
+    RAI_PARAM("bullet/", bool, softBody, false)
+    RAI_PARAM("bullet/", bool, multiBody, false)
     RAI_PARAM("bullet/", double, defaultFriction, 1.)
     RAI_PARAM("bullet/", double, defaultRestitution, .1)
     RAI_PARAM("bullet/", double, contactStiffness, 1e4)
@@ -23,8 +27,9 @@ namespace rai {
 
 struct BulletInterface {
   struct BulletInterface_self* self=0;
+  struct Options{ int i; };
 
-  BulletInterface(rai::Configuration& C, int verbose=1, bool yAxisGravity=false, bool enableSoftBodies=false);
+  BulletInterface(rai::Configuration& C, const rai::Bullet_Options& opt = rai::Bullet_Options());
   ~BulletInterface();
 
   void step(double tau=.01);

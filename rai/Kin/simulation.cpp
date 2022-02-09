@@ -120,7 +120,7 @@ Simulation::Simulation(Configuration& _C, Simulation::SimulatorEngine _engine, i
   if(engine==_physx) {
     self->physx = make_shared<PhysXInterface>(C, verbose-1);
   } else if(engine==_bullet) {
-    self->bullet = make_shared<BulletInterface>(C, verbose-1);
+    self->bullet = make_shared<BulletInterface>(C, rai::Bullet_Options().set_verbose(verbose-1));
 #ifdef BACK_BRIDGE
     self->bulletBridge = make_shared<BulletBridge>(self->bullet->getDynamicsWorld());
     self->bulletBridge->getConfiguration(self->bridgeC);

@@ -122,7 +122,7 @@ struct Frame : NonCopyable {
 
   //structural information/retrieval
   bool isChildOf(const Frame* par, int order=1) const;
-  void getRigidSubFrames(FrameL& F, bool includeRigidJoints); ///< recursively collect all rigidly attached sub-frames (e.g., shapes of a link), (THIS is not included)
+  void getRigidSubFrames(FrameL& F, bool includeRigidJoints=false); ///< recursively collect all rigidly attached sub-frames (e.g., shapes of a link), (THIS is not included)
   void getPartSubFrames(FrameL& F); ///< recursively collect all frames of this part
   void getSubtree(FrameL& F);
   Frame* getRoot();
