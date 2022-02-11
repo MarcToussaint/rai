@@ -47,18 +47,23 @@ void SplineCtrlReference::overrideSmooth(const arr& x, const arr& t, double ctrl
 
 void SplineCtrlReference::overrideHard(const arr& x, const arr& t, const arr& xDot0, double nowTime){
   waitForInitialized();
-  //only saftey checks: evaluate the current spline and time
+
+  CHECK_LE(t.first(), .0, "");
+  CHECK_GE(t.first(), -.2, "you first time knot is more than 200msec ago!");
+
   auto splineSet = spline.set();
-  {
-      arr x_now, xDot_now;
-      splineSet->eval(x_now, xDot_now, NoArr, nowTime);
-      CHECK_LE(t.first(), .0, "");
-      CHECK_GE(t.first(), -.2, "you first time knot is more than 200msec ago!");
-      CHECK_LE(maxDiff(x[0],x_now), .1, "your first point knot is too far from the current spline");
-      CHECK_LE(maxDiff(xDot0,xDot_now), .5, "your initial velocity is too far from the current spline");
-  }
+
+  //only saftey checks: evaluate the old spline
+  arr x_old, xDot_old;
+  splineSet->eval(x_old, xDot_old, NoArr, nowTime);
 
   splineSet->set(2, x, t+nowTime, xDot0);
+
+  //only saftey checks: evaluate the new spline
+  arr x_new, xDot_new;
+  splineSet->eval(x_new, xDot_new, NoArr, nowTime);
+  CHECK_LE(maxDiff(x_old,x_new), .1, "your first point knot is too far from the current spline");
+  CHECK_LE(maxDiff(xDot_old,xDot_new), .5, "your initial velocity is too far from the current spline");
 }
 
 void SplineCtrlReference::report(double ctrlTime){
@@ -125,16 +130,21 @@ void CubicSplineCtrlReference::overrideSmooth(const arr& x, const arr& v, const 
 
 void CubicSplineCtrlReference::overrideHard(const arr& x, const arr& v, const arr& t, double ctrlTime){
   waitForInitialized();
+
+  CHECK_LE(t.first(), .0, "hard overwrite requires the spline to include a NOW node");
+  CHECK_GE(t.first(), -.5, "you first time knot is more than 500msec ago!");
+
   auto splineSet = spline.set();
-  { //some safety checks!
-    arr x_now, xDot_now;
-    splineSet->eval(x_now, xDot_now, NoArr, ctrlTime);
-    CHECK_LE(t.first(), .0, "hard overwrite requires the spline to include a NOW node");
-    CHECK_GE(t.first(), -.2, "you first time knot is more than 200msec ago!");
-    CHECK_LE(maxDiff(x[0],x_now), .1, "your first point knot is too far from the current spline");
-    CHECK_LE(maxDiff(v[0],xDot_now), .5, "your initial velocity is too far from the current spline");
-  }
+  arr x_old, xDot_old;
+  splineSet->eval(x_old, xDot_old, NoArr, ctrlTime);
+
   splineSet->set(x, v, t+ctrlTime);
+
+  arr x_new, xDot_new;
+  splineSet->eval(x_new, xDot_new, NoArr, ctrlTime);
+
+  CHECK_LE(maxDiff(x_old, x_new), .1, "your new reference is too far from the current spline");
+  CHECK_LE(maxDiff(xDot_old, xDot_new), .5, "your reference velocity is too far from the current spline");
 }
 
 void CubicSplineCtrlReference::report(double ctrlTime){

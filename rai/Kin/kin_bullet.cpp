@@ -854,7 +854,7 @@ void BulletBridge::pullPoses(rai::Configuration& C, bool alsoStaticAndKinematic)
 
 #else
 
-BulletInterface::BulletInterface(rai::Configuration& K, int verbose, bool yAxisGravity, bool enableSoftBodies) { NICO }
+BulletInterface::BulletInterface(rai::Configuration& K, const rai::Bullet_Options& opt) { NICO }
 BulletInterface::~BulletInterface() { NICO }
 void BulletInterface::step(double tau) { NICO }
 void BulletInterface::pushFullState(const FrameL& frames, const arr& vel) { NICO }

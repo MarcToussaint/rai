@@ -475,10 +475,9 @@ void KOMO::add_collision(bool hardConstraint, double margin, double prec) {
 
 void KOMO::add_jointLimits(bool hardConstraint, double margin, double prec) {
   if(hardConstraint) { //interpreted as hard constraint (default)
-    addObjective({}, make_shared<F_qLimits>(), {}, OT_ineq, {-prec}, NoArr);
+    addObjective({}, make_shared<F_qLimits>(), {"ALL"}, OT_ineq, {prec}, {-margin});
   } else { //cost term
     NIY;
-//    setTask(0., -1., new TM_Proxy(TMT_allP, {}, margin), OT_sos, NoArr, prec);
   }
 }
 

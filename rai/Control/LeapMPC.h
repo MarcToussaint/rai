@@ -6,6 +6,7 @@
 
 struct LeapMPC{
   KOMO komo;
+
   //for info only:
   arr x1, xT, tau;
 

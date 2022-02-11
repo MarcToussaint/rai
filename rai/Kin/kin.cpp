@@ -1887,7 +1887,7 @@ void Configuration::inverseDynamics(arr& tau, const arr& qd, const arr& qdd, boo
 std::shared_ptr<ConfigurationViewer>& Configuration::gl(const char* window_title, bool offscreen) {
   if(!self->viewer) {
     self->viewer = make_shared<ConfigurationViewer>();
-    rai::Frame *camF = getFrame("camera", false);
+    rai::Frame *camF = getFrame("camera_gl", false);
     if(camF) self->viewer->setCamera(camF);
   }
   return self->viewer;

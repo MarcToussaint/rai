@@ -476,7 +476,7 @@ struct Simulation_DisplayThread : Thread, GLDrawer {
     gl.camera.setDefault();
     gl.addClickCall(new MoveBallHereCallback());///added
 
-    if(Ccopy["camera"]) gl.camera.X = Ccopy["camera"]->ensure_X();
+    if(Ccopy["camera_gl"]) gl.camera.X = Ccopy["camera_gl"]->ensure_X();
 
     threadLoop();
     while(step_count<2) rai::wait(.05);
