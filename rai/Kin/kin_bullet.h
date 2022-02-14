@@ -27,18 +27,20 @@ namespace rai {
 
 struct BulletInterface {
   struct BulletInterface_self* self=0;
-  struct Options{ int i; };
 
   BulletInterface(rai::Configuration& C, const rai::Bullet_Options& opt = rai::Bullet_Options());
   ~BulletInterface();
 
   void step(double tau=.01);
 
-  void pushKinematicStates(const FrameL& frames);
-  void pushFullState(const FrameL& frames, const arr& frameVelocities=NoArr);
-  void pullDynamicStates(FrameL& frames, arr& frameVelocities=NoArr);
+  void pushKinematicStates(const rai::Configuration& C);
+  void pushFullState(const rai::Configuration& C, const arr& frameVelocities=NoArr);
+  void pullDynamicStates(rai::Configuration& C, arr& frameVelocities=NoArr);
 
   void changeObjectType(rai::Frame* f, int _type, const arr& withVelocity={});
+
+  void motorizeMultiBody(rai::Frame* base);
+  void setMotorQ(const rai::Configuration& C);
 
   void saveBulletFile(const char* filename);
   class btDiscreteDynamicsWorld* getDynamicsWorld();

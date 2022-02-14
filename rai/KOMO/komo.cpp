@@ -654,7 +654,7 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase) 
     }
   }
 
-//  view(true, STRING("after"));
+//  view(true, STRING("after keyframes->constant"));
 
   //then interpolate w.r.t. non-switching frames within the intervals
   auto F = getCtrlFramesAndScale(world);
@@ -717,6 +717,8 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase) 
 #endif
   }
 #endif
+
+//  view(true, STRING("after interpolation"));
 
   run_prepare(0.);
 }

@@ -294,8 +294,7 @@ void Metronome::reset(double ticIntervalSec) {
 }
 
 void Metronome::waitForTic() {
-  auto interval = std::chrono::duration<double>(ticInterval);
-  ticTime += interval;
+  ticTime += std::chrono::duration<double>(ticInterval);
   std::chrono::time_point<std::chrono::high_resolution_clock, std::chrono::duration<double>> now = std::chrono::high_resolution_clock::now();
   if(ticTime>now){
     std::this_thread::sleep_until(ticTime);

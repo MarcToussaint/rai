@@ -2,6 +2,17 @@
 
 //===========================================================================
 
+void testMetronome(){
+  Metronome tic(.1);
+  for(;;){
+    tic.waitForTic();
+    cout <<"tic: " <<tic.tics <<" \t time:" <<rai::realTime() <<endl;
+    if(tic.tics>30) break;
+  }
+}
+
+//===========================================================================
+
 // Normal Thread struct
 struct MyThread: Thread{
   Var<double> x;
@@ -195,6 +206,7 @@ void TEST(Logging){
 int MAIN(int argc,char** argv){
   rai::initCmdLine(argc, argv);
 
+  testMetronome();
   testThread();
   testSorter();
 

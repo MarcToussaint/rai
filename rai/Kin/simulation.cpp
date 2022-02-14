@@ -175,9 +175,10 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     self->physx->step(tau);
     self->physx->pullDynamicStates(C.frames, self->frameVelocities);
   } else if(engine==_bullet) {
-    self->bullet->pushKinematicStates(C.frames);
+    self->bullet->pushKinematicStates(C);
+    self->bullet->setMotorQ(C);
     self->bullet->step(tau);
-    self->bullet->pullDynamicStates(C.frames, self->frameVelocities);
+    self->bullet->pullDynamicStates(C); //, self->frameVelocities);
 #ifdef BACK_BRIDGE
     self->bulletBridge->pullPoses(self->bridgeC, true);
     self->bridgeC.watch(false, "bullet bridge");
@@ -324,7 +325,7 @@ ptr<SimulationState> Simulation::getState() {
   if(engine==_physx) {
     self->physx->pullDynamicStates(C.frames, qdot);
   } else if(engine==_bullet) {
-    self->bullet->pullDynamicStates(C.frames, qdot);
+    self->bullet->pullDynamicStates(C, qdot);
   } else NIY;
   return make_shared<SimulationState>(C.getFrameState(), qdot);
 }
@@ -338,7 +339,7 @@ void Simulation::pushConfigurationToSimulator(const arr& frameVelocities) {
   if(engine==_physx) {
     self->physx->pushFullState(C.frames, frameVelocities);
   } else if(engine==_bullet) {
-    self->bullet->pushFullState(C.frames, frameVelocities);
+    self->bullet->pushFullState(C, frameVelocities);
   } else NIY;
 }
 
