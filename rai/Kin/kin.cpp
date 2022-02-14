@@ -629,6 +629,7 @@ void Configuration::setTaus(double tau) {
 /// set the 'tau-coordinate' (time interval from previous time slice) for equal for all frames
 void Configuration::setTaus(const arr& tau) {
   CHECK_EQ(frames.nd, 2, "only for matrix of frames (=series of configurations)");
+  CHECK_EQ(frames.d0, tau.N, "need taus for each slice");
   for(uint t=0;t<frames.d0;t++) frames(t,0)->tau = tau(t);
 }
 

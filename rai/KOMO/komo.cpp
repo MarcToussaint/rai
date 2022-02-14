@@ -169,6 +169,7 @@ void KOMO::_addObjective(const std::shared_ptr<Objective>& ob, const intA& timeS
   objectives.append(ob);
 
   CHECK_EQ(timeSlices.nd, 2, "");
+  CHECK_EQ(timeSlices.d1, ob->feat->order+1, "");
   for(uint c=0;c<timeSlices.d0;c++){
     shared_ptr<GroundedObjective> o = objs.append( make_shared<GroundedObjective>(ob->feat, ob->type, timeSlices[c]) );
     o->objId = objectives.N-1;

@@ -905,9 +905,10 @@ void BulletBridge::pullPoses(rai::Configuration& C, bool alsoStaticAndKinematic)
 BulletInterface::BulletInterface(rai::Configuration& K, const rai::Bullet_Options& opt) { NICO }
 BulletInterface::~BulletInterface() { NICO }
 void BulletInterface::step(double tau) { NICO }
-void BulletInterface::pushFullState(const FrameL& frames, const arr& vel) { NICO }
-void BulletInterface::pushKinematicStates(const FrameL& frames) { NICO }
-void BulletInterface::pullDynamicStates(FrameL& frames, arr& vel) { NICO }
+void BulletInterface::pushFullState(const rai::Configuration& C, const arr& vel) { NICO }
+void BulletInterface::pushKinematicStates(const rai::Configuration& C) { NICO }
+void BulletInterface::pullDynamicStates(rai::Configuration& C, arr& vel) { NICO }
+void BulletInterface::setMotorQ(const rai::Configuration& C) { NICO }
 void BulletInterface::saveBulletFile(const char* filename) { NICO }
 void BulletInterface::changeObjectType(rai::Frame* f, int _type, const arr& withVelocity) { NICO }
 
