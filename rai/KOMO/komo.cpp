@@ -35,6 +35,8 @@
 
 #include "../Core/util.ipp"
 
+#include "pathTools.h"
+
 #include <iomanip>
 
 #ifdef RAI_GL
@@ -658,11 +660,11 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase) 
 //  view(true, STRING("after keyframes->constant"));
 
   //then interpolate w.r.t. non-switching frames within the intervals
+#if 1
   auto F = getCtrlFramesAndScale(world);
   //F.frames.reshape(1,-1,2); F_qItself qfeat;
   arr signs;
   DofL dofs;
-#if 1
   for(uint i=0; i<steps.N; i++) {
     uint t0=0; if(i) t0 = steps(i-1);
     uint t1=steps(i);
@@ -686,6 +688,8 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase) 
       arr q0 = signs%pathConfig.getDofState(dofs);
       getDofsAndSignFromFramePairs(dofs, signs, pathConfig.getFrames(F.frames + timeSlices(k_order+t1,0)->ID));
       arr q1 = signs%pathConfig.getDofState(dofs);
+      makeMod2Pi(q0, q1);
+      pathConfig.setDofState(signs%q1, dofs);
 //      arr q0 = qfeat.eval(pathConfig.getFrames(F.frames + timeSlices(k_order+t0,0)->ID));  q0.J_reset();
 //      arr q1 = qfeat.eval(pathConfig.getFrames(F.frames + timeSlices(k_order+t1,0)->ID));  q1.J_reset();
       for(uint t=t0+1; t<t1; t++) {

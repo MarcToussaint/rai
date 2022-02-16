@@ -402,7 +402,7 @@ SkeletonTranscription Skeleton::mp_path(const arrA& waypoints){
 
 }
 
-void Skeleton::setKOMO(KOMO& komo, ArgWord sequenceOrPath) const {
+void Skeleton::setKOMO(KOMO& komo, ArgWord sequenceOrPath, uint stepsPerPhase, double accScale, double lenScale, double homingScale, double initNoise) const {
   //  if(sequenceOrPath==rai::_sequence){
   //    solver = rai::KS_dense;
   //  }else{
@@ -413,13 +413,13 @@ void Skeleton::setKOMO(KOMO& komo, ArgWord sequenceOrPath) const {
   if(sequenceOrPath==rai::_sequence) {
     komo.setTiming(maxPhase, 1, 2., 1);
 //    komo.setTiming(maxPhase+1., 1, 5., 1); //as defined in bounds.cpp
-    komo.add_qControlObjective({}, 1, 1e-2);
-    komo.add_qControlObjective({}, 0, 1e-2);
+    komo.add_qControlObjective({}, 1, lenScale);
+    komo.add_qControlObjective({}, 0, homingScale);
   } else {
-    komo.setTiming(maxPhase, 30, 2., 2);
+    komo.setTiming(maxPhase, stepsPerPhase, 2., 2);
 //    komo->setTiming(maxPhase+.5, 10, 10., 2); //as defined in bounds.cpp
-    komo.add_qControlObjective({}, 2, 1.);
-    komo.add_qControlObjective({}, 0, 1e-2);
+    komo.add_qControlObjective({}, 2, accScale);
+    komo.add_qControlObjective({}, 0, homingScale);
   }
   komo.addQuaternionNorms();
 
@@ -427,7 +427,7 @@ void Skeleton::setKOMO(KOMO& komo, ArgWord sequenceOrPath) const {
 
   setKOMO(komo);
 
-  komo.run_prepare(.01);
+  komo.run_prepare(initNoise);
 }
 
 void Skeleton::setKOMO(KOMO& komo) const {

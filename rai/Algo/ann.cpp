@@ -66,7 +66,7 @@ void ANN::calculate() {
   self->treeSize = X.d0;
 }
 
-void ANN::getkNN(arr& dists, intA& idx, const arr& x, uint k, double eps, bool verbose) {
+void ANN::getkNN(arr& dists, uintA& idx, const arr& x, uint k, double eps, bool verbose) {
   CHECK_GE(X.d0, k, "data has less (" <<X.d0 <<") than k=" <<k <<" points");
   CHECK_EQ(x.N, X.d1, "query point has wrong dimension. x.N=" << x.N << ", X.d1=" << X.d1);
 
@@ -78,7 +78,7 @@ void ANN::getkNN(arr& dists, intA& idx, const arr& x, uint k, double eps, bool v
   if(self->treeSize>=k) {
     dists.resize(k);
     idx.resize(k);
-    self->tree->annkSearch(x.p, k, idx.p, dists.p, eps);
+    self->tree->annkSearch(x.p, k, (int*)idx.p, dists.p, eps);
     restStartsAt=self->treeSize;
   } else {
     dists.clear();
@@ -119,19 +119,19 @@ void ANN::getkNN(arr& dists, intA& idx, const arr& x, uint k, double eps, bool v
 }
 
 uint ANN::getNN(const arr& x, double eps, bool verbose) {
-  intA idx;
+  uintA idx;
   arr dists;
   getkNN(dists, idx, x, 1, eps, verbose);
   return idx(0);
 }
 
-void ANN::getkNN(intA& idx, const arr& x, uint k, double eps, bool verbose) {
+void ANN::getkNN(uintA& idx, const arr& x, uint k, double eps, bool verbose) {
   arr dists;
   getkNN(dists, idx, x, k, eps, verbose);
 }
 
 void ANN::getkNN(arr& xx, const arr& x, uint k, double eps, bool verbose) {
-  intA idx;
+  uintA idx;
   arr dists;
   getkNN(dists, idx, x, k, eps, verbose);
   xx.resize(idx.N, X.d1);
@@ -149,8 +149,8 @@ void ANN::calculate() { NICO }
 void ANN::setX(const arr& _XX) { NICO }
 void ANN::append(const arr& x) { NICO }
 uint ANN::getNN(const arr& x, double eps, bool verbose) { NICO }
-void ANN::getkNN(intA& idx, const arr& x, uint k, double eps, bool verbose) { NICO }
-void ANN::getkNN(arr& sqrDists, intA& idx, const arr& x, uint k, double eps, bool verbose) { NICO }
+void ANN::getkNN(uintA& idx, const arr& x, uint k, double eps, bool verbose) { NICO }
+void ANN::getkNN(arr& sqrDists, uintA& idx, const arr& x, uint k, double eps, bool verbose) { NICO }
 void ANN::getkNN(arr& X, const arr& x, uint k, double eps, bool verbose) { NICO }
 
 #endif

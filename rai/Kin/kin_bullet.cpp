@@ -334,8 +334,8 @@ void BulletInterface::setMotorQ(const rai::Configuration& C){
   MultiBodyInfo& mi = self->multibodies.first();
   if(!mi.motors.N) motorizeMultiBody(mi.links.first());
   for(uint i=0;i<mi.motors.N;i++){
-    mi.motors(i)->setPositionTarget(q(i), .001);
-    mi.motors(i)->setVelocityTarget(0., .1);
+    mi.motors(i)->setPositionTarget(q(i), .1);
+//    mi.motors(i)->setVelocityTarget(0., .1);
   }
 }
 
