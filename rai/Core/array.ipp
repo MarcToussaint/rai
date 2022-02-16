@@ -771,8 +771,8 @@ template<class T> void rai::Array<T>::delRows(int i, uint k) {
 template<class T> void rai::Array<T>::insRows(int i, uint k) {
   CHECK(memMove, "only with memMove");
   CHECK_EQ(nd, 2, "only for matricies");
-  if(i<0) i+=d0;
-  CHECK(i>=0 && i<(int)d0, "range error (" <<i <<">=" <<d0 <<")");
+  if(i<0) i+=d0+1;
+  CHECK_LE(i,(int)d0, "range error (" <<i <<">=" <<d0 <<")");
   int n=d0;
   resizeCopy(d0+k, d1);
   if(n>i) memmove(p+(i+k)*d1, p+i*d1, sizeT*d1*(n-i));
@@ -799,7 +799,7 @@ template<class T> void rai::Array<T>::insColumns(int i, uint k) {
   CHECK(memMove, "only with memMove");
   CHECK_EQ(nd, 2, "only for matricies");
   if(!k) return;
-  if(i<0) i+=d1;
+  if(i<0) i+=d1+1;
   CHECK_LE(i, (int)d1, "range check error");
   uint n=d1;
   resizeCopy(d0, n+k);

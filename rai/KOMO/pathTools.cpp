@@ -488,3 +488,12 @@ arr getJerk(const arr& x, const arr& tau){
   }
   return j;
 }
+
+void makeMod2Pi(const arr& q0, arr& q1){
+  CHECK_EQ(q0.N, q1.N, "");
+  for(uint i=0;i<q0.N;i++){
+    double del = q0.elem(i) - q1.elem(i);
+    if(del>RAI_PI) q1.elem(i) += RAI_2PI;
+    if(del<-RAI_PI) q1.elem(i) -= RAI_2PI;
+  }
+}

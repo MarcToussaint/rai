@@ -28,10 +28,10 @@ stdOutPipe(SkeletonEntry)
 //===========================================================================
 
 struct SkeletonTranscription {
-  shared_ptr<KOMO> komo;
-  shared_ptr<MathematicalProgram> mp;
-  shared_ptr<MathematicalProgram_Factored> fmp;
-  shared_ptr<SolverReturn> ret;
+  std::shared_ptr<KOMO> komo;
+  std::shared_ptr<MathematicalProgram> mp;
+  std::shared_ptr<MathematicalProgram_Factored> fmp;
+  std::shared_ptr<SolverReturn> ret;
 };
 
 //===========================================================================
@@ -77,7 +77,7 @@ struct Skeleton {
   //not sure
   //void setKOMOBackground(const Animation& _A, const arr& times);
   void setKOMO(KOMO& komo) const;
-  void setKOMO(KOMO& komo, ArgWord sequenceOrPath) const;
+  void setKOMO(KOMO& komo, ArgWord sequenceOrPath, uint stepsPerPhase=30, double accScale=1e0, double lenScale=1e-2, double homingScale=1e-2, double initNoise=.01) const;
 
   //-- I/O
   void read(istream& is);

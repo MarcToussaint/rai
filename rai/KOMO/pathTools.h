@@ -62,6 +62,8 @@ void mirrorDuplicate(std::pair<arr, arr>& path);
 arr path_resample(const arr& q, double durationScale);
 
 
+void makeMod2Pi(const arr& q0, arr& q1);
+
 //-- POSE
 
 struct PoseTool{
