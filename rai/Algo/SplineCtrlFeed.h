@@ -26,7 +26,7 @@ struct SplineCtrlReference : ReferenceFeed {
   /// override the spline, but use the current spline's current pos/vel as start knot of the new spline; the first time knot needs to be >.1 sec
   void overrideSmooth(const arr& x, const arr& t, double ctrlTime);
   /// fully override the spline with new knots x and t, as well as initial vel xDot0; for safety, the first x needs to be close to the current spline's current pos
-  void overrideHard(const arr& x, const arr& t, const arr& xDot0, double nowTime);
+  void overrideHard(const arr& x, const arr& t, double ctrlTime);
 
   //simple helper for single goal spline
   void moveTo(const arr& x, double t, double ctrlTime, bool append){
@@ -36,6 +36,7 @@ struct SplineCtrlReference : ReferenceFeed {
 
   //info:
   double getEndTime() { return spline.get()->end(); }
+  void eval(arr& x, arr& xDot, arr& xDDot, double t) { spline.get()->eval(x, xDot, xDDot, t); }
 
   void report(double ctrlTime);
 };

@@ -72,7 +72,7 @@ struct CubicSpline{
 
   void eval(arr& x, arr& xDot, arr& xDDot, double t) const;
   arr eval(double t, uint diff=0) const;
-  arr eval(const arr& T) const;
+  arr eval(const arr& T, uint diff=0) const;
 
   double begin() const { return times.first(); }
   double end() const { return times.last(); }
