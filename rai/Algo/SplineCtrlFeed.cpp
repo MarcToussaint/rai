@@ -34,7 +34,7 @@ void SplineCtrlReference::append(const arr& x, const arr& t, double ctrlTime, bo
 }
 
 void SplineCtrlReference::overrideSmooth(const arr& x, const arr& t, double ctrlTime){
-  CHECK(t.first()>.1, "that's too harsh!");
+  CHECK(t.first()>.001, "that's too harsh!");
   waitForInitialized();
   arr x_now, xDot_now;
   arr _x(x), _t(t);
@@ -45,7 +45,7 @@ void SplineCtrlReference::overrideSmooth(const arr& x, const arr& t, double ctrl
   splineSet->set(2, _x, _t+ctrlTime, xDot_now);
 }
 
-void SplineCtrlReference::overrideHard(const arr& x, const arr& t, const arr& xDot0, double nowTime){
+void SplineCtrlReference::overrideHard(const arr& x, const arr& t, double ctrlTime){
   waitForInitialized();
 
   CHECK_LE(t.first(), .0, "");
@@ -55,13 +55,13 @@ void SplineCtrlReference::overrideHard(const arr& x, const arr& t, const arr& xD
 
   //only saftey checks: evaluate the old spline
   arr x_old, xDot_old;
-  splineSet->eval(x_old, xDot_old, NoArr, nowTime);
+  splineSet->eval(x_old, xDot_old, NoArr, ctrlTime);
 
-  splineSet->set(2, x, t+nowTime, xDot0);
+  splineSet->set(2, x, t+ctrlTime, xDot_old);
 
   //only saftey checks: evaluate the new spline
   arr x_new, xDot_new;
-  splineSet->eval(x_new, xDot_new, NoArr, nowTime);
+  splineSet->eval(x_new, xDot_new, NoArr, ctrlTime);
   CHECK_LE(maxDiff(x_old,x_new), .1, "your first point knot is too far from the current spline");
   CHECK_LE(maxDiff(xDot_old,xDot_new), .5, "your initial velocity is too far from the current spline");
 }
@@ -103,7 +103,6 @@ void CubicSplineCtrlReference::append(const arr& x, const arr& v, const arr& t, 
   }else{ //previous spline still active... append
     CHECK_GE(t.first(), .01, "that's too harsh! When appending the first time knot should be greater zero (otherwise non-smooth).");
     spline.set()->append(x, v, t);
-    report(ctrlTime);
   }
 }
 

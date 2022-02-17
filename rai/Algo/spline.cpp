@@ -404,9 +404,9 @@ arr CubicSpline::eval(double t, uint diff) const{
   return ret;
 }
 
-arr CubicSpline::eval(const arr& T) const{
+arr CubicSpline::eval(const arr& T, uint diff) const{
   arr x(T.N, pieces.first().d.N);
-  for(uint i=0;i<T.N;i++) x[i] = eval(T(i));
+  for(uint i=0;i<T.N;i++) x[i] = eval(T(i), diff);
   return x;
 }
 

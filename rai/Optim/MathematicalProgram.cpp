@@ -13,7 +13,7 @@
 //===========================================================================
 
 template<> const char* rai::Enum<ObjectiveType>::names []= {
-  "none", "f", "sos", "ineq", "eq", "OT_ineqB", nullptr
+  "none", "f", "sos", "ineq", "eq", "ineqB", "ineqP", nullptr
 };
 
 //===========================================================================
