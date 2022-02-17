@@ -266,8 +266,8 @@ void F_Link::updateFeatherstones() {
 //  rai::Transformation XQ;
 //  XQ=X;
 //  XQ.appendTransformation(Q);
-  rai::Vector fo = X.rot/force;
-  rai::Vector to = X.rot/(torque + ((X.rot*com)^force));
+  rai::Vector fo = -X.rot * force;
+  rai::Vector to = -X.rot * (torque + ((X.rot*com)^force));
   _f.resize(6);
   _f(0)=to.x;  _f(1)=to.y;  _f(2)=to.z;
   _f(3)=fo.x;  _f(4)=fo.y;  _f(5)=fo.z;

@@ -1038,6 +1038,7 @@ Quaternion operator*(const Quaternion& b, const Quaternion& c) {
 
 /// A=B*C^{-1}
 Quaternion operator/(const Quaternion& b, const Quaternion& c) {
+  // same as b * (-c), where c is just inverted (c.w \gets - c.w)
   Quaternion a;
   a.w =-b.w*c.w - b.x*c.x - b.y*c.y - b.z*c.z;
   a.x = b.w*c.x - b.x*c.w + b.y*c.z - b.z*c.y;
@@ -1095,7 +1096,7 @@ Vector operator*(const Quaternion& b, const Vector& c) {
 }
 
 /// inverse transform of a vector by a rotation
-Vector operator/(const Quaternion& b, const Vector& c) {
+Vector operator/(const Vector& c, const Quaternion& b) {
   Matrix M = b.getMatrix();
   Vector a;
   a.x = M.m00*c.x + M.m10*c.y + M.m20*c.z;
@@ -1117,9 +1118,10 @@ Transformation operator*(const Transformation& X, const Transformation& c) {
   return f;
 }
 
-Transformation operator/(const Transformation& X, const Transformation& c) {
+Transformation operator/(const Transformation& to, const Transformation& from) {
+  // same as (-from) * to
   Transformation f;
-  f.setDifference(c, X);
+  f.setDifference(from, to);
   return f;
 }
 
@@ -1132,10 +1134,10 @@ Vector operator*(const Transformation& X, const Vector& c) {
 }
 
 /// inverse transform of a vector by a frame
-Vector operator/(const Transformation& X, const Vector& c) {
+Vector operator/(const Vector& c, const Transformation& X) {
   Vector a(c);
   a -= X.pos;
-  a = X.rot / a;
+  a = a / X.rot;
   return a;
 }
 
@@ -1309,10 +1311,11 @@ void Transformation::addRelativeRotationQuat(double w, double x, double y, doubl
   rot = rot*R;
 }
 
-/** @brief transform the turtle into the frame f,
+/** @brief transform the turtle by f,
     which is interpreted RELATIVE to the current frame
     (new = old * f) */
 void Transformation::appendTransformation(const Transformation& f) {
+  //below is same as ``pos += rot*f.pos;  rot = rot*f.rot;''
   if(!f.pos.isZero) {
     if(rot.isZero) pos += f.pos;
     else mult(pos, rot, f.pos, true);
@@ -1350,9 +1353,15 @@ void Transformation::setAffineMatrix(const double* m) {
 
 ///  to = new * from
 void Transformation::setDifference(const Transformation& from, const Transformation& to) {
-  rot = Quaternion_Id / from.rot * to.rot;
-  pos = from.rot/(to.pos-from.pos);
+  // same as (-from) * to
+  rot = (-from.rot) * to.rot;
+  pos = (-from.rot) * (to.pos-from.pos);
   rot.normalize();
+}
+
+void Transformation::setInterpolate(double t, const Transformation& a, const Transformation b){
+  pos = (1.-t)*a.pos + t*b.pos;
+  rot.setInterpolate(t, a.rot, b.rot);
 }
 
 /// get the current position/orientation/scale in an OpenGL format matrix (of type double[16])
@@ -1374,7 +1383,7 @@ arr Transformation::getAffineMatrix() const {
 /// get inverse OpenGL matrix for this frame (of type double[16])
 double* Transformation::getInverseAffineMatrix(double* m) const {
   Matrix M = rot.getMatrix();
-  Vector pinv; pinv=rot/pos;
+  Vector pinv; pinv=pos/rot;
   m[0] =M.m00; m[1] =M.m10; m[2] =M.m20; m[3] =-pinv.x;
   m[4] =M.m01; m[5] =M.m11; m[6] =M.m21; m[7] =-pinv.y;
   m[8] =M.m02; m[9] =M.m12; m[10]=M.m22; m[11]=-pinv.z;
@@ -1401,7 +1410,7 @@ double* Transformation::getAffineMatrixGL(double* m) const {
 /// get inverse OpenGL matrix for this frame (of type double[16]) */
 double* Transformation::getInverseAffineMatrixGL(double* m) const {
   Matrix M = rot.getMatrix();
-  Vector pinv; pinv=rot/pos;
+  Vector pinv; pinv=pos/rot;
   m[0]=M.m00; m[4]=M.m10; m[8] =M.m20; m[12]=-pinv.x;
   m[1]=M.m01; m[5]=M.m11; m[9] =M.m21; m[13]=-pinv.y;
   m[2]=M.m02; m[6]=M.m12; m[10]=M.m22; m[14]=-pinv.z;
@@ -1675,14 +1684,14 @@ void DynamicTransformation::setAffineMatrix(const double* m) {
 void DynamicTransformation::setDifference(const DynamicTransformation& from, const DynamicTransformation& to) {
   if(from.zeroVels && to.zeroVels) {
     rot = Quaternion_Id / from.rot * to.rot;
-    pos = from.rot/(to.pos-from.pos);
+    pos = (-from.rot) * (to.pos-from.pos);
     zeroVels = true;
   } else {
     rot = Quaternion_Id / from.rot * to.rot;
-    angvel = from.rot/(to.angvel-from.angvel);
-    vel = from.rot/(to.vel-from.vel);
-    vel-= from.rot/(from.angvel^(to.pos-from.pos));
-    pos = from.rot/(to.pos-from.pos);
+    angvel = (-from.rot) * (to.angvel-from.angvel);
+    vel = (-from.rot) * (to.vel-from.vel);
+    vel-= (-from.rot) * (from.angvel^(to.pos-from.pos));
+    pos = (-from.rot) * (to.pos-from.pos);
     zeroVels = false;
   }
 }

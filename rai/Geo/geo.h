@@ -191,6 +191,7 @@ struct Transformation {
   Transformation& setRandom();
   void setInverse(const Transformation& f);
   void setDifference(const Transformation& from, const Transformation& to);
+  void setInterpolate(double t, const Transformation& a, const Transformation b);
   void setAffineMatrix(const double* m);
 
   bool isZero() const;
@@ -364,15 +365,15 @@ Quaternion operator-(const Quaternion&, const Quaternion&);
 // TRANSFORMATION
 Transformation operator-(const Transformation&);
 Transformation operator*(const Transformation& b, const Transformation& c);
-Transformation operator/(const Transformation& b, const Transformation& c);
+Transformation operator/(const Transformation& to, const Transformation& from);
 bool           operator==(const Transformation&, const Transformation&);
 bool           operator!=(const Transformation&, const Transformation&);
 
 // MIXED
 Vector operator*(const Quaternion& b, const Vector& c);
-Vector operator/(const Quaternion& b, const Vector& c);
+Vector operator/(const Vector& c, const Quaternion& b);
 Vector operator*(const Transformation& b, const Vector& c);
-Vector operator/(const Transformation& b, const Vector& c);
+Vector operator/(const Vector& c, const Transformation& b);
 
 std::istream& operator>>(std::istream&, Vector&);
 std::istream& operator>>(std::istream&, Matrix&);

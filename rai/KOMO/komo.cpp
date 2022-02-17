@@ -627,7 +627,8 @@ void getDofsAndSignFromFramePairs(DofL& dofs, arr& signs, const FrameL& F){
   }
 }
 
-void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase) {
+uintA KOMO::initWithWaypoints_pieceWiseConstant(const arrA& waypoints, uint waypointStepsPerPhase) {
+
   //compute in which steps (configuration time slices) the waypoints are imposed
   uintA steps(waypoints.N);
   for(uint i=0; i<steps.N; i++) {
@@ -656,6 +657,13 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase) 
       if(steps(i)<T) setConfiguration_qAll(steps(i), waypoints(i));
     }
   }
+
+  return steps;
+}
+
+void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase) {
+
+  uintA steps = initWithWaypoints_pieceWiseConstant(waypoints, waypointStepsPerPhase);
 
 //  view(true, STRING("after keyframes->constant"));
 
@@ -688,6 +696,7 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase) 
       arr q0 = signs%pathConfig.getDofState(dofs);
       getDofsAndSignFromFramePairs(dofs, signs, pathConfig.getFrames(F.frames + timeSlices(k_order+t1,0)->ID));
       arr q1 = signs%pathConfig.getDofState(dofs);
+      //TODO: check if all dofs are rotational joints!
       makeMod2Pi(q0, q1);
       pathConfig.setDofState(signs%q1, dofs);
 //      arr q0 = qfeat.eval(pathConfig.getFrames(F.frames + timeSlices(k_order+t0,0)->ID));  q0.J_reset();
@@ -726,6 +735,55 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase) 
 //  view(true, STRING("after interpolation"));
 
   run_prepare(0.);
+}
+
+void KOMO::straightenCtrlFrames_mod2Pi(){
+  auto F = getCtrlFramesAndScale(world);
+  arr signs;
+  DofL dofs;
+  for(uint t=0;t<T-1;t++) {
+    getDofsAndSignFromFramePairs(dofs, signs, pathConfig.getFrames(F.frames + timeSlices(k_order+t,0)->ID));
+    arr q0 = signs%pathConfig.getDofState(dofs);
+    getDofsAndSignFromFramePairs(dofs, signs, pathConfig.getFrames(F.frames + timeSlices(k_order+t+1,0)->ID));
+    arr q1 = signs%pathConfig.getDofState(dofs);
+    //TODO: check if all dofs are rotational joints!
+    makeMod2Pi(q0, q1);
+    pathConfig.setDofState(signs%q1, dofs);
+  }
+}
+
+
+void KOMO::addWaypointsInterpolationObjectives(const arrA& waypoints, uint waypointStepsPerPhase) {
+
+  uintA steps = initWithWaypoints_pieceWiseConstant(waypoints, waypointStepsPerPhase);
+
+  for(uint k=0; k<steps.N; k++) {
+    uint t0=0; if(k) t0 = steps(k-1);
+    uint t1=steps(k);
+
+    for(uint i=0;i<timeSlices.d1;i++){
+      rai::Transformation A = timeSlices(k_order+t0, i)->ensure_X();
+      rai::Transformation B = timeSlices(k_order+t1, i)->ensure_X();
+      rai::Transformation X;
+      if(A==B){
+      }else{
+        for(uint t=t0; t<=t1; t++) {
+          double phase = double(t-t0)/double(t1-t0);
+          X.setInterpolate(phase, A, B);
+          {
+            std::shared_ptr<Feature> feat = make_shared<F_Position>();
+            feat->setFrameIDs({i}) .setTarget(X.pos.getArr());
+            ptr<struct Objective>  tmp = addObjective({0.}, feat, {}, OT_sos, NoArr, NoArr, -1, t, t);
+          }
+          {
+            std::shared_ptr<Feature> feat = make_shared<F_Quaternion>();
+            feat->setFrameIDs({i}) .setTarget(X.rot.getArr4d());
+            ptr<struct Objective>  tmp = addObjective({0.}, feat, {}, OT_sos, NoArr, NoArr, -1, t, t);
+          }
+        }
+      }
+    }
+  }
 }
 
 void KOMO::updateRootObjects(const Configuration& C){

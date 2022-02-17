@@ -926,7 +926,7 @@ arr rai::Joint::calcDofsFromConfig() const {
       Q.rot.getRad(q(0), rotv);
       if(q(0)>RAI_PI) q(0)-=RAI_2PI;
       if(rotv*Vector_z<0.) q(0)=-q(0);
-      rai::Vector relpos = Q.rot/Q.pos;
+      rai::Vector relpos = Q.pos/Q.rot;
       q(1)=relpos.x;
       q(2)=relpos.y;
     } break;
