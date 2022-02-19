@@ -6,7 +6,7 @@ void TEST(ANN) {
 
   ANN ann;
   doubleA x(dim),X(N,dim),Y;
-  intA idx;
+  uintA idx;
   arr dists;
 
   rndUniform(X,0.,1.,false);

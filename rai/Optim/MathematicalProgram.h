@@ -149,15 +149,13 @@ struct Conv_MathematicalProgram_TrivialFactoreded : MathematicalProgram_Factored
 
   Conv_MathematicalProgram_TrivialFactoreded(const shared_ptr<MathematicalProgram>& P) : P(P) {
     copySignature(*P);
-  }
-
-  virtual arr  getInitializationSample(const arr& previousOptima= {}) { return P->getInitializationSample(previousOptima); }
-
-  virtual void getFactorization(uintA& variableDimensions, uintA& featureDimensions, uintAA& featureVariables) {
     variableDimensions = { dimension };
     featureDimensions = { featureTypes.N };
     featureVariables = { uintA({0}) };
   }
+
+  virtual arr  getInitializationSample(const arr& previousOptima= {}) { return P->getInitializationSample(previousOptima); }
+
   virtual void setSingleVariable(uint var_id, const arr& x) { x_buffer = x; }
   virtual void evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H) {  P->evaluate(phi, J, x_buffer);   if(!!H) NIY;  }
 };

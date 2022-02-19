@@ -26,15 +26,16 @@ namespace rai {
 template<class T>
 bool getParameterBase(T& x, const char* key, bool hasDefault, const T* Default) {
   if(getParameters()->get<T>(x, key)) {
-    LOG(3) <<std::setw(20) <<key <<" = " <<std::setw(5) <<x <<" [" <<typeid(x).name() <<"] (graph)";
+    LOG(3) <<std::setw(20) <<key <<": " <<std::setw(5) <<x <<" # user [" <<typeid(x).name() <<"]";
     return true;
   }
 
   if(hasDefault) {
     if(Default) {
       x=*Default;
-      LOG(3) <<std::setw(20) <<key <<" = " <<std::setw(5) <<x <<" [" <<typeid(x).name() <<"] (default)";
-//      getParameters()->newNode<T>(key, {}, x); //add the parameter to the parameterGraph
+      LOG(3) <<std::setw(20) <<key <<": " <<std::setw(5) <<x <<" # default [" <<typeid(x).name() <<"]";
+      //-- add used parameter back to graph??
+      //getParameters()->newNode<T>(key, {}, x); //add the parameter to the parameterGraph
     }
     return false;
   }

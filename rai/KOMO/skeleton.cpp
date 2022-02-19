@@ -392,7 +392,7 @@ SkeletonTranscription Skeleton::mp_path(const arrA& waypoints){
     #endif
 
     komo->initWithWaypoints(waypoints, 1);
-//    komo->opt.animateOptimization = 3;
+//    komo->opt.animateOptimization = 2;
   }else{
     komo->run_prepare(.01);
   }

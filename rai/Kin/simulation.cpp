@@ -176,7 +176,7 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
     self->physx->pullDynamicStates(C.frames, self->frameVelocities);
   } else if(engine==_bullet) {
     self->bullet->pushKinematicStates(C);
-    self->bullet->setMotorQ(C);
+    if(self->bullet->opt().multiBody) self->bullet->setMotorQ(C);
     self->bullet->step(tau);
     self->bullet->pullDynamicStates(C); //, self->frameVelocities);
 #ifdef BACK_BRIDGE
@@ -477,7 +477,7 @@ struct Simulation_DisplayThread : Thread, GLDrawer {
     gl.camera.setDefault();
     gl.addClickCall(new MoveBallHereCallback());///added
 
-    if(Ccopy["camera_gl"]) gl.camera.X = Ccopy["camera_gl"]->ensure_X();
+    if(Ccopy.getFrame("camera_gl",false)) gl.camera.X = Ccopy["camera_gl"]->ensure_X();
 
     threadLoop();
     while(step_count<2) rai::wait(.05);

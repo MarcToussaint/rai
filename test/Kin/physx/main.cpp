@@ -34,7 +34,7 @@ int main(int argc,char** argv){
   for(uint t=0; t<300; t++) {
     rai::wait(.01);
     sim.step(.01);
-    sim.pullDynamicStates(C.frames);
+    sim.pullDynamicStates(C);
     C.watch(false, STRING("t="<<t));
   }
 

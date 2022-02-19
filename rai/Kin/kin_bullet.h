@@ -44,6 +44,8 @@ struct BulletInterface {
 
   void saveBulletFile(const char* filename);
   class btDiscreteDynamicsWorld* getDynamicsWorld();
+
+  rai::Bullet_Options& opt();
 };
 
 

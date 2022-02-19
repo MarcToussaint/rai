@@ -21,12 +21,7 @@
 
 namespace rai {
   struct FclInterface;
-}
-
-//===========================================================================
-
-namespace rai {
-enum KOMOsolver { KS_none=-1, KS_dense=0, KS_sparse, KS_banded, KS_sparseFactored, KS_NLopt, KS_Ipopt, KS_Ceres };
+  enum KOMOsolver { KS_none=-1, KS_dense=0, KS_sparse, KS_banded, KS_sparseFactored, KS_NLopt, KS_Ipopt, KS_Ceres };
 }
 
 //===========================================================================
@@ -155,9 +150,9 @@ public:
   void setConfiguration_qOrg(int t, const arr& q); ///< set only those DOFs that were defined in the original world (excluding extra DOFs from switches)
   void setConfiguration_X(int t, const arr& X); ///< t<0 allows to set the prefix configurations; while 0 <= t < T allows to set all other initial configurations
   void initWithConstant(const arr& q); ///< set all configurations EXCEPT the prefix to a particular state
-  void initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase=1); ///< set all configurations (EXCEPT prefix) to interpolate given waypoints
+  void initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase=1, int verbose=-1); ///< set all configurations (EXCEPT prefix) to interpolate given waypoints
   void addWaypointsInterpolationObjectives(const arrA& waypoints, uint waypointStepsPerPhase);
-  uintA initWithWaypoints_pieceWiseConstant(const arrA& waypoints, uint waypointStepsPerPhase);
+  uintA initWithWaypoints_pieceWiseConstant(const arrA& waypoints, uint waypointStepsPerPhase, int verbose=-1);
   void straightenCtrlFrames_mod2Pi();
   void updateRootObjects(const rai::Configuration& C);
   void updateAndShiftPrefix(const rai::Configuration& C);

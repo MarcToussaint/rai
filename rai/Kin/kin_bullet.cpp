@@ -471,7 +471,10 @@ btRigidBody* BulletInterface_self::addLink(rai::Frame* f) {
   {
     double friction=opt.defaultFriction;
     for(auto s:shapes) if(s->frame.ats) s->frame.ats->get<double>(friction, "friction");
-    if(friction>=0.) body->setFriction(friction);
+    if(friction>=0.){
+      if(opt.verbose>1) LOG(0) <<"setting friction of '" <<f->name <<"' to " <<friction;
+      body->setFriction(friction);
+    }
   }
 //  body->setRollingFriction(.01);
 //  body->setSpinningFriction(.01);
@@ -732,6 +735,10 @@ void BulletInterface::saveBulletFile(const char* filename) {
 
 btDiscreteDynamicsWorld*BulletInterface::getDynamicsWorld(){
   return self->dynamicsWorld;
+}
+
+rai::Bullet_Options& BulletInterface::opt(){
+  return self->opt;
 }
 
 btCollisionShape* BulletInterface_self::createCollisionShape(rai::Shape* s) {
