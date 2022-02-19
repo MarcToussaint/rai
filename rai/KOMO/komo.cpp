@@ -627,7 +627,7 @@ void getDofsAndSignFromFramePairs(DofL& dofs, arr& signs, const FrameL& F){
   }
 }
 
-uintA KOMO::initWithWaypoints_pieceWiseConstant(const arrA& waypoints, uint waypointStepsPerPhase) {
+uintA KOMO::initWithWaypoints_pieceWiseConstant(const arrA& waypoints, uint waypointStepsPerPhase, int verbose) {
 
   //compute in which steps (configuration time slices) the waypoints are imposed
   uintA steps(waypoints.N);
@@ -635,7 +635,9 @@ uintA KOMO::initWithWaypoints_pieceWiseConstant(const arrA& waypoints, uint wayp
     steps(i) = conv_time2step(conv_step2time(i, waypointStepsPerPhase), stepsPerPhase);
   }
 
-//  view(true, STRING("before"));
+  if(verbose>0){
+    view(true, STRING("initWithWaypoints - before"));
+  }
 
   //first set the path piece-wise CONSTANT at waypoints and the subsequent steps (each waypoint may have different dimension!...)
   if(!opt.mimicStable){ //depends on sw->isStable -> mimic !!
@@ -661,11 +663,13 @@ uintA KOMO::initWithWaypoints_pieceWiseConstant(const arrA& waypoints, uint wayp
   return steps;
 }
 
-void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase) {
+void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, int verbose) {
 
-  uintA steps = initWithWaypoints_pieceWiseConstant(waypoints, waypointStepsPerPhase);
+  uintA steps = initWithWaypoints_pieceWiseConstant(waypoints, waypointStepsPerPhase, verbose);
 
-//  view(true, STRING("after keyframes->constant"));
+  if(verbose>0){
+    view(true, STRING("initWithWaypoints - after keyframes->constant"));
+  }
 
   //then interpolate w.r.t. non-switching frames within the intervals
 #if 1
@@ -732,7 +736,9 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase) 
   }
 #endif
 
-//  view(true, STRING("after interpolation"));
+  if(verbose>0){
+    view(true, STRING("initWithWaypoints - done"));
+  }
 
   run_prepare(0.);
 }
@@ -1634,9 +1640,9 @@ void Conv_KOMO_SparseNonfactored::evaluate(arr& phi, arr& J, const arr& x) {
       arr yJ = y.J_reset();
       phi.setVectorBlock(y, M);
 
-      if(ob->type==OT_sos) komo.sos+=sumOfSqr(y);
-      else if(ob->type==OT_ineq) komo.ineq += sumOfPos(y);
-      else if(ob->type==OT_eq) komo.eq += sumOfAbs(y);
+      if(ob->type==OT_sos) komo.sos+=sumOfSqr(y); // / max(ob->feat->scale);
+      else if(ob->type==OT_ineq) komo.ineq += sumOfPos(y) / (ob->feat->scale.N?max(ob->feat->scale):1.);
+      else if(ob->type==OT_eq) komo.eq += sumOfAbs(y) / (ob->feat->scale.N?max(ob->feat->scale):1.);
 
       if(!!J) {
         if(sparse){
