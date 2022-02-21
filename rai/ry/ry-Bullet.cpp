@@ -19,19 +19,19 @@ void init_Bullet(pybind11::module& m) {
       .def("step", &BulletInterface::step)
 
   .def("step", [](BulletInterface& self, shared_ptr<rai::Configuration>& C) {
-    self.pushKinematicStates(C->frames);
+    self.pushKinematicStates(*C);
     self.step();
-    self.pullDynamicStates(C->frames);
+    self.pullDynamicStates(*C);
   })
 
   .def("getState", [](BulletInterface& self, shared_ptr<rai::Configuration>& C) {
     arr V;
-    self.pullDynamicStates(C->frames, V);
+    self.pullDynamicStates(*C, V);
     return pybind11::array(V.dim(), V.p);
   })
 
   .def("setState", [](BulletInterface& self, shared_ptr<rai::Configuration>& C, const pybind11::array_t<double>& velocities) {
-    self.pushFullState(C->frames, numpy2arr(velocities));
+    self.pushFullState(*C, numpy2arr(velocities));
   })
   ;
 }

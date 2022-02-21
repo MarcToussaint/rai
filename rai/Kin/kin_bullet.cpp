@@ -918,6 +918,7 @@ void BulletInterface::pullDynamicStates(rai::Configuration& C, arr& vel) { NICO 
 void BulletInterface::setMotorQ(const rai::Configuration& C) { NICO }
 void BulletInterface::saveBulletFile(const char* filename) { NICO }
 void BulletInterface::changeObjectType(rai::Frame* f, int _type, const arr& withVelocity) { NICO }
+rai::Bullet_Options& BulletInterface::opt(){ NICO; }
 
 #endif
 
