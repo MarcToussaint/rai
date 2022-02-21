@@ -73,10 +73,11 @@ bool TimingMPC::update_progressTime(double gap){
   }
   //time beyond current phase
   if(phase+1<tau.N){ //if there exists another phase
-      tau(phase+1) -= gap-tau(phase); //change initialization of timeOpt
-      tau(phase) = 0.; //change initialization of timeOpt
+    tau(phase+1) -= gap-tau(phase); //change initialization of timeOpt
+    tau(phase) = 0.; //change initialization of timeOpt
   }else{
-      tau = 0.;
+    tau = 0.;
+//    tau(phase)=.1; return false;
   }
   phase++; //increase phase
   return true;

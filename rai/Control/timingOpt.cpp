@@ -1,6 +1,6 @@
 #include "timingOpt.h"
 
-TimingProblem::TimingProblem(const arr& _waypoints, const arr& _tangents, const arr& _x0, const arr& _v0, double _timeCost, const arr& v_init, const arr& tau_init, bool _optTau, double _maxVel, double _maxAcc, double _maxJer, double _ctrlCost)
+TimingProblem::TimingProblem(const arr& _waypoints, const arr& _tangents, const arr& _x0, const arr& _v0, double _timeCost, const arr& v_init, const arr& tau_init, bool _optTau, double _maxVel, double _maxAcc, double _maxJer, double _ctrlCost, bool _optLastVel)
   : waypoints(_waypoints),
     tangents(_tangents),
     x0(_x0),
@@ -8,6 +8,7 @@ TimingProblem::TimingProblem(const arr& _waypoints, const arr& _tangents, const 
     timeCost(_timeCost),
     ctrlCost(_ctrlCost),
     optTau(_optTau),
+    optLastVel(_optLastVel),
     maxVel(_maxVel),
     maxAcc(_maxAcc),
     maxJer(_maxJer),
@@ -18,15 +19,18 @@ TimingProblem::TimingProblem(const arr& _waypoints, const arr& _tangents, const 
   uint K = waypoints.d0;
   uint d = waypoints.d1;
 
+  uint vN=K;
+  if(!optLastVel) vN -=1;
+
   if(tangents.N){
     CHECK_EQ(tangents.nd, 2, "");
-    CHECK_EQ(tangents.d0, K-1, "");
+    CHECK_EQ(tangents.d0, vN, "");
     CHECK_EQ(tangents.d1, d, "");
   }
 
   if(!v.N){
-    if(tangents.N) v.resize(K-1).setZero();
-    else v.resize(K-1, d).setZero();
+    if(tangents.N) v.resize(vN).setZero();
+    else v.resize(vN, d).setZero();
   }
 
   if(!tau.N) tau.resize(K) = 1.;
@@ -77,8 +81,8 @@ void TimingProblem::evaluate(arr& phi, arr& J, const arr& x){
     vIdx=K;
   }
   if(K>1){
-    if(tangents.N) v = x.sub(vIdx, -1).reshape(K-1);
-    else v = x.sub(vIdx, -1).reshape(K-1, d);
+    if(tangents.N) v = x.sub(vIdx, -1).reshape(v.N);
+    else v = x.sub(vIdx, -1).reshape(v.d0, v.d1);
   }else{
     if(tangents.N) v.resize(0, 1);
     else v.resize(0,d);
@@ -123,7 +127,7 @@ void TimingProblem::evaluate(arr& phi, arr& J, const arr& x){
     }
     arr _x1 = waypoints[k];
     arr _v1 = zeros(d);
-    if(k<K-1){
+    if(k<K-1 || optLastVel){
       if(tangents.N){
         _v1 = v(k) * tangents[k];
         rai::SparseMatrix& J = _v1.J().sparse().resize(d, dimension, d);
@@ -178,6 +182,6 @@ arr TimingProblem::getInitializationSample(const arr& previousOptima){
 void TimingProblem::getVels(arr& vel){
   if(tangents.N) vel = v%tangents;
   else vel = v;
-  vel.append(zeros(waypoints.d1));
+  if(!optLastVel) vel.append(zeros(waypoints.d1));
   vel.reshape(waypoints.d0, waypoints.d1);
 }

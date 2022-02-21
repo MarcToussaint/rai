@@ -49,7 +49,7 @@ void SplineCtrlReference::overrideHard(const arr& x, const arr& t, double ctrlTi
   waitForInitialized();
 
   CHECK_LE(t.first(), .0, "");
-  CHECK_GE(t.first(), -.2, "you first time knot is more than 200msec ago!");
+  CHECK_GE(t.first(), -.5, "you first time knot is more than 500msec ago!");
 
   auto splineSet = spline.set();
 

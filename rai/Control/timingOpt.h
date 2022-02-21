@@ -13,6 +13,7 @@ struct TimingProblem : MathematicalProgram {
   double timeCost;  //time-opt weight
   double ctrlCost;
   bool optTau=true; //option: if false, only velocities are fitted to the given points and timing
+  bool optLastVel=false;
 
   const double maxVel;
   const double maxAcc;
@@ -25,7 +26,7 @@ struct TimingProblem : MathematicalProgram {
   TimingProblem(const arr& _waypoints, const arr& _tangents, const arr& _x0, const arr& _v0, double _timeCost,
                 const arr& v_init={}, const arr& tau_init={},
                 bool _optTau=true,
-                double _maxVel=-1., double _maxAcc=-1., double _maxJer=-1., double _ctrlCost=1e0);
+                double _maxVel=-1., double _maxAcc=-1., double _maxJer=-1., double _ctrlCost=1e0, bool _optLastVel=false);
   ~TimingProblem(){}
 
   virtual void evaluate(arr& phi, arr& J, const arr& x);
