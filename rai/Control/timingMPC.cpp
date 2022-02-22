@@ -72,12 +72,15 @@ bool TimingMPC::update_progressTime(double gap){
     return false;
   }
   //time beyond current phase
-  if(phase+1<tau.N){ //if there exists another phase
+  if(phase+1<nPhases()){ //if there exists another phase
     tau(phase+1) -= gap-tau(phase); //change initialization of timeOpt
     tau(phase) = 0.; //change initialization of timeOpt
   }else{
+    if(phase+1==nPhases() && neverDone){ //stay in last phase and reinit tau=.1
+      tau(phase)=.1;
+      return false;
+    }
     tau = 0.;
-//    tau(phase)=.1; return false;
   }
   phase++; //increase phase
   return true;
@@ -90,6 +93,7 @@ void TimingMPC::update_waypoints(const arr& _waypoints, bool setNextWaypointTang
     waypoints = _waypoints;
   }
   if(setNextWaypointTangent){
+    LOG(-1) <<"questionable";
     tangents.resize(waypoints.d0-1, waypoints.d1);
     for(uint k=1; k<waypoints.d0; k++){
       tangents[k-1] = waypoints[k] - waypoints[k-1];
