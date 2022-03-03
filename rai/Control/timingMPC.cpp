@@ -87,11 +87,15 @@ bool TimingMPC::update_progressTime(double gap){
 }
 
 void TimingMPC::update_waypoints(const arr& _waypoints, bool setNextWaypointTangent){
-  CHECK_EQ(waypoints.d0, _waypoints.d0, "");
-  CHECK_EQ(waypoints.d1, _waypoints.d1, "");
-  if(&waypoints!=&_waypoints){
+  if(_waypoints.N!=waypoints.N){ //full reset
+    waypoints = _waypoints;
+    tau = 10.*ones(waypoints.d0);
+    vels.clear();
+    tangents.clear();
+  }else  if(&waypoints!=&_waypoints){
     waypoints = _waypoints;
   }
+
   if(setNextWaypointTangent){
     LOG(-1) <<"questionable";
     tangents.resize(waypoints.d0-1, waypoints.d1);

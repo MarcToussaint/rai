@@ -1640,9 +1640,12 @@ void Conv_KOMO_SparseNonfactored::evaluate(arr& phi, arr& J, const arr& x) {
       arr yJ = y.J_reset();
       phi.setVectorBlock(y, M);
 
+      double scale = (ob->feat->scale.N?absMax(ob->feat->scale):1.);
+      CHECK_GE(scale, 1e-4, "");
+
       if(ob->type==OT_sos) komo.sos+=sumOfSqr(y); // / max(ob->feat->scale);
-      else if(ob->type==OT_ineq) komo.ineq += sumOfPos(y) / (ob->feat->scale.N?max(ob->feat->scale):1.);
-      else if(ob->type==OT_eq) komo.eq += sumOfAbs(y) / (ob->feat->scale.N?max(ob->feat->scale):1.);
+      else if(ob->type==OT_ineq) komo.ineq += sumOfPos(y) / scale;
+      else if(ob->type==OT_eq) komo.eq += sumOfAbs(y) / scale;
 
       if(!!J) {
         if(sparse){
