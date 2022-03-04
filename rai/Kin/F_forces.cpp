@@ -864,6 +864,11 @@ arr F_PushSide::phi(const FrameL& F){
   arr b = F_Position() .eval({F.elem(1)});
   arr c = F_Position() .eval({F.elem(2)});
 
-  arr y = ~(a-b) * (c-b);
+  arr ab = (a-b);
+  arr cb = (c-b);
+  op_normalize(ab, 1e-4);
+  op_normalize(cb, 1e-4);
+
+  arr y = ~ab * cb;
   return y;
 }
