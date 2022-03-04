@@ -648,7 +648,7 @@ void OpenGL::drawId(uint id) {
     glColorId(id);
     drawOptions.drawColors=false;
   } else {
-    drawOptions.drawColors=true;
+//    drawOptions.drawColors=true;
   }
 }
 
@@ -718,6 +718,7 @@ void glDrawText(const char* txt, float x, float y, float z, bool largeFont) {
     switch(*txt) {
       case '\n':
         y+=15;
+        if(largeFont) y+=4;
         glRasterPos3f(x, y, z);
         break;
       case '\b':

@@ -1390,7 +1390,7 @@ void rai::Shape::glDraw(OpenGL& gl) {
         if(size.N) s = size.last();
         if(s>0.){
           glDrawDiamond(s/5., s/5., s/5.);
-          glDrawAxes(s, !gl.drawOptions.drawMode_idColor);
+          glDrawAxes(s, gl.drawOptions.drawColors);
         }else if(s<0.){
           glDrawAxis(-s);
         }

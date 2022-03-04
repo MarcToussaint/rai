@@ -1524,19 +1524,19 @@ void rai::Mesh::glDraw(struct OpenGL& gl) {
     //  glShadeModel(GL_FLAT);
     glShadeModel(GL_SMOOTH);
     glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_NORMAL_ARRAY);
     if(glDrawOptions(gl).drawColors) {
       if(tex.N) CHECK_EQ(tex.d0, V.d0, "this needs tex coords for each vertex; if you have it face wise, render the slow way..");
       if(tex.N) glEnable(GL_TEXTURE_2D);
 
-      glEnableClientState(GL_NORMAL_ARRAY);
       if(C.N==V.N) glEnableClientState(GL_COLOR_ARRAY); else glDisableClientState(GL_COLOR_ARRAY);
       if(C.N==V.N) glDisable(GL_LIGHTING); //because lighting requires ambiance colors to be set..., not just color..
       if(tex.N) glEnableClientState(GL_TEXTURE_COORD_ARRAY); else glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     }
 
     glVertexPointer(3, GL_DOUBLE, 0, V.p);
+    glNormalPointer(GL_DOUBLE, 0, Vn.p);
     if(glDrawOptions(gl).drawColors) {
-      glNormalPointer(GL_DOUBLE, 0, Vn.p);
       if(C.N==V.N) glColorPointer(3, GL_DOUBLE, 0, C.p);
       if(tex.N) glTexCoordPointer(2, GL_DOUBLE, 0, tex.p);
     }

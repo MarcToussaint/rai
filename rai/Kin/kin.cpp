@@ -2842,7 +2842,7 @@ void Configuration::glDraw_sub(OpenGL& gl, const FrameL& F, int drawOpaqueOrTran
 
   glPushMatrix();
 
-  glColor(.5, .5, .5);
+//  glColor(.5, .5, .5);
 
   if(drawOpaqueOrTransparanet!=2) {
     if(gl.drawOptions.drawVisualsOnly) {
