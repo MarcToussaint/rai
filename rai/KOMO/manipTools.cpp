@@ -85,7 +85,7 @@ void addBoxPlaceObjectives(KOMO& komo, double time,
     if(!pre){
       komo.addObjective({time}, FS_positionDiff, {boxName, tableName}, OT_eq, 1e1*arr({1,3},{0,0,1}), {.0, .0, relPos});
     }else{
-      komo.addObjective({time}, FS_positionDiff, {boxName, tableName}, OT_eq, 1e1*arr({1,3},{0,0,1}), {.0, .0, relPos+.03});
+      komo.addObjective({time}, FS_positionDiff, {boxName, tableName}, OT_eq, 1e1*arr({1,3},{0,0,1}), {.0, .0, relPos+.04});
     }
 
     //xy-position: above table
