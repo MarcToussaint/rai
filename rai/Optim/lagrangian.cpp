@@ -354,7 +354,7 @@ void LagrangianProblem::autoUpdate(const rai::OptOptions& opt, double* L_x, arr&
     case rai::squaredPenalty: aulaUpdate(opt, false, -1., L_x, dL_x, HL_x);  break;
     case rai::augmentedLag:   aulaUpdate(opt, false, 1., L_x, dL_x, HL_x);  break;
     case rai::anyTimeAula:    aulaUpdate(opt, true,  1., L_x, dL_x, HL_x);  break;
-    case rai::logBarrier:     muLB *= opt.muLBDec;  break;
+    case rai::logBarrier:     aulaUpdate(opt, false, -1., L_x, dL_x, HL_x);  break;
     case rai::squaredPenaltyFixed: HALT("you should not be here"); break;
     case rai::noMethod: HALT("need to set method before");  break;
   }

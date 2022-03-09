@@ -14,6 +14,7 @@ struct TimingProblem : MathematicalProgram {
   double ctrlCost;
   bool optTau=true; //option: if false, only velocities are fitted to the given points and timing
   bool optLastVel=false;
+  bool tauBarrier=false;
 
   const double maxVel;
   const double maxAcc;
@@ -34,4 +35,5 @@ struct TimingProblem : MathematicalProgram {
   virtual arr  getInitializationSample(const arr& previousOptima= {});
 
   void getVels(arr& vel);
+  void getTaus(arr& tau);
 };

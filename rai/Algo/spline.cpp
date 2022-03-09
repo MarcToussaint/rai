@@ -458,11 +458,40 @@ arr CubicSplineMaxAcc(const arr& x0, const arr& v0, const arr& x1, const arr& v1
 
   uint n=x0.N;
   arr y(4*n);
-  if(b.jac) y.J().sparse().resize(4*n, b.jac->d1, 0);
+  if(b.jac) y.J().sparse().resize(y.N, b.jac->d1, 0);
   y.setVectorBlock(b, 0*n);
   y.setVectorBlock(-b, 1*n);
   y.setVectorBlock(b + a, 2*n);
   y.setVectorBlock(-b - a, 3*n);
+  return y;
+}
+
+arr CubicSplineMaxVel(const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ){
+  double tau2 = tau*tau, tau3 = tau*tau2;
+  //  arr d = x0;
+  //  arr c = v0;
+  arr b = 2./tau2 * (  3.*(x1-x0) - tau*(v1+2.*v0) );
+  if(tauJ.N){
+    b.J() += -12./tau3 * (x1-x0) * tauJ;
+    b.J() -= -2./tau2 * (v1+2.*v0) * tauJ;
+  }
+  arr a = 6./tau2 * ( -2.*(x1-x0) + tau*(v1+v0) );
+  if(tauJ.N){
+    a.J() -= -24./tau3 * (x1-x0) * tauJ;
+    a.J() += -6./tau2 * (v1+v0) * tauJ;
+  }
+
+//  arr t = -b/a;
+//  arr vt = b % t + v0;
+
+  uint n=x0.N;
+  arr y(4*n);
+  y.setZero();
+  if(v0.jac) y.J().sparse().resize(y.N, v0.jac->d1, 0);
+  y.setVectorBlock(v0, 0*n);
+  y.setVectorBlock(-v0, 1*n);
+//  y.setVectorBlock(vt, 2*n);
+//  y.setVectorBlock(-vt, 3*n);
   return y;
 }
 

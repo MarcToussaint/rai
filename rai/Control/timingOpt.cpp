@@ -24,7 +24,7 @@ TimingProblem::TimingProblem(const arr& _waypoints, const arr& _tangents,
   uint K = waypoints.d0;
   uint d = waypoints.d1;
 
-  uint vN=K;
+  uint vN=K; //number of vels to be optimized
   if(!optLastVel) vN -=1;
 
   if(tangents.N){
@@ -46,7 +46,7 @@ TimingProblem::TimingProblem(const arr& _waypoints, const arr& _tangents,
   if(optTau){
     dimension += tau.N;
     bounds_lo.resize(dimension) = 0.;
-    bounds_up.resize(dimension) = -1.;
+    bounds_up.resize(dimension) = -1.; //means deactivated
     for(uint k=0;k<tau.N;k++){
       bounds_lo(k) = 1e-3;
       bounds_up(k) = 1e1;
@@ -56,7 +56,9 @@ TimingProblem::TimingProblem(const arr& _waypoints, const arr& _tangents,
   //-- init feature types
   uint m=1; //timeCost
   if(ctrlCost>0.) m += K*2*d; //control costs
+  if(maxVel>0.) m += K*4*d;
   if(maxAcc>0.) m += K*4*d;
+  if(tauBarrier) m += tau.N;
   featureTypes.resize(m);
 
   m=0;
@@ -67,11 +69,20 @@ TimingProblem::TimingProblem(const arr& _waypoints, const arr& _tangents,
       featureTypes({m,m+2*d-1}) = OT_sos; //control costs
       m += 2*d;
     }
+    if(maxVel>0.){
+      featureTypes({m,m+4*d-1}) = OT_ineq; //maxVel
+      m += 4*d;
+    }
     if(maxAcc>0.){
       featureTypes({m,m+4*d-1}) = OT_ineq; //maxAcc
       m += 4*d;
     }
+    if(tauBarrier){
+      featureTypes(m) = OT_ineqB; //tau barrier
+      m += 1;
+    }
   }
+  CHECK_EQ(m, featureTypes.N, "");
 }
 
 void TimingProblem::evaluate(arr& phi, arr& J, const arr& x){
@@ -82,10 +93,10 @@ void TimingProblem::evaluate(arr& phi, arr& J, const arr& x){
   uint d = waypoints.d1;
   uint vIdx=0;
   if(optTau){
-    tau = x.sub(0, K-1).reshape(K);
+    tau = x.sub(0, K-1).reshape(tau.N);
     vIdx=K;
   }
-  if(K>1){
+  if(v.N){
     if(tangents.N) v = x.sub(vIdx, -1).reshape(v.N);
     else v = x.sub(vIdx, -1).reshape(v.d0, v.d1);
   }else{
@@ -115,7 +126,7 @@ void TimingProblem::evaluate(arr& phi, arr& J, const arr& x){
 
   // loop through segments for other objectives
   for(uint k=0;k<K;k++){
-    //get x0,v0,x1,v1 with jacobians
+    //get x0,v0,x1,v1 with (trivial) jacobians
     arr _x0 = x0;
     arr _v0 = v0;
     if(k){
@@ -150,7 +161,7 @@ void TimingProblem::evaluate(arr& phi, arr& J, const arr& x){
       tauJ.sparse().resize(1, dimension, 1).entry(0, k, 0) = 1;
     }
 
-    //- 2) control costs (sum of sqr-acc
+    //- 2) control costs (sum of sqr-acc)
     if(ctrlCost>0.){
       arr y = rai::CubicSplineLeapCost(_x0, _v0, _x1, _v1, tau(k), tauJ);
       y *= ctrlCost;
@@ -159,7 +170,17 @@ void TimingProblem::evaluate(arr& phi, arr& J, const arr& x){
       m += y.N;
     }
 
-    // 3) acc limits
+    // 4) vel limits
+    if(maxVel>0.){
+      arr y = rai::CubicSplineMaxVel(_x0, _v0, _x1, _v1, tau(k), tauJ);
+      y -= maxVel;
+      y *= 1e1;
+      phi.setVectorBlock(y.noJ(), m);
+      if(!!J) J.sparse().add(y.J(), m, 0);
+      m += y.N;
+    }
+
+    // 5) acc limits
     if(maxAcc>0.){
       arr y = rai::CubicSplineMaxAcc(_x0, _v0, _x1, _v1, tau(k), tauJ);
       y -= maxAcc;
@@ -168,8 +189,13 @@ void TimingProblem::evaluate(arr& phi, arr& J, const arr& x){
       if(!!J) J.sparse().add(y.J(), m, 0);
       m += y.N;
     }
-  }
 
+    if(tauBarrier){
+      phi(m) = -1.1 * tau(k); //tau barrier
+      if(!!J) J.sparse().add(-1.1 * tauJ, m, 0);
+      m += 1;
+    }
+  }
   CHECK_EQ(m, phi.N, "");
 }
 
@@ -189,4 +215,8 @@ void TimingProblem::getVels(arr& vel){
   else vel = v;
   if(!optLastVel) vel.append(zeros(waypoints.d1));
   vel.reshape(waypoints.d0, waypoints.d1);
+}
+
+void TimingProblem::getTaus(arr& taus){
+  taus = tau;
 }

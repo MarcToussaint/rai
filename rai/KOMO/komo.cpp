@@ -1640,9 +1640,9 @@ void Conv_KOMO_SparseNonfactored::evaluate(arr& phi, arr& J, const arr& x) {
       arr yJ = y.J_reset();
       phi.setVectorBlock(y, M);
 
-      double scale = (ob->feat->scale.N?absMax(ob->feat->scale):1.);
+      double scale=1.;
+      if(komo.opt.unscaleEqIneqReport && ob->feat->scale.N) scale = absMax(ob->feat->scale);
       CHECK_GE(scale, 1e-4, "");
-      scale=1.;
 
       if(ob->type==OT_sos) komo.sos+=sumOfSqr(y); // / max(ob->feat->scale);
       else if(ob->type==OT_ineq) komo.ineq += sumOfPos(y) / scale;

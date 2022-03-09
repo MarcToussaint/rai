@@ -17,6 +17,7 @@
 #include "../Gui/opengl.h"
 #include "../Algo/SplineCtrlFeed.h"
 
+#include <iomanip>
 //#define BACK_BRIDGE
 
 namespace rai {
@@ -490,6 +491,8 @@ struct Simulation_DisplayThread : Thread, GLDrawer {
 
   void step() {
     gl.update(STRING("t:" <<time), true);
+    //static int pngCount=0;
+//    write_ppm(gl.captureImage, STRING("z.vid/"<<std::setw(4)<<std::setfill('0')<<(pngCount++)<<".ppm"));
   }
 
   void glDraw(OpenGL& gl) {
