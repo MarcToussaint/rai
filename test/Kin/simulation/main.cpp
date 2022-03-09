@@ -36,7 +36,7 @@ void testPushes(){
       //some good old fashioned IK
       arr q = C.getJointState();
       arr diff = C.feature(FS_positionDiff, {"gripper", "box"})->eval(C);
-      diff *= .005/length(diff);
+      diff *= .02/length(diff);
       q -= pseudoInverse(diff.J(), NoArr, 1e-2) * diff;
 //      C.setJointState(q);
 
@@ -88,7 +88,7 @@ void testGrasp(){
 //                 .setCentering()
                  .eval(C.getFrames({"finger1", "finger2", "ring4"}));
 //                 C.feature(FS_oppose, {"finger1", "finger2", "ring4"})->eval(C);
-      diff *= rai::MIN(.005/length(diff), 1.);
+      diff *= rai::MIN(.01/length(diff), 1.);
       q -= pseudoInverse(diff.J(), NoArr, 1e-2) * diff;
     }
 
@@ -98,7 +98,7 @@ void testGrasp(){
 
     if(S.getGripperIsGrasping("gripper")){
       arr diff = C.feature(FS_position, {"gripper"})->eval(C);
-      q -= pseudoInverse(diff.J(), NoArr, 1e-2) * ARR(0.,0.,-2e-4);
+      q -= pseudoInverse(diff.J(), NoArr, 1e-2) * ARR(0.,0.,-1e-3);
     }
 
     if(t==900){

@@ -70,6 +70,7 @@ struct SimulationImp {
 
 struct Imp_CloseGripper : SimulationImp {
   Frame* gripper, *fing1, *fing2, *obj, *finger1, *finger2;
+  arr limits;
   std::unique_ptr<F_PairCollision> coll1;
   std::unique_ptr<F_PairCollision> coll2;
   double q;
@@ -83,6 +84,7 @@ struct Imp_CloseGripper : SimulationImp {
 
 struct Imp_OpenGripper : SimulationImp {
   Frame* gripper, *fing1, *fing2;
+  arr limits;
   double q;
   double speed;
 
@@ -220,15 +222,14 @@ bool getFingersForGripper(rai::Frame*& gripper, rai::Frame*& fing1, rai::Frame*&
     if(f->name.endsWith("finger1")) fing1=f;
     if(f->name.endsWith("finger2")) fing2=f;
   }
-//  fing1 = fing1->parent;
-//  fing2 = fing2->parent;
-  fing1 = fing1->getUpwardLink();
-  fing2 = fing2->getUpwardLink();
-
-  CHECK(fing1->joint, "");
-  CHECK(fing2->joint, "");
-  CHECK(!fing1->joint->active || !fing1->joint->dim, ""); //grippers need to be rigid joints! (to not be part of the dynamic/control system)
-  CHECK(!fing2->joint->active || !fing2->joint->dim, "");
+  fing1 = fing1->parent;
+  fing2 = fing2->parent;
+//  fing1 = fing1->getUpwardLink();
+//  fing2 = fing2->getUpwardLink();
+//  CHECK(fing1->joint, "");
+//  CHECK(fing2->joint, "");
+//  CHECK(!fing1->joint->active || !fing1->joint->dim, ""); //grippers need to be rigid joints! (to not be part of the dynamic/control system)
+//  CHECK(!fing2->joint->active || !fing2->joint->dim, "");
 
   //requirement: two of the children of need to be the finger geometries
 //  fing1 = gripper->children(0); while(!fing1->shape && fing1->children.N) fing1 = fing1->children(0);
@@ -385,7 +386,7 @@ bool Simulation::getGripperIsClose(const char* gripperFrameName) {
   getFingersForGripper(gripper, fing1, fing2, C, gripperFrameName);
   if(!gripper) return -1.;
   double q = fing1->get_Q().pos.x;
-  if(q<=fing1->joint->limits(0)) return true;
+  if(q<=fing1->ats->get<arr>("limits")(0)) return true;
   return false;
 }
 
@@ -394,7 +395,7 @@ bool Simulation::getGripperIsOpen(const char* gripperFrameName) {
   getFingersForGripper(gripper, fing1, fing2, C, gripperFrameName);
   if(!gripper) return false;
   double q = fing1->get_Q().pos.x;
-  if(q>=fing1->joint->limits(1)) return true;
+  if(q>=fing1->ats->get<arr>("limits")(1)) return true;
   return false;
 }
 
@@ -583,7 +584,8 @@ Imp_CloseGripper::Imp_CloseGripper(Frame* _gripper, Frame* _fing1, Frame* _fing2
     coll2->setFrameIDs({finger2->ID, obj->ID});
   }
 
-  CHECK(!fing1->joint->active || !fing1->joint->dim, "");
+//  CHECK(!fing1->joint->active || !fing1->joint->dim, "");
+  limits = fing1->ats->get<arr>("limits");
   q = fing1->get_Q().pos.x;
 }
 
@@ -601,7 +603,7 @@ void Imp_CloseGripper::modConfiguration(Simulation& S, double tau) {
   fing1->set_Q()->pos.set(q, 0., 0.);
   fing2->set_Q()->pos.set(q, 0., 0.);
 
-  if(q<fing1->joint->limits(0)) { //stop grasp by joint limits -> unsuccessful
+  if(q<limits(0)) { //stop grasp by joint limits -> unsuccessful
     if(S.verbose>1) {
       LOG(1) <<"terminating closing gripper (limit) - nothing grasped";
     }
@@ -651,7 +653,8 @@ Imp_OpenGripper::Imp_OpenGripper(Frame* _gripper, Frame* _fing1, Frame* _fing2, 
   when = _beforePhysics;
   type = Simulation::_openGripper;
 
-  CHECK(!fing1->joint->active || !fing1->joint->dim, "");
+//  CHECK(!fing1->joint->active || !fing1->joint->dim, "");
+  limits = fing1->ats->get<arr>("limits");
   q = fing1->get_Q().pos.x;
 }
 
@@ -666,7 +669,7 @@ void Imp_OpenGripper::modConfiguration(Simulation& S, double tau) {
   q += 1e-1*speed*tau;
   fing1->set_Q()->pos.set(q, 0., 0.);
   fing2->set_Q()->pos.set(q, 0., 0.);
-  if(q > fing1->joint->limits(1)) { //stop opening
+  if(q > limits(1)) { //stop opening
     if(S.verbose>1) {
       LOG(1) <<"terminating opening gripper " <<gripper->name;
     }
