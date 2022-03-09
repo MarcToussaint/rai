@@ -114,6 +114,7 @@ struct Configuration : GLDrawer {
   DofL getDofs(const FrameL& F, bool activesOnly=true) const;
   uintA getCtrlFramesAndScale(arr& scale=NoArr) const;
   FrameL getRoots() const;
+  FrameL getParts() const;
   FrameL getLinks() const;
 
   /// @name get dof or frame state

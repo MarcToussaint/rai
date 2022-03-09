@@ -22,6 +22,8 @@ namespace rai {
     RAI_PARAM("bullet/", double, defaultRestitution, .1)
     RAI_PARAM("bullet/", double, contactStiffness, 1e4)
     RAI_PARAM("bullet/", double, contactDamping, 1e-1)
+    RAI_PARAM("bullet/", double, motorKp, .1)
+    RAI_PARAM("bullet/", double, motorKd, 1.)
   };
 }//namespace
 

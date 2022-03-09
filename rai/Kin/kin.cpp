@@ -490,6 +490,13 @@ FrameL Configuration::getRoots() const {
   return roots;
 }
 
+/// get all frames without parent or with a PartBreak joint
+FrameL Configuration::getParts() const {
+  FrameL links;
+  for(Frame* a:frames) if(!a->parent || (a->joint && a->joint->isPartBreak())) links.append(a);
+  return links;
+}
+
 /// get all frames without parent or with joint
 FrameL Configuration::getLinks() const {
   FrameL links;
