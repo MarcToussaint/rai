@@ -100,6 +100,7 @@ void glDrawTexQuad(const byteA& img,
 void glRasterImage(float x, float y, byteA& img, float zoom=1.);
 
 void read_png(byteA& img, const char* file_name, bool swap_rows);
+void write_png(const byteA& img, const char* file_name, bool swap_rows);
 
 
 //===========================================================================

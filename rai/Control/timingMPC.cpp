@@ -21,10 +21,9 @@ shared_ptr<SolverReturn> TimingMPC::solve(const arr& x0, const arr& v0, int verb
   }
 
   TimingProblem mp(waypoints({phase, -1}), tangents({phase, -1}),
-                   x0, v0, timeCost,
-                   vels({phase, -1}), tau({phase, -1}),
-                   true,
-                   -1., -1., -1., ctrlCost);
+                   x0, v0, timeCost, ctrlCost,
+                   true, false,
+                   vels({phase, -1}), tau({phase, -1}));
 
   MP_Solver S;
   if(warmstart_dual.N){

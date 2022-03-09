@@ -1379,6 +1379,7 @@ template bool rai::getParameter<bool>(const char*, const bool&);
 template long rai::getParameter<long>(const char*);
 template rai::String rai::getParameter<rai::String>(const char*);
 template rai::String rai::getParameter<rai::String>(const char*, const rai::String&);
+template StringA rai::getParameter<StringA>(const char*);
 template StringA rai::getParameter<StringA>(const char*, const StringA&);
 
 template void rai::setParameter<double>(const char*, const double&);

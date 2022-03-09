@@ -23,10 +23,11 @@ struct TimingProblem : MathematicalProgram {
   arr v;   //velocities at way points
   arr tau; //timing
 
-  TimingProblem(const arr& _waypoints, const arr& _tangents, const arr& _x0, const arr& _v0, double _timeCost,
+  TimingProblem(const arr& _waypoints, const arr& _tangents, const arr& _x0, const arr& _v0,
+                double _timeCost, double _ctrlCost,
+                bool _optTau=true,  bool _optLastVel=false,
                 const arr& v_init={}, const arr& tau_init={},
-                bool _optTau=true,
-                double _maxVel=-1., double _maxAcc=-1., double _maxJer=-1., double _ctrlCost=1e0, bool _optLastVel=false);
+                double _maxVel=-1., double _maxAcc=-1., double _maxJer=-1.);
   ~TimingProblem(){}
 
   virtual void evaluate(arr& phi, arr& J, const arr& x);

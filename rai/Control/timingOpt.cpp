@@ -1,6 +1,11 @@
 #include "timingOpt.h"
 
-TimingProblem::TimingProblem(const arr& _waypoints, const arr& _tangents, const arr& _x0, const arr& _v0, double _timeCost, const arr& v_init, const arr& tau_init, bool _optTau, double _maxVel, double _maxAcc, double _maxJer, double _ctrlCost, bool _optLastVel)
+TimingProblem::TimingProblem(const arr& _waypoints, const arr& _tangents,
+                             const arr& _x0, const arr& _v0,
+                             double _timeCost, double _ctrlCost,
+                             bool _optTau, bool _optLastVel,
+                             const arr& v_init, const arr& tau_init,
+                             double _maxVel, double _maxAcc, double _maxJer)
   : waypoints(_waypoints),
     tangents(_tangents),
     x0(_x0),

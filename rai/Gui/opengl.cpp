@@ -2714,23 +2714,68 @@ void read_png(byteA& img, const char* file_name, bool swap_rows) {
 
   img.resize(height, png_get_rowbytes(png, info));
   rai::Array<byte*> cpointers = img.getCarray();
-  //    row_pointers = (png_bytep*)malloc(sizeof(png_bytep) * height);
-  //    for(int y = 0; y < height; y++) {
-  //      row_pointers[y] = (png_byte*)malloc(png_get_rowbytes(png,info));
-  //    }
+  if(swap_rows) cpointers.reverse();
 
   png_read_image(png, cpointers.p);
 
   img.resize(height, width, img.N/(height*width));
 
   fclose(fp);
-
-  if(swap_rows) flip_image(img);
 #else
   LOG(-2) <<"libpng not linked";
 #endif
 }
 
+
+
+void write_png(const byteA& img, const char* file_name, bool swap_rows) {
+#ifdef RAI_PNG
+  FILE *fp = fopen(file_name, "wb");
+  if(!fp) abort();
+
+  png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+  if (!png) abort();
+
+  png_infop info = png_create_info_struct(png);
+  if (!info) abort();
+
+  if (setjmp(png_jmpbuf(png))) abort();
+
+  png_init_io(png, fp);
+
+  // Output is 8bit depth, RGBA format.
+  png_set_IHDR(
+    png,
+    info,
+    img.d1, img.d0,
+    8,
+    img.d2==4?PNG_COLOR_TYPE_RGBA:PNG_COLOR_TYPE_RGB,
+    PNG_INTERLACE_NONE,
+    PNG_COMPRESSION_TYPE_DEFAULT,
+    PNG_FILTER_TYPE_DEFAULT
+  );
+  png_write_info(png, info);
+
+  // To remove the alpha channel for PNG_COLOR_TYPE_RGB format,
+  // Use png_set_filler().
+  //png_set_filler(png, 0, PNG_FILLER_AFTER);
+
+  byteA imgRef = img.ref();
+  imgRef.reshape(img.d0, -1);
+  rai::Array<byte*> cpointers = imgRef.getCarray();
+  if(swap_rows) cpointers.reverse();
+
+  png_write_image(png, cpointers.p);
+  png_write_end(png, NULL);
+
+  fclose(fp);
+
+  png_destroy_write_struct(&png, &info);
+#else
+  LOG(-2) <<"libpng not linked";
+#endif
+
+}
 RUN_ON_INIT_BEGIN(opengl)
 rai::Array<GLDrawer*>::memMove=1;
 RUN_ON_INIT_END(opengl)
