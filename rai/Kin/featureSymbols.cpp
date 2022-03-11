@@ -164,7 +164,7 @@ ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, const ra
   else if(feat==FS_angularVel) { f=make_shared<F_AngVel>(); }
 
   else if(feat==FS_accumulatedCollisions) {
-    f=make_shared<F_AccumulatedCollisions>();
+    f=make_shared<F_AccumulatedCollisions>(0., true, false);
     if(!frames.N) f->frameIDs = framesToIndices(C.frames);
   }
   else if(feat==FS_jointLimits) {

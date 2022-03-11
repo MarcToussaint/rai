@@ -470,9 +470,9 @@ void KOMO::setSlowAround(double time, double delta, double prec, bool hardConstr
 
 void KOMO::add_collision(bool hardConstraint, double margin, double prec) {
   if(hardConstraint) { //interpreted as hard constraint (default)
-    addObjective({}, make_shared<F_AccumulatedCollisions>(margin), {"ALL"}, OT_eq, {prec}, NoArr);
+    addObjective({}, make_shared<F_AccumulatedCollisions>(margin, true, false), {"ALL"}, OT_eq, {prec}, NoArr);
   } else { //cost term
-    addObjective({}, make_shared<F_AccumulatedCollisions>(margin), {"ALL"}, OT_sos, {prec}, NoArr);
+    addObjective({}, make_shared<F_AccumulatedCollisions>(margin, true, false), {"ALL"}, OT_sos, {prec}, NoArr);
   }
 }
 

@@ -105,10 +105,17 @@ void F_AccumulatedCollisions::phi2(arr& y, arr& J, const FrameL& F) {
   rai::Configuration& C = F.first()->C;
   C.kinematicsZero(y, J, 1);
   for(rai::Proxy& p: C.proxies) {
-//    if((p.a->ID>=F.first()->ID && p.a->ID<=F.last()->ID)
-//      || (p.b->ID>=F.first()->ID && p.b->ID<=F.last()->ID)) { //F.contains(p.a) && F.contains(p.b)) {
-    if((!xorSelect && (F.contains(p.a) || F.contains(p.b)))
-       || (xorSelect && (F.contains(p.a) ^ F.contains(p.b)))){
+    bool isSelected=false;
+    if(selectAll){
+        //select based on indices, e.g. being in a single time slice of a path config
+        isSelected = (p.a->ID>=F.first()->ID && p.a->ID<=F.last()->ID)
+                     || (p.b->ID>=F.first()->ID && p.b->ID<=F.last()->ID);
+    }else{
+        //select by explicitly looking up in F
+        isSelected = (!selectXor && (F.contains(p.a) || F.contains(p.b)))
+                     || (selectXor && (F.contains(p.a) ^ F.contains(p.b)));
+    }
+    if(isSelected){
       CHECK(p.a->shape, "");
       CHECK(p.b->shape, "");
 
