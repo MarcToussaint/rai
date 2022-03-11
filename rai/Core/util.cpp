@@ -587,6 +587,10 @@ bool getDisableGui() {
   return _disableGui==1;
 }
 
+double forsyth(double x, double a) {
+  return x*x/(a*a+x*x);
+}
+
 }//namespace rai
 
 //===========================================================================
@@ -1383,6 +1387,7 @@ template StringA rai::getParameter<StringA>(const char*);
 template StringA rai::getParameter<StringA>(const char*, const StringA&);
 
 template void rai::setParameter<double>(const char*, const double&);
+template void rai::setParameter<arr>(const char*, const arr&);
 template void rai::setParameter<rai::String>(const char*, const rai::String&);
 
 template rai::Enum<rai::ArgWord> rai::getParameter<rai::Enum<rai::ArgWord>>(const char*);

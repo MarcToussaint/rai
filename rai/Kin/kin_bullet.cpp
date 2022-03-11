@@ -168,6 +168,7 @@ BulletInterface::BulletInterface(rai::Configuration& C, const rai::Bullet_Option
     FrameL parts = C.getParts();
     for(rai::Frame *f : parts){
       self->addMultiBody(f);
+      if((*f->ats)["motors"]) motorizeMultiBody(f);
     }
     //  self->addMultiBody(C(0), verbose);
     //  self->addExample();
@@ -327,11 +328,12 @@ void BulletInterface::motorizeMultiBody(rai::Frame* base){
 void BulletInterface::setMotorQ(const rai::Configuration& C){
   CHECK(self->opt.multiBody, "");
   arr q = C.getJointState();
-  MultiBodyInfo& mi = self->multibodies.first();
-  if(!mi.motors.N) motorizeMultiBody(mi.links.first());
-  for(uint i=0;i<mi.motors.N;i++){
-    mi.motors(i)->setPositionTarget(q(i), opt().motorKp);
+  uint qIdx=0;
+  for(MultiBodyInfo& mi:self->multibodies){
+    for(uint i=0;i<mi.motors.N;i++){
+      mi.motors(i)->setPositionTarget(q(qIdx++), opt().motorKp);
 //    mi.motors(i)->setVelocityTarget(0., .1);
+    }
   }
 }
 
@@ -502,7 +504,7 @@ btMultiBody* BulletInterface_self::addMultiBody(rai::Frame* base) {
   FrameL F = {base};
   base->getPartSubFrames(F);
   FrameL links = {base};
-  for(auto* f:F){ if(f->joint) links.append(f); }
+  for(auto* f:F){ if(f->joint && !f->joint->isPartBreak()) links.append(f); }
 //  if(links.N==1){ addLink(base); return 0; } //actually just a single body, not multibody...
   intA parents(links.N);
   parents(0) = -1;
@@ -594,6 +596,8 @@ btMultiBody* BulletInterface_self::addMultiBody(rai::Frame* base) {
           col->setFriction(friction);
         }
       }
+      col->setRollingFriction(.01);
+      col->setSpinningFriction(.01);
       {
         double restitution=opt.defaultRestitution;
         for(auto s:shapes) if(s->frame.ats) s->frame.ats->get<double>(restitution, "restitution");

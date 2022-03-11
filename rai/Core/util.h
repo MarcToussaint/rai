@@ -147,6 +147,7 @@ double gaussInt(double x);
 double gaussIntExpectation(double x);
 double NNsdv(const double& a, const double& b, double sdv);
 double NNsdv(double x, double sdv);
+double forsyth(double x, double a);
 
 //----- time access
 double clockTime(); //(really on the clock)
