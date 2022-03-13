@@ -39,8 +39,8 @@ protected:
   //-- problem signature: needs to be defined in the constructor or a derived class
   uint dimension=0;
 public:
-  arr bounds_lo, bounds_up;
   ObjectiveTypeA featureTypes;
+  arr bounds_lo, bounds_up;
 
 public:
   virtual ~MathematicalProgram() {}
@@ -69,6 +69,10 @@ public:
   const ObjectiveTypeA& getFeatureTypes() const { return featureTypes; }
 
   shared_ptr<MathematicalProgram> ptr(){ return shared_ptr<MathematicalProgram>(this, [](MathematicalProgram*){}); }
+
+
+  double eval_scalar(arr& g, arr& H, const arr& x);
+
 };
 
 //===========================================================================

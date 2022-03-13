@@ -150,9 +150,9 @@ OptNewton::StopCriterion OptNewton::step() {
       beta = 2.*beta - sigmin;
       return stopCriterion=stopNone;
 #endif
-#if 1 //increase beta by betaInc
+      //increase beta by betaInc
       if(options.dampingInc>0.) beta*=options.dampingInc;
-#endif
+
       //use gradient
       if(options.verbose>0) {
         cout <<"** hessian inversion failed ... using gradient descent direction" <<endl;
