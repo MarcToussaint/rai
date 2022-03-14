@@ -1172,6 +1172,40 @@ void KOMO::plotPhaseTrajectory() {
 
 //===========================================================================
 
+void KOMO::addStableFrame(const char* name, const char* parent, JointType jointType, const char* initPose) {
+  FrameL F;
+  Frame* p0 = world[parent];
+  {
+    Frame *f = world.addFrame(name);
+    f->setParent(p0, false);
+  }
+  Frame* init = world[initPose];
+  Frame *f0=0;
+  for(uint s=0;s<timeSlices.d0;s++) { //apply switch on all configurations!
+    Frame *f = pathConfig.addFrame(name);
+    Frame *p = timeSlices(s,p0->ID);
+    CHECK_EQ(p->name, parent, "");
+    f->setParent(p, false);
+    if(initPose) f->setPose(init->getPose());
+    if(jointType!=JT_none){
+      f->setJoint(jointType);
+      if(f0) f->joint->setMimic(f0->joint);
+      else f0=f;
+    }
+    f->setShape(ST_marker, {.1});
+    F.append(f);
+  }
+  CHECK_EQ(F.N, timeSlices.d0,"");
+  timeSlices.insColumns(-1);
+  for(uint s=0;s<timeSlices.d0;s++) timeSlices(s,-1) = F(s);
+  CHECK_EQ(timeSlices.d1, world.frames.N, "");
+  if(timeSlices.N==pathConfig.frames.N){
+    pathConfig.frames = timeSlices;
+    uint i=0;
+    for(Frame* f: pathConfig.frames) f->ID = i++;
+  }
+}
+
 void KOMO::applySwitch(const KinematicSwitch& sw) {
 #if 0 //for debugging
     cout <<"APPLYING SWITCH:\n" <<*sw <<endl;

@@ -206,6 +206,7 @@ public:
   void selectJointsBySubtrees(const StringA& roots, const arr& times= {}, bool notThose=false);
   void setupPathConfig();
   void checkBounds(const arr& x);
+  void addStableFrame(const char* name, const char* parent, rai::JointType jointType, const char* initPose);
   void applySwitch(const rai::KinematicSwitch& sw);
   void retrospectApplySwitches();
   void retrospectChangeJointType(int startStep, int endStep, uint frameID, rai::JointType newJointType);
