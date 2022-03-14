@@ -20,6 +20,8 @@
 #include <BulletDynamics/Featherstone/btMultiBodyLinkCollider.h>
 #include <BulletDynamics/Featherstone/btMultiBodyConstraintSolver.h>
 #include <BulletDynamics/Featherstone/btMultiBodyJointMotor.h>
+#include <BulletDynamics/Featherstone/btMultiBodyJointLimitConstraint.h>
+#include <BulletDynamics/Featherstone/btMultiBodyGearConstraint.h>
 
 // ============================================================================
 
@@ -317,10 +319,12 @@ void BulletInterface::motorizeMultiBody(rai::Frame* base){
   CHECK(world, "need a btMultiBodyDynamicsWorld");
   for(uint i=0;i<n;i++){
      auto mot = new btMultiBodyJointMotor(mi.multibody, i, 0., 100000.);
+    if(!mi.links(i+1)->joint->mimic){
     world->addMultiBodyConstraint(mot);
     arr q = mi.links(i+1)->joint->calcDofsFromConfig();
     mot->setPositionTarget(q.scalar(), opt().motorKp);
     mot->setVelocityTarget(0., opt().motorKd);
+    }
     mi.motors(i) = mot;
   }
 }
@@ -539,6 +543,8 @@ btMultiBody* BulletInterface_self::addMultiBody(rai::Frame* base) {
   }
 
   btMultiBody* multibody = 0;
+  auto world = dynamic_cast<btMultiBodyDynamicsWorld*>(dynamicsWorld);
+  CHECK(world, "need a btMultiBodyDynamicsWorld");
 
   for(uint i=0; i<links.N; i++) {
     //create collision shape
@@ -578,8 +584,26 @@ btMultiBody* BulletInterface_self::addMultiBody(rai::Frame* base) {
           multibody->setupRevolute(i-1, mass, localInertia, parents(i)-1,
                                    conv_rot_btQuat(-relA.rot), axis, conv_vec_btVec3(relA.pos), conv_vec_btVec3(relB.pos), true);
         } break;
+        case rai::JT_transY:{
+          btVector3 axis(0,1,0);
+          multibody->setupPrismatic(i-1, mass, localInertia, parents(i)-1, conv_rot_btQuat(-relA.rot), axis, conv_vec_btVec3(relA.pos), conv_vec_btVec3(relB.pos), true);
+        } break;
         default: NIY;
       };
+      if(linkJoint->joint->limits.N){
+        btMultiBodyConstraint* limitCons = new btMultiBodyJointLimitConstraint(multibody, i-1, linkJoint->joint->limits(0), linkJoint->joint->limits(1));
+        world->addMultiBodyConstraint(limitCons);
+      }
+      if(linkJoint->joint->mimic){
+        btVector3 pivot(0,1,0);
+        btMatrix3x3 frame(1,0,0,0,1,0,0,0,1);
+        //HARD CODED: mimicer is the previous one
+        btMultiBodyConstraint* gearCons = new btMultiBodyGearConstraint(multibody, i-1, multibody, i-2, pivot, pivot, frame, frame);
+        gearCons->setGearRatio(-1); //why needed? already flipped in config..
+        gearCons->setErp(0.1);
+        gearCons->setMaxAppliedImpulse(50);
+        world->addMultiBodyConstraint(gearCons);
+      }
     }
 
     //add collider
@@ -615,7 +639,7 @@ btMultiBody* BulletInterface_self::addMultiBody(rai::Frame* base) {
   multibody->finalizeMultiDof();
 
   multibody->setCanSleep(false);
-  multibody->setHasSelfCollision(false);
+  multibody->setHasSelfCollision(true);
   multibody->setUseGyroTerm(false);
   multibody->setLinearDamping(0.1f);
   multibody->setAngularDamping(0.9f);
@@ -634,8 +658,6 @@ btMultiBody* BulletInterface_self::addMultiBody(rai::Frame* base) {
     }
   }
 
-  auto world = dynamic_cast<btMultiBodyDynamicsWorld*>(dynamicsWorld);
-  CHECK(world, "need a btMultiBodyDynamicsWorld");
   world->addMultiBody(multibody);
   multibodies.append(MultiBodyInfo{multibody, links, {}});
 
