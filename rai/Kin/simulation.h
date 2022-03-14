@@ -91,6 +91,8 @@ struct Simulation {
   //-- post-hoc world manipulations
   void registerNewObjectWithEngine(rai::Frame* f);
 
+  //allow writing pics for video
+  uint& pngCount();
 };
 
 }

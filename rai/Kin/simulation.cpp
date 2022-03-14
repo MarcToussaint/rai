@@ -470,6 +470,7 @@ struct Simulation_DisplayThread : Thread, GLDrawer {
   floatA depth;
   byteA segmentation;
   byteA screenshot;
+  uint pngCount=0;
 
   Simulation_DisplayThread(const Configuration& C)
     : Thread("Sim_DisplayThread", .05),
@@ -492,8 +493,7 @@ struct Simulation_DisplayThread : Thread, GLDrawer {
 
   void step() {
     gl.update(STRING("t:" <<time), true);
-    //static int pngCount=0;
-//    write_ppm(gl.captureImage, STRING("z.vid/"<<std::setw(4)<<std::setfill('0')<<(pngCount++)<<".ppm"));
+    //write_png(gl.captureImage, STRING("z.vid/"<<std::setw(4)<<std::setfill('0')<<(pngCount++)<<".png"));
   }
 
   void glDraw(OpenGL& gl) {
@@ -720,6 +720,10 @@ void Imp_BlockJoints::modConfiguration(Simulation& S, double tau) {
     q(j->qIndex) = qBlocked(i);
   }
   S.C.setJointState(q);
+}
+
+uint& Simulation::pngCount(){
+  return self->display->pngCount;
 }
 
 } //namespace rai
