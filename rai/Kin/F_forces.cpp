@@ -849,7 +849,14 @@ arr F_PushRadiusPrior::phi(const FrameL& F){
 
 arr F_PushAligned::phi(const FrameL& F){
   CHECK_EQ(F.N, 3, "");
-  arr a = F_Position() .eval({F.elem(0)});
+
+  //poa
+  arr a;
+  if(rai::getContact(F.elem(0), F.elem(1), false)){
+    a = F_fex_POA() .eval({F.elem(0), F.elem(1)});
+  }else{
+    a = F_Position() .eval({F.elem(0)});
+  }
   arr b = F_Position() .eval({F.elem(1)});
   arr c = F_Position() .eval({F.elem(2)});
 
@@ -860,13 +867,20 @@ arr F_PushAligned::phi(const FrameL& F){
 
 arr F_PushSide::phi(const FrameL& F){
   CHECK_EQ(F.N, 3, "");
-  arr a = F_Position() .eval({F.elem(0)});
+
+  //poa
+  arr a;
+  if(rai::getContact(F.elem(0), F.elem(1), false)){
+    a = F_fex_POA() .eval({F.elem(0), F.elem(1)});
+  }else{
+    a = F_Position() .eval({F.elem(0)});
+  }
   arr b = F_Position() .eval({F.elem(1)});
   arr c = F_Position() .eval({F.elem(2)});
 
   arr ab = (a-b);
   arr cb = (c-b);
-  op_normalize(ab, 1e-4);
+//  op_normalize(ab, 1e-4);
   op_normalize(cb, 1e-4);
 
   arr y = ~ab * cb;
