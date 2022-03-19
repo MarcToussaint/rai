@@ -291,7 +291,7 @@ struct Shape : NonCopyable, GLDrawer {
   Enum<ShapeType>& type() { return _type; }
   Mesh& mesh() { if(!_mesh) _mesh = make_shared<Mesh>();  return *_mesh; }
   Mesh& sscCore() { if(!_sscCore) _sscCore = make_shared<Mesh>();  return *_sscCore; }
-  double alpha() { arr& C=mesh().C; if(C.N==4) return C(3); return 1.; }
+  double alpha() { arr& C=mesh().C; if(C.N==4 || C.N==2) return C(-1); return 1.; }
 
   void createMeshes();
   shared_ptr<ScalarFunction> functional(bool worldCoordinates=true);

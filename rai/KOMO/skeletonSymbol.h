@@ -6,10 +6,10 @@ enum SkeletonSymbol {
   SY_none=-1,
 
   //geometric:
-  SY_touch, SY_above, SY_inside, SY_oppose,
+  SY_touch, SY_above, SY_inside, SY_oppose, SY_restingOn,
 
   //pose constraints:
-  SY_poseEq, SY_stableRelPose, SY_stablePose,
+  SY_poseEq, SY_positionEq, SY_stableRelPose, SY_stablePose,
 
   //mode switches:
   SY_stable, SY_stableOn, SY_dynamic, SY_dynamicOn, SY_dynamicTrans, SY_quasiStatic, SY_quasiStaticOn, SY_downUp, SY_break, SY_stableZero,
@@ -19,6 +19,9 @@ enum SkeletonSymbol {
 
   //mode switches:
   SY_magic, SY_magicTrans,
+
+  //integrated:
+  SY_pushAndPlace,
 
   //grasps/placements:
   SY_topBoxGrasp, SY_topBoxPlace,

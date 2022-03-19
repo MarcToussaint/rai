@@ -179,8 +179,7 @@ struct F_fex_POA_isAtWitnesspoint : Feature {
 
 struct F_PushRadiusPrior : Feature {
   double rad;
-  arr target;
-  F_PushRadiusPrior(double _rad, const arr& _target={}) : rad(_rad), target(_target){}
+  F_PushRadiusPrior(double _rad) : rad(_rad){}
   virtual arr phi(const FrameL& F);
   virtual uint dim_phi2(const FrameL& F) { return 3; }
 };

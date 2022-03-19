@@ -816,26 +816,27 @@ arr F_fex_NormalVelIsComplementary::phi(const FrameL& F) {
 arr F_PushRadiusPrior::phi(const FrameL& F){
 //  CHECK_EQ(F.N, 4, "");
 
+  rai::Frame *stick = F.elem(0);
+  rai::Frame *obj = F.elem(1);
+  rai::Frame *target = (F.d1==3?F.elem(2):0);
+
   //poa
   arr p;
-  if(rai::getContact(F.elem(0), F.elem(1), false)){
-    p = F_fex_POA() .eval({F.elem(0), F.elem(1)});
+  if(rai::getContact(stick, obj, false)){
+    p = F_fex_POA() .eval({stick, obj});
   }else{
-    p = F_Position() .eval({F.elem(0)});
+    p = F_Position() .eval({stick});
   }
 
   //object center
-  arr c = F_Position() .eval({F.elem(1)});
+  arr c = F_Position() .eval({obj});
 
   arr dir;
-  if(target.N){
-    dir = -c;
-    dir += target;
-  }else if(F.N==3){
+  if(F.N==3){ //target is given as 3rd frame
     CHECK_EQ(order, 0, "");
     dir = -c;
-    dir += F_Position() .eval({F.elem(2)});
-  }else{ //push 'towards' velocity
+    dir += F_Position() .eval({target});
+  }else{ //target is implicit in object velocity
     CHECK_EQ(order, 1, "");
     //object velocity
     dir = F_Position() .setOrder(1) .eval({F(0,1),F(1,1)});

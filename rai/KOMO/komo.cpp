@@ -1219,7 +1219,8 @@ void KOMO::applySwitch(const KinematicSwitch& sw) {
     if(s<0) s=0;
     int sEnd = int(k_order+T);
 //    if(sw.timeOfTermination>=0)  sEnd = sw.timeOfTermination+(int)k_order;
-    CHECK(s<sEnd, "s:" <<s <<" sEnd:" <<sEnd);
+    CHECK(s<=sEnd, "s:" <<s <<" sEnd:" <<sEnd);
+    if(s==sEnd) return;
     rai::Frame *f0=0;
     for(; s<sEnd; s++) { //apply switch on all configurations!
       rai::Frame* f = sw.apply(timeSlices[s]());

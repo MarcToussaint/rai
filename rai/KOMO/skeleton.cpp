@@ -11,7 +11,7 @@
 
 namespace rai {
 
-Array<SkeletonSymbol> skeletonModes = { SY_stable, SY_stableOn, SY_stableYPhi, SY_dynamic, SY_dynamicOn, SY_dynamicTrans, SY_quasiStatic, SY_quasiStaticOn, SY_magicTrans };
+Array<SkeletonSymbol> skeletonModes = { SY_stable, SY_stableOn, SY_stableYPhi, SY_stableZero, SY_dynamic, SY_dynamicOn, SY_dynamicTrans, SY_quasiStatic, SY_quasiStaticOn, SY_magicTrans };
 
 void SkeletonEntry::write(std::ostream& os) const {
   os <<"[" <<phase0 <<", " <<phase1 <<"] " <<symbol <<' ';
@@ -403,20 +403,18 @@ SkeletonTranscription Skeleton::mp_path(const arrA& waypoints){
 }
 
 void Skeleton::setKOMO(KOMO& komo, ArgWord sequenceOrPath, uint stepsPerPhase, double accScale, double lenScale, double homingScale, double initNoise) const {
-  //  if(sequenceOrPath==rai::_sequence){
-  //    solver = rai::KS_dense;
-  //  }else{
-  //    solver = rai::KS_sparse;
-  //  }
-
+  if(!komo.world.frames.N){
+    CHECK(C, "");
+    komo.setModel(*C, true);
+  }
   double maxPhase = getMaxPhase();
   if(sequenceOrPath==rai::_sequence) {
-    komo.setTiming(maxPhase, 1, 2., 1);
+    komo.setTiming(maxPhase, 1, 5., 1);
 //    komo.setTiming(maxPhase+1., 1, 5., 1); //as defined in bounds.cpp
     komo.add_qControlObjective({}, 1, lenScale);
     komo.add_qControlObjective({}, 0, homingScale);
   } else {
-    komo.setTiming(maxPhase, stepsPerPhase, 2., 2);
+    komo.setTiming(maxPhase, stepsPerPhase, 5., 2);
 //    komo->setTiming(maxPhase+.5, 10, 10., 2); //as defined in bounds.cpp
     komo.add_qControlObjective({}, 2, accScale);
     komo.add_qControlObjective({}, 0, homingScale);
@@ -450,6 +448,18 @@ void Skeleton::setKOMO(KOMO& komo) const {
       case SY_oppose:     komo.addObjective({s.phase0, s.phase1}, FS_oppose, s.frames, OT_eq, {1e1});  break;
 
       case SY_relPosY:    komo.addObjective({s.phase0, s.phase1}, FS_positionRel, {s.frames(0), s.frames(1)}, OT_eq, {{1,3},{0,1e2,0}});  break;
+      case SY_restingOn:{
+        rai::Frame* table = komo.world.getFrame(s.frames(0));
+        rai::Frame* obj = komo.world.getFrame(s.frames(1));
+        if(obj->shape && obj->shape->type()==ST_capsule){
+          double height = .5*table->getSize()(2) + obj->getSize()(1);
+          komo.addObjective({s.phase0, s.phase1}, FS_positionRel, {s.frames(1), s.frames(0)}, OT_eq, {{1,3}, {0,0,1e1}}, {0,0,height});
+          komo.addObjective({s.phase0, s.phase1}, FS_scalarProductZZ, s.frames, OT_eq, {1e1});
+        }else{
+          NIY;
+        }
+
+      } break;
       case SY_topBoxGrasp: {
         komo.addObjective({s.phase0}, FS_positionDiff, s.frames, OT_eq, {1e2});
         komo.addObjective({s.phase0}, FS_scalarProductXY, s.frames, OT_eq, {1e2}, {0.});
@@ -524,6 +534,7 @@ void Skeleton::setKOMO(KOMO& komo) const {
       case SY_stableRelPose: komo.addObjective({s.phase0, s.phase1+1.}, FS_poseRel, s.frames, OT_eq, {1e2}, {}, 1);  break;
       case SY_stablePose:  komo.addObjective({s.phase0, s.phase1+1.}, FS_pose, s.frames, OT_eq, {1e2}, {}, 1);  break;
       case SY_poseEq: komo.addObjective({s.phase0, s.phase1}, FS_poseDiff, s.frames, OT_eq, {1e2});  break;
+      case SY_positionEq: komo.addObjective({s.phase0, s.phase1}, FS_positionDiff, s.frames, OT_eq, {1e2});  break;
 
       case SY_downUp: {
         if(komo.k_order>=2) {
@@ -539,6 +550,7 @@ void Skeleton::setKOMO(KOMO& komo) const {
       case SY_contactComplementary: komo.addContact_ComplementarySlide(s.phase0, s.phase1, s.frames(0), s.frames(1));  break;
       case SY_push:{
         komo.addContact_slide(s.phase0, s.phase1, s.frames(0), s.frames(1));
+        //prior on contact point!
         if(s.phase1>=s.phase0+.8){
           rai::Frame* obj = komo.world.getFrame(s.frames(1));
           if(!(obj->shape && obj->shape->type()==ST_sphere) && obj->children.N){
@@ -548,13 +560,14 @@ void Skeleton::setKOMO(KOMO& komo) const {
             double rad = obj->shape->radius();
             arr times = {s.phase0+.2,s.phase1-.2};
             if(komo.k_order==1) times = {s.phase0, s.phase1};
-            komo.addObjective(times, make_shared<F_PushRadiusPrior>(rad), s.frames, OT_sos, {1e1}, NoArr, 1, +1, 0);
+            komo.addObjective(times, make_shared<F_PushRadiusPrior>(rad), s.frames, OT_sos, {1e0}, NoArr, 1, +1, 0);
           }
         }
+        //motion/control costs on the object
         if(komo.k_order>1){
-          komo.addObjective({s.phase0, s.phase1}, FS_position, {s.frames(1)}, OT_sos, {3e0}, {}, 2); //smooth obj motion
-          komo.addObjective({s.phase1}, FS_pose, {s.frames(0)}, OT_eq, {1e0}, {}, 1);
-          komo.addObjective({s.phase1}, FS_pose, {s.frames(1)}, OT_eq, {1e0}, {}, 1);
+          komo.addObjective({s.phase0, s.phase1}, FS_position, {s.frames(1)}, OT_sos, {1e0}, {}, 2); //smooth obj motion
+          komo.addObjective({s.phase1}, FS_pose, {s.frames(0)}, OT_eq, {1e0}, {}, 1); //zero vel at start
+          komo.addObjective({s.phase1}, FS_pose, {s.frames(1)}, OT_eq, {1e0}, {}, 1); //zero vel at end
         }
       } break;
       case SY_bounce:     komo.addContact_elasticBounce(s.phase0, s.frames(0), s.frames(1), .9);  break;
@@ -582,6 +595,7 @@ void Skeleton::setKOMO(KOMO& komo) const {
       case SY_stable:      //if(!ignoreSwitches) addSwitch_stable(s.phase0, s.phase1+1., s.frames(0), s.frames(1));  break;
       case SY_stableOn:    //if(!ignoreSwitches) addSwitch_stableOn(s.phase0, s.phase1+1., s.frames(0), s.frames(1));  break;
       case SY_stableYPhi:    //if(!ignoreSwitches) addSwitch_stableOn(s.phase0, s.phase1+1., s.frames(0), s.frames(1));  break;
+      case SY_stableZero:
       case SY_dynamic:     //if(!ignoreSwitches) addSwitch_dynamic(s.phase0, s.phase1+1., "base", s.frames(0));  break;
       case SY_dynamicOn:   //if(!ignoreSwitches) addSwitch_dynamicOn(s.phase0, s.phase1+1., s.frames(0), s.frames(1));  break;
       case SY_dynamicTrans:   //if(!ignoreSwitches) addSwitch_dynamicTrans(s.phase0, s.phase1+1., "base", s.frames(0));  break;
