@@ -16,4 +16,4 @@ namespace ry {
 
 struct RyOperate { std::shared_ptr<RobotOperation> R; };
 
-};
+}

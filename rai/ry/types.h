@@ -167,7 +167,7 @@ template <typename T>  struct type_caster<rai::Array<T>> {
     pybind11::array_t<T> ret = arr2numpy(src);
     return ret.release();
   }
-};
+}
 }
 }
 

@@ -27,5 +27,4 @@ struct RyCamera {
     : C(make_shared<RosCamera>(rgb, depth, rosNodeName, rgb_topic, depth_topic, useUint)) {}
 };
 
-};
-
+}

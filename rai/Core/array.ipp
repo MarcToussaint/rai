@@ -804,7 +804,7 @@ template<class T> void rai::Array<T>::insColumns(int i, uint k) {
   uint n=d1;
   resizeCopy(d0, n+k);
   for(uint j=d0; j--;) {
-    if(i<n) memmove(p+j*d1+(i+k), p+j*n+i, sizeT*(n-i));
+    if(i<(int)n) memmove(p+j*d1+(i+k), p+j*n+i, sizeT*(n-i));
     memset(p+j*d1+i, 0, sizeT*k);
     if(i) memmove(p+j*d1, p+j*n, sizeT*i);
   }
