@@ -136,9 +136,10 @@ intA Skeleton::getSwitches(const rai::Configuration& C) const {
       for(; j>=0; j--) {
         if(skeletonModes.contains(S.elem(j).symbol)) { //S(j) is about a switch
           const rai::String& prevSwitched = S.elem(j).frames(1);
-          if(prevSwitched==toBeSwitched->name
-              || prevSwitched==rootOfSwitch->name
-              || prevSwitched==childOfSwitch->name)
+          if(S.elem(i).frames(-1)==S.elem(j).frames(-1)
+             || prevSwitched==toBeSwitched->name
+             || prevSwitched==rootOfSwitch->name
+             || prevSwitched==childOfSwitch->name)
             break;
         }
       }
@@ -490,6 +491,7 @@ void Skeleton::setKOMO(KOMO& komo) const {
         komo.addObjective({s.phase0}, FS_positionDiff, {s.frames(0), s.frames(1)}, OT_eq, {{1, 3}, {1e2, .0, .0}}, {.5*boxSize, 0., 0.}); //arr({1,3},{0,0,1e2})
         komo.addObjective({s.phase0}, FS_scalarProductXZ, {s.frames(1), s.frames(0)}, OT_eq, {1e2}, {1.});
         //        komo.addObjective({s.phase0}, FS_scalarProductYZ, {s.frames(1), s.frames(0)}, OT_eq, {1e2});
+        komo.addObjective({s.phase0, s.phase1}, FS_insideBox, {s.frames(0), s.frames(1)}, OT_ineq, {0,1e1,1e1,0,1e1,1e1});
         break;
       }
       case SY_touchBoxNormalY: {
@@ -497,7 +499,7 @@ void Skeleton::setKOMO(KOMO& komo) const {
         //        CHECK(box, "");
         //        CHECK(box->shape && box->shape->type()==rai::ST_ssBox, "");
         double boxSize = shapeSize(komo.world, s.frames(1), 1);
-        komo.addObjective({s.phase0}, FS_positionDiff, {s.frames(0), s.frames(1)}, OT_eq, {{1, 3}, {1e2, .0, .0}}, {.5*boxSize, 0., 0.}); //arr({1,3},{0,0,1e2})
+        komo.addObjective({s.phase0}, FS_positionDiff, {s.frames(0), s.frames(1)}, OT_eq, {{1, 3}, {0., 1e2, .0}}, {0,.5*boxSize, 0.});
         komo.addObjective({s.phase0}, FS_scalarProductYZ, {s.frames(1), s.frames(0)}, OT_eq, {1e2}, {1.});
         //        komo.addObjective({s.phase0}, FS_scalarProductYZ, {s.frames(1), s.frames(0)}, OT_eq, {1e2});
         break;

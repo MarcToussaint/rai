@@ -1361,7 +1361,8 @@ void rai::Shape::glDraw(OpenGL& gl) {
   glPushName((frame.ID <<2) | 1);
 
   if(gl.drawOptions.drawMode_idColor){
-    gl.drawId(frame.ID);
+    glColorId(frame.ID);
+    CHECK(!gl.drawOptions.drawColors, "must be disabled..");
   } else if(gl.drawOptions.drawColors) {
     if(mesh().C.N) glColor(mesh().C); //color[0], color[1], color[2], color[3]*world.orsDrawAlpha);
     else glColor(.5, .5, .5);

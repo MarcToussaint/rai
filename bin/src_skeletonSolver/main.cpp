@@ -30,7 +30,7 @@ int main(int argc,char **argv){
   LOG(0) <<"using collisions: " <<collisions;
 
   rai::Configuration C;
-  C.addFile(rai::raiPath(confFile));
+  C.addFile(confFile);
   C.watch();
 
   rai::Skeleton S;
@@ -40,7 +40,7 @@ int main(int argc,char **argv){
 
   S.setConfiguration(C);
 //  S.solve(mode, rai::getParameter<int>("verbose", 3));
-  S.solve3(true);
+  S.solve3(true, rai::getParameter<int>("verbose", 3));
 
   rai::wait();
 

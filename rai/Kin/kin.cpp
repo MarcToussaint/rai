@@ -2923,13 +2923,11 @@ void Configuration::glDraw_sub(OpenGL& gl, const FrameL& F, int drawOpaqueOrTran
       if(F.nd==2 && f->ID>F.d1 && f->shape->_mesh==F.elem(f->ID-F.d1)->shape->_mesh && f->X==F.elem(f->ID-F.d1)->X){//has the same shape and pose as previous time slice frame
         continue;
       }
-      gl.drawId(f->ID);
       f->shape->glDraw(gl);
     }
   }
   if(drawOpaqueOrTransparanet==0 || drawOpaqueOrTransparanet==2) {
     for(Frame* f: F) if(f->shape && f->shape->alpha()<1.) {
-      gl.drawId(f->ID);
       f->shape->glDraw(gl);
     }
   }
@@ -3309,11 +3307,13 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
   EditConfigurationKeyCall(Configuration& _C, bool& _exit): C(_C), exit(_exit) {}
   bool keyCallback(OpenGL& gl) {
     if(gl.pressedkey==' ') { //grab a body
+      gl.drawOptions.drawColors=false;
       gl.drawOptions.drawMode_idColor=true;
       gl.beginNonThreadedDraw(true);
       gl.Draw(gl.width, gl.height, 0, true);
       gl.endNonThreadedDraw(true);
       gl.drawOptions.drawMode_idColor=false;
+      gl.drawOptions.drawColors=true;
       write_ppm(gl.captureImage,"z.ppm");
       uint id = color2id(&gl.captureImage(gl.mouseposy, gl.mouseposx, 0));
       float d = gl.captureDepth(gl.mouseposy, gl.mouseposx);
@@ -3351,7 +3351,7 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
         case '4':  gl.drawOptions.drawZlines^=1;  break;
         case '5':  gl.reportSelects^=1;  break;
         case '6':  gl.reportEvents^=1;  break;
-        case '7':  gl.drawOptions.drawMode_idColor^=1;  break;
+        case '7':  gl.drawOptions.drawMode_idColor^=1; gl.drawOptions.drawColors^=1;  break;
         case 'o':  gl.camera.X.pos += gl.camera.X.rot*Vector(0, 0, .1);  break;
         case 'u':  gl.camera.X.pos -= gl.camera.X.rot*Vector(0, 0, .1);  break;
         case 'k':  gl.camera.X.pos += gl.camera.X.rot*Vector(0, .1, 0);  break;

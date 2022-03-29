@@ -643,15 +643,6 @@ void glColorId(uint id) {
   glColor3ubv(rgb);
 }
 
-void OpenGL::drawId(uint id) {
-  if(drawOptions.drawMode_idColor) {
-    glColorId(id);
-    drawOptions.drawColors=false;
-  } else {
-//    drawOptions.drawColors=true;
-  }
-}
-
 /* // shadows do not work with a light source;
    // thus, we need to leave this out. 4. Mar 06 (hh)
 void glShadowTransform()
@@ -2267,6 +2258,7 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) 
     drawFocus = false;
     if(!downPressed) {
       drawOptions.drawMode_idColor = true;
+      drawOptions.drawColors = false;
       beginNonThreadedDraw(true);
       Draw(w, h, nullptr, true);
       endNonThreadedDraw(true);
@@ -2283,6 +2275,7 @@ void OpenGL::MouseButton(int button, int downPressed, int _x, int _y, int mods) 
     }
   } else {
     drawOptions.drawMode_idColor = false;
+    drawOptions.drawColors = true;
   }
 
   //mouse scroll wheel:
