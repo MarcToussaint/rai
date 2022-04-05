@@ -68,6 +68,30 @@ Shape* getShape(const Configuration& K, const char* name) {
   return s;
 }
 
+rai::Transformation relTransformOn(const rai::Configuration& K, const char* name1, const char* name2) {
+  rai::Frame* f1 = K.getFrame(name1);
+  rai::Frame* f2 = K.getFrame(name2);
+  rai::Shape* s1 = f1->shape;
+  rai::Shape* s2 = f2->shape;
+  if(!s1) { for(rai::Frame* b:f1->children) if(b->name==name1 && b->shape) { s1=b->shape; break; } }
+  if(!s2) { for(rai::Frame* b:f2->children) if(b->name==name2 && b->shape) { s2=b->shape; break; } }
+  rai::Transformation rel=0;
+  CHECK(s1->type()==rai::ST_ssBox, "");
+  rel.pos.z += .5*s1->size(2);
+  if(s1->type()==rai::ST_marker){
+  }else if(s2->type()==rai::ST_sphere){
+    rel.pos.z += s2->radius();
+  }else if(s2->type()==rai::ST_capsule){
+    rel.pos.z += s2->radius();
+    rel.rot.setRadX(.5*RAI_PI);
+  }else if(s2->type()==rai::ST_ssCylinder){
+    rel.pos.z += .5*s2->size(0);
+  }
+  return rel;
+}
+
+//===========================================================================
+
 KOMO::KOMO() : computeCollisions(true) {
   solver = getParameter<rai::Enum<rai::KOMOsolver>>("KOMO/solver", KS_sparse);
 }
@@ -244,6 +268,7 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
       auto sw = addSwitch(times, true, true, JT_rigid, SWInit_zero, frames(0), frames(1));
     } else if(newMode==SY_stableOn) {
       Transformation rel = 0;
+	//relTransformOn(world, frames(0), frames(1));
       rel.pos.set(0, 0, .5*(shapeSize(world, frames(0)) + shapeSize(world, frames(1))));
       auto sw = addSwitch(times, true, true, JT_transXYPhi, SWInit_copy, frames(0), frames(1), rel);
     } else if(newMode==SY_stableYPhi) {
@@ -317,7 +342,7 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
         addObjective(times, make_shared<F_NewtonEuler>(false), {frames(1)}, OT_eq, {1e2}, NoArr, 2, +1, 0);
     }
   } else if(newMode==SY_quasiStaticOn) {
-    CHECK_EQ(frames.N, 2, "");
+    CHECK_GE(frames.N, 2, "");
     Transformation rel = 0;
     rel.pos.set(0, 0, .5*(shapeSize(world, frames(0)) + shapeSize(world, frames(1))));
 //    addSwitch(times, true, JT_transXYPhi, SWInit_copy, frames(0), frames(1), rel);
@@ -1724,8 +1749,7 @@ void Conv_KOMO_SparseNonfactored::report(std::ostream& os, int verbose) {
   komo.reportProblem(os);
   if(verbose>1) os <<komo.getReport(verbose>3);
   if(verbose>2) komo.view(verbose>3, "Conv_KOMO_SparseNonfactored - report");
-  if(verbose>4) komo.view_play(false);
-  if(verbose>5) while(komo.view_play(true));
+  if(verbose>4) while(komo.view_play(true));
   if(verbose>6){
     rai::system("mkdir -p z.vid");
     komo.view_play(false, .1, "z.vid/");

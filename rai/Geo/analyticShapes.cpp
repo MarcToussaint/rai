@@ -48,6 +48,10 @@ double DistanceFunction_Cylinder::f(arr& g, arr& H, const arr& x) {
   arr aaTovasq = 1/(la*la) * (a^a);
   arr zzT = z^z;
 
+  if(la<1e-10 || lb<1e-10){
+    HALT("compare to DistanceFunction_Capsule method..");
+  }
+
   if(lb < size_z/2.) {   // x projection on z is inside cyl
     if(la<r && (size_z/2.-lb)<(r-la)) { // x is INSIDE the cyl and closer to the lid than the wall
       if(!!g) g = 1./lb*b; //z is unit: s*z*|z|*sgn(b*z) = s*b/nb
@@ -96,10 +100,17 @@ double DistanceFunction_Capsule::f(arr& g, arr& H, const arr& x) {
   arr a = (x-c) - b;
   arr I(3, 3);
   double la = length(a);
+
+  if(la<1e-10){
+    if(!!g) g.resize(x.N).setZero();
+    if(!!H) H.resize(x.N, x.N).setZero();
+    return -r;
+  }
+
   arr aaTovasq = 1/(la*la) * (a^a);
   arr zzT = z^z;
 
-  if(zcoord < .5*size_z && zcoord > -.5*size_z) {   // x projection on z is inside line
+  if(zcoord <= .5*size_z && zcoord >= -.5*size_z) {   // x projection on z is inside line
     if(!!g) g = a/la;
     if(!!H) {
       I.setId(3);

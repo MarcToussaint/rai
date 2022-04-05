@@ -98,7 +98,7 @@ void Skeleton::fillInEndPhaseOfModes(){
   for(uint i=0; i<S.N; i++) {
     SkeletonEntry& si = S(i);
     if(si.phase1==-1 && si.frames.N) {
-      si.phase1=maxPhase;
+//      si.phase1=maxPhase;
       for(uint j=i+1; j<S.N; j++) {
         SkeletonEntry& sj = S(j);
         if(     sj.phase0>si.phase0 && //needs to be in the future
@@ -195,7 +195,7 @@ shared_ptr<SolverReturn> Skeleton::solve3(bool useKeyframes, int verbose){
     sol.setInitialization(keyframes.komo->x); //to avoid adding noise again
     ret = sol.solve();
     keyframes.mp->report(cout, verbose);
-    sol.gnuplot_costs();
+//    sol.gnuplot_costs();
   }
 
 #if 0
@@ -216,7 +216,7 @@ shared_ptr<SolverReturn> Skeleton::solve3(bool useKeyframes, int verbose){
 //    path.komo->opt.animateOptimization = 1;
     ret = sol.solve();
     path.mp->report(cout, verbose);
-    sol.gnuplot_costs();
+//    sol.gnuplot_costs();
   }
 
   return ret;
@@ -502,6 +502,7 @@ void Skeleton::setKOMO(KOMO& komo) const {
         komo.addObjective({s.phase0}, FS_positionDiff, {s.frames(0), s.frames(1)}, OT_eq, {{1, 3}, {0., 1e2, .0}}, {0,.5*boxSize, 0.});
         komo.addObjective({s.phase0}, FS_scalarProductYZ, {s.frames(1), s.frames(0)}, OT_eq, {1e2}, {1.});
         //        komo.addObjective({s.phase0}, FS_scalarProductYZ, {s.frames(1), s.frames(0)}, OT_eq, {1e2});
+        komo.addObjective({s.phase0, s.phase1}, FS_insideBox, {s.frames(0), s.frames(1)}, OT_ineq, {1e1,0,1e1,1e1,0,1e1});
         break;
       }
       case SY_touchBoxNormalZ: {
@@ -517,6 +518,7 @@ void Skeleton::setKOMO(KOMO& komo) const {
         komo.addObjective({s.phase0}, FS_positionDiff, {s.frames(0), s.frames(1)}, OT_eq, {{1, 3}, {0., 0., 1e2}}, {0, 0, .5*boxSize}); //arr({1,3},{0,0,1e2})
         komo.addObjective({s.phase0}, FS_scalarProductZZ, {s.frames(1), s.frames(0)}, OT_eq, {1e2}, {1.});
         //        komo.addObjective({s.phase0}, FS_vectorZDiff, {s.frames(0), s.frames(1)}, OT_eq, {1e2});
+        komo.addObjective({s.phase0, s.phase1}, FS_insideBox, {s.frames(0), s.frames(1)}, OT_ineq, {1e1,1e1,0,1e1,1e1,0});
         break;
       }
 

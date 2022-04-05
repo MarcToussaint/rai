@@ -41,12 +41,12 @@ void conv_times2steps(int& fromStep, int& toStep, const arr& times, int stepsPer
   CHECK_GE(stepsPerPhase, 0, "");
 
   //convert to steps
-  fromStep = (fromTime<0.?0:conv_time2step(fromTime, stepsPerPhase));
+  fromStep = (fromTime<0.?T-1:conv_time2step(fromTime, stepsPerPhase));
   toStep   = (toTime<0.?T-1:conv_time2step(toTime, stepsPerPhase));
 
   //account for deltas
-  if(fromTime>=0 && deltaFromStep) fromStep+=deltaFromStep;
-  if(toTime>=0 && deltaToStep) toStep+=deltaToStep;
+  if(deltaFromStep) fromStep+=deltaFromStep;
+  if(deltaToStep) toStep+=deltaToStep;
 
   //clip
   if(fromStep<0) fromStep=0;
@@ -157,7 +157,7 @@ rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) const {
     CHECK(jointType!=JT_none, "");
 
     if(!jA.isZero()) to->insertPreLink(jA);
-    if(!jB.isZero()) { HALT("only to be careful: does the orgX still work?"); to->insertPostLink(jB); }
+    if(!jB.isZero()) { to->insertPostLink(jB); orgX = orgX * (-jB); }
 
     //initialize to zero, copy, or random
     if(init==SWInit_zero) { //initialize the joint with zero transform
@@ -170,7 +170,7 @@ rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) const {
         to->Q.setZero();
         to->joint->setDofs(q, 0);
       }
-    } if(init==SWInit_random) { //random, modulo DOFs
+    } else if(init==SWInit_random) { //random, modulo DOFs
       to->Q.setRandom();
       if(to->joint->dim>0) {
         arr q = to->joint->calcDofsFromConfig();
