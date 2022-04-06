@@ -797,7 +797,7 @@ Node* Graph::readNode(std::istream& is, StringA& tags, const char* predetermined
             String::readEatStopSymbol = 1;
             is >>strings;
             String::readSkipSymbols = " \t";
-            String::readStopSymbols = "\n\r";
+            String::readStopSymbols = ",\n\r";
             String::readEatStopSymbol = 1;
             node = newNode<StringA>(key, parents, strings);
           } else if(c2=='[') { //arrA
@@ -813,7 +813,7 @@ Node* Graph::readNode(std::istream& is, StringA& tags, const char* predetermined
             String::readStopSymbols=" ,\n\t]";
             String::readEatStopSymbol = 0;
             is >>strings;
-            String::readStopSymbols = "\n\r";
+            String::readStopSymbols = ",\n\r";
             String::readEatStopSymbol = 1;
             node = newNode<StringA>(key, parents, strings);
           } else {

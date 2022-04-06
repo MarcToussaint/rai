@@ -2123,7 +2123,7 @@ template<class T> void rai::Array<T>::read(std::istream& is) {
       is.get(c);
       if(c==']' || !is.good()) { is.clear(); break; }
       if(c==';' || c=='\n') {  //set an array width
-        if(!d) d=i; else if(i%d) PARSERR("mis-structured array in row " <<i/d);
+        if(!d && i>1) d=i; else if(i%d) PARSERR("mis-structured array in row " <<i/d);
         continue;
       }
       if(c!=',') is.putback(c);

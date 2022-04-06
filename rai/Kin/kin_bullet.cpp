@@ -573,7 +573,7 @@ btMultiBody* BulletInterface_self::addMultiBody(rai::Frame* base) {
       multibody->setBaseWorldTransform(conv_trans_btTrans(linkMass->ensure_X()));
     }else{ //link
       //get parent and coms
-      rai::Frame* parJoint = links(parents(i));
+      //rai::Frame* parJoint = links(parents(i));
       rai::Frame* parMass = masses(parents(i));
       rai::Transformation relA = linkJoint->parent->ensure_X() / parMass ->ensure_X();
       rai::Transformation relB = linkMass->get_Q();

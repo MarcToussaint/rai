@@ -78,7 +78,7 @@
 //
 
 const char* rai::String::readSkipSymbols = " \t";
-const char* rai::String::readStopSymbols = "\n\r";
+const char* rai::String::readStopSymbols = ",\n\r";
 int   rai::String::readEatStopSymbol     = 1;
 rai::String rai::errString;
 Mutex coutMutex;
@@ -162,7 +162,7 @@ char skip(std::istream& is, const char* skipSymbols, const char* stopSymbols, bo
 void skipRestOfLine(std::istream& is) {
   char c;
   do { c=is.get(); } while(c!='\n' && is.good());
-  if(c=='\n') is.putback(c);
+  //if(c=='\n') is.putback(c);
 }
 
 /// skips the next character

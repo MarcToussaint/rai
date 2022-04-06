@@ -456,15 +456,13 @@ void OpenGL::openWindow() {
 void OpenGL::closeWindow() {
   self->needsRedraw=0;
   if(self->window) {
-    singletonGlSpinner()->delGL(this);
-    {
-      auto fg = singletonGlSpinner();
-      fg->mutex.lock(RAI_HERE);
-      glfwDestroyWindow(self->window);
-      fg->mutex.unlock();
-      isUpdating.setStatus(0);
-      watching.setStatus(0);
-    }
+    auto fg = singletonGlSpinner();
+    isUpdating.setStatus(0);
+    watching.setStatus(0);
+    fg->delGL(this);
+    fg->mutex.lock(RAI_HERE);
+    glfwDestroyWindow(self->window);
+    fg->mutex.unlock();
   }
 }
 

@@ -94,7 +94,7 @@ void Skeleton::setFromStateSequence(Array<Graph*>& states, const arr& times){
 }
 
 void Skeleton::fillInEndPhaseOfModes(){
-  double maxPhase = getMaxPhase();
+  //double maxPhase = getMaxPhase();
   for(uint i=0; i<S.N; i++) {
     SkeletonEntry& si = S(i);
     if(si.phase1==-1 && si.frames.N) {
@@ -557,10 +557,10 @@ void Skeleton::setKOMO(KOMO& komo) const {
         //prior on contact point!
         if(s.phase1>=s.phase0+.8){
           rai::Frame* obj = komo.world.getFrame(s.frames(1));
-          if(!(obj->shape && obj->shape->type()==ST_sphere) && obj->children.N){
+          if(obj->children.N && !(obj->shape && (obj->shape->type()==ST_sphere || obj->shape->type()==ST_capsule))){
             obj = obj->children.last();
           }
-          if(obj->shape && obj->shape->type()==ST_sphere){
+          if(obj->shape && (obj->shape->type()==ST_sphere || obj->shape->type()==ST_capsule)){
             double rad = obj->shape->radius();
             arr times = {s.phase0+.2,s.phase1-.2};
             if(komo.k_order==1) times = {s.phase0, s.phase1};
