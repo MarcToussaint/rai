@@ -36,7 +36,7 @@ OPENCV = 0
 GRAPHVIZ = 0
 GTK = 0
 G4 = 0
-PNG = 0
+#PNG = 0
 
 PCL = 0
 ODE = 0

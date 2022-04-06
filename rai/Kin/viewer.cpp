@@ -163,7 +163,7 @@ bool rai::ConfigurationViewer::playVideo(uint T, uint nFrames, bool watch, doubl
 
   if(saveVideoPath) {
     rai::system(STRING("mkdir -p " <<saveVideoPath));
-    rai::system(STRING("rm -f " <<saveVideoPath <<"*.ppm"));
+    rai::system(STRING("rm -f " <<saveVideoPath <<"*.png"));
   }
 
   CHECK_GE(C.frames.N, T*nFrames, "");
@@ -189,7 +189,7 @@ bool rai::ConfigurationViewer::playVideo(uint T, uint nFrames, bool watch, doubl
 
     {
       auto _dataLock = gl->dataLock(RAI_HERE);
-      if(saveVideoPath) write_ppm(gl->captureImage, STRING(saveVideoPath<<std::setw(4)<<std::setfill('0')<<t<<".ppm"));
+      if(saveVideoPath) write_png(gl->captureImage, STRING(saveVideoPath<<std::setw(4)<<std::setfill('0')<<t<<".png"));
     }
   }
   drawText = tag;
@@ -211,7 +211,7 @@ bool rai::ConfigurationViewer::playVideo(bool watch, double delay, const char* s
 
   if(saveVideoPath) {
     rai::system(STRING("mkdir -p " <<saveVideoPath));
-    rai::system(STRING("rm -f " <<saveVideoPath <<"*.ppm"));
+    rai::system(STRING("rm -f " <<saveVideoPath <<"*.png"));
   }
 
   for(uint t=0; t<framePath.d0; t++) {
@@ -230,7 +230,7 @@ bool rai::ConfigurationViewer::playVideo(bool watch, double delay, const char* s
 
     {
       auto _dataLock = gl->dataLock(RAI_HERE);
-      if(saveVideoPath) write_ppm(gl->captureImage, STRING(saveVideoPath<<std::setw(4)<<std::setfill('0')<<t<<".ppm"));
+      if(saveVideoPath) write_png(gl->captureImage, STRING(saveVideoPath<<std::setw(4)<<std::setfill('0')<<t<<".png"));
     }
   }
   drawText = tag;
@@ -242,7 +242,7 @@ bool rai::ConfigurationViewer::playVideo(bool watch, double delay, const char* s
 }
 
 void rai::ConfigurationViewer::savePng(const char* saveVideoPath) {
-  write_ppm(gl->captureImage, STRING(saveVideoPath<<std::setw(4)<<std::setfill('0')<<(pngCount++)<<".ppm"));
+  write_png(gl->captureImage, STRING(saveVideoPath<<std::setw(4)<<std::setfill('0')<<(pngCount++)<<".png"));
 }
 
 rai::Camera& rai::ConfigurationViewer::displayCamera() {

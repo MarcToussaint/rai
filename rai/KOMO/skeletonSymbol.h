@@ -40,6 +40,8 @@ enum SkeletonSymbol {
 
   SY_boxGraspX, SY_boxGraspY, SY_boxGraspZ,
 
+  SY_lift,
+
   SY_stableYPhi,
 
   SY_end,
