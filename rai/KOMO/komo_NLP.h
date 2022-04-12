@@ -23,30 +23,34 @@ struct Conv_KOMO_NLP : NLP {
 //this treats EACH BRANCH and dof as its own variable
 struct Conv_KOMO_FactoredNLP : NLP_Factored {
   KOMO& komo;
-  //each variable refers to a SET OF dofs (e.g., a set of joints)
-  struct VariableIndexEntry { DofL dofs; uint dim; };
-  rai::Array<VariableIndexEntry> __variableIndex;
-  uintA subVars;
 
-  //features are one-to-one with gounded KOMO features, but with additional info on varIds
-  struct FeatureIndexEntry { shared_ptr<GroundedObjective> ob; uint dim; uintA varIds; };
-  rai::Array<FeatureIndexEntry> __featureIndex;
+  //in addition to the NLP_Factored signature, we store per variable:
+  rai::Array<DofL> variableDofs;
+  StringA variableNames;
+
+//  //each variable refers to a SET OF dofs (e.g., a set of joints)
+//  struct VariableIndexEntry { DofL dofs; uint dim; String name; };
+//  rai::Array<VariableIndexEntry> __variableIndex;
+
+//  //features are one-to-one with gounded KOMO features, but with additional info on varIds
+//  struct FeatureIndexEntry { shared_ptr<GroundedObjective> ob; uint dim; uintA varIds; };
+//  rai::Array<FeatureIndexEntry> __featureIndex;
+
+  //when subSelect, this stores which variables are active
+  uintA subVars;
   uintA subFeats;
 
-  VariableIndexEntry& variableIndex(uint var_id){ if(subVars.N) return __variableIndex(subVars(var_id)); else return __variableIndex(var_id); }
-  FeatureIndexEntry& featureIndex(uint feat_id){ if(subFeats.N) return __featureIndex(subFeats(feat_id)); else return __featureIndex(feat_id); }
+//  VariableIndexEntry& variableIndex(uint var_id){ if(subVars.N) return __variableIndex(subVars(var_id)); else return __variableIndex(var_id); }
+//  FeatureIndexEntry& featureIndex(uint feat_id){ if(subFeats.N) return __featureIndex(subFeats(feat_id)); else return __featureIndex(feat_id); }
 
-  Conv_KOMO_FactoredNLP(KOMO& _komo);
+  Conv_KOMO_FactoredNLP(KOMO& _komo, const rai::Array<DofL>& varDofs);
 
   virtual void subSelect(const uintA& activeVariables, const uintA& conditionalVariables);
 
-  virtual uint getNumVariables() { if(subVars.N) return subVars.N; return __variableIndex.N; }
-  virtual uint getNumFeatures() { if(subFeats.N) return subFeats.N; return __featureIndex.N; }
-//  virtual uint getVariableDim(uint var_id) { return variableIndex(var_id).dim; }
-//  virtual uint getFactorDim(uint feat_id) { return featureIndex(feat_id).dim; }
-//  virtual uintA getVariableFactors(uint var_id) { NIY; } //return variableIndex(var_id).featIds; }
-//  virtual uintA getFactorVariables(uint feat_id) { return featureIndex(feat_id).varIds; }
-  virtual rai::String getVariableName(uint var_id);
+  virtual uint getNumVariables() { if(subVars.N) return subVars.N; return variableDimensions.N; }
+  virtual uint getNumFeatures() { if(subFeats.N) return subFeats.N; return featureDimensions.N; }
+
+  virtual rai::String getVariableName(uint var_id){ if(subVars.N) return variableNames(subVars(var_id)); return variableNames(var_id); }
 
   ///-- signature/structure of the mathematical problem
 //    virtual arr getInitializationSample();

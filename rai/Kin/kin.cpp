@@ -529,19 +529,19 @@ rai::Array<DofL> Configuration::getPartsDofs() const{
       //add normal
       if(d){
         dofs(nonzero++) = D;
-        cout <<'#' <<i <<' ' <<f->name <<' ' <<D.modList() <<endl;
+        //cout <<'#' <<i <<' ' <<f->name <<' ' <<D.modList() <<endl;
         for(Dof *dof:D) totalDim += dof->dim;
       }
       //add forces
       if(F.N){
         dofs(nonzero++) = F;
-        cout <<"#FORCES" <<i <<' ' <<f->name <<' ' <<F.modList() <<endl;
+        //cout <<"#FORCES" <<i <<' ' <<f->name <<' ' <<F.modList() <<endl;
         for(Dof *dof:F) totalDim += dof->dim;
       }
     }
   }
   dofs.resizeCopy(nonzero);
-  cout <<"total dim:" <<totalDim <<endl;
+  //cout <<"total dim:" <<totalDim <<endl;
   return dofs;
 }
 
@@ -684,11 +684,11 @@ void Configuration::setTaus(const arr& tau) {
   for(uint t=0;t<frames.d0;t++) frames(t,0)->tau = tau(t);
 }
 
-void Configuration::setActiveJoints(const DofL& joints){
+void Configuration::setActiveJoints(const DofL& dofs){
   for(rai::Frame *f:frames) if(f->joint) f->joint->active=false;
-  for(rai::Dof *j:joints) j->active=true;
+  for(rai::Dof *j:dofs) j->active=true;
   reset_q();
-  activeDofs = joints;
+  activeDofs = dofs;
   calc_indexedActiveJoints(false);
   checkConsistency();
 }

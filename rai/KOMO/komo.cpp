@@ -1326,7 +1326,8 @@ shared_ptr<NLP> KOMO::nlp_SparseNonFactored(){
 }
 
 shared_ptr<NLP_Factored> KOMO::nlp_Factored(){
-  return make_shared<Conv_KOMO_FactoredNLP>(*this);
+  rai::Array<DofL> dofs = pathConfig.getPartsDofs();
+  return make_shared<Conv_KOMO_FactoredNLP>(*this, dofs);
 }
 
 Camera& KOMO::displayCamera(){ DEPR; return pathConfig.gl()->displayCamera(); }

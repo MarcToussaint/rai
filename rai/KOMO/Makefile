@@ -2,7 +2,7 @@ BASE   = ../..
 NAME   = $(shell basename `pwd`)
 OUTPUT = lib$(NAME).so
 
-OPTIM = fast_debug
+OPTIM = debug#fast_debug
 
 DEPEND = Core Geo Kin Optim Logic
 

@@ -2,6 +2,7 @@
 
 #include "../Kin/frame.h"
 #include "../Kin/proxy.h"
+#include "../Kin/forceExchange.h"
 
 namespace rai{
 
@@ -158,10 +159,15 @@ arr Conv_KOMO_NLP::getInitializationSample(const arr& previousOptima) {
 
 //===========================================================================
 
-Conv_KOMO_FactoredNLP::Conv_KOMO_FactoredNLP(KOMO& _komo) : komo(_komo) {
+Conv_KOMO_FactoredNLP::Conv_KOMO_FactoredNLP(KOMO& _komo, const rai::Array<DofL>& varDofs) : komo(_komo) {
+  komo.pathConfig.jacMode = rai::Configuration::JM_sparse;
   komo.run_prepare(0.);
-  komo.pathConfig.jacMode = Configuration::JM_sparse;
 
+  //NLP signature
+  dimension = komo.pathConfig.getJointStateDimension();
+  komo.getBounds(bounds_lo, bounds_up);
+
+#if 0 //old
   //create variable index
   uint xDim=0;
   uint varId=0;
@@ -194,46 +200,72 @@ Conv_KOMO_FactoredNLP::Conv_KOMO_FactoredNLP(KOMO& _komo) : komo(_komo) {
     varId++;
   }
   CHECK_EQ(xDim, komo.pathConfig.getJointStateDimension(), "");
+#else
+
+  //NLP_Factored signature: variables
+  uint xDim=0;
+  DofL activeDofs;
+  uintA xIndex2varIndex;
+  variableDofs = varDofs;
+  variableDimensions.resize(varDofs.N);
+  variableNames.resize(varDofs.N);
+  for(uint i=0;i<varDofs.N;i++) {
+    DofL& dofs = varDofs(i);
+    activeDofs.append(dofs);
+
+    uint varDim=0;
+    for(Dof* d:dofs){
+      varDim += d->dim;
+      xIndex2varIndex.append(consts<uint>(i, d->dim));
+    }
+    variableDimensions(i) = varDim;
+    xDim += varDim;
+
+    String name;
+    String A; A <<dofs(0)->frame->name <<'.' <<dofs(0)->frame->ID/komo.pathConfig.frames.d1;
+    String B; B <<dofs(-1)->frame->name <<'.' <<dofs(-1)->frame->ID/komo.pathConfig.frames.d1;
+    if(dofs.N>1){
+      name <<A <<"--" <<B;
+    }else if(dofs(0)->fex()){
+      name <<"F--" <<A <<"--" <<dofs(0)->fex()->a.name <<"--" <<dofs(0)->fex()->b.name;
+    }else if(dofs(0)->mimic){
+      name <<"M--" <<A;
+    }else{
+      name <<A;
+    }
+    variableNames(i) = name;
+  }
+  CHECK_EQ(xDim, komo.pathConfig.getJointStateDimension(), "");
+  CHECK_EQ(xDim, xIndex2varIndex.N, "");
+#endif
 
   //ensure that komo.pathConfig uses the same indexing -- that its activeJoint set is indexed exactly as consecutive variables
-  komo.pathConfig.setActiveJoints(activeJoints);
+  komo.pathConfig.setActiveJoints(activeDofs);
+  komo.pathConfig.ensure_q();
 
-  //create feature index
-  uint featId=0;
-  for(shared_ptr<GroundedObjective>& ob:komo.objs) {
-    uint featDim = ob->feat->dim(ob->frames);
-    uintA featVars;
-    for(Frame *f:ob->frames){ //which frames does the objective depend on?
-      uint varId = frameID2VarId(f->ID); //which variable parameterized that frame
-      if(varId!=UINT_MAX) featVars.setAppendInSorted(varId);
-    }
-    __featureIndex.append( FeatureIndexEntry{ ob, featDim, featVars } );
-    featId++;
-  }
-
-  //define signature
-  dimension = komo.pathConfig.getJointStateDimension();
-  komo.getBounds(bounds_lo, bounds_up);
+  //NLP_Factored signature: features
+  featureDimensions.resize(komo.objs.N);
+  featureVariables.resize(komo.objs.N);
   featureTypes.clear();
-  for(uint f=0; f<getNumFeatures(); f++) {
-    featureTypes.append(consts<ObjectiveType>(featureIndex(f).ob->type, featureIndex(f).dim));
+  for(uint f=0;f<getNumFeatures();f++){
+    std::shared_ptr<GroundedObjective>& ob = komo.objs(f);
+    featureDimensions(f) = ob->feat->dim(ob->frames);
+    featureTypes.append(consts<ObjectiveType>(ob->type, featureDimensions(f)));
   }
 
-  //define factorization
-  variableDimensions.resize(getNumVariables());
-  for(uint i=0; i<getNumVariables(); i++) {
-    variableDimensions(i) = variableIndex(i).dim;
-  }
-
-  featureDimensions.resize(getNumFeatures());
-  featureVariables.resize(getNumFeatures());
-  arr y, J;
-
-  for(uint f=0; f<getNumFeatures(); f++) {
-    FeatureIndexEntry& F = featureIndex(f);
-    featureDimensions(f) = F.dim;
-    if(!F.dim) continue;
-    featureVariables(f) = F.varIds;
+  //get variable dependance from querying the sparse Jacobian!
+  for(uint f=0;f<getNumFeatures();f++){
+    std::shared_ptr<GroundedObjective>& ob = komo.objs(f);
+    arr y = ob->feat->eval(ob->frames);
+    if(y.N){
+      CHECK(y.J().isSparse(), "");
+      SparseMatrix& S = y.J().sparse();
+      for(uint i=0;i<S.elems.d0;i++){
+        uint xIndex = S.elems(i,1);
+        uint var = xIndex2varIndex(xIndex);
+        featureVariables(f).setAppendInSorted(var);
+      }
+    }
   }
 }
 
@@ -242,22 +274,20 @@ void Conv_KOMO_FactoredNLP::subSelect(const uintA& activeVariables, const uintA&
   for(uint i:activeVariables) allVars.setAppendInSorted(i);
   for(uint i:conditionalVariables) allVars.setAppendInSorted(i);
 
-  DofL activeJoints;
+  DofL activeDofs;
   for(uint v:activeVariables){
-    VariableIndexEntry& V = __variableIndex(v);
-    for(Dof *d:V.dofs) activeJoints.append(dynamic_cast<Joint*>(d));
+    for(Dof *d:variableDofs(v)) activeDofs.append(dynamic_cast<Joint*>(d));
   }
   subVars = activeVariables;
 
   //ensure that komo.pathConfig uses the same indexing -- that its activeJoint set is indexed exactly as consecutive variables
-  komo.pathConfig.setActiveJoints(activeJoints);
+  komo.pathConfig.setActiveJoints(activeDofs);
   komo.run_prepare(0.);
 
   subFeats.clear();
-  for(uint f=0;f<__featureIndex.N;f++){
-    FeatureIndexEntry& F = __featureIndex(f);
+  for(uint f=0;f<getNumFeatures();f++){
     bool active=true;
-    for(int j:F.varIds){
+    for(int j:featureVariables(f)){
       if(!allVars.containsInSorted(j)) { //only objectives that link only to X \cup Y
         active=false;
       }
@@ -266,44 +296,17 @@ void Conv_KOMO_FactoredNLP::subSelect(const uintA& activeVariables, const uintA&
   }
 }
 
-String Conv_KOMO_FactoredNLP::getVariableName(uint var_id){
-  Dof* d = variableIndex(var_id).dofs.first();
-  Joint *j = dynamic_cast<Joint*>(d);
-  CHECK(j, "");
-  return STRING(j->frame->name <<'.' <<j->frame->ID);
-}
-
 void Conv_KOMO_FactoredNLP::setSingleVariable(uint var_id, const arr& x) {
-  //komo.pathConfig.ensure_q();
-
-  VariableIndexEntry& v = variableIndex(var_id);
-  CHECK_EQ(v.dim, x.N, "");
-//  uint dofIdx = v.xIndex;
-  uint xIdx=0;
-  for(Dof *dof:v.dofs){
-    dof->setDofs(x, xIdx);
-    //      if(!j->mimic){
-    if(dof->active){
-      for(uint ii=0; ii<dof->dim; ii++) komo.pathConfig.q.elem(dof->qIndex+ii) = x(xIdx+ii);
-    }else{
-      HALT("shoudn't be here..?");
-      for(uint ii=0; ii<dof->dim; ii++) komo.pathConfig.qInactive.elem(dof->qIndex+ii) = x(xIdx+ii);
-    }
-    xIdx += dof->dim;
-  }
-  CHECK_EQ(xIdx, v.dim, "");
-
-  komo.pathConfig.proxies.clear();
-  komo.pathConfig._state_q_isGood=true;
-  komo.pathConfig._state_proxies_isGood=false;
+  if(subVars.N) var_id = subVars(var_id);
+  CHECK_EQ(variableDimensions(var_id), x.N, "");
+  komo.pathConfig.setDofState(x, variableDofs(var_id));
 }
 
 void Conv_KOMO_FactoredNLP::evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H) {
-  FeatureIndexEntry& F = featureIndex(feat_id);
-
-  phi = F.ob->feat->eval(F.ob->frames);
+  if(subFeats.N) feat_id = subFeats(feat_id);
+  std::shared_ptr<GroundedObjective>& ob = komo.objs(feat_id);
+  phi = ob->feat->eval(ob->frames);
   J = phi.J();
-  //  cout <<"EVAL '" <<F.ob->name() <<"' phi:" <<phi <<endl;
 }
 
 void Conv_KOMO_FactoredNLP::report(std::ostream& os, int verbose) {
@@ -311,26 +314,22 @@ void Conv_KOMO_FactoredNLP::report(std::ostream& os, int verbose) {
   komo.pathConfig.ensure_q();
 
   if(verbose>1){
-    for(uint v=0; v<getNumVariables(); v++) {
-      VariableIndexEntry& V = variableIndex(v);
-      os <<"Variable " <<v <<" dim:" <<V.dim <<" dofs:{ ";
-      for(Dof* d:V.dofs){
-        Joint *j = dynamic_cast<Joint*>(d);
-        CHECK(j, "");
-        os <<j->frame->name <<'.' <<j->frame->ID <<' ';
-      }
-      os <<'}' <<endl;
+    for(uint i=0; i<getNumVariables(); i++) {
+      uint var_id = i;
+      if(subVars.N) var_id = subVars(var_id);
+      os <<"Variable " <<var_id <<" '" <<variableNames(var_id) <<"' dim:" <<variableDimensions(var_id) <<endl;
     }
-
 
     arr y, J;
     for(uint f=0; f<getNumFeatures(); f++) {
-      FeatureIndexEntry& F = featureIndex(f);
-      os <<"Feature " <<f <<" dim:" <<F.dim <<" vars:( ";
-      for(uint& i:F.varIds) os <<i <<' ';
-      os <<") desc:" <<F.ob->feat->shortTag(komo.pathConfig);
-      evaluateSingleFeature(f, y, J, NoArr);
-      os <<" y:" <<y <<endl;
+      uint feat_id = f;
+      if(subFeats.N) feat_id = subFeats(feat_id);
+      std::shared_ptr<GroundedObjective>& ob = komo.objs(feat_id);
+      os <<"Feature " <<feat_id <<" '" <<ob->feat->shortTag(komo.pathConfig) <<"' dim:" <<featureDimensions(feat_id) <<" vars:( ";
+      for(uint& i:featureVariables(feat_id)) os <<variableNames(i) <<' ';
+      os <<")" ;
+      evaluateSingleFeature(feat_id, y, J, NoArr);
+      os <<" y:" <<y.noJ() <<endl;
 //      os <<"J:" <<J <<endl;
     }
   }

@@ -142,7 +142,7 @@ struct Configuration : GLDrawer {
   void setTaus(const arr& tau);
 
   /// @name active DOFs selection
-  void setActiveJoints(const DofL& F);
+  void setActiveJoints(const DofL& dofs);
   void selectJoints(const FrameL& F, bool notThose=false);
   void selectJoints(const DofL& dofs, bool notThose=false);
   void selectJointsByName(const StringA&, bool notThose=false);
