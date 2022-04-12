@@ -492,9 +492,9 @@ FrameL Configuration::getRoots() const {
 
 /// get all frames without parent or with a PartBreak joint
 FrameL Configuration::getParts() const {
-  FrameL links;
-  for(Frame* a:frames) if(!a->parent || (a->joint && a->joint->isPartBreak())) links.append(a);
-  return links;
+  FrameL F;
+  for(Frame* a:frames) if(!a->parent || (a->joint && a->joint->isPartBreak())) F.append(a);
+  return F;
 }
 
 /// get all frames without parent or with joint
@@ -502,6 +502,47 @@ FrameL Configuration::getLinks() const {
   FrameL links;
   for(Frame* a:frames) if(!a->parent || a->joint) links.append(a);
   return links;
+}
+
+rai::Array<DofL> Configuration::getPartsDofs() const{
+  FrameL parts = getParts();
+  rai::Array<DofL> dofs(parts.N);
+  uint nonzero=0;
+  uint totalDim=0;
+  for(uint i=0;i<parts.N;i++){
+    Frame *f = parts.elem(i);
+    FrameL sub = {f};
+    f->getPartSubFrames(sub);
+    DofL D = getDofs(sub, true);
+    DofL F;
+    if(D.N){
+      //remove mimics
+      for(uint i=D.N;i--;) if(D(i)->mimic) D.remove(i);
+      //separate forces
+      for(uint i=D.N;i--;) if(D(i)->fex()){
+        F.append(D(i));
+        D.remove(i);
+      }
+      //count dofs
+      uint d=0;
+      for(Dof* dof:D) d+=dof->dim;
+      //add normal
+      if(d){
+        dofs(nonzero++) = D;
+        cout <<'#' <<i <<' ' <<f->name <<' ' <<D.modList() <<endl;
+        for(Dof *dof:D) totalDim += dof->dim;
+      }
+      //add forces
+      if(F.N){
+        dofs(nonzero++) = F;
+        cout <<"#FORCES" <<i <<' ' <<f->name <<' ' <<F.modList() <<endl;
+        for(Dof *dof:F) totalDim += dof->dim;
+      }
+    }
+  }
+  dofs.resizeCopy(nonzero);
+  cout <<"total dim:" <<totalDim <<endl;
+  return dofs;
 }
 
 /// get the number of DOFs (size of the q-vector, including DOFs of joints and forces

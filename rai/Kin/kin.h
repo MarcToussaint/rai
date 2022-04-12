@@ -116,6 +116,7 @@ struct Configuration : GLDrawer {
   FrameL getRoots() const;
   FrameL getParts() const;
   FrameL getLinks() const;
+  rai::Array<DofL> getPartsDofs() const;
 
   /// @name get dof or frame state
   uint getJointStateDimension() const;

@@ -968,6 +968,8 @@ void KOMO::run_prepare(double addInitializationNoise) {
   //add noise
   if(addInitializationNoise>0.) {
     rndGauss(x, addInitializationNoise, true); //don't initialize at a singular config
+  }
+  {
     arr lo, up;
     getBounds(lo, up);
     boundClip(x, lo, up);

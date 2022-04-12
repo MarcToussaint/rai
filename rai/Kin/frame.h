@@ -200,7 +200,10 @@ struct Dof {
 
   const Joint* joint() const;
   const ForceExchange* fex() const;
+
+  virtual void write(std::ostream& os) const;
 };
+stdOutPipe(Dof)
 
 //===========================================================================
 

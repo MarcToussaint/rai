@@ -641,9 +641,13 @@ void rai::Dof::setActive(bool _active){
   if(frame) frame->C.reset_q();
 }
 
-const rai::Joint*rai::Dof::joint() const{ return dynamic_cast<const Joint*>(this); }
+const rai::Joint* rai::Dof::joint() const{ return dynamic_cast<const Joint*>(this); }
 
-const rai::ForceExchange*rai::Dof::fex() const{ return dynamic_cast<const ForceExchange*>(this); }
+const rai::ForceExchange* rai::Dof::fex() const{ return dynamic_cast<const ForceExchange*>(this); }
+
+void rai::Dof::write(std::ostream& os) const {
+  os <<"DOF of frame '" <<frame->name <<"'";
+}
 
 //===========================================================================
 
