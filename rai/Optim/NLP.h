@@ -21,7 +21,7 @@ arr summarizeErrors(const arr& phi, const ObjectiveTypeA& tt);
 
 //===========================================================================
 
-/** The MathematicalProgram abstraction provides a solver access to all it needs. To declare a MP problem, the user needs to
+/** The NLP abstraction provides a solver access to all it needs. To declare a NLP problem, the user needs to
  *  overload the virtuals.
  *
  *  The core method to overload is 'evaluate', which returns a feature vector $phi$ and optionally its Jacobian $J$.
@@ -34,7 +34,7 @@ arr summarizeErrors(const arr& phi, const ObjectiveTypeA& tt);
  *
  *  Importantly: the Jacobian may be sparse! This allows to implicitly represent structured NLP (in contrast to explicit structure, see below)
  */
-struct MathematicalProgram : NonCopyable {
+struct NLP : NonCopyable {
 protected:
   //-- problem signature: needs to be defined in the constructor or a derived class
   uint dimension=0;
@@ -43,9 +43,9 @@ public:
   arr bounds_lo, bounds_up;
 
 public:
-  virtual ~MathematicalProgram() {}
+  virtual ~NLP() {}
 
-  void copySignature(const MathematicalProgram& P){
+  void copySignature(const NLP& P){
     dimension = P.dimension;
     bounds_lo = P.bounds_lo;
     bounds_up = P.bounds_up;
@@ -68,7 +68,7 @@ public:
   void getBounds(arr& lo, arr& up) const { lo=bounds_lo; up=bounds_up; }
   const ObjectiveTypeA& getFeatureTypes() const { return featureTypes; }
 
-  shared_ptr<MathematicalProgram> ptr(){ return shared_ptr<MathematicalProgram>(this, [](MathematicalProgram*){}); }
+  shared_ptr<NLP> ptr(){ return shared_ptr<NLP>(this, [](NLP*){}); }
 
 
   double eval_scalar(arr& g, arr& H, const arr& x);
@@ -77,7 +77,7 @@ public:
 
 //===========================================================================
 
-struct MathematicalProgram_Factored : MathematicalProgram {
+struct NLP_Factored : NLP {
   //-- problem factorization: needs to be defined in the constructor or a derived class
   uintA variableDimensions; //the size of each variable block
   uintA featureDimensions;  //the size of each feature block
@@ -99,8 +99,8 @@ struct MathematicalProgram_Factored : MathematicalProgram {
 //===========================================================================
 // TRIVIAL only header
 
-struct MP_Traced : MathematicalProgram {
-  shared_ptr<MathematicalProgram> P;
+struct NLP_Traced : NLP {
+  shared_ptr<NLP> P;
   uint evals=0;
   arr xTrace, costTrace, phiTrace, JTrace;
   bool trace_x=true;
@@ -108,7 +108,7 @@ struct MP_Traced : MathematicalProgram {
   bool trace_phi=false;
   bool trace_J=false;
 
-  MP_Traced(const shared_ptr<MathematicalProgram>& P) : P(P) {
+  NLP_Traced(const shared_ptr<NLP>& P) : P(P) {
     copySignature(*P);
   }
 
@@ -134,11 +134,11 @@ struct MP_Traced : MathematicalProgram {
 
 //===========================================================================
 
-struct MP_Viewer {
-  shared_ptr<MathematicalProgram> P;
-  shared_ptr<MP_Traced> T;
+struct NLP_Viewer {
+  shared_ptr<NLP> P;
+  shared_ptr<NLP_Traced> T;
 
-  MP_Viewer(const shared_ptr<MathematicalProgram>& P, const shared_ptr<MP_Traced>& T={}) : P(P), T(T) {}
+  NLP_Viewer(const shared_ptr<NLP>& P, const shared_ptr<NLP_Traced>& T={}) : P(P), T(T) {}
 
   void display();
   void plotCostTrace();
@@ -147,11 +147,11 @@ struct MP_Viewer {
 //===========================================================================
 // TRIVIAL only header
 
-struct Conv_MathematicalProgram_TrivialFactoreded : MathematicalProgram_Factored {
-  shared_ptr<MathematicalProgram> P;
+struct Conv_NLP_TrivialFactoreded : NLP_Factored {
+  shared_ptr<NLP> P;
   arr x_buffer;
 
-  Conv_MathematicalProgram_TrivialFactoreded(const shared_ptr<MathematicalProgram>& P) : P(P) {
+  Conv_NLP_TrivialFactoreded(const shared_ptr<NLP>& P) : P(P) {
     copySignature(*P);
     variableDimensions = { dimension };
     featureDimensions = { featureTypes.N };
@@ -166,15 +166,15 @@ struct Conv_MathematicalProgram_TrivialFactoreded : MathematicalProgram_Factored
 
 //===========================================================================
 
-struct Conv_FactoredNLP_BandedNLP : MathematicalProgram {
-  shared_ptr<MathematicalProgram_Factored> P;
+struct Conv_FactoredNLP_BandedNLP : NLP {
+  shared_ptr<NLP_Factored> P;
   uint maxBandSize;
   bool sparseNotBanded;
   uintA varDimIntegral, featDimIntegral;
   //buffers
   arrA J_i;
 
-  Conv_FactoredNLP_BandedNLP(const shared_ptr<MathematicalProgram_Factored>& P, uint _maxBandSize, bool _sparseNotBanded=false);
+  Conv_FactoredNLP_BandedNLP(const shared_ptr<NLP_Factored>& P, uint _maxBandSize, bool _sparseNotBanded=false);
 
   // trivial
   virtual arr  getInitializationSample(const arr& previousOptima= {}) { return P->getInitializationSample(previousOptima); }

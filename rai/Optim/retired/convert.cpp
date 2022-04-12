@@ -24,7 +24,7 @@ Convert::~Convert() {
   if(cpm) { delete cpm; cpm=nullptr; }
 }
 
-//void conv_KOrderMarkovFunction_MathematicalProgram(KOrderMarkovFunction& f, arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x);
+//void conv_KOrderMarkovFunction_NLP(KOrderMarkovFunction& f, arr& phi, arr& J, arr& H, ObjectiveTypeA& tt, const arr& x);
 double conv_VectorFunction_ScalarFunction(VectorFunction f, arr& g, arr& H, const arr& x) {
   arr y = f(x);
   //  if(J.special==arr::RowShiftedST) J = unpack(J);
@@ -96,7 +96,7 @@ ScalarFunction conv_VectorFunction2ScalarFunction(const VectorFunction& f) {
   };
 }
 
-void Conv_linearlyReparameterize_MathematicalProgram::evaluate(arr& phi, arr& J, const arr& z) {
+void Conv_linearlyReparameterize_NLP::evaluate(arr& phi, arr& J, const arr& z) {
   arr x = B*z;
   P.evaluate(phi, J, x);
   if(!!J) J = comp_A_x(J, B);
@@ -105,10 +105,10 @@ void Conv_linearlyReparameterize_MathematicalProgram::evaluate(arr& phi, arr& J,
 //===========================================================================
 
 Convert::Convert(KOMO_Problem& p) : cstyle_fs(nullptr), cstyle_fv(nullptr), data(nullptr), cpm(nullptr) {
-  cpm = new Conv_KOMOProblem_MathematicalProgram(p);
+  cpm = new Conv_KOMOProblem_NLP(p);
 }
 
-Convert::operator MathematicalProgram& () {
+Convert::operator NLP& () {
   if(!cpm) HALT("");
   return *cpm;
 }

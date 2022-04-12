@@ -7,7 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "opt-nlopt.h"
-#include "MP_Solver.h"
+#include "NLP_Solver.h"
 #include "optimization.h"
 
 #ifdef RAI_NLOPT

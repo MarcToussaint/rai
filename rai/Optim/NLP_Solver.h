@@ -1,13 +1,13 @@
 #pragma once
 
-#include "MathematicalProgram.h"
+#include "NLP.h"
 #include "options.h"
 #include "../Core/graph.h"
 
-enum MP_SolverID { MPS_none=-1,
-                   MPS_gradientDescent, MPS_rprop, MPS_LBFGS, MPS_newton,
-                   MPS_augmentedLag, MPS_squaredPenalty, MPS_logBarrier, MPS_singleSquaredPenalty,
-                   MPS_NLopt, MPS_Ipopt, MPS_Ceres
+enum NLP_SolverID { NLPS_none=-1,
+                   NLPS_gradientDescent, NLPS_rprop, NLPS_LBFGS, NLPS_newton,
+                   NLPS_augmentedLag, NLPS_squaredPenalty, NLPS_logBarrier, NLPS_singleSquaredPenalty,
+                   NLPS_NLopt, NLPS_Ipopt, NLPS_Ceres
                   };
 
 enum NLopt_SolverOption { _NLopt_LD_SLSQP,
@@ -38,18 +38,18 @@ struct SolverReturn {
 stdOutPipe(SolverReturn)
 
 /** User Interface: Meta class to call several different solvers in a unified manner. */
-struct MP_Solver : NonCopyable {
-  MP_SolverID solverID=MPS_augmentedLag;
+struct NLP_Solver : NonCopyable {
+  NLP_SolverID solverID=NLPS_augmentedLag;
   arr x, dual;
-  shared_ptr<MP_Traced> P;
+  shared_ptr<NLP_Traced> P;
   rai::OptOptions opt;
 
-  MP_Solver& setSolver(MP_SolverID _solverID){ solverID=_solverID; return *this; }
-  MP_Solver& setProblem(const shared_ptr<MathematicalProgram>& _P){ CHECK(!P, "problem was already set!"); P = make_shared<MP_Traced>(_P); return *this; }
-  MP_Solver& setOptions(const rai::OptOptions& _opt){ opt = _opt; return *this; }
-  MP_Solver& setInitialization(const arr& _x){ x=_x; return *this; }
-  MP_Solver& setWarmstart(const arr& _x, const arr& _dual){ x=_x; dual=_dual; return *this; }
-  MP_Solver& setTracing(bool trace_x, bool trace_costs, bool trace_phi, bool trace_J){ P->setTracing(trace_x, trace_costs, trace_phi, trace_J); return *this; }
+  NLP_Solver& setSolver(NLP_SolverID _solverID){ solverID=_solverID; return *this; }
+  NLP_Solver& setProblem(const shared_ptr<NLP>& _P){ CHECK(!P, "problem was already set!"); P = make_shared<NLP_Traced>(_P); return *this; }
+  NLP_Solver& setOptions(const rai::OptOptions& _opt){ opt = _opt; return *this; }
+  NLP_Solver& setInitialization(const arr& _x){ x=_x; return *this; }
+  NLP_Solver& setWarmstart(const arr& _x, const arr& _dual){ x=_x; dual=_dual; return *this; }
+  NLP_Solver& setTracing(bool trace_x, bool trace_costs, bool trace_phi, bool trace_J){ P->setTracing(trace_x, trace_costs, trace_phi, trace_J); return *this; }
 
   shared_ptr<SolverReturn> solve(int resampleInitialization=-1); ///< -1: only when not yet set
 

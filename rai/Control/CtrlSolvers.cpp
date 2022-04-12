@@ -548,7 +548,7 @@ void TaskControlMethods::calcForceControl(CtrlObjectiveL& tasks, arr& K_ft, arr&
 
 #endif
 
-CtrlProblem_MathematicalProgram::CtrlProblem_MathematicalProgram(CtrlSolver& _CP)
+CtrlProblem_NLP::CtrlProblem_NLP(CtrlSolver& _CP)
   : CP(_CP) {
   for(uint k=0; k<2; k++) {
     rai::Configuration* C = Ctuple.append(new rai::Configuration());
@@ -559,11 +559,11 @@ CtrlProblem_MathematicalProgram::CtrlProblem_MathematicalProgram(CtrlSolver& _CP
   }
 }
 
-uint CtrlProblem_MathematicalProgram::getDimension() {
+uint CtrlProblem_NLP::getDimension() {
   return CP.komo.world.getJointStateDimension();
 }
 
-void CtrlProblem_MathematicalProgram::getBounds(arr& bounds_lo, arr& bounds_up) {
+void CtrlProblem_NLP::getBounds(arr& bounds_lo, arr& bounds_up) {
   arr limits = ~CP.komo.world.getLimits();
   bounds_lo = limits[0];
   bounds_up = limits[1];
@@ -581,7 +581,7 @@ void CtrlProblem_MathematicalProgram::getBounds(arr& bounds_lo, arr& bounds_up) 
   }
 }
 
-void CtrlProblem_MathematicalProgram::getFeatureTypes(ObjectiveTypeA& featureTypes) {
+void CtrlProblem_NLP::getFeatureTypes(ObjectiveTypeA& featureTypes) {
   for(auto& o: CP.objectives) if(o->active) {
     uint d = o->feat->dim(o->feat->getFrames(CP.komo.world));
     featureTypes.append(consts<ObjectiveType>(o->type, d));
@@ -589,7 +589,7 @@ void CtrlProblem_MathematicalProgram::getFeatureTypes(ObjectiveTypeA& featureTyp
   dimPhi = featureTypes.N;
 }
 
-void CtrlProblem_MathematicalProgram::getNames(StringA& variableNames, StringA& featureNames) {
+void CtrlProblem_NLP::getNames(StringA& variableNames, StringA& featureNames) {
   variableNames = CP.komo.world.getJointNames();
   for(auto& o: CP.objectives) if(o->active) {
     uint d = o->feat->dim(o->feat->getFrames(CP.komo.world));
@@ -597,11 +597,11 @@ void CtrlProblem_MathematicalProgram::getNames(StringA& variableNames, StringA& 
   }
 }
 
-arr CtrlProblem_MathematicalProgram::getInitializationSample(const arr& previousOptima) {
+arr CtrlProblem_NLP::getInitializationSample(const arr& previousOptima) {
   NIY;
 }
 
-void CtrlProblem_MathematicalProgram::evaluate(arr& phi, arr& J, const arr& x) {
+void CtrlProblem_NLP::evaluate(arr& phi, arr& J, const arr& x) {
   Ctuple(-1)->setJointState(x);
   Ctuple(-1)->stepSwift();
 
@@ -659,7 +659,7 @@ void CtrlProblem_MathematicalProgram::evaluate(arr& phi, arr& J, const arr& x) {
 }
 
 arr solve_optim(CtrlSolver& CP) {
-  auto MP = make_shared<CtrlProblem_MathematicalProgram>(CP);
+  auto nlp = make_shared<CtrlProblem_NLP>(CP);
 
   arr x = CP.komo.world.getJointState();
   rai::OptOptions opt;
@@ -667,8 +667,8 @@ arr solve_optim(CtrlSolver& CP) {
   opt.stopGTolerance = 1e-4;
   opt.stopIters = 10;
 //  opt.nonStrictSteps=-1;
-  OptConstrained O(x, NoArr, MP, opt);
-  MP->getBounds(O.newton.bounds_lo, O.newton.bounds_up);
+  OptConstrained O(x, NoArr, nlp, opt);
+  nlp->getBounds(O.newton.bounds_lo, O.newton.bounds_up);
   O.run();
   return x;
 }

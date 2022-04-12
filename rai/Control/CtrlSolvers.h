@@ -9,7 +9,7 @@
 #pragma once
 
 #include "CtrlObjective.h"
-#include "../Optim/MathematicalProgram.h"
+#include "../Optim/NLP.h"
 
 //===========================================================================
 
@@ -46,14 +46,14 @@ struct TaskControlMethods {
 
 //===========================================================================
 
-struct CtrlProblem_MathematicalProgram : MathematicalProgram {
+struct CtrlProblem_NLP : NLP {
   CtrlSolver& CP;
   ConfigurationL Ctuple;
   uint dimPhi=0;
   arr store_phi;
   arr store_J;
 
-  CtrlProblem_MathematicalProgram(CtrlSolver& _CP);
+  CtrlProblem_NLP(CtrlSolver& _CP);
 
   virtual uint getDimension();
   virtual void getBounds(arr& bounds_lo, arr& bounds_up);

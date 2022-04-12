@@ -6,12 +6,12 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "MathematicalProgram.h"
+#include "NLP.h"
 
 struct IpoptInterface {
-  shared_ptr<MathematicalProgram> P;
+  shared_ptr<NLP> P;
 
-  IpoptInterface(const shared_ptr<MathematicalProgram>& P) : P(P) {}
+  IpoptInterface(const shared_ptr<NLP>& P) : P(P) {}
 
   arr solve(const arr& x_init=NoArr);
 };

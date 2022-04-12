@@ -21,14 +21,14 @@ struct KOMO_Problem {
 };
 
 //-- converters
-struct Conv_KOMOProblem_MathematicalProgram : MathematicalProgram {
+struct Conv_KOMOProblem_NLP : NLP {
   KOMO_Problem& KOMO;
   uintA variableDimensions, varDimIntegral;
   uintA featureTimes;
   ObjectiveTypeA featureTypes;
   arrA J_KOMO, H_KOMO;
 
-  Conv_KOMOProblem_MathematicalProgram(KOMO_Problem& P);
+  Conv_KOMOProblem_NLP(KOMO_Problem& P);
 
   virtual uint getDimension() { return varDimIntegral.elem(-1); }
   virtual void getFeatureTypes(ObjectiveTypeA& ft) { ft = featureTypes; }

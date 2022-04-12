@@ -11,7 +11,7 @@
 // test standard constrained optimizers
 //
 
-void lectureDemo(const shared_ptr<MathematicalProgram>& P, const arr& x_start=NoArr, uint iters=20){
+void lectureDemo(const shared_ptr<NLP>& P, const arr& x_start=NoArr, uint iters=20){
   rai::OptOptions options;
   LagrangianProblem lag(P, options);
 

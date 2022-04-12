@@ -76,8 +76,8 @@ double _RosenbrockFunction(arr& g, arr& H, const arr& x) {
   return f;
 }
 
-struct MP_Rosenbrock : ScalarUnconstrainedProgram {
-  MP_Rosenbrock(uint dim) { dimension=dim; }
+struct NLP_Rosenbrock : ScalarUnconstrainedProgram {
+  NLP_Rosenbrock(uint dim) { dimension=dim; }
   virtual double f(arr &g, arr &H, const arr &x){ return _RosenbrockFunction(g, H, x); }
 };
 
@@ -97,8 +97,8 @@ double _RastriginFunction(arr& g, arr& H, const arr& x) {
   return f;
 }
 
-struct MP_Rastrigin : ScalarUnconstrainedProgram {
-  MP_Rastrigin(uint dim){ dimension=dim; }
+struct NLP_Rastrigin : ScalarUnconstrainedProgram {
+  NLP_Rastrigin(uint dim){ dimension=dim; }
   virtual uint getDimension(){ return dimension; }
   virtual double f(arr &g, arr &H, const arr &x){ return _RastriginFunction(g, H, x); }
 };
@@ -195,7 +195,7 @@ void generateConditionedRandomProjection(arr& M, uint n, double condition) {
 
 //===========================================================================
 
-MP_Squared::MP_Squared(uint _n, double condition, bool random) : n(_n) {
+NLP_Squared::NLP_Squared(uint _n, double condition, bool random) : n(_n) {
   dimension = n;
   featureTypes = consts<ObjectiveType>(OT_sos, n);
 
@@ -322,7 +322,7 @@ void ChoiceConstraintFunction::getFHessian(arr& H, const arr& x) {
 
 
 
-std::shared_ptr<MathematicalProgram> getBenchmarkFromCfg(){
+std::shared_ptr<NLP> getBenchmarkFromCfg(){
   rai::Enum<BenchmarkSymbol> bs (rai::getParameter<rai::String>("benchmark"));
   uint dim = rai::getParameter<uint>("benchmark/dim", 2);
   double forsyth = rai::getParameter<double>("benchmark/forsyth", -1.);
@@ -331,50 +331,50 @@ std::shared_ptr<MathematicalProgram> getBenchmarkFromCfg(){
   //-- unconstrained problems
 
   {
-    std::shared_ptr<ScalarUnconstrainedProgram> mp;
+    std::shared_ptr<ScalarUnconstrainedProgram> nlp;
 
-    if(bs==BS_Rosenbrock) mp = make_shared<MP_Rosenbrock>(dim);
-    else if(bs==BS_Rastrigin) mp = make_shared<MP_Rastrigin>(dim);
+    if(bs==BS_Rosenbrock) nlp = make_shared<NLP_Rosenbrock>(dim);
+    else if(bs==BS_Rastrigin) nlp = make_shared<NLP_Rastrigin>(dim);
     else if(forsyth>0.){
-      shared_ptr<MathematicalProgram> org;
-      if(bs==BS_Square) org = make_shared<MP_Squared>(dim, condition, false);
-      else if(bs==BS_RandomSquared) org = make_shared<MP_Squared>(dim, condition, true);
-      else if(bs==BS_RastriginSOS) org = make_shared<MP_RastriginSOS>();
+      shared_ptr<NLP> org;
+      if(bs==BS_Square) org = make_shared<NLP_Squared>(dim, condition, false);
+      else if(bs==BS_RandomSquared) org = make_shared<NLP_Squared>(dim, condition, true);
+      else if(bs==BS_RastriginSOS) org = make_shared<NLP_RastriginSOS>();
       if(org){
         auto lag = make_shared<LagrangianProblem>(org); //convert to scalar
-        mp = make_shared<ScalarUnconstrainedProgram>(lag, dim);
+        nlp = make_shared<ScalarUnconstrainedProgram>(lag, dim);
       }
     }
 
-    if(mp){
+    if(nlp){
       arr bounds = rai::getParameter<arr>("benchmark/bounds", {});
       if(bounds.N){
-        mp->bounds_lo = consts<double>(bounds(0), dim);
-        mp->bounds_up = consts<double>(bounds(1), dim);
+        nlp->bounds_lo = consts<double>(bounds(0), dim);
+        nlp->bounds_up = consts<double>(bounds(1), dim);
       }
-      if(forsyth>0.) mp->forsythAlpha = forsyth;
-      return mp;
+      if(forsyth>0.) nlp->forsythAlpha = forsyth;
+      return nlp;
     }
   }
 
   //-- constrained problems
 
-  std::shared_ptr<MathematicalProgram> mp;
+  std::shared_ptr<NLP> nlp;
 
-  if(bs==BS_RandomLP) mp = make_shared<MP_RandomLP>(dim);
-  else if(bs==BS_Square) mp = make_shared<MP_Squared>(dim, condition, false);
-  else if(bs==BS_RandomSquared) mp = make_shared<MP_Squared>(dim, condition, true);
-  else if(bs==BS_RastriginSOS) mp = make_shared<MP_RastriginSOS>();
-  else if(bs==BS_Wedge) mp = make_shared<MP_Wedge>();
-  else if(bs==BS_HalfCircle) mp = make_shared<MP_HalfCircle>();
-  else if(bs==BS_CircleLine) mp = make_shared<MP_CircleLine>();
+  if(bs==BS_RandomLP) nlp = make_shared<NLP_RandomLP>(dim);
+  else if(bs==BS_Square) nlp = make_shared<NLP_Squared>(dim, condition, false);
+  else if(bs==BS_RandomSquared) nlp = make_shared<NLP_Squared>(dim, condition, true);
+  else if(bs==BS_RastriginSOS) nlp = make_shared<NLP_RastriginSOS>();
+  else if(bs==BS_Wedge) nlp = make_shared<NLP_Wedge>();
+  else if(bs==BS_HalfCircle) nlp = make_shared<NLP_HalfCircle>();
+  else if(bs==BS_CircleLine) nlp = make_shared<NLP_CircleLine>();
   else HALT("can't interpret benchmark symbol: " <<bs);
 
   arr bounds = rai::getParameter<arr>("benchmark/bounds", {});
   if(bounds.N){
-    mp->bounds_lo = consts<double>(bounds(0), dim);
-    mp->bounds_up = consts<double>(bounds(1), dim);
+    nlp->bounds_lo = consts<double>(bounds(0), dim);
+    nlp->bounds_up = consts<double>(bounds(1), dim);
   }
 
-  return mp;
+  return nlp;
 }

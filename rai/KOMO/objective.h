@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "../Optim/MathematicalProgram.h"
+#include "../Optim/NLP.h"
 #include "../Kin/feature.h"
 
 //===========================================================================

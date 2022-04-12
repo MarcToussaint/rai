@@ -3,7 +3,7 @@
 #include <Kin/F_collisions.h>
 #include <Kin/viewer.h>
 #include <Kin/F_pose.h>
-#include <Optim/MP_Solver.h>
+#include <Optim/NLP_Solver.h>
 
 //===========================================================================
 
@@ -53,8 +53,8 @@ void testFactored(){
 
   //== get info from the factored problem
   {
-    std::shared_ptr<MathematicalProgram_Factored> mp = komo.mp_Factored();
-    mp->report(cout, 3);
+    std::shared_ptr<NLP_Factored> nlp = komo.nlp_Factored();
+    nlp->report(cout, 3);
   }
 
   //== three equivalent options to solve the full problem:
@@ -80,27 +80,27 @@ void testFactored(){
   while(komo.view_play(true));
 #endif
 
-  std::shared_ptr<MathematicalProgram_Factored> mp = komo.mp_Factored();
-  mp->report(cout, 3);
+  std::shared_ptr<NLP_Factored> nlp = komo.nlp_Factored();
+  nlp->report(cout, 3);
 
   uintA gripperDUP_vars;
-  for(uint i=0;i<mp->variableDimensions.N;i++){
-    if(mp->getVariableName(i).startsWith("gripperDUP")) gripperDUP_vars.append(i);
+  for(uint i=0;i<nlp->variableDimensions.N;i++){
+    if(nlp->getVariableName(i).startsWith("gripperDUP")) gripperDUP_vars.append(i);
   }
   cout <<gripperDUP_vars <<endl;
 
-  mp->subSelect(gripperDUP_vars, {});
+  nlp->subSelect(gripperDUP_vars, {});
 
   cout <<"======== SUBSELECT ==========" <<endl;
-  mp->report(cout, 3);
+  nlp->report(cout, 3);
 
-  checkJacobianCP(*mp, komo.x, 1e-6);
+  checkJacobianCP(*nlp, komo.x, 1e-6);
 
-  MP_Solver()
-      .setProblem(mp)
+  NLP_Solver()
+      .setProblem(nlp)
       .solve();
 
-  mp->report(cout, 3);
+  nlp->report(cout, 3);
 
 //  komo.checkGradients();
 //  komo.optimize();

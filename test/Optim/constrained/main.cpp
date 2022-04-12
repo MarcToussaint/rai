@@ -4,14 +4,14 @@
 #include <Optim/constrained.h>
 
 //lecture.cpp:
-void lectureDemo(const shared_ptr<MathematicalProgram>& P, const arr& x_start=NoArr, uint iters=20);
+void lectureDemo(const shared_ptr<NLP>& P, const arr& x_start=NoArr, uint iters=20);
 
 //==============================================================================
 //
 // test standard constrained optimizers
 //
 
-void testConstraint2(MathematicalProgram& p, arr& x_start=NoArr){
+void testConstraint2(NLP& p, arr& x_start=NoArr){
   //-- initial x
   arr x = p.getInitializationSample();
   if(!!x_start) x=x_start;
@@ -27,7 +27,7 @@ void testConstraint2(MathematicalProgram& p, arr& x_start=NoArr){
 // test the phase one optimization
 //
 
-void testPhaseOne(const shared_ptr<MathematicalProgram>& f, uint dim_x){
+void testPhaseOne(const shared_ptr<NLP>& f, uint dim_x){
   auto metaF = make_shared<PhaseOneProblem>(f);
 
   arr x;
@@ -63,8 +63,8 @@ void TEST(CoveringSphere){
 
 //===========================================================================
 
-void TEST(MathematicalProgram){
-  auto P = make_shared<MP_TrivialSquareFunction>(2, 1., 2.);
+void TEST(NLP){
+  auto P = make_shared<NLP_TrivialSquareFunction>(2, 1., 2.);
 
   arr x, phi;
   x = P->getInitializationSample();
@@ -72,7 +72,7 @@ void TEST(MathematicalProgram){
   P->evaluate(phi, NoArr, x);
   cout <<x <<endl <<phi;
 
-  //Conv_MathematicalProgram_ConstrainedProblem F(P);
+  //Conv_NLP_ConstrainedProblem F(P);
   checkJacobianCP(*P, x, 1e-4);
 
   OptConstrained opt(x, NoArr, P, rai::OptOptions().set_verbose(6));
@@ -97,7 +97,7 @@ int main(int argc,char** argv){
 //  testConstraint2(F);
 
 //  testCoveringSphere();
-//  testMathematicalProgram();
+//  testNLP();
 
   return 0;
 }

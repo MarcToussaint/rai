@@ -20,7 +20,7 @@ double I_lambda_x(uint i, arr& lambda, arr& g) {
 
 //==============================================================================
 
-LagrangianProblem::LagrangianProblem(const shared_ptr<MathematicalProgram>& P, const rai::OptOptions& opt, arr& lambdaInit)
+LagrangianProblem::LagrangianProblem(const shared_ptr<NLP>& P, const rai::OptOptions& opt, arr& lambdaInit)
   : P(P), muLB(0.), mu(0.), nu(0.), useLB(false) {
 
   CHECK(P, "null problem given");

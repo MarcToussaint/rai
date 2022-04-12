@@ -1,24 +1,24 @@
 #include "komo.h"
 #include "skeleton.h"
 
-#include "../Optim/MathematicalProgram.h"
+#include "../Optim/NLP.h"
 
 struct OptBench_InvKin_Endeff {
   OptBench_InvKin_Endeff(const char* modelFile, bool unconstrained);
-  shared_ptr<MathematicalProgram> get(){  return nlp;  }
+  shared_ptr<NLP> get(){  return nlp;  }
 
 private:
   unique_ptr<KOMO> komo;
-  shared_ptr<MathematicalProgram> nlp;
+  shared_ptr<NLP> nlp;
 };
 
 struct OptBench_Skeleton {
   void create(const char* modelFile, const rai::Skeleton& S, rai::ArgWord sequenceOrPath);
-  shared_ptr<MathematicalProgram> get(){  CHECK(nlp, "need to create first"); return nlp;  }
+  shared_ptr<NLP> get(){  CHECK(nlp, "need to create first"); return nlp;  }
 
 //private:
   unique_ptr<KOMO> komo;
-  shared_ptr<MathematicalProgram> nlp;
+  shared_ptr<NLP> nlp;
 };
 
 struct OptBench_Skeleton_Pick : OptBench_Skeleton {

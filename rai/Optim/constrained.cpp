@@ -61,7 +61,7 @@ const char* MethodName[]= { "NoMethod", "SquaredPenalty", "AugmentedLagrangian",
 
 //==============================================================================
 
-OptConstrained::OptConstrained(arr& _x, arr& _dual, const shared_ptr<MathematicalProgram>& P, rai::OptOptions _opt, std::ostream* _logFile)
+OptConstrained::OptConstrained(arr& _x, arr& _dual, const shared_ptr<NLP>& P, rai::OptOptions _opt, std::ostream* _logFile)
   : L(P, _opt, _dual), newton(_x, L, _opt, _logFile), dual(_dual), opt(_opt), logFile(_logFile) {
 
   if(opt.boundedNewton){

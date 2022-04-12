@@ -5,18 +5,18 @@
 //===========================================================================
 
 void TEST(NLOpt){
-  std::shared_ptr<MathematicalProgram> mp = getBenchmarkFromCfg();
-  auto traced = make_shared<MP_Traced>(mp);
-  arr x_init = mp->getInitializationSample();
+  std::shared_ptr<NLP> nlp = getBenchmarkFromCfg();
+  auto traced = make_shared<NLP_Traced>(nlp);
+  arr x_init = nlp->getInitializationSample();
 
   {
     NLoptInterface nlo(traced);
     nlo.solve(x_init);
   }
 
-  MP_Viewer(mp, traced).display();
+  NLP_Viewer(nlp, traced).display();
   rai::wait();
-  MP_Viewer(mp, traced).plotCostTrace();
+  NLP_Viewer(nlp, traced).plotCostTrace();
   rai::wait();
 
   //---
@@ -28,9 +28,9 @@ void TEST(NLOpt){
     opt.run();
   }
 
-  MP_Viewer(mp, traced).display();
+  NLP_Viewer(nlp, traced).display();
   rai::wait();
-  MP_Viewer(mp, traced).plotCostTrace();
+  NLP_Viewer(nlp, traced).plotCostTrace();
   rai::wait();
 }
 

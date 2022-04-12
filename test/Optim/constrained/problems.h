@@ -1,6 +1,6 @@
 #include <Optim/optimization.h>
 
-struct CoveringSpheresProblem : MathematicalProgram {
+struct CoveringSpheresProblem : NLP {
   const arr& x;
   double p, alpha;
   uint s;

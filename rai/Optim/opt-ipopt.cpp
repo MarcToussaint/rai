@@ -14,13 +14,13 @@
 #include <coin/IpIpoptApplication.hpp>
 
 struct Conv_MP_Ipopt : Ipopt::TNLP {
-  shared_ptr<MathematicalProgram> P;
+  shared_ptr<NLP> P;
   arr x_init;
   arr x, phi_x, J_x;
 
   //-- buffers to avoid recomputing gradients
 
-  Conv_MP_Ipopt(const shared_ptr<MathematicalProgram>& P);
+  Conv_MP_Ipopt(const shared_ptr<NLP>& P);
 
   virtual ~Conv_MP_Ipopt();
 
@@ -58,7 +58,7 @@ struct Conv_MP_Ipopt : Ipopt::TNLP {
                                  Ipopt::IpoptCalculatedQuantities* ip_cq);
 };
 
-Conv_MP_Ipopt::Conv_MP_Ipopt(const shared_ptr<MathematicalProgram>& P) : P(P) {}
+Conv_MP_Ipopt::Conv_MP_Ipopt(const shared_ptr<NLP>& P) : P(P) {}
 
 Conv_MP_Ipopt::~Conv_MP_Ipopt() {}
 

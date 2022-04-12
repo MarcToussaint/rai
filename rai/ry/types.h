@@ -28,7 +28,7 @@ typedef std::vector<I_feature> I_features;
 
 typedef std::tuple<std::vector<double>, std::string, I_StringA, I_args> I_objective;
 typedef std::vector<I_objective> I_objectives;
-};
+}
 
 pybind11::dict graph2dict(const rai::Graph& G);
 
@@ -167,7 +167,7 @@ template <typename T>  struct type_caster<rai::Array<T>> {
     pybind11::array_t<T> ret = arr2numpy(src);
     return ret.release();
   }
-}
+ };
 }
 }
 

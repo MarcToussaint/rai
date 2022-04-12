@@ -1,5 +1,5 @@
 #include <KOMO/komo.h>
-#include <Optim/MP_Solver.h>
+#include <Optim/NLP_Solver.h>
 #include <KOMO/pathTools.h>
 
 #include <thread>
@@ -36,7 +36,7 @@ void createPath(){
 
 //===========================================================================
 
-struct TimeOpt : MathematicalProgram {
+struct TimeOpt : NLP {
   const arr path;
   const uint prefix;
   const uint n;
@@ -228,35 +228,35 @@ void timeOpt(){
   arr x0=path[0];
   for(uint i=0;i<k;i++){ path.prepend(x0); }
 
-  TimeOpt mp(path, k, 2., 4., 30., 1e1);
-  mp.animate=false;
-//  checkJacobianCP(mp, tau.sub(k,-1), 1e-6);
+  TimeOpt nlp(path, k, 2., 4., 30., 1e1);
+  nlp.animate=false;
+//  checkJacobianCP(nlp, tau.sub(k,-1), 1e-6);
 //  rai::wait();
 
   rai::setParameter<double>("opt/maxStep", 1e-1);
   rai::setParameter<double>("opt/stopTolerance", 1e-6);
   rai::setParameter<double>("opt/damping", 1e-2);
 
-  rai::Enum<MP_SolverID> sid (rai::getParameter<rai::String>("solver"));
-  MP_Solver solver;
+  rai::Enum<NLP_SolverID> sid (rai::getParameter<rai::String>("solver"));
+  NLP_Solver solver;
   solver
-      .setProblem(mp.ptr())
+      .setProblem(nlp.ptr())
 //      .setTracing(true, true,true, false)
       .setSolver(sid);
   auto ret = solver.solve();
   cout <<*ret <<endl;
 
-//  checkJacobianCP(mp, ret->x, 1e-6);
+//  checkJacobianCP(nlp, ret->x, 1e-6);
   arr tau(path.d0);
   tau=.01;
-  tau({k,-1}) = mp.tau;
+  tau({k,-1}) = nlp.tau;
 
   cout <<tau <<endl;
 
-  mp.plotSolution();
+  nlp.plotSolution();
   rai::wait();
 
-  MP_Viewer(mp.ptr(), solver.P).plotCostTrace();
+  NLP_Viewer(nlp.ptr(), solver.P).plotCostTrace();
   rai::wait();
 //  cout <<solver.getTrace_x() <<solver.getTrace_costs() <<endl;
 

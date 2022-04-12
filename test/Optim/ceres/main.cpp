@@ -26,7 +26,7 @@
 #include <ceres/loss_function.h>
 
 //class Conv_CostFunction : public ceres::CostFunction {
-//  std::shared_ptr<MathematicalProgram> MP;
+//  std::shared_ptr<NLP> MP;
 //  uint feature_id;
 //  uint featureDim;
 //  intA varIds;
@@ -34,7 +34,7 @@
 //  uint varTotalDim;
 
 //public:
-//  Conv_CostFunction(const ptr<MathematicalProgram>& _MP,
+//  Conv_CostFunction(const ptr<NLP>& _MP,
 //                    uint _feature_id,
 //                    const uintA& variableDimensions,
 //                    const uintA& featureDimensions,
@@ -82,7 +82,7 @@
 ////===========================================================================
 
 //struct Conv_MatematicalProgram_CeresProblem {
-//  std::shared_ptr<MathematicalProgram> MP;
+//  std::shared_ptr<NLP> MP;
 
 //  uintA variableDimensions, featureDimensions, variableDimIntegral;
 //  intAA featureVariables;
@@ -96,7 +96,7 @@
 
 //  ceres::Problem cs;
 
-//  Conv_MatematicalProgram_CeresProblem(const ptr<MathematicalProgram>& _MP) : MP(_MP) {
+//  Conv_MatematicalProgram_CeresProblem(const ptr<NLP>& _MP) : MP(_MP) {
 
 //    //you must never ever resize these arrays, as ceres takes pointers directly into these fixed memory buffers!
 //    x_base.resize(MP.getDimension());
@@ -166,12 +166,12 @@ void tutorialBasics(){
 
 #if 1
   komo.solver=rai::KS_dense;
-  auto P1 = komo.mp_SparseNonFactored();
-  auto P = make_shared<Conv_MathematicalProgram_TrivialFactoreded>(P1);
+  auto P1 = komo.nlp_SparseNonFactored();
+  auto P = make_shared<Conv_NLP_TrivialFactoreded>(P1);
 
   checkJacobianCP(*P, komo.x, 1e-4);
 
-  Conv_MathematicalProgram_CeresProblem cer(P);
+  Conv_NLP_CeresProblem cer(P);
   cer.x_full = P->getInitializationSample();
 
   // Run the solver!
@@ -210,11 +210,11 @@ void tutorialBasics(){
 //===========================================================================
 
 void testCeres2(){
-  MP_TrivialSquareFunction P(20, 1., 2.);
+  NLP_TrivialSquareFunction P(20, 1., 2.);
 //  auto P = make_shared<ChoiceConstraintFunction>();
 
-  auto P2 = make_shared<Conv_MathematicalProgram_TrivialFactoreded>(P.ptr());
-  Conv_MathematicalProgram_CeresProblem cer(P2);
+  auto P2 = make_shared<Conv_NLP_TrivialFactoreded>(P.ptr());
+  Conv_NLP_CeresProblem cer(P2);
 
   cer.x_full = P.getInitializationSample();
 
@@ -232,13 +232,13 @@ void testCeres2(){
 //===========================================================================
 
 void TEST(Ceres){
-//  MP_TrivialSquareFunction P(2, 1., 2.);
+//  NLP_TrivialSquareFunction P(2, 1., 2.);
   ChoiceConstraintFunction P;
 
   {
-    MP_Traced P2(P.ptr());
+    NLP_Traced P2(P.ptr());
     LagrangianProblem L(P2.ptr());
-    auto P3 = make_shared<Conv_MathematicalProgram_TrivialFactoreded>(L.ptr());
+    auto P3 = make_shared<Conv_NLP_TrivialFactoreded>(L.ptr());
 
     CeresInterface opt(P3);
     opt.solve();

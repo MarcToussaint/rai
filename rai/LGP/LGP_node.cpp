@@ -14,7 +14,7 @@
 #include "../Kin/switch.h"
 #include "../Gui/opengl.h"
 #include "../Kin/viewer.h"
-#include "../Optim/MP_Solver.h"
+#include "../Optim/NLP_Solver.h"
 
 #define DEBUG(x) //x
 #define DEL_INFEASIBLE(x) //x
@@ -43,16 +43,16 @@ rai::SkeletonTranscription skeleton2Bound2(BoundType boundType, rai::Skeleton& S
                                            const arrA& waypoints) {
 
   if(boundType==BD_pose)
-    return S.mp_finalSlice();
+    return S.nlp_finalSlice();
 
   if(boundType==BD_seq)
-    return S.mp();
+    return S.nlp();
 
   if(boundType==BD_path)
-    return S.mp_path();
+    return S.nlp_path();
 
   if(boundType==BD_seqPath)
-    return S.mp_path(waypoints);
+    return S.nlp_path(waypoints);
 
   HALT("should not be here!");
 
@@ -198,7 +198,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
     komo->run();
 
 //    NLP_Solver sol;
-//    sol.setProblem(*problem(bound).mp);
+//    sol.setProblem(*problem(bound).nlp);
 //    auto ret = sol.solve();
 //    problem(bound).sol = sol.solve();
 

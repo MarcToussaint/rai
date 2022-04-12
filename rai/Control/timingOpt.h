@@ -1,11 +1,11 @@
 #pragma once
 
-#include <Optim/MathematicalProgram.h>
+#include <Optim/NLP.h>
 #include <Algo/spline.h>
 
 //===========================================================================
 
-struct TimingProblem : MathematicalProgram {
+struct TimingProblem : NLP {
   //problem specs
   arr waypoints; //way points
   arr tangents;  //optional tangents at the way points

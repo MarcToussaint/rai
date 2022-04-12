@@ -9,21 +9,21 @@
 #pragma once
 
 #include "optimization.h"
-#include "MathematicalProgram.h"
+#include "NLP.h"
 
 //-- basic converters
 ScalarFunction     conv_cstylefs2ScalarFunction(double(*fs)(arr*, const arr&, void*), void* data);
 VectorFunction     conv_cstylefv2VectorFunction(void (*fv)(arr&, arr*, const arr&, void*), void* data);
 ScalarFunction     conv_VectorFunction2ScalarFunction(const VectorFunction& f);
-//MathematicalProgram conv_KOMO2MathematicalProgram(struct KOMO_Problem& f);
+//NLP conv_KOMO2NLP(struct KOMO_Problem& f);
 
 /// this takes a constrained problem over $x$ and re-represents it over $z$ where $x=Bz$
 
-struct Conv_linearlyReparameterize_MathematicalProgram : MathematicalProgram {
-  MathematicalProgram& P;
+struct Conv_linearlyReparameterize_NLP : NLP {
+  NLP& P;
   arr B;
-  Conv_linearlyReparameterize_MathematicalProgram(MathematicalProgram& P, const arr& B):P(P), B(B) {}
-  ~Conv_linearlyReparameterize_MathematicalProgram() {}
+  Conv_linearlyReparameterize_NLP(NLP& P, const arr& B):P(P), B(B) {}
+  ~Conv_linearlyReparameterize_NLP() {}
 
   virtual uint getDimension() { return P.getDimension(); }
   virtual void getFeatureTypes(ObjectiveTypeA& ft) { P.getFeatureTypes(ft); }
@@ -37,7 +37,7 @@ struct Convert {
   void* data;
   ScalarFunction sf;
   VectorFunction vf;
-  MathematicalProgram* cpm;
+  NLP* cpm;
 
   Convert(const ScalarFunction&);
   Convert(const VectorFunction&);
@@ -47,6 +47,6 @@ struct Convert {
   ~Convert();
   operator ScalarFunction();
   operator VectorFunction();
-  operator MathematicalProgram& ();
+  operator NLP& ();
 };
 

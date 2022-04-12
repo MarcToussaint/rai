@@ -6,14 +6,14 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "MathematicalProgram.h"
+#include "NLP.h"
 
 struct NLoptInterface {
-  shared_ptr<MathematicalProgram> P;
+  shared_ptr<NLP> P;
   arr x, phi_x, J_x;
   int verbose=1;
 
-  NLoptInterface(const shared_ptr<MathematicalProgram>& _P) : P(_P) {}
+  NLoptInterface(const shared_ptr<NLP>& _P) : P(_P) {}
 
   arr solve(const arr& x_init=NoArr);
 

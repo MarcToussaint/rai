@@ -9,7 +9,7 @@
 #pragma once
 
 #include "optimization.h"
-#include "MathematicalProgram.h"
+#include "NLP.h"
 
 extern ScalarFunction RosenbrockFunction();
 extern ScalarFunction RastriginFunction();
@@ -18,11 +18,11 @@ extern ScalarFunction SumFunction();
 extern ScalarFunction HoleFunction();
 extern ScalarFunction ChoiceFunction();
 
-std::shared_ptr<MathematicalProgram> getBenchmarkFromCfg();
+std::shared_ptr<NLP> getBenchmarkFromCfg();
 
 //===========================================================================
 
-struct ScalarUnconstrainedProgram : MathematicalProgram {
+struct ScalarUnconstrainedProgram : NLP {
   double forsythAlpha = -1.;
   shared_ptr<ScalarFunction> S;
   ScalarUnconstrainedProgram() { featureTypes = {OT_f}; }
@@ -53,10 +53,10 @@ struct ScalarUnconstrainedProgram : MathematicalProgram {
 
 //===========================================================================
 
-struct MP_TrivialSquareFunction : MathematicalProgram {
+struct NLP_TrivialSquareFunction : NLP {
   double lo, hi;
 
-  MP_TrivialSquareFunction(uint dim=10, double lo=-1., double hi=1.){
+  NLP_TrivialSquareFunction(uint dim=10, double lo=-1., double hi=1.){
     dimension = dim;
     featureTypes = consts<ObjectiveType>(OT_sos, dimension);
     bounds_lo = consts<double>(lo, dimension);
@@ -71,10 +71,10 @@ struct MP_TrivialSquareFunction : MathematicalProgram {
 
 //===========================================================================
 
-struct MP_RandomLP : MathematicalProgram {
+struct NLP_RandomLP : NLP {
   arr randomG;
 
-  MP_RandomLP(uint dim) {
+  NLP_RandomLP(uint dim) {
     dimension = dim;
 
     randomG.resize(5*dim+5, dim+1);
@@ -100,7 +100,7 @@ struct MP_RandomLP : MathematicalProgram {
 
 //===========================================================================
 
-struct ChoiceConstraintFunction : MathematicalProgram {
+struct ChoiceConstraintFunction : NLP {
   enum WhichConstraint { none=0, wedge2D=1, halfcircle2D, randomLinear, circleLine2D, boundConstrained, boundConstrainedIneq } which;
   uint n;
   arr randomG;
@@ -122,7 +122,7 @@ struct ChoiceConstraintFunction : MathematicalProgram {
 
 //===========================================================================
 
-struct SimpleConstraintFunction : MathematicalProgram {
+struct SimpleConstraintFunction : NLP {
   SimpleConstraintFunction() {
     featureTypes = { OT_sos, OT_sos, OT_ineq, OT_ineq };
   }
@@ -145,10 +145,10 @@ struct SimpleConstraintFunction : MathematicalProgram {
 
 //===========================================================================
 
-struct MP_RastriginSOS : MathematicalProgram {
+struct NLP_RastriginSOS : NLP {
   double a;
   double condition;
-  MP_RastriginSOS() {
+  NLP_RastriginSOS() {
     a = rai::getParameter<double>("Rastrigin/a");
     condition = rai::getParameter<double>("benchmark/condition");
 
@@ -176,11 +176,11 @@ struct MP_RastriginSOS : MathematicalProgram {
 //===========================================================================
 
 /// $f(x) = x^T C x$ where C has eigen values ranging from 1 to 'condition'
-struct MP_Squared : MathematicalProgram {
+struct NLP_Squared : NLP {
   arr C; /// $A = C^T C $
   uint n;  /// dimensionality of $x$
 
-  MP_Squared(uint n, double condition=100., bool random=true);
+  NLP_Squared(uint n, double condition=100., bool random=true);
 
   virtual void evaluate(arr &phi, arr &J, const arr &x){ phi=C*x; if(!!J) J=C; }
 //  virtual arr getInitializationSample(const arr &previousOptima={}){ return ones(n); }
@@ -188,8 +188,8 @@ struct MP_Squared : MathematicalProgram {
 
 //===========================================================================
 
-struct MP_Wedge : MathematicalProgram {
-  MP_Wedge(){
+struct NLP_Wedge : NLP {
+  NLP_Wedge(){
     dimension=2;
     featureTypes = { OT_f };
     featureTypes.append(consts(OT_ineq, 2));
@@ -206,8 +206,8 @@ struct MP_Wedge : MathematicalProgram {
 
 //===========================================================================
 
-struct MP_HalfCircle : MathematicalProgram {
-  MP_HalfCircle(){
+struct NLP_HalfCircle : NLP {
+  NLP_HalfCircle(){
     dimension=2;
     featureTypes = { OT_f };
     featureTypes.append(consts(OT_ineq, 2));
@@ -224,8 +224,8 @@ struct MP_HalfCircle : MathematicalProgram {
 
 //===========================================================================
 
-struct MP_CircleLine : MathematicalProgram {
-  MP_CircleLine(){
+struct NLP_CircleLine : NLP {
+  NLP_CircleLine(){
     dimension=2;
     featureTypes = { OT_f };
     featureTypes.append(OT_ineq);

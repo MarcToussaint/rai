@@ -13,7 +13,7 @@
 #include "../Kin/kin.h"
 #include "../Optim/optimization.h"
 #include "../Optim/constrained.h"
-#include "../Optim/MathematicalProgram.h"
+#include "../Optim/NLP.h"
 #include "../Kin/switch.h"
 #include "../Kin/featureSymbols.h"
 
@@ -215,11 +215,11 @@ public:
 
   //===========================================================================
   //
-  // MP transcriptions
+  // NLP transcriptions
   //
 
-  shared_ptr<MathematicalProgram> mp_SparseNonFactored();
-  shared_ptr<MathematicalProgram_Factored> mp_Factored();
+  shared_ptr<NLP> nlp_SparseNonFactored();
+  shared_ptr<NLP_Factored> nlp_Factored();
 
 
   //===========================================================================

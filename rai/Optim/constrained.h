@@ -27,7 +27,7 @@ struct OptConstrained {
   bool earlyPhase=false;
   ostream* logFile=nullptr;
 
-  OptConstrained(arr& x, arr& dual, const shared_ptr<MathematicalProgram>& P, rai::OptOptions opt=NOOPT, ostream* _logFile=0);
+  OptConstrained(arr& x, arr& dual, const shared_ptr<NLP>& P, rai::OptOptions opt=NOOPT, ostream* _logFile=0);
   ~OptConstrained();
   bool step();
   uint run();
@@ -39,7 +39,7 @@ struct OptConstrained {
 // evaluating
 //
 
-inline void evaluateMathematicalProgram(const arr& x, MathematicalProgram& P, std::ostream& os) {
+inline void evaluateNLP(const arr& x, NLP& P, std::ostream& os) {
   arr phi_x;
   P.evaluate(phi_x, NoArr, x);
   double Ef=0., Eh=0., Eg=0.;
@@ -60,11 +60,11 @@ inline void evaluateMathematicalProgram(const arr& x, MathematicalProgram& P, st
 // to the phase one problem of another constraint problem
 //
 
-struct PhaseOneProblem : MathematicalProgram {
-  shared_ptr<MathematicalProgram> P;
+struct PhaseOneProblem : NLP {
+  shared_ptr<NLP> P;
   uint dim_ineq, dim_eq;
 
-  PhaseOneProblem(const shared_ptr<MathematicalProgram>& _P):P(_P) {
+  PhaseOneProblem(const shared_ptr<NLP>& _P):P(_P) {
     dimension = P->getDimension();
     featureTypes = P->featureTypes;
     featureTypes.append(OT_ineq);

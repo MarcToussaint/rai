@@ -5,8 +5,8 @@
 #include "../Core/util.h"
 #include "../Core/array.h"
 #include "../Kin/kin.h"
-#include "../Optim/MathematicalProgram.h"
-#include "../Optim/MP_Solver.h"
+#include "../Optim/NLP.h"
+#include "../Optim/NLP_Solver.h"
 
 struct KOMO;
 
@@ -29,8 +29,8 @@ stdOutPipe(SkeletonEntry)
 
 struct SkeletonTranscription {
   std::shared_ptr<KOMO> komo;
-  std::shared_ptr<MathematicalProgram> mp;
-  std::shared_ptr<MathematicalProgram_Factored> fmp;
+  std::shared_ptr<NLP> nlp;
+  std::shared_ptr<NLP_Factored> fmp;
   std::shared_ptr<SolverReturn> ret;
 };
 
@@ -55,15 +55,15 @@ struct Skeleton {
   double getMaxPhase() const;
   intA getSwitches(const Configuration& C) const;
 
-  //-- get MP transcriptions
+  //-- get NLP transcriptions
   //keyframes
-  SkeletonTranscription mp(uint stepsPerPhase=1);
-  SkeletonTranscription mp_finalSlice(); //"pose bound"
-  shared_ptr<MathematicalProgram> mp_timeConditional(const uintA& vars, const uintA& cond);
-  shared_ptr<MathematicalProgram_Factored> mp_timeFactored();
-  shared_ptr<MathematicalProgram_Factored> mp_fineFactored();
+  SkeletonTranscription nlp(uint stepsPerPhase=1);
+  SkeletonTranscription nlp_finalSlice(); //"pose bound"
+  shared_ptr<NLP> nlp_timeConditional(const uintA& vars, const uintA& cond);
+  shared_ptr<NLP_Factored> nlp_timeFactored();
+  shared_ptr<NLP_Factored> nlp_fineFactored();
   //path
-  SkeletonTranscription mp_path(const arrA& waypoints={});
+  SkeletonTranscription nlp_path(const arrA& waypoints={});
 
   //-- to be removed (call generic NLPsolver)
   arr solve(rai::ArgWord sequenceOrPath, int verbose=2);

@@ -14,7 +14,7 @@ ObjectiveTypeA& NoObjectiveTypeA = __NoTermTypeA;
 
 //===========================================================================
 
-double Conv_MathematicalProgram_ScalarProblem::scalar(arr& g, arr& H, const arr& x){
+double Conv_NLP_ScalarProblem::scalar(arr& g, arr& H, const arr& x){
   arr phi, J;
   P->evaluate(phi, J, x);
 
@@ -73,7 +73,7 @@ double Conv_MathematicalProgram_ScalarProblem::scalar(arr& g, arr& H, const arr&
 // checks and converters
 //
 
-bool checkJacobianCP(MathematicalProgram& P, const arr& x, double tolerance) {
+bool checkJacobianCP(NLP& P, const arr& x, double tolerance) {
   VectorFunction F = [&P](const arr& x) {
     arr phi, J;
     P.evaluate(phi, J, x);
@@ -83,7 +83,7 @@ bool checkJacobianCP(MathematicalProgram& P, const arr& x, double tolerance) {
   return checkJacobian(F, x, tolerance);
 }
 
-bool checkHessianCP(MathematicalProgram& P, const arr& x, double tolerance) {
+bool checkHessianCP(NLP& P, const arr& x, double tolerance) {
   uint i;
   arr phi, J;
   P.evaluate(phi, NoArr, x); //TODO: only call getStructure
@@ -110,7 +110,7 @@ void boundClip(arr& y, const arr& bound_lo, const arr& bound_up) {
   }
 }
 
-void boundClip(MathematicalProgram& P, arr& x){
+void boundClip(NLP& P, arr& x){
   arr bounds_lo, bounds_up;
   P.getBounds(bounds_lo, bounds_up);
   boundClip(x, bounds_lo, bounds_up);
@@ -127,7 +127,7 @@ bool boundCheck(const arr& x, const arr& bound_lo, const arr& bound_up, double e
   return good;
 }
 
-bool checkInBound(MathematicalProgram& P, const arr& x){
+bool checkInBound(NLP& P, const arr& x){
   arr bound_lo, bound_up;
   P.getBounds(bound_lo, bound_up);
   CHECK_EQ(x.N, bound_lo.N, "");

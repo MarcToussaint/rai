@@ -25,7 +25,7 @@
 //===========================================================================
 
 arr CeresInterface::solve() {
-  Conv_MathematicalProgram_CeresProblem cer(P);
+  Conv_NLP_CeresProblem cer(P);
   cer.x_full = P->getInitializationSample();
 
   ceres::Solver::Options options;
@@ -47,7 +47,7 @@ arr CeresInterface::solve() {
 //===========================================================================
 
 class Conv_Feature_CostFunction : public ceres::CostFunction {
-  Conv_MathematicalProgram_CeresProblem& P;
+  Conv_NLP_CeresProblem& P;
   uint feature_id;
   uint featureDim;
   uintA varIds;
@@ -55,7 +55,7 @@ class Conv_Feature_CostFunction : public ceres::CostFunction {
   uint varTotalDim;
 
  public:
-  Conv_Feature_CostFunction(Conv_MathematicalProgram_CeresProblem& _P,
+  Conv_Feature_CostFunction(Conv_NLP_CeresProblem& _P,
                             uint _feature_id,
                             const uintA& variableDimensions,
                             const uintA& featureDimensions,
@@ -66,7 +66,7 @@ class Conv_Feature_CostFunction : public ceres::CostFunction {
                         double** jacobians) const;
 };
 
-Conv_Feature_CostFunction::Conv_Feature_CostFunction(Conv_MathematicalProgram_CeresProblem& _P, uint _feature_id, const uintA& variableDimensions, const uintA& featureDimensions, const uintAA& featureVariables)
+Conv_Feature_CostFunction::Conv_Feature_CostFunction(Conv_NLP_CeresProblem& _P, uint _feature_id, const uintA& variableDimensions, const uintA& featureDimensions, const uintAA& featureVariables)
   : P(_P), feature_id(_feature_id) {
   featureDim = featureDimensions(feature_id);
   varIds = featureVariables(feature_id);
@@ -107,7 +107,7 @@ bool Conv_Feature_CostFunction::Evaluate(const double* const* parameters, double
   return true;
 }
 
-Conv_MathematicalProgram_CeresProblem::Conv_MathematicalProgram_CeresProblem(const shared_ptr<MathematicalProgram_Factored>& _P) : P(_P) {
+Conv_NLP_CeresProblem::Conv_NLP_CeresProblem(const shared_ptr<NLP_Factored>& _P) : P(_P) {
   uintA variableDimIntegral, featureDimIntegral;
   arr bounds_lo, bounds_up;
   P->getBounds(bounds_lo, bounds_up);
@@ -178,7 +178,7 @@ arr CeresInterface::solve() {
   NICO
 }
 
-Conv_MathematicalProgram_CeresProblem::Conv_MathematicalProgram_CeresProblem(const shared_ptr<MathematicalProgram_Factored>& _P) : P(_P) {
+Conv_NLP_CeresProblem::Conv_NLP_CeresProblem(const shared_ptr<NLP_Factored>& _P) : P(_P) {
   NICO
 }
 

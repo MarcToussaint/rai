@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "MathematicalProgram.h"
+#include "NLP.h"
 
 namespace ceres {
 class Problem;
@@ -17,22 +17,22 @@ class Problem;
 //===========================================================================
 
 struct CeresInterface {
-  shared_ptr<MathematicalProgram_Factored> P;
-//  MathematicalProgram& P;
+  shared_ptr<NLP_Factored> P;
+//  NLP& P;
 
-  CeresInterface(const shared_ptr<MathematicalProgram_Factored>& P) : P(P) {}
+  CeresInterface(const shared_ptr<NLP_Factored>& P) : P(P) {}
 
   arr solve();
 };
 
 //===========================================================================
 
-struct Conv_MathematicalProgram_CeresProblem {
-  shared_ptr<MathematicalProgram_Factored> P;
+struct Conv_NLP_CeresProblem {
+  shared_ptr<NLP_Factored> P;
 
   arr x_full, phi_full; //the full linear memory for all decision variables and all features
 
   ptr<ceres::Problem> ceresProblem;
 
-  Conv_MathematicalProgram_CeresProblem(const shared_ptr<MathematicalProgram_Factored>& _P);
+  Conv_NLP_CeresProblem(const shared_ptr<NLP_Factored>& _P);
 };

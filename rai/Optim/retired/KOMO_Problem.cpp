@@ -76,12 +76,12 @@ void KOMO_GraphProblem::phi(arr& phi, arrA& J, arrA& H, const arr& x) {
   KOMO.phi(phi, J, H, NoUintA, featureTypes, x);
 }
 
-Conv_KOMOProblem_MathematicalProgram::Conv_KOMOProblem_MathematicalProgram(KOMO_Problem& P) : KOMO(P) {
+Conv_KOMOProblem_NLP::Conv_KOMOProblem_NLP(KOMO_Problem& P) : KOMO(P) {
   KOMO.getStructure(variableDimensions, featureTimes, featureTypes);
   varDimIntegral = integral(variableDimensions);
 }
 
-void Conv_KOMOProblem_MathematicalProgram::evaluate(arr& phi, arr& J, const arr& x) {
+void Conv_KOMOProblem_NLP::evaluate(arr& phi, arr& J, const arr& x) {
   KOMO.phi(phi, (!!J?J_KOMO:NoArrA), NoArrA, featureTimes, featureTypes, x);
 
   //-- construct a row-shifed J from the array of featureJs

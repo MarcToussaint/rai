@@ -9,7 +9,7 @@
 #pragma once
 
 #include "optimization.h"
-#include "MathematicalProgram.h"
+#include "NLP.h"
 
 struct GraphProblem {
   /// We have 'variableDimensions.N' variables, each with a different dimension 'variableDimensions(i)'.
@@ -34,7 +34,7 @@ struct GraphProblem {
 };
 
 /// Reduction to an unstructured constrained problem
-struct Conv_Graph_MathematicalProgram : MathematicalProgram {
+struct Conv_Graph_NLP : NLP {
   GraphProblem& G;
   uintA variableDimensions, varDimIntegral;
   intAA featureVariables;
@@ -43,7 +43,7 @@ struct Conv_Graph_MathematicalProgram : MathematicalProgram {
   ostream* logFile=0;
   uint queryCount=0;
 
-  Conv_Graph_MathematicalProgram(GraphProblem& _G, ostream* _log=0);
+  Conv_Graph_NLP(GraphProblem& _G, ostream* _log=0);
 
   uint getDimension();
   void getFeatureTypes(ObjectiveTypeA& ft);

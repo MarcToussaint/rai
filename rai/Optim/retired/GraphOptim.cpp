@@ -114,9 +114,9 @@ void SubGraphProblem::optim(int verbose) {
   rai::timerStart();
 #if 0
   ModGraphProblem Gsel(*this);
-  Conv_Graph_MathematicalProgram C(Gsel);
+  Conv_Graph_NLP C(Gsel);
 #else
-  Conv_Graph_MathematicalProgram C(*this);
+  Conv_Graph_NLP C(*this);
 #endif
   C.reportProblem(logFile);
   arr dual;

@@ -1,6 +1,6 @@
 #include "timingMPC.h"
 #include "timingOpt.h"
-#include "../Optim/MP_Solver.h"
+#include "../Optim/NLP_Solver.h"
 
 TimingMPC::TimingMPC(const arr& _waypoints, double _timeCost, double _ctrlCost)
   : waypoints(_waypoints),
@@ -20,30 +20,30 @@ shared_ptr<SolverReturn> TimingMPC::solve(const arr& x0, const arr& v0, int verb
     if(tangents.N) vels=zeros(waypoints.d0-1);
   }
 
-  TimingProblem mp(waypoints({phase, -1}), tangents({phase, -1}),
+  TimingProblem nlp(waypoints({phase, -1}), tangents({phase, -1}),
                    x0, v0, timeCost, ctrlCost,
                    true, false,
                    vels({phase, -1}), tau({phase, -1}));
 
-  MP_Solver S;
+  NLP_Solver S;
   if(warmstart_dual.N){
 //    S.setWarmstart({}, warmstart_dual);
 //    opt.muInit = 25;
   }
   S.setOptions(opt)
-      .setProblem(mp.ptr())
-      .setSolver(MPS_augmentedLag);
+      .setProblem(nlp.ptr())
+      .setSolver(NLPS_augmentedLag);
 
   auto ret = S.solve();
 
   if(verbose>1){
     cout <<*ret <<endl;
-    cout <<"## vels:\n" <<mp.v <<endl;
-    cout <<"## taus: " <<mp.tau <<endl;
+    cout <<"## vels:\n" <<nlp.v <<endl;
+    cout <<"## taus: " <<nlp.tau <<endl;
   }
 
-  tau({phase, -1}) = mp.tau;
-  vels({phase, -1}) = mp.v;
+  tau({phase, -1}) = nlp.tau;
+  vels({phase, -1}) = nlp.v;
   warmstart_dual = ret->dual;
 
   if(verbose>0){

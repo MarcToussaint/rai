@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "MathematicalProgram.h"
+#include "NLP.h"
 
 //===========================================================================
 //
@@ -20,11 +20,11 @@
 //VectorFunction
 //fct
 
-struct Conv_ScalarProblem_MathematicalProgram : MathematicalProgram {
+struct Conv_ScalarProblem_NLP : NLP {
   ScalarFunction f;
   uint xDim;
   arr bounds_lo, bounds_up;
-  Conv_ScalarProblem_MathematicalProgram(const ScalarFunction& f, uint xDim): f(f), xDim(xDim) {}
+  Conv_ScalarProblem_NLP(const ScalarFunction& f, uint xDim): f(f), xDim(xDim) {}
   uint getDimension() { return xDim; }
   void getBounds(arr& _bounds_lo, arr& _bounds_up) { _bounds_lo=bounds_lo; _bounds_up=bounds_up; }
   void getFeatureTypes(ObjectiveTypeA& ot) { ot = {OT_f}; }
@@ -39,10 +39,10 @@ struct Conv_ScalarProblem_MathematicalProgram : MathematicalProgram {
   void setBounds(double lo, double up){ bounds_lo.resize(xDim) = lo;  bounds_up.resize(xDim) = up; }
 };
 
-struct Conv_MathematicalProgram_ScalarProblem : ScalarFunction {
-  std::shared_ptr<MathematicalProgram> P;
+struct Conv_NLP_ScalarProblem : ScalarFunction {
+  std::shared_ptr<NLP> P;
 
-  Conv_MathematicalProgram_ScalarProblem(std::shared_ptr<MathematicalProgram> _P) : P(_P) {
+  Conv_NLP_ScalarProblem(std::shared_ptr<NLP> _P) : P(_P) {
     ScalarFunction::operator=([this](arr& g, arr& H, const arr& x) -> double {
       return this->scalar(g, H, x);
     });
@@ -57,10 +57,10 @@ struct Conv_MathematicalProgram_ScalarProblem : ScalarFunction {
 // checks, evaluation
 //
 
-bool checkJacobianCP(MathematicalProgram& P, const arr& x, double tolerance);
-bool checkHessianCP(MathematicalProgram& P, const arr& x, double tolerance);
-bool checkInBound(MathematicalProgram& P, const arr& x);
-void boundClip(MathematicalProgram& P, arr& x);
+bool checkJacobianCP(NLP& P, const arr& x, double tolerance);
+bool checkHessianCP(NLP& P, const arr& x, double tolerance);
+bool checkInBound(NLP& P, const arr& x);
+void boundClip(NLP& P, arr& x);
 void boundClip(arr& y, const arr& bound_lo, const arr& bound_up);
 bool boundCheck(const arr& x, const arr& bound_lo, const arr& bound_up, double eps=1e-3);
 bool checkDirectionalGradient(const ScalarFunction& f, const arr& x, const arr& delta, double tolerance);

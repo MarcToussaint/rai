@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "MathematicalProgram.h"
+#include "NLP.h"
 #include "options.h"
 
 //==============================================================================
@@ -19,8 +19,8 @@
 // that can include lagrange terms, penalties, log barriers, and augmented lagrangian terms
 //
 
-struct LagrangianProblem : ScalarFunction, MathematicalProgram {
-  shared_ptr<MathematicalProgram> P;
+struct LagrangianProblem : ScalarFunction, NLP {
+  shared_ptr<NLP> P;
 
   //-- parameters of the unconstrained (Lagrangian) scalar function
   double muLB;       ///< log barrier mu
@@ -35,7 +35,7 @@ struct LagrangianProblem : ScalarFunction, MathematicalProgram {
 
   ostream* logFile=nullptr;  ///< file for logging
 
-  LagrangianProblem(const shared_ptr<MathematicalProgram>& P, const rai::OptOptions& opt=NOOPT, arr& lambdaInit=NoArr);
+  LagrangianProblem(const shared_ptr<NLP>& P, const rai::OptOptions& opt=NOOPT, arr& lambdaInit=NoArr);
 
   virtual void evaluate(arr& phi, arr& J, const arr& x);       //evaluate all features and (optionally) their Jacobians for state x
   virtual void getFHessian(arr& H, const arr& x);              //the Hessian of the sum of all f-features (or Hessian in addition to the Gauss-Newton Hessian of all other features)

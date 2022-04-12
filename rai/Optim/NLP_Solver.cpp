@@ -1,4 +1,4 @@
-#include "MP_Solver.h"
+#include "NLP_Solver.h"
 
 #include "optimization.h"
 #include "gradient.h"
@@ -6,10 +6,10 @@
 #include "opt-nlopt.h"
 #include "opt-ipopt.h"
 #include "opt-ceres.h"
-#include "MathematicalProgram.h"
+#include "NLP.h"
 #include "constrained.h"
 
-template<> const char* rai::Enum<MP_SolverID>::names []= {
+template<> const char* rai::Enum<NLP_SolverID>::names []= {
   "gradientDescent", "rprop", "LBFGS", "newton",
   "augmentedLag", "squaredPenalty", "logBarrier", "singleSquaredPenalty",
   "NLopt", "Ipopt", "Ceres", nullptr
@@ -28,7 +28,7 @@ template<> const char* rai::Enum<NLopt_SolverOption>::names []= {
     "LD_TNEWTON_PRECOND",
     "LD_TNEWTON_PRECOND_RESTART", nullptr };
 
-shared_ptr<SolverReturn> MP_Solver::solve(int resampleInitialization){
+shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization){
   auto ret = make_shared<SolverReturn>();
   shared_ptr<OptConstrained> optCon;
   double time = -rai::cpuTime();
@@ -38,49 +38,49 @@ shared_ptr<SolverReturn> MP_Solver::solve(int resampleInitialization){
   }else{
     CHECK(x.N, "x is of zero dimensionality - needs initialization");
   }
-  if(solverID==MPS_newton){
-    Conv_MathematicalProgram_ScalarProblem P1(P);
+  if(solverID==NLPS_newton){
+    Conv_NLP_ScalarProblem P1(P);
     OptNewton newton(x, P1, opt);
     newton.run();
     ret->f = newton.fx;
   }
-  else if(solverID==MPS_gradientDescent){
-    Conv_MathematicalProgram_ScalarProblem P1(P);
+  else if(solverID==NLPS_gradientDescent){
+    Conv_NLP_ScalarProblem P1(P);
     OptGrad(x, P1).run();
   }
-  else if(solverID==MPS_rprop){
-    Conv_MathematicalProgram_ScalarProblem P1(P);
+  else if(solverID==NLPS_rprop){
+    Conv_NLP_ScalarProblem P1(P);
     Rprop().loop(x, P1, opt.stopTolerance, opt.initStep, opt.stopEvals, opt.verbose);
   }
-  else if(solverID==MPS_augmentedLag){
+  else if(solverID==NLPS_augmentedLag){
     opt.set_constrainedMethod(rai::augmentedLag);
     optCon = make_shared<OptConstrained>(x, dual, P, opt);
     optCon->run();
   }
-  else if(solverID==MPS_squaredPenalty){
+  else if(solverID==NLPS_squaredPenalty){
     opt.set_constrainedMethod(rai::squaredPenalty);
     optCon = make_shared<OptConstrained>(x, dual, P, opt);
     optCon->run();
   }
-  else if(solverID==MPS_logBarrier){
+  else if(solverID==NLPS_logBarrier){
     opt.set_constrainedMethod(rai::logBarrier);
     optCon = make_shared<OptConstrained>(x, dual, P, opt);
     optCon->run();
   }
-  else if(solverID==MPS_NLopt){
+  else if(solverID==NLPS_NLopt){
     NLoptInterface nlo(P);
     x = nlo.solve(x);
   }
-  else if(solverID==MPS_Ipopt){
+  else if(solverID==NLPS_Ipopt){
     IpoptInterface nlo(P);
     x = nlo.solve(x);
   }
-  else if(solverID==MPS_Ceres){
-    auto P1 = make_shared<Conv_MathematicalProgram_TrivialFactoreded>(P);
+  else if(solverID==NLPS_Ceres){
+    auto P1 = make_shared<Conv_NLP_TrivialFactoreded>(P);
     CeresInterface nlo(P1);
     x = nlo.solve();
   }
-  else HALT("solver wrapper not implemented yet for solver ID '" <<rai::Enum<MP_SolverID>(solverID) <<"'");
+  else HALT("solver wrapper not implemented yet for solver ID '" <<rai::Enum<NLP_SolverID>(solverID) <<"'");
 
   if(optCon){
       ret->ineq = optCon->L.get_sumOfGviolations();

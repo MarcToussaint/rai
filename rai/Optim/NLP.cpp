@@ -6,7 +6,7 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#include "MathematicalProgram.h"
+#include "NLP.h"
 #include "optimization.h"
 #include "lagrangian.h"
 
@@ -34,7 +34,7 @@ arr summarizeErrors(const arr& phi, const ObjectiveTypeA& tt) {
 
 //===========================================================================
 
-arr MathematicalProgram::getInitializationSample(const arr& previousOptima) {
+arr NLP::getInitializationSample(const arr& previousOptima) {
   arr blo, bup;
   uint n = getDimension();
   getBounds(blo, bup);
@@ -47,7 +47,7 @@ arr MathematicalProgram::getInitializationSample(const arr& previousOptima) {
   return blo + rand(n) % (bup - blo);
 }
 
-double MathematicalProgram::eval_scalar(arr& g, arr& H, const arr& x){
+double NLP::eval_scalar(arr& g, arr& H, const arr& x){
   arr phi, J;
   evaluate(phi, J, x);
 
@@ -102,7 +102,7 @@ double MathematicalProgram::eval_scalar(arr& g, arr& H, const arr& x){
 
 //===========================================================================
 
-void MathematicalProgram_Factored::evaluate(arr& phi, arr& J, const arr& x) {
+void NLP_Factored::evaluate(arr& phi, arr& J, const arr& x) {
   uintA varDimIntegral = integral(variableDimensions).prepend(0);
 
   //-- loop through variables and set them
@@ -162,7 +162,7 @@ void MathematicalProgram_Factored::evaluate(arr& phi, arr& J, const arr& x) {
 
 //===========================================================================
 
-Conv_FactoredNLP_BandedNLP::Conv_FactoredNLP_BandedNLP(const shared_ptr<MathematicalProgram_Factored>& P, uint _maxBandSize, bool _sparseNotBanded)
+Conv_FactoredNLP_BandedNLP::Conv_FactoredNLP_BandedNLP(const shared_ptr<NLP_Factored>& P, uint _maxBandSize, bool _sparseNotBanded)
   : P(P), maxBandSize(_maxBandSize), sparseNotBanded(_sparseNotBanded) {
   varDimIntegral = integral(P->variableDimensions).prepend(0);
   featDimIntegral = integral(P->featureDimensions).prepend(0);
@@ -297,7 +297,7 @@ void Conv_FactoredNLP_BandedNLP::evaluate(arr& phi, arr& J, const arr& x) {
 
 //===========================================================================
 
-void MP_Traced::evaluate(arr& phi, arr& J, const arr& x) {
+void NLP_Traced::evaluate(arr& phi, arr& J, const arr& x) {
   evals++;
   P->evaluate(phi, J, x);
   if(trace_x){ xTrace.append(x); xTrace.reshape(-1, x.N); }
@@ -306,7 +306,7 @@ void MP_Traced::evaluate(arr& phi, arr& J, const arr& x) {
   if(trace_J && !!J) { JTrace.append(J);  JTrace.reshape(-1, phi.N, x.N); }
 }
 
-void MP_Traced::report(std::ostream& os, int verbose){
+void NLP_Traced::report(std::ostream& os, int verbose){
   os <<"TRACE: #evals: " <<evals;
   if(costTrace.N) os <<" costs: " <<costTrace[-1];
   if(xTrace.N && xTrace.d1<10) os <<" x: " <<xTrace[-1];
@@ -315,7 +315,7 @@ void MP_Traced::report(std::ostream& os, int verbose){
 
 //===========================================================================
 
-void MP_Viewer::display(){
+void NLP_Viewer::display(){
   uint d = P->getDimension();
   CHECK_EQ(d, 2, "can only display 2D problems for now");
 
@@ -334,13 +334,13 @@ void MP_Viewer::display(){
   //-- transform constrained problem to AugLag scalar function
   P->evaluate(phi, NoArr, X[0]);
   std::shared_ptr<LagrangianProblem> lag;
-  std::shared_ptr<MathematicalProgram> mp_save;
+  std::shared_ptr<NLP> nlp_save;
   if(phi.N>1){
     lag = make_shared<LagrangianProblem>(P);
     lag->mu = lag->nu = 1e3;
-    mp_save = P;
+    nlp_save = P;
     P.reset();
-    P = make_shared<Conv_ScalarProblem_MathematicalProgram>(*lag, d);
+    P = make_shared<Conv_ScalarProblem_NLP>(*lag, d);
   }
 
   //-- evaluate over the grid
@@ -380,7 +380,7 @@ void MP_Viewer::display(){
   gnuplot(cmd);
 }
 
-void MP_Viewer::plotCostTrace(){
+void NLP_Viewer::plotCostTrace(){
   CHECK(T, "");
   T->costTrace.writeRaw(FILE("z.trace"));
   rai::String cmd;

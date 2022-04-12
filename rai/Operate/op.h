@@ -21,7 +21,7 @@ struct Act {
   virtual ~Act() {}
 
   double time() { return rai::realTime()-startTime; }
-  virtual void write(ostream& os) { os <<'<' <<std::setw(14) <<niceTypeidName(typeid(*this)) <<"> @" <<std::setw(12) <<rai::Enum<ActStatus>(status()) <<std::setw(5) <<std::setprecision(3)<<time() <<"s -- "; }
+  virtual void write(ostream& os) { os <<'<' <<std::setw(14) <<rai::niceTypeidName(typeid(*this)) <<"> @" <<std::setw(12) <<rai::Enum<ActStatus>(status()) <<std::setw(5) <<std::setprecision(3)<<time() <<"s -- "; }
 
   typedef std::shared_ptr<Act> Ptr;
 };

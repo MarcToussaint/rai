@@ -6,7 +6,7 @@
 #include "../Kin/F_pose.h"
 #include "../Kin/F_forces.h"
 #include "../Kin/F_qFeatures.h"
-#include "../Optim/MP_Solver.h"
+#include "../Optim/NLP_Solver.h"
 #include "../Logic/fol.h"
 
 namespace rai {
@@ -173,28 +173,28 @@ arr Skeleton::solve(ArgWord sequenceOrPath, int verbose) {
 }
 
 SkeletonTranscription Skeleton::solve2(int verbose){
-  SkeletonTranscription keyframes = this->mp();
+  SkeletonTranscription keyframes = this->nlp();
 
-  MP_Solver sol;
-  sol.setProblem(keyframes.mp);
+  NLP_Solver sol;
+  sol.setProblem(keyframes.nlp);
   sol.setInitialization(keyframes.komo->x); //to avoid adding noise again
   sol.setOptions(OptOptions().set_verbose(verbose));
   keyframes.ret = sol.solve();
-  if(verbose>0) keyframes.mp->report(cout, verbose);
+  if(verbose>0) keyframes.nlp->report(cout, verbose);
   if(verbose>1) sol.gnuplot_costs();
   return keyframes;
 }
 
 shared_ptr<SolverReturn> Skeleton::solve3(bool useKeyframes, int verbose){
-  SkeletonTranscription keyframes = this->mp();
+  SkeletonTranscription keyframes = this->nlp();
 
   shared_ptr<SolverReturn> ret;
   {
-    MP_Solver sol;
-    sol.setProblem(keyframes.mp);
+    NLP_Solver sol;
+    sol.setProblem(keyframes.nlp);
     sol.setInitialization(keyframes.komo->x); //to avoid adding noise again
     ret = sol.solve();
-    keyframes.mp->report(cout, verbose);
+    keyframes.nlp->report(cout, verbose);
 //    sol.gnuplot_costs();
   }
 
@@ -207,15 +207,15 @@ shared_ptr<SolverReturn> Skeleton::solve3(bool useKeyframes, int verbose){
 #endif
 
 
-  SkeletonTranscription path = this->mp_path( (useKeyframes?waypoints:arrA()));
+  SkeletonTranscription path = this->nlp_path( (useKeyframes?waypoints:arrA()));
 
   {
-    MP_Solver sol;
-    sol.setProblem(path.mp);
+    NLP_Solver sol;
+    sol.setProblem(path.nlp);
     sol.setInitialization(path.komo->x); //to avoid adding noise again
 //    path.komo->opt.animateOptimization = 1;
     ret = sol.solve();
-    path.mp->report(cout, verbose);
+    path.nlp->report(cout, verbose);
 //    sol.gnuplot_costs();
   }
 
@@ -235,7 +235,7 @@ void Skeleton::getKeyframeConfiguration(Configuration& C, int step, int verbose)
   }
 }
 
-SkeletonTranscription Skeleton::mp(uint stepsPerPhase){
+SkeletonTranscription Skeleton::nlp(uint stepsPerPhase){
   SkeletonTranscription ret;
   ret.komo=make_shared<KOMO>();
   ret.komo->opt.verbose = verbose-2;
@@ -260,11 +260,11 @@ SkeletonTranscription Skeleton::mp(uint stepsPerPhase){
   komo->run_prepare(.01);
   //komo->opt.animateOptimization = 0;
 #endif
-  ret.mp=ret.komo->mp_SparseNonFactored();
+  ret.nlp=ret.komo->nlp_SparseNonFactored();
   return ret;
 }
 
-SkeletonTranscription Skeleton::mp_finalSlice(){
+SkeletonTranscription Skeleton::nlp_finalSlice(){
   SkeletonTranscription ret;
   ret.komo=make_shared<KOMO>();
   ret.komo->opt.verbose=verbose;
@@ -345,11 +345,11 @@ SkeletonTranscription Skeleton::mp_finalSlice(){
   komo->run_prepare(.01);
   //      komo->setPairedTimes();
 
-  ret.mp=ret.komo->mp_SparseNonFactored();
+  ret.nlp=ret.komo->nlp_SparseNonFactored();
   return ret;
 }
 
-SkeletonTranscription Skeleton::mp_path(const arrA& waypoints){
+SkeletonTranscription Skeleton::nlp_path(const arrA& waypoints){
   SkeletonTranscription ret;
   ret.komo=make_shared<KOMO>();
   ret.komo->opt.verbose = verbose-2;
@@ -398,7 +398,7 @@ SkeletonTranscription Skeleton::mp_path(const arrA& waypoints){
     komo->run_prepare(.01);
   }
 #endif
-  ret.mp=ret.komo->mp_SparseNonFactored();
+  ret.nlp=ret.komo->nlp_SparseNonFactored();
   return ret;
 
 }

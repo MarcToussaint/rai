@@ -16,7 +16,7 @@
 #include "../Geo/analyticShapes.h"
 
 void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
-  struct fitSSBoxProblem : MathematicalProgram {
+  struct fitSSBoxProblem : NLP {
     const arr& X;
     fitSSBoxProblem(const arr& X):X(X) {}
     virtual void getFeatureTypes(ObjectiveTypeA& tt) { tt.resize(5+X.d0); tt=OT_ineq; tt(0) = OT_f; }
@@ -151,7 +151,7 @@ void computeOptimalSSBox(rai::Mesh& mesh, arr& x_ret, rai::Transformation& t_ret
 }
 
 void minimalConvexCore(arr& core, const arr& points, double radius, int verbose) {
-  struct convexCoreProblem : MathematicalProgram {
+  struct convexCoreProblem : NLP {
     const arr& X;
     const uintA& T;
     double radius;
@@ -393,7 +393,7 @@ void minimalConvexCore3(arr& core, const arr& org_pts, double max_radius, int ve
   core = centers;
 }
 
-struct LinearProgram : MathematicalProgram {
+struct LinearProgram : NLP {
   arr c;
   arr G, g;
 
@@ -453,7 +453,7 @@ double sphereReduceConvex(rai::Mesh& M, double radius, int verbose) {
   return r;
 }
 
-struct FitSphereProblem : MathematicalProgram {
+struct FitSphereProblem : NLP {
   const arr& X;
   FitSphereProblem(const arr& X):X(X) {}
   virtual void getFeatureTypes(ObjectiveTypeA& tt) { tt.resize(1+X.d0); tt=OT_ineq;   tt(0) = OT_f; }
@@ -481,7 +481,7 @@ struct FitSphereProblem : MathematicalProgram {
   }
 };
 
-struct FitCapsuleProblem : MathematicalProgram {
+struct FitCapsuleProblem : NLP {
   const arr& X;
   FitCapsuleProblem(const arr& X):X(X) {}
   virtual void getFeatureTypes(ObjectiveTypeA& tt) { tt.resize(2+X.d0); tt=OT_ineq; tt(0) = OT_f; }
@@ -567,7 +567,7 @@ void optimalSphere(arr& core, uint num, const arr& org_pts, double& radius, int 
   x.append(radius);
 
   //problem
-  ptr<MathematicalProgram> F;
+  ptr<NLP> F;
   if(num==1) F = make_shared<FitSphereProblem>(pts);
   else if(num==2)  F = make_shared<FitCapsuleProblem>(pts);
 
