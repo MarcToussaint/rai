@@ -62,7 +62,7 @@ struct Configuration : GLDrawer {
 
   //-- fundamental structure
   FrameL frames;    ///< list of coordinate frames, with shapes, joints, inertias attached
-  DofL dofs;        ///< list of degrees of freedom
+  DofL otherDofs;   ///< list of other degrees of freedom (forces)
   ProxyA proxies;   ///< list of current collision proximities between frames
   arr q;            ///< the current configuration state (DOF) vector
   arr qInactive;    ///< configuration state of all inactive DOFs
@@ -142,7 +142,7 @@ struct Configuration : GLDrawer {
   void setTaus(const arr& tau);
 
   /// @name active DOFs selection
-  void setActiveJoints(const DofL& dofs);
+  void setActiveDofs(const DofL& dofs);
   void selectJoints(const FrameL& F, bool notThose=false);
   void selectJoints(const DofL& dofs, bool notThose=false);
   void selectJointsByName(const StringA&, bool notThose=false);

@@ -916,7 +916,7 @@ void KOMO::run(OptOptions options) {
 
   } else if(solver==rai::KS_banded) {
     pathConfig.jacMode = rai::Configuration::JM_rowShifted;
-    auto P = make_shared<Conv_KOMO_TimeFactoredNLP>(*this);
+    auto P = make_shared<Conv_KOMO_FactoredNLP>(*this, pathConfig.getPartsDofs());
     Conv_FactoredNLP_BandedNLP C(P, 0);
     C.maxBandSize = (k_order+1)*max(P->variableDimensions);
     OptConstrained opt(x, dual, C.ptr(), options, logFile);
@@ -1009,12 +1009,12 @@ void KOMO::checkGradients() {
   if(solver==rai::KS_none) {
     NIY;
   } else if(solver==rai::KS_banded) {
-    SP = make_shared<Conv_KOMO_TimeFactoredNLP>(*this);
+    SP = make_shared<Conv_KOMO_FactoredNLP>(*this, pathConfig.getPartsDofs());
     auto BP = make_shared<Conv_FactoredNLP_BandedNLP>(SP, 0);
     BP->maxBandSize = (k_order+1)*max(SP->variableDimensions);
     CP = BP;
   } else if(solver==rai::KS_sparseFactored) {
-    SP = make_shared<Conv_KOMO_TimeFactoredNLP>(*this);
+    SP = make_shared<Conv_KOMO_FactoredNLP>(*this, pathConfig.getPartsDofs());
     CP = make_shared<Conv_FactoredNLP_BandedNLP>(SP, 0, true);
   } else {
     CP = make_shared<Conv_KOMO_NLP>(*this, solver==rai::KS_sparse);
@@ -1237,7 +1237,7 @@ void KOMO::setupPathConfig() {
 //    }
 
 //    uint nBefore = pathConfig.frames.N;
-    pathConfig.addCopies(C.frames, C.dofs);
+    pathConfig.addCopies(C.frames, C.otherDofs);
 //    timeSlices[s] = pathConfig.frames({nBefore, -1});
 
   }

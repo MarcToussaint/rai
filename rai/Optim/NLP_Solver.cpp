@@ -35,6 +35,7 @@ shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization){
 
   if(resampleInitialization==1 || !x.N){
     x = P->getInitializationSample();
+    dual.clear();
   }else{
     CHECK(x.N, "x is of zero dimensionality - needs initialization");
   }

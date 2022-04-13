@@ -41,11 +41,11 @@ stdOutPipe(SolverReturn)
 struct NLP_Solver : NonCopyable {
   NLP_SolverID solverID=NLPS_augmentedLag;
   arr x, dual;
-  shared_ptr<NLP_Traced> P;
+  std::shared_ptr<NLP_Traced> P;
   rai::OptOptions opt;
 
   NLP_Solver& setSolver(NLP_SolverID _solverID){ solverID=_solverID; return *this; }
-  NLP_Solver& setProblem(const shared_ptr<NLP>& _P){ CHECK(!P, "problem was already set!"); P = make_shared<NLP_Traced>(_P); return *this; }
+  NLP_Solver& setProblem(const shared_ptr<NLP>& _P){ if(P){ CHECK_EQ(P->P.get(), _P.get(), ""); P->clear(); P->copySignature(*_P); }else{ P = make_shared<NLP_Traced>(_P); }return *this; }
   NLP_Solver& setOptions(const rai::OptOptions& _opt){ opt = _opt; return *this; }
   NLP_Solver& setInitialization(const arr& _x){ x=_x; return *this; }
   NLP_Solver& setWarmstart(const arr& _x, const arr& _dual){ x=_x; dual=_dual; return *this; }

@@ -19,7 +19,7 @@ rai::ForceExchange::ForceExchange(rai::Frame& a, rai::Frame& b, ForceExchangeTyp
   a.C.reset_q();
   a.forces.append(this);
   b.forces.append(this);
-  a.C.dofs.append(this);
+  a.C.otherDofs.append(this);
   setZero();
   if(copy) {
     qIndex=copy->qIndex; dim=copy->dim; limits=copy->limits; active=copy->active;
@@ -38,7 +38,7 @@ rai::ForceExchange::~ForceExchange() {
   a.C.reset_q();
   a.forces.removeValue(this);
   b.forces.removeValue(this);
-  a.C.dofs.removeValue(this);
+  a.C.otherDofs.removeValue(this);
 }
 
 void rai::ForceExchange::setZero() {
@@ -117,10 +117,10 @@ void rai::ForceExchange::kinPOA(arr& y, arr& J) const {
 
   if(type==FXT_poa){
     y = poa;
-    if(!!J) for(uint i=0; i<3; i++) J.elem(i, qIndex+0+i) = 1.;
+    if(!!J && active) for(uint i=0; i<3; i++) J.elem(i, qIndex+0+i) = 1.;
   }else if(type==FXT_poaOnly){
     y = poa;
-    if(!!J) for(uint i=0; i<3; i++) J.elem(i, qIndex+0+i) = 1.;
+    if(!!J && active) for(uint i=0; i<3; i++) J.elem(i, qIndex+0+i) = 1.;
   }else if(type==FXT_torque || type==FXT_force || type==FXT_forceZ){
     //use b as the POA!!
     b.C.kinematicsPos(y, J, &b);
@@ -132,17 +132,17 @@ void rai::ForceExchange::kinForce(arr& y, arr& J) const {
 
   if(type==FXT_poa){
     y = force;
-    if(!!J) for(uint i=0; i<3; i++) J.elem(i, qIndex+3+i) = scale;
+    if(!!J && active) for(uint i=0; i<3; i++) J.elem(i, qIndex+3+i) = scale;
   }else if(type==FXT_poaOnly){
     //is zero already
   }else if(type==FXT_torque || type==FXT_force || type==FXT_force){
     y = force;
-    if(!!J) for(uint i=0; i<3; i++) J.elem(i, qIndex+0+i) = scale;
+    if(!!J && active) for(uint i=0; i<3; i++) J.elem(i, qIndex+0+i) = scale;
   }else if(type==FXT_forceZ){
     arr z, Jz;
     b.C.kinematicsVec(z, Jz, &b, Vector_z);
     y = force.scalar() * z;
-    if(!!J){
+    if(!!J && active){
       for(uint i=0; i<3; i++) J.elem(i, qIndex) += scale * z.elem(i);
       J += force.scalar()*Jz;
     }

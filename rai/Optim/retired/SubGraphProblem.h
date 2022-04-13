@@ -1,15 +1,3 @@
-/*  ------------------------------------------------------------------
-    Copyright (c) 2011-2020 Marc Toussaint
-    email: toussaint@tu-berlin.de
-
-    This code is distributed under the MIT License.
-    Please see <root-path>/LICENSE for details.
-    --------------------------------------------------------------  */
-
-#include "optimization.h"
-#include "Graph_Problem.h"
-#include "constrained.h"
-
 struct VariableNode {
   uint x_index;
   uint x_dim;
@@ -61,25 +49,4 @@ struct SubGraphProblem : GraphProblem {
   virtual void getStructure(uintA& variableDimensions, intAA& featureVariables, ObjectiveTypeA& featureTypes);
   virtual void phi(arr& phi, arrA& J, arrA& H, const arr& x);
   virtual void getSemantics(StringA& varNames, StringA& phiNames);
-};
-
-struct BacktrackingGraphOptimization {
-  GraphProblem_Structure G;
-
-  //return values
-  uintA infeasibleSubset;
-  uintA conflictSet;
-  double f_low;
-
-  BacktrackingGraphOptimization(GraphProblem& _G);
-
-  int chooseNextVariableToAssign(const uintA& Y);
-
-  uintA getVariablesForObjectives(uintA& O);
-
-  void evaluate(const arr& x);
-
-  bool run();
-
-  bool runFull();
 };

@@ -162,7 +162,7 @@ void Configuration::copy(const Configuration& C, bool referenceSwiftOnCopy) {
   //  for(Proxy& p:proxies) { p.a = frames.elem(p.a->ID); p.b = frames.elem(p.b->ID);  p.coll.reset(); }
 
   //copy contacts
-  for(Dof* dof:C.dofs){
+  for(Dof* dof:C.otherDofs){
     const ForceExchange* ex = dof->fex();
     if(ex) new ForceExchange(*frames.elem(ex->a.ID), *frames.elem(ex->b.ID), ex->type, ex);
   }
@@ -348,7 +348,7 @@ Frame* Configuration::addCopies(const FrameL& F, const DofL& _dofs) {
 
 /// same as addCopies() with C.frames and C.forces
 void Configuration::addConfiguration(const Configuration& C, double tau){
-  Frame* f=addCopies(C.frames, C.dofs);
+  Frame* f=addCopies(C.frames, C.otherDofs);
   if(tau>=0.) f->tau=tau;
 }
 
@@ -684,13 +684,14 @@ void Configuration::setTaus(const arr& tau) {
   for(uint t=0;t<frames.d0;t++) frames(t,0)->tau = tau(t);
 }
 
-void Configuration::setActiveJoints(const DofL& dofs){
+void Configuration::setActiveDofs(const DofL& dofs){
   for(rai::Frame *f:frames) if(f->joint) f->joint->active=false;
-  for(rai::Dof *j:dofs) j->active=true;
+  for(Dof* d: otherDofs) d->active = false;
+  for(rai::Dof *d:dofs) d->active = true;
   reset_q();
   activeDofs = dofs;
   calc_indexedActiveJoints(false);
-  checkConsistency();
+//  checkConsistency();
 }
 
 void Configuration::selectJoints(const FrameL& F, bool notThose){
@@ -705,6 +706,7 @@ void Configuration::selectJoints(const FrameL& F, bool notThose){
 /// selects only the joints of the given frames to be active -- the q-vector (and Jacobians) will refer only to those DOFs
 void Configuration::selectJoints(const DofL& dofs, bool notThose) {
   for(Frame* f: frames) if(f->joint) f->joint->active = notThose;
+  for(Dof* d: otherDofs) d->active = notThose;
   for(Dof* dof: dofs) if(dof){
     dof->active = !notThose;
     if(dof->mimic) dof->mimic->active = dof->active; //activate also the joint mimic'ed
@@ -880,7 +882,7 @@ double Configuration::getTotalPenetration() {
 
 Graph Configuration::reportForces() {
   Graph G;
-  for(Dof *dof : dofs) {
+  for(Dof *dof : otherDofs) {
     const ForceExchange* ex = dof->fex();
     if(ex){
       Graph& g = G.newSubgraph();
@@ -2515,7 +2517,7 @@ void Configuration::report(std::ostream& os) const {
      <<" #shapes=" <<nShapes
      <<" #ucertainties=" <<nUc
      <<" #proxies=" <<proxies.N
-     <<" #dofs=" <<dofs.N
+     <<" #dofs=" <<otherDofs.N
      <<" #evals=" <<setJointStateCount
      <<endl;
 
