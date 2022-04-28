@@ -306,7 +306,7 @@ void NLP_Traced::evaluate(arr& phi, arr& J, const arr& x) {
   if(trace_J && !!J) { JTrace.append(J);  JTrace.reshape(-1, phi.N, x.N); }
 }
 
-void NLP_Traced::report(std::ostream& os, int verbose){
+void NLP_Traced::report(std::ostream& os, int verbose, const char* msg){
   os <<"TRACE: #evals: " <<evals;
   if(costTrace.N) os <<" costs: " <<costTrace[-1];
   if(xTrace.N && xTrace.d1<10) os <<" x: " <<xTrace[-1];

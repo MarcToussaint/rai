@@ -802,35 +802,22 @@ arr Configuration::getNaturalCtrlMetric(double power) const {
 }
 
 /// returns the vector of joint limts */
-arr Configuration::getLimits() const {
-  uint N=getJointStateDimension();
+arr Configuration::getLimits(const DofL& dofs) const {
+  uint N=0;
+  for(Dof* d:dofs) N += d->dim;
   arr limits(N, 2);
   limits.setZero();
   for(uint i=0;i<N;i++) limits(i,1)=-1.;
-  for(Dof* j:activeDofs) {
-    for(uint k=0; k<j->dim; k++) { //in case joint has multiple dimensions
-      if(j->limits.N) {
-        limits(j->qIndex+k, 0) = j->limits.elem(2*k+0); //lo
-        limits(j->qIndex+k, 1) = j->limits.elem(2*k+1); //up
+  N=0;
+  for(Dof* d:dofs) {
+    for(uint k=0; k<d->dim; k++) { //in case joint has multiple dimensions
+      if(d->limits.N) {
+        limits(N+k, 0) = d->limits.elem(2*k+0); //lo
+        limits(N+k, 1) = d->limits.elem(2*k+1); //up
       }
     }
+    N += d->dim;
   }
-#if 0
-  for(ForceExchange* f: forces) {
-    uint i=f->qIndex;
-    uint d=f->getDimFromType();
-    CHECK_EQ(d, 6, "");
-    for(uint k=0; k<3; k++) {
-      limits(i+k, 0)=-10.; //lo
-      limits(i+k, 1)=+10.; //up
-    }
-    for(uint k=3; k<6; k++) {
-      limits(i+k, 0)=-1.; //lo
-      limits(i+k, 1)=+1.; //up
-    }
-  }
-#endif
-//    cout <<"limits:" <<limits <<endl;
   return limits;
 }
 
@@ -1360,39 +1347,33 @@ void Configuration::calc_indexedActiveJoints(bool resetActiveJointSet) {
 
   //-- count active DOFs
   uint qcount=0;
-  for(Dof* j: activeDofs) {
-    if(!j->mimic) {
-      j->qIndex = qcount;
-//      if(!j->uncertainty)
-        qcount += j->dim;
-//      else
-//        qcount += 2*j->dim;
+  for(Dof* d: activeDofs) {
+    if(!d->mimic) {
+      d->qIndex = qcount;
+      qcount += d->dim;
     } else {
-      CHECK(j->mimic->active, "active joint '" << j->frame->name <<"' mimics inactive joint '" <<j->mimic->frame->name <<"'");
-      j->qIndex = j->mimic->qIndex;
+      CHECK(d->mimic->active, "active dof '" << d->frame->name <<"' mimics inactive dof '" <<d->mimic->frame->name <<"'");
+      d->qIndex = d->mimic->qIndex;
     }
   }
-#if 0
-  for(ForceExchange* c: forces) {
-    c->qIndex = qcount;
-    qcount += c->qDim();
-  }
-#endif
 
   //-- resize q
   q.resize(qcount).setZero();
   _state_q_isGood = false;
 
   //-- count inactive DOFs
+  DofL inactiveDofs;
+  for(Frame* f:frames) if(f->joint && !f->joint->active) inactiveDofs.append(f->joint);
+  for(Dof* d:otherDofs) if(!d->active) inactiveDofs.append(d);
   qcount=0;
-  for(Frame* f:frames) if(f->joint && !f->joint->active){ //include counting mimic'ing!
-    Joint *j = f->joint;
-    j->dim = j->getDimFromType();
-    j->qIndex = qcount;
-    if(!j->uncertainty)
-      qcount += j->dim;
-    else
-      qcount += 2*j->dim;
+  for(Dof *d:inactiveDofs){ //include counting mimic'ing!
+    if(!d->mimic) {
+      d->qIndex = qcount;
+      qcount += d->dim;
+    } else {
+      //CHECK(!d->mimic->active, "inactive dof'" << d->frame->name <<"'[" <<d->frame->ID <<"] mimics active dof'" <<d->mimic->frame->name <<"'[" <<d->mimic->frame->ID <<']');
+      d->qIndex = d->mimic->qIndex;
+    }
   }
 
   //-- resize qInactive
@@ -1408,42 +1389,29 @@ void Configuration::calcDofsFromConfig() {
 
   uint n=0;
   //-- active dofs
-  for(Dof* j: activeDofs) {
-    if(j->mimic) continue; //don't count dependent joints
-    CHECK_EQ(j->qIndex, n, "joint indexing is inconsistent");
-    arr joint_q = j->calcDofsFromConfig();
-    CHECK_EQ(joint_q.N, j->dim, "");
-    if(!j->dim) continue; //nothing to do
-    q.setVectorBlock(joint_q, j->qIndex);
-    n += j->dim;
-//    if(j->uncertainty) {
-//      q.setVectorBlock(j->uncertainty->sigma, j->qIndex+j->dim);
-//      n += j->dim;
-//    }
+  for(Dof* d: activeDofs) {
+    if(d->mimic) continue; //don't count dependent joints
+    CHECK_EQ(d->qIndex, n, "joint indexing is inconsistent");
+    arr joint_q = d->calcDofsFromConfig();
+    CHECK_EQ(joint_q.N, d->dim, "");
+    if(!d->dim) continue; //nothing to do
+    q.setVectorBlock(joint_q, d->qIndex);
+    n += d->dim;
   }
-
-#if 0
-  //-- forces (part of the DOFs)
-  for(ForceExchange* c: forces) {
-    CHECK_EQ(c->qIndex, n, "joint indexing is inconsistent");
-    arr contact_q = c->calcDofsFromConfig();
-    CHECK_EQ(contact_q.N, c->getDimFromType(), "");
-    q.setVectorBlock(contact_q, c->qIndex);
-    n += c->getDimFromType();
-  }
-  CHECK_EQ(n, q.N, "");
-#endif
 
   //-- inactive dofs
+  DofL inactiveDofs;
+  for(Frame* f:frames) if(f->joint && !f->joint->active) inactiveDofs.append(f->joint);
+  for(Dof* d:otherDofs) if(!d->active) inactiveDofs.append(d);
   n=0;
-  for(Frame* f: frames) if(f->joint && !f->joint->active){ //this includes mimic'ing joints!
-    Joint *j = f->joint;
-    CHECK_EQ(j->qIndex, n, "joint indexing is inconsistent");
-    arr joint_q = j->calcDofsFromConfig();
-    CHECK_EQ(joint_q.N, j->dim, "");
-    if(!f->joint->dim) continue; //nothing to do
-    qInactive.setVectorBlock(joint_q, j->qIndex);
-    n += j->dim;
+  for(Dof* d: inactiveDofs) {
+    if(d->mimic) continue; //don't count dependent joints
+    CHECK_EQ(d->qIndex, n, "joint indexing is inconsistent");
+    arr joint_q = d->calcDofsFromConfig();
+    CHECK_EQ(joint_q.N, d->dim, "");
+    if(!d->dim) continue; //nothing to do
+    qInactive.setVectorBlock(joint_q, d->qIndex);
+    n += d->dim;
   }
   CHECK_EQ(n, qInactive.N, "");
 

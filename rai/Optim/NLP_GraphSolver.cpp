@@ -108,9 +108,10 @@ void NLP_GraphSolver::test() {
 
 bool NLP_GraphSolver::solveFull() {
   P->subSelect({}, {});
+  P->report(cout, 2);
   std::shared_ptr<SolverReturn> ret = subSolver
                                       .setProblem(P)
-                                      .solve();
+                                      .solve(1);
   return ret->feasible;
 }
 
@@ -123,8 +124,42 @@ bool NLP_GraphSolver::solveRandom() {
   uintA Y = A({i+1,i+j});
   P->subSelect(X,Y);
   P->report(cout, 2);
+//  P->getInitializationSample();
   std::shared_ptr<SolverReturn> ret = subSolver
                                       .setProblem(P)
                                       .solve(1);
   return ret->feasible;
+}
+
+bool NLP_GraphSolver::solveInOrder(uintA order){
+  uintA X,Y;
+  std::shared_ptr<SolverReturn> ret;
+  for(uint i=0;i<order.N;i++){
+    Y = X;
+    X = {order(i)};
+    P->subSelect(X,Y);
+    P->report(cout, 2);
+    if(P->featureDimensions.N){ //any features at all?
+      ret = subSolver
+            .setProblem(P)
+            .solve(1);
+      P->report(cout, 4, STRING(X <<'|' <<Y));
+    }
+    //--
+    X = Y;
+    X.append(order(i));
+    Y.clear();
+    if(ret && ret->feasible) continue;
+    P->subSelect(X,Y);
+    P->report(cout, 2);
+    //  P->getInitializationSample();
+    if(P->featureDimensions.N){ //any features at all?
+      ret = subSolver
+            .setProblem(P)
+            .solve(1);
+      P->report(cout, 4, STRING(X <<'|' <<Y));
+    }
+  }
+  return ret->feasible;
+
 }

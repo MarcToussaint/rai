@@ -152,7 +152,8 @@ struct Configuration : GLDrawer {
   /// @name get other information
   arr getCtrlMetric() const;
   arr getNaturalCtrlMetric(double power=.5) const;               ///< returns diagonal of a natural metric in q-space, depending on tree depth
-  arr getLimits() const;
+  arr getLimits(const DofL& dofs) const;
+  arr getLimits() const { return getLimits(activeDofs); }
   double getEnergy(const arr& qdot);
   double getTotalPenetration(); ///< proxies are returns from a collision engine; contacts stable constraints
   Graph reportForces();

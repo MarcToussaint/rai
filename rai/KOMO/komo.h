@@ -129,10 +129,10 @@ struct KOMO : NonCopyable {
   //-- core kinematic switch symbols of skeletons
 //protected:
   //low-level add dof switches
-  void addSwitch(const arr& times, bool before, const ptr<rai::KinematicSwitch>& sw);
-  ptr<rai::KinematicSwitch> addSwitch(const arr& times, bool before, bool stable, rai::JointType type, rai::SwitchInitializationType init,
-                 const char* ref1, const char* ref2,
-                 const rai::Transformation& jFrom=NoTransformation, const rai::Transformation& jTo=NoTransformation);
+  rai::Frame* addSwitch(const arr& times, bool before, const ptr<rai::KinematicSwitch>& sw);
+  rai::Frame* addSwitch(const arr& times, bool before, bool stable, rai::JointType type, rai::SwitchInitializationType init,
+                        const char* ref1, const char* ref2,
+                        const rai::Transformation& jFrom=NoTransformation, const rai::Transformation& jTo=NoTransformation);
 public:
   //add a mode switch: both, the low-level dof switches and corresponding constraints of consistency
   void addModeSwitch(const arr& times, rai::SkeletonSymbol newMode, const StringA& frames, bool firstSwitch);
@@ -150,6 +150,7 @@ public:
   void setConfiguration_qAll(int t, const arr& q); ///< t<0 allows to set the prefix configurations; while 0 <= t < T allows to set all other initial configurations
   void setConfiguration_qOrg(int t, const arr& q); ///< set only those DOFs that were defined in the original world (excluding extra DOFs from switches)
   void setConfiguration_X(int t, const arr& X); ///< t<0 allows to set the prefix configurations; while 0 <= t < T allows to set all other initial configurations
+  void initRandom();
   void initWithConstant(const arr& q); ///< set all configurations EXCEPT the prefix to a particular state
   void initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase=1, int verbose=-1); ///< set all configurations (EXCEPT prefix) to interpolate given waypoints
   void addWaypointsInterpolationObjectives(const arrA& waypoints, uint waypointStepsPerPhase);
@@ -207,7 +208,7 @@ public:
   void setupPathConfig();
   void checkBounds(const arr& x);
   void addStableFrame(const char* name, const char* parent, rai::JointType jointType, const char* initPose);
-  void applySwitch(const rai::KinematicSwitch& sw);
+  rai::Frame* applySwitch(const rai::KinematicSwitch& sw);
   void retrospectApplySwitches();
   void retrospectChangeJointType(int startStep, int endStep, uint frameID, rai::JointType newJointType);
   void set_x(const arr& x, const uintA& selectedConfigurationsOnly=NoUintA);            ///< set the state trajectory of all configurations

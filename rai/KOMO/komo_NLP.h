@@ -17,7 +17,7 @@ struct Conv_KOMO_NLP : NLP {
   virtual void evaluate(arr& phi, arr& J, const arr& x);
   virtual void getFHessian(arr& H, const arr& x);
 
-  virtual void report(ostream& os, int verbose);
+  virtual void report(ostream& os, int verbose, const char* msg=0);
 };
 
 //this treats EACH PART and force-dof as its own variable
@@ -48,16 +48,14 @@ struct Conv_KOMO_FactoredNLP : NLP_Factored {
 
   ///-- signature/structure of the mathematical problem
 //    virtual arr getInitializationSample();
-  virtual arr getInitializationSample(const arr& previousOptima) {
-    komo.run_prepare(.01);
-    return komo.x;
-  }
+  virtual arr getInitializationSample(const arr& previousOptima);
 
   ///--- evaluation
   virtual void setSingleVariable(uint var_id, const arr& x); //set a single variable block
   virtual void evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H); //get a single feature block
 
-  void report(ostream& os, int verbose);
+  void evaluate(arr& phi, arr& J, const arr& x);
+  void report(ostream& os, int verbose, const char* msg=0);
 };
 
 }//namespace

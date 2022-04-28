@@ -33,5 +33,6 @@ struct NLP_GraphSolver : NonCopyable {
 
   bool solveFull();
   bool solveRandom();
+  bool solveInOrder(uintA order);
   void test();
 };

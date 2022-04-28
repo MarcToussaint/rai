@@ -244,38 +244,46 @@ ptr<Objective> KOMO::addObjective(const arr& times,
 //  flags.append(fl);
 //}
 
-void KOMO::addSwitch(const arr& times, bool before, const ptr<KinematicSwitch>& sw) {
+rai::Frame* KOMO::addSwitch(const arr& times, bool before, const ptr<KinematicSwitch>& sw) {
   sw->setTimeOfApplication(times, before, stepsPerPhase, T);
-  applySwitch(*sw); //apply immediately
+  rai::Frame *f = applySwitch(*sw); //apply immediately
   switches.append(sw); //only to report, not apply in retrospect
+  return f;
 }
 
-ptr<KinematicSwitch> KOMO::addSwitch(const arr& times, bool before, bool stable,
-                     rai::JointType type, SwitchInitializationType init,
-                     const char* ref1, const char* ref2,
-                     const rai::Transformation& jFrom, const rai::Transformation& jTo) {
+rai::Frame* KOMO::addSwitch(const arr& times, bool before, bool stable,
+                            rai::JointType type, SwitchInitializationType init,
+                            const char* ref1, const char* ref2,
+                            const rai::Transformation& jFrom, const rai::Transformation& jTo) {
   auto sw = make_shared<KinematicSwitch>(SW_joint, type, ref1, ref2, world, init, 0, jFrom, jTo);
   sw->isStable = stable;
-  addSwitch(times, before, sw);
-  return sw;
+  return addSwitch(times, before, sw);
 }
 
 void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA& frames, bool firstSwitch) {
   //-- creating a stable kinematic linking
   if(newMode==SY_stable || newMode==SY_stableOn || newMode==SY_stableYPhi || newMode==SY_stableZero){
     if(newMode==SY_stable) {
-      auto sw = addSwitch(times, true, true, JT_free, SWInit_copy, frames(0), frames(1));
+      addSwitch(times, true, true, JT_free, SWInit_copy, frames(0), frames(1));
     } else if(newMode==SY_stableZero) {
-      auto sw = addSwitch(times, true, true, JT_rigid, SWInit_zero, frames(0), frames(1));
+      addSwitch(times, true, true, JT_rigid, SWInit_zero, frames(0), frames(1));
     } else if(newMode==SY_stableOn) {
       Transformation rel = 0;
 	//relTransformOn(world, frames(0), frames(1));
       rel.pos.set(0, 0, .5*(shapeSize(world, frames(0)) + shapeSize(world, frames(1))));
-      auto sw = addSwitch(times, true, true, JT_transXYPhi, SWInit_copy, frames(0), frames(1), rel);
+      rai::Frame* f = addSwitch(times, true, true, JT_transXYPhi, SWInit_copy, frames(0), frames(1), rel);
+      {
+        rai::Shape* on = world.getFrame(frames(0))->shape;
+        CHECK_EQ(on->type(), rai::ST_ssBox, "")
+        f->joint->limits = {
+                           -on->size(0), on->size(0),
+                           -on->size(1), on->size(1),
+                           -6.,6. };
+      }
     } else if(newMode==SY_stableYPhi) {
       Transformation rel = 0;
 //      rel.pos.set(0, 0, -.5*(shapeSize(world, frames(0)) + shapeSize(world, frames(1))));
-      auto sw = addSwitch(times, true, true, JT_transY, SWInit_copy, frames(0), frames(1), rel);
+      addSwitch(times, true, true, JT_transY, SWInit_copy, frames(0), frames(1), rel);
     } else NIY;
 
     if(!opt.mimicStable && newMode!=SY_stableZero){
@@ -542,6 +550,15 @@ void KOMO::setConfiguration_X(int t, const arr& X) {
   pathConfig.setFrameState(X, timeSlices[k_order+t]);
 }
 
+void KOMO::initRandom(){
+  run_prepare(0.);
+  arr lo,up;
+  getBounds(lo,up);
+  for(uint i=0;i<x.N;i++){
+    if(up(i)>lo(i)) x(i) = rnd.uni(lo(i),up(i));
+  }
+}
+
 arr KOMO::getConfiguration_X(int t) {
   return pathConfig.getFrameState(timeSlices[k_order+t]);
 }
@@ -665,7 +682,7 @@ uintA KOMO::initWithWaypoints_pieceWiseConstant(const arrA& waypoints, uint wayp
     view(true, STRING("initWithWaypoints - before"));
   }
 
-  //first set the path piece-wise CONSTANT at waypoints and the subsequent steps (each waypoint may have different dimension!...)
+  //set the path piece-wise CONSTANT at waypoints and the subsequent steps (each waypoint may have different dimension!...)
   if(!opt.mimicStable){ //depends on sw->isStable -> mimic !!
     for(uint i=0; i<steps.N; i++) {
       uint Tstop=T;
@@ -1140,39 +1157,41 @@ void KOMO::addStableFrame(const char* name, const char* parent, JointType jointT
   }
 }
 
-void KOMO::applySwitch(const KinematicSwitch& sw) {
+rai::Frame* KOMO::applySwitch(const KinematicSwitch& sw) {
 #if 0 //for debugging
-    cout <<"APPLYING SWITCH:\n" <<*sw <<endl;
-    cout <<world.frames(sw.fromId)->name <<"->" <<world.frames(sw.toId)->name <<endl;
-    sw.apply(world.frames);
-    listWriteNames( world.frames(sw.toId)->getPathToRoot(), cout );
-    listWriteNames( world.frames(sw.toId)->children, cout );
+  cout <<"APPLYING SWITCH:\n" <<*sw <<endl;
+  cout <<world.frames(sw.fromId)->name <<"->" <<world.frames(sw.toId)->name <<endl;
+  sw.apply(world.frames);
+  listWriteNames( world.frames(sw.toId)->getPathToRoot(), cout );
+  listWriteNames( world.frames(sw.toId)->children, cout );
 #endif
-    int s = sw.timeOfApplication+(int)k_order;
-    if(s<0) s=0;
-    int sEnd = int(k_order+T);
-//    if(sw.timeOfTermination>=0)  sEnd = sw.timeOfTermination+(int)k_order;
-    CHECK(s<=sEnd, "s:" <<s <<" sEnd:" <<sEnd);
-    if(s==sEnd) return;
-    rai::Frame *f0=0;
-    for(; s<sEnd; s++) { //apply switch on all configurations!
-      rai::Frame* f = sw.apply(timeSlices[s]());
-      if(!f0){
-        f0=f;
-      } else {
-        if(sw.symbol==SW_addContact){
-          rai::ForceExchange* ex0 = f0->forces.last();
-          rai::ForceExchange* ex1 = f->forces.last();
-          ex1->poa = ex0->poa;
-        }else{
-          f->set_Q() = f0->get_Q(); //copy the relative pose (switch joint initialization) from the first application
-          if(opt.mimicStable){
-            /*CRUCIAL CHANGE!*/
-            if(sw.isStable) f->joint->setMimic(f0->joint);
-          }
+  int s = sw.timeOfApplication+(int)k_order;
+  if(s<0) s=0;
+  int sEnd = int(k_order+T);
+  //    if(sw.timeOfTermination>=0)  sEnd = sw.timeOfTermination+(int)k_order;
+  CHECK(s<=sEnd, "s:" <<s <<" sEnd:" <<sEnd);
+  if(s==sEnd) return 0;
+  rai::Frame *f0=0;
+  for(; s<sEnd; s++) { //apply switch on all configurations!
+    rai::Frame* f = sw.apply(timeSlices[s]());
+    if(!f0){
+      f0=f;
+    } else {
+      if(sw.symbol==SW_addContact){
+        rai::ForceExchange* ex0 = f0->forces.last();
+        rai::ForceExchange* ex1 = f->forces.last();
+        ex1->poa = ex0->poa;
+      }else{
+        f->set_Q() = f0->get_Q(); //copy the relative pose (switch joint initialization) from the first application
+        if(opt.mimicStable){
+          /*CRUCIAL CHANGE!*/
+          if(sw.isStable) f->joint->setMimic(f0->joint);
         }
       }
     }
+  }
+  if(sw.isStable && opt.mimicStable) return f0;
+  return 0;
 }
 
 void KOMO::retrospectApplySwitches() {

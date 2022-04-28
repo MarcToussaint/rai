@@ -117,7 +117,7 @@ void Conv_KOMO_NLP::getFHessian(arr& H, const arr& x) {
   }
 }
 
-void Conv_KOMO_NLP::report(std::ostream& os, int verbose) {
+void Conv_KOMO_NLP::report(std::ostream& os, int verbose, const char* msg) {
   komo.reportProblem(os);
   if(verbose>1) os <<komo.getReport(verbose>3);
   if(verbose>2) komo.view(verbose>3, "Conv_KOMO_SparseNonfactored - report");
@@ -294,6 +294,36 @@ void Conv_KOMO_FactoredNLP::subSelect(const uintA& activeVariables, const uintA&
   }
 }
 
+arr Conv_KOMO_FactoredNLP::getInitializationSample(const arr& previousOptima) {
+  for(Dof *d:komo.pathConfig.activeDofs){
+    if(d->limits.N && d->dim!=1){ //HACK!!
+      arr q(d->dim);
+      for(uint k=0; k<d->dim; k++) { //in case joint has multiple dimensions
+        double lo = d->limits.elem(2*k+0); //lo
+        double up = d->limits.elem(2*k+1); //up
+        q(k) = rnd.uni(lo,up);
+      }
+      d->setDofs(q);
+    }else{
+      arr q = d->calcDofsFromConfig();
+      rndGauss(q, 0.01, true);
+      d->setDofs(q);
+    }
+  }
+  komo.pathConfig._state_q_isGood=false;
+//  komo.run_prepare(.0);
+//  komo.initRandom();
+  komo.x = komo.pathConfig.getJointState();
+  {
+    arr lo, up;
+    komo.getBounds(lo, up);
+    boundClip(komo.x, lo, up);
+  }
+  komo.set_x(komo.x);
+  komo.view(true, "randomInit");
+  return komo.x;
+}
+
 void Conv_KOMO_FactoredNLP::setSingleVariable(uint var_id, const arr& x) {
   CHECK_EQ(vars(var_id).dim, x.N, "");
   komo.pathConfig.setDofState(x, vars(var_id).dofs);
@@ -305,7 +335,12 @@ void Conv_KOMO_FactoredNLP::evaluateSingleFeature(uint feat_id, arr& phi, arr& J
   J = phi.J();
 }
 
-void Conv_KOMO_FactoredNLP::report(std::ostream& os, int verbose) {
+void Conv_KOMO_FactoredNLP::evaluate(arr& phi, arr& J, const arr& x) {
+  NLP_Factored::evaluate(phi, J, x);
+  reportAfterPhiComputation(komo);
+}
+
+void Conv_KOMO_FactoredNLP::report(std::ostream& os, int verbose, const char* msg) {
   komo.reportProblem(os);
   komo.pathConfig.ensure_q();
 
@@ -313,8 +348,15 @@ void Conv_KOMO_FactoredNLP::report(std::ostream& os, int verbose) {
     for(uint i=0; i<varsN(); i++) {
       os <<"Variable " <<i;
       if(subVars.N) os <<"[" <<subVars(i) <<"]";
-      os <<" '" <<vars(i).name <<"' dim:" <<vars(i).dim;
-      if(vars(i).dofs.N>=1) os <<" qIdx:" <<vars(i).dofs(0)->qIndex <<endl;
+      os <<" '" <<vars(i).name <<"' dim:" <<vars(i).dim  <<" dofs:" <<vars(i).dofs.N;
+      os <<" {";
+      if(vars(i).dofs.N<=2){
+        for(Dof *d:vars(i).dofs){
+          os <<" qIdx:" <<d->qIndex;
+          if(d->limits.N) os <<" limits:" <<d->limits;
+        }
+      }else{ os <<" ..."; }
+      os <<" }" <<endl;
     }
 
     arr y, J;
@@ -336,7 +378,9 @@ void Conv_KOMO_FactoredNLP::report(std::ostream& os, int verbose) {
     <<"\n  featureVariables: " <<featureVariables <<endl;
   }
 
-  if(verbose>3) komo.view(true, "Conv_KOMO_FineStructuredProblem - report");
+  if(msg) os <<" *** " <<msg <<" ***"<<endl;
+
+  if(verbose>3) komo.view(true, STRING("Conv_KOMO_FineStructuredProblem - " <<msg));
   if(verbose>4) komo.view_play(true);
   if(verbose>5){
     rai::system("mkdir -p z.vid");

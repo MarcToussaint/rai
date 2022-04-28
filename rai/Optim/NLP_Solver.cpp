@@ -29,7 +29,7 @@ template<> const char* rai::Enum<NLopt_SolverOption>::names []= {
     "LD_TNEWTON_PRECOND_RESTART", nullptr };
 
 shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization){
-  auto ret = make_shared<SolverReturn>();
+  std::shared_ptr<SolverReturn> ret = make_shared<SolverReturn>();
   shared_ptr<OptConstrained> optCon;
   double time = -rai::cpuTime();
 
@@ -84,10 +84,11 @@ shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization){
   else HALT("solver wrapper not implemented yet for solver ID '" <<rai::Enum<NLP_SolverID>(solverID) <<"'");
 
   if(optCon){
-      ret->ineq = optCon->L.get_sumOfGviolations();
-      ret->eq = optCon->L.get_sumOfHviolations();
-      ret->sos = optCon->L.get_cost_sos();
-      ret->f = optCon->L.get_cost_f();
+    ret->ineq = optCon->L.get_sumOfGviolations();
+    ret->eq = optCon->L.get_sumOfHviolations();
+    ret->sos = optCon->L.get_cost_sos();
+    ret->f = optCon->L.get_cost_f();
+    ret->feasible = (ret->ineq<.5) && (ret->eq<.5);
   }
 
   //checkJacobianCP(*P, x, 1e-4);
