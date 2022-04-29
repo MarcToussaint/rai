@@ -687,9 +687,18 @@ void Configuration::setTaus(const arr& tau) {
 void Configuration::setActiveDofs(const DofL& dofs){
   for(rai::Frame *f:frames) if(f->joint) f->joint->active=false;
   for(Dof* d: otherDofs) d->active = false;
-  for(rai::Dof *d:dofs) d->active = true;
+  DofL mimics;
+  for(Dof *d:dofs){
+    d->active = true;
+    if(d->mimic) mimics.append(d->mimic); //activate also the joint mimic'ed
+    for(Dof *dd:d->mimicers) mimics.append(dd);; //activate also mimicing joints
+  }
   reset_q();
   activeDofs = dofs;
+  for(Dof *d:mimics){
+    d->active = true;
+    activeDofs.setAppend(d);
+  }
   calc_indexedActiveJoints(false);
 //  checkConsistency();
 }
@@ -804,12 +813,12 @@ arr Configuration::getNaturalCtrlMetric(double power) const {
 /// returns the vector of joint limts */
 arr Configuration::getLimits(const DofL& dofs) const {
   uint N=0;
-  for(Dof* d:dofs) N += d->dim;
+  for(Dof* d:dofs) if(!d->mimic) N += d->dim;
   arr limits(N, 2);
   limits.setZero();
   for(uint i=0;i<N;i++) limits(i,1)=-1.;
   N=0;
-  for(Dof* d:dofs) {
+  for(Dof* d:dofs) if(!d->mimic) {
     for(uint k=0; k<d->dim; k++) { //in case joint has multiple dimensions
       if(d->limits.N) {
         limits(N+k, 0) = d->limits.elem(2*k+0); //lo
@@ -1169,6 +1178,9 @@ bool Configuration::checkConsistency() const {
       if(j->mimic) {
         CHECK(j->mimic>(void*)1, "mimic was not parsed correctly");
         CHECK(frames.contains(j->mimic->frame), "mimic points to a frame outside this kinematic configuration");
+        CHECK_EQ(j->active, j->mimic->active, "");
+        CHECK_EQ(j->qIndex, j->mimic->qIndex, "");
+        CHECK_EQ(j->dim, j->mimic->dim, "");
       } else {
       }
 
@@ -1176,6 +1188,14 @@ bool Configuration::checkConsistency() const {
         CHECK_EQ(m->mimic, j, "");
       }
     }
+
+  for(Dof* d:otherDofs){
+    if(d->mimic){
+      CHECK_EQ(d->active, d->mimic->active, "");
+      CHECK_EQ(d->qIndex, d->mimic->qIndex, "");
+      CHECK_EQ(d->dim, d->mimic->dim, "");
+    }
+  }
 
   //check topsort
   if(_state_indexedJoints_areGood) {

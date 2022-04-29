@@ -172,9 +172,10 @@ void displayFunction(const ScalarFunction& f, bool wait, double lo, double hi) {
     Y(i) = ((fx==fx && fx<10.)? fx : 10.);
   }
   Y.reshape(101, 101);
+  FILE("z.fct") <<(~Y).modRaw();
 //  plot()->Gnuplot();  plot()->Surface(Y);  plot()->update(true);
-  write(LIST<arr>(Y), "z.fct");
-  gnuplot("reset; splot [-1:1][-1:1] 'z.fct' matrix us ($1/50-1):($2/50-1):3 w l", wait, true);
+//  write(LIST<arr>(Y), "z.fct");
+  gnuplot("reset; set xlabel 'x'; set ylabel 'y'; splot [-1:1][-1:1] 'z.fct' matrix us ($1/50-1):($2/50-1):3 w l", wait, true);
 }
 
 /// minimizes \f$f(x)\f$ using its gradient only

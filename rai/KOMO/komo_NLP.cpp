@@ -184,8 +184,8 @@ Conv_KOMO_FactoredNLP::Conv_KOMO_FactoredNLP(KOMO& _komo, const rai::Array<DofL>
 
     //variable name
     String name;
-    String A; A <<dofs(0)->frame->name <<'.' <<dofs(0)->frame->ID/komo.pathConfig.frames.d1;
-    String B; B <<dofs(-1)->frame->name <<'.' <<dofs(-1)->frame->ID/komo.pathConfig.frames.d1;
+    String A; A <<dofs(0)->frame->name <<'.' <<(dofs(0)->frame->ID/komo.pathConfig.frames.d1 - komo.k_order);
+    String B; B <<dofs(-1)->frame->name <<'.' <<(dofs(-1)->frame->ID/komo.pathConfig.frames.d1 - komo.k_order);
     if(dofs.N>1){
       name <<A <<"--" <<B;
     }else if(dofs(0)->fex()){
@@ -199,17 +199,19 @@ Conv_KOMO_FactoredNLP::Conv_KOMO_FactoredNLP(KOMO& _komo, const rai::Array<DofL>
   }
   CHECK_EQ(xDim, komo.pathConfig.getJointStateDimension(), "");
   CHECK_EQ(xDim, xIndex2varIndex.N, "");
+//  cout <<"xIndex2varIndex" <<xIndex2varIndex <<endl;
 
   //ensure that komo.pathConfig uses the same indexing -- that its activeJoint set is indexed exactly as consecutive variables
   komo.pathConfig.setActiveDofs(activeDofs);
   komo.pathConfig.ensure_q();
+  komo.pathConfig.checkConsistency();
 
   //NLP_Factored signature: features
   __featureIndex.resize(komo.objs.N);
   for(uint f=0;f<featsN();f++){
     std::shared_ptr<GroundedObjective>& ob = komo.objs(f);
     __featureIndex(f).ob = ob;
-    __featureIndex(f).dim = ob->feat->dim(ob->frames);
+//    __featureIndex(f).dim = ob->feat->dim(ob->frames);
   }
 
   //get variable dependance from querying the sparse Jacobian!
@@ -288,9 +290,9 @@ void Conv_KOMO_FactoredNLP::subSelect(const uintA& activeVariables, const uintA&
   featureVariables.resize(featsN());
   featureTypes.clear();
   for(uint i=0;i<featsN();i++){
-    featureDimensions(i) = feats(i).dim;
+    featureDimensions(i) = feats(i).ob->feat->dim(feats(i).ob->frames); //__featureIndex(f).dim = ob->feat->dim(ob->frames);
     featureVariables(i) = subVarsInv.sub(feats(i).vars);
-    featureTypes.append(consts<ObjectiveType>(feats(i).ob->type, feats(i).dim));
+    featureTypes.append(consts<ObjectiveType>(feats(i).ob->type, featureDimensions(i)));
   }
 }
 
@@ -320,7 +322,7 @@ arr Conv_KOMO_FactoredNLP::getInitializationSample(const arr& previousOptima) {
     boundClip(komo.x, lo, up);
   }
   komo.set_x(komo.x);
-  komo.view(true, "randomInit");
+//  komo.view(true, "randomInit");
   return komo.x;
 }
 
@@ -341,10 +343,10 @@ void Conv_KOMO_FactoredNLP::evaluate(arr& phi, arr& J, const arr& x) {
 }
 
 void Conv_KOMO_FactoredNLP::report(std::ostream& os, int verbose, const char* msg) {
-  komo.reportProblem(os);
+//  komo.reportProblem(os);
   komo.pathConfig.ensure_q();
 
-  if(verbose>1){
+  if(verbose>4){
     for(uint i=0; i<varsN(); i++) {
       os <<"Variable " <<i;
       if(subVars.N) os <<"[" <<subVars(i) <<"]";
@@ -354,6 +356,7 @@ void Conv_KOMO_FactoredNLP::report(std::ostream& os, int verbose, const char* ms
         for(Dof *d:vars(i).dofs){
           os <<" qIdx:" <<d->qIndex;
           if(d->limits.N) os <<" limits:" <<d->limits;
+          if(d->isStable) os <<" STABLE";
         }
       }else{ os <<" ..."; }
       os <<" }" <<endl;
@@ -364,7 +367,7 @@ void Conv_KOMO_FactoredNLP::report(std::ostream& os, int verbose, const char* ms
       std::shared_ptr<GroundedObjective>& ob = feats(f).ob;
       os <<"Feature " <<f;
       if(subVars.N) os <<"[" <<subFeats(f) <<"]";
-      os <<" '" <<ob->feat->shortTag(komo.pathConfig) <<"' dim:" <<feats(f).dim <<" vars: " <<featureVariables(f) <<'=' <<feats(f).vars <<"=[ ";
+      os <<" '" <<ob->feat->shortTag(komo.pathConfig) <<"' dim:" <<feats(f).ob->feat->dim(feats(f).ob->frames) <<" vars: " <<featureVariables(f) <<'=' <<feats(f).vars <<"=[ ";
       for(uint& i:featureVariables(f)) if(i!=UINT_MAX) os <<vars(i).name <<' '; else os <<"% ";
       os <<"]" ;
       evaluateSingleFeature(f, y, J, NoArr);

@@ -112,6 +112,8 @@ bool NLP_GraphSolver::solveFull() {
   std::shared_ptr<SolverReturn> ret = subSolver
                                       .setProblem(P)
                                       .solve(1);
+  x = ret->x;
+  dual = ret->dual=dual;
   return ret->feasible;
 }
 
@@ -124,10 +126,14 @@ bool NLP_GraphSolver::solveRandom() {
   uintA Y = A({i+1,i+j});
   P->subSelect(X,Y);
   P->report(cout, 2);
-//  P->getInitializationSample();
+  subSolver.x = P->getInitializationSample();
+  subSolver.dual.clear();
+  P->report(cout, 4, STRING("INITIALIZATION for " << X <<'|' <<Y));
   std::shared_ptr<SolverReturn> ret = subSolver
                                       .setProblem(P)
-                                      .solve(1);
+                                      .solve(0);
+  checkJacobianCP(*P, subSolver.x, 1e-4);
+  P->report(cout, 4, STRING("OPT for " <<X <<'|' <<Y));
   return ret->feasible;
 }
 
@@ -140,10 +146,14 @@ bool NLP_GraphSolver::solveInOrder(uintA order){
     P->subSelect(X,Y);
     P->report(cout, 2);
     if(P->featureDimensions.N){ //any features at all?
+      subSolver.x = P->getInitializationSample();
+      subSolver.dual.clear();
+      P->report(cout, 4, STRING("INITIALIZATION for " << X <<'|' <<Y));
       ret = subSolver
             .setProblem(P)
-            .solve(1);
-      P->report(cout, 4, STRING(X <<'|' <<Y));
+            .solve(0);
+      checkJacobianCP(*P, subSolver.x, 1e-4);
+      P->report(cout, 4, STRING("OPT for " <<X <<'|' <<Y));
     }
     //--
     X = Y;
@@ -154,10 +164,14 @@ bool NLP_GraphSolver::solveInOrder(uintA order){
     P->report(cout, 2);
     //  P->getInitializationSample();
     if(P->featureDimensions.N){ //any features at all?
+      subSolver.x = P->getInitializationSample();
+      subSolver.dual.clear();
+      P->report(cout, 4, STRING("INITIALIZATION for " << X <<'|' <<Y));
       ret = subSolver
             .setProblem(P)
-            .solve(1);
-      P->report(cout, 4, STRING(X <<'|' <<Y));
+            .solve(0);
+      checkJacobianCP(*P, subSolver.x, 1e-4);
+      P->report(cout, 4, STRING("OPT for " <<X <<'|' <<Y));
     }
   }
   return ret->feasible;
