@@ -49,6 +49,8 @@ struct Conv_KOMO_FactoredNLP : NLP_Factored {
   ///-- signature/structure of the mathematical problem
 //    virtual arr getInitializationSample();
   virtual arr getInitializationSample(const arr& previousOptima);
+  virtual arr  getSingleVariableInitSample(uint var_id);
+  virtual void randomizeSingleVariable(uint var_id);
 
   ///--- evaluation
   virtual void setSingleVariable(uint var_id, const arr& x); //set a single variable block

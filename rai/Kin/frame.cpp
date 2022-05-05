@@ -633,6 +633,10 @@ bool rai::Frame::isChildOf(const rai::Frame* par, int order) const {
 
 //===========================================================================
 
+arr rai::Dof::getDofState(){
+  return frame->C.getDofState(DofL{this});
+}
+
 void rai::Dof::setActive(bool _active){
   if(mimic){ mimic->setActive(_active); return; }
   active = _active;

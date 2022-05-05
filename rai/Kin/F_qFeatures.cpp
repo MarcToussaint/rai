@@ -260,10 +260,11 @@ rai::Array<rai::Joint*> getMatchingJoints(const ConfigurationL& Ktuple, bool zer
 DofL getDofs(const FrameL& F){
   DofL dofs;
   for(rai::Frame *f: F){
-    rai::Joint *j = f->joint;
-    if(j && j->limits.N) dofs.append(j);
-    for(rai::ForceExchange* fex:f->forces){
-      if(fex->sign(f)>0.) dofs.append(fex);
+    if(f->joint && f->joint->active){
+      if(f->joint->limits.N) dofs.append(f->joint);
+    }
+    for(rai::ForceExchange* fex:f->forces) if(&fex->a==f){
+      if(fex->active && fex->limits.N) dofs.append(fex);
     }
   }
   return dofs;

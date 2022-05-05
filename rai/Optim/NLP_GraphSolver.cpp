@@ -109,9 +109,14 @@ void NLP_GraphSolver::test() {
 bool NLP_GraphSolver::solveFull() {
   P->subSelect({}, {});
   P->report(cout, 2);
+  subSolver.x = P->getInitializationSample();
+  subSolver.dual.clear();
+  P->report(cout, 4, STRING("INITIALIZATION full"));
   std::shared_ptr<SolverReturn> ret = subSolver
                                       .setProblem(P)
-                                      .solve(1);
+                                      .solve(0);
+  //checkJacobianCP(*P, subSolver.x, 1e-4);
+  P->report(cout, 4, STRING("OPT full"));
   x = ret->x;
   dual = ret->dual=dual;
   return ret->feasible;
@@ -140,7 +145,9 @@ bool NLP_GraphSolver::solveRandom() {
 bool NLP_GraphSolver::solveInOrder(uintA order){
   uintA X,Y;
   std::shared_ptr<SolverReturn> ret;
+  if(!order.N) order.setStraightPerm(P->numTotalVariables());
   for(uint i=0;i<order.N;i++){
+#if 0
     Y = X;
     X = {order(i)};
     P->subSelect(X,Y);
@@ -157,22 +164,31 @@ bool NLP_GraphSolver::solveInOrder(uintA order){
     }
     //--
     X = Y;
+#endif
     X.append(order(i));
     Y.clear();
-    if(ret && ret->feasible) continue;
-    P->subSelect(X,Y);
-    P->report(cout, 2);
-    //  P->getInitializationSample();
-    if(P->featureDimensions.N){ //any features at all?
-      subSolver.x = P->getInitializationSample();
-      subSolver.dual.clear();
-      P->report(cout, 4, STRING("INITIALIZATION for " << X <<'|' <<Y));
-      ret = subSolver
-            .setProblem(P)
-            .solve(0);
-      checkJacobianCP(*P, subSolver.x, 1e-4);
-      P->report(cout, 4, STRING("OPT for " <<X <<'|' <<Y));
+    if(true){ //ret && !ret->feasible){
+      P->subSelect(X,Y);
+      P->report(cout, 2);
+      //  P->getInitializationSample();
+      if(P->featureDimensions.N){ //any features at all?
+        P->randomizeSingleVariable(i);
+//        subSolver.x = P->getInitializationSample();
+//        subSolver.dual.clear();
+        P->report(cout, 5, STRING("INITIALIZATION for " << X <<'|' <<Y));
+        ret = subSolver
+              .setProblem(P)
+              .solve(1);
+//        checkJacobianCP(*P, subSolver.x, 1e-4);
+        P->report(cout, 5, STRING("OPT for " <<X <<'|' <<Y));
+      }
     }
+    //--reinit all other variables!
+    for(uint j=i+1;j<order.N;j++){
+      arr z = P->getSingleVariableInitSample(j);
+//      P->setSingleVariable(j, z);
+    }
+    //P->report(cout, 5, STRING("POST INIT for " <<X <<'|' <<Y));
   }
   return ret->feasible;
 

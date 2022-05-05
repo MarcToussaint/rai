@@ -88,6 +88,9 @@ struct NLP_Factored : NLP {
   virtual void setSingleVariable(uint var_id, const arr& x) = 0; //set a single variable block
   virtual void evaluateSingleFeature(uint feat_id, arr& phi, arr& J, arr& H) = 0; //get a single feature block
 
+  virtual arr  getSingleVariableInitSample(uint var_id){ return {}; } //get an initialization (for MC sampling/restarts) [default: initialize random within bounds]
+  virtual void randomizeSingleVariable(uint var_id){ return; }
+
   //-- unstructured (batch) evaluation
   virtual void evaluate(arr& phi, arr& J, const arr& x); //default implementation: loop using setSingleVariable and evaluateSingleFeature
 

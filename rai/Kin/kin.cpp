@@ -453,10 +453,9 @@ StringA Configuration::getJointNames() const {
 DofL Configuration::getDofs(const FrameL& F, bool activesOnly) const{
   DofL dofs;
   for(Frame* f:F) {
-    Dof* j = f->joint;
-    if(j && (!activesOnly || j->active)) dofs.append(j);
-  }
-  for(Frame* f:F) {
+    if(f->joint && (!activesOnly || f->joint->active)){
+      dofs.append(f->joint);
+    }
     for(ForceExchange* fex: f->forces) if(&fex->a==f){
       if(fex && (!activesOnly || fex->active)) dofs.append(fex);
     }

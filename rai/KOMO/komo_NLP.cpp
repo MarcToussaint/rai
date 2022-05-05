@@ -297,8 +297,12 @@ void Conv_KOMO_FactoredNLP::subSelect(const uintA& activeVariables, const uintA&
 }
 
 arr Conv_KOMO_FactoredNLP::getInitializationSample(const arr& previousOptima) {
+#if 0
+  komo.run_prepare(0.01);
+  return komo.x;
+#else
   for(Dof *d:komo.pathConfig.activeDofs){
-    if(d->limits.N && d->dim!=1){ //HACK!!
+    if(false && d->limits.N && d->dim!=1){ //HACK!!
       arr q(d->dim);
       for(uint k=0; k<d->dim; k++) { //in case joint has multiple dimensions
         double lo = d->limits.elem(2*k+0); //lo
@@ -324,6 +328,43 @@ arr Conv_KOMO_FactoredNLP::getInitializationSample(const arr& previousOptima) {
   komo.set_x(komo.x);
 //  komo.view(true, "randomInit");
   return komo.x;
+#endif
+}
+
+void Conv_KOMO_FactoredNLP::randomizeSingleVariable(uint var_id){
+  for(Dof *d:__variableIndex(var_id).dofs){
+    if(d->limits.N && d->dim!=1){ //HACK!!
+      arr q(d->dim);
+      for(uint k=0; k<d->dim; k++) { //in case joint has multiple dimensions
+        double lo = d->limits.elem(2*k+0); //lo
+        double up = d->limits.elem(2*k+1); //up
+        q(k) = rnd.uni(lo,up);
+      }
+      d->setDofs(q);
+    }else{
+      arr q = d->calcDofsFromConfig();
+      rndGauss(q, 0.01, true);
+      d->setDofs(q);
+    }
+  }
+}
+
+arr Conv_KOMO_FactoredNLP::getSingleVariableInitSample(uint var_id){
+  arr z;
+  for(Dof *d:__variableIndex(var_id).dofs){
+    //if joint, find previous dof:
+    if(d->frame->ID >= komo.pathConfig.frames.d1){ //is joint and prev time slice exists
+      Frame *prev = komo.pathConfig.frames.elem(d->frame->ID - komo.pathConfig.frames.d1); //grab frame from prev time slice
+      CHECK(prev, "");
+      //init from relative pose (as in applySwitch)
+      d->frame->set_X() = prev->ensure_X(); //copy the relative pose (switch joint initialization) from the first application
+      for(Dof *m: d->mimicers) m->frame->set_Q() = d->frame->get_Q();
+      z.append(d->calcDofsFromConfig());
+    }else{//otherwise???
+      z.append(d->calcDofsFromConfig());
+    }
+  }
+  return z;
 }
 
 void Conv_KOMO_FactoredNLP::setSingleVariable(uint var_id, const arr& x) {
@@ -383,9 +424,9 @@ void Conv_KOMO_FactoredNLP::report(std::ostream& os, int verbose, const char* ms
 
   if(msg) os <<" *** " <<msg <<" ***"<<endl;
 
-  if(verbose>3) komo.view(true, STRING("Conv_KOMO_FineStructuredProblem - " <<msg));
-  if(verbose>4) komo.view_play(true);
-  if(verbose>5){
+  if(verbose>3) komo.view(verbose>4, STRING("Conv_KOMO_FineStructuredProblem - " <<msg));
+  if(verbose>5) komo.view_play(true);
+  if(verbose>6){
     rai::system("mkdir -p z.vid");
     komo.view_play(false, .1, "z.vid/");
     if(verbose>3) komo.view(true, "Conv_KOMO_SparseNonfactored - video saved in z.vid/");
