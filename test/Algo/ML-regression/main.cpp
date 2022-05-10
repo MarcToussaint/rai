@@ -11,7 +11,7 @@ void testLinReg(const char *datafile=nullptr) {
     datafile="z.train";
     arr X,y;
     artificialData(X, y);
-    FILE(datafile) <<catCol(X,y);
+    FILE(datafile) <<catCol(X,y).modRaw();
   }
 
   //-- load data from a file
@@ -26,45 +26,45 @@ void testLinReg(const char *datafile=nullptr) {
   //-- compute optimal parameters
   arr Sigma;
   arr beta = ridgeRegression(Phi, y, -1., Sigma);
+  double sigma = sqrt(sumOfSqr(Phi*beta-y)/(X.d0-1));
+
   cout <<"estimated beta = "<< beta <<endl;
   if(beta.N==beta_true.N) cout <<"max-norm beta-beta_true = " <<maxDiff(beta, beta_true) <<endl; //beta_true is global and generated during artificialData
-  double sigma = sqrt(sumOfSqr(Phi*beta-y)/(X.d0-1));
   cout <<"Mean error (sdv) = " <<sigma <<endl;
 
   //-- evaluate model on a grid
-  arr X_grid,y_grid;
-  X_grid.setGrid(X.d1,-5,5, (X.d1==1?500:30));
+  arr X_grid = grid(X.d1,-5,5, (X.d1==1?500:30));
   Phi = makeFeatures(X_grid, readFromCfgFileFT, X);
-  y_grid = Phi*beta;
+  arr y_grid = Phi*beta;
   arr s_grid = sqrt(evaluateBayesianRidgeRegressionSigma(Phi, Sigma)/*+rai::sqr(sigma)*/);
 
-  if(X.d1==1){
-    plot()->Gnuplot();
-    if(plotDev) plot()->FunctionPrecision(X_grid, y_grid, y_grid+s_grid, y_grid-s_grid);
-    else plot()->Function(X_grid, y_grid);
-    plot()->Points(X,y);
-    plot()->update(true);
-  }
+//  if(X.d1==1){
+//    plot()->Gnuplot();
+//    if(plotDev) plot()->FunctionPrecision(X_grid, y_grid, y_grid+s_grid, y_grid-s_grid);
+//    else plot()->Function(X_grid, y_grid);
+//    plot()->Points(X,y);
+//    plot()->update(true);
+//  }
 
   //-- gnuplot
   rai::arrayBrackets="  ";
-//  if(X.d1==1){
-//    FILE("z.model") <<catCol(X_grid, y_grid);
-//    gnuplot(STRING("plot [-3:3] '" <<datafile <<"' us 1:2 w p,'z.model' us 1:2 w l"), false, true,"z.pdf");
-//  }
+  if(X.d1==1){
+    FILE("z.model") <<catCol(X_grid, y_grid);
+    gnuplot(STRING("plot [-3:3] '" <<datafile <<"' us 1:2 w p,'z.model' us 1:2 w l"), false, false,"z.pdf");
+  }
   if(X.d1==2){
-    if(plotDev){
+    if(false && plotDev){
       FILE("z.model") <<~y_grid.reshape(31,31);
       FILE("z.model_s") <<~(y_grid+s_grid).reshape(31,31);
       FILE("z.model__s") <<~(y_grid-s_grid).reshape(31,31);
       gnuplot(STRING("splot [-3:3][-3:3] '" <<datafile <<"' w p ps 1 pt 3,\
                      'z.model' matrix us ($1/5-3):($2/5-3):3 w l,\
                      'z.model_s' matrix us ($1/5-3):($2/5-3):3 w l,\
-                     'z.model__s' matrix us ($1/5-3):($2/5-3):3 w l; pause mouse"), false, true, "z.pdf");
+                     'z.model__s' matrix us ($1/5-3):($2/5-3):3 w l; pause mouse"), false, false, "z.pdf");
     }else{
       FILE("z.model") <<~y_grid.reshape(31,31);
       gnuplot(STRING("splot [-3:3][-3:3] '" <<datafile <<"' w p ps 1 pt 3,\
-                     'z.model' matrix us ($1/5-3):($2/5-3):3 w l"), false, true, "z.pdf");
+                     'z.model' matrix us ($1/5-3):($2/5-3):3 w l"), false, false, "z.pdf");
     }
   }
 }
@@ -311,7 +311,8 @@ void TEST(MultiClass){
 
   arr X,y;
   artificialData_HastiesMultiClass(X, y);
-  
+  CHECK_EQ(X.d1, 2, "needs n=2");
+
   arr Phi = makeFeatures(X);
   arr beta = logisticRegressionMultiClass(Phi, y);
   
@@ -324,10 +325,9 @@ void TEST(MultiClass){
   rai::arrayBrackets="  ";
   FILE("z.train") <<catCol(X, label, y, p_pred);
   
-  arr X_grid,p_grid;
-  X_grid.setGrid(2,-2,3,50);
+  arr X_grid = grid(2,-2,3,50);
   Phi = makeFeatures(X_grid,readFromCfgFileFT,X);
-  p_grid = exp(Phi*beta);
+  arr p_grid = exp(Phi*beta);
   for(uint i=0; i<p_grid.d0; i++) p_grid[i]() /= sum(p_grid[i]);
   p_grid = ~p_grid;
   p_grid.reshape(p_grid.d0,51,51);
@@ -365,7 +365,7 @@ void TEST(CV){
   arr Phi = makeFeatures(X);
   FILE("z.train") <<catCol(X, y);
 
-  uint k_fold = rai::getParameter<uint>("k_fold",10);
+  uint k_fold = rai::getParameter<double>("k_fold",10);
   cv.crossValidateMultipleLambdas(Phi, y, {1e-3,1e-2,1e-1,1e0,1e1,1e2,1e3,1e4,1e5}, k_fold, false);
   cv.plot();
   cout <<"10-fold CV:\n  costMeans= " <<cv.scoreMeans <<"\n  costSDVs= " <<cv.scoreSDVs <<endl;
@@ -448,13 +448,13 @@ int main(int argc, char *argv[]) {
 
   rai::arrayBrackets="[]";
 
-  uint seed = rai::getParameter<uint>("seed", 0);
-  if(!seed)  rnd.clockSeed();
+  uint seed = rai::getParameter<double>("seed", 0);
+  if(!seed) rnd.clockSeed();
   else rnd.seed(seed);
 
   plotDev = rai::getParameter<bool>("plotDev", true);
 
-  switch(rai::getParameter<uint>("mode",1)) {
+  switch((int)rai::getParameter<double>("mode",1)) {
     case 1:  testLinReg();  break;
     case 2:  test2Class();  break;
     case 3:  testMultiClass();  break;
@@ -467,6 +467,7 @@ int main(int argc, char *argv[]) {
   }
   
   plot()->Clear();
+  rai::wait();
   return 0;
 }
 

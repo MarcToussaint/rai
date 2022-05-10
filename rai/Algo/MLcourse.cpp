@@ -156,7 +156,7 @@ void piecewiseLinearFeatures(arr& Z, const arr& X) {
 }
 
 void rbfFeatures(arr& Z, const arr& X, const arr& Xtrain, arr& Jacobian) {
-  uint rbfBias = rai::getParameter<uint>("rbfBias", 1);
+  uint rbfBias = rai::getParameter<double>("rbfBias", 1);
   double rbfWidth = rai::sqr(rai::getParameter<double>("rbfWidth", .2));
   Z.resize(X.d0, Xtrain.d0+rbfBias);
   if(!!Jacobian) Jacobian.resize(X.d0, Xtrain.d0+rbfBias, X.d1);
@@ -173,7 +173,7 @@ void rbfFeatures(arr& Z, const arr& X, const arr& Xtrain, arr& Jacobian) {
 
 arr makeFeatures(const arr& X, FeatureType featureType, const arr& rbfCenters, arr& Jacobian) {
   if(X.nd==1) return makeFeatures(~X, featureType, rbfCenters, Jacobian);
-  if(featureType==readFromCfgFileFT) featureType = (FeatureType)rai::getParameter<uint>("modelFeatureType", 1);
+  if(featureType==readFromCfgFileFT) featureType = (FeatureType)rai::getParameter<double>("modelFeatureType", 1);
   arr Z;
   switch(featureType) {
     case constFT:     Z = consts<double>(1., X.d0, 1);  break;
@@ -189,18 +189,18 @@ arr makeFeatures(const arr& X, FeatureType featureType, const arr& rbfCenters, a
 }
 
 arr artificialData(arr& X, arr& y, ArtificialDataType dataType) {
-  uint n = rai::getParameter<uint>("n", 100);
-  uint d = rai::getParameter<uint>("d", 1);
+  uint n = rai::getParameter<double>("n", 100);
+  uint d = rai::getParameter<double>("d", 1);
   double sigma = rai::getParameter<double>("sigma", 1.); // observation noise
 
   arr beta_true;
 
-  if(dataType==readFromCfgFileDT) dataType = (ArtificialDataType)rai::getParameter<uint>("dataType", 1);
+  if(dataType==readFromCfgFileDT) dataType = (ArtificialDataType)rai::getParameter<double>("dataType", 1);
   switch(dataType) {
     case linearRedundantData:
     case linearData: {
       X = randn(n, d);
-      arr Z = makeFeatures(X, (FeatureType)rai::getParameter<uint>("dataFeatureType", 1));
+      arr Z = makeFeatures(X, (FeatureType)rai::getParameter<double>("dataFeatureType", 1));
       arr beta;
       beta = randn(Z.d1, 1).reshape(Z.d1);
       if(dataType==linearRedundantData) {
@@ -222,7 +222,7 @@ arr artificialData(arr& X, arr& y, ArtificialDataType dataType) {
     case linearOutlier: {
       double rate = rai::getParameter<double>("outlierRate", .1);
       X = randn(n, d);
-      arr Z = makeFeatures(X, (FeatureType)rai::getParameter<uint>("dataFeatureType", 1));
+      arr Z = makeFeatures(X, (FeatureType)rai::getParameter<double>("dataFeatureType", 1));
       arr beta;
       beta = randn(Z.d1, 1).reshape(Z.d1);
       y = Z*beta;
@@ -241,8 +241,8 @@ arr artificialData(arr& X, arr& y, ArtificialDataType dataType) {
 }
 
 void artificialData_Hasties2Class(arr& X, arr& y) {
-  uint n = rai::getParameter<uint>("n", 100);
-  uint d = rai::getParameter<uint>("d", 2);
+  uint n = rai::getParameter<double>("n", 100);
+  uint d = rai::getParameter<double>("d", 2);
 
   arr means0(10, d), means1(10, d), x(d), bias0(d), bias1(d);
 
@@ -266,9 +266,9 @@ void artificialData_Hasties2Class(arr& X, arr& y) {
 }
 
 void artificialData_HastiesMultiClass(arr& X, arr& y) {
-  uint n = rai::getParameter<uint>("n", 100);
-  uint d = rai::getParameter<uint>("d", 2);
-  uint M = rai::getParameter<uint>("M", 3);
+  uint n = rai::getParameter<double>("n", 100);
+  uint d = rai::getParameter<double>("d", 2);
+  uint M = rai::getParameter<double>("M", 3);
 
   arr means(M, 10, d), x(d);
 
@@ -287,8 +287,8 @@ void artificialData_HastiesMultiClass(arr& X, arr& y) {
 }
 
 void artificialData_GaussianMixture(arr& X, arr& y) {
-  uint n = rai::getParameter<uint>("n", 100);
-  uint M = rai::getParameter<uint>("M", 3);
+  uint n = rai::getParameter<double>("n", 100);
+  uint M = rai::getParameter<double>("M", 3);
   double sig = rai::getParameter<double>("sigma", .2);
 
   arr means(M, 2), V(M, 2, 2), x(2);
