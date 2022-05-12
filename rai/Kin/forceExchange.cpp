@@ -216,6 +216,7 @@ void rai::ForceExchange::glDraw(OpenGL& gl) {
   glVertex3dv((_poa+scale*_force).p); //white: force
   glEnd();
   glLineWidth(1.f);
+  glColor(.0,.0,.0, 1.);
 
 //  glBegin(GL_LINES);
 //  glVertex3dv(&a.ensure_X().pos.x);

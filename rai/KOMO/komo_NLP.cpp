@@ -184,8 +184,8 @@ Conv_KOMO_FactoredNLP::Conv_KOMO_FactoredNLP(KOMO& _komo, const rai::Array<DofL>
 
     //variable name
     String name;
-    String A; A <<dofs(0)->frame->name <<'.' <<(dofs(0)->frame->ID/komo.pathConfig.frames.d1 - komo.k_order);
-    String B; B <<dofs(-1)->frame->name <<'.' <<(dofs(-1)->frame->ID/komo.pathConfig.frames.d1 - komo.k_order);
+    String A; A <<dofs(0)->frame->name <<'.' <<(dofs(0)->frame->ID/komo.timeSlices.d1 - komo.k_order);
+    String B; B <<dofs(-1)->frame->name <<'.' <<(dofs(-1)->frame->ID/komo.timeSlices.d1 - komo.k_order);
     if(dofs.N>1){
       name <<A <<"--" <<B;
     }else if(dofs(0)->fex()){
@@ -340,6 +340,7 @@ void Conv_KOMO_FactoredNLP::randomizeSingleVariable(uint var_id){
         double up = d->limits.elem(2*k+1); //up
         q(k) = rnd.uni(lo,up);
       }
+      LOG(0) <<"### initializing " <<d->frame->name <<" with " <<q;
       d->setDofs(q);
     }else{
       arr q = d->calcDofsFromConfig();
@@ -353,13 +354,18 @@ arr Conv_KOMO_FactoredNLP::getSingleVariableInitSample(uint var_id){
   arr z;
   for(Dof *d:__variableIndex(var_id).dofs){
     //if joint, find previous dof:
-    if(d->frame->ID >= komo.pathConfig.frames.d1){ //is joint and prev time slice exists
-      Frame *prev = komo.pathConfig.frames.elem(d->frame->ID - komo.pathConfig.frames.d1); //grab frame from prev time slice
+    if(d->frame->ID >= komo.timeSlices.d1){ //is joint and prev time slice exists
+      Frame *prev = komo.pathConfig.frames.elem(d->frame->ID - komo.timeSlices.d1); //grab frame from prev time slice
       CHECK(prev, "");
       //init from relative pose (as in applySwitch)
       d->frame->set_X() = prev->ensure_X(); //copy the relative pose (switch joint initialization) from the first application
+      arr q = d->calcDofsFromConfig();
+#if 1
+      d->setDofs(q); //also sets it for all mimicers
+#else
       for(Dof *m: d->mimicers) m->frame->set_Q() = d->frame->get_Q();
-      z.append(d->calcDofsFromConfig());
+#endif
+      z.append(q);
     }else{//otherwise???
       z.append(d->calcDofsFromConfig());
     }

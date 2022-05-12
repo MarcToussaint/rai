@@ -340,14 +340,17 @@ void Graph::appendDict(const std::map<std::string, std::string>& dict) {
 }
 
 Node* Graph::findNode(const char* key, bool recurseUp, bool recurseDown) const {
-  for(Node* n: (*this)) if(n->matches(key)) return n;
+//  for(uint i=N;i--;) if(elem(i)->matches(key)) return elem(i);
+  for(Node *n:(*this)) if(n->matches(key)) return n;
   Node* ret=nullptr;
   if(recurseUp && isNodeOfGraph) ret = isNodeOfGraph->container.findNode(key, true, false);
   if(ret) return ret;
-  if(recurseDown) for(Node* n: (*this)) if(n->isGraph()) {
-        ret = n->graph().findNode(key, false, true);
-        if(ret) return ret;
-      }
+  if(recurseDown){
+    for(Node* n: (*this)) if(n->isGraph()) {
+      ret = n->graph().findNode(key, false, true);
+      if(ret) return ret;
+    }
+  }
   return ret;
 }
 

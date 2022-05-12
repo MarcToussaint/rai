@@ -175,12 +175,12 @@ bool NLP_GraphSolver::solveInOrder(uintA order){
         P->randomizeSingleVariable(i);
 //        subSolver.x = P->getInitializationSample();
 //        subSolver.dual.clear();
-        P->report(cout, 5, STRING("INITIALIZATION for " << X <<'|' <<Y));
+//        P->report(cout, 5, STRING("INITIALIZATION for " << X <<'|' <<Y));
         ret = subSolver
               .setProblem(P)
               .solve(1);
 //        checkJacobianCP(*P, subSolver.x, 1e-4);
-        P->report(cout, 5, STRING("OPT for " <<X <<'|' <<Y));
+//        P->report(cout, 5, STRING("OPT for " <<X <<'|' <<Y));
       }
     }
     //--reinit all other variables!

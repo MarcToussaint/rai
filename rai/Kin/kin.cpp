@@ -683,6 +683,43 @@ void Configuration::setTaus(const arr& tau) {
   for(uint t=0;t<frames.d0;t++) frames(t,0)->tau = tau(t);
 }
 
+void Configuration::setRandom(uint timeSlices_d1){
+  for(Dof *d:activeDofs){
+    if(d->limits.N && d->dim!=1 && !d->mimic){ //HACK!!
+      arr q(d->dim);
+      for(uint k=0; k<d->dim; k++) { //in case joint has multiple dimensions
+        double lo = d->limits.elem(2*k+0); //lo
+        double up = d->limits.elem(2*k+1); //up
+        q(k) = rnd.uni(lo,up);
+      }
+      d->setDofs(q);
+    }else{
+      //if time-sliced, and previous dof exists, then first adopt
+      if(timeSlices_d1 && d->joint() && !d->mimic && d->dim!=1 && d->frame->ID >= timeSlices_d1){ //is joint and prev time slice exists
+        Frame *prev = frames.elem(d->frame->ID - timeSlices_d1); //grab frame from prev time slice
+        CHECK(prev, "");
+        //init from relative pose (as in applySwitch)
+        d->frame->set_X() = prev->ensure_X(); //copy the relative pose (switch joint initialization) from the first application
+        arr q = d->calcDofsFromConfig();
+        d->setDofs(q); //also sets it for all mimicers
+      }
+
+      arr q = d->calcDofsFromConfig();
+      rndGauss(q, 0.01, true);
+      if(d->limits.N){
+        for(uint k=0; k<d->dim; k++) { //in case joint has multiple dimensions
+          double lo = d->limits.elem(2*k+0); //lo
+          double up = d->limits.elem(2*k+1); //up
+          rai::clip(q(k), lo, up);
+        }
+      }
+      d->setDofs(q);
+    }
+  }
+  _state_q_isGood=false;
+  checkConsistency();
+}
+
 void Configuration::setActiveDofs(const DofL& dofs){
   for(rai::Frame *f:frames) if(f->joint) f->joint->active=false;
   for(Dof* d: otherDofs) d->active = false;
@@ -3374,6 +3411,8 @@ struct EditConfigurationKeyCall:OpenGL::GLKeyCall {
         }
       }
 #endif
+    } else if(gl.pressedkey=='r') { //random sample
+      C.setRandom();
     } else switch(gl.pressedkey) {
         case '1':  gl.drawOptions.drawShapes^=1;  break;
         case '2':  gl.drawOptions.drawJoints^=1;  break;
@@ -3445,6 +3484,7 @@ void editConfiguration(const char* filename, Configuration& C) {
                       "SHIFT-LEFT CLICK - move view\n"
                       "CTRL-LEFT CLICK - write object ID\n"
                       "c - compute and write collisions\n"
+                      "r - random sample a new configuration\n"
                       "1..7 - view options\n"
                       "jkluio - keyboard move\n"
                       "as - keyboard rotate\n"

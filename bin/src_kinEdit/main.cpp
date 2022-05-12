@@ -94,7 +94,7 @@ int main(int argc,char **argv){
   if(file.endsWith(".dae")){
     C.watch(true);
   }else{
-    editConfiguration(file, C);
+    rai::editConfiguration(file, C);
   }
 
   return 0;

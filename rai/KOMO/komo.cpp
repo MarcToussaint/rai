@@ -276,9 +276,9 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
         rai::Shape* on = world.getFrame(frames(0))->shape;
         CHECK_EQ(on->type(), rai::ST_ssBox, "")
         f->joint->limits = {
-                           -on->size(0), on->size(0),
-                           -on->size(1), on->size(1),
-                           -6.,6. };
+                           -.5*on->size(0), .5*on->size(0),
+                           -.5*on->size(1), .5*on->size(1),
+                           -3.,3. };
       }
     } else if(newMode==SY_stableYPhi) {
       Transformation rel = 0;
@@ -551,12 +551,41 @@ void KOMO::setConfiguration_X(int t, const arr& X) {
 }
 
 void KOMO::initRandom(){
+#if 0
   run_prepare(0.);
   arr lo,up;
   getBounds(lo,up);
   for(uint i=0;i<x.N;i++){
     if(up(i)>lo(i)) x(i) = rnd.uni(lo(i),up(i));
   }
+  set_x(x);
+#elif 1
+  pathConfig.setRandom(timeSlices.d1);
+#else
+  for(Dof *d:pathConfig.activeDofs){
+    if(d->limits.N && d->dim!=1){ //HACK!!
+      arr q(d->dim);
+      for(uint k=0; k<d->dim; k++) { //in case joint has multiple dimensions
+        double lo = d->limits.elem(2*k+0); //lo
+        double up = d->limits.elem(2*k+1); //up
+        q(k) = rnd.uni(lo,up);
+      }
+      d->setDofs(q);
+    }else{
+      arr q = d->calcDofsFromConfig();
+      rndGauss(q, 0.01, true);
+      d->setDofs(q);
+    }
+  }
+  pathConfig._state_q_isGood=false;
+  x = pathConfig.getJointState();
+  {
+    arr lo, up;
+    getBounds(lo, up);
+    boundClip(x, lo, up);
+  }
+  set_x(x);
+#endif
 }
 
 arr KOMO::getConfiguration_X(int t) {

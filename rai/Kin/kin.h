@@ -140,6 +140,7 @@ struct Configuration : GLDrawer {
   void setFrameState(const arr& X, const uintA& F){ setFrameState(X, getFrames(F)); } ///< same as setFrameState() with getFrames()
   void setTaus(double tau);
   void setTaus(const arr& tau);
+  void setRandom(uint timeSlices_d1=0);
 
   /// @name active DOFs selection
   void setActiveDofs(const DofL& dofs);
