@@ -134,6 +134,7 @@ struct Frame : NonCopyable {
 
   void prefixSubtree(const char* prefix);
   void computeCompoundInertia();
+  void transformToDiagInertia();
 
   //I/O
   void read(const Graph& ats);
@@ -150,7 +151,7 @@ struct Frame : NonCopyable {
   Frame& setRelativeQuaternion(const arr& quat);
   Frame& setPointCloud(const arr& points, const byteA& colors= {});
   Frame& setConvexMesh(const arr& points, const byteA& colors= {}, double radius=0.);
-  Frame& setMesh(const arr& points, const byteA& colors= {}, double radius=0.);
+  Frame& setMesh(const rai::Mesh& m);
   Frame& setColor(const arr& color);
   Frame& setJoint(rai::JointType jointType);
   Frame& setContact(int cont);

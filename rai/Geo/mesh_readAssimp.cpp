@@ -94,6 +94,14 @@ void AssimpLoader::loadNode(const aiNode* node, const aiScene* scene, arr T, boo
   }
   meshes.append();
 
+  if(node->mMetaData){
+    CHECK(node->mMetaData->mKeys[0]==aiString("mass"), "");
+    double m;
+    node->mMetaData->Get<double>(0,m);
+    masses.append(m);
+  }else{
+    masses.append(0.);
+  }
 
   for(unsigned int i = 0; i < node->mNumMeshes; i++)  {
     aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];

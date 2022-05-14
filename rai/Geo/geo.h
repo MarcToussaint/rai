@@ -75,6 +75,7 @@ struct Matrix {
   void setZero();
   void setRandom(double range=1.);
   void setId();
+  void setDiag(const arr& diag);
   void setFrame(Vector&, Vector&, Vector&);
   void setInvFrame(Vector&, Vector&, Vector&);
   void setXrot(double);
@@ -84,6 +85,8 @@ struct Matrix {
   void setTensorProduct(const Vector&, const Vector&);
 
   double diffZero() const;
+
+  bool isDiagonal() const { return !m01 && !m02 && !m10 && !m12 && !m20 && !m21; }
 
   void write(std::ostream&) const;
   void read(std::istream&);

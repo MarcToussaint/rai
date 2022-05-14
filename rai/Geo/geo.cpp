@@ -341,6 +341,14 @@ void Matrix::setId() {
   m01=m02=m10=m12=m20=m21=0.;
 }
 
+void Matrix::setDiag(const arr& diag){
+  CHECK_EQ(diag.N, 3, "");
+  setZero();
+  m00=diag.elem(0);
+  m11=diag.elem(1);
+  m22=diag.elem(2);
+}
+
 /// set the matrix
 void Matrix::set(double* p) {
   m00=p[0]; m01=p[1]; m02=p[2];
@@ -1328,8 +1336,12 @@ void Transformation::appendTransformation(const Transformation& f) {
 
 /// inverse transform (new = old * f^{-1})
 void Transformation::appendInvTransformation(const Transformation& f) {
-  rot = rot/f.rot;
-  pos -= rot*f.pos;
+  if(!f.rot.isZero) {
+    rot = rot/f.rot;
+  }
+  if(!f.pos.isZero) {
+    pos -= rot*f.pos;
+  }
 }
 
 /// this = f^{-1}

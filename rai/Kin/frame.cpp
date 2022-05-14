@@ -273,6 +273,32 @@ void rai::Frame::computeCompoundInertia(){
   }
 }
 
+void rai::Frame::transformToDiagInertia(){
+  CHECK(inertia, "");
+  CHECK(!shape || shape->type()==rai::ST_marker, "can't translate this frame if it has a shape attached");
+  CHECK(!joint || joint->type==rai::JT_rigid || joint->type==rai::JT_free, "can't translate this frame if it has a joint attached");
+  LOG(0) <<"translating frame '" <<name <<"' to accomodate for centered compound inertia for bullet";
+  rai::Transformation t=0;
+  //transform COM
+  if(!inertia->com.isZero){
+    t.pos = inertia->com;
+    inertia->com.setZero();
+  }
+  if(!inertia->matrix.isDiagonal()){
+    arr I = inertia->matrix.getArr();
+    arr U,d,V;
+    svd(U, d, V, I, false);
+    inertia->matrix.setDiag(d);
+    t.rot.setMatrix(V);
+  }
+
+  if(!t.isZero()){
+    set_X()->appendTransformation(t);
+    for(rai::Frame* ch:children) ch->set_Q() = -t * ch->get_Q();
+  }
+
+}
+
 void rai::Frame::_state_setXBadinBranch() {
   if(_state_X_isGood) { //no need to propagate to children if already bad
     _state_X_isGood=false;
@@ -475,6 +501,12 @@ rai::Frame& rai::Frame::setConvexMesh(const arr& points, const byteA& colors, do
   if(colors.N) {
     getShape().mesh().C.clear().operator=(convert<double>(byteA(colors))/255.).reshape(-1, 3);
   }
+  return *this;
+}
+
+rai::Frame& rai::Frame::setMesh(const rai::Mesh& m) {
+  getShape().type() = ST_mesh;
+  getShape().mesh() = m;
   return *this;
 }
 
@@ -1599,6 +1631,9 @@ void rai::Inertia::defaultInertiaByShape() {
 
 void rai::Inertia::write(std::ostream& os) const {
   os <<", mass:" <<mass;
+  if(matrix.isDiagonal()){
+    os <<", inertia:[" <<matrix.m00 <<' ' <<matrix.m11 <<' ' <<matrix.m22 <<']';
+  }
 }
 
 void rai::Inertia::write(Graph& g) {
@@ -1611,7 +1646,10 @@ void rai::Inertia::read(const Graph& G) {
     mass=d;
     matrix.setId();
     matrix *= .2*d;
-    if(frame.shape) defaultInertiaByShape();
+    if(frame.shape && frame.shape->type()!=ST_marker) defaultInertiaByShape();
+  }
+  if(G["inertia"]) {
+    matrix.setDiag(G.get<arr>("inertia"));
   }
   if(G["fixed"])       type=BT_static;
   if(G["static"])      type=BT_static;

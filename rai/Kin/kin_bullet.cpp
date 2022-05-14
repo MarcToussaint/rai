@@ -417,6 +417,7 @@ btCollisionShape* BulletInterface_self::createLinkShape(ShapeL& shapes, rai::Bod
   bool shapesHaveInertia=false;
   for(rai::Shape *s:shapes) if(s->frame.inertia){ shapesHaveInertia=true; break; }
   if(shapesHaveInertia && !f->inertia){
+    DEPR("please use computeComputeInertia and transformToDiagInertia before bullet");
     f->computeCompoundInertia();
 #if 1 //CRAZY! we relocate that frame to have zero COM (bullet only accepts zero COM and diagonal inertia)
     if(!f->inertia->com.isZero){

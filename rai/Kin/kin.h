@@ -94,7 +94,7 @@ struct Configuration : GLDrawer {
   /// @name initializations, building configurations
   Frame* addFrame(const char* name, const char* parent=nullptr, const char* args=nullptr);
   Frame* addFile(const char* filename);
-  void addAssimp(const char* filename);
+  Frame* addAssimp(const char* filename);
   Frame* addCopies(const FrameL& F, const DofL& _dofs);
   void addConfiguration(const Configuration& C, double tau=1.);
 

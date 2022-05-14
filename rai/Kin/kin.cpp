@@ -215,7 +215,7 @@ Frame* Configuration::addFile(const char* filename) {
   return frames.elem(n); //returns 1st frame of added file
 }
 
-void Configuration::addAssimp(const char* filename) {
+Frame* Configuration::addAssimp(const char* filename) {
   AssimpLoader A(filename, true, true);
   //-- create all frames
   uint Nold = frames.N;
@@ -226,12 +226,15 @@ void Configuration::addAssimp(const char* filename) {
   for(uint i=0;i<A.names.N;i++){
     Frame* f = frames(Nold+i);
     if(A.parents(i).N){
-      Frame* f = frames(Nold+i);
-      rai::Frame *parent = getFrame(A.parents(i));
-      if(parent) f->setParent(parent);
+      int j = A.names.findValue(A.parents(i));
+      CHECK_GE(j,0,"parent name not found");
+      CHECK_LE(j,(int)i,"parent is later frame!");
+      rai::Frame *parent = frames(Nold+j);
+      f->setParent(parent);
     }
     f->set_X() = A.poses(i);
   }
+  //-- set meshes
   for(uint i=0;i<A.names.N;i++){
     Frame* f = frames(Nold+i);
     if(A.meshes(i).N==1){
@@ -254,6 +257,7 @@ void Configuration::addAssimp(const char* filename) {
       }
     }
   }
+  return frames(Nold+0); //root frame
 }
 
 #if 0
@@ -2345,7 +2349,7 @@ void Configuration::writeCollada(const char* filename, const char* format) const
   // create a new scene
   aiScene scene;
   scene.mRootNode = new aiNode("root");
-  // create a dummy material
+  // create two dummy materials, one transparent
   scene.mMaterials = new aiMaterial *[2];
   scene.mNumMaterials = 2;
   scene.mMaterials[0] = new aiMaterial();
@@ -2370,8 +2374,7 @@ void Configuration::writeCollada(const char* filename, const char* format) const
       aiMesh* mesh = scene.mMeshes[n_meshes] = new aiMesh();
       Mesh& M = f->shape->mesh();
       buildAiMesh(M, mesh);
-      double alpha = f->shape->alpha();
-      if(alpha==1.)
+      if(f->shape->alpha()==1.)
         mesh->mMaterialIndex = 0;
       else
         mesh->mMaterialIndex = 1;
@@ -2383,6 +2386,11 @@ void Configuration::writeCollada(const char* filename, const char* format) const
     }else{
       node->mMeshes = 0;
       node->mNumMeshes = 0;
+    }
+    // add mass?
+    if(f->inertia){
+      node->mMetaData = new aiMetadata();
+      node->mMetaData->Add<double>("mass", f->inertia->mass);
     }
     f->get_Q().getAffineMatrix(T.p);
     for(uint j=0; j<4; j++) for(uint k=0; k<4; k++) {
@@ -2426,6 +2434,7 @@ void Configuration::writeMeshes(const char* pathPrefix) const {
     if(f->shape &&
         (f->shape->type()==ST_mesh || f->shape->type()==ST_ssCvx)) {
       String filename = pathPrefix;
+      if(!f->ats) f->ats = make_shared<Graph>();
 #if 0
       filename <<f->name <<".arr";
       f->ats.getNew<String>("mesh") = filename;

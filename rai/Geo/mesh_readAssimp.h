@@ -15,6 +15,7 @@ struct AssimpLoader {
   rai::Array<rai::Transformation> poses;
   StringA names;
   StringA parents;
+  arr masses;
   std::string directory;
   int verbose=0;
 
