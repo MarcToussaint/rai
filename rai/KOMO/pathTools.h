@@ -61,6 +61,7 @@ void mirrorDuplicate(std::pair<arr, arr>& path);
 //convert to spline, then resample to new length
 arr path_resample(const arr& q, double durationScale);
 
+arr path_resampleLinear(const arr& q, uint T);
 
 void makeMod2Pi(const arr& q0, arr& q1);
 

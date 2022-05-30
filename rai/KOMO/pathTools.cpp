@@ -291,6 +291,20 @@ arr path_resample(const arr& q, double durationScale) {
   return r;
 }
 
+arr path_resampleLinear(const arr& q, uint T){
+  arr r(T, q.d1);
+  for(uint t=0;t<T-1;t++){
+    double s = double(t)/(T-1)*(q.d0-1);
+    uint i0 = floor(s);
+    double a = s-i0;
+    uint i1=i0+1;
+    if(i1>=q.d0) i1=i0;
+    r[t] = (1.-a)*q[i0] + a*q[i0+1];
+  }
+  r[T-1] = q[q.d0-1];
+  return r;
+}
+
 rai::Spline getSpline(const arr& q, double duration, uint degree) {
   rai::Spline S;
   S.set(degree, q, grid(1,0.,duration, q.N-1));

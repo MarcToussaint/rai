@@ -869,6 +869,13 @@ void KOMO::initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase, 
   run_prepare(0.);
 }
 
+void KOMO::initWithPath_qOrg(const arr& q){
+  CHECK_EQ(q.d0, T, "");
+  for(uint t=0;t<T;t++){
+    setConfiguration_qOrg(t, q[t]);
+  }
+}
+
 void KOMO::straightenCtrlFrames_mod2Pi(){
   auto F = getCtrlFramesAndScale(world);
   arr signs;

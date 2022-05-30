@@ -154,6 +154,7 @@ public:
   void initRandom();
   void initWithConstant(const arr& q); ///< set all configurations EXCEPT the prefix to a particular state
   void initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase=1, int verbose=-1); ///< set all configurations (EXCEPT prefix) to interpolate given waypoints
+  void initWithPath_qOrg(const arr& q);
   void addWaypointsInterpolationObjectives(const arrA& waypoints, uint waypointStepsPerPhase);
   uintA initWithWaypoints_pieceWiseConstant(const arrA& waypoints, uint waypointStepsPerPhase, int verbose=-1);
   void straightenCtrlFrames_mod2Pi();
