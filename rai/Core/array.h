@@ -119,7 +119,7 @@ template<class T> struct Array : /*std::vector<T>,*/ Serializable {
   typename std::vector<T>::const_iterator begin() const { return typename std::vector<T>::const_iterator(p); }
   typename std::vector<T>::iterator end() { return typename std::vector<T>::iterator(p+N); }
   typename std::vector<T>::const_iterator end() const { return typename std::vector<T>::const_iterator(p+N); }
-  ArrayIterationEnumerated<T> itEnumerated() { return ArrayIterationEnumerated<T>(*this); }
+  ArrayIterationEnumerated<T> itEnumerated() const { return ArrayIterationEnumerated<T>(*this); }
   ArrayIterationReverse<T> itReverse() { return ArrayIterationReverse<T>(*this); }
   //TODO: more: rows iterator, reverse iterator
 
@@ -343,16 +343,17 @@ template<class T> struct Array : /*std::vector<T>,*/ Serializable {
 
 template<class T> struct ArrayItEnumerated {
   T* p;
-  uint i;
+  uint count;
   T& operator()() { return *p; } //access to value by user
-  void operator++() { p++; i++; }
+  void operator++() { p++; count++; }
   ArrayItEnumerated<T>& operator*() { return *this; } //in for(auto& it:array.enumerated())  it is assigned to *iterator
   friend bool operator!=(const ArrayItEnumerated& i, const ArrayItEnumerated& j) { return i.p!=j.p; }
+  T& operator->() { return *p; }
 };
 
 template<class T> struct ArrayIterationEnumerated {
-  Array<T>& x;
-  ArrayIterationEnumerated(Array<T>& x):x(x) {}
+  const Array<T>& x;
+  ArrayIterationEnumerated(const Array<T>& x):x(x) {}
   ArrayItEnumerated<T> begin() { return {x.p, 0}; }
   ArrayItEnumerated<T> end() { return {x.p+x.N, x.N}; }
   //  const_iterator begin() const { return p; }
@@ -710,6 +711,8 @@ arr finiteDifferenceJacobian(const VectorFunction& f, const arr& _x, arr& Janaly
 bool checkGradient(const ScalarFunction& f, const arr& x, double tolerance, bool verbose=false);
 bool checkHessian(const ScalarFunction& f, const arr& x, double tolerance, bool verbose=false);
 bool checkJacobian(const VectorFunction& f, const arr& x, double tolerance, bool verbose=false);
+void boundClip(arr& y, const arr& bound_lo, const arr& bound_up);
+bool boundCheck(const arr& x, const arr& bound_lo, const arr& bound_up, double eps=1e-3);
 
 double NNinv(const arr& a, const arr& b, const arr& Cinv);
 double logNNprec(const arr& a, const arr& b, double prec);

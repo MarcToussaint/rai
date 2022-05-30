@@ -223,6 +223,7 @@ shared_ptr<SolverReturn> Skeleton::solve3(bool useKeyframes, int verbose){
 }
 
 void Skeleton::getKeyframeConfiguration(Configuration& C, int step, int verbose){
+  //note: the alternative would be to copy the frames komo.timeSlices[step] into a new config
   CHECK(komo, "");
   CHECK_EQ(komo->k_order, 1, "");
   C.copy(komo->world);
@@ -403,7 +404,7 @@ SkeletonTranscription Skeleton::nlp_path(const arrA& waypoints){
 
 }
 
-void Skeleton::setKOMO(KOMO& komo, ArgWord sequenceOrPath, uint stepsPerPhase, double accScale, double lenScale, double homingScale, double initNoise) const {
+void Skeleton::setKOMO(KOMO& komo, ArgWord sequenceOrPath, uint stepsPerPhase, double accScale, double lenScale, double homingScale) const {
   if(!komo.world.frames.N){
     CHECK(C, "");
     komo.setModel(*C, true);
@@ -412,13 +413,13 @@ void Skeleton::setKOMO(KOMO& komo, ArgWord sequenceOrPath, uint stepsPerPhase, d
   if(sequenceOrPath==rai::_sequence) {
     komo.setTiming(maxPhase, 1, 5., 1);
 //    komo.setTiming(maxPhase+1., 1, 5., 1); //as defined in bounds.cpp
-    komo.add_qControlObjective({}, 1, lenScale);
-    komo.add_qControlObjective({}, 0, homingScale);
+    if(lenScale>0.) komo.add_qControlObjective({}, 1, lenScale);
+    if(homingScale>0.) komo.add_qControlObjective({}, 0, homingScale);
   } else {
     komo.setTiming(maxPhase, stepsPerPhase, 5., 2);
 //    komo->setTiming(maxPhase+.5, 10, 10., 2); //as defined in bounds.cpp
-    komo.add_qControlObjective({}, 2, accScale);
-    komo.add_qControlObjective({}, 0, homingScale);
+    if(accScale>0.) komo.add_qControlObjective({}, 2, accScale);
+    if(homingScale>0.) komo.add_qControlObjective({}, 0, homingScale);
   }
   komo.addQuaternionNorms();
 
@@ -426,7 +427,7 @@ void Skeleton::setKOMO(KOMO& komo, ArgWord sequenceOrPath, uint stepsPerPhase, d
 
   setKOMO(komo);
 
-  komo.run_prepare(initNoise);
+  komo.run_prepare(0.);
 }
 
 void Skeleton::setKOMO(KOMO& komo) const {

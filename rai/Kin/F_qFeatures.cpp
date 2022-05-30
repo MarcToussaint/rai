@@ -280,13 +280,22 @@ void F_qLimits::phi2(arr& y, arr& J, const FrameL& F){
     for(uint k=0; k<dof->dim; k++) { //in case joint has multiple dimensions
       double lo = dof->limits(2*k+0);
       double up = dof->limits(2*k+1);
-      uint i = dof->qIndex+k;
-      y.elem(m) = lo - F.last()->C.q(i);
-      if(!!J) J.elem(m, i) -= 1.;
-      m++;
-      y.elem(m) = F.last()->C.q(i) - up;
-      if(!!J) J.elem(m, i) += 1.;
-      m++;
+      if(up>=lo){
+        uint i = dof->qIndex+k;
+        double qi = F.last()->C.q(i);
+//        if(true){
+//          if(qi < lo) LOG(0) <<dof->name() <<' ' <<k <<' ' <<qi <<'<' <<lo <<" violates lower limit";
+//          if(qi > up) LOG(0) <<dof->name() <<' ' <<k <<' ' <<qi <<'>' <<up <<" violates upper limit";
+//        }
+        y.elem(m) = lo - qi;
+        if(!!J) J.elem(m, i) -= 1.;
+        m++;
+        y.elem(m) = qi - up;
+        if(!!J) J.elem(m, i) += 1.;
+        m++;
+      }else{
+        m+=2;
+      }
     }
   }
   CHECK_EQ(m, M, "");

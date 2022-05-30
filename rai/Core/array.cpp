@@ -1426,6 +1426,26 @@ bool checkJacobian(const VectorFunction& f,
   return true;
 }
 
+void boundClip(arr& y, const arr& bound_lo, const arr& bound_up) {
+  if(bound_lo.N && bound_up.N) {
+    for(uint i=0; i<y.N; i++) if(bound_up.elem(i)>=bound_lo.elem(i)) {
+      if(y.elem(i)>bound_up.elem(i)) y.elem(i) = bound_up.elem(i);
+      if(y.elem(i)<bound_lo.elem(i)) y.elem(i) = bound_lo.elem(i);
+    }
+  }
+}
+
+bool boundCheck(const arr& x, const arr& bound_lo, const arr& bound_up, double eps){
+  bool good=true;
+  if(bound_lo.N && bound_up.N) {
+    for(uint i=0; i<x.N; i++) if(bound_up.elem(i)>=bound_lo.elem(i)) {
+      if(x.elem(i) < bound_lo.elem(i)-eps){ good=false; LOG(0) <<"x(" <<i <<")=" <<x.elem(i) <<" violates lower bound " <<bound_lo.elem(i); }
+      if(x.elem(i) > bound_up.elem(i)+eps){ good=false;  LOG(0) <<"x(" <<i <<")=" <<x.elem(i) <<" violates upper bound " <<bound_up.elem(i); }
+    }
+  }
+  return good;
+}
+
 #define EXP ::exp //rai::approxExp
 
 double NNinv(const arr& a, const arr& b, const arr& Cinv) {

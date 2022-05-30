@@ -88,9 +88,10 @@ double shapeSize(const rai::Configuration& K, const char* name, uint i) {
   }
   if(!s) return 0;
   if(s->type()==rai::ST_marker) return 0.;
-  if(s->type()==rai::ST_sphere) return 2.*s->radius();
-  if(s->type()==rai::ST_capsule) return 2.*s->radius();
-  if(s->type()==rai::ST_ssCylinder) return s->size(0);
+  else if(s->type()==rai::ST_sphere) return 2.*s->radius();
+  else if(s->type()==rai::ST_capsule) return 2.*s->radius();
+  else if(s->type()==rai::ST_cylinder) return s->size(0);
+  else if(s->type()==rai::ST_ssCylinder) return s->size(0);
   return s->size(i);
 }
 

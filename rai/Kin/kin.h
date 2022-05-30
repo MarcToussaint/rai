@@ -140,7 +140,7 @@ struct Configuration : GLDrawer {
   void setFrameState(const arr& X, const uintA& F){ setFrameState(X, getFrames(F)); } ///< same as setFrameState() with getFrames()
   void setTaus(double tau);
   void setTaus(const arr& tau);
-  void setRandom(uint timeSlices_d1=0);
+  void setRandom(uint timeSlices_d1=0, int verbose=0);
 
   /// @name active DOFs selection
   void setActiveDofs(const DofL& dofs);
@@ -270,6 +270,7 @@ struct Configuration : GLDrawer {
   //some info
   void report(std::ostream& os=std::cout) const;
   void reportProxies(std::ostream& os=std::cout, double belowMargin=1., bool brief=true) const;
+  void reportLimits(std::ostream& os=std::cout) const;
 
 private:
   void readFromGraph(const Graph& G, bool addInsteadOfClear=false);

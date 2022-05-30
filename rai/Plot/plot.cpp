@@ -490,7 +490,7 @@ void rai::PlotModule::glDraw(OpenGL& gl) {
           }
         data.mesh.computeNormals();
         glDisable(GL_CULL_FACE);
-        data.mesh.glDraw(NoOpenGL);
+        data.mesh.glDraw(gl);
         glEnable(GL_CULL_FACE);
       } else { //as a grid
         c.blacken(.5);

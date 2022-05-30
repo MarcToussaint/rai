@@ -75,6 +75,7 @@ struct Frame : NonCopyable {
   String name;             ///< name
   Frame* parent=nullptr;   ///< parent frame
   FrameL children;         ///< list of children
+  Frame* prev=0;           ///< same frame in the previous time slice - if time sliced
 
  protected:
   Transformation Q=0;        ///< relative transform to parent
@@ -89,15 +90,15 @@ struct Frame : NonCopyable {
   void calc_Q_from_parent(bool enforceWithinJoint = true);
 
  public:
-  double tau=0.;             ///< frame's relative time transformation (could be thought as part of the transformation X in space-time)
-  std::shared_ptr<Graph> ats;                 ///< list of any-type attributes
+  double tau=0.;              ///< frame's relative time transformation (could be thought as part of the transformation X in space-time)
+  std::shared_ptr<Graph> ats; ///< list of any-type attributes
 
   //attachments to the frame
   Joint* joint=nullptr;          ///< this frame is an articulated joint
   Shape* shape=nullptr;          ///< this frame has a (collision or visual) geometry
   Inertia* inertia=nullptr;      ///< this frame has inertia (is a mass)
   Array<ForceExchange*> forces;  ///< this frame exchanges forces with other frames
-  ParticleDofs* particleDofs=nullptr;
+  ParticleDofs* particleDofs=nullptr; ///< this frame is a set of particles that are dofs themselves
 
   Frame(Configuration& _C, const Frame* copyFrame=nullptr);
   Frame(Frame* _parent);
@@ -115,22 +116,22 @@ struct Frame : NonCopyable {
   Transformation_Qtoken set_Q() { return Transformation_Qtoken(*this); }
 
   //structural operations
+  Frame& setParent(Frame* _parent, bool keepAbsolutePose_and_adaptRelativePose=false, bool checkForLoop=false);
+  void unLink();
   Frame* insertPreLink(const rai::Transformation& A=0);
   Frame* insertPostLink(const rai::Transformation& B=0);
-  void unLink();
-  Frame& setParent(Frame* _parent, bool keepAbsolutePose_and_adaptRelativePose=false, bool checkForLoop=false);
 
   //structural information/retrieval
   bool isChildOf(const Frame* par, int order=1) const;
-  void getRigidSubFrames(FrameL& F, bool includeRigidJoints=false); ///< recursively collect all rigidly attached sub-frames (e.g., shapes of a link), (THIS is not included)
-  void getPartSubFrames(FrameL& F); ///< recursively collect all frames of this part
-  void getSubtree(FrameL& F);
+  void getRigidSubFrames(FrameL& F, bool includeRigidJoints=false) const; ///< recursively collect all rigidly attached sub-frames (e.g., shapes of a link), (THIS is not included)
+  void getPartSubFrames(FrameL& F) const; ///< recursively collect all frames of this part
+  void getSubtree(FrameL& F) const;
   Frame* getRoot();
   FrameL getPathToRoot();
   Frame* getUpwardLink(rai::Transformation& Qtotal=NoTransformation, bool untilPartBreak=false) const; ///< recurse upward BEFORE the next joint and return relative transform (this->Q is not included!b)
   Frame* getDownwardLink(bool untilPartBreak=false) const; ///< recurse upward BEFORE the next joint and return relative transform (this->Q is not included!b)
   FrameL getPathToUpwardLink(bool untilPartBreak=false); ///< recurse upward BEFORE the next joint and return relative transform (this->Q is not included!b)
-  const char* isPart();
+  const char* isPart() const;
 
   void prefixSubtree(const char* prefix);
   void computeCompoundInertia();
@@ -183,14 +184,20 @@ stdOutPipe(Frame)
 //===========================================================================
 
 struct Dof {
-  Frame* frame=0;    ///< this is the frame that Joint articulates! I.e., the output frame
+  Frame* frame=0;    ///< this is the frame that this dof articulates! I.e., the output frame
   bool active=true;  ///< if false, this dof is not considered part of the configuration's q-vector
   uint dim=UINT_MAX;
   uint qIndex=UINT_MAX;
-  arr  limits;    ///< joint limits (lo, up, [maxvel, maxeffort])
-  Joint* mimic=0; ///< if non-nullptr, this joint's state is identical to another's
-  JointL mimicers;  ///< list of mimicing joints
+  arr  limits;       ///< joint limits (lo, up, [maxvel, maxeffort])
+  Joint* mimic=0;    ///< if non-nullptr, this joint's state is identical to another's
+  JointL mimicers;   ///< list of mimicing joints
   bool isStable=false;
+
+  /* sampling info:
+   * double sampleUniform //prob for uniform initialization within limits
+   * double sampleSdv //sdv of gaussian around default
+   * arr sampleMean //mean of gaussian, if not defined -> copyX from prev
+   */
 
   virtual ~Dof() {}
   virtual void setDofs(const arr& q, uint n=0) = 0;

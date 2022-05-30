@@ -444,13 +444,19 @@ template<class T> bool checkParameter(const char* tag);
 
 template<class T> void setParameter(const char* key, const T& x);
 
-template<class T> struct ParameterInit {
-  ParameterInit(T& x, const char* tag, const T& Default) { getParameter<T>(x, tag, Default); }
+template<class Tvar, class Tparam> struct ParameterInit {
+  ParameterInit(Tvar& x, const char* tag, const Tparam& Default) { x = (Tvar) getParameter<Tparam>( tag, Default); }
 };
+
 #define RAI_PARAM(scope, type, name, Default) \
   type name; \
   auto& set_##name(type _##name){ name=_##name; return *this; } \
-  rai::ParameterInit<type> __init_##name = {name, scope #name, Default};
+  rai::ParameterInit<type, type> __init_##name = {name, scope #name, Default};
+
+#define RAI_PARAMt(scope, Tvar, name, Tparam, Default) \
+  Tvar name; \
+  auto& set_##name(Tvar _##name){ name=_##name; return *this; } \
+  rai::ParameterInit<Tvar, Tparam> __init_##name = {name, scope #name, Default};
 
 template<class T> struct ParameterInitEnum {
   ParameterInitEnum(T& x, const char* tag, const T& Default) {

@@ -162,21 +162,21 @@ void rai::Frame::_state_updateAfterTouchingQ() {
   if(joint && joint->dim) C._state_q_isGood = false;
 }
 
-void rai::Frame::getRigidSubFrames(FrameL& F, bool includeRigidJoints) {
+void rai::Frame::getRigidSubFrames(FrameL& F, bool includeRigidJoints) const {
   for(Frame* child:children)
     if(!child->joint || (includeRigidJoints && child->joint->type==JT_rigid)) { F.append(child); child->getRigidSubFrames(F, includeRigidJoints); }
 }
 
-void rai::Frame::getPartSubFrames(FrameL& F) {
+void rai::Frame::getPartSubFrames(FrameL& F) const {
   for(Frame* child:children)
     if(!child->joint || !child->joint->isPartBreak()) { F.append(child); child->getPartSubFrames(F); }
 }
 
-void rai::Frame::getSubtree(FrameL& F) {
+void rai::Frame::getSubtree(FrameL& F) const {
   for(Frame* child:children) { F.append(child); child->getSubtree(F); }
 }
 
-rai::Frame*rai::Frame::getRoot(){
+rai::Frame* rai::Frame::getRoot() {
   rai::Frame* f = this;
   while(f->parent) f = f->parent;
   return f;
@@ -248,7 +248,7 @@ rai::Inertia& rai::Frame::getInertia() {
   return *inertia;
 }
 
-const char* rai::Frame::isPart() {
+const char* rai::Frame::isPart() const {
   rai::String* p = 0;
   if(ats) ats->find<rai::String>("part");
   if(p) return p->p;

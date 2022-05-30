@@ -1395,6 +1395,7 @@ template rai::Enum<rai::ArgWord> rai::getParameter<rai::Enum<rai::ArgWord>>(cons
 
 template bool rai::checkParameter<uint>(const char*);
 template bool rai::checkParameter<int>(const char*);
+template bool rai::checkParameter<double>(const char*);
 template bool rai::checkParameter<bool>(const char*);
 template bool rai::checkParameter<rai::String>(const char*);
 

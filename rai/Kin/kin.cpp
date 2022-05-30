@@ -687,9 +687,11 @@ void Configuration::setTaus(const arr& tau) {
   for(uint t=0;t<frames.d0;t++) frames(t,0)->tau = tau(t);
 }
 
-void Configuration::setRandom(uint timeSlices_d1){
+void Configuration::setRandom(uint timeSlices_d1, int verbose){
   for(Dof *d:activeDofs){
-    if(d->limits.N && d->dim!=1 && !d->mimic){ //HACK!!
+    if(d->limits.N && d->dim>1 && d->dim<7 && !d->mimic){ //HACK!! dim>1 exluces joints, dim<7 excludes stable grasps
+      //** UNIFORM
+      if(verbose>0) LOG(0) <<"init '" <<d->frame->name <<'[' <<d->frame->ID <<',' <<(timeSlices_d1?d->frame->ID/timeSlices_d1:0) <<']' <<"' uniform in limits " <<d->limits <<" relative to '" <<d->frame->parent->name <<"'";
       arr q(d->dim);
       for(uint k=0; k<d->dim; k++) { //in case joint has multiple dimensions
         double lo = d->limits.elem(2*k+0); //lo
@@ -698,10 +700,12 @@ void Configuration::setRandom(uint timeSlices_d1){
       }
       d->setDofs(q);
     }else{
+      //** GAUSS
       //if time-sliced, and previous dof exists, then first adopt
       if(timeSlices_d1 && d->joint() && !d->mimic && d->dim!=1 && d->frame->ID >= timeSlices_d1){ //is joint and prev time slice exists
         Frame *prev = frames.elem(d->frame->ID - timeSlices_d1); //grab frame from prev time slice
         CHECK(prev, "");
+        if(verbose>0) LOG(0) <<"init '" <<d->frame->name <<'[' <<d->frame->ID <<',' <<(timeSlices_d1?d->frame->ID/timeSlices_d1:0) <<']' <<"' pose-X-equal to prevSlice frame '" <<prev->name <<"' relative to '" <<d->frame->parent->name <<"'";
         //init from relative pose (as in applySwitch)
         d->frame->set_X() = prev->ensure_X(); //copy the relative pose (switch joint initialization) from the first application
         arr q = d->calcDofsFromConfig();
@@ -710,12 +714,15 @@ void Configuration::setRandom(uint timeSlices_d1){
 
       arr q = d->calcDofsFromConfig();
       rndGauss(q, 0.01, true);
+      if(verbose>0) LOG(0) <<"init '" <<d->frame->name <<'[' <<d->frame->ID <<',' <<(timeSlices_d1?d->frame->ID/timeSlices_d1:0) <<']' <<"' adding noise: " <<q;
+
       if(d->limits.N){
         for(uint k=0; k<d->dim; k++) { //in case joint has multiple dimensions
           double lo = d->limits.elem(2*k+0); //lo
           double up = d->limits.elem(2*k+1); //up
-          rai::clip(q(k), lo, up);
+          if(up>=lo) rai::clip(q(k), lo, up);
         }
+        if(verbose>0) LOG(0) <<"clipped to " <<d->limits <<" -> " <<q;
       }
       d->setDofs(q);
     }
@@ -2756,6 +2763,24 @@ void Configuration::reportProxies(std::ostream& os, double belowMargin, bool bri
     if(&c->a==a) {
       c->coll();
       os <<*c <<endl;
+    }
+  }
+}
+
+void Configuration::reportLimits(std::ostream& os) const {
+  os <<"Limits report:" <<endl;
+  for(Dof *d:activeDofs){
+    if(d->limits.N){
+      arr q = d->calcDofsFromConfig();
+      arr l = d->limits;
+      bool good=true;
+      if(d->dim>1){
+        l = ~l.reshape(-1,2);
+        good = boundCheck(q, l[0], l[1]);
+      }else{
+        good = boundCheck(q, l({0,0}), l({1,1}));
+      }
+      if(!good) LOG(0) <<d->name() <<" violates limits";
     }
   }
 }

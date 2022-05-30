@@ -101,30 +101,10 @@ bool checkHessianCP(NLP& P, const arr& x, double tolerance) {
   return checkHessian(F, x, tolerance);
 }
 
-void boundClip(arr& y, const arr& bound_lo, const arr& bound_up) {
-  if(bound_lo.N && bound_up.N) {
-    for(uint i=0; i<y.N; i++) if(bound_up.elem(i)>=bound_lo.elem(i)) {
-      if(y.elem(i)>bound_up.elem(i)) y.elem(i) = bound_up.elem(i);
-      if(y.elem(i)<bound_lo.elem(i)) y.elem(i) = bound_lo.elem(i);
-    }
-  }
-}
-
 void boundClip(NLP& P, arr& x){
   arr bounds_lo, bounds_up;
   P.getBounds(bounds_lo, bounds_up);
   boundClip(x, bounds_lo, bounds_up);
-}
-
-bool boundCheck(const arr& x, const arr& bound_lo, const arr& bound_up, double eps){
-  bool good=true;
-  if(bound_lo.N && bound_up.N) {
-    for(uint i=0; i<x.N; i++) if(bound_up.elem(i)>=bound_lo.elem(i)) {
-      if(x.elem(i) < bound_lo.elem(i)-eps){ good=false; LOG(0) <<"x(" <<i <<")=" <<x.elem(i) <<" violates lower bound " <<bound_lo.elem(i); }
-      if(x.elem(i) > bound_up.elem(i)+eps){ good=false;  LOG(0) <<"x(" <<i <<")=" <<x.elem(i) <<" violates upper bound " <<bound_up.elem(i); }
-    }
-  }
-  return good;
 }
 
 bool checkInBound(NLP& P, const arr& x){

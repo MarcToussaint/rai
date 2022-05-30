@@ -121,7 +121,7 @@ struct KOMO : NonCopyable {
   void addQuaternionNorms(const arr& times=NoArr, double scale=3e0, bool hard=true);
 
   void add_collision(bool hardConstraint=true, double margin=.0, double prec=1e1);
-  void add_jointLimits(bool hardConstraint=true, double margin=.05, double prec=1.);
+  void add_jointLimits(bool hardConstraint=true, double margin=.0, double prec=1.);
   void setLiftDownUp(double time, const char* endeff, double timeToLift=.15);
   void setSlow(double startTime, double endTime, double prec=1e1, bool hardConstrained=false);
   void setSlowAround(double time, double delta, double prec=1e1, bool hardConstrained=false);
@@ -150,6 +150,7 @@ public:
   void setConfiguration_qAll(int t, const arr& q); ///< t<0 allows to set the prefix configurations; while 0 <= t < T allows to set all other initial configurations
   void setConfiguration_qOrg(int t, const arr& q); ///< set only those DOFs that were defined in the original world (excluding extra DOFs from switches)
   void setConfiguration_X(int t, const arr& X); ///< t<0 allows to set the prefix configurations; while 0 <= t < T allows to set all other initial configurations
+  void initOrg();
   void initRandom();
   void initWithConstant(const arr& q); ///< set all configurations EXCEPT the prefix to a particular state
   void initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase=1, int verbose=-1); ///< set all configurations (EXCEPT prefix) to interpolate given waypoints
@@ -173,6 +174,7 @@ public:
   arr getConfiguration_qAll(int t);  ///< get all DOFs
   arr getConfiguration_qOrg(int t);  ///< get only those DOFs that were defined in the original world (excluding extra DOFs from switches)
   arr getConfiguration_X(int t);     ///< get frame path for selected frames
+  void getConfiguration_full(rai::Configuration& C, int t, int verbose);
 
   arrA getPath_qAll();                            ///< get the DOFs (of potentially varying dimensionality) for each configuration
   arr getPath_qOrg();      ///< get joint path, optionally for selected joints

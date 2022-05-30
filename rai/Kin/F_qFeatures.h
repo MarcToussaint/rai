@@ -39,7 +39,6 @@ struct F_qZeroVel : Feature {
 //===========================================================================
 
 struct F_qLimits : Feature {
-  //TODO (danny) allow margin specification (marc:) No! use linear transform
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F);
 };

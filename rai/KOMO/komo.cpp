@@ -264,7 +264,35 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
   //-- creating a stable kinematic linking
   if(newMode==SY_stable || newMode==SY_stableOn || newMode==SY_stableYPhi || newMode==SY_stableZero){
     if(newMode==SY_stable) {
-      addSwitch(times, true, true, JT_free, SWInit_copy, frames(0), frames(1));
+      rai::Frame* f = addSwitch(times, true, true, JT_free, SWInit_copy, frames(0), frames(1));
+      if(f){//limits?
+        double maxsize = 0.;
+        rai::Shape* from = world.getFrame(frames(0))->shape;
+        if(from && from->type()!=rai::ST_marker){
+          if(from->type()==rai::ST_sphere || from->type()==rai::ST_cylinder || from->type()==rai::ST_ssCylinder){
+            maxsize += 2.*from->size(0);
+          }else{
+            maxsize += absMax(from->size);
+          }
+        }else if(from){
+          CHECK_EQ(from->type(), ST_marker, "");
+        }
+        rai::Shape* to = world.getFrame(frames(1))->shape;
+        if(to && to->type()!=rai::ST_marker){
+          if(to->type()==rai::ST_sphere || to->type()==rai::ST_cylinder || to->type()==rai::ST_ssCylinder){
+            maxsize += 2.*to->size(0);
+          }else{
+            maxsize += absMax(to->size);
+          }
+        }
+        if(maxsize>1e-4){
+          f->joint->limits =
+          { -.6*maxsize, .6*maxsize,
+            -.6*maxsize, .6*maxsize,
+            -.6*maxsize, .6*maxsize,
+            0,-1, 0,-1, 0,-1, 0,-1 }; //no limits on rotation
+        }
+      }
     } else if(newMode==SY_stableZero) {
       addSwitch(times, true, true, JT_rigid, SWInit_zero, frames(0), frames(1));
     } else if(newMode==SY_stableOn) {
@@ -272,13 +300,13 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
 	//relTransformOn(world, frames(0), frames(1));
       rel.pos.set(0, 0, .5*(shapeSize(world, frames(0)) + shapeSize(world, frames(1))));
       rai::Frame* f = addSwitch(times, true, true, JT_transXYPhi, SWInit_copy, frames(0), frames(1), rel);
-      {
+      if(f){//limits?
         rai::Shape* on = world.getFrame(frames(0))->shape;
         CHECK_EQ(on->type(), rai::ST_ssBox, "")
         f->joint->limits = {
                            -.5*on->size(0), .5*on->size(0),
                            -.5*on->size(1), .5*on->size(1),
-                           -3.,3. };
+                           0,-1 };
       }
     } else if(newMode==SY_stableYPhi) {
       Transformation rel = 0;
@@ -550,6 +578,16 @@ void KOMO::setConfiguration_X(int t, const arr& X) {
   pathConfig.setFrameState(X, timeSlices[k_order+t]);
 }
 
+void KOMO::initOrg(){
+  arr X = world.getFrameState();
+  for(uint t=0;t<T;t++){
+    pathConfig.setFrameState(X, timeSlices[k_order+t]);
+  }
+  for(Dof *d:pathConfig.activeDofs){
+    if(d->fex()) d->setDofs(zeros(d->dim));
+  }
+}
+
 void KOMO::initRandom(){
 #if 0
   run_prepare(0.);
@@ -560,7 +598,8 @@ void KOMO::initRandom(){
   }
   set_x(x);
 #elif 1
-  pathConfig.setRandom(timeSlices.d1);
+  pathConfig.setRandom(timeSlices.d1, 0); //opt.verbose);
+  x = pathConfig.getJointState();
 #else
   for(Dof *d:pathConfig.activeDofs){
     if(d->limits.N && d->dim!=1){ //HACK!!
@@ -590,6 +629,21 @@ void KOMO::initRandom(){
 
 arr KOMO::getConfiguration_X(int t) {
   return pathConfig.getFrameState(timeSlices[k_order+t]);
+}
+
+void KOMO::getConfiguration_full(Configuration& C, int t, int verbose){
+  //note: the alternative would be to copy the frames komo.timeSlices[step] into a new config
+  CHECK_EQ(k_order, 1, "");
+  C.copy(world);
+  for(std::shared_ptr<rai::KinematicSwitch>& sw:switches) {
+    int s = sw->timeOfApplication;
+    if(s<=t){
+      if(verbose){ LOG(0) <<"applying switch:"; sw->write(cout, C.frames); cout <<endl; }
+      sw->apply(C.frames);
+    }
+  }
+  arr X = getConfiguration_X(t);
+  C.setFrameState(X, C.frames({0,X.d0-1}));
 }
 
 arr KOMO::getConfiguration_qOrg(int t) {

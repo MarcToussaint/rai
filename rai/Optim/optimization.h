@@ -61,8 +61,6 @@ bool checkJacobianCP(NLP& P, const arr& x, double tolerance);
 bool checkHessianCP(NLP& P, const arr& x, double tolerance);
 bool checkInBound(NLP& P, const arr& x);
 void boundClip(NLP& P, arr& x);
-void boundClip(arr& y, const arr& bound_lo, const arr& bound_up);
-bool boundCheck(const arr& x, const arr& bound_lo, const arr& bound_up, double eps=1e-3);
 bool checkDirectionalGradient(const ScalarFunction& f, const arr& x, const arr& delta, double tolerance);
 bool checkDirectionalJacobian(const VectorFunction& f, const arr& x, const arr& delta, double tolerance);
 

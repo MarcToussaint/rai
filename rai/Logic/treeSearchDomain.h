@@ -104,6 +104,8 @@ struct TreeSearchNode{
   virtual bool isFailure() const{ return false; }
   virtual bool isGoal() const{ return false; }
 
+  //access parent
+  virtual TreeSearchNode *getParent() const{ return 0; }
   virtual void write(std::ostream& os) const { std::cerr <<"NOT OVERLOADED!" <<std::endl; }
   virtual void report(std::ostream& os, int verbose) const { std::cerr <<"NOT OVERLOADED!" <<std::endl; }
 };
