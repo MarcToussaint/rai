@@ -193,11 +193,10 @@ struct Dof {
   JointL mimicers;   ///< list of mimicing joints
   bool isStable=false;
 
-  /* sampling info:
-   * double sampleUniform //prob for uniform initialization within limits
-   * double sampleSdv //sdv of gaussian around default
-   * arr sampleMean //mean of gaussian, if not defined -> copyX from prev
-   */
+  // sampling info:
+  double sampleUniform=0.; //prob for uniform initialization within limits
+  double sampleSdv=.01; //sdv of gaussian around default
+  arr q0; //mean of gaussian, if not defined -> copyX from prev
 
   virtual ~Dof() {}
   virtual void setDofs(const arr& q, uint n=0) = 0;
@@ -221,7 +220,6 @@ struct Joint : Dof, NonCopyable {
 
   // joint information
   byte generator;    ///< (7bits), h in Featherstone's code (indicates basis vectors of the Lie algebra, but including the middle quaternion w)
-  arr q0;            ///< joint null position
   double H=1.;       ///< control cost scalar
   double scale=1.;   ///< scaling robot-q = scale * q-vector
 

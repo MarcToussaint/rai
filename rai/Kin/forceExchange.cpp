@@ -23,6 +23,7 @@ rai::ForceExchange::ForceExchange(rai::Frame& a, rai::Frame& b, ForceExchangeTyp
   setZero();
   if(copy) {
     qIndex=copy->qIndex; dim=copy->dim; limits=copy->limits; active=copy->active;
+    sampleUniform=copy->sampleUniform;  sampleSdv=copy->sampleSdv;
     if(copy->mimic) NIY;
 
     scale=copy->scale;

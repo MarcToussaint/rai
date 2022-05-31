@@ -702,6 +702,7 @@ rai::Joint::Joint(Frame& f, Joint* copyJoint) {
     qIndex=copyJoint->qIndex; dim=copyJoint->dim;
     type=copyJoint->type; axis=copyJoint->axis; limits=copyJoint->limits; q0=copyJoint->q0; H=copyJoint->H; scale=copyJoint->scale;
     active=copyJoint->active;
+    sampleUniform=copyJoint->sampleUniform;  sampleSdv=copyJoint->sampleSdv;
 
     if(copyJoint->mimic){
       setMimic(frame->C.frames.elem(copyJoint->mimic->frame->ID)->joint);
@@ -1232,6 +1233,9 @@ void rai::Joint::read(const Graph& G) {
     CHECK_EQ(3, ctrl_limits.N, "parsed ctrl_limits have wrong dimension");
     limits.append(ctrl_limits);
   }
+
+  //sampling
+  G.get(sampleUniform, "sampleUniform");
 
   //coupled to another joint requires post-processing by the Graph::read!!
   if(G["mimic"]) {

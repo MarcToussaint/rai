@@ -151,7 +151,7 @@ public:
   void setConfiguration_qOrg(int t, const arr& q); ///< set only those DOFs that were defined in the original world (excluding extra DOFs from switches)
   void setConfiguration_X(int t, const arr& X); ///< t<0 allows to set the prefix configurations; while 0 <= t < T allows to set all other initial configurations
   void initOrg();
-  void initRandom();
+  void initRandom(int verbose=0);
   void initWithConstant(const arr& q); ///< set all configurations EXCEPT the prefix to a particular state
   void initWithWaypoints(const arrA& waypoints, uint waypointStepsPerPhase=1, int verbose=-1); ///< set all configurations (EXCEPT prefix) to interpolate given waypoints
   void initWithPath_qOrg(const arr& q);

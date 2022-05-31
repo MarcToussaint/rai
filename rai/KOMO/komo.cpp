@@ -292,6 +292,9 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
             -.6*maxsize, .6*maxsize,
             0,-1, 0,-1, 0,-1, 0,-1 }; //no limits on rotation
         }
+        //sample heuristic
+        f->joint->sampleUniform=0.;
+        f->joint->q0.clear();
       }
     } else if(newMode==SY_stableZero) {
       addSwitch(times, true, true, JT_rigid, SWInit_zero, frames(0), frames(1));
@@ -300,13 +303,16 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
 	//relTransformOn(world, frames(0), frames(1));
       rel.pos.set(0, 0, .5*(shapeSize(world, frames(0)) + shapeSize(world, frames(1))));
       rai::Frame* f = addSwitch(times, true, true, JT_transXYPhi, SWInit_copy, frames(0), frames(1), rel);
-      if(f){//limits?
+      if(f){
+        //limits?
         rai::Shape* on = world.getFrame(frames(0))->shape;
         CHECK_EQ(on->type(), rai::ST_ssBox, "")
         f->joint->limits = {
                            -.5*on->size(0), .5*on->size(0),
                            -.5*on->size(1), .5*on->size(1),
                            0,-1 };
+        //init heuristic
+        f->joint->sampleUniform=1.;
       }
     } else if(newMode==SY_stableYPhi) {
       Transformation rel = 0;
@@ -588,43 +594,9 @@ void KOMO::initOrg(){
   }
 }
 
-void KOMO::initRandom(){
-#if 0
-  run_prepare(0.);
-  arr lo,up;
-  getBounds(lo,up);
-  for(uint i=0;i<x.N;i++){
-    if(up(i)>lo(i)) x(i) = rnd.uni(lo(i),up(i));
-  }
-  set_x(x);
-#elif 1
-  pathConfig.setRandom(timeSlices.d1, 0); //opt.verbose);
+void KOMO::initRandom(int verbose){
+  pathConfig.setRandom(timeSlices.d1, verbose); //opt.verbose);
   x = pathConfig.getJointState();
-#else
-  for(Dof *d:pathConfig.activeDofs){
-    if(d->limits.N && d->dim!=1){ //HACK!!
-      arr q(d->dim);
-      for(uint k=0; k<d->dim; k++) { //in case joint has multiple dimensions
-        double lo = d->limits.elem(2*k+0); //lo
-        double up = d->limits.elem(2*k+1); //up
-        q(k) = rnd.uni(lo,up);
-      }
-      d->setDofs(q);
-    }else{
-      arr q = d->calcDofsFromConfig();
-      rndGauss(q, 0.01, true);
-      d->setDofs(q);
-    }
-  }
-  pathConfig._state_q_isGood=false;
-  x = pathConfig.getJointState();
-  {
-    arr lo, up;
-    getBounds(lo, up);
-    boundClip(x, lo, up);
-  }
-  set_x(x);
-#endif
 }
 
 arr KOMO::getConfiguration_X(int t) {

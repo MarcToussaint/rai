@@ -326,6 +326,12 @@ Frame* Configuration::addCopies(const FrameL& F, const DofL& _dofs) {
         f_new->joint->setMimic(f_orig->joint);
       }
     }
+
+    //auto-create prev link if names match
+    if(f_new->ID>=F.N){
+      rai::Frame *p = frames(f_new->ID-F.N);
+      if(p->name==f_new->name) f_new->prev = p;
+    }
   }
 
   //relink frames - special attention to mimic'ing
@@ -689,33 +695,45 @@ void Configuration::setTaus(const arr& tau) {
 
 void Configuration::setRandom(uint timeSlices_d1, int verbose){
   for(Dof *d:activeDofs){
-    if(d->limits.N && d->dim>1 && d->dim<7 && !d->mimic){ //HACK!! dim>1 exluces joints, dim<7 excludes stable grasps
+    if(d->sampleUniform==1.){ //should become probabilistic!
       //** UNIFORM
       if(verbose>0) LOG(0) <<"init '" <<d->frame->name <<'[' <<d->frame->ID <<',' <<(timeSlices_d1?d->frame->ID/timeSlices_d1:0) <<']' <<"' uniform in limits " <<d->limits <<" relative to '" <<d->frame->parent->name <<"'";
       arr q(d->dim);
       for(uint k=0; k<d->dim; k++) { //in case joint has multiple dimensions
         double lo = d->limits.elem(2*k+0); //lo
         double up = d->limits.elem(2*k+1); //up
-        q(k) = rnd.uni(lo,up);
+        if(up>=lo){
+          q(k) = rnd.uni(lo,up);
+        }else{
+          //if no limit given for individual entry -> copy prev
+          CHECK(d->frame->prev, "need either q0 or prev to initialize non-full-limits dof");
+          arr qPrev = d->frame->prev->joint->getDofState();
+          q(k) = qPrev(k);
+        }
       }
       d->setDofs(q);
+
     }else{
       //** GAUSS
-      //if time-sliced, and previous dof exists, then first adopt
-      if(timeSlices_d1 && d->joint() && !d->mimic && d->dim!=1 && d->frame->ID >= timeSlices_d1){ //is joint and prev time slice exists
-        Frame *prev = frames.elem(d->frame->ID - timeSlices_d1); //grab frame from prev time slice
-        CHECK(prev, "");
-        if(verbose>0) LOG(0) <<"init '" <<d->frame->name <<'[' <<d->frame->ID <<',' <<(timeSlices_d1?d->frame->ID/timeSlices_d1:0) <<']' <<"' pose-X-equal to prevSlice frame '" <<prev->name <<"' relative to '" <<d->frame->parent->name <<"'";
+      //mean: q0 or prev
+      if(d->q0.N){ //has default mean
+        d->setDofs(d->q0); //also sets it for all mimicers
+      }else{
+        CHECK(d->frame->prev, "");
+        if(verbose>0) LOG(0) <<"init '" <<d->frame->name <<'[' <<d->frame->ID <<',' <<(timeSlices_d1?d->frame->ID/timeSlices_d1:0) <<']'
+                            <<"' pose-X-equal to prevSlice frame '" <<d->frame->prev->name <<"' relative to '" <<d->frame->parent->name <<"'";
         //init from relative pose (as in applySwitch)
-        d->frame->set_X() = prev->ensure_X(); //copy the relative pose (switch joint initialization) from the first application
+        d->frame->set_X() = d->frame->prev->ensure_X(); //copy the relative pose (switch joint initialization) from the first application
         arr q = d->calcDofsFromConfig();
         d->setDofs(q); //also sets it for all mimicers
       }
 
+      //gauss
       arr q = d->calcDofsFromConfig();
       rndGauss(q, 0.01, true);
       if(verbose>0) LOG(0) <<"init '" <<d->frame->name <<'[' <<d->frame->ID <<',' <<(timeSlices_d1?d->frame->ID/timeSlices_d1:0) <<']' <<"' adding noise: " <<q;
 
+      //clip
       if(d->limits.N){
         for(uint k=0; k<d->dim; k++) { //in case joint has multiple dimensions
           double lo = d->limits.elem(2*k+0); //lo
