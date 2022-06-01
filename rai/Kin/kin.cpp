@@ -695,20 +695,19 @@ void Configuration::setTaus(const arr& tau) {
 
 void Configuration::setRandom(uint timeSlices_d1, int verbose){
   for(Dof *d:activeDofs){
-    if(d->sampleUniform==1.){ //should become probabilistic!
+    if(d->sampleUniform>0. && d->sampleUniform>rnd.uni()){
       //** UNIFORM
       if(verbose>0) LOG(0) <<"init '" <<d->frame->name <<'[' <<d->frame->ID <<',' <<(timeSlices_d1?d->frame->ID/timeSlices_d1:0) <<']' <<"' uniform in limits " <<d->limits <<" relative to '" <<d->frame->parent->name <<"'";
-      arr q(d->dim);
+
+      d->frame->set_X() = d->frame->prev->ensure_X(); //copy the relative pose (switch joint initialization) from the first application
+      arr q = d->calcDofsFromConfig();
+//      arr q(d->dim);
+
       for(uint k=0; k<d->dim; k++) { //in case joint has multiple dimensions
         double lo = d->limits.elem(2*k+0); //lo
         double up = d->limits.elem(2*k+1); //up
         if(up>=lo){
           q(k) = rnd.uni(lo,up);
-        }else{
-          //if no limit given for individual entry -> copy prev
-          CHECK(d->frame->prev, "need either q0 or prev to initialize non-full-limits dof");
-          arr qPrev = d->frame->prev->joint->getDofState();
-          q(k) = qPrev(k);
         }
       }
       d->setDofs(q);
@@ -730,7 +729,7 @@ void Configuration::setRandom(uint timeSlices_d1, int verbose){
 
       //gauss
       arr q = d->calcDofsFromConfig();
-      rndGauss(q, 0.01, true);
+      rndGauss(q, d->sampleSdv, true);
       if(verbose>0) LOG(0) <<"init '" <<d->frame->name <<'[' <<d->frame->ID <<',' <<(timeSlices_d1?d->frame->ID/timeSlices_d1:0) <<']' <<"' adding noise: " <<q;
 
       //clip
