@@ -1105,9 +1105,11 @@ void KOMO::checkGradients() {
     phi.J() = J;
     return phi;
   };
-  //    checkJacobian(F, x, tolerance);
+
+  arr x0 = pathConfig.getJointState();
+  //    checkJacobian(F, x0, tolerance);
   arr J;
-  arr JJ=finiteDifferenceJacobian(F, x, J);
+  arr JJ=finiteDifferenceJacobian(F, x0, J);
   bool succ=true;
   double mmd=0.;
   for(uint i=0; i<J.d0; i++) {

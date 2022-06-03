@@ -407,7 +407,7 @@ SkeletonTranscription Skeleton::nlp_path(const arrA& waypoints){
 void Skeleton::setKOMO(KOMO& komo, ArgWord sequenceOrPath, uint stepsPerPhase, double accScale, double lenScale, double homingScale) const {
   if(!komo.world.frames.N){
     CHECK(C, "");
-    komo.setModel(*C, true);
+    komo.setModel(*C, collisions);
   }
   double maxPhase = getMaxPhase();
   if(sequenceOrPath==rai::_sequence) {
@@ -571,7 +571,7 @@ void Skeleton::setKOMO(KOMO& komo) const {
         }
         //motion/control costs on the object
         if(komo.k_order>1){
-          komo.addObjective({s.phase0, s.phase1}, FS_position, {s.frames(1)}, OT_sos, {1e0}, {}, 2); //smooth obj motion
+          komo.addObjective({s.phase0, s.phase1}, FS_position, {s.frames(1)}, OT_sos, {1e-1}, {}, 2); //smooth obj motion
           komo.addObjective({s.phase1}, FS_pose, {s.frames(0)}, OT_eq, {1e0}, {}, 1); //zero vel at start
           komo.addObjective({s.phase1}, FS_pose, {s.frames(1)}, OT_eq, {1e0}, {}, 1); //zero vel at end
         }

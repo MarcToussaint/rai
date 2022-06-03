@@ -695,7 +695,7 @@ void Configuration::setTaus(const arr& tau) {
 
 void Configuration::setRandom(uint timeSlices_d1, int verbose){
   for(Dof *d:activeDofs){
-    if(d->sampleUniform>0. && d->sampleUniform>rnd.uni()){
+    if(d->sampleUniform>0. && (d->sampleUniform>=1. || d->sampleUniform>=rnd.uni())){
       //** UNIFORM
       if(verbose>0) LOG(0) <<"init '" <<d->frame->name <<'[' <<d->frame->ID <<',' <<(timeSlices_d1?d->frame->ID/timeSlices_d1:0) <<']' <<"' uniform in limits " <<d->limits <<" relative to '" <<d->frame->parent->name <<"'";
 

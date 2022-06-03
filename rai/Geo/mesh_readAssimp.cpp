@@ -96,7 +96,7 @@ void AssimpLoader::loadNode(const aiNode* node, const aiScene* scene, arr T, boo
 
   if(node->mMetaData){
     CHECK(node->mMetaData->mKeys[0]==aiString("mass"), "");
-    double m;
+    double m=0.;
     node->mMetaData->Get<double>(0,m);
     masses.append(m);
   }else{
