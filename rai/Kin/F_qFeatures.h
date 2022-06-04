@@ -31,6 +31,13 @@ struct F_qItself : Feature {
 
 //===========================================================================
 
+struct F_q0Bias : Feature {
+  virtual void phi2(arr& y, arr& J, const FrameL& F);
+  virtual uint dim_phi2(const FrameL& F);
+};
+
+//===========================================================================
+
 struct F_qZeroVel : Feature {
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2(const FrameL& F);

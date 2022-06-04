@@ -754,7 +754,21 @@ uintA KOMO::initWithWaypoints_pieceWiseConstant(const arrA& waypoints, uint wayp
     }
   }else{
     for(uint i=0; i<steps.N; i++) {
-      if(steps(i)<T) setConfiguration_qAll(steps(i), waypoints(i));
+      if(steps(i)<T){
+        setConfiguration_qAll(steps(i), waypoints(i));
+/*
+        uint Tstop=T;
+        if(i+1<steps.N && steps(i+1)<T) Tstop=steps(i+1);
+        for(uint t=steps(i)+1; t<Tstop; t++){
+          for(uint i=0;i<timeSlices.d1;i++){
+            rai::Frame *f = timeSlices(k_order+t, i);
+            if(f->joint && f->joint->active && !f->joint->mimic && f->prev){
+              f->joint->setDofs(f->prev->joint->getDofState());
+            }
+          }
+        }
+*/
+      }
     }
   }
 

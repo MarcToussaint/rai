@@ -255,6 +255,13 @@ const char* rai::Frame::isPart() const {
   return 0;
 }
 
+rai::Dof* rai::Frame::getDof() const {
+  if(joint) return joint;
+  if(forces.N) return forces.first();
+  if(particleDofs) return particleDofs;
+  return 0;
+}
+
 void rai::Frame::prefixSubtree(const char* prefix) {
   FrameL F = {this};
   getSubtree(F);
@@ -1574,9 +1581,12 @@ shared_ptr<ScalarFunction> rai::Shape::functional(bool worldCoordinates){
     case rai::ST_sphere:
       return make_shared<DistanceFunction_Sphere>(pose, radius());
     case rai::ST_cylinder:
-      return make_shared<DistanceFunction_Cylinder>(pose, size(-2), size(-1));
+      return make_shared<DistanceFunction_Cylinder>(pose, size(0), size(1));
+    case rai::ST_ssCylinder:
+      return make_shared<DistanceFunction_Cylinder>(pose, size(0), size(1));
+      //return make_shared<DistanceFunction_SSSomething>(make_shared<DistanceFunction_Cylinder>(pose, size(0), size(1)-size(2)), size(2));
     case rai::ST_capsule:
-      return make_shared<DistanceFunction_Capsule>(pose, size(-2), size(-1));
+      return make_shared<DistanceFunction_Capsule>(pose, size(0), size(1));
     case rai::ST_ssBox: {
       return make_shared<DistanceFunction_ssBox>(pose, size(0), size(1), size(2), size(3));
     default:

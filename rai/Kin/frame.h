@@ -132,6 +132,7 @@ struct Frame : NonCopyable {
   Frame* getDownwardLink(bool untilPartBreak=false) const; ///< recurse upward BEFORE the next joint and return relative transform (this->Q is not included!b)
   FrameL getPathToUpwardLink(bool untilPartBreak=false); ///< recurse upward BEFORE the next joint and return relative transform (this->Q is not included!b)
   const char* isPart() const;
+  Dof* getDof() const;
 
   void prefixSubtree(const char* prefix);
   void computeCompoundInertia();

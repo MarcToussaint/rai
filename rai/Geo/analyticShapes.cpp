@@ -210,6 +210,15 @@ double DistanceFunction_ssBox::f(arr& g, arr& H, const arr& x) {
 
 //===========================================================================
 
+DistanceFunction_SSSomething::DistanceFunction_SSSomething(const std::shared_ptr<ScalarFunction>& _something, double _r)
+  : something(_something), r(_r) {}
+
+double DistanceFunction_SSSomething::f(arr& g, arr& H, const arr& x){
+  return (*something)(g, H, x)-r;
+}
+
+//===========================================================================
+
 DistanceFunction_super::DistanceFunction_super(const rai::Transformation& _pose, const arr& _size, double _degree)
   : pose(_pose), size(_size), degree(_degree) {
   ScalarFunction::operator=([this](arr& g, arr& H, const arr& x)->double{ return f(g, H, x); });

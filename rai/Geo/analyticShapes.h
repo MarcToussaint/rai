@@ -27,6 +27,13 @@ struct DistanceFunction_super : ScalarFunction {
   double f(arr& g, arr& H, const arr& x);
 };
 
+struct DistanceFunction_SSSomething : ScalarFunction {
+  std::shared_ptr<ScalarFunction> something;
+  double r;
+  DistanceFunction_SSSomething(const std::shared_ptr<ScalarFunction>& _something, double _r);
+  double f(arr& g, arr& H, const arr& x);
+};
+
 struct DistanceFunction_Cylinder : ScalarFunction {
   rai::Transformation pose; double size_z, r;
   DistanceFunction_Cylinder(const rai::Transformation& _pose, double _size_z, double _r);

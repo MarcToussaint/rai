@@ -192,6 +192,42 @@ uint F_qItself::dim_phi2(const FrameL& F){
 
 //===========================================================================
 
+void F_q0Bias::phi2(arr& y, arr& J, const FrameL& F){
+  uint n=dim_phi2(F);
+  if(!n){ y.clear(); J.clear(); return; }
+  rai::Configuration& C = F.last()->C;
+  CHECK(C._state_q_isGood, "");
+  C.kinematicsZero(y, J, n);
+  uint m=0;
+  for(rai::Frame* f:F) {
+    rai::Dof* d = f->getDof();
+    if(!d || !d->q0) continue;
+    for(uint k=0; k<d->dim; k++) {
+      if(d->active){
+        y.elem(m) = C.q.elem(d->qIndex+k);
+      }else{
+        y.elem(m) = C.qInactive.elem(d->qIndex+k);
+      }
+      y.elem(m) -= d->q0(k);
+      if(!!J && d->active) J.elem(m, d->qIndex+k) = 1.;
+      m++;
+    }
+  }
+  CHECK_EQ(n, m, "");
+}
+
+uint F_q0Bias::dim_phi2(const FrameL& F){
+  uint m=0;
+  for(rai::Frame* f:F) {
+    rai::Dof* d = f->getDof();
+    if(!d || !d->q0) continue;
+    m+=d->dim;
+  }
+  return m;
+}
+
+//===========================================================================
+
 void F_qZeroVel::phi2(arr& y, arr& J, const FrameL& F){
   CHECK_EQ(order, 1, "");
   y = F_qItself()
@@ -419,3 +455,4 @@ uintA getSwitchedFrames(const FrameL& A, const FrameL& B) {
   }
   return switchedFrames;
 }
+
