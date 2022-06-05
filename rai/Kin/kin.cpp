@@ -703,14 +703,13 @@ void Configuration::setRandom(uint timeSlices_d1, int verbose){
       arr q = d->calcDofsFromConfig();
 //      arr q(d->dim);
 
-      for(uint k=0; k<d->dim; k++) { //in case joint has multiple dimensions
+      for(uint k=0; k<d->dim; k++){
         double lo = d->limits.elem(2*k+0); //lo
         double up = d->limits.elem(2*k+1); //up
-        if(up>=lo){
-          q(k) = rnd.uni(lo,up);
-        }
+        if(up>=lo) q(k) = rnd.uni(lo,up);
       }
       d->setDofs(q);
+      d->q0 = q; //CRUCIAL to impose a bias to that random initialization
 
     }else{
       //** GAUSS
@@ -1201,8 +1200,7 @@ bool Configuration::checkConsistency() const {
   }
 
   for(Frame* a: frames) {
-    CHECK(&a->C, "");
-    CHECK(&a->C==this, "");
+    CHECK_EQ(&a->C, this, "");
     CHECK_EQ(a, frames.elem(a->ID), "");
     for(Frame* b: a->children) CHECK_EQ(b->parent, a, "");
     if(a->joint) CHECK_EQ(a->joint->frame, a, "");
@@ -1238,22 +1236,25 @@ bool Configuration::checkConsistency() const {
       CHECK_GE(j->type.x, 0, "");
       CHECK_LE(j->type.x, JT_tau, "");
       CHECK_EQ(j->dim, j->getDimFromType(), "");
-
-      if(j->mimic) {
-        CHECK(j->mimic>(void*)1, "mimic was not parsed correctly");
-        CHECK(frames.contains(j->mimic->frame), "mimic points to a frame outside this kinematic configuration");
-        CHECK_EQ(j->active, j->mimic->active, "");
-        CHECK_EQ(j->qIndex, j->mimic->qIndex, "");
-        CHECK_EQ(j->dim, j->mimic->dim, "");
-      } else {
-      }
-
-      for(Joint* m:j->mimicers) {
-        CHECK_EQ(m->mimic, j, "");
-      }
     }
 
+  for(Dof* j:activeDofs){
+    CHECK_EQ(&j->frame->C, this, "");
+    if(j->mimic) {
+      CHECK(j->mimic>(void*)1, "mimic was not parsed correctly");
+      CHECK(frames.contains(j->mimic->frame), "mimic points to a frame outside this kinematic configuration");
+      CHECK_EQ(j->active, j->mimic->active, "");
+      CHECK_EQ(j->qIndex, j->mimic->qIndex, "");
+      CHECK_EQ(j->dim, j->mimic->dim, "");
+    }
+
+    for(Joint* m:j->mimicers) {
+      CHECK_EQ(m->mimic, j, "");
+    }
+  }
+
   for(Dof* d:otherDofs){
+    CHECK_EQ(&d->frame->C, this, "");
     if(d->mimic){
       CHECK_EQ(d->active, d->mimic->active, "");
       CHECK_EQ(d->qIndex, d->mimic->qIndex, "");

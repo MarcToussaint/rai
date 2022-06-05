@@ -293,8 +293,8 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
             0,-1, 0,-1, 0,-1, 0,-1 }; //no limits on rotation
         }
         //sample heuristic
-        f->joint->sampleUniform=0.;
-        f->joint->q0.clear();
+        f->joint->sampleUniform=1.;
+        f->joint->q0 = zeros(7); //.clear();
       }
     } else if(newMode==SY_stableZero) {
       addSwitch(times, true, true, JT_rigid, SWInit_zero, frames(0), frames(1));
@@ -313,6 +313,7 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
                            0,-1 };
         //init heuristic
         f->joint->sampleUniform=1.;
+        f->joint->q0 = zeros(3);
       }
     } else if(newMode==SY_stableYPhi) {
       Transformation rel = 0;
@@ -754,20 +755,18 @@ uintA KOMO::initWithWaypoints_pieceWiseConstant(const arrA& waypoints, uint wayp
     }
   }else{
     for(uint i=0; i<steps.N; i++) {
-      if(steps(i)<T){
-        setConfiguration_qAll(steps(i), waypoints(i));
-/*
-        uint Tstop=T;
-        if(i+1<steps.N && steps(i+1)<T) Tstop=steps(i+1);
-        for(uint t=steps(i)+1; t<Tstop; t++){
-          for(uint i=0;i<timeSlices.d1;i++){
-            rai::Frame *f = timeSlices(k_order+t, i);
-            if(f->joint && f->joint->active && !f->joint->mimic && f->prev){
-              f->joint->setDofs(f->prev->joint->getDofState());
-            }
+      if(steps(i)<T) setConfiguration_qAll(steps(i), waypoints(i));
+    }
+    //set intermediate constant
+    for(uint i=0; i<steps.N; i++) {
+      uint Tstart = 1;
+      if(i) Tstart = steps(i-1)+1;
+      for(uint t=Tstart; t<steps(i); t++){
+        for(rai::Frame *f:timeSlices[k_order+t]){
+          if(f->joint && f->joint->active && !f->joint->mimic && f->prev){
+            f->C.setDofState(f->prev->joint->getDofState(), {f->joint});
           }
         }
-*/
       }
     }
   }

@@ -201,7 +201,7 @@ void F_q0Bias::phi2(arr& y, arr& J, const FrameL& F){
   uint m=0;
   for(rai::Frame* f:F) {
     rai::Dof* d = f->getDof();
-    if(!d || !d->q0) continue;
+    if(!d || !d->q0.N) continue;
     for(uint k=0; k<d->dim; k++) {
       if(d->active){
         y.elem(m) = C.q.elem(d->qIndex+k);
@@ -220,7 +220,8 @@ uint F_q0Bias::dim_phi2(const FrameL& F){
   uint m=0;
   for(rai::Frame* f:F) {
     rai::Dof* d = f->getDof();
-    if(!d || !d->q0) continue;
+    if(!d || !d->q0.N) continue;
+    CHECK_EQ(d->q0.N, d->dim, "");
     m+=d->dim;
   }
   return m;
