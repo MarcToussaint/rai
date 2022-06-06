@@ -203,7 +203,7 @@ void TEST(Iterators) {
   cout <<x <<endl;
 
   for(auto& e:x.itEnumerated()){
-    cout <<e.i <<' ' <<e() <<endl;
+    cout <<e.count <<' ' <<e() <<endl;
   }
 
   for(auto& e:x.itReverse()){

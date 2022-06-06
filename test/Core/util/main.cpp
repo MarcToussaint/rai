@@ -18,15 +18,15 @@ void TEST(String){
   s="a=1.2, b=3.4, blabla";
   cout <<s <<'|' <<endl;
   s >>(const char*)"a=" >>a >>(const char*)", b=" >>b;  // read things from string
-  s >>tmp;      // read string from string (starting at current scan position)
+  s >>"," >>tmp;      // read string from string (starting at current scan position)
   CHECK_ZERO(a-1.2, 1e-10, "");
   CHECK_ZERO(b-3.4, 1e-10, "");
-  CHECK_EQ(tmp,", blabla", "");
+  CHECK_EQ(tmp,"blabla", "");
   cout <<"a=" <<a <<", b=" <<b <<tmp <<'|' <<endl;
 
   s.resetIstream();   // reset the istream pointer of source string before...
   s >>tmp;            // ...reading string from string (starting at beginning of string)
-  CHECK_EQ(tmp,"a=1.2, b=3.4, blabla", "");
+  CHECK_EQ(tmp,"a=1.2", "");
   cout <<tmp <<'|' <<endl;
 
   s.resetIstream();   // reset the istream pointer of source string before...
