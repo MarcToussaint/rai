@@ -21,7 +21,7 @@
 //===========================================================================
 
 template<> const char* rai::Enum<rai::JointType>::names []= {
-  "none", "hingeX", "hingeY", "hingeZ", "transX", "transY", "transZ", "transXY", "trans3", "transXYPhi", "transYPhi", "universal", "rigid", "quatBall", "phiTransXY", "XBall", "free", "tau", nullptr
+  "none", "hingeX", "hingeY", "hingeZ", "transX", "transY", "transZ", "transXY", "trans3", "transXYPhi", "transYPhi", "universal", "rigid", "quatBall", "phiTransXY", "XBall", "free", "generic", "tau", nullptr
 };
 
 template<> const char* rai::Enum<rai::BodyType>::names []= {
@@ -710,6 +710,7 @@ rai::Joint::Joint(Frame& f, Joint* copyJoint) {
     type=copyJoint->type; axis=copyJoint->axis; limits=copyJoint->limits; q0=copyJoint->q0; H=copyJoint->H; scale=copyJoint->scale;
     active=copyJoint->active;
     sampleUniform=copyJoint->sampleUniform;  sampleSdv=copyJoint->sampleSdv;
+    code=copyJoint->code;
 
     if(copyJoint->mimic){
       setMimic(frame->C.frames.elem(copyJoint->mimic->frame->ID)->joint);
@@ -750,6 +751,7 @@ void rai::Joint::setMimic(rai::Joint* j, bool unsetPreviousMimic){
       mimic->mimicers.removeValue(this);
       mimic=0;
     }
+    CHECK_EQ(j->type, type, "can't mimic joints of different type [could be generalized to dim]:" <<*this <<*j);
     CHECK(!mimic,"");
     mimic=j;
     mimic->mimicers.append(this);
@@ -832,6 +834,40 @@ void rai::Joint::setDofs(const arr& q_full, uint _qIndex) {
         }
         Q.rot.normalize();
         Q.rot.isZero=false;
+      } break;
+
+      case JT_generic: {
+        for(uint i=0;i<code.N;i++){
+          switch(code[i]){
+            case 't':
+              frame->tau = 1e-1 * qp[i];
+              if(frame->tau<1e-10) frame->tau=1e-10;
+              break;
+            case 'x':  Q.pos.x = qp[i];  Q.pos.isZero=false;  break;
+            case 'X':  Q.pos.x = -qp[i];  Q.pos.isZero=false;  break;
+            case 'y':  Q.pos.y = qp[i];  Q.pos.isZero=false;  break;
+            case 'Y':  Q.pos.y = -qp[i];  Q.pos.isZero=false;  break;
+            case 'z':  Q.pos.z = qp[i];  Q.pos.isZero=false;  break;
+            case 'Z':  Q.pos.z = -qp[i];  Q.pos.isZero=false;  break;
+            case 'a':  Q.rot.addX(qp[i]);  break;
+            case 'A':  Q.rot.addX(-qp[i]);  break;
+            case 'b':  Q.rot.addY(qp[i]);  break;
+            case 'B':  Q.rot.addY(-qp[i]);  break;
+            case 'c':  Q.rot.addZ(qp[i]);  break;
+            case 'C':  Q.rot.addZ(-qp[i]);  break;
+            case 'w':{
+              CHECK_EQ(code.N-i, 4, "");
+              Q.rot.set(qp+i);
+              {
+                double n=Q.rot.normalization();
+                if(n<.1 || n>10.) LOG(-1) <<"quat normalization is extreme: " <<n;
+              }
+              Q.rot.normalize();
+              Q.rot.isZero=false;
+              i+=3;
+            } break;
+          }
+        }
       } break;
 
       case JT_transX: {
@@ -1004,13 +1040,44 @@ arr rai::Joint::calcDofsFromConfig() const {
       q(3)=Q.rot.y;
       q(4)=Q.rot.z;
       break;
+    case JT_generic: {
+      q.resize(code.N);
+      for(uint i=0;i<code.N;i++){
+        switch(code[i]){
+          case 't':  q.elem(i) = 1e1 * frame->tau;  break;
+          case 'x':  q.elem(i) = Q.pos.x;  break;
+          case 'X':  q.elem(i) = -Q.pos.x;  break;
+          case 'y':  q.elem(i) = Q.pos.y;  break;
+          case 'Y':  q.elem(i) = -Q.pos.y;  break;
+          case 'z':  q.elem(i) = Q.pos.z;  break;
+          case 'Z':  q.elem(i) = -Q.pos.z;  break;
+          case 'a':  q.elem(i) = Q.rot.getRoll_X();  break;
+          case 'A':  q.elem(i) = -Q.rot.getRoll_X();  break;
+          case 'b':  q.elem(i) = Q.rot.getPitch_Y();  break;
+          case 'B':  q.elem(i) = -Q.rot.getPitch_Y();  break;
+          case 'c':  q.elem(i) = Q.rot.getYaw_Z();  break;
+          case 'C':  q.elem(i) = -Q.rot.getYaw_Z();  break;
+          case 'w':{
+            CHECK_EQ(code.N-i, 4, "");
+            q.elem(i+0)=Q.rot.w;
+            q.elem(i+1)=Q.rot.x;
+            q.elem(i+2)=Q.rot.y;
+            q.elem(i+3)=Q.rot.z;
+            i+=3;
+          } break;
+        }
+      }
+
+    } break;
     case JT_tau:
       q.resize(1);
       q(0) = 1e1 * frame->tau;
       break;
     default: NIY;
   }
-  q /= scale;
+  if(scale!=1.){
+    q /= scale;
+  }
   return q;
 }
 
@@ -1100,6 +1167,7 @@ uint rai::Joint::getDimFromType() const {
   if(type==JT_free) return 7;
   if(type==JT_rigid || type==JT_none) return 0;
   if(type==JT_XBall) return 5;
+  if(type==JT_generic) return code.N;
   if(type==JT_tau) return 1;
   HALT("shouldn't be here");
   return 0;
@@ -1204,7 +1272,14 @@ void rai::Joint::read(const Graph& G) {
   G.get(H, "ctrl_H");
   G.get(scale, "joint_scale");
   if(G.get(d, "joint"))        type=(JointType)d;
-  else if(G.get(str, "joint")) { str >>type; }
+  else if(G.get(str, "joint")) {
+    if(str[0]=='_'){
+      type=JT_generic;
+      code.set(&str(1),str.N-1);
+    }else{
+      type=str;
+    }
+  }
   else if(G.get(d, "type"))    type=(JointType)d;
   else if(G.get(str, "type"))  { str >>type; }
   else type=JT_rigid;

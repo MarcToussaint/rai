@@ -28,7 +28,7 @@ struct Shape;
 struct Inertia;
 struct ForceExchange;
 struct ParticleDofs;
-enum JointType { JT_none=0, JT_hingeX, JT_hingeY, JT_hingeZ, JT_transX, JT_transY, JT_transZ, JT_transXY, JT_trans3, JT_transXYPhi, JT_transYPhi, JT_universal, JT_rigid, JT_quatBall, JT_phiTransXY, JT_XBall, JT_free, JT_tau };
+enum JointType { JT_none=0, JT_hingeX, JT_hingeY, JT_hingeZ, JT_transX, JT_transY, JT_transZ, JT_transXY, JT_trans3, JT_transXYPhi, JT_transYPhi, JT_universal, JT_rigid, JT_quatBall, JT_phiTransXY, JT_XBall, JT_free, JT_generic, JT_tau };
 enum BodyType  { BT_none=-1, BT_dynamic=0, BT_kinematic, BT_static, BT_soft };
 }
 
@@ -220,7 +220,8 @@ stdOutPipe(Dof)
 struct Joint : Dof, NonCopyable {
 
   // joint information
-  byte generator;    ///< (7bits), h in Featherstone's code (indicates basis vectors of the Lie algebra, but including the middle quaternion w)
+  //  byte generator;    ///< (7bits), h in Featherstone's code (indicates basis vectors of the Lie algebra, but including the middle quaternion w)
+  String code;       ///< for JT_generic: code "txyzwabc" to indicate transformations; dim==code.N
   double H=1.;       ///< control cost scalar
   double scale=1.;   ///< scaling robot-q = scale * q-vector
 

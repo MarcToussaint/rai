@@ -116,9 +116,9 @@ struct Quaternion {
   void setRad(double radians, double axis0, double axis1, double axis2);
   void setRad(double radians, const Vector& axis);
   void setRad(double angle);
-  void setRadX(double angle);
-  void setRadY(double angle);
-  void setRadZ(double angle);
+  void setRadX(double radians);
+  void setRadY(double radians);
+  void setRadZ(double radians);
   Quaternion& setRpy(double r, double p, double y);
   void setVec(Vector w);
   void setMatrix(double* m);
@@ -157,6 +157,9 @@ struct Quaternion {
   double* getMatrix(double* m) const;
   double* getMatrixOde(double* m) const; //in Ode foramt: 3x4 memory storae
   double* getMatrixGL(double* m) const;  //in OpenGL format: transposed 4x4 memory storage
+  double getRoll_X() const;
+  double getPitch_Y() const;
+  double getYaw_Z() const;
   arr getEulerRPY() const;
   void applyOnPointArray(arr& pts);
 

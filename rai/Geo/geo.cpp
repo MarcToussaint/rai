@@ -525,11 +525,12 @@ void Quaternion::alignWith(const Vector& v) {
   normalize();
 }
 
-void Quaternion::addX(double angle) {
-  if(!angle) { return; }
-  angle/=2.;
-  double cw=cos(angle);
-  double cx=sin(angle);
+void Quaternion::addX(double radians) {
+  if(isZero){ setRadX(radians); return; }
+  if(!radians) { return; }
+  radians/=2.;
+  double cw=cos(radians);
+  double cx=sin(radians);
 
   Quaternion a;
   a.w = w*cw - x*cx;
@@ -540,11 +541,12 @@ void Quaternion::addX(double angle) {
   set(a.w, a.x, a.y, a.z);
 }
 
-void Quaternion::addY(double angle) {
-  if(!angle) { return; }
-  angle/=2.;
-  double cw=cos(angle);
-  double cy=sin(angle);
+void Quaternion::addY(double radians) {
+  if(isZero){ setRadY(radians); return; }
+  if(!radians) { return; }
+  radians/=2.;
+  double cw=cos(radians);
+  double cy=sin(radians);
 
   Quaternion a;
   a.w = w*cw - y*cy;
@@ -556,6 +558,7 @@ void Quaternion::addY(double angle) {
 }
 
 Quaternion& Quaternion::addZ(double radians) {
+  if(isZero){ setRadZ(radians); return *this; }
   if(!radians) { return *this; }
   radians/=2.;
   double cw=cos(radians);
@@ -678,31 +681,31 @@ void Quaternion::setRad(double angle) {
 }
 
 /// rotation around X-axis by given radiants
-void Quaternion::setRadX(double angle) {
-  if(!angle) { setZero(); return; }
-  angle/=2.;
-  w=cos(angle);
-  x=sin(angle);
+void Quaternion::setRadX(double radians) {
+  if(!radians) { setZero(); return; }
+  radians/=2.;
+  w=cos(radians);
+  x=sin(radians);
   y=z=0.;
   isZero=false;
 }
 
 /// rotation around Y-axis by given radiants
-void Quaternion::setRadY(double angle) {
-  if(!angle) { setZero(); return; }
-  angle/=2.;
-  w=cos(angle);
-  y=sin(angle);
+void Quaternion::setRadY(double radians) {
+  if(!radians) { setZero(); return; }
+  radians/=2.;
+  w=cos(radians);
+  y=sin(radians);
   x=z=0.;
   isZero=false;
 }
 
 /// rotation around Z-axis by given radiants
-void Quaternion::setRadZ(double angle) {
-  if(!angle) { setZero(); return; }
-  angle/=2.;
-  w=cos(angle);
-  z=sin(angle);
+void Quaternion::setRadZ(double radians) {
+  if(!radians) { setZero(); return; }
+  radians/=2.;
+  w=cos(radians);
+  z=sin(radians);
   x=y=0.;
   isZero=false;
 }
@@ -923,27 +926,27 @@ double* Quaternion::getMatrixGL(double* m) const {
   return m;
 }
 
-arr Quaternion::getEulerRPY() const {
-  double roll, pitch, yaw;
-
-  // roll (x-axis rotation)
+double Quaternion::getRoll_X() const {
   double sinr = +2.0 * (w * x + y * z);
   double cosr = +1.0 - 2.0 * (x * x + y * y);
-  roll = atan2(sinr, cosr);
+  return atan2(sinr, cosr);
+}
 
-  // pitch (y-axis rotation)
+double Quaternion::getPitch_Y() const {
   double sinp = +2.0 * (w * y - z * x);
   if(fabs(sinp) >= 1)
-    pitch = copysign(RAI_PI / 2, sinp); // use 90 degrees if out of range
-  else
-    pitch = asin(sinp);
+    return copysign(RAI_PI / 2, sinp); // use 90 degrees if out of range
+  return asin(sinp);
+}
 
-  // yaw (z-axis rotation)
+double Quaternion::getYaw_Z() const {
   double siny = +2.0 * (w * z + x * y);
   double cosy = +1.0 - 2.0 * (y * y + z * z);
-  yaw = atan2(siny, cosy);
+  return atan2(siny, cosy);
+}
 
-  return {roll, pitch, yaw};
+arr Quaternion::getEulerRPY() const {
+  return {getRoll_X(), getPitch_Y(), getYaw_Z()};
 }
 
 void Quaternion::applyOnPointArray(arr& pts) {

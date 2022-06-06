@@ -1660,6 +1660,39 @@ void Configuration::jacobian_pos(arr& J, Frame* a, const Vector& pos_world) cons
           R *= j->scale;
           J.setMatrixBlock(R.sub(0, -1, 0, 1), 0, j_idx+1);
         }
+        if(j->type==JT_generic){
+          arr R = j->frame->parent->get_X().rot.getArr();
+          R *= j->scale;
+          arr Rt =~R;
+          Vector d = (pos_world-j->X()*j->Q().pos);
+          arr D = skew(d.getArr());
+
+          for(uint i=0;i<j->code.N;i++){
+            switch(j->code[i]){
+              case 't': break;
+              case 'x':  J.setMatrixBlock(Rt[0], 0, j_idx+i);  break;
+              case 'X':  J.setMatrixBlock(-Rt[0], 0, j_idx+i);  break;
+              case 'y':  J.setMatrixBlock(Rt[1], 0, j_idx+i);  break;
+              case 'Y':  J.setMatrixBlock(-Rt[1], 0, j_idx+i);  break;
+              case 'z':  J.setMatrixBlock(Rt[2], 0, j_idx+i);  break;
+              case 'Z':  J.setMatrixBlock(-Rt[2], 0, j_idx+i);  break;
+              case 'a':  J.setMatrixBlock(-D*Rt[0], 0, j_idx+i);  break;
+              case 'A':  J.setMatrixBlock(D*Rt[0], 0, j_idx+i);  break;
+              case 'b':  J.setMatrixBlock(-D*Rt[1], 0, j_idx+i);  break;
+              case 'B':  J.setMatrixBlock(D*Rt[1], 0, j_idx+i);  break;
+              case 'c':  J.setMatrixBlock(-D*Rt[2], 0, j_idx+i);  break;
+              case 'C':  J.setMatrixBlock(D*Rt[2], 0, j_idx+i);  break;
+              case 'w':{
+                arr Jrot = j->X().rot.getArr() * a->Q.rot.getJacobian(); //transform w-vectors into world coordinate
+                Jrot *= j->scale;
+                Jrot = crossProduct(Jrot, conv_vec2arr(d));  //cross-product of all 4 w-vectors with lever
+                Jrot /= sqrt(sumOfSqr(q({j_idx+i, j_idx+i+3})));   //account for the potential non-normalization of q
+                J.setMatrixBlock(Jrot, 0, j_idx+i);
+                i+=3;
+              } break;
+            }
+          }
+        }
         if(j->type==JT_XBall) {
           arr R = conv_vec2arr(j->X().rot.getX());
           R *= j->scale;
@@ -1722,6 +1755,31 @@ void Configuration::jacobian_angular(arr& J, Frame* a) const {
           //          for(uint i=0;i<4;i++) for(uint k=0;k<3;k++) J.elem(k,j_idx+offset+i) += Jrot(k,i);
           Jrot *= j->scale;
           J.setMatrixBlock(Jrot, 0, j_idx+offset);
+        }
+        if(j->type==JT_generic) {
+          arr R = j->frame->parent->get_X().rot.getArr();
+          R *= j->scale;
+          arr Rt =~R;
+
+          for(uint i=0;i<j->code.N;i++){
+            switch(j->code[i]){
+              case 't': break;
+              case 'a':  J.setMatrixBlock(Rt[0], 0, j_idx+i);  break;
+              case 'A':  J.setMatrixBlock(-Rt[0], 0, j_idx+i);  break;
+              case 'b':  J.setMatrixBlock(Rt[1], 0, j_idx+i);  break;
+              case 'B':  J.setMatrixBlock(-Rt[1], 0, j_idx+i);  break;
+              case 'c':  J.setMatrixBlock(Rt[2], 0, j_idx+i);  break;
+              case 'C':  J.setMatrixBlock(-Rt[2], 0, j_idx+i);  break;
+              case 'w':{
+                arr Jrot = j->X().rot.getArr() * a->Q.rot.getJacobian(); //transform w-vectors into world coordinate
+                Jrot *= j->scale;
+                Jrot /= sqrt(sumOfSqr(q({j_idx+i, j_idx+i+3}))); //account for the potential non-normalization of q
+                J.setMatrixBlock(Jrot, 0, j_idx+i);
+                i+=3;
+              } break;
+            }
+          }
+
         }
         //all other joints: J=0 !!
       }

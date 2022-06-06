@@ -419,7 +419,7 @@ btCollisionShape* BulletInterface_self::createLinkShape(ShapeL& shapes, rai::Bod
   if(shapesHaveInertia && !f->inertia){
     DEPR("please use computeComputeInertia and transformToDiagInertia before bullet");
     f->computeCompoundInertia();
-#if 1 //CRAZY! we relocate that frame to have zero COM (bullet only accepts zero COM and diagonal inertia)
+#if 1 //we relocate that frame to have zero COM (bullet only accepts zero COM and diagonal inertia)
     if(!f->inertia->com.isZero){
       CHECK(!f->shape || f->shape->type()==rai::ST_marker, "can't translate this frame if it has a shape attached");
       CHECK(!f->joint || f->joint->type==rai::JT_rigid || f->joint->type==rai::JT_free, "can't translate this frame if it has a joint attached");

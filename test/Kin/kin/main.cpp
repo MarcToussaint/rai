@@ -72,21 +72,19 @@ void TEST(Kinematics){
 
   struct MyFct : VectorFunction{
     enum Mode {Pos, Vec, Quat} mode;
-    rai::Configuration& K;
-    rai::Frame *b, *b2;
-    rai::Vector &vec, &vec2;
-    MyFct(Mode _mode, rai::Configuration &_K,
-          rai::Frame *_b, rai::Vector &_vec, rai::Frame *_b2, rai::Vector &_vec2)
-      : mode(_mode), K(_K), b(_b), b2(_b2), vec(_vec), vec2(_vec2){
+    rai::Configuration& C;
+    rai::Frame *b;
+    rai::Vector &vec;
+    MyFct(Mode _mode, rai::Configuration &_C, rai::Frame *_b, rai::Vector &_vec)
+      : mode(_mode), C(_C), b(_b), vec(_vec){
       VectorFunction::operator= ( [this](const arr& x) -> arr {
         arr y, J;
-        K.setJointState(x);
-        K.setJacModeAs(J);
+        C.setJointState(x);
+        C.setJacModeAs(J);
         switch(mode){
-          case Pos:    K.kinematicsPos(y,J,b,vec); break;
-          case Vec:    K.kinematicsVec(y,J,b,vec); break;
-          case Quat:   K.kinematicsQuat(y,J,b); break;
-//          case RelRot: K.kinematicsRelRot(y,J,b,b2); break;
+          case Pos:    C.kinematicsPos(y,J,b,vec); break;
+          case Vec:    C.kinematicsVec(y,J,b,vec); break;
+          case Quat:   C.kinematicsQuat(y,J,b); break;
         }
         y.J() = J;
         return y;
@@ -97,23 +95,22 @@ void TEST(Kinematics){
   };
 
 //  rai::Configuration G("arm7.g");
-  rai::Configuration G("kinematicTests.g");
+  rai::Configuration C("kinematicTests.g");
 //  rai::Configuration G("../../../../rai-robotModels/pr2/pr2.g");
 //  rai::Configuration G("../../../projects/17-LGP-push/quatJacTest.g");
 //  G.watch(true);
 
   for(uint k=0;k<10;k++){
-    rai::Frame *b = G.frames.rndElem();
-    rai::Frame *b2 = G.frames.rndElem();
+    rai::Frame *b = C.frames.rndElem();
     rai::Vector vec=0, vec2=0;
     vec.setRandom();
     vec2.setRandom();
-    arr x(G.getJointStateDimension());
+    arr x(C.getJointStateDimension());
     rndUniform(x,-.5,.5,false);
 
-    cout <<"kinematicsPos:   "; checkJacobian(MyFct(MyFct::Pos   , G, b, vec, b2, vec2)(), x, 1e-5);
-    cout <<"kinematicsVec:   "; checkJacobian(MyFct(MyFct::Vec   , G, b, vec, b2, vec2)(), x, 1e-5);
-    cout <<"kinematicsQuat:  "; checkJacobian(MyFct(MyFct::Quat  , G, b, vec, b2, vec2)(), x, 1e-5);
+    cout <<"kinematicsPos:   "; checkJacobian(MyFct(MyFct::Pos  , C, b, vec)(), x, 1e-5);
+    cout <<"kinematicsVec:   "; checkJacobian(MyFct(MyFct::Vec  , C, b, vec)(), x, 1e-5);
+    cout <<"kinematicsQuat:  "; checkJacobian(MyFct(MyFct::Quat , C, b, vec)(), x, 1e-5);
 
     //checkJacobian(Convert(T1::f_hess, nullptr), x, 1e-5);
   }
