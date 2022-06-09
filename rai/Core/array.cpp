@@ -2753,8 +2753,8 @@ void SparseMatrix::add(const arr& B, uint lo0, uint lo1, double coeff){
   if(B.nd==2){
     CHECK_LE(lo0+B.d0, Z.d0, "");
     CHECK_LE(lo1+B.d1, Z.d1, "");
-  }else if(B.nd==1){ //add a row vector
-    CHECK_LE(lo1+B.d0, Z.d1, "");
+  }else if(B.nd==1){ //add a column! vector
+    CHECK_LE(lo0+B.d0, Z.d0, "");
   }else NIY;
   uint Nold=Z.N;
   Z.resizeMEM(Nold+B.N, true);
@@ -2766,16 +2766,23 @@ void SparseMatrix::add(const arr& B, uint lo0, uint lo1, double coeff){
     int *e = &elems(Nold,0);
     const intA& vecElems = B.sparseVec().elems;
     for(int i:vecElems){
+      *(e++) = i; //COLUMN vector
       *(e++) = 0;
-      *(e++) = i;
     }
   }else{
     elems.resizeCopy(Nold+B.N, 2);
     int *e = &elems(Nold,0);
-    for(uint i=0;i<B.d0;i++) for(uint j=0;j<B.d1;j++){
-      *(e++) = i;
-      *(e++) = j;
-    }
+    if(B.nd==2){
+      for(uint i=0;i<B.d0;i++) for(uint j=0;j<B.d1;j++){
+        *(e++) = i;
+        *(e++) = j;
+      }
+    }else if(B.nd==1){
+      for(uint i=0;i<B.d0;i++){
+        *(e++) = i; //COLUMN vector
+        *(e++) = 0;
+      }
+    };
   }
   if(coeff){
     for(double* x=&Z.elem(Nold); x!=Z.p+Z.N; x++) (*x) *= coeff;
@@ -2817,6 +2824,10 @@ void SparseMatrix::checkConsistency() const {
   CHECK_EQ(this, Z.special, "");
   CHECK_EQ(elems.d0, Z.N, "");
   CHECK_EQ(elems.d1, 2, "");
+  for(uint i=0; i<Z.N; i++){
+    CHECK_LE(elems(i,0), Z.d0, "");
+    CHECK_LE(elems(i,1), Z.d1, "");
+  }
   if(cols.N){
     CHECK_EQ(rows.N, Z.d0, "");
     CHECK_EQ(cols.N, Z.d1, "");

@@ -43,6 +43,7 @@ enum SkeletonSymbol {
   SY_lift,
 
   SY_stableYPhi,
+  SY_stableOnX,
 
   SY_end,
 };

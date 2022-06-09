@@ -706,10 +706,12 @@ void Configuration::setRandom(uint timeSlices_d1, int verbose){
       for(uint k=0; k<d->dim; k++){
         double lo = d->limits.elem(2*k+0); //lo
         double up = d->limits.elem(2*k+1); //up
-        if(up>=lo) q(k) = rnd.uni(lo,up);
+        if(up>=lo){
+          q(k) = rnd.uni(lo,up);
+          d->q0(k) = q(k); //CRUCIAL to impose a bias to that random initialization
+        }
       }
       d->setDofs(q);
-      d->q0 = q; //CRUCIAL to impose a bias to that random initialization
 
     }else{
       //** GAUSS
@@ -1605,6 +1607,7 @@ void Configuration::kinematicsZero(arr& y, arr& J, uint n) const {
 /// what is the linear velocity of a world point (pos_world) attached to frame a for a given joint velocity?
 void Configuration::jacobian_pos(arr& J, Frame* a, const Vector& pos_world) const {
   CHECK_EQ(&a->C, this, "");
+  CHECK(_state_indexedJoints_areGood, "");
 
   a->ensure_X();
 
@@ -1617,6 +1620,7 @@ void Configuration::jacobian_pos(arr& J, Frame* a, const Vector& pos_world) cons
     Joint* j=a->joint;
     if(j && j->active) {
       uint j_idx=j->qIndex;
+      CHECK_LE(j_idx, q.N, "");
       if(j_idx>=N) if(j->active) CHECK_EQ(j->type, JT_rigid, "");
       if(j_idx<N) {
         if(j->type==JT_hingeX || j->type==JT_hingeY || j->type==JT_hingeZ) {

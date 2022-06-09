@@ -18,6 +18,7 @@ template<> const char* rai::Enum<rai::SkeletonSymbol>::names []= {
   "boxGraspX", "boxGraspY", "boxGraspZ",
   "lift",
   "stableYPhi",
+  "stableOnX",
   "end",
   nullptr
 };

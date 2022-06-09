@@ -257,6 +257,7 @@ struct Joint : Dof, NonCopyable {
   void makeRigid();
   void makeFree(double H_cost=0.);
   void setType(JointType _type);
+  void setGeneric(const char* _code);
   void flip();
 
   void read(const Graph& G);

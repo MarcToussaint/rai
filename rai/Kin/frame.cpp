@@ -1216,6 +1216,13 @@ void rai::Joint::setType(rai::JointType _type) {
   }
 }
 
+void rai::Joint::setGeneric(const char* _code){
+  type = JT_generic;
+  code = _code;
+  dim = getDimFromType();
+  frame->C.reset_q();
+}
+
 void rai::Joint::flip() {
   frame->joint = 0;
   frame = frame->parent;
