@@ -124,16 +124,14 @@ void init_KOMO(pybind11::module& m) {
        pybind11::arg("deltaToStep")=0
                                         )
 
-//  .def("addSwitch_stable",
-//       &KOMO::addSwitch_stable,
-//       "",
-//       pybind11::arg("startTime"),
-//       pybind11::arg("endTime"),
-//       pybind11::arg("prevFromFrame"),
-//       pybind11::arg("fromFrame"),
-//       pybind11::arg("toFrame"),
-//       pybind11::arg("firstSwitch")=true
-//       )
+  .def("addModeSwitch",
+       &KOMO::addModeSwitch,
+       "",
+       pybind11::arg("times"),
+       pybind11::arg("newMode"),
+       pybind11::arg("frames"),
+       pybind11::arg("firstSwitch")=true
+       )
 
 //  .def("addSwitch_magic", &KOMO::addSwitch_magic)
 

@@ -1169,22 +1169,12 @@ bool Configuration::checkConsistency() const {
     for(Dof* j:activeDofs) {
       if(j->mimic) {
         CHECK_EQ(j->qIndex, j->mimic->qIndex, "");
+        CHECK_EQ(j->active, j->mimic->active, "");
       } else {
         CHECK_EQ(j->qIndex, myqdim, "joint indexing is inconsistent");
-//        if(!j->uncertainty)
-          myqdim += j->dim;
-//        else
-//          myqdim += 2*j->dim;
+        myqdim += j->dim;
       }
     }
-#if 0
-    for(ForceExchange* c: forces) {
-//      CHECK_EQ(c->qDim(), 6, "");
-      CHECK_EQ(c->qIndex, myqdim, "joint indexing is inconsistent");
-      myqdim += c->getDimFromType();
-    }
-    CHECK_EQ(myqdim, q.N, "qdim is wrong");
-#endif
 
     //consistency with Q
     for(Frame* f : frames) if(f->joint){
@@ -1194,7 +1184,9 @@ bool Configuration::checkConsistency() const {
       if(j->active){
         for(uint i=0; i<jq.N; i++) CHECK_ZERO(jq.elem(i) - q.elem(j->qIndex+i), 1e-6, "joint vector q and relative transform Q do not match for joint '" <<j->frame->name <<"', index " <<i);
       }else{
-        for(uint i=0; i<jq.N; i++) CHECK_ZERO(jq.elem(i) - qInactive.elem(j->qIndex+i), 1e-6, "joint vector q and relative transform Q do not match for joint '" <<j->frame->name <<"', index " <<i);
+        if(!j->mimic){
+          for(uint i=0; i<jq.N; i++) CHECK_ZERO(jq.elem(i) - qInactive.elem(j->qIndex+i), 1e-6, "joint vector q and relative transform Q do not match for joint '" <<j->frame->name <<"', index " <<i);
+        }
       }
     }
   }

@@ -310,7 +310,7 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
         f->joint->limits = {
                            -.5*on->size(0), .5*on->size(0),
                            -.5*on->size(1), .5*on->size(1),
-                           0,-1 };
+                           -RAI_2PI,RAI_2PI };
         //init heuristic
         f->joint->sampleUniform=1.;
         f->joint->q0 = zeros(3);
