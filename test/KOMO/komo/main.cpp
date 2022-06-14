@@ -34,6 +34,7 @@ void TEST(Easy){
   cout <<"TIME OPTIM: total=" <<sum(komo.getPath_times()) <<komo.getPath_times() <<endl;
   komo.plotTrajectory();
 //  komo.reportProxies();
+//  komo.checkGradients();
 
   komo.view(true, "result");
   while(komo.view_play(true));

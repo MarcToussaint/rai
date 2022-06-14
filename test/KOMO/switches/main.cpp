@@ -80,9 +80,9 @@ void testPickAndPlace(bool keyframesOnly){
   }
 
   //place
-  komo.addModeSwitch({2., -1.}, rai::SY_stable, {"table", "box"}, false);
-  komo.addObjective({2.}, FS_positionDiff, {"box", "table"}, OT_eq, {1e2}, {0,0,.08}); //arr({1,3},{0,0,1e2})
-  komo.addObjective({2.}, FS_vectorZ, {"gripper"}, OT_eq, {1e2}, {0., 0., 1.});
+  komo.addModeSwitch({2., -1.}, rai::SY_stableOn, {"table", "box"}, false);
+//  komo.addObjective({2.}, FS_positionDiff, {"box", "table"}, OT_eq, {1e2}, {0,0,.08}); //arr({1,3},{0,0,1e2})
+//  komo.addObjective({2.}, FS_vectorZ, {"gripper"}, OT_eq, {1e2}, {0., 0., 1.});
 
   if(!keyframesOnly){
     //slow - down - up
@@ -92,7 +92,7 @@ void testPickAndPlace(bool keyframesOnly){
 
   komo.opt.verbose = 4;
   komo.optimize();
-//  komo.checkGradients();
+  //komo.checkGradients();
 
   komo.view(true, "optimized motion");
   for(uint i=0;i<2;i++) komo.view_play(true);
@@ -170,8 +170,8 @@ int main(int argc,char** argv){
   rai::initCmdLine(argc,argv);
 
 //  testGrasp();
-  testPickAndPlace2(false);
-//  testPickAndPlace(true);
+//  testPickAndPlace2(false);
+  testPickAndPlace(false);
 
   return 0;
 }

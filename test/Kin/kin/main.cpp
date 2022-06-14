@@ -80,7 +80,6 @@ void TEST(Kinematics){
       VectorFunction::operator= ( [this](const arr& x) -> arr {
         arr y, J;
         C.setJointState(x);
-        C.setJacModeAs(J);
         switch(mode){
           case Pos:    C.kinematicsPos(y,J,b,vec); break;
           case Vec:    C.kinematicsVec(y,J,b,vec); break;
@@ -99,6 +98,8 @@ void TEST(Kinematics){
 //  rai::Configuration G("../../../../rai-robotModels/pr2/pr2.g");
 //  rai::Configuration G("../../../projects/17-LGP-push/quatJacTest.g");
 //  G.watch(true);
+
+  C.jacMode = C.JM_sparse;
 
   for(uint k=0;k<10;k++){
     rai::Frame *b = C.frames.rndElem();
@@ -154,7 +155,7 @@ void TEST(Graph){
 void TEST(QuaternionKinematics){
   rai::Configuration G("kinematicTestQuat.g");
 
-  for(uint k=0;k<3;k++){
+  for(uint k=0;k<5;k++){
     rai::Quaternion target;
     target.setRandom();
     G.getFrame("ref")->set_Q()->rot = target;
@@ -169,6 +170,7 @@ void TEST(QuaternionKinematics){
       x += 0.05 * Jinv * (conv_quat2arr(target)-y);                  //simulate a time step (only kinematically)
       G.setJointState(x);
       G.watch(false, STRING("test quaternion task spaces -- time " <<t));
+      rai::wait(.01);
     }
   }
 }

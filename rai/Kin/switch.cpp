@@ -151,13 +151,22 @@ rai::Frame* rai::KinematicSwitch::apply(FrameL& frames) const {
     if(to->parent) to->unLink();
 #endif
 
+    if(!jB.isZero()) {
+      Frame *newto = new Frame(to->C);
+      newto->name <<'<' <<to->name;
+      to->setParent(newto, false);
+      to->set_Q() = jB;
+      to=newto;
+      orgX = orgX * (-jB);
+    }
+
     //create a new joint
     to->setParent(from, false, true); //checkForLoop might throw an error
     to->setJoint(jointType);
     CHECK(jointType!=JT_none, "");
 
     if(!jA.isZero()) to->insertPreLink(jA);
-    if(!jB.isZero()) { to->insertPostLink(jB); orgX = orgX * (-jB); }
+    //if(!jB.isZero()) { to->insertPostLink(jB); orgX = orgX * (-jB); }
 
     //initialize to zero, copy, or random
     if(init==SWInit_zero) { //initialize the joint with zero transform

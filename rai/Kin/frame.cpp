@@ -618,10 +618,10 @@ rai::Frame* rai::Frame::insertPostLink(const rai::Transformation& B) {
   for(Frame* b:children) b->parent = f;
   children.clear();
 
+  f->setParent(this, false);
+
   if(!!B) f->Q=B; else f->Q.setZero();
   f->_state_updateAfterTouchingQ();
-
-  f->setParent(this, false);
 
   return f;
 }
@@ -1221,6 +1221,7 @@ void rai::Joint::setGeneric(const char* _code){
   code = _code;
   dim = getDimFromType();
   frame->C.reset_q();
+  for(Joint* m:mimicers) m->setGeneric(code);
 }
 
 void rai::Joint::flip() {

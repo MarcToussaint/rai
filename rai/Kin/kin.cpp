@@ -699,9 +699,10 @@ void Configuration::setRandom(uint timeSlices_d1, int verbose){
       //** UNIFORM
       if(verbose>0) LOG(0) <<"init '" <<d->frame->name <<'[' <<d->frame->ID <<',' <<(timeSlices_d1?d->frame->ID/timeSlices_d1:0) <<']' <<"' uniform in limits " <<d->limits <<" relative to '" <<d->frame->parent->name <<"'";
 
-      d->frame->set_X() = d->frame->prev->ensure_X(); //copy the relative pose (switch joint initialization) from the first application
+      if(d->frame->prev){
+        d->frame->set_X() = d->frame->prev->ensure_X(); //copy the relative pose (switch joint initialization) from the first application
+      }
       arr q = d->calcDofsFromConfig();
-//      arr q(d->dim);
 
       for(uint k=0; k<d->dim; k++){
         double lo = d->limits.elem(2*k+0); //lo

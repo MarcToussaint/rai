@@ -31,7 +31,7 @@ namespace rai {
   struct KOMO_Options {
     RAI_PARAM("KOMO/", int, verbose, 1)
     RAI_PARAM("KOMO/", int, animateOptimization, 0)
-    RAI_PARAM("KOMO/", bool, mimicStable, false)
+    RAI_PARAM("KOMO/", bool, mimicStable, true)
     RAI_PARAM("KOMO/", bool, useFCL, true)
     RAI_PARAM("KOMO/", bool, unscaleEqIneqReport, false)
   };

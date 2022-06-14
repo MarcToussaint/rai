@@ -15,6 +15,7 @@ endif
 
 ifeq ($(JSON),1)
 DEPEND_UBUNTU += libjsoncpp-dev
+CXXFLAGS += -DRAI_JSON
 LIBS += -ljsoncpp
 endif
 
