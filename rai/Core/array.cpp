@@ -1367,14 +1367,18 @@ bool checkGradient(const ScalarFunction& f,
   uint i;
   double md=maxDiff(J, JJ, &i);
   if(md>tolerance && md>fabs(J.elem(i))*tolerance) {
-    RAI_MSG("checkGradient -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)");
+    LOG(-1) <<"checkGradient -- FAILURE -- max diff=" <<md <<" |"<<J.elem(i)<<'-'<<JJ.elem(i)<<"| (stored in files z.J_*)";
     J >>FILE("z.J_analytical");
     JJ >>FILE("z.J_empirical");
-    //cout <<"\nmeasured grad=" <<JJ <<"\ncomputed grad=" <<J <<endl;
+    if(verbose){
+      cout <<"ANALYTICAL: " <<J <<endl;
+      cout <<"EMPIRICAL: " <<JJ <<endl;
+    }
     //HALT("");
     return false;
   } else {
     cout <<"checkGradient -- SUCCESS (max diff error=" <<md <<")" <<endl;
+    if(verbose) cout <<"J:" <<J <<endl;
   }
   return true;
 }

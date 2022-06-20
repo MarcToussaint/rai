@@ -20,7 +20,7 @@ struct ANN;
 
 namespace rai {
 
-enum ShapeType { ST_none=-1, ST_box=0, ST_sphere, ST_capsule, ST_mesh, ST_cylinder, ST_marker, ST_pointCloud, ST_ssCvx, ST_ssBox, ST_ssCylinder, ST_ssBoxElip, ST_quad, ST_camera };
+enum ShapeType { ST_none=-1, ST_box=0, ST_sphere, ST_capsule, ST_mesh, ST_cylinder, ST_marker, ST_pointCloud, ST_ssCvx, ST_ssBox, ST_ssCylinder, ST_ssBoxElip, ST_quad, ST_camera, ST_sdf };
 
 //===========================================================================
 /// a mesh (arrays of vertices, triangles, colors & normals)
@@ -67,6 +67,7 @@ struct Mesh : GLDrawer {
   void setImplicitSurface(ScalarFunction f, double lo=-10., double hi=+10., uint res=100);
   void setImplicitSurface(ScalarFunction f, double xLo, double xHi, double yLo, double yHi, double zLo, double zHi, uint res);
   void setImplicitSurface(const arr& gridValues, const arr& lo, const arr& hi);
+  void setImplicitSurface(const floatA& gridValues, const arr& lo, const arr& hi);
   void setImplicitSurfaceBySphereProjection(ScalarFunction f, double rad, uint fineness=3);
   Mesh& setRandom(uint vertices=10);
   void setGrid(uint X, uint Y);

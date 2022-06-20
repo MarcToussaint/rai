@@ -298,12 +298,14 @@ struct Shape : NonCopyable, GLDrawer {
   arr size;
   ptr<Mesh> _mesh;
   ptr<Mesh> _sscCore;
+  ptr<floatA> _sdf;
   char cont=0;           ///< are contacts registered (or filtered in the callback)
 
   double radius() { if(size.N) return size(-1); return 0.; }
   Enum<ShapeType>& type() { return _type; }
   Mesh& mesh() { if(!_mesh) _mesh = make_shared<Mesh>();  return *_mesh; }
   Mesh& sscCore() { if(!_sscCore) _sscCore = make_shared<Mesh>();  return *_sscCore; }
+  floatA& sdf() { if(!_sdf) _sdf = make_shared<floatA>();  return *_sdf; }
   double alpha() { arr& C=mesh().C; if(C.N==4 || C.N==2) return C(-1); return 1.; }
 
   void createMeshes();

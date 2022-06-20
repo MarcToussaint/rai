@@ -30,7 +30,7 @@ extern void glColorId(uint id);
 //==============================================================================
 
 template<> const char* rai::Enum<rai::ShapeType>::names []= {
-  "box", "sphere", "capsule", "mesh", "cylinder", "marker", "pointCloud", "ssCvx", "ssBox", "ssCylinder", "ssBoxElip", "quad", "camera", nullptr
+  "box", "sphere", "capsule", "mesh", "cylinder", "marker", "pointCloud", "ssCvx", "ssBox", "ssCylinder", "ssBoxElip", "quad", "camera", "sdf", nullptr
 };
 
 //==============================================================================
@@ -1847,6 +1847,12 @@ void rai::Mesh::setImplicitSurface(ScalarFunction f, double xLo, double xHi, dou
     T(i, 1)=mc.trig(i)->v2;
     T(i, 2)=mc.trig(i)->v3;
   }
+}
+
+void rai::Mesh::setImplicitSurface(const floatA& gridValues, const arr& lo, const arr& hi){
+  arr D;
+  copy(D,gridValues);
+  setImplicitSurface(D, lo, hi);
 }
 
 void rai::Mesh::setImplicitSurface(const arr& gridValues, const arr& lo, const arr& hi){

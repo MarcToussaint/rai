@@ -135,16 +135,16 @@ double DistanceFunction_Capsule::f(arr& g, arr& H, const arr& x) {
 /// dx, dy, dz are box-wall-coordinates: width=2*dx...; t is box transform; x is query point in world
 void closestPointOnBox(arr& closest, arr& signs, const rai::Transformation& t, double dx, double dy, double dz, const arr& x) {
   arr rot = t.rot.getArr();
-  arr a_rel = (~rot)*(x-conv_vec2arr(t.pos)); //point in box coordinates
+  arr x_rel = (~rot)*(x-conv_vec2arr(t.pos)); //point in box coordinates
   arr dim = {dx, dy, dz};
   signs.resize(3);
   signs.setZero();
-  closest = a_rel;
-  arr del_abs = fabs(a_rel)-dim;
+  closest = x_rel;
+  arr del_abs = fabs(x_rel)-dim;
   if(del_abs.max()<0.) { //inside
     uint side=del_abs.argmax(); //which side are we closest to?
     //in positive or neg direction?
-    if(a_rel(side)>0) { closest(side) = dim(side);  signs(side)=+1.; }
+    if(x_rel(side)>0) { closest(side) = dim(side);  signs(side)=+1.; }
     else             { closest(side) =-dim(side);  signs(side)=-1.; }
   } else { //outside
     for(uint side=0; side<3; side++) {
@@ -211,10 +211,89 @@ double DistanceFunction_ssBox::f(arr& g, arr& H, const arr& x) {
 //===========================================================================
 
 DistanceFunction_SSSomething::DistanceFunction_SSSomething(const std::shared_ptr<ScalarFunction>& _something, double _r)
-  : something(_something), r(_r) {}
+  : something(_something), r(_r) {
+  ScalarFunction::operator=([this](arr& g, arr& H, const arr& x)->double{ return f(g, H, x); });
+}
 
 double DistanceFunction_SSSomething::f(arr& g, arr& H, const arr& x){
   return (*something)(g, H, x)-r;
+}
+
+//===========================================================================
+
+double interpolate1D(double v0, double v1, double x){
+  return v0*(1.f-x) + v1*x;
+}
+
+double interpolate2D(double v00, double v10, double v01, double v11, double x, double y){
+  double s = interpolate1D(v00, v10, x);
+  double t = interpolate1D(v01, v11, x);
+  return interpolate1D(s, t, y);
+}
+
+double interpolate3D(double v000, double v100, double v010, double v110, double v001, double v101, double v011, double v111, double x, double y, double z) {
+  double s = interpolate2D(v000, v100, v010, v110, x, y);
+  double t = interpolate2D(v001, v101, v011, v111, x, y);
+  return interpolate1D(s, t, z);
+}
+
+DistanceFunction_SDFArray::DistanceFunction_SDFArray(const rai::Transformation& _pose, const floatA& _sdf, const arr& _lo, const arr& _hi)
+  : pose(_pose), sdf(_sdf), lo(_lo), hi(_hi) {
+  ScalarFunction::operator=([this](arr& g, arr& H, const arr& x)->double{ return f(g, H, x); });
+}
+
+double DistanceFunction_SDFArray::f(arr& g, arr& H, const arr& x){
+  arr rot = pose.rot.getArr();
+  arr x_rel = (~rot)*(x-conv_vec2arr(pose.pos)); //point in box coordinates
+
+  for(uint i=0;i<3;i++){ //check outside box
+    if(x_rel.elem(i) <=lo.elem(i) || x_rel.elem(i)>=hi.elem(i)){
+      DistanceFunction_Sphere D(pose, 0.);
+      return D.f(g, H, x);
+    }
+  }
+
+  arr res = arr{(double)sdf.d0-1, (double)sdf.d1-1, (double)sdf.d2-1};
+  res /= (hi-lo);
+  arr fidx = (x_rel-lo) % res;
+
+  arr frac(3), idx(3);
+  for(uint i=0;i<3;i++) frac(i) = modf(fidx(i), &idx(i));
+
+  int _x = idx(0);
+  int _y = idx(1);
+  int _z = idx(2);
+
+  double v000 = sdf(_x+0,_y+0,_z+0);
+  double v100 = sdf(_x+1,_y+0,_z+0);
+  double v010 = sdf(_x+0,_y+1,_z+0);
+  double v110 = sdf(_x+1,_y+1,_z+0);
+  double v001 = sdf(_x+0,_y+0,_z+1);
+  double v101 = sdf(_x+1,_y+0,_z+1);
+  double v011 = sdf(_x+0,_y+1,_z+1);
+  double v111 = sdf(_x+1,_y+1,_z+1);
+  double dx = frac(0);
+  double dy = frac(1);
+  double dz = frac(2);
+
+
+  double f = interpolate3D(v000, v100, v010, v110, v001, v101, v011, v111,
+                           dx,dy,dz);
+
+  if(!!g){
+    g.resize(3).setZero();
+    g(0) = interpolate2D(v100,v110,v101,v111, dy,dz) - interpolate2D(v000,v010,v001,v011, dy,dz);
+    g(1) = interpolate2D(v010,v110,v011,v111, dx,dz) - interpolate2D(v000,v100,v001,v101, dx,dz);
+    g(2) = interpolate2D(v001,v101,v011,v111, dx,dy) - interpolate2D(v000,v100,v010,v110, dx,dy);
+    g *= res;
+    g = rot*g;
+  }
+
+  if(!!H){
+    H.resize(3,3).setZero();
+  }
+
+  return f;
 }
 
 //===========================================================================

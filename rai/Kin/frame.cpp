@@ -350,7 +350,7 @@ void rai::Frame::read(const Graph& ats) {
       joint->read(ats);
     }
   }
-  if(ats["shape"] || ats["mesh"]) { shape = new Shape(*this); shape->read(ats); }
+  if(ats["shape"] || ats["mesh"] || ats["sdf"]) { shape = new Shape(*this); shape->read(ats); }
   if(ats["mass"]) { inertia = new Inertia(*this); inertia->read(ats); }
 
   if(ats["collisionCore"]) {
@@ -1365,6 +1365,7 @@ rai::Shape::Shape(Frame& f, const Shape* copyShape)
     const Shape& s = *copyShape;
     if(s._mesh) _mesh = s._mesh; //shallow shared_ptr copy!
     if(s._sscCore) _sscCore = s._sscCore; //shallow shared_ptr copy!
+    if(s._sdf) _sdf = s._sdf; //shallow shared_ptr copy!
     _type = s._type;
     size = s.size;
     cont = s.cont;
@@ -1411,6 +1412,14 @@ void rai::Shape::read(const Graph& ats) {
       fil.cd_file();
       read_ppm(mesh().texImg, fil.name, true);
 //      cout <<"TEXTURE: " <<mesh().texImg.dim() <<endl;
+    }
+    if(ats.get(str, "sdf"))     { sdf().readTagged(str, "sdf"); }
+    else if(ats.get(fil, "sdf"))     { sdf().readTagged(fil.getIs(false), "sdf"); }
+    if(_sdf){
+      sdf() *= 0.01f;
+      CHECK_EQ(size.N, 3, "need a size for the sdf");
+      if(type()==ST_none) type()=ST_sdf;
+      else CHECK_EQ(type(), ST_sdf, "");
     }
     if(ats.get(d, "meshscale"))  { mesh().scale(d); }
     if(ats.get(x, "meshscale"))  { mesh().scale(x(0), x(1), x(2)); }
@@ -1591,6 +1600,9 @@ void rai::Shape::createMeshes() {
     case rai::ST_pointCloud:
 //      if(!mesh().V.N) LOG(-1) <<"mesh needs to be loaded";
       break;
+    case rai::ST_sdf: {
+      mesh().setImplicitSurface(sdf(), -.5*size, .5*size);
+    } break;
     case rai::ST_quad: {
       byteA tex = mesh().texImg;
       mesh().setQuad(size(0), size(1), tex);
@@ -1661,6 +1673,8 @@ shared_ptr<ScalarFunction> rai::Shape::functional(bool worldCoordinates){
     case rai::ST_none: HALT("shapes should have a type - somehow wrong initialization..."); break;
     case rai::ST_box:
       return make_shared<DistanceFunction_ssBox>(pose, size(0), size(1), size(2), 0.);
+    case rai::ST_marker:
+      return make_shared<DistanceFunction_Sphere>(pose, 0.);
     case rai::ST_sphere:
       return make_shared<DistanceFunction_Sphere>(pose, radius());
     case rai::ST_cylinder:
@@ -1670,13 +1684,13 @@ shared_ptr<ScalarFunction> rai::Shape::functional(bool worldCoordinates){
       //return make_shared<DistanceFunction_SSSomething>(make_shared<DistanceFunction_Cylinder>(pose, size(0), size(1)-size(2)), size(2));
     case rai::ST_capsule:
       return make_shared<DistanceFunction_Capsule>(pose, size(0), size(1));
-    case rai::ST_ssBox: {
+    case rai::ST_ssBox:
       return make_shared<DistanceFunction_ssBox>(pose, size(0), size(1), size(2), size(3));
+    case rai::ST_sdf:
+      return make_shared<DistanceFunction_SDFArray>(pose, sdf(), -.5*size, .5*size);
     default:
       return shared_ptr<ScalarFunction>();
-    }
   }
-
 }
 
 rai::Inertia::Inertia(Frame& f, Inertia* copyInertia) : frame(f), type(BT_dynamic) {

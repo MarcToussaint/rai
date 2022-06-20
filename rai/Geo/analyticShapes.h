@@ -46,4 +46,12 @@ struct DistanceFunction_Capsule : ScalarFunction {
   double f(arr& g, arr& H, const arr& x);
 };
 
+struct DistanceFunction_SDFArray : ScalarFunction {
+  rai::Transformation pose;
+  const floatA& sdf;
+  arr lo, hi;
+  DistanceFunction_SDFArray(const rai::Transformation& _pose, const floatA& _sdf, const arr& _lo, const arr& _hi);
+  double f(arr& g, arr& H, const arr& x);
+};
+
 extern ScalarFunction DistanceFunction_SSBox;
