@@ -7,51 +7,88 @@
 // analytic distance functions
 //
 
-struct DistanceFunction_Sphere : ScalarFunction {
+struct SDF : ScalarFunction {
+  SDF() : ScalarFunction( std::bind(&SDF::f, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3) ) {}
+  ~SDF(){}
+  virtual double f(arr& g, arr& H, const arr& x) = 0;
+
+  arr eval(const arr& samples);
+};
+
+struct SDF_Sphere : SDF {
   rai::Transformation pose; double r;
-  DistanceFunction_Sphere(const rai::Transformation& _pose, double _r);
+  SDF_Sphere(const rai::Transformation& _pose, double _r)
+    : pose(_pose), r(_r) {}
   double f(arr& g, arr& H, const arr& x);
 };
 
-struct DistanceFunction_ssBox : ScalarFunction {
-  rai::Transformation pose; double size_x, size_y, size_z, r;
-  DistanceFunction_ssBox(const rai::Transformation& _pose, double _size_x, double _size_y, double _size_z, double _r=0.);
+struct SDF_ssBox : SDF {
+  rai::Transformation pose;
+  arr size;
+  double r;
+  SDF_ssBox(const rai::Transformation& _pose, const arr& _size, double _r=0.)
+    : pose(_pose), size(_size), r(_r) {}
   double f(arr& g, arr& H, const arr& x);
 };
 
-struct DistanceFunction_super : ScalarFunction {
+struct SDF_SuperQuadric : SDF {
   rai::Transformation pose;
   arr size;
   double degree;
-  DistanceFunction_super(const rai::Transformation& _pose, const arr& _size, double _degree=5.);
+  SDF_SuperQuadric(const rai::Transformation& _pose, const arr& _size, double _degree=5.)
+    : pose(_pose), size(_size), degree(_degree) {}
   double f(arr& g, arr& H, const arr& x);
 };
 
-struct DistanceFunction_SSSomething : ScalarFunction {
-  std::shared_ptr<ScalarFunction> something;
+struct SDF_ssSomething : SDF {
+  std::shared_ptr<SDF> something;
   double r;
-  DistanceFunction_SSSomething(const std::shared_ptr<ScalarFunction>& _something, double _r);
+  SDF_ssSomething(const std::shared_ptr<SDF>& _something, double _r)
+    : something(_something), r(_r) {}
   double f(arr& g, arr& H, const arr& x);
 };
 
-struct DistanceFunction_Cylinder : ScalarFunction {
+struct SDF_Cylinder : SDF {
   rai::Transformation pose; double size_z, r;
-  DistanceFunction_Cylinder(const rai::Transformation& _pose, double _size_z, double _r);
+  SDF_Cylinder(const rai::Transformation& _pose, double _size_z, double _r)
+    : pose(_pose), size_z(_size_z), r(_r) {}
   double f(arr& g, arr& H, const arr& x);
 };
 
-struct DistanceFunction_Capsule : ScalarFunction {
+struct SDF_Capsule : SDF {
   rai::Transformation pose; double size_z, r;
-  DistanceFunction_Capsule(const rai::Transformation& _pose, double _size_z, double _r);
+  SDF_Capsule(const rai::Transformation& _pose, double _size_z, double _r)
+    : pose(_pose), size_z(_size_z), r(_r) {}
   double f(arr& g, arr& H, const arr& x);
 };
 
-struct DistanceFunction_SDFArray : ScalarFunction {
+struct SDF_Blobby : SDF {
+  double f(arr& g, arr& H, const arr& _x){
+    double x=_x(0), y=_x(1), z=_x(2);
+    return x*x*x*x - 5*x*x+ y*y*y*y - 5*y*y + z*z*z*z - 5*z*z + 11.8;
+  }
+};
+
+struct SDF_Torus : SDF {
+  double f(arr& g, arr& H, const arr& _x){
+    double x=_x(0), y=_x(1), z=_x(2);
+    double r=sqrt(x*x + y*y);
+    return z*z + (1.-r)*(1.-r) - .1;
+  }
+};
+
+struct SDF_GridData : SDF {
   rai::Transformation pose;
-  const floatA& sdf;
+  floatA grid;
   arr lo, hi;
-  DistanceFunction_SDFArray(const rai::Transformation& _pose, const floatA& _sdf, const arr& _lo, const arr& _hi);
+  SDF_GridData(const rai::Transformation& _pose, const floatA& _grid, const arr& _lo, const arr& _hi)
+    : pose(_pose), grid(_grid), lo(_lo), hi(_hi) {}
+
+  SDF_GridData(SDF& f, const arr& _lo, const arr& _hi, const uintA& res);
+
   double f(arr& g, arr& H, const arr& x);
 };
+
+//===========================================================================
 
 extern ScalarFunction DistanceFunction_SSBox;

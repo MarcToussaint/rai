@@ -712,7 +712,7 @@ bool checkGradient(const ScalarFunction& f, const arr& x, double tolerance, bool
 bool checkHessian(const ScalarFunction& f, const arr& x, double tolerance, bool verbose=false);
 bool checkJacobian(const VectorFunction& f, const arr& x, double tolerance, bool verbose=false);
 void boundClip(arr& y, const arr& bound_lo, const arr& bound_up);
-bool boundCheck(const arr& x, const arr& bound_lo, const arr& bound_up, double eps=1e-3);
+bool boundCheck(const arr& x, const arr& bound_lo, const arr& bound_up, double eps=1e-3, bool verbose=true);
 
 double NNinv(const arr& a, const arr& b, const arr& Cinv);
 double logNNprec(const arr& a, const arr& b, double prec);

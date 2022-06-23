@@ -1672,22 +1672,22 @@ shared_ptr<ScalarFunction> rai::Shape::functional(bool worldCoordinates){
   switch(_type) {
     case rai::ST_none: HALT("shapes should have a type - somehow wrong initialization..."); break;
     case rai::ST_box:
-      return make_shared<DistanceFunction_ssBox>(pose, size(0), size(1), size(2), 0.);
+      return make_shared<SDF_ssBox>(pose, size(0), size(1), size(2), 0.);
     case rai::ST_marker:
-      return make_shared<DistanceFunction_Sphere>(pose, 0.);
+      return make_shared<SDF_Sphere>(pose, 0.);
     case rai::ST_sphere:
-      return make_shared<DistanceFunction_Sphere>(pose, radius());
+      return make_shared<SDF_Sphere>(pose, radius());
     case rai::ST_cylinder:
-      return make_shared<DistanceFunction_Cylinder>(pose, size(0), size(1));
+      return make_shared<SDF_Cylinder>(pose, size(0), size(1));
     case rai::ST_ssCylinder:
-      return make_shared<DistanceFunction_Cylinder>(pose, size(0), size(1));
+      return make_shared<SDF_Cylinder>(pose, size(0), size(1));
       //return make_shared<DistanceFunction_SSSomething>(make_shared<DistanceFunction_Cylinder>(pose, size(0), size(1)-size(2)), size(2));
     case rai::ST_capsule:
-      return make_shared<DistanceFunction_Capsule>(pose, size(0), size(1));
+      return make_shared<SDF_Capsule>(pose, size(0), size(1));
     case rai::ST_ssBox:
-      return make_shared<DistanceFunction_ssBox>(pose, size(0), size(1), size(2), size(3));
+      return make_shared<SDF_ssBox>(pose, size(0), size(1), size(2), size(3));
     case rai::ST_sdf:
-      return make_shared<DistanceFunction_SDFArray>(pose, sdf(), -.5*size, .5*size);
+      return make_shared<SDF_GridData>(pose, sdf(), -.5*size, .5*size);
     default:
       return shared_ptr<ScalarFunction>();
   }

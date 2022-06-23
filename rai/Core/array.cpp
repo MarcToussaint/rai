@@ -224,15 +224,21 @@ arr grid(const arr& lo, const arr& hi, const uintA& steps) {
   arr X;
   uint i, j, k;
   if(lo.N==1) {
+    double delta=0.;
+    if(steps(0)) delta = (hi(0)-lo(0))/steps(0);
+
     X.resize(steps(0)+1, 1);
-    for(i=0; i<X.d0; i++) X.operator()(i, 0)=lo(0)+(hi(0)-lo(0))*i/steps(0);
+    for(i=0; i<X.d0; i++) X.operator()(i, 0)=lo(0)+delta*i;
     return X;
   }
   if(lo.N==2) {
+    arr delta = zeros(2);
+    for(uint i=0; i<2; i++) if(steps(i)) delta(i) = (hi(i)-lo(i))/steps(i);
+
     X.resize(steps(0)+1, steps(1)+1, 2);
     for(i=0; i<X.d0; i++) for(j=0; j<X.d1; j++) {
-        X.operator()(i, j, 0)=lo(0)+(i?(hi(0)-lo(0))*i/steps(0):0.);
-        X.operator()(i, j, 1)=lo(1)+(j?(hi(1)-lo(1))*j/steps(1):0.);
+        X.operator()(i, j, 0)=lo(0)+delta(0)*i;
+        X.operator()(i, j, 1)=lo(1)+delta(1)*j;
       }
     X.reshape(X.d0*X.d1, 2);
     return X;
@@ -241,12 +247,12 @@ arr grid(const arr& lo, const arr& hi, const uintA& steps) {
     arr delta = zeros(3);
     for(uint i=0; i<3; i++) if(steps(i)) delta(i) = (hi(i)-lo(i))/steps(i);
 
-    X.resize(TUP(steps(2)+1, steps(1)+1, steps(0)+1, 3));
+    X.resize(TUP(steps(0)+1, steps(1)+1, steps(2)+1, 3));
     for(i=0; i<X.d0; i++) for(j=0; j<X.d1; j++) for(k=0; k<X.d2; k++) {
-          X.elem(TUP(i, j, k, 0))=lo(0)+delta(0)*k;
-          X.elem(TUP(i, j, k, 1))=lo(1)+delta(1)*j;
-          X.elem(TUP(i, j, k, 2))=lo(2)+delta(2)*i;
-        }
+      X.elem(TUP(i, j, k, 0))=lo(0)+delta(0)*i;
+      X.elem(TUP(i, j, k, 1))=lo(1)+delta(1)*j;
+      X.elem(TUP(i, j, k, 2))=lo(2)+delta(2)*k;
+    }
     X.reshape(X.d0*X.d1*X.d2, 3);
     return X;
   }
@@ -1445,12 +1451,12 @@ void boundClip(arr& y, const arr& bound_lo, const arr& bound_up) {
   }
 }
 
-bool boundCheck(const arr& x, const arr& bound_lo, const arr& bound_up, double eps){
+bool boundCheck(const arr& x, const arr& bound_lo, const arr& bound_up, double eps, bool verbose){
   bool good=true;
   if(bound_lo.N && bound_up.N) {
     for(uint i=0; i<x.N; i++) if(bound_up.elem(i)>=bound_lo.elem(i)) {
-      if(x.elem(i) < bound_lo.elem(i)-eps){ good=false; LOG(0) <<"x(" <<i <<")=" <<x.elem(i) <<" violates lower bound " <<bound_lo.elem(i); }
-      if(x.elem(i) > bound_up.elem(i)+eps){ good=false;  LOG(0) <<"x(" <<i <<")=" <<x.elem(i) <<" violates upper bound " <<bound_up.elem(i); }
+      if(x.elem(i) < bound_lo.elem(i)-eps){ good=false;  if(verbose) LOG(0) <<"x(" <<i <<")=" <<x.elem(i) <<" violates lower bound " <<bound_lo.elem(i); else break; }
+      if(x.elem(i) > bound_up.elem(i)+eps){ good=false;  if(verbose) LOG(0) <<"x(" <<i <<")=" <<x.elem(i) <<" violates upper bound " <<bound_up.elem(i); else break; }
     }
   }
   return good;
@@ -2829,8 +2835,8 @@ void SparseMatrix::checkConsistency() const {
   CHECK_EQ(elems.d0, Z.N, "");
   CHECK_EQ(elems.d1, 2, "");
   for(uint i=0; i<Z.N; i++){
-    CHECK_LE(elems(i,0), Z.d0, "");
-    CHECK_LE(elems(i,1), Z.d1, "");
+    CHECK_LE(elems(i,0), (int)Z.d0, "");
+    CHECK_LE(elems(i,1), (int)Z.d1, "");
   }
   if(cols.N){
     CHECK_EQ(rows.N, Z.d0, "");

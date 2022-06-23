@@ -1,10 +1,18 @@
 #include "analyticShapes.h"
 
-DistanceFunction_Sphere::DistanceFunction_Sphere(const rai::Transformation& _pose, double _r):pose(_pose), r(_r) {
-  ScalarFunction::operator=([this](arr& g, arr& H, const arr& x)->double{ return f(g, H, x); });
+//===========================================================================
+
+arr SDF::eval(const arr& samples){
+  CHECK_EQ(samples.nd, 2, "");
+  CHECK_EQ(samples.d1, 3, "");
+  arr y(samples.d0);
+  for(uint i=0;i<y.N;i++) y.elem(i) = f(NoArr, NoArr, samples[i]);
+  return y;
 }
 
-double DistanceFunction_Sphere::f(arr& g, arr& H, const arr& x) {
+//===========================================================================
+
+double SDF_Sphere::f(arr& g, arr& H, const arr& x) {
   arr d = x-conv_vec2arr(pose.pos);
   double len = length(d);
   double eps=1e-10;
@@ -33,14 +41,11 @@ double DistanceFunction_Sphere::f(arr& g, arr& H, const arr& x) {
 
 //===========================================================================
 
-DistanceFunction_Cylinder::DistanceFunction_Cylinder(const rai::Transformation& _pose, double _size_z, double _r):pose(_pose), size_z(_size_z), r(_r) {
-  ScalarFunction::operator=([this](arr& g, arr& H, const arr& x)->double{ return f(g, H, x); });
-}
-
-double DistanceFunction_Cylinder::f(arr& g, arr& H, const arr& x) {
+double SDF_Cylinder::f(arr& g, arr& H, const arr& x) {
   arr z = conv_vec2arr(pose.rot.getZ());
   arr c = conv_vec2arr(pose.pos);
-  arr b = scalarProduct(x-c, z) * z;
+  double zcoord = scalarProduct(x-c, z);
+  arr b = zcoord * z;
   arr a = (x-c) - b;
   arr I(3, 3);
   double la = length(a);
@@ -48,8 +53,18 @@ double DistanceFunction_Cylinder::f(arr& g, arr& H, const arr& x) {
   arr aaTovasq = 1/(la*la) * (a^a);
   arr zzT = z^z;
 
-  if(la<1e-10 || lb<1e-10){
-    HALT("compare to DistanceFunction_Capsule method..");
+  if(la<1e-10){
+    if(!!H) H.resize(x.N, x.N).setZero();
+    if(zcoord > .5*size_z){
+      if(!!g) g = z;
+      return zcoord - .5*size_z;
+    }else if(-zcoord > .5*size_z) {
+      if(!!g) g = -z;
+      return (-zcoord - .5*size_z);
+    }else{
+      if(!!g) g.resize(x.N).setZero();
+      return -r;
+    }
   }
 
   if(lb < size_z/2.) {   // x projection on z is inside cyl
@@ -88,11 +103,7 @@ double DistanceFunction_Cylinder::f(arr& g, arr& H, const arr& x) {
 
 //===========================================================================
 
-DistanceFunction_Capsule::DistanceFunction_Capsule(const rai::Transformation& _pose, double _size_z,  double _r):pose(_pose), size_z(_size_z), r(_r) {
-  ScalarFunction::operator=([this](arr& g, arr& H, const arr& x)->double{ return f(g, H, x); });
-}
-
-double DistanceFunction_Capsule::f(arr& g, arr& H, const arr& x) {
+double SDF_Capsule::f(arr& g, arr& H, const arr& x) {
   arr z = conv_vec2arr(pose.rot.getZ());
   arr c = conv_vec2arr(pose.pos);
   double zcoord = scalarProduct(x-c, z);
@@ -102,9 +113,17 @@ double DistanceFunction_Capsule::f(arr& g, arr& H, const arr& x) {
   double la = length(a);
 
   if(la<1e-10){
-    if(!!g) g.resize(x.N).setZero();
     if(!!H) H.resize(x.N, x.N).setZero();
-    return -r;
+    if(zcoord > .5*size_z){
+      if(!!g) g = z;
+      return zcoord - .5*size_z - r;
+    }else if(-zcoord > .5*size_z) {
+      if(!!g) g = -z;
+      return (-zcoord - .5*size_z) - r;
+    }else{
+      if(!!g) g.resize(x.N).setZero();
+      return -r;
+    }
   }
 
   arr aaTovasq = 1/(la*la) * (a^a);
@@ -157,15 +176,11 @@ void closestPointOnBox(arr& closest, arr& signs, const rai::Transformation& t, d
 
 //===========================================================================
 
-DistanceFunction_ssBox::DistanceFunction_ssBox(const rai::Transformation& _pose, double _size_x, double _size_y, double _size_z, double _r)
-  : pose(_pose), size_x(_size_x), size_y(_size_y), size_z(_size_z), r(_r) {
-  ScalarFunction::operator=([this](arr& g, arr& H, const arr& x)->double{ return f(g, H, x); });
-}
-
-double DistanceFunction_ssBox::f(arr& g, arr& H, const arr& x) {
+double SDF_ssBox::f(arr& g, arr& H, const arr& x) {
   arr rot = pose.rot.getArr();
   arr x_rel = (~rot)*(x-conv_vec2arr(pose.pos)); //point in box coordinates
-  arr box = {.5*size_x-r, .5*size_y-r, .5*size_z-r};
+  arr box = .5*size;
+  if(r) box -= r;
 
   arr closest = x_rel;
   arr del_abs = fabs(x_rel)-box;
@@ -210,19 +225,14 @@ double DistanceFunction_ssBox::f(arr& g, arr& H, const arr& x) {
 
 //===========================================================================
 
-DistanceFunction_SSSomething::DistanceFunction_SSSomething(const std::shared_ptr<ScalarFunction>& _something, double _r)
-  : something(_something), r(_r) {
-  ScalarFunction::operator=([this](arr& g, arr& H, const arr& x)->double{ return f(g, H, x); });
-}
-
-double DistanceFunction_SSSomething::f(arr& g, arr& H, const arr& x){
+double SDF_ssSomething::f(arr& g, arr& H, const arr& x){
   return (*something)(g, H, x)-r;
 }
 
 //===========================================================================
 
 double interpolate1D(double v0, double v1, double x){
-  return v0*(1.f-x) + v1*x;
+  return v0*(1.-x) + v1*x;
 }
 
 double interpolate2D(double v00, double v10, double v01, double v11, double x, double y){
@@ -237,23 +247,47 @@ double interpolate3D(double v000, double v100, double v010, double v110, double 
   return interpolate1D(s, t, z);
 }
 
-DistanceFunction_SDFArray::DistanceFunction_SDFArray(const rai::Transformation& _pose, const floatA& _sdf, const arr& _lo, const arr& _hi)
-  : pose(_pose), sdf(_sdf), lo(_lo), hi(_hi) {
-  ScalarFunction::operator=([this](arr& g, arr& H, const arr& x)->double{ return f(g, H, x); });
+SDF_GridData::SDF_GridData(SDF& f, const arr& _lo, const arr& _hi, const uintA& res)
+  : pose(0), lo(_lo), hi(_hi) {
+  //compute grid data
+#if 1
+  arr samples = ::grid(lo, hi, res);
+  arr values = f.eval(samples);
+  copy(grid, values);
+  grid.reshape(res+1u);
+#else
+  grid.resize(res+1u);
+  arr x(3);
+  arr skip = (hi - lo) / convert<double>(res);
+  for(uint k=0; k<res(2); k++) {
+    x(2) = lo(2) + k*skip(2);
+    for(uint j=0; j<res(1); j++) {
+      x(1) = lo(1) + j*skip(1);
+      for(uint i=0; i<res(0); i++) {
+        x(0) = lo(0) + i*skip(0);
+        grid(i,j,k) = f(NoArr, NoArr, x) ;
+      }
+    }
+  }
+#endif
 }
 
-double DistanceFunction_SDFArray::f(arr& g, arr& H, const arr& x){
+double SDF_GridData::f(arr& g, arr& H, const arr& x){
   arr rot = pose.rot.getArr();
   arr x_rel = (~rot)*(x-conv_vec2arr(pose.pos)); //point in box coordinates
 
+  arr gBox, HBox;
+  double fBox=0.;
   for(uint i=0;i<3;i++){ //check outside box
-    if(x_rel.elem(i) <=lo.elem(i) || x_rel.elem(i)>=hi.elem(i)){
-      DistanceFunction_Sphere D(pose, 0.);
-      return D.f(g, H, x);
+    if(!boundCheck(x_rel, lo, hi, 0., false)){
+      boundClip(x_rel, lo, hi);
+      arr size = hi - lo;
+      SDF_ssBox B(pose, size);
+      fBox = B.f(gBox, HBox, x);
     }
   }
 
-  arr res = arr{(double)sdf.d0-1, (double)sdf.d1-1, (double)sdf.d2-1};
+  arr res = arr{(double)grid.d0-1, (double)grid.d1-1, (double)grid.d2-1};
   res /= (hi-lo);
   arr fidx = (x_rel-lo) % res;
 
@@ -263,18 +297,22 @@ double DistanceFunction_SDFArray::f(arr& g, arr& H, const arr& x){
   int _x = idx(0);
   int _y = idx(1);
   int _z = idx(2);
-
-  double v000 = sdf(_x+0,_y+0,_z+0);
-  double v100 = sdf(_x+1,_y+0,_z+0);
-  double v010 = sdf(_x+0,_y+1,_z+0);
-  double v110 = sdf(_x+1,_y+1,_z+0);
-  double v001 = sdf(_x+0,_y+0,_z+1);
-  double v101 = sdf(_x+1,_y+0,_z+1);
-  double v011 = sdf(_x+0,_y+1,_z+1);
-  double v111 = sdf(_x+1,_y+1,_z+1);
   double dx = frac(0);
   double dy = frac(1);
   double dz = frac(2);
+
+  if(_x+1==(int)grid.d0 && dx<1e-10){ _x--; dx=1.; }
+  if(_y+1==(int)grid.d1 && dy<1e-10){ _y--; dy=1.; }
+  if(_z+1==(int)grid.d2 && dz<1e-10){ _z--; dz=1.; }
+
+  double v000 = grid(_x+0,_y+0,_z+0);
+  double v100 = grid(_x+1,_y+0,_z+0);
+  double v010 = grid(_x+0,_y+1,_z+0);
+  double v110 = grid(_x+1,_y+1,_z+0);
+  double v001 = grid(_x+0,_y+0,_z+1);
+  double v101 = grid(_x+1,_y+0,_z+1);
+  double v011 = grid(_x+0,_y+1,_z+1);
+  double v111 = grid(_x+1,_y+1,_z+1);
 
 
   double f = interpolate3D(v000, v100, v010, v110, v001, v101, v011, v111,
@@ -293,17 +331,18 @@ double DistanceFunction_SDFArray::f(arr& g, arr& H, const arr& x){
     H.resize(3,3).setZero();
   }
 
+  if(fBox){
+    f += fBox;
+    if(!!g) g += gBox;
+    if(!!H) H += HBox;
+  }
+
   return f;
 }
 
 //===========================================================================
 
-DistanceFunction_super::DistanceFunction_super(const rai::Transformation& _pose, const arr& _size, double _degree)
-  : pose(_pose), size(_size), degree(_degree) {
-  ScalarFunction::operator=([this](arr& g, arr& H, const arr& x)->double{ return f(g, H, x); });
-}
-
-double DistanceFunction_super::f(arr& g, arr& H, const arr& x) {
+double SDF_SuperQuadric::f(arr& g, arr& H, const arr& x) {
   double fx=0;
   if(!!g) g.resize(3).setZero();
   if(!!H) H.resize(3,3).setZero();
