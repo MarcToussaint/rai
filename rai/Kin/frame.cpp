@@ -1413,10 +1413,9 @@ void rai::Shape::read(const Graph& ats) {
       read_ppm(mesh().texImg, fil.name, true);
 //      cout <<"TEXTURE: " <<mesh().texImg.dim() <<endl;
     }
-    if(ats.get(str, "sdf"))     { sdf().readTagged(str, "sdf"); }
-    else if(ats.get(fil, "sdf"))     { sdf().readTagged(fil.getIs(false), "sdf"); }
+    if(ats.get(str, "sdf"))      { sdf().read(FILE(str)); }
+    else if(ats.get(fil, "sdf")) { sdf().read(fil); }
     if(_sdf){
-      sdf() *= 0.01f;
       CHECK_EQ(size.N, 3, "need a size for the sdf");
       if(type()==ST_none) type()=ST_sdf;
       else CHECK_EQ(type(), ST_sdf, "");
@@ -1601,7 +1600,7 @@ void rai::Shape::createMeshes() {
 //      if(!mesh().V.N) LOG(-1) <<"mesh needs to be loaded";
       break;
     case rai::ST_sdf: {
-      mesh().setImplicitSurface(sdf(), -.5*size, .5*size);
+      mesh().setImplicitSurface(sdf().gridData, sdf().lo, sdf().up);
     } break;
     case rai::ST_quad: {
       byteA tex = mesh().texImg;
@@ -1672,7 +1671,7 @@ shared_ptr<ScalarFunction> rai::Shape::functional(bool worldCoordinates){
   switch(_type) {
     case rai::ST_none: HALT("shapes should have a type - somehow wrong initialization..."); break;
     case rai::ST_box:
-      return make_shared<SDF_ssBox>(pose, size(0), size(1), size(2), 0.);
+      return make_shared<SDF_ssBox>(pose, size, 0.);
     case rai::ST_marker:
       return make_shared<SDF_Sphere>(pose, 0.);
     case rai::ST_sphere:
@@ -1685,9 +1684,10 @@ shared_ptr<ScalarFunction> rai::Shape::functional(bool worldCoordinates){
     case rai::ST_capsule:
       return make_shared<SDF_Capsule>(pose, size(0), size(1));
     case rai::ST_ssBox:
-      return make_shared<SDF_ssBox>(pose, size(0), size(1), size(2), size(3));
+      return make_shared<SDF_ssBox>(pose, size);
     case rai::ST_sdf:
-      return make_shared<SDF_GridData>(pose, sdf(), -.5*size, .5*size);
+      CHECK(_sdf, "");
+      return _sdf;
     default:
       return shared_ptr<ScalarFunction>();
   }

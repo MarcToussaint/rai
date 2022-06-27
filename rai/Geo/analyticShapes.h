@@ -13,6 +13,11 @@ struct SDF : ScalarFunction {
   virtual double f(arr& g, arr& H, const arr& x) = 0;
 
   arr eval(const arr& samples);
+  floatA evalFloat(const arr& samples);
+  void viewSlice(OpenGL& gl, double z, const arr& lo, const arr& hi);
+  void animateSlices(const arr& lo, const arr& hi, bool wait=true);
+
+  arr projectNewton(const arr& x0, double maxStep=.1);
 };
 
 struct SDF_Sphere : SDF {
@@ -27,7 +32,7 @@ struct SDF_ssBox : SDF {
   arr size;
   double r;
   SDF_ssBox(const rai::Transformation& _pose, const arr& _size, double _r=0.)
-    : pose(_pose), size(_size), r(_r) {}
+      : pose(_pose), size(_size), r(_r) { if(size.N==4){ r=size(3); size.resizeCopy(3); } }
   double f(arr& g, arr& H, const arr& x);
 };
 
@@ -78,16 +83,22 @@ struct SDF_Torus : SDF {
 };
 
 struct SDF_GridData : SDF {
-  rai::Transformation pose;
-  floatA grid;
-  arr lo, hi;
-  SDF_GridData(const rai::Transformation& _pose, const floatA& _grid, const arr& _lo, const arr& _hi)
-    : pose(_pose), grid(_grid), lo(_lo), hi(_hi) {}
+  rai::Transformation pose=0;
+  floatA gridData;
+  arr lo, up;
+  SDF_GridData(const rai::Transformation& _pose, const floatA& _data, const arr& _lo, const arr& _up)
+    : pose(_pose), gridData(_data), lo(_lo), up(_up) {}
 
   SDF_GridData(SDF& f, const arr& _lo, const arr& _hi, const uintA& res);
+  SDF_GridData() {}
+  SDF_GridData(istream& is) { read(is); }
 
   double f(arr& g, arr& H, const arr& x);
+
+  void write(std::ostream& os) const;
+  void read(std::istream& is);
 };
+stdPipes(SDF_GridData)
 
 //===========================================================================
 

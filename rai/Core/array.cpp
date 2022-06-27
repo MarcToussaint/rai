@@ -205,7 +205,8 @@ template<> Array<double> Array<double>::J_reset() {
   template<> SparseMatrix& Array<type>::sparse() { NIY; return *(new SparseMatrix(NoArr)); } \
   template<> const SparseMatrix& Array<type>::sparse() const{ NIY; return *(new SparseMatrix(NoArr)); } \
   template<> RowShifted& Array<type>::rowShifted() { NIY; return *(new RowShifted(NoArr)); } \
-  template<> const RowShifted& Array<type>::rowShifted() const{ NIY; return *(new RowShifted(NoArr)); }
+  template<> const RowShifted& Array<type>::rowShifted() const{ NIY; return *(new RowShifted(NoArr)); } \
+  template<> Array<type>& Array<type>::J() { NIY; }
 NONSENSE(float)
 NONSENSE(uint)
 NONSENSE(int)

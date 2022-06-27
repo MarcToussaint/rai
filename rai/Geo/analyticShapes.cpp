@@ -1,5 +1,8 @@
 #include "analyticShapes.h"
 
+#include "../Gui/opengl.h"
+#include "../Optim/newton.h"
+
 //===========================================================================
 
 arr SDF::eval(const arr& samples){
@@ -7,6 +10,68 @@ arr SDF::eval(const arr& samples){
   CHECK_EQ(samples.d1, 3, "");
   arr y(samples.d0);
   for(uint i=0;i<y.N;i++) y.elem(i) = f(NoArr, NoArr, samples[i]);
+  return y;
+}
+
+floatA SDF::evalFloat(const arr& samples){
+  CHECK_EQ(samples.nd, 2, "");
+  CHECK_EQ(samples.d1, 3, "");
+  floatA y(samples.d0);
+  for(uint i=0;i<y.N;i++) y.elem(i) = f(NoArr, NoArr, samples[i]);
+  return y;
+}
+
+void SDF::viewSlice(OpenGL& gl, double z, const arr& lo, const arr& hi){
+  gl.resize(505, 505);
+
+  arr samples = ::grid({lo(0), lo(1), z}, {hi(0), hi(1), z}, {100, 100, 0});
+  arr values = eval(samples);
+  values.reshape(101,101);
+  gl.displayRedBlue(values, false, 5.);
+}
+
+void SDF::animateSlices(const arr& lo, const arr& hi, bool wait){
+  OpenGL gl;
+  for(double z=lo(2);z<=hi(2);z += (hi(2)-lo(2))/20.){
+    viewSlice(gl, z, lo, hi);
+    gl.text <<" z=" <<z;
+    if(wait) gl.watch();
+  }
+}
+
+arr SDF::projectNewton(const arr& x0, double maxStep){
+  ScalarFunction distSqr = [this, &x0](arr& g, arr& H, const arr& x){
+    double d = f(g, H, x);
+    if(!!H) H *= 2.*d;
+    if(!!H) H += 2.*(g^g);
+    if(!!g) g *= 2.*d;
+
+
+    double w=1.;
+    arr c = (x-x0);
+    if(!!g) g += (2.*w)*c;
+    if(!!H) H += (2.*w)*eye(3);
+
+    return d*d + w*sumOfSqr(c);
+  };
+
+  arr y = x0;
+//  checkGradient(distSqr, y, 1e-6);
+//  checkHessian(distSqr, y, 1e-6);
+//  checkGradient(*this, y, 1e-6);
+//  checkHessian(*this, y, 1e-6);
+
+  OptNewton newton(y, distSqr, rai::OptOptions()
+                   .set_verbose(0)
+                   .set_maxStep(maxStep)
+                   .set_damping(1e-10) );
+  newton.run();
+
+  checkGradient(distSqr, y, 1e-4);
+//  checkHessian(distSqr, y, 1e-6);
+//  checkGradient(*this, y, 1e-6);
+//  checkHessian(*this, y, 1e-6);
+
   return y;
 }
 
@@ -248,13 +313,13 @@ double interpolate3D(double v000, double v100, double v010, double v110, double 
 }
 
 SDF_GridData::SDF_GridData(SDF& f, const arr& _lo, const arr& _hi, const uintA& res)
-  : pose(0), lo(_lo), hi(_hi) {
+  : lo(_lo), up(_hi) {
   //compute grid data
 #if 1
-  arr samples = ::grid(lo, hi, res);
+  arr samples = ::grid(lo, up, res);
   arr values = f.eval(samples);
-  copy(grid, values);
-  grid.reshape(res+1u);
+  copy(gridData, values);
+  gridData.reshape(res+1u);
 #else
   grid.resize(res+1u);
   arr x(3);
@@ -279,16 +344,20 @@ double SDF_GridData::f(arr& g, arr& H, const arr& x){
   arr gBox, HBox;
   double fBox=0.;
   for(uint i=0;i<3;i++){ //check outside box
-    if(!boundCheck(x_rel, lo, hi, 0., false)){
-      boundClip(x_rel, lo, hi);
-      arr size = hi - lo;
-      SDF_ssBox B(pose, size);
+    if(!boundCheck(x_rel, lo+.01, up-.01, 0., false)){
+      boundClip(x_rel, lo+.01, up-.01);
+      arr size = up - lo - .02;
+      arr center = .5*(up+lo);
+      rai::Transformation boxPose=pose;
+      boxPose.addRelativeTranslation(center);
+      SDF_ssBox B(boxPose, size);
       fBox = B.f(gBox, HBox, x);
+      CHECK(fBox>=0., "");
     }
   }
 
-  arr res = arr{(double)grid.d0-1, (double)grid.d1-1, (double)grid.d2-1};
-  res /= (hi-lo);
+  arr res = arr{(double)gridData.d0-1, (double)gridData.d1-1, (double)gridData.d2-1};
+  res /= (up-lo);
   arr fidx = (x_rel-lo) % res;
 
   arr frac(3), idx(3);
@@ -301,18 +370,18 @@ double SDF_GridData::f(arr& g, arr& H, const arr& x){
   double dy = frac(1);
   double dz = frac(2);
 
-  if(_x+1==(int)grid.d0 && dx<1e-10){ _x--; dx=1.; }
-  if(_y+1==(int)grid.d1 && dy<1e-10){ _y--; dy=1.; }
-  if(_z+1==(int)grid.d2 && dz<1e-10){ _z--; dz=1.; }
+  if(_x+1==(int)gridData.d0 && dx<1e-10){ _x--; dx=1.; }
+  if(_y+1==(int)gridData.d1 && dy<1e-10){ _y--; dy=1.; }
+  if(_z+1==(int)gridData.d2 && dz<1e-10){ _z--; dz=1.; }
 
-  double v000 = grid(_x+0,_y+0,_z+0);
-  double v100 = grid(_x+1,_y+0,_z+0);
-  double v010 = grid(_x+0,_y+1,_z+0);
-  double v110 = grid(_x+1,_y+1,_z+0);
-  double v001 = grid(_x+0,_y+0,_z+1);
-  double v101 = grid(_x+1,_y+0,_z+1);
-  double v011 = grid(_x+0,_y+1,_z+1);
-  double v111 = grid(_x+1,_y+1,_z+1);
+  double v000 = gridData(_x+0,_y+0,_z+0);
+  double v100 = gridData(_x+1,_y+0,_z+0);
+  double v010 = gridData(_x+0,_y+1,_z+0);
+  double v110 = gridData(_x+1,_y+1,_z+0);
+  double v001 = gridData(_x+0,_y+0,_z+1);
+  double v101 = gridData(_x+1,_y+0,_z+1);
+  double v011 = gridData(_x+0,_y+1,_z+1);
+  double v111 = gridData(_x+1,_y+1,_z+1);
 
 
   double f = interpolate3D(v000, v100, v010, v110, v001, v101, v011, v111,
@@ -331,13 +400,26 @@ double SDF_GridData::f(arr& g, arr& H, const arr& x){
     H.resize(3,3).setZero();
   }
 
+  double boxFactor=10.;
   if(fBox){
-    f += fBox;
-    if(!!g) g += gBox;
-    if(!!H) H += HBox;
+    f += boxFactor * fBox;
+    if(!!g) g += boxFactor * gBox;
+    if(!!H) H += boxFactor * HBox;
   }
 
   return f;
+}
+
+void SDF_GridData::write(std::ostream& os) const {
+  lo.writeTagged(os,"lo");
+  up.writeTagged(os,"up");
+  gridData.writeTagged(os, "sdf", true);
+}
+
+void SDF_GridData::read(std::istream& is){
+  lo.readTagged(is,"lo");
+  up.readTagged(is,"up");
+  gridData.readTagged(is, "sdf");
 }
 
 //===========================================================================
