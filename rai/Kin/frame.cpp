@@ -11,7 +11,7 @@
 #include "uncertainty.h"
 #include "forceExchange.h"
 #include "dof_particles.h"
-#include "../Geo/analyticShapes.h"
+#include "../Geo/signedDistanceFunctions.h"
 #include <climits>
 
 #ifdef RAI_GL

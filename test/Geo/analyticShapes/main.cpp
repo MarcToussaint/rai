@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <GL/gl.h>
 
-#include <Geo/analyticShapes.h>
+#include <Geo/signedDistanceFunctions.h>
 #include <Geo/mesh.h>
 #include <Gui/opengl.h>
 
@@ -90,7 +90,7 @@ void TEST(DistanceFunctions2) {
 
     bool suc=true;
     suc &= checkGradient(DistanceFunction_SSBox, x, 1e-6);
-//    suc &= checkHessian(DistanceFunction_SSBox, x, 1e-6);
+//    suc &= checkHessian(SDF_SSBox, x, 1e-6);
     if(!suc){
       arr g,H;
       cout <<"f=" <<DistanceFunction_SSBox(g,H,x); //set breakpoint here;
@@ -100,7 +100,7 @@ void TEST(DistanceFunctions2) {
 
   //-- display
 //  rai::Mesh m;
-//  m.setImplicitSurface(DistanceFunction_SSBox,-10.,10.,100); //only works for 3D ScalarFunction
+//  m.setImplicitSurface(SDF_SSBox,-10.,10.,100); //only works for 3D ScalarFunction
 //  OpenGL gl;
 //  gl.add(m);
 //  gl.watch();

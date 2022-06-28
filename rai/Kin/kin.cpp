@@ -22,7 +22,6 @@
 #include "../Geo/fclInterface.h"
 #include "../Geo/qhull.h"
 #include "../Geo/mesh_readAssimp.h"
-#include "../GeoOptim/geoOptim.h"
 #include "../Gui/opengl.h"
 #include "../Algo/algos.h"
 #include <iomanip>

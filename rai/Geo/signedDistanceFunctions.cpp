@@ -1,4 +1,4 @@
-#include "analyticShapes.h"
+#include "signedDistanceFunctions.h"
 
 #include "../Gui/opengl.h"
 #include "../Optim/newton.h"

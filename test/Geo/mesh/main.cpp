@@ -4,7 +4,7 @@
 #include <Geo/mesh.h>
 #include <Gui/opengl.h>
 #include <Geo/qhull.h>
-#include <Geo/analyticShapes.h>
+#include <Geo/signedDistanceFunctions.h>
 
 void drawInit(void*, OpenGL& gl){
   glStandardLight(nullptr, gl);
@@ -127,9 +127,9 @@ void TEST(DistanceFunctions) {
   gl.add(m);
 
   rai::Array<ScalarFunction*> fcts = {
-    new DistanceFunction_Sphere(t, 1.),
-    new DistanceFunction_ssBox(t, 1., 2., 3., 1.),
-    new DistanceFunction_Cylinder(t, 2., 1.)
+    new SDF_Sphere(t, 1.),
+    new SDF_ssBox(t, arr{1., 2., 3.}, 1.),
+    new SDF_Cylinder(t, 2., 1.)
   };
 
   for(ScalarFunction* f: fcts){
@@ -163,7 +163,7 @@ void TEST(DistanceFunctions2) {
 
     bool suc=true;
     suc &= checkGradient(DistanceFunction_SSBox, x, 1e-6);
-//    suc &= checkHessian(DistanceFunction_SSBox, x, 1e-6);
+//    suc &= checkHessian(SDF_SSBox, x, 1e-6);
     if(!suc){
       arr g,H;
       cout <<"f=" <<DistanceFunction_SSBox(g,H,x); //set breakpoint here;

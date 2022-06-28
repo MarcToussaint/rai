@@ -12,7 +12,7 @@
 #include "../Geo/geo.h"
 #include "../Core/graph.h"
 #include "../Geo/mesh.h"
-#include "../Geo/analyticShapes.h"
+#include "../Geo/signedDistanceFunctions.h"
 
 /* TODO:
  * replace the types by more fundamental:
