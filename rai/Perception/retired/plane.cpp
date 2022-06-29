@@ -22,7 +22,7 @@ double CostFct_PlanePoints::f() { return sumOfSqr(y); }
 arr CostFct_PlanePoints::df_transform() {
   arr df_translation = (2. * sum(y)) * ~n;
   arr J;
-  tensorPermutation(J, r.getMatrixJacobian(), TUP(0, 2, 1)); //account for the transpose of R!!
+  tensorPermutation(J, r.getMatrixJacobian(), uintA{0, 2, 1}); //account for the transpose of R!!
   arr df_quaternion = 2. * (~y * X) * ~(J * n);
   return cat(df_translation, df_quaternion);
 }

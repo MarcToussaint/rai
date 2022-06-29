@@ -228,7 +228,7 @@ void Skeleton::getKeyframeConfiguration(Configuration& C, int step, int verbose)
   CHECK(komo, "");
   CHECK_EQ(komo->k_order, 1, "");
   C.copy(komo->world);
-  for(ptr<KinematicSwitch>& sw:komo->switches) {
+  for(shared_ptr<KinematicSwitch>& sw:komo->switches) {
     int s = sw->timeOfApplication;
     if(s<=step){
       if(verbose){ LOG(0) <<"applying switch:"; sw->write(cout, C.frames); cout <<endl; }
@@ -245,7 +245,7 @@ SkeletonTranscription Skeleton::nlp(uint stepsPerPhase){
   ret.komo->setModel(*C, collisions);
   setKOMO(*ret.komo, rai::_sequence);
 #else
-  ptr<KOMO> komo = ret.komo;
+  shared_ptr<KOMO> komo = ret.komo;
   double maxPhase = getMaxPhase();
   komo->clearObjectives();
 
@@ -270,7 +270,7 @@ SkeletonTranscription Skeleton::nlp_finalSlice(){
   SkeletonTranscription ret;
   ret.komo=make_shared<KOMO>();
   ret.komo->opt.verbose=verbose;
-  ptr<KOMO> komo = ret.komo;
+  shared_ptr<KOMO> komo = ret.komo;
 
   double maxPhase = getMaxPhase();
   komo->clearObjectives();
@@ -322,7 +322,7 @@ SkeletonTranscription Skeleton::nlp_finalSlice(){
   finalS.setKOMO(*komo);
 
   //-- deactivate all velocity objectives except for transition
-  for(ptr<Objective>& o:komo->objectives) {
+  for(shared_ptr<Objective>& o:komo->objectives) {
     if(o->feat->order>0
        && !std::dynamic_pointer_cast<F_qItself>(o->feat)
        && !std::dynamic_pointer_cast<F_Pose>(o->feat)
@@ -330,7 +330,7 @@ SkeletonTranscription Skeleton::nlp_finalSlice(){
       o->times={1e6};
     }
   }
-  for(ptr<GroundedObjective>& o:komo->objs) {
+  for(shared_ptr<GroundedObjective>& o:komo->objs) {
     if(o->feat->order>0
        && !std::dynamic_pointer_cast<F_qItself>(o->feat)
        && !std::dynamic_pointer_cast<F_Pose>(o->feat)
@@ -362,7 +362,7 @@ SkeletonTranscription Skeleton::nlp_path(const arrA& waypoints){
   if(waypoints.N){
     #if 0 //impose waypoint costs?
       for(uint i=0; i<waypoints.N-1; i++) {
-          ret.komo->addObjective(ARR(conv_step2time(i, waypointsStepsPerPhase)), FS_qItself, {}, OT_sos, {1e-1}, waypoints(i));
+          ret.komo->addObjective(arr{conv_step2time(i, waypointsStepsPerPhase)), FS_qItself, {}, OT_sos, {1e-1}, waypoints(i)};
       }
     #endif
 
@@ -390,7 +390,7 @@ SkeletonTranscription Skeleton::nlp_path(const arrA& waypoints){
   if(waypoints.N){
     #if 0 //impose waypoint costs?
       for(uint i=0; i<waypoints.N-1; i++) {
-          ret.komo->addObjective(ARR(conv_step2time(i, waypointsStepsPerPhase)), FS_qItself, {}, OT_sos, {1e-1}, waypoints(i));
+          ret.komo->addObjective(arr{conv_step2time(i, waypointsStepsPerPhase)), FS_qItself, {}, OT_sos, {1e-1}, waypoints(i)};
       }
     #endif
 

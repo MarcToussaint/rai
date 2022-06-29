@@ -25,7 +25,7 @@ struct ImageViewer : Thread {
 };
 
 struct ImageViewerFloat : Thread {
-  ptr<struct OpenGL> gl;
+  shared_ptr<struct OpenGL> gl;
   Var<floatA> img;
   bool flipImage = false;
   float scale;

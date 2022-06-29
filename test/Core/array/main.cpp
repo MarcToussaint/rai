@@ -1,4 +1,7 @@
 #include <Core/array.h>
+#include <Core/util.h>
+
+#include <math.h>
 
 using namespace std;
 
@@ -140,7 +143,7 @@ void TEST(Basics){
   cout <<"\nrows manipulated:\n" <<a <<endl;
 
   //setting arrays ``by hand''
-  a = ARR(0, 1, 2, 3, 4); //ARR(...) is equivalent to rai::Array<double>({ ... })
+  a = arr{0, 1, 2, 3, 4}; //arr{...} is equivalent to rai::Array<double>({ ... })
   cout <<"\nset by hand:\n" <<a <<endl;
   ints = { 0, -1, -2, -3, -4 };
   cout <<"\nset by hand:\n" <<ints <<endl;
@@ -291,7 +294,7 @@ void TEST(SimpleIterators) {
 
   cout << "*** Iterate linearly through the memory of an array (3D)" << endl;
   arr C = randn(1, 8);
-  C.reshape(TUP(2, 2, 2));
+  C.reshape(uintA{2, 2, 2});
   for (const auto& elem : C) {
     cout << elem << endl;
   }
@@ -341,7 +344,7 @@ void TEST(Matlab){
   uintA p = randperm(5);
   cout <<"\nrandperm(5)" <<p <<endl;
 
-  arr A = ARR(1,2,3,4);  A.reshape(2,2);
+  arr A = arr{1,2,3,4};  A.reshape(2,2);
   arr B = repmat(A,2,3);
   cout <<"\nA=" <<A <<endl;
   cout <<"\nrepmat(A,2,3)" <<B <<endl;
@@ -494,7 +497,7 @@ void TEST(Gnuplot){
 
 void TEST(Determinant){
   cout <<"\n*** determinant computation\n";
-  arr a = ARR(1,1,2,1,1,0,0,-2,3);
+  arr a = arr{1,1,2,1,1,0,0,-2,3};
   a.reshape(3,3);
   double d=determinant(a);
   double c00=cofactor(a,0,0);
@@ -690,26 +693,26 @@ void TEST(Tensor){
   uint k;
   for(k=0;k<100;k++){
     //element-wise multiplication
-    A.resize(TUP(rnd(3)+1,rnd(3)+1));
+    A.resize(rnd(3)+1, rnd(3)+1);
     B.resize(A.d1,A.d0);
     rndUniform(A,0.,1.,false);
     rndUniform(B,0.,1.,false);
     C=A;
-    tensorMultiply(C,B,TUP(1,0));
+    tensorMultiply(C,B,uintA{1,0});
     CHECK_EQ(C,A%~B,"");
     C=A;
-    tensorMultiply_old(C,B,TUP(C.d0,C.d1),TUP(1,0));
+    tensorMultiply_old(C,B,uintA{C.d0,C.d1},uintA{1,0});
     CHECK_EQ(C,A%~B,"");
-    tensorEquation(C,A,TUP(0,1),B,TUP(1,0),0);
+    tensorEquation(C,A,uintA{0,1},B,uintA{1,0},0);
     CHECK_EQ(C,A%~B,"");
 
     //matrix product
     C.resize(A.d0,A.d0);
-    tensorEquation(C,A,TUP(0,2),B,TUP(2,1),1);
+    tensorEquation(C,A,uintA{0,2},B,uintA{2,1},1);
     CHECK_EQ(C,A*B,"");
 
     C.resize(A.d1,A.d1);
-    tensorEquation(C,A,TUP(2,0),B,TUP(1,2),1);
+    tensorEquation(C,A,uintA{2,0},B,uintA{1,2},1);
     CHECK_EQ(C,~A*~B,"");
   }
   cout <<"\n... tensor tests successful\n";
@@ -717,7 +720,7 @@ void TEST(Tensor){
   //test permutations:
   A.resize(2,3,4);
   rndInteger(A,0,1,false);
-  tensorPermutation(B, A, TUP(0,1,2));
+  tensorPermutation(B, A, uintA{0,1,2});
   cout <<A <<endl <<B <<endl;
 }
 
@@ -915,8 +918,6 @@ void TEST(EigenValues){
 
 int MAIN(int argc, char **argv){
   rai::initCmdLine(argc, argv);
-
-  testMemoryBound(); return 0;
 
   testBasics();
   testIterators();

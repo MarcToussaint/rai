@@ -27,7 +27,7 @@ struct LGPpy_self : LGP_Tree {
 };
 
 struct LGPpy {
-  ptr<LGPpy_self> self;
+  shared_ptr<LGPpy_self> self;
 
   LGPpy(Config& _kin, const std::string& folFileName);
   ~LGPpy();

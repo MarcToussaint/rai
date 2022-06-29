@@ -162,7 +162,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
   CHECK(comp, "no compute object returned");
 #endif
 
-  ptr<KOMO>& komo = problem(bound).komo;
+  shared_ptr<KOMO>& komo = problem(bound).komo;
 
   //-- verbosity...
   if(tree.verbose>1){

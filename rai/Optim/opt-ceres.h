@@ -32,7 +32,7 @@ struct Conv_NLP_CeresProblem {
 
   arr x_full, phi_full; //the full linear memory for all decision variables and all features
 
-  ptr<ceres::Problem> ceresProblem;
+  shared_ptr<ceres::Problem> ceresProblem;
 
   Conv_NLP_CeresProblem(const shared_ptr<NLP_Factored>& _P);
 };

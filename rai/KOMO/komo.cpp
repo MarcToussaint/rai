@@ -140,14 +140,14 @@ void KOMO::clone(const KOMO& komo, bool deepCopyFeatures){
   timeSlices = pathConfig.getFrames(framesToIndices(komo.timeSlices));
 
   //copy running objectives
-  for(const ptr<Objective>& o:komo.objectives){
+  for(const shared_ptr<Objective>& o:komo.objectives){
     std::shared_ptr<Feature> f = o->feat;
     if(deepCopyFeatures) f = f->deepCopy();
     objectives.append(make_shared<Objective>(f, o->type, o->name, o->times));
   }
 
   //copy grounded objectives
-  for(const ptr<GroundedObjective>& o:komo.objs){
+  for(const shared_ptr<GroundedObjective>& o:komo.objs){
     std::shared_ptr<Feature> f = o->feat;
     if(deepCopyFeatures) f = f->deepCopy();
     auto ocopy = objs.append(make_shared<GroundedObjective>(f, o->type, o->timeSlices));
@@ -159,7 +159,7 @@ void KOMO::addTimeOptimization() {
   world.addTauJoint();
   rai::Frame *timeF = world.frames.first();
 #if 0 //break the constraint at phase switches: EMPIRICALLY EQUIVALENT TO BELOW (passive_ballBounce TEST)
-  ptr<Objective> o = addObjective({}, make_shared<F_qTime>(), {timeF->name}, OT_sos, {1e2}, {}, 1); //smooth time evolution
+  shared_ptr<Objective> o = addObjective({}, make_shared<F_qTime>(), {timeF->name}, OT_sos, {1e2}, {}, 1); //smooth time evolution
   if(o->configs.nd==1) { //for KOMO optimization
     CHECK(o->configs.nd==1 && o->configs.N==T, "");
     CHECK_GE(stepsPerPhase, 10, "NIY");
@@ -214,8 +214,8 @@ void KOMO::_addObjective(const std::shared_ptr<Objective>& ob, const intA& timeS
   }
 }
 
-ptr<Objective> KOMO::addObjective(const arr& times,
-                                  const ptr<Feature>& f, const StringA& frames,
+shared_ptr<Objective> KOMO::addObjective(const arr& times,
+                                  const shared_ptr<Feature>& f, const StringA& frames,
                                   ObjectiveType type, const arr& scale, const arr& target, int order,
                                   int deltaFromStep, int deltaToStep) {
   //-- we need the path configuration to ground the objectives
@@ -244,7 +244,7 @@ ptr<Objective> KOMO::addObjective(const arr& times,
 //  flags.append(fl);
 //}
 
-rai::Frame* KOMO::addSwitch(const arr& times, bool before, const ptr<KinematicSwitch>& sw) {
+rai::Frame* KOMO::addSwitch(const arr& times, bool before, const shared_ptr<KinematicSwitch>& sw) {
   sw->setTimeOfApplication(times, before, stepsPerPhase, T);
   rai::Frame *f = applySwitch(*sw); //apply immediately
   switches.append(sw); //only to report, not apply in retrospect
@@ -443,7 +443,7 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
     addObjective(times, make_shared<F_NewtonEuler_DampedVelocities>(0., false), {frames(1)}, OT_eq, {1e2}, NoArr, 1, +1, 0);
 #else
     //eq for 3DOFs only
-    ptr<Objective> o = addObjective(times, make_shared<F_NewtonEuler_DampedVelocities>(false), {frames(1)}, OT_eq, {}, NoArr, 1, +1, 0);
+    shared_ptr<Objective> o = addObjective(times, make_shared<F_NewtonEuler_DampedVelocities>(false), {frames(1)}, OT_eq, {}, NoArr, 1, +1, 0);
     o->feat->scale=1e1 * arr({3, 6}, {
       1, 0, 0, 0, 0, 0,
       0, 1, 0, 0, 0, 0,
@@ -544,12 +544,12 @@ void KOMO::addContact_elasticBounce(double time, const char* from, const char* t
   addObjective({time}, make_shared<F_fex_Force>(), {from, to}, OT_sos, {1e-4});
 }
 
-ptr<Objective> KOMO::add_qControlObjective(const arr& times, uint order, double scale, const arr& target, int deltaFromStep, int deltaToStep) {
+shared_ptr<Objective> KOMO::add_qControlObjective(const arr& times, uint order, double scale, const arr& target, int deltaFromStep, int deltaToStep) {
   auto F = getCtrlFramesAndScale(world);
   //F.scale *= sqrt(tau); NO!! The Feature::finiteDifference does this automatically, depending on the timeIntegral flag!
 
   CHECK_GE(k_order, order, "");
-  ptr<Objective> o = addObjective(times, make_shared<F_qItself>(F.frames, (order==0)), {}, OT_sos, scale*F.scale, target, order, deltaFromStep, deltaToStep);
+  shared_ptr<Objective> o = addObjective(times, make_shared<F_qItself>(F.frames, (order==0)), {}, OT_sos, scale*F.scale, target, order, deltaFromStep, deltaToStep);
   o->feat->timeIntegral=1;
   return o;
 }
@@ -562,10 +562,10 @@ void KOMO::setSlow(double startTime, double endTime, double prec, bool hardConst
   if(stepsPerPhase>2) { //otherwise: no velocities
     uintA selectedBodies;
     for(rai::Frame* f:world.frames) if(f->joint && f->joint->dim>0 && f->joint->dim<7 && f->joint->type!=rai::JT_tau && f->joint->active && f->joint->H>0.) {
-        selectedBodies.append(TUP(f->ID, f->parent->ID));
+        selectedBodies.append(uintA{f->ID, f->parent->ID});
       }
     selectedBodies.reshape(selectedBodies.N/2, 2);
-    ptr<Feature> feat = make_shared<F_qItself>(selectedBodies);
+    shared_ptr<Feature> feat = make_shared<F_qItself>(selectedBodies);
     if(!hardConstrained) addObjective({startTime, endTime}, feat, {}, OT_sos, {prec}, NoArr, 1);
     else addObjective({startTime, endTime}, feat, {}, OT_eq, {prec}, NoArr, 1);
   }
@@ -936,12 +936,12 @@ void KOMO::addWaypointsInterpolationObjectives(const arrA& waypoints, uint waypo
           {
             std::shared_ptr<Feature> feat = make_shared<F_Position>();
             feat->setFrameIDs({i}) .setTarget(X.pos.getArr());
-            ptr<struct Objective>  tmp = addObjective({0.}, feat, {}, OT_sos, NoArr, NoArr, -1, t, t);
+            shared_ptr<struct Objective>  tmp = addObjective({0.}, feat, {}, OT_sos, NoArr, NoArr, -1, t, t);
           }
           {
             std::shared_ptr<Feature> feat = make_shared<F_Quaternion>();
             feat->setFrameIDs({i}) .setTarget(X.rot.getArr4d());
-            ptr<struct Objective>  tmp = addObjective({0.}, feat, {}, OT_sos, NoArr, NoArr, -1, t, t);
+            shared_ptr<struct Objective>  tmp = addObjective({0.}, feat, {}, OT_sos, NoArr, NoArr, -1, t, t);
           }
         }
       }
@@ -1516,7 +1516,7 @@ CHECK_EQ(M, featureValues.N, "");
   rai::Graph report;
   double totalC=0., totalG=0., totalH=0., totalF=0.;
   for(uint i=0; i<objectives.N; i++) {
-    ptr<Objective> c = objectives(i);
+    shared_ptr<Objective> c = objectives(i);
     Graph& g = report.newSubgraph({c->name}, {});
     g.newNode<double>({"order"}, {}, c->feat->order);
     g.newNode<String>({"type"}, {}, Enum<ObjectiveType>(c->type).name());

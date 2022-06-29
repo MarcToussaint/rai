@@ -3,6 +3,8 @@
 #include "../Gui/opengl.h"
 #include "../Optim/newton.h"
 
+#include <math.h>
+
 //===========================================================================
 
 arr SDF::eval(const arr& samples){
@@ -469,3 +471,9 @@ ScalarFunction DistanceFunction_SSBox = [](arr& g, arr& H, const arr& x) -> doub
   return d;
 };
 
+
+double SDF_Torus::f(arr& g, arr& H, const arr& _x){
+    double x=_x(0), y=_x(1), z=_x(2);
+    double r=sqrt(x*x + y*y);
+    return z*z + (1.-r)*(1.-r) - .1;
+}

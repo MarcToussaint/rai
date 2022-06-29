@@ -30,7 +30,7 @@ void openConfigFile(const char* name) {
     //RAI_MSG("couldn't open config file " <<name);
     LOG(3) <<" - failed";
   }
-  LOG(3) <<std::endl;
+  LOG(3) <<endl;
 }
 
 /** @brief Search the first occurence of a sequence '\c tag:'

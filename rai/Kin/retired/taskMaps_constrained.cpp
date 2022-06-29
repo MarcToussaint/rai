@@ -162,7 +162,7 @@ void VelAlignConstraint::phi(arr& y, arr& J, const ConfigurationL& G) {
     J_j = zeros(G.N, y_j.N, J_bar_j.d1);
     J_j[G.N-1]() = J_bar_j;
     arr tmp(J_j);
-    tensorPermutation(J_j, tmp, TUP(1u, 0u, 2u));
+    tensorPermutation(J_j, tmp, uintA{1u, 0u, 2u});
     J_j.reshape(y_j.N, G.N*J_bar_j.d1);
   }
 
@@ -183,7 +183,7 @@ void VelAlignConstraint::phi(arr& y, arr& J, const ConfigurationL& G) {
     dJ_i[G.N-1-1]() = -J_bar(1);
     dJ_i[G.N-1-0]() = J_bar(0);
     arr tmp(dJ_i);
-    tensorPermutation(dJ_i, tmp, TUP(1u, 0u, 2u));
+    tensorPermutation(dJ_i, tmp, uintA{1u, 0u, 2u});
     dJ_i.reshape(dy_i.N, G.N*J_bar(0).d1);
   }
 

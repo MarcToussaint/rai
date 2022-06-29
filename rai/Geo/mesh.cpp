@@ -13,6 +13,8 @@
 #include "../Optim/newton.h"
 
 #include <limits>
+#include <algorithm>
+#include <math.h>
 
 #ifdef RAI_PLY
 #  include "ply/ply.h"
@@ -431,8 +433,8 @@ void rai::Mesh::makeConvexHull() {
 void rai::Mesh::makeTriangleFan() {
   T.clear();
   for(uint i=1; i+1<V.d0; i++) {
-    T.append(TUP(0, i, i+1));
-    T.append(TUP(0, i+1, i));
+    T.append(uintA{0, i, i+1});
+    T.append(uintA{0, i+1, i});
   }
   T.reshape(T.N/3, 3);
 }
@@ -1407,7 +1409,7 @@ uintA getSubMeshPositions(const char* filename) {
       case 'v': {
         if(flag > 0) {
           end_pos = ftell(file) - 1;
-          result.append(TUP((uint)start_pos, (uint)end_pos));
+          result.append(uintA{(uint)start_pos, (uint)end_pos});
           start_pos = end_pos;
           flag =0;
         }
@@ -1419,7 +1421,7 @@ uintA getSubMeshPositions(const char* filename) {
   }
 
   end_pos = ftell(file) - 1;
-  result.append(TUP((uint)start_pos, (uint)end_pos));
+  result.append(uintA{(uint)start_pos, (uint)end_pos});
   result.reshape(result.N/2, 2);
   return result;
 }
@@ -1825,7 +1827,7 @@ void rai::Mesh::setImplicitSurface(ScalarFunction f, double xLo, double xHi, dou
       y = yLo+j*(yHi-yLo)/res;
       for(i=0; i<res; i++) {
         x = xLo+i*(xHi-xLo)/res;
-        mc.set_data(f(NoArr, NoArr, ARR((double)x, (double)y, (double)z)), i, j, k) ;
+        mc.set_data(f(NoArr, NoArr, arr{(double)x, (double)y, (double)z}), i, j, k) ;
       }
     }
   }

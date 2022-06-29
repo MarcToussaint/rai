@@ -104,7 +104,7 @@ double gamepadSignalMap(double x) {
 bool Gamepad2Tasks::updateTasks(arr& gamepadState, const rai::Configuration& K) {
   if(stopButtons(gamepadState)) return true;
 
-  //for(ptr<CtrlObjective>& pdt:TC.tasks) pdt->active=false;
+  //for(shared_ptr<CtrlObjective>& pdt:TC.tasks) pdt->active=false;
 
   HALT("change code: add a qNull here explicitly");
 //  TC.qNullCostRef.PD().setGains(0., 10.); //nullspace qitself is not used for homing by default
@@ -163,8 +163,8 @@ bool Gamepad2Tasks::updateTasks(arr& gamepadState, const rai::Configuration& K) 
       arr ve;
       ve = conv_vec2arr(vel);
       if(sel==up) {
-        if(robot=="pr2") ve = ARR(ve(1), -ve(0));
-        if(robot=="baxter") ve = ARR(ve(1));
+        if(robot=="pr2") ve = arr{ve(1), -ve(0)};
+        if(robot=="baxter") ve = arr{ve(1)};
       }
       pdt->PD().y_target = pdt->y + 0.01*ve;
       pdt->PD().v_target = ve; //setZero();
@@ -203,10 +203,10 @@ bool Gamepad2Tasks::updateTasks(arr& gamepadState, const rai::Configuration& K) 
       }
       if(!pdt) break;
       if(robot=="pr2") {
-        if(mode==8) pdt->PD().y_target=ARR(.08); else pdt->PD().y_target=ARR(.01);
+        if(mode==8) pdt->PD().y_target=arr{.08}; else pdt->PD().y_target=arr{.01};
       }
       if(robot=="baxter") {
-        if(mode==8) pdt->PD().y_target=ARR(.1); else pdt->PD().y_target=ARR(0.);
+        if(mode==8) pdt->PD().y_target=arr{.1}; else pdt->PD().y_target=arr{0.};
       }
       pdt->active=true;
       break;
@@ -214,13 +214,13 @@ bool Gamepad2Tasks::updateTasks(arr& gamepadState, const rai::Configuration& K) 
 //    case 2: { //(2) CRAZY tactile guiding
 //      skin->active=true;
 //      skin->y_prec = 5e1;
-//      skin->y_target=ARR(.0, .0, .0, .0, .0, .0);
+//      skin->y_target=arr{.0, .0, .0, .0, .0, .0};
 //      //ON SIMULATION: since it is set to (.01, .01, .01) this will always give a repelling force!
 //      break;
 //    }
 //    case 256: { //(select)close hand
 //      skin->active=true;
-//      skin->y_target=ARR(.007, 0, .02, 0, .007, 0);
+//      skin->y_target=arr{.007, 0, .02, 0, .007, 0};
 //      break;
 //    }
 //    case 512: { //(start)open hand

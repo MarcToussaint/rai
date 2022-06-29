@@ -57,7 +57,7 @@ inline floatA conv_cvMat2floatA(const cv::Mat& mat) {
   if(mat.isContinuous()) {
     X.setCarray((float*)mat.data, X.N);
   } else {
-    for(int i=0; i<mat.rows; i++) X[i].setCarray((float*)mat.ptr<uchar>(i), mat.cols);
+    for(int i=0; i<mat.rows; i++) X[i].setCarray((float*)mat.shared_ptr<uchar>(i), mat.cols);
   }
   return X;
 }

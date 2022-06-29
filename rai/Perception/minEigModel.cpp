@@ -123,8 +123,8 @@ void MinEigModel::computeConvexHull2() {
   convexHull.T.clear();
   if(!eig.x_lo.N) return;
   arr b0, b1;
-  if(eig.x_lo.argmax()==0) b0 = ARR(0, 1, 0) - eig.x_lo*eig.x_lo(1);
-  else                       b0 = ARR(1, 0, 0) - eig.x_lo*eig.x_lo(0);
+  if(eig.x_lo.argmax()==0) b0 = arr{0, 1, 0} - eig.x_lo*eig.x_lo(1);
+  else                       b0 = arr{1, 0, 0} - eig.x_lo*eig.x_lo(0);
   b0 /= length(b0);
   b1 = crossProduct(eig.x_lo, b0);
   b1 /= length(b1);

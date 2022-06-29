@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include "../Core/util.h"
 #include "../Geo/geo.h"
 #include "../Core/graph.h"
 #include "../Geo/mesh.h"
@@ -297,9 +296,9 @@ struct Shape : NonCopyable, GLDrawer {
   Frame& frame;
   Enum<ShapeType> _type;
   arr size;
-  ptr<Mesh> _mesh;
-  ptr<Mesh> _sscCore;
-  ptr<SDF_GridData> _sdf;
+  shared_ptr<Mesh> _mesh;
+  shared_ptr<Mesh> _sscCore;
+  shared_ptr<SDF_GridData> _sdf;
   char cont=0;           ///< are contacts registered (or filtered in the callback)
 
   double radius() { if(size.N) return size(-1); return 0.; }

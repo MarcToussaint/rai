@@ -66,7 +66,7 @@ OptNewton::StopCriterion OptNewton::step() {
   arr y, gy, Hy, Delta;
 
   its++;
-  if(options.verbose>1) cout <<"optNewton it:" <<std::setw(4) <<its << "  beta:" <<std::setw(4) <<beta <<flush;
+  if(options.verbose>1) cout <<"optNewton it:" <<std::setw(4) <<its << "  beta:" <<std::setw(4) <<beta <<std::flush;
 
   if(!(fx==fx)) HALT("you're calling a newton step with initial function value = NAN");
 
@@ -174,7 +174,7 @@ OptNewton::StopCriterion OptNewton::step() {
   double alphaHiLimit = options.maxStep/maxDelta;
   //double alphaLoLimit = 1e-1*options.stopTolerance/maxDelta;
 
-  if(options.verbose>1) cout <<"  |Delta|:" <<std::setw(11) <<maxDelta <<flush;
+  if(options.verbose>1) cout <<"  |Delta|:" <<std::setw(11) <<maxDelta <<std::flush;
 
   //lazy stopping criterion: stop without any update
   if(absMax(Delta)<1e-1*options.stopTolerance) {
@@ -195,7 +195,7 @@ OptNewton::StopCriterion OptNewton::step() {
     fy = f(gy, Hy, y);  evals++;
     timeEval += rai::cpuTime();
     if(options.verbose>5) cout <<"  probing y:" <<y;
-    if(options.verbose>1) cout <<"  evals:" <<std::setw(4) <<evals <<"  alpha:" <<std::setw(11) <<alpha <<"  f(y):" <<fy <<flush;
+    if(options.verbose>1) cout <<"  evals:" <<std::setw(4) <<evals <<"  alpha:" <<std::setw(11) <<alpha <<"  f(y):" <<fy <<std::flush;
     if(simpleLog) {
       (*simpleLog) <<its <<' ' <<evals <<' ' <<fy <<' ' <<alpha;
       if(y.N<=5) y.writeRaw(*simpleLog);
@@ -236,7 +236,7 @@ OptNewton::StopCriterion OptNewton::step() {
       break;
     } else {
       //reject new point
-      if(options.verbose>1) cout <<" - reject (lineSearch:" <<lineSearchSteps <<")" <<flush;
+      if(options.verbose>1) cout <<" - reject (lineSearch:" <<lineSearchSteps <<")" <<std::flush;
       if(logFile) {
         (*logFile) <<"{ lineSearch: " <<lineSearchSteps <<", alpha: " <<alpha <<", beta: " <<beta <<", f_x: " <<fx <<", f_y: " <<fy <<", wolfe: " <<wolfe <<", accept: False }," <<endl;
       }
@@ -254,7 +254,7 @@ OptNewton::StopCriterion OptNewton::step() {
         endLineSearch=true;
         if(options.verbose>1) cout <<", stop & betaInc"<<endl;
       } else {
-        if(options.verbose>1) cout <<"\n                                  (line search)  " <<flush;
+        if(options.verbose>1) cout <<"\n                                  (line search)  " <<std::flush;
       }
       alpha *= options.stepDec;
 //      if(alpha<alphaLoLimit) endLineSearch=true;

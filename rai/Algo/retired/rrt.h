@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "../Core/array.ipp"
+#include "../Core/array.h"
 
 struct RRT {
  private:

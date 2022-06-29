@@ -19,6 +19,7 @@
 #include "featureSymbols.h"
 #include "viewer.h"
 #include "../Core/graph.h"
+#include "../Core/util.h"
 #include "../Geo/fclInterface.h"
 #include "../Geo/qhull.h"
 #include "../Geo/mesh_readAssimp.h"
@@ -265,7 +266,7 @@ Frame* Configuration::addObject(ShapeType shape, const arr& size, const arr& col
   Shape* s = new Shape(*f);
   s->type() = shape;
   if(col.N) s->mesh().C = col;
-  if(radius>0.) s->size() = ARR(radius);
+  if(radius>0.) s->size() = arr{radius};
   if(shape!=ST_mesh && shape!=ST_ssCvx) {
     if(size.N>=1) s->size() = size;
     s->createMeshes();
@@ -278,7 +279,7 @@ Frame* Configuration::addObject(ShapeType shape, const arr& size, const arr& col
       s->sscCore().V = size;
       s->sscCore().V.reshape(-1, 3);
       CHECK(radius>0., "radius must be greater zero");
-      s->size() = ARR(radius);
+      s->size() = arr{radius};
     }
   }
   return f;
@@ -483,7 +484,7 @@ uintA Configuration::getCtrlFramesAndScale(arr& scale) const {
   for(rai::Frame* f : frames) {
     rai::Joint *j = f->joint;
     if(j && j->active && j->dim>0 && (!j->mimic) && j->H>0. && j->type!=rai::JT_tau && (!f->ats || !(*f->ats)["constant"])) {
-      qFrames.append(TUP(f->ID, f->parent->ID));
+      qFrames.append(uintA{f->ID, f->parent->ID});
       if(!!scale) scale.append(j->H, j->dim);
     }
   }
@@ -1308,7 +1309,7 @@ void exclude(uintA& ex, FrameL& F1, FrameL& F2) {
   for(Frame* f1:F1) {
     for(Frame* f2:F2) {
       if(f1->ID < f2->ID) {
-        ex.append(TUP(f1->ID, f2->ID));
+        ex.append(uintA{f1->ID, f2->ID});
       }
     }
   }
@@ -2067,7 +2068,7 @@ std::shared_ptr<SwiftInterface> Configuration::swift() {
 
 std::shared_ptr<FclInterface> Configuration::fcl() {
   if(!self->fcl) {
-    Array<ptr<Mesh>> geometries(frames.N);
+    Array<shared_ptr<Mesh>> geometries(frames.N);
     for(Frame* f:frames) {
       if(f->shape && f->shape->cont) {
         CHECK(f->shape->type()!=rai::ST_marker, "collision object can't be a marker");
@@ -2339,7 +2340,7 @@ void Configuration::write(std::ostream& os, bool explicitlySorted) const {
     FrameL sorted = calc_topSort();
     for(Frame* f: sorted) f->write(os);
   }
-  os <<std::endl;
+  os <<endl;
 }
 
 void Configuration::write(Graph& G) const {
@@ -3464,7 +3465,7 @@ struct EditConfigurationHoverCall:OpenGL::GLHoverCall {
       double x=gl.mouseposx, y=gl.mouseposy, z=seld;
       gl.unproject(x, y, z, true);
       cout <<"x=" <<x <<" y=" <<y <<" z=" <<z <<" d=" <<seld <<endl;
-      movingBody->setPosition(selpos.getArr() + ARR(x-selx, y-sely, z-selz));
+      movingBody->setPosition(selpos.getArr() + arr{x-selx, y-sely, z-selz});
     }
     return true;
   }
@@ -3553,7 +3554,7 @@ void editConfiguration(const char* filename, Configuration& C) {
   C.gl()->ensure_gl().addClickCall(new EditConfigurationClickCall(C));
   Inotify ino(filename);
   for(; !exit;) {
-    cout <<"reloading `" <<filename <<"' ... " <<std::endl;
+    cout <<"reloading `" <<filename <<"' ... " <<endl;
     Configuration C_tmp;
     {
       FileToken file(filename, true);
@@ -3624,6 +3625,3 @@ void editConfiguration(const char* filename, Configuration& C) {
 #include "../Core/util.ipp"
 template rai::Array<rai::Shape*>::Array(uint);
 //template Shape* listFindByName(const Array<Shape*>&,const char*);
-
-#include "../Core/array.ipp"
-template rai::Array<rai::Joint*>::Array();

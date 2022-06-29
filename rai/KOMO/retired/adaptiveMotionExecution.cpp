@@ -26,7 +26,7 @@ AdaptiveMotionExecution::AdaptiveMotionExecution(rai::Configuration& _world, arr
   }
 
   traj = ~x0;
-  s = ARR(0.);
+  s = arr{0.};
   joints_bk.append(~q0);
 
   lastGoal = goalRef+(x0-_trajRef[0]);
@@ -91,7 +91,7 @@ void AdaptiveMotionExecution::plotState() {
   cout << "Save Path: " << scene << endl;
 
   write(LIST<arr>(joints_bk), STRING(scene<<"/joints_bk.output"));
-  write(LIST<arr>(ARR(dt)), STRING(scene<<"/dt.output"));
+  write(LIST<arr>(arr{dt}), STRING(scene<<"/dt.output"));
   write(LIST<arr>(goal), STRING(scene<<"/goal.output"));
 
   write(LIST<arr>(trajRef->points), STRING(scene<<"/trajRef.output"));

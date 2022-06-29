@@ -81,7 +81,7 @@ bool sOrsSceneGui::hoverCallback(OpenGL&) {
       double x=gl->mouseposx, y=gl->mouseposy, z=seld;
       gl->unproject(x, y, z, true);
       cout <<"x=" <<x <<" y=" <<y <<" z=" <<z <<" d=" <<seld <<endl;
-      movingBody->X.pos = selpos + ARR(x-selx, y-sely, z-selz);
+      movingBody->X.pos = selpos + arr{x-selx, y-sely, z-selz};
       break;
     }
     case emOde: {

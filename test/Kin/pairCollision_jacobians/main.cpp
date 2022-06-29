@@ -51,7 +51,7 @@ void TEST(GJK_Jacobians) {
     s1.sscCore().scale(2.);       s2.sscCore().scale(2.);
     s1.mesh().C = {.5,.8,.5,.4};   s2.mesh().C = {.5,.5,.8,.4};
     s1.type() = s2.type() = rai::ST_ssCvx; //ST_mesh;
-    s1.size() = ARR(rnd.uni(.01, .3)); s2.size() = ARR(rnd.uni(.01, .3));
+    s1.size() = arr{rnd.uni(.01, .3)}; s2.size() = arr{rnd.uni(.01, .3)};
     if(rnd.uni()<.2) s1.sscCore().setDot();
     if(rnd.uni()<.2) s2.sscCore().setDot();
     s1.createMeshes();

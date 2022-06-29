@@ -98,7 +98,7 @@ void testGrasp(){
 
     if(S.getGripperIsGrasping("gripper")){
       arr diff = C.feature(FS_position, {"gripper"})->eval(C);
-      q -= pseudoInverse(diff.J(), NoArr, 1e-2) * ARR(0.,0.,-1e-3);
+      q -= pseudoInverse(diff.J(), NoArr, 1e-2) * arr{0.,0.,-1e-3};
     }
 
     if(t==900){

@@ -10,6 +10,10 @@
 #include "optimization.h"
 #include "lagrangian.h"
 
+#include "../Core/util.h"
+
+#include <math.h>
+
 //===========================================================================
 
 template<> const char* rai::Enum<ObjectiveType>::names []= {
@@ -45,6 +49,10 @@ arr NLP::getInitializationSample(const arr& previousOptima) {
   CHECK_EQ(n, blo.N, "");
   CHECK_EQ(n, bup.N, "");
   return blo + rand(n) % (bup - blo);
+}
+
+void NLP::report(std::ostream& os, int verbose, const char* msg){
+  os <<"NLP of type '" <<rai::niceTypeidName(typeid(*this)) <<"' -- no reporting implemented";
 }
 
 double NLP::eval_scalar(arr& g, arr& H, const arr& x){
@@ -159,6 +167,8 @@ void NLP_Factored::evaluate(arr& phi, arr& J, const arr& x) {
   }
   CHECK_EQ(n, phi.N, "");
 }
+
+rai::String NLP_Factored::getVariableName(uint var_id){ return STRING("-dummy-"); }
 
 //===========================================================================
 
@@ -354,7 +364,7 @@ void NLP_Viewer::display(){
 
   //-- plot
   //  plot()->Gnuplot();  plot()->Surface(Y);  plot()->update(true);
-  write(LIST<arr>(Y), "z.fct");
+  write(arrL{&Y}, "z.fct");
 
   rai::String cmd;
   cmd <<"reset; set contour; set cntrparam linear; set cntrparam levels incremental 0,.1,10; set xlabel 'x'; set ylabel 'y'; ";

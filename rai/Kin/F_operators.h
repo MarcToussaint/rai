@@ -13,10 +13,10 @@
 //===========================================================================
 
 struct F_Max : Feature {
-  ptr<Feature> f;
+  shared_ptr<Feature> f;
   bool neg;
 
-  F_Max(const ptr<Feature>& f, bool neg=false) : f(f), neg(neg) {}
+  F_Max(const shared_ptr<Feature>& f, bool neg=false) : f(f), neg(neg) {}
 
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2( const FrameL& F) { return 1; }
@@ -26,9 +26,9 @@ struct F_Max : Feature {
 //===========================================================================
 
 struct F_Norm : Feature {
-  ptr<Feature> f;
+  shared_ptr<Feature> f;
 
-  F_Norm(const ptr<Feature>& f) : f(f) {}
+  F_Norm(const shared_ptr<Feature>& f) : f(f) {}
 
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2( const FrameL& F) { return 1; }
@@ -38,9 +38,9 @@ struct F_Norm : Feature {
 //===========================================================================
 
 struct F_Normalized : Feature {
-  ptr<Feature> f;
+  shared_ptr<Feature> f;
 
-  F_Normalized(const ptr<Feature>& f) : f(f) {}
+  F_Normalized(const shared_ptr<Feature>& f) : f(f) {}
 
   virtual void phi2(arr& y, arr& J, const FrameL& F);
   virtual uint dim_phi2( const FrameL& F) { return f->dim(F); }

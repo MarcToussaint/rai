@@ -480,7 +480,7 @@ NodeL getSubstitutions2(Graph& KB, NodeL& relations, int verbose) {
   for(Node* rel:relations) {
     if(nFreeVars(rel->index)==1 && rel->isOfType<bool>() && rel->get<bool>()==false) {
       Node* var = getFirstVariable(rel, &varScope);
-      if(verbose>3) cout <<"checking literal '" <<*rel <<"'" <<flush;
+      if(verbose>3) cout <<"checking literal '" <<*rel <<"'" <<std::flush;
       removeInfeasibleSymbolsFromDomain(KB, domainOf(var->index), rel, &varScope);
       if(verbose>3) { cout <<" gives remaining domain for '" <<*var <<"' {"; listWrite(domainOf(var->index), cout); cout <<" }" <<endl; }
       if(domainOf(var->index).N==0) {

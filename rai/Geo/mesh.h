@@ -9,8 +9,10 @@
 #pragma once
 
 #include "geo.h"
-#include "../Core/array.h"
 
+struct OpenGL;
+
+//fwd decl
 namespace rai { struct Mesh; }
 typedef rai::Array<rai::Mesh> MeshA;
 typedef rai::Array<rai::Mesh*> MeshL;

@@ -185,7 +185,7 @@ CT_Status CtrlReference_Path::update(arr& yRef, arr& ydotRef, double tau, const 
 //===========================================================================
 
 CtrlObjective::CtrlObjective(const char* name, Feature* map)
-  : map(map), name(name), active(true), status(CT_init), ref(nullptr), prec(ARR(1.)), hierarchy(1) {
+  : map(map), name(name), active(true), status(CT_init), ref(nullptr), prec(arr{1.}), hierarchy(1) {
   //  ref = new CtrlReference_PD();
 }
 
@@ -707,7 +707,7 @@ void TaskControlMethods::calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, d
   CHECK_LE(nForceTasks, 1, "Multiple force laws not allowed at the moment");
   if(!nForceTasks) {
     K_ft = zeros(world.getJointStateDimension());
-    fRef = ARR(0.0);
+    fRef = arr{0.0};
     J_ft_inv = zeros(1, 6);
     gamma = 0.0;
   }

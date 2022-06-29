@@ -318,7 +318,7 @@ void KOMO::Conv_KOMO_KOMOProblem_toBeRetired::getStructure(uintA& variableDimens
   phiDim.resize(komo.T, komo.objectives.N);   phiDim.setZero();
   for(uint t=0; t<komo.T; t++) {
     for(uint i=0; i<komo.objectives.N; i++) {
-      ptr<Objective> task = komo.objectives.elem(i);
+      shared_ptr<Objective> task = komo.objectives.elem(i);
       if(task->isActive(t)) {
         uint m = task->feat->__dim_phi(komo.configurations({t, t+komo.k_order})); //dimensionality of this task
 
@@ -362,7 +362,7 @@ void KOMO::Conv_KOMO_KOMOProblem_toBeRetired::phi(arr& phi, arrA& J, arrA& H, ui
     uintA Ktuple_dim = getKtupleDim(Ktuple);
 
     for(uint i=0; i<komo.objectives.N; i++) {
-      ptr<Objective> task = komo.objectives.elem(i);
+      shared_ptr<Objective> task = komo.objectives.elem(i);
       if(task->isActive(t)) {
         //query the task map and check dimensionalities of returns
         task->feat->eval(y, Jy, Ktuple);
@@ -439,7 +439,7 @@ void KOMO::Conv_KOMO_GraphProblem_toBeRetired::getStructure(uintA& variableDimen
   if(!!featureVariables) featureVariables.clear();
   if(!!featureTypes) featureTypes.clear();
   uint M=0;
-  for(ptr<Objective>& ob:komo.objectives) {
+  for(shared_ptr<Objective>& ob:komo.objectives) {
     CHECK_EQ(ob->configs.nd, 2, "in sparse mode, vars need to be tuples of variables");
     for(uint l=0; l<ob->configs.d0; l++) {
       ConfigurationL Ktuple = komo.configurations.sub(convert<uint, int>(ob->configs[l]+(int)komo.k_order));
@@ -471,7 +471,7 @@ void KOMO::Conv_KOMO_GraphProblem_toBeRetired::getSemantics(StringA& varNames, S
 
   phiNames.clear();
   uint M=0;
-  for(ptr<Objective>& ob:komo.objectives) {
+  for(shared_ptr<Objective>& ob:komo.objectives) {
     CHECK_EQ(ob->configs.nd, 2, "in sparse mode, vars need to be tuples of variables");
     for(uint l=0; l<ob->configs.d0; l++) {
       ConfigurationL Ktuple = komo.configurations.sub(convert<uint, int>(ob->configs[l]+(int)komo.k_order));
@@ -495,7 +495,7 @@ void KOMO::Conv_KOMO_GraphProblem_toBeRetired::phi(arr& phi, arrA& J, arrA& H, c
   arr y, Jy;
 //  Jy.sparse();
   uint M=0;
-  for(ptr<Objective>& ob:komo.objectives) {
+  for(shared_ptr<Objective>& ob:komo.objectives) {
     CHECK_EQ(ob->configs.nd, 2, "in sparse mode, vars need to be tuples of variables");
     for(uint l=0; l<ob->configs.d0; l++) {
       ConfigurationL Ktuple = komo.configurations.sub(convert<uint, int>(ob->configs[l]+(int)komo.k_order));
@@ -559,7 +559,7 @@ void KOMO::Conv_KOMO_GraphProblem_toBeRetired::getPartialPhi(arr& phi, arrA& J, 
 
     arr y, Jy;
     uint M=0;
-    for(ptr<Objective>& ob:komo.objectives) {
+    for(shared_ptr<Objective>& ob:komo.objectives) {
       CHECK_EQ(ob->configs.nd, 2, "in sparse mode, vars need to be tuples of variables");
       for(uint l=0; l<ob->configs.d0; l++) {
         ConfigurationL Ktuple = komo.configurations.sub(convert<uint, int>(ob->configs[l]+(int)komo.k_order));

@@ -14,18 +14,18 @@
 //===========================================================================
 
 CtrlObjective::CtrlObjective(const char* name, Feature* map)
-  : map(*map), name(name), active(true), prec(ARR(100.)), maxVel(0.), maxAcc(0.), f_alpha(0.), f_gamma(0.),
+  : map(*map), name(name), active(true), prec(arr{100.}), maxVel(0.), maxAcc(0.), f_alpha(0.), f_gamma(0.),
     flipTargetSignOnNegScalarProduct(false), makeTargetModulo2PI(false) {
 }
 
 CtrlObjective::CtrlObjective(const char* name, Feature* map, double decayTime, double dampingRatio, double maxVel, double maxAcc)
-  : map(*map), name(name), active(true), prec(ARR(100.)), maxVel(maxVel), maxAcc(maxAcc), f_alpha(0.), f_gamma(0.),
+  : map(*map), name(name), active(true), prec(arr{100.}), maxVel(maxVel), maxAcc(maxAcc), f_alpha(0.), f_gamma(0.),
     flipTargetSignOnNegScalarProduct(false), makeTargetModulo2PI(false) {
   setGainsAsNatural(decayTime, dampingRatio);
 }
 
 CtrlObjective::CtrlObjective(const char* name, Feature* map, const Graph& params)
-  : map(*map), name(name), active(true), prec(ARR(100.)), maxVel(0.), maxAcc(0.), f_alpha(0.), f_gamma(0.),
+  : map(*map), name(name), active(true), prec(arr{100.}), maxVel(0.), maxAcc(0.), f_alpha(0.), f_gamma(0.),
     flipTargetSignOnNegScalarProduct(false), makeTargetModulo2PI(false) {
   if(!params["PD"]) setGainsAsNatural(3., .7);
   set(params);
@@ -56,14 +56,14 @@ void CtrlObjective::setGains(const arr& _Kp, const arr& _Kd) {
   //active=true; //TODO
   Kp = _Kp;
   Kd = _Kd;
-  if(!prec.N) prec=ARR(100.);
+  if(!prec.N) prec=arr{100.};
 }
 
 void CtrlObjective::setGains(double pgain, double dgain) {
   //active=true; //TODO
-  Kp = ARR(pgain);
-  Kd = ARR(dgain);
-  if(!prec.N) prec=ARR(100.);
+  Kp = arr{pgain};
+  Kd = arr{dgain};
+  if(!prec.N) prec=arr{100.};
 }
 
 void CtrlObjective::setGainsAsNatural(double decayTime, double dampingRatio) {
@@ -217,21 +217,21 @@ void ConstraintForceTask::updateConstraintControl(const arr& _g, const double& l
   CHECK_GE(lambda_desired, 0., "lambda must be positive or zero");
 
   if(g<0 && lambda_desired>0.) { //steer towards constraint
-    desiredApproach.y_ref=ARR(.05); //set goal to overshoot!
+    desiredApproach.y_ref=arr{.05}; //set goal to overshoot!
     desiredApproach.setGainsAsNatural(.3, 1.);
-    desiredApproach.prec=ARR(1e4);
+    desiredApproach.prec=arr{1e4};
   }
 
   if(g>-1e-2 && lambda_desired>0.) { //stay in constraint -> constrain dynamics
-    desiredApproach.y_ref=ARR(0.);
+    desiredApproach.y_ref=arr{0.};
     desiredApproach.setGainsAsNatural(.05, .7);
-    desiredApproach.prec=ARR(1e6);
+    desiredApproach.prec=arr{1e6};
   }
 
   if(g>-0.02 && lambda_desired==0.) { //release constraint -> softly push out
-    desiredApproach.y_ref=ARR(-0.04);
+    desiredApproach.y_ref=arr{-0.04};
     desiredApproach.setGainsAsNatural(.3, 1.);
-    desiredApproach.prec=ARR(1e4);
+    desiredApproach.prec=arr{1e4};
   }
 
   if(g<=-0.02 && lambda_desired==0.) { //stay out of contact -> constrain dynamics
@@ -503,7 +503,7 @@ void TaskControlMethods::calcForceControl(arr& K_ft, arr& J_ft_inv, arr& fRef, d
   CHECK_LE(nForceTasks, 1, "Multiple force laws not allowed at the moment");
   if(!nForceTasks) {
     K_ft = zeros(world.getJointStateDimension());
-    fRef = ARR(0.0);
+    fRef = arr{0.0};
     J_ft_inv = zeros(1, 6);
     gamma = 0.0;
   }

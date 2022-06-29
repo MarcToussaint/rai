@@ -10,6 +10,8 @@
 
 #include "../Core/array.h"
 
+#include <iostream>
+
 namespace rai {
 
 //===========================================================================
@@ -239,7 +241,7 @@ struct DynamicTransformation : Transformation {
   DynamicTransformation() {}
   DynamicTransformation(int zero) { CHECK_EQ(zero, 0, "this is only for initialization with zero"); setZero(); }
   DynamicTransformation(const DynamicTransformation& t) : Transformation(t), vel(t.vel), angvel(t.angvel), zeroVels(t.zeroVels) {}
-  DynamicTransformation(const char* init) { read(rai::String(init).stream()); }
+  DynamicTransformation(const char* init);
 
   DynamicTransformation& setZero();
   DynamicTransformation& setText(const char* txt);
@@ -311,7 +313,7 @@ struct Camera {
   //retired
   void setCameraProjectionMatrix(const arr& P); //P is in standard convention -> computes fixedProjectionMatrix in OpenGL convention from this
 
-  void report(ostream& os=cout);
+  void report(std::ostream& os=std::cout);
 };
 
 //===========================================================================

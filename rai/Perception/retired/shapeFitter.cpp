@@ -622,7 +622,7 @@ void ShapeFitter::step() {
         double r=0;
         for(uint i=0; i<n/2; i++) r += length(obj->shapePoints3d[i]-obj->shapePoints3d[n/2+i])/2.;
         r /= n/2;
-        obj->orsShapeParams=ARR(0., 0., h, r);
+        obj->orsShapeParams=arr{0., 0., h, r};
 
         //printf("z before: %f ", obj->center3d.p[2]);
         //obj->center3d(2) += fabs(0.108-h);//move object center up, if the seen height is smaller than the original height
@@ -642,13 +642,13 @@ void ShapeFitter::step() {
         obj->diagDiff = obj->shapePoints3d[3*n/6] - obj->shapePoints3d[4*n/6];
         //for(uint d = 0; d < 6; d++)
         //  cout <<obj->shapePoints3d[d*n/6] <<endl;
-        obj->orsShapeParams=ARR(x, y, h, 0);
+        obj->orsShapeParams=arr{x, y, h, 0};
       }
       if(obj->shapeType == 0) { //sphere
         double r=0;
         for(uint i=0; i<n; i++) r+=length(obj->shapePoints3d[0]-obj->center3d); //mitteln ueber alle punkte!
         r/=n;
-        obj->orsShapeParams=ARR(0., 0., 0., r);
+        obj->orsShapeParams=arr{0., 0., 0., r};
       }
       obj->found++;
     } else { //other index is just point mass, just single contour point

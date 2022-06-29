@@ -8,7 +8,8 @@
 
 #include "benchmarks.h"
 #include "lagrangian.h"
-//#include "functions.h"
+
+#include <math.h>
 
 //===========================================================================
 
@@ -377,4 +378,21 @@ std::shared_ptr<NLP> getBenchmarkFromCfg(){
   }
 
   return nlp;
+}
+
+void NLP_RastriginSOS::evaluate(arr& phi, arr& J, const arr& x) {
+  CHECK_EQ(x.N, 2, "");
+  phi.resize(4);
+  phi(0) = sin(a*x(0));
+  phi(1) = sin(a*condition*x(1));
+  phi(2) = 2.*x(0);
+  phi(3) = 2.*condition*x(1);
+  if(!!J) {
+    J.resize(4, 2);
+    J.setZero();
+    J(0, 0) = cos(a*x(0))*a;
+    J(1, 1) = cos(a*condition*x(1))*a*condition;
+    J(2, 0) = 2.;
+    J(3, 1) = 2.*condition;
+  }
 }

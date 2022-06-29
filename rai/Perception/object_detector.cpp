@@ -120,7 +120,7 @@ bool IsABox(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointCloud<pcl::Normal>::
 
       //cout<<InliersPlane->indices.size() <<" vs. "<<inCloud->points.size()<<endl;
       if((double)InliersPlane->indices.size()/(double)inCloud->points.size() > 0.2) {
-        Matrix[index]() = ARR(outCoefficients[i]->values[0], outCoefficients[i]->values[1], outCoefficients[i]->values[2]);
+        Matrix[index]() = arr{outCoefficients[i]->values[0], outCoefficients[i]->values[1], outCoefficients[i]->values[2]};
         index ++;
         if(index==3) break;
       }
@@ -156,7 +156,7 @@ bool IsABox(pcl::PointCloud<PointT>::Ptr inCloud, pcl::PointCloud<pcl::Normal>::
     pcl::getMinMax3D(*transformed_cloud, proj_min, proj_max);
     //arr center(3);
 
-    length = ARR(proj_max.x - proj_min.x, proj_max.y - proj_min.y, proj_max.z - proj_min.z);
+    length = arr{proj_max.x - proj_min.x, proj_max.y - proj_min.y, proj_max.z - proj_min.z};
 
     center(0) = 0.5*(proj_min.x + proj_max.x);
     center(1) = 0.5*(proj_min.y + proj_max.y);

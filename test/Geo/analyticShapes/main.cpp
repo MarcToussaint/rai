@@ -131,7 +131,7 @@ void TEST(SimpleImplicitSurfaces) {
   gl.add(glStandardScene,nullptr);
   gl.add(m);
 
-  for(ptr<SDF>& f: fcts){
+  for(shared_ptr<SDF>& f: fcts){
     m.setImplicitSurface(*f,-10.,10.,100);
     gl.watch();
   }

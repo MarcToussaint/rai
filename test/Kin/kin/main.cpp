@@ -306,7 +306,7 @@ void TEST(Limits){
     checkJacobian(F->vf2(F->getFrames(G)),x,1e-4);
     for(uint t=0;t<10;t++){
       arr lim = F->eval(F->getFrames(G));
-      cout <<"y=" <<lim <<"  " <<flush;
+      cout <<"y=" <<lim <<"  " <<std::flush;
 //      cout <<"J:" <<lim.J <<endl;
       for(uint i=0;i<lim.N;i++) if(lim(i)<0.) lim(i)=0.; //penalize only positive
       x -= 1. * pseudoInverse(lim.J()) * lim;

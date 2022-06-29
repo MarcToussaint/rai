@@ -11,6 +11,7 @@
 #include "../Gui/opengl.h"
 #include "../Optim/newton.h"
 #include "../Algo/ann.h"
+#include "../Core/util.h"
 
 #ifdef RAI_GJK
 extern "C" {
@@ -524,7 +525,7 @@ void PairCollision::glDraw(OpenGL&) {
 
 void PairCollision::kinDistance(arr& y, arr& J,
                                 const arr& Jp1, const arr& Jp2) {
-  y = ARR(distance-rad1-rad2);
+  y = arr{distance-rad1-rad2};
   if(!!J) {
     arr Jdiff = Jp1 - Jp2;
     J = ~normal*Jdiff;
@@ -546,7 +547,7 @@ void PairCollision::kinNormal(arr& y, arr& J,
       double ab=scalarProduct(a, b);
       if(1.-ab*ab>1e-8) { //the edges are not colinear
         double nn = ::sqrt(1.-ab*ab);
-        double sign = ::sign(scalarProduct(normal, crossProduct(b, a)));
+        double sign = rai::sign(scalarProduct(normal, crossProduct(b, a)));
         J = ((sign/nn) * (eye(3, 3) - normal*~normal)) * (skew(b) * crossProduct(Jx1, a) - skew(a) * crossProduct(Jx2, b));
       }
     } else if(simplexType(2, 1)) {
@@ -604,7 +605,7 @@ void PairCollision::kinVector(arr& y, arr& J,
       double ab=scalarProduct(a, b);
       if(1.-ab*ab>1e-8) { //the edges are not colinear
         double nn = ::sqrt(1.-ab*ab);
-        double sign = ::sign(scalarProduct(normal, crossProduct(b, a)));
+        double sign = rai::sign(scalarProduct(normal, crossProduct(b, a)));
         J += ((distance * sign/nn) * (eye(3, 3) - normal*~normal)) * (skew(b) * crossProduct(Jx1, a) - skew(a) * crossProduct(Jx2, b));
       }
     }

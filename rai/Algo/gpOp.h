@@ -11,6 +11,8 @@
 #include "../Core/array.h"
 #include "../Core/util.h"
 
+#include <math.h>
+
 struct GaussianProcessKernel;
 
 struct GaussianProcessOptimized {

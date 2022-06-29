@@ -21,7 +21,6 @@
 #endif
 
 #include "opengl.h"
-#include "../Core/array.ipp"
 #include "../Geo/geo.h"
 
 #ifdef RAI_GLFW
@@ -562,7 +561,7 @@ uint color2id(byte rgb[3]) {
 arr id2color(uint id) {
   byteA rgb(3);
   id2color(rgb.p, id);
-  return ARR(rgb(0)/256., rgb(1)/256., rgb(2)/256.);
+  return arr{rgb(0)/256., rgb(1)/256., rgb(2)/256.};
 }
 
 #ifdef RAI_GL

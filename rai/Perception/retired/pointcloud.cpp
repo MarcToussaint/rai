@@ -43,7 +43,7 @@ void findMinMaxOfCylinder(double& min, double& max, arr& start, const pcl::Point
   min = std::numeric_limits<double>::max();
   max = -std::numeric_limits<double>::max();
   for(uint i=0; i<cloud->size(); ++i) {
-    arr point = ARR((*cloud)[i].x, (*cloud)[i].y, (*cloud)[i].z);
+    arr point = arr{(*cloud)[i].x, (*cloud)[i].y, (*cloud)[i].z};
     double p = scalarProduct(dir, point);
     if(p < min) {
       min = p;
@@ -166,7 +166,7 @@ struct sObjectFitter {
       object = cyl_object;
       inliers = cyl_inliers;
       double min, max;
-      arr direction = ARR(object->values[3], object->values[4], object->values[5]);
+      arr direction = arr{object->values[3], object->values[4], object->values[5]};
       pcl::PointCloud<PointT>::Ptr cylinder(new pcl::PointCloud<PointT>());
       pcl::ExtractIndices<PointT> extract;
       extract.setInputCloud(cloud);
@@ -175,7 +175,7 @@ struct sObjectFitter {
       extract.filter(*cylinder);
       arr start;
       findMinMaxOfCylinder(min, max, start, cylinder, direction);
-      arr s = ARR(object->values[0], object->values[1], object->values[2]);
+      arr s = arr{object->values[0], object->values[1], object->values[2]};
       direction = direction/length(direction);
       arr st = s+scalarProduct(direction, (start-s))*direction;
       direction = (max - min) * direction;
@@ -407,7 +407,7 @@ void ObjectFilter::step() {
   out_objects->clear();
   // HACK! We assume max two cylinders
   for(uint i = 0; i<cyl_pos.d0; i++) {
-    double height = length(ARR(cyl_pos(i, 3), cyl_pos(i, 4), cyl_pos(i, 5)));
+    double height = length(arr{cyl_pos(i, 3), cyl_pos(i, 4), cyl_pos(i, 5))};
     // if cylinder is higher then real cylinder there are probably two...
     if(height > 0.15) {
       int oldd0 = cyl_pos.d0;
@@ -426,17 +426,17 @@ void ObjectFilter::step() {
   }
   for(uint i = 0; i<cyl_pos.d0; i++) {
     ObjectBelief* cyl = new ObjectBelief();
-    cyl->position = ARR(cyl_pos(i, 0), cyl_pos(i, 1), cyl_pos(i, 2));
-    cyl->rotation.setDiff(ARR(0, 0, 1), ARR(cyl_pos(i, 3), cyl_pos(i, 4), cyl_pos(i, 5)));
+    cyl->position = arr{cyl_pos(i, 0), cyl_pos(i, 1), cyl_pos(i, 2)};
+    cyl->rotation.setDiff(arr{0, 0, 1}, arr{cyl_pos(i, 3), cyl_pos(i, 4), cyl_pos(i, 5))};
     cyl->shapeParams(RADIUS) = cyl_pos(i, 6); //.025;
-    cyl->shapeParams(HEIGHT) = length(ARR(cyl_pos(i, 3), cyl_pos(i, 4), cyl_pos(i, 5)));
+    cyl->shapeParams(HEIGHT) = length(arr{cyl_pos(i, 3), cyl_pos(i, 4), cyl_pos(i, 5))};
     cyl->shapeType = rai::ST_cylinder;
     //cyl->pcl_object = pcl_cyls(i);
     out_objects->append(cyl);
   }
   for(uint i = 0; i<sph_pos.d0; i++) {
     ObjectBelief* sph = new ObjectBelief;
-    sph->position = ARR(sph_pos(i, 0), sph_pos(i, 1), sph_pos(i, 2));
+    sph->position = arr{sph_pos(i, 0), sph_pos(i, 1), sph_pos(i, 2)};
     sph->shapeParams(RADIUS) = sph_pos(i, 3);
     sph->shapeType = rai::ST_sphere;
     //sph->pcl_object = pcl_sph(i);
@@ -464,7 +464,7 @@ void createOrsObject(rai::Configuration& world, rai::Body& body, const ObjectBel
 
   t.appendTransformation(sensor_to_ors);
 
-  arr size = ARR(0., 0., object->shapeParams(HEIGHT), object->shapeParams(RADIUS));
+  arr size = arr{0., 0., object->shapeParams(HEIGHT}, object->shapeParams(RADIUS));
 
   rai::Shape* s = new rai::Shape(world, body);
   for(uint i = 0; i < 4; ++i) s->size[i] = size(i);
@@ -481,7 +481,7 @@ void moveObject(intA& used, const ShapeL& objects, const rai::Vector& pos, const
   for(uint i=0; i<objects.N; ++i) {
     if(used.contains(i)) continue;
     rai::Vector diff_ = objects(i)->X.pos - pos;
-    double diff = length(ARR(diff_.x, diff_.y, diff_.z));
+    double diff = length(arr{diff_.x, diff_.y, diff_.z});
     if(diff < max) {
       max = diff;
       max_index = i;

@@ -8,6 +8,8 @@
 
 #include "depth2PointCloud.h"
 
+#include <math.h>
+
 Depth2PointCloud::Depth2PointCloud(Var<floatA>& _depth, float _fx, float _fy, float _px, float _py)
   : Thread("Depth2PointCloud"),
     depth(this, _depth, true),

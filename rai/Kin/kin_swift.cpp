@@ -45,8 +45,8 @@ SwiftInterface::SwiftInterface(const FrameL& frames, double _cutoff, int verbose
   if(verbose>0) cout <<" -- SwiftInterface init";
   rai::Shape* s;
   for(rai::Frame* f: frames) if((s=f->shape) && s->cont) {
-      if(verbose>0) cout <<'.' <<flush;
-      if(verbose>1) cout <<f->name <<flush;
+      if(verbose>0) cout <<'.' <<std::flush;
+      if(verbose>1) cout <<f->name <<std::flush;
       add=true;
       switch(s->type()) {
         case rai::ST_none: HALT("shapes should have a type - somehow wrong initialization..."); break;
@@ -243,7 +243,7 @@ uintA SwiftInterface::pullFromSwift(bool dumpReport) {
     scene->Query_Tolerance_Verification(false, cutoff, np, &oids);
 //    scene->Query_Intersection(false, np, &oids);
   } catch(const char* msg) {
-    std::cerr <<"... catching error '" <<msg <<"' -- SWIFT failed! .. no proxies for this posture!!..." <<endl;
+    cerr <<"... catching error '" <<msg <<"' -- SWIFT failed! .. no proxies for this posture!!..." <<endl;
     return uintA();
   } catch(std::exception& e) {
     cout <<"... catching error '" <<e.what() <<"' -- SWIFT failed! .. no proxies for this posture!!..." <<endl;

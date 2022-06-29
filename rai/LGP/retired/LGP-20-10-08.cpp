@@ -1,5 +1,5 @@
-ptr<KOMO> LGP_Node::optSubCG(const SubCG& scg, bool collisions, int verbose) {
-  ptr<KOMO> komo = make_shared<KOMO>();
+shared_ptr<KOMO> LGP_Node::optSubCG(const SubCG& scg, bool collisions, int verbose) {
+  shared_ptr<KOMO> komo = make_shared<KOMO>();
 
   komo->verbose = rai::MAX(verbose, 0);
 
@@ -51,7 +51,7 @@ ptr<KOMO> LGP_Node::optSubCG(const SubCG& scg, bool collisions, int verbose) {
   return komo;
 }
 
-ptr<CG> LGP_Node::getCGO(bool collisions, int verbose) {
+shared_ptr<CG> LGP_Node::getCGO(bool collisions, int verbose) {
   Skeleton S = getSkeleton();
 
   if(verbose>1) {
@@ -65,7 +65,7 @@ ptr<CG> LGP_Node::getCGO(bool collisions, int verbose) {
 
 //===========================================================================
 
-ptr<CG> skeleton2CGO(const Skeleton& S, const rai::Configuration& startKinematics, bool collisions) {
+shared_ptr<CG> skeleton2CGO(const Skeleton& S, const rai::Configuration& startKinematics, bool collisions) {
   cout <<"*** " <<RAI_HERE <<endl;
   writeSkeleton(cout, S);
 
@@ -84,7 +84,7 @@ ptr<CG> skeleton2CGO(const Skeleton& S, const rai::Configuration& startKinematic
   cout <<"frames: " <<frames <<endl;
 
   //-- create graph vertices
-  ptr<CG> cg = make_shared<CG>();
+  shared_ptr<CG> cg = make_shared<CG>();
   for(int t=0; t<=maxPhase; t++) {
     for(rai::String& f:frames) {
       cg->G.newNode<int>({STRING(f <<'_' <<t)}, {}, t);

@@ -567,7 +567,7 @@ void optimalSphere(arr& core, uint num, const arr& org_pts, double& radius, int 
   x.append(radius);
 
   //problem
-  ptr<NLP> F;
+  shared_ptr<NLP> F;
   if(num==1) F = make_shared<FitSphereProblem>(pts);
   else if(num==2)  F = make_shared<FitCapsuleProblem>(pts);
 

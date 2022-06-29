@@ -17,7 +17,9 @@
 #endif
 
 #include "array.h"
+#include "array.ipp"
 #include "util.h"
+#include "util.ipp"
 
 #ifdef RAI_LAPACK
 extern "C" {
@@ -202,15 +204,19 @@ template<> Array<double> Array<double>::J_reset() {
 }
 
 #define NONSENSE( type ) \
+  template<> Array<type> Array<type>::noJ() const { HALT("not for this type"); } \
   template<> SparseMatrix& Array<type>::sparse() { NIY; return *(new SparseMatrix(NoArr)); } \
   template<> const SparseMatrix& Array<type>::sparse() const{ NIY; return *(new SparseMatrix(NoArr)); } \
   template<> RowShifted& Array<type>::rowShifted() { NIY; return *(new RowShifted(NoArr)); } \
   template<> const RowShifted& Array<type>::rowShifted() const{ NIY; return *(new RowShifted(NoArr)); } \
   template<> Array<type>& Array<type>::J() { NIY; }
 NONSENSE(float)
+NONSENSE(long)
 NONSENSE(uint)
 NONSENSE(int)
+NONSENSE(unsigned short)
 NONSENSE(byte)
+NONSENSE(char)
 #undef NONSENSE
 
 }
@@ -248,11 +254,11 @@ arr grid(const arr& lo, const arr& hi, const uintA& steps) {
     arr delta = zeros(3);
     for(uint i=0; i<3; i++) if(steps(i)) delta(i) = (hi(i)-lo(i))/steps(i);
 
-    X.resize(TUP(steps(0)+1, steps(1)+1, steps(2)+1, 3));
+    X.resize(uintA{steps(0)+1, steps(1)+1, steps(2)+1, 3});
     for(i=0; i<X.d0; i++) for(j=0; j<X.d1; j++) for(k=0; k<X.d2; k++) {
-      X.elem(TUP(i, j, k, 0))=lo(0)+delta(0)*i;
-      X.elem(TUP(i, j, k, 1))=lo(1)+delta(1)*j;
-      X.elem(TUP(i, j, k, 2))=lo(2)+delta(2)*k;
+      X.elem(uintA{i, j, k, 0})=lo(0)+delta(0)*i;
+      X.elem(uintA{i, j, k, 1})=lo(1)+delta(1)*j;
+      X.elem(uintA{i, j, k, 2})=lo(2)+delta(2)*k;
     }
     X.reshape(X.d0*X.d1*X.d2, 3);
     return X;
@@ -401,17 +407,17 @@ uint svd(arr& U, arr& d, arr& V, const arr& A, bool sort) {
   arr Atmp;
   Atmp = U * dD * ~V;
   //cout <<"\nA=" <<A <<"\nAtmp=" <<Atmp <<"U=" <<U <<"W=" <<dD <<"~V=" <<~V <<endl;
-  std::cout <<"SVD is correct:  " <<(err=maxDiff(Atmp, A)) <<' ' <<endl;    CHECK(err<RAI_CHECK_SVD, "");
+  cout <<"SVD is correct:  " <<(err=maxDiff(Atmp, A)) <<' ' <<endl;    CHECK(err<RAI_CHECK_SVD, "");
   if(A.d0<=A.d1) {
     I.setId(U.d0);
-    std::cout <<"U is orthogonal: " <<(err=maxDiff(U * ~U, I)) <<' ' <<endl;  CHECK(err<RAI_CHECK_SVD, "");
+    cout <<"U is orthogonal: " <<(err=maxDiff(U * ~U, I)) <<' ' <<endl;  CHECK(err<RAI_CHECK_SVD, "");
     I.setId(V.d1);
-    std::cout <<"V is orthogonal: " <<(err=maxDiff(~V * V, I)) <<endl;        CHECK(err<RAI_CHECK_SVD, "");
+    cout <<"V is orthogonal: " <<(err=maxDiff(~V * V, I)) <<endl;        CHECK(err<RAI_CHECK_SVD, "");
   } else {
     I.setId(U.d1);
-    std::cout <<"U is orthogonal: " <<(err=maxDiff(~U * U, I)) <<' ' <<endl;  CHECK(err<RAI_CHECK_SVD, "");
+    cout <<"U is orthogonal: " <<(err=maxDiff(~U * U, I)) <<' ' <<endl;  CHECK(err<RAI_CHECK_SVD, "");
     I.setId(V.d0);
-    std::cout <<"V is orthogonal: " <<(err=sqrDistance(V * ~V, I)) <<endl;        CHECK(err<1e-5, "");
+    cout <<"V is orthogonal: " <<(err=sqrDistance(V * ~V, I)) <<endl;        CHECK(err<1e-5, "");
   }
   rai::useLapack=uselapack;
 #endif
@@ -1565,7 +1571,7 @@ void blas_MM(arr& X, const arr& A, const arr& B) {
               0., X.p, X.d1);
 #if 0//test
   rai::useLapack=false;
-  std::cout  <<"blas_MM error = " <<maxDiff(A*B, X, 0) <<std::endl;
+  cout  <<"blas_MM error = " <<maxDiff(A*B, X, 0) <<endl;
   rai::useLapack=true;
 #endif
 }
@@ -1581,7 +1587,7 @@ void blas_A_At(arr& X, const arr& A) {
   for(uint i=0; i<n; i++) for(uint j=0; j<i; j++) X.p[i*n+j] = X.p[j*n+i]; //fill in the lower triangle
 #if 0//test
   rai::useLapack=false;
-  std::cout  <<"blas_MM error = " <<maxDiff(A*~A, X, 0) <<std::endl;
+  cout  <<"blas_MM error = " <<maxDiff(A*~A, X, 0) <<endl;
   rai::useLapack=true;
 #endif
 }
@@ -1597,7 +1603,7 @@ void blas_At_A(arr& X, const arr& A) {
   for(uint i=0; i<n; i++) for(uint j=0; j<i; j++) X.p[i*n+j] = X.p[j*n+i]; //fill in the lower triangle
 #if 0//test
   rai::useLapack=false;
-  std::cout  <<"blas_MM error = " <<maxDiff(~A*A, X, 0) <<std::endl;
+  cout  <<"blas_MM error = " <<maxDiff(~A*A, X, 0) <<endl;
   rai::useLapack=true;
 #endif
 }
@@ -1614,7 +1620,7 @@ void blas_Mv(arr& y, const arr& A, const arr& x) {
               0., y.p, 1);
 #if 0 //test
   rai::useLapack=false;
-  std::cout  <<"blas_Mv error = " <<maxDiff(A*x, y, 0) <<std::endl;
+  cout  <<"blas_Mv error = " <<maxDiff(A*x, y, 0) <<endl;
   rai::useLapack=true;
 #endif
 }
@@ -1634,7 +1640,7 @@ void blas_MsymMsym(arr& X, const arr& A, const arr& B) {
   Y.setZero();
   for(i=0; i<Y.d0; i++) for(j=0; j<Y.d1; j++) for(k=0; k<A.d1; k++)
         Y(i, j) += A(i, k) * B(k, j);
-  std::cout  <<"blas_MsymMsym error = " <<sqrDistance(X, Y) <<std::endl;
+  cout  <<"blas_MsymMsym error = " <<sqrDistance(X, Y) <<endl;
 #endif
 }
 
@@ -1693,10 +1699,10 @@ arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
 //    arr sig, eig;
 //    lapack_EigenDecomp(A, sig, eig);
 #endif
-    rai::errString <<"lapack_Ainv_b_sym error info = " <<INFO
+    rai::errStringStream() <<"lapack_Ainv_b_sym error info = " <<INFO
                    <<". Typically this is because A is not pos-def.";
 //    \nsmallest "<<k<<" eigenvalues=" <<sig;
-    throw(rai::errString.p);
+    throw(rai::errString());
 //    THROW("lapack_Ainv_b_sym error info = " <<INFO
 //         <<". Typically this is because A is not pos-def.\nsmallest "<<k<<" eigenvalues=" <<sig);
   }
@@ -2589,8 +2595,8 @@ void SparseMatrix::setupRowsCols() {
   for(uint k=0; k<elems.d0; k++) {
     uint i = elems(k, 0);
     uint j = elems(k, 1);
-    rows(i).append(TUP(j, k));
-    cols(j).append(TUP(i, k));
+    rows(i).append(uintA{j, k});
+    cols(j).append(uintA{i, k});
   }
 }
 
@@ -2985,7 +2991,7 @@ Eigen::MatrixXd conv_arr2eigen(const arr& in) {
 void graphRandomUndirected(uintA& E, uint n, double connectivity) {
   uint i, j;
   for(i=0; i<n; i++) for(j=i+1; j<n; j++) {
-      if(rnd.uni()<connectivity) E.append(TUP(i, j));
+      if(rnd.uni()<connectivity) E.append(uintA{i, j});
     }
   E.reshape(E.N/2, 2);
 }
@@ -2993,7 +2999,7 @@ void graphRandomUndirected(uintA& E, uint n, double connectivity) {
 void graphRandomTree(uintA& E, uint N, uint roots) {
   uint i;
   CHECK_GE(roots, 1, "");
-  for(i=roots; i<N; i++) E.append(TUP(rnd(i), i));
+  for(i=roots; i<N; i++) E.append(uintA{rnd(i), i});
   E.reshape(E.N/2, 2);
 }
 
@@ -3034,7 +3040,7 @@ void graphRandomFixedDegree(uintA& E, uint N, uint d) {
         for(i2=i1+1; i2<U.N && !suit_pair_found; i2++) {
           if((U(i1)/d) != (U(i2)/d)) {  // they are suitable (refer to different nodes)
             suit_pair_found = true;
-            E.append(TUP(U(i1)/d, U(i2)/d));
+            E.append(uintA{U(i1)/d, U(i2)/d});
             U.remove(i2);  // first remove largest
             U.remove(i1);  // remove smallest
           }
@@ -3069,39 +3075,55 @@ void graphRandomFixedDegree(uintA& E, uint N, uint d) {
 
 //===========================================================================
 //
+// explicit instantiations for double
+//
+
+template<> const rai::Array<double>& rai::Array<double>::ensureDouble() const{ return *this; }
+template<class T> const rai::Array<double>& rai::Array<T>::ensureDouble() const{ HALT("not for this type"); }
+
+template<> rai::Array<double>& rai::Array<double>::ensureDouble(){ return *this; }
+template<class T> rai::Array<double>& rai::Array<T>::ensureDouble(){ HALT("not for this type"); }
+
+//===========================================================================
+//
 // explicit instantiations
 // (in old versions, array.ipp was not included by array.h -- one could revive this)
 //
 
-//#include "array.ipp"
-//#define T double
-//#  include "array_instantiate.cxx"
-//#undef T
+#if 0
+#define T double
+#  include "array_instantiate.cxx"
+#undef T
 
-//#define NOFLOAT
-//#define T float
-//#  include "array_instantiate.cxx"
-//#undef T
+#define NOFLOAT
+#define T float
+#  include "array_instantiate.cxx"
+#undef T
 
-//#define T uint
-//#  include "array_instantiate.cxx"
-//#undef T
+#define T uint
+#  include "array_instantiate.cxx"
+#undef T
 
-//#define T uint16_t
-//#  include "array_instantiate.cxx"
-//#undef T
+#define T uint16_t
+#  include "array_instantiate.cxx"
+#undef T
 
-//#define T int
-//#  include "array_instantiate.cxx"
-//#undef T
+#define T int
+#  include "array_instantiate.cxx"
+#undef T
 
-//#define T long
-//#  include "array_instantiate.cxx"
-//#undef T
-//#define T byte
-//#  include "array_instantiate.cxx"
-//#undef T
-//#undef NOFLOAT
+#define T long
+#  include "array_instantiate.cxx"
+#undef T
+
+#define T byte
+#  include "array_instantiate.cxx"
+#undef T
+
+#define T char
+#  include "array_instantiate.cxx"
+#undef T
+#undef NOFLOAT
 
 template rai::Array<rai::String>::Array();
 template rai::Array<rai::String>::~Array();
@@ -3119,13 +3141,14 @@ template rai::Array<char const*>::~Array();
 
 template rai::Array<uintA>::Array();
 template rai::Array<uintA>::Array(uint);
+template rai::Array<uintA>::Array(const rai::Array<uintA>&);
+template rai::Array<uintA>& rai::Array<uintA>::operator=(std::initializer_list<uintA> values);
 template rai::Array<uintA>::~Array();
 
 template rai::Array<arr>::Array();
 template rai::Array<arr>::Array(uint);
 template rai::Array<arr>::~Array();
-
-#include "util.ipp"
+#endif
 
 template rai::Array<double> rai::getParameter<arr>(char const*);
 template rai::Array<double> rai::getParameter<arr>(char const*, const arr&);
@@ -3136,6 +3159,13 @@ template void rai::getParameter(uintA&, const char*, const uintA&);
 template void rai::getParameter(arr&, const char*, const arr&);
 
 void linkArray() { cout <<"*** libArray.so dynamically loaded ***" <<endl; }
+
+namespace rai{
+template
+typename std::enable_if<!is_shared_ptr<rai::String>::value, std::ostream&>::type
+operator<<(std::ostream& os, const rai::Array<rai::String>& x);
+template std::istream& operator>>(std::istream& is, Array<rai::String>& x);
+}
 
 //namespace rai{
 //template<> template<> Array<rai::String>::Array(std::initializer_list<const char*> list) {

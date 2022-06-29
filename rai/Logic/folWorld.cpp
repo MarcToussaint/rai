@@ -34,7 +34,7 @@ void FOL_World::Decision::write(ostream& os) const {
 #else
     os <<'(' <<rule->key;
     for(uint i=0; i<substitution.N; i++) { os <<' ' <<substitution.elem(i)->key; }
-    os <<')' <<flush;
+    os <<')' <<std::flush;
 #endif
   }
 }
@@ -232,7 +232,7 @@ TreeSearchDomain::TransitionReturn FOL_World::transition(const Handle& action) {
 
 const std::vector<FOL_World::Handle> FOL_World::get_actions() {
   CHECK(state, "you need to set the state first! (e.g., reset_state)");
-  if(verbose>2) cout <<"****************** FOL_World: Computing possible decisions" <<flush;
+  if(verbose>2) cout <<"****************** FOL_World: Computing possible decisions" <<std::flush;
   Array<Handle> decisions; //tuples of rule and substitution
   if(hasWait) {
     decisions.append(Handle(new Decision(true, nullptr, {}, decisions.N))); //the wait decision (true as first argument, no rule, no substitution)

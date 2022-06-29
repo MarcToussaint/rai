@@ -11,6 +11,7 @@
 #include "../Core/array.h"
 #include "../Core/thread.h"
 #include "../Geo/geo.h"
+
 #include <functional>
 
 #ifdef RAI_FLTK

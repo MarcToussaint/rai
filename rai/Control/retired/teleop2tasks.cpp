@@ -90,7 +90,7 @@ void Teleop2Tasks::updateMovement(floatA& cal_pose, arr& old_pos, arr& old_effpo
 
   //get positiondata
   copy(pos, cal_pose.sub(0, 2));
-  pos += ARR(0.6, 0., 1.);
+  pos += arr{0.6, 0., 1.};
 
   //calculate difference in position
   copy(pos_div, pos);
@@ -98,19 +98,19 @@ void Teleop2Tasks::updateMovement(floatA& cal_pose, arr& old_pos, arr& old_effpo
 
   //reset positions if no movement on the axis allowed
   if(!move_x) {
-    pos_div += ARR(-pos_div(0), 0, 0);
+    pos_div += arr{-pos_div(0), 0, 0};
   }
   if(!move_y) {
-    pos_div += ARR(0, -pos_div(1), 0);
+    pos_div += arr{0, -pos_div(1), 0};
   }
   if(!move_z) {
-    pos_div += ARR(0, 0, -pos_div(2));
+    pos_div += arr{0, 0, -pos_div(2)};
   }
   old_effpos +=pos_div;
 
   if(effPos) {
     effPos->PD().setTarget(old_effpos);
-//    effPos->setCompliance( c_in_this_direction = 1., c_in_other_directions=.1, direction=ARR(.7,.7,0) );
+//    effPos->setCompliance( c_in_this_direction = 1., c_in_other_directions=.1, direction=arr{.7,.7,0} );
   }
   copy(old_pos, pos);
 }
@@ -152,8 +152,8 @@ void Teleop2Tasks::updateTasks(floatA cal_pose_rh, floatA cal_pose_lh, float cal
   if(!initialised) {
     copy(old_pos_rh, cal_pose_rh.sub(0, 2));
     copy(old_pos_lh, cal_pose_lh.sub(0, 2));
-    old_pos_rh += ARR(0.6, 0., 1.);
-    old_pos_lh += ARR(0.6, 0., 1.);
+    old_pos_rh += arr{0.6, 0., 1.};
+    old_pos_lh += arr{0.6, 0., 1.};
     copy(old_effpos_r, old_pos_rh);
     copy(old_effpos_l, old_pos_lh);
     initialised = true;

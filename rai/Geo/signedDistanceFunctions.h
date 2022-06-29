@@ -75,11 +75,7 @@ struct SDF_Blobby : SDF {
 };
 
 struct SDF_Torus : SDF {
-  double f(arr& g, arr& H, const arr& _x){
-    double x=_x(0), y=_x(1), z=_x(2);
-    double r=sqrt(x*x + y*y);
-    return z*z + (1.-r)*(1.-r) - .1;
-  }
+  double f(arr& g, arr& H, const arr& _x);
 };
 
 struct SDF_GridData : SDF {

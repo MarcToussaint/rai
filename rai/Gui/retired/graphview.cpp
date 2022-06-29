@@ -8,7 +8,6 @@
 
 #include "graphview.h"
 #include "../Core/util.ipp"
-#include "../Core/array.ipp"
 #include "../Gui/gtk.h"
 
 #if defined RAI_GTK and defined RAI_GRAPHVIZ

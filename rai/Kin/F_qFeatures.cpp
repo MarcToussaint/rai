@@ -238,12 +238,12 @@ void F_qZeroVel::phi2(arr& y, arr& J, const FrameL& F){
 #if 1
   rai::Frame *f = F.last();
   if(f->joint->type==rai::JT_transXYPhi) {
-    arr s = ARR(10., 10., 1.);
+    arr s = arr{10., 10., 1.};
     y = s%y;
     //if(!!J) J = s%J;
   }
   if(f->joint->type==rai::JT_free) {
-    arr s = ARR(10., 10., 10., 1., 1., 1., 1.);
+    arr s = arr{10., 10., 10., 1., 1., 1., 1.};
     y = s%y;
     //if(!!J) J = s%J;
   }

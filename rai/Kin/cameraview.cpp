@@ -85,7 +85,7 @@ void rai::CameraView::updateConfiguration(const rai::Configuration& newC) {
     C.copy(newC);
     //deep copy meshes!
     for(rai::Frame* f:C.frames) if(f->shape) {
-        ptr<Mesh> org = f->shape->_mesh;
+        shared_ptr<Mesh> org = f->shape->_mesh;
         f->shape->_mesh = make_shared<Mesh> (*org.get());
       }
     if(renderMode==seg) { //update frameIDmap
@@ -280,5 +280,5 @@ void rai::Sim_CameraView::step() {
 
 arr rai::Sim_CameraView::getFxypxy() {
   auto sen = V.currentSensor;
-  return ARR(sen->cam.focalLength*sen->height, sen->cam.focalLength*sen->height, .5*(sen->width-1.), .5*(sen->height-1.));
+  return arr{sen->cam.focalLength*sen->height, sen->cam.focalLength*sen->height, .5*(sen->width-1.), .5*(sen->height-1.)};
 }

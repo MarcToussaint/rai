@@ -8,7 +8,6 @@
 
 #include "graph.h"
 #include "util.ipp"
-#include "array.ipp"
 
 #include <map>
 
@@ -734,7 +733,7 @@ Node* Graph::readNode(std::istream& is, StringA& tags, const char* predetermined
   }
   DEBUG(checkConsistency());
 
-  if(verbose) { cout <<" tags:" <<tags <<flush; }
+  if(verbose) { cout <<" tags:" <<tags <<std::flush; }
 
   String key;
   if(!predeterminedKey) {
@@ -752,7 +751,7 @@ Node* Graph::readNode(std::istream& is, StringA& tags, const char* predetermined
   }
   DEBUG(checkConsistency());
 
-  if(verbose) { cout <<" parents:"; if(!parents.N) cout <<"none"; else listWrite(parents, cout, " ", "()"); cout <<flush; }
+  if(verbose) { cout <<" parents:"; if(!parents.N) cout <<"none"; else listWrite(parents, cout, " ", "()"); cout <<std::flush; }
 
   //-- read value
   Node* node=nullptr;

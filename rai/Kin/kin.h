@@ -10,6 +10,7 @@
 
 #include "featureSymbols.h"
 #include "../Core/array.h"
+#include "../Core/graph.h"
 #include "../Geo/geo.h"
 #include "../Geo/mesh.h"
 
@@ -268,9 +269,9 @@ struct Configuration : GLDrawer {
   void displayDot();
 
   //some info
-  void report(std::ostream& os=std::cout) const;
-  void reportProxies(std::ostream& os=std::cout, double belowMargin=1., bool brief=true) const;
-  void reportLimits(std::ostream& os=std::cout) const;
+  void report(std::ostream& os=cout) const;
+  void reportProxies(std::ostream& os=cout, double belowMargin=1., bool brief=true) const;
+  void reportLimits(std::ostream& os=cout) const;
 
 private:
   void readFromGraph(const Graph& G, bool addInsteadOfClear=false);

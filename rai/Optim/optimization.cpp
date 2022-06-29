@@ -8,6 +8,8 @@
 
 #include "optimization.h"
 
+#include <math.h>
+
 uint eval_count=0;
 ObjectiveTypeA __NoTermTypeA(new SpecialArray(SpecialArray::ST_NoArr));
 ObjectiveTypeA& NoObjectiveTypeA = __NoTermTypeA;

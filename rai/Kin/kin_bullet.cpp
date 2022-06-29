@@ -11,6 +11,7 @@
 #ifdef RAI_BULLET
 
 #include "frame.h"
+
 #include <btBulletDynamicsCommon.h>
 #include <BulletSoftBody/btSoftBody.h>
 #include <BulletSoftBody/btSoftBodyHelpers.h>
@@ -43,7 +44,7 @@ btTransform conv_trans_btTrans(const rai::Transformation& X) {
 }
 
 arr conv_btVec3_arr(const btVector3& v) {
-  return ARR(v.x(), v.y(), v.z());
+  return arr{v.x(), v.y(), v.z()};
 }
 
 btVector3 conv_arr_btVec3(const arr& v) {

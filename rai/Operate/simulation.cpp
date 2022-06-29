@@ -162,7 +162,7 @@ void Simulation::setJointStateSafe(arr q_ref, StringA& jointsInLimit, StringA& c
       arr qstep_nullspace = q_ref - q;
       if(length(qstep_nullspace)>.1) qstep_nullspace = .1/length(qstep_nullspace) * qstep_nullspace;
 
-      arr qstep = invJ * (ARR(.9) - y); //.9 is the target for the proxy cost (1. is contact, 0. is margin))
+      arr qstep = invJ * (arr{.9} - y); //.9 is the target for the proxy cost (1. is contact, 0. is margin))
       qstep += (I - invJ*J) * qstep_nullspace;
 
       if(absMax(qstep)<1e-6) break;
@@ -358,7 +358,7 @@ arr computeNextFeasibleConfiguration(rai::Configuration& K, arr q_ref, StringA& 
       arr qstep_nullspace = q_ref - q;
       if(length(qstep_nullspace)>.1) qstep_nullspace = .1/length(qstep_nullspace) * qstep_nullspace;
 
-      arr qstep = invJ * (ARR(.9) - y); //.9 is the target for the proxy cost (1. is contact, 0. is margin))
+      arr qstep = invJ * (arr{.9} - y); //.9 is the target for the proxy cost (1. is contact, 0. is margin))
       qstep += (I - invJ*J) * qstep_nullspace;
 
       if(absMax(qstep)<1e-6) break;

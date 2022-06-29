@@ -241,7 +241,7 @@ void Collector::step()
     rndUniform(box.V, -0.05, 0.05, true);
     box.scale(0.1);
 
-    PercCluster* fake_cluster = new PercCluster( ARR(0.6, 0., 0.05),  // mean
+    PercCluster* fake_cluster = new PercCluster( arr{0.6, 0., 0.05},  // mean
                                                  box.V,               // points
                                                  "/base_footprint");  // frame
     fake_cluster->pose.setZero();

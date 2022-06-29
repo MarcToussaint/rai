@@ -2085,7 +2085,7 @@ bool SWIFT_PairWorkspace::Walk_Convex_LC( RESULT_TYPE start_state )
 #else
 //#ifdef SWIFT_DEBUG
         if( r++ == STATE_TRANS_CYCLE_DECL ) {
-          //std::cerr << "WARNING - SWIFT infinite loop detected: throwing error ..." << endl;
+          //cerr << "WARNING - SWIFT infinite loop detected: throwing error ..." << endl;
           throw "swift cycle";
           //exit( -1 );
         }

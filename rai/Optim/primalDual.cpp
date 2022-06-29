@@ -8,6 +8,8 @@
 
 #include "primalDual.h"
 
+#include <math.h>
+
 PrimalDualProblem::PrimalDualProblem(const arr& x, const shared_ptr<NLP>& P, rai::OptOptions opt, arr& lambdaInit)
   : L(P, opt, lambdaInit), mu(opt.muLBInit) {
 

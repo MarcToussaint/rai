@@ -8,6 +8,8 @@
 
 #include "lagrangian.h"
 
+#include <math.h>
+
 //==============================================================================
 //
 // LagrangianProblem

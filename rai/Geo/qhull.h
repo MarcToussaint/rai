@@ -9,7 +9,6 @@
 #pragma once
 
 #include "geo.h"
-#include "../Core/array.h"
 
 void plotQhullState(uint D);
 extern int QHULL_DEBUG_LEVEL;

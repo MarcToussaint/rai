@@ -11,6 +11,8 @@
 #include "../Core/thread.h"
 #include "../Geo/geo.h"
 
+#include <math.h>
+
 struct Depth2PointCloud : Thread {
   //inputs
   Var<floatA> depth;

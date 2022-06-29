@@ -26,7 +26,7 @@ struct LGP_Tree_SolutionData : GLDrawer {
   LGP_Node* node; ///< contains costs, constraints, and solutions for each level
   String decisions;
 
-  Array<ptr<Mesh>> geoms; ///< for display
+  Array<shared_ptr<Mesh>> geoms; ///< for display
   Array<TransformationA> paths; ///< for display
   uint displayStep=0;
 

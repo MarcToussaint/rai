@@ -12,6 +12,7 @@
 #include "forceExchange.h"
 #include "dof_particles.h"
 #include "../Geo/signedDistanceFunctions.h"
+
 #include <climits>
 
 #ifdef RAI_GL
@@ -368,8 +369,8 @@ void rai::Frame::read(const Graph& ats) {
     }
     sh->type() = rai::ST_ssCvx;
     sh->sscCore().V = core;
-    sh->size = ARR(r);
-    sh->mesh().C = ARR(1., 1., 0., .5);
+    sh->size = arr{r};
+    sh->mesh().C = arr{1., 1., 0., .5};
     sh->mesh().setSSCvx(core, r);
   }
 }
@@ -503,7 +504,7 @@ rai::Frame& rai::Frame::setConvexMesh(const arr& points, const byteA& colors, do
     getShape().sscCore().V.clear().operator=(points).reshape(-1, 3);
     getShape().sscCore().makeConvexHull();
     getShape().mesh().setSSCvx(getShape().sscCore().V, radius);
-    getShape().size = ARR(radius);
+    getShape().size = arr{radius};
   }
   if(colors.N) {
     getShape().mesh().C.clear().operator=(convert<double>(byteA(colors))/255.).reshape(-1, 3);

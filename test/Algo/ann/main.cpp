@@ -18,9 +18,9 @@ void TEST(ANN) {
   Y.resize(idx.N,x.N);
   for(uint i=0;i<Y.d0;i++) Y[i] = X[idx(i)];
   std::cout <<"build time (#" <<ann.X.N <<") = " <<rai::timerRead() <<"sec" <<std::endl;
-  write(LIST<arr>(X),"z.data");
-  write(LIST<arr>(x.reshape(1,x.N)),"z.query");
-  write(LIST<arr>(Y),"z.neighbors");
+  write(arrL{&X},"z.data");
+  write(arrL{&x.reshape(1,x.N)},"z.query");
+  write(arrL{&Y},"z.neighbors");
   gnuplot("set size square; plot 'z.data' w p,'z.query' w p,'z.neighbors' w p");
   rai::wait();
 }

@@ -148,7 +148,7 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
   arr ucontrol = u_control; //a copy to allow for perturbations
 
   //-- imps before control
-  for(ptr<SimulationImp>& imp : imps) if(imp->when==SimulationImp::_beforeControl) {
+  for(shared_ptr<SimulationImp>& imp : imps) if(imp->when==SimulationImp::_beforeControl) {
       imp->modControl(*this, ucontrol, tau, u_mode);
     }
 
@@ -168,7 +168,7 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
   } else NIY;
 
   //-- imps before physics
-  for(ptr<SimulationImp>& imp : imps) if(imp->when==SimulationImp::_beforePhysics) {
+  for(shared_ptr<SimulationImp>& imp : imps) if(imp->when==SimulationImp::_beforePhysics) {
       imp->modConfiguration(*this, tau);
     }
 
@@ -190,7 +190,7 @@ void Simulation::step(const arr& u_control, double tau, ControlMode u_mode) {
   } else NIY;
 
   //-- imps after physics
-  for(ptr<SimulationImp>& imp : imps) if(imp->when==SimulationImp::_afterPhysics) {
+  for(shared_ptr<SimulationImp>& imp : imps) if(imp->when==SimulationImp::_afterPhysics) {
       imp->modConfiguration(*this, tau);
     }
 
@@ -322,7 +322,7 @@ void Simulation::closeGripper(const char* gripperFrameName, double width, double
   imps.append(make_shared<Imp_CloseGripper>(gripper, fing1, fing2, obj, speed));
 }
 
-ptr<SimulationState> Simulation::getState() {
+shared_ptr<SimulationState> Simulation::getState() {
   arr qdot;
   if(engine==_physx) {
     self->physx->pullDynamicStates(C.frames, qdot);
@@ -354,7 +354,7 @@ void Simulation::registerNewObjectWithEngine(Frame* f) {
   } else NIY;
 }
 
-void Simulation::restoreState(const ptr<SimulationState>& state) {
+void Simulation::restoreState(const shared_ptr<SimulationState>& state) {
   setState(state->frameState, state->frameVels);
 }
 
@@ -426,7 +426,7 @@ void Simulation::getImageAndDepth(byteA& image, floatA& depth) {
   cameraview().computeImageAndDepth(image, depth);
 
   //-- imps after images
-  for(ptr<SimulationImp>& imp : imps) if(imp->when==SimulationImp::_afterImages) {
+  for(shared_ptr<SimulationImp>& imp : imps) if(imp->when==SimulationImp::_afterImages) {
       imp->modImages(*this, image, depth);
     }
 
@@ -447,11 +447,11 @@ struct MoveBallHereCallback:OpenGL::GLClickCall {
       if(d<.01 || d==1.) {
         cout <<"NO SELECTION: SELECTION DEPTH = " <<d <<' ' <<gl.camera.glConvertToTrueDepth(d) <<endl;
       } else {
-        std::cout << "pixel coords and depth " << x << std::endl;
+        cout <<"pixel coords and depth " <<x <<endl;
         gl.camera.unproject_fromPixelsAndGLDepth(x, gl.width, gl.height);
       }
 
-      std::cout << "translation in world coords is " << x << std::endl;
+      cout << "translation in world coords is " <<x <<endl;
 
 
     }  
@@ -541,7 +541,7 @@ void Simulation_self::updateDisplayData(double _time, const rai::Configuration& 
     display->Ccopy.copy(_C, false);
     //deep copy meshes!
     for(rai::Frame* f:display->Ccopy.frames) if(f->shape) {
-        ptr<Mesh> org = f->shape->_mesh;
+        shared_ptr<Mesh> org = f->shape->_mesh;
         f->shape->_mesh = make_shared<Mesh> (*org.get());
       }
   }

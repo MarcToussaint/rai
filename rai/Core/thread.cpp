@@ -42,7 +42,7 @@ RWLock::RWLock() {
 
 RWLock::~RWLock() {
     if (rwCount) {
-        std::cerr << "Destroying locked RWLock" << endl;
+        cerr << "Destroying locked RWLock" <<endl;
         exit(1);
     }
 }
@@ -385,7 +385,7 @@ Thread::Thread(const char* _name, double beatIntervalSec)
 
 Thread::~Thread() {
     if (thread) {
-        std::cerr << "Call 'threadClose()' in the destructor of the DERIVED class! \
+        cerr << "Call 'threadClose()' in the destructor of the DERIVED class! \
            That's because the 'virtual table is destroyed' before calling the destructor ~Thread (google 'call virtual function\
            in destructor') but now the destructor has to call 'threadClose' which triggers a Thread::close(), which is\
            pure virtual while you're trying to call ~Thread.";
@@ -554,20 +554,20 @@ void signalhandler(int s) {
   int calls = moduleShutdown()->incrementStatus();
   cerr <<"\n*** System received signal " <<s <<" -- count=" <<calls <<endl;
   if(calls==1) {
-    LOG(0) <<" -- waiting for main loop to break on moduleShutdown()->getStatus()" <<endl;
+    LOG(0) <<" -- waiting for main loop to break on moduleShutdown()->getStatus()";
   }
   if(calls==2) {
-    LOG(0) <<" -- smoothly closing modules directly" <<endl;
+    LOG(0) <<" -- smoothly closing modules directly";
 //    threadCloseModules(); //might lead to a hangup of the main loop, but processes should close
-    LOG(0) <<" -- DONE" <<endl;
+    LOG(0) <<" -- DONE";
   }
   if(calls==3) {
-    LOG(0) <<" -- cancelling threads to force closing" <<endl;
+    LOG(0) <<" -- cancelling threads to force closing";
 //    threadCancelModules();
-    LOG(0) <<" -- DONE" <<endl;
+    LOG(0) <<" -- DONE";
   }
   if(calls>3) {
-    LOG(3) <<" ** moduleShutdown failed - hard exit!" <<endl;
+    LOG(3) <<" ** moduleShutdown failed - hard exit!";
     exit(1);
   }
 }
@@ -590,7 +590,7 @@ int _allPositive(const VarL& signalers, int whoChanged) {
 }
 
 RUN_ON_INIT_BEGIN(thread)
-rai::Array<ptr<Var_base>*>::memMove=true;
+rai::Array<shared_ptr<Var_base>*>::memMove=true;
 ThreadL::memMove=true;
 SignalerL::memMove=true;
 RUN_ON_INIT_END(thread)

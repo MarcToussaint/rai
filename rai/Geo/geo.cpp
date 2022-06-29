@@ -8,8 +8,11 @@
 
 #include "geo.h"
 #include "../Core/array.h"
+#include "../Core/util.h"
 
 #include <algorithm>
+#include <math.h>
+
 #ifdef RAI_GL
 #  include <GL/glu.h>
 #endif
@@ -141,7 +144,7 @@ Vector Vector::getNormalVectorNormalToThis() const {
   if(isZero) {
     RAI_MSG("every vector is normal to a zero vector");
   }
-  arr s = ARR(fabs(x), fabs(y), fabs(z));
+  arr s = arr{fabs(x), fabs(y), fabs(z)};
   uint c = s.argmax();
   double xv, yv, zv;
   if(c == 0) {
@@ -1556,6 +1559,8 @@ void Transformation::read(std::istream& is) {
 DynamicTransformation& DynamicTransformation::setText(const char* txt) { read(rai::String(txt)()); return *this; }
 
 /// resets the position to origin, rotation to identity, velocities to zero, scale to unit
+DynamicTransformation::DynamicTransformation(const char* init) { read(rai::String(init).stream()); }
+
 DynamicTransformation& DynamicTransformation::setZero() {
   memset(this, 0, sizeof(DynamicTransformation));
   rot.w = 1.;
@@ -1842,7 +1847,7 @@ void Camera::upright(const Vector& up) {
 void Camera::setCameraProjectionMatrix(const arr& P) {
   //P is in standard convention -> computes fixedProjectionMatrix in OpenGL convention from this
   cout <<"desired P=" <<P <<endl;
-  arr Kview=ARR(200., 0., 200., 0., 200., 200., 0., 0., 1.); //OpenGL's calibration matrix
+  arr Kview=arr{200., 0., 200., 0., 200., 200., 0., 0., 1.}; //OpenGL's calibration matrix
   Kview.reshape(3, 3);
   //arr glP=inverse(Kview)*P;
   arr glP=P;

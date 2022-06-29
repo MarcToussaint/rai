@@ -188,7 +188,7 @@ arr gnuplot(const double x){
   double g = x * x * x;
   double b = std::sin(x * 2 * RAI_PI);
 
-  return ARR(r, g, b);
+  return arr{r, g, b};
 }
 
 void rai::ForceExchange::glDraw(OpenGL& gl) {

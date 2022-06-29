@@ -504,7 +504,7 @@ void G4Rec::computeDPos(const char* sensor) {
       if(f == 0)
         A = qX * (pY - pX);
       p = qX * (pY - pX) - A;
-      bamDPos[is][f]() = ARR(p.x, p.y, p.z);
+      bamDPos[is][f]() = arr{p.x, p.y, p.z};
     }
   }
 

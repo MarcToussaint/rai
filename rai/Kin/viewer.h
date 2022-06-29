@@ -56,7 +56,7 @@ struct ConfigurationViewer : GLDrawer {
   String text;
   uint pngCount=0;
 public:
-  std::shared_ptr<struct OpenGL> gl;
+  shared_ptr<struct OpenGL> gl;
   bool drawFrameLines=true;
 };
 

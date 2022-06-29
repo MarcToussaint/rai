@@ -8,6 +8,9 @@
 
 #pragma once
 
+#include "defines.h"
+
+//#include <iosfwd>
 #include <iostream>
 #include <stdint.h>
 #include <string.h>
@@ -15,8 +18,10 @@
 #include <memory>
 #include <vector>
 
-#define ARR ARRAY<double> ///< write ARR(1., 4., 5., 7.) to generate a double-Array
-#define TUP ARRAY<uint> ///< write TUP(1, 2, 3) to generate a uint-Array
+using std::unique_ptr;
+using std::shared_ptr;
+using std::make_unique;
+using std::make_shared;
 
 typedef unsigned char byte;
 typedef unsigned int uint;
@@ -299,6 +304,8 @@ template<class T> struct Array : /*std::vector<T>,*/ Serializable {
   const RowShifted& rowShifted() const;
   bool isSparse() const;
   void setNoArr();
+  rai::Array<double>& ensureDouble();
+  const rai::Array<double>& ensureDouble() const;
 
   /// @name attached Jacobian
   Array<T>& J();
@@ -306,17 +313,17 @@ template<class T> struct Array : /*std::vector<T>,*/ Serializable {
   Array<T> J_reset();
 
   /// @name I/O
-  void write(std::ostream& os=std::cout, const char* ELEMSEP=nullptr, const char* LINESEP=nullptr, const char* BRACKETS=nullptr, bool dimTag=false, bool binary=false) const;
+  void write(std::ostream& os=stdCout(), const char* ELEMSEP=nullptr, const char* LINESEP=nullptr, const char* BRACKETS=nullptr, bool dimTag=false, bool binary=false) const;
   void read(std::istream& is);
   void writeTagged(std::ostream& os, const char* tag, bool binary=false) const;
   bool readTagged(std::istream& is, const char* tag);
   void writeTagged(const char* filename, const char* tag, bool binary=false) const;
   bool readTagged(const char* filename, const char* tag);
-  void writeDim(std::ostream& os=std::cout) const;
+  void writeDim(std::ostream& os=stdCout()) const;
   void readDim(std::istream& is);
   void writeRaw(std::ostream& os) const;
   void readRaw(std::istream& is);
-  void writeWithIndex(std::ostream& os=std::cout) const;
+  void writeWithIndex(std::ostream& os=stdCout()) const;
   const Array<T>& ioraw() const;
   const char* prt(); //gdb pretty print
 
@@ -401,6 +408,39 @@ template<class T> bool operator!=(const Array<T>& v, const Array<T>& w);
 template<class T> bool operator<(const Array<T>& v, const Array<T>& w);
 template<class T> std::istream& operator>>(std::istream& is, Array<T>& x);
 //template<class T> std::ostream& operator<<(std::ostream& os, const Array<T>& x);
+
+#if 1
+#ifndef RAI_MSVC
+template<typename T> struct is_shared_ptr : std::false_type {};
+template<typename T> struct is_shared_ptr<std::shared_ptr<T>> : std::true_type {};
+
+template <class T>
+typename std::enable_if<is_shared_ptr<T>::value, std::ostream&>::type
+operator<<(std::ostream& os, const rai::Array<T>& x);
+//  {
+//    os <<'{';
+//    for(uint i=0; i<x.N; i++) { if(x.elem(i)) os <<' ' <<*x.elem(i); else os <<" <NULL>"; }
+//    os <<" }";
+//    //  x.write(os);
+//    return os;
+//  }
+
+  template <class T>
+  typename std::enable_if<!is_shared_ptr<T>::value, std::ostream&>::type
+  operator<<(std::ostream& os, const rai::Array<T>& x);
+//  {
+//    x.write(os); return os;
+//  }
+
+  #else //MSVC
+
+  template <class T> std::ostream& operator<<(std::ostream& os, const rai::Array<T>& x);
+//  {
+//    x.write(os); return os;
+//  }
+
+  #endif
+#endif
 
 template <class T> struct ArrayModRaw{
   const Array<T> *x;
@@ -547,29 +587,6 @@ struct KernelFunction {
 };
 
 //===========================================================================
-
-template<class T> rai::Array<T> ARRAY() {                                    rai::Array<T> z(0); return z; }
-template<class T> rai::Array<T> ARRAY(const T& i) {                                    rai::Array<T> z(1); z(0)=i; return z; }
-template<class T> rai::Array<T> ARRAY(const T& i, const T& j) {                               rai::Array<T> z(2); z(0)=i; z(1)=j; return z; }
-template<class T> rai::Array<T> ARRAY(const T& i, const T& j, const T& k) {                          rai::Array<T> z(3); z(0)=i; z(1)=j; z(2)=k; return z; }
-template<class T> rai::Array<T> ARRAY(const T& i, const T& j, const T& k, const T& l) {                     rai::Array<T> z(4); z(0)=i; z(1)=j; z(2)=k; z(3)=l; return z; }
-template<class T> rai::Array<T> ARRAY(const T& i, const T& j, const T& k, const T& l, const T& m) {                rai::Array<T> z(5); z(0)=i; z(1)=j; z(2)=k; z(3)=l; z(4)=m; return z; }
-template<class T> rai::Array<T> ARRAY(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n) {           rai::Array<T> z(6); z(0)=i; z(1)=j; z(2)=k; z(3)=l; z(4)=m; z(5)=n; return z; }
-template<class T> rai::Array<T> ARRAY(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o) {      rai::Array<T> z(7); z(0)=i; z(1)=j; z(2)=k; z(3)=l; z(4)=m; z(5)=n; z(6)=o; return z; }
-template<class T> rai::Array<T> ARRAY(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o, const T& p) { rai::Array<T> z(8); z(0)=i; z(1)=j; z(2)=k; z(3)=l; z(4)=m; z(5)=n; z(6)=o; z(7)=p; return z; }
-template<class T> rai::Array<T> ARRAY(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o, const T& p, const T& q) { rai::Array<T> z(9); z(0)=i; z(1)=j; z(2)=k; z(3)=l; z(4)=m; z(5)=n; z(6)=o; z(7)=p; z(8)=q; return z; }
-
-template<class T> rai::Array<T*> LIST() {                                    rai::Array<T*> z(0); return z; }
-template<class T> rai::Array<T*> LIST(const T& i) {                                    rai::Array<T*> z(1); z(0)=(T*)&i; return z; }
-template<class T> rai::Array<T*> LIST(const T& i, const T& j) {                               rai::Array<T*> z(2); z(0)=(T*)&i; z(1)=(T*)&j; return z; }
-template<class T> rai::Array<T*> LIST(const T& i, const T& j, const T& k) {                          rai::Array<T*> z(3); z(0)=(T*)&i; z(1)=(T*)&j; z(2)=(T*)&k; return z; }
-template<class T> rai::Array<T*> LIST(const T& i, const T& j, const T& k, const T& l) {                     rai::Array<T*> z(4); z(0)=(T*)&i; z(1)=(T*)&j; z(2)=(T*)&k; z(3)=(T*)&l; return z; }
-template<class T> rai::Array<T*> LIST(const T& i, const T& j, const T& k, const T& l, const T& m) {                rai::Array<T*> z(5); z(0)=(T*)&i; z(1)=(T*)&j; z(2)=(T*)&k; z(3)=(T*)&l; z(4)=(T*)&m; return z; }
-template<class T> rai::Array<T*> LIST(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n) {           rai::Array<T*> z(6); z(0)=(T*)&i; z(1)=(T*)&j; z(2)=(T*)&k; z(3)=(T*)&l; z(4)=(T*)&m; z(5)=(T*)&n; return z; }
-template<class T> rai::Array<T*> LIST(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o) {      rai::Array<T*> z(7); z(0)=(T*)&i; z(1)=(T*)&j; z(2)=(T*)&k; z(3)=(T*)&l; z(4)=(T*)&m; z(5)=(T*)&n; z(6)=(T*)&o; return z; }
-template<class T> rai::Array<T*> LIST(const T& i, const T& j, const T& k, const T& l, const T& m, const T& n, const T& o, const T& p) { rai::Array<T*> z(8); z(0)=(T*)&i; z(1)=(T*)&j; z(2)=(T*)&k; z(3)=(T*)&l; z(4)=(T*)&m; z(5)=(T*)&n; z(6)=(T*)&o; z(7)=(T*)&p; return z; }
-
-//===========================================================================
 /// @}
 /// @name Octave/Matlab functions to generate special arrays
 /// @{
@@ -584,34 +601,34 @@ inline arr eyeVec(uint n, uint i) { arr z(n); z.setZero(); z(i)=1.; return z; }
 /// return array of ones
 inline arr ones(const uintA& d) {  arr z;  z.resize(d);  z=1.;  return z;  }
 /// return VECTOR of ones
-inline arr ones(uint n) { return ones(TUP(n)); }
+inline arr ones(uint n) { return ones(uintA{n}); }
 /// return matrix of ones
-inline arr ones(uint d0, uint d1) { return ones(TUP(d0, d1)); }
+inline arr ones(uint d0, uint d1) { return ones(uintA{d0, d1}); }
 
 /// return array of zeros
 inline arr zeros(const uintA& d) {  arr z;  z.resize(d);  z.setZero();  return z; }
 /// return VECTOR of zeros
-inline arr zeros(uint n) { return zeros(TUP(n)); }
+inline arr zeros(uint n) { return zeros(uintA{n}); }
 /// return matrix of zeros
-inline arr zeros(uint d0, uint d1) { return zeros(TUP(d0, d1)); }
+inline arr zeros(uint d0, uint d1) { return zeros(uintA{d0, d1}); }
 /// return tensor of zeros
-inline arr zeros(uint d0, uint d1, uint d2) { return zeros(TUP(d0, d1, d2)); }
+inline arr zeros(uint d0, uint d1, uint d2) { return zeros(uintA{d0, d1, d2}); }
 
 /// return array of c's
 template<class T> rai::Array<T> consts(const T& c, const uintA& d)  {  rai::Array<T> z;  z.resize(d);  z.setUni(c);  return z; }
 /// return VECTOR of c's
-template<class T> rai::Array<T> consts(const T& c, uint n) { return consts(c, TUP(n)); }
+template<class T> rai::Array<T> consts(const T& c, uint n) { return consts(c, uintA{n}); }
 /// return matrix of c's
-template<class T> rai::Array<T> consts(const T& c, uint d0, uint d1) { return consts(c, TUP(d0, d1)); }
+template<class T> rai::Array<T> consts(const T& c, uint d0, uint d1) { return consts(c, uintA{d0, d1}); }
 /// return tensor of c's
-template<class T> rai::Array<T> consts(const T& c, uint d0, uint d1, uint d2) { return consts(c, TUP(d0, d1, d2)); }
+template<class T> rai::Array<T> consts(const T& c, uint d0, uint d1, uint d2) { return consts(c, uintA{d0, d1, d2}); }
 
 /// return array with uniform random numbers in [0, 1]
 arr rand(const uintA& d);
 /// return array with uniform random numbers in [0, 1]
-inline arr rand(uint n) { return rand(TUP(n)); }
+inline arr rand(uint n) { return rand(uintA{n}); }
 /// return array with uniform random numbers in [0, 1]
-inline arr rand(uint d0, uint d1) { return rand(TUP(d0, d1)); }
+inline arr rand(uint d0, uint d1) { return rand(uintA{d0, d1}); }
 
 /// return tensor of c's
 template<class T> const T& random(const rai::Array<T>& range) { return range.rndElem(); }
@@ -619,9 +636,9 @@ template<class T> const T& random(const rai::Array<T>& range) { return range.rnd
 /// return array with normal (Gaussian) random numbers
 arr randn(const uintA& d);
 /// return array with normal (Gaussian) random numbers
-inline arr randn(uint n) { return randn(TUP(n)); }
+inline arr randn(uint n) { return randn(uintA{n}); }
 /// return array with normal (Gaussian) random numbers
-inline arr randn(uint d0, uint d1) { return randn(TUP(d0, d1)); }
+inline arr randn(uint d0, uint d1) { return randn(uintA{d0, d1}); }
 
 /// return a grid with different lo/hi/steps in each dimension
 arr grid(const arr& lo, const arr& hi, const uintA& steps);
@@ -814,12 +831,12 @@ template<class T> rai::Array<T> cat(const rai::Array<T>& y, const rai::Array<T>&
 template<class T> rai::Array<T> cat(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c, const rai::Array<T>& d) { rai::Array<T> x; x.append(a); x.append(b); x.append(c); x.append(d); return x; }
 template<class T> rai::Array<T> cat(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c, const rai::Array<T>& d, const rai::Array<T>& e) { rai::Array<T> x; x.append(a); x.append(b); x.append(c); x.append(d); x.append(e); return x; }
 template<class T> rai::Array<T> cat(const rai::Array<rai::Array<T>>& X) {  rai::Array<T> x; for(const rai::Array<T>& z: X) x.append(z); return x; }
-template<class T> rai::Array<T> catCol(const rai::Array<rai::Array<T>*>& X);
+template<class T> rai::Array<T> catCol(const rai::Array<const rai::Array<T>*>& X);
 template<class T> rai::Array<T> catCol(const rai::Array<rai::Array<T>>& X);
-template<class T> rai::Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b) { return catCol(LIST<rai::Array<T>>(a, b)); }
-template<class T> rai::Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c) { return catCol(LIST<rai::Array<T>>(a, b, c)); }
-template<class T> rai::Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c, const rai::Array<T>& d) { return catCol(LIST<rai::Array<T>>(a, b, c, d)); }
-template<class T> rai::Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c, const rai::Array<T>& d, const rai::Array<T>& e) { return catCol(LIST<rai::Array<T>>(a, b, c, d, e)); }
+template<class T> rai::Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b) { return catCol(rai::Array<const rai::Array<T>*>{&a, &b}); }
+template<class T> rai::Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c) { return catCol(rai::Array<const rai::Array<T>*>{&a, &b, &c}); }
+template<class T> rai::Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c, const rai::Array<T>& d) { return catCol(rai::Array<const rai::Array<T>*>{&a, &b, &c, &d}); }
+template<class T> rai::Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c, const rai::Array<T>& d, const rai::Array<T>& e) { return catCol(rai::Array<const rai::Array<T>*>{&a, &b, &c, &d, &e}); }
 
 //===========================================================================
 /// @}
@@ -1083,8 +1100,8 @@ UpdateOperator(%=)
 /*  TODO: realize list simpler: let the Array class have a 'listMode' flag. When this flag is true, the read, write, resize, find etc routines
 will simply be behave differently */
 
-template<class T> char listWrite(const rai::Array<std::shared_ptr<T>>& L, std::ostream& os=std::cout, const char* ELEMSEP=" ", const char* delim=nullptr);
-template<class T> char listWrite(const rai::Array<T*>& L, std::ostream& os=std::cout, const char* ELEMSEP=" ", const char* delim=nullptr);
+template<class T> char listWrite(const rai::Array<std::shared_ptr<T>>& L, std::ostream& os=stdCout(), const char* ELEMSEP=" ", const char* delim=nullptr);
+template<class T> char listWrite(const rai::Array<T*>& L, std::ostream& os=stdCout(), const char* ELEMSEP=" ", const char* delim=nullptr);
 template<class T> void listWriteNames(const rai::Array<T*>& L, std::ostream& os);
 template<class T> rai::String listString(const rai::Array<T*>& L);
 template<class T> void listRead(rai::Array<T*>& L, std::istream& is, const char* delim=nullptr);
@@ -1092,6 +1109,7 @@ template<class T> void listCopy(rai::Array<T*>& L, const rai::Array<T*>& M);  //
 template<class T> void listCopy(rai::Array<std::shared_ptr<T>>& L, const rai::Array<std::shared_ptr<T>>& M);  //copy a list by calling the copy constructor for each element
 template<class T> void listClone(rai::Array<T*>& L, const rai::Array<T*>& M); //copy a list by calling the 'newClone' method of each element (works for virtual types)
 template<class T> void listDelete(rai::Array<T*>& L);
+template<class T> void listResize(rai::Array<T*>& L, uint N);
 template<class T> void listReindex(rai::Array<T*>& L);
 template<class T> T* listFindValue(const rai::Array<T*>& L, const T& x);
 template<class T> T* listFindByName(const rai::Array<T*>& L, const char* name); //each element needs a 'name' (usually rai::String)
@@ -1148,11 +1166,8 @@ Eigen::MatrixXd conv_arr2eigen(const arr& in);
 #endif //RAI_EIGEN
 
 //===========================================================================
+//
 // implementations
 //
 
-void linkArray();
-
 #include "array.ipp"
-
-// (note: http://www.informit.com/articles/article.aspx?p=31783&seqNum=2)

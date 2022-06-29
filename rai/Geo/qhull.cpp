@@ -10,6 +10,7 @@
 
 #include "qhull.h"
 #include "mesh.h"
+#include "../Core/util.h"
 
 extern "C" {
 #ifdef RAI_MSVC
@@ -309,10 +310,10 @@ double forceClosure(const arr& C, const arr& Cn, const rai::Vector& center,
     arr dFdX;
     d = -distanceToConvexHullGradient(dFdX, X, origin, true);
     dFdX *= -1.;
-    dFdX.reshape(TUP(C.d0, S, origin.N));
-    dXdC.reshape(TUP(C.d0, S, origin.N, 3));
-    dFdC->resize(TUP(C.d0, 3));
-    tensorEquation(*dFdC, dFdX, TUP(0u, 2u, 3u), dXdC, TUP(0u, 2u, 3u, 1u), 2);
+    dFdX.reshape(uintA{C.d0, S, origin.N});
+    dXdC.reshape(uintA{C.d0, S, origin.N, 3});
+    dFdC->resize(uintA{C.d0, 3});
+    tensorEquation(*dFdC, dFdX, uintA{0u, 2u, 3u}, dXdC, uintA{0u, 2u, 3u, 1u}, 2);
   }
   return d;
 }
@@ -391,7 +392,7 @@ void getDelaunayEdges(uintA& E, const arr& V) {
       FOREACHvertex_(facet->vertices) face[i++]=qh_pointid(vertex->point);//vertex->id;
       CHECK_EQ(i, dim+1, "strange number of vertices of a facet!");
       for(j=0; j<dim+1; j++) for(k=j+1; k<dim+1; k++) {
-          E.append(TUP(face[j], face[k]));
+          E.append(uintA{face[j], face[k]});
         }
     }
   }

@@ -38,7 +38,7 @@ struct KOMO_ext : KOMO {
   void setPosition(double startTime, double endTime, const char* shape, const char* shapeRel=nullptr, ObjectiveType type=OT_sos, const arr& target=NoArr, double prec=1e2);
   void setOrientation(double startTime, double endTime, const char* shape, const char* shapeRel, ObjectiveType type=OT_sos, const arr& target=NoArr, double prec=1e2);
   void setVelocity(double startTime, double endTime, const char* shape, const char* shapeRel=nullptr, ObjectiveType type=OT_sos, const arr& target=NoArr, double prec=1e2);
-  void setAlign(double startTime, double endTime, const char* shape,  const arr& whichAxis=ARR(1., 0., 0.), const char* shapeRel=nullptr, const arr& whichAxisRel=ARR(1., 0., 0.), ObjectiveType type=OT_sos, const arr& target=ARR(1.), double prec=1e2);
+  void setAlign(double startTime, double endTime, const char* shape,  const arr& whichAxis=arr{1., 0., 0.}, const char* shapeRel=nullptr, const arr& whichAxisRel=arr{1., 0., 0.}, ObjectiveType type=OT_sos, const arr& target=arr{1.}, double prec=1e2);
   void setAlignedStacking(double time, const char* object, ObjectiveType type=OT_sos, double prec=1e2);
   void setLastTaskToBeVelocity();
 

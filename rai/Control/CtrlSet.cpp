@@ -10,7 +10,7 @@
 
 #include "CtrlTargets.h"
 
-ptr<CtrlObjective> CtrlSet::addObjective(const ptr<Feature>& f, ObjectiveType type, double transientStep) {
+shared_ptr<CtrlObjective> CtrlSet::addObjective(const shared_ptr<Feature>& f, ObjectiveType type, double transientStep) {
   std::shared_ptr<CtrlObjective> t = make_shared<CtrlObjective>();
   t->feat = f;
   t->type = type;

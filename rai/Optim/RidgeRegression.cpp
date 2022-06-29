@@ -9,6 +9,8 @@
 #include "RidgeRegression.h"
 #include "../Core/util.h"
 
+#include <math.h>
+
 arr beta_true;
 
 double NormalSdv(const double& a, const double& b, double sdv) {
@@ -111,8 +113,8 @@ double DefaultKernelFunction::k(const arr& x1, const arr& x2, arr& gx1, arr& Hx1
     switch(type) {
       case readFromCfg: HALT("???");  break;
       case Gauss:
-        hyperParam1 = ARR(rai::sqr(rai::getParameter<double>("ML/KernelWidth")));
-        hyperParam2 = ARR(rai::sqr(rai::getParameter<double>("ML/PriorSdv")));
+        hyperParam1 = arr{rai::sqr(rai::getParameter<double>("ML/KernelWidth"))};
+        hyperParam2 = arr{rai::sqr(rai::getParameter<double>("ML/PriorSdv"))};
         break;
     }
   }

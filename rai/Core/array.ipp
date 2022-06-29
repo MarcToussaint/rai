@@ -858,10 +858,10 @@ template<class T> T& rai::Array<T>::elem(int i, int j) {
   CHECK(nd==2 && (uint)i<d0 && (uint)j<d1,
         "2D range error (" <<nd <<"=2, " <<i <<"<" <<d0 <<", " <<j <<"<" <<d1 <<")");
   if(isSparseMatrix(*this)) {
-    return sparse().addEntry(i, j);
+    return (T&)ensureDouble().sparse().addEntry(i, j);
   }
   if(isRowShifted(*this)) {
-    return rowShifted().elemNew(i, j);
+    return (T&)ensureDouble().rowShifted().elemNew(i, j);
   }
   return p[i*d1+j];
 
@@ -1390,14 +1390,14 @@ template<class T> rai::Array<T>& rai::Array<T>::setZero(byte zero) {
 }
 
 /// concatenate 2D matrices (or vectors) column-wise
-template<class T> rai::Array<T> catCol(const rai::Array<rai::Array<T>*>& X) {
+template<class T> rai::Array<T> catCol(const rai::Array<const rai::Array<T>*>& X) {
   uint d0=X(0)->d0, d1=0;
-  for(rai::Array<T>* x:X) { CHECK((x->nd==2 || x->nd==1) && x->d0==d0, ""); d1+=x->nd==2?x->d1:1; }
+  for(const rai::Array<T>* x:X) { CHECK((x->nd==2 || x->nd==1) && x->d0==d0, ""); d1+=x->nd==2?x->d1:1; }
   rai::Array<T> z;
   if(X.first()->isSparse()){
       z.sparse().resize(d0, d1, 0);
       d1=0;
-      for(rai::Array<T>* x:  X) {
+      for(const rai::Array<T>* x:  X) {
           CHECK(x->isSparse(), "");
           CHECK(x->nd==2,"");
           z.sparse().add(x->sparse(), 0, d1);
@@ -1406,15 +1406,15 @@ template<class T> rai::Array<T> catCol(const rai::Array<rai::Array<T>*>& X) {
   }else{
       z.resize(d0, d1);
       d1=0;
-      for(rai::Array<T>* x:  X) { z.setMatrixBlock(*x, 0, d1); d1+=x->nd==2?x->d1:1; }
+      for(const rai::Array<T>* x:  X) { z.setMatrixBlock(*x, 0, d1); d1+=x->nd==2?x->d1:1; }
   }
   return z;
 }
 
 /// concatenate 2D matrices (or vectors) column-wise
 template<class T> rai::Array<T> catCol(const rai::Array<rai::Array<T>>& X) {
-  rai::Array<rai::Array<T>*> Xp;
-  for(rai::Array<T>& x:  X) Xp.append(&x);
+  rai::Array<const rai::Array<T>*> Xp;
+  for(const rai::Array<T>& x:  X) Xp.append(&x);
   return catCol(Xp);
 }
 
@@ -1489,8 +1489,8 @@ template<class T> void rai::Array<T>::setBlockMatrix(const rai::Array<T>& A, con
       CHECK(isRowShifted(B), "");
       CHECK(A.d1==B.d1, "");
       rowShifted().resize(A.d0+B.d0, A.d1, rai::MAX(A.rowShifted().rowSize, B.rowShifted().rowSize));
-      rowShifted().add(A, 0, 0);
-      rowShifted().add(B, A.d0, 0);
+      rowShifted().add(A.ensureDouble(), 0, 0);
+      rowShifted().add(B.ensureDouble(), A.d0, 0);
     } else if(isNoArr(A)){
       CHECK(isNoArr(B), "");
       setNoArr();
@@ -1525,7 +1525,7 @@ template<class T> void rai::Array<T>::setBlockVector(const rai::Array<T>& a, con
 /// write the matrix B into 'this' matrix at location lo0, lo1
 template<class T> void rai::Array<T>::setMatrixBlock(const rai::Array<T>& B, uint lo0, uint lo1) {
   if(isSparse()){
-    sparse().add(B, lo0, lo1);
+    sparse().add(B.ensureDouble(), lo0, lo1);
     return;
   }
   CHECK(B.nd==1 || B.nd==2, "");
@@ -1540,7 +1540,7 @@ template<class T> void rai::Array<T>::setMatrixBlock(const rai::Array<T>& B, uin
         for(i=0; i<B.d0; i++) for(j=0; j<B.d1; j++) p[(lo0+i)*d1+lo1+j] = B.p[i*B.d1+j];   // operator()(lo0+i, lo1+j)=B(i, j);
       }
     } else if(isRowShifted(*this)) {
-      rowShifted().add(B, lo0, lo1);
+      rowShifted().add(B.ensureDouble(), lo0, lo1);
     } else NIY;
   } else { //N.nd==1
     CHECK(nd==2 && lo0+B.d0<=d0 && lo1+1<=d1, "");
@@ -1821,11 +1821,11 @@ rai::Array<T>::setGrid(uint dim, T lo, T hi, uint steps) {
     return;
   }
   if(dim==3) {
-    resize(TUP(steps+1, steps+1, steps+1, 3));
+    resize(uintA{steps+1, steps+1, steps+1, 3});
     for(i=0; i<d0; i++) for(j=0; j<d1; j++) for(k=0; k<d2; k++) {
-          elem(TUP(i, j, k, 0))=lo+(hi-lo)*i/steps;
-          elem(TUP(i, j, k, 1))=lo+(hi-lo)*j/steps;
-          elem(TUP(i, j, k, 2))=lo+(hi-lo)*k/steps;
+          elem(uintA{i, j, k, 0})=lo+(hi-lo)*i/steps;
+          elem(uintA{i, j, k, 1})=lo+(hi-lo)*j/steps;
+          elem(uintA{i, j, k, 2})=lo+(hi-lo)*k/steps;
         }
     reshape(d0*d1*d2, 3);
     return;
@@ -1990,9 +1990,11 @@ template<class T> void rai::Array<T>::setNoArr() {
   special = new SpecialArray(SpecialArray::ST_NoArr);
 }
 
+#if 1
+namespace rai{
 #ifndef RAI_MSVC
-template<typename T> struct is_shared_ptr : std::false_type {};
-template<typename T> struct is_shared_ptr<std::shared_ptr<T>> : std::true_type {};
+//template<typename T> struct is_shared_ptr : std::false_type {};
+//template<typename T> struct is_shared_ptr<std::shared_ptr<T>> : std::true_type {};
 
 template <class T>
 typename std::enable_if<is_shared_ptr<T>::value, std::ostream&>::type
@@ -2017,6 +2019,8 @@ template <class T> std::ostream& operator<<(std::ostream& os, const rai::Array<T
 }
 
 #endif
+}
+#endif
 
 /** @brief prototype for operator<<, writes the array by separating elements with ELEMSEP, separating rows with LINESEP, using BRACKETS[0] and BRACKETS[1] to brace the data, optionally writs a dimensionality tag before the data (see below), and optinally in binary format */
 template<class T> void rai::Array<T>::write(std::ostream& os, const char* ELEMSEP, const char* LINESEP, const char* BRACKETS, bool dimTag, bool binary) const {
@@ -2028,11 +2032,11 @@ template<class T> void rai::Array<T>::write(std::ostream& os, const char* ELEMSE
 
   if(binary) {
     writeDim(os);
-    os <<std::endl;
+    os <<endl;
     os.put(0);
     os.write((char*)p, sizeT*N);
     os.put(0);
-    os <<std::endl;
+    os <<endl;
   } else if(isSparseVector(*this)) {
     intA& elems = dynamic_cast<SparseVector*>(special)->elems;
     for(uint i=0; i<N; i++) os <<"( " <<elems(i) <<" ) " <<elem(i) <<endl;
@@ -2491,7 +2495,7 @@ template<class T> void makeConditional(rai::Array<T>& P) {
   }
 }
 
-//inline uintA TUP(uint i, uint j, uint k, uint l){                      uintA z(4); z(0)=i; z(1)=j; z(2)=k; z(3)=l; return z; }
+//inline uintA uintA{uint i, uint j, uint k, uint l}{                      uintA z(4); z(0)=i; z(1)=j; z(2)=k; z(3)=l; return z; }
 
 /// check whether this is a distribution over the first index w.r.t. the later indices
 template<class T> void checkNormalization(rai::Array<T>& v, double tol) {
@@ -2517,7 +2521,7 @@ template<class T> void checkNormalization(rai::Array<T>& v, double tol) {
     case 4:
       for(j=0; j<v.d1; j++) for(k=0; k<v.d2; k++) {
           for(l=0; l<v.N/(v.d0*v.d1*v.d2); l++) {
-            for(p=0, i=0; i<v.d0; i++) p+=v.elem(TUP(i, j, k, l));
+            for(p=0, i=0; i<v.d0; i++) p+=v.elem(uintA{i, j, k, l});
             CHECK(std::fabs(1.-p)<tol, "distribution is not normalized: " <<v <<" " <<p);
           }
         }
@@ -2892,7 +2896,7 @@ void op_innerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<
       }
     }else{
       if(rai::useLapack && typeid(T)==typeid(double)) {
-        blas_Mv(x, y, z);
+        blas_Mv(x.ensureDouble(), y.ensureDouble(), z.ensureDouble());
       }else{
         uint i, d0=y.d0, dk=y.d1;
         T* a, *astop, *b, *c;
@@ -2929,11 +2933,11 @@ void op_innerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<
     }
 #endif
     if(typeid(T)==typeid(double)) {
-      if(isSparseMatrix(y)) { x = y.sparse().A_B(z); return; }
-      if(isSparseMatrix(z)) { x = z.sparse().B_A(y); return; }
-      if(isRowShifted(y)) { x = y.rowShifted().A_B(z); return; }
-      if(isRowShifted(z)) { x = z.rowShifted().B_A(y); return; }
-      if(rai::useLapack){ blas_MM(x, y, z); return; }
+      if(isSparseMatrix(y)) { x.ensureDouble() = y.sparse().A_B(z.ensureDouble()); return; }
+      if(isSparseMatrix(z)) { x.ensureDouble() = z.sparse().B_A(y.ensureDouble()); return; }
+      if(isRowShifted(y)) { x.ensureDouble() = y.rowShifted().A_B(z.ensureDouble()); return; }
+      if(isRowShifted(z)) { x.ensureDouble() = z.rowShifted().B_A(y.ensureDouble()); return; }
+      if(rai::useLapack){ blas_MM(x.ensureDouble(), y.ensureDouble(), z.ensureDouble()); return; }
     }
     T* a, *astop, *b, *c;
     x.resize(d0, d1); x.setZero();
@@ -2949,7 +2953,7 @@ void op_innerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<
       if(y.jac && !z.jac){
         CHECK_EQ(y.d0, 1, "");
         x.J().resize(z.d1, y.jac->d1);
-        tensorEquation(x.J(), *y.jac, TUP(2,1), z, TUP(2,0), 1);
+        tensorEquation(x.J(), *y.jac, uintA{2,1}, z, uintA{2,0}, 1);
       }else NIY;
     }
     return;
@@ -2973,11 +2977,12 @@ void op_innerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<
     return;
   }
   if(y.nd==1 && z.nd==2 && z.d0==1) {  //vector x vector^T -> matrix (outer product)
-    if(typeid(T)==typeid(double)) {
+    if(typeid(T)==typeid(double) && z.isSparse()) {
       arr _y;
-      _y.referTo(y);
+      _y.referTo(y.ensureDouble());
       _y.reshape(y.N, 1);
-      if(z.isSparse()) { x = z.sparse().B_A(_y); return; }
+      x.ensureDouble() = z.sparse().B_A(_y.ensureDouble());
+      return;
     }
     uint i, j, d0=y.d0, d1=z.d1;
     x.resize(d0, d1);
@@ -2985,7 +2990,7 @@ void op_innerProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Array<
     if(y.jac || z.jac){
       if(y.jac && !z.jac){
         x.J().resize(y.N, z.N, y.jac->d1);
-        tensorEquation(x.J(), *y.jac, TUP(0,2), z, TUP(3,1), 1);
+        tensorEquation(x.J(), *y.jac, uintA{0,2}, z, uintA{3,1}, 1);
       }else NIY;
     }
     return;
@@ -3105,7 +3110,7 @@ void op_indexWiseProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Ar
     x = z;
     if(isSparseMatrix(z)){
       CHECK(typeid(T)==typeid(double), "only for double!");
-      x.sparse().rowWiseMult(y);
+      x.sparse().rowWiseMult(y.ensureDouble());
       if(y.jac || z.jac){ NIY }
       return;
     }
@@ -3129,7 +3134,7 @@ void op_indexWiseProduct(rai::Array<T>& x, const rai::Array<T>& y, const rai::Ar
     if(y.jac || z.jac){
       if(y.jac && !z.jac){
         x.J().resize(z.d0, z.d1, y.jac->d1);
-        tensorEquation(x.J(), *y.jac, TUP(0,2), z, TUP(0,1));
+        tensorEquation(x.J(), *y.jac, uintA{0,2}, z, uintA{0,1});
       }else NIY;
     }
     return;
@@ -3400,7 +3405,7 @@ template<class T> void tensorCheckCondNormalization_with_logP(const rai::Array<T
   associated with which slots of C and the summation sign. More
   precisely, if we have \f$C_{i_0i_1i_2} = \sum_{i_3i_4}
   A_{i_4i_2i_1}~ B_{i_3i_0}\f$ then you should call
-  tensor(C, A, TUP(4, 2, 1), B, TUP(3, 0), 2); Here, the `2` indicates that
+  tensor(C, A, uintA{4, 2, 1}, B, uintA{3, 0}, 2); Here, the `2` indicates that
   the last two indices of i_0, .., i_4 are summed over, and C only
   becomes a 3rd rank instead of 5th rank tensor */
 template<class T> void tensorEquation(rai::Array<T>& X, const rai::Array<T>& A, const uintA& pickA, const rai::Array<T>& B, const uintA& pickB, uint sum) {
@@ -3934,7 +3939,7 @@ template<class T> Array<T> operator*(T y, const Array<T>& z) {             Array
 template<class T> Array<T> operator%(const Array<T>& y, const Array<T>& z) { Array<T> x; op_indexWiseProduct(x, y, z); return x; }
 
 /// inverse
-template<class T> Array<T> operator/(int y, const Array<T>& z) {  CHECK_EQ(y, 1, ""); Array<T> x=inverse(z); return x; }
+template<class T> Array<T> operator/(int y, const Array<T>& z) {  CHECK_EQ(y, 1, ""); Array<T> x; x.ensureDouble() = inverse(z.ensureDouble()); return x; }
 /// scalar division
 template<class T> Array<T> operator/(const Array<T>& y, T z) {             Array<T> x(y); x/=z; return x; }
 /// element-wise division
@@ -4297,7 +4302,7 @@ template<class T>
 void rai::Array<T>::J_setId() {
   CHECK(!jac, "");
   CHECK(nd==1,"");
-  jac = make_unique<arr>();
+  jac = make_unique<Array<T>>();
   jac->setId(N);
 }
 
@@ -4376,7 +4381,7 @@ template<class T> void listCopy(rai::Array<T*>& L, const rai::Array<T*>& M) {
   for(uint i=0; i<L.N; i++) L.elem(i)=new T(*M.elem(i));
 }
 
-template<class T> void listCopy(rai::Array<ptr<T>>& L, const rai::Array<ptr<T>>& M) {
+template<class T> void listCopy(rai::Array<shared_ptr<T>>& L, const rai::Array<shared_ptr<T>>& M) {
   L.clear();
   L.resizeAs(M);
   for(uint i=0; i<L.N; i++) L.elem(i) = make_shared<T>(*M.elem(i));
@@ -4393,19 +4398,19 @@ template<class T> void listReindex(rai::Array<T*>& L) {
 
 template<class T> T* listFindByName(const rai::Array<T*>& L, const char* name) {
   for(T* e: L) if(e->name==name) return e;
-  //std::cerr <<"\n*** name '" <<name <<"' not in this list!" <<std::endl;
+  //cerr <<"\n*** name '" <<name <<"' not in this list!" <<endl;
   return NULL;
 }
 
 template<class T> T* listFindByType(const rai::Array<T*>& L, const char* type) {
   for(T* e: L) if(!strcmp(e->type, type)) return e;
-  //std::cerr <<"type '" <<type <<"' not in this list!" <<std::endl;
+  //cerr <<"type '" <<type <<"' not in this list!" <<endl;
   return NULL;
 }
 
 template<class T> T* listFindValue(const rai::Array<T*>& L, const T& x) {
   for(T* e: L) if(*e==x) return e;
-  //std::cerr <<"value '" <<x <<"' not in this list!" <<std::endl;
+  //cerr <<"value '" <<x <<"' not in this list!" <<endl;
   return NULL;
 }
 
@@ -4471,7 +4476,7 @@ void graphMaximumSpanningTree(rai::Array<vert*>& V, rai::Array<edge*>& E, const 
     m.clear();
     for(i=0; i<addedNodes.N; i++) {
       j=addedNodes(i);
-      for(k=0; k<V.N; k++) if(!done(k) && (!m.N || W(j, k)>Wmax)) { m=TUP(j, k); Wmax=W(j, k); }
+      for(k=0; k<V.N; k++) if(!done(k) && (!m.N || W(j, k)>Wmax)) { m=uintA{j, k}; Wmax=W(j, k); }
     }
     CHECK(m.N, "graph is not connected!");
     if(done(m(1))) m.permute(0, 1);

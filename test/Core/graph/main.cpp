@@ -9,7 +9,7 @@ void TEST(Read){
   rai::Graph G;
 
   G.checkConsistency();
-  cout <<"\n** reading graph..." <<flush;
+  cout <<"\n** reading graph..." <<std::flush;
   G.read(FILE(filename?filename:"example.g"), true); //including parse info
   cout <<G <<endl;
   G.checkConsistency();
@@ -44,7 +44,7 @@ void TEST(Init){
 
   rai::Graph B;
 
-  B <<"x" <<"b" <<rai::NodeInitializer("a", 3.) <<rai::NodeInitializer("b", {"x"}, ARR(1.,2.,3.));
+  B <<"x" <<"b" <<rai::NodeInitializer("a", 3.) <<rai::NodeInitializer("b", {"x"}, arr{1.,2.,3.});
   cout <<B <<endl;
 }
 

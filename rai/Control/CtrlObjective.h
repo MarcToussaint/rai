@@ -42,7 +42,7 @@ struct CtrlObjective {
 //  arr f;             ///< measured generalized force in this task space
 
   CtrlObjective() : type(OT_sos), transientStep(-1.), active(true), /*kp(1.), kd(1.),*/ status(AS_init) {}
-//  CtrlObjective(char* _name, const ptr<Feature>& _feat, const ptr<CtrlReference>& _ref, double _kp, double _kd, const arr& _C);
+//  CtrlObjective(char* _name, const shared_ptr<Feature>& _feat, const shared_ptr<CtrlReference>& _ref, double _kp, double _kd, const arr& _C);
   ~CtrlObjective() {}
 
   arr getResidual(CtrlSolver& cp);

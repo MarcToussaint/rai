@@ -1,5 +1,6 @@
 #include <Geo/geo.h>
 #include <Core/array.h>
+#include <Core/util.h>
 
 //===========================================================================
 //

@@ -26,7 +26,7 @@ struct Simulation {
   Configuration& C;
   double time;
   SimulatorEngine engine;
-  Array<ptr<SimulationImp>> imps; ///< list of (adversarial) imps doing things/perturbations/noise in addition to clean physics engine
+  Array<shared_ptr<SimulationImp>> imps; ///< list of (adversarial) imps doing things/perturbations/noise in addition to clean physics engine
   int verbose;
   FrameL grasps;
 
@@ -83,8 +83,8 @@ struct Simulation {
   //== management interface
 
   //-- store and reset the state of the simulation
-  ptr<SimulationState> getState();
-  void restoreState(const ptr<SimulationState>& state);
+  shared_ptr<SimulationState> getState();
+  void restoreState(const shared_ptr<SimulationState>& state);
   void setState(const arr& frameState, const arr& frameVelocities=NoArr);
   void pushConfigurationToSimulator(const arr& frameVelocities=NoArr);
 

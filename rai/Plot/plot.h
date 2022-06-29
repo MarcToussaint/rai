@@ -30,7 +30,7 @@ typedef enum { opengl, xfig, gnupl } PlotMode;
 namespace rai {
 
 struct PlotModule : GLDrawer {
-  unique_ptr<struct sPlotModule> self;
+  std::unique_ptr<struct sPlotModule> self;
   PlotMode mode;
   OpenGL* gl;
   bool light, grid, colors, drawBox, drawDots, perspective;
