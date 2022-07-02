@@ -15,7 +15,7 @@ struct SDF : ScalarFunction {
   arr eval(const arr& samples);
   floatA evalFloat(const arr& samples);
   void viewSlice(OpenGL& gl, double z, const arr& lo, const arr& hi);
-  void animateSlices(const arr& lo, const arr& hi, bool wait=true);
+  void animateSlices(const arr& lo, const arr& hi, double wait=0.);
 
   arr projectNewton(const arr& x0, double maxStep=.1);
 };

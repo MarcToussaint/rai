@@ -32,12 +32,16 @@ void SDF::viewSlice(OpenGL& gl, double z, const arr& lo, const arr& hi){
   gl.displayRedBlue(values, false, 5.);
 }
 
-void SDF::animateSlices(const arr& lo, const arr& hi, bool wait){
+void SDF::animateSlices(const arr& lo, const arr& hi, double wait){
   OpenGL gl;
   for(double z=lo(2);z<=hi(2);z += (hi(2)-lo(2))/20.){
     viewSlice(gl, z, lo, hi);
     gl.text <<" z=" <<z;
-    if(wait) gl.watch();
+    if(wait<0.) gl.watch();
+    else{
+      gl.update();
+      if(wait) rai::wait(wait);
+    }
   }
 }
 

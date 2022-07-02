@@ -187,20 +187,16 @@ void display(){
 //    make_shared<SDF_Capsule>(pose, 2., .2)
   };
 
-  auto f2 = make_shared<SDF_GridData>(*fcts(0), arr{-1.,-1.,-1.}, arr{1.,1.,1.}, uintA{20,20,20});
+  arr lo =  arr{-1.,-1.,-1.};
+  arr up = arr{1.,1.,1.};
+  auto f2 = make_shared<SDF_GridData>(*fcts(0), lo, up, uintA{20,20,20});
   fcts.append(f2);
 
   OpenGL gl;
 
   for(shared_ptr<SDF>& fct:fcts){
-    for(double z=-2.; z<=2.; z+= .1) {
-      arr samples = grid({-2.,-2., z}, {2.,2., z}, {100, 100, 0});
-      arr values = fct->eval(samples);
-      values.reshape(101,101);
-      cout <<"slice z=" <<z <<endl;
-      gl.displayGrey(values, false, 4.);
-      rai::wait(.1);
-    }
+    fct->animateSlices(lo, up, .1);
+    rai::wait();
   }
 }
 
