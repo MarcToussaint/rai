@@ -81,10 +81,10 @@ Node::Node(const std::type_info& _type, Graph& _container, const char* _key, con
 }
 
 Node::~Node() {
-  if(container.isDoubleLinked) while(children.N) children.last()->removeParent(this);
+  if(container.isDoubleLinked) while(children.N) children.elem(-1)->removeParent(this);
   if(numChildren) LOG(-2) <<"It is not allowed to delete nodes that still have children";
-  while(parents.N) removeParent(parents.last());
-  if(this==container.last()) { //great: this is very efficient to remove without breaking indexing
+  while(parents.N) removeParent(parents.elem(-1));
+  if(this==container.elem(-1)) { //great: this is very efficient to remove without breaking indexing
     container.resizeCopy(container.N-1);
   } else {
     container.removeValue(this);
@@ -103,7 +103,7 @@ void Node::addParent(Node* p, bool prepend) {
 }
 
 void Node::removeParent(Node* p) {
-  if(p==parents.last()) parents.removeLast(); else parents.removeValue(p);
+  if(p==parents.elem(-1)) parents.removeLast(); else parents.removeValue(p);
   CHECK(p->numChildren, "");
   p->numChildren--;
   if(container.isDoubleLinked) p->children.removeValue(this);
@@ -153,7 +153,7 @@ void Node::write(std::ostream& os, bool yamlMode) const {
     //    if(keys.N) os <<' ';
     os <<'(';
     for(Node* it: parents) {
-      if(it!=parents.first()) os <<' ';
+      if(it!=parents.elem(0)) os <<' ';
       if(it->key.N) {
         os <<it->key;
       } else { //relative numerical reference
@@ -474,7 +474,7 @@ Node* Graph::edit(Node* ed) {
   for(Node* n : KVG) if(n!=ed) {
       CHECK(ed->type == n->type, "can't edit/merge nodes of different types!");
       if(ed->parents.N) { //replace parents
-        while(n->parents.N) n->removeParent(n->parents.last());
+        while(n->parents.N) n->removeParent(n->parents.elem(-1));
         for(Node* p:ed->parents) n->addParent(p);
       }
       if(n->isGraph()) { //merge the KVGs
@@ -493,9 +493,9 @@ Node* Graph::edit(Node* ed) {
 
 void Graph::collapse(Node* a, Node* b) {
   NodeL ab= {a, b}, ba= {b, a};
-//  cout <<"collapsing " <<a->keys.first() <<' ' <<b->keys.first() <<endl;
+//  cout <<"collapsing " <<a->keys.elem(0) <<' ' <<b->keys.elem(0) <<endl;
 //  cout <<"collapsing " <<*a <<listString(a->children) <<" and " <<*b <<listString(b->children) <<endl;
-//  a->keys.first() <<'_' <<b->keys.first();
+//  a->keys.elem(0) <<'_' <<b->keys.elem(0);
   for(Node* ch:a->children) if(ch->parents==ab || ch->parents==ba) delete ch;
   NodeL b_parentOf = b->children;
   for(Node* ch:b_parentOf) {
@@ -647,7 +647,7 @@ void Graph::read(std::istream& is, bool parseInfo) {
     if(n->isGraph() && n->graph().findNode("%Edit")) edits.append(n);
   }
   for(Node* ed:edits) {
-//    CHECK_EQ(ed->key.first(), "Edit", "an edit node needs Edit as first key");
+//    CHECK_EQ(ed->key.elem(0), "Edit", "an edit node needs Edit as first key");
     ed->graph().delNode(ed->graph().findNode("%Edit"));
 //    ed->key.remove(0);
     edit(ed);
@@ -737,7 +737,7 @@ Node* Graph::readNode(std::istream& is, StringA& tags, const char* predetermined
 
   String key;
   if(!predeterminedKey) {
-    if(tags.N) key = tags.last();
+    if(tags.N) key = tags.elem(-1);
   } else {
     key = predeterminedKey;
   }
@@ -751,7 +751,7 @@ Node* Graph::readNode(std::istream& is, StringA& tags, const char* predetermined
   }
   DEBUG(checkConsistency());
 
-  if(verbose) { cout <<" parents:"; if(!parents.N) cout <<"none"; else listWrite(parents, cout, " ", "()"); cout <<std::flush; }
+  if(verbose) { cout <<" parents:"; if(!parents.N) cout <<"none"; else cout <<parents.modList() <<std::flush; }
 
   //-- read value
   Node* node=nullptr;
@@ -886,9 +886,7 @@ Node* Graph::readNode(std::istream& is, StringA& tags, const char* predetermined
   if(!node) {
     cerr <<"FAILED reading node with keys ";
     tags.write(cerr, " ", nullptr, "()");
-    cerr <<" and parents ";
-    listWrite(parents, cerr, " ", "()");
-    cerr <<endl;
+    cerr <<" and parents " <<parents.modList() <<endl;
   }
 
   if(tags.N>1) {
@@ -1068,8 +1066,8 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
 #endif
     } else {
 //      if(n->parents.N) {
-//        label <<"(" <<n->parents(0)->keys.last();
-//        for(uint i=1; i<n->parents.N; i++) label <<' ' <<n->parents(i)->keys.last();
+//        label <<"(" <<n->parents(0)->keys.elem(-1);
+//        for(uint i=1; i<n->parents.N; i++) label <<' ' <<n->parents(i)->keys.elem(-1);
 //        label <<")";
 //      }
     }
@@ -1278,8 +1276,8 @@ NodeL neighbors(Node* it) {
 int distance(NodeL A, NodeL B) {
   CHECK(A.N, "");
   CHECK(B.N, "");
-  Graph& G=A.first()->container;
-  CHECK_EQ(&B.first()->container, &G, "");
+  Graph& G=A.elem(0)->container;
+  CHECK_EQ(&B.elem(0)->container, &G, "");
 
   boolA doneA(G.N), doneB(G.N);
   doneA.setZero();

@@ -16,8 +16,8 @@
 #include <Eigen/SparseQR>
 #endif
 
-#include "array.h"
-#include "array.ipp"
+#include "arrayDouble.h"
+#include "arrayDouble.cxx"
 #include "util.h"
 #include "util.ipp"
 
@@ -69,22 +69,12 @@ const char* arrayBrackets="[]";
 //===========================================================================
 }
 
-arr __NoArr(new SpecialArray(SpecialArray::ST_NoArr));
-arr& NoArr = __NoArr;
-arrA __NoArrA(new SpecialArray(SpecialArray::ST_NoArr));
-arrA& NoArrA = __NoArrA;
-uintA __NoUintA(new SpecialArray(SpecialArray::ST_NoArr));
-uintA& NoUintA = __NoUintA;
-uint16A __NoUint16A(new SpecialArray(SpecialArray::ST_NoArr));
-uint16A& NoUint16A = __NoUint16A;
-byteA __NoByteA(new SpecialArray(SpecialArray::ST_NoArr));
-byteA& NoByteA = __NoByteA;
-intAA __NoIntAA(new SpecialArray(SpecialArray::ST_NoArr));
-intAA& NoIntAA = __NoIntAA;
-uintAA __NoUintAA(new SpecialArray(SpecialArray::ST_NoArr));
-uintAA& NoUintAA = __NoUintAA;
-StringA __NoStringA(new SpecialArray(SpecialArray::ST_NoArr));
-StringA& NoStringA = __NoStringA;
+
+arr& getNoArr(){
+  static arr __noArr;
+  if(!__noArr.special) __noArr.setNoArr();
+  return __noArr;
+}
 
 /* LAPACK notes
 Use the documentation at
@@ -98,7 +88,7 @@ I've put the clapack.h directly into the rai directory - one only has to link to
 namespace rai {
 
 /// make sparse: create the \ref sparse index
-template<> SparseVector& Array<double>::sparseVec() {
+SparseVector& arr::sparseVec() {
   SparseVector* s;
   if(!special) {
     s = new SparseVector(*this);
@@ -117,7 +107,7 @@ template<> SparseVector& Array<double>::sparseVec() {
   return *s;
 }
 
-template<> const SparseVector& Array<double>::sparseVec() const {
+const SparseVector& arr::sparseVec() const {
   CHECK(isSparseVector(*this), "");
   SparseVector* s = dynamic_cast<SparseVector*>(special);
   CHECK(s, "");
@@ -125,7 +115,7 @@ template<> const SparseVector& Array<double>::sparseVec() const {
 }
 
 /// make sparse: create the \ref sparse index
-template<> SparseMatrix& Array<double>::sparse() {
+SparseMatrix& arr::sparse() {
   SparseMatrix* s;
   if(!special) {
     s = new SparseMatrix(*this);
@@ -145,7 +135,7 @@ template<> SparseMatrix& Array<double>::sparse() {
 }
 
 /// make sparse: create the \ref sparse index
-template<> const SparseMatrix& Array<double>::sparse() const {
+const SparseMatrix& arr::sparse() const {
   CHECK(isSparseMatrix(*this), "");
   SparseMatrix* s = dynamic_cast<SparseMatrix*>(special);
   CHECK(s, "");
@@ -153,7 +143,7 @@ template<> const SparseMatrix& Array<double>::sparse() const {
 }
 
 /// make sparse: create the \ref sparse index
-template<> RowShifted& Array<double>::rowShifted() {
+RowShifted& arr::rowShifted() {
   rai::RowShifted* r;
   if(!special) {
     r = new rai::RowShifted(*this);
@@ -173,7 +163,7 @@ template<> RowShifted& Array<double>::rowShifted() {
 }
 
   /// make sparse: create the \ref sparse index
-template<> const RowShifted& Array<double>::rowShifted() const{
+const RowShifted& arr::rowShifted() const{
   CHECK(isRowShifted(*this), "");
   rai::RowShifted* r = dynamic_cast<RowShifted*>(special);
   CHECK(r, "");
@@ -181,19 +171,19 @@ template<> const RowShifted& Array<double>::rowShifted() const{
 }
 
 /// attach jacobian
-template<> Array<double>& Array<double>::J() {
+arr& arr::J() {
   if(!jac){
-    jac = make_unique<rai::Array<double>>();
+    jac = make_unique<arr>();
   }
   return *jac;
 }
-template<> Array<double> Array<double>::noJ() const {
-  Array<double> x;
+arr arr::noJ() const {
+  arr x;
   CHECK(!isSpecial(*this), "reference for special doesn't work yet..");
   x.referTo(*this);
   return x;
 }
-template<> Array<double> Array<double>::J_reset() {
+arr arr::J_reset() {
   CHECK(jac, "");
   arr J;
   if(jac){
@@ -202,22 +192,6 @@ template<> Array<double> Array<double>::J_reset() {
   }else J.setNoArr();
   return J;
 }
-
-#define NONSENSE( type ) \
-  template<> Array<type> Array<type>::noJ() const { HALT("not for this type"); } \
-  template<> SparseMatrix& Array<type>::sparse() { NIY; return *(new SparseMatrix(NoArr)); } \
-  template<> const SparseMatrix& Array<type>::sparse() const{ NIY; return *(new SparseMatrix(NoArr)); } \
-  template<> RowShifted& Array<type>::rowShifted() { NIY; return *(new RowShifted(NoArr)); } \
-  template<> const RowShifted& Array<type>::rowShifted() const{ NIY; return *(new RowShifted(NoArr)); } \
-  template<> Array<type>& Array<type>::J() { NIY; }
-NONSENSE(float)
-NONSENSE(long)
-NONSENSE(uint)
-NONSENSE(int)
-NONSENSE(unsigned short)
-NONSENSE(byte)
-NONSENSE(char)
-#undef NONSENSE
 
 }
 
@@ -290,7 +264,7 @@ arr diag(double d, uint n) {
 
 void addDiag(arr& A, double d) {
   if(isRowShifted(A)) {
-    rai::RowShifted* Aaux = (rai::RowShifted*) A.special;
+    rai::RowShifted* Aaux = dynamic_cast<rai::RowShifted*>(A.special);
     if(!Aaux->symmetric) HALT("this is not a symmetric matrix");
     for(uint i=0; i<A.d0; i++) A(i, 0) += d;
   } else {
@@ -385,43 +359,8 @@ uint own_SVD(
   defined */
 uint svd(arr& U, arr& d, arr& V, const arr& A, bool sort) {
   uint r;
-#ifdef RAI_LAPACK
-  if(rai::useLapack) {
-    r=lapack_SVD(U, d, V, A);
-    V=~V;
-  } else {
-    r=own_SVD(U, d, V, A, sort);
-  }
-#else
-  r=own_SVD(U, d, V, A, sort);
-#endif
-
-#ifdef RAI_CHECK_SVD
-  bool uselapack=rai::useLapack;
-  rai::useLapack=false;
-  double err;
-  arr dD, I;
-  setDiagonal(dD, d);
-  //cout <<U <<dD <<Vt;
-  //Atmp = V * D * U;
-  arr Atmp;
-  Atmp = U * dD * ~V;
-  //cout <<"\nA=" <<A <<"\nAtmp=" <<Atmp <<"U=" <<U <<"W=" <<dD <<"~V=" <<~V <<endl;
-  cout <<"SVD is correct:  " <<(err=maxDiff(Atmp, A)) <<' ' <<endl;    CHECK(err<RAI_CHECK_SVD, "");
-  if(A.d0<=A.d1) {
-    I.setId(U.d0);
-    cout <<"U is orthogonal: " <<(err=maxDiff(U * ~U, I)) <<' ' <<endl;  CHECK(err<RAI_CHECK_SVD, "");
-    I.setId(V.d1);
-    cout <<"V is orthogonal: " <<(err=maxDiff(~V * V, I)) <<endl;        CHECK(err<RAI_CHECK_SVD, "");
-  } else {
-    I.setId(U.d1);
-    cout <<"U is orthogonal: " <<(err=maxDiff(~U * U, I)) <<' ' <<endl;  CHECK(err<RAI_CHECK_SVD, "");
-    I.setId(V.d0);
-    cout <<"V is orthogonal: " <<(err=sqrDistance(V * ~V, I)) <<endl;        CHECK(err<1e-5, "");
-  }
-  rai::useLapack=uselapack;
-#endif
-
+  r=lapack_SVD(U, d, V, A);
+  V=~V;
   return r;
 }
 
@@ -447,7 +386,7 @@ void pca(arr& Y, arr& v, arr& W, const arr& X, uint npc) {
   arr m = sum(X, 0) / (double)X.d0;
   arr D = X;
   for(uint i = 0; i < D.d0; i++)
-    D[i]() -= m;
+    D[i].noconst() -= m;
 
   arr U;
   svd(U, v, W, D, true);
@@ -574,15 +513,7 @@ void inverse_LU(arr& Xinv, const arr& X) {
 
 void inverse_SymPosDef(arr& Ainv, const arr& A) {
   CHECK_EQ(A.d0, A.d1, "");
-#ifdef RAI_LAPACK
-  if(rai::useLapack) lapack_inverseSymPosDef(Ainv, A);
-  else inverse_SVD(Ainv, A);
-#else
-  inverse_SVD(Ainv, A);
-#endif
-#ifdef RAI_CHECK_INVERSE
-  check_inverse(Ainv, A);
-#endif
+  lapack_inverseSymPosDef(Ainv, A);
 }
 
 arr pseudoInverse(const arr& A, const arr& Winv, double eps) {
@@ -646,311 +577,6 @@ inline double RAI_SIGN_SVD(double a, double b) { return b>0 ? ::fabs(a) : -::fab
 #define RAI_max_SVD(a, b) ( (a)>(b) ? (a) : (b) )
 #define RAI_SVD_MINVALUE .0 //1e-10
 
-uint own_SVD(
-  arr& U,
-  arr& w,
-  arr& V,
-  const arr& A,
-  bool sort) {
-  //rai::Array<double*> Apointers, Upointers, Vpointers;
-  unsigned m = A.d0; /* rows */
-  unsigned n = A.d1; /* cols */
-  U.resize(m, n);
-  V.resize(n, n);
-  w.resize(n);
-  rai::Array<double*> Ap, Up, Vp;
-  double** a = A.getCarray(Ap); //Pointers(Apointers); /* input matrix */
-  double** u = U.getCarray(Up); //Pointers(Upointers); /* left vectors */
-  double** v = V.getCarray(Vp); //Pointers(Vpointers); /* right vectors */
-
-  int flag;
-  unsigned i, its, j, jj, k, l, nm(0), r;
-  double anorm, c, f, g, h, s, scale, x, y, z, t;
-
-  arr rv1(n);
-
-  /* copy A to U */
-  for(i=0; i<m; i++) for(j=0; j<n; j++) u[i][j] = a[i][j];
-
-  /* householder reduction to pickBiagonal form */
-  g = scale = anorm = 0.0;
-
-  for(i=0; i<n; i++) {
-    l = i + 1;
-    rv1(i) = scale * g;
-    g = s = scale = 0.0;
-
-    if(i<m) {
-      for(k=i; k<m; k++) scale += fabs(u[k][i]);
-
-      if(scale!=0.0) {
-        for(k=i; k<m; k++) {
-          u[k][i] /= scale;
-          s += u[k][i] * u[k][i];
-        }
-
-        f = u[i][i];
-        g = -RAI_SIGN_SVD(sqrt(s), f);
-        h = f * g - s;
-        u[i][i] = f - g;
-
-        for(j=l; j<n; j++) {
-          s = 0.0;
-          for(k=i; k<m; k++) s += u[k][i] * u[k][j];
-
-          f = s / h;
-          for(k=i; k<m; k++) u[k][j] += f * u[k][i];
-        }
-
-        for(k=i; k<m; k++) u[k][i] *= scale;
-      }
-    }
-
-    w(i) = scale * g;
-    g = s = scale = 0.0;
-
-    if(i<m && i!=n-1) {
-      for(k=l; k<n; k++)scale += fabs(u[i][k]);
-
-      if(scale!=0.0) {
-        for(k=l; k<n; k++) {
-          u[i][k] /= scale;
-          s += u[i][k] * u[i][k];
-        }
-
-        f = u[i][l];
-        g = -RAI_SIGN_SVD(sqrt(s), f);
-        h = f * g - s;
-        u[i][l] = f - g;
-
-        for(k=l; k<n; k++) rv1(k) = u[i][k] / h;
-
-        for(j=l; j<m; j++) {
-          s = 0.0;
-          for(k=l; k<n; k++) s += u[j][k] * u[i][k];
-
-          for(k=l; k<n; k++) u[j][k] += s * rv1(k);
-        }
-
-        for(k=l; k<n; k++) u[i][k] *= scale;
-      }
-    }
-
-    anorm = RAI_max_SVD(anorm, fabs(w(i)) + fabs(rv1(i)));
-  }
-
-  /* accumulation of right-hand transformations */
-  for(l=i=n; i--; l--) {
-    if(l<n) {
-      if(g!=0.0) {
-        /* double division avoids possible underflow */
-        for(j=l; j<n; j++) v[j][i] = (u[i][j] / u[i][l]) / g;
-
-        for(j=l; j<n; j++) {
-          s = 0.0;
-          for(k=l; k<n; k++) s += u[i][k] * v[k][j];
-
-          for(k=l; k<n; k++) v[k][j] += s * v[k][i];
-        }
-      }
-
-      for(j=l; j<n; j++) v[i][j] = v[j][i] = 0.0;
-    }
-
-    v[i][i] = 1.0;
-    g = rv1(i);
-  }
-
-  /* accumulation of left-hand transformations */
-  for(l=i=(m<n?m:n); i--; l--) {
-    g = w(i);
-
-    for(j=l; j<n; j++) u[i][j] = 0.0;
-
-    if(g!=0.0) {
-      g = 1.0 / g;
-
-      for(j=l; j<n; j++) {
-        s = 0.0;
-        for(k=l; k<m; k++) s += u[k][i] * u[k][j];
-
-        /* double division avoids possible underflow */
-        f = (s / u[i][i]) * g;
-
-        for(k=i; k<m; k++) u[k][j] += f * u[k][i];
-      }
-
-      for(j=i; j<m; j++) u[j][i] *= g;
-    } else {
-      for(j=i; j<m; j++) u[j][i] = 0.0;
-    }
-
-    u[i][i]++;
-  }
-
-  /* diagonalization of the pickBiagonal form */
-  for(k=n; k--;) {
-    for(its=1; its<=30; its++) {
-      flag = 1;
-
-      /* test for splitting */
-      for(l = k + 1; l--;) {
-        /* rv1 [0] is always zero, so there is no exit */
-        nm = l - 1;
-
-        if(fabs(rv1(l)) + anorm == anorm) {
-          flag = 0;
-          break;
-        }
-
-        //if(!l) break; //(mt 07-01-16)
-        if(fabs(w(nm)) + anorm == anorm) break;
-      }
-
-      if(flag) {
-        /* cancellation of rv1 [l] if l greater than 0 */
-        c = 0.0;
-        s = 1.0;
-
-        for(i=l; i<=k; i++) {
-          f = s * rv1(i);
-          rv1(i) *= c;
-
-          if(fabs(f) + anorm == anorm) break;
-
-          g = w(i);
-          h = hypot(f, g);
-          w(i) = h;
-          h = 1.0 / h;
-          c = g * h;
-          s = -f * h;
-
-          for(j=0; j<m; j++) {
-            y = u[j][nm];
-            z = u[j][i];
-            u[j][nm] = y * c + z * s;
-            u[j][i] = z * c - y * s;
-          }
-        }
-      }
-
-      /* test for convergence */
-      z = w(k);
-
-      if(l==k) {
-        if(z<0.0) {
-          w(k) = -z;
-          for(j=0; j<n; j++) v[j][k] = -v[j][k];
-        }
-        break;
-      }
-
-      if(its==50) HALT("svd failed");
-      //if(its==30) throw k;
-
-      /* shift from bottom 2 by 2 minor */
-      x = w(l);
-      nm = k - 1;
-      y = w(nm);
-      g = rv1(nm);
-      h = rv1(k);
-      f = ((y - z) * (y + z) + (g - h) * (g + h)) / (2.0 * h * y);
-      g = hypot(f, 1.0);
-      f = ((x - z) * (x + z) + h * ((y / (f + RAI_SIGN_SVD(g, f))) - h)) / x;
-
-      /* next qr transformation */
-      c = s = 1.0;
-
-      for(j=l; j<k; j++) {
-        i = j + 1;
-        g = rv1(i);
-        y = w(i);
-        h = s * g;
-        g *= c;
-        z = hypot(f, h);
-        rv1(j) = z;
-        c = f / z;
-        s = h / z;
-        f = x * c + g * s;
-        g = g * c - x * s;
-        h = y * s;
-        y *= c;
-
-        for(jj=0; jj<n; jj++) {
-          x = v[jj][j];
-          z = v[jj][i];
-          v[jj][j] = x * c + z * s;
-          v[jj][i] = z * c - x * s;
-        }
-
-        z = hypot(f, h);
-        w(j) = z;
-
-        /* rotation can be arbitrary if z is zero */
-        if(z!=0.0) {
-          z = 1.0 / z;
-          c = f * z;
-          s = h * z;
-        }
-
-        f = c * g + s * y;
-        x = c * y - s * g;
-
-        for(jj=0; jj<m; jj++) {
-          y = u[jj][j];
-          z = u[jj][i];
-          u[jj][j] = y * c + z * s;
-          u[jj][i] = z * c - y * s;
-        }
-      }
-
-      rv1(l) = 0.0;
-      rv1(k) = f;
-      w(k) = x;
-    }
-  }
-
-  //sorting:
-  if(sort) {
-    unsigned i, j, k;
-    double   p;
-
-    for(i=0; i<n-1; i++) {
-      p = w(k=i);
-
-      for(j=i+1; j<n; j++) if(w(j)>=p) p = w(k=j);
-
-      if(k!=i) {
-        w(k) = w(i);
-        w(i) = p;
-
-        for(j=0; j<n; j++) {
-          p       = v[j][i];
-          v[j][i] = v[j][k];
-          v[j][k] = p;
-        }
-
-        for(j=0; j<m; j++) {
-          p       = u[j][i];
-          u[j][i] = u[j][k];
-          u[j][k] = p;
-        }
-      }
-    }
-  }
-
-  //rank analysis
-
-  for(r=0; r<n && w(r)>RAI_SVD_MINVALUE; r++) {};
-
-  t = r < n ? fabs(w(n-1)) : 0.0;
-  r = 0;
-  s = 0.0;
-  while(r<n && w(r)>t && w(r)+s>s) s += w(r++);
-
-  return r;
-}
-
 double determinantSubroutine(double** A, uint n) {
   if(n==1) return A[0][0];
   if(n==2) return A[0][0]*A[1][1]-A[0][1]*A[1][0];
@@ -970,8 +596,7 @@ double determinantSubroutine(double** A, uint n) {
 
 double determinant(const arr& A) {
   CHECK(A.nd==2 && A.d0==A.d1, "determinants require a squared 2D matrix");
-  rai::Array<double*> tmp;
-  return determinantSubroutine(A.getCarray(tmp), A.d0);
+  return determinantSubroutine(rai::getCarray(A).p, A.d0);
 }
 
 double cofactor(const arr& A, uint i, uint j) {
@@ -1037,13 +662,6 @@ arr bootstrap(const arr& x) {
   arr y(x.N);
   for(uint i=0; i<y.N; i++) y(i) = x(rnd(y.N));
   return y;
-}
-
-void write(const arrL& X, const char* filename, const char* ELEMSEP, const char* LINESEP, const char* BRACKETS, bool dimTag, bool binary) {
-  std::ofstream fil;
-  rai::open(fil, filename);
-  catCol(X).write(fil, ELEMSEP, LINESEP, BRACKETS, dimTag, binary);
-  fil.close();
 }
 
 //===========================================================================
@@ -1137,22 +755,6 @@ void flip_image(byteA& img) {
     memmove(c, a, n);
     memmove(a, b, n);
     memmove(b, c, n);
-  }
-}
-
-void flip_image(floatA& img) {
-  if(!img.N) return;
-  uint h=img.d0, n=img.N/img.d0;
-  floatA line(n);
-  float* a, *b, *c;
-  uint s=sizeof(float);
-  for(uint i=0; i<h/2; i++) {
-    a=img.p+i*n;
-    b=img.p+(h-1-i)*n;
-    c=line.p;
-    memmove(c, a, n*s);
-    memmove(a, b, n*s);
-    memmove(b, c, n*s);
   }
 }
 
@@ -1569,11 +1171,6 @@ void blas_MM(arr& X, const arr& A, const arr& B) {
               1., A.p, A.d1,
               B.p, B.d1,
               0., X.p, X.d1);
-#if 0//test
-  rai::useLapack=false;
-  cout  <<"blas_MM error = " <<maxDiff(A*B, X, 0) <<endl;
-  rai::useLapack=true;
-#endif
 }
 
 void blas_A_At(arr& X, const arr& A) {
@@ -1585,11 +1182,6 @@ void blas_A_At(arr& X, const arr& A) {
               1.f, A.p, A.d1,
               0., X.p, X.d1);
   for(uint i=0; i<n; i++) for(uint j=0; j<i; j++) X.p[i*n+j] = X.p[j*n+i]; //fill in the lower triangle
-#if 0//test
-  rai::useLapack=false;
-  cout  <<"blas_MM error = " <<maxDiff(A*~A, X, 0) <<endl;
-  rai::useLapack=true;
-#endif
 }
 
 void blas_At_A(arr& X, const arr& A) {
@@ -1601,11 +1193,6 @@ void blas_At_A(arr& X, const arr& A) {
               1.f, A.p, A.d1,
               0., X.p, X.d1);
   for(uint i=0; i<n; i++) for(uint j=0; j<i; j++) X.p[i*n+j] = X.p[j*n+i]; //fill in the lower triangle
-#if 0//test
-  rai::useLapack=false;
-  cout  <<"blas_MM error = " <<maxDiff(~A*A, X, 0) <<endl;
-  rai::useLapack=true;
-#endif
 }
 
 void blas_Mv(arr& y, const arr& A, const arr& x) {
@@ -1618,11 +1205,6 @@ void blas_Mv(arr& y, const arr& A, const arr& x) {
               1., A.p, A.d1,
               x.p, 1,
               0., y.p, 1);
-#if 0 //test
-  rai::useLapack=false;
-  cout  <<"blas_Mv error = " <<maxDiff(A*x, y, 0) <<endl;
-  rai::useLapack=true;
-#endif
 }
 
 void blas_MsymMsym(arr& X, const arr& A, const arr& B) {
@@ -1655,13 +1237,13 @@ arr lapack_Ainv_b_sym(const arr& A, const arr& b) {
     RAI_MSG("TODO: directly call lapack with the matrix!")
     arr bT = ~b;
     x.resizeAs(bT);
-    for(uint i=0; i<bT.d0; i++) x[i]() = lapack_Ainv_b_sym(A, bT[i]);
+    for(uint i=0; i<bT.d0; i++) x[i].noconst() = lapack_Ainv_b_sym(A, bT[i]);
     x=~x;
     return x;
   }
   integer N=A.d0, KD=0, NRHS=1, LDAB=0, INFO;
   if(isRowShifted(A)) {
-    rai::RowShifted* Aaux = (rai::RowShifted*) A.special;
+    rai::RowShifted* Aaux = dynamic_cast<rai::RowShifted*>(A.special);
     if(!Aaux->symmetric) HALT("this is not a symmetric matrix");
     for(uint i=0; i<A.d0; i++) if(Aaux->rowShift(i)!=i) HALT("this is not shifted as an upper triangle");
     KD=Aaux->rowSize-1;
@@ -1839,7 +1421,7 @@ void lapack_mldivide(arr& X, const arr& A, const arr& B) {
 
 void lapack_choleskySymPosDef(arr& Achol, const arr& A) {
   if(isRowShifted(A)) {
-    rai::RowShifted* Aaux = (rai::RowShifted*) A.special;
+    rai::RowShifted* Aaux = dynamic_cast<rai::RowShifted*>(A.special);
     if(!Aaux->symmetric) HALT("this is not a symmetric matrix");
     for(uint i=0; i<A.d0; i++) if(Aaux->rowShift(i)!=i) HALT("this is not shifted as an upper triangle");
 
@@ -1925,8 +1507,8 @@ dlauum = multiply L'*L
 #if !defined RAI_MSVC && defined RAI_NOCHECK
 #  warning "RAI_LAPACK undefined - using inefficient implementations"
 #endif
-void blas_MM(arr& X, const arr& A, const arr& B) { rai::useLapack=false; op_innerProduct(X, A, B); };
-void blas_MsymMsym(arr& X, const arr& A, const arr& B) { rai::useLapack=false; op_innerProduct(X, A, B); };
+void blas_MM(arr& X, const arr& A, const arr& B) { rai::useLapack=false; op_innerProduct(X, A, B); rai::useLapack=true; };
+void blas_MsymMsym(arr& X, const arr& A, const arr& B) { rai::useLapack=false; op_innerProduct(X, A, B); rai::useLapack=true; };
 void blas_Mv(arr& y, const arr& A, const arr& x) {       rai::useLapack=false; op_innerProduct(y, A, x); rai::useLapack=true; };
 void blas_A_At(arr& X, const arr& A) { NICO }
 void blas_At_A(arr& X, const arr& A) { NICO }
@@ -2276,7 +1858,7 @@ arr rai::RowShifted::A_x(const arr& x) {
   if(x.nd==2) {
     arr Y(x.d1, Z.d0);
     arr X = ~x;
-    for(uint j=0; j<x.d1; j++) Y[j]() = A_x(X[j]);
+    for(uint j=0; j<x.d1; j++) Y[j].noconst() = A_x(X[j]);
     return ~Y;
   }
   CHECK_EQ(x.N, Z.d1, "");
@@ -2380,7 +1962,7 @@ void rai::RowShifted::write(ostream& os) const{
   os <<"packed numbers =\n" <<Z
       <<"\nrowShifts=" <<rowShift
      <<"\nrowLens=" <<rowLen;
-  if(colPatches.N) os <<"\ncolPaches=\n" <<~colPatches;
+  if(colPatches.N) os <<"\ncolPaches=\n" <<colPatches;
   os  <<"\nunpacked =\n" <<unpack() <<endl;
 }
 
@@ -2412,8 +1994,7 @@ SparseMatrix::SparseMatrix(arr& _Z, const SparseMatrix& s) : SparseMatrix(_Z) {
 }
 
 /// return fraction of non-zeros in the array
-template<>
-double Array<double>::sparsity() {
+double arr::sparsity() {
   uint i, m=0;
   for(i=0; i<N; i++) if(elem(i)) m++;
   return ((double)m)/N;
@@ -2499,8 +2080,8 @@ double& SparseVector::addEntry(int i) {
   elems.resizeCopy(k+1);
   elems(k)=i;
   Z.resizeMEM(k+1, true);
-  Z.last()=0.;
-  return Z.last();
+  Z.elem(-1)=0.;
+  return Z.elem(-1);
 }
 
 double& SparseMatrix::addEntry(int i, int j) {
@@ -2515,8 +2096,8 @@ double& SparseMatrix::addEntry(int i, int j) {
   elems(k, 1)=j;
   if(rows.nd){ rows.clear(); cols.clear(); }
   Z.resizeMEM(k+1, true);
-  Z.last()=0.;
-  return Z.last();
+  Z.elem(-1)=0.;
+  return Z.elem(-1);
 }
 
 arr SparseMatrix::getSparseRow(uint i) const {
@@ -2712,11 +2293,6 @@ void SparseMatrix::transpose() {
 }
 
 void SparseMatrix::rowWiseMult(const arr& a) {
-  CHECK_EQ(a.N, Z.d0, "");
-  for(uint k=0; k<Z.N; k++) Z.elem(k) *= a.elem(elems.p[2*k]);
-}
-
-void SparseMatrix::rowWiseMult(const floatA& a) {
   CHECK_EQ(a.N, Z.d0, "");
   for(uint k=0; k<Z.N; k++) Z.elem(k) *= a.elem(elems.p[2*k]);
 }
@@ -3078,11 +2654,26 @@ void graphRandomFixedDegree(uintA& E, uint N, uint d) {
 // explicit instantiations for double
 //
 
-template<> const rai::Array<double>& rai::Array<double>::ensureDouble() const{ return *this; }
-template<class T> const rai::Array<double>& rai::Array<T>::ensureDouble() const{ HALT("not for this type"); }
+namespace rai {
 
-template<> rai::Array<double>& rai::Array<double>::ensureDouble(){ return *this; }
-template<class T> rai::Array<double>& rai::Array<T>::ensureDouble(){ HALT("not for this type"); }
+uint product(const uintA& x){
+  uint t(1);
+  for(uint i=x.N; i--; t *= x.p[i]);
+  return t;
+}
+
+uint max(const uintA& x){
+    CHECK(x.N, "");
+    uint i, m=0;
+    for(i=1; i<x.N; i++) if(x.p[i]>x.p[m]) m=i;
+    return x.p[m];
+}
+
+}
+
+const arr& arr::ensureDouble() const{ return *this; }
+
+arr& arr::ensureDouble(){ return *this; }
 
 //===========================================================================
 //
@@ -3125,8 +2716,8 @@ template<class T> rai::Array<double>& rai::Array<T>::ensureDouble(){ HALT("not f
 #undef T
 #undef NOFLOAT
 
-template rai::Array<rai::String>::Array();
-template rai::Array<rai::String>::~Array();
+template StringA::Array();
+template StringA::~Array();
 
 template rai::Array<rai::String*>::Array();
 template rai::Array<rai::String*>::~Array();
@@ -3150,25 +2741,16 @@ template rai::Array<arr>::Array(uint);
 template rai::Array<arr>::~Array();
 #endif
 
-template rai::Array<double> rai::getParameter<arr>(char const*);
-template rai::Array<double> rai::getParameter<arr>(char const*, const arr&);
-template rai::Array<float> rai::getParameter<floatA>(char const*);
-template rai::Array<uint> rai::getParameter<uintA>(char const*);
+template arr rai::getParameter<arr>(char const*);
+template arr rai::getParameter<arr>(char const*, const arr&);
+template floatA rai::getParameter<floatA>(char const*);
+template uintA rai::getParameter<uintA>(char const*);
 template bool rai::checkParameter<arr>(char const*);
 template void rai::getParameter(uintA&, const char*, const uintA&);
 template void rai::getParameter(arr&, const char*, const arr&);
 
-void linkArray() { cout <<"*** libArray.so dynamically loaded ***" <<endl; }
-
-namespace rai{
-template
-typename std::enable_if<!is_shared_ptr<rai::String>::value, std::ostream&>::type
-operator<<(std::ostream& os, const rai::Array<rai::String>& x);
-template std::istream& operator>>(std::istream& is, Array<rai::String>& x);
-}
-
 //namespace rai{
-//template<> template<> Array<rai::String>::Array(std::initializer_list<const char*> list) {
+//StringA::Array(std::initializer_list<const char*> list) {
 //  init();
 //  for(const char* t : list) append(rai::String(t));
 //}

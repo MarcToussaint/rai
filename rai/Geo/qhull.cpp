@@ -343,7 +343,7 @@ arr getHull(const arr& V, uintA& T) {
     memmove(&Vnew(i, 0), vertex->point,  dim*sizeof(double));
     i++;
   }
-  if(!!T) { //retrieve also the triangulation
+  if(T.N) { //retrieve also the triangulation
     T.resize(qh num_facets, dim);
     f=0;
     FORALLfacets {
@@ -610,7 +610,9 @@ void sort2Dpoints(arr& A) {
   }
   uintA perm;
   perm.setStraightPerm(A.d0);
-  perm.sort([&d](const uint&i, const uint&j) { return d(i)<d(j); });
+  static const double* dCapture;
+  dCapture = d.p;
+  perm.sort([](const uint&i, const uint&j) { return dCapture[i]<dCapture[j]; });
   A.permuteRows(perm);
 }
 

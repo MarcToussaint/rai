@@ -325,7 +325,7 @@ SDF_GridData::SDF_GridData(SDF& f, const arr& _lo, const arr& _hi, const uintA& 
   arr samples = ::grid(lo, up, res);
   arr values = f.eval(samples);
   copy(gridData, values);
-  gridData.reshape(res+1u);
+  gridData.reshape({res(0)+1, res(1)+1, res(2)+1});
 #else
   grid.resize(res+1u);
   arr x(3);

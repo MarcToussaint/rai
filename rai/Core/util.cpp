@@ -1122,6 +1122,9 @@ void  rai::Rnd::seed250(int32_t seed) {
   for(i=0; i<4711; ++i) rnd250();
 }
 
+namespace rai{
+  uint rndInt(uint up){ return rnd.num(up); }
+}
 //===========================================================================
 //
 // Inotify

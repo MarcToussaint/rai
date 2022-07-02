@@ -388,7 +388,7 @@ struct Node_typed : Node {
   }
 
   virtual void writeValue(std::ostream& os) const {
-    if(typeid(T)==typeid(NodeL)) listWrite(*getValue<NodeL>(), os, " ");
+    if(typeid(T)==typeid(NodeL)) os <<getValue<NodeL>()->modList();
     else os <<value;
   }
 
