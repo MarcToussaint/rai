@@ -23,6 +23,8 @@
 #include "opengl.h"
 #include "../Geo/geo.h"
 
+#include <math.h>
+
 #ifdef RAI_GLFW
 #  include <GLFW/glfw3.h>
 #endif
@@ -1429,17 +1431,6 @@ int OpenGL::watchImage(const byteA& _img, bool wait, float _zoom) {
   glWatchImage(img, wait, 20);
 }*/
 
-int OpenGL::displayGrey(const floatA& x, bool wait, float _zoom) {
-  static byteA img;
-  resizeAs(img, x);
-  float mi=x.min(), ma=x.max();
-  text.clear() <<"displayGrey" <<" max:" <<ma <<" min:" <<mi <<endl;
-  for(uint i=0; i<x.N; i++) {
-    img.elem(i)=(byte)(255.*(x.elem(i)-mi)/(ma-mi));
-  }
-  return watchImage(img, wait, _zoom);
-}
-
 int OpenGL::displayGrey(const arr& x, bool wait, float _zoom) {
   static byteA img;
   resizeAs(img, x);
@@ -1686,7 +1677,7 @@ void OpenGL::clearSubView(uint v) {
 void OpenGL::clear() {
   auto _dataLock = dataLock(RAI_HERE);
   views.clear();
-  listDelete(toBeDeletedOnCleanup);
+  for(CstyleDrawer* d:toBeDeletedOnCleanup) delete d;
   drawers.clear();
   initCalls.clear();
   hoverCalls.clear();
@@ -2703,7 +2694,7 @@ void read_png(byteA& img, const char* file_name, bool swap_rows) {
   png_read_update_info(png, info);
 
   img.resize(height, png_get_rowbytes(png, info));
-  rai::Array<byte*> cpointers = img.getCarray();
+  rai::Array<byte*> cpointers = getCarray(img);
   if(swap_rows) cpointers.reverse();
 
   png_read_image(png, cpointers.p);
@@ -2752,7 +2743,7 @@ void write_png(const byteA& img, const char* file_name, bool swap_rows) {
 
   byteA imgRef = img.ref();
   imgRef.reshape(img.d0, -1);
-  rai::Array<byte*> cpointers = imgRef.getCarray();
+  rai::Array<byte*> cpointers = getCarray(imgRef);
   if(swap_rows) cpointers.reverse();
 
   png_write_image(png, cpointers.p);

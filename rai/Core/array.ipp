@@ -1005,19 +1005,21 @@ template<class T> Array<T>& Array<T>::setZero(byte zero) {
 }
 
 /// concatenate 2D matrices (or vectors) column-wise
-template<class T> Array<T> catCol(const Array<const Array<T>*>& X) {
+template<class T> Array<T> catCol(const Array<Array<T>*>& X) {
   uint d0=X(0)->d0, d1=0;
   for(const Array<T>* x:X) { CHECK((x->nd==2 || x->nd==1) && x->d0==d0, ""); d1+=x->nd==2?x->d1:1; }
   Array<T> z;
-  if(X.first()->isSparse()){
-      z.sparse().resize(d0, d1, 0);
-      d1=0;
-      for(const Array<T>* x:  X) {
-          CHECK(x->isSparse(), "");
-          CHECK(x->nd==2,"");
-          z.sparse().add(x->sparse(), 0, d1);
-          d1+=x->d1;
-      }
+  if(isSparse(*X.first())){
+    NIY;
+//      z.sparse().resize(d0, d1, 0);
+//      d1=0;
+//      for(const Array<T>* x:  X) {
+//        arr* xx = dynamic_cast<arr*>(x);
+//          CHECK(xx->isSparse(), "");
+//          CHECK(xx->nd==2,"");
+//          z.sparse().add(x->sparse(), 0, d1);
+//          d1+=x->d1;
+//      }
   }else{
       z.resize(d0, d1);
       d1=0;
@@ -1092,8 +1094,9 @@ template<class T> void Array<T>::setBlockMatrix(const Array<T>& A, const Array<T
 template<class T> void Array<T>::setBlockVector(const Array<T>& a, const Array<T>& b) {
   CHECK(a.nd==1 && b.nd==1, "");
   resize(a.N+b.N);
-  setVectorBlock(a.noJ(), 0);   //for(i=0;i<a.N;i++) operator()(i    )=a(i);
-  setVectorBlock(b.noJ(), a.N); //for(i=0;i<b.N;i++) operator()(i+a.N)=b(i);
+  NIY;
+//  setVectorBlock(a.noJ(), 0);   //for(i=0;i<a.N;i++) operator()(i    )=a(i);
+//  setVectorBlock(b.noJ(), a.N); //for(i=0;i<b.N;i++) operator()(i+a.N)=b(i);
 }
 
 /// write the matrix B into 'this' matrix at location lo0, lo1
@@ -1468,7 +1471,7 @@ template<class T> void Array<T>::permute(const Array<uint>& permutation) {
 template<class T> void Array<T>::permuteRows(const Array<uint>& permutation) {
   CHECK_LE(permutation.N, d0, "array smaller than permutation ("<<N<<"<"<<permutation.N<<")");
   Array<T> b=(*this);
-  for(uint i=0; i<d0; i++) operator[](i)()=b[permutation(i)];
+  for(uint i=0; i<d0; i++) operator[](i)=b[permutation(i)];
 }
 
 /// apply the given 'permutation' on 'this'

@@ -28,13 +28,16 @@ int main(int argc, char** argv){
   gl.renderInBack();
 
   write_ppm(gl.captureImage, "z.ppm", true);
-  write_ppm(convert<byte>(255.f*gl.captureDepth), "z.depth.ppm", true);
+  arr depth;
+  rai::copy(depth, gl.captureDepth);
+  depth *= 255.;
+  write_ppm(rai::convert<byte>(depth), "z.depth.ppm", true);
 
   if(!offscreen){
     gl.watch();
     OpenGL gl2("depth", 800, 600);
     gl2.watchImage(gl.captureImage, true, 1.);
-    gl2.displayGrey(gl.captureDepth, true, 1.);
+    gl2.displayGrey(depth, true, 1.);
   }
 
   cout <<"DONE!" <<endl;

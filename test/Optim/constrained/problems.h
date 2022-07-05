@@ -1,5 +1,7 @@
 #include <Optim/optimization.h>
 
+#include <math.h>
+
 struct CoveringSpheresProblem : NLP {
   const arr& x;
   double p, alpha;
@@ -19,7 +21,7 @@ struct CoveringSpheresProblem : NLP {
     }
 
 //    r = .1;
-    return cat(c,r);
+    return (c,r);
   }
 
   virtual void getFeatureTypes(ObjectiveTypeA& ft){ NIY }

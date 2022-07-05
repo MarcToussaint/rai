@@ -220,7 +220,6 @@ struct OpenGL {
   /// @name to display image data (kind of misuse)
   int watchImage(const byteA& img, bool wait, float backgroundZoom=1.);
   int watchImage(const floatA& img, bool wait, float backgroundZoom=1.);
-  int displayGrey(const floatA& x, bool wait, float backgroundZoom=1.);
   int displayGrey(const arr& x, bool wait, float backgroundZoom=1.);
   int displayRedBlue(const arr& x, bool wait, float backgroundZoom=1.);
 

@@ -59,7 +59,9 @@ void TEST(Grab) {
   cout <<"normal view - written to z.ppm " <<endl;
   gl.update("title", true);
   write_ppm(gl.captureImage,"z.1.ppm");
-  write_ppm(convert<byte>(255.f*gl.captureDepth),"z.2.ppm");
+  arr depth = rai::convert<double>(gl.captureDepth);
+  depth *= 255.;
+  write_ppm(rai::convert<byte>(depth),"z.2.ppm");
 
   gl.watch();
 
@@ -71,8 +73,8 @@ void TEST(Grab) {
 
   //grap the depth image from current view:
   gl.update(nullptr, true);
-  cout <<"max " <<(int)gl.captureDepth.max() <<" min " <<(int)gl.captureDepth.min() <<endl;
-  gl.watchImage(gl.captureDepth,true,1);
+  cout <<"max " <<(int)depth.max() <<" min " <<(int)depth.min() <<endl;
+  gl.displayGrey(depth,true,1);
 }
 
 /************ second test ************/
@@ -276,7 +278,7 @@ void read_png(byteA &img, const char *file_name, bool swap_rows) {
   png_read_update_info(png, info);
 
   img.resize(height, png_get_rowbytes(png,info));
-  rai::Array<byte*> cpointers = img.getCarray();
+  rai::Array<byte*> cpointers = getCarray(img);
   //    row_pointers = (png_bytep*)malloc(sizeof(png_bytep) * height);
   //    for(int y = 0; y < height; y++) {
   //      row_pointers[y] = (png_byte*)malloc(png_get_rowbytes(png,info));

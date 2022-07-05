@@ -83,10 +83,12 @@ struct ArrayDouble : public rai::Array<double> {
 
     ArrayDouble() : rai::Array<double>() {}
     ArrayDouble(const ArrayDouble& a){ operator=(a); } //copy constructor
+    ArrayDouble(const Array<double>& a){ operator=(a); } //copy constructor
     ArrayDouble(ArrayDouble&& a) : Array<double>(a) {}  //move constructor
     explicit ArrayDouble(uint D0){ resize(D0); }
     explicit ArrayDouble(uint D0, uint D1){ resize(D0, D1); }
     explicit ArrayDouble(uint D0, uint D1, uint D2){ resize(D0, D1, D2); }
+    explicit ArrayDouble(const double* p, uint size, bool byReference){ if(byReference) referTo(p,size); else setCarray(p,size); }
     explicit ArrayDouble(const std::vector<double>& a, bool byReference){ if(byReference) referTo(&a.front(), a.size()); else setCarray(&a.front(), a.size()); }
     ArrayDouble(std::initializer_list<double> values) { operator=(values); }
     ArrayDouble(std::initializer_list<uint> dim, std::initializer_list<double> values){ operator=(values); reshape(dim); }
@@ -96,6 +98,7 @@ struct ArrayDouble : public rai::Array<double> {
     ArrayDouble& operator=(std::initializer_list<double> values);
     ArrayDouble& operator=(const double& v);
     ArrayDouble& operator=(const ArrayDouble& a);
+    ArrayDouble& operator=(const Array<double>& a);
     ArrayDouble& operator=(const std::vector<double>& values);
 
     rai::ArrayIterationEnumerated itEnumerated() const;
@@ -306,7 +309,8 @@ BinaryFunction(fmod);
 /// @name standard types
 /// @{
 
-typedef rai::Array<arr>    arrA;
+typedef rai::Array<arr> arrA;
+typedef rai::Array<arr*> arrL;
 
 //===========================================================================
 /// @}
@@ -784,6 +788,15 @@ UpdateOperator(*=)
 UpdateOperator(/=)
 UpdateOperator(%=)
 #undef UpdateOperator
+
+namespace rai{
+  template<class T> bool isSparse(Array<T>& x){
+    if(typeid(T)!=typeid(double)) return false;
+    arr* y = dynamic_cast<arr*>(&x);
+    if(!y) return false;
+    return y->isSparse();
+  }
+}
 
 //===========================================================================
 //

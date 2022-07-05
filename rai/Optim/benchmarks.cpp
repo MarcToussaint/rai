@@ -198,7 +198,7 @@ void generateConditionedRandomProjection(arr& M, uint n, double condition) {
 
 NLP_Squared::NLP_Squared(uint _n, double condition, bool random) : n(_n) {
   dimension = n;
-  featureTypes = consts<ObjectiveType>(OT_sos, n);
+  featureTypes = rai::consts<ObjectiveType>(OT_sos, n);
 
   //let C be a ortho-normal matrix (=random rotation matrix)
   C.resize(n, n);
@@ -207,11 +207,11 @@ NLP_Squared::NLP_Squared(uint _n, double condition, bool random) : n(_n) {
     rndUniform(C, -1., 1., false);
     //orthogonalize
     for(uint i=0; i<n; i++) {
-      for(uint j=0; j<i; j++) C[i]()-=scalarProduct(C[i], C[j])*C[j];
+      for(uint j=0; j<i; j++) C[i] -= scalarProduct(C[i], C[j])*C[j];
       C[i]()/=length(C[i]);
     }
     //we condition each column of M with powers of the condition
-    for(uint i=0; i<n; i++) C[i]() *= pow(condition, double(i) / (2.*double(n - 1)));
+    for(uint i=0; i<n; i++) C[i] *= pow(condition, double(i) / (2.*double(n - 1)));
 
   }else{
     arr cond(n);
@@ -249,7 +249,7 @@ ChoiceConstraintFunction::ChoiceConstraintFunction() {
     case none:
       break;
     case wedge2D:
-      tt.append(consts(OT_ineq, n));
+      tt.append(rai::consts(OT_ineq, n));
       break;
     case halfcircle2D:
       tt.append(OT_ineq);
@@ -260,7 +260,7 @@ ChoiceConstraintFunction::ChoiceConstraintFunction() {
       tt.append(OT_eq);
       break;
     case randomLinear:
-      tt.append(consts(OT_ineq, 5*n+5));
+      tt.append(rai::consts(OT_ineq, 5*n+5));
       break;
     case boundConstrained:
       break;
@@ -301,7 +301,7 @@ void ChoiceConstraintFunction::evaluate(arr& phi, arr& J, const arr& x) {
         }
       }
       CHECK_EQ(randomG.d1, x.N+1, "you changed dimensionality");
-      phi.append(randomG * cat({1.}, x));
+      phi.append(randomG * (arr{1.}, x));
       if(!!J) J.append(randomG.sub(0, -1, 1, -1));
     } break;
     case boundConstrained: {
@@ -350,8 +350,8 @@ std::shared_ptr<NLP> getBenchmarkFromCfg(){
     if(nlp){
       arr bounds = rai::getParameter<arr>("benchmark/bounds", {});
       if(bounds.N){
-        nlp->bounds_lo = consts<double>(bounds(0), dim);
-        nlp->bounds_up = consts<double>(bounds(1), dim);
+        nlp->bounds_lo = rai::consts<double>(bounds(0), dim);
+        nlp->bounds_up = rai::consts<double>(bounds(1), dim);
       }
       if(forsyth>0.) nlp->forsythAlpha = forsyth;
       return nlp;
@@ -373,8 +373,8 @@ std::shared_ptr<NLP> getBenchmarkFromCfg(){
 
   arr bounds = rai::getParameter<arr>("benchmark/bounds", {});
   if(bounds.N){
-    nlp->bounds_lo = consts<double>(bounds(0), dim);
-    nlp->bounds_up = consts<double>(bounds(1), dim);
+    nlp->bounds_lo = rai::consts<double>(bounds(0), dim);
+    nlp->bounds_up = rai::consts<double>(bounds(1), dim);
   }
 
   return nlp;

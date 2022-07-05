@@ -190,7 +190,7 @@ void rai::Mesh::setSphere(uint fineness) {
 //  setTetrahedron();
   for(uint k=0; k<fineness; k++) {
     subDivide();
-    for(uint i=0; i<V.d0; i++) V[i]() /= length(V[i]);
+    for(uint i=0; i<V.d0; i++) V[i] /= length(V[i]);
   }
   makeConvexHull();
 }
@@ -201,7 +201,7 @@ void rai::Mesh::setHalfSphere(uint fineness) {
   T.resizeCopy(4, 3);
   for(uint k=0; k<fineness; k++) {
     subDivide();
-    for(uint i=0; i<V.d0; i++) V[i]() /= length(V[i]);
+    for(uint i=0; i<V.d0; i++) V[i] /= length(V[i]);
   }
   makeConvexHull();
 }
@@ -299,9 +299,9 @@ void rai::Mesh::subDivide() {
   uint a, b, c, i, k, l;
   for(i=0, k=v, l=0; i<t; i++) {
     a=T(i, 0); b=T(i, 1); c=T(i, 2);
-    V[k+0]() = (double).5*(V[a] + V[b]);
-    V[k+1]() = (double).5*(V[b] + V[c]);
-    V[k+2]() = (double).5*(V[c] + V[a]);
+    V[k+0] = (double).5*(V[a] + V[b]);
+    V[k+1] = (double).5*(V[b] + V[c]);
+    V[k+2] = (double).5*(V[c] + V[a]);
     newT(l, 0)=a;   newT(l, 1)=k+0; newT(l, 2)=k+2; l++;
     newT(l, 0)=k+0; newT(l, 1)=b;   newT(l, 2)=k+1; l++;
     newT(l, 0)=k+0; newT(l, 1)=k+1; newT(l, 2)=k+2; l++;
@@ -318,9 +318,9 @@ void rai::Mesh::subDivide(uint i) {
   T.resizeCopy(t+3, 3);
   uint a, b, c;
   a=T(i, 0); b=T(i, 1); c=T(i, 2);
-  V[v+0]() = (double).5*(V[a] + V[b]);
-  V[v+1]() = (double).5*(V[b] + V[c]);
-  V[v+2]() = (double).5*(V[c] + V[a]);
+  V[v+0] = (double).5*(V[a] + V[b]);
+  V[v+1] = (double).5*(V[b] + V[c]);
+  V[v+2] = (double).5*(V[c] + V[a]);
   T(i, 0)=a;   T(i, 1)=v+0; T(i, 2)=v+2; //the old ith tri becomes one of the 4 new ones
   T(t, 0)=v+0; T(t, 1)=b;   T(t, 2)=v+1; t++;
   T(t, 0)=v+0; T(t, 1)=v+1; T(t, 2)=v+2; t++;
@@ -350,7 +350,7 @@ void rai::Mesh::transform(const rai::Transformation& t) {
 
 rai::Vector rai::Mesh::center() {
   arr Vmean = mean(V);
-  for(uint i=0; i<V.d0; i++) V[i]() -= Vmean;
+  for(uint i=0; i<V.d0; i++) V[i] -= Vmean;
   return Vector(Vmean);
 }
 
@@ -388,7 +388,7 @@ void rai::Mesh::addMesh(const Mesh& mesh2, const rai::Transformation& X) {
     Tt.append(consts<uint>(0, mesh2.T.d0, 3));
   }
   if(!X.isZero()) {
-    X.applyOnPointArray(V({n, -1})());
+    X.applyOnPointArray(V({n, -1}).noconst());
   }
   if(mesh2.texImg.N){
 //    CHECK(!texImg.N, "can't append texture images");
@@ -508,7 +508,7 @@ void rai::Mesh::computeNormals() {
     Vn(t[2], 0)+=a.x;  Vn(t[2], 1)+=a.y;  Vn(t[2], 2)+=a.z;
   }
   Vector d;
-  for(uint i=0; i<Vn.d0; i++) { d.set(&Vn(i, 0)); Vn[i]()/=d.length(); }
+  for(uint i=0; i<Vn.d0; i++) { d.set(&Vn(i, 0)); Vn[i]/=d.length(); }
 }
 
 arr rai::Mesh::computeTriDistances() {
@@ -1018,7 +1018,7 @@ arr rai::Mesh::getBox() const {
     a = elemWiseMin(a, V[i]);
     b = elemWiseMax(b, V[i]);
   }
-  return cat(a, b).reshape(2, 3);
+  return (a, b).reshape(2, 3);
 }
 
 double rai::Mesh::getRadius() const {

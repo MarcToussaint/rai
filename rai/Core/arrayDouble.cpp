@@ -68,13 +68,26 @@ arr& arr::operator=(const double& v) {
 }
 
 /// copy operator
+arr& arr::operator=(const Array<double>& a) {
+  CHECK(this!=&a, "never do this!!!");
+  resizeAs(a);
+  if(memMove) memmove(p, a.p, sizeT*N);
+  else for(uint i=0; i<N; i++) p[i]=a.p[i];
+  if(special) { delete special; special=0; }
+  return *this;
+}
+
+/// copy operator
 arr& arr::operator=(const arr& a) {
+  operator=((const Array<double>&)a);
+#if 0
   CHECK(this!=&a, "never do this!!!");
   //if(a.temp){ takeOver(*((arr*)&a)); return *this; }
   resizeAs(a);
   if(memMove) memmove(p, a.p, sizeT*N);
   else for(uint i=0; i<N; i++) p[i]=a.p[i];
   if(special) { delete special; special=0; }
+#endif
   if(isSpecial(a)) {
     if(isRowShifted(a)) {
       special = new RowShifted(*((arr*)this), *dynamic_cast<RowShifted*>(a.special));

@@ -208,7 +208,7 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
     }
     arr tmp = J_x;
     if(!isSpecial(tmp)) {
-      for(uint i=0; i<phi_x.N; i++) tmp[i]() *= sqrt(coeff.p[i]);
+      for(uint i=0; i<phi_x.N; i++) tmp[i] *= sqrt(coeff.p[i]);
     } else if(isSparseMatrix(tmp)){
       arr sqrtCoeff = sqrt(coeff);
       tmp.sparse().rowWiseMult(sqrtCoeff);

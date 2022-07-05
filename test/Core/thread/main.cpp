@@ -128,8 +128,8 @@ struct PairSorter:Thread{
 void TEST(Sorter){
   uint N=20;
 
-  rai::MArray<Var<int>> x(N);
-  rai::MArray<shared_ptr<PairSorter>> ps(N-1);
+  rai::Array<Var<int>> x(N);
+  rai::Array<shared_ptr<PairSorter>> ps(N-1);
   for(uint i=0;i<N-1;i++)
     ps(i) = make_shared<PairSorter>(x(i), x(i+1));
 

@@ -17,7 +17,6 @@
 #endif
 
 #include "arrayDouble.h"
-#include "arrayDouble.cxx"
 #include "util.h"
 #include "util.ipp"
 
@@ -2662,11 +2661,39 @@ uint product(const uintA& x){
   return t;
 }
 
+uint sum(const uintA& v) {
+  uint t(0);
+  for(uint i=v.N; i--; t+=v.p[i]) {};
+  return t;
+}
+
 uint max(const uintA& x){
-    CHECK(x.N, "");
-    uint i, m=0;
-    for(i=1; i<x.N; i++) if(x.p[i]>x.p[m]) m=i;
-    return x.p[m];
+  CHECK(x.N, "");
+  uint i, m=0;
+  for(i=1; i<x.N; i++) if(x.p[i]>x.p[m]) m=i;
+  return x.p[m];
+}
+
+uintA integral(const uintA& x) {
+  if(x.nd==1) {
+    uint s(0);
+    uintA y(x.N);
+    for(uint i=0; i<x.N; i++) { s+=x.elem(i); y.elem(i)=s; }
+    return y;
+  }
+  NIY;
+  return uintA();
+}
+
+uintA differencing(const uintA& x, uint w) {
+  if(x.nd==1) {
+    uintA y(x.N);
+    if(x.N) y.elem(0) = x.elem(0);
+    for(uint i=1; i<x.N; i++) { y.elem(i)=x.elem(i)-x.elem(i-1); }
+    return y;
+  }
+  NIY;
+  return uintA();
 }
 
 }

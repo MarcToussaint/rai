@@ -167,7 +167,7 @@ double KernelRidgeRegression::evaluate(const arr& x, arr& g, arr& H, double plus
   arr kappa(X.d0);
   arr Jkappa(X.d0, x.N);
   arr Hkappa(X.d0, x.N, x.N);
-  for(uint i=0; i<X.d0; i++) kappa(i) = kernel.k(x, X[i], Jkappa[i](), Hkappa[i]());
+  for(uint i=0; i<X.d0; i++) kappa(i) = kernel.k(x, X[i], Jkappa[i].noconst(), Hkappa[i].noconst());
 
   double fx = 0.;
   if(!!g) g = zeros(x.N);

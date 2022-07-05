@@ -178,7 +178,7 @@ arr makeFeatures(const arr& X, FeatureType featureType, const arr& rbfCenters, a
   if(featureType==readFromCfgFileFT) featureType = (FeatureType)rai::getParameter<double>("modelFeatureType", 1);
   arr Z;
   switch(featureType) {
-    case constFT:     Z = consts<double>(1., X.d0, 1);  break;
+    case constFT:     Z = rai::consts<double>(1., X.d0, 1);  break;
     case linearFT:    linearFeatures(Z, X);  break;
     case quadraticFT: quadraticFeatures(Z, X);  break;
     case cubicFT:     cubicFeatures(Z, X);  break;
@@ -275,7 +275,7 @@ void artificialData_HastiesMultiClass(arr& X, arr& y) {
   arr means(M, 10, d), x(d);
 
   rndGauss(means);
-  for(uint c=0; c<M; c++)  means[c]() += ones(10, 1)*~consts((double)c, d);
+  for(uint c=0; c<M; c++)  means[c] += ones(10, 1)*~consts((double)c, d);
 
   X.resize(M*n, d);
   y.resize(M*n, M);

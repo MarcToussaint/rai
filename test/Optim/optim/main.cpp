@@ -34,7 +34,7 @@ void TEST(Solver) {
   S.solve();
 
   arr path = catCol(S.getTrace_x(), S.getTrace_costs());
-  path.writeRaw(FILE("z.path"));
+  FILE("z.path") <<path.modRaw();
 
   NLP_Viewer(nlp, S.P). display();
   // displayNLP(nlp, S.getTrace_x(), S.getTrace_costs());

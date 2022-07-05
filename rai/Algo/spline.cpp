@@ -213,7 +213,7 @@ Spline& Spline::set_vel(uint degree, const arr& _points, const arr& velocities, 
 }
 
 Spline&Spline::setUniform(uint _degree, uint steps) {
-  arr x=range(0.,1.,steps);
+  arr x = ::range(0.,1.,steps);
   set(_degree, x, x);
   return *this;
 }
@@ -222,7 +222,7 @@ arr Spline::getGridBasis(uint T) {
   arr basis(T, knotPoints.d0);
   arr db,ddb;
   for(uint t=0; t<T; t++){
-    getCoeffs2(basis[t](), db, ddb, double(t)/(T-1), degree, knotTimes.p, knotPoints.d0, knotTimes.N, 0);
+    getCoeffs2(basis[t].noconst(), db, ddb, double(t)/(T-1), degree, knotTimes.p, knotPoints.d0, knotTimes.N, 0);
   }
   return basis;
 }
@@ -296,7 +296,7 @@ void Path::transform_CurrentBecomes_EndFixed(const arr& current, double t) {
   for(uint i=0; i<knotPoints.d0; i++) {
     double ti = double(i)/double(knotPoints.d0-1);
     double a = (1.-ti)/(1.-t);
-    knotPoints[i]() += a*delta;
+    knotPoints[i] += a*delta;
   }
 }
 
@@ -305,13 +305,13 @@ void Path::transform_CurrentFixed_EndBecomes(const arr& end, double t) {
   for(uint i=0; i<knotPoints.d0; i++) {
     double ti = double(i)/double(knotPoints.d0-1);
     double a = (ti-t)/(1.-t);
-    knotPoints[i]() += a*delta;
+    knotPoints[i] += a*delta;
   }
 }
 
 void Path::transform_CurrentBecomes_AllFollow(const arr& current, double t) {
   arr delta = current - eval(t);
-  for(uint i=0; i<knotPoints.d0; i++) knotPoints[i]() += delta;
+  for(uint i=0; i<knotPoints.d0; i++) knotPoints[i] += delta;
 }
 
 //==============================================================================

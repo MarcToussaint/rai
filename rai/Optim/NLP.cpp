@@ -364,7 +364,7 @@ void NLP_Viewer::display(){
 
   //-- plot
   //  plot()->Gnuplot();  plot()->Surface(Y);  plot()->update(true);
-  write(arrL{&Y}, "z.fct");
+  FILE("z.fct") <<Y.modRaw() <<endl;
 
   rai::String cmd;
   cmd <<"reset; set contour; set cntrparam linear; set cntrparam levels incremental 0,.1,10; set xlabel 'x'; set ylabel 'y'; ";
@@ -376,10 +376,10 @@ void NLP_Viewer::display(){
   }else{
     T->report(cout, 0);
     if(false && T->costTrace.N){
-      catCol(T->xTrace, T->costTrace.col(0)).writeRaw(FILE("z.trace"));
+      FILE("z.trace") <<catCol(T->xTrace, T->costTrace.col(0)).modRaw();
       cmd <<splot <<", 'z.trace' us 1:2:3 w lp; ";
     }else{
-      T->xTrace.writeRaw(FILE("z.trace"));
+      FILE("z.trace") <<T->xTrace.modRaw();
       cmd <<"unset surface; set table 'z.table'; ";
       cmd <<splot <<"; ";
       cmd <<"unset table; ";
@@ -392,7 +392,7 @@ void NLP_Viewer::display(){
 
 void NLP_Viewer::plotCostTrace(){
   CHECK(T, "");
-  T->costTrace.writeRaw(FILE("z.trace"));
+  FILE("z.trace") <<T->costTrace.modRaw();
   rai::String cmd;
   cmd <<"reset; set xlabel 'evals'; set ylabel 'objectives'; set style data lines;";
   cmd <<"plot 'z.trace' us ($0+1):1 t 'f+sos', '' us ($0+1):2 t 'ineq', '' us ($0+1):3 t 'eq';";

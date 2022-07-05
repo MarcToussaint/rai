@@ -52,7 +52,7 @@ void OptNewton::reinit(const arr& _x) {
   }
   if(simpleLog) {
     (*simpleLog) <<its <<' ' <<evals <<' ' <<fx <<' ' <<alpha;
-    if(x.N<=5) x.writeRaw(*simpleLog);
+    if(x.N<=5) (*simpleLog) <<x.modRaw();
     (*simpleLog) <<endl;
   }
 }
@@ -198,7 +198,7 @@ OptNewton::StopCriterion OptNewton::step() {
     if(options.verbose>1) cout <<"  evals:" <<std::setw(4) <<evals <<"  alpha:" <<std::setw(11) <<alpha <<"  f(y):" <<fy <<std::flush;
     if(simpleLog) {
       (*simpleLog) <<its <<' ' <<evals <<' ' <<fy <<' ' <<alpha;
-      if(y.N<=5) y.writeRaw(*simpleLog);
+      if(y.N<=5) (*simpleLog) <<y.modRaw();
       (*simpleLog) <<endl;
     }
 

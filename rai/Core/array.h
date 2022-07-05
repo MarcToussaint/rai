@@ -177,6 +177,9 @@ template<class T> struct Array {
   T& elem(int i) const;
   T& elem(int i, int j); //access that also handles sparse matrices
   T& elem(const Array<uint>& I) const;
+  T& first() const { return elem(0); }
+  T& last() const { return elem(-1); }
+  T& scalar() const { return elem(); }
   T& rndElem() const;
   //reference to single elements
   T& operator()() { return elem(); }
@@ -374,14 +377,13 @@ template<class T> Array<T*> getCarray(const Array<T> data){
 /// @name concatenating arrays together
 /// @{
 
-
 namespace rai{
-template<class T> Array<T> catCol(const Array<const Array<T>*>& X);
-template<class T> Array<T> catCol(const Array<Array<T>>& X);
-template<class T> Array<T> catCol(const Array<T>& a, const Array<T>& b) { return catCol(Array<const Array<T>*>{&a, &b}); }
-template<class T> Array<T> catCol(const Array<T>& a, const Array<T>& b, const Array<T>& c) { return catCol(Array<const Array<T>*>{&a, &b, &c}); }
-template<class T> Array<T> catCol(const Array<T>& a, const Array<T>& b, const Array<T>& c, const Array<T>& d) { return catCol(Array<const Array<T>*>{&a, &b, &c, &d}); }
-template<class T> Array<T> catCol(const Array<T>& a, const Array<T>& b, const Array<T>& c, const Array<T>& d, const Array<T>& e) { return catCol(Array<const Array<T>*>{&a, &b, &c, &d, &e}); }
+template<class T> Array<T> catCol(const rai::Array<rai::Array<T>*>& X);
+template<class T> Array<T> catCol(const rai::Array<rai::Array<T>>& X);
+template<class T> Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b) { return catCol(rai::Array<rai::Array<T>*>{(rai::Array<T>*)&a, (rai::Array<T>*)&b}); }
+template<class T> Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c) { return catCol(rai::Array<rai::Array<T>*>{(rai::Array<T>*)&a, (rai::Array<T>*)&b, (rai::Array<T>*)&c}); }
+template<class T> Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c, const rai::Array<T>& d) { return catCol(rai::Array<rai::Array<T>*>{(rai::Array<T>*)&a, (rai::Array<T>*)&b, (rai::Array<T>*)&c, (rai::Array<T>*)&d}); }
+template<class T> Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c, const rai::Array<T>& d, const rai::Array<T>& e) { return catCol(rai::Array<rai::Array<T>*>{(rai::Array<T>*)&a, (rai::Array<T>*)&b, (rai::Array<T>*)&c, (rai::Array<T>*)&d, (rai::Array<T>*)&e}); }
 }
 
 //===========================================================================
@@ -512,10 +514,24 @@ template<class T> uint numberSharedElements(const Array<T>& x, const Array<T>& y
 }
 
 //===========================================================================
+//
+// arr specific
+//
+
+namespace rai{
+template<class T> bool isSparse(Array<T>& x);
+
+}
+
+
+//===========================================================================
 
 namespace rai{
   uint product(const uintA& x);
   uint max(const uintA& x);
+  uint sum(const uintA& x);
+  uintA integral(const uintA& x);
+  uintA differencing(const uintA& x, uint width=1);
 }
 
 //===========================================================================
