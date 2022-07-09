@@ -161,7 +161,7 @@ LGP_Tree::~LGP_Tree() {
   filNodes.reset();
   filComputes.reset();
   solutions.writeAccess();
-  listDelete(solutions());
+  rai::listDelete(solutions());
   solutions.deAccess();
 }
 

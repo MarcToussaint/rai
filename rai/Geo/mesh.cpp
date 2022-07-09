@@ -798,7 +798,7 @@ void rai::Mesh::clean() {
       if(r==2) { A=T(i, 2);  B=T(i, 0);  /*C=T(i, 1);*/ }
 
       //check all triangles that share A & B
-      setSection(neighbors, VT[A], VT[B]);
+      neighbors = rai::setSection(VT[A], VT[B]);
       neighbors.removeAllValues(-1);
       if(neighbors.N>2) RAI_MSG("edge shared by more than 2 triangles " <<neighbors);
       neighbors.removeValue(i);

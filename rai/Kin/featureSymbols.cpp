@@ -209,7 +209,7 @@ shared_ptr<Feature> symbols2feature(FeatureSymbol feat, const StringA& frames, c
   else HALT("can't interpret feature symbols: " <<feat);
 
 //  if(!f->frameIDs.N) f->frameIDs = C.getFrameIDs(frames);
-  if(!!frames && frames.N){
+  if(frames.N){
     CHECK(!f->frameIDs.N, "frameIDs are already set");
     if(frames.N==1 && frames.scalar()=="ALL") f->frameIDs = framesToIndices(C.frames);
     else f->frameIDs = C.getFrameIDs(frames);

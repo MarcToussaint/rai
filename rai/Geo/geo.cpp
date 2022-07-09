@@ -1853,7 +1853,7 @@ void Camera::setCameraProjectionMatrix(const arr& P) {
   arr glP=P;
   //glP[2]()*=-1.;
   glP.append(glP[2]);
-  glP[2]()*=.99; glP(2, 2)*=1.02; //some hack to invent a culling coordinate (usually determined via near and far...)
+  glP[2] *= .99; glP(2, 2)*=1.02; //some hack to invent a culling coordinate (usually determined via near and far...)
   glP = ~glP;
   glP *= 1./glP(3, 3);
   cout <<"glP=" <<glP <<endl;

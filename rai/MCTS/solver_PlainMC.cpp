@@ -65,7 +65,7 @@ double PlainMC::finishRollout(int stepAbort) {
   while(!world.is_terminal_state() && (stepAbort<0 || rolloutStep++<(uint)stepAbort)) {
     rai::Array<rai::TreeSearchDomain::Handle> actions;
     actions = world.get_actions(); //WARNING: conv... returns a reference!!
-    if(verbose>2) { cout <<"Possible decisions: "; listWrite(actions); cout <<endl; }
+    if(verbose>2) { cout <<"Possible decisions:"; for(auto& a:actions) cout <<' ' <<*a; cout <<endl; }
     if(!actions.N) {
       if(verbose>1) { cout <<" -- no decisions left -> terminal" <<endl; }
       break;

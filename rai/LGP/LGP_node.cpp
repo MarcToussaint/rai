@@ -415,7 +415,7 @@ void LGP_Node::checkConsistency() {
   if(children.N) {
     fol.setState(folState, step);
     auto actions = fol.get_actions();
-    CHECK_EQ(children.N, actions.size(), "");
+    CHECK_EQ(children.N, actions.N, "");
 #ifndef RAI_NOCHECK
     uint i=0;
     for(FOL_World::Handle& a:actions) {

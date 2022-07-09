@@ -46,7 +46,7 @@ void F_InsideBox::phi2(arr& y, arr& J, const FrameL& F) {
   CHECK_EQ(box->shape->type(), rai::ST_ssBox, "the 2nd shape needs to be a box");
 
   arr pos = F_PositionRel() .eval({pnt, box});
-  arr range = box->shape->size();
+  arr range = box->shape->size;
   range.resizeCopy(3);
   range *= .5;
   range -= margin;

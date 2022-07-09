@@ -6,6 +6,8 @@
 #include <Geo/qhull.h>
 #include <Geo/signedDistanceFunctions.h>
 
+#include <math.h>
+
 void drawInit(void*, OpenGL& gl){
   glStandardLight(nullptr, gl);
   glDrawAxes(1.);
@@ -197,7 +199,7 @@ ScalarFunction sphere=[](arr&,arr&, const arr& X){
 
 ScalarFunction torus = [](arr&,arr&, const arr& X){
     double x=X(0), y=X(1), z=X(2);
-    double r=sqrt(x*x + y*y);
+    double r = sqrt(x*x + y*y);
     return z*z + (1.-r)*(1.-r) - .1;
   };
 

@@ -82,7 +82,7 @@ struct Sim_CameraView : Thread {
   Sim_CameraView(Var<rai::Configuration>& _kin,
                  Var<byteA> _color,
                  Var<floatA> _depth,
-                 double beatIntervalSec=-1., const char* _cameraFrameName=nullptr, bool _idColors=false, const byteA& _frameIDmap=NoByteA);
+                 double beatIntervalSec=-1., const char* _cameraFrameName=nullptr, bool _idColors=false, const byteA& _frameIDmap={});
   ~Sim_CameraView();
 
   void step();

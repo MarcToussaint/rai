@@ -4,18 +4,18 @@ void addBoxPickObjectives(KOMO& komo, double time, rai::ArgWord dir, const char*
     arr xLine, yzPlane;
     FeatureSymbol xyScalarProduct=FS_none, xzScalarProduct=FS_none;
     if(dir==rai::_xAxis){
-        xLine = {{1,3},{1,0,0}};
-        yzPlane = {{2,3},{0,1,0,0,0,1}};
+        xLine = arr{{1,3},{1,0,0}};
+        yzPlane = arr{{2,3},{0,1,0,0,0,1}};
         xyScalarProduct = FS_scalarProductXY;
         xzScalarProduct = FS_scalarProductXZ;
     } else if(dir==rai::_yAxis){
-        xLine = {{1,3},{0,1,0}};
-        yzPlane = {{2,3},{1,0,0,0,0,1}};
+        xLine = arr{{1,3},{0,1,0}};
+        yzPlane = arr{{2,3},{1,0,0,0,0,1}};
         xyScalarProduct = FS_scalarProductXX;
         xzScalarProduct = FS_scalarProductXZ;
     } else if(dir==rai::_zAxis){
-        xLine = {{1,3},{0,0,1}};
-        yzPlane = {{2,3},{1,0,0,0,1,0}};
+        xLine = arr{{1,3},{0,0,1}};
+        yzPlane = arr{{2,3},{1,0,0,0,1,0}};
         xyScalarProduct = FS_scalarProductXX;
         xzScalarProduct = FS_scalarProductXY;
     }

@@ -188,8 +188,6 @@ void makeRndScene(){
     if(!(t%10)) S.getImageAndDepth(rgb, depth); //we don't need images with 100Hz, rendering is slow
 
     S.step({}, tau, S._none);
-
-    cout <<"depth in range: " <<depth.min() <<' ' <<depth.max() <<endl;
   }
 
   C.sortFrames();

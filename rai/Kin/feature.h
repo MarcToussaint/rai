@@ -77,7 +77,7 @@ template<class T>
 std::shared_ptr<Feature> make_feature(const StringA& frames, const rai::Configuration& C, const arr& scale=NoArr, const arr& target=NoArr, int order=-1){
   std::shared_ptr<Feature> f = make_shared<T>();
 
-  if(!!frames && frames.N){
+  if(frames.N){
     CHECK(!f->frameIDs.N, "frameIDs are already set");
     if(frames.N==1 && frames.scalar()=="ALL") f->frameIDs = framesToIndices(C.frames);
     else f->frameIDs = C.getFrameIDs(frames);

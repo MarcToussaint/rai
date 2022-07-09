@@ -35,8 +35,8 @@ void rai::Proxy::calc_coll() {
   rai::Shape* s2 = b->shape;
   CHECK(s1 && s2, "");
 
-  double r1=0.; if(s1->size().N) r1=s1->size().last();
-  double r2=0.; if(s2->size().N) r2=s2->size().last();
+  double r1=0.; if(s1->size.N) r1=s1->size.elem(-1);
+  double r2=0.; if(s2->size.N) r2=s2->size.elem(-1);
   rai::Mesh* m1 = &s1->sscCore();  if(!m1->V.N) { m1 = &s1->mesh(); r1=0.; }
   rai::Mesh* m2 = &s2->sscCore();  if(!m2->V.N) { m2 = &s2->mesh(); r2=0.; }
 

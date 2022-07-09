@@ -757,6 +757,21 @@ void flip_image(byteA& img) {
   }
 }
 
+void flip_image(floatA& img) {
+  if(!img.N) return;
+  uint h=img.d0, n=img.N/img.d0;
+  floatA line(n);
+  float* a, *b, *c;
+  for(uint i=0; i<h/2; i++) {
+    a=img.p+i*n;
+    b=img.p+(h-1-i)*n;
+    c=line.p;
+    memmove(c, a, n*img.sizeT);
+    memmove(a, b, n*img.sizeT);
+    memmove(b, c, n*img.sizeT);
+  }
+}
+
 /// make grey scale image
 void make_grey(byteA& img) {
   CHECK(img.nd==3 && (img.d2==3 || img.d1==4), "makeGray requires color image as input");

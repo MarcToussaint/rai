@@ -83,7 +83,7 @@ rai::Frame::~Frame() {
   }else{
     CHECK_EQ(this, C.frames.elem(ID), "");
     C.frames.remove(ID);
-    listReindex(C.frames);
+    for(uint i=0; i<C.frames.N; i++) C.frames.elem(i)->ID=i;
   }
   C.reset_q();
 }
@@ -431,7 +431,7 @@ void rai::Frame::write(std::ostream& os) const {
 
 rai::Frame& rai::Frame::setShape(rai::ShapeType shape, const arr& size) {
   getShape().type() = shape;
-  getShape().size() = size;
+  getShape().size = size;
   getShape().createMeshes();
   return *this;
 }
@@ -1516,7 +1516,7 @@ void rai::Shape::glDraw(OpenGL& gl) {
   glLoadMatrixd(GLmatrix);
 
   if(!gl.drawOptions.drawShapes) {
-    double scale=.33*(.02+sum(size)); //some scale
+    double scale=.33*(.02+::sum(size)); //some scale
     if(!scale) scale=1.;
     scale*=.3;
     glDrawAxes(scale);

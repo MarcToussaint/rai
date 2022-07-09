@@ -98,7 +98,7 @@ void KinViewer::step() {
 
 void KinPathViewer::setConfigurations(const ConfigurationL& cs) {
   configurations.writeAccess();
-  listResize(configurations(), cs.N);
+  rai::listResizeCopy(configurations(), cs.N);
   for(uint i=0; i<cs.N; i++) configurations()(i)->copy(*cs(i), true);
   configurations.deAccess();
 }

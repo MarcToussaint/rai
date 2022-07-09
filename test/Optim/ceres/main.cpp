@@ -243,7 +243,7 @@ void TEST(Ceres){
     CeresInterface opt(P3);
     opt.solve();
     ofstream fil2("z.opt2");
-    P2.xTrace.writeRaw(fil2);
+    fil2 <<P2.xTrace.modRaw();
   }
 
   arr x, phi;

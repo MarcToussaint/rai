@@ -58,7 +58,7 @@ struct CoveringSpheresProblem : NLP {
     }
     if(!!Jg){
       arr Jg_dij = (ed_ij%(1.+alpha*(d_ij - repmat(g,1,s))));
-      for(uint i=0;i<x.d0;i++) Jg_dij[i]() /= sed_i(i);
+      for(uint i=0;i<x.d0;i++) Jg_dij[i] /= sed_i(i);
 
       arr Jg_cj(x.d0, s, 3);
       for(uint i=0;i<x.d0;i++) for(uint j=0;j<s;j++){

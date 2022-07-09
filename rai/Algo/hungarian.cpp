@@ -44,13 +44,13 @@ void Hungarian::minimize() {
   starred = primed = zeros(dim, dim);
   for(uint i = 0; i < dim; i++) {
     double minRow = costs[i].argmin();
-    costs[i]() -= costs(i, minRow);
+    costs[i] -= costs(i, minRow);
   }
   costs = ~costs;
 
   for(uint i = 0; i < dim; i++) {
     double minRow = costs[i].argmin();
-    costs[i]() -= costs(i, minRow);
+    costs[i] -= costs(i, minRow);
   }
   costs = ~costs;
   starZeros();

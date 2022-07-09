@@ -293,7 +293,7 @@ void Simulation::closeGripper(const char* gripperFrameName, double width, double
   }
 
   //intersect
-  FrameL objs = setSection(fing1close, fing2close);
+  FrameL objs = rai::setSection(fing1close, fing2close);
 //  cout <<"initiating ";
 //  listWrite(objs);
 //  cout <<endl;

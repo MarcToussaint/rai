@@ -89,7 +89,7 @@ double NLP::eval_scalar(arr& g, arr& H, const arr& x){
     }
     arr tmp = J;
     if(!isSparseMatrix(tmp)) {
-      for(uint i=0; i<phi.N; i++) tmp[i]() *= sqrt(coeff.p[i]);
+      for(uint i=0; i<phi.N; i++) tmp[i] *= sqrt(coeff.p[i]);
     } else {
       arr sqrtCoeff = sqrt(coeff);
       tmp.sparse().rowWiseMult(sqrtCoeff);

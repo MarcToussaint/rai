@@ -192,8 +192,8 @@ void TEST(Copy){
   G2 >>FILE("z.2");
 
   charA g1,g2;
-  g1.readRaw(FILE("z.1"));
-  g2.readRaw(FILE("z.2"));
+  FILE("z.1") >>g1;
+  FILE("z.2") >>g2;
 
   CHECK_EQ(g1, g2, "copy operator failed!")
   cout <<"** copy operator success" <<endl;
@@ -341,7 +341,7 @@ void TEST(PlayStateSequence){
   generateSequence(X, 200, n);
   arr v(X.d1); v=0.;
   for(uint t=0;t<X.d0;t++){
-    C.setJointState(X[t]());
+    C.setJointState(X[t]);
     C.watch(false, STRING("replay of a state sequence -- time " <<t));
     rai::wait(.01);
   }
@@ -404,7 +404,7 @@ void TEST(FollowRedundantSequence){
   G.setJointState(x);
   rai::Frame *endeff = G.getFrame("arm7");
   G.kinematicsPos(y, NoArr, endeff, rel);
-  for(t=0;t<T;t++) Z[t]() += y; //adjust coordinates to be inside the arm range
+  for(t=0;t<T;t++) Z[t] += y; //adjust coordinates to be inside the arm range
   plot()->Line(Z);
   G.gl()->add(plot()());
   G.watch(false);
@@ -494,7 +494,7 @@ void TEST(Dynamics){
       text.clear() <<"t=" <<t <<"  torque controlled damping (acc = - vel)\n(checking consistency of forward and inverse dynamics),  energy=" <<G.getEnergy(qd);
     }else{
       //cout <<q <<qd <<qdd <<' ' <<G.getEnergy() <<endl;
-      arr x=cat(q, qd).reshape(2, q.N);
+      arr x=(q, qd).reshape(2, q.N);
       rai::rk4_2ndOrder(x, x, diffEqn, dt);
       q=x[0]; qd=x[1];
       if(t>300){

@@ -1341,7 +1341,9 @@ uintA Configuration::getCollisionExcludePairIDs(bool verbose) {
     if(F.N>1) {
       if(verbose) {
         LOG(0) <<"excluding intra-link collisions: ";
-        cout <<"           ";  listWriteNames(F, cout);  cout <<endl;
+        cout <<"           ";
+        for(Frame *ff:F) cout <<ff->name <<' ';
+        cout <<endl;
       }
       exclude(ex, F, F);
     }
@@ -1367,8 +1369,8 @@ uintA Configuration::getCollisionExcludePairIDs(bool verbose) {
         if(F.N && P.N) {
           if(verbose) {
             LOG(0) <<"excluding between-sets collisions: ";
-            cout <<"           ";  listWriteNames(F, cout);  cout <<endl;
-            cout <<"           ";  listWriteNames(P, cout);  cout <<endl;
+            cout <<"           ";  for(Frame *ff:F) cout <<f->name <<' ';  cout <<endl;
+            cout <<"           ";  for(Frame *ff:P) cout <<f->name <<' ';  cout <<endl;
           }
           exclude(ex, F, P);
         }
@@ -2257,8 +2259,8 @@ void Configuration::stepDynamics(arr& qdot, const arr& Bu_control, double tau, d
   arr x1=cat(s->q, s->qdot).reshape(2, s->q.N);
 #else
   arr x1;
-  rk4_2ndOrder(x1, cat(q, qdot).reshape(2, q.N), eqn, tau);
-  if(dynamicNoise) rndGauss(x1[1](), ::sqrt(tau)*dynamicNoise, true);
+  rk4_2ndOrder(x1, (q, qdot).reshape(2, q.N), eqn, tau);
+  if(dynamicNoise) rndGauss(x1[1].noconst(), ::sqrt(tau)*dynamicNoise, true);
 #endif
 
   setJointState(x1[0]);
@@ -2361,7 +2363,7 @@ void Configuration::writeURDF(std::ostream& os, const char* robotName) const {
   for(Frame* a:frames) {
     if(a->shape && a->shape->type()!=ST_mesh && a->shape->type()!=ST_marker) {
       os <<"  <visual>\n    <geometry>\n";
-      arr& size = a->shape->size();
+      arr& size = a->shape->size;
       switch(a->shape->type()) {
         case ST_box:       os <<"      <box size=\"" <<size({0, 2}) <<"\" />\n";  break;
         case ST_cylinder:  os <<"      <cylinder length=\"" <<size.elem(-2) <<"\" radius=\"" <<size.elem(-1) <<"\" />\n";  break;
@@ -2388,7 +2390,7 @@ void Configuration::writeURDF(std::ostream& os, const char* robotName) const {
       for(Frame* b:shapes) {
         if(b->shape && b->shape->type()!=ST_mesh && b->shape->type()!=ST_marker) {
           os <<"  <visual>\n    <geometry>\n";
-          arr& size = b->shape->size();
+          arr& size = b->shape->size;
           switch(b->shape->type()) {
             case ST_box:       os <<"      <box size=\"" <<size({0, 2}) <<"\" />\n";  break;
             case ST_cylinder:  os <<"      <cylinder length=\"" <<size.elem(-2) <<"\" radius=\"" <<size.elem(-1) <<"\" />\n";  break;
@@ -2735,7 +2737,7 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
     s->read(*f->ats);
 
     if(n->parents.N==1) {
-      Frame* b = listFindByName(frames, n->parents(0)->key);
+      Frame* b = getFrame(n->parents(0)->key);
       CHECK(b, "could not find frame '" <<n->parents(0)->key <<"'");
       f->setParent(b);
       if((*f->ats)["rel"]) f->ats->get(f->Q, "rel");
@@ -2749,8 +2751,8 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
     CHECK(n->isGraph(), "joints must have value Graph: specs=" <<*n <<' ' <<n->index);
     CHECK(n->key=="joint" || n->graph().findNode("%joint"), "");
 
-    Frame* from=listFindByName(frames, n->parents(0)->key);
-    Frame* to=listFindByName(frames, n->parents(1)->key);
+    Frame* from = getFrame(n->parents(0)->key);
+    Frame* to  = getFrame(n->parents(1)->key);
     CHECK(from, "JOINT: from '" <<n->parents(0)->key <<"' does not exist ["<<*n <<"]");
     CHECK(to, "JOINT: to '" <<n->parents(1)->key <<"' does not exist ["<<*n <<"]");
 

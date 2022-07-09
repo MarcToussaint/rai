@@ -208,7 +208,7 @@ NLP_Squared::NLP_Squared(uint _n, double condition, bool random) : n(_n) {
     //orthogonalize
     for(uint i=0; i<n; i++) {
       for(uint j=0; j<i; j++) C[i] -= scalarProduct(C[i], C[j])*C[j];
-      C[i]()/=length(C[i]);
+      C[i] /= length(C[i]);
     }
     //we condition each column of M with powers of the condition
     for(uint i=0; i<n; i++) C[i] *= pow(condition, double(i) / (2.*double(n - 1)));

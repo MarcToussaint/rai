@@ -321,7 +321,7 @@ void TEST(MultiClass){
   arr p_pred,label(Phi.d0);
   p_pred = exp(Phi*beta);
   for(uint i=0; i<label.N; i++) {
-    p_pred[i]() /= sum(p_pred[i]);
+    p_pred[i] /= sum(p_pred[i]);
     label(i) = y[i].argmax();
   }
   rai::arrayBrackets="  ";
@@ -330,7 +330,7 @@ void TEST(MultiClass){
   arr X_grid = grid(2,-2,3,50);
   Phi = makeFeatures(X_grid,readFromCfgFileFT,X);
   arr p_grid = exp(Phi*beta);
-  for(uint i=0; i<p_grid.d0; i++) p_grid[i]() /= sum(p_grid[i]);
+  for(uint i=0; i<p_grid.d0; i++) p_grid[i] /= sum(p_grid[i]);
   p_grid = ~p_grid;
   p_grid.reshape(p_grid.d0,51,51);
   

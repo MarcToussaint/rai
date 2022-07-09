@@ -118,7 +118,7 @@ void rai::CameraView::computeImageAndDepth(byteA& image, floatA& depth) {
     image = seg;
     image.reshape(gl.height, gl.width);
   }
-  if(!!depth) {
+  if(true) { //(!!depth) {
     depth = gl.captureDepth;
     flip_image(depth);
     for(float& d:depth) {
@@ -253,7 +253,7 @@ rai::Sim_CameraView::Sim_CameraView(Var<rai::Configuration>& _kin,
   }
   if(_idColors) {
     V.renderMode = V.seg;
-    if(!!_frameIDmap)
+    if(_frameIDmap.N)
       V.frameIDmap = _frameIDmap;
     else {
       V.C.clear();;

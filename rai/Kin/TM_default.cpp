@@ -223,8 +223,8 @@ void TM_Default::phi(arr& y, arr& J, const rai::Configuration& C) {
     y(0) = scalarProduct(xi, (pj-pi));
     y(1) = scalarProduct(yi, (pj-pi));
     if(!!J) {
-      J = cat(~xi * (Jpj-Jpi) + ~(pj-pi) * Jxi,
-              ~yi * (Jpj-Jpi) + ~(pj-pi) * Jyi);
+      J = (~xi * (Jpj-Jpi) + ~(pj-pi) * Jxi,
+           ~yi * (Jpj-Jpi) + ~(pj-pi) * Jyi);
       J.reshape(2, C.getJointStateDimension());
     }
     return;

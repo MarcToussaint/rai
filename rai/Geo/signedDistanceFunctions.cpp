@@ -470,7 +470,7 @@ ScalarFunction DistanceFunction_SSBox = [](arr& g, arr& H, const arr& x) -> doub
     g({3, 5}) = - signs%(rai::Vector(grad) / t.rot).getArr();
     g(6) = -1.;
     g({10, 13}) = ~grad*crossProduct(t.rot.getJacobian(), (x({0, 2})-t.pos.getArr()));
-    g({10, 13})() /= -sqrt(sumOfSqr(x({10, 13}))); //account for the potential non-normalization of q
+    g({10, 13}) /= -sqrt(sumOfSqr(x({10, 13}))); //account for the potential non-normalization of q
   }
   return d;
 };

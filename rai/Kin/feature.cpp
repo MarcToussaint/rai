@@ -68,7 +68,7 @@ arr Feature::phi_finiteDifferenceReduce(const FrameL& F) {
 
 void Feature::setup(const rai::Configuration& C, const StringA& frames, const arr& _scale, const arr& _target, int _order){
   //-- if arguments are given, modify the feature's frames, scaling and order
-  if(!!frames && frames.N){
+  if(frames.N){
     if(frames.N==1 && frames.scalar()=="ALL") frameIDs = framesToIndices(C.frames); //important! this means that, if no explicit selection of frames was made, all frames (of a time slice) are referred to
     else frameIDs = C.getFrameIDs(frames);
   }

@@ -468,6 +468,7 @@ void make_RGB(byteA& img);
 void make_RGB2BGRA(byteA& img);
 void swap_RGB_BGR(byteA& img);
 void flip_image(byteA& img);
+void flip_image(floatA& img);
 void image_halfResolution(byteA& img);
 
 void scanArrFile(const char* name);
@@ -540,6 +541,7 @@ double length(const arr& v);
 double product(const arr& v);
 double max(const arr& v);
 arr max(const arr& v, uint d);
+arr min(const arr& v, uint d);
 
 double trace(const arr& v);
 double var(const arr& v);

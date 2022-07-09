@@ -1289,7 +1289,7 @@ rai::Frame* KOMO::applySwitch(const KinematicSwitch& sw) {
   if(s==sEnd) return 0;
   rai::Frame *f0=0;
   for(; s<sEnd; s++) { //apply switch on all configurations!
-    rai::Frame* f = sw.apply(timeSlices[s]());
+    rai::Frame* f = sw.apply(timeSlices[s].noconst());
     if(!f0){
       f0=f;
     } else {
@@ -1619,7 +1619,8 @@ rai::Graph KOMO::getProblemGraph(bool includeValues, bool includeSolution) {
       g.newNode<arrA>({"y"}, {}, V);
       g.newNode<arrA>({"J"}, {}, J);
 
-      arr Vflat = cat(V);
+      arr Vflat;
+      for(arr& v: V) Vflat.append(v);
 
       if(ob->type==OT_sos) {
         g.newNode<double>({"sos_sumOfSqr"}, {}, sumOfSqr(Vflat));

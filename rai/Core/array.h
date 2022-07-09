@@ -81,8 +81,6 @@ template<class T> struct Array {
   Array<T>& operator=(std::initializer_list<T> values);
   Array<T>& operator=(const T& v);
   Array<T>& operator=(const Array<T>& a);
-  //Array<T>& operator=(const std::vector<T>& a);
-
 
   /// @name iterators
   struct iterator {
@@ -182,7 +180,6 @@ template<class T> struct Array {
   T& scalar() const { return elem(); }
   T& rndElem() const;
   //reference to single elements
-  T& operator()() { return elem(); }
   T& operator()(int i) const;
   T& operator()(int i, int j) const;
   T& operator()(int i, int j, int k) const;
@@ -300,6 +297,19 @@ template<class T> bool operator!=(const Array<T>& v, const Array<T>& w);
 template<class T> std::istream& operator>>(std::istream& is, Array<T>& x);
 template<class T> std::ostream& operator<<(std::ostream& os, const Array<T>& x);
 
+template<class T> Array<T>& operator+=(Array<T>& x, const Array<T>& y){
+  CHECK_EQ(x.N, y.N, "update operator on different array dimensions (" <<x.N <<", " <<y.N <<")");
+  T *xp=x.p, *xstop=xp+x.N;
+  const T *yp=y.p;
+  for(; xp!=xstop; xp++, yp++) *xp += *yp;
+}
+template<class T> Array<T>& operator+=(Array<T>& x, const T& y){
+  T *xp=x.p, *xstop=xp+x.N;
+  for(; xp!=xstop; xp++) *xp += y;
+}
+template<class T> Array<T> operator+(const Array<T>& y, const Array<T>& z) { Array<T> x(y); x+=z; return x; }
+template<class T> Array<T> operator+(const Array<T>& y, T z){                Array<T> x(y); x+=z; return x; }
+
 //IO modifiers
 template <class T> struct ArrayModRaw{
   const Array<T> *x;
@@ -384,6 +394,7 @@ template<class T> Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b
 template<class T> Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c) { return catCol(rai::Array<rai::Array<T>*>{(rai::Array<T>*)&a, (rai::Array<T>*)&b, (rai::Array<T>*)&c}); }
 template<class T> Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c, const rai::Array<T>& d) { return catCol(rai::Array<rai::Array<T>*>{(rai::Array<T>*)&a, (rai::Array<T>*)&b, (rai::Array<T>*)&c, (rai::Array<T>*)&d}); }
 template<class T> Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c, const rai::Array<T>& d, const rai::Array<T>& e) { return catCol(rai::Array<rai::Array<T>*>{(rai::Array<T>*)&a, (rai::Array<T>*)&b, (rai::Array<T>*)&c, (rai::Array<T>*)&d, (rai::Array<T>*)&e}); }
+
 }
 
 //===========================================================================
@@ -424,8 +435,8 @@ bool samedim(const Array<T>& a, const Array<S>& b) {
 namespace rai{
 
 /// x becomes the section of y and z
-template<class T> void setSection(Array<T>& x, const Array<T>& y, const Array<T>& z) {
-  x.clear();
+template<class T> Array<T> setSection(const Array<T>& y, const Array<T>& z) {
+  Array<T> x;
   x.reserveMEM(y.N<z.N?y.N:z.N);
   T* yp=y.p, *zp=z.p, *ystop=y.p+y.N, *zstop=z.p+z.N;
   for(yp=y.p; yp!=ystop; yp++) {
@@ -435,16 +446,19 @@ template<class T> void setSection(Array<T>& x, const Array<T>& y, const Array<T>
       }
     }
   }
+  return x;
 }
 
 /// x becomes the section of y and z
-template<class T> void setUnion(Array<T>& x, const Array<T>& y, const Array<T>& z) {
+template<class T> Array<T> setUnion( const Array<T>& y, const Array<T>& z) {
+  Array<T> x;
   uint i, j;
   if(&x!=&y) x=y;
   for(i=0; i<z.N; i++) {
     for(j=0; j<y.N; j++) if(z(i)==y(j)) break;
     if(j==y.N) x.append(z(i));
   }
+  return x;
 }
 
 /// x becomes the section of y and z
@@ -509,6 +523,35 @@ template<class T> uint numberSharedElements(const Array<T>& x, const Array<T>& y
   Array<T> z;
   setSection(z, x, y);
   return z.N;
+}
+
+}
+
+//===========================================================================
+
+namespace rai {
+
+template<class T> char listWrite(const rai::Array<T*>& L, std::ostream& os, const char* ELEMSEP=" ", const char* delim=0) {
+  if(delim) os <<delim[0];
+  for(uint i=0; i<L.N; i++) { if(i) os <<ELEMSEP;  if(L.elem(i)) os <<*L.elem(i); else os <<"<NULL>"; }
+  if(delim) os <<delim[1] <<std::flush;
+  return '#';
+}
+
+template<class T> void listDelete(rai::Array<T*>& L) {
+  for(uint i=L.N; i--;) delete L.elem(i);
+  L.clear();
+}
+
+template<class T> void listResizeCopy(rai::Array<T*>& L, uint N) {
+  if(L.N<N) {
+    uint n=L.N;
+    L.resizeCopy(N);
+    for(uint i=n; i<N; i++) L.elem(i)=new T();
+  } else {
+    for(uint i=N; i<L.N; i++) { delete L.elem(i); L.elem(i)=NULL; }
+    L.resizeCopy(N);
+  }
 }
 
 }

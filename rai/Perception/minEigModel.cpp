@@ -11,6 +11,7 @@
 #include "../Geo/geo.h"
 #include "../Geo/qhull.h"
 #include <GL/gl.h>
+#include <math.h>
 
 void MinEigModel::setPoints(const uintA& points) {
   pts = points;

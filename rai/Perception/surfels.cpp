@@ -10,6 +10,8 @@
 #include "../Geo/geo.h"
 #include "kinect2pointCloud.h"
 
+#include <math.h>
+
 void glDrawSurfels(void* classP, OpenGL&) { ((Surfels*)classP)->glDraw(false); }
 void glDrawSurfelIndices(void* classP, OpenGL&) { ((Surfels*)classP)->glDraw(true); }
 
@@ -18,9 +20,9 @@ void Surfels::setRandom(uint N) {
   rndGauss(pos, .3);
   for(uint i=0; i<N; i++) pos(i, 2) += 1.f;
   norm.resize(N, 3);
-  for(uint i=0; i<N; i++) norm[i]() = {0.f, 0.f, -1.f};
+  for(uint i=0; i<N; i++) norm[i] = {0.f, 0.f, -1.f};
 //  rndGauss(norm);
-  for(uint i=0; i<norm.d0; i++) norm[i]() /= length(norm[i]);
+  for(uint i=0; i<norm.d0; i++) norm[i] /= length(norm[i]);
   col.resize(N, 3);
   rndUniform(col);
   rad.resize(N);
@@ -52,8 +54,8 @@ void Surfels::glDraw(bool renderIndex) {
   for(uint i=0; i<pos.d0; i++) {
 //    if(!renderIndex && D(i).n<1.) continue; //don't draw
     if(!renderIndex) {
-      glColor3fv(&col(i, 0));
-      glNormal3fv(&norm(i, 0));
+      glColor3dv(&col(i, 0));
+      glNormal3dv(&norm(i, 0));
     } else {
       uint j=i+1;
       glColor3f(float((j>>16)&0xff)/256.f, float((j>>8)&0xff)/256.f, float(j&0xff)/256.f);
