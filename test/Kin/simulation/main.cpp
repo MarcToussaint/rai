@@ -24,7 +24,7 @@ void testPushes(){
 
   arr Xstart = C.getFrameState();
 
-  for(uint k=0;k<5;k++){
+  for(uint k=0;k<2;k++){
 
     //restart from the same state multiple times
     S.setState(Xstart);
@@ -300,10 +300,10 @@ int main(int argc,char **argv){
   makeRndScene();
   testFriction();
   testStackOfBlocks();
+  testCompound();
   testPushes();
   testOpenClose();
   testGrasp();
-  testCompound();
 
   return 0;
 }

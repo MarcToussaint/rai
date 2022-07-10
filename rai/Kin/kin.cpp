@@ -1369,8 +1369,8 @@ uintA Configuration::getCollisionExcludePairIDs(bool verbose) {
         if(F.N && P.N) {
           if(verbose) {
             LOG(0) <<"excluding between-sets collisions: ";
-            cout <<"           ";  for(Frame *ff:F) cout <<f->name <<' ';  cout <<endl;
-            cout <<"           ";  for(Frame *ff:P) cout <<f->name <<' ';  cout <<endl;
+            cout <<"           ";  for(Frame *ff:F) cout <<ff->name <<' ';  cout <<endl;
+            cout <<"           ";  for(Frame *ff:P) cout <<ff->name <<' ';  cout <<endl;
           }
           exclude(ex, F, P);
         }

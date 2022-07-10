@@ -90,13 +90,14 @@ namespace rai {
 SparseVector& arr::sparseVec() {
   SparseVector* s;
   if(!special) {
-    s = new SparseVector(*this);
     if(N) {
       CHECK_EQ(nd, 1, "");
       arr copy;
-      copy.swap(*this);
+      copy.takeOver(*this);
+      s = new SparseVector(*this);
       s->setFromDense(copy);
     } else {
+      s = new SparseVector(*this);
       nd=1;
     }
   } else {
@@ -117,13 +118,14 @@ const SparseVector& arr::sparseVec() const {
 SparseMatrix& arr::sparse() {
   SparseMatrix* s;
   if(!special) {
-    s = new SparseMatrix(*this);
     if(N) {
       CHECK_EQ(nd, 2, "");
       arr copy;
-      copy.swap(*this);
+      copy.takeOver(*this);
+      s = new SparseMatrix(*this); //needs to be AFTER takeOver
       s->setFromDense(copy);
     } else {
+      s = new SparseMatrix(*this);
       nd=2;
     }
   } else {
@@ -265,9 +267,9 @@ void addDiag(arr& A, double d) {
   if(isRowShifted(A)) {
     rai::RowShifted* Aaux = dynamic_cast<rai::RowShifted*>(A.special);
     if(!Aaux->symmetric) HALT("this is not a symmetric matrix");
-    for(uint i=0; i<A.d0; i++) A(i, 0) += d;
+    for(uint i=0; i<A.d0; i++) A.p[i*A.d1] += d;
   } else {
-    for(uint i=0; i<A.d0; i++) A(i, i) += d;
+    for(uint i=0; i<A.d0; i++) A.elem(i, i) += d;
   }
 }
 
@@ -2450,32 +2452,32 @@ void SparseMatrix::checkConsistency() const {
   }
 }
 
+void operator -= (SparseMatrix& x, const SparseMatrix& y) { x.add(y, 0, 0, -1.); }
+void operator -= (SparseMatrix& x, double y) { arr& X=x.Z; x.unsparse(); X -= y; }
+
+void operator += (SparseMatrix& x, const SparseMatrix& y) { x.add(y); }
+void operator += (SparseMatrix& x, double y) { arr& X=x.Z; x.unsparse(); X += y; }
+
+void operator *= (SparseMatrix& x, const SparseMatrix& y) { NIY; }
+void operator *= (SparseMatrix& x, double y) { x.memRef() *= y; }
+
+void operator /= (SparseMatrix& x, const SparseMatrix& y) { NIY; }
+void operator /= (SparseMatrix& x, double y) { x.memRef() /= y; }
+
+void operator -= (RowShifted& x, const RowShifted& y) { x.add(y.Z, 0, 0, -1.); }
+void operator -= (RowShifted& x, double y) { arr X=x.unpack(); X-=y; x.Z=X; }
+
+void operator += (RowShifted& x, const RowShifted& y) { x.add(y.Z); }
+void operator += (RowShifted& x, double y) { arr X=x.unpack(); X+=y; x.Z=X; }
+
+void operator *= (RowShifted& x, const RowShifted& y) { NIY; }
+void operator *= (RowShifted& x, double y) { x.memRef() *= y; }
+
+void operator /= (RowShifted& x, const RowShifted& y) { NIY; }
+void operator /= (RowShifted& x, double y) { x.memRef() /= y; }
+//void operator %= (RowShifted& x, const RowShifted& y){ NIY; }
+
 } //namespace rai
-
-void operator -= (rai::SparseMatrix& x, const rai::SparseMatrix& y) { x.add(y, 0, 0, -1.); }
-void operator -= (rai::SparseMatrix& x, double y) { arr& X=x.Z; x.unsparse(); X -= y; }
-
-void operator += (rai::SparseMatrix& x, const rai::SparseMatrix& y) { x.add(y); }
-void operator += (rai::SparseMatrix& x, double y) { arr& X=x.Z; x.unsparse(); X += y; }
-
-void operator *= (rai::SparseMatrix& x, const rai::SparseMatrix& y) { NIY; }
-void operator *= (rai::SparseMatrix& x, double y) { x.memRef() *= y; }
-
-void operator /= (rai::SparseMatrix& x, const rai::SparseMatrix& y) { NIY; }
-void operator /= (rai::SparseMatrix& x, double y) { x.memRef() /= y; }
-
-void operator -= (rai::RowShifted& x, const rai::RowShifted& y) { x.add(y.Z, 0, 0, -1.); }
-void operator -= (rai::RowShifted& x, double y) { arr X=x.unpack(); X-=y; x.Z=X; }
-
-void operator += (rai::RowShifted& x, const rai::RowShifted& y) { x.add(y.Z); }
-void operator += (rai::RowShifted& x, double y) { arr X=x.unpack(); X+=y; x.Z=X; }
-
-void operator *= (rai::RowShifted& x, const rai::RowShifted& y) { NIY; }
-void operator *= (rai::RowShifted& x, double y) { x.memRef() *= y; }
-
-void operator /= (rai::RowShifted& x, const rai::RowShifted& y) { NIY; }
-void operator /= (rai::RowShifted& x, double y) { x.memRef() /= y; }
-//void operator %= (rai::RowShifted& x, const rai::RowShifted& y){ NIY; }
 
 //===========================================================================
 //
@@ -2712,10 +2714,6 @@ uintA differencing(const uintA& x, uint w) {
 }
 
 }
-
-const arr& arr::ensureDouble() const{ return *this; }
-
-arr& arr::ensureDouble(){ return *this; }
 
 //===========================================================================
 //

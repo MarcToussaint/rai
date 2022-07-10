@@ -7,8 +7,8 @@
 ostream& stdCout(){ return std::cout; }
 
 std::ostream& rai::LogToken::os() {
-    if(!msg) msg = new String;
-    return msg->stream();
+  if(!msg) msg = new String;
+  return msg->stream();
 }
 
 namespace rai{

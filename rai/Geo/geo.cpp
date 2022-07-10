@@ -1453,7 +1453,11 @@ arr Transformation::getWrenchTransform() const {
   arr r = skew(pos.getArr()); //(3, 3);  Featherstone::skew(r, &pos.x); skew pos
   arr R = rot.getArr(); //(3, 3);  rot.getMatrix(R.p);
   transpose(R);
-  arr X(6, 6);  X.setBlockMatrix(R, z, R*~r, R); //[[unklar!!]]
+  arr X(6, 6);
+  X.setMatrixBlock(R, 0, 0);
+  X.setMatrixBlock(z, 0, 3);
+  X.setMatrixBlock(R*~r, 3, 0);
+  X.setMatrixBlock(R, 3, 3); //[[unklar!!]]
   return X;
   //cout <<"\nz=" <<z <<"\nr=" <<r <<"\nR=" <<R <<"\nX=" <<X <<endl;
 }

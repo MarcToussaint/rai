@@ -1613,6 +1613,7 @@ void rai::Shape::createMeshes() {
         CHECK(mesh().V.N, "mesh or sscCore needs to be loaded");
         sscCore() = mesh();
       }
+      if(!sscCore().T.N) sscCore().makeConvexHull();
       mesh().setSSCvx(sscCore().V, size.last());
       break;
     case rai::ST_ssBox: {

@@ -56,17 +56,17 @@ void simGfile(){
     sim.loop();
 #else
     BulletInterface bull_rai(C);
-    FrameL bots = C.getParts();
-    for(auto& f:bots) if((*f->ats)["motors"]){
-      bull_rai.motorizeMultiBody(f);
-    }
+//    FrameL bots = C.getParts();
+//    for(auto& f:bots) if(f->ats && (*f->ats)["motors"]){
+//      bull_rai.motorizeMultiBody(f);
+//    }
     C.watch(true);
     C.gl()->resetPressedKey();
 
     double tau = .01;
     double glTau = .025;
     Metronome tic(tau);
-    for(uint t=0;;t++){
+    for(uint t=0;t<5./tau;t++){
       bull_rai.step(tau);
       bull_rai.pullDynamicStates(C);
 

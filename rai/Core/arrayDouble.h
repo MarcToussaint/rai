@@ -35,8 +35,6 @@ struct Serializable {
   virtual uint serial_decode(char* data, uint data_size) = 0;
 };
 
-struct SpecialArray;
-
 namespace rai {
 
 struct FileToken;
@@ -79,12 +77,12 @@ struct ArrayIterationReverse;
   Please see also the reference for the \ref array.h
   header, which contains lots of functions that can be applied on
   Arrays. */
-struct ArrayDouble : public rai::Array<double> {
+struct ArrayDouble : public Array<double> {
 
-    ArrayDouble() : rai::Array<double>() {}
+    ArrayDouble() : Array<double>() {}
     ArrayDouble(const ArrayDouble& a){ operator=(a); } //copy constructor
     ArrayDouble(const Array<double>& a){ operator=(a); } //copy constructor
-    ArrayDouble(ArrayDouble&& a) : Array<double>(a) {}  //move constructor
+    ArrayDouble(ArrayDouble&& a) : Array<double>((Array<double>&&)a) { if(a.jac) jac = std::move(a.jac); }  //move constructor
     explicit ArrayDouble(uint D0){ resize(D0); }
     explicit ArrayDouble(uint D0, uint D1){ resize(D0, D1); }
     explicit ArrayDouble(uint D0, uint D1, uint D2){ resize(D0, D1, D2); }
@@ -92,7 +90,6 @@ struct ArrayDouble : public rai::Array<double> {
     explicit ArrayDouble(const std::vector<double>& a, bool byReference){ if(byReference) referTo(&a.front(), a.size()); else setCarray(&a.front(), a.size()); }
     ArrayDouble(std::initializer_list<double> values) { operator=(values); }
     ArrayDouble(std::initializer_list<uint> dim, std::initializer_list<double> values){ operator=(values); reshape(dim); }
-    ~ArrayDouble();
     bool operator!() const; ///< check if NoArr
 
     ArrayDouble& operator=(std::initializer_list<double> values);
@@ -101,8 +98,8 @@ struct ArrayDouble : public rai::Array<double> {
     ArrayDouble& operator=(const Array<double>& a);
     ArrayDouble& operator=(const std::vector<double>& values);
 
-    rai::ArrayIterationEnumerated itEnumerated() const;
-    rai::ArrayIterationReverse itReverse();
+    ArrayIterationEnumerated itEnumerated() const;
+    ArrayIterationReverse itReverse();
 
     std::vector<double> vec() const{ return std::vector<double>(p, p+N); }
 
@@ -139,23 +136,35 @@ struct ArrayDouble : public rai::Array<double> {
     void argmax(uint& i, uint& j) const; //-> remove, or return uintA
     void argmax(uint& i, uint& j, uint& k) const; //-> remove
 
-    ArrayDouble& ensureDouble();
-    const ArrayDouble& ensureDouble() const;
+    void setMatrixBlock(const ArrayDouble& B, uint lo0, uint lo1);
+    void setVectorBlock(const ArrayDouble& B, uint lo);
+    void setBlockVector(const ArrayDouble& a, const ArrayDouble& b) {
+      CHECK(a.nd==1 && b.nd==1, "");
+      resize(a.N+b.N);
+      setVectorBlock(a.noJ(), 0);
+      setVectorBlock(b.noJ(), a.N);
+      if(a.jac || b.jac){
+        if(a.jac && b.jac){
+          J().setBlockMatrix(*a.jac, *b.jac);
+        } else NIY;
+      }
+    }
+
+    void setBlockMatrix(const ArrayDouble& A, const ArrayDouble& B);
 
     void J_setId();
 
   //-- special: arrays can be sparse/packed/etc and augmented with aux data to support this
-  SpecialArray* special=0; ///< auxiliary data, e.g. if this is a sparse matrics, depends on special type
   std::unique_ptr<ArrayDouble> jac=0; ///< optional pointer to Jacobian, to enable autodiff
 
   /// @name special matrices
   double sparsity();
-  rai::SparseMatrix& sparse();
-  const rai::SparseMatrix& sparse() const;
-  rai::SparseVector& sparseVec();
-  const rai::SparseVector& sparseVec() const;
-  rai::RowShifted& rowShifted();
-  const rai::RowShifted& rowShifted() const;
+  SparseMatrix& sparse();
+  const SparseMatrix& sparse() const;
+  SparseVector& sparseVec();
+  const SparseVector& sparseVec() const;
+  RowShifted& rowShifted();
+  const RowShifted& rowShifted() const;
   bool isSparse() const;
   void setNoArr();
 
@@ -163,6 +172,8 @@ struct ArrayDouble : public rai::Array<double> {
   ArrayDouble& J();
   ArrayDouble noJ() const;
   ArrayDouble J_reset();
+
+  void write(std::ostream& os=stdCout(), const char* ELEMSEP=nullptr, const char* LINESEP=nullptr, const char* BRACKETS=nullptr, bool dimTag=false, bool binary=false) const;
 };
 
 }
@@ -641,6 +652,8 @@ arr eigen_Ainv_b(const arr& A, const arr& b);
 /// @name special matrices & packings
 /// @{
 
+namespace rai {
+
 struct SpecialArray {
   enum Type { ST_none, ST_NoArr, ST_EmptyShape, hasCarrayST, sparseVectorST, sparseMatrixST, diagST, RowShiftedST, CpointerSdouble };
   Type type;
@@ -650,13 +663,11 @@ struct SpecialArray {
   SpecialArray& operator=(const SpecialArray&) = delete; //non-copyable
 };
 
-inline rai::ArrayIterationEnumerated arr::itEnumerated() const { return rai::ArrayIterationEnumerated(*this); }
+inline ArrayIterationEnumerated arr::itEnumerated() const { return ArrayIterationEnumerated(*this); }
 
-inline rai::ArrayIterationReverse arr::itReverse() { return rai::ArrayIterationReverse(*this); }
+inline ArrayIterationReverse arr::itReverse() { return ArrayIterationReverse(*this); }
 
 inline bool arr::isSparse() const { return special && (special->type==SpecialArray::sparseMatrixST || special->type==SpecialArray::sparseVectorST); }
-
-namespace rai {
 
 inline bool isSpecial(const arr& X)      { return X.special && X.special->type!=SpecialArray::ST_none; }
 inline bool isNoArr(const arr& X)        { return X.special && X.special->type==SpecialArray::ST_NoArr; }
@@ -774,13 +785,11 @@ arr comp_At(const arr& A);
 arr comp_A_x(const arr& A, const arr& x);
 arr makeRowSparse(const arr& X);
 
-}//namespace rai
-
 #define UpdateOperator( op ) \
-  void operator op (rai::SparseMatrix& x, const rai::SparseMatrix& y); \
-  void operator op (rai::SparseMatrix& x, double y ); \
-  void operator op (rai::RowShifted& x, const rai::RowShifted& y); \
-  void operator op (rai::RowShifted& x, double y );
+  void operator op (SparseMatrix& x, const SparseMatrix& y); \
+  void operator op (SparseMatrix& x, double y ); \
+  void operator op (RowShifted& x, const RowShifted& y); \
+  void operator op (RowShifted& x, double y );
 UpdateOperator(|=)
 UpdateOperator(^=)
 UpdateOperator(&=)
@@ -791,14 +800,14 @@ UpdateOperator(/=)
 UpdateOperator(%=)
 #undef UpdateOperator
 
-namespace rai{
-  template<class T> bool isSparse(Array<T>& x){
-    if(typeid(T)!=typeid(double)) return false;
-    arr* y = dynamic_cast<arr*>(&x);
-    if(!y) return false;
-    return y->isSparse();
-  }
+template<class T> bool isSparse(Array<T>& x){
+  if(typeid(T)!=typeid(double)) return false;
+  arr* y = dynamic_cast<arr*>(&x);
+  if(!y) return false;
+  return y->isSparse();
 }
+
+}//namespace rai
 
 //===========================================================================
 //

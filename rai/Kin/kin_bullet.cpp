@@ -171,7 +171,7 @@ BulletInterface::BulletInterface(rai::Configuration& C, const rai::Bullet_Option
     FrameL parts = C.getParts();
     for(rai::Frame *f : parts){
       self->addMultiBody(f);
-      if((*f->ats)["motors"]) motorizeMultiBody(f);
+      if(f->ats && (*f->ats)["motors"]) motorizeMultiBody(f);
     }
     //  self->addMultiBody(C(0), verbose);
     //  self->addExample();

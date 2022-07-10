@@ -44,6 +44,7 @@ namespace rai {
 
 template<class T> struct ArrayModRaw;
 template<class T> struct ArrayModList;
+struct SpecialArray;
 
 /** Simple array container to store arbitrary-dimensional arrays (tensors).
   Can buffer more memory than necessary for faster
@@ -61,6 +62,7 @@ template<class T> struct Array {
   uint* d;  ///< pointer to dimensions (for nd<=3 points to d0)
   bool isReference; ///< true if this refers to memory of another array
   uint M;   ///< memory allocated (>=N)
+  SpecialArray* special=0; ///< auxiliary data, e.g. if this is a sparse matrics, depends on special type
 
   static int  sizeT;   ///< constant for each type T: stores the sizeof(T)
   static char memMove; ///< constant for each type T: decides whether memmove can be used instead of individual copies
@@ -162,8 +164,7 @@ template<class T> struct Array {
   void referToDim(const Array<T>& a, int i);
   void referToDim(const Array<T>& a, uint i, uint j);
   void referToDim(const Array<T>& a, uint i, uint j, uint k);
-  void takeOver(Array<T>& a);  //a becomes a reference to its previously owned memory!
-  void swap(Array<T>& a);      //the two arrays swap their contents!
+  void takeOver(Array<T>& a);  //a is cleared (earlier: becomes a reference to its previously owned memory)
   void setGrid(uint dim, T lo, T hi, uint steps);
 
   void J_setId();
@@ -297,13 +298,13 @@ template<class T> bool operator!=(const Array<T>& v, const Array<T>& w);
 template<class T> std::istream& operator>>(std::istream& is, Array<T>& x);
 template<class T> std::ostream& operator<<(std::ostream& os, const Array<T>& x);
 
-template<class T> Array<T>& operator+=(Array<T>& x, const Array<T>& y){
+template<class T> void operator+=(Array<T>& x, const Array<T>& y){
   CHECK_EQ(x.N, y.N, "update operator on different array dimensions (" <<x.N <<", " <<y.N <<")");
   T *xp=x.p, *xstop=xp+x.N;
   const T *yp=y.p;
   for(; xp!=xstop; xp++, yp++) *xp += *yp;
 }
-template<class T> Array<T>& operator+=(Array<T>& x, const T& y){
+template<class T> void operator+=(Array<T>& x, const T& y){
   T *xp=x.p, *xstop=xp+x.N;
   for(; xp!=xstop; xp++) *xp += y;
 }
@@ -373,7 +374,7 @@ template<class T> Array<T> consts(const T& c, uint d0, uint d1, uint d2) { retur
 inline uintA range(uint n) { uintA r;  r.setStraightPerm(n);  return r; }
 inline uintA randperm(uint n) {  uintA z;  z.setRandomPerm(n);  return z; }
 
-template<class T> Array<T*> getCarray(const Array<T> data){
+template<class T> Array<T*> getCarray(const Array<T>& data){
   CHECK_EQ(data.nd, 2, "only 2D array gives C-array of type T**");
   Array<T*> Cpointers(data.d0);
   for(uint i=0; i<data.d0; i++) Cpointers(i)=data.p+i*data.d1;

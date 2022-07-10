@@ -46,7 +46,8 @@ template<class T> Array<T>::Array()
     d0(0), d1(0), d2(0),
     d(&d0),
     isReference(false),
-    M(0) {
+    M(0),
+    special(0) {
   if(sizeT==-1) sizeT=sizeof(T);
   if(memMove==(char)-1) {
     memMove=0;
@@ -76,11 +77,14 @@ template<class T> Array<T>::Array(Array<T>&& a)
     d0(a.d0), d1(a.d1), d2(a.d2),
     d(&d0),
     isReference(a.isReference),
-    M(a.M) {
+    M(a.M),
+    special(a.special){
+  //if(a.jac) jac = std::move(a.jac);
   CHECK_EQ(a.d, &a.d0, "");
   a.p=NULL;
   a.N=a.nd=a.d0=a.d1=a.d2=0;
   a.isReference=false;
+  a.special=NULL;
 }
 
 /// constructor with resize
@@ -98,10 +102,21 @@ template<class T> Array<T>::Array(std::initializer_list<T> values) : Array() { o
 /// initialization via {1., 2., 3., ...} lists, with certain dimensionality
 template<class T> Array<T>::Array(std::initializer_list<uint> dim, std::initializer_list<T> values) : Array() { operator=(values); reshape(dim); }
 
-template<class T> Array<T>::~Array() { clear(); }
+template<class T> Array<T>::~Array() {
+#if 0
+  clear();
+#else //faster (leaves members non-zeroed..)
+  if(special) { delete special; special=NULL; }
+  if(M) {
+    globalMemoryTotal -= M*sizeT;
+    if(memMove==1) free(p); else delete[] p;
+  }
+#endif
+}
 
 /// frees all memory; this becomes an empty array
 template<class T> Array<T>&  Array<T>::clear() {
+  if(special) { delete special; special=NULL; }
   freeMEM();
   return *this;
 }
@@ -724,7 +739,7 @@ template<class T> T& Array<T>::operator()(int i) const {
 template<class T> T& Array<T>::operator()(int i, int j) const {
   if(i<0) i += d0;
   if(j<0) j += d1;
-  CHECK(nd==2 && (uint)i<d0 && (uint)j<d1,
+  CHECK(nd==2 && (uint)i<d0 && (uint)j<d1 && !special,
         "2D range error (" <<nd <<"=2, " <<i <<"<" <<d0 <<", " <<j <<"<" <<d1 <<")");
   return p[i*d1+j];
 }
@@ -734,7 +749,7 @@ template<class T> T& Array<T>::operator()(int i, int j, int k) const {
   if(i<0) i += d0;
   if(j<0) j += d1;
   if(k<0) k += d2;
-  CHECK(nd==3 && (uint)i<d0 && (uint)j<d1 && (uint)k<d2,
+  CHECK(nd==3 && (uint)i<d0 && (uint)j<d1 && (uint)k<d2 && !special,
         "3D range error (" <<nd <<"=3, " <<i <<"<" <<d0 <<", " <<j <<"<" <<d1 <<", " <<k <<"<" <<d2 <<")");
   return p[(i*d1+j)*d2+k];
 }
@@ -778,6 +793,7 @@ template<class T> Array<T> Array<T>::operator()(int i, int j, std::initializer_l
 
 /// get a subarray (e.g., row of a matrix); use in conjuction with operator()() to get a reference
 template<class T> Array<T> Array<T>::operator[](int i) const {
+  CHECK(!special, "");
   Array<T> z;
   z.referToDim(*this, i);
   return z;
@@ -987,6 +1003,7 @@ template<class T> Array<T>& Array<T>::operator=(const Array<T>& a) {
   resizeAs(a);
   if(memMove) memmove(p, a.p, sizeT*N);
   else for(uint i=0; i<N; i++) p[i]=a.p[i];
+  if(special) { delete special; special=NULL; }
   return *this;
 }
 
@@ -1094,13 +1111,13 @@ template<class T> void Array<T>::setBlockMatrix(const Array<T>& A, const Array<T
 template<class T> void Array<T>::setBlockVector(const Array<T>& a, const Array<T>& b) {
   CHECK(a.nd==1 && b.nd==1, "");
   resize(a.N+b.N);
-  NIY;
-//  setVectorBlock(a.noJ(), 0);   //for(i=0;i<a.N;i++) operator()(i    )=a(i);
-//  setVectorBlock(b.noJ(), a.N); //for(i=0;i<b.N;i++) operator()(i+a.N)=b(i);
+  setVectorBlock(a, 0);   //for(i=0;i<a.N;i++) operator()(i    )=a(i);
+  setVectorBlock(b, a.N); //for(i=0;i<b.N;i++) operator()(i+a.N)=b(i);
 }
 
 /// write the matrix B into 'this' matrix at location lo0, lo1
 template<class T> void Array<T>::setMatrixBlock(const Array<T>& B, uint lo0, uint lo1) {
+  CHECK(!special && !B.special, "");
   CHECK(B.nd==1 || B.nd==2, "");
   if(B.nd==2) {
     CHECK(nd==2 && lo0+B.d0<=d0 && lo1+B.d1<=d1, "");
@@ -1126,6 +1143,7 @@ template<class T> void Array<T>::getMatrixBlock(Array<T>& B, uint lo0, uint lo1)
 
 /// write the vector B into 'this' vector at location lo0
 template<class T> void Array<T>::setVectorBlock(const Array<T>& B, uint lo) {
+  CHECK(!special && !B.special, "");
   CHECK(nd==1 && B.nd==1 && lo+B.N<=N, "");
   uint i;
   for(i=0; i<B.N; i++) elem(lo+i)=B.elem(i);
@@ -1151,7 +1169,7 @@ template<class T> void Array<T>::setReversePerm(int n) {
 }
 
 /// permute all elements randomly
-template<class T> void rai::Array<T>::setRandomPerm(int n) {
+template<class T> void Array<T>::setRandomPerm(int n) {
   setStraightPerm(n);
   int j, r;
   for(j=N-1; j>=1; j--) {
@@ -1182,6 +1200,7 @@ template<class T> void Array<T>::setCarray(const T** buffer, uint D0, uint D1) {
 
 /// make this array a reference to the array \c a
 template<class T> void Array<T>::referTo(const Array<T>& a) {
+  CHECK(!a.special, "");
   referTo(a.p, a.N);
   reshapeAs(a);
 }
@@ -1248,6 +1267,7 @@ template<class T> void Array<T>::referToRange(const Array<T>& a, int i, int j, i
 /// make this array a subarray reference to \c a
 template<class T> void Array<T>::referToDim(const Array<T>& a, int i) {
   CHECK(a.nd>1, "can't create subarray of array less than 2 dimensions");
+  CHECK(!special, "can't refer to row of sparse matrix");
   if(i<0) i+=a.d0;
   CHECK(i>=0 && i<(int)a.d0, "SubDim range error (" <<i <<"<" <<a.d0 <<")");
 
@@ -1307,39 +1327,16 @@ template<class T> void Array<T>::takeOver(Array<T>& a) {
   memMove=a.memMove;
   N=a.N; nd=a.nd; d0=a.d0; d1=a.d1; d2=a.d2;
   p=a.p; M=a.M;
+  special=a.special;
+#if 0 //a remains reference on this
   a.isReference=true;
   a.M=0;
-}
-
-template<class T> void Array<T>::swap(Array<T>& a) {
-  CHECK(!isReference && !a.isReference, "NIY for references");
-//  CHECK(!special&& !a.special, "NIY for specials");
-  CHECK(nd<=3 && a.nd<=3, "only for 1D");
-#ifdef RAI_USE_STDVEC
-  std::swap((vec_type&)*this, (vec_type&)a);
-#endif
-
-#define SWAPx(X, Y){ auto z=X; X=Y; Y=z; }
-  SWAPx(p, a.p);
-//  SWAPx(special, a.special);
-//  SWAPx(isReference, a.isReference);
-//  T* p_tmp = p;
-//  p=a.p;
-//  a.p=p_tmp;
-#undef SWAPx
-
-  uint z;
-#define SWAP(X, Y){ z=X; X=Y; Y=z; }
-  SWAP(N, a.N);
-  SWAP(M, a.M);
-  SWAP(nd, a.nd);
-  SWAP(d0, a.d0);
-  SWAP(d1, a.d1);
-  SWAP(d2, a.d2);
-#undef SWAP
-
-#ifdef RAI_USE_STDVEC
-  CHECK_EQ(p, vec_type::data(), "");
+#else //a is cleared
+  a.p=NULL;
+  a.M=a.N=a.nd=a.d0=a.d1=a.d2=0;
+  if(a.d && a.d!=&a.d0) { delete[] a.d; a.d=NULL; }
+  a.special=0;
+  a.isReference=false;
 #endif
 }
 
@@ -1377,7 +1374,7 @@ Array<T>::setGrid(uint dim, T lo, T hi, uint steps) {
 }
 
 /// sort this list
-template<class T> rai::Array<T>& rai::Array<T>::sort(ElemCompare comp) {
+template<class T> Array<T>& Array<T>::sort(ElemCompare comp) {
   std::sort(p, p+N, comp);
   return *this;
 }
@@ -1489,7 +1486,7 @@ template<class T> void Array<T>::permuteRowsInv(const Array<uint>& permutation) 
 }
 
 /// randomly permute all entries of 'this'
-template<class T> void rai::Array<T>::permuteRandomly() {
+template<class T> void Array<T>::permuteRandomly() {
   uintA perm;
   perm.setRandomPerm(N);
   permute(perm);
@@ -1519,6 +1516,7 @@ template<class T> void Array<T>::shift(int offset, bool wrapAround) {
 
 /** @brief prototype for operator<<, writes the array by separating elements with ELEMSEP, separating rows with LINESEP, using BRACKETS[0] and BRACKETS[1] to brace the data, optionally writs a dimensionality tag before the data (see below), and optinally in binary format */
 template<class T> void Array<T>::write(std::ostream& os, const char* ELEMSEP, const char* LINESEP, const char* BRACKETS, bool dimTag, bool binary) const {
+  CHECK(!special, "");
   CHECK(!binary || memMove, "binary write works only for memMoveable data");
   uint i, j, k;
   if(!ELEMSEP) ELEMSEP=arrayElemsep;
@@ -1642,7 +1640,7 @@ template<class T> bool Array<T>::readTagged(std::istream& is, const char* tag) {
 }
 
 /// write a dimensionality tag of format <d0 d1 d2 ...>
-template<class T> void rai::Array<T>::writeDim(std::ostream& os) const {
+template<class T> void Array<T>::writeDim(std::ostream& os) const {
   uint i;
   os <<'<';
   if(nd) os <<dim(0);
@@ -1651,7 +1649,7 @@ template<class T> void rai::Array<T>::writeDim(std::ostream& os) const {
 }
 
 /// read a dimensionality tag of format <d0 d1 d2 ...> and resize this array accordingly
-template<class T> void rai::Array<T>::readDim(std::istream& is) {
+template<class T> void Array<T>::readDim(std::istream& is) {
   char c;
   uint ND, dim[10];
   is >>PARSE("<");

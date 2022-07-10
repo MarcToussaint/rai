@@ -6,8 +6,6 @@
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
 
-#pragma once
-
 #include "array.h"
 #include "util.h"
 
@@ -48,8 +46,6 @@
   Arrays. */
 
 //***** constructors
-
-rai::ArrayDouble::~ArrayDouble() { if(special) delete special; }
 
 arr& arr::operator=(std::initializer_list<double> values) {
   resize(values.size());
@@ -129,10 +125,10 @@ double& arr::elem(int i, int j) {
   CHECK(nd==2 && (uint)i<d0 && (uint)j<d1,
         "2D range error (" <<nd <<"=2, " <<i <<"<" <<d0 <<", " <<j <<"<" <<d1 <<")");
   if(isSparseMatrix(*this)) {
-    return (double&)ensureDouble().sparse().addEntry(i, j);
+    return sparse().addEntry(i, j);
   }
   if(isRowShifted(*this)) {
-    return (double&)ensureDouble().rowShifted().elemNew(i, j);
+    return rowShifted().elemNew(i, j);
   }
   return p[i*d1+j];
 
@@ -329,13 +325,66 @@ void arr::argmax(uint& i, uint& j) const { CHECK_EQ(nd, 2, "needs 2D array"); j=
   > exists for type double */
 void arr::argmax(uint& i, uint& j, uint& k) const { CHECK_EQ(nd, 3, "needs 3D array"); k=argmax(); i=k/(d1*d2); k=k%(d1*d2); j=k/d2; k=k%d2; }
 
+
 /// the index of the minimum; precondition: the comparision operator > exists for type T
 uint arr::argmin() const { uint i, m=0; for(i=0; i<N; i++) if(p[i]<p[m]) m=i; return m; }
 
 
+void rai::ArrayDouble::setMatrixBlock(const rai::ArrayDouble& B, uint lo0, uint lo1){
+  if(isSparse())
+    sparse().add(B, lo0, lo1);
+  else
+    Array<double>::setMatrixBlock(B, lo0, lo1);
+}
+
+void rai::ArrayDouble::setVectorBlock(const rai::ArrayDouble& B, uint lo){
+  Array<double>::setVectorBlock(B, lo);
+  if(B.jac){
+    CHECK(jac && jac->d1==B.jac->d1, "Jacobian needs to be pre-sized");
+    CHECK(!B.jac->jac, "NOT HANDLED YET");
+    jac->setMatrixBlock(*B.jac, lo, 0);
+  }
+}
+
+void rai::ArrayDouble::setBlockMatrix(const rai::ArrayDouble& A, const rai::ArrayDouble& B) {
+  if(!A.special){
+    Array<double>::setBlockMatrix(A, B);
+  }else if(A.isSparse()){
+    CHECK(B.isSparse(), "");
+    CHECK(A.d1==B.d1, "");
+    sparse().resize(A.d0+B.d0, A.d1, 0);
+    sparse().add(A.sparse(), 0, 0);
+    sparse().add(B.sparse(), A.d0, 0);
+  } else if(isRowShifted(A)){
+    CHECK(isRowShifted(B), "");
+    CHECK(A.d1==B.d1, "");
+    rowShifted().resize(A.d0+B.d0, A.d1, rai::MAX(A.rowShifted().rowSize, B.rowShifted().rowSize));
+    rowShifted().add(A, 0, 0);
+    rowShifted().add(B, A.d0, 0);
+  } else if(isNoArr(A)){
+    CHECK(isNoArr(B), "");
+    setNoArr();
+  } else NIY;
+}
+
 void arr::setNoArr() {
   clear();
   special = new SpecialArray(SpecialArray::ST_NoArr);
+}
+
+void rai::ArrayDouble::write(std::ostream& os, const char* ELEMSEP, const char* LINESEP, const char* BRACKETS, bool dimTag, bool binary) const {
+  if(!special){
+    Array<double>::write(os, ELEMSEP, LINESEP, BRACKETS, dimTag, binary);
+  } else if(isSparseVector(*this)) {
+    intA& elems = dynamic_cast<SparseVector*>(special)->elems;
+    for(uint i=0; i<N; i++) os <<"( " <<elems(i) <<" ) " <<elem(i) <<endl;
+  } else if(isSparseMatrix(*this)) {
+    intA& elems = dynamic_cast<SparseMatrix*>(special)->elems;
+    for(uint i=0; i<N; i++) os <<'(' <<elems[i] <<") " <<elem(i) <<endl;
+  }
+  if(jac){
+    os <<" -- JACOBIAN:\n" <<*jac <<endl;
+  }
 }
 
 /// x = y^T
@@ -935,7 +984,7 @@ void op_innerProduct(arr& x, const arr& y, const arr& z) {
       }
     }else{
       if(rai::useLapack && typeid(double)==typeid(double)) {
-        blas_Mv(x.ensureDouble(), y.ensureDouble(), z.ensureDouble());
+        blas_Mv(x, y, z);
       }else{
         uint i, d0=y.d0, dk=y.d1;
         double* a, *astop, *b, *c;
@@ -972,11 +1021,11 @@ void op_innerProduct(arr& x, const arr& y, const arr& z) {
     }
 #endif
     if(typeid(double)==typeid(double)) {
-      if(isSparseMatrix(y)) { x.ensureDouble() = y.sparse().A_B(z.ensureDouble()); return; }
-      if(isSparseMatrix(z)) { x.ensureDouble() = z.sparse().B_A(y.ensureDouble()); return; }
-      if(isRowShifted(y)) { x.ensureDouble() = y.rowShifted().A_B(z.ensureDouble()); return; }
-      if(isRowShifted(z)) { x.ensureDouble() = z.rowShifted().B_A(y.ensureDouble()); return; }
-      if(rai::useLapack){ blas_MM(x.ensureDouble(), y.ensureDouble(), z.ensureDouble()); return; }
+      if(isSparseMatrix(y)) { x = y.sparse().A_B(z); return; }
+      if(isSparseMatrix(z)) { x = z.sparse().B_A(y); return; }
+      if(isRowShifted(y)) { x = y.rowShifted().A_B(z); return; }
+      if(isRowShifted(z)) { x = z.rowShifted().B_A(y); return; }
+      if(rai::useLapack){ blas_MM(x, y, z); return; }
     }
     double* a, *astop, *b, *c;
     x.resize(d0, d1); x.setZero();
@@ -1018,9 +1067,9 @@ void op_innerProduct(arr& x, const arr& y, const arr& z) {
   if(y.nd==1 && z.nd==2 && z.d0==1) {  //vector x vector^double -> matrix (outer product)
     if(typeid(double)==typeid(double) && z.isSparse()) {
       arr _y;
-      _y.referTo(y.ensureDouble());
+      _y.referTo(y);
       _y.reshape(y.N, 1);
-      x.ensureDouble() = z.sparse().B_A(_y.ensureDouble());
+      x = z.sparse().B_A(_y);
       return;
     }
     uint i, j, d0=y.d0, d1=z.d1;
@@ -1146,7 +1195,7 @@ void op_indexWiseProduct(arr& x, const arr& y, const arr& z) {
     x = z;
     if(isSparseMatrix(z)){
       CHECK(typeid(double)==typeid(double), "only for double!");
-      x.sparse().rowWiseMult(y.ensureDouble());
+      x.sparse().rowWiseMult(y);
       if(y.jac || z.jac){ NIY }
       return;
     }
@@ -1853,7 +1902,7 @@ arr operator*(double y, const arr& z) {             arr x(z); x*=y; return x; }
 arr operator%(const arr& y, const arr& z) { arr x; op_indexWiseProduct(x, y, z); return x; }
 
 /// inverse
-arr operator/(int y, const arr& z) {  CHECK_EQ(y, 1, ""); arr x; x.ensureDouble() = inverse(z.ensureDouble()); return x; }
+arr operator/(int y, const arr& z) {  CHECK_EQ(y, 1, ""); arr x; x = inverse(z); return x; }
 /// scalar division
 arr operator/(const arr& y, double z) {             arr x(y); x/=z; return x; }
 /// element-wise division

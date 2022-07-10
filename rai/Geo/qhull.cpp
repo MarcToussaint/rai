@@ -342,7 +342,7 @@ arr getHull(const arr& V, uintA& T) {
     memmove(&Vnew(i, 0), vertex->point,  dim*sizeof(double));
     i++;
   }
-  if(T.N) { //retrieve also the triangulation
+  if(true) { //retrieve also the triangulation
     T.resize(qh num_facets, dim);
     f=0;
     FORALLfacets {

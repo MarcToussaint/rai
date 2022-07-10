@@ -1678,6 +1678,7 @@ void OpenGL::clear() {
   auto _dataLock = dataLock(RAI_HERE);
   views.clear();
   for(CstyleDrawer* d:toBeDeletedOnCleanup) delete d;
+  toBeDeletedOnCleanup.clear();
   drawers.clear();
   initCalls.clear();
   hoverCalls.clear();
