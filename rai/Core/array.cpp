@@ -117,20 +117,21 @@ const SparseVector& arr::sparseVec() const {
 /// make sparse: create the \ref sparse index
 SparseMatrix& arr::sparse() {
   SparseMatrix* s;
-  if(!special) {
-    if(N) {
-      CHECK_EQ(nd, 2, "");
-      arr copy;
-      copy.takeOver(*this);
-      s = new SparseMatrix(*this); //needs to be AFTER takeOver
-      s->setFromDense(copy);
-    } else {
-      s = new SparseMatrix(*this);
-      nd=2;
-    }
-  } else {
+  if(special){
     s = dynamic_cast<SparseMatrix*>(special);
-    CHECK(s, "");
+    CHECK(s,"");
+    return *s;
+  }
+
+  if(N) {
+    CHECK_EQ(nd, 2, "");
+    arr copy;
+    copy.takeOver(*this);
+    s = new SparseMatrix(*this); //needs to be AFTER takeOver
+    s->setFromDense(copy);
+  } else {
+    s = new SparseMatrix(*this);
+    nd=2;
   }
   return *s;
 }

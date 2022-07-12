@@ -214,7 +214,7 @@ void LGP_Tree::updateDisplay() {
   if(!dth) initDisplay();
 
   //individual windows to display focusNode
-  if(verbose>2) {
+  if(false && verbose>2) {
     String decisions = focusNode->getTreePathString('\n');
     for(uint i=1; i<views.N; i++) {
       if(focusNode->problem(i).komo && focusNode->problem(i).komo->timeSlices.N) {
