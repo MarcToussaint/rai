@@ -27,7 +27,7 @@ void init_Bullet(pybind11::module& m) {
   .def("getState", [](BulletInterface& self, shared_ptr<rai::Configuration>& C) {
     arr V;
     self.pullDynamicStates(*C, V);
-    return pybind11::array(V.dim(), V.p);
+    return arr2numpy(V);
   })
 
   .def("setState", [](BulletInterface& self, shared_ptr<rai::Configuration>& C, const pybind11::array_t<double>& velocities) {

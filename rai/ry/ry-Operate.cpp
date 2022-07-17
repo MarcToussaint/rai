@@ -42,7 +42,7 @@ void init_Operate(pybind11::module& m) {
 
   .def("getJointPositions", [](ry::RyOperate& self, shared_ptr<rai::Configuration>& C) {
     arr q = self.R->getJointPositions();
-    return pybind11::array(q.dim(), q.p);
+    return arr2numpy(q);
   })
 
   .def("getGripperGrabbed", [](ry::RyOperate& self, const std::string& whichArm) {
