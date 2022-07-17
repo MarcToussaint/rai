@@ -73,6 +73,16 @@ struct GLDrawer {
 
 //===========================================================================
 //
+// just a hook to make solvers step'able
+//
+
+struct Stepper {
+  virtual int step() = 0;
+  virtual ~Stepper() {}
+};
+
+//===========================================================================
+//
 // logging
 //
 

@@ -46,25 +46,38 @@ struct RRT_SingleTree : GLDrawer {
 
 ///algorithms
 struct RRT_PathFinder {
-    ConfigurationProblem& P;
-    arr starts, goals;
+  ConfigurationProblem& P;
+  shared_ptr<RRT_SingleTree> rrt0;
+  shared_ptr<RRT_SingleTree> rrtT;
 
+  //parameters
   double stepsize;
   uint maxIters=5000;
   uint verbose;
   bool intermediateCheck;
+  double p_forwardStep=.5;
+  double p_sideStep=.0;
+  double p_backwardStep=.0;
 
+  //counters
+  uint iters=0;
   uint n_backStep=0, n_backStepGood=0, n_sideStep=0, n_sideStepGood=0, n_forwardStep=0, n_forwardStepGood=0, n_rndStep=0, n_rndStepGood=0;
 
-  RRT_PathFinder(ConfigurationProblem& _P, const arr& starts, const arr& goals, double _stepsize = .2, uint _verbose=0, bool _intermediateCheck=false);
+  //output
+  arr path;
 
+  RRT_PathFinder(ConfigurationProblem& _P, const arr& starts, const arr& goals, double _stepsize = .2, uint _verbose=0, bool _intermediateCheck=false);
+  ~RRT_PathFinder(){}
+
+  int stepConnect();
   void planForward(const arr& q0, const arr& qT);
-  arr planConnect(const arr& q0, const arr& qT, double p_forwardStep=.5, double p_sideStep=.0, double p_backwardStep=.0); //default numbers: equivalent to standard bidirect
+  arr planConnect(); //default numbers: equivalent to standard bidirect
 
   bool growTreeTowardsRandom(RRT_SingleTree& rrt);
-  bool growTreeToTree(RRT_SingleTree& rrt_A, RRT_SingleTree& rrt_B, double p_forwardStep, double p_sideStep, double p_backwardStep);
+  bool growTreeToTree(RRT_SingleTree& rrt_A, RRT_SingleTree& rrt_B);
 
-  virtual shared_ptr<PathResult> run(double timeBudget=1.);
+  virtual shared_ptr<PathResult> run(double timeBudget=1.); //obsolete
+
 
 private:
   rai::Configuration DISP;

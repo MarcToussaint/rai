@@ -170,7 +170,7 @@ bool RRT_PathFinder::growTreeTowardsRandom(RRT_SingleTree& rrt){
   return false;
 }
 
-bool RRT_PathFinder::growTreeToTree(RRT_SingleTree& rrt_A, RRT_SingleTree& rrt_B, double p_forwardStep, double p_sideStep, double p_backwardStep){
+bool RRT_PathFinder::growTreeToTree(RRT_SingleTree& rrt_A, RRT_SingleTree& rrt_B){
   bool isSideStep, isForwardStep;
   //decide on a target: forward or random
   arr t;
@@ -219,39 +219,44 @@ bool RRT_PathFinder::growTreeToTree(RRT_SingleTree& rrt_A, RRT_SingleTree& rrt_B
 
 RRT_PathFinder::RRT_PathFinder(ConfigurationProblem& _P, const arr& _starts, const arr& _goals, double _stepsize, uint _verbose, bool _intermediateCheck)
   : P(_P),
-    starts(_starts),
-    goals(_goals),
     stepsize(_stepsize),
     verbose(_verbose),
     intermediateCheck(_intermediateCheck) {
+  arr q0 = _starts;
+  arr qT = _goals;
+  auto q0ret = P.query(q0);
+  auto qTret = P.query(qT);
+  if(!q0ret->isFeasible){ if(verbose>0) LOG(0) <<"initializing with infeasible q0"; if(verbose>1) q0ret->writeDetails(std::cout, P); }
+  if(!qTret->isFeasible){ if(verbose>0) LOG(0) <<"initializing with infeasible qT"; if(verbose>1) qTret->writeDetails(std::cout, P); }
+  rrt0 = make_shared<RRT_SingleTree>(q0, q0ret);
+  rrtT = make_shared<RRT_SingleTree>(qT, qTret);
+
+  if(verbose>2){
+    DISP.clear();
+    DISP.copy(P.C);
+    DISP.gl()->add(*rrt0);
+    DISP.gl()->add(*rrtT);
+  }
 }
 
 void RRT_PathFinder::planForward(const arr& q0, const arr& qT){
-  DISP.clear();
-  DISP.copy(P.C);
-
-  arr q = q0;
-
-  RRT_SingleTree rrt(q0, P.query(q0));
-  DISP.gl()->add(rrt);
-
   bool success=false;
 
-  uint i;
-  for(i=0;i<100000;i++){
+  for(uint i=0;i<100000;i++){
+    iters++;
     //let rrt0 grow
-    bool added = growTreeTowardsRandom(rrt);
+    bool added = growTreeTowardsRandom(*rrt0);
     if(added){
-      if(length(rrt.getLast() - qT)<stepsize) success = true;
+      if(length(rrt0->getLast() - qT)<stepsize) success = true;
     }
     if(success) break;
 
     //some output
     if (verbose > 2){
       if(!(i%100)){
-        DISP.setJointState(q); //updates display (makes it slow)
+        DISP.setJointState(rrt0->getLast());
         DISP.watch(false);
-        std::cout <<"RRT samples=" <<i <<" tree size = " <<rrt.getNumberNodes() <<std::endl;
+        std::cout <<"RRT samples=" <<i <<" tree size = " <<rrt0->getNumberNodes() <<std::endl;
       }
     }
   }
@@ -260,12 +265,12 @@ void RRT_PathFinder::planForward(const arr& q0, const arr& qT){
 
   if (verbose > 0){
     std::cout <<"SUCCESS!"
-              <<"\n  tested samples=" <<2*i
-              <<"\n  #tree-size=" <<rrt.getNumberNodes()
+              <<"\n  tested samples=" <<P.evals
+              <<"\n  #tree-size=" <<rrt0->getNumberNodes()
      << std::endl;
   }
 
-  arr path = rrt.getPathFromNode(rrt.nearestID);
+  arr path = rrt0->getPathFromNode(rrt0->nearestID);
   revertPath(path);
 
   //display
@@ -284,78 +289,66 @@ void RRT_PathFinder::planForward(const arr& q0, const arr& qT){
   path >>FILE("z.path");
 }
 
-arr RRT_PathFinder::planConnect(const arr& q0, const arr& qT, double p_forwardStep, double p_sideStep, double p_backwardStep){
-  auto q0ret = P.query(q0);
-  auto qTret = P.query(qT);
-  if(!q0ret->isFeasible){ if(verbose>0) LOG(0) <<"initializing with infeasible q0"; if(verbose>1) q0ret->writeDetails(std::cout, P); return {}; }
-  if(!qTret->isFeasible){ if(verbose>0) LOG(0) <<"initializing with infeasible qT"; if(verbose>1) qTret->writeDetails(std::cout, P); return {}; }
-  RRT_SingleTree rrt0(q0, q0ret);
-  RRT_SingleTree rrtT(qT, qTret);
+int RRT_PathFinder::stepConnect(){
+  iters++;
+  if(iters>maxIters) return -1;
 
+  bool success = growTreeToTree(*rrt0, *rrtT);
+  if(!success) success = growTreeToTree(*rrtT, *rrt0);
+
+  //animation display
   if(verbose>2){
-    DISP.clear();
-    DISP.copy(P.C);
-    DISP.gl()->add(rrt0);
-    DISP.gl()->add(rrtT);
-  }
-
-  bool success=false;
-
-  uint i;
-  for(i=0;i<maxIters;i++){
-    success = growTreeToTree(rrt0, rrtT, p_forwardStep, p_sideStep, p_backwardStep);
-    if(success) break;
-
-    success = growTreeToTree(rrtT, rrt0, p_forwardStep, p_sideStep, p_backwardStep);
-    if(success) break;
-
-    //some output
-    if(verbose>2){
-      if(!(i%100)){
-        DISP.setJointState(rrt0.getLast());
-        DISP.watch(verbose>4, STRING("planConnect it " <<i));
-        std::cout <<"RRT queries=" <<P.evals <<" tree sizes = " <<rrt0.getNumberNodes()  <<' ' <<rrtT.getNumberNodes() <<std::endl;
-      }
+    if(!(iters%100)){
+      DISP.setJointState(rrt0->getLast());
+      DISP.watch(verbose>4, STRING("planConnect evals " <<P.evals));
+      std::cout <<"RRT queries=" <<P.evals <<" tree sizes = " <<rrt0->getNumberNodes()  <<' ' <<rrtT->getNumberNodes() <<std::endl;
     }
   }
 
-  if(verbose>0){
-    if(success)
+  //-- the rest is only on success -> extract the path, display, etc
+
+  if(success){
+    if(verbose>0){
       std::cout <<"\nSUCCESS!" <<std::endl;
-    else
-      std::cout <<"\nFAIL!" <<std::endl;
-    std::cout <<"  RRT queries=" <<P.evals <<" tree sizes = " <<rrt0.getNumberNodes()  <<' ' <<rrtT.getNumberNodes() <<std::endl;
-    std::cout <<"  forwardSteps: " <<(100.*n_forwardStepGood/n_forwardStep) <<"%/" <<n_forwardStep;
-    std::cout <<"  backSteps: " <<(100.*n_backStepGood/n_backStep) <<"%/" <<n_backStep;
-    std::cout <<"  rndSteps: " <<(100.*n_rndStepGood/n_rndStep) <<"%/" <<n_rndStep;
-    std::cout <<"  sideSteps: " <<(100.*n_sideStepGood/n_sideStep) <<"%/" <<n_sideStep;
-    std::cout <<std::endl;
-  }
-
-  if(!success) return NoArr;
-
-  arr path = rrt0.getPathFromNode(rrt0.nearestID);
-  arr pathT = rrtT.getPathFromNode(rrtT.nearestID);
-
-  revertPath(path);
-  path.append(pathT);
-
-  //display
-  if(verbose>1){
-    std::cout <<"  path-length=" <<path.d0 <<std::endl;
-    if(verbose>2){
-      DISP.proxies.clear();
-      for(uint t=0;t<path.d0;t++){
-        DISP.setJointState(path[t]);
-        DISP.watch(false, STRING("rrt result "<<t));
-        rai::wait(.1);
-      }
-      DISP.watch(true);
-      DISP.clear();
+      std::cout <<"  RRT queries=" <<P.evals <<" tree sizes = " <<rrt0->getNumberNodes()  <<' ' <<rrtT->getNumberNodes() <<std::endl;
+      std::cout <<"  forwardSteps: " <<(100.*n_forwardStepGood/n_forwardStep) <<"%/" <<n_forwardStep;
+      std::cout <<"  backSteps: " <<(100.*n_backStepGood/n_backStep) <<"%/" <<n_backStep;
+      std::cout <<"  rndSteps: " <<(100.*n_rndStepGood/n_rndStep) <<"%/" <<n_rndStep;
+      std::cout <<"  sideSteps: " <<(100.*n_sideStepGood/n_sideStep) <<"%/" <<n_sideStep;
+      std::cout <<std::endl;
     }
+
+    path = rrt0->getPathFromNode(rrt0->nearestID);
+    arr pathT = rrtT->getPathFromNode(rrtT->nearestID);
+
+    revertPath(path);
+    path.append(pathT);
+
+    //display
+    if(verbose>1){
+      std::cout <<"  path-length=" <<path.d0 <<std::endl;
+      if(verbose>2){
+        DISP.proxies.clear();
+        for(uint t=0;t<path.d0;t++){
+          DISP.setJointState(path[t]);
+          DISP.watch(false, STRING("rrt result "<<t));
+          rai::wait(.1);
+        }
+        DISP.watch(true);
+        DISP.clear();
+      }
+    }
+
+    return 1;
   }
 
-  path >>FILE("z.path");
+  return 0;
+}
+
+arr RRT_PathFinder::planConnect(){
+  int r=0;
+  while(!r){ r = stepConnect(); }
+  if(r==-1) return NoArr;
   return path;
 }
 
@@ -370,10 +363,7 @@ void revertPath(arr& path){
 }
 
 shared_ptr<PathResult> RRT_PathFinder::run(double timeBudget){
-  CHECK(starts.N, "no goal given")
-  CHECK(goals.N, "no goal given")
-  arr path = planConnect(starts, goals, .5, .0, .0); //.9, .9);
-
+  planConnect();
   return make_shared<PathResult>(path);
 }
 
