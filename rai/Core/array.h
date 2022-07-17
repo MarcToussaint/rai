@@ -12,8 +12,7 @@
 
 #include <initializer_list>
 #include <tuple>
-#include <ostream>
-#include <istream>
+#include <iostream>
 
 using std::endl;
 
@@ -80,28 +79,29 @@ template<class T> struct Array {
   Array(std::initializer_list<uint> dim, std::initializer_list<T> values);
   virtual ~Array();
 
+  /// @name assignments
   Array<T>& operator=(std::initializer_list<T> values);
   Array<T>& operator=(const T& v);
   Array<T>& operator=(const Array<T>& a);
 
   /// @name iterators
   struct iterator {
-      using reference = T&;
-      T* p;
-      T& operator()() { return *p; } //access to value by user
-      void operator++() { p++; }
-      reference operator*() { return *p; } //in for(auto& it:array.enumerated())  it is assigned to *iterator
-      friend bool operator!=(const iterator& i, const iterator& j) { return i.p!=j.p; }
-      T& operator->() { return *p; }
+    using reference = T&;
+    T* p;
+    T& operator()() { return *p; } //access to value by user
+    void operator++() { p++; }
+    reference operator*() { return *p; } //in for(auto& it:array.enumerated())  it is assigned to *iterator
+    friend bool operator!=(const iterator& i, const iterator& j) { return i.p!=j.p; }
+    T& operator->() { return *p; }
   };
   struct const_iterator {
-      using reference = const T&;
-      const T* p;
-      const T& operator()() { return *p; } //access to value by user
-      void operator++() { p++; }
-      reference operator*() { return *p; } //in for(auto& it:array.enumerated())  it is assigned to *iterator
-      friend bool operator!=(const const_iterator& i, const const_iterator& j) { return i.p!=j.p; }
-      const T& operator->() { return *p; }
+    using reference = const T&;
+    const T* p;
+    const T& operator()() { return *p; } //access to value by user
+    void operator++() { p++; }
+    reference operator*() { return *p; } //in for(auto& it:array.enumerated())  it is assigned to *iterator
+    friend bool operator!=(const const_iterator& i, const const_iterator& j) { return i.p!=j.p; }
+    const T& operator->() { return *p; }
   };
 
   iterator begin() { return iterator{p}; }
@@ -167,11 +167,9 @@ template<class T> struct Array {
   void takeOver(Array<T>& a);  //a is cleared (earlier: becomes a reference to its previously owned memory)
   void setGrid(uint dim, T lo, T hi, uint steps);
 
-  void J_setId();
-
   /// @name access by reference (direct memory access)
   Array<T> ref() const; //a reference on this
-  Array<T>& noconst() { return *this; } //TODO: make this the scalar reference!
+  Array<T>& noconst() { return *this; }
   T& elem() const;
   T& elem(int i) const;
   T& elem(int i, int j); //access that also handles sparse matrices
@@ -201,15 +199,11 @@ template<class T> struct Array {
   Array<T> rows(uint start_row, uint end_row) const;
   Array<T> col(uint col_index) const;
   Array<T> cols(uint start_col, uint end_col) const;
-
-  void getMatrixBlock(Array<T>& B, uint lo0, uint lo1) const; // -> return array
-  void getVectorBlock(Array<T>& B, uint lo) const;
   
   int findValue(const T& x) const;
   void findValues(Array<uint>& indices, const T& x) const;
   bool contains(const T& x) const { return findValue(x)!=-1; }
   bool contains(const Array<T>& X) const { for(const T& x:X) if(findValue(x)==-1) return false; return true; }
-  uint getMemsize() const; // -> remove
 
   /// @name appending etc
   T& append();
@@ -262,16 +256,21 @@ template<class T> struct Array {
   void shift(int offset, bool wrapAround=true);
 
   /// @name I/O
-  void write(std::ostream& os=stdCout(), const char* ELEMSEP=nullptr, const char* LINESEP=nullptr, const char* BRACKETS=nullptr, bool dimTag=false, bool binary=false) const;
+  void write(std::ostream& os=std::cout, const char* ELEMSEP=nullptr, const char* LINESEP=nullptr, const char* BRACKETS=nullptr, bool dimTag=false, bool binary=false) const;
   void read(std::istream& is);
   void writeTagged(std::ostream& os, const char* tag, bool binary=false) const;
   bool readTagged(std::istream& is, const char* tag);
-  void writeDim(std::ostream& os=stdCout()) const;
+  void writeDim(std::ostream& os=std::cout) const;
   void readDim(std::istream& is);
 
   /// modifiers
   ArrayModRaw<T> modRaw() const;
   ArrayModList<T> modList() const;
+
+  // noArr special
+  bool operator!() const;
+  Array<T>& setNoArr();
+
 
 //protected:
   /// @name kind of private
@@ -330,6 +329,7 @@ template <class T> struct ArrayModList{
   }
 };
 template <class T> ArrayModList<T> Array<T>::modList() const{ return ArrayModList<T>(this); }
+
 template <class T> std::ostream& operator<<(std::ostream& os, const ArrayModList<T>& x) { x.write(os); return os; }
 
 } //namespace
@@ -357,7 +357,7 @@ typedef rai::Array<rai::String*> StringL;
 
 //===========================================================================
 //
-// constructors
+// creators
 //
 
 namespace rai{
@@ -395,7 +395,6 @@ template<class T> Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b
 template<class T> Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c) { return catCol(rai::Array<rai::Array<T>*>{(rai::Array<T>*)&a, (rai::Array<T>*)&b, (rai::Array<T>*)&c}); }
 template<class T> Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c, const rai::Array<T>& d) { return catCol(rai::Array<rai::Array<T>*>{(rai::Array<T>*)&a, (rai::Array<T>*)&b, (rai::Array<T>*)&c, (rai::Array<T>*)&d}); }
 template<class T> Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c, const rai::Array<T>& d, const rai::Array<T>& e) { return catCol(rai::Array<rai::Array<T>*>{(rai::Array<T>*)&a, (rai::Array<T>*)&b, (rai::Array<T>*)&c, (rai::Array<T>*)&d, (rai::Array<T>*)&e}); }
-
 }
 
 //===========================================================================
@@ -563,7 +562,18 @@ template<class T> void listResizeCopy(rai::Array<T*>& L, uint N) {
 //
 
 namespace rai{
-template<class T> bool isSparse(Array<T>& x);
+
+struct SpecialArray {
+  enum Type { ST_none, ST_NoArr, ST_EmptyShape, hasCarrayST, sparseVectorST, sparseMatrixST, diagST, RowShiftedST, CpointerSdouble };
+  Type type;
+  SpecialArray(Type _type=ST_none) : type(_type) {}
+  SpecialArray(const SpecialArray&) = delete; //non-copyable
+  virtual ~SpecialArray() {}
+  SpecialArray& operator=(const SpecialArray&) = delete; //non-copyable
+};
+
+template<class T> bool Array<T>::operator!() const{ return special && special->type==SpecialArray::ST_NoArr; }
+template<class T> Array<T>& Array<T>::setNoArr() { special = new SpecialArray(SpecialArray::ST_NoArr); return *this; }
 
 }
 

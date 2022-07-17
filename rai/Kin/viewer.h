@@ -10,7 +10,6 @@
 
 #include "kin.h"
 #include "proxy.h"
-#include "../Core/util.h"
 
 namespace rai {
 

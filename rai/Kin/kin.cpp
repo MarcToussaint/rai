@@ -1879,7 +1879,7 @@ void Configuration::kinematicsQuat(arr& y, arr& J, Frame* a) const { //TODO: all
     J.setNoArr();
     return;
   }
-  if(A.isSparse()) {
+  if(isSparse(A)) {
     J = A;
     J.sparse().reshape(4, A.d1);
     J.sparse().colShift(1);
@@ -2906,7 +2906,7 @@ void Configuration::kinematicsPenetration(arr& y, arr& J, double margin) const {
 /// set the jacMode flag to match with the type of the given J
 void Configuration::setJacModeAs(const arr& J){
   if(!isSpecial(J)) jacMode = JM_dense;
-  else if(J.isSparse()) jacMode = JM_sparse;
+  else if(isSparse(J)) jacMode = JM_sparse;
   else if(isNoArr(J)) jacMode = JM_noArr;
   else if(isEmptyShape(J)) jacMode = JM_emptyShape;
   else NIY;

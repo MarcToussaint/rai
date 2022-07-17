@@ -9,6 +9,7 @@
 #pragma once
 
 #include "array.h"
+
 #include <algorithm>
 
 #define ARRAY_flexiMem true
@@ -243,15 +244,6 @@ template<class T> Array<T>& Array<T>::reshapeAs(const Array<T>& a) {
 template<class T> Array<T>& Array<T>::reshapeFlat() {
   reshape(N);
   return *this;
-}
-
-/// return the size of memory allocated in bytes
-template<class T> uint Array<T>::getMemsize() const {
-#ifdef RAI_USE_STDVEC
-  return vec_type::capacity()*sizeof(T);
-#else
-  return M*sizeT;
-#endif
 }
 
 /// return the k-th dimensionality
@@ -1134,26 +1126,12 @@ template<class T> void Array<T>::setMatrixBlock(const Array<T>& B, uint lo0, uin
   }
 }
 
-/// return a sub-matrix of 'this' taken at location lo0, lo1
-template<class T> void Array<T>::getMatrixBlock(Array<T>& B, uint lo0, uint lo1) const {
-  CHECK(nd==2 && B.nd==2 && lo0+B.d0<=d0 && lo1+B.d1<=d1, "");
-  uint i, j;
-  for(i=0; i<B.d0; i++) for(j=0; j<B.d1; j++) B(i, j)=operator()(lo0+i, lo1+j);
-}
-
 /// write the vector B into 'this' vector at location lo0
 template<class T> void Array<T>::setVectorBlock(const Array<T>& B, uint lo) {
   CHECK(!special && !B.special, "");
   CHECK(nd==1 && B.nd==1 && lo+B.N<=N, "");
   uint i;
   for(i=0; i<B.N; i++) elem(lo+i)=B.elem(i);
-}
-
-/// B (needs to be sized before) becomes sub-vector of 'this' at location lo
-template<class T> void Array<T>::getVectorBlock(Array<T>& B, uint lo) const {
-  CHECK(nd==1 && B.nd==1 && lo+B.N<=N, "");
-  uint i;
-  for(i=0; i<B.N; i++) B(i)=operator()(lo+i);
 }
 
 /// sorted permutation of length \c n

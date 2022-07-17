@@ -1418,8 +1418,8 @@ int OpenGL::watchImage(const byteA& _img, bool wait, float _zoom) {
 }
 
 /*void glWatchImage(const floatA &x, bool wait, float zoom){
-  double ma=x.max();
-  double mi=x.min();
+  double ma=max(x);
+  double mi=min(x);
   if(wait) cout <<"watched image min/max = " <<mi <<' ' <<ma <<endl;
   byteA img;
   img.resize(x.d0*x.d1);
@@ -1434,7 +1434,7 @@ int OpenGL::watchImage(const byteA& _img, bool wait, float _zoom) {
 int OpenGL::displayGrey(const arr& x, bool wait, float _zoom) {
   static byteA img;
   resizeAs(img, x);
-  double mi=x.min(), ma=x.max();
+  double mi=min(x), ma=max(x);
   text.clear() <<"displayGrey" <<" max:" <<ma <<"min:" <<mi <<endl;
   for(uint i=0; i<x.N; i++) {
     img.elem(i)=(byte)(255.*(x.elem(i)-mi)/(ma-mi));
@@ -1443,7 +1443,7 @@ int OpenGL::displayGrey(const arr& x, bool wait, float _zoom) {
 }
 
 int OpenGL::displayRedBlue(const arr& x, bool wait, float _zoom) {
-  double mi=x.min(), ma=x.max();
+  double mi=min(x), ma=max(x);
   text.clear() <<"max=" <<ma <<"min=" <<mi <<endl;
 //  cout <<"\rdisplay" <<win <<" max=" <<ma <<"min=" <<mi;
   static byteA img;

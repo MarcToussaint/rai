@@ -29,7 +29,7 @@ struct Proxy : GLDrawer {
   Vector posA;     ///< contact or closest point position on surface of shape A (in world coordinates)
   Vector posB;     ///< contact or closest point position on surface of shape B (in world coordinates)
   Vector normal;   ///< contact normal, pointing from B to A (proportional to posA-posB)
-  double d;        ///< distance (positive) or penetration (negative) between A and B
+  double d=0.;        ///< distance (positive) or penetration (negative) between A and B
   uint colorCode = 0;
   shared_ptr<PairCollision> collision;
 

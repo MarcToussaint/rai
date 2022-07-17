@@ -138,7 +138,7 @@ void NLP_Factored::evaluate(arr& phi, arr& J, const arr& x) {
     if(!!J) {
       CHECK(!!J_i, "");
       if(resetJ){
-        if(J_i.isSparse()) J.sparse().resize(phi.N, x.N, 0);
+        if(isSparse(J_i)) J.sparse().resize(phi.N, x.N, 0);
         else J.resize(phi.N, x.N).setZero();
         resetJ=false;
       }
@@ -154,7 +154,7 @@ void NLP_Factored::evaluate(arr& phi, arr& J, const arr& x) {
         }
         CHECK_EQ(Jii, J_i.d1, "");
       }else{
-        if(J.isSparse()){
+        if(isSparse(J)){
           J_i.sparse().reshape(J.d0, J.d1);
           J_i.sparse().colShift(n);
           J += J_i;

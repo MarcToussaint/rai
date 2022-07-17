@@ -29,7 +29,7 @@ struct GravityCompensation::CV : public CrossValidation {
     }
     if(verbose) cout <<"10-fold CV:\n  costMeans= " << this->scoreMeans << "\n  costSDVs= " << this->scoreSDVs << endl;
 
-    uint bestIndex = this->scoreMeans.argmin();
+    uint bestIndex = argmin(this->scoreMeans);
 
     c = (1-scoreMeans(bestIndex)/scoreMeans.last())*100;
 

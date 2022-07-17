@@ -73,7 +73,7 @@ void TEST(Grab) {
 
   //grap the depth image from current view:
   gl.update(nullptr, true);
-  cout <<"max " <<(int)depth.max() <<" min " <<(int)depth.min() <<endl;
+  cout <<"max " <<(int)max(depth) <<" min " <<(int)min(depth) <<endl;
   gl.displayGrey(depth,true,1);
 }
 

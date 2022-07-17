@@ -298,9 +298,9 @@ struct MeshCluster {
 
 void RitterAlgorithm(arr& center, double& radius, const arr& pts) {
   arr Pts = ~pts;
-  int minx=Pts[0].argmin(), maxx=Pts[0].argmax(),
-      miny=Pts[1].argmin(), maxy=Pts[1].argmax(),
-      minz=Pts[2].argmin(), maxz=Pts[2].argmax();
+  int minx=argmin(Pts[0]), maxx=argmax(Pts[0]),
+      miny=argmin(Pts[1]), maxy=argmax(Pts[1]),
+      minz=argmin(Pts[2]), maxz=argmax(Pts[2]);
   double dist2x = sumOfSqr(pts[minx] - pts[maxx]);
   double dist2y = sumOfSqr(pts[miny] - pts[maxy]);
   double dist2z = sumOfSqr(pts[minz] - pts[maxz]);

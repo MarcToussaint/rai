@@ -95,7 +95,7 @@ void LagrangianProblem::evaluate(arr& phi, arr& J, const arr& _x) {
   CHECK_EQ(nphi, phi.N, "");
 
   if(!!J) { //term Jacobians
-    if(J_x.isSparse()){
+    if(isSparse(J_x)){
       J.sparse().resize(phi.N, J_x.d1, 0);
       J_x.sparse().setupRowsCols();
     }else{
@@ -106,7 +106,7 @@ void LagrangianProblem::evaluate(arr& phi, arr& J, const arr& _x) {
       ObjectiveType ot = P->featureTypes.p[i];
 //#define J_setRow(fac) { J.setMatrixBlock(fac J_x.sparse().getSparseRow(i), nphi++, 0); }
 //#define J_setRow(fac) { J.setMatrixBlock(fac ~J_x[i], nphi++, 0); }
-#define J_setRow(fac) { if(!J.isSparse()) J.setMatrixBlock(fac ~J_x[i], nphi++, 0); else J.setMatrixBlock(fac J_x.sparse().getSparseRow(i), nphi++, 0); }
+#define J_setRow(fac) { if(!isSparse(J)) J.setMatrixBlock(fac ~J_x[i], nphi++, 0); else J.setMatrixBlock(fac J_x.sparse().getSparseRow(i), nphi++, 0); }
       if(            ot==OT_f)   J_setRow()   // direct cost term
       if(            ot==OT_sos) J_setRow()   // sumOfSqr terms
       if(useLB    && ot==OT_ineq) J_setRow( (-muLB/phi_x.p[i])* )                    //log barrier, check feasibility

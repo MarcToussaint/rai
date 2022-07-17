@@ -94,7 +94,7 @@ OptNewton::StopCriterion OptNewton::step() {
         for(uint i=0;i<x.N;i++) if(boundActive.elem(i)){
           for(uint j=0;j<x.N;j++) if(i!=j){ R(i,j)=0; R(j,i)=0; }
         }
-      } else if(R.isSparse()) {
+      } else if(isSparse(R)) {
         rai::SparseMatrix& s = R.sparse();
         for(uint k=0; k<s.elems.d0; k++) {
           uint i = s.elems(k, 0);
@@ -112,7 +112,7 @@ OptNewton::StopCriterion OptNewton::step() {
   //-- compute Delta
 #if 0
   arr sig = lapack_kSmallestEigenValues_sym(R, 3);
-  double sigmin = sig.min();
+  double sigmin = min(sig);
   double diag = 0.;
   if(sigmin<beta) diag = beta-sigmin;
 #endif
@@ -145,7 +145,7 @@ OptNewton::StopCriterion OptNewton::step() {
       if(o.verbose>0) {
         cout <<"** hessian inversion failed ... increasing damping **\neigenvalues=" <<sig <<endl;
       }
-      double sigmin = sig.min();
+      double sigmin = min(sig);
       if(sigmin>0.) THROW("Hessian inversion failed, but eigenvalues are positive???");
       beta = 2.*beta - sigmin;
       return stopCriterion=stopNone;

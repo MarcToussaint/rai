@@ -103,7 +103,7 @@ arr NLoptInterface::solve(const arr& x_init) {
 
 double NLoptInterface::f(const arr& _x, arr& _grad) {
   if(x!=_x) { x=_x;  P->evaluate(phi_x, J_x, x); }
-  CHECK(!J_x.isSparse(), "NLopt can't handle sparse Jacobians")
+  CHECK(!isSparse(J_x), "NLopt can't handle sparse Jacobians")
   CHECK_EQ(phi_x.N, P->featureTypes.N, "");
   double fval=0;
   arr grad=zeros(_grad.N);

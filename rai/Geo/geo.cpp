@@ -145,7 +145,7 @@ Vector Vector::getNormalVectorNormalToThis() const {
     RAI_MSG("every vector is normal to a zero vector");
   }
   arr s = arr{fabs(x), fabs(y), fabs(z)};
-  uint c = s.argmax();
+  uint c = argmax(s);
   double xv, yv, zv;
   if(c == 0) {
     xv = -(y+z)/x;

@@ -231,8 +231,8 @@ void closestPointOnBox(arr& closest, arr& signs, const rai::Transformation& t, d
   signs.setZero();
   closest = x_rel;
   arr del_abs = fabs(x_rel)-dim;
-  if(del_abs.max()<0.) { //inside
-    uint side=del_abs.argmax(); //which side are we closest to?
+  if(max(del_abs)<0.) { //inside
+    uint side=argmax(del_abs); //which side are we closest to?
     //in positive or neg direction?
     if(x_rel(side)>0) { closest(side) = dim(side);  signs(side)=+1.; }
     else             { closest(side) =-dim(side);  signs(side)=-1.; }
@@ -257,8 +257,8 @@ double SDF_ssBox::f(arr& g, arr& H, const arr& x) {
   arr del_abs = fabs(x_rel)-box;
   bool inside=true;
   //-- find closest point on box
-  if(del_abs.max()<0.) { //inside
-    uint side=del_abs.argmax(); //which side are we closest to?
+  if(max(del_abs)<0.) { //inside
+    uint side=argmax(del_abs); //which side are we closest to?
     if(x_rel(side)>0) closest(side) = box(side);  else  closest(side)=-box(side); //in positive or neg direction?
   } else { //outside
     inside = false;
@@ -275,7 +275,7 @@ double SDF_ssBox::f(arr& g, arr& H, const arr& x) {
     if(inside) { //inside
       H.resize(3, 3).setZero();
     } else { //outside
-      if(del_abs.min()>0.) { //outside on all 3 axis
+      if(min(del_abs)>0.) { //outside on all 3 axis
         H = 1./d * (eye(3) - (del^del)/(d*d));
       } else {
         arr edge=del_abs;

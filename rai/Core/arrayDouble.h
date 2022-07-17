@@ -37,7 +37,7 @@ struct Serializable {
 
 namespace rai {
 
-struct FileToken;
+//struct FileToken;
 struct SparseVector;
 struct SparseMatrix;
 struct RowShifted;
@@ -79,83 +79,62 @@ struct ArrayIterationReverse;
   Arrays. */
 struct ArrayDouble : public Array<double> {
 
-    ArrayDouble() : Array<double>() {}
-    ArrayDouble(const ArrayDouble& a){ operator=(a); } //copy constructor
-    ArrayDouble(const Array<double>& a){ operator=(a); } //copy constructor
-    ArrayDouble(ArrayDouble&& a) : Array<double>((Array<double>&&)a) { if(a.jac) jac = std::move(a.jac); }  //move constructor
-    explicit ArrayDouble(uint D0){ resize(D0); }
-    explicit ArrayDouble(uint D0, uint D1){ resize(D0, D1); }
-    explicit ArrayDouble(uint D0, uint D1, uint D2){ resize(D0, D1, D2); }
-    explicit ArrayDouble(const double* p, uint size, bool byReference){ if(byReference) referTo(p,size); else setCarray(p,size); }
-    explicit ArrayDouble(const std::vector<double>& a, bool byReference){ if(byReference) referTo(&a.front(), a.size()); else setCarray(&a.front(), a.size()); }
-    ArrayDouble(std::initializer_list<double> values) { operator=(values); }
-    ArrayDouble(std::initializer_list<uint> dim, std::initializer_list<double> values){ operator=(values); reshape(dim); }
-    bool operator!() const; ///< check if NoArr
+  //c.tors
+  ArrayDouble() : Array<double>() {}
+  ArrayDouble(const ArrayDouble& a){ operator=(a); } //copy constructor
+  ArrayDouble(const Array<double>& a){ operator=(a); } //copy constructor
+  ArrayDouble(ArrayDouble&& a) : Array<double>((Array<double>&&)a) { if(a.jac) jac = std::move(a.jac); }  //move constructor
+  explicit ArrayDouble(uint D0){ resize(D0); }
+  explicit ArrayDouble(uint D0, uint D1){ resize(D0, D1); }
+  explicit ArrayDouble(uint D0, uint D1, uint D2){ resize(D0, D1, D2); }
+  explicit ArrayDouble(const double* p, uint size, bool byReference){ if(byReference) referTo(p,size); else setCarray(p,size); }
+  explicit ArrayDouble(const std::vector<double>& a, bool byReference){ if(byReference) referTo(&a.front(), a.size()); else setCarray(&a.front(), a.size()); }
+  ArrayDouble(std::initializer_list<double> values) { operator=(values); }
+  ArrayDouble(std::initializer_list<uint> dim, std::initializer_list<double> values){ operator=(values); reshape(dim); }
 
-    ArrayDouble& operator=(std::initializer_list<double> values);
-    ArrayDouble& operator=(const double& v);
-    ArrayDouble& operator=(const ArrayDouble& a);
-    ArrayDouble& operator=(const Array<double>& a);
-    ArrayDouble& operator=(const std::vector<double>& values);
+  //assignments
+  ArrayDouble& operator=(std::initializer_list<double> values);
+  ArrayDouble& operator=(const double& v);
+  ArrayDouble& operator=(const ArrayDouble& a);
+  ArrayDouble& operator=(const Array<double>& a);
+  ArrayDouble& operator=(const std::vector<double>& values){ setCarray(&values.front(), values.size()); return *this; }
 
-    ArrayIterationEnumerated itEnumerated() const;
-    ArrayIterationReverse itReverse();
+  //iterators
+  ArrayIterationEnumerated itEnumerated() const;
+  ArrayIterationReverse itReverse();
 
-    std::vector<double> vec() const{ return std::vector<double>(p, p+N); }
+  //conversion
+  std::vector<double> vec() const{ return std::vector<double>(p, p+N); }
+  ArrayDouble& noconst(){ return *this; }
 
-    ArrayDouble& noconst(){ return *this; }
-    ArrayDouble ref() const; //a reference on this
-    using Array<double>::operator();
-    ArrayDouble operator()(std::pair<int, int> I) const;
-    ArrayDouble operator()(int i, std::pair<int, int> J) const;
-    ArrayDouble operator()(int i, int j, std::initializer_list<int> K) const;
-    ArrayDouble operator[](int i) const;     // calls referToDim(*this, i)
+  /// @name access by reference (direct memory access)
+  ArrayDouble ref() const { ArrayDouble x; x.referTo(*this); return x; }
+  using Array<double>::elem; //adopt all elem(..) methods
+  double& elem(int i, int j); //access that also handles sparse matrices
+  using Array<double>::operator(); //adopt all double& operator()(..) methods
+  ArrayDouble operator()(std::pair<int, int> I) const{ ArrayDouble z; z.referToRange(*this, I.first, I.second); return z; }
+  ArrayDouble operator()(int i, std::pair<int, int> J) const { ArrayDouble z; z.referToRange(*this, i, J.first, J.second); return z; }
+  ArrayDouble operator()(int i, int j, std::initializer_list<int> K) const;
+  ArrayDouble operator[](int i) const{ ArrayDouble z; z.referToDim(*this, i); return z; }
 
-    /// @name access by copy
-    ArrayDouble copy() const;
-    ArrayDouble sub(int i, int I) const;
-    ArrayDouble sub(int i, int I, int j, int J) const;
-    ArrayDouble sub(int i, int I, int j, int J, int k, int K) const;
-    ArrayDouble sub(int i, int I, Array<uint> cols) const;
-    ArrayDouble sub(Array<uint> elems) const;
-    ArrayDouble row(uint row_index) const;
-    ArrayDouble rows(uint start_row, uint end_row) const;
-    ArrayDouble col(uint col_index) const;
-    ArrayDouble cols(uint start_col, uint end_col) const;
+  /// @name access by copy (overloaded because of return value)
+  ArrayDouble copy() const{ return ArrayDouble(*this); }
 
-    using Array<double>::elem;
-    double& elem(int i, int j); //access that also handles sparse matrices
+  ArrayDouble sub(int i, int I) const;
+  ArrayDouble sub(int i, int I, int j, int J) const;
+  ArrayDouble sub(int i, int I, int j, int J, int k, int K) const;
+  ArrayDouble sub(int i, int I, Array<uint> cols) const;
+  ArrayDouble sub(Array<uint> elems) const;
+  ArrayDouble row(uint row_index) const{ return sub(row_index, row_index, 0, d1 - 1); }
+  ArrayDouble rows(uint start_row, uint end_row) const{ return sub(start_row, end_row - 1, 0, d1 - 1); }
+  ArrayDouble col(uint col_index) const{  ArrayDouble x = sub(0, d0 - 1, col_index, col_index); x.reshape(d0); return x; }
+  ArrayDouble cols(uint start_col, uint end_col) const{ return sub(0, d0 - 1, start_col, end_col - 1); }
 
-    ArrayDouble& clear();
-
-    double& min() const;
-    double& max() const;
-    void minmax(double& minVal, double& maxVal) const;
-    uint argmin() const;
-    uint argmax() const;
-    void argmax(uint& i, uint& j) const; //-> remove, or return uintA
-    void argmax(uint& i, uint& j, uint& k) const; //-> remove
-
-    void setMatrixBlock(const ArrayDouble& B, uint lo0, uint lo1);
-    void setVectorBlock(const ArrayDouble& B, uint lo);
-    void setBlockVector(const ArrayDouble& a, const ArrayDouble& b) {
-      CHECK(a.nd==1 && b.nd==1, "");
-      resize(a.N+b.N);
-      setVectorBlock(a.noJ(), 0);
-      setVectorBlock(b.noJ(), a.N);
-      if(a.jac || b.jac){
-        if(a.jac && b.jac){
-          J().setBlockMatrix(*a.jac, *b.jac);
-        } else NIY;
-      }
-    }
-
-    void setBlockMatrix(const ArrayDouble& A, const ArrayDouble& B);
-
-    void J_setId();
-
-  //-- special: arrays can be sparse/packed/etc and augmented with aux data to support this
-  std::unique_ptr<ArrayDouble> jac=0; ///< optional pointer to Jacobian, to enable autodiff
+  //overloaded to handle Jacobians
+  void setMatrixBlock(const ArrayDouble& B, uint lo0, uint lo1);
+  void setVectorBlock(const ArrayDouble& B, uint lo);
+  void setBlockVector(const ArrayDouble& a, const ArrayDouble& b);
+  void setBlockMatrix(const ArrayDouble& A, const ArrayDouble& B);
 
   /// @name special matrices
   double sparsity();
@@ -165,10 +144,10 @@ struct ArrayDouble : public Array<double> {
   const SparseVector& sparseVec() const;
   RowShifted& rowShifted();
   const RowShifted& rowShifted() const;
-  bool isSparse() const;
-  void setNoArr();
 
   /// @name attached Jacobian
+  std::unique_ptr<ArrayDouble> jac=0; ///< optional pointer to Jacobian, to enable autodiff
+  void J_setId();
   ArrayDouble& J();
   ArrayDouble noJ() const;
   ArrayDouble J_reset();
@@ -328,7 +307,7 @@ typedef rai::Array<arr*> arrL;
 /// @name constant non-arrays
 /// @{
 
-arr& getNoArr(); //this is a pointer to nullptr!!!! I use it for optional arguments
+arr& getNoArr();
 #define NoArr getNoArr()
 
 //===========================================================================
@@ -411,13 +390,7 @@ inline arr grid(uint dim, double lo, double hi, uint steps) { arr g;  g.setGrid(
 inline arr range(double lo, double hi, uint steps) { arr g;  g.setGrid(1, lo, hi, steps);  g.reshape(-1);  return g; }
 //inline uintA range(uint n) { uintA r;  r.setStraightPerm(n);  return r; }
 
-
 arr repmat(const arr& A, uint m, uint n);
-
-//inline double max(const arr& x) { return x.max(); }
-//inline double min(const arr& x) { return x.min(); }
-inline uint argmax(const arr& x) { return x.argmax(); }
-inline uint argmin(const arr& x) { return x.argmin(); }
 
 //inline uintA randperm(uint n) {  uintA z;  z.setRandomPerm(n);  return z; }
 inline arr linspace(double base, double limit, uint n) {  arr z;  z.setGrid(1, base, limit, n);  return z;  }
@@ -542,25 +515,31 @@ double sqrDistance(const arr& g, const arr& v, const arr& w);
 double euclideanDistance(const arr& v, const arr& w);
 double metricDistance(const arr& g, const arr& v, const arr& w);
 
+//min max
+double min(const arr& x);
+double max(const arr& x);
+arr max(const arr& v, uint d);
+arr min(const arr& v, uint d);
+uint argmin(const arr& x);
+uint argmax(const arr& x);
+void argmax(uint& i, uint& j, const arr& x);
+void argmax(uint& i, uint& j, uint& k, const arr& x);
+double minDiag(const arr& v);
+double absMax(const arr& x);
+double absMin(const arr& x);
+
 double sum(const arr& v);
-double scalar(const arr& v);
 arr sum(const arr& v, uint d);
 double sumOfAbs(const arr& v);
 double sumOfPos(const arr& v);
 double sumOfSqr(const arr& v);
 double length(const arr& v);
 double product(const arr& v);
-double max(const arr& v);
-arr max(const arr& v, uint d);
-arr min(const arr& v, uint d);
 
 double trace(const arr& v);
 double var(const arr& v);
 arr mean(const arr& v);
 arr stdDev(const arr& v);
-double minDiag(const arr& v);
-double absMax(const arr& x);
-double absMin(const arr& x);
 void clip(const arr& x, double lo, double hi);
 
 void op_transpose(arr& x, const arr& y);
@@ -654,21 +633,11 @@ arr eigen_Ainv_b(const arr& A, const arr& b);
 
 namespace rai {
 
-struct SpecialArray {
-  enum Type { ST_none, ST_NoArr, ST_EmptyShape, hasCarrayST, sparseVectorST, sparseMatrixST, diagST, RowShiftedST, CpointerSdouble };
-  Type type;
-  SpecialArray(Type _type=ST_none) : type(_type) {}
-  SpecialArray(const SpecialArray&) = delete; //non-copyable
-  virtual ~SpecialArray() {}
-  SpecialArray& operator=(const SpecialArray&) = delete; //non-copyable
-};
-
 inline ArrayIterationEnumerated arr::itEnumerated() const { return ArrayIterationEnumerated(*this); }
 
 inline ArrayIterationReverse arr::itReverse() { return ArrayIterationReverse(*this); }
 
-inline bool arr::isSparse() const { return special && (special->type==SpecialArray::sparseMatrixST || special->type==SpecialArray::sparseVectorST); }
-
+inline bool isSparse(const arr& X)       { return X.special && (X.special->type==SpecialArray::sparseMatrixST || X.special->type==SpecialArray::sparseVectorST); }
 inline bool isSpecial(const arr& X)      { return X.special && X.special->type!=SpecialArray::ST_none; }
 inline bool isNoArr(const arr& X)        { return X.special && X.special->type==SpecialArray::ST_NoArr; }
 inline bool isEmptyShape(const arr& X)   { return X.special && X.special->type==SpecialArray::ST_EmptyShape; }
@@ -799,13 +768,6 @@ UpdateOperator(*=)
 UpdateOperator(/=)
 UpdateOperator(%=)
 #undef UpdateOperator
-
-template<class T> bool isSparse(Array<T>& x){
-  if(typeid(T)!=typeid(double)) return false;
-  arr* y = dynamic_cast<arr*>(&x);
-  if(!y) return false;
-  return y->isSparse();
-}
 
 }//namespace rai
 

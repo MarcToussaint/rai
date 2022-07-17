@@ -189,7 +189,7 @@ uint PlainMC::getBestActionIdx() {
     else
       Q(a) = Qmin;
   }
-  return Q.argmax();
+  return argmax(Q);
 }
 
 rai::TreeSearchDomain::Handle PlainMC::getBestAction() {

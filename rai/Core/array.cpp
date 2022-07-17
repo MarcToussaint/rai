@@ -16,7 +16,7 @@
 #include <Eigen/SparseQR>
 #endif
 
-#include "arrayDouble.h"
+#include "array.h"
 #include "util.h"
 #include "util.ipp"
 
@@ -2241,7 +2241,7 @@ arr SparseMatrix::At_A() {
 }
 
 arr SparseMatrix::A_B(const arr& B) const {
-  if(!B.isSparse() && B.N<25){
+  if(!isSparse(B) && B.N<25){
     arr C;
     SparseMatrix &S = C.sparse();
     S.resize(B.d0, Z.d1, B.d1*Z.N); //resize to maximal possible
@@ -2265,7 +2265,7 @@ arr SparseMatrix::A_B(const arr& B) const {
 }
 
 arr SparseMatrix::B_A(const arr& B) const {
-  if(!B.isSparse() && B.N<25){
+  if(!isSparse(B) && B.N<25){
     arr C;
     SparseMatrix &S = C.sparse();
     S.resize(B.d0, Z.d1, B.d0*Z.N); //resize to maximal possible
@@ -2430,7 +2430,7 @@ arr SparseMatrix::getTriplets() const{
 }
 
 void SparseMatrix::checkConsistency() const {
-  CHECK(Z.isSparse(), "")
+  CHECK(isSparse(Z), "")
   CHECK_EQ(this, Z.special, "");
   CHECK_EQ(elems.d0, Z.N, "");
   CHECK_EQ(elems.d1, 2, "");

@@ -99,24 +99,6 @@ arr& arr::operator=(const arr& a) {
   return *this;
 }
 
-/// copy operator
-arr& arr::operator=(const std::vector<double>& a) {
-  setCarray(&a.front(), a.size());
-  return *this;
-}
-
-bool arr::operator!() const {
-    CHECK(((char*)this)+1!=(char*)1, "the zero pointer convention is deprecated!");
-  return rai::isNoArr(*this);
-}
-
-/// frees all memory; this becomes an empty array
-arr&  arr::clear() {
-  if(special) { delete special; special=0; }
-  freeMEM();
-  return *this;
-}
-
 
 /// access that invariantly works for sparse and non-sparse matrices
 double& arr::elem(int i, int j) {
@@ -134,33 +116,6 @@ double& arr::elem(int i, int j) {
 
 }
 
-arr arr::ref() const {
-  arr x;
-  x.referTo(*this);
-  return x;
-}
-
-arr arr::operator()(std::pair<int, int> I) const {
-  arr z;
-  z.referToRange(*this, I.first, I.second);
-  //  if(I.size()==2) z.referToRange(*this, I.begin()[0], I.begin()[1]);
-  //  else if(I.size()==0) z.referTo(*this);
-  //  else if(I.size()==1) z.referToDim(*this, I.begin()[0]);
-  //  else HALT("range list needs 0,1, or 2 entries exactly");
-  return z;
-}
-
-/// range reference access
-arr arr::operator()(int i, std::pair<int, int> J) const {
-  arr z;
-  z.referToRange(*this, i, J.first, J.second);
-//  if(J.size()==2)
-//  else if(J.size()==0) z.referToDim(*this, i);
-//  else if(J.size()==1) z.referToDim(*this, i, J.begin()[0]);
-//  else HALT("range list needs 0,1, or 2 entries exactly");
-  return z;
-}
-
 /// range reference access
 arr arr::operator()(int i, int j, std::initializer_list<int> K) const {
   arr z;
@@ -170,16 +125,6 @@ arr arr::operator()(int i, int j, std::initializer_list<int> K) const {
   else HALT("range list needs 0,1, or 2 entries exactly");
   return z;
 }
-
-/// get a subarray (e.g., row of a matrix); use in conjuction with operator()() to get a reference
-arr arr::operator[](int i) const {
-  arr z;
-  z.referToDim(*this, i);
-  return z;
-}
-
-/// non-reference copy (to apply followup operators, like x.copy().reshape(3,5))
-arr arr::copy() const { return arr(*this); }
 
 /** @brief a sub array of a 1D Array (corresponds to matlab [i:I]); when
   the upper limit I is -1, it is replaced by the max limit (like
@@ -275,63 +220,8 @@ arr arr::sub(Array<uint> elems) const {
   return x;
 }
 
-arr arr::row(uint row_index) const {
-  return sub(row_index, row_index, 0, d1 - 1);
-}
-
-arr arr::col(uint col_index) const {
-  arr x = sub(0, d0 - 1, col_index, col_index);
-  x.reshape(d0);
-  return x;
-}
-
-arr arr::rows(uint start_row, uint end_row) const {
-  return sub(start_row, end_row - 1, 0, d1 - 1);
-}
-
-arr arr::cols(uint start_col, uint end_col) const {
-  return sub(0, d0 - 1, start_col, end_col - 1);
-}
-
-/// convert a subarray into a reference (e.g. a[3]()+=.123)
-//double& arr::operator()() const { return scalar(); } //return (*this); }
-
-/// reference to the max entry
-double& arr::max() const { CHECK(N, ""); uint i, m=0; for(i=1; i<N; i++) if(p[i]>p[m]) m=i; return p[m]; }
-
-/// reference to the min entry
-double& arr::min() const { CHECK(N, ""); uint i, m=0; for(i=1; i<N; i++) if(p[i]<p[m]) m=i; return p[m]; }
-
-/// gets the min and max
-void arr::minmax(double& minVal, double& maxVal) const {
-  CHECK(N, "");
-  uint i;
-  minVal=maxVal=p[0];
-  for(i=1; i<N; i++) {
-    if(p[i]<minVal) minVal=p[i];
-    else if(p[i]>maxVal) maxVal=p[i];
-  }
-}
-
-/** @brief the index of the maxium; precondition: the comparision operator
-  > exists for type double */
-uint arr::argmax() const { uint i, m=0; for(i=0; i<N; i++) if(p[i]>p[m]) m=i; return m; }
-
-/** @brief the index of the maxium; precondition: the comparision operator
-  > exists for type double */
-void arr::argmax(uint& i, uint& j) const { CHECK_EQ(nd, 2, "needs 2D array"); j=argmax(); i=j/d1; j=j%d1; }
-
-/** @brief the index of the maxium; precondition: the comparision operator
-  > exists for type double */
-void arr::argmax(uint& i, uint& j, uint& k) const { CHECK_EQ(nd, 3, "needs 3D array"); k=argmax(); i=k/(d1*d2); k=k%(d1*d2); j=k/d2; k=k%d2; }
-
-
-/// the index of the minimum; precondition: the comparision operator > exists for type T
-uint arr::argmin() const { uint i, m=0; for(i=0; i<N; i++) if(p[i]<p[m]) m=i; return m; }
-
-
 void rai::ArrayDouble::setMatrixBlock(const rai::ArrayDouble& B, uint lo0, uint lo1){
-  if(isSparse())
+  if(isSparse(*this))
     sparse().add(B, lo0, lo1);
   else
     Array<double>::setMatrixBlock(B, lo0, lo1);
@@ -346,16 +236,28 @@ void rai::ArrayDouble::setVectorBlock(const rai::ArrayDouble& B, uint lo){
   }
 }
 
+void rai::ArrayDouble::setBlockVector(const rai::ArrayDouble& a, const rai::ArrayDouble& b) {
+  CHECK(a.nd==1 && b.nd==1, "");
+  resize(a.N+b.N);
+  setVectorBlock(a.noJ(), 0);
+  setVectorBlock(b.noJ(), a.N);
+  if(a.jac || b.jac){
+    if(a.jac && b.jac){
+      J().setBlockMatrix(*a.jac, *b.jac);
+    } else NIY;
+  }
+}
+
 void rai::ArrayDouble::setBlockMatrix(const rai::ArrayDouble& A, const rai::ArrayDouble& B) {
-  if(!A.special){
-    Array<double>::setBlockMatrix(A, B);
-  }else if(A.isSparse()){
-    CHECK(B.isSparse(), "");
-    CHECK(A.d1==B.d1, "");
-    sparse().resize(A.d0+B.d0, A.d1, 0);
-    sparse().add(A.sparse(), 0, 0);
-    sparse().add(B.sparse(), A.d0, 0);
-  } else if(isRowShifted(A)){
+    if(!A.special){
+        Array<double>::setBlockMatrix(A, B);
+    }else if(isSparse(A)){
+        CHECK(isSparse(B), "");
+        CHECK(A.d1==B.d1, "");
+        sparse().resize(A.d0+B.d0, A.d1, 0);
+        sparse().add(A.sparse(), 0, 0);
+        sparse().add(B.sparse(), A.d0, 0);
+    } else if(isRowShifted(A)){
     CHECK(isRowShifted(B), "");
     CHECK(A.d1==B.d1, "");
     rowShifted().resize(A.d0+B.d0, A.d1, rai::MAX(A.rowShifted().rowSize, B.rowShifted().rowSize));
@@ -365,11 +267,6 @@ void rai::ArrayDouble::setBlockMatrix(const rai::ArrayDouble& A, const rai::Arra
     CHECK(isNoArr(B), "");
     setNoArr();
   } else NIY;
-}
-
-void arr::setNoArr() {
-  clear();
-  special = new SpecialArray(SpecialArray::ST_NoArr);
 }
 
 void rai::ArrayDouble::write(std::ostream& os, const char* ELEMSEP, const char* LINESEP, const char* BRACKETS, bool dimTag, bool binary) const {
@@ -755,68 +652,44 @@ double sum(const arr& v) {
 }
 
 /// \f$\max_i x_i\f$
-double max(const arr& v) {
-  CHECK(v.N, "");
-  double m(v.p[0]);
-  for(uint i=v.N; i--;) if(v.p[i]>m) m=v.p[i];
+double max(const arr& x) {
+  CHECK(x.N, "");
+  double m(x.p[0]);
+  for(uint i=x.N; --i;) if(x.p[i]>m) m=x.p[i];
   return m;
 }
 
 /// \f$\min_i x_i\f$
-double min(const arr& v) {
-  CHECK(v.N, "");
-  double m(v.p[0]);
-  for(uint i=v.N; i--;) if(v.p[i]<m) m=v.p[i];
+double min(const arr& x) {
+  CHECK(x.N, "");
+  double m(x.p[0]);
+  for(uint i=x.N; --i;) if(x.p[i]<m) m=x.p[i];
   return m;
 }
 
-double scalar(const arr& x) {
-  return x.elem();
+/// get absolute min (using fabs)
+double absMin(const arr& x) {
+  CHECK(x.N, "");
+  double m(std::fabs(x.p[0]));
+  for(uint i=x.N; --i;) if(std::fabs(x.p[i])<m) m=std::fabs(x.p[i]);
+  return m;
 }
 
-/// \f$\sum_i x_i\f$
-arr sum(const arr& v, uint d) {
-  CHECK(v.nd>d, "array doesn't have this dimension");
-  arr x;
-  x.referTo(v);
-  arr S;
-  uint i, j, k;
-  if(d==v.nd-1) {  //sum over last index - contiguous in memory
-    x.reshape(x.N/x.dim(x.nd-1), x.dim(x.nd-1));
-    S.resize(x.d0);  S.setZero();
-    for(i=0; i<x.d0; i++) for(j=0; j<x.d1; j++) S(i) += x(i, j);
-    return S;
-  }
-  if(d==0) {  //sum over first index
-    x.reshape(x.d0, x.N/x.d0);
-    S.resize(x.d1);  S.setZero();
-    for(i=0; i<x.d0; i++) for(j=0; j<x.d1; j++) S(j) += x(i, j);
-    if(v.nd>2) S.reshape(v.dim().sub(1, -1));
-    return S;
-  }
-  //any other index (includes the previous cases, but marginally slower)
-  uintA IV, IS, dimV, dimS;
-  dimV = v.dim();
-  dimS.resize(dimV.N-1);
-  for(i = 0, j = 0; i < dimS.N; i++, j++) {
-    if(i == d) j++;
-    dimS(i) = dimV(j);
-  }
-  x.referTo(v);
-  x.reshape(x.N);
-  S.resize(dimS); S.setZero();
-  IS.resize(dimS.N);
-  for(k = 0; k < x.N; k++) {
-    IV = getIndexTuple(k, v.dim());
-    for(i = 0, j = 0; i < IS.N; i++, j++) {
-      if(i == d) j++;
-      IS(i) = IV(j);
-    }
-    S.elem(IS) += x(k);
-  }
-//  S.reshape(S.N); //(mt: Hä? Hab ich das gemacht???)
-  return S;
+/// get absolute maximum (using fabs)
+double absMax(const arr& x) {
+  if(!x.N) return 0;
+  double m(std::fabs(x.p[0]));
+  for(uint i=x.N; --i;) if(std::fabs(x.p[i])>m) m=std::fabs(x.p[i]);
+  return m;
 }
+
+uint argmin(const arr& x) { uint m=0; for(uint i=x.N; --i;) if(x.p[i]<x.p[m]) m=i; return m; }
+
+uint argmax(const arr& x) { uint m=0; for(uint i=x.N; --i;) if(x.p[i]>x.p[m]) m=i; return m; }
+
+void argmax(uint& i, uint& j, const arr& x) { CHECK_EQ(x.nd, 2, "needs 2D array"); j=argmax(x); i=j/x.d1; j=j%x.d1; }
+
+void argmax(uint& i, uint& j, uint& k, const arr& x) { CHECK_EQ(x.nd, 3, "needs 3D array"); k=argmax(x); i=k/(x.d1*x.d2); k=k%(x.d1*x.d2); j=k/x.d2; k=k%x.d2; }
 
 /// \f$\max_i x_i\f$
 arr max(const arr& v, uint d) {
@@ -864,10 +737,56 @@ arr min(const arr& v, uint d) {
   NIY;
 }
 
+
+
+/// \f$\sum_i x_i\f$
+arr sum(const arr& v, uint d) {
+  CHECK(v.nd>d, "array doesn't have this dimension");
+  arr x;
+  x.referTo(v);
+  arr S;
+  uint i, j, k;
+  if(d==v.nd-1) {  //sum over last index - contiguous in memory
+    x.reshape(x.N/x.dim(x.nd-1), x.dim(x.nd-1));
+    S.resize(x.d0);  S.setZero();
+    for(i=0; i<x.d0; i++) for(j=0; j<x.d1; j++) S(i) += x(i, j);
+    return S;
+  }
+  if(d==0) {  //sum over first index
+    x.reshape(x.d0, x.N/x.d0);
+    S.resize(x.d1);  S.setZero();
+    for(i=0; i<x.d0; i++) for(j=0; j<x.d1; j++) S(j) += x(i, j);
+    if(v.nd>2) S.reshape(v.dim().sub(1, -1));
+    return S;
+  }
+  //any other index (includes the previous cases, but marginally slower)
+  uintA IV, IS, dimV, dimS;
+  dimV = v.dim();
+  dimS.resize(dimV.N-1);
+  for(i = 0, j = 0; i < dimS.N; i++, j++) {
+    if(i == d) j++;
+    dimS(i) = dimV(j);
+  }
+  x.referTo(v);
+  x.reshape(x.N);
+  S.resize(dimS); S.setZero();
+  IS.resize(dimS.N);
+  for(k = 0; k < x.N; k++) {
+    IV = getIndexTuple(k, v.dim());
+    for(i = 0, j = 0; i < IS.N; i++, j++) {
+      if(i == d) j++;
+      IS(i) = IV(j);
+    }
+    S.elem(IS) += x(k);
+  }
+//  S.reshape(S.N); //(mt: Hä? Hab ich das gemacht???)
+  return S;
+}
+
 /// \f$\sum_i |x_i|\f$
 double sumOfAbs(const arr& v) {
   double t(0);
-  for(uint i=v.N; i--; t+=(double)std::fabs((double)v.p[i])) {};
+  for(uint i=v.N; i--; t+=std::fabs(v.p[i])) {};
   return t;
 }
 
@@ -886,7 +805,7 @@ double sumOfSqr(const arr& v) {
 }
 
 /// \f$\sqrt{\sum_i x_i^2}\f$
-double length(const arr& x) { return (double)std::sqrt((double)sumOfSqr(x)); }
+double length(const arr& x) { return std::sqrt(sumOfSqr(x)); }
 
 double var(const arr& x) { double m=sum(x)/x.N; return sumOfSqr(x)/x.N-m*m; }
 
@@ -922,24 +841,6 @@ double minDiag(const arr& v) {
   CHECK(v.nd==2 && v.d0==v.d1, "only for squared matrix");
   double t=v(0, 0);
   for(uint i=1; i<v.d0; i++) if(v(i, i)<t) t=v(i, i);
-  return t;
-}
-
-/// get absolute min (using fabs)
-double absMin(const arr& x) {
-  CHECK(x.N, "");
-  uint i;
-  double t((double)std::fabs((double)x.p[0]));
-  for(i=1; i<x.N; i++) if(std::fabs((double)x.p[i])<t) t=(double)std::fabs((double)x.p[i]);
-  return t;
-}
-
-/// get absolute maximum (using fabs)
-double absMax(const arr& x) {
-  if(!x.N) return (double)0;
-  uint i;
-  double t((double)std::fabs((double)x.p[0]));
-  for(i=1; i<x.N; i++) if(std::fabs((double)x.p[i])>t) t=(double)std::fabs((double)x.p[i]);
   return t;
 }
 
@@ -1065,7 +966,7 @@ void op_innerProduct(arr& x, const arr& y, const arr& z) {
     return;
   }
   if(y.nd==1 && z.nd==2 && z.d0==1) {  //vector x vector^double -> matrix (outer product)
-    if(typeid(double)==typeid(double) && z.isSparse()) {
+    if(typeid(double)==typeid(double) && isSparse(z)) {
       arr _y;
       _y.referTo(y);
       _y.reshape(y.N, 1);

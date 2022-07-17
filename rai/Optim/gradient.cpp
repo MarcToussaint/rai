@@ -180,7 +180,7 @@ bool sRprop::step(arr& w, const arr& grad, uint* singleI) {
     }
   }
 
-  return stepSize.max() < incr*dMin;
+  return max(stepSize) < incr*dMin;
 }
 
 bool Rprop::step(arr& x, const ScalarFunction& f) {
