@@ -831,7 +831,7 @@ template<class T> rai::Array<T> cat(const rai::Array<T>& y, const rai::Array<T>&
 template<class T> rai::Array<T> cat(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c, const rai::Array<T>& d) { rai::Array<T> x; x.append(a); x.append(b); x.append(c); x.append(d); return x; }
 template<class T> rai::Array<T> cat(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c, const rai::Array<T>& d, const rai::Array<T>& e) { rai::Array<T> x; x.append(a); x.append(b); x.append(c); x.append(d); x.append(e); return x; }
 template<class T> rai::Array<T> cat(const rai::Array<rai::Array<T>>& X) {  rai::Array<T> x; for(const rai::Array<T>& z: X) x.append(z); return x; }
-template<class T> rai::Array<T> catCol(const rai::Array<const rai::Array<T>*>& X);
+template<class T> rai::Array<T> catCol(const rai::Array<rai::Array<T>*>& X);
 template<class T> rai::Array<T> catCol(const rai::Array<rai::Array<T>>& X);
 template<class T> rai::Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b) { return catCol(rai::Array<const rai::Array<T>*>{&a, &b}); }
 template<class T> rai::Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c) { return catCol(rai::Array<const rai::Array<T>*>{&a, &b, &c}); }

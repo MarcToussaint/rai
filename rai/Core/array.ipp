@@ -1390,7 +1390,7 @@ template<class T> rai::Array<T>& rai::Array<T>::setZero(byte zero) {
 }
 
 /// concatenate 2D matrices (or vectors) column-wise
-template<class T> rai::Array<T> catCol(const rai::Array<const rai::Array<T>*>& X) {
+template<class T> rai::Array<T> catCol(const rai::Array<rai::Array<T>*>& X) {
   uint d0=X(0)->d0, d1=0;
   for(const rai::Array<T>* x:X) { CHECK((x->nd==2 || x->nd==1) && x->d0==d0, ""); d1+=x->nd==2?x->d1:1; }
   rai::Array<T> z;

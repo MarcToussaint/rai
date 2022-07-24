@@ -350,9 +350,10 @@ double SDF_GridData::f(arr& g, arr& H, const arr& x){
   arr gBox, HBox;
   double fBox=0.;
   for(uint i=0;i<3;i++){ //check outside box
-    if(!boundCheck(x_rel, lo+.01, up-.01, 0., false)){
-      boundClip(x_rel, lo+.01, up-.01);
-      arr size = up - lo - .02;
+    double margin=.001;
+    if(!boundCheck(x_rel, lo+margin, up-margin, 0., false)){
+      boundClip(x_rel, lo+margin, up-margin);
+      arr size = up - lo - 2.*margin;
       arr center = .5*(up+lo);
       rai::Transformation boxPose=pose;
       boxPose.addRelativeTranslation(center);
@@ -406,7 +407,7 @@ double SDF_GridData::f(arr& g, arr& H, const arr& x){
     H.resize(3,3).setZero();
   }
 
-  double boxFactor=10.;
+  double boxFactor=20.;
   if(fBox){
     f += boxFactor * fBox;
     if(!!g) g += boxFactor * gBox;
