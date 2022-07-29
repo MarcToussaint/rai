@@ -2825,8 +2825,8 @@ void SparseMatrix::checkConsistency() const {
   CHECK_EQ(elems.d0, Z.N, "");
   CHECK_EQ(elems.d1, 2, "");
   for(uint i=0; i<Z.N; i++){
-    CHECK_LE(elems(i,0), Z.d0, "");
-    CHECK_LE(elems(i,1), Z.d1, "");
+    CHECK_LE(elems(i,0), (int)Z.d0, "");
+    CHECK_LE(elems(i,1), (int)Z.d1, "");
   }
   if(cols.N){
     CHECK_EQ(rows.N, Z.d0, "");

@@ -7,7 +7,9 @@
     --------------------------------------------------------------  */
 
 #include "geo.h"
+
 #include "../Core/array.h"
+#include "../Core/graph.h"
 
 #include <algorithm>
 #ifdef RAI_GL
@@ -1854,6 +1856,14 @@ void Camera::setCameraProjectionMatrix(const arr& P) {
   cout <<"glP=" <<glP <<endl;
   //glLoadMatrixd(glP.p);
   //fixedProjectionMatrix = glP;
+}
+
+void Camera::read(Graph& ats){
+  focalLength = ats.get<double>("focalLength", -1.);
+  heightAbs = ats.get<double>("orthoAbsHeight", -1.);
+  arr range =  ats.get<arr>("zRange", {});
+  if(range.N){ zNear=range(0); zFar=range(1); }
+  whRatio = ats.get<double>("width", 400.) / ats.get<double>("height", 200.);
 }
 
 void Camera::report(std::ostream& os) {

@@ -311,6 +311,7 @@ struct Camera {
   //retired
   void setCameraProjectionMatrix(const arr& P); //P is in standard convention -> computes fixedProjectionMatrix in OpenGL convention from this
 
+  void read(Graph& ats);
   void report(ostream& os=cout);
 };
 
