@@ -1606,8 +1606,9 @@ template<class T> void Array<T>::read(std::istream& is) {
 
 /// write data with a name tag (convenient to write multiple data arrays into one file)
 template<class T> void Array<T>::writeTagged(std::ostream& os, const char* tag, bool binary) const {
-  os <<tag <<": ";
+  os <<tag <<' ';
   write(os, " ", "\n ", "[]", true, binary);
+  os <<endl;
 }
 
 /// read data with a name tag (convenient to read multiple data arrays from one file)

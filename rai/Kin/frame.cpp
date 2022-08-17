@@ -1417,7 +1417,10 @@ void rai::Shape::read(const Graph& ats) {
     if(ats.get(str, "sdf"))      { sdf().read(FILE(str)); }
     else if(ats.get(fil, "sdf")) { sdf().read(fil); }
     if(_sdf){
-      CHECK_EQ(size.N, 3, "need a size for the sdf");
+      if(size.N){
+        if(size.N==1){ sdf().lo *= size.elem(); sdf().up *= size.elem(); }
+        else NIY;
+      }
       if(type()==ST_none) type()=ST_sdf;
       else CHECK_EQ(type(), ST_sdf, "");
     }

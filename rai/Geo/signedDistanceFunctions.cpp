@@ -389,9 +389,17 @@ double SDF_GridData::f(arr& g, arr& H, const arr& x){
   double v011 = gridData(_x+0,_y+1,_z+1);
   double v111 = gridData(_x+1,_y+1,_z+1);
 
-
+#if 1
   double f = interpolate3D(v000, v100, v010, v110, v001, v101, v011, v111,
                            dx,dy,dz);
+#else
+  arr wx = {1.-dx, dx};
+  arr wy = {1.-dy, dy};
+  arr wz = {1.-dz, dz};
+  arr coeffs = (wx ^ wy) ^ wz;
+  arr values = { v000, v100, v010, v110, v001, v101, v011, v111 };
+  double f = scalarProduct(coeffs, values);
+#endif
 
   if(!!g){
     g.resize(3).setZero();
