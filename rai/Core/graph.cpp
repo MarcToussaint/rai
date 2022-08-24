@@ -1046,7 +1046,7 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
     os << " ];" <<endl;
     os <<"node [ fontsize=9, width=.3, height=.3 ];" <<endl;
     os <<"edge [ arrowtail=dot, arrowsize=.5, fontsize=6 ];" <<endl;
-    index(true);
+//    index(true);
   } else {
     if(!isIndexed) index();
   }
@@ -1093,9 +1093,12 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
           os <<"}" <<endl;
           n->graph().writeDot(os, true, defaultEdges, -1);
         } else {
-          label <<'\n' <<n->graph();
+//          label <<'\n' <<n->graph();
           for(uint i=0; i<label.N; i++) if(label(i)=='"') label(i)='\'';
-          os <<n->index <<" [ label=\"" <<label <<"\" shape=box ];" <<endl;
+          rai::String *dotstyle = n->graph().find<rai::String>("dotstyle");
+          if(dotstyle) shape <<*dotstyle;
+//          os <<n->index <<" [ label=\"" <<label <<"\" shape=box ];" <<endl;
+          os <<n->index <<" [ label=\"" <<label <<'"' <<shape <<" ];" <<endl;
         }
       } else { //normal node
         if(nodesOrEdges>=0) {
@@ -1118,7 +1121,7 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
   }
   if(!withoutHeader) {
     os <<"}" <<endl;
-    index(false);
+//    index(false);
   }
 }
 
@@ -1140,7 +1143,7 @@ void Graph::sortByDotOrder() {
 
 ParseInfo& Graph::getParseInfo(Node* n) {
   if(!pi) pi=new ArrayG<ParseInfo>(*this);
-  return pi->operator()(n);
+  return pi->nodeelem(n);
   //  if(pi.N!=N+1){
   //    listResizeCopy(pi, N+1);
   //    pi(0)->node=nullptr;
@@ -1154,7 +1157,7 @@ RenderingInfo& Graph::getRenderingInfo(Node* n) {
   CHECK(!n || &n->container==this, "");
 #if 1
   if(!ri) ri=new ArrayG<RenderingInfo>(*this);
-  return ri->operator()(n);
+  return ri->nodeelem(n);
 #else
   if(ri.N!=N+1) {
     ri.resizeCopy(N+1); //listResizeCopy(ri, N+1);
