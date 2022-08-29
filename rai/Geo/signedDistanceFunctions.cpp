@@ -45,15 +45,15 @@ void SDF::animateSlices(const arr& lo, const arr& hi, double wait){
   }
 }
 
-arr SDF::projectNewton(const arr& x0, double maxStep){
-  ScalarFunction distSqr = [this, &x0](arr& g, arr& H, const arr& x){
+arr SDF::projectNewton(const arr& x0, double maxStep, double regularization){
+  ScalarFunction distSqr = [this, &x0, regularization](arr& g, arr& H, const arr& x){
     double d = f(g, H, x);
     if(!!H) H *= 2.*d;
     if(!!H) H += 2.*(g^g);
     if(!!g) g *= 2.*d;
 
 
-    double w=1.;
+    double w=regularization;
     arr c = (x-x0);
     if(!!g) g += (2.*w)*c;
     if(!!H) H += (2.*w)*eye(3);
@@ -348,18 +348,23 @@ double SDF_GridData::f(arr& g, arr& H, const arr& x){
   arr x_rel = (~rot)*(x-conv_vec2arr(pose.pos)); //point in box coordinates
 
   arr gBox, HBox;
+  boolA clipped = {false, false, false};
   double fBox=0.;
-  for(uint i=0;i<3;i++){ //check outside box
-    if(!boundCheck(x_rel, lo+.01, up-.01, 0., false)){
-      boundClip(x_rel, lo+.01, up-.01);
-      arr size = up - lo - .02;
-      arr center = .5*(up+lo);
-      rai::Transformation boxPose=pose;
-      boxPose.addRelativeTranslation(center);
-      SDF_ssBox B(boxPose, size);
-      fBox = B.f(gBox, HBox, x);
-      CHECK(fBox>=0., "");
+  double eps=.001;
+  if(!boundCheck(x_rel, lo+eps, up-eps, 0., false)){ //check outside box
+//    boundClip(x_rel, lo+eps, up-eps);
+    //clip -- and memorize which are clipped!
+    for(uint i=0; i<3; i++) {
+      if(x_rel(i)<lo.elem(i)+eps){ x_rel.elem(i) = lo.elem(i)+eps; clipped.elem(i)=true; }
+      if(x_rel(i)>up.elem(i)-eps){ x_rel.elem(i) = up.elem(i)-eps; clipped.elem(i)=true; }
     }
+    arr size = up - lo - 2.*eps;
+    arr center = .5*(up+lo);
+    rai::Transformation boxPose=pose;
+    boxPose.addRelativeTranslation(center);
+    SDF_ssBox B(boxPose, size);
+    fBox = B.f(gBox, HBox, x);
+    CHECK(fBox>=0., "");
   }
 
   arr res = arr{(double)gridData.d0-1, (double)gridData.d1-1, (double)gridData.d2-1};
@@ -403,9 +408,9 @@ double SDF_GridData::f(arr& g, arr& H, const arr& x){
 
   if(!!g){
     g.resize(3).setZero();
-    g(0) = interpolate2D(v100,v110,v101,v111, dy,dz) - interpolate2D(v000,v010,v001,v011, dy,dz);
-    g(1) = interpolate2D(v010,v110,v011,v111, dx,dz) - interpolate2D(v000,v100,v001,v101, dx,dz);
-    g(2) = interpolate2D(v001,v101,v011,v111, dx,dy) - interpolate2D(v000,v100,v010,v110, dx,dy);
+    if(!clipped(0)) g(0) = interpolate2D(v100,v110,v101,v111, dy,dz) - interpolate2D(v000,v010,v001,v011, dy,dz);
+    if(!clipped(1)) g(1) = interpolate2D(v010,v110,v011,v111, dx,dz) - interpolate2D(v000,v100,v001,v101, dx,dz);
+    if(!clipped(2)) g(2) = interpolate2D(v001,v101,v011,v111, dx,dy) - interpolate2D(v000,v100,v010,v110, dx,dy);
     g *= res;
     g = rot*g;
   }
@@ -414,8 +419,8 @@ double SDF_GridData::f(arr& g, arr& H, const arr& x){
     H.resize(3,3).setZero();
   }
 
-  double boxFactor=10.;
   if(fBox){
+    double boxFactor=1.;
     f += boxFactor * fBox;
     if(!!g) g += boxFactor * gBox;
     if(!!H) H += boxFactor * HBox;

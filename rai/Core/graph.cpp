@@ -1053,29 +1053,12 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
   for(Node* n: list()) {
     if(hasRenderingInfo(n) && getRenderingInfo(n).skip) continue;
     String label;
-    if(n->key.N) {
-#if 0
-      bool newline=false;
-      for(String& k:n->key) {
-        if(newline) label <<"\\n";
-        label <<k;
-        newline=true;
-      }
-#else
-      label <<n->key;
-#endif
-    } else {
-//      if(n->parents.N) {
-//        label <<"(" <<n->parents(0)->keys.elem(-1);
-//        for(uint i=1; i<n->parents.N; i++) label <<' ' <<n->parents(i)->keys.elem(-1);
-//        label <<")";
-//      }
-    }
+    if(n->key.N) label <<n->key;
     if(label.N) label <<"\\n";
     n->writeValue(label);
 
     String shape;
-    if(n->key.contains("box")) shape <<", shape=box"; else shape <<", shape=ellipse";
+//    if(n->key.contains("box")) shape <<", shape=box"; else shape <<", shape=ellipse";
     if(focusIndex==(int)n->index) shape <<", color=red";
     if(hasRenderingInfo(n)) shape <<' ' <<getRenderingInfo(n).dotstyle;
 
@@ -1095,8 +1078,6 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
         } else {
 //          label <<'\n' <<n->graph();
           for(uint i=0; i<label.N; i++) if(label(i)=='"') label(i)='\'';
-          rai::String *dotstyle = n->graph().find<rai::String>("dotstyle");
-          if(dotstyle) shape <<*dotstyle;
 //          os <<n->index <<" [ label=\"" <<label <<"\" shape=box ];" <<endl;
           os <<n->index <<" [ label=\"" <<label <<'"' <<shape <<" ];" <<endl;
         }
@@ -1109,11 +1090,8 @@ void Graph::writeDot(std::ostream& os, bool withoutHeader, bool defaultEdges, in
         uint pa_COUNT=0;
         for(Node* pa: n->parents) {
           if(hasRenderingInfo(pa) && getRenderingInfo(pa).skip) continue;
-          //              if(pa->index<n->index)
           os <<pa->index <<" -> " <<n->index <<" [ ";
-          //              else
-          //                  os <<n->index <<" -> " <<pa->index <<" [ ";
-          os <<"label=" <<pa_COUNT++;
+          if(n->parents.N>1) os <<"label=" <<pa_COUNT++;
           os <<" ];" <<endl;
         }
       }

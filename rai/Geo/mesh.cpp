@@ -52,7 +52,7 @@ void rai::Mesh::clear() {
   graph.clear();
 }
 
-void rai::Mesh::setBox() {
+void rai::Mesh::setBox(bool edgesOnly) {
   clear();
   double verts[24] = {
     -.5, -.5, -.5,
@@ -72,10 +72,21 @@ void rai::Mesh::setBox() {
     2, 6, 5, 5, 1, 2,
     0, 4, 7, 7, 3, 0
   };
+  uint edges[24] = {
+    0, 1, 1, 2, 2, 3, 3, 0,
+    4, 5, 5, 6, 6, 7, 7, 4,
+    0, 4, 1, 5, 2, 6, 3, 7
+  };
+
   V.setCarray(verts, 24);
-  T.setCarray(tris, 36);
   V.reshape(8, 3);
-  T.reshape(12, 3);
+  if(!edgesOnly) {
+    T.setCarray(tris, 36);
+    T.reshape(12, 3);
+  }else{
+    T.setCarray(edges, 24);
+    T.reshape(12, 2);
+  }
   Vn.clear(); Tn.clear();
   graph.clear();
   //cout <<V <<endl;  for(uint i=0;i<4;i++) cout <<length(V[i]) <<endl;

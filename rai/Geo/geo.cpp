@@ -952,7 +952,7 @@ arr Quaternion::getEulerRPY() const {
   return {getRoll_X(), getPitch_Y(), getYaw_Z()};
 }
 
-void Quaternion::applyOnPointArray(arr& pts) {
+void Quaternion::applyOnPointArray(arr& pts) const {
   arr R = ~getArr(); //transposed, to make it applicable to an n-times-3 array
   pts = pts * R;
 }

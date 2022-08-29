@@ -53,7 +53,7 @@ struct Mesh : GLDrawer {
 
   /// @name set or create
   void clear();
-  void setBox();
+  void setBox(bool edgesOnly=false);
   void setDot(); ///< an awkward mesh: just a single dot, not tris (e.g. cvx core of a sphere...)
   void setLine(double l); ///< an awkward mesh: just a single line, not tris (e.g. cvx core of a sphere...)
   void setQuad(double x_width=1., double y_width=1., const byteA& _texImg={}); ///< a quat, optionally with texture
