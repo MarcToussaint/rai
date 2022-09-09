@@ -957,9 +957,13 @@ void addJasonValues(Graph& G, const char* key, Json::Value& value) {
         cout <<value[0][0].type();
         NIY;
       }
+    } else if(value[0].type()==Json::objectValue) {
+        rai::Node* sub = new Node_typed<bool>(G, {key}, {}, true);
+        for(uint i=0; i<value.size(); i++){
+          Json2Graph(G.newSubgraph({STRING(key<<'_'<<i)}, {sub}), value[i]);
+        }
     } else {
-      cout <<value[0].type();
-      NIY
+      HALT("can't parse array of elems of unknown type '" <<value[0].type() <<"'");
     }
   } else {
     switch(value.type()) {

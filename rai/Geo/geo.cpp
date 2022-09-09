@@ -2103,3 +2103,6 @@ template rai::Array<rai::Vector>::~Array();
 
 template rai::Array<rai::Transformation*>::Array();
 template rai::Array<rai::Transformation*>::~Array();
+
+#include <Core/util.ipp>
+template rai::Vector rai::getParameter(const char*, const rai::Vector&);

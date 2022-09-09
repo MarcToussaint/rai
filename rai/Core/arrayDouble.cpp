@@ -683,9 +683,9 @@ double absMax(const arr& x) {
   return m;
 }
 
-uint argmin(const arr& x) { uint m=0; for(uint i=x.N; --i;) if(x.p[i]<x.p[m]) m=i; return m; }
+uint argmin(const arr& x) { CHECK_GE(x.N, 1, ""); uint m=0; for(uint i=x.N; --i;) if(x.p[i]<x.p[m]) m=i; return m; }
 
-uint argmax(const arr& x) { uint m=0; for(uint i=x.N; --i;) if(x.p[i]>x.p[m]) m=i; return m; }
+uint argmax(const arr& x) { CHECK_GE(x.N, 1, ""); uint m=0; for(uint i=x.N; --i;) if(x.p[i]>x.p[m]) m=i; return m; }
 
 void argmax(uint& i, uint& j, const arr& x) { CHECK_EQ(x.nd, 2, "needs 2D array"); j=argmax(x); i=j/x.d1; j=j%x.d1; }
 
