@@ -155,6 +155,7 @@ bool RRT_PathFinder::growTreeTowardsRandom(RRT_SingleTree& rrt){
   const arr start = rrt.ann.X[0];
   arr t(rrt.getNode(0).N);
   rndUniform(t,-RAI_2PI,RAI_2PI,false);
+  HALT("DON'T USE 2PI")
 
   arr q = rrt.getProposalTowards(t, stepsize);
 
@@ -178,8 +179,17 @@ bool RRT_PathFinder::growTreeToTree(RRT_SingleTree& rrt_A, RRT_SingleTree& rrt_B
     t = rrt_B.getRandomNode();
     isForwardStep = true;
   }else{
+#if 1
+    t.resize(rrt_A.getNode(0).N);
+    for(uint i=0;i<t.N;i++){
+      double lo=P.limits(i,0), up=P.limits(i,1);
+      CHECK_GE(up-lo, 1e-3,"limits are null interval: " <<i <<' ' <<P.C.getJointNames());
+      t.elem(i) = lo + rnd.uni()*(up-lo);
+    }
+#else
     t.resize(rrt_A.getNode(0).N);
     rndUniform(t,-RAI_2PI,RAI_2PI,false);
+#endif
     isForwardStep = false;
   }
 

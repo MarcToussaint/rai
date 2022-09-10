@@ -318,29 +318,13 @@ double interpolate3D(double v000, double v100, double v010, double v110, double 
   return interpolate1D(s, t, z);
 }
 
-SDF_GridData::SDF_GridData(SDF& f, const arr& _lo, const arr& _hi, const uintA& res)
-  : lo(_lo), up(_hi) {
+SDF_GridData::SDF_GridData(SDF& f, const arr& _lo, const arr& _up, const uintA& res)
+  : lo(_lo), up(_up) {
   //compute grid data
-#if 1
   arr samples = ::grid(lo, up, res);
   arr values = f.eval(samples);
   copy(gridData, values);
   gridData.reshape({res(0)+1, res(1)+1, res(2)+1});
-#else
-  grid.resize(res+1u);
-  arr x(3);
-  arr skip = (hi - lo) / convert<double>(res);
-  for(uint k=0; k<res(2); k++) {
-    x(2) = lo(2) + k*skip(2);
-    for(uint j=0; j<res(1); j++) {
-      x(1) = lo(1) + j*skip(1);
-      for(uint i=0; i<res(0); i++) {
-        x(0) = lo(0) + i*skip(0);
-        grid(i,j,k) = f(NoArr, NoArr, x) ;
-      }
-    }
-  }
-#endif
 }
 
 double SDF_GridData::f(arr& g, arr& H, const arr& x){

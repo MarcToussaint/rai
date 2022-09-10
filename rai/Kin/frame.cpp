@@ -710,11 +710,16 @@ rai::Joint::Joint(Frame& f, Joint* copyJoint) {
     qIndex=copyJoint->qIndex; dim=copyJoint->dim;
     type=copyJoint->type; axis=copyJoint->axis; limits=copyJoint->limits; q0=copyJoint->q0; H=copyJoint->H; scale=copyJoint->scale;
     active=copyJoint->active;
+    isStable=copyJoint->isStable;
     sampleUniform=copyJoint->sampleUniform;  sampleSdv=copyJoint->sampleSdv;
     code=copyJoint->code;
 
     if(copyJoint->mimic){
-      setMimic(frame->C.frames.elem(copyJoint->mimic->frame->ID)->joint);
+      if(copyJoint->mimic->frame->ID<frame->C.frames.N){
+        setMimic(frame->C.frames.elem(copyJoint->mimic->frame->ID)->joint);
+      }else{
+        setMimic(0);
+      }
     }
 
     if(copyJoint->uncertainty) {

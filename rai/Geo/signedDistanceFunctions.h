@@ -86,7 +86,7 @@ struct SDF_GridData : SDF {
   SDF_GridData(const rai::Transformation& _pose, const floatA& _data, const arr& _lo, const arr& _up)
     : pose(_pose), gridData(_data), lo(_lo), up(_up) {}
 
-  SDF_GridData(SDF& f, const arr& _lo, const arr& _hi, const uintA& res);
+  SDF_GridData(SDF& f, const arr& _lo, const arr& _up, const uintA& res);
   SDF_GridData() {}
   SDF_GridData(istream& is) { read(is); }
 

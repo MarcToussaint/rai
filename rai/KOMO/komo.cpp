@@ -293,7 +293,7 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
           { -.6*maxsize, .6*maxsize,
             -.6*maxsize, .6*maxsize,
             -.6*maxsize, .6*maxsize,
-            0,-1, 0,-1, 0,-1, 0,-1 }; //no limits on rotation
+            -1.1,1.1, -1.1,1.1, -1.1,1.1, -1.1,1.1 }; //no limits on rotation
         }
         //sample heuristic
         f->joint->sampleUniform=0.;
@@ -429,7 +429,24 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
     Transformation rel = 0;
     rel.pos.set(0, 0, .5*(shapeSize(world, frames(0)) + shapeSize(world, frames(1))));
 //    addSwitch(times, true, JT_transXYPhi, SWInit_copy, frames(0), frames(1), rel);
-    addSwitch(times, true, make_shared<KinematicSwitch>(SW_joint, JT_transXYPhi, frames(0), frames(1), world, SWInit_copy, 0, rel, NoTransformation));
+    rai::Frame* f = addSwitch(times, true, make_shared<KinematicSwitch>(SW_joint, JT_transXYPhi, frames(0), frames(1), world, SWInit_copy, 0, rel, NoTransformation));
+    if(f){
+      //limits?
+      rai::Shape* on = world.getFrame(frames(0))->shape;
+      CHECK_EQ(on->type(), rai::ST_ssBox, "")
+      f->joint->limits = {
+                         -.5*on->size(0), .5*on->size(0),
+                         -.5*on->size(1), .5*on->size(1),
+                         -RAI_2PI,RAI_2PI };
+      //init heuristic
+      f->joint->sampleUniform=1.;
+      f->joint->q0 = zeros(3);
+      rai::Frame *p=f->prev;
+      while(p && p->joint && p->joint->type==JT_transXYPhi){
+        p->joint->limits = f->joint->limits;
+        p = p->prev;
+      }
+    }
 
     //-- no jump at start
     if(firstSwitch){
@@ -644,6 +661,17 @@ arr KOMO::getConfiguration_X(int t) {
 }
 
 void KOMO::getConfiguration_full(Configuration& C, int t, int verbose){
+#if 1
+  C.clear();
+  FrameL F = timeSlices[k_order+t].copy();
+  for(rai::Frame *f:F){
+    f->ensure_X();
+    if(f->parent && !F.contains(f->parent)) F.append(f->parent);
+  }
+  C.addCopies(F, {}); //, pathConfig.getDofs(F, false));
+  C.frames.reshape(-1);
+  C.checkConsistency();
+#else
   //note: the alternative would be to copy the frames komo.timeSlices[step] into a new config
   CHECK_EQ(k_order, 1, "");
   C.copy(world);
@@ -656,6 +684,7 @@ void KOMO::getConfiguration_full(Configuration& C, int t, int verbose){
   }
   arr X = getConfiguration_X(t);
   C.setFrameState(X, C.frames({0,X.d0-1}));
+#endif
 }
 
 arr KOMO::getConfiguration_qOrg(int t) {
@@ -1287,9 +1316,9 @@ rai::Frame* KOMO::applySwitch(const KinematicSwitch& sw) {
   //    if(sw.timeOfTermination>=0)  sEnd = sw.timeOfTermination+(int)k_order;
   CHECK(s<=sEnd, "s:" <<s <<" sEnd:" <<sEnd);
   if(s==sEnd) return 0;
-  rai::Frame *f0=0;
+  rai::Frame *f0=0, *f=0;
   for(; s<sEnd; s++) { //apply switch on all configurations!
-    rai::Frame* f = sw.apply(timeSlices[s].noconst());
+    f = sw.apply(timeSlices[s].noconst());
     if(!f0){
       f0=f;
     } else {
@@ -1307,7 +1336,7 @@ rai::Frame* KOMO::applySwitch(const KinematicSwitch& sw) {
     }
   }
   if(sw.isStable && opt.mimicStable) return f0;
-  return 0;
+  return f;
 }
 
 void KOMO::retrospectApplySwitches() {

@@ -335,13 +335,17 @@ Frame* Configuration::addCopies(const FrameL& F, const DofL& _dofs) {
   }
 
   //relink frames - special attention to mimic'ing
-  for(Frame* f:F) if(f->parent && f->parent->ID<=maxId && FId2thisId(f->parent->ID)!=-1) {
+  for(Frame* f:F) if(f->parent){
+    if(f->parent->ID>maxId || FId2thisId(f->parent->ID)==-1) {
+      LOG(-1) <<"can't relink frame '" <<*f <<"'";
+    }
     Frame* f_new = frames.elem(FId2thisId(f->ID));
     f_new->setParent(frames.elem(FId2thisId(f->parent->ID)));
     //take care of within-F mimic joints:
     if(f->joint && f->joint->mimic){
-      CHECK(f->joint && f->joint->mimic, "");
-      f_new->joint->setMimic(frames.elem(FId2thisId(f->joint->mimic->frame->ID))->joint, true);
+      if(f->joint->mimic->frame->ID<maxId && FId2thisId(f->joint->mimic->frame->ID)!=-1){
+        f_new->joint->setMimic(frames.elem(FId2thisId(f->joint->mimic->frame->ID))->joint, true);
+      }
     }
   }
 
