@@ -290,9 +290,9 @@ void KOMO::addModeSwitch(const arr& times, SkeletonSymbol newMode, const StringA
         }
         if(maxsize>1e-4){
           f->joint->limits =
-          { -.6*maxsize, .6*maxsize,
-            -.6*maxsize, .6*maxsize,
-            -.6*maxsize, .6*maxsize,
+          { -.9*maxsize, .9*maxsize,
+            -.9*maxsize, .9*maxsize,
+            -.9*maxsize, .9*maxsize,
             -1.1,1.1, -1.1,1.1, -1.1,1.1, -1.1,1.1 }; //no limits on rotation
         }
         //sample heuristic

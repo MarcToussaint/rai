@@ -287,7 +287,7 @@ OptNewton::~OptNewton() {
 #ifndef RAI_MSVC
 //  if(o.verbose>1) gnuplot("plot 'z.opt' us 1:3 w l", nullptr, true);
 #endif
-  if(options.verbose>1) cout <<"--- optNewtonStop: f(x)=" <<fx <<endl;
+  if(options.verbose>1) cout <<"*** optNewtonStop: f(x)=" <<fx <<endl;
 }
 
 OptNewton& OptNewton::setBounds(const arr& _bounds_lo, const arr& _bounds_up){

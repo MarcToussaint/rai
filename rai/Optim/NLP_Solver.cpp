@@ -29,8 +29,7 @@ template<> const char* rai::Enum<NLopt_SolverOption>::names []= {
     "LD_TNEWTON_PRECOND_RESTART", nullptr };
 
 shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization){
-  std::shared_ptr<SolverReturn> ret = make_shared<SolverReturn>();
-  shared_ptr<OptConstrained> optCon;
+  ret = make_shared<SolverReturn>();
   double time = -rai::cpuTime();
 
   if(resampleInitialization==1 || !x.N){
@@ -89,6 +88,7 @@ shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization){
     ret->sos = optCon->L.get_cost_sos();
     ret->f = optCon->L.get_cost_f();
     ret->feasible = (ret->ineq<.5) && (ret->eq<.5);
+    optCon.reset();
   }
 
   //checkJacobianCP(*P, x, 1e-4);
@@ -99,4 +99,55 @@ shared_ptr<SolverReturn> NLP_Solver::solve(int resampleInitialization){
   ret->evals=P->evals;
   ret->time = time;
   return ret;
+}
+
+shared_ptr<SolverReturn> NLP_Solver::solveStepping(int resampleInitialization){
+  if(resampleInitialization==1) x.clear();
+  while(!step());
+  return ret;
+}
+
+bool NLP_Solver::step(){
+  CHECK(solverID==NLPS_augmentedLag
+        || solverID==NLPS_squaredPenalty
+        || solverID==NLPS_logBarrier, "stepping only implemented for these");
+
+  if(!optCon){ //first step -> initialize
+    CHECK(!ret, "");
+    ret = make_shared<SolverReturn>();
+
+    if(!x.N){
+      x = P->getInitializationSample();
+      dual.clear();
+    }else{
+      CHECK(x.N, "x is of zero dimensionality - needs initialization");
+    }
+
+    if(solverID==NLPS_augmentedLag){
+      opt.set_constrainedMethod(rai::augmentedLag);
+    }else if(solverID==NLPS_squaredPenalty){
+      opt.set_constrainedMethod(rai::squaredPenalty);
+    }else if(solverID==NLPS_logBarrier){
+      opt.set_constrainedMethod(rai::logBarrier);
+    }
+    optCon = make_shared<OptConstrained>(x, dual, P, opt);
+
+  }
+
+  ret->time -= rai::cpuTime();
+  ret->done=optCon->ministep();
+  ret->time += rai::cpuTime();
+
+  ret->x=x;
+  ret->dual=dual;
+  ret->evals=P->evals;
+
+  arr feats = optCon->L.get_totalFeatures();
+  ret->f = feats(OT_f);
+  ret->sos = feats(OT_sos);
+  ret->ineq = feats(OT_ineq) + feats(OT_ineqB) + feats(OT_ineqP);
+  ret->eq = feats(OT_eq);
+  ret->feasible = (ret->ineq<.5) && (ret->eq<.5);
+
+  return ret->done;
 }

@@ -31,7 +31,7 @@ void TEST(Solver) {
   S.setSolver(sid);
   S.setProblem(nlp);
   if(x_init.N) S.setInitialization(x_init);
-  S.solve();
+  S.solveStepping();
 
   arr path = catCol(S.getTrace_x(), S.getTrace_costs());
   FILE("z.path") <<path.modRaw();
@@ -49,7 +49,7 @@ int MAIN(int argc,char** argv){
 
   rnd.clockSeed();
 
-  testDisplay();
+//  testDisplay();
   testSolver();
 
   return 0;

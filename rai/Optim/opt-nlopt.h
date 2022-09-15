@@ -5,6 +5,7 @@
     This code is distributed under the MIT License.
     Please see <root-path>/LICENSE for details.
     --------------------------------------------------------------  */
+#pragma once
 
 #include "NLP.h"
 

@@ -28,10 +28,13 @@ struct OptConstrained {
   ostream* logFile=nullptr;
 
   OptConstrained(arr& x, arr& dual, const shared_ptr<NLP>& P, rai::OptOptions opt=NOOPT, ostream* _logFile=0);
-  ~OptConstrained();
-  bool step();
+
   uint run();
+  bool ministep();
 //  void reinit();
+private:
+  arr x_beforeNewton;
+  double org_stopTol, org_stopGTol;
 };
 
 //==============================================================================

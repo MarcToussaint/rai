@@ -231,6 +231,20 @@ double LagrangianProblem::lagrangian(arr& dL, arr& HL, const arr& _x) {
 #endif
 }
 
+arr LagrangianProblem::get_totalFeatures(){
+  arr feat(OT_ineqP+1);
+  feat.setZero();
+  for(uint i=0; i<phi_x.N; i++) {
+    if(P->featureTypes.elem(i)==OT_f) feat.elem(OT_f) += phi_x.elem(i);
+    else if(P->featureTypes.elem(i)==OT_sos) feat.elem(OT_sos) += rai::sqr(phi_x.elem(i));
+    else if(P->featureTypes.elem(i)==OT_ineq && phi_x.elem(i)>0.) feat.elem(OT_ineq) += phi_x.elem(i);
+    else if(P->featureTypes.elem(i)==OT_eq) feat.elem(OT_eq) += fabs(phi_x.elem(i));
+    else if(P->featureTypes.elem(i)==OT_ineqB && phi_x.elem(i)>0.) feat.elem(OT_ineqB) += phi_x.elem(i);
+    else if(P->featureTypes.elem(i)==OT_ineqP && phi_x.elem(i)>0.) feat.elem(OT_ineqP) += phi_x.elem(i);
+  }
+  return feat;
+}
+
 double LagrangianProblem::get_cost_f() {
   double S=0.;
   for(uint i=0; i<phi_x.N; i++) {

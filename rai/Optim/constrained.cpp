@@ -83,66 +83,72 @@ OptConstrained::OptConstrained(arr& _x, arr& _dual, const shared_ptr<NLP>& P, ra
   if(logFile) {
     (*logFile) <<"{ optConstraint: " <<its <<", mu: " <<L.mu <<", nu: " <<L.nu <<", L_x: " <<newton.fx <<", errors: ["<<L.get_costs() <<", " <<L.get_sumOfGviolations() <<", " <<L.get_sumOfHviolations() <<"], lambda: " <<L.lambda <<" }," <<endl;
   }
-}
 
-bool OptConstrained::step() {
   newton.logFile = logFile;
   L.logFile = logFile;
 
-  if(!newton.evals) newton.reinit(newton.x);
+  //check for no constraints
+  if(L.get_dimOfType(OT_ineq)==0 && L.get_dimOfType(OT_ineqB)==0 && L.get_dimOfType(OT_eq)==0) {
+    if(opt.verbose>0) cout <<"** optConstr. NO CONSTRAINTS -> run just Newton once" <<endl;
+    opt.constrainedMethod=rai::squaredPenaltyFixed;
+  }
+
+  //in first iteration, if not squaredPenaltyFixed, increase stop tolerance
+  org_stopTol = opt.stopTolerance;
+  org_stopGTol = opt.stopGTolerance;
+  if(!its && opt.constrainedMethod!=rai::squaredPenaltyFixed){
+    newton.options.stopTolerance = 3.*org_stopTol;
+    newton.options.stopGTolerance = 3.*org_stopGTol;
+  }
+
+  x_beforeNewton = newton.x;
 
   if(opt.verbose>0) {
     cout <<"** optConstr. it=" <<its
-         <<(earlyPhase?'e':'l')
+         <<"start evals:" <<newton.evals
          <<" mu=" <<L.mu <<" nu=" <<L.nu <<" muLB=" <<L.muLB;
     if(newton.x.N<5) cout <<" \tlambda=" <<L.lambda;
     cout <<endl;
   }
+}
 
-  arr x_old = newton.x;
+uint OptConstrained::run() {
+#if 0
+  while(!step());
+#else
+  while(!ministep());
+#endif
+  return newton.evals;
+}
 
-  //check for no constraints
-  bool newtonOnce=false;
-  if(L.get_dimOfType(OT_ineq)==0 && L.get_dimOfType(OT_ineqB)==0 && L.get_dimOfType(OT_eq)==0) {
-    if(opt.verbose>0) cout <<"** optConstr. NO CONSTRAINTS -> run Newton once and stop" <<endl;
-    newtonOnce=true;
-  }
-
-  if(L.lambda.N) CHECK_EQ(L.lambda.N, L.phi_x.N, "");
-
-  //run newton on the Lagrangian problem
-  if(newtonOnce || opt.constrainedMethod==rai::squaredPenaltyFixed) {
-    newton.run();
-  } else {
-    double org_stopTol = newton.options.stopTolerance;
-    double org_stopGTol = newton.options.stopGTolerance;
-    if(!its){
-      newton.options.stopTolerance *= 3.;
-      newton.options.stopGTolerance *= 3.;
-    }
-    if(earlyPhase){
-      newton.options.stopTolerance *= 10.;
-      newton.options.stopGTolerance *= 10.;
-    }
-    if(opt.constrainedMethod==rai::anyTimeAula)  newton.run(20);
-    else                                         newton.run();
-    newton.options.stopTolerance = org_stopTol;
-    newton.options.stopGTolerance = org_stopGTol;
-  }
-
+bool OptConstrained::ministep(){
+  //-- first a Newton step
+  newton.step();
   if(L.lambda.N) CHECK_EQ(L.lambda.N, L.phi_x.N, "the evaluation (within newton) changed the phi-dimensionality");
 
+  //-- check end of Newton loop
+  bool endNewton=false;
+  if(newton.its>1000) endNewton=true;
+  if(newton.stopCriterion==OptNewton::stopStepFailed) endNewton=true;;
+  if(newton.stopCriterion>=OptNewton::stopDeltaConverge) endNewton=true;;
+
+  if(!endNewton) return false;
+
+  //<< Newton loop ended
+
   if(opt.verbose>0) {
+    //END of old Newton loop
     cout <<"** optConstr. it=" <<its
-         <<(earlyPhase?'e':'l')
-         <<' ' <<newton.evals
+         <<"start evals:" <<newton.evals
          <<" f(x)=" <<L.get_costs()
          <<" \tg_compl=" <<L.get_sumOfGviolations()
          <<" \th_compl=" <<L.get_sumOfHviolations()
-         <<" \t|x-x'|=" <<absMax(x_old-newton.x);
+         <<" \t|x-x'|=" <<absMax(x_beforeNewton-newton.x);
     if(newton.x.N<5) cout <<" \tx=" <<newton.x;
     cout <<endl;
   }
+
+  //-- STOPPING CRITERIA
 
   //check for squaredPenaltyFixed method
   if(opt.constrainedMethod==rai::squaredPenaltyFixed) {
@@ -151,7 +157,7 @@ bool OptConstrained::step() {
   }
 
   //check for newtonOnce
-  if(newtonOnce) {
+  if(opt.constrainedMethod==rai::squaredPenaltyFixed) {
     return true;
   }
 
@@ -161,10 +167,8 @@ bool OptConstrained::step() {
     return true;
   }
 
-  its++;
-
-  //stopping criteron
-  if(its>=2 && absMax(x_old-newton.x) < (earlyPhase?5.:1.)*opt.stopTolerance) {
+  //main stopping criteron
+  if(its>=1 && absMax(x_beforeNewton-newton.x) < (earlyPhase?5.:1.)*opt.stopTolerance) {
     if(opt.verbose>0) cout <<"** optConstr. StoppingCriterion Delta<" <<opt.stopTolerance <<endl;
     if(earlyPhase) earlyPhase=false;
     else {
@@ -173,15 +177,17 @@ bool OptConstrained::step() {
         return true;
     }
   }
-//  if(its>=2 && newtonStop==OptNewton::stopTinySteps) {
-//    if(opt.verbose>0) cout <<"** optConstr. StoppingCriterion TinySteps<" <<opt.stopTolerance <<endl;
-//    if(earlyPhase) earlyPhase=false;
-//    else {
-//      if(opt.stopGTolerance<0.
-//          || L.get_sumOfGviolations() + L.get_sumOfHviolations() < opt.stopGTolerance)
-//        return true;
-//    }
-//  }
+
+  //  if(its>=2 && newtonStop==OptNewton::stopTinySteps) {
+  //    if(opt.verbose>0) cout <<"** optConstr. StoppingCriterion TinySteps<" <<opt.stopTolerance <<endl;
+  //    if(earlyPhase) earlyPhase=false;
+  //    else {
+  //      if(opt.stopGTolerance<0.
+  //          || L.get_sumOfGviolations() + L.get_sumOfHviolations() < opt.stopGTolerance)
+  //        return true;
+  //    }
+  //  }
+
   if(opt.stopEvals>0 && newton.evals>=opt.stopEvals) {
     if(opt.verbose>0) cout <<"** optConstr. StoppingCriterion MAX EVALS" <<endl;
     return true;
@@ -195,6 +201,9 @@ bool OptConstrained::step() {
     return true;
   }
 
+  //-- CONTINUE WITH NEXT NEWTON LOOP
+  its++;
+
   double L_x_before = newton.fx;
 
   //upate Lagrange parameters
@@ -206,18 +215,28 @@ bool OptConstrained::step() {
     (*logFile) <<"{ optConstraint: " <<its <<", mu: " <<L.mu <<", nu: " <<L.nu <<", L_x_beforeUpdate: " <<L_x_before <<", L_x_afterUpdate: " <<newton.fx <<", errors: ["<<L.get_costs() <<", " <<L.get_sumOfGviolations() <<", " <<L.get_sumOfHviolations() <<"], lambda: " <<L.lambda <<" }," <<endl;
   }
 
+  if(opt.verbose>0) {
+    //START of new Newton loop
+    cout <<"** optConstr. it=" <<its
+         <<"end   evals:" <<newton.evals
+         <<" mu=" <<L.mu <<" nu=" <<L.nu <<" muLB=" <<L.muLB;
+    if(newton.x.N<5) cout <<" \tlambda=" <<L.lambda;
+    cout <<endl;
+  }
+
+  x_beforeNewton = newton.x;
+
+  if(L.lambda.N) CHECK_EQ(L.lambda.N, L.phi_x.N, "");
+
+  if(earlyPhase){
+    newton.options.stopTolerance = 10.*org_stopTol;
+    newton.options.stopGTolerance = 10.*org_stopGTol;
+  }else{
+    newton.options.stopTolerance = org_stopTol;
+    newton.options.stopGTolerance = org_stopGTol;
+  }
+
   return false;
-}
-
-uint OptConstrained::run() {
-//  earlyPhase=true;
-  while(!step());
-//  newton.beta *= 1e-3;
-//  step();
-  return newton.evals;
-}
-
-OptConstrained::~OptConstrained() {
 }
 
 
