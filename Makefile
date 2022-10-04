@@ -25,7 +25,7 @@ printUbuntuAll: $(DEPEND:%=inPath_printUbuntu/%) printUbuntu
 
 printDependAll: $(DEPEND:%=inPath_printDepend/%) printDepend
 
-tests: $(test_paths:%=inPath_make/%)
+tests: $(test_paths:%=inPath_make/%) inPath_makeLib/ry
 
 bin: $(bin_paths:%=inPath_make/%)
 

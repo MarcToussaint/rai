@@ -694,7 +694,7 @@ rai::LogToken::~LogToken() {
 
       if(log_level==-1) { cout <<"** WARNING:" <<rai::errString() <<endl; return; }
       else if(log_level==-2) { cerr <<"** ERROR:" <<rai::errString() <<endl; /*throw does not WORK!!! Because this is a destructor. The THROW macro does it inline*/ }
-      //INSERT BREAKPOINT HERE
+      //INSERT BREAKPOINT HERE (or before and after this line)
       else if(log_level>=-3) { cerr <<"** HARD EXIT! " <<rai::errString() <<endl;  exit(1); }
 //      if(log_level<=-3) raise(SIGABRT);
     }

@@ -449,6 +449,7 @@ void Featherstone::RBmci(arr& rbi, double m, double* c, const rai::Matrix& I) {
   II.referTo(&I.m00, 9);
   II.reshape(3, 3);
 
+  rbi.resize(6,6);
   rbi.setMatrixBlock(II + m*C*~C, 0,0);
   rbi.setMatrixBlock(m*C, 0,3);
   rbi.setMatrixBlock(m*~C, 3,0);

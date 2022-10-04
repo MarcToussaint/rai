@@ -370,7 +370,6 @@ double Simulation::getGripperWidth(const char* gripperFrameName) {
   rai::Frame* gripper, *fing1, *fing2;
   getFingersForGripper(gripper, fing1, fing2, C, gripperFrameName);
   if(!gripper) return -1.;
-  CHECK(!fing1->joint->active || !fing1->joint->dim, "");
   return fing1->get_Q().pos.x;
 }
 
