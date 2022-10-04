@@ -45,15 +45,15 @@ void SDF::animateSlices(const arr& lo, const arr& hi, double wait){
   }
 }
 
-arr SDF::projectNewton(const arr& x0, double maxStep){
-  ScalarFunction distSqr = [this, &x0](arr& g, arr& H, const arr& x){
+arr SDF::projectNewton(const arr& x0, double maxStep, double regularization){
+  ScalarFunction distSqr = [this, &x0, regularization](arr& g, arr& H, const arr& x){
     double d = f(g, H, x);
     if(!!H) H *= 2.*d;
     if(!!H) H += 2.*(g^g);
     if(!!g) g *= 2.*d;
 
 
-    double w=1.;
+    double w=regularization;
     arr c = (x-x0);
     if(!!g) g += (2.*w)*c;
     if(!!H) H += (2.*w)*eye(3);
@@ -231,8 +231,8 @@ void closestPointOnBox(arr& closest, arr& signs, const rai::Transformation& t, d
   signs.setZero();
   closest = x_rel;
   arr del_abs = fabs(x_rel)-dim;
-  if(del_abs.max()<0.) { //inside
-    uint side=del_abs.argmax(); //which side are we closest to?
+  if(max(del_abs)<0.) { //inside
+    uint side=argmax(del_abs); //which side are we closest to?
     //in positive or neg direction?
     if(x_rel(side)>0) { closest(side) = dim(side);  signs(side)=+1.; }
     else             { closest(side) =-dim(side);  signs(side)=-1.; }
@@ -257,8 +257,8 @@ double SDF_ssBox::f(arr& g, arr& H, const arr& x) {
   arr del_abs = fabs(x_rel)-box;
   bool inside=true;
   //-- find closest point on box
-  if(del_abs.max()<0.) { //inside
-    uint side=del_abs.argmax(); //which side are we closest to?
+  if(max(del_abs)<0.) { //inside
+    uint side=argmax(del_abs); //which side are we closest to?
     if(x_rel(side)>0) closest(side) = box(side);  else  closest(side)=-box(side); //in positive or neg direction?
   } else { //outside
     inside = false;
@@ -275,7 +275,7 @@ double SDF_ssBox::f(arr& g, arr& H, const arr& x) {
     if(inside) { //inside
       H.resize(3, 3).setZero();
     } else { //outside
-      if(del_abs.min()>0.) { //outside on all 3 axis
+      if(min(del_abs)>0.) { //outside on all 3 axis
         H = 1./d * (eye(3) - (del^del)/(d*d));
       } else {
         arr edge=del_abs;
@@ -318,29 +318,13 @@ double interpolate3D(double v000, double v100, double v010, double v110, double 
   return interpolate1D(s, t, z);
 }
 
-SDF_GridData::SDF_GridData(SDF& f, const arr& _lo, const arr& _hi, const uintA& res)
-  : lo(_lo), up(_hi) {
+SDF_GridData::SDF_GridData(SDF& f, const arr& _lo, const arr& _up, const uintA& res)
+  : lo(_lo), up(_up) {
   //compute grid data
-#if 1
   arr samples = ::grid(lo, up, res);
   arr values = f.eval(samples);
   copy(gridData, values);
-  gridData.reshape(res+1u);
-#else
-  grid.resize(res+1u);
-  arr x(3);
-  arr skip = (hi - lo) / convert<double>(res);
-  for(uint k=0; k<res(2); k++) {
-    x(2) = lo(2) + k*skip(2);
-    for(uint j=0; j<res(1); j++) {
-      x(1) = lo(1) + j*skip(1);
-      for(uint i=0; i<res(0); i++) {
-        x(0) = lo(0) + i*skip(0);
-        grid(i,j,k) = f(NoArr, NoArr, x) ;
-      }
-    }
-  }
-#endif
+  gridData.reshape({res(0)+1, res(1)+1, res(2)+1});
 }
 
 double SDF_GridData::f(arr& g, arr& H, const arr& x){
@@ -348,19 +332,23 @@ double SDF_GridData::f(arr& g, arr& H, const arr& x){
   arr x_rel = (~rot)*(x-conv_vec2arr(pose.pos)); //point in box coordinates
 
   arr gBox, HBox;
+  boolA clipped = {false, false, false};
   double fBox=0.;
-  for(uint i=0;i<3;i++){ //check outside box
-    double margin=.001;
-    if(!boundCheck(x_rel, lo+margin, up-margin, 0., false)){
-      boundClip(x_rel, lo+margin, up-margin);
-      arr size = up - lo - 2.*margin;
-      arr center = .5*(up+lo);
-      rai::Transformation boxPose=pose;
-      boxPose.addRelativeTranslation(center);
-      SDF_ssBox B(boxPose, size);
-      fBox = B.f(gBox, HBox, x);
-      CHECK(fBox>=0., "");
+  double eps=.001;
+  if(!boundCheck(x_rel, lo+eps, up-eps, 0., false)){ //check outside box
+//    boundClip(x_rel, lo+eps, up-eps);
+    //clip -- and memorize which are clipped!
+    for(uint i=0; i<3; i++) {
+      if(x_rel(i)<lo.elem(i)+eps){ x_rel.elem(i) = lo.elem(i)+eps; clipped.elem(i)=true; }
+      if(x_rel(i)>up.elem(i)-eps){ x_rel.elem(i) = up.elem(i)-eps; clipped.elem(i)=true; }
     }
+    arr size = up - lo - 2.*eps;
+    arr center = .5*(up+lo);
+    rai::Transformation boxPose=pose;
+    boxPose.addRelativeTranslation(center);
+    SDF_ssBox B(boxPose, size);
+    fBox = B.f(gBox, HBox, x);
+    CHECK(fBox>=0., "");
   }
 
   arr res = arr{(double)gridData.d0-1, (double)gridData.d1-1, (double)gridData.d2-1};
@@ -390,15 +378,23 @@ double SDF_GridData::f(arr& g, arr& H, const arr& x){
   double v011 = gridData(_x+0,_y+1,_z+1);
   double v111 = gridData(_x+1,_y+1,_z+1);
 
-
+#if 1
   double f = interpolate3D(v000, v100, v010, v110, v001, v101, v011, v111,
                            dx,dy,dz);
+#else
+  arr wx = {1.-dx, dx};
+  arr wy = {1.-dy, dy};
+  arr wz = {1.-dz, dz};
+  arr coeffs = (wx ^ wy) ^ wz;
+  arr values = { v000, v100, v010, v110, v001, v101, v011, v111 };
+  double f = scalarProduct(coeffs, values);
+#endif
 
   if(!!g){
     g.resize(3).setZero();
-    g(0) = interpolate2D(v100,v110,v101,v111, dy,dz) - interpolate2D(v000,v010,v001,v011, dy,dz);
-    g(1) = interpolate2D(v010,v110,v011,v111, dx,dz) - interpolate2D(v000,v100,v001,v101, dx,dz);
-    g(2) = interpolate2D(v001,v101,v011,v111, dx,dy) - interpolate2D(v000,v100,v010,v110, dx,dy);
+    if(!clipped(0)) g(0) = interpolate2D(v100,v110,v101,v111, dy,dz) - interpolate2D(v000,v010,v001,v011, dy,dz);
+    if(!clipped(1)) g(1) = interpolate2D(v010,v110,v011,v111, dx,dz) - interpolate2D(v000,v100,v001,v101, dx,dz);
+    if(!clipped(2)) g(2) = interpolate2D(v001,v101,v011,v111, dx,dy) - interpolate2D(v000,v100,v010,v110, dx,dy);
     g *= res;
     g = rot*g;
   }
@@ -407,8 +403,8 @@ double SDF_GridData::f(arr& g, arr& H, const arr& x){
     H.resize(3,3).setZero();
   }
 
-  double boxFactor=20.;
   if(fBox){
+    double boxFactor=1.;
     f += boxFactor * fBox;
     if(!!g) g += boxFactor * gBox;
     if(!!H) H += boxFactor * HBox;
@@ -471,7 +467,7 @@ ScalarFunction DistanceFunction_SSBox = [](arr& g, arr& H, const arr& x) -> doub
     g({3, 5}) = - signs%(rai::Vector(grad) / t.rot).getArr();
     g(6) = -1.;
     g({10, 13}) = ~grad*crossProduct(t.rot.getJacobian(), (x({0, 2})-t.pos.getArr()));
-    g({10, 13})() /= -sqrt(sumOfSqr(x({10, 13}))); //account for the potential non-normalization of q
+    g({10, 13}) /= -sqrt(sumOfSqr(x({10, 13}))); //account for the potential non-normalization of q
   }
   return d;
 };

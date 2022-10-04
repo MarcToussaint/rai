@@ -58,7 +58,7 @@ void readNode(rai::Graph* i, uintA& hsitoi, uintA& itohsi, int ind) {
   if(hsi >= hsitoi.N) {
     hsitoiN = hsitoi.N;
     hsitoi.resizeCopy(hsi+1);
-    hsitoi({hsitoiN, hsi})() = -1;
+    hsitoi({hsitoiN, hsi}) = -1;
   }
   hsitoi(hsi) = ind;
   itohsi.append(hsi);
@@ -270,11 +270,11 @@ void G4Rec::load(const char* recdir, bool interpolate) {
   dataquatprev = data[0].sub(0, -1, 3, -1);
   for(uint f = 1; f < data.d0; f++) {
     for(uint i = 0; i < data.d1; i++) {
-      dataquat.referToRange(data(f, i, {})(), 3, -1);
+      dataquat.referToRange(data(f, i, {}), 3, -1);
       if(sum(dataquat % dataquatprev[i]) < 0)
         dataquat *= -1.;
       if(!length(dataquatprev[i]) || length(dataquat))
-        dataquatprev[i]() = dataquat;
+        dataquatprev[i] = dataquat;
     }
   }
   if(interpolate) { // interpolating missing measures
@@ -504,7 +504,7 @@ void G4Rec::computeDPos(const char* sensor) {
       if(f == 0)
         A = qX * (pY - pX);
       p = qX * (pY - pX) - A;
-      bamDPos[is][f]() = arr{p.x, p.y, p.z};
+      bamDPos[is][f] = arr{p.x, p.y, p.z};
     }
   }
 
@@ -529,7 +529,7 @@ void G4Rec::computeDQuat(const char* sensor) {
       if(f == 0)
         A = qX / qY;
       quat = qX / (A * qY);
-      bamDQuat[j][f]() = { quat.w, quat.x, quat.y, quat.z };
+      bamDQuat[j][f] = { quat.w, quat.x, quat.y, quat.z };
     }
   }
 

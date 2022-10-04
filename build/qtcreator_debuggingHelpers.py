@@ -86,6 +86,9 @@ def qdump__rai__Array(d, value):
             d.putSubItem("special", value["special"])
             d.putSubItem("jac", value["jac"])
             
+def qdump__rai__ArrayDouble(d, value):
+    qdump__rai__Array(d, value)
+
 def qdump__rai__Node_typed(d, value):
     pars_N = int(value["parents"]["N"])
     pars_p = value["parents"]["p"]
@@ -219,6 +222,7 @@ def qdump__rai__Frame(d, value):
             d.putSubItem("ID", value["ID"])
             d.putSubItem("name", value["name"])
             d.putSubItem("parent", value["parent"])
+            d.putSubItem("prev", value["prev"])
             d.putSubItem("children", value["children"])
             d.putSubItem("Q", value["Q"])
             d.putSubItem("X", value["X"])

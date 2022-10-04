@@ -233,7 +233,11 @@ void FrameToMatrix(arr& X, const rai::Transformation& f) {
   arr r(3, 3);  Featherstone::skew(r, &f.pos.x);
   arr R(3, 3);  f.rot.getMatrix(R.p);
   transpose(R);
-  X.resize(6, 6);  X.setBlockMatrix(R, z, R*~r, R); //[[unklar!!]]
+  X.resize(6, 6);
+  X.setMatrixBlock(R, 0, 0);
+  X.setMatrixBlock(z, 0, 3);
+  X.setMatrixBlock(R*~r, 3, 0);
+  X.setMatrixBlock(R, 3, 3); //[[unklar!!]]
   //cout <<"\nz=" <<z <<"\nr=" <<r <<"\nR=" <<R <<"\nX=" <<X <<endl;
 }
 
@@ -445,7 +449,10 @@ void Featherstone::RBmci(arr& rbi, double m, double* c, const rai::Matrix& I) {
   II.referTo(&I.m00, 9);
   II.reshape(3, 3);
 
-  rbi.setBlockMatrix(II + m*C*~C, m*C, m*~C, m*eye(3));
+  rbi.setMatrixBlock(II + m*C*~C, 0,0);
+  rbi.setMatrixBlock(m*C, 0,3);
+  rbi.setMatrixBlock(m*~C, 3,0);
+  rbi.setMatrixBlock(m*eye(3), 3,3);
   //rbi = [ I + m*C*C', m*C; m*C', m*eye(3) ];
 }
 
@@ -733,8 +740,8 @@ void FeatherstoneInterface::fwdDynamics_aba_nD(arr& qdd,
       u(i).clear(); u(i).resize(0);
     }
     if(par != -1) {
-      IA[par]() += ~Xup[i] * (IA[i] - I_h(i)*inverse(h_I_h(i))*~I_h(i)) * Xup[i];
-      fA[par]() += ~Xup[i] * (fA[i] + IA[i]*dh_dq[i] + I_h(i)*inverse(h_I_h(i))*u(i));
+      IA[par] += ~Xup[i] * (IA[i] - I_h(i)*inverse(h_I_h(i))*~I_h(i)) * Xup[i];
+      fA[par] += ~Xup[i] * (fA[i] + IA[i]*dh_dq[i] + I_h(i)*inverse(h_I_h(i))*u(i));
     }
   }
 
@@ -743,7 +750,7 @@ void FeatherstoneInterface::fwdDynamics_aba_nD(arr& qdd,
     if(par == -1) {
       a[i] = 0; //Xup[i] * grav_accn;
     } else {
-      a[i]() = Xup[i] * a[par];
+      a[i] = Xup[i] * a[par];
     }
     if(tree(i).dof()) {
       qdd_i(i) = inverse(h_I_h(i))*(u(i) - ~I_h(i)*a[i]);
@@ -776,20 +783,20 @@ void FeatherstoneInterface::fwdDynamics_aba_1D(arr& qdd,
     F_Link& link = tree(i);
     iq  = link.qIndex;
     par = link.parent;
-    Xup[i]() = link._Q; //the transformation from the i-th to the j-th
+    Xup[i] = link._Q; //the transformation from the i-th to the j-th
     if(par!=-1) {
-      h[i]() = link._h;
+      h[i] = link._h;
       if(iq!=-1) {//is not a fixed joint
         vJ = h[i] * qd(iq); //equation (2), vJ = relative vel across joint i
-        v[i]() = Xup[i] * v[par] + vJ; //eq (27)
-        dh_dq[i]() = Featherstone::crossM(v[i]) * vJ;  //WHY??
+        v[i] = Xup[i] * v[par] + vJ; //eq (27)
+        dh_dq[i] = Featherstone::crossM(v[i]) * vJ;  //WHY??
         taui(i) = tau(iq);
       } else {
-        v[i]() = Xup[i] * v[par]; //eq (27)
+        v[i] = Xup[i] * v[par]; //eq (27)
       }
     }
-    IA[i]() = tree(i)._I;
-    fA[i]() = Featherstone::crossF(v[i]) * (tree(i)._I * v[i]) - tree(i)._f;  //first part of eq (29)
+    IA[i] = tree(i)._I;
+    fA[i] = Featherstone::crossF(v[i]) * (tree(i)._I * v[i]) - tree(i)._f;  //first part of eq (29)
   }
 
   //bwd: propagate tree inertia
@@ -799,7 +806,7 @@ void FeatherstoneInterface::fwdDynamics_aba_1D(arr& qdd,
     //eq (28)
     if(par!=-1) {
       if(link.qIndex!=-1) {
-        I_h[i]()     = IA[i] * h[i];
+        I_h[i]     = IA[i] * h[i];
         h_I_h(i)     = scalarProduct(h[i], I_h[i]);
         inv_h_I_h(i) = 1./h_I_h(i);
         tau__h_fA(i) = taui(i) - scalarProduct(h[i], fA[i]); //[change from above] last term in (13), 2nd equation below (13)
@@ -883,7 +890,7 @@ void FeatherstoneInterface::invDynamics(arr& tau,
       qidx = tree(i).qIndex;
       tau_i(qidx) = ~h(i) * fJ[i];
     }
-    if(par != -1)     fJ[par]() += ~Xup[i] * fJ[i];
+    if(par != -1)     fJ[par] += ~Xup[i] * fJ[i];
   }
 }
 
@@ -927,21 +934,21 @@ void FeatherstoneInterface::equationOfMotion(arr& H, arr& C,
   for(i=0; i<N; i++) {
     iq  = tree(i).qIndex;
     par = tree(i).parent;
-    Xup[i]() = tree(i)._Q; //the transformation from the i-th to the j-th
+    Xup[i] = tree(i)._Q; //the transformation from the i-th to the j-th
     if(par!=-1) {
-      h[i]() = tree(i)._h;
+      h[i] = tree(i)._h;
       if(iq!=-1) {//is not a fixed joint
         vJ = h[i] * qd(iq); //equation (2), vJ = relative vel across joint i
-        v[i]() = Xup[i]*v[par] + vJ;
-        dh_dq[i]() = Featherstone::crossM(v[i]) * vJ;  //WHY??
-        avp[i]() = Xup[i]*avp[par] + Featherstone::crossM(v[i])*vJ;
+        v[i] = Xup[i]*v[par] + vJ;
+        dh_dq[i] = Featherstone::crossM(v[i]) * vJ;  //WHY??
+        avp[i] = Xup[i]*avp[par] + Featherstone::crossM(v[i])*vJ;
       } else {
-        v[i]() = Xup[i] * v[par];
-        avp[i]() = Xup[i] * avp[par];
+        v[i] = Xup[i] * v[par];
+        avp[i] = Xup[i] * avp[par];
       }
     }
-    IC[i]() = tree(i)._I;
-    fvp[i]() = tree(i)._I*avp[i] + Featherstone::crossF(v[i])*(tree(i)._I*v[i]) - tree(i)._f;
+    IC[i] = tree(i)._I;
+    fvp[i] = tree(i)._I*avp[i] + Featherstone::crossF(v[i])*(tree(i)._I*v[i]) - tree(i)._f;
   }
 
   C.resize(qd.N).setZero();
@@ -953,8 +960,8 @@ void FeatherstoneInterface::equationOfMotion(arr& H, arr& C,
       C(iq) += scalarProduct(h[i], fvp[i]);
     }
     if(par!=-1) {
-      fvp[par]() += ~Xup[i] * fvp[i];
-      IC[par]() += ~Xup[i] * IC[i] * Xup[i];
+      fvp[par] += ~Xup[i] * fvp[i];
+      IC[par] += ~Xup[i] * IC[i] * Xup[i];
     }
   }
 

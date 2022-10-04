@@ -23,6 +23,8 @@
 #include "opengl.h"
 #include "../Geo/geo.h"
 
+#include <math.h>
+
 #ifdef RAI_GLFW
 #  include <GLFW/glfw3.h>
 #endif
@@ -1408,6 +1410,7 @@ int OpenGL::watchImage(const floatA& _img, bool wait, float _zoom) {
 }
 
 int OpenGL::watchImage(const byteA& _img, bool wait, float _zoom) {
+  if(!self->window) resize(_img.d1, _img.d0);
   background=_img;
   backgroundZoom=_zoom;
   //resize(img->d1*zoom,img->d0*zoom);
@@ -1416,8 +1419,8 @@ int OpenGL::watchImage(const byteA& _img, bool wait, float _zoom) {
 }
 
 /*void glWatchImage(const floatA &x, bool wait, float zoom){
-  double ma=x.max();
-  double mi=x.min();
+  double ma=max(x);
+  double mi=min(x);
   if(wait) cout <<"watched image min/max = " <<mi <<' ' <<ma <<endl;
   byteA img;
   img.resize(x.d0*x.d1);
@@ -1429,21 +1432,10 @@ int OpenGL::watchImage(const byteA& _img, bool wait, float _zoom) {
   glWatchImage(img, wait, 20);
 }*/
 
-int OpenGL::displayGrey(const floatA& x, bool wait, float _zoom) {
-  static byteA img;
-  resizeAs(img, x);
-  float mi=x.min(), ma=x.max();
-  text.clear() <<"displayGrey" <<" max:" <<ma <<" min:" <<mi <<endl;
-  for(uint i=0; i<x.N; i++) {
-    img.elem(i)=(byte)(255.*(x.elem(i)-mi)/(ma-mi));
-  }
-  return watchImage(img, wait, _zoom);
-}
-
 int OpenGL::displayGrey(const arr& x, bool wait, float _zoom) {
   static byteA img;
   resizeAs(img, x);
-  double mi=x.min(), ma=x.max();
+  double mi=min(x), ma=max(x);
   text.clear() <<"displayGrey" <<" max:" <<ma <<"min:" <<mi <<endl;
   for(uint i=0; i<x.N; i++) {
     img.elem(i)=(byte)(255.*(x.elem(i)-mi)/(ma-mi));
@@ -1452,7 +1444,7 @@ int OpenGL::displayGrey(const arr& x, bool wait, float _zoom) {
 }
 
 int OpenGL::displayRedBlue(const arr& x, bool wait, float _zoom) {
-  double mi=x.min(), ma=x.max();
+  double mi=min(x), ma=max(x);
   text.clear() <<"max=" <<ma <<"min=" <<mi <<endl;
 //  cout <<"\rdisplay" <<win <<" max=" <<ma <<"min=" <<mi;
   static byteA img;
@@ -1686,7 +1678,8 @@ void OpenGL::clearSubView(uint v) {
 void OpenGL::clear() {
   auto _dataLock = dataLock(RAI_HERE);
   views.clear();
-  listDelete(toBeDeletedOnCleanup);
+  for(CstyleDrawer* d:toBeDeletedOnCleanup) delete d;
+  toBeDeletedOnCleanup.clear();
   drawers.clear();
   initCalls.clear();
   hoverCalls.clear();
@@ -2703,7 +2696,7 @@ void read_png(byteA& img, const char* file_name, bool swap_rows) {
   png_read_update_info(png, info);
 
   img.resize(height, png_get_rowbytes(png, info));
-  rai::Array<byte*> cpointers = img.getCarray();
+  rai::Array<byte*> cpointers = getCarray(img);
   if(swap_rows) cpointers.reverse();
 
   png_read_image(png, cpointers.p);
@@ -2752,7 +2745,7 @@ void write_png(const byteA& img, const char* file_name, bool swap_rows) {
 
   byteA imgRef = img.ref();
   imgRef.reshape(img.d0, -1);
-  rai::Array<byte*> cpointers = imgRef.getCarray();
+  rai::Array<byte*> cpointers = getCarray(imgRef);
   if(swap_rows) cpointers.reverse();
 
   png_write_image(png, cpointers.p);

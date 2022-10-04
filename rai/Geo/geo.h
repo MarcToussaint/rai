@@ -163,7 +163,7 @@ struct Quaternion {
   double getPitch_Y() const;
   double getYaw_Z() const;
   arr getEulerRPY() const;
-  void applyOnPointArray(arr& pts);
+  void applyOnPointArray(arr& pts) const;
 
   arr getJacobian() const;
   arr getMatrixJacobian() const;

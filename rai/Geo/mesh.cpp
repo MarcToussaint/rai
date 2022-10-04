@@ -52,7 +52,7 @@ void rai::Mesh::clear() {
   graph.clear();
 }
 
-void rai::Mesh::setBox() {
+void rai::Mesh::setBox(bool edgesOnly) {
   clear();
   double verts[24] = {
     -.5, -.5, -.5,
@@ -72,10 +72,21 @@ void rai::Mesh::setBox() {
     2, 6, 5, 5, 1, 2,
     0, 4, 7, 7, 3, 0
   };
+  uint edges[24] = {
+    0, 1, 1, 2, 2, 3, 3, 0,
+    4, 5, 5, 6, 6, 7, 7, 4,
+    0, 4, 1, 5, 2, 6, 3, 7
+  };
+
   V.setCarray(verts, 24);
-  T.setCarray(tris, 36);
   V.reshape(8, 3);
-  T.reshape(12, 3);
+  if(!edgesOnly) {
+    T.setCarray(tris, 36);
+    T.reshape(12, 3);
+  }else{
+    T.setCarray(edges, 24);
+    T.reshape(12, 2);
+  }
   Vn.clear(); Tn.clear();
   graph.clear();
   //cout <<V <<endl;  for(uint i=0;i<4;i++) cout <<length(V[i]) <<endl;
@@ -190,7 +201,7 @@ void rai::Mesh::setSphere(uint fineness) {
 //  setTetrahedron();
   for(uint k=0; k<fineness; k++) {
     subDivide();
-    for(uint i=0; i<V.d0; i++) V[i]() /= length(V[i]);
+    for(uint i=0; i<V.d0; i++) V[i] /= length(V[i]);
   }
   makeConvexHull();
 }
@@ -201,7 +212,7 @@ void rai::Mesh::setHalfSphere(uint fineness) {
   T.resizeCopy(4, 3);
   for(uint k=0; k<fineness; k++) {
     subDivide();
-    for(uint i=0; i<V.d0; i++) V[i]() /= length(V[i]);
+    for(uint i=0; i<V.d0; i++) V[i] /= length(V[i]);
   }
   makeConvexHull();
 }
@@ -299,9 +310,9 @@ void rai::Mesh::subDivide() {
   uint a, b, c, i, k, l;
   for(i=0, k=v, l=0; i<t; i++) {
     a=T(i, 0); b=T(i, 1); c=T(i, 2);
-    V[k+0]() = (double).5*(V[a] + V[b]);
-    V[k+1]() = (double).5*(V[b] + V[c]);
-    V[k+2]() = (double).5*(V[c] + V[a]);
+    V[k+0] = (double).5*(V[a] + V[b]);
+    V[k+1] = (double).5*(V[b] + V[c]);
+    V[k+2] = (double).5*(V[c] + V[a]);
     newT(l, 0)=a;   newT(l, 1)=k+0; newT(l, 2)=k+2; l++;
     newT(l, 0)=k+0; newT(l, 1)=b;   newT(l, 2)=k+1; l++;
     newT(l, 0)=k+0; newT(l, 1)=k+1; newT(l, 2)=k+2; l++;
@@ -318,9 +329,9 @@ void rai::Mesh::subDivide(uint i) {
   T.resizeCopy(t+3, 3);
   uint a, b, c;
   a=T(i, 0); b=T(i, 1); c=T(i, 2);
-  V[v+0]() = (double).5*(V[a] + V[b]);
-  V[v+1]() = (double).5*(V[b] + V[c]);
-  V[v+2]() = (double).5*(V[c] + V[a]);
+  V[v+0] = (double).5*(V[a] + V[b]);
+  V[v+1] = (double).5*(V[b] + V[c]);
+  V[v+2] = (double).5*(V[c] + V[a]);
   T(i, 0)=a;   T(i, 1)=v+0; T(i, 2)=v+2; //the old ith tri becomes one of the 4 new ones
   T(t, 0)=v+0; T(t, 1)=b;   T(t, 2)=v+1; t++;
   T(t, 0)=v+0; T(t, 1)=v+1; T(t, 2)=v+2; t++;
@@ -350,7 +361,7 @@ void rai::Mesh::transform(const rai::Transformation& t) {
 
 rai::Vector rai::Mesh::center() {
   arr Vmean = mean(V);
-  for(uint i=0; i<V.d0; i++) V[i]() -= Vmean;
+  for(uint i=0; i<V.d0; i++) V[i] -= Vmean;
   return Vector(Vmean);
 }
 
@@ -388,7 +399,7 @@ void rai::Mesh::addMesh(const Mesh& mesh2, const rai::Transformation& X) {
     Tt.append(consts<uint>(0, mesh2.T.d0, 3));
   }
   if(!X.isZero()) {
-    X.applyOnPointArray(V({n, -1})());
+    X.applyOnPointArray(V({n, -1}).noconst());
   }
   if(mesh2.texImg.N){
 //    CHECK(!texImg.N, "can't append texture images");
@@ -508,7 +519,7 @@ void rai::Mesh::computeNormals() {
     Vn(t[2], 0)+=a.x;  Vn(t[2], 1)+=a.y;  Vn(t[2], 2)+=a.z;
   }
   Vector d;
-  for(uint i=0; i<Vn.d0; i++) { d.set(&Vn(i, 0)); Vn[i]()/=d.length(); }
+  for(uint i=0; i<Vn.d0; i++) { d.set(&Vn(i, 0)); Vn[i]/=d.length(); }
 }
 
 arr rai::Mesh::computeTriDistances() {
@@ -798,7 +809,7 @@ void rai::Mesh::clean() {
       if(r==2) { A=T(i, 2);  B=T(i, 0);  /*C=T(i, 1);*/ }
 
       //check all triangles that share A & B
-      setSection(neighbors, VT[A], VT[B]);
+      neighbors = rai::setSection(VT[A], VT[B]);
       neighbors.removeAllValues(-1);
       if(neighbors.N>2) RAI_MSG("edge shared by more than 2 triangles " <<neighbors);
       neighbors.removeValue(i);
@@ -1018,7 +1029,7 @@ arr rai::Mesh::getBox() const {
     a = elemWiseMin(a, V[i]);
     b = elemWiseMax(b, V[i]);
   }
-  return cat(a, b).reshape(2, 3);
+  return (a, b).reshape(2, 3);
 }
 
 double rai::Mesh::getRadius() const {

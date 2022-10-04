@@ -152,32 +152,36 @@ void init_Config(pybind11::module& m) {
     if(joints.N) q = self->getJointState(joints);
     else q = self->getJointState();
     return q;
-//    return pybind11::array(q.dim(), q.p);
+//    return arr2numpy(q);
   },
   "get the joint state as a numpy vector, optionally only for a subset of joints specified as list of joint names",
   pybind11::arg("joints") = ry::I_StringA()
       )
 
-  .def("setJointState", [](shared_ptr<rai::Configuration>& self, const std::vector<double>& q, const uintA& joints) {
-    if(joints.N) {
-      self->setJointState(arr(q, true), joints);
+//  .def("setJointState", [](shared_ptr<rai::Configuration>& self, const std::vector<double>& q, const uintA& joints) {
+//    if(joints.N) {
+//      self->setJointState(arr(q, true), joints);
+//    } else {
+//      self->setJointState(arr(q, true));
+//    }
+//    checkView(self);
+//  },
+//  "set the joint state, optionally only for a subset of joints specified as list of frameIDs",
+//  pybind11::arg("q"),
+//  pybind11::arg("joints") = uintA()
+//  )
+
+  .def("setJointState", [](shared_ptr<rai::Configuration>& self, const arr& q, const pybind11::list& joints) {
+    if(!joints.size()) {
+      self->setJointState(q);
     } else {
-      self->setJointState(arr(q, true));
+      self->setJointState(q, self->getFrames(list2arr<rai::String>(joints)));
     }
     checkView(self);
   },
-  "set the joint state, optionally only for a subset of joints specified as list of frameIDs",
+  "set the joint state, optionally only for a subset of joints specified as list of joint names",
   pybind11::arg("q"),
-  pybind11::arg("joints") = ry::I_StringA()
-      )
-
-      .def("setJointState", [](shared_ptr<rai::Configuration>& self, const arr& q, const ry::I_StringA& joints) {
-        self->setJointState(q, self->getFrames(I_conv(joints)));
-        checkView(self);
-      },
-      "set the joint state, optionally only for a subset of joints specified as list of joint names",
-  pybind11::arg("q"),
-  pybind11::arg("joints")
+  pybind11::arg("joints") = pybind11::list()
   )
 
   .def("setJointStateSlice", [](shared_ptr<rai::Configuration>& self, const std::vector<double>& q, uint t) {
@@ -199,7 +203,7 @@ void init_Config(pybind11::module& m) {
 
   .def("getFrameState", [](shared_ptr<rai::Configuration>& self) {
     arr X = self->getFrameState();
-    return pybind11::array(X.dim(), X.p);
+    return arr2numpy(X);
   },
   "get the frame state as a n-times-7 numpy matrix, with a 7D pose per frame"
       )
@@ -208,7 +212,7 @@ void init_Config(pybind11::module& m) {
     arr X;
     rai::Frame* f = self->getFrame(frame, true);
     if(f) X = f->ensure_X().getArr7d();
-    return pybind11::array(X.dim(), X.p);
+    return arr2numpy(X);
   }, "TODO remove -> use individual frame!")
 
   .def("setFrameState", [](shared_ptr<rai::Configuration>& self, const std::vector<double>& X, const ry::I_StringA& frames) {
@@ -256,7 +260,7 @@ many mapping refer to one or several frames, which need to be specified using fr
 
   .def("evalFeature", [](shared_ptr<rai::Configuration>& self, FeatureSymbol fs, const ry::I_StringA& frames) {
     arr y = self->evalFeature(fs, I_conv(frames));
-    return pybind11::make_tuple(pybind11::array(y.dim(), y.p), pybind11::array(y.J().dim(), y.J().p));
+    return pybind11::make_tuple(arr2numpy(y), arr2numpy(y.J()));
   }, "TODO remove -> use feature directly"
       )
 
@@ -348,7 +352,7 @@ To get really precise distances and penetrations use the FS.distance feature wit
 
   .def("view_getScreenshot", [](shared_ptr<rai::Configuration>& self) {
     byteA rgb = self->gl()->getScreenshot();
-   return pybind11::array_t<byte>(rgb.dim(), rgb.p);
+   return Array2numpy<byte>(rgb);
   })
 
   .def("view_close", [](shared_ptr<rai::Configuration>& self) {
@@ -484,7 +488,7 @@ allows you to control robot motors by position, velocity, or accelerations, \
   .def("equationOfMotion", [](shared_ptr<rai::Configuration>& self, std::vector<double>& qdot, bool gravity) {
     arr M, F;
     self->equationOfMotion(M, F, arr(qdot, true), gravity);
-    return pybind11::make_tuple(pybind11::array(M.dim(), M.p), pybind11::array(F.dim(), F.p));
+    return pybind11::make_tuple(arr2numpy(M), arr2numpy(F));
   }, "",
   pybind11::arg("qdot"),
   pybind11::arg("gravity"))
@@ -493,7 +497,7 @@ allows you to control robot motors by position, velocity, or accelerations, \
     arr _qdot(qdot, false);
     self->stepDynamics(_qdot, arr(u_control, true), tau, dynamicNoise, gravity);
     checkView(self);
-    return pybind11::array(_qdot.dim(), _qdot.p);
+    return arr2numpy(_qdot);
   }, "",
   pybind11::arg("qdot"),
   pybind11::arg("u_control"),
@@ -545,8 +549,8 @@ allows you to control robot motors by position, velocity, or accelerations, \
     else self.cam->renderMode = rai::CameraView::all;
     self.cam->computeImageAndDepth(imageSet, depthSet);
     pybind11::tuple ret(2);
-    ret[0] = pybind11::array(imageSet->dim(), imageSet->p);
-    ret[1] = pybind11::array(depthSet->dim(), depthSet->p);
+    ret[0] = Array2numpy<byte>(imageSet);
+    ret[1] = Array2numpy<float>(depthSet);
     return ret;
   },
   pybind11::arg("visualsOnly")=true
@@ -557,7 +561,7 @@ allows you to control robot motors by position, velocity, or accelerations, \
     floatA __depth; copy(__depth, _depth);
     auto ptsSet = self.pts.set();
     self.cam->computePointCloud(ptsSet, __depth, globalCoordinates);
-    return pybind11::array(ptsSet->dim(), ptsSet->p);
+    return arr2numpy(ptsSet);
   }, "",
   pybind11::arg("depth"),
   pybind11::arg("globalCoordinates") = true)
@@ -565,7 +569,7 @@ allows you to control robot motors by position, velocity, or accelerations, \
   .def("computeSegmentation", [](ry::RyCameraView& self) {
     auto segSet = self.segmentation.set();
     self.cam->computeSegmentation(segSet);
-    return pybind11::array(segSet->dim(), segSet->p);
+    return Array2numpy<byte>(segSet());
   })
 
   .def("pointCloudViewer", [](ry::RyCameraView& self) {

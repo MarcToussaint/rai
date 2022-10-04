@@ -80,12 +80,12 @@ void fitSSBox(arr& x, double& f, double& g, const arr& X, int verbose) {
   rot.setRandom();
   arr tX = X * rot.getArr(); //rotate points (with rot^{-1})
   arr ma = max(tX, 0), mi = min(tX, 0); //get coordinate-wise min and max
-  x({0, 2})() = (ma-mi)/2.;  //sizes
+  x({0, 2}) = (ma-mi)/2.;  //sizes
   x(3) = 1.; //sum(ma-mi)/6.;  //radius
-  x({4, 6})() = rot.getArr() * (mi+.5*(ma-mi)); //center (rotated back)
-  x({7, 10})() = conv_quat2arr(rot);
-  rndGauss(x({7, 10})(), .1, true);
-  x({7, 10})() /= length(x({7, 10})());
+  x({4, 6}) = rot.getArr() * (mi+.5*(ma-mi)); //center (rotated back)
+  x({7, 10}) = conv_quat2arr(rot);
+  rndGauss(x({7, 10}).noconst(), .1, true);
+  x({7, 10}) /= length(x({7, 10}));
 
   if(verbose>1) {
     checkJacobianCP(F, x, 1e-4);
@@ -167,7 +167,7 @@ void minimalConvexCore(arr& core, const arr& points, double radius, int verbose)
       gl.add(m0);
       gl.add(m1);
     }
-    virtual void getFeatureTypes(ObjectiveTypeA& tt) { tt = consts<ObjectiveType>(OT_ineq, X.d0+1); tt(0) = OT_f; }
+    virtual void getFeatureTypes(ObjectiveTypeA& tt) { tt.resize(X.d0+1) = OT_ineq; tt(0) = OT_f; }
     void evaluate(arr& phi, arr& J, const arr& x) {
       uint n = X.d0;
       arr _x = x.ref().reshape(-1, 3);
@@ -298,9 +298,9 @@ struct MeshCluster {
 
 void RitterAlgorithm(arr& center, double& radius, const arr& pts) {
   arr Pts = ~pts;
-  int minx=Pts[0].argmin(), maxx=Pts[0].argmax(),
-      miny=Pts[1].argmin(), maxy=Pts[1].argmax(),
-      minz=Pts[2].argmin(), maxz=Pts[2].argmax();
+  int minx=argmin(Pts[0]), maxx=argmax(Pts[0]),
+      miny=argmin(Pts[1]), maxy=argmax(Pts[1]),
+      minz=argmin(Pts[2]), maxz=argmax(Pts[2]);
   double dist2x = sumOfSqr(pts[minx] - pts[maxx]);
   double dist2y = sumOfSqr(pts[miny] - pts[maxy]);
   double dist2z = sumOfSqr(pts[minz] - pts[maxz]);
@@ -325,7 +325,8 @@ void RitterAlgorithm(arr& center, double& radius, const arr& pts) {
 }
 
 void minimalConvexCore2(arr& core, const arr& org_pts, double max_radius, int verbose) {
-  arr pts = getHull(org_pts);
+  uintA T;
+  arr pts = getHull(org_pts, T);
 
   rai::Array<MeshCluster> clusters;
 
@@ -382,7 +383,8 @@ void minimalConvexCore2(arr& core, const arr& org_pts, double max_radius, int ve
 }
 
 void minimalConvexCore3(arr& core, const arr& org_pts, double max_radius, int verbose) {
-  arr pts = getHull(org_pts);
+  uintA T;
+  arr pts = getHull(org_pts, T);
 
   uint k=20;
   arr centers(k, 3);
@@ -541,8 +543,11 @@ struct FitCapsuleProblem : NLP {
     B.setId();
     B *= 1./l;
     B -= ((a-b)^(a-b)) / (l*l*l);
-    arr A;
-    A.setBlockMatrix(B, -B, -B, B);
+    arr A(6,6);
+    A.setMatrixBlock(B, 0,0);
+    A.setMatrixBlock(-B, 0,3);
+    A.setMatrixBlock(-B, 3,0);
+    A.setMatrixBlock(B, 3,3);
     H.setMatrixBlock(A, 0, 0);
     checkNan(H);
   }//zero
@@ -550,7 +555,8 @@ struct FitCapsuleProblem : NLP {
 };
 
 void optimalSphere(arr& core, uint num, const arr& org_pts, double& radius, int verbose) {
-  arr pts = getHull(org_pts);
+  uintA T;
+  arr pts = getHull(org_pts, T);
 
   LOG(1) <<"merging with radius " <<radius;
 

@@ -107,7 +107,7 @@ struct FOL_World : TreeSearchDomain {
   void copy(const FOL_World& fol) { init(fol.KB); }
 
   virtual TransitionReturn transition(const Handle& action); //returns (observation, reward)
-  virtual const std::vector<Handle> get_actions();
+  virtual const Array<Handle> get_actions();
   virtual bool is_feasible_action(const Handle& action);
   virtual const Handle get_stateCopy();
   virtual void set_state(const Handle& _state);

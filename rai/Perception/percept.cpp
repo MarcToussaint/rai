@@ -215,7 +215,7 @@ void PercBox::syncWith(rai::Configuration& K) {
     shape->type() = rai::ST_box;
   }
   body->setPose(pose);
-  body->shape->size() = size;
+  body->shape->size = size;
   body->shape->mesh().C = color;
 }
 
@@ -268,7 +268,7 @@ void PercCluster::syncWith(rai::Configuration& K) {
     shape->type() = rai::ST_pointCloud;
     shape = new rai::Shape(*body);
     shape->type() = rai::ST_marker;
-    shape->size() = consts<double>(.2, 3);
+    shape->size = rai::consts(.2, 3);
 //    stored_clusters.append(id);
   }
   body->setPose(pose);
@@ -290,7 +290,7 @@ void PercAlvar::syncWith(rai::Configuration& K) {
     body->name = alvar_name;
     rai::Shape* shape = new rai::Shape(*body);
     shape->type() = rai::ST_marker;
-    shape->size() = consts<double>(.2, 3);
+    shape->size = rai::consts(.2, 3);
 //    stored_alvars.append(id);
   }
 
@@ -307,7 +307,7 @@ void OptitrackBody::syncWith(rai::Configuration& K) {
     body->name = optitrackbody_name;
     rai::Shape* shape = new rai::Shape(*body);
     shape->type() = rai::ST_marker;
-    shape->size() = consts<double>(.1, 3);
+    shape->size = rai::consts(.1, 3);
 //    stored_optitrackbodies.append(id);
   }
 
@@ -324,7 +324,7 @@ void OptitrackMarker::syncWith(rai::Configuration& K) {
     body->name = optitrackmarker_name;
     rai::Shape* shape = new rai::Shape(*body);
     shape->type() = rai::ST_sphere;
-    shape->size() = consts<double>(.03, 3);
+    shape->size = rai::consts(.03, 3);
 //    stored_optitrackmarkers.append(id);
   }
 

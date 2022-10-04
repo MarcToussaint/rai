@@ -24,6 +24,7 @@ struct CameraView : GLDrawer {
     int frame=-1;
     Sensor() {}
     rai::Transformation& pose() { return cam.X; }
+    arr getFxypxy(){ return arr{cam.focalLength*height, cam.focalLength*height, .5*double(width), .5*double(height)}; }
   };
 
   //-- description of world configuration
@@ -56,6 +57,11 @@ struct CameraView : GLDrawer {
   void computeKinectDepth(uint16A& kinect_depth, const arr& depth);
   void computePointCloud(arr& pts, const floatA& depth, bool globalCoordinates=true); // point cloud (rgb of every point is given in image)
   void computeSegmentation(byteA& segmentation);     // -> segmentation
+  void computeSegmentation(uintA& segmentation);     // -> segmentation
+
+  //-- helpers
+  arr pixel2world(const arr& pixelCoordinates);
+  arr world2pixel(const arr& worldCoordinates);
 
   //-- displays
   void watch_PCL(const arr& pts, const byteA& rgb);
@@ -82,7 +88,7 @@ struct Sim_CameraView : Thread {
   Sim_CameraView(Var<rai::Configuration>& _kin,
                  Var<byteA> _color,
                  Var<floatA> _depth,
-                 double beatIntervalSec=-1., const char* _cameraFrameName=nullptr, bool _idColors=false, const byteA& _frameIDmap=NoByteA);
+                 double beatIntervalSec=-1., const char* _cameraFrameName=nullptr, bool _idColors=false, const byteA& _frameIDmap={});
   ~Sim_CameraView();
 
   void step();

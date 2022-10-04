@@ -8,6 +8,7 @@
 
 #include "cameraview.h"
 #include "frame.h"
+#include "../Geo/depth2PointCloud.h"
 
 //===========================================================================
 
@@ -118,7 +119,7 @@ void rai::CameraView::computeImageAndDepth(byteA& image, floatA& depth) {
     image = seg;
     image.reshape(gl.height, gl.width);
   }
-  if(!!depth) {
+  if(true) { //(!!depth) {
     depth = gl.captureDepth;
     flip_image(depth);
     for(float& d:depth) {
@@ -132,10 +133,20 @@ void rai::CameraView::computeImageAndDepth(byteA& image, floatA& depth) {
 void rai::CameraView::computeSegmentation(byteA& segmentation) {
   updateCamera();
   renderMode=seg;
-  gl.update(nullptr, true);
+  gl.renderInBack();
+//  gl.update(nullptr, true);
   segmentation = gl.captureImage;
   flip_image(segmentation);
   done(__func__);
+}
+
+void rai::CameraView::computeSegmentation(uintA& segmentation) {
+  byteA seg;
+  computeSegmentation(seg);
+  segmentation.resize(seg.d0, seg.d1);
+  for(uint i=0; i<segmentation.N; i++) {
+    segmentation.elem(i) = color2id(seg.p+3*i);
+  }
 }
 
 void rai::CameraView::computeKinectDepth(uint16A& kinect_depth, const arr& depth) {
@@ -178,8 +189,26 @@ void rai::CameraView::computePointCloud(arr& pts, const floatA& depth, bool glob
   done(__func__);
 }
 
-void rai::CameraView::watch_PCL(const arr& pts, const byteA& rgb) {
+arr rai::CameraView::pixel2world(const arr& pixelCoordinates){
+  CHECK(currentSensor, "");
+  CHECK_EQ(pixelCoordinates.N, 3, "");
+  arr fxypxy = currentSensor->getFxypxy();
+  arr x = pixelCoordinates;
+  depthData2point(x.p, fxypxy.p);
+  return x;
+}
 
+arr rai::CameraView::world2pixel(const arr& worldCoordinates){
+  CHECK(currentSensor, "");
+  CHECK_EQ(worldCoordinates.N, 3, "");
+  arr fxypxy = currentSensor->getFxypxy();
+  arr x = worldCoordinates;
+  point2depthData(x.p, fxypxy.p);
+  return x;
+}
+
+void rai::CameraView::watch_PCL(const arr& pts, const byteA& rgb) {
+  NIY;
 }
 
 void rai::CameraView::updateCamera() {
@@ -253,7 +282,7 @@ rai::Sim_CameraView::Sim_CameraView(Var<rai::Configuration>& _kin,
   }
   if(_idColors) {
     V.renderMode = V.seg;
-    if(!!_frameIDmap)
+    if(_frameIDmap.N)
       V.frameIDmap = _frameIDmap;
     else {
       V.C.clear();;

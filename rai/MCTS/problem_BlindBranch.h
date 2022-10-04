@@ -37,7 +37,7 @@ struct BlindBranch : rai::TreeSearchDomain {
   void reset_state();
   TransitionReturn transition(const Handle& action);
   TransitionReturn transition_randomly();
-  const std::vector<Handle> get_actions();
+  const rai::Array<Handle> get_actions();
   const Handle get_state();
   void set_state(const Handle& _state);
   bool is_terminal_state() const;

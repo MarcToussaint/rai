@@ -291,9 +291,9 @@ void rai::Mesh::readObjFile(std::istream& is) {
 
   //CONVENTION!: start counting vertex indices from 0!!
   T -= 1u;
-  CHECK(T.max() < nV, "");
+  CHECK(max(T) < nV, "");
   if(nTex) {
     Tt -= 1u;
-    CHECK(Tt.max() < nTex, "");
+    CHECK(max(Tt) < nTex, "");
   }
 }

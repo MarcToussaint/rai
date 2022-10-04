@@ -129,7 +129,7 @@ void Event::stopListenTo(Var_base& v) {
 }
 
 void Event::stopListening() {
-  while(variables.N) stopListenTo(*variables.last());
+  while(variables.N) stopListenTo(*variables.elem(-1));
 }
 
 void Event::callback(Var_base* v) {

@@ -31,10 +31,10 @@ void TEST(Solver) {
   S.setSolver(sid);
   S.setProblem(nlp);
   if(x_init.N) S.setInitialization(x_init);
-  S.solve();
+  S.solveStepping();
 
   arr path = catCol(S.getTrace_x(), S.getTrace_costs());
-  path.writeRaw(FILE("z.path"));
+  FILE("z.path") <<path.modRaw();
 
   NLP_Viewer(nlp, S.P). display();
   // displayNLP(nlp, S.getTrace_x(), S.getTrace_costs());
@@ -49,7 +49,7 @@ int MAIN(int argc,char** argv){
 
   rnd.clockSeed();
 
-  testDisplay();
+//  testDisplay();
   testSolver();
 
   return 0;

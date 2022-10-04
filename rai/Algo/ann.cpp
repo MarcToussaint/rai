@@ -61,7 +61,7 @@ void ANN::append(const arr& x) {
 void ANN::calculate() {
   if(self->treeSize == X.d0) return;
   self->clear();
-  X.getCarray(self->cpointers);
+  self->cpointers = getCarray(X);
   self->tree = new ANNkd_tree(self->cpointers.p, X.d0, X.d1);
   self->treeSize = X.d0;
 }

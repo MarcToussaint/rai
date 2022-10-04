@@ -12,6 +12,7 @@
 #include <vector>
 #include <memory>
 #include <tuple>
+#include "../Core/array.h"
 
 namespace rai {
 
@@ -50,12 +51,12 @@ struct TreeSearchDomain {
 
   /// Perform a random action
   virtual TransitionReturn transition_randomly() {
-    std::vector<Handle> actions = get_actions();
-    return transition(actions[rand()%actions.size()]);
+    Array<Handle> actions = get_actions();
+    return transition(actions.rndElem());
   }
 
   /// Get the available actions in the current state
-  virtual const std::vector<Handle> get_actions() = 0;
+  virtual const Array<Handle> get_actions() = 0;
 
   /// Return whether action is feasible in current state
   virtual bool is_feasible_action(const Handle& action) { return true; }

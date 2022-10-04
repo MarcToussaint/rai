@@ -651,11 +651,12 @@ rai::LogToken::~LogToken() {
   if(log.logFileLevel>=log_level) {
     if(!log.fil) log.fil = new ofstream;
     if(!log.fil->is_open()) log.fil->open(STRING("z.log."<<log.key));
-    (*log.fil) <<code_file <<':' <<code_func <<':' <<code_line <<'(' <<log_level <<") " <<msg <<endl;
+    (*log.fil) <<code_file <<':' <<code_func <<':' <<code_line <<'(' <<log_level <<") " <<(*msg) <<endl;
   }
   if(log.logCoutLevel>=log_level) {
     rai::errStringStream().clear();
-    rai::errStringStream() <<code_file <<':' <<code_func <<':' <<code_line <<'(' <<log_level <<") " <<msg;
+    rai::errStringStream() <<code_file <<':' <<code_func <<':' <<code_line <<'(' <<log_level <<") " <<(*msg);
+    if(msg){ delete msg; msg=0; }
     if(log.callback) log.callback(rai::errString(), log_level);
     if(log_level>=0){
       cout <<"** INFO:" <<rai::errString() <<endl; return;
@@ -693,12 +694,12 @@ rai::LogToken::~LogToken() {
 
       if(log_level==-1) { cout <<"** WARNING:" <<rai::errString() <<endl; return; }
       else if(log_level==-2) { cerr <<"** ERROR:" <<rai::errString() <<endl; /*throw does not WORK!!! Because this is a destructor. The THROW macro does it inline*/ }
-      else if(log_level==-3) { cerr <<"** HARD EXIT! " <<rai::errString() <<endl;  exit(1); }
       //INSERT BREAKPOINT HERE
-      if(log_level<=-3) raise(SIGABRT);
+      else if(log_level>=-3) { cerr <<"** HARD EXIT! " <<rai::errString() <<endl;  exit(1); }
+//      if(log_level<=-3) raise(SIGABRT);
     }
   }
-  if(msg) delete msg;
+  if(msg){ delete msg; msg=0; }
 //  rai::logServer().mutex.unlock();
 }
 
@@ -748,6 +749,21 @@ void rai::String::prepend(const rai::String& s) {
   resize(n+s.N, true);
   memmove(p+s.N, p, n);
   memmove(p, s, s.N);
+}
+
+void rai::String::replace(uint i, uint n, const char* xp, uint xN) {
+  uint Nold=N;
+  if(n==xN) {
+    memmove(p+i, xp, (xN));
+  } else if(n>xN) {
+    memmove(p+i+xN, p+i+n, (Nold-i-n));
+    if(i+n<Nold) memmove(p+i, xp, (xN));
+    resize(Nold-n+xN, true);
+  } else {
+    resize(Nold+xN-n, true);
+    if(i+n<Nold) memmove(p+i+xN, p+i+n, (Nold-i-n));
+    memmove(p+i, xp, (xN));
+  }
 }
 
 rai::String& rai::String::setRandom() {
@@ -890,6 +906,12 @@ bool rai::String::operator==(const String& s) const { if(!p && !s.p) return true
 bool rai::String::operator!=(const char* s) const { return !operator==(s); }
 bool rai::String::operator!=(const String& s) const { return !(operator==(s)); }
 bool rai::String::operator<=(const String& s) const { return p && s.p && strcmp(p, s.p)<=0; }
+
+bool rai::String::contains(char c) const {
+  if(!p) return false;
+  for(uint i=0;i<N;i++) if(p[i]==c) return true;
+  return false;
+}
 
 bool rai::String::contains(const String& substring) const {
   if(!p && substring.p) return false;
@@ -1122,6 +1144,9 @@ void  rai::Rnd::seed250(int32_t seed) {
   for(i=0; i<4711; ++i) rnd250();
 }
 
+namespace rai{
+  uint rndInt(uint up){ return rnd.num(up); }
+}
 //===========================================================================
 //
 // Inotify

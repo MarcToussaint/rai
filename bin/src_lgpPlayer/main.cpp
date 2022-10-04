@@ -55,10 +55,10 @@ void playFOL(const char* file){
       int choice=-1;
       cmd >>choice;
       cout <<"CHOICE=" <<choice <<endl;
-      if(choice<0 || choice>=(int)actions.size()) {
+      if(choice<0 || choice>=(int)actions.N) {
         LOG(-1) <<"command '" <<c <<"' not known";
       } else {
-        auto &a = actions[choice];
+        auto &a = actions(choice);
         cout <<"executing decision " <<*a <<endl;
         auto res=fol.transition(a);
         cout <<"->  result: obs=" <<*res.observation <<" reward=" <<res.reward <<endl;

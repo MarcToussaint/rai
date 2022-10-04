@@ -89,7 +89,7 @@ double NLP::eval_scalar(arr& g, arr& H, const arr& x){
     }
     arr tmp = J;
     if(!isSparseMatrix(tmp)) {
-      for(uint i=0; i<phi.N; i++) tmp[i]() *= sqrt(coeff.p[i]);
+      for(uint i=0; i<phi.N; i++) tmp[i] *= sqrt(coeff.p[i]);
     } else {
       arr sqrtCoeff = sqrt(coeff);
       tmp.sparse().rowWiseMult(sqrtCoeff);
@@ -138,7 +138,7 @@ void NLP_Factored::evaluate(arr& phi, arr& J, const arr& x) {
     if(!!J) {
       CHECK(!!J_i, "");
       if(resetJ){
-        if(J_i.isSparse()) J.sparse().resize(phi.N, x.N, 0);
+        if(isSparse(J_i)) J.sparse().resize(phi.N, x.N, 0);
         else J.resize(phi.N, x.N).setZero();
         resetJ=false;
       }
@@ -154,7 +154,7 @@ void NLP_Factored::evaluate(arr& phi, arr& J, const arr& x) {
         }
         CHECK_EQ(Jii, J_i.d1, "");
       }else{
-        if(J.isSparse()){
+        if(isSparse(J)){
           J_i.sparse().reshape(J.d0, J.d1);
           J_i.sparse().colShift(n);
           J += J_i;
@@ -364,7 +364,7 @@ void NLP_Viewer::display(){
 
   //-- plot
   //  plot()->Gnuplot();  plot()->Surface(Y);  plot()->update(true);
-  write(arrL{&Y}, "z.fct");
+  FILE("z.fct") <<Y.modRaw() <<endl;
 
   rai::String cmd;
   cmd <<"reset; set contour; set cntrparam linear; set cntrparam levels incremental 0,.1,10; set xlabel 'x'; set ylabel 'y'; ";
@@ -376,10 +376,10 @@ void NLP_Viewer::display(){
   }else{
     T->report(cout, 0);
     if(false && T->costTrace.N){
-      catCol(T->xTrace, T->costTrace.col(0)).writeRaw(FILE("z.trace"));
+      FILE("z.trace") <<catCol(T->xTrace, T->costTrace.col(0)).modRaw();
       cmd <<splot <<", 'z.trace' us 1:2:3 w lp; ";
     }else{
-      T->xTrace.writeRaw(FILE("z.trace"));
+      FILE("z.trace") <<T->xTrace.modRaw();
       cmd <<"unset surface; set table 'z.table'; ";
       cmd <<splot <<"; ";
       cmd <<"unset table; ";
@@ -392,7 +392,7 @@ void NLP_Viewer::display(){
 
 void NLP_Viewer::plotCostTrace(){
   CHECK(T, "");
-  T->costTrace.writeRaw(FILE("z.trace"));
+  FILE("z.trace") <<T->costTrace.modRaw();
   rai::String cmd;
   cmd <<"reset; set xlabel 'evals'; set ylabel 'objectives'; set style data lines;";
   cmd <<"plot 'z.trace' us ($0+1):1 t 'f+sos', '' us ($0+1):2 t 'ineq', '' us ($0+1):3 t 'eq';";

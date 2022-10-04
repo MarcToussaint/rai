@@ -81,7 +81,7 @@ void ImageViewer::step() {
 // ImageViewerFloat
 //
 
-ImageViewerFloat::ImageViewerFloat(const Var<floatA>& _img, double beatIntervalSec, float _scale)
+ImageViewerFloat::ImageViewerFloat(const Var<floatA>& _img, double beatIntervalSec, double _scale)
   : Thread(STRING("ImageViewerFloat_" <<_img.name()), beatIntervalSec),
     img(this, _img, (beatIntervalSec<0.)),
     scale(_scale) {
@@ -94,12 +94,14 @@ ImageViewerFloat::~ImageViewerFloat() {
 }
 
 void ImageViewerFloat::step() {
-  floatA img_copy;
+  byteA img_copy;
   {
     auto _dataLock = gl->dataLock(RAI_HERE);
-    img_copy = img.get();
+    arr img_copy1;
+    rai::copy(img_copy1, img.get()());
+    if(scale!=1.) img_copy1 *= scale;
+    rai::copy(img_copy, img_copy1);
     if(flipImage) flip_image(img_copy);
-    if(scale!=1.f) img_copy *= scale;
 
     if(!img_copy.N) return;
     if(gl->height!= img_copy.d0 || gl->width!= img_copy.d1) gl->resize(img_copy.d1, img_copy.d0);

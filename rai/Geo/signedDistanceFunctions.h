@@ -16,8 +16,9 @@ struct SDF : ScalarFunction {
   floatA evalFloat(const arr& samples);
   void viewSlice(OpenGL& gl, double z, const arr& lo, const arr& hi);
   void animateSlices(const arr& lo, const arr& hi, double wait=0.);
+  void view(double wait=0.);
 
-  arr projectNewton(const arr& x0, double maxStep=.1);
+  arr projectNewton(const arr& x0, double maxStep=.1, double regularization=1e-1);
 };
 
 struct SDF_Sphere : SDF {
@@ -85,7 +86,7 @@ struct SDF_GridData : SDF {
   SDF_GridData(const rai::Transformation& _pose, const floatA& _data, const arr& _lo, const arr& _up)
     : pose(_pose), gridData(_data), lo(_lo), up(_up) {}
 
-  SDF_GridData(SDF& f, const arr& _lo, const arr& _hi, const uintA& res);
+  SDF_GridData(SDF& f, const arr& _lo, const arr& _up, const uintA& res);
   SDF_GridData() {}
   SDF_GridData(istream& is) { read(is); }
 

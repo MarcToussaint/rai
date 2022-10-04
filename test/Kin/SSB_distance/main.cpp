@@ -128,8 +128,8 @@ double distance_SSRects(rai::Frame& A, rai::Frame& B, rai::Vector& Pa, rai::Vect
  * In the code this is transformed back and forth... */
 double distance_(rai::Frame& A, rai::Frame& B, rai::Vector& Pa, rai::Vector& Pb){
   CHECK(A.shape && B.shape, "");
-  arr& As = A.shape->size();
-  arr& Bs = B.shape->size();
+  arr& As = A.shape->size;
+  arr& Bs = B.shape->size;
   As(0)-=2.*As(3);  As(1)-=2.*As(3);  As(2)-=2.*As(3);
   Bs(0)-=2.*Bs(3);  Bs(1)-=2.*Bs(3);  Bs(2)-=2.*Bs(3);
   A.set_X()->pos -= 0.5*(A.ensure_X().rot*rai::Vector(As(0), As(1), As(2)));

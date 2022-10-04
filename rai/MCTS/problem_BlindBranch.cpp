@@ -7,6 +7,7 @@
     --------------------------------------------------------------  */
 
 #include "problem_BlindBranch.h"
+#include "../Core/util.h"
 
 BlindBranch::BlindBranch(uint H):H(H) {
   actions = { Handle(new Action(-1)), Handle(new Action(+1)) };
@@ -27,8 +28,8 @@ rai::TreeSearchDomain::TransitionReturn BlindBranch::transition_randomly() {
   return transition(actions(1));
 }
 
-const std::vector<rai::TreeSearchDomain::Handle> BlindBranch::get_actions() {
-  return actions.vec();
+const rai::Array<rai::TreeSearchDomain::Handle> BlindBranch::get_actions() {
+  return actions;
 }
 
 const rai::TreeSearchDomain::Handle BlindBranch::get_state() {

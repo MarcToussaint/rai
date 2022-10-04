@@ -38,7 +38,7 @@ void threeStepGraspHeuristic(arr& x, KOMO& MP, uint shapeId, uint verbose) {
       x_side[side]() = x;
     }
     cout <<"3 side costs=" <<cost_side <<endl;
-    side = cost_side.argmin();
+    side = argmin(cost_side);
     x = x_side[side];
   } else {
     setGraspGoals_PR2(MP, T, shapeId, side, 0);

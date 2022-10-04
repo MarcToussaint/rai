@@ -5,9 +5,6 @@
 //==============================================================================
 
 void TEST(Basics){
-
-  double tau=.1;
-
   rai::Spline S;
   arr X = {1., 0., 0., 1.};  X.reshape(-1,1);
   arr T = {0., .5, .5, 1.};
@@ -47,7 +44,7 @@ void TEST(Basics){
 void TEST(Speed){
 
   uint N=1000000, n=2;
-  arr X = randn(N, 2);
+  arr X = randn(N, n);
   arr T = integral(rand(N)+0.1);
 //  cout <<X <<endl <<T <<endl;
 

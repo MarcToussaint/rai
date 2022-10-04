@@ -87,8 +87,8 @@ void FOL_World::init(const Graph& _KB) {
     cout <<"****************** FOL_World: creation info:" <<endl;
     cout <<"*** start_state=" <<*start_state <<endl;
     cout <<"*** reward fct=" <<*rewardFct <<endl;
-    cout <<"*** worldRules = "; listWrite(worldRules, cout); cout <<endl;
-    cout <<"*** decisionRules = "; listWrite(decisionRules, cout, "\n"); cout <<endl;
+    cout <<"*** worldRules = "; rai::listWrite(worldRules, cout); cout <<endl;
+    cout <<"*** decisionRules = "; rai::listWrite(decisionRules, cout, "\n"); cout <<endl;
   }
 
   if(verbFil) {
@@ -190,7 +190,7 @@ TreeSearchDomain::TransitionReturn FOL_World::transition(const Handle& action) {
     } else {
       lastStepProbability = 1.;
     }
-    if(verbose>2) { cout <<"*** effect =" <<*effect <<" SUB"; listWrite(d->substitution, cout); cout <<endl; }
+    if(verbose>2) { cout <<"*** effect =" <<*effect <<" SUB"; rai::listWrite(d->substitution, cout); cout <<endl; }
     applyEffectLiterals(*state, effect->graph(), d->substitution, &d->rule->graph());
 
     if(!hasWait) lastStepDuration = 1.;
@@ -230,7 +230,7 @@ TreeSearchDomain::TransitionReturn FOL_World::transition(const Handle& action) {
   return { Handle(new Observation(lastStepObservation)), lastStepReward, lastStepDuration };
 }
 
-const std::vector<FOL_World::Handle> FOL_World::get_actions() {
+const Array<TreeSearchDomain::Handle> FOL_World::get_actions() {
   CHECK(state, "you need to set the state first! (e.g., reset_state)");
   if(verbose>2) cout <<"****************** FOL_World: Computing possible decisions" <<std::flush;
   Array<Handle> decisions; //tuples of rule and substitution
@@ -246,7 +246,7 @@ const std::vector<FOL_World::Handle> FOL_World::get_actions() {
   if(verbose>2) cout <<"-- # possible decisions: " <<decisions.N <<endl;
   if(verbose>3) for(Handle& d:decisions) { d.get()->write(cout); cout <<endl; }
 //    cout <<"rule " <<d.first->keys(1) <<" SUB "; listWrite(d.second, cout); cout <<endl;
-  return decisions.vec();
+  return decisions;
 }
 
 bool FOL_World::is_feasible_action(const TreeSearchDomain::Handle& action) {

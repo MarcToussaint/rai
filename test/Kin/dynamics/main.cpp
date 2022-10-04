@@ -78,7 +78,7 @@ void TEST(Dynamics){
       text.clear() <<"t=" <<t <<"  torque controlled damping (acc = - vel)\n(checking consistency of forward and inverse dynamics),  energy=" <<C.getEnergy(qd);
     }else{
       //cout <<q <<qd <<qdd <<' ' <<G.getEnergy() <<endl;
-      arr x=cat(q,qd).reshape(2,q.N);
+      arr x = (q,qd).reshape(2,q.N);
       rai::rk4_2ndOrder(x, x, diffEqn, dt);
       q=x[0]; qd=x[1];
       if(t>500){

@@ -436,7 +436,7 @@ template<class T>
 int Var<T>::waitForRevisionGreaterThan(int rev) {
   EventFunction evFct = [&rev](const rai::Array<Var_base*>& vars, int whoChanged) -> int {
     CHECK_EQ(vars.N, 1, ""); //this event only checks the revision for a single var
-    if(vars.scalar()->revision > (uint)rev) return 1;
+    if(vars.elem()->revision > (uint)rev) return 1;
     return 0;
   };
 

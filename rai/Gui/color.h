@@ -8,7 +8,6 @@
 
 #pragma once
 
-//#include "../Core/util.h"
 #include "../Core/array.h"
 
 namespace rai {

@@ -164,7 +164,7 @@ void projectToSurface(){
       x += pose.pos.getArr();
       checkGradient(*fct, x, 1e-4);
       checkHessian(*fct, x, 1e-4);
-      x.writeRaw(fil);
+      fil <<x.modRaw();
       fil <<(*fct)(NoArr, NoArr, x) <<endl;
     }
 

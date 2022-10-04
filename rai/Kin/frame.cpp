@@ -83,7 +83,7 @@ rai::Frame::~Frame() {
   }else{
     CHECK_EQ(this, C.frames.elem(ID), "");
     C.frames.remove(ID);
-    listReindex(C.frames);
+    for(uint i=0; i<C.frames.N; i++) C.frames.elem(i)->ID=i;
   }
   C.reset_q();
 }
@@ -431,7 +431,7 @@ void rai::Frame::write(std::ostream& os) const {
 
 rai::Frame& rai::Frame::setShape(rai::ShapeType shape, const arr& size) {
   getShape().type() = shape;
-  getShape().size() = size;
+  getShape().size = size;
   getShape().createMeshes();
   return *this;
 }
@@ -710,11 +710,16 @@ rai::Joint::Joint(Frame& f, Joint* copyJoint) {
     qIndex=copyJoint->qIndex; dim=copyJoint->dim;
     type=copyJoint->type; axis=copyJoint->axis; limits=copyJoint->limits; q0=copyJoint->q0; H=copyJoint->H; scale=copyJoint->scale;
     active=copyJoint->active;
+    isStable=copyJoint->isStable;
     sampleUniform=copyJoint->sampleUniform;  sampleSdv=copyJoint->sampleSdv;
     code=copyJoint->code;
 
     if(copyJoint->mimic){
-      setMimic(frame->C.frames.elem(copyJoint->mimic->frame->ID)->joint);
+      if(copyJoint->mimic->frame->ID<frame->C.frames.N){
+        setMimic(frame->C.frames.elem(copyJoint->mimic->frame->ID)->joint);
+      }else{
+        setMimic(0);
+      }
     }
 
     if(copyJoint->uncertainty) {
@@ -1417,7 +1422,10 @@ void rai::Shape::read(const Graph& ats) {
     if(ats.get(str, "sdf"))      { sdf().read(FILE(str)); }
     else if(ats.get(fil, "sdf")) { sdf().read(fil); }
     if(_sdf){
-      CHECK_EQ(size.N, 3, "need a size for the sdf");
+      if(size.N){
+        if(size.N==1){ sdf().lo *= size.elem(); sdf().up *= size.elem(); }
+        else NIY;
+      }
       if(type()==ST_none) type()=ST_sdf;
       else CHECK_EQ(type(), ST_sdf, "");
     }
@@ -1516,7 +1524,7 @@ void rai::Shape::glDraw(OpenGL& gl) {
   glLoadMatrixd(GLmatrix);
 
   if(!gl.drawOptions.drawShapes) {
-    double scale=.33*(.02+sum(size)); //some scale
+    double scale=.33*(.02+::sum(size)); //some scale
     if(!scale) scale=1.;
     scale*=.3;
     glDrawAxes(scale);
@@ -1613,6 +1621,7 @@ void rai::Shape::createMeshes() {
         CHECK(mesh().V.N, "mesh or sscCore needs to be loaded");
         sscCore() = mesh();
       }
+      if(!sscCore().T.N) sscCore().makeConvexHull();
       mesh().setSSCvx(sscCore().V, size.last());
       break;
     case rai::ST_ssBox: {

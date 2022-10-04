@@ -72,8 +72,8 @@ void init_Simulation(pybind11::module& m) {
     byteA rgb;
     floatA depth;
     self->getImageAndDepth(rgb, depth);
-    return pybind11::make_tuple(pybind11::array_t<byte>(rgb.dim(), rgb.p),
-                                pybind11::array_t<float>(depth.dim(), depth.p));
+    return pybind11::make_tuple(Array2numpy<byte>(rgb),
+                                Array2numpy<float>(depth));
   })
 
 //  .def("getSegmentation", [](std::shared_ptr<rai::Simulation>& self) {
@@ -100,27 +100,27 @@ void init_Simulation(pybind11::module& m) {
   .def("getGroundTruthPosition", [](std::shared_ptr<rai::Simulation>& self, const char* frame) {
     rai::Frame* f = self->C.getFrame(frame);
     arr x = f->getPosition();
-    return pybind11::array_t<double>(x.dim(), x.p);
+    return arr2numpy(x);
   })
 
   .def("getGroundTruthRotationMatrix", [](std::shared_ptr<rai::Simulation>& self, const char* frame) {
     rai::Frame* f = self->C.getFrame(frame);
     arr x = f->getRotationMatrix();
-    return pybind11::array_t<double>(x.dim(), x.p);
+    return arr2numpy(x);
   })
 
   .def("getGroundTruthSize", [](std::shared_ptr<rai::Simulation>& self, const char* frame) {
     rai::Frame* f = self->C.getFrame(frame);
     arr x = f->getSize();
-    return pybind11::array_t<double>(x.dim(), x.p);
+    return arr2numpy(x);
   })
 
   .def("addImp", &rai::Simulation::addImp)
 
   .def("getState", [](std::shared_ptr<rai::Simulation>& self) {
     shared_ptr<rai::SimulationState> state = self->getState();
-    return pybind11::make_tuple(pybind11::array_t<double>(state->frameState.dim(), state->frameState.p),
-                                pybind11::array_t<double>(state->frameVels.dim(), state->frameVels.p));
+    return pybind11::make_tuple(arr2numpy(state->frameState),
+                                arr2numpy(state->frameVels));
   })
 
   .def("restoreState", &rai::Simulation::restoreState)
@@ -135,7 +135,7 @@ void init_Simulation(pybind11::module& m) {
     arr points;
     floatA _depth = numpy2arr<float>(depth);
     depthData2pointCloud(points, _depth, arr(Fxypxy, true));
-    return pybind11::array(points.dim(), points.p);
+    return arr2numpy(points);
   })
 
   .def("getScreenshot", &rai::Simulation::getScreenshot)

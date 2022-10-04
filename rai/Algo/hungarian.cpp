@@ -43,14 +43,14 @@ void Hungarian::minimize() {
   covered_rows = covered_cols = zeros(dim);
   starred = primed = zeros(dim, dim);
   for(uint i = 0; i < dim; i++) {
-    double minRow = costs[i]().argmin();
-    costs[i]() -= costs(i, minRow);
+    double minRow = argmin(costs[i]);
+    costs[i] -= costs(i, minRow);
   }
   costs = ~costs;
 
   for(uint i = 0; i < dim; i++) {
-    double minRow = costs[i]().argmin();
-    costs[i]() -= costs(i, minRow);
+    double minRow = argmin(costs[i]);
+    costs[i] -= costs(i, minRow);
   }
   costs = ~costs;
   starZeros();
@@ -83,7 +83,7 @@ void Hungarian::coverColumns() {
   uint count = 0;
   starred = ~starred;
   for(uint i = 0; i < dim; i++) {
-    if(sum(starred[i]()) > 0) {
+    if(sum(starred[i]) > 0) {
       covered_cols(i) = 1;
       count++;
     }
@@ -110,7 +110,7 @@ void Hungarian::prime() {
         primed(i, j) = 1;
         // Check to see if there is a starred zero in this row.
 
-        if(sum(starred[i]()) == 0) {
+        if(sum(starred[i]) == 0) {
           path_row.clear();
           path_row.push_back(i);
           path_col.clear();
@@ -121,7 +121,7 @@ void Hungarian::prime() {
           // Cover this row
           covered_rows(i) = 1;
           // Uncover columns containing star
-          uint maxIndex = starred[i]().argmax();
+          uint maxIndex = argmax(starred[i]);
           covered_cols(maxIndex) = 0;
           prime();
           return;
@@ -139,7 +139,7 @@ void Hungarian::makePath() {
   while(1) {
     starred = ~starred;
     // find the star in the column
-    int row = starred[path_col.at(count)]().argmax();
+    int row = argmax(starred[path_col.at(count)]);
 
     starred = ~starred;
     if(starred(row, path_col.at(count)) == 0)
@@ -150,7 +150,7 @@ void Hungarian::makePath() {
     path_col.push_back(path_col.at(count - 1));
 
     // find the prime in this row
-    int col = primed[row]().argmax();
+    int col = argmax(primed[row]);
     count++;
     path_row.push_back(path_row.at(count - 1));
     path_col.push_back(col);

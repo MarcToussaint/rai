@@ -152,7 +152,10 @@ void Configuration::copy(const Configuration& C, bool referenceSwiftOnCopy) {
 
   //copy frames; first each Frame/Link/Joint directly, where all links go to the origin K (!!!); then relink to itself
   for(Frame* f:C.frames) new Frame(*this, f);
-  for(Frame* f:C.frames) if(f->parent) frames.elem(f->ID)->setParent(frames.elem(f->parent->ID));
+  for(Frame* f:C.frames){
+    if(f->parent) frames.elem(f->ID)->setParent(frames.elem(f->parent->ID));
+    if(f->prev) frames.elem(f->ID)->prev = frames.elem(f->prev->ID);
+  }
 //  addFramesCopy(C.frames);
   frames.reshapeAs(C.frames);
 
@@ -335,13 +338,17 @@ Frame* Configuration::addCopies(const FrameL& F, const DofL& _dofs) {
   }
 
   //relink frames - special attention to mimic'ing
-  for(Frame* f:F) if(f->parent && f->parent->ID<=maxId && FId2thisId(f->parent->ID)!=-1) {
+  for(Frame* f:F) if(f->parent){
+    if(f->parent->ID>maxId || FId2thisId(f->parent->ID)==-1) {
+      LOG(-1) <<"can't relink frame '" <<*f <<"'";
+    }
     Frame* f_new = frames.elem(FId2thisId(f->ID));
     f_new->setParent(frames.elem(FId2thisId(f->parent->ID)));
     //take care of within-F mimic joints:
     if(f->joint && f->joint->mimic){
-      CHECK(f->joint && f->joint->mimic, "");
-      f_new->joint->setMimic(frames.elem(FId2thisId(f->joint->mimic->frame->ID))->joint, true);
+      if(f->joint->mimic->frame->ID<maxId && FId2thisId(f->joint->mimic->frame->ID)!=-1){
+        f_new->joint->setMimic(frames.elem(FId2thisId(f->joint->mimic->frame->ID))->joint, true);
+      }
     }
   }
 
@@ -1010,6 +1017,7 @@ void Configuration::clear() {
   proxies.clear(); //while(proxies.N){ delete proxies.last(); /*checkConsistency();*/ }
   while(frames.N) { delete frames.last(); /*checkConsistency();*/ }
   reset_q();
+  if(self->viewer) self->viewer->recopyMeshes(*this);
 
   _state_proxies_isGood=false;
 }
@@ -1341,7 +1349,9 @@ uintA Configuration::getCollisionExcludePairIDs(bool verbose) {
     if(F.N>1) {
       if(verbose) {
         LOG(0) <<"excluding intra-link collisions: ";
-        cout <<"           ";  listWriteNames(F, cout);  cout <<endl;
+        cout <<"           ";
+        for(Frame *ff:F) cout <<ff->name <<' ';
+        cout <<endl;
       }
       exclude(ex, F, F);
     }
@@ -1367,8 +1377,8 @@ uintA Configuration::getCollisionExcludePairIDs(bool verbose) {
         if(F.N && P.N) {
           if(verbose) {
             LOG(0) <<"excluding between-sets collisions: ";
-            cout <<"           ";  listWriteNames(F, cout);  cout <<endl;
-            cout <<"           ";  listWriteNames(P, cout);  cout <<endl;
+            cout <<"           ";  for(Frame *ff:F) cout <<ff->name <<' ';  cout <<endl;
+            cout <<"           ";  for(Frame *ff:P) cout <<ff->name <<' ';  cout <<endl;
           }
           exclude(ex, F, P);
         }
@@ -1877,7 +1887,7 @@ void Configuration::kinematicsQuat(arr& y, arr& J, Frame* a) const { //TODO: all
     J.setNoArr();
     return;
   }
-  if(A.isSparse()) {
+  if(isSparse(A)) {
     J = A;
     J.sparse().reshape(4, A.d1);
     J.sparse().colShift(1);
@@ -2257,8 +2267,8 @@ void Configuration::stepDynamics(arr& qdot, const arr& Bu_control, double tau, d
   arr x1=cat(s->q, s->qdot).reshape(2, s->q.N);
 #else
   arr x1;
-  rk4_2ndOrder(x1, cat(q, qdot).reshape(2, q.N), eqn, tau);
-  if(dynamicNoise) rndGauss(x1[1](), ::sqrt(tau)*dynamicNoise, true);
+  rk4_2ndOrder(x1, (q, qdot).reshape(2, q.N), eqn, tau);
+  if(dynamicNoise) rndGauss(x1[1].noconst(), ::sqrt(tau)*dynamicNoise, true);
 #endif
 
   setJointState(x1[0]);
@@ -2361,7 +2371,7 @@ void Configuration::writeURDF(std::ostream& os, const char* robotName) const {
   for(Frame* a:frames) {
     if(a->shape && a->shape->type()!=ST_mesh && a->shape->type()!=ST_marker) {
       os <<"  <visual>\n    <geometry>\n";
-      arr& size = a->shape->size();
+      arr& size = a->shape->size;
       switch(a->shape->type()) {
         case ST_box:       os <<"      <box size=\"" <<size({0, 2}) <<"\" />\n";  break;
         case ST_cylinder:  os <<"      <cylinder length=\"" <<size.elem(-2) <<"\" radius=\"" <<size.elem(-1) <<"\" />\n";  break;
@@ -2388,7 +2398,7 @@ void Configuration::writeURDF(std::ostream& os, const char* robotName) const {
       for(Frame* b:shapes) {
         if(b->shape && b->shape->type()!=ST_mesh && b->shape->type()!=ST_marker) {
           os <<"  <visual>\n    <geometry>\n";
-          arr& size = b->shape->size();
+          arr& size = b->shape->size;
           switch(b->shape->type()) {
             case ST_box:       os <<"      <box size=\"" <<size({0, 2}) <<"\" />\n";  break;
             case ST_cylinder:  os <<"      <cylinder length=\"" <<size.elem(-2) <<"\" radius=\"" <<size.elem(-1) <<"\" />\n";  break;
@@ -2735,7 +2745,7 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
     s->read(*f->ats);
 
     if(n->parents.N==1) {
-      Frame* b = listFindByName(frames, n->parents(0)->key);
+      Frame* b = getFrame(n->parents(0)->key);
       CHECK(b, "could not find frame '" <<n->parents(0)->key <<"'");
       f->setParent(b);
       if((*f->ats)["rel"]) f->ats->get(f->Q, "rel");
@@ -2749,8 +2759,8 @@ void Configuration::readFromGraph(const Graph& G, bool addInsteadOfClear) {
     CHECK(n->isGraph(), "joints must have value Graph: specs=" <<*n <<' ' <<n->index);
     CHECK(n->key=="joint" || n->graph().findNode("%joint"), "");
 
-    Frame* from=listFindByName(frames, n->parents(0)->key);
-    Frame* to=listFindByName(frames, n->parents(1)->key);
+    Frame* from = getFrame(n->parents(0)->key);
+    Frame* to  = getFrame(n->parents(1)->key);
     CHECK(from, "JOINT: from '" <<n->parents(0)->key <<"' does not exist ["<<*n <<"]");
     CHECK(to, "JOINT: to '" <<n->parents(1)->key <<"' does not exist ["<<*n <<"]");
 
@@ -2904,7 +2914,7 @@ void Configuration::kinematicsPenetration(arr& y, arr& J, double margin) const {
 /// set the jacMode flag to match with the type of the given J
 void Configuration::setJacModeAs(const arr& J){
   if(!isSpecial(J)) jacMode = JM_dense;
-  else if(J.isSparse()) jacMode = JM_sparse;
+  else if(isSparse(J)) jacMode = JM_sparse;
   else if(isNoArr(J)) jacMode = JM_noArr;
   else if(isEmptyShape(J)) jacMode = JM_emptyShape;
   else NIY;

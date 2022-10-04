@@ -58,9 +58,9 @@ struct NLP_TrivialSquareFunction : NLP {
 
   NLP_TrivialSquareFunction(uint dim=10, double lo=-1., double hi=1.){
     dimension = dim;
-    featureTypes = consts<ObjectiveType>(OT_sos, dimension);
-    bounds_lo = consts<double>(lo, dimension);
-    bounds_up = consts<double>(hi, dimension);
+    featureTypes = rai::consts<ObjectiveType>(OT_sos, dimension);
+    bounds_lo = rai::consts<double>(lo, dimension);
+    bounds_up = rai::consts<double>(hi, dimension);
   }
 
   void evaluate(arr& phi, arr& J, const arr& x) {
@@ -85,14 +85,14 @@ struct NLP_RandomLP : NLP {
     }
 
     featureTypes = { OT_f };
-    featureTypes.append(consts(OT_ineq, randomG.d0));
+    featureTypes.append(rai::consts(OT_ineq, randomG.d0));
   }
 
   virtual void evaluate(arr &phi, arr &J, const arr &x) {
     phi = {sum(x)};
     if(!!J) J = ones(1, x.N);
 
-    phi.append(randomG * cat({1.}, x));
+    phi.append(randomG * (arr{1.}, x));
     if(!!J) J.append(randomG.sub(0, -1, 1, -1));
   }
 
@@ -138,7 +138,7 @@ struct SimpleConstraintFunction : NLP {
     if(!!J) J.setMatrixBlock(eye(2), 0, 0);
     x(0) += 1.;
 
-    phi(2) = .25-sumOfSqr(x);  if(!!J) J[2]() = -2.*x; //OUTSIDE the circle
+    phi(2) = .25-sumOfSqr(x);  if(!!J) J[2] = -2.*x; //OUTSIDE the circle
     phi(3) = x(0);             if(!!J) J(3, 0) = 1.;
   }
 };
@@ -153,7 +153,7 @@ struct NLP_RastriginSOS : NLP {
     condition = rai::getParameter<double>("benchmark/condition");
 
     dimension=2;
-    featureTypes = consts<ObjectiveType>(OT_sos, 4);
+    featureTypes = rai::consts<ObjectiveType>(OT_sos, 4);
   }
   virtual void evaluate(arr &phi, arr &J, const arr &x);
 };
@@ -177,7 +177,7 @@ struct NLP_Wedge : NLP {
   NLP_Wedge(){
     dimension=2;
     featureTypes = { OT_f };
-    featureTypes.append(consts(OT_ineq, 2));
+    featureTypes.append(rai::consts(OT_ineq, 2));
   }
 
   virtual void evaluate(arr &phi, arr &J, const arr &x) {
@@ -195,7 +195,7 @@ struct NLP_HalfCircle : NLP {
   NLP_HalfCircle(){
     dimension=2;
     featureTypes = { OT_f };
-    featureTypes.append(consts(OT_ineq, 2));
+    featureTypes.append(rai::consts(OT_ineq, 2));
   }
 
   virtual void evaluate(arr &phi, arr &J, const arr &x) {

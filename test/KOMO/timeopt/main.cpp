@@ -190,7 +190,7 @@ struct TimeOpt : NLP {
       arr path = integral(delta);
       path.remove(0, prefix);
 
-      catCol(~~time,~~path).writeRaw( FILE("z.dat") );
+      FILE("z.dat") <<catCol(~~time,~~path).modRaw();
       gnuplot("plot [0:5] 'z.dat' us 1:2 w lp");
     }
 
@@ -213,7 +213,7 @@ struct TimeOpt : NLP {
     arr vi = min(getVel(path,ttau),1) / maxVel;
     arr ai = min(getAcc(path,ttau),1) / maxAcc;
     arr ji = min(getJerk(path,ttau),1) / maxJer;
-    catCol(arrA{~~time, ~~v, ~~a, ~~j, ~~vi, ~~ai, ~~ji}).reshape(-1,7).writeRaw( FILE("z.dat") );
+    FILE("z.dat") <<rai::catCol(rai::Array<rai::Array<double>*>{&time, &v, &a, &j, &vi, &ai, &ji}).reshape(-1,7).modRaw();
     gnuplot("plot [:][-1.1:1.1] 'z.dat' us 1:2 t 'v', '' us 1:3 t 'a', '' us 1:4 t 'j', '' us 1:5 t 'vmin', '' us 1:6 t 'amin', '' us 1:7 t 'jmin'");
   }
 };

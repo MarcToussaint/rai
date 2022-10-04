@@ -167,7 +167,7 @@ double KernelRidgeRegression::evaluate(const arr& x, arr& g, arr& H, double plus
   arr kappa(X.d0);
   arr Jkappa(X.d0, x.N);
   arr Hkappa(X.d0, x.N, x.N);
-  for(uint i=0; i<X.d0; i++) kappa(i) = kernel.k(x, X[i], Jkappa[i](), Hkappa[i]());
+  for(uint i=0; i<X.d0; i++) kappa(i) = kernel.k(x, X[i], Jkappa[i].noconst(), Hkappa[i].noconst());
 
   double fx = 0.;
   if(!!g) g = zeros(x.N);
@@ -363,7 +363,7 @@ arr logisticRegressionMultiClass(const arr& X, const arr& y, double lambda) {
     for(uint i=0; i<f.N; i++) rai::clip(f.elem(i), -100., 100.);  //constrain the discriminative values to avoid NANs...
     p = exp(f);
     Z = sum(p, 1);
-    for(uint i=0; i<n; i++) p[i]() /= Z(i);
+    for(uint i=0; i<n; i++) p[i] /= Z(i);
 //    w = p % (1.-p);
 
     //compute logLikelihood
@@ -372,7 +372,7 @@ arr logisticRegressionMultiClass(const arr& X, const arr& y, double lambda) {
 
     logLike=0.;
     for(uint i=0; i<n; i++) {
-      p[i]() /= sum(p[i]); //normalize the exp(f(x)) along each row
+      p[i] /= sum(p[i]); //normalize the exp(f(x)) along each row
       for(uint c=0; c<M; c++) logLike += y(i, c)*log(p(i, c));
     }
 

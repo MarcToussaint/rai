@@ -145,7 +145,7 @@ Vector Vector::getNormalVectorNormalToThis() const {
     RAI_MSG("every vector is normal to a zero vector");
   }
   arr s = arr{fabs(x), fabs(y), fabs(z)};
-  uint c = s.argmax();
+  uint c = argmax(s);
   double xv, yv, zv;
   if(c == 0) {
     xv = -(y+z)/x;
@@ -952,7 +952,7 @@ arr Quaternion::getEulerRPY() const {
   return {getRoll_X(), getPitch_Y(), getYaw_Z()};
 }
 
-void Quaternion::applyOnPointArray(arr& pts) {
+void Quaternion::applyOnPointArray(arr& pts) const {
   arr R = ~getArr(); //transposed, to make it applicable to an n-times-3 array
   pts = pts * R;
 }
@@ -1453,7 +1453,11 @@ arr Transformation::getWrenchTransform() const {
   arr r = skew(pos.getArr()); //(3, 3);  Featherstone::skew(r, &pos.x); skew pos
   arr R = rot.getArr(); //(3, 3);  rot.getMatrix(R.p);
   transpose(R);
-  arr X(6, 6);  X.setBlockMatrix(R, z, R*~r, R); //[[unklar!!]]
+  arr X(6, 6);
+  X.setMatrixBlock(R, 0, 0);
+  X.setMatrixBlock(z, 0, 3);
+  X.setMatrixBlock(R*~r, 3, 0);
+  X.setMatrixBlock(R, 3, 3); //[[unklar!!]]
   return X;
   //cout <<"\nz=" <<z <<"\nr=" <<r <<"\nR=" <<R <<"\nX=" <<X <<endl;
 }
@@ -1853,7 +1857,7 @@ void Camera::setCameraProjectionMatrix(const arr& P) {
   arr glP=P;
   //glP[2]()*=-1.;
   glP.append(glP[2]);
-  glP[2]()*=.99; glP(2, 2)*=1.02; //some hack to invent a culling coordinate (usually determined via near and far...)
+  glP[2] *= .99; glP(2, 2)*=1.02; //some hack to invent a culling coordinate (usually determined via near and far...)
   glP = ~glP;
   glP *= 1./glP(3, 3);
   cout <<"glP=" <<glP <<endl;
@@ -2099,3 +2103,6 @@ template rai::Array<rai::Vector>::~Array();
 
 template rai::Array<rai::Transformation*>::Array();
 template rai::Array<rai::Transformation*>::~Array();
+
+#include <Core/util.ipp>
+template rai::Vector rai::getParameter(const char*, const rai::Vector&);

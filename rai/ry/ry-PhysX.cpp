@@ -28,7 +28,7 @@ void init_PhysX(pybind11::module& m) {
   .def("getState", [](PhysXInterface& self, shared_ptr<rai::Configuration>& C) {
     arr V;
     self.pullDynamicStates(C->frames, V);
-    return pybind11::array(V.dim(), V.p);
+    return arr2numpy(V);
   })
 
   .def("setState", [](PhysXInterface& self, shared_ptr<rai::Configuration>& C, const pybind11::array_t<double>& velocities) {

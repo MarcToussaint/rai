@@ -171,7 +171,7 @@ BulletInterface::BulletInterface(rai::Configuration& C, const rai::Bullet_Option
     FrameL parts = C.getParts();
     for(rai::Frame *f : parts){
       self->addMultiBody(f);
-      if((*f->ats)["motors"]) motorizeMultiBody(f);
+      if(f->ats && (*f->ats)["motors"]) motorizeMultiBody(f);
     }
     //  self->addMultiBody(C(0), verbose);
     //  self->addExample();
@@ -818,7 +818,7 @@ btCollisionShape* BulletInterface_self::createCollisionShape(rai::Shape* s) {
 #ifdef BT_USE_DOUBLE_PRECISION
       arr& V = s->mesh().V;
 #else
-      floatA V = convert<float>(s->mesh().V);
+      floatA V = rai::convert<float>(s->mesh().V);
 #endif
       colShape = new btConvexHullShape(V.p, V.d0, V.sizeT*V.d1);
       colShape->setMargin(0.);

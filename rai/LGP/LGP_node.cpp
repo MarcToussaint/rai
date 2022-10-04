@@ -163,6 +163,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
 #endif
 
   shared_ptr<KOMO>& komo = problem(bound).komo;
+  komo->opt.verbose = rai::MAX(verbose, 0);
 
   //-- verbosity...
   if(tree.verbose>1){
@@ -222,7 +223,7 @@ void LGP_Node::optBound(BoundType bound, bool collisions, int verbose) {
 
   double cost_here = komo->sos;
   double constraints_here = komo->ineq + komo->eq;
-  bool feas = (constraints_here<1.);
+  bool feas = (constraints_here<2.);
 
   if(komo->opt.verbose>0) {
     cout <<"  RESULTS: cost: " <<cost_here <<" constraints: " <<constraints_here <<" feasible: " <<feas <<endl;
@@ -415,7 +416,7 @@ void LGP_Node::checkConsistency() {
   if(children.N) {
     fol.setState(folState, step);
     auto actions = fol.get_actions();
-    CHECK_EQ(children.N, actions.size(), "");
+    CHECK_EQ(children.N, actions.N, "");
 #ifndef RAI_NOCHECK
     uint i=0;
     for(FOL_World::Handle& a:actions) {

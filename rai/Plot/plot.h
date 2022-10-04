@@ -9,15 +9,18 @@
 #pragma once
 
 #include "../Core/util.h"
+#include "../Core/array.h"
 
 //===========================================================================
 
 struct OpenGL;
 struct Gaussian;
-namespace rai {  template<class T> struct Array;  }
+namespace rai {
+  template<class T> struct Array;
+}
 
+//typedef struct arr;
 typedef unsigned int uint;
-typedef rai::Array<double> arr;
 typedef rai::Array<byte> byteA;
 typedef rai::Array<uint> uintA;
 typedef rai::Array<Gaussian> GaussianA;

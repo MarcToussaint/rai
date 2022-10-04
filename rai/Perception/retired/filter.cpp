@@ -225,7 +225,7 @@ PerceptL Filter::assign(const PerceptL& inputs, const PerceptL& database, const 
   uint num_new = inputs.N;
 
   for(uint i = 0; i < ha.starred.dim(0); ++i) {   //index over inputs
-    uint col = ha.starred[i]().argmax();        //index over database
+    uint col = argmax(ha.starred[i]);        //index over database
     // 3 cases:
     // 1) Existed before, no longer exists. If i > num_new
     // 2) Existed before and still exists. If costs < distannce_threshold
@@ -288,7 +288,7 @@ arr Filter::createCostMatrix(const PerceptL& inputs, const PerceptL& database) {
     }
 
   // For every element that hasn't been set, set the costs to the max.
-  double max_costs = costs.max();
+  double max_costs = max(costs);
 
   for(uint i=0; i<dims; ++i) for(uint j=0; j<dims; ++j) {
       if((i >= num_new) || (j >= num_old))

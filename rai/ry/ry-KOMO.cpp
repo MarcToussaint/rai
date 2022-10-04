@@ -179,12 +179,12 @@ void init_KOMO(pybind11::module& m) {
   .def("getPathFrames", &KOMO::getPath_X)
 //  .def("getPathFrames", [](std::shared_ptr<KOMO>& self, const ry::I_StringA& frames) {
 //    arr X = self->getPath_frames(I_conv(frames));
-//    return pybind11::array(X.dim(), X.p);
+//    return arr2numpy(X);
 //  })
 
   .def("getPathTau", [](std::shared_ptr<KOMO>& self) {
     arr X = self->getPath_tau();
-    return pybind11::array(X.dim(), X.p);
+    return arr2numpy(X);
   })
 
   .def("getForceInteractions", [](std::shared_ptr<KOMO>& self) {
