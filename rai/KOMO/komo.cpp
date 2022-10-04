@@ -1132,9 +1132,13 @@ void KOMO::reportProblem(std::ostream& os) {
   os <<"  computeCollisions:" <<computeCollisions <<endl;
   for(shared_ptr<Objective>& t:objectives){
     os <<"    " <<*t;
-    int fromStep, toStep;
-    conv_times2steps(fromStep, toStep, t->times, stepsPerPhase, T, +0, +0);
-    os <<"  timeSlices: [" <<fromStep <<".." <<toStep <<"]" <<endl;
+    if(t->times.N && t->times.elem(0)==-10.){
+      os <<"  timeSlices: [" <<t->times <<"]" <<endl;
+    }else{
+      int fromStep, toStep;
+      conv_times2steps(fromStep, toStep, t->times, stepsPerPhase, T, +0, +0);
+      os <<"  timeSlices: [" <<fromStep <<".." <<toStep <<"]" <<endl;
+    }
   }
   for(std::shared_ptr<KinematicSwitch>& sw:switches) {
     os <<"    ";

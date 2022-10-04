@@ -1410,6 +1410,7 @@ int OpenGL::watchImage(const floatA& _img, bool wait, float _zoom) {
 }
 
 int OpenGL::watchImage(const byteA& _img, bool wait, float _zoom) {
+  if(!self->window) resize(_img.d1, _img.d0);
   background=_img;
   backgroundZoom=_zoom;
   //resize(img->d1*zoom,img->d0*zoom);

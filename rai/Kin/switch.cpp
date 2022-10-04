@@ -57,6 +57,13 @@ void conv_times2steps(int& fromStep, int& toStep, const arr& times, int stepsPer
 intA conv_times2tuples(const arr& times, uint order, int stepsPerPhase, uint T,
                        int deltaFromStep, int deltaToStep){
 
+  if(times.N && times.elem(0)==-10.){
+    intA configs (times.N-1);
+    for(uint i=0;i<configs.N;i++) configs(i) = times(i+1);
+    configs.reshape(-1, order+1);
+    return configs;
+  }
+
   int fromStep, toStep;
   conv_times2steps(fromStep, toStep, times, stepsPerPhase, T, deltaFromStep, deltaToStep);
 

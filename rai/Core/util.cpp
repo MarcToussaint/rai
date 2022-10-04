@@ -751,6 +751,21 @@ void rai::String::prepend(const rai::String& s) {
   memmove(p, s, s.N);
 }
 
+void rai::String::replace(uint i, uint n, const char* xp, uint xN) {
+  uint Nold=N;
+  if(n==xN) {
+    memmove(p+i, xp, (xN));
+  } else if(n>xN) {
+    memmove(p+i+xN, p+i+n, (Nold-i-n));
+    if(i+n<Nold) memmove(p+i, xp, (xN));
+    resize(Nold-n+xN, true);
+  } else {
+    resize(Nold+xN-n, true);
+    if(i+n<Nold) memmove(p+i+xN, p+i+n, (Nold-i-n));
+    memmove(p+i, xp, (xN));
+  }
+}
+
 rai::String& rai::String::setRandom() {
   resize(rnd(2, 6), false);
   for(uint i=0; i<N; i++) operator()(i)=rnd('a', 'z');
@@ -891,6 +906,12 @@ bool rai::String::operator==(const String& s) const { if(!p && !s.p) return true
 bool rai::String::operator!=(const char* s) const { return !operator==(s); }
 bool rai::String::operator!=(const String& s) const { return !(operator==(s)); }
 bool rai::String::operator<=(const String& s) const { return p && s.p && strcmp(p, s.p)<=0; }
+
+bool rai::String::contains(char c) const {
+  if(!p) return false;
+  for(uint i=0;i<N;i++) if(p[i]==c) return true;
+  return false;
+}
 
 bool rai::String::contains(const String& substring) const {
   if(!p && substring.p) return false;

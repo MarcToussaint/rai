@@ -82,6 +82,12 @@ void depthData2point(double* pt, double* fxypxy) {
   pt[2] = -pt[2];
 }
 
+void point2depthData(double* pt, double* fxypxy) {
+  pt[2] = -pt[2];
+  pt[0] = fxypxy[2] + (pt[0]*fxypxy[0])/pt[2];
+  pt[1] = fxypxy[3] - (pt[1]*fxypxy[1])/pt[2];
+}
+
 void depthData2point(arr& pt, const arr& Fxypxy) {
   CHECK_EQ(pt.N, 3, "need a 3D point");
   CHECK_EQ(Fxypxy.N, 4, "need 4 intrinsic parameters");

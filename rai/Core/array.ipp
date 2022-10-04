@@ -1583,13 +1583,13 @@ template<class T> void Array<T>::read(std::istream& is) {
       is.get(c);
       if(c==']' || !is.good()) { is.clear(); break; }
       if(c==';' || c=='\n') {  //set an array width
-        if(!d && i>1) d=i; else if(i%d) PARSERR("mis-structured array in row " <<i/d);
+        if(!d && i>1) d=i; else if(d && i%d) PARSERR("mis-structured array in row " <<i/d);
         continue;
       }
       if(c!=',') is.putback(c);
       is >>x;
       if(!is.good()) { is.clear(); break; }
-      if(i>=N) resizeCopy(i+1000);
+      if(i>=N) resizeCopy(i+1000/sizeT);
       elem(i)=x;
       i++;
     }

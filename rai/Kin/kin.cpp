@@ -152,7 +152,10 @@ void Configuration::copy(const Configuration& C, bool referenceSwiftOnCopy) {
 
   //copy frames; first each Frame/Link/Joint directly, where all links go to the origin K (!!!); then relink to itself
   for(Frame* f:C.frames) new Frame(*this, f);
-  for(Frame* f:C.frames) if(f->parent) frames.elem(f->ID)->setParent(frames.elem(f->parent->ID));
+  for(Frame* f:C.frames){
+    if(f->parent) frames.elem(f->ID)->setParent(frames.elem(f->parent->ID));
+    if(f->prev) frames.elem(f->ID)->prev = frames.elem(f->prev->ID);
+  }
 //  addFramesCopy(C.frames);
   frames.reshapeAs(C.frames);
 
@@ -1014,6 +1017,7 @@ void Configuration::clear() {
   proxies.clear(); //while(proxies.N){ delete proxies.last(); /*checkConsistency();*/ }
   while(frames.N) { delete frames.last(); /*checkConsistency();*/ }
   reset_q();
+  if(self->viewer) self->viewer->recopyMeshes(*this);
 
   _state_proxies_isGood=false;
 }

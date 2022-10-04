@@ -184,6 +184,8 @@ struct String : public std::iostream {
   void resize(uint n, bool copy); //low-level resizing the string buffer - with additinal final 0
   void append(char x);
   void prepend(const String& s);
+  void replace(uint i, uint n, const char* xp, uint xN);
+
   String& setRandom();
 
   /// @name resetting
@@ -199,6 +201,7 @@ struct String : public std::iostream {
   bool operator<=(const String& s) const;
 
   /// @name misc
+  bool contains(char c) const;
   bool contains(const String& substring) const;
   bool startsWith(const String& substring) const;
   bool startsWith(const char* substring) const;
