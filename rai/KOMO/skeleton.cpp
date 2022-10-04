@@ -59,8 +59,16 @@ void Skeleton::setFromStateSequence(Array<Graph*>& states, const arr& times){
         //check if there is a predicate
         if(!symbols.N) continue;
 
+        //if logic symbol ends with _, extend one time step further
+        rai::String& symstr = symbols.first();
+        bool extend=false;
+        if(symstr(-1)=='_'){
+          extend=true;
+          symstr.resize(symstr.N-1, true);
+        }
+
         //check if predicate is a SkeletonSymbol
-        if(!Enum<SkeletonSymbol>::contains(symbols.first())) continue;
+        if(!Enum<SkeletonSymbol>::contains(symstr)) continue;
 
         //trace into the future
         uint k_end=k+1;
@@ -70,8 +78,9 @@ void Skeleton::setFromStateSequence(Array<Graph*>& states, const arr& times){
           done(k_end, persists->index) = true;
         }
         k_end--;
+        if(extend) k_end++;
 
-        Enum<SkeletonSymbol> sym(symbols.first());
+        Enum<SkeletonSymbol> sym(symstr);
         if(k_end==states.N-1) {
           S.append(SkeletonEntry({times(k), times.last(), sym, symbols({1, -1})}));
         } else {
