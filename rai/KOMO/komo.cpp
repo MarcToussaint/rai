@@ -1224,6 +1224,8 @@ int KOMO::view(bool pause, const char* txt){ pathConfig.gl()->recopyMeshes(pathC
 
 int KOMO::view_play(bool pause, double delay, const char* saveVideoPath){ view(false, 0); return pathConfig.gl()->playVideo(timeSlices.d0, timeSlices.d1, pause, delay*tau*T, saveVideoPath); }
 
+void KOMO::view_close(){ pathConfig.glClose(); }
+
 void KOMO::plotTrajectory() {
   ofstream fil("z.trajectories");
   StringA jointNames = world.getJointNames();

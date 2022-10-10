@@ -325,7 +325,7 @@ template <class T> struct ArrayModList{
   const Array<T> *x;
   ArrayModList(const Array<T>* x) : x(x) {}
   void write(std::ostream& os) const{
-    for(uint i=0; i<x->N; i++) { if(i) os <<' ';  if(x->elem(i)) os <<x->elem(i); else os <<"<NULL>"; }
+    for(uint i=0; i<x->N; i++) { if(i) os <<' ';  if(x->elem(i)) os <<*x->elem(i); else os <<"<NULL>"; }
   }
 };
 template <class T> ArrayModList<T> Array<T>::modList() const{ return ArrayModList<T>(this); }

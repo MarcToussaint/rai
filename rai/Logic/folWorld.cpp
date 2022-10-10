@@ -396,6 +396,7 @@ void FOL_World::setState(Graph* s, int setT_step) {
   if(setT_step>=0) T_step = setT_step;
   DEBUG(KB.checkConsistency();)
   CHECK(state->isNodeOfGraph && &state->isNodeOfGraph->container==&KB, "");
+  deadEnd=successEnd=false;
 }
 
 Graph* FOL_World::createStateCopy() {
@@ -590,7 +591,7 @@ void FOL_World::addTerminalRule(const char* literals) {
   effect.newNode<bool>({}, {Quit_keyword}, true); //adds the (QUIT) to the effect
 
   preconditions.read(STRING(literals));
-  cout <<"CREATED TERMINATION RULE:" <<*rule.isNodeOfGraph <<endl;
+//  LOG(0) <<"CREATED TERMINATION RULE:" <<*rule.isNodeOfGraph;
 }
 
 void FOL_World::addTerminalRule(const StringAA& literals) {
@@ -615,5 +616,21 @@ void FOL_World::addDecisionSequence(std::istream& is) {
   seq.read(is);
   cout <<"CREATED DECISION SEQUENCE:" <<*seq.isNodeOfGraph <<endl;
 }
+
+std::shared_ptr<TreeSearchNode> FOL_World_State::transition(int action){
+  if(L.state!=state) L.setState(state, T_step);
+  L.T_real = T_real;
+  TreeSearchDomain::TransitionReturn ret = L.transition(actions(action));
+  CHECK(L.state!=state, "");
+  std::shared_ptr<FOL_World_State> s = make_shared<FOL_World_State>(L, this, L.is_terminal_state());
+  s->f_prio = L.T_step;
+  if(!s->isTerminal) s->f_prio += .9;
+  s->name <<"fol" <<L.T_step<<'_' <<action <<' ' <<*actions(action);
+  return s;
+}
+
+void FOL_World_State::write(std::ostream& os) const { os <<'#' <<ID <<'_' <<name <<' '; }
+
+void FOL_World_State::report(std::ostream& os, int verbose) const { os <<'#' <<ID <<'_' <<name <<' '; }
 
 } //namespace
