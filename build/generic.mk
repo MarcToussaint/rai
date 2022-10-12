@@ -93,6 +93,9 @@ ifdef BASE2
 CPATHS	+= $(BASE2)
 endif
 LPATHS	+= $(BASE)/lib $(HOME)/opt/lib /usr/local/lib
+ifdef BASE2
+LPATHS	+= $(BASE2)/lib
+endif
 LIBS += -lrt
 
 #google-pprof:

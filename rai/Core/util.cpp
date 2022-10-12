@@ -1380,9 +1380,10 @@ std::string getcwd_string() {
 }
 
 const char* niceTypeidName(const std::type_info& type) {
-  const char* name = type.name();
-  while(*name>='0' && *name<='9') name++;
-  return name;
+  static char buf[256];
+  strcpy(buf, type.name());
+  for(char *c=buf;*c;c++) if(*c>='0' && *c<='9') *c='.';
+  return buf;
 }
 }
 

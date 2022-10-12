@@ -758,7 +758,7 @@ Node* Graph::readNode(std::istream& is, StringA& tags, const char* predetermined
   pinfo.value_beg=(long int)is.tellg()-1;
   if(c=='=' || c==':' || c=='{' || c=='[' || c=='<' || c=='!' || c=='\'') {
     if(c=='=' || c==':') c=getNextChar(is, " \t");
-    if((c>='a' && c<='z') || (c>='A' && c<='Z') || c=='_') { //String or boolean
+    if((c>='a' && c<='z') || (c>='A' && c<='Z') || c=='_' || c=='/') { //String or boolean
       is.putback(c);
       str.read(is, "", " \n\r\t,;}", false);
       if(str=="true" || str=="True") node = newNode<bool>(key, parents, true);
