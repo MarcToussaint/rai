@@ -390,6 +390,7 @@ template<class T> Array<T*> getCarray(const Array<T>& data){
 
 namespace rai{
 template<class T> Array<T> catCol(const rai::Array<rai::Array<T>*>& X);
+template<class T> Array<T> catCol(std::initializer_list<rai::Array<T>> X);
 template<class T> Array<T> catCol(const rai::Array<rai::Array<T>>& X);
 template<class T> Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b) { return catCol(rai::Array<rai::Array<T>*>{(rai::Array<T>*)&a, (rai::Array<T>*)&b}); }
 template<class T> Array<T> catCol(const rai::Array<T>& a, const rai::Array<T>& b, const rai::Array<T>& c) { return catCol(rai::Array<rai::Array<T>*>{(rai::Array<T>*)&a, (rai::Array<T>*)&b, (rai::Array<T>*)&c}); }

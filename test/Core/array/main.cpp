@@ -244,7 +244,6 @@ void TEST(Autodiff){
 
   x.J_setId();
 
-
   arr y = A*x;
   cout <<y <<endl <<A <<endl;
 
@@ -262,6 +261,8 @@ void TEST(Autodiff){
   checkOperation(a-x);
   checkOperation(x%a);
   checkOperation(a%x);
+  checkOperation(x/a);
+  checkOperation(a/x);
   checkOperation(-x);
   checkOperation(~x);
   checkOperation(~x*a);

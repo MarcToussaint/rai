@@ -1853,18 +1853,18 @@ arr& operator+=(arr& x, double y){
   UpdateOperator_MS(+=);
   return x;
 }
-  arr& operator+=(arr&& x, const arr& y){
-    UpdateOperator_MM(+=);
-    if(y.jac){
-      if(x.jac) *x.jac += *y.jac;
-      else x.J() = *y.jac;
-    }
-    return x;
+arr& operator+=(arr&& x, const arr& y){
+  UpdateOperator_MM(+=);
+  if(y.jac){
+    if(x.jac) *x.jac += *y.jac;
+    else x.J() = *y.jac;
   }
-  arr& operator+=(arr&& x, double y){
-    UpdateOperator_MS(+=);
-    return x;
-  }
+  return x;
+}
+arr& operator+=(arr&& x, double y){
+  UpdateOperator_MS(+=);
+  return x;
+}
 
 arr& operator-=(arr& x, const arr& y){
   UpdateOperator_MM(-=);
@@ -1897,7 +1897,7 @@ arr& operator*=(arr& x, const arr& y){
     CHECK_EQ(y.nd, 1, "");
     if(x.jac && !y.jac) *x.jac = y % (*x.jac);
     else if(!x.jac && y.jac) x.J() = x % (*y.jac);
-    else NIY;
+    else{ *x.jac = y.noJ() % (*x.jac); *x.jac += x.noJ() % (*y.jac); }
   }
   UpdateOperator_MM(*=);
   return x;
@@ -1926,7 +1926,21 @@ arr& operator*=(arr& x, double y){
 arr& operator/=(arr& x, const arr& y){
   UpdateOperator_MM(/=);
   if(x.jac || y.jac){
-    NIY;
+    if(x.jac && !y.jac){
+      arr yinv(y.N);
+      for(uint i=0;i<y.N;i++) yinv.p[i] = 1./y.p[i];
+      *x.jac = yinv % (*x.jac);
+    }else if(!x.jac && y.jac){
+      arr coeff(y.N);
+      for(uint i=0;i<y.N;i++) coeff.p[i] = -x.p[i]/y.p[i]; //NOTE: x(i) is already divided by y(i)!
+      x.J() = coeff % (*y.jac);
+    }else{
+      arr coeff(y.N);
+      for(uint i=0;i<y.N;i++) coeff.p[i] = 1./y.p[i];
+      *x.jac = coeff % (*x.jac);
+      for(uint i=0;i<y.N;i++) coeff.p[i] = -x.p[i]/y.p[i];
+      *x.jac += coeff % (*y.jac);
+    }
   }
   return x;
 }

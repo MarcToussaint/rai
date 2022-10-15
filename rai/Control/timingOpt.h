@@ -16,9 +16,9 @@ struct TimingProblem : NLP {
   bool optLastVel=false;
   bool tauBarrier=false;
 
-  const double maxVel;
-  const double maxAcc;
-  const double maxJer;
+  arr maxVel;
+  arr maxAcc;
+  arr maxJer;
 
   //decision variables (optimization output)
   arr v;   //velocities at way points

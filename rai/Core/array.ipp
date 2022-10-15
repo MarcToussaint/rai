@@ -1037,6 +1037,12 @@ template<class T> Array<T> catCol(const Array<Array<T>*>& X) {
   return z;
 }
 
+template<class T> Array<T> catCol(std::initializer_list<rai::Array<T>> X){
+  Array<Array<T>*> Xp;
+  for(const Array<T>& x:  X) Xp.append((Array<T>*)&x);
+  return catCol(Xp);
+}
+
 /// concatenate 2D matrices (or vectors) column-wise
 template<class T> Array<T> catCol(const Array<Array<T>>& X) {
   Array<const Array<T>*> Xp;

@@ -14,9 +14,6 @@ TimingProblem::TimingProblem(const arr& _waypoints, const arr& _tangents,
     ctrlCost(_ctrlCost),
     optTau(_optTau),
     optLastVel(_optLastVel),
-    maxVel(_maxVel),
-    maxAcc(_maxAcc),
-    maxJer(_maxJer),
     v(v_init),
     tau(tau_init){
 
@@ -49,16 +46,21 @@ TimingProblem::TimingProblem(const arr& _waypoints, const arr& _tangents,
     bounds_up.resize(dimension) = -1.; //means deactivated
     for(uint k=0;k<tau.N;k++){
       bounds_lo(k) = 1e-3;
-      bounds_up(k) = 1e1;
+      bounds_up(k) = 1e3;
     }
   }
+
+  if(_maxVel>0.) maxVel=consts(_maxVel, d);
+  if(_maxAcc>0.) maxAcc=consts(_maxAcc, d);
+  if(_maxJer>0.) maxJer=consts(_maxJer, d);
 
   //-- init feature types
   uint m=1; //timeCost
   if(ctrlCost>0.) m += K*2*d; //control costs
-  if(maxVel>0.) m += K*4*d;
-  if(maxAcc>0.) m += K*4*d;
-  if(tauBarrier) m += tau.N;
+  if(maxVel.N) m += K*4*d;
+  if(maxAcc.N) m += K*4*d;
+  if(maxJer.N) m += K*2*d;
+  if(tauBarrier) m += K;
   featureTypes.resize(m);
 
   m=0;
@@ -69,13 +71,17 @@ TimingProblem::TimingProblem(const arr& _waypoints, const arr& _tangents,
       featureTypes({m,m+2*d-1}) = OT_sos; //control costs
       m += 2*d;
     }
-    if(maxVel>0.){
+    if(maxVel.N){
       featureTypes({m,m+4*d-1}) = OT_ineq; //maxVel
       m += 4*d;
     }
-    if(maxAcc>0.){
+    if(maxAcc.N){
       featureTypes({m,m+4*d-1}) = OT_ineq; //maxAcc
       m += 4*d;
+    }
+    if(maxJer.N){
+      featureTypes({m,m+2*d-1}) = OT_ineq; //maxJer
+      m += 2*d;
     }
     if(tauBarrier){
       featureTypes(m) = OT_ineqB; //tau barrier
@@ -171,9 +177,9 @@ void TimingProblem::evaluate(arr& phi, arr& J, const arr& x){
     }
 
     // 4) vel limits
-    if(maxVel>0.){
+    if(maxVel.N){
       arr y = rai::CubicSplineMaxVel(_x0, _v0, _x1, _v1, tau(k), tauJ);
-      y -= maxVel;
+      for(uint i=0;i<y.N;i++) { y.elem(i) -= maxVel.elem(i%maxVel.N); }
       y *= 1e1;
       phi.setVectorBlock(y.noJ(), m);
       if(!!J) J.sparse().add(y.J(), m, 0);
@@ -181,10 +187,20 @@ void TimingProblem::evaluate(arr& phi, arr& J, const arr& x){
     }
 
     // 5) acc limits
-    if(maxAcc>0.){
+    if(maxAcc.N){
       arr y = rai::CubicSplineMaxAcc(_x0, _v0, _x1, _v1, tau(k), tauJ);
-      y -= maxAcc;
-      y *= 1e1;
+      for(uint i=0;i<y.N;i++) { y.elem(i) -= maxAcc.elem(i%maxAcc.N); }
+      y *= 1e0;
+      phi.setVectorBlock(y.noJ(), m);
+      if(!!J) J.sparse().add(y.J(), m, 0);
+      m += y.N;
+    }
+
+    // 6) jer limits
+    if(maxJer.N){
+      arr y = rai::CubicSplineMaxJer(_x0, _v0, _x1, _v1, tau(k), tauJ);
+      for(uint i=0;i<y.N;i++) { y.elem(i) -= maxJer.elem(i%maxJer.N); } //y -= maxJer;
+      y *= 1e0;
       phi.setVectorBlock(y.noJ(), m);
       if(!!J) J.sparse().add(y.J(), m, 0);
       m += y.N;
