@@ -479,7 +479,18 @@ arr CubicSplineMaxJer(const arr& x0, const arr& v0, const arr& x1, const arr& v1
   return y;
 }
 
-arr CubicSplineMaxAcc(const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ){
+arr CubicSplineAcc0(const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ){
+  //acceleration is 6a t + 2b
+  double tau2 = tau*tau, tau3 = tau*tau2;
+  arr b2 = 2./tau2 * (  3.*(x1-x0) - tau*(v1+2.*v0) );
+  if(tauJ.N){
+    b2.J() += -12./tau3 * (x1-x0) * tauJ;
+    b2.J() -= -2./tau2 * (v1+2.*v0) * tauJ;
+  }
+  return b2;
+}
+
+arr CubicSplineAcc1(const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ){
   //acceleration is 6a t + 2b
   double tau2 = tau*tau, tau3 = tau*tau2;
   //  arr d = x0;
@@ -494,14 +505,32 @@ arr CubicSplineMaxAcc(const arr& x0, const arr& v0, const arr& x1, const arr& v1
     a6_tau.J() -= -24./tau3 * (x1-x0) * tauJ;
     a6_tau.J() += -6./tau2 * (v1+v0) * tauJ;
   }
+  return a6_tau + b2;
+}
 
-  uint n=x0.N;
-  arr y(4*n);
+arr CubicSplineMaxAcc(const arr& x0, const arr& v0, const arr& x1, const arr& v1, double tau, const arr& tauJ){
+  //acceleration is 6a t + 2b
+  double tau2 = tau*tau, tau3 = tau*tau2;
+  //  arr d = x0;
+  //  arr c = v0;
+  arr b2 = 2./tau2 * (  3.*(x1-x0) - tau*(v1+2.*v0) );
+  if(tauJ.N){
+    b2.J() += -12./tau3 * (x1.noJ()-x0.noJ()) * tauJ;
+    b2.J() -= -2./tau2 * (v1.noJ()+2.*v0.noJ()) * tauJ;
+  }
+  arr a6_tau = 6./tau2 * ( -2.*(x1-x0) + tau*(v1+v0) );
+  if(tauJ.N){
+    a6_tau.J() -= -24./tau3 * (x1.noJ()-x0.noJ()) * tauJ;
+    a6_tau.J() += -6./tau2 * (v1.noJ()+v0.noJ()) * tauJ;
+  }
+
+  uint d=x0.N;
+  arr y(4*d);
   if(b2.jac) y.J().sparse().resize(y.N, b2.jac->d1, 0);
-  y.setVectorBlock(b2, 0*n);
-  y.setVectorBlock(-b2, 1*n);
-  y.setVectorBlock(b2 + a6_tau, 2*n);
-  y.setVectorBlock(-b2 - a6_tau, 3*n);
+  y.setVectorBlock(b2, 0*d);
+  y.setVectorBlock(-b2, 1*d);
+  y.setVectorBlock(b2 + a6_tau, 2*d);
+  y.setVectorBlock(-b2 - a6_tau, 3*d);
   return y;
 }
 

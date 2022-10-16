@@ -15,6 +15,8 @@ struct TimingProblem : NLP {
   bool optTau=true; //option: if false, only velocities are fitted to the given points and timing
   bool optLastVel=false;
   bool tauBarrier=false;
+  bool accCont=false;
+  uint refine=0;
 
   arr maxVel;
   arr maxAcc;
@@ -28,7 +30,8 @@ struct TimingProblem : NLP {
                 double _timeCost, double _ctrlCost,
                 bool _optTau=true,  bool _optLastVel=false,
                 const arr& v_init={}, const arr& tau_init={},
-                double _maxVel=-1., double _maxAcc=-1., double _maxJer=-1.);
+                double _maxVel=-1., double _maxAcc=-1., double _maxJer=-1.,
+                uint _refine=0, bool _accCont=false);
   ~TimingProblem(){}
 
   virtual void evaluate(arr& phi, arr& J, const arr& x);
@@ -36,4 +39,9 @@ struct TimingProblem : NLP {
 
   void getVels(arr& vel);
   void getTaus(arr& tau);
+
+private:
+  arr xJ(int k);
+  arr vJ(int k);
+  arr Jtau(int k);
 };
