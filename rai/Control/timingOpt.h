@@ -8,7 +8,6 @@
 struct TimingProblem : NLP {
   //problem specs
   arr waypoints; //way points
-  arr tangents;  //optional tangents at the way points
   arr x0, v0;    //start state
   double timeCost;  //time-opt weight
   double timeCost2;  //time-opt weight
@@ -17,7 +16,7 @@ struct TimingProblem : NLP {
   bool optLastVel=false;
   bool tauBarrier=false;
   bool accCont=false;
-  uintA wayOpt;
+  uintA wayFree;
 
   arr maxVel;
   arr maxAcc;
@@ -32,7 +31,7 @@ struct TimingProblem : NLP {
                 bool _optTau=true,  bool _optLastVel=false,
                 const arr& v_init={}, const arr& tau_init={},
                 double _maxVel=-1., double _maxAcc=-1., double _maxJer=-1.,
-                const uintA& _wayOpt={}, bool _accCont=false, double _timeCost2=-1.);
+                const uintA& _wayFree={}, bool _accCont=false, double _timeCost2=-1.);
   ~TimingProblem(){}
 
   virtual void evaluate(arr& phi, arr& J, const arr& x);
@@ -41,7 +40,6 @@ struct TimingProblem : NLP {
 
   void smartInitVels();
   void getVels(arr& vel);
-  void getTaus(arr& tau);
 
 private:
   arr xJ(int k);
