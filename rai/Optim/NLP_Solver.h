@@ -33,9 +33,9 @@ struct SolverReturn {
   double sos=-1., f=-1., ineq=-1., eq=-1.;
   bool done=false;
   void write(ostream& os) const{
-    os <<"SolverReturn: time: " <<time <<" evals: " <<evals;
-    os <<" done: " <<done <<" feasible: " <<feasible;
-    os <<" sos: " <<sos <<" f: " <<f <<" ineq: " <<ineq <<" eq: " <<eq;
+    os <<"SolverReturn: { time: " <<time <<", evals: " <<evals;
+    os <<", done: " <<done <<", feasible: " <<feasible;
+    os <<", sos: " <<sos <<", f: " <<f <<", ineq: " <<ineq <<", eq: " <<eq <<" }";
   }
 };
 stdOutPipe(SolverReturn)

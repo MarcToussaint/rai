@@ -1549,14 +1549,11 @@ template<class T> void Array<T>::write(std::ostream& os, const char* ELEMSEP, co
 
 /** @brief prototype for operator>>, if there is a dimensionality tag: fast reading of ascii (if there is brackets[]) or binary (if there is \\0\\0 brackets) data; otherwise slow ascii read */
 template<class T> void Array<T>::read(std::istream& is) {
-  uint d, i;
-  char c;
-  T x;
   bool expectBracket=false;
 
 #define PARSERR(x) HALT("Error in parsing Array of type '" <<typeid(T).name() <<"' (line=" <<lineCount <<"):\n" <<x)
 
-  c=peerNextChar(is, " \n\r\t", true);
+  char c=peerNextChar(is, " \n\r\t", true);
   if(c=='[') {
     is >>PARSE("[");
     expectBracket=true;
@@ -1572,7 +1569,7 @@ template<class T> void Array<T>::read(std::istream& is) {
       if(is.fail()) PARSERR("could not binary data");
       c=is.get();  if(c!=0) PARSERR("couldn't read \0 after binary data block :-(");
     } else { //fast ascii read
-      for(i=0; i<N; i++) {
+      for(uint i=0; i<N; i++) {
         if(is.fail()) PARSERR("could not read " <<i <<"-th element of an array");
         is >>p[i];
       }
@@ -1583,7 +1580,8 @@ template<class T> void Array<T>::read(std::istream& is) {
     }
   } else { //slow ascii read (inferring size from formatting)
     uint i=0;
-    d=0;
+    uint d=0;
+    T x;
     for(;;) {
       skip(is, " ,\r\t", NULL, true);
       is.get(c);

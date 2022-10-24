@@ -250,7 +250,7 @@ arr TimingProblem::getInitializationSample(const arr& previousOptima){
   return x.reshape(-1);
 }
 
-void TimingProblem::report(std::ostream& os, int verbose, const char* msg){
+void TimingProblem::report(std::ostream& fil, int verbose, const char* msg){
 
   arr path = waypoints;       path.prepend(x0);
   arr vels = v;               vels.prepend(v0);  vels.append(zeros(vels.d1));
@@ -272,30 +272,31 @@ void TimingProblem::report(std::ostream& os, int verbose, const char* msg){
     if(maxAcc.N) for(uint i=0;i<xdd.d0;i++) xdd[i] /= maxAcc;
     if(maxJer.N) for(uint i=0;i<xddd.d0;i++) xddd[i] /= maxJer;
 
-    if(x.d1>1){
-      arr vM = max(xd,1);
-      arr aM = max(xdd,1);
-      arr jM = max(xddd,1);
-      arr vm = min(xd,1);
-      arr am = min(xdd,1);
-      arr jm = min(xddd,1);
-      rai::catCol({timeGrid, vM, vm, aM, am, jM, jm}).modRaw().write( FILE("z.dat") );
-      gnuplot("plot [:][-1.1:1.1] 'z.dat' us 1:2 t 'vmax' ls 1, '' us 1:3 t 'vmin' ls 1, '' us 1:4 t 'amax' ls 2, '' us 1:5 t 'amin' ls 2, '' us 1:6 t 'jmax' ls 3, '' us 1:7 t 'jmin' ls 3");
-    }else{
-      rai::catCol({timeGrid, x, xd, xdd, xddd}).reshape(-1,5).modRaw(). write( FILE("z.dat") );
-      gnuplot("plot [:][-1.1:1.1] 'z.dat' us 1:2 t 'x', ''us 1:3 t 'v', '' us 1:4 t 'a', '' us 1:5 t 'j'");
+    if(verbose>2){
+      if(x.d1>1){
+        arr vM = max(xd,1);
+        arr aM = max(xdd,1);
+        arr jM = max(xddd,1);
+        arr vm = min(xd,1);
+        arr am = min(xdd,1);
+        arr jm = min(xddd,1);
+        rai::catCol({timeGrid, vM, vm, aM, am, jM, jm}).modRaw().write( FILE("z.dat") );
+        gnuplot("plot [:][-1.1:1.1] 'z.dat' us 1:2 t 'vmax' ls 1, '' us 1:3 t 'vmin' ls 1, '' us 1:4 t 'amax' ls 2, '' us 1:5 t 'amin' ls 2, '' us 1:6 t 'jmax' ls 3, '' us 1:7 t 'jmin' ls 3");
+      }else{
+        rai::catCol({timeGrid, x, xd, xdd, xddd}).reshape(-1,5).modRaw(). write( FILE("z.dat") );
+        gnuplot("plot [:][-1.1:1.1] 'z.dat' us 1:2 t 'x', ''us 1:3 t 'v', '' us 1:4 t 'a', '' us 1:5 t 'j'");
+      }
     }
 
-    if(verbose>2){
+    {
       //write
-      ofstream fil("z.out");
+      fil <<"totalTime: " <<times(-1) <<endl;
       fil <<"waypointTimes:" <<times <<endl;
       fil <<"waypoints:" <<path <<endl;
       fil <<"waypointVels:" <<vels <<endl;
-      arr T;
-      for(double t=0;t<=times(-1);t+=.002) T.append(t);
-      fil <<"fine500HzPath: " <<S.eval(T) <<endl;
-      fil.close();
+//      arr T;
+//      for(double t=0;t<=times(-1);t+=.002) T.append(t);
+//      fil <<"fine500HzPath: " <<S.eval(T) <<endl;
     }
   }
 }
