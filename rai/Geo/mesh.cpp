@@ -1123,6 +1123,7 @@ void rai::Mesh::readFile(const char* filename) {
 
 void rai::Mesh::read(std::istream& is, const char* fileExtension, const char* filename) {
   if(!strcmp(fileExtension, "arr")) { readArr(is); }
+  else if(!strcmp(fileExtension, "msh")) { readArr(is); }
   else if(!strcmp(fileExtension, "off")) { readOffFile(is); }
   else if(!strcmp(fileExtension, "ply")) { readPLY(filename); }
   else if(!strcmp(fileExtension, "tri")) { readTriFile(is); }

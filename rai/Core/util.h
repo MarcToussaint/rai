@@ -377,8 +377,8 @@ struct FileToken {
   void cd_start();
   void cd_file();
   bool exists();
-  std::ofstream& getOs(bool change_dir=false);
-  std::ifstream& getIs(bool change_dir=false);
+  std::ostream& getOs(bool change_dir=false);
+  std::istream& getIs(bool change_dir=false);
   operator std::istream& () { return getIs(); }
   operator std::ostream& () { return getOs(); }
 
@@ -592,6 +592,26 @@ struct Type_typed : Type {
 
 inline bool operator!=(Type& t1, Type& t2) { return t1.typeId() != t2.typeId(); }
 inline bool operator==(Type& t1, Type& t2) { return t1.typeId() == t2.typeId(); }
+
+//===========================================================================
+//
+// initialization helpers
+//
+
+template<class T> T fromFile(const char* filename){
+  rai::FileToken file(filename, true);
+  T x;
+  x.read(file.getIs());
+  file.cd_start();
+  return x;
+}
+
+template<class T> T fromString(const char* str){
+  std::stringstream stream(str);
+  T x;
+  x.read(stream);
+  return x;
+}
 
 //===========================================================================
 //

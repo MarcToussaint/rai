@@ -1482,6 +1482,7 @@ template<class T> void Array<T>::shift(int offset, bool wrapAround) {
   CHECK(memMove, "pushing only works with memMove enabled");
   uint m=offset>0?offset:-offset;
   if(!m) return;
+  if(m==N && wrapAround) return; //nothing to be done;
   CHECK(m<N, "shift offset needs to be smaller than memory size");
   if(wrapAround) tmp.resize(m);
   if(offset>0) {
@@ -1587,7 +1588,7 @@ template<class T> void Array<T>::read(std::istream& is) {
       is.get(c);
       if(c==']' || !is.good()) { is.clear(); break; }
       if(c==';' || c=='\n') {  //set an array width
-        if(!d && i>1) d=i; else if(d && i%d) PARSERR("mis-structured array in row " <<i/d);
+        if(!d) d=i; else if(d && i%d) PARSERR("mis-structured array in row " <<i/d);
         continue;
       }
       if(c!=',') is.putback(c);

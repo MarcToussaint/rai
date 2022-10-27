@@ -1031,7 +1031,7 @@ bool rai::FileToken::exists() {
   return r==0;
 }
 
-std::ofstream& rai::FileToken::getOs(bool change_dir) {
+std::ostream& rai::FileToken::getOs(bool change_dir) {
   CHECK(!is, "don't use a FileToken both as input and output");
   if(!os) {
     if(change_dir) cd_file();
@@ -1043,7 +1043,7 @@ std::ofstream& rai::FileToken::getOs(bool change_dir) {
   return *os;
 }
 
-std::ifstream& rai::FileToken::getIs(bool change_dir) {
+std::istream& rai::FileToken::getIs(bool change_dir) {
   CHECK(!os, "don't use a FileToken both as input and output");
   if(!is) {
     if(change_dir) cd_file();
@@ -1419,6 +1419,7 @@ template StringA rai::getParameter<StringA>(const char*);
 template StringA rai::getParameter<StringA>(const char*, const StringA&);
 
 template void rai::setParameter<double>(const char*, const double&);
+template void rai::setParameter<uint>(const char*, const uint&);
 template void rai::setParameter<arr>(const char*, const arr&);
 template void rai::setParameter<rai::String>(const char*, const rai::String&);
 
