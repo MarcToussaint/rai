@@ -209,7 +209,7 @@ void Simulation::setMoveTo(const arr& x, double t, bool append){
   if(x.nd==1) path.reshape(1,x.d0);
 
   arr times = {t};
-  if(x.nd==2) times = range(t/(x.d0), t, x.d0-1);
+  if(x.nd==2) times.setGrid(1, t/(x.d0), t, x.d0-1);
 
   if(append) self->ref.append(path, times, time, true);
   else self->ref.overrideSmooth(path, times, time);

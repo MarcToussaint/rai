@@ -965,11 +965,12 @@ Array<T> Array<T>::cols(uint start_col, uint end_col) const {
 }
 
 /// makes this array a reference to the C buffer
-template<class T> void Array<T>::referTo(const T* buffer, uint n) {
+template<class T> Array<T>& Array<T>::referTo(const T* buffer, uint n) {
   freeMEM();
   isReference=true;
   nd=1; d0=N=n; d1=d2=0;
   p=(T*)buffer;
+  return *this;
 }
 
 template<class T> Array<T>& Array<T>::operator=(std::initializer_list<T> values) {

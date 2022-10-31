@@ -1902,9 +1902,8 @@ void rai::Mesh::setImplicitSurface(const arr& gridValues, const arr& lo, const a
 }
 
 #else //Lewiner
-void rai::Mesh::setImplicitSurface(ScalarFunction f, double lo, double hi, uint res) {
-  NICO
-}
+void rai::Mesh::setImplicitSurface(ScalarFunction f, double lo, double hi, uint res) {  NICO  }
+void rai::Mesh::setImplicitSurface(const floatA& gridValues, const arr& lo, const arr& hi) { NICO }
 #endif
 
 void rai::Mesh::setImplicitSurfaceBySphereProjection(ScalarFunction f, double rad, uint fineness){

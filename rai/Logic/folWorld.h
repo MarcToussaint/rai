@@ -147,7 +147,7 @@ struct FOL_World : TreeSearchDomain {
   String callPDDLsolver();
 
 };
-stdOutPipe(FOL_World);
+stdOutPipe(FOL_World)
 
 struct FOL_World_State : TreeSearchNode {
   FOL_World& L;

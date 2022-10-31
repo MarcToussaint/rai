@@ -156,7 +156,7 @@ template<class T> struct Array {
   void setRandomPerm(int n=-1);
   void setCarray(const T* buffer, uint D0);
   void setCarray(const T** buffer, uint D0, uint D1);
-  void referTo(const T* buffer, uint n);
+  Array<T>& referTo(const T* buffer, uint n);
   void referTo(const Array<T>& a);
   void referToRange(const Array<T>& a, int i_lo, int i_up);
   void referToRange(const Array<T>& a, int i, int j_lo, int j_up);
