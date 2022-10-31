@@ -288,10 +288,10 @@ DEPEND_UBUNTU += libopencv-dev
     %CPATH := $(CPATH):$(IFLAGS:\-I%=\:%\:) % is it possible to add the includes to the CPATH?
     LIBS      += `pkg-config --libs opencv-2.3.1`
   else 
-    CXXFLAGS  += -DRAI_OPENCV `pkg-config --cflags-only-other opencv`
-    CXXFLAGS += `pkg-config --cflags-only-I opencv`
+    CXXFLAGS  += -DRAI_OPENCV `pkg-config --cflags-only-other opencv4`
+    CXXFLAGS += `pkg-config --cflags-only-I opencv4`
     %CPATH := $(CPATH):$(IFLAGS:\-I%=\:%\:) % is it possible to add the includes to the CPATH?
-    LIBS      += `pkg-config --libs opencv`
+    LIBS      += `pkg-config --libs opencv4`
   endif
 endif
 

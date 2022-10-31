@@ -368,10 +368,10 @@ void BulletInterface::pushFullState(const rai::Configuration& C, const arr& fram
       if(!!frameVelocities && frameVelocities.N) {
         b->setLinearVelocity(btVector3(frameVelocities(f->ID, 0, 0), frameVelocities(f->ID, 0, 1), frameVelocities(f->ID, 0, 2)));
         b->setAngularVelocity(btVector3(frameVelocities(f->ID, 1, 0), frameVelocities(f->ID, 1, 1), frameVelocities(f->ID, 1, 2)));
-      } else {
+      } /*else {
         b->setLinearVelocity(btVector3(0., 0., 0.));
         b->setAngularVelocity(btVector3(0., 0., 0.));
-      }
+      }*/
     }
   }
   self->dynamicsWorld->stepSimulation(.01); //without this, two consequtive pushFullState won't work! (something active tag?)
@@ -482,15 +482,14 @@ btRigidBody* BulletInterface_self::addLink(rai::Frame* f) {
       body->setFriction(friction);
     }
   }
-//  body->setRollingFriction(.01);
-//  body->setSpinningFriction(.01);
-  //cout <<body->getContactStiffness() <<' ' <<body->getContactDamping() <<endl;
-  body->setContactStiffnessAndDamping(opt.contactStiffness, opt.contactDamping);
+  body->setRollingFriction(.01);
+  body->setSpinningFriction(.01);
   {
     double restitution=opt.defaultRestitution;
     for(auto s:shapes) if(s->frame.ats) s->frame.ats->get<double>(restitution, "restitution");
     if(restitution>=0.) body->setRestitution(restitution);
   }
+  body->setContactStiffnessAndDamping(opt.contactStiffness, opt.contactDamping);
 
   dynamicsWorld->addRigidBody(body);
 
